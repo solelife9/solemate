@@ -27,6 +27,14 @@ const FB = 'Barlow-Regular';
 const FBM = 'Barlow-Medium';
 const FP = 'PretendardVariable';
 
+const BRANDS=['New Balance','La Sportiva','Inov-8','ASICS','Nike','Adidas','Brooks','Saucony','Hoka','Mizuno','Salomon','Karhu','Scott','Merrell','Norda','Veja','Lululemon','Reebok','Puma','On'];
+function parseShoeName(name:string):{brand:string;model:string}{
+  for(const b of BRANDS){if(name.toUpperCase().startsWith(b.toUpperCase())){return{brand:b.toUpperCase(),model:name.slice(b.length).trim()};}}
+  const idx=name.indexOf(' ');
+  if(idx<0)return{brand:name.toUpperCase(),model:''};
+  return{brand:name.slice(0,idx).toUpperCase(),model:name.slice(idx+1).trim()};
+}
+
 function calcDist(lat1:number,lon1:number,lat2:number,lon2:number):number{
   const R=6371,dL=(lat2-lat1)*Math.PI/180,dl=(lon2-lon1)*Math.PI/180;
   const a=Math.sin(dL/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dl/2)**2;
@@ -150,9 +158,9 @@ function Main(){
     }catch(e){Alert.alert('오류','삭제 실패');}
   }
 
-  async function addRun(shoeId:string,km:number,date:string,memo:string,source:string,duration?:number,cadence?:number,route?:string,location?:string){
+  async function addRun(shoeId:string,km:number,date:string,memo:string,source:string,duration?:number,cadence?:number,route?:string,location?:string,heart_rate?:number){
     try{
-      const r=await fetch(API+'/api/runs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:userId,shoe_id:shoeId,km,run_date:date,memo,source,duration:duration||0,cadence:cadence||0,route:route||'',location:location||''})});
+      const r=await fetch(API+'/api/runs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:userId,shoe_id:shoeId,km,run_date:date,memo,source,duration:duration||0,cadence:cadence||0,route:route||'',location:location||'',heart_rate:heart_rate||0})});
       const nr=await r.json();
       const now=new Date();
       const hh=String(now.getHours()).padStart(2,'0');
@@ -200,6 +208,14 @@ function Main(){
     <View style={{flex:1,backgroundColor:BG}}>
       <View style={[a.header,{paddingTop:insets.top+8}]}>
         <Text style={a.logo}><Text style={{color:T1}}>SOLE</Text><Text style={{color:ACCENT}}>MATE</Text></Text>
+        {tab==='shoes'&&(
+          <TouchableOpacity
+            style={{flexDirection:'row',alignItems:'center',gap:5}}
+            onPress={()=>setShowAdd(true)}>
+            <Ionicons name="add-circle-outline" size={16} color={ACCENT}/>
+            <Text style={{color:ACCENT,fontSize:13,fontWeight:'700'}}>러닝화 등록하기</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       <View style={{flex:1}}>
@@ -254,9 +270,100 @@ function Main(){
 }
 
 // ─── Shoes Tab ────────────────────────────────────────────────
+function ShoeHistoryModal({shoe,runs,onClose}:any){
+  const DOW=['일','월','화','수','목','금','토'];
+  const shoeRuns=[...(runs||[])].filter((r:any)=>r.shoe_id===shoe.id)
+    .sort((a:any,b:any)=>b.run_date.localeCompare(a.run_date));
+  const totalKm=shoeRuns.reduce((a:number,r:any)=>a+parseFloat(r.km||0),0);
+  const paceRuns=shoeRuns.filter((r:any)=>r.duration>0&&parseFloat(r.km)>0.1);
+  const avgPace=paceRuns.length?paceRuns.reduce((a:number,r:any)=>a+r.duration/parseFloat(r.km),0)/paceRuns.length:0;
+  return(
+    <View style={{position:'absolute',top:0,left:0,right:0,bottom:0,backgroundColor:'rgba(0,0,0,0.85)',zIndex:100}}>
+      <View style={{flex:1,backgroundColor:BG,marginTop:60,borderTopLeftRadius:24,borderTopRightRadius:24,overflow:'hidden'}}>
+        {/* 헤더 */}
+        <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',padding:20,borderBottomWidth:StyleSheet.hairlineWidth,borderBottomColor:SEP}}>
+          <View>
+            <Text style={{color:ACCENT,fontSize:13,fontWeight:'700',letterSpacing:2}}>{parseShoeName(shoe.name).brand}</Text>
+            <Text style={{color:T1,fontSize:20,fontWeight:'900',fontFamily:FH}}>{parseShoeName(shoe.name).model||shoe.name}</Text>
+          </View>
+          <TouchableOpacity onPress={onClose} style={{padding:8}}>
+            <Ionicons name="close" size={24} color={T2}/>
+          </TouchableOpacity>
+        </View>
+        {/* 요약 스탯 */}
+        <View style={{flexDirection:'row',padding:16,gap:0,backgroundColor:CARD,margin:16,borderRadius:12}}>
+          <View style={{flex:1,alignItems:'center'}}>
+            <Text style={{color:T1,fontSize:18,fontWeight:'700',fontFamily:FH}}>{totalKm.toFixed(1)} km</Text>
+            <Text style={{color:T3,fontSize:11,marginTop:3}}>총 거리</Text>
+          </View>
+          <View style={{width:StyleSheet.hairlineWidth,backgroundColor:SEP}}/>
+          <View style={{flex:1,alignItems:'center'}}>
+            <Text style={{color:T1,fontSize:18,fontWeight:'700',fontFamily:FH}}>{shoeRuns.length}회</Text>
+            <Text style={{color:T3,fontSize:11,marginTop:3}}>총 런</Text>
+          </View>
+          <View style={{width:StyleSheet.hairlineWidth,backgroundColor:SEP}}/>
+          <View style={{flex:1,alignItems:'center'}}>
+            <Text style={{color:T1,fontSize:18,fontWeight:'700',fontFamily:FH}}>{avgPace>0?fmtPace(1,avgPace):'--'}</Text>
+            <Text style={{color:T3,fontSize:11,marginTop:3}}>평균 페이스</Text>
+          </View>
+        </View>
+        {/* 기록 리스트 */}
+        <ScrollView contentContainerStyle={{paddingHorizontal:16,paddingBottom:32,gap:10}}>
+          {shoeRuns.length===0?(
+            <View style={{alignItems:'center',paddingTop:40}}>
+              <Text style={{color:T3,fontSize:14}}>아직 기록이 없어요</Text>
+            </View>
+          ):shoeRuns.map((r:any)=>{
+            const km=parseFloat(r.km);
+            const dur=r.duration||0;
+            const d=new Date(r.run_date);
+            const dow=DOW[d.getDay()]||'';
+            return(
+              <View key={r.id} style={{backgroundColor:CARD,borderRadius:12,overflow:'hidden',marginBottom:10}}>
+                <View style={{padding:12,paddingBottom:8}}>
+                  <Text style={{color:T2,fontSize:12,fontFamily:FP}}>{r.run_date} · {dow}요일</Text>
+                  {r.location?<Text style={{color:T3,fontSize:11,marginTop:2}} numberOfLines={1}>{r.location}</Text>:null}
+                </View>
+                <View style={{height:StyleSheet.hairlineWidth,backgroundColor:SEP}}/>
+                <View style={{flexDirection:'row',paddingVertical:12}}>
+                  <View style={{flex:1,alignItems:'center'}}>
+                    <Text style={{color:T1,fontSize:15,fontWeight:'700',fontFamily:FH}}>{km.toFixed(2)}</Text>
+                    <Text style={{color:T3,fontSize:10,marginTop:2}}>km</Text>
+                  </View>
+                  <View style={{width:StyleSheet.hairlineWidth,backgroundColor:SEP}}/>
+                  <View style={{flex:1,alignItems:'center'}}>
+                    <Text style={{color:T1,fontSize:15,fontWeight:'700',fontFamily:FH}}>{dur>0?fmtPace(km,dur):'--'}</Text>
+                    <Text style={{color:T3,fontSize:10,marginTop:2}}>페이스</Text>
+                  </View>
+                  <View style={{width:StyleSheet.hairlineWidth,backgroundColor:SEP}}/>
+                  <View style={{flex:1,alignItems:'center'}}>
+                    <Text style={{color:T1,fontSize:15,fontWeight:'700',fontFamily:FH}}>{dur>0?fmtTime(dur):'--:--'}</Text>
+                    <Text style={{color:T3,fontSize:10,marginTop:2}}>시간</Text>
+                  </View>
+                  <View style={{width:StyleSheet.hairlineWidth,backgroundColor:SEP}}/>
+                  <View style={{flex:1,alignItems:'center'}}>
+                    <Text style={{color:T1,fontSize:15,fontWeight:'700',fontFamily:FH}}>{r.cadence>0?r.cadence:'--'}</Text>
+                    <Text style={{color:T3,fontSize:10,marginTop:2}}>케이던스</Text>
+                  </View>
+                  <View style={{width:StyleSheet.hairlineWidth,backgroundColor:SEP}}/>
+                  <View style={{flex:1,alignItems:'center'}}>
+                    <Text style={{color:T1,fontSize:15,fontWeight:'700',fontFamily:FH}}>{r.heart_rate>0?r.heart_rate:'--'}</Text>
+                    <Text style={{color:T3,fontSize:10,marginTop:2}}>심박수</Text>
+                  </View>
+                </View>
+              </View>
+            );
+          })}
+        </ScrollView>
+      </View>
+    </View>
+  );
+}
+
 function ShoesTab({shoes,runs,shoeStats,deleteShoe,updateShoeName,onStartRun,onAddShoe}:any){
   const [editingId,setEditingId]=useState<string|null>(null);
   const [editName,setEditName]=useState('');
+  const [historyShoe,setHistoryShoe]=useState<any>(null);
   if(!shoes.length) return(
     <View style={a.empty}>
       <ShoeIcon size={64} color={T3}/>
@@ -269,20 +376,23 @@ function ShoesTab({shoes,runs,shoeStats,deleteShoe,updateShoeName,onStartRun,onA
   );
 
   return(
+    <View style={{flex:1}}>
     <ScrollView contentContainerStyle={{padding:16,paddingBottom:32}}>
       {shoes.map((s:any)=>{
         const{used,left,pct}=shoeStats(s);
         const p=Math.round(pct);
         const bc=p>40?ACCENT:p>15?WARN:DANGER;
         const bl=p>40?'양호':p>15?'주의':'교체 필요';
+        const shoeRuns=runs.filter((r:any)=>r.shoe_id===s.id);
+        const runCount=shoeRuns.length;
+        const lastRun=shoeRuns.length>0?shoeRuns.sort((a:any,b:any)=>b.run_date.localeCompare(a.run_date))[0].run_date:'없음';
         return(
-          <View key={s.id} style={{backgroundColor:CARD,borderRadius:18,marginBottom:14,overflow:'hidden',borderWidth:1,borderColor:'rgba(255,255,255,0.06)'}}>
-            {/* 왼쪽 컬러 액센트 바 */}
-            <View style={{position:'absolute',left:0,top:0,bottom:0,width:3,backgroundColor:bc,borderTopLeftRadius:18,borderBottomLeftRadius:18}}/>
+          <TouchableOpacity key={s.id} activeOpacity={0.85} onPress={()=>setHistoryShoe(s)}
+            style={{backgroundColor:CARD,borderRadius:14,marginBottom:10,overflow:'hidden',borderWidth:1,borderColor:'rgba(255,255,255,0.06)'}}>
 
-            <View style={{padding:18,paddingLeft:20}}>
+            <View style={{padding:14,paddingLeft:18}}>
               {/* 상단: 신발명 + 삭제 */}
-              <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'flex-start',marginBottom:3}}>
+              <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'flex-start',marginBottom:2}}>
                 {editingId===s.id?(
                   <View style={{flexDirection:'row',alignItems:'center',gap:8,flex:1}}>
                     <TextInput
@@ -296,9 +406,12 @@ function ShoesTab({shoes,runs,shoeStats,deleteShoe,updateShoeName,onStartRun,onA
                     </TouchableOpacity>
                   </View>
                 ):(
-                  <TouchableOpacity style={{flexDirection:'row',alignItems:'center',gap:6,flex:1}} onPress={()=>{setEditingId(s.id);setEditName(s.name);}}>
-                    <Text style={{color:T1,fontSize:17,fontWeight:'800',fontFamily:FH}}>{s.name}</Text>
-                    <Ionicons name="pencil-outline" size={13} color={T3}/>
+                  <TouchableOpacity style={{flex:1}} onPress={()=>{setEditingId(s.id);setEditName(s.name);}}>
+                    <Text style={{color:ACCENT,fontSize:16,fontWeight:'700',fontFamily:FBM,letterSpacing:2}}>{parseShoeName(s.name).brand}</Text>
+                    <View style={{flexDirection:'row',alignItems:'center',gap:6,marginTop:1}}>
+                      <Text style={{color:T1,fontSize:22,fontWeight:'900',fontFamily:FH,letterSpacing:0.5}}>{parseShoeName(s.name).model||parseShoeName(s.name).brand}</Text>
+                      <Ionicons name="pencil-outline" size={13} color={T3}/>
+                    </View>
                   </TouchableOpacity>
                 )}
                 <TouchableOpacity onPress={()=>Alert.alert('삭제','이 러닝화를 삭제할까요?',[{text:'취소'},{text:'삭제',style:'destructive',onPress:()=>deleteShoe(s.id)}])} style={{padding:4,marginLeft:8}}>
@@ -307,7 +420,7 @@ function ShoesTab({shoes,runs,shoeStats,deleteShoe,updateShoeName,onStartRun,onA
               </View>
 
               {/* 구매일 + 상태 */}
-              <View style={{flexDirection:'row',alignItems:'center',gap:8,marginBottom:18}}>
+              <View style={{flexDirection:'row',alignItems:'center',gap:8,marginBottom:10}}>
                 <Text style={{color:T3,fontSize:11}}>{s.purchase_date?`${s.purchase_date} · `:''}최대 {s.max_km}km</Text>
                 <View style={{backgroundColor:bc+'22',borderRadius:4,paddingHorizontal:6,paddingVertical:2}}>
                   <Text style={{color:bc,fontSize:10,fontWeight:'700'}}>{bl}</Text>
@@ -315,9 +428,9 @@ function ShoesTab({shoes,runs,shoeStats,deleteShoe,updateShoeName,onStartRun,onA
               </View>
 
               {/* 남은 km + 프로그레스 */}
-              <View style={{marginBottom:18}}>
-                <View style={{flexDirection:'row',alignItems:'baseline',marginBottom:10}}>
-                  <Text style={{color:bc,fontSize:40,fontWeight:'900',fontFamily:FH,letterSpacing:-1}}>{Math.round(left)}</Text>
+              <View style={{marginBottom:10}}>
+                <View style={{flexDirection:'row',alignItems:'baseline',marginBottom:6}}>
+                  <Text style={{color:bc,fontSize:30,fontWeight:'900',fontFamily:FH,letterSpacing:-1}}>{Math.round(left)}</Text>
                   <Text style={{color:T3,fontSize:12,marginLeft:6}}>km 남음</Text>
                   <View style={{flex:1}}/>
                   <Text style={{color:T2,fontSize:13,fontWeight:'600'}}>{p}%</Text>
@@ -327,24 +440,29 @@ function ShoesTab({shoes,runs,shoeStats,deleteShoe,updateShoeName,onStartRun,onA
                 </View>
               </View>
 
-              {/* 스탯 2열 */}
-              <View style={{flexDirection:'row',gap:0,marginBottom:16,backgroundColor:SURFACE,borderRadius:12,padding:12}}>
+              {/* 스탯 3열 */}
+              <View style={{flexDirection:'row',gap:0,marginBottom:10,backgroundColor:SURFACE,borderRadius:10,padding:10}}>
                 <View style={{flex:1,alignItems:'center'}}>
-                  <Text style={{color:T1,fontSize:16,fontWeight:'700',fontFamily:FH}}>{Math.round(used)} km</Text>
-                  <Text style={{color:T3,fontSize:10,marginTop:3}}>누적 사용</Text>
+                  <Text style={{color:T1,fontSize:15,fontWeight:'700',fontFamily:FH}}>{Math.round(used)} km</Text>
+                  <Text style={{color:T3,fontSize:10,marginTop:3}}>누적 거리</Text>
                 </View>
                 <View style={{width:StyleSheet.hairlineWidth,backgroundColor:SEP}}/>
                 <View style={{flex:1,alignItems:'center'}}>
-                  <Text style={{color:T1,fontSize:16,fontWeight:'700',fontFamily:FH}}>{Math.round(left)} km</Text>
-                  <Text style={{color:T3,fontSize:10,marginTop:3}}>잔여 거리</Text>
+                  <Text style={{color:T1,fontSize:15,fontWeight:'700',fontFamily:FH}}>{runCount}회</Text>
+                  <Text style={{color:T3,fontSize:10,marginTop:3}}>총 런</Text>
+                </View>
+                <View style={{width:StyleSheet.hairlineWidth,backgroundColor:SEP}}/>
+                <View style={{flex:1,alignItems:'center'}}>
+                  <Text style={{color:T1,fontSize:11,fontWeight:'700',fontFamily:FH,textAlign:'center'}}>{lastRun}</Text>
+                  <Text style={{color:T3,fontSize:10,marginTop:3}}>마지막 런</Text>
                 </View>
               </View>
 
               {/* 러닝시작 버튼 */}
               <TouchableOpacity
-                style={{backgroundColor:ACCENT,borderRadius:12,paddingVertical:13,alignItems:'center'}}
+                style={{borderRadius:10,paddingVertical:10,alignItems:'center',borderWidth:1.5,borderColor:ACCENT}}
                 onPress={()=>onStartRun({id:s.id,name:s.name})}>
-                <Text style={{color:'#000',fontSize:15,fontWeight:'800',letterSpacing:0.5}}>러닝시작</Text>
+                <Text style={{color:ACCENT,fontSize:14,fontWeight:'800',letterSpacing:0.5}}>러닝시작</Text>
               </TouchableOpacity>
 
             </View>{/* padding View 닫기 */}
@@ -361,18 +479,13 @@ function ShoesTab({shoes,runs,shoeStats,deleteShoe,updateShoeName,onStartRun,onA
                 </TouchableOpacity>
               </View>
             )}
-          </View>
+          </TouchableOpacity>
         );
       })}
 
-      {/* 러닝화 등록 */}
-      <TouchableOpacity
-        style={{flexDirection:'row',alignItems:'center',justifyContent:'center',borderRadius:16,borderWidth:1.5,borderColor:SEP,paddingVertical:16,gap:8}}
-        onPress={onAddShoe}>
-        <Ionicons name="add-circle-outline" size={20} color={T2}/>
-        <Text style={{color:T2,fontSize:15,fontWeight:'600'}}>러닝화 등록하기</Text>
-      </TouchableOpacity>
     </ScrollView>
+    {historyShoe&&<ShoeHistoryModal shoe={historyShoe} runs={runs} onClose={()=>setHistoryShoe(null)}/>}
+    </View>
   );
 }
 
