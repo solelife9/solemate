@@ -55,47 +55,25 @@ function today():string{return new Date().toISOString().split('T')[0];}
 
 function ShoeIcon({color,size=24}:{color:string;size?:number}){
   return(
-    <Svg width={size} height={size} viewBox="0 0 100 80" fill="none">
-      {/* 아웃솔 (두꺼운 밑창) */}
-      <Path d="M8 62 Q8 72 20 74 Q45 78 70 76 Q84 74 90 68 Q96 62 92 56"
-        stroke={color} strokeWidth={6} strokeLinecap="round" strokeLinejoin="round"/>
-      {/* 미드솔 */}
-      <Path d="M8 62 Q6 54 10 50"
-        stroke={color} strokeWidth={6} strokeLinecap="round"/>
-      <Path d="M92 56 L90 48 Q90 40 82 38 Q74 36 70 42"
-        stroke={color} strokeWidth={6} strokeLinecap="round"/>
-      {/* 어퍼 (신발 윗면) */}
-      <Path d="M10 50 Q14 36 26 30 Q38 24 50 22 Q62 20 70 16 Q78 12 76 5 Q74 -1 68 4"
-        stroke={color} strokeWidth={6} strokeLinecap="round" strokeLinejoin="round"/>
-      {/* 혀 (tongue) */}
-      <Path d="M12 48 Q18 36 24 34"
-        stroke={color} strokeWidth={5} strokeLinecap="round"/>
-      {/* 힐 칼라 */}
-      <Path d="M70 42 Q66 34 70 28 Q74 22 80 26 Q86 30 90 40"
-        stroke={color} strokeWidth={5} strokeLinecap="round"/>
-      {/* 끈 */}
-      <Path d="M30 30 L32 44 M42 26 L44 40 M54 23 L55 37"
-        stroke={color} strokeWidth={3.5} strokeLinecap="round" opacity={0.6}/>
-      {/* 힐 로고 점 */}
-      <Circle cx="14" cy="42" r="2.5" fill={color} opacity={0.5}/>
-      <Circle cx="14" cy="34" r="2.5" fill={color} opacity={0.5}/>
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
+      <Path d="M18,2c-2.408,0-5,2.19-5,7,0,1.736,.816,3.369,1.605,4.947,.717,1.434,1.395,2.789,1.395,4.053v2.5c0,1.93,1.57,3.5,3.5,3.5s3.5-1.57,3.5-3.5v-2.5c0-1.377,.229-2.291,.47-3.257,.261-1.042,.53-2.12,.53-3.743,0-7.383-4.331-9-6-9Zm3,18.5c0,.827-.673,1.5-1.5,1.5s-1.5-.673-1.5-1.5v-1.5h3v1.5Zm.53-6.243c-.203,.812-.412,1.646-.494,2.743h-3.123c-.23-1.368-.883-2.675-1.519-3.947-.717-1.434-1.395-2.789-1.395-4.053,0-3.283,1.509-5,3-5,.04,0,4,.19,4,7,0,1.377-.229,2.291-.47,3.257ZM6,0C4.331,0,0,1.617,0,9c0,1.623,.27,2.701,.53,3.743,.241,.967,.47,1.88,.47,3.257v2.5c0,1.93,1.57,3.5,3.5,3.5s3.5-1.57,3.5-3.5v-2.5c0-1.264,.678-2.619,1.395-4.053,.789-1.579,1.605-3.211,1.605-4.947C11,2.19,8.408,0,6,0Zm0,18.5c0,.827-.673,1.5-1.5,1.5s-1.5-.673-1.5-1.5v-1.5h3v1.5Zm1.605-7.447c-.636,1.272-1.289,2.579-1.519,3.947H2.964c-.082-1.097-.291-1.931-.494-2.743-.241-.967-.47-1.88-.47-3.257C2,2.19,5.96,2,6,2c1.491,0,3,1.717,3,5,0,1.264-.678,2.619-1.395,4.053Z"/>
     </Svg>
   );
 }
 function HistoryIcon({color,size=24}:{color:string;size?:number}){
   return(
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Circle cx="12" cy="12" r="9" stroke={color} strokeWidth={1.5}/>
-      <Polyline points="12 7 12 12 15 15" stroke={color} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"/>
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
+      <Path d="M12,24C5.383,24,0,18.617,0,12S5.383,0,12,0s12,5.383,12,12-5.383,12-12,12Zm0-21C7.038,3,3,7.037,3,12s4.038,9,9,9,9-4.037,9-9S16.963,3,12,3Zm5,9.5c0-.828-.672-1.5-1.5-1.5h-2.5V6.5c0-.828-.671-1.5-1.5-1.5s-1.5,.672-1.5,1.5v6c0,.828,.671,1.5,1.5,1.5h4c.828,0,1.5-.672,1.5-1.5Z"/>
     </Svg>
   );
 }
 function StatsIcon({color,size=24}:{color:string;size?:number}){
   return(
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Rect x="3" y="12" width="4" height="9" rx="1" stroke={color} strokeWidth={1.5}/>
-      <Rect x="10" y="7" width="4" height="14" rx="1" stroke={color} strokeWidth={1.5}/>
-      <Rect x="17" y="3" width="4" height="18" rx="1" stroke={color} strokeWidth={1.5}/>
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
+      <Path d="M3,21V0H0V21a3,3,0,0,0,3,3H24V21Z"/>
+      <Rect x="18" y="9" width="3" height="9"/>
+      <Rect x="6" y="9" width="3" height="9"/>
+      <Rect x="12" y="4" width="3" height="14"/>
     </Svg>
   );
 }
@@ -213,9 +191,9 @@ function Main(){
   }
 
   const TABS=[
-    {key:'shoes',label:'신발',ion:null,Icon:ShoeIcon},
-    {key:'log',  label:'기록',ion:'time-outline',Icon:null},
-    {key:'stats',label:'통계',ion:'bar-chart-outline',Icon:null},
+    {key:'shoes',label:'신발',Icon:ShoeIcon},
+    {key:'log',  label:'기록',Icon:HistoryIcon},
+    {key:'stats',label:'통계',Icon:StatsIcon},
   ];
 
   return(
@@ -236,10 +214,7 @@ function Main(){
           return(
             <TouchableOpacity key={t.key} style={a.navBtn} onPress={()=>setTab(t.key)} activeOpacity={0.7}>
               <View style={[{alignItems:'center',justifyContent:'center',paddingHorizontal:16,paddingVertical:6,borderRadius:12,gap:3},active&&{backgroundColor:ACCENT+'18'}]}>
-                {t.Icon
-                  ? <t.Icon size={active?24:22} color={active?ACCENT:T3}/>
-                  : <Ionicons name={t.ion as any} size={active?23:21} color={active?ACCENT:T3}/>
-                }
+                <t.Icon size={active?24:22} color={active?ACCENT:T3}/>
                 <Text style={[a.navLabel,active&&{color:ACCENT,fontWeight:'700'}]}>{t.label}</Text>
               </View>
             </TouchableOpacity>
