@@ -934,29 +934,33 @@ function LogTab({shoes,runs}:any){
                       </Svg>
                     )}
                   </View>
-                  <View style={{flex:1,gap:2}}>
-                    <Text style={{color:T1,fontSize:15,fontWeight:'700',fontFamily:FH}}>{fmtDate}</Text>
-                    <Text style={{color:T2,fontSize:13,fontFamily:FP}}>{dow}요일 러닝{s?' · '+s.name:''}</Text>
-                    {run.location?<Text style={{color:T3,fontSize:11,marginTop:1}} numberOfLines={1}>{run.location}</Text>:null}
+                  <View style={{flex:1,gap:3}}>
+                    {s&&<Text style={{color:ACCENT,fontSize:13,fontWeight:'700',fontFamily:FBM}}>{s.name}</Text>}
+                    <View style={{flexDirection:'row',alignItems:'baseline',gap:8}}>
+                      <Text style={{color:T1,fontSize:17,fontWeight:'700',fontFamily:FH}}>{fmtDate}</Text>
+                      {run.run_time&&<Text style={{color:T2,fontSize:17,fontWeight:'700',fontFamily:FH}}>{run.run_time}</Text>}
+                    </View>
+                    <Text style={{color:T2,fontSize:14,fontFamily:FP}}>{dow}요일 러닝</Text>
+                    {run.location?<Text style={{color:T3,fontSize:12,marginTop:1}} numberOfLines={1}>{run.location}</Text>:null}
                   </View>
                 </View>
                 {/* 구분선 */}
                 <View style={{height:StyleSheet.hairlineWidth,backgroundColor:SEP,marginHorizontal:0}}/>
                 {/* 하단: 3열 스탯 */}
-                <View style={{flexDirection:'row',paddingVertical:14}}>
+                <View style={{flexDirection:'row',paddingVertical:16}}>
                   <View style={{flex:1,alignItems:'center'}}>
-                    <Text style={{color:T1,fontSize:18,fontWeight:'700',fontFamily:FH}}>{km.toFixed(2)}</Text>
-                    <Text style={{color:T3,fontSize:11,marginTop:3}}>Km</Text>
+                    <Text style={{color:T1,fontSize:21,fontWeight:'700',fontFamily:FH}}>{km.toFixed(2)}</Text>
+                    <Text style={{color:T3,fontSize:12,marginTop:3}}>Km</Text>
                   </View>
                   <View style={{width:StyleSheet.hairlineWidth,backgroundColor:SEP}}/>
                   <View style={{flex:1,alignItems:'center'}}>
-                    <Text style={{color:T1,fontSize:18,fontWeight:'700',fontFamily:FH}}>{dur>0?fmtPace(km,dur):"-'--\""}</Text>
-                    <Text style={{color:T3,fontSize:11,marginTop:3}}>평균 페이스</Text>
+                    <Text style={{color:T1,fontSize:21,fontWeight:'700',fontFamily:FH}}>{dur>0?fmtPace(km,dur):"-'--\""}</Text>
+                    <Text style={{color:T3,fontSize:12,marginTop:3}}>평균 페이스</Text>
                   </View>
                   <View style={{width:StyleSheet.hairlineWidth,backgroundColor:SEP}}/>
                   <View style={{flex:1,alignItems:'center'}}>
-                    <Text style={{color:T1,fontSize:18,fontWeight:'700',fontFamily:FH}}>{dur>0?fmtTime(dur):'--:--'}</Text>
-                    <Text style={{color:T3,fontSize:11,marginTop:3}}>시간</Text>
+                    <Text style={{color:T1,fontSize:21,fontWeight:'700',fontFamily:FH}}>{dur>0?fmtTime(dur):'--:--'}</Text>
+                    <Text style={{color:T3,fontSize:12,marginTop:3}}>시간</Text>
                   </View>
                 </View>
               </TouchableOpacity>
