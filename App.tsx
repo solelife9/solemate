@@ -14,14 +14,15 @@ import Tts from 'react-native-tts';
 const API = 'https://solelife-backend.onrender.com';
 const ACCENT = '#FF6500';
 const BG = '#000000';
-const CARD = '#1C1C1E';
-const SURFACE = '#2C2C2E';
-const SEP = 'rgba(255,255,255,0.08)';
+const CARD = '#111111';
+const SURFACE = '#1C1C1E';
+const SURFACE2 = '#242424';
+const SEP = 'rgba(255,255,255,0.07)';
 const T1 = '#FFFFFF';
-const T2 = 'rgba(255,255,255,0.6)';
-const T3 = 'rgba(255,255,255,0.3)';
+const T2 = 'rgba(255,255,255,0.55)';
+const T3 = 'rgba(255,255,255,0.28)';
 const WARN = '#FF9F0A';
-const DANGER = '#FF453A';
+const DANGER = '#FF3B30';
 const FH = 'BebasNeue-Regular';
 const FB = 'Barlow-Regular';
 const FBM = 'Barlow-Medium';
@@ -207,41 +208,44 @@ function Main(){
   return(
     <View style={{flex:1,backgroundColor:BG}}>
       <View style={[a.header,{paddingTop:insets.top+8}]}>
-        <Text style={a.logo}><Text style={{color:T1,fontFamily:FP,fontWeight:'800',fontSize:20,letterSpacing:3}}>SOLE</Text><Text style={{color:ACCENT,fontFamily:FP,fontWeight:'800',fontSize:20,letterSpacing:3}}>MATE</Text></Text>
+        <Text style={a.logo}><Text style={{color:T1,fontFamily:FH,fontSize:28,letterSpacing:5}}>SOLE</Text><Text style={{color:ACCENT,fontFamily:FH,fontSize:28,letterSpacing:5}}>MATE</Text></Text>
         {tab==='shoes'&&(
           <TouchableOpacity
-            style={{borderWidth:1,borderColor:'rgba(255,255,255,0.2)',borderRadius:20,paddingHorizontal:14,paddingVertical:6,backgroundColor:'rgba(255,255,255,0.06)'}}
+            style={{backgroundColor:ACCENT,borderRadius:100,paddingHorizontal:18,paddingVertical:9}}
             onPress={()=>setShowAdd(true)}>
-            <Text style={{color:T1,fontSize:13,fontWeight:'600',fontFamily:FP}}>러닝화 등록하기</Text>
+            <Text style={{color:'#000',fontSize:13,fontWeight:'800',fontFamily:FP,letterSpacing:0.3}}>러닝화 등록</Text>
           </TouchableOpacity>
         )}
       </View>
 
-      <View style={{flex:1}}>
+      <View style={{flex:1,paddingBottom:insets.bottom+96}}>
         {tab==='shoes'&&<ShoesTab shoes={shoes} runs={runs} shoeStats={shoeStats} deleteShoe={deleteShoe} updateShoeName={updateShoeName} onStartRun={setSetupRun} onAddShoe={()=>setShowAdd(true)}/>}
         {tab==='log'  &&<LogTab   shoes={shoes} runs={runs}/>}
         {tab==='stats'&&shoes!=null&&runs!=null&&shoeStats!=null&&<StatsTab shoes={shoes} runs={runs} shoeStats={shoeStats}/>}
       </View>
 
-      <View style={[a.navBar,{paddingBottom:insets.bottom+2}]}>
-        {TABS.map(t=>{
-          const active=tab===t.key;
-          return(
-            <View key={t.key} style={a.navBtn}>
+      <View style={{position:'absolute',bottom:insets.bottom+16,left:24,right:24}}>
+        <View style={{flexDirection:'row',backgroundColor:'#1C1C1E',borderRadius:999,paddingVertical:10,paddingHorizontal:10,shadowColor:'#000',shadowOffset:{width:0,height:8},shadowOpacity:0.5,shadowRadius:20,elevation:24}}>
+          {TABS.map(t=>{
+            const active=tab===t.key;
+            return(
               <TouchableOpacity
+                key={t.key}
                 onPress={()=>setTab(t.key)}
-                activeOpacity={0.8}
-                style={[
-                  {alignItems:'center',justifyContent:'center',paddingHorizontal:18,paddingVertical:7,borderRadius:14,gap:3,overflow:'hidden'},
-                  active&&{backgroundColor:'rgba(255,255,255,0.1)'}
-                ]}
+                activeOpacity={0.7}
+                style={{flex:1,alignItems:'center',paddingVertical:7,gap:5}}
               >
-                <t.Icon size={active?24:21} color={active?ACCENT:T3}/>
-                <Text style={[a.navLabel,active&&{color:ACCENT,fontWeight:'700'}]}>{t.label}</Text>
+                <View style={active
+                  ? {width:48,height:48,borderRadius:24,borderWidth:1.5,borderColor:ACCENT,alignItems:'center',justifyContent:'center'}
+                  : {width:48,height:48,alignItems:'center',justifyContent:'center'}
+                }>
+                  <t.Icon size={22} color={active?ACCENT:'rgba(255,255,255,0.4)'}/>
+                </View>
+                <Text style={{fontSize:10,fontFamily:FP,color:active?ACCENT:'rgba(255,255,255,0.4)',fontWeight:active?'700':'400'}}>{t.label}</Text>
               </TouchableOpacity>
-            </View>
-          );
-        })}
+            );
+          })}
+        </View>
       </View>
 
       {showAdd&&(
@@ -397,10 +401,10 @@ function ShoesTab({shoes,runs,shoeStats,deleteShoe,updateShoeName,onStartRun,onA
         const avgKm=shoeRuns.length?shoeRuns.reduce((a:number,r:any)=>a+parseFloat(r.km),0)/shoeRuns.length:0;
         const maxKmRun=shoeRuns.length?Math.max(...shoeRuns.map((r:any)=>parseFloat(r.km))):0;
         return(
-          <TouchableOpacity key={s.id} activeOpacity={0.85} onPress={()=>setHistoryShoe(s)}
-            style={{backgroundColor:CARD,borderRadius:14,marginBottom:10,overflow:'hidden',borderWidth:1,borderColor:'rgba(255,255,255,0.06)'}}>
+          <TouchableOpacity key={s.id} activeOpacity={0.82} onPress={()=>setHistoryShoe(s)}
+            style={{backgroundColor:CARD,borderRadius:24,marginBottom:12,overflow:'hidden'}}>
 
-            <View style={{padding:14,paddingLeft:18}}>
+            <View style={{padding:22}}>
               {/* 상단: 신발명 + 삭제 */}
               <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'flex-start',marginBottom:2}}>
                 {editingId===s.id?(
@@ -417,9 +421,9 @@ function ShoesTab({shoes,runs,shoeStats,deleteShoe,updateShoeName,onStartRun,onA
                   </View>
                 ):(
                   <TouchableOpacity style={{flex:1}} onPress={()=>{setEditingId(s.id);setEditName(s.name);}}>
-                    <Text style={{color:ACCENT,fontSize:11,fontWeight:'700',fontFamily:FP,letterSpacing:2,marginLeft:6}}>{parseShoeName(s.name).brand}</Text>
-                    <View style={{flexDirection:'row',alignItems:'center',gap:6,marginTop:2}}>
-                      <Text style={{color:T1,fontSize:20,fontWeight:'800',fontFamily:FP,letterSpacing:-0.3}}>{parseShoeName(s.name).model||parseShoeName(s.name).brand}</Text>
+                    <Text style={{color:ACCENT,fontSize:11,fontWeight:'700',fontFamily:FP,letterSpacing:2}}>{parseShoeName(s.name).brand}</Text>
+                    <View style={{flexDirection:'row',alignItems:'center',gap:6,marginTop:3}}>
+                      <Text style={{color:T1,fontSize:22,fontFamily:FH,letterSpacing:0.5}}>{parseShoeName(s.name).model||parseShoeName(s.name).brand}</Text>
                       <Ionicons name="pencil-outline" size={13} color={T3}/>
                     </View>
                   </TouchableOpacity>
@@ -430,53 +434,53 @@ function ShoesTab({shoes,runs,shoeStats,deleteShoe,updateShoeName,onStartRun,onA
               </View>
 
               {/* 구매일 + 상태 */}
-              <View style={{flexDirection:'row',alignItems:'center',gap:8,marginBottom:10}}>
-                <Text style={{color:T3,fontSize:11}}>{s.purchase_date?`${s.purchase_date} · `:''}최대 {s.max_km}km</Text>
-                <View style={{backgroundColor:badgeColor+'22',borderRadius:4,paddingHorizontal:6,paddingVertical:2}}>
-                  <Text style={{color:badgeColor,fontSize:10,fontWeight:'700'}}>{bl}</Text>
+              <View style={{flexDirection:'row',alignItems:'center',gap:8,marginBottom:14}}>
+                <Text style={{color:T3,fontSize:12,fontFamily:FP}}>{s.purchase_date?`${s.purchase_date} · `:''}최대 {s.max_km}km</Text>
+                <View style={{backgroundColor:badgeColor+'18',borderRadius:100,paddingHorizontal:10,paddingVertical:4}}>
+                  <Text style={{color:badgeColor,fontSize:11,fontWeight:'700',fontFamily:FP}}>{bl}</Text>
                 </View>
               </View>
 
               {/* 남은 km + 프로그레스 */}
-              <View style={{marginBottom:10}}>
-                <View style={{flexDirection:'row',alignItems:'baseline',marginBottom:6}}>
-                  <Text style={{color:bc,fontSize:42,fontWeight:'800',fontFamily:FP,letterSpacing:-1}}>{Math.round(left)}</Text>
-                  <Text style={{color:T3,fontSize:12,marginLeft:6}}>km 남음</Text>
+              <View style={{marginBottom:14}}>
+                <View style={{flexDirection:'row',alignItems:'baseline',marginBottom:8}}>
+                  <Text style={{color:bc,fontSize:52,fontFamily:FH,letterSpacing:-1}}>{Math.round(left)}</Text>
+                  <Text style={{color:T3,fontSize:14,marginLeft:8,fontFamily:FP}}>km 남음</Text>
                   <View style={{flex:1}}/>
-                  <Text style={{color:T2,fontSize:13,fontWeight:'600'}}>{p}%</Text>
+                  <Text style={{color:T2,fontSize:14,fontWeight:'600',fontFamily:FP}}>{p}%</Text>
                 </View>
-                <View style={{backgroundColor:SURFACE,borderRadius:100,height:3,overflow:'hidden'}}>
+                <View style={{backgroundColor:SURFACE2,borderRadius:100,height:5,overflow:'hidden'}}>
                   <View style={{height:'100%',width:`${p}%` as any,backgroundColor:bc,borderRadius:100}}/>
                 </View>
               </View>
 
               {/* 스탯 3열 */}
-              <View style={{flexDirection:'row',marginBottom:14,paddingTop:4,paddingHorizontal:4}}>
+              <View style={{flexDirection:'row',marginBottom:18,paddingTop:2}}>
                 <View style={{flex:1}}>
-                  <Text style={{color:T1,fontSize:14,fontWeight:'700',fontFamily:FP}}>{Math.round(used)} km</Text>
-                  <Text style={{color:T3,fontSize:10,marginTop:3}}>누적 거리</Text>
+                  <Text style={{color:T1,fontSize:16,fontWeight:'700',fontFamily:FP}}>{Math.round(used)} km</Text>
+                  <Text style={{color:T3,fontSize:11,marginTop:4,fontFamily:FP}}>누적 거리</Text>
                 </View>
                 <View style={{flex:1,alignItems:'center'}}>
-                  <Text style={{color:T1,fontSize:14,fontWeight:'700',fontFamily:FP}}>{runCount}회</Text>
-                  <Text style={{color:T3,fontSize:10,marginTop:3}}>총 런</Text>
+                  <Text style={{color:T1,fontSize:16,fontWeight:'700',fontFamily:FP}}>{runCount}회</Text>
+                  <Text style={{color:T3,fontSize:11,marginTop:4,fontFamily:FP}}>총 런</Text>
                 </View>
                 <View style={{flex:1,alignItems:'flex-end'}}>
-                  <Text style={{color:T1,fontSize:14,fontWeight:'700',fontFamily:FP}}>{avgPaceSec>0?fmtPace(1,avgPaceSec):'--'}</Text>
-                  <Text style={{color:T3,fontSize:10,marginTop:3}}>평균 페이스</Text>
+                  <Text style={{color:T1,fontSize:16,fontWeight:'700',fontFamily:FP}}>{avgPaceSec>0?fmtPace(1,avgPaceSec):'--'}</Text>
+                  <Text style={{color:T3,fontSize:11,marginTop:4,fontFamily:FP}}>평균 페이스</Text>
                 </View>
               </View>
 
               {/* 러닝시작 버튼 */}
               <TouchableOpacity
-                style={{borderRadius:12,paddingVertical:12,alignItems:'center',backgroundColor:ACCENT}}
+                style={{borderRadius:100,paddingVertical:17,alignItems:'center',backgroundColor:ACCENT}}
                 onPress={()=>onStartRun({id:s.id,name:s.name})}>
-                <Text style={{color:'#000',fontSize:14,fontWeight:'800',letterSpacing:0.5,fontFamily:FP}}>러닝시작</Text>
+                <Text style={{color:'#000',fontSize:15,fontWeight:'800',letterSpacing:0.3,fontFamily:FP}}>러닝 시작</Text>
               </TouchableOpacity>
 
             </View>{/* padding View 닫기 */}
             {/* 교체 시 구매 버튼 */}
             {p<=15&&(
-              <View style={{flexDirection:'row',gap:8,marginTop:10}}>
+              <View style={{flexDirection:'row',gap:8,marginTop:12,paddingHorizontal:16,paddingBottom:16}}>
                 <TouchableOpacity style={[a.buyBtn,{flex:1}]}
                   onPress={()=>Linking.openURL('https://www.coupang.com/np/search?q='+encodeURIComponent(s.name))}>
                   <Text style={a.buyBtnText}>쿠팡에서 구매</Text>
@@ -911,7 +915,7 @@ function LogTab({shoes,runs}:any){
             // 미니 SVG 경로
             let rPts:{lat:number,lon:number}[]=[];
             try{if(run.route){const raw=JSON.parse(run.route);rPts=raw.length>4?raw.filter((_:any,i:number)=>i%2===0):raw;}}catch(e){}
-            const TW=68,TH=68,TP=7;
+            const TW=76,TH=76,TP=8;
             let miniPath='';
             if(rPts.length>=2){
               const lats=rPts.map((p:any)=>p.lat),lons=rPts.map((p:any)=>p.lon);
@@ -925,12 +929,12 @@ function LogTab({shoes,runs}:any){
             }
 
             return(
-              <TouchableOpacity key={run.id} activeOpacity={0.75}
-                style={{backgroundColor:CARD,borderRadius:16,overflow:'hidden'}}
+              <TouchableOpacity key={run.id} activeOpacity={0.8}
+                style={{backgroundColor:CARD,borderRadius:22,overflow:'hidden'}}
                 onPress={()=>setSelectedRun({...run,shoeName:s?s.name:'삭제된 신발'})}>
                 {/* 상단: 썸네일 + 날짜/설명 */}
-                <View style={{flexDirection:'row',alignItems:'center',padding:16,gap:14}}>
-                  <View style={{width:TW,height:TH,borderRadius:12,backgroundColor:SURFACE,overflow:'hidden',alignItems:'center',justifyContent:'center'}}>
+                <View style={{flexDirection:'row',alignItems:'center',padding:18,gap:16}}>
+                  <View style={{width:TW,height:TH,borderRadius:16,backgroundColor:SURFACE,overflow:'hidden',alignItems:'center',justifyContent:'center'}}>
                     {miniPath?(
                       <Svg width={TW} height={TH}>
                         <Path d={miniPath} stroke={ACCENT} strokeWidth={2.5} fill="none" strokeLinecap="round" strokeLinejoin="round" opacity={0.9}/>
@@ -955,20 +959,20 @@ function LogTab({shoes,runs}:any){
                 {/* 구분선 */}
                 <View style={{height:StyleSheet.hairlineWidth,backgroundColor:SEP,marginHorizontal:0}}/>
                 {/* 하단: 3열 스탯 */}
-                <View style={{flexDirection:'row',paddingVertical:16}}>
+                <View style={{flexDirection:'row',paddingVertical:18}}>
                   <View style={{flex:1,alignItems:'center'}}>
-                    <Text style={{color:T1,fontSize:20,fontWeight:'800',fontFamily:FP}}>{km.toFixed(2)}</Text>
-                    <Text style={{color:T3,fontSize:11,marginTop:3}}>Km</Text>
+                    <Text style={{color:T1,fontSize:22,fontFamily:FH,letterSpacing:0.3}}>{km.toFixed(2)}</Text>
+                    <Text style={{color:T3,fontSize:11,marginTop:4,fontFamily:FP}}>킬로미터</Text>
                   </View>
                   <View style={{width:StyleSheet.hairlineWidth,backgroundColor:SEP}}/>
                   <View style={{flex:1,alignItems:'center'}}>
-                    <Text style={{color:T1,fontSize:20,fontWeight:'800',fontFamily:FP}}>{dur>0?fmtPace(km,dur):"-'--\""}</Text>
-                    <Text style={{color:T3,fontSize:11,marginTop:3}}>평균 페이스</Text>
+                    <Text style={{color:T1,fontSize:22,fontFamily:FH,letterSpacing:0.3}}>{dur>0?fmtPace(km,dur):"-'--\""}</Text>
+                    <Text style={{color:T3,fontSize:11,marginTop:4,fontFamily:FP}}>평균 페이스</Text>
                   </View>
                   <View style={{width:StyleSheet.hairlineWidth,backgroundColor:SEP}}/>
                   <View style={{flex:1,alignItems:'center'}}>
-                    <Text style={{color:T1,fontSize:20,fontWeight:'800',fontFamily:FP}}>{dur>0?fmtTime(dur):'--:--'}</Text>
-                    <Text style={{color:T3,fontSize:11,marginTop:3}}>시간</Text>
+                    <Text style={{color:T1,fontSize:22,fontFamily:FH,letterSpacing:0.3}}>{dur>0?fmtTime(dur):'--:--'}</Text>
+                    <Text style={{color:T3,fontSize:11,marginTop:4,fontFamily:FP}}>시간</Text>
                   </View>
                 </View>
               </TouchableOpacity>
@@ -1417,24 +1421,24 @@ function StatsTab({shoes,runs,shoeStats}:any){
 
       <View style={a.statGrid}>
         <View style={a.statBox}>
-          <Text style={{color:ACCENT,fontSize:11,fontFamily:FP,fontWeight:'700',letterSpacing:0.5,marginBottom:4}}>거리</Text>
+          <Text style={{color:T3,fontSize:12,fontFamily:FP,fontWeight:'600',marginBottom:6}}>거리</Text>
           <Text style={a.statNum}>{totalKm.toFixed(1)}</Text>
           <Text style={a.statLbl}>km</Text>
         </View>
         <View style={a.statBox}>
-          <Text style={{color:ACCENT,fontSize:11,fontFamily:FP,fontWeight:'700',letterSpacing:0.5,marginBottom:4}}>횟수</Text>
+          <Text style={{color:T3,fontSize:12,fontFamily:FP,fontWeight:'600',marginBottom:6}}>횟수</Text>
           <Text style={a.statNum}>{filtered.length}</Text>
           <Text style={a.statLbl}>회 런</Text>
         </View>
       </View>
       <View style={[a.statGrid,{marginTop:0}]}>
         <View style={a.statBox}>
-          <Text style={{color:ACCENT,fontSize:11,fontFamily:FP,fontWeight:'700',letterSpacing:0.5,marginBottom:4}}>페이스</Text>
+          <Text style={{color:T3,fontSize:12,fontFamily:FP,fontWeight:'600',marginBottom:6}}>페이스</Text>
           <Text style={a.statNum}>{avgPaceSec>0?fmtPace(1,avgPaceSec):'--'}</Text>
           <Text style={a.statLbl}>평균</Text>
         </View>
         <View style={a.statBox}>
-          <Text style={{color:ACCENT,fontSize:11,fontFamily:FP,fontWeight:'700',letterSpacing:0.5,marginBottom:4}}>시간</Text>
+          <Text style={{color:T3,fontSize:12,fontFamily:FP,fontWeight:'600',marginBottom:6}}>시간</Text>
           <Text style={a.statNum}>{fmtTotalTime(totalSec)}</Text>
           <Text style={a.statLbl}>총</Text>
         </View>
@@ -1472,8 +1476,8 @@ function StatsTab({shoes,runs,shoeStats}:any){
         const YAXIS_W=30;
         const yLabels=[maxKm,maxKm/2,0];
         return(
-          <View style={{backgroundColor:CARD,borderRadius:14,padding:16,marginBottom:12,marginTop:0}}>
-            <Text style={{color:T2,fontSize:12,fontWeight:'600',marginBottom:12}}>{period==='week'?'요일별':period==='month'?'일별':'월별'} 거리</Text>
+          <View style={{backgroundColor:CARD,borderRadius:22,padding:20,marginBottom:12,marginTop:0}}>
+            <Text style={{color:T2,fontSize:13,fontWeight:'600',fontFamily:FP,marginBottom:16}}>{period==='week'?'요일별':period==='month'?'일별':'월별'} 거리</Text>
             <View style={{flexDirection:'row',gap:4}}>
               {/* 바 영역 */}
               <View style={{flex:1}}>
@@ -1785,123 +1789,131 @@ function AddShoeModal({onAdd,onClose}:any){
 
 // ─── Styles ───────────────────────────────────────────────────
 const a = StyleSheet.create({
-  header:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',paddingHorizontal:20,paddingBottom:14,backgroundColor:BG,borderBottomWidth:StyleSheet.hairlineWidth,borderBottomColor:'rgba(255,255,255,0.05)'},
-  logo:{fontSize:22,fontFamily:FH,letterSpacing:4},
-  navBar:{flexDirection:'row',backgroundColor:'#0D0D0D',borderTopWidth:StyleSheet.hairlineWidth,borderTopColor:'rgba(255,255,255,0.06)',paddingTop:6},
-  navBtn:{flex:1,alignItems:'center',justifyContent:'center'},
-  navLabel:{fontSize:10,color:T3,fontFamily:FP,letterSpacing:0.3},
+  // ── Layout
+  header:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',paddingHorizontal:24,paddingBottom:18,backgroundColor:BG},
+  logo:{fontSize:26,fontFamily:FH,letterSpacing:5},
+  navBar:{flexDirection:'row',backgroundColor:'#161616',borderTopWidth:0.5,borderTopColor:'rgba(255,255,255,0.08)',paddingTop:8},
+  navBtn:{flex:1,alignItems:'center',justifyContent:'center',paddingVertical:6,gap:5},
+  navLabel:{fontSize:10,color:'rgba(255,255,255,0.35)',fontFamily:FP,fontWeight:'500'},
 
-  empty:{flex:1,alignItems:'center',justifyContent:'center',padding:40,gap:12},
-  emptyTitle:{color:T1,fontSize:17,fontFamily:FP},
-  emptyText:{color:T3,fontSize:14,fontFamily:FP,textAlign:'center',lineHeight:22},
-  emptyAddBtn:{flexDirection:'row',alignItems:'center',backgroundColor:ACCENT,paddingHorizontal:28,paddingVertical:15,borderRadius:100,gap:8,marginTop:8},
-  emptyAddBtnText:{color:'#000',fontSize:16,fontFamily:FP,letterSpacing:0.5},
-  addShoeBtn:{flexDirection:'row',alignItems:'center',justifyContent:'center',borderWidth:1.5,borderColor:ACCENT+'50',borderRadius:14,paddingVertical:14,gap:8,marginTop:4},
+  // ── Empty state
+  empty:{flex:1,alignItems:'center',justifyContent:'center',padding:40,gap:16},
+  emptyTitle:{color:T1,fontSize:20,fontFamily:FP,fontWeight:'700'},
+  emptyText:{color:T3,fontSize:15,fontFamily:FP,textAlign:'center',lineHeight:24},
+  emptyAddBtn:{backgroundColor:ACCENT,paddingHorizontal:32,paddingVertical:17,borderRadius:100,marginTop:8},
+  emptyAddBtnText:{color:'#000',fontSize:16,fontFamily:FP,fontWeight:'700',letterSpacing:0.3},
+  addShoeBtn:{flexDirection:'row',alignItems:'center',justifyContent:'center',borderWidth:1,borderColor:ACCENT+'35',borderRadius:22,paddingVertical:16,gap:8,marginTop:4},
   addShoeBtnText:{color:ACCENT,fontSize:15,fontFamily:FP,fontWeight:'600'},
 
-  shoeCard:{backgroundColor:CARD,borderRadius:18,padding:16,marginBottom:12},
-  shoeCardHead:{flexDirection:'row',justifyContent:'space-between',alignItems:'flex-start',marginBottom:14},
-  shoeName:{color:T1,fontSize:18,fontFamily:FH,letterSpacing:1.5,marginBottom:3},
-  shoeMeta:{color:T3,fontSize:11,fontFamily:FP},
-  badge:{paddingHorizontal:10,paddingVertical:4,borderRadius:20},
+  // ── Shoe cards
+  shoeCard:{backgroundColor:CARD,borderRadius:24,padding:20,marginBottom:12},
+  shoeCardHead:{flexDirection:'row',justifyContent:'space-between',alignItems:'flex-start',marginBottom:16},
+  shoeName:{color:T1,fontSize:20,fontFamily:FH,letterSpacing:2,marginBottom:4},
+  shoeMeta:{color:T3,fontSize:12,fontFamily:FP},
+  badge:{paddingHorizontal:10,paddingVertical:5,borderRadius:100},
   badgeText:{fontSize:11,fontFamily:FP,fontWeight:'700'},
-  barTrack:{backgroundColor:SURFACE,borderRadius:100,height:4,overflow:'hidden',marginBottom:12},
+  barTrack:{backgroundColor:SURFACE,borderRadius:100,height:5,overflow:'hidden',marginBottom:16},
   barFill:{height:'100%',borderRadius:100},
-  shoeStatsRow:{flexDirection:'row',justifyContent:'space-between',marginBottom:14},
-  ssStat:{color:T3,fontSize:10,fontFamily:FP,letterSpacing:1.5,textTransform:'uppercase' as const},
-  ssNum:{color:T1,fontSize:24,fontFamily:FH,fontWeight:'300'},
-  runBtn:{backgroundColor:ACCENT,borderRadius:14,paddingVertical:13,alignItems:'center',flexDirection:'row',justifyContent:'center'},
-  runBtnText:{color:'#000',fontSize:16,fontFamily:FP,letterSpacing:0.5},
-  buyBtn:{backgroundColor:SURFACE,borderRadius:10,paddingVertical:10,alignItems:'center'},
+  shoeStatsRow:{flexDirection:'row',justifyContent:'space-between',marginBottom:18},
+  ssStat:{color:T3,fontSize:11,fontFamily:FP,marginTop:3},
+  ssNum:{color:T1,fontSize:26,fontFamily:FH},
+  runBtn:{backgroundColor:ACCENT,borderRadius:100,paddingVertical:17,alignItems:'center'},
+  runBtnText:{color:'#000',fontSize:15,fontFamily:FP,fontWeight:'800',letterSpacing:0.3},
+  buyBtn:{backgroundColor:SURFACE,borderRadius:14,paddingVertical:12,alignItems:'center'},
   buyBtnText:{color:T2,fontSize:13,fontFamily:FP,fontWeight:'600'},
 
-  formCard:{backgroundColor:CARD,borderRadius:14,padding:16,marginBottom:14},
-  fcTitle:{color:T2,fontSize:10,fontFamily:FP,letterSpacing:1.5,textTransform:'uppercase' as const,marginBottom:12},
-  flabel:{color:T2,fontSize:12,fontFamily:FP,fontWeight:'600',marginBottom:6,marginTop:4},
-  inputGroup:{backgroundColor:SURFACE,borderRadius:14,overflow:'hidden'},
-  inputRow:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',paddingHorizontal:14,paddingVertical:13},
+  // ── Forms
+  formCard:{backgroundColor:CARD,borderRadius:22,padding:20,marginBottom:16},
+  fcTitle:{color:T2,fontSize:12,fontFamily:FP,fontWeight:'600',letterSpacing:0.3,marginBottom:14},
+  flabel:{color:T2,fontSize:13,fontFamily:FP,fontWeight:'600',marginBottom:8,marginTop:4},
+  inputGroup:{backgroundColor:SURFACE,borderRadius:18,overflow:'hidden'},
+  inputRow:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',paddingHorizontal:16,paddingVertical:15},
   inputLbl:{color:T1,fontSize:15,fontFamily:FP},
   inputField:{color:T1,fontSize:15,fontFamily:FP,textAlign:'right',padding:0,minWidth:60},
-  inputDiv:{height:StyleSheet.hairlineWidth,backgroundColor:SEP,marginLeft:14},
-  input:{backgroundColor:SURFACE,borderRadius:12,padding:13,color:T1,fontSize:15,fontFamily:FP,marginBottom:10},
-  chip:{paddingHorizontal:14,paddingVertical:8,borderRadius:100,backgroundColor:SURFACE,marginRight:8},
-  chipActive:{backgroundColor:ACCENT+'20'},
+  inputDiv:{height:StyleSheet.hairlineWidth,backgroundColor:SEP,marginLeft:16},
+  input:{backgroundColor:SURFACE,borderRadius:16,padding:15,color:T1,fontSize:15,fontFamily:FP,marginBottom:12},
+  chip:{paddingHorizontal:16,paddingVertical:9,borderRadius:100,backgroundColor:SURFACE,marginRight:8},
+  chipActive:{backgroundColor:ACCENT+'22'},
   chipText:{color:T2,fontSize:13,fontFamily:FP,fontWeight:'500'},
-  recChip:{marginTop:4,paddingHorizontal:8,paddingVertical:3,borderRadius:6,backgroundColor:ACCENT+'18',alignSelf:'flex-start'},
+  recChip:{marginTop:5,paddingHorizontal:8,paddingVertical:3,borderRadius:8,backgroundColor:ACCENT+'18',alignSelf:'flex-start'},
   recChipText:{color:ACCENT,fontSize:11,fontFamily:FP,fontWeight:'600'},
-  dragKmVal:{color:ACCENT,fontSize:20,fontFamily:FH,letterSpacing:1,minWidth:48,textAlign:'right'},
-  wheelWrap:{backgroundColor:SURFACE,borderRadius:16,marginTop:10,overflow:'hidden'},
-  wheelHighlight:{position:'absolute',top:48*2,left:16,right:16,height:48,backgroundColor:ACCENT+'18',borderRadius:10},
+  dragKmVal:{color:ACCENT,fontSize:22,fontFamily:FH,letterSpacing:1,minWidth:48,textAlign:'right'},
+  wheelWrap:{backgroundColor:SURFACE,borderRadius:20,marginTop:12,overflow:'hidden'},
+  wheelHighlight:{position:'absolute',top:48*2,left:20,right:20,height:48,backgroundColor:ACCENT+'15',borderRadius:12},
   wheelItem:{color:T3,fontSize:16,fontFamily:FP},
-  wheelItemActive:{color:T1,fontSize:22,fontFamily:FH},
+  wheelItemActive:{color:T1,fontSize:24,fontFamily:FH},
   wheelRecLabel:{color:ACCENT,fontSize:10,fontFamily:FP,fontWeight:'700',letterSpacing:0.5},
-  wheelDone:{padding:14,alignItems:'center',borderTopWidth:StyleSheet.hairlineWidth,borderTopColor:SEP},
-  wheelDoneTxt:{color:ACCENT,fontSize:16,fontFamily:FP,fontWeight:'600',letterSpacing:0},
-  accentBtn:{backgroundColor:ACCENT,padding:15,borderRadius:16,alignItems:'center',justifyContent:'center'},
-  accentBtnText:{color:'#000',fontSize:16,fontFamily:FP,fontWeight:'700',letterSpacing:0.3},
-  ghostBtn:{flex:1,backgroundColor:SURFACE,borderRadius:16,alignItems:'center',justifyContent:'center',padding:15},
+  wheelDone:{padding:16,alignItems:'center',borderTopWidth:StyleSheet.hairlineWidth,borderTopColor:SEP},
+  wheelDoneTxt:{color:ACCENT,fontSize:16,fontFamily:FP,fontWeight:'700'},
+  accentBtn:{backgroundColor:ACCENT,padding:17,borderRadius:100,alignItems:'center',justifyContent:'center'},
+  accentBtnText:{color:'#000',fontSize:16,fontFamily:FP,fontWeight:'700',letterSpacing:0.2},
+  ghostBtn:{flex:1,backgroundColor:SURFACE,borderRadius:100,alignItems:'center',justifyContent:'center',padding:17},
 
-  secTitle:{color:T3,fontSize:10,fontFamily:FP,letterSpacing:1.5,textTransform:'uppercase' as const,marginBottom:10},
-  histWrap:{backgroundColor:CARD,borderRadius:14,overflow:'hidden'},
-  histItem:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',paddingVertical:14,paddingHorizontal:16,borderBottomWidth:StyleSheet.hairlineWidth,borderBottomColor:SEP},
-  histKm:{color:T1,fontSize:18,fontFamily:FH,letterSpacing:1},
-  histMeta:{color:T3,fontSize:11,fontFamily:FP,marginTop:2},
-  histShoe:{color:T2,fontSize:11,fontFamily:FP,textAlign:'right',maxWidth:130},
-  gpsBadge:{backgroundColor:ACCENT+'22',paddingHorizontal:6,paddingVertical:2,borderRadius:6,borderWidth:1,borderColor:ACCENT},
+  // ── Section title
+  secTitle:{color:T2,fontSize:13,fontFamily:FP,fontWeight:'600',marginBottom:12},
+  histWrap:{backgroundColor:CARD,borderRadius:20,overflow:'hidden'},
+  histItem:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',paddingVertical:16,paddingHorizontal:18,borderBottomWidth:StyleSheet.hairlineWidth,borderBottomColor:SEP},
+  histKm:{color:T1,fontSize:20,fontFamily:FH,letterSpacing:1},
+  histMeta:{color:T3,fontSize:12,fontFamily:FP,marginTop:3},
+  histShoe:{color:T2,fontSize:12,fontFamily:FP,textAlign:'right',maxWidth:130},
+  gpsBadge:{backgroundColor:ACCENT+'18',paddingHorizontal:8,paddingVertical:3,borderRadius:8,borderWidth:1,borderColor:ACCENT+'50'},
 
-  periodSel:{flexDirection:'row',backgroundColor:CARD,borderRadius:16,padding:4,marginBottom:12},
-  periodBtn:{flex:1,paddingVertical:9,alignItems:'center',borderRadius:12},
+  // ── Stats
+  periodSel:{flexDirection:'row',backgroundColor:CARD,borderRadius:18,padding:4,marginBottom:16},
+  periodBtn:{flex:1,paddingVertical:10,alignItems:'center',borderRadius:14},
   periodBtnOn:{backgroundColor:ACCENT},
   periodTxt:{color:T3,fontSize:14,fontFamily:FP,fontWeight:'600'},
-  periodTxtOn:{color:'#000',fontFamily:FP,fontWeight:'700',letterSpacing:0},
-  periodNav:{flexDirection:'row',alignItems:'center',backgroundColor:CARD,borderRadius:16,paddingVertical:12,paddingHorizontal:4,marginBottom:12},
-  periodNavLabel:{color:T1,fontSize:14,fontFamily:FP,fontWeight:'700'},
-  statGrid:{flexDirection:'row',gap:10,marginBottom:10},
-  statBox:{flex:1,backgroundColor:CARD,borderRadius:18,padding:16,alignItems:'flex-start'},
-  statNum:{color:T1,fontSize:32,fontFamily:FP,fontWeight:'800',letterSpacing:-0.5},
-  statLbl:{color:T3,fontSize:11,marginTop:2,fontFamily:FP,letterSpacing:0.3},
+  periodTxtOn:{color:'#000',fontFamily:FP,fontWeight:'700'},
+  periodNav:{flexDirection:'row',alignItems:'center',backgroundColor:CARD,borderRadius:18,paddingVertical:14,paddingHorizontal:8,marginBottom:16},
+  periodNavLabel:{color:T1,fontSize:15,fontFamily:FP,fontWeight:'700'},
+  statGrid:{flexDirection:'row',gap:12,marginBottom:12},
+  statBox:{flex:1,backgroundColor:CARD,borderRadius:22,padding:20,alignItems:'flex-start'},
+  statNum:{color:T1,fontSize:40,fontFamily:FH,letterSpacing:-0.5,lineHeight:44},
+  statLbl:{color:T3,fontSize:12,marginTop:4,fontFamily:FP},
 
-  modalBg:{position:'absolute',top:0,left:0,right:0,bottom:0,backgroundColor:'rgba(0,0,0,0.75)',justifyContent:'flex-end'},
-  modal:{backgroundColor:CARD,borderTopLeftRadius:24,borderTopRightRadius:24,padding:20,paddingTop:12,maxHeight:'92%'},
-  modalHandle:{width:36,height:4,backgroundColor:SURFACE,borderRadius:2,alignSelf:'center',marginBottom:16},
-  modalTitle:{color:T1,fontSize:18,fontFamily:FP,letterSpacing:0},
+  // ── Modal
+  modalBg:{position:'absolute',top:0,left:0,right:0,bottom:0,backgroundColor:'rgba(0,0,0,0.82)',justifyContent:'flex-end'},
+  modal:{backgroundColor:CARD,borderTopLeftRadius:32,borderTopRightRadius:32,padding:24,paddingTop:12,maxHeight:'92%'},
+  modalHandle:{width:40,height:4,backgroundColor:SURFACE,borderRadius:2,alignSelf:'center',marginBottom:20},
+  modalTitle:{color:T1,fontSize:20,fontFamily:FP,fontWeight:'700'},
 
-  acList:{backgroundColor:SURFACE,borderRadius:12,marginBottom:10,maxHeight:160},
-  acItem:{padding:14,borderBottomWidth:StyleSheet.hairlineWidth,borderBottomColor:SEP},
+  // ── Autocomplete
+  acList:{backgroundColor:SURFACE,borderRadius:16,marginBottom:12,maxHeight:180},
+  acItem:{padding:16,borderBottomWidth:StyleSheet.hairlineWidth,borderBottomColor:SEP},
   acName:{color:T1,fontSize:14,fontFamily:FP,fontWeight:'600'},
-  acSub:{color:T3,fontSize:12,fontFamily:FP,marginTop:2},
+  acSub:{color:T3,fontSize:12,fontFamily:FP,marginTop:3},
 });
 
 const r = StyleSheet.create({
-  screen:{position:'absolute',top:0,left:0,right:0,bottom:0,backgroundColor:BG,paddingHorizontal:24},
+  screen:{position:'absolute',top:0,left:0,right:0,bottom:0,backgroundColor:BG,paddingHorizontal:28},
   topRow:{marginBottom:8},
-  runningLabel:{color:ACCENT,fontSize:11,fontFamily:FP,fontWeight:'700',letterSpacing:1.5,textTransform:'uppercase' as const},
-  doneLabel:{color:ACCENT,fontSize:11,fontFamily:FP,fontWeight:'700',letterSpacing:1.5,textTransform:'uppercase' as const},
-  topShoe:{color:T1,fontSize:24,fontFamily:FH,letterSpacing:1.5,marginTop:2},
+  runningLabel:{color:ACCENT,fontSize:11,fontFamily:FP,fontWeight:'700',letterSpacing:2,textTransform:'uppercase' as const},
+  doneLabel:{color:ACCENT,fontSize:11,fontFamily:FP,fontWeight:'700',letterSpacing:2,textTransform:'uppercase' as const},
+  topShoe:{color:T1,fontSize:22,fontFamily:FH,letterSpacing:2,marginTop:4},
   gpsChip:{flexDirection:'row',alignItems:'center',marginTop:6},
   gpsText:{color:T3,fontSize:11,fontFamily:FP},
   center:{flex:1,alignItems:'center',justifyContent:'center'},
-  bigKm:{color:T1,fontSize:96,fontFamily:FH,letterSpacing:-3,lineHeight:96},
-  kmUnit:{color:T3,fontSize:13,fontFamily:FP,letterSpacing:4,marginTop:4},
-  metrics:{flexDirection:'row',backgroundColor:CARD,borderRadius:14,marginBottom:20},
-  mItem:{flex:1,alignItems:'center',paddingVertical:16},
-  mVal:{color:T1,fontSize:20,fontFamily:FH,letterSpacing:0.5},
-  mLbl:{color:T3,fontSize:10,marginTop:4,fontFamily:FP,letterSpacing:1.5,textTransform:'uppercase' as const},
-  mSep:{width:StyleSheet.hairlineWidth,backgroundColor:SEP,marginVertical:12},
-  controlRow:{flexDirection:'row',justifyContent:'center',gap:52,alignItems:'flex-start'},
-  pauseBtn:{width:72,height:72,borderRadius:36,backgroundColor:SURFACE,alignItems:'center',justifyContent:'center',borderWidth:1.5,borderColor:'rgba(232,99,42,0.35)'},
-  stopBtn:{width:80,height:80,borderRadius:40,backgroundColor:DANGER,alignItems:'center',justifyContent:'center'},
-  stopIcon:{width:26,height:26,borderRadius:5,backgroundColor:'#fff'},
-  ctrlHint:{color:T3,fontSize:10,fontFamily:FP,letterSpacing:1,marginTop:8,textTransform:'uppercase' as const,textAlign:'center'},
-  progressWrap:{marginBottom:16},
-  progressTrack:{backgroundColor:SURFACE,borderRadius:100,height:8,overflow:'hidden'},
+  bigKm:{color:T1,fontSize:100,fontFamily:FH,letterSpacing:-4,lineHeight:100},
+  kmUnit:{color:T3,fontSize:14,fontFamily:FP,fontWeight:'500',letterSpacing:6,marginTop:8},
+  metrics:{flexDirection:'row',backgroundColor:CARD,borderRadius:24,marginBottom:24},
+  mItem:{flex:1,alignItems:'center',paddingVertical:20},
+  mVal:{color:T1,fontSize:22,fontFamily:FH,letterSpacing:0.3},
+  mLbl:{color:T3,fontSize:11,marginTop:5,fontFamily:FP,fontWeight:'500',letterSpacing:0.5},
+  mSep:{width:StyleSheet.hairlineWidth,backgroundColor:SEP,marginVertical:16},
+  controlRow:{flexDirection:'row',justifyContent:'center',gap:56,alignItems:'flex-start'},
+  pauseBtn:{width:76,height:76,borderRadius:38,backgroundColor:SURFACE,alignItems:'center',justifyContent:'center'},
+  stopBtn:{width:84,height:84,borderRadius:42,backgroundColor:DANGER,alignItems:'center',justifyContent:'center'},
+  stopIcon:{width:26,height:26,borderRadius:6,backgroundColor:'#fff'},
+  ctrlHint:{color:T3,fontSize:10,fontFamily:FP,letterSpacing:0.5,marginTop:10,textAlign:'center'},
+  progressWrap:{marginBottom:20},
+  progressTrack:{backgroundColor:SURFACE,borderRadius:100,height:10,overflow:'hidden'},
   progressFill:{height:'100%',borderRadius:100,backgroundColor:ACCENT},
-  progressRemain:{color:T1,fontSize:13,fontFamily:FP},
-  progressGoalTxt:{color:T3,fontSize:12,fontFamily:FP},
-  memoInput:{backgroundColor:SURFACE,borderRadius:14,padding:14,color:T1,fontSize:15,fontFamily:FP,marginBottom:16},
+  progressRemain:{color:T1,fontSize:14,fontFamily:FP,fontWeight:'600'},
+  progressGoalTxt:{color:T3,fontSize:13,fontFamily:FP},
+  memoInput:{backgroundColor:SURFACE,borderRadius:20,padding:18,color:T1,fontSize:15,fontFamily:FP,marginBottom:20},
   actionRow:{flexDirection:'row',gap:12},
-  discardBtn:{flex:1,backgroundColor:SURFACE,borderRadius:14,padding:16,alignItems:'center'},
-  discardTxt:{color:T2,fontSize:16,fontFamily:FP,fontWeight:'600',letterSpacing:0},
-  saveBtn:{flex:2,backgroundColor:ACCENT,borderRadius:14,padding:16,alignItems:'center'},
-  saveTxt:{color:'#000',fontSize:16,fontFamily:FP,fontWeight:'600',letterSpacing:0},
+  discardBtn:{flex:1,backgroundColor:SURFACE,borderRadius:100,padding:18,alignItems:'center'},
+  discardTxt:{color:T2,fontSize:16,fontFamily:FP,fontWeight:'600'},
+  saveBtn:{flex:2,backgroundColor:ACCENT,borderRadius:100,padding:18,alignItems:'center'},
+  saveTxt:{color:'#000',fontSize:16,fontFamily:FP,fontWeight:'700'},
 });
