@@ -1,0 +1,160 @@
+{"_e":"root:init","_t":1779864574290,"format":"v0-jsonl","version":"56.1.12"}
+{"_e":"env:mode","_t":1779864574291,"nodeEnv":"development","babelEnv":"development","mode":"development"}
+{"_e":"env:load","_t":1779864574293,"mode":"development","files":[],"env":{}}
+{"_e":"devserver:start","_t":1779864574529,"mode":"development","web":true,"baseUrl":"","asyncRoutes":false,"routerRoot":"../..\\..\\app","serverComponents":false,"serverActions":false,"serverRendering":false,"apiRoutes":false,"exporting":false}
+{"_e":"metro:config","_t":1779864575013,"serverRoot":"../..\\..","projectRoot":"../..\\..","exporting":false,"flags":{"autolinkingModuleResolution":false,"serverActions":false,"serverComponents":false,"reactCompiler":false,"optimizeGraph":false,"treeshaking":false,"logbox":false}}
+{"_e":"metro:instantiate","_t":1779864589525,"atlas":false,"workers":6,"host":"::","port":8081}
+{"_e":"metro:bundling:started","_t":1779864607726,"id":"1","platform":"android","environment":null,"entry":"index.js"}
+{"_e":"metro:bundling:progress","_t":1779864607728,"id":"1","progress":0,"total":1,"current":0}
+{"_e":"metro:bundling:progress","_t":1779864607737,"id":"1","progress":0,"total":1,"current":0}
+{"_e":"metro:bundling:progress","_t":1779864608533,"id":"1","progress":0.010000000000000002,"total":1,"current":1}
+{"_e":"metro:bundling:progress","_t":1779864608637,"id":"1","progress":0.04000000000000001,"total":5,"current":2}
+{"_e":"metro:bundling:progress","_t":1779864609164,"id":"1","progress":0.09,"total":5,"current":3}
+{"_e":"metro:bundling:progress","_t":1779864609275,"id":"1","progress":0.16000000000000003,"total":5,"current":4}
+{"_e":"metro:bundling:progress","_t":1779864609382,"id":"1","progress":0.16000000000000003,"total":110,"current":6}
+{"_e":"metro:bundling:progress","_t":1779864609484,"id":"1","progress":0.16000000000000003,"total":130,"current":15}
+{"_e":"metro:bundling:progress","_t":1779864609588,"id":"1","progress":0.16000000000000003,"total":131,"current":15}
+{"_e":"metro:bundling:progress","_t":1779864609610,"id":"1","progress":0.16000000000000003,"total":131,"current":16}
+{"_e":"metro:bundling:progress","_t":1779864609713,"id":"1","progress":0.16000000000000003,"total":138,"current":20}
+{"_e":"metro:bundling:progress","_t":1779864609813,"id":"1","progress":0.16000000000000003,"total":150,"current":26}
+{"_e":"metro:bundling:progress","_t":1779864609916,"id":"1","progress":0.16000000000000003,"total":160,"current":29}
+{"_e":"metro:bundling:progress","_t":1779864610025,"id":"1","progress":0.16000000000000003,"total":164,"current":31}
+{"_e":"metro:bundling:progress","_t":1779864610137,"id":"1","progress":0.16000000000000003,"total":166,"current":34}
+{"_e":"metro:bundling:progress","_t":1779864610250,"id":"1","progress":0.16000000000000003,"total":177,"current":37}
+{"_e":"metro:bundling:progress","_t":1779864610354,"id":"1","progress":0.16000000000000003,"total":182,"current":44}
+{"_e":"metro:bundling:progress","_t":1779864610454,"id":"1","progress":0.16000000000000003,"total":189,"current":50}
+{"_e":"metro:bundling:progress","_t":1779864610556,"id":"1","progress":0.16000000000000003,"total":203,"current":64}
+{"_e":"metro:bundling:progress","_t":1779864610655,"id":"1","progress":0.16000000000000003,"total":213,"current":72}
+{"_e":"metro:bundling:progress","_t":1779864610762,"id":"1","progress":0.16000000000000003,"total":222,"current":80}
+{"_e":"metro:bundling:progress","_t":1779864610865,"id":"1","progress":0.16000000000000003,"total":225,"current":88}
+{"_e":"metro:bundling:progress","_t":1779864610970,"id":"1","progress":0.18313914685074656,"total":229,"current":98}
+{"_e":"metro:bundling:progress","_t":1779864611071,"id":"1","progress":0.20909124114252317,"total":234,"current":107}
+{"_e":"metro:bundling:progress","_t":1779864611173,"id":"1","progress":0.24585069444444446,"total":240,"current":119}
+{"_e":"metro:bundling:progress","_t":1779864611275,"id":"1","progress":0.24585069444444446,"total":253,"current":124}
+{"_e":"metro:bundling:progress","_t":1779864611382,"id":"1","progress":0.26176311519740403,"total":258,"current":132}
+{"_e":"metro:bundling:progress","_t":1779864611484,"id":"1","progress":0.28122130394857664,"total":264,"current":140}
+{"_e":"metro:bundling:progress","_t":1779864611584,"id":"1","progress":0.29197907048322563,"total":285,"current":154}
+{"_e":"metro:bundling:progress","_t":1779864611695,"id":"1","progress":0.30156851479459923,"total":295,"current":162}
+{"_e":"metro:bundling:progress","_t":1779864611795,"id":"1","progress":0.3189810266994846,"total":301,"current":170}
+{"_e":"metro:bundling:progress","_t":1779864611897,"id":"1","progress":0.3335729612565217,"total":303,"current":175}
+{"_e":"metro:bundling:progress","_t":1779864612002,"id":"1","progress":0.34443429185702773,"total":305,"current":179}
+{"_e":"metro:bundling:progress","_t":1779864612124,"id":"1","progress":0.34443429185702773,"total":336,"current":190}
+{"_e":"metro:bundling:progress","_t":1779864612227,"id":"1","progress":0.34443429185702773,"total":350,"current":204}
+{"_e":"metro:bundling:progress","_t":1779864612327,"id":"1","progress":0.35935512776043477,"total":372,"current":223}
+{"_e":"metro:bundling:progress","_t":1779864612449,"id":"1","progress":0.3849195471615361,"total":382,"current":237}
+{"_e":"metro:bundling:progress","_t":1779864612549,"id":"1","progress":0.3849195471615361,"total":541,"current":247}
+{"_e":"metro:bundling:progress","_t":1779864612654,"id":"1","progress":0.3849195471615361,"total":552,"current":258}
+{"_e":"metro:bundling:progress","_t":1779864612756,"id":"1","progress":0.3849195471615361,"total":563,"current":270}
+{"_e":"metro:bundling:progress","_t":1779864612869,"id":"1","progress":0.3849195471615361,"total":646,"current":277}
+{"_e":"metro:bundling:progress","_t":1779864612970,"id":"1","progress":0.3849195471615361,"total":647,"current":287}
+{"_e":"metro:bundling:progress","_t":1779864613070,"id":"1","progress":0.3849195471615361,"total":654,"current":296}
+{"_e":"metro:bundling:progress","_t":1779864613174,"id":"1","progress":0.3849195471615361,"total":660,"current":307}
+{"_e":"metro:bundling:progress","_t":1779864613280,"id":"1","progress":0.3849195471615361,"total":664,"current":312}
+{"_e":"metro:bundling:progress","_t":1779864613435,"id":"1","progress":0.3849195471615361,"total":672,"current":317}
+{"_e":"metro:bundling:progress","_t":1779864613534,"id":"1","progress":0.3849195471615361,"total":675,"current":341}
+{"_e":"metro:bundling:progress","_t":1779864618451,"id":"1","progress":0.3849195471615361,"total":681,"current":356}
+{"_e":"metro:bundling:progress","_t":1779864618553,"id":"1","progress":0.3849195471615361,"total":686,"current":370}
+{"_e":"metro:bundling:progress","_t":1779864618702,"id":"1","progress":0.3849195471615361,"total":688,"current":384}
+{"_e":"metro:bundling:progress","_t":1779864618807,"id":"1","progress":0.3849195471615361,"total":701,"current":395}
+{"_e":"metro:bundling:progress","_t":1779864618909,"id":"1","progress":0.3849195471615361,"total":708,"current":420}
+{"_e":"metro:bundling:progress","_t":1779864619011,"id":"1","progress":0.3849195471615361,"total":722,"current":438}
+{"_e":"metro:bundling:progress","_t":1779864619111,"id":"1","progress":0.4041578103298778,"total":722,"current":459}
+{"_e":"metro:bundling:progress","_t":1779864619211,"id":"1","progress":0.4298135362683149,"total":723,"current":474}
+{"_e":"metro:bundling:progress","_t":1779864619343,"id":"1","progress":0.4655611855559964,"total":724,"current":494}
+{"_e":"metro:bundling:progress","_t":1779864619449,"id":"1","progress":0.5079515277311437,"total":724,"current":516}
+{"_e":"metro:bundling:progress","_t":1779864619550,"id":"1","progress":0.543043128505187,"total":726,"current":535}
+{"_e":"metro:bundling:progress","_t":1779864619650,"id":"1","progress":0.5707265818627012,"total":732,"current":553}
+{"_e":"metro:bundling:progress","_t":1779864619750,"id":"1","progress":0.5787446525609897,"total":744,"current":566}
+{"_e":"metro:bundling:progress","_t":1779864619850,"id":"1","progress":0.6074826989619377,"total":748,"current":583}
+{"_e":"metro:bundling:progress","_t":1779864619951,"id":"1","progress":0.650711111111111,"total":750,"current":605}
+{"_e":"metro:bundling:progress","_t":1779864620052,"id":"1","progress":0.6643218991744161,"total":757,"current":617}
+{"_e":"metro:bundling:progress","_t":1779864620155,"id":"1","progress":0.6845981728263907,"total":759,"current":628}
+{"_e":"metro:bundling:progress","_t":1779864620256,"id":"1","progress":0.7142689840935238,"total":762,"current":644}
+{"_e":"metro:bundling:progress","_t":1779864620356,"id":"1","progress":0.7505054374245279,"total":763,"current":661}
+{"_e":"metro:bundling:progress","_t":1779864620463,"id":"1","progress":0.772198698258849,"total":767,"current":674}
+{"_e":"metro:bundling:progress","_t":1779864620566,"id":"1","progress":0.77747966243945,"total":778,"current":686}
+{"_e":"metro:bundling:progress","_t":1779864620666,"id":"1","progress":0.8017557788421491,"total":784,"current":702}
+{"_e":"metro:bundling:progress","_t":1779864620769,"id":"1","progress":0.8435895979552923,"total":785,"current":721}
+{"_e":"metro:bundling:progress","_t":1779864620869,"id":"1","progress":0.8630857432921941,"total":789,"current":733}
+{"_e":"metro:bundling:progress","_t":1779864620972,"id":"1","progress":0.8630857432921941,"total":797,"current":737}
+{"_e":"metro:bundling:progress","_t":1779864621081,"id":"1","progress":0.863398788626982,"total":805,"current":748}
+{"_e":"metro:bundling:progress","_t":1779864621181,"id":"1","progress":0.8783290664660632,"total":812,"current":761}
+{"_e":"metro:bundling:progress","_t":1779864621286,"id":"1","progress":0.8783290664660632,"total":818,"current":766}
+{"_e":"metro:bundling:progress","_t":1779864621386,"id":"1","progress":0.8982340930330754,"total":823,"current":780}
+{"_e":"metro:bundling:progress","_t":1779864621490,"id":"1","progress":0.9103187939041751,"total":828,"current":790}
+{"_e":"metro:bundling:progress","_t":1779864621592,"id":"1","progress":0.9290172739149368,"total":830,"current":800}
+{"_e":"metro:bundling:progress","_t":1779864621692,"id":"1","progress":0.9386941087884111,"total":835,"current":809}
+{"_e":"metro:bundling:progress","_t":1779864621795,"id":"1","progress":0.9503917607197636,"total":836,"current":815}
+{"_e":"metro:bundling:progress","_t":1779864621895,"id":"1","progress":0.9645627847443108,"total":839,"current":824}
+{"_e":"metro:bundling:progress","_t":1779864622001,"id":"1","progress":0.9739810090702948,"total":840,"current":829}
+{"_e":"metro:bundling:progress","_t":1779864622112,"id":"1","progress":0.9928783609343387,"total":841,"current":838}
+{"_e":"metro:bundling:progress","_t":1779864622223,"id":"1","progress":0.9952494128924714,"total":841,"current":839}
+{"_e":"metro:bundling:progress","_t":1779864623203,"id":"1","progress":0.997623292581025,"total":841,"current":840}
+{"_e":"metro:bundling:progress","_t":1779864623317,"id":"1","progress":0.997623292581025,"total":843,"current":841}
+{"_e":"metro:bundling:progress","_t":1779864623421,"id":"1","progress":0.997623292581025,"total":865,"current":848}
+{"_e":"metro:bundling:progress","_t":1779864623524,"id":"1","progress":0.997623292581025,"total":900,"current":869}
+{"_e":"metro:bundling:progress","_t":1779864623630,"id":"1","progress":0.997623292581025,"total":913,"current":883}
+{"_e":"metro:bundling:progress","_t":1779864623730,"id":"1","progress":0.997623292581025,"total":919,"current":888}
+{"_e":"metro:bundling:progress","_t":1779864623831,"id":"1","progress":0.997623292581025,"total":927,"current":896}
+{"_e":"metro:bundling:progress","_t":1779864623931,"id":"1","progress":0.997623292581025,"total":929,"current":903}
+{"_e":"metro:bundling:progress","_t":1779864624031,"id":"1","progress":0.997623292581025,"total":933,"current":914}
+{"_e":"metro:bundling:progress","_t":1779864624143,"id":"1","progress":0.997623292581025,"total":944,"current":927}
+{"_e":"metro:bundling:progress","_t":1779864624245,"id":"1","progress":0.997623292581025,"total":951,"current":944}
+{"_e":"metro:bundling:progress","_t":1779864624351,"id":"1","progress":0.9979134069325012,"total":958,"current":957}
+{"_e":"metro:bundling:progress","_t":1779864625222,"id":"1","progress":0.999,"total":958,"current":958}
+{"_e":"metro:bundling:done","_t":1779864625559,"id":"1","total":958,"ms":17831.9406}
+{"_e":"metro:bundling:started","_t":1779864641791,"id":"2","platform":"android","environment":null,"entry":"index.js"}
+{"_e":"metro:bundling:progress","_t":1779864641792,"id":"2","progress":0,"total":1,"current":0}
+{"_e":"metro:bundling:done","_t":1779864641848,"id":"2","total":1,"ms":55.5815}
+{"_e":"metro:client_log","_t":1779864644471,"level":"log","data":["Running \"SoleMate\" with {\"rootTag\":1,\"initialProps\":{},\"fabric\":true}"]}
+{"_e":"metro:client_log","_t":1779864694254,"level":"error","data":["[TypeError: iterator method is not callable]"]}
+{"_e":"metro:bundling:started","_t":1779864715241,"id":"5","platform":"android","environment":null,"entry":"index.js"}
+{"_e":"metro:bundling:progress","_t":1779864715242,"id":"5","progress":0,"total":1,"current":0}
+{"_e":"metro:bundling:done","_t":1779864715375,"id":"5","total":1,"ms":133.7692}
+{"_e":"metro:client_log","_t":1779864717457,"level":"log","data":["Running \"SoleMate\" with {\"rootTag\":1,\"initialProps\":{},\"fabric\":true}"]}
+{"_e":"metro:client_log","_t":1779864718772,"level":"error","data":["[TypeError: iterator method is not callable]"]}
+{"_e":"metro:client_log","_t":1779864982044,"level":"error","data":["[TypeError: undefined is not a function]"]}
+{"_e":"metro:bundling:started","_t":1779865077197,"id":"a","platform":"android","environment":null,"entry":"index.js"}
+{"_e":"metro:bundling:progress","_t":1779865077212,"id":"a","progress":0,"total":1,"current":0}
+{"_e":"metro:bundling:done","_t":1779865077689,"id":"a","total":1,"ms":485.5053}
+{"_e":"metro:client_log","_t":1779865080832,"level":"log","data":["Running \"SoleMate\" with {\"rootTag\":1,\"initialProps\":{},\"fabric\":true}"]}
+{"_e":"metro:client_log","_t":1779865107877,"level":"error","data":["[TypeError: undefined is not a function]"]}
+{"_e":"metro:bundling:started","_t":1779865149597,"id":"e","platform":"android","environment":null,"entry":"index.js"}
+{"_e":"metro:bundling:progress","_t":1779865149603,"id":"e","progress":0,"total":1,"current":0}
+{"_e":"metro:bundling:progress","_t":1779865149624,"id":"e","progress":0,"total":1,"current":0}
+{"_e":"metro:bundling:progress","_t":1779865150791,"id":"e","progress":0,"total":1,"current":0}
+{"_e":"metro:bundling:done","_t":1779865151110,"id":"e","total":1,"ms":1508.4959}
+{"_e":"metro:client_log","_t":1779865156576,"level":"log","data":["Running \"SoleMate\" with {\"rootTag\":1,\"initialProps\":{},\"fabric\":true}"]}
+{"_e":"metro:client_log","_t":1779865158328,"level":"error","data":["[TypeError: undefined is not a function]"]}
+{"_e":"metro:bundling:started","_t":1779865166985,"id":"h","platform":"android","environment":null,"entry":"index.js"}
+{"_e":"metro:bundling:progress","_t":1779865166985,"id":"h","progress":0,"total":1,"current":0}
+{"_e":"metro:bundling:done","_t":1779865167068,"id":"h","total":1,"ms":83.0927}
+{"_e":"metro:client_log","_t":1779865172570,"level":"log","data":["Running \"SoleMate\" with {\"rootTag\":1,\"initialProps\":{},\"fabric\":true}"]}
+{"_e":"metro:bundling:started","_t":1779865185842,"id":"i","platform":"android","environment":null,"entry":"index.js"}
+{"_e":"metro:bundling:progress","_t":1779865185845,"id":"i","progress":0,"total":1,"current":0}
+{"_e":"metro:bundling:done","_t":1779865186135,"id":"i","total":1,"ms":291.5768}
+{"_e":"metro:client_log","_t":1779865190513,"level":"log","data":["Running \"SoleMate\" with {\"rootTag\":1,\"initialProps\":{},\"fabric\":true}"]}
+{"_e":"metro:bundling:started","_t":1779865207103,"id":"j","platform":"android","environment":null,"entry":"index.js"}
+{"_e":"metro:bundling:progress","_t":1779865207105,"id":"j","progress":0,"total":1,"current":0}
+{"_e":"metro:bundling:done","_t":1779865207447,"id":"j","total":1,"ms":342.7589}
+{"_e":"metro:client_log","_t":1779865209982,"level":"log","data":["Running \"SoleMate\" with {\"rootTag\":1,\"initialProps\":{},\"fabric\":true}"]}
+{"_e":"metro:client_log","_t":1779865210907,"level":"error","data":["[TypeError: undefined is not a function]"]}
+{"_e":"metro:bundling:started","_t":1779865236595,"id":"m","platform":"android","environment":null,"entry":"index.js"}
+{"_e":"metro:bundling:progress","_t":1779865236599,"id":"m","progress":0,"total":1,"current":0}
+{"_e":"metro:bundling:done","_t":1779865236743,"id":"m","total":1,"ms":146.0068}
+{"_e":"metro:client_log","_t":1779865239673,"level":"log","data":["Running \"SoleMate\" with {\"rootTag\":1,\"initialProps\":{},\"fabric\":true}"]}
+{"_e":"metro:client_log","_t":1779865243369,"level":"error","data":["[TypeError: undefined is not a function]"]}
+{"_e":"metro:bundling:started","_t":1779865282320,"id":"q","platform":"android","environment":null,"entry":"index.js"}
+{"_e":"metro:bundling:progress","_t":1779865282337,"id":"q","progress":0,"total":1,"current":0}
+{"_e":"metro:bundling:done","_t":1779865282857,"id":"q","total":1,"ms":525.7366}
+{"_e":"metro:client_log","_t":1779865285029,"level":"log","data":["Running \"SoleMate\" with {\"rootTag\":1,\"initialProps\":{},\"fabric\":true}"]}
+{"_e":"metro:client_log","_t":1779865287032,"level":"error","data":["[TypeError: undefined is not a function]"]}
+{"_e":"metro:bundling:started","_t":1779865355721,"id":"u","platform":"android","environment":null,"entry":"index.js"}
+{"_e":"metro:bundling:progress","_t":1779865355738,"id":"u","progress":0,"total":1,"current":0}
+{"_e":"metro:bundling:done","_t":1779865356264,"id":"u","total":1,"ms":532.6494}
+{"_e":"metro:client_log","_t":1779865362728,"level":"log","data":["Running \"SoleMate\" with {\"rootTag\":1,\"initialProps\":{},\"fabric\":true}"]}
+{"_e":"metro:bundling:started","_t":1779865380507,"id":"v","platform":"android","environment":null,"entry":"index.js"}
+{"_e":"metro:bundling:progress","_t":1779865380513,"id":"v","progress":0,"total":1,"current":0}
+{"_e":"metro:bundling:done","_t":1779865380992,"id":"v","total":1,"ms":480.8152}
+{"_e":"metro:client_log","_t":1779865385402,"level":"log","data":["Running \"SoleMate\" with {\"rootTag\":1,\"initialProps\":{},\"fabric\":true}"]}
+{"_e":"metro:client_log","_t":1779865401845,"level":"error","data":["[TypeError: iterator method is not callable]"]}

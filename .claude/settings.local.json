@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//mnt/c/Users/USER/**)",
+      "Read(//c//**)",
+      "Bash(npm install *)",
+      "Bash(npm list *)",
+      "Bash(npx tsc *)",
+      "Bash(grep -v \"Try \\\\`npm\")",
+      "Bash(npx react-native *)",
+      "Bash(./gradlew assembleRelease)",
+      "Bash(wait *)",
+      "Bash(cp \"/c/Users/USER/Downloads/Barlow,Bebas_Neue/Bebas_Neue/BebasNeue-Regular.ttf\" /c/Users/USER/SoleMate/assets/fonts/)",
+      "Bash(cp \"/c/Users/USER/Downloads/Barlow,Bebas_Neue/Barlow/Barlow-Regular.ttf\" /c/Users/USER/SoleMate/assets/fonts/)",
+      "Bash(cp \"/c/Users/USER/Downloads/Barlow,Bebas_Neue/Barlow/Barlow-Medium.ttf\" /c/Users/USER/SoleMate/assets/fonts/)",
+      "Bash(npx react-native-asset *)",
+      "Bash(cmd /c \"gradlew.bat app:installDebug\")",
+      "Bash(gh release *)",
+      "WebFetch(domain:api.github.com)"
+    ]
+  }
+}
