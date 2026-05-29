@@ -1,7 +1,7 @@
 import React, {useState, useEffect, useRef, useMemo} from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView,
-  TextInput, Alert, StatusBar, PanResponder, Linking, PermissionsAndroid, Platform, Dimensions,
+  TextInput, Alert, StatusBar, PanResponder, Linking, PermissionsAndroid, Platform, Dimensions, Pressable,
 } from 'react-native';
 import {SafeAreaProvider, useSafeAreaInsets} from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -12,9 +12,9 @@ import Svg, {Path, Circle, Polyline, Rect, Text as SvgText} from 'react-native-s
 import Tts from 'react-native-tts';
 
 const API = 'https://solelife-backend.onrender.com';
-const ACCENT = '#E8632A';
+const ACCENT = '#FF6500';
 const BG = '#000000';
-const CARD = '#161616';
+const CARD = '#1C1C1E';
 const SURFACE = '#2C2C2E';
 const SEP = 'rgba(255,255,255,0.08)';
 const T1 = '#FFFFFF';
@@ -207,13 +207,12 @@ function Main(){
   return(
     <View style={{flex:1,backgroundColor:BG}}>
       <View style={[a.header,{paddingTop:insets.top+8}]}>
-        <Text style={a.logo}><Text style={{color:T1}}>SOLE</Text><Text style={{color:ACCENT}}>MATE</Text></Text>
+        <Text style={a.logo}><Text style={{color:T1,fontFamily:FP,fontWeight:'800',fontSize:20,letterSpacing:3}}>SOLE</Text><Text style={{color:ACCENT,fontFamily:FP,fontWeight:'800',fontSize:20,letterSpacing:3}}>MATE</Text></Text>
         {tab==='shoes'&&(
           <TouchableOpacity
-            style={{flexDirection:'row',alignItems:'center',gap:5}}
+            style={{borderWidth:1,borderColor:'rgba(255,255,255,0.2)',borderRadius:20,paddingHorizontal:14,paddingVertical:6,backgroundColor:'rgba(255,255,255,0.06)'}}
             onPress={()=>setShowAdd(true)}>
-            <Ionicons name="add-circle-outline" size={16} color={ACCENT}/>
-            <Text style={{color:ACCENT,fontSize:13,fontWeight:'700'}}>러닝화 등록하기</Text>
+            <Text style={{color:T1,fontSize:13,fontWeight:'600',fontFamily:FP}}>러닝화 등록하기</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -228,12 +227,19 @@ function Main(){
         {TABS.map(t=>{
           const active=tab===t.key;
           return(
-            <TouchableOpacity key={t.key} style={a.navBtn} onPress={()=>setTab(t.key)} activeOpacity={0.7}>
-              <View style={[{alignItems:'center',justifyContent:'center',paddingHorizontal:16,paddingVertical:6,borderRadius:12,gap:3},active&&{backgroundColor:ACCENT+'18'}]}>
-                <t.Icon size={active?24:22} color={active?ACCENT:T3}/>
+            <View key={t.key} style={a.navBtn}>
+              <TouchableOpacity
+                onPress={()=>setTab(t.key)}
+                activeOpacity={0.8}
+                style={[
+                  {alignItems:'center',justifyContent:'center',paddingHorizontal:18,paddingVertical:7,borderRadius:14,gap:3,overflow:'hidden'},
+                  active&&{backgroundColor:'rgba(255,255,255,0.1)'}
+                ]}
+              >
+                <t.Icon size={active?24:21} color={active?ACCENT:T3}/>
                 <Text style={[a.navLabel,active&&{color:ACCENT,fontWeight:'700'}]}>{t.label}</Text>
-              </View>
-            </TouchableOpacity>
+              </TouchableOpacity>
+            </View>
           );
         })}
       </View>
@@ -382,10 +388,14 @@ function ShoesTab({shoes,runs,shoeStats,deleteShoe,updateShoeName,onStartRun,onA
         const{used,left,pct}=shoeStats(s);
         const p=Math.round(pct);
         const bc=p>40?ACCENT:p>15?WARN:DANGER;
+        const badgeColor=p>40?'#30D158':p>15?WARN:DANGER;
         const bl=p>40?'양호':p>15?'주의':'교체 필요';
         const shoeRuns=runs.filter((r:any)=>r.shoe_id===s.id);
         const runCount=shoeRuns.length;
-        const lastRun=shoeRuns.length>0?shoeRuns.sort((a:any,b:any)=>b.run_date.localeCompare(a.run_date))[0].run_date:'없음';
+        const gpsRuns=shoeRuns.filter((r:any)=>r.source==='gps'&&r.duration>0&&parseFloat(r.km)>0.1);
+        const avgPaceSec=gpsRuns.length?gpsRuns.reduce((a:number,r:any)=>a+r.duration/parseFloat(r.km),0)/gpsRuns.length:0;
+        const avgKm=shoeRuns.length?shoeRuns.reduce((a:number,r:any)=>a+parseFloat(r.km),0)/shoeRuns.length:0;
+        const maxKmRun=shoeRuns.length?Math.max(...shoeRuns.map((r:any)=>parseFloat(r.km))):0;
         return(
           <TouchableOpacity key={s.id} activeOpacity={0.85} onPress={()=>setHistoryShoe(s)}
             style={{backgroundColor:CARD,borderRadius:14,marginBottom:10,overflow:'hidden',borderWidth:1,borderColor:'rgba(255,255,255,0.06)'}}>
@@ -407,9 +417,9 @@ function ShoesTab({shoes,runs,shoeStats,deleteShoe,updateShoeName,onStartRun,onA
                   </View>
                 ):(
                   <TouchableOpacity style={{flex:1}} onPress={()=>{setEditingId(s.id);setEditName(s.name);}}>
-                    <Text style={{color:ACCENT,fontSize:16,fontWeight:'700',fontFamily:FBM,letterSpacing:2}}>{parseShoeName(s.name).brand}</Text>
-                    <View style={{flexDirection:'row',alignItems:'center',gap:6,marginTop:1}}>
-                      <Text style={{color:T1,fontSize:22,fontWeight:'900',fontFamily:FH,letterSpacing:0.5}}>{parseShoeName(s.name).model||parseShoeName(s.name).brand}</Text>
+                    <Text style={{color:ACCENT,fontSize:11,fontWeight:'700',fontFamily:FP,letterSpacing:2,marginLeft:6}}>{parseShoeName(s.name).brand}</Text>
+                    <View style={{flexDirection:'row',alignItems:'center',gap:6,marginTop:2}}>
+                      <Text style={{color:T1,fontSize:20,fontWeight:'800',fontFamily:FP,letterSpacing:-0.3}}>{parseShoeName(s.name).model||parseShoeName(s.name).brand}</Text>
                       <Ionicons name="pencil-outline" size={13} color={T3}/>
                     </View>
                   </TouchableOpacity>
@@ -422,47 +432,45 @@ function ShoesTab({shoes,runs,shoeStats,deleteShoe,updateShoeName,onStartRun,onA
               {/* 구매일 + 상태 */}
               <View style={{flexDirection:'row',alignItems:'center',gap:8,marginBottom:10}}>
                 <Text style={{color:T3,fontSize:11}}>{s.purchase_date?`${s.purchase_date} · `:''}최대 {s.max_km}km</Text>
-                <View style={{backgroundColor:bc+'22',borderRadius:4,paddingHorizontal:6,paddingVertical:2}}>
-                  <Text style={{color:bc,fontSize:10,fontWeight:'700'}}>{bl}</Text>
+                <View style={{backgroundColor:badgeColor+'22',borderRadius:4,paddingHorizontal:6,paddingVertical:2}}>
+                  <Text style={{color:badgeColor,fontSize:10,fontWeight:'700'}}>{bl}</Text>
                 </View>
               </View>
 
               {/* 남은 km + 프로그레스 */}
               <View style={{marginBottom:10}}>
                 <View style={{flexDirection:'row',alignItems:'baseline',marginBottom:6}}>
-                  <Text style={{color:bc,fontSize:30,fontWeight:'900',fontFamily:FH,letterSpacing:-1}}>{Math.round(left)}</Text>
+                  <Text style={{color:bc,fontSize:42,fontWeight:'800',fontFamily:FP,letterSpacing:-1}}>{Math.round(left)}</Text>
                   <Text style={{color:T3,fontSize:12,marginLeft:6}}>km 남음</Text>
                   <View style={{flex:1}}/>
                   <Text style={{color:T2,fontSize:13,fontWeight:'600'}}>{p}%</Text>
                 </View>
-                <View style={{backgroundColor:SURFACE,borderRadius:100,height:6,overflow:'hidden'}}>
-                  <View style={{height:'100%',width:`${p}%` as any,backgroundColor:bc,borderRadius:100,opacity:0.9}}/>
+                <View style={{backgroundColor:SURFACE,borderRadius:100,height:3,overflow:'hidden'}}>
+                  <View style={{height:'100%',width:`${p}%` as any,backgroundColor:bc,borderRadius:100}}/>
                 </View>
               </View>
 
               {/* 스탯 3열 */}
-              <View style={{flexDirection:'row',gap:0,marginBottom:10,backgroundColor:SURFACE,borderRadius:10,padding:10}}>
-                <View style={{flex:1,alignItems:'center'}}>
-                  <Text style={{color:T1,fontSize:15,fontWeight:'700',fontFamily:FH}}>{Math.round(used)} km</Text>
+              <View style={{flexDirection:'row',marginBottom:14,paddingTop:4,paddingHorizontal:4}}>
+                <View style={{flex:1}}>
+                  <Text style={{color:T1,fontSize:14,fontWeight:'700',fontFamily:FP}}>{Math.round(used)} km</Text>
                   <Text style={{color:T3,fontSize:10,marginTop:3}}>누적 거리</Text>
                 </View>
-                <View style={{width:StyleSheet.hairlineWidth,backgroundColor:SEP}}/>
                 <View style={{flex:1,alignItems:'center'}}>
-                  <Text style={{color:T1,fontSize:15,fontWeight:'700',fontFamily:FH}}>{runCount}회</Text>
+                  <Text style={{color:T1,fontSize:14,fontWeight:'700',fontFamily:FP}}>{runCount}회</Text>
                   <Text style={{color:T3,fontSize:10,marginTop:3}}>총 런</Text>
                 </View>
-                <View style={{width:StyleSheet.hairlineWidth,backgroundColor:SEP}}/>
-                <View style={{flex:1,alignItems:'center'}}>
-                  <Text style={{color:T1,fontSize:11,fontWeight:'700',fontFamily:FH,textAlign:'center'}}>{lastRun}</Text>
-                  <Text style={{color:T3,fontSize:10,marginTop:3}}>마지막 런</Text>
+                <View style={{flex:1,alignItems:'flex-end'}}>
+                  <Text style={{color:T1,fontSize:14,fontWeight:'700',fontFamily:FP}}>{avgPaceSec>0?fmtPace(1,avgPaceSec):'--'}</Text>
+                  <Text style={{color:T3,fontSize:10,marginTop:3}}>평균 페이스</Text>
                 </View>
               </View>
 
               {/* 러닝시작 버튼 */}
               <TouchableOpacity
-                style={{borderRadius:10,paddingVertical:10,alignItems:'center',borderWidth:1.5,borderColor:ACCENT}}
+                style={{borderRadius:12,paddingVertical:12,alignItems:'center',backgroundColor:ACCENT}}
                 onPress={()=>onStartRun({id:s.id,name:s.name})}>
-                <Text style={{color:ACCENT,fontSize:14,fontWeight:'800',letterSpacing:0.5}}>러닝시작</Text>
+                <Text style={{color:'#000',fontSize:14,fontWeight:'800',letterSpacing:0.5,fontFamily:FP}}>러닝시작</Text>
               </TouchableOpacity>
 
             </View>{/* padding View 닫기 */}
@@ -949,18 +957,18 @@ function LogTab({shoes,runs}:any){
                 {/* 하단: 3열 스탯 */}
                 <View style={{flexDirection:'row',paddingVertical:16}}>
                   <View style={{flex:1,alignItems:'center'}}>
-                    <Text style={{color:T1,fontSize:21,fontWeight:'700',fontFamily:FH}}>{km.toFixed(2)}</Text>
-                    <Text style={{color:T3,fontSize:12,marginTop:3}}>Km</Text>
+                    <Text style={{color:T1,fontSize:20,fontWeight:'800',fontFamily:FP}}>{km.toFixed(2)}</Text>
+                    <Text style={{color:T3,fontSize:11,marginTop:3}}>Km</Text>
                   </View>
                   <View style={{width:StyleSheet.hairlineWidth,backgroundColor:SEP}}/>
                   <View style={{flex:1,alignItems:'center'}}>
-                    <Text style={{color:T1,fontSize:21,fontWeight:'700',fontFamily:FH}}>{dur>0?fmtPace(km,dur):"-'--\""}</Text>
-                    <Text style={{color:T3,fontSize:12,marginTop:3}}>평균 페이스</Text>
+                    <Text style={{color:T1,fontSize:20,fontWeight:'800',fontFamily:FP}}>{dur>0?fmtPace(km,dur):"-'--\""}</Text>
+                    <Text style={{color:T3,fontSize:11,marginTop:3}}>평균 페이스</Text>
                   </View>
                   <View style={{width:StyleSheet.hairlineWidth,backgroundColor:SEP}}/>
                   <View style={{flex:1,alignItems:'center'}}>
-                    <Text style={{color:T1,fontSize:21,fontWeight:'700',fontFamily:FH}}>{dur>0?fmtTime(dur):'--:--'}</Text>
-                    <Text style={{color:T3,fontSize:12,marginTop:3}}>시간</Text>
+                    <Text style={{color:T1,fontSize:20,fontWeight:'800',fontFamily:FP}}>{dur>0?fmtTime(dur):'--:--'}</Text>
+                    <Text style={{color:T3,fontSize:11,marginTop:3}}>시간</Text>
                   </View>
                 </View>
               </TouchableOpacity>
@@ -1152,57 +1160,120 @@ function PeriodWheelPicker({period,offset,onChange,onClose,firstRunDate}:{
 }){
   const ITEM_H=48;
   const now=new Date();
-  function monOf(d:Date){const r=new Date(d);const day=r.getDay();r.setDate(r.getDate()-(day===0?6:day-1));r.setHours(0,0,0,0);return r;}
+  const firstDate=useMemo(()=>new Date(firstRunDate||today()),[firstRunDate]);
 
-  const items=useMemo(()=>{
+  // 초기 선택값 (offset → year/month)
+  const initD=useMemo(()=>{
+    const d=new Date(now);
+    if(period==='month') d.setMonth(d.getMonth()-offset);
+    if(period==='year') d.setFullYear(d.getFullYear()-offset);
+    return d;
+  },[]);
+  const [selYear,setSelYear]=useState(initD.getFullYear());
+  const [selMonth,setSelMonth]=useState(initD.getMonth()+1);
+
+  const years=useMemo(()=>{
+    const arr:number[]=[];
+    for(let y=now.getFullYear();y>=firstDate.getFullYear();y--) arr.push(y);
+    return arr;
+  },[firstDate]);
+  const months=[1,2,3,4,5,6,7,8,9,10,11,12];
+
+  // 주 목록
+  function monOf(d:Date){const r=new Date(d);const day=r.getDay();r.setDate(r.getDate()-(day===0?6:day-1));r.setHours(0,0,0,0);return r;}
+  const weekItems=useMemo(()=>{
+    if(period!=='week') return [];
     const list:{label:string}[]=[];
-    const first=new Date(firstRunDate||today());
-    if(period==='year'){
-      for(let y=now.getFullYear();y>=first.getFullYear();y--) list.push({label:`${y}년`});
-    } else if(period==='month'){
-      let d=new Date(now.getFullYear(),now.getMonth(),1);
-      const fm=new Date(first.getFullYear(),first.getMonth(),1);
-      while(d>=fm){list.push({label:`${d.getFullYear()}년 ${d.getMonth()+1}월`});d.setMonth(d.getMonth()-1);}
-    } else if(period==='week'){
-      let mon=monOf(now);
-      const fm=monOf(first);
-      let idx=0;
-      while(mon>=fm){
-        const sun=new Date(mon);sun.setDate(mon.getDate()+6);
-        const label=idx===0?'이번 주':idx===1?'지난 주'
-          :`${mon.toISOString().slice(5,10).replace('-','/')} ~ ${sun.toISOString().slice(5,10).replace('-','/')}`;
-        list.push({label});
-        mon.setDate(mon.getDate()-7);
-        idx++;
-      }
+    let mon=monOf(now);const fm=monOf(firstDate);let idx=0;
+    while(mon>=fm){
+      const sun=new Date(mon);sun.setDate(mon.getDate()+6);
+      const label=idx===0?'이번 주':idx===1?'지난 주'
+        :`${mon.toISOString().slice(5,10).replace('-','/')} ~ ${sun.toISOString().slice(5,10).replace('-','/')}`;
+      list.push({label});
+      const next=new Date(mon);next.setDate(next.getDate()-7);mon=next;idx++;
     }
     return list;
-  },[period,firstRunDate]);
+  },[period,firstDate]);
 
-  const scrollRef=useRef<ScrollView>(null);
-  const curOffset=Math.min(offset,items.length-1);
-  useEffect(()=>{setTimeout(()=>scrollRef.current?.scrollTo({y:curOffset*ITEM_H,animated:false}),30);},[]);
+  const yearRef=useRef<ScrollView>(null);
+  const monthRef=useRef<ScrollView>(null);
+  const weekRef=useRef<ScrollView>(null);
+  const curWeekOff=Math.min(offset,weekItems.length-1);
 
-  function onScrollEnd(e:any){
-    const idx=Math.max(0,Math.min(items.length-1,Math.round(e.nativeEvent.contentOffset.y/ITEM_H)));
-    onChange(idx);
+  useEffect(()=>{
+    if(period==='week'){
+      setTimeout(()=>weekRef.current?.scrollTo({y:curWeekOff*ITEM_H,animated:false}),30);
+    } else {
+      const yi=years.indexOf(selYear);
+      if(yi>=0) setTimeout(()=>yearRef.current?.scrollTo({y:yi*ITEM_H,animated:false}),30);
+      if(period==='month') setTimeout(()=>monthRef.current?.scrollTo({y:(selMonth-1)*ITEM_H,animated:false}),30);
+    }
+  },[]);
+
+  function handleSelect(){
+    let off=0;
+    if(period==='month') off=(now.getFullYear()-selYear)*12+(now.getMonth()+1-selMonth);
+    else if(period==='year') off=now.getFullYear()-selYear;
+    onChange(Math.max(0,off));
+    onClose();
   }
 
-  return(
-    <View style={a.wheelWrap}>
-      <View pointerEvents="none" style={a.wheelHighlight}/>
-      <ScrollView ref={scrollRef} style={{height:ITEM_H*5}}
-        showsVerticalScrollIndicator={false} snapToInterval={ITEM_H}
-        decelerationRate="fast" onMomentumScrollEnd={onScrollEnd} onScrollEndDrag={onScrollEnd}
+  // ── 주 단위: 단일 컬럼 ──
+  if(period==='week') return(
+    <View style={[a.wheelWrap,{marginTop:0}]}>
+      <ScrollView ref={weekRef} style={{height:ITEM_H*5}}
+        showsVerticalScrollIndicator={false} snapToInterval={ITEM_H} decelerationRate="fast"
+        onMomentumScrollEnd={(e)=>{const i=Math.max(0,Math.min(weekItems.length-1,Math.round(e.nativeEvent.contentOffset.y/ITEM_H)));onChange(i);}}
+        onScrollEndDrag={(e)=>{const i=Math.max(0,Math.min(weekItems.length-1,Math.round(e.nativeEvent.contentOffset.y/ITEM_H)));onChange(i);}}
         contentContainerStyle={{paddingVertical:ITEM_H*2}}>
-        {items.map((item,i)=>(
+        {weekItems.map((item,i)=>(
           <View key={i} style={{height:ITEM_H,justifyContent:'center',alignItems:'center'}}>
-            <Text style={[a.wheelItem,curOffset===i&&a.wheelItemActive]}>{item.label}</Text>
+            <Text style={[a.wheelItem,curWeekOff===i&&a.wheelItemActive]}>{item.label}</Text>
           </View>
         ))}
       </ScrollView>
       <TouchableOpacity style={a.wheelDone} onPress={onClose}>
         <Text style={a.wheelDoneTxt}>완료</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  // ── 월/년: 두 컬럼 휠 ──
+  return(
+    <View>
+      <View style={{flexDirection:'row'}}>
+        {/* 연도 */}
+        <ScrollView ref={yearRef} style={{flex:1,height:ITEM_H*5}}
+          showsVerticalScrollIndicator={false} snapToInterval={ITEM_H} decelerationRate="fast"
+          onMomentumScrollEnd={(e)=>{const i=Math.max(0,Math.min(years.length-1,Math.round(e.nativeEvent.contentOffset.y/ITEM_H)));setSelYear(years[i]);}}
+          onScrollEndDrag={(e)=>{const i=Math.max(0,Math.min(years.length-1,Math.round(e.nativeEvent.contentOffset.y/ITEM_H)));setSelYear(years[i]);}}
+          contentContainerStyle={{paddingVertical:ITEM_H*2}}>
+          {years.map(y=>(
+            <View key={y} style={{height:ITEM_H,justifyContent:'center',alignItems:'center'}}>
+              <Text style={[a.wheelItem,selYear===y&&a.wheelItemActive]}>{y}년</Text>
+            </View>
+          ))}
+        </ScrollView>
+        {/* 월 (월 단위일 때만) */}
+        {period==='month'&&<>
+          <View style={{width:StyleSheet.hairlineWidth,backgroundColor:SEP}}/>
+          <ScrollView ref={monthRef} style={{flex:1,height:ITEM_H*5}}
+            showsVerticalScrollIndicator={false} snapToInterval={ITEM_H} decelerationRate="fast"
+            onMomentumScrollEnd={(e)=>{const i=Math.max(0,Math.min(11,Math.round(e.nativeEvent.contentOffset.y/ITEM_H)));setSelMonth(months[i]);}}
+            onScrollEndDrag={(e)=>{const i=Math.max(0,Math.min(11,Math.round(e.nativeEvent.contentOffset.y/ITEM_H)));setSelMonth(months[i]);}}
+            contentContainerStyle={{paddingVertical:ITEM_H*2}}>
+            {months.map(m=>(
+              <View key={m} style={{height:ITEM_H,justifyContent:'center',alignItems:'center'}}>
+                <Text style={[a.wheelItem,selMonth===m&&a.wheelItemActive]}>{m}월</Text>
+              </View>
+            ))}
+          </ScrollView>
+        </>}
+      </View>
+      <TouchableOpacity
+        style={{padding:14,alignItems:'center',borderTopWidth:StyleSheet.hairlineWidth,borderTopColor:SEP}}
+        onPress={handleSelect}>
+        <Text style={{color:T2,fontSize:14,fontWeight:'600',letterSpacing:1}}>선택</Text>
       </TouchableOpacity>
     </View>
   );
@@ -1294,8 +1365,8 @@ function StatsTab({shoes,runs,shoeStats}:any){
 
   function fmtTotalTime(s:number){
     const h=Math.floor(s/3600),m=Math.floor((s%3600)/60);
-    if(h>0) return`${h}h ${m}m`;
-    return m>0?`${m}m`:'--';
+    if(h>0) return`${h}시간 ${m}분`;
+    return m>0?`${m}분`:'--';
   }
 
   const shoePerf=shoes.map((s:any)=>{
@@ -1313,6 +1384,7 @@ function StatsTab({shoes,runs,shoeStats}:any){
   const PERIODS=[{key:'week',label:'주'},{key:'month',label:'월'},{key:'year',label:'년'},{key:'all',label:'전체'}];
 
   return(
+    <View style={{flex:1}}>
     <ScrollView contentContainerStyle={{padding:16,paddingBottom:24}}>
 
       <View style={a.periodSel}>
@@ -1339,27 +1411,101 @@ function StatsTab({shoes,runs,shoeStats}:any){
           </TouchableOpacity>
         </View>
       )}
-      {period!=='all'&&showPicker&&(
-        <PeriodWheelPicker
-          period={period} offset={offset}
-          onChange={o=>{changeOffset(o);}}
-          onClose={()=>setShowPicker(false)}
-          firstRunDate={firstRunDate}
-        />
-      )}
-
       {period==='all'&&(
         <Text style={{color:T1,fontSize:15,fontWeight:'700',marginBottom:12}}>전체 기록</Text>
       )}
 
       <View style={a.statGrid}>
-        <View style={a.statBox}><Text style={a.statNum}>{totalKm.toFixed(1)}</Text><Text style={a.statLbl}>총 km</Text></View>
-        <View style={a.statBox}><Text style={a.statNum}>{filtered.length}</Text><Text style={a.statLbl}>런 횟수</Text></View>
+        <View style={a.statBox}>
+          <Text style={{color:ACCENT,fontSize:11,fontFamily:FP,fontWeight:'700',letterSpacing:0.5,marginBottom:4}}>거리</Text>
+          <Text style={a.statNum}>{totalKm.toFixed(1)}</Text>
+          <Text style={a.statLbl}>km</Text>
+        </View>
+        <View style={a.statBox}>
+          <Text style={{color:ACCENT,fontSize:11,fontFamily:FP,fontWeight:'700',letterSpacing:0.5,marginBottom:4}}>횟수</Text>
+          <Text style={a.statNum}>{filtered.length}</Text>
+          <Text style={a.statLbl}>회 런</Text>
+        </View>
       </View>
       <View style={[a.statGrid,{marginTop:0}]}>
-        <View style={a.statBox}><Text style={a.statNum}>{avgPaceSec>0?fmtPace(1,avgPaceSec):'--'}</Text><Text style={a.statLbl}>평균 페이스</Text></View>
-        <View style={a.statBox}><Text style={a.statNum}>{fmtTotalTime(totalSec)}</Text><Text style={a.statLbl}>총 시간</Text></View>
+        <View style={a.statBox}>
+          <Text style={{color:ACCENT,fontSize:11,fontFamily:FP,fontWeight:'700',letterSpacing:0.5,marginBottom:4}}>페이스</Text>
+          <Text style={a.statNum}>{avgPaceSec>0?fmtPace(1,avgPaceSec):'--'}</Text>
+          <Text style={a.statLbl}>평균</Text>
+        </View>
+        <View style={a.statBox}>
+          <Text style={{color:ACCENT,fontSize:11,fontFamily:FP,fontWeight:'700',letterSpacing:0.5,marginBottom:4}}>시간</Text>
+          <Text style={a.statNum}>{fmtTotalTime(totalSec)}</Text>
+          <Text style={a.statLbl}>총</Text>
+        </View>
       </View>
+
+      {/* km 바 차트 */}
+      {period!=='all'&&filtered.length>0&&(()=>{
+        const days=period==='week'?7:period==='month'?
+          new Date(targetDate().getFullYear(),targetDate().getMonth()+1,0).getDate():12;
+        const labels=period==='week'?['월','화','수','목','금','토','일']:
+          period==='month'?Array.from({length:days},(_,i)=>String(i+1)):
+          ['1','2','3','4','5','6','7','8','9','10','11','12'];
+        const buckets=period==='week'?(() => {
+          const mon=getMondayOf(targetDate());
+          return Array.from({length:7},(_,i)=>{
+            const d=new Date(mon); d.setDate(mon.getDate()+i);
+            const ds=d.toISOString().split('T')[0];
+            return filtered.filter((r:any)=>r.run_date===ds).reduce((a:number,r:any)=>a+parseFloat(r.km),0);
+          });
+        })():period==='month'?(() => {
+          const t=targetDate();
+          return Array.from({length:days},(_,i)=>{
+            const ds=`${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(i+1).padStart(2,'0')}`;
+            return filtered.filter((r:any)=>r.run_date===ds).reduce((a:number,r:any)=>a+parseFloat(r.km),0);
+          });
+        })():(() => {
+          const t=targetDate();
+          return Array.from({length:12},(_,i)=>{
+            const ms=`${t.getFullYear()}-${String(i+1).padStart(2,'0')}`;
+            return filtered.filter((r:any)=>r.run_date?.startsWith(ms)).reduce((a:number,r:any)=>a+parseFloat(r.km),0);
+          });
+        })();
+        const maxKm=Math.max(...buckets,0.1);
+        const BAR_H=90;
+        const YAXIS_W=30;
+        const yLabels=[maxKm,maxKm/2,0];
+        return(
+          <View style={{backgroundColor:CARD,borderRadius:14,padding:16,marginBottom:12,marginTop:0}}>
+            <Text style={{color:T2,fontSize:12,fontWeight:'600',marginBottom:12}}>{period==='week'?'요일별':period==='month'?'일별':'월별'} 거리</Text>
+            <View style={{flexDirection:'row',gap:4}}>
+              {/* 바 영역 */}
+              <View style={{flex:1}}>
+                {/* 가이드라인 */}
+                {[0,0.5,1].map((_,gi)=>(
+                  <View key={gi} style={{position:'absolute',top:gi*(BAR_H/2),left:0,right:0,height:StyleSheet.hairlineWidth,backgroundColor:'rgba(255,255,255,0.1)'}}/>
+                ))}
+                <View style={{flexDirection:'row',alignItems:'flex-end',height:BAR_H,gap:period==='month'?2:4}}>
+                  {buckets.map((km:number,i:number)=>(
+                    <View key={i} style={{flex:1,alignItems:'center',justifyContent:'flex-end',height:BAR_H}}>
+                      <View style={{width:'100%',height:Math.max(km/maxKm*BAR_H,km>0?3:0),backgroundColor:km>0?ACCENT:SURFACE,borderRadius:3,opacity:km>0?0.9:0.3}}/>
+                    </View>
+                  ))}
+                </View>
+              </View>
+              {/* Y축 라벨 */}
+              <View style={{width:YAXIS_W,height:BAR_H,justifyContent:'space-between',alignItems:'flex-end'}}>
+                {yLabels.map((v,i)=>(
+                  <Text key={i} style={{color:T3,fontSize:9,lineHeight:10}}>{v===0?'0':`${v.toFixed(1)}`}</Text>
+                ))}
+              </View>
+            </View>
+            <View style={{flexDirection:'row',marginTop:4,paddingRight:YAXIS_W+4,gap:period==='month'?2:4}}>
+              {labels.map((l:string,i:number)=>(
+                period==='month'&&labels.length>15&&i%5!==0?
+                <View key={i} style={{flex:1}}/>:
+                <Text key={i} style={{flex:1,color:T3,fontSize:period==='month'?8:10,textAlign:'center'}}>{l}</Text>
+              ))}
+            </View>
+          </View>
+        );
+      })()}
 
       {shoePerf.length>=2&&(
         <View style={[a.shoeCard,{marginBottom:12,marginTop:4}]}>
@@ -1413,6 +1559,22 @@ function StatsTab({shoes,runs,shoeStats}:any){
         </View>
       )}
     </ScrollView>
+
+    {period!=='all'&&showPicker&&(
+      <View style={{position:'absolute',top:0,left:0,right:0,bottom:0,justifyContent:'flex-end',backgroundColor:'rgba(0,0,0,0.5)'}}>
+        <TouchableOpacity style={{flex:1}} onPress={()=>setShowPicker(false)} activeOpacity={1}/>
+        <View style={{backgroundColor:CARD,borderTopLeftRadius:24,borderTopRightRadius:24,paddingTop:12,paddingBottom:32}}>
+          <View style={{width:36,height:4,backgroundColor:SURFACE,borderRadius:2,alignSelf:'center',marginBottom:8}}/>
+          <PeriodWheelPicker
+            period={period} offset={offset}
+            onChange={o=>{changeOffset(o);}}
+            onClose={()=>setShowPicker(false)}
+            firstRunDate={firstRunDate}
+          />
+        </View>
+      </View>
+    )}
+    </View>
   );
 }
 
@@ -1623,9 +1785,9 @@ function AddShoeModal({onAdd,onClose}:any){
 
 // ─── Styles ───────────────────────────────────────────────────
 const a = StyleSheet.create({
-  header:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',paddingHorizontal:20,paddingBottom:14,backgroundColor:BG,borderBottomWidth:StyleSheet.hairlineWidth,borderBottomColor:'rgba(255,255,255,0.06)'},
+  header:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',paddingHorizontal:20,paddingBottom:14,backgroundColor:BG,borderBottomWidth:StyleSheet.hairlineWidth,borderBottomColor:'rgba(255,255,255,0.05)'},
   logo:{fontSize:22,fontFamily:FH,letterSpacing:4},
-  navBar:{flexDirection:'row',backgroundColor:'#0A0A0A',borderTopWidth:StyleSheet.hairlineWidth,borderTopColor:'rgba(255,255,255,0.08)',paddingTop:6},
+  navBar:{flexDirection:'row',backgroundColor:'#0D0D0D',borderTopWidth:StyleSheet.hairlineWidth,borderTopColor:'rgba(255,255,255,0.06)',paddingTop:6},
   navBtn:{flex:1,alignItems:'center',justifyContent:'center'},
   navLabel:{fontSize:10,color:T3,fontFamily:FP,letterSpacing:0.3},
 
@@ -1637,7 +1799,7 @@ const a = StyleSheet.create({
   addShoeBtn:{flexDirection:'row',alignItems:'center',justifyContent:'center',borderWidth:1.5,borderColor:ACCENT+'50',borderRadius:14,paddingVertical:14,gap:8,marginTop:4},
   addShoeBtnText:{color:ACCENT,fontSize:15,fontFamily:FP,fontWeight:'600'},
 
-  shoeCard:{backgroundColor:CARD,borderRadius:14,padding:16,marginBottom:12},
+  shoeCard:{backgroundColor:CARD,borderRadius:18,padding:16,marginBottom:12},
   shoeCardHead:{flexDirection:'row',justifyContent:'space-between',alignItems:'flex-start',marginBottom:14},
   shoeName:{color:T1,fontSize:18,fontFamily:FH,letterSpacing:1.5,marginBottom:3},
   shoeMeta:{color:T3,fontSize:11,fontFamily:FP},
@@ -1675,9 +1837,9 @@ const a = StyleSheet.create({
   wheelRecLabel:{color:ACCENT,fontSize:10,fontFamily:FP,fontWeight:'700',letterSpacing:0.5},
   wheelDone:{padding:14,alignItems:'center',borderTopWidth:StyleSheet.hairlineWidth,borderTopColor:SEP},
   wheelDoneTxt:{color:ACCENT,fontSize:16,fontFamily:FP,fontWeight:'600',letterSpacing:0},
-  accentBtn:{backgroundColor:ACCENT,padding:15,borderRadius:14,alignItems:'center',justifyContent:'center'},
-  accentBtnText:{color:'#000',fontSize:16,fontFamily:FP,letterSpacing:0.5},
-  ghostBtn:{flex:1,backgroundColor:SURFACE,borderRadius:14,alignItems:'center',justifyContent:'center',padding:15},
+  accentBtn:{backgroundColor:ACCENT,padding:15,borderRadius:16,alignItems:'center',justifyContent:'center'},
+  accentBtnText:{color:'#000',fontSize:16,fontFamily:FP,fontWeight:'700',letterSpacing:0.3},
+  ghostBtn:{flex:1,backgroundColor:SURFACE,borderRadius:16,alignItems:'center',justifyContent:'center',padding:15},
 
   secTitle:{color:T3,fontSize:10,fontFamily:FP,letterSpacing:1.5,textTransform:'uppercase' as const,marginBottom:10},
   histWrap:{backgroundColor:CARD,borderRadius:14,overflow:'hidden'},
@@ -1687,17 +1849,17 @@ const a = StyleSheet.create({
   histShoe:{color:T2,fontSize:11,fontFamily:FP,textAlign:'right',maxWidth:130},
   gpsBadge:{backgroundColor:ACCENT+'22',paddingHorizontal:6,paddingVertical:2,borderRadius:6,borderWidth:1,borderColor:ACCENT},
 
-  periodSel:{flexDirection:'row',backgroundColor:CARD,borderRadius:14,padding:4,marginBottom:12},
-  periodBtn:{flex:1,paddingVertical:9,alignItems:'center',borderRadius:10},
+  periodSel:{flexDirection:'row',backgroundColor:CARD,borderRadius:16,padding:4,marginBottom:12},
+  periodBtn:{flex:1,paddingVertical:9,alignItems:'center',borderRadius:12},
   periodBtnOn:{backgroundColor:ACCENT},
   periodTxt:{color:T3,fontSize:14,fontFamily:FP,fontWeight:'600'},
   periodTxtOn:{color:'#000',fontFamily:FP,fontWeight:'700',letterSpacing:0},
-  periodNav:{flexDirection:'row',alignItems:'center',backgroundColor:CARD,borderRadius:14,paddingVertical:12,paddingHorizontal:4,marginBottom:12},
+  periodNav:{flexDirection:'row',alignItems:'center',backgroundColor:CARD,borderRadius:16,paddingVertical:12,paddingHorizontal:4,marginBottom:12},
   periodNavLabel:{color:T1,fontSize:14,fontFamily:FP,fontWeight:'700'},
-  statGrid:{flexDirection:'row',gap:8,marginBottom:8},
-  statBox:{flex:1,backgroundColor:CARD,borderRadius:14,padding:16,alignItems:'center'},
-  statNum:{color:ACCENT,fontSize:32,fontFamily:FH,letterSpacing:-1},
-  statLbl:{color:T3,fontSize:10,marginTop:4,fontFamily:FP,letterSpacing:1},
+  statGrid:{flexDirection:'row',gap:10,marginBottom:10},
+  statBox:{flex:1,backgroundColor:CARD,borderRadius:18,padding:16,alignItems:'flex-start'},
+  statNum:{color:T1,fontSize:32,fontFamily:FP,fontWeight:'800',letterSpacing:-0.5},
+  statLbl:{color:T3,fontSize:11,marginTop:2,fontFamily:FP,letterSpacing:0.3},
 
   modalBg:{position:'absolute',top:0,left:0,right:0,bottom:0,backgroundColor:'rgba(0,0,0,0.75)',justifyContent:'flex-end'},
   modal:{backgroundColor:CARD,borderTopLeftRadius:24,borderTopRightRadius:24,padding:20,paddingTop:12,maxHeight:'92%'},
