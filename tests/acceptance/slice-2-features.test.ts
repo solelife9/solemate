@@ -17,7 +17,11 @@ import {
   SHOE_MODELS,
 } from '../../data/shoeModels';
 import { kmToDisplay, fmtDistance } from '../../lib/units';
-import { weeklyProgress, currentStreak } from '../../lib/goals';
+import {
+  weeklyProgress,
+  currentStreak,
+  personalRecords,
+} from '../../lib/goals';
 
 describe('차별점: 신발 모델 DB 권장 수명 자동 추천', () => {
   test('검증된 시드 DB는 유명 브랜드 다수 모델을 포함한다(≥100)', () => {
@@ -67,5 +71,35 @@ describe('러닝 목표 달성률 & 스트릭(실데이터)', () => {
       { run_date: '2026-06-02', km: 3 },
     ], '2026-06-02');
     expect(s).toBeGreaterThanOrEqual(2);
+  });
+});
+
+describe('개인 기록(PR) 집계', () => {
+  test('최고 페이스 1k/5k(초)와 최장 거리(km)를 집계', () => {
+    const pr = personalRecords([
+      { run_date: '2026-05-20', km: 10, durationS: 3000 }, // 300s/km
+      { run_date: '2026-05-22', km: 5, durationS: 1400 }, // 280s/km(더 빠름)
+      { run_date: '2026-05-24', km: 0.5, durationS: 200 }, // 1km 미만 → 페이스 제외
+    ]);
+    expect(pr.fastest1k).toBeCloseTo(280, 5);
+    expect(pr.fastest5k).toBeCloseTo(1400, 5);
+    expect(pr.longest).toBe(10);
+  });
+
+  test('5km 미만만 있으면 fastest5k는 null', () => {
+    const pr = personalRecords([
+      { run_date: '2026-05-20', km: 2, durationS: 600 },
+    ]);
+    expect(pr.fastest5k).toBeNull();
+    expect(pr.fastest1k).toBeCloseTo(300, 5);
+    expect(pr.longest).toBe(2);
+  });
+
+  test('기록이 없으면 모두 null', () => {
+    expect(personalRecords([])).toEqual({
+      fastest1k: null,
+      fastest5k: null,
+      longest: null,
+    });
   });
 });
