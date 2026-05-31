@@ -309,7 +309,7 @@ function RunActiveScreen({shoe,insets,goalKm,onSave,onDiscard}:{shoe:{id:string;
   const pts=useRef<any[]>([]);
   const dist=useRef(0);
   const fixIndex=useRef(0);
-  const lastFixMs=useRef(0);
+  const lastGoodMs=useRef(0);
   const lastGood=useRef<{lat:number;lon:number}|null>(null);
   const t0=useRef(Date.now());
   const kf=useRef(new KalmanFilter());
@@ -367,7 +367,7 @@ function RunActiveScreen({shoe,insets,goalKm,onSave,onDiscard}:{shoe:{id:string;
 
   function beginRun(){
     dist.current=0;t0.current=Date.now();kf.current.reset();
-    fixIndex.current=0;lastFixMs.current=0;lastGood.current=null;
+    fixIndex.current=0;lastGoodMs.current=0;lastGood.current=null;
     stepTs.current=[];lastMag.current=0;lastStep.current=0;pts.current=[];
     locationRef.current='';locationFetched.current=false;
     isPausedRef.current=false;autoPausedRef.current=false;
@@ -414,21 +414,23 @@ function RunActiveScreen({shoe,insets,goalKm,onSave,onDiscard}:{shoe:{id:string;
             }).catch(()=>{});
         }
         const idx=fixIndex.current++;
-        const dtSec=lastFixMs.current?Math.max((pos.timestamp-lastFixMs.current)/1000,0):0;
-        lastFixMs.current=pos.timestamp;
         if(lastGood.current){
           const d=calcDist(lastGood.current.lat,lastGood.current.lon,f.lat,f.lon);
+          // dtSec는 distKm와 '같은 두 점'(마지막 양호 위치 → 현재 fix)을 span해야 한다.
+          // 직전 fix(과거 lastFixMs) 기준으로 재면 비-워밍업 거부 직후 두 기준이 어긋나
+          // segmentSpeed가 과대평가되어 정상 구간을 거짓 거부한다(시간기준 desync).
+          const dtSec=lastGoodMs.current?Math.max((pos.timestamp-lastGoodMs.current)/1000,0):0;
           if(acceptSegment({distKm:d,dtSec,accuracyM:acc,fixIndex:idx})){
             dist.current+=d;setKm(Math.round(dist.current*100)/100);
-            pts.current.push(f);lastGood.current=f;
+            pts.current.push(f);lastGood.current=f;lastGoodMs.current=pos.timestamp;
           }else if(idx<WARMUP_FIXES){
-            // 워밍업 구간: 거리에 가산하지 않되 마지막 양호 위치를 갱신해
+            // 워밍업 구간: 거리에 가산하지 않되 마지막 양호 위치/시각을 갱신해
             // 워밍업 종료 직후 첫 구간이 거대한 점프로 잡히지 않게 한다.
-            lastGood.current=f;
+            lastGood.current=f;lastGoodMs.current=pos.timestamp;
           }
-          // 그 외 거부(정확도/속도/거리)는 lastGood을 보존 → 경로 연속성 유지,
-          // 다음 양호 fix가 마지막 양호 위치로부터 다시 측정된다.
-        }else{lastGood.current=f;pts.current.push(f);}
+          // 그 외 거부(정확도/속도/거리)는 lastGood/lastGoodMs을 보존 → 경로 연속성 유지,
+          // 다음 양호 fix가 '마지막 양호 위치/시각'으로부터 다시 측정된다.
+        }else{lastGood.current=f;lastGoodMs.current=pos.timestamp;pts.current.push(f);}
       },
       err=>{setGpsStatus(err.code===1?'위치 권한 필요':'GPS 신호 없음');},
       {enableHighAccuracy:true,interval:1000,fastestInterval:500,forceRequestLocation:true,distanceFilter:0,maximumAge:0} as any,

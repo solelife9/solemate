@@ -1,4 +1,5 @@
 import {calcDist, acceptSegment, segmentSpeedMps, simplifyRoute} from '../../lib/geo';
+import {MIN_SEG_DIST_KM} from '../../lib/engineConstants';
 
 describe('calcDist', () => {
   test('zero distance for identical points', () => {
@@ -71,6 +72,14 @@ describe('acceptSegment', () => {
     // 350m even over a long dt (so speed alone would not reject it)
     expect(acceptSegment({...good, distKm: 0.35, dtSec: 120})).toBe(false);
     expect(acceptSegment({...good, distKm: 0.3, dtSec: 120})).toBe(true);
+  });
+
+  test('MIN_SEG_DIST_KM (1m) is an exact >= boundary, not >', () => {
+    // The gate rejects `distKm < MIN_SEG_DIST_KM`, so exactly 1m must pass and
+    // anything below the floor (even a hair under) must be dropped as noise.
+    expect(MIN_SEG_DIST_KM).toBe(0.001);
+    expect(acceptSegment({...good, distKm: MIN_SEG_DIST_KM})).toBe(true);
+    expect(acceptSegment({...good, distKm: MIN_SEG_DIST_KM - 1e-7})).toBe(false);
   });
 });
 
