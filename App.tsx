@@ -26,6 +26,9 @@ import {KalmanFilter} from './lib/kalman';
 import {calcDist, acceptSegment, segmentSpeedMps, simplifyRoute} from './lib/geo';
 import {WARMUP_FIXES} from './lib/engineConstants';
 import {decideAutoPause, initAutoPauseState} from './lib/autoPause';
+import {
+  buildForegroundServiceConfig, needsBackgroundLocationPermission,
+} from './lib/foregroundService';
 import {initCadenceState, feedAccelSample} from './lib/cadence';
 import {fmtPace, fmtTime, fmtKDate, getMonday, ymdLocal} from './lib/format';
 import {
@@ -484,6 +487,18 @@ function RunActiveScreen({shoe,insets,goalKm,onSave,onDiscard,resume}:{shoe:{id:
           Alert.alert('권한 필요','위치 권한을 허용해야 GPS 러닝이 가능합니다.');
           return;
         }
+        // audit#1: 화면off/백그라운드 지속 기록(포그라운드 서비스)을 위한 백그라운드
+        // 위치 권한(선택). Android 10+에서만 별도 런타임 권한이며, 거부돼도
+        // 포그라운드 서비스 트래킹은 계속되므로 막지 않는다(graceful). 이 요청은
+        // 기존 fine-location 게이트 통과 후 부가적으로만 시도한다(권한 로직 회귀 금지).
+        if(needsBackgroundLocationPermission('android',Number(Platform.Version))){
+          try{
+            await PermissionsAndroid.request(
+              PermissionsAndroid.PERMISSIONS.ACCESS_BACKGROUND_LOCATION,
+              {title:'백그라운드 위치 권한',message:'화면을 끄거나 다른 앱을 써도 러닝 거리가 끊기지 않도록 백그라운드 위치 권한을 허용해주세요.',buttonPositive:'허용',buttonNegative:'나중에'},
+            );
+          }catch{/* 백그라운드 권한 실패는 무시 — 포그라운드 트래킹은 계속된다 */}
+        }
       }
       beginRun();
     })();
@@ -622,7 +637,11 @@ function RunActiveScreen({shoe,insets,goalKm,onSave,onDiscard,resume}:{shoe:{id:
         }else{lastGood.current=f;lastGoodMs.current=pos.timestamp;pts.current.push(f);}
       },
       err=>{setGpsStatus(err.code===1?'위치 권한 필요':'GPS 신호 없음');},
-      {enableHighAccuracy:true,interval:1000,fastestInterval:500,forceRequestLocation:true,distanceFilter:0,maximumAge:0} as any,
+      // audit#1: foregroundService 옵션으로 location 타입 포그라운드 서비스를 켜
+      // 화면off/백그라운드에서도 OS가 watchPosition fix를 계속 전달하게 한다(거리·
+      // 시간 유실 방지). 채널/notification은 AndroidManifest 권한·서비스 선언과 짝.
+      {enableHighAccuracy:true,interval:1000,fastestInterval:500,forceRequestLocation:true,distanceFilter:0,maximumAge:0,
+        foregroundService:buildForegroundServiceConfig(goalKm)} as any,
     );
   }
 
