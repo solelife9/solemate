@@ -23,8 +23,9 @@ import AddShoeScreen from './AddShoeScreen.rn';
 import {RunStart} from './RunScreen.rn';
 
 import {KalmanFilter} from './lib/kalman';
-import {calcDist, acceptSegment, simplifyRoute} from './lib/geo';
+import {calcDist, acceptSegment, segmentSpeedMps, simplifyRoute} from './lib/geo';
 import {WARMUP_FIXES} from './lib/engineConstants';
+import {decideAutoPause, initAutoPauseState} from './lib/autoPause';
 import {fmtPace, fmtTime, fmtKDate, getMonday, ymdLocal} from './lib/format';
 import {
   sumKm, avgPaceLabel, totalTimeLabel, summaryOf, maxDayStreak,
@@ -321,7 +322,10 @@ function RunActiveScreen({shoe,insets,goalKm,onSave,onDiscard}:{shoe:{id:string;
   const pausedMs=useRef(0);
   const pauseStartRef=useRef(0);
   const announcedKm=useRef(0);
-  const lastMovementRef=useRef(Date.now());
+  // 자동 일시정지 판정용: 매 fix마다 갱신되는 속도측정 앵커 + 순수 상태기계.
+  const autoAnchor=useRef<{lat:number;lon:number}|null>(null);
+  const autoAnchorMs=useRef(0);
+  const autoPauseState=useRef(initAutoPauseState());
   const stopConfirmTimer=useRef<any>(null);
 
   useEffect(()=>{
@@ -365,27 +369,46 @@ function RunActiveScreen({shoe,insets,goalKm,onSave,onDiscard}:{shoe:{id:string;
     }
   },[km]);
 
+  // ── 일시정지 진입/해제 (audit#4) ───────────────────────────────
+  // pauseStartRef를 가드로 사용해 pausedMs 폭주를 막는다: 이미 일시정지 중이면
+  // 재진입하지 않고(중복 pauseStart 갱신 금지), 해제 시 pauseStart가 유효할 때만
+  // 1회 가산한 뒤 0으로 초기화해 같은 일시정지 구간을 두 번 더하지 않는다.
+  function enterPause(auto:boolean){
+    if(isPausedRef.current)return;
+    isPausedRef.current=true;autoPausedRef.current=auto;
+    pauseStartRef.current=Date.now();
+    setPaused(true);setAutoPaused(auto);
+    try{Tts.stop();Tts.speak(auto?'자동으로 일시정지합니다.':'일시정지합니다.');}catch(e){}
+  }
+  function exitPause(auto:boolean){
+    if(!isPausedRef.current)return;
+    if(pauseStartRef.current>0){
+      const delta=Date.now()-pauseStartRef.current;
+      if(delta>0)pausedMs.current+=delta;
+      pauseStartRef.current=0; // 가드: 동일 구간 중복 가산 방지
+    }
+    isPausedRef.current=false;autoPausedRef.current=false;
+    // 재개 후 상태기계 초기화 — 직전 slow/fast 잔여로 즉시 재트리거되지 않게.
+    autoPauseState.current=initAutoPauseState();
+    setPaused(false);setAutoPaused(false);
+    try{Tts.speak('달리기를 재개합니다.');}catch(e){}
+    void auto;
+  }
+
   function beginRun(){
     dist.current=0;t0.current=Date.now();kf.current.reset();
     fixIndex.current=0;lastGoodMs.current=0;lastGood.current=null;
     stepTs.current=[];lastMag.current=0;lastStep.current=0;pts.current=[];
     locationRef.current='';locationFetched.current=false;
     isPausedRef.current=false;autoPausedRef.current=false;
-    pausedMs.current=0;announcedKm.current=0;
-    lastMovementRef.current=Date.now();
+    pausedMs.current=0;pauseStartRef.current=0;announcedKm.current=0;
+    autoAnchor.current=null;autoAnchorMs.current=0;autoPauseState.current=initAutoPauseState();
     setUpdateIntervalForType(SensorTypes.accelerometer,100);
     stepSub.current=accelerometer.subscribe(({x,y,z})=>{
-      const mag=Math.sqrt(x*x+y*y+z*z),nowT=Date.now();
-      if(mag>10.5){
-        lastMovementRef.current=nowT;
-        if(isPausedRef.current&&autoPausedRef.current){
-          pausedMs.current+=nowT-pauseStartRef.current;
-          isPausedRef.current=false;autoPausedRef.current=false;
-          setPaused(false);setAutoPaused(false);
-          try{Tts.speak('달리기를 재개합니다.');}catch(e){}
-        }
-      }
+      // 가속도계는 케이던스(걸음수)만 담당한다. 자동 일시정지/재개는 GPS 속도
+      // 기반 상태기계(decideAutoPause)가 watchPosition에서 판정한다.
       if(isPausedRef.current)return;
+      const mag=Math.sqrt(x*x+y*y+z*z),nowT=Date.now();
       if(mag>12&&lastMag.current<=12&&nowT-lastStep.current>250){
         lastStep.current=nowT;
         stepTs.current.push(nowT);
@@ -396,14 +419,35 @@ function RunActiveScreen({shoe,insets,goalKm,onSave,onDiscard}:{shoe:{id:string;
       lastMag.current=mag;
     });
     timer.current=setInterval(()=>{
-      if(!isPausedRef.current){setElapsed(Math.floor((Date.now()-t0.current-pausedMs.current)/1000));}
+      // elapsed = now − t0 − pausedMs (음수 방지로 0 하한). 일시정지 중엔 멈춘다.
+      if(!isPausedRef.current){setElapsed(Math.max(0,Math.floor((Date.now()-t0.current-pausedMs.current)/1000)));}
     },1000);
     watchId.current=Geolocation.watchPosition(
       pos=>{
-        if(isPausedRef.current)return;
         const{latitude:lat,longitude:lon,accuracy:acc}=pos.coords;
         const f=kf.current.process(lat,lon,acc,pos.timestamp);
         setGpsStatus(`정확도 ${Math.round(acc)}m`);
+        const idx=fixIndex.current;
+
+        // ── 자동 일시정지/재개 판정 ──────────────────────────────────
+        // 매 fix의 구간속도를 상태기계에 공급한다. 워밍업 이후에만 평가하고,
+        // 수동 일시정지 중에는 평가하지 않는다(자동 일시정지 구간일 때만 재개 판정).
+        if(idx>=WARMUP_FIXES&&autoAnchor.current&&(!isPausedRef.current||autoPausedRef.current)){
+          const moved=calcDist(autoAnchor.current.lat,autoAnchor.current.lon,f.lat,f.lon);
+          const dtA=Math.max((pos.timestamp-autoAnchorMs.current)/1000,0);
+          if(dtA>0){
+            const decision=decideAutoPause(autoPauseState.current,segmentSpeedMps(moved,dtA),dtA);
+            autoPauseState.current=decision.state;
+            if(decision.justPaused)enterPause(true);
+            else if(decision.justResumed)exitPause(true);
+          }
+        }
+        // 앵커는 일시정지 중에도 매 fix 갱신 — 재개 판정용 속도를 계속 측정.
+        autoAnchor.current={lat:f.lat,lon:f.lon};autoAnchorMs.current=pos.timestamp;
+
+        // 일시정지 동안에는 거리/위치/케이던스를 누적하지 않는다.
+        if(isPausedRef.current)return;
+        fixIndex.current=idx+1; // running일 때만 fix 소비(워밍업 카운트 일관성)
         if(!locationFetched.current){
           locationFetched.current=true;
           fetch(`https://nominatim.openstreetmap.org/reverse?lat=${f.lat}&lon=${f.lon}&format=json&accept-language=ko`,{headers:{'User-Agent':'SoleMate/1.0'}})
@@ -413,7 +457,6 @@ function RunActiveScreen({shoe,insets,goalKm,onSave,onDiscard}:{shoe:{id:string;
               locationRef.current=parts.length>0?parts.join(', '):(d.display_name||'').split(',').slice(0,2).join(',').trim()||'';
             }).catch(()=>{});
         }
-        const idx=fixIndex.current++;
         if(lastGood.current){
           const d=calcDist(lastGood.current.lat,lastGood.current.lon,f.lat,f.lon);
           // dtSec는 distKm와 '같은 두 점'(마지막 양호 위치 → 현재 fix)을 span해야 한다.
@@ -444,16 +487,9 @@ function RunActiveScreen({shoe,insets,goalKm,onSave,onDiscard}:{shoe:{id:string;
   }
 
   function handlePause(){
-    if(!paused){
-      isPausedRef.current=true;autoPausedRef.current=false;pauseStartRef.current=Date.now();
-      setPaused(true);setAutoPaused(false);
-      try{Tts.stop();Tts.speak('일시정지합니다.');}catch(e){}
-    }else{
-      pausedMs.current+=Date.now()-pauseStartRef.current;
-      isPausedRef.current=false;autoPausedRef.current=false;lastMovementRef.current=Date.now();
-      setPaused(false);setAutoPaused(false);
-      try{Tts.speak('달리기를 재개합니다.');}catch(e){}
-    }
+    // 수동 토글: enterPause/exitPause가 pauseStartRef 가드로 pausedMs를 1회만 가산.
+    if(!isPausedRef.current)enterPause(false);
+    else exitPause(false);
   }
 
   function handleStop(){
@@ -464,8 +500,8 @@ function RunActiveScreen({shoe,insets,goalKm,onSave,onDiscard}:{shoe:{id:string;
     }
     clearTimeout(stopConfirmTimer.current);
     setStopConfirm(false);
-    const curPausedMs=isPausedRef.current?pausedMs.current+(Date.now()-pauseStartRef.current):pausedMs.current;
-    const fk=dist.current,ft=Math.floor((Date.now()-t0.current-curPausedMs)/1000);
+    const curPausedMs=(isPausedRef.current&&pauseStartRef.current>0)?pausedMs.current+(Date.now()-pauseStartRef.current):pausedMs.current;
+    const fk=dist.current,ft=Math.max(0,Math.floor((Date.now()-t0.current-curPausedMs)/1000));
     if(fk<0.01){
       stop();
       Alert.alert('거리가 너무 짧아요','계속 달리거나 나가기를 선택하세요',[
