@@ -26,9 +26,7 @@ import {KalmanFilter} from './lib/kalman';
 import {calcDist, acceptSegment, segmentSpeedMps, simplifyRoute} from './lib/geo';
 import {WARMUP_FIXES} from './lib/engineConstants';
 import {decideAutoPause, initAutoPauseState} from './lib/autoPause';
-import {
-  buildForegroundServiceConfig, needsBackgroundLocationPermission,
-} from './lib/foregroundService';
+import {buildForegroundServiceConfig} from './lib/foregroundService';
 import {initCadenceState, feedAccelSample} from './lib/cadence';
 import {fmtPace, fmtTime, fmtKDate, getMonday, ymdLocal} from './lib/format';
 import {
@@ -487,18 +485,12 @@ function RunActiveScreen({shoe,insets,goalKm,onSave,onDiscard,resume}:{shoe:{id:
           Alert.alert('권한 필요','위치 권한을 허용해야 GPS 러닝이 가능합니다.');
           return;
         }
-        // audit#1: 화면off/백그라운드 지속 기록(포그라운드 서비스)을 위한 백그라운드
-        // 위치 권한(선택). Android 10+에서만 별도 런타임 권한이며, 거부돼도
-        // 포그라운드 서비스 트래킹은 계속되므로 막지 않는다(graceful). 이 요청은
-        // 기존 fine-location 게이트 통과 후 부가적으로만 시도한다(권한 로직 회귀 금지).
-        if(needsBackgroundLocationPermission('android',Number(Platform.Version))){
-          try{
-            await PermissionsAndroid.request(
-              PermissionsAndroid.PERMISSIONS.ACCESS_BACKGROUND_LOCATION,
-              {title:'백그라운드 위치 권한',message:'화면을 끄거나 다른 앱을 써도 러닝 거리가 끊기지 않도록 백그라운드 위치 권한을 허용해주세요.',buttonPositive:'허용',buttonNegative:'나중에'},
-            );
-          }catch{/* 백그라운드 권한 실패는 무시 — 포그라운드 트래킹은 계속된다 */}
-        }
+        // 재스코프 주의: 예전엔 여기서 ACCESS_BACKGROUND_LOCATION을 추가 요청했으나
+        // 제거했다. 설치된 react-native-geolocation-service@5.3.1은 실제 포그라운드
+        // 서비스를 제공하지 않아 "화면을 꺼도 끊기지 않는다"는 약속이 거짓이고,
+        // 동작하는 백그라운드 서비스 없이 백그라운드 위치 권한을 요청하면 Google Play
+        // 심사 거부 위험이 있다. 실제 백그라운드 기록은 라이브러리 교체 또는 네이티브
+        // 포그라운드 서비스가 필요한 사용자 결정사항이다(.tenet/knowledge 참고).
       }
       beginRun();
     })();
@@ -637,9 +629,12 @@ function RunActiveScreen({shoe,insets,goalKm,onSave,onDiscard,resume}:{shoe:{id:
         }else{lastGood.current=f;lastGoodMs.current=pos.timestamp;pts.current.push(f);}
       },
       err=>{setGpsStatus(err.code===1?'위치 권한 필요':'GPS 신호 없음');},
-      // audit#1: foregroundService 옵션으로 location 타입 포그라운드 서비스를 켜
-      // 화면off/백그라운드에서도 OS가 watchPosition fix를 계속 전달하게 한다(거리·
-      // 시간 유실 방지). 채널/notification은 AndroidManifest 권한·서비스 선언과 짝.
+      // forward-compat(무해): foregroundService 옵션을 부착해 두지만 현재 설치된
+      // react-native-geolocation-service@5.3.1은 이 옵션을 인식하지 않아 no-op이다
+      // (미지의 키는 네이티브 LocationOptions 파서가 조용히 무시 → 크래시 없음).
+      // 따라서 지금은 화면off/백그라운드에서 fix가 지속되지 '않는다'. 포그라운드
+      // 서비스를 제공하는 라이브러리로 교체하거나 네이티브 서비스를 도입하면 이
+      // 옵션이 즉시 활성화된다(실제 백그라운드 트래킹은 follow-up, .tenet/knowledge).
       {enableHighAccuracy:true,interval:1000,fastestInterval:500,forceRequestLocation:true,distanceFilter:0,maximumAge:0,
         foregroundService:buildForegroundServiceConfig(goalKm)} as any,
     );

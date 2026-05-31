@@ -10,7 +10,8 @@ describe('buildForegroundServiceConfig', () => {
     const cfg = buildForegroundServiceConfig(5);
     expect(cfg.channelId).toBe(FG_SERVICE_CHANNEL_ID);
     expect(cfg.notificationTitle).toBe('러닝 기록 중');
-    // Body must reassure the user that backgrounding keeps recording.
+    // Prepared notification copy (shown only once a real foreground service
+    // runs; today this option is a no-op forward-prep — see lib header).
     expect(cfg.notificationBody).toContain('화면을 꺼도');
   });
 

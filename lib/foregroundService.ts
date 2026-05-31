@@ -10,11 +10,18 @@
 // foreground service keeps the process alive so watchPosition keeps delivering
 // fixes; the user sees an ongoing notification while a run is active.
 //
-// The config is consumed natively only when the AndroidManifest declares the
+// CURRENT STATUS (honest): the installed react-native-geolocation-service@5.3.1
+// has NO foreground service, so this config is a NO-OP today — background/
+// screen-off tracking does NOT actually persist yet. The config is consumed
+// natively only once the app ships a foreground-service-capable geolocation
+// module (or a custom native service) AND the AndroidManifest declares the
 // FOREGROUND_SERVICE / FOREGROUND_SERVICE_LOCATION permissions and a
-// location-typed <service>. Passing it is harmless where it is ignored (unknown
-// option keys are dropped by the native LocationOptions parser), so it is safe
-// to attach unconditionally and is forward-compatible.
+// location-typed <service>. Passing it now is harmless where it is ignored
+// (unknown option keys are dropped by the native LocationOptions parser), so it
+// is safe to attach unconditionally as forward-prep. The notification copy below
+// is the text that WILL be shown once a real service runs. Enabling real
+// background tracking is a user decision (lib swap / native service) — see
+// .tenet/knowledge/2026-06-01_geolocation-no-foreground-service.md.
 
 /** Notification channel id for the run-tracking foreground service. */
 export const FG_SERVICE_CHANNEL_ID = 'keego_run_tracking';
