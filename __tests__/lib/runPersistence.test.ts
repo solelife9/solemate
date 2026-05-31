@@ -30,6 +30,7 @@ import {
   removePendingRun,
   flushPendingRuns,
   serverHasRun,
+  matchServerRun,
   reconcilePendingWithServer,
 } from '../../lib/runPersistence';
 
@@ -277,38 +278,113 @@ describe('serverHasRun — match a queued run against already-fetched server run
   });
 });
 
-describe('reconcilePendingWithServer — drop already-synced runs before re-POST', () => {
-  test('dequeues a queued run the server already has (no duplicate re-POST) and keeps it durably removed', async () => {
-    await enqueuePendingRun(PENDING);
-    // Server already holds this run (POSTed last session; dequeue never persisted).
+// ── 1:1 server-row matching (echo definitive, signature heuristic) ──
+describe('matchServerRun — 1:1 consumption, echo preferred over signature', () => {
+  test('reports an echoed-localId match as definitive (kind=echo)', () => {
+    const serverRuns = [{id: 'server-7', localId: 'run_abc', shoe_id: 'x', run_date: 'y', km: 99}];
+    expect(matchServerRun(PENDING, serverRuns)).toEqual({index: 0, kind: 'echo'});
+  });
+
+  test('reports a signature-only match as a heuristic (kind=signature)', () => {
     const serverRuns = [{id: 'server-7', shoe_id: 'shoe-1', run_date: '2026-06-01', km: 5.02}];
+    expect(matchServerRun(PENDING, serverRuns)).toEqual({index: 0, kind: 'signature'});
+  });
 
-    const remaining = await reconcilePendingWithServer(serverRuns);
+  test('prefers the echoed row even when an earlier row matches only by signature', () => {
+    const serverRuns = [
+      {id: 'sig', shoe_id: 'shoe-1', run_date: '2026-06-01', km: 5.02}, // signature
+      {id: 'echo', localId: 'run_abc', shoe_id: 'other', run_date: 'z', km: 1}, // echo
+    ];
+    expect(matchServerRun(PENDING, serverRuns)).toEqual({index: 1, kind: 'echo'});
+  });
 
-    expect(remaining).toEqual([]);
+  test('a consumed server row cannot match a second queued run (1:1)', () => {
+    const a: PendingRun = {...PENDING, localId: 'run_a'};
+    const b: PendingRun = {...PENDING, localId: 'run_b'}; // identical signature
+    const serverRuns = [{shoe_id: 'shoe-1', run_date: '2026-06-01', km: 5.02}]; // ONE row
+    const consumed = new Set<number>();
+    const m1 = matchServerRun(a, serverRuns, consumed);
+    expect(m1).toEqual({index: 0, kind: 'signature'});
+    consumed.add(m1!.index);
+    // The single server row is spent — it can no longer claim the second run.
+    expect(matchServerRun(b, serverRuns, consumed)).toBeNull();
+  });
+});
+
+describe('reconcilePendingWithServer — drop ONLY echo-confirmed runs (iron law: avoid loss)', () => {
+  test('dequeues a queued run the server echoes by localId, and keeps it durably removed', async () => {
+    await enqueuePendingRun(PENDING);
+    // Server echoes the client idempotency key — definitive proof it is ours.
+    const serverRuns = [{id: 'server-7', localId: 'run_abc', shoe_id: 'shoe-1', run_date: '2026-06-01', km: 5.02}];
+
+    const {stillPending, dropped} = await reconcilePendingWithServer(serverRuns);
+
+    expect(stillPending).toEqual([]);
+    expect(dropped.map(r => r.localId)).toEqual(['run_abc']);
     // The dequeue is persisted, so a crash here cannot resurrect the run.
     expect(await loadPendingRuns()).toEqual([]);
+  });
+
+  test('a signature-only match is KEPT queued (re-POST) — never silently dropped', async () => {
+    await enqueuePendingRun(PENDING);
+    // Same shoe/date/km but NO echoed localId: could be a coincidental twin.
+    const serverRuns = [{id: 'server-7', shoe_id: 'shoe-1', run_date: '2026-06-01', km: 5.02}];
+
+    const {stillPending, dropped} = await reconcilePendingWithServer(serverRuns);
+
+    // Dropping it would risk irrecoverable loss; re-POST risks only a visible dup.
+    expect(dropped).toEqual([]);
+    expect(stillPending.map(r => r.localId)).toEqual(['run_abc']);
+    expect((await loadPendingRuns()).map(r => r.localId)).toEqual(['run_abc']);
+  });
+
+  test('two identical-signature queued runs with no echoed id are BOTH kept (no data loss)', async () => {
+    await enqueuePendingRun(PENDING);
+    await enqueuePendingRun({...PENDING, localId: 'run_twin'}); // same shoe/date/km
+    // One server row with the shared signature, no echoed localId.
+    const serverRuns = [{shoe_id: 'shoe-1', run_date: '2026-06-01', km: 5.02}];
+
+    const {stillPending, dropped} = await reconcilePendingWithServer(serverRuns);
+
+    expect(dropped).toEqual([]);
+    expect(stillPending.map(r => r.localId).sort()).toEqual(['run_abc', 'run_twin']);
+    expect((await loadPendingRuns()).map(r => r.localId).sort()).toEqual(['run_abc', 'run_twin']);
   });
 
   test('keeps a genuinely-unsynced run queued for the flush', async () => {
     await enqueuePendingRun(PENDING);
     const serverRuns = [{id: 'server-7', shoe_id: 'shoe-1', run_date: '2026-06-01', km: 8.0}];
 
-    const remaining = await reconcilePendingWithServer(serverRuns);
+    const {stillPending} = await reconcilePendingWithServer(serverRuns);
 
-    expect(remaining.map(r => r.localId)).toEqual(['run_abc']);
+    expect(stillPending.map(r => r.localId)).toEqual(['run_abc']);
     expect((await loadPendingRuns()).map(r => r.localId)).toEqual(['run_abc']);
   });
 
-  test('only the already-synced run is dropped; the rest survive (no data loss)', async () => {
+  test('only the echo-confirmed run is dropped; the rest survive', async () => {
     await enqueuePendingRun(PENDING);
     await enqueuePendingRun({...PENDING, localId: 'run_new', km: 3.1, run_date: '2026-06-02'});
-    // Server has the first run only.
-    const serverRuns = [{shoe_id: 'shoe-1', run_date: '2026-06-01', km: 5.02}];
+    // Server echoes the first run only.
+    const serverRuns = [{localId: 'run_abc', shoe_id: 'shoe-1', run_date: '2026-06-01', km: 5.02}];
 
-    const remaining = await reconcilePendingWithServer(serverRuns);
+    const {stillPending, dropped} = await reconcilePendingWithServer(serverRuns);
 
-    expect(remaining.map(r => r.localId)).toEqual(['run_new']);
+    expect(dropped.map(r => r.localId)).toEqual(['run_abc']);
+    expect(stillPending.map(r => r.localId)).toEqual(['run_new']);
     expect((await loadPendingRuns()).map(r => r.localId)).toEqual(['run_new']);
+  });
+
+  test('one echoed server row drops at most ONE of two identical-localId-echo candidates (1:1)', async () => {
+    // Defensive: even if two queued runs somehow shared an echoed signature, a
+    // single server row consumes only one — the other stays queued, not lost.
+    await enqueuePendingRun(PENDING);
+    await enqueuePendingRun({...PENDING, localId: 'run_dupe'});
+    // Two server rows, only one echoes run_abc.
+    const serverRuns = [{localId: 'run_abc', shoe_id: 'shoe-1', run_date: '2026-06-01', km: 5.02}];
+
+    const {stillPending, dropped} = await reconcilePendingWithServer(serverRuns);
+
+    expect(dropped.map(r => r.localId)).toEqual(['run_abc']);
+    expect(stillPending.map(r => r.localId)).toEqual(['run_dupe']);
   });
 });

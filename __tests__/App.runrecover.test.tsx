@@ -175,6 +175,7 @@ test('복구 restores the run (distance/time/goal/cadence) and saving POSTs the 
   expect(runPost!.body.km).toBe(3.2);
   expect(runPost!.body.route).toContain('37.5'); // route rebuilt from restored pts
   expect(runPost!.body.duration).toBe(900); // restored elapsed → run duration
+  expect(runPost!.body.shoe_id).toBe('s1'); // restored shoe identity (not a default/wrong shoe)
 
   act(() => renderer.unmount());
 });

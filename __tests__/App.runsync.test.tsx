@@ -111,15 +111,19 @@ test('a queued run is re-synced to /api/runs on launch and removed from the queu
   expect(await loadPendingRuns()).toEqual([]);
 });
 
-test('a queued run the server already has is dequeued WITHOUT a second POST (idempotency — no duplicate row)', async () => {
-  // Scenario: last session POSTed this run successfully but was killed before the
-  // local dequeue persisted, so it is still queued AND already on the server.
+test('a queued run the server ECHOES (localId) is dequeued WITHOUT a second POST, and its dead route_/time_ keys are purged', async () => {
+  // Scenario: last session POSTed this run successfully (server echoes our
+  // localId) but was killed before the local dequeue persisted, so it is still
+  // queued AND already on the server.
   await AsyncStorage.clear();
   await AsyncStorage.setItem(PENDING_RUNS_KEY, JSON.stringify([QUEUED]));
-  // GET /api/runs returns a row matching the queued run's signature (shoe+date+km).
+  // addRun also wrote per-run local keys; they must NOT survive the dequeue.
+  await AsyncStorage.setItem('route_' + QUEUED.localId, QUEUED.route);
+  await AsyncStorage.setItem('time_' + QUEUED.localId, QUEUED.run_time);
+  // GET /api/runs echoes the client idempotency key — definitive proof it is ours.
   const calls = mockBackend({
     runsPostOk: true,
-    existingRuns: [{id: 'server-7', shoe_id: 'shoe-1', run_date: '2026-05-31', km: 4.2}],
+    existingRuns: [{id: 'server-7', localId: 'run_offline_1', shoe_id: 'shoe-1', run_date: '2026-05-31', km: 4.2}],
   });
 
   await mountAndSettle();
@@ -128,6 +132,30 @@ test('a queued run the server already has is dequeued WITHOUT a second POST (ide
   const runPost = calls.find(c => c.method === 'POST' && c.url.includes('/api/runs'));
   expect(runPost).toBeUndefined();
   // ...yet the run is removed from the queue (reconciled as already synced).
+  expect(await loadPendingRuns()).toEqual([]);
+  // dead-key 누수 0: no orphan route_/time_<localId> keys remain after dequeue.
+  const keys = await AsyncStorage.getAllKeys();
+  expect(keys.filter(k => k.startsWith('route_run_') || k.startsWith('time_run_'))).toEqual([]);
+});
+
+test('a signature-only match (no echoed localId) is re-POSTed, not dropped — iron law avoids data loss', async () => {
+  // The server has a row with the SAME shoe/date/km but does NOT echo our
+  // localId: it might be a coincidental twin, so we must re-POST rather than risk
+  // losing a genuinely-unsynced run.
+  await AsyncStorage.clear();
+  await AsyncStorage.setItem(PENDING_RUNS_KEY, JSON.stringify([QUEUED]));
+  const calls = mockBackend({
+    runsPostOk: true,
+    existingRuns: [{id: 'server-7', shoe_id: 'shoe-1', run_date: '2026-05-31', km: 4.2}],
+  });
+
+  await mountAndSettle();
+
+  // The run IS re-POSTed (a visible, correctable duplicate beats irrecoverable loss).
+  const runPost = calls.find(c => c.method === 'POST' && c.url.includes('/api/runs'));
+  expect(runPost).toBeDefined();
+  expect(runPost!.body.localId).toBe('run_offline_1');
+  // After the POST succeeds it is reconciled out of the queue.
   expect(await loadPendingRuns()).toEqual([]);
 });
 

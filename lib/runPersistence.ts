@@ -195,47 +195,102 @@ export async function removePendingRun(localId: string): Promise<PendingRun[]> {
 
 // ── client-side idempotency (duplicate-run guard) ───────────────
 /**
- * A signature that identifies the same finished run across the local queue and
- * the server's run list, independent of server id. The backend is external and
- * cannot dedupe, so the client matches a queued run against runs it already
- * fetched: first by an echoed client id (the `localId` we POST as a forward-
- * compatible idempotency key), then by the natural signature run_date + shoe_id
- * + distance. A km tolerance of <0.005 absorbs float round-trip noise.
+ * Does this server row carry back the echoed client idempotency key (`localId`)
+ * we POSTed? An echoed id is DEFINITIVE proof the server stored exactly this run.
  */
-export function serverHasRun(pending: PendingRun, serverRuns: any[]): boolean {
-  if (!Array.isArray(serverRuns)) return false;
-  return serverRuns.some(r => {
-    if (!r || typeof r !== 'object') return false;
-    // echoed client idempotency key (server stores/returns what we sent)
-    const echoed = r.localId ?? r.client_id ?? r.local_id;
-    if (echoed != null && String(echoed) === pending.localId) return true;
-    // natural signature: same shoe, same date, same distance
-    if (String(r.shoe_id) !== pending.shoe_id) return false;
-    if (String(r.run_date) !== pending.run_date) return false;
-    const km = typeof r.km === 'number' ? r.km : parseFloat(String(r.km));
-    return Number.isFinite(km) && Math.abs(km - pending.km) < 0.005;
-  });
+function echoesLocalId(serverRun: any, localId: string): boolean {
+  const echoed = serverRun.localId ?? serverRun.client_id ?? serverRun.local_id;
+  return echoed != null && String(echoed) === localId;
 }
 
 /**
- * Before re-POSTing the queue, drop any pending run the server already has
- * (matched by `serverHasRun`). This closes the duplicate-row window: if a prior
- * session POSTed a run successfully but was killed before `removePendingRun`
- * could persist, the run is still queued — re-POSTing it would create a second
- * row (inflated total km / shoe wear). Reconciling against the freshly fetched
- * server runs dequeues it WITHOUT a second POST. Returns the runs that still
- * genuinely need syncing.
+ * Natural-signature match: same shoe, same date, distance within float-roundtrip
+ * noise (<0.005km). This is only a HEURISTIC — two genuinely distinct runs can
+ * share (shoe, date, km) by coincidence — so callers must not treat it as proof.
  */
-export async function reconcilePendingWithServer(
+function signatureMatches(serverRun: any, pending: PendingRun): boolean {
+  if (String(serverRun.shoe_id) !== pending.shoe_id) return false;
+  if (String(serverRun.run_date) !== pending.run_date) return false;
+  const km = typeof serverRun.km === 'number' ? serverRun.km : parseFloat(String(serverRun.km));
+  return Number.isFinite(km) && Math.abs(km - pending.km) < 0.005;
+}
+
+/**
+ * Does the server already represent this queued run, by echoed localId OR by
+ * natural signature? A non-consuming detection helper (kept for callers that
+ * just need a yes/no); the dequeue path uses `matchServerRun` for 1:1 matching.
+ */
+export function serverHasRun(pending: PendingRun, serverRuns: any[]): boolean {
+  if (!Array.isArray(serverRuns)) return false;
+  return serverRuns.some(
+    r =>
+      r &&
+      typeof r === 'object' &&
+      (echoesLocalId(r, pending.localId) || signatureMatches(r, pending)),
+  );
+}
+
+/**
+ * Find the server row that represents `pending`, honouring 1:1 consumption: a
+ * row already claimed (its index in `consumed`) cannot match a second queued run,
+ * so a single server row can never account for more than one pending run. An
+ * echoed localId is preferred and reported as `'echo'` (definitive); a natural
+ * signature falls back to `'signature'` (heuristic only). Returns null when the
+ * server has no row for this run.
+ */
+export function matchServerRun(
+  pending: PendingRun,
   serverRuns: any[],
-): Promise<PendingRun[]> {
-  const queue = await loadPendingRuns();
-  if (queue.length === 0) return [];
-  const stillPending = queue.filter(p => !serverHasRun(p, serverRuns));
-  if (stillPending.length !== queue.length) {
-    await writePendingRuns(stillPending); // persist the dequeue
+  consumed?: Set<number>,
+): {index: number; kind: 'echo' | 'signature'} | null {
+  if (!Array.isArray(serverRuns)) return null;
+  let sigIndex = -1;
+  for (let i = 0; i < serverRuns.length; i++) {
+    if (consumed && consumed.has(i)) continue;
+    const r = serverRuns[i];
+    if (!r || typeof r !== 'object') continue;
+    if (echoesLocalId(r, pending.localId)) return {index: i, kind: 'echo'};
+    if (sigIndex === -1 && signatureMatches(r, pending)) sigIndex = i;
   }
-  return stillPending;
+  return sigIndex === -1 ? null : {index: sigIndex, kind: 'signature'};
+}
+
+/**
+ * Reconcile the pending queue against the runs we just fetched. Returns the runs
+ * that still need a POST (`stillPending`) and the ones dropped as already-synced
+ * (`dropped`).
+ *
+ * The drop is INTENTIONALLY conservative — iron law: 유실 회피 > 중복 회피. A run
+ * is dequeued WITHOUT re-POSTing ONLY when a server row echoes its localId, i.e.
+ * the server confirms it stored exactly this run. A signature-only match is NOT
+ * enough: two distinct runs can coincidentally share (shoe, date, km), and
+ * dropping an unsynced one would lose it irrecoverably, whereas a duplicate row
+ * is visible and correctable. So signature-only (and unmatched) runs stay queued
+ * to be re-POSTed. The residual duplicate window is already minimised by
+ * persisting `removePendingRun` first on a successful sync. Matching is 1:1 so a
+ * single server row can never drop more than one queued run.
+ */
+export async function reconcilePendingWithServer(serverRuns: any[]): Promise<{
+  stillPending: PendingRun[];
+  dropped: PendingRun[];
+}> {
+  const queue = await loadPendingRuns();
+  if (queue.length === 0) return {stillPending: [], dropped: []};
+  const consumed = new Set<number>();
+  const stillPending: PendingRun[] = [];
+  const dropped: PendingRun[] = [];
+  for (const p of queue) {
+    const m = matchServerRun(p, serverRuns, consumed);
+    if (m && m.kind === 'echo') {
+      consumed.add(m.index); // 1:1 — this row can't dequeue another run
+      dropped.push(p);
+    } else {
+      // unmatched OR signature-only → re-POST, never drop (no data loss).
+      stillPending.push(p);
+    }
+  }
+  if (dropped.length > 0) await writePendingRuns(stillPending); // persist dequeue
+  return {stillPending, dropped};
 }
 
 /**

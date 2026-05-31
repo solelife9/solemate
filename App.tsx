@@ -125,7 +125,15 @@ function Main(){
   //      죽어 큐에 남은 런이 다음 실행에서 중복 POST되는 윈도우를 닫는다.
   //   2) flushPendingRuns — 남은 런만 postRun으로 재전송. 실패하면 큐에 보존.
   async function syncPendingRuns(serverRuns:any[],uid?:string|null){
-    await reconcilePendingWithServer(serverRuns);
+    const {dropped}=await reconcilePendingWithServer(serverRuns);
+    // dequeue(드롭)된 각 런의 route_/time_<localId> 로컬키 제거. addRun이 기록한
+    // 이 키들은 reconcileSynced(POST 경로)가 정리하지만, 서버가 이미 가진 런을
+    // 재-POST 없이 큐에서 드롭하는 이 경로에서는 정리되지 않아 영구 누수된다
+    // (모든 dedup마다 큰 route blob 적체). reconcileSynced와 동일하게 제거한다.
+    for(const d of dropped){
+      await AsyncStorage.removeItem('route_'+d.localId);
+      await AsyncStorage.removeItem('time_'+d.localId);
+    }
     await flushPendingRuns(async(p)=>{
       const server=await postRun(p,uid);
       await reconcileSynced(p,server);
