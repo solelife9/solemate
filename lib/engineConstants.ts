@@ -30,6 +30,12 @@ export const AUTO_RESUME_SPEED_MPS = 1.0;
 /** 자동 재개까지 이동 지속 시간(s). */
 export const AUTO_RESUME_HOLD_S = 2;
 
+/** GPS 死구간(dead-zone) 판정 임계값(ms). 마지막 fix 수신 후 이 시간 동안 새 fix가
+ *  들어오지 않으면 거리는 멈춘 채 시간만 누적되어 페이스가 왜곡된다(audit#9). 이때
+ *  사용자에게 배너로 경고한다. watchPosition interval(1s)의 8배 — 일시적 누락이
+ *  아니라 지속적 신호 두절일 때만 트리거되도록 여유를 둔다. */
+export const GPS_STALL_THRESHOLD_MS = 8000;
+
 // ─── 케이던스(spm) 검출 상수 ──────────────────────────────────────
 // 가속도 합벡터(magnitude) 피크 1개 = 한 발의 착지(스텝 1회, 단발 기준).
 // 케이던스는 양발의 스텝을 모두 합산한 분당 스텝수(spm)이며 러닝 표준은

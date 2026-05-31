@@ -1,7 +1,7 @@
 import React, {useState, useEffect, useRef} from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, TextInput, Alert, StatusBar,
-  PermissionsAndroid, Platform,
+  PermissionsAndroid, Platform, Linking,
 } from 'react-native';
 import {SafeAreaProvider, useSafeAreaInsets} from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -27,6 +27,7 @@ import {calcDist, acceptSegment, segmentSpeedMps, simplifyRoute} from './lib/geo
 import {WARMUP_FIXES} from './lib/engineConstants';
 import {decideAutoPause, initAutoPauseState} from './lib/autoPause';
 import {buildForegroundServiceConfig} from './lib/foregroundService';
+import {gpsStallStatus} from './lib/gpsHealth';
 import {initCadenceState, feedAccelSample} from './lib/cadence';
 import {fmtPace, fmtTime, fmtKDate, getMonday, ymdLocal} from './lib/format';
 import {
@@ -49,6 +50,16 @@ function nowTimeLabel():string{
 }
 
 function today():string{return ymdLocal(new Date());}
+
+// 위치 권한이 없거나 회수됐을 때의 한국어 안내 + 설정 딥링크. 앱은 권한을 직접
+// 되돌릴 수 없으므로 OS 설정 화면으로 보내 사용자가 다시 허용하게 한다. openSettings
+// 실패(미지원 환경 등)는 삼켜서 크래시를 막는다(트래킹 차단이 목적, 크래시 금지).
+function openLocationSettingsAlert(message:string){
+  Alert.alert('위치 권한 필요',message,[
+    {text:'닫기',style:'cancel'},
+    {text:'설정 열기',onPress:()=>{Promise.resolve(Linking.openSettings()).catch(()=>{});}},
+  ]);
+}
 
 export default function App(){
   return(
@@ -420,6 +431,11 @@ function RunActiveScreen({shoe,insets,goalKm,onSave,onDiscard,resume}:{shoe:{id:
   const [km,setKm]=useState(resume?resume.dist:0);
   const [elapsed,setElapsed]=useState(resume?resume.elapsed:0);
   const [gpsStatus,setGpsStatus]=useState('GPS 신호 찾는 중...');
+  // GPS 死구간(audit#9): 마지막 fix 수신 후 무신호가 지속되면 거리는 멈춘 채 시간만
+  // 누적된다. 순수 판정(gpsStallStatus)으로 감지해 한국어 배너를 띄운다.
+  const [gpsStalled,setGpsStalled]=useState(false);
+  // 주행 중 위치 권한 회수: 트래킹을 멈추고(가비지 거리 금지) 영구 배너 + 설정 안내.
+  const [permLost,setPermLost]=useState(false);
   const [cadence,setCadence]=useState(resume?resume.cadence:0);
   const [paused,setPaused]=useState(false);
   const [autoPaused,setAutoPaused]=useState(false);
@@ -443,6 +459,11 @@ function RunActiveScreen({shoe,insets,goalKm,onSave,onDiscard,resume}:{shoe:{id:
   const fixIndex=useRef(0);
   const lastGoodMs=useRef(0);
   const lastGood=useRef<{lat:number;lon:number}|null>(null);
+  // 死구간 판정용: '수신'한 마지막 fix의 벽시계 시각(거리 채택 여부와 무관 — 거부된
+  // fix도 신호가 살아있음을 뜻하므로 갱신). 0이면 아직 첫 fix 전(워밍업/탐색).
+  const lastRecvMs=useRef(0);
+  // 주행 중 권한 회수 안내를 한 번만 띄우기 위한 가드(에러 콜백 반복 호출 방지).
+  const permRevokedRef=useRef(false);
   const t0=useRef(Date.now());
   const kf=useRef(new KalmanFilter());
   const cadRef=useRef(0);
@@ -477,12 +498,16 @@ function RunActiveScreen({shoe,insets,goalKm,onSave,onDiscard,resume}:{shoe:{id:
     setTimeout(()=>{try{Tts.speak(`달리기를 시작합니다! 목표는 ${goalKm}킬로미터입니다.`);}catch(e){}},800);
     (async()=>{
       if(Platform.OS==='android'){
+        // danger zone: 이 fine-location 게이트가 트래킹 시작의 유일한 관문이다.
+        // 거부 시 watchPosition을 절대 시작하지 않는다(가비지 거리 금지). 회귀 금지.
         const granted=await PermissionsAndroid.request(
           PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
           {title:'위치 권한',message:'러닝 거리 측정을 위해 위치 권한이 필요합니다.',buttonPositive:'허용',buttonNegative:'거부'}
         );
         if(granted!==PermissionsAndroid.RESULTS.GRANTED){
-          Alert.alert('권한 필요','위치 권한을 허용해야 GPS 러닝이 가능합니다.');
+          // 한국어 안내 + 설정 딥링크. 트래킹은 시작하지 않고 그대로 반환한다.
+          openLocationSettingsAlert('위치 권한을 허용해야 GPS 러닝이 가능합니다. 설정에서 위치 권한을 허용해 주세요.');
+          setPermLost(true);
           return;
         }
         // 재스코프 주의: 예전엔 여기서 ACCESS_BACKGROUND_LOCATION을 추가 요청했으나
@@ -491,6 +516,18 @@ function RunActiveScreen({shoe,insets,goalKm,onSave,onDiscard,resume}:{shoe:{id:
         // 동작하는 백그라운드 서비스 없이 백그라운드 위치 권한을 요청하면 Google Play
         // 심사 거부 위험이 있다. 실제 백그라운드 기록은 라이브러리 교체 또는 네이티브
         // 포그라운드 서비스가 필요한 사용자 결정사항이다(.tenet/knowledge 참고).
+      }else if(Platform.OS==='ios'){
+        // audit#8: iOS는 그동안 위치 권한을 한 번도 요청하지 않아 첫 fix가 영영 오지
+        // 않는 무한 '신호 찾는 중'에 빠질 수 있었다. whenInUse(앱 사용 중) 권한을
+        // 명시 요청하고, 허용되지 않으면 한국어 안내 + 설정 딥링크 후 트래킹 차단.
+        let status:string;
+        try{status=await Geolocation.requestAuthorization('whenInUse');}
+        catch{status='denied';}
+        if(status!=='granted'){
+          openLocationSettingsAlert('위치 권한이 없어 GPS 러닝을 시작할 수 없습니다. 설정에서 위치 접근을 허용해 주세요.');
+          setPermLost(true);
+          return;
+        }
       }
       beginRun();
     })();
@@ -552,6 +589,8 @@ function RunActiveScreen({shoe,insets,goalKm,onSave,onDiscard,resume}:{shoe:{id:
   function beginRun(){
     dist.current=0;t0.current=Date.now();kf.current.reset();
     fixIndex.current=0;lastGoodMs.current=0;lastGood.current=null;
+    lastRecvMs.current=0;permRevokedRef.current=false;
+    setGpsStalled(false);setPermLost(false);
     cadenceState.current=initCadenceState();cadRef.current=0;pts.current=[];
     locationRef.current='';locationFetched.current=false;
     isPausedRef.current=false;autoPausedRef.current=false;
@@ -570,13 +609,24 @@ function RunActiveScreen({shoe,insets,goalKm,onSave,onDiscard,resume}:{shoe:{id:
     });
     timer.current=setInterval(()=>{
       // elapsed = now − t0 − pausedMs (음수 방지로 0 하한). 일시정지 중엔 멈춘다.
-      if(!isPausedRef.current){setElapsed(Math.max(0,Math.floor((Date.now()-t0.current-pausedMs.current)/1000)));}
+      if(!isPausedRef.current){
+        setElapsed(Math.max(0,Math.floor((Date.now()-t0.current-pausedMs.current)/1000)));
+        // 死구간 판정(audit#9): 마지막 수신 후 무신호가 임계값을 넘으면 배너 ON.
+        // 일시정지 중에는 fix가 정상적으로 끊길 수 있으므로 판정하지 않는다(거짓경보 방지).
+        setGpsStalled(gpsStallStatus(lastRecvMs.current,Date.now()).stalled);
+      }else{
+        setGpsStalled(false);
+      }
     },1000);
     // 진행중 스냅샷: 즉시 1회 + 3초마다(audit#2). 크래시/강제종료 시 복구 지점이 된다.
     writeSnapshot();
     snapTimer.current=setInterval(writeSnapshot,3000);
     watchId.current=Geolocation.watchPosition(
       pos=>{
+        // fix 수신 시각(벽시계) 갱신 + 死구간 해제. 거리 채택 여부와 무관하게 신호가
+        // 살아있다는 신호이므로 거부될 fix에도 갱신한다.
+        lastRecvMs.current=Date.now();
+        setGpsStalled(false); // 새 fix 도착 → 死구간 해제(값 동일 시 React가 리렌더 생략)
         const{latitude:lat,longitude:lon,accuracy:acc}=pos.coords;
         const f=kf.current.process(lat,lon,acc,pos.timestamp);
         setGpsStatus(`정확도 ${Math.round(acc)}m`);
@@ -628,7 +678,12 @@ function RunActiveScreen({shoe,insets,goalKm,onSave,onDiscard,resume}:{shoe:{id:
           // 다음 양호 fix가 '마지막 양호 위치/시각'으로부터 다시 측정된다.
         }else{lastGood.current=f;lastGoodMs.current=pos.timestamp;pts.current.push(f);}
       },
-      err=>{setGpsStatus(err.code===1?'위치 권한 필요':'GPS 신호 없음');},
+      err=>{
+        // code 1 = PERMISSION_DENIED: 주행 중 위치 권한이 회수됨. 트래킹을 멈추고
+        // (가비지 거리/시간 누적 금지) 한국어 안내 + 설정 딥링크. 그 외는 신호 없음.
+        if(err&&err.code===1)handlePermissionRevoked();
+        else setGpsStatus('GPS 신호 없음');
+      },
       // forward-compat(무해): foregroundService 옵션을 부착해 두지만 현재 설치된
       // react-native-geolocation-service@5.3.1은 이 옵션을 인식하지 않아 no-op이다
       // (미지의 키는 네이티브 LocationOptions 파서가 조용히 무시 → 크래시 없음).
@@ -645,6 +700,20 @@ function RunActiveScreen({shoe,insets,goalKm,onSave,onDiscard,resume}:{shoe:{id:
     if(stepSub.current){stepSub.current.unsubscribe();stepSub.current=null;}
     clearInterval(timer.current);
     clearInterval(snapTimer.current);
+  }
+
+  // 주행 중 위치 권한 회수 처리. stop()으로 watch/타이머/스냅샷을 모두 멈춰 거리·시간이
+  // 더 누적되지 않게 하고(가비지 데이터 금지), 영구 배너 + 설정 딥링크로 안내한다.
+  // 이미 기록된 거리/경과는 보존되며 사용자는 '종료'로 저장/버리기를 선택할 수 있다.
+  // 가드로 1회만 동작해 에러 콜백 연속 호출 시 알림 폭주를 막는다(크래시/스팸 금지).
+  function handlePermissionRevoked(){
+    if(permRevokedRef.current)return;
+    permRevokedRef.current=true;
+    stop();
+    setGpsStatus('위치 권한 필요');
+    setGpsStalled(false); // 死구간 배너 대신 권한 회수 배너가 우선한다
+    setPermLost(true);
+    openLocationSettingsAlert('주행 중 위치 권한이 회수되어 거리 기록을 멈췄습니다. 설정에서 위치 권한을 다시 허용해 주세요.');
   }
 
   function handlePause(){
@@ -746,6 +815,19 @@ function RunActiveScreen({shoe,insets,goalKm,onSave,onDiscard,resume}:{shoe:{id:
         <Text style={run.gpsText}>{gpsStatus}</Text>
       </View>
 
+      {/* 권한 회수 배너(우선) / GPS 死구간 배너(audit#9). 둘 다 한국어 안내. */}
+      {permLost?(
+        <TouchableOpacity style={[run.banner,run.bannerDanger]} onPress={()=>{Promise.resolve(Linking.openSettings()).catch(()=>{});}}>
+          <Ionicons name="alert-circle" size={15} color={DANGER}/>
+          <Text style={run.bannerText}>위치 권한이 꺼져 거리 기록을 멈췄어요. 눌러서 설정에서 다시 허용하세요.</Text>
+        </TouchableOpacity>
+      ):gpsStalled?(
+        <View style={[run.banner,run.bannerWarn]}>
+          <Ionicons name="warning-outline" size={15} color={WARN}/>
+          <Text style={run.bannerText}>GPS 신호가 약해 거리가 기록되지 않고 있어요. 시간만 계속 측정됩니다.</Text>
+        </View>
+      ):null}
+
       <View style={run.body}>
         <Ring size={272} stroke={16} progress={progress} color={pauseColor}>
           <View style={{alignItems:'center'}}>
@@ -790,6 +872,10 @@ const run=StyleSheet.create({
   shoeChipText:{color:T3,fontFamily:FP,fontSize:12.5,fontWeight:'600'},
   gpsRow:{flexDirection:'row',alignItems:'center',marginTop:8},
   gpsText:{color:T3,fontFamily:FP,fontSize:11},
+  banner:{flexDirection:'row',alignItems:'center',gap:8,marginTop:10,paddingVertical:10,paddingHorizontal:12,borderRadius:12,borderWidth:StyleSheet.hairlineWidth},
+  bannerWarn:{backgroundColor:'rgba(255,193,7,0.12)',borderColor:WARN},
+  bannerDanger:{backgroundColor:'rgba(255,69,58,0.14)',borderColor:DANGER},
+  bannerText:{flex:1,color:T1,fontFamily:FP,fontSize:12.5,fontWeight:'500',lineHeight:17},
   body:{flex:1,alignItems:'center',justifyContent:'center'},
   goalText:{color:T3,fontFamily:FP,fontSize:12,fontWeight:'500',letterSpacing:1},
   bigDist:{color:T1,fontFamily:FH,fontSize:84,letterSpacing:1,marginTop:6},
