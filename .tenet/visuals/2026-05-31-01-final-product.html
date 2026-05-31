@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Keego — 최종 제품 (3 slice 완료 상태)</title>
+<style>
+  :root{
+    --bg:#000000;
+    --card:#1C1C1E;
+    --card-hi:#2C2C2E;
+    --card-dim:#0D0D0D;
+    --hero:#161618;
+    --accent:#FF6500;
+    --accent2:#FF9F4A;
+    --warn:#FF9F0A;
+    --danger:#FF453A;
+    --good:#30D158;
+    --t1:#FFFFFF;
+    --t2:#EBEBF5;
+    --t3:#8E8E93;
+    --sep:rgba(255,255,255,0.08);
+    --font:'Pretendard',-apple-system,'Segoe UI',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased;}
+  body{
+    background:#0a0a0a;
+    font-family:var(--font);
+    color:var(--t1);
+    padding:40px 28px 64px;
+  }
+  .page-header{
+    max-width:2080px;margin:0 auto 34px;display:flex;align-items:baseline;gap:18px;flex-wrap:wrap;
+  }
+  .page-header .wm{
+    font-size:30px;font-weight:800;letter-spacing:-0.5px;
+    background:linear-gradient(90deg,var(--accent),var(--accent2));
+    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+  }
+  .page-header .sub{color:var(--t3);font-size:15px;font-weight:500;}
+  .page-header .tag{
+    margin-left:auto;color:var(--t3);font-size:13px;border:1px solid var(--sep);
+    padding:6px 14px;border-radius:999px;
+  }
+  .frames{
+    max-width:2080px;margin:0 auto;
+    display:flex;flex-wrap:wrap;gap:30px;justify-content:center;
+  }
+  .frame-wrap{display:flex;flex-direction:column;align-items:center;gap:14px;}
+  .frame-label{color:var(--t3);font-size:13px;font-weight:600;letter-spacing:0.2px;}
+  .frame-label b{color:var(--t2);font-weight:700;}
+  .frame{
+    width:390px;height:844px;background:var(--bg);
+    border-radius:44px;position:relative;overflow:hidden;
+    box-shadow:0 0 0 11px #1a1a1c,0 0 0 13px #2a2a2c,0 32px 80px rgba(0,0,0,0.7);
+  }
+  .screen{position:absolute;inset:0;display:flex;flex-direction:column;}
+
+  /* status bar */
+  .statusbar{
+    height:54px;flex:0 0 54px;display:flex;align-items:flex-end;justify-content:space-between;
+    padding:0 30px 8px;font-size:15px;font-weight:600;color:var(--t1);
+  }
+  .statusbar .sb-r{display:flex;align-items:center;gap:7px;}
+  .sb-bars{display:flex;align-items:flex-end;gap:2px;height:11px;}
+  .sb-bars i{width:3px;background:var(--t1);border-radius:1px;}
+  .sb-bars i:nth-child(1){height:4px}.sb-bars i:nth-child(2){height:6px}
+  .sb-bars i:nth-child(3){height:8px}.sb-bars i:nth-child(4){height:11px}
+  .sb-bat{width:24px;height:12px;border:1.5px solid rgba(255,255,255,0.5);border-radius:3px;position:relative;}
+  .sb-bat::after{content:"";position:absolute;right:-3px;top:3px;width:2px;height:6px;background:rgba(255,255,255,0.5);border-radius:0 1px 1px 0;}
+  .sb-bat i{position:absolute;inset:1.5px;width:70%;background:var(--t1);border-radius:1px;}
+
+  .content{flex:1 1 auto;overflow:hidden;padding:6px 20px 0;}
+  .scroll{height:100%;overflow:hidden;}
+
+  /* common bits */
+  .row{display:flex;align-items:center;}
+  .between{justify-content:space-between;}
+  .pill{
+    display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;
+    padding:5px 11px;border-radius:999px;letter-spacing:0.2px;
+  }
+  .pill.warn{background:rgba(255,159,10,0.16);color:var(--warn);}
+  .pill.danger{background:rgba(255,69,58,0.16);color:var(--danger);}
+  .pill.good{background:rgba(48,209,88,0.16);color:var(--good);}
+  .pill.dim{background:var(--card-hi);color:var(--t2);}
+  .num{
+    font-weight:800;letter-spacing:-1px;font-variant-numeric:tabular-nums;line-height:1;
+  }
+  .cta{
+    border:none;cursor:pointer;width:100%;border-radius:18px;padding:18px;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    color:#fff;font-size:18px;font-weight:800;font-family:var(--font);letter-spacing:0.3px;
+    box-shadow:0 10px 26px rgba(255,101,0,0.34);
+    display:flex;align-items:center;justify-content:center;gap:9px;
+  }
+  .card{background:var(--card);border-radius:20px;}
+  .sectiontitle{font-size:13px;font-weight:700;color:var(--t3);letter-spacing:0.4px;text-transform:none;}
+
+  /* tab bar */
+  .tabbar{
+    flex:0 0 84px;height:84px;border-top:1px solid var(--sep);
+    background:rgba(12,12,13,0.92);backdrop-filter:blur(20px);
+    display:flex;align-items:flex-start;padding:11px 14px 0;justify-content:space-around;
+  }
+  .tab{display:flex;flex-direction:column;align-items:center;gap:5px;flex:1;color:var(--t3);}
+  .tab.active{color:var(--accent);}
+  .tab span{font-size:10px;font-weight:600;letter-spacing:0.2px;}
+  .tab svg{display:block;}
+
+  .home-pad{padding-bottom:8px;}
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <span class="wm">Keego</span>
+  <span class="sub">최종 제품 — 3 slice 완료 상태</span>
+  <span class="tag">부상 없이, 계속 달리기 · keep going</span>
+</div>
+
+<div class="frames">
+
+  <!-- ============ 1. HOME ============ -->
+  <div class="frame-wrap">
+    <div class="frame-label"><b>1 · 홈</b> — 신발 우선 플로우</div>
+    <div class="frame">
+      <div class="screen">
+        <div class="statusbar">
+          <span>9:41</span>
+          <span class="sb-r">
+            <span class="sb-bars"><i></i><i></i><i></i><i></i></span>
+            <svg width="17" height="12" viewBox="0 0 17 12" fill="none"><path d="M8.5 2C5.5 2 2.9 3.2 1 5.1l1.4 1.4C3.9 5 6.1 4 8.5 4s4.6 1 6.1 2.5L16 5.1C14.1 3.2 11.5 2 8.5 2z" fill="#fff"/><path d="M8.5 6c-1.6 0-3 .6-4 1.6L8.5 11l4-3.4C11.5 6.6 10.1 6 8.5 6z" fill="#fff"/></svg>
+            <span class="sb-bat"><i></i></span>
+          </span>
+        </div>
+        <div class="content">
+          <div class="scroll home-pad">
+            <!-- header -->
+            <div class="row between" style="margin:2px 0 16px;">
+              <div>
+                <div style="font-size:26px;font-weight:800;letter-spacing:-0.6px;background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;">Keego</div>
+                <div style="font-size:12px;color:var(--t3);font-weight:500;margin-top:1px;">안녕하세요, 민우님 👋</div>
+              </div>
+              <button style="display:flex;align-items:center;gap:6px;background:var(--card-hi);border:none;color:var(--t1);font-family:var(--font);font-size:12px;font-weight:700;padding:9px 13px;border-radius:999px;cursor:pointer;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+                신발 추가
+              </button>
+            </div>
+
+            <!-- weekly quick stats -->
+            <div class="card" style="padding:15px 16px;margin-bottom:14px;">
+              <div class="row between" style="margin-bottom:11px;">
+                <span class="sectiontitle">이번 주</span>
+                <span style="font-size:11px;color:var(--t3);font-weight:600;">5월 26 – 6월 1</span>
+              </div>
+              <div class="row" style="gap:0;">
+                <div style="flex:1;">
+                  <div class="num" style="font-size:23px;">24.6</div>
+                  <div style="font-size:11px;color:var(--t3);font-weight:600;margin-top:3px;">거리 (km)</div>
+                </div>
+                <div style="width:1px;height:34px;background:var(--sep);"></div>
+                <div style="flex:1;padding-left:16px;">
+                  <div class="num" style="font-size:23px;">4</div>
+                  <div style="font-size:11px;color:var(--t3);font-weight:600;margin-top:3px;">런</div>
+                </div>
+                <div style="width:1px;height:34px;background:var(--sep);"></div>
+                <div style="flex:1;padding-left:16px;">
+                  <div class="num" style="font-size:23px;">5'42"</div>
+                  <div style="font-size:11px;color:var(--t3);font-weight:600;margin-top:3px;">평균 페이스</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- HERO shoe card -->
+            <div style="background:var(--hero);border-radius:22px;padding:18px 18px 16px;margin-bottom:14px;position:relative;overflow:hidden;">
+              <div style="position:absolute;top:-40px;right:-40px;width:150px;height:150px;background:radial-gradient(circle,rgba(255,101,0,0.18),transparent 70%);"></div>
+              <div class="row between" style="margin-bottom:6px;position:relative;">
+                <span class="pill dim">선택된 신발</span>
+                <span class="pill warn">교체 임박</span>
+              </div>
+              <div class="row" style="gap:16px;align-items:center;position:relative;">
+                <!-- durability ring 52% -->
+                <div style="position:relative;width:104px;height:104px;flex:0 0 104px;">
+                  <svg width="104" height="104" viewBox="0 0 104 104">
+                    <circle cx="52" cy="52" r="45" fill="none" stroke="#2C2C2E" stroke-width="9"/>
+                    <circle cx="52" cy="52" r="45" fill="none" stroke="url(#grad1)" stroke-width="9" stroke-linecap="round"
+                      stroke-dasharray="282.7" stroke-dashoffset="135.7" transform="rotate(-90 52 52)"/>
+                    <defs><linearGradient id="grad1" x1="0" y1="0" x2="1" y2="1">
+                      <stop offset="0" stop-color="#FF6500"/><stop offset="1" stop-color="#FF9F4A"/></linearGradient></defs>
+                  </svg>
+                  <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+                    <div class="num" style="font-size:25px;">52<span style="font-size:13px;font-weight:700;">%</span></div>
+                    <div style="font-size:9px;color:var(--t3);font-weight:700;letter-spacing:0.3px;margin-top:1px;">잔여 수명</div>
+                  </div>
+                </div>
+                <div style="flex:1;">
+                  <div style="font-size:18px;font-weight:800;letter-spacing:-0.3px;">나이키 페가수스 41</div>
+                  <div style="font-size:12px;color:var(--t3);font-weight:600;margin-top:2px;">데일리 트레이너</div>
+                  <div style="margin-top:13px;display:flex;flex-direction:column;gap:4px;">
+                    <div class="row between"><span style="font-size:12px;color:var(--t2);font-weight:600;">잔여</span><span class="num" style="font-size:14px;">312 km</span></div>
+                    <div class="row between"><span style="font-size:12px;color:var(--t3);font-weight:600;">수명</span><span style="font-size:13px;color:var(--t3);font-weight:700;">600 km</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- CTA -->
+            <button class="cta" style="margin-bottom:16px;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z"/></svg>
+              러닝 시작
+            </button>
+
+            <!-- shoe picker -->
+            <div class="row between" style="margin-bottom:9px;">
+              <span class="sectiontitle">신발 선택</span>
+              <span style="font-size:11px;color:var(--accent);font-weight:700;">전체 보기</span>
+            </div>
+            <div class="row" style="gap:9px;">
+              <div style="flex:1;background:var(--card);border:1.5px solid var(--accent);border-radius:15px;padding:11px 11px 10px;">
+                <div style="font-size:12px;font-weight:700;">페가수스 41</div>
+                <div style="font-size:10px;color:var(--warn);font-weight:700;margin-top:3px;">잔여 312km · 주의</div>
+              </div>
+              <div style="flex:1;background:var(--card);border:1.5px solid transparent;border-radius:15px;padding:11px 11px 10px;">
+                <div style="font-size:12px;font-weight:700;">인보브 2</div>
+                <div style="font-size:10px;color:var(--good);font-weight:700;margin-top:3px;">잔여 540km · 좋음</div>
+              </div>
+              <div style="flex:1;background:var(--card);border:1.5px solid transparent;border-radius:15px;padding:11px 11px 10px;">
+                <div style="font-size:12px;font-weight:700;">알파플라이 3</div>
+                <div style="font-size:10px;color:var(--danger);font-weight:700;margin-top:3px;">잔여 38km · 교체</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- tab bar -->
+        <div class="tabbar">
+          <div class="tab active">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20h14V9.5"/></svg>
+            <span>홈</span>
+          </div>
+          <div class="tab">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round"><path d="M4 19l4-9 4 4 3-7 5 12"/></svg>
+            <span>기록</span>
+          </div>
+          <div class="tab">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round"><path d="M3 13l2-4h9l4 4 3 1v3H3z"/><path d="M3 13l-1 4h20"/></svg>
+            <span>신발</span>
+          </div>
+          <div class="tab">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
+            <span>프로필</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 2. RUN ACTIVE ============ -->
+  <div class="frame-wrap">
+    <div class="frame-label"><b>2 · 러닝 중</b> — 실시간 엔진</div>
+    <div class="frame">
+      <div class="screen">
+        <div class="statusbar">
+          <span>9:48</span>
+          <span class="sb-r">
+            <span class="sb-bars"><i></i><i></i><i></i><i></i></span>
+            <svg width="17" height="12" viewBox="0 0 17 12" fill="none"><path d="M8.5 2C5.5 2 2.9 3.2 1 5.1l1.4 1.4C3.9 5 6.1 4 8.5 4s4.6 1 6.1 2.5L16 5.1C14.1 3.2 11.5 2 8.5 2z" fill="#fff"/><path d="M8.5 6c-1.6 0-3 .6-4 1.6L8.5 11l4-3.4C11.5 6.6 10.1 6 8.5 6z" fill="#fff"/></svg>
+            <span class="sb-bat"><i></i></span>
+          </span>
+        </div>
+        <div class="content" style="display:flex;flex-direction:column;">
+          <!-- top: shoe + gps -->
+          <div class="row between" style="margin:2px 0 6px;">
+            <div class="row" style="gap:7px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round"><path d="M3 13l2-4h9l4 4 3 1v3H3z"/></svg>
+              <span style="font-size:12px;color:var(--t2);font-weight:700;">페가수스 41로 달리는 중</span>
+            </div>
+            <span class="pill good"><span style="width:6px;height:6px;border-radius:50%;background:var(--good);display:inline-block;"></span>GPS 8m</span>
+          </div>
+
+          <div class="row" style="justify-content:center;gap:8px;margin:6px 0 4px;">
+            <span class="pill dim">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+              자동 일시정지 켜짐
+            </span>
+          </div>
+
+          <!-- huge distance -->
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+            <div style="font-size:13px;color:var(--t3);font-weight:700;letter-spacing:1px;margin-bottom:4px;">거리 · KM</div>
+            <div class="num" style="font-size:118px;letter-spacing:-4px;background:linear-gradient(180deg,#fff,#d8d8dc);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;">3.42</div>
+            <div style="width:46px;height:4px;border-radius:2px;background:linear-gradient(90deg,var(--accent),var(--accent2));margin-top:14px;"></div>
+          </div>
+
+          <!-- metric grid -->
+          <div class="card" style="padding:18px 8px;margin-bottom:14px;">
+            <div class="row">
+              <div style="flex:1;text-align:center;">
+                <div class="num" style="font-size:27px;">5'38"</div>
+                <div style="font-size:11px;color:var(--t3);font-weight:700;margin-top:4px;">페이스 /km</div>
+              </div>
+              <div style="width:1px;height:40px;background:var(--sep);"></div>
+              <div style="flex:1;text-align:center;">
+                <div class="num" style="font-size:27px;">19:18</div>
+                <div style="font-size:11px;color:var(--t3);font-weight:700;margin-top:4px;">시간</div>
+              </div>
+              <div style="width:1px;height:40px;background:var(--sep);"></div>
+              <div style="flex:1;text-align:center;">
+                <div class="num" style="font-size:27px;">172</div>
+                <div style="font-size:11px;color:var(--t3);font-weight:700;margin-top:4px;">케이던스 spm</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- controls -->
+          <div class="row" style="gap:14px;justify-content:center;align-items:center;margin-bottom:20px;">
+            <button style="width:76px;height:76px;border-radius:50%;border:none;cursor:pointer;background:var(--card-hi);color:var(--t1);display:flex;align-items:center;justify-content:center;">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/></svg>
+            </button>
+            <button style="width:96px;height:96px;border-radius:50%;border:none;cursor:pointer;background:linear-gradient(135deg,var(--danger),#FF6B63);color:#fff;font-weight:800;font-size:15px;font-family:var(--font);box-shadow:0 10px 26px rgba(255,69,58,0.34);display:flex;align-items:center;justify-content:center;">
+              <svg width="30" height="30" viewBox="0 0 24 24" fill="#fff"><rect x="6" y="6" width="12" height="12" rx="2.4"/></svg>
+            </button>
+            <button style="width:76px;height:76px;border-radius:50%;border:none;cursor:pointer;background:var(--card-hi);color:var(--t1);display:flex;align-items:center;justify-content:center;">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v6l4-3"/><circle cx="12" cy="13" r="8"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 3. SHOES ============ -->
+  <div class="frame-wrap">
+    <div class="frame-label"><b>3 · 신발</b> — 내구도 관리 (차별점)</div>
+    <div class="frame">
+      <div class="screen">
+        <div class="statusbar">
+          <span>9:41</span>
+          <span class="sb-r">
+            <span class="sb-bars"><i></i><i></i><i></i><i></i></span>
+            <svg width="17" height="12" viewBox="0 0 17 12" fill="none"><path d="M8.5 2C5.5 2 2.9 3.2 1 5.1l1.4 1.4C3.9 5 6.1 4 8.5 4s4.6 1 6.1 2.5L16 5.1C14.1 3.2 11.5 2 8.5 2z" fill="#fff"/><path d="M8.5 6c-1.6 0-3 .6-4 1.6L8.5 11l4-3.4C11.5 6.6 10.1 6 8.5 6z" fill="#fff"/></svg>
+            <span class="sb-bat"><i></i></span>
+          </span>
+        </div>
+        <div class="content">
+          <div class="scroll">
+            <div class="row between" style="margin:2px 0 4px;">
+              <div style="font-size:24px;font-weight:800;letter-spacing:-0.5px;">내 신발장</div>
+              <button style="width:36px;height:36px;border-radius:50%;border:none;background:var(--card-hi);cursor:pointer;display:flex;align-items:center;justify-content:center;">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+              </button>
+            </div>
+            <div style="font-size:12px;color:var(--t3);font-weight:600;margin-bottom:16px;">신발 4켤레 · 누적 2,148 km</div>
+
+            <!-- shoe card: good -->
+            <div class="card" style="padding:15px 16px;margin-bottom:12px;">
+              <div class="row" style="gap:15px;align-items:center;">
+                <div style="position:relative;width:74px;height:74px;flex:0 0 74px;">
+                  <svg width="74" height="74" viewBox="0 0 74 74">
+                    <circle cx="37" cy="37" r="31" fill="none" stroke="#2C2C2E" stroke-width="7"/>
+                    <circle cx="37" cy="37" r="31" fill="none" stroke="#30D158" stroke-width="7" stroke-linecap="round" stroke-dasharray="194.8" stroke-dashoffset="35" transform="rotate(-90 37 37)"/>
+                  </svg>
+                  <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;" class="num">82<span style="font-size:9px;font-weight:700;">%</span></div>
+                </div>
+                <div style="flex:1;">
+                  <div class="row between"><span style="font-size:16px;font-weight:800;">인보브 2</span><span class="pill good">좋음</span></div>
+                  <div style="font-size:12px;color:var(--t3);font-weight:600;margin-top:2px;">데일리 · 쿠션</div>
+                  <div class="row between" style="margin-top:10px;">
+                    <span style="font-size:12px;color:var(--t2);font-weight:600;">누적 <b style="color:var(--t1);">160 km</b></span>
+                    <span style="font-size:12px;color:var(--t3);font-weight:600;">잔여 540 km</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- shoe card: warn -->
+            <div class="card" style="padding:15px 16px;margin-bottom:12px;border:1px solid rgba(255,159,10,0.25);">
+              <div class="row" style="gap:15px;align-items:center;">
+                <div style="position:relative;width:74px;height:74px;flex:0 0 74px;">
+                  <svg width="74" height="74" viewBox="0 0 74 74">
+                    <circle cx="37" cy="37" r="31" fill="none" stroke="#2C2C2E" stroke-width="7"/>
+                    <circle cx="37" cy="37" r="31" fill="none" stroke="#FF9F0A" stroke-width="7" stroke-linecap="round" stroke-dasharray="194.8" stroke-dashoffset="93.5" transform="rotate(-90 37 37)"/>
+                  </svg>
+                  <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;" class="num">52<span style="font-size:9px;font-weight:700;">%</span></div>
+                </div>
+                <div style="flex:1;">
+                  <div class="row between"><span style="font-size:16px;font-weight:800;">페가수스 41</span><span class="pill warn">주의</span></div>
+                  <div style="font-size:12px;color:var(--t3);font-weight:600;margin-top:2px;">데일리 트레이너 · 선택됨</div>
+                  <div class="row between" style="margin-top:10px;">
+                    <span style="font-size:12px;color:var(--t2);font-weight:600;">누적 <b style="color:var(--t1);">288 km</b></span>
+                    <span style="font-size:12px;color:var(--warn);font-weight:700;">잔여 312 km</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- shoe card: danger (replace soon) -->
+            <div class="card" style="padding:15px 16px;margin-bottom:12px;border:1px solid rgba(255,69,58,0.32);background:linear-gradient(180deg,rgba(255,69,58,0.06),var(--card));">
+              <div class="row" style="gap:15px;align-items:center;">
+                <div style="position:relative;width:74px;height:74px;flex:0 0 74px;">
+                  <svg width="74" height="74" viewBox="0 0 74 74">
+                    <circle cx="37" cy="37" r="31" fill="none" stroke="#2C2C2E" stroke-width="7"/>
+                    <circle cx="37" cy="37" r="31" fill="none" stroke="#FF453A" stroke-width="7" stroke-linecap="round" stroke-dasharray="194.8" stroke-dashoffset="182" transform="rotate(-90 37 37)"/>
+                  </svg>
+                  <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;" class="num">6<span style="font-size:9px;font-weight:700;">%</span></div>
+                </div>
+                <div style="flex:1;">
+                  <div class="row between"><span style="font-size:16px;font-weight:800;">알파플라이 3</span><span class="pill danger">교체</span></div>
+                  <div style="font-size:12px;color:var(--t3);font-weight:600;margin-top:2px;">레이스 · 카본</div>
+                  <div class="row between" style="margin-top:10px;">
+                    <span style="font-size:12px;color:var(--t2);font-weight:600;">누적 <b style="color:var(--t1);">462 km</b></span>
+                    <span style="font-size:12px;color:var(--danger);font-weight:700;">잔여 38 km</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- shoe card: good 2 -->
+            <div class="card" style="padding:15px 16px;">
+              <div class="row" style="gap:15px;align-items:center;">
+                <div style="position:relative;width:74px;height:74px;flex:0 0 74px;">
+                  <svg width="74" height="74" viewBox="0 0 74 74">
+                    <circle cx="37" cy="37" r="31" fill="none" stroke="#2C2C2E" stroke-width="7"/>
+                    <circle cx="37" cy="37" r="31" fill="none" stroke="#30D158" stroke-width="7" stroke-linecap="round" stroke-dasharray="194.8" stroke-dashoffset="58" transform="rotate(-90 37 37)"/>
+                  </svg>
+                  <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;" class="num">70<span style="font-size:9px;font-weight:700;">%</span></div>
+                </div>
+                <div style="flex:1;">
+                  <div class="row between"><span style="font-size:16px;font-weight:800;">호카 본디 8</span><span class="pill good">좋음</span></div>
+                  <div style="font-size:12px;color:var(--t3);font-weight:600;margin-top:2px;">장거리 · 맥시멀</div>
+                  <div class="row between" style="margin-top:10px;">
+                    <span style="font-size:12px;color:var(--t2);font-weight:600;">누적 <b style="color:var(--t1);">238 km</b></span>
+                    <span style="font-size:12px;color:var(--t3);font-weight:600;">잔여 562 km</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="tabbar">
+          <div class="tab">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20h14V9.5"/></svg>
+            <span>홈</span>
+          </div>
+          <div class="tab">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round"><path d="M4 19l4-9 4 4 3-7 5 12"/></svg>
+            <span>기록</span>
+          </div>
+          <div class="tab active">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round"><path d="M3 13l2-4h9l4 4 3 1v3H3z"/><path d="M3 13l-1 4h20"/></svg>
+            <span>신발</span>
+          </div>
+          <div class="tab">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
+            <span>프로필</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 4. HISTORY ============ -->
+  <div class="frame-wrap">
+    <div class="frame-label"><b>4 · 기록</b> — 통계 + 코스 지도</div>
+    <div class="frame">
+      <div class="screen">
+        <div class="statusbar">
+          <span>9:41</span>
+          <span class="sb-r">
+            <span class="sb-bars"><i></i><i></i><i></i><i></i></span>
+            <svg width="17" height="12" viewBox="0 0 17 12" fill="none"><path d="M8.5 2C5.5 2 2.9 3.2 1 5.1l1.4 1.4C3.9 5 6.1 4 8.5 4s4.6 1 6.1 2.5L16 5.1C14.1 3.2 11.5 2 8.5 2z" fill="#fff"/><path d="M8.5 6c-1.6 0-3 .6-4 1.6L8.5 11l4-3.4C11.5 6.6 10.1 6 8.5 6z" fill="#fff"/></svg>
+            <span class="sb-bat"><i></i></span>
+          </span>
+        </div>
+        <div class="content">
+          <div class="scroll">
+            <div style="font-size:24px;font-weight:800;letter-spacing:-0.5px;margin:2px 0 14px;">기록</div>
+
+            <!-- period tabs -->
+            <div class="row" style="background:var(--card-dim);border-radius:13px;padding:4px;margin-bottom:16px;">
+              <div style="flex:1;text-align:center;font-size:13px;font-weight:700;padding:8px 0;border-radius:10px;background:var(--card-hi);color:var(--t1);">주</div>
+              <div style="flex:1;text-align:center;font-size:13px;font-weight:600;padding:8px 0;color:var(--t3);">월</div>
+              <div style="flex:1;text-align:center;font-size:13px;font-weight:600;padding:8px 0;color:var(--t3);">년</div>
+              <div style="flex:1;text-align:center;font-size:13px;font-weight:600;padding:8px 0;color:var(--t3);">전체</div>
+            </div>
+
+            <!-- summary -->
+            <div class="card" style="padding:16px;margin-bottom:14px;">
+              <div class="row">
+                <div style="flex:1;"><div class="num" style="font-size:24px;">24.6</div><div style="font-size:11px;color:var(--t3);font-weight:700;margin-top:3px;">거리 km</div></div>
+                <div style="flex:1;"><div class="num" style="font-size:24px;">2:21</div><div style="font-size:11px;color:var(--t3);font-weight:700;margin-top:3px;">시간 h</div></div>
+                <div style="flex:1;"><div class="num" style="font-size:24px;">1,847</div><div style="font-size:11px;color:var(--t3);font-weight:700;margin-top:3px;">칼로리</div></div>
+              </div>
+              <!-- bar chart -->
+              <div class="row" style="align-items:flex-end;gap:8px;height:78px;margin-top:18px;">
+                <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;">
+                  <div style="width:100%;height:30px;background:var(--card-hi);border-radius:5px;"></div><span style="font-size:10px;color:var(--t3);font-weight:600;">월</span></div>
+                <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;">
+                  <div style="width:100%;height:52px;background:linear-gradient(180deg,var(--accent2),var(--accent));border-radius:5px;"></div><span style="font-size:10px;color:var(--t3);font-weight:600;">화</span></div>
+                <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;">
+                  <div style="width:100%;height:14px;background:var(--card-hi);border-radius:5px;"></div><span style="font-size:10px;color:var(--t3);font-weight:600;">수</span></div>
+                <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;">
+                  <div style="width:100%;height:40px;background:linear-gradient(180deg,var(--accent2),var(--accent));border-radius:5px;"></div><span style="font-size:10px;color:var(--t3);font-weight:600;">목</span></div>
+                <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;">
+                  <div style="width:100%;height:8px;background:var(--card-hi);border-radius:5px;"></div><span style="font-size:10px;color:var(--t3);font-weight:600;">금</span></div>
+                <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;">
+                  <div style="width:100%;height:64px;background:linear-gradient(180deg,var(--accent2),var(--accent));border-radius:5px;"></div><span style="font-size:10px;color:var(--t3);font-weight:600;">토</span></div>
+                <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;">
+                  <div style="width:100%;height:20px;background:var(--card-hi);border-radius:5px;"></div><span style="font-size:10px;color:var(--t3);font-weight:600;">일</span></div>
+              </div>
+            </div>
+
+            <div class="sectiontitle" style="margin-bottom:9px;">최근 러닝</div>
+
+            <!-- run row with course map -->
+            <div class="card" style="padding:14px;margin-bottom:11px;overflow:hidden;">
+              <div class="row" style="gap:13px;">
+                <!-- course map svg -->
+                <div style="width:88px;height:88px;flex:0 0 88px;border-radius:14px;background:var(--card-dim);position:relative;overflow:hidden;">
+                  <svg width="88" height="88" viewBox="0 0 88 88">
+                    <rect width="88" height="88" fill="#0D0D0D"/>
+                    <line x1="0" y1="29" x2="88" y2="29" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+                    <line x1="0" y1="59" x2="88" y2="59" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+                    <line x1="29" y1="0" x2="29" y2="88" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+                    <line x1="59" y1="0" x2="59" y2="88" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+                    <polyline points="16,68 22,50 18,38 30,30 28,18 44,20 52,32 48,46 62,50 70,38 66,24"
+                      fill="none" stroke="url(#route1)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+                    <circle cx="16" cy="68" r="4" fill="#30D158"/>
+                    <circle cx="66" cy="24" r="4" fill="#FF453A"/>
+                    <defs><linearGradient id="route1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FF6500"/><stop offset="1" stop-color="#FF9F4A"/></linearGradient></defs>
+                  </svg>
+                </div>
+                <div style="flex:1;">
+                  <div class="row between"><span style="font-size:15px;font-weight:800;">한강 저녁 러닝</span><span style="font-size:11px;color:var(--t3);font-weight:600;">어제</span></div>
+                  <div style="font-size:11px;color:var(--t3);font-weight:600;margin-top:1px;">페가수스 41 · 반포 코스</div>
+                  <div class="row" style="gap:14px;margin-top:11px;">
+                    <div><div class="num" style="font-size:16px;">7.21</div><div style="font-size:9px;color:var(--t3);font-weight:700;">km</div></div>
+                    <div><div class="num" style="font-size:16px;">5'31"</div><div style="font-size:9px;color:var(--t3);font-weight:700;">페이스</div></div>
+                    <div><div class="num" style="font-size:16px;">39:48</div><div style="font-size:9px;color:var(--t3);font-weight:700;">시간</div></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- run row 2 -->
+            <div class="card" style="padding:14px;">
+              <div class="row" style="gap:13px;">
+                <div style="width:88px;height:88px;flex:0 0 88px;border-radius:14px;background:var(--card-dim);position:relative;overflow:hidden;">
+                  <svg width="88" height="88" viewBox="0 0 88 88">
+                    <rect width="88" height="88" fill="#0D0D0D"/>
+                    <line x1="0" y1="29" x2="88" y2="29" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+                    <line x1="0" y1="59" x2="88" y2="59" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+                    <polyline points="18,22 34,26 40,42 58,44 64,60 50,70 36,64 24,72 62,72"
+                      fill="none" stroke="url(#route1)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+                    <circle cx="18" cy="22" r="4" fill="#30D158"/>
+                    <circle cx="62" cy="72" r="4" fill="#FF453A"/>
+                  </svg>
+                </div>
+                <div style="flex:1;">
+                  <div class="row between"><span style="font-size:15px;font-weight:800;">출근 전 인터벌</span><span style="font-size:11px;color:var(--t3);font-weight:600;">3일 전</span></div>
+                  <div style="font-size:11px;color:var(--t3);font-weight:600;margin-top:1px;">인보브 2 · 올림픽공원</div>
+                  <div class="row" style="gap:14px;margin-top:11px;">
+                    <div><div class="num" style="font-size:16px;">5.04</div><div style="font-size:9px;color:var(--t3);font-weight:700;">km</div></div>
+                    <div><div class="num" style="font-size:16px;">4'52"</div><div style="font-size:9px;color:var(--t3);font-weight:700;">페이스</div></div>
+                    <div><div class="num" style="font-size:16px;">24:33</div><div style="font-size:9px;color:var(--t3);font-weight:700;">시간</div></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="tabbar">
+          <div class="tab">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20h14V9.5"/></svg>
+            <span>홈</span>
+          </div>
+          <div class="tab active">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round"><path d="M4 19l4-9 4 4 3-7 5 12"/></svg>
+            <span>기록</span>
+          </div>
+          <div class="tab">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round"><path d="M3 13l2-4h9l4 4 3 1v3H3z"/><path d="M3 13l-1 4h20"/></svg>
+            <span>신발</span>
+          </div>
+          <div class="tab">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
+            <span>프로필</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 5. PROFILE ============ -->
+  <div class="frame-wrap">
+    <div class="frame-label"><b>5 · 프로필</b> — 설정 (실동작)</div>
+    <div class="frame">
+      <div class="screen">
+        <div class="statusbar">
+          <span>9:41</span>
+          <span class="sb-r">
+            <span class="sb-bars"><i></i><i></i><i></i><i></i></span>
+            <svg width="17" height="12" viewBox="0 0 17 12" fill="none"><path d="M8.5 2C5.5 2 2.9 3.2 1 5.1l1.4 1.4C3.9 5 6.1 4 8.5 4s4.6 1 6.1 2.5L16 5.1C14.1 3.2 11.5 2 8.5 2z" fill="#fff"/><path d="M8.5 6c-1.6 0-3 .6-4 1.6L8.5 11l4-3.4C11.5 6.6 10.1 6 8.5 6z" fill="#fff"/></svg>
+            <span class="sb-bat"><i></i></span>
+          </span>
+        </div>
+        <div class="content">
+          <div class="scroll">
+            <!-- profile head -->
+            <div class="row" style="gap:14px;margin:6px 0 16px;align-items:center;">
+              <div style="width:62px;height:62px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;color:#fff;">민</div>
+              <div style="flex:1;">
+                <div style="font-size:19px;font-weight:800;">김민우</div>
+                <div style="font-size:12px;color:var(--t3);font-weight:600;margin-top:2px;">2024년부터 · 누적 1,284 km</div>
+              </div>
+              <span class="pill warn" style="font-size:13px;">🔥 12일 연속</span>
+            </div>
+
+            <!-- weekly goal ring -->
+            <div class="card" style="padding:16px;margin-bottom:14px;">
+              <div class="row" style="gap:16px;align-items:center;">
+                <div style="position:relative;width:90px;height:90px;flex:0 0 90px;">
+                  <svg width="90" height="90" viewBox="0 0 90 90">
+                    <circle cx="45" cy="45" r="38" fill="none" stroke="#2C2C2E" stroke-width="8"/>
+                    <circle cx="45" cy="45" r="38" fill="none" stroke="url(#goalg)" stroke-width="8" stroke-linecap="round"
+                      stroke-dasharray="238.8" stroke-dashoffset="43" transform="rotate(-90 45 45)"/>
+                    <defs><linearGradient id="goalg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FF6500"/><stop offset="1" stop-color="#FF9F4A"/></linearGradient></defs>
+                  </svg>
+                  <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+                    <div class="num" style="font-size:22px;">82<span style="font-size:11px;font-weight:700;">%</span></div>
+                  </div>
+                </div>
+                <div style="flex:1;">
+                  <div style="font-size:13px;color:var(--t3);font-weight:700;">주간 목표</div>
+                  <div style="margin-top:4px;"><span class="num" style="font-size:24px;">24.6</span><span style="font-size:14px;color:var(--t3);font-weight:700;"> / 30 km</span></div>
+                  <div style="font-size:12px;color:var(--good);font-weight:700;margin-top:5px;">목표까지 5.4km 남았어요</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- settings rows -->
+            <div class="sectiontitle" style="margin:4px 0 9px;">설정</div>
+            <div class="card" style="overflow:hidden;margin-bottom:14px;">
+              <!-- 주간 목표 -->
+              <div class="row between" style="padding:14px 16px;border-bottom:1px solid var(--sep);">
+                <div class="row" style="gap:12px;">
+                  <span style="width:30px;height:30px;border-radius:8px;background:rgba(255,101,0,0.16);display:flex;align-items:center;justify-content:center;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/></svg>
+                  </span>
+                  <span style="font-size:14px;font-weight:600;color:var(--t1);">주간 목표</span>
+                </div>
+                <span style="font-size:14px;color:var(--t3);font-weight:600;">주 30 km ›</span>
+              </div>
+              <!-- 신발 교체 알림 toggle ON -->
+              <div class="row between" style="padding:14px 16px;border-bottom:1px solid var(--sep);">
+                <div class="row" style="gap:12px;">
+                  <span style="width:30px;height:30px;border-radius:8px;background:rgba(255,159,10,0.16);display:flex;align-items:center;justify-content:center;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--warn)" stroke-width="2.2" stroke-linejoin="round"><path d="M6 9a6 6 0 1112 0c0 5 2 6 2 6H4s2-1 2-6z"/><path d="M10 20a2 2 0 004 0"/></svg>
+                  </span>
+                  <div>
+                    <div style="font-size:14px;font-weight:600;color:var(--t1);">신발 교체 알림</div>
+                    <div style="font-size:11px;color:var(--t3);font-weight:600;margin-top:1px;">잔여 10% 이하일 때</div>
+                  </div>
+                </div>
+                <span style="width:46px;height:28px;border-radius:999px;background:linear-gradient(135deg,var(--accent),var(--accent2));position:relative;display:inline-block;">
+                  <span style="position:absolute;top:2px;right:2px;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,0.4);"></span>
+                </span>
+              </div>
+              <!-- 단위 -->
+              <div class="row between" style="padding:14px 16px;border-bottom:1px solid var(--sep);">
+                <div class="row" style="gap:12px;">
+                  <span style="width:30px;height:30px;border-radius:8px;background:var(--card-hi);display:flex;align-items:center;justify-content:center;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--t2)" stroke-width="2.2"><path d="M4 7h16M4 12h10M4 17h7"/></svg>
+                  </span>
+                  <span style="font-size:14px;font-weight:600;color:var(--t1);">단위</span>
+                </div>
+                <span style="font-size:14px;color:var(--t3);font-weight:600;">킬로미터 ›</span>
+              </div>
+              <!-- 계정 -->
+              <div class="row between" style="padding:14px 16px;">
+                <div class="row" style="gap:12px;">
+                  <span style="width:30px;height:30px;border-radius:8px;background:var(--card-hi);display:flex;align-items:center;justify-content:center;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--t2)" stroke-width="2.2" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
+                  </span>
+                  <div>
+                    <div style="font-size:14px;font-weight:600;color:var(--t1);">계정</div>
+                    <div style="font-size:11px;color:var(--t3);font-weight:600;margin-top:1px;">kmw0236@gmail.com</div>
+                  </div>
+                </div>
+                <span style="font-size:14px;color:var(--t3);font-weight:600;">›</span>
+              </div>
+            </div>
+
+            <div style="text-align:center;font-size:11px;color:var(--t3);font-weight:600;">Keego v1.0 · 부상 없이, 계속 달리기</div>
+          </div>
+        </div>
+        <div class="tabbar">
+          <div class="tab">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20h14V9.5"/></svg>
+            <span>홈</span>
+          </div>
+          <div class="tab">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round"><path d="M4 19l4-9 4 4 3-7 5 12"/></svg>
+            <span>기록</span>
+          </div>
+          <div class="tab">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round"><path d="M3 13l2-4h9l4 4 3 1v3H3z"/><path d="M3 13l-1 4h20"/></svg>
+            <span>신발</span>
+          </div>
+          <div class="tab active">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
+            <span>프로필</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

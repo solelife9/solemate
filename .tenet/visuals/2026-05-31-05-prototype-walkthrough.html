@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Keego — slice walkthrough (클릭형)</title>
+<style>
+  :root{
+    --bg:#000;--page:#0a0a0a;--card:#1C1C1E;--hi:#2C2C2E;--dim:#0D0D0D;--hero:#161618;
+    --acc:#FF6500;--acc2:#FF9F4A;--good:#30D158;--warn:#FF9F0A;--danger:#FF453A;
+    --t1:#fff;--t2:#EBEBF5;--t3:#8E8E93;--sep:rgba(255,255,255,.08);
+    --font:'Pretendard',-apple-system,'Segoe UI',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;background:var(--page);color:var(--t1);font-family:var(--font);
+    display:flex;flex-direction:column;align-items:center;padding:24px;min-height:100vh}
+  h1{font-size:20px;margin:0 0 2px;letter-spacing:.5px}
+  .sub{color:var(--t3);font-size:12.5px;margin-bottom:16px;text-align:center;max-width:520px}
+  .slicebar{display:flex;gap:8px;margin-bottom:16px}
+  .slicebar button{background:var(--card);color:var(--t2);border:1px solid var(--sep);
+    padding:8px 14px;border-radius:999px;font:inherit;font-size:12.5px;cursor:pointer}
+  .slicebar button.on{background:linear-gradient(135deg,var(--acc),var(--acc2));color:#1a0c00;border:none;font-weight:800}
+  /* phone */
+  .phone{width:360px;height:740px;background:var(--bg);border-radius:42px;border:1px solid #222;
+    box-shadow:0 30px 80px rgba(0,0,0,.6),inset 0 0 0 9px #0c0c0c;position:relative;overflow:hidden}
+  .notch{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:120px;height:24px;background:#000;border-radius:0 0 16px 16px;z-index:5}
+  .screen{position:absolute;inset:0;padding:54px 18px 84px;display:none;overflow-y:auto}
+  .screen.on{display:block;animation:fade .25s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .wm{font-weight:900;font-size:22px;letter-spacing:.5px;background:linear-gradient(135deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .tag{color:var(--t3);font-size:11px;margin-top:-2px}
+  .row{display:flex;align-items:center;justify-content:space-between}
+  .stat{flex:1;text-align:center}
+  .stat .n{font-size:22px;font-weight:800;letter-spacing:.5px}
+  .stat .l{font-size:10.5px;color:var(--t3);margin-top:2px}
+  .card{background:var(--card);border-radius:18px;padding:16px;border:1px solid var(--sep)}
+  .hero{background:var(--hero);border:1px solid var(--sep);border-radius:22px;padding:18px;margin-top:14px}
+  .cta{display:block;width:100%;border:none;border-radius:16px;padding:16px;margin-top:14px;
+    background:linear-gradient(135deg,var(--acc),var(--acc2));color:#1a0c00;font:inherit;font-weight:900;font-size:16px;cursor:pointer}
+  .ghost{background:var(--hi);color:var(--t1);font-weight:700}
+  .chip{display:inline-block;padding:5px 10px;border-radius:999px;font-size:11px;font-weight:700}
+  .chip.warn{background:rgba(255,159,10,.16);color:var(--warn)}
+  .chip.dng{background:rgba(255,69,58,.16);color:var(--danger)}
+  .chip.good{background:rgba(48,209,88,.16);color:var(--good)}
+  .shoechip{display:inline-flex;align-items:center;gap:7px;padding:9px 12px;border-radius:14px;background:var(--card);border:1px solid var(--sep);font-size:12.5px;margin-right:8px;cursor:pointer}
+  .shoechip.sel{border-color:var(--acc);background:#1d1206}
+  .tabbar{position:absolute;bottom:0;left:0;right:0;height:68px;background:rgba(10,10,10,.92);border-top:1px solid var(--sep);
+    display:flex;align-items:center;justify-content:space-around;backdrop-filter:blur(8px)}
+  .tabbar div{display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--t3);font-size:10px}
+  .tabbar div.on{color:var(--acc)}
+  .tabbar svg{width:22px;height:22px}
+  .ring{display:block;margin:6px auto}
+  .toast{position:absolute;left:18px;right:18px;bottom:84px;background:#10240f;border:1px solid var(--good);
+    color:#d6ffe0;border-radius:14px;padding:12px 14px;font-size:12.5px;display:none;z-index:8}
+  .muted{color:var(--t3);font-size:12px}
+  .hd{font-size:18px;font-weight:800;margin:2px 0 10px}
+  .label{font-size:13px}
+  .val{font-size:13px;color:var(--t3)}
+  .sw{width:42px;height:25px;border-radius:999px;background:var(--acc);position:relative}
+  .sw::after{content:"";position:absolute;top:3px;right:3px;width:19px;height:19px;border-radius:50%;background:#fff}
+  .seg{display:flex;background:var(--dim);border-radius:10px;padding:3px}
+  .seg span{flex:1;text-align:center;padding:6px;border-radius:8px;font-size:12px;color:var(--t3)}
+  .seg span.on{background:var(--acc);color:#1a0c00;font-weight:800}
+  .hint{margin-top:14px;color:var(--t3);font-size:12px;text-align:center;max-width:360px}
+  .navbtn{margin-top:8px;background:var(--card);border:1px solid var(--sep);color:var(--t2);border-radius:12px;padding:9px 14px;font:inherit;font-size:12px;cursor:pointer}
+</style>
+</head>
+<body>
+  <h1>Keego — slice walkthrough</h1>
+  <div class="sub">각 slice의 use-checkpoint에서 사용자가 실제로 보게 될 화면. 위 탭으로 slice를 전환하고, Slice 2의 화면은 <b>탭해서 shoe-first 흐름</b>(신발 선택 → 러닝 → 종료 → 신발 거리 자동 차감)을 클릭해볼 수 있습니다.</div>
+
+  <div class="slicebar">
+    <button id="b1" class="on" onclick="slice(1)">Slice 1 · 엔진</button>
+    <button id="b2" onclick="slice(2)">Slice 2 · 기능</button>
+    <button id="b3" onclick="slice(3)">Slice 3 · 디자인</button>
+  </div>
+
+  <div class="phone">
+    <div class="notch"></div>
+
+    <!-- ============ SLICE 1 : engine (run screen) ============ -->
+    <div class="screen s1 on" id="s1">
+      <div class="row"><div><div class="wm">Keego</div><div class="tag">Slice 1 — 믿을 수 있는 엔진</div></div>
+        <span class="chip good">GPS 정확도 8m</span></div>
+      <div class="hero" style="text-align:center">
+        <div class="muted">페가수스 41로 달리는 중</div>
+        <div style="font-size:62px;font-weight:900;letter-spacing:1px;margin:6px 0">2.18<span style="font-size:22px;color:var(--t3)"> km</span></div>
+        <div class="row" style="margin-top:8px">
+          <div class="stat"><div class="n">5'42"</div><div class="l">페이스</div></div>
+          <div class="stat"><div class="n">12:27</div><div class="l">운동 시간</div></div>
+          <div class="stat"><div class="n">172</div><div class="l">spm</div></div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:12px;border-color:var(--warn);background:#241a05">
+        <div class="row"><b style="color:var(--warn)">⏸ 자동 일시정지됨</b><span class="muted">신호등?</span></div>
+        <div class="muted" style="margin-top:6px">정지 감지(0.6m/s·6초) — 다시 달리면 자동 재개. 일시정지 동안 거리·시간 누적 중단.</div>
+      </div>
+      <div class="muted" style="margin-top:12px;line-height:1.7">
+        ✓ 정확도 20m 초과 fix 거리 제외 &nbsp; ✓ 시작 첫 3 fix(워밍업) 제외<br>
+        ✓ 12m/s 초과 점프 좌표 거부 &nbsp; <span style="color:var(--acc2)">— 모두 단위 테스트로 검증</span>
+      </div>
+      <div class="row" style="gap:10px;margin-top:14px">
+        <button class="cta ghost" style="margin:0">일시정지</button>
+        <button class="cta" style="margin:0;background:var(--danger);color:#fff">종료</button>
+      </div>
+      <div class="hint">Slice 1은 화면 추가·리뉴얼 없이 <b>엔진 신뢰성</b>만 끌어올립니다.</div>
+    </div>
+
+    <!-- ============ SLICE 2 : features (clickable shoe-first) ============ -->
+    <!-- 2a home: pick shoe -->
+    <div class="screen s2" id="s2a">
+      <div class="row"><div><div class="wm">Keego</div><div class="tag">오늘도, keep going</div></div>
+        <span class="chip warn">신발 1 교체 임박</span></div>
+      <div class="row" style="margin-top:14px;gap:8px">
+        <div class="stat card"><div class="n">23.4</div><div class="l">이번 주 km</div></div>
+        <div class="stat card"><div class="n">4</div><div class="l">런</div></div>
+        <div class="stat card"><div class="n">🔥12</div><div class="l">스트릭</div></div>
+      </div>
+      <div style="margin-top:16px;font-size:13px;color:var(--t2)">어떤 신발로 달릴까요?</div>
+      <div style="margin-top:10px;white-space:nowrap;overflow-x:auto">
+        <span class="shoechip sel" id="sc1" onclick="pick(1)">👟 페가수스 41</span>
+        <span class="shoechip" id="sc2" onclick="pick(2)">👟 인보브 8</span>
+      </div>
+      <div class="hero" id="herocard">
+        <div class="row"><b id="heroname">나이키 페가수스 41</b><span class="chip good" id="herobadge">상태 좋음</span></div>
+        <svg class="ring" width="150" height="150" viewBox="0 0 150 150">
+          <circle cx="75" cy="75" r="62" fill="none" stroke="#2c2c2e" stroke-width="12"/>
+          <circle id="ringarc" cx="75" cy="75" r="62" fill="none" stroke="url(#rg)" stroke-width="12" stroke-linecap="round"
+            stroke-dasharray="389" stroke-dashoffset="187" transform="rotate(-90 75 75)"/>
+          <defs><linearGradient id="rg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FF6500"/><stop offset="1" stop-color="#FF9F4A"/></linearGradient></defs>
+          <text x="75" y="70" text-anchor="middle" fill="#fff" font-size="26" font-weight="800" id="ringkm">312</text>
+          <text x="75" y="90" text-anchor="middle" fill="#8E8E93" font-size="11" id="ringsub">km 더 달릴 수 있어요</text>
+        </svg>
+        <div class="muted" style="text-align:center" id="herolife">누적 288 / 수명 600 km</div>
+      </div>
+      <button class="cta" onclick="go('s2b')">러닝 시작 →</button>
+      <div class="hint">신발 칩을 바꿔보세요 — 홈 히어로가 실제 선택 신발로 바뀝니다(activeIdx 버그 수정).</div>
+    </div>
+
+    <!-- 2b running -->
+    <div class="screen s2" id="s2b">
+      <div class="row"><div><div class="wm">Keego</div><div class="tag" id="runshoe">페가수스 41로 달리는 중</div></div>
+        <span class="chip good">GPS 8m</span></div>
+      <div class="hero" style="text-align:center">
+        <div style="font-size:60px;font-weight:900;letter-spacing:1px;margin:6px 0">3.42<span style="font-size:22px;color:var(--t3)"> km</span></div>
+        <div class="row"><div class="stat"><div class="n">5'38"</div><div class="l">페이스</div></div>
+          <div class="stat"><div class="n">19:14</div><div class="l">시간</div></div>
+          <div class="stat"><div class="n">174</div><div class="l">spm</div></div></div>
+      </div>
+      <button class="cta" style="background:var(--danger);color:#fff" onclick="go('s2c')">종료 & 저장</button>
+      <button class="navbtn" style="display:block;width:100%;margin-top:10px" onclick="go('s2a')">← 홈</button>
+      <div class="hint">Slice 1 엔진(정확도 필터·자동정지) 위에서 동작합니다.</div>
+    </div>
+
+    <!-- 2c saved -> shoe decremented + share -->
+    <div class="screen s2" id="s2c">
+      <div class="hd" style="text-align:center;margin-top:10px">🎉 3.42km 완주!</div>
+      <div class="card" style="text-align:center">
+        <div class="muted">이번 런으로</div>
+        <div style="font-size:18px;font-weight:800;margin:4px 0"><span id="dshoe">페가수스 41</span> +3.42km</div>
+        <div class="muted" id="dafter">잔여 수명 312 → 308.6 km</div>
+        <div style="margin-top:8px"><span class="chip warn">수명 51% — 곧 교체 권장</span></div>
+      </div>
+      <div class="card" style="margin-top:12px">
+        <div class="row"><b>코스</b><span class="muted">서울 한강</span></div>
+        <svg width="100%" height="120" viewBox="0 0 300 120" style="margin-top:8px">
+          <rect width="300" height="120" rx="10" fill="#0d0d0d"/>
+          <path d="M20 90 C 60 40, 90 100, 130 60 S 210 30, 250 70 L 280 40" fill="none" stroke="url(#rg2)" stroke-width="4" stroke-linecap="round"/>
+          <circle cx="20" cy="90" r="5" fill="#30D158"/><circle cx="280" cy="40" r="5" fill="#FF453A"/>
+          <defs><linearGradient id="rg2" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#FF6500"/><stop offset="1" stop-color="#FF9F4A"/></linearGradient></defs>
+        </svg>
+      </div>
+      <div class="row" style="gap:10px;margin-top:12px">
+        <button class="cta ghost" style="margin:0" onclick="toast()">기록 공유</button>
+        <button class="cta" style="margin:0" onclick="go('s2a')">완료</button>
+      </div>
+      <div class="hint">shoe-first 루프 완성: 선택 신발에 거리가 자동 차감되고 수명 링이 갱신됩니다.</div>
+      <div class="toast" id="tt">📤 "오늘 3.42km · 5'38"/km · 페가수스 41 👟 — keep going!" 텍스트로 공유(RN Share)</div>
+    </div>
+
+    <!-- ============ SLICE 3 : polished design ============ -->
+    <div class="screen s3" id="s3">
+      <div class="row"><div><div class="wm" style="font-size:26px">Keego</div><div class="tag">부상 없이, 계속 달리기</div></div>
+        <div style="width:38px;height:38px;border-radius:50%;background:var(--hi)"></div></div>
+      <div class="hero" style="background:linear-gradient(160deg,#1d1206,#0f0a04);border-color:#3a2a12">
+        <div class="row"><div><div style="font-size:12px;color:var(--acc2);font-weight:700">오늘의 신발</div>
+          <b style="font-size:17px">나이키 페가수스 41</b></div><span class="chip good">상태 좋음</span></div>
+        <svg class="ring" width="160" height="160" viewBox="0 0 160 160">
+          <circle cx="80" cy="80" r="66" fill="none" stroke="#241a0a" stroke-width="13"/>
+          <circle cx="80" cy="80" r="66" fill="none" stroke="url(#rg3)" stroke-width="13" stroke-linecap="round"
+            stroke-dasharray="414" stroke-dashoffset="199" transform="rotate(-90 80 80)"/>
+          <defs><linearGradient id="rg3" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FF6500"/><stop offset="1" stop-color="#FF9F4A"/></linearGradient></defs>
+          <text x="80" y="74" text-anchor="middle" fill="#fff" font-size="30" font-weight="900">312</text>
+          <text x="80" y="96" text-anchor="middle" fill="#8E8E93" font-size="11">km 더 함께</text>
+        </svg>
+        <button class="cta" style="margin-top:4px" onclick="alert('러닝 시작 (프로토타입)')">러닝 시작</button>
+      </div>
+      <div class="row" style="margin-top:14px;gap:10px">
+        <div class="stat card"><div class="n">23.4</div><div class="l">주간 km · 목표 30</div></div>
+        <div class="stat card"><div class="n">🔥 12</div><div class="l">연속 일</div></div>
+      </div>
+      <div class="card" style="margin-top:12px;background:#241a05;border-color:var(--warn)">
+        <div class="row"><b style="color:var(--warn)">👟 인보브 8 — 교체 임박</b><span class="muted">552/600km</span></div>
+        <div class="muted" style="margin-top:6px">지금 교체하면 부상 없이 계속 달릴 수 있어요.</div>
+      </div>
+      <div class="hint">디자인 토큰(색·타이포·간격) 일관 적용 · Keego 브랜드 보이스 · 심박 UI 제거.</div>
+    </div>
+
+    <!-- tab bar -->
+    <div class="tabbar">
+      <div class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-8 9 8M5 10v10h14V10"/></svg>홈</div>
+      <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19V5m0 14h16M8 16v-5m4 5V8m4 8v-3"/></svg>기록</div>
+      <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 13c2-2 5-2 7 0s5 2 7 0M3 17h18"/></svg>신발</div>
+      <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>프로필</div>
+    </div>
+  </div>
+
+  <script>
+    var cur=1;
+    function showOnly(cls,id){
+      document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('on')});
+      document.getElementById(id).classList.add('on');
+    }
+    function slice(n){
+      cur=n;
+      ['b1','b2','b3'].forEach(function(b,i){document.getElementById(b).classList.toggle('on',i===n-1)});
+      if(n===1) showOnly('s1','s1');
+      if(n===2) showOnly('s2','s2a');
+      if(n===3) showOnly('s3','s3');
+    }
+    function go(id){ showOnly('s2',id); }
+    function pick(i){
+      document.getElementById('sc1').classList.toggle('sel',i===1);
+      document.getElementById('sc2').classList.toggle('sel',i===2);
+      if(i===1){
+        heroname.textContent='나이키 페가수스 41'; herobadge.textContent='상태 좋음'; herobadge.className='chip good';
+        ringkm.textContent='312'; ringsub.textContent='km 더 달릴 수 있어요'; herolife.textContent='누적 288 / 수명 600 km';
+        ringarc.setAttribute('stroke-dashoffset','187'); runshoe.textContent='페가수스 41로 달리는 중'; dshoe.textContent='페가수스 41'; dafter.textContent='잔여 수명 312 → 308.6 km';
+      }else{
+        heroname.textContent='이너브 인보브 8'; herobadge.textContent='교체 임박'; herobadge.className='chip warn';
+        ringkm.textContent='48'; ringsub.textContent='km 남음 — 교체 권장'; herolife.textContent='누적 552 / 수명 600 km';
+        ringarc.setAttribute('stroke-dashoffset','358'); runshoe.textContent='인보브 8로 달리는 중'; dshoe.textContent='인보브 8'; dafter.textContent='잔여 수명 48 → 44.6 km';
+      }
+    }
+    function toast(){var t=document.getElementById('tt');t.style.display='block';setTimeout(function(){t.style.display='none'},3200);}
+  </script>
+</body>
+</html>

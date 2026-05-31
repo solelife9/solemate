@@ -66,6 +66,9 @@ yarn-error.log
 # testing
 /coverage
 
+# Tenet runtime state (volatile SQLite — human-readable artifacts under .tenet/ are tracked)
+.tenet/.state/
+
 # Yarn
 .yarn/*
 !.yarn/patches
