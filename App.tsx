@@ -33,8 +33,18 @@ import {
   weekBuckets, monthBuckets, yearBuckets,
 } from './lib/stats';
 import {parseShoeName, shoeHealth, isRetired, DEFAULT_MAX_KM} from './lib/shoe';
+import {
+  saveSnapshot, loadSnapshot, clearSnapshot, isResumable,
+  enqueuePendingRun, removePendingRun, flushPendingRuns,
+  RunSnapshot, PendingRun,
+} from './lib/runPersistence';
 
 const API = 'https://solelife-backend.onrender.com';
+
+function nowTimeLabel():string{
+  const n=new Date();
+  return `${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`;
+}
 
 function today():string{return ymdLocal(new Date());}
 
@@ -55,9 +65,45 @@ function Main(){
   const [overlay,setOverlay]=useState<'none'|'add'|'goal'|'run'>('none');
   const [pendingShoe,setPendingShoe]=useState<{id:string;name:string;ui:Shoe}|null>(null);
   const [activeRun,setActiveRun]=useState<{id:string;name:string;goalKm:number}|null>(null);
+  // audit#2: 앱 시작 시 감지된 미완료 런 스냅샷. 사용자가 '복구' 선택 시 done
+  // 화면으로 시드되어 검토 후 저장/버리기를 결정한다(데이터 유실 금지).
+  const [resumeSnap,setResumeSnap]=useState<RunSnapshot|null>(null);
   const insets=useSafeAreaInsets();
 
   useEffect(()=>{initUser();},[]);
+
+  // audit#3 재동기: userId가 준비되면 네트워크 실패로 큐에 남은 완주 런을 재전송.
+  // 큐 읽기/쓰기는 flushPendingRuns(저장)이, POST(네트워크)는 주입된 syncFn이
+  // 담당해 저장/네트워크가 분리된다.
+  useEffect(()=>{
+    if(!userId) return;
+    flushPendingRuns(async(p)=>{
+      const server=await postRun(p);
+      await reconcileSynced(p,server);
+    }).catch(()=>{});
+  },[userId]);
+
+  // audit#2: 미완료 런 감지 → 복구/저장 프롬프트. 한 번만 묻는다.
+  useEffect(()=>{
+    let asked=false;
+    (async()=>{
+      const snap=await loadSnapshot();
+      if(asked||!isResumable(snap)||!snap) return;
+      asked=true;
+      Alert.alert(
+        '미완료 런 발견',
+        `${snap.dist.toFixed(2)}km · ${fmtTime(snap.elapsed)} 기록이 남아 있습니다.\n복구해서 저장하시겠어요?`,
+        [
+          {text:'버리기',style:'destructive',onPress:()=>{void clearSnapshot();}},
+          {text:'복구',onPress:()=>{
+            setActiveRun({id:snap.shoe.id,name:snap.shoe.name,goalKm:snap.goalKm});
+            setResumeSnap(snap);
+            setOverlay('run');
+          }},
+        ],
+      );
+    })();
+  },[]);
 
   async function initUser(){
     let did=await AsyncStorage.getItem('device_id');
@@ -114,19 +160,55 @@ function Main(){
     }catch(e){Alert.alert('오류',retired?'보관 처리 실패':'복원 실패');}
   }
 
+  // 완주 런 저장(audit#3): 로컬 우선 + 미동기 큐. 저장(AsyncStorage)과 네트워크
+  // (POST)를 분리해 부분성공 desync를 막는다.
+  //   1) enqueuePendingRun + 낙관적 setRuns — 네트워크 try 밖에서 먼저 영속화하므로
+  //      여기서 크래시/네트워크 단절이 나도 route/run이 소실되지 않는다(iron law).
+  //   2) postRun(네트워크)을 별도로 시도 — 성공 시 서버 id로 화해 + 큐 제거,
+  //      실패 시 큐에 남겨 다음 flushPendingRuns가 재전송.
   async function addRun(shoeId:string,km:number,date:string,memo:string,source:string,duration?:number,cadence?:number,route?:string,location?:string,heart_rate?:number){
+    const timeStr=nowTimeLabel();
+    const localId='run_'+Date.now()+'_'+Math.random().toString(36).slice(2,9);
+    const pending:PendingRun={
+      localId, shoe_id:shoeId, km, run_date:date, memo:memo||'', source,
+      duration:duration||0, cadence:cadence||0, route:route||'', location:location||'',
+      heart_rate:heart_rate||0, run_time:timeStr, queuedAt:Date.now(),
+    };
+
+    // ── 1) 로컬 우선 영속화(네트워크 try 밖) ──
+    await enqueuePendingRun(pending);
+    if(route) await AsyncStorage.setItem('route_'+localId, route);
+    await AsyncStorage.setItem('time_'+localId, timeStr);
+    setRuns(prev=>[{id:localId,shoe_id:shoeId,km,run_date:date,duration:duration||0,
+      cadence:cadence||0,memo:memo||'',route:route||'',run_time:timeStr,_pending:true},...prev]);
+
+    // ── 2) 네트워크 동기화(별도 try). 실패해도 위 로컬 기록·큐는 보존된다. ──
     try{
-      const r=await fetch(API+'/api/runs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:userId,shoe_id:shoeId,km,run_date:date,memo,source,duration:duration||0,cadence:cadence||0,route:route||'',location:location||'',heart_rate:heart_rate||0})});
-      const nr=await r.json();
-      const now=new Date();
-      const timeStr=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-      const runWithRoute={...nr,shoe_id:shoeId,route:route||nr.route||'',run_time:timeStr};
-      setRuns(prev=>[runWithRoute,...prev]);
-      if(nr.id){
-        if(route) await AsyncStorage.setItem('route_'+nr.id, route);
-        await AsyncStorage.setItem('time_'+nr.id, timeStr);
-      }
-    }catch(e){Alert.alert('오류','저장 실패');}
+      const server=await postRun(pending);
+      await reconcileSynced(pending,server);
+    }catch(e){/* 큐에 남아 다음 실행/포그라운드에서 재동기 */}
+  }
+
+  // 단일 POST 경로 — addRun과 startup 재동기(flushPendingRuns)가 공유한다.
+  async function postRun(p:PendingRun):Promise<any>{
+    const r=await fetch(API+'/api/runs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:userId,shoe_id:p.shoe_id,km:p.km,run_date:p.run_date,memo:p.memo,source:p.source,duration:p.duration,cadence:p.cadence,route:p.route,location:p.location,heart_rate:p.heart_rate})});
+    if(!r||!r.ok) throw new Error('run POST failed');
+    return r.json();
+  }
+
+  // 동기 성공 후 화해: 서버 id로 route_/time_ 재키잉, 큐에서 제거, 낙관적 항목을
+  // 서버 항목으로 교체(없으면 추가). localId/serverId 중복은 제거한다.
+  async function reconcileSynced(p:PendingRun,server:any){
+    const serverId=server&&server.id!=null?server.id:null;
+    if(serverId){
+      if(p.route) await AsyncStorage.setItem('route_'+serverId, p.route);
+      if(p.run_time) await AsyncStorage.setItem('time_'+serverId, p.run_time);
+    }
+    await removePendingRun(p.localId);
+    const merged={...(server||{}),id:serverId??p.localId,shoe_id:p.shoe_id,km:p.km,run_date:p.run_date,
+      duration:p.duration,cadence:p.cadence,memo:p.memo,route:p.route||((server&&server.route)||''),
+      run_time:p.run_time,_pending:false};
+    setRuns(prev=>[merged,...prev.filter(r=>r.id!==p.localId&&(serverId==null||r.id!==serverId))]);
   }
 
   async function checkShoeAlerts(shoeList:any[],runList:any[]){
@@ -264,11 +346,13 @@ function Main(){
         shoe={activeRun}
         insets={insets}
         goalKm={activeRun.goalKm}
+        resume={resumeSnap}
         onSave={async(km,dur,cad,memo,route,location)=>{
           await addRun(activeRun.id,km,today(),memo||'','gps',dur,cad,route,location);
-          setActiveRun(null);setOverlay('none');setTab(1);
+          await clearSnapshot();
+          setResumeSnap(null);setActiveRun(null);setOverlay('none');setTab(1);
         }}
-        onDiscard={()=>{setActiveRun(null);setOverlay('none');}}
+        onDiscard={()=>{void clearSnapshot();setResumeSnap(null);setActiveRun(null);setOverlay('none');}}
       />
     );
   }
@@ -301,26 +385,30 @@ function Main(){
 }
 
 // ─── Live run screen (GPS / sensors / TTS engine + handoff Ring UI) ─────────
-function RunActiveScreen({shoe,insets,goalKm,onSave,onDiscard}:{shoe:{id:string;name:string};insets:any;goalKm:number;onSave:(km:number,dur:number,cad:number,memo:string,route:string,location:string)=>Promise<void>;onDiscard:()=>void}){
+function RunActiveScreen({shoe,insets,goalKm,onSave,onDiscard,resume}:{shoe:{id:string;name:string};insets:any;goalKm:number;onSave:(km:number,dur:number,cad:number,memo:string,route:string,location:string)=>Promise<void>;onDiscard:()=>void;resume?:RunSnapshot|null}){
   const ui=parseShoeName(shoe.name);
-  const [phase,setPhase]=useState<'running'|'done'>('running');
-  const [km,setKm]=useState(0);
-  const [elapsed,setElapsed]=useState(0);
+  // 복구 모드: 미완료 런 스냅샷으로 done 화면을 시드해 검토 후 저장/버리기. GPS는
+  // 다시 시작하지 않는다(이미 기록된 거리/경로를 그대로 보존).
+  const resumeRoute=resume?(()=>{const sr=simplifyRoute(resume.pts as any,200);return sr.length>=2?JSON.stringify(sr):'';})():'';
+  const [phase,setPhase]=useState<'running'|'done'>(resume?'done':'running');
+  const [km,setKm]=useState(resume?resume.dist:0);
+  const [elapsed,setElapsed]=useState(resume?resume.elapsed:0);
   const [gpsStatus,setGpsStatus]=useState('GPS 신호 찾는 중...');
-  const [cadence,setCadence]=useState(0);
+  const [cadence,setCadence]=useState(resume?resume.cadence:0);
   const [paused,setPaused]=useState(false);
   const [autoPaused,setAutoPaused]=useState(false);
   const [stopConfirm,setStopConfirm]=useState(false);
-  const [finKm,setFinKm]=useState(0);
-  const [finTime,setFinTime]=useState(0);
-  const [finCad,setFinCad]=useState(0);
-  const [finRoute,setFinRoute]=useState('');
-  const [finLocation,setFinLocation]=useState('');
+  const [finKm,setFinKm]=useState(resume?resume.dist:0);
+  const [finTime,setFinTime]=useState(resume?resume.elapsed:0);
+  const [finCad,setFinCad]=useState(resume?resume.cadence:0);
+  const [finRoute,setFinRoute]=useState(resumeRoute);
+  const [finLocation,setFinLocation]=useState(resume?resume.location:'');
   const [memo,setMemo]=useState('');
   const [saving,setSaving]=useState(false);
 
   const watchId=useRef<number|null>(null);
   const timer=useRef<any>(null);
+  const snapTimer=useRef<any>(null);
   const stepSub=useRef<any>(null);
   // 케이던스(spm) 순수 상태기계 — 가속도 피크검출+윈도우 정규화는 lib/cadence.ts.
   const cadenceState=useRef(initCadenceState());
@@ -346,6 +434,8 @@ function RunActiveScreen({shoe,insets,goalKm,onSave,onDiscard}:{shoe:{id:string;
   const stopConfirmTimer=useRef<any>(null);
 
   useEffect(()=>{
+    // 복구 모드는 이미 끝난 런을 검토만 한다 — GPS/센서/권한/TTS를 켜지 않는다.
+    if(resume) return;
     (async()=>{
       try{
         Tts.setDefaultLanguage('ko-KR');
@@ -412,6 +502,21 @@ function RunActiveScreen({shoe,insets,goalKm,onSave,onDiscard}:{shoe:{id:string;
     void auto;
   }
 
+  // audit#2: 진행중 런 상태를 수 초마다 스냅샷으로 영속. 순수 저장(네트워크와 무관)
+  // 이며, sanitize에서 음수/NaN을 0으로 막아 손상된 스냅샷이 음수 데이터를 만들지
+  // 않는다(iron law). 일시정지 중에도 현재 경과를 동일 공식으로 계산해 기록한다.
+  function writeSnapshot(){
+    const curPausedMs=(isPausedRef.current&&pauseStartRef.current>0)?pausedMs.current+(Date.now()-pauseStartRef.current):pausedMs.current;
+    const el=Math.max(0,Math.floor((Date.now()-t0.current-curPausedMs)/1000));
+    saveSnapshot({
+      dist:dist.current, elapsed:el,
+      pts:pts.current.map((p:any)=>({lat:p.lat,lon:p.lon})),
+      pausedMs:pausedMs.current, t0:t0.current,
+      shoe:{id:shoe.id,name:shoe.name}, goalKm, cadence:cadRef.current,
+      location:locationRef.current, savedAt:Date.now(),
+    }).catch(()=>{});
+  }
+
   function beginRun(){
     dist.current=0;t0.current=Date.now();kf.current.reset();
     fixIndex.current=0;lastGoodMs.current=0;lastGood.current=null;
@@ -435,6 +540,9 @@ function RunActiveScreen({shoe,insets,goalKm,onSave,onDiscard}:{shoe:{id:string;
       // elapsed = now − t0 − pausedMs (음수 방지로 0 하한). 일시정지 중엔 멈춘다.
       if(!isPausedRef.current){setElapsed(Math.max(0,Math.floor((Date.now()-t0.current-pausedMs.current)/1000)));}
     },1000);
+    // 진행중 스냅샷: 즉시 1회 + 3초마다(audit#2). 크래시/강제종료 시 복구 지점이 된다.
+    writeSnapshot();
+    snapTimer.current=setInterval(writeSnapshot,3000);
     watchId.current=Geolocation.watchPosition(
       pos=>{
         const{latitude:lat,longitude:lon,accuracy:acc}=pos.coords;
@@ -497,6 +605,7 @@ function RunActiveScreen({shoe,insets,goalKm,onSave,onDiscard}:{shoe:{id:string;
     if(watchId.current!==null){Geolocation.clearWatch(watchId.current);watchId.current=null;}
     if(stepSub.current){stepSub.current.unsubscribe();stepSub.current=null;}
     clearInterval(timer.current);
+    clearInterval(snapTimer.current);
   }
 
   function handlePause(){
