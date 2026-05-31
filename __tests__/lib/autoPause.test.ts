@@ -127,3 +127,16 @@ describe('decideAutoPause — purity', () => {
     expect(s).toEqual(snapshot);
   });
 });
+
+describe('engine constants are pinned to the tuned spec', () => {
+  // The hysteresis behavior above is described in terms of concrete numbers
+  // (0.6/1.0 m/s, 6s/2s). Pin those exact values so a stray retune of
+  // engineConstants.ts that would silently change auto-pause feel — or break the
+  // 0.6→1.0 hysteresis gap that prevents flapping — fails the suite loudly.
+  test('pause/resume speed thresholds and hold windows match', () => {
+    expect(AUTO_PAUSE_SPEED_MPS).toBe(0.6);
+    expect(AUTO_RESUME_SPEED_MPS).toBe(1.0);
+    expect(AUTO_PAUSE_HOLD_S).toBe(6);
+    expect(AUTO_RESUME_HOLD_S).toBe(2);
+  });
+});
