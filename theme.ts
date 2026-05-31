@@ -65,7 +65,9 @@ export type Shoe = {
   model: string;
   used: number;
   max: number;
-  condition: '양호' | '점검';
+  // Proportional wear tier — see lib/shoe.ts shoeHealth (audit#7).
+  condition: '양호' | '주의' | '교체';
+  retired?: boolean;    // archived: hidden from run pickers, records preserved
 };
 
 export type Run = {

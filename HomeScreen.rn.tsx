@@ -17,6 +17,10 @@ export type WeekStats = { km: string; runs: number; pace: string };
 const CARD_W = 138;
 const GAP = 10;
 
+// Proportional condition → color (shoeHealth tiers: 양호 / 주의 / 교체).
+const ringColor = (c: string) => (c === '교체' ? DANGER : c === '주의' ? WARN : ACCENT);
+const tierColor = (c: string) => (c === '교체' ? DANGER : c === '주의' ? WARN : GOOD);
+
 function TopBar({ onAddShoe }: { onAddShoe?: () => void }) {
   return (
     <View style={s.topbar}>
@@ -49,7 +53,8 @@ function QuickStats({ week }: { week: WeekStats }) {
 function HeroShoe({ shoe }: { shoe: Shoe }) {
   const remain = Math.max(0, shoe.max - shoe.used);
   const pct = shoe.max > 0 ? remain / shoe.max : 0;
-  const good = shoe.condition === '양호';
+  const ring = ringColor(shoe.condition);
+  const tier = tierColor(shoe.condition);
   return (
     <View style={s.hero}>
       <View style={s.heroTop}>
@@ -60,7 +65,7 @@ function HeroShoe({ shoe }: { shoe: Shoe }) {
           </View>
           <Text style={s.heroModel} numberOfLines={2}>{shoe.model}</Text>
         </View>
-        <Ring size={68} stroke={7} progress={pct} color={good ? ACCENT : DANGER}>
+        <Ring size={68} stroke={7} progress={pct} color={ring}>
           <Text style={s.ringPct}>{Math.round(pct * 100)}<Text style={s.ringPctU}>%</Text></Text>
         </Ring>
       </View>
@@ -70,8 +75,8 @@ function HeroShoe({ shoe }: { shoe: Shoe }) {
           <Text style={s.heroRemainU}>km 남음</Text>
         </View>
         <View style={s.row}>
-          <View style={[s.dot, { backgroundColor: good ? GOOD : WARN }]} />
-          <Text style={[s.condText, { color: good ? GOOD : WARN }]}>{shoe.condition}</Text>
+          <View style={[s.dot, { backgroundColor: tier }]} />
+          <Text style={[s.condText, { color: tier }]}>{shoe.condition}</Text>
           <Text style={s.condSub}>· {shoe.used}/{shoe.max}km</Text>
         </View>
       </View>
@@ -91,7 +96,7 @@ function StartButton({ onPress }: { onPress?: () => void }) {
 function PickerCard({ shoe, active, onPress }: { shoe: Shoe; active: boolean; onPress: () => void }) {
   const remain = Math.max(0, shoe.max - shoe.used);
   const pct = shoe.max > 0 ? remain / shoe.max : 0;
-  const good = shoe.condition === '양호';
+  const ring = ringColor(shoe.condition);
   return (
     <Pressable
       onPress={onPress}
@@ -99,7 +104,7 @@ function PickerCard({ shoe, active, onPress }: { shoe: Shoe; active: boolean; on
     >
       <View style={s.row}>
         <Text style={s.pcardBrand} numberOfLines={1}>{shoe.brand}</Text>
-        <Ring size={30} stroke={3.5} progress={pct} color={good ? ACCENT : DANGER}>
+        <Ring size={30} stroke={3.5} progress={pct} color={ring}>
           <Text style={s.pcardRingPct}>{Math.round(pct * 100)}</Text>
         </Ring>
       </View>

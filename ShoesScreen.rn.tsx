@@ -12,11 +12,13 @@ import { Ring, TabBar } from './primitives';
 
 export type ShoeTotals = { totalRuns: number; totalTime: string };
 
-const condColor = (c: string) => (c === '양호' ? GOOD : WARN);
+// Proportional condition → color (shoeHealth tiers: 양호 / 주의 / 교체).
+const condColor = (c: string) => (c === '교체' ? DANGER : c === '주의' ? WARN : GOOD);
+const ringColor = (c: string) => (c === '교체' ? DANGER : c === '주의' ? WARN : ACCENT);
 
 // ── shoe detail ───────────────────────────────────────────────────────────────
 function ShoeDetail({
-  shoe, idx, runs, totals, onBack, onRename, onDelete,
+  shoe, idx, runs, totals, onBack, onRename, onDelete, onRetire,
 }: {
   shoe: Shoe;
   idx: number;
@@ -25,10 +27,12 @@ function ShoeDetail({
   onBack: () => void;
   onRename?: (id: string, name: string) => void;
   onDelete?: (id: string) => void;
+  onRetire?: (id: string, retired: boolean) => void;
 }) {
   const remain = Math.max(0, shoe.max - shoe.used);
   const pct = shoe.max > 0 ? remain / shoe.max : 0;
-  const good = shoe.condition === '양호';
+  const ring = ringColor(shoe.condition);
+  const retired = !!shoe.retired;
   const shoeRuns = runs.filter((r) => r.shoe === idx);
 
   const [editing, setEditing] = useState(false);
@@ -39,8 +43,17 @@ function ShoeDetail({
     if (shoe.id && v) onRename?.(shoe.id, v);
     setEditing(false);
   };
+  // 보관/복원: 런 기록을 보존한 채 신발만 선택목록에서 숨기거나 되돌린다.
+  const toggleRetire = () => {
+    if (!shoe.id) return;
+    if (retired) { onRetire?.(shoe.id, false); return; }
+    Alert.alert('신발 보관', `${shoe.brand} ${shoe.model}을(를) 보관할까요?\n러닝 기록은 그대로 보존되며, 러닝 시작 목록에서만 숨겨집니다.`, [
+      { text: '취소', style: 'cancel' },
+      { text: '보관', onPress: () => onRetire?.(shoe.id!, true) },
+    ]);
+  };
   const confirmDelete = () => {
-    Alert.alert('신발 삭제', `${shoe.brand} ${shoe.model}을(를) 삭제할까요?\n관련 러닝 기록도 함께 삭제됩니다.`, [
+    Alert.alert('신발 삭제', `${shoe.brand} ${shoe.model}을(를) 삭제할까요?\n러닝 기록은 보존됩니다. 신발만 잠금장에서 제거됩니다.`, [
       { text: '취소', style: 'cancel' },
       { text: '삭제', style: 'destructive', onPress: () => { if (shoe.id) onDelete?.(shoe.id); onBack(); } },
     ]);
@@ -52,6 +65,7 @@ function ShoeDetail({
         <Pressable onPress={onBack} style={s.iconBtn}><Ionicons name="chevron-back" size={20} color={T1} /></Pressable>
         <View style={{ flexDirection: 'row', gap: 10 }}>
           <Pressable onPress={() => setEditing((e) => !e)} style={s.iconBtn}><Ionicons name="pencil" size={16} color={T2} /></Pressable>
+          <Pressable onPress={toggleRetire} style={s.iconBtn}><Ionicons name={retired ? 'arrow-undo-outline' : 'archive-outline'} size={16} color={retired ? ACCENT : T2} /></Pressable>
           <Pressable onPress={confirmDelete} style={s.iconBtn}><Ionicons name="trash-outline" size={16} color={DANGER} /></Pressable>
         </View>
       </View>
@@ -67,14 +81,17 @@ function ShoeDetail({
           </View>
         ) : (
           <View style={{ paddingHorizontal: 4 }}>
-            <Text style={s.dBrand}>{shoe.brand}</Text>
+            <View style={s.row}>
+              <Text style={s.dBrand}>{shoe.brand}</Text>
+              {retired && <View style={s.retiredChip}><Text style={s.retiredChipText}>보관됨</Text></View>}
+            </View>
             <Text style={s.dModel}>{shoe.model}</Text>
           </View>
         )}
 
         {/* durability hero */}
         <View style={[s.card, s.dHero]}>
-          <Ring size={116} stroke={12} progress={pct} color={good ? ACCENT : DANGER}>
+          <Ring size={116} stroke={12} progress={pct} color={ring}>
             <Text style={s.dHeroPct}>{Math.round(pct * 100)}<Text style={s.dHeroPctU}>%</Text></Text>
           </Ring>
           <View style={{ flex: 1 }}>
@@ -137,17 +154,19 @@ function ShoeDetail({
 function ShoeCard({ shoe, featured, onPress }: { shoe: Shoe; featured: boolean; onPress: () => void }) {
   const remain = Math.max(0, shoe.max - shoe.used);
   const pct = shoe.max > 0 ? remain / shoe.max : 0;
-  const good = shoe.condition === '양호';
+  const ring = ringColor(shoe.condition);
+  const retired = !!shoe.retired;
   return (
-    <Pressable onPress={onPress} style={[s.shoeCard, featured ? s.shoeCardFeatured : s.shoeCardIdle]}>
+    <Pressable onPress={onPress} style={[s.shoeCard, featured ? s.shoeCardFeatured : s.shoeCardIdle, retired && s.shoeCardRetired]}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 18 }}>
-        <Ring size={72} stroke={9} progress={pct} color={good ? ACCENT : DANGER}>
+        <Ring size={72} stroke={9} progress={pct} color={retired ? T3 : ring}>
           <Text style={s.shoeRingPct}>{Math.round(pct * 100)}<Text style={s.shoeRingPctU}>%</Text></Text>
         </Ring>
         <View style={{ flex: 1, minWidth: 0 }}>
           <View style={s.row}>
             <Text style={s.shoeBrand}>{shoe.brand}</Text>
-            {featured && <View style={s.usingChip}><Text style={s.usingChipText}>사용 중</Text></View>}
+            {retired ? <View style={s.retiredChip}><Text style={s.retiredChipText}>보관됨</Text></View>
+              : featured && <View style={s.usingChip}><Text style={s.usingChipText}>사용 중</Text></View>}
           </View>
           <Text style={s.shoeModel} numberOfLines={1}>{shoe.model}</Text>
           <Text style={s.shoeMeta}>{shoe.used} / {shoe.max} km · <Text style={{ color: condColor(shoe.condition) }}>{shoe.condition}</Text></Text>
@@ -155,14 +174,14 @@ function ShoeCard({ shoe, featured, onPress }: { shoe: Shoe; featured: boolean; 
         <Ionicons name="chevron-forward" size={16} color={T3} />
       </View>
       <View style={s.track}>
-        <View style={[s.trackFill, { width: `${pct * 100}%`, backgroundColor: good ? ACCENT : DANGER }]} />
+        <View style={[s.trackFill, { width: `${pct * 100}%`, backgroundColor: retired ? T3 : ring }]} />
       </View>
     </Pressable>
   );
 }
 
 export default function ShoesScreen({
-  shoes = SHOES, runs = [], totals = {}, activeIdx = 0, onAddShoe, onTab, onRename, onDelete,
+  shoes = SHOES, runs = [], totals = {}, activeIdx = 0, onAddShoe, onTab, onRename, onDelete, onRetire,
 }: {
   shoes?: Shoe[];
   runs?: Run[];
@@ -172,6 +191,7 @@ export default function ShoesScreen({
   onTab?: (i: number) => void;
   onRename?: (id: string, name: string) => void;
   onDelete?: (id: string) => void;
+  onRetire?: (id: string, retired: boolean) => void;
 }) {
   const [detail, setDetail] = useState<number | null>(null);
 
@@ -185,6 +205,7 @@ export default function ShoesScreen({
         onBack={() => setDetail(null)}
         onRename={onRename}
         onDelete={onDelete}
+        onRetire={onRetire}
       />
     );
   }
@@ -226,6 +247,9 @@ const s = StyleSheet.create({
   shoeCard: { backgroundColor: CARD, borderRadius: 22, padding: 22 },
   shoeCardFeatured: { borderWidth: 1, borderColor: ACCENT },
   shoeCardIdle: { borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(255,255,255,0.05)' },
+  shoeCardRetired: { opacity: 0.55, borderColor: 'rgba(255,255,255,0.05)' },
+  retiredChip: { backgroundColor: CARD_HI, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2 },
+  retiredChipText: { color: T3, fontFamily: FONT, fontSize: 10, fontWeight: '500', letterSpacing: 0.4 },
   shoeRingPct: { color: T1, fontFamily: DISPLAY, fontSize: 17 },
   shoeRingPctU: { color: T3, fontFamily: FONT, fontSize: 9 },
   shoeBrand: { color: T3, fontFamily: FONT, fontSize: 11, fontWeight: '500', letterSpacing: 1.3 },

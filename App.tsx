@@ -32,7 +32,7 @@ import {
   sumKm, avgPaceLabel, totalTimeLabel, summaryOf, maxDayStreak,
   weekBuckets, monthBuckets, yearBuckets,
 } from './lib/stats';
-import {parseShoeName} from './lib/shoe';
+import {parseShoeName, shoeHealth, isRetired, DEFAULT_MAX_KM} from './lib/shoe';
 
 const API = 'https://solelife-backend.onrender.com';
 
@@ -95,12 +95,23 @@ function Main(){
     }catch(e){Alert.alert('오류','수정 실패');}
   }
 
+  // 신발 삭제는 더 이상 런 기록을 동반삭제하지 않는다(iron law: 데이터 파괴 금지).
+  // 런은 보존되어 기록/통계에 남고, 신발만 잠금장(locker)에서 제거된다. 신발을
+  // 영구히 지우는 대신 보존이 목적이면 retireShoe(보관)를 쓴다.
   async function deleteShoe(id:string){
     try{
       await fetch(API+'/api/shoes/'+id,{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:userId})});
       setShoes(prev=>prev.filter(s=>s.id!==id));
-      setRuns(prev=>prev.filter(r=>r.shoe_id!==id));
     }catch(e){Alert.alert('오류','삭제 실패');}
+  }
+
+  // 보관(retire/archive): 신발을 선택목록·홈 picker에서 숨기되 신발과 런 기록은
+  // 모두 보존한다. retired 토글이므로 복원도 가능하다.
+  async function retireShoe(id:string,retired:boolean){
+    try{
+      await fetch(API+'/api/shoes/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:userId,retired})});
+      setShoes(prev=>prev.map(s=>s.id===id?{...s,retired}:s));
+    }catch(e){Alert.alert('오류',retired?'보관 처리 실패':'복원 실패');}
   }
 
   async function addRun(shoeId:string,km:number,date:string,memo:string,source:string,duration?:number,cadence?:number,route?:string,location?:string,heart_rate?:number){
@@ -123,35 +134,40 @@ function Main(){
       if(!Array.isArray(shoeList)||!Array.isArray(runList)) return;
       const lastAlert=await AsyncStorage.getItem('shoe_alert_date');
       if(lastAlert===today()) return;
-      const critical=shoeList.filter((s:any)=>{
-        const used=runList.filter((r:any)=>r.shoe_id===s.id).reduce((a:number,r:any)=>a+parseFloat(r.km||0),0)+(s.start_km||0);
-        return Math.max(0,(s.max_km||600)-used)<=100;
-      });
+      // 수명 비례 티어(shoeHealth) 기준 '교체' 신발만 알림. 보관된 신발은 제외.
+      const critical=shoeList.filter((s:any)=>!isRetired(s)&&shoeHealth(s,runList).condition==='교체');
       if(critical.length>0){
         await AsyncStorage.setItem('shoe_alert_date',today());
-        Alert.alert('신발 교체 알림',critical.map((s:any)=>s.name).join(', ')+'\n\n잔여 수명이 100km 이하입니다.\n새 신발을 준비하세요!',[{text:'확인'}]);
+        Alert.alert('신발 교체 알림',critical.map((s:any)=>s.name).join(', ')+'\n\n수명의 90% 이상을 사용했습니다.\n새 신발을 준비하세요!',[{text:'확인'}]);
       }
     }catch(e){console.log('checkShoeAlerts error',e);}
   }
 
   // ── adapters: backend → presentational shapes ──────────────
   function toUiShoe(s:any):Shoe{
-    const usedReal=runs.filter(r=>r.shoe_id===s.id).reduce((a,r)=>a+(parseFloat(r.km)||0),0)+(s.start_km||0);
-    const max=s.max_km||600;
+    // 단일 소스(shoeHealth)에서 used/남은수명/condition을 도출 — 하드코딩 100km
+    // 임계·중복 used 계산 제거(audit#7).
+    const h=shoeHealth(s,runs);
     const {brand,model}=parseShoeName(s.name);
     return {
       id:s.id,
       brand:brand||s.name,
       model:model||(brand?'':s.name),
-      used:Math.round(usedReal),
-      max,
-      condition:(max-usedReal)<=100?'점검':'양호',
+      used:Math.round(h.usedKm),
+      max:s.max_km||DEFAULT_MAX_KM,
+      condition:h.condition,
+      retired:isRetired(s),
     };
   }
 
   const uiShoes:Shoe[]=shoes.map(toUiShoe);
   const idxById:Record<string,number>={};
   shoes.forEach((s,i)=>{idxById[s.id]=i;});
+
+  // 홈/러닝 picker용 목록: 보관된 신발은 숨기되 원본 인덱스를 보존해 시작 액션이
+  // 올바른 신발을 가리키게 한다(런 기록은 잠금장·통계에 그대로 남는다).
+  const homeShoes=shoes.map((s,i)=>({raw:s,ui:uiShoes[i]})).filter(x=>!isRetired(x.raw));
+  const homeUiShoes:Shoe[]=homeShoes.map(x=>x.ui);
 
   const sortedRaw=[...runs].sort((a,b)=>String(b.run_date).localeCompare(String(a.run_date)));
   function toUiRun(run:any):Run{
@@ -218,9 +234,10 @@ function Main(){
   ];
 
   // ── actions ─────────────────────────────────────────────────
+  // i는 homeUiShoes(보관 신발 제외 목록)의 인덱스 — 원본 신발로 되짚어 시작한다.
   const startFromIdx=(i:number)=>{
-    const s=shoes[i]; if(!s) return;
-    setPendingShoe({id:s.id,name:s.name,ui:uiShoes[i]});
+    const entry=homeShoes[i]; if(!entry) return;
+    setPendingShoe({id:entry.raw.id,name:entry.raw.name,ui:entry.ui});
     setOverlay('goal');
   };
   const onAddSaved=(shoe:Shoe)=>{
@@ -261,7 +278,7 @@ function Main(){
       <View style={{flex:1}}>
         {tab===0&&(
           <HomeScreen
-            shoes={uiShoes} week={week} dateLabel={dateLabel}
+            shoes={homeUiShoes} week={week} dateLabel={dateLabel}
             onStart={startFromIdx} onAddShoe={()=>setOverlay('add')} onTab={setTab}
           />
         )}
@@ -272,7 +289,7 @@ function Main(){
           <ShoesScreen
             shoes={uiShoes} runs={uiRuns} totals={shoeTotals} activeIdx={0}
             onAddShoe={()=>setOverlay('add')} onTab={setTab}
-            onRename={updateShoeName} onDelete={deleteShoe}
+            onRename={updateShoeName} onDelete={deleteShoe} onRetire={retireShoe}
           />
         )}
         {tab===3&&(
