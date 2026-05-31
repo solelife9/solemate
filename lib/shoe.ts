@@ -1,11 +1,18 @@
 // ─── Shoe helpers ────────────────────────────────────────────────
 // Pure shoe-name parsing + the single source of truth for shoe wear/condition.
 
-export const BRANDS = [
-  'New Balance', 'La Sportiva', 'Inov-8', 'ASICS', 'Nike', 'Adidas', 'Brooks',
-  'Saucony', 'Hoka', 'Mizuno', 'Salomon', 'Karhu', 'Scott', 'Merrell', 'Norda',
-  'Veja', 'Lululemon', 'Reebok', 'Puma', 'On',
+import {BRANDS as CATALOG_BRANDS} from '../data/shoeModels';
+
+// 시드 카탈로그(data/shoeModels)가 브랜드 단일 소스다. 카탈로그엔 없지만 사용자가
+// 보유할 수 있는 브랜드만 parseShoeName 보조용으로 여기에 보탠다(파싱 전용).
+const EXTRA_PARSE_BRANDS = [
+  'La Sportiva', 'Inov-8', 'Karhu', 'Scott', 'Merrell', 'Norda',
+  'Veja', 'Lululemon', 'Reebok',
 ];
+
+// 다중 단어 브랜드를 먼저 검사해야 접두 매칭이 안정적이다(예: "New Balance").
+export const BRANDS: string[] = [...new Set([...CATALOG_BRANDS, ...EXTRA_PARSE_BRANDS])]
+  .sort((a, b) => b.split(' ').length - a.split(' ').length);
 
 /**
  * Split a free-form shoe name into `{brand, model}`. Known multi-word brands

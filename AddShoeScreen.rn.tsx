@@ -7,32 +7,26 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import {
   BG, CARD, CARD_HI, ACCENT, T1, T2, T3, FONT, DISPLAY, Shoe,
 } from './theme';
+// 신발 모델 카탈로그·권장수명은 data/shoeModels(단일 소스)에서 가져온다.
+import { BRANDS, modelsForBrand, getRecommendedLifespanKm } from './data/shoeModels';
 
-// model catalogue with recommended max life (km): racer≈400 · tempo≈600 · daily≈800
-const MODELS: Record<string, [string, number][]> = {
-  NIKE: [['Pegasus 41', 800], ['Vaporfly 3', 400], ['Alphafly 3', 400], ['Invincible 3', 800], ['Structure 25', 800], ['Zoom Fly 6', 600]],
-  ADIDAS: [['Adizero Adios Pro 3', 400], ['Adizero Boston 12', 600], ['Ultraboost Light', 800], ['Supernova Rise', 800], ['Takumi Sen 10', 400]],
-  HOKA: [['Mach 6', 600], ['Clifton 9', 800], ['Bondi 8', 800], ['Rocket X 2', 400], ['Speedgoat 5', 800]],
-  ASICS: [['Gel-Nimbus 26', 800], ['Novablast 4', 600], ['Superblast 2', 800], ['Metaspeed Sky+', 400], ['Gel-Kayano 31', 800], ['Magic Speed 4', 400]],
-  'NEW BALANCE': [['FuelCell Rebel v4', 600], ['SC Elite v4', 400], ['Fresh Foam 1080 v13', 800], ['More v4', 800]],
-  SAUCONY: [['Endorphin Speed 4', 600], ['Endorphin Pro 4', 400], ['Kinvara 15', 600], ['Ride 17', 800]],
-  BROOKS: [['Ghost 16', 800], ['Glycerin 21', 800], ['Hyperion Max 2', 600], ['Adrenaline GTS 23', 800]],
-  PUMA: [['Deviate Nitro 3', 600], ['Velocity Nitro 3', 800], ['Fast-R Nitro Elite 3', 400]],
-};
-const BRANDS = Object.keys(MODELS);
-const MAX_PRESETS = [400, 500, 600, 700, 800];
+// 권장 수명 빠른 선택값(km) — 카테고리 기준값. 모델 선택 시 자동 채워지며 직접 수정 가능.
+const MAX_PRESETS = [320, 400, 560, 700, 850];
 
 export default function AddShoeScreen({
   onClose, onSave,
 }: { onClose?: () => void; onSave?: (shoe: Shoe) => void }) {
-  const [brand, setBrand] = useState('NIKE');
+  const [brand, setBrand] = useState(BRANDS[0]);
   const [model, setModel] = useState('');
   const [focused, setFocused] = useState(false);
-  const [max, setMax] = useState(500);
+  const [max, setMax] = useState(700);
   const [used, setUsed] = useState('0');
 
   const q = model.trim().toLowerCase();
-  const suggestions = (MODELS[brand] || []).filter(([m]) => q && m.toLowerCase().includes(q) && m.toLowerCase() !== q).slice(0, 5);
+  const suggestions = modelsForBrand(brand)
+    .filter((m) => q && m.toLowerCase().includes(q) && m.toLowerCase() !== q)
+    .slice(0, 5)
+    .map((m) => [m, getRecommendedLifespanKm({ brand, model: m })] as [string, number]);
   const valid = model.trim().length > 0;
 
   const pickModel = (name: string, km: number) => { setModel(name); setMax(km); setFocused(false); };
