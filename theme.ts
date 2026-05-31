@@ -18,7 +18,45 @@ export const SEP = 'rgba(255,255,255,0.08)';
 
 // Font family names as actually loaded in this project (assets/fonts + Info.plist).
 export const FONT = 'PretendardVariable';  // body
-export const DISPLAY = 'BebasNeue-Regular'; // big numbers / wordmark
+
+// ── DISPLAY font transition (Keego rebrand) ──────────────────────────────────
+// We are unifying the type system onto a single family (Pretendard). The big
+// numbers / wordmark historically used BebasNeue; Slice 3 will flip every screen
+// onto FONT. Until then `DISPLAY` must keep its existing string value so the live
+// screens don't change. Flip UNIFY_DISPLAY_FONT to true (in Slice 3) and every
+// consumer of DISPLAY transparently moves to Pretendard with no further edits.
+export const DISPLAY_LEGACY = 'BebasNeue-Regular'; // current big-number / wordmark face
+export const DISPLAY_TARGET = FONT;                // unified target face (Pretendard)
+export const UNIFY_DISPLAY_FONT = false;           // Slice 3 flips this to true
+export const DISPLAY = UNIFY_DISPLAY_FONT ? DISPLAY_TARGET : DISPLAY_LEGACY;
+
+// ── spacing scale (dp) ───────────────────────────────────────────────────────
+export const SPACE = { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 32 } as const;
+export type SpaceKey = keyof typeof SPACE;
+
+// ── corner radius scale (dp) ─────────────────────────────────────────────────
+export const RADIUS = { sm: 12, md: 16, lg: 20, xl: 24, pill: 999 } as const;
+export type RadiusKey = keyof typeof RADIUS;
+
+// ── type scale ───────────────────────────────────────────────────────────────
+// Presets bundle size / weight / letterSpacing so a screen can spread one token
+// into a Text style: <Text style={[{ fontFamily: FONT }, TYPE.body]} />. Weights
+// are RN fontWeight string literals so they stay assignable to TextStyle.
+export type TypePreset = {
+  fontSize: number;
+  fontWeight: '400' | '500' | '600' | '700';
+  letterSpacing: number;
+};
+export const TYPE = {
+  display: { fontSize: 32, fontWeight: '500', letterSpacing: -0.8 },
+  title:   { fontSize: 22, fontWeight: '600', letterSpacing: -0.4 },
+  heading: { fontSize: 17, fontWeight: '600', letterSpacing: -0.2 },
+  body:    { fontSize: 15, fontWeight: '500', letterSpacing: -0.2 },
+  label:   { fontSize: 13, fontWeight: '500', letterSpacing: 0.2 },
+  caption: { fontSize: 12, fontWeight: '500', letterSpacing: 0.2 },
+  micro:   { fontSize: 10, fontWeight: '600', letterSpacing: 0.8 },
+} as const satisfies Record<string, TypePreset>;
+export type TypeKey = keyof typeof TYPE;
 
 // ── shared UI types (presentational shapes used by the handoff screens) ───────
 export type Shoe = {
