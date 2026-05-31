@@ -6,7 +6,7 @@ import React, { useMemo } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Svg, { Circle, Defs, LinearGradient as SvgGradient, Stop } from 'react-native-svg';
-import { ACCENT, ACCENT_2, T1, T3, FONT } from './theme';
+import { ACCENT, ACCENT_2, T3, FONT } from './theme';
 
 // ── Ring (arc progress, gradient sweep) ───────────────────────────────────────
 export function Ring({

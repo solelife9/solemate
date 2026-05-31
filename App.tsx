@@ -83,6 +83,7 @@ function Main(){
   const [resumeSnap,setResumeSnap]=useState<RunSnapshot|null>(null);
   const insets=useSafeAreaInsets();
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(()=>{initUser();},[]);
 
   // audit#2: 미완료 런 감지 → 복구/저장 프롬프트. 한 번만 묻는다.
@@ -128,7 +129,7 @@ function Main(){
       // audit#3 재동기: 네트워크 실패로 큐에 남은 완주 런을 재전송. 서버 런 목록과
       // 사용자 id를 갓 받은 값으로 넘겨, 재-POST 전 클라이언트 화해로 중복을 막는다.
       await syncPendingRuns(safeRuns,d.user_id);
-    }catch(e){console.log('offline');}
+    }catch{console.log('offline');}
   }
 
   // audit#3 재동기 진입점(저장/네트워크 분리). 두 단계로 중복 행을 막는다:
@@ -157,14 +158,14 @@ function Main(){
       const r=await fetch(API+'/api/shoes',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:userId,name,max_km:maxKm,start_km:startKm,purchase_date:date})});
       const newShoe=await r.json();
       setShoes(prev=>[newShoe,...prev]);
-    }catch(e){Alert.alert('오류','저장 실패');}
+    }catch{Alert.alert('오류','저장 실패');}
   }
 
   async function updateShoeName(id:string,name:string){
     try{
       await fetch(API+'/api/shoes/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:userId,name})});
       setShoes(prev=>prev.map(s=>s.id===id?{...s,name}:s));
-    }catch(e){Alert.alert('오류','수정 실패');}
+    }catch{Alert.alert('오류','수정 실패');}
   }
 
   // 신발 삭제는 더 이상 런 기록을 동반삭제하지 않는다(iron law: 데이터 파괴 금지).
@@ -174,7 +175,7 @@ function Main(){
     try{
       await fetch(API+'/api/shoes/'+id,{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:userId})});
       setShoes(prev=>prev.filter(s=>s.id!==id));
-    }catch(e){Alert.alert('오류','삭제 실패');}
+    }catch{Alert.alert('오류','삭제 실패');}
   }
 
   // 보관(retire/archive): 신발을 선택목록·홈 picker에서 숨기되 신발과 런 기록은
@@ -183,7 +184,7 @@ function Main(){
     try{
       await fetch(API+'/api/shoes/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:userId,retired})});
       setShoes(prev=>prev.map(s=>s.id===id?{...s,retired}:s));
-    }catch(e){Alert.alert('오류',retired?'보관 처리 실패':'복원 실패');}
+    }catch{Alert.alert('오류',retired?'보관 처리 실패':'복원 실패');}
   }
 
   // 완주 런 저장(audit#3): 로컬 우선 + 미동기 큐. 저장(AsyncStorage)과 네트워크
@@ -212,7 +213,7 @@ function Main(){
     try{
       const server=await postRun(pending);
       await reconcileSynced(pending,server);
-    }catch(e){/* 큐에 남아 다음 실행/포그라운드에서 재동기 */}
+    }catch{/* 큐에 남아 다음 실행/포그라운드에서 재동기 */}
   }
 
   // 단일 POST 경로 — addRun과 startup 재동기(syncPendingRuns)가 공유한다. uid는
@@ -493,9 +494,9 @@ function RunActiveScreen({shoe,insets,goalKm,onSave,onDiscard,resume}:{shoe:{id:
           (v.name?.toLowerCase().includes('female')||v.name?.toLowerCase().includes('여성')||(v.quality&&v.quality>=400))
         );
         if(femaleVoice) Tts.setDefaultVoice(femaleVoice.id);
-      }catch(e){}
+      }catch{}
     })();
-    setTimeout(()=>{try{Tts.speak(`달리기를 시작합니다! 목표는 ${goalKm}킬로미터입니다.`);}catch(e){}},800);
+    setTimeout(()=>{try{Tts.speak(`달리기를 시작합니다! 목표는 ${goalKm}킬로미터입니다.`);}catch{}},800);
     (async()=>{
       if(Platform.OS==='android'){
         // danger zone: 이 fine-location 게이트가 트래킹 시작의 유일한 관문이다.
@@ -531,7 +532,8 @@ function RunActiveScreen({shoe,insets,goalKm,onSave,onDiscard,resume}:{shoe:{id:
       }
       beginRun();
     })();
-    return()=>{stop();clearTimeout(stopConfirmTimer.current);try{Tts.stop();}catch(e){}};
+    return()=>{stop();clearTimeout(stopConfirmTimer.current);try{Tts.stop();}catch{}};
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   },[]);
 
   useEffect(()=>{
@@ -539,10 +541,11 @@ function RunActiveScreen({shoe,insets,goalKm,onSave,onDiscard,resume}:{shoe:{id:
     if(fullKm>0&&fullKm>announcedKm.current){
       announcedKm.current=fullKm;
       const remaining=Math.max(0,goalKm-fullKm);
-      try{Tts.stop();}catch(e){}
-      if(remaining>0){try{Tts.speak(`${fullKm}킬로미터 완주! 앞으로 ${Math.round(remaining)}킬로미터 남았습니다.`);}catch(e){}}
-      else{try{Tts.speak(`목표 달성! ${goalKm}킬로미터 완주를 축하합니다!`);}catch(e){}}
+      try{Tts.stop();}catch{}
+      if(remaining>0){try{Tts.speak(`${fullKm}킬로미터 완주! 앞으로 ${Math.round(remaining)}킬로미터 남았습니다.`);}catch{}}
+      else{try{Tts.speak(`목표 달성! ${goalKm}킬로미터 완주를 축하합니다!`);}catch{}}
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   },[km]);
 
   // ── 일시정지 진입/해제 (audit#4) ───────────────────────────────
@@ -554,7 +557,7 @@ function RunActiveScreen({shoe,insets,goalKm,onSave,onDiscard,resume}:{shoe:{id:
     isPausedRef.current=true;autoPausedRef.current=auto;
     pauseStartRef.current=Date.now();
     setPaused(true);setAutoPaused(auto);
-    try{Tts.stop();Tts.speak(auto?'자동으로 일시정지합니다.':'일시정지합니다.');}catch(e){}
+    try{Tts.stop();Tts.speak(auto?'자동으로 일시정지합니다.':'일시정지합니다.');}catch{}
   }
   function exitPause(auto:boolean){
     if(!isPausedRef.current)return;
@@ -567,7 +570,7 @@ function RunActiveScreen({shoe,insets,goalKm,onSave,onDiscard,resume}:{shoe:{id:
     // 재개 후 상태기계 초기화 — 직전 slow/fast 잔여로 즉시 재트리거되지 않게.
     autoPauseState.current=initAutoPauseState();
     setPaused(false);setAutoPaused(false);
-    try{Tts.speak('달리기를 재개합니다.');}catch(e){}
+    try{Tts.speak('달리기를 재개합니다.');}catch{}
     void auto;
   }
 
@@ -762,7 +765,7 @@ function RunActiveScreen({shoe,insets,goalKm,onSave,onDiscard,resume}:{shoe:{id:
             const parts=[addr.suburb||addr.neighbourhood||addr.quarter||addr.city_district||addr.town,addr.city||addr.county||addr.state].filter(Boolean);
             loc=parts.length>0?parts.join(', '):(d.display_name||'').split(',').slice(0,2).join(',').trim()||'';
           }
-        }catch(e){}
+        }catch{}
       }
       await onSave(Math.round(finKm*100)/100,finTime,finCad,memo,finRoute,loc);
     }finally{setSaving(false);}
