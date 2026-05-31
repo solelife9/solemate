@@ -22,79 +22,18 @@ import ProfileScreen, {Profile, Badge} from './ProfileScreen.rn';
 import AddShoeScreen from './AddShoeScreen.rn';
 import {RunStart} from './RunScreen.rn';
 
+import {KalmanFilter} from './lib/kalman';
+import {calcDist, simplifyRoute} from './lib/geo';
+import {fmtPace, fmtTime, fmtKDate, getMonday, ymdLocal} from './lib/format';
+import {
+  sumKm, avgPaceLabel, totalTimeLabel, summaryOf, maxDayStreak,
+  weekBuckets, monthBuckets, yearBuckets,
+} from './lib/stats';
+import {parseShoeName} from './lib/shoe';
+
 const API = 'https://solelife-backend.onrender.com';
-const DOW = ['일', '월', '화', '수', '목', '금', '토'];
 
-const BRANDS=['New Balance','La Sportiva','Inov-8','ASICS','Nike','Adidas','Brooks','Saucony','Hoka','Mizuno','Salomon','Karhu','Scott','Merrell','Norda','Veja','Lululemon','Reebok','Puma','On'];
-function parseShoeName(name:string):{brand:string;model:string}{
-  if(!name) return{brand:'',model:''};
-  for(const b of BRANDS){if(name.toUpperCase().startsWith(b.toUpperCase())){return{brand:b.toUpperCase(),model:name.slice(b.length).trim()};}}
-  const idx=name.indexOf(' ');
-  if(idx<0)return{brand:name.toUpperCase(),model:''};
-  return{brand:name.slice(0,idx).toUpperCase(),model:name.slice(idx+1).trim()};
-}
-
-function calcDist(lat1:number,lon1:number,lat2:number,lon2:number):number{
-  const R=6371,dL=(lat2-lat1)*Math.PI/180,dl=(lon2-lon1)*Math.PI/180;
-  const a=Math.sin(dL/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dl/2)**2;
-  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
-}
-
-class KalmanFilter{
-  private v=-1;private lat=0;private lon=0;private ts=0;private readonly Q=3;
-  process(lat:number,lon:number,acc:number,ts:number):{lat:number,lon:number}{
-    if(this.v<0){this.lat=lat;this.lon=lon;this.v=acc*acc;this.ts=ts;return{lat,lon};}
-    const dt=Math.max((ts-this.ts)/1000,0);this.ts=ts;this.v+=dt*this.Q*this.Q;
-    const K=this.v/(this.v+acc*acc);
-    this.lat+=K*(lat-this.lat);this.lon+=K*(lon-this.lon);this.v=(1-K)*this.v;
-    return{lat:this.lat,lon:this.lon};
-  }
-  reset(){this.v=-1;}
-}
-
-function fmtTime(s:number):string{
-  const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;
-  if(h>0)return`${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
-  return`${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
-}
-function fmtPace(km:number,s:number):string{if(km<0.01)return'--';const p=s/km;return`${Math.floor(p/60)}'${String(Math.round(p%60)).padStart(2,'0')}"`;}
-function today():string{return new Date().toISOString().split('T')[0];}
-
-// ─── date / period helpers ────────────────────────────────────
-function fmtKDate(iso:string){
-  const d=new Date(iso+'T00:00:00');
-  if(isNaN(d.getTime())) return {date:iso,day:'',dateNum:''};
-  return {date:`${d.getMonth()+1}월 ${d.getDate()}일`,day:DOW[d.getDay()],dateNum:String(d.getDate())};
-}
-function getMonday(d:Date){const r=new Date(d);const day=r.getDay();r.setDate(r.getDate()-(day===0?6:day-1));r.setHours(0,0,0,0);return r;}
-function ymd(d:Date){return d.toISOString().split('T')[0];}
-function sumKm(list:any[]){return list.reduce((a,r)=>a+(parseFloat(r.km)||0),0);}
-function avgPaceLabel(list:any[]){
-  const p=list.filter(r=>(r.duration||0)>0&&parseFloat(r.km)>0.1);
-  if(!p.length) return '--';
-  const sec=p.reduce((a,r)=>a+r.duration/parseFloat(r.km),0)/p.length;
-  return fmtPace(1,sec);
-}
-function totalTimeLabel(list:any[]){
-  const s=list.reduce((a,r)=>a+(r.duration||0),0);
-  if(s<=0) return '--';
-  const h=Math.floor(s/3600),m=Math.floor((s%3600)/60);
-  return h>0?`${h}h ${m}m`:`${m}m`;
-}
-function summaryOf(list:any[]):PeriodSummary{
-  return {km:sumKm(list).toFixed(1),runs:list.length,pace:avgPaceLabel(list),time:totalTimeLabel(list)};
-}
-function maxDayStreak(dates:string[]):number{
-  const uniq=[...new Set(dates)].sort();
-  let best=0,cur=0;let prev:Date|null=null;
-  for(const ds of uniq){
-    const d=new Date(ds+'T00:00:00');
-    if(prev){const diff=Math.round((d.getTime()-prev.getTime())/86400000);cur=diff===1?cur+1:1;}
-    else cur=1;
-    best=Math.max(best,cur);prev=d;
-  }
-  return best;
-}
+function today():string{return ymdLocal(new Date());}
 
 export default function App(){
   return(
@@ -230,26 +169,23 @@ function Main(){
   // ── home week stats ────────────────────────────────────────
   const now=new Date();
   const mon=getMonday(now); const sun=new Date(mon); sun.setDate(mon.getDate()+6);
-  const weekRuns=runs.filter(r=>r.run_date>=ymd(mon)&&r.run_date<=ymd(sun));
+  const weekRuns=runs.filter(r=>r.run_date>=ymdLocal(mon)&&r.run_date<=ymdLocal(sun));
   const week:WeekStats={km:sumKm(weekRuns).toFixed(1),runs:weekRuns.length,pace:avgPaceLabel(weekRuns)};
   const dateLabel=`${now.getMonth()+1}월 ${now.getDate()}일 ${['일요일','월요일','화요일','수요일','목요일','금요일','토요일'][now.getDay()]}`;
 
   // ── history summary + chart per period ─────────────────────
-  const monthRuns=runs.filter(r=>String(r.run_date).startsWith(ymd(now).slice(0,7)));
+  const monthRuns=runs.filter(r=>String(r.run_date).startsWith(ymdLocal(now).slice(0,7)));
   const yearRuns=runs.filter(r=>String(r.run_date).startsWith(String(now.getFullYear())));
   const summary:Record<string,PeriodSummary>={
     '주':summaryOf(weekRuns),'월':summaryOf(monthRuns),'년':summaryOf(yearRuns),'전체':summaryOf(runs),
   };
   // week chart: daily Mon..Sun
-  const weekData:number[]=[]; for(let i=0;i<7;i++){const d=new Date(mon);d.setDate(mon.getDate()+i);weekData.push(Math.round(sumKm(runs.filter(r=>r.run_date===ymd(d)))*10)/10);}
+  const weekData=weekBuckets(runs,mon).map(v=>Math.round(v*10)/10);
   // month chart: weekly buckets
-  const daysInMonth=new Date(now.getFullYear(),now.getMonth()+1,0).getDate();
-  const weekCount=Math.ceil(daysInMonth/7);
-  const monthData:number[]=Array(weekCount).fill(0);
-  monthRuns.forEach(r=>{const day=new Date(r.run_date+'T00:00:00').getDate();const b=Math.min(weekCount-1,Math.ceil(day/7)-1);monthData[b]+=parseFloat(r.km)||0;});
+  const monthData=monthBuckets(monthRuns,now.getFullYear(),now.getMonth());
+  const weekCount=monthData.length;
   // year chart: monthly Jan..Dec
-  const yearData:number[]=Array(12).fill(0);
-  yearRuns.forEach(r=>{const m=new Date(r.run_date+'T00:00:00').getMonth();yearData[m]+=parseFloat(r.km)||0;});
+  const yearData=yearBuckets(yearRuns);
   const chart:Record<string,PeriodChart>={
     '주':{title:'일별 거리',data:weekData,labels:['월','화','수','목','금','토','일']},
     '월':{title:'주간 거리',data:monthData.map(v=>Math.round(v*10)/10),labels:Array.from({length:weekCount},(_,i)=>`${i+1}주`)},
@@ -522,8 +458,7 @@ function RunActiveScreen({shoe,insets,goalKm,onSave,onDiscard}:{shoe:{id:string;
       return;
     }
     stop();
-    const rawPts=pts.current;
-    const sampled=rawPts.length>200?Array.from({length:200},(_,i)=>rawPts[Math.min(Math.floor(i*(rawPts.length-1)/199),rawPts.length-1)]):rawPts;
+    const sampled=simplifyRoute(pts.current,200);
     setFinRoute(sampled.length>=2?JSON.stringify(sampled):'');
     setFinLocation(locationRef.current);
     setFinKm(fk);setFinTime(ft);setFinCad(cadRef.current);
