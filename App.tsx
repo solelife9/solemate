@@ -26,6 +26,7 @@ import {KalmanFilter} from './lib/kalman';
 import {calcDist, acceptSegment, segmentSpeedMps, simplifyRoute} from './lib/geo';
 import {WARMUP_FIXES} from './lib/engineConstants';
 import {decideAutoPause, initAutoPauseState} from './lib/autoPause';
+import {initCadenceState, feedAccelSample} from './lib/cadence';
 import {fmtPace, fmtTime, fmtKDate, getMonday, ymdLocal} from './lib/format';
 import {
   sumKm, avgPaceLabel, totalTimeLabel, summaryOf, maxDayStreak,
@@ -304,9 +305,8 @@ function RunActiveScreen({shoe,insets,goalKm,onSave,onDiscard}:{shoe:{id:string;
   const watchId=useRef<number|null>(null);
   const timer=useRef<any>(null);
   const stepSub=useRef<any>(null);
-  const stepTs=useRef<number[]>([]);
-  const lastMag=useRef(0);
-  const lastStep=useRef(0);
+  // 케이던스(spm) 순수 상태기계 — 가속도 피크검출+윈도우 정규화는 lib/cadence.ts.
+  const cadenceState=useRef(initCadenceState(Date.now()));
   const pts=useRef<any[]>([]);
   const dist=useRef(0);
   const fixIndex=useRef(0);
@@ -398,7 +398,7 @@ function RunActiveScreen({shoe,insets,goalKm,onSave,onDiscard}:{shoe:{id:string;
   function beginRun(){
     dist.current=0;t0.current=Date.now();kf.current.reset();
     fixIndex.current=0;lastGoodMs.current=0;lastGood.current=null;
-    stepTs.current=[];lastMag.current=0;lastStep.current=0;pts.current=[];
+    cadenceState.current=initCadenceState(Date.now());cadRef.current=0;pts.current=[];
     locationRef.current='';locationFetched.current=false;
     isPausedRef.current=false;autoPausedRef.current=false;
     pausedMs.current=0;pauseStartRef.current=0;announcedKm.current=0;
@@ -409,14 +409,10 @@ function RunActiveScreen({shoe,insets,goalKm,onSave,onDiscard}:{shoe:{id:string;
       // 기반 상태기계(decideAutoPause)가 watchPosition에서 판정한다.
       if(isPausedRef.current)return;
       const mag=Math.sqrt(x*x+y*y+z*z),nowT=Date.now();
-      if(mag>12&&lastMag.current<=12&&nowT-lastStep.current>250){
-        lastStep.current=nowT;
-        stepTs.current.push(nowT);
-        stepTs.current=stepTs.current.filter(t=>nowT-t<=60000);
-        cadRef.current=stepTs.current.length;
-        setCadence(cadRef.current);
-      }
-      lastMag.current=mag;
+      // 순수함수에 가속도 표본 공급 → 피크검출+분당비율 정규화된 spm 산출(audit#14).
+      const c=feedAccelSample(cadenceState.current,mag,nowT);
+      cadenceState.current=c.state;
+      if(c.spm!==cadRef.current){cadRef.current=c.spm;setCadence(c.spm);}
     });
     timer.current=setInterval(()=>{
       // elapsed = now − t0 − pausedMs (음수 방지로 0 하한). 일시정지 중엔 멈춘다.
