@@ -18,7 +18,7 @@ test('mounting App authenticates and persists a device id via AsyncStorage', asy
   });
 
   // initUser() reached the auth endpoint through the mocked fetch.
-  const requested = (global.fetch as jest.Mock).mock.calls.map(c => String(c[0]));
+  const requested = (globalThis.fetch as jest.Mock).mock.calls.map(c => String(c[0]));
   expect(requested.some(u => u.includes('/api/auth'))).toBe(true);
 
   // The generated device id round-trips through the AsyncStorage mock.
