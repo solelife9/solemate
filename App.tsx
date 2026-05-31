@@ -306,7 +306,7 @@ function RunActiveScreen({shoe,insets,goalKm,onSave,onDiscard}:{shoe:{id:string;
   const timer=useRef<any>(null);
   const stepSub=useRef<any>(null);
   // 케이던스(spm) 순수 상태기계 — 가속도 피크검출+윈도우 정규화는 lib/cadence.ts.
-  const cadenceState=useRef(initCadenceState(Date.now()));
+  const cadenceState=useRef(initCadenceState());
   const pts=useRef<any[]>([]);
   const dist=useRef(0);
   const fixIndex=useRef(0);
@@ -398,7 +398,7 @@ function RunActiveScreen({shoe,insets,goalKm,onSave,onDiscard}:{shoe:{id:string;
   function beginRun(){
     dist.current=0;t0.current=Date.now();kf.current.reset();
     fixIndex.current=0;lastGoodMs.current=0;lastGood.current=null;
-    cadenceState.current=initCadenceState(Date.now());cadRef.current=0;pts.current=[];
+    cadenceState.current=initCadenceState();cadRef.current=0;pts.current=[];
     locationRef.current='';locationFetched.current=false;
     isPausedRef.current=false;autoPausedRef.current=false;
     pausedMs.current=0;pauseStartRef.current=0;announcedKm.current=0;

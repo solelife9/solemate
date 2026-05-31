@@ -17,7 +17,7 @@ function runStrikes(opts: {
   peak?: number;
 }) {
   const peak = opts.peak ?? STEP_PEAK_THRESHOLD + 5;
-  let state = initCadenceState(opts.startMs);
+  let state = initCadenceState();
   let last = {state, stepDetected: false, spm: 0};
   let steps = 0;
   for (let i = 0; i < opts.count; i++) {
@@ -34,14 +34,14 @@ function runStrikes(opts: {
 }
 
 describe('initCadenceState', () => {
-  test('starts with no steps and the given start time', () => {
-    expect(initCadenceState(1000)).toEqual({steps: [], lastMag: 0, lastStepMs: -Infinity, startMs: 1000});
+  test('starts with no steps and a debounce-disarmed clock', () => {
+    expect(initCadenceState()).toEqual({steps: [], lastMag: 0, lastStepMs: -Infinity});
   });
 });
 
 describe('feedAccelSample — peak (foot-strike) detection', () => {
   test('a single upward threshold crossing registers exactly one step', () => {
-    let s = initCadenceState(0);
+    let s = initCadenceState();
     let r = feedAccelSample(s, STEP_PEAK_THRESHOLD - 1, 0); // below
     expect(r.stepDetected).toBe(false);
     r = feedAccelSample(r.state, STEP_PEAK_THRESHOLD + 3, 1); // crosses up → strike
@@ -50,7 +50,7 @@ describe('feedAccelSample — peak (foot-strike) detection', () => {
   });
 
   test('staying above the threshold does not re-count without a new rising edge', () => {
-    let r = feedAccelSample(initCadenceState(0), STEP_PEAK_THRESHOLD + 3, 0); // strike
+    let r = feedAccelSample(initCadenceState(), STEP_PEAK_THRESHOLD + 3, 0); // strike
     expect(r.stepDetected).toBe(true);
     // still above threshold (no dip back below) → no new edge even much later
     r = feedAccelSample(r.state, STEP_PEAK_THRESHOLD + 4, 500);
@@ -59,14 +59,14 @@ describe('feedAccelSample — peak (foot-strike) detection', () => {
   });
 
   test('exactly at the threshold is not a peak (strict >)', () => {
-    let r = feedAccelSample(initCadenceState(0), STEP_PEAK_THRESHOLD - 1, 0);
+    let r = feedAccelSample(initCadenceState(), STEP_PEAK_THRESHOLD - 1, 0);
     r = feedAccelSample(r.state, STEP_PEAK_THRESHOLD, 1); // == threshold
     expect(r.stepDetected).toBe(false);
     expect(r.state.steps).toHaveLength(0);
   });
 
   test('debounce drops a second rising edge inside STEP_MIN_INTERVAL_MS', () => {
-    let r = feedAccelSample(initCadenceState(0), STEP_PEAK_THRESHOLD + 3, 0); // strike @0
+    let r = feedAccelSample(initCadenceState(), STEP_PEAK_THRESHOLD + 3, 0); // strike @0
     r = feedAccelSample(r.state, STEP_PEAK_THRESHOLD - 2, 100); // dip
     // rising edge again at +200ms — inside the 250ms debounce, so rejected
     r = feedAccelSample(r.state, STEP_PEAK_THRESHOLD + 3, 200);
@@ -75,7 +75,7 @@ describe('feedAccelSample — peak (foot-strike) detection', () => {
   });
 
   test('a rising edge just past STEP_MIN_INTERVAL_MS is accepted', () => {
-    let r = feedAccelSample(initCadenceState(0), STEP_PEAK_THRESHOLD + 3, 0); // strike @0
+    let r = feedAccelSample(initCadenceState(), STEP_PEAK_THRESHOLD + 3, 0); // strike @0
     r = feedAccelSample(r.state, STEP_PEAK_THRESHOLD - 2, 100); // dip
     r = feedAccelSample(r.state, STEP_PEAK_THRESHOLD + 3, STEP_MIN_INTERVAL_MS + 1);
     expect(r.stepDetected).toBe(true);
@@ -126,22 +126,61 @@ describe('computeSpm — audit#14 initial-window normalization', () => {
 
   test('returns 0 before CADENCE_MIN_WINDOW_MS elapses (too little data)', () => {
     // A couple of strikes within the first 2s — under the 3s minimum window.
-    let r = feedAccelSample(initCadenceState(0), STEP_PEAK_THRESHOLD + 3, 200);
+    let r = feedAccelSample(initCadenceState(), STEP_PEAK_THRESHOLD + 3, 200);
     r = feedAccelSample(r.state, STEP_PEAK_THRESHOLD - 2, 600);
     r = feedAccelSample(r.state, STEP_PEAK_THRESHOLD + 3, 1000);
     expect(r.state.steps.length).toBeGreaterThan(0); // strikes were detected…
     expect(computeSpm(r.state, 2000)).toBe(0); // …but cadence is withheld until 3s
   });
 
-  test('begins reporting a normalized rate exactly at CADENCE_MIN_WINDOW_MS', () => {
+  test('begins reporting a normalized rate exactly at CADENCE_MIN_WINDOW_MS after the first step', () => {
+    // Withholding is gated on the OBSERVED step span (now − firstStep), not the
+    // run start, so the gate opens CADENCE_MIN_WINDOW_MS after the first strike.
     const {state} = runStrikes({startMs: 0, count: 9, intervalMs: 333}); // ~3s of 180spm
-    expect(computeSpm(state, CADENCE_MIN_WINDOW_MS)).toBeGreaterThan(0);
+    const firstStep = state.steps[0];
+    expect(computeSpm(state, firstStep + CADENCE_MIN_WINDOW_MS - 1)).toBe(0); // 1ms short → withheld
+    expect(computeSpm(state, firstStep + CADENCE_MIN_WINDOW_MS)).toBeGreaterThan(0); // gate opens
+  });
+});
+
+describe('computeSpm — audit#14b idle before the first step does not dilute the rate', () => {
+  test('a true ~180 spm started 30s into the run reads its real cadence, not ~26', () => {
+    // The runner stands on the start line for 30s (GPS warm-up) before the first
+    // footfall. The OLD code divided by (now − runStart) and reported ~26 spm for
+    // a genuine 180. The fix divides by the observed step span instead.
+    const idleMs = 30000;
+    const intervalMs = Math.round(60000 / 180); // 333ms → 180 spm
+    const {state} = runStrikes({startMs: idleMs, count: 30, intervalMs}); // ~10s of running
+    const now = idleMs + 30 * intervalMs + 1; // ~40s after run start, ~10s of stepping
+    const spm = computeSpm(state, now);
+    expect(spm).toBeGreaterThanOrEqual(160); // real cadence, NOT diluted by the idle
+    expect(spm).toBeLessThanOrEqual(180);
+  });
+
+  test('10s idle + 10s of 180 spm is not pulled down toward ~90', () => {
+    // The 10s-idle / 10s-run case the critic flagged: run-start normalization
+    // would halve the rate (~90). Observed-span normalization holds the real value.
+    const idleMs = 10000;
+    const intervalMs = Math.round(60000 / 180); // 333ms
+    const {state} = runStrikes({startMs: idleMs, count: 30, intervalMs});
+    const now = idleMs + 30 * intervalMs + 1;
+    expect(computeSpm(state, now)).toBeGreaterThan(150); // far above the ~90 dilution
+  });
+
+  test('the idle gap before the first strike never makes spm negative or zero mid-run', () => {
+    // Data-integrity guard: a large startMs offset must not underflow the
+    // denominator (firstStep ≤ now always) — spm stays a positive finite rate.
+    const {state} = runStrikes({startMs: 120000, count: 20, intervalMs: 333});
+    const now = 120000 + 20 * 333 + 1;
+    const spm = computeSpm(state, now);
+    expect(spm).toBeGreaterThan(0);
+    expect(Number.isFinite(spm)).toBe(true);
   });
 });
 
 describe('feedAccelSample — rolling 60s window pruning', () => {
   test('strikes older than the window age out even on a non-step sample', () => {
-    let r = feedAccelSample(initCadenceState(0), STEP_PEAK_THRESHOLD + 3, 0); // strike @0
+    let r = feedAccelSample(initCadenceState(), STEP_PEAK_THRESHOLD + 3, 0); // strike @0
     expect(r.state.steps).toEqual([0]);
     // a quiet sample well past the window — the old strike must be pruned
     r = feedAccelSample(r.state, 1, CADENCE_WINDOW_MS + 1);
@@ -151,9 +190,9 @@ describe('feedAccelSample — rolling 60s window pruning', () => {
 
 describe('feedAccelSample — purity', () => {
   test('does not mutate the input state', () => {
-    const s = initCadenceState(0);
+    const s = initCadenceState();
     s.steps.push(0);
-    const snapshot = {steps: [...s.steps], lastMag: s.lastMag, lastStepMs: s.lastStepMs, startMs: s.startMs};
+    const snapshot = {steps: [...s.steps], lastMag: s.lastMag, lastStepMs: s.lastStepMs};
     feedAccelSample(s, STEP_PEAK_THRESHOLD + 5, 1000);
     expect(s).toEqual(snapshot);
   });
