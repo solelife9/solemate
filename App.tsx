@@ -23,7 +23,8 @@ import AddShoeScreen from './AddShoeScreen.rn';
 import {RunStart} from './RunScreen.rn';
 
 import {KalmanFilter} from './lib/kalman';
-import {calcDist, simplifyRoute} from './lib/geo';
+import {calcDist, acceptSegment, simplifyRoute} from './lib/geo';
+import {WARMUP_FIXES} from './lib/engineConstants';
 import {fmtPace, fmtTime, fmtKDate, getMonday, ymdLocal} from './lib/format';
 import {
   sumKm, avgPaceLabel, totalTimeLabel, summaryOf, maxDayStreak,
@@ -307,6 +308,9 @@ function RunActiveScreen({shoe,insets,goalKm,onSave,onDiscard}:{shoe:{id:string;
   const lastStep=useRef(0);
   const pts=useRef<any[]>([]);
   const dist=useRef(0);
+  const fixIndex=useRef(0);
+  const lastFixMs=useRef(0);
+  const lastGood=useRef<{lat:number;lon:number}|null>(null);
   const t0=useRef(Date.now());
   const kf=useRef(new KalmanFilter());
   const cadRef=useRef(0);
@@ -363,6 +367,7 @@ function RunActiveScreen({shoe,insets,goalKm,onSave,onDiscard}:{shoe:{id:string;
 
   function beginRun(){
     dist.current=0;t0.current=Date.now();kf.current.reset();
+    fixIndex.current=0;lastFixMs.current=0;lastGood.current=null;
     stepTs.current=[];lastMag.current=0;lastStep.current=0;pts.current=[];
     locationRef.current='';locationFetched.current=false;
     isPausedRef.current=false;autoPausedRef.current=false;
@@ -408,12 +413,22 @@ function RunActiveScreen({shoe,insets,goalKm,onSave,onDiscard}:{shoe:{id:string;
               locationRef.current=parts.length>0?parts.join(', '):(d.display_name||'').split(',').slice(0,2).join(',').trim()||'';
             }).catch(()=>{});
         }
-        if(pts.current.length>0){
-          const prev=pts.current[pts.current.length-1];
-          const d=calcDist(prev.lat,prev.lon,f.lat,f.lon);
-          if(d>0.003&&d<0.3){dist.current+=d;setKm(Math.round(dist.current*100)/100);}
-          if(d>=0.005) pts.current.push(f);
-        }else{pts.current.push(f);}
+        const idx=fixIndex.current++;
+        const dtSec=lastFixMs.current?Math.max((pos.timestamp-lastFixMs.current)/1000,0):0;
+        lastFixMs.current=pos.timestamp;
+        if(lastGood.current){
+          const d=calcDist(lastGood.current.lat,lastGood.current.lon,f.lat,f.lon);
+          if(acceptSegment({distKm:d,dtSec,accuracyM:acc,fixIndex:idx})){
+            dist.current+=d;setKm(Math.round(dist.current*100)/100);
+            pts.current.push(f);lastGood.current=f;
+          }else if(idx<WARMUP_FIXES){
+            // 워밍업 구간: 거리에 가산하지 않되 마지막 양호 위치를 갱신해
+            // 워밍업 종료 직후 첫 구간이 거대한 점프로 잡히지 않게 한다.
+            lastGood.current=f;
+          }
+          // 그 외 거부(정확도/속도/거리)는 lastGood을 보존 → 경로 연속성 유지,
+          // 다음 양호 fix가 마지막 양호 위치로부터 다시 측정된다.
+        }else{lastGood.current=f;pts.current.push(f);}
       },
       err=>{setGpsStatus(err.code===1?'위치 권한 필요':'GPS 신호 없음');},
       {enableHighAccuracy:true,interval:1000,fastestInterval:500,forceRequestLocation:true,distanceFilter:0,maximumAge:0} as any,
