@@ -42,8 +42,9 @@ const QUEUED: PendingRun = {
 };
 
 // Backend mock recording every call. runsPostOk toggles whether POST /api/runs
-// succeeds, so we can drive both the synced and the failed-sync paths.
-function mockBackend(opts: {runsPostOk: boolean}): RecordedCall[] {
+// succeeds; existingRuns is what GET /api/runs returns (used to drive the
+// client-side idempotency reconcile path).
+function mockBackend(opts: {runsPostOk: boolean; existingRuns?: any[]}): RecordedCall[] {
   const calls: RecordedCall[] = [];
   (globalThis.fetch as jest.Mock).mockImplementation((url: any, init: any) => {
     const u = String(url);
@@ -51,7 +52,7 @@ function mockBackend(opts: {runsPostOk: boolean}): RecordedCall[] {
     let body: any;
     try {
       body = init && init.body ? JSON.parse(init.body) : undefined;
-    } catch (e) {
+    } catch {
       body = undefined;
     }
     calls.push({method, url: u, body});
@@ -64,7 +65,8 @@ function mockBackend(opts: {runsPostOk: boolean}): RecordedCall[] {
     }
     let payload: any = {};
     if (u.includes('/api/auth')) payload = {user_id: 'test-user'};
-    else if (u.includes('/api/shoes') || u.includes('/api/runs')) payload = [];
+    else if (u.includes('/api/runs')) payload = opts.existingRuns ?? [];
+    else if (u.includes('/api/shoes')) payload = [];
     return Promise.resolve({
       ok: true,
       status: 200,
@@ -102,8 +104,30 @@ test('a queued run is re-synced to /api/runs on launch and removed from the queu
   expect(runPost!.body.km).toBe(4.2);
   expect(runPost!.body.route).toContain('37.5');
   expect(runPost!.body.user_id).toBe('test-user');
+  // The POST carries the client idempotency key (localId) for forward-compat dedup.
+  expect(runPost!.body.localId).toBe('run_offline_1');
 
   // After a successful sync the queue is empty — the run is no longer pending.
+  expect(await loadPendingRuns()).toEqual([]);
+});
+
+test('a queued run the server already has is dequeued WITHOUT a second POST (idempotency — no duplicate row)', async () => {
+  // Scenario: last session POSTed this run successfully but was killed before the
+  // local dequeue persisted, so it is still queued AND already on the server.
+  await AsyncStorage.clear();
+  await AsyncStorage.setItem(PENDING_RUNS_KEY, JSON.stringify([QUEUED]));
+  // GET /api/runs returns a row matching the queued run's signature (shoe+date+km).
+  const calls = mockBackend({
+    runsPostOk: true,
+    existingRuns: [{id: 'server-7', shoe_id: 'shoe-1', run_date: '2026-05-31', km: 4.2}],
+  });
+
+  await mountAndSettle();
+
+  // No POST /api/runs is made — re-POSTing would create a duplicate (inflated km).
+  const runPost = calls.find(c => c.method === 'POST' && c.url.includes('/api/runs'));
+  expect(runPost).toBeUndefined();
+  // ...yet the run is removed from the queue (reconciled as already synced).
   expect(await loadPendingRuns()).toEqual([]);
 });
 

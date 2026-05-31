@@ -36,6 +36,7 @@ import {parseShoeName, shoeHealth, isRetired, DEFAULT_MAX_KM} from './lib/shoe';
 import {
   saveSnapshot, loadSnapshot, clearSnapshot, isResumable,
   enqueuePendingRun, removePendingRun, flushPendingRuns,
+  reconcilePendingWithServer,
   RunSnapshot, PendingRun,
 } from './lib/runPersistence';
 
@@ -71,17 +72,6 @@ function Main(){
   const insets=useSafeAreaInsets();
 
   useEffect(()=>{initUser();},[]);
-
-  // audit#3 재동기: userId가 준비되면 네트워크 실패로 큐에 남은 완주 런을 재전송.
-  // 큐 읽기/쓰기는 flushPendingRuns(저장)이, POST(네트워크)는 주입된 syncFn이
-  // 담당해 저장/네트워크가 분리된다.
-  useEffect(()=>{
-    if(!userId) return;
-    flushPendingRuns(async(p)=>{
-      const server=await postRun(p);
-      await reconcileSynced(p,server);
-    }).catch(()=>{});
-  },[userId]);
 
   // audit#2: 미완료 런 감지 → 복구/저장 프롬프트. 한 번만 묻는다.
   useEffect(()=>{
@@ -123,7 +113,23 @@ function Main(){
       }));
       setShoes(safeShoes);setRuns(runsWithRoute);
       checkShoeAlerts(safeShoes,safeRuns);
+      // audit#3 재동기: 네트워크 실패로 큐에 남은 완주 런을 재전송. 서버 런 목록과
+      // 사용자 id를 갓 받은 값으로 넘겨, 재-POST 전 클라이언트 화해로 중복을 막는다.
+      await syncPendingRuns(safeRuns,d.user_id);
     }catch(e){console.log('offline');}
+  }
+
+  // audit#3 재동기 진입점(저장/네트워크 분리). 두 단계로 중복 행을 막는다:
+  //   1) reconcilePendingWithServer — 서버가 이미 가진 런(시그니처/echo localId
+  //      매칭)은 재-POST 없이 큐에서 제거. POST 성공 후 dequeue 영속 전에 프로세스가
+  //      죽어 큐에 남은 런이 다음 실행에서 중복 POST되는 윈도우를 닫는다.
+  //   2) flushPendingRuns — 남은 런만 postRun으로 재전송. 실패하면 큐에 보존.
+  async function syncPendingRuns(serverRuns:any[],uid?:string|null){
+    await reconcilePendingWithServer(serverRuns);
+    await flushPendingRuns(async(p)=>{
+      const server=await postRun(p,uid);
+      await reconcileSynced(p,server);
+    });
   }
 
   async function addShoe(name:string,maxKm:number,startKm:number,date:string){
@@ -189,22 +195,33 @@ function Main(){
     }catch(e){/* 큐에 남아 다음 실행/포그라운드에서 재동기 */}
   }
 
-  // 단일 POST 경로 — addRun과 startup 재동기(flushPendingRuns)가 공유한다.
-  async function postRun(p:PendingRun):Promise<any>{
-    const r=await fetch(API+'/api/runs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:userId,shoe_id:p.shoe_id,km:p.km,run_date:p.run_date,memo:p.memo,source:p.source,duration:p.duration,cadence:p.cadence,route:p.route,location:p.location,heart_rate:p.heart_rate})});
+  // 단일 POST 경로 — addRun과 startup 재동기(syncPendingRuns)가 공유한다. uid는
+  // 명시 주입 가능(initUser는 setUserId 직후라 state가 아직 갱신 전이므로 갓 받은
+  // user_id를 직접 넘긴다). localId를 멱등 키로 함께 전송 — 현재 백엔드는 무시하나,
+  // echo back 시 서버 dedup/클라이언트 화해에 쓰이는 forward-compat 키.
+  async function postRun(p:PendingRun,uid?:string|null):Promise<any>{
+    const user=uid??userId;
+    const r=await fetch(API+'/api/runs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:user,localId:p.localId,shoe_id:p.shoe_id,km:p.km,run_date:p.run_date,memo:p.memo,source:p.source,duration:p.duration,cadence:p.cadence,route:p.route,location:p.location,heart_rate:p.heart_rate})});
     if(!r||!r.ok) throw new Error('run POST failed');
     return r.json();
   }
 
-  // 동기 성공 후 화해: 서버 id로 route_/time_ 재키잉, 큐에서 제거, 낙관적 항목을
-  // 서버 항목으로 교체(없으면 추가). localId/serverId 중복은 제거한다.
+  // 동기 성공 후 화해: 큐 제거를 먼저 영속(POST↔dequeue 윈도우 최소화 → 중복 재-POST
+  // 방지), 그다음 서버 id로 route_/time_ 재키잉 + 원본 localId 키 제거(dead-key 누수
+  // 방지), 마지막으로 낙관적 항목을 서버 항목으로 교체. localId/serverId 중복은 제거.
   async function reconcileSynced(p:PendingRun,server:any){
     const serverId=server&&server.id!=null?server.id:null;
+    // (c) 다른 어떤 작업보다 먼저 dequeue를 영속한다.
+    await removePendingRun(p.localId);
     if(serverId){
       if(p.route) await AsyncStorage.setItem('route_'+serverId, p.route);
       if(p.run_time) await AsyncStorage.setItem('time_'+serverId, p.run_time);
+      // serverId로 재키잉했으므로 localId 원본 키는 죽은 키 — 제거해 누수를 막는다.
+      if(String(serverId)!==p.localId){
+        await AsyncStorage.removeItem('route_'+p.localId);
+        await AsyncStorage.removeItem('time_'+p.localId);
+      }
     }
-    await removePendingRun(p.localId);
     const merged={...(server||{}),id:serverId??p.localId,shoe_id:p.shoe_id,km:p.km,run_date:p.run_date,
       duration:p.duration,cadence:p.cadence,memo:p.memo,route:p.route||((server&&server.route)||''),
       run_time:p.run_time,_pending:false};

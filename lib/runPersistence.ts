@@ -139,7 +139,7 @@ export async function loadSnapshot(): Promise<RunSnapshot | null> {
     const raw = await AsyncStorage.getItem(SNAPSHOT_KEY);
     if (!raw) return null;
     return sanitizeSnapshot(JSON.parse(raw));
-  } catch (e) {
+  } catch {
     return null;
   }
 }
@@ -158,7 +158,7 @@ export async function loadPendingRuns(): Promise<PendingRun[]> {
     const arr = JSON.parse(raw);
     if (!Array.isArray(arr)) return [];
     return arr.map(sanitizePendingRun).filter((r): r is PendingRun => r !== null);
-  } catch (e) {
+  } catch {
     return [];
   }
 }
@@ -193,6 +193,51 @@ export async function removePendingRun(localId: string): Promise<PendingRun[]> {
   return next;
 }
 
+// ── client-side idempotency (duplicate-run guard) ───────────────
+/**
+ * A signature that identifies the same finished run across the local queue and
+ * the server's run list, independent of server id. The backend is external and
+ * cannot dedupe, so the client matches a queued run against runs it already
+ * fetched: first by an echoed client id (the `localId` we POST as a forward-
+ * compatible idempotency key), then by the natural signature run_date + shoe_id
+ * + distance. A km tolerance of <0.005 absorbs float round-trip noise.
+ */
+export function serverHasRun(pending: PendingRun, serverRuns: any[]): boolean {
+  if (!Array.isArray(serverRuns)) return false;
+  return serverRuns.some(r => {
+    if (!r || typeof r !== 'object') return false;
+    // echoed client idempotency key (server stores/returns what we sent)
+    const echoed = r.localId ?? r.client_id ?? r.local_id;
+    if (echoed != null && String(echoed) === pending.localId) return true;
+    // natural signature: same shoe, same date, same distance
+    if (String(r.shoe_id) !== pending.shoe_id) return false;
+    if (String(r.run_date) !== pending.run_date) return false;
+    const km = typeof r.km === 'number' ? r.km : parseFloat(String(r.km));
+    return Number.isFinite(km) && Math.abs(km - pending.km) < 0.005;
+  });
+}
+
+/**
+ * Before re-POSTing the queue, drop any pending run the server already has
+ * (matched by `serverHasRun`). This closes the duplicate-row window: if a prior
+ * session POSTed a run successfully but was killed before `removePendingRun`
+ * could persist, the run is still queued — re-POSTing it would create a second
+ * row (inflated total km / shoe wear). Reconciling against the freshly fetched
+ * server runs dequeues it WITHOUT a second POST. Returns the runs that still
+ * genuinely need syncing.
+ */
+export async function reconcilePendingWithServer(
+  serverRuns: any[],
+): Promise<PendingRun[]> {
+  const queue = await loadPendingRuns();
+  if (queue.length === 0) return [];
+  const stillPending = queue.filter(p => !serverHasRun(p, serverRuns));
+  if (stillPending.length !== queue.length) {
+    await writePendingRuns(stillPending); // persist the dequeue
+  }
+  return stillPending;
+}
+
 /**
  * Retry every queued run through an injected `syncFn` (the network lives in the
  * caller — this keeps storage and network strictly separate). A run is removed
@@ -210,7 +255,7 @@ export async function flushPendingRuns(
     try {
       await syncFn(run);
       synced++;
-    } catch (e) {
+    } catch {
       stillPending.push(run); // keep for next retry — never dropped
     }
   }

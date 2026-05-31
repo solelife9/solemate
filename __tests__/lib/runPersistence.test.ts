@@ -29,6 +29,8 @@ import {
   loadPendingRuns,
   removePendingRun,
   flushPendingRuns,
+  serverHasRun,
+  reconcilePendingWithServer,
 } from '../../lib/runPersistence';
 
 // The official mock's clearAllMockStorages() only drops the registry pointer,
@@ -242,5 +244,71 @@ describe('flushPendingRuns — re-sync without data loss', () => {
     const result = await flushPendingRuns(sync);
     expect(sync).not.toHaveBeenCalled();
     expect(result).toEqual({synced: 0, remaining: 0});
+  });
+});
+
+// ── client-side idempotency (duplicate-run guard) ────────────────
+describe('serverHasRun — match a queued run against already-fetched server runs', () => {
+  test('matches on the echoed client idempotency key (localId)', () => {
+    const serverRuns = [{id: 'server-7', localId: 'run_abc', shoe_id: 'other', run_date: 'x', km: 99}];
+    // Even though shoe/date/km differ, the echoed localId proves it is the same run.
+    expect(serverHasRun(PENDING, serverRuns)).toBe(true);
+  });
+
+  test('matches on the natural signature run_date + shoe_id + km when no id is echoed', () => {
+    const serverRuns = [{id: 'server-7', shoe_id: 'shoe-1', run_date: '2026-06-01', km: 5.02}];
+    expect(serverHasRun(PENDING, serverRuns)).toBe(true);
+  });
+
+  test('absorbs float round-trip noise within a 0.005km tolerance', () => {
+    const serverRuns = [{id: 's', shoe_id: 'shoe-1', run_date: '2026-06-01', km: 5.018}];
+    expect(serverHasRun(PENDING, serverRuns)).toBe(true);
+  });
+
+  test('does NOT match a different run (different distance, no echoed id)', () => {
+    const serverRuns = [{id: 's', shoe_id: 'shoe-1', run_date: '2026-06-01', km: 8.0}];
+    expect(serverHasRun(PENDING, serverRuns)).toBe(false);
+  });
+
+  test('does NOT match when the server list is empty or malformed', () => {
+    expect(serverHasRun(PENDING, [])).toBe(false);
+    expect(serverHasRun(PENDING, null as any)).toBe(false);
+    expect(serverHasRun(PENDING, [null, {}] as any)).toBe(false);
+  });
+});
+
+describe('reconcilePendingWithServer — drop already-synced runs before re-POST', () => {
+  test('dequeues a queued run the server already has (no duplicate re-POST) and keeps it durably removed', async () => {
+    await enqueuePendingRun(PENDING);
+    // Server already holds this run (POSTed last session; dequeue never persisted).
+    const serverRuns = [{id: 'server-7', shoe_id: 'shoe-1', run_date: '2026-06-01', km: 5.02}];
+
+    const remaining = await reconcilePendingWithServer(serverRuns);
+
+    expect(remaining).toEqual([]);
+    // The dequeue is persisted, so a crash here cannot resurrect the run.
+    expect(await loadPendingRuns()).toEqual([]);
+  });
+
+  test('keeps a genuinely-unsynced run queued for the flush', async () => {
+    await enqueuePendingRun(PENDING);
+    const serverRuns = [{id: 'server-7', shoe_id: 'shoe-1', run_date: '2026-06-01', km: 8.0}];
+
+    const remaining = await reconcilePendingWithServer(serverRuns);
+
+    expect(remaining.map(r => r.localId)).toEqual(['run_abc']);
+    expect((await loadPendingRuns()).map(r => r.localId)).toEqual(['run_abc']);
+  });
+
+  test('only the already-synced run is dropped; the rest survive (no data loss)', async () => {
+    await enqueuePendingRun(PENDING);
+    await enqueuePendingRun({...PENDING, localId: 'run_new', km: 3.1, run_date: '2026-06-02'});
+    // Server has the first run only.
+    const serverRuns = [{shoe_id: 'shoe-1', run_date: '2026-06-01', km: 5.02}];
+
+    const remaining = await reconcilePendingWithServer(serverRuns);
+
+    expect(remaining.map(r => r.localId)).toEqual(['run_new']);
+    expect((await loadPendingRuns()).map(r => r.localId)).toEqual(['run_new']);
   });
 });
