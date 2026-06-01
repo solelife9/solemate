@@ -54,6 +54,7 @@ export function weeklyProgress(
 
   let totalKm = 0;
   for (const r of runs) {
+    if (r.km <= 0) continue; // 0km/음수 km(비런·비정상)은 거리 합산 제외
     const day = localMidnight(r.run_date).getTime();
     if (day >= start && day < end) totalKm += r.km;
   }
@@ -67,7 +68,12 @@ export function weeklyProgress(
  * 오늘 기록이 없으면 0, 있으면 과거로 끊길 때까지 센다.
  */
 export function currentStreak(runs: Run[], todayISO: string): number {
-  const days = new Set(runs.map((r) => localMidnight(r.run_date).getTime()));
+  // 0km(또는 음수) 날은 비런 → 스트릭에서 제외(끊김 처리). km>0인 런만 day-set 구성.
+  const days = new Set(
+    runs
+      .filter((r) => r.km > 0)
+      .map((r) => localMidnight(r.run_date).getTime()),
+  );
 
   let cursor = localMidnight(todayISO);
   let streak = 0;
@@ -88,7 +94,8 @@ export function personalRecords(runs: Run[]): PersonalRecords {
   let longest: number | null = null;
 
   for (const r of runs) {
-    if (longest === null || r.km > longest) longest = r.km;
+    // 음수/0km(비정상·비런)은 최장 거리 자격에서 제외
+    if (r.km > 0 && (longest === null || r.km > longest)) longest = r.km;
 
     if (r.km > 0 && r.durationS !== undefined && r.durationS > 0) {
       const secPerKm = r.durationS / r.km;

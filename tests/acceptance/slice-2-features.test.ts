@@ -16,7 +16,7 @@ import {
   getRecommendedLifespanKm,
   SHOE_MODELS,
 } from '../../data/shoeModels';
-import { kmToDisplay, fmtDistance } from '../../lib/units';
+import { kmToDisplay, displayToKm, fmtDistance, KM_PER_MI } from '../../lib/units';
 import {
   weeklyProgress,
   currentStreak,
@@ -47,9 +47,25 @@ describe('단위 설정(km↔mi) 환산', () => {
     expect(kmToDisplay(10, 'km')).toBeCloseTo(10, 3);
     expect(kmToDisplay(10, 'mi')).toBeCloseTo(6.2137, 2);
   });
-  test('fmtDistance는 단위 라벨 포함', () => {
-    expect(fmtDistance(5, 'km')).toMatch(/km/);
+
+  test('displayToKm: km은 항등, mi는 1.60934 곱(저장 표준 복원)', () => {
+    // km 단위는 표시값=저장값
+    expect(displayToKm(10, 'km')).toBe(10);
+    // mi→km 환산 명시: 1mi = 1.60934km
+    expect(displayToKm(1, 'mi')).toBeCloseTo(KM_PER_MI, 5);
+    expect(displayToKm(5, 'mi')).toBeCloseTo(5 * KM_PER_MI, 5);
+    // round-trip: 10km을 mi로 표시(≈6.2137mi)했다가 다시 km로 복원하면 10km
+    expect(displayToKm(6.2137, 'mi')).toBeCloseTo(10, 2);
+    expect(displayToKm(kmToDisplay(10, 'mi'), 'mi')).toBeCloseTo(10, 5);
+  });
+
+  test('fmtDistance는 환산된 숫자값과 단위 라벨을 함께 표시', () => {
+    // km: 라벨 + 환산값(5.0) 그대로
+    expect(fmtDistance(5, 'km')).toBe('5.0 km');
+    // mi: 라벨 + 실제 환산 숫자(5km ≈ 3.1mi) — 라벨만이 아니라 값도 단언
     expect(fmtDistance(5, 'mi')).toMatch(/mi/);
+    expect(fmtDistance(5, 'mi')).toContain('3.1');
+    expect(fmtDistance(5, 'mi')).toBe('3.1 mi');
   });
 });
 
@@ -65,12 +81,46 @@ describe('러닝 목표 달성률 & 스트릭(실데이터)', () => {
     expect(p.totalKm).toBeCloseTo(12, 5);
     expect(p.percent).toBeCloseTo(40, 0); // 12/30
   });
-  test('연속 러닝 스트릭(0km 날은 비런으로 끊김 처리 정책 확인)', () => {
+
+  test('weeklyProgress: 주 경계(mondayISO~+7일) 밖 런은 합산에서 제외', () => {
+    // monday='2026-06-01'(월) → 주: 06-01 00:00 ~ 06-08 00:00(배타)
+    const boundaryRuns = [
+      { run_date: '2026-05-31', km: 100 }, // mondayISO 이전(일) → 제외
+      { run_date: '2026-06-01', km: 5 }, // 주 시작(포함)
+      { run_date: '2026-06-07', km: 7 }, // 그 주 일요일(포함)
+      { run_date: '2026-06-08', km: 100 }, // 다음 주 월요일(배타 → 제외)
+    ];
+    const p = weeklyProgress(boundaryRuns, 30, monday);
+    // mondayISO를 무시하면 212가 되어 통과 불가 — 주 안 런(5+7)만 집계되어야 함
+    expect(p.totalKm).toBe(12);
+    expect(p.percent).toBe(40); // 12/30 → 40%
+  });
+
+  test('연속 러닝 스트릭: 정확히 2일(off-by-one 차단)', () => {
     const s = currentStreak([
       { run_date: '2026-06-01', km: 5 },
       { run_date: '2026-06-02', km: 3 },
     ], '2026-06-02');
-    expect(s).toBeGreaterThanOrEqual(2);
+    expect(s).toBe(2);
+  });
+
+  test('스트릭: 오늘이 0km(비런)이면 끊겨 0', () => {
+    // 정책: 0km 날은 비런 → 스트릭 끊김. 오늘이 0km이면 streak=0.
+    const s = currentStreak([
+      { run_date: '2026-06-01', km: 5 },
+      { run_date: '2026-06-02', km: 0 },
+    ], '2026-06-02');
+    expect(s).toBe(0);
+  });
+
+  test('스트릭: 중간에 빠진 날(gap)이 있으면 끊김', () => {
+    // 06-04 누락 → 오늘(06-05)부터 역행하면 06-04에서 끊겨 streak=1
+    const s = currentStreak([
+      { run_date: '2026-06-01', km: 5 },
+      { run_date: '2026-06-02', km: 3 },
+      { run_date: '2026-06-05', km: 4 },
+    ], '2026-06-05');
+    expect(s).toBe(1);
   });
 });
 
