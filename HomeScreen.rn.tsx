@@ -251,7 +251,7 @@ export default function HomeScreen({
       {active ? (
         <>
           {/* shoe-first 주인공: 선택 신발(idx 실값) 수명 링 히어로 카드 */}
-          <View style={{ paddingHorizontal: SPACE.xl, paddingTop: 30 }}>
+          <View testID="home-hero" style={{ paddingHorizontal: SPACE.xl, paddingTop: 30 }}>
             <HeroShoe shoe={active} recommended={isRecommended} unit={unit} />
           </View>
           {/* 강조는 CTA에 — 선택 신발 idx로 러닝 시작 연결 */}
