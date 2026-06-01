@@ -141,6 +141,24 @@ test('notifyPermissionRevoked stops accumulation and flags the state', () => {
   expect(t.getDistanceKm()).toBe(d);
 });
 
+test('notifyPermissionRevoked freezes elapsed time — clock keeps ticking but time does not', () => {
+  const {t, set} = makeEngine();
+  t.start({goalKm: 5, shoe: {id: 's1', name: 'X'}, t0: 100000});
+
+  set(120000); // 20s into the run
+  expect(t.getElapsed()).toBe(20);
+
+  t.notifyPermissionRevoked(); // time must freeze here, like distance does
+  expect(t.getElapsed()).toBe(20);
+
+  // 1s ticker keeps firing and wall clock keeps advancing — elapsed stays put.
+  t.tick();
+  set(200000); // 80s more pass on the wall clock
+  t.tick();
+  expect(t.getElapsed()).toBe(20); // frozen, not 100
+  expect(t.getState().elapsed).toBe(20);
+});
+
 test('emits firstFix once and pause/resume events with the auto flag', () => {
   const {t} = makeEngine();
   const events: RunTrackerEvent[] = [];

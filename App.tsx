@@ -886,7 +886,10 @@ function RunActiveScreen({shoe,insets,goalKm,onSave,onDiscard,resume}:{shoe:{id:
             }).catch(()=>{});
         }
       }else if(ev.type==='permissionRevoked'){
-        // 주행 중 권한 회수: 엔진이 트래킹을 멈췄다. delivery 경로도 정리하고 안내한다.
+        // 주행 중 권한 회수: 엔진이 트래킹(거리·시간)을 멈췄다. delivery 경로와
+        // 1초 틱/스냅샷 타이머도 정리한다 — 틱이 계속 돌면 헛돌 뿐이고, 시간은
+        // 엔진이 freeze하므로 더 증가하지 않는다(거리와 동일하게 정지).
+        clearInterval(timer.current);clearInterval(snapTimer.current);
         void stopTracking();
         setGpsStatus('위치 권한 필요');setGpsStalled(false);
         openLocationSettingsAlert('주행 중 위치 권한이 회수되어 거리 기록을 멈췄습니다. 설정에서 위치 권한을 다시 허용해 주세요.');

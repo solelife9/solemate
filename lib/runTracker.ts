@@ -88,6 +88,11 @@ class RunTracker {
   private location = '';
   private accuracyM: number | null = null;
   private permissionRevoked = false;
+  // Elapsed seconds captured at permission-revocation; once set, getElapsed()
+  // returns it verbatim so displayed time freezes (the wall clock keeps ticking
+  // and the UI's 1s timer keeps calling tick(), but time must stop on revoke —
+  // mirrors how distance freezes). null while the run time is still live.
+  private frozenElapsed: number | null = null;
   private active = false;
   private firstFixEmitted = false;
 
@@ -122,6 +127,7 @@ class RunTracker {
     this.location = '';
     this.accuracyM = null;
     this.permissionRevoked = false;
+    this.frozenElapsed = null;
     this.active = true;
     this.firstFixEmitted = false;
   }
@@ -201,6 +207,10 @@ class RunTracker {
   // ── permission revoked mid-run ────────────────────────────────────
   notifyPermissionRevoked() {
     if (this.permissionRevoked) return;
+    // Freeze elapsed BEFORE flipping the flag: capture the live value, then
+    // getElapsed() returns it for the rest of the run so time stops growing —
+    // distance already stops because `active` goes false and ingestFix() bails.
+    this.frozenElapsed = this.getElapsed();
     this.permissionRevoked = true;
     this.active = false; // stop accumulating garbage distance/time
     this.emit({type: 'permissionRevoked'});
@@ -284,6 +294,9 @@ class RunTracker {
 
   // ── time + dead-zone (recomputed by the UI's 1s ticker) ───────────
   getElapsed(): number {
+    // Once permission is revoked, time is frozen at the captured value — the 1s
+    // ticker may keep firing but displayed elapsed must not advance.
+    if (this.frozenElapsed != null) return this.frozenElapsed;
     const curPausedMs =
       this.isPaused && this.pauseStartMs > 0
         ? this.pausedMs + (this.now() - this.pauseStartMs)

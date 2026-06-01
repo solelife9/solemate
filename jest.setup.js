@@ -15,21 +15,6 @@ jest.mock('@react-native-async-storage/async-storage', () =>
   require('@react-native-async-storage/async-storage/jest').default,
 );
 
-// ── react-native-geolocation-service ────────────────────────────────────────
-// watchPosition never fires (no real fixes); it just hands back a numeric watch
-// id like the native module so clearWatch(id) stays valid. requestAuthorization
-// resolves "granted" so permission gates fall through in tests.
-jest.mock('react-native-geolocation-service', () => ({
-  __esModule: true,
-  default: {
-    watchPosition: jest.fn(() => 1),
-    clearWatch: jest.fn(),
-    getCurrentPosition: jest.fn(),
-    requestAuthorization: jest.fn(() => Promise.resolve('granted')),
-    stopObserving: jest.fn(),
-  },
-}));
-
 // ── expo-location ────────────────────────────────────────────────────────────
 // The run engine's real GPS source. watchPositionAsync records its (options,
 // callback, errorHandler) like the native module and hands back a removable

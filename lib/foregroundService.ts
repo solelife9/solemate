@@ -1,27 +1,26 @@
 // ─── Foreground-service config for background run tracking (audit#1) ──────────
 // Pure helpers that produce the `foregroundService` option handed to
-// react-native-geolocation-service's watchPosition, plus the decision of whether
+// expo-location's startLocationUpdatesAsync, plus the decision of whether
 // ACCESS_BACKGROUND_LOCATION still needs requesting on this Android version.
 //
 // WHY a foreground service: when the screen turns off or the app is backgrounded,
 // Android suspends JS timers and throttles location callbacks (Doze + background
 // execution limits), so distance/time recording stalls — the #1 reliability
 // defect for a running app (pocket runs lose distance). A location-typed
-// foreground service keeps the process alive so watchPosition keeps delivering
-// fixes; the user sees an ongoing notification while a run is active.
+// foreground service keeps the process alive so location fixes keep arriving;
+// the user sees an ongoing notification while a run is active.
 //
-// CURRENT STATUS (honest): the installed react-native-geolocation-service@5.3.1
-// has NO foreground service, so this config is a NO-OP today — background/
-// screen-off tracking does NOT actually persist yet. The config is consumed
-// natively only once the app ships a foreground-service-capable geolocation
-// module (or a custom native service) AND the AndroidManifest declares the
-// FOREGROUND_SERVICE / FOREGROUND_SERVICE_LOCATION permissions and a
-// location-typed <service>. Passing it now is harmless where it is ignored
-// (unknown option keys are dropped by the native LocationOptions parser), so it
-// is safe to attach unconditionally as forward-prep. The notification copy below
-// is the text that WILL be shown once a real service runs. Enabling real
-// background tracking is a user decision (lib swap / native service) — see
-// .tenet/knowledge/2026-06-01_geolocation-no-foreground-service.md.
+// CURRENT STATUS: this config is LIVE. It is consumed by
+// lib/locationService.ts → Location.startLocationUpdatesAsync({ foregroundService })
+// (expo-location + expo-task-manager), which runs a real location-typed Android
+// foreground service. With the screen off / app backgrounded the registered
+// TaskManager task keeps receiving fixes and feeds the shared engine
+// (runTracker.ingestFix), so distance and time continue to accumulate — no more
+// pocket-run distance loss. The AndroidManifest declares FOREGROUND_SERVICE /
+// FOREGROUND_SERVICE_LOCATION (and ACCESS_BACKGROUND_LOCATION is requested
+// gracefully); expo-location merges the location-typed <service> element. The
+// notification copy below is what the user sees on the ongoing notification while
+// a run is being tracked.
 
 /** Notification channel id for the run-tracking foreground service. */
 export const FG_SERVICE_CHANNEL_ID = 'keego_run_tracking';
