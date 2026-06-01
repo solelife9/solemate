@@ -3,7 +3,7 @@
 // (sample data removed — real summary/chart/runs are injected via props)
 // ============================================================================
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet, LayoutChangeEvent } from 'react-native';
+import { View, Text, ScrollView, Pressable, StyleSheet, LayoutChangeEvent, Share } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Svg, { Polyline, Circle } from 'react-native-svg';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -13,6 +13,7 @@ import {
 import { TabBar } from './primitives';
 import { Unit, displayNum } from './lib/units';
 import { parseRoute, projectRoute, LatLon } from './lib/route';
+import { buildRunShareText } from './lib/share';
 
 export type PeriodSummary = { km: string; runs: number; pace: string; time: string };
 export type PeriodChart = { title: string; data: number[]; labels: string[] };
@@ -113,6 +114,21 @@ function RunDetail({ run, shoe, onBack, unit }: { run: Run; shoe?: Shoe; onBack:
       .catch(() => { if (alive) setRoute([]); });
     return () => { alive = false; };
   }, [run.id]);
+  // 거리/페이스/시간/신발명을 keep-going 톤 한국어 요약으로 만들어 RN Share API로
+  // 내보낸다(네이티브 추가 0). 사용자가 공유 시트를 닫거나 실패해도 조용히 무시.
+  const onShare = () => {
+    Share.share({
+      message: buildRunShareText({
+        distKm: run.dist,
+        unit,
+        pace: run.pace,
+        time: run.time,
+        shoeBrand: shoe?.brand,
+        shoeModel: shoe?.model,
+        date: `${run.date} ${run.day}요일`,
+      }),
+    }).catch(() => {});
+  };
   const dash = (n: number, u: string) => (n > 0 ? { v: String(n), u } : { v: '--', u: '' });
   const stats = [
     { l: '평균 페이스', v: run.pace, u: '/km' },
@@ -124,8 +140,11 @@ function RunDetail({ run, shoe, onBack, unit }: { run: Run; shoe?: Shoe; onBack:
   ];
   return (
     <View style={s.screen}>
-      <View style={s.nav}>
+      <View style={[s.nav, s.navRow]}>
         <Pressable onPress={onBack} style={s.iconBtn}><Ionicons name="chevron-back" size={20} color={T1} /></Pressable>
+        <Pressable onPress={onShare} style={s.iconBtn} accessibilityRole="button" accessibilityLabel="공유">
+          <Ionicons name="share-outline" size={18} color={T1} />
+        </Pressable>
       </View>
       <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: 28 }}>
         <Text style={s.detailDate}>{run.date} {run.day}요일</Text>
@@ -292,6 +311,7 @@ const s = StyleSheet.create({
 
   // detail
   nav: { paddingTop: 60, paddingHorizontal: 16, paddingBottom: 6 },
+  navRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   iconBtn: { width: 38, height: 38, borderRadius: 999, backgroundColor: '#2C2C2E', borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(255,255,255,0.12)', alignItems: 'center', justifyContent: 'center' },
   detailDate: { color: T3, fontFamily: FONT, fontSize: 13 },
   detailDist: { color: T1, fontFamily: DISPLAY, fontSize: 56, letterSpacing: 0.5 },
