@@ -23,7 +23,7 @@ const ringColor = (c: string) => (c === '교체' ? DANGER : c === '주의' ? WAR
 
 // ── shoe detail ───────────────────────────────────────────────────────────────
 function ShoeDetail({
-  shoe, idx, runs, totals, price, onBack, onRename, onDelete, onRetire, onSetPrice,
+  shoe, idx, runs, totals, price, onBack, onRename, onDelete, onRetire, onSetPrice, onStartRun,
 }: {
   shoe: Shoe;
   idx: number;
@@ -35,6 +35,8 @@ function ShoeDetail({
   onDelete?: (id: string) => void;
   onRetire?: (id: string, retired: boolean) => void;
   onSetPrice?: (id: string, price: number) => void;
+  // shoe-first 동선: 이 신발로 바로 런 시작(목표 설정 → 러닝). 신발 id를 넘긴다.
+  onStartRun?: (id: string) => void;
 }) {
   const remain = Math.max(0, shoe.max - shoe.used);
   const pct = shoe.max > 0 ? remain / shoe.max : 0;
@@ -103,6 +105,15 @@ function ShoeDetail({
             </View>
             <Text style={s.dModel}>{shoe.model}</Text>
           </View>
+        )}
+
+        {/* 기본 CTA: 이 신발로 바로 런 시작(shoe-first). 보관된 신발은 시작 동선에서
+            제외되므로 숨긴다(런 기록은 그대로 보존·표시). */}
+        {!retired && shoe.id && onStartRun && (
+          <Pressable onPress={() => onStartRun(shoe.id!)} style={s.runCta}>
+            <Ionicons name="play" size={18} color="#fff" />
+            <Text style={s.runCtaText}>이 신발로 달리기</Text>
+          </Pressable>
         )}
 
         {/* durability hero */}
@@ -200,7 +211,7 @@ function ShoeDetail({
 }
 
 // ── locker ─────────────────────────────────────────────────────────────────
-function ShoeCard({ shoe, featured, onPress }: { shoe: Shoe; featured: boolean; onPress: () => void }) {
+function ShoeCard({ shoe, featured, onPress, onPlay }: { shoe: Shoe; featured: boolean; onPress: () => void; onPlay?: () => void }) {
   const remain = Math.max(0, shoe.max - shoe.used);
   const pct = shoe.max > 0 ? remain / shoe.max : 0;
   const ring = ringColor(shoe.condition);
@@ -220,7 +231,15 @@ function ShoeCard({ shoe, featured, onPress }: { shoe: Shoe; featured: boolean; 
           <Text style={s.shoeModel} numberOfLines={1}>{shoe.model}</Text>
           <Text style={s.shoeMeta}>{shoe.used} / {shoe.max} km · <Text style={{ color: condColor(shoe.condition) }}>{shoe.condition}</Text></Text>
         </View>
-        <Ionicons name="chevron-forward" size={16} color={T3} />
+        {/* play 어포던스: 카드에서 바로 이 신발로 런 시작(shoe-first). 카드 자체 탭은
+            상세로 가므로, 시작은 별도 버튼으로 분리한다. 보관된 신발엔 노출하지 않는다. */}
+        {!retired && onPlay ? (
+          <Pressable onPress={onPlay} hitSlop={10} style={s.cardPlay}>
+            <Ionicons name="play" size={16} color="#fff" />
+          </Pressable>
+        ) : (
+          <Ionicons name="chevron-forward" size={16} color={T3} />
+        )}
       </View>
       <View style={s.track}>
         <View style={[s.trackFill, { width: `${pct * 100}%`, backgroundColor: retired ? T3 : ring }]} />
@@ -230,7 +249,7 @@ function ShoeCard({ shoe, featured, onPress }: { shoe: Shoe; featured: boolean; 
 }
 
 export default function ShoesScreen({
-  shoes = SHOES, runs = [], totals = {}, activeIdx = 0, prices = {}, onAddShoe, onTab, onRename, onDelete, onRetire, onSetPrice,
+  shoes = SHOES, runs = [], totals = {}, activeIdx = 0, prices = {}, onAddShoe, onTab, onRename, onDelete, onRetire, onSetPrice, onStartRun,
 }: {
   shoes?: Shoe[];
   runs?: Run[];
@@ -244,6 +263,8 @@ export default function ShoesScreen({
   onDelete?: (id: string) => void;
   onRetire?: (id: string, retired: boolean) => void;
   onSetPrice?: (id: string, price: number) => void;
+  // shoe-first 동선: 상세 CTA·락커 카드 play에서 해당 신발 id로 런 시작을 알린다.
+  onStartRun?: (id: string) => void;
 }) {
   const [detail, setDetail] = useState<number | null>(null);
 
@@ -261,6 +282,7 @@ export default function ShoesScreen({
         onDelete={onDelete}
         onRetire={onRetire}
         onSetPrice={onSetPrice}
+        onStartRun={onStartRun}
       />
     );
   }
@@ -273,7 +295,13 @@ export default function ShoesScreen({
       </View>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 18, paddingBottom: 8, gap: 14, paddingTop: 12 }}>
         {shoes.map((shoe, i) => (
-          <ShoeCard key={shoe.id || i} shoe={shoe} featured={i === activeIdx} onPress={() => setDetail(i)} />
+          <ShoeCard
+            key={shoe.id || i}
+            shoe={shoe}
+            featured={i === activeIdx}
+            onPress={() => setDetail(i)}
+            onPlay={shoe.id && onStartRun ? () => onStartRun(shoe.id!) : undefined}
+          />
         ))}
         <Pressable onPress={onAddShoe} style={s.addCard}>
           <Ionicons name="add" size={18} color={T3} />
@@ -312,6 +340,7 @@ const s = StyleSheet.create({
   usingChipText: { color: ACCENT, fontFamily: FONT, fontSize: 10, fontWeight: '500' },
   shoeModel: { color: T1, fontFamily: FONT, fontSize: 18, fontWeight: '500', letterSpacing: -0.3, marginTop: 3 },
   shoeMeta: { color: T3, fontFamily: FONT, fontSize: 12.5, fontWeight: '600', marginTop: 5 },
+  cardPlay: { width: 38, height: 38, borderRadius: 999, backgroundColor: ACCENT, alignItems: 'center', justifyContent: 'center' },
   track: { height: 6, borderRadius: 999, backgroundColor: CARD_HI, overflow: 'hidden', marginTop: 16 },
   trackFill: { height: '100%', borderRadius: 999 },
 
@@ -323,6 +352,8 @@ const s = StyleSheet.create({
   iconBtn: { width: 38, height: 38, borderRadius: 999, backgroundColor: CARD_HI, borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(255,255,255,0.12)', alignItems: 'center', justifyContent: 'center' },
   dBrand: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500', letterSpacing: 1.6 },
   dModel: { color: T1, fontFamily: FONT, fontSize: 27, fontWeight: '500', letterSpacing: -0.6, marginTop: 4 },
+  runCta: { height: 54, borderRadius: 18, backgroundColor: ACCENT, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9 },
+  runCtaText: { color: '#fff', fontFamily: FONT, fontSize: 16, fontWeight: '600', letterSpacing: -0.2 },
   dHero: { padding: 24, flexDirection: 'row', alignItems: 'center', gap: 22 },
   dHeroPct: { color: T1, fontFamily: DISPLAY, fontSize: 30 },
   dHeroPctU: { color: T3, fontFamily: FONT, fontSize: 13 },

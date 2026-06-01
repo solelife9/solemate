@@ -414,6 +414,14 @@ function Main(){
     setPendingShoe({id:entry.raw.id,name:entry.raw.name,ui:entry.ui});
     setOverlay('goal');
   };
+  // shoe-first 동선: 신발 화면(상세 CTA·락커 play)에서 신발 id로 런을 시작한다.
+  // 시작 신발을 선택 신발로도 반영해(홈 히어로·'사용 중' 일관) 목표 설정 화면으로 넘어간다.
+  const startFromShoeId=(id:string)=>{
+    const i=idxById[id]; const raw=shoes[i]; if(!raw) return;
+    setSelectedShoeId(id);
+    setPendingShoe({id:raw.id,name:raw.name,ui:uiShoes[i]});
+    setOverlay('goal');
+  };
   const onAddSaved=(shoe:Shoe)=>{
     addShoe(`${shoe.brand} ${shoe.model}`.trim(),shoe.max,shoe.used,today());
     setOverlay('none');
@@ -469,6 +477,7 @@ function Main(){
             prices={prices} onSetPrice={setShoePrice}
             onAddShoe={()=>setOverlay('add')} onTab={setTab}
             onRename={updateShoeName} onDelete={deleteShoe} onRetire={retireShoe}
+            onStartRun={startFromShoeId}
           />
         )}
         {tab===3&&(
