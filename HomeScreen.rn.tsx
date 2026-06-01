@@ -50,7 +50,7 @@ function QuickStats({ week }: { week: WeekStats }) {
   );
 }
 
-function HeroShoe({ shoe }: { shoe: Shoe }) {
+function HeroShoe({ shoe, recommended }: { shoe: Shoe; recommended?: boolean }) {
   const remain = Math.max(0, shoe.max - shoe.used);
   const pct = shoe.max > 0 ? remain / shoe.max : 0;
   const ring = ringColor(shoe.condition);
@@ -62,6 +62,12 @@ function HeroShoe({ shoe }: { shoe: Shoe }) {
           <View style={s.row}>
             <Text style={s.heroBrand}>{shoe.brand}</Text>
             <View style={s.usingChip}><Text style={s.usingChipText}>사용 중</Text></View>
+            {recommended && (
+              <View style={s.recommendChip}>
+                <Ionicons name="sparkles" size={9} color={ACCENT} />
+                <Text style={s.recommendChipText}>오늘은 이 신발</Text>
+              </View>
+            )}
           </View>
           <Text style={s.heroModel} numberOfLines={2}>{shoe.model}</Text>
         </View>
@@ -163,6 +169,7 @@ function EmptyHome({ onAddShoe }: { onAddShoe?: () => void }) {
 
 export default function HomeScreen({
   shoes = SHOES, week = { km: '0', runs: 0, pace: '--' }, dateLabel = '', onStart, onAddShoe, onTab,
+  activeIdx: activeIdxProp, onSelect, recommendedIdx,
 }: {
   shoes?: Shoe[];
   week?: WeekStats;
@@ -170,10 +177,20 @@ export default function HomeScreen({
   onStart?: (idx: number) => void;
   onAddShoe?: () => void;
   onTab?: (i: number) => void;
+  // 선택 신발을 App이 소유(제어 모드): activeIdx+onSelect가 함께 오면 외부 상태를
+  // 따른다. 둘 다 없으면 기존처럼 내부 상태로 동작(하위호환).
+  activeIdx?: number;
+  onSelect?: (i: number) => void;
+  // 휴식 로테이션 추천 신발의 인덱스. 히어로가 이 신발이면 '오늘은 이 신발' 칩 표시.
+  recommendedIdx?: number;
 }) {
-  const [activeIdx, setActiveIdx] = useState(0);
-  const idx = Math.min(activeIdx, Math.max(0, shoes.length - 1));
+  const [internalIdx, setInternalIdx] = useState(0);
+  const controlled = activeIdxProp != null && typeof onSelect === 'function';
+  const rawIdx = controlled ? (activeIdxProp as number) : internalIdx;
+  const idx = Math.min(Math.max(0, rawIdx), Math.max(0, shoes.length - 1));
+  const select = (i: number) => { if (controlled) onSelect?.(i); else setInternalIdx(i); };
   const active = shoes[idx];
+  const isRecommended = recommendedIdx != null && recommendedIdx === idx;
 
   return (
     <View style={s.screen}>
@@ -186,7 +203,7 @@ export default function HomeScreen({
       {active ? (
         <>
           <View style={{ paddingHorizontal: 20, paddingTop: 30 }}>
-            <HeroShoe shoe={active} />
+            <HeroShoe shoe={active} recommended={isRecommended} />
           </View>
           <View style={{ paddingHorizontal: 20, paddingTop: 7 }}>
             <StartButton onPress={() => onStart?.(idx)} />
@@ -194,7 +211,7 @@ export default function HomeScreen({
           {shoes.length > 1 && (
             <View style={{ marginTop: 32 }}>
               <Text style={s.sectionLabel}>내 러닝화</Text>
-              <ShoePicker shoes={shoes} activeIdx={idx} onSelect={setActiveIdx} />
+              <ShoePicker shoes={shoes} activeIdx={idx} onSelect={select} />
             </View>
           )}
           <View style={{ flex: 1 }} />
@@ -234,6 +251,8 @@ const s = StyleSheet.create({
   heroBrand: { color: T3, fontFamily: FONT, fontSize: 11, fontWeight: '500', letterSpacing: 1.4 },
   usingChip: { backgroundColor: 'rgba(255,101,0,0.14)', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2 },
   usingChipText: { color: ACCENT, fontFamily: FONT, fontSize: 10, fontWeight: '500' },
+  recommendChip: { flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: 'rgba(255,101,0,0.14)', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2, borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(255,101,0,0.45)' },
+  recommendChipText: { color: ACCENT, fontFamily: FONT, fontSize: 10, fontWeight: '600' },
   heroModel: { color: T1, fontFamily: FONT, fontSize: 23, fontWeight: '600', letterSpacing: -0.5, marginTop: 7, lineHeight: 28 },
   heroBottom: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 18 },
   heroRemain: { color: T1, fontFamily: DISPLAY, fontSize: 46, letterSpacing: -1 },

@@ -37,6 +37,7 @@ import {
   weekBuckets, monthBuckets, yearBuckets,
 } from './lib/stats';
 import {parseShoeName, shoeHealth, isRetired, DEFAULT_MAX_KM} from './lib/shoe';
+import {recommendShoeId, lastWornDate} from './lib/shoeRecommend';
 import {
   saveSnapshot, loadSnapshot, clearSnapshot, isResumable,
   enqueuePendingRun, removePendingRun, flushPendingRuns,
@@ -79,6 +80,12 @@ function Main(){
   const [userId,setUserId]=useState<string|null>(null);
   const [shoes,setShoes]=useState<BackendShoe[]>([]);
   const [runs,setRuns]=useState<BackendRun[]>([]);
+  // 홈/신발 화면이 공유하는 '선택 신발' id. null이면 휴식 로테이션 추천 신발로 폴백한다
+  // (activeIdx={0} 하드코딩 제거 — 선택/추천이 홈 히어로와 신발 '사용 중' 표시를 함께 몬다).
+  const [selectedShoeId,setSelectedShoeId]=useState<string|null>(null);
+  // 신발 id → 구매가(원). cost-per-km 파생용. AsyncStorage('price_<id>')에 영속(백엔드
+  // 스키마 무변경 — 데이터 파괴 금지). 신발 로드 후 채워진다.
+  const [prices,setPrices]=useState<Record<string,number>>({});
   const [overlay,setOverlay]=useState<'none'|'add'|'goal'|'run'>('none');
   const [pendingShoe,setPendingShoe]=useState<{id:string;name:string;ui:Shoe}|null>(null);
   const [activeRun,setActiveRun]=useState<{id:string;name:string;goalKm:number}|null>(null);
@@ -129,6 +136,7 @@ function Main(){
         return merged;
       }));
       setShoes(safeShoes);setRuns(runsWithRoute);
+      void loadPrices(safeShoes);
       checkShoeAlerts(safeShoes,safeRuns);
       // audit#3 재동기: 네트워크 실패로 큐에 남은 완주 런을 재전송. 서버 런 목록과
       // 사용자 id를 갓 받은 값으로 넘겨, 재-POST 전 클라이언트 화해로 중복을 막는다.
@@ -189,6 +197,28 @@ function Main(){
       await fetch(API+'/api/shoes/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:userId,retired})});
       setShoes(prev=>prev.map(s=>s.id===id?{...s,retired}:s));
     }catch{Alert.alert('오류',retired?'보관 처리 실패':'복원 실패');}
+  }
+
+  // 구매가 로드: 각 신발의 price_<id> 로컬 키를 읽어 prices 맵을 채운다. 백엔드 스키마를
+  // 건드리지 않고 클라이언트에 영속(데이터 파괴 금지). 숫자로 파싱되는 값만 채택한다.
+  async function loadPrices(shoeList:BackendShoe[]){
+    try{
+      const entries=await Promise.all((shoeList||[]).map(async(s)=>{
+        if(!s||!s.id) return null;
+        const raw=await AsyncStorage.getItem('price_'+s.id);
+        const v=raw!=null?Number(raw):NaN;
+        return Number.isFinite(v)&&v>0?[s.id,v] as [string,number]:null;
+      }));
+      const map:Record<string,number>={};
+      for(const e of entries){if(e)map[e[0]]=e[1];}
+      setPrices(map);
+    }catch(e){console.log('loadPrices error',e);}
+  }
+
+  // 구매가 저장: 로컬 영속 + 상태 갱신. cost-per-km는 ShoeDetail에서 순수함수로 파생된다.
+  async function setShoePrice(id:string,price:number){
+    setPrices(prev=>({...prev,[id]:price}));
+    try{await AsyncStorage.setItem('price_'+id,String(price));}catch(e){console.log('setShoePrice error',e);}
   }
 
   // 완주 런 저장(audit#3): 로컬 우선 + 미동기 큐. 저장(AsyncStorage)과 네트워크
@@ -293,6 +323,21 @@ function Main(){
   const homeShoes=shoes.map((s,i)=>({raw:s,ui:uiShoes[i]})).filter(x=>!isRetired(x.raw));
   const homeUiShoes:Shoe[]=homeShoes.map(x=>x.ui);
 
+  // ── 선택/추천 신발(activeIdx 하드코딩 제거) ──────────────────────────────────
+  // 추천: 휴식 로테이션(가장 오래 쉰 활성 신발). 선택: 사용자가 홈에서 고른 신발(없으면
+  // 추천으로 폴백). effectiveId 하나가 홈 히어로와 신발화면 '사용 중' 표시를 함께 몬다.
+  const recommendedId=recommendShoeId(shoes,runs) as string|null;
+  const effectiveId=
+    (selectedShoeId&&homeShoes.some(x=>x.raw.id===selectedShoeId))?selectedShoeId
+    :(recommendedId&&homeShoes.some(x=>x.raw.id===recommendedId))?recommendedId
+    :(homeShoes[0]?.raw.id??null);
+  const homeActiveIdx=Math.max(0,homeShoes.findIndex(x=>x.raw.id===effectiveId));
+  const homeRecommendedIdx=homeShoes.findIndex(x=>x.raw.id===recommendedId);
+  // 신발화면(보관 포함 전체)에서 선택 신발의 인덱스 — '사용 중' 강조용.
+  const shoesActiveIdx=Math.max(0,shoes.findIndex(s=>s.id===effectiveId));
+  // 홈 picker(보관 제외) 인덱스 → 원본 신발 id로 선택 상태를 갱신한다.
+  const selectHomeShoe=(i:number)=>{const e=homeShoes[i];if(e)setSelectedShoeId(e.raw.id);};
+
   const sortedRaw=[...runs].sort((a,b)=>String(b.run_date).localeCompare(String(a.run_date)));
   function toUiRun(run:any):Run{
     const km=parseFloat(run.km)||0;
@@ -337,7 +382,12 @@ function Main(){
 
   // ── per-shoe totals (for shoe detail) ──────────────────────
   const shoeTotals:Record<number,ShoeTotals>={};
-  shoes.forEach((s,i)=>{const list=runs.filter(r=>r.shoe_id===s.id);shoeTotals[i]={totalRuns:list.length,totalTime:totalTimeLabel(list)};});
+  shoes.forEach((s,i)=>{
+    const list=runs.filter(r=>r.shoe_id===s.id);
+    // 마지막 착용일(런에서 파생) → 한국어 표기. 미착용이면 undefined로 둬 화면에서 생략.
+    const worn=lastWornDate(s.id,runs);
+    shoeTotals[i]={totalRuns:list.length,totalTime:totalTimeLabel(list),lastWorn:worn?fmtKDate(worn).date:undefined};
+  });
 
   // ── profile ─────────────────────────────────────────────────
   const totalKm=Math.round(sumKm(runs));
@@ -405,6 +455,8 @@ function Main(){
         {tab===0&&(
           <HomeScreen
             shoes={homeUiShoes} week={week} dateLabel={dateLabel}
+            activeIdx={homeActiveIdx} onSelect={selectHomeShoe}
+            recommendedIdx={homeRecommendedIdx>=0?homeRecommendedIdx:undefined}
             onStart={startFromIdx} onAddShoe={()=>setOverlay('add')} onTab={setTab}
           />
         )}
@@ -413,7 +465,8 @@ function Main(){
         )}
         {tab===2&&(
           <ShoesScreen
-            shoes={uiShoes} runs={uiRuns} totals={shoeTotals} activeIdx={0}
+            shoes={uiShoes} runs={uiRuns} totals={shoeTotals} activeIdx={shoesActiveIdx}
+            prices={prices} onSetPrice={setShoePrice}
             onAddShoe={()=>setOverlay('add')} onTab={setTab}
             onRename={updateShoeName} onDelete={deleteShoe} onRetire={retireShoe}
           />

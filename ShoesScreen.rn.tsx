@@ -9,8 +9,13 @@ import {
   BG, CARD, CARD_HI, ACCENT, DANGER, WARN, GOOD, T1, T2, T3, SEP, FONT, DISPLAY, Shoe, Run, SHOES,
 } from './theme';
 import { Ring, TabBar } from './primitives';
+import { costPerKm } from './lib/shoeRecommend';
 
-export type ShoeTotals = { totalRuns: number; totalTime: string };
+// lastWorn: 이 신발의 마지막 착용일(런에서 파생, 한국어 표기). 미착용이면 생략.
+export type ShoeTotals = { totalRuns: number; totalTime: string; lastWorn?: string };
+
+// 정수 원화에 천단위 콤마. 음수/NaN은 그대로(호출부가 양수만 넘김).
+const fmtWon = (n: number) => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 
 // Proportional condition → color (shoeHealth tiers: 양호 / 주의 / 교체).
 const condColor = (c: string) => (c === '교체' ? DANGER : c === '주의' ? WARN : GOOD);
@@ -18,16 +23,18 @@ const ringColor = (c: string) => (c === '교체' ? DANGER : c === '주의' ? WAR
 
 // ── shoe detail ───────────────────────────────────────────────────────────────
 function ShoeDetail({
-  shoe, idx, runs, totals, onBack, onRename, onDelete, onRetire,
+  shoe, idx, runs, totals, price, onBack, onRename, onDelete, onRetire, onSetPrice,
 }: {
   shoe: Shoe;
   idx: number;
   runs: Run[];
   totals: ShoeTotals;
+  price?: number;
   onBack: () => void;
   onRename?: (id: string, name: string) => void;
   onDelete?: (id: string) => void;
   onRetire?: (id: string, retired: boolean) => void;
+  onSetPrice?: (id: string, price: number) => void;
 }) {
   const remain = Math.max(0, shoe.max - shoe.used);
   const pct = shoe.max > 0 ? remain / shoe.max : 0;
@@ -37,6 +44,15 @@ function ShoeDetail({
 
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(`${shoe.brand} ${shoe.model}`.trim());
+
+  // 구매가(원) 입력 — 저장하면 onSetPrice로 영속화된다. km당 비용은 순수함수로 파생.
+  const [priceInput, setPriceInput] = useState(price != null && price > 0 ? String(price) : '');
+  const savePrice = () => {
+    if (!shoe.id) return;
+    const v = Math.round(Number(priceInput) || 0);
+    if (v >= 0) onSetPrice?.(shoe.id, v);
+  };
+  const cpk = costPerKm(Number(priceInput) || 0, shoe.used);
 
   const saveName = () => {
     const v = name.trim();
@@ -122,8 +138,41 @@ function ShoeDetail({
           ))}
         </View>
 
+        {/* cost-per-km: 구매가 입력 → km당 비용 파생 */}
+        <View style={[s.card, { padding: 18, gap: 12 }]}>
+          <View style={s.cpkHead}>
+            <Text style={s.dHeroLabel}>구매가</Text>
+            {cpk != null && (
+              <View style={s.cpkBadge}>
+                <Text style={s.cpkBadgeV}>{fmtWon(cpk)}</Text>
+                <Text style={s.cpkBadgeU}>원/km</Text>
+              </View>
+            )}
+          </View>
+          <View style={s.priceRow}>
+            <TextInput
+              value={priceInput}
+              onChangeText={(v) => setPriceInput(v.replace(/[^0-9]/g, ''))}
+              onBlur={savePrice}
+              keyboardType="number-pad"
+              placeholder="0"
+              placeholderTextColor={T3}
+              style={s.priceInput}
+            />
+            <Text style={s.priceUnit}>원</Text>
+          </View>
+          <Text style={s.cpkHint}>
+            {cpk != null
+              ? `${shoe.used}km 사용 · 1km당 ${fmtWon(cpk)}원`
+              : '구매가를 입력하면 1km당 비용이 계산돼요.'}
+          </Text>
+        </View>
+
         {/* runs */}
-        <Text style={s.sectionLabel}>이 신발로 달린 기록</Text>
+        <View style={[s.row, { paddingHorizontal: 4, justifyContent: 'space-between' }]}>
+          <Text style={s.sectionLabel}>이 신발로 달린 기록</Text>
+          {!!totals.lastWorn && <Text style={s.lastWorn}>마지막 착용 {totals.lastWorn}</Text>}
+        </View>
         {shoeRuns.length === 0 ? (
           <View style={[s.card, { padding: 24, alignItems: 'center' }]}>
             <Text style={{ color: T3, fontFamily: FONT, fontSize: 13 }}>아직 기록이 없어요</Text>
@@ -181,31 +230,37 @@ function ShoeCard({ shoe, featured, onPress }: { shoe: Shoe; featured: boolean; 
 }
 
 export default function ShoesScreen({
-  shoes = SHOES, runs = [], totals = {}, activeIdx = 0, onAddShoe, onTab, onRename, onDelete, onRetire,
+  shoes = SHOES, runs = [], totals = {}, activeIdx = 0, prices = {}, onAddShoe, onTab, onRename, onDelete, onRetire, onSetPrice,
 }: {
   shoes?: Shoe[];
   runs?: Run[];
   totals?: Record<number, ShoeTotals>;
   activeIdx?: number;
+  // 신발 id → 구매가(원). cost-per-km 파생용. 미입력 신발은 키 없음.
+  prices?: Record<string, number>;
   onAddShoe?: () => void;
   onTab?: (i: number) => void;
   onRename?: (id: string, name: string) => void;
   onDelete?: (id: string) => void;
   onRetire?: (id: string, retired: boolean) => void;
+  onSetPrice?: (id: string, price: number) => void;
 }) {
   const [detail, setDetail] = useState<number | null>(null);
 
   if (detail != null && shoes[detail]) {
+    const dShoe = shoes[detail];
     return (
       <ShoeDetail
-        shoe={shoes[detail]}
+        shoe={dShoe}
         idx={detail}
         runs={runs}
         totals={totals[detail] || { totalRuns: 0, totalTime: '--' }}
+        price={dShoe.id ? prices[dShoe.id] : undefined}
         onBack={() => setDetail(null)}
         onRename={onRename}
         onDelete={onDelete}
         onRetire={onRetire}
+        onSetPrice={onSetPrice}
       />
     );
   }
@@ -285,6 +340,16 @@ const s = StyleSheet.create({
   statValue: { color: T1, fontFamily: DISPLAY, fontSize: 22, letterSpacing: 0.3 },
   statUnit: { color: T3, fontFamily: FONT, fontSize: 12 },
   statLabel: { color: T3, fontFamily: FONT, fontSize: 11, marginTop: 4 },
+
+  cpkHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  cpkBadge: { flexDirection: 'row', alignItems: 'flex-end', gap: 3, backgroundColor: CARD_HI, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 },
+  cpkBadgeV: { color: ACCENT, fontFamily: DISPLAY, fontSize: 17 },
+  cpkBadgeU: { color: T3, fontFamily: FONT, fontSize: 11, marginBottom: 1 },
+  priceRow: { backgroundColor: CARD_HI, borderRadius: 14, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16 },
+  priceInput: { flex: 1, color: T1, fontFamily: DISPLAY, fontSize: 22, paddingVertical: 12 },
+  priceUnit: { color: T3, fontFamily: FONT, fontSize: 15 },
+  cpkHint: { color: T3, fontFamily: FONT, fontSize: 11.5 },
+  lastWorn: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500' },
 
   runRow: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 15, paddingHorizontal: 18 },
   runRowBorder: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: SEP },
