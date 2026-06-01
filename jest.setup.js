@@ -30,6 +30,52 @@ jest.mock('react-native-geolocation-service', () => ({
   },
 }));
 
+// ── expo-location ────────────────────────────────────────────────────────────
+// The run engine's real GPS source. watchPositionAsync records its (options,
+// callback, errorHandler) like the native module and hands back a removable
+// subscription; tests capture mock.calls[0][1] to inject synthetic fixes.
+// Permission requests resolve "granted" so the location gate falls through; the
+// background-task lifecycle calls resolve as no-ops.
+jest.mock('expo-location', () => ({
+  __esModule: true,
+  Accuracy: {
+    Lowest: 1, Low: 2, Balanced: 3, High: 4, Highest: 5, BestForNavigation: 6,
+  },
+  watchPositionAsync: jest.fn(() => Promise.resolve({remove: jest.fn()})),
+  requestForegroundPermissionsAsync: jest.fn(() =>
+    Promise.resolve({granted: true, status: 'granted'}),
+  ),
+  getForegroundPermissionsAsync: jest.fn(() =>
+    Promise.resolve({granted: true, status: 'granted'}),
+  ),
+  requestBackgroundPermissionsAsync: jest.fn(() =>
+    Promise.resolve({granted: true, status: 'granted'}),
+  ),
+  getBackgroundPermissionsAsync: jest.fn(() =>
+    Promise.resolve({granted: true, status: 'granted'}),
+  ),
+  startLocationUpdatesAsync: jest.fn(() => Promise.resolve()),
+  stopLocationUpdatesAsync: jest.fn(() => Promise.resolve()),
+  hasStartedLocationUpdatesAsync: jest.fn(() => Promise.resolve(false)),
+}));
+
+// ── expo-task-manager ────────────────────────────────────────────────────────
+// defineTask stores the executor in a registry so background-delivery tests can
+// invoke the registered task body directly (via the __getTask helper).
+jest.mock('expo-task-manager', () => {
+  const tasks = {};
+  return {
+    __esModule: true,
+    defineTask: jest.fn((name, executor) => {
+      tasks[name] = executor;
+    }),
+    isTaskRegisteredAsync: jest.fn(() => Promise.resolve(false)),
+    unregisterTaskAsync: jest.fn(() => Promise.resolve()),
+    // test-only accessor for the executor registered under `name`.
+    __getTask: name => tasks[name],
+  };
+});
+
 // ── react-native-sensors ─────────────────────────────────────────────────────
 // accelerometer.subscribe() returns a subscription with a no-op unsubscribe and
 // never emits, so step/cadence logic stays inert during tests.

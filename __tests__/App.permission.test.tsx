@@ -1,29 +1,26 @@
 /**
- * App.tsx location-permission + GPS dead-zone integration tests.
+ * App.tsx location-permission + GPS dead-zone integration tests (expo-location).
  *
  * Drives the real App through home → goal → live-run and asserts on observable
- * outcomes (the GPS watch is/ isn't started, the Korean guidance Alert + its
+ * outcomes (whether tracking is/isn't started, the Korean guidance Alert + its
  * settings deeplink, and the on-screen dead-zone banner) — not internal state.
  *
  * Covers:
- *  - audit#8: iOS now requests whenInUse authorization before tracking; a denial
- *    blocks the watch and offers a Settings deeplink (no garbage distance, no crash).
- *  - Android danger-zone regression: a denied ACCESS_FINE_LOCATION grant must NOT
- *    start watchPosition, and now also offers the Settings deeplink.
- *  - Mid-run permission revocation (watchPosition error code 1): tracking is
- *    stopped (clearWatch) and the user is guided to Settings.
+ *  - expo permission gate: a denied foreground permission must NOT start the GPS
+ *    watch, and offers a Settings deeplink + on-screen banner (no garbage distance).
+ *  - Mid-run permission revocation (watchPositionAsync errorHandler reports a
+ *    permission-denied reason): tracking stops (no further distance) and the user
+ *    is guided to Settings.
  *  - audit#9: a GPS dead-zone (no fix received for the stall threshold) surfaces a
- *    Korean banner while elapsed time keeps running.
- *
- * Tests use globalThis (fetch mock, fake-timer clock).
+ *    Korean banner while elapsed time keeps running (driven by the engine's 1s tick).
  *
  * @format
  */
 
 import React from 'react';
-import {Alert, Linking, PermissionsAndroid, Platform} from 'react-native';
+import {Alert, Linking} from 'react-native';
 import ReactTestRenderer, {act} from 'react-test-renderer';
-import Geolocation from 'react-native-geolocation-service';
+import * as Location from 'expo-location';
 import App from '../App';
 import {GPS_STALL_THRESHOLD_MS} from '../lib/gpsHealth';
 
@@ -68,6 +65,17 @@ function pressByText(root: ReactTestRenderer.ReactTestInstance, label: string) {
   });
 }
 
+function readKm(root: ReactTestRenderer.ReactTestInstance): number {
+  const node = root
+    .findAll(n => typeof n.type === 'string')
+    .find(n => {
+      const c = n.props.children;
+      return typeof c === 'string' && /^\d+\.\d{2}$/.test(c.trim());
+    });
+  if (!node) throw new Error('km readout not found');
+  return parseFloat(node.props.children as string);
+}
+
 // Mount App and navigate to the live-run screen (default 5km goal). Does NOT
 // assert that the GPS watch started — permission-gate tests check that itself.
 async function startRun() {
@@ -84,35 +92,29 @@ async function startRun() {
   return {renderer, root};
 }
 
-const watchMock = () => Geolocation.watchPosition as jest.Mock;
+const watchMock = () => Location.watchPositionAsync as jest.Mock;
 
-// The global beforeEach runs jest.clearAllMocks(), which wipes recorded calls but
-// NOT implementations — so a mockResolvedValue set in one test would leak into the
-// next. Re-establish the default "granted" authorization before every test.
-beforeEach(() => {
-  (Geolocation.requestAuthorization as jest.Mock).mockResolvedValue('granted');
-});
-
-// ── iOS authorization (audit#8) ──────────────────────────────────────────────
-test('iOS requests whenInUse authorization before starting the GPS watch (audit#8)', async () => {
-  // The preset's default Platform.OS is 'ios'; the requestAuthorization mock
-  // resolves 'granted', so the watch should start after the request.
+// ── happy path ───────────────────────────────────────────────────────────────
+test('the foreground location permission is requested before the GPS watch starts', async () => {
   const {renderer} = await startRun();
 
-  expect(Geolocation.requestAuthorization).toHaveBeenCalledWith('whenInUse');
+  expect(Location.requestForegroundPermissionsAsync).toHaveBeenCalled();
   expect(watchMock().mock.calls.length).toBeGreaterThan(0);
 
   act(() => renderer.unmount());
 });
 
-test('iOS: a denied whenInUse authorization blocks the watch and offers a Settings deeplink', async () => {
-  (Geolocation.requestAuthorization as jest.Mock).mockResolvedValue('denied');
+// ── denied foreground permission (graceful, no garbage distance) ─────────────
+test('a denied foreground permission blocks the GPS watch and offers a Settings deeplink', async () => {
+  (Location.requestForegroundPermissionsAsync as jest.Mock).mockResolvedValueOnce({
+    granted: false,
+    status: 'denied',
+  });
   const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
   try {
     const {renderer, root} = await startRun();
 
-    expect(Geolocation.requestAuthorization).toHaveBeenCalledWith('whenInUse');
-    // Denied → tracking never starts (no garbage distance).
+    // Denied → tracking never starts.
     expect(watchMock().mock.calls.length).toBe(0);
 
     // Korean guidance Alert with a working Settings deeplink.
@@ -132,67 +134,44 @@ test('iOS: a denied whenInUse authorization blocks the watch and offers a Settin
   }
 });
 
-// ── Android fine-location danger-zone gate ───────────────────────────────────
-test('Android: a denied fine-location grant blocks the GPS watch and offers a Settings deeplink', async () => {
-  const prevOS = Platform.OS;
-  Platform.OS = 'android';
-  const reqSpy = jest
-    .spyOn(PermissionsAndroid, 'request')
-    .mockResolvedValue(PermissionsAndroid.RESULTS.DENIED);
-  const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
-  try {
-    const {renderer, root} = await startRun();
-
-    // The fine-location gate ran...
-    expect(reqSpy.mock.calls.map(c => c[0])).toContain(
-      PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-    );
-    // ...and because it was denied, tracking never started.
-    expect(watchMock().mock.calls.length).toBe(0);
-
-    // Korean guidance Alert with a Settings deeplink.
-    const call = alertSpy.mock.calls.find(c => String(c[0]).includes('위치 권한'));
-    expect(call).toBeTruthy();
-    const openBtn = (call![2] as any[]).find(b => b.text === '설정 열기');
-    expect(openBtn).toBeTruthy();
-    openBtn.onPress();
-    expect(Linking.openSettings).toHaveBeenCalled();
-
-    expect(textOf(root)).toContain('위치 권한이 꺼져');
-
-    act(() => renderer.unmount());
-  } finally {
-    alertSpy.mockRestore();
-    reqSpy.mockRestore();
-    Platform.OS = prevOS;
-  }
-});
-
-// ── Mid-run permission revocation ────────────────────────────────────────────
-test('mid-run permission revocation (error code 1) stops tracking and guides to Settings', async () => {
+// ── mid-run permission revocation ────────────────────────────────────────────
+test('mid-run permission revocation stops tracking (no further distance) and guides to Settings', async () => {
   const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
   try {
     const {renderer, root} = await startRun();
 
     const calls = watchMock().mock.calls;
     expect(calls.length).toBeGreaterThan(0);
-    const onError = calls[0][1] as (e: any) => void;
+    const onPos = calls[0][1] as (p: any) => void;
+    const onError = calls[0][2] as (reason: string) => void;
 
-    // The OS reports PERMISSION_DENIED while the run is live.
-    act(() => {
-      onError({code: 1, message: 'permission revoked'});
+    // Accumulate some real distance first (warmup at P0 then accepted segments).
+    const LON = 127.0;
+    let t = 100000;
+    await act(async () => onPos({coords: {latitude: 37.5, longitude: LON, accuracy: 5}, timestamp: t}));
+    await act(async () => onPos({coords: {latitude: 37.5, longitude: LON, accuracy: 5}, timestamp: (t += 2000)}));
+    await act(async () => onPos({coords: {latitude: 37.5, longitude: LON, accuracy: 5}, timestamp: (t += 2000)}));
+    await act(async () => onPos({coords: {latitude: 37.5003, longitude: LON, accuracy: 5}, timestamp: (t += 3000)}));
+    const kmBefore = readKm(root);
+    expect(kmBefore).toBeGreaterThan(0);
+
+    // The OS reports a permission-denied reason while the run is live.
+    await act(async () => {
+      onError('Location permission denied');
     });
 
-    // Tracking is stopped so no garbage distance accrues...
-    expect(Geolocation.clearWatch as jest.Mock).toHaveBeenCalled();
     // ...the on-screen banner appears...
     expect(textOf(root)).toContain('위치 권한이 꺼져');
-    // ...and the guidance Alert offers a working Settings deeplink.
+    // ...the guidance Alert offers a working Settings deeplink...
     const call = alertSpy.mock.calls.find(c => String(c[0]).includes('위치 권한'));
     expect(call).toBeTruthy();
     const openBtn = (call![2] as any[]).find(b => b.text === '설정 열기');
     openBtn.onPress();
     expect(Linking.openSettings).toHaveBeenCalled();
+
+    // ...and tracking is stopped: a further fix must NOT add distance.
+    await act(async () => onPos({coords: {latitude: 37.5009, longitude: LON, accuracy: 5}, timestamp: (t += 3000)}));
+    expect(readKm(root)).toBe(kmBefore);
 
     act(() => renderer.unmount());
   } finally {
@@ -215,7 +194,7 @@ test('a GPS dead-zone (no fix for the stall threshold) surfaces a Korean banner'
       pressByText(root, '러닝 시작');
     });
 
-    const onPos = watchMock().mock.calls[0][0] as (p: any) => void;
+    const onPos = watchMock().mock.calls[0][1] as (p: any) => void;
 
     // One fix arrives → last-received time is set; no stall yet.
     await act(async () => {

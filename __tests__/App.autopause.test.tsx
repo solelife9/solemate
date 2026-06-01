@@ -28,7 +28,7 @@
 
 import React from 'react';
 import ReactTestRenderer, {act} from 'react-test-renderer';
-import Geolocation from 'react-native-geolocation-service';
+import * as Location from 'expo-location';
 import App from '../App';
 
 function mockBackendWithShoe() {
@@ -133,9 +133,10 @@ async function startRun() {
     pressByText(root, '러닝 시작');
   });
 
-  const calls = (Geolocation.watchPosition as jest.Mock).mock.calls;
+  const calls = (Location.watchPositionAsync as jest.Mock).mock.calls;
   expect(calls.length).toBeGreaterThan(0);
-  const onPos = calls[calls.length - 1][0] as (p: any) => void;
+  // expo watchPositionAsync(options, callback, errorHandler) → callback is arg 1.
+  const onPos = calls[calls.length - 1][1] as (p: any) => void;
 
   const emit = (lat: number, lon: number, accuracy: number, timestamp: number) =>
     act(() => {

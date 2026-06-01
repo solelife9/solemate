@@ -5,17 +5,20 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
-    <!-- 재스코프(Play-safe): 백그라운드 트래킹용 권한을 의도적으로 선언하지 않는다.
-         설치된 react-native-geolocation-service@5.3.1은 실제 location 타입 포그라운드
-         서비스를 제공하지 않으므로(no-op), 동작하는 서비스 없이
-         ACCESS_BACKGROUND_LOCATION / FOREGROUND_SERVICE_LOCATION을 선언하면
-         "화면을 꺼도 안 끊김"이 거짓 약속이 되고 Google Play 심사 red flag가 된다.
-         실제 백그라운드 기록은 라이브러리 교체 또는 네이티브 포그라운드 서비스가
-         필요한 사용자 결정사항이며, 그때 아래 권한을 함께 추가한다(.tenet/knowledge 참고):
-           <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-           <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
-           <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
-         + 매니페스트에 location 타입 <service> 선언(서비스 제공 모듈이 머지). -->
+    <!-- 백그라운드 런 트래킹(화면off) 권한 — expo-location 교체로 실제 동작한다.
+         expo-location 의 location 타입 포그라운드 서비스가
+         Location.startLocationUpdatesAsync(+foregroundService) 로 기동되므로,
+         아래 권한이 실제 기능에 대응한다("화면을 꺼도 거리/시간이 계속 기록됨").
+         - FOREGROUND_SERVICE / FOREGROUND_SERVICE_LOCATION: Android 14+ 에서 location
+           타입 포그라운드 서비스 기동에 필수.
+         - ACCESS_BACKGROUND_LOCATION: Android 10(API 29)+ 에서 화면off/백그라운드
+           위치 수집에 필요(런타임 요청은 requestBackgroundPermissionsAsync 가 담당하며,
+           거부돼도 포그라운드 트래킹은 graceful 하게 동작).
+         location 타입 <service> 선언은 expo-location 모듈의 매니페스트가 머지하므로
+         여기서 중복 선언하지 않는다(중복 선언 시 머지 충돌/크래시 위험). -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
 
 
     <application
@@ -27,14 +30,9 @@
       android:theme="@style/AppTheme"
       android:usesCleartextTraffic="${usesCleartextTraffic}"
       android:supportsRtl="true">
-      <!-- 백그라운드 트래킹용 location 타입 포그라운드 서비스 선언 위치(현재 없음).
-           설치된 react-native-geolocation-service@5.3.1은 서비스 클래스를 제공하지
-           않으므로 여기에 임의 클래스명을 선언하면 런타임 크래시 위험이 있어 선언하지
-           않는다. 서비스를 제공하는 모듈로 교체하거나 네이티브 Kotlin 서비스를 도입할
-           때, 위 백그라운드 권한과 함께 아래 형태로 추가한다(.tenet/knowledge 참고):
-             <service android:name="<제공자 서비스 클래스>"
-                      android:foregroundServiceType="location"
-                      android:exported="false" /> -->
+      <!-- location 타입 포그라운드 서비스(<service ... foregroundServiceType="location">)
+           는 expo-location 모듈의 AndroidManifest 가 자동 머지하므로 여기서 직접
+           선언하지 않는다(중복 선언 시 머지 충돌). -->
       <activity
         android:name=".MainActivity"
         android:label="@string/app_name"

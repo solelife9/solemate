@@ -7,8 +7,10 @@
 import React from 'react';
 import ReactTestRenderer from 'react-test-renderer';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Geolocation from 'react-native-geolocation-service';
+import * as Location from 'expo-location';
+import * as TaskManager from 'expo-task-manager';
 import {accelerometer} from 'react-native-sensors';
+import {RUN_LOCATION_TASK} from '../lib/locationService';
 import Tts from 'react-native-tts';
 import App from '../App';
 
@@ -26,18 +28,24 @@ test('mounting App authenticates and persists a device id via AsyncStorage', asy
   expect(deviceId).toMatch(/^sl_/);
 });
 
-test('Geolocation watchPosition id round-trips through clearWatch', () => {
-  const id = Geolocation.watchPosition(jest.fn(), jest.fn(), {} as any);
-  expect(typeof id).toBe('number');
-
-  // clearWatch must accept the very id watchPosition handed back — assert the
-  // mock recorded that exact argument, not merely that the call didn't throw.
-  Geolocation.clearWatch(id);
-  expect(Geolocation.clearWatch as jest.Mock).toHaveBeenCalledWith(id);
+test('expo watchPositionAsync hands back a removable subscription', async () => {
+  const sub = await Location.watchPositionAsync({} as any, jest.fn());
+  // The run engine calls sub.remove() on stop — the mock must provide it.
+  expect(typeof sub.remove).toBe('function');
+  expect(() => sub.remove()).not.toThrow();
 });
 
-test('requestAuthorization resolves without a real device prompt', async () => {
-  await expect(Geolocation.requestAuthorization('whenInUse')).resolves.toBe('granted');
+test('foreground location permission resolves granted without a real device prompt', async () => {
+  await expect(
+    Location.requestForegroundPermissionsAsync(),
+  ).resolves.toMatchObject({granted: true});
+});
+
+test('the background run-location task is registered with TaskManager', () => {
+  // Importing lib/locationService defines the task at module scope; the mocked
+  // defineTask records it so a headless background batch can be replayed in tests.
+  const executor = (TaskManager as any).__getTask(RUN_LOCATION_TASK);
+  expect(typeof executor).toBe('function');
 });
 
 test('accelerometer.subscribe returns an unsubscribable handle and never emits', () => {

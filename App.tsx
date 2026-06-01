@@ -1,11 +1,10 @@
 import React, {useState, useEffect, useRef} from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, TextInput, Alert, StatusBar,
-  PermissionsAndroid, Platform, Linking,
+  Linking,
 } from 'react-native';
 import {SafeAreaProvider, useSafeAreaInsets} from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Geolocation from 'react-native-geolocation-service';
 import {accelerometer, setUpdateIntervalForType, SensorTypes} from 'react-native-sensors';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Tts from 'react-native-tts';
@@ -24,12 +23,12 @@ import ProfileScreen, {Profile, Badge, PersonalRecord} from './ProfileScreen.rn'
 import AddShoeScreen from './AddShoeScreen.rn';
 import {RunStart} from './RunScreen.rn';
 
-import {KalmanFilter} from './lib/kalman';
-import {calcDist, acceptSegment, segmentSpeedMps, simplifyRoute} from './lib/geo';
-import {WARMUP_FIXES} from './lib/engineConstants';
-import {decideAutoPause, initAutoPauseState} from './lib/autoPause';
-import {buildForegroundServiceConfig} from './lib/foregroundService';
-import {gpsStallStatus} from './lib/gpsHealth';
+import {simplifyRoute} from './lib/geo';
+import {runTracker} from './lib/runTracker';
+import {
+  requestRunPermissions, startTracking, stopTracking, isPermissionError,
+  RunPermissions,
+} from './lib/locationService';
 import {initCadenceState, feedAccelSample} from './lib/cadence';
 import {fmtPace, fmtTime, fmtKDate, getMonday, ymdLocal} from './lib/format';
 import {
@@ -39,7 +38,7 @@ import {
 import {parseShoeName, shoeHealth, isRetired, DEFAULT_MAX_KM, clampMaxKm, reconcileShoeAlerts, KEEP_GOING_REPLACE} from './lib/shoe';
 import {recommendShoeId, lastWornDate} from './lib/shoeRecommend';
 import {
-  saveSnapshot, loadSnapshot, clearSnapshot, isResumable,
+  loadSnapshot, clearSnapshot, isResumable,
   enqueuePendingRun, removePendingRun, updatePendingRun, flushPendingRuns,
   reconcilePendingWithServer,
   RunSnapshot, PendingRun,
@@ -839,41 +838,61 @@ function RunActiveScreen({shoe,insets,goalKm,onSave,onDiscard,resume}:{shoe:{id:
   const [memo,setMemo]=useState('');
   const [saving,setSaving]=useState(false);
 
-  const watchId=useRef<number|null>(null);
   const timer=useRef<any>(null);
   const snapTimer=useRef<any>(null);
   const stepSub=useRef<any>(null);
   // 케이던스(spm) 순수 상태기계 — 가속도 피크검출+윈도우 정규화는 lib/cadence.ts.
+  // 케이던스만 화면이 소유한다(가속도계 기반). 거리/시간/일시정지/死구간/권한 회수는
+  // 모두 공유 GPS 엔진(runTracker)이 소유하고 subscribe로 화면에 흘려보낸다.
   const cadenceState=useRef(initCadenceState());
-  const pts=useRef<any[]>([]);
-  const dist=useRef(0);
-  const fixIndex=useRef(0);
-  const lastGoodMs=useRef(0);
-  const lastGood=useRef<{lat:number;lon:number}|null>(null);
-  // 死구간 판정용: '수신'한 마지막 fix의 벽시계 시각(거리 채택 여부와 무관 — 거부된
-  // fix도 신호가 살아있음을 뜻하므로 갱신). 0이면 아직 첫 fix 전(워밍업/탐색).
-  const lastRecvMs=useRef(0);
-  // 주행 중 권한 회수 안내를 한 번만 띄우기 위한 가드(에러 콜백 반복 호출 방지).
-  const permRevokedRef=useRef(false);
-  const t0=useRef(Date.now());
-  const kf=useRef(new KalmanFilter());
   const cadRef=useRef(0);
   const locationRef=useRef('');
   const locationFetched=useRef(false);
-  const isPausedRef=useRef(false);
-  const autoPausedRef=useRef(false);
-  const pausedMs=useRef(0);
-  const pauseStartRef=useRef(0);
   const announcedKm=useRef(0);
-  // 자동 일시정지 판정용: 매 fix마다 갱신되는 속도측정 앵커 + 순수 상태기계.
-  const autoAnchor=useRef<{lat:number;lon:number}|null>(null);
-  const autoAnchorMs=useRef(0);
-  const autoPauseState=useRef(initAutoPauseState());
+  // 요청한 위치 권한 결과(포그라운드/백그라운드). '계속 달리기'(거리 짧음 재시작) 시
+  // 동일 권한으로 다시 트래킹을 시작하기 위해 보관한다.
+  const permRef=useRef<RunPermissions>({foreground:true,background:false});
   const stopConfirmTimer=useRef<any>(null);
 
   useEffect(()=>{
     // 복구 모드는 이미 끝난 런을 검토만 한다 — GPS/센서/권한/TTS를 켜지 않는다.
     if(resume) return;
+    // 공유 GPS 엔진(runTracker) 구독: 거리/시간/일시정지/死구간/권한 회수 상태가
+    // 여기로 흘러와 화면 상태를 갱신한다. 포그라운드(watchPositionAsync)와
+    // 백그라운드(task) fix가 모두 같은 엔진에 먹이므로, 화면off에서 누적된 거리도
+    // 화면 복귀 시 이 구독으로 그대로 반영된다.
+    const unsub=runTracker.subscribe(ev=>{
+      if(ev.type==='state'){
+        const s=ev.state;
+        setKm(s.dist);setElapsed(s.elapsed);
+        setPaused(s.paused);setAutoPaused(s.autoPaused);
+        setGpsStalled(s.stalled);setPermLost(s.permissionRevoked);
+        if(s.permissionRevoked)setGpsStatus('위치 권한 필요');
+        else if(s.accuracyM!=null)setGpsStatus(`정확도 ${s.accuracyM}m`);
+      }else if(ev.type==='paused'){
+        try{Tts.stop();Tts.speak(ev.auto?'자동으로 일시정지합니다.':'일시정지합니다.');}catch{}
+      }else if(ev.type==='resumed'){
+        try{Tts.speak('달리기를 재개합니다.');}catch{}
+      }else if(ev.type==='firstFix'){
+        // 첫 fix 좌표로 1회 역지오코딩 → 위치 라벨. 엔진 메타에도 실어 스냅샷/저장에 반영.
+        if(!locationFetched.current){
+          locationFetched.current=true;
+          fetch(`https://nominatim.openstreetmap.org/reverse?lat=${ev.lat}&lon=${ev.lon}&format=json&accept-language=ko`,{headers:{'User-Agent':'SoleMate/1.0'}})
+            .then(r=>r.json()).then(d=>{
+              const addr=d.address||{};
+              const parts=[addr.suburb||addr.neighbourhood||addr.quarter||addr.city_district||addr.town,addr.city||addr.county||addr.state].filter(Boolean);
+              locationRef.current=parts.length>0?parts.join(', '):(d.display_name||'').split(',').slice(0,2).join(',').trim()||'';
+              runTracker.setMeta({location:locationRef.current});
+            }).catch(()=>{});
+        }
+      }else if(ev.type==='permissionRevoked'){
+        // 주행 중 권한 회수: 엔진이 트래킹을 멈췄다. delivery 경로도 정리하고 안내한다.
+        void stopTracking();
+        setGpsStatus('위치 권한 필요');setGpsStalled(false);
+        openLocationSettingsAlert('주행 중 위치 권한이 회수되어 거리 기록을 멈췄습니다. 설정에서 위치 권한을 다시 허용해 주세요.');
+      }
+    });
+
     (async()=>{
       try{
         Tts.setDefaultLanguage('ko-KR');
@@ -888,41 +907,20 @@ function RunActiveScreen({shoe,insets,goalKm,onSave,onDiscard,resume}:{shoe:{id:
     })();
     setTimeout(()=>{try{Tts.speak(`달리기를 시작합니다! 목표는 ${goalKm}킬로미터입니다.`);}catch{}},800);
     (async()=>{
-      if(Platform.OS==='android'){
-        // danger zone: 이 fine-location 게이트가 트래킹 시작의 유일한 관문이다.
-        // 거부 시 watchPosition을 절대 시작하지 않는다(가비지 거리 금지). 회귀 금지.
-        const granted=await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-          {title:'위치 권한',message:'러닝 거리 측정을 위해 위치 권한이 필요합니다.',buttonPositive:'허용',buttonNegative:'거부'}
-        );
-        if(granted!==PermissionsAndroid.RESULTS.GRANTED){
-          // 한국어 안내 + 설정 딥링크. 트래킹은 시작하지 않고 그대로 반환한다.
-          openLocationSettingsAlert('위치 권한을 허용해야 GPS 러닝이 가능합니다. 설정에서 위치 권한을 허용해 주세요.');
-          setPermLost(true);
-          return;
-        }
-        // 재스코프 주의: 예전엔 여기서 ACCESS_BACKGROUND_LOCATION을 추가 요청했으나
-        // 제거했다. 설치된 react-native-geolocation-service@5.3.1은 실제 포그라운드
-        // 서비스를 제공하지 않아 "화면을 꺼도 끊기지 않는다"는 약속이 거짓이고,
-        // 동작하는 백그라운드 서비스 없이 백그라운드 위치 권한을 요청하면 Google Play
-        // 심사 거부 위험이 있다. 실제 백그라운드 기록은 라이브러리 교체 또는 네이티브
-        // 포그라운드 서비스가 필요한 사용자 결정사항이다(.tenet/knowledge 참고).
-      }else if(Platform.OS==='ios'){
-        // audit#8: iOS는 그동안 위치 권한을 한 번도 요청하지 않아 첫 fix가 영영 오지
-        // 않는 무한 '신호 찾는 중'에 빠질 수 있었다. whenInUse(앱 사용 중) 권한을
-        // 명시 요청하고, 허용되지 않으면 한국어 안내 + 설정 딥링크 후 트래킹 차단.
-        let status:string;
-        try{status=await Geolocation.requestAuthorization('whenInUse');}
-        catch{status='denied';}
-        if(status!=='granted'){
-          openLocationSettingsAlert('위치 권한이 없어 GPS 러닝을 시작할 수 없습니다. 설정에서 위치 접근을 허용해 주세요.');
-          setPermLost(true);
-          return;
-        }
+      // expo-location 통합 권한 게이트(android/ios 공통). 포그라운드 권한이 트래킹
+      // 시작의 유일한 관문이다 — 거부 시 절대 시작하지 않는다(가비지 거리 금지).
+      // 백그라운드(화면off) 권한은 추가 요청하되 거부돼도 비치명적: 포그라운드
+      // 트래킹은 그대로 동작한다(graceful). 회귀 금지.
+      const perm=await requestRunPermissions();
+      permRef.current=perm;
+      if(!perm.foreground){
+        openLocationSettingsAlert('위치 권한을 허용해야 GPS 러닝이 가능합니다. 설정에서 위치 권한을 허용해 주세요.');
+        setPermLost(true);
+        return;
       }
-      beginRun();
+      await beginRun(perm);
     })();
-    return()=>{stop();clearTimeout(stopConfirmTimer.current);try{Tts.stop();}catch{}};
+    return()=>{stop();unsub();clearTimeout(stopConfirmTimer.current);try{Tts.stop();}catch{}};
     // eslint-disable-next-line react-hooks/exhaustive-deps
   },[]);
 
@@ -938,181 +936,54 @@ function RunActiveScreen({shoe,insets,goalKm,onSave,onDiscard,resume}:{shoe:{id:
     // eslint-disable-next-line react-hooks/exhaustive-deps
   },[km]);
 
-  // ── 일시정지 진입/해제 (audit#4) ───────────────────────────────
-  // pauseStartRef를 가드로 사용해 pausedMs 폭주를 막는다: 이미 일시정지 중이면
-  // 재진입하지 않고(중복 pauseStart 갱신 금지), 해제 시 pauseStart가 유효할 때만
-  // 1회 가산한 뒤 0으로 초기화해 같은 일시정지 구간을 두 번 더하지 않는다.
-  function enterPause(auto:boolean){
-    if(isPausedRef.current)return;
-    isPausedRef.current=true;autoPausedRef.current=auto;
-    pauseStartRef.current=Date.now();
-    setPaused(true);setAutoPaused(auto);
-    try{Tts.stop();Tts.speak(auto?'자동으로 일시정지합니다.':'일시정지합니다.');}catch{}
-  }
-  function exitPause(auto:boolean){
-    if(!isPausedRef.current)return;
-    if(pauseStartRef.current>0){
-      const delta=Date.now()-pauseStartRef.current;
-      if(delta>0)pausedMs.current+=delta;
-      pauseStartRef.current=0; // 가드: 동일 구간 중복 가산 방지
-    }
-    isPausedRef.current=false;autoPausedRef.current=false;
-    // 재개 후 상태기계 초기화 — 직전 slow/fast 잔여로 즉시 재트리거되지 않게.
-    autoPauseState.current=initAutoPauseState();
-    setPaused(false);setAutoPaused(false);
-    try{Tts.speak('달리기를 재개합니다.');}catch{}
-    void auto;
-  }
-
-  // audit#2: 진행중 런 상태를 수 초마다 스냅샷으로 영속. 순수 저장(네트워크와 무관)
-  // 이며, sanitize에서 음수/NaN을 0으로 막아 손상된 스냅샷이 음수 데이터를 만들지
-  // 않는다(iron law). 일시정지 중에도 현재 경과를 동일 공식으로 계산해 기록한다.
-  function writeSnapshot(){
-    const curPausedMs=(isPausedRef.current&&pauseStartRef.current>0)?pausedMs.current+(Date.now()-pauseStartRef.current):pausedMs.current;
-    const el=Math.max(0,Math.floor((Date.now()-t0.current-curPausedMs)/1000));
-    saveSnapshot({
-      dist:dist.current, elapsed:el,
-      pts:pts.current.map((p:any)=>({lat:p.lat,lon:p.lon})),
-      pausedMs:pausedMs.current, t0:t0.current,
-      shoe:{id:shoe.id,name:shoe.name}, goalKm, cadence:cadRef.current,
-      location:locationRef.current, savedAt:Date.now(),
-    }).catch(()=>{});
-  }
-
-  function beginRun(){
-    dist.current=0;t0.current=Date.now();kf.current.reset();
-    fixIndex.current=0;lastGoodMs.current=0;lastGood.current=null;
-    lastRecvMs.current=0;permRevokedRef.current=false;
-    setGpsStalled(false);setPermLost(false);
-    cadenceState.current=initCadenceState();cadRef.current=0;pts.current=[];
-    locationRef.current='';locationFetched.current=false;
-    isPausedRef.current=false;autoPausedRef.current=false;
-    pausedMs.current=0;pauseStartRef.current=0;announcedKm.current=0;
-    autoAnchor.current=null;autoAnchorMs.current=0;autoPauseState.current=initAutoPauseState();
+  // 런 시작: 공유 엔진을 초기화하고, 케이던스 가속도계 + 1초 틱(경과/死구간) +
+  // 3초 스냅샷 타이머를 띄운 뒤 expo-location 트래킹(포그라운드 watch + 가능 시
+  // 백그라운드 task)을 시작한다. 거리/시간/일시정지/死구간 판정은 모두 엔진이
+  // 소유하고 subscribe로 화면에 반영된다(이 함수는 delivery/타이머만 띄운다).
+  async function beginRun(perm:RunPermissions){
+    runTracker.start({goalKm,shoe:{id:shoe.id,name:shoe.name}});
+    setKm(0);setElapsed(0);setCadence(0);
+    setGpsStalled(false);setPermLost(false);setGpsStatus('GPS 신호 찾는 중...');
+    cadenceState.current=initCadenceState();cadRef.current=0;
+    locationRef.current='';locationFetched.current=false;announcedKm.current=0;
     setUpdateIntervalForType(SensorTypes.accelerometer,100);
     stepSub.current=accelerometer.subscribe(({x,y,z})=>{
       // 가속도계는 케이던스(걸음수)만 담당한다. 자동 일시정지/재개는 GPS 속도
-      // 기반 상태기계(decideAutoPause)가 watchPosition에서 판정한다.
-      if(isPausedRef.current)return;
+      // 기반 상태기계(엔진의 decideAutoPause)가 fix마다 판정한다.
+      if(runTracker.pausedFlag())return;
       const mag=Math.sqrt(x*x+y*y+z*z),nowT=Date.now();
       // 순수함수에 가속도 표본 공급 → 피크검출+분당비율 정규화된 spm 산출(audit#14).
       const c=feedAccelSample(cadenceState.current,mag,nowT);
       cadenceState.current=c.state;
-      if(c.spm!==cadRef.current){cadRef.current=c.spm;setCadence(c.spm);}
+      if(c.spm!==cadRef.current){cadRef.current=c.spm;setCadence(c.spm);runTracker.setMeta({cadence:c.spm});}
     });
-    timer.current=setInterval(()=>{
-      // elapsed = now − t0 − pausedMs (음수 방지로 0 하한). 일시정지 중엔 멈춘다.
-      if(!isPausedRef.current){
-        setElapsed(Math.max(0,Math.floor((Date.now()-t0.current-pausedMs.current)/1000)));
-        // 死구간 판정(audit#9): 마지막 수신 후 무신호가 임계값을 넘으면 배너 ON.
-        // 일시정지 중에는 fix가 정상적으로 끊길 수 있으므로 판정하지 않는다(거짓경보 방지).
-        setGpsStalled(gpsStallStatus(lastRecvMs.current,Date.now()).stalled);
-      }else{
-        setGpsStalled(false);
-      }
-    },1000);
-    // 진행중 스냅샷: 즉시 1회 + 3초마다(audit#2). 크래시/강제종료 시 복구 지점이 된다.
-    writeSnapshot();
-    snapTimer.current=setInterval(writeSnapshot,3000);
-    watchId.current=Geolocation.watchPosition(
-      pos=>{
-        // fix 수신 시각(벽시계) 갱신 + 死구간 해제. 거리 채택 여부와 무관하게 신호가
-        // 살아있다는 신호이므로 거부될 fix에도 갱신한다.
-        lastRecvMs.current=Date.now();
-        setGpsStalled(false); // 새 fix 도착 → 死구간 해제(값 동일 시 React가 리렌더 생략)
-        const{latitude:lat,longitude:lon,accuracy:acc}=pos.coords;
-        const f=kf.current.process(lat,lon,acc,pos.timestamp);
-        setGpsStatus(`정확도 ${Math.round(acc)}m`);
-        const idx=fixIndex.current;
-
-        // ── 자동 일시정지/재개 판정 ──────────────────────────────────
-        // 매 fix의 구간속도를 상태기계에 공급한다. 워밍업 이후에만 평가하고,
-        // 수동 일시정지 중에는 평가하지 않는다(자동 일시정지 구간일 때만 재개 판정).
-        if(idx>=WARMUP_FIXES&&autoAnchor.current&&(!isPausedRef.current||autoPausedRef.current)){
-          const moved=calcDist(autoAnchor.current.lat,autoAnchor.current.lon,f.lat,f.lon);
-          const dtA=Math.max((pos.timestamp-autoAnchorMs.current)/1000,0);
-          if(dtA>0){
-            const decision=decideAutoPause(autoPauseState.current,segmentSpeedMps(moved,dtA),dtA);
-            autoPauseState.current=decision.state;
-            if(decision.justPaused)enterPause(true);
-            else if(decision.justResumed)exitPause(true);
-          }
-        }
-        // 앵커는 일시정지 중에도 매 fix 갱신 — 재개 판정용 속도를 계속 측정.
-        autoAnchor.current={lat:f.lat,lon:f.lon};autoAnchorMs.current=pos.timestamp;
-
-        // 일시정지 동안에는 거리/위치/케이던스를 누적하지 않는다.
-        if(isPausedRef.current)return;
-        fixIndex.current=idx+1; // running일 때만 fix 소비(워밍업 카운트 일관성)
-        if(!locationFetched.current){
-          locationFetched.current=true;
-          fetch(`https://nominatim.openstreetmap.org/reverse?lat=${f.lat}&lon=${f.lon}&format=json&accept-language=ko`,{headers:{'User-Agent':'SoleMate/1.0'}})
-            .then(r=>r.json()).then(d=>{
-              const addr=d.address||{};
-              const parts=[addr.suburb||addr.neighbourhood||addr.quarter||addr.city_district||addr.town,addr.city||addr.county||addr.state].filter(Boolean);
-              locationRef.current=parts.length>0?parts.join(', '):(d.display_name||'').split(',').slice(0,2).join(',').trim()||'';
-            }).catch(()=>{});
-        }
-        if(lastGood.current){
-          const d=calcDist(lastGood.current.lat,lastGood.current.lon,f.lat,f.lon);
-          // dtSec는 distKm와 '같은 두 점'(마지막 양호 위치 → 현재 fix)을 span해야 한다.
-          // 직전 fix(과거 lastFixMs) 기준으로 재면 비-워밍업 거부 직후 두 기준이 어긋나
-          // segmentSpeed가 과대평가되어 정상 구간을 거짓 거부한다(시간기준 desync).
-          const dtSec=lastGoodMs.current?Math.max((pos.timestamp-lastGoodMs.current)/1000,0):0;
-          if(acceptSegment({distKm:d,dtSec,accuracyM:acc,fixIndex:idx})){
-            dist.current+=d;setKm(Math.round(dist.current*100)/100);
-            pts.current.push(f);lastGood.current=f;lastGoodMs.current=pos.timestamp;
-          }else if(idx<WARMUP_FIXES){
-            // 워밍업 구간: 거리에 가산하지 않되 마지막 양호 위치/시각을 갱신해
-            // 워밍업 종료 직후 첫 구간이 거대한 점프로 잡히지 않게 한다.
-            lastGood.current=f;lastGoodMs.current=pos.timestamp;
-          }
-          // 그 외 거부(정확도/속도/거리)는 lastGood/lastGoodMs을 보존 → 경로 연속성 유지,
-          // 다음 양호 fix가 '마지막 양호 위치/시각'으로부터 다시 측정된다.
-        }else{lastGood.current=f;lastGoodMs.current=pos.timestamp;pts.current.push(f);}
-      },
-      err=>{
-        // code 1 = PERMISSION_DENIED: 주행 중 위치 권한이 회수됨. 트래킹을 멈추고
-        // (가비지 거리/시간 누적 금지) 한국어 안내 + 설정 딥링크. 그 외는 신호 없음.
-        if(err&&err.code===1)handlePermissionRevoked();
+    // 1초 틱: fix가 없어도 경과/死구간을 다시 계산해 화면을 갱신한다(엔진이 판정).
+    timer.current=setInterval(()=>runTracker.tick(),1000);
+    // 진행중 스냅샷: 3초마다 영속(audit#2). fix마다도 persist되지만, 무신호 구간에서
+    // 시간만 흐를 때의 복구 정확도를 위해 주기 저장도 둔다. 크래시 시 복구 지점.
+    snapTimer.current=setInterval(()=>runTracker.persist(),3000);
+    await startTracking(goalKm,{
+      background:perm.background,
+      onError:reason=>{
+        // 권한 회수성 에러면 엔진을 멈춰 가비지 거리/시간 누적을 막는다(subscribe의
+        // permissionRevoked 핸들러가 delivery 정리 + 안내를 맡는다). 그 외는 신호 없음.
+        if(isPermissionError(reason))runTracker.notifyPermissionRevoked();
         else setGpsStatus('GPS 신호 없음');
       },
-      // forward-compat(무해): foregroundService 옵션을 부착해 두지만 현재 설치된
-      // react-native-geolocation-service@5.3.1은 이 옵션을 인식하지 않아 no-op이다
-      // (미지의 키는 네이티브 LocationOptions 파서가 조용히 무시 → 크래시 없음).
-      // 따라서 지금은 화면off/백그라운드에서 fix가 지속되지 '않는다'. 포그라운드
-      // 서비스를 제공하는 라이브러리로 교체하거나 네이티브 서비스를 도입하면 이
-      // 옵션이 즉시 활성화된다(실제 백그라운드 트래킹은 follow-up, .tenet/knowledge).
-      {enableHighAccuracy:true,interval:1000,fastestInterval:500,forceRequestLocation:true,distanceFilter:0,maximumAge:0,
-        foregroundService:buildForegroundServiceConfig(goalKm)} as any,
-    );
+    });
   }
 
   function stop(){
-    if(watchId.current!==null){Geolocation.clearWatch(watchId.current);watchId.current=null;}
     if(stepSub.current){stepSub.current.unsubscribe();stepSub.current=null;}
     clearInterval(timer.current);
     clearInterval(snapTimer.current);
-  }
-
-  // 주행 중 위치 권한 회수 처리. stop()으로 watch/타이머/스냅샷을 모두 멈춰 거리·시간이
-  // 더 누적되지 않게 하고(가비지 데이터 금지), 영구 배너 + 설정 딥링크로 안내한다.
-  // 이미 기록된 거리/경과는 보존되며 사용자는 '종료'로 저장/버리기를 선택할 수 있다.
-  // 가드로 1회만 동작해 에러 콜백 연속 호출 시 알림 폭주를 막는다(크래시/스팸 금지).
-  function handlePermissionRevoked(){
-    if(permRevokedRef.current)return;
-    permRevokedRef.current=true;
-    stop();
-    setGpsStatus('위치 권한 필요');
-    setGpsStalled(false); // 死구간 배너 대신 권한 회수 배너가 우선한다
-    setPermLost(true);
-    openLocationSettingsAlert('주행 중 위치 권한이 회수되어 거리 기록을 멈췄습니다. 설정에서 위치 권한을 다시 허용해 주세요.');
+    void stopTracking();
+    runTracker.stop();
   }
 
   function handlePause(){
-    // 수동 토글: enterPause/exitPause가 pauseStartRef 가드로 pausedMs를 1회만 가산.
-    if(!isPausedRef.current)enterPause(false);
-    else exitPause(false);
+    // 수동 토글: 엔진이 pauseStart 가드로 pausedMs를 1회만 가산한다.
+    runTracker.togglePause();
   }
 
   function handleStop(){
@@ -1123,18 +994,18 @@ function RunActiveScreen({shoe,insets,goalKm,onSave,onDiscard,resume}:{shoe:{id:
     }
     clearTimeout(stopConfirmTimer.current);
     setStopConfirm(false);
-    const curPausedMs=(isPausedRef.current&&pauseStartRef.current>0)?pausedMs.current+(Date.now()-pauseStartRef.current):pausedMs.current;
-    const fk=dist.current,ft=Math.max(0,Math.floor((Date.now()-t0.current-curPausedMs)/1000));
+    // 최종 거리/시간은 엔진(단일 소스)에서 읽는다 — 화면off 동안 누적분도 포함된다.
+    const fk=runTracker.getDistanceKm(),ft=runTracker.getElapsedFinal();
     if(fk<0.01){
       stop();
       Alert.alert('거리가 너무 짧아요','계속 달리거나 나가기를 선택하세요',[
-        {text:'계속 달리기',onPress:()=>{setKm(0);setElapsed(0);setCadence(0);setGpsStatus('GPS 신호 찾는 중...');setPaused(false);setAutoPaused(false);beginRun();}},
+        {text:'계속 달리기',onPress:()=>{setKm(0);setElapsed(0);setCadence(0);setGpsStatus('GPS 신호 찾는 중...');setPaused(false);setAutoPaused(false);void beginRun(permRef.current);}},
         {text:'나가기',style:'destructive',onPress:onDiscard},
       ]);
       return;
     }
     stop();
-    const sampled=simplifyRoute(pts.current,200);
+    const sampled=simplifyRoute(runTracker.getPoints() as any,200);
     setFinRoute(sampled.length>=2?JSON.stringify(sampled):'');
     setFinLocation(locationRef.current);
     setFinKm(fk);setFinTime(ft);setFinCad(cadRef.current);

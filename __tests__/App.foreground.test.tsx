@@ -1,25 +1,27 @@
 /**
- * App.tsx foreground-service option wiring test (forward-prep).
+ * App.tsx background-tracking wiring test (expo-location).
  *
  * Drives the real App through home → goal → live-run and asserts the engine
- * registered its Geolocation.watchPosition with a `foregroundService`
- * notification config in the options (3rd arg). This verifies only that the
- * forward-compat option is PASSED to watchPosition with the expected channel /
- * copy — NOT that screen-off tracking actually persists. The installed
- * react-native-geolocation-service@5.3.1 ignores this option (no foreground
- * service), so real background tracking is a follow-up (lib swap / native
- * service) — see .tenet/knowledge/2026-06-01_geolocation-no-foreground-service.md.
- * We assert on the actual call the engine made (not internal state).
+ * started a location-typed foreground service via
+ * Location.startLocationUpdatesAsync with the prepared Korean notification copy,
+ * AND a live foreground watch via Location.watchPositionAsync. With the
+ * expo-location swap this is REAL screen-off tracking (the background task feeds
+ * the same shared engine), not a forward-prep no-op. We assert on the actual
+ * calls the engine made (not internal state).
+ *
+ * Also covers the permission gate: a denied foreground permission must NOT start
+ * any tracking, and a denied *background* permission is graceful — the
+ * foreground watch still starts (no screen-off service), so the run records
+ * while the screen is on.
  *
  * @format
  */
 
 import React from 'react';
-import {PermissionsAndroid, Platform} from 'react-native';
 import ReactTestRenderer, {act} from 'react-test-renderer';
-import Geolocation from 'react-native-geolocation-service';
+import * as Location from 'expo-location';
 import App from '../App';
-import {FG_SERVICE_CHANNEL_ID} from '../lib/foregroundService';
+import {RUN_LOCATION_TASK} from '../lib/locationService';
 
 function mockBackendWithShoe() {
   (globalThis.fetch as jest.Mock).mockImplementation((url: any) => {
@@ -73,90 +75,63 @@ async function startRun() {
   await act(async () => {
     pressByText(root, '러닝 시작'); // goal → live run (default 5km)
   });
-  return renderer;
+  return {renderer, root};
 }
 
-test('live run passes a foreground-service notification config to the GPS watch (forward-prep option is wired; real backgrounding is follow-up)', async () => {
-  const renderer = await startRun();
+const watchMock = () => Location.watchPositionAsync as jest.Mock;
+const bgMock = () => Location.startLocationUpdatesAsync as jest.Mock;
 
-  const calls = (Geolocation.watchPosition as jest.Mock).mock.calls;
+test('live run starts a location foreground service (background task) with the prepared Korean notification + a live foreground watch', async () => {
+  const {renderer} = await startRun();
+
+  // Foreground live updates started.
+  expect(watchMock().mock.calls.length).toBeGreaterThan(0);
+
+  // Background screen-off updates started under the run-location task with a
+  // location-typed foreground service notification (real backgrounding now).
+  const calls = bgMock().mock.calls;
   expect(calls.length).toBeGreaterThan(0);
-
-  const options = calls[0][2];
+  expect(calls[0][0]).toBe(RUN_LOCATION_TASK);
+  const options = calls[0][1];
   expect(options).toBeTruthy();
   expect(options.foregroundService).toBeTruthy();
-  // Bound to the dedicated run-tracking channel with the prepared Korean copy
-  // (the notification text shown only once a real foreground service runs).
-  expect(options.foregroundService.channelId).toBe(FG_SERVICE_CHANNEL_ID);
   expect(options.foregroundService.notificationTitle).toBe('러닝 기록 중');
-  // The default-goal run (5km) surfaces the goal in the prepared notification.
+  // The default-goal run (5km) surfaces the goal in the notification body.
   expect(options.foregroundService.notificationBody).toContain('5km');
 
   act(() => renderer.unmount());
 });
 
-// ── permission gate regression ──────────────────────────────────────────────
-// On Android the engine MUST request ACCESS_FINE_LOCATION before starting the
-// GPS watch, and MUST NOT start watchPosition when that fine-location request is
-// denied. (The previously-added ACCESS_BACKGROUND_LOCATION request was removed as
-// a Play-safe re-scope; only the fine-location gate governs whether tracking
-// starts.) This guards against a regression where a denied grant still leaks
-// location tracking. Drives the real App on Platform.OS='android'.
-test('on Android, a denied fine-location grant blocks the GPS watch from starting (no watchPosition)', async () => {
-  const prevOS = Platform.OS;
-  Platform.OS = 'android';
-  // Fine-location request is denied; engine must alert and bail before beginRun().
-  const reqSpy = jest
-    .spyOn(PermissionsAndroid, 'request')
-    .mockResolvedValue(PermissionsAndroid.RESULTS.DENIED);
-  try {
-    const renderer = await startRun();
+// ── permission gate ──────────────────────────────────────────────────────────
+// A denied foreground permission must NOT start any tracking (no garbage
+// distance) — neither the foreground watch nor the background service.
+test('a denied foreground location permission blocks all tracking (no watch, no background service)', async () => {
+  (Location.requestForegroundPermissionsAsync as jest.Mock).mockResolvedValueOnce({
+    granted: false,
+    status: 'denied',
+  });
+  const {renderer} = await startRun();
 
-    // The fine-location permission was actually requested (the gate ran)...
-    const requested = reqSpy.mock.calls.map(c => c[0]);
-    expect(requested).toContain(
-      PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-    );
-    // ...background location is NEVER requested (removed in the re-scope)...
-    expect(requested).not.toContain(
-      PermissionsAndroid.PERMISSIONS.ACCESS_BACKGROUND_LOCATION,
-    );
-    // ...and because fine location was denied, the GPS watch never started.
-    expect((Geolocation.watchPosition as jest.Mock).mock.calls.length).toBe(0);
+  expect(Location.requestForegroundPermissionsAsync).toHaveBeenCalled();
+  expect(watchMock().mock.calls.length).toBe(0);
+  expect(bgMock().mock.calls.length).toBe(0);
 
-    act(() => renderer.unmount());
-  } finally {
-    reqSpy.mockRestore();
-    Platform.OS = prevOS;
-  }
+  act(() => renderer.unmount());
 });
 
-// Complementary: when fine location IS granted on Android, the watch starts AND
-// background location is still never requested (the re-scope holds on the happy
-// path too — only the harmful background request was removed, not the gate).
-test('on Android with fine-location granted, the GPS watch starts and background location is never requested', async () => {
-  const prevOS = Platform.OS;
-  Platform.OS = 'android';
-  const reqSpy = jest
-    .spyOn(PermissionsAndroid, 'request')
-    .mockResolvedValue(PermissionsAndroid.RESULTS.GRANTED);
-  try {
-    const renderer = await startRun();
+// A denied BACKGROUND permission is graceful: the foreground watch still starts
+// (the run records while the screen is on), but no screen-off service is started.
+test('a denied background permission is graceful — foreground watch starts, no background service', async () => {
+  (Location.requestBackgroundPermissionsAsync as jest.Mock).mockResolvedValueOnce({
+    granted: false,
+    status: 'denied',
+  });
+  const {renderer} = await startRun();
 
-    const requested = reqSpy.mock.calls.map(c => c[0]);
-    expect(requested).toContain(
-      PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-    );
-    expect(requested).not.toContain(
-      PermissionsAndroid.PERMISSIONS.ACCESS_BACKGROUND_LOCATION,
-    );
-    expect(
-      (Geolocation.watchPosition as jest.Mock).mock.calls.length,
-    ).toBeGreaterThan(0);
+  // Foreground tracking still runs...
+  expect(watchMock().mock.calls.length).toBeGreaterThan(0);
+  // ...but the screen-off background service was not started (graceful denial).
+  expect(bgMock().mock.calls.length).toBe(0);
 
-    act(() => renderer.unmount());
-  } finally {
-    reqSpy.mockRestore();
-    Platform.OS = prevOS;
-  }
+  act(() => renderer.unmount());
 });

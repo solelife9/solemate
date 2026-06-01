@@ -14,7 +14,7 @@
 
 import React from 'react';
 import ReactTestRenderer, {act} from 'react-test-renderer';
-import Geolocation from 'react-native-geolocation-service';
+import * as Location from 'expo-location';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import App from '../App';
 import {SNAPSHOT_KEY} from '../lib/runPersistence';
@@ -106,9 +106,10 @@ async function startRunWithDistance() {
     pressByText(root, '러닝 시작'); // goal → live run
   });
 
-  const calls = (Geolocation.watchPosition as jest.Mock).mock.calls;
+  const calls = (Location.watchPositionAsync as jest.Mock).mock.calls;
   expect(calls.length).toBeGreaterThan(0);
-  const onPos = calls[calls.length - 1][0] as (p: any) => void;
+  // expo watchPositionAsync(options, callback, errorHandler) → callback is arg 1.
+  const onPos = calls[calls.length - 1][1] as (p: any) => void;
   const emit = (lat: number, lon: number, accuracy: number, timestamp: number) =>
     act(() => {
       onPos({coords: {latitude: lat, longitude: lon, accuracy}, timestamp});

@@ -1,9 +1,25 @@
-# react-native-geolocation-service@5.3.1은 포그라운드 서비스를 내장하지 않음
+# react-native-geolocation-service@5.3.1은 포그라운드 서비스를 내장하지 않음 → expo-location으로 교체(해결됨)
 
 type: knowledge
 job_name: 백그라운드 트래킹(포그라운드 서비스) (slice-1-background-track)
 confidence: implemented-and-tested
 created: 2026-06-01
+updated: 2026-06-01
+
+## RESOLVED (2026-06-01, pro-overhaul 마무리 job)
+
+아래 "재스코프(forward-prep)"는 **종료**됐다. 백그라운드 트래킹을 **실제 동작**하도록 마무리:
+
+- **GPS 라이브러리 교체:** react-native-geolocation-service → **expo-location**(+ expo-task-manager). expo SDK 56 / RN 0.85 네이티브 통합은 선행 워커가 완료, gradle assembleDebug GREEN 확인됨.
+- **공유 엔진:** `lib/runTracker.ts`(순수 로직 unchanged 재사용)가 단일 거리/시간 소스. 포그라운드(`Location.watchPositionAsync`)와 백그라운드(`expo-task-manager` task + `Location.startLocationUpdatesAsync`의 `foregroundService`)가 **둘 다** `runTracker.ingestFix`로 같은 엔진에 먹인다. 타임스탬프 de-dup으로 중복 fix 이중 계산 방지.
+- **delivery 레이어:** `lib/locationService.ts` — `requestRunPermissions`(foreground 필수·background graceful), `startTracking`/`stopTracking`, 모듈 스코프 `defineTask`(headless 컨텍스트가 이름으로 executor 해석).
+- **AndroidManifest:** `FOREGROUND_SERVICE`/`FOREGROUND_SERVICE_LOCATION`/`ACCESS_BACKGROUND_LOCATION` **복원**(이제 실제 기능에 대응). location 타입 `<service>`는 expo-location 모듈 매니페스트가 머지하므로 직접 선언 안 함(중복 머지 충돌 회피). uses-permission 추가는 머지 충돌 없음.
+- **권한 흐름:** android/ios 통합(`requestForegroundPermissionsAsync`). foreground 거부 → 트래킹 시작 안 함 + 설정 딥링크. background 거부 → graceful(포그라운드만 기록). 주행 중 회수 → watch errorHandler의 권한성 reason 감지 → `notifyPermissionRevoked`로 엔진 정지.
+- **테스트:** `__tests__/lib/runTracker.test.ts`(순수 엔진), `__tests__/lib/locationService.test.ts`(expo 모킹: foreground fix→거리, 백그라운드 task 배치 전달, 권한 graceful), App 통합테스트 expo-location로 갱신. tsc/lint/jest GREEN(403 tests).
+
+아래 원본 findings는 교체 *이전* 상태의 기록(히스토리)으로 보존한다.
+
+---
 
 ## Findings
 

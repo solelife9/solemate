@@ -31,7 +31,7 @@ import React from 'react';
 import {Alert} from 'react-native';
 import ReactTestRenderer, {act} from 'react-test-renderer';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Geolocation from 'react-native-geolocation-service';
+import * as Location from 'expo-location';
 import App from '../App';
 
 type Resp = {ok: boolean; status: number; json: () => Promise<any>; text: () => Promise<string>};
@@ -193,7 +193,9 @@ test('first-time runner is shown a location-permission rationale BEFORE the OS d
     await flush();
 
     // The OS permission has NOT been requested yet — priming comes first.
-    expect((Geolocation.requestAuthorization as jest.Mock).mock.calls.length).toBe(0);
+    expect(
+      (Location.requestForegroundPermissionsAsync as jest.Mock).mock.calls.length,
+    ).toBe(0);
     // A Korean rationale Alert was shown explaining WHY location is needed.
     const priming = alertSpy.mock.calls.find(c => String(c[0]).includes('위치 권한 안내'));
     expect(priming).toBeTruthy();
@@ -207,7 +209,9 @@ test('first-time runner is shown a location-permission rationale BEFORE the OS d
     });
     await flush();
 
-    expect((Geolocation.requestAuthorization as jest.Mock).mock.calls.length).toBeGreaterThan(0);
+    expect(
+      (Location.requestForegroundPermissionsAsync as jest.Mock).mock.calls.length,
+    ).toBeGreaterThan(0);
     // Priming is remembered so it never nags on the next run.
     expect(await AsyncStorage.getItem('loc_perm_primed')).toBe('1');
 
