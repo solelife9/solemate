@@ -185,6 +185,26 @@ export async function enqueuePendingRun(run: PendingRun): Promise<PendingRun[]> 
   return next;
 }
 
+/**
+ * Patch a still-queued (unsynced) run in place by localId — used when the user
+ * edits a run that has not yet reached the server, so the eventual POST carries
+ * the edited values. `patch` uses the same field names as PendingRun (shoe_id,
+ * km, run_date, duration, ...). Sanitized before write (iron law: non-negative,
+ * NaN-stripped). No-op if no queued run matches. Returns the new queue.
+ */
+export async function updatePendingRun(
+  localId: string,
+  patch: Partial<PendingRun>,
+): Promise<PendingRun[]> {
+  const queue = await loadPendingRuns();
+  const id = String(localId);
+  const next = queue
+    .map(r => (r.localId === id ? sanitizePendingRun({...r, ...patch, localId: id}) : r))
+    .filter((r): r is PendingRun => r !== null);
+  await writePendingRuns(next);
+  return next;
+}
+
 /** Remove one run from the queue by localId (after a confirmed sync). */
 export async function removePendingRun(localId: string): Promise<PendingRun[]> {
   const queue = await loadPendingRuns();

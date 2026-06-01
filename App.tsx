@@ -20,7 +20,7 @@ import ErrorBoundary from './ErrorBoundary';
 import HomeScreen, {WeekStats} from './HomeScreen.rn';
 import HistoryScreen, {PeriodSummary, PeriodChart} from './HistoryScreen.rn';
 import ShoesScreen, {ShoeTotals} from './ShoesScreen.rn';
-import ProfileScreen, {Profile, Badge} from './ProfileScreen.rn';
+import ProfileScreen, {Profile, Badge, PersonalRecord} from './ProfileScreen.rn';
 import AddShoeScreen from './AddShoeScreen.rn';
 import {RunStart} from './RunScreen.rn';
 
@@ -40,7 +40,7 @@ import {parseShoeName, shoeHealth, isRetired, DEFAULT_MAX_KM, clampMaxKm, reconc
 import {recommendShoeId, lastWornDate} from './lib/shoeRecommend';
 import {
   saveSnapshot, loadSnapshot, clearSnapshot, isResumable,
-  enqueuePendingRun, removePendingRun, flushPendingRuns,
+  enqueuePendingRun, removePendingRun, updatePendingRun, flushPendingRuns,
   reconcilePendingWithServer,
   RunSnapshot, PendingRun,
 } from './lib/runPersistence';
@@ -49,7 +49,7 @@ import {
   AlertSettings, loadSettings, saveUnit, saveGoal, saveAlerts,
   clampGoal, DEFAULT_SETTINGS,
 } from './lib/settings';
-import {weeklyProgress, currentStreak} from './lib/goals';
+import {weeklyProgress, currentStreak, personalRecords} from './lib/goals';
 
 const API = 'https://solelife-backend.onrender.com';
 
@@ -314,6 +314,50 @@ function Main(){
     setRuns(prev=>[merged,...prev.filter(r=>r.id!==p.localId&&(serverId==null||r.id!==serverId))]);
   }
 
+  // 수동 런 입력(앱 외 주행·잔존 마일리지 보정): source='manual'로 addRun을 재사용한다.
+  // 로컬 우선 큐 + 낙관적 삽입 동선을 그대로 타므로 신발 km(shoeHealth)이 즉시 반영되고
+  // 네트워크 실패 시에도 유실되지 않는다(iron law). route/cadence는 비운다(GPS 미동반).
+  function addManualRun(shoeId:string,km:number,date:string,durationSec:number){
+    void addRun(shoeId,km,date,'','manual',durationSec);
+  }
+
+  // 개별 런 편집(백엔드 PATCH). 낙관적으로 runs 상태를 갱신 → toUiShoe가 runs에서
+  // shoeHealth를 파생하므로 신발 수명은 자동 재계산된다(별도 신발 PATCH 불필요).
+  // fields는 백엔드 컬럼명(shoe_id/km/run_date/duration). 아직 서버에 없는 미동기
+  // (_pending) 런이면 PATCH 대신 큐를 수정해 향후 POST가 편집값을 싣게 한다.
+  async function editRun(id:string,fields:{shoe_id?:string;km?:number;run_date?:string;duration?:number}){
+    const sid=String(id);
+    const target=runs.find(r=>String(r.id)===sid);
+    setRuns(prev=>prev.map(r=>String(r.id)===sid?{...r,...fields}:r));
+    if(target&&target._pending){
+      await updatePendingRun(sid,fields as Partial<PendingRun>);
+      return;
+    }
+    try{
+      await fetch(API+'/api/runs/'+sid,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:userId,...fields})});
+    }catch{Alert.alert('오류','런 수정 실패');}
+  }
+
+  // 개별 런 삭제(백엔드 DELETE). 삭제 확인 Alert는 화면(HistoryScreen)이 띄운다.
+  // runs에서 제거하면 shoeHealth가 줄어 신발 사용거리도 자동 감소한다(파생값). 미동기
+  // 런은 서버에 없으므로 네트워크 없이 로컬에서만 제거하고, 동기된 런은 서버 삭제 성공
+  // 후 제거한다(실패 시 보존). route_/time_ 로컬키도 함께 정리해 누수를 막는다.
+  async function deleteRun(id:string){
+    const sid=String(id);
+    const target=runs.find(r=>String(r.id)===sid);
+    const finishLocal=async()=>{
+      setRuns(prev=>prev.filter(r=>String(r.id)!==sid));
+      await removePendingRun(sid);
+      await AsyncStorage.removeItem('route_'+sid);
+      await AsyncStorage.removeItem('time_'+sid);
+    };
+    if(target&&target._pending){await finishLocal();return;}
+    try{
+      await fetch(API+'/api/runs/'+sid,{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:userId})});
+      await finishLocal();
+    }catch{Alert.alert('오류','삭제 실패');}
+  }
+
   // 신발 교체 알림: 설정(on/off · 임계값)을 따른다. 비활성이면 아예 묻지 않고,
   // 활성이면 사용자가 정한 임계값(수명 사용률 %) 이상인 신발만 알린다.
   // 임계값은 km 절대값(shoeHealth.percentUsed) 기준 — 표시 단위와 무관.
@@ -400,6 +444,8 @@ function Main(){
       time:dur>0?fmtTime(dur):'--',
       shoe:idxById[run.shoe_id]??-1,
       cal:0, cadence:run.cadence||0, bpm:run.heart_rate||0, elev:0,
+      // 편집 폼 프리필용 원본값(날짜·시간 초). 거리/신발은 위 dist/shoe로 충분.
+      runDate:String(run.run_date??''), durationS:dur,
     };
   }
   const uiRuns:Run[]=sortedRaw.map(toUiRun);
@@ -469,6 +515,16 @@ function Main(){
     {icon:'flash',label:'10회 달성',on:runs.length>=10},
     {icon:'map',label:'하프',on:runs.some(r=>parseFloat(String(r.km))>=21.1)},
   ];
+  // 개인 기록(PR) 프로필 카드: 1km 최고 페이스·5km 최고 기록·최장 거리. 거리·시간이
+  // 모두 양수인 런만 페이스 산정에 쓴다(personalRecords 순수함수). 거리는 표시 단위로
+  // 환산하고(페이스/시간은 단위 불변), 기록이 없는 항목은 '--'로 둔다.
+  const prRuns=runs.map(r=>({run_date:String(r.run_date),km:parseFloat(String(r.km))||0,durationS:r.duration||0}));
+  const pr=personalRecords(prRuns);
+  const records:PersonalRecord[]=[
+    {icon:'flash-outline',label:'1km 최고 페이스',value:pr.fastest1k!=null?fmtPace(1,pr.fastest1k):'--',unit:pr.fastest1k!=null?'/km':''},
+    {icon:'timer-outline',label:'5km 최고 기록',value:pr.fastest5k!=null?fmtTime(Math.round(pr.fastest5k)):'--',unit:''},
+    {icon:'trending-up-outline',label:'최장 거리',value:pr.longest!=null?String(displayNum(pr.longest,unit,2)):'--',unit:pr.longest!=null?unit:''},
+  ];
 
   // ── actions ─────────────────────────────────────────────────
   // i는 homeUiShoes(보관 신발 제외 목록)의 인덱스 — 원본 신발로 되짚어 시작한다.
@@ -533,7 +589,10 @@ function Main(){
           />
         )}
         {tab===1&&(
-          <HistoryScreen shoes={uiShoes} runs={uiRuns} summary={summary} chart={chart} unit={unit} onTab={setTab}/>
+          <HistoryScreen
+            shoes={uiShoes} runs={uiRuns} summary={summary} chart={chart} unit={unit} onTab={setTab}
+            onAddRun={addManualRun} onEditRun={editRun} onDeleteRun={deleteRun}
+          />
         )}
         {tab===2&&(
           <ShoesScreen
@@ -546,7 +605,7 @@ function Main(){
         )}
         {tab===3&&(
           <ProfileScreen
-            profile={profile} badges={badges} onTab={setTab}
+            profile={profile} badges={badges} records={records} onTab={setTab}
             unit={unit} onChangeUnit={changeUnit}
             goalWeeklyKm={goalWeeklyKm} weeklyPercent={goalProgress.percent} onChangeGoal={changeGoal}
             alerts={alerts} onChangeAlerts={changeAlerts}

@@ -3,17 +3,40 @@
 // (sample data removed — real summary/chart/runs are injected via props)
 // ============================================================================
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet, LayoutChangeEvent, Share } from 'react-native';
+import { View, Text, ScrollView, Pressable, StyleSheet, LayoutChangeEvent, Share, TextInput, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Svg, { Polyline, Circle } from 'react-native-svg';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {
-  BG, CARD, ACCENT, T1, T2, T3, SEP, FONT, DISPLAY, Shoe, Run, SHOES,
+  BG, CARD, CARD_HI, ACCENT, DANGER, T1, T2, T3, SEP, FONT, DISPLAY, Shoe, Run, SHOES,
 } from './theme';
 import { TabBar } from './primitives';
-import { Unit, displayNum } from './lib/units';
+import { Unit, displayNum, displayToKm } from './lib/units';
+import { ymdLocal } from './lib/format';
 import { parseRoute, projectRoute, LatLon } from './lib/route';
 import { buildRunShareText } from './lib/share';
+
+// ── manual-run / edit form helpers ──────────────────────────────────────────
+// 소요 시간 입력은 'MM:SS'(또는 분 단위 숫자)를 초로 변환한다. 빈 값/파싱 불가 → 0.
+function parseDurationInput(text: string): number {
+  const t = (text || '').trim();
+  if (!t) return 0;
+  if (t.includes(':')) {
+    const [m, sec] = t.split(':');
+    const mm = parseInt(m, 10);
+    const ss = parseInt(sec, 10);
+    return Math.max(0, (Number.isFinite(mm) ? mm : 0) * 60 + (Number.isFinite(ss) ? ss : 0));
+  }
+  const mins = parseFloat(t);
+  return Number.isFinite(mins) && mins > 0 ? Math.round(mins * 60) : 0;
+}
+// 초 → 'M:SS' (프리필용). 0 이하면 빈 문자열.
+function fmtDurationInput(sec: number): string {
+  if (!sec || sec <= 0) return '';
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60);
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
 
 export type PeriodSummary = { km: string; runs: number; pace: string; time: string };
 export type PeriodChart = { title: string; data: number[]; labels: string[] };
@@ -101,8 +124,115 @@ function CourseMap({ points }: { points: LatLon[] }) {
   );
 }
 
+// ── manual-run input / run edit form ────────────────────────────────────────
+// 한 폼으로 '수동 입력'(initial=null)과 '편집'(initial=Run)을 모두 처리한다. 거리는
+// 표시 단위(km|mi)로 입력받아 displayToKm로 저장 표준 km으로 되돌리고, 시간은 'MM:SS'를
+// 초로, 날짜는 'YYYY-MM-DD'로 받는다. 신발은 칩으로 고른다(편집 시 원래 신발이 프리필).
+function RunForm({
+  shoes, unit, initial, onCancel, onSubmit,
+}: {
+  shoes: Shoe[];
+  unit: Unit;
+  initial?: Run | null;
+  onCancel: () => void;
+  onSubmit: (v: { shoeId: string; km: number; date: string; durationSec: number }) => void;
+}) {
+  const editing = !!initial;
+  const initShoeId = editing && initial!.shoe >= 0 ? shoes[initial!.shoe]?.id : undefined;
+  const [shoeId, setShoeId] = useState<string | undefined>(initShoeId ?? shoes[0]?.id);
+  const [dist, setDist] = useState(editing ? String(displayNum(initial!.dist, unit, 2)) : '');
+  const [dur, setDur] = useState(editing ? fmtDurationInput(initial!.durationS || 0) : '');
+  const [date, setDate] = useState(editing ? (initial!.runDate || '') : ymdLocal(new Date()));
+
+  const submit = () => {
+    const dispKm = parseFloat(dist);
+    if (!shoeId) { Alert.alert('알림', '신발을 선택하세요'); return; }
+    if (!Number.isFinite(dispKm) || dispKm <= 0) { Alert.alert('알림', '거리를 0보다 크게 입력하세요'); return; }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) { Alert.alert('알림', '날짜는 YYYY-MM-DD 형식으로 입력하세요'); return; }
+    onSubmit({ shoeId, km: displayToKm(dispKm, unit), date, durationSec: parseDurationInput(dur) });
+  };
+
+  return (
+    <View style={s.screen}>
+      <View style={[s.nav, s.navRow]}>
+        <Pressable onPress={onCancel} style={s.iconBtn}><Ionicons name="chevron-back" size={20} color={T1} /></Pressable>
+        <Text style={s.formTitle}>{editing ? '러닝 편집' : '수동 기록 추가'}</Text>
+        <View style={s.iconBtn} />
+      </View>
+      <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: 40, gap: 18 }}>
+        {/* 신발 선택 */}
+        <View>
+          <Text style={s.formLabel}>신발</Text>
+          {shoes.length === 0 ? (
+            <Text style={s.formHint}>먼저 신발을 등록하세요</Text>
+          ) : (
+            <View style={s.chipWrap}>
+              {shoes.map((sh, i) => {
+                const on = sh.id === shoeId;
+                return (
+                  <Pressable
+                    key={sh.id || i}
+                    onPress={() => sh.id && setShoeId(sh.id)}
+                    style={[s.chip, on && s.chipOn]}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: on }}
+                  >
+                    <Text style={[s.chipTxt, { color: on ? '#000' : T2 }]} numberOfLines={1}>
+                      {sh.brand} {sh.model}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          )}
+        </View>
+        {/* 거리 */}
+        <View>
+          <Text style={s.formLabel}>거리 ({unit})</Text>
+          <TextInput
+            value={dist}
+            onChangeText={setDist}
+            keyboardType="decimal-pad"
+            placeholder={`예: 5.0`}
+            placeholderTextColor={T3}
+            style={s.input}
+            accessibilityLabel="거리"
+          />
+        </View>
+        {/* 시간 */}
+        <View>
+          <Text style={s.formLabel}>시간 (MM:SS)</Text>
+          <TextInput
+            value={dur}
+            onChangeText={setDur}
+            placeholder="예: 30:00 (선택)"
+            placeholderTextColor={T3}
+            style={s.input}
+            accessibilityLabel="시간"
+          />
+        </View>
+        {/* 날짜 */}
+        <View>
+          <Text style={s.formLabel}>날짜 (YYYY-MM-DD)</Text>
+          <TextInput
+            value={date}
+            onChangeText={setDate}
+            placeholder="2026-06-01"
+            placeholderTextColor={T3}
+            style={s.input}
+            accessibilityLabel="날짜"
+          />
+        </View>
+        <Pressable onPress={submit} style={({ pressed }) => [s.saveBtn, pressed && { opacity: 0.85 }]} accessibilityRole="button">
+          <Text style={s.saveBtnTxt}>{editing ? '저장하기' : '추가하기'}</Text>
+        </Pressable>
+      </ScrollView>
+    </View>
+  );
+}
+
 // ── run detail ────────────────────────────────────────────────────────────────
-function RunDetail({ run, shoe, onBack, unit }: { run: Run; shoe?: Shoe; onBack: () => void; unit: Unit }) {
+function RunDetail({ run, shoe, onBack, unit, onEdit, onDelete }: { run: Run; shoe?: Shoe; onBack: () => void; unit: Unit; onEdit?: () => void; onDelete?: (id: string) => void }) {
   // Load the recorded route for this run once. Missing/invalid blob → [] → map
   // stays hidden (graceful). route_<id> is written by App.addRun on save.
   const [route, setRoute] = useState<LatLon[]>([]);
@@ -129,6 +259,17 @@ function RunDetail({ run, shoe, onBack, unit }: { run: Run; shoe?: Shoe; onBack:
       }),
     }).catch(() => {});
   };
+  // 삭제는 확인 Alert로 보호한다(파괴 방지). 삭제 시 신발 사용거리도 줄어듦을 안내한다.
+  const confirmDelete = () => {
+    Alert.alert(
+      '러닝 기록 삭제',
+      `${run.date} ${displayNum(run.dist, unit, 2)}${unit} 기록을 삭제할까요?\n삭제하면 신발 사용 거리도 함께 줄어듭니다.`,
+      [
+        { text: '취소', style: 'cancel' },
+        { text: '삭제', style: 'destructive', onPress: () => { if (run.id) onDelete?.(run.id); onBack(); } },
+      ],
+    );
+  };
   const dash = (n: number, u: string) => (n > 0 ? { v: String(n), u } : { v: '--', u: '' });
   const stats = [
     { l: '평균 페이스', v: run.pace, u: '/km' },
@@ -142,9 +283,21 @@ function RunDetail({ run, shoe, onBack, unit }: { run: Run; shoe?: Shoe; onBack:
     <View style={s.screen}>
       <View style={[s.nav, s.navRow]}>
         <Pressable onPress={onBack} style={s.iconBtn}><Ionicons name="chevron-back" size={20} color={T1} /></Pressable>
-        <Pressable onPress={onShare} style={s.iconBtn} accessibilityRole="button" accessibilityLabel="공유">
-          <Ionicons name="share-outline" size={18} color={T1} />
-        </Pressable>
+        <View style={s.navActions}>
+          {!!onEdit && (
+            <Pressable onPress={onEdit} style={s.iconBtn} accessibilityRole="button" accessibilityLabel="편집">
+              <Ionicons name="create-outline" size={18} color={T1} />
+            </Pressable>
+          )}
+          <Pressable onPress={onShare} style={s.iconBtn} accessibilityRole="button" accessibilityLabel="공유">
+            <Ionicons name="share-outline" size={18} color={T1} />
+          </Pressable>
+          {!!onDelete && (
+            <Pressable onPress={confirmDelete} style={s.iconBtn} accessibilityRole="button" accessibilityLabel="삭제">
+              <Ionicons name="trash-outline" size={18} color={DANGER} />
+            </Pressable>
+          )}
+        </View>
       </View>
       <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: 28 }}>
         <Text style={s.detailDate}>{run.date} {run.day}요일</Text>
@@ -198,6 +351,7 @@ function RunRow({ run, shoes, onPress, last, unit }: { run: Run; shoes: Shoe[]; 
 
 export default function HistoryScreen({
   shoes = SHOES, runs = [], summary = {}, chart = {}, onTab, unit = 'km',
+  onAddRun, onEditRun, onDeleteRun,
 }: {
   shoes?: Shoe[];
   runs?: Run[];
@@ -206,9 +360,15 @@ export default function HistoryScreen({
   onTab?: (i: number) => void;
   // 표시 단위(km|mi). 거리·차트 눈금이 이를 따른다(요약·차트 값은 App이 환산해 주입).
   unit?: Unit;
+  // 수동 입력/편집/삭제 콜백(App이 백엔드 POST/PATCH/DELETE + 상태를 처리). 거리는 km.
+  onAddRun?: (shoeId: string, km: number, date: string, durationSec: number) => void;
+  onEditRun?: (id: string, fields: { shoe_id?: string; km?: number; run_date?: string; duration?: number }) => void;
+  onDeleteRun?: (id: string) => void;
 }) {
   const [period, setPeriod] = useState('월');
   const [detail, setDetail] = useState<Run | null>(null);
+  // 폼 상태: 'add'(수동 입력) | {edit, run}(편집). null이면 목록 화면.
+  const [form, setForm] = useState<null | { mode: 'add' } | { mode: 'edit'; run: Run }>(null);
 
   const sum = summary[period] || EMPTY_SUMMARY;
   const ch = chart[period];
@@ -219,11 +379,51 @@ export default function HistoryScreen({
     { l: '시간', v: sum.time, u: '총' },
   ];
 
-  if (detail) return <RunDetail run={detail} shoe={shoes[detail.shoe]} onBack={() => setDetail(null)} unit={unit} />;
+  // 폼(추가/편집)이 열려 있으면 폼만 렌더. 제출 시 콜백을 호출하고 목록으로 복귀한다.
+  if (form) {
+    const initial = form.mode === 'edit' ? form.run : null;
+    return (
+      <RunForm
+        shoes={shoes}
+        unit={unit}
+        initial={initial}
+        onCancel={() => setForm(null)}
+        onSubmit={({ shoeId, km, date, durationSec }) => {
+          if (form.mode === 'edit' && form.run.id) {
+            onEditRun?.(form.run.id, { shoe_id: shoeId, km, run_date: date, duration: durationSec });
+          } else {
+            onAddRun?.(shoeId, km, date, durationSec);
+          }
+          setForm(null);
+          setDetail(null);
+        }}
+      />
+    );
+  }
+
+  if (detail) {
+    return (
+      <RunDetail
+        run={detail}
+        shoe={shoes[detail.shoe]}
+        onBack={() => setDetail(null)}
+        unit={unit}
+        onEdit={onEditRun ? () => setForm({ mode: 'edit', run: detail }) : undefined}
+        onDelete={onDeleteRun}
+      />
+    );
+  }
 
   return (
     <View style={s.screen}>
-      <View style={s.header}><Text style={s.title}>기록</Text></View>
+      <View style={[s.header, s.headerRow]}>
+        <Text style={s.title}>기록</Text>
+        {!!onAddRun && (
+          <Pressable onPress={() => setForm({ mode: 'add' })} style={s.iconBtn} accessibilityRole="button" accessibilityLabel="수동 기록 추가">
+            <Ionicons name="add" size={22} color={T1} />
+          </Pressable>
+        )}
+      </View>
       <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: 8, gap: 16 }}>
         {/* period segment */}
         <View style={s.segment}>
@@ -283,6 +483,7 @@ const s = StyleSheet.create({
   sectionLabel: { color: T2, fontFamily: FONT, fontSize: 14, fontWeight: '500', letterSpacing: 0.2, paddingHorizontal: 4 },
 
   header: { paddingTop: 60, paddingHorizontal: 22, paddingBottom: 8 },
+  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   title: { color: T1, fontFamily: FONT, fontSize: 32, fontWeight: '500', letterSpacing: -0.8 },
 
   segment: { flexDirection: 'row', gap: 4, backgroundColor: '#2C2C2E', borderRadius: 14, padding: 4 },
@@ -312,7 +513,20 @@ const s = StyleSheet.create({
   // detail
   nav: { paddingTop: 60, paddingHorizontal: 16, paddingBottom: 6 },
   navRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  navActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   iconBtn: { width: 38, height: 38, borderRadius: 999, backgroundColor: '#2C2C2E', borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(255,255,255,0.12)', alignItems: 'center', justifyContent: 'center' },
+
+  // manual-run / edit form
+  formTitle: { color: T1, fontFamily: FONT, fontSize: 17, fontWeight: '600' },
+  formLabel: { color: T2, fontFamily: FONT, fontSize: 13.5, fontWeight: '600', marginBottom: 8, paddingHorizontal: 2 },
+  formHint: { color: T3, fontFamily: FONT, fontSize: 13 },
+  chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  chip: { maxWidth: '100%', backgroundColor: CARD_HI, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 9, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
+  chipOn: { backgroundColor: ACCENT, borderColor: ACCENT },
+  chipTxt: { fontFamily: FONT, fontSize: 13.5, fontWeight: '600' },
+  input: { backgroundColor: CARD, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14, color: T1, fontFamily: FONT, fontSize: 16, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
+  saveBtn: { backgroundColor: ACCENT, borderRadius: 16, paddingVertical: 16, alignItems: 'center', marginTop: 6 },
+  saveBtnTxt: { color: '#000', fontFamily: FONT, fontSize: 16, fontWeight: '700' },
   detailDate: { color: T3, fontFamily: FONT, fontSize: 13 },
   detailDist: { color: T1, fontFamily: DISPLAY, fontSize: 56, letterSpacing: 0.5 },
   detailDistU: { color: T2, fontFamily: FONT, fontSize: 20, marginLeft: 6, marginBottom: 8 },

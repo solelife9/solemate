@@ -20,6 +20,9 @@ import {
 
 export type Profile = { name: string; since: string; totalKm: number; totalRuns: number; totalTime: string; level: string };
 export type Badge = { icon: string; label: string; on: boolean };
+// 개인 기록(PR) 카드 한 칸. value/unit은 App이 표시 단위로 환산·포맷해 주입한다
+// (기록 없음은 value='--'). 화면은 표시만 담당한다.
+export type PersonalRecord = { icon: string; label: string; value: string; unit: string };
 
 const DEFAULT_PROFILE: Profile = { name: '러너', since: '', totalKm: 0, totalRuns: 0, totalTime: '0', level: '러닝 레벨 1' };
 const APP_VERSION = '0.0.1';
@@ -43,7 +46,7 @@ function Stepper({ value, suffix, onMinus, onPlus }: { value: number | string; s
 }
 
 export default function ProfileScreen({
-  profile = DEFAULT_PROFILE, badges = [], onTab,
+  profile = DEFAULT_PROFILE, badges = [], records = [], onTab,
   unit = 'km', onChangeUnit,
   goalWeeklyKm = DEFAULT_SETTINGS.goalWeeklyKm, weeklyPercent = 0, onChangeGoal,
   alerts = { ...DEFAULT_ALERTS }, onChangeAlerts,
@@ -51,6 +54,7 @@ export default function ProfileScreen({
 }: {
   profile?: Profile;
   badges?: Badge[];
+  records?: PersonalRecord[];
   onTab?: (i: number) => void;
   unit?: Unit;
   onChangeUnit?: (u: Unit) => void;
@@ -119,6 +123,22 @@ export default function ProfileScreen({
             ))}
           </View>
         </View>
+
+        {/* personal records (PR) — 1km 페이스 · 5km 기록 · 최장 거리 */}
+        {records.length > 0 && (
+          <View style={[s.card, { padding: 22 }]}>
+            <Text style={s.cardTitle}>개인 기록</Text>
+            <View style={s.statRow}>
+              {records.map((r, i) => (
+                <View key={i} style={[s.statCell, i > 0 && s.statDivider]}>
+                  <Ionicons name={r.icon} size={18} color={ACCENT} style={{ marginBottom: 6 }} />
+                  <Text style={s.statValue}>{r.value}{!!r.unit && <Text style={s.statUnit}>{r.unit}</Text>}</Text>
+                  <Text style={s.statLabel}>{r.label}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
 
         {/* achievements */}
         {badges.length > 0 && (

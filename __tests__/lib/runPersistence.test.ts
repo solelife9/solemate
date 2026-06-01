@@ -28,6 +28,7 @@ import {
   enqueuePendingRun,
   loadPendingRuns,
   removePendingRun,
+  updatePendingRun,
   flushPendingRuns,
   serverHasRun,
   matchServerRun,
@@ -185,6 +186,27 @@ describe('unsynced run queue', () => {
     await removePendingRun('run_abc');
     const queue = await loadPendingRuns();
     expect(queue.map(r => r.localId)).toEqual(['run_xyz']);
+  });
+
+  test('updatePendingRun patches only the matching run (edit before sync carries new values)', async () => {
+    await enqueuePendingRun(PENDING);
+    await enqueuePendingRun({...PENDING, localId: 'run_xyz', km: 3.1});
+    // 편집: run_abc의 거리·신발을 수정. 다른 런(run_xyz)은 그대로.
+    await updatePendingRun('run_abc', {km: 8.4, shoe_id: 'shoe-2'});
+    const queue = await loadPendingRuns();
+    const abc = queue.find(r => r.localId === 'run_abc')!;
+    const xyz = queue.find(r => r.localId === 'run_xyz')!;
+    expect(abc.km).toBe(8.4);
+    expect(abc.shoe_id).toBe('shoe-2');
+    expect(xyz.km).toBe(3.1); // 다른 런 불변
+  });
+
+  test('updatePendingRun is a no-op when no queued run matches the localId', async () => {
+    await enqueuePendingRun(PENDING);
+    await updatePendingRun('run_nope', {km: 999});
+    const queue = await loadPendingRuns();
+    expect(queue).toHaveLength(1);
+    expect(queue[0].km).toBe(5.02); // 원래 값 유지
   });
 
   test('loadPendingRuns clamps a negative km from a tampered blob to 0', async () => {

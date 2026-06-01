@@ -83,6 +83,10 @@ export type Run = {
   cadence: number;
   bpm: number;
   elev: number;
+  // 편집 폼 프리필용 원본 값(표시 파생값과 별개). 거리는 dist(km)에 이미 있고,
+  // 날짜는 'YYYY-MM-DD' 저장 표준, 시간은 초(duration)로 보존한다.
+  runDate?: string;  // 'YYYY-MM-DD' (run_date 원본)
+  durationS?: number; // 소요 시간(초, duration 원본)
 };
 
 // Fallback used only when a screen is rendered without data (kept empty so no
