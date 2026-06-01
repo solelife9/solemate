@@ -36,7 +36,7 @@ import {
   sumKm, avgPaceLabel, totalTimeLabel, summaryOf, maxDayStreak,
   weekBuckets, monthBuckets, yearBuckets,
 } from './lib/stats';
-import {parseShoeName, shoeHealth, isRetired, DEFAULT_MAX_KM} from './lib/shoe';
+import {parseShoeName, shoeHealth, isRetired, DEFAULT_MAX_KM, clampMaxKm, reconcileShoeAlerts, KEEP_GOING_REPLACE} from './lib/shoe';
 import {recommendShoeId, lastWornDate} from './lib/shoeRecommend';
 import {
   saveSnapshot, loadSnapshot, clearSnapshot, isResumable,
@@ -200,6 +200,17 @@ function Main(){
     }catch{Alert.alert('오류','수정 실패');}
   }
 
+  // 신발별 수명(max_km) 조정 — 신발별 교체 임계의 분모. clampMaxKm로 범위를 보정한
+  // 뒤 낙관적으로 상태를 갱신(즉시 배지/링 반영)하고 백엔드에 PATCH한다. 수명을 올려
+  // 임계 아래로 내려간 신발은 다음 checkShoeAlerts에서 추적 집합에서 빠진다.
+  async function updateShoeMaxKm(id:string,maxKm:number){
+    const v=clampMaxKm(maxKm);
+    setShoes(prev=>prev.map(s=>s.id===id?{...s,max_km:v}:s));
+    try{
+      await fetch(API+'/api/shoes/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:userId,max_km:v})});
+    }catch{Alert.alert('오류','수명 수정 실패');}
+  }
+
   // 신발 삭제는 더 이상 런 기록을 동반삭제하지 않는다(iron law: 데이터 파괴 금지).
   // 런은 보존되어 기록/통계에 남고, 신발만 잠금장(locker)에서 제거된다. 신발을
   // 영구히 지우는 대신 보존이 목적이면 retireShoe(보관)를 쓴다.
@@ -304,19 +315,28 @@ function Main(){
   }
 
   // 신발 교체 알림: 설정(on/off · 임계값)을 따른다. 비활성이면 아예 묻지 않고,
-  // 활성이면 사용자가 정한 임계값(수명 사용률 %) 이상인 신발만 하루 1회 알린다.
+  // 활성이면 사용자가 정한 임계값(수명 사용률 %) 이상인 신발만 알린다.
   // 임계값은 km 절대값(shoeHealth.percentUsed) 기준 — 표시 단위와 무관.
+  //
+  // 중복 방지는 '하루 1회' 전역 게이트가 아니라 *신발별 추적*으로 한다(reconcileShoeAlerts).
+  // 이미 알린 신발 id 집합(shoe_alert_notified)을 들고, 임계 이상이면서 아직 안 알린
+  // 신발만 새로 알린다. 같은 신발의 반복 알림을 막으면서도, 같은 날 새로 임계에 도달한
+  // 다른 신발은 즉시 알린다. 임계 아래로 내려간 신발(수명 상향/교체)은 집합에서 빠진다.
   async function checkShoeAlerts(shoeList:any[],runList:any[],alertCfg:AlertSettings){
     try{
       if(!alertCfg||!alertCfg.enabled) return;
       if(!Array.isArray(shoeList)||!Array.isArray(runList)) return;
-      const lastAlert=await AsyncStorage.getItem('shoe_alert_date');
-      if(lastAlert===today()) return;
-      // 사용자 임계값 이상 사용한 신발만 알림. 보관된 신발은 제외.
+      // 사용자 임계값 이상 사용한 신발만 후보. 보관된 신발은 제외.
       const critical=shoeList.filter((s:any)=>!isRetired(s)&&shoeHealth(s,runList).percentUsed>=alertCfg.thresholdPct);
-      if(critical.length>0){
-        await AsyncStorage.setItem('shoe_alert_date',today());
-        Alert.alert('신발 교체 알림',critical.map((s:any)=>s.name).join(', ')+`\n\n수명의 ${alertCfg.thresholdPct}% 이상을 사용했습니다.\n새 신발을 준비하세요!`,[{text:'확인'}]);
+      const prevRaw=await AsyncStorage.getItem('shoe_alert_notified');
+      let prev:any[]=[];
+      try{const p=JSON.parse(prevRaw||'[]');if(Array.isArray(p)) prev=p;}catch{prev=[];}
+      const {toNotify,notified}=reconcileShoeAlerts(critical.map((s:any)=>s.id),prev);
+      // 임계 신발 집합이 바뀌면(새 알림이든, 내려간 신발 정리든) 추적값을 영속.
+      await AsyncStorage.setItem('shoe_alert_notified',JSON.stringify(notified));
+      if(toNotify.length>0){
+        const names=critical.filter((s:any)=>toNotify.some((id:any)=>String(id)===String(s.id))).map((s:any)=>s.name);
+        Alert.alert('신발 교체 알림',names.join(', ')+`\n\n수명의 ${alertCfg.thresholdPct}% 이상을 사용했습니다.\n${KEEP_GOING_REPLACE} — 새 신발을 준비하세요!`,[{text:'확인'}]);
       }
     }catch(e){console.log('checkShoeAlerts error',e);}
   }
@@ -521,7 +541,7 @@ function Main(){
             prices={prices} onSetPrice={setShoePrice} unit={unit}
             onAddShoe={()=>setOverlay('add')} onTab={setTab}
             onRename={updateShoeName} onDelete={deleteShoe} onRetire={retireShoe}
-            onStartRun={startFromShoeId}
+            onSetMaxKm={updateShoeMaxKm} onStartRun={startFromShoeId}
           />
         )}
         {tab===3&&(

@@ -95,3 +95,66 @@ export function shoeHealth(shoe: ShoeLike, runs: RunLike[] = []): ShoeHealth {
 export function isRetired(shoe: ShoeLike | null | undefined): boolean {
   return !!(shoe && shoe.retired);
 }
+
+// ─── Per-shoe lifespan (max_km) tuning ────────────────────────────
+// 신발별 수명(max_km)을 사용자가 직접 조정한다 = 신발별 교체 임계의 분모. 한 신발의
+// max_km을 올리면 같은 주행거리라도 percentUsed가 내려가 tier가 완화되고, 내리면
+// 더 빨리 주의/교체로 넘어간다. 비현실적 값으로 화면이 깨지지 않게 범위를 클램프한다.
+export const MIN_SHOE_MAX_KM = 100;
+export const MAX_SHOE_MAX_KM = 2000;
+export const SHOE_MAX_STEP_KM = 50;
+
+/** 신발 수명(max_km)을 허용 범위(km)로 클램프 + 정수 반올림. 비정상값은 기본 수명. */
+export function clampMaxKm(km: number): number {
+  if (!Number.isFinite(km)) return DEFAULT_MAX_KM;
+  return Math.max(MIN_SHOE_MAX_KM, Math.min(MAX_SHOE_MAX_KM, Math.round(km)));
+}
+
+// ─── Tier badge (앱내 배지: 홈/목록/상세 공용) ──────────────────────
+// shoeHealth의 condition을 화면 배지로 매핑한다. '양호'는 배지를 노출하지 않으므로
+// null(평상시 잡음 제거). 주의/교체만 색/문구를 띄워 교체 동선을 끌어올린다.
+export type BadgeTone = 'warn' | 'danger';
+export type TierBadge = {label: ShoeCondition; tone: BadgeTone};
+
+// keep-going 카피: 교체를 '손실'이 아니라 '부상 없이 계속'의 조건으로 프레이밍한다.
+export const KEEP_GOING_REPLACE = '지금 교체하면 부상 없이 계속';
+
+/** condition → 배지({label,tone}) | null. '양호'면 null(배지 없음). */
+export function tierBadge(condition: ShoeCondition): TierBadge | null {
+  if (condition === '교체') return {label: '교체', tone: 'danger'};
+  if (condition === '주의') return {label: '주의', tone: 'warn'};
+  return null;
+}
+
+// ─── 신발 교체 알림 추적(중복 알림 방지) ───────────────────────────
+// 기존 '하루 1회' 전역 게이트의 문제: ① 같은 신발이 매일 다시 알린다(중복) ② 한 신발이
+// 오늘 이미 알렸으면, 같은 날 임계에 새로 도달한 *다른* 신발은 묻혀버린다.
+// 올바른 추적 = 신발별. 이미 알린 신발 id 집합을 들고, 임계 이상이면서 아직 안 알린
+// 신발만 새로 알린다. 임계 아래로 내려간 신발(수명 상향/교체)은 집합에서 빠져, 추후
+// 진짜 재도달 시 다시 알릴 수 있다.
+export type ShoeId = string | number;
+
+/**
+ * 임계 이상 신발 id 목록(criticalIds)과 이미 알린 id 목록(alreadyNotified)을 받아,
+ * 새로 알릴 신발(toNotify)과 갱신된 알림-완료 집합(notified)을 반환한다. 순수함수 —
+ * 영속은 호출부(App)가 한다.
+ *   · toNotify  = 임계 이상이지만 아직 안 알린 신발(중복 없음)
+ *   · notified  = 현재 임계 이상인 모든 신발(아래로 내려간 신발은 자동 제외)
+ */
+export function reconcileShoeAlerts(
+  criticalIds: ShoeId[],
+  alreadyNotified: ShoeId[],
+): {toNotify: ShoeId[]; notified: ShoeId[]} {
+  const notifiedSet = new Set((alreadyNotified || []).map(String));
+  const seen = new Set<string>();
+  const toNotify: ShoeId[] = [];
+  const notified: ShoeId[] = [];
+  for (const id of criticalIds || []) {
+    const key = String(id);
+    if (seen.has(key)) continue; // 중복 id 방어
+    seen.add(key);
+    notified.push(id);
+    if (!notifiedSet.has(key)) toNotify.push(id);
+  }
+  return {toNotify, notified};
+}

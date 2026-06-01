@@ -8,9 +8,10 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import {
   BG, CARD, CARD_HI, ACCENT, DANGER, WARN, GOOD, T1, T2, T3, SEP, FONT, DISPLAY, Shoe, Run, SHOES,
 } from './theme';
-import { Ring, TabBar } from './primitives';
+import { Ring, TabBar, TierBadge } from './primitives';
 import { costPerKm } from './lib/shoeRecommend';
-import { Unit, displayNum } from './lib/units';
+import { Unit, displayNum, displayToKm } from './lib/units';
+import { clampMaxKm, KEEP_GOING_REPLACE, SHOE_MAX_STEP_KM, SHOE_REPLACE_PCT } from './lib/shoe';
 
 // lastWorn: 이 신발의 마지막 착용일(런에서 파생, 한국어 표기). 미착용이면 생략.
 export type ShoeTotals = { totalRuns: number; totalTime: string; lastWorn?: string };
@@ -24,7 +25,7 @@ const ringColor = (c: string) => (c === '교체' ? DANGER : c === '주의' ? WAR
 
 // ── shoe detail ───────────────────────────────────────────────────────────────
 function ShoeDetail({
-  shoe, idx, runs, totals, price, unit, onBack, onRename, onDelete, onRetire, onSetPrice, onStartRun,
+  shoe, idx, runs, totals, price, unit, onBack, onRename, onDelete, onRetire, onSetPrice, onSetMaxKm, onStartRun,
 }: {
   shoe: Shoe;
   idx: number;
@@ -37,6 +38,8 @@ function ShoeDetail({
   onDelete?: (id: string) => void;
   onRetire?: (id: string, retired: boolean) => void;
   onSetPrice?: (id: string, price: number) => void;
+  // 신발별 수명(max_km) 조정 — 교체 임계의 분모를 사용자가 직접 보정한다.
+  onSetMaxKm?: (id: string, maxKm: number) => void;
   // shoe-first 동선: 이 신발로 바로 런 시작(목표 설정 → 러닝). 신발 id를 넘긴다.
   onStartRun?: (id: string) => void;
 }) {
@@ -61,6 +64,21 @@ function ShoeDetail({
     if (v >= 0) onSetPrice?.(shoe.id, v);
   };
   const cpk = costPerKm(Number(priceInput) || 0, shoe.used);
+
+  // 신발 수명(max_km) 조정: ＋/− 50km씩 보정. 비율(percentUsed)은 km 절대값으로
+  // 계산하지만 표시·스텝은 단위를 따른다(goal 스테퍼와 동일). 임계 tier는 새 max로
+  // 즉시 재판정해, 수명을 올리면 교체→주의→양호로 완화되는 걸 바로 보여준다.
+  const usedKm = shoe.used;
+  const percentUsed = shoe.max > 0 ? (usedKm / shoe.max) * 100 : 0;
+  const maxStepDisplay = displayNum(SHOE_MAX_STEP_KM, unit, 0) || 1;
+  const stepMaxKm = (dir: 1 | -1) => {
+    if (!shoe.id) return;
+    const nextDisplay = displayNum(shoe.max, unit, 0) + dir * maxStepDisplay;
+    onSetMaxKm?.(shoe.id, clampMaxKm(displayToKm(nextDisplay, unit)));
+  };
+  // 교체 임계 도달까지 남은 거리(표시 단위). 임계 = max_km * SHOE_REPLACE_PCT/100.
+  const replaceAtKm = (shoe.max * SHOE_REPLACE_PCT) / 100;
+  const toReplaceKm = Math.max(0, replaceAtKm - usedKm);
 
   const saveName = () => {
     const v = name.trim();
@@ -107,6 +125,8 @@ function ShoeDetail({
           <View style={{ paddingHorizontal: 4 }}>
             <View style={s.row}>
               <Text style={s.dBrand}>{shoe.brand}</Text>
+              {/* 교체/주의 tier 배지 — 상세 헤더에서 즉시 눈에 띄게(양호는 미노출). */}
+              <TierBadge condition={shoe.condition} size="md" />
               {retired && <View style={s.retiredChip}><Text style={s.retiredChipText}>보관됨</Text></View>}
             </View>
             <Text style={s.dModel}>{shoe.model}</Text>
@@ -140,6 +160,47 @@ function ShoeDetail({
             </View>
           </View>
         </View>
+
+        {/* 신발별 수명(max_km) 조정 + 교체 임계 표시 — 신발별 교체 임계의 분모.
+            보관된 신발은 조정 동선에서 제외(기록은 그대로 유지). */}
+        {!retired && shoe.id && onSetMaxKm && (
+          <View style={[s.card, { padding: 18, gap: 14 }]}>
+            <View style={s.cpkHead}>
+              <Text style={s.dHeroLabel}>신발 수명</Text>
+              <TierBadge condition={shoe.condition} />
+            </View>
+            <View style={s.maxStepper}>
+              <Pressable
+                onPress={() => stepMaxKm(-1)}
+                hitSlop={6}
+                style={({ pressed }) => [s.maxStepBtn, pressed && { backgroundColor: CARD }]}
+              >
+                <Ionicons name="remove" size={20} color={T1} />
+              </Pressable>
+              <View style={s.maxStepVal}>
+                <Text style={s.maxStepNum}>{displayNum(shoe.max, unit, 0)}<Text style={s.maxStepUnit}> {unit}</Text></Text>
+                <Text style={s.maxStepCaption}>{Math.round(percentUsed)}% 사용</Text>
+              </View>
+              <Pressable
+                onPress={() => stepMaxKm(1)}
+                hitSlop={6}
+                style={({ pressed }) => [s.maxStepBtn, pressed && { backgroundColor: CARD }]}
+              >
+                <Ionicons name="add" size={20} color={T1} />
+              </Pressable>
+            </View>
+            {/* 임계 표시: 교체 tier(≥90%) 도달까지 남은 거리. 이미 교체 tier면 keep-going 카피. */}
+            <Text style={s.maxHint}>
+              {shoe.condition === '교체'
+                ? `교체 시점을 넘겼어요. ${KEEP_GOING_REPLACE}.`
+                : `교체 권장(${SHOE_REPLACE_PCT}%)까지 `}
+              {shoe.condition !== '교체' && (
+                <Text style={{ color: ACCENT }}>{displayNum(toReplaceKm, unit, 0)}{unit}</Text>
+              )}
+              {shoe.condition !== '교체' && ' 남음'}
+            </Text>
+          </View>
+        )}
 
         {/* totals */}
         <View style={[s.card, s.statRow]}>
@@ -233,6 +294,8 @@ function ShoeCard({ shoe, featured, onPress, onPlay, unit }: { shoe: Shoe; featu
         <View style={{ flex: 1, minWidth: 0 }}>
           <View style={s.row}>
             <Text style={s.shoeBrand}>{shoe.brand}</Text>
+            {/* 교체/주의 tier 배지 — 목록 카드에서 한눈에(양호는 미노출). */}
+            {!retired && <TierBadge condition={shoe.condition} />}
             {retired ? <View style={s.retiredChip}><Text style={s.retiredChipText}>보관됨</Text></View>
               : featured && <View style={s.usingChip}><Text style={s.usingChipText}>사용 중</Text></View>}
           </View>
@@ -257,7 +320,7 @@ function ShoeCard({ shoe, featured, onPress, onPlay, unit }: { shoe: Shoe; featu
 }
 
 export default function ShoesScreen({
-  shoes = SHOES, runs = [], totals = {}, activeIdx = 0, prices = {}, unit = 'km', onAddShoe, onTab, onRename, onDelete, onRetire, onSetPrice, onStartRun,
+  shoes = SHOES, runs = [], totals = {}, activeIdx = 0, prices = {}, unit = 'km', onAddShoe, onTab, onRename, onDelete, onRetire, onSetPrice, onSetMaxKm, onStartRun,
 }: {
   shoes?: Shoe[];
   runs?: Run[];
@@ -273,6 +336,8 @@ export default function ShoesScreen({
   onDelete?: (id: string) => void;
   onRetire?: (id: string, retired: boolean) => void;
   onSetPrice?: (id: string, price: number) => void;
+  // 신발별 수명(max_km) 조정 — 상세 화면 수명 스테퍼가 호출한다.
+  onSetMaxKm?: (id: string, maxKm: number) => void;
   // shoe-first 동선: 상세 CTA·락커 카드 play에서 해당 신발 id로 런 시작을 알린다.
   onStartRun?: (id: string) => void;
 }) {
@@ -293,6 +358,7 @@ export default function ShoesScreen({
         onDelete={onDelete}
         onRetire={onRetire}
         onSetPrice={onSetPrice}
+        onSetMaxKm={onSetMaxKm}
         onStartRun={onStartRun}
       />
     );
@@ -393,6 +459,15 @@ const s = StyleSheet.create({
   priceUnit: { color: T3, fontFamily: FONT, fontSize: 15 },
   cpkHint: { color: T3, fontFamily: FONT, fontSize: 11.5 },
   lastWorn: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500' },
+
+  // 신발 수명(max_km) 조정 스테퍼
+  maxStepper: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 14 },
+  maxStepBtn: { width: 46, height: 46, borderRadius: 14, backgroundColor: CARD_HI, alignItems: 'center', justifyContent: 'center' },
+  maxStepVal: { flex: 1, alignItems: 'center' },
+  maxStepNum: { color: T1, fontFamily: DISPLAY, fontSize: 28, letterSpacing: 0.3 },
+  maxStepUnit: { color: T3, fontFamily: FONT, fontSize: 13 },
+  maxStepCaption: { color: T3, fontFamily: FONT, fontSize: 11.5, fontWeight: '600', marginTop: 3 },
+  maxHint: { color: T3, fontFamily: FONT, fontSize: 12, lineHeight: 18 },
 
   runRow: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 15, paddingHorizontal: 18 },
   runRowBorder: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: SEP },

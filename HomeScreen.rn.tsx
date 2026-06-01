@@ -10,7 +10,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import {
   BG, CARD_DIM, CARD_HI, HERO_BG, ACCENT, DANGER, WARN, GOOD, T1, T2, T3, SEP, FONT, DISPLAY, Shoe, SHOES,
 } from './theme';
-import { Ring, TabBar } from './primitives';
+import { Ring, TabBar, TierBadge } from './primitives';
 import { Unit, displayNum } from './lib/units';
 
 export type WeekStats = { km: string; runs: number; pace: string };
@@ -101,6 +101,8 @@ function HeroShoe({ shoe, recommended, unit }: { shoe: Shoe; recommended?: boole
         <View style={{ flex: 1, minWidth: 0 }}>
           <View style={s.row}>
             <Text style={s.heroBrand}>{shoe.brand}</Text>
+            {/* 교체/주의 tier 배지 — 홈 히어로에서 가장 먼저 보이게(양호는 미노출). */}
+            <TierBadge condition={shoe.condition} />
             <View style={s.usingChip}><Text style={s.usingChipText}>사용 중</Text></View>
             {recommended && (
               <View style={s.recommendChip}>

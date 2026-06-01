@@ -6,7 +6,8 @@ import React, { useMemo } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Svg, { Circle, Defs, LinearGradient as SvgGradient, Stop } from 'react-native-svg';
-import { ACCENT, ACCENT_2, T3, FONT } from './theme';
+import { ACCENT, ACCENT_2, WARN, DANGER, T3, FONT } from './theme';
+import { tierBadge, ShoeCondition } from './lib/shoe';
 
 // ── Ring (arc progress, gradient sweep) ───────────────────────────────────────
 export function Ring({
@@ -35,6 +36,33 @@ export function Ring({
         />
       </Svg>
       {children}
+    </View>
+  );
+}
+
+// ── Tier badge (앱내 교체 배지: 홈/신발 목록/상세 공용) ───────────────────────
+// shoeHealth 주의/교체 tier만 노출한다(양호는 null → 평상시 잡음 제거). 색은 tone에
+// 따르고, 경고 아이콘 + 한국어 라벨('주의'|'교체')로 교체 동선을 끌어올린다. size로
+// 히어로(큰 배지)와 목록 칩(작은 배지)을 공용한다.
+export function TierBadge({ condition, size = 'sm' }: { condition: ShoeCondition; size?: 'sm' | 'md' }) {
+  const badge = tierBadge(condition);
+  if (!badge) return null;
+  const color = badge.tone === 'danger' ? DANGER : WARN;
+  const md = size === 'md';
+  return (
+    <View
+      testID={`tier-badge-${badge.label}`}
+      style={{
+        flexDirection: 'row', alignItems: 'center', gap: md ? 5 : 4, alignSelf: 'flex-start',
+        borderRadius: 999, paddingHorizontal: md ? 11 : 8, paddingVertical: md ? 5 : 3,
+        backgroundColor: badge.tone === 'danger' ? 'rgba(255,69,58,0.15)' : 'rgba(255,159,10,0.15)',
+        borderWidth: StyleSheet.hairlineWidth, borderColor: color,
+      }}
+    >
+      <Ionicons name="warning" size={md ? 13 : 11} color={color} />
+      <Text style={{ color, fontFamily: FONT, fontSize: md ? 12 : 10.5, fontWeight: '700', letterSpacing: 0.2 }}>
+        {badge.label}
+      </Text>
     </View>
   );
 }
