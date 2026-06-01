@@ -68,6 +68,7 @@ export type Shoe = {
   // Proportional wear tier — see lib/shoe.ts shoeHealth (audit#7).
   condition: '양호' | '주의' | '교체';
   retired?: boolean;    // archived: hidden from run pickers, records preserved
+  photoUri?: string;    // local image-picker URI (optional; absent = no photo)
 };
 
 export type Run = {

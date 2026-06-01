@@ -15,6 +15,7 @@
     "@react-navigation/bottom-tabs": "^7.15.9",
     "@react-navigation/native": "^7.2.2",
     "expo": "~56.0.0",
+    "expo-image-picker": "~17.0.0",
     "expo-location": "~56.0.15",
     "expo-task-manager": "~56.0.16",
     "react": "19.2.3",

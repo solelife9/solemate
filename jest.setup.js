@@ -61,6 +61,23 @@ jest.mock('expo-task-manager', () => {
   };
 });
 
+// ── expo-image-picker ────────────────────────────────────────────────────────
+// AddShoeScreen's photo attach. Default: permission granted, user cancels (no
+// photo). Per-test overrides drive the success / failure / denied paths.
+jest.mock('expo-image-picker', () => ({
+  __esModule: true,
+  MediaTypeOptions: {All: 'All', Videos: 'Videos', Images: 'Images'},
+  requestMediaLibraryPermissionsAsync: jest.fn(() =>
+    Promise.resolve({granted: true, status: 'granted'}),
+  ),
+  getMediaLibraryPermissionsAsync: jest.fn(() =>
+    Promise.resolve({granted: true, status: 'granted'}),
+  ),
+  launchImageLibraryAsync: jest.fn(() =>
+    Promise.resolve({canceled: true, assets: null}),
+  ),
+}));
+
 // ── react-native-sensors ─────────────────────────────────────────────────────
 // accelerometer.subscribe() returns a subscription with a no-op unsubscribe and
 // never emits, so step/cadence logic stays inert during tests.

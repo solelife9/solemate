@@ -1,17 +1,17 @@
 // ============================================================================
-// AddShoeScreen.rn.tsx — register a new shoe (brand chips, autocomplete, recommended life)
+// AddShoeScreen.rn.tsx — register a new shoe (brand chips, model autocomplete,
+// auto-filled recommended life with a '권장' badge, real photo attach)
 // ============================================================================
 import React, { useState } from 'react';
-import { View, Text, TextInput, ScrollView, Pressable, StyleSheet } from 'react-native';
+import { View, Text, TextInput, ScrollView, Pressable, Image, StyleSheet } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {
   BG, CARD, CARD_HI, ACCENT, T1, T2, T3, FONT, DISPLAY, Shoe,
 } from './theme';
 // 신발 모델 카탈로그·권장수명은 data/shoeModels(단일 소스)에서 가져온다.
 import { BRANDS, modelsForBrand, getRecommendedLifespanKm } from './data/shoeModels';
-
-// 권장 수명 빠른 선택값(km) — 카테고리 기준값. 모델 선택 시 자동 채워지며 직접 수정 가능.
-const MAX_PRESETS = [320, 400, 560, 700, 850];
+// 사진 첨부는 expo-image-picker 래퍼(lib/photo)를 통해 실제로 동작한다.
+import { pickShoePhoto } from './lib/photo';
 
 export default function AddShoeScreen({
   onClose, onSave,
@@ -19,8 +19,13 @@ export default function AddShoeScreen({
   const [brand, setBrand] = useState(BRANDS[0]);
   const [model, setModel] = useState('');
   const [focused, setFocused] = useState(false);
-  const [max, setMax] = useState(700);
+  // 권장 수명(km) — 모델 선택 시 자동 채워지며 사용자가 직접 수정 가능.
+  const [max, setMax] = useState(getRecommendedLifespanKm({ brand: BRANDS[0] }));
   const [used, setUsed] = useState('0');
+  // 사진: 선택 성공 시 uri, 실패 시 에러 플래그(저장은 비차단 — 사진 없이 진행 가능).
+  const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const [photoError, setPhotoError] = useState(false);
+  const [picking, setPicking] = useState(false);
 
   const q = model.trim().toLowerCase();
   const suggestions = modelsForBrand(brand)
@@ -29,10 +34,39 @@ export default function AddShoeScreen({
     .map((m) => [m, getRecommendedLifespanKm({ brand, model: m })] as [string, number]);
   const valid = model.trim().length > 0;
 
+  // 현재 brand+model 기준 권장 수명. max가 이 값과 같으면 '권장'(자동값), 다르면 사용자 수정값.
+  const recommendedKm = getRecommendedLifespanKm({ brand, model });
+  const isRecommended = max === recommendedKm;
+
   const pickModel = (name: string, km: number) => { setModel(name); setMax(km); setFocused(false); };
+  // 브랜드를 바꾸면 모델을 비우고 권장 수명도 새 브랜드 기준으로 되돌린다.
+  const pickBrand = (b: string) => { setBrand(b); setModel(''); setMax(getRecommendedLifespanKm({ brand: b })); };
+
+  const onPickPhoto = async () => {
+    if (picking) return;
+    setPicking(true);
+    setPhotoError(false);
+    try {
+      const picked = await pickShoePhoto();
+      if (picked) setPhotoUri(picked.uri);
+    } catch {
+      // 실패해도 저장을 막지 않는다 — 에러를 표시하고 재시도를 제안.
+      setPhotoError(true);
+    } finally {
+      setPicking(false);
+    }
+  };
+
   const save = () => {
     if (!valid) return;
-    onSave?.({ brand, model: model.trim(), max, used: Number(used) || 0, condition: '양호' });
+    onSave?.({
+      brand,
+      model: model.trim(),
+      max,
+      used: Number(used) || 0,
+      condition: '양호',
+      ...(photoUri ? { photoUri } : {}),
+    });
   };
 
   return (
@@ -47,11 +81,22 @@ export default function AddShoeScreen({
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: 20 }} keyboardShouldPersistTaps="handled">
-        {/* photo placeholder (wire to your image picker) */}
-        <View style={s.photo}>
-          <Ionicons name="camera-outline" size={26} color={T3} />
-          <Text style={s.photoText}>신발 사진</Text>
-        </View>
+        {/* photo — tap to pick from library; non-blocking on failure */}
+        <Pressable onPress={onPickPhoto} disabled={picking} style={({ pressed }) => [s.photo, pressed && s.pressed]}>
+          {photoUri ? (
+            <Image source={{ uri: photoUri }} style={s.photoImg} resizeMode="cover" />
+          ) : (
+            <>
+              <Ionicons name={photoError ? 'refresh-outline' : 'camera-outline'} size={26} color={photoError ? ACCENT : T3} />
+              <Text style={[s.photoText, photoError && { color: ACCENT }]}>
+                {picking ? '불러오는 중…' : photoError ? '다시 시도' : '신발 사진'}
+              </Text>
+            </>
+          )}
+        </Pressable>
+        {photoError && (
+          <Text style={s.photoErr}>사진을 불러오지 못했어요. 사진 없이 등록하거나 다시 시도하세요.</Text>
+        )}
 
         {/* brand */}
         <Text style={s.label}>브랜드</Text>
@@ -59,7 +104,7 @@ export default function AddShoeScreen({
           {BRANDS.map((b) => {
             const on = b === brand;
             return (
-              <Pressable key={b} onPress={() => { setBrand(b); setModel(''); }} style={[s.chip, on ? s.chipOn : s.chipOff]}>
+              <Pressable key={b} onPress={() => pickBrand(b)} style={[s.chip, on ? s.chipOn : s.chipOff]}>
                 <Text style={[s.chipText, { color: on ? ACCENT : T2 }]}>{b}</Text>
               </Pressable>
             );
@@ -91,20 +136,26 @@ export default function AddShoeScreen({
           )}
         </View>
 
-        {/* max life */}
-        <Text style={[s.label, { marginTop: 22 }]}>최대 수명</Text>
-        <View style={{ flexDirection: 'row', gap: 8 }}>
-          {MAX_PRESETS.map((m) => {
-            const on = max === m;
-            return (
-              <Pressable key={m} onPress={() => setMax(m)} style={[s.maxBtn, on ? s.chipOn : s.chipOff]}>
-                <Text style={[s.maxV, { color: on ? ACCENT : T2 }]}>{m}</Text>
-                <Text style={[s.maxU, { color: on ? ACCENT : T3 }]}>km</Text>
-              </Pressable>
-            );
-          })}
+        {/* max life — auto-filled recommendation, editable; '권장' badge when unchanged */}
+        <View style={s.maxHead}>
+          <Text style={[s.label, { paddingBottom: 0 }]}>최대 수명</Text>
+          {isRecommended && (
+            <View style={s.badge}>
+              <Ionicons name="sparkles-outline" size={11} color={ACCENT} />
+              <Text style={s.badgeText}>권장</Text>
+            </View>
+          )}
         </View>
-        <Text style={s.hint}>모델을 선택하면 권장 수명이 자동으로 맞춰져요. 직접 바꿀 수도 있어요.</Text>
+        <View style={s.usedRow}>
+          <TextInput
+            value={max ? String(max) : ''}
+            onChangeText={(v) => setMax(Number(v.replace(/[^0-9]/g, '')) || 0)}
+            keyboardType="number-pad"
+            style={s.usedInput}
+          />
+          <Text style={s.usedUnit}>km</Text>
+        </View>
+        <Text style={s.hint}>모델을 선택하면 권장 수명이 자동으로 채워져요. 직접 바꿀 수도 있어요.</Text>
 
         {/* current mileage */}
         <Text style={[s.label, { marginTop: 22 }]}>현재 누적 거리</Text>
@@ -138,8 +189,10 @@ const s = StyleSheet.create({
   iconBtn: { width: 38, height: 38, borderRadius: 999, backgroundColor: CARD_HI, borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(255,255,255,0.12)', alignItems: 'center', justifyContent: 'center' },
   navTitle: { color: T1, fontFamily: FONT, fontSize: 16, fontWeight: '500', letterSpacing: -0.2 },
 
-  photo: { alignSelf: 'center', width: 128, height: 128, borderRadius: 26, backgroundColor: '#1f1f22', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 22 },
+  photo: { alignSelf: 'center', width: 128, height: 128, borderRadius: 26, backgroundColor: '#1f1f22', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 10, overflow: 'hidden' },
+  photoImg: { width: '100%', height: '100%' },
   photoText: { color: T3, fontFamily: FONT, fontSize: 12 },
+  photoErr: { color: T3, fontFamily: FONT, fontSize: 11.5, textAlign: 'center', marginBottom: 16, paddingHorizontal: 12 },
 
   label: { color: T2, fontFamily: FONT, fontSize: 13, fontWeight: '500', letterSpacing: 0.2, paddingHorizontal: 4, paddingBottom: 10 },
 
@@ -155,9 +208,9 @@ const s = StyleSheet.create({
   sugModel: { flex: 1, color: T1, fontFamily: FONT, fontSize: 14.5, fontWeight: '500', letterSpacing: -0.2 },
   sugKm: { color: T3, fontFamily: FONT, fontSize: 11, fontWeight: '500' },
 
-  maxBtn: { flex: 1, height: 52, borderRadius: 14, alignItems: 'center', justifyContent: 'center', gap: 1 },
-  maxV: { fontFamily: DISPLAY, fontSize: 18 },
-  maxU: { fontFamily: FONT, fontSize: 9, fontWeight: '500' },
+  maxHead: { marginTop: 22, flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 4, paddingBottom: 10 },
+  badge: { flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: 9, paddingVertical: 3, borderRadius: 999, backgroundColor: 'rgba(255,101,0,0.14)', borderWidth: StyleSheet.hairlineWidth, borderColor: ACCENT },
+  badgeText: { color: ACCENT, fontFamily: FONT, fontSize: 11, fontWeight: '700', letterSpacing: 0.4 },
 
   hint: { color: T3, fontFamily: FONT, fontSize: 11.5, paddingHorizontal: 4, paddingTop: 9 },
 
