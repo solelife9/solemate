@@ -15,6 +15,8 @@ import {
   FONT as FP, DISPLAY as FH, SEP, Shoe, Run,
 } from './theme';
 import {Ring} from './primitives';
+import ErrorBoundary from './ErrorBoundary';
+// BackendShoe / BackendRun 은 types.d.ts 의 전역 ambient 인터페이스(import 불필요).
 import HomeScreen, {WeekStats} from './HomeScreen.rn';
 import HistoryScreen, {PeriodSummary, PeriodChart} from './HistoryScreen.rn';
 import ShoesScreen, {ShoeTotals} from './ShoesScreen.rn';
@@ -65,7 +67,9 @@ export default function App(){
   return(
     <SafeAreaProvider>
       <StatusBar barStyle="light-content" backgroundColor={BG}/>
-      <Main/>
+      <ErrorBoundary>
+        <Main/>
+      </ErrorBoundary>
     </SafeAreaProvider>
   );
 }
@@ -73,8 +77,8 @@ export default function App(){
 function Main(){
   const [tab,setTab]=useState(0);                 // 0 home · 1 history · 2 shoes · 3 profile
   const [userId,setUserId]=useState<string|null>(null);
-  const [shoes,setShoes]=useState<any[]>([]);
-  const [runs,setRuns]=useState<any[]>([]);
+  const [shoes,setShoes]=useState<BackendShoe[]>([]);
+  const [runs,setRuns]=useState<BackendRun[]>([]);
   const [overlay,setOverlay]=useState<'none'|'add'|'goal'|'run'>('none');
   const [pendingShoe,setPendingShoe]=useState<{id:string;name:string;ui:Shoe}|null>(null);
   const [activeRun,setActiveRun]=useState<{id:string;name:string;goalKm:number}|null>(null);
@@ -350,7 +354,7 @@ function Main(){
     {icon:'trophy',label:'100km',on:totalKm>=100},
     {icon:'flame',label:'7일 연속',on:streak>=7},
     {icon:'flash',label:'10회 달성',on:runs.length>=10},
-    {icon:'map',label:'하프',on:runs.some(r=>parseFloat(r.km)>=21.1)},
+    {icon:'map',label:'하프',on:runs.some(r=>parseFloat(String(r.km))>=21.1)},
   ];
 
   // ── actions ─────────────────────────────────────────────────
