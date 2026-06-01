@@ -164,7 +164,7 @@ function ShoeDetail({
         {/* 교체 내러티브(keep-going 보이스) — 교체 tier 도달 시, 교체를 '손실'이 아니라
             '부상 없이 계속 달리기'의 조건으로 프레이밍해 상세를 마감한다. KEEP_GOING_REPLACE
             (lib/shoe 단일 카피)에서 파생. */}
-        {shoe.condition === '교체' && (
+        {!retired && shoe.condition === '교체' && (
           <View style={s.keepGoing}>
             <Ionicons name="shield-checkmark" size={17} color={ACCENT} />
             <Text style={s.keepGoingText}>{`${KEEP_GOING_REPLACE} 달릴 수 있어요`}</Text>
@@ -199,10 +199,11 @@ function ShoeDetail({
                 <Ionicons name="add" size={20} color={T1} />
               </Pressable>
             </View>
-            {/* 임계 표시: 교체 tier(≥90%) 도달까지 남은 거리. 이미 교체 tier면 keep-going 카피. */}
+            {/* 임계 표시: 교체 tier(≥90%) 도달까지 남은 거리. 이미 교체 tier면 사실만
+                알리고, keep-going 카피는 위 배너가 단독으로 담당한다(중복 방지). */}
             <Text style={s.maxHint}>
               {shoe.condition === '교체'
-                ? `교체 시점을 넘겼어요. ${KEEP_GOING_REPLACE} 달릴 수 있어요.`
+                ? '교체 시점을 넘겼어요.'
                 : `교체 권장(${SHOE_REPLACE_PCT}%)까지 `}
               {shoe.condition !== '교체' && (
                 <Text style={{ color: ACCENT }}>{displayNum(toReplaceKm, unit, 0)}{unit}</Text>
