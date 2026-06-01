@@ -1,5 +1,9 @@
 // ============================================================================
-// HomeScreen.rn.tsx — SoleMate Home (hero shoe + center-snap picker)
+// HomeScreen.rn.tsx — Keego Home (hero shoe + center-snap picker)
+// 색/폰트는 전부 theme 토큰(BG/CARD/ACCENT/T1~T3/SEP/SPACE/RADIUS/TYPE/FONT/
+// DISPLAY)과 withAlpha 파생만 사용한다(raw hex/인라인 fontFamily 0). 워드마크는
+// KeegoWordmark primitive. shoe-first: 선택 신발(activeIdx 실값) 수명 링 히어로가
+// 주인공이고, 오렌지는 핵심 수치·CTA에만(라벨/보조텍스트는 T3 회색).
 // ============================================================================
 import React, { useRef, useState } from 'react';
 import {
@@ -8,9 +12,10 @@ import {
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {
-  BG, CARD_DIM, CARD_HI, HERO_BG, ACCENT, DANGER, WARN, GOOD, T1, T2, T3, SEP, FONT, DISPLAY, Shoe, SHOES,
+  BG, CARD_DIM, CARD_HI, HERO_BG, ACCENT, DANGER, WARN, GOOD, T1, T2, T3, SEP,
+  FONT, DISPLAY, SPACE, RADIUS, withAlpha, Shoe, SHOES,
 } from './theme';
-import { Ring, TabBar, TierBadge } from './primitives';
+import { Ring, TabBar, TierBadge, KeegoWordmark, Button, SectionTitle, conditionColor } from './primitives';
 import { Unit, displayNum } from './lib/units';
 
 export type WeekStats = { km: string; runs: number; pace: string };
@@ -21,14 +26,14 @@ export type GoalInfo = { km: number; pct: number; streak: number };
 const CARD_W = 138;
 const GAP = 10;
 
-// Proportional condition → color (shoeHealth tiers: 양호 / 주의 / 교체).
+// Proportional condition → ring color. 양호는 accent(주인공 톤), 주의/교체는 경고색.
+// 도트/조건 텍스트의 상태색은 primitives.conditionColor(양호=GOOD 녹색)를 재사용한다.
 const ringColor = (c: string) => (c === '교체' ? DANGER : c === '주의' ? WARN : ACCENT);
-const tierColor = (c: string) => (c === '교체' ? DANGER : c === '주의' ? WARN : GOOD);
 
 function TopBar({ onAddShoe }: { onAddShoe?: () => void }) {
   return (
     <View style={s.topbar}>
-      <Text style={s.wordmark}>SOLEMATE</Text>
+      <KeegoWordmark size={24} />
       <Pressable onPress={onAddShoe} style={({ pressed }) => [s.addBtn, pressed && s.pressed]}>
         <Text style={s.addBtnText}>신발 추가</Text>
       </Pressable>
@@ -57,6 +62,7 @@ function QuickStats({ week, unit }: { week: WeekStats; unit: Unit }) {
 // 주간 목표 진행 + 연속 러닝 스트릭(keep-going 동기). 달성률은 Ring(primitives 재사용)
 // 으로, 스트릭은 불꽃 칩으로 실데이터를 표시한다. pct는 0~999%(목표 초과 가능), 링은
 // 100%에서 가득 차고(달성 시 GOOD 색), 스트릭이 0이면 '오늘 시작' 유도 문구를 보여준다.
+// 라벨/부가 텍스트는 T3 회색(오렌지 절제), 강조는 링 수치와 활성 스트릭에만.
 function WeeklyGoal({ goal, unit }: { goal: GoalInfo; unit: Unit }) {
   const goalDisplay = displayNum(goal.km, unit, 0);
   const pct = Math.max(0, goal.pct);
@@ -66,7 +72,7 @@ function WeeklyGoal({ goal, unit }: { goal: GoalInfo; unit: Unit }) {
     <View style={s.goalCard}>
       <View style={s.goalInfo}>
         <View style={s.row}>
-          <Ionicons name="flag" size={13} color={ACCENT} />
+          <Ionicons name="flag" size={13} color={T3} />
           <Text style={s.goalLabel}>주간 목표</Text>
         </View>
         <Text style={s.goalSub}>목표 {goalDisplay}{unit} / 주</Text>
@@ -94,7 +100,7 @@ function HeroShoe({ shoe, recommended, unit }: { shoe: Shoe; recommended?: boole
   const used = displayNum(shoe.used, unit);
   const max = displayNum(shoe.max, unit);
   const ring = ringColor(shoe.condition);
-  const tier = tierColor(shoe.condition);
+  const tier = conditionColor(shoe.condition);
   return (
     <View style={s.hero}>
       <View style={s.heroTop}>
@@ -129,15 +135,6 @@ function HeroShoe({ shoe, recommended, unit }: { shoe: Shoe; recommended?: boole
         </View>
       </View>
     </View>
-  );
-}
-
-function StartButton({ onPress }: { onPress?: () => void }) {
-  return (
-    <Pressable onPress={onPress} style={({ pressed }) => [s.cta, pressed && s.pressed]}>
-      <Ionicons name="play" size={20} color="#fff" />
-      <Text style={s.ctaText}>러닝 시작</Text>
-    </Pressable>
   );
 }
 
@@ -247,21 +244,23 @@ export default function HomeScreen({
       </View>
       <QuickStats week={week} unit={unit} />
       {goal && (
-        <View style={{ paddingHorizontal: 20, marginTop: 16 }}>
+        <View style={{ paddingHorizontal: SPACE.xl, marginTop: SPACE.lg }}>
           <WeeklyGoal goal={goal} unit={unit} />
         </View>
       )}
       {active ? (
         <>
-          <View style={{ paddingHorizontal: 20, paddingTop: 30 }}>
+          {/* shoe-first 주인공: 선택 신발(idx 실값) 수명 링 히어로 카드 */}
+          <View style={{ paddingHorizontal: SPACE.xl, paddingTop: 30 }}>
             <HeroShoe shoe={active} recommended={isRecommended} unit={unit} />
           </View>
-          <View style={{ paddingHorizontal: 20, paddingTop: 7 }}>
-            <StartButton onPress={() => onStart?.(idx)} />
+          {/* 강조는 CTA에 — 선택 신발 idx로 러닝 시작 연결 */}
+          <View style={{ paddingHorizontal: SPACE.xl, paddingTop: SPACE.sm }}>
+            <Button label="러닝 시작" icon="play" onPress={() => onStart?.(idx)} />
           </View>
           {shoes.length > 1 && (
-            <View style={{ marginTop: 32 }}>
-              <Text style={s.sectionLabel}>내 러닝화</Text>
+            <View style={{ marginTop: SPACE.xxl }}>
+              <SectionTitle style={s.sectionLabel}>내 러닝화</SectionTitle>
               <ShoePicker shoes={shoes} activeIdx={idx} onSelect={select} unit={unit} />
             </View>
           )}
@@ -281,39 +280,38 @@ const s = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   baselineRow: { flexDirection: 'row', alignItems: 'flex-end' },
 
-  topbar: { paddingTop: 60, paddingHorizontal: 20, paddingBottom: 4, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  wordmark: { color: T1, fontFamily: DISPLAY, fontSize: 22, letterSpacing: 1 },
-  addBtn: { height: 36, paddingHorizontal: 18, borderRadius: 999, borderWidth: 1, borderColor: 'rgba(255,101,0,0.35)', backgroundColor: 'rgba(255,101,0,0.12)', alignItems: 'center', justifyContent: 'center' },
+  topbar: { paddingTop: 60, paddingHorizontal: SPACE.xl, paddingBottom: SPACE.xs, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  addBtn: { height: 36, paddingHorizontal: 18, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: withAlpha(ACCENT, 0.35), backgroundColor: withAlpha(ACCENT, 0.12), alignItems: 'center', justifyContent: 'center' },
   addBtnText: { color: ACCENT, fontFamily: FONT, fontSize: 13, fontWeight: '600' },
 
-  greetWrap: { paddingHorizontal: 20, paddingTop: 14 },
+  greetWrap: { paddingHorizontal: SPACE.xl, paddingTop: 14 },
   date: { color: T3, fontFamily: FONT, fontSize: 13, letterSpacing: 0.2 },
   greet: { color: T1, fontFamily: FONT, fontSize: 24, fontWeight: '400', letterSpacing: -0.4, marginTop: 6, lineHeight: 31 },
 
-  quick: { flexDirection: 'row', marginHorizontal: 20, marginTop: 18 },
+  quick: { flexDirection: 'row', marginHorizontal: SPACE.xl, marginTop: 18 },
   quickCell: { flex: 1 },
   quickDivider: { borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: SEP, paddingLeft: 14, alignItems: 'center' },
   quickV: { color: T1, fontFamily: DISPLAY, fontSize: 24, letterSpacing: 0.3 },
   quickU: { color: T3, fontFamily: FONT, fontSize: 11, fontWeight: '400' },
   quickL: { color: T3, fontFamily: FONT, fontSize: 11, marginTop: 4, letterSpacing: 0.2 },
 
-  goalCard: { backgroundColor: CARD_DIM, borderRadius: 18, borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(255,255,255,0.06)', padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  goalCard: { backgroundColor: CARD_DIM, borderRadius: 18, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.06), padding: SPACE.lg, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   goalInfo: { flex: 1, gap: 9, minWidth: 0 },
-  goalLabel: { color: T2, fontFamily: FONT, fontSize: 13, fontWeight: '600', letterSpacing: 0.2 },
+  goalLabel: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600', letterSpacing: 0.2 },
   goalSub: { color: T3, fontFamily: FONT, fontSize: 11.5, fontWeight: '500' },
-  streakChip: { flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start', borderRadius: 999, paddingHorizontal: 9, paddingVertical: 4 },
-  streakChipOn: { backgroundColor: 'rgba(255,101,0,0.14)', borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(255,101,0,0.4)' },
+  streakChip: { flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start', borderRadius: RADIUS.pill, paddingHorizontal: 9, paddingVertical: 4 },
+  streakChipOn: { backgroundColor: withAlpha(ACCENT, 0.14), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.4) },
   streakChipOff: { backgroundColor: CARD_HI },
   streakText: { fontFamily: FONT, fontSize: 12, fontWeight: '600', letterSpacing: 0.1 },
   goalRingPct: { color: T1, fontFamily: DISPLAY, fontSize: 19, letterSpacing: 0.2 },
   goalRingU: { color: T3, fontFamily: FONT, fontSize: 10 },
 
-  hero: { backgroundColor: HERO_BG, borderRadius: 24, borderWidth: 1, borderColor: ACCENT, padding: 24 },
+  hero: { backgroundColor: HERO_BG, borderRadius: RADIUS.xl, borderWidth: 1, borderColor: ACCENT, padding: 24 },
   heroTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 14 },
   heroBrand: { color: T3, fontFamily: FONT, fontSize: 11, fontWeight: '500', letterSpacing: 1.4 },
-  usingChip: { backgroundColor: 'rgba(255,101,0,0.14)', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2 },
+  usingChip: { backgroundColor: withAlpha(ACCENT, 0.14), borderRadius: 6, paddingHorizontal: SPACE.sm, paddingVertical: 2 },
   usingChipText: { color: ACCENT, fontFamily: FONT, fontSize: 10, fontWeight: '500' },
-  recommendChip: { flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: 'rgba(255,101,0,0.14)', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2, borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(255,101,0,0.45)' },
+  recommendChip: { flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: withAlpha(ACCENT, 0.14), borderRadius: 6, paddingHorizontal: SPACE.sm, paddingVertical: 2, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.45) },
   recommendChipText: { color: ACCENT, fontFamily: FONT, fontSize: 10, fontWeight: '600' },
   heroModel: { color: T1, fontFamily: FONT, fontSize: 23, fontWeight: '600', letterSpacing: -0.5, marginTop: 7, lineHeight: 28 },
   heroBottom: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 18 },
@@ -321,18 +319,15 @@ const s = StyleSheet.create({
   heroRemainU: { color: T2, fontFamily: FONT, fontSize: 16, marginLeft: 5, marginBottom: 6 },
   ringPct: { color: T1, fontFamily: DISPLAY, fontSize: 17 },
   ringPctU: { color: T3, fontFamily: FONT, fontSize: 9 },
-  dot: { width: 6, height: 6, borderRadius: 999 },
+  dot: { width: 6, height: 6, borderRadius: RADIUS.pill },
   condText: { fontFamily: FONT, fontSize: 13, fontWeight: '500' },
   condSub: { color: T3, fontFamily: FONT, fontSize: 12.5 },
 
-  cta: { height: 62, borderRadius: 20, backgroundColor: ACCENT, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
-  ctaText: { color: '#fff', fontFamily: FONT, fontSize: 18, fontWeight: '600', letterSpacing: 0.2 },
+  sectionLabel: { paddingHorizontal: SPACE.xl, paddingBottom: SPACE.md },
 
-  sectionLabel: { color: T2, fontFamily: FONT, fontSize: 14, fontWeight: '500', letterSpacing: 0.2, paddingHorizontal: 20, paddingBottom: 12 },
-
-  pcard: { width: CARD_W, height: CARD_W, borderRadius: 20, padding: 16, justifyContent: 'space-between' },
+  pcard: { width: CARD_W, height: CARD_W, borderRadius: RADIUS.lg, padding: SPACE.lg, justifyContent: 'space-between' },
   pcardActive: { backgroundColor: HERO_BG, borderWidth: 1, borderColor: ACCENT },
-  pcardIdle: { backgroundColor: CARD_DIM, borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(255,255,255,0.06)' },
+  pcardIdle: { backgroundColor: CARD_DIM, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.06) },
   pcardBrand: { flex: 1, color: T3, fontFamily: FONT, fontSize: 10, fontWeight: '500', letterSpacing: 1.2 },
   pcardRingPct: { color: T1, fontFamily: DISPLAY, fontSize: 11 },
   pcardModel: { fontFamily: FONT, fontSize: 14, fontWeight: '500', letterSpacing: -0.3, lineHeight: 18 },
@@ -342,6 +337,6 @@ const s = StyleSheet.create({
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 40, gap: 6 },
   emptyTitle: { color: T1, fontFamily: FONT, fontSize: 18, fontWeight: '600', marginTop: 14 },
   emptyText: { color: T3, fontFamily: FONT, fontSize: 13.5, textAlign: 'center', lineHeight: 20, marginTop: 2 },
-  emptyBtn: { marginTop: 18, height: 48, paddingHorizontal: 28, borderRadius: 999, backgroundColor: ACCENT, alignItems: 'center', justifyContent: 'center' },
-  emptyBtnText: { color: '#fff', fontFamily: FONT, fontSize: 15, fontWeight: '600' },
+  emptyBtn: { marginTop: 18, height: 48, paddingHorizontal: 28, borderRadius: RADIUS.pill, backgroundColor: ACCENT, alignItems: 'center', justifyContent: 'center' },
+  emptyBtnText: { color: T1, fontFamily: FONT, fontSize: 15, fontWeight: '600' },
 });
