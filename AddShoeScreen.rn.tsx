@@ -6,8 +6,9 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, ScrollView, Pressable, Image, StyleSheet } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {
-  BG, CARD, CARD_HI, ACCENT, T1, T2, T3, FONT, DISPLAY, Shoe,
+  BG, CARD, CARD_HI, ACCENT, T1, T2, T3, FONT, DISPLAY, withAlpha, Shoe,
 } from './theme';
+import { Pill } from './primitives';
 // 신발 모델 카탈로그·권장수명은 data/shoeModels(단일 소스)에서 가져온다.
 import { BRANDS, modelsForBrand, getRecommendedLifespanKm } from './data/shoeModels';
 // 사진 첨부는 expo-image-picker 래퍼(lib/photo)를 통해 실제로 동작한다.
@@ -139,12 +140,7 @@ export default function AddShoeScreen({
         {/* max life — auto-filled recommendation, editable; '권장' badge when unchanged */}
         <View style={s.maxHead}>
           <Text style={[s.label, { paddingBottom: 0 }]}>최대 수명</Text>
-          {isRecommended && (
-            <View style={s.badge}>
-              <Ionicons name="sparkles-outline" size={11} color={ACCENT} />
-              <Text style={s.badgeText}>권장</Text>
-            </View>
-          )}
+          {isRecommended && <Pill tone="accent" label="권장" icon="sparkles-outline" />}
         </View>
         <View style={s.usedRow}>
           <TextInput
@@ -186,10 +182,10 @@ const s = StyleSheet.create({
   pressed: { opacity: 0.85, transform: [{ scale: 0.98 }] },
 
   nav: { paddingTop: 60, paddingHorizontal: 18, paddingBottom: 6, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  iconBtn: { width: 38, height: 38, borderRadius: 999, backgroundColor: CARD_HI, borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(255,255,255,0.12)', alignItems: 'center', justifyContent: 'center' },
+  iconBtn: { width: 38, height: 38, borderRadius: 999, backgroundColor: CARD_HI, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.12), alignItems: 'center', justifyContent: 'center' },
   navTitle: { color: T1, fontFamily: FONT, fontSize: 16, fontWeight: '500', letterSpacing: -0.2 },
 
-  photo: { alignSelf: 'center', width: 128, height: 128, borderRadius: 26, backgroundColor: '#1f1f22', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 10, overflow: 'hidden' },
+  photo: { alignSelf: 'center', width: 128, height: 128, borderRadius: 26, backgroundColor: CARD_HI, alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 10, overflow: 'hidden' },
   photoImg: { width: '100%', height: '100%' },
   photoText: { color: T3, fontFamily: FONT, fontSize: 12 },
   photoErr: { color: T3, fontFamily: FONT, fontSize: 11.5, textAlign: 'center', marginBottom: 16, paddingHorizontal: 12 },
@@ -197,20 +193,18 @@ const s = StyleSheet.create({
   label: { color: T2, fontFamily: FONT, fontSize: 13, fontWeight: '500', letterSpacing: 0.2, paddingHorizontal: 4, paddingBottom: 10 },
 
   chip: { height: 40, paddingHorizontal: 18, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
-  chipOn: { borderWidth: 1, borderColor: ACCENT, backgroundColor: 'rgba(255,101,0,0.14)' },
-  chipOff: { borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(255,255,255,0.12)', backgroundColor: CARD_HI },
+  chipOn: { borderWidth: 1, borderColor: ACCENT, backgroundColor: withAlpha(ACCENT, 0.14) },
+  chipOff: { borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.12), backgroundColor: CARD_HI },
   chipText: { fontFamily: FONT, fontSize: 12.5, fontWeight: '600', letterSpacing: 0.6 },
 
   input: { backgroundColor: CARD, borderRadius: 18, color: T1, fontFamily: FONT, fontSize: 16, fontWeight: '500', paddingHorizontal: 18, paddingVertical: 16, letterSpacing: -0.2 },
-  dropdown: { position: 'absolute', top: 62, left: 0, right: 0, zIndex: 30, backgroundColor: CARD, borderRadius: 18, padding: 6, borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(255,255,255,0.12)' },
+  dropdown: { position: 'absolute', top: 62, left: 0, right: 0, zIndex: 30, backgroundColor: CARD, borderRadius: 18, padding: 6, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.12) },
   suggestion: { flexDirection: 'row', alignItems: 'center', gap: 9, paddingVertical: 11, paddingHorizontal: 12, borderRadius: 11 },
   sugBrand: { color: T3, fontFamily: FONT, fontSize: 10, fontWeight: '600', letterSpacing: 0.8 },
   sugModel: { flex: 1, color: T1, fontFamily: FONT, fontSize: 14.5, fontWeight: '500', letterSpacing: -0.2 },
   sugKm: { color: T3, fontFamily: FONT, fontSize: 11, fontWeight: '500' },
 
   maxHead: { marginTop: 22, flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 4, paddingBottom: 10 },
-  badge: { flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: 9, paddingVertical: 3, borderRadius: 999, backgroundColor: 'rgba(255,101,0,0.14)', borderWidth: StyleSheet.hairlineWidth, borderColor: ACCENT },
-  badgeText: { color: ACCENT, fontFamily: FONT, fontSize: 11, fontWeight: '700', letterSpacing: 0.4 },
 
   hint: { color: T3, fontFamily: FONT, fontSize: 11.5, paddingHorizontal: 4, paddingTop: 9 },
 
@@ -221,5 +215,5 @@ const s = StyleSheet.create({
   ctaWrap: { paddingHorizontal: 18, paddingTop: 6, paddingBottom: 34, backgroundColor: BG },
   cta: { height: 58, borderRadius: 18, backgroundColor: ACCENT, alignItems: 'center', justifyContent: 'center' },
   ctaDisabled: { backgroundColor: CARD_HI },
-  ctaText: { color: '#fff', fontFamily: FONT, fontSize: 17, fontWeight: '600', letterSpacing: 0.2 },
+  ctaText: { color: T1, fontFamily: FONT, fontSize: 17, fontWeight: '600', letterSpacing: 0.2 },
 });

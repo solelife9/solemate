@@ -1,0 +1,148 @@
+/**
+ * ShoesScreen.rn.tsx — behavioural tests for the Slice-3 Keego shoe locker/detail.
+ *
+ * Drives the real screen with props (no backend) and asserts OBSERVABLE output —
+ * what renders into the locker/detail and what the onStartRun callback receives —
+ * guarding the wiring that survived the token/Pill-primitive refactor:
+ *
+ *   1) Tapping a locker card opens its detail (model + durability ring %).
+ *   2) A 교체-tier shoe's detail closes with the keep-going narrative
+ *      ('지금 교체하면 부상 없이 계속 달릴 수 있어요') + the 교체 tier badge; a 양호
+ *      shoe shows neither (orange/narrative restraint).
+ *   3) shoe-first: the locker card play button calls onStartRun with the shoe id,
+ *      and the detail CTA '이 신발로 달리기' calls it too — the Pill swap didn't
+ *      drop the onPress wiring.
+ *   4) A retired shoe shows the '보관됨' Pill and hides the run CTA (records kept).
+ *
+ * @format
+ */
+
+import React from 'react';
+import ReactTestRenderer, {act} from 'react-test-renderer';
+import ShoesScreen from '../ShoesScreen.rn';
+import {Shoe, Run} from '../theme';
+
+function textOf(node: ReactTestRenderer.ReactTestInstance): string {
+  let out = '';
+  const walk = (n: any) => {
+    if (typeof n === 'string') {
+      out += n;
+      return;
+    }
+    if (!n || !n.children) return;
+    n.children.forEach(walk);
+  };
+  walk(node);
+  return out;
+}
+
+// Most-specific Pressable whose rendered text contains `needle`.
+function pressBy(root: ReactTestRenderer.ReactTestInstance, needle: string) {
+  const hits = root.findAll(
+    (n: any) => n && n.props && typeof n.props.onPress === 'function' && textOf(n).includes(needle),
+  );
+  hits.sort((a, b) => textOf(a).length - textOf(b).length);
+  if (!hits.length) throw new Error(`no pressable contains "${needle}"`);
+  return hits[0];
+}
+
+function byTestID(root: ReactTestRenderer.ReactTestInstance, id: string) {
+  return root.findAll((n: any) => n && n.props && n.props.testID === id);
+}
+
+function tap(node: ReactTestRenderer.ReactTestInstance) {
+  act(() => {
+    node.props.onPress();
+  });
+}
+
+function render(el: React.ReactElement) {
+  let r!: ReactTestRenderer.ReactTestRenderer;
+  act(() => {
+    r = ReactTestRenderer.create(el);
+  });
+  return r;
+}
+
+const SHOES: Shoe[] = [
+  {id: 's1', brand: 'Nike', model: 'Pegasus 41', used: 100, max: 500, condition: '양호'}, // 80%
+  {id: 's2', brand: 'Hoka', model: 'Clifton 9', used: 580, max: 600, condition: '교체'}, // 3% → 교체
+];
+
+const RUNS: Run[] = [];
+
+// ── 1) tapping a locker card opens its detail ─────────────────────────────────
+test('락커 카드를 누르면 그 신발의 상세(모델 + 내구도 링)가 열린다', () => {
+  const root = render(<ShoesScreen shoes={SHOES} runs={RUNS} />).root;
+
+  // locker 목록에는 두 신발 모델이 모두 보인다.
+  expect(textOf(root)).toContain('Pegasus 41');
+  expect(textOf(root)).toContain('Clifton 9');
+
+  tap(pressBy(root, 'Pegasus 41'));
+
+  // 상세로 진입 — 내구도 링 라벨('남은 수명')과 모델이 보인다.
+  const txt = textOf(root);
+  expect(txt).toContain('남은 수명');
+  expect(txt).toContain('Pegasus 41');
+});
+
+// ── 2) 교체-tier detail closes with the keep-going narrative + tier badge ──────
+describe('교체 내러티브(keep-going 보이스)는 교체 tier에서만 노출된다', () => {
+  test('교체 신발 상세 = keep-going 카피 + 교체 tier 배지', () => {
+    const root = render(<ShoesScreen shoes={SHOES} runs={RUNS} />).root;
+    tap(pressBy(root, 'Clifton 9'));
+
+    const txt = textOf(root);
+    expect(txt).toContain('지금 교체하면 부상 없이 계속 달릴 수 있어요');
+    // 교체 tier 배지(Pill 기반 TierBadge)가 상세 헤더에 뜬다.
+    expect(byTestID(root, 'tier-badge-교체').length).toBeGreaterThanOrEqual(1);
+  });
+
+  test('양호 신발 상세에는 keep-going 카피도 교체 배지도 없다', () => {
+    const root = render(<ShoesScreen shoes={SHOES} runs={RUNS} />).root;
+    tap(pressBy(root, 'Pegasus 41'));
+
+    const txt = textOf(root);
+    expect(txt).not.toContain('지금 교체하면 부상 없이 계속 달릴 수 있어요');
+    expect(byTestID(root, 'tier-badge-교체').length).toBe(0);
+  });
+});
+
+// ── 3) shoe-first wiring survives the Pill swap ───────────────────────────────
+test('락커 카드 play 버튼 → onStartRun(신발 id) 호출', () => {
+  const onStartRun = jest.fn();
+  const root = render(<ShoesScreen shoes={SHOES} runs={RUNS} onStartRun={onStartRun} />).root;
+
+  const play = byTestID(root, 'shoe-play-s1')[0];
+  expect(play).toBeTruthy();
+  tap(play);
+
+  expect(onStartRun).toHaveBeenCalledTimes(1);
+  expect(onStartRun).toHaveBeenCalledWith('s1');
+});
+
+test("상세 CTA '이 신발로 달리기' → onStartRun(신발 id) 호출", () => {
+  const onStartRun = jest.fn();
+  const root = render(<ShoesScreen shoes={SHOES} runs={RUNS} onStartRun={onStartRun} />).root;
+
+  tap(pressBy(root, 'Clifton 9')); // 상세 진입
+  tap(pressBy(root, '이 신발로 달리기'));
+
+  expect(onStartRun).toHaveBeenCalledWith('s2');
+});
+
+// ── 4) retired shoe: '보관됨' Pill + run CTA hidden, records preserved ─────────
+test('보관된 신발 상세 = 보관됨 배지 + 러닝 CTA 미노출(기록 보존)', () => {
+  const retired: Shoe[] = [
+    {id: 'r1', brand: 'Asics', model: 'Nimbus 26', used: 200, max: 600, condition: '양호', retired: true},
+  ];
+  const onStartRun = jest.fn();
+  const root = render(<ShoesScreen shoes={retired} runs={RUNS} onStartRun={onStartRun} />).root;
+
+  tap(pressBy(root, 'Nimbus 26'));
+
+  const txt = textOf(root);
+  expect(txt).toContain('보관됨');
+  expect(txt).not.toContain('이 신발로 달리기');
+});

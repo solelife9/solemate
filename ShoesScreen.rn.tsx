@@ -6,9 +6,9 @@ import React, { useState } from 'react';
 import { View, Text, ScrollView, Pressable, TextInput, Alert, StyleSheet } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {
-  BG, CARD, CARD_HI, ACCENT, DANGER, WARN, GOOD, T1, T2, T3, SEP, FONT, DISPLAY, Shoe, Run, SHOES,
+  BG, CARD, CARD_HI, ACCENT, DANGER, WARN, GOOD, T1, T2, T3, SEP, FONT, DISPLAY, withAlpha, Shoe, Run, SHOES,
 } from './theme';
-import { Ring, TabBar, TierBadge } from './primitives';
+import { Ring, TabBar, TierBadge, Pill } from './primitives';
 import { costPerKm } from './lib/shoeRecommend';
 import { Unit, displayNum, displayToKm } from './lib/units';
 import { clampMaxKm, KEEP_GOING_REPLACE, SHOE_MAX_STEP_KM, SHOE_REPLACE_PCT } from './lib/shoe';
@@ -118,7 +118,7 @@ function ShoeDetail({
             <TextInput value={name} onChangeText={setName} style={s.editInput} placeholderTextColor={T3} autoFocus />
             <View style={{ flexDirection: 'row', gap: 10 }}>
               <Pressable onPress={() => setEditing(false)} style={[s.editBtn, { backgroundColor: CARD_HI }]}><Text style={[s.editBtnTxt, { color: T2 }]}>취소</Text></Pressable>
-              <Pressable onPress={saveName} style={[s.editBtn, { backgroundColor: ACCENT }]}><Text style={[s.editBtnTxt, { color: '#fff' }]}>저장</Text></Pressable>
+              <Pressable onPress={saveName} style={[s.editBtn, { backgroundColor: ACCENT }]}><Text style={[s.editBtnTxt, { color: T1 }]}>저장</Text></Pressable>
             </View>
           </View>
         ) : (
@@ -127,7 +127,7 @@ function ShoeDetail({
               <Text style={s.dBrand}>{shoe.brand}</Text>
               {/* 교체/주의 tier 배지 — 상세 헤더에서 즉시 눈에 띄게(양호는 미노출). */}
               <TierBadge condition={shoe.condition} size="md" />
-              {retired && <View style={s.retiredChip}><Text style={s.retiredChipText}>보관됨</Text></View>}
+              {retired && <Pill tone="dim" label="보관됨" />}
             </View>
             <Text style={s.dModel}>{shoe.model}</Text>
           </View>
@@ -137,7 +137,7 @@ function ShoeDetail({
             제외되므로 숨긴다(런 기록은 그대로 보존·표시). */}
         {!retired && shoe.id && onStartRun && (
           <Pressable onPress={() => onStartRun(shoe.id!)} style={s.runCta}>
-            <Ionicons name="play" size={18} color="#fff" />
+            <Ionicons name="play" size={18} color={T1} />
             <Text style={s.runCtaText}>이 신발로 달리기</Text>
           </Pressable>
         )}
@@ -160,6 +160,16 @@ function ShoeDetail({
             </View>
           </View>
         </View>
+
+        {/* 교체 내러티브(keep-going 보이스) — 교체 tier 도달 시, 교체를 '손실'이 아니라
+            '부상 없이 계속 달리기'의 조건으로 프레이밍해 상세를 마감한다. KEEP_GOING_REPLACE
+            (lib/shoe 단일 카피)에서 파생. */}
+        {shoe.condition === '교체' && (
+          <View style={s.keepGoing}>
+            <Ionicons name="shield-checkmark" size={17} color={ACCENT} />
+            <Text style={s.keepGoingText}>{`${KEEP_GOING_REPLACE} 달릴 수 있어요`}</Text>
+          </View>
+        )}
 
         {/* 신발별 수명(max_km) 조정 + 교체 임계 표시 — 신발별 교체 임계의 분모.
             보관된 신발은 조정 동선에서 제외(기록은 그대로 유지). */}
@@ -192,7 +202,7 @@ function ShoeDetail({
             {/* 임계 표시: 교체 tier(≥90%) 도달까지 남은 거리. 이미 교체 tier면 keep-going 카피. */}
             <Text style={s.maxHint}>
               {shoe.condition === '교체'
-                ? `교체 시점을 넘겼어요. ${KEEP_GOING_REPLACE}.`
+                ? `교체 시점을 넘겼어요. ${KEEP_GOING_REPLACE} 달릴 수 있어요.`
                 : `교체 권장(${SHOE_REPLACE_PCT}%)까지 `}
               {shoe.condition !== '교체' && (
                 <Text style={{ color: ACCENT }}>{displayNum(toReplaceKm, unit, 0)}{unit}</Text>
@@ -296,8 +306,8 @@ function ShoeCard({ shoe, featured, onPress, onPlay, unit }: { shoe: Shoe; featu
             <Text style={s.shoeBrand}>{shoe.brand}</Text>
             {/* 교체/주의 tier 배지 — 목록 카드에서 한눈에(양호는 미노출). */}
             {!retired && <TierBadge condition={shoe.condition} />}
-            {retired ? <View style={s.retiredChip}><Text style={s.retiredChipText}>보관됨</Text></View>
-              : featured && <View style={s.usingChip}><Text style={s.usingChipText}>사용 중</Text></View>}
+            {retired ? <Pill tone="dim" label="보관됨" />
+              : featured && <Pill tone="accent" label="사용 중" />}
           </View>
           <Text style={s.shoeModel} numberOfLines={1}>{shoe.model}</Text>
           <Text style={s.shoeMeta}>{usedDisp} / {maxDisp} {unit} · <Text style={{ color: condColor(shoe.condition) }}>{shoe.condition}</Text></Text>
@@ -305,8 +315,8 @@ function ShoeCard({ shoe, featured, onPress, onPlay, unit }: { shoe: Shoe; featu
         {/* play 어포던스: 카드에서 바로 이 신발로 런 시작(shoe-first). 카드 자체 탭은
             상세로 가므로, 시작은 별도 버튼으로 분리한다. 보관된 신발엔 노출하지 않는다. */}
         {!retired && onPlay ? (
-          <Pressable onPress={onPlay} hitSlop={10} style={s.cardPlay}>
-            <Ionicons name="play" size={16} color="#fff" />
+          <Pressable onPress={onPlay} hitSlop={10} style={s.cardPlay} testID={shoe.id ? `shoe-play-${shoe.id}` : undefined}>
+            <Ionicons name="play" size={16} color={T1} />
           </Pressable>
         ) : (
           <Ionicons name="chevron-forward" size={16} color={T3} />
@@ -407,31 +417,31 @@ const s = StyleSheet.create({
 
   shoeCard: { backgroundColor: CARD, borderRadius: 22, padding: 22 },
   shoeCardFeatured: { borderWidth: 1, borderColor: ACCENT },
-  shoeCardIdle: { borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(255,255,255,0.05)' },
-  shoeCardRetired: { opacity: 0.55, borderColor: 'rgba(255,255,255,0.05)' },
-  retiredChip: { backgroundColor: CARD_HI, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2 },
-  retiredChipText: { color: T3, fontFamily: FONT, fontSize: 10, fontWeight: '500', letterSpacing: 0.4 },
+  shoeCardIdle: { borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.05) },
+  shoeCardRetired: { opacity: 0.55, borderColor: withAlpha(T1, 0.05) },
   shoeRingPct: { color: T1, fontFamily: DISPLAY, fontSize: 17 },
   shoeRingPctU: { color: T3, fontFamily: FONT, fontSize: 9 },
   shoeBrand: { color: T3, fontFamily: FONT, fontSize: 11, fontWeight: '500', letterSpacing: 1.3 },
-  usingChip: { backgroundColor: 'rgba(255,101,0,0.14)', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2 },
-  usingChipText: { color: ACCENT, fontFamily: FONT, fontSize: 10, fontWeight: '500' },
   shoeModel: { color: T1, fontFamily: FONT, fontSize: 18, fontWeight: '500', letterSpacing: -0.3, marginTop: 3 },
   shoeMeta: { color: T3, fontFamily: FONT, fontSize: 12.5, fontWeight: '600', marginTop: 5 },
   cardPlay: { width: 38, height: 38, borderRadius: 999, backgroundColor: ACCENT, alignItems: 'center', justifyContent: 'center' },
   track: { height: 6, borderRadius: 999, backgroundColor: CARD_HI, overflow: 'hidden', marginTop: 16 },
   trackFill: { height: '100%', borderRadius: 999 },
 
-  addCard: { borderRadius: 22, borderWidth: 1.5, borderStyle: 'dashed', borderColor: 'rgba(255,255,255,0.12)', padding: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  addCard: { borderRadius: 22, borderWidth: 1.5, borderStyle: 'dashed', borderColor: withAlpha(T1, 0.12), padding: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   addText: { color: T3, fontFamily: FONT, fontSize: 15, fontWeight: '500' },
 
   // detail
   detailNav: { paddingTop: 60, paddingHorizontal: 16, paddingBottom: 6, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  iconBtn: { width: 38, height: 38, borderRadius: 999, backgroundColor: CARD_HI, borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(255,255,255,0.12)', alignItems: 'center', justifyContent: 'center' },
+  iconBtn: { width: 38, height: 38, borderRadius: 999, backgroundColor: CARD_HI, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.12), alignItems: 'center', justifyContent: 'center' },
   dBrand: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500', letterSpacing: 1.6 },
   dModel: { color: T1, fontFamily: FONT, fontSize: 27, fontWeight: '500', letterSpacing: -0.6, marginTop: 4 },
   runCta: { height: 54, borderRadius: 18, backgroundColor: ACCENT, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9 },
-  runCtaText: { color: '#fff', fontFamily: FONT, fontSize: 16, fontWeight: '600', letterSpacing: -0.2 },
+  runCtaText: { color: T1, fontFamily: FONT, fontSize: 16, fontWeight: '600', letterSpacing: -0.2 },
+
+  // 교체 내러티브 배너(keep-going 보이스) — accent 톤 반투명 표면(withAlpha 파생).
+  keepGoing: { flexDirection: 'row', alignItems: 'center', gap: 9, backgroundColor: withAlpha(ACCENT, 0.12), borderRadius: 16, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.35), paddingHorizontal: 16, paddingVertical: 13 },
+  keepGoingText: { flex: 1, color: ACCENT, fontFamily: FONT, fontSize: 13, fontWeight: '600', letterSpacing: -0.1, lineHeight: 18 },
   dHero: { padding: 24, flexDirection: 'row', alignItems: 'center', gap: 22 },
   dHeroPct: { color: T1, fontFamily: DISPLAY, fontSize: 30 },
   dHeroPctU: { color: T3, fontFamily: FONT, fontSize: 13 },
