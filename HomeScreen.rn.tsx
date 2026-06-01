@@ -8,11 +8,14 @@ import {
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {
-  BG, CARD_DIM, HERO_BG, ACCENT, DANGER, WARN, GOOD, T1, T2, T3, SEP, FONT, DISPLAY, Shoe, SHOES,
+  BG, CARD_DIM, CARD_HI, HERO_BG, ACCENT, DANGER, WARN, GOOD, T1, T2, T3, SEP, FONT, DISPLAY, Shoe, SHOES,
 } from './theme';
 import { Ring, TabBar } from './primitives';
+import { Unit, displayNum } from './lib/units';
 
 export type WeekStats = { km: string; runs: number; pace: string };
+// 주간 목표(거리는 km 표준, pct는 이번 주 달성률 %). 목표 설정 행이 구동한다.
+export type GoalInfo = { km: number; pct: number };
 
 const CARD_W = 138;
 const GAP = 10;
@@ -32,9 +35,9 @@ function TopBar({ onAddShoe }: { onAddShoe?: () => void }) {
   );
 }
 
-function QuickStats({ week }: { week: WeekStats }) {
+function QuickStats({ week, unit }: { week: WeekStats; unit: Unit }) {
   const items = [
-    { v: week.km, u: 'km', l: '이번 주' },
+    { v: week.km, u: unit, l: '이번 주' },
     { v: String(week.runs), u: '회', l: '러닝' },
     { v: week.pace, u: '', l: '평균 페이스' },
   ];
@@ -50,9 +53,34 @@ function QuickStats({ week }: { week: WeekStats }) {
   );
 }
 
-function HeroShoe({ shoe, recommended }: { shoe: Shoe; recommended?: boolean }) {
-  const remain = Math.max(0, shoe.max - shoe.used);
-  const pct = shoe.max > 0 ? remain / shoe.max : 0;
+// 주간 목표 진행: 목표 거리(표시 단위) 대비 달성률 + 진행 바. pct는 0~999%로 표시.
+function WeeklyGoal({ goal, unit }: { goal: GoalInfo; unit: Unit }) {
+  const goalDisplay = displayNum(goal.km, unit, 0);
+  const pct = Math.max(0, goal.pct);
+  return (
+    <View style={s.goalCard}>
+      <View style={s.goalHead}>
+        <View style={s.row}>
+          <Ionicons name="flag" size={13} color={ACCENT} />
+          <Text style={s.goalLabel}>주간 목표</Text>
+        </View>
+        <Text style={s.goalPct}>{pct}%</Text>
+      </View>
+      <View style={s.goalTrack}>
+        <View style={[s.goalFill, { width: `${Math.min(100, pct)}%` }]} />
+      </View>
+      <Text style={s.goalSub}>목표 {goalDisplay}{unit} / 주</Text>
+    </View>
+  );
+}
+
+function HeroShoe({ shoe, recommended, unit }: { shoe: Shoe; recommended?: boolean; unit: Unit }) {
+  // 비율(pct)은 km 절대값으로 계산(단위 불변), 표시 숫자만 표시 단위로 환산한다.
+  const remainKm = Math.max(0, shoe.max - shoe.used);
+  const pct = shoe.max > 0 ? remainKm / shoe.max : 0;
+  const remain = displayNum(remainKm, unit);
+  const used = displayNum(shoe.used, unit);
+  const max = displayNum(shoe.max, unit);
   const ring = ringColor(shoe.condition);
   const tier = tierColor(shoe.condition);
   return (
@@ -78,12 +106,12 @@ function HeroShoe({ shoe, recommended }: { shoe: Shoe; recommended?: boolean }) 
       <View style={s.heroBottom}>
         <View style={s.baselineRow}>
           <Text style={s.heroRemain}>{remain}</Text>
-          <Text style={s.heroRemainU}>km 남음</Text>
+          <Text style={s.heroRemainU}>{unit} 남음</Text>
         </View>
         <View style={s.row}>
           <View style={[s.dot, { backgroundColor: tier }]} />
           <Text style={[s.condText, { color: tier }]}>{shoe.condition}</Text>
-          <Text style={s.condSub}>· {shoe.used}/{shoe.max}km</Text>
+          <Text style={s.condSub}>· {used}/{max}{unit}</Text>
         </View>
       </View>
     </View>
@@ -99,9 +127,10 @@ function StartButton({ onPress }: { onPress?: () => void }) {
   );
 }
 
-function PickerCard({ shoe, active, onPress }: { shoe: Shoe; active: boolean; onPress: () => void }) {
-  const remain = Math.max(0, shoe.max - shoe.used);
-  const pct = shoe.max > 0 ? remain / shoe.max : 0;
+function PickerCard({ shoe, active, onPress, unit }: { shoe: Shoe; active: boolean; onPress: () => void; unit: Unit }) {
+  const remainKm = Math.max(0, shoe.max - shoe.used);
+  const pct = shoe.max > 0 ? remainKm / shoe.max : 0;
+  const remain = displayNum(remainKm, unit);
   const ring = ringColor(shoe.condition);
   return (
     <Pressable
@@ -118,14 +147,14 @@ function PickerCard({ shoe, active, onPress }: { shoe: Shoe; active: boolean; on
         <Text style={[s.pcardModel, { color: active ? T1 : T2 }]} numberOfLines={2}>{shoe.model}</Text>
         <View style={[s.baselineRow, { marginTop: 6 }]}>
           <Text style={[s.pcardRemain, { color: active ? T1 : T2 }]}>{remain}</Text>
-          <Text style={s.pcardRemainU}>km 남음</Text>
+          <Text style={s.pcardRemainU}>{unit} 남음</Text>
         </View>
       </View>
     </Pressable>
   );
 }
 
-function ShoePicker({ shoes, activeIdx, onSelect }: { shoes: Shoe[]; activeIdx: number; onSelect: (i: number) => void }) {
+function ShoePicker({ shoes, activeIdx, onSelect, unit }: { shoes: Shoe[]; activeIdx: number; onSelect: (i: number) => void; unit: Unit }) {
   const ref = useRef<ScrollView>(null);
   const [pad, setPad] = useState(150);
 
@@ -148,7 +177,7 @@ function ShoePicker({ shoes, activeIdx, onSelect }: { shoes: Shoe[]; activeIdx: 
       contentContainerStyle={{ paddingHorizontal: pad, gap: GAP }}
     >
       {shoes.map((shoe, i) => (
-        <PickerCard key={i} shoe={shoe} active={i === activeIdx} onPress={() => { onSelect(i); scrollTo(i); }} />
+        <PickerCard key={i} shoe={shoe} active={i === activeIdx} unit={unit} onPress={() => { onSelect(i); scrollTo(i); }} />
       ))}
     </ScrollView>
   );
@@ -169,7 +198,7 @@ function EmptyHome({ onAddShoe }: { onAddShoe?: () => void }) {
 
 export default function HomeScreen({
   shoes = SHOES, week = { km: '0', runs: 0, pace: '--' }, dateLabel = '', onStart, onAddShoe, onTab,
-  activeIdx: activeIdxProp, onSelect, recommendedIdx,
+  activeIdx: activeIdxProp, onSelect, recommendedIdx, unit = 'km', goal,
 }: {
   shoes?: Shoe[];
   week?: WeekStats;
@@ -183,6 +212,9 @@ export default function HomeScreen({
   onSelect?: (i: number) => void;
   // 휴식 로테이션 추천 신발의 인덱스. 히어로가 이 신발이면 '오늘은 이 신발' 칩 표시.
   recommendedIdx?: number;
+  // 표시 단위(km|mi)와 주간 목표 진행(설정 화면에서 구동). 둘 다 표시 전용.
+  unit?: Unit;
+  goal?: GoalInfo;
 }) {
   const [internalIdx, setInternalIdx] = useState(0);
   const controlled = activeIdxProp != null && typeof onSelect === 'function';
@@ -199,11 +231,16 @@ export default function HomeScreen({
         {!!dateLabel && <Text style={s.date}>{dateLabel}</Text>}
         <Text style={s.greet}>오늘은 어떤 신발로{'\n'}달려볼까요?</Text>
       </View>
-      <QuickStats week={week} />
+      <QuickStats week={week} unit={unit} />
+      {goal && (
+        <View style={{ paddingHorizontal: 20, marginTop: 16 }}>
+          <WeeklyGoal goal={goal} unit={unit} />
+        </View>
+      )}
       {active ? (
         <>
           <View style={{ paddingHorizontal: 20, paddingTop: 30 }}>
-            <HeroShoe shoe={active} recommended={isRecommended} />
+            <HeroShoe shoe={active} recommended={isRecommended} unit={unit} />
           </View>
           <View style={{ paddingHorizontal: 20, paddingTop: 7 }}>
             <StartButton onPress={() => onStart?.(idx)} />
@@ -211,7 +248,7 @@ export default function HomeScreen({
           {shoes.length > 1 && (
             <View style={{ marginTop: 32 }}>
               <Text style={s.sectionLabel}>내 러닝화</Text>
-              <ShoePicker shoes={shoes} activeIdx={idx} onSelect={select} />
+              <ShoePicker shoes={shoes} activeIdx={idx} onSelect={select} unit={unit} />
             </View>
           )}
           <View style={{ flex: 1 }} />
@@ -245,6 +282,14 @@ const s = StyleSheet.create({
   quickV: { color: T1, fontFamily: DISPLAY, fontSize: 24, letterSpacing: 0.3 },
   quickU: { color: T3, fontFamily: FONT, fontSize: 11, fontWeight: '400' },
   quickL: { color: T3, fontFamily: FONT, fontSize: 11, marginTop: 4, letterSpacing: 0.2 },
+
+  goalCard: { backgroundColor: CARD_DIM, borderRadius: 18, borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(255,255,255,0.06)', padding: 16, gap: 10 },
+  goalHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  goalLabel: { color: T2, fontFamily: FONT, fontSize: 13, fontWeight: '600', letterSpacing: 0.2 },
+  goalPct: { color: ACCENT, fontFamily: DISPLAY, fontSize: 20, letterSpacing: 0.3 },
+  goalTrack: { height: 7, borderRadius: 999, backgroundColor: CARD_HI, overflow: 'hidden' },
+  goalFill: { height: '100%', borderRadius: 999, backgroundColor: ACCENT },
+  goalSub: { color: T3, fontFamily: FONT, fontSize: 11.5, fontWeight: '500' },
 
   hero: { backgroundColor: HERO_BG, borderRadius: 24, borderWidth: 1, borderColor: ACCENT, padding: 24 },
   heroTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 14 },

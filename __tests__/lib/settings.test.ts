@@ -1,0 +1,79 @@
+// lib/settings 순수 파서 + AsyncStorage 라운드트립 테스트.
+// 관찰 가능한 동작: 손상/누락 영속값은 기본값으로 정규화되고, save→load가 값을
+// 보존하며, 범위 밖 값은 저장 시점에 클램프된다(잘못된 설정이 화면을 깨지 않음).
+
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {
+  parseUnit, parseGoal, parseAlerts, clampGoal, clampThreshold,
+  loadSettings, saveUnit, saveGoal, saveAlerts,
+  K_GOAL, DEFAULT_SETTINGS, DEFAULT_ALERTS,
+} from '../../lib/settings';
+
+describe('settings parsers', () => {
+  test('parseUnit: mi는 명시적일 때만, 그 외(누락/손상)는 km', () => {
+    expect(parseUnit('mi')).toBe('mi');
+    expect(parseUnit('km')).toBe('km');
+    expect(parseUnit(null)).toBe('km');
+    expect(parseUnit('garbage')).toBe('km');
+  });
+
+  test('parseGoal: 양수만 채택, 비정상은 기본값, 범위는 클램프', () => {
+    expect(parseGoal('30')).toBe(30);
+    expect(parseGoal(null)).toBe(DEFAULT_SETTINGS.goalWeeklyKm);
+    expect(parseGoal('0')).toBe(DEFAULT_SETTINGS.goalWeeklyKm);
+    expect(parseGoal('-5')).toBe(DEFAULT_SETTINGS.goalWeeklyKm);
+    expect(parseGoal('abc')).toBe(DEFAULT_SETTINGS.goalWeeklyKm);
+    expect(parseGoal('99999')).toBe(500); // MAX_GOAL_KM 클램프
+  });
+
+  test('clampGoal: 1..500 정수', () => {
+    expect(clampGoal(30)).toBe(30);
+    expect(clampGoal(0)).toBe(1);
+    expect(clampGoal(10000)).toBe(500);
+    expect(clampGoal(29.6)).toBe(30);
+  });
+
+  test('clampThreshold: 50..100 정수', () => {
+    expect(clampThreshold(90)).toBe(90);
+    expect(clampThreshold(10)).toBe(50);
+    expect(clampThreshold(200)).toBe(100);
+    expect(clampThreshold(NaN)).toBe(DEFAULT_ALERTS.thresholdPct);
+  });
+
+  test('parseAlerts: 손상/누락 → 기본값, 유효값은 정규화', () => {
+    expect(parseAlerts(null)).toEqual(DEFAULT_ALERTS);
+    expect(parseAlerts('not json')).toEqual(DEFAULT_ALERTS);
+    expect(parseAlerts(JSON.stringify({enabled: false, thresholdPct: 75}))).toEqual({enabled: false, thresholdPct: 75});
+    // 범위 밖 임계값은 클램프(5 → 50)
+    expect(parseAlerts(JSON.stringify({enabled: false, thresholdPct: 5}))).toEqual({enabled: false, thresholdPct: 50});
+    // enabled 비불리언은 기본 enabled로 폴백
+    expect(parseAlerts(JSON.stringify({thresholdPct: 80}))).toEqual({enabled: true, thresholdPct: 80});
+  });
+});
+
+describe('settings 영속(AsyncStorage 라운드트립)', () => {
+  test('storage가 비면 loadSettings는 기본값', async () => {
+    expect(await loadSettings()).toEqual(DEFAULT_SETTINGS);
+  });
+
+  test('saveUnit/saveGoal/saveAlerts → loadSettings가 그대로 복원', async () => {
+    await saveUnit('mi');
+    await saveGoal(45);
+    await saveAlerts({enabled: false, thresholdPct: 80});
+    const st = await loadSettings();
+    expect(st.unit).toBe('mi');
+    expect(st.goalWeeklyKm).toBe(45);
+    expect(st.alerts).toEqual({enabled: false, thresholdPct: 80});
+  });
+
+  test('saveGoal은 저장 전에 클램프한다(0 → 1)', async () => {
+    await saveGoal(0);
+    expect(await AsyncStorage.getItem(K_GOAL)).toBe('1');
+  });
+
+  test('saveAlerts는 임계값을 클램프해 저장(5 → 50)', async () => {
+    await saveAlerts({enabled: true, thresholdPct: 5});
+    const st = await loadSettings();
+    expect(st.alerts.thresholdPct).toBe(50);
+  });
+});

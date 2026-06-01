@@ -44,6 +44,12 @@ import {
   reconcilePendingWithServer,
   RunSnapshot, PendingRun,
 } from './lib/runPersistence';
+import {Unit, kmToDisplay, displayNum} from './lib/units';
+import {
+  AlertSettings, loadSettings, saveUnit, saveGoal, saveAlerts,
+  clampGoal, DEFAULT_SETTINGS,
+} from './lib/settings';
+import {weeklyProgress} from './lib/goals';
 
 const API = 'https://solelife-backend.onrender.com';
 
@@ -92,6 +98,14 @@ function Main(){
   // audit#2: 앱 시작 시 감지된 미완료 런 스냅샷. 사용자가 '복구' 선택 시 done
   // 화면으로 시드되어 검토 후 저장/버리기를 결정한다(데이터 유실 금지).
   const [resumeSnap,setResumeSnap]=useState<RunSnapshot|null>(null);
+  // ── 사용자 설정(ProfileScreen 설정 4행이 구동) ─────────────────────────────
+  // 거리 단위(표시 전용 — 저장 표준은 항상 km), 주간 목표(km), 신발 교체 알림.
+  // loadSettings로 AsyncStorage(settings_unit/goal_weekly_km/settings_alerts)에서
+  // 복원하고, 변경 시 즉시 영속 + 상태 갱신해 전 화면에 반영한다.
+  const [unit,setUnit]=useState<Unit>(DEFAULT_SETTINGS.unit);
+  const [goalWeeklyKm,setGoalWeeklyKm]=useState(DEFAULT_SETTINGS.goalWeeklyKm);
+  const [alerts,setAlerts]=useState<AlertSettings>({...DEFAULT_SETTINGS.alerts});
+  const [deviceId,setDeviceId]=useState<string>('');
   const insets=useSafeAreaInsets();
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -122,6 +136,12 @@ function Main(){
   async function initUser(){
     let did=await AsyncStorage.getItem('device_id');
     if(!did){did='sl_'+Date.now()+'_'+Math.random().toString(36).substr(2,9);await AsyncStorage.setItem('device_id',did);}
+    setDeviceId(did);
+    // 설정 복원은 네트워크와 무관하므로 fetch try 밖에서 먼저 읽는다(오프라인에서도
+    // 단위/목표/알림이 사용자가 마지막에 정한 값으로 뜬다). 알림 판정에 갓 읽은
+    // alerts 설정을 직접 넘긴다(setAlerts state 갱신 전이라 클로저가 옛값일 수 있음).
+    const st=await loadSettings();
+    setUnit(st.unit);setGoalWeeklyKm(st.goalWeeklyKm);setAlerts(st.alerts);
     try{
       const r=await fetch(API+'/api/auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({device_id:did})});
       const d=await r.json();setUserId(d.user_id);
@@ -137,7 +157,7 @@ function Main(){
       }));
       setShoes(safeShoes);setRuns(runsWithRoute);
       void loadPrices(safeShoes);
-      checkShoeAlerts(safeShoes,safeRuns);
+      checkShoeAlerts(safeShoes,safeRuns,st.alerts);
       // audit#3 재동기: 네트워크 실패로 큐에 남은 완주 런을 재전송. 서버 런 목록과
       // 사용자 id를 갓 받은 값으로 넘겨, 재-POST 전 클라이언트 화해로 중복을 막는다.
       await syncPendingRuns(safeRuns,d.user_id);
@@ -283,19 +303,29 @@ function Main(){
     setRuns(prev=>[merged,...prev.filter(r=>r.id!==p.localId&&(serverId==null||r.id!==serverId))]);
   }
 
-  async function checkShoeAlerts(shoeList:any[],runList:any[]){
+  // 신발 교체 알림: 설정(on/off · 임계값)을 따른다. 비활성이면 아예 묻지 않고,
+  // 활성이면 사용자가 정한 임계값(수명 사용률 %) 이상인 신발만 하루 1회 알린다.
+  // 임계값은 km 절대값(shoeHealth.percentUsed) 기준 — 표시 단위와 무관.
+  async function checkShoeAlerts(shoeList:any[],runList:any[],alertCfg:AlertSettings){
     try{
+      if(!alertCfg||!alertCfg.enabled) return;
       if(!Array.isArray(shoeList)||!Array.isArray(runList)) return;
       const lastAlert=await AsyncStorage.getItem('shoe_alert_date');
       if(lastAlert===today()) return;
-      // 수명 비례 티어(shoeHealth) 기준 '교체' 신발만 알림. 보관된 신발은 제외.
-      const critical=shoeList.filter((s:any)=>!isRetired(s)&&shoeHealth(s,runList).condition==='교체');
+      // 사용자 임계값 이상 사용한 신발만 알림. 보관된 신발은 제외.
+      const critical=shoeList.filter((s:any)=>!isRetired(s)&&shoeHealth(s,runList).percentUsed>=alertCfg.thresholdPct);
       if(critical.length>0){
         await AsyncStorage.setItem('shoe_alert_date',today());
-        Alert.alert('신발 교체 알림',critical.map((s:any)=>s.name).join(', ')+'\n\n수명의 90% 이상을 사용했습니다.\n새 신발을 준비하세요!',[{text:'확인'}]);
+        Alert.alert('신발 교체 알림',critical.map((s:any)=>s.name).join(', ')+`\n\n수명의 ${alertCfg.thresholdPct}% 이상을 사용했습니다.\n새 신발을 준비하세요!`,[{text:'확인'}]);
       }
     }catch(e){console.log('checkShoeAlerts error',e);}
   }
+
+  // ── 설정 변경(영속 + 상태 갱신) — ProfileScreen 설정 행이 호출 ──────────────
+  // 각 setter는 즉시 setState로 화면을 갱신하고 saveX로 AsyncStorage에 영속한다.
+  const changeUnit=(u:Unit)=>{setUnit(u);void saveUnit(u);};
+  const changeGoal=(km:number)=>{const v=clampGoal(km);setGoalWeeklyKm(v);void saveGoal(v);};
+  const changeAlerts=(a:AlertSettings)=>{setAlerts(a);void saveAlerts(a);};
 
   // ── adapters: backend → presentational shapes ──────────────
   function toUiShoe(s:any):Shoe{
@@ -358,17 +388,28 @@ function Main(){
   const now=new Date();
   const mon=getMonday(now); const sun=new Date(mon); sun.setDate(mon.getDate()+6);
   const weekRuns=runs.filter(r=>r.run_date>=ymdLocal(mon)&&r.run_date<=ymdLocal(sun));
-  const week:WeekStats={km:sumKm(weekRuns).toFixed(1),runs:weekRuns.length,pace:avgPaceLabel(weekRuns)};
+  // 표시 단위(unit)로 환산한 주간 거리. 저장 표준 km은 sumKm이 유지하고, 화면용
+  // 문자열만 kmToDisplay로 변환한다(km이면 항등 — 기존 출력과 동일).
+  const week:WeekStats={km:kmToDisplay(sumKm(weekRuns),unit).toFixed(1),runs:weekRuns.length,pace:avgPaceLabel(weekRuns)};
   const dateLabel=`${now.getMonth()+1}월 ${now.getDate()}일 ${['일요일','월요일','화요일','수요일','목요일','금요일','토요일'][now.getDay()]}`;
+  // 주간 목표 달성률(목표 설정 행이 구동). 거리 합·목표는 km 기준으로 계산하고
+  // 퍼센트만 화면에 쓴다(단위 환산과 무관 — 비율은 단위 불변).
+  const goalProgress=weeklyProgress(
+    runs.map(r=>({run_date:String(r.run_date),km:parseFloat(String(r.km))||0})),
+    goalWeeklyKm, ymdLocal(mon),
+  );
 
   // ── history summary + chart per period ─────────────────────
   const monthRuns=runs.filter(r=>String(r.run_date).startsWith(ymdLocal(now).slice(0,7)));
   const yearRuns=runs.filter(r=>String(r.run_date).startsWith(String(now.getFullYear())));
+  // 기간 요약: 거리(km)만 표시 단위로 환산하고 나머지(횟수/페이스/시간)는 그대로.
+  const mkSummary=(list:any[]):PeriodSummary=>({...summaryOf(list),km:kmToDisplay(sumKm(list),unit).toFixed(1)});
   const summary:Record<string,PeriodSummary>={
-    '주':summaryOf(weekRuns),'월':summaryOf(monthRuns),'년':summaryOf(yearRuns),'전체':summaryOf(runs),
+    '주':mkSummary(weekRuns),'월':mkSummary(monthRuns),'년':mkSummary(yearRuns),'전체':mkSummary(runs),
   };
+  // 차트 데이터도 표시 단위로 환산(막대 높이·우측 km 눈금 라벨이 함께 단위를 따른다).
   // week chart: daily Mon..Sun
-  const weekData=weekBuckets(runs,mon).map(v=>Math.round(v*10)/10);
+  const weekData=weekBuckets(runs,mon).map(v=>displayNum(v,unit,1));
   // month chart: weekly buckets
   const monthData=monthBuckets(monthRuns,now.getFullYear(),now.getMonth());
   const weekCount=monthData.length;
@@ -376,8 +417,8 @@ function Main(){
   const yearData=yearBuckets(yearRuns);
   const chart:Record<string,PeriodChart>={
     '주':{title:'일별 거리',data:weekData,labels:['월','화','수','목','금','토','일']},
-    '월':{title:'주간 거리',data:monthData.map(v=>Math.round(v*10)/10),labels:Array.from({length:weekCount},(_,i)=>`${i+1}주`)},
-    '년':{title:'월별 거리',data:yearData.map(v=>Math.round(v)),labels:['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월']},
+    '월':{title:'주간 거리',data:monthData.map(v=>displayNum(v,unit,1)),labels:Array.from({length:weekCount},(_,i)=>`${i+1}주`)},
+    '년':{title:'월별 거리',data:yearData.map(v=>displayNum(v,unit,0)),labels:['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월']},
   };
 
   // ── per-shoe totals (for shoe detail) ──────────────────────
@@ -396,8 +437,9 @@ function Main(){
   const since=firstDate?(()=>{const d=new Date(firstDate+'T00:00:00');return `${d.getFullYear()}년 ${d.getMonth()+1}월부터`;})():'';
   const streak=maxDayStreak(runs.map(r=>r.run_date).filter(Boolean));
   const profile:Profile={
-    name:'러너', since, totalKm, totalRuns:runs.length,
+    name:'러너', since, totalKm:displayNum(sumKm(runs),unit,0), totalRuns:runs.length,
     totalTime:String(Math.round(totalSec/3600)),
+    // 레벨/배지는 km 절대값(totalKm) 기준 — 단위를 바꿔도 자격이 흔들리지 않는다.
     level:`러닝 레벨 ${Math.floor(totalKm/100)+1}`,
   };
   const badges:Badge[]=[
@@ -462,26 +504,33 @@ function Main(){
       <View style={{flex:1}}>
         {tab===0&&(
           <HomeScreen
-            shoes={homeUiShoes} week={week} dateLabel={dateLabel}
+            shoes={homeUiShoes} week={week} dateLabel={dateLabel} unit={unit}
+            goal={{km:goalWeeklyKm,pct:goalProgress.percent}}
             activeIdx={homeActiveIdx} onSelect={selectHomeShoe}
             recommendedIdx={homeRecommendedIdx>=0?homeRecommendedIdx:undefined}
             onStart={startFromIdx} onAddShoe={()=>setOverlay('add')} onTab={setTab}
           />
         )}
         {tab===1&&(
-          <HistoryScreen shoes={uiShoes} runs={uiRuns} summary={summary} chart={chart} onTab={setTab}/>
+          <HistoryScreen shoes={uiShoes} runs={uiRuns} summary={summary} chart={chart} unit={unit} onTab={setTab}/>
         )}
         {tab===2&&(
           <ShoesScreen
             shoes={uiShoes} runs={uiRuns} totals={shoeTotals} activeIdx={shoesActiveIdx}
-            prices={prices} onSetPrice={setShoePrice}
+            prices={prices} onSetPrice={setShoePrice} unit={unit}
             onAddShoe={()=>setOverlay('add')} onTab={setTab}
             onRename={updateShoeName} onDelete={deleteShoe} onRetire={retireShoe}
             onStartRun={startFromShoeId}
           />
         )}
         {tab===3&&(
-          <ProfileScreen profile={profile} badges={badges} onTab={setTab}/>
+          <ProfileScreen
+            profile={profile} badges={badges} onTab={setTab}
+            unit={unit} onChangeUnit={changeUnit}
+            goalWeeklyKm={goalWeeklyKm} weeklyPercent={goalProgress.percent} onChangeGoal={changeGoal}
+            alerts={alerts} onChangeAlerts={changeAlerts}
+            deviceId={deviceId}
+          />
         )}
       </View>
     </View>

@@ -1,28 +1,83 @@
 // ============================================================================
 // ProfileScreen.rn.tsx — 프로필: identity, lifetime stats, achievements, settings
-// (sample data removed — real profile/badges injected via props)
+// 설정 4행은 실제로 구동된다(하드코딩 '주5회'/'켜짐'/'킬로미터' 제거):
+//   · 목표 설정 — 주간 목표 거리(km 표준) 스테퍼 + 달성률
+//   · 알림     — 신발 교체 알림 on/off + 임계값(수명 사용률 %)
+//   · 단위     — km ↔ mi 토글(전 화면 즉시 환산 반영)
+//   · 계정 설정 — 기기/가입/버전 정보
+// 값은 App이 소유(영속은 lib/settings)하고, 이 화면은 표시 + 변경 콜백만 담당한다.
 // ============================================================================
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { BG, CARD, CARD_HI, ACCENT, T1, T2, T3, SEP, FONT, DISPLAY } from './theme';
 import { TabBar } from './primitives';
+import { Unit, unitKorean, displayNum, displayToKm } from './lib/units';
+import {
+  AlertSettings, GOAL_STEP_DISPLAY, THRESHOLD_STEP,
+  MIN_THRESHOLD_PCT, MAX_THRESHOLD_PCT, DEFAULT_SETTINGS, DEFAULT_ALERTS,
+} from './lib/settings';
 
 export type Profile = { name: string; since: string; totalKm: number; totalRuns: number; totalTime: string; level: string };
 export type Badge = { icon: string; label: string; on: boolean };
 
 const DEFAULT_PROFILE: Profile = { name: '러너', since: '', totalKm: 0, totalRuns: 0, totalTime: '0', level: '러닝 레벨 1' };
+const APP_VERSION = '0.0.1';
 
-const SETTINGS: { icon: string; label: string; detail: string }[] = [
-  { icon: 'flag-outline', label: '목표 설정', detail: '주 5회' },
-  { icon: 'notifications-outline', label: '알림', detail: '켜짐' },
-  { icon: 'speedometer-outline', label: '단위', detail: '킬로미터' },
-  { icon: 'settings-outline', label: '계정 설정', detail: '' },
-];
+// −/＋ 스테퍼(목표 거리·알림 임계값 공용). 모듈 스코프에 둬 매 렌더 재생성을 피한다.
+function Stepper({ value, suffix, onMinus, onPlus }: { value: number | string; suffix: string; onMinus: () => void; onPlus: () => void }) {
+  return (
+    <View style={s.stepper}>
+      <Pressable onPress={onMinus} style={({ pressed }) => [s.stepBtn, pressed && { backgroundColor: CARD }]}>
+        <Ionicons name="remove" size={20} color={T1} />
+      </Pressable>
+      <View style={s.stepVal}>
+        <Text style={s.stepNum}>{value}</Text>
+        <Text style={s.stepUnit}>{suffix}</Text>
+      </View>
+      <Pressable onPress={onPlus} style={({ pressed }) => [s.stepBtn, pressed && { backgroundColor: CARD }]}>
+        <Ionicons name="add" size={20} color={T1} />
+      </Pressable>
+    </View>
+  );
+}
 
 export default function ProfileScreen({
   profile = DEFAULT_PROFILE, badges = [], onTab,
-}: { profile?: Profile; badges?: Badge[]; onTab?: (i: number) => void }) {
+  unit = 'km', onChangeUnit,
+  goalWeeklyKm = DEFAULT_SETTINGS.goalWeeklyKm, weeklyPercent = 0, onChangeGoal,
+  alerts = { ...DEFAULT_ALERTS }, onChangeAlerts,
+  deviceId = '',
+}: {
+  profile?: Profile;
+  badges?: Badge[];
+  onTab?: (i: number) => void;
+  unit?: Unit;
+  onChangeUnit?: (u: Unit) => void;
+  goalWeeklyKm?: number;
+  weeklyPercent?: number;
+  onChangeGoal?: (km: number) => void;
+  alerts?: AlertSettings;
+  onChangeAlerts?: (a: AlertSettings) => void;
+  deviceId?: string;
+}) {
+  // 어떤 설정 행이 펼쳐졌는지(단위는 패널 없이 즉시 토글). 한 번에 하나만 펼친다.
+  const [open, setOpen] = useState<null | 'goal' | 'alerts' | 'account'>(null);
+  const toggleOpen = (k: 'goal' | 'alerts' | 'account') => setOpen((o) => (o === k ? null : k));
+
+  // 목표는 km로 저장하되 화면은 표시 단위(km|mi)로 보여주고 스텝도 표시 단위로 움직인다.
+  const goalDisplay = displayNum(goalWeeklyKm, unit, 0);
+  const stepGoal = (dir: 1 | -1) => {
+    const next = goalDisplay + dir * GOAL_STEP_DISPLAY;   // 표시 단위 기준 증감
+    onChangeGoal?.(displayToKm(next, unit));               // km로 되돌려 저장(클램프는 App)
+  };
+
+  const toggleAlerts = () => onChangeAlerts?.({ ...alerts, enabled: !alerts.enabled });
+  const stepThreshold = (dir: 1 | -1) => {
+    const next = Math.max(MIN_THRESHOLD_PCT, Math.min(MAX_THRESHOLD_PCT, alerts.thresholdPct + dir * THRESHOLD_STEP));
+    onChangeAlerts?.({ ...alerts, thresholdPct: next });
+  };
+
   return (
     <View style={s.screen}>
       <ScrollView contentContainerStyle={{ paddingTop: 60, paddingHorizontal: 18, paddingBottom: 8, gap: 16 }}>
@@ -53,7 +108,7 @@ export default function ProfileScreen({
           <Text style={s.cardTitle}>누적 기록</Text>
           <View style={s.statRow}>
             {[
-              { v: profile.totalKm.toLocaleString(), u: 'km', l: '총 거리' },
+              { v: profile.totalKm.toLocaleString(), u: unit, l: '총 거리' },
               { v: String(profile.totalRuns), u: '회', l: '총 러닝' },
               { v: profile.totalTime, u: 'h', l: '총 시간' },
             ].map((x, i) => (
@@ -82,18 +137,67 @@ export default function ProfileScreen({
           </View>
         )}
 
-        {/* settings */}
+        {/* settings — 실제 구동 */}
         <View>
           <Text style={[s.sectionLabel, { paddingBottom: 12 }]}>설정</Text>
           <View style={[s.card, { overflow: 'hidden' }]}>
-            {SETTINGS.map((item, i) => (
-              <Pressable key={i} style={({ pressed }) => [s.settingRow, i < SETTINGS.length - 1 && s.settingBorder, pressed && { backgroundColor: CARD_HI }]}>
-                <Ionicons name={item.icon} size={20} color={T2} />
-                <Text style={s.settingLabel}>{item.label}</Text>
-                {!!item.detail && <Text style={s.settingDetail}>{item.detail}</Text>}
-                <Ionicons name="chevron-forward" size={16} color={T3} />
-              </Pressable>
-            ))}
+            {/* 1) 목표 설정 */}
+            <Pressable onPress={() => toggleOpen('goal')} style={({ pressed }) => [s.settingRow, s.settingBorder, pressed && { backgroundColor: CARD_HI }]}>
+              <Ionicons name="flag-outline" size={20} color={T2} />
+              <Text style={s.settingLabel}>목표 설정</Text>
+              <Text style={s.settingDetail}>{`주 ${goalDisplay}${unit}`}</Text>
+              <Ionicons name={open === 'goal' ? 'chevron-up' : 'chevron-forward'} size={16} color={T3} />
+            </Pressable>
+            {open === 'goal' && (
+              <View style={[s.panel, s.settingBorder]}>
+                <Stepper value={goalDisplay} suffix={`${unit}/주`} onMinus={() => stepGoal(-1)} onPlus={() => stepGoal(1)} />
+                <Text style={s.panelHint}>이번 주 <Text style={{ color: ACCENT }}>{weeklyPercent}%</Text> 달성</Text>
+              </View>
+            )}
+
+            {/* 2) 알림 */}
+            <Pressable onPress={() => toggleOpen('alerts')} style={({ pressed }) => [s.settingRow, s.settingBorder, pressed && { backgroundColor: CARD_HI }]}>
+              <Ionicons name="notifications-outline" size={20} color={T2} />
+              <Text style={s.settingLabel}>알림</Text>
+              <Text style={s.settingDetail}>{alerts.enabled ? '켜짐' : '꺼짐'}</Text>
+              <Ionicons name={open === 'alerts' ? 'chevron-up' : 'chevron-forward'} size={16} color={T3} />
+            </Pressable>
+            {open === 'alerts' && (
+              <View style={[s.panel, s.settingBorder]}>
+                <Pressable onPress={toggleAlerts} style={[s.toggle, alerts.enabled ? s.toggleOn : s.toggleOff]}>
+                  <Ionicons name={alerts.enabled ? 'notifications' : 'notifications-off'} size={16} color={alerts.enabled ? '#fff' : T2} />
+                  <Text style={[s.toggleTxt, { color: alerts.enabled ? '#fff' : T2 }]}>{alerts.enabled ? '신발 교체 알림 켜짐' : '신발 교체 알림 꺼짐'}</Text>
+                </Pressable>
+                {alerts.enabled && (
+                  <>
+                    <Stepper value={alerts.thresholdPct} suffix="% 사용 시" onMinus={() => stepThreshold(-1)} onPlus={() => stepThreshold(1)} />
+                    <Text style={s.panelHint}>신발 수명의 <Text style={{ color: ACCENT }}>{alerts.thresholdPct}%</Text>를 쓰면 교체 알림을 보냅니다.</Text>
+                  </>
+                )}
+              </View>
+            )}
+
+            {/* 3) 단위 — 즉시 토글(전 화면 환산 반영) */}
+            <Pressable onPress={() => onChangeUnit?.(unit === 'km' ? 'mi' : 'km')} style={({ pressed }) => [s.settingRow, s.settingBorder, pressed && { backgroundColor: CARD_HI }]}>
+              <Ionicons name="speedometer-outline" size={20} color={T2} />
+              <Text style={s.settingLabel}>단위</Text>
+              <Text style={s.settingDetail}>{unitKorean(unit)}</Text>
+              <Ionicons name="swap-horizontal" size={16} color={T3} />
+            </Pressable>
+
+            {/* 4) 계정 설정 */}
+            <Pressable onPress={() => toggleOpen('account')} style={({ pressed }) => [s.settingRow, pressed && { backgroundColor: CARD_HI }]}>
+              <Ionicons name="settings-outline" size={20} color={T2} />
+              <Text style={s.settingLabel}>계정 설정</Text>
+              <Ionicons name={open === 'account' ? 'chevron-up' : 'chevron-forward'} size={16} color={T3} />
+            </Pressable>
+            {open === 'account' && (
+              <View style={s.panel}>
+                <View style={s.acctRow}><Text style={s.acctK}>기기 ID</Text><Text style={s.acctV} numberOfLines={1}>{deviceId || '—'}</Text></View>
+                <View style={s.acctRow}><Text style={s.acctK}>가입</Text><Text style={s.acctV}>{profile.since || '기록 없음'}</Text></View>
+                <View style={s.acctRow}><Text style={s.acctK}>버전</Text><Text style={s.acctV}>{APP_VERSION}</Text></View>
+              </View>
+            )}
           </View>
         </View>
       </ScrollView>
@@ -136,4 +240,22 @@ const s = StyleSheet.create({
   settingBorder: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: SEP },
   settingLabel: { flex: 1, color: T1, fontFamily: FONT, fontSize: 16, fontWeight: '600' },
   settingDetail: { color: T3, fontFamily: FONT, fontSize: 14, fontWeight: '600' },
+
+  // expandable panels
+  panel: { paddingHorizontal: 18, paddingVertical: 16, gap: 14, backgroundColor: 'rgba(255,255,255,0.02)' },
+  panelHint: { color: T3, fontFamily: FONT, fontSize: 12.5, lineHeight: 18 },
+  stepper: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 14 },
+  stepBtn: { width: 46, height: 46, borderRadius: 14, backgroundColor: CARD_HI, alignItems: 'center', justifyContent: 'center' },
+  stepVal: { flex: 1, alignItems: 'center' },
+  stepNum: { color: T1, fontFamily: DISPLAY, fontSize: 30, letterSpacing: 0.3 },
+  stepUnit: { color: T3, fontFamily: FONT, fontSize: 11.5, fontWeight: '600', marginTop: 2 },
+
+  toggle: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 44, borderRadius: 14 },
+  toggleOn: { backgroundColor: ACCENT },
+  toggleOff: { backgroundColor: CARD_HI },
+  toggleTxt: { fontFamily: FONT, fontSize: 14.5, fontWeight: '600' },
+
+  acctRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 14 },
+  acctK: { color: T3, fontFamily: FONT, fontSize: 13.5, fontWeight: '500' },
+  acctV: { flex: 1, textAlign: 'right', color: T2, fontFamily: FONT, fontSize: 13.5, fontWeight: '500' },
 });

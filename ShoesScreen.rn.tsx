@@ -10,6 +10,7 @@ import {
 } from './theme';
 import { Ring, TabBar } from './primitives';
 import { costPerKm } from './lib/shoeRecommend';
+import { Unit, displayNum } from './lib/units';
 
 // lastWorn: 이 신발의 마지막 착용일(런에서 파생, 한국어 표기). 미착용이면 생략.
 export type ShoeTotals = { totalRuns: number; totalTime: string; lastWorn?: string };
@@ -23,13 +24,14 @@ const ringColor = (c: string) => (c === '교체' ? DANGER : c === '주의' ? WAR
 
 // ── shoe detail ───────────────────────────────────────────────────────────────
 function ShoeDetail({
-  shoe, idx, runs, totals, price, onBack, onRename, onDelete, onRetire, onSetPrice, onStartRun,
+  shoe, idx, runs, totals, price, unit, onBack, onRename, onDelete, onRetire, onSetPrice, onStartRun,
 }: {
   shoe: Shoe;
   idx: number;
   runs: Run[];
   totals: ShoeTotals;
   price?: number;
+  unit: Unit;
   onBack: () => void;
   onRename?: (id: string, name: string) => void;
   onDelete?: (id: string) => void;
@@ -38,8 +40,12 @@ function ShoeDetail({
   // shoe-first 동선: 이 신발로 바로 런 시작(목표 설정 → 러닝). 신발 id를 넘긴다.
   onStartRun?: (id: string) => void;
 }) {
-  const remain = Math.max(0, shoe.max - shoe.used);
-  const pct = shoe.max > 0 ? remain / shoe.max : 0;
+  // 비율은 km 절대값, 표시 숫자만 단위 환산. cost-per-km는 의도적으로 km 기준(원/km).
+  const remainKm = Math.max(0, shoe.max - shoe.used);
+  const pct = shoe.max > 0 ? remainKm / shoe.max : 0;
+  const remain = displayNum(remainKm, unit);
+  const usedDisp = displayNum(shoe.used, unit);
+  const maxDisp = displayNum(shoe.max, unit);
   const ring = ringColor(shoe.condition);
   const retired = !!shoe.retired;
   const shoeRuns = runs.filter((r) => r.shoe === idx);
@@ -125,12 +131,12 @@ function ShoeDetail({
             <Text style={s.dHeroLabel}>남은 수명</Text>
             <View style={[s.baselineRow, { marginTop: 2 }]}>
               <Text style={s.dHeroRemain}>{remain}</Text>
-              <Text style={s.dHeroRemainU}>km</Text>
+              <Text style={s.dHeroRemainU}>{unit}</Text>
             </View>
             <View style={[s.row, { marginTop: 8 }]}>
               <View style={[s.dot, { backgroundColor: condColor(shoe.condition) }]} />
               <Text style={[s.condText, { color: condColor(shoe.condition) }]}>{shoe.condition}</Text>
-              <Text style={s.condSub}>· {shoe.used}/{shoe.max}km</Text>
+              <Text style={s.condSub}>· {usedDisp}/{maxDisp}{unit}</Text>
             </View>
           </View>
         </View>
@@ -138,7 +144,7 @@ function ShoeDetail({
         {/* totals */}
         <View style={[s.card, s.statRow]}>
           {[
-            { v: String(shoe.used), u: 'km', l: '총 누적 거리' },
+            { v: String(usedDisp), u: unit, l: '총 누적 거리' },
             { v: String(totals.totalRuns), u: '회', l: '총 런 횟수' },
             { v: totals.totalTime, u: '', l: '총 러닝 시간' },
           ].map((x, i) => (
@@ -198,7 +204,7 @@ function ShoeDetail({
                 </View>
                 <View style={s.runDivider} />
                 <View style={{ flex: 1 }}>
-                  <View style={s.baselineRow}><Text style={s.runDist}>{r.dist}</Text><Text style={s.runDistU}>km</Text></View>
+                  <View style={s.baselineRow}><Text style={s.runDist}>{displayNum(r.dist, unit, 2)}</Text><Text style={s.runDistU}>{unit}</Text></View>
                   <Text style={s.runSub}>{r.pace} /km   {r.time}</Text>
                 </View>
               </View>
@@ -211,11 +217,13 @@ function ShoeDetail({
 }
 
 // ── locker ─────────────────────────────────────────────────────────────────
-function ShoeCard({ shoe, featured, onPress, onPlay }: { shoe: Shoe; featured: boolean; onPress: () => void; onPlay?: () => void }) {
-  const remain = Math.max(0, shoe.max - shoe.used);
-  const pct = shoe.max > 0 ? remain / shoe.max : 0;
+function ShoeCard({ shoe, featured, onPress, onPlay, unit }: { shoe: Shoe; featured: boolean; onPress: () => void; onPlay?: () => void; unit: Unit }) {
+  const remainKm = Math.max(0, shoe.max - shoe.used);
+  const pct = shoe.max > 0 ? remainKm / shoe.max : 0;
   const ring = ringColor(shoe.condition);
   const retired = !!shoe.retired;
+  const usedDisp = displayNum(shoe.used, unit);
+  const maxDisp = displayNum(shoe.max, unit);
   return (
     <Pressable onPress={onPress} style={[s.shoeCard, featured ? s.shoeCardFeatured : s.shoeCardIdle, retired && s.shoeCardRetired]}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 18 }}>
@@ -229,7 +237,7 @@ function ShoeCard({ shoe, featured, onPress, onPlay }: { shoe: Shoe; featured: b
               : featured && <View style={s.usingChip}><Text style={s.usingChipText}>사용 중</Text></View>}
           </View>
           <Text style={s.shoeModel} numberOfLines={1}>{shoe.model}</Text>
-          <Text style={s.shoeMeta}>{shoe.used} / {shoe.max} km · <Text style={{ color: condColor(shoe.condition) }}>{shoe.condition}</Text></Text>
+          <Text style={s.shoeMeta}>{usedDisp} / {maxDisp} {unit} · <Text style={{ color: condColor(shoe.condition) }}>{shoe.condition}</Text></Text>
         </View>
         {/* play 어포던스: 카드에서 바로 이 신발로 런 시작(shoe-first). 카드 자체 탭은
             상세로 가므로, 시작은 별도 버튼으로 분리한다. 보관된 신발엔 노출하지 않는다. */}
@@ -249,7 +257,7 @@ function ShoeCard({ shoe, featured, onPress, onPlay }: { shoe: Shoe; featured: b
 }
 
 export default function ShoesScreen({
-  shoes = SHOES, runs = [], totals = {}, activeIdx = 0, prices = {}, onAddShoe, onTab, onRename, onDelete, onRetire, onSetPrice, onStartRun,
+  shoes = SHOES, runs = [], totals = {}, activeIdx = 0, prices = {}, unit = 'km', onAddShoe, onTab, onRename, onDelete, onRetire, onSetPrice, onStartRun,
 }: {
   shoes?: Shoe[];
   runs?: Run[];
@@ -257,6 +265,8 @@ export default function ShoesScreen({
   activeIdx?: number;
   // 신발 id → 구매가(원). cost-per-km 파생용. 미입력 신발은 키 없음.
   prices?: Record<string, number>;
+  // 표시 단위(km|mi). 수명·기록 거리가 이를 따른다(cost-per-km는 km 고정).
+  unit?: Unit;
   onAddShoe?: () => void;
   onTab?: (i: number) => void;
   onRename?: (id: string, name: string) => void;
@@ -277,6 +287,7 @@ export default function ShoesScreen({
         runs={runs}
         totals={totals[detail] || { totalRuns: 0, totalTime: '--' }}
         price={dShoe.id ? prices[dShoe.id] : undefined}
+        unit={unit}
         onBack={() => setDetail(null)}
         onRename={onRename}
         onDelete={onDelete}
@@ -299,6 +310,7 @@ export default function ShoesScreen({
             key={shoe.id || i}
             shoe={shoe}
             featured={i === activeIdx}
+            unit={unit}
             onPress={() => setDetail(i)}
             onPlay={shoe.id && onStartRun ? () => onStartRun(shoe.id!) : undefined}
           />

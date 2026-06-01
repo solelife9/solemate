@@ -22,3 +22,15 @@ export function displayToKm(value: number, unit: Unit): number {
 export function fmtDistance(km: number, unit: Unit): string {
   return `${kmToDisplay(km, unit).toFixed(1)} ${unit}`;
 }
+
+/** 단위의 한국어 표기 ('킬로미터' | '마일'). 설정 화면 detail 용. */
+export function unitKorean(unit: Unit): string {
+  return unit === 'mi' ? '마일' : '킬로미터';
+}
+
+/** km 값을 표시 단위로 환산 후 지정 소수 자리수로 반올림한 '숫자'를 반환.
+ *  화면이 라벨('km'|'mi')은 따로 붙이고 숫자만 필요할 때 쓴다. km이면 항등. */
+export function displayNum(km: number, unit: Unit, digits = 0): number {
+  const p = Math.pow(10, digits);
+  return Math.round(kmToDisplay(km, unit) * p) / p;
+}

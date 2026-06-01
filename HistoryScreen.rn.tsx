@@ -9,6 +9,7 @@ import {
   BG, CARD, ACCENT, T1, T2, T3, SEP, FONT, DISPLAY, Shoe, Run, SHOES,
 } from './theme';
 import { TabBar } from './primitives';
+import { Unit, displayNum } from './lib/units';
 
 export type PeriodSummary = { km: string; runs: number; pace: string; time: string };
 export type PeriodChart = { title: string; data: number[]; labels: string[] };
@@ -17,7 +18,7 @@ const PERIODS = ['주', '월', '년', '전체'];
 const EMPTY_SUMMARY: PeriodSummary = { km: '0', runs: 0, pace: '--', time: '--' };
 
 // ── bar chart with right-side km gridlines ────────────────────────────────────
-function PeriodChartView({ data, labels }: { data: number[]; labels: string[] }) {
+function PeriodChartView({ data, labels, unit }: { data: number[]; labels: string[]; unit: Unit }) {
   const H = 124;
   const max = Math.max(...data, 1);
   const niceStep = (mx: number) => {
@@ -37,7 +38,7 @@ function PeriodChartView({ data, labels }: { data: number[]; labels: string[] })
         {ticks.map((tk, i) => (
           <View key={i} style={{ position: 'absolute', left: 0, right: 0, bottom: (tk / niceMax) * H }}>
             <View style={{ position: 'absolute', left: 0, right: 42, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP }} />
-            <Text style={{ position: 'absolute', right: 0, width: 42, textAlign: 'right', color: T3, fontFamily: DISPLAY, fontSize: 11, marginBottom: -7 }}>{tk === 0 ? '0' : `${fmtTick(tk)}km`}</Text>
+            <Text style={{ position: 'absolute', right: 0, width: 42, textAlign: 'right', color: T3, fontFamily: DISPLAY, fontSize: 11, marginBottom: -7 }}>{tk === 0 ? '0' : `${fmtTick(tk)}${unit}`}</Text>
           </View>
         ))}
         <View style={{ position: 'absolute', left: 0, right: 42, top: 0, bottom: 0, flexDirection: 'row', alignItems: 'flex-end', gap: dense ? 4 : 8 }}>
@@ -58,7 +59,7 @@ function PeriodChartView({ data, labels }: { data: number[]; labels: string[] })
 }
 
 // ── run detail ────────────────────────────────────────────────────────────────
-function RunDetail({ run, shoe, onBack }: { run: Run; shoe?: Shoe; onBack: () => void }) {
+function RunDetail({ run, shoe, onBack, unit }: { run: Run; shoe?: Shoe; onBack: () => void; unit: Unit }) {
   const dash = (n: number, u: string) => (n > 0 ? { v: String(n), u } : { v: '--', u: '' });
   const stats = [
     { l: '평균 페이스', v: run.pace, u: '/km' },
@@ -76,8 +77,8 @@ function RunDetail({ run, shoe, onBack }: { run: Run; shoe?: Shoe; onBack: () =>
       <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: 28 }}>
         <Text style={s.detailDate}>{run.date} {run.day}요일</Text>
         <View style={[s.baselineRow, { marginTop: 8 }]}>
-          <Text style={s.detailDist}>{run.dist}</Text>
-          <Text style={s.detailDistU}>km</Text>
+          <Text style={s.detailDist}>{displayNum(run.dist, unit, 2)}</Text>
+          <Text style={s.detailDistU}>{unit}</Text>
         </View>
         {!!shoe && (
           <View style={[s.card, { padding: 16, marginTop: 16 }]}>
@@ -99,7 +100,7 @@ function RunDetail({ run, shoe, onBack }: { run: Run; shoe?: Shoe; onBack: () =>
 }
 
 // ── history main ────────────────────────────────────────────────────────────
-function RunRow({ run, shoes, onPress, last }: { run: Run; shoes: Shoe[]; onPress: () => void; last: boolean }) {
+function RunRow({ run, shoes, onPress, last, unit }: { run: Run; shoes: Shoe[]; onPress: () => void; last: boolean; unit: Unit }) {
   const shoe = shoes[run.shoe];
   return (
     <Pressable onPress={onPress} style={[s.runRow, !last && s.runRowBorder]}>
@@ -112,7 +113,7 @@ function RunRow({ run, shoes, onPress, last }: { run: Run; shoes: Shoe[]; onPres
         <Text style={s.runBrand}>{shoe ? shoe.brand : '삭제된 신발'}</Text>
         <Text style={s.runModel} numberOfLines={1}>{shoe ? shoe.model : ''}</Text>
         <View style={s.runMetrics}>
-          <View><View style={s.baselineRow}><Text style={s.runV}>{run.dist}</Text><Text style={s.runU}>km</Text></View><Text style={s.runML}>거리</Text></View>
+          <View><View style={s.baselineRow}><Text style={s.runV}>{displayNum(run.dist, unit, 2)}</Text><Text style={s.runU}>{unit}</Text></View><Text style={s.runML}>거리</Text></View>
           <View><Text style={s.runV}>{run.pace}</Text><Text style={s.runML}>평균 페이스</Text></View>
           <View><Text style={s.runV}>{run.time}</Text><Text style={s.runML}>시간</Text></View>
         </View>
@@ -123,13 +124,15 @@ function RunRow({ run, shoes, onPress, last }: { run: Run; shoes: Shoe[]; onPres
 }
 
 export default function HistoryScreen({
-  shoes = SHOES, runs = [], summary = {}, chart = {}, onTab,
+  shoes = SHOES, runs = [], summary = {}, chart = {}, onTab, unit = 'km',
 }: {
   shoes?: Shoe[];
   runs?: Run[];
   summary?: Record<string, PeriodSummary>;
   chart?: Record<string, PeriodChart>;
   onTab?: (i: number) => void;
+  // 표시 단위(km|mi). 거리·차트 눈금이 이를 따른다(요약·차트 값은 App이 환산해 주입).
+  unit?: Unit;
 }) {
   const [period, setPeriod] = useState('월');
   const [detail, setDetail] = useState<Run | null>(null);
@@ -137,13 +140,13 @@ export default function HistoryScreen({
   const sum = summary[period] || EMPTY_SUMMARY;
   const ch = chart[period];
   const stats = [
-    { l: '거리', v: sum.km, u: 'km' },
+    { l: '거리', v: sum.km, u: unit },
     { l: '횟수', v: String(sum.runs), u: '회' },
     { l: '페이스', v: sum.pace, u: '평균' },
     { l: '시간', v: sum.time, u: '총' },
   ];
 
-  if (detail) return <RunDetail run={detail} shoe={shoes[detail.shoe]} onBack={() => setDetail(null)} />;
+  if (detail) return <RunDetail run={detail} shoe={shoes[detail.shoe]} onBack={() => setDetail(null)} unit={unit} />;
 
   return (
     <View style={s.screen}>
@@ -176,7 +179,7 @@ export default function HistoryScreen({
         {ch && ch.data.length > 0 && (
           <View style={[s.card, { padding: 22 }]}>
             <Text style={s.cardTitle}>{ch.title}</Text>
-            <View style={{ marginTop: 18 }}><PeriodChartView data={ch.data} labels={ch.labels} /></View>
+            <View style={{ marginTop: 18 }}><PeriodChartView data={ch.data} labels={ch.labels} unit={unit} /></View>
           </View>
         )}
 
@@ -189,7 +192,7 @@ export default function HistoryScreen({
         ) : (
           <View style={[s.card, { overflow: 'hidden' }]}>
             {runs.map((r, i) => (
-              <RunRow key={r.id || i} run={r} shoes={shoes} onPress={() => setDetail(r)} last={i === runs.length - 1} />
+              <RunRow key={r.id || i} run={r} shoes={shoes} onPress={() => setDetail(r)} last={i === runs.length - 1} unit={unit} />
             ))}
           </View>
         )}
