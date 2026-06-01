@@ -14,8 +14,9 @@ import { Ring, TabBar } from './primitives';
 import { Unit, displayNum } from './lib/units';
 
 export type WeekStats = { km: string; runs: number; pace: string };
-// 주간 목표(거리는 km 표준, pct는 이번 주 달성률 %). 목표 설정 행이 구동한다.
-export type GoalInfo = { km: number; pct: number };
+// 주간 목표 + keep-going 동기 지표. 거리는 km 표준, pct는 이번 주 달성률 %(목표
+// 설정 행이 구동), streak은 오늘까지 이어지는 연속 러닝 일수(lib/goals.currentStreak).
+export type GoalInfo = { km: number; pct: number; streak: number };
 
 const CARD_W = 138;
 const GAP = 10;
@@ -53,23 +54,34 @@ function QuickStats({ week, unit }: { week: WeekStats; unit: Unit }) {
   );
 }
 
-// 주간 목표 진행: 목표 거리(표시 단위) 대비 달성률 + 진행 바. pct는 0~999%로 표시.
+// 주간 목표 진행 + 연속 러닝 스트릭(keep-going 동기). 달성률은 Ring(primitives 재사용)
+// 으로, 스트릭은 불꽃 칩으로 실데이터를 표시한다. pct는 0~999%(목표 초과 가능), 링은
+// 100%에서 가득 차고(달성 시 GOOD 색), 스트릭이 0이면 '오늘 시작' 유도 문구를 보여준다.
 function WeeklyGoal({ goal, unit }: { goal: GoalInfo; unit: Unit }) {
   const goalDisplay = displayNum(goal.km, unit, 0);
   const pct = Math.max(0, goal.pct);
+  const reached = pct >= 100;
+  const streak = Math.max(0, goal.streak);
   return (
     <View style={s.goalCard}>
-      <View style={s.goalHead}>
+      <View style={s.goalInfo}>
         <View style={s.row}>
           <Ionicons name="flag" size={13} color={ACCENT} />
           <Text style={s.goalLabel}>주간 목표</Text>
         </View>
-        <Text style={s.goalPct}>{pct}%</Text>
+        <Text style={s.goalSub}>목표 {goalDisplay}{unit} / 주</Text>
+        <View style={[s.streakChip, streak > 0 ? s.streakChipOn : s.streakChipOff]}>
+          <Ionicons name="flame" size={12} color={streak > 0 ? ACCENT : T3} />
+          <Text style={[s.streakText, { color: streak > 0 ? ACCENT : T3 }]}>
+            {streak > 0 ? `${streak}일 연속` : '오늘 달리고 스트릭 시작'}
+          </Text>
+        </View>
       </View>
-      <View style={s.goalTrack}>
-        <View style={[s.goalFill, { width: `${Math.min(100, pct)}%` }]} />
-      </View>
-      <Text style={s.goalSub}>목표 {goalDisplay}{unit} / 주</Text>
+      <Ring size={76} stroke={8} progress={pct / 100} color={reached ? GOOD : ACCENT}>
+        <Text style={[s.goalRingPct, reached && { color: GOOD }]}>
+          {pct}<Text style={s.goalRingU}>%</Text>
+        </Text>
+      </Ring>
     </View>
   );
 }
@@ -283,13 +295,16 @@ const s = StyleSheet.create({
   quickU: { color: T3, fontFamily: FONT, fontSize: 11, fontWeight: '400' },
   quickL: { color: T3, fontFamily: FONT, fontSize: 11, marginTop: 4, letterSpacing: 0.2 },
 
-  goalCard: { backgroundColor: CARD_DIM, borderRadius: 18, borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(255,255,255,0.06)', padding: 16, gap: 10 },
-  goalHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  goalCard: { backgroundColor: CARD_DIM, borderRadius: 18, borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(255,255,255,0.06)', padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  goalInfo: { flex: 1, gap: 9, minWidth: 0 },
   goalLabel: { color: T2, fontFamily: FONT, fontSize: 13, fontWeight: '600', letterSpacing: 0.2 },
-  goalPct: { color: ACCENT, fontFamily: DISPLAY, fontSize: 20, letterSpacing: 0.3 },
-  goalTrack: { height: 7, borderRadius: 999, backgroundColor: CARD_HI, overflow: 'hidden' },
-  goalFill: { height: '100%', borderRadius: 999, backgroundColor: ACCENT },
   goalSub: { color: T3, fontFamily: FONT, fontSize: 11.5, fontWeight: '500' },
+  streakChip: { flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start', borderRadius: 999, paddingHorizontal: 9, paddingVertical: 4 },
+  streakChipOn: { backgroundColor: 'rgba(255,101,0,0.14)', borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(255,101,0,0.4)' },
+  streakChipOff: { backgroundColor: CARD_HI },
+  streakText: { fontFamily: FONT, fontSize: 12, fontWeight: '600', letterSpacing: 0.1 },
+  goalRingPct: { color: T1, fontFamily: DISPLAY, fontSize: 19, letterSpacing: 0.2 },
+  goalRingU: { color: T3, fontFamily: FONT, fontSize: 10 },
 
   hero: { backgroundColor: HERO_BG, borderRadius: 24, borderWidth: 1, borderColor: ACCENT, padding: 24 },
   heroTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 14 },

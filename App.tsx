@@ -49,7 +49,7 @@ import {
   AlertSettings, loadSettings, saveUnit, saveGoal, saveAlerts,
   clampGoal, DEFAULT_SETTINGS,
 } from './lib/settings';
-import {weeklyProgress} from './lib/goals';
+import {weeklyProgress, currentStreak} from './lib/goals';
 
 const API = 'https://solelife-backend.onrender.com';
 
@@ -394,10 +394,11 @@ function Main(){
   const dateLabel=`${now.getMonth()+1}월 ${now.getDate()}일 ${['일요일','월요일','화요일','수요일','목요일','금요일','토요일'][now.getDay()]}`;
   // 주간 목표 달성률(목표 설정 행이 구동). 거리 합·목표는 km 기준으로 계산하고
   // 퍼센트만 화면에 쓴다(단위 환산과 무관 — 비율은 단위 불변).
-  const goalProgress=weeklyProgress(
-    runs.map(r=>({run_date:String(r.run_date),km:parseFloat(String(r.km))||0})),
-    goalWeeklyKm, ymdLocal(mon),
-  );
+  const goalRuns=runs.map(r=>({run_date:String(r.run_date),km:parseFloat(String(r.km))||0}));
+  const goalProgress=weeklyProgress(goalRuns, goalWeeklyKm, ymdLocal(mon));
+  // 연속 러닝 스트릭(keep-going 동기): 오늘까지 끊김 없이 이어진 달림 일수. 비율과
+  // 무관한 절대 일수이므로 단위 환산 없이 그대로 표시한다(0km/비런 날은 끊김 처리).
+  const goalStreak=currentStreak(goalRuns, ymdLocal(now));
 
   // ── history summary + chart per period ─────────────────────
   const monthRuns=runs.filter(r=>String(r.run_date).startsWith(ymdLocal(now).slice(0,7)));
@@ -505,7 +506,7 @@ function Main(){
         {tab===0&&(
           <HomeScreen
             shoes={homeUiShoes} week={week} dateLabel={dateLabel} unit={unit}
-            goal={{km:goalWeeklyKm,pct:goalProgress.percent}}
+            goal={{km:goalWeeklyKm,pct:goalProgress.percent,streak:goalStreak}}
             activeIdx={homeActiveIdx} onSelect={selectHomeShoe}
             recommendedIdx={homeRecommendedIdx>=0?homeRecommendedIdx:undefined}
             onStart={startFromIdx} onAddShoe={()=>setOverlay('add')} onTab={setTab}
