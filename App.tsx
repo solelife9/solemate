@@ -11,7 +11,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import Tts from 'react-native-tts';
 
 import {
-  BG, CARD_HI as SURFACE, ACCENT, WARN, DANGER, T1, T3,
+  BG, CARD, CARD_HI as SURFACE, ACCENT, WARN, DANGER, T1, T2, T3,
   FONT as FP, DISPLAY as FH, SEP, Shoe, Run,
 } from './theme';
 import {Ring} from './primitives';
@@ -33,7 +33,7 @@ import {gpsStallStatus} from './lib/gpsHealth';
 import {initCadenceState, feedAccelSample} from './lib/cadence';
 import {fmtPace, fmtTime, fmtKDate, getMonday, ymdLocal} from './lib/format';
 import {
-  sumKm, avgPaceLabel, totalTimeLabel, summaryOf, maxDayStreak,
+  sumKm, avgPaceLabel, totalTimeLabel, durationLabel, summaryOf, maxDayStreak,
   weekBuckets, monthBuckets, yearBuckets,
 } from './lib/stats';
 import {parseShoeName, shoeHealth, isRetired, DEFAULT_MAX_KM, clampMaxKm, reconcileShoeAlerts, KEEP_GOING_REPLACE} from './lib/shoe';
@@ -52,6 +52,18 @@ import {
 import {weeklyProgress, currentStreak, personalRecords} from './lib/goals';
 
 const API = 'https://solelife-backend.onrender.com';
+
+// audit#9/#10: 콜드 백엔드 부팅 상태기계. 'loading'(스켈레톤) → 'ready'(정상) |
+// 'error'(재시도 카드). 'error'는 fetch 실패만을 의미하며, 빈-신규(fetch 성공 + 빈
+// 배열)와 구분된다 — 신규 사용자는 재시도 카드가 아니라 온보딩/빈 홈을 본다.
+type BootState = 'loading' | 'ready' | 'error';
+
+// 첫 실행 온보딩 / 위치 권한 priming 의 1회성 플래그 키(AsyncStorage 영속).
+const ONBOARD_KEY = 'onboarded';        // 온보딩 완료
+const LOC_PRIME_KEY = 'loc_perm_primed'; // 위치 권한 사전 안내 완료
+
+// keep-going 톤: 실패를 '끝'이 아니라 '잠깐 멈춤'으로 프레이밍해 재시도를 유도한다.
+const KEEP_GOING_RETRY = '잠깐 숨 고르는 중이에요. 다시 시도하면 계속 달릴 수 있어요.';
 
 function nowTimeLabel():string{
   const n=new Date();
@@ -106,6 +118,14 @@ function Main(){
   const [goalWeeklyKm,setGoalWeeklyKm]=useState(DEFAULT_SETTINGS.goalWeeklyKm);
   const [alerts,setAlerts]=useState<AlertSettings>({...DEFAULT_SETTINGS.alerts});
   const [deviceId,setDeviceId]=useState<string>('');
+  // audit#9/#10: 콜드 백엔드 부팅 상태(스켈레톤/재시도 카드). 최초엔 'loading'으로 떠
+  // 스켈레톤을 보여주고, initUser 성공 시 'ready', fetch 실패 시 'error'로 간다.
+  const [bootState,setBootState]=useState<BootState>('loading');
+  // 첫 실행 온보딩 노출 여부(완료 시 영속). 신규(신발 0개·미완료)에게만 1회 보여준다.
+  const [onboarded,setOnboarded]=useState(true);
+  // 위치 권한 사전 안내(priming) 완료 여부. false면 첫 GPS 런 시작 직전 이유를
+  // 먼저 안내(Alert)한 뒤 OS 권한 다이얼로그로 넘어간다(audit#9/#10).
+  const [locPrimed,setLocPrimed]=useState(true);
   const insets=useSafeAreaInsets();
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -134,9 +154,19 @@ function Main(){
   },[]);
 
   async function initUser(){
+    // 재시도(재진입) 시 스켈레톤으로 되돌려 직전 에러 카드를 치운다.
+    setBootState('loading');
     let did=await AsyncStorage.getItem('device_id');
     if(!did){did='sl_'+Date.now()+'_'+Math.random().toString(36).substr(2,9);await AsyncStorage.setItem('device_id',did);}
     setDeviceId(did);
+    // 1회성 플래그(온보딩/권한 priming) 복원. 네트워크와 무관하므로 fetch try 밖에서
+    // 먼저 읽어, 콜드 백엔드라도 첫 실행 안내가 정상 동작하게 한다.
+    const [onbRaw,primeRaw]=await Promise.all([
+      AsyncStorage.getItem(ONBOARD_KEY),
+      AsyncStorage.getItem(LOC_PRIME_KEY),
+    ]);
+    setOnboarded(!!onbRaw);
+    setLocPrimed(!!primeRaw);
     // 설정 복원은 네트워크와 무관하므로 fetch try 밖에서 먼저 읽는다(오프라인에서도
     // 단위/목표/알림이 사용자가 마지막에 정한 값으로 뜬다). 알림 판정에 갓 읽은
     // alerts 설정을 직접 넘긴다(setAlerts state 갱신 전이라 클로저가 옛값일 수 있음).
@@ -156,12 +186,20 @@ function Main(){
         return merged;
       }));
       setShoes(safeShoes);setRuns(runsWithRoute);
+      // 부팅 성공: fetch가 성공한 순간 'ready'. 빈 배열이어도 'error'가 아니다 —
+      // 빈-신규 사용자는 재시도 카드가 아니라 온보딩/빈 홈을 봐야 한다(구분).
+      setBootState('ready');
       void loadPrices(safeShoes);
       checkShoeAlerts(safeShoes,safeRuns,st.alerts);
       // audit#3 재동기: 네트워크 실패로 큐에 남은 완주 런을 재전송. 서버 런 목록과
       // 사용자 id를 갓 받은 값으로 넘겨, 재-POST 전 클라이언트 화해로 중복을 막는다.
       await syncPendingRuns(safeRuns,d.user_id);
-    }catch{console.log('offline');}
+    }catch{
+      // 콜드 백엔드/오프라인: fetch 실패는 빈-신규와 다르다. 재시도 카드를 띄워
+      // 사용자가 직접 재시도하게 한다(데이터 없음 ≠ 불러오기 실패).
+      console.log('offline');
+      setBootState('error');
+    }
   }
 
   // audit#3 재동기 진입점(저장/네트워크 분리). 두 단계로 중복 행을 막는다:
@@ -494,7 +532,11 @@ function Main(){
     const list=runs.filter(r=>r.shoe_id===s.id);
     // 마지막 착용일(런에서 파생) → 한국어 표기. 미착용이면 undefined로 둬 화면에서 생략.
     const worn=lastWornDate(s.id,runs);
-    shoeTotals[i]={totalRuns:list.length,totalTime:totalTimeLabel(list),lastWorn:worn?fmtKDate(worn).date:undefined};
+    // 누적 러닝 시간은 서버 truth(run_time, 초)를 우선한다 — 다른 기기의 미동기 런까지
+    // 반영된 값. 없으면 로컬 런 로그 합산으로 폴백한다(audit#9/#10).
+    const serverSec=Number(s.run_time);
+    const totalTime=Number.isFinite(serverSec)&&serverSec>0?durationLabel(serverSec):totalTimeLabel(list);
+    shoeTotals[i]={totalRuns:list.length,totalTime,lastWorn:worn?fmtKDate(worn).date:undefined};
   });
 
   // ── profile ─────────────────────────────────────────────────
@@ -546,16 +588,62 @@ function Main(){
     setOverlay('none');
   };
 
+  // ── 위치 권한 priming(audit#9/#10) ──────────────────────────────────────────
+  // 라이브 런 진입 직전 관문. 권한을 처음 쓰는 사용자에겐 OS 다이얼로그 전에 '왜
+  // 위치 권한이 필요한지'를 먼저 한국어로 안내한다(priming). '계속'을 누르면 1회성
+  // 플래그를 영속하고 런으로 진입 → RunActiveScreen 이 실제 OS 권한을 요청한다.
+  // 이미 안내했거나(locPrimed) 닫으면 추가 안내 없이 동작한다.
+  const enterRun=(km:number)=>{
+    setActiveRun({id:pendingShoe!.id,name:pendingShoe!.name,goalKm:km});
+    setOverlay('run');
+  };
+  const startActiveRun=(km:number)=>{
+    if(!pendingShoe) return;
+    if(locPrimed){enterRun(km);return;}
+    Alert.alert(
+      '위치 권한 안내',
+      '러닝 거리와 코스를 GPS로 정확히 측정하기 위해 위치 권한이 필요해요. 다음 화면에서 권한을 허용해 주세요.',
+      [
+        {text:'닫기',style:'cancel'},
+        {text:'계속',onPress:()=>{
+          setLocPrimed(true);
+          void AsyncStorage.setItem(LOC_PRIME_KEY,'1');
+          enterRun(km);
+        }},
+      ],
+    );
+  };
+
+  // 온보딩 완료: 1회성 플래그 영속 + 화면에서 치운다. wantAddShoe면 곧장 신발 등록으로.
+  const finishOnboarding=(wantAddShoe:boolean)=>{
+    setOnboarded(true);
+    void AsyncStorage.setItem(ONBOARD_KEY,'1');
+    setOverlay(wantAddShoe?'add':'none');
+  };
+
   // ── render ──────────────────────────────────────────────────
+  // 콜드 백엔드 부팅: 스켈레톤(로딩) / 재시도 카드(에러). 빈-신규는 'ready'라 여기
+  // 걸리지 않고 아래 온보딩/홈으로 간다(fetch 실패와 빈 데이터의 구분).
+  if(bootState==='loading'){
+    return <BootSkeleton/>;
+  }
+  if(bootState==='error'){
+    return <BootError onRetry={()=>{void initUser();}}/>;
+  }
   if(overlay==='add'){
     return <AddShoeScreen onClose={()=>setOverlay('none')} onSave={onAddSaved}/>;
+  }
+  // 첫 실행 온보딩: 신발이 없고(신규) 아직 온보딩 전이면 신발→런→수명 차감 흐름을
+  // 1회 소개한다. 신발을 이미 가진 사용자/완료자에겐 뜨지 않는다.
+  if(!onboarded&&shoes.length===0&&overlay==='none'){
+    return <Onboarding onStart={()=>finishOnboarding(true)} onSkip={()=>finishOnboarding(false)}/>;
   }
   if(overlay==='goal'&&pendingShoe){
     return (
       <RunStart
         shoe={pendingShoe.ui}
         onClose={()=>{setOverlay('none');setPendingShoe(null);}}
-        onStart={(km)=>{setActiveRun({id:pendingShoe.id,name:pendingShoe.name,goalKm:km});setOverlay('run');}}
+        onStart={startActiveRun}
       />
     );
   }
@@ -616,6 +704,113 @@ function Main(){
     </View>
   );
 }
+
+// ─── 콜드 백엔드 스켈레톤(audit#9/#10) ──────────────────────────────────────
+// 스피너가 아니라 스켈레톤: 실제 콘텐츠(히어로 카드 + 주간 통계 3칸 + 신발 줄)의
+// 자리표시 형태를 회색 블록으로 미리 보여줘 '레이아웃이 곧 채워진다'는 신호를 준다.
+// testID로 통합테스트가 로딩 상태를 식별한다.
+function SkelBlock({h,w,style}:{h:number;w?:number|string;style?:any}){
+  return <View style={[{height:h,width:(w as any)??'100%',borderRadius:10,backgroundColor:SURFACE},style]}/>;
+}
+function BootSkeleton(){
+  return (
+    <View testID="boot-skeleton" style={boot.screen}>
+      <View style={{height:24}}/>
+      <SkelBlock h={14} w={120}/>
+      <View style={{height:18}}/>
+      {/* 히어로 카드 자리 */}
+      <SkelBlock h={150} style={{borderRadius:20}}/>
+      <View style={{height:16}}/>
+      {/* 주간 통계 3칸 */}
+      <View style={{flexDirection:'row',gap:10}}>
+        <SkelBlock h={64} w={'31%'as any}/>
+        <SkelBlock h={64} w={'31%'as any}/>
+        <SkelBlock h={64} w={'31%'as any}/>
+      </View>
+      <View style={{height:16}}/>
+      {/* 신발 줄 자리 */}
+      <SkelBlock h={84} style={{borderRadius:16}}/>
+      <View style={{height:10}}/>
+      <SkelBlock h={84} style={{borderRadius:16}}/>
+    </View>
+  );
+}
+
+// ─── 콜드 백엔드 에러: 재시도 카드(keep-going 톤, audit#9/#10) ───────────────
+// fetch 실패(콜드/오프라인)에만 뜬다 — 빈-신규(성공+빈배열)와 구분된다. 실패를
+// '잠깐 멈춤'으로 프레이밍하고 '다시 시도' 버튼으로 initUser 재진입을 제공한다.
+function BootError({onRetry}:{onRetry:()=>void}){
+  return (
+    <View testID="boot-error" style={[boot.screen,{justifyContent:'center'}]}>
+      <View style={boot.card}>
+        <Ionicons name="cloud-offline-outline" size={40} color={WARN}/>
+        <Text style={boot.cardTitle}>연결이 잠시 끊겼어요</Text>
+        <Text style={boot.cardBody}>{KEEP_GOING_RETRY}</Text>
+        <TouchableOpacity testID="boot-retry" onPress={onRetry} style={boot.retryBtn} activeOpacity={0.85}>
+          <Ionicons name="refresh" size={18} color={'#000'}/>
+          <Text style={boot.retryText}>다시 시도</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+
+// ─── 첫 실행 온보딩(audit#9/#10) ────────────────────────────────────────────
+// 신규 사용자에게 핵심 동선을 1회 소개: 신발을 등록하면, 달릴 때마다 그 신발의
+// 수명이 자동으로 차감된다(shoe-first 가치 제안). '신발 등록하고 시작'으로 곧장
+// 신발 등록 화면으로 보낸다.
+function Onboarding({onStart,onSkip}:{onStart:()=>void;onSkip:()=>void}){
+  const steps=[
+    {icon:'add-circle-outline',title:'신발을 등록하세요',body:'자주 신는 러닝화를 추가하면 잠금장에 보관돼요.'},
+    {icon:'walk-outline',title:'달리면 수명이 차감돼요',body:'러닝 거리만큼 그 신발의 수명이 자동으로 줄어듭니다.'},
+    {icon:'shield-checkmark-outline',title:'교체 시점을 알려드려요',body:'수명이 다하면 미리 알림 — 부상 없이 계속 달릴 수 있게.'},
+  ];
+  return (
+    <View testID="onboarding" style={[boot.screen,{justifyContent:'center'}]}>
+      <Text style={boot.obKicker}>KEEGO 시작하기</Text>
+      <Text style={boot.obTitle}>신발과 함께 달리는{'\n'}러닝 트래커</Text>
+      <View style={{height:24}}/>
+      {steps.map((s,i)=>(
+        <View key={i} style={boot.obStep}>
+          <View style={boot.obIconWrap}>
+            <Ionicons name={s.icon} size={22} color={ACCENT}/>
+          </View>
+          <View style={{flex:1}}>
+            <Text style={boot.obStepTitle}>{s.title}</Text>
+            <Text style={boot.obStepBody}>{s.body}</Text>
+          </View>
+        </View>
+      ))}
+      <View style={{height:28}}/>
+      <TouchableOpacity testID="onboarding-start" onPress={onStart} style={boot.retryBtn} activeOpacity={0.85}>
+        <Text style={boot.retryText}>신발 등록하고 시작</Text>
+      </TouchableOpacity>
+      <TouchableOpacity testID="onboarding-skip" onPress={onSkip} style={boot.obSkip} activeOpacity={0.7}>
+        <Text style={boot.obSkipText}>나중에 할게요</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+const boot=StyleSheet.create({
+  screen:{flex:1,backgroundColor:BG,paddingHorizontal:18,paddingTop:60},
+  card:{backgroundColor:CARD,borderRadius:20,padding:24,alignItems:'center',gap:12,
+    borderWidth:StyleSheet.hairlineWidth,borderColor:SEP},
+  cardTitle:{color:T1,fontFamily:FP,fontSize:18,fontWeight:'700',marginTop:4},
+  cardBody:{color:T3,fontFamily:FP,fontSize:14,lineHeight:20,textAlign:'center'},
+  retryBtn:{flexDirection:'row',alignItems:'center',justifyContent:'center',gap:8,
+    backgroundColor:ACCENT,borderRadius:14,paddingVertical:14,paddingHorizontal:24,marginTop:8,alignSelf:'stretch'},
+  retryText:{color:'#000',fontFamily:FP,fontSize:16,fontWeight:'700'},
+  obKicker:{color:ACCENT,fontFamily:FP,fontSize:13,fontWeight:'700',letterSpacing:1},
+  obTitle:{color:T1,fontFamily:FP,fontSize:26,fontWeight:'700',lineHeight:34,marginTop:8},
+  obStep:{flexDirection:'row',alignItems:'center',gap:14,marginBottom:16},
+  obIconWrap:{width:44,height:44,borderRadius:12,backgroundColor:CARD,alignItems:'center',justifyContent:'center',
+    borderWidth:StyleSheet.hairlineWidth,borderColor:SEP},
+  obStepTitle:{color:T1,fontFamily:FP,fontSize:16,fontWeight:'600'},
+  obStepBody:{color:T2,fontFamily:FP,fontSize:13,lineHeight:18,marginTop:2,opacity:0.7},
+  obSkip:{alignItems:'center',paddingVertical:14,marginTop:4},
+  obSkipText:{color:T3,fontFamily:FP,fontSize:14,fontWeight:'500'},
+});
 
 // ─── Live run screen (GPS / sensors / TTS engine + handoff Ring UI) ─────────
 function RunActiveScreen({shoe,insets,goalKm,onSave,onDiscard,resume}:{shoe:{id:string;name:string};insets:any;goalKm:number;onSave:(km:number,dur:number,cad:number,memo:string,route:string,location:string)=>Promise<void>;onDiscard:()=>void;resume?:RunSnapshot|null}){

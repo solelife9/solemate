@@ -2,6 +2,7 @@ import {
   sumKm,
   avgPaceLabel,
   totalTimeLabel,
+  durationLabel,
   summaryOf,
   maxDayStreak,
   weekBuckets,
@@ -37,6 +38,23 @@ describe('totalTimeLabel', () => {
   });
   test('hours and minutes when over an hour', () => {
     expect(totalTimeLabel([{duration: 3700}])).toBe('1h 1m');
+  });
+});
+
+describe('durationLabel — 서버 truth run_time(초) 포맷(audit#9/#10)', () => {
+  test('0/음수/NaN → --', () => {
+    expect(durationLabel(0)).toBe('--');
+    expect(durationLabel(-5)).toBe('--');
+    expect(durationLabel(NaN)).toBe('--');
+  });
+  test('한 시간 미만은 분만', () => {
+    expect(durationLabel(900)).toBe('15m');
+  });
+  test('한 시간 이상은 시간+분', () => {
+    expect(durationLabel(3700)).toBe('1h 1m');
+  });
+  test('totalTimeLabel과 동일한 포맷을 낸다(공용 헬퍼)', () => {
+    expect(durationLabel(3700)).toBe(totalTimeLabel([{duration: 3700}]));
   });
 });
 

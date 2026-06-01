@@ -59,6 +59,10 @@ export type ShoeLike = {
   max?: number; // presentational alias used by the UI Shoe shape
   start_km?: number; // mileage already on the shoe at registration
   retired?: boolean;
+  // 서버 truth(audit#9/#10): 서버가 영속한 누적 주행거리(km). 존재하면 클라이언트
+  // 런-합산 파생 대신 이 값을 usedKm 의 단일 소스로 쓴다(다른 기기의 미동기 런으로
+  // 인한 과소표시 완화). 없으면 start_km + Σ runs 로 폴백한다.
+  total_km?: number;
 };
 
 export type RunLike = {shoe_id?: string | number; km?: number | string};
@@ -72,20 +76,29 @@ export function conditionForPercent(percentUsed: number): ShoeCondition {
 }
 
 /**
- * Derive a shoe's wear from its registration mileage + every run logged against
- * its id. `runs` that belong to other shoes are ignored, so this is safe to call
- * with the full run list. Pure: no rounding/clamping beyond a non-negative
- * remaining (a shoe past its life still reports its true usedKm/percentUsed).
+ * Derive a shoe's wear. Prefers the SERVER-PERSISTED `total_km` (audit#9/#10) as
+ * the single source of truth for usedKm when present; otherwise falls back to the
+ * client derivation: registration mileage (start_km) + every run logged against
+ * this shoe's id (runs for other shoes are ignored, so it is safe to pass the
+ * full run list). Pure: no rounding/clamping beyond a non-negative remaining (a
+ * shoe past its life still reports its true usedKm/percentUsed).
  */
 export function shoeHealth(shoe: ShoeLike, runs: RunLike[] = []): ShoeHealth {
   const max = Number(shoe?.max_km ?? shoe?.max ?? DEFAULT_MAX_KM) || DEFAULT_MAX_KM;
-  const startKm = Number(shoe?.start_km ?? 0) || 0;
-  const ranKm = (runs || []).reduce((sum, r) => {
-    if (!r || r.shoe_id !== shoe?.id) return sum;
-    const km = typeof r.km === 'number' ? r.km : parseFloat(String(r.km));
-    return sum + (Number.isFinite(km) ? km : 0);
-  }, 0);
-  const usedKm = startKm + ranKm;
+  // 서버 truth 우선: total_km 이 유한·음수아님이면 그것을 usedKm 으로 채택한다.
+  const serverTotal = Number(shoe?.total_km);
+  let usedKm: number;
+  if (Number.isFinite(serverTotal) && serverTotal >= 0) {
+    usedKm = serverTotal;
+  } else {
+    const startKm = Number(shoe?.start_km ?? 0) || 0;
+    const ranKm = (runs || []).reduce((sum, r) => {
+      if (!r || r.shoe_id !== shoe?.id) return sum;
+      const km = typeof r.km === 'number' ? r.km : parseFloat(String(r.km));
+      return sum + (Number.isFinite(km) ? km : 0);
+    }, 0);
+    usedKm = startKm + ranKm;
+  }
   const remainingKm = Math.max(0, max - usedKm);
   const percentUsed = max > 0 ? (usedKm / max) * 100 : 0;
   return {usedKm, remainingKm, percentUsed, condition: conditionForPercent(percentUsed)};

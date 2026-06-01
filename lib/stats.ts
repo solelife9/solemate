@@ -28,13 +28,20 @@ export function avgPaceLabel(list: any[]): string {
   return fmtPace(1, sec);
 }
 
-/** Total moving time as "Hh Mm" / "Mm", or '--' when zero. */
-export function totalTimeLabel(list: any[]): string {
-  const s = list.reduce((a, r) => a + (r.duration || 0), 0);
-  if (s <= 0) return '--';
+/** Format a duration in seconds as "Hh Mm" / "Mm", or '--' when not positive.
+ *  Shared by totalTimeLabel (client-derived) and the server-truth `run_time`
+ *  path (audit#9/#10) so both render identically. */
+export function durationLabel(seconds: number): string {
+  const s = Number(seconds);
+  if (!Number.isFinite(s) || s <= 0) return '--';
   const h = Math.floor(s / 3600),
     m = Math.floor((s % 3600) / 60);
   return h > 0 ? `${h}h ${m}m` : `${m}m`;
+}
+
+/** Total moving time as "Hh Mm" / "Mm", or '--' when zero. */
+export function totalTimeLabel(list: any[]): string {
+  return durationLabel(list.reduce((a, r) => a + (r.duration || 0), 0));
 }
 
 /** Period summary (distance/count/pace/time) for a run list. */

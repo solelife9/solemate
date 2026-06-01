@@ -95,6 +95,47 @@ describe('shoeHealth — used = start_km + Σ(this shoe runs)', () => {
   });
 });
 
+describe('shoeHealth — 서버 truth(total_km) 우선(audit#9/#10)', () => {
+  test('서버 total_km이 있으면 클라이언트 런 합산 대신 그것을 usedKm으로 쓴다', () => {
+    // 로컬엔 런이 0개여도 서버가 540km를 영속했다면 그 값이 truth다(다른 기기 런 반영).
+    const h = shoeHealth({id: 's1', max_km: 700, total_km: 540}, []);
+    expect(h.usedKm).toBe(540);
+    expect(h.remainingKm).toBeCloseTo(160, 5);
+    expect(h.percentUsed).toBeCloseTo(77.14, 1);
+    expect(h.condition).toBe('주의');
+  });
+
+  test('서버 total_km은 로컬 런 합산을 덮어쓴다(이중 계산 방지)', () => {
+    // 서버 truth가 단일 소스 — 로컬 런까지 더해 부풀리지 않는다.
+    const h = shoeHealth({id: 's1', max_km: 700, start_km: 100, total_km: 300}, [
+      {shoe_id: 's1', km: 50},
+    ]);
+    expect(h.usedKm).toBe(300);
+  });
+
+  test('total_km이 없으면 기존 클라이언트 파생(start_km + Σ runs)으로 폴백한다', () => {
+    const h = shoeHealth({id: 's1', max_km: 700, start_km: 20}, [{shoe_id: 's1', km: 30}]);
+    expect(h.usedKm).toBeCloseTo(50, 5);
+  });
+
+  test('total_km이 NaN/음수면 truth로 인정하지 않고 폴백한다', () => {
+    const bad = shoeHealth({id: 's1', max_km: 700, total_km: NaN, start_km: 10}, [
+      {shoe_id: 's1', km: 5},
+    ]);
+    expect(bad.usedKm).toBeCloseTo(15, 5);
+    const neg = shoeHealth({id: 's1', max_km: 700, total_km: -1, start_km: 10}, []);
+    expect(neg.usedKm).toBeCloseTo(10, 5);
+  });
+
+  test('서버 total_km 0은 유효한 truth다(아직 안 달린 신발)', () => {
+    const h = shoeHealth({id: 's1', max_km: 700, start_km: 0, total_km: 0}, [
+      {shoe_id: 's1', km: 99}, // 미동기 로컬 런은 서버 truth로 무시
+    ]);
+    expect(h.usedKm).toBe(0);
+    expect(h.condition).toBe('양호');
+  });
+});
+
 describe('shoeHealth — 카테고리 수명 비례 condition 티어', () => {
   const shoe = {id: 1, max_km: 700, start_km: 0};
   const tierAt = (km: number) => shoeHealth(shoe, [{shoe_id: 1, km}]).condition;
