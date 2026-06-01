@@ -25,9 +25,9 @@ export const FONT = 'PretendardVariable';  // body
 // onto FONT. Until then `DISPLAY` must keep its existing string value so the live
 // screens don't change. Flip UNIFY_DISPLAY_FONT to true (in Slice 3) and every
 // consumer of DISPLAY transparently moves to Pretendard with no further edits.
-export const DISPLAY_LEGACY = 'BebasNeue-Regular'; // current big-number / wordmark face
+export const DISPLAY_LEGACY = 'BebasNeue-Regular'; // legacy big-number / wordmark face (no longer used)
 export const DISPLAY_TARGET = FONT;                // unified target face (Pretendard)
-export const UNIFY_DISPLAY_FONT = false;           // Slice 3 flips this to true
+export const UNIFY_DISPLAY_FONT = true;            // Slice 3: unified onto Pretendard
 export const DISPLAY = UNIFY_DISPLAY_FONT ? DISPLAY_TARGET : DISPLAY_LEGACY;
 
 // ── spacing scale (dp) ───────────────────────────────────────────────────────

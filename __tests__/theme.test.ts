@@ -57,10 +57,13 @@ describe('TYPE presets', () => {
 });
 
 describe('DISPLAY font transition (Keego rebrand)', () => {
-  test('while unification is off DISPLAY keeps the legacy BebasNeue face', () => {
-    expect(UNIFY_DISPLAY_FONT).toBe(false);
-    expect(DISPLAY).toBe(DISPLAY_LEGACY);
-    expect(DISPLAY).toBe('BebasNeue-Regular');
+  test('Slice 3 unifies DISPLAY onto the Pretendard body face (Bebas retired)', () => {
+    expect(UNIFY_DISPLAY_FONT).toBe(true);
+    expect(DISPLAY).toBe(DISPLAY_TARGET);
+    expect(DISPLAY).toBe(FONT);
+    // The legacy face token is preserved but no longer the active DISPLAY.
+    expect(DISPLAY_LEGACY).toBe('BebasNeue-Regular');
+    expect(DISPLAY).not.toBe(DISPLAY_LEGACY);
   });
   test('the unified target is Pretendard so Slice 3 can flip one flag', () => {
     expect(DISPLAY_TARGET).toBe(FONT);
