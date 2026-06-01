@@ -16,6 +16,23 @@ export const T2 = '#EBEBF5';
 export const T3 = '#8E8E93';
 export const SEP = 'rgba(255,255,255,0.08)';
 
+// ── alpha helper ─────────────────────────────────────────────────────────────
+// Derive a translucent fill from an existing #RRGGBB token so semi-transparent
+// surfaces (e.g. badge backgrounds) stay a single source of truth: change the
+// hex token and every withAlpha() consumer follows. Avoids hand-copied rgba()
+// literals that silently desync from the colour they were cloned from.
+export function withAlpha(hex: string, alpha: number): string {
+  const m = /^#?([0-9a-fA-F]{6})$/.exec(hex.trim());
+  if (!m) {
+    throw new Error(`withAlpha: expected #RRGGBB, got "${hex}"`);
+  }
+  const rgb = m[1];
+  const r = parseInt(rgb.slice(0, 2), 16);
+  const g = parseInt(rgb.slice(2, 4), 16);
+  const b = parseInt(rgb.slice(4, 6), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
 // Font family names as actually loaded in this project (assets/fonts + Info.plist).
 export const FONT = 'PretendardVariable';  // body
 

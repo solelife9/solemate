@@ -41,6 +41,7 @@ import {
   SPACE,
   RADIUS,
   TYPE,
+  withAlpha,
 } from './theme';
 import {tierBadge, ShoeCondition} from './lib/shoe';
 
@@ -61,8 +62,9 @@ export function conditionTone(condition: ShoeCondition): Tone {
   return 'good';
 }
 
-// 톤별 전경/반투명 배경. 배경 rgba 는 theme 의 GOOD/WARN/DANGER/ACCENT hex 와
-// 동일한 채널값(15% 알파)이라 단일 소스를 깨지 않는다. dim 은 CARD_HI 표면.
+// 톤별 전경/반투명 배경. 배경은 theme 의 GOOD/WARN/DANGER/ACCENT 토큰에서
+// withAlpha(…, 0.15) 로 파생하므로 토큰 색을 바꾸면 반투명 배경도 함께 따라간다
+// (수동 rgba 복제 없음 = 단일 진실원). dim 은 CARD_HI 표면.
 const TONE_FG: Record<Tone, string> = {
   good: GOOD,
   warn: WARN,
@@ -70,11 +72,11 @@ const TONE_FG: Record<Tone, string> = {
   accent: ACCENT,
   dim: T3,
 };
-const TONE_BG: Record<Tone, string> = {
-  good: 'rgba(48,209,88,0.15)',
-  warn: 'rgba(255,159,10,0.15)',
-  danger: 'rgba(255,69,58,0.15)',
-  accent: 'rgba(255,101,0,0.15)',
+export const TONE_BG: Record<Tone, string> = {
+  good: withAlpha(GOOD, 0.15),
+  warn: withAlpha(WARN, 0.15),
+  danger: withAlpha(DANGER, 0.15),
+  accent: withAlpha(ACCENT, 0.15),
   dim: CARD_HI,
 };
 
