@@ -180,7 +180,7 @@ function ShoeDetail({
           </View>
           <Text style={s.cpkHint}>
             {cpk != null
-              ? `${shoe.used}km 사용 · 1km당 ${fmtWon(cpk)}원`
+              ? `${usedDisp}${unit} 사용 · 1km당 ${fmtWon(cpk)}원`
               : '구매가를 입력하면 1km당 비용이 계산돼요.'}
           </Text>
         </View>
