@@ -2,14 +2,17 @@
 // HistoryScreen.rn.tsx — 기록: period segment, period chart, recent runs + RunDetail
 // (sample data removed — real summary/chart/runs are injected via props)
 // ============================================================================
-import React, { useState } from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, ScrollView, Pressable, StyleSheet, LayoutChangeEvent } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import Svg, { Polyline, Circle } from 'react-native-svg';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {
   BG, CARD, ACCENT, T1, T2, T3, SEP, FONT, DISPLAY, Shoe, Run, SHOES,
 } from './theme';
 import { TabBar } from './primitives';
 import { Unit, displayNum } from './lib/units';
+import { parseRoute, projectRoute, LatLon } from './lib/route';
 
 export type PeriodSummary = { km: string; runs: number; pace: string; time: string };
 export type PeriodChart = { title: string; data: number[]; labels: string[] };
@@ -58,8 +61,58 @@ function PeriodChartView({ data, labels, unit }: { data: number[]; labels: strin
   );
 }
 
+// ── course map ────────────────────────────────────────────────────────────────
+// Renders the recorded GPS route (AsyncStorage `route_<id>`, [{lat,lon}]) as a
+// single react-native-svg polyline. Native deps: 0 (svg only). The map sizes to
+// the card width (measured on layout) at a fixed height, and projection is the
+// pure projectRoute() so the visual is fully unit-tested. An empty/invalid route
+// renders nothing — the caller hides the whole card on `points.length < 2`.
+const MAP_H = 180;
+const MAP_PAD = 16;
+
+function CourseMap({ points }: { points: LatLon[] }) {
+  const [w, setW] = useState(0);
+  const onLayout = (e: LayoutChangeEvent) => setW(e.nativeEvent.layout.width);
+  if (points.length < 2) return null;
+  const proj = w > 0 ? projectRoute(points, { width: w, height: MAP_H, padding: MAP_PAD }) : null;
+  const start = proj?.points[0];
+  const end = proj?.points[proj.points.length - 1];
+  return (
+    <View style={[s.card, { padding: 16, marginTop: 16 }]}>
+      <Text style={s.detailBrand}>코스</Text>
+      <View style={{ height: MAP_H, marginTop: 10, borderRadius: 14, overflow: 'hidden', backgroundColor: '#1C1C1E' }} onLayout={onLayout}>
+        {proj && proj.svgPoints !== '' && (
+          <Svg width={w} height={MAP_H}>
+            <Polyline
+              points={proj.svgPoints}
+              fill="none"
+              stroke={ACCENT}
+              strokeWidth={3}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            {!!start && <Circle cx={start.x} cy={start.y} r={5} fill={ACCENT} />}
+            {!!end && <Circle cx={end.x} cy={end.y} r={5} fill="#FFFFFF" stroke={ACCENT} strokeWidth={2} />}
+          </Svg>
+        )}
+      </View>
+    </View>
+  );
+}
+
 // ── run detail ────────────────────────────────────────────────────────────────
 function RunDetail({ run, shoe, onBack, unit }: { run: Run; shoe?: Shoe; onBack: () => void; unit: Unit }) {
+  // Load the recorded route for this run once. Missing/invalid blob → [] → map
+  // stays hidden (graceful). route_<id> is written by App.addRun on save.
+  const [route, setRoute] = useState<LatLon[]>([]);
+  useEffect(() => {
+    let alive = true;
+    if (!run.id) { setRoute([]); return; }
+    AsyncStorage.getItem('route_' + run.id)
+      .then(raw => { if (alive) setRoute(parseRoute(raw)); })
+      .catch(() => { if (alive) setRoute([]); });
+    return () => { alive = false; };
+  }, [run.id]);
   const dash = (n: number, u: string) => (n > 0 ? { v: String(n), u } : { v: '--', u: '' });
   const stats = [
     { l: '평균 페이스', v: run.pace, u: '/km' },
@@ -86,6 +139,7 @@ function RunDetail({ run, shoe, onBack, unit }: { run: Run; shoe?: Shoe; onBack:
             <Text style={s.detailModel}>{shoe.model}</Text>
           </View>
         )}
+        <CourseMap points={route} />
         <View style={s.statGrid}>
           {stats.map((x, i) => (
             <View key={i} style={s.statCell}>
