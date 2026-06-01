@@ -48,7 +48,11 @@ export function buildRunShareText(input: RunShareInput): string {
   if (input.date && input.date.trim()) lines.push(`🗓️ ${input.date.trim()}`);
   lines.push(`📍 거리 ${dist} ${unit}`);
   if (input.time && input.time !== '--') lines.push(`⏱️ 시간 ${input.time}`);
-  if (input.pace && input.pace !== '--') lines.push(`⚡ 페이스 ${input.pace} /${unit}`);
+  // 페이스 라벨은 항상 '/km' — input.pace(=run.pace, fmtPace 출력)는 언제나 '초/km' 값이고
+  // 앱이 분/마일 페이스를 따로 계산하지 않는다. mi 모드라도 라벨만 '/mi'로 바꾸면 같은 값을
+  // 다른 단위로 거짓 표기(상세 화면·ShoesScreen은 '/km')하게 되므로 거리(mi 환산)와 별개로
+  // 페이스는 km 기준으로 고정해 앱 전체와 일관성을 유지한다.
+  if (input.pace && input.pace !== '--') lines.push(`⚡ 페이스 ${input.pace} /km`);
   if (shoe) lines.push(`👟 신발 ${shoe}`);
   lines.push('', FOOTER);
   return lines.join('\n');

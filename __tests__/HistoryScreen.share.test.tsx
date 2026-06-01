@@ -134,8 +134,34 @@ describe('HistoryScreen 공유 버튼', () => {
     await flush();
 
     const msg: string = shareSpy.mock.calls[0][0].message;
-    // 5.2 km == 3.23 mi
+    // 거리는 mi로 환산(5.2 km == 3.23 mi)되지만, 페이스 값은 초/km이므로 라벨은 /km로 고정.
+    // → 한 공유 안에서 거리=mi·페이스=/km로 단위가 의도대로 다르다(거짓 per-mile 통계 방지).
     expect(msg).toContain('📍 거리 3.23 mi');
-    expect(msg).toContain('/mi');
+    expect(msg).toContain('⚡ 페이스 5\'02" /km');
+    expect(msg).not.toContain('/mi'); // 페이스가 /mi로 잘못 라벨되지 않는다
+  });
+
+  test('공유가 실패(reject)해도 onShare는 예외를 던지지 않고 조용히 무시한다(.catch)', async () => {
+    shareSpy.mockRejectedValueOnce(new Error('user dismissed / native failure'));
+
+    let renderer!: ReactTestRenderer.ReactTestRenderer;
+    await act(async () => {
+      renderer = ReactTestRenderer.create(<HistoryScreen shoes={[SHOE]} runs={[RUN]} unit="km" />);
+    });
+    await flush();
+    const root = renderer.root;
+
+    await openDetail(root, 'Pegasus 41');
+
+    // 버튼을 눌러도 reject가 표면화되지 않아야 한다 — flush 중 unhandled rejection이 없으면 통과
+    await expect(
+      (async () => {
+        await act(async () => {
+          shareButton(root).props.onPress();
+        });
+        await flush();
+      })(),
+    ).resolves.toBeUndefined();
+    expect(shareSpy).toHaveBeenCalledTimes(1);
   });
 });

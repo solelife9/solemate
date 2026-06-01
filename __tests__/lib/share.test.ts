@@ -25,13 +25,16 @@ describe('buildRunShareText', () => {
     expect(lines[lines.length - 1]).toBe('#Keego #keepgoing');
   });
 
-  test('거리는 표시 단위(mi)로 환산해 소수 2자리로 출력한다', () => {
+  test('거리는 표시 단위(mi)로 환산하지만 페이스 라벨은 /km로 고정한다', () => {
     // 1.60934 km == 정확히 1.00 mi
     const text = buildRunShareText({distKm: 1.60934, unit: 'mi'});
     expect(text).toContain('📍 거리 1.00 mi');
-    // 페이스 라벨도 단위를 따른다
+    // 페이스 값은 항상 초/km 기준이므로 mi 모드라도 라벨은 /km로 고정(거짓 통계 방지)
     const withPace = buildRunShareText({distKm: 1.60934, unit: 'mi', pace: "8'00\""});
-    expect(withPace).toContain('⚡ 페이스 8\'00" /mi');
+    expect(withPace).toContain('⚡ 페이스 8\'00" /km');
+    expect(withPace).not.toContain('/mi'); // 페이스에 /mi 라벨이 절대 붙지 않는다
+    // 거리는 mi 환산, 페이스는 /km — 한 공유 안에서 단위가 의도대로 다름
+    expect(withPace).toContain('📍 거리 1.00 mi');
   });
 
   test("페이스·시간이 '--'(의미 없는 값)이면 해당 줄을 통째로 생략한다", () => {
