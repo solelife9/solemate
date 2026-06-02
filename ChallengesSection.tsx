@@ -9,8 +9,8 @@
 import React, {useState} from 'react';
 import {View, Text, Pressable, StyleSheet} from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import {CARD, CARD_HI, ACCENT, GOOD, T1, T2, T3, SEP, FONT, DISPLAY, RADIUS, SPACE, withAlpha} from './theme';
-import {Ring, Pill, SectionTitle} from './primitives';
+import {CARD, CARD_HI, ACCENT, GOOD, T1, T2, T3, SEP, FONT, DISPLAY, RADIUS, withAlpha} from './theme';
+import {Ring, Pill} from './primitives';
 import {Challenge, ChallengeRun, ChallengeKind, challengeProgress} from './lib/challenges';
 
 // 챌린지 한 줄의 사람이 읽는 라벨(순수 카피 — 토큰 아님).
