@@ -291,7 +291,7 @@ const s = StyleSheet.create({
 
   hero: { backgroundColor: HERO_BG, borderRadius: RADIUS.xl, borderWidth: 1, borderColor: ACCENT, padding: 24 },
   heroTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 14 },
-  heroBrand: { color: T3, fontFamily: FONT, fontSize: 11, fontWeight: '500', letterSpacing: 1.4 },
+  heroBrand: { color: T3, fontFamily: DISPLAY, fontSize: 11, fontWeight: '500', letterSpacing: 1.4 },
   usingChip: { backgroundColor: withAlpha(ACCENT, 0.14), borderRadius: 6, paddingHorizontal: SPACE.sm, paddingVertical: 2 },
   usingChipText: { color: ACCENT, fontFamily: FONT, fontSize: 10, fontWeight: '500' },
   heroModel: { color: T1, fontFamily: DISPLAY, fontSize: 24, fontWeight: '600', letterSpacing: -0.2, marginTop: 7, lineHeight: 28 },
@@ -309,7 +309,7 @@ const s = StyleSheet.create({
   pcard: { width: CARD_W, height: CARD_W, borderRadius: RADIUS.lg, padding: SPACE.lg, justifyContent: 'space-between' },
   pcardActive: { backgroundColor: HERO_BG, borderWidth: 1, borderColor: ACCENT },
   pcardIdle: { backgroundColor: CARD_DIM, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.06) },
-  pcardBrand: { flex: 1, color: T3, fontFamily: FONT, fontSize: 10, fontWeight: '500', letterSpacing: 1.2 },
+  pcardBrand: { flex: 1, color: T3, fontFamily: DISPLAY, fontSize: 10, fontWeight: '500', letterSpacing: 1.2 },
   pcardRingPct: { color: T1, fontFamily: DISPLAY, fontSize: 11 },
   pcardModel: { fontFamily: DISPLAY, fontSize: 15, fontWeight: '500', letterSpacing: -0.1, lineHeight: 18 },
   pcardRemain: { fontFamily: DISPLAY, fontSize: 18, letterSpacing: -0.3 },

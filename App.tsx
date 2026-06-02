@@ -7,6 +7,7 @@ import {SafeAreaProvider, useSafeAreaInsets} from 'react-native-safe-area-contex
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {accelerometer, setUpdateIntervalForType, SensorTypes} from 'react-native-sensors';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import Tts from 'react-native-tts';
 
 import {
@@ -1040,7 +1041,7 @@ function RunActiveScreen({shoe,insets,goalKm,onSave,onDiscard,resume}:{shoe:{id:
     <View style={[run.screen,{paddingTop:insets.top+24,paddingBottom:insets.bottom+28}]}>
       <View style={run.top}>
         <View style={run.liveRow}><Text style={[run.liveText,{color:ACCENT}]}>완료</Text></View>
-        <View style={run.shoeChip}><Ionicons name="footsteps-outline" size={15} color={T3}/><Text style={run.shoeChipText}>{ui.model||shoe.name}</Text></View>
+        <View style={run.shoeChip}><MaterialCommunityIcons name="shoe-sneaker" size={15} color={T3}/><Text style={run.shoeChipText}>{ui.model||shoe.name}</Text></View>
       </View>
       <View style={run.body}>
         <Ring size={272} stroke={16} progress={1} color={ACCENT}>
@@ -1071,7 +1072,7 @@ function RunActiveScreen({shoe,insets,goalKm,onSave,onDiscard,resume}:{shoe:{id:
           <View style={[run.liveDot,{backgroundColor:pauseColor}]}/>
           <Text style={[run.liveText,{color:pauseColor}]}>{pauseLabel}</Text>
         </View>
-        <View style={run.shoeChip}><Ionicons name="footsteps-outline" size={15} color={T3}/><Text style={run.shoeChipText}>{ui.model||shoe.name}</Text></View>
+        <View style={run.shoeChip}><MaterialCommunityIcons name="shoe-sneaker" size={15} color={T3}/><Text style={run.shoeChipText}>{ui.model||shoe.name}</Text></View>
       </View>
       <View style={run.gpsRow}>
         <Ionicons name="radio-outline" size={11} color={ACCENT} style={{marginRight:4}}/>
@@ -1132,7 +1133,7 @@ const run=StyleSheet.create({
   liveDot:{width:8,height:8,borderRadius:999},
   liveText:{fontFamily:FP,fontSize:14,fontWeight:'500',letterSpacing:0.3},
   shoeChip:{flexDirection:'row',alignItems:'center',gap:7,height:30,paddingHorizontal:12,borderRadius:999,backgroundColor:SURFACE},
-  shoeChipText:{color:T3,fontFamily:FP,fontSize:12.5,fontWeight:'600'},
+  shoeChipText:{color:T3,fontFamily:FH,fontSize:13,fontWeight:'600'},
   gpsRow:{flexDirection:'row',alignItems:'center',marginTop:8},
   gpsText:{color:T3,fontFamily:FP,fontSize:11},
   banner:{flexDirection:'row',alignItems:'center',gap:8,marginTop:10,paddingVertical:10,paddingHorizontal:12,borderRadius:12,borderWidth:StyleSheet.hairlineWidth},
