@@ -294,7 +294,7 @@ const s = StyleSheet.create({
   heroBrand: { color: T3, fontFamily: FONT, fontSize: 11, fontWeight: '500', letterSpacing: 1.4 },
   usingChip: { backgroundColor: withAlpha(ACCENT, 0.14), borderRadius: 6, paddingHorizontal: SPACE.sm, paddingVertical: 2 },
   usingChipText: { color: ACCENT, fontFamily: FONT, fontSize: 10, fontWeight: '500' },
-  heroModel: { color: T1, fontFamily: FONT, fontSize: 23, fontWeight: '600', letterSpacing: -0.5, marginTop: 7, lineHeight: 28 },
+  heroModel: { color: T1, fontFamily: DISPLAY, fontSize: 24, fontWeight: '600', letterSpacing: -0.2, marginTop: 7, lineHeight: 28 },
   heroBottom: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 18 },
   heroRemain: { color: T1, fontFamily: DISPLAY, fontSize: 46, letterSpacing: -1 },
   heroRemainU: { color: T2, fontFamily: FONT, fontSize: 16, marginLeft: 5, marginBottom: 6 },
@@ -311,7 +311,7 @@ const s = StyleSheet.create({
   pcardIdle: { backgroundColor: CARD_DIM, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.06) },
   pcardBrand: { flex: 1, color: T3, fontFamily: FONT, fontSize: 10, fontWeight: '500', letterSpacing: 1.2 },
   pcardRingPct: { color: T1, fontFamily: DISPLAY, fontSize: 11 },
-  pcardModel: { fontFamily: FONT, fontSize: 14, fontWeight: '500', letterSpacing: -0.3, lineHeight: 18 },
+  pcardModel: { fontFamily: DISPLAY, fontSize: 15, fontWeight: '500', letterSpacing: -0.1, lineHeight: 18 },
   pcardRemain: { fontFamily: DISPLAY, fontSize: 18, letterSpacing: -0.3 },
   pcardRemainU: { color: T3, fontFamily: FONT, fontSize: 10.5, marginLeft: 3, marginBottom: 1 },
 

@@ -409,7 +409,7 @@ const s = StyleSheet.create({
   shoeRingPct: { color: T1, fontFamily: DISPLAY, fontSize: 17 },
   shoeRingPctU: { color: T3, fontFamily: FONT, fontSize: 9 },
   shoeBrand: { color: T3, fontFamily: FONT, fontSize: 11, fontWeight: '500', letterSpacing: 1.3 },
-  shoeModel: { color: T1, fontFamily: FONT, fontSize: 18, fontWeight: '500', letterSpacing: -0.3, marginTop: 3 },
+  shoeModel: { color: T1, fontFamily: DISPLAY, fontSize: 19, fontWeight: '500', letterSpacing: -0.1, marginTop: 3 },
   shoeMeta: { color: T3, fontFamily: FONT, fontSize: 12.5, fontWeight: '600', marginTop: 5 },
   cardPlay: { width: 38, height: 38, borderRadius: 999, backgroundColor: ACCENT, alignItems: 'center', justifyContent: 'center' },
   track: { height: 6, borderRadius: 999, backgroundColor: CARD_HI, overflow: 'hidden', marginTop: 16 },
@@ -422,7 +422,7 @@ const s = StyleSheet.create({
   detailNav: { paddingTop: 12, paddingHorizontal: 16, paddingBottom: 6, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   iconBtn: { width: 38, height: 38, borderRadius: 999, backgroundColor: CARD_HI, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.12), alignItems: 'center', justifyContent: 'center' },
   dBrand: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500', letterSpacing: 1.6 },
-  dModel: { color: T1, fontFamily: FONT, fontSize: 27, fontWeight: '500', letterSpacing: -0.6, marginTop: 4 },
+  dModel: { color: T1, fontFamily: DISPLAY, fontSize: 28, fontWeight: '500', letterSpacing: -0.3, marginTop: 4 },
   runCta: { height: 54, borderRadius: 18, backgroundColor: ACCENT, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9 },
   runCtaText: { color: T1, fontFamily: FONT, fontSize: 16, fontWeight: '600', letterSpacing: -0.2 },
 
