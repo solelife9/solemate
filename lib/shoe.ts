@@ -115,7 +115,7 @@ export function isRetired(shoe: ShoeLike | null | undefined): boolean {
 // 더 빨리 주의/교체로 넘어간다. 비현실적 값으로 화면이 깨지지 않게 범위를 클램프한다.
 export const MIN_SHOE_MAX_KM = 100;
 export const MAX_SHOE_MAX_KM = 2000;
-export const SHOE_MAX_STEP_KM = 50;
+export const SHOE_MAX_STEP_KM = 10;
 
 /** 신발 수명(max_km)을 허용 범위(km)로 클램프 + 정수 반올림. 비정상값은 기본 수명. */
 export function clampMaxKm(km: number): number {

@@ -53,17 +53,33 @@ function ShoeDetail({
 
   // 신발 수명(max_km)을 '남은 수명' 옆 연필로 펼쳐 바로 보정한다(기본 접힘).
   const [editingMax, setEditingMax] = useState(false);
+  // 직접 입력 임시값(표시 단위 문자열). null이면 '입력 중 아님' → shoe.max를 그대로 보여준다.
+  // 매 타건마다 커밋하지 않고 blur/제출 시 한 번만 onSetMaxKm으로 영속화한다.
+  const [maxDraft, setMaxDraft] = useState<string | null>(null);
 
-  // 신발 수명(max_km) 조정: ＋/− 50km씩 보정. 비율(percentUsed)은 km 절대값으로
-  // 계산하지만 표시·스텝은 단위를 따른다(goal 스테퍼와 동일). 임계 tier는 새 max로
-  // 즉시 재판정해, 수명을 올리면 교체→주의→양호로 완화되는 걸 바로 보여준다.
+  // 신발 수명(max_km) 조정: ＋/− 10km씩 보정 + 직접 입력. 비율(percentUsed)은 km 절대값
+  // 으로 계산하지만 표시·스텝·입력은 단위를 따른다. 임계 tier는 새 max로 즉시 재판정해,
+  // 수명을 올리면 교체→주의→양호로 완화되는 걸 바로 보여준다.
   const usedKm = shoe.used;
   const percentUsed = shoe.max > 0 ? (usedKm / shoe.max) * 100 : 0;
   const maxStepDisplay = displayNum(SHOE_MAX_STEP_KM, unit, 0) || 1;
+  const commitMaxKm = (km: number) => {
+    if (!shoe.id) return;
+    onSetMaxKm?.(shoe.id, clampMaxKm(km));
+  };
   const stepMaxKm = (dir: 1 | -1) => {
     if (!shoe.id) return;
+    setMaxDraft(null); // ± 사용 시 입력 임시값을 버리고 확정값 기준으로 보정
     const nextDisplay = displayNum(shoe.max, unit, 0) + dir * maxStepDisplay;
-    onSetMaxKm?.(shoe.id, clampMaxKm(displayToKm(nextDisplay, unit)));
+    commitMaxKm(displayToKm(nextDisplay, unit));
+  };
+  // 직접 입력 커밋: 표시 단위 → km 변환 후 클램프 영속. 빈/0 값은 무시하고 원복.
+  const commitMaxDraft = () => {
+    if (maxDraft != null) {
+      const n = Number(maxDraft);
+      if (Number.isFinite(n) && n > 0) commitMaxKm(displayToKm(n, unit));
+    }
+    setMaxDraft(null);
   };
   // 교체 임계 도달까지 남은 거리(표시 단위). 임계 = max_km * SHOE_REPLACE_PCT/100.
   const replaceAtKm = (shoe.max * SHOE_REPLACE_PCT) / 100;
@@ -173,7 +189,21 @@ function ShoeDetail({
                 <Ionicons name="remove" size={20} color={T1} />
               </Pressable>
               <View style={s.maxStepVal}>
-                <Text style={s.maxStepNum}>{displayNum(shoe.max, unit, 0)}<Text style={s.maxStepUnit}> {unit}</Text></Text>
+                <View style={s.maxInputRow}>
+                  <TextInput
+                    value={maxDraft ?? String(displayNum(shoe.max, unit, 0))}
+                    onChangeText={(v) => setMaxDraft(v.replace(/[^0-9]/g, ''))}
+                    onBlur={commitMaxDraft}
+                    onSubmitEditing={commitMaxDraft}
+                    keyboardType="number-pad"
+                    returnKeyType="done"
+                    maxLength={4}
+                    selectTextOnFocus
+                    accessibilityLabel="신발 수명 직접 입력"
+                    style={s.maxInput}
+                  />
+                  <Text style={s.maxStepUnit}> {unit}</Text>
+                </View>
                 <Text style={s.maxStepCaption}>{Math.round(percentUsed)}% 사용</Text>
               </View>
               <Pressable onPress={() => stepMaxKm(1)} hitSlop={6} accessibilityRole="button" accessibilityLabel="수명 늘리기" style={({ pressed }) => [s.maxStepBtn, pressed && { backgroundColor: CARD }]}>
@@ -421,12 +451,13 @@ const s = StyleSheet.create({
 
   lastWorn: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500' },
 
-  // 신발 수명(max_km) 조정 스테퍼
+  // 신발 수명(max_km) 조정 스테퍼 + 직접 입력
   maxStepper: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 14 },
   maxStepBtn: { width: 46, height: 46, borderRadius: 14, backgroundColor: CARD_HI, alignItems: 'center', justifyContent: 'center' },
   maxStepVal: { flex: 1, alignItems: 'center' },
-  maxStepNum: { color: T1, fontFamily: DISPLAY, fontSize: 28, letterSpacing: 0.3 },
-  maxStepUnit: { color: T3, fontFamily: FONT, fontSize: 13 },
+  maxInputRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'center' },
+  maxInput: { color: T1, fontFamily: DISPLAY, fontSize: 28, letterSpacing: 0.3, textAlign: 'center', minWidth: 70, paddingVertical: 0, paddingBottom: 2, borderBottomWidth: 1, borderBottomColor: withAlpha(ACCENT, 0.4) },
+  maxStepUnit: { color: T3, fontFamily: FONT, fontSize: 13, marginBottom: 3 },
   maxStepCaption: { color: T3, fontFamily: FONT, fontSize: 11.5, fontWeight: '600', marginTop: 3 },
   maxHint: { color: T3, fontFamily: FONT, fontSize: 12, lineHeight: 18 },
 
