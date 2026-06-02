@@ -8,7 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Svg, { Polyline, Circle } from 'react-native-svg';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {
-  BG, CARD, CARD_HI, ACCENT, DANGER, T1, T2, T3, SEP, FONT, DISPLAY, Shoe, Run, SHOES,
+  BG, CARD, CARD_DIM, CARD_HI, ACCENT, DANGER, T1, T2, T3, SEP, FONT, DISPLAY, Shoe, Run, SHOES, withAlpha,
 } from './theme';
 import { TabBar } from './primitives';
 import { Unit, displayNum, displayToKm } from './lib/units';
@@ -63,22 +63,22 @@ function PeriodChartView({ data, labels, unit }: { data: number[]; labels: strin
     <View>
       <View style={{ height: H, position: 'relative' }}>
         {ticks.map((tk, i) => (
-          <View key={i} style={{ position: 'absolute', left: 0, right: 0, bottom: (tk / niceMax) * H }}>
-            <View style={{ position: 'absolute', left: 0, right: 42, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP }} />
-            <Text style={{ position: 'absolute', right: 0, width: 42, textAlign: 'right', color: T3, fontFamily: DISPLAY, fontSize: 11, marginBottom: -7 }}>{tk === 0 ? '0' : `${fmtTick(tk)}${unit}`}</Text>
+          <View key={i} style={[s.chartGrid, { bottom: (tk / niceMax) * H }]}>
+            <View style={s.chartGridLine} />
+            <Text style={s.chartTick}>{tk === 0 ? '0' : `${fmtTick(tk)}${unit}`}</Text>
           </View>
         ))}
-        <View style={{ position: 'absolute', left: 0, right: 42, top: 0, bottom: 0, flexDirection: 'row', alignItems: 'flex-end', gap: dense ? 4 : 8 }}>
+        <View style={[s.chartBars, { gap: dense ? 4 : 8 }]}>
           {data.map((v, i) => (
-            <View key={i} style={{ flex: 1, alignItems: 'center' }}>
-              <View style={{ width: '100%', maxWidth: dense ? 12 : 18, height: v <= 0 ? 0 : Math.max(4, (v / niceMax) * H), borderRadius: 999, backgroundColor: ACCENT }} />
+            <View key={i} style={s.chartBarSlot}>
+              <View style={[s.chartBar, { maxWidth: dense ? 12 : 18, height: v <= 0 ? 0 : Math.max(4, (v / niceMax) * H) }]} />
             </View>
           ))}
         </View>
       </View>
-      <View style={{ flexDirection: 'row', gap: dense ? 4 : 8, marginTop: 8, paddingRight: 42 }}>
+      <View style={[s.chartLabels, { gap: dense ? 4 : 8 }]}>
         {labels.map((l, i) => (
-          <Text key={i} style={{ flex: 1, textAlign: 'center', color: T3, fontFamily: FONT, fontSize: dense ? 9 : 11, fontWeight: '600' }}>{l}</Text>
+          <Text key={i} style={[s.chartLabel, { fontSize: dense ? 9 : 11 }]}>{l}</Text>
         ))}
       </View>
     </View>
@@ -104,7 +104,7 @@ function CourseMap({ points }: { points: LatLon[] }) {
   return (
     <View style={[s.card, { padding: 16, marginTop: 16 }]}>
       <Text style={s.detailBrand}>코스</Text>
-      <View style={{ height: MAP_H, marginTop: 10, borderRadius: 14, overflow: 'hidden', backgroundColor: '#1C1C1E' }} onLayout={onLayout}>
+      <View style={s.mapWell} onLayout={onLayout}>
         {proj && proj.svgPoints !== '' && (
           <Svg width={w} height={MAP_H}>
             <Polyline
@@ -116,7 +116,7 @@ function CourseMap({ points }: { points: LatLon[] }) {
               strokeLinejoin="round"
             />
             {!!start && <Circle cx={start.x} cy={start.y} r={5} fill={ACCENT} />}
-            {!!end && <Circle cx={end.x} cy={end.y} r={5} fill="#FFFFFF" stroke={ACCENT} strokeWidth={2} />}
+            {!!end && <Circle cx={end.x} cy={end.y} r={5} fill={T1} stroke={ACCENT} strokeWidth={2} />}
           </Svg>
         )}
       </View>
@@ -177,7 +177,7 @@ function RunForm({
                     accessibilityRole="button"
                     accessibilityState={{ selected: on }}
                   >
-                    <Text style={[s.chipTxt, { color: on ? '#000' : T2 }]} numberOfLines={1}>
+                    <Text style={[s.chipTxt, { color: on ? BG : T2 }]} numberOfLines={1}>
                       {sh.brand} {sh.model}
                     </Text>
                   </Pressable>
@@ -431,7 +431,7 @@ export default function HistoryScreen({
             const on = p === period;
             return (
               <Pressable key={p} onPress={() => setPeriod(p)} style={[s.segItem, on && s.segItemOn]}>
-                <Text style={[s.segText, { color: on ? '#000' : T3, fontWeight: on ? '700' : '500' }]}>{p}</Text>
+                <Text style={[s.segText, { color: on ? BG : T3, fontWeight: on ? '700' : '500' }]}>{p}</Text>
               </Pressable>
             );
           })}
@@ -460,7 +460,7 @@ export default function HistoryScreen({
         <Text style={s.sectionLabel}>최근 러닝</Text>
         {runs.length === 0 ? (
           <View style={[s.card, { padding: 28, alignItems: 'center' }]}>
-            <Text style={{ color: T3, fontFamily: FONT, fontSize: 13.5 }}>아직 기록이 없어요</Text>
+            <Text style={s.emptyHint}>아직 기록이 없어요 — 첫 러닝이 여기 쌓여요</Text>
           </View>
         ) : (
           <View style={[s.card, { overflow: 'hidden' }]}>
@@ -486,10 +486,24 @@ const s = StyleSheet.create({
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   title: { color: T1, fontFamily: FONT, fontSize: 32, fontWeight: '500', letterSpacing: -0.8 },
 
-  segment: { flexDirection: 'row', gap: 4, backgroundColor: '#2C2C2E', borderRadius: 14, padding: 4 },
+  segment: { flexDirection: 'row', gap: 4, backgroundColor: CARD_HI, borderRadius: 14, padding: 4 },
   segItem: { flex: 1, alignItems: 'center', paddingVertical: 9, borderRadius: 11 },
   segItemOn: { backgroundColor: ACCENT },
   segText: { fontFamily: FONT, fontSize: 14 },
+
+  // bar chart (right-side km gridlines · accent bars)
+  chartGrid: { position: 'absolute', left: 0, right: 0 },
+  chartGridLine: { position: 'absolute', left: 0, right: 42, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP },
+  chartTick: { position: 'absolute', right: 0, width: 42, textAlign: 'right', color: T3, fontFamily: DISPLAY, fontSize: 11, marginBottom: -7 },
+  chartBars: { position: 'absolute', left: 0, right: 42, top: 0, bottom: 0, flexDirection: 'row', alignItems: 'flex-end' },
+  chartBarSlot: { flex: 1, alignItems: 'center' },
+  chartBar: { width: '100%', borderRadius: 999, backgroundColor: ACCENT },
+  chartLabels: { flexDirection: 'row', marginTop: 8, paddingRight: 42 },
+  chartLabel: { flex: 1, textAlign: 'center', color: T3, fontFamily: FONT, fontWeight: '600' },
+
+  // course map (recessed well, svg polyline)
+  mapWell: { height: MAP_H, marginTop: 10, borderRadius: 14, overflow: 'hidden', backgroundColor: CARD_DIM, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
+  emptyHint: { color: T3, fontFamily: FONT, fontSize: 13.5, textAlign: 'center' },
 
   summaryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   summaryCell: { width: '47.5%', flexGrow: 1, backgroundColor: CARD, borderRadius: 20, padding: 17 },
@@ -514,7 +528,7 @@ const s = StyleSheet.create({
   nav: { paddingTop: 60, paddingHorizontal: 16, paddingBottom: 6 },
   navRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   navActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  iconBtn: { width: 38, height: 38, borderRadius: 999, backgroundColor: '#2C2C2E', borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(255,255,255,0.12)', alignItems: 'center', justifyContent: 'center' },
+  iconBtn: { width: 38, height: 38, borderRadius: 999, backgroundColor: CARD_HI, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.12), alignItems: 'center', justifyContent: 'center' },
 
   // manual-run / edit form
   formTitle: { color: T1, fontFamily: FONT, fontSize: 17, fontWeight: '600' },
@@ -526,7 +540,7 @@ const s = StyleSheet.create({
   chipTxt: { fontFamily: FONT, fontSize: 13.5, fontWeight: '600' },
   input: { backgroundColor: CARD, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14, color: T1, fontFamily: FONT, fontSize: 16, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
   saveBtn: { backgroundColor: ACCENT, borderRadius: 16, paddingVertical: 16, alignItems: 'center', marginTop: 6 },
-  saveBtnTxt: { color: '#000', fontFamily: FONT, fontSize: 16, fontWeight: '700' },
+  saveBtnTxt: { color: BG, fontFamily: FONT, fontSize: 16, fontWeight: '700' },
   detailDate: { color: T3, fontFamily: FONT, fontSize: 13 },
   detailDist: { color: T1, fontFamily: DISPLAY, fontSize: 56, letterSpacing: 0.5 },
   detailDistU: { color: T2, fontFamily: FONT, fontSize: 20, marginLeft: 6, marginBottom: 8 },

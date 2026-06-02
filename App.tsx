@@ -694,7 +694,11 @@ function Main(){
           <ProfileScreen
             profile={profile} badges={badges} records={records} onTab={setTab}
             unit={unit} onChangeUnit={changeUnit}
-            goalWeeklyKm={goalWeeklyKm} weeklyPercent={goalProgress.percent} onChangeGoal={changeGoal}
+            goalWeeklyKm={goalWeeklyKm} weeklyPercent={goalProgress.percent}
+            weeklyDoneKm={goalProgress.totalKm} onChangeGoal={changeGoal}
+            streakDays={goalStreak}
+            weekDays={weekBuckets(runs, mon).map(v => v > 0)}
+            weekTodayIdx={(now.getDay() + 6) % 7}
             alerts={alerts} onChangeAlerts={changeAlerts}
             deviceId={deviceId}
           />
