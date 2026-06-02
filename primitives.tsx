@@ -46,6 +46,7 @@ import {
   withAlpha,
 } from './theme';
 import {tierBadge, ShoeCondition} from './lib/shoe';
+import {InjuryLevel} from './lib/injury';
 
 // ── Status colour helpers (single mapping shoeHealth.condition → colour/tone) ──
 // shoeHealth 의 condition 을 화면 색/배지 톤으로 옮기는 단일 소스. 양호=GOOD,
@@ -335,6 +336,63 @@ export function TierBadge({
     />
   );
 }
+
+// ── Injury warning banner (부상예방 경고: 홈 히어로 · 신발 상세 공용) ──────────
+// assessInjuryRisk 의 caution/high 등급만 경고 배너로 노출한다(safe → null, 안전
+// 등급은 경고 미노출). 색은 tier 톤과 정렬: caution=WARN, high=DANGER. 배경은 해당
+// 토큰의 withAlpha 파생 + 한 줄 keep-going 안내 문구. testID 는 injury-banner-{level}.
+export function InjuryBanner({
+  level,
+  message,
+  testID,
+}: {
+  level: InjuryLevel;
+  message: string;
+  testID?: string;
+}) {
+  if (level === 'safe' || !message) {
+    return null;
+  }
+  const fg = level === 'high' ? DANGER : WARN;
+  return (
+    <View
+      testID={testID ?? `injury-banner-${level}`}
+      accessible
+      accessibilityRole="text"
+      accessibilityLabel={message}
+      style={[
+        injury.banner,
+        {backgroundColor: withAlpha(fg, 0.12), borderColor: withAlpha(fg, 0.4)},
+      ]}>
+      <Ionicons
+        name={level === 'high' ? 'alert-circle' : 'warning'}
+        size={17}
+        color={fg}
+      />
+      <Text style={[injury.text, {color: fg}]}>{message}</Text>
+    </View>
+  );
+}
+
+const injury = StyleSheet.create({
+  banner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 9,
+    borderRadius: RADIUS.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: SPACE.lg,
+    paddingVertical: 12,
+  },
+  text: {
+    flex: 1,
+    fontFamily: FONT,
+    fontSize: 13,
+    fontWeight: '600',
+    letterSpacing: -0.1,
+    lineHeight: 18,
+  },
+});
 
 // ── Metric (value + unit, baseline 정렬 · tabular-nums) ────────────────────────
 // 큰 숫자(value)와 단위(unit)를 baseline 정렬 + gap 으로 분리해 '0.0km' 같이 붙어

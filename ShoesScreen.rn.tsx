@@ -9,9 +9,10 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {
   BG, CARD, CARD_HI, ACCENT, DANGER, WARN, GOOD, T1, T2, T3, SEP, FONT, DISPLAY, withAlpha, Shoe, Run, SHOES,
 } from './theme';
-import { Ring, TabBar, TierBadge, Pill } from './primitives';
+import { Ring, TabBar, TierBadge, Pill, InjuryBanner } from './primitives';
 import { Unit, displayNum, displayToKm } from './lib/units';
 import { clampMaxKm, KEEP_GOING_REPLACE, SHOE_MAX_STEP_KM, SHOE_REPLACE_PCT } from './lib/shoe';
+import { assessShoeInjuryRisk } from './lib/injury';
 
 // lastWorn: 이 신발의 마지막 착용일(런에서 파생, 한국어 표기). 미착용이면 생략.
 export type ShoeTotals = { totalRuns: number; totalTime: string; lastWorn?: string };
@@ -47,6 +48,9 @@ function ShoeDetail({
   const ring = ringColor(shoe.condition);
   const retired = !!shoe.retired;
   const shoeRuns = runs.filter((r) => r.shoe === idx);
+  // 부상예방 경고(주의/위험) — shoeHealth 와 같은 마모 분모(used/max)로 판정한다.
+  // 안전 등급/보관 신발은 경고를 노출하지 않는다(보관됨 상태와의 모순 방지).
+  const injury = assessShoeInjuryRisk(shoe);
 
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(`${shoe.brand} ${shoe.model}`.trim());
@@ -179,6 +183,12 @@ function ShoeDetail({
             </View>
           </View>
         </View>
+
+        {/* 부상예방 경고 배너(주의/위험) — 마모도가 임계를 넘으면 keep-going 보이스로
+            교체를 권한다. 안전 등급(InjuryBanner null)·보관 신발은 미노출. */}
+        {!retired && injury.level !== 'safe' && (
+          <InjuryBanner level={injury.level} message={injury.message} />
+        )}
 
         {/* '남은 수명' 옆 연필로 펼치는 신발 수명(max_km) 보정기 — ±로 교체 임계의 분모를
             직접 조정한다(기본 접힘). 보관된 신발은 조정 동선에서 제외(기록은 그대로 유지). */}

@@ -16,8 +16,9 @@ import {
   BG, CARD_DIM, CARD_HI, HERO_BG, ACCENT, DANGER, WARN, GOOD, T1, T2, T3,
   FONT, DISPLAY, SPACE, RADIUS, withAlpha, Shoe, SHOES,
 } from './theme';
-import { Ring, TabBar, TierBadge, KeegoWordmark, Button, SectionTitle, conditionColor } from './primitives';
+import { Ring, TabBar, TierBadge, KeegoWordmark, Button, SectionTitle, conditionColor, InjuryBanner } from './primitives';
 import { Unit, displayNum } from './lib/units';
+import { assessShoeInjuryRisk } from './lib/injury';
 
 export type WeekStats = { km: string; runs: number; pace: string };
 // 주간 목표 + keep-going 동기 지표. 거리는 km 표준, pct는 이번 주 달성률 %(목표
@@ -89,6 +90,9 @@ function HeroShoe({ shoe, unit }: { shoe: Shoe; unit: Unit }) {
   const max = displayNum(shoe.max, unit);
   const ring = ringColor(shoe.condition);
   const tier = conditionColor(shoe.condition);
+  // 부상예방 경고(주의/위험)는 같은 마모 분모(used/max)로 판정해 히어로 하단에 띄운다.
+  // 안전 등급은 InjuryBanner가 null을 돌려줘 경고를 노출하지 않는다(보관 신발도 제외).
+  const injury = assessShoeInjuryRisk(shoe);
   return (
     <View style={s.hero}>
       <View style={s.heroTop}>
@@ -116,6 +120,11 @@ function HeroShoe({ shoe, unit }: { shoe: Shoe; unit: Unit }) {
           <Text style={s.condSub}>· {used}/{max}{unit}</Text>
         </View>
       </View>
+      {!shoe.retired && injury.level !== 'safe' && (
+        <View style={s.injuryWrap}>
+          <InjuryBanner level={injury.level} message={injury.message} />
+        </View>
+      )}
     </View>
   );
 }
@@ -298,6 +307,7 @@ const s = StyleSheet.create({
   heroBottom: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 18 },
   heroRemain: { color: T1, fontFamily: DISPLAY, fontSize: 46, letterSpacing: -1 },
   heroRemainU: { color: T2, fontFamily: FONT, fontSize: 16, marginLeft: 5, marginBottom: 6 },
+  injuryWrap: { marginTop: 16 },
   ringPct: { color: T1, fontFamily: DISPLAY, fontSize: 17 },
   ringPctU: { color: T3, fontFamily: FONT, fontSize: 9 },
   dot: { width: 6, height: 6, borderRadius: RADIUS.pill },

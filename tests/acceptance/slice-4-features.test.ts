@@ -22,7 +22,7 @@ import { challengeProgress } from '../../lib/challenges';
 // ── 차별점: 부상예방 경고 (마모도 → 위험 등급) ───────────────────────────────
 // NOTE: 각 블록은 .skip 으로 시작한다(스텁 단계 — npm test green 유지). 해당 dev 잡이
 // lib 모듈을 실제 구현하면 자기 블록의 `.skip` 을 제거한다. slice-4-e2e 가 잔존 `.skip` 0 을 검증.
-describe.skip('@slice-4 부상예방 경고', () => {
+describe('@slice-4 부상예방 경고', () => {
   test('마모도 구간별 위험 등급: <75% 안전, 75~90% 주의, >90% 위험', () => {
     expect(assessInjuryRisk(0.4).level).toBe('safe');
     expect(assessInjuryRisk(0.8).level).toBe('caution');
