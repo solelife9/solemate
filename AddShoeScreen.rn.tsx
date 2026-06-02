@@ -30,10 +30,17 @@ export default function AddShoeScreen({
   const [picking, setPicking] = useState(false);
 
   const q = model.trim().toLowerCase();
-  const suggestions = modelsForBrand(brand)
-    .filter((m) => q && m.toLowerCase().includes(q) && m.toLowerCase() !== q)
-    .slice(0, 5)
-    .map((m) => [m, getRecommendedLifespanKm({ brand, model: m })] as [string, number]);
+  // 모델 목록은 data/shoeModels(modelsForBrand)를 단일 소스로 쓰고 알파벳순(localeCompare)으로 정렬.
+  const sortedModels = modelsForBrand(brand).slice().sort((a, b) => a.localeCompare(b));
+  // 두 방식 병행:
+  //  - 입력이 비어 있으면 해당 브랜드의 전체 모델을 알파벳순으로(스크롤) 노출
+  //  - 글자를 입력하면 기존 필터(부분일치, 상위 5개) 동작 유지
+  const matches = q
+    ? sortedModels.filter((m) => m.toLowerCase().includes(q) && m.toLowerCase() !== q).slice(0, 5)
+    : sortedModels;
+  const suggestions = matches.map(
+    (m) => [m, getRecommendedLifespanKm({ brand, model: m })] as [string, number],
+  );
   const valid = model.trim().length > 0;
 
   // 현재 brand+model 기준 권장 수명. max가 이 값과 같으면 '권장'(자동값), 다르면 사용자 수정값.
@@ -128,13 +135,21 @@ export default function AddShoeScreen({
           />
           {focused && suggestions.length > 0 && (
             <View style={s.dropdown}>
-              {suggestions.map(([m, km]) => (
-                <Pressable key={m} onPress={() => pickModel(m, km)} style={({ pressed }) => [s.suggestion, pressed && { backgroundColor: CARD_HI }]}>
-                  <Text style={s.sugBrand}>{brand}</Text>
-                  <Text style={s.sugModel}>{m}</Text>
-                  <Text style={s.sugKm}>{km}km</Text>
-                </Pressable>
-              ))}
+              {/* 리스트가 길면(브랜드 전체 노출 시) 최대 높이 내에서 스크롤 */}
+              <ScrollView
+                style={s.dropdownScroll}
+                keyboardShouldPersistTaps="handled"
+                nestedScrollEnabled
+                showsVerticalScrollIndicator={false}
+              >
+                {suggestions.map(([m, km]) => (
+                  <Pressable key={m} onPress={() => pickModel(m, km)} accessibilityRole="button" accessibilityLabel={m} style={({ pressed }) => [s.suggestion, pressed && { backgroundColor: CARD_HI }]}>
+                    <Text style={s.sugBrand}>{brand}</Text>
+                    <Text style={s.sugModel}>{m}</Text>
+                    <Text style={s.sugKm}>{km}km</Text>
+                  </Pressable>
+                ))}
+              </ScrollView>
             </View>
           )}
         </View>
@@ -201,6 +216,7 @@ const s = StyleSheet.create({
 
   input: { backgroundColor: CARD, borderRadius: 18, color: T1, fontFamily: FONT, fontSize: 16, fontWeight: '500', paddingHorizontal: 18, paddingVertical: 16, letterSpacing: -0.2 },
   dropdown: { position: 'absolute', top: 62, left: 0, right: 0, zIndex: 30, backgroundColor: CARD, borderRadius: 18, padding: 6, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.12) },
+  dropdownScroll: { maxHeight: 264 },
   suggestion: { flexDirection: 'row', alignItems: 'center', gap: 9, paddingVertical: 11, paddingHorizontal: 12, borderRadius: 11 },
   sugBrand: { color: T3, fontFamily: FONT, fontSize: 10, fontWeight: '600', letterSpacing: 0.8 },
   sugModel: { flex: 1, color: T1, fontFamily: FONT, fontSize: 14.5, fontWeight: '500', letterSpacing: -0.2 },

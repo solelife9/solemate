@@ -97,6 +97,33 @@ async function typeModel(root: ReactTestRenderer.ReactTestInstance, text: string
   await flush();
 }
 
+// Focus the model input without typing (empty input).
+async function focusModel(root: ReactTestRenderer.ReactTestInstance) {
+  const input = modelInput(root);
+  await act(async () => {
+    input.props.onFocus();
+  });
+  await flush();
+}
+
+// The model names currently shown in the suggestion dropdown, in render order.
+// Each suggestion row carries accessibilityLabel === its model name.
+function suggestedModels(root: ReactTestRenderer.ReactTestInstance): string[] {
+  return root
+    .findAll(
+      (n: any) =>
+        n &&
+        n.props &&
+        typeof n.props.onPress === 'function' &&
+        n.props.accessibilityRole === 'button' &&
+        typeof n.props.accessibilityLabel === 'string' &&
+        n.props.accessibilityLabel.length > 0 &&
+        // suggestion rows render a '…km' recommendation; nav/brand chips do not
+        /\dkm$/.test(textOf(n)),
+    )
+    .map((n: any) => n.props.accessibilityLabel as string);
+}
+
 // ── 1) model pick → recommended km auto-fills + '권장' badge ────────────────────
 test('모델 자동완성에서 카본화를 고르면 권장 320km가 자동 입력되고 권장 배지가 뜬다', async () => {
   const onSave = jest.fn();
@@ -191,4 +218,64 @@ test('사진 선택에 성공하면 미리보기가 뜨고 photoUri가 저장에
   await tap(pressBy(root, '러닝화 등록'));
 
   expect(onSave.mock.calls[0][0].photoUri).toBe('file:///shoe.jpg');
+});
+
+// ── 5) focus + empty input → 브랜드 전체 모델이 알파벳순으로 노출된다 ─────────────────
+test('모델칸 포커스 시 입력이 비어 있으면 브랜드(Nike) 전체 모델이 알파벳순으로 뜬다', async () => {
+  const onSave = jest.fn();
+  const root = await mountScreen(onSave);
+
+  // 글자를 치지 않고 포커스만 — 빈 입력.
+  await focusModel(root);
+
+  const shown = suggestedModels(root);
+  // data/shoeModels의 Nike 14개 모델 전체가 노출된다(필터 슬라이스 없음).
+  expect(shown).toHaveLength(14);
+  // 알파벳 오름차순(localeCompare) — 첫 항목은 'Alphafly 3'.
+  expect(shown[0]).toBe('Alphafly 3');
+  // 노출 순서가 localeCompare 정렬 결과와 정확히 일치한다.
+  const sorted = [...shown].sort((a, b) => a.localeCompare(b));
+  expect(shown).toEqual(sorted);
+  // 알려진 모델들이 모두 들어 있다(단일 소스 = modelsForBrand).
+  expect(shown).toEqual(expect.arrayContaining(['Pegasus 41', 'Vaporfly 4', 'Zoom Fly 6']));
+});
+
+// ── 6) 글자를 입력하면 기존 필터 동작 유지(전체→부분일치로 좁혀진다) ──────────────────
+test('모델명을 입력하면 전체 목록이 부분일치로 필터된다(두 방식 병행)', async () => {
+  const onSave = jest.fn();
+  const root = await mountScreen(onSave);
+
+  // 빈 입력 포커스 → 전체 14개.
+  await focusModel(root);
+  expect(suggestedModels(root)).toHaveLength(14);
+
+  // 'Pegasus' 입력 → Pegasus* 계열로만 좁혀진다.
+  await typeModel(root, 'Pegasus');
+  const filtered = suggestedModels(root);
+  expect(filtered.length).toBeGreaterThan(0);
+  expect(filtered.length).toBeLessThan(14);
+  expect(filtered.every(m => m.toLowerCase().includes('pegasus'))).toBe(true);
+});
+
+// ── 7) 전체 목록에서 항목 탭 → model/max(권장수명) 자동 세팅 ──────────────────────────
+test('빈 입력 전체 목록에서 항목을 선택하면 model과 권장 수명(max)이 세팅된다', async () => {
+  const onSave = jest.fn();
+  const root = await mountScreen(onSave);
+
+  // 빈 입력 포커스 → 전체 목록에서 per-model 오버라이드가 있는 'Alphafly 3'(400km)를 탭.
+  await focusModel(root);
+  await tap(pressBy(root, 'Alphafly 3'));
+
+  // 관찰: 모델 입력이 채워지고 최대 수명이 권장 400으로 자동 세팅 + 권장 배지.
+  expect(modelInput(root).props.value).toBe('Alphafly 3');
+  expect(maxInput(root).props.value).toBe('400');
+  expect(badgeShown(root)).toBe(true);
+
+  // 저장 시 선택한 model과 권장 max가 그대로 전달된다.
+  await tap(pressBy(root, '러닝화 등록'));
+  expect(onSave.mock.calls[0][0]).toMatchObject({
+    brand: 'Nike',
+    model: 'Alphafly 3',
+    max: 400,
+  });
 });
