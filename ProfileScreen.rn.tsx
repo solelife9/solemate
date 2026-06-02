@@ -19,6 +19,8 @@ import {
   MIN_THRESHOLD_PCT, MAX_THRESHOLD_PCT, DEFAULT_SETTINGS, DEFAULT_ALERTS,
 } from './lib/settings';
 import { serializeBackup, parseBackup, BackupPayload, BackupV1 } from './lib/backup';
+import ChallengesSection from './ChallengesSection';
+import { Challenge, ChallengeRun } from './lib/challenges';
 
 export type Profile = { name: string; since: string; totalKm: number; totalRuns: number; totalTime: string; level: string };
 export type Badge = { icon: string; label: string; on: boolean };
@@ -55,6 +57,7 @@ export default function ProfileScreen({
   alerts = { ...DEFAULT_ALERTS }, onChangeAlerts,
   deviceId = '',
   backupData = { shoes: [], runs: [], settings: {} }, onImport,
+  challenges = [], challengeRuns = [], onCreateChallenge, onDeleteChallenge, todayISO = '',
 }: {
   profile?: Profile;
   badges?: Badge[];
@@ -79,6 +82,12 @@ export default function ProfileScreen({
   backupData?: BackupPayload;
   // 가져오기: parseBackup 검증 성공 시에만 호출된다(실패 시 미호출 — 기존 데이터 보존).
   onImport?: (data: BackupV1) => void;
+  // 개인 챌린지: App 이 소유(영속)하는 목록 + 런 매핑({date,dist}). 생성/삭제 콜백만 받는다.
+  challenges?: Challenge[];
+  challengeRuns?: ChallengeRun[];
+  onCreateChallenge?: (c: Challenge) => void;
+  onDeleteChallenge?: (id: string) => void;
+  todayISO?: string;
 }) {
   // 어떤 설정 행이 펼쳐졌는지(단위는 패널 없이 즉시 토글). 한 번에 하나만 펼친다.
   const [open, setOpen] = useState<null | 'goal' | 'alerts' | 'account' | 'import'>(null);
@@ -356,6 +365,15 @@ export default function ProfileScreen({
             )}
           </View>
         </View>
+
+        {/* 개인 챌린지 — 혼자 세우는 거리·연속일 목표(진행률 링 + 달성 뱃지) */}
+        <ChallengesSection
+          challenges={challenges}
+          runs={challengeRuns}
+          onCreate={onCreateChallenge}
+          onDelete={onDeleteChallenge}
+          today={todayISO}
+        />
       </ScrollView>
       <TabBar active={3} onTab={(i) => onTab?.(i)} />
     </View>

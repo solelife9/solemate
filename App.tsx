@@ -52,11 +52,14 @@ import {
 } from './lib/settings';
 import {weeklyProgress, currentStreak, personalRecords} from './lib/goals';
 import {serializeBackup, BackupV1} from './lib/backup';
+import {Challenge, ChallengeRun} from './lib/challenges';
 
 const API = 'https://solelife-backend.onrender.com';
 
 // 로컬 백업 가져오기 시 원본을 보관하는 신규 AsyncStorage 키(기존 키 파괴 금지).
 const K_BACKUP_IMPORT = 'imported_backup_v1';
+// 개인 챌린지 목록을 영속하는 신규 AsyncStorage 키(개인 전용 — 계정/서버 불필요).
+const K_CHALLENGES = 'challenges_v1';
 
 // audit#9/#10: 콜드 백엔드 부팅 상태기계. 'loading'(스켈레톤) → 'ready'(정상) |
 // 'error'(재시도 카드). 'error'는 fetch 실패만을 의미하며, 빈-신규(fetch 성공 + 빈
@@ -122,6 +125,9 @@ function Main(){
   const [goalWeeklyKm,setGoalWeeklyKm]=useState(DEFAULT_SETTINGS.goalWeeklyKm);
   const [alerts,setAlerts]=useState<AlertSettings>({...DEFAULT_SETTINGS.alerts});
   const [deviceId,setDeviceId]=useState<string>('');
+  // 개인 챌린지 목록(거리·연속일). 신규 키(K_CHALLENGES)로 영속하며 런 기록에서
+  // 진행률을 파생한다(lib/challenges). 기존 키와 분리돼 데이터 파괴 위험이 없다.
+  const [challenges,setChallenges]=useState<Challenge[]>([]);
   // audit#9/#10: 콜드 백엔드 부팅 상태(스켈레톤/재시도 카드). 최초엔 'loading'으로 떠
   // 스켈레톤을 보여주고, initUser 성공 시 'ready', fetch 실패 시 'error'로 간다.
   const [bootState,setBootState]=useState<BootState>('loading');
@@ -134,6 +140,19 @@ function Main(){
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(()=>{initUser();},[]);
+
+  // 개인 챌린지 목록 복원(신규 키 — 네트워크 무관, 1회). 손상/형식오류는 조용히
+  // 무시해 빈 목록으로 시작한다(기존 데이터 보존, 크래시 금지).
+  useEffect(()=>{
+    (async()=>{
+      try{
+        const raw=await AsyncStorage.getItem(K_CHALLENGES);
+        if(!raw)return;
+        const arr=JSON.parse(raw);
+        if(Array.isArray(arr))setChallenges(arr.filter((c:any)=>c&&typeof c.id==='string'));
+      }catch(e){console.log('challenges load error',e);}
+    })();
+  },[]);
 
   // audit#2: 미완료 런 감지 → 복구/저장 프롬프트. 한 번만 묻는다.
   useEffect(()=>{
@@ -433,6 +452,24 @@ function Main(){
     }
   };
 
+  // ── 개인 챌린지 생성/삭제(영속 + 상태 갱신) ─────────────────────────────────
+  // 신규 키(K_CHALLENGES)에만 쓰므로 기존 데이터(신발/런/설정)와 격리된다. 진행률은
+  // 저장하지 않고 런 기록에서 매번 파생(challengeProgress)해 단일 진실원을 유지한다.
+  const persistChallenges=(next:Challenge[])=>{
+    setChallenges(next);
+    try{void AsyncStorage.setItem(K_CHALLENGES,JSON.stringify(next));}catch(e){console.log('challenges save error',e);}
+  };
+  const createChallenge=(c:Challenge)=>{
+    // 같은 id(같은 종류·기간·목표) 중복 생성은 덮어쓴다(목록 비대화 방지).
+    persistChallenges([...challenges.filter(x=>x.id!==c.id),c]);
+  };
+  const deleteChallenge=(id:string)=>{
+    persistChallenges(challenges.filter(c=>c.id!==id));
+  };
+  // 챌린지 진행률용 런 매핑: 런 기록 → {date,dist}. km 은 백엔드가 문자열로도 보내므로
+  // Number 로 강제하고, 음수/NaN 은 lib(challengeProgress)에서 0 으로 방어한다.
+  const challengeRuns:ChallengeRun[]=runs.map(r=>({date:String(r.run_date||'').slice(0,10),dist:Number(r.km)||0}));
+
   // ── adapters: backend → presentational shapes ──────────────
   function toUiShoe(s:any):Shoe{
     // 단일 소스(shoeHealth)에서 used/남은수명/condition을 도출 — 하드코딩 100km
@@ -726,6 +763,9 @@ function Main(){
             alerts={alerts} onChangeAlerts={changeAlerts}
             deviceId={deviceId}
             backupData={backupData} onImport={importBackup}
+            challenges={challenges} challengeRuns={challengeRuns}
+            onCreateChallenge={createChallenge} onDeleteChallenge={deleteChallenge}
+            todayISO={today()}
           />
         )}
       </View>

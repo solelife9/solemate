@@ -106,7 +106,7 @@ describe('@slice-4 데이터 백업/복원', () => {
 });
 
 // ── 개인 챌린지 (거리·스트릭) ────────────────────────────────────────────────
-describe.skip('@slice-4 개인 챌린지', () => {
+describe('@slice-4 개인 챌린지', () => {
   test('거리 챌린지: 기간 내 런 거리 합산으로 진행률·달성 판정', () => {
     const ch = { id: 'c1', kind: 'distance' as const, targetKm: 100, startDate: '2026-06-01', endDate: '2026-06-30' };
     const runs = [
