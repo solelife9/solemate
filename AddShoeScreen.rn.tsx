@@ -107,7 +107,7 @@ export default function AddShoeScreen({
           {BRANDS.map((b) => {
             const on = b === brand;
             return (
-              <Pressable key={b} onPress={() => pickBrand(b)} accessibilityRole="button" accessibilityLabel={b} accessibilityState={{ selected: on }} style={({ pressed }) => [s.chip, on ? s.chipOn : s.chipOff, pressed && s.pressed]}>
+              <Pressable key={b} onPress={() => pickBrand(b)} accessibilityRole="button" accessibilityLabel={b} accessibilityState={{ selected: on }} hitSlop={{ top: 6, bottom: 6 }} style={({ pressed }) => [s.chip, on ? s.chipOn : s.chipOff, pressed && s.pressed]}>
                 <Text style={[s.chipText, { color: on ? ACCENT : T2 }]}>{b}</Text>
               </Pressable>
             );

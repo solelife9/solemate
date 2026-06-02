@@ -491,7 +491,7 @@ const s = StyleSheet.create({
   title: { color: T1, fontFamily: FONT, fontSize: 32, fontWeight: '500', letterSpacing: -0.8 },
 
   segment: { flexDirection: 'row', gap: 4, backgroundColor: CARD_HI, borderRadius: 14, padding: 4 },
-  segItem: { flex: 1, alignItems: 'center', paddingVertical: 9, borderRadius: 11 },
+  segItem: { flex: 1, minHeight: 44, alignItems: 'center', justifyContent: 'center', paddingVertical: 9, borderRadius: 11 },
   segItemOn: { backgroundColor: ACCENT },
   segText: { fontFamily: FONT, fontSize: 14 },
 

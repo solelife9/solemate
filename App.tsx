@@ -63,6 +63,8 @@ const LOC_PRIME_KEY = 'loc_perm_primed'; // 위치 권한 사전 안내 완료
 
 // keep-going 톤: 실패를 '끝'이 아니라 '잠깐 멈춤'으로 프레이밍해 재시도를 유도한다.
 const KEEP_GOING_RETRY = '잠깐 숨 고르는 중이에요. 다시 시도하면 계속 달릴 수 있어요.';
+// keep-going 톤(로딩): 스켈레톤이 비어 보이지 않도록 '곧 이어 달린다'는 안내를 얹는다.
+const KEEP_GOING_LOADING = '기록을 불러오는 중이에요. 곧 다시 달릴 수 있어요.';
 
 function nowTimeLabel():string{
   const n=new Date();
@@ -720,6 +722,8 @@ function BootSkeleton(){
   return (
     <View testID="boot-skeleton" style={[boot.screen,{paddingTop:insets.top+12}]}>
       <View style={{height:24}}/>
+      <Text testID="boot-loading-copy" style={boot.loadingCaption}>{KEEP_GOING_LOADING}</Text>
+      <View style={{height:14}}/>
       <SkelBlock h={14} w={120}/>
       <View style={{height:18}}/>
       {/* 히어로 카드 자리 */}
@@ -804,6 +808,7 @@ const boot=StyleSheet.create({
     borderWidth:StyleSheet.hairlineWidth,borderColor:SEP},
   cardTitle:{color:T1,fontFamily:FP,fontSize:18,fontWeight:'700',marginTop:4},
   cardBody:{color:T3,fontFamily:FP,fontSize:14,lineHeight:20,textAlign:'center'},
+  loadingCaption:{color:T3,fontFamily:FP,fontSize:13,lineHeight:19},
   retryBtn:{flexDirection:'row',alignItems:'center',justifyContent:'center',gap:8,
     backgroundColor:ACCENT,borderRadius:14,paddingVertical:14,paddingHorizontal:24,marginTop:8,alignSelf:'stretch'},
   retryText:{color:'#000',fontFamily:FP,fontSize:16,fontWeight:'700'},

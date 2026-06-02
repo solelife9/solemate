@@ -58,7 +58,7 @@ export function RunStart({
         {PRESETS.map((p) => {
           const on = val === p;
           return (
-            <Pressable key={p} onPress={() => setVal(p)} accessibilityRole="button" accessibilityLabel={`${p}km`} accessibilityState={{ selected: on }} style={({ pressed }) => [s.preset, on ? s.presetOn : s.presetOff, pressed && s.pressed]}>
+            <Pressable key={p} onPress={() => setVal(p)} accessibilityRole="button" accessibilityLabel={`${p}km`} accessibilityState={{ selected: on }} hitSlop={{ top: 6, bottom: 6 }} style={({ pressed }) => [s.preset, on ? s.presetOn : s.presetOff, pressed && s.pressed]}>
               <Text style={[s.presetText, { color: on ? ACCENT : T2 }]}>{p}km</Text>
             </Pressable>
           );
