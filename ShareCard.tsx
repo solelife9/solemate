@@ -21,10 +21,12 @@ export const CARD_H = 1080;
 const PAD = 88;
 
 // 미니 코스맵 영역(카드 하단). projectRoute는 [0,w]×[0,h]로 투영하므로 <G>로 평행이동.
+// MAP_Y/MAP_H는 테스트(ShareCard.test)에서 통계 텍스트가 맵 밴드 밖에 있음을 단언할 때
+// 재사용하므로 export 한다 — 불투명 맵 배경이 페이스/시간 텍스트를 덮는 회귀 방지.
 const MAP_X = PAD;
 const MAP_W = CARD_W - PAD * 2;
-const MAP_H = 300;
-const MAP_Y = CARD_H - PAD - MAP_H;
+export const MAP_H = 240;
+export const MAP_Y = CARD_H - PAD - MAP_H;
 const MAP_PAD = 28;
 
 // projectRoute의 점들을 SVG path d 문자열로(첫 점 M, 이후 L). 빈 경로면 ''.
@@ -50,7 +52,11 @@ const ShareCard = React.forwardRef<unknown, ShareCardProps>(({model, route = []}
   const hasMap = pathD !== '';
 
   // 부가 지표(페이스/시간) 칸 배치 — 카드 가로를 균등 분할.
-  const statY = 712;
+  // statY(라벨)·statY+56(값) 모두 미니맵 밴드[MAP_Y, MAP_Y+MAP_H] 위에 둔다. 맵 배경
+  // Rect가 문서 순서상 stats 뒤에 그려지므로, 밴드 안에 두면 불투명 배경이 텍스트를
+  // 덮어 공유 이미지에서 페이스/시간이 안 보인다(차단 결함). 값 하단(656+56=712)이
+  // MAP_Y(752)보다 위 — 여백 40px 확보.
+  const statY = 656;
   const statSlot = MAP_W / Math.max(model.stats.length, 1);
 
   return (
@@ -75,6 +81,17 @@ const ShareCard = React.forwardRef<unknown, ShareCardProps>(({model, route = []}
       <SvgText x={PAD} y={228} fill={T3} fontFamily={FONT} fontSize={30}>
         {model.tagline}
       </SvgText>
+      {/* 해시태그 — 헤더 우측 상단(좌측 태그라인과 같은 베이스라인, 좌/우 정렬로 비충돌).
+          예전엔 맵 바로 위에 뒀으나 통계 행을 맵 위로 올리며 자리를 양보했다. */}
+      <SvgText
+        x={CARD_W - PAD}
+        y={228}
+        fill={T3}
+        fontFamily={FONT}
+        fontSize={28}
+        textAnchor="end">
+        {model.hashtag}
+      </SvgText>
 
       {/* 날짜 */}
       {!!model.date && (
@@ -93,7 +110,7 @@ const ShareCard = React.forwardRef<unknown, ShareCardProps>(({model, route = []}
 
       {/* 신발명 */}
       {!!model.shoe && (
-        <SvgText x={PAD} y={636} fill={ACCENT} fontFamily={FONT} fontSize={36} fontWeight="600">
+        <SvgText x={PAD} y={612} fill={ACCENT} fontFamily={FONT} fontSize={36} fontWeight="600">
           {`👟 ${model.shoe}`}
         </SvgText>
       )}
@@ -136,17 +153,6 @@ const ShareCard = React.forwardRef<unknown, ShareCardProps>(({model, route = []}
           {!!end && <Circle cx={end.x} cy={end.y} r={12} fill={T1} stroke={ACCENT} strokeWidth={5} />}
         </G>
       )}
-
-      {/* 해시태그 푸터 */}
-      <SvgText
-        x={CARD_W - PAD}
-        y={MAP_Y - 36}
-        fill={T3}
-        fontFamily={FONT}
-        fontSize={28}
-        textAnchor="end">
-        {model.hashtag}
-      </SvgText>
     </Svg>
   );
 });

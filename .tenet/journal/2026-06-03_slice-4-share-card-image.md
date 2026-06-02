@@ -36,3 +36,24 @@ Svg ref의 `toDataURL()`로 PNG dataURL을 만들어 RN `Share`로 이미지 공
   텍스트 '공유' 버튼 회귀 가드, reject 무시.
 
 iron law green: tsc 0, eslint 0 error, jest 66 suites / 588 passed (3 skip 유지).
+
+## retry 1 — code_critic 차단 결함(product_bug) 수정
+
+**증상:** 페이스/시간 통계 텍스트(statY=712 라벨·768 값)가 미니맵 Rect 밴드
+[MAP_Y=692, 992] 안에 있었고, 불투명 맵 배경 `<Rect fill=CARD_DIM>`(문서 순서상
+stats 뒤)이 SVG 페인트 순서로 통계를 덮어 공유 이미지에서 페이스·시간이 안 보였다.
+
+**수정(ShareCard.tsx):**
+- 세로 레이아웃을 점검해 통계 행을 미니맵 위로 올렸다. `MAP_H` 300→240(맵을 약간
+  줄여 공간 확보), `MAP_Y`는 752로 내려감. `statY` 712→656(값 하단 712 < MAP_Y 752,
+  여백 40px). 신발 라인 636→612로 올려 통계 라벨과 간격 확보.
+- 해시태그 푸터를 맵 바로 위(MAP_Y-36)에서 헤더 우측 상단(y=228, 태그라인과 같은
+  베이스라인·우측 정렬)으로 이동 — 통계가 차지한 자리를 양보, 좌/우 정렬로 비충돌.
+- `MAP_Y`/`MAP_H` export(테스트 위치 가드 재사용). 토큰만(raw hex 0), 다크+오렌지 유지.
+
+**위치 가드(ShareCard.test.tsx):** 통계 4개 텍스트(페이스 라벨/값·시간 라벨/값)가
+실제 존재하고 각 y좌표가 밴드[MAP_Y, MAP_Y+MAP_H] **밖(위)**임을 단언 — 겹침 회귀 방지.
+기존 '필드 존재' 단언은 그대로 유지.
+
+iron law green: tsc 0, eslint 0 error, jest 66 suites / 589 passed(+1 가드, 3 skip 유지).
+react-native-svg만 사용(새 네이티브 의존 0), toDataURL 캡처·텍스트 폴백·기존 테스트 그대로.
