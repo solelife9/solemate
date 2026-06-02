@@ -39,16 +39,12 @@ export function withAlpha(hex: string, alpha: number): string {
 // Font family names as actually loaded in this project (assets/fonts + Info.plist).
 export const FONT = 'PretendardVariable';  // body
 
-// ── DISPLAY font transition (Keego rebrand) ──────────────────────────────────
-// We are unifying the type system onto a single family (Pretendard). The big
-// numbers / wordmark historically used BebasNeue; Slice 3 will flip every screen
-// onto FONT. Until then `DISPLAY` must keep its existing string value so the live
-// screens don't change. Flip UNIFY_DISPLAY_FONT to true (in Slice 3) and every
-// consumer of DISPLAY transparently moves to Pretendard with no further edits.
-export const DISPLAY_LEGACY = 'BebasNeue-Regular'; // legacy big-number / wordmark face (no longer used)
-export const DISPLAY_TARGET = FONT;                // unified target face (Pretendard)
-export const UNIFY_DISPLAY_FONT = true;            // Slice 3: unified onto Pretendard
-export const DISPLAY = UNIFY_DISPLAY_FONT ? DISPLAY_TARGET : DISPLAY_LEGACY;
+// ── DISPLAY face: 본문(Pretendard)과 대비를 주는 디스플레이 폰트 ─────────────────
+// 큰 숫자(km·%·페이스)와 Keego 워드마크엔 스포티 그로테스크 Barlow를 쓴다. 한글/본문은
+// FONT(Pretendard)가 담당하므로 Barlow는 라틴·숫자 전용으로 안전하다.
+// 히스토리: 초기 BebasNeue → Slice3에서 Pretendard로 통일 → 통일이 밋밋해 Barlow
+// 디스플레이로 타이포 대비를 복원(2026-06-02). 두 폰트 모두 assets/fonts에 번들됨.
+export const DISPLAY = 'Barlow-Medium';
 
 // ── spacing scale (dp) ───────────────────────────────────────────────────────
 export const SPACE = { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 32 } as const;

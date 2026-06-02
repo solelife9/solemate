@@ -4,9 +4,6 @@ import {
   TYPE,
   FONT,
   DISPLAY,
-  DISPLAY_LEGACY,
-  DISPLAY_TARGET,
-  UNIFY_DISPLAY_FONT,
   BG,
   ACCENT,
   T1,
@@ -56,20 +53,12 @@ describe('TYPE presets', () => {
   });
 });
 
-describe('DISPLAY font transition (Keego rebrand)', () => {
-  test('Slice 3 unifies DISPLAY onto the Pretendard body face (Bebas retired)', () => {
-    expect(UNIFY_DISPLAY_FONT).toBe(true);
-    expect(DISPLAY).toBe(DISPLAY_TARGET);
-    expect(DISPLAY).toBe(FONT);
-    // The legacy face token is preserved but no longer the active DISPLAY.
-    expect(DISPLAY_LEGACY).toBe('BebasNeue-Regular');
-    expect(DISPLAY).not.toBe(DISPLAY_LEGACY);
-  });
-  test('the unified target is Pretendard so Slice 3 can flip one flag', () => {
-    expect(DISPLAY_TARGET).toBe(FONT);
-    // Mirror of the production ternary: flipping the flag moves DISPLAY to FONT.
-    const flipped = true ? DISPLAY_TARGET : DISPLAY_LEGACY;
-    expect(flipped).toBe(FONT);
+describe('DISPLAY face (본문 Pretendard와 대비)', () => {
+  test('DISPLAY는 디스플레이 페이스 Barlow, 본문 FONT는 Pretendard로 서로 다르다', () => {
+    expect(FONT).toBe('PretendardVariable');
+    expect(DISPLAY).toBe('Barlow-Medium');
+    // 통일이 아니라 의도된 대비 — 큰 숫자·워드마크가 본문과 다른 페이스를 쓴다.
+    expect(DISPLAY).not.toBe(FONT);
   });
 });
 

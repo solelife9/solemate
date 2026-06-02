@@ -49,9 +49,13 @@ describe('@slice-3 디자인 토큰화 — 화면 하드코딩 색/폰트 0 (cri
   });
 });
 
-describe('@slice-3 타이포 Pretendard 통일', () => {
-  test('theme DISPLAY가 본문 FONT(Pretendard)와 동일로 통일됨 (UNIFY_DISPLAY_FONT=true)', () => {
-    expect(DISPLAY).toBe(FONT);
+describe('@slice-3 타이포 — 본문 Pretendard + 디스플레이 Barlow 대비', () => {
+  test('본문은 Pretendard, 디스플레이(큰 숫자·워드마크)는 Barlow로 서로 다른 페이스', () => {
+    // 화면은 raw fontFamily 문자열 없이 토큰(FONT/DISPLAY)만 쓴다(위 스캔이 보장).
+    // 토큰 자체는 본문/디스플레이가 의도적으로 달라 타이포 대비를 만든다.
+    expect(FONT).toBe('PretendardVariable');
+    expect(DISPLAY).toBe('Barlow-Medium');
+    expect(DISPLAY).not.toBe(FONT);
   });
 });
 
