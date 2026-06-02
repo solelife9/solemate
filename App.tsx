@@ -451,9 +451,20 @@ function Main(){
   const idxById:Record<string,number>={};
   shoes.forEach((s,i)=>{idxById[s.id]=i;});
 
-  // 홈/러닝 picker용 목록: 보관된 신발은 숨기되 원본 인덱스를 보존해 시작 액션이
-  // 올바른 신발을 가리키게 한다(런 기록은 잠금장·통계에 그대로 남는다).
-  const homeShoes=shoes.map((s,i)=>({raw:s,ui:uiShoes[i]})).filter(x=>!isRetired(x.raw));
+  // 홈/러닝 picker용 목록: 보관된 신발은 숨기고 '가장 최근에 신은 순'으로 정렬한다
+  // (미착용은 뒤, 동률은 등록순 유지). 홈 히어로 기준(mostRecentShoeId)과 picker 카드
+  // 순서를 같은 기준으로 맞춰, 손이 가는 신발이 맨 앞에 오게 한다. 정렬 후 인덱스는
+  // homeActiveIdx·selectHomeShoe·startFromIdx가 모두 같은 homeShoes를 되짚으므로
+  // 선택/시작 매핑이 어긋나지 않는다(런 기록은 잠금장·통계에 그대로 남는다).
+  const homeShoes=shoes.map((s,i)=>({raw:s,ui:uiShoes[i]})).filter(x=>!isRetired(x.raw))
+    .map((x,i)=>({x,i,worn:lastWornDate(x.raw.id,runs)}))
+    .sort((a,b)=>{
+      if(a.worn===b.worn) return a.i-b.i;   // 동률(같은 날짜·둘 다 미착용) → 등록순 유지
+      if(a.worn===null) return 1;            // a 미착용 → 뒤로
+      if(b.worn===null) return -1;           // b 미착용 → 앞으로
+      return a.worn>b.worn?-1:1;             // 더 늦은(최근) 날짜가 앞
+    })
+    .map(o=>o.x);
   const homeUiShoes:Shoe[]=homeShoes.map(x=>x.ui);
 
   // ── 선택/기본 신발(activeIdx 하드코딩 제거) ──────────────────────────────────

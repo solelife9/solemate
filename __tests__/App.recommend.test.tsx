@@ -133,6 +133,30 @@ test('홈 picker에서 다른 신발을 고르면 히어로가 그 신발로 바
   expect(hero).not.toContain('Pegasus');
 });
 
+test('내 러닝화 picker는 가장 최근에 신은 순으로 정렬된다(등록순이 아니라)', async () => {
+  // 등록순은 [Pegasus, Clifton]이지만 Clifton(05-30)이 Pegasus(05-20)보다 최근 →
+  // picker 첫 카드는 Clifton이어야 한다(정렬이 등록순을 뒤집어 히어로 기준과 일치).
+  const shoes: ApiShoe[] = [
+    {id: 's1', name: 'Nike Pegasus', max_km: 600, start_km: 0},
+    {id: 's2', name: 'Hoka Clifton', max_km: 600, start_km: 0},
+  ];
+  const runs: ApiRun[] = [
+    {id: 'r1', shoe_id: 's1', km: 5, run_date: '2026-05-20', duration: 1800},
+    {id: 'r2', shoe_id: 's2', km: 5, run_date: '2026-05-30', duration: 1800},
+  ];
+  const {root} = await mount(shoes, runs);
+  // picker 카드만 onPress + 모델명을 갖는다(히어로·CTA는 모델명 미포함). 문서 순서 = 좌→우.
+  const cards = root.findAll(
+    (n: any) =>
+      n && n.props && typeof n.props.onPress === 'function' &&
+      (textOf(n).includes('Pegasus') || textOf(n).includes('Clifton')),
+  );
+  expect(cards.length).toBeGreaterThanOrEqual(2);
+  expect(textOf(cards[0])).toContain('Clifton');
+  expect(textOf(cards[0])).not.toContain('Pegasus');
+  expect(textOf(cards[cards.length - 1])).toContain('Pegasus');
+});
+
 test('선택은 App이 소유 — 신발 탭의 사용 중 강조도 선택 신발을 가리킨다', async () => {
   const {root} = await mount(SHOES, RUNS);
   // 홈에서 Clifton 선택(기본=Pegasus와 다른 신발을 골라 '선택 반영'을 검증)
