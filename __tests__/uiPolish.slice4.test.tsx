@@ -17,11 +17,14 @@
 
 import React from 'react';
 import ReactTestRenderer, {act} from 'react-test-renderer';
-import {StyleSheet} from 'react-native';
+import {StyleSheet, Alert} from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import App from '../App';
 import HistoryScreen from '../HistoryScreen.rn';
 import ShoesScreen from '../ShoesScreen.rn';
 import {Shoe} from '../theme';
+import {SNAPSHOT_KEY, RunSnapshot} from '../lib/runPersistence';
+import {fmtTime, fmtPace} from '../lib/format';
 
 function textOf(node: any): string {
   let out = '';
@@ -108,6 +111,98 @@ test('① 라이브 런 지표 행: time/flash/walk-outline 아이콘이 없고 
   expect(txt).toContain('케이던스');
   // 케이던스 값은 아직 보폭 입력이 없어 '--' 자리표시자로 렌더된다(값 칸 보존).
   expect(txt).toContain('--');
+
+  act(() => renderer.unmount());
+});
+
+// ── ①b 완주/요약(done) 화면: 라이브런과 별개의 중복 inline 지표 행을 가드한다 ──
+// App.tsx 의 요약 행(phase==='done')은 라이브런 행과 공유 컴포넌트가 아닌 별도
+// inline JSX 다. 라이브런 가드(테스트 ①)는 요약 행을 구동하지 못하므로, 요약 행에
+// 아이콘이 재추가돼도 통과해버린다. 여기서는 미완료-런 스냅샷 복구 경로로 done
+// 화면을 결정적으로 시드(GPS 불필요)해 요약 지표 행을 직접 단언한다.
+const RESUME: RunSnapshot = {
+  dist: 3.2,
+  elapsed: 900,
+  pts: [
+    {lat: 37.5, lon: 127.0},
+    {lat: 37.503, lon: 127.0},
+  ],
+  pausedMs: 0,
+  t0: 1_700_000_000_000,
+  shoe: {id: 's1', name: 'Nike Pegasus'},
+  goalKm: 5,
+  cadence: 172,
+  location: '서울',
+  savedAt: 1_700_000_900_000,
+};
+
+function mockBackendEmpty() {
+  (globalThis.fetch as jest.Mock).mockImplementation((url: any) => {
+    const u = String(url);
+    let body: any = {};
+    if (u.includes('/api/auth')) body = {user_id: 'u1'};
+    else if (u.includes('/api/shoes') || u.includes('/api/runs')) body = [];
+    return Promise.resolve({
+      ok: true,
+      status: 200,
+      json: () => Promise.resolve(body),
+      text: () => Promise.resolve(JSON.stringify(body)),
+    });
+  });
+}
+
+async function tick(n = 6) {
+  for (let i = 0; i < n; i++) {
+    await act(async () => {
+      await Promise.resolve();
+    });
+  }
+}
+
+// 스냅샷을 시드 → 마운트 → '미완료 런 발견' Alert 의 '복구' 선택 → done/요약 화면.
+async function recoverToSummary() {
+  mockBackendEmpty();
+  await AsyncStorage.setItem(SNAPSHOT_KEY, JSON.stringify(RESUME));
+  const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+  let renderer!: ReactTestRenderer.ReactTestRenderer;
+  await act(async () => {
+    renderer = ReactTestRenderer.create(<App />);
+  });
+  await tick(5);
+  const call = alertSpy.mock.calls.find(c => String(c[0]).includes('미완료 런'));
+  if (!call) throw new Error('recover Alert was not shown');
+  const recover = (call[2] as any[]).find(b => b.text === '복구');
+  await act(async () => {
+    recover.onPress();
+  });
+  alertSpy.mockRestore();
+  return renderer;
+}
+
+test('①b 완주/요약 지표 행: time/flash/walk-outline 아이콘이 없고 라벨/값만 렌더된다', async () => {
+  const renderer = await recoverToSummary();
+  const root = renderer.root;
+  const txt = textOf(root);
+
+  // 요약 화면에 도달했음을 확정(라이브런이 아니라 done 화면) — 저장/버리기 액션.
+  expect(txt).toContain('저장하기');
+  expect(txt).toContain('버리기');
+
+  // 요약 지표 행 위 아이콘 3종이 트리 어디에도 없다(아이콘 mock 은 name 을 텍스트로
+  // 렌더하므로, 재추가 시 이 단언이 깨진다). 라이브런 가드와 대칭.
+  expect(txt).not.toContain('time-outline');
+  expect(txt).not.toContain('flash-outline');
+  expect(txt).not.toContain('walk-outline');
+
+  // 라벨은 그대로 — 정보 손실 없음.
+  expect(txt).toContain('시간');
+  expect(txt).toContain('평균 페이스');
+  expect(txt).toContain('케이던스');
+
+  // 값도 그대로(finTime/finKm→평균페이스/finCad). 스냅샷의 결정적 값으로 단언.
+  expect(txt).toContain(fmtTime(RESUME.elapsed)); // 시간 값
+  expect(txt).toContain(fmtPace(RESUME.dist, RESUME.elapsed)); // 평균 페이스 값
+  expect(txt).toContain(String(RESUME.cadence)); // 케이던스 값(172)
 
   act(() => renderer.unmount());
 });
