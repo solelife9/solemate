@@ -98,24 +98,22 @@ function readElapsedSec(root: ReactTestRenderer.ReactTestInstance): number {
   return m * 60 + s;
 }
 
-// Read the cadence metric value. The cadence metric View renders as
-// [Ionicons 'walk-outline', <value>, '케이던스'] — the walk-outline icon is
-// unique to cadence on the run screen — so concatenating its text and stripping
-// the icon name + label leaves just the value ('--' when there is no cadence).
+// Read the cadence metric value. The metric icons were removed (UI polish
+// slice-4), so the cadence metric View now renders as [<value>, '케이던스']. The
+// bare '케이던스' label Text also matches the needle, so keep only host nodes
+// whose text carries MORE than the label (i.e. the value), and take the smallest
+// — the metric View itself ('<value>케이던스'); ancestors are strictly longer.
 // Used to prove the GPS auto-pause path never fabricates a cadence value.
 function readCadence(root: ReactTestRenderer.ReactTestInstance): string {
   const metric = root
     .findAll(n => typeof n.type === 'string')
     .filter(n => {
       const t = textOf(n);
-      return t.includes('케이던스') && t.includes('walk-outline');
+      return t.includes('케이던스') && t.replace('케이던스', '').trim() !== '';
     })
-    // The metric's child Texts each hold only one of the two tokens, so the
-    // smallest host node containing BOTH is the metric View itself
-    // ("walk-outline" + value + "케이던스"); ancestors are strictly longer.
     .sort((a, b) => textOf(a).length - textOf(b).length)[0];
   if (!metric) throw new Error('cadence metric not found');
-  return textOf(metric).replace('walk-outline', '').replace('케이던스', '');
+  return textOf(metric).replace('케이던스', '');
 }
 
 const isAutoPaused = (root: ReactTestRenderer.ReactTestInstance) =>

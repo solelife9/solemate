@@ -1064,9 +1064,9 @@ function RunActiveScreen({shoe,insets,goalKm,onSave,onDiscard,resume}:{shoe:{id:
         </Ring>
       </View>
       <View style={run.metrics}>
-        <View style={run.metric}><Ionicons name="time-outline" size={18} color={T3}/><Text style={run.metricV}>{fmtTime(finTime)}</Text><Text style={run.metricL}>시간</Text></View>
-        <View style={run.metric}><Ionicons name="flash-outline" size={18} color={T3}/><Text style={run.metricV}>{fmtPace(finKm,finTime)}</Text><Text style={run.metricL}>평균 페이스</Text></View>
-        <View style={run.metric}><Ionicons name="walk-outline" size={18} color={T3}/><Text style={run.metricV}>{finCad>0?finCad:'--'}</Text><Text style={run.metricL}>케이던스</Text></View>
+        <View style={run.metric}><Text style={run.metricV}>{fmtTime(finTime)}</Text><Text style={run.metricL}>시간</Text></View>
+        <View style={run.metric}><Text style={run.metricV}>{fmtPace(finKm,finTime)}</Text><Text style={run.metricL}>평균 페이스</Text></View>
+        <View style={run.metric}><Text style={run.metricV}>{finCad>0?finCad:'--'}</Text><Text style={run.metricL}>케이던스</Text></View>
       </View>
       <TextInput style={run.memo} value={memo} onChangeText={setMemo} placeholder="메모 (선택)" placeholderTextColor={T3} autoCorrect={false} autoCapitalize="none"/>
       <View style={run.actionRow}>
@@ -1114,9 +1114,9 @@ function RunActiveScreen({shoe,insets,goalKm,onSave,onDiscard,resume}:{shoe:{id:
       </View>
 
       <View style={run.metrics}>
-        <View style={run.metric}><Ionicons name="time-outline" size={18} color={T3}/><Text style={run.metricV}>{fmtTime(elapsed)}</Text><Text style={run.metricL}>시간</Text></View>
-        <View style={run.metric}><Ionicons name="flash-outline" size={18} color={T3}/><Text style={run.metricV}>{fmtPace(km,elapsed)}</Text><Text style={run.metricL}>평균 페이스</Text></View>
-        <View style={run.metric}><Ionicons name="walk-outline" size={18} color={T3}/><Text style={run.metricV}>{cadence>0?cadence:'--'}</Text><Text style={run.metricL}>케이던스</Text></View>
+        <View style={run.metric}><Text style={run.metricV}>{fmtTime(elapsed)}</Text><Text style={run.metricL}>시간</Text></View>
+        <View style={run.metric}><Text style={run.metricV}>{fmtPace(km,elapsed)}</Text><Text style={run.metricL}>평균 페이스</Text></View>
+        <View style={run.metric}><Text style={run.metricV}>{cadence>0?cadence:'--'}</Text><Text style={run.metricL}>케이던스</Text></View>
       </View>
 
       <View style={run.controls}>
@@ -1155,9 +1155,9 @@ const run=StyleSheet.create({
   goalText:{color:T3,fontFamily:FP,fontSize:12,fontWeight:'500',letterSpacing:1},
   bigDist:{color:T1,fontFamily:FH,fontSize:84,letterSpacing:1,marginTop:6},
   bigUnit:{color:T3,fontFamily:FP,fontSize:14,fontWeight:'600',marginTop:2},
-  metrics:{flexDirection:'row',marginHorizontal:-4,paddingVertical:8,paddingBottom:22,borderTopWidth:StyleSheet.hairlineWidth,borderTopColor:SEP},
-  metric:{flex:1,alignItems:'center',gap:6},
-  metricV:{color:T1,fontFamily:FH,fontSize:26,letterSpacing:0.3},
+  metrics:{flexDirection:'row',marginHorizontal:-4,paddingVertical:14,paddingBottom:24,borderTopWidth:StyleSheet.hairlineWidth,borderTopColor:SEP},
+  metric:{flex:1,alignItems:'center',gap:4},
+  metricV:{color:T1,fontFamily:FH,fontSize:28,letterSpacing:0.3},
   metricL:{color:T3,fontFamily:FP,fontSize:11.5,fontWeight:'600'},
   controls:{flexDirection:'row',alignItems:'flex-start',justifyContent:'center',gap:40,paddingTop:4,paddingBottom:8},
   ctrlPrimary:{width:92,height:92,borderRadius:999,backgroundColor:ACCENT,alignItems:'center',justifyContent:'center'},

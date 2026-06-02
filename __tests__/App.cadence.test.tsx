@@ -67,20 +67,21 @@ function pressByText(root: ReactTestRenderer.ReactTestInstance, label: string) {
 }
 
 // Read the cadence metric value ('--' when there is no cadence, else the spm
-// number as a string). The cadence metric View renders as
-// [Ionicons 'walk-outline', <value>, '케이던스']; the walk-outline icon is unique
-// to cadence on the run screen, so the smallest host node carrying both tokens
-// is the metric View — concatenate its text and strip the icon + label.
+// number as a string). The metric icons were removed (UI polish slice-4), so the
+// cadence metric View now renders as [<value>, '케이던스']. The bare '케이던스'
+// label Text also contains the needle, so we keep only host nodes whose text has
+// MORE than the label (i.e. the value too) and take the smallest — the metric
+// View itself ('<value>케이던스'); ancestors are strictly longer.
 function readCadence(root: ReactTestRenderer.ReactTestInstance): string {
   const metric = root
     .findAll(n => typeof n.type === 'string')
     .filter(n => {
       const t = textOf(n);
-      return t.includes('케이던스') && t.includes('walk-outline');
+      return t.includes('케이던스') && t.replace('케이던스', '').trim() !== '';
     })
     .sort((a, b) => textOf(a).length - textOf(b).length)[0];
   if (!metric) throw new Error('cadence metric not found');
-  return textOf(metric).replace('walk-outline', '').replace('케이던스', '').trim();
+  return textOf(metric).replace('케이던스', '').trim();
 }
 
 async function startRun() {

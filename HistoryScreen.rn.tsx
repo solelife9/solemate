@@ -428,7 +428,7 @@ export default function HistoryScreen({
           </Pressable>
         )}
       </View>
-      <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: 8, gap: 16 }}>
+      <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: 8, gap: 12 }}>
         {/* period segment */}
         <View style={s.segment}>
           {PERIODS.map((p) => {
@@ -490,10 +490,12 @@ const s = StyleSheet.create({
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   title: { color: T1, fontFamily: FONT, fontSize: 32, fontWeight: '500', letterSpacing: -0.8 },
 
-  segment: { flexDirection: 'row', gap: 4, backgroundColor: CARD_HI, borderRadius: 14, padding: 4 },
-  segItem: { flex: 1, minHeight: 44, alignItems: 'center', justifyContent: 'center', paddingVertical: 9, borderRadius: 11 },
+  // 콤팩트: 세그먼트 컨테이너 패딩·항목 내부 패딩·폰트를 줄여 세로를 압축한다.
+  // 단, 터치 타깃은 접근성(≥44pt)을 위해 minHeight 44 를 유지한다(폴리시 회귀 가드).
+  segment: { flexDirection: 'row', gap: 4, backgroundColor: CARD_HI, borderRadius: 13, padding: 3 },
+  segItem: { flex: 1, minHeight: 44, alignItems: 'center', justifyContent: 'center', paddingVertical: 6, borderRadius: 10 },
   segItemOn: { backgroundColor: ACCENT },
-  segText: { fontFamily: FONT, fontSize: 14 },
+  segText: { fontFamily: FONT, fontSize: 13.5 },
 
   // bar chart (right-side km gridlines · accent bars)
   chartGrid: { position: 'absolute', left: 0, right: 0 },
@@ -509,11 +511,13 @@ const s = StyleSheet.create({
   mapWell: { height: MAP_H, marginTop: 10, borderRadius: 14, overflow: 'hidden', backgroundColor: CARD_DIM, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
   emptyHint: { color: T3, fontFamily: FONT, fontSize: 13.5, textAlign: 'center' },
 
-  summaryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  summaryCell: { width: '47.5%', flexGrow: 1, backgroundColor: CARD, borderRadius: 20, padding: 17 },
-  summaryLabel: { color: ACCENT, fontFamily: FONT, fontSize: 12.5, fontWeight: '600', letterSpacing: 0.2 },
-  summaryValue: { color: T1, fontFamily: DISPLAY, fontSize: 32, letterSpacing: 0.3, marginTop: 6 },
-  summaryUnit: { color: T3, fontFamily: FONT, fontSize: 12, marginTop: 2 },
+  // 콤팩트: 요약 4칸(거리/횟수/페이스/시간)의 패딩·값 폰트·여백을 줄여 세로 높이를
+  // 압축한다(정보는 그대로 유지 — 라벨/값/단위 모두 렌더). 리스트가 위로 올라온다.
+  summaryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  summaryCell: { width: '47.5%', flexGrow: 1, backgroundColor: CARD, borderRadius: 18, padding: 13 },
+  summaryLabel: { color: ACCENT, fontFamily: FONT, fontSize: 12, fontWeight: '600', letterSpacing: 0.2 },
+  summaryValue: { color: T1, fontFamily: DISPLAY, fontSize: 25, letterSpacing: 0.3, marginTop: 3 },
+  summaryUnit: { color: T3, fontFamily: FONT, fontSize: 11.5, marginTop: 1 },
 
   runRow: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 16, paddingHorizontal: 18 },
   runRowBorder: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: SEP },

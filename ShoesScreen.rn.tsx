@@ -298,7 +298,7 @@ function ShoeCard({ shoe, featured, onPress, onPlay, unit }: { shoe: Shoe; featu
   return (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${shoe.brand} ${shoe.model} 상세`} style={({ pressed }) => [s.shoeCard, featured ? s.shoeCardFeatured : s.shoeCardIdle, retired && s.shoeCardRetired, pressed && s.pressed]}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 18 }}>
-        <Ring size={72} stroke={9} progress={pct} color={retired ? T3 : ring}>
+        <Ring size={78} stroke={9} progress={pct} color={retired ? T3 : ring}>
           <Text style={s.shoeRingPct}>{Math.round(pct * 100)}<Text style={s.shoeRingPctU}>%</Text></Text>
         </Ring>
         <View style={{ flex: 1, minWidth: 0 }}>
@@ -321,9 +321,6 @@ function ShoeCard({ shoe, featured, onPress, onPlay, unit }: { shoe: Shoe; featu
         ) : (
           <Ionicons name="chevron-forward" size={16} color={T3} />
         )}
-      </View>
-      <View style={s.track}>
-        <View style={[s.trackFill, { width: `${pct * 100}%`, backgroundColor: retired ? T3 : ring }]} />
       </View>
     </Pressable>
   );
@@ -412,18 +409,19 @@ const s = StyleSheet.create({
   headerCount: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600' },
   title: { color: T1, fontFamily: FONT, fontSize: 32, fontWeight: '500', letterSpacing: -0.8, marginTop: 2 },
 
-  shoeCard: { backgroundColor: CARD, borderRadius: 22, padding: 22 },
+  // 카드 하단 중복 진행바(track/trackFill)를 제거하고 원형 Ring 만 유지한다. 바가
+  // 빠진 만큼 카드 패딩을 살짝 줄이고(20), 링(78)·모델 폰트(20)를 키워 비율을
+  // 재조정했다 — 같은 pct 를 두 번 그리던 중복을 없애 시선이 링에 모인다.
+  shoeCard: { backgroundColor: CARD, borderRadius: 22, padding: 20 },
   shoeCardFeatured: { borderWidth: 1, borderColor: ACCENT },
   shoeCardIdle: { borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.05) },
   shoeCardRetired: { opacity: 0.55, borderColor: withAlpha(T1, 0.05) },
-  shoeRingPct: { color: T1, fontFamily: DISPLAY, fontSize: 17 },
+  shoeRingPct: { color: T1, fontFamily: DISPLAY, fontSize: 18 },
   shoeRingPctU: { color: T3, fontFamily: FONT, fontSize: 9 },
   shoeBrand: { color: T3, fontFamily: DISPLAY, fontSize: 11, fontWeight: '500', letterSpacing: 1.3 },
-  shoeModel: { color: T1, fontFamily: DISPLAY, fontSize: 19, fontWeight: '500', letterSpacing: -0.1, marginTop: 3 },
-  shoeMeta: { color: T3, fontFamily: FONT, fontSize: 12.5, fontWeight: '600', marginTop: 5 },
+  shoeModel: { color: T1, fontFamily: DISPLAY, fontSize: 20, fontWeight: '500', letterSpacing: -0.1, marginTop: 3 },
+  shoeMeta: { color: T3, fontFamily: FONT, fontSize: 12.5, fontWeight: '600', marginTop: 6 },
   cardPlay: { width: 38, height: 38, borderRadius: 999, backgroundColor: ACCENT, alignItems: 'center', justifyContent: 'center' },
-  track: { height: 6, borderRadius: 999, backgroundColor: CARD_HI, overflow: 'hidden', marginTop: 16 },
-  trackFill: { height: '100%', borderRadius: 999 },
 
   addCard: { borderRadius: 22, borderWidth: 1.5, borderStyle: 'dashed', borderColor: withAlpha(T1, 0.12), padding: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   addText: { color: T3, fontFamily: FONT, fontSize: 15, fontWeight: '500' },
