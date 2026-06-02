@@ -43,7 +43,7 @@ describe('@slice-4 부상예방 경고', () => {
 });
 
 // ── 차별점: 신발 로테이션 추천 ───────────────────────────────────────────────
-describe.skip('@slice-4 신발 로테이션 추천', () => {
+describe('@slice-4 신발 로테이션 추천', () => {
   const mk = (id: string, brand: string, model: string, extra: object = {}) =>
     ({ id, brand, model, ...extra });
 

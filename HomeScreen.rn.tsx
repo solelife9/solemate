@@ -16,9 +16,10 @@ import {
   BG, CARD_DIM, CARD_HI, HERO_BG, ACCENT, DANGER, WARN, GOOD, T1, T2, T3,
   FONT, DISPLAY, SPACE, RADIUS, withAlpha, Shoe, SHOES,
 } from './theme';
-import { Ring, TabBar, TierBadge, KeegoWordmark, Button, SectionTitle, conditionColor, InjuryBanner } from './primitives';
+import { Ring, TabBar, TierBadge, KeegoWordmark, Button, SectionTitle, Pill, conditionColor, InjuryBanner } from './primitives';
 import { Unit, displayNum } from './lib/units';
 import { assessShoeInjuryRisk } from './lib/injury';
+import { RotationPick } from './lib/rotation';
 
 export type WeekStats = { km: string; runs: number; pace: string };
 // 주간 목표 + keep-going 동기 지표. 거리는 km 표준, pct는 이번 주 달성률 %(목표
@@ -185,6 +186,40 @@ function ShoePicker({ shoes, activeIdx, onSelect, unit }: { shoes: Shoe[]; activ
   );
 }
 
+// 신발 로테이션 추천(차별점). recommendRotation(App에서 신발+런으로 계산)이 활성
+// 2켤레+ 일 때만 picks 를 채우므로, 비었으면(1켤레/추천 없음) 통째로 숨긴다. runType
+// 미선택 기본은 '휴식·마모 분산' 추천 — 가장 오래 쉰 신발이 맨 위(rotation[0])에 온다.
+// 토큰만(색/폰트), 새 상태 없음(props 표시 전용).
+function RotationCard({ rotation, onPickShoe }: { rotation: RotationPick[]; onPickShoe?: (shoeId: string) => void }) {
+  if (!rotation || rotation.length === 0) return null;
+  return (
+    <View testID="home-rotation" style={s.rotaWrap}>
+      <SectionTitle style={s.sectionLabel}>오늘의 로테이션 추천</SectionTitle>
+      <View style={s.rotaCard}>
+        {rotation.map((p, i) => (
+          <Pressable
+            key={p.shoe.id ?? i}
+            testID={`rotation-pick-${i}`}
+            onPress={onPickShoe ? () => onPickShoe(p.shoe.id) : undefined}
+            accessibilityRole="button"
+            accessibilityLabel={`${p.shoe.brand} ${p.shoe.model} · ${p.reason}`}
+            style={({ pressed }) => [s.rotaRow, i > 0 && s.rotaRowSep, pressed && s.pressed]}>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <View style={s.row}>
+                <Text style={s.rotaBrand} numberOfLines={1}>{p.shoe.brand}</Text>
+                {i === 0 && <Pill tone="accent" label="오늘 추천" icon="sparkles" />}
+              </View>
+              <Text style={[s.rotaModel, { color: i === 0 ? T1 : T2 }]} numberOfLines={1}>{p.shoe.model}</Text>
+              <Text style={s.rotaReason} numberOfLines={1}>{p.reason}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={T3} />
+          </Pressable>
+        ))}
+      </View>
+    </View>
+  );
+}
+
 function EmptyHome({ onAddShoe }: { onAddShoe?: () => void }) {
   return (
     <View style={s.empty}>
@@ -206,7 +241,7 @@ function EmptyHome({ onAddShoe }: { onAddShoe?: () => void }) {
 
 export default function HomeScreen({
   shoes = SHOES, dateLabel = '', onStart, onAddShoe, onTab,
-  activeIdx: activeIdxProp, onSelect, unit = 'km', goal,
+  activeIdx: activeIdxProp, onSelect, unit = 'km', goal, rotation, onPickShoe,
 }: {
   shoes?: Shoe[];
   week?: WeekStats;
@@ -214,6 +249,12 @@ export default function HomeScreen({
   onStart?: (idx: number) => void;
   onAddShoe?: () => void;
   onTab?: (i: number) => void;
+  // 신발 로테이션 추천(App이 신발+런으로 recommendRotation 계산해 내려준다). 활성
+  // 2켤레+ 에서만 채워지고, 비면 카드가 숨는다(1켤레/추천 없음). 표시 전용.
+  rotation?: RotationPick[];
+  // 추천 신발을 누르면 그 신발을 홈 히어로로 선택한다(shoe.id 기준 — picker 순서와
+  // 다른 추천 순서를 id로 매핑해 잘못된 신발 선택을 막는다).
+  onPickShoe?: (shoeId: string) => void;
   // 선택 신발을 App이 소유(제어 모드): activeIdx+onSelect가 함께 오면 외부 상태를
   // 따른다. 둘 다 없으면 기존처럼 내부 상태로 동작(하위호환).
   activeIdx?: number;
@@ -260,6 +301,8 @@ export default function HomeScreen({
               <ShoePicker shoes={shoes} activeIdx={idx} onSelect={select} unit={unit} />
             </View>
           )}
+          {/* 휴식·마모 분산 로테이션 추천(2켤레+에서만 채워짐, 비면 자동 숨김) */}
+          <RotationCard rotation={rotation ?? []} onPickShoe={onPickShoe} />
         </>
       ) : (
         <EmptyHome onAddShoe={onAddShoe} />
@@ -315,6 +358,14 @@ const s = StyleSheet.create({
   condSub: { color: T3, fontFamily: FONT, fontSize: 12.5 },
 
   sectionLabel: { paddingHorizontal: SPACE.xl, paddingBottom: SPACE.md },
+
+  rotaWrap: { marginTop: SPACE.lg },
+  rotaCard: { marginHorizontal: SPACE.xl, backgroundColor: CARD_DIM, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.06), paddingHorizontal: SPACE.lg },
+  rotaRow: { flexDirection: 'row', alignItems: 'center', gap: SPACE.md, paddingVertical: 14 },
+  rotaRowSep: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.07) },
+  rotaBrand: { color: T3, fontFamily: DISPLAY, fontSize: 10.5, fontWeight: '500', letterSpacing: 1.2 },
+  rotaModel: { fontFamily: DISPLAY, fontSize: 15, fontWeight: '600', letterSpacing: -0.1, marginTop: 4 },
+  rotaReason: { color: T3, fontFamily: FONT, fontSize: 12, marginTop: 3 },
 
   pcard: { width: CARD_W, height: CARD_W, borderRadius: RADIUS.lg, padding: SPACE.lg, justifyContent: 'space-between' },
   pcardActive: { backgroundColor: HERO_BG, borderWidth: 1, borderColor: ACCENT },

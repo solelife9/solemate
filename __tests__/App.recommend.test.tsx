@@ -144,10 +144,12 @@ test('내 러닝화 picker는 가장 최근에 신은 순으로 정렬된다(등
     {id: 'r2', shoe_id: 's2', km: 5, run_date: '2026-05-30', duration: 1800},
   ];
   const {root} = await mount(shoes, runs);
-  // picker 카드만 onPress + 모델명을 갖는다(히어로·CTA는 모델명 미포함). 문서 순서 = 좌→우.
+  // picker 카드만 onPress + 모델명 + '남음'(남은수명)을 함께 갖는다(히어로·CTA는 모델명
+  // 미포함, 로테이션 추천 칩은 '남음' 미포함). 문서 순서 = 좌→우.
   const cards = root.findAll(
     (n: any) =>
       n && n.props && typeof n.props.onPress === 'function' &&
+      textOf(n).includes('남음') &&
       (textOf(n).includes('Pegasus') || textOf(n).includes('Clifton')),
   );
   expect(cards.length).toBeGreaterThanOrEqual(2);

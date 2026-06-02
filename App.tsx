@@ -38,6 +38,7 @@ import {
 } from './lib/stats';
 import {parseShoeName, shoeHealth, isRetired, DEFAULT_MAX_KM, clampMaxKm, reconcileShoeAlerts, KEEP_GOING_REPLACE} from './lib/shoe';
 import {mostRecentShoeId, lastWornDate} from './lib/shoeRecommend';
+import {recommendRotation} from './lib/rotation';
 import {
   loadSnapshot, clearSnapshot, isResumable,
   enqueuePendingRun, removePendingRun, updatePendingRun, flushPendingRuns,
@@ -491,6 +492,15 @@ function Main(){
   // 무관한 절대 일수이므로 단위 환산 없이 그대로 표시한다(0km/비런 날은 끊김 처리).
   const goalStreak=currentStreak(goalRuns, ymdLocal(now));
 
+  // 신발 로테이션 추천(차별점): 보유 신발+런 기록에서만 파생(새 상태 없음). 활성 2켤레+
+  // 일 때만 picks 가 채워지고, runType 미선택이라 '휴식·마모 분산' 기본 추천이 된다.
+  // 카테고리는 brand+model(parseShoeName) 로 data/shoeModels 조회 — 커스텀은 브랜드 폴백.
+  const rotationPicks=recommendRotation({
+    shoes:shoes.map(s=>{const {brand,model}=parseShoeName(s.name);return {id:s.id,brand:brand||s.name,model:model||(brand?'':s.name),retired:isRetired(s)};}),
+    runs:runs.map(r=>({shoeId:String(r.shoe_id),date:String(r.run_date)})),
+    today:ymdLocal(now),
+  });
+
   // ── history summary + chart per period ─────────────────────
   const monthRuns=runs.filter(r=>String(r.run_date).startsWith(ymdLocal(now).slice(0,7)));
   const yearRuns=runs.filter(r=>String(r.run_date).startsWith(String(now.getFullYear())));
@@ -660,6 +670,7 @@ function Main(){
             goal={{km:goalWeeklyKm,pct:goalProgress.percent,streak:goalStreak}}
             activeIdx={homeActiveIdx} onSelect={selectHomeShoe}
             onStart={startFromIdx} onAddShoe={()=>setOverlay('add')} onTab={setTab}
+            rotation={rotationPicks} onPickShoe={setSelectedShoeId}
           />
         )}
         {tab===1&&(
