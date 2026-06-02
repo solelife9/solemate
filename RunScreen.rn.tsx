@@ -11,6 +11,7 @@
 // ============================================================================
 import React, { useState } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {
   BG, CARD_HI, ACCENT, T1, T2, T3, FONT, Shoe, SHOES, withAlpha,
@@ -37,12 +38,13 @@ export function RunStart({
 
   const goal = Number(val);
   const start = () => { if (goal > 0) onStart?.(Math.round(goal * 10) / 10); };
+  const insets = useSafeAreaInsets();
 
   return (
-    <View style={s.screen}>
+    <View style={[s.screen, { paddingTop: insets.top }]}>
       <View style={s.startHeader}>
         <Text style={s.startTitle}>목표 거리</Text>
-        <Pressable onPress={onClose} style={s.closeBtn}><Ionicons name="close" size={16} color={T2} /></Pressable>
+        <Pressable onPress={onClose} hitSlop={10} accessibilityRole="button" accessibilityLabel="닫기" style={({ pressed }) => [s.closeBtn, pressed && s.pressed]}><Ionicons name="close" size={16} color={T2} /></Pressable>
       </View>
 
       <View style={s.startBody}>
@@ -56,7 +58,7 @@ export function RunStart({
         {PRESETS.map((p) => {
           const on = val === p;
           return (
-            <Pressable key={p} onPress={() => setVal(p)} style={[s.preset, on ? s.presetOn : s.presetOff]}>
+            <Pressable key={p} onPress={() => setVal(p)} accessibilityRole="button" accessibilityLabel={`${p}km`} accessibilityState={{ selected: on }} style={({ pressed }) => [s.preset, on ? s.presetOn : s.presetOff, pressed && s.pressed]}>
               <Text style={[s.presetText, { color: on ? ACCENT : T2 }]}>{p}km</Text>
             </Pressable>
           );
@@ -66,7 +68,7 @@ export function RunStart({
       {/* keypad */}
       <View style={s.keypad}>
         {KEYS.map((k) => (
-          <Pressable key={k} onPress={() => press(k)} style={({ pressed }) => [s.key, pressed && s.keyPressed]}>
+          <Pressable key={k} onPress={() => press(k)} accessibilityRole="button" accessibilityLabel={k === '⌫' ? '지우기' : k} style={({ pressed }) => [s.key, pressed && s.keyPressed]}>
             {k === '⌫'
               ? <Ionicons name="backspace-outline" size={24} color={T1} />
               : <Text style={s.keyText}>{k}</Text>}
@@ -83,7 +85,8 @@ export function RunStart({
 
 const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: BG },
-  startHeader: { paddingTop: 60, paddingHorizontal: 22, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  pressed: { opacity: 0.85 },
+  startHeader: { paddingTop: 12, paddingHorizontal: 22, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   startTitle: { color: T1, fontFamily: FONT, fontSize: 20, fontWeight: '500', letterSpacing: -0.4 },
   closeBtn: { width: 34, height: 34, borderRadius: 999, backgroundColor: CARD_HI, alignItems: 'center', justifyContent: 'center' },
   startBody: { flex: 1, alignItems: 'center', justifyContent: 'center' },

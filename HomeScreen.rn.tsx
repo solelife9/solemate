@@ -11,6 +11,7 @@ import {
   NativeSyntheticEvent, NativeScrollEvent,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {
   BG, CARD_DIM, CARD_HI, HERO_BG, ACCENT, DANGER, WARN, GOOD, T1, T2, T3, SEP,
   FONT, DISPLAY, SPACE, RADIUS, withAlpha, Shoe, SHOES,
@@ -34,7 +35,12 @@ function TopBar({ onAddShoe }: { onAddShoe?: () => void }) {
   return (
     <View style={s.topbar}>
       <KeegoWordmark size={24} />
-      <Pressable onPress={onAddShoe} style={({ pressed }) => [s.addBtn, pressed && s.pressed]}>
+      <Pressable
+        onPress={onAddShoe}
+        accessibilityRole="button"
+        accessibilityLabel="신발 추가"
+        hitSlop={8}
+        style={({ pressed }) => [s.addBtn, pressed && s.pressed]}>
         <Text style={s.addBtnText}>신발 추가</Text>
       </Pressable>
     </View>
@@ -198,9 +204,13 @@ function EmptyHome({ onAddShoe }: { onAddShoe?: () => void }) {
   return (
     <View style={s.empty}>
       <Ionicons name="footsteps-outline" size={56} color={T3} />
-      <Text style={s.emptyTitle}>러닝화를 추가해보세요</Text>
-      <Text style={s.emptyText}>러닝화를 등록하고{'\n'}달린 거리를 추적해보세요</Text>
-      <Pressable onPress={onAddShoe} style={({ pressed }) => [s.emptyBtn, pressed && s.pressed]}>
+      <Text style={s.emptyTitle}>첫 러닝화를 등록해볼까요?</Text>
+      <Text style={s.emptyText}>신발을 추가하면, 달릴 때마다{'\n'}수명을 함께 추적하며 계속 달릴 수 있어요</Text>
+      <Pressable
+        onPress={onAddShoe}
+        accessibilityRole="button"
+        accessibilityLabel="러닝화 등록하기"
+        style={({ pressed }) => [s.emptyBtn, pressed && s.pressed]}>
         <Text style={s.emptyBtnText}>러닝화 등록하기</Text>
       </Pressable>
     </View>
@@ -234,9 +244,10 @@ export default function HomeScreen({
   const select = (i: number) => { if (controlled) onSelect?.(i); else setInternalIdx(i); };
   const active = shoes[idx];
   const isRecommended = recommendedIdx != null && recommendedIdx === idx;
+  const insets = useSafeAreaInsets();
 
   return (
-    <View style={s.screen}>
+    <View style={[s.screen, { paddingTop: insets.top }]}>
       <TopBar onAddShoe={onAddShoe} />
       <View style={s.greetWrap}>
         {!!dateLabel && <Text style={s.date}>{dateLabel}</Text>}
@@ -280,7 +291,7 @@ const s = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   baselineRow: { flexDirection: 'row', alignItems: 'flex-end' },
 
-  topbar: { paddingTop: 60, paddingHorizontal: SPACE.xl, paddingBottom: SPACE.xs, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  topbar: { paddingTop: 12, paddingHorizontal: SPACE.xl, paddingBottom: SPACE.xs, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   addBtn: { height: 36, paddingHorizontal: 18, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: withAlpha(ACCENT, 0.35), backgroundColor: withAlpha(ACCENT, 0.12), alignItems: 'center', justifyContent: 'center' },
   addBtnText: { color: ACCENT, fontFamily: FONT, fontSize: 13, fontWeight: '600' },
 

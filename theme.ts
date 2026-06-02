@@ -13,7 +13,10 @@ export const DANGER = '#FF453A';
 export const GOOD = '#30D158';           // healthy condition dot
 export const T1 = '#FFFFFF';
 export const T2 = '#EBEBF5';
-export const T3 = '#8E8E93';
+// Tertiary/secondary text. Lifted from iOS systemGray(#8E8E93) to #9C9CA3 so the
+// smallest captions clear WCAG AA contrast on the dark surfaces (CARD/BG): ~5.2→
+// ~6.3:1 on CARD. Still clearly a muted secondary tone (dark direction intact).
+export const T3 = '#9C9CA3';
 export const SEP = 'rgba(255,255,255,0.08)';
 
 // ── alpha helper ─────────────────────────────────────────────────────────────

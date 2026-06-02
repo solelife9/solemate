@@ -5,6 +5,7 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, Pressable, TextInput, Alert, StyleSheet } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {
   BG, CARD, CARD_HI, ACCENT, DANGER, WARN, GOOD, T1, T2, T3, SEP, FONT, DISPLAY, withAlpha, Shoe, Run, SHOES,
 } from './theme';
@@ -101,14 +102,15 @@ function ShoeDetail({
     ]);
   };
 
+  const insets = useSafeAreaInsets();
   return (
-    <View style={s.screen}>
+    <View style={[s.screen, { paddingTop: insets.top }]}>
       <View style={s.detailNav}>
-        <Pressable onPress={onBack} style={s.iconBtn}><Ionicons name="chevron-back" size={20} color={T1} /></Pressable>
+        <Pressable onPress={onBack} hitSlop={6} accessibilityRole="button" accessibilityLabel="뒤로" style={s.iconBtn}><Ionicons name="chevron-back" size={20} color={T1} /></Pressable>
         <View style={{ flexDirection: 'row', gap: 10 }}>
-          <Pressable onPress={() => setEditing((e) => !e)} style={s.iconBtn}><Ionicons name="pencil" size={16} color={T2} /></Pressable>
-          <Pressable onPress={toggleRetire} style={s.iconBtn}><Ionicons name={retired ? 'arrow-undo-outline' : 'archive-outline'} size={16} color={retired ? ACCENT : T2} /></Pressable>
-          <Pressable onPress={confirmDelete} style={s.iconBtn}><Ionicons name="trash-outline" size={16} color={DANGER} /></Pressable>
+          <Pressable onPress={() => setEditing((e) => !e)} hitSlop={6} accessibilityRole="button" accessibilityLabel="이름 편집" style={s.iconBtn}><Ionicons name="pencil" size={16} color={T2} /></Pressable>
+          <Pressable onPress={toggleRetire} hitSlop={6} accessibilityRole="button" accessibilityLabel={retired ? '보관 복원' : '신발 보관'} style={s.iconBtn}><Ionicons name={retired ? 'arrow-undo-outline' : 'archive-outline'} size={16} color={retired ? ACCENT : T2} /></Pressable>
+          <Pressable onPress={confirmDelete} hitSlop={6} accessibilityRole="button" accessibilityLabel="신발 삭제" style={s.iconBtn}><Ionicons name="trash-outline" size={16} color={DANGER} /></Pressable>
         </View>
       </View>
       <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: 28, gap: 16 }} keyboardShouldPersistTaps="handled">
@@ -136,7 +138,7 @@ function ShoeDetail({
         {/* 기본 CTA: 이 신발로 바로 런 시작(shoe-first). 보관된 신발은 시작 동선에서
             제외되므로 숨긴다(런 기록은 그대로 보존·표시). */}
         {!retired && shoe.id && onStartRun && (
-          <Pressable onPress={() => onStartRun(shoe.id!)} style={s.runCta}>
+          <Pressable onPress={() => onStartRun(shoe.id!)} accessibilityRole="button" accessibilityLabel="이 신발로 달리기" style={({ pressed }) => [s.runCta, pressed && s.pressed]}>
             <Ionicons name="play" size={18} color={T1} />
             <Text style={s.runCtaText}>이 신발로 달리기</Text>
           </Pressable>
@@ -264,7 +266,7 @@ function ShoeDetail({
         </View>
         {shoeRuns.length === 0 ? (
           <View style={[s.card, { padding: 24, alignItems: 'center' }]}>
-            <Text style={{ color: T3, fontFamily: FONT, fontSize: 13 }}>아직 기록이 없어요</Text>
+            <Text style={{ color: T3, fontFamily: FONT, fontSize: 13 }}>아직 기록이 없어요 — 이 신발로 첫 걸음을 떼어볼까요?</Text>
           </View>
         ) : (
           <View style={[s.card, { overflow: 'hidden' }]}>
@@ -297,7 +299,7 @@ function ShoeCard({ shoe, featured, onPress, onPlay, unit }: { shoe: Shoe; featu
   const usedDisp = displayNum(shoe.used, unit);
   const maxDisp = displayNum(shoe.max, unit);
   return (
-    <Pressable onPress={onPress} style={[s.shoeCard, featured ? s.shoeCardFeatured : s.shoeCardIdle, retired && s.shoeCardRetired]}>
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${shoe.brand} ${shoe.model} 상세`} style={({ pressed }) => [s.shoeCard, featured ? s.shoeCardFeatured : s.shoeCardIdle, retired && s.shoeCardRetired, pressed && s.pressed]}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 18 }}>
         <Ring size={72} stroke={9} progress={pct} color={retired ? T3 : ring}>
           <Text style={s.shoeRingPct}>{Math.round(pct * 100)}<Text style={s.shoeRingPctU}>%</Text></Text>
@@ -316,7 +318,7 @@ function ShoeCard({ shoe, featured, onPress, onPlay, unit }: { shoe: Shoe; featu
         {/* play 어포던스: 카드에서 바로 이 신발로 런 시작(shoe-first). 카드 자체 탭은
             상세로 가므로, 시작은 별도 버튼으로 분리한다. 보관된 신발엔 노출하지 않는다. */}
         {!retired && onPlay ? (
-          <Pressable onPress={onPlay} hitSlop={10} style={s.cardPlay} testID={shoe.id ? `shoe-play-${shoe.id}` : undefined}>
+          <Pressable onPress={onPlay} hitSlop={10} accessibilityRole="button" accessibilityLabel={`${shoe.brand} ${shoe.model}로 달리기`} style={({ pressed }) => [s.cardPlay, pressed && s.pressed]} testID={shoe.id ? `shoe-play-${shoe.id}` : undefined}>
             <Ionicons name="play" size={16} color={T1} />
           </Pressable>
         ) : (
@@ -353,6 +355,7 @@ export default function ShoesScreen({
   onStartRun?: (id: string) => void;
 }) {
   const [detail, setDetail] = useState<number | null>(null);
+  const insets = useSafeAreaInsets();
 
   if (detail != null && shoes[detail]) {
     const dShoe = shoes[detail];
@@ -376,7 +379,7 @@ export default function ShoesScreen({
   }
 
   return (
-    <View style={s.screen}>
+    <View style={[s.screen, { paddingTop: insets.top }]}>
       <View style={s.header}>
         <Text style={s.headerCount}>{shoes.length}켤레 보유</Text>
         <Text style={s.title}>신발</Text>
@@ -392,7 +395,7 @@ export default function ShoesScreen({
             onPlay={shoe.id && onStartRun ? () => onStartRun(shoe.id!) : undefined}
           />
         ))}
-        <Pressable onPress={onAddShoe} style={s.addCard}>
+        <Pressable onPress={onAddShoe} accessibilityRole="button" accessibilityLabel="러닝화 등록하기" style={({ pressed }) => [s.addCard, pressed && s.pressed]}>
           <Ionicons name="add" size={18} color={T3} />
           <Text style={s.addText}>러닝화 등록하기</Text>
         </Pressable>
@@ -404,6 +407,7 @@ export default function ShoesScreen({
 
 const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: BG },
+  pressed: { opacity: 0.85 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   baselineRow: { flexDirection: 'row', alignItems: 'flex-end' },
   card: { backgroundColor: CARD, borderRadius: 22 },
@@ -412,7 +416,7 @@ const s = StyleSheet.create({
   condText: { fontFamily: FONT, fontSize: 13, fontWeight: '500' },
   condSub: { color: T3, fontFamily: FONT, fontSize: 13 },
 
-  header: { paddingTop: 60, paddingHorizontal: 22, paddingBottom: 8 },
+  header: { paddingTop: 12, paddingHorizontal: 22, paddingBottom: 8 },
   headerCount: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600' },
   title: { color: T1, fontFamily: FONT, fontSize: 32, fontWeight: '500', letterSpacing: -0.8, marginTop: 2 },
 
@@ -433,7 +437,7 @@ const s = StyleSheet.create({
   addText: { color: T3, fontFamily: FONT, fontSize: 15, fontWeight: '500' },
 
   // detail
-  detailNav: { paddingTop: 60, paddingHorizontal: 16, paddingBottom: 6, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  detailNav: { paddingTop: 12, paddingHorizontal: 16, paddingBottom: 6, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   iconBtn: { width: 38, height: 38, borderRadius: 999, backgroundColor: CARD_HI, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.12), alignItems: 'center', justifyContent: 'center' },
   dBrand: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500', letterSpacing: 1.6 },
   dModel: { color: T1, fontFamily: FONT, fontSize: 27, fontWeight: '500', letterSpacing: -0.6, marginTop: 4 },

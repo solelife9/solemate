@@ -4,6 +4,7 @@
 // ============================================================================
 import React, { useState } from 'react';
 import { View, Text, TextInput, ScrollView, Pressable, Image, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {
   BG, CARD, CARD_HI, ACCENT, T1, T2, T3, FONT, DISPLAY, withAlpha, Shoe,
@@ -70,11 +71,12 @@ export default function AddShoeScreen({
     });
   };
 
+  const insets = useSafeAreaInsets();
   return (
-    <View style={s.screen}>
+    <View style={[s.screen, { paddingTop: insets.top }]}>
       {/* nav */}
       <View style={s.nav}>
-        <Pressable onPress={onClose} style={({ pressed }) => [s.iconBtn, pressed && s.pressed]}>
+        <Pressable onPress={onClose} hitSlop={10} accessibilityRole="button" accessibilityLabel="닫기" style={({ pressed }) => [s.iconBtn, pressed && s.pressed]}>
           <Ionicons name="close" size={18} color={T2} />
         </Pressable>
         <Text style={s.navTitle}>러닝화 등록</Text>
@@ -105,7 +107,7 @@ export default function AddShoeScreen({
           {BRANDS.map((b) => {
             const on = b === brand;
             return (
-              <Pressable key={b} onPress={() => pickBrand(b)} style={[s.chip, on ? s.chipOn : s.chipOff]}>
+              <Pressable key={b} onPress={() => pickBrand(b)} accessibilityRole="button" accessibilityLabel={b} accessibilityState={{ selected: on }} style={({ pressed }) => [s.chip, on ? s.chipOn : s.chipOff, pressed && s.pressed]}>
                 <Text style={[s.chipText, { color: on ? ACCENT : T2 }]}>{b}</Text>
               </Pressable>
             );
@@ -169,7 +171,7 @@ export default function AddShoeScreen({
 
       {/* CTA */}
       <View style={s.ctaWrap}>
-        <Pressable onPress={save} disabled={!valid} style={[s.cta, !valid && s.ctaDisabled]}>
+        <Pressable onPress={save} disabled={!valid} accessibilityRole="button" accessibilityLabel="러닝화 등록" accessibilityState={{ disabled: !valid }} style={({ pressed }) => [s.cta, !valid && s.ctaDisabled, pressed && valid && s.pressed]}>
           <Text style={[s.ctaText, !valid && { color: T3 }]}>러닝화 등록</Text>
         </Pressable>
       </View>
@@ -181,7 +183,7 @@ const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: BG },
   pressed: { opacity: 0.85, transform: [{ scale: 0.98 }] },
 
-  nav: { paddingTop: 60, paddingHorizontal: 18, paddingBottom: 6, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  nav: { paddingTop: 12, paddingHorizontal: 18, paddingBottom: 6, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   iconBtn: { width: 38, height: 38, borderRadius: 999, backgroundColor: CARD_HI, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.12), alignItems: 'center', justifyContent: 'center' },
   navTitle: { color: T1, fontFamily: FONT, fontSize: 16, fontWeight: '500', letterSpacing: -0.2 },
 

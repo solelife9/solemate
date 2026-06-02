@@ -16,6 +16,7 @@ import {
   TextStyle,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Svg, {
   Circle,
   Defs,
@@ -199,6 +200,8 @@ export function Button({
       onPress={onPress}
       disabled={disabled}
       accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{disabled}}
       style={({pressed}) => [
         btn.base,
         cta ? null : btn.ghost,
@@ -280,6 +283,9 @@ export function Pill({
   return (
     <View
       testID={testID}
+      accessible
+      accessibilityRole="text"
+      accessibilityLabel={label}
       style={[
         pill.base,
         md ? pill.md : pill.sm,
@@ -449,8 +455,11 @@ const TABS = [
 ];
 
 export function TabBar({active, onTab}: {active: number; onTab: (i: number) => void}) {
+  // 하단 제스처바/홈 인디케이터 영역을 피하도록 safe-area inset 을 흡수한다(하드코딩
+  // paddingBottom 대신). inset 이 없는 단말은 기존 여백(24)을 유지해 회귀를 막는다.
+  const insets = useSafeAreaInsets();
   return (
-    <View style={t.wrap}>
+    <View style={[t.wrap, {paddingBottom: insets.bottom > 0 ? insets.bottom + SPACE.sm : 24}]}>
       <View style={t.dock}>
         {TABS.map((tab, i) => {
           const on = i === active;
@@ -458,7 +467,11 @@ export function TabBar({active, onTab}: {active: number; onTab: (i: number) => v
             <Pressable
               key={i}
               onPress={() => onTab(i)}
-              style={[t.item, on && t.itemActive]}>
+              accessibilityRole="tab"
+              accessibilityLabel={tab.label}
+              accessibilityState={{selected: on}}
+              hitSlop={6}
+              style={({pressed}) => [t.item, on && t.itemActive, pressed && t.itemPressed]}>
               <Ionicons
                 name={on ? tab.icon : `${tab.icon}-outline`}
                 size={24}
@@ -502,5 +515,6 @@ const t = StyleSheet.create({
     borderRadius: RADIUS.lg,
   },
   itemActive: {backgroundColor: 'rgba(255,255,255,0.10)'},
+  itemPressed: {opacity: 0.6},
   label: {fontFamily: FONT, fontSize: 10, letterSpacing: 0.1},
 });

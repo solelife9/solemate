@@ -9,6 +9,7 @@
 // ============================================================================
 import React, { useState } from 'react';
 import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { BG, CARD, CARD_DIM, CARD_HI, ACCENT, GOOD, T1, T2, T3, SEP, FONT, DISPLAY, withAlpha } from './theme';
 import { TabBar, Ring, Pill, SectionTitle } from './primitives';
@@ -31,14 +32,14 @@ const APP_VERSION = '0.0.1';
 function Stepper({ value, suffix, onMinus, onPlus }: { value: number | string; suffix: string; onMinus: () => void; onPlus: () => void }) {
   return (
     <View style={s.stepper}>
-      <Pressable onPress={onMinus} style={({ pressed }) => [s.stepBtn, pressed && { backgroundColor: CARD }]}>
+      <Pressable onPress={onMinus} accessibilityRole="button" accessibilityLabel={`${suffix} 줄이기`} style={({ pressed }) => [s.stepBtn, pressed && { backgroundColor: CARD }]}>
         <Ionicons name="remove" size={20} color={T1} />
       </Pressable>
-      <View style={s.stepVal}>
+      <View style={s.stepVal} accessible accessibilityLabel={`${value} ${suffix}`}>
         <Text style={s.stepNum}>{value}</Text>
         <Text style={s.stepUnit}>{suffix}</Text>
       </View>
-      <Pressable onPress={onPlus} style={({ pressed }) => [s.stepBtn, pressed && { backgroundColor: CARD }]}>
+      <Pressable onPress={onPlus} accessibilityRole="button" accessibilityLabel={`${suffix} 늘리기`} style={({ pressed }) => [s.stepBtn, pressed && { backgroundColor: CARD }]}>
         <Ionicons name="add" size={20} color={T1} />
       </Pressable>
     </View>
@@ -104,9 +105,10 @@ export default function ProfileScreen({
   const week7 = Array.from({ length: 7 }, (_, i) => !!weekDays[i]);
   const DOW = ['월', '화', '수', '목', '금', '토', '일'];
 
+  const insets = useSafeAreaInsets();
   return (
     <View style={s.screen}>
-      <ScrollView contentContainerStyle={{ paddingTop: 60, paddingHorizontal: 18, paddingBottom: 8, gap: 16 }}>
+      <ScrollView contentContainerStyle={{ paddingTop: insets.top + 12, paddingHorizontal: 18, paddingBottom: 8, gap: 16 }}>
         {/* header */}
         <View style={s.headerRow}>
           <Text style={s.title}>프로필</Text>
@@ -226,7 +228,7 @@ export default function ProfileScreen({
           <Text style={[s.sectionLabel, { paddingBottom: 12 }]}>설정</Text>
           <View style={[s.card, { overflow: 'hidden' }]}>
             {/* 1) 목표 설정 */}
-            <Pressable onPress={() => toggleOpen('goal')} style={({ pressed }) => [s.settingRow, s.settingBorder, pressed && { backgroundColor: CARD_HI }]}>
+            <Pressable onPress={() => toggleOpen('goal')} accessibilityRole="button" accessibilityLabel={`목표 설정, 주 ${goalDisplay}${unit}`} accessibilityState={{ expanded: open === 'goal' }} style={({ pressed }) => [s.settingRow, s.settingBorder, pressed && { backgroundColor: CARD_HI }]}>
               <View style={s.settingIcon}><Ionicons name="flag-outline" size={17} color={ACCENT} /></View>
               <Text style={s.settingLabel}>목표 설정</Text>
               <Text style={s.settingDetail}>{`주 ${goalDisplay}${unit}`}</Text>
@@ -240,7 +242,7 @@ export default function ProfileScreen({
             )}
 
             {/* 2) 알림 */}
-            <Pressable onPress={() => toggleOpen('alerts')} style={({ pressed }) => [s.settingRow, s.settingBorder, pressed && { backgroundColor: CARD_HI }]}>
+            <Pressable onPress={() => toggleOpen('alerts')} accessibilityRole="button" accessibilityLabel={`알림, ${alerts.enabled ? '켜짐' : '꺼짐'}`} accessibilityState={{ expanded: open === 'alerts' }} style={({ pressed }) => [s.settingRow, s.settingBorder, pressed && { backgroundColor: CARD_HI }]}>
               <View style={s.settingIcon}><Ionicons name="notifications-outline" size={17} color={ACCENT} /></View>
               <Text style={s.settingLabel}>알림</Text>
               <Text style={s.settingDetail}>{alerts.enabled ? '켜짐' : '꺼짐'}</Text>
@@ -248,7 +250,7 @@ export default function ProfileScreen({
             </Pressable>
             {open === 'alerts' && (
               <View style={[s.panel, s.settingBorder]}>
-                <Pressable onPress={toggleAlerts} style={[s.toggle, alerts.enabled ? s.toggleOn : s.toggleOff]}>
+                <Pressable onPress={toggleAlerts} accessibilityRole="switch" accessibilityLabel="신발 교체 알림" accessibilityState={{ checked: alerts.enabled }} style={[s.toggle, alerts.enabled ? s.toggleOn : s.toggleOff]}>
                   <Ionicons name={alerts.enabled ? 'notifications' : 'notifications-off'} size={16} color={alerts.enabled ? T1 : T2} />
                   <Text style={[s.toggleTxt, { color: alerts.enabled ? T1 : T2 }]}>{alerts.enabled ? '신발 교체 알림 켜짐' : '신발 교체 알림 꺼짐'}</Text>
                 </Pressable>
@@ -262,7 +264,7 @@ export default function ProfileScreen({
             )}
 
             {/* 3) 단위 — 즉시 토글(전 화면 환산 반영) */}
-            <Pressable onPress={() => onChangeUnit?.(unit === 'km' ? 'mi' : 'km')} style={({ pressed }) => [s.settingRow, s.settingBorder, pressed && { backgroundColor: CARD_HI }]}>
+            <Pressable onPress={() => onChangeUnit?.(unit === 'km' ? 'mi' : 'km')} accessibilityRole="button" accessibilityLabel={`단위, 현재 ${unitKorean(unit)}. 눌러서 전환`} style={({ pressed }) => [s.settingRow, s.settingBorder, pressed && { backgroundColor: CARD_HI }]}>
               <View style={s.settingIcon}><Ionicons name="speedometer-outline" size={17} color={ACCENT} /></View>
               <Text style={s.settingLabel}>단위</Text>
               <Text style={s.settingDetail}>{unitKorean(unit)}</Text>
@@ -270,7 +272,7 @@ export default function ProfileScreen({
             </Pressable>
 
             {/* 4) 계정 설정 */}
-            <Pressable onPress={() => toggleOpen('account')} style={({ pressed }) => [s.settingRow, pressed && { backgroundColor: CARD_HI }]}>
+            <Pressable onPress={() => toggleOpen('account')} accessibilityRole="button" accessibilityLabel="계정 설정" accessibilityState={{ expanded: open === 'account' }} style={({ pressed }) => [s.settingRow, pressed && { backgroundColor: CARD_HI }]}>
               <View style={s.settingIcon}><Ionicons name="settings-outline" size={17} color={ACCENT} /></View>
               <Text style={s.settingLabel}>계정 설정</Text>
               <Ionicons name={open === 'account' ? 'chevron-up' : 'chevron-forward'} size={16} color={T3} />

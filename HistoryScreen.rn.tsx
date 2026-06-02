@@ -5,6 +5,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, Pressable, StyleSheet, LayoutChangeEvent, Share, TextInput, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Polyline, Circle } from 'react-native-svg';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {
@@ -152,10 +153,11 @@ function RunForm({
     onSubmit({ shoeId, km: displayToKm(dispKm, unit), date, durationSec: parseDurationInput(dur) });
   };
 
+  const insets = useSafeAreaInsets();
   return (
-    <View style={s.screen}>
+    <View style={[s.screen, { paddingTop: insets.top }]}>
       <View style={[s.nav, s.navRow]}>
-        <Pressable onPress={onCancel} style={s.iconBtn}><Ionicons name="chevron-back" size={20} color={T1} /></Pressable>
+        <Pressable onPress={onCancel} hitSlop={6} accessibilityRole="button" accessibilityLabel="뒤로" style={s.iconBtn}><Ionicons name="chevron-back" size={20} color={T1} /></Pressable>
         <Text style={s.formTitle}>{editing ? '러닝 편집' : '수동 기록 추가'}</Text>
         <View style={s.iconBtn} />
       </View>
@@ -279,10 +281,11 @@ function RunDetail({ run, shoe, onBack, unit, onEdit, onDelete }: { run: Run; sh
     { l: '평균 심박', ...dash(run.bpm, 'bpm') },
     { l: '고도 상승', ...dash(run.elev, 'm') },
   ];
+  const insets = useSafeAreaInsets();
   return (
-    <View style={s.screen}>
+    <View style={[s.screen, { paddingTop: insets.top }]}>
       <View style={[s.nav, s.navRow]}>
-        <Pressable onPress={onBack} style={s.iconBtn}><Ionicons name="chevron-back" size={20} color={T1} /></Pressable>
+        <Pressable onPress={onBack} hitSlop={6} accessibilityRole="button" accessibilityLabel="뒤로" style={s.iconBtn}><Ionicons name="chevron-back" size={20} color={T1} /></Pressable>
         <View style={s.navActions}>
           {!!onEdit && (
             <Pressable onPress={onEdit} style={s.iconBtn} accessibilityRole="button" accessibilityLabel="편집">
@@ -329,7 +332,7 @@ function RunDetail({ run, shoe, onBack, unit, onEdit, onDelete }: { run: Run; sh
 function RunRow({ run, shoes, onPress, last, unit }: { run: Run; shoes: Shoe[]; onPress: () => void; last: boolean; unit: Unit }) {
   const shoe = shoes[run.shoe];
   return (
-    <Pressable onPress={onPress} style={[s.runRow, !last && s.runRowBorder]}>
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${run.date} ${shoe ? shoe.brand + ' ' + shoe.model : '삭제된 신발'} 기록`} style={({ pressed }) => [s.runRow, !last && s.runRowBorder, pressed && { opacity: 0.7 }]}>
       <View style={s.runDate}>
         <Text style={s.runDay}>{run.day}</Text>
         <Text style={s.runDateNum}>{run.dateNum}</Text>
@@ -369,6 +372,7 @@ export default function HistoryScreen({
   const [detail, setDetail] = useState<Run | null>(null);
   // 폼 상태: 'add'(수동 입력) | {edit, run}(편집). null이면 목록 화면.
   const [form, setForm] = useState<null | { mode: 'add' } | { mode: 'edit'; run: Run }>(null);
+  const insets = useSafeAreaInsets();
 
   const sum = summary[period] || EMPTY_SUMMARY;
   const ch = chart[period];
@@ -415,11 +419,11 @@ export default function HistoryScreen({
   }
 
   return (
-    <View style={s.screen}>
+    <View style={[s.screen, { paddingTop: insets.top }]}>
       <View style={[s.header, s.headerRow]}>
         <Text style={s.title}>기록</Text>
         {!!onAddRun && (
-          <Pressable onPress={() => setForm({ mode: 'add' })} style={s.iconBtn} accessibilityRole="button" accessibilityLabel="수동 기록 추가">
+          <Pressable onPress={() => setForm({ mode: 'add' })} hitSlop={8} style={s.iconBtn} accessibilityRole="button" accessibilityLabel="수동 기록 추가">
             <Ionicons name="add" size={22} color={T1} />
           </Pressable>
         )}
@@ -430,7 +434,7 @@ export default function HistoryScreen({
           {PERIODS.map((p) => {
             const on = p === period;
             return (
-              <Pressable key={p} onPress={() => setPeriod(p)} style={[s.segItem, on && s.segItemOn]}>
+              <Pressable key={p} onPress={() => setPeriod(p)} accessibilityRole="button" accessibilityLabel={p} accessibilityState={{ selected: on }} style={({ pressed }) => [s.segItem, on && s.segItemOn, pressed && !on && { opacity: 0.7 }]}>
                 <Text style={[s.segText, { color: on ? BG : T3, fontWeight: on ? '700' : '500' }]}>{p}</Text>
               </Pressable>
             );
@@ -482,7 +486,7 @@ const s = StyleSheet.create({
   cardTitle: { color: T2, fontFamily: FONT, fontSize: 13.5, fontWeight: '500' },
   sectionLabel: { color: T2, fontFamily: FONT, fontSize: 14, fontWeight: '500', letterSpacing: 0.2, paddingHorizontal: 4 },
 
-  header: { paddingTop: 60, paddingHorizontal: 22, paddingBottom: 8 },
+  header: { paddingTop: 12, paddingHorizontal: 22, paddingBottom: 8 },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   title: { color: T1, fontFamily: FONT, fontSize: 32, fontWeight: '500', letterSpacing: -0.8 },
 
@@ -525,7 +529,7 @@ const s = StyleSheet.create({
   runML: { color: T3, fontFamily: FONT, fontSize: 10.5, marginTop: 2 },
 
   // detail
-  nav: { paddingTop: 60, paddingHorizontal: 16, paddingBottom: 6 },
+  nav: { paddingTop: 12, paddingHorizontal: 16, paddingBottom: 6 },
   navRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   navActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   iconBtn: { width: 38, height: 38, borderRadius: 999, backgroundColor: CARD_HI, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.12), alignItems: 'center', justifyContent: 'center' },

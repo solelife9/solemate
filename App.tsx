@@ -716,8 +716,9 @@ function SkelBlock({h,w,style}:{h:number;w?:number|string;style?:any}){
   return <View style={[{height:h,width:(w as any)??'100%',borderRadius:10,backgroundColor:SURFACE},style]}/>;
 }
 function BootSkeleton(){
+  const insets=useSafeAreaInsets();
   return (
-    <View testID="boot-skeleton" style={boot.screen}>
+    <View testID="boot-skeleton" style={[boot.screen,{paddingTop:insets.top+12}]}>
       <View style={{height:24}}/>
       <SkelBlock h={14} w={120}/>
       <View style={{height:18}}/>
@@ -743,13 +744,14 @@ function BootSkeleton(){
 // fetch 실패(콜드/오프라인)에만 뜬다 — 빈-신규(성공+빈배열)와 구분된다. 실패를
 // '잠깐 멈춤'으로 프레이밍하고 '다시 시도' 버튼으로 initUser 재진입을 제공한다.
 function BootError({onRetry}:{onRetry:()=>void}){
+  const insets=useSafeAreaInsets();
   return (
-    <View testID="boot-error" style={[boot.screen,{justifyContent:'center'}]}>
+    <View testID="boot-error" style={[boot.screen,{justifyContent:'center',paddingTop:insets.top+12}]}>
       <View style={boot.card}>
         <Ionicons name="cloud-offline-outline" size={40} color={WARN}/>
         <Text style={boot.cardTitle}>연결이 잠시 끊겼어요</Text>
         <Text style={boot.cardBody}>{KEEP_GOING_RETRY}</Text>
-        <TouchableOpacity testID="boot-retry" onPress={onRetry} style={boot.retryBtn} activeOpacity={0.85}>
+        <TouchableOpacity testID="boot-retry" onPress={onRetry} style={boot.retryBtn} activeOpacity={0.85} accessibilityRole="button" accessibilityLabel="다시 시도">
           <Ionicons name="refresh" size={18} color={'#000'}/>
           <Text style={boot.retryText}>다시 시도</Text>
         </TouchableOpacity>
@@ -768,8 +770,9 @@ function Onboarding({onStart,onSkip}:{onStart:()=>void;onSkip:()=>void}){
     {icon:'walk-outline',title:'달리면 수명이 차감돼요',body:'러닝 거리만큼 그 신발의 수명이 자동으로 줄어듭니다.'},
     {icon:'shield-checkmark-outline',title:'교체 시점을 알려드려요',body:'수명이 다하면 미리 알림 — 부상 없이 계속 달릴 수 있게.'},
   ];
+  const insets=useSafeAreaInsets();
   return (
-    <View testID="onboarding" style={[boot.screen,{justifyContent:'center'}]}>
+    <View testID="onboarding" style={[boot.screen,{justifyContent:'center',paddingTop:insets.top+12}]}>
       <Text style={boot.obKicker}>KEEGO 시작하기</Text>
       <Text style={boot.obTitle}>신발과 함께 달리는{'\n'}러닝 트래커</Text>
       <View style={{height:24}}/>
@@ -785,10 +788,10 @@ function Onboarding({onStart,onSkip}:{onStart:()=>void;onSkip:()=>void}){
         </View>
       ))}
       <View style={{height:28}}/>
-      <TouchableOpacity testID="onboarding-start" onPress={onStart} style={boot.retryBtn} activeOpacity={0.85}>
+      <TouchableOpacity testID="onboarding-start" onPress={onStart} style={boot.retryBtn} activeOpacity={0.85} accessibilityRole="button" accessibilityLabel="신발 등록하고 시작">
         <Text style={boot.retryText}>신발 등록하고 시작</Text>
       </TouchableOpacity>
-      <TouchableOpacity testID="onboarding-skip" onPress={onSkip} style={boot.obSkip} activeOpacity={0.7}>
+      <TouchableOpacity testID="onboarding-skip" onPress={onSkip} style={boot.obSkip} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="나중에 할게요">
         <Text style={boot.obSkipText}>나중에 할게요</Text>
       </TouchableOpacity>
     </View>
@@ -796,7 +799,7 @@ function Onboarding({onStart,onSkip}:{onStart:()=>void;onSkip:()=>void}){
 }
 
 const boot=StyleSheet.create({
-  screen:{flex:1,backgroundColor:BG,paddingHorizontal:18,paddingTop:60},
+  screen:{flex:1,backgroundColor:BG,paddingHorizontal:18,paddingTop:12},
   card:{backgroundColor:CARD,borderRadius:20,padding:24,alignItems:'center',gap:12,
     borderWidth:StyleSheet.hairlineWidth,borderColor:SEP},
   cardTitle:{color:T1,fontFamily:FP,fontSize:18,fontWeight:'700',marginTop:4},
@@ -1066,8 +1069,8 @@ function RunActiveScreen({shoe,insets,goalKm,onSave,onDiscard,resume}:{shoe:{id:
       </View>
       <TextInput style={run.memo} value={memo} onChangeText={setMemo} placeholder="메모 (선택)" placeholderTextColor={T3} autoCorrect={false} autoCapitalize="none"/>
       <View style={run.actionRow}>
-        <TouchableOpacity style={run.discardBtn} onPress={onDiscard}><Text style={run.discardTxt}>버리기</Text></TouchableOpacity>
-        <TouchableOpacity style={run.saveBtn} onPress={handleSave} disabled={saving}><Text style={run.saveTxt}>{saving?'저장 중...':'저장하기'}</Text></TouchableOpacity>
+        <TouchableOpacity style={run.discardBtn} onPress={onDiscard} accessibilityRole="button" accessibilityLabel="버리기"><Text style={run.discardTxt}>버리기</Text></TouchableOpacity>
+        <TouchableOpacity style={run.saveBtn} onPress={handleSave} disabled={saving} accessibilityRole="button" accessibilityLabel="저장하기" accessibilityState={{disabled:saving}}><Text style={run.saveTxt}>{saving?'저장 중...':'저장하기'}</Text></TouchableOpacity>
       </View>
     </View>
   );
@@ -1117,13 +1120,13 @@ function RunActiveScreen({shoe,insets,goalKm,onSave,onDiscard,resume}:{shoe:{id:
 
       <View style={run.controls}>
         <View style={{alignItems:'center',gap:8}}>
-          <TouchableOpacity style={run.ctrlPrimary} onPress={handlePause}>
+          <TouchableOpacity style={run.ctrlPrimary} onPress={handlePause} accessibilityRole="button" accessibilityLabel={paused?'재개':'일시정지'}>
             <Ionicons name={paused?'play':'pause'} size={34} color="#fff"/>
           </TouchableOpacity>
           <Text style={run.ctrlHint}>{paused?'재개':'일시정지'}</Text>
         </View>
         <View style={{alignItems:'center',gap:8}}>
-          <TouchableOpacity style={[run.ctrlStop,stopConfirm&&{backgroundColor:DANGER}]} onPress={handleStop}>
+          <TouchableOpacity style={[run.ctrlStop,stopConfirm&&{backgroundColor:DANGER}]} onPress={handleStop} accessibilityRole="button" accessibilityLabel={stopConfirm?'한번 더 누르면 종료':'종료'}>
             <Ionicons name="stop" size={26} color={stopConfirm?'#fff':DANGER}/>
           </TouchableOpacity>
           <Text style={[run.ctrlHint,stopConfirm&&{color:WARN,fontWeight:'700'}]}>{stopConfirm?'한번 더 누르면 종료':'종료'}</Text>
