@@ -203,16 +203,18 @@ function ShoePicker({ shoes, activeIdx, onSelect, unit }: { shoes: Shoe[]; activ
 function EmptyHome({ onAddShoe }: { onAddShoe?: () => void }) {
   return (
     <View style={s.empty}>
-      <Ionicons name="footsteps-outline" size={56} color={T3} />
-      <Text style={s.emptyTitle}>첫 러닝화를 등록해볼까요?</Text>
-      <Text style={s.emptyText}>신발을 추가하면, 달릴 때마다{'\n'}수명을 함께 추적하며 계속 달릴 수 있어요</Text>
-      <Pressable
-        onPress={onAddShoe}
-        accessibilityRole="button"
-        accessibilityLabel="러닝화 등록하기"
-        style={({ pressed }) => [s.emptyBtn, pressed && s.pressed]}>
-        <Text style={s.emptyBtnText}>러닝화 등록하기</Text>
-      </Pressable>
+      {/* 아이콘 없이 테두리 카드 안에 문구 + 버튼만 */}
+      <View style={s.emptyCard}>
+        <Text style={s.emptyTitle}>첫 러닝화를 등록해볼까요?</Text>
+        <Text style={s.emptyText}>신발을 추가하면, 달릴 때마다{'\n'}수명을 함께 추적하며 계속 달릴 수 있어요</Text>
+        <Pressable
+          onPress={onAddShoe}
+          accessibilityRole="button"
+          accessibilityLabel="러닝화 등록하기"
+          style={({ pressed }) => [s.emptyBtn, pressed && s.pressed]}>
+          <Text style={s.emptyBtnText}>러닝화 등록하기</Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -278,7 +280,11 @@ export default function HomeScreen({
           <View style={{ flex: 1 }} />
         </>
       ) : (
-        <EmptyHome onAddShoe={onAddShoe} />
+        <>
+          <EmptyHome onAddShoe={onAddShoe} />
+          {/* 빈 상태에서도 TabBar를 화면 바닥에 고정(가운데 갭 제거) */}
+          <View style={{ flex: 1 }} />
+        </>
       )}
       <TabBar active={0} onTab={(i) => onTab?.(i)} />
     </View>
@@ -345,9 +351,10 @@ const s = StyleSheet.create({
   pcardRemain: { fontFamily: DISPLAY, fontSize: 18, letterSpacing: -0.3 },
   pcardRemainU: { color: T3, fontFamily: FONT, fontSize: 10.5, marginLeft: 3, marginBottom: 1 },
 
-  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 40, gap: 6 },
-  emptyTitle: { color: T1, fontFamily: FONT, fontSize: 18, fontWeight: '600', marginTop: 14 },
-  emptyText: { color: T3, fontFamily: FONT, fontSize: 13.5, textAlign: 'center', lineHeight: 20, marginTop: 2 },
-  emptyBtn: { marginTop: 18, height: 48, paddingHorizontal: 28, borderRadius: RADIUS.pill, backgroundColor: ACCENT, alignItems: 'center', justifyContent: 'center' },
+  empty: { paddingHorizontal: SPACE.xl, paddingTop: 30 },
+  emptyCard: { alignSelf: 'stretch', alignItems: 'center', backgroundColor: CARD_DIM, borderRadius: RADIUS.xl, borderWidth: 1, borderColor: withAlpha(T1, 0.12), paddingVertical: 40, paddingHorizontal: 24 },
+  emptyTitle: { color: T1, fontFamily: FONT, fontSize: 18, fontWeight: '600' },
+  emptyText: { color: T3, fontFamily: FONT, fontSize: 13.5, textAlign: 'center', lineHeight: 20, marginTop: 10 },
+  emptyBtn: { alignSelf: 'stretch', marginTop: 22, height: 50, borderRadius: RADIUS.pill, backgroundColor: ACCENT, alignItems: 'center', justifyContent: 'center' },
   emptyBtnText: { color: T1, fontFamily: FONT, fontSize: 15, fontWeight: '600' },
 });
