@@ -102,9 +102,6 @@ function Main(){
   // 홈/신발 화면이 공유하는 '선택 신발' id. null이면 휴식 로테이션 추천 신발로 폴백한다
   // (activeIdx={0} 하드코딩 제거 — 선택/추천이 홈 히어로와 신발 '사용 중' 표시를 함께 몬다).
   const [selectedShoeId,setSelectedShoeId]=useState<string|null>(null);
-  // 신발 id → 구매가(원). cost-per-km 파생용. AsyncStorage('price_<id>')에 영속(백엔드
-  // 스키마 무변경 — 데이터 파괴 금지). 신발 로드 후 채워진다.
-  const [prices,setPrices]=useState<Record<string,number>>({});
   const [overlay,setOverlay]=useState<'none'|'add'|'goal'|'run'>('none');
   const [pendingShoe,setPendingShoe]=useState<{id:string;name:string;ui:Shoe}|null>(null);
   const [activeRun,setActiveRun]=useState<{id:string;name:string;goalKm:number}|null>(null);
@@ -190,7 +187,6 @@ function Main(){
       // 부팅 성공: fetch가 성공한 순간 'ready'. 빈 배열이어도 'error'가 아니다 —
       // 빈-신규 사용자는 재시도 카드가 아니라 온보딩/빈 홈을 봐야 한다(구분).
       setBootState('ready');
-      void loadPrices(safeShoes);
       checkShoeAlerts(safeShoes,safeRuns,st.alerts);
       // audit#3 재동기: 네트워크 실패로 큐에 남은 완주 런을 재전송. 서버 런 목록과
       // 사용자 id를 갓 받은 값으로 넘겨, 재-POST 전 클라이언트 화해로 중복을 막는다.
@@ -269,27 +265,6 @@ function Main(){
     }catch{Alert.alert('오류',retired?'보관 처리 실패':'복원 실패');}
   }
 
-  // 구매가 로드: 각 신발의 price_<id> 로컬 키를 읽어 prices 맵을 채운다. 백엔드 스키마를
-  // 건드리지 않고 클라이언트에 영속(데이터 파괴 금지). 숫자로 파싱되는 값만 채택한다.
-  async function loadPrices(shoeList:BackendShoe[]){
-    try{
-      const entries=await Promise.all((shoeList||[]).map(async(s)=>{
-        if(!s||!s.id) return null;
-        const raw=await AsyncStorage.getItem('price_'+s.id);
-        const v=raw!=null?Number(raw):NaN;
-        return Number.isFinite(v)&&v>0?[s.id,v] as [string,number]:null;
-      }));
-      const map:Record<string,number>={};
-      for(const e of entries){if(e)map[e[0]]=e[1];}
-      setPrices(map);
-    }catch(e){console.log('loadPrices error',e);}
-  }
-
-  // 구매가 저장: 로컬 영속 + 상태 갱신. cost-per-km는 ShoeDetail에서 순수함수로 파생된다.
-  async function setShoePrice(id:string,price:number){
-    setPrices(prev=>({...prev,[id]:price}));
-    try{await AsyncStorage.setItem('price_'+id,String(price));}catch(e){console.log('setShoePrice error',e);}
-  }
 
   // 완주 런 저장(audit#3): 로컬 우선 + 미동기 큐. 저장(AsyncStorage)과 네트워크
   // (POST)를 분리해 부분성공 desync를 막는다.
@@ -695,7 +670,7 @@ function Main(){
         {tab===2&&(
           <ShoesScreen
             shoes={uiShoes} runs={uiRuns} totals={shoeTotals} activeIdx={shoesActiveIdx}
-            prices={prices} onSetPrice={setShoePrice} unit={unit}
+            unit={unit}
             onAddShoe={()=>setOverlay('add')} onTab={setTab}
             onRename={updateShoeName} onDelete={deleteShoe} onRetire={retireShoe}
             onSetMaxKm={updateShoeMaxKm} onStartRun={startFromShoeId}

@@ -10,15 +10,11 @@ import {
   BG, CARD, CARD_HI, ACCENT, DANGER, WARN, GOOD, T1, T2, T3, SEP, FONT, DISPLAY, withAlpha, Shoe, Run, SHOES,
 } from './theme';
 import { Ring, TabBar, TierBadge, Pill } from './primitives';
-import { costPerKm } from './lib/shoeRecommend';
 import { Unit, displayNum, displayToKm } from './lib/units';
 import { clampMaxKm, KEEP_GOING_REPLACE, SHOE_MAX_STEP_KM, SHOE_REPLACE_PCT } from './lib/shoe';
 
 // lastWorn: 이 신발의 마지막 착용일(런에서 파생, 한국어 표기). 미착용이면 생략.
 export type ShoeTotals = { totalRuns: number; totalTime: string; lastWorn?: string };
-
-// 정수 원화에 천단위 콤마. 음수/NaN은 그대로(호출부가 양수만 넘김).
-const fmtWon = (n: number) => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 
 // Proportional condition → color (shoeHealth tiers: 양호 / 주의 / 교체).
 const condColor = (c: string) => (c === '교체' ? DANGER : c === '주의' ? WARN : GOOD);
@@ -26,25 +22,23 @@ const ringColor = (c: string) => (c === '교체' ? DANGER : c === '주의' ? WAR
 
 // ── shoe detail ───────────────────────────────────────────────────────────────
 function ShoeDetail({
-  shoe, idx, runs, totals, price, unit, onBack, onRename, onDelete, onRetire, onSetPrice, onSetMaxKm, onStartRun,
+  shoe, idx, runs, totals, unit, onBack, onRename, onDelete, onRetire, onSetMaxKm, onStartRun,
 }: {
   shoe: Shoe;
   idx: number;
   runs: Run[];
   totals: ShoeTotals;
-  price?: number;
   unit: Unit;
   onBack: () => void;
   onRename?: (id: string, name: string) => void;
   onDelete?: (id: string) => void;
   onRetire?: (id: string, retired: boolean) => void;
-  onSetPrice?: (id: string, price: number) => void;
   // 신발별 수명(max_km) 조정 — 교체 임계의 분모를 사용자가 직접 보정한다.
   onSetMaxKm?: (id: string, maxKm: number) => void;
   // shoe-first 동선: 이 신발로 바로 런 시작(목표 설정 → 러닝). 신발 id를 넘긴다.
   onStartRun?: (id: string) => void;
 }) {
-  // 비율은 km 절대값, 표시 숫자만 단위 환산. cost-per-km는 의도적으로 km 기준(원/km).
+  // 비율은 km 절대값, 표시 숫자만 표시 단위로 환산한다.
   const remainKm = Math.max(0, shoe.max - shoe.used);
   const pct = shoe.max > 0 ? remainKm / shoe.max : 0;
   const remain = displayNum(remainKm, unit);
@@ -57,14 +51,8 @@ function ShoeDetail({
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(`${shoe.brand} ${shoe.model}`.trim());
 
-  // 구매가(원) 입력 — 저장하면 onSetPrice로 영속화된다. km당 비용은 순수함수로 파생.
-  const [priceInput, setPriceInput] = useState(price != null && price > 0 ? String(price) : '');
-  const savePrice = () => {
-    if (!shoe.id) return;
-    const v = Math.round(Number(priceInput) || 0);
-    if (v >= 0) onSetPrice?.(shoe.id, v);
-  };
-  const cpk = costPerKm(Number(priceInput) || 0, shoe.used);
+  // 신발 수명(max_km)을 '남은 수명' 옆 연필로 펼쳐 바로 보정한다(기본 접힘).
+  const [editingMax, setEditingMax] = useState(false);
 
   // 신발 수명(max_km) 조정: ＋/− 50km씩 보정. 비율(percentUsed)은 km 절대값으로
   // 계산하지만 표시·스텝은 단위를 따른다(goal 스테퍼와 동일). 임계 tier는 새 max로
@@ -150,7 +138,20 @@ function ShoeDetail({
             <Text style={s.dHeroPct}>{Math.round(pct * 100)}<Text style={s.dHeroPctU}>%</Text></Text>
           </Ring>
           <View style={{ flex: 1 }}>
-            <Text style={s.dHeroLabel}>남은 수명</Text>
+            <View style={s.dHeroLabelRow}>
+              <Text style={s.dHeroLabel}>남은 수명</Text>
+              {!retired && shoe.id && onSetMaxKm && (
+                <Pressable
+                  onPress={() => setEditingMax((e) => !e)}
+                  hitSlop={8}
+                  accessibilityRole="button"
+                  accessibilityLabel="신발 수명 수정"
+                  style={s.maxEditToggle}
+                >
+                  <Ionicons name={editingMax ? 'checkmark' : 'create-outline'} size={14} color={editingMax ? ACCENT : T3} />
+                </Pressable>
+              )}
+            </View>
             <View style={[s.baselineRow, { marginTop: 2 }]}>
               <Text style={s.dHeroRemain}>{remain}</Text>
               <Text style={s.dHeroRemainU}>{unit}</Text>
@@ -163,46 +164,22 @@ function ShoeDetail({
           </View>
         </View>
 
-        {/* 교체 내러티브(keep-going 보이스) — 교체 tier 도달 시, 교체를 '손실'이 아니라
-            '부상 없이 계속 달리기'의 조건으로 프레이밍해 상세를 마감한다. KEEP_GOING_REPLACE
-            (lib/shoe 단일 카피)에서 파생. */}
-        {!retired && shoe.condition === '교체' && (
-          <View style={s.keepGoing}>
-            <Ionicons name="shield-checkmark" size={17} color={ACCENT} />
-            <Text style={s.keepGoingText}>{`${KEEP_GOING_REPLACE} 달릴 수 있어요`}</Text>
-          </View>
-        )}
-
-        {/* 신발별 수명(max_km) 조정 + 교체 임계 표시 — 신발별 교체 임계의 분모.
-            보관된 신발은 조정 동선에서 제외(기록은 그대로 유지). */}
-        {!retired && shoe.id && onSetMaxKm && (
-          <View style={[s.card, { padding: 18, gap: 14 }]}>
-            <View style={s.cpkHead}>
-              <Text style={s.dHeroLabel}>신발 수명</Text>
-              <TierBadge condition={shoe.condition} />
-            </View>
+        {/* '남은 수명' 옆 연필로 펼치는 신발 수명(max_km) 보정기 — ±로 교체 임계의 분모를
+            직접 조정한다(기본 접힘). 보관된 신발은 조정 동선에서 제외(기록은 그대로 유지). */}
+        {editingMax && !retired && shoe.id && onSetMaxKm && (
+          <View style={[s.card, { padding: 18, gap: 12 }]}>
             <View style={s.maxStepper}>
-              <Pressable
-                onPress={() => stepMaxKm(-1)}
-                hitSlop={6}
-                style={({ pressed }) => [s.maxStepBtn, pressed && { backgroundColor: CARD }]}
-              >
+              <Pressable onPress={() => stepMaxKm(-1)} hitSlop={6} accessibilityRole="button" accessibilityLabel="수명 줄이기" style={({ pressed }) => [s.maxStepBtn, pressed && { backgroundColor: CARD }]}>
                 <Ionicons name="remove" size={20} color={T1} />
               </Pressable>
               <View style={s.maxStepVal}>
                 <Text style={s.maxStepNum}>{displayNum(shoe.max, unit, 0)}<Text style={s.maxStepUnit}> {unit}</Text></Text>
                 <Text style={s.maxStepCaption}>{Math.round(percentUsed)}% 사용</Text>
               </View>
-              <Pressable
-                onPress={() => stepMaxKm(1)}
-                hitSlop={6}
-                style={({ pressed }) => [s.maxStepBtn, pressed && { backgroundColor: CARD }]}
-              >
+              <Pressable onPress={() => stepMaxKm(1)} hitSlop={6} accessibilityRole="button" accessibilityLabel="수명 늘리기" style={({ pressed }) => [s.maxStepBtn, pressed && { backgroundColor: CARD }]}>
                 <Ionicons name="add" size={20} color={T1} />
               </Pressable>
             </View>
-            {/* 임계 표시: 교체 tier(≥90%) 도달까지 남은 거리. 이미 교체 tier면 사실만
-                알리고, keep-going 카피는 위 배너가 단독으로 담당한다(중복 방지). */}
             <Text style={s.maxHint}>
               {shoe.condition === '교체'
                 ? '교체 시점을 넘겼어요.'
@@ -212,6 +189,16 @@ function ShoeDetail({
               )}
               {shoe.condition !== '교체' && ' 남음'}
             </Text>
+          </View>
+        )}
+
+        {/* 교체 내러티브(keep-going 보이스) — 교체 tier 도달 시, 교체를 '손실'이 아니라
+            '부상 없이 계속 달리기'의 조건으로 프레이밍해 상세를 마감한다. KEEP_GOING_REPLACE
+            (lib/shoe 단일 카피)에서 파생. */}
+        {!retired && shoe.condition === '교체' && (
+          <View style={s.keepGoing}>
+            <Ionicons name="shield-checkmark" size={17} color={ACCENT} />
+            <Text style={s.keepGoingText}>{`${KEEP_GOING_REPLACE} 달릴 수 있어요`}</Text>
           </View>
         )}
 
@@ -227,36 +214,6 @@ function ShoeDetail({
               <Text style={s.statLabel}>{x.l}</Text>
             </View>
           ))}
-        </View>
-
-        {/* cost-per-km: 구매가 입력 → km당 비용 파생 */}
-        <View style={[s.card, { padding: 18, gap: 12 }]}>
-          <View style={s.cpkHead}>
-            <Text style={s.dHeroLabel}>구매가</Text>
-            {cpk != null && (
-              <View style={s.cpkBadge}>
-                <Text style={s.cpkBadgeV}>{fmtWon(cpk)}</Text>
-                <Text style={s.cpkBadgeU}>원/km</Text>
-              </View>
-            )}
-          </View>
-          <View style={s.priceRow}>
-            <TextInput
-              value={priceInput}
-              onChangeText={(v) => setPriceInput(v.replace(/[^0-9]/g, ''))}
-              onBlur={savePrice}
-              keyboardType="number-pad"
-              placeholder="0"
-              placeholderTextColor={T3}
-              style={s.priceInput}
-            />
-            <Text style={s.priceUnit}>원</Text>
-          </View>
-          <Text style={s.cpkHint}>
-            {cpk != null
-              ? `${usedDisp}${unit} 사용 · 1km당 ${fmtWon(cpk)}원`
-              : '구매가를 입력하면 1km당 비용이 계산돼요.'}
-          </Text>
         </View>
 
         {/* runs */}
@@ -333,23 +290,20 @@ function ShoeCard({ shoe, featured, onPress, onPlay, unit }: { shoe: Shoe; featu
 }
 
 export default function ShoesScreen({
-  shoes = SHOES, runs = [], totals = {}, activeIdx = 0, prices = {}, unit = 'km', onAddShoe, onTab, onRename, onDelete, onRetire, onSetPrice, onSetMaxKm, onStartRun,
+  shoes = SHOES, runs = [], totals = {}, activeIdx = 0, unit = 'km', onAddShoe, onTab, onRename, onDelete, onRetire, onSetMaxKm, onStartRun,
 }: {
   shoes?: Shoe[];
   runs?: Run[];
   totals?: Record<number, ShoeTotals>;
   activeIdx?: number;
-  // 신발 id → 구매가(원). cost-per-km 파생용. 미입력 신발은 키 없음.
-  prices?: Record<string, number>;
-  // 표시 단위(km|mi). 수명·기록 거리가 이를 따른다(cost-per-km는 km 고정).
+  // 표시 단위(km|mi). 수명·기록 거리가 이를 따른다.
   unit?: Unit;
   onAddShoe?: () => void;
   onTab?: (i: number) => void;
   onRename?: (id: string, name: string) => void;
   onDelete?: (id: string) => void;
   onRetire?: (id: string, retired: boolean) => void;
-  onSetPrice?: (id: string, price: number) => void;
-  // 신발별 수명(max_km) 조정 — 상세 화면 수명 스테퍼가 호출한다.
+  // 신발별 수명(max_km) 조정 — 상세 화면 수명 편집기가 호출한다.
   onSetMaxKm?: (id: string, maxKm: number) => void;
   // shoe-first 동선: 상세 CTA·락커 카드 play에서 해당 신발 id로 런 시작을 알린다.
   onStartRun?: (id: string) => void;
@@ -365,13 +319,11 @@ export default function ShoesScreen({
         idx={detail}
         runs={runs}
         totals={totals[detail] || { totalRuns: 0, totalTime: '--' }}
-        price={dShoe.id ? prices[dShoe.id] : undefined}
         unit={unit}
         onBack={() => setDetail(null)}
         onRename={onRename}
         onDelete={onDelete}
         onRetire={onRetire}
-        onSetPrice={onSetPrice}
         onSetMaxKm={onSetMaxKm}
         onStartRun={onStartRun}
       />
@@ -451,6 +403,8 @@ const s = StyleSheet.create({
   dHeroPct: { color: T1, fontFamily: DISPLAY, fontSize: 30 },
   dHeroPctU: { color: T3, fontFamily: FONT, fontSize: 13 },
   dHeroLabel: { color: T3, fontFamily: FONT, fontSize: 13 },
+  dHeroLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  maxEditToggle: { width: 26, height: 26, borderRadius: 8, backgroundColor: CARD_HI, alignItems: 'center', justifyContent: 'center' },
   dHeroRemain: { color: T1, fontFamily: DISPLAY, fontSize: 44, letterSpacing: 0.5 },
   dHeroRemainU: { color: T2, fontFamily: FONT, fontSize: 16, marginLeft: 5, marginBottom: 6 },
 
@@ -465,14 +419,6 @@ const s = StyleSheet.create({
   statUnit: { color: T3, fontFamily: FONT, fontSize: 12 },
   statLabel: { color: T3, fontFamily: FONT, fontSize: 11, marginTop: 4 },
 
-  cpkHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  cpkBadge: { flexDirection: 'row', alignItems: 'flex-end', gap: 3, backgroundColor: CARD_HI, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 },
-  cpkBadgeV: { color: ACCENT, fontFamily: DISPLAY, fontSize: 17 },
-  cpkBadgeU: { color: T3, fontFamily: FONT, fontSize: 11, marginBottom: 1 },
-  priceRow: { backgroundColor: CARD_HI, borderRadius: 14, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16 },
-  priceInput: { flex: 1, color: T1, fontFamily: DISPLAY, fontSize: 22, paddingVertical: 12 },
-  priceUnit: { color: T3, fontFamily: FONT, fontSize: 15 },
-  cpkHint: { color: T3, fontFamily: FONT, fontSize: 11.5 },
   lastWorn: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500' },
 
   // 신발 수명(max_km) 조정 스테퍼
