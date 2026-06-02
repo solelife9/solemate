@@ -13,7 +13,7 @@ import {
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {
-  BG, CARD_DIM, CARD_HI, HERO_BG, ACCENT, DANGER, WARN, GOOD, T1, T2, T3, SEP,
+  BG, CARD_DIM, CARD_HI, HERO_BG, ACCENT, DANGER, WARN, GOOD, T1, T2, T3,
   FONT, DISPLAY, SPACE, RADIUS, withAlpha, Shoe, SHOES,
 } from './theme';
 import { Ring, TabBar, TierBadge, KeegoWordmark, Button, SectionTitle, conditionColor } from './primitives';
@@ -43,24 +43,6 @@ function TopBar({ onAddShoe }: { onAddShoe?: () => void }) {
         style={({ pressed }) => [s.addBtn, pressed && s.pressed]}>
         <Text style={s.addBtnText}>신발 추가</Text>
       </Pressable>
-    </View>
-  );
-}
-
-function QuickStats({ week, unit }: { week: WeekStats; unit: Unit }) {
-  const items = [
-    { v: week.km, u: unit, l: '이번 주' },
-    { v: String(week.runs), u: '회', l: '러닝' },
-    { v: week.pace, u: '', l: '평균 페이스' },
-  ];
-  return (
-    <View style={s.quick}>
-      {items.map((q, i) => (
-        <View key={i} style={[s.quickCell, i > 0 && s.quickDivider]}>
-          <Text style={s.quickV}>{q.v}<Text style={s.quickU}>{q.u}</Text></Text>
-          <Text style={s.quickL}>{q.l}</Text>
-        </View>
-      ))}
     </View>
   );
 }
@@ -220,7 +202,7 @@ function EmptyHome({ onAddShoe }: { onAddShoe?: () => void }) {
 }
 
 export default function HomeScreen({
-  shoes = SHOES, week = { km: '0', runs: 0, pace: '--' }, dateLabel = '', onStart, onAddShoe, onTab,
+  shoes = SHOES, dateLabel = '', onStart, onAddShoe, onTab,
   activeIdx: activeIdxProp, onSelect, recommendedIdx, unit = 'km', goal,
 }: {
   shoes?: Shoe[];
@@ -251,11 +233,12 @@ export default function HomeScreen({
   return (
     <View style={[s.screen, { paddingTop: insets.top }]}>
       <TopBar onAddShoe={onAddShoe} />
+      {/* 콘텐츠는 스크롤되고 TabBar는 화면 바닥에 고정된다(신발 많을 때 탭바가 밀려 사라지던 문제 해결) */}
+      <ScrollView style={s.scroll} contentContainerStyle={s.scrollContent} showsVerticalScrollIndicator={false}>
       <View style={s.greetWrap}>
         {!!dateLabel && <Text style={s.date}>{dateLabel}</Text>}
         <Text style={s.greet}>오늘은 어떤 신발로{'\n'}달려볼까요?</Text>
       </View>
-      <QuickStats week={week} unit={unit} />
       {goal && (
         <View style={{ paddingHorizontal: SPACE.xl, marginTop: SPACE.lg }}>
           <WeeklyGoal goal={goal} unit={unit} />
@@ -264,7 +247,7 @@ export default function HomeScreen({
       {active ? (
         <>
           {/* shoe-first 주인공: 선택 신발(idx 실값) 수명 링 히어로 카드 */}
-          <View testID="home-hero" style={{ paddingHorizontal: SPACE.xl, paddingTop: 30 }}>
+          <View testID="home-hero" style={{ paddingHorizontal: SPACE.xl, paddingTop: SPACE.lg }}>
             <HeroShoe shoe={active} recommended={isRecommended} unit={unit} />
           </View>
           {/* 강조는 CTA에 — 선택 신발 idx로 러닝 시작 연결 */}
@@ -272,20 +255,16 @@ export default function HomeScreen({
             <Button label="러닝 시작" icon="play" onPress={() => onStart?.(idx)} />
           </View>
           {shoes.length > 1 && (
-            <View style={{ marginTop: SPACE.xxl }}>
+            <View style={{ marginTop: SPACE.lg }}>
               <SectionTitle style={s.sectionLabel}>내 러닝화</SectionTitle>
               <ShoePicker shoes={shoes} activeIdx={idx} onSelect={select} unit={unit} />
             </View>
           )}
-          <View style={{ flex: 1 }} />
         </>
       ) : (
-        <>
-          <EmptyHome onAddShoe={onAddShoe} />
-          {/* 빈 상태에서도 TabBar를 화면 바닥에 고정(가운데 갭 제거) */}
-          <View style={{ flex: 1 }} />
-        </>
+        <EmptyHome onAddShoe={onAddShoe} />
       )}
+      </ScrollView>
       <TabBar active={0} onTab={(i) => onTab?.(i)} />
     </View>
   );
@@ -293,6 +272,8 @@ export default function HomeScreen({
 
 const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: BG },
+  scroll: { flex: 1 },
+  scrollContent: { paddingBottom: SPACE.lg },
   pressed: { opacity: 0.85, transform: [{ scale: 0.98 }] },
   row: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   baselineRow: { flexDirection: 'row', alignItems: 'flex-end' },
@@ -305,12 +286,6 @@ const s = StyleSheet.create({
   date: { color: T3, fontFamily: FONT, fontSize: 13, letterSpacing: 0.2 },
   greet: { color: T1, fontFamily: FONT, fontSize: 24, fontWeight: '400', letterSpacing: -0.4, marginTop: 6, lineHeight: 31 },
 
-  quick: { flexDirection: 'row', marginHorizontal: SPACE.xl, marginTop: 18 },
-  quickCell: { flex: 1 },
-  quickDivider: { borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: SEP, paddingLeft: 14, alignItems: 'center' },
-  quickV: { color: T1, fontFamily: DISPLAY, fontSize: 24, letterSpacing: 0.3 },
-  quickU: { color: T3, fontFamily: FONT, fontSize: 11, fontWeight: '400' },
-  quickL: { color: T3, fontFamily: FONT, fontSize: 11, marginTop: 4, letterSpacing: 0.2 },
 
   goalCard: { backgroundColor: CARD_DIM, borderRadius: 18, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.06), padding: SPACE.lg, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   goalInfo: { flex: 1, gap: 9, minWidth: 0 },

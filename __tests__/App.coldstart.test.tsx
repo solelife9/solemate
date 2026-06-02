@@ -100,7 +100,7 @@ test('cold backend: while the boot fetch is in flight the app shows a SKELETON, 
   // and NOT the Home content or the error card.
   expect(has(root, 'boot-skeleton')).toBe(true);
   expect(has(root, 'boot-error')).toBe(false);
-  expect(textOf(root)).not.toContain('이번 주');
+  expect(textOf(root)).not.toContain('오늘은 어떤 신발로');
 
   act(() => renderer.unmount());
 });
@@ -137,8 +137,8 @@ test('cold backend: a FAILED boot fetch shows a retry card, and 다시 시도 re
 
   expect(has(root, 'boot-error')).toBe(false);
   expect(has(root, 'boot-skeleton')).toBe(false);
-  // Home is now rendered (weekly-stats label is Home-only content).
-  expect(textOf(root)).toContain('이번 주');
+  // Home is now rendered (greeting is Home-only content; QuickStats 행은 제거됨).
+  expect(textOf(root)).toContain('오늘은 어떤 신발로');
 
   act(() => renderer.unmount());
 });
