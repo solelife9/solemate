@@ -3,7 +3,7 @@
  *
  * 관찰 가능한 동작을 검증한다(내부 상태가 아니라 화면에 무엇이 보이는가):
  *   1) activeIdx={0} 하드코딩 제거 — 홈 히어로는 처음에 휴식 로테이션 추천 신발
- *      (가장 오래 쉰 신발)을 보여주고 '오늘은 이 신발' 칩을 단다.
+ *      (가장 오래 쉰 신발)을 기본으로 보여준다(추천 배지는 제거됨, 선택 동작만 유지).
  *   2) 홈 picker에서 다른 신발을 고르면 히어로가 그 신발로 바뀐다(선택 반영).
  *   3) 선택은 App이 소유하므로 신발 탭의 '사용 중' 강조도 같은 신발을 가리킨다.
  *   4) ShoeDetail에서 구매가를 입력하면 km당 비용(원/km)이 파생 표시되고,
@@ -113,13 +113,12 @@ const RUNS: ApiRun[] = [
   {id: 'r2', shoe_id: 's2', km: 5, run_date: '2026-05-01', duration: 1800},
 ];
 
-test('홈 히어로는 처음에 휴식 로테이션 추천 신발을 보여주고 추천 칩을 단다(하드코딩 제거)', async () => {
+test('홈 히어로는 처음에 휴식 로테이션 추천 신발(가장 오래 쉰)을 기본으로 보여준다(하드코딩 제거)', async () => {
   const {root} = await mount(SHOES, RUNS);
   const hero = heroText(root);
-  // 가장 오래 쉰 Clifton이 히어로 + '오늘은 이 신발' 칩
+  // 가장 오래 쉰 Clifton이 기본 히어로(추천 배지 자체는 제거됨 — 선택/기본값 동작만 유지)
   expect(hero).toContain('Clifton');
   expect(hero).not.toContain('Pegasus');
-  expect(textOf(root)).toContain('오늘은 이 신발');
 });
 
 test('홈 picker에서 다른 신발을 고르면 히어로가 그 신발로 바뀐다(선택 반영)', async () => {
@@ -132,8 +131,6 @@ test('홈 picker에서 다른 신발을 고르면 히어로가 그 신발로 바
   const hero = heroText(root);
   expect(hero).toContain('Pegasus');
   expect(hero).not.toContain('Clifton');
-  // Pegasus는 추천(가장 오래 쉰) 신발이 아니므로 추천 칩 미표시
-  expect(hero).not.toContain('오늘은 이 신발');
 });
 
 test('선택은 App이 소유 — 신발 탭의 사용 중 강조도 선택 신발을 가리킨다', async () => {

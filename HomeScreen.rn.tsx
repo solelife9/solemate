@@ -80,7 +80,7 @@ function WeeklyGoal({ goal, unit }: { goal: GoalInfo; unit: Unit }) {
   );
 }
 
-function HeroShoe({ shoe, recommended, unit }: { shoe: Shoe; recommended?: boolean; unit: Unit }) {
+function HeroShoe({ shoe, unit }: { shoe: Shoe; unit: Unit }) {
   // 비율(pct)은 km 절대값으로 계산(단위 불변), 표시 숫자만 표시 단위로 환산한다.
   const remainKm = Math.max(0, shoe.max - shoe.used);
   const pct = shoe.max > 0 ? remainKm / shoe.max : 0;
@@ -98,12 +98,6 @@ function HeroShoe({ shoe, recommended, unit }: { shoe: Shoe; recommended?: boole
             {/* 교체/주의 tier 배지 — 홈 히어로에서 가장 먼저 보이게(양호는 미노출). */}
             <TierBadge condition={shoe.condition} />
             <View style={s.usingChip}><Text style={s.usingChipText}>사용 중</Text></View>
-            {recommended && (
-              <View style={s.recommendChip}>
-                <Ionicons name="sparkles" size={9} color={ACCENT} />
-                <Text style={s.recommendChipText}>오늘은 이 신발</Text>
-              </View>
-            )}
           </View>
           <Text style={s.heroModel} numberOfLines={2}>{shoe.model}</Text>
         </View>
@@ -203,7 +197,7 @@ function EmptyHome({ onAddShoe }: { onAddShoe?: () => void }) {
 
 export default function HomeScreen({
   shoes = SHOES, dateLabel = '', onStart, onAddShoe, onTab,
-  activeIdx: activeIdxProp, onSelect, recommendedIdx, unit = 'km', goal,
+  activeIdx: activeIdxProp, onSelect, unit = 'km', goal,
 }: {
   shoes?: Shoe[];
   week?: WeekStats;
@@ -215,8 +209,6 @@ export default function HomeScreen({
   // 따른다. 둘 다 없으면 기존처럼 내부 상태로 동작(하위호환).
   activeIdx?: number;
   onSelect?: (i: number) => void;
-  // 휴식 로테이션 추천 신발의 인덱스. 히어로가 이 신발이면 '오늘은 이 신발' 칩 표시.
-  recommendedIdx?: number;
   // 표시 단위(km|mi)와 주간 목표 진행(설정 화면에서 구동). 둘 다 표시 전용.
   unit?: Unit;
   goal?: GoalInfo;
@@ -227,7 +219,6 @@ export default function HomeScreen({
   const idx = Math.min(Math.max(0, rawIdx), Math.max(0, shoes.length - 1));
   const select = (i: number) => { if (controlled) onSelect?.(i); else setInternalIdx(i); };
   const active = shoes[idx];
-  const isRecommended = recommendedIdx != null && recommendedIdx === idx;
   const insets = useSafeAreaInsets();
 
   return (
@@ -248,7 +239,7 @@ export default function HomeScreen({
         <>
           {/* shoe-first 주인공: 선택 신발(idx 실값) 수명 링 히어로 카드 */}
           <View testID="home-hero" style={{ paddingHorizontal: SPACE.xl, paddingTop: SPACE.lg }}>
-            <HeroShoe shoe={active} recommended={isRecommended} unit={unit} />
+            <HeroShoe shoe={active} unit={unit} />
           </View>
           {/* 강조는 CTA에 — 선택 신발 idx로 러닝 시작 연결 */}
           <View style={{ paddingHorizontal: SPACE.xl, paddingTop: SPACE.sm }}>
@@ -303,8 +294,6 @@ const s = StyleSheet.create({
   heroBrand: { color: T3, fontFamily: FONT, fontSize: 11, fontWeight: '500', letterSpacing: 1.4 },
   usingChip: { backgroundColor: withAlpha(ACCENT, 0.14), borderRadius: 6, paddingHorizontal: SPACE.sm, paddingVertical: 2 },
   usingChipText: { color: ACCENT, fontFamily: FONT, fontSize: 10, fontWeight: '500' },
-  recommendChip: { flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: withAlpha(ACCENT, 0.14), borderRadius: 6, paddingHorizontal: SPACE.sm, paddingVertical: 2, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.45) },
-  recommendChipText: { color: ACCENT, fontFamily: FONT, fontSize: 10, fontWeight: '600' },
   heroModel: { color: T1, fontFamily: FONT, fontSize: 23, fontWeight: '600', letterSpacing: -0.5, marginTop: 7, lineHeight: 28 },
   heroBottom: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 18 },
   heroRemain: { color: T1, fontFamily: DISPLAY, fontSize: 46, letterSpacing: -1 },

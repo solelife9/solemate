@@ -465,7 +465,6 @@ function Main(){
     :(recommendedId&&homeShoes.some(x=>x.raw.id===recommendedId))?recommendedId
     :(homeShoes[0]?.raw.id??null);
   const homeActiveIdx=Math.max(0,homeShoes.findIndex(x=>x.raw.id===effectiveId));
-  const homeRecommendedIdx=homeShoes.findIndex(x=>x.raw.id===recommendedId);
   // 신발화면(보관 포함 전체)에서 선택 신발의 인덱스 — '사용 중' 강조용.
   const shoesActiveIdx=Math.max(0,shoes.findIndex(s=>s.id===effectiveId));
   // 홈 picker(보관 제외) 인덱스 → 원본 신발 id로 선택 상태를 갱신한다.
@@ -673,7 +672,6 @@ function Main(){
             shoes={homeUiShoes} week={week} dateLabel={dateLabel} unit={unit}
             goal={{km:goalWeeklyKm,pct:goalProgress.percent,streak:goalStreak}}
             activeIdx={homeActiveIdx} onSelect={selectHomeShoe}
-            recommendedIdx={homeRecommendedIdx>=0?homeRecommendedIdx:undefined}
             onStart={startFromIdx} onAddShoe={()=>setOverlay('add')} onTab={setTab}
           />
         )}
