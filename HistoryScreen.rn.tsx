@@ -278,7 +278,7 @@ function RunDetail({ run, shoe, onBack, unit, onEdit, onDelete }: { run: Run; sh
     { l: '시간', v: run.time, u: '' },
     { l: '칼로리', ...dash(run.cal, 'kcal') },
     { l: '케이던스', ...dash(run.cadence, 'spm') },
-    { l: '평균 심박', ...dash(run.bpm, 'bpm') },
+    // 심박 UI 숨김(spec #15 / iron law #17). Run.bpm 데이터는 보존하되 화면에 렌더하지 않는다.
     { l: '고도 상승', ...dash(run.elev, 'm') },
   ];
   const insets = useSafeAreaInsets();

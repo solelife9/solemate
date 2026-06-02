@@ -10,9 +10,10 @@
  *   1) 저장 레이어(PendingRun.heart_rate) — 실제 AsyncStorage 큐 라운드트립으로
  *      값이 살아남는지 단언한다. PendingRun 타입에서 heart_rate 를 지우면 아래
  *      타입드 리터럴이 잉여 속성으로 tsc 실패 → 컴파일 가드.
- *   2) 프레젠테이션 레이어(Run.bpm) — 실제 소비자(HistoryScreen 상세 '평균 심박')를
- *      렌더해 값이 화면에 나오는지 단언한다. Run 타입에서 bpm 을 지우면 타입드
- *      리터럴이 tsc 실패 → 컴파일 가드.
+ *   2) 프레젠테이션 레이어(Run.bpm) — 실제 소비자(HistoryScreen 상세)를 렌더해
+ *      심박 UI('평균 심박' 라벨·'bpm' 단위)가 화면에 **나오지 않는지** 단언한다
+ *      (spec #15 '심박 UI 숨김'). 동시에 캐스트 없는 Run 리터럴이 bpm 을 들고 있어,
+ *      Run 타입에서 bpm 을 지우면 타입드 리터럴이 tsc 실패 → 데이터 타입 보존 컴파일 가드.
  *
  * 핵심: 두 픽스처 모두 캐스트가 없으므로, 필드를 타입에서 제거하면 **반드시 tsc 가
  * 실패**한다. 데이터 자체(저장소/네이티브)는 전혀 건드리지 않는다.
@@ -24,6 +25,7 @@ import React from 'react';
 import ReactTestRenderer, {act} from 'react-test-renderer';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import HistoryScreen from '../HistoryScreen.rn';
+import {RunStart} from '../RunScreen.rn';
 import type {Run, Shoe} from '../theme';
 import {
   PendingRun,
@@ -68,8 +70,9 @@ describe('iron law #17 — heart_rate 저장 보존', () => {
   });
 });
 
-// ── 2) 프레젠테이션 레이어: Run.bpm 이 상세 화면 '평균 심박'으로 표시되는가 ──
-// 캐스트 없는 Run 리터럴 → bpm 을 타입에서 지우면 tsc 실패.
+// ── 2) 프레젠테이션 레이어: Run.bpm 이 상세 화면에 '평균 심박'으로 노출되지 않는가 ──
+// 캐스트 없는 Run 리터럴 → bpm 을 타입에서 지우면 tsc 실패(데이터 타입 보존 가드).
+// 동시에 화면에는 심박 UI 가 없어야 한다(spec #15 / iron law #17 '표시만 숨김').
 const RUN: Run = {
   id: 'r-hr-1',
   date: '5월 28일',
@@ -123,8 +126,8 @@ async function openDetail(root: ReactTestRenderer.ReactTestInstance, needle: str
   await flush();
 }
 
-describe('iron law #17 — Run.bpm 프레젠테이션 보존', () => {
-  test('bpm 값이 있는 런은 상세 화면에서 "평균 심박 152 bpm"으로 렌더된다', async () => {
+describe('iron law #17 — Run.bpm 심박 UI 숨김(데이터는 보존)', () => {
+  test('bpm 값이 있어도 상세 화면에 심박 UI("평균 심박" 라벨·"bpm" 단위)가 노출되지 않는다', async () => {
     let renderer!: ReactTestRenderer.ReactTestRenderer;
     await act(async () => {
       renderer = ReactTestRenderer.create(<HistoryScreen shoes={[SHOE]} runs={[RUN]} unit="km" />);
@@ -135,9 +138,21 @@ describe('iron law #17 — Run.bpm 프레젠테이션 보존', () => {
     await openDetail(root, 'Pegasus 41');
 
     const screenText = textOf(root);
-    // 실제 소비자(RunDetail stats)가 Run.bpm 값을 그대로 표시해야 한다.
-    expect(screenText).toContain('평균 심박');
-    expect(screenText).toContain('152');
-    expect(screenText).toContain('bpm');
+    // 상세가 정상 렌더됐는지 확인(다른 stat 라벨로 화면 진입을 증명).
+    expect(screenText).toContain('케이던스');
+    // 심박 UI 는 숨겨야 한다(spec #15). 라벨/단위/값 모두 노출 금지.
+    expect(screenText).not.toContain('평균 심박');
+    expect(screenText).not.toContain('bpm');
+  });
+
+  test('RunScreen(RunStart) 목표 화면에도 심박 UI("심박"/"bpm")가 없다', () => {
+    let renderer!: ReactTestRenderer.ReactTestRenderer;
+    act(() => {
+      renderer = ReactTestRenderer.create(<RunStart shoe={SHOE} />);
+    });
+    const screenText = textOf(renderer.root);
+    expect(screenText).toContain('러닝 시작'); // 화면이 정상 렌더됨을 증명
+    expect(screenText).not.toContain('심박');
+    expect(screenText).not.toContain('bpm');
   });
 });
