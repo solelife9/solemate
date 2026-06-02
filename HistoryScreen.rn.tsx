@@ -2,7 +2,7 @@
 // HistoryScreen.rn.tsx — 기록: period segment, period chart, recent runs + RunDetail
 // (sample data removed — real summary/chart/runs are injected via props)
 // ============================================================================
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, ScrollView, Pressable, StyleSheet, LayoutChangeEvent, Share, TextInput, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -16,6 +16,8 @@ import { Unit, displayNum, displayToKm } from './lib/units';
 import { ymdLocal } from './lib/format';
 import { parseRoute, projectRoute, LatLon } from './lib/route';
 import { buildRunShareText } from './lib/share';
+import { buildShareCardModel, shareRunCard, SvgCapturable } from './lib/shareCard';
+import ShareCard from './ShareCard';
 
 // ── manual-run / edit form helpers ──────────────────────────────────────────
 // 소요 시간 입력은 'MM:SS'(또는 분 단위 숫자)를 초로 변환한다. 빈 값/파싱 불가 → 0.
@@ -246,20 +248,28 @@ function RunDetail({ run, shoe, onBack, unit, onEdit, onDelete }: { run: Run; sh
       .catch(() => { if (alive) setRoute([]); });
     return () => { alive = false; };
   }, [run.id]);
+  // 공유 입력(텍스트·카드 폴백이 같은 필드를 쓰도록 단일 출처로 둔다).
+  const shareInput = {
+    distKm: run.dist,
+    unit,
+    pace: run.pace,
+    time: run.time,
+    shoeBrand: shoe?.brand,
+    shoeModel: shoe?.model,
+    date: `${run.date} ${run.day}요일`,
+  };
   // 거리/페이스/시간/신발명을 keep-going 톤 한국어 요약으로 만들어 RN Share API로
   // 내보낸다(네이티브 추가 0). 사용자가 공유 시트를 닫거나 실패해도 조용히 무시.
   const onShare = () => {
-    Share.share({
-      message: buildRunShareText({
-        distKm: run.dist,
-        unit,
-        pace: run.pace,
-        time: run.time,
-        shoeBrand: shoe?.brand,
-        shoeModel: shoe?.model,
-        date: `${run.date} ${run.day}요일`,
-      }),
-    }).catch(() => {});
+    Share.share({ message: buildRunShareText(shareInput) }).catch(() => {});
+  };
+  // 이미지 카드 공유: 화면 밖에 마운트된 <ShareCard>의 Svg ref.toDataURL()로 PNG
+  // dataURL을 만들어 RN Share로 내보낸다. 새 네이티브 의존 없이 react-native-svg만
+  // 사용. 캡처 실패 시 텍스트 공유로 조용히 폴백한다(shareRunCard 내부 처리).
+  const cardRef = useRef<SvgCapturable | null>(null);
+  const cardModel = buildShareCardModel(shareInput);
+  const onShareCard = () => {
+    shareRunCard(cardRef, shareInput);
   };
   // 삭제는 확인 Alert로 보호한다(파괴 방지). 삭제 시 신발 사용거리도 줄어듦을 안내한다.
   const confirmDelete = () => {
@@ -292,6 +302,9 @@ function RunDetail({ run, shoe, onBack, unit, onEdit, onDelete }: { run: Run; sh
               <Ionicons name="create-outline" size={18} color={T1} />
             </Pressable>
           )}
+          <Pressable onPress={onShareCard} style={s.iconBtn} accessibilityRole="button" accessibilityLabel="카드 공유">
+            <Ionicons name="image-outline" size={18} color={ACCENT} />
+          </Pressable>
           <Pressable onPress={onShare} style={s.iconBtn} accessibilityRole="button" accessibilityLabel="공유">
             <Ionicons name="share-outline" size={18} color={T1} />
           </Pressable>
@@ -324,6 +337,11 @@ function RunDetail({ run, shoe, onBack, unit, onEdit, onDelete }: { run: Run; sh
           ))}
         </View>
       </ScrollView>
+      {/* 공유 카드: 화면 밖(off-screen)에 마운트해 toDataURL 캡처 대상으로만 쓴다.
+          pointerEvents none + 음수 위치라 사용자에겐 보이지 않지만 레이아웃은 된다. */}
+      <View style={s.offscreen} pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+        <ShareCard ref={cardRef} model={cardModel} route={route} />
+      </View>
     </View>
   );
 }
@@ -481,6 +499,8 @@ export default function HistoryScreen({
 
 const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: BG },
+  // 공유 카드 캡처용: 화면 밖(좌측 far-off)으로 밀어 보이지 않게 하되 마운트는 유지.
+  offscreen: { position: 'absolute', left: -10000, top: 0, opacity: 0 },
   baselineRow: { flexDirection: 'row', alignItems: 'flex-end' },
   card: { backgroundColor: CARD, borderRadius: 22 },
   cardTitle: { color: T2, fontFamily: FONT, fontSize: 13.5, fontWeight: '500' },

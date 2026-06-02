@@ -145,7 +145,19 @@ jest.mock('react-native-svg', () => {
     Comp.displayName = displayName;
     return Comp;
   };
-  const Svg = make('Svg');
+  // Svg is a class so a ref resolves to the instance, exposing toDataURL — the
+  // share-card capture path (lib/shareCard captureCardDataUrl) can be exercised
+  // without the native canvas. Mirrors react-native-svg's callback contract:
+  // toDataURL(cb) invokes cb with a base64 payload (no data: prefix).
+  class Svg extends React.Component {
+    toDataURL(callback) {
+      if (typeof callback === 'function') callback('MOCK_SHARE_CARD_PNG_BASE64');
+    }
+    render() {
+      return React.createElement(View, this.props, this.props.children);
+    }
+  }
+  Svg.displayName = 'Svg';
   const names = [
     'Circle', 'Ellipse', 'G', 'Text', 'TSpan', 'TextPath', 'Path',
     'Polygon', 'Polyline', 'Line', 'Rect', 'Use', 'Image', 'Symbol',
