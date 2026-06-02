@@ -10,7 +10,8 @@
 //   - runType(easy/tempo/long/recovery/race)이 있으면 해당 카테고리 매칭 우선
 //     (카테고리는 data/shoeModels 의 brand+model 조회, 커스텀/미매칭은 브랜드 폴백)
 //   - 같은 조건이면 더 오래 쉰(마지막 착용일이 더 이른) 신발 우선(폼 회복)
-//   - 그다음 누적 사용(런 수) 적은 신발 우선(마모 분산)
+//   - 그다음 누적거리(Σ km) 적은 신발 우선(마모 분산) — 런 수가 아니라 실제 마모량
+//   - 거리까지 같으면 마지막으로 런 수 적은 신발 우선(보조 tie-break)
 //   - 각 pick 에 한국어 reason 문구('3일 휴식 · 카본화는 쉬게' 류)
 // ============================================================================
 import {findShoeModel, ShoeCategory, SHOE_MODELS} from '../data/shoeModels';
@@ -27,6 +28,7 @@ export interface RotationShoe {
 export interface RotationRun {
   shoeId: string;
   date: string; // 'YYYY-MM-DD'
+  km?: number; // 이 런의 거리(마모 분산 tie-break 용). 없으면 0으로 취급.
 }
 
 export interface RotationPick {
@@ -135,7 +137,8 @@ interface Enriched {
   shoe: RotationShoe;
   cat: ShoeCategory | undefined;
   lastWorn: string | null;
-  runCount: number;
+  totalKm: number; // 신발별 누적거리 합(Σ km) — 마모 분산 3차 tie-break
+  runCount: number; // 런 횟수 — 거리 동률 시 4차 보조 tie-break
   matches: boolean;
 }
 
@@ -177,7 +180,8 @@ function reasonFor(
  * 그렇지 않으면 모든 활성 신발을 우선순위대로 정렬해 RotationPick[] 로 돌려준다:
  *   1) (runType 있을 때) 해당 카테고리 매칭 신발 우선
  *   2) 더 오래 쉰(마지막 착용일이 더 이른; 미착용=최우선) 신발 — 폼 회복
- *   3) 누적 사용(런 수) 적은 신발 — 마모 분산
+ *   3) 누적거리(Σ km) 적은 신발 — 마모 분산(런 수가 아니라 실제 마모량)
+ *   4) 거리 동률이면 런 수 적은 신발 — 보조 tie-break
  * score 는 정렬 결과를 반영한 점수(클수록 우선). 동률은 입력 순서 유지(stable sort).
  *
  * today 가 주어지면 reason 의 휴식 일수를 그 기준으로 계산한다(미지정 시 런 기록 중
@@ -198,9 +202,14 @@ export function recommendRotation(input: {
   const enriched: Enriched[] = active.map((shoe) => {
     const cat = categoryForShoe(shoe);
     const worn = lastWorn(shoe.id, runs);
-    const runCount = (runs || []).filter((r) => r && r.shoeId === shoe.id).length;
+    const own = (runs || []).filter((r) => r && r.shoeId === shoe.id);
+    // 누적거리 = 신발별 모든 런의 km 합. 음수/NaN/누락은 0으로 방어(데이터 안전).
+    const totalKm = own.reduce((sum, r) => {
+      const km = Number(r.km);
+      return sum + (Number.isFinite(km) && km > 0 ? km : 0);
+    }, 0);
     const matches = !!(preferred && cat && preferred.includes(cat));
-    return {shoe, cat, lastWorn: worn, runCount, matches};
+    return {shoe, cat, lastWorn: worn, totalKm, runCount: own.length, matches};
   });
 
   enriched.sort((a, b) => {
@@ -209,7 +218,10 @@ export function recommendRotation(input: {
     // ② 더 오래 쉰 신발 우선(폼 회복)
     const rest = compareRest(a.lastWorn, b.lastWorn);
     if (rest !== 0) return rest;
-    // ③ 누적 사용(런 수) 적은 신발 우선(마모 분산)
+    // ③ 누적거리(Σ km) 적은 신발 우선 — 실제 마모량 분산(run 수 대용 아님:
+    //    30km 1회 > 9km 3회를 올바르게 '더 마모됨'으로 판정).
+    if (a.totalKm !== b.totalKm) return a.totalKm - b.totalKm;
+    // ④ 거리까지 같으면 런 수 적은 신발 우선(보조 tie-break)
     if (a.runCount !== b.runCount) return a.runCount - b.runCount;
     return 0; // 동률 → 입력 순서 유지
   });

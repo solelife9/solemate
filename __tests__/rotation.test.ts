@@ -38,6 +38,41 @@ describe('recommendRotation — 정렬 규칙', () => {
     expect(picks[0].shoe.id).toBe('fresh');
   });
 
+  test('같은 카테고리·동일 휴식이면 누적거리(Σ km) 적은 신발이 우선(마모 분산)', () => {
+    const shoes: RotationShoe[] = [
+      {id: 'far', brand: 'Nike', model: 'Pegasus 41'},
+      {id: 'near', brand: 'Adidas', model: 'Adizero SL2'},
+    ];
+    // 둘 다 같은 날 마지막 착용(휴식 동률). 'far' 누적 40km, 'near' 누적 10km → near 우선.
+    const runs: RotationRun[] = [
+      {shoeId: 'far', date: '2026-06-01', km: 40},
+      {shoeId: 'near', date: '2026-06-01', km: 10},
+    ];
+    const picks = recommendRotation({shoes, runs, runType: 'easy', today: '2026-06-03'});
+    expect(picks[0].shoe.id).toBe('near');
+    expect(picks[1].shoe.id).toBe('far');
+  });
+
+  test('거리 tie-break는 런 수 대용이 아니다: 런 1회 30km > 런 3회 9km 로 마모 판정', () => {
+    // 'big' 은 30km 1회(런 수 1, 거리 30), 'small' 은 3km 3회(런 수 3, 거리 9).
+    // run count 로 정렬하면 'big'(1회)이 '덜 씀'이라 먼저 와 의도가 뒤집히지만,
+    // 누적거리(30 > 9)로 정렬하면 'small'(9km)이 덜 마모 → 먼저 추천돼야 한다.
+    const shoes: RotationShoe[] = [
+      {id: 'big', brand: 'Nike', model: 'Pegasus 41'},
+      {id: 'small', brand: 'Adidas', model: 'Adizero SL2'},
+    ];
+    const runs: RotationRun[] = [
+      {shoeId: 'big', date: '2026-06-01', km: 30}, // 1회 30km
+      {shoeId: 'small', date: '2026-06-01', km: 3}, // 3km × 3회 = 9km
+      {shoeId: 'small', date: '2026-05-31', km: 3},
+      {shoeId: 'small', date: '2026-05-30', km: 3},
+    ];
+    const picks = recommendRotation({shoes, runs, runType: 'easy', today: '2026-06-03'});
+    // 휴식 동률(둘 다 06-01) → 거리(small 9 < big 30)로 small 이 먼저.
+    expect(picks[0].shoe.id).toBe('small');
+    expect(picks[1].shoe.id).toBe('big');
+  });
+
   test('커스텀/미매칭 신발도 브랜드 폴백으로 카테고리를 얻어 추천에 포함된다', () => {
     // 'Nike Custom XYZ' 는 카탈로그에 없지만 Nike 브랜드 폴백으로 카테고리를 추정한다.
     const shoes: RotationShoe[] = [

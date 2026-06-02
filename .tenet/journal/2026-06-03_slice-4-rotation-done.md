@@ -16,3 +16,19 @@ created: 2026-06-03
 - **iron law**: tsc 0, eslint 0 errors(기존 inline-style 경고만), jest 60 suites/536 passed. 토큰만 · 네이티브 0 · 데이터 보존(순수 파생).
 - **smoke**: RN/Expo — 에뮬레이터 부팅 대신 react-test-renderer 로 실제 HomeScreen/App 마운트 렌더가 스모크(추천 카드 렌더·정렬·숨김 관찰 검증).
 - **next**: slice-4 잔여 — 백업/복원, 공유카드, 챌린지(각 describe 아직 `.skip`).
+
+## Retry 1 — code_critic 차단 결함 수정(3차 정렬 spec 위반)
+
+- **결함**: spec deliverable #1 은 휴식 동률 시 3차 tie-break 를 "누적거리(km) 적은 신발"로
+  요구했으나, 구현은 **run count(런 횟수)** 로 깨뜨렸다. run count 는 마모 대용이 아니다
+  (30km 1회 > 9km 3회인데 run count 로는 전자가 '덜 씀'으로 잡혀 마모 분산 의도가 역전).
+  두 신발 마지막 착용일이 같을 때(둘 다 미착용/둘 다 오늘) 홈 카드에서 실제 발동.
+- **수정**:
+  - `lib/rotation.ts`: `RotationRun.km?` 추가. `Enriched.totalKm`(Σ km, 음수/NaN/누락=0 방어) 계산.
+    정렬 3차를 **누적거리 적은 순**으로 교체, run count 는 4차 보조 tie-break 로 강등.
+    1차(카테고리)·2차(휴식) 우선순위 불변. doc/계약 주석 동기화.
+  - `App.tsx`(~500): rotation runs 매핑에 `km:parseFloat(String(r.km))||0` 포함(기존 drop 복구).
+  - 테스트 보강(+4): `rotation.test.ts` — 거리 tie-break 증명 2건('런1회30km vs 런3회9km'
+    로 run count 대용 아님 단언). `App.recommend.test.tsx` — <App/> 마운트 시 home-rotation
+    카드 렌더(배선 회귀) + 2켤레 중 1켤레 retired→활성1→카드 숨김.
+- **iron law**: tsc 0, eslint 0 errors(기존 경고만), jest 60 suites/540 passed(536→540). 토큰만·네이티브 0·데이터 보존(순수 파생).

@@ -497,7 +497,7 @@ function Main(){
   // 카테고리는 brand+model(parseShoeName) 로 data/shoeModels 조회 — 커스텀은 브랜드 폴백.
   const rotationPicks=recommendRotation({
     shoes:shoes.map(s=>{const {brand,model}=parseShoeName(s.name);return {id:s.id,brand:brand||s.name,model:model||(brand?'':s.name),retired:isRetired(s)};}),
-    runs:runs.map(r=>({shoeId:String(r.shoe_id),date:String(r.run_date)})),
+    runs:runs.map(r=>({shoeId:String(r.shoe_id),date:String(r.run_date),km:parseFloat(String(r.km))||0})),
     today:ymdLocal(now),
   });
 

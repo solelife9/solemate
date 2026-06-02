@@ -87,6 +87,9 @@ async function tap(node: ReactTestRenderer.ReactTestInstance) {
 
 // HeroShoe 컨테이너 텍스트(브랜드 + 모델 + '사용 중' + 남은수명…)를 한 덩어리로 읽는다.
 // '사용 중' 칩이 들어 있는 가장 작은 View를 히어로로 본다.
+const byTestID = (root: ReactTestRenderer.ReactTestInstance, id: string) =>
+  root.findAll((n: any) => n && n.props && n.props.testID === id);
+
 function heroText(root: ReactTestRenderer.ReactTestInstance): string {
   // 홈 히어로만 '사용 중' 칩을 갖는다(picker 카드엔 없음). 이를 포함하는 가장 작은
   // 노드가 곧 히어로 카드이므로, 그 텍스트로 어떤 신발이 히어로인지 판별한다.
@@ -183,4 +186,32 @@ test('ShoeDetail: 마지막 착용일이 런 기록에서 파생되어 표시된
   // 마지막 착용일(런에서 파생): 2026-05-31 → '5월 31일'
   expect(textOf(root)).toContain('마지막 착용');
   expect(textOf(root)).toContain('5월 31일');
+});
+
+// ── slice-4 로테이션: App 배선 회귀 방지 ─────────────────────────────────────
+test('활성 2켤레면 홈에 로테이션 추천 카드(home-rotation)가 렌더된다', async () => {
+  const {root} = await mount(SHOES, RUNS);
+  const card = byTestID(root, 'home-rotation');
+  expect(card.length).toBeGreaterThan(0);
+  const cardText = textOf(card[0]);
+  // recommendRotation 결과로 두 활성 신발이 모두 카드에 나타난다(App→HomeScreen 배선).
+  expect(cardText).toContain('Pegasus');
+  expect(cardText).toContain('Clifton');
+  // 더 오래 쉰(05-01) Clifton 이 pick-0, '오늘 추천' 칩이 붙는다.
+  const pick0 = textOf(byTestID(root, 'rotation-pick-0')[0]);
+  expect(pick0).toContain('Clifton');
+  expect(pick0).toContain('오늘 추천');
+});
+
+test('정확히 2켤레 중 1켤레 보관 → 활성 1켤레 → 로테이션 카드 숨김', async () => {
+  const shoes: ApiShoe[] = [
+    {id: 's1', name: 'Nike Pegasus', max_km: 600, start_km: 0},
+    {id: 's2', name: 'Hoka Clifton', max_km: 600, start_km: 0, retired: true},
+  ];
+  const runs: ApiRun[] = [
+    {id: 'r1', shoe_id: 's1', km: 5, run_date: '2026-05-31', duration: 1800},
+  ];
+  const {root} = await mount(shoes, runs);
+  // 활성이 1켤레뿐 → recommendRotation [] → 카드가 렌더되지 않는다.
+  expect(byTestID(root, 'home-rotation').length).toBe(0);
 });
