@@ -124,6 +124,16 @@ jest.mock('react-native-vector-icons/Ionicons', () => {
   return {__esModule: true, default: Icon};
 });
 
+// ── react-native-vector-icons/MaterialCommunityIcons ─────────────────────────
+// 신발 탭(shoe-sneaker — Ionicons에 없는 글리프)용. 동일하게 이름을 텍스트로 렌더.
+jest.mock('react-native-vector-icons/MaterialCommunityIcons', () => {
+  const React = require('react');
+  const {Text} = require('react-native');
+  const Icon = ({name, ...rest}) => React.createElement(Text, rest, name);
+  Icon.displayName = 'MaterialCommunityIcons';
+  return {__esModule: true, default: Icon};
+});
+
 // ── react-native-svg ─────────────────────────────────────────────────────────
 // Map every SVG primitive onto a plain View so layout renders without the
 // native canvas.

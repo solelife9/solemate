@@ -1,5 +1,6 @@
 // Ambient module declarations for JS-only deps without bundled TS types.
 declare module 'react-native-vector-icons/Ionicons';
+declare module 'react-native-vector-icons/MaterialCommunityIcons';
 
 // ── backend payload shapes ────────────────────────────────────────────────────
 // 백엔드(REST) 응답/요청 행의 실제 필드 형태. App.tsx의 shoes/runs 상태가 들고 있는

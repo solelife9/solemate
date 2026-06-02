@@ -179,7 +179,7 @@ test('retire(보관) PATCHes retired=true, never DELETE, and keeps the shoe\'s r
     [{id: 'r1', shoe_id: 's1', km: 5, run_date: '2026-06-01', duration: 1800}],
   );
 
-  await tap(pressBy(root, 'footsteps')); // → Shoes tab
+  await tap(pressBy(root, 'shoe-sneaker')); // → Shoes tab
   await tap(pressBy(root, 'Pegasus')); // open shoe detail
   // sanity: the run is listed in the detail before we retire
   expect(textOf(root)).not.toContain('아직 기록이 없어요');
@@ -209,7 +209,7 @@ test('delete(삭제) DELETEs only the shoe; the run is preserved (no cascade)', 
     [{id: 'r1', shoe_id: 's1', km: 5, run_date: '2026-06-01', duration: 1800}],
   );
 
-  await tap(pressBy(root, 'footsteps')); // → Shoes tab
+  await tap(pressBy(root, 'shoe-sneaker')); // → Shoes tab
   await tap(pressBy(root, 'Pegasus')); // open shoe detail
   await tap(pressBy(root, 'trash-outline')); // 삭제 → Alert auto-confirm
 
@@ -238,7 +238,7 @@ test('restore(복원) PATCHes retired=false and the shoe reappears in the home p
   // before restore: archived shoe is not on the home picker.
   expect(textOf(root)).not.toContain('Clifton');
 
-  await tap(pressBy(root, 'footsteps')); // → Shoes tab (locker shows all incl. retired)
+  await tap(pressBy(root, 'shoe-sneaker')); // → Shoes tab (locker shows all incl. retired)
   await tap(pressBy(root, 'Clifton')); // open archived shoe detail
   await tap(pressBy(root, 'arrow-undo-outline')); // 복원 (no Alert on restore)
 

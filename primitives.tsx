@@ -16,6 +16,7 @@ import {
   TextStyle,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Svg, {
   Circle,
@@ -447,10 +448,12 @@ const section = StyleSheet.create({
 });
 
 // ── Bottom tab bar (floating dock, Apple-Fitness capsule highlight) ───────────
-const TABS = [
+// set 'mci'면 MaterialCommunityIcons(운동화 등 Ionicons에 없는 글리프), 아니면 Ionicons.
+// Ionicons 탭은 활성=채움/비활성=`-outline`; MCI 탭은 outline 변형이 없어 색으로만 구분한다.
+const TABS: {icon: string; label: string; set?: 'mci'}[] = [
   {icon: 'home', label: '홈'},
   {icon: 'time', label: '기록'},
-  {icon: 'footsteps', label: '신발'},
+  {icon: 'shoe-sneaker', label: '신발', set: 'mci'},
   {icon: 'person', label: '프로필'},
 ];
 
@@ -472,11 +475,11 @@ export function TabBar({active, onTab}: {active: number; onTab: (i: number) => v
               accessibilityState={{selected: on}}
               hitSlop={6}
               style={({pressed}) => [t.item, on && t.itemActive, pressed && t.itemPressed]}>
-              <Ionicons
-                name={on ? tab.icon : `${tab.icon}-outline`}
-                size={24}
-                color={on ? ACCENT : T3}
-              />
+              {tab.set === 'mci' ? (
+                <MaterialCommunityIcons name={tab.icon} size={24} color={on ? ACCENT : T3} />
+              ) : (
+                <Ionicons name={on ? tab.icon : `${tab.icon}-outline`} size={24} color={on ? ACCENT : T3} />
+              )}
               <Text style={[t.label, {color: on ? ACCENT : T3, fontWeight: on ? '600' : '500'}]}>
                 {tab.label}
               </Text>
