@@ -36,7 +36,7 @@ import {
   weekBuckets, monthBuckets, yearBuckets,
 } from './lib/stats';
 import {parseShoeName, shoeHealth, isRetired, DEFAULT_MAX_KM, clampMaxKm, reconcileShoeAlerts, KEEP_GOING_REPLACE} from './lib/shoe';
-import {recommendShoeId, lastWornDate} from './lib/shoeRecommend';
+import {mostRecentShoeId, lastWornDate} from './lib/shoeRecommend';
 import {
   loadSnapshot, clearSnapshot, isResumable,
   enqueuePendingRun, removePendingRun, updatePendingRun, flushPendingRuns,
@@ -456,13 +456,13 @@ function Main(){
   const homeShoes=shoes.map((s,i)=>({raw:s,ui:uiShoes[i]})).filter(x=>!isRetired(x.raw));
   const homeUiShoes:Shoe[]=homeShoes.map(x=>x.ui);
 
-  // ── 선택/추천 신발(activeIdx 하드코딩 제거) ──────────────────────────────────
-  // 추천: 휴식 로테이션(가장 오래 쉰 활성 신발). 선택: 사용자가 홈에서 고른 신발(없으면
-  // 추천으로 폴백). effectiveId 하나가 홈 히어로와 신발화면 '사용 중' 표시를 함께 몬다.
-  const recommendedId=recommendShoeId(shoes,runs) as string|null;
+  // ── 선택/기본 신발(activeIdx 하드코딩 제거) ──────────────────────────────────
+  // 기본: 가장 최근에 신은 활성 신발(손이 가는 신발). 선택: 사용자가 홈에서 고른 신발
+  // (없으면 기본으로 폴백). effectiveId 하나가 홈 히어로와 신발화면 '사용 중' 표시를 몬다.
+  const recentId=mostRecentShoeId(shoes,runs) as string|null;
   const effectiveId=
     (selectedShoeId&&homeShoes.some(x=>x.raw.id===selectedShoeId))?selectedShoeId
-    :(recommendedId&&homeShoes.some(x=>x.raw.id===recommendedId))?recommendedId
+    :(recentId&&homeShoes.some(x=>x.raw.id===recentId))?recentId
     :(homeShoes[0]?.raw.id??null);
   const homeActiveIdx=Math.max(0,homeShoes.findIndex(x=>x.raw.id===effectiveId));
   // 신발화면(보관 포함 전체)에서 선택 신발의 인덱스 — '사용 중' 강조용.

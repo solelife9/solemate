@@ -2,8 +2,8 @@
  * App.tsx 신발 선택/추천 통합 테스트.
  *
  * 관찰 가능한 동작을 검증한다(내부 상태가 아니라 화면에 무엇이 보이는가):
- *   1) activeIdx={0} 하드코딩 제거 — 홈 히어로는 처음에 휴식 로테이션 추천 신발
- *      (가장 오래 쉰 신발)을 기본으로 보여준다(추천 배지는 제거됨, 선택 동작만 유지).
+ *   1) activeIdx={0} 하드코딩 제거 — 홈 히어로는 처음에 가장 최근에 신은 신발을
+ *      기본으로 보여준다(추천 배지 없음, 선택 동작만 유지).
  *   2) 홈 picker에서 다른 신발을 고르면 히어로가 그 신발로 바뀐다(선택 반영).
  *   3) 선택은 App이 소유하므로 신발 탭의 '사용 중' 강조도 같은 신발을 가리킨다.
  *   4) ShoeDetail에서 구매가를 입력하면 km당 비용(원/km)이 파생 표시되고,
@@ -103,7 +103,7 @@ beforeEach(async () => {
   await AsyncStorage.clear();
 });
 
-// s1 Pegasus는 최근(05-31), s2 Clifton은 오래 전(05-01) 착용 → s2가 가장 오래 쉼 → 추천.
+// s1 Pegasus는 최근(05-31), s2 Clifton은 오래 전(05-01) 착용 → s1이 가장 최근 → 기본 히어로.
 const SHOES: ApiShoe[] = [
   {id: 's1', name: 'Nike Pegasus', max_km: 600, start_km: 0},
   {id: 's2', name: 'Hoka Clifton', max_km: 600, start_km: 0},
@@ -113,41 +113,41 @@ const RUNS: ApiRun[] = [
   {id: 'r2', shoe_id: 's2', km: 5, run_date: '2026-05-01', duration: 1800},
 ];
 
-test('홈 히어로는 처음에 휴식 로테이션 추천 신발(가장 오래 쉰)을 기본으로 보여준다(하드코딩 제거)', async () => {
+test('홈 히어로는 처음에 가장 최근에 신은 신발을 기본으로 보여준다(하드코딩 제거)', async () => {
   const {root} = await mount(SHOES, RUNS);
   const hero = heroText(root);
-  // 가장 오래 쉰 Clifton이 기본 히어로(추천 배지 자체는 제거됨 — 선택/기본값 동작만 유지)
-  expect(hero).toContain('Clifton');
-  expect(hero).not.toContain('Pegasus');
-});
-
-test('홈 picker에서 다른 신발을 고르면 히어로가 그 신발로 바뀐다(선택 반영)', async () => {
-  const {root} = await mount(SHOES, RUNS);
-  // 처음엔 추천(Clifton)이 히어로
-  expect(heroText(root)).toContain('Clifton');
-
-  // picker에서 Pegasus 선택 → 히어로가 Pegasus로 전환, 추천 칩은 사라진다
-  await tap(pressBy(root, 'Pegasus'));
-  const hero = heroText(root);
+  // 가장 최근(05-31)에 신은 Pegasus가 기본 히어로(추천 배지 없이 선택/기본값 동작만 유지)
   expect(hero).toContain('Pegasus');
   expect(hero).not.toContain('Clifton');
 });
 
+test('홈 picker에서 다른 신발을 고르면 히어로가 그 신발로 바뀐다(선택 반영)', async () => {
+  const {root} = await mount(SHOES, RUNS);
+  // 처음엔 기본(가장 최근 신은 Pegasus)이 히어로
+  expect(heroText(root)).toContain('Pegasus');
+
+  // picker에서 Clifton 선택 → 히어로가 Clifton으로 전환
+  await tap(pressBy(root, 'Clifton'));
+  const hero = heroText(root);
+  expect(hero).toContain('Clifton');
+  expect(hero).not.toContain('Pegasus');
+});
+
 test('선택은 App이 소유 — 신발 탭의 사용 중 강조도 선택 신발을 가리킨다', async () => {
   const {root} = await mount(SHOES, RUNS);
-  // 홈에서 Pegasus 선택
-  await tap(pressBy(root, 'Pegasus'));
+  // 홈에서 Clifton 선택(기본=Pegasus와 다른 신발을 골라 '선택 반영'을 검증)
+  await tap(pressBy(root, 'Clifton'));
   // 신발 탭으로 이동(footsteps 아이콘 탭)
   await tap(pressBy(root, 'footsteps'));
 
-  // 신발 잠금장에서 '사용 중' 칩이 달린 카드가 Pegasus여야 한다.
+  // 신발 잠금장에서 '사용 중' 칩이 달린 카드가 Clifton이어야 한다.
   const featured = root.findAll(
     (n: any) => n && n.props && typeof n.props.onPress === 'function' && textOf(n).includes('사용 중'),
   );
   featured.sort((a, b) => textOf(a).length - textOf(b).length);
   expect(featured.length).toBeGreaterThan(0);
-  expect(textOf(featured[0])).toContain('Pegasus');
-  expect(textOf(featured[0])).not.toContain('Clifton');
+  expect(textOf(featured[0])).toContain('Clifton');
+  expect(textOf(featured[0])).not.toContain('Pegasus');
 });
 
 test('ShoeDetail: 구매가 입력 → km당 비용 파생 표시 + 마지막 착용일 표시', async () => {

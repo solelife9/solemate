@@ -74,6 +74,43 @@ export function recommendShoeId(
 }
 
 /**
+ * 마지막 착용일이 더 늦은(=더 최근에 신은) 쪽이 true. 한 번도 안 신은 신발(null)은
+ * 가장 오래된 것으로 간주(=최근 아님). 동률이면 false를 반환해 입력 순서를 보존한다.
+ */
+function moreRecent(a: string | null, b: string | null): boolean {
+  if (a === b) return false;
+  if (a === null) return false; // a: 미착용 → 최근 아님
+  if (b === null) return true; // b: 미착용 → a가 더 최근
+  return a > b; // 더 늦은 날짜가 더 최근
+}
+
+/**
+ * '오늘 기본 히어로' 선택. 활성(보관 안 된) 신발 중 가장 최근에 신은(마지막 착용일이
+ * 가장 늦은) 신발의 id를 돌려준다. 동률이거나 전부 미착용이면 먼저 등록된(입력 순서)
+ * 신발. 활성 신발이 없으면 null.
+ *
+ * 사용자가 손이 가는(최근 신는) 신발을 홈에서 바로 보게 해 찾는 수고를 던다.
+ * (이전의 '가장 오래 쉰 신발' 로테이션 추천과는 반대 기준 — recommendShoeId 참고.)
+ */
+export function mostRecentShoeId(
+  shoes: (ShoeLike & {id?: string | number})[] = [],
+  runs: RunWithDate[] = [],
+): string | number | null {
+  const active = (shoes || []).filter((s) => s && !isRetired(s));
+  if (!active.length) return null;
+  let best = active[0];
+  let bestWorn = lastWornDate(best.id, runs);
+  for (let i = 1; i < active.length; i++) {
+    const worn = lastWornDate(active[i].id, runs);
+    if (moreRecent(worn, bestWorn)) {
+      best = active[i];
+      bestWorn = worn;
+    }
+  }
+  return best.id ?? null;
+}
+
+/**
  * 마지막 착용 이후 쉰 일수(오늘 기준). 한 번도 안 신었으면 null.
  * 미래 날짜(데이터 이상)는 0으로 하한 처리한다.
  */

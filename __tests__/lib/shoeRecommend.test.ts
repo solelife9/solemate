@@ -1,6 +1,7 @@
 import {
   lastWornDate,
   recommendShoeId,
+  mostRecentShoeId,
   restDays,
   costPerKm,
 } from '../../lib/shoeRecommend';
@@ -80,6 +81,54 @@ describe('recommendShoeId — 휴식 로테이션(가장 오래 쉰 신발)', ()
     expect(
       recommendShoeId([{id: 's1', retired: true}], []),
     ).toBeNull();
+  });
+});
+
+describe('mostRecentShoeId — 가장 최근에 신은 신발(홈 기본 히어로)', () => {
+  const shoes = [
+    {id: 's1', max_km: 600},
+    {id: 's2', max_km: 600},
+    {id: 's3', max_km: 600},
+  ];
+
+  test('마지막 착용일이 가장 늦은(가장 최근) 신발을 돌려준다', () => {
+    const runs = [
+      {shoe_id: 's1', run_date: '2026-05-20'},
+      {shoe_id: 's2', run_date: '2026-05-28'}, // 가장 최근
+      {shoe_id: 's3', run_date: '2026-05-25'},
+    ];
+    expect(mostRecentShoeId(shoes, runs)).toBe('s2');
+  });
+
+  test('미착용 신발은 최근으로 치지 않는다(신은 신발 우선)', () => {
+    const runs = [
+      {shoe_id: 's1', run_date: '2026-05-20'},
+      // s2, s3은 미착용
+    ];
+    expect(mostRecentShoeId(shoes, runs)).toBe('s1');
+  });
+
+  test('보관(retired)된 신발은 제외한다', () => {
+    const withRetired = [
+      {id: 's1', max_km: 600, retired: true}, // 가장 최근이지만 보관됨 → 제외
+      {id: 's2', max_km: 600},
+      {id: 's3', max_km: 600},
+    ];
+    const runs = [
+      {shoe_id: 's1', run_date: '2026-05-30'},
+      {shoe_id: 's2', run_date: '2026-05-28'},
+      {shoe_id: 's3', run_date: '2026-05-20'},
+    ];
+    expect(mostRecentShoeId(withRetired, runs)).toBe('s2');
+  });
+
+  test('동률(둘 다 미착용)이면 먼저 등록된 신발을 유지(안정 정렬)', () => {
+    expect(mostRecentShoeId(shoes, [])).toBe('s1');
+  });
+
+  test('활성 신발이 없으면 null', () => {
+    expect(mostRecentShoeId([], [])).toBeNull();
+    expect(mostRecentShoeId([{id: 's1', retired: true}], [])).toBeNull();
   });
 });
 
