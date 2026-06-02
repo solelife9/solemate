@@ -78,7 +78,7 @@ describe('@slice-4 신발 로테이션 추천', () => {
 });
 
 // ── 데이터 백업/복원 (버전드 JSON 라운드트립) ────────────────────────────────
-describe.skip('@slice-4 데이터 백업/복원', () => {
+describe('@slice-4 데이터 백업/복원', () => {
   const payload = {
     shoes: [{ id: '1', brand: 'Nike', model: 'Pegasus 41', total_km: 120, target_km: 700 }],
     runs: [{ id: '10', shoe_id: 1, distance_km: 5.2, date: '2026-06-01' }],

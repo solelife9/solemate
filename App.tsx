@@ -51,8 +51,12 @@ import {
   clampGoal, DEFAULT_SETTINGS,
 } from './lib/settings';
 import {weeklyProgress, currentStreak, personalRecords} from './lib/goals';
+import {serializeBackup, BackupV1} from './lib/backup';
 
 const API = 'https://solelife-backend.onrender.com';
+
+// 로컬 백업 가져오기 시 원본을 보관하는 신규 AsyncStorage 키(기존 키 파괴 금지).
+const K_BACKUP_IMPORT = 'imported_backup_v1';
 
 // audit#9/#10: 콜드 백엔드 부팅 상태기계. 'loading'(스켈레톤) → 'ready'(정상) |
 // 'error'(재시도 카드). 'error'는 fetch 실패만을 의미하며, 빈-신규(fetch 성공 + 빈
@@ -407,6 +411,28 @@ function Main(){
   const changeGoal=(km:number)=>{const v=clampGoal(km);setGoalWeeklyKm(v);void saveGoal(v);};
   const changeAlerts=(a:AlertSettings)=>{setAlerts(a);void saveAlerts(a);};
 
+  // ── 로컬 백업/복원(Slice 4) ─────────────────────────────────────────────────
+  // 내보내기 대상: 현재 신발+런+설정을 그대로 모은다(km 표준 settings). ProfileScreen이
+  // serializeBackup→RN Share로 내보낸다.
+  const backupData={shoes,runs,settings:{unit,goal_weekly_km:goalWeeklyKm,alerts}};
+  // 가져오기: ProfileScreen이 parseBackup으로 *검증에 성공한* BackupV1만 넘겨준다.
+  // 검증 실패 시엔 호출 자체가 없으므로 여기 도달하면 기존 데이터를 안전하게 교체한다.
+  // 신규 키(K_BACKUP_IMPORT)에 원본을 영속해 두어 추후 추적/롤백 근거를 남기고,
+  // 기존 키(settings_*)는 changeX(=saveX)가 정상 경로로만 갱신해 파괴를 막는다.
+  const importBackup=(data:BackupV1)=>{
+    try{void AsyncStorage.setItem(K_BACKUP_IMPORT,serializeBackup({shoes:data.shoes,runs:data.runs,settings:data.settings}));}catch(e){console.log('backup persist error',e);}
+    if(Array.isArray(data.shoes))setShoes(data.shoes as BackendShoe[]);
+    if(Array.isArray(data.runs))setRuns(data.runs as BackendRun[]);
+    const st:any=data.settings||{};
+    if(st.unit==='km'||st.unit==='mi')changeUnit(st.unit);
+    if(typeof st.goal_weekly_km==='number')changeGoal(st.goal_weekly_km);
+    if(st.alerts&&typeof st.alerts==='object'){
+      const en=typeof st.alerts.enabled==='boolean'?st.alerts.enabled:alerts.enabled;
+      const th=Number(st.alerts.thresholdPct);
+      changeAlerts({enabled:en,thresholdPct:Number.isFinite(th)?th:alerts.thresholdPct});
+    }
+  };
+
   // ── adapters: backend → presentational shapes ──────────────
   function toUiShoe(s:any):Shoe{
     // 단일 소스(shoeHealth)에서 used/남은수명/condition을 도출 — 하드코딩 100km
@@ -699,6 +725,7 @@ function Main(){
             weekTodayIdx={(now.getDay() + 6) % 7}
             alerts={alerts} onChangeAlerts={changeAlerts}
             deviceId={deviceId}
+            backupData={backupData} onImport={importBackup}
           />
         )}
       </View>

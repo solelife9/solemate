@@ -8,16 +8,17 @@
 // 값은 App이 소유(영속은 lib/settings)하고, 이 화면은 표시 + 변경 콜백만 담당한다.
 // ============================================================================
 import React, { useState } from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, Pressable, StyleSheet, Share, TextInput } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { BG, CARD, CARD_DIM, CARD_HI, ACCENT, GOOD, T1, T2, T3, SEP, FONT, DISPLAY, withAlpha } from './theme';
+import { BG, CARD, CARD_DIM, CARD_HI, ACCENT, GOOD, DANGER, T1, T2, T3, SEP, FONT, DISPLAY, withAlpha } from './theme';
 import { TabBar, Ring, Pill, SectionTitle } from './primitives';
 import { Unit, unitKorean, displayNum, displayToKm } from './lib/units';
 import {
   AlertSettings, GOAL_STEP_DISPLAY, THRESHOLD_STEP,
   MIN_THRESHOLD_PCT, MAX_THRESHOLD_PCT, DEFAULT_SETTINGS, DEFAULT_ALERTS,
 } from './lib/settings';
+import { serializeBackup, parseBackup, BackupPayload, BackupV1 } from './lib/backup';
 
 export type Profile = { name: string; since: string; totalKm: number; totalRuns: number; totalTime: string; level: string };
 export type Badge = { icon: string; label: string; on: boolean };
@@ -53,6 +54,7 @@ export default function ProfileScreen({
   streakDays = 0, weekDays = [], weekTodayIdx = -1,
   alerts = { ...DEFAULT_ALERTS }, onChangeAlerts,
   deviceId = '',
+  backupData = { shoes: [], runs: [], settings: {} }, onImport,
 }: {
   profile?: Profile;
   badges?: Badge[];
@@ -73,10 +75,36 @@ export default function ProfileScreen({
   alerts?: AlertSettings;
   onChangeAlerts?: (a: AlertSettings) => void;
   deviceId?: string;
+  // 로컬 백업 대상(신발+런+설정). App이 소유한 상태를 모아 주입한다.
+  backupData?: BackupPayload;
+  // 가져오기: parseBackup 검증 성공 시에만 호출된다(실패 시 미호출 — 기존 데이터 보존).
+  onImport?: (data: BackupV1) => void;
 }) {
   // 어떤 설정 행이 펼쳐졌는지(단위는 패널 없이 즉시 토글). 한 번에 하나만 펼친다.
-  const [open, setOpen] = useState<null | 'goal' | 'alerts' | 'account'>(null);
-  const toggleOpen = (k: 'goal' | 'alerts' | 'account') => setOpen((o) => (o === k ? null : k));
+  const [open, setOpen] = useState<null | 'goal' | 'alerts' | 'account' | 'import'>(null);
+  const toggleOpen = (k: 'goal' | 'alerts' | 'account' | 'import') => setOpen((o) => (o === k ? null : k));
+
+  // ── 데이터 백업/복원 ───────────────────────────────────────────────────────
+  // 내보내기: 신발+런+설정을 버전드 JSON으로 직렬화해 RN Share로 내보낸다(네이티브 0).
+  const onExport = () => {
+    const json = serializeBackup(backupData);
+    // Share.share는 비동기 — 사용자가 시트를 닫으면 reject될 수 있으므로 조용히 무시한다.
+    Promise.resolve(Share.share({ message: json })).catch(() => {});
+  };
+  // 가져오기: 텍스트(붙여넣기)를 parseBackup으로 검증한다. 성공 시에만 onImport를 호출해
+  // 복원하고, 실패하면 onImport를 부르지 않고 에러만 안내한다(기존 데이터 그대로).
+  const [importText, setImportText] = useState('');
+  const [importMsg, setImportMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const onImportPress = () => {
+    try {
+      const parsed = parseBackup(importText);
+      onImport?.(parsed);
+      const n = parsed.shoes.length + parsed.runs.length;
+      setImportMsg({ ok: true, text: `가져오기 완료 — 항목 ${n}개를 복원했습니다.` });
+    } catch (e: any) {
+      setImportMsg({ ok: false, text: e?.message || '가져오기에 실패했습니다. 기존 데이터는 그대로입니다.' });
+    }
+  };
 
   // 목표는 km로 저장하되 화면은 표시 단위(km|mi)로 보여주고 스텝도 표시 단위로 움직인다.
   const goalDisplay = displayNum(goalWeeklyKm, unit, 0);
@@ -286,6 +314,48 @@ export default function ProfileScreen({
             )}
           </View>
         </View>
+
+        {/* 데이터 백업/복원 — 로컬 백업(네이티브 0: RN Share + 텍스트 붙여넣기) */}
+        <View testID="data-section">
+          <Text style={[s.sectionLabel, { paddingBottom: 12 }]}>데이터</Text>
+          <View style={[s.card, { overflow: 'hidden' }]}>
+            {/* 내보내기 — 신발+런+설정을 JSON으로 묶어 공유 */}
+            <Pressable onPress={onExport} accessibilityRole="button" accessibilityLabel="데이터 내보내기" style={({ pressed }) => [s.settingRow, s.settingBorder, pressed && { backgroundColor: CARD_HI }]}>
+              <View style={s.settingIcon}><Ionicons name="cloud-upload-outline" size={17} color={ACCENT} /></View>
+              <Text style={s.settingLabel}>데이터 내보내기</Text>
+              <Ionicons name="share-outline" size={16} color={T3} />
+            </Pressable>
+
+            {/* 가져오기 — 백업 텍스트를 붙여넣어 검증 후 복원 */}
+            <Pressable onPress={() => toggleOpen('import')} accessibilityRole="button" accessibilityLabel="데이터 가져오기" accessibilityState={{ expanded: open === 'import' }} style={({ pressed }) => [s.settingRow, pressed && { backgroundColor: CARD_HI }]}>
+              <View style={s.settingIcon}><Ionicons name="cloud-download-outline" size={17} color={ACCENT} /></View>
+              <Text style={s.settingLabel}>데이터 가져오기</Text>
+              <Ionicons name={open === 'import' ? 'chevron-up' : 'chevron-forward'} size={16} color={T3} />
+            </Pressable>
+            {open === 'import' && (
+              <View style={s.panel}>
+                <Text style={s.panelHint}>백업 텍스트를 붙여넣고 가져오기를 누르세요. 검증에 성공하면 데이터를 복원합니다.</Text>
+                <TextInput
+                  testID="import-input"
+                  value={importText}
+                  onChangeText={setImportText}
+                  placeholder="백업 JSON 붙여넣기"
+                  placeholderTextColor={T3}
+                  multiline
+                  accessibilityLabel="백업 텍스트 입력"
+                  style={s.dataInput}
+                />
+                <Pressable onPress={onImportPress} accessibilityRole="button" accessibilityLabel="가져오기 실행" style={({ pressed }) => [s.dataBtn, pressed && { opacity: 0.85 }]}>
+                  <Ionicons name="download-outline" size={16} color={T1} />
+                  <Text style={s.dataBtnTxt}>가져오기</Text>
+                </Pressable>
+                {importMsg && (
+                  <Text testID="import-msg" style={[s.dataMsg, importMsg.ok ? s.dataMsgOk : s.dataMsgErr]}>{importMsg.text}</Text>
+                )}
+              </View>
+            )}
+          </View>
+        </View>
       </ScrollView>
       <TabBar active={3} onTab={(i) => onTab?.(i)} />
     </View>
@@ -370,4 +440,12 @@ const s = StyleSheet.create({
   acctRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 14 },
   acctK: { color: T3, fontFamily: FONT, fontSize: 13.5, fontWeight: '500' },
   acctV: { flex: 1, textAlign: 'right', color: T2, fontFamily: FONT, fontSize: 13.5, fontWeight: '500' },
+
+  // 데이터 가져오기 패널
+  dataInput: { minHeight: 84, maxHeight: 160, borderRadius: 12, backgroundColor: CARD_HI, color: T1, fontFamily: FONT, fontSize: 13, padding: 12, textAlignVertical: 'top' },
+  dataBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 44, borderRadius: 14, backgroundColor: ACCENT },
+  dataBtnTxt: { color: T1, fontFamily: FONT, fontSize: 14.5, fontWeight: '600' },
+  dataMsg: { fontFamily: FONT, fontSize: 12.5, fontWeight: '600', lineHeight: 18 },
+  dataMsgOk: { color: GOOD },
+  dataMsgErr: { color: DANGER },
 });
