@@ -50,6 +50,14 @@ const DISTANCE_CH: Challenge = {
   endDate: '2026-06-30',
 };
 
+const STREAK_CH: Challenge = {
+  id: 's1',
+  kind: 'streak',
+  targetDays: 3,
+  startDate: '2026-06-01',
+  endDate: '2026-06-30',
+};
+
 describe('ChallengesSection 진행률 반영', () => {
   test('기간 내 런 거리 합이 진행률(%)로 카드에 반영된다', () => {
     const runs = [
@@ -85,6 +93,62 @@ describe('ChallengesSection 달성 뱃지', () => {
 
     const pctNode = root.find((n: any) => n.props?.testID === 'challenge-pct-c1');
     expect(textOf(pctNode)).toBe('100%');
+  });
+});
+
+describe('ChallengesSection 스트릭 진행률(distance 렌더와 대칭)', () => {
+  test("kind='streak' 챌린지는 연속일 수가 challengeProgress 대로 진행률(%)로 렌더된다", () => {
+    // 06-01·06-02·06-03 연속 3일 + 06-05(끊김) → 최대 연속 3일. 목표 3일 → 100%.
+    const runs = [
+      {date: '2026-06-01', dist: 4},
+      {date: '2026-06-02', dist: 3},
+      {date: '2026-06-03', dist: 5},
+      {date: '2026-06-05', dist: 9},
+      {date: '2026-05-20', dist: 9}, // 기간 밖 → 무시
+    ];
+    const root = render({challenges: [STREAK_CH], runs});
+
+    const expected = challengeProgress(STREAK_CH, runs); // current 3 / target 3 → pct 1
+    expect(expected.current).toBe(3);
+    const pctNode = root.find((n: any) => n.props?.testID === 'challenge-pct-s1');
+    expect(textOf(pctNode)).toBe(`${Math.round(expected.pct * 100)}%`);
+    expect(textOf(pctNode)).toBe('100%');
+
+    // 목표를 채웠으므로 달성 뱃지를 노출한다.
+    const badge = root.find((n: any) => n.props?.testID === 'challenge-badge-s1');
+    expect(textOf(badge)).toContain('달성');
+  });
+
+  test('미달성 스트릭은 진행률만 반영하고 달성 뱃지를 노출하지 않는다', () => {
+    // 06-01·06-02 연속 2일뿐 → 목표 3일 대비 2/3 → 67%, 미달성.
+    const runs = [
+      {date: '2026-06-01', dist: 4},
+      {date: '2026-06-02', dist: 3},
+    ];
+    const root = render({challenges: [STREAK_CH], runs});
+
+    const expected = challengeProgress(STREAK_CH, runs); // current 2 / target 3
+    expect(expected.current).toBe(2);
+    expect(expected.completed).toBe(false);
+    const pctNode = root.find((n: any) => n.props?.testID === 'challenge-pct-s1');
+    expect(textOf(pctNode)).toBe(`${Math.round(expected.pct * 100)}%`);
+    expect(textOf(pctNode)).toBe('67%');
+
+    const badges = root.findAll((n: any) => n.props?.testID === 'challenge-badge-s1');
+    expect(badges.length).toBe(0);
+  });
+});
+
+describe('ChallengesSection 빈 상태', () => {
+  test('challenges=[] 면 빈 상태 안내를 렌더하고 챌린지 카드는 없다', () => {
+    const root = render({challenges: [], runs: []});
+    const empty = root.find((n: any) => n.props?.testID === 'challenges-empty');
+    expect(textOf(empty).length).toBeGreaterThan(0);
+    // 카드가 하나도 렌더되지 않는다(challenge-<id> testID 부재).
+    const cards = root.findAll(
+      (n: any) => typeof n.props?.testID === 'string' && /^challenge-[^-]/.test(n.props.testID),
+    );
+    expect(cards.length).toBe(0);
   });
 });
 
