@@ -119,6 +119,10 @@ function Main(){
   // 홈/신발 화면이 공유하는 '선택 신발' id. null이면 휴식 로테이션 추천 신발로 폴백한다
   // (activeIdx={0} 하드코딩 제거 — 선택/추천이 홈 히어로와 신발 '사용 중' 표시를 함께 몬다).
   const [selectedShoeId,setSelectedShoeId]=useState<string|null>(null);
+  // 홈 카드 → 화면 이동: 히어로 신발 탭 시 그 신발 상세를 신발탭에서 열고, 주간목표 탭 시
+  // 프로필의 목표 설정 패널을 펼친 채 진입한다(각각 한 번만 소비).
+  const [shoesDetailId,setShoesDetailId]=useState<string|null>(null);
+  const [profileInitialOpen,setProfileInitialOpen]=useState<'goal'|'weight'|'alerts'|'account'|'import'|null>(null);
   const [overlay,setOverlay]=useState<'none'|'add'|'goal'|'run'>('none');
   const [pendingShoe,setPendingShoe]=useState<{id:string;name:string;ui:Shoe}|null>(null);
   const [activeRun,setActiveRun]=useState<{id:string;name:string;goalKm:number}|null>(null);
@@ -796,6 +800,8 @@ function Main(){
             activeIdx={homeActiveIdx} onSelect={selectHomeShoe}
             onStart={startFromIdx} onAddShoe={()=>setOverlay('add')} onTab={setTab}
             rotation={rotationPicks} onPickShoe={setSelectedShoeId}
+            onEditGoal={()=>{setProfileInitialOpen('goal');setTab(3);}}
+            onOpenShoe={(id)=>{setSelectedShoeId(id);setShoesDetailId(id);setTab(2);}}
           />
         )}
         {tab===1&&(
@@ -811,6 +817,7 @@ function Main(){
             onAddShoe={()=>setOverlay('add')} onTab={setTab}
             onRename={updateShoeName} onDelete={deleteShoe} onRetire={retireShoe}
             onSetMaxKm={updateShoeMaxKm} onStartRun={startFromShoeId}
+            detailShoeId={shoesDetailId} onConsumeDetail={()=>setShoesDetailId(null)}
           />
         )}
         {tab===3&&(
@@ -818,6 +825,7 @@ function Main(){
             profile={profile} badges={badges} records={records} onTab={setTab}
             profilePhotoUri={profilePhoto} onChangeName={changeProfileName} onPickPhoto={pickProfilePhoto}
             weightKg={weightKg} onChangeWeight={changeWeight}
+            initialOpen={profileInitialOpen} onConsumeInitialOpen={()=>setProfileInitialOpen(null)}
             unit={unit} onChangeUnit={changeUnit}
             goalWeeklyKm={goalWeeklyKm} weeklyPercent={goalProgress.percent}
             weeklyDoneKm={goalProgress.totalKm} onChangeGoal={changeGoal}

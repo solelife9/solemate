@@ -7,7 +7,7 @@
 //   · 계정 설정 — 기기/가입/버전 정보
 // 값은 App이 소유(영속은 lib/settings)하고, 이 화면은 표시 + 변경 콜백만 담당한다.
 // ============================================================================
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, ScrollView, Pressable, StyleSheet, Share, TextInput, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -65,6 +65,7 @@ export default function ProfileScreen({
   profile = DEFAULT_PROFILE, badges = [], records = [], onTab,
   profilePhotoUri = '', onChangeName, onPickPhoto,
   weightKg = DEFAULT_SETTINGS.weightKg, onChangeWeight,
+  initialOpen = null, onConsumeInitialOpen,
   unit = 'km', onChangeUnit,
   goalWeeklyKm = DEFAULT_SETTINGS.goalWeeklyKm, weeklyPercent = 0, weeklyDoneKm = 0, onChangeGoal,
   streakDays = 0, weekDays = [], weekTodayIdx = -1,
@@ -85,6 +86,9 @@ export default function ProfileScreen({
   // 체중(kg) — 칼로리 추정용. 설정 스테퍼가 조정한다.
   weightKg?: number;
   onChangeWeight?: (kg: number) => void;
+  // 외부(홈 주간목표 탭)에서 특정 설정 패널을 펼친 채 진입한다(한 번만 소비).
+  initialOpen?: 'goal' | 'weight' | 'alerts' | 'account' | 'import' | null;
+  onConsumeInitialOpen?: () => void;
   unit?: Unit;
   onChangeUnit?: (u: Unit) => void;
   goalWeeklyKm?: number;
@@ -129,6 +133,16 @@ export default function ProfileScreen({
   const scrollRef = useRef<ScrollView>(null);
   const [settingsY, setSettingsY] = useState(0);
   const scrollToSettings = () => scrollRef.current?.scrollTo({ y: Math.max(0, settingsY - 8), animated: true });
+
+  // 홈 주간목표 탭으로 진입 시: 해당 설정 패널을 펼치고 설정 섹션으로 스크롤한다(한 번만 소비).
+  useEffect(() => {
+    if (!initialOpen) return;
+    setOpen(initialOpen);
+    const t = setTimeout(scrollToSettings, 250);
+    onConsumeInitialOpen?.();
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialOpen]);
 
   // 이름 인라인 편집(저장은 onChangeName → App 이 영속). 편집 시작 시 현재 이름을
   // 초안으로 채우고, 저장 시 공백이면 App 이 기본값으로 보정한다.

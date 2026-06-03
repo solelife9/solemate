@@ -54,7 +54,7 @@ function TopBar({ onAddShoe }: { onAddShoe?: () => void }) {
 // 으로, 스트릭은 불꽃 칩으로 실데이터를 표시한다. pct는 0~999%(목표 초과 가능), 링은
 // 100%에서 가득 차고(달성 시 GOOD 색), 스트릭이 0이면 '오늘 시작' 유도 문구를 보여준다.
 // 라벨/부가 텍스트는 T3 회색(오렌지 절제), 강조는 링 수치와 활성 스트릭에만.
-function WeeklyGoal({ goal, unit }: { goal: GoalInfo; unit: Unit }) {
+function WeeklyGoal({ goal, unit, editable }: { goal: GoalInfo; unit: Unit; editable?: boolean }) {
   const goalDisplay = displayNum(goal.km, unit, 0);
   const pct = Math.max(0, goal.pct);
   const reached = pct >= 100;
@@ -65,6 +65,7 @@ function WeeklyGoal({ goal, unit }: { goal: GoalInfo; unit: Unit }) {
         <View style={s.row}>
           <Ionicons name="flag" size={13} color={T3} />
           <Text style={s.goalLabel}>주간 목표</Text>
+          {editable && <Ionicons name="create-outline" size={13} color={T3} />}
         </View>
         <Text style={s.goalSub}>목표 {goalDisplay}{unit} / 주</Text>
         <View style={[s.streakChip, streak > 0 ? s.streakChipOn : s.streakChipOff]}>
@@ -83,7 +84,7 @@ function WeeklyGoal({ goal, unit }: { goal: GoalInfo; unit: Unit }) {
   );
 }
 
-function HeroShoe({ shoe, unit }: { shoe: Shoe; unit: Unit }) {
+function HeroShoe({ shoe, unit, tappable }: { shoe: Shoe; unit: Unit; tappable?: boolean }) {
   // 비율(pct)은 km 절대값으로 계산(단위 불변), 표시 숫자만 표시 단위로 환산한다.
   const remainKm = Math.max(0, shoe.max - shoe.used);
   const pct = shoe.max > 0 ? remainKm / shoe.max : 0;
@@ -120,6 +121,7 @@ function HeroShoe({ shoe, unit }: { shoe: Shoe; unit: Unit }) {
           <View style={[s.dot, { backgroundColor: tier }]} />
           <Text style={[s.condText, { color: tier }]}>{shoe.condition}</Text>
           <Text style={s.condSub}>· {used}/{max}{unit}</Text>
+          {tappable && <Ionicons name="chevron-forward" size={15} color={T3} style={{ marginLeft: 2 }} />}
         </View>
       </View>
       {!shoe.retired && injury.level !== 'safe' && (
@@ -285,6 +287,7 @@ function EmptyHome({ onAddShoe }: { onAddShoe?: () => void }) {
 export default function HomeScreen({
   shoes = SHOES, dateLabel = '', onStart, onAddShoe, onTab,
   activeIdx: activeIdxProp, onSelect, unit = 'km', goal, rotation, onPickShoe,
+  onEditGoal, onOpenShoe,
 }: {
   shoes?: Shoe[];
   week?: WeekStats;
@@ -305,6 +308,9 @@ export default function HomeScreen({
   // 표시 단위(km|mi)와 주간 목표 진행(설정 화면에서 구동). 둘 다 표시 전용.
   unit?: Unit;
   goal?: GoalInfo;
+  // 홈 카드 인터랙션: 주간 목표 카드 탭 → 목표 수정, 히어로 신발 탭 → 그 신발 상세로 이동.
+  onEditGoal?: () => void;
+  onOpenShoe?: (shoeId: string) => void;
 }) {
   const [internalIdx, setInternalIdx] = useState(0);
   const controlled = activeIdxProp != null && typeof onSelect === 'function';
@@ -324,16 +330,26 @@ export default function HomeScreen({
         <Text style={s.greet}>오늘은 어떤 신발로{'\n'}달려볼까요?</Text>
       </View>
       {goal && (
-        <View style={{ paddingHorizontal: SPACE.xl, marginTop: SPACE.sm }}>
-          <WeeklyGoal goal={goal} unit={unit} />
-        </View>
+        <Pressable
+          onPress={onEditGoal}
+          accessibilityRole="button"
+          accessibilityLabel="주간 목표 수정"
+          style={({ pressed }) => [{ paddingHorizontal: SPACE.xl, marginTop: SPACE.sm }, pressed && s.pressed]}>
+          <WeeklyGoal goal={goal} unit={unit} editable={!!onEditGoal} />
+        </Pressable>
       )}
       {active ? (
         <>
-          {/* shoe-first 주인공: 선택 신발(idx 실값) 수명 링 히어로 카드 */}
-          <View testID="home-hero" style={{ paddingHorizontal: SPACE.xl, paddingTop: SPACE.sm }}>
-            <HeroShoe shoe={active} unit={unit} />
-          </View>
+          {/* shoe-first 주인공: 선택 신발(idx 실값) 수명 링 히어로 카드 — 탭하면 상세로 */}
+          <Pressable
+            onPress={() => { if (active.id) onOpenShoe?.(active.id); }}
+            accessibilityRole="button"
+            accessibilityLabel={`${active.brand} ${active.model} 상세 보기`}
+            style={({ pressed }) => [pressed && s.pressed]}>
+            <View testID="home-hero" style={{ paddingHorizontal: SPACE.xl, paddingTop: SPACE.sm }}>
+              <HeroShoe shoe={active} unit={unit} tappable={!!onOpenShoe} />
+            </View>
+          </Pressable>
           {/* 강조는 CTA에 — 선택 신발 idx로 러닝 시작 연결 */}
           <View style={{ paddingHorizontal: SPACE.xl, paddingTop: SPACE.sm }}>
             <Button label="러닝 시작" icon="play" onPress={() => onStart?.(idx)} />

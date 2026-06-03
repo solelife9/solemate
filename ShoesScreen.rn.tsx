@@ -2,7 +2,7 @@
 // ShoesScreen.rn.tsx — 신발 locker + 신발 상세 (ShoeDetail)
 // (sample data removed — real shoes/runs/totals injected via props)
 // ============================================================================
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, Pressable, TextInput, Alert, StyleSheet } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
@@ -338,11 +338,16 @@ function ShoeCard({ shoe, featured, onPress, onPlay, unit, pace }: { shoe: Shoe;
 
 export default function ShoesScreen({
   shoes = SHOES, runs = [], totals = {}, activeIdx = 0, unit = 'km', onAddShoe, onTab, onRename, onDelete, onRetire, onSetMaxKm, onStartRun,
+  detailShoeId, onConsumeDetail,
 }: {
   shoes?: Shoe[];
   runs?: Run[];
   totals?: Record<number, ShoeTotals>;
   activeIdx?: number;
+  // 외부(홈 히어로 탭)에서 특정 신발 상세를 바로 연다. id가 들어오면 그 신발 상세로
+  // 진입하고 onConsumeDetail로 한 번만 소비한다(뒤로가기는 내부 detail 상태로 복귀).
+  detailShoeId?: string | null;
+  onConsumeDetail?: () => void;
   // 표시 단위(km|mi). 수명·기록 거리가 이를 따른다.
   unit?: Unit;
   onAddShoe?: () => void;
@@ -356,6 +361,14 @@ export default function ShoesScreen({
   onStartRun?: (id: string) => void;
 }) {
   const [detail, setDetail] = useState<number | null>(null);
+  // 홈 히어로에서 넘어온 신발 id를 상세로 연다(한 번만 소비). id→index 매핑 후 detail 세팅.
+  useEffect(() => {
+    if (!detailShoeId) return;
+    const i = shoes.findIndex((sh) => sh.id === detailShoeId);
+    if (i >= 0) setDetail(i);
+    onConsumeDetail?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [detailShoeId]);
   const insets = useSafeAreaInsets();
 
   if (detail != null && shoes[detail]) {
