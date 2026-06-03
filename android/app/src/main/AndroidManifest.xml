@@ -20,6 +20,14 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
 
+    <!-- expo-task-manager 필수: 백그라운드 위치 전달을 위해 persisted JobScheduler
+         작업(setPersisted(true))을 예약하는데, Android 는 persisted job 예약에
+         RECEIVE_BOOT_COMPLETED 권한을 요구한다. 누락 시 첫 백그라운드 위치 수신에서
+         LocationTaskConsumer→TaskManagerUtils.scheduleJob 이
+         "requested job be persisted without holding RECEIVE_BOOT_COMPLETED permission"
+         IllegalArgumentException 으로 크래시한다(화면off 러닝 직후 앱이 바로 종료). -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
 
     <application
       android:name=".MainApplication"
