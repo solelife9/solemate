@@ -2,8 +2,8 @@
 // AddShoeScreen.rn.tsx — register a new shoe (brand chips, model autocomplete,
 // auto-filled recommended life with a '권장' badge, real photo attach)
 // ============================================================================
-import React, { useRef, useState } from 'react';
-import { View, Text, TextInput, ScrollView, Pressable, Image, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TextInput, ScrollView, Pressable, Image, StyleSheet, Modal } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {
@@ -20,7 +20,10 @@ export default function AddShoeScreen({
 }: { onClose?: () => void; onSave?: (shoe: Shoe) => void }) {
   const [brand, setBrand] = useState(BRANDS[0]);
   const [model, setModel] = useState('');
-  const [focused, setFocused] = useState(false);
+  // 전용 모델 검색 모달(전체화면): 탭하면 열리고, 검색창(상단)+알파벳 목록(중간)+키보드(하단)
+  // 구조라 목록이 키보드에 가리지 않는다. search는 모달 내부의 실시간 검색어(커밋값은 model).
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [search, setSearch] = useState('');
   // 권장 수명(km) — 모델 선택 시 자동 채워지며 사용자가 직접 수정 가능.
   const [max, setMax] = useState(getRecommendedLifespanKm({ brand: BRANDS[0] }));
   const [used, setUsed] = useState('0');
@@ -29,25 +32,28 @@ export default function AddShoeScreen({
   const [photoError, setPhotoError] = useState(false);
   const [picking, setPicking] = useState(false);
 
-  const q = model.trim().toLowerCase();
+  const q = search.trim().toLowerCase();
   // 모델 목록은 data/shoeModels(modelsForBrand)를 단일 소스로 쓰고 알파벳순(localeCompare)으로 정렬.
   const sortedModels = modelsForBrand(brand).slice().sort((a, b) => a.localeCompare(b));
-  // 두 방식 병행:
-  //  - 입력이 비어 있으면 해당 브랜드의 전체 모델을 알파벳순으로(스크롤) 노출
-  //  - 글자를 입력하면 기존 필터(부분일치, 상위 5개) 동작 유지
-  const matches = q
-    ? sortedModels.filter((m) => m.toLowerCase().includes(q) && m.toLowerCase() !== q).slice(0, 5)
-    : sortedModels;
+  // 모달 검색: 비면 브랜드 전체(알파벳순), 입력하면 부분일치 전체(모달은 스크롤 가능하므로 상위 5개 제한 없음).
+  const matches = q ? sortedModels.filter((m) => m.toLowerCase().includes(q)) : sortedModels;
   const suggestions = matches.map(
     (m) => [m, getRecommendedLifespanKm({ brand, model: m })] as [string, number],
   );
+  // 직접 입력: 검색어가 있고 DB에 정확 일치가 없으면, 입력값을 커스텀 모델로 추가하는 옵션을 준다.
+  const trimmed = search.trim();
+  const exact = sortedModels.some((m) => m.toLowerCase() === q);
+  const customOption: [string, number] | null =
+    trimmed.length > 0 && !exact ? [trimmed, getRecommendedLifespanKm({ brand, model: trimmed })] : null;
   const valid = model.trim().length > 0;
 
   // 현재 brand+model 기준 권장 수명. max가 이 값과 같으면 '권장'(자동값), 다르면 사용자 수정값.
   const recommendedKm = getRecommendedLifespanKm({ brand, model });
   const isRecommended = max === recommendedKm;
 
-  const pickModel = (name: string, km: number) => { setModel(name); setMax(km); setFocused(false); };
+  const openPicker = () => { setSearch(''); setPickerOpen(true); };
+  const closePicker = () => setPickerOpen(false);
+  const pickModel = (name: string, km: number) => { setModel(name); setMax(km); setPickerOpen(false); setSearch(''); };
   // 브랜드를 바꾸면 모델을 비우고 권장 수명도 새 브랜드 기준으로 되돌린다.
   const pickBrand = (b: string) => { setBrand(b); setModel(''); setMax(getRecommendedLifespanKm({ brand: b })); };
 
@@ -78,16 +84,6 @@ export default function AddShoeScreen({
     });
   };
 
-  // 모델칸 포커스 시 입력을 화면 위로 끌어올려, 아래에 뜨는 알파벳 목록이 키보드에
-  // 가리지 않게 한다(검색칸은 위·목록은 그 아래·키보드는 하단). 키보드가 올라온 뒤
-  // 스크롤하도록 살짝 지연하고, 충분히 올릴 수 있도록 포커스 동안 하단 여백을 키운다.
-  const scrollRef = useRef<ScrollView>(null);
-  const modelY = useRef(0);
-  const onModelFocus = () => {
-    setFocused(true);
-    setTimeout(() => { scrollRef.current?.scrollTo?.({ y: Math.max(0, modelY.current - 8), animated: true }); }, 180);
-  };
-
   const insets = useSafeAreaInsets();
   return (
     <View style={[s.screen, { paddingTop: insets.top }]}>
@@ -100,7 +96,7 @@ export default function AddShoeScreen({
         <View style={{ width: 38 }} />
       </View>
 
-      <ScrollView ref={scrollRef} contentContainerStyle={{ padding: 18, paddingBottom: 20 }} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: 20 }} keyboardShouldPersistTaps="handled">
         {/* photo — tap to pick from library; non-blocking on failure */}
         <Pressable onPress={onPickPhoto} disabled={picking} style={({ pressed }) => [s.photo, pressed && s.pressed]}>
           {photoUri ? (
@@ -131,38 +127,12 @@ export default function AddShoeScreen({
           })}
         </ScrollView>
 
-        {/* model + autocomplete */}
+        {/* model — 탭하면 전체화면 검색 모달이 열린다(키보드가 목록을 가리지 않음) */}
         <Text style={[s.label, { marginTop: 22 }]}>모델명</Text>
-        <View onLayout={(e) => { modelY.current = e.nativeEvent.layout.y; }}>
-          <TextInput
-            value={model}
-            onChangeText={setModel}
-            onFocus={onModelFocus}
-            onBlur={() => setTimeout(() => setFocused(false), 150)}
-            placeholder="예: Pegasus 41"
-            placeholderTextColor={T3}
-            style={s.input}
-          />
-          {focused && suggestions.length > 0 && (
-            <View style={s.dropdown}>
-              {/* 리스트가 길면(브랜드 전체 노출 시) 최대 높이 내에서 스크롤 */}
-              <ScrollView
-                style={s.dropdownScroll}
-                keyboardShouldPersistTaps="handled"
-                nestedScrollEnabled
-                showsVerticalScrollIndicator={false}
-              >
-                {suggestions.map(([m, km]) => (
-                  <Pressable key={m} onPress={() => pickModel(m, km)} accessibilityRole="button" accessibilityLabel={m} style={({ pressed }) => [s.suggestion, pressed && { backgroundColor: CARD_HI }]}>
-                    <Text style={s.sugBrand}>{brand}</Text>
-                    <Text style={s.sugModel}>{m}</Text>
-                    <Text style={s.sugKm}>{km}km</Text>
-                  </Pressable>
-                ))}
-              </ScrollView>
-            </View>
-          )}
-        </View>
+        <Pressable onPress={openPicker} accessibilityRole="button" accessibilityLabel="모델 선택" style={({ pressed }) => [s.selector, pressed && s.pressed]}>
+          <Text style={[s.selectorText, !model && { color: T3 }]} numberOfLines={1}>{model || '모델 선택 또는 검색'}</Text>
+          <Ionicons name="chevron-down" size={18} color={T3} />
+        </Pressable>
 
         {/* max life — auto-filled recommendation, editable; '권장' badge when unchanged */}
         <View style={s.maxHead}>
@@ -192,9 +162,6 @@ export default function AddShoeScreen({
           <Text style={s.usedUnit}>km</Text>
         </View>
         <Text style={s.hint}>새 신발이면 0으로 두세요.</Text>
-        {/* 모델 검색 포커스 시 입력칸을 화면 위로 끌어올릴 수 있도록 하단 여백 확보 —
-            드롭다운(알파벳 목록)이 키보드 위에 온전히 보이게 한다. */}
-        <View style={{ height: focused ? 300 : 24 }} />
       </ScrollView>
 
       {/* CTA */}
@@ -203,6 +170,62 @@ export default function AddShoeScreen({
           <Text style={[s.ctaText, !valid && { color: T3 }]}>러닝화 등록</Text>
         </Pressable>
       </View>
+
+      {/* 전용 모델 검색 모달 — 검색창(상단) + 알파벳 목록(중간, flex) + 키보드(하단).
+          목록이 키보드에 가리지 않고, DB에 없는 모델은 '직접 추가'로 입력할 수 있다. */}
+      {pickerOpen && (
+        <Modal visible animationType="slide" onRequestClose={closePicker}>
+          <View style={[s.screen, { paddingTop: insets.top }]}>
+            <View style={s.nav}>
+              <Pressable onPress={closePicker} hitSlop={10} accessibilityRole="button" accessibilityLabel="닫기" style={({ pressed }) => [s.iconBtn, pressed && s.pressed]}>
+                <Ionicons name="chevron-back" size={20} color={T2} />
+              </Pressable>
+              <Text style={s.navTitle}>{brand} 모델</Text>
+              <View style={{ width: 38 }} />
+            </View>
+
+            <View style={s.searchBar}>
+              <Ionicons name="search" size={18} color={T3} />
+              <TextInput
+                value={search}
+                onChangeText={setSearch}
+                autoFocus
+                placeholder="모델 검색 또는 직접 입력"
+                placeholderTextColor={T3}
+                style={s.searchInput}
+                returnKeyType="done"
+                autoCorrect={false}
+                autoCapitalize="none"
+              />
+              {search.length > 0 && (
+                <Pressable onPress={() => setSearch('')} hitSlop={8} accessibilityRole="button" accessibilityLabel="검색 지우기">
+                  <Ionicons name="close-circle" size={18} color={T3} />
+                </Pressable>
+              )}
+            </View>
+
+            <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 12, paddingBottom: 24 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+              {suggestions.map(([m, km]) => (
+                <Pressable key={m} onPress={() => pickModel(m, km)} accessibilityRole="button" accessibilityLabel={m} style={({ pressed }) => [s.suggestion, pressed && { backgroundColor: CARD_HI }]}>
+                  <Text style={s.sugBrand}>{brand}</Text>
+                  <Text style={s.sugModel}>{m}</Text>
+                  <Text style={s.sugKm}>{km}km</Text>
+                </Pressable>
+              ))}
+              {customOption && (
+                <Pressable onPress={() => pickModel(customOption[0], customOption[1])} accessibilityRole="button" accessibilityLabel={`직접 추가 ${customOption[0]}`} style={({ pressed }) => [s.suggestion, s.customRow, pressed && { backgroundColor: CARD_HI }]}>
+                  <Ionicons name="add-circle-outline" size={18} color={ACCENT} />
+                  <Text style={s.customText} numberOfLines={1}>"{customOption[0]}" 직접 추가</Text>
+                  <Text style={s.sugKm}>{customOption[1]}km</Text>
+                </Pressable>
+              )}
+              {suggestions.length === 0 && !customOption && (
+                <Text style={s.noResult}>검색 결과가 없어요 — 모델명을 입력해 직접 추가하세요.</Text>
+              )}
+            </ScrollView>
+          </View>
+        </Modal>
+      )}
     </View>
   );
 }
@@ -227,10 +250,16 @@ const s = StyleSheet.create({
   chipOff: { borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.12), backgroundColor: CARD_HI },
   chipText: { fontFamily: FONT, fontSize: 12.5, fontWeight: '600', letterSpacing: 0.6 },
 
-  input: { backgroundColor: CARD, borderRadius: 18, color: T1, fontFamily: FONT, fontSize: 16, fontWeight: '500', paddingHorizontal: 18, paddingVertical: 16, letterSpacing: -0.2 },
-  dropdown: { position: 'absolute', top: 62, left: 0, right: 0, zIndex: 30, backgroundColor: CARD, borderRadius: 18, padding: 6, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.12) },
-  dropdownScroll: { maxHeight: 264 },
-  suggestion: { flexDirection: 'row', alignItems: 'center', gap: 9, paddingVertical: 11, paddingHorizontal: 12, borderRadius: 11 },
+  // 모델 선택 트리거(탭하면 검색 모달). 입력칸처럼 보이되 누르면 모달이 열린다.
+  selector: { backgroundColor: CARD, borderRadius: 18, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingVertical: 16 },
+  selectorText: { flex: 1, color: T1, fontFamily: FONT, fontSize: 16, fontWeight: '500', letterSpacing: -0.2 },
+  // 모달 검색바(상단 고정) + 결과 행
+  searchBar: { flexDirection: 'row', alignItems: 'center', gap: 9, marginHorizontal: 18, marginTop: 4, marginBottom: 10, backgroundColor: CARD, borderRadius: 16, paddingHorizontal: 16, paddingVertical: 12, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.12) },
+  searchInput: { flex: 1, color: T1, fontFamily: FONT, fontSize: 16, fontWeight: '500', letterSpacing: -0.2, paddingVertical: 0 },
+  customRow: { borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.4), backgroundColor: withAlpha(ACCENT, 0.08), marginTop: 6 },
+  customText: { flex: 1, color: ACCENT, fontFamily: FONT, fontSize: 14.5, fontWeight: '600', letterSpacing: -0.2 },
+  noResult: { color: T3, fontFamily: FONT, fontSize: 13.5, textAlign: 'center', paddingVertical: 28 },
+  suggestion: { flexDirection: 'row', alignItems: 'center', gap: 9, paddingVertical: 14, paddingHorizontal: 12, borderRadius: 11 },
   sugBrand: { color: T3, fontFamily: FONT, fontSize: 10, fontWeight: '600', letterSpacing: 0.8 },
   sugModel: { flex: 1, color: T1, fontFamily: FONT, fontSize: 14.5, fontWeight: '500', letterSpacing: -0.2 },
   sugKm: { color: T3, fontFamily: FONT, fontSize: 11, fontWeight: '500' },
