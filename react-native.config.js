@@ -1,15 +1,13 @@
-// react-native-firebase 모듈은 RN 0.84+ "prebuilt(precompiled) React core" 와
-// 함께 동작하려면 iOS 에서 정적 링크되어야 한다(비모듈 React 헤더 문제 회피).
-// 사용 중인 모든 모듈(app/auth/firestore)을 forceStaticLinking 으로 등록한다.
-// Android 에는 영향 없음(autolinking 그대로). iOS Podfile 의
-// $RNFirebaseAsStaticFramework=true 와 함께 정적 프레임워크 구성을 보장한다.
-const firebaseStaticIos = {platforms: {ios: {forceStaticLinking: true}}};
-
+// 벡터 아이콘 폰트를 네이티브로 링크하기 위한 에셋 경로.
+// (react-native-vector-icons / Expo 폰트 자산)
+//
+// 참고: @react-native-firebase 의 iOS 정적 링크는 Podfile 의
+// `$RNFirebaseAsStaticFramework = true` 플래그가 담당한다.
+// @react-native-community/cli 20.1.0 의 config 스키마에는
+// `dependencies.*.platforms.ios.forceStaticLinking` 키가 존재하지 않아,
+// 그 블록을 두면 Metro(`react-native start`)/`run-android` 의
+// parseUserConfig 검증이 즉시 실패한다. 따라서 여기서는 에셋만 선언하고
+// iOS 정적 프레임워크는 Podfile 플래그에만 의존한다.
 module.exports = {
   assets: ['./assets/fonts'],
-  dependencies: {
-    '@react-native-firebase/app': firebaseStaticIos,
-    '@react-native-firebase/auth': firebaseStaticIos,
-    '@react-native-firebase/firestore': firebaseStaticIos,
-  },
 };
