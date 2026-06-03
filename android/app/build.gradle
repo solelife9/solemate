@@ -100,6 +100,12 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
+        // 카카오 네이티브 앱 키는 공개 저장소에 두지 않는다 — ~/.gradle/gradle.properties 의
+        // KAKAO_NATIVE_APP_KEY 에서 읽어 (1) kakao_app_key 문자열 리소스(KakaoSdk.init 가
+        // 읽음)와 (2) AndroidManifest redirect scheme(kakao<KEY>) 플레이스홀더로 주입한다.
+        def kakaoNativeAppKey = (project.findProperty('KAKAO_NATIVE_APP_KEY') ?: '').toString()
+        resValue "string", "kakao_app_key", kakaoNativeAppKey
+        manifestPlaceholders = [kakaoNativeAppKey: kakaoNativeAppKey]
     }
     signingConfigs {
         debug {

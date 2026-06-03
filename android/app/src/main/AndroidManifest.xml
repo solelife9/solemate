@@ -53,5 +53,19 @@
             <category android:name="android.intent.category.LAUNCHER" />
         </intent-filter>
       </activity>
+
+      <!-- 카카오 로그인 redirect 핸들러. scheme 의 앱 키는 build.gradle 의
+           manifestPlaceholder(kakaoNativeAppKey, ~/.gradle 에서 주입)로 채워진다
+           — 공개 저장소에 키를 두지 않기 위함. 키 미설정 시 scheme=kakao 로 무해. -->
+      <activity
+        android:name="com.kakao.sdk.auth.AuthCodeHandlerActivity"
+        android:exported="true">
+        <intent-filter>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.DEFAULT" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:host="oauth" android:scheme="kakao${kakaoNativeAppKey}" />
+        </intent-filter>
+      </activity>
     </application>
 </manifest>
