@@ -2,7 +2,7 @@
 // AddShoeScreen.rn.tsx — register a new shoe (brand chips, model autocomplete,
 // auto-filled recommended life with a '권장' badge, real photo attach)
 // ============================================================================
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { View, Text, TextInput, ScrollView, Pressable, Image, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -78,6 +78,16 @@ export default function AddShoeScreen({
     });
   };
 
+  // 모델칸 포커스 시 입력을 화면 위로 끌어올려, 아래에 뜨는 알파벳 목록이 키보드에
+  // 가리지 않게 한다(검색칸은 위·목록은 그 아래·키보드는 하단). 키보드가 올라온 뒤
+  // 스크롤하도록 살짝 지연하고, 충분히 올릴 수 있도록 포커스 동안 하단 여백을 키운다.
+  const scrollRef = useRef<ScrollView>(null);
+  const modelY = useRef(0);
+  const onModelFocus = () => {
+    setFocused(true);
+    setTimeout(() => { scrollRef.current?.scrollTo?.({ y: Math.max(0, modelY.current - 8), animated: true }); }, 180);
+  };
+
   const insets = useSafeAreaInsets();
   return (
     <View style={[s.screen, { paddingTop: insets.top }]}>
@@ -90,7 +100,7 @@ export default function AddShoeScreen({
         <View style={{ width: 38 }} />
       </View>
 
-      <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: 20 }} keyboardShouldPersistTaps="handled">
+      <ScrollView ref={scrollRef} contentContainerStyle={{ padding: 18, paddingBottom: 20 }} keyboardShouldPersistTaps="handled">
         {/* photo — tap to pick from library; non-blocking on failure */}
         <Pressable onPress={onPickPhoto} disabled={picking} style={({ pressed }) => [s.photo, pressed && s.pressed]}>
           {photoUri ? (
@@ -123,11 +133,11 @@ export default function AddShoeScreen({
 
         {/* model + autocomplete */}
         <Text style={[s.label, { marginTop: 22 }]}>모델명</Text>
-        <View>
+        <View onLayout={(e) => { modelY.current = e.nativeEvent.layout.y; }}>
           <TextInput
             value={model}
             onChangeText={setModel}
-            onFocus={() => setFocused(true)}
+            onFocus={onModelFocus}
             onBlur={() => setTimeout(() => setFocused(false), 150)}
             placeholder="예: Pegasus 41"
             placeholderTextColor={T3}
@@ -182,6 +192,9 @@ export default function AddShoeScreen({
           <Text style={s.usedUnit}>km</Text>
         </View>
         <Text style={s.hint}>새 신발이면 0으로 두세요.</Text>
+        {/* 모델 검색 포커스 시 입력칸을 화면 위로 끌어올릴 수 있도록 하단 여백 확보 —
+            드롭다운(알파벳 목록)이 키보드 위에 온전히 보이게 한다. */}
+        <View style={{ height: focused ? 300 : 24 }} />
       </ScrollView>
 
       {/* CTA */}
