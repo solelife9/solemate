@@ -230,5 +230,12 @@ Total slices: 5 (코어 1–3 완료 · Phase 2로 4–5 추가, 2026-06-03)
 - **Firebase 인증**: @react-native-firebase/app + auth, Google/Apple 로그인. 네이티브 추가(google-services.json 사용자 등록 필요).
 - **Firebase 동기**: Firestore 클라우드 백업/동기(신발/런/설정), device_id→계정 데이터 마이그레이션(파괴 금지).
 - **BLE 심박**: react-native-ble-plx 스캔/연결/실시간 BPM, 런 중 기록·저장, **심박 UI 재노출(실데이터)**. 네이티브 + 권한.
-- **검증 한계**: 텐넷은 코드+모킹 단위/통합까지. BLE·Firebase 실연동·로그인 플로우는 사용자 실기기+심박기기 확인. gradle 빌드는 오케스트레이터가 에뮬레이터로 1차 확인.
-- **Out of slice**: 소셜/리더보드, OS 푸시, 수익화 제휴.
+  - **HR 소스 = 표준 BLE Heart Rate Service(GATT `0x180D` / char `0x2A37`)**. 이 한 프로파일로 체스트 스트랩·암밴드 + **가민 워치 "심박 브로드캐스트" 모드**까지 커버. **애플워치는 범위 밖**(표준 BLE 송출 안 함, Android 서드파티 실시간 불가 — watchOS 동반앱+HealthKit 별도 큰 작업).
+  - **실검증 가능**: 사용자가 **가민 워치 보유** → 브로드캐스트 모드로 실기기 end-to-end 심박 검증 가능(스트랩 불요).
+- **검증 한계**: 텐넷은 코드+모킹 단위/통합까지. Firebase 실연동·로그인 플로우는 사용자 실기기 확인. BLE는 사용자 가민 워치로 실검증. gradle 빌드는 오케스트레이터가 에뮬레이터로 1차 확인.
+- **Out of slice**: 소셜/리더보드, OS 푸시, 수익화 제휴, **애플워치/HealthKit 심박**.
+
+## Redirect at slice 5 (2026-06-03) — HR 소스·기기 가용성 확정
+사용자 피드백: (1) Firebase = 네이티브 @react-native-firebase 채택, 순서 Firebase→BLE. (2) "가민워치/애플워치로도 되냐?" → HR 소스를 표준 BLE HR 프로파일(0x180D)로 설계: 가민 브로드캐스트 모드 지원(○), 애플워치 미지원(×, 범위 밖). (3) 사용자 가민 워치 보유 → BLE 실검증 가능. (4) 에뮬레이터/기기 구동 가능.
+영향 슬라이스: 5 (Firebase 먼저 → BLE).
+미해결 전제: 네이티브 firebase 빌드는 `google-services.json`(android/app/, 패키지 `com.solemate`) 필요 — 사용자 제공 대기.

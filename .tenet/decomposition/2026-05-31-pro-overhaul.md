@@ -131,3 +131,32 @@ slice-4-injury-prevention → slice-4-rotation → slice-4-addshoe-browse → sl
 - `lib/challenges.ts`: `challengeProgress(challenge,runs):{current,target,pct,completed}`.
 
 수용 테스트: `tests/acceptance/slice-4-features.test.ts`(@slice-4, 스텁+`.skip` 커밋됨). 통과 시 Slice 4 done → use-checkpoint(에뮬/실기기 화면 확인). 이후 Slice 5(Firebase·BLE) 별도 분해.
+
+---
+
+## Slice 5 (Firebase 부분): 계정/클라우드 동기 (네이티브 — 실연동 사용자 실기기)
+
+순서: Firebase 먼저 → BLE(별도 후속 fire). "안전한 것부터" — google-services.json 불요의
+순수로직(synclogic)을 먼저, 그 다음 네이티브 통합(빌드 검증)·UI·수용. 호환성: @react-native-
+firebase v24 가 RN 0.84+/Expo 54+ 를 `forceStaticLinking` 으로 지원(우리 RN0.85.3+Expo56, JDK17+).
+
+### ASCII DAG
+
+```
+slice-5-fb-synclogic ──▶ slice-5-fb-native ──▶ slice-5-fb-ui ──▶ slice-5-fb-e2e
+   (순수로직, 파일불요)     (네이티브, google-      (로그인/동기 UI)    (수용, 코드+모킹)
+                            services.json 필요)
+```
+
+### Jobs
+
+- **slice-5-fb-synclogic**(dev, deps []): `lib/cloudSync.ts` 본 구현(현재 throw 스텁 교체). `nextAuthState`(signedOut↔signingIn↔signedIn/error, 부정전이는 현재유지), `mergeCloudData(local,remote)`(shoes/runs id 합집합 무손실·충돌 시 updatedAt 최신·settings 얕은병합·remote null이면 local 보존), `migrateDeviceToAccount`(최초 로그인 기기→계정 무손실 이관). **iron law: 데이터 파괴 금지**. firebase SDK 는 포트(인터페이스) 뒤로 추상화만(여기선 import 금지·순수 유지). 단위 테스트 + 수용 `@slice-5 인증 상태머신`·`클라우드 병합 무손실`·`기기→계정 마이그레이션` describe `.skip` 제거. **google-services.json 불요 — 지금 실행 가능.**
+- **slice-5-fb-native**(dev, deps synclogic): `@react-native-firebase/app`+`/auth`+`/firestore` 설치, RN0.85/Expo56 용 `forceStaticLinking` 설정(각 모듈 등록), android `com.google.gms.google-services` gradle 플러그인 + `android/app/google-services.json`(패키지 `com.solemate`) 배선. firebase 포트의 실제 구현(synclogic 인터페이스 충족)을 auth/firestore 로 연결. **전제: google-services.json 사용자 제공.** 없으면 깨진 빌드를 만들지 말고 대기·보고(iron law: 빌드 깨지면 머지 금지, 네이티브 되돌림). 오케스트레이터가 `npx react-native run-android`(emulator-5554)로 gradle 빌드 1차 검증. jest 는 firebase 모듈 목으로 green 유지.
+- **slice-5-fb-ui**(dev, deps native): `ProfileScreen` 로그인(Google/Apple)·로그아웃·동기상태(마지막 동기시각)·"클라우드 백업/복원" 행 추가, 로그인 상태에서 데이터 변경 시 동기 트리거(수동 버튼 포함). 목 firebase 로 로그인→동기→상태 반영 행동 테스트(백엔드 호출 없이 props/포트 주입). 다크+오렌지 토큰만.
+- **slice-5-fb-e2e**(integration_test, report_only, deps ui): `npx tsc --noEmit`+`npm run lint`+`npm test`, @slice-1/2/3/4/5 수용 통과, `tests/acceptance/slice-5-cloud.test.ts` 잔존 `.skip` 0, 동기 라운드트립·기기→계정 마이그레이션 데이터 무손실/격리, 기존 신발/런/설정 키 바이트 보존 확인. 코드 수정 금지(report-only), 차단결함은 `tenet_report_blocking_finding`. 실연동(실제 로그인/Firestore)·gradle 빌드는 사용자 실기기 use-checkpoint.
+
+### Interface Contracts (dev 잡 준수)
+- `lib/cloudSync.ts`: `nextAuthState(cur:AuthState,ev:AuthEvent):AuthState`; `mergeCloudData(local:BackupPayload,remote:BackupPayload|null):BackupPayload`; `migrateDeviceToAccount(local,remote):BackupPayload`. (BackupPayload={shoes,runs,settings} — lib/backup 재사용.)
+- firebase 포트(예: `CloudPort{ signIn(provider), signOut(), pull():Promise<BackupPayload|null>, push(data):Promise<void> }`)는 native 잡이 정의·구현, synclogic 은 포트에 비의존(순수).
+
+수용 테스트: `tests/acceptance/slice-5-cloud.test.ts`(@slice-5, 스텁+`.skip` 커밋됨, google-services.json 불요). 네이티브/실연동은 사용자 실기기. BLE 심박은 Firebase use-checkpoint 후 별도 fire(가민 워치 브로드캐스트=표준 BLE 0x180D 실검증, 애플워치 범위밖).
