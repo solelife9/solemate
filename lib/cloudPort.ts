@@ -15,12 +15,21 @@
 
 import type { BackupPayload } from './backup';
 
-/** 지원 로그인 방식. anonymous 는 자체 완결, google 은 외부 자격증명이 필요하다. */
-export type CloudProvider = 'anonymous' | 'google';
+/**
+ * 지원 로그인 방식. anonymous 는 자체 완결, google·apple 은 RNFB 밖에서 받은 외부
+ * OAuth 자격증명이 필요하다(포트를 백엔드-순수하게 유지하려 앱 계층이 리졸버를 주입).
+ */
+export type CloudProvider = 'anonymous' | 'google' | 'apple';
 
-/** 포트가 노출하는 최소 사용자 정보. firebase User 전체를 새어나가지 않게 좁힌다. */
+/**
+ * 포트가 노출하는 최소 사용자 정보. firebase User 전체를 새어나가지 않게 좁힌다.
+ * email/displayName 은 화면의 '로그인 상태(이메일/계정) 표시'에만 쓰이는 부가 정보로,
+ * 없을 수 있다(anonymous 로그인 등). uid 만이 동기 문서 키로서 필수다.
+ */
 export interface CloudUser {
   uid: string;
+  email?: string | null;
+  displayName?: string | null;
 }
 
 /**

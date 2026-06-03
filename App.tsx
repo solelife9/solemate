@@ -51,8 +51,9 @@ import {
   clampGoal, DEFAULT_SETTINGS,
 } from './lib/settings';
 import {weeklyProgress, currentStreak, personalRecords} from './lib/goals';
-import {serializeBackup, BackupV1} from './lib/backup';
+import {serializeBackup, BackupV1, BackupPayload} from './lib/backup';
 import {Challenge, ChallengeRun} from './lib/challenges';
+import {createFirebaseCloudPort} from './lib/firebaseCloudPort';
 
 const API = 'https://solelife-backend.onrender.com';
 
@@ -438,8 +439,9 @@ function Main(){
   // 검증 실패 시엔 호출 자체가 없으므로 여기 도달하면 기존 데이터를 안전하게 교체한다.
   // 신규 키(K_BACKUP_IMPORT)에 원본을 영속해 두어 추후 추적/롤백 근거를 남기고,
   // 기존 키(settings_*)는 changeX(=saveX)가 정상 경로로만 갱신해 파괴를 막는다.
-  const importBackup=(data:BackupV1)=>{
-    try{void AsyncStorage.setItem(K_BACKUP_IMPORT,serializeBackup({shoes:data.shoes,runs:data.runs,settings:data.settings}));}catch(e){console.log('backup persist error',e);}
+  // 백업 페이로드(신발+런+설정)를 현재 상태로 반영한다. 로컬 가져오기와 클라우드 동기
+  // 병합 결과가 공유한다. 설정은 changeX(=saveX) 정상 경로로만 갱신해 기존 키 파괴를 막는다.
+  const applyBackupPayload=(data:BackupPayload)=>{
     if(Array.isArray(data.shoes))setShoes(data.shoes as BackendShoe[]);
     if(Array.isArray(data.runs))setRuns(data.runs as BackendRun[]);
     const st:any=data.settings||{};
@@ -451,6 +453,16 @@ function Main(){
       changeAlerts({enabled:en,thresholdPct:Number.isFinite(th)?th:alerts.thresholdPct});
     }
   };
+  const importBackup=(data:BackupV1)=>{
+    try{void AsyncStorage.setItem(K_BACKUP_IMPORT,serializeBackup({shoes:data.shoes,runs:data.runs,settings:data.settings}));}catch(e){console.log('backup persist error',e);}
+    applyBackupPayload({shoes:data.shoes,runs:data.runs,settings:data.settings});
+  };
+
+  // ── 계정·클라우드 동기(Slice 5) ─────────────────────────────────────────────
+  // firebase 구현 포트를 한 번만 만든다(getAuth/getFirestore 는 메서드 안에서 지연
+  // 호출 — 생성 자체는 네이티브를 건드리지 않는다). ProfileScreen 이 이 포트로 로그인/
+  // 동기를 트리거하고, 병합(cloudSync.mergeCloudData) 결과를 applyBackupPayload 로 받는다.
+  const cloudPortRef=useRef(createFirebaseCloudPort());
 
   // ── 개인 챌린지 생성/삭제(영속 + 상태 갱신) ─────────────────────────────────
   // 신규 키(K_CHALLENGES)에만 쓰므로 기존 데이터(신발/런/설정)와 격리된다. 진행률은
@@ -766,6 +778,7 @@ function Main(){
             challenges={challenges} challengeRuns={challengeRuns}
             onCreateChallenge={createChallenge} onDeleteChallenge={deleteChallenge}
             todayISO={today()}
+            cloudPort={cloudPortRef.current} onCloudMerged={applyBackupPayload}
           />
         )}
       </View>

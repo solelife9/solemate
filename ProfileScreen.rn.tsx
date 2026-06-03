@@ -21,6 +21,8 @@ import {
 import { serializeBackup, parseBackup, BackupPayload, BackupV1 } from './lib/backup';
 import ChallengesSection from './ChallengesSection';
 import { Challenge, ChallengeRun } from './lib/challenges';
+import { mergeCloudData, nextAuthState, AuthState } from './lib/cloudSync';
+import type { CloudPort, CloudProvider, CloudUser } from './lib/cloudPort';
 
 export type Profile = { name: string; since: string; totalKm: number; totalRuns: number; totalTime: string; level: string };
 export type Badge = { icon: string; label: string; on: boolean };
@@ -30,6 +32,15 @@ export type PersonalRecord = { icon: string; label: string; value: string; unit:
 
 const DEFAULT_PROFILE: Profile = { name: '러너', since: '', totalKm: 0, totalRuns: 0, totalTime: '0', level: '러닝 레벨 1' };
 const APP_VERSION = '0.0.1';
+
+// 마지막 동기 시각을 HH:MM 로 짧게 포맷한다(상세 행 detail 용). null 이면 호출부가
+// '아직 동기 안 함' 카피로 분기한다.
+function fmtSyncTime(ms: number): string {
+  const d = new Date(ms);
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mm = String(d.getMinutes()).padStart(2, '0');
+  return `${hh}:${mm}`;
+}
 
 // −/＋ 스테퍼(목표 거리·알림 임계값 공용). 모듈 스코프에 둬 매 렌더 재생성을 피한다.
 function Stepper({ value, suffix, onMinus, onPlus }: { value: number | string; suffix: string; onMinus: () => void; onPlus: () => void }) {
@@ -58,6 +69,7 @@ export default function ProfileScreen({
   deviceId = '',
   backupData = { shoes: [], runs: [], settings: {} }, onImport,
   challenges = [], challengeRuns = [], onCreateChallenge, onDeleteChallenge, todayISO = '',
+  cloudPort, onCloudMerged, cloudClock = () => Date.now(),
 }: {
   profile?: Profile;
   badges?: Badge[];
@@ -88,6 +100,15 @@ export default function ProfileScreen({
   onCreateChallenge?: (c: Challenge) => void;
   onDeleteChallenge?: (id: string) => void;
   todayISO?: string;
+  // ── 계정·클라우드 동기 ───────────────────────────────────────────────────────
+  // 백엔드 포트(주입). App 은 firebaseCloudPort 를, 테스트는 메모리 목 포트를 넣는다.
+  // 없으면 계정 섹션의 버튼은 동작하지 않는다(안전한 no-op).
+  cloudPort?: CloudPort;
+  // 동기로 병합된 결과(BackupPayload)를 App 상태/영속에 반영하는 콜백. pull→merge→push
+  // 직후 호출돼 원격에만 있던 레코드를 로컬에도 무손실로 들여온다(데이터 파괴 금지).
+  onCloudMerged?: (data: BackupPayload) => void;
+  // 마지막 동기 시각용 시계(테스트 주입). 기본은 Date.now.
+  cloudClock?: () => number;
 }) {
   // 어떤 설정 행이 펼쳐졌는지(단위는 패널 없이 즉시 토글). 한 번에 하나만 펼친다.
   const [open, setOpen] = useState<null | 'goal' | 'alerts' | 'account' | 'import'>(null);
@@ -114,6 +135,72 @@ export default function ProfileScreen({
       setImportMsg({ ok: false, text: e?.message || '가져오기에 실패했습니다. 기존 데이터는 그대로입니다.' });
     }
   };
+
+  // ── 계정·클라우드 동기 ───────────────────────────────────────────────────────
+  // 인증 상태는 lib/cloudSync 의 상태머신(nextAuthState)으로만 전이시켜 화면이 임의로
+  // 상태를 깨지 않게 한다. 실제 로그인/동기는 주입된 cloudPort 뒤에서 일어나고, 이 화면은
+  // 상태 표시 + 트리거만 담당한다(백엔드는 firebaseCloudPort, 테스트는 메모리 목 포트).
+  const [authState, setAuthState] = useState<AuthState>('signedOut');
+  const [cloudUser, setCloudUser] = useState<CloudUser | null>(null);
+  const [lastSyncAt, setLastSyncAt] = useState<number | null>(null);
+  const [syncing, setSyncing] = useState(false);
+  const [cloudMsg, setCloudMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const signedIn = authState === 'signedIn';
+  const signingIn = authState === 'signingIn';
+
+  // 로그인: signInStart→(성공)signInSuccess/(실패)signInError. error 상태에서의 재시도는
+  // 상태머신 계약상 signedOut 경유가 필요하므로 먼저 signedOut 으로 리셋한 뒤 시작한다.
+  const handleSignIn = async (provider: CloudProvider) => {
+    if (!cloudPort || signingIn) return;
+    setCloudMsg(null);
+    setAuthState((s) => nextAuthState(s === 'error' ? 'signedOut' : s, 'signInStart'));
+    try {
+      const user = await cloudPort.signIn(provider);
+      setCloudUser(user);
+      setAuthState((s) => nextAuthState(s, 'signInSuccess'));
+    } catch (e: any) {
+      setAuthState((s) => nextAuthState(s, 'signInError'));
+      setCloudMsg({ ok: false, text: e?.message || '로그인에 실패했습니다.' });
+    }
+  };
+
+  // 로그아웃: 어디서든 signedOut 으로. 로컬 데이터는 건드리지 않는다(데이터 파괴 금지).
+  const handleSignOut = async () => {
+    if (!cloudPort) return;
+    try {
+      await cloudPort.signOut();
+    } catch {
+      // 네트워크 실패로 원격 세션이 안 닫혀도 화면은 로그아웃으로 떨군다.
+    }
+    setCloudUser(null);
+    setLastSyncAt(null);
+    setCloudMsg(null);
+    setAuthState((s) => nextAuthState(s, 'signOut'));
+  };
+
+  // 지금 동기: pull(원격) → mergeCloudData(로컬, 원격) → push(병합 결과). 양방향 무손실
+  // 병합이라 백업·복원을 한 번에 끝낸다(어느 쪽 레코드도 버리지 않음). 병합 결과는
+  // onCloudMerged 로 App 에 돌려 원격에만 있던 레코드를 로컬에도 반영한다.
+  const handleSync = async () => {
+    if (!cloudPort || !signedIn || syncing) return;
+    setSyncing(true);
+    setCloudMsg(null);
+    try {
+      const remote = await cloudPort.pull();
+      const merged = mergeCloudData(backupData, remote);
+      await cloudPort.push(merged);
+      onCloudMerged?.(merged);
+      setLastSyncAt(cloudClock());
+      setCloudMsg({ ok: true, text: '클라우드 동기 완료 — 데이터가 안전하게 백업됐습니다.' });
+    } catch (e: any) {
+      setCloudMsg({ ok: false, text: e?.message || '동기에 실패했습니다. 로컬 데이터는 그대로입니다.' });
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const accountLabel = cloudUser?.email || cloudUser?.displayName || '계정 연결됨';
+  const lastSyncLabel = lastSyncAt == null ? '아직 동기 안 함' : `${fmtSyncTime(lastSyncAt)} 동기됨`;
 
   // 목표는 km로 저장하되 화면은 표시 단위(km|mi)로 보여주고 스텝도 표시 단위로 움직인다.
   const goalDisplay = displayNum(goalWeeklyKm, unit, 0);
@@ -324,6 +411,55 @@ export default function ProfileScreen({
           </View>
         </View>
 
+        {/* 계정 · 클라우드 동기 — 로그인하면 신발/런/설정을 계정 클라우드와 무손실 동기 */}
+        <View testID="cloud-section">
+          <Text style={[s.sectionLabel, { paddingBottom: 12 }]}>계정 · 클라우드</Text>
+          <View style={[s.card, { overflow: 'hidden' }]}>
+            {signedIn ? (
+              <>
+                {/* 로그인 상태 — 이메일/계정 표시 */}
+                <View style={[s.settingRow, s.settingBorder]} testID="cloud-account">
+                  <View style={s.settingIcon}><Ionicons name="person-circle-outline" size={17} color={ACCENT} /></View>
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <Text style={s.settingLabel} numberOfLines={1}>{accountLabel}</Text>
+                    <Text style={s.cloudSub}>클라우드 연결됨</Text>
+                  </View>
+                  <Ionicons name="cloud-done-outline" size={18} color={GOOD} />
+                </View>
+
+                {/* 지금 동기 — pull+merge+push. detail 에 마지막 동기 시각 노출 */}
+                <Pressable testID="cloud-sync" onPress={handleSync} disabled={syncing} accessibilityRole="button" accessibilityLabel="지금 동기" accessibilityState={{ disabled: syncing }} style={({ pressed }) => [s.settingRow, s.settingBorder, pressed && { backgroundColor: CARD_HI }]}>
+                  <View style={s.settingIcon}><Ionicons name="sync-outline" size={17} color={ACCENT} /></View>
+                  <Text style={s.settingLabel}>{syncing ? '동기 중…' : '지금 동기'}</Text>
+                  <Text style={s.settingDetail} testID="cloud-last-sync">{lastSyncLabel}</Text>
+                </Pressable>
+
+                {/* 로그아웃 */}
+                <Pressable onPress={handleSignOut} accessibilityRole="button" accessibilityLabel="로그아웃" style={({ pressed }) => [s.settingRow, pressed && { backgroundColor: CARD_HI }]}>
+                  <View style={s.settingIcon}><Ionicons name="log-out-outline" size={17} color={DANGER} /></View>
+                  <Text style={[s.settingLabel, { color: DANGER }]}>로그아웃</Text>
+                  <Ionicons name="chevron-forward" size={16} color={T3} />
+                </Pressable>
+              </>
+            ) : (
+              <View style={s.cloudPad}>
+                <Text style={s.cloudIntro}>로그인하면 신발·런·설정이 클라우드에 안전하게 백업되고 기기 간 동기됩니다.</Text>
+                <Pressable testID="cloud-signin-google" onPress={() => handleSignIn('google')} disabled={signingIn} accessibilityRole="button" accessibilityLabel="Google로 로그인" accessibilityState={{ disabled: signingIn }} style={({ pressed }) => [s.cloudBtn, s.cloudBtnGoogle, pressed && { opacity: 0.85 }]}>
+                  <Ionicons name="logo-google" size={17} color={T1} />
+                  <Text style={s.cloudBtnTxt}>{signingIn ? '로그인 중…' : 'Google로 계속'}</Text>
+                </Pressable>
+                <Pressable testID="cloud-signin-apple" onPress={() => handleSignIn('apple')} disabled={signingIn} accessibilityRole="button" accessibilityLabel="Apple로 로그인" accessibilityState={{ disabled: signingIn }} style={({ pressed }) => [s.cloudBtn, s.cloudBtnApple, pressed && { opacity: 0.85 }]}>
+                  <Ionicons name="logo-apple" size={18} color={T1} />
+                  <Text style={s.cloudBtnTxt}>{signingIn ? '로그인 중…' : 'Apple로 계속'}</Text>
+                </Pressable>
+              </View>
+            )}
+            {cloudMsg && (
+              <Text testID="cloud-msg" style={[s.cloudMsg, cloudMsg.ok ? s.dataMsgOk : s.dataMsgErr]}>{cloudMsg.text}</Text>
+            )}
+          </View>
+        </View>
+
         {/* 데이터 백업/복원 — 로컬 백업(네이티브 0: RN Share + 텍스트 붙여넣기) */}
         <View testID="data-section">
           <Text style={[s.sectionLabel, { paddingBottom: 12 }]}>데이터</Text>
@@ -466,4 +602,14 @@ const s = StyleSheet.create({
   dataMsg: { fontFamily: FONT, fontSize: 12.5, fontWeight: '600', lineHeight: 18 },
   dataMsgOk: { color: GOOD },
   dataMsgErr: { color: DANGER },
+
+  // 계정 · 클라우드 동기
+  cloudSub: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '600', marginTop: 2 },
+  cloudPad: { padding: 16, gap: 12 },
+  cloudIntro: { color: T3, fontFamily: FONT, fontSize: 12.5, lineHeight: 18 },
+  cloudBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 48, borderRadius: 14 },
+  cloudBtnGoogle: { backgroundColor: ACCENT },
+  cloudBtnApple: { backgroundColor: CARD_HI },
+  cloudBtnTxt: { color: T1, fontFamily: FONT, fontSize: 15, fontWeight: '600' },
+  cloudMsg: { fontFamily: FONT, fontSize: 12.5, fontWeight: '600', lineHeight: 18, paddingHorizontal: 16, paddingBottom: 14 },
 });

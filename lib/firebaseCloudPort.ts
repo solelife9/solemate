@@ -37,6 +37,19 @@ export interface FirebaseCloudPortOptions {
    * 자격증명 획득 책임을 앱 계층에 두어 포트를 백엔드-순수하게 유지한다.
    */
   resolveGoogleCredential?: () => Promise<FirebaseAuthCredential>;
+  /**
+   * apple 로그인도 동일하게 RNFB 밖(예: @invertase/react-native-apple-authentication)
+   * 에서 받은 OAuth 자격증명이 필요하다. 없으면 'apple' 은 비활성(명확한 에러).
+   */
+  resolveAppleCredential?: () => Promise<FirebaseAuthCredential>;
+}
+
+/**
+ * firebase User 에서 포트가 노출하는 최소 사용자 정보만 추려낸다. email/displayName 은
+ * 화면 표시용 부가 정보로, 익명 로그인 등에선 없을 수 있어 옵셔널로 좁혀 담는다.
+ */
+function toCloudUser(user: { uid: string; email?: string | null; displayName?: string | null }): CloudUser {
+  return { uid: user.uid, email: user.email ?? null, displayName: user.displayName ?? null };
 }
 
 /**
@@ -82,15 +95,17 @@ export function createFirebaseCloudPort(
     async signIn(provider: CloudProvider): Promise<CloudUser> {
       if (provider === 'anonymous') {
         const credential = await signInAnonymously(getAuth());
-        return { uid: credential.user.uid };
+        return toCloudUser(credential.user);
       }
-      // provider === 'google'
-      if (!options.resolveGoogleCredential) {
-        throw new Error("'google' 로그인에는 자격증명 리졸버 주입이 필요합니다.");
+      // google·apple 은 외부 자격증명 리졸버를 통해 OAuth credential 을 받아 로그인한다.
+      const resolver =
+        provider === 'google' ? options.resolveGoogleCredential : options.resolveAppleCredential;
+      if (!resolver) {
+        throw new Error(`'${provider}' 로그인에는 자격증명 리졸버 주입이 필요합니다.`);
       }
-      const googleCredential = await options.resolveGoogleCredential();
-      const credential = await signInWithCredential(getAuth(), googleCredential);
-      return { uid: credential.user.uid };
+      const oauthCredential = await resolver();
+      const credential = await signInWithCredential(getAuth(), oauthCredential);
+      return toCloudUser(credential.user);
     },
 
     async signOut(): Promise<void> {
