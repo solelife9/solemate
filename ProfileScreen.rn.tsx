@@ -8,7 +8,7 @@
 // 값은 App이 소유(영속은 lib/settings)하고, 이 화면은 표시 + 변경 콜백만 담당한다.
 // ============================================================================
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet, Share, TextInput, Image } from 'react-native';
+import { View, Text, ScrollView, Pressable, StyleSheet, TextInput, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { BG, CARD, CARD_DIM, CARD_HI, ACCENT, GOOD, DANGER, T1, T2, T3, SEP, FONT, DISPLAY, withAlpha } from './theme';
@@ -19,8 +19,7 @@ import {
   MIN_THRESHOLD_PCT, MAX_THRESHOLD_PCT, DEFAULT_SETTINGS, DEFAULT_ALERTS,
   WEIGHT_STEP, MIN_WEIGHT_KG, MAX_WEIGHT_KG,
 } from './lib/settings';
-import { serializeBackup, parseBackup, BackupPayload, BackupV1 } from './lib/backup';
-import ChallengesSection from './ChallengesSection';
+import { BackupPayload, BackupV1 } from './lib/backup';
 import { Challenge, ChallengeRun } from './lib/challenges';
 import { mergeCloudData, nextAuthState, AuthState } from './lib/cloudSync';
 import type { CloudPort, CloudProvider, CloudUser } from './lib/cloudPort';
@@ -71,8 +70,7 @@ export default function ProfileScreen({
   streakDays = 0, weekDays = [], weekTodayIdx = -1,
   alerts = { ...DEFAULT_ALERTS }, onChangeAlerts,
   deviceId = '',
-  backupData = { shoes: [], runs: [], settings: {} }, onImport,
-  challenges = [], challengeRuns = [], onCreateChallenge, onDeleteChallenge, todayISO = '',
+  backupData = { shoes: [], runs: [], settings: {} },
   cloudPort, onCloudMerged, cloudClock = () => Date.now(),
 }: {
   profile?: Profile;
@@ -150,28 +148,6 @@ export default function ProfileScreen({
   const [nameDraft, setNameDraft] = useState(profile.name);
   const startEditName = () => { setNameDraft(profile.name); setEditingName(true); };
   const saveName = () => { onChangeName?.(nameDraft); setEditingName(false); };
-
-  // ── 데이터 백업/복원 ───────────────────────────────────────────────────────
-  // 내보내기: 신발+런+설정을 버전드 JSON으로 직렬화해 RN Share로 내보낸다(네이티브 0).
-  const onExport = () => {
-    const json = serializeBackup(backupData);
-    // Share.share는 비동기 — 사용자가 시트를 닫으면 reject될 수 있으므로 조용히 무시한다.
-    Promise.resolve(Share.share({ message: json })).catch(() => {});
-  };
-  // 가져오기: 텍스트(붙여넣기)를 parseBackup으로 검증한다. 성공 시에만 onImport를 호출해
-  // 복원하고, 실패하면 onImport를 부르지 않고 에러만 안내한다(기존 데이터 그대로).
-  const [importText, setImportText] = useState('');
-  const [importMsg, setImportMsg] = useState<{ ok: boolean; text: string } | null>(null);
-  const onImportPress = () => {
-    try {
-      const parsed = parseBackup(importText);
-      onImport?.(parsed);
-      const n = parsed.shoes.length + parsed.runs.length;
-      setImportMsg({ ok: true, text: `가져오기 완료 — 항목 ${n}개를 복원했습니다.` });
-    } catch (e: any) {
-      setImportMsg({ ok: false, text: e?.message || '가져오기에 실패했습니다. 기존 데이터는 그대로입니다.' });
-    }
-  };
 
   // ── 계정·클라우드 동기 ───────────────────────────────────────────────────────
   // 인증 상태는 lib/cloudSync 의 상태머신(nextAuthState)으로만 전이시켜 화면이 임의로
@@ -544,56 +520,6 @@ export default function ProfileScreen({
           </View>
         </View>
 
-        {/* 데이터 백업/복원 — 로컬 백업(네이티브 0: RN Share + 텍스트 붙여넣기) */}
-        <View testID="data-section">
-          <Text style={[s.sectionLabel, { paddingBottom: 12 }]}>데이터</Text>
-          <View style={[s.card, { overflow: 'hidden' }]}>
-            {/* 내보내기 — 신발+런+설정을 JSON으로 묶어 공유 */}
-            <Pressable onPress={onExport} accessibilityRole="button" accessibilityLabel="데이터 내보내기" style={({ pressed }) => [s.settingRow, s.settingBorder, pressed && { backgroundColor: CARD_HI }]}>
-              <View style={s.settingIcon}><Ionicons name="cloud-upload-outline" size={17} color={ACCENT} /></View>
-              <Text style={s.settingLabel}>데이터 내보내기</Text>
-              <Ionicons name="share-outline" size={16} color={T3} />
-            </Pressable>
-
-            {/* 가져오기 — 백업 텍스트를 붙여넣어 검증 후 복원 */}
-            <Pressable onPress={() => toggleOpen('import')} accessibilityRole="button" accessibilityLabel="데이터 가져오기" accessibilityState={{ expanded: open === 'import' }} style={({ pressed }) => [s.settingRow, pressed && { backgroundColor: CARD_HI }]}>
-              <View style={s.settingIcon}><Ionicons name="cloud-download-outline" size={17} color={ACCENT} /></View>
-              <Text style={s.settingLabel}>데이터 가져오기</Text>
-              <Ionicons name={open === 'import' ? 'chevron-up' : 'chevron-forward'} size={16} color={T3} />
-            </Pressable>
-            {open === 'import' && (
-              <View style={s.panel}>
-                <Text style={s.panelHint}>백업 텍스트를 붙여넣고 가져오기를 누르세요. 검증에 성공하면 데이터를 복원합니다.</Text>
-                <TextInput
-                  testID="import-input"
-                  value={importText}
-                  onChangeText={setImportText}
-                  placeholder="백업 JSON 붙여넣기"
-                  placeholderTextColor={T3}
-                  multiline
-                  accessibilityLabel="백업 텍스트 입력"
-                  style={s.dataInput}
-                />
-                <Pressable onPress={onImportPress} accessibilityRole="button" accessibilityLabel="가져오기 실행" style={({ pressed }) => [s.dataBtn, pressed && { opacity: 0.85 }]}>
-                  <Ionicons name="download-outline" size={16} color={T1} />
-                  <Text style={s.dataBtnTxt}>가져오기</Text>
-                </Pressable>
-                {importMsg && (
-                  <Text testID="import-msg" style={[s.dataMsg, importMsg.ok ? s.dataMsgOk : s.dataMsgErr]}>{importMsg.text}</Text>
-                )}
-              </View>
-            )}
-          </View>
-        </View>
-
-        {/* 개인 챌린지 — 혼자 세우는 거리·연속일 목표(진행률 링 + 달성 뱃지) */}
-        <ChallengesSection
-          challenges={challenges}
-          runs={challengeRuns}
-          onCreate={onCreateChallenge}
-          onDelete={onDeleteChallenge}
-          today={todayISO}
-        />
       </ScrollView>
       <TabBar active={3} onTab={(i) => onTab?.(i)} />
     </View>
