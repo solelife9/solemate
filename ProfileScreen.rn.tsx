@@ -7,8 +7,8 @@
 //   · 계정 설정 — 기기/가입/버전 정보
 // 값은 App이 소유(영속은 lib/settings)하고, 이 화면은 표시 + 변경 콜백만 담당한다.
 // ============================================================================
-import React, { useState } from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet, Share, TextInput } from 'react-native';
+import React, { useRef, useState } from 'react';
+import { View, Text, ScrollView, Pressable, StyleSheet, Share, TextInput, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { BG, CARD, CARD_DIM, CARD_HI, ACCENT, GOOD, DANGER, T1, T2, T3, SEP, FONT, DISPLAY, withAlpha } from './theme';
@@ -62,6 +62,7 @@ function Stepper({ value, suffix, onMinus, onPlus }: { value: number | string; s
 
 export default function ProfileScreen({
   profile = DEFAULT_PROFILE, badges = [], records = [], onTab,
+  profilePhotoUri = '', onChangeName, onPickPhoto,
   unit = 'km', onChangeUnit,
   goalWeeklyKm = DEFAULT_SETTINGS.goalWeeklyKm, weeklyPercent = 0, weeklyDoneKm = 0, onChangeGoal,
   streakDays = 0, weekDays = [], weekTodayIdx = -1,
@@ -75,6 +76,10 @@ export default function ProfileScreen({
   badges?: Badge[];
   records?: PersonalRecord[];
   onTab?: (i: number) => void;
+  // 프로필 정체성(로컬 영속). 사진 URI(없으면 아이콘 폴백), 이름 변경, 사진 선택 콜백.
+  profilePhotoUri?: string;
+  onChangeName?: (name: string) => void;
+  onPickPhoto?: () => void;
   unit?: Unit;
   onChangeUnit?: (u: Unit) => void;
   goalWeeklyKm?: number;
@@ -113,6 +118,19 @@ export default function ProfileScreen({
   // 어떤 설정 행이 펼쳐졌는지(단위는 패널 없이 즉시 토글). 한 번에 하나만 펼친다.
   const [open, setOpen] = useState<null | 'goal' | 'alerts' | 'account' | 'import'>(null);
   const toggleOpen = (k: 'goal' | 'alerts' | 'account' | 'import') => setOpen((o) => (o === k ? null : k));
+
+  // 헤더 설정 버튼 → '설정' 섹션으로 스크롤(무반응이던 버튼에 동작 부여). 섹션 위치는
+  // onLayout 으로 측정한다(콘텐츠 컨테이너 기준 y).
+  const scrollRef = useRef<ScrollView>(null);
+  const [settingsY, setSettingsY] = useState(0);
+  const scrollToSettings = () => scrollRef.current?.scrollTo({ y: Math.max(0, settingsY - 8), animated: true });
+
+  // 이름 인라인 편집(저장은 onChangeName → App 이 영속). 편집 시작 시 현재 이름을
+  // 초안으로 채우고, 저장 시 공백이면 App 이 기본값으로 보정한다.
+  const [editingName, setEditingName] = useState(false);
+  const [nameDraft, setNameDraft] = useState(profile.name);
+  const startEditName = () => { setNameDraft(profile.name); setEditingName(true); };
+  const saveName = () => { onChangeName?.(nameDraft); setEditingName(false); };
 
   // ── 데이터 백업/복원 ───────────────────────────────────────────────────────
   // 내보내기: 신발+런+설정을 버전드 JSON으로 직렬화해 RN Share로 내보낸다(네이티브 0).
@@ -232,22 +250,51 @@ export default function ProfileScreen({
   const insets = useSafeAreaInsets();
   return (
     <View style={s.screen}>
-      <ScrollView contentContainerStyle={{ paddingTop: insets.top + 12, paddingHorizontal: 18, paddingBottom: 8, gap: 16 }}>
+      <ScrollView ref={scrollRef} contentContainerStyle={{ paddingTop: insets.top + 12, paddingHorizontal: 18, paddingBottom: 8, gap: 16 }}>
         {/* header */}
         <View style={s.headerRow}>
           <Text style={s.title}>프로필</Text>
-          <Pressable style={s.iconBtn}><Ionicons name="settings-outline" size={19} color={T2} /></Pressable>
+          <Pressable onPress={scrollToSettings} accessibilityRole="button" accessibilityLabel="설정으로 이동" style={({ pressed }) => [s.iconBtn, pressed && { backgroundColor: CARD }]}><Ionicons name="settings-outline" size={19} color={T2} /></Pressable>
         </View>
 
-        {/* identity */}
+        {/* identity — 아바타(탭하면 사진 변경) + 이름(탭하면 인라인 편집) */}
         <View style={s.identity}>
-          <View style={s.avatarRing}>
+          <Pressable onPress={onPickPhoto} accessibilityRole="button" accessibilityLabel="프로필 사진 변경" style={s.avatarRing} testID="profile-avatar">
             <View style={s.avatarInner}>
-              <Ionicons name="person" size={30} color={T3} />
+              {profilePhotoUri ? (
+                <Image source={{ uri: profilePhotoUri }} style={s.avatarImg} testID="profile-avatar-img" />
+              ) : (
+                <Ionicons name="person" size={30} color={T3} />
+              )}
             </View>
-          </View>
+            <View style={s.avatarEdit}><Ionicons name="camera" size={11} color={BG} /></View>
+          </Pressable>
           <View style={{ flex: 1, minWidth: 0 }}>
-            <Text style={s.name}>{profile.name}</Text>
+            {editingName ? (
+              <View style={s.nameEditRow}>
+                <TextInput
+                  testID="profile-name-input"
+                  value={nameDraft}
+                  onChangeText={setNameDraft}
+                  autoFocus
+                  maxLength={20}
+                  returnKeyType="done"
+                  onSubmitEditing={saveName}
+                  placeholder="이름"
+                  placeholderTextColor={T3}
+                  style={s.nameInput}
+                  accessibilityLabel="이름 입력"
+                />
+                <Pressable onPress={saveName} accessibilityRole="button" accessibilityLabel="이름 저장" style={s.nameSaveBtn}>
+                  <Ionicons name="checkmark" size={18} color={BG} />
+                </Pressable>
+              </View>
+            ) : (
+              <Pressable onPress={startEditName} accessibilityRole="button" accessibilityLabel="이름 편집" style={s.nameRow} testID="profile-name">
+                <Text style={s.name} numberOfLines={1}>{profile.name}</Text>
+                <Ionicons name="pencil" size={13} color={T3} />
+              </Pressable>
+            )}
             <View style={[s.row, { marginTop: 6 }]}>
               <View style={s.levelChip}><Text style={s.levelChipText}>{profile.level}</Text></View>
               {!!profile.since && <Text style={s.since}>{profile.since}</Text>}
@@ -348,7 +395,7 @@ export default function ProfileScreen({
         )}
 
         {/* settings — 실제 구동 */}
-        <View>
+        <View onLayout={(e) => setSettingsY(e.nativeEvent.layout.y)}>
           <Text style={[s.sectionLabel, { paddingBottom: 12 }]}>설정</Text>
           <View style={[s.card, { overflow: 'hidden' }]}>
             {/* 1) 목표 설정 */}
@@ -529,8 +576,14 @@ const s = StyleSheet.create({
 
   identity: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 4, paddingTop: 4 },
   avatarRing: { padding: 3, borderRadius: 999, backgroundColor: ACCENT },
-  avatarInner: { padding: 2.5, borderRadius: 999, backgroundColor: BG },
+  avatarInner: { padding: 2.5, borderRadius: 999, backgroundColor: BG, alignItems: 'center', justifyContent: 'center' },
+  avatarImg: { width: 50, height: 50, borderRadius: 999 },
+  avatarEdit: { position: 'absolute', right: -1, bottom: -1, width: 18, height: 18, borderRadius: 999, backgroundColor: ACCENT, borderWidth: 2, borderColor: BG, alignItems: 'center', justifyContent: 'center' },
   name: { color: T1, fontFamily: FONT, fontSize: 24, fontWeight: '500', letterSpacing: -0.5 },
+  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
+  nameEditRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  nameInput: { flex: 1, color: T1, fontFamily: FONT, fontSize: 22, fontWeight: '500', letterSpacing: -0.5, borderBottomWidth: 1, borderBottomColor: ACCENT, paddingVertical: 2, paddingHorizontal: 0 },
+  nameSaveBtn: { width: 34, height: 34, borderRadius: 999, backgroundColor: ACCENT, alignItems: 'center', justifyContent: 'center' },
   levelChip: { backgroundColor: withAlpha(ACCENT, 0.14), borderRadius: 7, paddingHorizontal: 8, paddingVertical: 2 },
   levelChipText: { color: ACCENT, fontFamily: FONT, fontSize: 11.5, fontWeight: '500' },
   since: { color: T3, fontFamily: FONT, fontSize: 12.5, fontWeight: '600' },

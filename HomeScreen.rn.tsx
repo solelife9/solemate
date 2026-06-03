@@ -7,7 +7,7 @@
 // ============================================================================
 import React, { useRef, useState } from 'react';
 import {
-  View, Text, ScrollView, Pressable, StyleSheet,
+  View, Text, ScrollView, Pressable, StyleSheet, Linking,
   NativeSyntheticEvent, NativeScrollEvent,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -20,6 +20,7 @@ import { Ring, TabBar, TierBadge, KeegoWordmark, Button, SectionTitle, Pill, con
 import { Unit, displayNum } from './lib/units';
 import { assessShoeInjuryRisk } from './lib/injury';
 import { RotationPick } from './lib/rotation';
+import { recommendNextShoes, buildShopLinks, categoryLabelKo, AFFILIATE_DISCLOSURE } from './lib/affiliate';
 
 export type WeekStats = { km: string; runs: number; pace: string };
 // 주간 목표 + keep-going 동기 지표. 거리는 km 표준, pct는 이번 주 달성률 %(목표
@@ -73,7 +74,7 @@ function WeeklyGoal({ goal, unit }: { goal: GoalInfo; unit: Unit }) {
           </Text>
         </View>
       </View>
-      <Ring size={76} stroke={8} progress={pct / 100} color={reached ? GOOD : ACCENT}>
+      <Ring size={64} stroke={8} progress={pct / 100} color={reached ? GOOD : ACCENT}>
         <Text style={[s.goalRingPct, reached && { color: GOOD }]}>
           {pct}<Text style={s.goalRingU}>%</Text>
         </Text>
@@ -106,7 +107,7 @@ function HeroShoe({ shoe, unit }: { shoe: Shoe; unit: Unit }) {
           </View>
           <Text style={s.heroModel} numberOfLines={2}>{shoe.model}</Text>
         </View>
-        <Ring size={68} stroke={7} progress={pct} color={ring}>
+        <Ring size={60} stroke={7} progress={pct} color={ring}>
           <Text style={s.ringPct}>{Math.round(pct * 100)}<Text style={s.ringPctU}>%</Text></Text>
         </Ring>
       </View>
@@ -220,6 +221,48 @@ function RotationCard({ rotation, onPickShoe }: { rotation: RotationPick[]; onPi
   );
 }
 
+// 수익화 v1(차별점 정합): 선택 신발이 '교체' 등급이면 같은 카테고리의 다음 러닝화를
+// 추천한다(구매 의도 최고 시점의 contextual 추천 — 배너광고 아님). 쇼핑몰 검색 링크는
+// lib/affiliate(순수)에서 만들고 Linking.openURL로 외부에서 연다. 투명성 안내(제휴 가능성+
+// '러너 우선')를 하단에 명시한다. 시드 DB가 없거나 추천이 비면 통째로 숨는다.
+function NextShoeCard({ shoe }: { shoe: Shoe }) {
+  const recs = recommendNextShoes({ brand: shoe.brand, model: shoe.model }, 3);
+  if (recs.length === 0) return null;
+  const open = (url: string) => { Promise.resolve(Linking.openURL(url)).catch(() => {}); };
+  return (
+    <View testID="home-next-shoe" style={s.nextWrap}>
+      <SectionTitle style={s.sectionLabel}>이제 교체할 때 — 다음 러닝화</SectionTitle>
+      <View style={s.nextCard}>
+        <Text style={s.nextSub}>
+          <Text style={{ color: T2, fontWeight: '600' }}>{shoe.model}</Text>의 수명이 거의 다 됐어요. 같은 용도의 다음 신발이에요.
+        </Text>
+        {recs.map((r, i) => (
+          <View key={`${r.brand}-${r.model}`} style={[s.nextRow, i > 0 && s.nextRowSep]}>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text style={s.nextBrand} numberOfLines={1}>{r.brand}</Text>
+              <Text style={s.nextModel} numberOfLines={1}>{r.model}</Text>
+              <Text style={s.nextCat}>{categoryLabelKo[r.category]}</Text>
+            </View>
+            <View style={s.shopBtns}>
+              {buildShopLinks(r).map((link) => (
+                <Pressable
+                  key={link.shop}
+                  onPress={() => open(link.url)}
+                  accessibilityRole="link"
+                  accessibilityLabel={`${r.brand} ${r.model} ${link.shop}에서 보기`}
+                  style={({ pressed }) => [s.shopBtn, pressed && s.pressed]}>
+                  <Text style={s.shopBtnTxt}>{link.shop}</Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+        ))}
+        <Text style={s.nextDisclosure}>{AFFILIATE_DISCLOSURE}</Text>
+      </View>
+    </View>
+  );
+}
+
 function EmptyHome({ onAddShoe }: { onAddShoe?: () => void }) {
   return (
     <View style={s.empty}>
@@ -281,14 +324,14 @@ export default function HomeScreen({
         <Text style={s.greet}>오늘은 어떤 신발로{'\n'}달려볼까요?</Text>
       </View>
       {goal && (
-        <View style={{ paddingHorizontal: SPACE.xl, marginTop: SPACE.lg }}>
+        <View style={{ paddingHorizontal: SPACE.xl, marginTop: SPACE.sm }}>
           <WeeklyGoal goal={goal} unit={unit} />
         </View>
       )}
       {active ? (
         <>
           {/* shoe-first 주인공: 선택 신발(idx 실값) 수명 링 히어로 카드 */}
-          <View testID="home-hero" style={{ paddingHorizontal: SPACE.xl, paddingTop: SPACE.lg }}>
+          <View testID="home-hero" style={{ paddingHorizontal: SPACE.xl, paddingTop: SPACE.sm }}>
             <HeroShoe shoe={active} unit={unit} />
           </View>
           {/* 강조는 CTA에 — 선택 신발 idx로 러닝 시작 연결 */}
@@ -296,13 +339,15 @@ export default function HomeScreen({
             <Button label="러닝 시작" icon="play" onPress={() => onStart?.(idx)} />
           </View>
           {shoes.length > 1 && (
-            <View style={{ marginTop: SPACE.lg }}>
+            <View style={{ marginTop: SPACE.md }}>
               <SectionTitle style={s.sectionLabel}>내 러닝화</SectionTitle>
               <ShoePicker shoes={shoes} activeIdx={idx} onSelect={select} unit={unit} />
             </View>
           )}
           {/* 휴식·마모 분산 로테이션 추천(2켤레+에서만 채워짐, 비면 자동 숨김) */}
           <RotationCard rotation={rotation ?? []} onPickShoe={onPickShoe} />
+          {/* 수익화 v1: 선택 신발이 '교체' 등급이면 다음 러닝화 추천(차별점 정합) */}
+          {active.condition === '교체' && <NextShoeCard shoe={active} />}
         </>
       ) : (
         <EmptyHome onAddShoe={onAddShoe} />
@@ -321,17 +366,17 @@ const s = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   baselineRow: { flexDirection: 'row', alignItems: 'flex-end' },
 
-  topbar: { paddingTop: 12, paddingHorizontal: SPACE.xl, paddingBottom: SPACE.xs, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  topbar: { paddingTop: 8, paddingHorizontal: SPACE.xl, paddingBottom: SPACE.xs, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   addBtn: { height: 36, paddingHorizontal: 18, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: withAlpha(ACCENT, 0.35), backgroundColor: withAlpha(ACCENT, 0.12), alignItems: 'center', justifyContent: 'center' },
   addBtnText: { color: ACCENT, fontFamily: FONT, fontSize: 13, fontWeight: '600' },
 
-  greetWrap: { paddingHorizontal: SPACE.xl, paddingTop: 14 },
+  greetWrap: { paddingHorizontal: SPACE.xl, paddingTop: 8 },
   date: { color: T3, fontFamily: FONT, fontSize: 13, letterSpacing: 0.2 },
-  greet: { color: T1, fontFamily: FONT, fontSize: 24, fontWeight: '400', letterSpacing: -0.4, marginTop: 6, lineHeight: 31 },
+  greet: { color: T1, fontFamily: FONT, fontSize: 20, fontWeight: '400', letterSpacing: -0.4, marginTop: 3, lineHeight: 26 },
 
 
-  goalCard: { backgroundColor: CARD_DIM, borderRadius: 18, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.06), padding: SPACE.lg, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  goalInfo: { flex: 1, gap: 9, minWidth: 0 },
+  goalCard: { backgroundColor: CARD_DIM, borderRadius: 18, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.06), padding: SPACE.md, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  goalInfo: { flex: 1, gap: 6, minWidth: 0 },
   goalLabel: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600', letterSpacing: 0.2 },
   goalSub: { color: T3, fontFamily: FONT, fontSize: 11.5, fontWeight: '500' },
   streakChip: { flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start', borderRadius: RADIUS.pill, paddingHorizontal: 9, paddingVertical: 4 },
@@ -341,14 +386,14 @@ const s = StyleSheet.create({
   goalRingPct: { color: T1, fontFamily: DISPLAY, fontSize: 19, letterSpacing: 0.2 },
   goalRingU: { color: T3, fontFamily: FONT, fontSize: 10 },
 
-  hero: { backgroundColor: HERO_BG, borderRadius: RADIUS.xl, borderWidth: 1, borderColor: ACCENT, padding: 24 },
+  hero: { backgroundColor: HERO_BG, borderRadius: RADIUS.xl, borderWidth: 1, borderColor: ACCENT, padding: 16 },
   heroTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 14 },
   heroBrand: { color: T3, fontFamily: DISPLAY, fontSize: 11, fontWeight: '500', letterSpacing: 1.4 },
   usingChip: { backgroundColor: withAlpha(ACCENT, 0.14), borderRadius: 6, paddingHorizontal: SPACE.sm, paddingVertical: 2 },
   usingChipText: { color: ACCENT, fontFamily: FONT, fontSize: 10, fontWeight: '500' },
-  heroModel: { color: T1, fontFamily: DISPLAY, fontSize: 24, fontWeight: '600', letterSpacing: -0.2, marginTop: 7, lineHeight: 28 },
-  heroBottom: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 18 },
-  heroRemain: { color: T1, fontFamily: DISPLAY, fontSize: 46, letterSpacing: -1 },
+  heroModel: { color: T1, fontFamily: DISPLAY, fontSize: 22, fontWeight: '600', letterSpacing: -0.2, marginTop: 5, lineHeight: 25 },
+  heroBottom: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 11 },
+  heroRemain: { color: T1, fontFamily: DISPLAY, fontSize: 38, letterSpacing: -1 },
   heroRemainU: { color: T2, fontFamily: FONT, fontSize: 16, marginLeft: 5, marginBottom: 6 },
   injuryWrap: { marginTop: 16 },
   ringPct: { color: T1, fontFamily: DISPLAY, fontSize: 17 },
@@ -357,7 +402,7 @@ const s = StyleSheet.create({
   condText: { fontFamily: FONT, fontSize: 13, fontWeight: '500' },
   condSub: { color: T3, fontFamily: FONT, fontSize: 12.5 },
 
-  sectionLabel: { paddingHorizontal: SPACE.xl, paddingBottom: SPACE.md },
+  sectionLabel: { paddingHorizontal: SPACE.xl, paddingBottom: SPACE.sm },
 
   rotaWrap: { marginTop: SPACE.lg },
   rotaCard: { marginHorizontal: SPACE.xl, backgroundColor: CARD_DIM, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.06), paddingHorizontal: SPACE.lg },
@@ -366,6 +411,20 @@ const s = StyleSheet.create({
   rotaBrand: { color: T3, fontFamily: DISPLAY, fontSize: 10.5, fontWeight: '500', letterSpacing: 1.2 },
   rotaModel: { fontFamily: DISPLAY, fontSize: 15, fontWeight: '600', letterSpacing: -0.1, marginTop: 4 },
   rotaReason: { color: T3, fontFamily: FONT, fontSize: 12, marginTop: 3 },
+
+  // 수익화 v1: 교체 시점 '다음 러닝화' 추천 카드(오렌지 절제 — 테두리만 액센트)
+  nextWrap: { marginTop: SPACE.lg },
+  nextCard: { marginHorizontal: SPACE.xl, backgroundColor: CARD_DIM, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: withAlpha(ACCENT, 0.3), padding: SPACE.lg },
+  nextSub: { color: T3, fontFamily: FONT, fontSize: 12.5, lineHeight: 18, marginBottom: SPACE.sm },
+  nextRow: { flexDirection: 'row', alignItems: 'center', gap: SPACE.md, paddingVertical: 11 },
+  nextRowSep: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.07) },
+  nextBrand: { color: T3, fontFamily: DISPLAY, fontSize: 10, fontWeight: '500', letterSpacing: 1.2 },
+  nextModel: { color: T1, fontFamily: DISPLAY, fontSize: 14.5, fontWeight: '600', letterSpacing: -0.1, marginTop: 3 },
+  nextCat: { color: T3, fontFamily: FONT, fontSize: 11, marginTop: 3 },
+  shopBtns: { flexDirection: 'row', gap: 6 },
+  shopBtn: { borderRadius: RADIUS.pill, borderWidth: 1, borderColor: withAlpha(ACCENT, 0.4), backgroundColor: withAlpha(ACCENT, 0.1), paddingHorizontal: 11, paddingVertical: 6 },
+  shopBtnTxt: { color: ACCENT, fontFamily: FONT, fontSize: 11.5, fontWeight: '600' },
+  nextDisclosure: { color: T3, fontFamily: FONT, fontSize: 10.5, lineHeight: 15, marginTop: SPACE.md, opacity: 0.85 },
 
   pcard: { width: CARD_W, height: CARD_W, borderRadius: RADIUS.lg, padding: SPACE.lg, justifyContent: 'space-between' },
   pcardActive: { backgroundColor: HERO_BG, borderWidth: 1, borderColor: ACCENT },

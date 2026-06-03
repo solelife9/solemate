@@ -520,7 +520,7 @@ export function TabBar({active, onTab}: {active: number; onTab: (i: number) => v
   // paddingBottom 대신). inset 이 없는 단말은 기존 여백(24)을 유지해 회귀를 막는다.
   const insets = useSafeAreaInsets();
   return (
-    <View style={[t.wrap, {paddingBottom: insets.bottom > 0 ? insets.bottom + SPACE.sm : 24}]}>
+    <View style={[t.wrap, {paddingBottom: insets.bottom > 0 ? insets.bottom : 12}]}>
       <View style={t.dock}>
         {TABS.map((tab, i) => {
           const on = i === active;
@@ -534,9 +534,9 @@ export function TabBar({active, onTab}: {active: number; onTab: (i: number) => v
               hitSlop={6}
               style={({pressed}) => [t.item, on && t.itemActive, pressed && t.itemPressed]}>
               {tab.set === 'mci' ? (
-                <MaterialCommunityIcons name={tab.icon} size={24} color={on ? ACCENT : T3} />
+                <MaterialCommunityIcons name={tab.icon} size={22} color={on ? ACCENT : T3} />
               ) : (
-                <Ionicons name={on ? tab.icon : `${tab.icon}-outline`} size={24} color={on ? ACCENT : T3} />
+                <Ionicons name={on ? tab.icon : `${tab.icon}-outline`} size={22} color={on ? ACCENT : T3} />
               )}
               <Text style={[t.label, {color: on ? ACCENT : T3, fontWeight: on ? '600' : '500'}]}>
                 {tab.label}
@@ -550,7 +550,7 @@ export function TabBar({active, onTab}: {active: number; onTab: (i: number) => v
 }
 
 const t = StyleSheet.create({
-  wrap: {paddingHorizontal: 14, paddingTop: 10, paddingBottom: 24},
+  wrap: {paddingHorizontal: 14, paddingTop: 6, paddingBottom: 12},
   dock: {
     flexDirection: 'row',
     alignItems: 'stretch',
@@ -571,8 +571,8 @@ const t = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: SPACE.xs,
-    paddingVertical: 9,
+    gap: 2,
+    paddingVertical: 6,
     borderRadius: RADIUS.lg,
   },
   itemActive: {backgroundColor: 'rgba(255,255,255,0.10)'},

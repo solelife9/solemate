@@ -55,6 +55,7 @@ import {serializeBackup, BackupV1, BackupPayload} from './lib/backup';
 import {Challenge, ChallengeRun} from './lib/challenges';
 import {createFirebaseCloudPort} from './lib/firebaseCloudPort';
 import {resolveGoogleCredential} from './lib/googleAuth';
+import {pickShoePhoto} from './lib/photo';
 
 const API = 'https://solelife-backend.onrender.com';
 
@@ -62,6 +63,10 @@ const API = 'https://solelife-backend.onrender.com';
 const K_BACKUP_IMPORT = 'imported_backup_v1';
 // 개인 챌린지 목록을 영속하는 신규 AsyncStorage 키(개인 전용 — 계정/서버 불필요).
 const K_CHALLENGES = 'challenges_v1';
+// 프로필 이름/사진(로컬 전용 — 개인 식별, 서버 불필요). 신규 키라 기존 데이터와 격리.
+const K_PROFILE_NAME = 'profile_name';
+const K_PROFILE_PHOTO = 'profile_photo';
+const DEFAULT_PROFILE_NAME = '러너';
 
 // audit#9/#10: 콜드 백엔드 부팅 상태기계. 'loading'(스켈레톤) → 'ready'(정상) |
 // 'error'(재시도 카드). 'error'는 fetch 실패만을 의미하며, 빈-신규(fetch 성공 + 빈
@@ -130,6 +135,10 @@ function Main(){
   // 개인 챌린지 목록(거리·연속일). 신규 키(K_CHALLENGES)로 영속하며 런 기록에서
   // 진행률을 파생한다(lib/challenges). 기존 키와 분리돼 데이터 파괴 위험이 없다.
   const [challenges,setChallenges]=useState<Challenge[]>([]);
+  // 프로필 이름/사진(로컬 영속). 이름 기본은 '러너', 사진은 없으면 빈 문자열(아바타
+  // 아이콘 폴백). 신규 키라 기존 신발/런 데이터와 격리돼 파괴 위험이 없다.
+  const [profileName,setProfileName]=useState(DEFAULT_PROFILE_NAME);
+  const [profilePhoto,setProfilePhoto]=useState('');
   // audit#9/#10: 콜드 백엔드 부팅 상태(스켈레톤/재시도 카드). 최초엔 'loading'으로 떠
   // 스켈레톤을 보여주고, initUser 성공 시 'ready', fetch 실패 시 'error'로 간다.
   const [bootState,setBootState]=useState<BootState>('loading');
@@ -153,6 +162,21 @@ function Main(){
         const arr=JSON.parse(raw);
         if(Array.isArray(arr))setChallenges(arr.filter((c:any)=>c&&typeof c.id==='string'));
       }catch(e){console.log('challenges load error',e);}
+    })();
+  },[]);
+
+  // 프로필 이름/사진 복원(신규 키 — 네트워크 무관, 1회). 손상/부재는 조용히 기본값으로
+  // 폴백한다(이름='러너', 사진 없음). 기존 데이터와 격리돼 파괴 위험 0.
+  useEffect(()=>{
+    (async()=>{
+      try{
+        const [nm,ph]=await Promise.all([
+          AsyncStorage.getItem(K_PROFILE_NAME),
+          AsyncStorage.getItem(K_PROFILE_PHOTO),
+        ]);
+        if(nm&&nm.trim())setProfileName(nm);
+        if(ph)setProfilePhoto(ph);
+      }catch(e){console.log('profile load error',e);}
     })();
   },[]);
 
@@ -481,6 +505,23 @@ function Main(){
   const deleteChallenge=(id:string)=>{
     persistChallenges(challenges.filter(c=>c.id!==id));
   };
+
+  // ── 프로필 이름/사진(영속 + 상태) ───────────────────────────────────────────
+  // 이름은 공백이면 기본값('러너')으로 보정해 빈 이름을 막고, 사진은 expo-image-picker로
+  // 고른 로컬 URI를 저장한다. 권한 거부/취소(null)·실패는 모두 비차단(조용히 유지).
+  const changeProfileName=(name:string)=>{
+    const v=(name||'').trim()||DEFAULT_PROFILE_NAME;
+    setProfileName(v);
+    try{void AsyncStorage.setItem(K_PROFILE_NAME,v);}catch(e){console.log('profile name save error',e);}
+  };
+  const pickProfilePhoto=async()=>{
+    try{
+      const picked=await pickShoePhoto();
+      if(!picked)return;
+      setProfilePhoto(picked.uri);
+      try{await AsyncStorage.setItem(K_PROFILE_PHOTO,picked.uri);}catch(e){console.log('profile photo save error',e);}
+    }catch(e){console.log('profile photo pick error',e);}
+  };
   // 챌린지 진행률용 런 매핑: 런 기록 → {date,dist}. km 은 백엔드가 문자열로도 보내므로
   // Number 로 강제하고, 음수/NaN 은 lib(challengeProgress)에서 0 으로 방어한다.
   const challengeRuns:ChallengeRun[]=runs.map(r=>({date:String(r.run_date||'').slice(0,10),dist:Number(r.km)||0}));
@@ -621,7 +662,7 @@ function Main(){
   const since=firstDate?(()=>{const d=new Date(firstDate+'T00:00:00');return `${d.getFullYear()}년 ${d.getMonth()+1}월부터`;})():'';
   const streak=maxDayStreak(runs.map(r=>r.run_date).filter(Boolean));
   const profile:Profile={
-    name:'러너', since, totalKm:displayNum(sumKm(runs),unit,0), totalRuns:runs.length,
+    name:profileName||DEFAULT_PROFILE_NAME, since, totalKm:displayNum(sumKm(runs),unit,0), totalRuns:runs.length,
     totalTime:String(Math.round(totalSec/3600)),
     // 레벨/배지는 km 절대값(totalKm) 기준 — 단위를 바꿔도 자격이 흔들리지 않는다.
     level:`러닝 레벨 ${Math.floor(totalKm/100)+1}`,
@@ -769,6 +810,7 @@ function Main(){
         {tab===3&&(
           <ProfileScreen
             profile={profile} badges={badges} records={records} onTab={setTab}
+            profilePhotoUri={profilePhoto} onChangeName={changeProfileName} onPickPhoto={pickProfilePhoto}
             unit={unit} onChangeUnit={changeUnit}
             goalWeeklyKm={goalWeeklyKm} weeklyPercent={goalProgress.percent}
             weeklyDoneKm={goalProgress.totalKm} onChangeGoal={changeGoal}
