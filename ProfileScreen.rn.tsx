@@ -11,7 +11,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, ScrollView, Pressable, StyleSheet, TextInput, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { BG, CARD, CARD_DIM, CARD_HI, ACCENT, GOOD, DANGER, T1, T2, T3, SEP, FONT, DISPLAY, withAlpha } from './theme';
+import { BG, CARD, CARD_DIM, CARD_HI, ACCENT, GOOD, DANGER, T1, T2, T3, SEP, FONT, DISPLAY, withAlpha, KAKAO_YELLOW, KAKAO_LABEL, NAVER_GREEN, NAVER_LABEL } from './theme';
 import { TabBar, Ring, Pill, SectionTitle } from './primitives';
 import { Unit, unitKorean, displayNum, displayToKm } from './lib/units';
 import {
@@ -504,6 +504,14 @@ export default function ProfileScreen({
             ) : (
               <View style={s.cloudPad}>
                 <Text style={s.cloudIntro}>로그인하면 신발·런·설정이 클라우드에 안전하게 백업되고 기기 간 동기됩니다.</Text>
+                <Pressable testID="cloud-signin-kakao" onPress={() => handleSignIn('kakao')} disabled={signingIn} accessibilityRole="button" accessibilityLabel="카카오로 로그인" accessibilityState={{ disabled: signingIn }} style={({ pressed }) => [s.cloudBtn, s.cloudBtnKakao, pressed && { opacity: 0.85 }]}>
+                  <Text style={[s.brandMark, { color: KAKAO_LABEL }]}>K</Text>
+                  <Text style={[s.cloudBtnTxt, { color: KAKAO_LABEL }]}>{signingIn ? '로그인 중…' : '카카오로 계속'}</Text>
+                </Pressable>
+                <Pressable testID="cloud-signin-naver" onPress={() => handleSignIn('naver')} disabled={signingIn} accessibilityRole="button" accessibilityLabel="네이버로 로그인" accessibilityState={{ disabled: signingIn }} style={({ pressed }) => [s.cloudBtn, s.cloudBtnNaver, pressed && { opacity: 0.85 }]}>
+                  <Text style={[s.brandMark, { color: NAVER_LABEL }]}>N</Text>
+                  <Text style={[s.cloudBtnTxt, { color: NAVER_LABEL }]}>{signingIn ? '로그인 중…' : '네이버로 계속'}</Text>
+                </Pressable>
                 <Pressable testID="cloud-signin-google" onPress={() => handleSignIn('google')} disabled={signingIn} accessibilityRole="button" accessibilityLabel="Google로 로그인" accessibilityState={{ disabled: signingIn }} style={({ pressed }) => [s.cloudBtn, s.cloudBtnGoogle, pressed && { opacity: 0.85 }]}>
                   <Ionicons name="logo-google" size={17} color={T1} />
                   <Text style={s.cloudBtnTxt}>{signingIn ? '로그인 중…' : 'Google로 계속'}</Text>
@@ -626,6 +634,9 @@ const s = StyleSheet.create({
   cloudBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 48, borderRadius: 14 },
   cloudBtnGoogle: { backgroundColor: ACCENT },
   cloudBtnApple: { backgroundColor: CARD_HI },
+  cloudBtnKakao: { backgroundColor: KAKAO_YELLOW },
+  cloudBtnNaver: { backgroundColor: NAVER_GREEN },
+  brandMark: { fontFamily: DISPLAY, fontSize: 17, fontWeight: '800' },
   cloudBtnTxt: { color: T1, fontFamily: FONT, fontSize: 15, fontWeight: '600' },
   cloudMsg: { fontFamily: FONT, fontSize: 12.5, fontWeight: '600', lineHeight: 18, paddingHorizontal: 16, paddingBottom: 14 },
 });

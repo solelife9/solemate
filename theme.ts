@@ -19,6 +19,14 @@ export const T2 = '#EBEBF5';
 export const T3 = '#9C9CA3';
 export const SEP = 'rgba(255,255,255,0.08)';
 
+// ── 소셜 로그인 브랜드 색 (외부 브랜드 고정값) ────────────────────────────────────
+// 카카오/네이버 공식 브랜드 컬러는 바꿀 수 없는 외부 값이라 토큰으로 모아 둔다(화면
+// 코드의 raw hex 0 원칙 유지 — 화면은 이 토큰만 참조).
+export const KAKAO_YELLOW = '#FEE500';
+export const KAKAO_LABEL = '#000000';
+export const NAVER_GREEN = '#03C75A';
+export const NAVER_LABEL = '#FFFFFF';
+
 // ── alpha helper ─────────────────────────────────────────────────────────────
 // Derive a translucent fill from an existing #RRGGBB token so semi-transparent
 // surfaces (e.g. badge backgrounds) stay a single source of truth: change the

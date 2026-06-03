@@ -324,3 +324,24 @@ global.fetch = jest.fn(url => {
     text: () => Promise.resolve(JSON.stringify(body)),
   });
 });
+
+// ── @react-native-seoul/kakao-login (네이티브 목) ────────────────────────────
+jest.mock('@react-native-seoul/kakao-login', () => ({
+  __esModule: true,
+  initializeKakaoSDK: jest.fn(),
+  login: jest.fn(() => Promise.resolve({accessToken: 'kakao-access-token'})),
+  logout: jest.fn(() => Promise.resolve()),
+  getProfile: jest.fn(() => Promise.resolve({id: 1, nickname: '테스터'})),
+}));
+
+// ── @react-native-seoul/naver-login (네이티브 목) ────────────────────────────
+jest.mock('@react-native-seoul/naver-login', () => ({
+  __esModule: true,
+  default: {
+    initialize: jest.fn(),
+    login: jest.fn(() =>
+      Promise.resolve({successResponse: {accessToken: 'naver-access-token'}, failureResponse: undefined}),
+    ),
+    logout: jest.fn(() => Promise.resolve()),
+  },
+}));

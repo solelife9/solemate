@@ -56,6 +56,8 @@ import {serializeBackup, BackupV1, BackupPayload} from './lib/backup';
 import {Challenge, ChallengeRun} from './lib/challenges';
 import {createFirebaseCloudPort} from './lib/firebaseCloudPort';
 import {resolveGoogleCredential} from './lib/googleAuth';
+import {resolveKakaoFirebaseToken} from './lib/kakaoAuth';
+import {resolveNaverFirebaseToken} from './lib/naverAuth';
 import {pickShoePhoto} from './lib/photo';
 
 const API = 'https://solelife-backend.onrender.com';
@@ -509,7 +511,11 @@ function Main(){
   // 동기를 트리거하고, 병합(cloudSync.mergeCloudData) 결과를 applyBackupPayload 로 받는다.
   // resolveGoogleCredential 주입으로 'Google로 계속' 버튼이 실제 네이티브 로그인을 탄다
   // (리졸버는 hasPlayServices→signIn→idToken→OAuth 자격증명; 실패는 정직한 에러로 전파).
-  const cloudPortRef=useRef(createFirebaseCloudPort({resolveGoogleCredential}));
+  const cloudPortRef=useRef(createFirebaseCloudPort({
+    resolveGoogleCredential,
+    resolveKakaoToken:resolveKakaoFirebaseToken,
+    resolveNaverToken:resolveNaverFirebaseToken,
+  }));
 
   // ── 개인 챌린지 생성/삭제(영속 + 상태 갱신) ─────────────────────────────────
   // 신규 키(K_CHALLENGES)에만 쓰므로 기존 데이터(신발/런/설정)와 격리된다. 진행률은
