@@ -2,6 +2,9 @@ apply plugin: "com.android.application"
 apply from: "../../node_modules/react-native-vector-icons/fonts.gradle"
 apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
+// @react-native-firebase: google-services.json(android/app/) 을 읽어 Firebase 설정을
+// 리소스로 주입한다. com.android.application 이후에 적용해야 한다.
+apply plugin: "com.google.gms.google-services"
 
 /**
  * This is the configuration block to customize your React Native Android app.

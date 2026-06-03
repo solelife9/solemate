@@ -81,3 +81,7 @@ yarn-error.log
 .expo
 dist/
 web-build/
+
+# Firebase config (사용자 제공 — 시크릿 노출 방지로 커밋하지 않는다)
+android/app/google-services.json
+ios/GoogleService-Info.plist

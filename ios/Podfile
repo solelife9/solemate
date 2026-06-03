@@ -9,6 +9,10 @@ require Pod::Executable.execute_command('node', ['-p',
 platform :ios, '16.4'
 prepare_react_native_project!
 
+# @react-native-firebase: Firebase iOS SDK 를 정적 프레임워크로 링크한다.
+# react-native.config.js 의 forceStaticLinking(RN 0.84+ prebuilt core 대응)과 짝.
+$RNFirebaseAsStaticFramework = true
+
 linkage = ENV['USE_FRAMEWORKS']
 if linkage != nil
   Pod::UI.puts "Configuring Pod with #{linkage}ally linked Frameworks".green

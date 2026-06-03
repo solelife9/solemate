@@ -190,6 +190,72 @@ jest.mock('react-native-safe-area-context', () => {
   };
 });
 
+// ── @react-native-firebase/auth (modular) ───────────────────────────────────
+// In-memory auth: signInAnonymously / signInWithCredential set a currentUser
+// that getAuth().currentUser reads back; signOut clears it. No native bridge.
+// __reset() restores signed-out state between tests.
+jest.mock('@react-native-firebase/auth', () => {
+  const state = {current: null};
+  const authInstance = {
+    get currentUser() {
+      return state.current;
+    },
+  };
+  return {
+    __esModule: true,
+    getAuth: jest.fn(() => authInstance),
+    signInAnonymously: jest.fn(() => {
+      state.current = {uid: 'anon-test-uid'};
+      return Promise.resolve({user: state.current});
+    }),
+    signInWithCredential: jest.fn((_auth, credential) => {
+      const uid = (credential && credential.uid) || 'credential-test-uid';
+      state.current = {uid};
+      return Promise.resolve({user: state.current});
+    }),
+    signOut: jest.fn(() => {
+      state.current = null;
+      return Promise.resolve();
+    }),
+    // test-only helpers
+    __reset: () => {
+      state.current = null;
+    },
+    __setCurrentUser: u => {
+      state.current = u;
+    },
+  };
+});
+
+// ── @react-native-firebase/firestore (modular) ───────────────────────────────
+// In-memory document store keyed by "collection/id". setDoc deep-clones (like
+// the wire would), getDoc returns a snapshot with exists()/data(). This lets
+// the cloud port's push→pull round-trip be asserted without a real backend.
+jest.mock('@react-native-firebase/firestore', () => {
+  const store = new Map();
+  return {
+    __esModule: true,
+    getFirestore: jest.fn(() => ({__db: true})),
+    doc: jest.fn((_db, collection, id) => ({__path: `${collection}/${id}`})),
+    setDoc: jest.fn((ref, data) => {
+      store.set(ref.__path, JSON.parse(JSON.stringify(data)));
+      return Promise.resolve();
+    }),
+    getDoc: jest.fn(ref => {
+      const has = store.has(ref.__path);
+      const data = store.get(ref.__path);
+      return Promise.resolve({
+        exists: () => has,
+        data: () => (has ? data : undefined),
+      });
+    }),
+    // test-only helper
+    __reset: () => {
+      store.clear();
+    },
+  };
+});
+
 // ── global.fetch ─────────────────────────────────────────────────────────────
 // Route-aware default so App bootstrap (auth → shoes → runs) resolves to sane,
 // empty data. Individual tests can override fetch.mockImplementationOnce(...).
