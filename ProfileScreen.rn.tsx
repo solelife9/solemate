@@ -171,6 +171,7 @@ export default function ProfileScreen({
       const user = await cloudPort.signIn(provider);
       setCloudUser(user);
       setAuthState((s) => nextAuthState(s, 'signInSuccess'));
+      // 동기는 아래 자동 동기 effect 가 (signedIn 전환 + 데이터 변경 시) 처리한다.
     } catch (e: any) {
       setAuthState((s) => nextAuthState(s, 'signInError'));
       setCloudMsg({ ok: false, text: e?.message || '로그인에 실패했습니다.' });
@@ -191,26 +192,38 @@ export default function ProfileScreen({
     setAuthState((s) => nextAuthState(s, 'signOut'));
   };
 
-  // 지금 동기: pull(원격) → mergeCloudData(로컬, 원격) → push(병합 결과). 양방향 무손실
+  // 동기 본체: pull(원격) → mergeCloudData(로컬, 원격) → push(병합 결과). 양방향 무손실
   // 병합이라 백업·복원을 한 번에 끝낸다(어느 쪽 레코드도 버리지 않음). 병합 결과는
   // onCloudMerged 로 App 에 돌려 원격에만 있던 레코드를 로컬에도 반영한다.
-  const handleSync = async () => {
-    if (!cloudPort || !signedIn || syncing) return;
+  // signedIn 가드 없이 cloudPort(currentUser)만 의존 — 로그인 직후 자동 호출에서도
+  // authState 상태 갱신 타이밍과 무관하게 동작한다.
+  const runSync = async (silent = false) => {
+    if (!cloudPort || syncing) return;
     setSyncing(true);
-    setCloudMsg(null);
+    if (!silent) setCloudMsg(null);
     try {
       const remote = await cloudPort.pull();
       const merged = mergeCloudData(backupData, remote);
       await cloudPort.push(merged);
       onCloudMerged?.(merged);
       setLastSyncAt(cloudClock());
-      setCloudMsg({ ok: true, text: '클라우드 동기 완료 — 데이터가 안전하게 백업됐습니다.' });
+      // 자동(silent) 동기는 성공 팝업을 띄우지 않는다(계정 행 상태로만 표시). 에러는 항상 안내.
+      if (!silent) setCloudMsg({ ok: true, text: '클라우드 동기 완료 — 데이터가 안전하게 백업됐습니다.' });
     } catch (e: any) {
       setCloudMsg({ ok: false, text: e?.message || '동기에 실패했습니다. 로컬 데이터는 그대로입니다.' });
     } finally {
       setSyncing(false);
     }
   };
+  // 자동 동기: 로그인(signedIn 전환) + 로컬 데이터(신발/런/설정) 변경 시 디바운스로
+  // 백그라운드 동기한다(수동 '지금 동기' 버튼 없음). 변경 폭주는 1초 디바운스로 합친다.
+  const dataSig = JSON.stringify(backupData);
+  useEffect(() => {
+    if (!signedIn) return;
+    const t = setTimeout(() => { void runSync(true); }, 1000);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [signedIn, dataSig]);
 
   const accountLabel = cloudUser?.email || cloudUser?.displayName || '계정 연결됨';
   const lastSyncLabel = lastSyncAt == null ? '아직 동기 안 함' : `${fmtSyncTime(lastSyncAt)} 동기됨`;
@@ -477,22 +490,15 @@ export default function ProfileScreen({
           <View style={[s.card, { overflow: 'hidden' }]}>
             {signedIn ? (
               <>
-                {/* 로그인 상태 — 이메일/계정 표시 */}
+                {/* 로그인 상태 — 계정 + 자동 동기 상태(수동 버튼 없음: 로그인·변경 시 자동 동기) */}
                 <View style={[s.settingRow, s.settingBorder]} testID="cloud-account">
                   <View style={s.settingIcon}><Ionicons name="person-circle-outline" size={17} color={ACCENT} /></View>
                   <View style={{ flex: 1, minWidth: 0 }}>
                     <Text style={s.settingLabel} numberOfLines={1}>{accountLabel}</Text>
-                    <Text style={s.cloudSub}>클라우드 연결됨</Text>
+                    <Text style={s.cloudSub} testID="cloud-last-sync">{syncing ? '자동 동기 중…' : (lastSyncAt == null ? '클라우드 연결됨 · 자동 동기' : `${lastSyncLabel} · 자동`)}</Text>
                   </View>
-                  <Ionicons name="cloud-done-outline" size={18} color={GOOD} />
+                  <Ionicons name={syncing ? 'sync-outline' : 'cloud-done-outline'} size={18} color={GOOD} />
                 </View>
-
-                {/* 지금 동기 — pull+merge+push. detail 에 마지막 동기 시각 노출 */}
-                <Pressable testID="cloud-sync" onPress={handleSync} disabled={syncing} accessibilityRole="button" accessibilityLabel="지금 동기" accessibilityState={{ disabled: syncing }} style={({ pressed }) => [s.settingRow, s.settingBorder, pressed && { backgroundColor: CARD_HI }]}>
-                  <View style={s.settingIcon}><Ionicons name="sync-outline" size={17} color={ACCENT} /></View>
-                  <Text style={s.settingLabel}>{syncing ? '동기 중…' : '지금 동기'}</Text>
-                  <Text style={s.settingDetail} testID="cloud-last-sync">{lastSyncLabel}</Text>
-                </Pressable>
 
                 {/* 로그아웃 */}
                 <Pressable onPress={handleSignOut} accessibilityRole="button" accessibilityLabel="로그아웃" style={({ pressed }) => [s.settingRow, pressed && { backgroundColor: CARD_HI }]}>

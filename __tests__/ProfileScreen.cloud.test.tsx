@@ -80,7 +80,7 @@ describe('ProfileScreen 계정·클라우드 로그인', () => {
     const root = render({cloudPort: mockPort(), backupData: LOCAL});
     expect(hasId(root, 'cloud-signin-google')).toBe(true);
     expect(hasId(root, 'cloud-signin-apple')).toBe(true);
-    expect(hasId(root, 'cloud-sync')).toBe(false);
+    expect(hasId(root, 'cloud-account')).toBe(false);
   });
 
   test('Google 로그인을 누르면 port.signIn("google")이 호출되고 signedIn 상태가 반영된다', async () => {
@@ -93,7 +93,7 @@ describe('ProfileScreen 계정·클라우드 로그인', () => {
     expect(port.signIn).toHaveBeenCalledWith('google');
     // signedIn 반영: 계정(이메일) 행 + 지금 동기 + 로그아웃 노출, 로그인 버튼은 사라짐.
     expect(textOf(byTestId(root, 'cloud-account'))).toContain('runner@keego.app');
-    expect(hasId(root, 'cloud-sync')).toBe(true);
+    expect(hasId(root, 'cloud-account')).toBe(true);
     expect(hasId(root, 'cloud-signin-google')).toBe(false);
   });
 
@@ -115,56 +115,68 @@ describe('ProfileScreen 계정·클라우드 로그인', () => {
   });
 });
 
-describe('ProfileScreen 지금 동기 (pull→merge→push)', () => {
-  test('동기를 누르면 pull→push 경로가 호출되고 push 는 로컬+원격 무손실 병합 결과다', async () => {
-    // 원격에만 있는 신발/런 id — 병합 후 push 와 onCloudMerged 에 양쪽이 모두 보존돼야 한다.
-    const remote: BackupPayload = {
-      shoes: [{id: 'R1', brand: 'Adidas', model: 'Boston'}],
-      runs: [{id: 'r-remote', km: 8}],
-      settings: {theme: 'dark'},
-    };
-    const port = mockPort(remote);
-    const onCloudMerged = jest.fn();
-    const root = render({cloudPort: port, backupData: LOCAL, onCloudMerged, cloudClock: () => 1_700_000_000_000});
+describe('ProfileScreen 자동 동기 (로그인/변경 시 pull→merge→push, 수동 버튼 없음)', () => {
+  // 자동 동기는 1초 디바운스 타이머 후 실행 — fake timer 로 경과시키고 promise 를 흘린다.
+  async function flushAutoSync() {
+    await act(async () => {
+      jest.advanceTimersByTime(1100);
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+  }
 
-    await press(byTestId(root, 'cloud-signin-google')); // signedIn 선행
-    await press(byTestId(root, 'cloud-sync'));
+  test('로그인하면 자동으로 pull→push(무손실 병합) 가 실행된다', async () => {
+    jest.useFakeTimers();
+    try {
+      // 원격에만 있는 신발/런 id — 병합 후 push 와 onCloudMerged 에 양쪽이 모두 보존돼야 한다.
+      const remote: BackupPayload = {
+        shoes: [{id: 'R1', brand: 'Adidas', model: 'Boston'}],
+        runs: [{id: 'r-remote', km: 8}],
+        settings: {theme: 'dark'},
+      };
+      const port = mockPort(remote);
+      const onCloudMerged = jest.fn();
+      const root = render({cloudPort: port, backupData: LOCAL, onCloudMerged, cloudClock: () => 1_700_000_000_000});
 
-    // pull 먼저, push 나중(merge 경로). 두 번 이상 push 되지 않는다.
-    expect(port.pull).toHaveBeenCalledTimes(1);
-    expect(port.push).toHaveBeenCalledTimes(1);
-    expect(port.pull.mock.invocationCallOrder[0]).toBeLessThan(port.push.mock.invocationCallOrder[0]);
+      await press(byTestId(root, 'cloud-signin-google')); // signedIn → 자동 동기 예약
+      await flushAutoSync();
 
-    // push 페이로드 = mergeCloudData(LOCAL, remote): 로컬·원격 id 모두 보존(데이터 파괴 0).
-    const pushed: BackupPayload = port.push.mock.calls[0][0];
-    const shoeIds = pushed.shoes.map((x: any) => x.id).sort();
-    const runIds = pushed.runs.map((x: any) => x.id).sort();
-    expect(shoeIds).toEqual(['L1', 'R1']);
-    expect(runIds).toEqual(['r-local', 'r-remote']);
-    // settings 도 양쪽 키 보존(unit=local, theme=remote)
-    expect(pushed.settings.unit).toBe('km');
-    expect(pushed.settings.theme).toBe('dark');
+      // pull 먼저, push 나중(merge 경로). 수동 버튼 없이 자동 1회.
+      expect(port.pull).toHaveBeenCalledTimes(1);
+      expect(port.push).toHaveBeenCalledTimes(1);
+      expect(port.pull.mock.invocationCallOrder[0]).toBeLessThan(port.push.mock.invocationCallOrder[0]);
 
-    // onCloudMerged 가 동일한 병합 결과로 호출돼 원격→로컬 반영 경로가 이어진다.
-    expect(onCloudMerged).toHaveBeenCalledTimes(1);
-    expect(onCloudMerged.mock.calls[0][0]).toEqual(pushed);
+      // push 페이로드 = mergeCloudData(LOCAL, remote): 로컬·원격 id 모두 보존(데이터 파괴 0).
+      const pushed: BackupPayload = port.push.mock.calls[0][0];
+      expect(pushed.shoes.map((x: any) => x.id).sort()).toEqual(['L1', 'R1']);
+      expect(pushed.runs.map((x: any) => x.id).sort()).toEqual(['r-local', 'r-remote']);
+      expect(pushed.settings.unit).toBe('km');
+      expect(pushed.settings.theme).toBe('dark');
 
-    // 마지막 동기 시각이 '아직 동기 안 함'에서 갱신된다.
-    const last = textOf(byTestId(root, 'cloud-last-sync'));
-    expect(last).not.toContain('아직 동기 안 함');
-    expect(last).toContain('동기됨');
+      // onCloudMerged 가 동일한 병합 결과로 호출돼 원격→로컬 반영 경로가 이어진다.
+      expect(onCloudMerged).toHaveBeenCalledTimes(1);
+      expect(onCloudMerged.mock.calls[0][0]).toEqual(pushed);
+    } finally {
+      jest.useRealTimers();
+    }
   });
 
   test('원격이 비어(null) 있어도 로컬을 유실 없이 push 한다', async () => {
-    const port = mockPort(null);
-    const onCloudMerged = jest.fn();
-    const root = render({cloudPort: port, backupData: LOCAL, onCloudMerged});
-    await press(byTestId(root, 'cloud-signin-google'));
-    await press(byTestId(root, 'cloud-sync'));
+    jest.useFakeTimers();
+    try {
+      const port = mockPort(null);
+      const root = render({cloudPort: port, backupData: LOCAL});
+      await press(byTestId(root, 'cloud-signin-google'));
+      await flushAutoSync();
 
-    const pushed: BackupPayload = port.push.mock.calls[0][0];
-    expect(pushed.shoes.map((x: any) => x.id)).toEqual(['L1']);
-    expect(pushed.runs.map((x: any) => x.id)).toEqual(['r-local']);
+      const pushed: BackupPayload = port.push.mock.calls[0][0];
+      expect(pushed.shoes.map((x: any) => x.id)).toEqual(['L1']);
+      expect(pushed.runs.map((x: any) => x.id)).toEqual(['r-local']);
+    } finally {
+      jest.useRealTimers();
+    }
   });
 });
 
@@ -173,7 +185,7 @@ describe('ProfileScreen 로그아웃', () => {
     const port = mockPort();
     const root = render({cloudPort: port, backupData: LOCAL});
     await press(byTestId(root, 'cloud-signin-google'));
-    expect(hasId(root, 'cloud-sync')).toBe(true); // signedIn 확인
+    expect(hasId(root, 'cloud-account')).toBe(true); // signedIn 확인
 
     const signOutBtn = root.find(
       (n: any) => n.props?.accessibilityLabel === '로그아웃' && typeof n.props?.onPress === 'function',
@@ -183,6 +195,6 @@ describe('ProfileScreen 로그아웃', () => {
     expect(port.signOut).toHaveBeenCalledTimes(1);
     // signedOut 반영: 로그인 버튼 재노출, 동기 행 사라짐.
     expect(hasId(root, 'cloud-signin-google')).toBe(true);
-    expect(hasId(root, 'cloud-sync')).toBe(false);
+    expect(hasId(root, 'cloud-account')).toBe(false);
   });
 });

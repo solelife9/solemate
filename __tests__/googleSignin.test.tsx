@@ -133,8 +133,8 @@ describe('ProfileScreen — Google로 계속 (실 리졸버 주입 포트)', () 
     const passedCredential = signInWithCredential.mock.calls[0][1];
     expect(passedCredential.token).toBe('mock-google-id-token');
     expect(passedCredential.providerId).toBe('google.com');
-    // 화면이 signedIn 으로: 동기 행 노출, 로그인 버튼 사라짐, 계정 행 노출.
-    expect(hasId(root, 'cloud-sync')).toBe(true);
+    // 화면이 signedIn 으로: 계정 행 노출, 로그인 버튼 사라짐.
+    expect(hasId(root, 'cloud-account')).toBe(true);
     expect(hasId(root, 'cloud-signin-google')).toBe(false);
     expect(textOf(byTestId(root, 'cloud-account')).length).toBeGreaterThan(0);
   });
@@ -151,7 +151,7 @@ describe('ProfileScreen — Google로 계속 (실 리졸버 주입 포트)', () 
 
     expect(signInWithCredential).not.toHaveBeenCalled();
     expect(hasId(root, 'cloud-signin-google')).toBe(true); // signedIn 아님
-    expect(hasId(root, 'cloud-sync')).toBe(false);
+    expect(hasId(root, 'cloud-account')).toBe(false);
     expect(textOf(byTestId(root, 'cloud-msg'))).toContain('Google Play 서비스');
   });
 });
