@@ -16,10 +16,14 @@
 import type { BackupPayload } from './backup';
 
 /**
- * 지원 로그인 방식. anonymous 는 자체 완결, google·apple 은 RNFB 밖에서 받은 외부
- * OAuth 자격증명이 필요하다(포트를 백엔드-순수하게 유지하려 앱 계층이 리졸버를 주입).
+ * 지원 로그인 방식.
+ *  - anonymous: 자체 완결.
+ *  - google·apple: RNFB 밖에서 받은 외부 OAuth 자격증명 필요(앱이 리졸버 주입).
+ *  - kakao·naver: Firebase 기본 제공이 아니므로, 네이티브 카카오/네이버 SDK 로그인 →
+ *    백엔드가 그 토큰을 검증해 발급한 'Firebase 커스텀 토큰'으로 signInWithCustomToken.
+ *    앱이 커스텀 토큰 리졸버를 주입한다(미주입 시 해당 provider 비활성).
  */
-export type CloudProvider = 'anonymous' | 'google' | 'apple';
+export type CloudProvider = 'anonymous' | 'google' | 'apple' | 'kakao' | 'naver';
 
 /**
  * 포트가 노출하는 최소 사용자 정보. firebase User 전체를 새어나가지 않게 좁힌다.

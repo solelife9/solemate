@@ -225,6 +225,12 @@ jest.mock('@react-native-firebase/auth', () => {
       state.current = {uid, email};
       return Promise.resolve({user: state.current});
     }),
+    // 카카오/네이버: 백엔드가 발급한 Firebase 커스텀 토큰으로 로그인. 목은 토큰 일부를
+    // uid 로 노출해 라운드트립을 단언 가능하게 한다.
+    signInWithCustomToken: jest.fn((_auth, token) => {
+      state.current = {uid: token ? `custom:${token}` : 'custom-test-uid'};
+      return Promise.resolve({user: state.current});
+    }),
     signOut: jest.fn(() => {
       state.current = null;
       return Promise.resolve();

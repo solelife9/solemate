@@ -102,4 +102,27 @@ describe('firebaseCloudPort (Firebase 클라우드 포트)', () => {
     const port = createFirebaseCloudPort();
     await expect(port.signIn('google')).rejects.toThrow(/google/i);
   });
+
+  test('kakao 로그인은 주입된 커스텀 토큰 리졸버로 signInWithCustomToken 한다', async () => {
+    const resolveKakaoToken = jest.fn(() => Promise.resolve('kakao-custom-token'));
+    const port = createFirebaseCloudPort({resolveKakaoToken});
+    const user = await port.signIn('kakao');
+    expect(resolveKakaoToken).toHaveBeenCalledTimes(1);
+    expect(user.uid).toBe('custom:kakao-custom-token');
+    expect(currentUid()).toBe('custom:kakao-custom-token');
+  });
+
+  test('naver 로그인도 커스텀 토큰 리졸버로 로그인한다', async () => {
+    const resolveNaverToken = jest.fn(() => Promise.resolve('naver-custom-token'));
+    const port = createFirebaseCloudPort({resolveNaverToken});
+    const user = await port.signIn('naver');
+    expect(resolveNaverToken).toHaveBeenCalledTimes(1);
+    expect(user.uid).toBe('custom:naver-custom-token');
+  });
+
+  test('리졸버 없이 kakao/naver 로그인은 명확한 에러로 거부된다', async () => {
+    const port = createFirebaseCloudPort();
+    await expect(port.signIn('kakao')).rejects.toThrow(/kakao/i);
+    await expect(port.signIn('naver')).rejects.toThrow(/naver/i);
+  });
 });

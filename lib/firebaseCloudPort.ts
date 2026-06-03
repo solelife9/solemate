@@ -12,6 +12,7 @@ import {
   getAuth,
   signInAnonymously,
   signInWithCredential,
+  signInWithCustomToken,
   signOut as firebaseSignOut,
 } from '@react-native-firebase/auth';
 import {
@@ -42,6 +43,14 @@ export interface FirebaseCloudPortOptions {
    * 에서 받은 OAuth 자격증명이 필요하다. 없으면 'apple' 은 비활성(명확한 에러).
    */
   resolveAppleCredential?: () => Promise<FirebaseAuthCredential>;
+  /**
+   * kakao 로그인: Firebase 기본 제공이 아니므로 OAuth credential 이 아니라 'Firebase
+   * 커스텀 토큰'으로 들어간다. 앱이 (네이티브 카카오 로그인 → 백엔드 토큰 검증 → 커스텀
+   * 토큰 발급)을 수행하는 리졸버를 주입한다. 없으면 'kakao' 는 비활성.
+   */
+  resolveKakaoToken?: () => Promise<string>;
+  /** naver 로그인: kakao 와 동일한 커스텀 토큰 방식. 없으면 'naver' 는 비활성. */
+  resolveNaverToken?: () => Promise<string>;
 }
 
 /**
@@ -95,6 +104,17 @@ export function createFirebaseCloudPort(
     async signIn(provider: CloudProvider): Promise<CloudUser> {
       if (provider === 'anonymous') {
         const credential = await signInAnonymously(getAuth());
+        return toCloudUser(credential.user);
+      }
+      // kakao·naver 는 Firebase 기본 제공이 아니라 백엔드가 발급한 커스텀 토큰으로 로그인.
+      if (provider === 'kakao' || provider === 'naver') {
+        const tokenResolver =
+          provider === 'kakao' ? options.resolveKakaoToken : options.resolveNaverToken;
+        if (!tokenResolver) {
+          throw new Error(`'${provider}' 로그인에는 커스텀 토큰 리졸버 주입이 필요합니다.`);
+        }
+        const customToken = await tokenResolver();
+        const credential = await signInWithCustomToken(getAuth(), customToken);
         return toCloudUser(credential.user);
       }
       // google·apple 은 외부 자격증명 리졸버를 통해 OAuth credential 을 받아 로그인한다.
