@@ -279,11 +279,23 @@ function Main(){
   }
 
   async function addShoe(name:string,maxKm:number,startKm:number,date:string){
+    // 계정(userId)이 아직 없으면 POST가 서버에서 500을 내므로, 명확히 안내하고 막는다.
+    if(!userId){
+      Alert.alert('잠시만요','계정 연결 중이에요. 잠시 후 다시 시도해 주세요.');
+      return;
+    }
     try{
       const r=await fetch(API+'/api/shoes',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:userId,name,max_km:maxKm,start_km:startKm,purchase_date:date})});
+      // 실패 원인을 삼키지 않고 드러낸다(상태코드 + 본문 일부) — 진단/사용자 안내 모두.
+      if(!r||!r.ok){
+        const body=await (r?r.text():Promise.resolve('')).catch(()=>'');
+        throw new Error(`서버 ${r?r.status:'응답없음'} ${String(body).slice(0,100)}`.trim());
+      }
       const newShoe=await r.json();
       setShoes(prev=>[newShoe,...prev]);
-    }catch{Alert.alert('오류','저장 실패');}
+    }catch(e:any){
+      Alert.alert('등록 실패',String(e?.message||e||'알 수 없는 오류')+'\n\n네트워크를 확인하고 다시 시도해 주세요.');
+    }
   }
 
   async function updateShoeName(id:string,name:string){
