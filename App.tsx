@@ -800,7 +800,7 @@ function Main(){
             activeIdx={homeActiveIdx} onSelect={selectHomeShoe}
             onStart={startFromIdx} onAddShoe={()=>setOverlay('add')} onTab={setTab}
             rotation={rotationPicks} onPickShoe={setSelectedShoeId}
-            onEditGoal={()=>{setProfileInitialOpen('goal');setTab(3);}}
+            onChangeGoal={changeGoal}
             onOpenShoe={(id)=>{setSelectedShoeId(id);setShoesDetailId(id);setTab(2);}}
           />
         )}

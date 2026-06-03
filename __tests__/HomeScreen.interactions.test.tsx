@@ -37,12 +37,27 @@ const SHOES: Shoe[] = [
 ];
 const GOAL: GoalInfo = {km: 30, pct: 40, streak: 3};
 
-describe('홈 주간목표 카드 인터랙션', () => {
-  test('주간목표 카드를 탭하면 onEditGoal이 호출된다', () => {
-    const onEditGoal = jest.fn();
-    const root = render(<HomeScreen shoes={SHOES} activeIdx={0} onSelect={jest.fn()} goal={GOAL} onEditGoal={onEditGoal} />).root;
+describe('홈 주간목표 인라인 편집(프로필로 이동하지 않음)', () => {
+  test('카드 탭 → 모달 열림 → ＋ 탭하면 onChangeGoal이 증가된 km으로 호출된다', () => {
+    const onChangeGoal = jest.fn();
+    const root = render(
+      <HomeScreen shoes={SHOES} activeIdx={0} onSelect={jest.fn()} goal={GOAL} unit="km" onChangeGoal={onChangeGoal} />,
+    ).root;
+    // 카드 탭 → 인라인 편집 모달 오픈
     act(() => { pressByLabel(root, '주간 목표 수정').props.onPress(); });
-    expect(onEditGoal).toHaveBeenCalledTimes(1);
+    // ＋ 탭 → 목표 km 한 스텝(5) 증가: 30 → 35
+    act(() => { pressByLabel(root, '목표 늘리기').props.onPress(); });
+    expect(onChangeGoal).toHaveBeenCalledWith(35);
+  });
+
+  test('－ 탭하면 목표 km이 한 스텝 감소한다(30 → 25)', () => {
+    const onChangeGoal = jest.fn();
+    const root = render(
+      <HomeScreen shoes={SHOES} activeIdx={0} onSelect={jest.fn()} goal={GOAL} unit="km" onChangeGoal={onChangeGoal} />,
+    ).root;
+    act(() => { pressByLabel(root, '주간 목표 수정').props.onPress(); });
+    act(() => { pressByLabel(root, '목표 줄이기').props.onPress(); });
+    expect(onChangeGoal).toHaveBeenCalledWith(25);
   });
 });
 

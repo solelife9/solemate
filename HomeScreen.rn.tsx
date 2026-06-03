@@ -7,17 +7,18 @@
 // ============================================================================
 import React, { useRef, useState } from 'react';
 import {
-  View, Text, ScrollView, Pressable, StyleSheet, Linking,
+  View, Text, ScrollView, Pressable, StyleSheet, Linking, Modal,
   NativeSyntheticEvent, NativeScrollEvent,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {
-  BG, CARD_DIM, CARD_HI, HERO_BG, ACCENT, DANGER, WARN, GOOD, T1, T2, T3,
+  BG, CARD, CARD_DIM, CARD_HI, HERO_BG, ACCENT, DANGER, WARN, GOOD, T1, T2, T3,
   FONT, DISPLAY, SPACE, RADIUS, withAlpha, Shoe, SHOES,
 } from './theme';
 import { Ring, TabBar, TierBadge, KeegoWordmark, Button, SectionTitle, Pill, conditionColor, InjuryBanner } from './primitives';
-import { Unit, displayNum } from './lib/units';
+import { Unit, displayNum, displayToKm } from './lib/units';
+import { GOAL_STEP_DISPLAY } from './lib/settings';
 import { assessShoeInjuryRisk } from './lib/injury';
 import { RotationPick } from './lib/rotation';
 import { recommendNextShoes, buildShopLinks, categoryLabelKo, AFFILIATE_DISCLOSURE } from './lib/affiliate';
@@ -287,7 +288,7 @@ function EmptyHome({ onAddShoe }: { onAddShoe?: () => void }) {
 export default function HomeScreen({
   shoes = SHOES, dateLabel = '', onStart, onAddShoe, onTab,
   activeIdx: activeIdxProp, onSelect, unit = 'km', goal, rotation, onPickShoe,
-  onEditGoal, onOpenShoe,
+  onChangeGoal, onOpenShoe,
 }: {
   shoes?: Shoe[];
   week?: WeekStats;
@@ -308,11 +309,19 @@ export default function HomeScreen({
   // 표시 단위(km|mi)와 주간 목표 진행(설정 화면에서 구동). 둘 다 표시 전용.
   unit?: Unit;
   goal?: GoalInfo;
-  // 홈 카드 인터랙션: 주간 목표 카드 탭 → 목표 수정, 히어로 신발 탭 → 그 신발 상세로 이동.
-  onEditGoal?: () => void;
+  // 홈 카드 인터랙션: 주간 목표 카드 탭 → 홈에서 바로 목표 수정(인라인 모달), 히어로
+  // 신발 탭 → 그 신발 상세로 이동. onChangeGoal(km)으로 목표를 영속 갱신한다.
+  onChangeGoal?: (km: number) => void;
   onOpenShoe?: (shoeId: string) => void;
 }) {
   const [internalIdx, setInternalIdx] = useState(0);
+  // 주간 목표 인라인 편집 모달(프로필로 이동하지 않고 홈에서 바로 수정).
+  const [goalEditOpen, setGoalEditOpen] = useState(false);
+  const stepGoal = (dir: 1 | -1) => {
+    if (!goal) return;
+    const next = displayNum(goal.km, unit, 0) + dir * GOAL_STEP_DISPLAY;
+    onChangeGoal?.(displayToKm(next, unit));
+  };
   const controlled = activeIdxProp != null && typeof onSelect === 'function';
   const rawIdx = controlled ? (activeIdxProp as number) : internalIdx;
   const idx = Math.min(Math.max(0, rawIdx), Math.max(0, shoes.length - 1));
@@ -331,11 +340,11 @@ export default function HomeScreen({
       </View>
       {goal && (
         <Pressable
-          onPress={onEditGoal}
+          onPress={() => onChangeGoal && setGoalEditOpen(true)}
           accessibilityRole="button"
           accessibilityLabel="주간 목표 수정"
           style={({ pressed }) => [{ paddingHorizontal: SPACE.xl, marginTop: SPACE.sm }, pressed && s.pressed]}>
-          <WeeklyGoal goal={goal} unit={unit} editable={!!onEditGoal} />
+          <WeeklyGoal goal={goal} unit={unit} editable={!!onChangeGoal} />
         </Pressable>
       )}
       {active ? (
@@ -370,6 +379,36 @@ export default function HomeScreen({
       )}
       </ScrollView>
       <TabBar active={0} onTab={(i) => onTab?.(i)} />
+
+      {/* 주간 목표 인라인 편집 — 홈에서 바로 ＋/－로 조정(프로필로 이동하지 않음). */}
+      {goal && (
+        <Modal visible={goalEditOpen} transparent animationType="fade" onRequestClose={() => setGoalEditOpen(false)}>
+          <Pressable style={s.goalBackdrop} onPress={() => setGoalEditOpen(false)} accessibilityRole="button" accessibilityLabel="닫기">
+            <Pressable style={s.goalSheet} onPress={() => {}}>
+              <View style={s.goalSheetHead}>
+                <Ionicons name="flag" size={15} color={ACCENT} />
+                <Text style={s.goalSheetTitle}>주간 목표</Text>
+              </View>
+              <View style={s.goalStepper}>
+                <Pressable onPress={() => stepGoal(-1)} accessibilityRole="button" accessibilityLabel="목표 줄이기" hitSlop={6} style={({ pressed }) => [s.goalStepBtn, pressed && { backgroundColor: CARD_DIM }]}>
+                  <Ionicons name="remove" size={22} color={T1} />
+                </Pressable>
+                <View style={s.goalStepVal}>
+                  <Text style={s.goalStepNum}>{displayNum(goal.km, unit, 0)}</Text>
+                  <Text style={s.goalStepUnit}>{unit}/주</Text>
+                </View>
+                <Pressable onPress={() => stepGoal(1)} accessibilityRole="button" accessibilityLabel="목표 늘리기" hitSlop={6} style={({ pressed }) => [s.goalStepBtn, pressed && { backgroundColor: CARD_DIM }]}>
+                  <Ionicons name="add" size={22} color={T1} />
+                </Pressable>
+              </View>
+              <Text style={s.goalSheetHint}>이번 주 <Text style={{ color: ACCENT }}>{Math.max(0, goal.pct)}%</Text> 달성</Text>
+              <Pressable onPress={() => setGoalEditOpen(false)} accessibilityRole="button" accessibilityLabel="완료" style={({ pressed }) => [s.goalDone, pressed && s.pressed]}>
+                <Text style={s.goalDoneText}>완료</Text>
+              </Pressable>
+            </Pressable>
+          </Pressable>
+        </Modal>
+      )}
     </View>
   );
 }
@@ -441,6 +480,20 @@ const s = StyleSheet.create({
   shopBtn: { borderRadius: RADIUS.pill, borderWidth: 1, borderColor: withAlpha(ACCENT, 0.4), backgroundColor: withAlpha(ACCENT, 0.1), paddingHorizontal: 11, paddingVertical: 6 },
   shopBtnTxt: { color: ACCENT, fontFamily: FONT, fontSize: 11.5, fontWeight: '600' },
   nextDisclosure: { color: T3, fontFamily: FONT, fontSize: 10.5, lineHeight: 15, marginTop: SPACE.md, opacity: 0.85 },
+
+  // 주간 목표 인라인 편집 모달(홈에서 바로 수정)
+  goalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', alignItems: 'center', justifyContent: 'center', padding: 32 },
+  goalSheet: { width: '100%', maxWidth: 360, backgroundColor: CARD, borderRadius: RADIUS.xl, padding: 24, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.1) },
+  goalSheetHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 20 },
+  goalSheetTitle: { color: T1, fontFamily: FONT, fontSize: 16, fontWeight: '600' },
+  goalStepper: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 16 },
+  goalStepBtn: { width: 52, height: 52, borderRadius: 16, backgroundColor: CARD_HI, alignItems: 'center', justifyContent: 'center' },
+  goalStepVal: { flex: 1, alignItems: 'center' },
+  goalStepNum: { color: T1, fontFamily: DISPLAY, fontSize: 40, letterSpacing: 0.3 },
+  goalStepUnit: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '600', marginTop: 2 },
+  goalSheetHint: { color: T3, fontFamily: FONT, fontSize: 12.5, textAlign: 'center', marginTop: 16 },
+  goalDone: { marginTop: 20, height: 50, borderRadius: 16, backgroundColor: ACCENT, alignItems: 'center', justifyContent: 'center' },
+  goalDoneText: { color: T1, fontFamily: FONT, fontSize: 15, fontWeight: '600' },
 
   pcard: { width: CARD_W, height: CARD_W, borderRadius: RADIUS.lg, padding: SPACE.lg, justifyContent: 'space-between' },
   pcardActive: { backgroundColor: HERO_BG, borderWidth: 1, borderColor: ACCENT },
