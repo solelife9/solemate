@@ -312,7 +312,7 @@ function ShoeCard({ shoe, featured, onPress, onPlay, unit, pace }: { shoe: Shoe;
             {retired ? <Pill tone="dim" label="보관됨" />
               : featured && <Pill tone="accent" label="사용 중" />}
           </View>
-          <Text style={s.shoeModel} numberOfLines={1}>{shoe.model}</Text>
+          <Text style={s.shoeModel} numberOfLines={2}>{shoe.model}</Text>
           <Text style={s.shoeMeta}>{usedDisp} / {maxDisp} {unit} · <Text style={{ color: condColor(shoe.condition) }}>{shoe.condition}</Text></Text>
           {/* 평균 페이스 — 신발끼리 한눈에 비교(기록 있을 때만). */}
           {pace && pace !== '--' && (
@@ -443,7 +443,7 @@ const s = StyleSheet.create({
   shoeRingPct: { color: T1, fontFamily: DISPLAY, fontSize: 18 },
   shoeRingPctU: { color: T3, fontFamily: FONT, fontSize: 9 },
   shoeBrand: { color: T3, fontFamily: DISPLAY, fontSize: 11, fontWeight: '500', letterSpacing: 1.3 },
-  shoeModel: { color: T1, fontFamily: DISPLAY, fontSize: 20, fontWeight: '500', letterSpacing: -0.1, marginTop: 3 },
+  shoeModel: { color: T1, fontFamily: DISPLAY, fontSize: 18, fontWeight: '500', letterSpacing: -0.2, lineHeight: 22, marginTop: 3 },
   shoeMeta: { color: T3, fontFamily: FONT, fontSize: 12.5, fontWeight: '600', marginTop: 6 },
   shoePaceRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 5 },
   shoePace: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '600' },
