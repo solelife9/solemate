@@ -15,7 +15,9 @@ import { clampMaxKm, KEEP_GOING_REPLACE, SHOE_MAX_STEP_KM, SHOE_REPLACE_PCT } fr
 import { assessShoeInjuryRisk } from './lib/injury';
 
 // lastWorn: 이 신발의 마지막 착용일(런에서 파생, 한국어 표기). 미착용이면 생략.
-export type ShoeTotals = { totalRuns: number; totalTime: string; lastWorn?: string };
+// avgPace: 이 신발로 달린 런들의 평균 페이스(예 "5'30\"" / 기록 없으면 '--'). 신발끼리
+// 페이스를 비교할 수 있게 상세·목록 카드에 함께 노출한다.
+export type ShoeTotals = { totalRuns: number; totalTime: string; avgPace: string; lastWorn?: string };
 
 // Proportional condition → color (shoeHealth tiers: 양호 / 주의 / 교체).
 const condColor = (c: string) => (c === '교체' ? DANGER : c === '주의' ? WARN : GOOD);
@@ -242,14 +244,15 @@ function ShoeDetail({
           </View>
         )}
 
-        {/* totals */}
-        <View style={[s.card, s.statRow]}>
+        {/* totals — 2x2 그리드(평균 페이스 포함): 신발별 누적·페이스를 비교할 수 있게 한다 */}
+        <View style={[s.card, s.statGrid]}>
           {[
             { v: String(usedDisp), u: unit, l: '총 누적 거리' },
             { v: String(totals.totalRuns), u: '회', l: '총 런 횟수' },
             { v: totals.totalTime, u: '', l: '총 러닝 시간' },
+            { v: totals.avgPace, u: totals.avgPace !== '--' ? '/km' : '', l: '평균 페이스' },
           ].map((x, i) => (
-            <View key={i} style={[s.statCell, i > 0 && s.statDivider]}>
+            <View key={i} style={s.statGridCell}>
               <Text style={s.statValue}>{x.v}<Text style={s.statUnit}>{x.u}</Text></Text>
               <Text style={s.statLabel}>{x.l}</Text>
             </View>
@@ -288,7 +291,7 @@ function ShoeDetail({
 }
 
 // ── locker ─────────────────────────────────────────────────────────────────
-function ShoeCard({ shoe, featured, onPress, onPlay, unit }: { shoe: Shoe; featured: boolean; onPress: () => void; onPlay?: () => void; unit: Unit }) {
+function ShoeCard({ shoe, featured, onPress, onPlay, unit, pace }: { shoe: Shoe; featured: boolean; onPress: () => void; onPlay?: () => void; unit: Unit; pace?: string }) {
   const remainKm = Math.max(0, shoe.max - shoe.used);
   const pct = shoe.max > 0 ? remainKm / shoe.max : 0;
   const ring = ringColor(shoe.condition);
@@ -311,6 +314,13 @@ function ShoeCard({ shoe, featured, onPress, onPlay, unit }: { shoe: Shoe; featu
           </View>
           <Text style={s.shoeModel} numberOfLines={1}>{shoe.model}</Text>
           <Text style={s.shoeMeta}>{usedDisp} / {maxDisp} {unit} · <Text style={{ color: condColor(shoe.condition) }}>{shoe.condition}</Text></Text>
+          {/* 평균 페이스 — 신발끼리 한눈에 비교(기록 있을 때만). */}
+          {pace && pace !== '--' && (
+            <View style={s.shoePaceRow}>
+              <Ionicons name="speedometer-outline" size={12} color={T3} />
+              <Text style={s.shoePace}>평균 <Text style={s.shoePaceVal}>{pace}</Text> /km</Text>
+            </View>
+          )}
         </View>
         {/* play 어포던스: 카드에서 바로 이 신발로 런 시작(shoe-first). 카드 자체 탭은
             상세로 가므로, 시작은 별도 버튼으로 분리한다. 보관된 신발엔 노출하지 않는다. */}
@@ -355,7 +365,7 @@ export default function ShoesScreen({
         shoe={dShoe}
         idx={detail}
         runs={runs}
-        totals={totals[detail] || { totalRuns: 0, totalTime: '--' }}
+        totals={totals[detail] || { totalRuns: 0, totalTime: '--', avgPace: '--' }}
         unit={unit}
         onBack={() => setDetail(null)}
         onRename={onRename}
@@ -380,6 +390,7 @@ export default function ShoesScreen({
             shoe={shoe}
             featured={i === activeIdx}
             unit={unit}
+            pace={totals[i]?.avgPace}
             onPress={() => setDetail(i)}
             onPlay={shoe.id && onStartRun ? () => onStartRun(shoe.id!) : undefined}
           />
@@ -421,6 +432,9 @@ const s = StyleSheet.create({
   shoeBrand: { color: T3, fontFamily: DISPLAY, fontSize: 11, fontWeight: '500', letterSpacing: 1.3 },
   shoeModel: { color: T1, fontFamily: DISPLAY, fontSize: 20, fontWeight: '500', letterSpacing: -0.1, marginTop: 3 },
   shoeMeta: { color: T3, fontFamily: FONT, fontSize: 12.5, fontWeight: '600', marginTop: 6 },
+  shoePaceRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 5 },
+  shoePace: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '600' },
+  shoePaceVal: { color: ACCENT, fontFamily: DISPLAY, fontSize: 12.5 },
   cardPlay: { width: 38, height: 38, borderRadius: 999, backgroundColor: ACCENT, alignItems: 'center', justifyContent: 'center' },
 
   addCard: { borderRadius: 22, borderWidth: 1.5, borderStyle: 'dashed', borderColor: withAlpha(T1, 0.12), padding: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
@@ -453,6 +467,9 @@ const s = StyleSheet.create({
   statRow: { flexDirection: 'row', paddingVertical: 20, paddingHorizontal: 14 },
   statCell: { flex: 1, alignItems: 'center' },
   statDivider: { borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: SEP },
+  // 2x2 통계 그리드(총거리/총횟수/총시간/평균페이스). 한 카드 안에 4칸을 넉넉히.
+  statGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingVertical: 8 },
+  statGridCell: { width: '50%', alignItems: 'center', paddingVertical: 14 },
   statValue: { color: T1, fontFamily: DISPLAY, fontSize: 22, letterSpacing: 0.3 },
   statUnit: { color: T3, fontFamily: FONT, fontSize: 12 },
   statLabel: { color: T3, fontFamily: FONT, fontSize: 11, marginTop: 4 },

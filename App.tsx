@@ -652,7 +652,8 @@ function Main(){
     // 반영된 값. 없으면 로컬 런 로그 합산으로 폴백한다(audit#9/#10).
     const serverSec=Number(s.run_time);
     const totalTime=Number.isFinite(serverSec)&&serverSec>0?durationLabel(serverSec):totalTimeLabel(list);
-    shoeTotals[i]={totalRuns:list.length,totalTime,lastWorn:worn?fmtKDate(worn).date:undefined};
+    // 신발별 평균 페이스(기록 있는 런만, lib/stats). 신발끼리 페이스 비교용으로 상세·목록에 노출.
+    shoeTotals[i]={totalRuns:list.length,totalTime,avgPace:avgPaceLabel(list),lastWorn:worn?fmtKDate(worn).date:undefined};
   });
 
   // ── profile ─────────────────────────────────────────────────
