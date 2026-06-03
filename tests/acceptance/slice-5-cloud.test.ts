@@ -30,7 +30,7 @@ const payload = (over: Partial<BackupPayload> = {}): BackupPayload => ({
 });
 
 // ── 인증 상태머신 ────────────────────────────────────────────────────────────
-describe.skip('@slice-5 인증 상태머신', () => {
+describe('@slice-5 인증 상태머신', () => {
   test('정상 로그인 흐름: signedOut→signingIn→signedIn', () => {
     expect(nextAuthState('signedOut', 'signInStart')).toBe('signingIn');
     expect(nextAuthState('signingIn', 'signInSuccess')).toBe('signedIn');
@@ -47,7 +47,7 @@ describe.skip('@slice-5 인증 상태머신', () => {
 });
 
 // ── 클라우드 병합: 데이터 파괴 금지(iron law) ────────────────────────────────
-describe.skip('@slice-5 클라우드 병합 무손실', () => {
+describe('@slice-5 클라우드 병합 무손실', () => {
   test('원격이 null 이면 로컬을 그대로 보존', () => {
     const local = payload({ shoes: [shoe('a')], runs: [run('r1')] });
     expect(mergeCloudData(local, null)).toEqual(local);
@@ -79,7 +79,7 @@ describe.skip('@slice-5 클라우드 병합 무손실', () => {
 });
 
 // ── 기기→계정 마이그레이션: 무손실 ───────────────────────────────────────────
-describe.skip('@slice-5 기기→계정 마이그레이션', () => {
+describe('@slice-5 기기→계정 마이그레이션', () => {
   test('최초 로그인: 기존 계정 데이터가 없으면 기기 데이터를 그대로 이관', () => {
     const local = payload({ shoes: [shoe('a')], runs: [run('r1')] });
     expect(migrateDeviceToAccount(local, null)).toEqual(local);
