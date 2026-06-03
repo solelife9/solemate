@@ -204,13 +204,25 @@ jest.mock('@react-native-firebase/auth', () => {
   return {
     __esModule: true,
     getAuth: jest.fn(() => authInstance),
+    // GoogleAuthProvider.credential(idToken) — google idToken 을 firebase OAuth
+    // 자격증명으로 감싼다. signInWithCredential 목이 uid 를 읽으므로 토큰 일부를 uid
+    // 로도 노출해 라운드트립을 단언 가능하게 한다(실제 SDK 는 uid 를 노출하지 않음).
+    GoogleAuthProvider: {
+      credential: jest.fn((idToken, accessToken = null) => ({
+        providerId: 'google.com',
+        token: idToken,
+        secret: accessToken,
+        uid: idToken ? `google:${idToken}` : undefined,
+      })),
+    },
     signInAnonymously: jest.fn(() => {
       state.current = {uid: 'anon-test-uid'};
       return Promise.resolve({user: state.current});
     }),
     signInWithCredential: jest.fn((_auth, credential) => {
       const uid = (credential && credential.uid) || 'credential-test-uid';
-      state.current = {uid};
+      const email = (credential && credential.email) || null;
+      state.current = {uid, email};
       return Promise.resolve({user: state.current});
     }),
     signOut: jest.fn(() => {
@@ -254,6 +266,38 @@ jest.mock('@react-native-firebase/firestore', () => {
       store.clear();
     },
   };
+});
+
+// ── @react-native-google-signin/google-signin ───────────────────────────────
+// Native Google account login. The default happy path resolves a signed-in user
+// carrying an idToken (the tagged-union shape v13+ returns: {type:'success',data}).
+// Tests override per-case: hasPlayServices.mockRejectedValueOnce / signIn to a
+// {type:'cancelled'} response / an idToken-less user to exercise the honest-error
+// branches. statusCodes mirrors the real error-code constants so the resolver's
+// code-based mapping (PLAY_SERVICES_NOT_AVAILABLE / SIGN_IN_CANCELLED) is testable.
+jest.mock('@react-native-google-signin/google-signin', () => {
+  const statusCodes = {
+    SIGN_IN_CANCELLED: 'SIGN_IN_CANCELLED',
+    IN_PROGRESS: 'IN_PROGRESS',
+    PLAY_SERVICES_NOT_AVAILABLE: 'PLAY_SERVICES_NOT_AVAILABLE',
+    SIGN_IN_REQUIRED: 'SIGN_IN_REQUIRED',
+  };
+  const GoogleSignin = {
+    configure: jest.fn(),
+    hasPlayServices: jest.fn(() => Promise.resolve(true)),
+    signIn: jest.fn(() =>
+      Promise.resolve({
+        type: 'success',
+        data: {
+          idToken: 'mock-google-id-token',
+          user: {id: 'g-1', email: 'runner@keego.app', name: 'Keego Runner'},
+        },
+      }),
+    ),
+    signOut: jest.fn(() => Promise.resolve()),
+    revokeAccess: jest.fn(() => Promise.resolve()),
+  };
+  return {__esModule: true, GoogleSignin, statusCodes, GoogleSigninButton: () => null};
 });
 
 // ── global.fetch ─────────────────────────────────────────────────────────────
