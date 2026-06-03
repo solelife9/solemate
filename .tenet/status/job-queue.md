@@ -1,9 +1,275 @@
 # Job Queue
 
-Updated: 2026-05-31T15:02:51.975Z
+Updated: 2026-06-03T05:47:03.726Z
 
-- [!] eval-mptta2gb — 6ms !! no agent adapter available
+- [x] eval-mptta2gb — 37s
 - [x] eval-mptu16xl — 27s
 - [x] eval-mptu417u — 26s
 - [x] eval-mptuqw82 — 18s
 - [x] eval-mptwryo5 — 31s
+- [x] 순수 엔진 로직 lib/ 추출 (slice-1-extract-libs) — 6m 40s
+- [x] jest 네이티브 모킹 셋업 (slice-1-jest-mocks) — 48s
+- [x] theme 토큰(spacing/radius/type) 추가 (slice-1-theme-tokens) — 1m 57s
+- [x] GPS fix 필터(정확도/워밍업/속도/하한) (slice-1-fix-filter) — 9m 54s
+- [x] 자동 일시정지 버그 수정·배선 (slice-1-auto-pause) — 9m 17s
+- [x] 케이던스 알고리즘 개선 (slice-1-cadence) — 7m 50s
+- [x] shoeHealth 단일화 + retire(보관) (slice-1-shoe-health) — 9m 49s
+- [x] 진행중/완주 런 손실 방지 (slice-1-run-persistence) — 5m 44s
+- [x] 백그라운드 트래킹(포그라운드 서비스) (slice-1-background-track) — 6m 31s
+- [x] 권한·GPS 死구간 graceful (slice-1-permissions) — 38m 20s !! cancelled by user
+- [-] 통합검증: Slice 1 엔진 (slice-1-e2e) !! cancelled by user
+- [x] code_critic for 3ad0ff30 — 16m 15s
+- [x] test_critic for 3ad0ff30 — 2m 6s
+- [x] playwright_eval for 3ad0ff30 — 2m 49s
+- [x] code_critic for e966567c — 3m 23s
+- [x] test_critic for e966567c — 1m 32s
+- [x] playwright_eval for e966567c — 1m 10s
+- [x] code_critic for e966567c — 18m 58s
+- [x] test_critic for e966567c — 1m 16s
+- [x] playwright_eval for e966567c — 3m 2s
+- [x] code_critic for e966567c — 1m 2s
+- [x] test_critic for e966567c — 1m 25s
+- [x] playwright_eval for e966567c — 56s
+- [x] code_critic for 8ae5ae21 — 1m 40s
+- [x] test_critic for 8ae5ae21 — 45s
+- [x] playwright_eval for 8ae5ae21 — 1m 58s
+- [x] code_critic for f44f126c — 3m 22s
+- [x] test_critic for f44f126c — 2m 6s
+- [x] playwright_eval for f44f126c — 2m 10s
+- [x] code_critic for f44f126c — 3m 26s
+- [x] test_critic for f44f126c — 2m 24s
+- [x] playwright_eval for f44f126c — 2m 15s
+- [x] code_critic for 23a954af — 3m 20s
+- [x] test_critic for 23a954af — 2m 28s
+- [x] playwright_eval for 23a954af — 3m 2s
+- [x] code_critic for 23a954af — 2m 1s
+- [x] test_critic for 23a954af — 1m 36s
+- [x] playwright_eval for 23a954af — 2m 45s
+- [x] code_critic for 64b5a981 — 2m 11s
+- [x] test_critic for 64b5a981 — 5m 52s
+- [x] playwright_eval for 64b5a981 — 2m 34s
+- [x] code_critic for 64b5a981 — 3m 45s
+- [x] test_critic for 64b5a981 — 2m 8s
+- [x] playwright_eval for 64b5a981 — 3m 52s
+- [x] code_critic for 47ab7fea — 14m 20s
+- [x] test_critic for 47ab7fea — 1m 50s
+- [x] playwright_eval for 47ab7fea — 1m 38s
+- [x] code_critic for 47ab7fea — 1m 47s
+- [x] test_critic for 47ab7fea — 1m 41s
+- [x] playwright_eval for 47ab7fea — 2m 49s
+- [x] code_critic for 278cf038 — 5m 26s
+- [x] test_critic for 278cf038 — 6m 28s
+- [x] playwright_eval for 278cf038 — 1m 49s
+- [x] code_critic for 278cf038 — 25m 23s !! cancelled by user
+- [x] test_critic for 278cf038 — 2m 15s
+- [x] playwright_eval for 278cf038 — 3m 27s
+- [x] code_critic for 278cf038 — 5m 23s
+- [x] test_critic for 278cf038 — 5m 57s
+- [x] playwright_eval for 278cf038 — 18m 12s !! cancelled by user
+- [x] code_critic for 278cf038 — 7m 1s
+- [x] test_critic for 278cf038 — 1m 19s
+- [x] playwright_eval for 278cf038 — 3m 7s
+- [x] code_critic for d50d5699 — 2m 8s
+- [x] test_critic for d50d5699 — 2m 23s
+- [x] playwright_eval for d50d5699 — 3m 45s
+- [x] code_critic for d50d5699 — 3m 2s
+- [x] test_critic for d50d5699 — 1m 50s
+- [x] playwright_eval for d50d5699 — 3m 32s
+- [x] 권한·GPS 死구간 graceful (재등록) (slice-1-permissions-r2) — 10m 59s
+- [-] 통합검증: Slice 1 엔진 (재등록) (slice-1-e2e-r2) — 118m 15s !! cancelled by user
+- [x] code_critic for 65213c19 — 3m 4s
+- [x] test_critic for 65213c19 — 2m 4s
+- [x] playwright_eval for 65213c19 — 2m 53s
+- [-] blocking finding follow-up for 통합검증: Slice 1 엔진 (재등록) — 23m 55s !! cancelled by user
+- [x] 통합검증: Slice 1 엔진 (lint 수정 후 재확인) (slice-1-e2e-r3) — 1m 24s
+- [x] 신발 모델 DB + 권장수명 추천 (slice-2-shoe-db) — 24m 52s
+- [x] 단위/목표/스트릭/PR 순수함수 (slice-2-units-goals) — 2m 21s
+- [x] 백엔드 타입 + ErrorBoundary (slice-2-types-errboundary) — 5m 33s
+- [-] 백그라운드 트래킹 = expo-location 교체 (slice-2-expo-location) — 25m 16s !! cancelled by user
+- [x] AddShoe 모델DB 자동완성 + 사진업로드 (slice-2-addshoe) — 6m 48s
+- [x] activeIdx 수정 + 오늘이신발 추천 + 타임라인/cost-per-km (slice-2-shoe-intel) — 8m 23s
+- [x] 신발 상세에서 바로 달리기 CTA (slice-2-shoe-run-cta) — 4m 54s
+- [x] ProfileScreen 설정 4행 실동작 (slice-2-profile-settings) — 7m 20s
+- [x] 목표 달성률 + 스트릭 UI (slice-2-goals-streak-ui) — 8m 5s
+- [x] 신발 교체 알림 배지 + 임계값 (slice-2-replace-badge) — 10m 47s
+- [x] 코스 지도(svg 폴리라인) (slice-2-course-map) — 4m 22s
+- [x] 기록 내보내기(Share 텍스트) (slice-2-export) — 2m 11s
+- [x] 런 편집/삭제 + 수동입력 + PR (slice-2-run-edit-manual-pr) — 12m 2s
+- [x] 로딩/에러 상태 + 온보딩 + 서버 truth (slice-2-states-onboard) — 14m 58s
+- [-] 통합검증: Slice 2 (slice-2-e2e) !! cancelled by user
+- [x] code_critic for 3512c94d — 3m 18s
+- [x] test_critic for 3512c94d — 2m 4s
+- [x] playwright_eval for 3512c94d — 2m 33s
+- [x] code_critic for 3512c94d — 8m 7s
+- [x] test_critic for 3512c94d — 3m 51s
+- [x] playwright_eval for 3512c94d — 2m 18s
+- [x] code_critic for 2f61f432 — 2m 33s
+- [x] test_critic for 2f61f432 — 1m 2s
+- [-] playwright_eval for 2f61f432 — 10m 24s !! cancelled by user
+- [x] code_critic for 2f61f432 — 1m 47s
+- [x] test_critic for 2f61f432 — 1m 3s
+- [x] playwright_eval for 2f61f432 — 1m 59s
+- [x] code_critic for 397c3079 — 2m 30s
+- [x] test_critic for 397c3079 — 1m 38s
+- [x] playwright_eval for 397c3079 — 6m 47s
+- [x] code_critic for 79e53516 — 2m 17s
+- [x] test_critic for 79e53516 — 1m 31s
+- [x] playwright_eval for 79e53516 — 1m 52s
+- [x] code_critic for 3bd4093a — 2m 12s
+- [x] test_critic for 3bd4093a — 1m 21s
+- [x] playwright_eval for 3bd4093a — 2m 33s
+- [x] code_critic for 91c4031b — 3m 28s
+- [x] test_critic for 91c4031b — 1m 59s
+- [x] playwright_eval for 91c4031b — 2m 42s
+- [x] code_critic for 91c4031b — 2m 30s
+- [x] test_critic for 91c4031b — 1m 13s
+- [x] playwright_eval for 91c4031b — 1m 40s
+- [x] code_critic for 27576310 — 3m 4s
+- [x] test_critic for 27576310 — 1m 24s
+- [x] playwright_eval for 27576310 — 1m 51s
+- [x] code_critic for 27576310 — 2m 52s
+- [x] test_critic for 27576310 — 1m 30s
+- [x] playwright_eval for 27576310 — 2m 34s
+- [x] code_critic for c3945152 — 3m 37s
+- [x] test_critic for c3945152 — 2m 21s
+- [x] playwright_eval for c3945152 — 2m 7s
+- [x] code_critic for 289dd843 — 2m 11s
+- [x] test_critic for 289dd843 — 1m 10s
+- [x] playwright_eval for 289dd843 — 1m 48s
+- [x] code_critic for ed6d9e56 — 1m 33s
+- [x] test_critic for ed6d9e56 — 1m 22s
+- [x] playwright_eval for ed6d9e56 — 1m 51s
+- [x] code_critic for ed6d9e56 — 1m 12s
+- [x] test_critic for ed6d9e56 — 1m 19s
+- [x] playwright_eval for ed6d9e56 — 1m 57s
+- [x] code_critic for adaefcb6 — 4m 29s
+- [x] test_critic for adaefcb6 — 1m 28s
+- [x] playwright_eval for adaefcb6 — 1m 50s
+- [x] expo-location 마무리(App.tsx 연결+권한복원+테스트) — 3m 39s
+- [x] code_critic for 2fed6fdf — 6m 36s
+- [x] test_critic for 2fed6fdf — 2m 41s
+- [x] playwright_eval for 2fed6fdf — 3m 2s
+- [x] code_critic for 2fed6fdf — 1m 33s
+- [x] test_critic for 2fed6fdf — 1m 15s
+- [x] playwright_eval for 2fed6fdf — 1m 56s
+- [x] code_critic for 8665635b — 3m 50s
+- [x] test_critic for 8665635b — 1m 47s
+- [x] playwright_eval for 8665635b — 2m 22s
+- [x] 통합검증: Slice 2 (slice-2-e2e 수용스윗) — 2m 9s
+- [x] theme flip(Pretendard 통일) + primitives 확장 (slice-3-theme-primitives) — 5m 51s
+- [x] HomeScreen 토큰화 + shoe-first 시각 주인공 (slice-3-home) — 3m 28s
+- [x] Shoes/AddShoe 토큰화 + 배지/내구도 마감 (slice-3-shoes-addshoe) — 2m 56s
+- [x] RunScreen 글랜서블 위계 + 심박 UI 숨김 (slice-3-run) — 4m 49s
+- [x] History/Profile 토큰화 + 코스맵/목표/스트릭 마감 (slice-3-history-profile) — 9m 56s
+- [x] 접근성/폴리시 횡단 마감 + 死deps 정리 (slice-3-polish-a11y) — 13m 9s
+- [x] 통합검증: Slice 3 (디자인 수용 sweep) (slice-3-e2e) — 1m 12s
+- [x] code_critic for 2bc14bdc — 3m 51s
+- [x] test_critic for 2bc14bdc — 2m 54s
+- [x] playwright_eval for 2bc14bdc — 3m 33s
+- [x] code_critic for 2bc14bdc — 1m 56s
+- [x] test_critic for 2bc14bdc — 1m 23s
+- [x] playwright_eval for 2bc14bdc — 1m 52s
+- [x] code_critic for f8615cd5 — 2m 30s
+- [x] test_critic for f8615cd5 — 2m 16s
+- [x] playwright_eval for f8615cd5 — 1m 41s
+- [x] code_critic for f8615cd5 — 2m 25s
+- [x] test_critic for f8615cd5 — 1m 26s
+- [x] playwright_eval for f8615cd5 — 1m 43s
+- [x] code_critic for 95b43db5 — 2m 49s
+- [x] test_critic for 95b43db5 — 1m 25s
+- [x] playwright_eval for 95b43db5 — 2m 5s
+- [x] code_critic for 95b43db5 — 2m 28s
+- [x] test_critic for 95b43db5 — 1m 34s
+- [x] playwright_eval for 95b43db5 — 1m 56s
+- [x] code_critic for aa48a8f1 — 3m 2s
+- [x] test_critic for aa48a8f1 — 2m 37s
+- [x] playwright_eval for aa48a8f1 — 1m 55s
+- [x] code_critic for aa48a8f1 — 2m 28s
+- [x] test_critic for aa48a8f1 — 1m 35s
+- [x] playwright_eval for aa48a8f1 — 1m 51s
+- [x] code_critic for 8cb13eae — 3m 10s
+- [x] test_critic for 8cb13eae — 2m 26s
+- [x] playwright_eval for 8cb13eae — 1m 30s
+- [x] code_critic for 7127ed04 — 4m 20s
+- [x] test_critic for 7127ed04 — 1m 51s
+- [x] playwright_eval for 7127ed04 — 1m 40s
+- [x] code_critic for 7127ed04 — 2m 7s
+- [x] test_critic for 7127ed04 — 1m 46s
+- [x] playwright_eval for 7127ed04 — 2m 10s
+- [x] code_critic for 24dcada3 — 3m 6s
+- [x] test_critic for 24dcada3 — 2m 28s
+- [x] playwright_eval for 24dcada3 — 2m 8s
+- [x] blocking finding follow-up for 통합검증: Slice 3 (디자인 수용 sweep) — 2m 25s
+- [x] code_critic for 0e173f3b — 1m 40s
+- [x] test_critic for 0e173f3b — 1m 22s
+- [x] playwright_eval for 0e173f3b — 1m 38s
+- [x] 부상예방 경고 (lib/injury + 홈/신발상세) (slice-4-injury-prevention) — 5m 36s
+- [x] 신발 로테이션 추천 (lib/rotation + UI) (slice-4-rotation) — 2m 3s
+- [x] AddShoe 모델 브라우즈(클릭 시 전체 알파벳순) (slice-4-addshoe-browse) — 3m 23s
+- [x] UI 폴리시(러닝 아이콘 제거·기록탭 축소·신발카드 바 제거) (slice-4-ui-polish) — 3m 2s
+- [x] 로컬 백업/복원 (lib/backup + ProfileScreen) (slice-4-backup) — 5m 58s
+- [x] 공유 카드 이미지 (svg toDataURL) (slice-4-share-card) — 4m 4s
+- [x] 개인 챌린지 (lib/challenges + UI) (slice-4-challenges) — 1m 11s
+- [x] 통합검증: Slice 4 (slice-4-e2e) — 1m 18s
+- [x] code_critic for c0a4bdba — 2m 22s
+- [x] test_critic for c0a4bdba — 1m 25s
+- [x] playwright_eval for c0a4bdba — 1m 28s
+- [x] code_critic for 0b3f7d76 — 1m 54s
+- [x] test_critic for 0b3f7d76 — 1m 37s
+- [x] playwright_eval for 0b3f7d76 — 3m 2s
+- [x] code_critic for 0b3f7d76 — 1m 39s
+- [x] test_critic for 0b3f7d76 — 1m 20s
+- [x] playwright_eval for 0b3f7d76 — 3m 15s
+- [x] code_critic for 0b3f7d76 — 1m 44s
+- [x] test_critic for 0b3f7d76 — 1m 5s
+- [x] playwright_eval for 0b3f7d76 — 2m 15s
+- [x] code_critic for 3aceb3e8 — 1m 31s
+- [x] test_critic for 3aceb3e8 — 1m 17s
+- [x] playwright_eval for 3aceb3e8 — 1m 49s
+- [x] code_critic for 0b383f5c — 2m 6s
+- [x] test_critic for 0b383f5c — 2m 12s
+- [x] playwright_eval for 0b383f5c — 2m 4s
+- [x] code_critic for 0b383f5c — 3m 44s
+- [x] test_critic for 0b383f5c — 1m 24s
+- [x] playwright_eval for 0b383f5c — 3m 37s
+- [x] code_critic for e82eb377 — 2m 2s
+- [x] test_critic for e82eb377 — 1m 17s
+- [x] playwright_eval for e82eb377 — 2m 12s
+- [x] code_critic for f6727898 — 1m 46s
+- [x] test_critic for f6727898 — 1m 46s
+- [x] playwright_eval for f6727898 — 2m 1s
+- [x] code_critic for f6727898 — 1m 32s
+- [x] test_critic for f6727898 — 1m 14s
+- [x] playwright_eval for f6727898 — 1m 41s
+- [x] code_critic for f805d3e4 — 3m 37s
+- [x] test_critic for f805d3e4 — 1m 10s
+- [x] playwright_eval for f805d3e4 — 1m 43s
+- [x] code_critic for f805d3e4 — 1m 21s
+- [x] test_critic for f805d3e4 — 1m 2s
+- [x] playwright_eval for f805d3e4 — 3m 54s
+- [x] code_critic for f805d3e4 — 1m 19s
+- [x] test_critic for f805d3e4 — 1m 11s
+- [x] playwright_eval for f805d3e4 — 1m 11s
+- [x] code_critic for 7d843927 — 1m 15s
+- [x] test_critic for 7d843927 — 1m 56s
+- [x] playwright_eval for 7d843927 — 1m 40s
+- [x] 클라우드 동기 순수로직 (lib/cloudSync) (slice-5-fb-synclogic) — 2m 44s
+- [x] @react-native-firebase 네이티브 통합 + google-services 배선 (slice-5-fb-native) — 1m 57s
+- [x] 로그인/클라우드 동기 UI (ProfileScreen) (slice-5-fb-ui) — 9m 3s
+- [x] 통합검증: Slice 5 Firebase (slice-5-fb-e2e) — 1m 9s
+- [x] code_critic for 6ca5257d — 1m 10s
+- [x] test_critic for 6ca5257d — 1m 0s
+- [x] playwright_eval for 6ca5257d — 1m 6s
+- [x] code_critic for 3730c981 — 3m 11s
+- [x] test_critic for 3730c981 — 1m 42s
+- [x] playwright_eval for 3730c981 — 1m 47s
+- [x] code_critic for e0a6d31a — 2m 28s
+- [x] test_critic for e0a6d31a — 1m 17s
+- [x] playwright_eval for e0a6d31a — 2m 33s
+- [x] code_critic for 3730c981 — 1m 4s
+- [x] test_critic for 3730c981 — 2m 2s
+- [x] playwright_eval for 3730c981 — 3m 58s
+- [x] @react-native-google-signin 배선(실 Google 로그인) (slice-5-google-signin) — 9m 44s
+- [x] code_critic for 6011d992 — 2m 26s
+- [x] test_critic for 6011d992 — 1m 36s
+- [x] playwright_eval for 6011d992 — 2m 37s

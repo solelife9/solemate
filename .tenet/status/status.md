@@ -1,15 +1,11 @@
 # Tenet Status
 
-Updated: 2026-05-31T15:02:51.975Z
+Updated: 2026-06-03T05:47:03.726Z
 
 | Metric | Count |
 |--------|-------|
-| Completed | 4 / 5 |
+| Completed | 265 / 271 |
 | Running | 0 |
 | Pending | 0 |
-| Failed | 1 |
+| Failed | 0 |
 | Blocked | 0 |
-
-## Failed
-
-- [!] eval-mptta2gb — 6ms !! no agent adapter available
