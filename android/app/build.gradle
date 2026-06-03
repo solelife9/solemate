@@ -86,6 +86,13 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
+    // Lint-vital on release assembly analyzes every native module and exhausts JVM
+    // Metaspace; it is not needed to produce a runnable APK. Skip it for release builds.
+    lint {
+        checkReleaseBuilds false
+        abortOnError false
+    }
+
     namespace "com.solemate"
     defaultConfig {
         applicationId "com.solemate"
@@ -126,3 +133,13 @@ dependencies {
         implementation jscFlavor
     }
 }
+
+// RNGP 0.85.3 + Gradle 9: the JS bundling task (createBundle*JsAndAssets) declares
+// `sources = fileTree(<projectRoot>)`, whose root directory contains android/app/build.
+// Gradle's strict implicit-dependency validation then flags every :app task that writes
+// under android/app as an undeclared input producer — an unbounded whack-a-mole that
+// excludes/mustRunAfter cannot fully resolve. Instead we disable the in-Gradle bundling
+// task and rely on a pre-generated JS bundle placed at
+// android/app/src/main/assets/index.android.bundle (see scripts/bundle-android-release.sh),
+// which mergeRelease{Assets,Resources} packages as ordinary source assets.
+tasks.matching { it.name ==~ /createBundle.*ReleaseJsAndAssets/ }.configureEach { it.enabled = false }

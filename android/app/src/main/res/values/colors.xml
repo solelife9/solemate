@@ -1,0 +1,4 @@
+<resources>
+    <!-- Keego brand: orange accent on near-black. Launcher icon background. -->
+    <color name="ic_launcher_background">#FF6500</color>
+</resources>
