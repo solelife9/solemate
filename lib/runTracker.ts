@@ -24,11 +24,14 @@ import {WARMUP_FIXES} from './engineConstants';
 import {decideAutoPause, initAutoPauseState, AutoPauseState} from './autoPause';
 import {gpsStallStatus} from './gpsHealth';
 import {saveSnapshot} from './runPersistence';
+import {initElevState, feedAltitude, ElevState} from './elevation';
 
 /** A raw GPS fix — the shape both expo-location's LocationObject and the old
- *  geolocation-service position share, so callers forward fixes verbatim. */
+ *  geolocation-service position share, so callers forward fixes verbatim.
+ *  altitude(m) is optional — used for elevation-gain accumulation; absent/null
+ *  fixes simply don't contribute to elevation. */
 export interface RawFix {
-  coords: {latitude: number; longitude: number; accuracy: number | null};
+  coords: {latitude: number; longitude: number; accuracy: number | null; altitude?: number | null};
   timestamp: number;
 }
 
@@ -41,6 +44,7 @@ export interface RunTrackerState {
   accuracyM: number | null; // last fix accuracy (null until first fix)
   stalled: boolean; // GPS dead-zone (no fresh fix past threshold) while running
   permissionRevoked: boolean;
+  elevGainM: number; // cumulative elevation gain (m, >= 0) from GPS altitude
 }
 
 export type RunTrackerEvent =
@@ -75,6 +79,7 @@ class RunTracker {
   private autoAnchor: {lat: number; lon: number} | null = null;
   private autoAnchorMs = 0;
   private autoPauseState: AutoPauseState = initAutoPauseState();
+  private elev: ElevState = initElevState();
 
   private isPaused = false;
   private autoPausedFlag = false;
@@ -116,6 +121,7 @@ class RunTracker {
     this.autoAnchor = null;
     this.autoAnchorMs = 0;
     this.autoPauseState = initAutoPauseState();
+    this.elev = initElevState();
     this.isPaused = false;
     this.autoPausedFlag = false;
     this.pausedMs = 0;
@@ -275,6 +281,9 @@ class RunTracker {
         this.pts.push(f);
         this.lastGood = f;
         this.lastGoodMs = ts;
+        // 고도 누적은 거리 누적과 같은 '채택된 fix'에서만 — 거부된 노이즈 fix가
+        // 상승분을 부풀리지 않게 한다(임계 필터는 lib/elevation가 추가로 담당).
+        this.elev = feedAltitude(this.elev, fix.coords.altitude);
       } else if (idx < WARMUP_FIXES) {
         // warmup: don't count, but advance last-good so the first post-warmup
         // segment isn't a giant settling jump.
@@ -286,6 +295,8 @@ class RunTracker {
       this.lastGood = f;
       this.lastGoodMs = ts;
       this.pts.push(f);
+      // 첫 채택 지점의 고도를 기준으로 설정(누적 0에서 시작).
+      this.elev = feedAltitude(this.elev, fix.coords.altitude);
     }
 
     this.persist();
@@ -323,11 +334,17 @@ class RunTracker {
       accuracyM: this.accuracyM,
       stalled: this.isStalled(),
       permissionRevoked: this.permissionRevoked,
+      elevGainM: Math.round(this.elev.gain),
     };
   }
 
   getDistanceKm(): number {
     return this.dist;
+  }
+
+  /** 누적 고도 상승(m, 정수) — 완주 화면 최종값으로 읽는다. */
+  getElevationGain(): number {
+    return Math.round(this.elev.gain);
   }
 
   getPoints(): {lat: number; lon: number}[] {

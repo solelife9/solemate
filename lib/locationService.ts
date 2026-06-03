@@ -49,6 +49,7 @@ export function toRawFix(loc: Location.LocationObject): RawFix {
       latitude: loc.coords.latitude,
       longitude: loc.coords.longitude,
       accuracy: loc.coords.accuracy ?? null,
+      altitude: loc.coords.altitude ?? null,
     },
     timestamp: loc.timestamp,
   };

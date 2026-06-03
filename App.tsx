@@ -47,9 +47,10 @@ import {
 } from './lib/runPersistence';
 import {Unit, kmToDisplay, displayNum} from './lib/units';
 import {
-  AlertSettings, loadSettings, saveUnit, saveGoal, saveAlerts,
+  AlertSettings, loadSettings, saveUnit, saveGoal, saveAlerts, saveWeight,
   clampGoal, DEFAULT_SETTINGS,
 } from './lib/settings';
+import {estimateCalories} from './lib/calories';
 import {weeklyProgress, currentStreak, personalRecords} from './lib/goals';
 import {serializeBackup, BackupV1, BackupPayload} from './lib/backup';
 import {Challenge, ChallengeRun} from './lib/challenges';
@@ -131,6 +132,8 @@ function Main(){
   const [unit,setUnit]=useState<Unit>(DEFAULT_SETTINGS.unit);
   const [goalWeeklyKm,setGoalWeeklyKm]=useState(DEFAULT_SETTINGS.goalWeeklyKm);
   const [alerts,setAlerts]=useState<AlertSettings>({...DEFAULT_SETTINGS.alerts});
+  // 체중(kg) — 러닝 칼로리 추정에 쓴다(설정에서 조정, 기본 65). 표시 단위와 무관.
+  const [weightKg,setWeightKg]=useState(DEFAULT_SETTINGS.weightKg);
   const [deviceId,setDeviceId]=useState<string>('');
   // 개인 챌린지 목록(거리·연속일). 신규 키(K_CHALLENGES)로 영속하며 런 기록에서
   // 진행률을 파생한다(lib/challenges). 기존 키와 분리돼 데이터 파괴 위험이 없다.
@@ -220,7 +223,7 @@ function Main(){
     // 단위/목표/알림이 사용자가 마지막에 정한 값으로 뜬다). 알림 판정에 갓 읽은
     // alerts 설정을 직접 넘긴다(setAlerts state 갱신 전이라 클로저가 옛값일 수 있음).
     const st=await loadSettings();
-    setUnit(st.unit);setGoalWeeklyKm(st.goalWeeklyKm);setAlerts(st.alerts);
+    setUnit(st.unit);setGoalWeeklyKm(st.goalWeeklyKm);setAlerts(st.alerts);setWeightKg(st.weightKg);
     try{
       const r=await fetch(API+'/api/auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({device_id:did})});
       const d=await r.json();setUserId(d.user_id);
@@ -455,6 +458,7 @@ function Main(){
   const changeUnit=(u:Unit)=>{setUnit(u);void saveUnit(u);};
   const changeGoal=(km:number)=>{const v=clampGoal(km);setGoalWeeklyKm(v);void saveGoal(v);};
   const changeAlerts=(a:AlertSettings)=>{setAlerts(a);void saveAlerts(a);};
+  const changeWeight=(kg:number)=>{setWeightKg(kg);void saveWeight(kg);};
 
   // ── 로컬 백업/복원(Slice 4) ─────────────────────────────────────────────────
   // 내보내기 대상: 현재 신발+런+설정을 그대로 모은다(km 표준 settings). ProfileScreen이
@@ -770,6 +774,7 @@ function Main(){
         shoe={activeRun}
         insets={insets}
         goalKm={activeRun.goalKm}
+        weightKg={weightKg}
         resume={resumeSnap}
         onSave={async(km,dur,cad,memo,route,location)=>{
           await addRun(activeRun.id,km,today(),memo||'','gps',dur,cad,route,location);
@@ -812,6 +817,7 @@ function Main(){
           <ProfileScreen
             profile={profile} badges={badges} records={records} onTab={setTab}
             profilePhotoUri={profilePhoto} onChangeName={changeProfileName} onPickPhoto={pickProfilePhoto}
+            weightKg={weightKg} onChangeWeight={changeWeight}
             unit={unit} onChangeUnit={changeUnit}
             goalWeeklyKm={goalWeeklyKm} weeklyPercent={goalProgress.percent}
             weeklyDoneKm={goalProgress.totalKm} onChangeGoal={changeGoal}
@@ -946,7 +952,7 @@ const boot=StyleSheet.create({
 });
 
 // ─── Live run screen (GPS / sensors / TTS engine + handoff Ring UI) ─────────
-function RunActiveScreen({shoe,insets,goalKm,onSave,onDiscard,resume}:{shoe:{id:string;name:string};insets:any;goalKm:number;onSave:(km:number,dur:number,cad:number,memo:string,route:string,location:string)=>Promise<void>;onDiscard:()=>void;resume?:RunSnapshot|null}){
+function RunActiveScreen({shoe,insets,goalKm,weightKg,onSave,onDiscard,resume}:{shoe:{id:string;name:string};insets:any;goalKm:number;weightKg:number;onSave:(km:number,dur:number,cad:number,memo:string,route:string,location:string)=>Promise<void>;onDiscard:()=>void;resume?:RunSnapshot|null}){
   const ui=parseShoeName(shoe.name);
   // 복구 모드: 미완료 런 스냅샷으로 done 화면을 시드해 검토 후 저장/버리기. GPS는
   // 다시 시작하지 않는다(이미 기록된 거리/경로를 그대로 보존).
@@ -961,6 +967,10 @@ function RunActiveScreen({shoe,insets,goalKm,onSave,onDiscard,resume}:{shoe:{id:
   // 주행 중 위치 권한 회수: 트래킹을 멈추고(가비지 거리 금지) 영구 배너 + 설정 안내.
   const [permLost,setPermLost]=useState(false);
   const [cadence,setCadence]=useState(resume?resume.cadence:0);
+  // 누적 고도 상승(m) — 엔진 state(elevGainM)에서 흘러온다. 복구 런은 스냅샷에 고도가
+  // 없어 0에서 시작(엔진 미작동). finElev는 정지 시 최종값을 고정한다.
+  const [elevGain,setElevGain]=useState(0);
+  const [finElev,setFinElev]=useState(0);
   const [paused,setPaused]=useState(false);
   const [autoPaused,setAutoPaused]=useState(false);
   const [stopConfirm,setStopConfirm]=useState(false);
@@ -1001,6 +1011,7 @@ function RunActiveScreen({shoe,insets,goalKm,onSave,onDiscard,resume}:{shoe:{id:
         setKm(s.dist);setElapsed(s.elapsed);
         setPaused(s.paused);setAutoPaused(s.autoPaused);
         setGpsStalled(s.stalled);setPermLost(s.permissionRevoked);
+        setElevGain(s.elevGainM);
         if(s.permissionRevoked)setGpsStatus('위치 권한 필요');
         else if(s.accuracyM!=null)setGpsStatus(`정확도 ${s.accuracyM}m`);
       }else if(ev.type==='paused'){
@@ -1146,6 +1157,7 @@ function RunActiveScreen({shoe,insets,goalKm,onSave,onDiscard,resume}:{shoe:{id:
     setFinRoute(sampled.length>=2?JSON.stringify(sampled):'');
     setFinLocation(locationRef.current);
     setFinKm(fk);setFinTime(ft);setFinCad(cadRef.current);
+    setFinElev(runTracker.getElevationGain());
     setPhase('done');
   }
 
@@ -1173,6 +1185,9 @@ function RunActiveScreen({shoe,insets,goalKm,onSave,onDiscard,resume}:{shoe:{id:
   const remaining=Math.max(0,goalKm-km);
   const pauseLabel=autoPaused?'자동 일시정지':paused?'일시정지':'러닝 중';
   const pauseColor=paused||autoPaused?WARN:ACCENT;
+  // 칼로리 추정(체중×거리×1.036) — 라이브(현재 km)와 완주(finKm) 각각. 거리 0이면 0.
+  const liveCal=estimateCalories(km,weightKg);
+  const finCal=estimateCalories(finKm,weightKg);
 
   if(phase==='done') return(
     <View style={[run.screen,{paddingTop:insets.top+24,paddingBottom:insets.bottom+28}]}>
@@ -1189,10 +1204,22 @@ function RunActiveScreen({shoe,insets,goalKm,onSave,onDiscard,resume}:{shoe:{id:
           </View>
         </Ring>
       </View>
-      <View style={run.metrics}>
-        <View style={run.metric}><Text style={run.metricV}>{fmtTime(finTime)}</Text><Text style={run.metricL}>시간</Text></View>
-        <View style={run.metric}><Text style={run.metricV}>{fmtPace(finKm,finTime)}</Text><Text style={run.metricL}>평균 페이스</Text></View>
-        <View style={run.metric}><Text style={run.metricV}>{finCad>0?finCad:'--'}</Text><Text style={run.metricL}>케이던스</Text></View>
+      <View style={run.metricsGrid}>
+        {[
+          {v:fmtTime(finTime), l:'시간'},
+          {v:fmtPace(finKm,finTime), l:'평균 페이스'},
+          {v:finCad>0?String(finCad):'--', l:'케이던스'},
+          {v:finCal>0?String(finCal):'--', l:'칼로리', u:'kcal'},
+          {v:String(finElev), l:'고도 상승', u:'m'},
+        ].map((m,i)=>(
+          <View key={i} style={run.metricCell}>
+            <View style={run.metricVRow}>
+              <Text style={run.metricV}>{m.v}</Text>
+              {m.u?<Text style={run.metricU}> {m.u}</Text>:null}
+            </View>
+            <Text style={run.metricL}>{m.l}</Text>
+          </View>
+        ))}
       </View>
       <TextInput style={run.memo} value={memo} onChangeText={setMemo} placeholder="메모 (선택)" placeholderTextColor={T3} autoCorrect={false} autoCapitalize="none"/>
       <View style={run.actionRow}>
@@ -1239,10 +1266,22 @@ function RunActiveScreen({shoe,insets,goalKm,onSave,onDiscard,resume}:{shoe:{id:
         </Ring>
       </View>
 
-      <View style={run.metrics}>
-        <View style={run.metric}><Text style={run.metricV}>{fmtTime(elapsed)}</Text><Text style={run.metricL}>시간</Text></View>
-        <View style={run.metric}><Text style={run.metricV}>{fmtPace(km,elapsed)}</Text><Text style={run.metricL}>평균 페이스</Text></View>
-        <View style={run.metric}><Text style={run.metricV}>{cadence>0?cadence:'--'}</Text><Text style={run.metricL}>케이던스</Text></View>
+      <View style={run.metricsGrid}>
+        {[
+          {v:fmtTime(elapsed), l:'시간'},
+          {v:fmtPace(km,elapsed), l:'평균 페이스'},
+          {v:cadence>0?String(cadence):'--', l:'케이던스'},
+          {v:liveCal>0?String(liveCal):'--', l:'칼로리', u:'kcal'},
+          {v:String(elevGain), l:'고도', u:'m'},
+        ].map((m,i)=>(
+          <View key={i} style={run.metricCell}>
+            <View style={run.metricVRow}>
+              <Text style={run.metricV}>{m.v}</Text>
+              {m.u?<Text style={run.metricU}> {m.u}</Text>:null}
+            </View>
+            <Text style={run.metricL}>{m.l}</Text>
+          </View>
+        ))}
       </View>
 
       <View style={run.controls}>
@@ -1283,7 +1322,12 @@ const run=StyleSheet.create({
   bigUnit:{color:T3,fontFamily:FP,fontSize:14,fontWeight:'600',marginTop:2},
   metrics:{flexDirection:'row',marginHorizontal:-4,paddingVertical:14,paddingBottom:24,borderTopWidth:StyleSheet.hairlineWidth,borderTopColor:SEP},
   metric:{flex:1,alignItems:'center',gap:4},
-  metricV:{color:T1,fontFamily:FH,fontSize:28,letterSpacing:0.3},
+  // 5지표 그리드(시간/페이스/케이던스/칼로리/고도) — 3열로 흘러 2행(3+2).
+  metricsGrid:{flexDirection:'row',flexWrap:'wrap',paddingTop:14,paddingBottom:20,borderTopWidth:StyleSheet.hairlineWidth,borderTopColor:SEP},
+  metricCell:{width:'33.33%',alignItems:'center',gap:4,paddingVertical:8},
+  metricVRow:{flexDirection:'row',alignItems:'flex-end'},
+  metricV:{color:T1,fontFamily:FH,fontSize:25,letterSpacing:0.3},
+  metricU:{color:T3,fontFamily:FP,fontSize:11,marginBottom:3},
   metricL:{color:T3,fontFamily:FP,fontSize:11.5,fontWeight:'600'},
   controls:{flexDirection:'row',alignItems:'flex-start',justifyContent:'center',gap:40,paddingTop:4,paddingBottom:8},
   ctrlPrimary:{width:92,height:92,borderRadius:999,backgroundColor:ACCENT,alignItems:'center',justifyContent:'center'},

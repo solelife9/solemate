@@ -5,8 +5,9 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   parseUnit, parseGoal, parseAlerts, clampGoal, clampThreshold,
+  parseWeight, clampWeight, saveWeight,
   loadSettings, saveUnit, saveGoal, saveAlerts,
-  K_GOAL, DEFAULT_SETTINGS, DEFAULT_ALERTS,
+  K_GOAL, K_WEIGHT, DEFAULT_SETTINGS, DEFAULT_ALERTS, DEFAULT_WEIGHT_KG,
 } from '../../lib/settings';
 
 describe('settings parsers', () => {
@@ -33,6 +34,24 @@ describe('settings parsers', () => {
     expect(clampGoal(29.6)).toBe(30);
   });
 
+  test('parseWeight/clampWeight: 30..200 정수, 비정상은 기본값', () => {
+    expect(parseWeight('70')).toBe(70);
+    expect(parseWeight(null)).toBe(DEFAULT_WEIGHT_KG);
+    expect(parseWeight('0')).toBe(DEFAULT_WEIGHT_KG);
+    expect(parseWeight('abc')).toBe(DEFAULT_WEIGHT_KG);
+    expect(clampWeight(10)).toBe(30);   // MIN
+    expect(clampWeight(500)).toBe(200); // MAX
+    expect(clampWeight(70.4)).toBe(70);
+  });
+
+  test('saveWeight→load: 체중이 보존된다', async () => {
+    await AsyncStorage.clear();
+    await saveWeight(72);
+    expect(await AsyncStorage.getItem(K_WEIGHT)).toBe('72');
+    const s = await loadSettings();
+    expect(s.weightKg).toBe(72);
+  });
+
   test('clampThreshold: 50..100 정수', () => {
     expect(clampThreshold(90)).toBe(90);
     expect(clampThreshold(10)).toBe(50);
@@ -53,6 +72,7 @@ describe('settings parsers', () => {
 
 describe('settings 영속(AsyncStorage 라운드트립)', () => {
   test('storage가 비면 loadSettings는 기본값', async () => {
+    await AsyncStorage.clear();
     expect(await loadSettings()).toEqual(DEFAULT_SETTINGS);
   });
 

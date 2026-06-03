@@ -17,6 +17,7 @@ import { Unit, unitKorean, displayNum, displayToKm } from './lib/units';
 import {
   AlertSettings, GOAL_STEP_DISPLAY, THRESHOLD_STEP,
   MIN_THRESHOLD_PCT, MAX_THRESHOLD_PCT, DEFAULT_SETTINGS, DEFAULT_ALERTS,
+  WEIGHT_STEP, MIN_WEIGHT_KG, MAX_WEIGHT_KG,
 } from './lib/settings';
 import { serializeBackup, parseBackup, BackupPayload, BackupV1 } from './lib/backup';
 import ChallengesSection from './ChallengesSection';
@@ -63,6 +64,7 @@ function Stepper({ value, suffix, onMinus, onPlus }: { value: number | string; s
 export default function ProfileScreen({
   profile = DEFAULT_PROFILE, badges = [], records = [], onTab,
   profilePhotoUri = '', onChangeName, onPickPhoto,
+  weightKg = DEFAULT_SETTINGS.weightKg, onChangeWeight,
   unit = 'km', onChangeUnit,
   goalWeeklyKm = DEFAULT_SETTINGS.goalWeeklyKm, weeklyPercent = 0, weeklyDoneKm = 0, onChangeGoal,
   streakDays = 0, weekDays = [], weekTodayIdx = -1,
@@ -80,6 +82,9 @@ export default function ProfileScreen({
   profilePhotoUri?: string;
   onChangeName?: (name: string) => void;
   onPickPhoto?: () => void;
+  // 체중(kg) — 칼로리 추정용. 설정 스테퍼가 조정한다.
+  weightKg?: number;
+  onChangeWeight?: (kg: number) => void;
   unit?: Unit;
   onChangeUnit?: (u: Unit) => void;
   goalWeeklyKm?: number;
@@ -116,8 +121,8 @@ export default function ProfileScreen({
   cloudClock?: () => number;
 }) {
   // 어떤 설정 행이 펼쳐졌는지(단위는 패널 없이 즉시 토글). 한 번에 하나만 펼친다.
-  const [open, setOpen] = useState<null | 'goal' | 'alerts' | 'account' | 'import'>(null);
-  const toggleOpen = (k: 'goal' | 'alerts' | 'account' | 'import') => setOpen((o) => (o === k ? null : k));
+  const [open, setOpen] = useState<null | 'goal' | 'weight' | 'alerts' | 'account' | 'import'>(null);
+  const toggleOpen = (k: 'goal' | 'weight' | 'alerts' | 'account' | 'import') => setOpen((o) => (o === k ? null : k));
 
   // 헤더 설정 버튼 → '설정' 섹션으로 스크롤(무반응이던 버튼에 동작 부여). 섹션 위치는
   // onLayout 으로 측정한다(콘텐츠 컨테이너 기준 y).
@@ -225,6 +230,10 @@ export default function ProfileScreen({
   const stepGoal = (dir: 1 | -1) => {
     const next = goalDisplay + dir * GOAL_STEP_DISPLAY;   // 표시 단위 기준 증감
     onChangeGoal?.(displayToKm(next, unit));               // km로 되돌려 저장(클램프는 App)
+  };
+
+  const stepWeight = (dir: 1 | -1) => {
+    onChangeWeight?.(Math.max(MIN_WEIGHT_KG, Math.min(MAX_WEIGHT_KG, weightKg + dir * WEIGHT_STEP)));
   };
 
   const toggleAlerts = () => onChangeAlerts?.({ ...alerts, enabled: !alerts.enabled });
@@ -441,6 +450,20 @@ export default function ProfileScreen({
               <Text style={s.settingDetail}>{unitKorean(unit)}</Text>
               <Ionicons name="swap-horizontal" size={16} color={T3} />
             </Pressable>
+
+            {/* 3.5) 체중 — 칼로리 추정용 */}
+            <Pressable onPress={() => toggleOpen('weight')} accessibilityRole="button" accessibilityLabel={`체중, ${weightKg}kg`} accessibilityState={{ expanded: open === 'weight' }} style={({ pressed }) => [s.settingRow, s.settingBorder, pressed && { backgroundColor: CARD_HI }]}>
+              <View style={s.settingIcon}><Ionicons name="body-outline" size={17} color={ACCENT} /></View>
+              <Text style={s.settingLabel}>체중</Text>
+              <Text style={s.settingDetail}>{weightKg}kg</Text>
+              <Ionicons name={open === 'weight' ? 'chevron-up' : 'chevron-forward'} size={16} color={T3} />
+            </Pressable>
+            {open === 'weight' && (
+              <View style={[s.panel, s.settingBorder]}>
+                <Stepper value={weightKg} suffix="kg" onMinus={() => stepWeight(-1)} onPlus={() => stepWeight(1)} />
+                <Text style={s.panelHint}>러닝 칼로리 추정에 사용돼요(가이드 값 — 정밀 측정 아님).</Text>
+              </View>
+            )}
 
             {/* 4) 계정 설정 */}
             <Pressable onPress={() => toggleOpen('account')} accessibilityRole="button" accessibilityLabel="계정 설정" accessibilityState={{ expanded: open === 'account' }} style={({ pressed }) => [s.settingRow, pressed && { backgroundColor: CARD_HI }]}>
