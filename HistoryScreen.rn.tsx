@@ -14,6 +14,7 @@ import {
 import { TabBar } from './primitives';
 import { Unit, displayNum, displayToKm } from './lib/units';
 import { ymdLocal } from './lib/format';
+import { getRunSurface, setRunSurface, type Surface } from './lib/wearModel';
 import { parseRoute, projectRoute, LatLon } from './lib/route';
 import { buildRunShareText } from './lib/share';
 import { buildShareCardModel, shareRunCard, SvgCapturable } from './lib/shareCard';
@@ -40,6 +41,15 @@ function fmtDurationInput(sec: number): string {
   const s = Math.floor(sec % 60);
   return `${m}:${String(s).padStart(2, '0')}`;
 }
+
+// 노면(surface) 선택 옵션 — 실효 마모 보정용(트레일>로드, 트랙·트레드밀<로드). 기본
+// road. 토큰화 칩 세그먼트로 고르고 AsyncStorage(surface_<runId>)에 영속한다(lib/wearModel).
+const SURFACE_OPTIONS: { value: Surface; label: string }[] = [
+  { value: 'road', label: '로드' },
+  { value: 'trail', label: '트레일' },
+  { value: 'track', label: '트랙' },
+  { value: 'treadmill', label: '트레드밀' },
+];
 
 export type PeriodSummary = { km: string; runs: number; pace: string; time: string };
 export type PeriodChart = { title: string; data: number[]; labels: string[] };
@@ -138,7 +148,7 @@ function RunForm({
   unit: Unit;
   initial?: Run | null;
   onCancel: () => void;
-  onSubmit: (v: { shoeId: string; km: number; date: string; durationSec: number }) => void;
+  onSubmit: (v: { shoeId: string; km: number; date: string; durationSec: number; surface: Surface }) => void;
 }) {
   const editing = !!initial;
   const initShoeId = editing && initial!.shoe >= 0 ? shoes[initial!.shoe]?.id : undefined;
@@ -146,13 +156,29 @@ function RunForm({
   const [dist, setDist] = useState(editing ? String(displayNum(initial!.dist, unit, 2)) : '');
   const [dur, setDur] = useState(editing ? fmtDurationInput(initial!.durationS || 0) : '');
   const [date, setDate] = useState(editing ? (initial!.runDate || '') : ymdLocal(new Date()));
+  // 노면 태그(실효 마모 보정). 편집 시 영속값을 프리필하고, 칩을 누르면 편집 런은 즉시
+  // 영속(setRunSurface)한다. 수동 추가는 런 id가 아직 없으므로 제출 시 onSubmit으로
+  // 올려 App이 새 런 id에 영속한다. 기본 road(미선택/미태그도 road로 동작 — 차단 아님).
+  const editId = editing ? initial!.id : undefined;
+  const [surface, setSurface] = useState<Surface>('road');
+  useEffect(() => {
+    let alive = true;
+    if (editId) {
+      getRunSurface(editId).then((s) => { if (alive) setSurface(s); }).catch(() => {});
+    }
+    return () => { alive = false; };
+  }, [editId]);
+  const pickSurface = (s: Surface) => {
+    setSurface(s);
+    if (editId) void setRunSurface(editId, s); // 편집 런은 즉시 영속(추가 런은 제출 시)
+  };
 
   const submit = () => {
     const dispKm = parseFloat(dist);
     if (!shoeId) { Alert.alert('알림', '신발을 선택하세요'); return; }
     if (!Number.isFinite(dispKm) || dispKm <= 0) { Alert.alert('알림', '거리를 0보다 크게 입력하세요'); return; }
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) { Alert.alert('알림', '날짜는 YYYY-MM-DD 형식으로 입력하세요'); return; }
-    onSubmit({ shoeId, km: displayToKm(dispKm, unit), date, durationSec: parseDurationInput(dur) });
+    onSubmit({ shoeId, km: displayToKm(dispKm, unit), date, durationSec: parseDurationInput(dur), surface });
   };
 
   const insets = useSafeAreaInsets();
@@ -226,6 +252,27 @@ function RunForm({
             style={s.input}
             accessibilityLabel="날짜"
           />
+        </View>
+        {/* 노면 — 실효 마모 보정용 태그(기본 로드). 토큰화 칩 세그먼트. */}
+        <View>
+          <Text style={s.formLabel}>노면</Text>
+          <View style={s.chipWrap}>
+            {SURFACE_OPTIONS.map((opt) => {
+              const on = opt.value === surface;
+              return (
+                <Pressable
+                  key={opt.value}
+                  onPress={() => pickSurface(opt.value)}
+                  style={[s.chip, on && s.chipOn]}
+                  accessibilityRole="button"
+                  accessibilityLabel={`노면 ${opt.label}`}
+                  accessibilityState={{ selected: on }}
+                >
+                  <Text style={[s.chipTxt, { color: on ? BG : T2 }]}>{opt.label}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
         </View>
         <Pressable onPress={submit} style={({ pressed }) => [s.saveBtn, pressed && { opacity: 0.85 }]} accessibilityRole="button">
           <Text style={s.saveBtnTxt}>{editing ? '저장하기' : '추가하기'}</Text>
@@ -382,7 +429,7 @@ export default function HistoryScreen({
   // 표시 단위(km|mi). 거리·차트 눈금이 이를 따른다(요약·차트 값은 App이 환산해 주입).
   unit?: Unit;
   // 수동 입력/편집/삭제 콜백(App이 백엔드 POST/PATCH/DELETE + 상태를 처리). 거리는 km.
-  onAddRun?: (shoeId: string, km: number, date: string, durationSec: number) => void;
+  onAddRun?: (shoeId: string, km: number, date: string, durationSec: number, surface?: Surface) => void;
   onEditRun?: (id: string, fields: { shoe_id?: string; km?: number; run_date?: string; duration?: number }) => void;
   onDeleteRun?: (id: string) => void;
 }) {
@@ -410,11 +457,13 @@ export default function HistoryScreen({
         unit={unit}
         initial={initial}
         onCancel={() => setForm(null)}
-        onSubmit={({ shoeId, km, date, durationSec }) => {
+        onSubmit={({ shoeId, km, date, durationSec, surface }) => {
           if (form.mode === 'edit' && form.run.id) {
+            // 노면은 칩 press 시 이미 setRunSurface로 영속됨(편집 런은 id가 있으므로).
             onEditRun?.(form.run.id, { shoe_id: shoeId, km, run_date: date, duration: durationSec });
           } else {
-            onAddRun?.(shoeId, km, date, durationSec);
+            // 수동 추가: 새 런 id가 App에서 생성되므로 surface를 함께 넘겨 거기서 영속한다.
+            onAddRun?.(shoeId, km, date, durationSec, surface);
           }
           setForm(null);
           setDetail(null);

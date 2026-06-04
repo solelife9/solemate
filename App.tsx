@@ -37,6 +37,8 @@ import {
   weekBuckets, monthBuckets, yearBuckets,
 } from './lib/stats';
 import {parseShoeName, shoeHealth, isRetired, DEFAULT_MAX_KM, clampMaxKm, reconcileShoeAlerts, KEEP_GOING_REPLACE} from './lib/shoe';
+import {setRunSurface, parseSurface, type Surface} from './lib/wearModel';
+import {forecastReplacement, type ReplacementForecast} from './lib/replacementForecast';
 import {mostRecentShoeId, lastWornDate} from './lib/shoeRecommend';
 import {recommendRotation} from './lib/rotation';
 import {
@@ -118,6 +120,9 @@ function Main(){
   const [userId,setUserId]=useState<string|null>(null);
   const [shoes,setShoes]=useState<BackendShoe[]>([]);
   const [runs,setRuns]=useState<BackendRun[]>([]);
+  // 런별 노면 태그 캐시(surface_<runId> → Surface). 실효 마모/교체 예측 보정용. 미태그는
+  // road로 동작(차단 아님). runs 변경 시 한 번에 읽어들이고, 손상/실패는 무시한다.
+  const [runSurfaces,setRunSurfaces]=useState<Record<string,Surface>>({});
   // 홈/신발 화면이 공유하는 '선택 신발' id. null이면 휴식 로테이션 추천 신발로 폴백한다
   // (activeIdx={0} 하드코딩 제거 — 선택/추천이 홈 히어로와 신발 '사용 중' 표시를 함께 몬다).
   const [selectedShoeId,setSelectedShoeId]=useState<string|null>(null);
@@ -188,6 +193,24 @@ function Main(){
       }catch(e){console.log('profile load error',e);}
     })();
   },[]);
+
+  // 런별 노면 태그(surface_<runId>) 일괄 로드 → 실효 마모/예측 보정에 반영. runs가 바뀔
+  // 때마다 multiGet으로 한 번에 읽고, 손상/실패/미태그는 road로 graceful 폴백한다(차단 아님).
+  useEffect(()=>{
+    let alive=true;
+    const ids=runs.map(r=>String(r.id)).filter(Boolean);
+    if(ids.length===0){setRunSurfaces({});return;}
+    (async()=>{
+      try{
+        const vals=await Promise.all(ids.map(id=>AsyncStorage.getItem('surface_'+id)));
+        if(!alive)return;
+        const map:Record<string,Surface>={};
+        ids.forEach((id,i)=>{const v=vals[i];if(v!=null) map[id]=parseSurface(v);});
+        setRunSurfaces(map);
+      }catch{/* 손상/실패는 무시 — 전부 road로 동작 */}
+    })();
+    return()=>{alive=false;};
+  },[runs]);
 
   // audit#2: 미완료 런 감지 → 복구/저장 프롬프트. 한 번만 묻는다.
   useEffect(()=>{
@@ -365,6 +388,8 @@ function Main(){
       const server=await postRun(pending);
       await reconcileSynced(pending,server);
     }catch{/* 큐에 남아 다음 실행/포그라운드에서 재동기 */}
+    // 노면 태그(선택)는 호출부가 localId로 영속하므로 생성된 localId를 돌려준다.
+    return localId;
   }
 
   // 단일 POST 경로 — addRun과 startup 재동기(syncPendingRuns)가 공유한다. uid는
@@ -388,10 +413,15 @@ function Main(){
     if(serverId){
       if(p.route) await AsyncStorage.setItem('route_'+serverId, p.route);
       if(p.run_time) await AsyncStorage.setItem('time_'+serverId, p.run_time);
+      // 노면 태그(surface_<id>)도 동일하게 serverId로 재키잉해 동기 후에도 보존한다(데이터
+      // 파괴 0). 대부분 미태그(키 없음)라 존재할 때만 옮긴다.
+      const surf=await AsyncStorage.getItem('surface_'+p.localId);
+      if(surf!=null) await AsyncStorage.setItem('surface_'+serverId, surf);
       // serverId로 재키잉했으므로 localId 원본 키는 죽은 키 — 제거해 누수를 막는다.
       if(String(serverId)!==p.localId){
         await AsyncStorage.removeItem('route_'+p.localId);
         await AsyncStorage.removeItem('time_'+p.localId);
+        if(surf!=null) await AsyncStorage.removeItem('surface_'+p.localId);
       }
     }
     const merged={...(server||{}),id:serverId??p.localId,shoe_id:p.shoe_id,km:p.km,run_date:p.run_date,
@@ -403,8 +433,10 @@ function Main(){
   // 수동 런 입력(앱 외 주행·잔존 마일리지 보정): source='manual'로 addRun을 재사용한다.
   // 로컬 우선 큐 + 낙관적 삽입 동선을 그대로 타므로 신발 km(shoeHealth)이 즉시 반영되고
   // 네트워크 실패 시에도 유실되지 않는다(iron law). route/cadence는 비운다(GPS 미동반).
-  function addManualRun(shoeId:string,km:number,date:string,durationSec:number){
-    void addRun(shoeId,km,date,'','manual',durationSec);
+  async function addManualRun(shoeId:string,km:number,date:string,durationSec:number,surface?:Surface){
+    const localId=await addRun(shoeId,km,date,'','manual',durationSec);
+    // 노면 태그(선택)는 새 런 id가 생긴 뒤 영속한다. road(기본)는 키를 만들지 않는다(잡음 0).
+    if(localId&&surface&&surface!=='road') await setRunSurface(localId,surface);
   }
 
   // 개별 런 편집(백엔드 PATCH). 낙관적으로 runs 상태를 갱신 → toUiShoe가 runs에서
@@ -436,6 +468,7 @@ function Main(){
       await removePendingRun(sid);
       await AsyncStorage.removeItem('route_'+sid);
       await AsyncStorage.removeItem('time_'+sid);
+      await AsyncStorage.removeItem('surface_'+sid);
     };
     if(target&&target._pending){await finishLocal();return;}
     try{
@@ -602,6 +635,21 @@ function Main(){
   const shoesActiveIdx=Math.max(0,shoes.findIndex(s=>s.id===effectiveId));
   // 홈 picker(보관 제외) 인덱스 → 원본 신발 id로 선택 상태를 갱신한다.
   const selectHomeShoe=(i:number)=>{const e=homeShoes[i];if(e)setSelectedShoeId(e.raw.id);};
+
+  // ── 실효 마모/교체 예측 보정(Slice 6) ────────────────────────────────────────
+  // 런별 노면 태그 조회(미태그 → road). 신발 상세(ShoesScreen)와 홈 히어로 예측이 같은
+  // 보정(체중·노면)을 공유하도록 한 곳에서 만든다. 표시 파생값이며 원본은 읽기만 한다.
+  const surfaceOf=(runId:string):Surface=>runSurfaces[runId]??'road';
+  // 홈 히어로(선택 신발)의 교체 예측. 신발 상세와 동일 입력(target=max_km, 거리/시간/날짜,
+  // weightKg, surfaceOf)으로 계산해 두 화면 예측이 일치한다. ok/overdue일 때만 히어로에 노출.
+  const homeActiveRaw=shoes.find(s=>s.id===effectiveId)||null;
+  const homeForecast:ReplacementForecast|null=homeActiveRaw?forecastReplacement(
+    {name:homeActiveRaw.name,target_km:Number(homeActiveRaw.max_km)},
+    runs.filter(r=>r.shoe_id===effectiveId).map(r=>({
+      id:r.id,distance_km:parseFloat(String(r.km))||0,duration_s:r.duration||0,date:String(r.run_date||''),
+    })),
+    {weightKg,surfaceOf},
+  ):null;
 
   const sortedRaw=[...runs].sort((a,b)=>String(b.run_date).localeCompare(String(a.run_date)));
   function toUiRun(run:any):Run{
@@ -819,6 +867,7 @@ function Main(){
             onStart={startFromIdx} onAddShoe={()=>setOverlay('add')} onTab={setTab}
             rotation={rotationPicks} onPickShoe={setSelectedShoeId}
             onChangeGoal={changeGoal}
+            forecast={homeForecast}
             onOpenShoe={(id)=>{setSelectedShoeId(id);setShoesDetailId(id);setTab(2);}}
           />
         )}
@@ -831,7 +880,7 @@ function Main(){
         {tab===2&&(
           <ShoesScreen
             shoes={uiShoes} runs={uiRuns} totals={shoeTotals} activeIdx={shoesActiveIdx}
-            unit={unit}
+            unit={unit} weightKg={weightKg} surfaceOf={surfaceOf}
             onAddShoe={()=>setOverlay('add')} onTab={setTab}
             onRename={updateShoeName} onDelete={deleteShoe} onRetire={retireShoe}
             onSetMaxKm={updateShoeMaxKm} onStartRun={startFromShoeId}

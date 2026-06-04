@@ -13,6 +13,7 @@ import { Ring, TabBar, TierBadge, Pill, InjuryBanner } from './primitives';
 import { Unit, displayNum, displayToKm } from './lib/units';
 import { clampMaxKm, KEEP_GOING_REPLACE, SHOE_MAX_STEP_KM, SHOE_REPLACE_PCT } from './lib/shoe';
 import { assessShoeInjuryRisk } from './lib/injury';
+import { buildWearView, forecastLineKo, type Surface } from './lib/wearView';
 
 // lastWorn: 이 신발의 마지막 착용일(런에서 파생, 한국어 표기). 미착용이면 생략.
 // avgPace: 이 신발로 달린 런들의 평균 페이스(예 "5'30\"" / 기록 없으면 '--'). 신발끼리
@@ -25,13 +26,17 @@ const ringColor = (c: string) => (c === '교체' ? DANGER : c === '주의' ? WAR
 
 // ── shoe detail ───────────────────────────────────────────────────────────────
 function ShoeDetail({
-  shoe, idx, runs, totals, unit, onBack, onRename, onDelete, onRetire, onSetMaxKm, onStartRun,
+  shoe, idx, runs, totals, unit, weightKg, surfaceOf, onBack, onRename, onDelete, onRetire, onSetMaxKm, onStartRun,
 }: {
   shoe: Shoe;
   idx: number;
   runs: Run[];
   totals: ShoeTotals;
   unit: Unit;
+  // 실효 마모/교체 예측 보정값. 체중(kg)은 settings.weightKg 재사용(미설정 시 기준 1.0),
+  // surfaceOf 는 런별 노면 태그 조회(미제공/미태그 시 road). 둘 다 표시 파생용.
+  weightKg?: number;
+  surfaceOf?: (runId: string) => Surface;
   onBack: () => void;
   onRename?: (id: string, name: string) => void;
   onDelete?: (id: string) => void;
@@ -50,6 +55,13 @@ function ShoeDetail({
   const ring = ringColor(shoe.condition);
   const retired = !!shoe.retired;
   const shoeRuns = runs.filter((r) => r.shoe === idx);
+  // 실효 마모/교체 예측(차별점): 단순 누적 km 가 아니라 체중·노면·페이스·세월 보정 "진짜
+  // 마모"와 "이 페이스면 약 N주 후 교체"를 파생한다(lib/wearView → wearModel/forecast 재사용).
+  // 원본 shoe/run 은 읽기만 한다(A6-1). 모든 엣지에서 NaN/음수 없음(A6-2).
+  const wearView = buildWearView(shoe, shoeRuns, { weightKg, surfaceOf });
+  const effWearKm = Math.round(wearView.effectiveWearKm);
+  const targetKm = Math.round(wearView.targetKm);
+  const forecastLine = forecastLineKo(wearView.forecast);
   // 부상예방 경고(주의/위험) — shoeHealth 와 같은 마모 분모(used/max)로 판정한다.
   // 안전 등급/보관 신발은 경고를 노출하지 않는다(보관됨 상태와의 모순 방지).
   const injury = assessShoeInjuryRisk(shoe);
@@ -185,6 +197,24 @@ function ShoeDetail({
             </View>
           </View>
         </View>
+
+        {/* 실효 마모 + 교체 예측(차별점): 단순 km 가 아닌 체중·노면·페이스·세월 보정 "진짜
+            마모"와 keep-going 보이스 예측 라인. 추정 톤('약'·'예상')으로 단정을 피한다(A6-3).
+            보관 신발은 교체 동선에서 제외한다(기록은 그대로 유지). */}
+        {!retired && (
+          <View style={[s.card, s.wearCard]}>
+            <View style={s.row}>
+              <Ionicons name="pulse" size={15} color={ACCENT} />
+              <Text style={s.wearLabel}>실효 마모</Text>
+            </View>
+            <View style={[s.baselineRow, { marginTop: 6 }]}>
+              <Text style={s.wearValue}>{effWearKm}</Text>
+              <Text style={s.wearUnit}>km</Text>
+              <Text style={s.wearTarget}> / 권장 {targetKm}km</Text>
+            </View>
+            {!!forecastLine && <Text style={s.wearForecast}>{forecastLine}</Text>}
+          </View>
+        )}
 
         {/* 부상예방 경고 배너(주의/위험) — 마모도가 임계를 넘으면 keep-going 보이스로
             교체를 권한다. 안전 등급(InjuryBanner null)·보관 신발은 미노출. */}
@@ -337,13 +367,17 @@ function ShoeCard({ shoe, featured, onPress, onPlay, unit, pace }: { shoe: Shoe;
 }
 
 export default function ShoesScreen({
-  shoes = SHOES, runs = [], totals = {}, activeIdx = 0, unit = 'km', onAddShoe, onTab, onRename, onDelete, onRetire, onSetMaxKm, onStartRun,
+  shoes = SHOES, runs = [], totals = {}, activeIdx = 0, unit = 'km', weightKg, surfaceOf, onAddShoe, onTab, onRename, onDelete, onRetire, onSetMaxKm, onStartRun,
   detailShoeId, onConsumeDetail,
 }: {
   shoes?: Shoe[];
   runs?: Run[];
   totals?: Record<number, ShoeTotals>;
   activeIdx?: number;
+  // 실효 마모/교체 예측 보정값(상세 화면 전달). 체중=settings.weightKg 재사용,
+  // surfaceOf=런별 노면 태그 조회. 둘 다 선택(미제공 시 기준 1.0·road).
+  weightKg?: number;
+  surfaceOf?: (runId: string) => Surface;
   // 외부(홈 히어로 탭)에서 특정 신발 상세를 바로 연다. id가 들어오면 그 신발 상세로
   // 진입하고 onConsumeDetail로 한 번만 소비한다(뒤로가기는 내부 detail 상태로 복귀).
   detailShoeId?: string | null;
@@ -380,6 +414,8 @@ export default function ShoesScreen({
         runs={runs}
         totals={totals[detail] || { totalRuns: 0, totalTime: '--', avgPace: '--' }}
         unit={unit}
+        weightKg={weightKg}
+        surfaceOf={surfaceOf}
         onBack={() => setDetail(null)}
         onRename={onRename}
         onDelete={onDelete}
@@ -464,6 +500,14 @@ const s = StyleSheet.create({
   // 교체 내러티브 배너(keep-going 보이스) — accent 톤 반투명 표면(withAlpha 파생).
   keepGoing: { flexDirection: 'row', alignItems: 'center', gap: 9, backgroundColor: withAlpha(ACCENT, 0.12), borderRadius: 16, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.35), paddingHorizontal: 16, paddingVertical: 13 },
   keepGoingText: { flex: 1, color: ACCENT, fontFamily: FONT, fontSize: 13, fontWeight: '600', letterSpacing: -0.1, lineHeight: 18 },
+  // 실효 마모 + 교체 예측 카드(차별점) — 본문 카드 톤에 accent 절제(라벨 아이콘/예측 라인만).
+  wearCard: { padding: 18, gap: 2 },
+  wearLabel: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600', letterSpacing: 0.2 },
+  wearValue: { color: T1, fontFamily: DISPLAY, fontSize: 30, letterSpacing: 0.3 },
+  wearUnit: { color: T2, fontFamily: FONT, fontSize: 14, marginLeft: 4, marginBottom: 4 },
+  wearTarget: { color: T3, fontFamily: FONT, fontSize: 13, marginBottom: 4 },
+  wearForecast: { color: ACCENT, fontFamily: FONT, fontSize: 12.5, fontWeight: '600', letterSpacing: -0.1, lineHeight: 18, marginTop: 8 },
+
   dHero: { padding: 24, flexDirection: 'row', alignItems: 'center', gap: 22 },
   dHeroPct: { color: T1, fontFamily: DISPLAY, fontSize: 30 },
   dHeroPctU: { color: T3, fontFamily: FONT, fontSize: 13 },

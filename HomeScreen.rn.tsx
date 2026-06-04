@@ -22,6 +22,7 @@ import { GOAL_STEP_DISPLAY } from './lib/settings';
 import { assessShoeInjuryRisk } from './lib/injury';
 import { RotationPick } from './lib/rotation';
 import { recommendNextShoes, buildShopLinks, categoryLabelKo, AFFILIATE_DISCLOSURE } from './lib/affiliate';
+import { forecastLineKo, type ReplacementForecast } from './lib/wearView';
 
 export type WeekStats = { km: string; runs: number; pace: string };
 // 주간 목표 + keep-going 동기 지표. 거리는 km 표준, pct는 이번 주 달성률 %(목표
@@ -85,7 +86,7 @@ function WeeklyGoal({ goal, unit, editable }: { goal: GoalInfo; unit: Unit; edit
   );
 }
 
-function HeroShoe({ shoe, unit, tappable }: { shoe: Shoe; unit: Unit; tappable?: boolean }) {
+function HeroShoe({ shoe, unit, tappable, forecast }: { shoe: Shoe; unit: Unit; tappable?: boolean; forecast?: ReplacementForecast | null }) {
   // 비율(pct)은 km 절대값으로 계산(단위 불변), 표시 숫자만 표시 단위로 환산한다.
   const remainKm = Math.max(0, shoe.max - shoe.used);
   const pct = shoe.max > 0 ? remainKm / shoe.max : 0;
@@ -97,6 +98,11 @@ function HeroShoe({ shoe, unit, tappable }: { shoe: Shoe; unit: Unit; tappable?:
   // 부상예방 경고(주의/위험)는 같은 마모 분모(used/max)로 판정해 히어로 하단에 띄운다.
   // 안전 등급은 InjuryBanner가 null을 돌려줘 경고를 노출하지 않는다(보관 신발도 제외).
   const injury = assessShoeInjuryRisk(shoe);
+  // 교체 예측 ETA 한 줄(ok/overdue일 때만 — keep-going 보이스). no_recent/결측이면 숨긴다.
+  const forecastLine =
+    forecast && (forecast.reason === 'ok' || forecast.reason === 'overdue')
+      ? forecastLineKo(forecast)
+      : '';
   return (
     <View style={s.hero}>
       <View style={s.heroTop}>
@@ -125,6 +131,13 @@ function HeroShoe({ shoe, unit, tappable }: { shoe: Shoe; unit: Unit; tappable?:
           {tappable && <Ionicons name="chevron-forward" size={15} color={T3} style={{ marginLeft: 2 }} />}
         </View>
       </View>
+      {/* 교체 예측 ETA 한 줄(차별점) — 기존 배지/경고 위에 보강. 추정 톤('약'·'예상'). */}
+      {!shoe.retired && !!forecastLine && (
+        <View style={s.heroForecast}>
+          <Ionicons name="time-outline" size={13} color={ACCENT} />
+          <Text style={s.heroForecastText}>{forecastLine}</Text>
+        </View>
+      )}
       {!shoe.retired && injury.level !== 'safe' && (
         <View style={s.injuryWrap}>
           <InjuryBanner level={injury.level} message={injury.message} />
@@ -288,9 +301,12 @@ function EmptyHome({ onAddShoe }: { onAddShoe?: () => void }) {
 export default function HomeScreen({
   shoes = SHOES, dateLabel = '', onStart, onAddShoe, onTab,
   activeIdx: activeIdxProp, onSelect, unit = 'km', goal, rotation, onPickShoe,
-  onChangeGoal, onOpenShoe,
+  onChangeGoal, onOpenShoe, forecast,
 }: {
   shoes?: Shoe[];
+  // 선택(히어로) 신발의 교체 예측(App이 실효마모 모델로 계산해 내려준다). ok/overdue일 때
+  // 히어로에 ETA 한 줄을 보강한다. 표시 전용(없으면 숨김).
+  forecast?: ReplacementForecast | null;
   week?: WeekStats;
   dateLabel?: string;
   onStart?: (idx: number) => void;
@@ -356,7 +372,7 @@ export default function HomeScreen({
             accessibilityLabel={`${active.brand} ${active.model} 상세 보기`}
             style={({ pressed }) => [pressed && s.pressed]}>
             <View testID="home-hero" style={{ paddingHorizontal: SPACE.xl, paddingTop: SPACE.sm }}>
-              <HeroShoe shoe={active} unit={unit} tappable={!!onOpenShoe} />
+              <HeroShoe shoe={active} unit={unit} tappable={!!onOpenShoe} forecast={forecast} />
             </View>
           </Pressable>
           {/* 강조는 CTA에 — 선택 신발 idx로 러닝 시작 연결 */}
@@ -451,6 +467,9 @@ const s = StyleSheet.create({
   heroRemain: { color: T1, fontFamily: DISPLAY, fontSize: 38, letterSpacing: -1 },
   heroRemainU: { color: T2, fontFamily: FONT, fontSize: 16, marginLeft: 5, marginBottom: 6 },
   injuryWrap: { marginTop: 16 },
+  // 교체 예측 ETA 한 줄(히어로 하단) — accent 절제(아이콘+텍스트만, 배경 없음).
+  heroForecast: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12 },
+  heroForecastText: { flex: 1, color: ACCENT, fontFamily: FONT, fontSize: 12, fontWeight: '600', letterSpacing: -0.1, lineHeight: 16 },
   ringPct: { color: T1, fontFamily: DISPLAY, fontSize: 17 },
   ringPctU: { color: T3, fontFamily: FONT, fontSize: 9 },
   dot: { width: 6, height: 6, borderRadius: RADIUS.pill },
