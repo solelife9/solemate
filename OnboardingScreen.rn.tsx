@@ -17,7 +17,6 @@ import {
   Text,
   StyleSheet,
   Pressable,
-  ScrollView,
   ImageBackground,
   PanResponder,
   ActivityIndicator,
@@ -518,7 +517,7 @@ function DegradeCurve() {
   const line = 'M6 18 C 70 22, 120 34, 180 70 S 300 120, 354 132';
   const area = 'M6 18 C 70 22, 120 34, 180 70 S 300 120, 354 132 L354 150 L6 150 Z';
   return (
-    <Svg viewBox="0 0 360 150" width="100%" height={118}>
+    <Svg viewBox="0 0 360 150" width="100%" height={92}>
       <Defs>
         <SvgGradient id="kg-dg" x1="0" y1="0" x2="0" y2="1">
           <Stop offset="0" stopColor="rgba(55,214,122,0.30)" />
@@ -543,7 +542,7 @@ function ShoesMatter({goNext, onSkip, insetTop, insetBottom}: ScreenProps) {
   return (
     <View style={s.screen}>
       <FlowHeader step={1} total={5} onSkip={onSkip} insetTop={insetTop} />
-      <ScrollView contentContainerStyle={s.scrollBody} showsVerticalScrollIndicator={false}>
+      <View style={s.bodyWrap}>
         <Eyebrow>Your shoes matter</Eyebrow>
         <Text style={s.title}>러닝화도 관리가 필요합니다</Text>
         <Text style={s.body}>
@@ -552,8 +551,8 @@ function ShoesMatter({goNext, onSkip, insetTop, insetBottom}: ScreenProps) {
 
         {/* 마모 곡선 카드 */}
         <View style={[s.heroCard, {overflow: 'hidden'}]}>
-          <LinearGrad stops={[{color: '#1A1A1F', offset: 0}, {color: '#141417', offset: 1}]} radius={24} />
-          <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', padding: 18, paddingBottom: 0}}>
+          <LinearGrad stops={[{color: '#1A1A1F', offset: 0}, {color: '#141417', offset: 1}]} radius={22} />
+          <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', padding: 14, paddingBottom: 0}}>
             <View>
               <Text style={{fontFamily: UI, fontSize: 12.5, color: KG.dim}}>당신의 데일리 러닝화</Text>
               <Text style={{fontFamily: UI, fontSize: 16, fontWeight: '700', color: '#fff', marginTop: 2}}>
@@ -562,8 +561,8 @@ function ShoesMatter({goNext, onSkip, insetTop, insetBottom}: ScreenProps) {
             </View>
             <StatusPill status="replace" />
           </View>
-          <View style={{paddingHorizontal: 18, paddingTop: 16, paddingBottom: 20}}>
-            <View style={{flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10}}>
+          <View style={{paddingHorizontal: 14, paddingTop: 10, paddingBottom: 14}}>
+            <View style={{flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8}}>
               <Text style={{fontFamily: UI, fontSize: 12, color: KG.faint, letterSpacing: 0.8}}>쿠셔닝 성능</Text>
               <Text style={{fontFamily: UI, fontSize: 12, color: KG.faint}}>0 → 800 KM</Text>
             </View>
@@ -575,13 +574,13 @@ function ShoesMatter({goNext, onSkip, insetTop, insetBottom}: ScreenProps) {
         <View style={s.factStrip}>
           <View>
             <Text style={{fontFamily: UI, fontSize: 13.5, color: KG.dim}}>러닝화 권장 수명</Text>
-            <Metric value="500–800" unit="KM" size={34} />
+            <Metric value="500–800" unit="KM" size={30} />
           </View>
           <Text style={{marginLeft: 'auto', fontFamily: UI, fontSize: 12.5, color: KG.dim, textAlign: 'right', lineHeight: 18}}>
             대부분의 러너가{'\n'}이 시기를 놓칩니다
           </Text>
         </View>
-      </ScrollView>
+      </View>
       <View style={[s.footer, {paddingBottom: Math.max(insetBottom, 18)}]}>
         <PrimaryButton label="다음" onPress={goNext} />
       </View>
@@ -596,7 +595,7 @@ function Injury({goNext, onSkip, insetTop, insetBottom}: ScreenProps) {
   return (
     <View style={s.screen}>
       <FlowHeader step={2} total={5} onSkip={onSkip} insetTop={insetTop} />
-      <ScrollView contentContainerStyle={s.scrollBody} showsVerticalScrollIndicator={false}>
+      <View style={s.bodyWrap}>
         <Eyebrow>Run injury free</Eyebrow>
         <Text style={s.title}>부상 없이 오래 달리세요</Text>
         <Text style={s.body}>
@@ -604,9 +603,9 @@ function Injury({goNext, onSkip, insetTop, insetBottom}: ScreenProps) {
         </Text>
 
         {/* 링 히어로 */}
-        <View style={[s.heroCard, {flexDirection: 'row', alignItems: 'center', gap: 20, padding: 20, overflow: 'hidden'}]}>
-          <LinearGrad stops={[{color: '#1E1E24', offset: 0}, {color: '#141417', offset: 1}]} radius={24} />
-          <LifespanRing km={540} max={800} size={128} stroke={11} />
+        <View style={[s.heroCard, {flexDirection: 'row', alignItems: 'center', gap: 18, padding: 14, overflow: 'hidden'}]}>
+          <LinearGrad stops={[{color: '#1E1E24', offset: 0}, {color: '#141417', offset: 1}]} radius={22} />
+          <LifespanRing km={540} max={800} size={104} stroke={9} />
           <View style={{flex: 1}}>
             <StatusPill status="caution" />
             <Text style={{fontFamily: UI, fontSize: 17, fontWeight: '700', color: '#fff', marginTop: 10}}>ASICS Novablast 5</Text>
@@ -617,24 +616,24 @@ function Injury({goNext, onSkip, insetTop, insetBottom}: ScreenProps) {
         </View>
 
         {/* 분석 그리드 */}
-        <View style={{flexDirection: 'row', gap: 12, marginTop: 14}}>
+        <View style={{flexDirection: 'row', gap: 12, marginTop: 10}}>
           <View style={[s.analyticCard, {flex: 1}]}>
-            <View style={{flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 10}}>
+            <View style={{flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 8}}>
               <HeartIcon />
               <Text style={{fontFamily: UI, fontSize: 12.5, color: KG.dim}}>충격 흡수율</Text>
             </View>
-            <Metric value={78} unit="%" size={40} />
-            <View style={{marginTop: 10}}>
+            <Metric value={78} unit="%" size={32} />
+            <View style={{marginTop: 8}}>
               <WearBar pct={78} color={KG.amber} />
             </View>
           </View>
           <View style={[s.analyticCard, {flex: 1}]}>
-            <View style={{flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 10}}>
+            <View style={{flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 8}}>
               <RulerIcon />
               <Text style={{fontFamily: UI, fontSize: 12.5, color: KG.dim}}>교체까지</Text>
             </View>
-            <Metric value={260} unit="KM" size={40} />
-            <Text style={{fontFamily: UI, fontSize: 12, color: KG.dim, marginTop: 12}}>약 3주 후 예상</Text>
+            <Metric value={260} unit="KM" size={32} />
+            <Text style={{fontFamily: UI, fontSize: 12, color: KG.dim, marginTop: 8}}>약 3주 후 예상</Text>
           </View>
         </View>
 
@@ -647,7 +646,7 @@ function Injury({goNext, onSkip, insetTop, insetBottom}: ScreenProps) {
             교체 시점 <Text style={{color: KG.orange, fontWeight: '600'}}>50 km 전</Text> 미리 알림을 보내드려요.
           </Text>
         </View>
-      </ScrollView>
+      </View>
       <View style={[s.footer, {paddingBottom: Math.max(insetBottom, 18)}]}>
         <PrimaryButton label="다음" onPress={goNext} />
       </View>
@@ -665,7 +664,7 @@ function ShoeCard({shoe}: {shoe: (typeof SHOES)[number]}) {
   const isReplace = st === 'replace';
   return (
     <View style={[s.shoeCard, isReplace && {borderColor: 'rgba(255,77,77,0.28)'}]}>
-      <PctRing pct={remain} color={col} size={72} stroke={7} />
+      <PctRing pct={remain} color={col} size={56} stroke={6} />
       <View style={{flex: 1, minWidth: 0}}>
         <Text style={s.brandEyebrow}>{shoe.brand.toUpperCase()}</Text>
         <Text numberOfLines={1} style={{fontFamily: UI, fontSize: 18, fontWeight: '700', color: '#fff', marginTop: 2}}>
@@ -685,24 +684,24 @@ function Management({goNext, onSkip, insetTop, insetBottom}: ScreenProps) {
   return (
     <View style={s.screen}>
       <FlowHeader step={3} total={5} onSkip={onSkip} insetTop={insetTop} />
-      <ScrollView contentContainerStyle={s.scrollBody} showsVerticalScrollIndicator={false}>
+      <View style={s.bodyWrap}>
         <Eyebrow>Smart shoe management</Eyebrow>
         <Text style={s.title}>신발 수명을 한눈에</Text>
 
         {/* 요약 히어로 */}
-        <View style={[s.summaryHero, {marginTop: 18}]}>
+        <View style={[s.summaryHero, {marginTop: 12}]}>
           <View>
             <Text style={{fontFamily: UI, fontSize: 12, color: KG.dim, letterSpacing: 0.8}}>전체 누적 거리</Text>
-            <Metric value="1,410" unit="KM" size={52} unitColor={KG.dim} />
+            <Metric value="1,410" unit="KM" size={40} unitColor={KG.dim} />
           </View>
           <View style={{alignItems: 'flex-end'}}>
-            <Text style={{fontFamily: DISP, fontSize: 40, color: '#fff'}}>3</Text>
+            <Text style={{fontFamily: DISP, fontSize: 34, color: '#fff'}}>3</Text>
             <Text style={{fontFamily: UI, fontSize: 12, color: KG.dim}}>켤레 관리 중</Text>
           </View>
         </View>
 
         {/* 신발 리스트 */}
-        <View style={{marginTop: 16, gap: 12}}>
+        <View style={{marginTop: 10, gap: 8}}>
           {SHOES.map(sh => (
             <ShoeCard key={sh.id} shoe={sh} />
           ))}
@@ -715,7 +714,7 @@ function Management({goNext, onSkip, insetTop, insetBottom}: ScreenProps) {
             <Text style={{fontWeight: '700'}}>Adizero Adios Pro 4</Text> 교체 시기예요. 새 러닝화를 추천받아 보세요.
           </Text>
         </View>
-      </ScrollView>
+      </View>
       <View style={[s.footer, {paddingBottom: Math.max(insetBottom, 18)}]}>
         <PrimaryButton label="내 신발 등록하기" onPress={goNext} />
       </View>
@@ -758,24 +757,23 @@ function Register({goNext, onSkip, onRegister, insetTop, insetBottom}: ScreenPro
   return (
     <View style={s.screen}>
       <FlowHeader step={4} total={5} onSkip={onSkip} insetTop={insetTop} />
-      <ScrollView contentContainerStyle={s.scrollBody} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+      <View style={s.bodyWrap}>
         <View style={{flexDirection: 'row', alignItems: 'center', gap: 8}}>
           <SparkIcon size={15} color={KG.orange} />
           <Text style={[s.eyebrow, {marginBottom: 0}]}>거의 다 왔어요</Text>
         </View>
-        <Text style={[s.title, {fontSize: 28}]}>첫 러닝화를{'\n'}등록해볼까요?</Text>
-        <Text style={s.body}>지금 신고 있는 러닝화를 등록하면{'\n'}Keego가 수명을 추적해드려요.</Text>
+        <Text style={[s.title, {fontSize: 22}]}>첫 러닝화를 등록해볼까요?</Text>
 
         {/* 라이브 프리뷰 카드 */}
         <View style={[s.previewCard, {borderColor: ready ? 'rgba(255,101,0,0.3)' : KG.line, overflow: 'hidden'}]}>
-          <LinearGrad stops={[{color: '#1C1C22', offset: 0}, {color: '#141417', offset: 1}]} radius={22} />
-          <PctRing pct={remain} color={col} size={64} stroke={6} />
-          <View style={{flex: 1, minWidth: 0, marginLeft: 18}}>
+          <LinearGrad stops={[{color: '#1C1C22', offset: 0}, {color: '#141417', offset: 1}]} radius={18} />
+          <PctRing pct={remain} color={col} size={52} stroke={6} />
+          <View style={{flex: 1, minWidth: 0, marginLeft: 14}}>
             <Text style={s.brandEyebrow}>{brand || '브랜드'}</Text>
-            <Text numberOfLines={1} style={{fontFamily: UI, fontSize: 18, fontWeight: '700', color: model ? '#fff' : KG.faint, marginTop: 2}}>
+            <Text numberOfLines={1} style={{fontFamily: UI, fontSize: 16, fontWeight: '700', color: model ? '#fff' : KG.faint, marginTop: 2}}>
               {model || '모델을 선택하세요'}
             </Text>
-            <Text style={{fontFamily: UI, fontSize: 13.5, color: KG.dim, marginTop: 7}}>
+            <Text style={{fontFamily: UI, fontSize: 13, color: KG.dim, marginTop: 5}}>
               {km.toLocaleString()} / {max} km
               <Text style={{color: KG.faint}}> · </Text>
               <Text style={{color: col, fontWeight: '600'}}>{STATUS[st].label}</Text>
@@ -784,7 +782,7 @@ function Register({goNext, onSkip, onRegister, insetTop, insetBottom}: ScreenPro
         </View>
 
         {/* 1 브랜드 */}
-        <View style={{marginTop: 20}}>
+        <View style={{marginTop: 12}}>
           <FieldLabel n="1" label="브랜드" />
           <View style={s.chipWrap}>
             {BRANDS.map(b => (
@@ -802,7 +800,7 @@ function Register({goNext, onSkip, onRegister, insetTop, insetBottom}: ScreenPro
         </View>
 
         {/* 2 모델 */}
-        <View style={{marginTop: 22}}>
+        <View style={{marginTop: 12}}>
           <FieldLabel n="2" label="모델" />
           {brand ? (
             <View style={s.chipWrap}>
@@ -811,12 +809,12 @@ function Register({goNext, onSkip, onRegister, insetTop, insetBottom}: ScreenPro
               ))}
             </View>
           ) : (
-            <Text style={{fontFamily: UI, fontSize: 13, color: KG.faint, marginTop: 10, paddingVertical: 4}}>브랜드를 먼저 선택하세요</Text>
+            <Text style={{fontFamily: UI, fontSize: 13, color: KG.faint, marginTop: 8, paddingVertical: 3}}>브랜드를 먼저 선택하세요</Text>
           )}
         </View>
 
         {/* 3 구매 시기 */}
-        <View style={{marginTop: 22}}>
+        <View style={{marginTop: 12}}>
           <FieldLabel n="3" label="구매 시기" />
           <View style={s.chipWrap}>
             {['1개월 이내', '3개월', '6개월', '직접 입력'].map(w => (
@@ -826,12 +824,12 @@ function Register({goNext, onSkip, onRegister, insetTop, insetBottom}: ScreenPro
         </View>
 
         {/* 4 현재 누적 거리 */}
-        <View style={{marginTop: 22, marginBottom: 8}}>
+        <View style={{marginTop: 12}}>
           <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
             <FieldLabel n="4" label="현재 누적 거리" />
-            <Metric value={km} unit="KM" size={24} />
+            <Metric value={km} unit="KM" size={22} />
           </View>
-          <View style={{marginTop: 14}}>
+          <View style={{marginTop: 10}}>
             <KmSlider value={km} min={0} max={600} step={10} onChange={setKm} />
             <View style={{flexDirection: 'row', justifyContent: 'space-between', marginTop: 6}}>
               <Text style={s.tick}>새 신발</Text>
@@ -840,7 +838,7 @@ function Register({goNext, onSkip, onRegister, insetTop, insetBottom}: ScreenPro
             </View>
           </View>
         </View>
-      </ScrollView>
+      </View>
 
       {/* 스티키 CTA */}
       <View style={[s.footer, {paddingBottom: Math.max(insetBottom, 18)}]}>
@@ -936,16 +934,16 @@ function Ready({registered, onFinish, onSkip, insetTop, insetBottom}: ScreenProp
         stops={[{color: 'rgba(255,101,0,0.22)', offset: 0}, {color: 'rgba(255,101,0,0)', offset: 0.65}]}
       />
       <FlowHeader step={5} total={5} onSkip={onSkip} insetTop={insetTop} />
-      <ScrollView contentContainerStyle={[s.scrollBody, {alignItems: 'center'}]} showsVerticalScrollIndicator={false}>
+      <View style={[s.bodyWrap, {alignItems: 'center'}]}>
         <View style={s.readyBadge}>
-          <KeegoMark size={34} />
+          <KeegoMark size={30} />
         </View>
-        <Text style={[s.title, {textAlign: 'center', marginTop: 22}]}>이제 달릴 준비가{'\n'}되었습니다</Text>
+        <Text style={[s.title, {textAlign: 'center', marginTop: 14}]}>이제 달릴 준비가{'\n'}되었습니다</Text>
         <Text style={[s.body, {textAlign: 'center'}]}>Keego와 함께 더 오래,{'\n'}더 건강하게 달리세요.</Text>
 
         {/* 등록 신발 요약 */}
         <View style={s.readyShoeCard}>
-          <PctRing pct={remain} color={col} size={56} stroke={6} />
+          <PctRing pct={remain} color={col} size={52} stroke={6} />
           <View style={{flex: 1, minWidth: 0, marginLeft: 15}}>
             <Text style={[s.brandEyebrow, {fontSize: 11}]}>추적 시작됨</Text>
             <Text numberOfLines={1} style={{fontFamily: UI, fontSize: 16, fontWeight: '700', color: '#fff', marginTop: 1}}>
@@ -958,7 +956,7 @@ function Ready({registered, onFinish, onSkip, insetTop, insetBottom}: ScreenProp
             </Text>
           </View>
         </View>
-      </ScrollView>
+      </View>
 
       {/* 로그인 */}
       <View style={[s.footer, {paddingBottom: Math.max(insetBottom, 18), gap: 10}]}>
@@ -1013,10 +1011,11 @@ const s = StyleSheet.create({
   screen: {flex: 1, backgroundColor: KG.bg},
   flowHeader: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24, paddingBottom: 6},
   skip: {fontFamily: UI, fontSize: 13, color: KG.faint, fontWeight: '500'},
-  scrollBody: {paddingHorizontal: 24, paddingTop: 16, paddingBottom: 24},
-  eyebrow: {fontFamily: UI, fontSize: 12.5, fontWeight: '700', letterSpacing: 1.6, color: KG.orange, textTransform: 'uppercase', marginBottom: 12},
-  title: {fontFamily: UI, fontSize: 30, lineHeight: 36, fontWeight: '700', letterSpacing: -0.6, color: KG.text},
-  body: {fontFamily: UI, fontSize: 15.5, lineHeight: 25, color: KG.dim, marginTop: 12, maxWidth: 340},
+  // 스크롤 제거: 본문은 flex:1 컨테이너로 한 화면에 들어가도록 압축한다(footer는 하단 고정).
+  bodyWrap: {flex: 1, paddingHorizontal: 24, paddingTop: 8},
+  eyebrow: {fontFamily: UI, fontSize: 12, fontWeight: '700', letterSpacing: 1.4, color: KG.orange, textTransform: 'uppercase', marginBottom: 6},
+  title: {fontFamily: UI, fontSize: 23, lineHeight: 29, fontWeight: '700', letterSpacing: -0.5, color: KG.text},
+  body: {fontFamily: UI, fontSize: 13.5, lineHeight: 19, color: KG.dim, marginTop: 8, maxWidth: 360},
   bodyStrong: {color: '#fff', fontWeight: '600'},
 
   // Welcome
@@ -1048,42 +1047,42 @@ const s = StyleSheet.create({
   ctaGloss: {position: 'absolute', top: 0, left: 0, right: 0, height: 1, backgroundColor: 'rgba(255,255,255,0.18)'},
   ctaLabel: {fontFamily: UI, fontSize: 16.5, fontWeight: '700', color: '#fff', letterSpacing: -0.2},
 
-  footer: {paddingHorizontal: 24, paddingTop: 12},
+  footer: {paddingHorizontal: 24, paddingTop: 8},
 
   // cards
-  heroCard: {marginTop: 18, borderRadius: 24, backgroundColor: KG.card, borderWidth: StyleSheet.hairlineWidth, borderColor: KG.line},
+  heroCard: {marginTop: 12, borderRadius: 22, backgroundColor: KG.card, borderWidth: StyleSheet.hairlineWidth, borderColor: KG.line},
   factStrip: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
-    marginTop: 16,
-    padding: 18,
+    marginTop: 10,
+    padding: 13,
     borderRadius: 18,
     backgroundColor: 'rgba(255,101,0,0.08)',
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: 'rgba(255,101,0,0.22)',
   },
-  analyticCard: {padding: 16, borderRadius: 20, backgroundColor: KG.card, borderWidth: StyleSheet.hairlineWidth, borderColor: KG.line},
+  analyticCard: {padding: 13, borderRadius: 18, backgroundColor: KG.card, borderWidth: StyleSheet.hairlineWidth, borderColor: KG.line},
   alertBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 13,
-    marginTop: 14,
-    padding: 16,
-    borderRadius: 18,
+    gap: 12,
+    marginTop: 10,
+    padding: 12,
+    borderRadius: 16,
     backgroundColor: 'rgba(255,255,255,0.04)',
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: KG.line,
   },
-  alertIconChip: {width: 38, height: 38, borderRadius: 12, backgroundColor: 'rgba(255,101,0,0.14)', alignItems: 'center', justifyContent: 'center'},
+  alertIconChip: {width: 34, height: 34, borderRadius: 11, backgroundColor: 'rgba(255,101,0,0.14)', alignItems: 'center', justifyContent: 'center'},
 
   // Management
   summaryHero: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 20,
-    borderRadius: 22,
+    padding: 14,
+    borderRadius: 20,
     backgroundColor: 'rgba(255,101,0,0.10)',
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: 'rgba(255,101,0,0.22)',
@@ -1091,9 +1090,9 @@ const s = StyleSheet.create({
   shoeCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 18,
-    padding: 18,
-    borderRadius: 22,
+    gap: 14,
+    padding: 13,
+    borderRadius: 18,
     backgroundColor: KG.card,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: KG.line,
@@ -1102,20 +1101,20 @@ const s = StyleSheet.create({
   recoStrip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 13,
-    marginTop: 14,
-    padding: 16,
-    borderRadius: 18,
+    gap: 12,
+    marginTop: 10,
+    padding: 12,
+    borderRadius: 16,
     backgroundColor: 'rgba(255,77,77,0.08)',
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: 'rgba(255,77,77,0.22)',
   },
 
   // Register
-  previewCard: {marginTop: 18, padding: 18, borderRadius: 22, flexDirection: 'row', alignItems: 'center', backgroundColor: KG.card, borderWidth: 1},
-  chipWrap: {flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10},
-  chip: {paddingVertical: 10, paddingHorizontal: 15, borderRadius: 12, borderWidth: StyleSheet.hairlineWidth},
-  chipSmall: {paddingVertical: 9, paddingHorizontal: 13},
+  previewCard: {marginTop: 12, padding: 12, borderRadius: 18, flexDirection: 'row', alignItems: 'center', backgroundColor: KG.card, borderWidth: 1},
+  chipWrap: {flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginTop: 8},
+  chip: {paddingVertical: 7, paddingHorizontal: 13, borderRadius: 11, borderWidth: StyleSheet.hairlineWidth},
+  chipSmall: {paddingVertical: 6, paddingHorizontal: 11},
   chipIdle: {backgroundColor: 'rgba(255,255,255,0.05)', borderColor: KG.line2},
   chipActive: {backgroundColor: KG.orange, borderColor: KG.orange},
   chipLabel: {fontFamily: UI, fontWeight: '600', letterSpacing: -0.1},
@@ -1144,10 +1143,10 @@ const s = StyleSheet.create({
 
   // Ready
   readyBadge: {
-    width: 64,
-    height: 64,
-    borderRadius: 20,
-    marginTop: 30,
+    width: 56,
+    height: 56,
+    borderRadius: 18,
+    marginTop: 14,
     backgroundColor: 'rgba(255,101,0,0.14)',
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: 'rgba(255,101,0,0.3)',
@@ -1157,9 +1156,9 @@ const s = StyleSheet.create({
   readyShoeCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 26,
-    padding: 16,
-    borderRadius: 20,
+    marginTop: 16,
+    padding: 14,
+    borderRadius: 18,
     backgroundColor: KG.card,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: KG.line,
