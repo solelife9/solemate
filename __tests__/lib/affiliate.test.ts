@@ -50,24 +50,42 @@ describe('recommendNextShoes', () => {
 });
 
 describe('buildShopLinks', () => {
-  it('builds coupang + naver search links with the encoded query', () => {
+  it('builds coupang + naver + musinsa + 29cm search links with the encoded query', () => {
     const links = buildShopLinks({ brand: 'Hoka', model: 'Clifton 10' });
     const shops = links.map((l) => l.shop);
     expect(shops).toContain('쿠팡');
     expect(shops).toContain('네이버쇼핑');
+    expect(shops).toContain('무신사');
+    expect(shops).toContain('29CM');
+    expect(links.length).toBe(4);
     for (const l of links) {
       expect(l.url).toContain(encodeURIComponent('Hoka Clifton 10'));
       expect(l.url.startsWith('https://')).toBe(true);
     }
   });
 
-  it('does not leak an affiliate channel when no tag is configured (secrets-0)', () => {
-    // 기본 AFFILIATE 는 빈 값 — URL 에 채널/태그가 붙지 않아야 한다.
+  it('points musinsa and 29cm at their correct search endpoints with the encoded query', () => {
+    const q = encodeURIComponent('Nike Pegasus 41');
+    const links = buildShopLinks({ brand: 'Nike', model: 'Pegasus 41' });
+    expect(links.find((l) => l.shop === '무신사')!.url).toBe(
+      `https://www.musinsa.com/search/musinsa/integration?q=${q}`,
+    );
+    expect(links.find((l) => l.shop === '29CM')!.url).toBe(
+      `https://www.29cm.co.kr/search?keyword=${q}`,
+    );
+  });
+
+  it('does not leak an affiliate channel/tag when no tag is configured (secrets-0)', () => {
+    // 기본 AFFILIATE 는 전부 빈 값 — 4개 URL 어디에도 채널/태그가 붙지 않아야 한다.
     expect(AFFILIATE.coupang).toBe('');
     expect(AFFILIATE.naver).toBe('');
+    expect(AFFILIATE.musinsa).toBe('');
+    expect(AFFILIATE.twentyninecm).toBe('');
     const links = buildShopLinks({ brand: 'Nike', model: 'Vaporfly 4' });
     expect(links.find((l) => l.shop === '쿠팡')!.url).not.toContain('channel=');
     expect(links.find((l) => l.shop === '네이버쇼핑')!.url).not.toContain('NaPm=');
+    expect(links.find((l) => l.shop === '무신사')!.url).not.toContain('affiliate=');
+    expect(links.find((l) => l.shop === '29CM')!.url).not.toContain('affiliate=');
   });
 });
 

@@ -27,7 +27,8 @@ export const categoryLabelKo: Record<ShoeCategory, string> = {
  * 제휴(어필리에이트) 태그 주입 지점 — 기본은 빈 값(시크릿 0 원칙).
  * 실제 파트너스 태그가 생기면 환경/설정에서 주입한다(여기에 평문 하드코딩 금지).
  */
-export const AFFILIATE: { coupang: string; naver: string } = { coupang: '', naver: '' };
+export const AFFILIATE: { coupang: string; naver: string; musinsa: string; twentyninecm: string } =
+  { coupang: '', naver: '', musinsa: '', twentyninecm: '' };
 
 export interface NextShoeInput {
   brand?: string;
@@ -79,16 +80,20 @@ export function recommendNextShoes(current: NextShoeInput, limit = 3): ShoeModel
 }
 
 /**
- * 한국 쇼핑몰 검색 링크를 만든다(쿠팡 · 네이버쇼핑). 둘 다 검색 결과 페이지로
- * 직행하는 안정적 엔드포인트. AFFILIATE 태그가 채워지면 그때 쿼리에 부착한다
+ * 한국 쇼핑몰 검색 링크를 만든다(쿠팡 · 네이버쇼핑 · 무신사 · 29CM). 모두 검색 결과
+ * 페이지로 직행하는 안정적 엔드포인트. AFFILIATE 태그가 채워지면 그때 쿼리에 부착한다
  * (기본은 순수 검색 URL — 시크릿 0).
  */
 export function buildShopLinks(m: { brand: string; model: string }): ShopLink[] {
   const q = encodeURIComponent(`${m.brand} ${m.model}`.trim());
   const coupangBase = `https://www.coupang.com/np/search?q=${q}`;
   const naverBase = `https://search.shopping.naver.com/search/all?query=${q}`;
+  const musinsaBase = `https://www.musinsa.com/search/musinsa/integration?q=${q}`;
+  const twentyninecmBase = `https://www.29cm.co.kr/search?keyword=${q}`;
   return [
     { shop: '쿠팡', url: AFFILIATE.coupang ? `${coupangBase}&channel=${encodeURIComponent(AFFILIATE.coupang)}` : coupangBase },
     { shop: '네이버쇼핑', url: AFFILIATE.naver ? `${naverBase}&NaPm=${encodeURIComponent(AFFILIATE.naver)}` : naverBase },
+    { shop: '무신사', url: AFFILIATE.musinsa ? `${musinsaBase}&affiliate=${encodeURIComponent(AFFILIATE.musinsa)}` : musinsaBase },
+    { shop: '29CM', url: AFFILIATE.twentyninecm ? `${twentyninecmBase}&affiliate=${encodeURIComponent(AFFILIATE.twentyninecm)}` : twentyninecmBase },
   ];
 }
