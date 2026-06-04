@@ -23,6 +23,7 @@ import { assessShoeInjuryRisk } from './lib/injury';
 import { RotationPick } from './lib/rotation';
 import { recommendNextShoes, buildShopLinks, categoryLabelKo, AFFILIATE_DISCLOSURE } from './lib/affiliate';
 import { forecastLineKo, type ReplacementForecast } from './lib/wearView';
+import { shouldRecommendNextShoe } from './lib/recommendTrigger';
 
 export type WeekStats = { km: string; runs: number; pace: string };
 // 주간 목표 + keep-going 동기 지표. 거리는 km 표준, pct는 이번 주 달성률 %(목표
@@ -387,8 +388,12 @@ export default function HomeScreen({
           )}
           {/* 휴식·마모 분산 로테이션 추천(2켤레+에서만 채워짐, 비면 자동 숨김) */}
           <RotationCard rotation={rotation ?? []} onPickShoe={onPickShoe} />
-          {/* 수익화 v1: 선택 신발이 '교체' 등급이면 다음 러닝화 추천(차별점 정합) */}
-          {active.condition === '교체' && <NextShoeCard shoe={active} />}
+          {/* 수익화 v1: 다음 러닝화 추천 노출 트리거 — Slice 6 교체 예측 기반(overdue/임박).
+              forecast가 주입되면 shouldRecommendNextShoe로 판정하고, 없으면 기존
+              condition==='교체' 폴백을 보존한다(회귀 방지). */}
+          {(forecast ? shouldRecommendNextShoe(forecast) : active.condition === '교체') && (
+            <NextShoeCard shoe={active} />
+          )}
         </>
       ) : (
         <EmptyHome onAddShoe={onAddShoe} />
