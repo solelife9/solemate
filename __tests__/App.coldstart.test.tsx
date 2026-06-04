@@ -221,8 +221,8 @@ test('first-time runner is shown a location-permission rationale BEFORE the OS d
   }
 });
 
-// ── 5) First-run onboarding ──────────────────────────────────────────────────
-test('first-run onboarding introduces shoe→run→wear and routes into shoe registration, then is not shown again', async () => {
+// ── 5) First-run onboarding (cinematic 6-screen flow) ────────────────────────
+test('first-run onboarding introduces the shoe-lifespan value, advances on 시작하기, and once skipped is never shown again', async () => {
   await AsyncStorage.removeItem('onboarded');
   (globalThis.fetch as jest.Mock).mockImplementation((url: any) => {
     const u = String(url);
@@ -237,17 +237,23 @@ test('first-run onboarding introduces shoe→run→wear and routes into shoe reg
   await flush();
   const root = renderer.root;
 
-  // The intro explains the core value: running deducts the shoe's lifespan.
+  // The cinematic welcome explains the core value: tracking shoe lifespan.
   expect(has(root, 'onboarding')).toBe(true);
   expect(textOf(root)).toContain('수명');
 
-  // Starting it persists the onboarded flag and routes into shoe registration.
+  // 시작하기 advances within the onboarding flow (does NOT finish it yet).
   pressTestID(root, 'onboarding-start');
+  await flush();
+  expect(has(root, 'onboarding')).toBe(true);
+  expect(await AsyncStorage.getItem('onboarded')).toBeNull();
+
+  // Skipping completes onboarding: the flag persists and the app routes to home.
+  pressTestID(root, 'onboarding-skip');
   await flush();
 
   expect(await AsyncStorage.getItem('onboarded')).toBe('1');
   expect(has(root, 'onboarding')).toBe(false);
-  // We are now on the add-shoe screen (its header/CTA copy is shoe-registration).
+  // Home is now shown (its content mentions 신발: "오늘은 어떤 신발로 ...").
   expect(textOf(root)).toContain('신발');
 
   act(() => renderer.unmount());

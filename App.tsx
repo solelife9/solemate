@@ -11,7 +11,7 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import Tts from 'react-native-tts';
 
 import {
-  BG, CARD, CARD_HI as SURFACE, ACCENT, WARN, DANGER, T1, T2, T3,
+  BG, CARD, CARD_HI as SURFACE, ACCENT, WARN, DANGER, T1, T3,
   FONT as FP, DISPLAY as FH, SEP, Shoe, Run,
 } from './theme';
 import {Ring} from './primitives';
@@ -22,6 +22,7 @@ import HistoryScreen, {PeriodSummary, PeriodChart} from './HistoryScreen.rn';
 import ShoesScreen, {ShoeTotals} from './ShoesScreen.rn';
 import ProfileScreen, {Profile, Badge, PersonalRecord} from './ProfileScreen.rn';
 import AddShoeScreen from './AddShoeScreen.rn';
+import OnboardingScreen, {RegisteredShoe} from './OnboardingScreen.rn';
 import {RunStart} from './RunScreen.rn';
 
 import {simplifyRoute} from './lib/geo';
@@ -805,11 +806,16 @@ function Main(){
     );
   };
 
-  // 온보딩 완료: 1회성 플래그 영속 + 화면에서 치운다. wantAddShoe면 곧장 신발 등록으로.
-  const finishOnboarding=(wantAddShoe:boolean)=>{
+  // 온보딩 완료: 1회성 플래그 영속 + 화면에서 치운다. 온보딩의 등록 단계에서 고른
+  // 신발(있으면)은 실제 백엔드 신발로 만들어 홈에 바로 반영한다(없으면 빈 홈으로).
+  // setOnboarded(true)가 먼저라 addShoe의 비동기 shoes 갱신이 흐름을 끊지 않는다.
+  const completeOnboarding=(registered:RegisteredShoe|null)=>{
     setOnboarded(true);
     void AsyncStorage.setItem(ONBOARD_KEY,'1');
-    setOverlay(wantAddShoe?'add':'none');
+    if(registered&&userId){
+      addShoe(`${registered.brand} ${registered.model}`.trim(),registered.max||DEFAULT_MAX_KM,Math.round(registered.km),today());
+    }
+    setOverlay('none');
   };
 
   // ── render ──────────────────────────────────────────────────
@@ -827,7 +833,7 @@ function Main(){
   // 첫 실행 온보딩: 신발이 없고(신규) 아직 온보딩 전이면 신발→런→수명 차감 흐름을
   // 1회 소개한다. 신발을 이미 가진 사용자/완료자에겐 뜨지 않는다.
   if(!onboarded&&shoes.length===0&&overlay==='none'){
-    return <Onboarding onStart={()=>finishOnboarding(true)} onSkip={()=>finishOnboarding(false)}/>;
+    return <OnboardingScreen onDone={completeOnboarding}/>;
   }
   if(overlay==='goal'&&pendingShoe){
     return (
@@ -967,44 +973,6 @@ function BootError({onRetry}:{onRetry:()=>void}){
   );
 }
 
-// ─── 첫 실행 온보딩(audit#9/#10) ────────────────────────────────────────────
-// 신규 사용자에게 핵심 동선을 1회 소개: 신발을 등록하면, 달릴 때마다 그 신발의
-// 수명이 자동으로 차감된다(shoe-first 가치 제안). '신발 등록하고 시작'으로 곧장
-// 신발 등록 화면으로 보낸다.
-function Onboarding({onStart,onSkip}:{onStart:()=>void;onSkip:()=>void}){
-  const steps=[
-    {icon:'add-circle-outline',title:'신발을 등록하세요',body:'자주 신는 러닝화를 추가하면 잠금장에 보관돼요.'},
-    {icon:'walk-outline',title:'달리면 수명이 차감돼요',body:'러닝 거리만큼 그 신발의 수명이 자동으로 줄어듭니다.'},
-    {icon:'shield-checkmark-outline',title:'교체 시점을 알려드려요',body:'수명이 다하면 미리 알림 — 부상 없이 계속 달릴 수 있게.'},
-  ];
-  const insets=useSafeAreaInsets();
-  return (
-    <View testID="onboarding" style={[boot.screen,{justifyContent:'center',paddingTop:insets.top+12}]}>
-      <Text style={boot.obKicker}>KEEGO 시작하기</Text>
-      <Text style={boot.obTitle}>신발과 함께 달리는{'\n'}러닝 트래커</Text>
-      <View style={{height:24}}/>
-      {steps.map((s,i)=>(
-        <View key={i} style={boot.obStep}>
-          <View style={boot.obIconWrap}>
-            <Ionicons name={s.icon} size={22} color={ACCENT}/>
-          </View>
-          <View style={{flex:1}}>
-            <Text style={boot.obStepTitle}>{s.title}</Text>
-            <Text style={boot.obStepBody}>{s.body}</Text>
-          </View>
-        </View>
-      ))}
-      <View style={{height:28}}/>
-      <TouchableOpacity testID="onboarding-start" onPress={onStart} style={boot.retryBtn} activeOpacity={0.85} accessibilityRole="button" accessibilityLabel="신발 등록하고 시작">
-        <Text style={boot.retryText}>신발 등록하고 시작</Text>
-      </TouchableOpacity>
-      <TouchableOpacity testID="onboarding-skip" onPress={onSkip} style={boot.obSkip} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="나중에 할게요">
-        <Text style={boot.obSkipText}>나중에 할게요</Text>
-      </TouchableOpacity>
-    </View>
-  );
-}
-
 const boot=StyleSheet.create({
   screen:{flex:1,backgroundColor:BG,paddingHorizontal:18,paddingTop:12},
   card:{backgroundColor:CARD,borderRadius:20,padding:24,alignItems:'center',gap:12,
@@ -1015,15 +983,6 @@ const boot=StyleSheet.create({
   retryBtn:{flexDirection:'row',alignItems:'center',justifyContent:'center',gap:8,
     backgroundColor:ACCENT,borderRadius:14,paddingVertical:14,paddingHorizontal:24,marginTop:8,alignSelf:'stretch'},
   retryText:{color:'#000',fontFamily:FP,fontSize:16,fontWeight:'700'},
-  obKicker:{color:ACCENT,fontFamily:FP,fontSize:13,fontWeight:'700',letterSpacing:1},
-  obTitle:{color:T1,fontFamily:FP,fontSize:26,fontWeight:'700',lineHeight:34,marginTop:8},
-  obStep:{flexDirection:'row',alignItems:'center',gap:14,marginBottom:16},
-  obIconWrap:{width:44,height:44,borderRadius:12,backgroundColor:CARD,alignItems:'center',justifyContent:'center',
-    borderWidth:StyleSheet.hairlineWidth,borderColor:SEP},
-  obStepTitle:{color:T1,fontFamily:FP,fontSize:16,fontWeight:'600'},
-  obStepBody:{color:T2,fontFamily:FP,fontSize:13,lineHeight:18,marginTop:2,opacity:0.7},
-  obSkip:{alignItems:'center',paddingVertical:14,marginTop:4},
-  obSkipText:{color:T3,fontFamily:FP,fontSize:14,fontWeight:'500'},
 });
 
 // ─── Live run screen (GPS / sensors / TTS engine + handoff Ring UI) ─────────
