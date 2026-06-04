@@ -4,10 +4,13 @@
  * 관찰 가능한 계약을 검증한다(휴리스틱 계수가 아니라 *분기*와 *안전성*):
  *   S6-4 정상(ok): 잔여>0·최근주행 있음 → weeksRemaining>0·etaISO 존재,
  *        confidence = 최근창 런≥3 ? high : low.
+ *        불변식: etaISO == now + weeksRemaining 주(출력↔출력, days↔weeks 혼동 차단).
+ *        타당성: 알려진 입력 → weeksRemaining 가 합리적 자릿수 band 안(rate 오류 차단).
  *        overdue: 잔여≤0 → reason 'overdue', weeks 0, eta = now.
  *        no_recent: 최근 28일 주행 0 → reason 'no_recent', weeks/eta = null.
+ *        분기 우선순위: 잔여≤0 AND 최근런0 → overdue 가 no_recent 보다 우선.
  *   A6-2 엣지: 결측·0·음수·비유한 입력에서 weeksRemaining 에 NaN/Infinity/음수 없음.
- *   경계: 최근창 런이 정확히 3개 → confidence 'high'.
+ *   경계: 최근창 런이 정확히 3개 → confidence 'high'; now−28d 정각 = 창 안.
  *
  * 순수 단위 — react-test-renderer/AsyncStorage 불요(no면 IO 는 surfaceOf 콜백으로 주입).
  *
@@ -53,6 +56,28 @@ describe('S6-4 정상(ok)', () => {
     const etaMs = new Date(f.etaISO as string).getTime();
     expect(Number.isFinite(etaMs)).toBe(true);
     expect(etaMs).toBeGreaterThan(NOW.getTime());
+    // 불변식: etaISO 는 정확히 now + weeksRemaining 주(週)여야 한다.
+    // days↔weeks 혼동·잘못된 배수·stale weeks 버그를 잡는다. 공개 출력↔출력만
+    // 비교하며 구현 상수(rate 계수 등)는 참조하지 않는다(오라클 누수 금지).
+    expect(etaMs).toBeCloseTo(
+      NOW.getTime() + (f.weeksRemaining as number) * 7 * DAY,
+      -3, // |diff| < 500ms (toISOString ms 절삭 오차만 허용)
+    );
+  });
+
+  test('weeksRemaining 타당성 경계: 알려진 입력 → 합리적 자릿수 band', () => {
+    // 최근 28일 실효 ~16km(8km×2, road·easy 페이스 → 보정 1.0), target 700,
+    // ageWear 0(구매시점 결측). 잔여 ≈ 수백km / 주당 한자릿수km → 수십~수백 주.
+    const shoe: WearShoe = {id: 's1', target_km: 700};
+    const runs: ForecastRun[] = [recentRun('r1', 4), recentRun('r2', 18)];
+    const f = forecastReplacement(shoe, runs, {now: NOW});
+
+    expect(f.reason).toBe('ok');
+    const weeks = f.weeksRemaining as number;
+    // rate 수식 총체적 오류(단위 혼동·잘못된 배수)를 잡는 자릿수 band:
+    // 1주보다 크고 수백주(≈10년)보다 작아야 한다.
+    expect(weeks).toBeGreaterThan(1);
+    expect(weeks).toBeLessThan(520);
   });
 
   test('confidence: 최근창 런≥3 → high, <3 → low', () => {
@@ -88,6 +113,50 @@ describe('S6-4 overdue(잔여 ≤ 0)', () => {
     expect(f.kmRemaining).toBeLessThanOrEqual(0);
     expect(f.weeksRemaining).toBe(0);
     expect(f.etaISO).toBe(NOW.toISOString());
+  });
+});
+
+describe('S6-4 분기 우선순위(remaining≤0 이 no_recent 보다 먼저)', () => {
+  test('잔여≤0 AND 최근런 0 → overdue 가 이긴다', () => {
+    // 큰 주행을 전부 28일 창 밖(40·50·60일 전)에 둔다: 누적 마모는 target 초과
+    // (잔여≤0)이면서 최근창 실효주행은 0. 스펙은 remaining≤0 을 먼저 검사하므로
+    // 결과는 no_recent 가 아니라 overdue 여야 한다.
+    const shoe: WearShoe = {id: 's-worn', target_km: 100};
+    const runs: ForecastRun[] = [
+      {id: 'r1', distance_km: 60, duration_s: 60 * 330, date: daysAgoISO(40)},
+      {id: 'r2', distance_km: 60, duration_s: 60 * 330, date: daysAgoISO(50)},
+      {id: 'r3', distance_km: 60, duration_s: 60 * 330, date: daysAgoISO(60)},
+    ];
+    const f = forecastReplacement(shoe, runs, {now: NOW});
+
+    expect(f.kmRemaining).toBeLessThanOrEqual(0); // 누적 마모 > target
+    expect(f.reason).toBe('overdue'); // ← no_recent 아님(remaining 먼저 검사)
+    expect(f.weeksRemaining).toBe(0);
+    expect(f.etaISO).toBe(NOW.toISOString());
+  });
+});
+
+describe('경계: 정확히 28일 전 런은 최근창 안', () => {
+  test('now−28d 정각 = 창 안(ok), 28d+1ms = 창 밖(no_recent)', () => {
+    const shoe: WearShoe = {id: 's1', target_km: 700};
+    const base = {id: 'edge', distance_km: 8, duration_s: 8 * 330};
+    const exactly28d: ForecastRun = {
+      ...base,
+      date: new Date(NOW.getTime() - 28 * DAY).toISOString(),
+    };
+    const justOutside: ForecastRun = {
+      ...base,
+      date: new Date(NOW.getTime() - (28 * DAY + 1)).toISOString(),
+    };
+
+    // 정확히 28일 전 = 창 경계 안 → 집계되어 ok.
+    const inWindow = forecastReplacement(shoe, [exactly28d], {now: NOW});
+    expect(inWindow.reason).toBe('ok');
+    expect(inWindow.weeksRemaining as number).toBeGreaterThan(0);
+
+    // 28일 + 1ms = 창 밖 → 집계 제외 → no_recent.
+    const outWindow = forecastReplacement(shoe, [justOutside], {now: NOW});
+    expect(outWindow.reason).toBe('no_recent');
   });
 });
 
