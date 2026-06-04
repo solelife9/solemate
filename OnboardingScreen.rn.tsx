@@ -246,7 +246,9 @@ function StatusPill({status}: {status: StatusKey}) {
   );
 }
 
-// 프로스티드 글래스 1차 CTA(흰 반투명 알약 — 솔리드 오렌지/흰색 아님).
+// 1차 CTA — 오렌지 그라데이션 알약(#FF7A2E→#EE5800 수직). expo-linear-gradient
+// 대신 react-native-svg(LinearGrad)로 채우고, 상단에 1px 광택 라인 + iOS 그림자
+// /Android elevation으로 입체감을 준다. 비활성은 ghost(반투명 흰색, 그림자 없음).
 function PrimaryButton({
   label,
   onPress,
@@ -267,6 +269,13 @@ function PrimaryButton({
       accessibilityLabel={label}
       accessibilityState={{disabled}}
       style={({pressed}) => [s.cta, disabled && s.ctaGhost, pressed && !disabled && {transform: [{scale: 0.97}]}]}>
+      {!disabled && (
+        <>
+          <LinearGrad stops={[{color: '#FF7A2E', offset: 0}, {color: '#EE5800', offset: 1}]} radius={15} />
+          {/* 상단 광택 엣지(그라데이션 위에 렌더) */}
+          <View pointerEvents="none" style={s.ctaGloss} />
+        </>
+      )}
       <Text style={[s.ctaLabel, disabled && {opacity: 0.5}]}>{label}</Text>
     </Pressable>
   );
@@ -1019,14 +1028,24 @@ const s = StyleSheet.create({
   // CTA
   cta: {
     height: 54,
-    borderRadius: 16,
+    borderRadius: 15,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.16)',
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 8},
+    shadowOpacity: 0.4,
+    shadowRadius: 14,
+    elevation: 6,
   },
-  ctaGhost: {backgroundColor: 'rgba(255,255,255,0.06)', borderColor: KG.line2},
+  ctaGhost: {
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderWidth: 1,
+    borderColor: KG.line2,
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  ctaGloss: {position: 'absolute', top: 0, left: 0, right: 0, height: 1, backgroundColor: 'rgba(255,255,255,0.18)'},
   ctaLabel: {fontFamily: UI, fontSize: 16.5, fontWeight: '700', color: '#fff', letterSpacing: -0.2},
 
   footer: {paddingHorizontal: 24, paddingTop: 12},
