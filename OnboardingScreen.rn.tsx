@@ -17,6 +17,7 @@ import {
   Text,
   StyleSheet,
   Pressable,
+  ScrollView,
   ImageBackground,
   PanResponder,
   ActivityIndicator,
@@ -542,7 +543,7 @@ function ShoesMatter({goNext, onSkip, insetTop, insetBottom}: ScreenProps) {
   return (
     <View style={s.screen}>
       <FlowHeader step={1} total={5} onSkip={onSkip} insetTop={insetTop} />
-      <View style={s.bodyWrap}>
+      <ScrollView style={s.flex1} contentContainerStyle={s.bodyContent} showsVerticalScrollIndicator={false}>
         <Eyebrow>Your shoes matter</Eyebrow>
         <Text style={s.title}>러닝화도 관리가 필요합니다</Text>
         <Text style={s.body}>
@@ -580,7 +581,7 @@ function ShoesMatter({goNext, onSkip, insetTop, insetBottom}: ScreenProps) {
             대부분의 러너가{'\n'}이 시기를 놓칩니다
           </Text>
         </View>
-      </View>
+      </ScrollView>
       <View style={[s.footer, {paddingBottom: Math.max(insetBottom, 18)}]}>
         <PrimaryButton label="다음" onPress={goNext} />
       </View>
@@ -595,7 +596,7 @@ function Injury({goNext, onSkip, insetTop, insetBottom}: ScreenProps) {
   return (
     <View style={s.screen}>
       <FlowHeader step={2} total={5} onSkip={onSkip} insetTop={insetTop} />
-      <View style={s.bodyWrap}>
+      <ScrollView style={s.flex1} contentContainerStyle={s.bodyContent} showsVerticalScrollIndicator={false}>
         <Eyebrow>Run injury free</Eyebrow>
         <Text style={s.title}>부상 없이 오래 달리세요</Text>
         <Text style={s.body}>
@@ -646,7 +647,7 @@ function Injury({goNext, onSkip, insetTop, insetBottom}: ScreenProps) {
             교체 시점 <Text style={{color: KG.orange, fontWeight: '600'}}>50 km 전</Text> 미리 알림을 보내드려요.
           </Text>
         </View>
-      </View>
+      </ScrollView>
       <View style={[s.footer, {paddingBottom: Math.max(insetBottom, 18)}]}>
         <PrimaryButton label="다음" onPress={goNext} />
       </View>
@@ -684,7 +685,7 @@ function Management({goNext, onSkip, insetTop, insetBottom}: ScreenProps) {
   return (
     <View style={s.screen}>
       <FlowHeader step={3} total={5} onSkip={onSkip} insetTop={insetTop} />
-      <View style={s.bodyWrap}>
+      <ScrollView style={s.flex1} contentContainerStyle={s.bodyContent} showsVerticalScrollIndicator={false}>
         <Eyebrow>Smart shoe management</Eyebrow>
         <Text style={s.title}>신발 수명을 한눈에</Text>
 
@@ -714,7 +715,7 @@ function Management({goNext, onSkip, insetTop, insetBottom}: ScreenProps) {
             <Text style={{fontWeight: '700'}}>Adizero Adios Pro 4</Text> 교체 시기예요. 새 러닝화를 추천받아 보세요.
           </Text>
         </View>
-      </View>
+      </ScrollView>
       <View style={[s.footer, {paddingBottom: Math.max(insetBottom, 18)}]}>
         <PrimaryButton label="내 신발 등록하기" onPress={goNext} />
       </View>
@@ -757,7 +758,7 @@ function Register({goNext, onSkip, onRegister, insetTop, insetBottom}: ScreenPro
   return (
     <View style={s.screen}>
       <FlowHeader step={4} total={5} onSkip={onSkip} insetTop={insetTop} />
-      <View style={s.bodyWrap}>
+      <ScrollView style={s.flex1} contentContainerStyle={s.bodyContent} showsVerticalScrollIndicator={false}>
         <View style={{flexDirection: 'row', alignItems: 'center', gap: 8}}>
           <SparkIcon size={15} color={KG.orange} />
           <Text style={[s.eyebrow, {marginBottom: 0}]}>거의 다 왔어요</Text>
@@ -838,7 +839,7 @@ function Register({goNext, onSkip, onRegister, insetTop, insetBottom}: ScreenPro
             </View>
           </View>
         </View>
-      </View>
+      </ScrollView>
 
       {/* 스티키 CTA */}
       <View style={[s.footer, {paddingBottom: Math.max(insetBottom, 18)}]}>
@@ -934,7 +935,7 @@ function Ready({registered, onFinish, onSkip, insetTop, insetBottom}: ScreenProp
         stops={[{color: 'rgba(255,101,0,0.22)', offset: 0}, {color: 'rgba(255,101,0,0)', offset: 0.65}]}
       />
       <FlowHeader step={5} total={5} onSkip={onSkip} insetTop={insetTop} />
-      <View style={[s.bodyWrap, {alignItems: 'center'}]}>
+      <ScrollView style={s.flex1} contentContainerStyle={[s.bodyContent, {alignItems: 'center'}]} showsVerticalScrollIndicator={false}>
         <View style={s.readyBadge}>
           <KeegoMark size={30} />
         </View>
@@ -956,7 +957,7 @@ function Ready({registered, onFinish, onSkip, insetTop, insetBottom}: ScreenProp
             </Text>
           </View>
         </View>
-      </View>
+      </ScrollView>
 
       {/* 로그인 */}
       <View style={[s.footer, {paddingBottom: Math.max(insetBottom, 18), gap: 10}]}>
@@ -1011,8 +1012,11 @@ const s = StyleSheet.create({
   screen: {flex: 1, backgroundColor: KG.bg},
   flowHeader: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24, paddingBottom: 6},
   skip: {fontFamily: UI, fontSize: 13, color: KG.faint, fontWeight: '500'},
-  // 스크롤 제거: 본문은 flex:1 컨테이너로 한 화면에 들어가도록 압축한다(footer는 하단 고정).
-  bodyWrap: {flex: 1, paddingHorizontal: 24, paddingTop: 8},
+  // 본문은 ScrollView로 감싸되 contentContainerStyle에 flexGrow:1을 줘, 콘텐츠가 화면에
+  // 들어오면 스크롤이 생기지 않고(=한 화면), 넘칠 때만 스크롤된다. footer(CTA)는 ScrollView
+  // 바깥 형제로 항상 하단에 고정돼 어떤 선택 상태에서도 사라지지 않는다.
+  flex1: {flex: 1},
+  bodyContent: {flexGrow: 1, paddingHorizontal: 24, paddingTop: 8},
   eyebrow: {fontFamily: UI, fontSize: 12, fontWeight: '700', letterSpacing: 1.4, color: KG.orange, textTransform: 'uppercase', marginBottom: 6},
   title: {fontFamily: UI, fontSize: 23, lineHeight: 29, fontWeight: '700', letterSpacing: -0.5, color: KG.text},
   body: {fontFamily: UI, fontSize: 13.5, lineHeight: 19, color: KG.dim, marginTop: 8, maxWidth: 360},
