@@ -3,17 +3,19 @@
 // (sample data removed — real shoes/runs/totals injected via props)
 // ============================================================================
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, Pressable, TextInput, Alert, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, Pressable, TextInput, Alert, Linking, StyleSheet } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {
-  BG, CARD, CARD_HI, ACCENT, DANGER, WARN, GOOD, T1, T2, T3, SEP, FONT, DISPLAY, withAlpha, Shoe, Run, SHOES,
+  BG, CARD, CARD_DIM, CARD_HI, ACCENT, DANGER, WARN, GOOD, T1, T2, T3, SEP, FONT, DISPLAY, withAlpha, Shoe, Run, SHOES,
 } from './theme';
-import { Ring, TabBar, TierBadge, Pill, InjuryBanner } from './primitives';
+import { Ring, TabBar, TierBadge, Pill, SectionTitle, InjuryBanner } from './primitives';
 import { Unit, displayNum, displayToKm } from './lib/units';
 import { clampMaxKm, KEEP_GOING_REPLACE, SHOE_MAX_STEP_KM, SHOE_REPLACE_PCT } from './lib/shoe';
 import { assessShoeInjuryRisk } from './lib/injury';
 import { buildWearView, forecastLineKo, type Surface } from './lib/wearView';
+import { recommendNextShoes, buildShopLinks, categoryLabelKo, AFFILIATE_DISCLOSURE } from './lib/affiliate';
+import { shouldRecommendNextShoe } from './lib/recommendTrigger';
 
 // lastWorn: 이 신발의 마지막 착용일(런에서 파생, 한국어 표기). 미착용이면 생략.
 // avgPace: 이 신발로 달린 런들의 평균 페이스(예 "5'30\"" / 기록 없으면 '--'). 신발끼리
@@ -23,6 +25,49 @@ export type ShoeTotals = { totalRuns: number; totalTime: string; avgPace: string
 // Proportional condition → color (shoeHealth tiers: 양호 / 주의 / 교체).
 const condColor = (c: string) => (c === '교체' ? DANGER : c === '주의' ? WARN : GOOD);
 const ringColor = (c: string) => (c === '교체' ? DANGER : c === '주의' ? WARN : ACCENT);
+
+// 수익화 v1(차별점 정합): 이 신발이 교체임박(forecast overdue/≤3주)일 때, 같은 카테고리의
+// '다음 러닝화'를 상세에서도 추천한다(구매 의도 최고 시점의 contextual 추천 — 배너광고 아님).
+// 홈 NextShoeCard 와 같은 lib/affiliate(순수) 자산을 재사용하되 상세 레이아웃에 맞춘다.
+// 쇼핑몰 검색 링크는 Linking.openURL 로 외부에서 열고, 투명성 안내(제휴 가능성+'러너 우선')를
+// 하단에 명시한다. 시드 DB가 없거나 추천이 비면 통째로 숨는다.
+function NextShoeCard({ shoe }: { shoe: Shoe }) {
+  const recs = recommendNextShoes({ brand: shoe.brand, model: shoe.model }, 3);
+  if (recs.length === 0) return null;
+  const open = (url: string) => { Promise.resolve(Linking.openURL(url)).catch(() => {}); };
+  return (
+    <View testID="shoe-detail-next-shoe" style={{ gap: 12 }}>
+      <SectionTitle style={s.nextSectionLabel}>이제 교체할 때 — 다음 러닝화</SectionTitle>
+      <View style={[s.card, s.nextCard]}>
+        <Text style={s.nextSub}>
+          <Text style={{ color: T2, fontWeight: '600' }}>{shoe.model}</Text>의 수명이 거의 다 됐어요. 같은 용도의 다음 신발이에요.
+        </Text>
+        {recs.map((r, i) => (
+          <View key={`${r.brand}-${r.model}`} style={[s.nextRow, i > 0 && s.nextRowSep]}>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text style={s.nextBrand} numberOfLines={1}>{r.brand}</Text>
+              <Text style={s.nextModel} numberOfLines={1}>{r.model}</Text>
+              <Text style={s.nextCat}>{categoryLabelKo[r.category]}</Text>
+            </View>
+            <View style={s.shopBtns}>
+              {buildShopLinks(r).map((link) => (
+                <Pressable
+                  key={link.shop}
+                  onPress={() => open(link.url)}
+                  accessibilityRole="link"
+                  accessibilityLabel={`${r.brand} ${r.model} ${link.shop}에서 보기`}
+                  style={({ pressed }) => [s.shopBtn, pressed && s.pressed]}>
+                  <Text style={s.shopBtnTxt}>{link.shop}</Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+        ))}
+        <Text style={s.nextDisclosure}>{AFFILIATE_DISCLOSURE}</Text>
+      </View>
+    </View>
+  );
+}
 
 // ── shoe detail ───────────────────────────────────────────────────────────────
 function ShoeDetail({
@@ -274,6 +319,14 @@ function ShoeDetail({
           </View>
         )}
 
+        {/* 수익화 v1(차별점 정합): 이 신발이 교체임박(forecast overdue/≤3주)이면 같은
+            카테고리의 '다음 러닝화'를 상세에서도 추천한다. 트리거는 Slice 6 교체 예측
+            (wearView.forecast)을 shouldRecommendNextShoe 로 판정해 홈과 동일한 기준을
+            쓴다(여유 있는 신발엔 미노출). 보관 신발은 교체 동선에서 제외한다. */}
+        {!retired && shouldRecommendNextShoe(wearView.forecast) && (
+          <NextShoeCard shoe={shoe} />
+        )}
+
         {/* totals — 2x2 그리드(평균 페이스 포함): 신발별 누적·페이스를 비교할 수 있게 한다 */}
         <View style={[s.card, s.statGrid]}>
           {[
@@ -464,6 +517,22 @@ const s = StyleSheet.create({
   dot: { width: 7, height: 7, borderRadius: 999 },
   condText: { fontFamily: FONT, fontSize: 13, fontWeight: '500' },
   condSub: { color: T3, fontFamily: FONT, fontSize: 13 },
+
+  // 다음 러닝화 추천 카드(수익화 v1) — 홈 NextShoeCard 와 같은 자산을 상세 레이아웃에
+  // 맞춰 재구성한다. 카드 표면은 s.card(CARD) 위에 CARD_DIM + accent 테두리로 절제하고,
+  // 쇼핑몰 버튼은 accent 반투명 pill 로 통일한다(하드코딩 색/폰트 0 — 전부 theme 토큰).
+  nextSectionLabel: { paddingHorizontal: 4 },
+  nextCard: { backgroundColor: CARD_DIM, borderWidth: 1, borderColor: withAlpha(ACCENT, 0.3), padding: 16 },
+  nextSub: { color: T3, fontFamily: FONT, fontSize: 12.5, lineHeight: 18, marginBottom: 6 },
+  nextRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 11 },
+  nextRowSep: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.07) },
+  nextBrand: { color: T3, fontFamily: DISPLAY, fontSize: 10, fontWeight: '500', letterSpacing: 1.2 },
+  nextModel: { color: T1, fontFamily: DISPLAY, fontSize: 14.5, fontWeight: '600', letterSpacing: -0.1, marginTop: 3 },
+  nextCat: { color: T3, fontFamily: FONT, fontSize: 11, marginTop: 3 },
+  shopBtns: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, justifyContent: 'flex-end', maxWidth: 132 },
+  shopBtn: { borderRadius: 999, borderWidth: 1, borderColor: withAlpha(ACCENT, 0.4), backgroundColor: withAlpha(ACCENT, 0.1), paddingHorizontal: 11, paddingVertical: 6 },
+  shopBtnTxt: { color: ACCENT, fontFamily: FONT, fontSize: 11.5, fontWeight: '600' },
+  nextDisclosure: { color: T3, fontFamily: FONT, fontSize: 10.5, lineHeight: 15, marginTop: 12, opacity: 0.85 },
 
   header: { paddingTop: 12, paddingHorizontal: 22, paddingBottom: 8 },
   headerCount: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600' },

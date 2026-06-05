@@ -9,7 +9,7 @@
 import React from 'react';
 import ReactTestRenderer, {act} from 'react-test-renderer';
 import ShoesScreen, {ShoeTotals} from '../ShoesScreen.rn';
-import {Shoe, Run} from '../theme';
+import {Shoe} from '../theme';
 
 function textOf(node: ReactTestRenderer.ReactTestInstance): string {
   let out = '';
