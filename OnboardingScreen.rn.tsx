@@ -11,7 +11,7 @@
 //   브랜드/모델/거리를 상위(App)에 넘겨 실제 신발 등록에 연결할 수 있게 한다.
 // - 완료 영속(AsyncStorage 'onboarded')은 App.tsx가 onDone 콜백에서 처리한다.
 // ============================================================================
-import React, {useId, useRef, useState} from 'react';
+import React, {useContext, useEffect, useId, useMemo, useRef, useState} from 'react';
 import {
   View,
   Text,
@@ -21,6 +21,9 @@ import {
   ImageBackground,
   PanResponder,
   ActivityIndicator,
+  Animated,
+  Easing,
+  AccessibilityInfo,
   StyleProp,
   ViewStyle,
 } from 'react-native';
@@ -90,6 +93,136 @@ const SHOES = [
 export type RegisteredShoe = {brand: string; model: string; km: number; max: number};
 
 // ════════════════════════════════════════════════════════════════════════════
+// 모션(진입 stagger / 카운트업 / 링 드로우 / 컨페티)
+//
+// 핸드오프의 시네마틱 진입을 RN 내장 Animated로 재현한다(reanimated 미설치).
+// 접근성: '동작 줄이기'가 켜져 있으면 모든 애니메이션을 끄고 최종 상태를 즉시 보여준다.
+// ════════════════════════════════════════════════════════════════════════════
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+
+// jest 워커에서는 타이머 기반 애니메이션을 건너뛰고 최종 상태를 즉시 보여준다(reduce-motion
+// 과 동일 취급). 실제 앱 런타임엔 JEST_WORKER_ID가 없어 애니메이션이 정상 동작한다. 테스트
+// teardown 뒤 잔여 Animated 타이머가 워커를 붙잡는 leak을 원천 차단한다.
+const SKIP_ANIM = !!(typeof process !== 'undefined' && process.env && process.env.JEST_WORKER_ID);
+
+// 트리 전역으로 reduce-motion 플래그를 내려, 모든 모션 헬퍼가 동일 값을 공유한다.
+const ReduceMotionCtx = React.createContext(false);
+
+function useReduceMotion(): boolean {
+  const [rm, setRm] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    AccessibilityInfo.isReduceMotionEnabled().then(v => {
+      if (alive) setRm(v);
+    });
+    const sub = AccessibilityInfo.addEventListener('reduceMotionChanged', setRm);
+    return () => {
+      alive = false;
+      sub?.remove?.();
+    };
+  }, []);
+  return rm;
+}
+
+// 진입 애니메이션: fade + 약간 떠오르기(translateY). delay로 stagger.
+function Rise({delay = 0, children, style}: {delay?: number; children: React.ReactNode; style?: StyleProp<ViewStyle>}) {
+  const rm = useContext(ReduceMotionCtx);
+  const a = useRef(new Animated.Value(rm || SKIP_ANIM ? 1 : 0)).current;
+  useEffect(() => {
+    if (rm || SKIP_ANIM) {
+      a.setValue(1);
+      return;
+    }
+    // JS 드라이버(useNativeDriver:false): 단발 진입(opacity/translate)이라 성능 영향이
+    // 미미하고, 네이티브 드라이버는 jest 환경에 NativeAnimated 모듈이 없어 throw한다.
+    const anim = Animated.timing(a, {toValue: 1, duration: 460, delay, easing: Easing.out(Easing.cubic), useNativeDriver: false});
+    anim.start();
+    return () => anim.stop();
+  }, [a, delay, rm]);
+  return (
+    <Animated.View
+      style={[style, {opacity: a, transform: [{translateY: a.interpolate({inputRange: [0, 1], outputRange: [14, 0]})}]}]}>
+      {children}
+    </Animated.View>
+  );
+}
+
+// 0 → target 카운트업 정수. animate=false(예: 슬라이더 실시간 값)거나 reduce-motion이면
+// 즉시 target을 따라간다.
+function useCountUp(target: number, animate = true, duration = 1200): number {
+  const rm = useContext(ReduceMotionCtx);
+  const [val, setVal] = useState(rm || SKIP_ANIM || !animate ? target : 0);
+  useEffect(() => {
+    if (rm || SKIP_ANIM || !animate) {
+      setVal(target);
+      return;
+    }
+    const a = new Animated.Value(0);
+    const id = a.addListener(({value}) => setVal(Math.round(value)));
+    const anim = Animated.timing(a, {toValue: target, duration, easing: Easing.out(Easing.cubic), useNativeDriver: false});
+    anim.start();
+    return () => {
+      anim.stop();
+      a.removeListener(id);
+    };
+  }, [target, animate, duration, rm]);
+  return val;
+}
+
+// 등록 성공 컨페티(가벼운 낙하). reduce-motion이면 렌더 안 함.
+const CONFETTI_COLORS = [KG.orange, KG.orangeSoft, KG.green, KG.amber, '#fff'];
+function Confetti() {
+  const rm = useContext(ReduceMotionCtx);
+  const pieces = useMemo(
+    () =>
+      Array.from({length: 16}, (_, i) => ({
+        leftPct: Math.round((i / 16) * 100),
+        size: 6 + Math.round(Math.random() * 6),
+        color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+        delay: Math.round(Math.random() * 400),
+        drift: Math.round((Math.random() - 0.5) * 40),
+        rounded: i % 2 === 0,
+      })),
+    [],
+  );
+  if (rm || SKIP_ANIM) return null;
+  return (
+    <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+      {pieces.map((p, i) => (
+        <ConfettiPiece key={i} {...p} />
+      ))}
+    </View>
+  );
+}
+function ConfettiPiece({leftPct, size, color, delay, drift, rounded}: {leftPct: number; size: number; color: string; delay: number; drift: number; rounded: boolean}) {
+  const t = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const anim = Animated.timing(t, {toValue: 1, duration: 1400, delay, easing: Easing.in(Easing.quad), useNativeDriver: false});
+    anim.start();
+    return () => anim.stop();
+  }, [t, delay]);
+  return (
+    <Animated.View
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: `${leftPct}%`,
+        width: size,
+        height: size,
+        borderRadius: rounded ? size / 2 : 2,
+        backgroundColor: color,
+        opacity: t.interpolate({inputRange: [0, 0.1, 0.85, 1], outputRange: [0, 1, 1, 0]}),
+        transform: [
+          {translateY: t.interpolate({inputRange: [0, 1], outputRange: [-20, 620]})},
+          {translateX: t.interpolate({inputRange: [0, 1], outputRange: [0, drift]})},
+          {rotate: t.interpolate({inputRange: [0, 1], outputRange: ['0deg', '420deg']})},
+        ],
+      }}
+    />
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
 // 공용 프리미티브
 // ════════════════════════════════════════════════════════════════════════════
 
@@ -113,7 +246,8 @@ function LinearGrad({
 }) {
   const id = `kg-grad-${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
   return (
-    <Svg style={[StyleSheet.absoluteFill, style]}>
+    // pointerEvents none: 장식용 절대 레이어가 위에 깔려도 아래 Pressable(버튼)/칩 터치를 가로채지 않게 한다.
+    <Svg pointerEvents="none" style={[StyleSheet.absoluteFill, style]}>
       <Defs>
         <SvgGradient id={id} x1={String(x1)} y1={String(y1)} x2={String(x2)} y2={String(y2)}>
           {stops.map((s, i) => (
@@ -133,21 +267,37 @@ function ProgressRing({
   progress,
   color,
   children,
+  animate = true,
 }: {
   size: number;
   stroke: number;
   progress: number;
   color: string;
   children?: React.ReactNode;
+  animate?: boolean;
 }) {
+  const rm = useContext(ReduceMotionCtx);
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
   const p = Math.max(0, Math.min(1, progress));
+  const target = c * (1 - p);
+  // 정적이면(예: 등록 프리뷰처럼 슬라이더로 실시간 갱신) 바로 target. 진입 시엔 빈
+  // 원(offset=c)에서 target까지 stroke-dashoffset을 그려 링이 채워지는 연출.
+  const off = useRef(new Animated.Value(rm || SKIP_ANIM || !animate ? target : c)).current;
+  useEffect(() => {
+    if (rm || SKIP_ANIM || !animate) {
+      off.setValue(target);
+      return;
+    }
+    const anim = Animated.timing(off, {toValue: target, duration: 1200, delay: 150, easing: Easing.out(Easing.cubic), useNativeDriver: false});
+    anim.start();
+    return () => anim.stop();
+  }, [off, target, c, rm, animate]);
   return (
     <View style={{width: size, height: size, alignItems: 'center', justifyContent: 'center'}}>
       <Svg width={size} height={size} style={{position: 'absolute', transform: [{rotate: '-90deg'}]}}>
         <Circle cx={size / 2} cy={size / 2} r={r} stroke="rgba(255,255,255,0.08)" strokeWidth={stroke} fill="none" />
-        <Circle
+        <AnimatedCircle
           cx={size / 2}
           cy={size / 2}
           r={r}
@@ -156,7 +306,7 @@ function ProgressRing({
           fill="none"
           strokeLinecap="round"
           strokeDasharray={c}
-          strokeDashoffset={c * (1 - p)}
+          strokeDashoffset={off}
         />
       </Svg>
       {children}
@@ -164,25 +314,27 @@ function ProgressRing({
   );
 }
 
-// 수명 링(중앙: km / max KM).
-function LifespanRing({km, max, size = 128, stroke = 11}: {km: number; max: number; size?: number; stroke?: number}) {
+// 수명 링(중앙: km / max KM). 진입 시 링 드로우 + km 카운트업.
+function LifespanRing({km, max, size = 128, stroke = 11, animate = true}: {km: number; max: number; size?: number; stroke?: number; animate?: boolean}) {
   const col = STATUS[statusFor(km, max)].c;
+  const shown = useCountUp(km, animate);
   return (
-    <ProgressRing size={size} stroke={stroke} progress={km / max} color={col}>
+    <ProgressRing size={size} stroke={stroke} progress={km / max} color={col} animate={animate}>
       <View style={{alignItems: 'center'}}>
-        <Text style={{fontFamily: DISP, fontSize: Math.round(size * 0.3), color: KG.text}}>{km}</Text>
+        <Text style={{fontFamily: DISP, fontSize: Math.round(size * 0.3), color: KG.text}}>{shown}</Text>
         <Text style={{fontFamily: UI, fontSize: 11, color: KG.dim, marginTop: 2, letterSpacing: 0.5}}>/ {max} KM</Text>
       </View>
     </ProgressRing>
   );
 }
 
-// 잔여수명 % 링(중앙: NN%).
-function PctRing({pct, color, size = 72, stroke = 7}: {pct: number; color: string; size?: number; stroke?: number}) {
+// 잔여수명 % 링(중앙: NN%). animate=false면 링/숫자 즉시(예: 등록 프리뷰 실시간 갱신).
+function PctRing({pct, color, size = 72, stroke = 7, animate = true}: {pct: number; color: string; size?: number; stroke?: number; animate?: boolean}) {
+  const shown = useCountUp(pct, animate);
   return (
-    <ProgressRing size={size} stroke={stroke} progress={pct / 100} color={color}>
+    <ProgressRing size={size} stroke={stroke} progress={pct / 100} color={color} animate={animate}>
       <View style={{flexDirection: 'row', alignItems: 'baseline'}}>
-        <Text style={{fontFamily: DISP, fontSize: Math.round(size * 0.3), color: '#fff'}}>{pct}</Text>
+        <Text style={{fontFamily: DISP, fontSize: Math.round(size * 0.3), color: '#fff'}}>{shown}</Text>
         <Text style={{fontFamily: UI, fontSize: Math.round(size * 0.16), color: KG.dim}}>%</Text>
       </View>
     </ProgressRing>
@@ -195,17 +347,23 @@ function Metric({
   size = 40,
   color = '#fff',
   unitColor = KG.faint,
+  countUp = false,
 }: {
   value: string | number;
   unit?: string;
   size?: number;
   color?: string;
   unitColor?: string;
+  countUp?: boolean;
 }) {
   const us = Math.max(12, Math.round(size * 0.4));
+  // 숫자 값일 때만 0→value 카운트업. 문자열("500–800","1,410")은 그대로 표시.
+  const numeric = typeof value === 'number';
+  const counted = useCountUp(numeric ? value : 0, countUp && numeric);
+  const display = numeric ? counted : value;
   return (
     <View style={{flexDirection: 'row', alignItems: 'baseline'}}>
-      <Text style={{fontFamily: DISP, fontSize: size, color, letterSpacing: 0.2}}>{value}</Text>
+      <Text style={{fontFamily: DISP, fontSize: size, color, letterSpacing: 0.2}}>{display}</Text>
       {unit ? (
         <Text style={{fontFamily: UI, fontSize: us, fontWeight: '600', color: unitColor, marginLeft: Math.max(5, Math.round(size * 0.14))}}>
           {unit}
@@ -491,21 +649,27 @@ function Welcome({goNext, insetTop, insetBottom}: {goNext: () => void; insetTop:
       {/* 워드마크 */}
       <Text style={[s.wordmark, {top: insetTop + 18}]}>KEEGO</Text>
 
-      {/* 하단 콘텐츠 */}
+      {/* 하단 콘텐츠 — staggered 진입 */}
       <View style={{flex: 1, justifyContent: 'flex-end', paddingHorizontal: 24, paddingBottom: Math.max(insetBottom, 24) + 8}}>
-        <Text style={s.heroHeadline}>
-          KEEP{'\n'}GOING<Text style={{color: KG.orange}}>.</Text>
-        </Text>
-        <Text style={s.heroSub}>멈추지 않는 발걸음을 위해</Text>
-        <Text style={s.heroBody}>Keego가 러닝화 수명을 추적해, 부상 없이{'\n'}끝까지 달릴 수 있도록 돕습니다.</Text>
-        <View style={{marginTop: 26}}>
+        <Rise delay={80}>
+          <Text style={s.heroHeadline}>
+            KEEP{'\n'}GOING<Text style={{color: KG.orange}}>.</Text>
+          </Text>
+        </Rise>
+        <Rise delay={220}>
+          <Text style={s.heroSub}>멈추지 않는 발걸음을 위해</Text>
+        </Rise>
+        <Rise delay={320}>
+          <Text style={s.heroBody}>Keego가 러닝화 수명을 추적해, 부상 없이{'\n'}끝까지 달릴 수 있도록 돕습니다.</Text>
+        </Rise>
+        <Rise delay={440} style={{marginTop: 26}}>
           <PrimaryButton testID="onboarding-start" label="시작하기" onPress={goNext} />
           <Pressable onPress={goNext} style={{alignItems: 'center', marginTop: 14}} accessibilityRole="button">
             <Text style={{fontFamily: UI, fontSize: 14, color: KG.dim, fontWeight: '500'}}>
               이미 계정이 있나요? <Text style={{color: '#fff'}}>로그인</Text>
             </Text>
           </Pressable>
-        </View>
+        </Rise>
       </View>
     </View>
   );
@@ -544,14 +708,16 @@ function ShoesMatter({goNext, onSkip, insetTop, insetBottom}: ScreenProps) {
     <View style={s.screen}>
       <FlowHeader step={1} total={5} onSkip={onSkip} insetTop={insetTop} />
       <ScrollView style={s.flex1} contentContainerStyle={s.bodyContent} showsVerticalScrollIndicator={false}>
-        <Eyebrow>Your shoes matter</Eyebrow>
-        <Text style={s.title}>러닝화도 관리가 필요합니다</Text>
-        <Text style={s.body}>
-          러닝화는 <Text style={s.bodyStrong}>누적 거리에 따라 성능이 달라집니다.</Text> 쿠셔닝이 닳은 신발은 충격을 그대로 무릎과 발목에 전달합니다.
-        </Text>
+        <Rise>
+          <Eyebrow>Your shoes matter</Eyebrow>
+          <Text style={s.title}>러닝화도 관리가 필요합니다</Text>
+          <Text style={s.body}>
+            러닝화는 <Text style={s.bodyStrong}>누적 거리에 따라 성능이 달라집니다.</Text> 쿠셔닝이 닳은 신발은 충격을 그대로 무릎과 발목에 전달합니다.
+          </Text>
+        </Rise>
 
         {/* 마모 곡선 카드 */}
-        <View style={[s.heroCard, {overflow: 'hidden'}]}>
+        <Rise delay={130} style={[s.heroCard, {overflow: 'hidden'}]}>
           <LinearGrad stops={[{color: '#1A1A1F', offset: 0}, {color: '#141417', offset: 1}]} radius={22} />
           <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', padding: 14, paddingBottom: 0}}>
             <View>
@@ -569,10 +735,10 @@ function ShoesMatter({goNext, onSkip, insetTop, insetBottom}: ScreenProps) {
             </View>
             <DegradeCurve />
           </View>
-        </View>
+        </Rise>
 
         {/* 권장 수명 팩트 스트립 */}
-        <View style={s.factStrip}>
+        <Rise delay={240} style={s.factStrip}>
           <View>
             <Text style={{fontFamily: UI, fontSize: 13.5, color: KG.dim}}>러닝화 권장 수명</Text>
             <Metric value="500–800" unit="KM" size={30} />
@@ -580,7 +746,7 @@ function ShoesMatter({goNext, onSkip, insetTop, insetBottom}: ScreenProps) {
           <Text style={{marginLeft: 'auto', fontFamily: UI, fontSize: 12.5, color: KG.dim, textAlign: 'right', lineHeight: 18}}>
             대부분의 러너가{'\n'}이 시기를 놓칩니다
           </Text>
-        </View>
+        </Rise>
       </ScrollView>
       <View style={[s.footer, {paddingBottom: Math.max(insetBottom, 18)}]}>
         <PrimaryButton label="다음" onPress={goNext} />
@@ -597,14 +763,16 @@ function Injury({goNext, onSkip, insetTop, insetBottom}: ScreenProps) {
     <View style={s.screen}>
       <FlowHeader step={2} total={5} onSkip={onSkip} insetTop={insetTop} />
       <ScrollView style={s.flex1} contentContainerStyle={s.bodyContent} showsVerticalScrollIndicator={false}>
-        <Eyebrow>Run injury free</Eyebrow>
-        <Text style={s.title}>부상 없이 오래 달리세요</Text>
-        <Text style={s.body}>
-          Keego가 신발 마일리지를 추적해 <Text style={s.bodyStrong}>교체 시기를 미리</Text> 알려드려요.
-        </Text>
+        <Rise>
+          <Eyebrow>Run injury free</Eyebrow>
+          <Text style={s.title}>부상 없이 오래 달리세요</Text>
+          <Text style={s.body}>
+            Keego가 신발 마일리지를 추적해 <Text style={s.bodyStrong}>교체 시기를 미리</Text> 알려드려요.
+          </Text>
+        </Rise>
 
         {/* 링 히어로 */}
-        <View style={[s.heroCard, {flexDirection: 'row', alignItems: 'center', gap: 18, padding: 14, overflow: 'hidden'}]}>
+        <Rise delay={130} style={[s.heroCard, {flexDirection: 'row', alignItems: 'center', gap: 18, padding: 14, overflow: 'hidden'}]}>
           <LinearGrad stops={[{color: '#1E1E24', offset: 0}, {color: '#141417', offset: 1}]} radius={22} />
           <LifespanRing km={540} max={800} size={104} stroke={9} />
           <View style={{flex: 1}}>
@@ -614,16 +782,16 @@ function Injury({goNext, onSkip, insetTop, insetBottom}: ScreenProps) {
               수명의 <Text style={{color: KG.amber, fontWeight: '600'}}>68%</Text>를 사용했어요.
             </Text>
           </View>
-        </View>
+        </Rise>
 
         {/* 분석 그리드 */}
-        <View style={{flexDirection: 'row', gap: 12, marginTop: 10}}>
+        <Rise delay={240} style={{flexDirection: 'row', gap: 12, marginTop: 10}}>
           <View style={[s.analyticCard, {flex: 1}]}>
             <View style={{flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 8}}>
               <HeartIcon />
               <Text style={{fontFamily: UI, fontSize: 12.5, color: KG.dim}}>충격 흡수율</Text>
             </View>
-            <Metric value={78} unit="%" size={32} />
+            <Metric value={78} unit="%" size={32} countUp />
             <View style={{marginTop: 8}}>
               <WearBar pct={78} color={KG.amber} />
             </View>
@@ -633,20 +801,20 @@ function Injury({goNext, onSkip, insetTop, insetBottom}: ScreenProps) {
               <RulerIcon />
               <Text style={{fontFamily: UI, fontSize: 12.5, color: KG.dim}}>교체까지</Text>
             </View>
-            <Metric value={260} unit="KM" size={32} />
+            <Metric value={260} unit="KM" size={32} countUp />
             <Text style={{fontFamily: UI, fontSize: 12, color: KG.dim, marginTop: 8}}>약 3주 후 예상</Text>
           </View>
-        </View>
+        </Rise>
 
         {/* 알림 배너 */}
-        <View style={s.alertBanner}>
+        <Rise delay={340} style={s.alertBanner}>
           <View style={s.alertIconChip}>
             <SparkIcon size={18} color={KG.orange} />
           </View>
           <Text style={{flex: 1, fontFamily: UI, fontSize: 13.5, color: KG.text, lineHeight: 19}}>
             교체 시점 <Text style={{color: KG.orange, fontWeight: '600'}}>50 km 전</Text> 미리 알림을 보내드려요.
           </Text>
-        </View>
+        </Rise>
       </ScrollView>
       <View style={[s.footer, {paddingBottom: Math.max(insetBottom, 18)}]}>
         <PrimaryButton label="다음" onPress={goNext} />
@@ -686,11 +854,13 @@ function Management({goNext, onSkip, insetTop, insetBottom}: ScreenProps) {
     <View style={s.screen}>
       <FlowHeader step={3} total={5} onSkip={onSkip} insetTop={insetTop} />
       <ScrollView style={s.flex1} contentContainerStyle={s.bodyContent} showsVerticalScrollIndicator={false}>
-        <Eyebrow>Smart shoe management</Eyebrow>
-        <Text style={s.title}>신발 수명을 한눈에</Text>
+        <Rise>
+          <Eyebrow>Smart shoe management</Eyebrow>
+          <Text style={s.title}>신발 수명을 한눈에</Text>
+        </Rise>
 
         {/* 요약 히어로 */}
-        <View style={[s.summaryHero, {marginTop: 12}]}>
+        <Rise delay={120} style={[s.summaryHero, {marginTop: 12}]}>
           <View>
             <Text style={{fontFamily: UI, fontSize: 12, color: KG.dim, letterSpacing: 0.8}}>전체 누적 거리</Text>
             <Metric value="1,410" unit="KM" size={40} unitColor={KG.dim} />
@@ -699,22 +869,24 @@ function Management({goNext, onSkip, insetTop, insetBottom}: ScreenProps) {
             <Text style={{fontFamily: DISP, fontSize: 34, color: '#fff'}}>3</Text>
             <Text style={{fontFamily: UI, fontSize: 12, color: KG.dim}}>켤레 관리 중</Text>
           </View>
-        </View>
+        </Rise>
 
-        {/* 신발 리스트 */}
+        {/* 신발 리스트 — 카드별 stagger */}
         <View style={{marginTop: 10, gap: 8}}>
-          {SHOES.map(sh => (
-            <ShoeCard key={sh.id} shoe={sh} />
+          {SHOES.map((sh, i) => (
+            <Rise key={sh.id} delay={220 + i * 90}>
+              <ShoeCard shoe={sh} />
+            </Rise>
           ))}
         </View>
 
         {/* 추천 스트립 */}
-        <View style={s.recoStrip}>
+        <Rise delay={220 + SHOES.length * 90} style={s.recoStrip}>
           <SparkIcon size={18} color={KG.red} />
           <Text style={{flex: 1, fontFamily: UI, fontSize: 13.5, color: KG.text, lineHeight: 19}}>
             <Text style={{fontWeight: '700'}}>Adizero Adios Pro 4</Text> 교체 시기예요. 새 러닝화를 추천받아 보세요.
           </Text>
-        </View>
+        </Rise>
       </ScrollView>
       <View style={[s.footer, {paddingBottom: Math.max(insetBottom, 18)}]}>
         <PrimaryButton label="내 신발 등록하기" onPress={goNext} />
@@ -759,16 +931,19 @@ function Register({goNext, onSkip, onRegister, insetTop, insetBottom}: ScreenPro
     <View style={s.screen}>
       <FlowHeader step={4} total={5} onSkip={onSkip} insetTop={insetTop} />
       <ScrollView style={s.flex1} contentContainerStyle={s.bodyContent} showsVerticalScrollIndicator={false}>
-        <View style={{flexDirection: 'row', alignItems: 'center', gap: 8}}>
-          <SparkIcon size={15} color={KG.orange} />
-          <Text style={[s.eyebrow, {marginBottom: 0}]}>거의 다 왔어요</Text>
-        </View>
-        <Text style={[s.title, {fontSize: 22}]}>첫 러닝화를 등록해볼까요?</Text>
+        <Rise>
+          <View style={{flexDirection: 'row', alignItems: 'center', gap: 8}}>
+            <SparkIcon size={15} color={KG.orange} />
+            <Text style={[s.eyebrow, {marginBottom: 0}]}>거의 다 왔어요</Text>
+          </View>
+          <Text style={[s.title, {fontSize: 22}]}>첫 러닝화를{'\n'}등록해볼까요?</Text>
+          <Text style={s.body}>지금 신고 있는 러닝화를 등록하면{'\n'}Keego가 수명을 추적해드려요.</Text>
+        </Rise>
 
         {/* 라이브 프리뷰 카드 */}
-        <View style={[s.previewCard, {borderColor: ready ? 'rgba(255,101,0,0.3)' : KG.line, overflow: 'hidden'}]}>
+        <Rise delay={120} style={[s.previewCard, {borderColor: ready ? 'rgba(255,101,0,0.3)' : KG.line, overflow: 'hidden'}]}>
           <LinearGrad stops={[{color: '#1C1C22', offset: 0}, {color: '#141417', offset: 1}]} radius={18} />
-          <PctRing pct={remain} color={col} size={52} stroke={6} />
+          <PctRing pct={remain} color={col} size={52} stroke={6} animate={false} />
           <View style={{flex: 1, minWidth: 0, marginLeft: 14}}>
             <Text style={s.brandEyebrow}>{brand || '브랜드'}</Text>
             <Text numberOfLines={1} style={{fontFamily: UI, fontSize: 16, fontWeight: '700', color: model ? '#fff' : KG.faint, marginTop: 2}}>
@@ -780,7 +955,7 @@ function Register({goNext, onSkip, onRegister, insetTop, insetBottom}: ScreenPro
               <Text style={{color: col, fontWeight: '600'}}>{STATUS[st].label}</Text>
             </Text>
           </View>
-        </View>
+        </Rise>
 
         {/* 1 브랜드 */}
         <View style={{marginTop: 12}}>
@@ -848,6 +1023,7 @@ function Register({goNext, onSkip, onRegister, insetTop, insetBottom}: ScreenPro
 
       {done && (
         <View style={s.successOverlay}>
+          <Confetti />
           <View style={s.successBadge}>
             <CheckIcon size={44} />
           </View>
@@ -936,14 +1112,18 @@ function Ready({registered, onFinish, onSkip, insetTop, insetBottom}: ScreenProp
       />
       <FlowHeader step={5} total={5} onSkip={onSkip} insetTop={insetTop} />
       <ScrollView style={s.flex1} contentContainerStyle={[s.bodyContent, {alignItems: 'center'}]} showsVerticalScrollIndicator={false}>
-        <View style={s.readyBadge}>
-          <KeegoMark size={30} />
-        </View>
-        <Text style={[s.title, {textAlign: 'center', marginTop: 14}]}>이제 달릴 준비가{'\n'}되었습니다</Text>
-        <Text style={[s.body, {textAlign: 'center'}]}>Keego와 함께 더 오래,{'\n'}더 건강하게 달리세요.</Text>
+        <Rise>
+          <View style={s.readyBadge}>
+            <KeegoMark size={30} />
+          </View>
+        </Rise>
+        <Rise delay={120} style={{alignSelf: 'stretch'}}>
+          <Text style={[s.title, {textAlign: 'center', marginTop: 14}]}>이제 달릴 준비가{'\n'}되었습니다</Text>
+          <Text style={[s.body, {textAlign: 'center'}]}>Keego와 함께 더 오래,{'\n'}더 건강하게 달리세요.</Text>
+        </Rise>
 
         {/* 등록 신발 요약 */}
-        <View style={s.readyShoeCard}>
+        <Rise delay={240} style={[s.readyShoeCard, {alignSelf: 'stretch'}]}>
           <PctRing pct={remain} color={col} size={52} stroke={6} />
           <View style={{flex: 1, minWidth: 0, marginLeft: 15}}>
             <Text style={[s.brandEyebrow, {fontSize: 11}]}>추적 시작됨</Text>
@@ -956,7 +1136,7 @@ function Ready({registered, onFinish, onSkip, insetTop, insetBottom}: ScreenProp
               <Text style={{color: col, fontWeight: '600'}}>{STATUS[st].label}</Text>
             </Text>
           </View>
-        </View>
+        </Rise>
       </ScrollView>
 
       {/* 로그인 */}
@@ -987,21 +1167,25 @@ type ScreenProps = {
 
 export default function OnboardingScreen({onDone}: {onDone: (registered: RegisteredShoe | null) => void}) {
   const insets = useSafeAreaInsets();
+  const reduceMotion = useReduceMotion();
   const [index, setIndex] = useState(0);
   const [registered, setRegistered] = useState<RegisteredShoe | null>(null);
   const goNext = () => setIndex(i => Math.min(5, i + 1));
   const onSkip = () => onDone(null);
   const common = {insetTop: insets.top, insetBottom: insets.bottom, onSkip, goNext};
 
+  // 각 화면은 index 전환 시 마운트/언마운트되므로, 도착할 때마다 Rise 진입이 1회 재생된다.
   return (
-    <View testID="onboarding" style={{flex: 1, backgroundColor: KG.bg}}>
-      {index === 0 && <Welcome goNext={goNext} insetTop={insets.top} insetBottom={insets.bottom} />}
-      {index === 1 && <ShoesMatter {...common} />}
-      {index === 2 && <Injury {...common} />}
-      {index === 3 && <Management {...common} />}
-      {index === 4 && <Register {...common} onRegister={setRegistered} />}
-      {index === 5 && <Ready {...common} registered={registered} onFinish={() => onDone(registered)} />}
-    </View>
+    <ReduceMotionCtx.Provider value={reduceMotion}>
+      <View testID="onboarding" style={{flex: 1, backgroundColor: KG.bg}}>
+        {index === 0 && <Welcome goNext={goNext} insetTop={insets.top} insetBottom={insets.bottom} />}
+        {index === 1 && <ShoesMatter {...common} />}
+        {index === 2 && <Injury {...common} />}
+        {index === 3 && <Management {...common} />}
+        {index === 4 && <Register {...common} onRegister={setRegistered} />}
+        {index === 5 && <Ready {...common} registered={registered} onFinish={() => onDone(registered)} />}
+      </View>
+    </ReduceMotionCtx.Provider>
   );
 }
 
