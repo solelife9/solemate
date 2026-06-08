@@ -17,7 +17,6 @@ import {
   TextStyle,
   LayoutChangeEvent,
 } from 'react-native';
-import {BlurView} from '@react-native-community/blur';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
@@ -549,8 +548,9 @@ export function TabBar({active, onTab}: {active: number; onTab: (i: number) => v
 
   return (
     <View style={[t.wrap, {paddingBottom: insets.bottom > 0 ? insets.bottom : 14}]}>
-      {/* 유리 블러 캡슐 — 뒤 콘텐츠가 비쳐 흐려진다. overflow:hidden 으로 라운드 클립. */}
-      <BlurView style={t.dock} blurType="dark" blurAmount={18} reducedTransparencyFallbackColor="rgba(28,28,32,0.94)">
+      {/* 떠있는 다크 캡슐 독. overflow:hidden 으로 라운드 클립.
+          (BlurView 는 Android 신아키텍처에서 flex 컨테이너 레이아웃이 깨져 미사용 — 불투명 표면으로 대체) */}
+      <View style={t.dock}>
         {/* 미끄러지는 오벌 하이라이트 */}
         <Animated.View pointerEvents="none" style={[t.hl, {left: hlX, width: hlW}]} />
         {TABS.map((tab, i) => {
@@ -576,7 +576,7 @@ export function TabBar({active, onTab}: {active: number; onTab: (i: number) => v
             </Pressable>
           );
         })}
-      </BlurView>
+      </View>
     </View>
   );
 }
@@ -590,11 +590,10 @@ const t = StyleSheet.create({
     height: 62,
     paddingHorizontal: 6,
     borderRadius: RADIUS.pill,
-    overflow: 'hidden',                       // BlurView 를 알약으로 클립
+    overflow: 'hidden',                       // 하이라이트를 알약으로 클립
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: 'rgba(255,255,255,0.10)',
-    // 블러 위에 살짝 어두운 막을 덧대 대비 확보(BlurView 단독이면 너무 밝을 수 있음).
-    backgroundColor: 'rgba(20,20,24,0.35)',
+    backgroundColor: 'rgba(28,28,32,0.94)',   // 불투명 다크 표면(블러 미사용 폴백)
     shadowColor: BG,
     shadowOpacity: 0.7,
     shadowRadius: 20,
