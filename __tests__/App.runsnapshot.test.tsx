@@ -158,6 +158,8 @@ test('saving the run clears the snapshot (no stale resume offer afterwards)', as
   await advanceSnapshot(3000);
   expect(await readSnapshot()).not.toBeNull(); // snapshot exists while running
 
+  // 안전 컨트롤: 달리는 중엔 종료 버튼이 숨겨져 있어, 먼저 일시정지해야 종료가 보인다.
+  pressByText(root, 'pause');
   // Stop (press twice to confirm) → review screen, then save.
   // The stop control is the pressable holding the "stop" icon (rendered as text).
   pressByText(root, 'stop');
@@ -180,6 +182,8 @@ test('discarding the run clears the snapshot', async () => {
   await advanceSnapshot(3000);
   expect(await readSnapshot()).not.toBeNull();
 
+  // 안전 컨트롤: 종료 전 일시정지(달리는 중엔 종료 숨김).
+  pressByText(root, 'pause');
   // The stop control is the pressable holding the "stop" icon (rendered as text).
   pressByText(root, 'stop');
   pressByText(root, 'stop');

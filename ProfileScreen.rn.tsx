@@ -8,7 +8,7 @@
 // 값은 App이 소유(영속은 lib/settings)하고, 이 화면은 표시 + 변경 콜백만 담당한다.
 // ============================================================================
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet, TextInput, Image } from 'react-native';
+import { View, Text, ScrollView, Pressable, StyleSheet, TextInput, Image, Share } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { BG, CARD, CARD_DIM, CARD_HI, ACCENT, GOOD, DANGER, T1, T2, T3, SEP, FONT, DISPLAY, withAlpha, KAKAO_YELLOW, KAKAO_LABEL, NAVER_GREEN, NAVER_LABEL } from './theme';
@@ -266,7 +266,10 @@ export default function ProfileScreen({
         {/* header */}
         <View style={s.headerRow}>
           <Text style={s.title}>마이</Text>
-          <Pressable onPress={scrollToSettings} accessibilityRole="button" accessibilityLabel="설정으로 이동" style={({ pressed }) => [s.iconBtn, pressed && { backgroundColor: CARD }]}><Ionicons name="settings-outline" size={19} color={T2} /></Pressable>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <Pressable onPress={() => Share.share({ message: 'Keego에서 내 러닝화 수명을 관리하고 있어요 🏃' })} accessibilityRole="button" accessibilityLabel="기록 공유" style={({ pressed }) => [s.iconBtn, pressed && { backgroundColor: CARD }]}><Ionicons name="share-outline" size={18} color={T2} /></Pressable>
+            <Pressable onPress={scrollToSettings} accessibilityRole="button" accessibilityLabel="설정으로 이동" style={({ pressed }) => [s.iconBtn, pressed && { backgroundColor: CARD }]}><Ionicons name="settings-outline" size={19} color={T2} /></Pressable>
+          </View>
         </View>
 
         {/* identity — 아바타(탭하면 사진 변경) + 이름(탭하면 인라인 편집) */}
@@ -543,7 +546,7 @@ export default function ProfileScreen({
 const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: BG },
   row: { flexDirection: 'row', alignItems: 'center', gap: 7 },
-  card: { backgroundColor: CARD, borderRadius: 22 },
+  card: { backgroundColor: CARD_DIM, borderRadius: 20, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.07) },
   cardTitle: { color: T2, fontFamily: FONT, fontSize: 13.5, fontWeight: '500', marginBottom: 16 },
   sectionLabel: { color: T2, fontFamily: FONT, fontSize: 14, fontWeight: '500', letterSpacing: 0.2, paddingHorizontal: 4 },
 
@@ -603,7 +606,7 @@ const s = StyleSheet.create({
 
   settingRow: { flexDirection: 'row', alignItems: 'center', gap: 13, paddingVertical: 14, paddingHorizontal: 16 },
   settingBorder: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: SEP },
-  settingIcon: { width: 30, height: 30, borderRadius: 9, backgroundColor: withAlpha(ACCENT, 0.13), alignItems: 'center', justifyContent: 'center' },
+  settingIcon: { width: 30, height: 30, borderRadius: 9, backgroundColor: withAlpha(T1, 0.06), alignItems: 'center', justifyContent: 'center' },
   settingLabel: { flex: 1, color: T1, fontFamily: FONT, fontSize: 16, fontWeight: '600' },
   settingDetail: { color: T3, fontFamily: FONT, fontSize: 14, fontWeight: '600' },
 

@@ -45,6 +45,7 @@ function textOf(node: ReactTestRenderer.ReactTestInstance): string {
     n.children.forEach(walk);
   };
   walk(node);
+  if ((out === '' || node.props?.accessibilityRole === 'tab') && typeof node.props?.accessibilityLabel === 'string') return node.props.accessibilityLabel;
   return out;
 }
 
@@ -154,8 +155,8 @@ test('a healthy shoe shows 양호 (no false replacement warning)', async () => {
     [{id: 'r1', shoe_id: 's1', km: 100, run_date: '2026-05-01', duration: 3600}], // ~17%
   );
   const txt = textOf(root);
-  expect(txt).toContain('양호');
-  expect(txt).not.toContain('교체');
+  expect(txt).toContain('최상의 컨디션'); // 양호 → 히어로 condLabel(리스킨)
+  expect(txt).not.toContain('교체 권장'); // 교체 경고 라벨 미노출('교체까지 약 N' 게이지 문구와 구분)
 });
 
 test('retired shoe is hidden from the home run-selection list; active shoe stays', async () => {
@@ -179,7 +180,7 @@ test('retire(보관) PATCHes retired=true, never DELETE, and keeps the shoe\'s r
     [{id: 'r1', shoe_id: 's1', km: 5, run_date: '2026-06-01', duration: 1800}],
   );
 
-  await tap(pressBy(root, 'shoe-sneaker')); // → Shoes tab
+  await tap(pressBy(root, '신발')); // → Shoes tab
   await tap(pressBy(root, 'Pegasus')); // open shoe detail
   // sanity: the run is listed in the detail before we retire
   expect(textOf(root)).not.toContain('아직 기록이 없어요');
@@ -209,7 +210,7 @@ test('delete(삭제) DELETEs only the shoe; the run is preserved (no cascade)', 
     [{id: 'r1', shoe_id: 's1', km: 5, run_date: '2026-06-01', duration: 1800}],
   );
 
-  await tap(pressBy(root, 'shoe-sneaker')); // → Shoes tab
+  await tap(pressBy(root, '신발')); // → Shoes tab
   await tap(pressBy(root, 'Pegasus')); // open shoe detail
   await tap(pressBy(root, 'trash-outline')); // 삭제 → Alert auto-confirm
 
@@ -219,7 +220,7 @@ test('delete(삭제) DELETEs only the shoe; the run is preserved (no cascade)', 
   expect(calls.filter(c => c.url.includes('/api/runs') && c.method === 'DELETE')).toHaveLength(0);
 
   // observable: the run survives the shoe — History still lists it (now orphaned).
-  await tap(pressBy(root, 'time-outline')); // → History tab
+  await tap(pressBy(root, '기록')); // → History tab
   const txt = textOf(root);
   expect(txt).toContain('삭제된 신발');
   expect(txt).toContain('5'); // the run's distance is still on screen
@@ -238,7 +239,7 @@ test('restore(복원) PATCHes retired=false and the shoe reappears in the home p
   // before restore: archived shoe is not on the home picker.
   expect(textOf(root)).not.toContain('Clifton');
 
-  await tap(pressBy(root, 'shoe-sneaker')); // → Shoes tab (locker shows all incl. retired)
+  await tap(pressBy(root, '신발')); // → Shoes tab (locker shows all incl. retired)
   await tap(pressBy(root, 'Clifton')); // open archived shoe detail
   await tap(pressBy(root, 'arrow-undo-outline')); // 복원 (no Alert on restore)
 
@@ -249,7 +250,7 @@ test('restore(복원) PATCHes retired=false and the shoe reappears in the home p
 
   // observable: back on home, the restored shoe is offered as a startable option.
   await tap(pressBy(root, 'chevron-back')); // detail → locker (TabBar)
-  await tap(pressBy(root, 'home-outline')); // → Home tab
+  await tap(pressBy(root, '홈')); // → Home tab
   const home = textOf(root);
   expect(home).toContain('Clifton');
   expect(home).toContain('러닝 시작'); // start CTA present → startable

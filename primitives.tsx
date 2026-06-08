@@ -18,9 +18,10 @@ import {
   LayoutChangeEvent,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import {BlurView} from '@react-native-community/blur';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Svg, {
+  Path,
   Circle,
   Defs,
   LinearGradient as SvgGradient,
@@ -507,12 +508,23 @@ const section = StyleSheet.create({
   },
 });
 
-// ── Bottom tab bar (floating dock, Apple-Fitness capsule highlight) ───────────
-// set 'mci'면 MaterialCommunityIcons(운동화 등 Ionicons에 없는 글리프), 아니면 Ionicons.
-// Ionicons 탭은 활성=채움/비활성=`-outline`; MCI 탭은 outline 변형이 없어 색으로만 구분한다.
-const TABS: {icon: string; label: string; set?: 'mci'; flip?: boolean}[] = [
+// ── Bottom tab bar (Threads-style floating glass dock) ───────────────────────
+// 신발은 커스텀 러닝화 SVG(react-native-svg), 나머지는 Ionicons(활성=채움/비활성 -outline).
+// 유리 블러는 BlurView 를 dock 의 absolute 배경으로 깔아(신아키텍처 flex 붕괴 회피) 구현.
+const SHOE_PATH =
+  'M222-79q-32 0-61.5-12T108-127l-7-7q-9-8-11.5-20t2.5-23l194-495q8-20 27.5-30.5T354-708l58 11q17 4 32.5-2.5T471-717q14-15 18.5-31.5T489-782l-5-15q-5-16-1.5-32.5T498-858l43-43q17-18 42.5-18t42.5 17l181 184q22 23 22.5 54.5T809-609l19 19q6 7 10.5 14.5T843-560q0 7-3 14t-11 15q-12 11-28.5 11.5T772-531l-18-19-28 29 18 18q11 11 11 28t-11 28q-12 11-28.5 11.5T687-447l-18-17-112 114 17 16q12 12 12 28.5T574-277q-12 11-28.5 11.5T517-277l-16-17-28 29 16 16q11 11 11 28t-11 28q-12 11-28.5 11.5T432-193l-16-15-28 28 16 15q11 12 11 28.5T404-108q-12 11-28.5 11.5T347-108l-16-16q-23 23-50.5 34T222-79Zm-57-283q5-11 8-19.5l3-8.5-22 56 3.5-8.5Q161-351 165-362Zm39-100q5-11 8-19.5l3-8.5-22 56 3.5-8.5Q200-451 204-462Zm39-100q5-11 8-19l3-8-22 55 3.5-8.5Q239-551 243-562Zm-21 402q17 0 31.5-6t25.5-18l471-478-166-169-20 20q12 40 4.5 78T528-662q-26 26-60 38.5t-71 4.5l-41-8-25 61 23 8q11 5 16 16t1 22q-4 12-15 18t-23 1l-24-9-17 44 19 7q11 5 16.5 16t1.5 22q-4 12-15.5 17.5t-23.5.5l-20-7-17 44 16 6q11 5 16 15.5t1 21.5q-4 12-15.5 18t-23.5 1l-16-6-54 136q10 7 21.5 10.5T222-160Zm242-336Z';
+
+function ShoeIcon({color}: {color: string}) {
+  return (
+    <Svg width={25} height={25} viewBox="0 -960 960 960">
+      <Path d={SHOE_PATH} fill={color} />
+    </Svg>
+  );
+}
+
+const TABS: {icon: string; label: string; shoe?: boolean; flip?: boolean}[] = [
   {icon: 'home', label: '홈'},
-  {icon: 'shoe-sneaker', label: '신발', set: 'mci', flip: true},
+  {icon: 'shoe', label: '신발', shoe: true, flip: true},
   {icon: 'time', label: '기록'},
   {icon: 'person', label: '마이'},
 ];
@@ -548,9 +560,10 @@ export function TabBar({active, onTab}: {active: number; onTab: (i: number) => v
 
   return (
     <View style={[t.wrap, {paddingBottom: insets.bottom > 0 ? insets.bottom : 14}]}>
-      {/* 떠있는 다크 캡슐 독. overflow:hidden 으로 라운드 클립.
-          (BlurView 는 Android 신아키텍처에서 flex 컨테이너 레이아웃이 깨져 미사용 — 불투명 표면으로 대체) */}
+      {/* 떠있는 유리 블러 캡슐 독. BlurView 는 absolute 배경으로만 깔고(신아키텍처 flex
+          붕괴 회피) 레이아웃은 일반 flex View 가 담당. overflow:hidden 으로 라운드 클립. */}
       <View style={t.dock}>
+        <BlurView pointerEvents="none" style={StyleSheet.absoluteFill} blurType="dark" blurAmount={18} reducedTransparencyFallbackColor="rgba(28,28,32,0.94)" />
         {/* 미끄러지는 오벌 하이라이트 */}
         <Animated.View pointerEvents="none" style={[t.hl, {left: hlX, width: hlW}]} />
         {TABS.map((tab, i) => {
@@ -567,8 +580,8 @@ export function TabBar({active, onTab}: {active: number; onTab: (i: number) => v
               hitSlop={6}
               style={({pressed}) => [t.item, pressed && {opacity: 0.55}]}>
               <View style={tab.flip ? {transform: [{scaleX: -1}]} : undefined}>
-                {tab.set === 'mci' ? (
-                  <MaterialCommunityIcons name={tab.icon} size={24} color={color} />
+                {tab.shoe ? (
+                  <ShoeIcon color={color} />
                 ) : (
                   <Ionicons name={on ? tab.icon : `${tab.icon}-outline`} size={24} color={color} />
                 )}
@@ -593,7 +606,7 @@ const t = StyleSheet.create({
     overflow: 'hidden',                       // 하이라이트를 알약으로 클립
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: 'rgba(255,255,255,0.10)',
-    backgroundColor: 'rgba(28,28,32,0.94)',   // 불투명 다크 표면(블러 미사용 폴백)
+    backgroundColor: 'rgba(20,20,24,0.4)',     // 블러 위 어두운 막(대비 확보; 블러 미지원 환경에서도 어둑하게)
     shadowColor: BG,
     shadowOpacity: 0.7,
     shadowRadius: 20,

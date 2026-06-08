@@ -1325,19 +1325,32 @@ function RunActiveScreen({shoe,insets,goalKm,weightKg,onSave,onDiscard,resume}:{
         ))}
       </View>
 
+      {/* 안전 컨트롤(오작동 종료 방지): 달리는 중엔 큰 일시정지 버튼만 노출(종료 숨김).
+          일시정지 상태에서만 종료(2단계 확인 유지)+재개를 보여준다. */}
       <View style={run.controls}>
-        <View style={{alignItems:'center',gap:8}}>
-          <TouchableOpacity style={run.ctrlPrimary} onPress={handlePause} accessibilityRole="button" accessibilityLabel={paused?'재개':'일시정지'}>
-            <Ionicons name={paused?'play':'pause'} size={34} color="#fff"/>
-          </TouchableOpacity>
-          <Text style={run.ctrlHint}>{paused?'재개':'일시정지'}</Text>
-        </View>
-        <View style={{alignItems:'center',gap:8}}>
-          <TouchableOpacity style={[run.ctrlStop,stopConfirm&&{backgroundColor:DANGER}]} onPress={handleStop} accessibilityRole="button" accessibilityLabel={stopConfirm?'한번 더 누르면 종료':'종료'}>
-            <Ionicons name="stop" size={26} color={stopConfirm?'#fff':DANGER}/>
-          </TouchableOpacity>
-          <Text style={[run.ctrlHint,stopConfirm&&{color:WARN,fontWeight:'700'}]}>{stopConfirm?'한번 더 누르면 종료':'종료'}</Text>
-        </View>
+        {!paused ? (
+          <View style={{alignItems:'center',gap:8}}>
+            <TouchableOpacity style={run.ctrlPrimaryLg} onPress={handlePause} accessibilityRole="button" accessibilityLabel="일시정지">
+              <Ionicons name="pause" size={40} color="#fff"/>
+            </TouchableOpacity>
+            <Text style={run.ctrlHint}>일시정지</Text>
+          </View>
+        ) : (
+          <>
+            <View style={{alignItems:'center',gap:8}}>
+              <TouchableOpacity style={[run.ctrlStop,stopConfirm&&{backgroundColor:DANGER}]} onPress={handleStop} accessibilityRole="button" accessibilityLabel={stopConfirm?'한번 더 누르면 종료':'종료'}>
+                <Ionicons name="stop" size={26} color={stopConfirm?'#fff':DANGER}/>
+              </TouchableOpacity>
+              <Text style={[run.ctrlHint,stopConfirm&&{color:WARN,fontWeight:'700'}]}>{stopConfirm?'한번 더 누르면 종료':'종료'}</Text>
+            </View>
+            <View style={{alignItems:'center',gap:8}}>
+              <TouchableOpacity style={run.ctrlPrimary} onPress={handlePause} accessibilityRole="button" accessibilityLabel="재개">
+                <Ionicons name="play" size={34} color="#fff"/>
+              </TouchableOpacity>
+              <Text style={run.ctrlHint}>재개</Text>
+            </View>
+          </>
+        )}
       </View>
     </View>
   );
@@ -1352,7 +1365,7 @@ const run=StyleSheet.create({
   shoeChip:{flexDirection:'row',alignItems:'center',gap:7,height:30,paddingHorizontal:12,borderRadius:999,backgroundColor:SURFACE},
   shoeChipText:{color:T3,fontFamily:FH,fontSize:13,fontWeight:'600'},
   gpsRow:{flexDirection:'row',alignItems:'center',marginTop:8},
-  gpsText:{color:T3,fontFamily:FP,fontSize:11},
+  gpsText:{color:T3,fontFamily:FP,fontSize:13,fontWeight:'600'},
   banner:{flexDirection:'row',alignItems:'center',gap:8,marginTop:10,paddingVertical:10,paddingHorizontal:12,borderRadius:12,borderWidth:StyleSheet.hairlineWidth},
   bannerWarn:{backgroundColor:'rgba(255,193,7,0.12)',borderColor:WARN},
   bannerDanger:{backgroundColor:'rgba(255,69,58,0.14)',borderColor:DANGER},
@@ -1380,6 +1393,7 @@ const run=StyleSheet.create({
   smL:{color:T3,fontFamily:FP,fontSize:10,fontWeight:'500',marginTop:3,textAlign:'center'},
   controls:{flexDirection:'row',alignItems:'flex-start',justifyContent:'center',gap:40,paddingTop:4,paddingBottom:8},
   ctrlPrimary:{width:92,height:92,borderRadius:999,backgroundColor:ACCENT,alignItems:'center',justifyContent:'center'},
+  ctrlPrimaryLg:{width:96,height:96,borderRadius:999,backgroundColor:ACCENT,alignItems:'center',justifyContent:'center'},
   ctrlStop:{width:72,height:72,borderRadius:999,backgroundColor:'rgba(255,69,58,0.18)',alignItems:'center',justifyContent:'center',marginTop:10},
   ctrlHint:{color:T3,fontFamily:FP,fontSize:11,letterSpacing:0.5,textAlign:'center'},
   memo:{backgroundColor:SURFACE,borderRadius:14,padding:14,color:T1,fontSize:15,fontFamily:FP,marginBottom:16},

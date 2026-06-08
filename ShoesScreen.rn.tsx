@@ -3,13 +3,13 @@
 // (sample data removed — real shoes/runs/totals injected via props)
 // ============================================================================
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, Pressable, TextInput, Alert, Linking, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, Pressable, TextInput, Alert, StyleSheet, Linking } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {
   BG, CARD, CARD_DIM, CARD_HI, ACCENT, DANGER, WARN, GOOD, T1, T2, T3, SEP, FONT, DISPLAY, withAlpha, Shoe, Run, SHOES,
 } from './theme';
-import { Ring, TabBar, TierBadge, Pill, SectionTitle, InjuryBanner } from './primitives';
+import { Ring, TabBar, TierBadge, Pill, InjuryBanner, SectionTitle } from './primitives';
 import { FuelGauge } from './FuelGauge';
 import { Unit, displayNum, displayToKm } from './lib/units';
 import { clampMaxKm, KEEP_GOING_REPLACE, SHOE_MAX_STEP_KM, SHOE_REPLACE_PCT } from './lib/shoe';
@@ -18,20 +18,9 @@ import { buildWearView, forecastLineKo, type Surface } from './lib/wearView';
 import { recommendNextShoes, buildShopLinks, categoryLabelKo, AFFILIATE_DISCLOSURE } from './lib/affiliate';
 import { shouldRecommendNextShoe } from './lib/recommendTrigger';
 
-// lastWorn: 이 신발의 마지막 착용일(런에서 파생, 한국어 표기). 미착용이면 생략.
-// avgPace: 이 신발로 달린 런들의 평균 페이스(예 "5'30\"" / 기록 없으면 '--'). 신발끼리
-// 페이스를 비교할 수 있게 상세·목록 카드에 함께 노출한다.
-export type ShoeTotals = { totalRuns: number; totalTime: string; avgPace: string; lastWorn?: string };
-
-// Proportional condition → color (shoeHealth tiers: 양호 / 주의 / 교체).
-const condColor = (c: string) => (c === '교체' ? DANGER : c === '주의' ? WARN : GOOD);
-const ringColor = (c: string) => (c === '교체' ? DANGER : c === '주의' ? WARN : ACCENT);
-
 // 수익화 v1(차별점 정합): 이 신발이 교체임박(forecast overdue/≤3주)일 때, 같은 카테고리의
 // '다음 러닝화'를 상세에서도 추천한다(구매 의도 최고 시점의 contextual 추천 — 배너광고 아님).
-// 홈 NextShoeCard 와 같은 lib/affiliate(순수) 자산을 재사용하되 상세 레이아웃에 맞춘다.
-// 쇼핑몰 검색 링크는 Linking.openURL 로 외부에서 열고, 투명성 안내(제휴 가능성+'러너 우선')를
-// 하단에 명시한다. 시드 DB가 없거나 추천이 비면 통째로 숨는다.
+// 쇼핑몰 검색 링크는 Linking.openURL 로 외부에서 열고, 투명성 안내를 하단에 명시한다.
 function NextShoeCard({ shoe }: { shoe: Shoe }) {
   const recs = recommendNextShoes({ brand: shoe.brand, model: shoe.model }, 3);
   if (recs.length === 0) return null;
@@ -70,6 +59,15 @@ function NextShoeCard({ shoe }: { shoe: Shoe }) {
   );
 }
 
+// lastWorn: 이 신발의 마지막 착용일(런에서 파생, 한국어 표기). 미착용이면 생략.
+// avgPace: 이 신발로 달린 런들의 평균 페이스(예 "5'30\"" / 기록 없으면 '--'). 신발끼리
+// 페이스를 비교할 수 있게 상세·목록 카드에 함께 노출한다.
+export type ShoeTotals = { totalRuns: number; totalTime: string; avgPace: string; lastWorn?: string };
+
+// Proportional condition → color (shoeHealth tiers: 양호 / 주의 / 교체).
+const condColor = (c: string) => (c === '교체' ? DANGER : c === '주의' ? WARN : GOOD);
+const ringColor = (c: string) => (c === '교체' ? DANGER : c === '주의' ? WARN : ACCENT);
+
 // ── shoe detail ───────────────────────────────────────────────────────────────
 function ShoeDetail({
   shoe, idx, runs, totals, unit, weightKg, surfaceOf, onBack, onRename, onDelete, onRetire, onSetMaxKm, onStartRun,
@@ -94,6 +92,7 @@ function ShoeDetail({
 }) {
   // 비율은 km 절대값, 표시 숫자만 표시 단위로 환산한다.
   const remainKm = Math.max(0, shoe.max - shoe.used);
+  const remain = displayNum(remainKm, unit);
   const usedDisp = displayNum(shoe.used, unit);
   const retired = !!shoe.retired;
   const shoeRuns = runs.filter((r) => r.shoe === idx);
@@ -103,8 +102,6 @@ function ShoeDetail({
   const wearView = buildWearView(shoe, shoeRuns, { weightKg, surfaceOf });
   const effWearKm = Math.round(wearView.effectiveWearKm);
   const targetKm = Math.round(wearView.targetKm);
-  // FuelGauge 채움/마커 위치: 실효 마모 비율(effectiveWearKm/targetKm), 0~1 클램프.
-  const wearPct = wearView.targetKm > 0 ? Math.min(1, wearView.effectiveWearKm / wearView.targetKm) : (shoe.max > 0 ? shoe.used / shoe.max : 0);
   const forecastLine = forecastLineKo(wearView.forecast);
   // 부상예방 경고(주의/위험) — shoeHealth 와 같은 마모 분모(used/max)로 판정한다.
   // 안전 등급/보관 신발은 경고를 노출하지 않는다(보관됨 상태와의 모순 방지).
@@ -205,31 +202,25 @@ function ShoeDetail({
             제외되므로 숨긴다(런 기록은 그대로 보존·표시). */}
         {!retired && shoe.id && onStartRun && (
           <Pressable onPress={() => onStartRun(shoe.id!)} accessibilityRole="button" accessibilityLabel="이 신발로 달리기" style={({ pressed }) => [s.runCta, pressed && s.pressed]}>
-            <Ionicons name="play" size={18} color={T1} />
+            <Ionicons name="play" size={15} color={T2} />
             <Text style={s.runCtaText}>이 신발로 달리기</Text>
           </Pressable>
         )}
 
-        {/* durability hero — 수명 연료게이지(FuelGauge). 아래 '수명 수정'으로 max_km 보정기 펼침. */}
-        <View style={[s.card, s.dHeroGauge]}>
+        {/* durability — 수명 연료게이지(가로 바) + 수명 조정 토글 */}
+        <View>
           <FuelGauge
-            remainLabel={String(displayNum(remainKm, unit, 0))}
+            remainLabel={String(remain)}
             unit={unit}
-            fillPct={wearPct}
+            fillPct={shoe.max > 0 ? Math.min(1, shoe.used / shoe.max) : 0}
             replacePct={SHOE_REPLACE_PCT / 100}
             condition={shoe.condition}
-            wearLabel={`실효 마모 ${Math.round(wearPct * 100)}%`}
+            wearLabel={`실효 마모 ${wearView.targetKm > 0 ? Math.round((wearView.effectiveWearKm / wearView.targetKm) * 100) : 0}%`}
           />
           {!retired && shoe.id && onSetMaxKm && (
-            <Pressable
-              onPress={() => setEditingMax((e) => !e)}
-              hitSlop={8}
-              accessibilityRole="button"
-              accessibilityLabel="신발 수명 수정"
-              style={s.maxEditRow}
-            >
+            <Pressable onPress={() => setEditingMax((e) => !e)} hitSlop={8} accessibilityRole="button" accessibilityLabel="신발 수명 수정" style={s.maxEditRow}>
               <Ionicons name={editingMax ? 'checkmark' : 'create-outline'} size={13} color={editingMax ? ACCENT : T3} />
-              <Text style={[s.maxEditRowText, editingMax && { color: ACCENT }]}>{editingMax ? '완료' : '수명 수정'}</Text>
+              <Text style={s.maxEditTxt}>{editingMax ? '완료' : '수명 조정'}</Text>
             </Pressable>
           )}
         </View>
@@ -310,10 +301,8 @@ function ShoeDetail({
           </View>
         )}
 
-        {/* 수익화 v1(차별점 정합): 이 신발이 교체임박(forecast overdue/≤3주)이면 같은
-            카테고리의 '다음 러닝화'를 상세에서도 추천한다. 트리거는 Slice 6 교체 예측
-            (wearView.forecast)을 shouldRecommendNextShoe 로 판정해 홈과 동일한 기준을
-            쓴다(여유 있는 신발엔 미노출). 보관 신발은 교체 동선에서 제외한다. */}
+        {/* 수익화 v1: 교체임박(forecast overdue/≤3주)이면 같은 카테고리 '다음 러닝화'를
+            상세에서도 추천(여유 있는 신발엔 미노출, 보관 신발 제외 — 홈과 동일 트리거). */}
         {!retired && shouldRecommendNextShoe(wearView.forecast) && (
           <NextShoeCard shoe={shoe} />
         )}
@@ -374,8 +363,8 @@ function ShoeCard({ shoe, featured, onPress, onPlay, unit, pace }: { shoe: Shoe;
   const maxDisp = displayNum(shoe.max, unit);
   return (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${shoe.brand} ${shoe.model} 상세`} style={({ pressed }) => [s.shoeCard, featured ? s.shoeCardFeatured : s.shoeCardIdle, retired && s.shoeCardRetired, pressed && s.pressed]}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 18 }}>
-        <Ring size={78} stroke={9} progress={pct} color={retired ? T3 : ring}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+        <Ring size={56} stroke={7} progress={pct} color={retired ? T3 : ring}>
           <Text style={s.shoeRingPct}>{Math.round(pct * 100)}<Text style={s.shoeRingPctU}>%</Text></Text>
         </Ring>
         <View style={{ flex: 1, minWidth: 0 }}>
@@ -503,27 +492,11 @@ const s = StyleSheet.create({
   pressed: { opacity: 0.85 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   baselineRow: { flexDirection: 'row', alignItems: 'flex-end' },
-  card: { backgroundColor: CARD, borderRadius: 22 },
+  card: { backgroundColor: CARD_DIM, borderRadius: 20, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.07) },
   sectionLabel: { color: T2, fontFamily: FONT, fontSize: 14, fontWeight: '500', letterSpacing: 0.2, paddingHorizontal: 4 },
   dot: { width: 7, height: 7, borderRadius: 999 },
   condText: { fontFamily: FONT, fontSize: 13, fontWeight: '500' },
   condSub: { color: T3, fontFamily: FONT, fontSize: 13 },
-
-  // 다음 러닝화 추천 카드(수익화 v1) — 홈 NextShoeCard 와 같은 자산을 상세 레이아웃에
-  // 맞춰 재구성한다. 카드 표면은 s.card(CARD) 위에 CARD_DIM + accent 테두리로 절제하고,
-  // 쇼핑몰 버튼은 accent 반투명 pill 로 통일한다(하드코딩 색/폰트 0 — 전부 theme 토큰).
-  nextSectionLabel: { paddingHorizontal: 4 },
-  nextCard: { backgroundColor: CARD_DIM, borderWidth: 1, borderColor: withAlpha(ACCENT, 0.3), padding: 16 },
-  nextSub: { color: T3, fontFamily: FONT, fontSize: 12.5, lineHeight: 18, marginBottom: 6 },
-  nextRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 11 },
-  nextRowSep: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.07) },
-  nextBrand: { color: T3, fontFamily: DISPLAY, fontSize: 10, fontWeight: '500', letterSpacing: 1.2 },
-  nextModel: { color: T1, fontFamily: DISPLAY, fontSize: 14.5, fontWeight: '600', letterSpacing: -0.1, marginTop: 3 },
-  nextCat: { color: T3, fontFamily: FONT, fontSize: 11, marginTop: 3 },
-  shopBtns: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, justifyContent: 'flex-end', maxWidth: 132 },
-  shopBtn: { borderRadius: 999, borderWidth: 1, borderColor: withAlpha(ACCENT, 0.4), backgroundColor: withAlpha(ACCENT, 0.1), paddingHorizontal: 11, paddingVertical: 6 },
-  shopBtnTxt: { color: ACCENT, fontFamily: FONT, fontSize: 11.5, fontWeight: '600' },
-  nextDisclosure: { color: T3, fontFamily: FONT, fontSize: 10.5, lineHeight: 15, marginTop: 12, opacity: 0.85 },
 
   header: { paddingTop: 12, paddingHorizontal: 22, paddingBottom: 8 },
   headerCount: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600' },
@@ -532,15 +505,15 @@ const s = StyleSheet.create({
   // 카드 하단 중복 진행바(track/trackFill)를 제거하고 원형 Ring 만 유지한다. 바가
   // 빠진 만큼 카드 패딩을 살짝 줄이고(20), 링(78)·모델 폰트(20)를 키워 비율을
   // 재조정했다 — 같은 pct 를 두 번 그리던 중복을 없애 시선이 링에 모인다.
-  shoeCard: { backgroundColor: CARD, borderRadius: 22, padding: 20 },
-  shoeCardFeatured: { borderWidth: 1, borderColor: ACCENT },
+  shoeCard: { backgroundColor: CARD_DIM, borderRadius: 18, padding: 14 },
+  shoeCardFeatured: { borderWidth: 1, borderColor: withAlpha(T1, 0.2) },
   shoeCardIdle: { borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.05) },
   shoeCardRetired: { opacity: 0.55, borderColor: withAlpha(T1, 0.05) },
-  shoeRingPct: { color: T1, fontFamily: DISPLAY, fontSize: 18 },
-  shoeRingPctU: { color: T3, fontFamily: FONT, fontSize: 9 },
+  shoeRingPct: { color: T1, fontFamily: DISPLAY, fontSize: 15 },
+  shoeRingPctU: { color: T3, fontFamily: FONT, fontSize: 8 },
   shoeBrand: { color: T3, fontFamily: DISPLAY, fontSize: 11, fontWeight: '500', letterSpacing: 1.3 },
-  shoeModel: { color: T1, fontFamily: DISPLAY, fontSize: 18, fontWeight: '500', letterSpacing: -0.2, lineHeight: 22, marginTop: 3 },
-  shoeMeta: { color: T3, fontFamily: FONT, fontSize: 12.5, fontWeight: '600', marginTop: 6 },
+  shoeModel: { color: T1, fontFamily: DISPLAY, fontSize: 16, fontWeight: '500', letterSpacing: -0.2, lineHeight: 20, marginTop: 2 },
+  shoeMeta: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '600', marginTop: 4 },
   shoePaceRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 5 },
   shoePace: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '600' },
   shoePaceVal: { color: ACCENT, fontFamily: DISPLAY, fontSize: 12.5 },
@@ -554,8 +527,8 @@ const s = StyleSheet.create({
   iconBtn: { width: 38, height: 38, borderRadius: 999, backgroundColor: CARD_HI, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.12), alignItems: 'center', justifyContent: 'center' },
   dBrand: { color: T3, fontFamily: DISPLAY, fontSize: 12, fontWeight: '500', letterSpacing: 1.6 },
   dModel: { color: T1, fontFamily: DISPLAY, fontSize: 28, fontWeight: '500', letterSpacing: -0.3, marginTop: 4 },
-  runCta: { height: 54, borderRadius: 18, backgroundColor: ACCENT, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9 },
-  runCtaText: { color: T1, fontFamily: FONT, fontSize: 16, fontWeight: '600', letterSpacing: -0.2 },
+  runCta: { height: 46, borderRadius: 14, backgroundColor: 'transparent', borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.14), flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  runCtaText: { color: T2, fontFamily: FONT, fontSize: 14.5, fontWeight: '600', letterSpacing: -0.2 },
 
   // 교체 내러티브 배너(keep-going 보이스) — accent 톤 반투명 표면(withAlpha 파생).
   keepGoing: { flexDirection: 'row', alignItems: 'center', gap: 9, backgroundColor: withAlpha(ACCENT, 0.12), borderRadius: 16, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.35), paddingHorizontal: 16, paddingVertical: 13 },
@@ -567,11 +540,10 @@ const s = StyleSheet.create({
   wearUnit: { color: T2, fontFamily: FONT, fontSize: 14, marginLeft: 4, marginBottom: 4 },
   wearTarget: { color: T3, fontFamily: FONT, fontSize: 13, marginBottom: 4 },
   wearForecast: { color: ACCENT, fontFamily: FONT, fontSize: 12.5, fontWeight: '600', letterSpacing: -0.1, lineHeight: 18, marginTop: 8 },
+  maxEditRow: { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-end', marginTop: 12 },
+  maxEditTxt: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500' },
 
   dHero: { padding: 24, flexDirection: 'row', alignItems: 'center', gap: 22 },
-  dHeroGauge: { paddingHorizontal: 22, paddingTop: 4, paddingBottom: 18 },
-  maxEditRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 5, marginTop: 16 },
-  maxEditRowText: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '600' },
   dHeroPct: { color: T1, fontFamily: DISPLAY, fontSize: 30 },
   dHeroPctU: { color: T3, fontFamily: FONT, fontSize: 13 },
   dHeroLabel: { color: T3, fontFamily: FONT, fontSize: 13 },
@@ -588,6 +560,18 @@ const s = StyleSheet.create({
   statCell: { flex: 1, alignItems: 'center' },
   statDivider: { borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: SEP },
   // 2x2 통계 그리드(총거리/총횟수/총시간/평균페이스). 한 카드 안에 4칸을 넉넉히.
+  nextSectionLabel: { paddingHorizontal: 4 },
+  nextCard: { backgroundColor: CARD_DIM, borderWidth: 1, borderColor: withAlpha(ACCENT, 0.3), padding: 16 },
+  nextSub: { color: T3, fontFamily: FONT, fontSize: 12.5, lineHeight: 18, marginBottom: 6 },
+  nextRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 11 },
+  nextRowSep: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.07) },
+  nextBrand: { color: T3, fontFamily: DISPLAY, fontSize: 10, fontWeight: '500', letterSpacing: 1.2 },
+  nextModel: { color: T1, fontFamily: DISPLAY, fontSize: 14.5, fontWeight: '600', letterSpacing: -0.1, marginTop: 3 },
+  nextCat: { color: T3, fontFamily: FONT, fontSize: 11, marginTop: 3 },
+  shopBtns: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, justifyContent: 'flex-end', maxWidth: 132 },
+  shopBtn: { borderRadius: 999, borderWidth: 1, borderColor: withAlpha(ACCENT, 0.4), backgroundColor: withAlpha(ACCENT, 0.1), paddingHorizontal: 11, paddingVertical: 6 },
+  shopBtnTxt: { color: ACCENT, fontFamily: FONT, fontSize: 11.5, fontWeight: '600' },
+  nextDisclosure: { color: T3, fontFamily: FONT, fontSize: 10.5, lineHeight: 15, marginTop: 12, opacity: 0.85 },
   statGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingVertical: 8 },
   statGridCell: { width: '50%', alignItems: 'center', paddingVertical: 14 },
   statValue: { color: T1, fontFamily: DISPLAY, fontSize: 22, letterSpacing: 0.3 },

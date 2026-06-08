@@ -58,12 +58,11 @@ function textOf(node: any): string {
   let out = '';
   const walk = (n: any) => {
     if (typeof n === 'string') { out += n; return; }
-    if (!n) return;
-    if (typeof n.props?.accessibilityLabel === 'string') out += n.props.accessibilityLabel;
-    if (!n.children) return;
+    if (!n || !n.children) return;
     n.children.forEach(walk);
   };
   walk(node);
+  if ((out === '' || node.props?.accessibilityRole === 'tab') && typeof node.props?.accessibilityLabel === 'string') return node.props.accessibilityLabel;
   return out;
 }
 
@@ -106,7 +105,7 @@ test('런 삭제 → 확인 Alert 후 신발 사용거리(km) 감소', async () 
   const {root} = await mount(SHOE, runs);
 
   // 삭제 전: 신발 카드에 누적 15 / 600 km.
-  await tap(pressBy(root, 'shoe-sneaker'));
+  await tap(pressBy(root, '신발'));
   expect(textOf(root)).toContain('15 / 600');
 
   // 기록 탭 → r2(5.25km) 상세 진입.
@@ -131,7 +130,7 @@ test('런 삭제 → 확인 Alert 후 신발 사용거리(km) 감소', async () 
   expect(delCall).toBeTruthy();
 
   // 신발 탭: 사용거리 15 → 10으로 감소(shoeHealth가 runs 파생).
-  await tap(pressBy(root, 'shoe-sneaker'));
+  await tap(pressBy(root, '신발'));
   expect(textOf(root)).toContain('10 / 600');
   expect(textOf(root)).not.toContain('15 / 600');
 });
@@ -167,7 +166,7 @@ test('런 편집(거리) → 백엔드 PATCH + 신발 km 재계산', async () =>
   const {root} = await mount(SHOE, runs);
 
   // 편집 전: 신발 10 / 600 km.
-  await tap(pressBy(root, 'shoe-sneaker'));
+  await tap(pressBy(root, '신발'));
   expect(textOf(root)).toContain('10 / 600');
 
   // 기록 → r1 상세 → 편집('create-outline') → 폼 프리필.
@@ -188,7 +187,7 @@ test('런 편집(거리) → 백엔드 PATCH + 신발 km 재계산', async () =>
   expect(JSON.parse(patch![1].body).km).toBe(12);
 
   // 신발 km 재계산: 10 → 12.
-  await tap(pressBy(root, 'shoe-sneaker'));
+  await tap(pressBy(root, '신발'));
   expect(textOf(root)).toContain('12 / 600');
 });
 

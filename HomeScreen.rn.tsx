@@ -16,7 +16,7 @@ import {
   BG, CARD, CARD_DIM, CARD_HI, HERO_BG, ACCENT, DANGER, WARN, GOOD, T1, T2, T3,
   FONT, DISPLAY, SPACE, RADIUS, withAlpha, Shoe, SHOES,
 } from './theme';
-import { Ring, TabBar, TierBadge, KeegoWordmark, Button, SectionTitle, Pill, conditionColor, InjuryBanner } from './primitives';
+import { Ring, TabBar, KeegoWordmark, Button, SectionTitle, Pill, conditionColor, InjuryBanner } from './primitives';
 import { Unit, displayNum, displayToKm } from './lib/units';
 import { GOAL_STEP_DISPLAY } from './lib/settings';
 import { assessShoeInjuryRisk } from './lib/injury';
@@ -36,6 +36,8 @@ const GAP = 10;
 // Proportional condition → ring color. 양호는 accent(주인공 톤), 주의/교체는 경고색.
 // 도트/조건 텍스트의 상태색은 primitives.conditionColor(양호=GOOD 녹색)를 재사용한다.
 const ringColor = (c: string) => (c === '교체' ? DANGER : c === '주의' ? WARN : ACCENT);
+// 컨디션 한글 레이블(히어로) — 양호는 keep-going 톤의 '최상의 컨디션'.
+const condLabel = (c: string) => (c === '교체' ? '교체 권장' : c === '주의' ? '주의 필요' : '최상의 컨디션');
 
 function TopBar({ onAddShoe }: { onAddShoe?: () => void }) {
   return (
@@ -94,7 +96,6 @@ function HeroShoe({ shoe, unit, tappable, forecast }: { shoe: Shoe; unit: Unit; 
   const remain = displayNum(remainKm, unit);
   const used = displayNum(shoe.used, unit);
   const max = displayNum(shoe.max, unit);
-  const ring = ringColor(shoe.condition);
   const tier = conditionColor(shoe.condition);
   // 부상예방 경고(주의/위험)는 같은 마모 분모(used/max)로 판정해 히어로 하단에 띄운다.
   // 안전 등급은 InjuryBanner가 null을 돌려줘 경고를 노출하지 않는다(보관 신발도 제외).
@@ -107,31 +108,29 @@ function HeroShoe({ shoe, unit, tappable, forecast }: { shoe: Shoe; unit: Unit; 
   return (
     <View style={s.hero}>
       <View style={s.heroTop}>
-        <View style={{ flex: 1, minWidth: 0 }}>
-          <View style={s.row}>
-            <Text style={s.heroBrand}>{shoe.brand}</Text>
-            {/* 교체/주의 tier 배지 — 홈 히어로에서 가장 먼저 보이게(양호는 미노출). */}
-            <TierBadge condition={shoe.condition} />
-            <View style={s.usingChip}><Text style={s.usingChipText}>사용 중</Text></View>
-          </View>
-          <Text style={s.heroModel} numberOfLines={2}>{shoe.model}</Text>
-        </View>
-        <Ring size={60} stroke={7} progress={pct} color={ring}>
-          <Text style={s.ringPct}>{Math.round(pct * 100)}<Text style={s.ringPctU}>%</Text></Text>
-        </Ring>
-      </View>
-      <View style={s.heroBottom}>
-        <View style={s.baselineRow}>
-          <Text style={s.heroRemain}>{remain}</Text>
-          <Text style={s.heroRemainU}>{unit} 남음</Text>
-        </View>
         <View style={s.row}>
-          <View style={[s.dot, { backgroundColor: tier }]} />
-          <Text style={[s.condText, { color: tier }]}>{shoe.condition}</Text>
-          <Text style={s.condSub}>· {used}/{max}{unit}</Text>
-          {tappable && <Ionicons name="chevron-forward" size={15} color={T3} style={{ marginLeft: 2 }} />}
+          <Text style={s.heroBrand}>{shoe.brand}</Text>
+          <View style={s.usingChip}><Text style={s.usingChipText}>사용 중</Text></View>
+        </View>
+        <View style={s.condPill} testID={`tier-badge-${shoe.condition}`}>
+          <View style={[s.condDot, { backgroundColor: tier }]} />
+          <Text style={[s.condPillText, { color: tier }]}>{condLabel(shoe.condition)}</Text>
         </View>
       </View>
+      <View style={s.modelRow}>
+        <Text style={s.heroModel} numberOfLines={2}>{shoe.model}</Text>
+        {tappable && <Ionicons name="chevron-forward" size={18} color={T3} />}
+      </View>
+      <View style={s.remainRow}>
+        <Text style={s.remainLead}>교체까지 약 </Text>
+        <Text style={s.heroRemain}>{remain}</Text>
+        <Text style={s.heroRemainU}>{unit}</Text>
+        <Text style={s.remainLead}> 남았어요</Text>
+      </View>
+      <View style={s.gaugeTrack}>
+        <View style={[s.gaugeFill, { width: `${Math.max(2, Math.round(pct * 100))}%` }]} />
+      </View>
+      <Text style={s.usageText}>{used} / {max}{unit} 사용</Text>
       {/* 교체 예측 ETA 한 줄(차별점) — 기존 배지/경고 위에 보강. 추정 톤('약'·'예상'). */}
       {!shoe.retired && !!forecastLine && (
         <View style={s.heroForecast}>
@@ -443,12 +442,12 @@ const s = StyleSheet.create({
   baselineRow: { flexDirection: 'row', alignItems: 'flex-end' },
 
   topbar: { paddingTop: 8, paddingHorizontal: SPACE.xl, paddingBottom: SPACE.xs, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  addBtn: { height: 36, paddingHorizontal: 18, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: withAlpha(ACCENT, 0.35), backgroundColor: withAlpha(ACCENT, 0.12), alignItems: 'center', justifyContent: 'center' },
-  addBtnText: { color: ACCENT, fontFamily: FONT, fontSize: 13, fontWeight: '600' },
+  addBtn: { height: 36, paddingHorizontal: 16, borderRadius: RADIUS.pill, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.12), backgroundColor: withAlpha(T1, 0.04), alignItems: 'center', justifyContent: 'center' },
+  addBtnText: { color: T2, fontFamily: FONT, fontSize: 13, fontWeight: '600' },
 
   greetWrap: { paddingHorizontal: SPACE.xl, paddingTop: 8 },
   date: { color: T3, fontFamily: FONT, fontSize: 13, letterSpacing: 0.2 },
-  greet: { color: T1, fontFamily: FONT, fontSize: 20, fontWeight: '400', letterSpacing: -0.4, marginTop: 3, lineHeight: 26 },
+  greet: { color: T1, fontFamily: FONT, fontSize: 21, fontWeight: '600', letterSpacing: -0.5, marginTop: 4, lineHeight: 27 },
 
 
   goalCard: { backgroundColor: CARD_DIM, borderRadius: 18, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.06), padding: SPACE.md, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
@@ -462,15 +461,23 @@ const s = StyleSheet.create({
   goalRingPct: { color: T1, fontFamily: DISPLAY, fontSize: 19, letterSpacing: 0.2 },
   goalRingU: { color: T3, fontFamily: FONT, fontSize: 10 },
 
-  hero: { backgroundColor: HERO_BG, borderRadius: RADIUS.xl, borderWidth: 1, borderColor: ACCENT, padding: 16 },
-  heroTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 14 },
-  heroBrand: { color: T3, fontFamily: DISPLAY, fontSize: 11, fontWeight: '500', letterSpacing: 1.4 },
-  usingChip: { backgroundColor: withAlpha(ACCENT, 0.14), borderRadius: 6, paddingHorizontal: SPACE.sm, paddingVertical: 2 },
-  usingChipText: { color: ACCENT, fontFamily: FONT, fontSize: 10, fontWeight: '500' },
-  heroModel: { color: T1, fontFamily: DISPLAY, fontSize: 22, fontWeight: '600', letterSpacing: -0.2, marginTop: 4, lineHeight: 25 },
-  heroBottom: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 8 },
-  heroRemain: { color: T1, fontFamily: DISPLAY, fontSize: 38, letterSpacing: -1 },
-  heroRemainU: { color: T2, fontFamily: FONT, fontSize: 16, marginLeft: 5, marginBottom: 6 },
+  hero: { backgroundColor: CARD_DIM, borderRadius: RADIUS.xl, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.08), padding: 18 },
+  heroTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 14 },
+  heroBrand: { color: T3, fontFamily: DISPLAY, fontSize: 11.5, fontWeight: '600', letterSpacing: 1.4 },
+  usingChip: { backgroundColor: withAlpha(T1, 0.06), borderRadius: 6, paddingHorizontal: SPACE.sm, paddingVertical: 2 },
+  usingChipText: { color: T3, fontFamily: FONT, fontSize: 10, fontWeight: '600' },
+  condPill: { flexDirection: 'row', alignItems: 'center', gap: 7 },
+  condDot: { width: 7, height: 7, borderRadius: RADIUS.pill },
+  condPillText: { fontFamily: FONT, fontSize: 13, fontWeight: '500', letterSpacing: -0.2 },
+  modelRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
+  heroModel: { flex: 1, color: T1, fontFamily: DISPLAY, fontSize: 28, fontWeight: '600', letterSpacing: -0.6, lineHeight: 30 },
+  remainRow: { flexDirection: 'row', alignItems: 'flex-end', flexWrap: 'wrap', marginTop: 18 },
+  remainLead: { color: T2, fontFamily: FONT, fontSize: 16, fontWeight: '500', letterSpacing: -0.2, marginBottom: 2 },
+  heroRemain: { color: T1, fontFamily: DISPLAY, fontSize: 30, fontWeight: '600', letterSpacing: -0.9, marginLeft: 2 },
+  heroRemainU: { color: T2, fontFamily: FONT, fontSize: 15, fontWeight: '500', marginLeft: 1, marginBottom: 2 },
+  gaugeTrack: { height: 5, borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.08), marginTop: 16, overflow: 'hidden' },
+  gaugeFill: { height: '100%', borderRadius: RADIUS.pill, backgroundColor: ACCENT },
+  usageText: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500', marginTop: 11 },
   injuryWrap: { marginTop: 16 },
   // 교체 예측 ETA 한 줄(히어로 하단) — accent 절제(아이콘+텍스트만, 배경 없음).
   heroForecast: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12 },
@@ -520,7 +527,7 @@ const s = StyleSheet.create({
   goalDoneText: { color: T1, fontFamily: FONT, fontSize: 15, fontWeight: '600' },
 
   pcard: { width: CARD_W, height: CARD_W, borderRadius: RADIUS.lg, padding: SPACE.lg, justifyContent: 'space-between' },
-  pcardActive: { backgroundColor: HERO_BG, borderWidth: 1, borderColor: ACCENT },
+  pcardActive: { backgroundColor: HERO_BG, borderWidth: 1, borderColor: withAlpha(T1, 0.2) },
   pcardIdle: { backgroundColor: CARD_DIM, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.06) },
   pcardBrand: { flex: 1, color: T3, fontFamily: DISPLAY, fontSize: 10, fontWeight: '500', letterSpacing: 1.2 },
   pcardRingPct: { color: T1, fontFamily: DISPLAY, fontSize: 11 },

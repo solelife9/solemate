@@ -112,8 +112,7 @@ describe('hero card reflects the real activeIdx, not index 0', () => {
     const txt = textOf(hero(root));
     expect(txt).toContain('Pegasus 41');
     expect(txt).not.toContain('Clifton 9');
-    expect(txt).toContain('80'); // lifespan ring % for shoe 0
-    expect(txt).toContain('400'); // remaining km for shoe 0
+    expect(txt).toContain('400'); // remaining km for shoe 0 (히어로 게이지 — 링% 표기 제거됨)
   });
 
   test('activeIdx=1 → hero swaps to the second shoe (Clifton 9 · 20% ring)', () => {
@@ -123,8 +122,7 @@ describe('hero card reflects the real activeIdx, not index 0', () => {
     const txt = textOf(hero(root));
     expect(txt).toContain('Clifton 9');
     expect(txt).not.toContain('Pegasus 41');
-    expect(txt).toContain('20'); // lifespan ring % for shoe 1
-    expect(txt).toContain('100'); // remaining km for shoe 1
+    expect(txt).toContain('100'); // remaining km for shoe 1 (히어로 게이지 — 링% 표기 제거됨)
   });
 
   test('out-of-range activeIdx clamps to the last shoe (no crash, hero = Clifton 9)', () => {

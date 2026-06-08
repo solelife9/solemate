@@ -2,7 +2,7 @@
 // HistoryScreen.rn.tsx — 기록: period segment, period chart, recent runs + RunDetail
 // (sample data removed — real summary/chart/runs are injected via props)
 // ============================================================================
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, ScrollView, Pressable, StyleSheet, LayoutChangeEvent, Share, TextInput, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -16,8 +16,8 @@ import { Unit, displayNum, displayToKm } from './lib/units';
 import { ymdLocal } from './lib/format';
 import { getRunSurface, setRunSurface, type Surface } from './lib/wearModel';
 import { parseRoute, projectRoute, LatLon } from './lib/route';
-import { buildSplits } from './lib/splits';
 import { RunSplits } from './RunSplits';
+import { buildSplits } from './lib/splits';
 import { buildRunShareText } from './lib/share';
 import { buildShareCardModel, shareRunCard, SvgCapturable } from './lib/shareCard';
 import ShareCard from './ShareCard';
@@ -73,6 +73,7 @@ function PeriodChartView({ data, labels, unit }: { data: number[]; labels: strin
   for (let v = 0; v <= niceMax + 1e-6; v += step) ticks.push(v);
   const dense = data.length > 7;
   const fmtTick = (v: number) => (Number.isInteger(v) ? String(v) : v.toFixed(1));
+  const [sel, setSel] = useState<number | null>(null);
 
   return (
     <View>
@@ -84,16 +85,28 @@ function PeriodChartView({ data, labels, unit }: { data: number[]; labels: strin
           </View>
         ))}
         <View style={[s.chartBars, { gap: dense ? 4 : 8 }]}>
-          {data.map((v, i) => (
-            <View key={i} style={s.chartBarSlot}>
-              <View style={[s.chartBar, { maxWidth: dense ? 12 : 18, height: v <= 0 ? 0 : Math.max(4, (v / niceMax) * H) }]} />
-            </View>
-          ))}
+          {data.map((v, i) => {
+            const bh = v <= 0 ? 0 : Math.max(4, (v / niceMax) * H);
+            const on = sel === i;
+            const dim = sel != null && !on;
+            return (
+              <Pressable key={i} style={s.chartBarSlot} onPress={() => setSel(on ? null : i)} hitSlop={4} accessibilityRole="button" accessibilityLabel={`${labels[i]} ${fmtTick(v)}${unit}`}>
+                {on && (
+                  <View style={[s.chartTipWrap, { bottom: bh + 8 }]} pointerEvents="none">
+                    <View style={s.chartTip}>
+                      <Text style={s.chartTipVal}>{fmtTick(v)}<Text style={s.chartTipU}>{unit}</Text></Text>
+                    </View>
+                  </View>
+                )}
+                <View style={[s.chartBar, { maxWidth: dense ? 12 : 18, height: bh, backgroundColor: dim ? withAlpha(ACCENT, 0.28) : ACCENT }]} />
+              </Pressable>
+            );
+          })}
         </View>
       </View>
       <View style={[s.chartLabels, { gap: dense ? 4 : 8 }]}>
         {labels.map((l, i) => (
-          <Text key={i} style={[s.chartLabel, { fontSize: dense ? 9 : 11 }]}>{l}</Text>
+          <Text key={i} style={[s.chartLabel, { fontSize: dense ? 9 : 11, color: sel === i ? T1 : T3 }]}>{l}</Text>
         ))}
       </View>
     </View>
@@ -297,9 +310,6 @@ function RunDetail({ run, shoe, onBack, unit, onEdit, onDelete }: { run: Run; sh
       .catch(() => { if (alive) setRoute([]); });
     return () => { alive = false; };
   }, [run.id]);
-  // 구간 스플릿(per-km) — 1Hz 점밀도로 페이스 근사(lib/splits). 경로 빈약 시 [] → 숨김.
-  const durationSec = run.durationS && run.durationS > 0 ? run.durationS : parseDurationInput(run.time);
-  const splits = useMemo(() => buildSplits(route, run.dist, durationSec), [route, run.dist, durationSec]);
   // 공유 입력(텍스트·카드 폴백이 같은 필드를 쓰도록 단일 출처로 둔다).
   const shareInput = {
     distKm: run.dist,
@@ -388,7 +398,8 @@ function RunDetail({ run, shoe, onBack, unit, onEdit, onDelete }: { run: Run; sh
             </View>
           ))}
         </View>
-        <RunSplits splits={splits} />
+        {/* 구간별 페이스 스플릿 — run.splits(구간 데이터)가 있을 때만 표시(없으면 자동 숨김) */}
+        <RunSplits splits={buildSplits(run, route)} />
       </ScrollView>
       {/* 공유 카드: 화면 밖(off-screen)에 마운트해 toDataURL 캡처 대상으로만 쓴다.
           pointerEvents none + 음수 위치라 사용자에겐 보이지 않지만 레이아웃은 된다. */}
@@ -581,6 +592,10 @@ const s = StyleSheet.create({
   chartBar: { width: '100%', borderRadius: 999, backgroundColor: ACCENT },
   chartLabels: { flexDirection: 'row', marginTop: 8, paddingRight: 42 },
   chartLabel: { flex: 1, textAlign: 'center', color: T3, fontFamily: FONT, fontWeight: '600' },
+  chartTipWrap: { position: 'absolute', left: -26, right: -26, alignItems: 'center', zIndex: 5 },
+  chartTip: { backgroundColor: CARD_HI, borderRadius: 8, paddingHorizontal: 9, paddingVertical: 5, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.14) },
+  chartTipVal: { color: T1, fontFamily: DISPLAY, fontSize: 13, fontWeight: '600', letterSpacing: 0.2 },
+  chartTipU: { color: T3, fontFamily: FONT, fontSize: 10, fontWeight: '500' },
 
   // course map (recessed well, svg polyline)
   mapWell: { height: MAP_H, marginTop: 10, borderRadius: 14, overflow: 'hidden', backgroundColor: CARD_DIM, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
@@ -605,7 +620,7 @@ const s = StyleSheet.create({
   runMetrics: { flexDirection: 'row', gap: 18, marginTop: 10 },
   runV: { color: T1, fontFamily: DISPLAY, fontSize: 20, letterSpacing: 0.2 },
   runU: { color: T3, fontFamily: FONT, fontSize: 11.5, marginLeft: 3, marginBottom: 1 },
-  runML: { color: T3, fontFamily: FONT, fontSize: 10.5, marginTop: 2 },
+  runML: { color: T2, fontFamily: FONT, fontSize: 11, fontWeight: '500', marginTop: 3 },
 
   // detail
   nav: { paddingTop: 12, paddingHorizontal: 16, paddingBottom: 6 },

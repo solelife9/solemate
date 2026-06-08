@@ -7,7 +7,7 @@ import { View, Text, TextInput, ScrollView, Pressable, Image, StyleSheet, Modal 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {
-  BG, CARD, CARD_HI, ACCENT, T1, T2, T3, FONT, DISPLAY, withAlpha, Shoe,
+  BG, CARD_DIM, CARD_HI, ACCENT, T1, T2, T3, FONT, DISPLAY, withAlpha, Shoe,
 } from './theme';
 import { Pill } from './primitives';
 // 신발 모델 카탈로그·권장수명은 data/shoeModels(단일 소스)에서 가져온다.
@@ -238,7 +238,7 @@ const s = StyleSheet.create({
   iconBtn: { width: 38, height: 38, borderRadius: 999, backgroundColor: CARD_HI, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.12), alignItems: 'center', justifyContent: 'center' },
   navTitle: { color: T1, fontFamily: FONT, fontSize: 16, fontWeight: '500', letterSpacing: -0.2 },
 
-  photo: { alignSelf: 'center', width: 128, height: 128, borderRadius: 26, backgroundColor: CARD_HI, alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 10, overflow: 'hidden' },
+  photo: { alignSelf: 'center', width: 120, height: 120, borderRadius: 26, borderWidth: 1, borderStyle: 'dashed', borderColor: withAlpha(T1, 0.14), backgroundColor: withAlpha(T1, 0.02), alignItems: 'center', justifyContent: 'center', gap: 7, marginBottom: 10, overflow: 'hidden' },
   photoImg: { width: '100%', height: '100%' },
   photoText: { color: T3, fontFamily: FONT, fontSize: 12 },
   photoErr: { color: T3, fontFamily: FONT, fontSize: 11.5, textAlign: 'center', marginBottom: 16, paddingHorizontal: 12 },
@@ -246,15 +246,15 @@ const s = StyleSheet.create({
   label: { color: T2, fontFamily: FONT, fontSize: 13, fontWeight: '500', letterSpacing: 0.2, paddingHorizontal: 4, paddingBottom: 10 },
 
   chip: { height: 40, paddingHorizontal: 18, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
-  chipOn: { borderWidth: 1, borderColor: ACCENT, backgroundColor: withAlpha(ACCENT, 0.14) },
+  chipOn: { borderWidth: 1, borderColor: withAlpha(T1, 0.22), backgroundColor: withAlpha(T1, 0.10) },
   chipOff: { borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.12), backgroundColor: CARD_HI },
   chipText: { fontFamily: FONT, fontSize: 12.5, fontWeight: '600', letterSpacing: 0.6 },
 
   // 모델 선택 트리거(탭하면 검색 모달). 입력칸처럼 보이되 누르면 모달이 열린다.
-  selector: { backgroundColor: CARD, borderRadius: 18, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingVertical: 16 },
+  selector: { backgroundColor: CARD_DIM, borderRadius: 16, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.07), flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingVertical: 16 },
   selectorText: { flex: 1, color: T1, fontFamily: FONT, fontSize: 16, fontWeight: '500', letterSpacing: -0.2 },
   // 모달 검색바(상단 고정) + 결과 행
-  searchBar: { flexDirection: 'row', alignItems: 'center', gap: 9, marginHorizontal: 18, marginTop: 4, marginBottom: 10, backgroundColor: CARD, borderRadius: 16, paddingHorizontal: 16, paddingVertical: 12, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.12) },
+  searchBar: { flexDirection: 'row', alignItems: 'center', gap: 9, marginHorizontal: 18, marginTop: 4, marginBottom: 10, backgroundColor: CARD_DIM, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 12, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.07) },
   searchInput: { flex: 1, color: T1, fontFamily: FONT, fontSize: 16, fontWeight: '500', letterSpacing: -0.2, paddingVertical: 0 },
   customRow: { borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.4), backgroundColor: withAlpha(ACCENT, 0.08), marginTop: 6 },
   customText: { flex: 1, color: ACCENT, fontFamily: FONT, fontSize: 14.5, fontWeight: '600', letterSpacing: -0.2 },
@@ -268,7 +268,7 @@ const s = StyleSheet.create({
 
   hint: { color: T3, fontFamily: FONT, fontSize: 11.5, paddingHorizontal: 4, paddingTop: 9 },
 
-  usedRow: { backgroundColor: CARD, borderRadius: 18, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 18 },
+  usedRow: { backgroundColor: CARD_DIM, borderRadius: 16, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.07), flexDirection: 'row', alignItems: 'center', paddingHorizontal: 18 },
   usedInput: { flex: 1, color: T1, fontFamily: DISPLAY, fontSize: 24, paddingVertical: 12 },
   usedUnit: { color: T3, fontFamily: FONT, fontSize: 15 },
 
