@@ -274,6 +274,35 @@ jest.mock('@react-native-firebase/firestore', () => {
   };
 });
 
+// ── @react-native-firebase/messaging (modular) ───────────────────────────────
+// In-memory FCM stub so lib/pushMessaging's wrapper can be exercised without a
+// native bridge. Default happy path: requestPermission → AUTHORIZED, getToken →
+// a fixed token, onMessage → registers the listener and returns an unsubscribe.
+// Tests override per-case (requestPermission.mockResolvedValueOnce(DENIED) /
+// .mockRejectedValueOnce(...) for the graceful branches; onMessage to capture
+// and invoke the registered foreground listener). AuthorizationStatus mirrors
+// the real numeric enum so isAuthorizedStatus's AUTHORIZED/PROVISIONAL gate is
+// testable.
+jest.mock('@react-native-firebase/messaging', () => {
+  const AuthorizationStatus = {
+    NOT_DETERMINED: -1,
+    DENIED: 0,
+    AUTHORIZED: 1,
+    PROVISIONAL: 2,
+    EPHEMERAL: 3,
+  };
+  const messagingInstance = {__messaging: true};
+  return {
+    __esModule: true,
+    AuthorizationStatus,
+    getMessaging: jest.fn(() => messagingInstance),
+    requestPermission: jest.fn(() => Promise.resolve(AuthorizationStatus.AUTHORIZED)),
+    getToken: jest.fn(() => Promise.resolve('mock-fcm-token')),
+    // onMessage returns the unsubscribe fn, like the real subscriber contract.
+    onMessage: jest.fn(() => jest.fn()),
+  };
+});
+
 // ── @react-native-google-signin/google-signin ───────────────────────────────
 // Native Google account login. The default happy path resolves a signed-in user
 // carrying an idToken (the tagged-union shape v13+ returns: {type:'success',data}).

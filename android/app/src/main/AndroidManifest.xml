@@ -28,6 +28,14 @@
          IllegalArgumentException 으로 크래시한다(화면off 러닝 직후 앱이 바로 종료). -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
+    <!-- 푸시 알림(Slice 8, @react-native-firebase/messaging). Android 13(API 33)+ 는
+         알림 표시에 런타임 권한이 필요하다. messaging.requestPermission() 이 이 권한을
+         런타임에 요청하며(lib/pushMessaging.requestPushPermission), 거부돼도 앱은 비차단
+         으로 동작한다(S8-3). FCM 서비스(<service> firebase-messaging) 선언은
+         @react-native-firebase/messaging 모듈의 매니페스트가 자동 머지하므로 여기서
+         중복 선언하지 않는다. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
 
     <application
       android:name=".MainApplication"
