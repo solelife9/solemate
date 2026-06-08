@@ -1,7 +1,7 @@
 import React, {useState, useEffect, useRef} from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, TextInput, Alert, StatusBar,
-  Linking,
+  Linking, AppState,
 } from 'react-native';
 import {SafeAreaProvider, useSafeAreaInsets} from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -55,6 +55,11 @@ import {
   clampGoal, DEFAULT_SETTINGS,
 } from './lib/settings';
 import {estimateCalories} from './lib/calories';
+import {
+  getNotifSettings, setNotifSettings, dueNotifications,
+  DEFAULT_NOTIF_SETTINGS, type NotifSettings, type NotifState, type ShoeForecast,
+} from './lib/notifications';
+import {presentDue} from './lib/pushMessaging';
 import {weeklyProgress, currentStreak, personalRecords} from './lib/goals';
 import {serializeBackup, BackupV1, BackupPayload} from './lib/backup';
 import {Challenge, ChallengeRun} from './lib/challenges';
@@ -74,6 +79,9 @@ const K_CHALLENGES = 'challenges_v1';
 const K_PROFILE_NAME = 'profile_name';
 const K_PROFILE_PHOTO = 'profile_photo';
 const DEFAULT_PROFILE_NAME = '러너';
+// 포그라운드에서 이미 표시한 푸시 알림 key 집합(당일 1회 표시, A8-4). 키는 날짜 스탬프를
+// 포함하므로(예: 'run_reminder:2026-06-09') 다음 날엔 자연히 새 키가 되어 다시 표시된다.
+const K_NOTIF_PRESENTED = 'notif_presented';
 
 // audit#9/#10: 콜드 백엔드 부팅 상태기계. 'loading'(스켈레톤) → 'ready'(정상) |
 // 'error'(재시도 카드). 'error'는 fetch 실패만을 의미하며, 빈-신규(fetch 성공 + 빈
@@ -145,6 +153,9 @@ function Main(){
   const [unit,setUnit]=useState<Unit>(DEFAULT_SETTINGS.unit);
   const [goalWeeklyKm,setGoalWeeklyKm]=useState(DEFAULT_SETTINGS.goalWeeklyKm);
   const [alerts,setAlerts]=useState<AlertSettings>({...DEFAULT_SETTINGS.alerts});
+  // 푸시 알림 설정(신규 notif_settings 키 — 기존 settings_alerts 와 별개). getNotifSettings
+  // 로 복원하고, ProfileScreen 의 변경을 changeNotifSettings 가 즉시 영속 + 상태 반영한다.
+  const [notifSettings,setNotifSettingsState]=useState<NotifSettings>(DEFAULT_NOTIF_SETTINGS);
   // 체중(kg) — 러닝 칼로리 추정에 쓴다(설정에서 조정, 기본 65). 표시 단위와 무관.
   const [weightKg,setWeightKg]=useState(DEFAULT_SETTINGS.weightKg);
   const [deviceId,setDeviceId]=useState<string>('');
@@ -194,6 +205,41 @@ function Main(){
         if(ph)setProfilePhoto(ph);
       }catch(e){console.log('profile load error',e);}
     })();
+  },[]);
+
+  // 푸시 알림 설정 복원(신규 키 — 네트워크 무관, 1회). 손상/부재는 getNotifSettings 가
+  // 기본값으로 graceful 폴백하므로 별도 방어가 필요 없다(기존 settings_alerts 불변).
+  useEffect(()=>{
+    (async()=>{
+      try{setNotifSettingsState(await getNotifSettings());}catch(e){console.log('notif settings load error',e);}
+    })();
+  },[]);
+
+  // 이미 표시한 푸시 알림 key 집합(당일 1회). 메모리 캐시 + 영속을 함께 들고, 포그라운드
+  // 진입마다 같은 알림이 반복 표시되는 것을 막는다(checkShoeAlerts 의 신발별 추적과 같은 톤).
+  const presentedNotifKeys=useRef<Set<string>>(new Set());
+  useEffect(()=>{
+    (async()=>{
+      try{
+        const raw=await AsyncStorage.getItem(K_NOTIF_PRESENTED);
+        const arr=JSON.parse(raw||'[]');
+        if(Array.isArray(arr))presentedNotifKeys.current=new Set(arr.filter((k:any)=>typeof k==='string'));
+      }catch{/* 손상/부재는 무시 — 빈 집합으로 시작 */}
+    })();
+  },[]);
+
+  // 포그라운드 진입 시 띄울 알림 계산/표시 함수의 최신 클로저를 담는 ref. 아래 render 에서
+  // 신발 forecast·weekly·lastRun·settings 가 모두 준비된 뒤 갱신한다(AppState 리스너는
+  // 1회만 구독하므로 stale 클로저를 피하려 ref 로 우회한다).
+  const presentDueRef=useRef<(()=>void)|null>(null);
+  // 백그라운드 → 포그라운드(active) 전환 시 dueNotifications 를 계산해 presentDue 로 표시한다
+  // (slice-8-notif-ui 배선). 최초 마운트(이미 active)에는 'change' 가 안 와 중복 표시되지
+  // 않고, 기존 온보딩/부트·런 등록 흐름과 독립적으로 동작한다(비차단·기존 흐름 보존).
+  useEffect(()=>{
+    const sub=AppState.addEventListener('change',(next)=>{
+      if(next==='active')presentDueRef.current?.();
+    });
+    return ()=>sub.remove();
   },[]);
 
   // 런별 노면 태그(surface_<runId>) 일괄 로드 → 실효 마모/예측 보정에 반영. runs가 바뀔
@@ -517,6 +563,8 @@ function Main(){
   const changeGoal=(km:number)=>{const v=clampGoal(km);setGoalWeeklyKm(v);void saveGoal(v);};
   const changeAlerts=(a:AlertSettings)=>{setAlerts(a);void saveAlerts(a);};
   const changeWeight=(kg:number)=>{setWeightKg(kg);void saveWeight(kg);};
+  // 푸시 알림 설정 변경: 즉시 상태 반영 + 신규 notif_settings 키에만 영속(기존 키 불변).
+  const changeNotifSettings=(s:NotifSettings)=>{setNotifSettingsState(s);void setNotifSettings(s);};
 
   // ── 로컬 백업/복원(Slice 4) ─────────────────────────────────────────────────
   // 내보내기 대상: 현재 신발+런+설정을 그대로 모은다(km 표준 settings). ProfileScreen이
@@ -691,6 +739,45 @@ function Main(){
   // 연속 러닝 스트릭(keep-going 동기): 오늘까지 끊김 없이 이어진 달림 일수. 비율과
   // 무관한 절대 일수이므로 단위 환산 없이 그대로 표시한다(0km/비런 날은 끊김 처리).
   const goalStreak=currentStreak(goalRuns, ymdLocal(now));
+
+  // ── 푸시 알림 표시 배선(slice-8-notif-ui) ────────────────────────────────────
+  // dueNotifications(순수) 의 입력 상태를 기존 lib 산출물에서 조립한다(중복 계산 0):
+  //   · shoesWithForecast — 신발마다 forecastReplacement(홈 히어로와 동일 입력: 체중·노면)
+  //   · weekly            — goalProgress(weeklyProgress) 그대로
+  //   · lastRunISO        — 가장 최근 런 날짜('YYYY-MM-DD'), 런 0개면 null
+  //   · settings          — notif_settings(notifSettings)
+  const buildNotifState=():NotifState=>{
+    const shoesWithForecast:ShoeForecast[]=shoes.map(s=>({
+      shoe:{id:s.id,name:s.name,target_km:Number(s.max_km)},
+      forecast:forecastReplacement(
+        {name:s.name,target_km:Number(s.max_km)},
+        runs.filter(r=>r.shoe_id===s.id).map(r=>({
+          id:r.id,distance_km:parseFloat(String(r.km))||0,duration_s:r.duration||0,date:String(r.run_date||''),
+        })),
+        {weightKg,surfaceOf},
+      ),
+    }));
+    const lastRunISO=runs.length
+      ? runs.reduce((m:string,r:any)=>{const d=String(r.run_date||'');return d>m?d:m;},'')||null
+      : null;
+    return {shoesWithForecast,weekly:goalProgress,lastRunISO,settings:notifSettings};
+  };
+  // 포그라운드 진입 시 실제 표시 경로. 당일 이미 표시한 key 는 제외(A8-4), 표시 후 key 를
+  // 메모리/영속에 누적한다. 날짜 스탬프 키만 유지해 어제 키는 자연 만료(누수 0). presentDue
+  // 의 기본 표시는 Alert 라 FCM 권한과 무관하게 동작한다(비차단). 예외는 삼켜 흐름을 막지 않는다.
+  presentDueRef.current=()=>{
+    try{
+      const intents=dueNotifications(buildNotifState(),new Date());
+      const fresh=intents.filter(i=>!presentedNotifKeys.current.has(i.key));
+      if(fresh.length===0)return;
+      void presentDue(fresh);
+      fresh.forEach(i=>presentedNotifKeys.current.add(i.key));
+      const todayY=today();
+      const kept=[...presentedNotifKeys.current].filter(k=>k.includes(todayY));
+      presentedNotifKeys.current=new Set(kept);
+      try{void AsyncStorage.setItem(K_NOTIF_PRESENTED,JSON.stringify(kept));}catch{/* 영속 실패는 삼킴 */}
+    }catch(e){console.log('notif present error',e);}
+  };
 
   // 신발 로테이션 추천(차별점): 보유 신발+런 기록에서만 파생(새 상태 없음). 활성 2켤레+
   // 일 때만 picks 가 채워지고, runType 미선택이라 '휴식·마모 분산' 기본 추천이 된다.
@@ -916,6 +1003,7 @@ function Main(){
             weekDays={weekBuckets(runs, mon).map(v => v > 0)}
             weekTodayIdx={(now.getDay() + 6) % 7}
             alerts={alerts} onChangeAlerts={changeAlerts}
+            notifSettings={notifSettings} onChangeNotifSettings={changeNotifSettings}
             deviceId={deviceId}
             backupData={backupData} onImport={importBackup}
             challenges={challenges} challengeRuns={challengeRuns}

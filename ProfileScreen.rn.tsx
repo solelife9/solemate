@@ -11,7 +11,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, ScrollView, Pressable, StyleSheet, TextInput, Image, Share } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { BG, CARD, CARD_DIM, CARD_HI, ACCENT, GOOD, DANGER, T1, T2, T3, SEP, FONT, DISPLAY, withAlpha, KAKAO_YELLOW, KAKAO_LABEL, NAVER_GREEN, NAVER_LABEL } from './theme';
+import { BG, CARD, CARD_DIM, CARD_HI, ACCENT, GOOD, DANGER, WARN, T1, T2, T3, SEP, FONT, DISPLAY, withAlpha, KAKAO_YELLOW, KAKAO_LABEL, NAVER_GREEN, NAVER_LABEL } from './theme';
 import { TabBar, Ring, Pill, SectionTitle } from './primitives';
 import { Unit, unitKorean, displayNum, displayToKm } from './lib/units';
 import {
@@ -19,6 +19,8 @@ import {
   MIN_THRESHOLD_PCT, MAX_THRESHOLD_PCT, DEFAULT_SETTINGS, DEFAULT_ALERTS,
   WEIGHT_STEP, MIN_WEIGHT_KG, MAX_WEIGHT_KG,
 } from './lib/settings';
+import { NotifSettings, DEFAULT_NOTIF_SETTINGS } from './lib/notifications';
+import { requestPushPermission as defaultRequestPushPermission } from './lib/pushMessaging';
 import { BackupPayload, BackupV1 } from './lib/backup';
 import { Challenge, ChallengeRun } from './lib/challenges';
 import { mergeCloudData, nextAuthState, AuthState } from './lib/cloudSync';
@@ -40,6 +42,37 @@ function fmtSyncTime(ms: number): string {
   const hh = String(d.getHours()).padStart(2, '0');
   const mm = String(d.getMinutes()).padStart(2, '0');
   return `${hh}:${mm}`;
+}
+
+// 러닝 리마인더 시각('HH:MM')을 30분 단위로 증감한다(24시간 순환). 형식 불량/결측은
+// 19:00 기준으로 보정해 NaN 없이 graceful 하게 동작한다(notifications 의 정규화와 동일 톤).
+const REMINDER_STEP_MIN = 30;
+function stepReminderTime(hhmm: string, dir: 1 | -1): string {
+  const m = /^([01]?\d|2[0-3]):([0-5]\d)$/.exec(typeof hhmm === 'string' ? hhmm : '');
+  const base = m ? Number(m[1]) * 60 + Number(m[2]) : 19 * 60;
+  let next = (base + dir * REMINDER_STEP_MIN) % (24 * 60);
+  if (next < 0) next += 24 * 60;
+  const h = Math.floor(next / 60);
+  const mm = next % 60;
+  return `${String(h).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+}
+
+// 푸시 알림 종류별 on/off 스위치 행(기존 in-app 알림 토글과 동일한 토큰 스타일 재사용).
+// value 가 실제 notif_settings 를 반영하고, press 시 onToggle 로 상위에 변경을 올린다.
+function NotifToggle({ label, value, onToggle, testID }: { label: string; value: boolean; onToggle: () => void; testID?: string }) {
+  return (
+    <Pressable
+      onPress={onToggle}
+      testID={testID}
+      accessibilityRole="switch"
+      accessibilityLabel={label}
+      accessibilityState={{ checked: value }}
+      style={[s.toggle, value ? s.toggleOn : s.toggleOff]}
+    >
+      <Ionicons name={value ? 'notifications' : 'notifications-off'} size={16} color={value ? T1 : T2} />
+      <Text style={[s.toggleTxt, { color: value ? T1 : T2 }]}>{`${label} ${value ? '켜짐' : '꺼짐'}`}</Text>
+    </Pressable>
+  );
 }
 
 // −/＋ 스테퍼(목표 거리·알림 임계값 공용). 모듈 스코프에 둬 매 렌더 재생성을 피한다.
@@ -69,6 +102,8 @@ export default function ProfileScreen({
   goalWeeklyKm = DEFAULT_SETTINGS.goalWeeklyKm, weeklyPercent = 0, weeklyDoneKm = 0, onChangeGoal,
   streakDays = 0, weekDays = [], weekTodayIdx = -1,
   alerts = { ...DEFAULT_ALERTS }, onChangeAlerts,
+  notifSettings = DEFAULT_NOTIF_SETTINGS, onChangeNotifSettings,
+  onRequestPushPermission = defaultRequestPushPermission,
   deviceId = '',
   backupData = { shoes: [], runs: [], settings: {} },
   cloudPort, onCloudMerged, cloudClock = () => Date.now(),
@@ -85,7 +120,7 @@ export default function ProfileScreen({
   weightKg?: number;
   onChangeWeight?: (kg: number) => void;
   // 외부(홈 주간목표 탭)에서 특정 설정 패널을 펼친 채 진입한다(한 번만 소비).
-  initialOpen?: 'goal' | 'weight' | 'alerts' | 'account' | 'import' | null;
+  initialOpen?: 'goal' | 'weight' | 'alerts' | 'notif' | 'account' | 'import' | null;
   onConsumeInitialOpen?: () => void;
   unit?: Unit;
   onChangeUnit?: (u: Unit) => void;
@@ -101,6 +136,13 @@ export default function ProfileScreen({
   weekTodayIdx?: number;
   alerts?: AlertSettings;
   onChangeAlerts?: (a: AlertSettings) => void;
+  // 푸시 알림 설정(신규 notif_settings 키). 기존 in-app 배지 알림(AlertSettings)과 별개·공존.
+  // App 이 getNotifSettings 로 복원해 주입하고, 변경은 onChangeNotifSettings 로 올려 영속한다.
+  notifSettings?: NotifSettings;
+  onChangeNotifSettings?: (s: NotifSettings) => void;
+  // 기기 푸시 권한 요청(주입 가능 — 기본은 lib/pushMessaging). 거부해도 throw 하지 않고
+  // false 를 돌려주므로(S8-3) 호출부는 비차단으로 graceful 안내만 한다.
+  onRequestPushPermission?: () => Promise<boolean>;
   deviceId?: string;
   // 로컬 백업 대상(신발+런+설정). App이 소유한 상태를 모아 주입한다.
   backupData?: BackupPayload;
@@ -123,8 +165,8 @@ export default function ProfileScreen({
   cloudClock?: () => number;
 }) {
   // 어떤 설정 행이 펼쳐졌는지(단위는 패널 없이 즉시 토글). 한 번에 하나만 펼친다.
-  const [open, setOpen] = useState<null | 'goal' | 'weight' | 'alerts' | 'account' | 'import'>(null);
-  const toggleOpen = (k: 'goal' | 'weight' | 'alerts' | 'account' | 'import') => setOpen((o) => (o === k ? null : k));
+  const [open, setOpen] = useState<null | 'goal' | 'weight' | 'alerts' | 'notif' | 'account' | 'import'>(null);
+  const toggleOpen = (k: 'goal' | 'weight' | 'alerts' | 'notif' | 'account' | 'import') => setOpen((o) => (o === k ? null : k));
 
   // 헤더 설정 버튼 → '설정' 섹션으로 스크롤(무반응이던 버튼에 동작 부여). 섹션 위치는
   // onLayout 으로 측정한다(콘텐츠 컨테이너 기준 y).
@@ -244,6 +286,38 @@ export default function ProfileScreen({
     const next = Math.max(MIN_THRESHOLD_PCT, Math.min(MAX_THRESHOLD_PCT, alerts.thresholdPct + dir * THRESHOLD_STEP));
     onChangeAlerts?.({ ...alerts, thresholdPct: next });
   };
+
+  // ── 푸시 알림 설정(신규 notif_settings) ─────────────────────────────────────
+  // 기기 권한이 거부됐을 때만 보여주는 비차단 graceful 안내(설정 자체는 저장됨). 권한은
+  // '켜는' 순간 1회 요청하고, ref 로 허용 여부를 기억해 매 토글마다 다시 묻지 않는다.
+  const [pushDenied, setPushDenied] = useState(false);
+  const pushGrantedRef = useRef(false);
+  const ensurePushPermission = async () => {
+    if (pushGrantedRef.current) return;
+    try {
+      // requestPushPermission 은 거부/오류에도 throw 하지 않고 false 를 돌려준다(S8-3).
+      const granted = await onRequestPushPermission?.();
+      if (granted) { pushGrantedRef.current = true; setPushDenied(false); }
+      else setPushDenied(true);
+    } catch {
+      // 만약을 위한 방어 — 권한 흐름 예외도 비차단(설정은 그대로 유지).
+      setPushDenied(true);
+    }
+  };
+  // 종류 토글: 변경을 즉시 상위로 올려 영속(끄기는 권한과 무관). 켜는 경우에만 권한을
+  // 확인하되, 거부돼도 설정은 저장되고 안내만 띄운다(비차단, S8-3).
+  const toggleNotif = (key: 'shoeReplacement' | 'weeklyGoal' | 'runReminder') => {
+    const turningOn = !notifSettings[key];
+    onChangeNotifSettings?.({ ...notifSettings, [key]: turningOn });
+    if (turningOn) void ensurePushPermission();
+  };
+  const stepReminder = (dir: 1 | -1) => {
+    onChangeNotifSettings?.({ ...notifSettings, reminderTime: stepReminderTime(notifSettings.reminderTime, dir) });
+  };
+  const notifOnCount =
+    (notifSettings.shoeReplacement ? 1 : 0) +
+    (notifSettings.weeklyGoal ? 1 : 0) +
+    (notifSettings.runReminder ? 1 : 0);
 
   // 주간 목표 링/카피: 달성률(%)·달성 거리·남은 거리를 표시 단위로 환산해 keep-going 톤
   // 한 줄로 묶는다. 100% 이상이면 '달성!' 축하 카피, 그 전이면 '남은 거리만 더' 격려.
@@ -449,6 +523,26 @@ export default function ProfileScreen({
               </View>
             )}
 
+            {/* 2.5) 푸시 알림 — 종류별 토글 + 리마인더 시각(기존 in-app '알림'[배지 임계값]과 별개·공존) */}
+            <Pressable onPress={() => toggleOpen('notif')} accessibilityRole="button" accessibilityLabel={`푸시 알림, ${notifOnCount}개 켜짐`} accessibilityState={{ expanded: open === 'notif' }} style={({ pressed }) => [s.settingRow, s.settingBorder, pressed && { backgroundColor: CARD_HI }]} testID="notif-row">
+              <View style={s.settingIcon}><Ionicons name="notifications-circle-outline" size={17} color={ACCENT} /></View>
+              <Text style={s.settingLabel}>푸시 알림</Text>
+              <Text style={s.settingDetail} testID="notif-detail">{notifOnCount > 0 ? `${notifOnCount}개 켜짐` : '꺼짐'}</Text>
+              <Ionicons name={open === 'notif' ? 'chevron-up' : 'chevron-forward'} size={16} color={T3} />
+            </Pressable>
+            {open === 'notif' && (
+              <View style={[s.panel, s.settingBorder]} testID="notif-panel">
+                <Text style={s.panelHint}>러닝화 교체·주간 목표·러닝 리마인더를 푸시로 받아요. (앱 내 신발 교체 배지와는 별개예요)</Text>
+                <NotifToggle label="교체 임박 알림" value={notifSettings.shoeReplacement} onToggle={() => toggleNotif('shoeReplacement')} testID="notif-toggle-shoeReplacement" />
+                <NotifToggle label="주간 목표 알림" value={notifSettings.weeklyGoal} onToggle={() => toggleNotif('weeklyGoal')} testID="notif-toggle-weeklyGoal" />
+                <NotifToggle label="러닝 리마인더" value={notifSettings.runReminder} onToggle={() => toggleNotif('runReminder')} testID="notif-toggle-runReminder" />
+                <Stepper value={notifSettings.reminderTime} suffix="리마인더 시각" onMinus={() => stepReminder(-1)} onPlus={() => stepReminder(1)} />
+                {pushDenied && (
+                  <Text style={s.notifDenied} testID="notif-perm-denied">기기 알림 권한이 꺼져 있어요. 설정에서 허용하면 푸시를 받을 수 있어요. (설정은 저장됐어요)</Text>
+                )}
+              </View>
+            )}
+
             {/* 3) 단위 — 즉시 토글(전 화면 환산 반영) */}
             <Pressable onPress={() => onChangeUnit?.(unit === 'km' ? 'mi' : 'km')} accessibilityRole="button" accessibilityLabel={`단위, 현재 ${unitKorean(unit)}. 눌러서 전환`} style={({ pressed }) => [s.settingRow, s.settingBorder, pressed && { backgroundColor: CARD_HI }]}>
               <View style={s.settingIcon}><Ionicons name="speedometer-outline" size={17} color={ACCENT} /></View>
@@ -618,6 +712,8 @@ const s = StyleSheet.create({
   stepVal: { flex: 1, alignItems: 'center' },
   stepNum: { color: T1, fontFamily: DISPLAY, fontSize: 30, letterSpacing: 0.3 },
   stepUnit: { color: T3, fontFamily: FONT, fontSize: 11.5, fontWeight: '600', marginTop: 2 },
+
+  notifDenied: { color: WARN, fontFamily: FONT, fontSize: 12.5, lineHeight: 18 },
 
   toggle: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 44, borderRadius: 14 },
   toggleOn: { backgroundColor: ACCENT },
