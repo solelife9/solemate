@@ -2,7 +2,7 @@
 // HistoryScreen.rn.tsx — 기록: period segment, period chart, recent runs + RunDetail
 // (sample data removed — real summary/chart/runs are injected via props)
 // ============================================================================
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, ScrollView, Pressable, StyleSheet, LayoutChangeEvent, Share, TextInput, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -16,6 +16,8 @@ import { Unit, displayNum, displayToKm } from './lib/units';
 import { ymdLocal } from './lib/format';
 import { getRunSurface, setRunSurface, type Surface } from './lib/wearModel';
 import { parseRoute, projectRoute, LatLon } from './lib/route';
+import { buildSplits } from './lib/splits';
+import { RunSplits } from './RunSplits';
 import { buildRunShareText } from './lib/share';
 import { buildShareCardModel, shareRunCard, SvgCapturable } from './lib/shareCard';
 import ShareCard from './ShareCard';
@@ -295,6 +297,9 @@ function RunDetail({ run, shoe, onBack, unit, onEdit, onDelete }: { run: Run; sh
       .catch(() => { if (alive) setRoute([]); });
     return () => { alive = false; };
   }, [run.id]);
+  // 구간 스플릿(per-km) — 1Hz 점밀도로 페이스 근사(lib/splits). 경로 빈약 시 [] → 숨김.
+  const durationSec = run.durationS && run.durationS > 0 ? run.durationS : parseDurationInput(run.time);
+  const splits = useMemo(() => buildSplits(route, run.dist, durationSec), [route, run.dist, durationSec]);
   // 공유 입력(텍스트·카드 폴백이 같은 필드를 쓰도록 단일 출처로 둔다).
   const shareInput = {
     distKm: run.dist,
@@ -383,6 +388,7 @@ function RunDetail({ run, shoe, onBack, unit, onEdit, onDelete }: { run: Run; sh
             </View>
           ))}
         </View>
+        <RunSplits splits={splits} />
       </ScrollView>
       {/* 공유 카드: 화면 밖(off-screen)에 마운트해 toDataURL 캡처 대상으로만 쓴다.
           pointerEvents none + 음수 위치라 사용자에겐 보이지 않지만 레이아웃은 된다. */}
@@ -541,7 +547,7 @@ export default function HistoryScreen({
           </View>
         )}
       </ScrollView>
-      <TabBar active={1} onTab={(i) => onTab?.(i)} />
+      <TabBar active={2} onTab={(i) => onTab?.(i)} />
     </View>
   );
 }

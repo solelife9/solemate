@@ -58,7 +58,9 @@ function textOf(node: any): string {
   let out = '';
   const walk = (n: any) => {
     if (typeof n === 'string') { out += n; return; }
-    if (!n || !n.children) return;
+    if (!n) return;
+    if (typeof n.props?.accessibilityLabel === 'string') out += n.props.accessibilityLabel;
+    if (!n.children) return;
     n.children.forEach(walk);
   };
   walk(node);
@@ -198,7 +200,7 @@ test('개인 기록(PR) 카드: 1km 페이스·5km 기록·최장 거리 렌더'
   ];
   const {root} = await mount(SHOE, runs);
 
-  await tap(pressBy(root, '프로필'));
+  await tap(pressBy(root, '마이'));
   const txt = textOf(root);
   expect(txt).toContain('개인 기록');
   expect(txt).toContain('1km 최고 페이스');

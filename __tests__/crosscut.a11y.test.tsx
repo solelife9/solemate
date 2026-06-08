@@ -83,9 +83,9 @@ describe('TabBar exposes accessible, color-independent tab state', () => {
     tabs.forEach(t => expect(typeof t.props.accessibilityLabel).toBe('string'));
     expect(tabs.map(t => t.props.accessibilityLabel)).toEqual([
       '홈',
-      '기록',
       '신발',
-      '프로필',
+      '기록',
+      '마이',
     ]);
   });
 

@@ -11,7 +11,7 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import Tts from 'react-native-tts';
 
 import {
-  BG, CARD, CARD_HI as SURFACE, ACCENT, WARN, DANGER, T1, T3,
+  BG, CARD, CARD_HI as SURFACE, ACCENT, WARN, DANGER, T1, T2, T3,
   FONT as FP, DISPLAY as FH, SEP, Shoe, Run,
 } from './theme';
 import {Ring} from './primitives';
@@ -855,7 +855,7 @@ function Main(){
         onSave={async(km,dur,cad,memo,route,location)=>{
           await addRun(activeRun.id,km,today(),memo||'','gps',dur,cad,route,location);
           await clearSnapshot();
-          setResumeSnap(null);setActiveRun(null);setOverlay('none');setTab(1);
+          setResumeSnap(null);setActiveRun(null);setOverlay('none');setTab(2);
         }}
         onDiscard={()=>{void clearSnapshot();setResumeSnap(null);setActiveRun(null);setOverlay('none');}}
       />
@@ -874,16 +874,16 @@ function Main(){
             rotation={rotationPicks} onPickShoe={setSelectedShoeId}
             onChangeGoal={changeGoal}
             forecast={homeForecast}
-            onOpenShoe={(id)=>{setSelectedShoeId(id);setShoesDetailId(id);setTab(2);}}
+            onOpenShoe={(id)=>{setSelectedShoeId(id);setShoesDetailId(id);setTab(1);}}
           />
         )}
-        {tab===1&&(
+        {tab===2&&(
           <HistoryScreen
             shoes={uiShoes} runs={uiRuns} summary={summary} chart={chart} unit={unit} onTab={setTab}
             onAddRun={addManualRun} onEditRun={editRun} onDeleteRun={deleteRun}
           />
         )}
-        {tab===2&&(
+        {tab===1&&(
           <ShoesScreen
             shoes={uiShoes} runs={uiRuns} totals={shoeTotals} activeIdx={shoesActiveIdx}
             unit={unit} weightKg={weightKg} surfaceOf={surfaceOf}
@@ -1300,20 +1300,27 @@ function RunActiveScreen({shoe,insets,goalKm,weightKg,onSave,onDiscard,resume}:{
         </Ring>
       </View>
 
-      <View style={run.metricsGrid}>
+      {/* 메트릭 위계: 시간·페이스 2개 크게(hero) + 케이던스·칼로리·고도 보조줄(sub). */}
+      <View style={run.heroMetrics}>
         {[
           {v:fmtTime(elapsed), l:'시간'},
           {v:fmtPace(km,elapsed), l:'평균 페이스'},
-          {v:cadence>0?String(cadence):'--', l:'케이던스'},
-          {v:liveCal>0?String(liveCal):'--', l:'칼로리', u:'kcal'},
-          {v:String(elevGain), l:'고도', u:'m'},
         ].map((m,i)=>(
-          <View key={i} style={run.metricCell}>
-            <View style={run.metricVRow}>
-              <Text style={run.metricV}>{m.v}</Text>
-              {m.u?<Text style={run.metricU}> {m.u}</Text>:null}
-            </View>
-            <Text style={run.metricL}>{m.l}</Text>
+          <View key={i} style={run.hm}>
+            <Text style={run.hmV}>{m.v}</Text>
+            <Text style={run.hmL}>{m.l}</Text>
+          </View>
+        ))}
+      </View>
+      <View style={run.subMetrics}>
+        {[
+          {v:cadence>0?String(cadence):'--', l:'케이던스'},
+          {v:liveCal>0?`${liveCal} kcal`:'-- kcal', l:'칼로리'},
+          {v:`${elevGain} m`, l:'고도'},
+        ].map((m,i)=>(
+          <View key={i} style={run.hm}>
+            <Text style={run.smV}>{m.v}</Text>
+            <Text style={run.smL}>{m.l}</Text>
           </View>
         ))}
       </View>
@@ -1363,6 +1370,14 @@ const run=StyleSheet.create({
   metricV:{color:T1,fontFamily:FH,fontSize:25,letterSpacing:0.3},
   metricU:{color:T3,fontFamily:FP,fontSize:11,marginBottom:3},
   metricL:{color:T3,fontFamily:FP,fontSize:11.5,fontWeight:'600'},
+  // 러닝 중 메트릭 위계 — 시간·페이스 hero(큰) + 케이던스·칼로리·고도 sub(작은).
+  heroMetrics:{flexDirection:'row',paddingVertical:16,borderTopWidth:StyleSheet.hairlineWidth,borderTopColor:SEP},
+  hm:{flex:1,alignItems:'center'},
+  hmV:{fontFamily:FH,fontSize:34,fontWeight:'600',color:T1,letterSpacing:-1},
+  hmL:{color:T3,fontFamily:FP,fontSize:11.5,fontWeight:'500',marginTop:5},
+  subMetrics:{flexDirection:'row',justifyContent:'space-around',paddingVertical:12},
+  smV:{fontFamily:FH,fontSize:15,fontWeight:'500',color:T2,textAlign:'center'},
+  smL:{color:T3,fontFamily:FP,fontSize:10,fontWeight:'500',marginTop:3,textAlign:'center'},
   controls:{flexDirection:'row',alignItems:'flex-start',justifyContent:'center',gap:40,paddingTop:4,paddingBottom:8},
   ctrlPrimary:{width:92,height:92,borderRadius:999,backgroundColor:ACCENT,alignItems:'center',justifyContent:'center'},
   ctrlStop:{width:72,height:72,borderRadius:999,backgroundColor:'rgba(255,69,58,0.18)',alignItems:'center',justifyContent:'center',marginTop:10},

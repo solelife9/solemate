@@ -5,16 +5,19 @@
 // All colour/spacing/radius/type values come from theme tokens (no raw hex).
 // Deps: react-native-svg, react-native-vector-icons
 // ============================================================================
-import React, {useId, useMemo} from 'react';
+import React, {useId, useMemo, useRef, useState, useEffect} from 'react';
 import {
   View,
   Text,
   Pressable,
+  Animated,
   StyleSheet,
   StyleProp,
   ViewStyle,
   TextStyle,
+  LayoutChangeEvent,
 } from 'react-native';
+import {BlurView} from '@react-native-community/blur';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
@@ -508,74 +511,104 @@ const section = StyleSheet.create({
 // ── Bottom tab bar (floating dock, Apple-Fitness capsule highlight) ───────────
 // set 'mci'면 MaterialCommunityIcons(운동화 등 Ionicons에 없는 글리프), 아니면 Ionicons.
 // Ionicons 탭은 활성=채움/비활성=`-outline`; MCI 탭은 outline 변형이 없어 색으로만 구분한다.
-const TABS: {icon: string; label: string; set?: 'mci'}[] = [
+const TABS: {icon: string; label: string; set?: 'mci'; flip?: boolean}[] = [
   {icon: 'home', label: '홈'},
+  {icon: 'shoe-sneaker', label: '신발', set: 'mci', flip: true},
   {icon: 'time', label: '기록'},
-  {icon: 'shoe-sneaker', label: '신발', set: 'mci'},
-  {icon: 'person', label: '프로필'},
+  {icon: 'person', label: '마이'},
 ];
 
 export function TabBar({active, onTab}: {active: number; onTab: (i: number) => void}) {
-  // 하단 제스처바/홈 인디케이터 영역을 피하도록 safe-area inset 을 흡수한다(하드코딩
-  // paddingBottom 대신). inset 이 없는 단말은 기존 여백(24)을 유지해 회귀를 막는다.
   const insets = useSafeAreaInsets();
+  // 각 탭의 x중심/폭을 onLayout 으로 측정해 하이라이트를 정확히 정렬한다.
+  const [slots, setSlots] = useState<{x: number; w: number}[]>([]);
+  const hlX = useRef(new Animated.Value(0)).current;
+  const hlW = useRef(new Animated.Value(0)).current;
+
+  const onSlot = (i: number) => (e: LayoutChangeEvent) => {
+    const {x, width} = e.nativeEvent.layout;
+    setSlots(prev => {
+      const next = [...prev];
+      next[i] = {x, w: width};
+      return next;
+    });
+  };
+
+  // 활성 인덱스/측정값이 바뀌면 하이라이트를 그 탭으로 이동(살짝 오버슈트).
+  useEffect(() => {
+    const s = slots[active];
+    if (!s) return;
+    const pad = 6;                 // 좌우로 살짝 넓게(위아래 여백과 균형)
+    const w = s.w + pad;
+    const x = s.x + (s.w - w) / 2;
+    Animated.parallel([
+      Animated.spring(hlX, {toValue: x, useNativeDriver: false, speed: 16, bounciness: 9}),
+      Animated.spring(hlW, {toValue: w, useNativeDriver: false, speed: 16, bounciness: 9}),
+    ]).start();
+  }, [active, slots, hlX, hlW]);
+
   return (
-    <View style={[t.wrap, {paddingBottom: insets.bottom > 0 ? insets.bottom : 12}]}>
-      <View style={t.dock}>
+    <View style={[t.wrap, {paddingBottom: insets.bottom > 0 ? insets.bottom : 14}]}>
+      {/* 유리 블러 캡슐 — 뒤 콘텐츠가 비쳐 흐려진다. overflow:hidden 으로 라운드 클립. */}
+      <BlurView style={t.dock} blurType="dark" blurAmount={18} reducedTransparencyFallbackColor="rgba(28,28,32,0.94)">
+        {/* 미끄러지는 오벌 하이라이트 */}
+        <Animated.View pointerEvents="none" style={[t.hl, {left: hlX, width: hlW}]} />
         {TABS.map((tab, i) => {
           const on = i === active;
+          const color = on ? T1 : T3;
           return (
             <Pressable
               key={i}
               onPress={() => onTab(i)}
+              onLayout={onSlot(i)}
               accessibilityRole="tab"
               accessibilityLabel={tab.label}
               accessibilityState={{selected: on}}
               hitSlop={6}
-              style={({pressed}) => [t.item, on && t.itemActive, pressed && t.itemPressed]}>
-              {tab.set === 'mci' ? (
-                <MaterialCommunityIcons name={tab.icon} size={22} color={on ? ACCENT : T3} />
-              ) : (
-                <Ionicons name={on ? tab.icon : `${tab.icon}-outline`} size={22} color={on ? ACCENT : T3} />
-              )}
-              <Text style={[t.label, {color: on ? ACCENT : T3, fontWeight: on ? '600' : '500'}]}>
-                {tab.label}
-              </Text>
+              style={({pressed}) => [t.item, pressed && {opacity: 0.55}]}>
+              <View style={tab.flip ? {transform: [{scaleX: -1}]} : undefined}>
+                {tab.set === 'mci' ? (
+                  <MaterialCommunityIcons name={tab.icon} size={24} color={color} />
+                ) : (
+                  <Ionicons name={on ? tab.icon : `${tab.icon}-outline`} size={24} color={color} />
+                )}
+              </View>
             </Pressable>
           );
         })}
-      </View>
+      </BlurView>
     </View>
   );
 }
 
 const t = StyleSheet.create({
-  wrap: {paddingHorizontal: 14, paddingTop: 6, paddingBottom: 12},
+  // 독을 화면 좌우에서 띄워(40dp) 폭을 줄인다 — 프로토타입과 동일.
+  wrap: {paddingHorizontal: 40, paddingTop: 6},
   dock: {
     flexDirection: 'row',
-    alignItems: 'stretch',
-    justifyContent: 'space-around',
-    gap: SPACE.xs,
-    padding: 6,
-    borderRadius: 28,
-    backgroundColor: 'rgba(28,28,32,0.92)',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: SEP,
-    shadowColor: BG,
-    shadowOpacity: 0.6,
-    shadowRadius: 18,
-    shadowOffset: {width: 0, height: 10},
-    elevation: 12,
-  },
-  item: {
-    flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 2,
-    paddingVertical: 6,
-    borderRadius: RADIUS.lg,
+    height: 62,
+    paddingHorizontal: 6,
+    borderRadius: RADIUS.pill,
+    overflow: 'hidden',                       // BlurView 를 알약으로 클립
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255,255,255,0.10)',
+    // 블러 위에 살짝 어두운 막을 덧대 대비 확보(BlurView 단독이면 너무 밝을 수 있음).
+    backgroundColor: 'rgba(20,20,24,0.35)',
+    shadowColor: BG,
+    shadowOpacity: 0.7,
+    shadowRadius: 20,
+    shadowOffset: {width: 0, height: 14},
+    elevation: 14,
   },
-  itemActive: {backgroundColor: 'rgba(255,255,255,0.10)'},
-  itemPressed: {opacity: 0.6},
+  hl: {
+    position: 'absolute',
+    top: '50%',
+    height: 50,
+    marginTop: -25,            // 세로 정중앙(translateY(-50%) 대응)
+    borderRadius: RADIUS.pill,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+  },
+  item: {flex: 1, height: 62, alignItems: 'center', justifyContent: 'center'},
   label: {fontFamily: FONT, fontSize: 10, letterSpacing: 0.1},
 });

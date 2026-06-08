@@ -265,7 +265,7 @@ export default function ProfileScreen({
       <ScrollView ref={scrollRef} contentContainerStyle={{ paddingTop: insets.top + 12, paddingHorizontal: 18, paddingBottom: 8, gap: 16 }}>
         {/* header */}
         <View style={s.headerRow}>
-          <Text style={s.title}>프로필</Text>
+          <Text style={s.title}>마이</Text>
           <Pressable onPress={scrollToSettings} accessibilityRole="button" accessibilityLabel="설정으로 이동" style={({ pressed }) => [s.iconBtn, pressed && { backgroundColor: CARD }]}><Ionicons name="settings-outline" size={19} color={T2} /></Pressable>
         </View>
 

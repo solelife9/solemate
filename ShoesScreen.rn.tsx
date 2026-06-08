@@ -10,6 +10,7 @@ import {
   BG, CARD, CARD_DIM, CARD_HI, ACCENT, DANGER, WARN, GOOD, T1, T2, T3, SEP, FONT, DISPLAY, withAlpha, Shoe, Run, SHOES,
 } from './theme';
 import { Ring, TabBar, TierBadge, Pill, SectionTitle, InjuryBanner } from './primitives';
+import { FuelGauge } from './FuelGauge';
 import { Unit, displayNum, displayToKm } from './lib/units';
 import { clampMaxKm, KEEP_GOING_REPLACE, SHOE_MAX_STEP_KM, SHOE_REPLACE_PCT } from './lib/shoe';
 import { assessShoeInjuryRisk } from './lib/injury';
@@ -93,11 +94,7 @@ function ShoeDetail({
 }) {
   // 비율은 km 절대값, 표시 숫자만 표시 단위로 환산한다.
   const remainKm = Math.max(0, shoe.max - shoe.used);
-  const pct = shoe.max > 0 ? remainKm / shoe.max : 0;
-  const remain = displayNum(remainKm, unit);
   const usedDisp = displayNum(shoe.used, unit);
-  const maxDisp = displayNum(shoe.max, unit);
-  const ring = ringColor(shoe.condition);
   const retired = !!shoe.retired;
   const shoeRuns = runs.filter((r) => r.shoe === idx);
   // 실효 마모/교체 예측(차별점): 단순 누적 km 가 아니라 체중·노면·페이스·세월 보정 "진짜
@@ -106,6 +103,8 @@ function ShoeDetail({
   const wearView = buildWearView(shoe, shoeRuns, { weightKg, surfaceOf });
   const effWearKm = Math.round(wearView.effectiveWearKm);
   const targetKm = Math.round(wearView.targetKm);
+  // FuelGauge 채움/마커 위치: 실효 마모 비율(effectiveWearKm/targetKm), 0~1 클램프.
+  const wearPct = wearView.targetKm > 0 ? Math.min(1, wearView.effectiveWearKm / wearView.targetKm) : (shoe.max > 0 ? shoe.used / shoe.max : 0);
   const forecastLine = forecastLineKo(wearView.forecast);
   // 부상예방 경고(주의/위험) — shoeHealth 와 같은 마모 분모(used/max)로 판정한다.
   // 안전 등급/보관 신발은 경고를 노출하지 않는다(보관됨 상태와의 모순 방지).
@@ -211,36 +210,28 @@ function ShoeDetail({
           </Pressable>
         )}
 
-        {/* durability hero */}
-        <View style={[s.card, s.dHero]}>
-          <Ring size={116} stroke={12} progress={pct} color={ring}>
-            <Text style={s.dHeroPct}>{Math.round(pct * 100)}<Text style={s.dHeroPctU}>%</Text></Text>
-          </Ring>
-          <View style={{ flex: 1 }}>
-            <View style={s.dHeroLabelRow}>
-              <Text style={s.dHeroLabel}>남은 수명</Text>
-              {!retired && shoe.id && onSetMaxKm && (
-                <Pressable
-                  onPress={() => setEditingMax((e) => !e)}
-                  hitSlop={8}
-                  accessibilityRole="button"
-                  accessibilityLabel="신발 수명 수정"
-                  style={s.maxEditToggle}
-                >
-                  <Ionicons name={editingMax ? 'checkmark' : 'create-outline'} size={14} color={editingMax ? ACCENT : T3} />
-                </Pressable>
-              )}
-            </View>
-            <View style={[s.baselineRow, { marginTop: 2 }]}>
-              <Text style={s.dHeroRemain}>{remain}</Text>
-              <Text style={s.dHeroRemainU}>{unit}</Text>
-            </View>
-            <View style={[s.row, { marginTop: 8 }]}>
-              <View style={[s.dot, { backgroundColor: condColor(shoe.condition) }]} />
-              <Text style={[s.condText, { color: condColor(shoe.condition) }]}>{shoe.condition}</Text>
-              <Text style={s.condSub}>· {usedDisp}/{maxDisp}{unit}</Text>
-            </View>
-          </View>
+        {/* durability hero — 수명 연료게이지(FuelGauge). 아래 '수명 수정'으로 max_km 보정기 펼침. */}
+        <View style={[s.card, s.dHeroGauge]}>
+          <FuelGauge
+            remainLabel={String(displayNum(remainKm, unit, 0))}
+            unit={unit}
+            fillPct={wearPct}
+            replacePct={SHOE_REPLACE_PCT / 100}
+            condition={shoe.condition}
+            wearLabel={`실효 마모 ${Math.round(wearPct * 100)}%`}
+          />
+          {!retired && shoe.id && onSetMaxKm && (
+            <Pressable
+              onPress={() => setEditingMax((e) => !e)}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="신발 수명 수정"
+              style={s.maxEditRow}
+            >
+              <Ionicons name={editingMax ? 'checkmark' : 'create-outline'} size={13} color={editingMax ? ACCENT : T3} />
+              <Text style={[s.maxEditRowText, editingMax && { color: ACCENT }]}>{editingMax ? '완료' : '수명 수정'}</Text>
+            </Pressable>
+          )}
         </View>
 
         {/* 실효 마모 + 교체 예측(차별점): 단순 km 가 아닌 체중·노면·페이스·세월 보정 "진짜
@@ -502,7 +493,7 @@ export default function ShoesScreen({
           <Text style={s.addText}>러닝화 등록하기</Text>
         </Pressable>
       </ScrollView>
-      <TabBar active={2} onTab={(i) => onTab?.(i)} />
+      <TabBar active={1} onTab={(i) => onTab?.(i)} />
     </View>
   );
 }
@@ -578,6 +569,9 @@ const s = StyleSheet.create({
   wearForecast: { color: ACCENT, fontFamily: FONT, fontSize: 12.5, fontWeight: '600', letterSpacing: -0.1, lineHeight: 18, marginTop: 8 },
 
   dHero: { padding: 24, flexDirection: 'row', alignItems: 'center', gap: 22 },
+  dHeroGauge: { paddingHorizontal: 22, paddingTop: 4, paddingBottom: 18 },
+  maxEditRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 5, marginTop: 16 },
+  maxEditRowText: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '600' },
   dHeroPct: { color: T1, fontFamily: DISPLAY, fontSize: 30 },
   dHeroPctU: { color: T3, fontFamily: FONT, fontSize: 13 },
   dHeroLabel: { color: T3, fontFamily: FONT, fontSize: 13 },
