@@ -24,6 +24,7 @@ import ProfileScreen, {Profile, Badge, PersonalRecord} from './ProfileScreen.rn'
 import AddShoeScreen from './AddShoeScreen.rn';
 import OnboardingScreen, {RegisteredShoe} from './OnboardingScreen.rn';
 import {RunStart} from './RunScreen.rn';
+import RunActiveView from './RunActiveScreen';
 
 import {simplifyRoute} from './lib/geo';
 import {runTracker} from './lib/runTracker';
@@ -418,11 +419,15 @@ function Main(){
       // 파괴 0). 대부분 미태그(키 없음)라 존재할 때만 옮긴다.
       const surf=await AsyncStorage.getItem('surface_'+p.localId);
       if(surf!=null) await AsyncStorage.setItem('surface_'+serverId, surf);
+      // 구간 스플릿(splits_<id>)도 surface_ 와 동일하게 serverId로 재키잉해 동기 후 보존한다.
+      const spl=await AsyncStorage.getItem('splits_'+p.localId);
+      if(spl!=null) await AsyncStorage.setItem('splits_'+serverId, spl);
       // serverId로 재키잉했으므로 localId 원본 키는 죽은 키 — 제거해 누수를 막는다.
       if(String(serverId)!==p.localId){
         await AsyncStorage.removeItem('route_'+p.localId);
         await AsyncStorage.removeItem('time_'+p.localId);
         if(surf!=null) await AsyncStorage.removeItem('surface_'+p.localId);
+        if(spl!=null) await AsyncStorage.removeItem('splits_'+p.localId);
       }
     }
     const merged={...(server||{}),id:serverId??p.localId,shoe_id:p.shoe_id,km:p.km,run_date:p.run_date,
@@ -470,6 +475,7 @@ function Main(){
       await AsyncStorage.removeItem('route_'+sid);
       await AsyncStorage.removeItem('time_'+sid);
       await AsyncStorage.removeItem('surface_'+sid);
+      await AsyncStorage.removeItem('splits_'+sid);
     };
     if(target&&target._pending){await finishLocal();return;}
     try{
@@ -852,8 +858,12 @@ function Main(){
         goalKm={activeRun.goalKm}
         weightKg={weightKg}
         resume={resumeSnap}
-        onSave={async(km,dur,cad,memo,route,location)=>{
-          await addRun(activeRun.id,km,today(),memo||'','gps',dur,cad,route,location);
+        onSave={async(km,dur,cad,memo,route,location,splits)=>{
+          const newId=await addRun(activeRun.id,km,today(),memo||'','gps',dur,cad,route,location);
+          // per-km 스플릿(레코더가 1km 통과 시각으로 남긴 실측 구간)을 localId로 영속한다.
+          // route_/surface_ 와 동일 패턴(로컬 전용·동기 시 serverId로 재키잉). RunDetail이
+          // splits_<id> 로 읽어 표시한다. 2구간 미만이면 표시 가치가 없어 저장 생략.
+          if(splits&&splits.length>=2) await AsyncStorage.setItem('splits_'+newId, JSON.stringify(splits));
           await clearSnapshot();
           setResumeSnap(null);setActiveRun(null);setOverlay('none');setTab(2);
         }}
@@ -986,7 +996,7 @@ const boot=StyleSheet.create({
 });
 
 // ─── Live run screen (GPS / sensors / TTS engine + handoff Ring UI) ─────────
-function RunActiveScreen({shoe,insets,goalKm,weightKg,onSave,onDiscard,resume}:{shoe:{id:string;name:string};insets:any;goalKm:number;weightKg:number;onSave:(km:number,dur:number,cad:number,memo:string,route:string,location:string)=>Promise<void>;onDiscard:()=>void;resume?:RunSnapshot|null}){
+function RunActiveScreen({shoe,insets,goalKm,weightKg,onSave,onDiscard,resume}:{shoe:{id:string;name:string};insets:any;goalKm:number;weightKg:number;onSave:(km:number,dur:number,cad:number,memo:string,route:string,location:string,splits:{km:number;paceSec:number;elevM:number}[])=>Promise<void>;onDiscard:()=>void;resume?:RunSnapshot|null}){
   const ui=parseShoeName(shoe.name);
   // 복구 모드: 미완료 런 스냅샷으로 done 화면을 시드해 검토 후 저장/버리기. GPS는
   // 다시 시작하지 않는다(이미 기록된 거리/경로를 그대로 보존).
@@ -994,7 +1004,7 @@ function RunActiveScreen({shoe,insets,goalKm,weightKg,onSave,onDiscard,resume}:{
   const [phase,setPhase]=useState<'running'|'done'>(resume?'done':'running');
   const [km,setKm]=useState(resume?resume.dist:0);
   const [elapsed,setElapsed]=useState(resume?resume.elapsed:0);
-  const [gpsStatus,setGpsStatus]=useState('GPS 신호 찾는 중...');
+  const [,setGpsStatus]=useState('GPS 신호 찾는 중...');
   // GPS 死구간(audit#9): 마지막 fix 수신 후 무신호가 지속되면 거리는 멈춘 채 시간만
   // 누적된다. 순수 판정(gpsStallStatus)으로 감지해 한국어 배너를 띄운다.
   const [gpsStalled,setGpsStalled]=useState(false);
@@ -1007,11 +1017,12 @@ function RunActiveScreen({shoe,insets,goalKm,weightKg,onSave,onDiscard,resume}:{
   const [finElev,setFinElev]=useState(0);
   const [paused,setPaused]=useState(false);
   const [autoPaused,setAutoPaused]=useState(false);
-  const [stopConfirm,setStopConfirm]=useState(false);
   const [finKm,setFinKm]=useState(resume?resume.dist:0);
   const [finTime,setFinTime]=useState(resume?resume.elapsed:0);
   const [finCad,setFinCad]=useState(resume?resume.cadence:0);
   const [finRoute,setFinRoute]=useState(resumeRoute);
+  // 완주 시 저장할 per-km 구간 스플릿(레코딩 결과 스냅샷).
+  const [finSplits,setFinSplits]=useState<{km:number;paceSec:number;elevM:number}[]>([]);
   const [finLocation,setFinLocation]=useState(resume?resume.location:'');
   const [memo,setMemo]=useState('');
   const [saving,setSaving]=useState(false);
@@ -1030,7 +1041,9 @@ function RunActiveScreen({shoe,insets,goalKm,weightKg,onSave,onDiscard,resume}:{
   // 요청한 위치 권한 결과(포그라운드/백그라운드). '계속 달리기'(거리 짧음 재시작) 시
   // 동일 권한으로 다시 트래킹을 시작하기 위해 보관한다.
   const permRef=useRef<RunPermissions>({foreground:true,background:false});
-  const stopConfirmTimer=useRef<any>(null);
+  // per-km 스플릿 누적(런 동안)과 마지막 km 경계의 시각/고도(구간 페이스·고도상승 계산용).
+  const splitsRef=useRef<{km:number;paceSec:number;elevM:number}[]>([]);
+  const lastSplitRef=useRef({elapsed:0,elevM:0});
 
   useEffect(()=>{
     // 복구 모드는 이미 끝난 런을 검토만 한다 — GPS/센서/권한/TTS를 켜지 않는다.
@@ -1046,6 +1059,15 @@ function RunActiveScreen({shoe,insets,goalKm,weightKg,onSave,onDiscard,resume}:{
         setPaused(s.paused);setAutoPaused(s.autoPaused);
         setGpsStalled(s.stalled);setPermLost(s.permissionRevoked);
         setElevGain(s.elevGainM);
+        // per-km 스플릿: dist가 정수 km 경계를 새로 넘으면 그 1km의 소요시간(초)·고도상승(m)을
+        // 기록한다. 경로에 타임스탬프가 없어 못 했던 '실제' 구간 페이스를 레코더가 직접 남긴다.
+        if(Math.floor(s.dist)>splitsRef.current.length){
+          const splitKm=splitsRef.current.length+1;
+          splitsRef.current.push({km:splitKm,
+            paceSec:Math.max(0,Math.round(s.elapsed-lastSplitRef.current.elapsed)),
+            elevM:Math.max(0,Math.round(s.elevGainM-lastSplitRef.current.elevM))});
+          lastSplitRef.current={elapsed:s.elapsed,elevM:s.elevGainM};
+        }
         if(s.permissionRevoked)setGpsStatus('위치 권한 필요');
         else if(s.accuracyM!=null)setGpsStatus(`정확도 ${s.accuracyM}m`);
       }else if(ev.type==='paused'){
@@ -1102,7 +1124,7 @@ function RunActiveScreen({shoe,insets,goalKm,weightKg,onSave,onDiscard,resume}:{
       }
       await beginRun(perm);
     })();
-    return()=>{stop();unsub();clearTimeout(stopConfirmTimer.current);try{Tts.stop();}catch{}};
+    return()=>{stop();unsub();try{Tts.stop();}catch{}};
     // eslint-disable-next-line react-hooks/exhaustive-deps
   },[]);
 
@@ -1124,6 +1146,7 @@ function RunActiveScreen({shoe,insets,goalKm,weightKg,onSave,onDiscard,resume}:{
   // 소유하고 subscribe로 화면에 반영된다(이 함수는 delivery/타이머만 띄운다).
   async function beginRun(perm:RunPermissions){
     runTracker.start({goalKm,shoe:{id:shoe.id,name:shoe.name}});
+    splitsRef.current=[];lastSplitRef.current={elapsed:0,elevM:0};
     setKm(0);setElapsed(0);setCadence(0);
     setGpsStalled(false);setPermLost(false);setGpsStatus('GPS 신호 찾는 중...');
     cadenceState.current=initCadenceState();cadRef.current=0;
@@ -1168,14 +1191,9 @@ function RunActiveScreen({shoe,insets,goalKm,weightKg,onSave,onDiscard,resume}:{
     runTracker.togglePause();
   }
 
-  function handleStop(){
-    if(!stopConfirm){
-      setStopConfirm(true);
-      stopConfirmTimer.current=setTimeout(()=>setStopConfirm(false),3000);
-      return;
-    }
-    clearTimeout(stopConfirmTimer.current);
-    setStopConfirm(false);
+  // 런 종료(실제 stop) — RunActiveScreen 종료 버튼의 롱프레스로만 호출된다(롱프레스 자체가
+  // 오작동 종료 가드라 별도 2단계 확인은 두지 않는다). 거리가 너무 짧으면 계속/나가기 선택.
+  function finishRun(){
     // 최종 거리/시간은 엔진(단일 소스)에서 읽는다 — 화면off 동안 누적분도 포함된다.
     const fk=runTracker.getDistanceKm(),ft=runTracker.getElapsedFinal();
     if(fk<0.01){
@@ -1189,6 +1207,7 @@ function RunActiveScreen({shoe,insets,goalKm,weightKg,onSave,onDiscard,resume}:{
     stop();
     const sampled=simplifyRoute(runTracker.getPoints() as any,200);
     setFinRoute(sampled.length>=2?JSON.stringify(sampled):'');
+    setFinSplits(splitsRef.current.slice());
     setFinLocation(locationRef.current);
     setFinKm(fk);setFinTime(ft);setFinCad(cadRef.current);
     setFinElev(runTracker.getElevationGain());
@@ -1211,14 +1230,11 @@ function RunActiveScreen({shoe,insets,goalKm,weightKg,onSave,onDiscard,resume}:{
           }
         }catch{}
       }
-      await onSave(Math.round(finKm*100)/100,finTime,finCad,memo,finRoute,loc);
+      await onSave(Math.round(finKm*100)/100,finTime,finCad,memo,finRoute,loc,finSplits);
     }finally{setSaving(false);}
   }
 
-  const progress=Math.min(1,km/goalKm);
-  const remaining=Math.max(0,goalKm-km);
   const pauseLabel=autoPaused?'자동 일시정지':paused?'일시정지':'러닝 중';
-  const pauseColor=paused||autoPaused?WARN:ACCENT;
   // 칼로리 추정(체중×거리×1.036) — 라이브(현재 km)와 완주(finKm) 각각. 거리 0이면 0.
   const liveCal=estimateCalories(km,weightKg);
   const finCal=estimateCalories(finKm,weightKg);
@@ -1263,96 +1279,26 @@ function RunActiveScreen({shoe,insets,goalKm,weightKg,onSave,onDiscard,resume}:{
     </View>
   );
 
-  return(
-    <View style={[run.screen,{paddingTop:insets.top+16,paddingBottom:insets.bottom+28}]}>
-      <View style={run.top}>
-        <View style={run.liveRow}>
-          <View style={[run.liveDot,{backgroundColor:pauseColor}]}/>
-          <Text style={[run.liveText,{color:pauseColor}]}>{pauseLabel}</Text>
-        </View>
-        <View style={run.shoeChip}><MaterialCommunityIcons name="shoe-sneaker" size={15} color={T3}/><Text style={run.shoeChipText}>{ui.model||shoe.name}</Text></View>
-      </View>
-      <View style={run.gpsRow}>
-        <Ionicons name="radio-outline" size={11} color={ACCENT} style={{marginRight:4}}/>
-        <Text style={run.gpsText}>{gpsStatus}</Text>
-      </View>
-
-      {/* 권한 회수 배너(우선) / GPS 死구간 배너(audit#9). 둘 다 한국어 안내. */}
-      {permLost?(
-        <TouchableOpacity style={[run.banner,run.bannerDanger]} onPress={()=>{Promise.resolve(Linking.openSettings()).catch(()=>{});}}>
-          <Ionicons name="alert-circle" size={15} color={DANGER}/>
-          <Text style={run.bannerText}>위치 권한이 꺼져 거리 기록을 멈췄어요. 눌러서 설정에서 다시 허용하세요.</Text>
-        </TouchableOpacity>
-      ):gpsStalled?(
-        <View style={[run.banner,run.bannerWarn]}>
-          <Ionicons name="warning-outline" size={15} color={WARN}/>
-          <Text style={run.bannerText}>GPS 신호가 약해 거리가 기록되지 않고 있어요. 시간만 계속 측정됩니다.</Text>
-        </View>
-      ):null}
-
-      <View style={run.body}>
-        <Ring size={272} stroke={16} progress={progress} color={pauseColor}>
-          <View style={{alignItems:'center'}}>
-            <Text style={run.goalText}>목표 {goalKm}km · {Math.round(progress*100)}%</Text>
-            <Text style={run.bigDist}>{km.toFixed(2)}</Text>
-            <Text style={run.bigUnit}>{remaining>0.009?`${remaining.toFixed(2)}km 남음`:'목표 달성!'}</Text>
-          </View>
-        </Ring>
-      </View>
-
-      {/* 메트릭 위계: 시간·페이스 2개 크게(hero) + 케이던스·칼로리·고도 보조줄(sub). */}
-      <View style={run.heroMetrics}>
-        {[
-          {v:fmtTime(elapsed), l:'시간'},
-          {v:fmtPace(km,elapsed), l:'평균 페이스'},
-        ].map((m,i)=>(
-          <View key={i} style={run.hm}>
-            <Text style={run.hmV}>{m.v}</Text>
-            <Text style={run.hmL}>{m.l}</Text>
-          </View>
-        ))}
-      </View>
-      <View style={run.subMetrics}>
-        {[
-          {v:cadence>0?String(cadence):'--', l:'케이던스'},
-          {v:liveCal>0?`${liveCal} kcal`:'-- kcal', l:'칼로리'},
-          {v:`${elevGain} m`, l:'고도'},
-        ].map((m,i)=>(
-          <View key={i} style={run.hm}>
-            <Text style={run.smV}>{m.v}</Text>
-            <Text style={run.smL}>{m.l}</Text>
-          </View>
-        ))}
-      </View>
-
-      {/* 안전 컨트롤(오작동 종료 방지): 달리는 중엔 큰 일시정지 버튼만 노출(종료 숨김).
-          일시정지 상태에서만 종료(2단계 확인 유지)+재개를 보여준다. */}
-      <View style={run.controls}>
-        {!paused ? (
-          <View style={{alignItems:'center',gap:8}}>
-            <TouchableOpacity style={run.ctrlPrimaryLg} onPress={handlePause} accessibilityRole="button" accessibilityLabel="일시정지">
-              <Ionicons name="pause" size={40} color="#fff"/>
-            </TouchableOpacity>
-            <Text style={run.ctrlHint}>일시정지</Text>
-          </View>
-        ) : (
-          <>
-            <View style={{alignItems:'center',gap:8}}>
-              <TouchableOpacity style={[run.ctrlStop,stopConfirm&&{backgroundColor:DANGER}]} onPress={handleStop} accessibilityRole="button" accessibilityLabel={stopConfirm?'한번 더 누르면 종료':'종료'}>
-                <Ionicons name="stop" size={26} color={stopConfirm?'#fff':DANGER}/>
-              </TouchableOpacity>
-              <Text style={[run.ctrlHint,stopConfirm&&{color:WARN,fontWeight:'700'}]}>{stopConfirm?'한번 더 누르면 종료':'종료'}</Text>
-            </View>
-            <View style={{alignItems:'center',gap:8}}>
-              <TouchableOpacity style={run.ctrlPrimary} onPress={handlePause} accessibilityRole="button" accessibilityLabel="재개">
-                <Ionicons name="play" size={34} color="#fff"/>
-              </TouchableOpacity>
-              <Text style={run.ctrlHint}>재개</Text>
-            </View>
-          </>
-        )}
-      </View>
-    </View>
+  // GPS 신호 세기(0~3): 권한 회수=0, 약신호/死구간=1, 정상=3 — RunActiveScreen 안테나 바.
+  const gpsLevel = permLost ? 0 : gpsStalled ? 1 : 3;
+  return (
+    <RunActiveView
+      shoeLabel={ui.model||shoe.name}
+      distanceKm={km}
+      goalKm={goalKm}
+      timeLabel={fmtTime(elapsed)}
+      paceLabel={fmtPace(km,elapsed)}
+      cadence={cadence}
+      calories={liveCal}
+      elevationM={elevGain}
+      gpsLevel={gpsLevel}
+      paused={paused}
+      statusLabel={pauseLabel}
+      onPause={handlePause}
+      onStop={finishRun}
+      permLost={permLost}
+      onOpenSettings={()=>{Promise.resolve(Linking.openSettings()).catch(()=>{});}}
+    />
   );
 }
 

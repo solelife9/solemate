@@ -59,6 +59,17 @@ function pressByText(root: ReactTestRenderer.ReactTestInstance, label: string) {
   });
 }
 
+// 종료 버튼은 onLongPress 로만 동작한다(롱프레스 자체가 오작동 종료 가드 — RunActiveScreen).
+function longPressByText(root: ReactTestRenderer.ReactTestInstance, label: string) {
+  const target = root
+    .findAll(n => typeof n.props.onLongPress === 'function')
+    .find(n => textOf(n).includes(label));
+  if (!target) throw new Error(`no long-pressable containing text: ${label}`);
+  act(() => {
+    target.props.onLongPress();
+  });
+}
+
 function readKm(root: ReactTestRenderer.ReactTestInstance): number {
   const node = root
     .findAll(n => typeof n.type === 'string')
@@ -160,10 +171,8 @@ test('saving the run clears the snapshot (no stale resume offer afterwards)', as
 
   // 안전 컨트롤: 달리는 중엔 종료 버튼이 숨겨져 있어, 먼저 일시정지해야 종료가 보인다.
   pressByText(root, 'pause');
-  // Stop (press twice to confirm) → review screen, then save.
-  // The stop control is the pressable holding the "stop" icon (rendered as text).
-  pressByText(root, 'stop');
-  pressByText(root, 'stop');
+  // 종료는 롱프레스(직접 stop → 리뷰 화면). 롱프레스 자체가 오작동 종료 가드.
+  longPressByText(root, 'stop');
   await flushMicrotasks();
   await act(async () => {
     pressByText(root, '저장하기');
@@ -182,11 +191,9 @@ test('discarding the run clears the snapshot', async () => {
   await advanceSnapshot(3000);
   expect(await readSnapshot()).not.toBeNull();
 
-  // 안전 컨트롤: 종료 전 일시정지(달리는 중엔 종료 숨김).
+  // 안전 컨트롤: 종료 전 일시정지(달리는 중엔 종료 숨김), 종료는 롱프레스(직접 stop).
   pressByText(root, 'pause');
-  // The stop control is the pressable holding the "stop" icon (rendered as text).
-  pressByText(root, 'stop');
-  pressByText(root, 'stop');
+  longPressByText(root, 'stop');
   await flushMicrotasks();
   pressByText(root, '버리기');
   await flushMicrotasks();

@@ -172,7 +172,6 @@ function ShoeDetail({
         <Pressable onPress={onBack} hitSlop={6} accessibilityRole="button" accessibilityLabel="뒤로" style={s.iconBtn}><Ionicons name="chevron-back" size={20} color={T1} /></Pressable>
         <View style={{ flexDirection: 'row', gap: 10 }}>
           <Pressable onPress={() => setEditing((e) => !e)} hitSlop={6} accessibilityRole="button" accessibilityLabel="이름 편집" style={s.iconBtn}><Ionicons name="pencil" size={16} color={T2} /></Pressable>
-          <Pressable onPress={toggleRetire} hitSlop={6} accessibilityRole="button" accessibilityLabel={retired ? '보관 복원' : '신발 보관'} style={s.iconBtn}><Ionicons name={retired ? 'arrow-undo-outline' : 'archive-outline'} size={16} color={retired ? ACCENT : T2} /></Pressable>
           <Pressable onPress={confirmDelete} hitSlop={6} accessibilityRole="button" accessibilityLabel="신발 삭제" style={s.iconBtn}><Ionicons name="trash-outline" size={16} color={DANGER} /></Pressable>
         </View>
       </View>
@@ -348,6 +347,19 @@ function ShoeDetail({
             ))}
           </View>
         )}
+
+        {/* 신발 은퇴(보관) — 목업처럼 하단 전체폭 버튼(danger 외곽선). 상단 아이콘 대신
+            여기서 명확히 처리한다. 이미 보관된 신발은 '보관 복원'으로 토글. */}
+        {shoe.id && onRetire && (
+          <Pressable
+            onPress={toggleRetire}
+            accessibilityRole="button"
+            accessibilityLabel={retired ? '보관 복원' : '신발 은퇴 처리'}
+            style={({ pressed }) => [retired ? s.restoreBtn : s.retireBtn, pressed && s.pressed]}>
+            <Ionicons name={retired ? 'arrow-undo-outline' : 'archive-outline'} size={16} color={retired ? T2 : DANGER} />
+            <Text style={[s.retireBtnText, { color: retired ? T2 : DANGER }]}>{retired ? '보관 복원' : '신발 은퇴 처리'}</Text>
+          </Pressable>
+        )}
       </ScrollView>
     </View>
   );
@@ -373,7 +385,7 @@ function ShoeCard({ shoe, featured, onPress, onPlay, unit, pace }: { shoe: Shoe;
             {/* 교체/주의 tier 배지 — 목록 카드에서 한눈에(양호는 미노출). */}
             {!retired && <TierBadge condition={shoe.condition} />}
             {retired ? <Pill tone="dim" label="보관됨" />
-              : featured && <Pill tone="accent" label="사용 중" />}
+              : featured && <Pill tone="dim" label="사용 중" />}
           </View>
           <Text style={s.shoeModel} numberOfLines={2}>{shoe.model}</Text>
           <Text style={s.shoeMeta}>{usedDisp} / {maxDisp} {unit} · <Text style={{ color: condColor(shoe.condition) }}>{shoe.condition}</Text></Text>
@@ -389,7 +401,7 @@ function ShoeCard({ shoe, featured, onPress, onPlay, unit, pace }: { shoe: Shoe;
             상세로 가므로, 시작은 별도 버튼으로 분리한다. 보관된 신발엔 노출하지 않는다. */}
         {!retired && onPlay ? (
           <Pressable onPress={onPlay} hitSlop={10} accessibilityRole="button" accessibilityLabel={`${shoe.brand} ${shoe.model}로 달리기`} style={({ pressed }) => [s.cardPlay, pressed && s.pressed]} testID={shoe.id ? `shoe-play-${shoe.id}` : undefined}>
-            <Ionicons name="play" size={16} color={T1} />
+            <Ionicons name="play" size={15} color={T2} />
           </Pressable>
         ) : (
           <Ionicons name="chevron-forward" size={16} color={T3} />
@@ -517,7 +529,10 @@ const s = StyleSheet.create({
   shoePaceRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 5 },
   shoePace: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '600' },
   shoePaceVal: { color: ACCENT, fontFamily: DISPLAY, fontSize: 12.5 },
-  cardPlay: { width: 38, height: 38, borderRadius: 999, backgroundColor: ACCENT, alignItems: 'center', justifyContent: 'center' },
+  cardPlay: { width: 38, height: 38, borderRadius: 999, backgroundColor: 'transparent', borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.14), alignItems: 'center', justifyContent: 'center' },
+  retireBtn: { height: 54, borderRadius: 16, marginTop: 22, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: withAlpha(DANGER, 0.06), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(DANGER, 0.45) },
+  restoreBtn: { height: 54, borderRadius: 16, marginTop: 22, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: 'transparent', borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.14) },
+  retireBtnText: { fontFamily: FONT, fontSize: 15, fontWeight: '600', letterSpacing: -0.2 },
 
   addCard: { borderRadius: 22, borderWidth: 1.5, borderStyle: 'dashed', borderColor: withAlpha(T1, 0.12), padding: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   addText: { color: T3, fontFamily: FONT, fontSize: 15, fontWeight: '500' },

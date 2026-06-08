@@ -17,6 +17,9 @@ export const T2 = '#EBEBF5';
 // smallest captions clear WCAG AA contrast on the dark surfaces (CARD/BG): ~5.2→
 // ~6.3:1 on CARD. Still clearly a muted secondary tone (dark direction intact).
 export const T3 = '#9C9CA3';
+// Quaternary text — dimmer than T3 for the faintest captions/units (sub-metric
+// 단위·라벨, 빈 GPS 바). 다크 표면에서 보조 정보 위계의 가장 약한 톤.
+export const T4 = '#6B6B73';
 export const SEP = 'rgba(255,255,255,0.08)';
 
 // ── 소셜 로그인 브랜드 색 (외부 브랜드 고정값) ────────────────────────────────────

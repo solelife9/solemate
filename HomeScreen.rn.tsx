@@ -64,15 +64,18 @@ function WeeklyGoal({ goal, unit, editable }: { goal: GoalInfo; unit: Unit; edit
   const pct = Math.max(0, goal.pct);
   const reached = pct >= 100;
   const streak = Math.max(0, goal.streak);
+  // 이번 주 달린 거리/남은 거리는 목표·달성률로 역산(week stats 미전달 — goal만으로 구성).
+  const doneKm = Math.round((goal.km * Math.min(pct, 999)) / 100);
+  const doneDisplay = displayNum(doneKm, unit, 0);
+  const remainDisplay = displayNum(Math.max(0, goal.km - doneKm), unit, 0);
   return (
     <View style={s.goalCard}>
-      <View style={s.goalInfo}>
+      <View style={s.goalHeadRow}>
         <View style={s.row}>
-          <Ionicons name="flag" size={13} color={T3} />
+          <Ionicons name="flag" size={12} color={T3} />
           <Text style={s.goalLabel}>주간 목표</Text>
-          {editable && <Ionicons name="create-outline" size={13} color={T3} />}
+          {editable && <Ionicons name="create-outline" size={12} color={T3} />}
         </View>
-        <Text style={s.goalSub}>목표 {goalDisplay}{unit} / 주</Text>
         <View style={[s.streakChip, streak > 0 ? s.streakChipOn : s.streakChipOff]}>
           <Ionicons name="flame" size={12} color={streak > 0 ? ACCENT : T3} />
           <Text style={[s.streakText, { color: streak > 0 ? ACCENT : T3 }]}>
@@ -80,11 +83,24 @@ function WeeklyGoal({ goal, unit, editable }: { goal: GoalInfo; unit: Unit; edit
           </Text>
         </View>
       </View>
-      <Ring size={64} stroke={8} progress={pct / 100} color={reached ? GOOD : ACCENT}>
-        <Text style={[s.goalRingPct, reached && { color: GOOD }]}>
-          {pct}<Text style={s.goalRingU}>%</Text>
-        </Text>
-      </Ring>
+      <View style={s.goalStats}>
+        <View style={s.goalStat}>
+          <Text style={s.goalStatV}>{doneDisplay}<Text style={s.goalStatU}>{unit}</Text></Text>
+          <Text style={s.goalStatK}>달린 거리</Text>
+        </View>
+        <View style={s.goalStat}>
+          <Text style={[s.goalStatV, reached && { color: GOOD }]}>{pct}<Text style={s.goalStatU}>%</Text></Text>
+          <Text style={s.goalStatK}>달성률</Text>
+        </View>
+        <View style={s.goalStat}>
+          <Text style={s.goalStatV}>{remainDisplay}<Text style={s.goalStatU}>{unit}</Text></Text>
+          <Text style={s.goalStatK}>남음</Text>
+        </View>
+      </View>
+      <View style={s.goalBar}>
+        <View testID="goal-progress" style={[s.goalBarFill, { width: `${Math.min(100, pct)}%`, backgroundColor: reached ? GOOD : ACCENT }]} />
+      </View>
+      <Text style={s.goalNote}>주간 목표 {goalDisplay}{unit}</Text>
     </View>
   );
 }
@@ -450,10 +466,19 @@ const s = StyleSheet.create({
   greet: { color: T1, fontFamily: FONT, fontSize: 21, fontWeight: '600', letterSpacing: -0.5, marginTop: 4, lineHeight: 27 },
 
 
-  goalCard: { backgroundColor: CARD_DIM, borderRadius: 18, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.06), padding: SPACE.md, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  goalCard: { backgroundColor: CARD_DIM, borderRadius: 18, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.06), padding: 14 },
+  goalHeadRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   goalInfo: { flex: 1, gap: 6, minWidth: 0 },
-  goalLabel: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600', letterSpacing: 0.2 },
+  goalLabel: { color: T3, fontFamily: FONT, fontSize: 12.5, fontWeight: '600', letterSpacing: 0.2 },
   goalSub: { color: T3, fontFamily: FONT, fontSize: 11.5, fontWeight: '500' },
+  goalStats: { flexDirection: 'row', marginTop: 13 },
+  goalStat: { flex: 1 },
+  goalStatV: { color: T1, fontFamily: DISPLAY, fontSize: 19, fontWeight: '500', letterSpacing: -0.3 },
+  goalStatU: { color: T3, fontFamily: FONT, fontSize: 10.5, fontWeight: '500' },
+  goalStatK: { color: T3, fontFamily: FONT, fontSize: 11, fontWeight: '500', marginTop: 4 },
+  goalBar: { height: 4, borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.08), marginTop: 14, overflow: 'hidden' },
+  goalBarFill: { height: '100%', borderRadius: RADIUS.pill },
+  goalNote: { color: T3, fontFamily: FONT, fontSize: 11, fontWeight: '500', marginTop: 9 },
   streakChip: { flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start', borderRadius: RADIUS.pill, paddingHorizontal: 9, paddingVertical: 4 },
   streakChipOn: { backgroundColor: withAlpha(ACCENT, 0.14), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.4) },
   streakChipOff: { backgroundColor: CARD_HI },
@@ -461,7 +486,7 @@ const s = StyleSheet.create({
   goalRingPct: { color: T1, fontFamily: DISPLAY, fontSize: 19, letterSpacing: 0.2 },
   goalRingU: { color: T3, fontFamily: FONT, fontSize: 10 },
 
-  hero: { backgroundColor: CARD_DIM, borderRadius: RADIUS.xl, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.08), padding: 18 },
+  hero: { backgroundColor: CARD_DIM, borderRadius: RADIUS.xl, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.13), padding: 18 },
   heroTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 14 },
   heroBrand: { color: T3, fontFamily: DISPLAY, fontSize: 11.5, fontWeight: '600', letterSpacing: 1.4 },
   usingChip: { backgroundColor: withAlpha(T1, 0.06), borderRadius: 6, paddingHorizontal: SPACE.sm, paddingVertical: 2 },

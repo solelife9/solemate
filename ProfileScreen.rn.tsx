@@ -383,7 +383,7 @@ export default function ProfileScreen({
             <View style={s.statRow}>
               {records.map((r, i) => (
                 <View key={i} style={[s.statCell, i > 0 && s.statDivider]}>
-                  <Ionicons name={r.icon} size={18} color={ACCENT} style={{ marginBottom: 6 }} />
+                  <Ionicons name={r.icon} size={18} color={T2} style={{ marginBottom: 6 }} />
                   <Text style={s.statValue}>{r.value}{!!r.unit && <Text style={s.statUnit}>{r.unit}</Text>}</Text>
                   <Text style={s.statLabel}>{r.label}</Text>
                 </View>
@@ -555,10 +555,10 @@ const s = StyleSheet.create({
   iconBtn: { width: 38, height: 38, borderRadius: 999, backgroundColor: CARD_HI, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.12), alignItems: 'center', justifyContent: 'center' },
 
   identity: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 4, paddingTop: 4 },
-  avatarRing: { padding: 3, borderRadius: 999, backgroundColor: ACCENT },
+  avatarRing: { padding: 2, borderRadius: 999, backgroundColor: withAlpha(T1, 0.12) },
   avatarInner: { padding: 2.5, borderRadius: 999, backgroundColor: BG, alignItems: 'center', justifyContent: 'center' },
   avatarImg: { width: 50, height: 50, borderRadius: 999 },
-  avatarEdit: { position: 'absolute', right: -1, bottom: -1, width: 18, height: 18, borderRadius: 999, backgroundColor: ACCENT, borderWidth: 2, borderColor: BG, alignItems: 'center', justifyContent: 'center' },
+  avatarEdit: { position: 'absolute', right: -1, bottom: -1, width: 18, height: 18, borderRadius: 999, backgroundColor: T3, borderWidth: 2, borderColor: BG, alignItems: 'center', justifyContent: 'center' },
   name: { color: T1, fontFamily: FONT, fontSize: 24, fontWeight: '500', letterSpacing: -0.5 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   nameEditRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },

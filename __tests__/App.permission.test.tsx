@@ -203,14 +203,14 @@ test('a GPS dead-zone (no fix for the stall threshold) surfaces a Korean banner'
         timestamp: Date.now(),
       });
     });
-    expect(textOf(root)).not.toContain('GPS 신호가 약해');
+    expect(textOf(root)).not.toContain('GPS 신호 약함');
 
     // Advance the clock past the stall threshold with no further fixes; the 1s
     // engine tick must flip the dead-zone banner on (distance frozen, time runs).
     await act(async () => {
       jest.advanceTimersByTime(GPS_STALL_THRESHOLD_MS + 1500);
     });
-    expect(textOf(root)).toContain('GPS 신호가 약해');
+    expect(textOf(root)).toContain('GPS 신호 약함');
 
     // A fresh fix clears the dead-zone banner again.
     await act(async () => {
@@ -219,7 +219,7 @@ test('a GPS dead-zone (no fix for the stall threshold) surfaces a Korean banner'
         timestamp: Date.now(),
       });
     });
-    expect(textOf(root)).not.toContain('GPS 신호가 약해');
+    expect(textOf(root)).not.toContain('GPS 신호 약함');
 
     act(() => renderer.unmount());
   } finally {

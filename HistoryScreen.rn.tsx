@@ -16,7 +16,7 @@ import { Unit, displayNum, displayToKm } from './lib/units';
 import { ymdLocal } from './lib/format';
 import { getRunSurface, setRunSurface, type Surface } from './lib/wearModel';
 import { parseRoute, projectRoute, LatLon } from './lib/route';
-import { RunSplits } from './RunSplits';
+import { RunSplits, Split } from './RunSplits';
 import { buildSplits } from './lib/splits';
 import { buildRunShareText } from './lib/share';
 import { buildShareCardModel, shareRunCard, SvgCapturable } from './lib/shareCard';
@@ -310,6 +310,23 @@ function RunDetail({ run, shoe, onBack, unit, onEdit, onDelete }: { run: Run; sh
       .catch(() => { if (alive) setRoute([]); });
     return () => { alive = false; };
   }, [run.id]);
+  // 레코더가 1km 통과 시각으로 남긴 실측 구간 스플릿(splits_<id>, App.onSave가 영속).
+  // 경로엔 타임스탬프가 없어 못 만들던 '실제' 구간 페이스다. 없으면 [] → RunSplits 자동 숨김.
+  const [recordedSplits, setRecordedSplits] = useState<Split[]>([]);
+  useEffect(() => {
+    let alive = true;
+    if (!run.id) { setRecordedSplits([]); return; }
+    AsyncStorage.getItem('splits_' + run.id)
+      .then(raw => {
+        if (!alive) return;
+        try {
+          const arr = raw ? JSON.parse(raw) : [];
+          setRecordedSplits(Array.isArray(arr) ? arr : []);
+        } catch { setRecordedSplits([]); }
+      })
+      .catch(() => { if (alive) setRecordedSplits([]); });
+    return () => { alive = false; };
+  }, [run.id]);
   // 공유 입력(텍스트·카드 폴백이 같은 필드를 쓰도록 단일 출처로 둔다).
   const shareInput = {
     distKm: run.dist,
@@ -399,7 +416,7 @@ function RunDetail({ run, shoe, onBack, unit, onEdit, onDelete }: { run: Run; sh
           ))}
         </View>
         {/* 구간별 페이스 스플릿 — run.splits(구간 데이터)가 있을 때만 표시(없으면 자동 숨김) */}
-        <RunSplits splits={buildSplits(run, route)} />
+        <RunSplits splits={recordedSplits.length >= 2 ? recordedSplits : buildSplits(run, route)} />
       </ScrollView>
       {/* 공유 카드: 화면 밖(off-screen)에 마운트해 toDataURL 캡처 대상으로만 쓴다.
           pointerEvents none + 음수 위치라 사용자에겐 보이지 않지만 레이아웃은 된다. */}
@@ -519,7 +536,7 @@ export default function HistoryScreen({
             const on = p === period;
             return (
               <Pressable key={p} onPress={() => setPeriod(p)} accessibilityRole="button" accessibilityLabel={p} accessibilityState={{ selected: on }} style={({ pressed }) => [s.segItem, on && s.segItemOn, pressed && !on && { opacity: 0.7 }]}>
-                <Text style={[s.segText, { color: on ? BG : T3, fontWeight: on ? '700' : '500' }]}>{p}</Text>
+                <Text style={[s.segText, { color: on ? T1 : T3, fontWeight: on ? '700' : '500' }]}>{p}</Text>
               </Pressable>
             );
           })}
@@ -578,9 +595,9 @@ const s = StyleSheet.create({
 
   // 콤팩트: 세그먼트 컨테이너 패딩·항목 내부 패딩·폰트를 줄여 세로를 압축한다.
   // 단, 터치 타깃은 접근성(≥44pt)을 위해 minHeight 44 를 유지한다(폴리시 회귀 가드).
-  segment: { flexDirection: 'row', gap: 4, backgroundColor: CARD_HI, borderRadius: 12, padding: 3 },
+  segment: { flexDirection: 'row', gap: 3, backgroundColor: withAlpha(T1, 0.035), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.07), borderRadius: 13, padding: 3 },
   segItem: { flex: 1, minHeight: 44, alignItems: 'center', justifyContent: 'center', paddingVertical: 6, borderRadius: 10 },
-  segItemOn: { backgroundColor: ACCENT },
+  segItemOn: { backgroundColor: withAlpha(T1, 0.09) },
   segText: { fontFamily: FONT, fontSize: 13.5 },
 
   // bar chart (right-side km gridlines · accent bars)
@@ -604,8 +621,8 @@ const s = StyleSheet.create({
   // 콤팩트: 요약 4칸(거리/횟수/페이스/시간)의 패딩·값 폰트·여백을 줄여 세로 높이를
   // 압축한다(정보는 그대로 유지 — 라벨/값/단위 모두 렌더). 리스트가 위로 올라온다.
   summaryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  summaryCell: { width: '47.5%', flexGrow: 1, backgroundColor: CARD, borderRadius: 16, padding: 11 },
-  summaryLabel: { color: ACCENT, fontFamily: FONT, fontSize: 12, fontWeight: '600', letterSpacing: 0.2 },
+  summaryCell: { width: '47.5%', flexGrow: 1, backgroundColor: CARD_DIM, borderRadius: 16, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.07), padding: 13 },
+  summaryLabel: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '600', letterSpacing: 0.2 },
   summaryValue: { color: T1, fontFamily: DISPLAY, fontSize: 22, letterSpacing: 0.3, marginTop: 2 },
   summaryUnit: { color: T3, fontFamily: FONT, fontSize: 11.5, marginTop: 1 },
 
