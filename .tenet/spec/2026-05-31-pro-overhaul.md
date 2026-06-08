@@ -91,6 +91,9 @@ Scenarios: `.tenet/spec/scenarios-2026-05-31-pro-overhaul.md`
 | `settings_alerts` | json | 신발 교체 알림 on/off + 임계값 |
 | `goal_weekly_km` | number | 주간 거리 목표 |
 | `goal_streak` | json | 스트릭 계산 캐시 |
+| `body_weight_kg` | number | **(이미 존재, 커밋 712ac9a)** 사용자 체중 — Slice 6 마모 weightFactor=weightKg/70 클램프[0.8,1.6]로 재사용. 기본 65. (신규 키 추가 안 함) |
+| `surface_<runId>` | 'road'\|'trail'\|'track'\|'treadmill' | (Slice 6) 런별 노면 태그(선택). 미설정 시 road |
+| `notif_settings` | json | (Slice 8) 알림 on/off·리마인더 시각·종류별 토글 |
 | (기존 유지) `route_<id>`,`time_<id>`,`device_id`,`shoe_alert_date` | | 파괴 금지 |
 
 ## Design Direction
@@ -145,6 +148,11 @@ Scenarios: `.tenet/spec/scenarios-2026-05-31-pro-overhaul.md`
 14. 화면 내 하드코딩 색상/폰트 0(theme 토큰만 사용), 전 화면 일관된 간격/타이포 스케일.
 15. 전 화면 시각 완성도 상향(NRC/Strava 대비 손색없는 마감), shoe-first 요소가 시각적 주인공.
 
+차별점 심화(Slice 6):
+19. `lib/wearModel.effectiveWearKm`가 체중·노면·페이스·폼경과월 보정을 적용(단위 테스트: 동일 거리라도 체중↑/트레일/세월↑ 시 실효마모↑, 미설정 시 기준 1.0·road). 음수·NaN 없음, 데이터 파괴 0.
+20. `lib/replacementForecast.forecastReplacement`가 최근 28일 실효율로 weeksRemaining·etaISO·confidence 반환(단위 테스트: 잔여≤0→'지금 교체', 최근주행0→'기록 없음', 런≥3→high). 
+21. 신발 상세에 실효 마모/권장 + 교체 예측 라인 렌더, 홈 교체임박 카드에 ETA 반영(행동 테스트). 체중 설정(ProfileScreen)·런 노면 태그가 영속되고 모델에 반영. 신규 모듈 라인 커버리지 ≥60%.
+
 전역(iron law):
 16. `npx tsc --noEmit`, `npm run lint`, `npm test` 모두 통과.
 17. 사용자 데이터(신발·런 기록) 파괴적 변경 없음(heart_rate 등 기존 필드 보존, 표시만 숨김).
@@ -169,13 +177,15 @@ Scenarios: `.tenet/spec/scenarios-2026-05-31-pro-overhaul.md`
 - 소셜/리더보드/친구(NRC식 커뮤니티) — 이번 범위 아님.
 - GPX/CSV·이미지 카드 내보내기 — 1차는 텍스트 공유, 확장 후보.
 - 백엔드 대규모 스키마 변경 — 가능한 기존 엔드포인트/로컬 저장으로 처리.
-- **수익화(신발 교체 제휴/어필리에이트) — Phase 2 로드맵.** 이번 3-slice는 코어에 집중. 단 추천 엔진 토대가 될 시드DB·내구도 로직은 Slice 1~2에서 구축.
-- 계정 로그인·멀티디바이스 동기, 런타입별 기본신발, 공유카드 — Phase 2.
+- ~~수익화(신발 교체 제휴/어필리에이트)~~ → **Phase 3 Slice 7로 진행**(2026-06-03). 시드DB·내구도 로직 토대 위에 추천+어필리에이트.
+- ~~OS 푸시 알림~~ → **Phase 3 Slice 8로 진행**(FCM). 헬스 연동·관측성·스토어 준비는 Slice 9.
+- 계정 로그인·멀티디바이스 동기는 Phase 2(Slice 5)에서 완료. 런타입별 기본신발은 범위 외 유지.
+- **Phase 3 잔여 범위 외**: 노면 자동감지(수동 태그만), 서버측 푸시 캠페인, 실시간 가격 조회, 애플워치/HealthKit 실연동(Mac 필요), 실제 스토어 심사 제출(사용자), 네이티브 앱 표시명/패키지 rename(danger zone, 사용자 승인 별건).
 - **백그라운드 트래킹은 이번 범위에 포함**(Slice 1, AndroidManifest 포그라운드 서비스 권한 추가 — 사용자 승인).
 
 ## Slice plan
 
-Total slices: 5 (코어 1–3 완료 · Phase 2로 4–5 추가, 2026-06-03)
+Total slices: 9 (코어 1–3 완료 · Phase 2로 4–5 완료 · Phase 3로 6–9 추가, 2026-06-03)
 
 ### Slice 1: 핵심 러닝 엔진 정밀화 + 신뢰성 (감사 P0 전부 포함 — 사용자 승인)
 - **Adds (정확도)**: GPS 정확도 기반 fix 필터(accuracy>20m 거부)·워밍업(첫 3 fix)·속도 이상치 게이트(>12m/s), **거리 하한 게이트 완화(3m→~1m, 일반 페이스 과소집계 수정, audit#5)**, 자동 일시정지 버그 수정(정지 감지 트리거 연결 + pausedMs guard, audit#4), 케이던스 알고리즘 개선(초기 윈도우·spm 정규화).
@@ -234,6 +244,44 @@ Total slices: 5 (코어 1–3 완료 · Phase 2로 4–5 추가, 2026-06-03)
   - **실검증 가능**: 사용자가 **가민 워치 보유** → 브로드캐스트 모드로 실기기 end-to-end 심박 검증 가능(스트랩 불요).
 - **검증 한계**: 텐넷은 코드+모킹 단위/통합까지. Firebase 실연동·로그인 플로우는 사용자 실기기 확인. BLE는 사용자 가민 워치로 실검증. gradle 빌드는 오케스트레이터가 에뮬레이터로 1차 확인.
 - **Out of slice**: 소셜/리더보드, OS 푸시, 수익화 제휴, **애플워치/HealthKit 심박**.
+
+## Phase 3 착수 (2026-06-03, 사용자 승인 — "다 하자, 순서는 네가 정해")
+
+Slice 1~5 + 카카오/네이버 로그인 완료 후 사용자가 추가 발전을 요청. 에이전트가 가치×차별점·의존성·리스크 기준으로 슬라이스 순서를 정해 플랜 체크포인트에서 승인받음(steer 04efe64c). 순서: ⑥차별점 심화(순수로직) → ⑦수익화(⑥ 의존) → ⑧리텐션(네이티브 푸시) → ⑨출시준비(헤비 네이티브/플랫폼). delivery_mode=agile 유지(슬라이스별 use-checkpoint).
+
+### Slice 6: 차별점 심화 — 진짜 마모 모델 + 교체 예측 (순수 lib, 네이티브 0)
+- **Adds (실효 마모 모델)**: `lib/wearModel.ts` 순수함수 — 단순 누적 km가 아니라 **체중·노면·페이스 강도·폼 경과시간** 보정 "실효 마모 km". 계수 근거=`.tenet/knowledge/2026-06-03_research-shoe-wear-factors.md`(휴리스틱, '추정' 명시). weightFactor=weight_kg/70 클램프[0.8,1.6](미입력 1.0), surfaceFactor(treadmill .85/track .9/road 1.0/trail 1.15, 기본 road), paceFactor(easy/normal 1.0/tempo 1.05/race 1.1, 페이스서 자동도출), ageWearKm=경과월×(target_km/24). `effectiveWearKm(shoe, runs, opts)` + per-run `runEffectiveWear`.
+- **Adds (교체 예측)**: `lib/replacementForecast.ts` 순수함수 — 최근 28일 실효 주행률로 **"약 N주 후 교체 권장 · 예상 M월 D일"** 예측(`forecastReplacement` → {weeksRemaining,kmRemaining,etaISO,confidence}). 엣지: 최근주행0→'최근 기록 없음', 잔여≤0→'지금 교체 권장', confidence=최근4주 런≥3이면 high.
+- **Adds (UI, 기존 토큰화 화면에 추가)**: 신발 상세에 "실효 마모 XXXkm / 권장 YYYkm" + 교체 예측 라인(keep-going 보이스). 홈 교체임박 카드에 예측 ETA 반영. 체중은 **이미 존재하는 `settings.weightKg`(body_weight_kg, 기본65) 재사용**(신규 입력 UI 불필요, 이미 ProfileScreen에 있음). 런 노면 태그(선택, 런 편집/수동입력에 노면 선택, 기본 road, AsyncStorage `surface_<runId>`) — 미설정 시 전부 road로 동작(차단 아님).
+- **Bundled with**: 마모/예측 순수함수 단위테스트(계수·엣지·forecast, ≥1 크리티컬 패스 + 라인커버리지 ≥60%), 신발상세/홈 행동 테스트(예측 라인·체중 반영 렌더), 체중/노면 AsyncStorage 영속 유틸.
+- **User can**: 신발 상세에서 단순 km가 아닌 체중·노면·세월을 반영한 "진짜 마모도"와 "이 페이스면 약 N주 후 교체 권장"을 보고, 부상 전에 미리 교체를 계획한다. shoe-first 차별점이 데이터로 증명됨.
+- **Out of slice**: 어필리에이트 추천(Slice 7, 이 예측을 트리거로 사용), 푸시 알림(Slice 8), 노면 자동감지(수동 태그만).
+- **iron law**: 순수 lib·네이티브 0·백엔드 스키마 변경 0(체중/노면 로컬), 데이터 파괴 금지, tsc/lint/test green, 다크+오렌지 유지.
+
+### Slice 7: 수익화 — 교체 시점 어필리에이트 신발 추천
+> **현황(2026-06-04 발견)**: 커밋 3703b9c로 **이미 대부분 구현됨** — `lib/affiliate.ts`(recommendNextShoes·buildShopLinks·AFFILIATE_DISCLOSURE), `lib/shoeRecommend.ts`. Slice 7 착수 시 **재구축 금지, 감사·갭보완**으로 전환(Slice 6 forecast를 추천 트리거로 연결됐는지, 투명성 고지·파트너 태그 레포밖 여부, 테스트 충분성 확인).
+- **Adds (잔여)**: `lib/shoeRecommender.ts` 순수함수 — 교체임박/은퇴 신발의 카테고리·용도 기반으로 시드DB(134모델)에서 **후속 러닝화 추천**(같은 카테고리 우선 + 권장수명/평점 고려, 추천 이유 문구). 교체임박(Slice 6 forecast) 시 신발상세/홈에 "다음 러닝화" 추천 카드. **어필리에이트 링크**(쿠팡파트너스/무신사/29CM — 링크 빌더 `lib/affiliate.ts`, 파트너 태그는 socialConfig 패턴으로 레포 밖). 투명성 고지("제휴 링크" 라벨), 배너광고 0.
+- **Bundled with**: 추천/링크 순수함수 테스트, 추천카드 행동 테스트(교체임박 시만 노출·링크 openURL 호출), 시드DB 카테고리 매핑 보강.
+- **User can**: 신발이 닳아갈 때 "다음엔 이 신발 어때요?" 맞춤 추천을 받고, 탭 한 번에 구매처로 이동한다(러너 최선 우선·투명).
+- **Out of slice**: 푸시로 추천 전달(Slice 8), 가격 실시간 조회/딥링크 자동화, 배너광고.
+- **iron law**: 커미션보다 러너 최선·투명성, 파트너 태그 시크릿 레포 밖, 네이티브 0(Linking은 RN 내장), tsc/lint/test green.
+
+### Slice 8: 리텐션 — 푸시 알림 + 주간/월간 리캡 (네이티브: FCM)
+- **Adds (푸시)**: Firebase Cloud Messaging(@react-native-firebase/messaging) 네이티브 통합 + 알림 권한(POST_NOTIFICATIONS) + 로컬 알림 스케줄링. 알림: **신발 교체임박**(Slice 6 forecast), **주간목표 진척**(예: 금요일 "목표 70%"), **러닝 리마인더**(설정 가능, 끄기 가능). 순수 스케줄 결정 로직 `lib/notifications.ts`.
+- **Adds (리캡)**: `lib/recap.ts` 순수함수 — 주간/월간 요약(총거리·런수·평균페이스·최다착용 신발·신발별 마모·PR) + 공유카드(svg toDataURL 확장, Slice 4 패턴 재사용). ProfileScreen/홈에 리캡 진입.
+- **Bundled with**: 알림 스케줄·리캡 순수함수 테스트, FCM 모킹(jest.setup), 알림 설정 영속(AsyncStorage), 권한 graceful(거부 시 비차단). 오케스트레이터 gradle 빌드 검증(에뮬레이터).
+- **User can**: 신발 교체·목표·러닝 리마인더 푸시를 받고, 주간/월간 러닝 리캡을 보고 공유한다 → 재방문/지속 동기.
+- **Out of slice**: 서버측 푸시 캠페인(클라이언트 로컬/FCM 토픽만), 소셜 비교.
+- **iron law**: 네이티브 최소·실기기 테스트 동반(사용자), 데이터 파괴 금지, tsc/lint/test green, 빌드 깨지면 머지 금지.
+
+### Slice 9: 출시 준비도 — 헬스 연동 + 관측성 + 스토어
+- **Adds (헬스)**: Android **Health Connect** 연동(러닝 기록 read/write 옵션) — 러너 기대 기본기. iOS Apple Health는 코드 호환만(빌드 추후 Mac).
+- **Adds (관측성)**: Crashlytics(@react-native-firebase/crashlytics) + Analytics(핵심 이벤트: 런 시작/완료/신발 추가/추천 탭) — 출시 후 품질·행동 가시성.
+- **Adds (스토어)**: iOS 빌드 셋업 점검, Play Store 등록물(개인정보처리방침 문서, 앱 아이콘·피처 그래픽·스크린샷 체크리스트). 네이티브 앱 표시명/패키지 rename은 danger zone — 영향 확인 후 사용자 승인 시만.
+- **Bundled with**: 헬스/관측성 래퍼 순수 로직 테스트 + 모킹, 권한 graceful, 오케스트레이터 gradle 빌드 검증.
+- **User can**: 러닝 기록이 Health Connect와 동기되고, 앱이 크래시/사용 지표를 수집하며, 스토어 출시에 필요한 등록물이 준비된 상태가 된다.
+- **Out of slice**: 실제 스토어 심사 제출(사용자), 네이티브 rename(사용자 승인 별건), 애플워치/HealthKit 실연동(Mac 필요).
+- **iron law**: 헤비 네이티브 신중·테스트 동반, 데이터 파괴 금지, 시크릿(google-services/서비스계정) 레포 밖, tsc/lint/test green.
 
 ## Redirect at slice 5 (2026-06-03) — HR 소스·기기 가용성 확정
 사용자 피드백: (1) Firebase = 네이티브 @react-native-firebase 채택, 순서 Firebase→BLE. (2) "가민워치/애플워치로도 되냐?" → HR 소스를 표준 BLE HR 프로파일(0x180D)로 설계: 가민 브로드캐스트 모드 지원(○), 애플워치 미지원(×, 범위 밖). (3) 사용자 가민 워치 보유 → BLE 실검증 가능. (4) 에뮬레이터/기기 구동 가능.

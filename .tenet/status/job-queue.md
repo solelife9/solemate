@@ -1,6 +1,6 @@
 # Job Queue
 
-Updated: 2026-06-03T05:47:03.726Z
+Updated: 2026-06-08T12:14:55.340Z
 
 - [x] eval-mptta2gb — 37s
 - [x] eval-mptu16xl — 27s
@@ -273,3 +273,33 @@ Updated: 2026-06-03T05:47:03.726Z
 - [x] code_critic for 6011d992 — 2m 26s
 - [x] test_critic for 6011d992 — 1m 36s
 - [x] playwright_eval for 6011d992 — 2m 37s
+- [x] eval-mpy6ym7n — 43s
+- [x] 실효 마모 모델 (lib/wearModel) (slice-6-wear-model) — 3m 56s
+- [x] 교체 예측 (lib/replacementForecast) (slice-6-forecast) — 2m 45s
+- [x] 신발상세·홈 교체예측 UI + 노면 태그 (slice-6-ui) — 16m 31s
+- [x] 통합검증: Slice 6 (마모모델+교체예측) (slice-6-e2e) — 1m 49s
+- [x] code_critic for b7b9cdcb — 2m 6s
+- [x] test_critic for b7b9cdcb — 1m 33s
+- [x] playwright_eval for b7b9cdcb — 1m 30s
+- [x] code_critic for 99d0f58f — 1m 49s
+- [x] test_critic for 99d0f58f — 1m 48s
+- [x] playwright_eval for 99d0f58f — 58s
+- [x] code_critic for 99d0f58f — 1m 52s
+- [x] test_critic for 99d0f58f — 1m 19s
+- [x] playwright_eval for 99d0f58f — 1m 14s
+- [x] code_critic for 1b23e96c — 5m 35s
+- [x] test_critic for 1b23e96c — 2m 37s
+- [x] playwright_eval for 1b23e96c — 2m 7s
+- [x] 쇼핑 링크 확장 (무신사·29CM) (slice-7-shoplinks) — 1m 5s
+- [x] 추천 트리거 forecast 연결 (slice-7-trigger) — 2m 16s
+- [x] 신발 상세 추천 카드 (slice-7-detail-card) — 5m 13s
+- [x] 통합검증: Slice 7 (수익화) (slice-7-e2e) — 1m 38s
+- [x] code_critic for 899c7af6 — 50s
+- [x] test_critic for 899c7af6 — 1m 22s
+- [x] playwright_eval for 899c7af6 — 58s
+- [x] code_critic for edc1d130 — 1m 52s
+- [x] test_critic for edc1d130 — 1m 27s
+- [x] playwright_eval for edc1d130 — 2m 26s
+- [x] code_critic for a8812b82 — 2m 6s
+- [x] test_critic for a8812b82 — 1m 50s
+- [x] playwright_eval for a8812b82 — 1m 44s

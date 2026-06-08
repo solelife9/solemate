@@ -178,3 +178,150 @@ Firebase 부분(synclogic/native/ui/e2e) 완료 후, 실 Google 네이티브 로
 - webClientId 출처: google-services.json `client[].oauth_client[client_type==3].client_id` 또는 R.string.default_web_client_id. 코드에 평문 하드코딩 금지.
 
 검증: 코드+모킹은 텐넷, 실 Google 로그인→Firestore 동기는 사용자 실기기(SHA-1 등록+json 갱신 후). Metro/gradle/run-android 는 오케스트레이터.
+
+---
+
+## Slice 6 (Phase 3): 진짜 마모 모델 + 교체 예측
+
+순수 lib(네이티브 0). 계수 근거 = `.tenet/knowledge/2026-06-03_research-shoe-wear-factors.md`(휴리스틱, '추정' 톤). 기존 자산 재사용: `lib/shoe.ts`(shoeHealth·usedKm·DEFAULT_MAX_KM), `data/shoeModels.ts`(categoryLifespanKm·DEFAULT_LIFESPAN_KM=700), `lib/settings.ts`(weightKg/body_weight_kg 기본65 — 신규 키 추가 금지), `lib/format.ts`. 원본 데이터(total_km/distance_km) 불변 — 실효마모는 파생 표시값.
+
+```
+slice-6-wear-model ──> slice-6-forecast ──> slice-6-ui ──> slice-6-e2e (report_only)
+```
+
+### Jobs
+
+- **slice-6-wear-model** (dev, deps: 없음): `lib/wearModel.ts` 순수함수 신설.
+  - `runEffectiveWear(run, opts)` = `distance_km × surfaceFactor(surface) × paceFactor(paceSecPerKm)`. surfaceFactor: treadmill .85 / track .9 / road 1.0(기본) / trail 1.15. paceFactor: paceSecPerKm≥360→1.0(easy), 300–360→1.0(normal), 240–300→1.05(tempo), <240→1.10(race); pace 결측/0 → 1.0. pace 는 run.duration_s/run.distance_km 에서 도출(있으면), 없으면 1.0.
+  - `effectiveWearKm(shoe, runs, opts)` = Σ runEffectiveWear × `weightFactor(opts.weightKg)` + `ageWearKm(shoe, now)`. weightFactor = clamp(weightKg/70, 0.8, 1.6); weightKg 결측 → 1.0. ageWearKm = monthsOwned × (targetKm/24); monthsOwned 는 shoe.created_at/purchase_date 에서(결측 → 0, 음수 → 0). targetKm = shoe.target_km(유한·>0)이면 그것, 아니면 모델 category→categoryLifespanKm, 최종 DEFAULT_LIFESPAN_KM(700).
+  - `targetKmFor(shoe)` 헬퍼(위 폴백 규칙 단일화).
+  - 노면 영속 유틸: `lib/settings.ts`(또는 `lib/wearModel.ts`)에 `getRunSurface(runId)`/`setRunSurface(runId, surface)` (AsyncStorage `surface_<runId>`, 검증·기본 road). 순수 계산부와 분리(IO는 얇게).
+  - **엣지(A6-2)**: NaN/Infinity/음수 절대 금지 — 모든 결측·0·음수 입력에 graceful 기본값. 빈 runs → ageWearKm만. targetKm=0 → DEFAULT 사용.
+  - 테스트(`__tests__` 또는 `lib/__tests__`): S6-1(체중85>70 실효↑, 미설정 1.0), S6-2(trail>road, race>easy, 노면 미태그=road), S6-3(저주행+오래됨→ageWearKm 누적), A6-1(원본 불변), A6-2(엣지 무NaN). 라인 커버리지 ≥60%, 크리티컬 패스 ≥1.
+  - iron law: 순수·네이티브0·백엔드0·tsc/lint/test green. **기존 weightKg 재사용**(신규 체중 키/UI 금지).
+
+- **slice-6-forecast** (dev, deps: slice-6-wear-model): `lib/replacementForecast.ts` 순수함수 신설.
+  - `forecastReplacement(shoe, runs, opts={weightKg, now, surfaceOf?})` → `{ kmRemaining, weeksRemaining|null, etaISO|null, confidence:'high'|'low', reason:'ok'|'overdue'|'no_recent' }`.
+  - kmRemaining = targetKmFor(shoe) − effectiveWearKm(...). remaining≤0 → reason'overdue'(weeks=0, eta=now). 최근28일 실효주행 합=0 → reason'no_recent'(weeks/eta=null). 그 외: recentRatePerWeek = (최근28일 실효km)/4; agePerWeek = (targetKm/24)/4.345; weeksRemaining = kmRemaining/(recentRatePerWeek+agePerWeek); etaISO = now + weeks. confidence = 최근28일 런수≥3 ? 'high' : 'low'.
+  - effectiveWearKm·targetKmFor·runEffectiveWear 는 wearModel 에서 import(중복 구현 금지).
+  - 테스트: S6-4(정상 forecast weeks·eta·confidence, overdue, no_recent), A6-2(엣지 무NaN/음수), A6-3(추정 톤은 UI 책임이나 함수는 null 명확 반환).
+  - iron law 동일.
+
+- **slice-6-ui** (dev, deps: slice-6-forecast): 기존 토큰화 화면에 표시 추가(레이아웃 신설 최소, theme 토큰만).
+  - **신발 상세(ShoesScreen.rn.tsx 의 상세/확장 영역)**: "실효 마모 {effective}km / 권장 {target}km" + 교체 예측 라인 — reason별 카피(keep-going·추정 톤): ok="이 페이스면 약 {N}주 후 교체 권장 · 예상 {M월 D일}", overdue="지금 교체하면 부상 없이 계속 달릴 수 있어요", no_recent="최근 기록이 없어 예측할 수 없어요". '약'/'예상' 추정 톤 필수(A6-3).
+  - **홈(HomeScreen.rn.tsx) 교체임박 카드**: 기존 교체 경고/배지에 forecast ETA 한 줄 보강(있을 때).
+  - **런 노면 태그**: 런 편집/수동입력 경로(App.runedit 관련 — 실제 위치는 코드서 확인)에 노면 선택(road/trail/track/treadmill, 기본 road) → setRunSurface 영속. 선택 UI는 토큰화 컴포넌트(칩/세그먼트).
+  - 체중은 ProfileScreen 기존 설정 재사용(여기서 추가 입력 UI 만들지 말 것). UI는 settings.weightKg 를 읽어 wearModel/forecast opts 로 전달.
+  - 행동 테스트(react-test-renderer, props-driven, 백엔드 호출 없이, 기존 jest.setup 모킹): 신발 상세에 예측 라인 텍스트 렌더(ok/overdue/no_recent 분기), 홈 카드 ETA 렌더, 체중 변경이 실효마모 표시에 반영, 노면 선택 press→setRunSurface 호출. (steer 8992e6cc: 토큰화 정적스캔만으론 test_critic 불충분 — 행동 단언 필수.)
+  - iron law: theme 토큰만(하드코딩 색/폰트 0), 데이터 파괴 0, 네이티브 0, 다크+오렌지 유지, tsc/lint/test green.
+
+- **slice-6-e2e** (integration_test, report_only, deps: slice-6-ui): `npx tsc --noEmit` + `npm run lint` + `npm test` green 확인, Slice 6 시나리오(S6-1..S6-5 + A6-1..A6-4) 커버리지 확인(wearModel/forecast 단위 + 신발상세/홈 행동 테스트 존재·통과), 기존 신발/런/설정 AsyncStorage 키 보존, 원본 total_km/distance_km 불변 확인. 코드 수정 금지(report-only), 차단결함은 `tenet_report_blocking_finding`.
+
+### Interface Contracts (dev 잡 준수)
+- `lib/wearModel.ts`: `runEffectiveWear(run:RunLike, opts?:{surface?:Surface}):number`; `effectiveWearKm(shoe:ShoeLike, runs:RunLike[], opts?:{weightKg?:number, now?:Date, surfaceOf?:(runId)=>Surface}):number`; `targetKmFor(shoe:ShoeLike):number`; `ageWearKm(shoe:ShoeLike, now?:Date):number`; `type Surface='road'|'trail'|'track'|'treadmill'`. RunLike/ShoeLike 는 lib/shoe.ts 타입 재사용/확장.
+- `lib/replacementForecast.ts`: `forecastReplacement(shoe, runs, opts?):ReplacementForecast` (위 반환형). wearModel 함수 import.
+- 노면 IO: `getRunSurface(runId:string):Promise<Surface>` / `setRunSurface(runId:string, s:Surface):Promise<void>` (AsyncStorage `surface_<runId>`, 기본 road).
+- 체중: `lib/settings.ts` 기존 `weightKg`(K_WEIGHT='body_weight_kg', 기본 DEFAULT_WEIGHT_KG=65) 재사용. 신규 키 금지.
+
+수용 테스트 컨벤션: 이 레포는 Slice 1~5와 동일하게 **dev 잡이 co-located 테스트(`__tests__/*.test.tsx`, `lib` 단위 테스트)를 직접 작성**하고 slice-6-e2e 가 `npm test` 스위프로 검증한다(별도 tests/acceptance 스텁 미사용 — 미존재 모듈 import 가 tsc strict 를 깨 동시 잡 eval 을 오염시키므로). 각 dev 잡 프롬프트에 담당 시나리오(S6-x/A6-x)를 명시함.
+
+---
+
+## Slice 7 (Phase 3): 수익화 — 교체 시점 어필리에이트 신발 추천 (감사·갭보완)
+
+> **현황(2026-06-04 감사 완료)**: Slice 7 핵심은 커밋 3703b9c로 **약 70% 이미 구현됨** — `lib/affiliate.ts`(`recommendNextShoes`·`buildShopLinks`[쿠팡+네이버]·`categoryLabelKo`·`AFFILIATE_DISCLOSURE`), `HomeScreen.rn.tsx`의 `NextShoeCard`(condition==='교체' 시 노출·`Linking.openURL` 동작), `__tests__/lib/affiliate.test.ts`·`__tests__/HomeScreen.nextShoe.test.tsx`, `data/shoeModels.ts` 134모델 7카테고리 매핑. **시크릿 0**(AFFILIATE 태그는 빈 기본값 주입 지점, buildShopLinks 는 빈 값이면 순수 검색 URL). → **재구축 금지, 아래 4개 갭만 보완.**
+
+스펙 대비 실제 갭: (1) 추천 카드가 홈에만 있고 **신발 상세(ShoesScreen)엔 없음**(스펙='신발상세/홈'), (2) 추천 트리거가 `condition==='교체'`(percent 90%) 기반이고 **Slice 6 forecast(교체임박/overdue) 미연결**(스펙='교체임박(Slice 6 forecast) 시'), (3) 쇼핑 링크가 **쿠팡+네이버만, 무신사/29CM 미포함**(스펙=쿠팡파트너스/무신사/29CM), (4) 위 항목 테스트.
+
+> **직렬 체인**: 화면 파일(HomeScreen·ShoesScreen) 공유 충돌 방지 + lib 헬퍼 선구현 위해 선형 의존.
+
+### ASCII DAG
+
+```
+slice-7-shoplinks → slice-7-trigger → slice-7-detail-card → slice-7-e2e (report_only)
+  (lib/affiliate     (forecast 트리거    (ShoesScreen 신발상세    (tsc/lint/test +
+   무신사/29CM 확장)   헬퍼 + 홈 재배선)    추천 카드)              S7 커버리지·시크릿0)
+```
+
+### Jobs
+
+- **slice-7-shoplinks** (dev, deps []): `lib/affiliate.ts` 의 `buildShopLinks` 를 **무신사·29CM 검색 링크 추가**로 확장(재구축 금지 — 기존 쿠팡/네이버 항목·정렬·시그니처 보존). 무신사 `https://www.musinsa.com/search/musinsa/integration?q={q}`, 29CM `https://www.29cm.co.kr/search?keyword={q}` (q=encodeURIComponent). `AFFILIATE` 주입 객체에 `musinsa:''`·`twentyninecm:''` 추가(빈 기본값·시크릿 0, 태그 있으면 그때만 쿼리 부착, 빈 값이면 순수 검색 URL). `__tests__/lib/affiliate.test.ts` 확장: 4개 쇼핑몰 링크 생성·URL 인코딩·**AFFILIATE 빈 값 시 태그 미부착(시크릿 0)** 단언. iron law: 순수·네이티브0·tsc/lint/test green.
+
+- **slice-7-trigger** (dev, deps slice-7-shoplinks): 추천 노출 트리거를 **Slice 6 forecast 에 연결**. `lib/affiliate.ts`(또는 신규 `lib/recommendTrigger.ts`)에 순수 헬퍼 `shouldRecommendNextShoe(forecast: ReplacementForecast): boolean` 신설 — `forecast.reason==='overdue'` 또는 교체임박(`reason==='ok'` && `weeksRemaining!=null` && `weeksRemaining <= REPLACE_SOON_WEEKS`(예 3)) 시 true, `no_recent`/여유 충분 시 false. `lib/replacementForecast.ts` 의 `forecastReplacement` 결과를 입력으로(중복 계산 금지·import 재사용). `HomeScreen.rn.tsx` 의 `NextShoeCard` 노출 조건을 기존 `active.condition==='교체'` 에서 이 헬퍼(App 이 주입하는 forecast 기반)로 전환 — **단 기존 percent 기반도 폴백 보존**(forecast 없을 때 회귀 방지). 단위 테스트(overdue·임박·여유·no_recent 분기) + 홈 행동 테스트(forecast overdue/임박 시 카드 노출, 여유 시 숨김). iron law: 데이터 파괴0·네이티브0·tsc/lint/test green.
+
+- **slice-7-detail-card** (dev, deps slice-7-trigger): **신발 상세(ShoesScreen.rn.tsx)에 '다음 러닝화' 추천 카드 추가**(현재 홈에만 존재). `recommendNextShoes`·`buildShopLinks`·`AFFILIATE_DISCLOSURE`·`categoryLabelKo` 재사용(재구현 금지), `shouldRecommendNextShoe`(slice-7-trigger) 로 교체임박 신발에서만 노출. 카드: 추천 모델 3개(브랜드·모델·카테고리 라벨) + 4개 쇼핑몰 버튼(press→`Linking.openURL`) + `AFFILIATE_DISCLOSURE` 고지. theme 토큰만(하드코딩 색/폰트0·다크#000+오렌지#FF6500). 행동 테스트(교체임박 신발 상세→카드 렌더·추천모델 텍스트·링크 press→openURL 호출, 여유 신발→미노출). iron law: 네이티브0·데이터 파괴0·tsc/lint/test green.
+
+- **slice-7-e2e** (integration_test, report_only, deps slice-7-detail-card): `npx tsc --noEmit` + `npm run lint` + `npm test` green 확인, Slice 7 커버리지 확인(affiliate 단위 + 홈/신발상세 추천카드 행동 테스트 존재·통과, 4개 쇼핑몰 링크, forecast 트리거 연결), **시크릿 0 확인**(`lib/affiliate.ts` 의 AFFILIATE 객체 전부 빈 기본값·평문 태그 미커밋), 네이티브/백엔드 변경 0, 데이터 파괴 0(추천은 읽기 전용 파생). 코드 수정 금지(report-only), 차단결함은 `tenet_report_blocking_finding`.
+
+### Interface Contracts (dev 잡 준수)
+- `lib/affiliate.ts`: 기존 `recommendNextShoes`/`AFFILIATE_DISCLOSURE`/`categoryLabelKo` 보존. `buildShopLinks(m:{brand,model}):ShopLink[]` 는 4개 항목(쿠팡·네이버쇼핑·무신사·29CM) 반환으로 확장. `AFFILIATE:{coupang,naver,musinsa,twentyninecm}` 전부 빈 문자열 기본(시크릿 0).
+- 트리거 헬퍼: `shouldRecommendNextShoe(forecast:ReplacementForecast):boolean` (overdue 또는 weeksRemaining≤REPLACE_SOON_WEEKS). forecast 는 `lib/replacementForecast.ts` 의 `forecastReplacement` 산출물 재사용.
+- 추천 카드는 홈·신발상세 **공통 트리거**(shouldRecommendNextShoe) + 공통 빌더(recommendNextShoes/buildShopLinks) 사용 — 두 화면 동작 일치.
+
+수용 테스트 컨벤션: Slice 6 과 동일(dev 잡 co-located 테스트 직접 작성, slice-7-e2e 가 `npm test` 스위프 검증). 통과 시 Slice 7 done → use-checkpoint(실기기에서 교체임박 신발의 추천 카드·쇼핑몰 열기 확인). 실제 제휴 파트너 태그(쿠팡파트너스/무신사/29CM ID)는 **코드 불요·사용자가 레포밖에서 AFFILIATE 에 주입**(없으면 순수 검색 링크로 동작).
+
+---
+
+## Slice 8 (Phase 3): 리텐션 — 푸시 알림(FCM) + 주간/월간 리캡 (2026-06-09 use-checkpoint approve)
+
+네이티브 포함 슬라이스(FCM messaging). **위험 격리 전략**: 순수 lib(notifications·recap)를 먼저 착지(네이티브 0·완전 테스트 가능)시키고, 위험한 네이티브 FCM 잡을 격리한 뒤, UI 잡을 마지막에. 기존 자산 재사용: `lib/replacementForecast.ts`(forecast·shouldRecommendNextShoe), `lib/goals.ts`(weeklyProgress·currentStreak·personalRecords), `lib/stats.ts`(summaryOf·sumKm·avgPaceLabel), `lib/wearModel.ts`(effectiveWearKm), `lib/shareCard.ts`(captureCardDataUrl·shareRunCard — svg toDataURL, Slice 4 패턴), `lib/settings.ts`(기존 `AlertSettings`/`K_ALERTS` 인앱배지는 **보존**, 푸시용 `notif_settings`는 신규 키). `@react-native-firebase/app/auth/firestore` 24.0.0 이미 존재.
+
+> **직렬 체인 근거**: notif-ui·recap-ui 가 둘 다 ProfileScreen 을 만지고, fcm-native·notif-ui 가 App.tsx 를 만질 수 있어 화면/부트 파일 충돌 방지로 선형화. 순수 lib 두 개(notif-logic·recap-logic)만 시작점에서 병렬.
+
+### ASCII DAG
+
+```
+slice-8-notif-logic ──> slice-8-fcm-native ──> slice-8-notif-ui ──┐
+  (lib/notifications     (messaging 통합·권한·     (ProfileScreen 알림     │
+   순수 결정+설정IO)       jest mock·gradle검증)     설정·권한·App배선)      ├──> slice-8-e2e
+                                                                  │     (report_only)
+slice-8-recap-logic ──────────────────────────> slice-8-recap-ui ┘
+  (lib/recap 순수 요약)                            (리캡 보기+공유카드)
+```
+
+### Jobs
+
+- **slice-8-notif-logic** (dev, deps []): `lib/notifications.ts` 순수 결정 로직 + 설정 IO(네이티브 0).
+  - `dueNotifications(state, now): NotificationIntent[]` — state = `{ shoesWithForecast:{shoe, forecast}[], weekly:WeeklyProgress, lastRunISO:string|null, settings:NotifSettings }`. 반환 의도 타입: `'shoe_replacement'`(forecast `reason==='overdue'` 또는 임박[shouldRecommendNextShoe]인 신발마다·신발명 포함), `'weekly_goal'`(now가 금요일 이후이고 weekly.percent<100일 때 진척 안내), `'run_reminder'`(settings.reminderTime 시각이고 오늘 런 없음[lastRunISO≠오늘]일 때). 각 타입은 `settings`의 해당 토글이 off면 제외(끄기 가능). 각 Intent = `{ type, title, body, key }`(key=중복 방지용 안정 식별자, 같은 날 같은 종류 1회).
+  - 설정 타입·IO: `NotifSettings = { shoeReplacement:boolean, weeklyGoal:boolean, runReminder:boolean, reminderTime:string('HH:MM') }`, `DEFAULT_NOTIF_SETTINGS`(전부 true, reminderTime 예 '19:00'). `getNotifSettings():Promise<NotifSettings>`/`setNotifSettings(s):Promise<void>`(AsyncStorage `notif_settings` json, 검증·결측 graceful 기본값). 순수 계산부와 IO 분리(IO 얇게). **기존 `K_ALERTS`/`AlertSettings`(인앱 배지) 건드리지 말 것 — 신규 키 `notif_settings`만 추가**(A8-1).
+  - forecast/임박 판단은 `lib/replacementForecast.ts`(`forecastReplacement`·`shouldRecommendNextShoe`) import 재사용(중복 계산 금지). weekly 는 `lib/goals.ts` `weeklyProgress` 산출물 입력으로 받음.
+  - **엣지(A8-5/A4식 graceful)**: 신발 0·런 0·lastRunISO null·forecast no_recent 에서 빈 목록 반환, NaN/예외 없음. 같은 알림 중복 금지(key 안정·당일 1회, A8-4).
+  - 테스트(`lib/__tests__` 또는 `__tests__`): S8-1(각 타입 트리거/비트리거), S8-2(토글 off→제외), A8-4(중복 키 1회), A8-5(엣지 빈 목록). 라인 커버리지 ≥60%, 크리티컬 패스 ≥1.
+  - iron law: 순수·네이티브0·백엔드0·tsc/lint/test green. 시크릿 0.
+
+- **slice-8-recap-logic** (dev, deps []): `lib/recap.ts` 순수 요약(네이티브 0).
+  - `weeklyRecap(runs, shoes, opts?)` / `monthlyRecap(runs, shoes, opts?)` → `Recap = { periodLabel:string, totalKm:number, runCount:number, avgPaceLabel:string, mostWornShoe:{name,km}|null, perShoeWear:{name,effectiveKm}[], prs:PersonalRecords, isEmpty:boolean }`. `lib/stats.ts`(summaryOf·sumKm·avgPaceLabel·durationLabel), `lib/goals.ts`(personalRecords), `lib/wearModel.ts`(effectiveWearKm — 신발별 실효마모) 재사용. 기간 필터(주=최근 월요일~, 월=해당 월) 순수 계산. now 는 opts 주입(테스트 결정성).
+  - **엣지(A8-5)**: 런 0개→isEmpty true·0값 graceful, mostWornShoe null, NaN/Infinity 0. 원본 데이터 불변(읽기 전용 파생).
+  - 테스트: S8-5(총거리·런수·평균페이스·최다착용·신발별마모·PR), A8-5(빈 데이터 graceful·무NaN), A8-1(원본 불변). 커버리지 ≥60%.
+  - iron law: 순수·네이티브0·tsc/lint/test green.
+
+- **slice-8-fcm-native** (dev, deps [slice-8-notif-logic]): `@react-native-firebase/messaging` 네이티브 통합 + 권한 + 얇은 RN 래퍼(`lib/pushMessaging.ts`).
+  - **착수 즉시 호환 확인(최우선, steer 31a3080c)**: `@react-native-firebase/messaging`를 기존 firebase 24.0.0(app/auth/firestore)·RN 0.85 와 **동일/호환 버전(24.0.0 권장)** 으로 추가. 통합 후 gradle/메트로/tsc/lint/test 를 green 으로 만들 수 없으면 **절대 깨진 네이티브 상태를 커밋하지 말 것** — 네이티브 변경(package.json·android)을 되돌려 빌드 원상복구하고 비호환 내용(버전·에러)을 `tenet_report_blocking_finding`/최종출력에 남기고 중단(A8-2, iron law).
+  - 통합 범위(최소): messaging 의존 추가 + Android POST_NOTIFICATIONS 권한 선언(AndroidManifest) + 권한 런타임 요청 헬퍼(거부 graceful·비차단, S8-3) + 포그라운드 메시지 핸들러/토큰 취득을 `lib/pushMessaging.ts`(네이티브 호출 격리·모킹 가능)로 래핑. **로컬 알림 표시**: `dueNotifications`(slice-8-notif-logic) 결과를 앱 포그라운드 진입 시 표시하는 경로를 래퍼에 둠. OS 타이머 기반 정밀 스케줄(notifee 등)은 **네이티브 최소 원칙상 이번 범위 밖** — 새 네이티브 스케줄 라이브러리 추가 금지(필요하다고 판단되면 임의 추가 말고 보고). google-services.json 등 시크릿은 레포 밖(A8-4).
+  - `jest.setup.js`(또는 after)에 `@react-native-firebase/messaging` 모킹 추가 — 단위/행동 테스트가 네이티브 없이 green.
+  - 테스트: pushMessaging 래퍼의 권한 거부 graceful(throw 안 함)·토큰/메시지 핸들러 모킹 동작. tsc/lint/test green.
+  - **오케스트레이터 추가 검증(eval 게이트 밖)**: 이 잡 완료 후 오케스트레이터가 별도로 `npx react-native run-android`(emulator-5554, ANDROID_HOME 설정됨)로 gradle 빌드+에뮬 설치 무결성을 확인한다. 깨지면 빌드 에러를 enhanced_prompt 로 retry(또는 비호환이면 되돌림 보고).
+  - iron law: 네이티브 최소·빌드 깨지면 머지 금지·데이터 파괴0·시크릿0·tsc/lint/test green.
+
+- **slice-8-notif-ui** (dev, deps [slice-8-fcm-native]): ProfileScreen 알림 설정 UI + 권한 흐름 + App 배선.
+  - ProfileScreen 설정 섹션에 **푸시 알림 설정**(기존 인앱 '알림' 행[배지 임계값]과 별개·공존): 종류별 토글 3개(교체임박/주간목표/러닝리마인더) + 리마인더 시각 선택, `getNotifSettings`/`setNotifSettings` 배선(S8-2). 권한 미허용 시 권한 요청 진입 + 거부 graceful 안내(비차단, S8-3).
+  - `App.tsx` 배선: 포그라운드 진입 시 `dueNotifications`(현재 신발 forecast·weekly·lastRun·settings 조합)를 계산해 `lib/pushMessaging.ts` 표시 경로로 전달. **기존 온보딩/부트 플로우(OnboardingScreen·ONBOARD_KEY)·신발 등록 경로와의 상호작용 인지**(steer f4ae2048) — 비차단·기존 흐름 보존.
+  - theme 토큰만(하드코딩 색/폰트0·다크#000+오렌지#FF6500). 행동 테스트(react-test-renderer, props-driven, jest.setup 모킹): 토글 press→`setNotifSettings` 올바른 인자 호출, 설정행이 실제 `notif_settings` 값 반영, 권한 거부 시 비차단(크래시 없음·나머지 동작). (steer 8992e6cc: 정적스캔만으론 test_critic 불충분 — 행동 단언 필수.)
+  - iron law: 데이터 파괴0(기존 `AlertSettings` 보존)·theme 토큰·tsc/lint/test green.
+
+- **slice-8-recap-ui** (dev, deps [slice-8-notif-ui, slice-8-recap-logic]): 리캡 보기 + 공유카드.
+  - ProfileScreen(또는 홈)에 **리캡 진입**(주간/월간 토글) → `weeklyRecap`/`monthlyRecap` 결과 렌더(총거리·런수·평균페이스·최다착용·PR). 빈 데이터 graceful 카피(keep-going 보이스, A8-5).
+  - **공유카드**: `lib/shareCard.ts` 의 svg toDataURL 패턴 재사용(Slice 4) — 리캡 요약 카드 SVG → `captureCardDataUrl`/`shareRunCard` 류로 공유. **새 네이티브 의존 추가 금지**(A8-3). 필요 시 `lib/shareCard.ts` 에 리캡용 빌더만 추가(기존 런카드 시그니처 보존).
+  - theme 토큰만(다크+오렌지). 행동 테스트: 리캡이 실데이터로 렌더(주/월 분기), 공유 press→공유 함수 호출, 빈 데이터 graceful 렌더.
+  - **주의**: notif-ui 와 같은 ProfileScreen 을 만지므로 deps 로 직렬화됨(충돌 방지). 기존 백업/내보내기·설정 행 보존.
+  - iron law: 네이티브0(공유카드 svg)·데이터 파괴0·theme 토큰·tsc/lint/test green.
+
+- **slice-8-e2e** (integration_test, report_only, deps [slice-8-notif-ui, slice-8-recap-ui]): `npx tsc --noEmit` + `npm run lint` + `npm test` green 확인, Slice 8 커버리지(S8-1·S8-5 순수 단위 + S8-2·S8-3·S8-6 UI 행동 테스트 존재·통과), `notif_settings` 영속·기존 `settings_alerts` 보존 확인(A8-1), jest.setup messaging 모킹 존재, **시크릿 0**(messaging 서버키/google-services 미커밋), 새 네이티브 스케줄/뷰샷 의존 미추가(A8-3) 확인, 데이터 파괴 0(리캡·알림은 읽기전용 파생). 코드 수정 금지(report-only), 차단결함은 `tenet_report_blocking_finding`. **단, FCM 실제 푸시 수신·OS 타이머 정밀 스케줄은 사용자 실기기 검증 사항으로 범위 밖**(use-checkpoint 에서 안내).
+
+### Interface Contracts (dev 잡 준수)
+- `lib/notifications.ts`: `type NotifSettings={shoeReplacement:boolean,weeklyGoal:boolean,runReminder:boolean,reminderTime:string}`; `DEFAULT_NOTIF_SETTINGS`; `type NotificationIntent={type:'shoe_replacement'|'weekly_goal'|'run_reminder',title:string,body:string,key:string}`; `dueNotifications(state,now:Date):NotificationIntent[]`; `getNotifSettings():Promise<NotifSettings>`; `setNotifSettings(s:NotifSettings):Promise<void>`. forecast/weekly 는 기존 lib import 재사용.
+- `lib/recap.ts`: `type Recap={periodLabel,totalKm,runCount,avgPaceLabel,mostWornShoe:{name,km}|null,perShoeWear:{name,effectiveKm}[],prs,isEmpty}`; `weeklyRecap(runs,shoes,opts?):Recap`; `monthlyRecap(runs,shoes,opts?):Recap`. stats/goals/wearModel import 재사용.
+- `lib/pushMessaging.ts`: 네이티브 messaging 호출 격리 래퍼 — `requestPushPermission():Promise<boolean>`(거부 graceful), `presentDue(intents:NotificationIntent[]):Promise<void>`(포그라운드 표시), 토큰/핸들러 셋업. jest.setup 모킹.
+- 기존 보존: `lib/settings.ts` 의 `AlertSettings`/`K_ALERTS`(인앱 배지)는 불변, 푸시 설정은 신규 `notif_settings` 키. `lib/shareCard.ts` 기존 런카드 시그니처 보존(리캡 빌더만 추가).
+
+수용 테스트 컨벤션: Slice 6·7 과 동일(dev 잡 co-located 테스트 직접 작성, slice-8-e2e 가 `npm test` 스위프 검증, 별도 tests/acceptance 스텁 미사용). 네이티브 잡(slice-8-fcm-native)은 eval 게이트(tsc/lint/test)에 더해 오케스트레이터의 `npx react-native run-android` gradle 빌드 검증을 추가로 받는다. 통과 시 Slice 8 done → use-checkpoint(실기기에서 실제 푸시 수신·리캡 공유 확인).

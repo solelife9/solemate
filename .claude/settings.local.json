@@ -16,7 +16,37 @@
       "Bash(npx react-native-asset *)",
       "Bash(cmd /c \"gradlew.bat app:installDebug\")",
       "Bash(gh release *)",
-      "WebFetch(domain:api.github.com)"
+      "WebFetch(domain:api.github.com)",
+      "Bash(echo \"=== EXIT: $? ===\")",
+      "Bash(npx jest *)",
+      "Bash(sed -n '7p')",
+      "Bash(npx eslint *)",
+      "Bash(echo \"=== eslint exit: $? ===\")",
+      "Bash(git commit -m '@ *)",
+      "Bash(git config *)",
+      "Bash(git commit --amend -m 'UI 리뉴얼: handoff RN 컴포넌트로 화면 교체 + 실데이터 연결 *)",
+      "Bash(git push *)",
+      "mcp__tenet__tenet_init",
+      "mcp__tenet__tenet_continue",
+      "mcp__tenet__tenet_compile_context",
+      "mcp__tenet__tenet_start_job",
+      "mcp__tenet__tenet_register_jobs",
+      "mcp__tenet__tenet_job_wait",
+      "mcp__tenet__tenet_job_result",
+      "mcp__tenet__tenet_cancel_job",
+      "mcp__tenet__tenet_start_eval",
+      "mcp__tenet__tenet_validate_clarity",
+      "mcp__tenet__tenet_validate_readiness",
+      "mcp__tenet__tenet_update_knowledge",
+      "mcp__tenet__tenet_add_steer",
+      "mcp__tenet__tenet_process_steer",
+      "mcp__tenet__tenet_health_check",
+      "mcp__tenet__tenet_get_status",
+      "mcp__tenet__tenet_retry_job",
+      "mcp__tenet__tenet_report_blocking_finding"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "tenet"
+  ]
 }
