@@ -1,6 +1,6 @@
 # Job Queue
 
-Updated: 2026-06-08T12:14:55.340Z
+Updated: 2026-06-08T23:22:28.821Z
 
 - [x] eval-mptta2gb — 37s
 - [x] eval-mptu16xl — 27s
@@ -303,3 +303,15 @@ Updated: 2026-06-08T12:14:55.340Z
 - [x] code_critic for a8812b82 — 2m 6s
 - [x] test_critic for a8812b82 — 1m 50s
 - [x] playwright_eval for a8812b82 — 1m 44s
+- [x] 알림 결정 로직 (lib/notifications) + 설정 IO (slice-8-notif-logic) — 5m 19s
+- [x] 주간/월간 리캡 (lib/recap) 순수 요약 (slice-8-recap-logic) — 5m 2s
+- [ ] @react-native-firebase/messaging 네이티브 통합 + 권한 + 래퍼 (slice-8-fcm-native)
+- [ ] ProfileScreen 푸시 알림 설정 + 권한 흐름 + App 배선 (slice-8-notif-ui)
+- [ ] 리캡 보기 + 공유카드 (svg toDataURL) (slice-8-recap-ui)
+- [ ] 통합검증: Slice 8 (푸시 알림 + 리캡) (slice-8-e2e)
+- [x] code_critic for 45f8a457 — 2m 6s
+- [x] test_critic for 45f8a457 — 2m 14s
+- [x] playwright_eval for 45f8a457 — 1m 19s
+- [x] code_critic for 93c05449 — 1m 59s
+- [x] test_critic for 93c05449 — 1m 12s
+- [x] playwright_eval for 93c05449 — 1m 18s
