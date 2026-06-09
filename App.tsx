@@ -23,8 +23,8 @@ import ShoesScreen, {ShoeTotals} from './ShoesScreen.rn';
 import ProfileScreen, {Profile, Badge, PersonalRecord} from './ProfileScreen.rn';
 import AddShoeScreen from './AddShoeScreen.rn';
 import OnboardingScreen, {RegisteredShoe} from './OnboardingScreen.rn';
-import {RunStart} from './RunScreen.rn';
-import RunActiveView from './RunActiveScreen';
+import RunGoalScreen from './RunGoalScreen.rn';
+import RunActiveScreenView from './RunActiveScreen.rn';
 
 import {simplifyRoute} from './lib/geo';
 import {runTracker} from './lib/runTracker';
@@ -930,9 +930,12 @@ function Main(){
   }
   if(overlay==='goal'&&pendingShoe){
     return (
-      <RunStart
-        shoe={pendingShoe.ui}
-        onClose={()=>{setOverlay('none');setPendingShoe(null);}}
+      <RunGoalScreen
+        shoeBrand={pendingShoe.ui.brand}
+        shoeLabel={pendingShoe.ui.model||pendingShoe.ui.brand}
+        shoeCondition={pendingShoe.ui.condition}
+        remainKm={Math.max(0,pendingShoe.ui.max-pendingShoe.ui.used)}
+        onBack={()=>{setOverlay('none');setPendingShoe(null);}}
         onStart={startActiveRun}
       />
     );
@@ -1100,6 +1103,8 @@ function RunActiveScreen({shoe,insets,goalKm,weightKg,onSave,onDiscard,resume}:{
   // 주행 중 위치 권한 회수: 트래킹을 멈추고(가비지 거리 금지) 영구 배너 + 설정 안내.
   const [permLost,setPermLost]=useState(false);
   const [cadence,setCadence]=useState(resume?resume.cadence:0);
+  // 마지막 fix 정확도(m, null=fix 이전). 실제 GPS 신호 강도(gpsLevel) 산출에 쓴다.
+  const [accuracyM,setAccuracyM]=useState<number|null>(null);
   // 누적 고도 상승(m) — 엔진 state(elevGainM)에서 흘러온다. 복구 런은 스냅샷에 고도가
   // 없어 0에서 시작(엔진 미작동). finElev는 정지 시 최종값을 고정한다.
   const [elevGain,setElevGain]=useState(0);
@@ -1148,6 +1153,7 @@ function RunActiveScreen({shoe,insets,goalKm,weightKg,onSave,onDiscard,resume}:{
         setPaused(s.paused);setAutoPaused(s.autoPaused);
         setGpsStalled(s.stalled);setPermLost(s.permissionRevoked);
         setElevGain(s.elevGainM);
+        setAccuracyM(s.accuracyM);
         // per-km 스플릿: dist가 정수 km 경계를 새로 넘으면 그 1km의 소요시간(초)·고도상승(m)을
         // 기록한다. 경로에 타임스탬프가 없어 못 했던 '실제' 구간 페이스를 레코더가 직접 남긴다.
         if(Math.floor(s.dist)>splitsRef.current.length){
@@ -1236,7 +1242,7 @@ function RunActiveScreen({shoe,insets,goalKm,weightKg,onSave,onDiscard,resume}:{
   async function beginRun(perm:RunPermissions){
     runTracker.start({goalKm,shoe:{id:shoe.id,name:shoe.name}});
     splitsRef.current=[];lastSplitRef.current={elapsed:0,elevM:0};
-    setKm(0);setElapsed(0);setCadence(0);
+    setKm(0);setElapsed(0);setCadence(0);setAccuracyM(null);
     setGpsStalled(false);setPermLost(false);setGpsStatus('GPS 신호 찾는 중...');
     cadenceState.current=initCadenceState();cadRef.current=0;
     locationRef.current='';locationFetched.current=false;announcedKm.current=0;
@@ -1368,10 +1374,17 @@ function RunActiveScreen({shoe,insets,goalKm,weightKg,onSave,onDiscard,resume}:{
     </View>
   );
 
-  // GPS 신호 세기(0~3): 권한 회수=0, 약신호/死구간=1, 정상=3 — RunActiveScreen 안테나 바.
-  const gpsLevel = permLost ? 0 : gpsStalled ? 1 : 3;
+  // 실제 GPS 신호 세기(0~3): 마지막 fix 정확도(m)를 4단계로 매핑한다. 권한 회수=0,
+  // fix 이전=0(검색 중), 死구간=1(약함), 그 외 정확도가 좋을수록 높다(<=12m 좋음,
+  // <=30m 보통, 그 이상 약함) — RunActiveScreen 안테나 바/라벨이 이 값을 읽는다.
+  const gpsLevel = permLost ? 0
+    : accuracyM==null ? 0
+    : gpsStalled ? 1
+    : accuracyM<=12 ? 3
+    : accuracyM<=30 ? 2
+    : 1;
   return (
-    <RunActiveView
+    <RunActiveScreenView
       shoeLabel={ui.model||shoe.name}
       distanceKm={km}
       goalKm={goalKm}
