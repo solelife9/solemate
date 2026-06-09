@@ -11,6 +11,8 @@ import {
 } from './theme';
 import { Ring, TabBar, TierBadge, Pill, InjuryBanner, SectionTitle } from './primitives';
 import { FuelGauge } from './FuelGauge';
+import { MockupButton } from './MockupButton.rn';
+import FirstShoeScreen from './FirstShoeScreen.rn';
 import { Unit, displayNum, displayToKm } from './lib/units';
 import { clampMaxKm, KEEP_GOING_REPLACE, SHOE_MAX_STEP_KM, SHOE_REPLACE_PCT } from './lib/shoe';
 import { assessShoeInjuryRisk } from './lib/injury';
@@ -200,10 +202,11 @@ function ShoeDetail({
         {/* 기본 CTA: 이 신발로 바로 런 시작(shoe-first). 보관된 신발은 시작 동선에서
             제외되므로 숨긴다(런 기록은 그대로 보존·표시). */}
         {!retired && shoe.id && onStartRun && (
-          <Pressable onPress={() => onStartRun(shoe.id!)} accessibilityRole="button" accessibilityLabel="이 신발로 달리기" style={({ pressed }) => [s.runCta, pressed && s.pressed]}>
-            <Ionicons name="play" size={15} color={T2} />
-            <Text style={s.runCtaText}>이 신발로 달리기</Text>
-          </Pressable>
+          <MockupButton
+            label="이 신발로 달리기"
+            iconNode={<Ionicons name="play" size={16} color={T1} />}
+            onPress={() => onStartRun(shoe.id!)}
+          />
         )}
 
         {/* durability — 수명 연료게이지(가로 바) + 수명 조정 토글 */}
@@ -469,6 +472,12 @@ export default function ShoesScreen({
         onStartRun={onStartRun}
       />
     );
+  }
+
+  // 신발 0개 → 풍부한 빈 상태(첫 러닝화 등록 유도). FirstShoeScreen 을 통째로 반환해
+  // 헤더·탭바 중복 없이 한 화면으로 대체한다. 등록 버튼은 AddShoe 오버레이(onAddShoe)로 열린다.
+  if (shoes.length === 0) {
+    return <FirstShoeScreen onRegister={onAddShoe} onTab={onTab} />;
   }
 
   return (

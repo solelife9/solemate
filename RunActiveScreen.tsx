@@ -30,6 +30,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import Svg, { Path } from 'react-native-svg';
 import { BG, ACCENT, GOOD, WARN, DANGER, T1, T2, T3, T4, SEP, FONT, DISPLAY, withAlpha } from './theme';
 import { Ring } from './primitives';
+import { GradientCircleButton } from './RunControlButton';
 
 const SHOE_PATH =
   'M222-79q-32 0-61.5-12T108-127l-7-7q-9-8-11.5-20t2.5-23l194-495q8-20 27.5-30.5T354-708l58 11q17 4 32.5-2.5T471-717q14-15 18.5-31.5T489-782l-5-15q-5-16-1.5-32.5T498-858l43-43q17-18 42.5-18t42.5 17l181 184q22 23 22.5 54.5T809-609l19 19q6 7 10.5 14.5T843-560q0 7-3 14t-11 15q-12 11-28.5 11.5T772-531l-18-19-28 29 18 18q11 11 11 28t-11 28q-12 11-28.5 11.5T687-447l-18-17-112 114 17 16q12 12 12 28.5T574-277q-12 11-28.5 11.5T517-277l-16-17-28 29 16 16q11 11 11 28t-11 28q-12 11-28.5 11.5T432-193l-16-15-28 28 16 15q11 12 11 28.5T404-108q-12 11-28.5 11.5T347-108l-16-16q-23 23-50.5 34T222-79Z';
@@ -151,9 +152,9 @@ export default function RunActiveScreen({
       <View style={r.controls}>
         {!paused ? (
           <View style={{ alignItems: 'center', gap: 8 }}>
-            <Pressable onPress={onPause} accessibilityRole="button" accessibilityLabel="일시정지" style={({ pressed }) => [r.primaryLg, pressed && { opacity: 0.85 }]}>
+            <GradientCircleButton size={96} onPress={onPause} accessibilityLabel="일시정지">
               <Ionicons name="pause" size={40} color="#fff" />
-            </Pressable>
+            </GradientCircleButton>
             <Text style={r.ctrlHint}>일시정지</Text>
           </View>
         ) : (
@@ -170,9 +171,9 @@ export default function RunActiveScreen({
               <Text style={r.ctrlHint}>길게 눌러 종료</Text>
             </View>
             <View style={{ alignItems: 'center', gap: 8 }}>
-              <Pressable onPress={onPause} accessibilityRole="button" accessibilityLabel="재개" style={({ pressed }) => [r.primary, pressed && { opacity: 0.85 }]}>
+              <GradientCircleButton size={76} onPress={onPause} accessibilityLabel="재개">
                 <Ionicons name="play" size={34} color="#fff" />
-              </Pressable>
+              </GradientCircleButton>
               <Text style={r.ctrlHint}>재개</Text>
             </View>
           </>
