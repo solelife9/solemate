@@ -11,6 +11,9 @@
 import {Share} from 'react-native';
 import {Unit, displayNum} from './units';
 import {buildRunShareText, RunShareInput} from './share';
+import {fmtPace, fmtTime} from './format';
+import type {Recap} from './recap';
+import type {PersonalRecords} from './goals';
 
 export interface ShareCardInput {
   /** 거리 — 저장 표준 km. 표시 단위로 환산해 출력한다. */
@@ -140,5 +143,133 @@ export async function shareRunCard(ref: SvgRefLike, fallback: RunShareInput): Pr
     await Share.share({url});
   } catch {
     await Share.share({message: buildRunShareText(fallback)}).catch(() => {});
+  }
+}
+
+// ─── Slice 8 리텐션: 리캡 요약 카드(주간/월간) ──────────────────────────────────
+// 위 런 카드와 동일한 패턴(순수 빌더 + Svg.toDataURL 캡처 + 텍스트 폴백)을 리캡에도
+// 그대로 적용한다. 기존 런카드 시그니처(buildShareCardModel/shareRunCard)는 건드리지
+// 않고, 리캡용 빌더만 더한다(A8-3: 새 네이티브 의존 0 — react-native-svg만 재사용).
+
+/** 빈 리캡(런 0개)에서 보여줄 keep-going 보이스(A8-5) — 카드/텍스트 공유 공통. */
+export const RECAP_EMPTY_COPY =
+  '아직 이 기간 기록이 없어요 — 가볍게 한 걸음부터, keep going';
+
+/** 주/월 라벨(리캡 자체는 기간 종류를 모르므로 호출부가 지정). */
+export type RecapKind = 'weekly' | 'monthly';
+
+export interface RecapShareCardModel {
+  /** 카드 제목('주간 리캡'|'월간 리캡'). */
+  title: string;
+  /** 기간 라벨(recap.periodLabel 그대로). */
+  period: string;
+  /** 총거리 숫자 문자열(표시 단위 환산, 소수 1자리). */
+  distance: string;
+  /** 거리 단위 라벨('km'|'mi'). */
+  unit: string;
+  /** 런 수·평균 페이스·최다 착용(의미 없는 값은 빠진다). */
+  stats: ShareCardStat[];
+  /** 개인 기록(1km/5km/최장) — 기록 없는 항목은 빠진다. */
+  prs: ShareCardStat[];
+  /** 기간 내 런 0개면 true(빈 리캡 카드). */
+  isEmpty: boolean;
+  /** 빈 리캡 keep-going 카피(A8-5). */
+  emptyCopy: string;
+  brand: string;
+  tagline: string;
+  hashtag: string;
+}
+
+/**
+ * 개인 기록(PersonalRecords)을 카드/화면 공용 표시 행으로 변환한다(순수). App 의
+ * 개인 기록 카드와 동일 포맷(1km=페이스 /km, 5km=시간, 최장=표시 단위 거리). 기록이
+ * 없는(null) 항목은 행에서 빠져 빈 칸이 생기지 않는다.
+ */
+export function formatRecapPRs(prs: PersonalRecords, unit: Unit = 'km'): ShareCardStat[] {
+  const rows: ShareCardStat[] = [];
+  if (prs?.fastest1k != null) {
+    rows.push({label: '1km 최고', value: `${fmtPace(1, prs.fastest1k)} /km`});
+  }
+  if (prs?.fastest5k != null) {
+    rows.push({label: '5km 최고', value: fmtTime(Math.round(prs.fastest5k))});
+  }
+  if (prs?.longest != null) {
+    rows.push({label: '최장 거리', value: `${displayNum(prs.longest, unit, 2)} ${unit}`});
+  }
+  return rows;
+}
+
+/**
+ * Recap 한 건을 리캡 공유 카드의 표시 필드로 변환한다(순수함수, 네이티브 의존 0).
+ * 총거리는 표시 단위로 환산해 소수 1자리. 평균 페이스가 '--'(무런)거나 최다 착용이
+ * 없으면 그 칸은 빠진다. 빈 리캡이면 isEmpty=true 로 카드가 keep-going 카피만 보인다.
+ */
+export function buildRecapShareCardModel(
+  recap: Recap,
+  opts?: {unit?: Unit; kind?: RecapKind},
+): RecapShareCardModel {
+  const unit = opts?.unit ?? 'km';
+  const kind = opts?.kind ?? 'weekly';
+
+  const stats: ShareCardStat[] = [{label: '런 수', value: `${recap.runCount}회`}];
+  if (recap.avgPaceLabel && recap.avgPaceLabel !== '--') {
+    stats.push({label: '평균 페이스', value: `${recap.avgPaceLabel} /km`});
+  }
+  if (recap.mostWornShoe) {
+    stats.push({label: '최다 착용', value: recap.mostWornShoe.name});
+  }
+
+  return {
+    title: kind === 'monthly' ? '월간 리캡' : '주간 리캡',
+    period: recap.periodLabel,
+    distance: displayNum(recap.totalKm, unit, 1).toFixed(1),
+    unit,
+    stats,
+    prs: formatRecapPRs(recap.prs, unit),
+    isEmpty: recap.isEmpty,
+    emptyCopy: RECAP_EMPTY_COPY,
+    brand: BRAND,
+    tagline: TAGLINE,
+    hashtag: HASHTAG,
+  };
+}
+
+/**
+ * 리캡 텍스트 폴백(카드 캡처 실패 시 RN Share 메시지). 빈 리캡은 keep-going 카피만,
+ * 실데이터는 총거리·런수·평균페이스·최다착용을 keep-going 톤 한 줄 요약으로 묶는다.
+ */
+export function buildRecapShareText(recap: Recap, opts?: {unit?: Unit; kind?: RecapKind}): string {
+  const m = buildRecapShareCardModel(recap, opts);
+  if (recap.isEmpty) {
+    return `${m.brand} ${m.title} (${m.period})\n${m.emptyCopy}`;
+  }
+  const lines = [
+    `${m.brand} ${m.title} · ${m.period}`,
+    `총 ${m.distance}${m.unit} · ${recap.runCount}회`,
+  ];
+  if (recap.avgPaceLabel && recap.avgPaceLabel !== '--') {
+    lines.push(`평균 페이스 ${recap.avgPaceLabel} /km`);
+  }
+  if (recap.mostWornShoe) {
+    lines.push(`최다 착용 ${recap.mostWornShoe.name} (${recap.mostWornShoe.km}km)`);
+  }
+  lines.push(m.hashtag);
+  return lines.join('\n');
+}
+
+/**
+ * 리캡 카드 이미지를 캡처해 RN Share 로 공유한다. 캡처 실패(네이티브 캔버스 미준비)
+ * 시 buildRecapShareText 텍스트 공유로 조용히 폴백한다 — shareRunCard 와 같은 계약.
+ */
+export async function shareRecapCard(
+  ref: SvgRefLike,
+  fallback: Recap,
+  opts?: {unit?: Unit; kind?: RecapKind},
+): Promise<void> {
+  try {
+    const url = await captureCardDataUrl(ref);
+    await Share.share({url});
+  } catch {
+    await Share.share({message: buildRecapShareText(fallback, opts)}).catch(() => {});
   }
 }

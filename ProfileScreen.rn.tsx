@@ -7,13 +7,16 @@
 //   · 계정 설정 — 기기/가입/버전 정보
 // 값은 App이 소유(영속은 lib/settings)하고, 이 화면은 표시 + 변경 콜백만 담당한다.
 // ============================================================================
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, ScrollView, Pressable, StyleSheet, TextInput, Image, Share } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { BG, CARD, CARD_DIM, CARD_HI, ACCENT, GOOD, DANGER, WARN, T1, T2, T3, SEP, FONT, DISPLAY, withAlpha, KAKAO_YELLOW, KAKAO_LABEL, NAVER_GREEN, NAVER_LABEL } from './theme';
 import { TabBar, Ring, Pill, SectionTitle } from './primitives';
 import { Unit, unitKorean, displayNum, displayToKm } from './lib/units';
+import { weeklyRecap, monthlyRecap, type RecapRun, type RecapShoe } from './lib/recap';
+import { buildRecapShareCardModel, shareRecapCard, formatRecapPRs, type RecapKind, type SvgCapturable } from './lib/shareCard';
+import RecapShareCard from './RecapShareCard';
 import {
   AlertSettings, GOAL_STEP_DISPLAY, THRESHOLD_STEP,
   MIN_THRESHOLD_PCT, MAX_THRESHOLD_PCT, DEFAULT_SETTINGS, DEFAULT_ALERTS,
@@ -104,6 +107,7 @@ export default function ProfileScreen({
   alerts = { ...DEFAULT_ALERTS }, onChangeAlerts,
   notifSettings = DEFAULT_NOTIF_SETTINGS, onChangeNotifSettings,
   onRequestPushPermission = defaultRequestPushPermission,
+  recapRuns = [], recapShoes = [], recapNow,
   deviceId = '',
   backupData = { shoes: [], runs: [], settings: {} },
   cloudPort, onCloudMerged, cloudClock = () => Date.now(),
@@ -143,6 +147,13 @@ export default function ProfileScreen({
   // 기기 푸시 권한 요청(주입 가능 — 기본은 lib/pushMessaging). 거부해도 throw 하지 않고
   // false 를 돌려주므로(S8-3) 호출부는 비차단으로 graceful 안내만 한다.
   onRequestPushPermission?: () => Promise<boolean>;
+  // ── 기간 리캡(돌아보기, slice-8-recap-ui) ───────────────────────────────────
+  // App 이 소유한 런/신발 원본을 그대로 주입한다(lib/recap 이 읽기 전용으로 요약, 원본
+  // 불변 A8-1). recapNow 는 기간 분기 결정용 기준 시각(미주입 시 현재 시각 — 프로덕션
+  // 기본). 테스트는 recapNow 를 주입해 주/월 분기를 결정적으로 검증한다.
+  recapRuns?: RecapRun[];
+  recapShoes?: RecapShoe[];
+  recapNow?: Date;
   deviceId?: string;
   // 로컬 백업 대상(신발+런+설정). App이 소유한 상태를 모아 주입한다.
   backupData?: BackupPayload;
@@ -319,6 +330,29 @@ export default function ProfileScreen({
     (notifSettings.weeklyGoal ? 1 : 0) +
     (notifSettings.runReminder ? 1 : 0);
 
+  // ── 기간 리캡(돌아보기) ──────────────────────────────────────────────────────
+  // 주간/월간 토글로 lib/recap 의 순수 요약을 만든다(원본 불변). recapNow 미주입 시
+  // 현재 시각 — useMemo 가 매 렌더 새 Date 를 만들지 않도록 한 번만 고정한다.
+  const [recapMode, setRecapMode] = useState<RecapKind>('weekly');
+  const nowRef = useRef<Date>(recapNow ?? new Date());
+  const recapBase = recapNow ?? nowRef.current;
+  const recap = useMemo(
+    () =>
+      recapMode === 'monthly'
+        ? monthlyRecap(recapRuns, recapShoes, { now: recapBase })
+        : weeklyRecap(recapRuns, recapShoes, { now: recapBase }),
+    [recapMode, recapRuns, recapShoes, recapBase],
+  );
+  // 화면 표시용 PR 행(카드와 동일 포맷 재사용). 표시 단위 환산은 빌더가 처리.
+  const recapPRs = formatRecapPRs(recap.prs, unit);
+  const recapTotalDisplay = displayNum(recap.totalKm, unit, 1);
+  // 공유 카드(화면 밖 마운트) 모델 — press 시 Svg.toDataURL 로 캡처해 공유.
+  const recapCardRef = useRef<SvgCapturable | null>(null);
+  const recapCardModel = buildRecapShareCardModel(recap, { unit, kind: recapMode });
+  const onShareRecap = () => {
+    shareRecapCard(recapCardRef, recap, { unit, kind: recapMode });
+  };
+
   // 주간 목표 링/카피: 달성률(%)·달성 거리·남은 거리를 표시 단위로 환산해 keep-going 톤
   // 한 줄로 묶는다. 100% 이상이면 '달성!' 축하 카피, 그 전이면 '남은 거리만 더' 격려.
   const doneDisplay = displayNum(weeklyDoneKm, unit, 1);
@@ -465,6 +499,100 @@ export default function ProfileScreen({
             </View>
           </View>
         )}
+
+        {/* 돌아보기(리캡) — 주간/월간 토글 + 요약 + 카드 공유(slice-8-recap-ui) */}
+        <View testID="recap-section">
+          <View style={s.recapHead}>
+            <Text style={s.sectionLabel}>돌아보기</Text>
+            <View style={s.recapToggle}>
+              <Pressable
+                onPress={() => setRecapMode('weekly')}
+                testID="recap-toggle-weekly"
+                accessibilityRole="button"
+                accessibilityLabel="주간 리캡"
+                accessibilityState={{ selected: recapMode === 'weekly' }}
+                style={[s.recapTab, recapMode === 'weekly' && s.recapTabOn]}>
+                <Text style={[s.recapTabTxt, recapMode === 'weekly' && s.recapTabTxtOn]}>주간</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => setRecapMode('monthly')}
+                testID="recap-toggle-monthly"
+                accessibilityRole="button"
+                accessibilityLabel="월간 리캡"
+                accessibilityState={{ selected: recapMode === 'monthly' }}
+                style={[s.recapTab, recapMode === 'monthly' && s.recapTabOn]}>
+                <Text style={[s.recapTabTxt, recapMode === 'monthly' && s.recapTabTxtOn]}>월간</Text>
+              </Pressable>
+            </View>
+          </View>
+          <View style={[s.card, { padding: 20 }]} testID="recap-card">
+            <View style={s.recapTopRow}>
+              <Text style={s.recapPeriod} testID="recap-period">{recap.periodLabel}</Text>
+              <Pressable
+                onPress={onShareRecap}
+                testID="recap-share"
+                accessibilityRole="button"
+                accessibilityLabel="리캡 카드 공유"
+                style={({ pressed }) => [s.recapShareBtn, pressed && { backgroundColor: CARD_HI }]}>
+                <Ionicons name="share-outline" size={16} color={ACCENT} />
+                <Text style={s.recapShareTxt}>공유</Text>
+              </Pressable>
+            </View>
+
+            {recap.isEmpty ? (
+              // 빈 데이터 graceful — keep-going 보이스(A8-5). 수치 대신 응원 한 줄.
+              <View style={s.recapEmpty} testID="recap-empty">
+                <Ionicons name="footsteps-outline" size={26} color={ACCENT} style={{ marginBottom: 8 }} />
+                <Text style={s.recapEmptyTxt}>
+                  {recapMode === 'monthly'
+                    ? '이번 달은 아직 기록이 없어요.\n가볍게 한 걸음부터 — keep going!'
+                    : '이번 주는 아직 기록이 없어요.\n가볍게 한 걸음부터 — keep going!'}
+                </Text>
+              </View>
+            ) : (
+              <>
+                {/* 총거리·런수·평균 페이스 3칸 */}
+                <View style={[s.statRow, { marginTop: 6 }]}>
+                  <View style={s.statCell} testID="recap-total">
+                    <Text style={s.statValue}>{recapTotalDisplay}<Text style={s.statUnit}>{unit}</Text></Text>
+                    <Text style={s.statLabel}>총 거리</Text>
+                  </View>
+                  <View style={[s.statCell, s.statDivider]} testID="recap-runcount">
+                    <Text style={s.statValue}>{recap.runCount}<Text style={s.statUnit}>회</Text></Text>
+                    <Text style={s.statLabel}>런 수</Text>
+                  </View>
+                  <View style={[s.statCell, s.statDivider]} testID="recap-pace">
+                    <Text style={s.statValue}>{recap.avgPaceLabel}<Text style={s.statUnit}>{recap.avgPaceLabel === '--' ? '' : '/km'}</Text></Text>
+                    <Text style={s.statLabel}>평균 페이스</Text>
+                  </View>
+                </View>
+
+                {/* 최다 착용 신발 */}
+                {recap.mostWornShoe && (
+                  <View style={s.recapMostWorn} testID="recap-most-worn">
+                    <Ionicons name="footsteps" size={15} color={ACCENT} />
+                    <Text style={s.recapMostWornTxt} numberOfLines={1}>
+                      최다 착용 · <Text style={{ color: T1, fontWeight: '700' }}>{recap.mostWornShoe.name}</Text>
+                      <Text style={{ color: T3 }}>{`  ${recap.mostWornShoe.km}km`}</Text>
+                    </Text>
+                  </View>
+                )}
+
+                {/* 개인 기록(PR) */}
+                {recapPRs.length > 0 && (
+                  <View style={s.recapPrBox} testID="recap-prs">
+                    {recapPRs.map((pr) => (
+                      <View key={pr.label} style={s.recapPrRow}>
+                        <Text style={s.recapPrLabel}>{pr.label}</Text>
+                        <Text style={s.recapPrValue}>{pr.value}</Text>
+                      </View>
+                    ))}
+                  </View>
+                )}
+              </>
+            )}
+          </View>
+        </View>
 
         {/* achievements */}
         {badges.length > 0 && (
@@ -632,6 +760,10 @@ export default function ProfileScreen({
         </View>
 
       </ScrollView>
+      {/* 화면 밖에 마운트된 리캡 공유 카드 — ref.toDataURL()로 PNG 캡처(보이지 않음). */}
+      <View style={s.offscreen} pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+        <RecapShareCard ref={recapCardRef} model={recapCardModel} />
+      </View>
       <TabBar active={3} onTab={(i) => onTab?.(i)} />
     </View>
   );
@@ -714,6 +846,27 @@ const s = StyleSheet.create({
   stepUnit: { color: T3, fontFamily: FONT, fontSize: 11.5, fontWeight: '600', marginTop: 2 },
 
   notifDenied: { color: WARN, fontFamily: FONT, fontSize: 12.5, lineHeight: 18 },
+
+  // ── 돌아보기(리캡) ───────────────────────────────────────────────────────────
+  recapHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 12, paddingHorizontal: 4 },
+  recapToggle: { flexDirection: 'row', backgroundColor: CARD_DIM, borderRadius: 999, padding: 3, gap: 2 },
+  recapTab: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 999 },
+  recapTabOn: { backgroundColor: ACCENT },
+  recapTabTxt: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600' },
+  recapTabTxtOn: { color: T1 },
+  recapTopRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
+  recapPeriod: { color: T2, fontFamily: FONT, fontSize: 14, fontWeight: '700' },
+  recapShareBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999, backgroundColor: withAlpha(ACCENT, 0.12) },
+  recapShareTxt: { color: ACCENT, fontFamily: FONT, fontSize: 12.5, fontWeight: '700' },
+  recapEmpty: { alignItems: 'center', paddingVertical: 22 },
+  recapEmptyTxt: { color: T3, fontFamily: FONT, fontSize: 13.5, fontWeight: '600', lineHeight: 20, textAlign: 'center' },
+  recapMostWorn: { flexDirection: 'row', alignItems: 'center', gap: 7, marginTop: 16, paddingTop: 14, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP },
+  recapMostWornTxt: { flex: 1, color: T2, fontFamily: FONT, fontSize: 13, fontWeight: '600' },
+  recapPrBox: { marginTop: 14, gap: 2 },
+  recapPrRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 7 },
+  recapPrLabel: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600' },
+  recapPrValue: { color: ACCENT, fontFamily: DISPLAY, fontSize: 16, letterSpacing: 0.2 },
+  offscreen: { position: 'absolute', left: -10000, top: 0, opacity: 0 },
 
   toggle: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 44, borderRadius: 14 },
   toggleOn: { backgroundColor: ACCENT },

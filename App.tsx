@@ -1004,6 +1004,7 @@ function Main(){
             weekTodayIdx={(now.getDay() + 6) % 7}
             alerts={alerts} onChangeAlerts={changeAlerts}
             notifSettings={notifSettings} onChangeNotifSettings={changeNotifSettings}
+            recapRuns={runs} recapShoes={shoes}
             deviceId={deviceId}
             backupData={backupData} onImport={importBackup}
             challenges={challenges} challengeRuns={challengeRuns}
