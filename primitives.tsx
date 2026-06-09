@@ -35,6 +35,8 @@ import {
   CARD_HI,
   ACCENT,
   ACCENT_2,
+  GRAD_TOP,
+  GRAD_BOT,
   WARN,
   DANGER,
   GOOD,
@@ -92,7 +94,7 @@ export const TONE_BG: Record<Tone, string> = {
 // radius 로 잘라준다. useId 로 그라데이션 id 충돌을 막는다(같은 화면 다중 CTA 안전).
 function GradientFill({
   radius,
-  colors = [ACCENT, ACCENT_2],
+  colors = [GRAD_TOP, GRAD_BOT],
 }: {
   radius: number;
   colors?: [string, string];
@@ -101,7 +103,7 @@ function GradientFill({
   return (
     <Svg style={StyleSheet.absoluteFill}>
       <Defs>
-        <SvgGradient id={id} x1="0" y1="0" x2="1" y2="1">
+        <SvgGradient id={id} x1="0" y1="0" x2="0" y2="1">
           <Stop offset="0" stopColor={colors[0]} />
           <Stop offset="1" stopColor={colors[1]} />
         </SvgGradient>
@@ -214,7 +216,8 @@ export function Button({
         pressed && btn.pressed,
         style,
       ]}>
-      {cta ? <GradientFill radius={RADIUS.md} /> : null}
+      {cta ? <GradientFill radius={18} /> : null}
+      {cta ? <View pointerEvents="none" style={btn.gloss} /> : null}
       {icon ? <Ionicons name={icon} size={20} color={T1} /> : null}
       <Text style={btn.label}>{label}</Text>
     </Pressable>
@@ -229,9 +232,10 @@ const btn = StyleSheet.create({
     gap: SPACE.sm,
     paddingVertical: SPACE.lg,
     paddingHorizontal: SPACE.xl,
-    borderRadius: RADIUS.md,
+    borderRadius: 18,
     overflow: 'hidden',
   },
+  gloss: {position: 'absolute', top: 0, left: 0, right: 0, height: 1, backgroundColor: 'rgba(255,255,255,0.22)'},
   ghost: {backgroundColor: CARD_HI},
   disabled: {opacity: 0.5},
   pressed: {opacity: 0.85},

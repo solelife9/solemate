@@ -7,9 +7,10 @@ import { View, Text, TextInput, ScrollView, Pressable, Image, StyleSheet, Modal 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {
-  BG, CARD_DIM, CARD_HI, ACCENT, T1, T2, T3, FONT, DISPLAY, withAlpha, Shoe,
+  BG, CARD_DIM, CARD_HI, ACCENT, T1, T2, T3, T4, FONT, DISPLAY, withAlpha, Shoe,
 } from './theme';
 import { Pill } from './primitives';
+import { MockupButton } from './MockupButton.rn';
 // 신발 모델 카탈로그·권장수명은 data/shoeModels(단일 소스)에서 가져온다.
 import { BRANDS, modelsForBrand, getRecommendedLifespanKm } from './data/shoeModels';
 // 사진 첨부는 expo-image-picker 래퍼(lib/photo)를 통해 실제로 동작한다.
@@ -113,6 +114,7 @@ export default function AddShoeScreen({
         {photoError && (
           <Text style={s.photoErr}>사진을 불러오지 못했어요. 사진 없이 등록하거나 다시 시도하세요.</Text>
         )}
+        {!photoError && <Text style={s.photoOpt}>선택 — 사진 없이도 등록할 수 있어요</Text>}
 
         {/* brand */}
         <Text style={s.label}>브랜드</Text>
@@ -121,7 +123,7 @@ export default function AddShoeScreen({
             const on = b === brand;
             return (
               <Pressable key={b} onPress={() => pickBrand(b)} accessibilityRole="button" accessibilityLabel={b} accessibilityState={{ selected: on }} hitSlop={{ top: 6, bottom: 6 }} style={({ pressed }) => [s.chip, on ? s.chipOn : s.chipOff, pressed && s.pressed]}>
-                <Text style={[s.chipText, { color: on ? ACCENT : T2 }]}>{b}</Text>
+                <Text style={[s.chipText, { color: on ? T1 : T2 }]}>{b}</Text>
               </Pressable>
             );
           })}
@@ -164,11 +166,9 @@ export default function AddShoeScreen({
         <Text style={s.hint}>새 신발이면 0으로 두세요.</Text>
       </ScrollView>
 
-      {/* CTA */}
+      {/* CTA — 목업 그라데이션+글로우 버튼(MockupButton). 미선택 시 ghost 비활성. */}
       <View style={s.ctaWrap}>
-        <Pressable onPress={save} disabled={!valid} accessibilityRole="button" accessibilityLabel="러닝화 등록" accessibilityState={{ disabled: !valid }} style={({ pressed }) => [s.cta, !valid && s.ctaDisabled, pressed && valid && s.pressed]}>
-          <Text style={[s.ctaText, !valid && { color: T3 }]}>러닝화 등록</Text>
-        </Pressable>
+        <MockupButton label="러닝화 등록" onPress={save} disabled={!valid} />
       </View>
 
       {/* 전용 모델 검색 모달 — 검색창(상단) + 알파벳 목록(중간, flex) + 키보드(하단).
@@ -242,6 +242,7 @@ const s = StyleSheet.create({
   photoImg: { width: '100%', height: '100%' },
   photoText: { color: T3, fontFamily: FONT, fontSize: 12 },
   photoErr: { color: T3, fontFamily: FONT, fontSize: 11.5, textAlign: 'center', marginBottom: 16, paddingHorizontal: 12 },
+  photoOpt: { color: T4, fontFamily: FONT, fontSize: 11, textAlign: 'center', marginBottom: 18 },
 
   label: { color: T2, fontFamily: FONT, fontSize: 13, fontWeight: '500', letterSpacing: 0.2, paddingHorizontal: 4, paddingBottom: 10 },
 

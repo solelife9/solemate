@@ -7,7 +7,7 @@ import { View, Text, ScrollView, Pressable, TextInput, Alert, StyleSheet, Linkin
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {
-  BG, CARD, CARD_DIM, CARD_HI, ACCENT, DANGER, WARN, GOOD, T1, T2, T3, SEP, FONT, DISPLAY, withAlpha, Shoe, Run, SHOES,
+  BG, CARD, CARD_DIM, CARD_HI, ACCENT, DANGER, WARN, GOOD, T1, T2, T3, T4, SEP, FONT, DISPLAY, withAlpha, Shoe, Run, SHOES,
 } from './theme';
 import { Ring, TabBar, TierBadge, Pill, InjuryBanner, SectionTitle } from './primitives';
 import { FuelGauge } from './FuelGauge';
@@ -385,13 +385,15 @@ function ShoeCard({ shoe, featured, onPress, onPlay, unit, pace }: { shoe: Shoe;
         <View style={{ flex: 1, minWidth: 0 }}>
           <View style={s.row}>
             <Text style={s.shoeBrand}>{shoe.brand}</Text>
-            {/* 교체/주의 tier 배지 — 목록 카드에서 한눈에(양호는 미노출). */}
-            {!retired && <TierBadge condition={shoe.condition} />}
             {retired ? <Pill tone="dim" label="보관됨" />
               : featured && <Pill tone="dim" label="사용 중" />}
           </View>
           <Text style={s.shoeModel} numberOfLines={2}>{shoe.model}</Text>
-          <Text style={s.shoeMeta}>{usedDisp} / {maxDisp} {unit} · <Text style={{ color: condColor(shoe.condition) }}>{shoe.condition}</Text></Text>
+          <View style={s.shoeCondRow}>
+            <View style={[s.shoeCondDot, { backgroundColor: condColor(shoe.condition) }]} />
+            <Text style={[s.shoeCondText, {color: condColor(shoe.condition)}]}>{shoe.condition}</Text>
+          </View>
+          <Text style={s.shoeMeta}>교체까지 <Text style={s.shoeMetaKm}>{displayNum(remainKm, unit)}{unit}</Text> · {usedDisp} / {maxDisp}{unit} 사용</Text>
           {/* 평균 페이스 — 신발끼리 한눈에 비교(기록 있을 때만). */}
           {pace && pace !== '--' && (
             <View style={s.shoePaceRow}>
@@ -533,8 +535,12 @@ const s = StyleSheet.create({
   shoeRingPct: { color: T1, fontFamily: DISPLAY, fontSize: 15 },
   shoeRingPctU: { color: T3, fontFamily: FONT, fontSize: 8 },
   shoeBrand: { color: T3, fontFamily: DISPLAY, fontSize: 11, fontWeight: '500', letterSpacing: 1.3 },
-  shoeModel: { color: T1, fontFamily: DISPLAY, fontSize: 16, fontWeight: '500', letterSpacing: -0.2, lineHeight: 20, marginTop: 2 },
-  shoeMeta: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '600', marginTop: 4 },
+  shoeModel: { color: T1, fontFamily: DISPLAY, fontSize: 19, fontWeight: '600', letterSpacing: -0.4, lineHeight: 23, marginTop: 3 },
+  shoeCondRow: { flexDirection: 'row', alignItems: 'center', gap: 7, marginTop: 10 },
+  shoeCondDot: { width: 7, height: 7, borderRadius: 999 },
+  shoeCondText: { color: T2, fontFamily: FONT, fontSize: 12.5, fontWeight: '500' },
+  shoeMeta: { color: T4, fontFamily: FONT, fontSize: 11.5, fontWeight: '500', marginTop: 9 },
+  shoeMetaKm: { color: T2, fontFamily: DISPLAY, fontWeight: '500' },
   shoePaceRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 5 },
   shoePace: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '600' },
   shoePaceVal: { color: ACCENT, fontFamily: DISPLAY, fontSize: 12.5 },

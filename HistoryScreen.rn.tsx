@@ -9,7 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Polyline, Circle } from 'react-native-svg';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {
-  BG, CARD, CARD_DIM, CARD_HI, ACCENT, DANGER, T1, T2, T3, SEP, FONT, DISPLAY, Shoe, Run, SHOES, withAlpha,
+  BG, CARD, CARD_DIM, CARD_HI, ACCENT, DANGER, T1, T2, T3, T4, SEP, FONT, DISPLAY, Shoe, Run, SHOES, withAlpha,
 } from './theme';
 import { TabBar } from './primitives';
 import { Unit, displayNum, displayToKm } from './lib/units';
@@ -542,13 +542,12 @@ export default function HistoryScreen({
           })}
         </View>
 
-        {/* stat grid */}
-        <View style={s.summaryGrid}>
+        {/* stat row — 4열 요약(목업 Screens Refined): 칸 사이 헤어라인, 값+단위 인라인, 라벨 아래. */}
+        <View style={s.sumRow}>
           {stats.map((x, i) => (
-            <View key={i} style={s.summaryCell}>
-              <Text style={s.summaryLabel}>{x.l}</Text>
-              <Text style={s.summaryValue}>{x.v}</Text>
-              <Text style={s.summaryUnit}>{x.u}</Text>
+            <View key={i} style={[s.sumCell, i > 0 && s.sumCellDiv]}>
+              <Text style={s.sumValue}>{x.v}{x.u ? <Text style={s.sumUnit}> {x.u}</Text> : null}</Text>
+              <Text style={s.sumLabel}>{x.l}</Text>
             </View>
           ))}
         </View>
@@ -622,6 +621,13 @@ const s = StyleSheet.create({
   // 압축한다(정보는 그대로 유지 — 라벨/값/단위 모두 렌더). 리스트가 위로 올라온다.
   summaryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   summaryCell: { width: '47.5%', flexGrow: 1, backgroundColor: CARD_DIM, borderRadius: 16, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.07), padding: 13 },
+  // 4열 요약 행(Screens Refined) — 카드 없이 헤어라인 구분.
+  sumRow: { flexDirection: 'row', marginTop: 6, marginBottom: 2 },
+  sumCell: { flex: 1, paddingHorizontal: 2 },
+  sumCellDiv: { borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: withAlpha(T1, 0.045), paddingLeft: 12 },
+  sumValue: { color: T1, fontFamily: DISPLAY, fontSize: 22, fontWeight: '500', letterSpacing: -0.4 },
+  sumUnit: { color: T4, fontFamily: FONT, fontSize: 10.5, fontWeight: '500' },
+  sumLabel: { color: T3, fontFamily: FONT, fontSize: 11, fontWeight: '500', marginTop: 5 },
   summaryLabel: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '600', letterSpacing: 0.2 },
   summaryValue: { color: T1, fontFamily: DISPLAY, fontSize: 22, letterSpacing: 0.3, marginTop: 2 },
   summaryUnit: { color: T3, fontFamily: FONT, fontSize: 11.5, marginTop: 1 },

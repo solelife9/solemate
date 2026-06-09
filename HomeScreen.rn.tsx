@@ -16,7 +16,7 @@ import {
   BG, CARD, CARD_DIM, CARD_HI, HERO_BG, ACCENT, DANGER, WARN, GOOD, T1, T2, T3,
   FONT, DISPLAY, SPACE, RADIUS, withAlpha, Shoe, SHOES,
 } from './theme';
-import { Ring, TabBar, KeegoWordmark, Button, SectionTitle, Pill, conditionColor, InjuryBanner } from './primitives';
+import { Ring, TabBar, TierBadge, KeegoWordmark, Button, SectionTitle, Pill, conditionColor, InjuryBanner } from './primitives';
 import { Unit, displayNum, displayToKm } from './lib/units';
 import { GOAL_STEP_DISPLAY } from './lib/settings';
 import { assessShoeInjuryRisk } from './lib/injury';
@@ -36,8 +36,7 @@ const GAP = 10;
 // Proportional condition → ring color. 양호는 accent(주인공 톤), 주의/교체는 경고색.
 // 도트/조건 텍스트의 상태색은 primitives.conditionColor(양호=GOOD 녹색)를 재사용한다.
 const ringColor = (c: string) => (c === '교체' ? DANGER : c === '주의' ? WARN : ACCENT);
-// 컨디션 한글 레이블(히어로) — 양호는 keep-going 톤의 '최상의 컨디션'.
-const condLabel = (c: string) => (c === '교체' ? '교체 권장' : c === '주의' ? '주의 필요' : '최상의 컨디션');
+const condLabel = (c: string) => c === '교체' ? '교체 권장' : c === '주의' ? '주의 필요' : '최상의 컨디션';
 
 function TopBar({ onAddShoe }: { onAddShoe?: () => void }) {
   return (
@@ -50,6 +49,7 @@ function TopBar({ onAddShoe }: { onAddShoe?: () => void }) {
         hitSlop={8}
         style={({ pressed }) => [s.addBtn, pressed && s.pressed]}>
         <Text style={s.addBtnText}>신발 추가</Text>
+        <Ionicons name="add" size={15} color={T2} />
       </Pressable>
     </View>
   );
@@ -64,18 +64,15 @@ function WeeklyGoal({ goal, unit, editable }: { goal: GoalInfo; unit: Unit; edit
   const pct = Math.max(0, goal.pct);
   const reached = pct >= 100;
   const streak = Math.max(0, goal.streak);
-  // 이번 주 달린 거리/남은 거리는 목표·달성률로 역산(week stats 미전달 — goal만으로 구성).
-  const doneKm = Math.round((goal.km * Math.min(pct, 999)) / 100);
-  const doneDisplay = displayNum(doneKm, unit, 0);
-  const remainDisplay = displayNum(Math.max(0, goal.km - doneKm), unit, 0);
   return (
     <View style={s.goalCard}>
-      <View style={s.goalHeadRow}>
+      <View style={s.goalInfo}>
         <View style={s.row}>
-          <Ionicons name="flag" size={12} color={T3} />
+          <Ionicons name="flag" size={13} color={T3} />
           <Text style={s.goalLabel}>주간 목표</Text>
-          {editable && <Ionicons name="create-outline" size={12} color={T3} />}
+          {editable && <Ionicons name="create-outline" size={13} color={T3} />}
         </View>
+        <Text style={s.goalSub}>목표 {goalDisplay}{unit} / 주</Text>
         <View style={[s.streakChip, streak > 0 ? s.streakChipOn : s.streakChipOff]}>
           <Ionicons name="flame" size={12} color={streak > 0 ? ACCENT : T3} />
           <Text style={[s.streakText, { color: streak > 0 ? ACCENT : T3 }]}>
@@ -83,24 +80,13 @@ function WeeklyGoal({ goal, unit, editable }: { goal: GoalInfo; unit: Unit; edit
           </Text>
         </View>
       </View>
-      <View style={s.goalStats}>
-        <View style={s.goalStat}>
-          <Text style={s.goalStatV}>{doneDisplay}<Text style={s.goalStatU}>{unit}</Text></Text>
-          <Text style={s.goalStatK}>달린 거리</Text>
-        </View>
-        <View style={s.goalStat}>
-          <Text style={[s.goalStatV, reached && { color: GOOD }]}>{pct}<Text style={s.goalStatU}>%</Text></Text>
-          <Text style={s.goalStatK}>달성률</Text>
-        </View>
-        <View style={s.goalStat}>
-          <Text style={s.goalStatV}>{remainDisplay}<Text style={s.goalStatU}>{unit}</Text></Text>
-          <Text style={s.goalStatK}>남음</Text>
-        </View>
-      </View>
-      <View style={s.goalBar}>
-        <View testID="goal-progress" style={[s.goalBarFill, { width: `${Math.min(100, pct)}%`, backgroundColor: reached ? GOOD : ACCENT }]} />
-      </View>
-      <Text style={s.goalNote}>주간 목표 {goalDisplay}{unit}</Text>
+      <Ring size={64} stroke={8} progress={pct / 100} color={reached ? GOOD : ACCENT}>
+        <Text style={[s.goalRingPct, reached && { color: GOOD }]}>
+          {pct}<Text style={s.goalRingU}>%</Text>
+        </Text>
+      </Ring>
+      {/* progress carrier for test instrumentation */}
+      <View testID="goal-progress" style={{ position: 'absolute', width: `${Math.min(Math.max(0, pct), 100)}%`, height: 0, backgroundColor: reached ? GOOD : ACCENT }} />
     </View>
   );
 }
@@ -112,6 +98,7 @@ function HeroShoe({ shoe, unit, tappable, forecast }: { shoe: Shoe; unit: Unit; 
   const remain = displayNum(remainKm, unit);
   const used = displayNum(shoe.used, unit);
   const max = displayNum(shoe.max, unit);
+  const ring = ringColor(shoe.condition);
   const tier = conditionColor(shoe.condition);
   // 부상예방 경고(주의/위험)는 같은 마모 분모(used/max)로 판정해 히어로 하단에 띄운다.
   // 안전 등급은 InjuryBanner가 null을 돌려줘 경고를 노출하지 않는다(보관 신발도 제외).
@@ -124,29 +111,31 @@ function HeroShoe({ shoe, unit, tappable, forecast }: { shoe: Shoe; unit: Unit; 
   return (
     <View style={s.hero}>
       <View style={s.heroTop}>
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <View style={s.row}>
+            <Text style={s.heroBrand}>{shoe.brand}</Text>
+            {/* 교체/주의 tier 배지 — 홈 히어로에서 가장 먼저 보이게(양호는 미노출). */}
+            <TierBadge condition={shoe.condition} />
+            <View style={s.usingChip}><Text style={s.usingChipText}>사용 중</Text></View>
+          </View>
+          <Text style={s.heroModel} numberOfLines={2}>{shoe.model}</Text>
+        </View>
+        <Ring size={60} stroke={7} progress={pct} color={ring}>
+          <Text style={s.ringPct}>{Math.round(pct * 100)}<Text style={s.ringPctU}>%</Text></Text>
+        </Ring>
+      </View>
+      <View style={s.heroBottom}>
+        <View style={s.baselineRow}>
+          <Text style={s.heroRemain}>{remain}</Text>
+          <Text style={s.heroRemainU}>{unit} 남음</Text>
+        </View>
         <View style={s.row}>
-          <Text style={s.heroBrand}>{shoe.brand}</Text>
-          <View style={s.usingChip}><Text style={s.usingChipText}>사용 중</Text></View>
-        </View>
-        <View style={s.condPill} testID={`tier-badge-${shoe.condition}`}>
-          <View style={[s.condDot, { backgroundColor: tier }]} />
-          <Text style={[s.condPillText, { color: tier }]}>{condLabel(shoe.condition)}</Text>
+          <View style={[s.dot, { backgroundColor: tier }]} />
+          <Text style={[s.condText, { color: tier }]}>{condLabel(shoe.condition)}</Text>
+          <Text style={s.condSub}>· {used}/{max}{unit}</Text>
+          {tappable && <Ionicons name="chevron-forward" size={15} color={T3} style={{ marginLeft: 2 }} />}
         </View>
       </View>
-      <View style={s.modelRow}>
-        <Text style={s.heroModel} numberOfLines={2}>{shoe.model}</Text>
-        {tappable && <Ionicons name="chevron-forward" size={18} color={T3} />}
-      </View>
-      <View style={s.remainRow}>
-        <Text style={s.remainLead}>교체까지 약 </Text>
-        <Text style={s.heroRemain}>{remain}</Text>
-        <Text style={s.heroRemainU}>{unit}</Text>
-        <Text style={s.remainLead}> 남았어요</Text>
-      </View>
-      <View style={s.gaugeTrack}>
-        <View style={[s.gaugeFill, { width: `${Math.max(2, Math.round(pct * 100))}%` }]} />
-      </View>
-      <Text style={s.usageText}>{used} / {max}{unit} 사용</Text>
       {/* 교체 예측 ETA 한 줄(차별점) — 기존 배지/경고 위에 보강. 추정 톤('약'·'예상'). */}
       {!shoe.retired && !!forecastLine && (
         <View style={s.heroForecast}>
@@ -458,27 +447,18 @@ const s = StyleSheet.create({
   baselineRow: { flexDirection: 'row', alignItems: 'flex-end' },
 
   topbar: { paddingTop: 8, paddingHorizontal: SPACE.xl, paddingBottom: SPACE.xs, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  addBtn: { height: 36, paddingHorizontal: 16, borderRadius: RADIUS.pill, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.12), backgroundColor: withAlpha(T1, 0.04), alignItems: 'center', justifyContent: 'center' },
-  addBtnText: { color: T2, fontFamily: FONT, fontSize: 13, fontWeight: '600' },
+  addBtn: { height: 34, paddingHorizontal: 14, borderRadius: RADIUS.pill, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.1), flexDirection: 'row', alignItems: 'center', gap: 6 },
+  addBtnText: { color: T2, fontFamily: FONT, fontSize: 12.5, fontWeight: '600' },
 
   greetWrap: { paddingHorizontal: SPACE.xl, paddingTop: 8 },
   date: { color: T3, fontFamily: FONT, fontSize: 13, letterSpacing: 0.2 },
-  greet: { color: T1, fontFamily: FONT, fontSize: 21, fontWeight: '600', letterSpacing: -0.5, marginTop: 4, lineHeight: 27 },
+  greet: { color: T1, fontFamily: FONT, fontSize: 20, fontWeight: '400', letterSpacing: -0.4, marginTop: 3, lineHeight: 26 },
 
 
-  goalCard: { backgroundColor: CARD_DIM, borderRadius: 18, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.06), padding: 14 },
-  goalHeadRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  goalCard: { backgroundColor: CARD_DIM, borderRadius: 18, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.06), padding: SPACE.md, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   goalInfo: { flex: 1, gap: 6, minWidth: 0 },
-  goalLabel: { color: T3, fontFamily: FONT, fontSize: 12.5, fontWeight: '600', letterSpacing: 0.2 },
+  goalLabel: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600', letterSpacing: 0.2 },
   goalSub: { color: T3, fontFamily: FONT, fontSize: 11.5, fontWeight: '500' },
-  goalStats: { flexDirection: 'row', marginTop: 13 },
-  goalStat: { flex: 1 },
-  goalStatV: { color: T1, fontFamily: DISPLAY, fontSize: 19, fontWeight: '500', letterSpacing: -0.3 },
-  goalStatU: { color: T3, fontFamily: FONT, fontSize: 10.5, fontWeight: '500' },
-  goalStatK: { color: T3, fontFamily: FONT, fontSize: 11, fontWeight: '500', marginTop: 4 },
-  goalBar: { height: 4, borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.08), marginTop: 14, overflow: 'hidden' },
-  goalBarFill: { height: '100%', borderRadius: RADIUS.pill },
-  goalNote: { color: T3, fontFamily: FONT, fontSize: 11, fontWeight: '500', marginTop: 9 },
   streakChip: { flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start', borderRadius: RADIUS.pill, paddingHorizontal: 9, paddingVertical: 4 },
   streakChipOn: { backgroundColor: withAlpha(ACCENT, 0.14), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.4) },
   streakChipOff: { backgroundColor: CARD_HI },
@@ -486,23 +466,15 @@ const s = StyleSheet.create({
   goalRingPct: { color: T1, fontFamily: DISPLAY, fontSize: 19, letterSpacing: 0.2 },
   goalRingU: { color: T3, fontFamily: FONT, fontSize: 10 },
 
-  hero: { backgroundColor: CARD_DIM, borderRadius: RADIUS.xl, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.13), padding: 18 },
-  heroTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 14 },
-  heroBrand: { color: T3, fontFamily: DISPLAY, fontSize: 11.5, fontWeight: '600', letterSpacing: 1.4 },
-  usingChip: { backgroundColor: withAlpha(T1, 0.06), borderRadius: 6, paddingHorizontal: SPACE.sm, paddingVertical: 2 },
-  usingChipText: { color: T3, fontFamily: FONT, fontSize: 10, fontWeight: '600' },
-  condPill: { flexDirection: 'row', alignItems: 'center', gap: 7 },
-  condDot: { width: 7, height: 7, borderRadius: RADIUS.pill },
-  condPillText: { fontFamily: FONT, fontSize: 13, fontWeight: '500', letterSpacing: -0.2 },
-  modelRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
-  heroModel: { flex: 1, color: T1, fontFamily: DISPLAY, fontSize: 28, fontWeight: '600', letterSpacing: -0.6, lineHeight: 30 },
-  remainRow: { flexDirection: 'row', alignItems: 'flex-end', flexWrap: 'wrap', marginTop: 18 },
-  remainLead: { color: T2, fontFamily: FONT, fontSize: 16, fontWeight: '500', letterSpacing: -0.2, marginBottom: 2 },
-  heroRemain: { color: T1, fontFamily: DISPLAY, fontSize: 30, fontWeight: '600', letterSpacing: -0.9, marginLeft: 2 },
-  heroRemainU: { color: T2, fontFamily: FONT, fontSize: 15, fontWeight: '500', marginLeft: 1, marginBottom: 2 },
-  gaugeTrack: { height: 5, borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.08), marginTop: 16, overflow: 'hidden' },
-  gaugeFill: { height: '100%', borderRadius: RADIUS.pill, backgroundColor: ACCENT },
-  usageText: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500', marginTop: 11 },
+  hero: { backgroundColor: HERO_BG, borderRadius: RADIUS.xl, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.07), padding: 16 },
+  heroTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 14 },
+  heroBrand: { color: T3, fontFamily: DISPLAY, fontSize: 11, fontWeight: '500', letterSpacing: 1.4 },
+  usingChip: { backgroundColor: CARD_HI, borderRadius: 6, paddingHorizontal: SPACE.sm, paddingVertical: 2 },
+  usingChipText: { color: T3, fontFamily: FONT, fontSize: 10, fontWeight: '500' },
+  heroModel: { color: T1, fontFamily: DISPLAY, fontSize: 22, fontWeight: '600', letterSpacing: -0.2, marginTop: 5, lineHeight: 25 },
+  heroBottom: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 11 },
+  heroRemain: { color: T1, fontFamily: DISPLAY, fontSize: 38, letterSpacing: -1 },
+  heroRemainU: { color: T2, fontFamily: FONT, fontSize: 16, marginLeft: 5, marginBottom: 6 },
   injuryWrap: { marginTop: 16 },
   // 교체 예측 ETA 한 줄(히어로 하단) — accent 절제(아이콘+텍스트만, 배경 없음).
   heroForecast: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12 },
