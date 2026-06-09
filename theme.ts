@@ -1,5 +1,5 @@
 // ============================================================================
-// theme.ts — SoleMate design tokens (React Native, bare RN 0.85)
+// theme.ts — Keego design tokens (React Native, bare RN 0.85)
 // ============================================================================
 export const BG = '#000000';
 export const CARD = '#1C1C1E';
