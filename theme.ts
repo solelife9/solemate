@@ -4,7 +4,10 @@
 export const BG = '#000000';
 export const CARD = '#1C1C1E';
 export const CARD_HI = '#2C2C2E';        // raised surface (chips / pressed)
-export const CARD_DIM = '#0D0D0D';       // recessed card (idle picker etc.)
+// 카드 배경(앱 전역 '어두운 카드'). near-black(#0D0D0D)은 순흑 BG 위에서 안 보여
+// black-on-black 이 되므로, 살짝 떠 보이는 회색(#161618 — 히어로/신발 카드와 동일 톤)
+// 으로 올린다. 이 토큰 하나가 홈·신발·기록·마이·등록 카드 배경을 한 번에 좌우한다.
+export const CARD_DIM = '#161618';       // recessed card (idle picker etc.)
 export const HERO_BG = '#161618';        // selected/featured card surface
 export const ACCENT = '#FF6500';
 export const ACCENT_2 = '#FF9F4A';       // gradient top stop

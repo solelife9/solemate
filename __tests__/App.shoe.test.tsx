@@ -137,6 +137,14 @@ function colorsOf(root: ReactTestRenderer.ReactTestInstance, value: string): (st
     .map((n: any) => (StyleSheet.flatten(n.props.style) || {}).color);
 }
 
+// 락커 컨디션 상태색은 텍스트가 아니라 상태 점(testID='cond-dot-<tier>')의 배경색에
+// 실린다(목업 리스킨: 글씨는 중립 T2, 점만 색). 점 배경색으로 3-tier 색 계약을 검증한다.
+function dotColorsOf(root: ReactTestRenderer.ReactTestInstance, condition: string): (string | undefined)[] {
+  return root
+    .findAll((n: any) => n?.props?.testID === `cond-dot-${condition}`)
+    .map((n: any) => (StyleSheet.flatten(n.props.style) || {}).backgroundColor);
+}
+
 // ── 1) single-source condition tier on the home hero ─────────────────────────
 test('worn shoe (>90% of max_km) shows the 교체 tier on the home hero (audit#7)', async () => {
   const {root} = await mount(
@@ -267,10 +275,10 @@ test('ShoesScreen renders 양호/주의/교체 in distinct colors', async () => 
     <ShoesScreen shoes={shoes} runs={[]} totals={{}} onTab={() => {}} onAddShoe={() => {}} />,
   );
 
-  // 3-tier color contract: 교체→DANGER, 주의→WARN, 양호→GOOD.
-  expect(colorsOf(root, '교체')).toContain(DANGER);
-  expect(colorsOf(root, '주의')).toContain(WARN);
-  expect(colorsOf(root, '양호')).toContain(GOOD);
+  // 3-tier color contract: 교체→DANGER, 주의→WARN, 양호→GOOD (상태 점에 실린다).
+  expect(dotColorsOf(root, '교체')).toContain(DANGER);
+  expect(dotColorsOf(root, '주의')).toContain(WARN);
+  expect(dotColorsOf(root, '양호')).toContain(GOOD);
 });
 
 test('ShoesScreen locker drives retire (archive) and restore (undo) through props', async () => {
