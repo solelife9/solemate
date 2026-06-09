@@ -221,6 +221,8 @@ describe('App 데이터 파괴 0 — notif 설정 변경이 기존 인앱 배지
 
     // 프로필(마이) → 푸시 알림 행 펼치기 → '러닝 리마인더' 끄기(끄기는 권한 요청과 무관).
     await tap(pressBy(root, '마이'));
+    // 설정 행은 마이탭 헤더 ⚙️ 뒤의 '설정' 뷰로 분리됐다 — 먼저 연다.
+    await tap(root.findAll((n: any) => n.props?.accessibilityLabel === '설정 열기')[0]);
     await tap(pressBy(root, '푸시 알림'));
     await tap(pressBy(root, '러닝 리마인더'));
 

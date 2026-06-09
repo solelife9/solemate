@@ -179,6 +179,11 @@ export default function ProfileScreen({
   const [open, setOpen] = useState<null | 'goal' | 'weight' | 'alerts' | 'notif' | 'account' | 'import'>(null);
   const toggleOpen = (k: 'goal' | 'weight' | 'alerts' | 'notif' | 'account' | 'import') => setOpen((o) => (o === k ? null : k));
 
+  // 마이탭 정리(설정 분리): 기본은 프로필+기록만 보이고, 헤더 ⚙️ 를 누르면 같은 화면이
+  // 전체화면 '설정' 뷰로 전환된다(목표·알림·푸시·단위·체중·계정·클라우드를 한곳에 모음).
+  // 상태/핸들러는 그대로 공유하므로 데이터 흐름은 바뀌지 않는다(뷰 전환일 뿐).
+  const [showSettings, setShowSettings] = useState(false);
+
   // 헤더 설정 버튼 → '설정' 섹션으로 스크롤(무반응이던 버튼에 동작 부여). 섹션 위치는
   // onLayout 으로 측정한다(콘텐츠 컨테이너 기준 y).
   const scrollRef = useRef<ScrollView>(null);
@@ -188,10 +193,9 @@ export default function ProfileScreen({
   // 홈 주간목표 탭으로 진입 시: 해당 설정 패널을 펼치고 설정 섹션으로 스크롤한다(한 번만 소비).
   useEffect(() => {
     if (!initialOpen) return;
+    setShowSettings(true);   // 홈 주간목표 탭 등 외부 진입 → 설정 뷰를 연다
     setOpen(initialOpen);
-    const t = setTimeout(scrollToSettings, 250);
     onConsumeInitialOpen?.();
-    return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialOpen]);
 
@@ -371,15 +375,24 @@ export default function ProfileScreen({
   return (
     <View style={s.screen}>
       <ScrollView ref={scrollRef} contentContainerStyle={{ paddingTop: insets.top + 12, paddingHorizontal: 18, paddingBottom: 8, gap: 16 }}>
-        {/* header */}
-        <View style={s.headerRow}>
-          <Text style={s.title}>마이</Text>
-          <View style={{ flexDirection: 'row', gap: 8 }}>
-            <Pressable onPress={() => Share.share({ message: 'Keego에서 내 러닝화 수명을 관리하고 있어요 🏃' })} accessibilityRole="button" accessibilityLabel="기록 공유" style={({ pressed }) => [s.iconBtn, pressed && { backgroundColor: CARD }]}><Ionicons name="share-outline" size={18} color={T2} /></Pressable>
-            <Pressable onPress={scrollToSettings} accessibilityRole="button" accessibilityLabel="설정으로 이동" style={({ pressed }) => [s.iconBtn, pressed && { backgroundColor: CARD }]}><Ionicons name="settings-outline" size={19} color={T2} /></Pressable>
+        {/* header — 마이(프로필+기록) ↔ 설정 뷰 전환 */}
+        {showSettings ? (
+          <View style={s.headerRow}>
+            <Pressable onPress={() => setShowSettings(false)} accessibilityRole="button" accessibilityLabel="뒤로" style={({ pressed }) => [s.iconBtn, pressed && { backgroundColor: CARD }]}><Ionicons name="chevron-back" size={20} color={T2} /></Pressable>
+            <Text style={s.title}>설정</Text>
+            <View style={{ width: 38 }} />
           </View>
-        </View>
+        ) : (
+          <View style={s.headerRow}>
+            <Text style={s.title}>마이</Text>
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <Pressable onPress={() => Share.share({ message: 'Keego에서 내 러닝화 수명을 관리하고 있어요 🏃' })} accessibilityRole="button" accessibilityLabel="기록 공유" style={({ pressed }) => [s.iconBtn, pressed && { backgroundColor: CARD }]}><Ionicons name="share-outline" size={18} color={T2} /></Pressable>
+            <Pressable onPress={() => setShowSettings(true)} accessibilityRole="button" accessibilityLabel="설정 열기" style={({ pressed }) => [s.iconBtn, pressed && { backgroundColor: CARD }]}><Ionicons name="settings-outline" size={19} color={T2} /></Pressable>
+            </View>
+          </View>
+        )}
 
+        {!showSettings && (<>
         {/* identity — 아바타(탭하면 사진 변경) + 이름(탭하면 인라인 편집) */}
         <View style={s.identity}>
           <Pressable onPress={onPickPhoto} accessibilityRole="button" accessibilityLabel="프로필 사진 변경" style={s.avatarRing} testID="profile-avatar">
@@ -610,9 +623,11 @@ export default function ProfileScreen({
             </View>
           </View>
         )}
+        </>)}
 
+        {showSettings && (<>
         {/* settings — 실제 구동 */}
-        <View onLayout={(e) => setSettingsY(e.nativeEvent.layout.y)}>
+        <View>
           <Text style={[s.sectionLabel, { paddingBottom: 12 }]}>설정</Text>
           <View style={[s.card, { overflow: 'hidden' }]}>
             {/* 1) 목표 설정 */}
@@ -758,6 +773,7 @@ export default function ProfileScreen({
             )}
           </View>
         </View>
+        </>)}
 
       </ScrollView>
       {/* 화면 밖에 마운트된 리캡 공유 카드 — ref.toDataURL()로 PNG 캡처(보이지 않음). */}

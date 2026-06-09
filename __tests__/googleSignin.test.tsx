@@ -99,6 +99,10 @@ function render(props: any) {
   act(() => {
     renderer = ReactTestRenderer.create(<ProfileScreen {...props} />);
   });
+  // 설정은 마이탭 헤더 ⚙️ 뒤의 '설정' 뷰로 분리됐다 — 로그인 버튼은 설정 뷰에 있어 열어둔다.
+  act(() => {
+    renderer.root.findAll((n: any) => n.props?.accessibilityLabel === '설정 열기')[0]?.props?.onPress?.();
+  });
   return renderer.root;
 }
 function byTestId(root: ReactTestRenderer.ReactTestInstance, id: string) {

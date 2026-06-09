@@ -97,6 +97,8 @@ describe('ProfileScreen 설정 행 구동 보존', () => {
   test('단위 행을 누르면 onChangeUnit이 반대 단위로 호출된다', () => {
     const onChangeUnit = jest.fn();
     const root = render({unit: 'km', onChangeUnit});
+    // 설정 행은 마이탭 헤더 ⚙️ 뒤의 '설정' 뷰로 이동했다 — 먼저 연다.
+    act(() => { root.findAll((n: any) => n.props?.accessibilityLabel === '설정 열기')[0]?.props?.onPress?.(); });
     act(() => {
       pressableWith(root, '단위').props.onPress();
     });
@@ -106,6 +108,8 @@ describe('ProfileScreen 설정 행 구동 보존', () => {
   test('목표 패널의 + 스테퍼를 누르면 onChangeGoal이 증가된 거리로 호출된다', () => {
     const onChangeGoal = jest.fn();
     const root = render({goalWeeklyKm: 30, weeklyPercent: 50, unit: 'km', onChangeGoal});
+    // 설정 행은 ⚙️ 뒤의 '설정' 뷰로 이동했다 — 먼저 연 뒤 목표 설정 행을 펼친다.
+    act(() => { root.findAll((n: any) => n.props?.accessibilityLabel === '설정 열기')[0]?.props?.onPress?.(); });
     // 목표 설정 행을 눌러 패널(스테퍼) 펼침
     act(() => {
       pressableWith(root, '목표 설정').props.onPress();

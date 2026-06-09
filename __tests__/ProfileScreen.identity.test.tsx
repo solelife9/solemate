@@ -66,8 +66,8 @@ describe('ProfileScreen identity — 이름·사진', () => {
 });
 
 describe('ProfileScreen settings shortcut — 헤더 설정 버튼', () => {
-  test('헤더 설정 버튼은 onPress(설정으로 이동) 가 연결돼 있다', () => {
+  test('헤더 설정 버튼(⚙️)이 설정 뷰를 여는 어포던스로 연결돼 있다', () => {
     const root = render(<ProfileScreen profile={PROFILE} />).root;
-    expect(byA11y(root, '설정으로 이동').length).toBe(1);
+    expect(byA11y(root, '설정 열기').length).toBe(1);
   });
 });

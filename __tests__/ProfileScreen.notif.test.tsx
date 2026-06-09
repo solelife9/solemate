@@ -34,6 +34,10 @@ function render(props: any) {
   act(() => {
     renderer = ReactTestRenderer.create(<ProfileScreen {...props} />);
   });
+  // 설정은 마이탭 헤더 ⚙️ 뒤의 '설정' 뷰로 분리됐다 — 설정 대상 테스트라 열어둔다.
+  act(() => {
+    renderer.root.findAll((n: any) => n.props?.accessibilityLabel === '설정 열기')[0]?.props?.onPress?.();
+  });
   return renderer.root;
 }
 

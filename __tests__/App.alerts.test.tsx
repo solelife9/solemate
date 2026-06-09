@@ -149,6 +149,8 @@ test('새 임계값(75%)에서 발화 — 기본값 90%였다면 조용했을 80
 test('알림 패널에서 임계값 +스텝 → settings_alerts.thresholdPct 영속', async () => {
   const {root} = await mount(SHOE80, RUNS80);
   await tap(pressBy(root, '마이'));
+  // 설정 행은 마이탭 헤더 ⚙️ 뒤의 '설정' 뷰로 분리됐다 — 먼저 연다.
+  await tap(root.findAll((n: any) => n.props?.accessibilityLabel === '설정 열기')[0]);
   await tap(pressBy(root, '알림')); // 패널 펼치기(기본 enabled=true, 임계 90%)
 
   // 패널의 임계값 스테퍼 '+'(add)로 90 → 95
