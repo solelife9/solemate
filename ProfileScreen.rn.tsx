@@ -707,20 +707,6 @@ export default function ProfileScreen({
                 <Text style={s.panelHint}>러닝 칼로리 추정에 사용돼요(가이드 값 — 정밀 측정 아님).</Text>
               </View>
             )}
-
-            {/* 4) 계정 설정 */}
-            <Pressable onPress={() => toggleOpen('account')} accessibilityRole="button" accessibilityLabel="계정 설정" accessibilityState={{ expanded: open === 'account' }} style={({ pressed }) => [s.settingRow, pressed && { backgroundColor: CARD_HI }]}>
-              <View style={s.settingIcon}><Ionicons name="settings-outline" size={17} color={ACCENT} /></View>
-              <Text style={s.settingLabel}>계정 설정</Text>
-              <Ionicons name={open === 'account' ? 'chevron-up' : 'chevron-forward'} size={16} color={T3} />
-            </Pressable>
-            {open === 'account' && (
-              <View style={s.panel}>
-                <View style={s.acctRow}><Text style={s.acctK}>기기 ID</Text><Text style={s.acctV} numberOfLines={1}>{deviceId || '—'}</Text></View>
-                <View style={s.acctRow}><Text style={s.acctK}>가입</Text><Text style={s.acctV}>{profile.since || '기록 없음'}</Text></View>
-                <View style={s.acctRow}><Text style={s.acctK}>버전</Text><Text style={s.acctV}>{APP_VERSION}</Text></View>
-              </View>
-            )}
           </View>
         </View>
 
@@ -768,6 +754,12 @@ export default function ProfileScreen({
                 </Pressable>
               </View>
             )}
+            {/* 앱·기기 정보(읽기 전용) — 기존 '계정 설정' 행을 계정 섹션으로 통합(이름 중복 제거). */}
+            <View style={[s.panel, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.07) }]} testID="app-info">
+              <View style={s.acctRow}><Text style={s.acctK}>기기 ID</Text><Text style={s.acctV} numberOfLines={1}>{deviceId || '—'}</Text></View>
+              <View style={s.acctRow}><Text style={s.acctK}>가입</Text><Text style={s.acctV}>{profile.since || '기록 없음'}</Text></View>
+              <View style={s.acctRow}><Text style={s.acctK}>버전</Text><Text style={s.acctV}>{APP_VERSION}</Text></View>
+            </View>
             {cloudMsg && (
               <Text testID="cloud-msg" style={[s.cloudMsg, cloudMsg.ok ? s.dataMsgOk : s.dataMsgErr]}>{cloudMsg.text}</Text>
             )}
