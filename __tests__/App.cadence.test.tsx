@@ -93,7 +93,11 @@ async function startRun() {
   const root = renderer.root;
   pressByText(root, '러닝 시작');
   await act(async () => {
-    pressByText(root, '러닝 시작');
+    pressByText(root, '러닝 시작'); // goal → 카운트다운
+  });
+  // 카운트다운(준비·GPS락·3·2·1·GO) 자동 진행을 건너뛰어 라이브 런으로 진입한다.
+  await act(async () => {
+    jest.advanceTimersByTime(6000);
   });
 
   // The run engine called accelerometer.subscribe(cb) in beginRun — grab cb so

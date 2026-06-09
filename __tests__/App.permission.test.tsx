@@ -86,9 +86,18 @@ async function startRun() {
   });
   const root = renderer.root;
   pressByText(root, '러닝 시작'); // Home → goal keypad
+  // 2nd 프레스가 카운트다운(준비·3·2·1·GO)을 띄운다. onDone 타이머 제어를 위해
+  // 카운트다운을 fake 타이머 하에서 mount/advance 하고(실타이머 테스트라 임시 보장),
+  // 라이브 런 진입 후 원복한다.
+  const fakeAlready = typeof (setTimeout as any).clock === 'object';
+  if (!fakeAlready) jest.useFakeTimers();
   await act(async () => {
-    pressByText(root, '러닝 시작'); // goal → live run
+    pressByText(root, '러닝 시작'); // goal → 카운트다운
   });
+  await act(async () => {
+    jest.advanceTimersByTime(6000); // 카운트다운 → 라이브 런(onDone)
+  });
+  if (!fakeAlready) jest.useRealTimers();
   return {renderer, root};
 }
 
@@ -189,9 +198,13 @@ test('a GPS dead-zone (no fix for the stall threshold) surfaces a Korean banner'
       renderer = ReactTestRenderer.create(<App />);
     });
     const root = renderer.root;
-    pressByText(root, '러닝 시작');
+    pressByText(root, '러닝 시작'); // home → goal
     await act(async () => {
-      pressByText(root, '러닝 시작');
+      pressByText(root, '러닝 시작'); // goal → 카운트다운
+    });
+    // 카운트다운(준비·3·2·1·GO) 자동 진행을 건너뛰어 라이브 런으로 진입(이 테스트는 자체 fake 타이머).
+    await act(async () => {
+      jest.advanceTimersByTime(6000);
     });
 
     const onPos = watchMock().mock.calls[0][1] as (p: any) => void;

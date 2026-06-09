@@ -114,7 +114,11 @@ async function startRunWithDistance() {
   const root = renderer.root;
   pressByText(root, '러닝 시작'); // home → goal
   await act(async () => {
-    pressByText(root, '러닝 시작'); // goal → live run
+    pressByText(root, '러닝 시작'); // goal → 카운트다운
+  });
+  // 카운트다운(준비·GPS락·3·2·1·GO) 자동 진행을 건너뛰어 라이브 런으로 진입한다.
+  await act(async () => {
+    jest.advanceTimersByTime(6000);
   });
 
   const calls = (Location.watchPositionAsync as jest.Mock).mock.calls;

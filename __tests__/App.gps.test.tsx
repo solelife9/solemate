@@ -90,13 +90,19 @@ async function startRun() {
   });
   const root = renderer.root;
   // Home → goal keypad.
-  pressByText(root, '러닝 시작');
-  // Goal keypad → live run (default goal 5km). Effect runs beginRun()
-  // synchronously on iOS (the jest RN preset's default Platform.OS), so
-  // watchPosition is registered by the time act() flushes.
+  pressByText(root, '러닝 시작'); // Home → goal
+  // Goal → 카운트다운 → live run. 카운트다운 onDone 타이머를 제어하려면 카운트다운이
+  // fake 타이머 하에서 mount/advance 돼야 한다(real/fake 양쪽에서 불리므로 임시 보장).
+  // 이후 beginRun()이 watchPosition을 등록한다(default goal 5km).
+  const fakeAlready = typeof (setTimeout as any).clock === 'object';
+  if (!fakeAlready) jest.useFakeTimers();
   await act(async () => {
-    pressByText(root, '러닝 시작');
+    pressByText(root, '러닝 시작'); // goal → 카운트다운
   });
+  await act(async () => {
+    jest.advanceTimersByTime(6000); // 카운트다운 → 라이브 런(onDone)
+  });
+  if (!fakeAlready) jest.useRealTimers();
 
   const calls = (Location.watchPositionAsync as jest.Mock).mock.calls;
   expect(calls.length).toBeGreaterThan(0);

@@ -126,10 +126,19 @@ async function startRun() {
     renderer = ReactTestRenderer.create(<App />);
   });
   const root = renderer.root;
-  pressByText(root, '러닝 시작');
+  pressByText(root, '러닝 시작'); // home → goal
+  // 2nd 프레스가 카운트다운(준비·3·2·1·GO)을 띄운다. onDone 타이머를 제어하려면
+  // 카운트다운이 fake 타이머 하에서 mount/advance 돼야 하므로, 이 헬퍼가 real/fake
+  // 양쪽 테스트에서 불리는 점을 고려해 진입 동안만 fake 를 보장하고 원복한다.
+  const fakeAlready = typeof (setTimeout as any).clock === 'object';
+  if (!fakeAlready) jest.useFakeTimers();
   await act(async () => {
-    pressByText(root, '러닝 시작');
+    pressByText(root, '러닝 시작'); // goal → 카운트다운
   });
+  await act(async () => {
+    jest.advanceTimersByTime(6000); // 카운트다운 → 라이브 런(onDone)
+  });
+  if (!fakeAlready) jest.useRealTimers();
 
   const calls = (Location.watchPositionAsync as jest.Mock).mock.calls;
   expect(calls.length).toBeGreaterThan(0);

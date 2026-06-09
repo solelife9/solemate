@@ -24,6 +24,7 @@ import ProfileScreen, {Profile, Badge, PersonalRecord} from './ProfileScreen.rn'
 import AddShoeScreen from './AddShoeScreen.rn';
 import OnboardingScreen, {RegisteredShoe} from './OnboardingScreen.rn';
 import RunGoalScreen from './RunGoalScreen.rn';
+import RunCountdownScreen from './RunCountdownScreen.rn';
 import RunActiveScreenView from './RunActiveScreen.rn';
 
 import {simplifyRoute} from './lib/geo';
@@ -140,7 +141,7 @@ function Main(){
   // 프로필의 목표 설정 패널을 펼친 채 진입한다(각각 한 번만 소비).
   const [shoesDetailId,setShoesDetailId]=useState<string|null>(null);
   const [profileInitialOpen,setProfileInitialOpen]=useState<'goal'|'weight'|'alerts'|'account'|'import'|null>(null);
-  const [overlay,setOverlay]=useState<'none'|'add'|'goal'|'run'>('none');
+  const [overlay,setOverlay]=useState<'none'|'add'|'goal'|'countdown'|'run'>('none');
   const [pendingShoe,setPendingShoe]=useState<{id:string;name:string;ui:Shoe}|null>(null);
   const [activeRun,setActiveRun]=useState<{id:string;name:string;goalKm:number}|null>(null);
   // audit#2: 앱 시작 시 감지된 미완료 런 스냅샷. 사용자가 '복구' 선택 시 done
@@ -879,8 +880,11 @@ function Main(){
   // 플래그를 영속하고 런으로 진입 → RunActiveScreen 이 실제 OS 권한을 요청한다.
   // 이미 안내했거나(locPrimed) 닫으면 추가 안내 없이 동작한다.
   const enterRun=(km:number)=>{
+    // 목표 설정 → 카운트다운(준비·GPS 워밍업·3·2·1·GO) → 라이브 런. 카운트다운의
+    // onDone 이 실제 런(GPS 트래킹 시작) 화면으로 넘긴다. 미완료 런 복구 경로는
+    // 카운트다운을 거치지 않고 곧장 'run'으로 간다(이미 끝난 런의 검토라서).
     setActiveRun({id:pendingShoe!.id,name:pendingShoe!.name,goalKm:km});
-    setOverlay('run');
+    setOverlay('countdown');
   };
   const startActiveRun=(km:number)=>{
     if(!pendingShoe) return;
@@ -937,6 +941,16 @@ function Main(){
         remainKm={Math.max(0,pendingShoe.ui.max-pendingShoe.ui.used)}
         onBack={()=>{setOverlay('none');setPendingShoe(null);}}
         onStart={startActiveRun}
+      />
+    );
+  }
+  if(overlay==='countdown'&&activeRun){
+    return (
+      <RunCountdownScreen
+        goalKm={activeRun.goalKm}
+        shoeLabel={parseShoeName(activeRun.name).model||activeRun.name}
+        onCancel={()=>setOverlay('goal')}
+        onDone={()=>setOverlay('run')}
       />
     );
   }

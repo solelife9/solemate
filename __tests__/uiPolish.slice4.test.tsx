@@ -89,10 +89,19 @@ async function toLiveRun() {
     renderer = ReactTestRenderer.create(<App />);
   });
   const root = renderer.root;
-  pressByText(root, '러닝 시작'); // 홈 → 목표 설정(RunStart)
+  pressByText(root, '러닝 시작'); // 홈 → 목표 설정(RunGoalScreen)
+  // 2nd 프레스가 카운트다운(준비·3·2·1·GO)을 띄운다. onDone 타이머 제어를 위해
+  // 카운트다운을 fake 타이머 하에서 mount/advance 하고(실타이머 테스트라 임시 보장),
+  // 라이브 런 진입 후 원복한다.
+  const fakeAlready = typeof (setTimeout as any).clock === 'object';
+  if (!fakeAlready) jest.useFakeTimers();
   await act(async () => {
-    pressByText(root, '러닝 시작'); // 목표 설정 → 라이브 런
+    pressByText(root, '러닝 시작'); // 목표 → 카운트다운
   });
+  await act(async () => {
+    jest.advanceTimersByTime(6000); // 카운트다운 → 라이브 런(onDone)
+  });
+  if (!fakeAlready) jest.useRealTimers();
   return {renderer, root};
 }
 

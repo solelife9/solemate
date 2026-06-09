@@ -72,9 +72,17 @@ async function startRun() {
   });
   const root = renderer.root;
   pressByText(root, '러닝 시작'); // Home → goal keypad
+  // Goal → 카운트다운 → live run. 카운트다운 onDone 타이머를 제어하려면 카운트다운이
+  // fake 타이머 하에서 mount/advance 돼야 한다(real/fake 양쪽에서 불리므로 임시 보장).
+  const fakeAlready = typeof (setTimeout as any).clock === 'object';
+  if (!fakeAlready) jest.useFakeTimers();
   await act(async () => {
-    pressByText(root, '러닝 시작'); // goal → live run (default 5km)
+    pressByText(root, '러닝 시작'); // goal → 카운트다운
   });
+  await act(async () => {
+    jest.advanceTimersByTime(6000); // 카운트다운 → 라이브 런(onDone, default 5km)
+  });
+  if (!fakeAlready) jest.useRealTimers();
   return {renderer, root};
 }
 

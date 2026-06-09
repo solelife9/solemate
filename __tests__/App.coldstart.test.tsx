@@ -204,9 +204,18 @@ test('first-time runner is shown a location-permission rationale BEFORE the OS d
     // Tap 계속 → the run now starts and the OS authorization is requested.
     const cont = (priming![2] as any[]).find(b => b.text === '계속');
     expect(cont).toBeTruthy();
+    // '계속' → enterRun → 카운트다운(준비·3·2·1·GO) → 라이브 런. OS 위치 권한은
+    // 카운트다운이 아니라 런 화면에서 요청하므로, 카운트다운이 fake 타이머 하에서
+    // mount 되도록 onPress 전에 fake 를 켜고 advance 해 런까지 진입시킨다.
+    const fakeAlready = typeof (setTimeout as any).clock === 'object';
+    if (!fakeAlready) jest.useFakeTimers();
     await act(async () => {
-      cont.onPress();
+      cont.onPress(); // enterRun → 카운트다운 mount
     });
+    await act(async () => {
+      jest.advanceTimersByTime(6000); // 카운트다운 → 라이브 런(OS 권한 요청)
+    });
+    if (!fakeAlready) jest.useRealTimers();
     await flush();
 
     expect(
