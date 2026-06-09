@@ -7,7 +7,7 @@ import { View, Text, ScrollView, Pressable, TextInput, Alert, StyleSheet, Linkin
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {
-  BG, CARD, CARD_DIM, CARD_HI, ACCENT, DANGER, WARN, GOOD, T1, T2, T3, T4, SEP, FONT, DISPLAY, withAlpha, Shoe, Run, SHOES,
+  BG, CARD, CARD_DIM, CARD_HI, HERO_BG, ACCENT, DANGER, WARN, GOOD, T1, T2, T3, T4, SEP, FONT, DISPLAY, withAlpha, Shoe, Run, SHOES,
 } from './theme';
 import { Ring, TabBar, TierBadge, Pill, InjuryBanner, SectionTitle } from './primitives';
 import { FuelGauge } from './FuelGauge';
@@ -69,6 +69,8 @@ export type ShoeTotals = { totalRuns: number; totalTime: string; avgPace: string
 // Proportional condition → color (shoeHealth tiers: 양호 / 주의 / 교체).
 const condColor = (c: string) => (c === '교체' ? DANGER : c === '주의' ? WARN : GOOD);
 const ringColor = (c: string) => (c === '교체' ? DANGER : c === '주의' ? WARN : ACCENT);
+// 락커 카드 컨디션 라벨 — 목업 정합(친근한 표현). 홈 히어로와 동일 매핑.
+const condLabel = (c: string) => (c === '교체' ? '교체 권장' : c === '주의' ? '주의 필요' : '최상의 컨디션');
 
 // ── shoe detail ───────────────────────────────────────────────────────────────
 function ShoeDetail({
@@ -378,21 +380,24 @@ function ShoeCard({ shoe, featured, onPress, onPlay, unit, pace }: { shoe: Shoe;
   const maxDisp = displayNum(shoe.max, unit);
   return (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${shoe.brand} ${shoe.model} 상세`} style={({ pressed }) => [s.shoeCard, featured ? s.shoeCardFeatured : s.shoeCardIdle, retired && s.shoeCardRetired, pressed && s.pressed]}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-        <Ring size={56} stroke={7} progress={pct} color={retired ? T3 : ring}>
+      <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 14 }}>
+        <Ring size={64} stroke={6} progress={pct} color={retired ? T3 : ring}>
           <Text style={s.shoeRingPct}>{Math.round(pct * 100)}<Text style={s.shoeRingPctU}>%</Text></Text>
         </Ring>
         <View style={{ flex: 1, minWidth: 0 }}>
-          <View style={s.row}>
-            <Text style={s.shoeBrand}>{shoe.brand}</Text>
-            {retired ? <Pill tone="dim" label="보관됨" />
-              : featured && <Pill tone="dim" label="사용 중" />}
+          {/* 상단 행: 브랜드+사용중(왼쪽) · 컨디션 도트+문구(오른쪽 위) — 홈 히어로 정합 */}
+          <View style={s.shoeTopRow}>
+            <View style={[s.row, { flexShrink: 1, minWidth: 0 }]}>
+              <Text style={s.shoeBrand}>{shoe.brand}</Text>
+              {retired ? <Pill tone="dim" label="보관됨" />
+                : featured && <Text style={s.shoeUsing}>· 사용 중</Text>}
+            </View>
+            <View style={[s.shoeCondRow, { marginTop: 0, flexShrink: 0 }]}>
+              <View testID={`cond-dot-${shoe.condition}`} style={[s.shoeCondDot, { backgroundColor: condColor(shoe.condition) }]} />
+              <Text style={[s.shoeCondText, { color: T2 }]} numberOfLines={1}>{condLabel(shoe.condition)}</Text>
+            </View>
           </View>
           <Text style={s.shoeModel} numberOfLines={2}>{shoe.model}</Text>
-          <View style={s.shoeCondRow}>
-            <View style={[s.shoeCondDot, { backgroundColor: condColor(shoe.condition) }]} />
-            <Text style={[s.shoeCondText, {color: condColor(shoe.condition)}]}>{shoe.condition}</Text>
-          </View>
           <Text style={s.shoeMeta}>교체까지 <Text style={s.shoeMetaKm}>{displayNum(remainKm, unit)}{unit}</Text> · {usedDisp} / {maxDisp}{unit} 사용</Text>
           {/* 평균 페이스 — 신발끼리 한눈에 비교(기록 있을 때만). */}
           {pace && pace !== '--' && (
@@ -409,7 +414,7 @@ function ShoeCard({ shoe, featured, onPress, onPlay, unit, pace }: { shoe: Shoe;
             <Ionicons name="play" size={15} color={T2} />
           </Pressable>
         ) : (
-          <Ionicons name="chevron-forward" size={16} color={T3} />
+          <Ionicons name="chevron-forward" size={16} color={T3} style={{ alignSelf: 'center' }} />
         )}
       </View>
     </Pressable>
@@ -484,9 +489,12 @@ export default function ShoesScreen({
 
   return (
     <View style={[s.screen, { paddingTop: insets.top }]}>
-      <View style={s.header}>
-        <Text style={s.headerCount}>{shoes.length}켤레 보유</Text>
+      <View style={s.topbar}>
         <Text style={s.title}>신발</Text>
+        <Pressable onPress={onAddShoe} accessibilityRole="button" accessibilityLabel="신발 추가" hitSlop={8} style={({ pressed }) => [s.addPill, pressed && s.pressed]}>
+          <Text style={s.addPillText}>신발 추가</Text>
+          <Ionicons name="add" size={15} color={T2} />
+        </Pressable>
       </View>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 18, paddingBottom: 8, gap: 14, paddingTop: 12 }}>
         {shoes.map((shoe, i) => (
@@ -521,21 +529,28 @@ const s = StyleSheet.create({
   condText: { fontFamily: FONT, fontSize: 13, fontWeight: '500' },
   condSub: { color: T3, fontFamily: FONT, fontSize: 13 },
 
-  header: { paddingTop: 12, paddingHorizontal: 22, paddingBottom: 8 },
-  headerCount: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600' },
-  title: { color: T1, fontFamily: FONT, fontSize: 32, fontWeight: '500', letterSpacing: -0.8, marginTop: 2 },
+  // 목업 정합: 제목 + '신발 추가' 버튼 한 줄(topbar)
+  topbar: { paddingTop: 8, paddingHorizontal: 22, paddingBottom: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  title: { color: T1, fontFamily: FONT, fontSize: 28, fontWeight: '600', letterSpacing: -0.6 },
+  addPill: { height: 34, paddingHorizontal: 14, borderRadius: 999, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.1), flexDirection: 'row', alignItems: 'center', gap: 6 },
+  addPillText: { color: T2, fontFamily: FONT, fontSize: 12.5, fontWeight: '600' },
 
   // 카드 하단 중복 진행바(track/trackFill)를 제거하고 원형 Ring 만 유지한다. 바가
   // 빠진 만큼 카드 패딩을 살짝 줄이고(20), 링(78)·모델 폰트(20)를 키워 비율을
   // 재조정했다 — 같은 pct 를 두 번 그리던 중복을 없애 시선이 링에 모인다.
-  shoeCard: { backgroundColor: CARD_DIM, borderRadius: 18, padding: 14 },
+  // 목업 정합: 카드 배경을 near-black(CARD_DIM)에서 살짝 떠 보이는 회색(HERO_BG — 홈
+  // 히어로 카드와 동일 톤)으로 올려 black-on-black 을 피한다.
+  shoeCard: { backgroundColor: HERO_BG, borderRadius: 20, padding: 16 },
   shoeCardFeatured: { borderWidth: 1, borderColor: withAlpha(T1, 0.2) },
-  shoeCardIdle: { borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.05) },
+  shoeCardIdle: { borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.08) },
   shoeCardRetired: { opacity: 0.55, borderColor: withAlpha(T1, 0.05) },
-  shoeRingPct: { color: T1, fontFamily: DISPLAY, fontSize: 15 },
+  shoeRingPct: { color: T1, fontFamily: DISPLAY, fontSize: 16 },
   shoeRingPctU: { color: T3, fontFamily: FONT, fontSize: 8 },
+  // 상단 행: 브랜드(왼쪽) ↔ 컨디션(오른쪽 위) 양끝 정렬
+  shoeTopRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   shoeBrand: { color: T3, fontFamily: DISPLAY, fontSize: 11, fontWeight: '500', letterSpacing: 1.3 },
-  shoeModel: { color: T1, fontFamily: DISPLAY, fontSize: 19, fontWeight: '600', letterSpacing: -0.4, lineHeight: 23, marginTop: 3 },
+  shoeUsing: { color: T3, fontFamily: FONT, fontSize: 11.5, fontWeight: '500' },
+  shoeModel: { color: T1, fontFamily: DISPLAY, fontSize: 22, fontWeight: '600', letterSpacing: -0.5, lineHeight: 26, marginTop: -2 },
   shoeCondRow: { flexDirection: 'row', alignItems: 'center', gap: 7, marginTop: 10 },
   shoeCondDot: { width: 7, height: 7, borderRadius: 999 },
   shoeCondText: { color: T2, fontFamily: FONT, fontSize: 12.5, fontWeight: '500' },
@@ -544,7 +559,7 @@ const s = StyleSheet.create({
   shoePaceRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 5 },
   shoePace: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '600' },
   shoePaceVal: { color: ACCENT, fontFamily: DISPLAY, fontSize: 12.5 },
-  cardPlay: { width: 38, height: 38, borderRadius: 999, backgroundColor: 'transparent', borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.14), alignItems: 'center', justifyContent: 'center' },
+  cardPlay: { alignSelf: 'center', width: 38, height: 38, borderRadius: 999, backgroundColor: 'transparent', borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.14), alignItems: 'center', justifyContent: 'center' },
   retireBtn: { height: 54, borderRadius: 16, marginTop: 22, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: withAlpha(DANGER, 0.06), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(DANGER, 0.45) },
   restoreBtn: { height: 54, borderRadius: 16, marginTop: 22, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: 'transparent', borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.14) },
   retireBtnText: { fontFamily: FONT, fontSize: 15, fontWeight: '600', letterSpacing: -0.2 },

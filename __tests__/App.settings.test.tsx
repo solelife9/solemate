@@ -191,14 +191,25 @@ test('단위 선택은 영속되어 재마운트(앱 재실행) 후에도 복원
   expect(textOf(second.root)).toContain('마일');
 });
 
+// 주간 달성률(0~1)을 진행 바(testID='goal-progress')의 width(%)에서 읽는다 — 목업
+// 리스킨에서 % 텍스트가 막대 게이지로 바뀌어, 바 채움으로 검증한다.
+function goalBarPct(root: ReactTestRenderer.ReactTestInstance): number {
+  const bars = root.findAll((n: any) => n?.props?.testID === 'goal-progress');
+  if (!bars.length) throw new Error('goal progress bar not found');
+  const style = bars[0].props.style;
+  const flat = Array.isArray(style) ? Object.assign({}, ...style.filter(Boolean)) : style || {};
+  const w = (flat || {}).width;
+  return typeof w === 'string' ? parseFloat(w) / 100 : 0;
+}
+
 test('목표 설정 변경 → 홈 주간 달성률(%) 갱신', async () => {
   const goalShoes: ApiShoe[] = [{id: 's1', name: 'Nike Pegasus', max_km: 600, start_km: 0}];
   // 이번 주 15km 달림 → 기본 목표 30km 대비 50%
   const goalRuns: ApiRun[] = [{id: 'r1', shoe_id: 's1', km: 15, run_date: todayIso(), duration: 3600}];
   const {root} = await mount(goalShoes, goalRuns);
 
-  // 홈 초기: 15 / 30 = 50%
-  expect(textOf(root)).toContain('50%');
+  // 홈 초기: 15 / 30 = 50% (목업 리스킨: % 텍스트 대신 진행 바 채움으로 표시)
+  expect(goalBarPct(root)).toBeCloseTo(0.5, 2);
 
   // 프로필 → 목표 설정 펼치기 → 스테퍼 '−'로 목표 30→25km
   await tap(pressBy(root, '마이'));
@@ -210,7 +221,7 @@ test('목표 설정 변경 → 홈 주간 달성률(%) 갱신', async () => {
 
   // 홈 복귀: 15 / 25 = 60%
   await tap(pressBy(root, '홈'));
-  expect(textOf(root)).toContain('60%');
+  expect(goalBarPct(root)).toBeCloseTo(0.6, 2);
 });
 
 test('알림 행 토글 → settings_alerts(enabled=false) 영속 + 표기 갱신', async () => {

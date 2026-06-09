@@ -11,6 +11,7 @@ import {
   Text,
   Pressable,
   Animated,
+  Platform,
   StyleSheet,
   StyleProp,
   ViewStyle,
@@ -567,7 +568,7 @@ export function TabBar({active, onTab}: {active: number; onTab: (i: number) => v
       {/* 떠있는 유리 블러 캡슐 독. BlurView 는 absolute 배경으로만 깔고(신아키텍처 flex
           붕괴 회피) 레이아웃은 일반 flex View 가 담당. overflow:hidden 으로 라운드 클립. */}
       <View style={t.dock}>
-        <BlurView pointerEvents="none" style={StyleSheet.absoluteFill} blurType="dark" blurAmount={18} reducedTransparencyFallbackColor="rgba(28,28,32,0.94)" />
+        <BlurView pointerEvents="none" style={StyleSheet.absoluteFill} blurType="dark" blurAmount={18} reducedTransparencyFallbackColor="rgba(46,46,52,0.9)" />
         {/* 미끄러지는 오벌 하이라이트 */}
         <Animated.View pointerEvents="none" style={[t.hl, {left: hlX, width: hlW}]} />
         {TABS.map((tab, i) => {
@@ -610,7 +611,9 @@ const t = StyleSheet.create({
     overflow: 'hidden',                       // 하이라이트를 알약으로 클립
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: 'rgba(255,255,255,0.10)',
-    backgroundColor: 'rgba(20,20,24,0.4)',     // 블러 위 어두운 막(대비 확보; 블러 미지원 환경에서도 어둑하게)
+    // iOS는 BlurView(프로스트 글래스)가 살아있어 어두운 막만 얹는다. 안드로이드는 블러
+    // 미지원이 흔해(특히 에뮬레이터) 회색 캡슐이 보이도록 더 밝은 반투명 회색으로 대체한다 — 목업 정합.
+    backgroundColor: Platform.OS === 'android' ? 'rgba(46,46,52,0.82)' : 'rgba(20,20,24,0.4)',
     shadowColor: BG,
     shadowOpacity: 0.7,
     shadowRadius: 20,

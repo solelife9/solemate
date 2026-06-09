@@ -13,7 +13,7 @@ import {
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {
-  BG, CARD, CARD_DIM, CARD_HI, HERO_BG, ACCENT, DANGER, WARN, GOOD, T1, T2, T3,
+  BG, CARD, CARD_DIM, CARD_HI, HERO_BG, ACCENT, DANGER, WARN, GOOD, T1, T2, T3, T4,
   FONT, DISPLAY, SPACE, RADIUS, withAlpha, Shoe, SHOES,
 } from './theme';
 import { Ring, TabBar, TierBadge, KeegoWordmark, Button, SectionTitle, Pill, conditionColor, InjuryBanner } from './primitives';
@@ -59,32 +59,33 @@ function TopBar({ onAddShoe }: { onAddShoe?: () => void }) {
 // 으로, 스트릭은 불꽃 칩으로 실데이터를 표시한다. pct는 0~999%(목표 초과 가능), 링은
 // 100%에서 가득 차고(달성 시 GOOD 색), 스트릭이 0이면 '오늘 시작' 유도 문구를 보여준다.
 // 라벨/부가 텍스트는 T3 회색(오렌지 절제), 강조는 링 수치와 활성 스트릭에만.
-function WeeklyGoal({ goal, unit, editable }: { goal: GoalInfo; unit: Unit; editable?: boolean }) {
+// 주간 목표 — 목업 정합: 원형 링 대신 가로 통계(거리·러닝·연속) + 막대 게이지. 거리/
+// 러닝은 week(이번 주 실측)에서, 연속은 goal.streak에서 온다. week 미주입 시 0으로 폴백.
+// '주간 목표' 라벨은 T3 회색(오렌지 절제) — 테스트가 이 토큰 결속을 검증한다.
+function WeeklyGoal({ goal, week, unit, editable }: { goal: GoalInfo; week?: WeekStats; unit: Unit; editable?: boolean }) {
   const goalDisplay = displayNum(goal.km, unit, 0);
   const pct = Math.max(0, goal.pct);
   const reached = pct >= 100;
   const streak = Math.max(0, goal.streak);
+  const distKm = week ? week.km : '0';
+  const runs = week ? week.runs : 0;
+  const remainKm = Math.max(0, goal.km - (parseFloat(distKm) || 0));
+  const remainDisplay = displayNum(remainKm, unit, 0);
   return (
-    <View style={s.goalCard}>
-      <View style={s.goalInfo}>
-        <View style={s.row}>
-          <Ionicons name="flag" size={13} color={T3} />
-          <Text style={s.goalLabel}>주간 목표</Text>
-          {editable && <Ionicons name="create-outline" size={13} color={T3} />}
-        </View>
-        <Text style={s.goalSub}>목표 {goalDisplay}{unit} / 주</Text>
-        <View style={[s.streakChip, streak > 0 ? s.streakChipOn : s.streakChipOff]}>
-          <Ionicons name="flame" size={12} color={streak > 0 ? ACCENT : T3} />
-          <Text style={[s.streakText, { color: streak > 0 ? ACCENT : T3 }]}>
-            {streak > 0 ? `${streak}일 연속` : '오늘 달리고 스트릭 시작'}
-          </Text>
-        </View>
+    <View>
+      <View style={[s.row, { marginBottom: 14 }]}>
+        <Ionicons name="flag" size={13} color={T3} />
+        <Text style={s.goalLabel}>주간 목표</Text>
+        {editable && <Ionicons name="create-outline" size={13} color={T3} />}
       </View>
-      <Ring size={64} stroke={8} progress={pct / 100} color={reached ? GOOD : ACCENT}>
-        <Text style={[s.goalRingPct, reached && { color: GOOD }]}>
-          {pct}<Text style={s.goalRingU}>%</Text>
-        </Text>
-      </Ring>
+      <View style={s.weekStats}>
+        <View style={[s.weekStat, s.weekStatLead]}><Text style={s.weekLeadV}>이번{'\n'}주</Text></View>
+        <View style={s.weekStat}><Text style={s.weekV}>{distKm}<Text style={s.weekU}>{unit}</Text></Text><Text style={s.weekK}>거리</Text></View>
+        <View style={s.weekStat}><Text style={s.weekV}>{runs}<Text style={s.weekU}>회</Text></Text><Text style={s.weekK}>러닝</Text></View>
+        <View style={s.weekStat}><Text testID="goal-streak" style={s.weekV}>{streak}<Text style={s.weekU}>일</Text></Text><Text style={s.weekK}>연속</Text></View>
+      </View>
+      <View style={s.gbar}><View style={[s.gbarFill, { width: `${Math.min(100, pct)}%`, backgroundColor: reached ? GOOD : ACCENT }]} /></View>
+      <Text style={s.gnote}>주간 목표 {goalDisplay}{unit} · {remainDisplay}{unit} 남음</Text>
       {/* progress carrier for test instrumentation */}
       <View testID="goal-progress" style={{ position: 'absolute', width: `${Math.min(Math.max(0, pct), 100)}%`, height: 0, backgroundColor: reached ? GOOD : ACCENT }} />
     </View>
@@ -110,37 +111,38 @@ function HeroShoe({ shoe, unit, tappable, forecast }: { shoe: Shoe; unit: Unit; 
       : '';
   return (
     <View style={s.hero}>
+      {/* 상단: 브랜드+사용중(왼쪽) · 컨디션 도트+문구(오른쪽) — 목업 herotop 정합 */}
       <View style={s.heroTop}>
-        <View style={{ flex: 1, minWidth: 0 }}>
-          <View style={s.row}>
-            <Text style={s.heroBrand}>{shoe.brand}</Text>
-            {/* 교체/주의 tier 배지 — 홈 히어로에서 가장 먼저 보이게(양호는 미노출). */}
+        <View style={[s.row, { flex: 1, minWidth: 0 }]}>
+          <Text style={s.heroBrand}>{shoe.brand}</Text>
+          <View style={s.usingChip}><Text style={s.usingChipText}>사용 중</Text></View>
+        </View>
+        <View style={s.condpill}>
+          {/* 주의/교체는 tier 배지로 먼저 강조, 양호는 도트+문구 */}
+          {shoe.condition !== '양호' ? (
             <TierBadge condition={shoe.condition} />
-            <View style={s.usingChip}><Text style={s.usingChipText}>사용 중</Text></View>
-          </View>
-          <Text style={s.heroModel} numberOfLines={2}>{shoe.model}</Text>
-        </View>
-        <Ring size={60} stroke={7} progress={pct} color={ring}>
-          <Text style={s.ringPct}>{Math.round(pct * 100)}<Text style={s.ringPctU}>%</Text></Text>
-        </Ring>
-      </View>
-      <View style={s.heroBottom}>
-        <View style={s.baselineRow}>
-          <Text style={s.heroRemain}>{remain}</Text>
-          <Text style={s.heroRemainU}>{unit} 남음</Text>
-        </View>
-        <View style={s.row}>
-          <View style={[s.dot, { backgroundColor: tier }]} />
-          <Text style={[s.condText, { color: tier }]}>{condLabel(shoe.condition)}</Text>
-          <Text style={s.condSub}>· {used}/{max}{unit}</Text>
-          {tappable && <Ionicons name="chevron-forward" size={15} color={T3} style={{ marginLeft: 2 }} />}
+          ) : (
+            <>
+              {/* 점만 컨디션 색(초록), 글씨는 중립(T2) — 목업 condpill 정합 */}
+              <View style={[s.dot, { backgroundColor: tier }]} />
+              <Text style={[s.condText, { color: T2 }]} numberOfLines={1}>{condLabel(shoe.condition)}</Text>
+            </>
+          )}
         </View>
       </View>
-      {/* 교체 예측 ETA 한 줄(차별점) — 기존 배지/경고 위에 보강. 추정 톤('약'·'예상'). */}
+      <Text style={s.heroModel} numberOfLines={1}>{shoe.model}</Text>
+      {/* 교체까지 남은 거리 — 문장형(목업 정합). 숫자는 받쳐주는 디스플레이 강조. */}
+      <Text style={s.heroRemainLine}>
+        교체까지 약 <Text style={s.heroRemainNum}>{remain}<Text style={s.heroRemainNumU}>{unit}</Text></Text> 남았어요
+      </Text>
+      <View style={s.gauge}><View style={[s.gaugeFill, { width: `${Math.round(pct * 100)}%`, backgroundColor: ring }]} /></View>
+      <Text style={s.usage}>{used} / {max}{unit} 사용</Text>
+      {/* 교체 예측 ETA 한 줄(차별점) — 목업 .fore 톤(회색·구분선). */}
       {!shoe.retired && !!forecastLine && (
         <View style={s.heroForecast}>
-          <Ionicons name="time-outline" size={13} color={ACCENT} />
+          <Ionicons name="time-outline" size={13} color={T3} />
           <Text style={s.heroForecastText}>{forecastLine}</Text>
+          {tappable && <Ionicons name="chevron-forward" size={14} color={T4} style={{ marginLeft: 'auto' }} />}
         </View>
       )}
       {!shoe.retired && injury.level !== 'safe' && (
@@ -305,7 +307,7 @@ function EmptyHome({ onAddShoe }: { onAddShoe?: () => void }) {
 
 export default function HomeScreen({
   shoes = SHOES, dateLabel = '', onStart, onAddShoe, onTab,
-  activeIdx: activeIdxProp, onSelect, unit = 'km', goal, rotation, onPickShoe,
+  activeIdx: activeIdxProp, onSelect, unit = 'km', goal, week, rotation, onPickShoe,
   onChangeGoal, onOpenShoe, forecast,
 }: {
   shoes?: Shoe[];
@@ -359,15 +361,6 @@ export default function HomeScreen({
         {!!dateLabel && <Text style={s.date}>{dateLabel}</Text>}
         <Text style={s.greet}>오늘은 어떤 신발로{'\n'}달려볼까요?</Text>
       </View>
-      {goal && (
-        <Pressable
-          onPress={() => onChangeGoal && setGoalEditOpen(true)}
-          accessibilityRole="button"
-          accessibilityLabel="주간 목표 수정"
-          style={({ pressed }) => [{ paddingHorizontal: SPACE.xl, marginTop: SPACE.sm }, pressed && s.pressed]}>
-          <WeeklyGoal goal={goal} unit={unit} editable={!!onChangeGoal} />
-        </Pressable>
-      )}
       {active ? (
         <>
           {/* shoe-first 주인공: 선택 신발(idx 실값) 수명 링 히어로 카드 — 탭하면 상세로 */}
@@ -386,9 +379,24 @@ export default function HomeScreen({
           </View>
           {shoes.length > 1 && (
             <View style={{ marginTop: SPACE.md }}>
-              <SectionTitle style={s.sectionLabel}>내 러닝화</SectionTitle>
+              <View style={s.sectionRow}>
+                <SectionTitle style={s.sectionLabelInline}>내 러닝화</SectionTitle>
+                <Pressable onPress={() => onTab?.(1)} hitSlop={8} accessibilityRole="button" accessibilityLabel="신발 전체 보기">
+                  <Text style={s.sectionMore}>전체 보기 ›</Text>
+                </Pressable>
+              </View>
               <ShoePicker shoes={shoes} activeIdx={idx} onSelect={select} unit={unit} />
             </View>
+          )}
+          {/* 주간 목표 — 목업 정합: 내 러닝화 아래 배치. 탭하면 인라인 편집 모달. */}
+          {goal && (
+            <Pressable
+              onPress={() => onChangeGoal && setGoalEditOpen(true)}
+              accessibilityRole="button"
+              accessibilityLabel="주간 목표 수정"
+              style={({ pressed }) => [s.weekWrap, pressed && s.pressed]}>
+              <WeeklyGoal goal={goal} week={week} unit={unit} editable={!!onChangeGoal} />
+            </Pressable>
           )}
           {/* 휴식·마모 분산 로테이션 추천(2켤레+에서만 채워짐, 비면 자동 숨김) */}
           <RotationCard rotation={rotation ?? []} onPickShoe={onPickShoe} />
@@ -471,21 +479,39 @@ const s = StyleSheet.create({
   heroBrand: { color: T3, fontFamily: DISPLAY, fontSize: 11, fontWeight: '500', letterSpacing: 1.4 },
   usingChip: { backgroundColor: CARD_HI, borderRadius: 6, paddingHorizontal: SPACE.sm, paddingVertical: 2 },
   usingChipText: { color: T3, fontFamily: FONT, fontSize: 10, fontWeight: '500' },
-  heroModel: { color: T1, fontFamily: DISPLAY, fontSize: 22, fontWeight: '600', letterSpacing: -0.2, marginTop: 5, lineHeight: 25 },
-  heroBottom: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 11 },
-  heroRemain: { color: T1, fontFamily: DISPLAY, fontSize: 38, letterSpacing: -1 },
-  heroRemainU: { color: T2, fontFamily: FONT, fontSize: 16, marginLeft: 5, marginBottom: 6 },
+  heroModel: { color: T1, fontFamily: DISPLAY, fontSize: 27, fontWeight: '600', letterSpacing: -0.6, marginTop: 7, lineHeight: 30 },
+  // 교체까지 남은 거리 — 문장형(목업 .remain). 숫자만 디스플레이 강조.
+  heroRemainLine: { color: T2, fontFamily: FONT, fontSize: 15, fontWeight: '500', letterSpacing: -0.2, marginTop: 16 },
+  heroRemainNum: { color: T1, fontFamily: DISPLAY, fontSize: 26, fontWeight: '600', letterSpacing: -0.6 },
+  heroRemainNumU: { color: T2, fontFamily: FONT, fontSize: 13, fontWeight: '500' },
+  gauge: { height: 4, borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.08), marginTop: 14, overflow: 'hidden' },
+  gaugeFill: { height: '100%', borderRadius: RADIUS.pill },
+  usage: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500', marginTop: 10 },
   injuryWrap: { marginTop: 16 },
-  // 교체 예측 ETA 한 줄(히어로 하단) — accent 절제(아이콘+텍스트만, 배경 없음).
-  heroForecast: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12 },
-  heroForecastText: { flex: 1, color: ACCENT, fontFamily: FONT, fontSize: 12, fontWeight: '600', letterSpacing: -0.1, lineHeight: 16 },
-  ringPct: { color: T1, fontFamily: DISPLAY, fontSize: 17 },
-  ringPctU: { color: T3, fontFamily: FONT, fontSize: 9 },
-  dot: { width: 6, height: 6, borderRadius: RADIUS.pill },
-  condText: { fontFamily: FONT, fontSize: 13, fontWeight: '500' },
-  condSub: { color: T3, fontFamily: FONT, fontSize: 12.5 },
+  // 교체 예측 ETA 한 줄(목업 .fore — 회색·상단 구분선).
+  heroForecast: { flexDirection: 'row', alignItems: 'center', gap: 7, marginTop: 14, paddingTop: 13, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.06) },
+  heroForecastText: { flex: 1, color: T3, fontFamily: FONT, fontSize: 12.5, fontWeight: '500', letterSpacing: -0.1, lineHeight: 16 },
+  condpill: { flexDirection: 'row', alignItems: 'center', gap: 7, flexShrink: 0, marginTop: 2 },
+  dot: { width: 7, height: 7, borderRadius: RADIUS.pill },
+  condText: { fontFamily: FONT, fontSize: 12.5, fontWeight: '500' },
 
   sectionLabel: { paddingHorizontal: SPACE.xl, paddingBottom: SPACE.sm },
+  sectionRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', paddingHorizontal: SPACE.xl, paddingBottom: SPACE.sm },
+  sectionLabelInline: { paddingHorizontal: 0, paddingBottom: 0 },
+  sectionMore: { color: T4, fontFamily: FONT, fontSize: 11.5, fontWeight: '500' },
+
+  // 주간 목표 — 목업 .week(상단 구분선 + 가로 통계 + 막대바)
+  weekWrap: { marginHorizontal: SPACE.xl, marginTop: SPACE.lg, paddingTop: 20, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.07) },
+  weekStats: { flexDirection: 'row', alignItems: 'flex-start' },
+  weekStat: { flex: 1 },
+  weekStatLead: {},
+  weekLeadV: { color: T2, fontFamily: FONT, fontSize: 15, fontWeight: '500', lineHeight: 19 },
+  weekV: { color: T1, fontFamily: DISPLAY, fontSize: 21, fontWeight: '500', letterSpacing: -0.4 },
+  weekU: { color: T4, fontFamily: FONT, fontSize: 11, fontWeight: '500' },
+  weekK: { color: T3, fontFamily: FONT, fontSize: 11, fontWeight: '500', marginTop: 5 },
+  gbar: { height: 3, borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.07), marginTop: 18, overflow: 'hidden' },
+  gbarFill: { height: '100%', borderRadius: RADIUS.pill },
+  gnote: { color: T4, fontFamily: FONT, fontSize: 11, marginTop: 9 },
 
   rotaWrap: { marginTop: SPACE.lg },
   rotaCard: { marginHorizontal: SPACE.xl, backgroundColor: CARD_DIM, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.06), paddingHorizontal: SPACE.lg },
