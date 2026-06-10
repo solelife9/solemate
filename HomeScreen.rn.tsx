@@ -24,7 +24,7 @@ import { RotationPick } from './lib/rotation';
 import { recommendNextShoes, buildShopLinks, categoryLabelKo, AFFILIATE_DISCLOSURE } from './lib/affiliate';
 import { forecastLineKo, type ReplacementForecast } from './lib/wearView';
 import { shouldRecommendNextShoe } from './lib/recommendTrigger';
-import { findShoeModelLoose, categoryPurposeKo, categoryTagsKo } from './data/shoeModels';
+import { findShoeClass, typeLabel } from './data/shoeClass';
 
 export type WeekStats = { km: string; runs: number; pace: string };
 // 주간 목표 + keep-going 동기 지표. 거리는 km 표준, pct는 이번 주 달성률 %(목표
@@ -105,6 +105,8 @@ function HeroShoe({ shoe, unit, tappable, forecast, active, onOpenShoe, onStart 
   const max = displayNum(shoe.max, unit);
   const ring = ringColor(shoe.condition);
   const tier = conditionColor(shoe.condition);
+  // 신발 종류 — 사용자 DB(shoes.json)의 type 을 예쁜 라벨(카본 레이싱 등)로 칩 표시.
+  const heroType = typeLabel(findShoeClass(shoe.brand, shoe.model)?.type);
   // 부상예방 경고(주의/위험)는 같은 마모 분모(used/max)로 판정해 히어로 하단에 띄운다.
   // 안전 등급은 InjuryBanner가 null을 돌려줘 경고를 노출하지 않는다(보관 신발도 제외).
   const injury = assessShoeInjuryRisk(shoe);
@@ -126,6 +128,7 @@ function HeroShoe({ shoe, unit, tappable, forecast, active, onOpenShoe, onStart 
         <View style={s.heroTop}>
           <View style={[s.row, { flex: 1, minWidth: 0 }]}>
             <Text style={s.heroBrand}>{shoe.brand}</Text>
+            {!!heroType && <View style={s.catChip}><Text style={s.catChipText}>{heroType}</Text></View>}
             <View style={s.usingChip}><Text style={s.usingChipText}>사용 중</Text></View>
           </View>
           <View style={s.condpill}>
@@ -235,10 +238,9 @@ function InsightCard({ shoe, unit, forecast }: { shoe: Shoe; unit: Unit; forecas
   const wr = forecast?.weeksRemaining;
   const weeks = forecast && (forecast.reason === 'ok' || forecast.reason === 'overdue') && wr != null ? Math.max(0, Math.round(wr)) : null;
   const warn = shoe.condition !== '양호';
-  // 모델 → 카테고리 → 용도/태그(데이터: data/shoeModels). 미매칭이면 용도 섹션 숨김.
-  const cat = findShoeModelLoose(shoe.brand, shoe.model)?.category;
-  const purpose = cat ? categoryPurposeKo[cat] : null;
-  const tags = cat ? categoryTagsKo[cat] : [];
+  // 추천 용도 = 사용자 DB(shoes.json)의 recommended(템포·인터벌·레이스 등 러닝 종류).
+  // 종류(카본화 등)는 추천 용도가 아니므로 칩으로 따로 표시하고 여기엔 넣지 않는다.
+  const recommended = findShoeClass(shoe.brand, shoe.model)?.recommended ?? [];
   return (
     <View style={s.insightCard}>
       <View style={s.insightGrid}>
@@ -256,13 +258,12 @@ function InsightCard({ shoe, unit, forecast }: { shoe: Shoe; unit: Unit; forecas
           <Text style={s.insightSub}>약 {remain}{unit} 남았어요</Text>
         </View>
       </View>
-      {/* 추천 용도 — 러닝화 종류(카테고리)에 맞는 용도 + 태그(목업 정합). 모델 매칭 시만 노출. */}
-      {!!purpose && (
+      {/* 추천 용도 — 사용자 DB의 추천 러닝 종류(데일리/장거리/템포/인터벌/레이스/회복/트레일). */}
+      {recommended.length > 0 && (
         <View style={s.insightPurpose}>
           <Text style={s.insightLabel}>추천 용도</Text>
-          <Text style={s.insightPurposeText}>{purpose}</Text>
           <View style={s.insightTags}>
-            {tags.map((t) => (
+            {recommended.map((t) => (
               <View key={t} style={s.insightTag}><Text style={s.insightTagText}>{t}</Text></View>
             ))}
           </View>
@@ -552,6 +553,9 @@ const s = StyleSheet.create({
   heroBrand: { color: T3, fontFamily: DISPLAY, fontSize: 11, fontWeight: '500', letterSpacing: 1.4 },
   usingChip: { backgroundColor: CARD_HI, borderRadius: 6, paddingHorizontal: SPACE.sm, paddingVertical: 2 },
   usingChipText: { color: T3, fontFamily: FONT, fontSize: 10, fontWeight: '500' },
+  // 신발 종류(카테고리) 칩 — 데이터에 적힌 카본/데일리 등을 오렌지 톤으로 표시
+  catChip: { backgroundColor: withAlpha(ACCENT, 0.14), borderRadius: 6, paddingHorizontal: SPACE.sm, paddingVertical: 2 },
+  catChipText: { color: ACCENT, fontFamily: FONT, fontSize: 10, fontWeight: '700', letterSpacing: 0.1 },
   heroModel: { color: T1, fontFamily: DISPLAY, fontSize: 27, fontWeight: '600', letterSpacing: -0.6, marginTop: 7, lineHeight: 30 },
   heroReason: { color: T2, fontFamily: FONT, fontSize: 14, fontWeight: '500', letterSpacing: -0.2, marginTop: 8, lineHeight: 20 },
   // 교체까지 남은 거리 — 문장형(목업 .remain). 숫자만 디스플레이 강조.

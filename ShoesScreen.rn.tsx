@@ -18,7 +18,7 @@ import { clampMaxKm, KEEP_GOING_REPLACE, SHOE_MAX_STEP_KM, SHOE_REPLACE_PCT } fr
 import { assessShoeInjuryRisk } from './lib/injury';
 import { buildWearView, forecastLineKo, type Surface } from './lib/wearView';
 import { recommendNextShoes, buildShopLinks, categoryLabelKo, AFFILIATE_DISCLOSURE } from './lib/affiliate';
-import { findShoeModelLoose, categoryPurposeKo, categoryTagsKo } from './data/shoeModels';
+import { findShoeClass, typeLabel } from './data/shoeClass';
 import { shouldRecommendNextShoe } from './lib/recommendTrigger';
 
 // 수익화 v1(차별점 정합): 이 신발이 교체임박(forecast overdue/≤3주)일 때, 같은 카테고리의
@@ -101,8 +101,9 @@ function ShoeDetail({
   const usedDisp = displayNum(shoe.used, unit);
   const retired = !!shoe.retired;
   const shoeRuns = runs.filter((r) => r.shoe === idx);
-  // 모델 → 카테고리 → 용도/태그(data/shoeModels). 목업 09 의 '용도 + 태그'를 종류에 맞게.
-  const detailCat = findShoeModelLoose(shoe.brand, shoe.model)?.category;
+  // 사용자 DB(shoes.json): 종류(type)+추천 용도(recommended). 종류는 칩, 추천 용도는 recommended.
+  const detailClass = findShoeClass(shoe.brand, shoe.model);
+  const detailType = typeLabel(detailClass?.type);
   // 실효 마모/교체 예측(차별점): 단순 누적 km 가 아니라 체중·노면·페이스·세월 보정 "진짜
   // 마모"와 "이 페이스면 약 N주 후 교체"를 파생한다(lib/wearView → wearModel/forecast 재사용).
   // 원본 shoe/run 은 읽기만 한다(A6-1). 모든 엣지에서 NaN/음수 없음(A6-2).
@@ -201,12 +202,15 @@ function ShoeDetail({
               {retired && <Pill tone="dim" label="보관됨" />}
             </View>
             <Text style={s.dModel}>{shoe.model}</Text>
-            {/* 용도 + 태그(목업 09) — 모델 카테고리 매칭 시 노출. */}
-            {detailCat && (
+            {/* 종류 칩 + 추천 용도(사용자 DB) — 종류(카본 레이싱 등)는 칩, 추천 용도는 recommended. */}
+            {!!detailType && (
+              <View style={s.dTypeChip}><Text style={s.dTypeChipText}>{detailType}</Text></View>
+            )}
+            {!!detailClass && detailClass.recommended.length > 0 && (
               <>
-                <Text style={s.dPurpose}>{categoryPurposeKo[detailCat]}</Text>
+                <Text style={s.dPurposeLabel}>추천 용도</Text>
                 <View style={s.dTags}>
-                  {categoryTagsKo[detailCat].map((t) => (
+                  {detailClass.recommended.map((t) => (
                     <View key={t} style={s.dTag}><Text style={s.dTagText}>{t}</Text></View>
                   ))}
                 </View>
@@ -598,6 +602,9 @@ const s = StyleSheet.create({
   dTags: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 12 },
   dTag: { backgroundColor: CARD_HI, borderRadius: 999, paddingHorizontal: 11, paddingVertical: 5 },
   dTagText: { color: T2, fontFamily: FONT, fontSize: 12, fontWeight: '600' },
+  dTypeChip: { alignSelf: 'flex-start', backgroundColor: withAlpha(ACCENT, 0.14), borderRadius: 999, paddingHorizontal: 11, paddingVertical: 5, marginTop: 12 },
+  dTypeChipText: { color: ACCENT, fontFamily: FONT, fontSize: 12, fontWeight: '700', letterSpacing: 0.1 },
+  dPurposeLabel: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600', marginTop: 16 },
   runCta: { height: 46, borderRadius: 14, backgroundColor: 'transparent', borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.14), flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   runCtaText: { color: T2, fontFamily: FONT, fontSize: 14.5, fontWeight: '600', letterSpacing: -0.2 },
 

@@ -63,30 +63,8 @@ export const categoryLifespanKm: Record<ShoeCategory, number> = {
 /** category 미지정·미매칭 시 사용하는 최종 기본값 (daily_trainer 기준) */
 export const DEFAULT_LIFESPAN_KM = categoryLifespanKm.daily_trainer; // 700
 
-// ────────────────────────────────────────────────────────────
-// 카테고리 → 용도(추천 문구) + 태그 (홈 '현재 상태'·신발 카드/상세 표시용)
-// 모델별 category(위 SHOE_MODELS)에서 도출하는 단일 소스. 목업 ShoeInsightCard 의
-// '추천 용도'/태그가 러닝화 종류에 맞게 나오도록 한다.
-// ────────────────────────────────────────────────────────────
-export const categoryPurposeKo: Record<ShoeCategory, string> = {
-  daily_trainer: '데일리 러닝과 가벼운 조깅에 두루 좋아요',
-  max_cushion: '장거리·회복 러닝에 푹신한 쿠션이 좋아요',
-  stability: '안정적인 지지로 데일리 러닝에 좋아요',
-  super_trainer: '템포부터 장거리 훈련까지 두루 소화해요',
-  tempo: '빠른 템포런과 인터벌 훈련에 적합해요',
-  carbon_racing: '레이스와 기록 도전에 최적이에요',
-  trail: '트레일·험로 러닝에 강해요',
-};
-
-export const categoryTagsKo: Record<ShoeCategory, string[]> = {
-  daily_trainer: ['데일리', '조깅', '입문'],
-  max_cushion: ['장거리', '회복', '맥스쿠션'],
-  stability: ['안정화', '데일리', '지지력'],
-  super_trainer: ['템포', '장거리', '훈련'],
-  tempo: ['템포', '인터벌', '스피드'],
-  carbon_racing: ['레이스', '카본', '기록도전'],
-  trail: ['트레일', '오프로드', '그립'],
-};
+// 용도/태그(추천 러닝)는 사용자 정리 DB(data/shoes.json → data/shoeClass.ts)를 단일 소스로
+// 쓴다. 여기서 카테고리→문구를 임의로 만들던 매핑은 제거(사용자 데이터로 대체).
 
 // ────────────────────────────────────────────────────────────
 // 시드 데이터 (134 모델)
@@ -288,27 +266,6 @@ export function findShoeModel(brand?: string, model?: string): ShoeModel | undef
   const m = normalize(model);
   return SHOE_MODELS.find(
     (s) => normalize(s.brand) === b && normalize(s.model) === m,
-  );
-}
-
-/** 모델명 끝의 버전 숫자(들)를 떼어 패밀리명만 남긴다. 'Clifton 9'→'clifton', 'Mach X 2'→'mach x'. */
-function modelFamily(model: string): string {
-  return normalize(model).replace(/\s+\d+(\.\d+)?$/, '').trim();
-}
-
-/**
- * 용도/카테고리 표시용 느슨한 조회: 정확 매칭이 없으면 같은 브랜드의 동일 모델 패밀리
- * (끝 버전 숫자 무시 — 예: Clifton 9 ↔ DB의 Clifton 10)로 폴백한다. 사용자가 약간 다른
- * 버전을 등록해도 종류/용도가 나오게 한다. recommendedKm 계산엔 쓰지 않는다(정확 매칭 유지).
- */
-export function findShoeModelLoose(brand?: string, model?: string): ShoeModel | undefined {
-  const exact = findShoeModel(brand, model);
-  if (exact || !brand || !model) return exact;
-  const b = normalize(brand);
-  const fam = modelFamily(model);
-  if (!fam) return undefined;
-  return SHOE_MODELS.find(
-    (s) => normalize(s.brand) === b && modelFamily(s.model) === fam,
   );
 }
 
