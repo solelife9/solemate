@@ -28,7 +28,7 @@ export const TYPE_DESCRIPTIONS: Record<string, string> =
 export const TYPE_LABEL_KO: Record<string, string> = {
   '카본화': '카본 레이싱',
   '슈퍼트레이너': '슈퍼 트레이너',
-  '데일리': '데일리',
+  '데일리': '데일리 트레이너',
   '안정화': '안정화',
   '트레일': '트레일',
   '맥스쿠셔닝': '맥스 쿠션',
