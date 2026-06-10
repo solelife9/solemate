@@ -81,7 +81,8 @@ describe("'러닝 시작' Button is wired to onStart with the selected index", (
     ).root;
 
     act(() => {
-      pressBy(root, '러닝 시작').props.onPress();
+      // 러닝 시작은 활성(home-hero) 카드 안에 있다 — 그 카드 내부 버튼을 누른다.
+      pressBy(hero(root), '러닝 시작').props.onPress();
     });
 
     expect(onStart).toHaveBeenCalledTimes(1);
@@ -96,7 +97,7 @@ describe("'러닝 시작' Button is wired to onStart with the selected index", (
     ).root;
 
     act(() => {
-      pressBy(root, '러닝 시작').props.onPress();
+      pressBy(hero(root), '러닝 시작').props.onPress();
     });
 
     expect(onStart).toHaveBeenCalledWith(0);

@@ -104,9 +104,10 @@ test('런 삭제 → 확인 Alert 후 신발 사용거리(km) 감소', async () 
   ];
   const {root} = await mount(SHOE, runs);
 
-  // 삭제 전: 신발 카드에 누적 15 / 600 km.
+  // 삭제 전: 신발 카드에 누적 15km / 총 600km (라벨바 — 목업 카드 포맷).
   await tap(pressBy(root, '신발'));
-  expect(textOf(root)).toContain('15 / 600');
+  expect(textOf(root)).toContain('15km');
+  expect(textOf(root)).toContain('600km');
 
   // 기록 탭 → r2(5.25km) 상세 진입.
   await tap(pressBy(root, '기록'));
@@ -129,10 +130,10 @@ test('런 삭제 → 확인 Alert 후 신발 사용거리(km) 감소', async () 
   );
   expect(delCall).toBeTruthy();
 
-  // 신발 탭: 사용거리 15 → 10으로 감소(shoeHealth가 runs 파생).
+  // 신발 탭: 사용거리 15 → 10으로 감소(shoeHealth가 runs 파생). 카드 누적 km(큰 숫자) 확인.
   await tap(pressBy(root, '신발'));
-  expect(textOf(root)).toContain('10 / 600');
-  expect(textOf(root)).not.toContain('15 / 600');
+  expect(textOf(root)).toContain('10km');
+  expect(textOf(root)).not.toContain('15km');
 });
 
 test('수동 입력 → 목록에 런 추가 + source=manual로 POST', async () => {
@@ -165,9 +166,10 @@ test('런 편집(거리) → 백엔드 PATCH + 신발 km 재계산', async () =>
   const runs: ApiRun[] = [{id: 'r1', shoe_id: 's1', km: 10, run_date: '2026-05-20', duration: 3000}];
   const {root} = await mount(SHOE, runs);
 
-  // 편집 전: 신발 10 / 600 km.
+  // 편집 전: 신발 10km / 총 600km (라벨바 — 목업 카드 포맷).
   await tap(pressBy(root, '신발'));
-  expect(textOf(root)).toContain('10 / 600');
+  expect(textOf(root)).toContain('10km');
+  expect(textOf(root)).toContain('600km');
 
   // 기록 → r1 상세 → 편집('create-outline') → 폼 프리필.
   await tap(pressBy(root, '기록'));
@@ -186,9 +188,9 @@ test('런 편집(거리) → 백엔드 PATCH + 신발 km 재계산', async () =>
   expect(patch).toBeTruthy();
   expect(JSON.parse(patch![1].body).km).toBe(12);
 
-  // 신발 km 재계산: 10 → 12.
+  // 신발 km 재계산: 10 → 12. 카드 누적 km(큰 숫자) 확인.
   await tap(pressBy(root, '신발'));
-  expect(textOf(root)).toContain('12 / 600');
+  expect(textOf(root)).toContain('12km');
 });
 
 test('개인 기록(PR) 카드: 1km 페이스·5km 기록·최장 거리 렌더', async () => {

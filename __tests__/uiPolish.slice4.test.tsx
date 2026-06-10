@@ -268,20 +268,23 @@ const SHOES: Shoe[] = [
   {id: 's1', brand: 'Nike', model: 'Pegasus 41', used: 100, max: 500, condition: '양호'},
 ];
 
-test('③ 신발 카드에 width "%" 진행바(track)가 없고, 원형 링의 잔여율 %는 렌더된다', () => {
+test('③ 신발 카드는 라벨바(사용/총 수명 km)를 렌더한다 — 목업 LifeBar(원형 링 대체)', () => {
+  // Slice4 에선 원형 링만 두고 중복 바를 제거했으나, 디자인 마무리 핸드오프는 신발 탭
+  // 카드를 가로 라벨바(사용/총 수명)로 통일한다. 카드는 누적/총 수명 km 라벨을 노출하고,
+  // 채움 바(%-width)가 정확히 1개 존재한다(중복 바 없음 = 단일 진행 표시).
   const root = render(<ShoesScreen shoes={SHOES} runs={[]} />).root;
 
-  // 원형 링(잔여율 80%)은 그대로 — 텍스트로 노출된다.
-  expect(textOf(root)).toContain('80');
+  // 사용/총 수명 km 라벨(used 100 / max 500)이 노출된다.
+  expect(textOf(root)).toContain('100km');
+  expect(textOf(root)).toContain('500km');
 
-  // 제거된 중복 바(trackFill)는 style.width 가 백분율 문자열인 유일한 노드였다.
-  // 카드 어디에도 백분율 width 스타일 노드가 없어야 한다(바 미렌더 단언).
+  // 라벨바 채움(%-width)이 렌더된다(목업 LifeBar — 신발당 1개).
   const pctWidthNodes = root.findAll((n: any) => {
     if (!n.props) return false;
     const w = flatStyle(n).width;
     return typeof w === 'string' && w.trim().endsWith('%');
   });
-  expect(pctWidthNodes.length).toBe(0);
+  expect(pctWidthNodes.length).toBeGreaterThanOrEqual(1);
 });
 
 test('③ track 제거 후에도 락커 카드 탭은 상세(남은 수명)를 연다(회귀 가드)', () => {

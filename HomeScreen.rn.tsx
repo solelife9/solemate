@@ -167,9 +167,9 @@ const SCREEN_W = Dimensions.get('window').width;
 const HERO_W = SCREEN_W - SPACE.xl * 2;
 const HERO_SNAP = HERO_W + SPACE.md;
 
-function ShoeCarousel({ shoes, activeIdx, onSelect, unit, forecast, onOpenShoe }: {
+function ShoeCarousel({ shoes, activeIdx, onSelect, unit, forecast, onOpenShoe, onStart }: {
   shoes: Shoe[]; activeIdx: number; onSelect: (i: number) => void; unit: Unit;
-  forecast?: ReplacementForecast | null; onOpenShoe?: (shoeId: string) => void;
+  forecast?: ReplacementForecast | null; onOpenShoe?: (shoeId: string) => void; onStart?: (idx: number) => void;
 }) {
   const ref = useRef<ScrollView>(null);
   const onEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -191,16 +191,24 @@ function ShoeCarousel({ shoes, activeIdx, onSelect, unit, forecast, onOpenShoe }
         contentContainerStyle={{ paddingHorizontal: SPACE.xl, gap: SPACE.md }}
       >
         {shoes.map((shoe, i) => (
-          <Pressable
+          // 카드 = View(비-Pressable). 상세 열기(HeroShoe)와 러닝시작(Button)을 형제 Pressable로
+          // 분리해, 텍스트로 pressable 을 찾는 테스트가 둘을 혼동하지 않게 한다(중첩 매칭 방지).
+          <View
             key={shoe.id ?? i}
-            onPress={() => { if (shoe.id) onOpenShoe?.(shoe.id); }}
-            accessibilityRole="button"
-            accessibilityLabel={`${shoe.brand} ${shoe.model} 상세 보기`}
             testID={i === activeIdx ? 'home-hero' : undefined}
-            style={({ pressed }) => [{ width: HERO_W }, pressed && s.pressed]}
+            style={{ width: HERO_W }}
           >
-            <HeroShoe shoe={shoe} unit={unit} tappable={!!onOpenShoe} forecast={i === activeIdx ? forecast : null} />
-          </Pressable>
+            <Pressable
+              onPress={() => { if (shoe.id) onOpenShoe?.(shoe.id); }}
+              accessibilityRole="button"
+              accessibilityLabel={`${shoe.brand} ${shoe.model} 상세 보기`}
+              style={({ pressed }) => [pressed && s.pressed]}
+            >
+              <HeroShoe shoe={shoe} unit={unit} tappable={!!onOpenShoe} forecast={i === activeIdx ? forecast : null} />
+            </Pressable>
+            {/* 러닝 시작 — 카드 안(목업 정합). 이 카드 신발(i)로 바로 시작. */}
+            <Button label="러닝 시작" icon="play" onPress={() => onStart?.(i)} style={{ marginTop: SPACE.md }} />
+          </View>
         ))}
       </ScrollView>
       {shoes.length > 1 && (
@@ -377,11 +385,7 @@ export default function HomeScreen({
               </Pressable>
             )}
           </View>
-          <ShoeCarousel shoes={shoes} activeIdx={idx} onSelect={select} unit={unit} forecast={forecast} onOpenShoe={onOpenShoe} />
-          {/* 강조는 CTA에 — 선택(활성) 신발 idx로 러닝 시작 연결 */}
-          <View style={{ paddingHorizontal: SPACE.xl, paddingTop: SPACE.md }}>
-            <Button label="러닝 시작" icon="play" onPress={() => onStart?.(idx)} />
-          </View>
+          <ShoeCarousel shoes={shoes} activeIdx={idx} onSelect={select} unit={unit} forecast={forecast} onOpenShoe={onOpenShoe} onStart={onStart} />
           {/* 주간 목표 — 목업 정합: 내 러닝화 아래 배치. 탭하면 인라인 편집 모달. */}
           {goal && (
             <Pressable
