@@ -232,7 +232,8 @@ function InsightCard({ shoe, unit, forecast }: { shoe: Shoe; unit: Unit; forecas
   const remainKm = Math.max(0, shoe.max - shoe.used);
   const remain = displayNum(remainKm, unit);
   const usedPct = shoe.max > 0 ? Math.round((shoe.used / shoe.max) * 100) : 0;
-  const weeks = forecast && (forecast.reason === 'ok' || forecast.reason === 'overdue') ? Math.max(0, Math.round(forecast.weeksRemaining)) : null;
+  const wr = forecast?.weeksRemaining;
+  const weeks = forecast && (forecast.reason === 'ok' || forecast.reason === 'overdue') && wr != null ? Math.max(0, Math.round(wr)) : null;
   const warn = shoe.condition !== '양호';
   // 모델 → 카테고리 → 용도/태그(데이터: data/shoeModels). 미매칭이면 용도 섹션 숨김.
   const cat = findShoeModel(shoe.brand, shoe.model)?.category;
