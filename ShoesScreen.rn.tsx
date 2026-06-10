@@ -18,7 +18,7 @@ import { clampMaxKm, KEEP_GOING_REPLACE, SHOE_MAX_STEP_KM, SHOE_REPLACE_PCT } fr
 import { assessShoeInjuryRisk } from './lib/injury';
 import { buildWearView, forecastLineKo, type Surface } from './lib/wearView';
 import { recommendNextShoes, buildShopLinks, categoryLabelKo, AFFILIATE_DISCLOSURE } from './lib/affiliate';
-import { findShoeModel, categoryPurposeKo, categoryTagsKo } from './data/shoeModels';
+import { findShoeModelLoose, categoryPurposeKo, categoryTagsKo } from './data/shoeModels';
 import { shouldRecommendNextShoe } from './lib/recommendTrigger';
 
 // 수익화 v1(차별점 정합): 이 신발이 교체임박(forecast overdue/≤3주)일 때, 같은 카테고리의
@@ -102,7 +102,7 @@ function ShoeDetail({
   const retired = !!shoe.retired;
   const shoeRuns = runs.filter((r) => r.shoe === idx);
   // 모델 → 카테고리 → 용도/태그(data/shoeModels). 목업 09 의 '용도 + 태그'를 종류에 맞게.
-  const detailCat = findShoeModel(shoe.brand, shoe.model)?.category;
+  const detailCat = findShoeModelLoose(shoe.brand, shoe.model)?.category;
   // 실효 마모/교체 예측(차별점): 단순 누적 km 가 아니라 체중·노면·페이스·세월 보정 "진짜
   // 마모"와 "이 페이스면 약 N주 후 교체"를 파생한다(lib/wearView → wearModel/forecast 재사용).
   // 원본 shoe/run 은 읽기만 한다(A6-1). 모든 엣지에서 NaN/음수 없음(A6-2).

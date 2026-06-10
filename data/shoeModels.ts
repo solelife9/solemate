@@ -291,6 +291,27 @@ export function findShoeModel(brand?: string, model?: string): ShoeModel | undef
   );
 }
 
+/** 모델명 끝의 버전 숫자(들)를 떼어 패밀리명만 남긴다. 'Clifton 9'→'clifton', 'Mach X 2'→'mach x'. */
+function modelFamily(model: string): string {
+  return normalize(model).replace(/\s+\d+(\.\d+)?$/, '').trim();
+}
+
+/**
+ * 용도/카테고리 표시용 느슨한 조회: 정확 매칭이 없으면 같은 브랜드의 동일 모델 패밀리
+ * (끝 버전 숫자 무시 — 예: Clifton 9 ↔ DB의 Clifton 10)로 폴백한다. 사용자가 약간 다른
+ * 버전을 등록해도 종류/용도가 나오게 한다. recommendedKm 계산엔 쓰지 않는다(정확 매칭 유지).
+ */
+export function findShoeModelLoose(brand?: string, model?: string): ShoeModel | undefined {
+  const exact = findShoeModel(brand, model);
+  if (exact || !brand || !model) return exact;
+  const b = normalize(brand);
+  const fam = modelFamily(model);
+  if (!fam) return undefined;
+  return SHOE_MODELS.find(
+    (s) => normalize(s.brand) === b && modelFamily(s.model) === fam,
+  );
+}
+
 // ────────────────────────────────────────────────────────────
 // 추천 로직 (순수 함수)
 // ────────────────────────────────────────────────────────────

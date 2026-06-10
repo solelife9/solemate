@@ -24,7 +24,7 @@ import { RotationPick } from './lib/rotation';
 import { recommendNextShoes, buildShopLinks, categoryLabelKo, AFFILIATE_DISCLOSURE } from './lib/affiliate';
 import { forecastLineKo, type ReplacementForecast } from './lib/wearView';
 import { shouldRecommendNextShoe } from './lib/recommendTrigger';
-import { findShoeModel, categoryPurposeKo, categoryTagsKo } from './data/shoeModels';
+import { findShoeModelLoose, categoryPurposeKo, categoryTagsKo } from './data/shoeModels';
 
 export type WeekStats = { km: string; runs: number; pace: string };
 // 주간 목표 + keep-going 동기 지표. 거리는 km 표준, pct는 이번 주 달성률 %(목표
@@ -236,7 +236,7 @@ function InsightCard({ shoe, unit, forecast }: { shoe: Shoe; unit: Unit; forecas
   const weeks = forecast && (forecast.reason === 'ok' || forecast.reason === 'overdue') && wr != null ? Math.max(0, Math.round(wr)) : null;
   const warn = shoe.condition !== '양호';
   // 모델 → 카테고리 → 용도/태그(데이터: data/shoeModels). 미매칭이면 용도 섹션 숨김.
-  const cat = findShoeModel(shoe.brand, shoe.model)?.category;
+  const cat = findShoeModelLoose(shoe.brand, shoe.model)?.category;
   const purpose = cat ? categoryPurposeKo[cat] : null;
   const tags = cat ? categoryTagsKo[cat] : [];
   return (
