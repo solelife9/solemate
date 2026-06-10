@@ -227,6 +227,20 @@ function ConfettiPiece({leftPct, size, color, delay, drift, rounded}: {leftPct: 
 // ════════════════════════════════════════════════════════════════════════════
 
 // 세로형 선형 그라데이션을 절대 레이어로 깐다(카드 배경·레전더빌리티 페이드).
+// react-native-svg 의 <Stop> 은 stopColor 의 rgba 알파를 무시하고 불투명으로 칠한다.
+// 따라서 'rgba(r,g,b,a)' 를 rgb 색 + stopOpacity 로 분리해 넘겨야 투명 페이드가 실제로
+// 비친다(미분리 시 페이드가 불투명 판이 되어 아래 이미지를 가린다). hex/rgb 는 그대로.
+function splitStopColor(color: string): {color: string; opacity: number} {
+  const m =
+    /^rgba\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*\)$/i.exec(
+      color,
+    );
+  if (m) {
+    return {color: `rgb(${m[1]}, ${m[2]}, ${m[3]})`, opacity: Number(m[4])};
+  }
+  return {color, opacity: 1};
+}
+
 function LinearGrad({
   stops,
   x1 = 0,
@@ -250,9 +264,17 @@ function LinearGrad({
     <Svg pointerEvents="none" style={[StyleSheet.absoluteFill, style]}>
       <Defs>
         <SvgGradient id={id} x1={String(x1)} y1={String(y1)} x2={String(x2)} y2={String(y2)}>
-          {stops.map((s, i) => (
-            <Stop key={i} offset={String(s.offset)} stopColor={s.color} />
-          ))}
+          {stops.map((s, i) => {
+            const c = splitStopColor(s.color);
+            return (
+              <Stop
+                key={i}
+                offset={String(s.offset)}
+                stopColor={c.color}
+                stopOpacity={String(c.opacity)}
+              />
+            );
+          })}
         </SvgGradient>
       </Defs>
       <Rect x="0" y="0" width="100%" height="100%" rx={radius} ry={radius} fill={`url(#${id})`} />
