@@ -24,6 +24,7 @@ import { RotationPick } from './lib/rotation';
 import { recommendNextShoes, buildShopLinks, categoryLabelKo, AFFILIATE_DISCLOSURE } from './lib/affiliate';
 import { forecastLineKo, type ReplacementForecast } from './lib/wearView';
 import { shouldRecommendNextShoe } from './lib/recommendTrigger';
+import { findShoeModel, categoryPurposeKo, categoryTagsKo } from './data/shoeModels';
 
 export type WeekStats = { km: string; runs: number; pace: string };
 // 주간 목표 + keep-going 동기 지표. 거리는 km 표준, pct는 이번 주 달성률 %(목표
@@ -95,7 +96,7 @@ function WeeklyGoal({ goal, week, unit, editable }: { goal: GoalInfo; week?: Wee
   );
 }
 
-function HeroShoe({ shoe, unit, tappable, forecast }: { shoe: Shoe; unit: Unit; tappable?: boolean; forecast?: ReplacementForecast | null }) {
+function HeroShoe({ shoe, unit, tappable, forecast, active, onOpenShoe, onStart }: { shoe: Shoe; unit: Unit; tappable?: boolean; forecast?: ReplacementForecast | null; active?: boolean; onOpenShoe?: () => void; onStart?: () => void }) {
   // 비율(pct)은 km 절대값으로 계산(단위 불변), 표시 숫자만 표시 단위로 환산한다.
   const remainKm = Math.max(0, shoe.max - shoe.used);
   const pct = shoe.max > 0 ? remainKm / shoe.max : 0;
@@ -113,48 +114,53 @@ function HeroShoe({ shoe, unit, tappable, forecast }: { shoe: Shoe; unit: Unit; 
       ? forecastLineKo(forecast)
       : '';
   return (
-    <View style={s.hero}>
-      {/* 상단: 브랜드+사용중(왼쪽) · 컨디션 도트+문구(오른쪽) — 목업 herotop 정합 */}
-      <View style={s.heroTop}>
-        <View style={[s.row, { flex: 1, minWidth: 0 }]}>
-          <Text style={s.heroBrand}>{shoe.brand}</Text>
-          <View style={s.usingChip}><Text style={s.usingChipText}>사용 중</Text></View>
+    <View style={[s.hero, active && s.heroActive]}>
+      {/* 정보 영역(탭 → 상세). 러닝시작 버튼은 이 Pressable 밖(형제)이라 중첩 매칭이 없다. */}
+      <Pressable
+        onPress={onOpenShoe}
+        disabled={!onOpenShoe}
+        accessibilityRole="button"
+        accessibilityLabel={`${shoe.brand} ${shoe.model} 상세 보기`}
+        style={({ pressed }) => [onOpenShoe && pressed ? s.pressed : null]}>
+        {/* 상단: 브랜드+사용중(왼쪽) · 컨디션 도트+문구(오른쪽) — 목업 herotop 정합 */}
+        <View style={s.heroTop}>
+          <View style={[s.row, { flex: 1, minWidth: 0 }]}>
+            <Text style={s.heroBrand}>{shoe.brand}</Text>
+            <View style={s.usingChip}><Text style={s.usingChipText}>사용 중</Text></View>
+          </View>
+          <View style={s.condpill}>
+            {shoe.condition !== '양호' ? (
+              <TierBadge condition={shoe.condition} />
+            ) : (
+              <>
+                <View style={[s.dot, { backgroundColor: tier }]} />
+                <Text style={[s.condText, { color: T2 }]} numberOfLines={1}>{condLabel(shoe.condition)}</Text>
+              </>
+            )}
+          </View>
         </View>
-        <View style={s.condpill}>
-          {/* 주의/교체는 tier 배지로 먼저 강조, 양호는 도트+문구 */}
-          {shoe.condition !== '양호' ? (
-            <TierBadge condition={shoe.condition} />
-          ) : (
-            <>
-              {/* 점만 컨디션 색(초록), 글씨는 중립(T2) — 목업 condpill 정합 */}
-              <View style={[s.dot, { backgroundColor: tier }]} />
-              <Text style={[s.condText, { color: T2 }]} numberOfLines={1}>{condLabel(shoe.condition)}</Text>
-            </>
-          )}
-        </View>
-      </View>
-      <Text style={s.heroModel} numberOfLines={1}>{shoe.model}</Text>
-      {/* 오늘의 한 줄(목업 reason) — 컨디션 기반 추천/안내(keep-going 보이스). */}
-      <Text style={s.heroReason} numberOfLines={2}>{condReason(shoe.condition)}</Text>
-      {/* 교체까지 남은 거리 — 문장형(목업 정합). 숫자는 받쳐주는 디스플레이 강조. */}
-      <Text style={s.heroRemainLine}>
-        교체까지 약 <Text style={s.heroRemainNum}>{remain}<Text style={s.heroRemainNumU}>{unit}</Text></Text> 남았어요
-      </Text>
-      <View style={s.gauge}><View style={[s.gaugeFill, { width: `${Math.round(pct * 100)}%`, backgroundColor: ring }]} /></View>
-      <Text style={s.usage}>{used} / {max}{unit} 사용</Text>
-      {/* 교체 예측 ETA 한 줄(차별점) — 목업 .fore 톤(회색·구분선). */}
-      {!shoe.retired && !!forecastLine && (
-        <View style={s.heroForecast}>
-          <Ionicons name="time-outline" size={13} color={T3} />
-          <Text style={s.heroForecastText}>{forecastLine}</Text>
-          {tappable && <Ionicons name="chevron-forward" size={14} color={T4} style={{ marginLeft: 'auto' }} />}
-        </View>
-      )}
-      {!shoe.retired && injury.level !== 'safe' && (
-        <View style={s.injuryWrap}>
-          <InjuryBanner level={injury.level} message={injury.message} />
-        </View>
-      )}
+        <Text style={s.heroModel} numberOfLines={1}>{shoe.model}</Text>
+        <Text style={s.heroReason} numberOfLines={2}>{condReason(shoe.condition)}</Text>
+        <Text style={s.heroRemainLine}>
+          교체까지 약 <Text style={s.heroRemainNum}>{remain}<Text style={s.heroRemainNumU}>{unit}</Text></Text> 남았어요
+        </Text>
+        <View style={s.gauge}><View style={[s.gaugeFill, { width: `${Math.round(pct * 100)}%`, backgroundColor: ring }]} /></View>
+        <Text style={s.usage}>{used} / {max}{unit} 사용</Text>
+        {!shoe.retired && !!forecastLine && (
+          <View style={s.heroForecast}>
+            <Ionicons name="time-outline" size={13} color={T3} />
+            <Text style={s.heroForecastText}>{forecastLine}</Text>
+            {tappable && <Ionicons name="chevron-forward" size={14} color={T4} style={{ marginLeft: 'auto' }} />}
+          </View>
+        )}
+        {!shoe.retired && injury.level !== 'safe' && (
+          <View style={s.injuryWrap}>
+            <InjuryBanner level={injury.level} message={injury.message} />
+          </View>
+        )}
+      </Pressable>
+      {/* 러닝 시작 — 카드 배경 안(목업 정합). 이 카드 신발로 바로 시작. */}
+      {onStart && <Button label="러닝 시작" icon="play" onPress={onStart} style={{ marginTop: SPACE.md }} />}
     </View>
   );
 }
@@ -191,23 +197,18 @@ function ShoeCarousel({ shoes, activeIdx, onSelect, unit, forecast, onOpenShoe, 
         contentContainerStyle={{ paddingHorizontal: SPACE.xl, gap: SPACE.md }}
       >
         {shoes.map((shoe, i) => (
-          // 카드 = View(비-Pressable). 상세 열기(HeroShoe)와 러닝시작(Button)을 형제 Pressable로
-          // 분리해, 텍스트로 pressable 을 찾는 테스트가 둘을 혼동하지 않게 한다(중첩 매칭 방지).
-          <View
-            key={shoe.id ?? i}
-            testID={i === activeIdx ? 'home-hero' : undefined}
-            style={{ width: HERO_W }}
-          >
-            <Pressable
-              onPress={() => { if (shoe.id) onOpenShoe?.(shoe.id); }}
-              accessibilityRole="button"
-              accessibilityLabel={`${shoe.brand} ${shoe.model} 상세 보기`}
-              style={({ pressed }) => [pressed && s.pressed]}
-            >
-              <HeroShoe shoe={shoe} unit={unit} tappable={!!onOpenShoe} forecast={i === activeIdx ? forecast : null} />
-            </Pressable>
-            {/* 러닝 시작 — 카드 안(목업 정합). 이 카드 신발(i)로 바로 시작. */}
-            <Button label="러닝 시작" icon="play" onPress={() => onStart?.(i)} style={{ marginTop: SPACE.md }} />
+          // 카드 = HeroShoe(배경/테두리/러닝시작 버튼 포함). 상세 열기·러닝시작은 HeroShoe 안에서
+          // 형제 Pressable 로 분리돼 텍스트 기반 테스트 혼동이 없다(중첩 매칭 방지).
+          <View key={shoe.id ?? i} testID={i === activeIdx ? 'home-hero' : undefined} style={{ width: HERO_W }}>
+            <HeroShoe
+              shoe={shoe}
+              unit={unit}
+              tappable={!!onOpenShoe}
+              active={i === activeIdx}
+              forecast={i === activeIdx ? forecast : null}
+              onOpenShoe={shoe.id && onOpenShoe ? () => onOpenShoe(shoe.id!) : undefined}
+              onStart={onStart ? () => onStart(i) : undefined}
+            />
           </View>
         ))}
       </ScrollView>
@@ -218,6 +219,53 @@ function ShoeCarousel({ shoes, activeIdx, onSelect, unit, forecast, onOpenShoe, 
           </View>
           <Text style={s.swipeHint}>내 러닝화 {shoes.length}켤레 · 좌우로 넘겨보세요</Text>
         </>
+      )}
+    </View>
+  );
+}
+
+// 현재 상태 — 선택(스와이프) 신발의 사용거리 / 교체 예상. 활성 신발 기준이라 캐러셀을
+// 좌우로 넘기면 이 카드도 함께 바뀐다(목업 '현재 상태' 정합). 표시 전용.
+function InsightCard({ shoe, unit, forecast }: { shoe: Shoe; unit: Unit; forecast?: ReplacementForecast | null }) {
+  const used = displayNum(shoe.used, unit);
+  const max = displayNum(shoe.max, unit);
+  const remainKm = Math.max(0, shoe.max - shoe.used);
+  const remain = displayNum(remainKm, unit);
+  const usedPct = shoe.max > 0 ? Math.round((shoe.used / shoe.max) * 100) : 0;
+  const weeks = forecast && (forecast.reason === 'ok' || forecast.reason === 'overdue') ? Math.max(0, Math.round(forecast.weeksRemaining)) : null;
+  const warn = shoe.condition !== '양호';
+  // 모델 → 카테고리 → 용도/태그(데이터: data/shoeModels). 미매칭이면 용도 섹션 숨김.
+  const cat = findShoeModel(shoe.brand, shoe.model)?.category;
+  const purpose = cat ? categoryPurposeKo[cat] : null;
+  const tags = cat ? categoryTagsKo[cat] : [];
+  return (
+    <View style={s.insightCard}>
+      <View style={s.insightGrid}>
+        <View style={{ flex: 1 }}>
+          <Text style={s.insightLabel}>사용 거리</Text>
+          <View style={[s.baselineRow, { marginTop: 6 }]}>
+            <Text style={s.insightNum}>{used}</Text><Text style={s.insightUnit}>{unit}</Text>
+          </View>
+          <Text style={s.insightSub}>총 내구도 {max}{unit} 중 {usedPct}%</Text>
+        </View>
+        <View style={s.insightDivider} />
+        <View style={{ flex: 1 }}>
+          <Text style={s.insightLabel}>교체 예상</Text>
+          <Text style={[s.insightWeeks, { color: warn ? ACCENT : T1 }]}>{weeks != null ? `약 ${weeks}주 후` : '—'}</Text>
+          <Text style={s.insightSub}>약 {remain}{unit} 남았어요</Text>
+        </View>
+      </View>
+      {/* 추천 용도 — 러닝화 종류(카테고리)에 맞는 용도 + 태그(목업 정합). 모델 매칭 시만 노출. */}
+      {!!purpose && (
+        <View style={s.insightPurpose}>
+          <Text style={s.insightLabel}>추천 용도</Text>
+          <Text style={s.insightPurposeText}>{purpose}</Text>
+          <View style={s.insightTags}>
+            {tags.map((t) => (
+              <View key={t} style={s.insightTag}><Text style={s.insightTagText}>{t}</Text></View>
+            ))}
+          </View>
+        </View>
       )}
     </View>
   );
@@ -386,6 +434,16 @@ export default function HomeScreen({
             )}
           </View>
           <ShoeCarousel shoes={shoes} activeIdx={idx} onSelect={select} unit={unit} forecast={forecast} onOpenShoe={onOpenShoe} onStart={onStart} />
+          {/* 현재 상태 — 선택(스와이프) 신발의 사용거리/교체예상. 캐러셀과 연동돼 함께 바뀐다. */}
+          <View style={[s.sectionRow, { marginTop: SPACE.lg }]}>
+            <SectionTitle style={s.sectionLabelInline}>현재 상태</SectionTitle>
+            <Pressable onPress={() => { if (active.id) onOpenShoe?.(active.id); }} hitSlop={8} accessibilityRole="button" accessibilityLabel="신발 상세 보기">
+              <Text style={s.sectionMore}>자세히 ›</Text>
+            </Pressable>
+          </View>
+          <View style={{ paddingHorizontal: SPACE.xl }}>
+            <InsightCard shoe={active} unit={unit} forecast={forecast} />
+          </View>
           {/* 주간 목표 — 목업 정합: 내 러닝화 아래 배치. 탭하면 인라인 편집 모달. */}
           {goal && (
             <Pressable
@@ -472,7 +530,23 @@ const s = StyleSheet.create({
   goalRingPct: { color: T1, fontFamily: DISPLAY, fontSize: 19, letterSpacing: 0.2 },
   goalRingU: { color: T3, fontFamily: FONT, fontSize: 10 },
 
-  hero: { backgroundColor: HERO_BG, borderRadius: RADIUS.xl, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.07), padding: 16 },
+  // 목업 카드: radius 20(RADIUS.lg) · 테두리 1px. 비활성 라인(흰 7%), 활성 오렌지(0.55).
+  hero: { backgroundColor: HERO_BG, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: withAlpha(T1, 0.07), padding: 20 },
+  heroActive: { borderColor: withAlpha(ACCENT, 0.55) },
+  // 현재 상태 인사이트 카드(사용거리 | 교체예상) — 활성 신발 반영
+  insightCard: { backgroundColor: CARD_DIM, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.06), padding: SPACE.lg },
+  insightGrid: { flexDirection: 'row', alignItems: 'flex-start' },
+  insightDivider: { width: StyleSheet.hairlineWidth, alignSelf: 'stretch', backgroundColor: withAlpha(T1, 0.08), marginHorizontal: SPACE.lg },
+  insightLabel: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600', letterSpacing: -0.1 },
+  insightNum: { color: T1, fontFamily: DISPLAY, fontSize: 22, fontWeight: '700', letterSpacing: -0.4 },
+  insightUnit: { color: T2, fontFamily: FONT, fontSize: 13, fontWeight: '600', marginLeft: 2 },
+  insightWeeks: { fontFamily: DISPLAY, fontSize: 19, fontWeight: '700', letterSpacing: -0.3, marginTop: 6 },
+  insightSub: { color: T3, fontFamily: FONT, fontSize: 12.5, fontWeight: '500', marginTop: 3 },
+  insightPurpose: { marginTop: SPACE.lg, paddingTop: SPACE.lg, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.07) },
+  insightPurposeText: { color: T2, fontFamily: FONT, fontSize: 15, fontWeight: '500', letterSpacing: -0.2, lineHeight: 22, marginTop: 8 },
+  insightTags: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 12 },
+  insightTag: { backgroundColor: CARD_HI, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 5 },
+  insightTagText: { color: T2, fontFamily: FONT, fontSize: 12, fontWeight: '600' },
   heroTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 14 },
   heroBrand: { color: T3, fontFamily: DISPLAY, fontSize: 11, fontWeight: '500', letterSpacing: 1.4 },
   usingChip: { backgroundColor: CARD_HI, borderRadius: 6, paddingHorizontal: SPACE.sm, paddingVertical: 2 },

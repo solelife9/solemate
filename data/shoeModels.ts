@@ -64,6 +64,31 @@ export const categoryLifespanKm: Record<ShoeCategory, number> = {
 export const DEFAULT_LIFESPAN_KM = categoryLifespanKm.daily_trainer; // 700
 
 // ────────────────────────────────────────────────────────────
+// 카테고리 → 용도(추천 문구) + 태그 (홈 '현재 상태'·신발 카드/상세 표시용)
+// 모델별 category(위 SHOE_MODELS)에서 도출하는 단일 소스. 목업 ShoeInsightCard 의
+// '추천 용도'/태그가 러닝화 종류에 맞게 나오도록 한다.
+// ────────────────────────────────────────────────────────────
+export const categoryPurposeKo: Record<ShoeCategory, string> = {
+  daily_trainer: '데일리 러닝과 가벼운 조깅에 두루 좋아요',
+  max_cushion: '장거리·회복 러닝에 푹신한 쿠션이 좋아요',
+  stability: '안정적인 지지로 데일리 러닝에 좋아요',
+  super_trainer: '템포부터 장거리 훈련까지 두루 소화해요',
+  tempo: '빠른 템포런과 인터벌 훈련에 적합해요',
+  carbon_racing: '레이스와 기록 도전에 최적이에요',
+  trail: '트레일·험로 러닝에 강해요',
+};
+
+export const categoryTagsKo: Record<ShoeCategory, string[]> = {
+  daily_trainer: ['데일리', '조깅', '입문'],
+  max_cushion: ['장거리', '회복', '맥스쿠션'],
+  stability: ['안정화', '데일리', '지지력'],
+  super_trainer: ['템포', '장거리', '훈련'],
+  tempo: ['템포', '인터벌', '스피드'],
+  carbon_racing: ['레이스', '카본', '기록도전'],
+  trail: ['트레일', '오프로드', '그립'],
+};
+
+// ────────────────────────────────────────────────────────────
 // 시드 데이터 (134 모델)
 // ────────────────────────────────────────────────────────────
 

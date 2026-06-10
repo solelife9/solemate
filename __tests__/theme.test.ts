@@ -53,12 +53,13 @@ describe('TYPE presets', () => {
   });
 });
 
-describe('DISPLAY face (본문 Pretendard와 대비)', () => {
-  test('DISPLAY는 디스플레이 페이스 Barlow, 본문 FONT는 Pretendard로 서로 다르다', () => {
+describe('DISPLAY face (디자인 마무리: Pretendard 전면 통일)', () => {
+  test('DISPLAY와 본문 FONT 모두 Pretendard — 모든 글씨를 하나로 통일(사용자 요청)', () => {
+    // 디자인 마무리 핸드오프 정합: 사진의 큰 숫자가 Barlow 그로테스크가 아니라 본문과 같은
+    // Pretendard. 사용자 요청('모든 글씨 Pretendard 통일')으로 Barlow 디스플레이 대비 철회.
     expect(FONT).toBe('PretendardVariable');
-    expect(DISPLAY).toBe('Barlow-Medium');
-    // 통일이 아니라 의도된 대비 — 큰 숫자·워드마크가 본문과 다른 페이스를 쓴다.
-    expect(DISPLAY).not.toBe(FONT);
+    expect(DISPLAY).toBe('PretendardVariable');
+    expect(DISPLAY).toBe(FONT);
   });
 });
 

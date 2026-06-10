@@ -60,7 +60,10 @@ export const FONT = 'PretendardVariable';  // body
 // FONT(Pretendard)가 담당하므로 Barlow는 라틴·숫자 전용으로 안전하다.
 // 히스토리: 초기 BebasNeue → Slice3에서 Pretendard로 통일 → 통일이 밋밋해 Barlow
 // 디스플레이로 타이포 대비를 복원(2026-06-02). 두 폰트 모두 assets/fonts에 번들됨.
-export const DISPLAY = 'Barlow-Medium';
+// 디자인 마무리 핸드오프 정합: 큰 숫자·모델명·워드마크를 본문과 같은 Pretendard 로 통일
+// (사진의 숫자가 Barlow 그로테스크가 아니라 Pretendard). 과거 Barlow 디스플레이 대비는
+// 사용자 요청('큰 숫자도 사진이랑 통일')으로 철회. 토큰 하나로 앱 전역 디스플레이 폰트를 좌우.
+export const DISPLAY = 'PretendardVariable';
 
 // ── spacing scale (dp) ───────────────────────────────────────────────────────
 export const SPACE = { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 32 } as const;
