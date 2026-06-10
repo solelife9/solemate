@@ -1,0 +1,29 @@
+{
+  "brand": "Adidas",
+  "source": "사용자 분류(러닝화 타입 · 추천 러닝)",
+  "updated": "2026-06-10",
+  "count": 19,
+  "types": ["카본화", "슈퍼트레이너", "데일리", "안정화", "트레일", "맥스쿠셔닝"],
+  "runKinds": ["데일리", "장거리", "템포", "인터벌", "레이스", "회복", "트레일"],
+  "shoes": [
+    { "model": "Adios Pro 3",        "type": "카본화",     "recommended": ["템포", "인터벌", "레이스"] },
+    { "model": "Adios Pro 4",        "type": "카본화",     "recommended": ["템포", "인터벌", "레이스"] },
+    { "model": "Adios Pro Evo 1",    "type": "카본화",     "recommended": ["레이스"] },
+    { "model": "Boston 11",          "type": "슈퍼트레이너", "recommended": ["장거리", "템포"] },
+    { "model": "Boston 12",          "type": "슈퍼트레이너", "recommended": ["장거리", "템포", "인터벌"] },
+    { "model": "Boston 13",          "type": "슈퍼트레이너", "recommended": ["장거리", "템포", "인터벌"] },
+    { "model": "Prime X 2 Strung",   "type": "슈퍼트레이너", "recommended": ["장거리", "템포", "인터벌"] },
+    { "model": "Adizero SL",         "type": "데일리",     "recommended": ["데일리", "장거리"] },
+    { "model": "Adizero SL 2",       "type": "데일리",     "recommended": ["데일리", "장거리", "템포"] },
+    { "model": "Duramo SL",          "type": "데일리",     "recommended": ["데일리"] },
+    { "model": "Solarboost 5",       "type": "데일리",     "recommended": ["데일리", "장거리"] },
+    { "model": "Supernova Rise",     "type": "데일리",     "recommended": ["데일리", "장거리"] },
+    { "model": "Supernova Solution", "type": "안정화",     "recommended": ["데일리", "장거리", "회복"] },
+    { "model": "Terrex Agravic 3",   "type": "트레일",     "recommended": ["트레일", "장거리"] },
+    { "model": "Ultraboost 22",      "type": "맥스쿠셔닝",  "recommended": ["회복", "장거리"] },
+    { "model": "Ultraboost 23",      "type": "맥스쿠셔닝",  "recommended": ["회복", "장거리"] },
+    { "model": "Ultraboost 24",      "type": "맥스쿠셔닝",  "recommended": ["회복", "장거리"] },
+    { "model": "Ultraboost 25",      "type": "맥스쿠셔닝",  "recommended": ["회복", "장거리"] },
+    { "model": "Ultraboost Light",   "type": "맥스쿠셔닝",  "recommended": ["회복", "장거리"] }
+  ]
+}
