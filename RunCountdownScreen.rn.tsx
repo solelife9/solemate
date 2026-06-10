@@ -30,7 +30,7 @@ const C = {
   hair: 'rgba(255,255,255,0.07)',
 };
 const UI = 'PretendardVariable';
-const DP = 'Barlow-Medium';
+const DP = 'PretendardVariable';
 
 function Icon({ name, size = 22, color = C.t2 }: { name: string; size?: number; color?: string }) {
   const g: Record<string, React.ReactNode> = {

@@ -26,7 +26,7 @@ const C = {
   sep: 'rgba(255,255,255,0.08)', hair2: 'rgba(255,255,255,0.045)',
 };
 const UI = 'PretendardVariable';
-const DP = 'Barlow-Medium';
+const DP = 'PretendardVariable';
 
 // ── Ring (진행할수록 짙어지는 호) ─────────────────────────────────────────────────
 // 캔버스 목업과 동일 원리: 호를 여러 세그먼트로 쪼개어 앵버(시작)→진한 엠버(선두)로
@@ -257,13 +257,13 @@ const r = StyleSheet.create({
   goal: { color: C.t3, fontFamily: UI, fontSize: 13, fontWeight: '500', marginBottom: 10 },
   goalMet: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 10 },
   goalMetText: { color: C.sage, fontFamily: UI, fontSize: 13, fontWeight: '600' },
-  bigDist: { color: C.t1, fontFamily: DP, fontSize: 76, fontWeight: '600', letterSpacing: -2, lineHeight: 78, includeFontPadding: false },
+  bigDist: { color: C.t1, fontFamily: DP, fontSize: 76, fontWeight: '800', letterSpacing: -2, lineHeight: 80, includeFontPadding: false },
   bigUnit: { color: C.t3, fontFamily: UI, fontSize: 13.5, fontWeight: '600', marginTop: 8 },
 
   heroMetrics: { flexDirection: 'row', marginTop: 26, paddingVertical: 16, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: C.sep, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.sep },
   hm: { flex: 1, alignItems: 'center' },
   hmDivider: { borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: C.hair2 },
-  hmV: { color: C.t1, fontFamily: DP, fontSize: 34, fontWeight: '600', letterSpacing: -1 },
+  hmV: { color: C.t1, fontFamily: DP, fontSize: 34, fontWeight: '700', letterSpacing: -1 },
   hmL: { color: C.t3, fontFamily: UI, fontSize: 11.5, fontWeight: '500', marginTop: 5 },
 
   subMetrics: { flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 14 },

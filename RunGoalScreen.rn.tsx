@@ -26,7 +26,7 @@ const C = {
   hair: 'rgba(255,255,255,0.07)', hair2: 'rgba(255,255,255,0.045)',
 };
 const UI = 'PretendardVariable';
-const DP = 'Barlow-Medium';
+const DP = 'PretendardVariable';
 
 // ── SVG 아이콘(자체 그림 — vector-icons 의존 제거) ───────────────────────────
 function Icon({ name, size = 22, color = C.t2, fill }: { name: string; size?: number; color?: string; fill?: string }) {
