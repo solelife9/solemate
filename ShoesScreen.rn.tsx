@@ -397,22 +397,39 @@ function ShoeCard({ shoe, featured, onPress, onPlay, unit, pace }: { shoe: Shoe;
   const maxDisp = displayNum(shoe.max, unit);
   // 사용률(%) — 라벨바 채움(목업 LifeBar 정합). 비율은 km 절대값으로(단위 불변).
   const usedPct = shoe.max > 0 ? Math.min(100, Math.round((shoe.used / shoe.max) * 100)) : 0;
+  // 사용자 DB: 종류(type)→칩, 추천 용도(recommended)→중간 한 줄(사진 정합).
+  const cardClass = findShoeClass(shoe.brand, shoe.model);
+  const cardType = typeLabel(cardClass?.type);
+  const cardRec = cardClass?.recommended ?? [];
   return (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${shoe.brand} ${shoe.model} 상세`} style={({ pressed }) => [s.shoeCard, featured ? s.shoeCardFeatured : s.shoeCardIdle, retired && s.shoeCardRetired, pressed && s.pressed]}>
-      {/* 상단: 브랜드 + 사용중/보관됨 (우상단은 play 어포던스가 차지) */}
-      <View style={s.shoeTopRow}>
-        <View style={[s.row, { flexShrink: 1, minWidth: 0 }]}>
-          <Text style={s.shoeBrand}>{shoe.brand}</Text>
-          {retired ? <Pill tone="dim" label="보관됨" />
-            : featured && <Text style={s.shoeUsing}>· 사용 중</Text>}
+      {/* 상단: 좌(브랜드·사용중·모델) ↔ 우(컨디션 위 · 화살표/▶ 아래) — 사진 정합 */}
+      <View style={s.shoeTopSection}>
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <View style={[s.row, { flexShrink: 1, minWidth: 0 }]}>
+            <Text style={s.shoeBrand}>{shoe.brand}</Text>
+            {!!cardType && <View style={s.cardTypeChip}><Text style={s.cardTypeChipText}>{cardType}</Text></View>}
+            {retired ? <Pill tone="dim" label="보관됨" />
+              : featured && <Text style={s.shoeUsing}>· 사용 중</Text>}
+          </View>
+          <Text style={s.shoeModel} numberOfLines={2}>{shoe.model}</Text>
+        </View>
+        <View style={s.shoeRightCol}>
+          <View style={s.shoeCondRow}>
+            <View testID={`cond-dot-${shoe.condition}`} style={[s.shoeCondDot, { backgroundColor: condColor(shoe.condition) }]} />
+            <Text style={[s.shoeCondText, { color: T2 }]} numberOfLines={1}>{condLabel(shoe.condition)}</Text>
+          </View>
+          {!retired && onPlay ? (
+            <Pressable onPress={onPlay} hitSlop={10} accessibilityRole="button" accessibilityLabel={`${shoe.brand} ${shoe.model}로 달리기`} style={({ pressed }) => [s.cardPlay, pressed && s.pressed]} testID={shoe.id ? `shoe-play-${shoe.id}` : undefined}>
+              <Ionicons name="play" size={14} color={T2} />
+            </Pressable>
+          ) : (
+            <Ionicons name="chevron-forward" size={18} color={T3} />
+          )}
         </View>
       </View>
-      <Text style={s.shoeModel} numberOfLines={2}>{shoe.model}</Text>
-      {/* 컨디션 도트+문구(모델 아래) — 색은 cond-dot testID 로 검증됨 */}
-      <View style={s.shoeCondRow}>
-        <View testID={`cond-dot-${shoe.condition}`} style={[s.shoeCondDot, { backgroundColor: condColor(shoe.condition) }]} />
-        <Text style={[s.shoeCondText, { color: T2 }]} numberOfLines={1}>{condLabel(shoe.condition)}</Text>
-      </View>
+      {/* 추천 용도(러닝 종류) — 중간(사진 정합). 모델 매칭 시만. */}
+      {cardRec.length > 0 && <Text style={s.shoePurpose} numberOfLines={1}>{cardRec.join(' · ')}</Text>}
       {/* 누적 거리(큰 숫자) + 교체까지 남은 거리(문장형) — 목업 lifeRow 정합 */}
       <View style={s.shoeLifeRow}>
         <View style={s.baselineRow}>
@@ -428,13 +445,6 @@ function ShoeCard({ shoe, featured, onPress, onPlay, unit, pace }: { shoe: Shoe;
         {pace && pace !== '--' ? <Text style={s.shoeBarLabel}>평균 <Text style={s.shoePaceVal}>{pace}</Text>/km</Text> : <View />}
         <Text style={s.shoeBarLabel}>{maxDisp}{unit}</Text>
       </View>
-      {/* play 어포던스: 카드에서 바로 이 신발로 런 시작(shoe-first). 카드 탭은 상세로 가므로
-          시작은 별도 버튼. 보관 신발엔 미노출(목업엔 없지만 현재 강점이라 우상단에 유지). */}
-      {!retired && onPlay ? (
-        <Pressable onPress={onPlay} hitSlop={10} accessibilityRole="button" accessibilityLabel={`${shoe.brand} ${shoe.model}로 달리기`} style={({ pressed }) => [s.cardPlayAbs, pressed && s.pressed]} testID={shoe.id ? `shoe-play-${shoe.id}` : undefined}>
-          <Ionicons name="play" size={15} color={T2} />
-        </Pressable>
-      ) : null}
     </Pressable>
   );
 }
@@ -566,17 +576,24 @@ const s = StyleSheet.create({
   shoeCardFeatured: { borderWidth: 1, borderColor: withAlpha(T1, 0.2) },
   shoeCardIdle: { borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.08) },
   shoeCardRetired: { opacity: 0.55, borderColor: withAlpha(T1, 0.05) },
-  // 상단 행: 브랜드(왼쪽) — 우상단은 play 어포던스
-  shoeTopRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, paddingRight: 44 },
+  // 상단: 좌(브랜드·모델) ↔ 우(컨디션 위 · ▶/화살표 아래) — 사진 정합
+  shoeTopSection: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 },
+  shoeRightCol: { alignItems: 'flex-end', gap: 10, flexShrink: 0 },
   shoeBrand: { color: T3, fontFamily: DISPLAY, fontSize: 11, fontWeight: '500', letterSpacing: 1.3 },
   shoeUsing: { color: T3, fontFamily: FONT, fontSize: 11.5, fontWeight: '500' },
-  shoeModel: { color: T1, fontFamily: DISPLAY, fontSize: 22, fontWeight: '600', letterSpacing: -0.5, lineHeight: 26, marginTop: 4, paddingRight: 44 },
-  shoeCondRow: { flexDirection: 'row', alignItems: 'center', gap: 7, marginTop: 8 },
+  shoeModel: { color: T1, fontFamily: DISPLAY, fontSize: 22, fontWeight: '800', letterSpacing: -0.5, lineHeight: 27, marginTop: 4 },
+  shoeCondRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
+  // 종류 칩(카본 레이싱 등) — 브랜드 옆
+  cardTypeChip: { backgroundColor: withAlpha(ACCENT, 0.14), borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2 },
+  cardTypeChipText: { color: ACCENT, fontFamily: FONT, fontSize: 10, fontWeight: '700', letterSpacing: 0.1 },
+  // 추천 용도(러닝 종류) 한 줄 — 카드 중간
+  shoePurpose: { color: T3, fontFamily: FONT, fontSize: 12.5, fontWeight: '500', letterSpacing: -0.1, marginTop: 10 },
+  cardPlay: { width: 32, height: 32, borderRadius: 999, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.14), alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(BG, 0.3) },
   shoeCondDot: { width: 7, height: 7, borderRadius: 999 },
   shoeCondText: { color: T2, fontFamily: FONT, fontSize: 12.5, fontWeight: '500' },
   // 누적 거리(큰 숫자) + 교체까지 남은 거리 — 목업 lifeRow 정합
   shoeLifeRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 14, marginBottom: 10 },
-  shoeUsedNum: { color: T1, fontFamily: DISPLAY, fontSize: 25, fontWeight: '600', letterSpacing: -0.6 },
+  shoeUsedNum: { color: T1, fontFamily: DISPLAY, fontSize: 25, fontWeight: '800', letterSpacing: -0.6 },
   shoeUsedU: { color: T2, fontFamily: FONT, fontSize: 13, fontWeight: '500', marginLeft: 2 },
   shoeRemain: { color: T3, fontFamily: FONT, fontSize: 12.5, fontWeight: '500' },
   // 라벨바(목업 LifeBar): 사용/총 수명 양끝 라벨 + 가운데 평균 페이스
@@ -597,7 +614,7 @@ const s = StyleSheet.create({
   detailNav: { paddingTop: 12, paddingHorizontal: 16, paddingBottom: 6, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   iconBtn: { width: 38, height: 38, borderRadius: 999, backgroundColor: CARD_HI, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.12), alignItems: 'center', justifyContent: 'center' },
   dBrand: { color: T3, fontFamily: DISPLAY, fontSize: 12, fontWeight: '500', letterSpacing: 1.6 },
-  dModel: { color: T1, fontFamily: DISPLAY, fontSize: 28, fontWeight: '500', letterSpacing: -0.3, marginTop: 4 },
+  dModel: { color: T1, fontFamily: DISPLAY, fontSize: 28, fontWeight: '800', letterSpacing: -0.3, marginTop: 4 },
   dPurpose: { color: T2, fontFamily: FONT, fontSize: 15, fontWeight: '500', letterSpacing: -0.2, lineHeight: 22, marginTop: 10 },
   dTags: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 12 },
   dTag: { backgroundColor: CARD_HI, borderRadius: 999, paddingHorizontal: 11, paddingVertical: 5 },
