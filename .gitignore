@@ -68,6 +68,17 @@ yarn-error.log
 
 # Tenet runtime state (volatile SQLite — human-readable artifacts under .tenet/ are tracked)
 .tenet/.state/
+# Tenet volatile build/run logs (journal·spec·knowledge·visuals 산출물은 계속 추적)
+.tenet/*.log
+.tenet/**/*.log
+.tenet/*.err
+.tenet/rn-config-check.json
+
+# Agent tooling (개인 로컬 설정 — .mcp.json은 tenet MCP 로드에 필요해 공유 차원에서 추적)
+.agents/
+.codex/
+.claude/skills/
+opencode.json
 
 # Yarn
 .yarn/*
