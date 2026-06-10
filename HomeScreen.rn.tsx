@@ -5,9 +5,9 @@
 // KeegoWordmark primitive. shoe-first: 선택 신발(activeIdx 실값) 수명 링 히어로가
 // 주인공이고, 오렌지는 핵심 수치·CTA에만(라벨/보조텍스트는 T3 회색).
 // ============================================================================
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import {
-  View, Text, ScrollView, Pressable, StyleSheet, Linking, Modal,
+  View, Text, ScrollView, Pressable, StyleSheet, Linking, Modal, Dimensions,
   NativeSyntheticEvent, NativeScrollEvent,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -16,7 +16,7 @@ import {
   BG, CARD, CARD_DIM, CARD_HI, HERO_BG, ACCENT, DANGER, WARN, GOOD, T1, T2, T3, T4,
   FONT, DISPLAY, SPACE, RADIUS, withAlpha, Shoe, SHOES,
 } from './theme';
-import { Ring, TabBar, TierBadge, KeegoWordmark, Button, SectionTitle, Pill, conditionColor, InjuryBanner } from './primitives';
+import { TabBar, TierBadge, KeegoWordmark, Button, SectionTitle, Pill, conditionColor, InjuryBanner } from './primitives';
 import { Unit, displayNum, displayToKm } from './lib/units';
 import { GOAL_STEP_DISPLAY } from './lib/settings';
 import { assessShoeInjuryRisk } from './lib/injury';
@@ -30,13 +30,16 @@ export type WeekStats = { km: string; runs: number; pace: string };
 // 설정 행이 구동), streak은 오늘까지 이어지는 연속 러닝 일수(lib/goals.currentStreak).
 export type GoalInfo = { km: number; pct: number; streak: number };
 
-const CARD_W = 138;
-const GAP = 10;
 
 // Proportional condition → ring color. 양호는 accent(주인공 톤), 주의/교체는 경고색.
 // 도트/조건 텍스트의 상태색은 primitives.conditionColor(양호=GOOD 녹색)를 재사용한다.
 const ringColor = (c: string) => (c === '교체' ? DANGER : c === '주의' ? WARN : ACCENT);
 const condLabel = (c: string) => c === '교체' ? '교체 권장' : c === '주의' ? '주의 필요' : '최상의 컨디션';
+// 카드 한 줄 요약(목업 reason 정합 — keep-going 보이스). 컨디션별 오늘의 추천/안내.
+const condReason = (c: string) =>
+  c === '교체' ? '교체 시기예요 — 부상 전에 바꿔주세요'
+  : c === '주의' ? '아직 괜찮지만 슬슬 교체를 준비할 때예요'
+  : '오늘 데일리 러닝에 가장 좋은 컨디션이에요';
 
 function TopBar({ onAddShoe }: { onAddShoe?: () => void }) {
   return (
@@ -131,6 +134,8 @@ function HeroShoe({ shoe, unit, tappable, forecast }: { shoe: Shoe; unit: Unit; 
         </View>
       </View>
       <Text style={s.heroModel} numberOfLines={1}>{shoe.model}</Text>
+      {/* 오늘의 한 줄(목업 reason) — 컨디션 기반 추천/안내(keep-going 보이스). */}
+      <Text style={s.heroReason} numberOfLines={2}>{condReason(shoe.condition)}</Text>
       {/* 교체까지 남은 거리 — 문장형(목업 정합). 숫자는 받쳐주는 디스플레이 강조. */}
       <Text style={s.heroRemainLine}>
         교체까지 약 <Text style={s.heroRemainNum}>{remain}<Text style={s.heroRemainNumU}>{unit}</Text></Text> 남았어요
@@ -154,59 +159,59 @@ function HeroShoe({ shoe, unit, tappable, forecast }: { shoe: Shoe; unit: Unit; 
   );
 }
 
-function PickerCard({ shoe, active, onPress, unit }: { shoe: Shoe; active: boolean; onPress: () => void; unit: Unit }) {
-  const remainKm = Math.max(0, shoe.max - shoe.used);
-  const pct = shoe.max > 0 ? remainKm / shoe.max : 0;
-  const remain = displayNum(remainKm, unit);
-  const ring = ringColor(shoe.condition);
-  return (
-    <Pressable
-      onPress={onPress}
-      style={[s.pcard, active ? s.pcardActive : s.pcardIdle, { opacity: active ? 1 : 0.7, transform: [{ scale: active ? 1 : 0.94 }] }]}
-    >
-      <View style={s.row}>
-        <Text style={s.pcardBrand} numberOfLines={1}>{shoe.brand}</Text>
-        <Ring size={30} stroke={3.5} progress={pct} color={ring}>
-          <Text style={s.pcardRingPct}>{Math.round(pct * 100)}</Text>
-        </Ring>
-      </View>
-      <View>
-        <Text style={[s.pcardModel, { color: active ? T1 : T2 }]} numberOfLines={2}>{shoe.model}</Text>
-        <View style={[s.baselineRow, { marginTop: 6 }]}>
-          <Text style={[s.pcardRemain, { color: active ? T1 : T2 }]}>{remain}</Text>
-          <Text style={s.pcardRemainU}>{unit} 남음</Text>
-        </View>
-      </View>
-    </Pressable>
-  );
-}
+// 오늘의 신발 — 풀폭 스와이프 캐러셀(목업 정합). 각 신발이 한 장의 카드(HeroShoe)로
+// 좌우로 넘겨지고, 스냅 위치로 활성 신발(onSelect)을 정한다. 활성 카드만 home-hero
+// testID + 교체 예측(forecast) 노출(App이 활성 신발 기준 forecast 하나만 내려주므로).
+// 카드 탭 → 그 신발 상세(onOpenShoe). 러닝 시작 CTA 는 캐러셀 아래 단일 버튼(활성 기준).
+const SCREEN_W = Dimensions.get('window').width;
+const HERO_W = SCREEN_W - SPACE.xl * 2;
+const HERO_SNAP = HERO_W + SPACE.md;
 
-function ShoePicker({ shoes, activeIdx, onSelect, unit }: { shoes: Shoe[]; activeIdx: number; onSelect: (i: number) => void; unit: Unit }) {
+function ShoeCarousel({ shoes, activeIdx, onSelect, unit, forecast, onOpenShoe }: {
+  shoes: Shoe[]; activeIdx: number; onSelect: (i: number) => void; unit: Unit;
+  forecast?: ReplacementForecast | null; onOpenShoe?: (shoeId: string) => void;
+}) {
   const ref = useRef<ScrollView>(null);
-  const [pad, setPad] = useState(150);
-
-  const onMomentumEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const idx = Math.round(e.nativeEvent.contentOffset.x / (CARD_W + GAP));
-    const clamped = Math.max(0, Math.min(shoes.length - 1, idx));
+  const onEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const i = Math.round(e.nativeEvent.contentOffset.x / HERO_SNAP);
+    const clamped = Math.max(0, Math.min(shoes.length - 1, i));
     if (clamped !== activeIdx) onSelect(clamped);
   };
-  const scrollTo = (i: number) => ref.current?.scrollTo({ x: i * (CARD_W + GAP), animated: true });
-
+  // 외부에서 활성 신발이 바뀌면(로테이션 추천 탭 등) 캐러셀도 그 카드로 스냅 이동.
+  useEffect(() => { ref.current?.scrollTo({ x: activeIdx * HERO_SNAP, animated: true }); }, [activeIdx]);
   return (
-    <ScrollView
-      ref={ref}
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      onLayout={(e) => setPad(Math.max(20, e.nativeEvent.layout.width / 2 - CARD_W / 2))}
-      snapToInterval={CARD_W + GAP}
-      decelerationRate="fast"
-      onMomentumScrollEnd={onMomentumEnd}
-      contentContainerStyle={{ paddingHorizontal: pad, gap: GAP }}
-    >
-      {shoes.map((shoe, i) => (
-        <PickerCard key={i} shoe={shoe} active={i === activeIdx} unit={unit} onPress={() => { onSelect(i); scrollTo(i); }} />
-      ))}
-    </ScrollView>
+    <View>
+      <ScrollView
+        ref={ref}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        snapToInterval={HERO_SNAP}
+        decelerationRate="fast"
+        onMomentumScrollEnd={onEnd}
+        contentContainerStyle={{ paddingHorizontal: SPACE.xl, gap: SPACE.md }}
+      >
+        {shoes.map((shoe, i) => (
+          <Pressable
+            key={shoe.id ?? i}
+            onPress={() => { if (shoe.id) onOpenShoe?.(shoe.id); }}
+            accessibilityRole="button"
+            accessibilityLabel={`${shoe.brand} ${shoe.model} 상세 보기`}
+            testID={i === activeIdx ? 'home-hero' : undefined}
+            style={({ pressed }) => [{ width: HERO_W }, pressed && s.pressed]}
+          >
+            <HeroShoe shoe={shoe} unit={unit} tappable={!!onOpenShoe} forecast={i === activeIdx ? forecast : null} />
+          </Pressable>
+        ))}
+      </ScrollView>
+      {shoes.length > 1 && (
+        <>
+          <View style={s.pageDots}>
+            {shoes.map((_, i) => <View key={i} style={[s.pageDot, i === activeIdx && s.pageDotOn]} />)}
+          </View>
+          <Text style={s.swipeHint}>내 러닝화 {shoes.length}켤레 · 좌우로 넘겨보세요</Text>
+        </>
+      )}
+    </View>
   );
 }
 
@@ -363,31 +368,20 @@ export default function HomeScreen({
       </View>
       {active ? (
         <>
-          {/* shoe-first 주인공: 선택 신발(idx 실값) 수명 링 히어로 카드 — 탭하면 상세로 */}
-          <Pressable
-            onPress={() => { if (active.id) onOpenShoe?.(active.id); }}
-            accessibilityRole="button"
-            accessibilityLabel={`${active.brand} ${active.model} 상세 보기`}
-            style={({ pressed }) => [pressed && s.pressed]}>
-            <View testID="home-hero" style={{ paddingHorizontal: SPACE.xl, paddingTop: SPACE.sm }}>
-              <HeroShoe shoe={active} unit={unit} tappable={!!onOpenShoe} forecast={forecast} />
-            </View>
-          </Pressable>
-          {/* 강조는 CTA에 — 선택 신발 idx로 러닝 시작 연결 */}
-          <View style={{ paddingHorizontal: SPACE.xl, paddingTop: SPACE.sm }}>
+          {/* shoe-first 주인공: 오늘의 신발 풀폭 캐러셀(좌우 스와이프). 활성 카드가 히어로. */}
+          <View style={s.sectionRow}>
+            <SectionTitle style={s.sectionLabelInline}>오늘의 신발</SectionTitle>
+            {shoes.length > 1 && (
+              <Pressable onPress={() => onTab?.(1)} hitSlop={8} accessibilityRole="button" accessibilityLabel="신발 전체 보기">
+                <Text style={s.sectionMore}>전체 보기 ›</Text>
+              </Pressable>
+            )}
+          </View>
+          <ShoeCarousel shoes={shoes} activeIdx={idx} onSelect={select} unit={unit} forecast={forecast} onOpenShoe={onOpenShoe} />
+          {/* 강조는 CTA에 — 선택(활성) 신발 idx로 러닝 시작 연결 */}
+          <View style={{ paddingHorizontal: SPACE.xl, paddingTop: SPACE.md }}>
             <Button label="러닝 시작" icon="play" onPress={() => onStart?.(idx)} />
           </View>
-          {shoes.length > 1 && (
-            <View style={{ marginTop: SPACE.md }}>
-              <View style={s.sectionRow}>
-                <SectionTitle style={s.sectionLabelInline}>내 러닝화</SectionTitle>
-                <Pressable onPress={() => onTab?.(1)} hitSlop={8} accessibilityRole="button" accessibilityLabel="신발 전체 보기">
-                  <Text style={s.sectionMore}>전체 보기 ›</Text>
-                </Pressable>
-              </View>
-              <ShoePicker shoes={shoes} activeIdx={idx} onSelect={select} unit={unit} />
-            </View>
-          )}
           {/* 주간 목표 — 목업 정합: 내 러닝화 아래 배치. 탭하면 인라인 편집 모달. */}
           {goal && (
             <Pressable
@@ -480,6 +474,7 @@ const s = StyleSheet.create({
   usingChip: { backgroundColor: CARD_HI, borderRadius: 6, paddingHorizontal: SPACE.sm, paddingVertical: 2 },
   usingChipText: { color: T3, fontFamily: FONT, fontSize: 10, fontWeight: '500' },
   heroModel: { color: T1, fontFamily: DISPLAY, fontSize: 27, fontWeight: '600', letterSpacing: -0.6, marginTop: 7, lineHeight: 30 },
+  heroReason: { color: T2, fontFamily: FONT, fontSize: 14, fontWeight: '500', letterSpacing: -0.2, marginTop: 8, lineHeight: 20 },
   // 교체까지 남은 거리 — 문장형(목업 .remain). 숫자만 디스플레이 강조.
   heroRemainLine: { color: T2, fontFamily: FONT, fontSize: 15, fontWeight: '500', letterSpacing: -0.2, marginTop: 16 },
   heroRemainNum: { color: T1, fontFamily: DISPLAY, fontSize: 26, fontWeight: '600', letterSpacing: -0.6 },
@@ -499,6 +494,12 @@ const s = StyleSheet.create({
   sectionRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', paddingHorizontal: SPACE.xl, paddingBottom: SPACE.sm },
   sectionLabelInline: { paddingHorizontal: 0, paddingBottom: 0 },
   sectionMore: { color: T4, fontFamily: FONT, fontSize: 11.5, fontWeight: '500' },
+
+  // 오늘의 신발 캐러셀 — 페이지 도트 + 스와이프 힌트(목업 정합)
+  pageDots: { flexDirection: 'row', justifyContent: 'center', gap: 6, marginTop: SPACE.md },
+  pageDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: withAlpha(T1, 0.22) },
+  pageDotOn: { width: 16, backgroundColor: ACCENT },
+  swipeHint: { textAlign: 'center', color: T3, fontFamily: FONT, fontSize: 12, marginTop: 10 },
 
   // 주간 목표 — 목업 .week(상단 구분선 + 가로 통계 + 막대바)
   weekWrap: { marginHorizontal: SPACE.xl, marginTop: SPACE.lg, paddingTop: 20, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.07) },
@@ -549,14 +550,6 @@ const s = StyleSheet.create({
   goalDone: { marginTop: 20, height: 50, borderRadius: 16, backgroundColor: ACCENT, alignItems: 'center', justifyContent: 'center' },
   goalDoneText: { color: T1, fontFamily: FONT, fontSize: 15, fontWeight: '600' },
 
-  pcard: { width: CARD_W, height: CARD_W, borderRadius: RADIUS.lg, padding: SPACE.lg, justifyContent: 'space-between' },
-  pcardActive: { backgroundColor: HERO_BG, borderWidth: 1, borderColor: withAlpha(T1, 0.2) },
-  pcardIdle: { backgroundColor: CARD_DIM, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.06) },
-  pcardBrand: { flex: 1, color: T3, fontFamily: DISPLAY, fontSize: 10, fontWeight: '500', letterSpacing: 1.2 },
-  pcardRingPct: { color: T1, fontFamily: DISPLAY, fontSize: 11 },
-  pcardModel: { fontFamily: DISPLAY, fontSize: 15, fontWeight: '500', letterSpacing: -0.1, lineHeight: 18 },
-  pcardRemain: { fontFamily: DISPLAY, fontSize: 18, letterSpacing: -0.3 },
-  pcardRemainU: { color: T3, fontFamily: FONT, fontSize: 10.5, marginLeft: 3, marginBottom: 1 },
 
   empty: { paddingHorizontal: SPACE.xl, paddingTop: 30 },
   emptyCard: { alignSelf: 'stretch', alignItems: 'center', backgroundColor: CARD_DIM, borderRadius: RADIUS.xl, borderWidth: 1, borderColor: withAlpha(T1, 0.12), paddingVertical: 40, paddingHorizontal: 24 },
