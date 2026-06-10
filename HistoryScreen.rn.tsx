@@ -428,25 +428,24 @@ function RunDetail({ run, shoe, onBack, unit, onEdit, onDelete }: { run: Run; sh
 }
 
 // ── history main ────────────────────────────────────────────────────────────
-function RunRow({ run, shoes, onPress, last, unit }: { run: Run; shoes: Shoe[]; onPress: () => void; last: boolean; unit: Unit }) {
+// 런 카드 — 목업 기록(10) 정합: 신발(브랜드/모델) + 날짜(우상단) + 거리·평균페이스·시간.
+// 런마다 별도 카드 박스로 띄운다(한 카드 안 행 → 카드별).
+function RunCard({ run, shoes, onPress, unit }: { run: Run; shoes: Shoe[]; onPress: () => void; unit: Unit }) {
   const shoe = shoes[run.shoe];
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${run.date} ${shoe ? shoe.brand + ' ' + shoe.model : '삭제된 신발'} 기록`} style={({ pressed }) => [s.runRow, !last && s.runRowBorder, pressed && { opacity: 0.7 }]}>
-      <View style={s.runDate}>
-        <Text style={s.runDay}>{run.day}</Text>
-        <Text style={s.runDateNum}>{run.dateNum}</Text>
-      </View>
-      <View style={s.runDivider} />
-      <View style={{ flex: 1, minWidth: 0 }}>
-        <Text style={s.runBrand}>{shoe ? shoe.brand : '삭제된 신발'}</Text>
-        <Text style={s.runModel} numberOfLines={1}>{shoe ? shoe.model : ''}</Text>
-        <View style={s.runMetrics}>
-          <View><View style={s.baselineRow}><Text style={s.runV}>{displayNum(run.dist, unit, 2)}</Text><Text style={s.runU}>{unit}</Text></View><Text style={s.runML}>거리</Text></View>
-          <View><Text style={s.runV}>{run.pace}</Text><Text style={s.runML}>평균 페이스</Text></View>
-          <View><Text style={s.runV}>{run.time}</Text><Text style={s.runML}>시간</Text></View>
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${run.date} ${shoe ? shoe.brand + ' ' + shoe.model : '삭제된 신발'} 기록`} style={({ pressed }) => [s.runCard, pressed && { opacity: 0.85 }]}>
+      <View style={s.runCardTop}>
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Text style={s.runCardBrand}>{shoe ? shoe.brand : '삭제된 신발'}</Text>
+          <Text style={s.runCardModel} numberOfLines={1}>{shoe ? shoe.model : ''}</Text>
         </View>
+        <Text style={s.runCardDate}>{run.date} {run.day}요일</Text>
       </View>
-      <Ionicons name="chevron-forward" size={16} color={T3} />
+      <View style={s.runCardMetrics}>
+        <View style={s.runCardMetric}><View style={s.baselineRow}><Text style={s.runV}>{displayNum(run.dist, unit, 2)}</Text><Text style={s.runU}>{unit}</Text></View><Text style={s.runML}>거리</Text></View>
+        <View style={s.runCardMetric}><Text style={s.runV}>{run.pace}</Text><Text style={s.runML}>평균 페이스</Text></View>
+        <View style={s.runCardMetric}><Text style={s.runV}>{run.time}</Text><Text style={s.runML}>시간</Text></View>
+      </View>
     </Pressable>
   );
 }
@@ -475,12 +474,8 @@ export default function HistoryScreen({
 
   const sum = summary[period] || EMPTY_SUMMARY;
   const ch = chart[period];
-  const stats = [
-    { l: '거리', v: sum.km, u: unit },
-    { l: '횟수', v: String(sum.runs), u: '회' },
-    { l: '페이스', v: sum.pace, u: '평균' },
-    { l: '시간', v: sum.time, u: '총' },
-  ];
+  // 기간 제목(요약 카드) — 목업 TITLES 정합.
+  const periodTitle = period === '주' ? '이번 주' : period === '월' ? '이번 달' : period === '년' ? '올해' : '전체 기간';
 
   // 폼(추가/편집)이 열려 있으면 폼만 렌더. 제출 시 콜백을 호출하고 목록으로 복귀한다.
   if (form) {
@@ -542,14 +537,18 @@ export default function HistoryScreen({
           })}
         </View>
 
-        {/* stat row — 4열 요약(목업 Screens Refined): 칸 사이 헤어라인, 값+단위 인라인, 라벨 아래. */}
-        <View style={s.sumRow}>
-          {stats.map((x, i) => (
-            <View key={i} style={[s.sumCell, i > 0 && s.sumCellDiv]}>
-              <Text style={s.sumValue}>{x.v}{x.u ? <Text style={s.sumUnit}> {x.u}</Text> : null}</Text>
-              <Text style={s.sumLabel}>{x.l}</Text>
-            </View>
-          ))}
+        {/* 요약 카드 — 목업 기록(10): 기간 제목 + 큰 거리 + 'N번 달렸어요' + 횟수·평균페이스·총시간 */}
+        <View style={[s.card, { padding: 20 }]}>
+          <Text style={s.sumTitle}>{periodTitle}</Text>
+          <View style={[s.baselineRow, { marginTop: 6 }]}>
+            <Text style={s.sumBigKm}>{sum.km}</Text><Text style={s.sumBigU}>{unit}</Text>
+          </View>
+          <Text style={s.sumSub}>{periodTitle} {sum.runs}번 달렸어요</Text>
+          <View style={s.sumMetricRow}>
+            <View style={s.sumMetric}><Text style={s.sumMetricV}>{sum.runs}<Text style={s.sumMetricU}> 회</Text></Text><Text style={s.sumMetricL}>횟수</Text></View>
+            <View style={s.sumMetric}><Text style={s.sumMetricV}>{sum.pace}</Text><Text style={s.sumMetricL}>평균 페이스</Text></View>
+            <View style={s.sumMetric}><Text style={s.sumMetricV}>{sum.time}</Text><Text style={s.sumMetricL}>총 시간</Text></View>
+          </View>
         </View>
 
         {/* chart (hidden for 전체) */}
@@ -560,16 +559,16 @@ export default function HistoryScreen({
           </View>
         )}
 
-        {/* recent runs */}
+        {/* recent runs — 런마다 별도 카드(목업 정합) */}
         <Text style={s.sectionLabel}>최근 러닝</Text>
         {runs.length === 0 ? (
           <View style={[s.card, { padding: 28, alignItems: 'center' }]}>
             <Text style={s.emptyHint}>아직 기록이 없어요 — 첫 러닝이 여기 쌓여요</Text>
           </View>
         ) : (
-          <View style={[s.card, { overflow: 'hidden' }]}>
+          <View style={{ gap: 10 }}>
             {runs.map((r, i) => (
-              <RunRow key={r.id || i} run={r} shoes={shoes} onPress={() => setDetail(r)} last={i === runs.length - 1} unit={unit} />
+              <RunCard key={r.id || i} run={r} shoes={shoes} onPress={() => setDetail(r)} unit={unit} />
             ))}
           </View>
         )}
@@ -587,6 +586,24 @@ const s = StyleSheet.create({
   card: { backgroundColor: CARD, borderRadius: 22 },
   cardTitle: { color: T2, fontFamily: FONT, fontSize: 13.5, fontWeight: '500' },
   sectionLabel: { color: T2, fontFamily: FONT, fontSize: 14, fontWeight: '500', letterSpacing: 0.2, paddingHorizontal: 4 },
+  // 요약 카드(큰 거리) — 목업 기록(10)
+  sumTitle: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600', letterSpacing: 0.2 },
+  sumBigKm: { color: T1, fontFamily: DISPLAY, fontSize: 42, fontWeight: '800', letterSpacing: -1 },
+  sumBigU: { color: T3, fontFamily: FONT, fontSize: 18, fontWeight: '600', marginLeft: 4 },
+  sumSub: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '500', marginTop: 2 },
+  sumMetricRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 18, paddingTop: 16, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP },
+  sumMetric: {},
+  sumMetricV: { color: T1, fontFamily: DISPLAY, fontSize: 19, fontWeight: '700', letterSpacing: -0.2 },
+  sumMetricU: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '600' },
+  sumMetricL: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500', marginTop: 4 },
+  // 런 카드 — 목업 기록(10): 신발+날짜 + 거리·평균페이스·시간
+  runCard: { backgroundColor: CARD, borderRadius: 20, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP, padding: 18 },
+  runCardTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, marginBottom: 14 },
+  runCardBrand: { color: T3, fontFamily: DISPLAY, fontSize: 11, fontWeight: '500', letterSpacing: 1.2 },
+  runCardModel: { color: T1, fontFamily: DISPLAY, fontSize: 16, fontWeight: '700', letterSpacing: -0.2, marginTop: 2 },
+  runCardDate: { color: T3, fontFamily: FONT, fontSize: 12.5, fontWeight: '500', flexShrink: 0 },
+  runCardMetrics: { flexDirection: 'row', gap: 24 },
+  runCardMetric: {},
 
   header: { paddingTop: 8, paddingHorizontal: 22, paddingBottom: 6 },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
