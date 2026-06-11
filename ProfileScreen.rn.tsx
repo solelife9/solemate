@@ -184,11 +184,7 @@ export default function ProfileScreen({
   // 상태/핸들러는 그대로 공유하므로 데이터 흐름은 바뀌지 않는다(뷰 전환일 뿐).
   const [showSettings, setShowSettings] = useState(false);
 
-  // 헤더 설정 버튼 → '설정' 섹션으로 스크롤(무반응이던 버튼에 동작 부여). 섹션 위치는
-  // onLayout 으로 측정한다(콘텐츠 컨테이너 기준 y).
   const scrollRef = useRef<ScrollView>(null);
-  const [settingsY, setSettingsY] = useState(0);
-  const scrollToSettings = () => scrollRef.current?.scrollTo({ y: Math.max(0, settingsY - 8), animated: true });
 
   // 홈 주간목표 탭으로 진입 시: 해당 설정 패널을 펼치고 설정 섹션으로 스크롤한다(한 번만 소비).
   useEffect(() => {
