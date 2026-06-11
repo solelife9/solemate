@@ -9,7 +9,7 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {
   BG, CARD, CARD_DIM, CARD_HI, HERO_BG, ACCENT, DANGER, WARN, GOOD, T1, T2, T3, T4, SEP, FONT, DISPLAY, withAlpha, Shoe, Run, SHOES,
 } from './theme';
-import { TabBar, TierBadge, Pill, InjuryBanner, SectionTitle } from './primitives';
+import { TabBar, TierBadge, Pill, InjuryBanner, SectionTitle, conditionTone } from './primitives';
 import { FuelGauge } from './FuelGauge';
 import FirstShoeScreen from './FirstShoeScreen.rn';
 import { Unit, displayNum, displayToKm } from './lib/units';
@@ -192,12 +192,14 @@ function ShoeDetail({
           </View>
         ) : (
           <View style={{ paddingHorizontal: 4 }}>
-            <View style={s.row}>
-              <Text style={s.dBrand}>{shoe.brand}</Text>
-              {/* 교체/주의 tier 배지 — 상세 헤더에서 즉시 눈에 띄게(양호는 미노출). */}
-              <TierBadge condition={shoe.condition} size="md" />
+            {/* 상태 칩(목업 09 상단) — 양호는 '최상의 컨디션' 칩, 주의/교체는 tier 배지(testID 유지). */}
+            <View style={[s.row, { marginBottom: 12 }]}>
+              {shoe.condition === '양호'
+                ? <Pill tone="good" label="최상의 컨디션" />
+                : <TierBadge condition={shoe.condition} size="md" />}
               {retired && <Pill tone="dim" label="보관됨" />}
             </View>
+            <Text style={s.dBrand}>{shoe.brand}</Text>
             <Text style={s.dModel}>{shoe.model}</Text>
             {/* 종류 칩 + 추천 용도(사용자 DB) — 종류(카본 레이싱 등)는 칩, 추천 용도는 recommended. */}
             {!!detailType && (
