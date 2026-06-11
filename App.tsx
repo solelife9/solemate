@@ -17,6 +17,7 @@ import {
 import {Ring} from './primitives';
 import ErrorBoundary from './ErrorBoundary';
 import {installCrashHandler, setCrashUser} from './lib/crashlytics';
+import {apiAuth, apiGetShoes, apiGetRuns, apiAddShoe, apiPatchShoe, apiDeleteShoe, apiAddRun, apiPatchRun, apiDeleteRun} from './lib/api';
 // BackendShoe / BackendRun 은 types.d.ts 의 전역 ambient 인터페이스(import 불필요).
 import HomeScreen, {WeekStats} from './HomeScreen.rn';
 import HistoryScreen, {PeriodSummary, PeriodChart} from './HistoryScreen.rn';
@@ -70,8 +71,6 @@ import {resolveGoogleCredential} from './lib/googleAuth';
 import {resolveKakaoFirebaseToken} from './lib/kakaoAuth';
 import {resolveNaverFirebaseToken} from './lib/naverAuth';
 import {pickShoePhoto} from './lib/photo';
-
-const API = 'https://solelife-backend.onrender.com';
 
 // 로컬 백업 가져오기 시 원본을 보관하는 신규 AsyncStorage 키(기존 키 파괴 금지).
 const K_BACKUP_IMPORT = 'imported_backup_v1';
@@ -308,10 +307,8 @@ function Main(){
     const st=await loadSettings();
     setUnit(st.unit);setGoalWeeklyKm(st.goalWeeklyKm);setAlerts(st.alerts);setWeightKg(st.weightKg);
     try{
-      const r=await fetch(API+'/api/auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({device_id:did})});
-      const d=await r.json();setUserId(d.user_id);setCrashUser(String(d.user_id||''));
-      const[sr,rr]=await Promise.all([fetch(API+'/api/shoes?user_id='+d.user_id),fetch(API+'/api/runs?user_id='+d.user_id)]);
-      const sd=await sr.json();const rd=await rr.json();
+      const d=await apiAuth(did);setUserId(d.user_id);setCrashUser(String(d.user_id||''));
+      const[sd,rd]=await Promise.all([apiGetShoes(d.user_id),apiGetRuns(d.user_id)]);
       const safeShoes=Array.isArray(sd)?sd:[];
       const safeRuns=Array.isArray(rd)?rd:[];
       const runsWithRoute=await Promise.all(safeRuns.map(async(run:any)=>{
@@ -384,13 +381,8 @@ function Main(){
       return;
     }
     try{
-      const r=await fetch(API+'/api/shoes',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:userId,name,max_km:maxKm,start_km:startKm,purchase_date:date})});
-      // 실패 원인을 삼키지 않고 드러낸다(상태코드 + 본문 일부) — 진단/사용자 안내 모두.
-      if(!r||!r.ok){
-        const body=await (r?r.text():Promise.resolve('')).catch(()=>'');
-        throw new Error(`서버 ${r?r.status:'응답없음'} ${String(body).slice(0,100)}`.trim());
-      }
-      const newShoe=await r.json();
+      // 실패는 apiAddShoe 가 상태코드+본문을 담아 throw → 아래 catch 가 안내한다.
+      const newShoe=await apiAddShoe(userId,{name,maxKm,startKm,date});
       setShoes(prev=>[newShoe,...prev]);
     }catch(e:any){
       Alert.alert('등록 실패',String(e?.message||e||'알 수 없는 오류')+'\n\n네트워크를 확인하고 다시 시도해 주세요.');
@@ -399,7 +391,7 @@ function Main(){
 
   async function updateShoeName(id:string,name:string){
     try{
-      await fetch(API+'/api/shoes/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:userId,name})});
+      await apiPatchShoe(userId,id,{name});
       setShoes(prev=>prev.map(s=>s.id===id?{...s,name}:s));
     }catch{Alert.alert('오류','수정 실패');}
   }
@@ -411,7 +403,7 @@ function Main(){
     const v=clampMaxKm(maxKm);
     setShoes(prev=>prev.map(s=>s.id===id?{...s,max_km:v}:s));
     try{
-      await fetch(API+'/api/shoes/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:userId,max_km:v})});
+      await apiPatchShoe(userId,id,{max_km:v});
     }catch{Alert.alert('오류','수명 수정 실패');}
   }
 
@@ -420,7 +412,7 @@ function Main(){
   // 영구히 지우는 대신 보존이 목적이면 retireShoe(보관)를 쓴다.
   async function deleteShoe(id:string){
     try{
-      await fetch(API+'/api/shoes/'+id,{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:userId})});
+      await apiDeleteShoe(userId,id);
       setShoes(prev=>prev.filter(s=>s.id!==id));
     }catch{Alert.alert('오류','삭제 실패');}
   }
@@ -429,7 +421,7 @@ function Main(){
   // 모두 보존한다. retired 토글이므로 복원도 가능하다.
   async function retireShoe(id:string,retired:boolean){
     try{
-      await fetch(API+'/api/shoes/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:userId,retired})});
+      await apiPatchShoe(userId,id,{retired});
       setShoes(prev=>prev.map(s=>s.id===id?{...s,retired}:s));
     }catch{Alert.alert('오류',retired?'보관 처리 실패':'복원 실패');}
   }
@@ -471,10 +463,8 @@ function Main(){
   // user_id를 직접 넘긴다). localId를 멱등 키로 함께 전송 — 현재 백엔드는 무시하나,
   // echo back 시 서버 dedup/클라이언트 화해에 쓰이는 forward-compat 키.
   async function postRun(p:PendingRun,uid?:string|null):Promise<any>{
-    const user=uid??userId;
-    const r=await fetch(API+'/api/runs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:user,localId:p.localId,shoe_id:p.shoe_id,km:p.km,run_date:p.run_date,memo:p.memo,source:p.source,duration:p.duration,cadence:p.cadence,route:p.route,location:p.location,heart_rate:p.heart_rate})});
-    if(!r||!r.ok) throw new Error('run POST failed');
-    return r.json();
+    // 실패(!ok)는 apiAddRun 이 throw → 동기화 큐가 재시도 대상으로 보존한다.
+    return apiAddRun(uid??userId,p);
   }
 
   // 동기 성공 후 화해: 큐 제거를 먼저 영속(POST↔dequeue 윈도우 최소화 → 중복 재-POST
@@ -530,7 +520,7 @@ function Main(){
       return;
     }
     try{
-      await fetch(API+'/api/runs/'+sid,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:userId,...fields})});
+      await apiPatchRun(userId,sid,fields);
     }catch{Alert.alert('오류','런 수정 실패');}
   }
 
@@ -551,7 +541,7 @@ function Main(){
     };
     if(target&&target._pending){await finishLocal();return;}
     try{
-      await fetch(API+'/api/runs/'+sid,{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:userId})});
+      await apiDeleteRun(userId,sid);
       await finishLocal();
     }catch{Alert.alert('오류','삭제 실패');}
   }
