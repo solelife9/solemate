@@ -17,38 +17,32 @@ type Props = {
   fillPct: number;              // 0~1 — 마커/채움 위치(실효 마모 권장)
   replacePct?: number;          // 0~1 — 교체 임계 경계(기본 0.9). 목업 마커 예시는 0.75 위치
   condition: '양호' | '주의' | '교체';
+  usedLabel?: string;           // 사용 거리(바 좌측 라벨)
+  maxLabel?: string;            // 총 수명(바 우측 라벨)
   replaceLabel?: string;        // 예 "교체 500km"
-  editSlot?: React.ReactNode;   // '남은 수명' 우측 편집 어포던스(선택)
+  editSlot?: React.ReactNode;   // '잔여 수명' 우측 편집 어포던스(선택)
 };
 
 const condColor = (c: string) => (c === '교체' ? DANGER : c === '주의' ? WARN : GOOD);
 
-export function FuelGauge({remainLabel, unit, fillPct, condition, replaceLabel, editSlot}: Props) {
+export function FuelGauge({remainLabel, unit, fillPct, condition, usedLabel, maxLabel, replaceLabel, editSlot}: Props) {
   const p = Math.max(0, Math.min(1, fillPct));
   const cc = condColor(condition);
   return (
     <View style={g.wrap}>
-      <View style={g.top}>
-        <View>
-          <View style={g.labelRow}>
-            <Text style={g.label}>남은 수명</Text>
-            {editSlot}
-          </View>
-          <View style={g.remRow}>
-            <Text style={g.rem}>{remainLabel}</Text>
-            <Text style={g.remU}>{unit}</Text>
-          </View>
-        </View>
+      <View style={g.labelRow}>
+        <Text style={g.label}>잔여 수명</Text>
+        {editSlot}
       </View>
-
-      {/* 수명 바 — 단색 중립 트랙 + 채움(양호=흰색·주의=주황·교체=빨강). 색 구간/마커 없음(사진 정합). */}
-      <View style={g.track}>
+      {/* 교체까지 남은 거리(문장) — 목업 09 lead. 숫자만 굵게. */}
+      <Text style={g.lead}>교체까지 약 <Text style={g.leadBold}>{remainLabel}{unit}</Text> 남았어요</Text>
+      {/* 수명 바 — 단색 중립 트랙 + 채움(양호=흰색·주의=주황·교체=빨강). 색 구간/마커 없음. */}
+      <View style={[g.track, {marginTop: 14}]}>
         <View style={[g.fill, {width: `${p * 100}%`, backgroundColor: condition === '양호' ? withAlpha(T1, 0.85) : cc}]} />
       </View>
-
       <View style={g.scale}>
-        <Text style={g.scaleTxt}>0{unit}</Text>
-        <Text style={g.scaleTxt}>{replaceLabel ?? '교체'}</Text>
+        <Text style={g.scaleTxt}>{usedLabel ?? '0'}{unit}</Text>
+        <Text style={g.scaleTxt}>{maxLabel ?? replaceLabel ?? ''}{maxLabel ? unit : ''}</Text>
       </View>
     </View>
   );
@@ -58,7 +52,9 @@ const g = StyleSheet.create({
   wrap: {marginTop: 0},
   top: {flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between'},
   labelRow: {flexDirection: 'row', alignItems: 'center', gap: 8},
-  label: {color: T3, fontFamily: FONT, fontSize: 11.5, fontWeight: '600', letterSpacing: 0.2},
+  label: {color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600', letterSpacing: 0.2},
+  lead: {color: T2, fontFamily: FONT, fontSize: 16, fontWeight: '500', letterSpacing: -0.2, marginTop: 8, lineHeight: 23},
+  leadBold: {color: T1, fontFamily: DISPLAY, fontWeight: '800'},
   remRow: {flexDirection: 'row', alignItems: 'flex-end', marginTop: 4},
   rem: {color: T1, fontFamily: DISPLAY, fontSize: 40, fontWeight: '600', letterSpacing: -1.4, lineHeight: 38},
   remU: {color: T2, fontFamily: FONT, fontSize: 16, fontWeight: '500', marginLeft: 3, marginBottom: 4},

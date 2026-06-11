@@ -96,6 +96,7 @@ function ShoeDetail({
   const remainKm = Math.max(0, shoe.max - shoe.used);
   const remain = displayNum(remainKm, unit);
   const usedDisp = displayNum(shoe.used, unit);
+  const maxDisp = displayNum(shoe.max, unit);
   const retired = !!shoe.retired;
   const shoeRuns = runs.filter((r) => r.shoe === idx);
   // 사용자 DB(shoes.json): 종류(type)+추천 용도(recommended). 종류는 칩, 추천 용도는 recommended.
@@ -222,8 +223,9 @@ function ShoeDetail({
             remainLabel={String(remain)}
             unit={unit}
             fillPct={shoe.max > 0 ? Math.min(1, shoe.used / shoe.max) : 0}
-            replacePct={SHOE_REPLACE_PCT / 100}
             condition={shoe.condition}
+            usedLabel={String(usedDisp)}
+            maxLabel={String(maxDisp)}
           />
           {!retired && shoe.id && onSetMaxKm && (
             <Pressable onPress={() => setEditingMax((e) => !e)} hitSlop={8} accessibilityRole="button" accessibilityLabel="신발 수명 수정" style={s.maxEditRow}>
