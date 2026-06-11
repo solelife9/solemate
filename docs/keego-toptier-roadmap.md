@@ -21,7 +21,9 @@
 ## Phase 2 — 신뢰성/관측성 · **네이티브 스캐폴딩 + 실기기**
 출시 안정성. 실사용자 크래시/이탈을 볼 수 있어야 개선 가능.
 
-- ☐ **2-1 Crashlytics** — Firebase 이미 사용 → @react-native-firebase/crashlytics 추가. (네이티브 빌드)
+- ☑ **2-1 Crashlytics** — @react-native-firebase/crashlytics 24.0.0 + gradle 플러그인.
+  lib/crashlytics.ts(graceful 래퍼) + 전역 JS 에러 핸들러 + 로그인 사용자 연결 +
+  ErrorBoundary 보고. 네이티브 재빌드(아래)로 활성화·검증 완료(레드박스 없음).
 - ☐ **2-2 분석 이벤트** — 핵심 퍼널(온보딩→첫신발→첫런→리텐션) 이벤트. (Firebase Analytics)
 - ☐ **2-3 백그라운드 트래킹 무결성** — 화면off/장시간/저배터리 GPS 무손실 실기기 검증.
 - ☐ **2-4 실기기 FCM 푸시 검증** — 리텐션 알림 실제 수신 확인(기록상 미완).
@@ -54,8 +56,18 @@
     에서 RunActiveScreen 파싱 실패도 해결). 테스트 851 통과.
 
 ### 회사에서 이어할 때(중요)
-- **maps 네이티브 재빌드 권장**: 위 가드로 앱은 안 죽지만, 실제 라이브 지도를 보려면
-  react-native-maps 가 네이티브 바이너리에 링크돼야 함(디버그 재빌드: `npx react-native
-  run-android` 또는 프로젝트 build:android). 가드 덕분에 미링크여도 지도만 빈 영역.
-- 다음 추천 순서: 1-4(로테이션 문구, 순수) → Phase 2-1 Crashlytics(네이티브, Firebase
-  이미 사용 → 가장 쉬운 관측성 첫걸음). ※ 1-2 cost-per-km 는 제외(사용자 결정).
+- **네이티브 재빌드 방법(검증됨)**: `JAVA_HOME = C:\Program Files\Android\Android Studio\jbr`
+  설정 후 `android\gradlew.bat installDebug` (또는 `npx react-native run-android`).
+  이 머신에서 crashlytics + maps 링크 빌드 성공(4분 39초)·설치·앱 정상 동작 확인.
+  회사 머신에서도 동일하게 한 번 빌드하면 됨(JS 변경은 Metro 가 서빙).
+- **Metro 가 죽어 있으면** 앱이 "Loading from 10.0.2.2:8081"에서 멈춤 → Metro 재시작
+  (`npx react-native start`). 로그는 프로젝트 밖(temp)에 — 트리 내부에 쓰면 watcher 무한 재시작.
+- **출시 전 남은 것**: ① 실기기 1회 검증(백그라운드 GPS 무손실 + FCM 푸시 + 라이브 지도
+  타일), ② 백엔드 안정화(onrender 콜드스타트), ③ 스토어 자산.
+- 다음 추천: 1-4(로테이션 문구, 순수) → Phase 2-3/2-4(실기기 백그라운드 GPS·FCM 검증).
+  ※ 1-2 cost-per-km 는 제외(사용자 결정).
+
+### 코드 정리(2026-06-12)
+- App.tsx 1524 → 1425줄: 백엔드 fetch → `lib/api.ts` 중앙화, DEV 시드 → `lib/devSeed.ts`.
+- ⚠️ **출시 차단급 버그 수정**: DEV 데모 시드가 운영 빌드에서도 실행돼 실사용자 데이터를
+  가짜로 덮던 문제 → `__DEV__` 3중 게이트로 운영 안전화(릴리스 빌드엔 시드 미포함).
