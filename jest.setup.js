@@ -331,6 +331,22 @@ jest.mock('@react-native-firebase/messaging', () => {
   };
 });
 
+// ── @react-native-firebase/crashlytics (modular) ─────────────────────────────
+// 인메모리 크래시리틱스 스텁 — lib/crashlytics 래퍼를 실 네이티브 없이 검증한다.
+// recordError/log/setUserId/setCollectionEnabled 는 호출만 기록(jest.fn)하고,
+// getCrashlytics 는 고정 인스턴스를 돌려준다(래퍼의 instance()가 이를 읽음).
+jest.mock('@react-native-firebase/crashlytics', () => {
+  const instance = {__crashlytics: true};
+  return {
+    __esModule: true,
+    getCrashlytics: jest.fn(() => instance),
+    recordError: jest.fn(),
+    log: jest.fn(),
+    setCrashlyticsCollectionEnabled: jest.fn(),
+    setUserId: jest.fn(),
+  };
+});
+
 // ── @react-native-google-signin/google-signin ───────────────────────────────
 // Native Google account login. The default happy path resolves a signed-in user
 // carrying an idToken (the tagged-union shape v13+ returns: {type:'success',data}).

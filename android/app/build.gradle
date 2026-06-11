@@ -5,6 +5,9 @@ apply plugin: "com.facebook.react"
 // @react-native-firebase: google-services.json(android/app/) 을 읽어 Firebase 설정을
 // 리소스로 주입한다. com.android.application 이후에 적용해야 한다.
 apply plugin: "com.google.gms.google-services"
+// @react-native-firebase/crashlytics: 네이티브 크래시 수집 + 매핑 업로드. google-services
+// 이후에 적용한다(Firebase 설정이 먼저 주입돼야 함).
+apply plugin: "com.google.firebase.crashlytics"
 
 /**
  * This is the configuration block to customize your React Native Android app.

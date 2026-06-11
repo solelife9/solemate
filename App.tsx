@@ -16,6 +16,7 @@ import {
 } from './theme';
 import {Ring} from './primitives';
 import ErrorBoundary from './ErrorBoundary';
+import {installCrashHandler, setCrashUser} from './lib/crashlytics';
 // BackendShoe / BackendRun 은 types.d.ts 의 전역 ambient 인터페이스(import 불필요).
 import HomeScreen, {WeekStats} from './HomeScreen.rn';
 import HistoryScreen, {PeriodSummary, PeriodChart} from './HistoryScreen.rn';
@@ -114,6 +115,10 @@ function openLocationSettingsAlert(message:string){
     {text:'설정 열기',onPress:()=>{Promise.resolve(Linking.openSettings()).catch(()=>{});}},
   ]);
 }
+
+// 부팅 시 전역 JS 에러 핸들러 설치 — 잡히지 않은 예외를 Crashlytics 에 기록(멱등·graceful).
+// 모듈 로드 시 1회. jest 등 ErrorUtils 부재 환경에선 no-op 으로 폴백한다.
+installCrashHandler();
 
 export default function App(){
   return(
@@ -304,7 +309,7 @@ function Main(){
     setUnit(st.unit);setGoalWeeklyKm(st.goalWeeklyKm);setAlerts(st.alerts);setWeightKg(st.weightKg);
     try{
       const r=await fetch(API+'/api/auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({device_id:did})});
-      const d=await r.json();setUserId(d.user_id);
+      const d=await r.json();setUserId(d.user_id);setCrashUser(String(d.user_id||''));
       const[sr,rr]=await Promise.all([fetch(API+'/api/shoes?user_id='+d.user_id),fetch(API+'/api/runs?user_id='+d.user_id)]);
       const sd=await sr.json();const rd=await rr.json();
       const safeShoes=Array.isArray(sd)?sd:[];

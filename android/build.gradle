@@ -18,6 +18,9 @@ buildscript {
         // @react-native-firebase: google-services.json 을 빌드에 반영(앱 모듈에서 apply).
         // 버전은 @react-native-firebase/app sdkVersions.android.gmsGoogleServicesGradle 와 일치.
         classpath("com.google.gms:google-services:4.4.4")
+        // @react-native-firebase/crashlytics: 크래시 심볼/매핑 업로드용 Gradle 플러그인
+        // (앱 모듈에서 apply). RNFirebase v24 와 호환되는 3.0.x 라인.
+        classpath("com.google.firebase:firebase-crashlytics-gradle:3.0.2")
     }
 }
 
