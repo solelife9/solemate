@@ -310,9 +310,9 @@ function ShoeDetail({
         {/* totals — 2x2 그리드(평균 페이스 포함): 신발별 누적·페이스를 비교할 수 있게 한다 */}
         <View style={[s.card, s.statGrid]}>
           {[
-            { v: String(usedDisp), u: unit, l: '총 누적 거리' },
-            { v: String(totals.totalRuns), u: '회', l: '총 런 횟수' },
-            { v: totals.totalTime, u: '', l: '총 러닝 시간' },
+            { v: String(usedDisp), u: unit, l: '누적 거리' },
+            { v: String(totals.totalRuns), u: '회', l: '러닝 횟수' },
+            { v: totals.totalTime, u: '', l: '러닝 시간' },
             { v: totals.avgPace, u: totals.avgPace !== '--' ? '/km' : '', l: '평균 페이스' },
           ].map((x, i) => (
             <View key={i} style={s.statGridCell}>
@@ -591,7 +591,7 @@ const s = StyleSheet.create({
   detailNav: { paddingTop: 12, paddingHorizontal: 16, paddingBottom: 6, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   iconBtn: { width: 38, height: 38, borderRadius: 999, backgroundColor: CARD_HI, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.12), alignItems: 'center', justifyContent: 'center' },
   dBrand: { color: T3, fontFamily: DISPLAY, fontSize: 12, fontWeight: '500', letterSpacing: 1.6 },
-  dModel: { color: T1, fontFamily: DISPLAY, fontSize: 28, fontWeight: '800', letterSpacing: -0.3, marginTop: 4 },
+  dModel: { color: T1, fontFamily: DISPLAY, fontSize: 32, fontWeight: '800', letterSpacing: -0.5, marginTop: 2, lineHeight: 38 },
   dPurpose: { color: T2, fontFamily: FONT, fontSize: 15, fontWeight: '500', letterSpacing: -0.2, lineHeight: 22, marginTop: 10 },
   dTags: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 12 },
   dTag: { backgroundColor: CARD_HI, borderRadius: 999, paddingHorizontal: 11, paddingVertical: 5 },

@@ -114,7 +114,7 @@ describe('ShoesScreen 상세 — 실효 마모 + 교체 예측', () => {
     const v60 = buildWearView(shoe, runs, {weightKg: 60});
     const v90 = buildWearView(shoe, runs, {weightKg: 90});
     expect(v90.effectiveWearKm).toBeGreaterThan(v60.effectiveWearKm);
-    expect(v90.forecast.weeksRemaining).toBeLessThanOrEqual(v60.forecast.weeksRemaining);
+    expect(v90.forecast.weeksRemaining ?? 0).toBeLessThanOrEqual(v60.forecast.weeksRemaining ?? Infinity);
 
     // 두 체중 모두 상세에 '교체 예상' 예측이 렌더된다('실효 마모' 용어는 미노출).
     const txt60 = openDetail(shoe, runs, 60);

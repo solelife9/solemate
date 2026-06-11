@@ -58,10 +58,10 @@ describe('ShoesScreen — 신발별 평균 페이스 비교', () => {
     const detail = textOf(root);
     expect(detail).toContain('평균 페이스');
     expect(detail).toContain("5'30\"");
-    // 기존 통계도 함께 유지
-    expect(detail).toContain('총 누적 거리');
-    expect(detail).toContain('총 런 횟수');
-    expect(detail).toContain('총 러닝 시간');
+    // 통계 라벨(목업 정합: '총' 접두 제거)
+    expect(detail).toContain('누적 거리');
+    expect(detail).toContain('러닝 횟수');
+    expect(detail).toContain('러닝 시간');
   });
 
   test('기록 없는 신발(avgPace "--")은 목록에 페이스 줄을 숨긴다', () => {
