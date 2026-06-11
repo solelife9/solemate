@@ -63,9 +63,9 @@ describe('DISPLAY face (디자인 마무리: Pretendard 전면 통일)', () => {
   });
 });
 
-describe('existing exports stay intact', () => {
-  test('color and font tokens are unchanged for current screens', () => {
-    expect(BG).toBe('#000000');
+describe('색/폰트 토큰은 디자인 마무리 핸드오프(theme.js) 값', () => {
+  test('핸드오프 정합: bg #0A0A0A · accent #FF6500 · text #FFF · Pretendard', () => {
+    expect(BG).toBe('#0A0A0A');       // 핸드오프 bg(순흑 #000 아님)
     expect(ACCENT).toBe('#FF6500');
     expect(T1).toBe('#FFFFFF');
     expect(FONT).toBe('PretendardVariable');

@@ -101,6 +101,11 @@ function ShoeDetail({
   const shoeRuns = runs.filter((r) => r.shoe === idx);
   // 사용자 DB(shoes.json): 종류(type)+추천 용도(recommended). 종류는 칩, 추천 용도는 recommended.
   const detailClass = findShoeClass(shoe.brand, shoe.model);
+  const detailType = typeLabel(detailClass?.type);
+  // 용도 문장(사진처럼) — 추천 러닝을 '… 러닝에 추천해요'로. 없으면 타입 설명으로 폴백.
+  const purposeSentence = detailClass && detailClass.recommended.length > 0
+    ? `${detailClass.recommended.join(' · ')} 러닝에 추천해요`
+    : (detailClass ? TYPE_DESCRIPTIONS[detailClass.type] : undefined);
   // 실효 마모/교체 예측(차별점): 단순 누적 km 가 아니라 체중·노면·페이스·세월 보정 "진짜
   // 마모"와 "이 페이스면 약 N주 후 교체"를 파생한다(lib/wearView → wearModel/forecast 재사용).
   // 원본 shoe/run 은 읽기만 한다(A6-1). 모든 엣지에서 NaN/음수 없음(A6-2).
@@ -197,23 +202,13 @@ function ShoeDetail({
                 : <TierBadge condition={shoe.condition} size="md" />}
               {retired && <Pill tone="dim" label="보관됨" />}
             </View>
-            <Text style={s.dBrand}>{shoe.brand}</Text>
+            <View style={s.row}>
+              <Text style={s.dBrand}>{shoe.brand}</Text>
+              {!!detailType && <View style={s.dTypeChip}><Text style={s.dTypeChipText}>{detailType}</Text></View>}
+            </View>
             <Text style={s.dModel}>{shoe.model}</Text>
-            {/* 용도 설명 문장 + 태그(목업 09 — '추천 용도' 라벨/종류 칩 없음). 데이터: shoes.json. */}
-            {!!detailClass && (
-              <>
-                {!!TYPE_DESCRIPTIONS[detailClass.type] && (
-                  <Text style={s.dPurpose}>{TYPE_DESCRIPTIONS[detailClass.type]}</Text>
-                )}
-                {detailClass.recommended.length > 0 && (
-                  <View style={s.dTags}>
-                    {detailClass.recommended.map((t) => (
-                      <View key={t} style={s.dTag}><Text style={s.dTagText}>{t}</Text></View>
-                    ))}
-                  </View>
-                )}
-              </>
-            )}
+            {/* 용도 문장(사진처럼) — 추천 러닝을 '… 러닝에 추천해요'로(목록 카드와 종류 칩 일관). */}
+            {!!purposeSentence && <Text style={s.dPurpose}>{purposeSentence}</Text>}
           </View>
         )}
 

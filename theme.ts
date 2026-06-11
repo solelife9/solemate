@@ -1,21 +1,22 @@
 // ============================================================================
 // theme.ts — Keego design tokens (React Native, bare RN 0.85)
 // ============================================================================
-export const BG = '#000000';
-export const CARD = '#1C1C1E';
-export const CARD_HI = '#2C2C2E';        // raised surface (chips / pressed)
-// 카드 배경(앱 전역 '어두운 카드'). near-black(#0D0D0D)은 순흑 BG 위에서 안 보여
-// black-on-black 이 되므로, 살짝 떠 보이는 회색(#161618 — 히어로/신발 카드와 동일 톤)
-// 으로 올린다. 이 토큰 하나가 홈·신발·기록·마이·등록 카드 배경을 한 번에 좌우한다.
-export const CARD_DIM = '#161618';       // recessed card (idle picker etc.)
-export const HERO_BG = '#161618';        // selected/featured card surface
+// 색 토큰은 디자인 마무리 핸드오프(keego-rn/theme.js) 값 그대로:
+// bg #0A0A0A · card #141414 · card2 #171717. (이전 순흑 #000 + #161618 보다 사진과 정합)
+export const BG = '#0A0A0A';
+export const CARD = '#141414';           // 기본 카드(상세·기록·마이 등) = 디자인 card
+export const CARD_HI = '#232326';        // raised surface (chips / pressed) — card2 보다 약간 위
+// 카드 배경(앱 전역 '어두운 카드') = 디자인 card #141414. 한 토큰이 홈·신발·기록·마이·등록 카드를 좌우.
+export const CARD_DIM = '#141414';       // recessed card = 디자인 card
+export const HERO_BG = '#171717';        // selected/featured card surface = 디자인 card2
 export const ACCENT = '#FF6500';
 export const ACCENT_2 = '#FF9F4A';       // gradient top stop
 export const GRAD_TOP = '#FF7A2E';       // button CTA gradient top stop
 export const GRAD_BOT = '#F25E00';       // button CTA gradient bottom stop
-export const WARN = '#FF9F0A';
-export const DANGER = '#FF453A';
-export const GOOD = '#30D158';           // healthy condition dot
+// 상태색 — 디자인 마무리 핸드오프(theme.js) 값 그대로: good/warn/danger.
+export const WARN = '#E6A23C';
+export const DANGER = '#FF5A45';
+export const GOOD = '#46C98B';           // healthy condition dot (핸드오프 good)
 export const T1 = '#FFFFFF';
 export const T2 = '#EBEBF5';
 // Tertiary/secondary text. Lifted from iOS systemGray(#8E8E93) to #9C9CA3 so the
@@ -25,7 +26,7 @@ export const T3 = '#9C9CA3';
 // Quaternary text — dimmer than T3 for the faintest captions/units (sub-metric
 // 단위·라벨, 빈 GPS 바). 다크 표면에서 보조 정보 위계의 가장 약한 톤.
 export const T4 = '#54545b';
-export const SEP = 'rgba(255,255,255,0.08)';
+export const SEP = 'rgba(255,255,255,0.07)';  // 핸드오프 line
 
 // ── 소셜 로그인 브랜드 색 (외부 브랜드 고정값) ────────────────────────────────────
 // 카카오/네이버 공식 브랜드 컬러는 바꿀 수 없는 외부 값이라 토큰으로 모아 둔다(화면
