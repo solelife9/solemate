@@ -1,0 +1,168 @@
+
+> SoleMate@0.0.1 lint
+> eslint .
+
+
+C:\Users\user\SoleMate\AddShoeScreen.rn.tsx
+   90:22  warning  Inline style: { width: 38 }                       react-native/no-inline-styles
+   93:42  warning  Inline style: { padding: 18, paddingBottom: 20 }  react-native/no-inline-styles
+  113:94  warning  Inline style: { gap: 8, paddingRight: 8 }         react-native/no-inline-styles
+  125:32  warning  Inline style: { marginTop: 22 }                   react-native/no-inline-styles
+  159:34  warning  Inline style: { paddingBottom: 0 }                react-native/no-inline-styles
+  174:32  warning  Inline style: { marginTop: 22 }                   react-native/no-inline-styles
+
+C:\Users\user\SoleMate\App.tsx
+   168:56   warning  Expected 'undefined' and instead saw 'void'      no-void
+   360:5    warning  Expected 'undefined' and instead saw 'void'      no-void
+   429:42   warning  Expected 'undefined' and instead saw 'void'      no-void
+   430:75   warning  Expected 'undefined' and instead saw 'void'      no-void
+   431:55   warning  Expected 'undefined' and instead saw 'void'      no-void
+   442:9    warning  Expected 'undefined' and instead saw 'void'      no-void
+   460:9    warning  Expected 'undefined' and instead saw 'void'      no-void
+   670:11   warning  Expected 'undefined' and instead saw 'void'      no-void
+   680:5    warning  Expected 'undefined' and instead saw 'void'      no-void
+   691:37   warning  Expected 'undefined' and instead saw 'void'      no-void
+   722:25   warning  Expected 'undefined' and instead saw 'void'      no-void
+   728:18   warning  Inline style: { flex: 1 }                        react-native/no-inline-styles
+   729:20   warning  Inline style: { flex: 1 }                        react-native/no-inline-styles
+   781:24   warning  Inline style: { borderRadius: 10 }               react-native/no-inline-styles
+   787:20   warning  Inline style: { height: 24 }                     react-native/no-inline-styles
+   789:20   warning  Inline style: { height: 14 }                     react-native/no-inline-styles
+   791:20   warning  Inline style: { height: 18 }                     react-native/no-inline-styles
+   793:33   warning  Inline style: { borderRadius: 20 }               react-native/no-inline-styles
+   794:20   warning  Inline style: { height: 16 }                     react-native/no-inline-styles
+   796:20   warning  Inline style: { flexDirection: 'row', gap: 10 }  react-native/no-inline-styles
+   801:20   warning  Inline style: { height: 16 }                     react-native/no-inline-styles
+   803:32   warning  Inline style: { borderRadius: 16 }               react-native/no-inline-styles
+   804:20   warning  Inline style: { height: 10 }                     react-native/no-inline-styles
+   805:32   warning  Inline style: { borderRadius: 16 }               react-native/no-inline-styles
+   816:51   warning  Inline style: { justifyContent: 'center' }       react-native/no-inline-styles
+   842:51   warning  Inline style: { justifyContent: 'center' }       react-native/no-inline-styles
+   845:20   warning  Inline style: { height: 24 }                     react-native/no-inline-styles
+   851:24   warning  Inline style: { flex: 1 }                        react-native/no-inline-styles
+   857:20   warning  Inline style: { height: 28 }                     react-native/no-inline-styles
+   968:9    warning  Expected 'undefined' and instead saw 'void'      no-void
+  1058:5    warning  Expected 'undefined' and instead saw 'void'      no-void
+  1080:143  warning  Expected 'undefined' and instead saw 'void'      no-void
+  1126:24   warning  Inline style: { alignItems: 'center' }           react-native/no-inline-styles
+  1156:72   warning  Inline style: { marginRight: 4 }                 react-native/no-inline-styles
+  1175:24   warning  Inline style: { alignItems: 'center' }           react-native/no-inline-styles
+  1190:22   warning  Inline style: { alignItems: 'center', gap: 8 }   react-native/no-inline-styles
+  1196:22   warning  Inline style: { alignItems: 'center', gap: 8 }   react-native/no-inline-styles
+  1200:51   warning  Inline style: { fontWeight: '700' }              react-native/no-inline-styles
+
+C:\Users\user\SoleMate\ChallengesSection.tsx
+   58:20  warning  Inline style: { flex: 1, minWidth: 0 }  react-native/no-inline-styles
+  214:22  warning  Inline style: { gap: 10 }               react-native/no-inline-styles
+
+C:\Users\user\SoleMate\HistoryScreen.rn.tsx
+   67:20  warning  Inline style: { position: 'relative' }                                                                    react-native/no-inline-styles
+   74:36  warning  Inline style: { gap: 'dense ? 4 : 8' }                                                                    react-native/no-inline-styles
+   77:41  warning  Inline style: {
+  maxWidth: 'dense ? 12 : 18',
+  height: 'v <= 0 ? 0 : Math.max(4, (v / niceMax) * H)'
+}  react-native/no-inline-styles
+   82:36  warning  Inline style: { gap: 'dense ? 4 : 8' }                                                                    react-native/no-inline-styles
+   84:47  warning  Inline style: { fontSize: 'dense ? 9 : 11' }                                                              react-native/no-inline-styles
+  108:27  warning  Inline style: { padding: 16, marginTop: 16 }                                                              react-native/no-inline-styles
+  166:42  warning  Inline style: { padding: 18, paddingBottom: 40, gap: 18 }                                                 react-native/no-inline-styles
+  318:42  warning  Inline style: { padding: 18, paddingBottom: 28 }                                                          react-native/no-inline-styles
+  320:38  warning  Inline style: { marginTop: 8 }                                                                            react-native/no-inline-styles
+  325:33  warning  Inline style: { padding: 16, marginTop: 16 }                                                              react-native/no-inline-styles
+  359:20  warning  Inline style: { flex: 1, minWidth: 0 }                                                                    react-native/no-inline-styles
+  449:42  warning  Inline style: { padding: 18, paddingBottom: 8, gap: 12 }                                                  react-native/no-inline-styles
+  456:42  warning  Inline style: { fontWeight: "on ? '700' : '500'" }                                                        react-native/no-inline-styles
+  475:33  warning  Inline style: { padding: 22 }                                                                             react-native/no-inline-styles
+  477:26  warning  Inline style: { marginTop: 18 }                                                                           react-native/no-inline-styles
+  484:33  warning  Inline style: { padding: 28, alignItems: 'center' }                                                       react-native/no-inline-styles
+  488:33  warning  Inline style: { overflow: 'hidden' }                                                                      react-native/no-inline-styles
+
+C:\Users\user\SoleMate\HomeScreen.rn.tsx
+  100:22  warning  Inline style: { flex: 1, minWidth: 0 }         react-native/no-inline-styles
+  141:62  warning  Inline style: { opacity: 'active ? 1 : 0.7' }  react-native/no-inline-styles
+  151:38  warning  Inline style: { marginTop: 6 }                 react-native/no-inline-styles
+  207:26  warning  Inline style: { flex: 1, minWidth: 0 }         react-native/no-inline-styles
+
+C:\Users\user\SoleMate\ProfileScreen.rn.tsx
+  148:42  warning  Inline style: { paddingHorizontal: 18, paddingBottom: 8, gap: 16 }  react-native/no-inline-styles
+  162:24  warning  Inline style: { flex: 1, minWidth: 0 }                              react-native/no-inline-styles
+  164:34  warning  Inline style: { marginTop: 6 }                                      react-native/no-inline-styles
+  181:24  warning  Inline style: { flex: 1, minWidth: 0 }                              react-native/no-inline-styles
+  214:31  warning  Inline style: { padding: 22 }                                       react-native/no-inline-styles
+  232:33  warning  Inline style: { padding: 22 }                                       react-native/no-inline-styles
+  237:75  warning  Inline style: { marginBottom: 6 }                                   react-native/no-inline-styles
+  249:43  warning  Inline style: { paddingBottom: 12 }                                 react-native/no-inline-styles
+  250:26  warning  Inline style: { flexDirection: 'row', gap: 12 }                     react-native/no-inline-styles
+  252:48  warning  Inline style: { opacity: 'b.on ? 1 : 0.4' }                         react-native/no-inline-styles
+  265:41  warning  Inline style: { paddingBottom: 12 }                                 react-native/no-inline-styles
+  266:33  warning  Inline style: { overflow: 'hidden' }                                react-native/no-inline-styles
+  329:41  warning  Inline style: { paddingBottom: 12 }                                 react-native/no-inline-styles
+  330:33  warning  Inline style: { overflow: 'hidden' }                                react-native/no-inline-styles
+
+C:\Users\user\SoleMate\ShoesScreen.rn.tsx
+  118:22  warning  Inline style: { flexDirection: 'row', gap: 10 }                                     react-native/no-inline-styles
+  124:42  warning  Inline style: { padding: 18, paddingBottom: 28, gap: 16 }                           react-native/no-inline-styles
+  126:33  warning  Inline style: { padding: 16, gap: 12 }                                              react-native/no-inline-styles
+  129:26  warning  Inline style: { flexDirection: 'row', gap: 10 }                                     react-native/no-inline-styles
+  135:24  warning  Inline style: { paddingHorizontal: 4 }                                              react-native/no-inline-styles
+  160:24  warning  Inline style: { flex: 1 }                                                           react-native/no-inline-styles
+  175:42  warning  Inline style: { marginTop: 2 }                                                      react-native/no-inline-styles
+  179:34  warning  Inline style: { marginTop: 8 }                                                      react-native/no-inline-styles
+  196:33  warning  Inline style: { padding: 18, gap: 12 }                                              react-native/no-inline-styles
+  260:30  warning  Inline style: { paddingHorizontal: 4, justifyContent: 'space-between' }             react-native/no-inline-styles
+  265:33  warning  Inline style: { padding: 24, alignItems: 'center' }                                 react-native/no-inline-styles
+  266:26  warning  Inline style: { fontSize: 13 }                                                      react-native/no-inline-styles
+  269:33  warning  Inline style: { overflow: 'hidden' }                                                react-native/no-inline-styles
+  277:30  warning  Inline style: { flex: 1 }                                                           react-native/no-inline-styles
+  300:20  warning  Inline style: { flexDirection: 'row', alignItems: 'center', gap: 18 }               react-native/no-inline-styles
+  304:22  warning  Inline style: { flex: 1, minWidth: 0 }                                              react-native/no-inline-styles
+  376:42  warning  Inline style: { paddingHorizontal: 18, paddingBottom: 8, gap: 14, paddingTop: 12 }  react-native/no-inline-styles
+
+C:\Users\user\SoleMate\__tests__\ChallengesSection.test.tsx
+  22:39  warning  Expected 'undefined' and instead saw 'void'  no-void
+
+C:\Users\user\SoleMate\__tests__\HistoryScreen.coursemap.test.tsx
+  59:39  warning  Expected 'undefined' and instead saw 'void'  no-void
+
+C:\Users\user\SoleMate\__tests__\HistoryScreen.design.test.tsx
+  19:39  warning  Expected 'undefined' and instead saw 'void'  no-void
+
+C:\Users\user\SoleMate\__tests__\HistoryScreen.share.test.tsx
+  50:39  warning  Expected 'undefined' and instead saw 'void'  no-void
+
+C:\Users\user\SoleMate\__tests__\HistoryScreen.shareCard.test.tsx
+  50:39  warning  Expected 'undefined' and instead saw 'void'  no-void
+
+C:\Users\user\SoleMate\__tests__\ProfileScreen.backup.test.tsx
+  25:39  warning  Expected 'undefined' and instead saw 'void'  no-void
+
+C:\Users\user\SoleMate\__tests__\ProfileScreen.design.test.tsx
+  20:39  warning  Expected 'undefined' and instead saw 'void'  no-void
+
+C:\Users\user\SoleMate\__tests__\ShareCard.test.tsx
+  33:39  warning  Expected 'undefined' and instead saw 'void'  no-void
+
+C:\Users\user\SoleMate\__tests__\heartRatePreserved.test.tsx
+  102:39  warning  Expected 'undefined' and instead saw 'void'  no-void
+
+C:\Users\user\SoleMate\coverage\lcov-report\block-navigation.js
+  1:0  warning  Unexpected unlimited 'eslint-disable' comment. Specify some rule names to disable  eslint-comments/no-unlimited-disable
+  1:1  warning  ESLint rules are disabled but never reported                                       eslint-comments/no-unused-disable
+
+C:\Users\user\SoleMate\coverage\lcov-report\prettify.js
+  1:0  warning  Unexpected unlimited 'eslint-disable' comment. Specify some rule names to disable  eslint-comments/no-unlimited-disable
+
+C:\Users\user\SoleMate\coverage\lcov-report\sorter.js
+  1:0  warning  Unexpected unlimited 'eslint-disable' comment. Specify some rule names to disable  eslint-comments/no-unlimited-disable
+
+C:\Users\user\SoleMate\lib\runTracker.ts
+  343:5  warning  Expected 'undefined' and instead saw 'void'  no-void
+
+C:\Users\user\SoleMate\primitives.tsx
+  299:33  warning  Inline style: { fontSize: 'md ? 12 : 10.5' }                                          react-native/no-inline-styles
+  523:27  warning  Inline style: { paddingBottom: 'insets.bottom > 0 ? insets.bottom + SPACE.sm : 24' }  react-native/no-inline-styles
+  541:38  warning  Inline style: { fontWeight: "on ? '600' : '500'" }                                    react-native/no-inline-styles
+
+✖ 115 problems (0 errors, 115 warnings)
+  0 errors and 1 warning potentially fixable with the `--fix` option.
+

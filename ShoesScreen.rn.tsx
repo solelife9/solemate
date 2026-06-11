@@ -527,7 +527,7 @@ const s = StyleSheet.create({
   pressed: { opacity: 0.85 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   baselineRow: { flexDirection: 'row', alignItems: 'flex-end' },
-  card: { backgroundColor: CARD_DIM, borderRadius: 20, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.07) },
+  card: { backgroundColor: CARD_DIM, borderRadius: 20, borderWidth: 1, borderColor: withAlpha(T1, 0.07) },
   sectionLabel: { color: T2, fontFamily: FONT, fontSize: 14, fontWeight: '500', letterSpacing: 0.2, paddingHorizontal: 4 },
   dot: { width: 7, height: 7, borderRadius: 999 },
   condText: { fontFamily: FONT, fontSize: 13, fontWeight: '500' },
@@ -547,7 +547,7 @@ const s = StyleSheet.create({
   // 히어로 카드와 동일 톤)으로 올려 black-on-black 을 피한다.
   shoeCard: { backgroundColor: HERO_BG, borderRadius: 20, padding: 16 },
   shoeCardFeatured: { borderWidth: 1, borderColor: withAlpha(T1, 0.2) },
-  shoeCardIdle: { borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.08) },
+  shoeCardIdle: { borderWidth: 1, borderColor: withAlpha(T1, 0.08) },
   shoeCardRetired: { opacity: 0.55, borderColor: withAlpha(T1, 0.05) },
   // 상단: 좌(브랜드·모델) ↔ 우(컨디션 위 · ▶/화살표 아래) — 사진 정합
   shoeTopSection: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 },

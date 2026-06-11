@@ -780,7 +780,7 @@ export default function ProfileScreen({
 const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: BG },
   row: { flexDirection: 'row', alignItems: 'center', gap: 7 },
-  card: { backgroundColor: CARD_DIM, borderRadius: 20, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.07) },
+  card: { backgroundColor: CARD_DIM, borderRadius: 20, borderWidth: 1, borderColor: withAlpha(T1, 0.07) },
   cardTitle: { color: T2, fontFamily: FONT, fontSize: 13.5, fontWeight: '500', marginBottom: 16 },
   sectionLabel: { color: T2, fontFamily: FONT, fontSize: 14, fontWeight: '500', letterSpacing: 0.2, paddingHorizontal: 4 },
 
@@ -834,7 +834,7 @@ const s = StyleSheet.create({
   statUnit: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '600' },
   statLabel: { color: T3, fontFamily: FONT, fontSize: 11.5, fontWeight: '600', marginTop: 4 },
 
-  badge: { flex: 1, backgroundColor: CARD, borderRadius: 22, paddingVertical: 16, paddingHorizontal: 8, alignItems: 'center', gap: 8 },
+  badge: { flex: 1, backgroundColor: CARD, borderRadius: 22, paddingVertical: 16, paddingHorizontal: 8, alignItems: 'center', gap: 8, borderWidth: 1, borderColor: withAlpha(T1, 0.07) },
   badgeIcon: { width: 44, height: 44, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
   badgeLabel: { fontFamily: FONT, fontSize: 10.5, fontWeight: '500', textAlign: 'center' },
 

@@ -316,6 +316,23 @@ function Main(){
         return merged;
       }));
       setShoes(safeShoes);setRuns(runsWithRoute);
+      // __KEEGO_DEV_SEED__ (임시 — 디자인 비교 검증용, 커밋 전 제거. 운영 DB 무관 로컬 목)
+      if(process.env.NODE_ENV!=='test' && (globalThis as any).__KEEGO_DEV_SEED__!==false){
+        const today=new Date();const iso=(d:number)=>{const x=new Date(today);x.setDate(x.getDate()-d);return x.toISOString().slice(0,10);};
+        const seedShoes:BackendShoe[]=[
+          {id:'seed1',name:'ASICS Novablast 5',max_km:650,total_km:412.8,purchase_date:'2026-02-10'},
+          {id:'seed2',name:'Nike Alphafly 3',max_km:400,total_km:287,purchase_date:'2026-03-01'},
+          {id:'seed3',name:'HOKA Clifton 9',max_km:600,total_km:96.2,purchase_date:'2025-11-15'},
+        ];
+        const seedRuns:BackendRun[]=[
+          {id:'r1',shoe_id:'seed1',km:8.2,run_date:iso(1),duration:2460,cadence:178},
+          {id:'r2',shoe_id:'seed1',km:5.0,run_date:iso(3),duration:1500,cadence:176},
+          {id:'r3',shoe_id:'seed2',km:12.1,run_date:iso(5),duration:3100,cadence:182},
+          {id:'r4',shoe_id:'seed3',km:6.4,run_date:iso(7),duration:2000,cadence:174},
+          {id:'r5',shoe_id:'seed1',km:10.0,run_date:iso(9),duration:3000,cadence:177},
+        ];
+        setShoes(seedShoes);setRuns(seedRuns);
+      }
       // 부팅 성공: fetch가 성공한 순간 'ready'. 빈 배열이어도 'error'가 아니다 —
       // 빈-신규 사용자는 재시도 카드가 아니라 온보딩/빈 홈을 봐야 한다(구분).
       setBootState('ready');

@@ -536,7 +536,7 @@ const s = StyleSheet.create({
   hero: { backgroundColor: HERO_BG, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: withAlpha(T1, 0.07), padding: 20 },
   heroActive: { borderColor: withAlpha(ACCENT, 0.55) },
   // 현재 상태 인사이트 카드(사용거리 | 교체예상) — 활성 신발 반영
-  insightCard: { backgroundColor: CARD_DIM, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.06), padding: SPACE.lg },
+  insightCard: { backgroundColor: CARD_DIM, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: withAlpha(T1, 0.07), padding: SPACE.lg },
   insightGrid: { flexDirection: 'row', alignItems: 'flex-start' },
   insightDivider: { width: StyleSheet.hairlineWidth, alignSelf: 'stretch', backgroundColor: withAlpha(T1, 0.08), marginHorizontal: SPACE.lg },
   insightLabel: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600', letterSpacing: -0.1 },
@@ -598,7 +598,7 @@ const s = StyleSheet.create({
   gnote: { color: T4, fontFamily: FONT, fontSize: 11, marginTop: 9 },
 
   rotaWrap: { marginTop: SPACE.lg },
-  rotaCard: { marginHorizontal: SPACE.xl, backgroundColor: CARD_DIM, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.06), paddingHorizontal: SPACE.lg },
+  rotaCard: { marginHorizontal: SPACE.xl, backgroundColor: CARD_DIM, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: withAlpha(T1, 0.07), paddingHorizontal: SPACE.lg },
   rotaRow: { flexDirection: 'row', alignItems: 'center', gap: SPACE.md, paddingVertical: 14 },
   rotaRowSep: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.07) },
   rotaBrand: { color: T3, fontFamily: DISPLAY, fontSize: 10.5, fontWeight: '500', letterSpacing: 1.2 },

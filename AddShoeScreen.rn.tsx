@@ -252,7 +252,7 @@ const s = StyleSheet.create({
   chipText: { fontFamily: FONT, fontSize: 12.5, fontWeight: '600', letterSpacing: 0.6 },
 
   // 모델 선택 트리거(탭하면 검색 모달). 입력칸처럼 보이되 누르면 모달이 열린다.
-  selector: { backgroundColor: CARD_DIM, borderRadius: 16, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.07), flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingVertical: 16 },
+  selector: { backgroundColor: CARD_DIM, borderRadius: 16, borderWidth: 1, borderColor: withAlpha(T1, 0.07), flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingVertical: 16 },
   selectorText: { flex: 1, color: T1, fontFamily: FONT, fontSize: 16, fontWeight: '500', letterSpacing: -0.2 },
   // 모달 검색바(상단 고정) + 결과 행
   searchBar: { flexDirection: 'row', alignItems: 'center', gap: 9, marginHorizontal: 18, marginTop: 4, marginBottom: 10, backgroundColor: CARD_DIM, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 12, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.07) },
@@ -269,7 +269,7 @@ const s = StyleSheet.create({
 
   hint: { color: T3, fontFamily: FONT, fontSize: 11.5, paddingHorizontal: 4, paddingTop: 9 },
 
-  usedRow: { backgroundColor: CARD_DIM, borderRadius: 16, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.07), flexDirection: 'row', alignItems: 'center', paddingHorizontal: 18 },
+  usedRow: { backgroundColor: CARD_DIM, borderRadius: 16, borderWidth: 1, borderColor: withAlpha(T1, 0.07), flexDirection: 'row', alignItems: 'center', paddingHorizontal: 18 },
   usedInput: { flex: 1, color: T1, fontFamily: DISPLAY, fontSize: 24, paddingVertical: 12 },
   usedUnit: { color: T3, fontFamily: FONT, fontSize: 15 },
 

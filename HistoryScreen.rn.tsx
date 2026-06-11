@@ -583,7 +583,7 @@ const s = StyleSheet.create({
   // 공유 카드 캡처용: 화면 밖(좌측 far-off)으로 밀어 보이지 않게 하되 마운트는 유지.
   offscreen: { position: 'absolute', left: -10000, top: 0, opacity: 0 },
   baselineRow: { flexDirection: 'row', alignItems: 'flex-end' },
-  card: { backgroundColor: CARD, borderRadius: 22 },
+  card: { backgroundColor: CARD, borderRadius: 22, borderWidth: 1, borderColor: SEP },
   cardTitle: { color: T2, fontFamily: FONT, fontSize: 13.5, fontWeight: '500' },
   sectionLabel: { color: T2, fontFamily: FONT, fontSize: 14, fontWeight: '500', letterSpacing: 0.2, paddingHorizontal: 4 },
   // 요약 카드(큰 거리) — 목업 기록(10)
@@ -597,7 +597,7 @@ const s = StyleSheet.create({
   sumMetricU: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '600' },
   sumMetricL: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500', marginTop: 4 },
   // 런 카드 — 목업 기록(10): 신발+날짜 + 거리·평균페이스·시간
-  runCard: { backgroundColor: CARD, borderRadius: 20, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP, padding: 18 },
+  runCard: { backgroundColor: CARD, borderRadius: 20, borderWidth: 1, borderColor: SEP, padding: 18 },
   runCardTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, marginBottom: 14 },
   runCardBrand: { color: T3, fontFamily: DISPLAY, fontSize: 11, fontWeight: '500', letterSpacing: 1.2 },
   runCardModel: { color: T1, fontFamily: DISPLAY, fontSize: 16, fontWeight: '700', letterSpacing: -0.2, marginTop: 2 },
@@ -637,7 +637,7 @@ const s = StyleSheet.create({
   // 콤팩트: 요약 4칸(거리/횟수/페이스/시간)의 패딩·값 폰트·여백을 줄여 세로 높이를
   // 압축한다(정보는 그대로 유지 — 라벨/값/단위 모두 렌더). 리스트가 위로 올라온다.
   summaryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  summaryCell: { width: '47.5%', flexGrow: 1, backgroundColor: CARD_DIM, borderRadius: 16, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.07), padding: 13 },
+  summaryCell: { width: '47.5%', flexGrow: 1, backgroundColor: CARD_DIM, borderRadius: 16, borderWidth: 1, borderColor: SEP, padding: 13 },
   // 4열 요약 행(Screens Refined) — 카드 없이 헤어라인 구분.
   sumRow: { flexDirection: 'row', marginTop: 6, marginBottom: 2 },
   sumCell: { flex: 1, paddingHorizontal: 2 },
@@ -685,7 +685,7 @@ const s = StyleSheet.create({
   detailBrand: { color: T3, fontFamily: FONT, fontSize: 10.5, fontWeight: '500', letterSpacing: 1.4 },
   detailModel: { color: T1, fontFamily: FONT, fontSize: 16, fontWeight: '500', marginTop: 3 },
   statGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 16 },
-  statCell: { width: '31.5%', flexGrow: 1, backgroundColor: CARD, borderRadius: 18, padding: 15 },
+  statCell: { width: '31.5%', flexGrow: 1, backgroundColor: CARD, borderRadius: 18, padding: 15, borderWidth: 1, borderColor: SEP },
   statLabel: { color: T3, fontFamily: FONT, fontSize: 11 },
   statValue: { color: T1, fontFamily: DISPLAY, fontSize: 21, letterSpacing: 0.3, marginTop: 7 },
   statUnit: { color: T3, fontFamily: FONT, fontSize: 10.5 },

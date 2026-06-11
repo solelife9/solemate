@@ -250,7 +250,7 @@ const s = StyleSheet.create({
   successTitle: {color: T1, fontFamily: FONT, fontSize: 26, fontWeight: '700', letterSpacing: -0.6, textAlign: 'center'},
   successSub: {marginTop: 11, color: T3, fontFamily: FONT, fontSize: 13.5, lineHeight: 21, textAlign: 'center', alignSelf: 'center', maxWidth: 264},
 
-  shoeCard: {marginTop: 26, backgroundColor: CARD, borderRadius: 22, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP, padding: 20},
+  shoeCard: {marginTop: 26, backgroundColor: CARD, borderRadius: 22, borderWidth: 1, borderColor: SEP, padding: 20},
   shoeRow: {flexDirection: 'row', alignItems: 'center', gap: 18},
   shoeBrand: {color: T3, fontFamily: FONT, fontSize: 11, fontWeight: '600', letterSpacing: 1.4},
   shoeModel: {marginTop: 4, color: T1, fontFamily: FONT, fontSize: 22, fontWeight: '700', letterSpacing: -0.6},

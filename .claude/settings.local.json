@@ -43,7 +43,8 @@
       "mcp__tenet__tenet_health_check",
       "mcp__tenet__tenet_get_status",
       "mcp__tenet__tenet_retry_job",
-      "mcp__tenet__tenet_report_blocking_finding"
+      "mcp__tenet__tenet_report_blocking_finding",
+      "Skill(tenet)"
     ]
   },
   "enabledMcpjsonServers": [
