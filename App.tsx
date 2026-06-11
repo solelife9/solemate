@@ -1148,9 +1148,14 @@ function RunActiveScreen({shoe,insets,goalKm,weightKg,onSave,onDiscard,resume}:{
   const [finRoute,setFinRoute]=useState(resumeRoute);
   // 완주 시 저장할 per-km 구간 스플릿(레코딩 결과 스냅샷).
   const [finSplits,setFinSplits]=useState<{km:number;paceSec:number;elevM:number}[]>([]);
+  // 라이브 지도용 좌표 목록 — GPS fix마다 runTracker.getPoints()로 갱신한다.
+  const [liveCoords,setLiveCoords]=useState<{lat:number;lon:number}[]>([]);
   const [finLocation,setFinLocation]=useState(resume?resume.location:'');
   const [memo,setMemo]=useState('');
   const [saving,setSaving]=useState(false);
+
+  // elapsed 최신값을 km 안내 effect에서 정확히 읽기 위한 ref (state는 클로저 지연 있음).
+  const elapsedRef=useRef(resume?resume.elapsed:0);
 
   const timer=useRef<any>(null);
   const snapTimer=useRef<any>(null);
@@ -1181,10 +1186,12 @@ function RunActiveScreen({shoe,insets,goalKm,weightKg,onSave,onDiscard,resume}:{
       if(ev.type==='state'){
         const s=ev.state;
         setKm(s.dist);setElapsed(s.elapsed);
+        elapsedRef.current=s.elapsed;
         setPaused(s.paused);setAutoPaused(s.autoPaused);
         setGpsStalled(s.stalled);setPermLost(s.permissionRevoked);
         setElevGain(s.elevGainM);
         setAccuracyM(s.accuracyM);
+        setLiveCoords(runTracker.getPoints());
         // per-km 스플릿: dist가 정수 km 경계를 새로 넘으면 그 1km의 소요시간(초)·고도상승(m)을
         // 기록한다. 경로에 타임스탬프가 없어 못 했던 '실제' 구간 페이스를 레코더가 직접 남긴다.
         if(Math.floor(s.dist)>splitsRef.current.length){
@@ -1259,9 +1266,36 @@ function RunActiveScreen({shoe,insets,goalKm,weightKg,onSave,onDiscard,resume}:{
     if(fullKm>0&&fullKm>announcedKm.current){
       announcedKm.current=fullKm;
       const remaining=Math.max(0,goalKm-fullKm);
+      const el=elapsedRef.current;
+
+      // 페이스를 한국어 음성으로 변환: 330초 → "5분 30초"
+      const toPaceKo=(distKm:number,sec:number)=>{
+        if(distKm<=0||sec<=0) return '';
+        const sPerKm=Math.round(sec/distKm);
+        const m=Math.floor(sPerKm/60), s=sPerKm%60;
+        return s>0?`${m}분 ${s}초`:`${m}분`;
+      };
+      const pace=toPaceKo(fullKm,el);
+
+      // 특별 구간 메시지
+      const isHalf=goalKm>0&&fullKm===Math.floor(goalKm/2)&&goalKm>=2;
+      const isLastKm=remaining===1;
+
       try{Tts.stop();}catch{}
-      if(remaining>0){try{Tts.speak(`${fullKm}킬로미터 완주! 앞으로 ${Math.round(remaining)}킬로미터 남았습니다.`);}catch{}}
-      else{try{Tts.speak(`목표 달성! ${goalKm}킬로미터 완주를 축하합니다!`);}catch{}}
+      if(remaining>0){
+        const parts=[`${fullKm}킬로미터`];
+        if(pace) parts.push(`페이스 ${pace}`);
+        parts.push(`남은 거리 ${Math.round(remaining)}킬로미터`);
+        if(isHalf) parts.push('절반 왔어요, 잘 하고 있어요');
+        if(isLastKm) parts.push('마지막 1킬로미터, 끝까지 달려요');
+        try{Tts.speak(parts.join('. ')+'.');}catch{}
+      }else{
+        const totalPace=toPaceKo(km,el);
+        const parts=[`목표 달성! ${goalKm}킬로미터 완주`];
+        if(totalPace) parts.push(`평균 페이스 ${totalPace}`);
+        parts.push('수고했어요');
+        try{Tts.speak(parts.join('. ')+'.');}catch{}
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   },[km]);
@@ -1431,6 +1465,7 @@ function RunActiveScreen({shoe,insets,goalKm,weightKg,onSave,onDiscard,resume}:{
       onStop={finishRun}
       permLost={permLost}
       onOpenSettings={()=>{Promise.resolve(Linking.openSettings()).catch(()=>{});}}
+      liveCoords={liveCoords}
     />
   );
 }

@@ -117,3 +117,26 @@ export function forecastLineKo(forecast: ReplacementForecast): string {
       return `이 페이스면 약 ${Math.max(1, Math.round(forecast.weeksRemaining))}주 후 교체 권장 · 예상 ${formatEtaKo(forecast.etaISO)}`;
   }
 }
+
+// ─── 예측 투명성(탑티어 1-1) ───────────────────────────────────────────────────
+// 사용자가 '왜 N주인지' 신뢰하도록 추정 근거와 정확도(confidence)를 한 줄로 설명한다.
+// 예측 엔진(replacementForecast)은 (최근 28일 주행 페이스 + 시간 경과 열화)로 잔여 주를
+// 구하고, 최근창 런 ≥3 이면 confidence='high'. 그 사실을 사람이 읽는 문장으로 노출.
+
+/** 예측 정확도 한국어 라벨 — confidence(high/low) → '정확도 높음'/'정확도 낮음'. */
+export function forecastConfidenceKo(forecast: ReplacementForecast): string {
+  return forecast?.confidence === 'high' ? '정확도 높음' : '정확도 낮음';
+}
+
+/**
+ * 예측 근거 한 줄(ok 분기 전용). 무엇을 반영했고 정확도가 왜 그런지 설명한다.
+ *   high → '최근 4주 주행 페이스와 시간 경과를 반영한 추정이에요'
+ *   low  → '최근 기록이 적어 정확도는 낮아요 — 더 달리면 정확해져요'
+ * ok 가 아니면(overdue/no_recent) 빈 문자열(근거 행 생략).
+ */
+export function forecastBasisKo(forecast: ReplacementForecast): string {
+  if (forecast?.reason !== 'ok' || forecast?.weeksRemaining == null) return '';
+  return forecast.confidence === 'high'
+    ? '최근 4주 주행 페이스와 시간 경과를 반영한 추정이에요'
+    : '최근 기록이 적어 정확도는 낮아요 — 더 달리면 정확해져요';
+}

@@ -18,6 +18,19 @@ import { View, Text, Pressable, StyleSheet, Animated, StatusBar } from 'react-na
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Svg, { Path, Circle } from 'react-native-svg';
+import MapView, { Polyline, Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+
+const DARK_MAP_STYLE = [
+  { elementType: 'geometry', stylers: [{ color: '#0f0f10' }] },
+  { elementType: 'labels.text.fill', stylers: [{ color: '#6b6b72' }] },
+  { elementType: 'labels.text.stroke', stylers: [{ color: '#0f0f10' }] },
+  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#262626' }] },
+  { featureType: 'road.arterial', elementType: 'geometry', stylers: [{ color: '#333338' }] },
+  { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#3a3a3f' }] },
+  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#07070a' }] },
+  { featureType: 'poi', stylers: [{ visibility: 'off' }] },
+  { featureType: 'transit', stylers: [{ visibility: 'off' }] },
+];
 
 const C = {
   bg: '#000000', surface: '#0F0F10',
@@ -89,17 +102,16 @@ export default function RunActiveScreen({
   cadence = 174, calories = 205, elevationM = 46, gpsLevel = 3,
   paused: pausedProp, onPause, onStop,
   permLost = false, onOpenSettings, statusLabel,
+  liveCoords,
 }: {
   shoeLabel?: string; distanceKm?: number; goalKm?: number;
   timeLabel?: string; paceLabel?: string;
   cadence?: number; calories?: number; elevationM?: number; gpsLevel?: number;
   paused?: boolean; onPause?: () => void; onStop?: () => void;
-  // 위치 권한이 런 도중 회수되면(permLost) 거리 기록이 멈춘다 — 탭하면 설정으로 보내
-  // 다시 허용하게 하는 복구 배너를 띄운다(권한 회수에서 빠져나오는 유일 경로).
   permLost?: boolean;
   onOpenSettings?: () => void;
-  // 라이브 상태 라벨('러닝 중'/'일시정지'/'자동 일시정지'). 미전달 시 paused 로 폴백.
   statusLabel?: string;
+  liveCoords?: { lat: number; lon: number }[];
 }) {
   const insets = useSafeAreaInsets();
   const [pausedState, setPausedState] = useState(false);
@@ -175,7 +187,7 @@ export default function RunActiveScreen({
 
       {/* ring */}
       <View style={r.ringWrap}>
-        <Ring size={264} stroke={16} progress={pct}>
+        <Ring size={232} stroke={14} progress={pct}>
           <View style={{ alignItems: 'center' }}>
             {met ? (
               <View style={r.goalMet}><Ionicons name="checkmark-circle" size={14} color={C.sage} /><Text style={r.goalMetText}>목표 {goalKm}km 달성</Text></View>
@@ -206,7 +218,44 @@ export default function RunActiveScreen({
         ))}
       </View>
 
-      <View style={{ flex: 1 }} />
+      {/* 라이브 지도: 좌표 2개 이상일 때 표시 */}
+      {liveCoords && liveCoords.length >= 2 ? (
+        <View style={r.mapWrap}>
+          <MapView
+            provider={PROVIDER_GOOGLE}
+            style={StyleSheet.absoluteFill}
+            customMapStyle={DARK_MAP_STYLE}
+            region={{
+              latitude: liveCoords[liveCoords.length - 1].lat,
+              longitude: liveCoords[liveCoords.length - 1].lon,
+              latitudeDelta: 0.006,
+              longitudeDelta: 0.006,
+            }}
+            scrollEnabled={false}
+            zoomEnabled={false}
+            rotateEnabled={false}
+            pitchEnabled={false}
+            toolbarEnabled={false}
+          >
+            <Polyline
+              coordinates={liveCoords.map(p => ({ latitude: p.lat, longitude: p.lon }))}
+              strokeColor={C.accent}
+              strokeWidth={4}
+              lineCap="round"
+              lineJoin="round"
+            />
+            <Marker
+              coordinate={{ latitude: liveCoords[liveCoords.length - 1].lat, longitude: liveCoords[liveCoords.length - 1].lon }}
+              anchor={{ x: 0.5, y: 0.5 }}
+              tracksViewChanges={false}
+            >
+              <View style={r.positionDot} />
+            </Marker>
+          </MapView>
+        </View>
+      ) : (
+        <View style={{ flex: 1 }} />
+      )}
 
       {/* controls */}
       <View style={r.controls}>
@@ -272,6 +321,29 @@ const r = StyleSheet.create({
   smU: { color: C.t4, fontFamily: UI, fontSize: 10 },
   smL: { color: C.t4, fontFamily: UI, fontSize: 10.5, fontWeight: '500', marginTop: 3 },
 
+  mapWrap: {
+    flex: 1,
+    minHeight: 130,
+    maxHeight: 180,
+    marginTop: 10,
+    marginBottom: 4,
+    borderRadius: 16,
+    overflow: 'hidden',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255,255,255,0.08)',
+  },
+  positionDot: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: C.accent,
+    borderWidth: 3,
+    borderColor: '#fff',
+    shadowColor: C.accent,
+    shadowOpacity: 0.8,
+    shadowRadius: 6,
+    elevation: 4,
+  },
   controls: { flexDirection: 'row', justifyContent: 'center', gap: 48, paddingBottom: 8 },
   cPrimary: { width: 88, height: 88, borderRadius: 999, backgroundColor: C.accent, alignItems: 'center', justifyContent: 'center' },
   cResume: { width: 76, height: 76, borderRadius: 999, backgroundColor: C.accent, alignItems: 'center', justifyContent: 'center' },

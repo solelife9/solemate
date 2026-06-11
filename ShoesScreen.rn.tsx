@@ -15,7 +15,7 @@ import FirstShoeScreen from './FirstShoeScreen.rn';
 import { Unit, displayNum, displayToKm } from './lib/units';
 import { clampMaxKm, KEEP_GOING_REPLACE, SHOE_MAX_STEP_KM, SHOE_REPLACE_PCT } from './lib/shoe';
 import { assessShoeInjuryRisk } from './lib/injury';
-import { buildWearView, type Surface } from './lib/wearView';
+import { buildWearView, forecastBasisKo, forecastConfidenceKo, type Surface } from './lib/wearView';
 import { recommendNextShoes, buildShopLinks, categoryLabelKo, AFFILIATE_DISCLOSURE } from './lib/affiliate';
 import { findShoeClass, typeLabel, TYPE_DESCRIPTIONS, purposeSentenceKo } from './data/shoeClass';
 import { shouldRecommendNextShoe } from './lib/recommendTrigger';
@@ -116,6 +116,10 @@ function ShoeDetail({
     wearView.forecast?.reason === 'ok' && wearView.forecast.weeksRemaining != null
       ? Math.max(1, Math.round(wearView.forecast.weeksRemaining))
       : null;
+  // 예측 투명성(탑티어 1-1): '왜 N주인지' 근거 + 정확도(confidence)를 사용자에게 노출.
+  const detailBasis = forecastBasisKo(wearView.forecast);
+  const detailConfHigh = wearView.forecast?.confidence === 'high';
+  const detailConfLabel = forecastConfidenceKo(wearView.forecast);
   // 부상예방 경고(주의/위험) — shoeHealth 와 같은 마모 분모(used/max)로 판정한다.
   // 안전 등급/보관 신발은 경고를 노출하지 않는다(보관됨 상태와의 모순 방지).
   const injury = assessShoeInjuryRisk(shoe);
@@ -325,8 +329,15 @@ function ShoeDetail({
             교체 예상이에요'. ok 예측에서만 노출(보관/예측없음/overdue 면 숨김). */}
         {!retired && detailReplaceWeeks != null && (
           <View style={[s.card, s.wearCard]}>
-            <Text style={s.wearLabel}>교체 예상</Text>
+            <View style={s.wearLabelRow}>
+              <Text style={s.wearLabel}>교체 예상</Text>
+              <View style={[s.confChip, detailConfHigh ? s.confChipHi : s.confChipLo]}>
+                <View style={[s.confDot, { backgroundColor: detailConfHigh ? GOOD : T3 }]} />
+                <Text style={[s.confChipText, { color: detailConfHigh ? GOOD : T3 }]}>{detailConfLabel}</Text>
+              </View>
+            </View>
             <Text style={s.replaceForecastText}>현재 패턴 기준 약 <Text style={s.dForecastBold}>{detailReplaceWeeks}주 후</Text> 교체 예상이에요</Text>
+            {!!detailBasis && <Text style={s.wearBasisText}>{detailBasis}</Text>}
           </View>
         )}
 
@@ -627,6 +638,14 @@ const s = StyleSheet.create({
   // 교체 예상 lead(핸드오프 lead 정합: 16px·lineHeight 23) + 주수 강조(bold·T1).
   replaceForecastText: { color: T2, fontFamily: FONT, fontSize: 16, fontWeight: '500', letterSpacing: -0.2, lineHeight: 23, marginTop: 8 },
   dForecastBold: { color: T1, fontWeight: '700' },
+  // 예측 투명성(1-1): 라벨 우측 정확도 칩 + 근거 한 줄. accent 절제(정확도색만 톤).
+  wearLabelRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  confChip: { flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 4 },
+  confChipHi: { backgroundColor: withAlpha(GOOD, 0.12) },
+  confChipLo: { backgroundColor: withAlpha(T1, 0.06) },
+  confDot: { width: 5, height: 5, borderRadius: 999 },
+  confChipText: { fontFamily: FONT, fontSize: 11, fontWeight: '700', letterSpacing: 0.1 },
+  wearBasisText: { color: T3, fontFamily: FONT, fontSize: 12.5, fontWeight: '500', letterSpacing: -0.1, lineHeight: 18, marginTop: 8 },
   maxEditRow: { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-end', marginTop: 12 },
   maxEditTxt: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500' },
 

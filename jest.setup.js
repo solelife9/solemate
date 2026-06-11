@@ -171,6 +171,34 @@ jest.mock('react-native-svg', () => {
   return exported;
 });
 
+// ── react-native-maps ────────────────────────────────────────────────────────
+// 런 지도(RunActiveScreen·route 미리보기)용. 네이티브 지도 캔버스 대신 MapView 와
+// 모든 오버레이(Polyline/Marker/...)를 plain View 로 매핑해 레이아웃만 렌더하게 한다.
+// PROVIDER_GOOGLE 은 실제처럼 문자열 상수로 노출(화면이 provider prop 에 그대로 넘김).
+jest.mock('react-native-maps', () => {
+  const React = require('react');
+  const {View} = require('react-native');
+  const make = displayName => {
+    const Comp = props => React.createElement(View, props, props.children);
+    Comp.displayName = displayName;
+    return Comp;
+  };
+  const MapView = make('MapView');
+  return {
+    __esModule: true,
+    default: MapView,
+    MapView,
+    Polyline: make('Polyline'),
+    Marker: make('Marker'),
+    Callout: make('Callout'),
+    Circle: make('Circle'),
+    Polygon: make('Polygon'),
+    Overlay: make('Overlay'),
+    PROVIDER_GOOGLE: 'google',
+    PROVIDER_DEFAULT: 'default',
+  };
+});
+
 // ── react-native-safe-area-context ──────────────────────────────────────────
 // Provider just renders children; insets/frame are fixed zero values.
 jest.mock('react-native-safe-area-context', () => {
