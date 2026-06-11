@@ -53,7 +53,7 @@ export function FuelGauge({remainLabel, unit, fillPct, replacePct = 0.9, conditi
         <View style={[g.seg, {flex: 0.6, backgroundColor: withAlpha(GOOD, 0.16)}]} />
         <View style={[g.seg, {flex: 0.15, backgroundColor: withAlpha(WARN, 0.18)}]} />
         <View style={[g.seg, {flex: 0.25, backgroundColor: withAlpha(DANGER, 0.22)}]} />
-        <View style={[g.fill, {width: `${p * 100}%`}]} />
+        <View style={[g.fill, {width: `${p * 100}%`, backgroundColor: condition === '양호' ? withAlpha(T1, 0.85) : cc}]} />
         <View style={[g.zone, {left: `${zone * 100}%`}]} />
         <View style={[g.marker, {left: `${p * 100}%`}]} />
       </View>

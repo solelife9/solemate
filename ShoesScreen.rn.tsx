@@ -240,7 +240,7 @@ function ShoeDetail({
         {!retired && (
           <View style={[s.card, s.wearCard]}>
             <View style={s.row}>
-              <Ionicons name="pulse" size={15} color={ACCENT} />
+              <Ionicons name="pulse" size={15} color={T3} />
               <Text style={s.wearLabel}>실효 마모</Text>
             </View>
             <View style={[s.baselineRow, { marginTop: 6 }]}>
@@ -620,7 +620,7 @@ const s = StyleSheet.create({
   wearValue: { color: T1, fontFamily: DISPLAY, fontSize: 30, letterSpacing: 0.3 },
   wearUnit: { color: T2, fontFamily: FONT, fontSize: 14, marginLeft: 4, marginBottom: 4 },
   wearTarget: { color: T3, fontFamily: FONT, fontSize: 13, marginBottom: 4 },
-  wearForecast: { color: ACCENT, fontFamily: FONT, fontSize: 12.5, fontWeight: '600', letterSpacing: -0.1, lineHeight: 18, marginTop: 8 },
+  wearForecast: { color: T3, fontFamily: FONT, fontSize: 12.5, fontWeight: '500', letterSpacing: -0.1, lineHeight: 18, marginTop: 8 },
   maxEditRow: { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-end', marginTop: 12 },
   maxEditTxt: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500' },
 
