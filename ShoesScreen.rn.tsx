@@ -219,16 +219,6 @@ function ShoeDetail({
           </View>
         )}
 
-        {/* 기본 CTA: 이 신발로 바로 런 시작(shoe-first). 보관된 신발은 시작 동선에서
-            제외되므로 숨긴다(런 기록은 그대로 보존·표시). */}
-        {!retired && shoe.id && onStartRun && (
-          <MockupButton
-            label="이 신발로 달리기"
-            iconNode={<Ionicons name="play" size={16} color={T1} />}
-            onPress={() => onStartRun(shoe.id!)}
-          />
-        )}
-
         {/* durability — 수명 연료게이지(가로 바) + 수명 조정 토글 */}
         <View>
           <FuelGauge
@@ -369,6 +359,16 @@ function ShoeDetail({
               </View>
             ))}
           </View>
+        )}
+
+        {/* 기본 CTA: 이 신발로 바로 런 시작 — 목업 09 처럼 상세 '맨 아래'에 배치(shoe-first).
+            보관된 신발은 시작 동선에서 제외(런 기록은 그대로 보존·표시). */}
+        {!retired && shoe.id && onStartRun && (
+          <MockupButton
+            label="이 신발로 달리기"
+            iconNode={<Ionicons name="play" size={16} color={T1} />}
+            onPress={() => onStartRun(shoe.id!)}
+          />
         )}
 
         {/* 신발 은퇴(보관) — 목업처럼 하단 전체폭 버튼(danger 외곽선). 상단 아이콘 대신
