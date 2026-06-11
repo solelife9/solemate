@@ -401,17 +401,18 @@ function RunDetail({ run, shoe, onBack, unit, onEdit, onDelete }: { run: Run; sh
         </View>
       </View>
       <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: 28 }}>
+        {/* 신발(브랜드+모델)을 카드 없이 맨 위에 — 이 런의 '제목'처럼(사용자 요청). */}
+        {!!shoe && (
+          <View style={{ marginBottom: 14 }}>
+            <Text style={s.detailBrand}>{shoe.brand}</Text>
+            <Text style={s.detailModel}>{shoe.model}</Text>
+          </View>
+        )}
         <Text style={s.detailDate}>{run.date} {run.day}요일</Text>
         <View style={[s.baselineRow, { marginTop: 8 }]}>
           <Text style={s.detailDist}>{displayNum(run.dist, unit, 2)}</Text>
           <Text style={s.detailDistU}>{unit}</Text>
         </View>
-        {!!shoe && (
-          <View style={[s.card, { padding: 16, marginTop: 16 }]}>
-            <Text style={s.detailBrand}>{shoe.brand}</Text>
-            <Text style={s.detailModel}>{shoe.model}</Text>
-          </View>
-        )}
         {/* 메트릭 한 카드(디자인 11): 2x3 그리드(값 위 · 라벨 아래, 좌측 정렬). */}
         <View style={[s.card, s.statGrid]}>
           {stats.map((x, i) => (
@@ -732,7 +733,7 @@ const s = StyleSheet.create({
   detailDist: { color: T1, fontFamily: DISPLAY, fontSize: 56, letterSpacing: 0.5 },
   detailDistU: { color: T2, fontFamily: FONT, fontSize: 20, marginLeft: 6, marginBottom: 8 },
   detailBrand: { color: T3, fontFamily: FONT, fontSize: 10.5, fontWeight: '500', letterSpacing: 1.4 },
-  detailModel: { color: T1, fontFamily: FONT, fontSize: 16, fontWeight: '500', marginTop: 3 },
+  detailModel: { color: T1, fontFamily: FONT, fontSize: 18, fontWeight: '600', letterSpacing: -0.2, marginTop: 3 },
   // 메트릭 한 카드(디자인 11) — 2x3 그리드. 값(위)·라벨(아래) 좌측 정렬, 칸마다 별도
   // 박스 없이 한 카드 안에 균등 1/3 폭으로 배치(이전 칸별 카드 → 한 카드).
   statGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingVertical: 16, paddingHorizontal: 20, rowGap: 18, marginTop: 16 },
