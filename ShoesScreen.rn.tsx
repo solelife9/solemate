@@ -17,7 +17,7 @@ import { clampMaxKm, KEEP_GOING_REPLACE, SHOE_MAX_STEP_KM, SHOE_REPLACE_PCT } fr
 import { assessShoeInjuryRisk } from './lib/injury';
 import { buildWearView, forecastLineKo, type Surface } from './lib/wearView';
 import { recommendNextShoes, buildShopLinks, categoryLabelKo, AFFILIATE_DISCLOSURE } from './lib/affiliate';
-import { findShoeClass, typeLabel } from './data/shoeClass';
+import { findShoeClass, typeLabel, TYPE_DESCRIPTIONS } from './data/shoeClass';
 import { shouldRecommendNextShoe } from './lib/recommendTrigger';
 
 // 수익화 v1(차별점 정합): 이 신발이 교체임박(forecast overdue/≤3주)일 때, 같은 카테고리의
@@ -101,7 +101,6 @@ function ShoeDetail({
   const shoeRuns = runs.filter((r) => r.shoe === idx);
   // 사용자 DB(shoes.json): 종류(type)+추천 용도(recommended). 종류는 칩, 추천 용도는 recommended.
   const detailClass = findShoeClass(shoe.brand, shoe.model);
-  const detailType = typeLabel(detailClass?.type);
   // 실효 마모/교체 예측(차별점): 단순 누적 km 가 아니라 체중·노면·페이스·세월 보정 "진짜
   // 마모"와 "이 페이스면 약 N주 후 교체"를 파생한다(lib/wearView → wearModel/forecast 재사용).
   // 원본 shoe/run 은 읽기만 한다(A6-1). 모든 엣지에서 NaN/음수 없음(A6-2).
@@ -191,34 +190,35 @@ function ShoeDetail({
           </View>
         ) : (
           <View style={{ paddingHorizontal: 4 }}>
-            {/* 상태 칩(목업 09 상단) — 양호는 '최상의 컨디션' 칩, 주의/교체는 tier 배지(testID 유지). */}
-            <View style={[s.row, { marginBottom: 12 }]}>
+            {/* 상태 칩(목업 09) — 양호: 회색 칩 + 흰 글씨 + 점. 주의/교체: tier 배지(testID 유지). */}
+            <View style={[s.row, { marginBottom: 14 }]}>
               {shoe.condition === '양호'
-                ? <Pill tone="good" label="최상의 컨디션" />
+                ? <View style={s.statusPill}><View style={s.statusDot} /><Text style={s.statusPillText}>최상의 컨디션</Text></View>
                 : <TierBadge condition={shoe.condition} size="md" />}
               {retired && <Pill tone="dim" label="보관됨" />}
             </View>
             <Text style={s.dBrand}>{shoe.brand}</Text>
             <Text style={s.dModel}>{shoe.model}</Text>
-            {/* 종류 칩 + 추천 용도(사용자 DB) — 종류(카본 레이싱 등)는 칩, 추천 용도는 recommended. */}
-            {!!detailType && (
-              <View style={s.dTypeChip}><Text style={s.dTypeChipText}>{detailType}</Text></View>
-            )}
-            {!!detailClass && detailClass.recommended.length > 0 && (
+            {/* 용도 설명 문장 + 태그(목업 09 — '추천 용도' 라벨/종류 칩 없음). 데이터: shoes.json. */}
+            {!!detailClass && (
               <>
-                <Text style={s.dPurposeLabel}>추천 용도</Text>
-                <View style={s.dTags}>
-                  {detailClass.recommended.map((t) => (
-                    <View key={t} style={s.dTag}><Text style={s.dTagText}>{t}</Text></View>
-                  ))}
-                </View>
+                {!!TYPE_DESCRIPTIONS[detailClass.type] && (
+                  <Text style={s.dPurpose}>{TYPE_DESCRIPTIONS[detailClass.type]}</Text>
+                )}
+                {detailClass.recommended.length > 0 && (
+                  <View style={s.dTags}>
+                    {detailClass.recommended.map((t) => (
+                      <View key={t} style={s.dTag}><Text style={s.dTagText}>{t}</Text></View>
+                    ))}
+                  </View>
+                )}
               </>
             )}
           </View>
         )}
 
-        {/* durability — 수명 연료게이지(가로 바) + 수명 조정 토글 */}
-        <View>
+        {/* durability — 잔여 수명 카드(목업 09): 게이지 + 수명 조정 토글 */}
+        <View style={[s.card, { padding: 18 }]}>
           <FuelGauge
             remainLabel={String(remain)}
             unit={unit}
@@ -234,16 +234,6 @@ function ShoeDetail({
             </Pressable>
           )}
         </View>
-
-        {/* 교체 예상(차별점의 사용자 친화 결과) — 체중·노면·페이스·세월 보정 예측을 'N주 후
-            교체 예상' 한 줄로(목업 09 교체예상 카드). '실효 마모' 용어는 일반 사용자가 헷갈려
-            제거. 추정 톤('약'·'예상'). 보관 신발은 제외, 예측 없으면 카드 자체를 숨긴다. */}
-        {!retired && !!forecastLine && (
-          <View style={[s.card, s.wearCard]}>
-            <Text style={s.wearLabel}>교체 예상</Text>
-            <Text style={s.replaceForecastText}>{forecastLine}</Text>
-          </View>
-        )}
 
         {/* 부상예방 경고 배너(주의/위험) — 마모도가 임계를 넘으면 keep-going 보이스로
             교체를 권한다. 안전 등급(InjuryBanner null)·보관 신발은 미노출. */}
@@ -323,6 +313,15 @@ function ShoeDetail({
             </View>
           ))}
         </View>
+
+        {/* 교체 예상 카드(목업 09: 통계 아래) — 보정 예측을 'N주 후 교체 예상' 한 줄로.
+            '실효 마모' 용어는 제거(혼동). 보관/예측없음이면 숨김. */}
+        {!retired && !!forecastLine && (
+          <View style={[s.card, s.wearCard]}>
+            <Text style={s.wearLabel}>교체 예상</Text>
+            <Text style={s.replaceForecastText}>{forecastLine}</Text>
+          </View>
+        )}
 
         {/* runs */}
         <View style={[s.row, { paddingHorizontal: 4, justifyContent: 'space-between' }]}>
@@ -592,6 +591,10 @@ const s = StyleSheet.create({
   // detail
   detailNav: { paddingTop: 12, paddingHorizontal: 16, paddingBottom: 6, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   iconBtn: { width: 38, height: 38, borderRadius: 999, backgroundColor: CARD_HI, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.12), alignItems: 'center', justifyContent: 'center' },
+  // 상태 칩(목업 09) — 회색 알약 + 흰 글씨 + 점(녹색 아님)
+  statusPill: { flexDirection: 'row', alignItems: 'center', gap: 7, backgroundColor: CARD_HI, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7, alignSelf: 'flex-start' },
+  statusDot: { width: 6, height: 6, borderRadius: 999, backgroundColor: T1 },
+  statusPillText: { color: T1, fontFamily: FONT, fontSize: 13, fontWeight: '600' },
   dBrand: { color: T3, fontFamily: DISPLAY, fontSize: 12, fontWeight: '500', letterSpacing: 1.6 },
   dModel: { color: T1, fontFamily: DISPLAY, fontSize: 32, fontWeight: '800', letterSpacing: -0.5, marginTop: 2, lineHeight: 38 },
   dPurpose: { color: T2, fontFamily: FONT, fontSize: 15, fontWeight: '500', letterSpacing: -0.2, lineHeight: 22, marginTop: 10 },
