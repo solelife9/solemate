@@ -15,9 +15,9 @@ import FirstShoeScreen from './FirstShoeScreen.rn';
 import { Unit, displayNum, displayToKm } from './lib/units';
 import { clampMaxKm, KEEP_GOING_REPLACE, SHOE_MAX_STEP_KM, SHOE_REPLACE_PCT } from './lib/shoe';
 import { assessShoeInjuryRisk } from './lib/injury';
-import { buildWearView, forecastLineKo, type Surface } from './lib/wearView';
+import { buildWearView, type Surface } from './lib/wearView';
 import { recommendNextShoes, buildShopLinks, categoryLabelKo, AFFILIATE_DISCLOSURE } from './lib/affiliate';
-import { findShoeClass, typeLabel, TYPE_DESCRIPTIONS } from './data/shoeClass';
+import { findShoeClass, typeLabel, TYPE_DESCRIPTIONS, purposeSentenceKo } from './data/shoeClass';
 import { shouldRecommendNextShoe } from './lib/recommendTrigger';
 
 // 수익화 v1(차별점 정합): 이 신발이 교체임박(forecast overdue/≤3주)일 때, 같은 카테고리의
@@ -102,15 +102,20 @@ function ShoeDetail({
   // 사용자 DB(shoes.json): 종류(type)+추천 용도(recommended). 종류는 칩, 추천 용도는 recommended.
   const detailClass = findShoeClass(shoe.brand, shoe.model);
   const detailType = typeLabel(detailClass?.type);
-  // 용도 문장(사진처럼) — 추천 러닝을 '… 러닝에 추천해요'로. 없으면 타입 설명으로 폴백.
-  const purposeSentence = detailClass && detailClass.recommended.length > 0
-    ? `${detailClass.recommended.join(' · ')} 러닝에 추천해요`
-    : (detailClass ? TYPE_DESCRIPTIONS[detailClass.type] : undefined);
+  // 용도 문장(핸드오프처럼 자연어로 풀어서) — 추천 러닝을 '…에 적합해요' 문장으로.
+  // 없으면 타입 한 줄 설명으로 폴백.
+  const purposeSentence = purposeSentenceKo(detailClass?.recommended)
+    ?? (detailClass ? TYPE_DESCRIPTIONS[detailClass.type] : undefined);
   // 실효 마모/교체 예측(차별점): 단순 누적 km 가 아니라 체중·노면·페이스·세월 보정 "진짜
   // 마모"와 "이 페이스면 약 N주 후 교체"를 파생한다(lib/wearView → wearModel/forecast 재사용).
   // 원본 shoe/run 은 읽기만 한다(A6-1). 모든 엣지에서 NaN/음수 없음(A6-2).
   const wearView = buildWearView(shoe, shoeRuns, { weightKg, surfaceOf });
-  const forecastLine = forecastLineKo(wearView.forecast);
+  // 교체 예상(상세 카드, 핸드오프 정합): '현재 패턴 기준 약 N주 후 교체 예상이에요'.
+  // ok 예측에서만 주수를 노출한다(overdue/예측불가는 카드 숨김 — 교체는 keep-going 배너가 담당).
+  const detailReplaceWeeks =
+    wearView.forecast?.reason === 'ok' && wearView.forecast.weeksRemaining != null
+      ? Math.max(1, Math.round(wearView.forecast.weeksRemaining))
+      : null;
   // 부상예방 경고(주의/위험) — shoeHealth 와 같은 마모 분모(used/max)로 판정한다.
   // 안전 등급/보관 신발은 경고를 노출하지 않는다(보관됨 상태와의 모순 방지).
   const injury = assessShoeInjuryRisk(shoe);
@@ -207,8 +212,15 @@ function ShoeDetail({
               {!!detailType && <View style={s.dTypeChip}><Text style={s.dTypeChipText}>{detailType}</Text></View>}
             </View>
             <Text style={s.dModel}>{shoe.model}</Text>
-            {/* 용도 문장(사진처럼) — 추천 러닝을 '… 러닝에 추천해요'로(목록 카드와 종류 칩 일관). */}
+            {/* 용도 문장(핸드오프처럼 자연어) + 추천 용도 칩(디자인 09 정합). */}
             {!!purposeSentence && <Text style={s.dPurpose}>{purposeSentence}</Text>}
+            {!!detailClass && detailClass.recommended.length > 0 && (
+              <View style={s.dTags}>
+                {detailClass.recommended.map((t) => (
+                  <View key={t} style={s.dTag}><Text style={s.dTagText}>{t}</Text></View>
+                ))}
+              </View>
+            )}
           </View>
         )}
 
@@ -309,12 +321,12 @@ function ShoeDetail({
           ))}
         </View>
 
-        {/* 교체 예상 카드(목업 09: 통계 아래) — 보정 예측을 'N주 후 교체 예상' 한 줄로.
-            '실효 마모' 용어는 제거(혼동). 보관/예측없음이면 숨김. */}
-        {!retired && !!forecastLine && (
+        {/* 교체 예상 카드(목업 09: 통계 아래) — 핸드오프 문구 '현재 패턴 기준 약 N주 후
+            교체 예상이에요'. ok 예측에서만 노출(보관/예측없음/overdue 면 숨김). */}
+        {!retired && detailReplaceWeeks != null && (
           <View style={[s.card, s.wearCard]}>
             <Text style={s.wearLabel}>교체 예상</Text>
-            <Text style={s.replaceForecastText}>{forecastLine}</Text>
+            <Text style={s.replaceForecastText}>현재 패턴 기준 약 <Text style={s.dForecastBold}>{detailReplaceWeeks}주 후</Text> 교체 예상이에요</Text>
           </View>
         )}
 
@@ -371,10 +383,10 @@ function ShoeCard({ shoe, featured, onPress, onPlay, unit, pace }: { shoe: Shoe;
   const maxDisp = displayNum(shoe.max, unit);
   // 사용률(%) — 라벨바 채움(목업 LifeBar 정합). 비율은 km 절대값으로(단위 불변).
   const usedPct = shoe.max > 0 ? Math.min(100, Math.round((shoe.used / shoe.max) * 100)) : 0;
-  // 사용자 DB: 종류(type)→칩, 추천 용도(recommended)→중간 한 줄(사진 정합).
+  // 사용자 DB: 종류(type)→칩, 추천 용도(recommended)→자연어 문장(핸드오프 purpose 정합).
   const cardClass = findShoeClass(shoe.brand, shoe.model);
   const cardType = typeLabel(cardClass?.type);
-  const cardRec = cardClass?.recommended ?? [];
+  const cardPurpose = purposeSentenceKo(cardClass?.recommended);
   return (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${shoe.brand} ${shoe.model} 상세`} style={({ pressed }) => [s.shoeCard, featured ? s.shoeCardFeatured : s.shoeCardIdle, retired && s.shoeCardRetired, pressed && s.pressed]}>
       {/* 상단: 좌(브랜드·사용중·모델) ↔ 우(컨디션 위 · 화살표/▶ 아래) — 사진 정합 */}
@@ -403,7 +415,7 @@ function ShoeCard({ shoe, featured, onPress, onPlay, unit, pace }: { shoe: Shoe;
         </View>
       </View>
       {/* 추천 용도(러닝 종류) — 중간(사진 정합). 모델 매칭 시만. */}
-      {cardRec.length > 0 && <Text style={s.shoePurpose} numberOfLines={1}>{cardRec.join(' · ')}</Text>}
+      {!!cardPurpose && <Text style={s.shoePurpose} numberOfLines={2}>{cardPurpose}</Text>}
       {/* 누적 거리(큰 숫자) + 교체까지 남은 거리(문장형) — 목업 lifeRow 정합 */}
       <View style={s.shoeLifeRow}>
         <View style={s.baselineRow}>
@@ -612,7 +624,9 @@ const s = StyleSheet.create({
   wearUnit: { color: T2, fontFamily: FONT, fontSize: 14, marginLeft: 4, marginBottom: 4 },
   wearTarget: { color: T3, fontFamily: FONT, fontSize: 13, marginBottom: 4 },
   wearForecast: { color: T3, fontFamily: FONT, fontSize: 12.5, fontWeight: '500', letterSpacing: -0.1, lineHeight: 18, marginTop: 8 },
-  replaceForecastText: { color: T2, fontFamily: FONT, fontSize: 15, fontWeight: '500', letterSpacing: -0.2, lineHeight: 22, marginTop: 8 },
+  // 교체 예상 lead(핸드오프 lead 정합: 16px·lineHeight 23) + 주수 강조(bold·T1).
+  replaceForecastText: { color: T2, fontFamily: FONT, fontSize: 16, fontWeight: '500', letterSpacing: -0.2, lineHeight: 23, marginTop: 8 },
+  dForecastBold: { color: T1, fontWeight: '700' },
   maxEditRow: { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-end', marginTop: 12 },
   maxEditTxt: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500' },
 

@@ -55,7 +55,7 @@ const mkRun = (over: Partial<Run>): Run => ({
 });
 
 describe('ShoesScreen 상세 — 실효 마모 + 교체 예측', () => {
-  test('ok 분기: "약 N주 후 교체 권장 · 예상 M월 D일" 추정 카피를 실데이터로 렌더', () => {
+  test('ok 분기: "현재 패턴 기준 약 N주 후 교체 예상이에요" 추정 카피를 실데이터로 렌더', () => {
     const shoe: Shoe = {id: 'a', brand: 'Nike', model: 'Pegasus 41', used: 100, max: 700, condition: '양호'};
     const runs: Run[] = [
       mkRun({id: 'r1', dist: 10, durationS: 3000, runDate: daysAgo(2)}),
@@ -70,9 +70,9 @@ describe('ShoesScreen 상세 — 실효 마모 + 교체 예측', () => {
     expect(txt).not.toContain('실효 마모');
     expect(txt).toContain('교체 예상');
     // 추정 톤(A6-3): 단정 회피 — '약'·'예상' 포함, "정확히" 류 단정 표현 없음.
-    expect(txt).toContain('약');
-    expect(txt).toContain('주 후 교체 권장');
-    expect(txt).toContain('예상');
+    // 핸드오프 문구 정합: '현재 패턴 기준 약 N주 후 교체 예상이에요'.
+    expect(txt).toContain('현재 패턴 기준 약');
+    expect(txt).toContain('주 후 교체 예상이에요');
     expect(txt).not.toContain('정확히');
   });
 
@@ -90,7 +90,7 @@ describe('ShoesScreen 상세 — 실효 마모 + 교체 예측', () => {
     expect(txt).toContain('지금 교체하면 부상 없이 계속 달릴 수 있어요');
   });
 
-  test('no_recent 분기: 최근 28일 주행이 없으면 "최근 기록이 없어 예측할 수 없어요"', () => {
+  test('no_recent 분기: 예측 불가(최근 28일 주행 없음)면 교체 예상 카드를 숨긴다(핸드오프 정합)', () => {
     const shoe: Shoe = {id: 'a', brand: 'On', model: 'Cloudflow 5', used: 50, max: 700, condition: '양호'};
     const runs: Run[] = [
       mkRun({id: 'r1', dist: 25, durationS: 7500, runDate: daysAgo(40)}),
@@ -99,8 +99,11 @@ describe('ShoesScreen 상세 — 실효 마모 + 교체 예측', () => {
     const view = buildWearView(shoe, runs, {});
     expect(view.forecast.reason).toBe('no_recent');
 
+    // 핸드오프 09엔 'no_recent' 같은 상태가 없다 → 주수를 못 내면 교체 예상 카드를
+    // 통째로 숨긴다(없는 컴포넌트/문구를 만들지 않음). '교체 예상' 라벨이 보이지 않는다.
     const txt = openDetail(shoe, runs);
-    expect(txt).toContain('최근 기록이 없어 예측할 수 없어요');
+    expect(txt).not.toContain('교체 예상');
+    expect(txt).not.toContain('최근 기록이 없어 예측할 수 없어요');
   });
 
   test('체중이 교체 예측 보정에 반영된다(weightFactor — 무거울수록 실효 마모 큼)', () => {

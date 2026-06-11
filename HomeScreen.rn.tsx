@@ -24,7 +24,7 @@ import { RotationPick } from './lib/rotation';
 import { recommendNextShoes, buildShopLinks, categoryLabelKo, AFFILIATE_DISCLOSURE } from './lib/affiliate';
 import { forecastLineKo, type ReplacementForecast } from './lib/wearView';
 import { shouldRecommendNextShoe } from './lib/recommendTrigger';
-import { findShoeClass, typeLabel } from './data/shoeClass';
+import { findShoeClass, typeLabel, purposeSentenceKo } from './data/shoeClass';
 
 export type WeekStats = { km: string; runs: number; pace: string };
 // 주간 목표 + keep-going 동기 지표. 거리는 km 표준, pct는 이번 주 달성률 %(목표
@@ -241,6 +241,7 @@ function InsightCard({ shoe, unit, forecast }: { shoe: Shoe; unit: Unit; forecas
   // 추천 용도 = 사용자 DB(shoes.json)의 recommended(템포·인터벌·레이스 등 러닝 종류).
   // 종류(카본화 등)는 추천 용도가 아니므로 칩으로 따로 표시하고 여기엔 넣지 않는다.
   const recommended = findShoeClass(shoe.brand, shoe.model)?.recommended ?? [];
+  const purposeSentence = purposeSentenceKo(recommended);
   return (
     <View style={s.insightCard}>
       <View style={s.insightGrid}>
@@ -262,6 +263,7 @@ function InsightCard({ shoe, unit, forecast }: { shoe: Shoe; unit: Unit; forecas
       {recommended.length > 0 && (
         <View style={s.insightPurpose}>
           <Text style={s.insightLabel}>추천 용도</Text>
+          {!!purposeSentence && <Text style={s.insightPurposeText}>{purposeSentence}</Text>}
           <View style={s.insightTags}>
             {recommended.map((t) => (
               <View key={t} style={s.insightTag}><Text style={s.insightTagText}>{t}</Text></View>
@@ -545,7 +547,8 @@ const s = StyleSheet.create({
   insightWeeks: { fontFamily: DISPLAY, fontSize: 19, fontWeight: '800', letterSpacing: -0.3, marginTop: 6 },
   insightSub: { color: T3, fontFamily: FONT, fontSize: 12.5, fontWeight: '500', marginTop: 3 },
   insightPurpose: { marginTop: SPACE.lg, paddingTop: SPACE.lg, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.07) },
-  insightPurposeText: { color: T2, fontFamily: FONT, fontSize: 15, fontWeight: '500', letterSpacing: -0.2, lineHeight: 22, marginTop: 8 },
+  // 추천 용도 자연어 문장(핸드오프 lead 정합: 16px·lineHeight 23).
+  insightPurposeText: { color: T2, fontFamily: FONT, fontSize: 16, fontWeight: '500', letterSpacing: -0.2, lineHeight: 23, marginTop: 6 },
   insightTags: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 12 },
   insightTag: { backgroundColor: CARD_HI, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 5 },
   insightTagText: { color: T2, fontFamily: FONT, fontSize: 12, fontWeight: '600' },

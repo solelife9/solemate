@@ -40,6 +40,48 @@ export function typeLabel(type?: string): string | undefined {
   return TYPE_LABEL_KO[type] ?? type;
 }
 
+// ── 추천 용도 → 자연어 문장 ────────────────────────────────────────────────────
+// 핸드오프(data.js)의 purpose 는 손으로 쓴 자연 문장('레이스와 빠른 템포 런에 적합해요').
+// 우리 DB 는 recommended 태그 배열만 가지므로, 태그를 자연스러운 명사구로 풀어
+// '…에 적합해요' 문장으로 합성한다(사용자 요청: 신발탭/상세 용도를 풀어서 설명).
+const RUN_PHRASE: Record<string, string> = {
+  '데일리': '데일리 러닝',
+  '장거리': '장거리 훈련',
+  '템포': '빠른 템포 런',
+  '인터벌': '인터벌 훈련',
+  '레이스': '레이스',
+  '회복': '회복 러닝',
+  '트레일': '트레일 러닝',
+};
+
+// 한글 마지막 글자에 받침이 있으면 true(조사 와/과 선택용).
+function hasFinalConsonant(word: string): boolean {
+  const ch = word.charCodeAt(word.length - 1);
+  if (ch < 0xac00 || ch > 0xd7a3) return false; // 한글 음절이 아니면 받침 없음 취급
+  return (ch - 0xac00) % 28 !== 0;
+}
+
+/**
+ * 추천 용도(러닝 종류) 배열 → '…에 적합해요' 자연 문장. 빈 배열이면 undefined.
+ *   [레이스, 템포]      → '레이스와 빠른 템포 런에 적합해요'
+ *   [데일리, 장거리]    → '데일리 러닝과 장거리 훈련에 적합해요'
+ *   [회복]              → '회복 러닝에 적합해요'
+ *   3개 이상            → '데일리 러닝, 장거리 훈련, 빠른 템포 런에 적합해요'
+ */
+export function purposeSentenceKo(recommended?: string[]): string | undefined {
+  if (!recommended || recommended.length === 0) return undefined;
+  const ps = recommended.map((r) => RUN_PHRASE[r] ?? r);
+  let subject: string;
+  if (ps.length === 1) {
+    subject = ps[0];
+  } else if (ps.length === 2) {
+    subject = `${ps[0]}${hasFinalConsonant(ps[0]) ? '과' : '와'} ${ps[1]}`;
+  } else {
+    subject = ps.join(', ');
+  }
+  return `${subject}에 적합해요`;
+}
+
 const ROWS = shoesData.shoes as ShoeClass[];
 
 function norm(s: string): string {
