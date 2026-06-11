@@ -13,7 +13,9 @@ import {
 } from './theme';
 import { TabBar } from './primitives';
 import { Unit, displayNum, displayToKm } from './lib/units';
-import { ymdLocal } from './lib/format';
+import { ymdLocal, fmtPace } from './lib/format';
+import { durationLabel } from './lib/stats';
+import { personalRecords } from './lib/records';
 import { getRunSurface, setRunSurface, type Surface } from './lib/wearModel';
 import { parseRoute, projectRoute, LatLon } from './lib/route';
 import { RunSplits, Split } from './RunSplits';
@@ -474,6 +476,8 @@ export default function HistoryScreen({
 
   const sum = summary[period] || EMPTY_SUMMARY;
   const ch = chart[period];
+  // 개인 기록(PR, 1-3) — 전체 런 기준 올타임 기록(기간 탭과 무관). 동기부여 카드.
+  const pr = personalRecords(runs);
   // 기간 제목(요약 카드) — 목업 TITLES 정합.
   const periodTitle = period === '주' ? '이번 주' : period === '월' ? '이번 달' : period === '년' ? '올해' : '전체 기간';
 
@@ -559,6 +563,30 @@ export default function HistoryScreen({
           </View>
         )}
 
+        {/* 개인 기록(PR, 1-3) — 올타임 최장거리·최고페이스·최장시간. 동기부여. */}
+        {pr.count > 0 && (
+          <View style={[s.card, { padding: 20 }]}>
+            <Text style={s.cardTitle}>개인 기록</Text>
+            <View style={s.prRow}>
+              <View style={s.prCell}>
+                <View style={s.baselineRow}>
+                  <Text style={s.prV}>{displayNum(pr.longestKm, unit, 1)}</Text>
+                  <Text style={s.prU}>{unit}</Text>
+                </View>
+                <Text style={s.prL}>최장 거리</Text>
+              </View>
+              <View style={s.prCell}>
+                <Text style={s.prV}>{pr.fastestPaceSec != null ? fmtPace(1, pr.fastestPaceSec) : '--'}</Text>
+                <Text style={s.prL}>최고 페이스</Text>
+              </View>
+              <View style={s.prCell}>
+                <Text style={s.prV}>{pr.longestDurationS > 0 ? durationLabel(pr.longestDurationS) : '--'}</Text>
+                <Text style={s.prL}>최장 시간</Text>
+              </View>
+            </View>
+          </View>
+        )}
+
         {/* recent runs — 런마다 별도 카드(목업 정합) */}
         <Text style={s.sectionLabel}>최근 러닝</Text>
         {runs.length === 0 ? (
@@ -596,6 +624,12 @@ const s = StyleSheet.create({
   sumMetricV: { color: T1, fontFamily: DISPLAY, fontSize: 19, fontWeight: '700', letterSpacing: -0.2 },
   sumMetricU: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '600' },
   sumMetricL: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500', marginTop: 4 },
+  // 개인 기록(PR, 1-3) — 3칸(최장거리/최고페이스/최장시간). 요약 메트릭과 같은 톤.
+  prRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 16 },
+  prCell: { flex: 1 },
+  prV: { color: T1, fontFamily: DISPLAY, fontSize: 21, fontWeight: '800', letterSpacing: -0.3 },
+  prU: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '600', marginLeft: 3 },
+  prL: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500', marginTop: 5 },
   // 런 카드 — 목업 기록(10): 신발+날짜 + 거리·평균페이스·시간
   runCard: { backgroundColor: CARD, borderRadius: 20, borderWidth: 1, borderColor: SEP, padding: 18 },
   runCardTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, marginBottom: 14 },
