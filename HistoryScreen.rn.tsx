@@ -364,13 +364,17 @@ function RunDetail({ run, shoe, onBack, unit, onEdit, onDelete }: { run: Run; sh
     );
   };
   const dash = (n: number, u: string) => (n > 0 ? { v: String(n), u } : { v: '--', u: '' });
+  // 메트릭 한 카드(디자인 11): 2x3 — 시간·평균페이스·칼로리 / 케이던스·누적고도·평균심박.
+  // 평균 심박(bpm)은 사용자 요청으로 노출한다(데이터 있으면 값, 없으면 '--' — 칼로리/고도와
+  // 동일 규약). BLE 심박 연동(Phase 3-2) 전엔 대부분 '--'지만 측정되면 자동 표시. 과거
+  // spec #15 'HR UI 숨김'은 제품 결정으로 철회(데이터 보존 가드는 유지).
   const stats = [
-    { l: '평균 페이스', v: run.pace, u: '/km' },
     { l: '시간', v: run.time, u: '' },
+    { l: '평균 페이스', v: run.pace, u: '/km' },
     { l: '칼로리', ...dash(run.cal, 'kcal') },
     { l: '케이던스', ...dash(run.cadence, 'spm') },
-    // 심박 UI 숨김(spec #15 / iron law #17). Run.bpm 데이터는 보존하되 화면에 렌더하지 않는다.
-    { l: '고도 상승', ...dash(run.elev, 'm') },
+    { l: '누적 고도', ...dash(run.elev, 'm') },
+    { l: '평균 심박', ...dash(run.bpm, 'bpm') },
   ];
   const insets = useSafeAreaInsets();
   return (
@@ -408,15 +412,17 @@ function RunDetail({ run, shoe, onBack, unit, onEdit, onDelete }: { run: Run; sh
             <Text style={s.detailModel}>{shoe.model}</Text>
           </View>
         )}
-        <CourseMap points={route} />
-        <View style={s.statGrid}>
+        {/* 메트릭 한 카드(디자인 11): 2x3 그리드(값 위 · 라벨 아래, 좌측 정렬). */}
+        <View style={[s.card, s.statGrid]}>
           {stats.map((x, i) => (
             <View key={i} style={s.statCell}>
-              <Text style={s.statLabel}>{x.l}</Text>
               <Text style={s.statValue}>{x.v}{x.u ? <Text style={s.statUnit}> {x.u}</Text> : null}</Text>
+              <Text style={s.statLabel}>{x.l}</Text>
             </View>
           ))}
         </View>
+        {/* 달린 위치(경로) 지도 — route_<id> 가 있으면 SVG 코스맵으로 표시(없으면 자동 숨김). */}
+        <CourseMap points={route} />
         {/* 구간별 페이스 스플릿 — run.splits(구간 데이터)가 있을 때만 표시(없으면 자동 숨김) */}
         <RunSplits splits={recordedSplits.length >= 2 ? recordedSplits : buildSplits(run, route)} />
       </ScrollView>
@@ -727,9 +733,11 @@ const s = StyleSheet.create({
   detailDistU: { color: T2, fontFamily: FONT, fontSize: 20, marginLeft: 6, marginBottom: 8 },
   detailBrand: { color: T3, fontFamily: FONT, fontSize: 10.5, fontWeight: '500', letterSpacing: 1.4 },
   detailModel: { color: T1, fontFamily: FONT, fontSize: 16, fontWeight: '500', marginTop: 3 },
-  statGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 16 },
-  statCell: { width: '31.5%', flexGrow: 1, backgroundColor: CARD, borderRadius: 18, padding: 15, borderWidth: 1, borderColor: SEP },
-  statLabel: { color: T3, fontFamily: FONT, fontSize: 11 },
-  statValue: { color: T1, fontFamily: DISPLAY, fontSize: 21, letterSpacing: 0.3, marginTop: 7 },
-  statUnit: { color: T3, fontFamily: FONT, fontSize: 10.5 },
+  // 메트릭 한 카드(디자인 11) — 2x3 그리드. 값(위)·라벨(아래) 좌측 정렬, 칸마다 별도
+  // 박스 없이 한 카드 안에 균등 1/3 폭으로 배치(이전 칸별 카드 → 한 카드).
+  statGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingVertical: 16, paddingHorizontal: 20, rowGap: 18, marginTop: 16 },
+  statCell: { width: '33.33%', paddingVertical: 6 },
+  statValue: { color: T1, fontFamily: DISPLAY, fontSize: 21, fontWeight: '700', letterSpacing: 0.2 },
+  statUnit: { color: T3, fontFamily: FONT, fontSize: 11.5, fontWeight: '500' },
+  statLabel: { color: T3, fontFamily: FONT, fontSize: 11.5, marginTop: 4 },
 });
