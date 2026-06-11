@@ -321,8 +321,11 @@ function Main(){
         return merged;
       }));
       setShoes(safeShoes);setRuns(runsWithRoute);
-      // __KEEGO_DEV_SEED__ (임시 — 디자인 비교 검증용, 커밋 전 제거. 운영 DB 무관 로컬 목)
-      if(process.env.NODE_ENV!=='test' && (globalThis as any).__KEEGO_DEV_SEED__!==false){
+      // 개발 전용 데모 시드(디자인/에뮬 검증용 로컬 목). 운영 안전 3중 게이트:
+      //   ① __DEV__  — 릴리스 빌드에선 false → 실사용자에게 절대 노출 안 됨.
+      //   ② NODE_ENV!=='test' — 테스트에선 주입한 신발을 보존(시드가 덮지 않음).
+      //   ③ safeShoes.length===0 — 백엔드가 빈 경우에만 시드(실데이터 안 덮음).
+      if(__DEV__ && process.env.NODE_ENV!=='test' && safeShoes.length===0 && (globalThis as any).__KEEGO_DEV_SEED__!==false){
         const today=new Date();const iso=(d:number)=>{const x=new Date(today);x.setDate(x.getDate()-d);return x.toISOString().slice(0,10);};
         const seedShoes:BackendShoe[]=[
           {id:'seed1',name:'ASICS Novablast 5',max_km:650,total_km:412.8,purchase_date:'2026-02-10'},
