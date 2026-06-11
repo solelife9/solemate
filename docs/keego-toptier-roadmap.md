@@ -12,11 +12,7 @@
 
 - ☑ **1-1 마모 예측 투명성** — 상세 교체예상 카드에 '왜 N주' 근거 한 줄 + 정확도(높음/낮음)
   칩. lib/wearView.forecastBasisKo/forecastConfidenceKo. 에뮬 검증 완료.
-- ☐ **1-2 cost-per-km** — 신발 km당 비용·총비용. **보류(결정 필요)**: 신발은 백엔드
-  영속(`/api/shoes` PATCH)인데 `price` 컬럼이 없다. 두 길 — (A) 백엔드에 price 컬럼
-  추가(서버 작업, 동기화됨), (B) 로컬 전용(AsyncStorage `shoe_price_<id>`, lib/settings
-  패턴, 기기간 동기화 안 됨). v1은 (B)가 빠름. 추가 시: AddShoeScreen 가격 입력 +
-  상세에 '총 OO원 · km당 OO원' + lib/costPerKm 순수계산 + 테스트. 미검증 야간작업 리스크라 보류.
+- ✖ **1-2 cost-per-km** — **제외(사용자 결정, 2026-06-12: "필요 없을 것 같다")**. 진행 안 함.
 - ☑ **1-3 개인기록(PR)** — 기록 탭에 최장거리·최고페이스·최장시간·최장스트릭 2x2 카드.
   lib/records.personalRecords(전체 런 순수 파생). 에뮬 검증 완료.
 - ☐ **1-4 신발 로테이션 인사이트 확장** — 휴식 분산/추천 근거 문구 강화(rotation 재사용).
@@ -61,5 +57,5 @@
 - **maps 네이티브 재빌드 권장**: 위 가드로 앱은 안 죽지만, 실제 라이브 지도를 보려면
   react-native-maps 가 네이티브 바이너리에 링크돼야 함(디버그 재빌드: `npx react-native
   run-android` 또는 프로젝트 build:android). 가드 덕분에 미링크여도 지도만 빈 영역.
-- 다음 추천 순서: 1-4(로테이션 문구, 순수) → 1-2(cost-per-km, (B) 로컬 전용으로) →
-  Phase 2-1 Crashlytics(네이티브, Firebase 이미 사용 → 가장 쉬운 관측성 첫걸음).
+- 다음 추천 순서: 1-4(로테이션 문구, 순수) → Phase 2-1 Crashlytics(네이티브, Firebase
+  이미 사용 → 가장 쉬운 관측성 첫걸음). ※ 1-2 cost-per-km 는 제외(사용자 결정).
