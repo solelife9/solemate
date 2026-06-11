@@ -122,14 +122,15 @@ test('락커 카드 play 버튼 → onStartRun(신발 id) 호출', () => {
   expect(onStartRun).toHaveBeenCalledWith('s1');
 });
 
-test("상세 CTA '이 신발로 달리기' → onStartRun(신발 id) 호출", () => {
+test('신발 상세 진입 — 런 시작 CTA 없음(목업 09: 런 시작은 목록 ▶가 담당)', () => {
   const onStartRun = jest.fn();
   const root = render(<ShoesScreen shoes={SHOES} runs={RUNS} onStartRun={onStartRun} />).root;
 
   tap(pressBy(root, 'Clifton 9')); // 상세 진입
-  tap(pressBy(root, '이 신발로 달리기'));
-
-  expect(onStartRun).toHaveBeenCalledWith('s2');
+  const txt = textOf(root);
+  expect(txt).toContain('Clifton 9'); // 상세 열림
+  // 목업 09 처럼 상세에 '이 신발로 달리기' CTA 를 두지 않는다(위 '락커 카드 play' 테스트가 시작 동선 검증).
+  expect(txt).not.toContain('이 신발로 달리기');
 });
 
 // ── 4) retired shoe: '보관됨' Pill + run CTA hidden, records preserved ─────────

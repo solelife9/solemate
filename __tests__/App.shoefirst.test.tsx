@@ -101,22 +101,16 @@ const RUNS: ApiRun[] = [
   {id: 'r2', shoe_id: 's2', km: 5, run_date: '2026-05-01', duration: 1800},
 ];
 
-test("상세 CTA '이 신발로 달리기' → 해당 신발로 목표 설정 화면 진입", async () => {
+test('신발 상세 진입 — 모델 표시, 런 시작 CTA는 상세에서 제거됨(목업 09 정합)', async () => {
   const {root} = await mount(SHOES, RUNS);
   await tap(pressBy(root, '신발')); // 신발 탭
   await tap(pressBy(root, 'Pegasus')); // Pegasus 상세
 
-  // 상세에 기본 CTA가 보인다
-  expect(textOf(root)).toContain('이 신발로 달리기');
-
-  // CTA 진입 → 목표 설정(RunStart) 화면. 다른 신발(Clifton)이 아니라 Pegasus로 진입.
-  await tap(pressBy(root, '이 신발로 달리기'));
   const txt = textOf(root);
-  // 브랜드는 단일 소스(BRANDS)에서 정규화되어 대문자로 표기된다(예: NIKE).
-  expect(txt).toContain('Pegasus'); // RunGoalScreen 신발 라벨
-  expect(txt).not.toContain('Clifton');
-  expect(txt).toContain('러닝 목표'); // RunGoalScreen 헤더
-  expect(txt).toContain('러닝 시작'); // RunGoalScreen 시작 CTA
+  expect(txt).toContain('Pegasus'); // 상세 진입(모델 표시)
+  // 목업 09 처럼 상세에는 '이 신발로 달리기' CTA 를 두지 않는다 — 런 시작은 홈 카드/신발
+  // 목록의 ▶ 어포던스로 한다(아래 '락커 카드 play' 테스트가 그 동선을 검증).
+  expect(txt).not.toContain('이 신발로 달리기');
 });
 
 test('락커 카드 play 어포던스 → 상세 없이 해당 신발로 목표 설정 화면 진입', async () => {
