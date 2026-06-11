@@ -9,7 +9,7 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {
   BG, CARD, CARD_DIM, CARD_HI, HERO_BG, ACCENT, DANGER, WARN, GOOD, T1, T2, T3, T4, SEP, FONT, DISPLAY, withAlpha, Shoe, Run, SHOES,
 } from './theme';
-import { TabBar, TierBadge, Pill, InjuryBanner, SectionTitle, conditionTone } from './primitives';
+import { TabBar, TierBadge, Pill, InjuryBanner, SectionTitle } from './primitives';
 import { FuelGauge } from './FuelGauge';
 import FirstShoeScreen from './FirstShoeScreen.rn';
 import { Unit, displayNum, displayToKm } from './lib/units';
@@ -105,8 +105,6 @@ function ShoeDetail({
   // 마모"와 "이 페이스면 약 N주 후 교체"를 파생한다(lib/wearView → wearModel/forecast 재사용).
   // 원본 shoe/run 은 읽기만 한다(A6-1). 모든 엣지에서 NaN/음수 없음(A6-2).
   const wearView = buildWearView(shoe, shoeRuns, { weightKg, surfaceOf });
-  const effWearKm = Math.round(wearView.effectiveWearKm);
-  const targetKm = Math.round(wearView.targetKm);
   const forecastLine = forecastLineKo(wearView.forecast);
   // 부상예방 경고(주의/위험) — shoeHealth 와 같은 마모 분모(used/max)로 판정한다.
   // 안전 등급/보관 신발은 경고를 노출하지 않는다(보관됨 상태와의 모순 방지).
@@ -226,7 +224,6 @@ function ShoeDetail({
             fillPct={shoe.max > 0 ? Math.min(1, shoe.used / shoe.max) : 0}
             replacePct={SHOE_REPLACE_PCT / 100}
             condition={shoe.condition}
-            wearLabel={`실효 마모 ${wearView.targetKm > 0 ? Math.round((wearView.effectiveWearKm / wearView.targetKm) * 100) : 0}%`}
           />
           {!retired && shoe.id && onSetMaxKm && (
             <Pressable onPress={() => setEditingMax((e) => !e)} hitSlop={8} accessibilityRole="button" accessibilityLabel="신발 수명 수정" style={s.maxEditRow}>
@@ -236,21 +233,13 @@ function ShoeDetail({
           )}
         </View>
 
-        {/* 실효 마모 + 교체 예측(차별점): 단순 km 가 아닌 체중·노면·페이스·세월 보정 "진짜
-            마모"와 keep-going 보이스 예측 라인. 추정 톤('약'·'예상')으로 단정을 피한다(A6-3).
-            보관 신발은 교체 동선에서 제외한다(기록은 그대로 유지). */}
-        {!retired && (
+        {/* 교체 예상(차별점의 사용자 친화 결과) — 체중·노면·페이스·세월 보정 예측을 'N주 후
+            교체 예상' 한 줄로(목업 09 교체예상 카드). '실효 마모' 용어는 일반 사용자가 헷갈려
+            제거. 추정 톤('약'·'예상'). 보관 신발은 제외, 예측 없으면 카드 자체를 숨긴다. */}
+        {!retired && !!forecastLine && (
           <View style={[s.card, s.wearCard]}>
-            <View style={s.row}>
-              <Ionicons name="pulse" size={15} color={T3} />
-              <Text style={s.wearLabel}>실효 마모</Text>
-            </View>
-            <View style={[s.baselineRow, { marginTop: 6 }]}>
-              <Text style={s.wearValue}>{effWearKm}</Text>
-              <Text style={s.wearUnit}>km</Text>
-              <Text style={s.wearTarget}> / 권장 {targetKm}km</Text>
-            </View>
-            {!!forecastLine && <Text style={s.wearForecast}>{forecastLine}</Text>}
+            <Text style={s.wearLabel}>교체 예상</Text>
+            <Text style={s.replaceForecastText}>{forecastLine}</Text>
           </View>
         )}
 
@@ -623,6 +612,7 @@ const s = StyleSheet.create({
   wearUnit: { color: T2, fontFamily: FONT, fontSize: 14, marginLeft: 4, marginBottom: 4 },
   wearTarget: { color: T3, fontFamily: FONT, fontSize: 13, marginBottom: 4 },
   wearForecast: { color: T3, fontFamily: FONT, fontSize: 12.5, fontWeight: '500', letterSpacing: -0.1, lineHeight: 18, marginTop: 8 },
+  replaceForecastText: { color: T2, fontFamily: FONT, fontSize: 15, fontWeight: '500', letterSpacing: -0.2, lineHeight: 22, marginTop: 8 },
   maxEditRow: { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-end', marginTop: 12 },
   maxEditTxt: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500' },
 

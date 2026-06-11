@@ -66,9 +66,9 @@ describe('ShoesScreen 상세 — 실효 마모 + 교체 예측', () => {
     expect(view.forecast.reason).toBe('ok');
 
     const txt = openDetail(shoe, runs);
-    expect(txt).toContain('실효 마모');
-    expect(txt).toContain(`${Math.round(view.effectiveWearKm)}`);
-    expect(txt).toContain(`권장 ${Math.round(view.targetKm)}km`);
+    // '실효 마모' 용어/숫자 표시는 제거(일반 사용자 혼동) — 결과(교체 예상)만 노출.
+    expect(txt).not.toContain('실효 마모');
+    expect(txt).toContain('교체 예상');
     // 추정 톤(A6-3): 단정 회피 — '약'·'예상' 포함, "정확히" 류 단정 표현 없음.
     expect(txt).toContain('약');
     expect(txt).toContain('주 후 교체 권장');
@@ -103,21 +103,22 @@ describe('ShoesScreen 상세 — 실효 마모 + 교체 예측', () => {
     expect(txt).toContain('최근 기록이 없어 예측할 수 없어요');
   });
 
-  test('체중이 다르면 실효 마모 표시 숫자가 달라진다(weightFactor 반영)', () => {
+  test('체중이 교체 예측 보정에 반영된다(weightFactor — 무거울수록 실효 마모 큼)', () => {
     const shoe: Shoe = {id: 'a', brand: 'Nike', model: 'Pegasus 41', used: 100, max: 700, condition: '양호'};
     const runs: Run[] = [
       mkRun({id: 'r1', dist: 30, durationS: 9000, runDate: daysAgo(3)}),
       mkRun({id: 'r2', dist: 30, durationS: 9000, runDate: daysAgo(7)}),
     ];
-    const eff60 = Math.round(buildWearView(shoe, runs, {weightKg: 60}).effectiveWearKm);
-    const eff90 = Math.round(buildWearView(shoe, runs, {weightKg: 90}).effectiveWearKm);
-    expect(eff90).toBeGreaterThan(eff60); // 무거운 러너 → 실효 마모 큼
+    // 모델(wearModel/forecast)이 체중을 반영한다 — 무거운 러너의 실효 마모가 더 크고
+    // 교체까지 남은 주가 더 짧다(예측 보정). 표시 숫자가 아니라 모델 결과로 검증.
+    const v60 = buildWearView(shoe, runs, {weightKg: 60});
+    const v90 = buildWearView(shoe, runs, {weightKg: 90});
+    expect(v90.effectiveWearKm).toBeGreaterThan(v60.effectiveWearKm);
+    expect(v90.forecast.weeksRemaining).toBeLessThanOrEqual(v60.forecast.weeksRemaining);
 
+    // 두 체중 모두 상세에 '교체 예상' 예측이 렌더된다('실효 마모' 용어는 미노출).
     const txt60 = openDetail(shoe, runs, 60);
-    const txt90 = openDetail(shoe, runs, 90);
-    expect(txt60).toContain(`${eff60}`);
-    expect(txt90).toContain(`${eff90}`);
-    // 두 화면의 실효 마모 표시가 실제로 다른 값을 보여준다.
-    expect(eff60).not.toBe(eff90);
+    expect(txt60).toContain('교체 예상');
+    expect(txt60).not.toContain('실효 마모');
   });
 });

@@ -17,17 +17,14 @@ type Props = {
   fillPct: number;              // 0~1 — 마커/채움 위치(실효 마모 권장)
   replacePct?: number;          // 0~1 — 교체 임계 경계(기본 0.9). 목업 마커 예시는 0.75 위치
   condition: '양호' | '주의' | '교체';
-  wearLabel?: string;           // 예 "실효 마모 24%"
   replaceLabel?: string;        // 예 "교체 500km"
   editSlot?: React.ReactNode;   // '남은 수명' 우측 편집 어포던스(선택)
 };
 
 const condColor = (c: string) => (c === '교체' ? DANGER : c === '주의' ? WARN : GOOD);
-const condText  = (c: string) => (c === '교체' ? '교체 권장' : c === '주의' ? '주의' : '최상의 컨디션');
 
-export function FuelGauge({remainLabel, unit, fillPct, replacePct = 0.9, condition, wearLabel, replaceLabel, editSlot}: Props) {
+export function FuelGauge({remainLabel, unit, fillPct, condition, replaceLabel, editSlot}: Props) {
   const p = Math.max(0, Math.min(1, fillPct));
-  const zone = Math.max(0, Math.min(1, replacePct));
   const cc = condColor(condition);
   return (
     <View style={g.wrap}>
@@ -42,26 +39,16 @@ export function FuelGauge({remainLabel, unit, fillPct, replacePct = 0.9, conditi
             <Text style={g.remU}>{unit}</Text>
           </View>
         </View>
-        <View style={g.cond}>
-          <View style={[g.dot, {backgroundColor: cc, shadowColor: cc, shadowOpacity: 0.5, shadowRadius: 5}]} />
-          <Text style={g.condTxt}>{condText(condition)}</Text>
-        </View>
       </View>
 
-      {/* 트랙: 좌(녹) → 교체임계(주황) → 끝(빨강). 목업 그라데이션을 스텝으로 근사 */}
+      {/* 수명 바 — 단색 중립 트랙 + 채움(양호=흰색·주의=주황·교체=빨강). 색 구간/마커 없음(사진 정합). */}
       <View style={g.track}>
-        <View style={[g.seg, {flex: 0.6, backgroundColor: withAlpha(GOOD, 0.16)}]} />
-        <View style={[g.seg, {flex: 0.15, backgroundColor: withAlpha(WARN, 0.18)}]} />
-        <View style={[g.seg, {flex: 0.25, backgroundColor: withAlpha(DANGER, 0.22)}]} />
         <View style={[g.fill, {width: `${p * 100}%`, backgroundColor: condition === '양호' ? withAlpha(T1, 0.85) : cc}]} />
-        <View style={[g.zone, {left: `${zone * 100}%`}]} />
-        <View style={[g.marker, {left: `${p * 100}%`}]} />
       </View>
 
       <View style={g.scale}>
         <Text style={g.scaleTxt}>0{unit}</Text>
-        {!!wearLabel && <Text style={g.scaleTxt}>{wearLabel}</Text>}
-        <Text style={[g.scaleTxt, {color: DANGER}]}>{replaceLabel ?? '교체'}</Text>
+        <Text style={g.scaleTxt}>{replaceLabel ?? '교체'}</Text>
       </View>
     </View>
   );

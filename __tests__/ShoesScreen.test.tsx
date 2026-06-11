@@ -160,16 +160,16 @@ test('사용 중인(미보관·featured) 신발 카드에 사용 중 상태 Pill
 });
 
 // ── 6) detail durability fuel gauge renders remaining life + effective wear ────
-test('상세 내구도 연료게이지는 남은 수명·실효 마모·컨디션을 렌더한다', () => {
-  // used 100 / max 500 → remain 400km. Ring 대신 FuelGauge 가 남은수명·실효마모·컨디션을 표시.
+test('상세 내구도 게이지는 남은 수명·컨디션을 렌더하고, 실효 마모 용어는 미노출', () => {
+  // used 100 / max 500 → remain 400km. FuelGauge 가 남은 수명 바를 표시. 상태는 상단 칩.
   const root = render(<ShoesScreen shoes={SHOES} runs={RUNS} />).root;
   tap(pressBy(root, 'Pegasus 41'));
 
   const txt = textOf(root);
   expect(txt).toContain('남은 수명');
   expect(txt).toContain('400'); // 남은 수명 값(km)
-  expect(txt).toContain('실효 마모'); // 연료게이지 마모 라벨
-  expect(txt).toContain('최상의 컨디션'); // 양호 컨디션 표기(FuelGauge condText)
+  expect(txt).toContain('최상의 컨디션'); // 양호 컨디션(상단 상태 칩)
+  expect(txt).not.toContain('실효 마모'); // 혼동되는 용어는 제거(교체 예상으로 대체)
 });
 
 // ── 7) regression: retired+교체 신발 상세엔 keep-going 배너가 뜨지 않는다 ───────
