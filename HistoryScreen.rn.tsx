@@ -732,8 +732,8 @@ const s = StyleSheet.create({
   detailDate: { color: T3, fontFamily: FONT, fontSize: 13 },
   detailDist: { color: T1, fontFamily: DISPLAY, fontSize: 56, letterSpacing: 0.5 },
   detailDistU: { color: T2, fontFamily: FONT, fontSize: 20, marginLeft: 6, marginBottom: 8 },
-  detailBrand: { color: T3, fontFamily: FONT, fontSize: 10.5, fontWeight: '500', letterSpacing: 1.4 },
-  detailModel: { color: T1, fontFamily: FONT, fontSize: 18, fontWeight: '600', letterSpacing: -0.2, marginTop: 3 },
+  detailBrand: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '600', letterSpacing: 1.4 },
+  detailModel: { color: T1, fontFamily: FONT, fontSize: 24, fontWeight: '700', letterSpacing: -0.4, marginTop: 4 },
   // 메트릭 한 카드(디자인 11) — 2x3 그리드. 값(위)·라벨(아래) 좌측 정렬, 칸마다 별도
   // 박스 없이 한 카드 안에 균등 1/3 폭으로 배치(이전 칸별 카드 → 한 카드).
   statGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingVertical: 16, paddingHorizontal: 20, rowGap: 18, marginTop: 16 },
