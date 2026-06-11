@@ -643,8 +643,10 @@ const s = StyleSheet.create({
   runCardBrand: { color: T3, fontFamily: DISPLAY, fontSize: 11, fontWeight: '500', letterSpacing: 1.2 },
   runCardModel: { color: T1, fontFamily: DISPLAY, fontSize: 16, fontWeight: '700', letterSpacing: -0.2, marginTop: 2 },
   runCardDate: { color: T3, fontFamily: FONT, fontSize: 12.5, fontWeight: '500', flexShrink: 0 },
-  runCardMetrics: { flexDirection: 'row', gap: 24 },
-  runCardMetric: {},
+  // 메트릭 3칸을 균등 1/3 폭으로 고정 — 거리 숫자 폭이 달라도 평균페이스·시간 열 위치가
+  // 흔들리지 않아 카드끼리 세로로 정렬된다(사용자 요청: 자리 고정).
+  runCardMetrics: { flexDirection: 'row' },
+  runCardMetric: { flex: 1 },
 
   header: { paddingTop: 8, paddingHorizontal: 22, paddingBottom: 6 },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
