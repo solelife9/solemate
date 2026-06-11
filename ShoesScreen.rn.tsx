@@ -683,9 +683,10 @@ const s = StyleSheet.create({
   shopBtn: { borderRadius: 999, borderWidth: 1, borderColor: withAlpha(ACCENT, 0.4), backgroundColor: withAlpha(ACCENT, 0.1), paddingHorizontal: 11, paddingVertical: 6 },
   shopBtnTxt: { color: ACCENT, fontFamily: FONT, fontSize: 11.5, fontWeight: '600' },
   nextDisclosure: { color: T3, fontFamily: FONT, fontSize: 10.5, lineHeight: 15, marginTop: 12, opacity: 0.85 },
-  // stats 2x2 — 사진(디자인 09)처럼 왼쪽 정렬(가운데정렬 X). 카드 안쪽 여백으로 들여쓴다.
-  statGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingVertical: 16, paddingHorizontal: 20 },
-  statGridCell: { width: '50%', paddingVertical: 14 },
+  // stats 2x2 — 사진(디자인 09)처럼 왼쪽 정렬. 글씨 비율에 맞게 패딩을 조여 카드가
+  // 과하게 커지지 않게 한다(사용자 요청).
+  statGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingVertical: 6, paddingHorizontal: 18 },
+  statGridCell: { width: '50%', paddingVertical: 10 },
   statValue: { color: T1, fontFamily: DISPLAY, fontSize: 22, letterSpacing: 0.3 },
   statUnit: { color: T3, fontFamily: FONT, fontSize: 12 },
   statLabel: { color: T3, fontFamily: FONT, fontSize: 11, marginTop: 4 },
