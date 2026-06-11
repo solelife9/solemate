@@ -204,16 +204,19 @@ function ShoeDetail({
           </View>
         ) : (
           <View style={{ paddingHorizontal: 4 }}>
-            {/* 상태 칩(목업 09) — 양호: 회색 칩 + 흰 글씨 + 점. 주의/교체: tier 배지(testID 유지). */}
-            <View style={[s.row, { marginBottom: 14 }]}>
-              {shoe.condition === '양호'
-                ? <View style={s.statusPill}><View style={s.statusDot} /><Text style={s.statusPillText}>최상의 컨디션</Text></View>
-                : <TierBadge condition={shoe.condition} size="md" />}
-              {retired && <Pill tone="dim" label="보관됨" />}
-            </View>
-            <View style={s.row}>
-              <Text style={s.dBrand}>{shoe.brand}</Text>
-              {!!detailType && <View style={s.dTypeChip}><Text style={s.dTypeChipText}>{detailType}</Text></View>}
+            {/* 헤더 한 줄(사용자 요청): 좌 = 브랜드 + 종류 칩(데일리), 우 = 컨디션 상태.
+                양호: 회색 칩 + 점. 주의/교체: tier 배지(testID 유지). 보관됨은 우측에 함께. */}
+            <View style={s.dHeaderRow}>
+              <View style={[s.row, { flexShrink: 1, minWidth: 0 }]}>
+                <Text style={s.dBrand}>{shoe.brand}</Text>
+                {!!detailType && <View style={s.dTypeChip}><Text style={s.dTypeChipText}>{detailType}</Text></View>}
+              </View>
+              <View style={s.row}>
+                {shoe.condition === '양호'
+                  ? <View style={s.statusPill}><View style={s.statusDot} /><Text style={s.statusPillText}>최상의 컨디션</Text></View>
+                  : <TierBadge condition={shoe.condition} size="md" />}
+                {retired && <Pill tone="dim" label="보관됨" />}
+              </View>
             </View>
             <Text style={s.dModel}>{shoe.model}</Text>
             {/* 용도 문장(핸드오프처럼 자연어) + 추천 용도 칩(디자인 09 정합). */}
@@ -619,7 +622,9 @@ const s = StyleSheet.create({
   dTags: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 12 },
   dTag: { backgroundColor: CARD_HI, borderRadius: 999, paddingHorizontal: 11, paddingVertical: 5 },
   dTagText: { color: T2, fontFamily: FONT, fontSize: 12, fontWeight: '600' },
-  dTypeChip: { alignSelf: 'flex-start', backgroundColor: withAlpha(ACCENT, 0.14), borderRadius: 999, paddingHorizontal: 11, paddingVertical: 5, marginTop: 12 },
+  // 헤더 한 줄: 좌(브랜드+종류칩) ↔ 우(컨디션). 수직 가운데 정렬.
+  dHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 10 },
+  dTypeChip: { backgroundColor: withAlpha(ACCENT, 0.14), borderRadius: 999, paddingHorizontal: 11, paddingVertical: 5 },
   dTypeChipText: { color: ACCENT, fontFamily: FONT, fontSize: 12, fontWeight: '700', letterSpacing: 0.1 },
   dPurposeLabel: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600', marginTop: 16 },
   runCta: { height: 46, borderRadius: 14, backgroundColor: 'transparent', borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.14), flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
@@ -678,8 +683,9 @@ const s = StyleSheet.create({
   shopBtn: { borderRadius: 999, borderWidth: 1, borderColor: withAlpha(ACCENT, 0.4), backgroundColor: withAlpha(ACCENT, 0.1), paddingHorizontal: 11, paddingVertical: 6 },
   shopBtnTxt: { color: ACCENT, fontFamily: FONT, fontSize: 11.5, fontWeight: '600' },
   nextDisclosure: { color: T3, fontFamily: FONT, fontSize: 10.5, lineHeight: 15, marginTop: 12, opacity: 0.85 },
-  statGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingVertical: 8 },
-  statGridCell: { width: '50%', alignItems: 'center', paddingVertical: 14 },
+  // stats 2x2 — 사진(디자인 09)처럼 왼쪽 정렬(가운데정렬 X). 카드 안쪽 여백으로 들여쓴다.
+  statGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingVertical: 16, paddingHorizontal: 20 },
+  statGridCell: { width: '50%', paddingVertical: 14 },
   statValue: { color: T1, fontFamily: DISPLAY, fontSize: 22, letterSpacing: 0.3 },
   statUnit: { color: T3, fontFamily: FONT, fontSize: 12 },
   statLabel: { color: T3, fontFamily: FONT, fontSize: 11, marginTop: 4 },

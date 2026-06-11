@@ -588,7 +588,8 @@ const s = StyleSheet.create({
   swipeHint: { textAlign: 'center', color: T3, fontFamily: FONT, fontSize: 12, marginTop: 10 },
 
   // 주간 목표 — 목업 .week(상단 구분선 + 가로 통계 + 막대바)
-  weekWrap: { marginHorizontal: SPACE.xl, marginTop: SPACE.lg, paddingTop: 20, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.07) },
+  // 주간 목표 카드(사용자 요청) — 현재 상태 InsightCard 와 동일한 카드 분위기로 통일.
+  weekWrap: { marginHorizontal: SPACE.xl, marginTop: SPACE.lg, backgroundColor: CARD_DIM, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: withAlpha(T1, 0.07), padding: SPACE.lg },
   weekStats: { flexDirection: 'row', alignItems: 'flex-start' },
   weekStat: { flex: 1 },
   weekStatLead: {},
