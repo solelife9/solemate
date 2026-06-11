@@ -18,7 +18,26 @@ import { View, Text, Pressable, StyleSheet, Animated, StatusBar } from 'react-na
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Svg, { Path, Circle } from 'react-native-svg';
-import MapView, { Polyline, Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+
+// react-native-maps 는 네이티브 모듈(RNMapsAirModule)을 요구한다. maps 가 아직 네이티브
+// 바이너리에 링크되지 않은 빌드(부분 통합 디버그 등)에서는 top-level import 만으로
+// getEnforcing 이 throw 해 앱 전체가 죽는다. 옵셔널 require 로 감싸 그 경우 지도만
+// 플레이스홀더로 폴백하고 나머지 화면·기능은 정상 동작하게 한다(네이티브 재빌드 후 자동 복구).
+let MapView: any = null;
+let Polyline: any = null;
+let Marker: any = null;
+let PROVIDER_GOOGLE: any = undefined;
+try {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const maps = require('react-native-maps');
+  MapView = maps.default ?? maps.MapView;
+  Polyline = maps.Polyline;
+  Marker = maps.Marker;
+  PROVIDER_GOOGLE = maps.PROVIDER_GOOGLE;
+} catch {
+  // 네이티브 미링크 — 지도는 플레이스홀더로 폴백.
+}
+const MAPS_AVAILABLE = !!MapView;
 
 const DARK_MAP_STYLE = [
   { elementType: 'geometry', stylers: [{ color: '#0f0f10' }] },
@@ -218,8 +237,9 @@ export default function RunActiveScreen({
         ))}
       </View>
 
-      {/* 라이브 지도: 좌표 2개 이상일 때 표시 */}
-      {liveCoords && liveCoords.length >= 2 ? (
+      {/* 라이브 지도: 좌표 2개 이상 + maps 네이티브 사용 가능일 때 표시.
+          maps 미링크 빌드에서는 좌표가 있어도 어두운 플레이스홀더로 폴백(앱 안 죽음). */}
+      {liveCoords && liveCoords.length >= 2 && MAPS_AVAILABLE ? (
         <View style={r.mapWrap}>
           <MapView
             provider={PROVIDER_GOOGLE}
