@@ -20,8 +20,26 @@ describe('personalRecords', () => {
       longestKm: 0,
       fastestPaceSec: null,
       longestDurationS: 0,
+      longestStreakDays: 0,
       count: 0,
     });
+  });
+
+  test('최장 스트릭 = 연속 달력일 최댓값(중복일 제거)', () => {
+    const pr = personalRecords([
+      mk({id: 'a', runDate: '2026-06-01'}),
+      mk({id: 'b', runDate: '2026-06-02'}),
+      mk({id: 'c', runDate: '2026-06-02'}), // 같은 날 중복 — 스트릭에 영향 없음
+      mk({id: 'd', runDate: '2026-06-03'}), // 1~3일 연속 3일
+      mk({id: 'e', runDate: '2026-06-09'}), // 끊김
+    ]);
+    expect(pr.longestStreakDays).toBe(3);
+  });
+
+  test('runDate 결측이면 스트릭 0(거리/시간 기록은 그대로)', () => {
+    const pr = personalRecords([mk({dist: 9, durationS: 2700, runDate: undefined})]);
+    expect(pr.longestStreakDays).toBe(0);
+    expect(pr.longestKm).toBe(9);
   });
 
   test('최장 거리·최장 시간은 단일 런 최댓값', () => {

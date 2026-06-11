@@ -7,6 +7,7 @@
 // 모든 엣지(빈 배열·결측·0·비유한)에서 NaN/Infinity 없이 graceful 한 값을 보장한다.
 
 import {Run} from '../theme';
+import {maxDayStreak} from './stats';
 
 export type PersonalRecords = {
   /** 최장 단일 런 거리(km). 기록 없으면 0. */
@@ -15,6 +16,8 @@ export type PersonalRecords = {
   fastestPaceSec: number | null;
   /** 최장 단일 런 시간(초). 기록 없으면 0. */
   longestDurationS: number;
+  /** 최장 연속 러닝 일수(스트릭) — Keego('keep going') 핵심 동기지표. 기록 없으면 0. */
+  longestStreakDays: number;
   /** PR 계산에 쓰인 유효 런 수(0이면 화면에서 카드 숨김). */
   count: number;
 };
@@ -50,5 +53,11 @@ export function personalRecords(runs: Run[]): PersonalRecords {
     }
   }
 
-  return {longestKm, fastestPaceSec, longestDurationS, count};
+  // 최장 연속 러닝일 — 같은 달력일 중복 제거 후 연속 일수의 최댓값(stats.maxDayStreak 재사용).
+  const dates = list
+    .map((r) => (r && typeof r.runDate === 'string' ? r.runDate : ''))
+    .filter((d): d is string => !!d);
+  const longestStreakDays = dates.length ? maxDayStreak(dates) : 0;
+
+  return {longestKm, fastestPaceSec, longestDurationS, longestStreakDays, count};
 }

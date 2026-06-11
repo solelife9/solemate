@@ -563,11 +563,11 @@ export default function HistoryScreen({
           </View>
         )}
 
-        {/* 개인 기록(PR, 1-3) — 올타임 최장거리·최고페이스·최장시간. 동기부여. */}
+        {/* 개인 기록(PR, 1-3) — 올타임 최장거리·최고페이스·최장시간·최장 스트릭. 동기부여. */}
         {pr.count > 0 && (
           <View style={[s.card, { padding: 20 }]}>
             <Text style={s.cardTitle}>개인 기록</Text>
-            <View style={s.prRow}>
+            <View style={s.prGrid}>
               <View style={s.prCell}>
                 <View style={s.baselineRow}>
                   <Text style={s.prV}>{displayNum(pr.longestKm, unit, 1)}</Text>
@@ -582,6 +582,13 @@ export default function HistoryScreen({
               <View style={s.prCell}>
                 <Text style={s.prV}>{pr.longestDurationS > 0 ? durationLabel(pr.longestDurationS) : '--'}</Text>
                 <Text style={s.prL}>최장 시간</Text>
+              </View>
+              <View style={s.prCell}>
+                <View style={s.baselineRow}>
+                  <Text style={s.prV}>{pr.longestStreakDays}</Text>
+                  <Text style={s.prU}>일</Text>
+                </View>
+                <Text style={s.prL}>최장 스트릭</Text>
               </View>
             </View>
           </View>
@@ -624,9 +631,9 @@ const s = StyleSheet.create({
   sumMetricV: { color: T1, fontFamily: DISPLAY, fontSize: 19, fontWeight: '700', letterSpacing: -0.2 },
   sumMetricU: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '600' },
   sumMetricL: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500', marginTop: 4 },
-  // 개인 기록(PR, 1-3) — 3칸(최장거리/최고페이스/최장시간). 요약 메트릭과 같은 톤.
-  prRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 16 },
-  prCell: { flex: 1 },
+  // 개인 기록(PR, 1-3) — 2x2 그리드(최장거리/최고페이스/최장시간/최장스트릭).
+  prGrid: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 16, rowGap: 18 },
+  prCell: { width: '50%' },
   prV: { color: T1, fontFamily: DISPLAY, fontSize: 21, fontWeight: '800', letterSpacing: -0.3 },
   prU: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '600', marginLeft: 3 },
   prL: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500', marginTop: 5 },
