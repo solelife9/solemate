@@ -308,7 +308,10 @@ const INJURY_ACHIEVEMENTS: AchievementDef[] = [
     value: earlyReplacementCount,
   }),
   // Clean Rotation: 평가 가능한 활성 신발 ≥2 이고 **전부** 건강(초과 없음).
-  // metricAch 로는 "전부 건강" 조건을 못 담으므로 별도 정의(진행은 건강한 활성 신발 수).
+  // metricAch 로는 "전부 건강" 조건을 못 담으므로 별도 정의. 진행바는 건강한/전체(healthy/total)
+  // 로 읽혀, 평가 신발 중 하나라도 overdue 면 절대 가득 차지 않는다(target=assessed). 따라서
+  // current===target ⟺ unlocked 가 **정의상** 성립한다(metricAch 와 동일 불변 — 진행바·언락 모순 불가).
+  // target 은 최소 2(로테이션 성립 조건) 로 깔아 신발<2 일 때도 가득 참=언락 모순을 막는다.
   {
     key: 'ach_clean_rotation',
     name: 'Clean Rotation',
@@ -316,8 +319,8 @@ const INJURY_ACHIEVEMENTS: AchievementDef[] = [
     rarity: 'silver',
     points: pointsForRarity('silver'),
     progress: (ctx): AchievementProgress => ({
-      current: Math.min(healthyActiveCount(ctx), 2),
-      target: 2,
+      current: healthyActiveCount(ctx),
+      target: Math.max(assessedActiveCount(ctx), 2),
     }),
     unlocked: ctx => {
       const assessed = assessedActiveCount(ctx);

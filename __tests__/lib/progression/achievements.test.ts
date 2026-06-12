@@ -211,6 +211,40 @@ describe('anti-scenario 1: 미충족 무언락', () => {
     expect(def.unlocked(clean)).toBe(true);
   });
 
+  // 회귀(code_critic): 진행바·언락 모순 금지(spec 시나리오5 — target 도달 ⟺ 언락).
+  // 혼합(건강2+초과1) 컨텍스트에서 바가 가득 차면(2/2) 언락은 false 인 모순이 났었다.
+  // 이제 바는 healthy/total 로 읽혀 overdue 가 하나라도 있으면 절대 가득 차지 않는다.
+  test('Clean Rotation: 혼합(건강/초과)이면 바가 가득 차지 않고 미언락', () => {
+    const def = achievementDef('ach_clean_rotation')!;
+    const mixed = emptyCtx({
+      perShoe: perShoeMap(
+        shoe({id: 'a', km: 100, maxKm: 600}), // ratio≈0.17 건강
+        shoe({id: 'b', km: 200, maxKm: 600}), // ratio≈0.33 건강
+        shoe({id: 'c', km: 590, maxKm: 600}), // ratio≈0.98 ≥0.9 초과
+      ),
+    });
+    const p = progressOf('ach_clean_rotation', mixed);
+    expect(p.current).toBeLessThan(p.target); // 바가 가득 차지 않음(2/3)
+    expect(def.unlocked(mixed)).toBe(false);
+    // 불변: current===target ⟺ unlocked.
+    expect(p.current === p.target).toBe(def.unlocked(mixed));
+  });
+
+  test('Clean Rotation: 전부 건강이면 바가 가득 차고(current===target) 언락', () => {
+    const def = achievementDef('ach_clean_rotation')!;
+    const allHealthy = emptyCtx({
+      perShoe: perShoeMap(
+        shoe({id: 'a', km: 100, maxKm: 600}),
+        shoe({id: 'b', km: 200, maxKm: 600}),
+        shoe({id: 'c', km: 300, maxKm: 600}),
+      ),
+    });
+    const p = progressOf('ach_clean_rotation', allHealthy);
+    expect(p.current).toBe(p.target); // 3/3 가득 참
+    expect(def.unlocked(allHealthy)).toBe(true);
+    expect(p.current === p.target).toBe(def.unlocked(allHealthy));
+  });
+
   test('Speedster: 빠른 페이스라도 런<10 이면 미언락(우연 배제)', () => {
     const def = achievementDef('ach_speedster')!;
     expect(def.unlocked(emptyCtx({bestPaceSec: 280, runCount: 9}))).toBe(false);
