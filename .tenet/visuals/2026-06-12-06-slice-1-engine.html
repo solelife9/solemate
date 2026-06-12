@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Slice A · Engine</title>
+<style>
+  :root{--bg:#0A0A0A;--card:#141414;--accent:#FF6500;--t1:#fff;--t2:#EBEBF5;--t3:#9C9CA3;--line:#242424;
+    --silver:#C0C0C0;--gold:#FFD700;--plat:#14B8A6;--dia:#3B82F6;--master:#9333EA;--legend:#FF6500;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:#000;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    -webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums;display:flex;justify-content:center;padding:32px 0;min-height:100vh;}
+  .phone{width:390px;background:var(--bg);border-radius:44px;overflow:hidden;border:1px solid #1c1c1c;box-shadow:0 30px 80px rgba(0,0,0,.6);}
+  .notch{height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 26px;color:var(--t2);font-size:13px;font-weight:600;}
+  .slabel{margin:0 18px 10px;font-size:11px;font-weight:800;letter-spacing:.12em;color:var(--accent);text-transform:uppercase;}
+  .scroll{padding:2px 18px 30px;color:var(--t1);}
+  h2{font-size:25px;font-weight:800;letter-spacing:-.03em;margin:4px 4px 14px;}
+  .hero{background:linear-gradient(160deg,#1a1530,#101012);border:1px solid #2a2440;border-radius:22px;padding:20px;display:flex;align-items:center;gap:15px;position:relative;}
+  .ring{width:76px;height:76px;flex:none;}
+  .chip{display:inline-flex;align-items:center;gap:6px;background:rgba(147,51,234,.16);border:1px solid rgba(147,51,234,.5);color:#d6bcff;padding:5px 12px;border-radius:999px;font-size:13px;font-weight:700;}
+  .nick{font-size:19px;font-weight:800;margin-top:8px;}
+  .titlepill{display:inline-flex;align-items:center;gap:6px;margin-top:6px;background:rgba(255,215,0,.12);border:1px solid rgba(255,215,0,.45);color:#FFD700;padding:4px 11px;border-radius:999px;font-size:12px;font-weight:600;}
+  .equiphint{font-size:11px;color:var(--t3);margin:10px 4px 0;display:flex;align-items:center;gap:6px;}
+  .equiphint b{color:var(--accent);}
+  .sec{display:flex;justify-content:space-between;align-items:center;margin:22px 4px 11px;}
+  .sec h3{font-size:16px;font-weight:800;}
+  .sec a{font-size:12px;color:var(--accent);font-weight:600;text-decoration:none;}
+  .gallery{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+  .tcard{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:12px 10px;position:relative;min-height:92px;}
+  .tcard.sel{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset;}
+  .tcard .ic{font-size:19px}
+  .tcard .nm{font-size:12px;font-weight:700;margin-top:8px;line-height:1.25}
+  .tcard .ct{font-size:9.5px;color:var(--t3);margin-top:3px}
+  .tcard.locked{opacity:.5}
+  .tcard .eq{position:absolute;top:9px;right:9px;font-size:8.5px;font-weight:800;background:var(--gold);color:#2a2200;padding:2px 7px;border-radius:6px}
+  .tcard .lk{position:absolute;top:10px;right:10px;font-size:11px;color:var(--t3)}
+  .tdot{width:8px;height:8px;border-radius:50%;position:absolute;left:10px;bottom:11px}
+  .ach{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:13px 14px;margin-bottom:9px}
+  .ach .top{display:flex;justify-content:space-between;align-items:center}
+  .ach .nm{font-size:13.5px;font-weight:700;display:flex;gap:8px;align-items:center}
+  .ach .rar{font-size:9px;font-weight:800;padding:2px 7px;border-radius:6px}
+  .ach .prog{display:flex;justify-content:space-between;font-size:11px;color:var(--t3);margin:10px 0 6px}
+  .ach .prog b{color:var(--t2)}
+  .track{height:6px;background:#222;border-radius:99px;overflow:hidden}
+  .fill{height:100%;border-radius:99px}
+  .points{display:flex;justify-content:space-between;align-items:center;background:linear-gradient(135deg,#1c140c,#141414);border:1px solid rgba(255,101,0,.35);border-radius:16px;padding:15px 17px;margin-top:13px}
+  .points .l{font-size:12px;color:var(--t2);font-weight:600}
+  .points .n{font-size:25px;font-weight:800;color:var(--accent)}
+  .note{margin:18px 6px 0;font-size:10.5px;color:#555;line-height:1.5;text-align:center}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="notch"><span>9:41</span><span>📶 􀙇</span></div>
+  <div class="slabel">Slice A — Progression Engine + Surface</div>
+  <div class="scroll">
+    <h2>Progression</h2>
+    <div class="hero">
+      <svg class="ring" viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="42" fill="none" stroke="#241a33" stroke-width="8"/>
+        <circle cx="50" cy="50" r="42" fill="none" stroke="#9333EA" stroke-width="8" stroke-linecap="round" stroke-dasharray="263.8" stroke-dashoffset="24" transform="rotate(-90 50 50)"/>
+        <text x="50" y="58" text-anchor="middle" font-size="26" fill="#fff">👑</text>
+      </svg>
+      <div>
+        <span class="chip">Master · 91</span>
+        <div class="nick">김민준</div>
+        <span class="titlepill">🛡️ Trusted Partner</span>
+      </div>
+    </div>
+    <div class="equiphint">💡 타이틀을 탭하면 <b>닉네임 옆에 장착</b>됩니다 (한 번에 1개)</div>
+
+    <div class="sec"><h3>Titles</h3><a href="#">전체 ›</a></div>
+    <div class="gallery">
+      <div class="tcard sel"><span class="eq">착용중</span><div class="ic">🛡️</div><div class="nm">Trusted Partner</div><div class="ct">Shoe Mgmt</div><span class="tdot" style="background:var(--gold)"></span></div>
+      <div class="tcard"><div class="ic">🏅</div><div class="nm">Rotation Master</div><div class="ct">Rotation</div><span class="tdot" style="background:var(--plat)"></span></div>
+      <div class="tcard"><div class="ic">🔥</div><div class="nm">Streak Keeper</div><div class="ct">Consistency</div><span class="tdot" style="background:var(--silver)"></span></div>
+      <div class="tcard"><div class="ic">🏃</div><div class="nm">Marathoner</div><div class="ct">Running</div><span class="tdot" style="background:var(--gold)"></span></div>
+      <div class="tcard locked"><span class="lk">🔒</span><div class="ic" style="opacity:.4">⚡</div><div class="nm">Speed Demon</div><div class="ct">Training</div><span class="tdot" style="background:var(--dia)"></span></div>
+      <div class="tcard locked"><span class="lk">🔒</span><div class="ic" style="opacity:.4">👑</div><div class="nm">Legend Runner</div><div class="ct">Running</div><span class="tdot" style="background:var(--legend)"></span></div>
+    </div>
+
+    <div class="sec"><h3>Achievements</h3></div>
+    <div class="ach">
+      <div class="top"><div class="nm">🛡️ Trusted Partner</div><div class="rar" style="background:rgba(255,215,0,.15);color:#FFD700">GOLD · 50P</div></div>
+      <div class="prog"><span>한 켤레로 500km</span><b>348 / 500km</b></div>
+      <div class="track"><div class="fill" style="width:69.6%;background:linear-gradient(90deg,#FFD700,#FF6500)"></div></div>
+    </div>
+    <div class="ach">
+      <div class="top"><div class="nm">🏃 Century Club</div><div class="rar" style="background:rgba(59,130,246,.15);color:#3B82F6">DIAMOND · 250P</div></div>
+      <div class="prog"><span>누적 5,000km</span><b>4,812 / 5,000km</b></div>
+      <div class="track"><div class="fill" style="width:96.2%;background:linear-gradient(90deg,#3B82F6,#9333EA)"></div></div>
+    </div>
+
+    <div class="points"><div class="l">Progress Points</div><div class="n">3,180</div></div>
+    <div class="note">Slice A 체크포인트 · 은퇴 / 챌린지 / 홈 통합은 다음 슬라이스</div>
+  </div>
+</div>
+</body>
+</html>

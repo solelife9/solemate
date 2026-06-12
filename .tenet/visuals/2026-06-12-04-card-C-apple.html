@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Retirement Card C · Apple (Default)</title>
+<style>
+  :root{--accent:#FF6500;--t1:#FFFFFF;--t2:#EBEBF5;--t3:#9C9CA3;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:#000;min-height:100vh;display:flex;align-items:center;justify-content:center;
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding:30px;font-variant-numeric:tabular-nums;flex-direction:column;gap:14px;}
+  .deftag{font-size:11px;letter-spacing:.2em;color:var(--accent);font-weight:700;text-transform:uppercase;}
+  .card{width:360px;height:360px;background:#0A0A0A;border-radius:26px;overflow:hidden;position:relative;
+    color:#fff;box-shadow:0 24px 70px rgba(0,0,0,.6);
+    background-image:radial-gradient(circle at 50% 0%,#16140f 0%,#0A0A0A 58%);}
+  .inner{position:absolute;inset:0;padding:38px 34px;display:flex;flex-direction:column;align-items:center;text-align:center;}
+  .grade{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;letter-spacing:.02em;
+    color:#cdb6ff;background:rgba(147,51,234,.14);border:1px solid rgba(147,51,234,.45);
+    padding:5px 13px;border-radius:999px;}
+  .grade .g{background:linear-gradient(90deg,#3B82F6,#9333EA);-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:800;}
+  .model{font-size:30px;font-weight:600;letter-spacing:-.01em;margin-top:30px;}
+  .km{font-size:19px;color:var(--t2);font-weight:400;margin-top:14px;letter-spacing:.01em;}
+  .km b{color:#fff;font-weight:700;}
+  .meta{font-size:13.5px;color:var(--t3);margin-top:24px;line-height:2;letter-spacing:.01em;}
+  .meta b{color:var(--t2);font-weight:600;}
+  .closing{margin-top:auto;}
+  .closing .l1{font-size:14px;color:var(--t3);letter-spacing:.01em;}
+  .closing .l2{font-size:21px;font-weight:600;margin-top:8px;letter-spacing:-.01em;
+    background:linear-gradient(90deg,#fff,#ffb27a);-webkit-background-clip:text;background-clip:text;color:transparent;}
+  .wm{margin-top:20px;font-size:11px;font-weight:700;letter-spacing:.4em;color:var(--t3);}
+</style>
+</head>
+<body>
+<div class="deftag">기본 카드 · Default Format C</div>
+<div class="card">
+  <div class="inner">
+    <div class="grade"><span>💎</span> <span class="g">Perfect Retirement</span></div>
+    <div class="model">Alphafly 3</div>
+    <div class="km"><b>512km</b> 함께했습니다.</div>
+    <div class="meta">
+      <span><b>42</b>회 러닝</span><br>
+      <span>평균 페이스 <b>4'58"</b></span><br>
+      <span><b>2026.03.12 ~ 2026.08.22</b></span>
+    </div>
+    <div class="closing">
+      <div class="l1">수명을 다했습니다.</div>
+      <div class="l2">훌륭한 여정이었습니다.</div>
+    </div>
+    <div class="wm">KEEGO</div>
+  </div>
+</div>
+</body>
+</html>

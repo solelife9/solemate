@@ -1,6 +1,6 @@
 # Job Queue
 
-Updated: 2026-06-09T00:26:30.984Z
+Updated: 2026-06-12T16:43:33.878Z
 
 - [x] eval-mptta2gb — 37s
 - [x] eval-mptu16xl — 27s
@@ -330,3 +330,51 @@ Updated: 2026-06-09T00:26:30.984Z
 - [x] code_critic for 9455bef9 — 2m 20s
 - [x] test_critic for 9455bef9 — 1m 45s
 - [x] playwright_eval for 9455bef9 — 2m 1s
+- [x] eval-mqb0q0rf — 25s
+- [x] eval-mqb11ef4 — 18s
+- [x] eval-mqb12xet — 22s
+- [x] eval-mqb18ccj — 35s
+- [x] 진척 엔진 토대(types+TIER_COLORS+storage+context) (slice-a-foundation) — 1m 10s
+- [x] 합성 Rank 산정(lib/progression/rank.ts) (slice-a-rank) — 1m 51s !! cancelled by user
+- [x] 타이틀 래더+히든+equip(lib/progression/titles.ts) (slice-a-titles) — 1m 29s
+- [x] 업적+포인트(lib/progression/achievements.ts) (slice-a-achievements) — 1m 54s
+- [x] 엔진 셀렉터+unlock notice+ranking stub(lib/progression/index.ts) (slice-a-engine) — 2m 24s
+- [x] ProgressionScreen UI + equip + 진입점 (slice-a-ui) — 3m 18s
+- [x] 통합검증: Slice A (엔진+UI 수용 sweep) (slice-a-e2e) — 1m 49s
+- [x] code_critic for f36395c5 — 3m 52s
+- [x] test_critic for f36395c5 — 2m 20s
+- [x] playwright_eval for f36395c5 — 1m 58s
+- [x] code_critic for f36395c5 — 59s
+- [x] test_critic for f36395c5 — 2m 6s
+- [x] playwright_eval for f36395c5 — 1m 37s
+- [x] code_critic for fbbdb7f0 — 3m 10s
+- [x] test_critic for fbbdb7f0 — 2m 45s
+- [x] playwright_eval for fbbdb7f0 — 1m 17s
+- [x] 합성 Rank 산정(lib/progression/rank.ts) 재등록 (slice-a-rank) — 1m 12s
+- [x] code_critic for eea51513 — 2m 41s
+- [x] test_critic for eea51513 — 1m 33s
+- [x] playwright_eval for eea51513 — 1m 6s
+- [x] code_critic for b9fb09b0 — 2m 41s
+- [x] test_critic for b9fb09b0 — 1m 32s
+- [x] playwright_eval for b9fb09b0 — 1m 12s
+- [x] code_critic for b9fb09b0 — 1m 13s
+- [x] test_critic for b9fb09b0 — 52s
+- [x] playwright_eval for b9fb09b0 — 1m 19s
+- [x] code_critic for 4f0bf5af — 2m 57s
+- [x] test_critic for 4f0bf5af — 1m 27s
+- [x] playwright_eval for 4f0bf5af — 1m 55s
+- [x] code_critic for 4f0bf5af — 1m 42s
+- [x] test_critic for 4f0bf5af — 1m 6s
+- [x] playwright_eval for 4f0bf5af — 1m 51s
+- [x] code_critic for a21ec819 — 2m 30s
+- [x] test_critic for a21ec819 — 1m 9s
+- [x] playwright_eval for a21ec819 — 1m 37s
+- [x] code_critic for a21ec819 — 1m 36s
+- [x] test_critic for a21ec819 — 1m 11s
+- [x] playwright_eval for a21ec819 — 1m 36s
+- [x] code_critic for 64522b20 — 2m 28s
+- [x] test_critic for 64522b20 — 1m 12s
+- [x] playwright_eval for 64522b20 — 3m 59s
+- [x] code_critic for 64522b20 — 2m 15s
+- [x] test_critic for 64522b20 — 1m 25s
+- [x] playwright_eval for 64522b20 — 1m 51s

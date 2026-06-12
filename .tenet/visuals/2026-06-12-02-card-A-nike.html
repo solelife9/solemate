@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Retirement Card A · Nike</title>
+<style>
+  :root{--accent:#FF6500;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:#000;min-height:100vh;display:flex;align-items:center;justify-content:center;
+    font-family:system-ui,-apple-system,"Arial Narrow",sans-serif;padding:30px;font-variant-numeric:tabular-nums;}
+  .card{width:360px;height:360px;background:#0A0A0A;border-radius:22px;overflow:hidden;position:relative;
+    box-shadow:0 24px 70px rgba(255,101,0,.18);color:#fff;}
+  .card::before{content:"";position:absolute;inset:0;
+    background:radial-gradient(circle at 78% 18%,rgba(255,101,0,.42),transparent 52%);}
+  .bar{position:absolute;left:0;top:0;width:7px;height:100%;background:var(--accent);}
+  .inner{position:absolute;inset:0;padding:26px 26px 22px 32px;display:flex;flex-direction:column;}
+  .tag{font-size:11px;font-weight:900;letter-spacing:.28em;color:var(--accent);}
+  .model{font-size:54px;font-weight:900;line-height:.92;letter-spacing:-.03em;margin-top:auto;
+    text-transform:uppercase;transform:scaleX(.88);transform-origin:left;}
+  .km{font-size:88px;font-weight:900;line-height:.82;letter-spacing:-.05em;transform:scaleX(.82);transform-origin:left;margin:2px 0;}
+  .km span{font-size:30px;-webkit-text-stroke:0;color:var(--accent);transform:scaleX(1.18);display:inline-block;}
+  .grid{display:flex;gap:26px;margin-top:14px;}
+  .grid div .v{font-size:25px;font-weight:900;letter-spacing:-.02em;line-height:1;transform:scaleX(.9);transform-origin:left;}
+  .grid div .k{font-size:9.5px;font-weight:800;letter-spacing:.14em;color:#9C9CA3;margin-top:5px;text-transform:uppercase;}
+  .dates{font-size:12px;font-weight:800;letter-spacing:.06em;color:#EBEBF5;margin-top:16px;}
+  .foot{display:flex;align-items:center;justify-content:space-between;margin-top:14px;border-top:1px solid #222;padding-top:13px;}
+  .mission{font-size:14px;font-weight:900;letter-spacing:.16em;color:var(--accent);}
+  .wm{font-size:11px;font-weight:900;letter-spacing:.1em;color:#fff;}
+  .wm span{color:#9C9CA3;font-weight:700;}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="bar"></div>
+  <div class="inner">
+    <div class="tag">RETIREMENT · CLASS OF 2026</div>
+    <div class="model">ALPHAFLY 3</div>
+    <div class="km">512<span>KM</span></div>
+    <div class="grid">
+      <div><div class="v">42</div><div class="k">RUNS</div></div>
+      <div><div class="v">4'21"</div><div class="k">BEST PACE</div></div>
+      <div><div class="v">×3</div><div class="k">PB</div></div>
+    </div>
+    <div class="dates">2026.03.12&nbsp;&nbsp;→&nbsp;&nbsp;2026.08.22</div>
+    <div class="foot">
+      <div class="mission">MISSION COMPLETE</div>
+      <div class="wm">KEEGO <span>Keep Going</span></div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

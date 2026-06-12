@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Slice B · Retirement</title>
+<style>
+  :root{--bg:#0A0A0A;--card:#141414;--accent:#FF6500;--t1:#fff;--t2:#EBEBF5;--t3:#9C9CA3;--line:#242424;--gold:#FFD700;--dia:#3B82F6;--master:#9333EA;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:#000;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums;display:flex;justify-content:center;padding:32px 0;min-height:100vh;}
+  .phone{width:390px;background:var(--bg);border-radius:44px;overflow:hidden;border:1px solid #1c1c1c;box-shadow:0 30px 80px rgba(0,0,0,.6);}
+  .notch{height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 26px;color:var(--t2);font-size:13px;font-weight:600;}
+  .slabel{margin:0 18px 10px;font-size:11px;font-weight:800;letter-spacing:.12em;color:var(--accent);text-transform:uppercase;}
+  .scroll{padding:2px 18px 30px;color:var(--t1);}
+  h2{font-size:24px;font-weight:800;letter-spacing:-.03em;margin:4px 4px 4px;}
+  .sub{color:var(--t3);font-size:12.5px;margin:0 4px 16px;}
+
+  /* lifespan reached state */
+  .reached{background:linear-gradient(150deg,#1c1208,#141414);border:1px solid rgba(255,101,0,.4);border-radius:20px;padding:18px;}
+  .reached .lr{display:flex;align-items:center;gap:12px;}
+  .reached .ic{font-size:26px}
+  .reached .h{font-size:15px;font-weight:800}
+  .reached .p{font-size:12px;color:var(--t3);margin-top:3px}
+  .reached .bar{height:7px;background:#241a10;border-radius:99px;overflow:hidden;margin:14px 0 4px}
+  .reached .bar i{display:block;height:100%;width:103%;background:linear-gradient(90deg,#FF6500,#ff9a4d)}
+  .reached .km{display:flex;justify-content:space-between;font-size:11px;color:var(--t3)}
+  .reached .btns{display:flex;gap:10px;margin-top:16px}
+  .reached .btns button{flex:1;padding:13px 0;border-radius:13px;font-size:14px;font-weight:700;border:none;font-family:inherit}
+  .reached .btns .keep{background:#222;color:#fff}
+  .reached .btns .retire{background:var(--accent);color:#0A0A0A}
+
+  .sec{margin:24px 4px 11px;font-size:15px;font-weight:800}
+  /* 3-step flow */
+  .flow{display:flex;gap:8px}
+  .step{flex:1;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 10px;min-height:148px;position:relative}
+  .step .n{position:absolute;top:9px;right:10px;font-size:9px;font-weight:800;color:var(--accent)}
+  .step .st{font-size:11px;font-weight:800;letter-spacing:.04em;margin-bottom:8px}
+  .step .ti{font-size:14px}
+  .step.s1 .body{font-size:10.5px;color:var(--t3);line-height:1.5;margin-top:6px}
+  .step.s2 .stat{display:flex;justify-content:space-between;font-size:10px;margin:4px 0;color:var(--t2)}
+  .step.s2 .stat b{color:#fff;font-weight:700}
+  .step.s3 .hl{font-size:9.5px;color:var(--t2);display:flex;gap:5px;align-items:center;margin:5px 0}
+  .step.s3 .hl b{color:var(--gold)}
+
+  /* card preview */
+  .preview{margin-top:8px;display:flex;justify-content:center}
+  .mini{width:188px;height:188px;border-radius:18px;background:radial-gradient(circle at 50% 0%,#16140f,#0A0A0A 58%);position:relative;border:1px solid #20242b}
+  .mini .in{position:absolute;inset:0;padding:20px 16px;display:flex;flex-direction:column;align-items:center;text-align:center;color:#fff}
+  .mini .grade{font-size:9px;font-weight:700;color:#cdb6ff;background:rgba(147,51,234,.16);border:1px solid rgba(147,51,234,.5);padding:3px 9px;border-radius:99px}
+  .mini .m{font-size:16px;font-weight:600;margin-top:14px}
+  .mini .k{font-size:11px;color:var(--t2);margin-top:8px}
+  .mini .k b{color:#fff}
+  .mini .cl{font-size:11px;color:var(--t3);margin-top:auto}
+  .mini .wm{font-size:8px;font-weight:700;letter-spacing:.3em;color:var(--t3);margin-top:10px}
+  .pvbtns{display:flex;gap:9px;margin-top:12px}
+  .pvbtns button{flex:1;padding:11px 0;border-radius:12px;font-size:12.5px;font-weight:700;border:none;font-family:inherit}
+  .pvbtns .save{background:#222;color:#fff}
+  .pvbtns .share{background:var(--accent);color:#0A0A0A}
+
+  /* hall of shoes */
+  .hgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+  .hcard{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 13px;position:relative}
+  .hcard .ret{position:absolute;top:11px;right:11px;font-size:8.5px;font-weight:800;letter-spacing:.05em;color:#9C9CA3;border:1px solid #333;padding:2px 7px;border-radius:6px}
+  .hcard .sh{font-size:22px}
+  .hcard .nm{font-size:13px;font-weight:700;margin-top:8px}
+  .hcard .km{font-size:20px;font-weight:800;margin-top:5px;letter-spacing:-.02em}
+  .hcard .yr{font-size:10.5px;color:var(--t3);margin-top:3px}
+  .hcard .km small{font-size:11px;color:var(--t3);font-weight:600}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="notch"><span>9:41</span><span>📶 􀙇</span></div>
+  <div class="slabel">Slice B — Shoe Retirement (signature)</div>
+  <div class="scroll">
+    <h2>Alphafly 3</h2>
+    <p class="sub">Nike · 등록 2026.03.12</p>
+
+    <!-- 수명 도달 -->
+    <div class="reached">
+      <div class="lr">
+        <div class="ic">⌛</div>
+        <div><div class="h">권장 수명에 도달했어요</div><div class="p">강요하지 않아요 — 계속 신어도 괜찮습니다.</div></div>
+      </div>
+      <div class="bar"><i></i></div>
+      <div class="km"><span>512km 주행</span><span>권장 500km</span></div>
+      <div class="btns"><button class="keep">계속 사용</button><button class="retire">은퇴시키기</button></div>
+    </div>
+
+    <!-- 3-step flow -->
+    <div class="sec">은퇴 플로우 (3단계)</div>
+    <div class="flow">
+      <div class="step s1"><div class="n">1/3</div><div class="st">확인</div><div class="ti">정말 은퇴시킬까요? 🥲</div><div class="body">은퇴 후에도 Hall of Shoes에 영원히 보관됩니다. 데이터는 삭제되지 않아요.</div></div>
+      <div class="step s2"><div class="n">2/3</div><div class="st">여정 요약</div>
+        <div class="stat"><span>거리</span><b>512km</b></div>
+        <div class="stat"><span>러닝</span><b>42회</b></div>
+        <div class="stat"><span>기간</span><b>163일</b></div>
+        <div class="stat"><span>평균</span><b>4'58"</b></div>
+        <div class="stat"><span>최고</span><b>4'21"</b></div>
+      </div>
+      <div class="step s3"><div class="n">3/3</div><div class="st">하이라이트</div>
+        <div class="hl">🏅 <b>PB ×3</b> 달성</div>
+        <div class="hl">📏 최장 <b>32.1km</b></div>
+        <div class="hl">💎 <b>Perfect</b> 등급</div>
+        <div class="hl">🛡️ Trusted Partner</div>
+      </div>
+    </div>
+
+    <!-- card preview -->
+    <div class="sec">은퇴 카드 미리보기</div>
+    <div class="preview">
+      <div class="mini"><div class="in">
+        <div class="grade">💎 Perfect Retirement</div>
+        <div class="m">Alphafly 3</div>
+        <div class="k"><b>512km</b> 함께했습니다</div>
+        <div class="cl">훌륭한 여정이었습니다.</div>
+        <div class="wm">KEEGO</div>
+      </div></div>
+    </div>
+    <div class="pvbtns"><button class="save">이미지 저장</button><button class="share">공유하기</button></div>
+
+    <!-- hall of shoes -->
+    <div class="sec">Hall of Shoes</div>
+    <div class="hgrid">
+      <div class="hcard"><span class="ret">RETIRED</span><div class="sh">👟</div><div class="nm">Alphafly 3</div><div class="km">512<small>km</small></div><div class="yr">은퇴 2026</div></div>
+      <div class="hcard"><span class="ret">RETIRED</span><div class="sh">👟</div><div class="nm">Novablast 5</div><div class="km">688<small>km</small></div><div class="yr">은퇴 2027</div></div>
+      <div class="hcard"><span class="ret">RETIRED</span><div class="sh">👟</div><div class="nm">Clifton 10</div><div class="km">503<small>km</small></div><div class="yr">은퇴 2028</div></div>
+      <div class="hcard" style="opacity:.45;border-style:dashed"><div class="sh" style="opacity:.4">➕</div><div class="nm" style="color:var(--t3)">다음 신발</div><div class="km" style="color:var(--t3)">—</div><div class="yr">현역 운행중</div></div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

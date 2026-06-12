@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Slice C · Challenges</title>
+<style>
+  :root{--bg:#0A0A0A;--card:#141414;--accent:#FF6500;--t1:#fff;--t2:#EBEBF5;--t3:#9C9CA3;--line:#242424;--plat:#14B8A6;--dia:#3B82F6;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:#000;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums;display:flex;justify-content:center;padding:32px 0;min-height:100vh;}
+  .phone{width:390px;background:var(--bg);border-radius:44px;overflow:hidden;border:1px solid #1c1c1c;box-shadow:0 30px 80px rgba(0,0,0,.6);}
+  .notch{height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 26px;color:var(--t2);font-size:13px;font-weight:600;}
+  .slabel{margin:0 18px 10px;font-size:11px;font-weight:800;letter-spacing:.12em;color:var(--accent);text-transform:uppercase;}
+  .scroll{padding:2px 18px 30px;color:var(--t1);}
+  h2{font-size:24px;font-weight:800;letter-spacing:-.03em;margin:4px 4px 4px;}
+  .sub{color:var(--t3);font-size:12.5px;margin:0 4px 18px;}
+  .seclab{display:flex;align-items:center;gap:8px;margin:18px 4px 11px;font-size:13px;font-weight:800;color:var(--t2)}
+  .seclab .tag{font-size:9px;font-weight:800;letter-spacing:.06em;padding:2px 8px;border-radius:6px}
+
+  .ch{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:11px;position:relative}
+  .ch .top{display:flex;align-items:center;gap:11px}
+  .ch .ic{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:19px;flex:none}
+  .ch .h{font-size:15px;font-weight:700}
+  .ch .d{font-size:11.5px;color:var(--t3);margin-top:2px}
+  .ch .right{margin-left:auto;text-align:right}
+  .ch .pct{font-size:18px;font-weight:800;letter-spacing:-.02em}
+  .ch .track{height:8px;background:#222;border-radius:99px;overflow:hidden;margin-top:13px}
+  .ch .fill{height:100%;border-radius:99px}
+  .ch .vals{display:flex;justify-content:space-between;font-size:11px;color:var(--t3);margin-top:7px}
+  .ch .vals b{color:var(--t2)}
+
+  .smart{background:linear-gradient(150deg,#1c140c,#141414);border:1px solid rgba(255,101,0,.42)}
+  .smart .badge{position:absolute;top:14px;right:14px;font-size:9px;font-weight:800;letter-spacing:.06em;color:#0A0A0A;background:var(--accent);padding:3px 9px;border-radius:7px}
+  .reason{margin-top:13px;background:rgba(255,101,0,.08);border:1px solid rgba(255,101,0,.25);border-radius:12px;padding:11px 13px;font-size:11.5px;color:var(--t2);line-height:1.5}
+  .reason b{color:var(--accent)}
+  .reason .lab{font-size:9px;font-weight:800;letter-spacing:.1em;color:var(--accent);text-transform:uppercase;display:block;margin-bottom:5px}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="notch"><span>9:41</span><span>📶 􀙇</span></div>
+  <div class="slabel">Slice C — Challenges Expansion</div>
+  <div class="scroll">
+    <h2>Challenges</h2>
+    <p class="sub">다양한 방식으로 더 나은 러너가 되어보세요</p>
+
+    <div class="seclab">📅 이번 달 <span class="tag" style="background:rgba(59,130,246,.15);color:#3B82F6">MONTHLY</span></div>
+    <div class="ch">
+      <div class="top">
+        <div class="ic" style="background:rgba(59,130,246,.15)">🗓️</div>
+        <div><div class="h">100km 달리기</div><div class="d">6월 한 달 동안</div></div>
+        <div class="right"><div class="pct" style="color:#3B82F6">62%</div></div>
+      </div>
+      <div class="track"><div class="fill" style="width:62%;background:linear-gradient(90deg,#3B82F6,#9333EA)"></div></div>
+      <div class="vals"><span><b>62</b> / 100km</span><span>D-18</span></div>
+    </div>
+
+    <div class="seclab">👟 신발 챌린지 <span class="tag" style="background:rgba(20,184,166,.15);color:#14B8A6">SHOE</span></div>
+    <div class="ch">
+      <div class="top">
+        <div class="ic" style="background:rgba(20,184,166,.15)">✨</div>
+        <div><div class="h">새 신발 길들이기</div><div class="d">Novablast 5로 50km</div></div>
+        <div class="right"><div class="pct" style="color:#14B8A6">24%</div></div>
+      </div>
+      <div class="track"><div class="fill" style="width:24%;background:linear-gradient(90deg,#14B8A6,#3B82F6)"></div></div>
+      <div class="vals"><span><b>12</b> / 50km</span><span>+25P</span></div>
+    </div>
+
+    <div class="seclab">🔄 로테이션 <span class="tag" style="background:rgba(147,51,234,.15);color:#9333EA">ROTATION</span></div>
+    <div class="ch">
+      <div class="top">
+        <div class="ic" style="background:rgba(147,51,234,.15)">⚖️</div>
+        <div><div class="h">균형 잡힌 한 주</div><div class="d">한 주에 2켤레 이상 사용</div></div>
+        <div class="right"><div class="pct" style="color:#9333EA">완료</div></div>
+      </div>
+      <div class="track"><div class="fill" style="width:100%;background:linear-gradient(90deg,#9333EA,#FF6500)"></div></div>
+      <div class="vals"><span><b>2</b> / 2켤레 ✓</span><span>이번 주 달성</span></div>
+    </div>
+
+    <div class="seclab">🧠 맞춤 챌린지 <span class="tag" style="background:rgba(255,101,0,.18);color:#FF6500">SMART</span></div>
+    <div class="ch smart">
+      <span class="badge">FOR YOU</span>
+      <div class="top">
+        <div class="ic" style="background:rgba(255,101,0,.15)">🎯</div>
+        <div><div class="h">로테이션 회복</div><div class="d">Novablast 5로 20km 달리기</div></div>
+        <div class="right"><div class="pct" style="color:var(--accent)">35%</div></div>
+      </div>
+      <div class="track"><div class="fill" style="width:35%;background:linear-gradient(90deg,#FF6500,#ff9a4d)"></div></div>
+      <div class="vals"><span><b>7</b> / 20km</span><span>+50P</span></div>
+      <div class="reason">
+        <span class="lab">왜 이 챌린지인가요?</span>
+        최근 <b>Alphafly 3</b>를 많이 신었어요 (지난 2주 78%). 신발 수명을 고르게 쓰려면 <b>Novablast 5</b>로 전환하는 게 좋아요.
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

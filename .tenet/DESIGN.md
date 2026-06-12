@@ -42,3 +42,58 @@
 ## Evolution
 - 구현 중 새 패턴 발생 시 본 문서 갱신. 프론트엔드 dev 잡은 CSS/컴포넌트 작성 전 본 문서를 읽는다.
 - iron law: 화면 내 하드코딩 색/폰트 0, 네이티브 폰트 무단 추가 금지, 데이터 파괴 금지.
+
+---
+
+# Progression & Retirement Ecosystem (2026-06-12)
+
+> Design notes for the Progression & Retirement feature (slices A–D).
+> Source spec: `.tenet/spec/2026-06-12-progression.md`. Mockups: `.tenet/visuals/2026-06-12-*`.
+> Tone benchmark: Apple Fitness · WHOOP · PlayStation Trophies · Spotify Wrapped. **Never childish, meme, or RPG.**
+
+## Chosen direction
+- **Dark + KEEGO orange, single family.** Continues the shipped Slice-3 system: background `#0A0A0A`, cards `#141414` / recessed `#171717`, one brand accent `#FF6500` used sparingly (CTAs, Legend tier, wordmark).
+- **Pretendard single family** (display + body), no secondary display face. Artifacts use the system stack (no web fonts allowed); production uses `PretendardVariable`.
+- **Tabular numerals everywhere** so km / paces / progress counts align.
+- Clean single hierarchy (800 headings, regular body), generous spacing, rounded corners 14–26. Phone-framed UI (~390px) on black; retirement cards square (~360px scaling a 1080×1080 keepsake).
+
+## TIER_COLORS palette (authoritative → add to `theme.ts`)
+Used for rank chips, tier rings, title-tier dots, achievement rarity labels, retirement-grade accents.
+
+| Tier     | Color     | Notes |
+|----------|-----------|-------|
+| Bronze   | `#CD7F32` | entry |
+| Silver   | `#C0C0C0` | |
+| Gold     | `#FFD700` | |
+| Platinum | `#14B8A6` | teal |
+| Diamond  | `#3B82F6` | blue |
+| Master   | `#9333EA` | purple |
+| Legend   | `#FF6500` | KEEGO orange — top tier only |
+
+Progress points by rarity: Bronze 10 · Silver 25 · Gold 50 · Platinum 100 · Diamond 250 · Master 500 · Legend 1000. A displayed total feeding the engagement pillar — **not an RPG level**.
+
+## Retirement card — default = Format C
+Renderer supports all four layouts; **Format C (Apple / Korean, emotional-proud) is the default**, with a small **Smart Retirement Grade badge** (e.g. 💎 Perfect Retirement), minimal, lots of breathing room, emotional closing ("훌륭한 여정이었습니다.").
+- **A — Nike campaign:** huge condensed type, high-contrast, orange bar, "MISSION COMPLETE".
+- **B — Modern premium:** thin weight, divider rules, "512km Together".
+- **D — Hall of Fame:** gold/orange certificate framing, laurel, Shoe Score, "Class of 2026".
+All carry the subtle **KEEGO / Keep Going** wordmark + real aggregates (distance, runs, paces, dates, PB count, longest run, grade).
+
+## Component patterns (→ `primitives.tsx`, tokens only from `theme.ts`)
+- **Rank chip** — pill, tier color 16% fill / 50% border, tier name + score/percentile; compact variant on Home.
+- **Tier ring** — SVG progress ring (tier-color stroke, rounded cap, −90° rotate) with tier emoji centered; Progression hero.
+- **Title pill** — small category-tier colored pill + emoji; exactly one equipped; "착용중" marks the equipped gallery card.
+- **Title gallery card** — emoji + name + category + bottom-left tier dot; locked ~0.5 opacity + 🔒.
+- **Achievement progress bar** — name + rarity label (rarity-colored), `current / target`, 6px track with tier-gradient fill; live, no fabrication.
+- **Retirement card** — square keepsake, four layouts (default C), grade badge + wordmark, Save Image / Share.
+- **Hall of Shoes grid** — 2-col cards (shoe glyph, model, big km, "은퇴 YYYY", RETIRED tag); persists forever, never disappears.
+- **Smart challenge card** — orange-tinted, "FOR YOU" badge, transparent **reason** block (rotation/wear data).
+- **Hall of Fame state** — dashed "준비 중 / 개인 기록 모드 · Coming soon"; **no fabricated competitors** (cross-user ranking deferred E/F).
+
+## Premium / non-RPG tone principles
+1. **Celebrate, don't gamify** — recognition of real running behavior, not XP grinding. No levels/HP/loot.
+2. **Restraint with accent** — one orange; tier colors do the categorical work; whitespace > decoration.
+3. **Truth only** — every number is a real aggregate; achievements unlock on real criteria; no fake leaderboards.
+4. **Never forced** — retirement always offers Continue; bittersweet-proud tone, not punitive.
+5. **Shoe-first stays shoe-first** — Home keeps the shoe hero; progression surfaced as compact chips/modules.
+6. **Keepsake quality** — retirement cards read like a framed memento (Apple/WHOOP), shareable and resonant.

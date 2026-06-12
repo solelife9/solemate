@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KEEGO Progression · Architecture</title>
+<style>
+  :root{
+    --bg:#0A0A0A; --card:#141414; --card2:#171717; --accent:#FF6500;
+    --t1:#FFFFFF; --t2:#EBEBF5; --t3:#9C9CA3; --line:#2A2A2A;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--t1);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    -webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums;}
+  .wrap{max-width:1180px;margin:0 auto;padding:40px 28px 64px;}
+  h1{font-size:26px;font-weight:800;letter-spacing:-.02em;margin:0 0 6px;}
+  .sub{color:var(--t3);font-size:14px;margin:0 0 28px;line-height:1.5;}
+  .legend{display:flex;gap:22px;flex-wrap:wrap;margin:0 0 22px;font-size:12.5px;color:var(--t2);}
+  .legend span{display:inline-flex;align-items:center;gap:8px;}
+  .swatch{width:26px;height:0;border-top:2px solid var(--accent);display:inline-block;}
+  .swatch.dash{border-top:2px dashed #6b7280;}
+  .swatch.solid2{border-top:2px solid #3B82F6;}
+  svg{width:100%;height:auto;display:block;background:#0d0d0d;border:1px solid var(--line);border-radius:18px;}
+  .node{cursor:default}
+  .node rect{transition:filter .15s ease, stroke .15s ease;}
+  .node:hover rect{filter:brightness(1.25);stroke:var(--accent);}
+  .node:hover .tip{opacity:1;}
+  .tip{opacity:0;transition:opacity .15s ease;pointer-events:none;}
+  text{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
+  .caption{margin-top:18px;color:var(--t3);font-size:12.5px;line-height:1.7;}
+  .caption b{color:var(--t2);font-weight:600;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Progression &amp; Retirement — Final Product Architecture</h1>
+  <p class="sub">Local-first engine in the RN app (this Tenet run, slices A–D). Networked leaderboards are a separate deferred run. Hover a box for detail.</p>
+  <div class="legend">
+    <span><span class="swatch"></span> data / call flow (this run)</span>
+    <span><span class="swatch solid2"></span> reads source-of-truth</span>
+    <span><span class="swatch dash"></span> deferred (separate Tenet run)</span>
+  </div>
+
+  <svg viewBox="0 0 1120 720" role="img" aria-label="Architecture diagram">
+    <defs>
+      <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M0,0 L10,5 L0,10 z" fill="#FF6500"/>
+      </marker>
+      <marker id="arrowBlue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M0,0 L10,5 L0,10 z" fill="#3B82F6"/>
+      </marker>
+      <marker id="arrowDash" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M0,0 L10,5 L0,10 z" fill="#6b7280"/>
+      </marker>
+    </defs>
+
+    <!-- ============ APP BOUNDARY ============ -->
+    <rect x="20" y="20" width="660" height="660" rx="20" fill="none" stroke="#262626" stroke-width="1.5"/>
+    <text x="44" y="50" fill="#9C9CA3" font-size="13" font-weight="700" letter-spacing=".08em">REACT NATIVE APP — THIS RUN (slices A–D)</text>
+
+    <!-- RN UI surfaces -->
+    <g class="node">
+      <rect x="48" y="74" width="280" height="92" rx="14" fill="#141414" stroke="#2A2A2A"/>
+      <text x="68" y="104" fill="#fff" font-size="15" font-weight="700">UI surfaces</text>
+      <text x="68" y="128" fill="#9C9CA3" font-size="12.5">Progression screen · Shoe detail</text>
+      <text x="68" y="148" fill="#9C9CA3" font-size="12.5">Hall of Shoes · Home · Challenges</text>
+      <g class="tip"><rect x="48" y="170" width="280" height="22" rx="6" fill="#FF6500"/>
+        <text x="60" y="185" fill="#0A0A0A" font-size="11.5" font-weight="700">rank chip · title pill · retirement card</text></g>
+    </g>
+
+    <!-- Progression engine -->
+    <g class="node">
+      <rect x="48" y="226" width="280" height="178" rx="14" fill="#171717" stroke="#FF6500" stroke-width="1.5"/>
+      <text x="68" y="256" fill="#FF6500" font-size="15" font-weight="800">lib/progression  (pure engine)</text>
+      <text x="68" y="284" fill="#EBEBF5" font-size="12.5">rank.ts — composite tier (Bronze→Legend)</text>
+      <text x="68" y="306" fill="#EBEBF5" font-size="12.5">titles.ts — category ladders + hidden</text>
+      <text x="68" y="328" fill="#EBEBF5" font-size="12.5">achievements.ts — progress + points</text>
+      <text x="68" y="350" fill="#EBEBF5" font-size="12.5">retirement.ts · retirementGrade.ts</text>
+      <text x="68" y="372" fill="#EBEBF5" font-size="12.5">retirementCard.ts · challengesExt.ts</text>
+      <text x="68" y="393" fill="#9C9CA3" font-size="11.5">pure · memoized · NaN→0 · no mutation</text>
+    </g>
+
+    <!-- Source of truth -->
+    <g class="node">
+      <rect x="396" y="74" width="262" height="92" rx="14" fill="#141414" stroke="#3B82F6" stroke-width="1.4"/>
+      <text x="416" y="104" fill="#3B82F6" font-size="15" font-weight="700">runs / shoes  (source of truth)</text>
+      <text x="416" y="128" fill="#9C9CA3" font-size="12.5">BackendRun · BackendShoe</text>
+      <text x="416" y="148" fill="#9C9CA3" font-size="12.5">existing run/shoe AsyncStorage keys</text>
+    </g>
+
+    <!-- progression_v1 storage -->
+    <g class="node">
+      <rect x="396" y="226" width="262" height="118" rx="14" fill="#141414" stroke="#2A2A2A"/>
+      <text x="416" y="256" fill="#fff" font-size="15" font-weight="700">AsyncStorage</text>
+      <text x="416" y="280" fill="#FF6500" font-size="13" font-weight="700">progression_v1</text>
+      <text x="416" y="302" fill="#9C9CA3" font-size="12">earnedTitles · equippedTitleKey</text>
+      <text x="416" y="321" fill="#9C9CA3" font-size="12">seenUnlocks · retiredShoes · points</text>
+      <g class="tip"><rect x="396" y="348" width="262" height="22" rx="6" fill="#FF6500"/>
+        <text x="408" y="363" fill="#0A0A0A" font-size="11" font-weight="700">user choices + records only · derived-then-cached</text></g>
+    </g>
+
+    <!-- RankingProvider seam -->
+    <g class="node">
+      <rect x="396" y="404" width="262" height="100" rx="14" fill="#141414" stroke="#2A2A2A" stroke-dasharray="2 0"/>
+      <text x="416" y="432" fill="#fff" font-size="15" font-weight="700">RankingProvider  (seam)</text>
+      <text x="416" y="456" fill="#9C9CA3" font-size="12">getLeaderboard() · getMyRanking()</text>
+      <text x="416" y="478" fill="#14B8A6" font-size="12" font-weight="600">now → local stub { available:false }</text>
+      <text x="416" y="497" fill="#6b7280" font-size="11.5">future → backend client (dashed)</text>
+    </g>
+
+    <!-- Firebase best-effort mirror -->
+    <g class="node">
+      <rect x="48" y="540" width="610" height="74" rx="14" fill="#141414" stroke="#2A2A2A"/>
+      <text x="68" y="568" fill="#fff" font-size="14" font-weight="700">Firebase userBackups doc — best-effort cloud mirror</text>
+      <text x="68" y="592" fill="#9C9CA3" font-size="12">optional · never blocking · mirrors progression_v1 (no new Firebase product)</text>
+    </g>
+
+    <!-- ============ DEFERRED BACKEND ============ -->
+    <rect x="708" y="120" width="392" height="470" rx="20" fill="none" stroke="#6b7280" stroke-width="1.5" stroke-dasharray="7 6"/>
+    <text x="730" y="150" fill="#6b7280" font-size="13" font-weight="700" letter-spacing=".06em">DEFERRED — SEPARATE TENET RUN (slice E/F)</text>
+
+    <g class="node">
+      <rect x="732" y="172" width="344" height="120" rx="14" fill="#121212" stroke="#6b7280" stroke-dasharray="6 5"/>
+      <text x="752" y="200" fill="#EBEBF5" font-size="15" font-weight="700">solelife-backend</text>
+      <text x="752" y="224" fill="#9C9CA3" font-size="12.5">Express + SQLite (Render persistent disk)</text>
+      <text x="752" y="246" fill="#9C9CA3" font-size="12.5">Firebase ID-token middleware</text>
+      <text x="752" y="268" fill="#9C9CA3" font-size="12.5">server-side score recompute (no client trust)</text>
+    </g>
+
+    <g class="node">
+      <rect x="732" y="312" width="344" height="96" rx="14" fill="#121212" stroke="#6b7280" stroke-dasharray="6 5"/>
+      <text x="752" y="340" fill="#EBEBF5" font-size="15" font-weight="700">Leaderboards / Hall of Fame</text>
+      <text x="752" y="364" fill="#9C9CA3" font-size="12.5">6-category boards · nearby · top-%</text>
+      <text x="752" y="386" fill="#9C9CA3" font-size="12.5">LeaderboardEntry { uid, rank, score, tier… }</text>
+    </g>
+
+    <g class="node">
+      <rect x="732" y="428" width="344" height="92" rx="14" fill="#121212" stroke="#6b7280" stroke-dasharray="6 5"/>
+      <text x="752" y="456" fill="#EBEBF5" font-size="14" font-weight="700">slice E — live ranking client (app)</text>
+      <text x="752" y="480" fill="#9C9CA3" font-size="12.5">wires RankingProvider → real boards</text>
+      <text x="752" y="502" fill="#9C9CA3" font-size="12.5">live Hall of Fame UI replaces stub</text>
+    </g>
+
+    <!-- ============ ARROWS ============ -->
+    <!-- UI <-> engine -->
+    <line x1="188" y1="166" x2="188" y2="222" stroke="#FF6500" stroke-width="2" marker-end="url(#arrow)" marker-start="url(#arrow)"/>
+    <!-- engine reads source of truth (blue) -->
+    <path d="M328,300 C370,300 380,150 396,128" fill="none" stroke="#3B82F6" stroke-width="2" marker-end="url(#arrowBlue)"/>
+    <!-- engine <-> progression_v1 -->
+    <line x1="328" y1="300" x2="392" y2="290" stroke="#FF6500" stroke-width="2" marker-end="url(#arrow)" marker-start="url(#arrow)"/>
+    <!-- engine -> ranking provider seam -->
+    <path d="M328,372 C360,400 372,440 392,452" fill="none" stroke="#FF6500" stroke-width="2" marker-end="url(#arrow)"/>
+    <!-- progression_v1 -> firebase mirror -->
+    <path d="M460,344 C440,500 360,520 320,538" fill="none" stroke="#FF6500" stroke-width="1.8" marker-end="url(#arrow)"/>
+    <!-- seam -> backend (dashed deferred) -->
+    <path d="M658,452 C690,452 700,360 730,352" fill="none" stroke="#6b7280" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrowDash)"/>
+    <!-- backend stack -> leaderboards -->
+    <line x1="904" y1="292" x2="904" y2="308" stroke="#6b7280" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrowDash)"/>
+    <!-- leaderboards -> slice E client -->
+    <line x1="904" y1="408" x2="904" y2="424" stroke="#6b7280" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrowDash)"/>
+    <!-- slice E client -> seam (replaces stub) -->
+    <path d="M732,474 C696,490 680,470 660,462" fill="none" stroke="#6b7280" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrowDash)"/>
+  </svg>
+
+  <p class="caption">
+    <b>This run (A–D):</b> the pure <b>lib/progression</b> engine derives rank, titles, achievements, points and retirement summaries from <b>runs/shoes (source of truth, read-only)</b>, caching only user choices + records into <b>progression_v1</b>. The <b>RankingProvider</b> is a seam returning a local "personal / coming-soon" stub — <b>no fabricated competitors</b>.
+    &nbsp;<b>Deferred (E/F):</b> a separate Tenet run in <b>solelife-backend</b> implements server-recomputed leaderboards; the app's slice E swaps the stub for the live client — zero engine rework thanks to the seam contract.
+  </p>
+</div>
+</body>
+</html>

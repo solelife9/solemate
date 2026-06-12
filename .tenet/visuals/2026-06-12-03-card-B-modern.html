@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Retirement Card B · Modern</title>
+<style>
+  :root{--accent:#FF6500;--t3:#9C9CA3;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:#000;min-height:100vh;display:flex;align-items:center;justify-content:center;
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding:30px;font-variant-numeric:tabular-nums;}
+  .card{width:360px;height:360px;background:#101113;border:1px solid #1e2024;border-radius:24px;
+    overflow:hidden;position:relative;color:#fff;box-shadow:0 24px 70px rgba(0,0,0,.6);
+    background-image:linear-gradient(180deg,#15171b 0%,#0d0e10 100%);}
+  .glow{position:absolute;width:300px;height:300px;border-radius:50%;left:50%;top:-130px;transform:translateX(-50%);
+    background:radial-gradient(circle,rgba(255,101,0,.16),transparent 60%);}
+  .inner{position:absolute;inset:0;padding:34px 34px 28px;display:flex;flex-direction:column;}
+  .eyebrow{font-size:10.5px;font-weight:700;letter-spacing:.34em;color:var(--accent);text-transform:uppercase;text-align:center;}
+  .model{font-size:34px;font-weight:300;letter-spacing:.01em;text-align:center;margin-top:18px;}
+  .together{font-size:13px;color:var(--t3);text-align:center;margin-top:6px;letter-spacing:.04em;}
+  .hr{height:1px;background:linear-gradient(90deg,transparent,#2a2c30,transparent);margin:22px 0;}
+  .row{display:flex;justify-content:space-between;padding:0 6px;}
+  .row .cell{text-align:center;flex:1;}
+  .row .cell + .cell{border-left:1px solid #222;}
+  .row .v{font-size:22px;font-weight:600;letter-spacing:-.01em;}
+  .row .v.acc{color:var(--accent);}
+  .row .k{font-size:9.5px;letter-spacing:.16em;color:var(--t3);margin-top:7px;text-transform:uppercase;}
+  .dates{margin-top:auto;text-align:center;}
+  .dates .d{font-size:15px;font-weight:500;letter-spacing:.04em;}
+  .dates .arrow{color:var(--accent);font-size:13px;margin:5px 0;}
+  .wm{text-align:center;margin-top:20px;font-size:12px;font-weight:700;letter-spacing:.42em;color:#fff;}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="glow"></div>
+  <div class="inner">
+    <div class="eyebrow">A Journey Completed</div>
+    <div class="model">Alphafly 3</div>
+    <div class="together">512&nbsp;km&nbsp;Together</div>
+    <div class="hr"></div>
+    <div class="row">
+      <div class="cell"><div class="v">42</div><div class="k">Runs</div></div>
+      <div class="cell"><div class="v acc">×3</div><div class="k">Personal Best</div></div>
+      <div class="cell"><div class="v">32.1<span style="font-size:12px;color:var(--t3)">km</span></div><div class="k">Longest Run</div></div>
+    </div>
+    <div class="dates">
+      <div class="d">2026.03</div>
+      <div class="arrow">↓</div>
+      <div class="d">2026.08</div>
+    </div>
+    <div class="wm">KEEGO</div>
+  </div>
+</div>
+</body>
+</html>

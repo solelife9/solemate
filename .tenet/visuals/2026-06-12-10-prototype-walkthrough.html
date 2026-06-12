@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KEEGO · Slice Walkthrough</title>
+<style>
+  :root{--bg:#0A0A0A;--card:#141414;--accent:#FF6500;--t1:#fff;--t2:#EBEBF5;--t3:#9C9CA3;--line:#242424;
+    --silver:#C0C0C0;--gold:#FFD700;--plat:#14B8A6;--dia:#3B82F6;--master:#9333EA;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:#000;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums;min-height:100vh;color:#fff;display:flex;flex-direction:column;align-items:center;padding:28px 0 50px}
+  h1{font-size:21px;font-weight:800;letter-spacing:-.02em}
+  .lead{color:var(--t3);font-size:13px;margin:6px 0 20px;text-align:center}
+  /* stepper */
+  .stepper{display:flex;gap:8px;margin-bottom:8px}
+  .stepper button{font-family:inherit;font-size:13px;font-weight:700;padding:11px 16px;border-radius:13px;border:1px solid var(--line);background:var(--card);color:var(--t3);cursor:pointer;transition:all .15s}
+  .stepper button .s{display:block;font-size:9px;font-weight:800;letter-spacing:.1em;color:#555;margin-bottom:3px}
+  .stepper button.active{background:var(--accent);color:#0A0A0A;border-color:var(--accent)}
+  .stepper button.active .s{color:rgba(10,10,10,.6)}
+  .nav{display:flex;gap:10px;margin:6px 0 20px}
+  .nav button{font-family:inherit;font-size:12px;font-weight:600;padding:7px 16px;border-radius:99px;border:1px solid var(--line);background:transparent;color:var(--t2);cursor:pointer}
+  .caption{color:var(--t2);font-size:12.5px;max-width:380px;text-align:center;margin-bottom:16px;line-height:1.55;min-height:34px}
+  .caption b{color:var(--accent)}
+
+  .phone{width:360px;background:var(--bg);border-radius:40px;overflow:hidden;border:1px solid #1c1c1c;box-shadow:0 30px 70px rgba(0,0,0,.6)}
+  .notch{height:38px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;color:var(--t2);font-size:12px;font-weight:600}
+  .screen{padding:4px 16px 26px;min-height:520px}
+  .slabel{font-size:10px;font-weight:800;letter-spacing:.12em;color:var(--accent);text-transform:uppercase;margin:2px 2px 10px}
+  h2{font-size:22px;font-weight:800;letter-spacing:-.03em;margin:2px 2px 12px}
+
+  .pane{display:none}
+  .pane.show{display:block;animation:f .25s ease}
+  @keyframes f{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  /* shared bits */
+  .hero{background:linear-gradient(160deg,#16181c,#101012);border:1px solid #20242b;border-radius:20px;padding:18px;display:flex;align-items:center;gap:14px}
+  .ring{width:70px;height:70px;flex:none}
+  .chip{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:5px 11px;font-size:12px;font-weight:700}
+  .nick{font-size:18px;font-weight:800;margin-top:7px}
+  .tpill{display:inline-flex;align-items:center;gap:5px;margin-top:5px;border-radius:999px;padding:3px 10px;font-size:11px;font-weight:600;background:rgba(255,215,0,.12);border:1px solid rgba(255,215,0,.45);color:var(--gold)}
+  .sec{margin:18px 2px 10px;font-size:14px;font-weight:800}
+  .gallery{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+  .tcard{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:11px 9px;min-height:80px;position:relative}
+  .tcard.locked{opacity:.5}
+  .tcard .ic{font-size:17px}.tcard .nm{font-size:11px;font-weight:700;margin-top:7px;line-height:1.2}
+  .tcard .eq{position:absolute;top:8px;right:8px;font-size:8px;font-weight:800;background:var(--gold);color:#221c00;padding:2px 6px;border-radius:5px}
+  .ach{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 13px;margin-bottom:8px}
+  .ach .top{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;font-weight:700}
+  .ach .rar{font-size:8.5px;font-weight:800;padding:2px 7px;border-radius:6px;background:rgba(255,215,0,.15);color:var(--gold)}
+  .track{height:6px;background:#222;border-radius:99px;overflow:hidden;margin-top:9px}
+  .fill{height:100%;border-radius:99px}
+  .points{display:flex;justify-content:space-between;align-items:center;background:linear-gradient(135deg,#1c140c,#141414);border:1px solid rgba(255,101,0,.35);border-radius:14px;padding:13px 15px;margin-top:11px}
+  .points .n{font-size:22px;font-weight:800;color:var(--accent)}
+
+  .reached{background:linear-gradient(150deg,#1c1208,#141414);border:1px solid rgba(255,101,0,.4);border-radius:16px;padding:15px}
+  .reached .h{font-size:14px;font-weight:800}
+  .reached .p{font-size:11px;color:var(--t3);margin-top:2px}
+  .reached .btns{display:flex;gap:9px;margin-top:13px}
+  .reached .btns button{flex:1;padding:11px 0;border-radius:11px;font-size:13px;font-weight:700;border:none;font-family:inherit}
+  .reached .keep{background:#222;color:#fff}.reached .retire{background:var(--accent);color:#0A0A0A}
+  .hgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin-top:8px}
+  .hcard{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;position:relative}
+  .hcard .ret{position:absolute;top:9px;right:9px;font-size:8px;font-weight:800;color:var(--t3);border:1px solid #333;padding:2px 6px;border-radius:5px}
+  .hcard .sh{font-size:19px}.hcard .nm{font-size:12px;font-weight:700;margin-top:6px}
+  .hcard .km{font-size:17px;font-weight:800;margin-top:4px}.hcard .km small{font-size:10px;color:var(--t3)}
+  .hcard .yr{font-size:9.5px;color:var(--t3);margin-top:2px}
+
+  .ch{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:13px;margin-bottom:9px;position:relative}
+  .ch.smart{background:linear-gradient(150deg,#1c140c,#141414);border-color:rgba(255,101,0,.42)}
+  .ch .row{display:flex;align-items:center;gap:10px}
+  .ch .cic{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex:none}
+  .ch .h{font-size:13.5px;font-weight:700}.ch .d{font-size:10.5px;color:var(--t3);margin-top:1px}
+  .ch .pct{margin-left:auto;font-size:16px;font-weight:800}
+  .ch .reason{margin-top:11px;background:rgba(255,101,0,.08);border:1px solid rgba(255,101,0,.25);border-radius:10px;padding:9px 11px;font-size:10.5px;color:var(--t2);line-height:1.45}
+  .ch .reason b{color:var(--accent)}
+
+  .greet{display:flex;justify-content:space-between;align-items:center;margin:2px 2px 13px}
+  .greet .hi{font-size:18px;font-weight:800}.greet .hi small{display:block;font-size:11px;color:var(--t3);font-weight:500;margin-top:2px}
+  .rmini{display:flex;flex-direction:column;align-items:flex-end;gap:5px}
+  .homehero{background:linear-gradient(160deg,#17181b,#101012);border:1px solid #20242b;border-radius:18px;padding:16px;text-align:center}
+  .homehero .lab{font-size:9.5px;font-weight:800;letter-spacing:.12em;color:var(--accent);text-transform:uppercase}
+  .homehero .shoe{font-size:38px;margin:3px 0}.homehero .nm{font-size:17px;font-weight:800}
+  .homehero .meta{font-size:11px;color:var(--t3);margin-top:2px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:11px}
+  .mod{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:13px}
+  .mod .t{font-size:9.5px;font-weight:800;letter-spacing:.07em;color:var(--t3);text-transform:uppercase}
+  .mod .h{font-size:12.5px;font-weight:700;margin-top:7px}
+</style>
+</head>
+<body>
+  <h1>KEEGO · Slice Walkthrough</h1>
+  <p class="lead">각 use-checkpoint를 미리보기 — 슬라이스를 눌러 진행되는 상태를 확인하세요</p>
+
+  <div class="stepper">
+    <button data-step="0" class="active" onclick="go(0)"><span class="s">SLICE</span>A · Engine</button>
+    <button data-step="1" onclick="go(1)"><span class="s">SLICE</span>B · Retire</button>
+    <button data-step="2" onclick="go(2)"><span class="s">SLICE</span>C · Challenge</button>
+    <button data-step="3" onclick="go(3)"><span class="s">SLICE</span>D · Home</button>
+  </div>
+  <div class="nav">
+    <button onclick="prev()">‹ 이전</button>
+    <button onclick="next()">다음 ›</button>
+  </div>
+  <p class="caption" id="cap"></p>
+
+  <div class="phone">
+    <div class="notch"><span>9:41</span><span>📶 􀙇</span></div>
+    <div class="screen">
+
+      <!-- SLICE A -->
+      <div class="pane show" data-pane="0">
+        <div class="slabel">Slice A — Engine</div>
+        <h2>Progression</h2>
+        <div class="hero">
+          <svg class="ring" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="42" fill="none" stroke="#1d2735" stroke-width="8"/>
+            <circle cx="50" cy="50" r="42" fill="none" stroke="#3B82F6" stroke-width="8" stroke-linecap="round" stroke-dasharray="263.8" stroke-dashoffset="42" transform="rotate(-90 50 50)"/>
+            <text x="50" y="57" text-anchor="middle" font-size="26" fill="#fff">💎</text>
+          </svg>
+          <div>
+            <span class="chip" style="background:rgba(59,130,246,.16);border:1px solid rgba(59,130,246,.5);color:#bcd3ff">Diamond · 84</span>
+            <div class="nick">김민준</div>
+            <span class="tpill">🏅 Rotation Master</span>
+          </div>
+        </div>
+        <div class="sec">Titles</div>
+        <div class="gallery">
+          <div class="tcard"><span class="eq">착용중</span><div class="ic">🏅</div><div class="nm">Rotation Master</div></div>
+          <div class="tcard"><div class="ic">🛡️</div><div class="nm">Trusted Partner</div></div>
+          <div class="tcard locked"><div class="ic" style="opacity:.4">👑</div><div class="nm">Legend Runner</div></div>
+        </div>
+        <div class="sec">Achievements</div>
+        <div class="ach"><div class="top"><span>🛡️ Trusted Partner</span><span class="rar">GOLD · 50P</span></div><div class="track"><div class="fill" style="width:69.6%;background:linear-gradient(90deg,#FFD700,#FF6500)"></div></div></div>
+        <div class="points"><span>Progress Points</span><span class="n">3,180</span></div>
+      </div>
+
+      <!-- SLICE B -->
+      <div class="pane" data-pane="1">
+        <div class="slabel">Slice B — Retirement</div>
+        <h2>Alphafly 3</h2>
+        <div class="reached">
+          <div class="h">⌛ 권장 수명에 도달했어요</div>
+          <div class="p">강요하지 않아요 — 512km / 권장 500km</div>
+          <div class="btns"><button class="keep">계속 사용</button><button class="retire">은퇴시키기</button></div>
+        </div>
+        <div class="sec">은퇴 플로우 (확인 → 여정 → 하이라이트)</div>
+        <div class="gallery">
+          <div class="tcard"><div class="ic">①</div><div class="nm">정말 은퇴할까요?</div></div>
+          <div class="tcard"><div class="ic">②</div><div class="nm">512km · 42회 · 4'58"</div></div>
+          <div class="tcard"><div class="ic">③</div><div class="nm">PB×3 · 32.1km · 💎</div></div>
+        </div>
+        <div class="sec">Hall of Shoes</div>
+        <div class="hgrid">
+          <div class="hcard"><span class="ret">RETIRED</span><div class="sh">👟</div><div class="nm">Alphafly 3</div><div class="km">512<small>km</small></div><div class="yr">은퇴 2026</div></div>
+          <div class="hcard"><span class="ret">RETIRED</span><div class="sh">👟</div><div class="nm">Novablast 5</div><div class="km">688<small>km</small></div><div class="yr">은퇴 2027</div></div>
+        </div>
+      </div>
+
+      <!-- SLICE C -->
+      <div class="pane" data-pane="2">
+        <div class="slabel">Slice C — Challenges</div>
+        <h2>Challenges</h2>
+        <div class="ch"><div class="row"><div class="cic" style="background:rgba(59,130,246,.15)">🗓️</div><div><div class="h">100km 달리기</div><div class="d">이번 달 · MONTHLY</div></div><div class="pct" style="color:#3B82F6">62%</div></div><div class="track"><div class="fill" style="width:62%;background:linear-gradient(90deg,#3B82F6,#9333EA)"></div></div></div>
+        <div class="ch"><div class="row"><div class="cic" style="background:rgba(20,184,166,.15)">✨</div><div><div class="h">새 신발 길들이기</div><div class="d">Novablast 5로 50km · SHOE</div></div><div class="pct" style="color:#14B8A6">24%</div></div><div class="track"><div class="fill" style="width:24%;background:linear-gradient(90deg,#14B8A6,#3B82F6)"></div></div></div>
+        <div class="ch smart"><div class="row"><div class="cic" style="background:rgba(255,101,0,.15)">🎯</div><div><div class="h">로테이션 회복 · SMART</div><div class="d">Novablast 5로 20km</div></div><div class="pct" style="color:var(--accent)">35%</div></div>
+          <div class="track"><div class="fill" style="width:35%;background:linear-gradient(90deg,#FF6500,#ff9a4d)"></div></div>
+          <div class="reason"><b>왜?</b> 최근 Alphafly 3를 많이 신었어요 → <b>Novablast 5</b>로 전환을 추천해요.</div>
+        </div>
+      </div>
+
+      <!-- SLICE D -->
+      <div class="pane" data-pane="3">
+        <div class="slabel">Slice D — Home</div>
+        <div class="greet">
+          <div class="hi">안녕하세요, 민준님<small>오늘도 좋은 러닝 되세요</small></div>
+          <div class="rmini">
+            <span class="chip" style="background:rgba(59,130,246,.16);border:1px solid rgba(59,130,246,.5);color:#bcd3ff;font-size:11px">💎 Diamond</span>
+            <span class="tpill">🏅 Rotation Master</span>
+          </div>
+        </div>
+        <div class="homehero">
+          <div class="lab">최근 신은 신발</div>
+          <div class="shoe">👟</div>
+          <div class="nm">Alphafly 3</div>
+          <div class="meta">512km · 권장 수명 임박</div>
+        </div>
+        <div class="grid2">
+          <div class="mod"><div class="t">🎯 진행중 챌린지</div><div class="h">100km 달리기</div><div class="track"><div class="fill" style="width:62%;background:linear-gradient(90deg,#3B82F6,#9333EA)"></div></div></div>
+          <div class="mod"><div class="t">🏅 최근 업적</div><div class="h">🛡️ Trusted Partner</div><span class="rar" style="display:inline-block;margin-top:8px">GOLD · +50P</span></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+<script>
+  var captions = [
+    "<b>Slice A</b> — 랭크 칩, 장착 타이틀, 타이틀 갤러리, 업적 진행, 포인트. 엔진 표면.",
+    "<b>Slice B</b> — 수명 도달 시 [계속 사용]/[은퇴], 3단계 플로우, 은퇴 카드, Hall of Shoes 추가.",
+    "<b>Slice C</b> — 월간 / 신발 / 로테이션 / 스마트(맞춤) 챌린지. 투명한 추천 이유 포함.",
+    "<b>Slice D</b> — 홈에 rank chip · 타이틀 · 현재 챌린지 · 최근 업적을 자연스럽게 노출 (shoe-first 유지)."
+  ];
+  var cur = 0;
+  function go(n){
+    cur = n;
+    document.querySelectorAll('.pane').forEach(function(p){ p.classList.toggle('show', +p.dataset.pane===n); });
+    document.querySelectorAll('.stepper button').forEach(function(b){ b.classList.toggle('active', +b.dataset.step===n); });
+    document.getElementById('cap').innerHTML = captions[n];
+  }
+  function next(){ go((cur+1)%4); }
+  function prev(){ go((cur+3)%4); }
+  go(0);
+</script>
+</body>
+</html>

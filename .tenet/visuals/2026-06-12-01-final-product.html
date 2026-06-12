@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KEEGO · Progression (Final)</title>
+<style>
+  :root{
+    --bg:#0A0A0A; --card:#141414; --card2:#171717; --accent:#FF6500;
+    --t1:#FFFFFF; --t2:#EBEBF5; --t3:#9C9CA3; --line:#242424;
+    --bronze:#CD7F32; --silver:#C0C0C0; --gold:#FFD700; --plat:#14B8A6;
+    --dia:#3B82F6; --master:#9333EA; --legend:#FF6500;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:#000;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    -webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums;
+    display:flex;justify-content:center;padding:32px 0;min-height:100vh;}
+  .phone{width:390px;background:var(--bg);border-radius:44px;overflow:hidden;
+    border:1px solid #1c1c1c;box-shadow:0 30px 80px rgba(0,0,0,.6);position:relative;}
+  .notch{height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 26px;color:var(--t2);font-size:13px;font-weight:600;}
+  .scroll{padding:6px 18px 34px;color:var(--t1);}
+  h2.title{font-size:26px;font-weight:800;letter-spacing:-.03em;margin:8px 4px 2px;}
+  .sub{color:var(--t3);font-size:13px;margin:0 4px 18px;}
+
+  /* hero rank */
+  .hero{background:linear-gradient(160deg,#16181c 0%,#101012 100%);border:1px solid #20242b;border-radius:24px;padding:22px 20px 20px;position:relative;overflow:hidden;}
+  .hero::before{content:"";position:absolute;width:240px;height:240px;right:-70px;top:-90px;border-radius:50%;
+    background:radial-gradient(circle,rgba(59,130,246,.28),transparent 65%);}
+  .rankrow{display:flex;align-items:center;gap:16px;position:relative;}
+  .ring{width:84px;height:84px;flex:none;}
+  .rankmeta .chip{display:inline-flex;align-items:center;gap:7px;background:rgba(59,130,246,.16);
+    border:1px solid rgba(59,130,246,.5);color:#bcd3ff;padding:5px 12px;border-radius:999px;font-size:13px;font-weight:700;}
+  .rankmeta .chip b{color:#fff;}
+  .nick{font-size:22px;font-weight:800;letter-spacing:-.02em;margin-top:9px;}
+  .titlepill{display:inline-flex;align-items:center;gap:6px;margin-top:6px;background:rgba(20,184,166,.14);
+    border:1px solid rgba(20,184,166,.45);color:#7fe3d6;padding:4px 11px;border-radius:999px;font-size:12.5px;font-weight:600;}
+  .score{position:absolute;right:2px;top:0;text-align:right;}
+  .score .n{font-size:30px;font-weight:800;color:#fff;letter-spacing:-.02em;}
+  .score .l{font-size:10.5px;color:var(--t3);letter-spacing:.12em;text-transform:uppercase;}
+  .nextbar{margin-top:16px;}
+  .nextbar .lab{display:flex;justify-content:space-between;font-size:11.5px;color:var(--t3);margin-bottom:6px;}
+  .track{height:7px;background:#222;border-radius:99px;overflow:hidden;}
+  .fill{height:100%;border-radius:99px;background:linear-gradient(90deg,#3B82F6,#9333EA);width:71%;}
+
+  /* stats */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin:16px 0 22px;}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:13px 8px;text-align:center;}
+  .stat .n{font-size:18px;font-weight:800;letter-spacing:-.02em;}
+  .stat .n small{font-size:11px;font-weight:700;color:var(--t3);}
+  .stat .l{font-size:10.5px;color:var(--t3);margin-top:3px;}
+
+  .sec{display:flex;align-items:center;justify-content:space-between;margin:24px 4px 12px;}
+  .sec h3{font-size:16px;font-weight:800;letter-spacing:-.01em;}
+  .sec a{font-size:12px;color:var(--accent);font-weight:600;text-decoration:none;}
+
+  /* title gallery */
+  .gallery{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+  .tcard{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:13px 11px;position:relative;min-height:96px;}
+  .tcard .ic{font-size:20px;}
+  .tcard .nm{font-size:12.5px;font-weight:700;margin-top:9px;line-height:1.25;}
+  .tcard .ct{font-size:10px;color:var(--t3);margin-top:4px;}
+  .tcard.locked{opacity:.5;}
+  .tcard.locked .nm{color:var(--t3);}
+  .tcard .eq{position:absolute;top:10px;right:10px;font-size:9px;font-weight:800;letter-spacing:.05em;
+    background:var(--plat);color:#04221e;padding:2px 7px;border-radius:7px;}
+  .tcard .lk{position:absolute;top:11px;right:11px;font-size:12px;color:var(--t3);}
+  .tdot{width:9px;height:9px;border-radius:50%;position:absolute;left:11px;bottom:13px;}
+
+  /* achievements */
+  .ach{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 15px;margin-bottom:10px;}
+  .ach .top{display:flex;align-items:center;justify-content:space-between;}
+  .ach .nm{font-size:14px;font-weight:700;display:flex;align-items:center;gap:9px;}
+  .ach .rar{font-size:9.5px;font-weight:800;padding:2px 8px;border-radius:7px;letter-spacing:.04em;}
+  .ach .prog{display:flex;justify-content:space-between;font-size:11.5px;color:var(--t3);margin:11px 0 6px;}
+  .ach .prog b{color:var(--t2);}
+  .ach .track{height:6px;}
+  .ach .fill2{height:100%;border-radius:99px;}
+
+  /* points */
+  .points{display:flex;align-items:center;justify-content:space-between;background:linear-gradient(135deg,#1c140c,#141414);
+    border:1px solid rgba(255,101,0,.35);border-radius:18px;padding:16px 18px;margin:14px 0 4px;}
+  .points .l{font-size:12.5px;color:var(--t2);font-weight:600;}
+  .points .l small{display:block;color:var(--t3);font-size:11px;font-weight:400;margin-top:2px;}
+  .points .n{font-size:28px;font-weight:800;color:var(--accent);letter-spacing:-.02em;}
+
+  /* hall of fame coming soon */
+  .hof{background:var(--card);border:1px dashed #2f2f2f;border-radius:18px;padding:20px;text-align:center;margin-top:4px;}
+  .hof .ic{font-size:26px;opacity:.7;}
+  .hof .h{font-size:14.5px;font-weight:700;margin-top:8px;}
+  .hof .p{font-size:12px;color:var(--t3);margin-top:6px;line-height:1.5;}
+  .hof .badge{display:inline-block;margin-top:12px;font-size:11px;font-weight:700;color:#7fe3d6;
+    background:rgba(20,184,166,.12);border:1px solid rgba(20,184,166,.4);padding:5px 12px;border-radius:999px;}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="notch"><span>9:41</span><span>● ● ●&nbsp;&nbsp;📶 􀙇</span></div>
+  <div class="scroll">
+    <h2 class="title">Progression</h2>
+    <p class="sub">당신의 러닝 성장 여정</p>
+
+    <!-- HERO -->
+    <div class="hero">
+      <div class="score"><div class="n">84</div><div class="l">Rank Score</div></div>
+      <div class="rankrow">
+        <svg class="ring" viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="42" fill="none" stroke="#1f2937" stroke-width="8"/>
+          <circle cx="50" cy="50" r="42" fill="none" stroke="#3B82F6" stroke-width="8" stroke-linecap="round"
+            stroke-dasharray="263.8" stroke-dashoffset="42" transform="rotate(-90 50 50)"/>
+          <text x="50" y="56" text-anchor="middle" font-size="30" fill="#fff">💎</text>
+        </svg>
+        <div class="rankmeta">
+          <span class="chip"><b>Diamond</b> · 상위 7%</span>
+          <div class="nick">김민준</div>
+          <span class="titlepill">🏅 Rotation Master</span>
+        </div>
+      </div>
+      <div class="nextbar">
+        <div class="lab"><span>다음 티어 · Master</span><span>84 / 90</span></div>
+        <div class="track"><div class="fill"></div></div>
+      </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats">
+      <div class="stat"><div class="n">4,812<small>km</small></div><div class="l">Total</div></div>
+      <div class="stat"><div class="n">12</div><div class="l">Registered</div></div>
+      <div class="stat"><div class="n">7</div><div class="l">Retired</div></div>
+      <div class="stat"><div class="n">18<small>일</small></div><div class="l">Streak</div></div>
+    </div>
+
+    <!-- TITLE GALLERY -->
+    <div class="sec"><h3>Titles</h3><a href="#">전체 28개 ›</a></div>
+    <div class="gallery">
+      <div class="tcard"><span class="eq">착용중</span><div class="ic">🏅</div><div class="nm">Rotation Master</div><div class="ct">Rotation</div><span class="tdot" style="background:var(--plat)"></span></div>
+      <div class="tcard"><div class="ic">🛡️</div><div class="nm">Trusted Partner</div><div class="ct">Shoe Mgmt</div><span class="tdot" style="background:var(--gold)"></span></div>
+      <div class="tcard"><div class="ic">🔥</div><div class="nm">Streak Keeper</div><div class="ct">Consistency</div><span class="tdot" style="background:var(--silver)"></span></div>
+      <div class="tcard"><div class="ic">🏃</div><div class="nm">Marathoner</div><div class="ct">Running</div><span class="tdot" style="background:var(--gold)"></span></div>
+      <div class="tcard locked"><span class="lk">🔒</span><div class="ic" style="opacity:.4">⚡</div><div class="nm">Speed Demon</div><div class="ct">Training</div><span class="tdot" style="background:var(--dia)"></span></div>
+      <div class="tcard locked"><span class="lk">🔒</span><div class="ic" style="opacity:.4">👑</div><div class="nm">Legend Runner</div><div class="ct">Running</div><span class="tdot" style="background:var(--legend)"></span></div>
+    </div>
+
+    <!-- ACHIEVEMENTS -->
+    <div class="sec"><h3>Achievements</h3><a href="#">진행중 ›</a></div>
+
+    <div class="ach">
+      <div class="top">
+        <div class="nm">🛡️ Trusted Partner</div>
+        <div class="rar" style="background:rgba(255,215,0,.15);color:#FFD700;">GOLD · 50P</div>
+      </div>
+      <div class="prog"><span>한 켤레로 500km 함께하기</span><b>348 / 500km</b></div>
+      <div class="track"><div class="fill2" style="width:69.6%;background:linear-gradient(90deg,#FFD700,#FF6500)"></div></div>
+    </div>
+
+    <div class="ach">
+      <div class="top">
+        <div class="nm">🔄 Daily Rotator</div>
+        <div class="rar" style="background:rgba(20,184,166,.15);color:#14B8A6;">PLATINUM · 100P</div>
+      </div>
+      <div class="prog"><span>한 주에 신발 2켤레 이상 (4주 연속)</span><b>3 / 4주</b></div>
+      <div class="track"><div class="fill2" style="width:75%;background:linear-gradient(90deg,#14B8A6,#3B82F6)"></div></div>
+    </div>
+
+    <div class="ach">
+      <div class="top">
+        <div class="nm">🏃 Century Club</div>
+        <div class="rar" style="background:rgba(59,130,246,.15);color:#3B82F6;">DIAMOND · 250P</div>
+      </div>
+      <div class="prog"><span>누적 5,000km 달성</span><b>4,812 / 5,000km</b></div>
+      <div class="track"><div class="fill2" style="width:96.2%;background:linear-gradient(90deg,#3B82F6,#9333EA)"></div></div>
+    </div>
+
+    <!-- POINTS -->
+    <div class="points">
+      <div class="l">Progress Points<small>달성한 업적의 누적 포인트</small></div>
+      <div class="n">3,180</div>
+    </div>
+
+    <!-- HALL OF FAME -->
+    <div class="sec"><h3>Hall of Fame</h3></div>
+    <div class="hof">
+      <div class="ic">🏆</div>
+      <div class="h">전국 러너 랭킹 — 준비 중</div>
+      <div class="p">지금은 나의 개인 기록만 표시됩니다.<br>다른 러너와의 랭킹은 곧 만나보실 수 있어요.</div>
+      <span class="badge">개인 기록 모드 · Coming soon</span>
+    </div>
+  </div>
+</div>
+</body>
+</html>
