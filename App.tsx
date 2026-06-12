@@ -29,6 +29,7 @@ import OnboardingScreen, {RegisteredShoe} from './OnboardingScreen.rn';
 import RunGoalScreen from './RunGoalScreen.rn';
 import RunCountdownScreen from './RunCountdownScreen.rn';
 import RunActiveScreenView from './RunActiveScreen.rn';
+import ProgressionScreen from './ProgressionScreen.rn';
 
 import {simplifyRoute} from './lib/geo';
 import {runTracker} from './lib/runTracker';
@@ -146,6 +147,9 @@ function Main(){
   // 프로필의 목표 설정 패널을 펼친 채 진입한다(각각 한 번만 소비).
   const [shoesDetailId,setShoesDetailId]=useState<string|null>(null);
   const [profileInitialOpen,setProfileInitialOpen]=useState<'goal'|'weight'|'alerts'|'account'|'import'|null>(null);
+  // 진척(랭크·타이틀·업적) 전체화면 표시 여부. 프로필의 '진척' 버튼이 열고, 화면의
+  // 뒤로 버튼이 닫는다. 기존 탭/온보딩 부트 흐름과 독립적인 오버레이형 게이트다.
+  const [showProgression,setShowProgression]=useState(false);
   const [overlay,setOverlay]=useState<'none'|'add'|'goal'|'countdown'|'run'>('none');
   const [pendingShoe,setPendingShoe]=useState<{id:string;name:string;ui:Shoe}|null>(null);
   const [activeRun,setActiveRun]=useState<{id:string;name:string;goalKm:number}|null>(null);
@@ -985,6 +989,12 @@ function Main(){
     );
   }
 
+  // 진척 전체화면(오버레이형) — 프로필 '진척' 버튼이 열고 뒤로 버튼이 닫는다. 런/신발
+  // 원본은 읽기 전용으로 넘기고(데이터 파괴 0), 닉네임은 profile_name 을 그대로 쓴다.
+  if(showProgression){
+    return <ProgressionScreen runs={runs} shoes={shoes} profileName={profileName} onBack={()=>setShowProgression(false)}/>;
+  }
+
   return(
     <View style={{flex:1,backgroundColor:BG}}>
       <View style={{flex:1}}>
@@ -1038,6 +1048,7 @@ function Main(){
             onCreateChallenge={createChallenge} onDeleteChallenge={deleteChallenge}
             todayISO={today()}
             cloudPort={cloudPortRef.current} onCloudMerged={applyBackupPayload}
+            onOpenProgression={()=>setShowProgression(true)}
           />
         )}
       </View>

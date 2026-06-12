@@ -111,6 +111,7 @@ export default function ProfileScreen({
   deviceId = '',
   backupData = { shoes: [], runs: [], settings: {} },
   cloudPort, onCloudMerged, cloudClock = () => Date.now(),
+  onOpenProgression,
 }: {
   profile?: Profile;
   badges?: Badge[];
@@ -174,6 +175,9 @@ export default function ProfileScreen({
   onCloudMerged?: (data: BackupPayload) => void;
   // 마지막 동기 시각용 시계(테스트 주입). 기본은 Date.now.
   cloudClock?: () => number;
+  // 진척(랭크·타이틀·업적) 화면 진입. App 이 전체화면 ProgressionScreen 으로 전환한다.
+  // 없으면 진척 진입 버튼은 표시되지 않는다(안전한 no-op).
+  onOpenProgression?: () => void;
 }) {
   // 어떤 설정 행이 펼쳐졌는지(단위는 패널 없이 즉시 토글). 한 번에 하나만 펼친다.
   const [open, setOpen] = useState<null | 'goal' | 'weight' | 'alerts' | 'notif' | 'account' | 'import'>(null);
@@ -493,6 +497,23 @@ export default function ProfileScreen({
           </View>
         </View>
 
+        {/* 진척(랭크·타이틀·업적) 진입 — 전체화면 ProgressionScreen 으로 전환 */}
+        {onOpenProgression && (
+          <Pressable
+            onPress={onOpenProgression}
+            testID="open-progression"
+            accessibilityRole="button"
+            accessibilityLabel="진척 열기"
+            style={({ pressed }) => [s.card, s.progressRow, pressed && { backgroundColor: CARD_HI }]}>
+            <View style={s.progressIcon}><Ionicons name="trophy-outline" size={19} color={ACCENT} /></View>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text style={s.progressTitle}>진척</Text>
+              <Text style={s.progressSub}>랭크 · 타이틀 · 업적</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={T3} />
+          </Pressable>
+        )}
+
         {/* personal records (PR) — 1km 페이스 · 5km 기록 · 최장 거리 */}
         {records.length > 0 && (
           <View style={[s.card, { padding: 22 }]}>
@@ -779,6 +800,10 @@ const s = StyleSheet.create({
   card: { backgroundColor: CARD_DIM, borderRadius: 20, borderWidth: 1, borderColor: withAlpha(T1, 0.07) },
   cardTitle: { color: T2, fontFamily: FONT, fontSize: 13.5, fontWeight: '500', marginBottom: 16 },
   sectionLabel: { color: T2, fontFamily: FONT, fontSize: 14, fontWeight: '500', letterSpacing: 0.2, paddingHorizontal: 4 },
+  progressRow: { flexDirection: 'row', alignItems: 'center', gap: 13, padding: 16 },
+  progressIcon: { width: 38, height: 38, borderRadius: 12, backgroundColor: withAlpha(ACCENT, 0.12), alignItems: 'center', justifyContent: 'center' },
+  progressTitle: { color: T1, fontFamily: FONT, fontSize: 15, fontWeight: '700' },
+  progressSub: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500', marginTop: 3 },
 
   headerRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', paddingHorizontal: 4 },
   title: { color: T1, fontFamily: FONT, fontSize: 32, fontWeight: '500', letterSpacing: -0.8 },
