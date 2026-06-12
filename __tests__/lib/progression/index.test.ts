@@ -141,6 +141,33 @@ describe('getProgression: 빈/엣지 입력', () => {
 });
 
 // ============================================================================
+// 2b) equipped 게이트 — 영속 장착 키는 '지금 충족된' 타이틀일 때만 노출(날조 금지)
+// ============================================================================
+describe('getProgression: equipped 검증(anti-scenario 1)', () => {
+  test('미충족 타이틀을 가리키는 equippedTitleKey → equipped=null', () => {
+    // running_1000k(1000km 필요)는 시드(~105km)로 충족되지 않는다. 손상/퇴행 상태가
+    // 이를 장착한 것으로 영속했다 가정 — 셀렉터는 미획득 타이틀을 표면화하면 안 된다.
+    const state = stateWith({
+      earnedTitles: [{key: 'running_1000k', unlockedAt: '', isEquipped: true}],
+      equippedTitleKey: 'running_1000k',
+    });
+    const view = getProgression(runs, shoes, state, NOW);
+    expect(view.titles.unlocked.map(t => t.key)).not.toContain('running_1000k');
+    expect(view.titles.equipped).toBeNull();
+  });
+
+  test('지금 충족된 타이틀을 장착 → 그 키가 그대로 노출', () => {
+    const state = stateWith({
+      earnedTitles: [{key: 'running_100k', unlockedAt: '', isEquipped: true}],
+      equippedTitleKey: 'running_100k',
+    });
+    const view = getProgression(runs, shoes, state, NOW);
+    expect(view.titles.unlocked.map(t => t.key)).toContain('running_100k');
+    expect(view.titles.equipped).toBe('running_100k');
+  });
+});
+
+// ============================================================================
 // 3) 메모이즈 — 동일 입력 재호출은 같은 객체, now 변경은 재계산
 // ============================================================================
 describe('getProgression 메모이즈', () => {
@@ -158,6 +185,14 @@ describe('getProgression 메모이즈', () => {
     expect(a).not.toBe(b);
     // 값 자체는 동일 시드라 일관(랭크 티어 동일).
     expect(a.rank.tier).toBe(b.rank.tier);
+  });
+
+  test('now 미지정(문서화된 기본 호출형) 동일 참조 재호출 → memo hit(toBe)', () => {
+    // 기본값 Date.now() 가 키에 새 나가면 매 호출이 재계산된다 — 그것을 막았는지 검증.
+    const state = defaultProgressionState();
+    const a = getProgression(runs, shoes, state);
+    const b = getProgression(runs, shoes, state);
+    expect(a).toBe(b);
   });
 });
 

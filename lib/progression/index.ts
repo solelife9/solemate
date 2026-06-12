@@ -143,8 +143,14 @@ function viewFromContext(
     titles: {
       unlocked: unlockedTitles,
       locked: lockedTitles,
+      // 장착 키는 **지금 충족된** 타이틀 집합에 있을 때만 노출한다 — 영속된
+      // equippedTitleKey 가 더 이상(혹은 한 번도) 충족되지 않은 타이틀을 가리키면
+      // (손상/리셋/퇴행한 파생-캐시 상태) 미획득 타이틀을 표면화하지 않는다
+      // (anti-scenario 1: 날조된 마일스톤 금지).
       equipped:
-        state && typeof state.equippedTitleKey === 'string'
+        state &&
+        typeof state.equippedTitleKey === 'string' &&
+        unlockedTitleKeys.has(state.equippedTitleKey)
           ? state.equippedTitleKey
           : null,
     },
@@ -154,11 +160,16 @@ function viewFromContext(
 }
 
 // ── 메모이즈(직전 입력 1슬롯 — 참조 동등 비교) ─────────────────────────────────
+// 키는 입력 **참조**(runs/shoes/state/challenges)와, **호출자가 명시한 경우의** now 뿐이다.
+// now 를 생략하면(문서화된 기본 호출형) 기본 시각(Date.now())을 키에 넣지 않는다 —
+// 그렇지 않으면 매 호출이 새 타임스탬프로 멱등을 깨 항상 재계산(memo always-miss)한다.
+// 명시 now 만 키에 반영하므로 시간 기반 타이틀의 결정성/재계산은 그대로 유지된다.
 let memoKey: {
   runs: unknown;
   shoes: unknown;
   state: unknown;
-  now: number;
+  challenges: unknown;
+  now: number | undefined;
 } | null = null;
 let memoVal: ProgressionView | null = null;
 
@@ -168,14 +179,16 @@ let memoVal: ProgressionView | null = null;
  * @param runs   서버/상태 런 행(비배열/null 안전).
  * @param shoes  서버/상태 신발 행(비배열/null 안전).
  * @param state  영속 진척 상태(progression_v1) — 장착 타이틀/획득 타이틀 등.
- * @param now    기준 시각(epoch ms). 미지정 시 Date.now()(시간 기반 타이틀 결정성).
- * @param challenges 완료 챌린지(engagement 평가축) — 선택.
+ * @param now    기준 시각(epoch ms). **미지정** 시 캐시 확인 후 Date.now() 로 해석하며
+ *               멱등 키에는 포함하지 않는다(기본 호출형은 참조 동등이면 memo hit).
+ *               명시하면 키에 반영되어 값이 바뀌면 재계산한다(시간 기반 타이틀 결정성).
+ * @param challenges 완료 챌린지(engagement 평가축) — 선택. 참조가 키의 일부.
  */
 export function getProgression(
   runs: readonly BackendRun[] | null | undefined,
   shoes: readonly BackendShoe[] | null | undefined,
   state: ProgressionState | null | undefined,
-  now: number = Date.now(),
+  now?: number,
   challenges?: readonly ContextChallengeInput[] | null,
 ): ProgressionView {
   const safeState = state ?? {
@@ -192,21 +205,24 @@ export function getProgression(
     memoKey.runs === runs &&
     memoKey.shoes === shoes &&
     memoKey.state === state &&
+    memoKey.challenges === challenges &&
     memoKey.now === now
   ) {
     return memoVal;
   }
 
+  // now 는 캐시 확인 **후에** 해석한다 — 기본값 Date.now() 가 키에 새 나가지 않도록.
+  const resolvedNow = now ?? Date.now();
   const ctx = buildContext(
     runs,
     shoes,
     safeState.earnedTitles,
     challenges,
-    now,
+    resolvedNow,
   );
   const view = viewFromContext(ctx, safeState);
 
-  memoKey = {runs, shoes, state, now};
+  memoKey = {runs, shoes, state, challenges, now};
   memoVal = view;
   return view;
 }
