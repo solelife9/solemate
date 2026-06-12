@@ -32,7 +32,7 @@ import RunActiveScreenView from './RunActiveScreen.rn';
 import ProgressionScreen from './ProgressionScreen.rn';
 import HallOfShoes from './HallOfShoes.rn';
 import {buildContext} from './lib/progression/context';
-import {getProgression} from './lib/progression';
+import {getProgression, pickRecentAchievement} from './lib/progression';
 import {loadProgression} from './lib/progression/storage';
 import type {ProgressionState, RetiredShoeRecord} from './lib/progression/types';
 import type {HomeProgression, HomeChallengeView} from './HomeScreen.rn';
@@ -785,16 +785,13 @@ function Main(){
   // 읽고, 수락한 챌린지(base distance/streak + ext monthly/shoe/rotation) 중 활성 1개의
   // 진행을 골라 홈 띠로 내려준다. 데이터를 만들지 않고 표시 파생만 한다(getProgression
   // 내부 메모 + 작은 루프라 매 렌더 비용은 무시 가능). 미주입 progState 도 안전 기본값.
-  const homeProgression:HomeProgression=(()=>{
+  const homeProgression:HomeProgression=useMemo(()=>{
     const view=getProgression(runs,shoes,progState??undefined);
     const equipped=view.titles.equipped
       ? (view.titles.unlocked.find(t=>t.key===view.titles.equipped)?.name??null)
       : null;
-    // 최근(하이라이트) 업적: 언락된 것 중 포인트 최고(동률은 카탈로그 순서) — 결정적.
-    let topAch:{name:string;points:number}|null=null;
-    for(const a of view.achievements){
-      if(a.unlocked&&(!topAch||a.points>topAch.points)) topAch={name:a.name,points:a.points};
-    }
+    // 최근(하이라이트) 업적: seenUnlocks 의 해제 순서(꼬리=최신) 기준 — 포인트가 아니라 recency.
+    const recentAch=pickRecentAchievement(view,progState?.seenUnlocks);
     // 활성 챌린지 후보: base + ext 진행 파생 → (미완료 우선, pct 내림차순) 1개.
     const nowISO=today();
     const extRuns:ExtRun[]=runs.map(r=>({date:String(r.run_date||'').slice(0,10),dist:Number(r.km)||0,shoeId:r.shoe_id,durationS:r.duration}));
@@ -815,9 +812,10 @@ function Main(){
       score:view.rank.score,
       equippedTitle:equipped,
       challenge:active?active.v:null,
-      achievement:topAch?{name:topAch.name}:null,
+      achievement:recentAch?{name:recentAch.name}:null,
     };
-  })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[runs,shoes,challenges,extChallenges,challengeRuns,progState]);
 
   // ── 은퇴 키프세이크 컨텍스트(Slice B) ────────────────────────────────────────
   // 영속된 은퇴 레코드(Hall of Shoes 소스) + 진척 컨텍스트(요약/등급 판정용). buildContext

@@ -272,3 +272,31 @@ export function collectUnlockedKeys(view: ProgressionView | null | undefined): s
     : [];
   return uniq([...titleKeys, ...achKeys]);
 }
+
+/**
+ * 홈 "최근 달성" 업적 선택 — **포인트가 아니라 실제 해제 순서(recency)** 로 고른다.
+ * seenUnlocks 는 detectNewUnlocks 가 새로 해제된 키를 **꼬리에 덧붙여** 영속하므로,
+ * 뒤에서부터 훑어 *현재도 해제된 업적* 과 매칭되는 마지막 키가 가장 최근에 달성한 업적이다.
+ * (seenUnlocks 엔 타이틀 키도 섞이지만 업적 맵에 없으니 자연히 건너뛴다.)
+ *
+ * 폴백(seenUnlocks 에 해제 업적이 하나도 없을 때만): 포인트 최고 → 그래도 없으면 아무 해제 업적.
+ * PURE: 입력 불변·throw 금지. 매칭 없으면 null.
+ */
+export function pickRecentAchievement(
+  view: ProgressionView | null | undefined,
+  seenUnlocks: readonly string[] | null | undefined,
+): AchievementView | null {
+  if (!view || typeof view !== 'object' || !Array.isArray(view.achievements)) return null;
+  const unlocked = view.achievements.filter(a => a && a.unlocked);
+  if (unlocked.length === 0) return null;
+  const byKey = new Map(unlocked.map(a => [a.key, a]));
+  const seen = asStringArray(seenUnlocks);
+  for (let i = seen.length - 1; i >= 0; i--) {
+    const hit = byKey.get(seen[i]);
+    if (hit) return hit;
+  }
+  // 폴백: recency 신호가 없으면 포인트 최고(동률은 카탈로그 순서) — 결정적.
+  let top = unlocked[0];
+  for (const a of unlocked) if (a.points > top.points) top = a;
+  return top;
+}

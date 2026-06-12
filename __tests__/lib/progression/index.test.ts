@@ -16,6 +16,8 @@ import {
   collectUnlockedKeys,
   detectNewUnlocks,
   getProgression,
+  pickRecentAchievement,
+  type AchievementView,
 } from '../../../lib/progression';
 import {defaultProgressionState} from '../../../lib/progression/storage';
 import {ProgressionState, RankTier} from '../../../lib/progression/types';
@@ -251,5 +253,80 @@ describe('detectNewUnlocks: 멱등 알림', () => {
   test('collectUnlockedKeys: 비정상 입력 → []', () => {
     expect(collectUnlockedKeys(null)).toEqual([]);
     expect(collectUnlockedKeys(undefined)).toEqual([]);
+  });
+});
+
+// ============================================================================
+// 5) pickRecentAchievement — 홈 '최근 달성'은 포인트가 아니라 해제 순서(recency)
+// ============================================================================
+describe('pickRecentAchievement: recency가 포인트를 이긴다', () => {
+  const ach = (key: string, name: string, points: number): AchievementView => ({
+    key,
+    name,
+    category: 'running',
+    rarity: 'bronze',
+    points,
+    progress: {current: 1, target: 1},
+    unlocked: true,
+  });
+  // 최소 뷰(셀렉터는 achievements 만 읽는다) — 나머지는 형태만 맞춰 캐스팅.
+  const viewWith = (achievements: AchievementView[]) =>
+    ({achievements} as unknown as Parameters<typeof pickRecentAchievement>[0]);
+
+  test('낮은 포인트 업적이 더 늦게(꼬리) 해제되면 그게 최근 달성으로 뽑힌다', () => {
+    // big=900점은 먼저, small=10점은 나중에 해제 → seenUnlocks 꼬리에 small 이 온다.
+    const view = viewWith([
+      ach('ach_big', 'Marathon Legend', 900),
+      ach('ach_small', 'First Steps', 10),
+    ]);
+    // 타이틀 키가 섞여 있어도(업적 맵에 없으니) 건너뛴다.
+    const seen = ['running_beginner', 'ach_big', 'ach_small'];
+    const pick = pickRecentAchievement(view, seen);
+    expect(pick?.key).toBe('ach_small'); // recency가 포인트(900>10)를 이긴다
+    expect(pick?.name).toBe('First Steps');
+  });
+
+  test('해제 순서가 반대면 결과도 반대(포인트 무관, 순서만 본다)', () => {
+    const view = viewWith([
+      ach('ach_big', 'Marathon Legend', 900),
+      ach('ach_small', 'First Steps', 10),
+    ]);
+    const pick = pickRecentAchievement(view, ['ach_small', 'ach_big']);
+    expect(pick?.key).toBe('ach_big'); // 이번엔 high-points가 더 늦게 해제됨
+  });
+
+  test('seenUnlocks 에 현재 해제 업적이 없으면 포인트 최고로 폴백', () => {
+    const view = viewWith([
+      ach('ach_big', 'Marathon Legend', 900),
+      ach('ach_small', 'First Steps', 10),
+    ]);
+    // seen 엔 타이틀 키뿐 → recency 신호 없음 → 포인트 최고(ach_big).
+    expect(pickRecentAchievement(view, ['running_beginner'])?.key).toBe('ach_big');
+    expect(pickRecentAchievement(view, [])?.key).toBe('ach_big');
+    expect(pickRecentAchievement(view, null)?.key).toBe('ach_big');
+  });
+
+  test('잠긴 업적 키가 seen 에 있어도 무시(현재 해제된 것만 매칭)', () => {
+    const locked = ach('ach_locked', 'Locked', 50);
+    locked.unlocked = false;
+    const view = viewWith([locked, ach('ach_small', 'First Steps', 10)]);
+    // 꼬리의 ach_locked 는 지금 잠겨 있으니 건너뛰고 ach_small 로.
+    expect(pickRecentAchievement(view, ['ach_small', 'ach_locked'])?.key).toBe('ach_small');
+  });
+
+  test('해제 업적이 하나도 없으면 null, 비정상 입력도 안전', () => {
+    expect(pickRecentAchievement(viewWith([]), ['x'])).toBeNull();
+    expect(pickRecentAchievement(null, ['x'])).toBeNull();
+    expect(pickRecentAchievement(undefined, null)).toBeNull();
+  });
+
+  test('실데이터 경로: getProgression 뷰 + seenUnlocks 로 최근 업적을 고른다', () => {
+    const view = getProgression(runs, shoes, defaultProgressionState(), NOW);
+    const unlocked = view.achievements.filter(a => a.unlocked);
+    expect(unlocked.length).toBeGreaterThan(1);
+    // 임의로 '가장 늦게' 해제한 키를 꼬리에 두면 그게 뽑혀야 한다(포인트와 무관).
+    const last = unlocked[0]; // 카탈로그 첫 해제 업적을 일부러 꼬리에 배치
+    const seen = [...unlocked.map(a => a.key).filter(k => k !== last.key), last.key];
+    expect(pickRecentAchievement(view, seen)?.key).toBe(last.key);
   });
 });
