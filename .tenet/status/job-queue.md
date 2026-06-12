@@ -1,6 +1,6 @@
 # Job Queue
 
-Updated: 2026-06-12T18:35:56.874Z
+Updated: 2026-06-12T19:27:47.773Z
 
 - [x] eval-mptta2gb — 37s
 - [x] eval-mptu16xl — 27s
@@ -404,3 +404,18 @@ Updated: 2026-06-12T18:35:56.874Z
 - [x] code_critic for 7c6d4820 — 1m 57s
 - [x] test_critic for 7c6d4820 — 2m 0s
 - [x] playwright_eval for 7c6d4820 — 1m 51s
+- [x] 챌린지 확장 로직(lib/progression/challengesExt.ts) (slice-c-challenges-logic) — 2m 35s
+- [x] 챌린지 확장 UI (slice-c-ui) — 8m 57s
+- [x] 통합검증: Slice C (챌린지 확장 sweep) (slice-c-e2e) — 1m 28s
+- [x] code_critic for b6bfe31b — 2m 36s
+- [x] test_critic for b6bfe31b — 1m 44s
+- [x] playwright_eval for b6bfe31b — 1m 35s
+- [x] code_critic for b6bfe31b — 1m 33s
+- [x] test_critic for b6bfe31b — 58s
+- [x] playwright_eval for b6bfe31b — 1m 44s
+- [x] code_critic for 597a1618 — 3m 11s
+- [x] test_critic for 597a1618 — 2m 9s
+- [x] playwright_eval for 597a1618 — 1m 35s
+- [x] code_critic for 597a1618 — 2m 48s
+- [x] test_critic for 597a1618 — 2m 26s
+- [x] playwright_eval for 597a1618 — 2m 39s
