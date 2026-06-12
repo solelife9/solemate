@@ -92,7 +92,6 @@ const CATEGORY_META: Record<TitleCategory, {label: string; icon: string}> = {
   shoeManagement: {label: '신발 관리', icon: 'shield-checkmark'},
   rotation: {label: '로테이션', icon: 'sync'},
   injuryPrevention: {label: '부상 예방', icon: 'fitness'},
-  trainingStyle: {label: '훈련 스타일', icon: 'speedometer'},
   retirement: {label: '은퇴', icon: 'ribbon'},
   hidden: {label: '히든', icon: 'sparkles'},
 };
@@ -102,7 +101,6 @@ const CATEGORY_ORDER: TitleCategory[] = [
   'shoeManagement',
   'rotation',
   'injuryPrevention',
-  'trainingStyle',
   'hidden',
   'retirement',
 ];

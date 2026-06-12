@@ -60,7 +60,6 @@ export type TitleCategory =
   | 'shoeManagement'
   | 'rotation'
   | 'injuryPrevention'
-  | 'trainingStyle'
   | 'hidden'
   | 'retirement';
 
@@ -223,6 +222,12 @@ export interface ProgressionContext {
   longestRunKm: number;
   /** 최고(최소) 평균 페이스(sec/km). 없으면 null. */
   bestPaceSec: number | null;
+  /**
+   * 단일 런 거리 ≥5km 인 런들 중 최고(최소) 평균 페이스(sec/km). 없으면 null.
+   * Speedster 가 "짧은 1km 질주"가 아닌 "의미 있는 거리에서의 속도"를 요구하는 데 쓴다.
+   * 손으로 만든 컨텍스트와의 하위호환을 위해 선택적(누락 → null=미달성).
+   */
+  bestPace5kSec?: number | null;
   /** 전체 평균 페이스(sec/km). 없으면 null. */
   avgPaceSec: number | null;
   /** 마지막 런에서 이어지는 연속 러닝 일수. */

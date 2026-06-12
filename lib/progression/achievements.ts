@@ -1,8 +1,8 @@
 // ============================================================================
 // lib/progression/achievements.ts — 업적 카탈로그 + 헬퍼 (Slice A)
 // ============================================================================
-// 6개 필러(Running·Consistency·Rotation·ShoeManagement·InjuryPrevention·
-// TrainingStyle) 전반의 업적 **단일 정의 출처**. 타이틀과 달리 업적은 **항상 보이는
+// 5개 필러(Running·Consistency·Rotation·ShoeManagement·InjuryPrevention) 전반의 업적
+// **단일 정의 출처**. 타이틀과 달리 업적은 **항상 보이는
 // 진행률(progress: current/target)** 을 노출한다 — 예: "Trusted Partner 348/500km".
 //
 // 각 AchievementDef:
@@ -129,10 +129,8 @@ const TRUSTED_PARTNER_KM = 500;
 const LONG_HAUL_KM = 1000;
 /** Long Run Specialist: 단일 최장 런. */
 const LONG_RUN_KM = 25;
-/** Speedster: 최고 페이스 ≤5:00/km(템포 능력 프록시 — 워크아웃 타입 미추적). */
+/** Speedster: 5km 이상 단일 런의 평균 페이스 ≤5:00/km. */
 const SPEEDSTER_PACE_SEC = 300;
-/** Speedster 가 우연이 아니도록 요구하는 최소 런 수. */
-const SPEEDSTER_MIN_RUNS = 10;
 
 // ── 진행/언락 일관 팩토리 ──────────────────────────────────────────────────────
 
@@ -162,6 +160,15 @@ function metricAch(opts: {
     },
     unlocked: ctx => nonNeg(opts.value(ctx)) >= target,
   };
+}
+
+/**
+ * Speedster 충족: **5km 이상 단일 런**에서 평균 페이스 ≤5:00/km 를 한 번이라도 기록.
+ * 거리 바닥(5km)으로 "짧은 1km 질주" 게이밍을 배제한다. bestPace5kSec 미주입(구 컨텍스트)→ 미달성.
+ */
+function isSpeedster(ctx: ProgressionContext): boolean {
+  const p = ctx?.bestPace5kSec;
+  return typeof p === 'number' && p > 0 && p <= SPEEDSTER_PACE_SEC;
 }
 
 // ============================================================================
@@ -211,6 +218,29 @@ const RUNNING_ACHIEVEMENTS: AchievementDef[] = [
     target: 5000,
     value: ctx => nonNeg(ctx.cumulativeKm),
   }),
+  // 단일 최장 런(장거리 능력) — 구 trainingStyle 에서 running 으로 이전.
+  metricAch({
+    key: 'ach_long_run_25',
+    name: 'Long Run Specialist',
+    category: 'running',
+    rarity: 'gold',
+    target: LONG_RUN_KM,
+    value: ctx => nonNeg(ctx.longestRunKm),
+  }),
+  // Speedster: 5km 이상 단일 런에서 평균 ≤5:00/km 한 번 — 구 trainingStyle 에서 running 으로 이전.
+  // 페이스는 낮을수록 좋아 단조 진행으로 표현 불가 → 이진 진행(미충족 0 / 충족 1). 정직 판정만 유지.
+  {
+    key: 'ach_speedster',
+    name: 'Speedster',
+    category: 'running',
+    rarity: 'gold',
+    points: pointsForRarity('gold'),
+    progress: (ctx): AchievementProgress => ({
+      current: isSpeedster(ctx) ? 1 : 0,
+      target: 1,
+    }),
+    unlocked: isSpeedster,
+  },
 ];
 
 // ── Consistency: 스트릭/주간 습관 ──────────────────────────────────────────────
@@ -247,6 +277,15 @@ const CONSISTENCY_ACHIEVEMENTS: AchievementDef[] = [
     rarity: 'silver',
     target: 75,
     value: ctx => Math.round(nonNeg(ctx.weeklyActiveRatio) * 100),
+  }),
+  // 누적 100회 러닝(볼륨·꾸준함) — 구 trainingStyle 에서 consistency 로 이전.
+  metricAch({
+    key: 'ach_century_runs',
+    name: 'Century of Runs',
+    category: 'consistency',
+    rarity: 'platinum',
+    target: 100,
+    value: ctx => nonNeg(ctx.runCount),
   }),
 ];
 
@@ -356,48 +395,6 @@ const INJURY_ACHIEVEMENTS: AchievementDef[] = [
   },
 ];
 
-// ── TrainingStyle: 장거리/속도/볼륨(워크아웃 타입 미추적 → 프록시) ──────────────
-const TRAINING_STYLE_ACHIEVEMENTS: AchievementDef[] = [
-  metricAch({
-    key: 'ach_long_run_25',
-    name: 'Long Run Specialist',
-    category: 'trainingStyle',
-    rarity: 'gold',
-    target: LONG_RUN_KM,
-    value: ctx => nonNeg(ctx.longestRunKm),
-  }),
-  metricAch({
-    key: 'ach_century_runs',
-    name: 'Century of Runs',
-    category: 'trainingStyle',
-    rarity: 'platinum',
-    target: 100,
-    value: ctx => nonNeg(ctx.runCount),
-  }),
-  // Speedster: 최고 페이스 ≤5:00/km & 런 ≥10(우연 배제). 페이스는 낮을수록 좋아
-  // 단조 진행으로 표현 불가 → 이진 진행(미충족 0 / 충족 1). 정직 판정만 유지.
-  {
-    key: 'ach_speedster',
-    name: 'Speedster',
-    category: 'trainingStyle',
-    rarity: 'gold',
-    points: pointsForRarity('gold'),
-    progress: (ctx): AchievementProgress => {
-      const fast =
-        ctx.bestPaceSec !== null &&
-        nonNeg(ctx.bestPaceSec) > 0 &&
-        ctx.bestPaceSec <= SPEEDSTER_PACE_SEC &&
-        nonNeg(ctx.runCount) >= SPEEDSTER_MIN_RUNS;
-      return {current: fast ? 1 : 0, target: 1};
-    },
-    unlocked: ctx =>
-      ctx.bestPaceSec !== null &&
-      nonNeg(ctx.bestPaceSec) > 0 &&
-      ctx.bestPaceSec <= SPEEDSTER_PACE_SEC &&
-      nonNeg(ctx.runCount) >= SPEEDSTER_MIN_RUNS,
-  },
-];
-
 // ── Retirement: Hall of Shoes 은퇴 수 + 등급 품질(progression_v1.retiredShoes) ──
 // 카운트형(First Retirement/Shoe Curator/Hall of Shoes)은 metricAch 로 진행바·언락이
 // 정의상 일치한다. 등급형(Smart Replacement/Perfect Timing)은 "해당 등급 은퇴가 ≥1"
@@ -457,7 +454,6 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   ...ROTATION_ACHIEVEMENTS,
   ...SHOE_ACHIEVEMENTS,
   ...INJURY_ACHIEVEMENTS,
-  ...TRAINING_STYLE_ACHIEVEMENTS,
   ...RETIREMENT_ACHIEVEMENTS,
 ];
 
@@ -474,11 +470,8 @@ export const ACHIEVEMENTS_BY_KEY: Readonly<Record<string, AchievementDef>> =
  * 값(타이틀 키)은 titles.ts 카탈로그에 실재해야 한다(분산 정의가 아닌 단순 참조 링크).
  */
 export const ACHIEVEMENT_UNLOCKS_TITLE: Readonly<Record<string, string>> = {
-  ach_marathon: 'style_race',
-  ach_long_run_25: 'style_long_run',
   ach_collection_5: 'shoe_rotation_runner',
   ach_collection_10: 'shoe_collector',
-  ach_speedster: 'style_tempo',
   ach_first_retirement: 'retire_starter',
   ach_retire_10: 'retire_hall',
 };

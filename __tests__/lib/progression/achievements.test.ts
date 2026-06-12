@@ -245,12 +245,16 @@ describe('anti-scenario 1: 미충족 무언락', () => {
     expect(p.current === p.target).toBe(def.unlocked(allHealthy));
   });
 
-  test('Speedster: 빠른 페이스라도 런<10 이면 미언락(우연 배제)', () => {
+  test('Speedster: 5km 이상 단일 런 평균 ≤5:00/km 한 번이면 언락(런 수 무관)', () => {
     const def = achievementDef('ach_speedster')!;
-    expect(def.unlocked(emptyCtx({bestPaceSec: 280, runCount: 9}))).toBe(false);
-    expect(def.unlocked(emptyCtx({bestPaceSec: 280, runCount: 10}))).toBe(true);
-    // 페이스 데이터 없음(null) → 미언락(날조 금지).
-    expect(def.unlocked(emptyCtx({bestPaceSec: null, runCount: 50}))).toBe(false);
+    // 5km+ 런 평균 300s(=5:00/km) → 단 1회로도 언락.
+    expect(def.unlocked(emptyCtx({bestPace5kSec: 300, runCount: 1}))).toBe(true);
+    // 5:00/km 보다 느리면 미언락.
+    expect(def.unlocked(emptyCtx({bestPace5kSec: 301, runCount: 50}))).toBe(false);
+    // 5km+ 빠른 런 없음(짧은 질주만) → 미언락. bestPaceSec 가 빨라도 거리 바닥 미충족.
+    expect(
+      def.unlocked(emptyCtx({bestPace5kSec: null, bestPaceSec: 200, runCount: 50})),
+    ).toBe(false);
   });
 
   test('비정상 입력에서 throw 없이 [] 반환', () => {
@@ -303,7 +307,7 @@ describe('카탈로그 무결성', () => {
     expect(Object.keys(ACHIEVEMENTS_BY_KEY).length).toBe(ACHIEVEMENTS.length);
   });
 
-  test('6개 필러 카테고리를 모두 커버한다', () => {
+  test('5개 필러 카테고리를 모두 커버한다', () => {
     const cats = new Set(ACHIEVEMENTS.map(a => a.category));
     [
       'running',
@@ -311,7 +315,6 @@ describe('카탈로그 무결성', () => {
       'rotation',
       'shoeManagement',
       'injuryPrevention',
-      'trainingStyle',
     ].forEach(c => expect(cats.has(c as never)).toBe(true));
   });
 

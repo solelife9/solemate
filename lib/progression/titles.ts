@@ -4,7 +4,7 @@
 // 모든 카테고리 사다리(ladder)와 hidden 타이틀의 **단일 정의 출처**. 각 TitleDef.criterion
 // 은 사전 집계 사실(ProgressionContext)만 읽어 달성 여부를 **순수 판정**한다(입력 불변,
 // NaN/음수/누락 → false, throw 금지). 랭크처럼 "거리 단독"이 아니라 러너됨의 여러 축
-// (거리·일관성·신발관리·로테이션·부상예방·트레이닝스타일)을 보상한다.
+// (거리·일관성·신발관리·로테이션·부상예방)을 보상한다.
 //
 // 권위 매핑(브리프 verbatim — 이름/기준을 발명·누락하지 않는다):
 //   running          1런 / 100 / 500 / 1000 / 5000 / 10000 / 25000 km (bronze→legend)
@@ -12,7 +12,6 @@
 //   rotation         2 사용 / 3 일관 / rotation≥0.7(3mo·1yr·2yr) + 탁월·엘리트
 //   injuryPrevention 조기교체 / 전부건강 / 무초과(6mo·1yr) + 탁월·장기·다년
 //   consistency      첫달 / 주간(1·3·6·12·24mo) + 엘리트
-//   trainingStyle    Tempo / Long Run / Recovery / Race (런 타입 믹스)
 //   hidden           Early Bird / Night Runner / Comeback / Long Relationship
 //
 // 시간 기반 타이틀("≥6개월" 등)은 히스토리 사실이 충족될 때까지 **잠긴 채로 둔다**
@@ -20,10 +19,6 @@
 //
 // 평가축 임계(mgmt≥0.9, rotation≥0.7, injuryPrevention≥0.9)는 rank.computeRank 의 평가축을
 // 그대로 재사용한다 — 평가축 정의의 권위는 rank.ts 한곳(중복 정의 금지·일관).
-//
-// trainingStyle 주의: 런 워크아웃 타입(tempo/easy/race)은 추적되지 않는다(BackendRun 에
-// 타입 필드 없음). 따라서 가용한 페이스/거리 사실로부터 **프록시**로 판정한다(Rain Runner
-// 와 같은 정직성 원칙 — 추적 불가한 신호는 발명하지 않는다).
 //
 // Rain Runner: OMITTED — 날씨가 추적되지 않아 정직하게 판정할 수 없으므로 v1 에서 제외한다
 // (spec Out of Scope). 데이터가 생기면 hidden 으로 추가.
@@ -50,16 +45,6 @@ const YEAR_2 = 730;
 // ── 신발 마모 비율 임계 ────────────────────────────────────────────────────────
 /** 초과 마모(overdue) 경고 비율 — rank/lib.shoe SHOE_REPLACE_PCT(90%)과 동일. */
 const OVERDUE_RATIO = 0.9;
-
-// ── trainingStyle 프록시 임계(페이스 sec/km, 거리 km) ────────────────────────────
-/** Tempo: 최고 페이스가 이보다 빠르면(≤) 템포 능력 보유 — 5:00/km. */
-const TEMPO_PACE_SEC = 300;
-/** Recovery: 평균이 최고보다 이 배수 이상 느리면 회복주를 섞는다는 신호. */
-const RECOVERY_PACE_FACTOR = 1.25;
-/** Long Run Specialist: 단일 최장 런 임계(장거리 훈련). */
-const LONG_RUN_KM = 25;
-/** Race Runner: 풀코스 거리 단일 런(레이스 완주 프록시). */
-const RACE_KM = 42.195;
 
 // ── 수치 방어 헬퍼 ────────────────────────────────────────────────────────────
 
@@ -473,51 +458,6 @@ const CONSISTENCY_TITLES: TitleDef[] = [
   },
 ];
 
-// ── trainingStyle: 런 타입 믹스(워크아웃 타입 미추적 → 페이스/거리 프록시) ──────────
-const TRAINING_STYLE_TITLES: TitleDef[] = [
-  {
-    // Tempo: 빠른 템포 페이스 능력(최고 페이스 ≤5:00/km) + 충분한 런.
-    key: 'style_tempo',
-    name: 'Tempo Runner',
-    category: 'trainingStyle',
-    tier: 'silver',
-    criterion: ctx =>
-      ctx.bestPaceSec !== null &&
-      nonNeg(ctx.bestPaceSec) > 0 &&
-      ctx.bestPaceSec <= TEMPO_PACE_SEC &&
-      nonNeg(ctx.runCount) >= 10,
-  },
-  {
-    // Long Run Specialist: 단일 장거리 런 완수.
-    key: 'style_long_run',
-    name: 'Long Run Specialist',
-    category: 'trainingStyle',
-    tier: 'gold',
-    criterion: ctx => nonNeg(ctx.longestRunKm) >= LONG_RUN_KM,
-  },
-  {
-    // Recovery: 평균이 최고보다 뚜렷이 느림 → 회복주를 섞는 패턴 + 충분한 볼륨.
-    key: 'style_recovery',
-    name: 'Recovery Runner',
-    category: 'trainingStyle',
-    tier: 'silver',
-    criterion: ctx =>
-      ctx.avgPaceSec !== null &&
-      ctx.bestPaceSec !== null &&
-      nonNeg(ctx.bestPaceSec) > 0 &&
-      ctx.avgPaceSec >= ctx.bestPaceSec * RECOVERY_PACE_FACTOR &&
-      nonNeg(ctx.runCount) >= 20,
-  },
-  {
-    // Race Runner: 풀코스 거리 단일 런(레이스 완주 프록시).
-    key: 'style_race',
-    name: 'Race Runner',
-    category: 'trainingStyle',
-    tier: 'platinum',
-    criterion: ctx => nonNeg(ctx.longestRunKm) >= RACE_KM,
-  },
-];
-
 // ── hidden: 미달성 시 갤러리 비노출(달성 순간 공개) ──────────────────────────────
 // Rain Runner 는 여기 들어가야 했으나 날씨 미추적으로 OMITTED(위 헤더 주석 참조).
 const HIDDEN_TITLES: TitleDef[] = [
@@ -635,7 +575,6 @@ export const TITLES: readonly TitleDef[] = [
   ...ROTATION_TITLES,
   ...INJURY_TITLES,
   ...CONSISTENCY_TITLES,
-  ...TRAINING_STYLE_TITLES,
   ...RETIREMENT_TITLES,
   ...HIDDEN_TITLES,
 ];

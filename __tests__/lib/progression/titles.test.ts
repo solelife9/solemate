@@ -350,53 +350,7 @@ describe('consistency 사다리', () => {
 });
 
 // ============================================================================
-// 6) trainingStyle — 페이스/거리 프록시
-// ============================================================================
-describe('trainingStyle 프록시', () => {
-  test('Tempo Runner: 최고 페이스≤300s & 런≥10', () => {
-    expect(
-      evaluateTitles(emptyCtx({bestPaceSec: 300, runCount: 10})),
-    ).toContain('style_tempo');
-    expect(
-      evaluateTitles(emptyCtx({bestPaceSec: 301, runCount: 10})),
-    ).not.toContain('style_tempo');
-    expect(
-      evaluateTitles(emptyCtx({bestPaceSec: 280, runCount: 9})),
-    ).not.toContain('style_tempo');
-  });
-
-  test('Long Run Specialist: 최장 런≥25km / Race Runner: ≥42.195km', () => {
-    expect(evaluateTitles(emptyCtx({longestRunKm: 25}))).toContain(
-      'style_long_run',
-    );
-    expect(evaluateTitles(emptyCtx({longestRunKm: 24.99}))).not.toContain(
-      'style_long_run',
-    );
-    expect(evaluateTitles(emptyCtx({longestRunKm: 42.195}))).toContain(
-      'style_race',
-    );
-    expect(evaluateTitles(emptyCtx({longestRunKm: 42}))).not.toContain(
-      'style_race',
-    );
-  });
-
-  test('Recovery Runner: 평균이 최고의 ≥1.25배 & 런≥20', () => {
-    expect(
-      evaluateTitles(
-        emptyCtx({avgPaceSec: 375, bestPaceSec: 300, runCount: 20}),
-      ),
-    ).toContain('style_recovery');
-    // 평균이 충분히 느리지 않으면(=빠른 단일톤) 미충족.
-    expect(
-      evaluateTitles(
-        emptyCtx({avgPaceSec: 330, bestPaceSec: 300, runCount: 20}),
-      ),
-    ).not.toContain('style_recovery');
-  });
-});
-
-// ============================================================================
-// 7) hidden 타이틀
+// 6) hidden 타이틀
 // ============================================================================
 describe('hidden 타이틀', () => {
   test('Early Bird: 새벽 런≥20', () => {
@@ -559,7 +513,6 @@ describe('카탈로그 무결성', () => {
       'rotation',
       'injuryPrevention',
       'consistency',
-      'trainingStyle',
       'hidden',
     ].forEach(c => expect(cats.has(c as never)).toBe(true));
   });

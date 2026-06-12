@@ -29,6 +29,8 @@ const DAY_MS = 86400000;
 const EARLY_BEFORE_HOUR = 5;
 /** Night Runner: 시작 시각 >= 22:00. */
 const NIGHT_AT_OR_AFTER_HOUR = 22;
+/** Speedster: 이 거리(km) 이상인 단일 런만 5km+ 페이스 집계에 포함. */
+const SPEEDSTER_MIN_KM = 5;
 
 /** km(string|number) → 유한 비음수 숫자. 비정상은 0. */
 function parseKm(v: unknown): number {
@@ -193,6 +195,8 @@ export function buildContext(
   let totalDurationS = 0;
   let earlyRunCount = 0;
   let nightRunCount = 0;
+  // 단일 런 ≥5km 중 최고(최소) 평균 페이스(sec/km) — Speedster 판정용.
+  let bestPace5kSec: number | null = null;
   const dates: string[] = [];
   // 신발별 런 합산(서버 total_km 가 없을 때만 km 폴백에 사용).
   const perShoeDerivedKm: Record<string, number> = {};
@@ -203,6 +207,18 @@ export function buildContext(
     const dur = parseSeconds(r.duration);
     cumulativeKm += km;
     totalDurationS += dur;
+
+    // 5km 이상 단일 런의 평균 페이스 후보(거리 바닥으로 "짧은 질주" 배제).
+    if (km >= SPEEDSTER_MIN_KM && dur > 0) {
+      const pace = dur / km;
+      if (
+        Number.isFinite(pace) &&
+        pace > 0 &&
+        (bestPace5kSec === null || pace < bestPace5kSec)
+      ) {
+        bestPace5kSec = pace;
+      }
+    }
 
     const hour = startHour(r.run_time);
     if (hour !== null) {
@@ -267,6 +283,7 @@ export function buildContext(
     totalDurationS,
     longestRunKm: pr.longestKm,
     bestPaceSec: pr.fastestPaceSec,
+    bestPace5kSec,
     avgPaceSec,
     currentStreak,
     longestStreak,

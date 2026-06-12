@@ -84,6 +84,10 @@ describe('buildContext aggregation', () => {
     expect(ctx.avgPaceSec).toBeCloseTo((1500 + 2400 + 2400 + 3600) / 35, 5);
   });
 
+  test('5km+ 최고 페이스(Speedster용): 모든 런 ≥5km → 최속 10km@2400s=240', () => {
+    expect(ctx.bestPace5kSec).toBe(240);
+  });
+
   test('주간 활성도 비율(0..1)', () => {
     // 첫 런 6/1 ~ now 6/12: 2주 span, 활성 주 2개(6/1주 + 6/9주) → 1.0
     expect(ctx.weeklyActiveRatio).toBeCloseTo(1, 5);
@@ -126,6 +130,7 @@ describe('buildContext edge/defensive', () => {
     expect(ctx.totalDurationS).toBe(0);
     expect(ctx.longestRunKm).toBe(0);
     expect(ctx.bestPaceSec).toBeNull();
+    expect(ctx.bestPace5kSec).toBeNull();
     expect(ctx.avgPaceSec).toBeNull();
     expect(ctx.currentStreak).toBe(0);
     expect(ctx.longestStreak).toBe(0);
@@ -133,6 +138,25 @@ describe('buildContext edge/defensive', () => {
     expect(ctx.weeklyActiveRatio).toBe(0);
     expect(ctx.perShoe).toEqual({});
     expect(ctx.registeredShoeCount).toBe(0);
+  });
+
+  test('5km+ 페이스의 거리 바닥: <5km 빠른 질주는 무시, ≥5km 런만 집계', () => {
+    // 3km를 매우 빠르게(210s/km) + 6km를 280s/km. 거리 바닥 5km → 6km 런만 후보.
+    const r: BackendRun[] = [
+      {id: 'a', shoe_id: 's1', km: 3, run_date: '2026-06-01', duration: 630}, // 210s/km, 그러나 <5km
+      {id: 'b', shoe_id: 's1', km: 6, run_date: '2026-06-02', duration: 1680}, // 280s/km, ≥5km
+    ];
+    const ctx = buildContext(r, [], [], [], NOW);
+    expect(ctx.bestPaceSec).toBe(210); // 1km 바닥 기준은 3km 질주가 최속
+    expect(ctx.bestPace5kSec).toBe(280); // 5km 바닥 기준은 6km 런만
+  });
+
+  test('5km+ 런이 하나도 없으면 bestPace5kSec=null', () => {
+    const r: BackendRun[] = [
+      {id: 'a', shoe_id: 's1', km: 4.9, run_date: '2026-06-01', duration: 1200},
+    ];
+    const ctx = buildContext(r, [], [], [], NOW);
+    expect(ctx.bestPace5kSec).toBeNull();
   });
 
   test('null/undefined 입력도 안전(빈 컨텍스트)', () => {
