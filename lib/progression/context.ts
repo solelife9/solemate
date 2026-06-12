@@ -20,6 +20,8 @@ import {
   EarnedTitle,
   PerShoeStats,
   ProgressionContext,
+  RetiredShoeRecord,
+  RetirementGrade,
 } from './types';
 
 const DAY_MS = 86400000;
@@ -137,6 +139,8 @@ function toUiRun(r: BackendRun): Run {
  * @param earned     이미 획득한 타이틀(중복 언락 방지/참여도).
  * @param challenges 챌린지(완료 수만 집계) — engagement 평가축.
  * @param now        기준 시각(epoch ms) — 주간 활성도 계산에 주입.
+ * @param retiredShoes 영속된 은퇴 레코드(progression_v1.retiredShoes) — 은퇴 업적/타이틀의
+ *                    권위 소스. 생략 시 은퇴 카운트/등급은 비어 있는 것으로 본다(하위호환).
  */
 export function buildContext(
   runs: readonly BackendRun[] | null | undefined,
@@ -144,12 +148,23 @@ export function buildContext(
   earned: readonly EarnedTitle[] | null | undefined,
   challenges: readonly ContextChallengeInput[] | null | undefined,
   now: number,
+  retiredShoes?: readonly RetiredShoeRecord[] | null | undefined,
 ): ProgressionContext {
   const runList = Array.isArray(runs) ? runs.filter(Boolean) : [];
   const shoeList = Array.isArray(shoes) ? shoes.filter(Boolean) : [];
   const earnedList = Array.isArray(earned) ? earned.filter(Boolean) : [];
   const challengeList = Array.isArray(challenges) ? challenges.filter(Boolean) : [];
+  const retiredList = Array.isArray(retiredShoes) ? retiredShoes.filter(Boolean) : [];
   const safeNow = Number.isFinite(now) ? now : 0;
+
+  // ── 은퇴(Hall of Shoes) 레코드: 실제 은퇴 이벤트 + 등급(날조 금지) ──────────────
+  // shoeId 누락 레코드는 무효로 제외(storage 정규화와 동일 규약). 등급 누락 → 'standard'.
+  const retirementGrades: RetirementGrade[] = [];
+  for (const r of retiredList) {
+    if (!r || typeof r.shoeId !== 'string' || !r.shoeId) continue;
+    retirementGrades.push((r.grade as RetirementGrade) ?? 'standard');
+  }
+  const retirementCount = retirementGrades.length;
 
   // ── perShoe 시드: 등록된 모든 신발(런 0인 신발·은퇴 신발도 포함) ──────────────
   const perShoe: Record<string, PerShoeStats> = {};
@@ -263,6 +278,8 @@ export function buildContext(
       s => s && typeof s.id === 'string' && s.id,
     ).length,
     retiredShoeCount,
+    retirementCount,
+    retirementGrades,
     perShoe,
     earnedTitleKeys,
     earnedTitleCount: earnedTitleKeys.length,

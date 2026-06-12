@@ -29,10 +29,12 @@
 // (spec Out of Scope). 데이터가 생기면 hidden 으로 추가.
 // ============================================================================
 import {computeRank} from './rank';
+import {isPerfectOrBetter, isSmartOrBetter} from './retirementGrade';
 import {
   PerShoeStats,
   ProgressionContext,
   ProgressionState,
+  RetirementGrade,
   TitleDef,
 } from './types';
 
@@ -144,6 +146,26 @@ function hasEarlyReplacement(ctx: ProgressionContext): boolean {
     const r = wearRatio(s);
     return r !== null && r > 0 && r < OVERDUE_RATIO;
   });
+}
+
+// ── 은퇴(Hall of Shoes) 지표 — 권위=ctx.retirementCount/retirementGrades ─────────
+// 신발 플래그가 아니라 영속 은퇴 레코드(progression_v1.retiredShoes)로 구동(날조 금지).
+/** 실제 은퇴(영속 레코드) 수 — 누락 → 0. */
+function retirementCount(ctx: ProgressionContext): number {
+  return nonNeg(ctx?.retirementCount ?? 0);
+}
+/** 은퇴 등급 목록(방어적 — 누락/비배열 → []). */
+function retirementGrades(ctx: ProgressionContext): RetirementGrade[] {
+  const g = ctx?.retirementGrades;
+  return Array.isArray(g) ? g.filter(Boolean) : [];
+}
+/** smart 이상 등급으로 교체한 은퇴 수(perfect/hallOfFame 포함). */
+function smartOrBetterRetirementCount(ctx: ProgressionContext): number {
+  return retirementGrades(ctx).filter(isSmartOrBetter).length;
+}
+/** perfect(이상) 등급으로 교체한 은퇴 수(hallOfFame 포함). */
+function perfectRetirementCount(ctx: ProgressionContext): number {
+  return retirementGrades(ctx).filter(isPerfectOrBetter).length;
 }
 
 // 평가축 재사용(권위=rank.ts). computeRank 는 순수·메모이즈 → ctx 참조당 1회만 계산.
@@ -538,6 +560,71 @@ const HIDDEN_TITLES: TitleDef[] = [
   },
 ];
 
+// ── retirement: 은퇴 수 + 등급 품질 사다리(Shoe Care Starter → … → Keep Going) ──
+// progression_v1.retiredShoes 의 실제 은퇴 수(retirementCount)와 등급 품질
+// (smart 이상/perfect)로 구동한다. 카운트가 충분히 쌓이고(1/3/5/10) 거기에 "잘 교체한"
+// 품질이 더해질수록 상위 사다리가 열린다. 최상위는 KEEGO 브랜드 슬로건 "Keep Going"
+// (브리프 verbatim — shoeManagement 의 동명 legend 타이틀과는 별개 키로 공존).
+const RETIREMENT_TITLES: TitleDef[] = [
+  {
+    key: 'retire_starter',
+    name: 'Shoe Care Starter',
+    category: 'retirement',
+    tier: 'bronze',
+    criterion: ctx => retirementCount(ctx) >= 1,
+  },
+  {
+    key: 'retire_mindful',
+    name: 'Mindful Retirer',
+    category: 'retirement',
+    tier: 'silver',
+    criterion: ctx => retirementCount(ctx) >= 3,
+  },
+  {
+    // 5켤레 은퇴 + 그중 하나라도 smart 이상(잘 교체한 흔적).
+    key: 'retire_smart',
+    name: 'Smart Retirer',
+    category: 'retirement',
+    tier: 'gold',
+    criterion: ctx =>
+      retirementCount(ctx) >= 5 && smartOrBetterRetirementCount(ctx) >= 1,
+  },
+  {
+    // 5켤레 은퇴 + smart 이상 3회(꾸준히 잘 교체).
+    key: 'retire_curator',
+    name: 'Curation Pro',
+    category: 'retirement',
+    tier: 'platinum',
+    criterion: ctx =>
+      retirementCount(ctx) >= 5 && smartOrBetterRetirementCount(ctx) >= 3,
+  },
+  {
+    key: 'retire_hall',
+    name: 'Hall of Shoes Keeper',
+    category: 'retirement',
+    tier: 'diamond',
+    criterion: ctx => retirementCount(ctx) >= 10,
+  },
+  {
+    // 10켤레 은퇴 + perfect 타이밍 1회(완벽한 교체를 해본 명예의 전당).
+    key: 'retire_perfect',
+    name: 'Perfect Curator',
+    category: 'retirement',
+    tier: 'master',
+    criterion: ctx =>
+      retirementCount(ctx) >= 10 && perfectRetirementCount(ctx) >= 1,
+  },
+  {
+    // 최상위(브랜드 슬로건): 10켤레 은퇴 + perfect 타이밍 3회.
+    key: 'retire_keep_going',
+    name: 'Keep Going',
+    category: 'retirement',
+    tier: 'legend',
+    criterion: ctx =>
+      retirementCount(ctx) >= 10 && perfectRetirementCount(ctx) >= 3,
+  },
+];
+
 /**
  * 전체 타이틀 카탈로그(권위·불변). 카테고리 순서대로 평탄화한다.
  * 갤러리/엔진은 이 배열만 소비한다(분산 정의 금지).
@@ -549,6 +636,7 @@ export const TITLES: readonly TitleDef[] = [
   ...INJURY_TITLES,
   ...CONSISTENCY_TITLES,
   ...TRAINING_STYLE_TITLES,
+  ...RETIREMENT_TITLES,
   ...HIDDEN_TITLES,
 ];
 

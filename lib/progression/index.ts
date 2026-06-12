@@ -219,6 +219,7 @@ export function getProgression(
     safeState.earnedTitles,
     challenges,
     resolvedNow,
+    safeState.retiredShoes,
   );
   const view = viewFromContext(ctx, safeState);
 

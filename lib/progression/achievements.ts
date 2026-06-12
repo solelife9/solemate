@@ -21,12 +21,14 @@
 // ============================================================================
 import {computeRank} from './rank';
 import {pointsForRarity} from './points';
+import {isPerfectOrBetter, isSmartOrBetter} from './retirementGrade';
 import {
   AchievementDef,
   AchievementProgress,
   PerShoeStats,
   ProgressionContext,
   RankTier,
+  RetirementGrade,
   TitleCategory,
 } from './types';
 
@@ -91,6 +93,31 @@ function assessedActiveCount(ctx: ProgressionContext): number {
 // 평가축 재사용(권위=rank.ts) — computeRank 는 순수·메모이즈.
 function rotationPillar(ctx: ProgressionContext): number {
   return computeRank(ctx).pillars.rotation;
+}
+
+// ── 은퇴(Hall of Shoes) 지표 — 권위=ctx.retirementCount/retirementGrades ─────────
+// 신발 플래그(retiredShoeCount)가 아니라 **영속 은퇴 레코드**(progression_v1.retiredShoes)
+// 로 구동한다(날조 금지 — 실제 은퇴 이벤트만). 손으로 만든 ctx 의 누락은 0/[] 로 방어.
+
+/** 실제 은퇴(영속 레코드) 수 — First Retirement/Shoe Curator/Hall of Shoes 진행 지표. */
+function retirementCount(ctx: ProgressionContext): number {
+  return nonNeg(ctx?.retirementCount ?? 0);
+}
+
+/** 은퇴 레코드 등급 목록(방어적 — 누락/비배열 → []). */
+function retirementGrades(ctx: ProgressionContext): RetirementGrade[] {
+  const g = ctx?.retirementGrades;
+  return Array.isArray(g) ? g.filter(Boolean) : [];
+}
+
+/** smart 이상 등급으로 교체한 은퇴 수 — Smart Replacement 진행 지표. */
+function smartOrBetterRetirementCount(ctx: ProgressionContext): number {
+  return retirementGrades(ctx).filter(isSmartOrBetter).length;
+}
+
+/** perfect(이상) 등급으로 교체한 은퇴 수 — Perfect Timing 진행 지표. */
+function perfectRetirementCount(ctx: ProgressionContext): number {
+  return retirementGrades(ctx).filter(isPerfectOrBetter).length;
 }
 
 // ── 거리/페이스 임계 ─────────────────────────────────────────────────────────
@@ -371,6 +398,55 @@ const TRAINING_STYLE_ACHIEVEMENTS: AchievementDef[] = [
   },
 ];
 
+// ── Retirement: Hall of Shoes 은퇴 수 + 등급 품질(progression_v1.retiredShoes) ──
+// 카운트형(First Retirement/Shoe Curator/Hall of Shoes)은 metricAch 로 진행바·언락이
+// 정의상 일치한다. 등급형(Smart Replacement/Perfect Timing)은 "해당 등급 은퇴가 ≥1"
+// 이라는 이진 조건을 target=1 카운트로 표현 — 진행바는 0/1↔1/1 로 언락과 일치한다.
+const RETIREMENT_ACHIEVEMENTS: AchievementDef[] = [
+  metricAch({
+    key: 'ach_first_retirement',
+    name: 'First Retirement',
+    category: 'retirement',
+    rarity: 'bronze',
+    target: 1,
+    value: retirementCount,
+  }),
+  metricAch({
+    key: 'ach_retire_5',
+    name: 'Shoe Curator',
+    category: 'retirement',
+    rarity: 'silver',
+    target: 5,
+    value: retirementCount,
+  }),
+  metricAch({
+    key: 'ach_retire_10',
+    name: 'Hall of Shoes',
+    category: 'retirement',
+    rarity: 'gold',
+    target: 10,
+    value: retirementCount,
+  }),
+  // Smart Replacement: 한 번이라도 smart 이상 등급으로 교체(perfect/hallOfFame 포함).
+  metricAch({
+    key: 'ach_smart_replacement',
+    name: 'Smart Replacement',
+    category: 'retirement',
+    rarity: 'silver',
+    target: 1,
+    value: smartOrBetterRetirementCount,
+  }),
+  // Perfect Timing: 한 번이라도 perfect(이상) 등급으로 교체(hallOfFame 포함).
+  metricAch({
+    key: 'ach_perfect_timing',
+    name: 'Perfect Timing',
+    category: 'retirement',
+    rarity: 'gold',
+    target: 1,
+    value: perfectRetirementCount,
+  }),
+];
+
 /**
  * 전체 업적 카탈로그(권위·불변). 필러 순서대로 평탄화한다.
  * 갤러리/엔진은 이 배열만 소비한다(분산 정의 금지).
@@ -382,6 +458,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   ...SHOE_ACHIEVEMENTS,
   ...INJURY_ACHIEVEMENTS,
   ...TRAINING_STYLE_ACHIEVEMENTS,
+  ...RETIREMENT_ACHIEVEMENTS,
 ];
 
 /** key → AchievementDef 조회 맵(O(1)). */
@@ -402,6 +479,8 @@ export const ACHIEVEMENT_UNLOCKS_TITLE: Readonly<Record<string, string>> = {
   ach_collection_5: 'shoe_rotation_runner',
   ach_collection_10: 'shoe_collector',
   ach_speedster: 'style_tempo',
+  ach_first_retirement: 'retire_starter',
+  ach_retire_10: 'retire_hall',
 };
 
 /** key 로 업적 정의 조회(없으면 undefined). */

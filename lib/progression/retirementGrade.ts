@@ -31,6 +31,36 @@ import {
   RetirementSummary,
 } from './types';
 
+// ── 등급 품질 순위(권위) ───────────────────────────────────────────────────────
+/**
+ * 은퇴 등급의 품질 순위(낮음→높음). 카탈로그(업적/타이틀)의 "smart 이상 / perfect"
+ * 판정이 이 한곳의 순위만 읽도록 단일 출처로 둔다(밴드 수학과 분리된 비교용 정의).
+ * hallOfFame 은 healthy lifecycle(smart/perfect)의 최상위 승격이므로 perfect 보다 높다.
+ */
+export const GRADE_QUALITY: Readonly<Record<RetirementGrade, number>> = {
+  standard: 0,
+  good: 1,
+  smart: 2,
+  perfect: 3,
+  hallOfFame: 4,
+};
+
+/** grade 가 'smart 이상'(smart/perfect/hallOfFame)인가 — Smart Replacement 판정. */
+export function isSmartOrBetter(grade: RetirementGrade | null | undefined): boolean {
+  const q = grade ? GRADE_QUALITY[grade] : undefined;
+  return Number.isFinite(q) && (q as number) >= GRADE_QUALITY.smart;
+}
+
+/**
+ * grade 가 'perfect 이상'(perfect/hallOfFame)인가 — Perfect Timing 판정.
+ * hallOfFame 은 perfect 보다 높은 최상위 등급이므로 포함한다(최고 등급이 더 약한
+ * 업적을 못 여는 모순을 막는다).
+ */
+export function isPerfectOrBetter(grade: RetirementGrade | null | undefined): boolean {
+  const q = grade ? GRADE_QUALITY[grade] : undefined;
+  return Number.isFinite(q) && (q as number) >= GRADE_QUALITY.perfect;
+}
+
 // ── 밴드 임계(권위) ────────────────────────────────────────────────────────────
 /** Perfect: 권장의 ±5% 이내. */
 export const PERFECT_BAND = 0.05;

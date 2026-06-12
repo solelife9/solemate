@@ -174,8 +174,16 @@ export default function ProgressionScreen({
 
   // 스탯 줄용 집계(총 거리/등록/은퇴/스트릭). context 는 순수·읽기 전용.
   const ctx = useMemo(
-    () => buildContext(runs, shoes, state.earnedTitles, null, resolvedNow),
-    [runs, shoes, state.earnedTitles, resolvedNow],
+    () =>
+      buildContext(
+        runs,
+        shoes,
+        state.earnedTitles,
+        null,
+        resolvedNow,
+        state.retiredShoes,
+      ),
+    [runs, shoes, state.earnedTitles, state.retiredShoes, resolvedNow],
   );
 
   // 키 → 표시명(언락 배너 카피용). 타이틀+업적을 합쳐 찾는다.

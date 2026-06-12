@@ -204,24 +204,32 @@ describe('ProgressionScreen — 프로덕션 마운트 데이터 보존', () => 
     await AsyncStorage.clear();
 
     // 디스크에 실제로 저장돼 있던(=loadProgression 이 돌려줄) 사용자 상태.
-    // 이미 충족된 모든 키가 seen 처리돼 있어 "새 언락"은 없어야 한다.
-    const view = getProgression(RUNS, SHOES, null, NOW);
+    // 이미 충족된 모든 키가 seen 처리돼 있어 "새 언락"은 없어야 한다. 은퇴 레코드가
+    // 은퇴 업적/타이틀(First Retirement·Shoe Care Starter 등)을 구동하므로, seenUnlocks 는
+    // 그 은퇴 레코드를 포함한 뷰로 계산해야 일관된다(영속 retiredShoes 반영).
+    const retiredShoes: ProgressionState['retiredShoes'] = [
+      {
+        shoeId: 'old1',
+        name: '은퇴한 페가수스',
+        km: 620,
+        retiredAt: '2026-04-01T00:00:00Z',
+        retireYear: 2026,
+        grade: 'standard',
+      },
+    ];
+    const view = getProgression(
+      RUNS,
+      SHOES,
+      {...defaultProgressionState(), retiredShoes},
+      NOW,
+    );
     const realState: ProgressionState = {
       earnedTitles: [
         {key: 'running_beginner', unlockedAt: '2026-05-01T00:00:00Z', isEquipped: true},
       ],
       equippedTitleKey: 'running_beginner',
       seenUnlocks: collectUnlockedKeys(view),
-      retiredShoes: [
-        {
-          shoeId: 'old1',
-          name: '은퇴한 페가수스',
-          km: 620,
-          retiredAt: '2026-04-01T00:00:00Z',
-          retireYear: 2026,
-          grade: 'standard',
-        },
-      ],
+      retiredShoes,
       points: 1234,
     };
 

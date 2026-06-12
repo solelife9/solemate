@@ -239,8 +239,20 @@ export interface ProgressionContext {
   longestGapDays: number;
   /** 등록된 신발 수(은퇴 포함). */
   registeredShoeCount: number;
-  /** 은퇴한 신발 수. */
+  /** 은퇴한 신발 수(신발 목록의 retired 플래그 기준). */
   retiredShoeCount: number;
+  /**
+   * 영속된 은퇴(Hall of Shoes) 레코드 수 — **실제 은퇴 이벤트**의 권위
+   * (progression_v1.retiredShoes). 은퇴 업적/타이틀은 retiredShoeCount(플래그)가 아니라
+   * 이 영속 레코드 수로 구동된다(날조 금지 — 실제 은퇴만 카운트). buildContext 가 항상
+   * 채우지만, 손으로 만든 컨텍스트와의 하위호환을 위해 선택적(누락 → 0)으로 둔다.
+   */
+  retirementCount?: number;
+  /**
+   * 각 은퇴 레코드의 등급(레코드 순서 보존). Smart Replacement(smart 이상)·Perfect
+   * Timing(perfect)·은퇴 타이틀의 품질 게이트가 읽는다. 누락 → [](판정 불가).
+   */
+  retirementGrades?: RetirementGrade[];
   /** 신발 id → 집계 통계. */
   perShoe: Record<string, PerShoeStats>;
   /** 이미 획득한 타이틀 키(중복 언락 방지/참여도용). */
