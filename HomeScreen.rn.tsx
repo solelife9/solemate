@@ -103,6 +103,8 @@ function HeroShoe({ shoe, unit, tappable, forecast, active, onOpenShoe, onStart 
   const remain = displayNum(remainKm, unit);
   const used = displayNum(shoe.used, unit);
   const max = displayNum(shoe.max, unit);
+  // 사용률(%) — used/max. 사용량 줄 오른쪽에 표시(InsightCard '내구도 중 N%' 와 동일 규약).
+  const usedPct = shoe.max > 0 ? Math.round((shoe.used / shoe.max) * 100) : 0;
   const ring = ringColor(shoe.condition);
   const tier = conditionColor(shoe.condition);
   // 신발 종류 — 사용자 DB(shoes.json)의 type 을 예쁜 라벨(카본 레이싱 등)로 칩 표시.
@@ -148,7 +150,10 @@ function HeroShoe({ shoe, unit, tappable, forecast, active, onOpenShoe, onStart 
           교체까지 약 <Text style={s.heroRemainNum}>{remain}<Text style={s.heroRemainNumU}>{unit}</Text></Text> 남았어요
         </Text>
         <View style={s.gauge}><View style={[s.gaugeFill, { width: `${Math.round(pct * 100)}%`, backgroundColor: ring }]} /></View>
-        <Text style={s.usage}>{used} / {max}{unit} 사용</Text>
+        <View style={s.usageRow}>
+          <Text style={s.usage}>{used} / {max}{unit} 사용</Text>
+          <Text style={s.usagePct}>{usedPct}%</Text>
+        </View>
         {/* 교체 예상 행 — 캐러셀 카드 높이를 통일하려고 항상 공간을 예약한다(forecast 가
             없는 신발은 같은 높이의 투명 플레이스홀더). 텍스트는 1줄 고정(긴 ETA 가 2줄로
             줄바꿈해 높이가 흔들리지 않게). */}
@@ -579,7 +584,10 @@ const s = StyleSheet.create({
   heroRemainNumU: { color: T2, fontFamily: FONT, fontSize: 13, fontWeight: '500' },
   gauge: { height: 4, borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.08), marginTop: 14, overflow: 'hidden' },
   gaugeFill: { height: '100%', borderRadius: RADIUS.pill },
-  usage: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500', marginTop: 10 },
+  // 사용량 줄 — 좌(사용량) ↔ 우(사용률 %). marginTop 은 행에 두고 텍스트끼리는 가운데 정렬.
+  usageRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 },
+  usage: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500' },
+  usagePct: { color: T2, fontFamily: FONT, fontSize: 12, fontWeight: '700', letterSpacing: 0.2 },
   injuryWrap: { marginTop: 16 },
   // 교체 예측 ETA 한 줄(목업 .fore — 회색·상단 구분선).
   heroForecast: { flexDirection: 'row', alignItems: 'center', gap: 7, marginTop: 14, paddingTop: 13, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.06) },
