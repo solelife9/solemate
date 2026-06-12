@@ -179,7 +179,7 @@ function isSpeedster(ctx: ProgressionContext): boolean {
 const RUNNING_ACHIEVEMENTS: AchievementDef[] = [
   metricAch({
     key: 'ach_first_run',
-    name: 'First Steps',
+    name: '첫 걸음',
     category: 'running',
     rarity: 'bronze',
     target: 1,
@@ -187,7 +187,7 @@ const RUNNING_ACHIEVEMENTS: AchievementDef[] = [
   }),
   metricAch({
     key: 'ach_half_marathon',
-    name: 'Half Marathon',
+    name: '하프 마라톤',
     category: 'running',
     rarity: 'silver',
     target: HALF_MARATHON_KM,
@@ -196,7 +196,7 @@ const RUNNING_ACHIEVEMENTS: AchievementDef[] = [
   // anti-scenario 1: ≥42km 런이 없으면 절대 언락되지 않는 "Marathon" 하이라이트.
   metricAch({
     key: 'ach_marathon',
-    name: 'Marathon Finisher',
+    name: '마라톤 완주',
     category: 'running',
     rarity: 'gold',
     target: MARATHON_KM,
@@ -204,7 +204,7 @@ const RUNNING_ACHIEVEMENTS: AchievementDef[] = [
   }),
   metricAch({
     key: 'ach_distance_1000',
-    name: '1000km Journey',
+    name: '1000km 여정',
     category: 'running',
     rarity: 'platinum',
     target: 1000,
@@ -212,7 +212,7 @@ const RUNNING_ACHIEVEMENTS: AchievementDef[] = [
   }),
   metricAch({
     key: 'ach_distance_5000',
-    name: '5000km Odyssey',
+    name: '5000km 대장정',
     category: 'running',
     rarity: 'diamond',
     target: 5000,
@@ -221,7 +221,7 @@ const RUNNING_ACHIEVEMENTS: AchievementDef[] = [
   // 단일 최장 런(장거리 능력) — 구 trainingStyle 에서 running 으로 이전.
   metricAch({
     key: 'ach_long_run_25',
-    name: 'Long Run Specialist',
+    name: '장거리 스페셜리스트',
     category: 'running',
     rarity: 'gold',
     target: LONG_RUN_KM,
@@ -231,7 +231,7 @@ const RUNNING_ACHIEVEMENTS: AchievementDef[] = [
   // 페이스는 낮을수록 좋아 단조 진행으로 표현 불가 → 이진 진행(미충족 0 / 충족 1). 정직 판정만 유지.
   {
     key: 'ach_speedster',
-    name: 'Speedster',
+    name: '스피드스터',
     category: 'running',
     rarity: 'gold',
     points: pointsForRarity('gold'),
@@ -247,7 +247,7 @@ const RUNNING_ACHIEVEMENTS: AchievementDef[] = [
 const CONSISTENCY_ACHIEVEMENTS: AchievementDef[] = [
   metricAch({
     key: 'ach_streak_7',
-    name: 'Week Warrior',
+    name: '일주일 전사',
     category: 'consistency',
     rarity: 'silver',
     target: 7,
@@ -255,7 +255,7 @@ const CONSISTENCY_ACHIEVEMENTS: AchievementDef[] = [
   }),
   metricAch({
     key: 'ach_streak_30',
-    name: 'Unbreakable',
+    name: '무적의 한 달',
     category: 'consistency',
     rarity: 'gold',
     target: 30,
@@ -263,7 +263,7 @@ const CONSISTENCY_ACHIEVEMENTS: AchievementDef[] = [
   }),
   metricAch({
     key: 'ach_streak_100',
-    name: 'Centurion Streak',
+    name: '100일의 기적',
     category: 'consistency',
     rarity: 'diamond',
     target: 100,
@@ -272,7 +272,7 @@ const CONSISTENCY_ACHIEVEMENTS: AchievementDef[] = [
   // 주간 활성 75% — 진행은 백분율 포인트(0..75).
   metricAch({
     key: 'ach_weekly_habit',
-    name: 'Habit Formed',
+    name: '습관 형성',
     category: 'consistency',
     rarity: 'silver',
     target: 75,
@@ -281,7 +281,7 @@ const CONSISTENCY_ACHIEVEMENTS: AchievementDef[] = [
   // 누적 100회 러닝(볼륨·꾸준함) — 구 trainingStyle 에서 consistency 로 이전.
   metricAch({
     key: 'ach_century_runs',
-    name: 'Century of Runs',
+    name: '100회 러닝',
     category: 'consistency',
     rarity: 'platinum',
     target: 100,
@@ -293,7 +293,7 @@ const CONSISTENCY_ACHIEVEMENTS: AchievementDef[] = [
 const ROTATION_ACHIEVEMENTS: AchievementDef[] = [
   metricAch({
     key: 'ach_rotation_3',
-    name: "Three's Company",
+    name: '세 켤레의 동행',
     category: 'rotation',
     rarity: 'silver',
     target: 3,
@@ -301,7 +301,7 @@ const ROTATION_ACHIEVEMENTS: AchievementDef[] = [
   }),
   metricAch({
     key: 'ach_rotation_5',
-    name: 'Rotation Maestro',
+    name: '로테이션 마에스트로',
     category: 'rotation',
     rarity: 'gold',
     target: 5,
@@ -310,7 +310,7 @@ const ROTATION_ACHIEVEMENTS: AchievementDef[] = [
   // 사용량 균형(엔트로피) ≥0.8 — 진행은 백분율 포인트(0..80). 평가축 권위=rank.ts.
   metricAch({
     key: 'ach_rotation_balance',
-    name: 'Perfect Balance',
+    name: '완벽한 균형',
     category: 'rotation',
     rarity: 'platinum',
     target: 80,
@@ -323,7 +323,7 @@ const SHOE_ACHIEVEMENTS: AchievementDef[] = [
   // ★ 사용자 명시 예시: "Trusted Partner 348/500km" — 한 켤레로 500km.
   metricAch({
     key: 'ach_trusted_partner',
-    name: 'Trusted Partner',
+    name: '믿음직한 파트너',
     category: 'shoeManagement',
     rarity: 'gold',
     target: TRUSTED_PARTNER_KM,
@@ -331,7 +331,7 @@ const SHOE_ACHIEVEMENTS: AchievementDef[] = [
   }),
   metricAch({
     key: 'ach_long_haul',
-    name: 'Long Haul',
+    name: '장수 신발',
     category: 'shoeManagement',
     rarity: 'diamond',
     target: LONG_HAUL_KM,
@@ -339,7 +339,7 @@ const SHOE_ACHIEVEMENTS: AchievementDef[] = [
   }),
   metricAch({
     key: 'ach_collection_5',
-    name: 'Shoe Curator',
+    name: '신발 큐레이터',
     category: 'shoeManagement',
     rarity: 'silver',
     target: 5,
@@ -347,7 +347,7 @@ const SHOE_ACHIEVEMENTS: AchievementDef[] = [
   }),
   metricAch({
     key: 'ach_collection_10',
-    name: 'Shoe Connoisseur',
+    name: '신발 감정가',
     category: 'shoeManagement',
     rarity: 'gold',
     target: 10,
@@ -359,7 +359,7 @@ const SHOE_ACHIEVEMENTS: AchievementDef[] = [
 const INJURY_ACHIEVEMENTS: AchievementDef[] = [
   metricAch({
     key: 'ach_smart_swap',
-    name: 'Smart Swap',
+    name: '현명한 교체',
     category: 'injuryPrevention',
     rarity: 'silver',
     target: 1,
@@ -367,7 +367,7 @@ const INJURY_ACHIEVEMENTS: AchievementDef[] = [
   }),
   metricAch({
     key: 'ach_health_guardian',
-    name: 'Health Guardian',
+    name: '건강 지킴이',
     category: 'injuryPrevention',
     rarity: 'gold',
     target: 3,
@@ -380,7 +380,7 @@ const INJURY_ACHIEVEMENTS: AchievementDef[] = [
   // target 은 최소 2(로테이션 성립 조건) 로 깔아 신발<2 일 때도 가득 참=언락 모순을 막는다.
   {
     key: 'ach_clean_rotation',
-    name: 'Clean Rotation',
+    name: '깨끗한 로테이션',
     category: 'injuryPrevention',
     rarity: 'silver',
     points: pointsForRarity('silver'),
@@ -402,7 +402,7 @@ const INJURY_ACHIEVEMENTS: AchievementDef[] = [
 const RETIREMENT_ACHIEVEMENTS: AchievementDef[] = [
   metricAch({
     key: 'ach_first_retirement',
-    name: 'First Retirement',
+    name: '첫 은퇴',
     category: 'retirement',
     rarity: 'bronze',
     target: 1,
@@ -410,7 +410,7 @@ const RETIREMENT_ACHIEVEMENTS: AchievementDef[] = [
   }),
   metricAch({
     key: 'ach_retire_5',
-    name: 'Shoe Curator',
+    name: '신발 큐레이터',
     category: 'retirement',
     rarity: 'silver',
     target: 5,
@@ -418,7 +418,7 @@ const RETIREMENT_ACHIEVEMENTS: AchievementDef[] = [
   }),
   metricAch({
     key: 'ach_retire_10',
-    name: 'Hall of Shoes',
+    name: '명예의 전당',
     category: 'retirement',
     rarity: 'gold',
     target: 10,
@@ -427,7 +427,7 @@ const RETIREMENT_ACHIEVEMENTS: AchievementDef[] = [
   // Smart Replacement: 한 번이라도 smart 이상 등급으로 교체(perfect/hallOfFame 포함).
   metricAch({
     key: 'ach_smart_replacement',
-    name: 'Smart Replacement',
+    name: '현명한 교체',
     category: 'retirement',
     rarity: 'silver',
     target: 1,
@@ -436,7 +436,7 @@ const RETIREMENT_ACHIEVEMENTS: AchievementDef[] = [
   // Perfect Timing: 한 번이라도 perfect(이상) 등급으로 교체(hallOfFame 포함).
   metricAch({
     key: 'ach_perfect_timing',
-    name: 'Perfect Timing',
+    name: '완벽한 타이밍',
     category: 'retirement',
     rarity: 'gold',
     target: 1,

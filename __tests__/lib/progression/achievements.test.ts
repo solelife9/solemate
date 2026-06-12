@@ -320,7 +320,7 @@ describe('카탈로그 무결성', () => {
 
   test('Trusted Partner(명시 예시)가 카탈로그에 존재한다', () => {
     const def = achievementDef('ach_trusted_partner');
-    expect(def?.name).toBe('Trusted Partner');
+    expect(def?.name).toBe('믿음직한 파트너');
     expect(def?.category).toBe('shoeManagement');
   });
 

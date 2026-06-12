@@ -172,49 +172,49 @@ function injuryPillar(ctx: ProgressionContext): number {
 const RUNNING_TITLES: TitleDef[] = [
   {
     key: 'running_beginner',
-    name: 'Running Beginner',
+    name: '러닝 입문',
     category: 'running',
     tier: 'bronze',
     criterion: ctx => nonNeg(ctx.runCount) >= 1,
   },
   {
     key: 'running_100k',
-    name: '100km Club',
+    name: '100km 클럽',
     category: 'running',
     tier: 'silver',
     criterion: ctx => nonNeg(ctx.cumulativeKm) >= 100,
   },
   {
     key: 'running_500k',
-    name: 'Distance Hunter',
+    name: '거리 사냥꾼',
     category: 'running',
     tier: 'gold',
     criterion: ctx => nonNeg(ctx.cumulativeKm) >= 500,
   },
   {
     key: 'running_1000k',
-    name: 'Marathon Mindset',
+    name: '천 킬로의 마음가짐',
     category: 'running',
     tier: 'platinum',
     criterion: ctx => nonNeg(ctx.cumulativeKm) >= 1000,
   },
   {
     key: 'running_5000k',
-    name: 'Elite Runner',
+    name: '엘리트 러너',
     category: 'running',
     tier: 'diamond',
     criterion: ctx => nonNeg(ctx.cumulativeKm) >= 5000,
   },
   {
     key: 'running_10000k',
-    name: 'Ultra Runner',
+    name: '울트라 러너',
     category: 'running',
     tier: 'master',
     criterion: ctx => nonNeg(ctx.cumulativeKm) >= 10000,
   },
   {
     key: 'running_25000k',
-    name: 'Endless Runner',
+    name: '멈추지 않는 러너',
     category: 'running',
     tier: 'legend',
     criterion: ctx => nonNeg(ctx.cumulativeKm) >= 25000,
@@ -225,28 +225,28 @@ const RUNNING_TITLES: TitleDef[] = [
 const SHOE_TITLES: TitleDef[] = [
   {
     key: 'shoe_beginner',
-    name: 'Shoe Beginner',
+    name: '신발 입문',
     category: 'shoeManagement',
     tier: 'bronze',
     criterion: ctx => nonNeg(ctx.registeredShoeCount) >= 1,
   },
   {
     key: 'shoe_enthusiast',
-    name: 'Shoe Enthusiast',
+    name: '신발 애호가',
     category: 'shoeManagement',
     tier: 'silver',
     criterion: ctx => nonNeg(ctx.registeredShoeCount) >= 3,
   },
   {
     key: 'shoe_rotation_runner',
-    name: 'Rotation Runner',
+    name: '로테이션 러너',
     category: 'shoeManagement',
     tier: 'gold',
     criterion: ctx => nonNeg(ctx.registeredShoeCount) >= 5,
   },
   {
     key: 'shoe_collector',
-    name: 'Shoe Collector',
+    name: '신발 수집가',
     category: 'shoeManagement',
     tier: 'platinum',
     criterion: ctx => nonNeg(ctx.registeredShoeCount) >= 10,
@@ -254,14 +254,14 @@ const SHOE_TITLES: TitleDef[] = [
   {
     // mgmt≥0.9 를 ≥6개월 유지 — 현재 mgmt + 충분한 테뉴어로 게이트(히스토리 충족 전 잠금).
     key: 'shoe_master',
-    name: 'Shoe Master',
+    name: '신발 마스터',
     category: 'shoeManagement',
     tier: 'diamond',
     criterion: ctx => mgmtPillar(ctx) >= 0.9 && tenureDays(ctx) >= MONTH_6,
   },
   {
     key: 'keego_master',
-    name: 'KEEGO Master',
+    name: 'KEEGO 마스터',
     category: 'shoeManagement',
     tier: 'master',
     criterion: ctx => mgmtPillar(ctx) >= 0.9 && tenureDays(ctx) >= YEAR_1,
@@ -280,7 +280,7 @@ const SHOE_TITLES: TitleDef[] = [
 const ROTATION_TITLES: TitleDef[] = [
   {
     key: 'rotation_starter',
-    name: 'Rotation Starter',
+    name: '로테이션 입문',
     category: 'rotation',
     tier: 'bronze',
     criterion: ctx => shoesUsedCount(ctx) >= 2,
@@ -288,28 +288,28 @@ const ROTATION_TITLES: TitleDef[] = [
   {
     // 3켤레를 일관되게(각 런 ≥3) 사용 — 일회성 보유가 아닌 실제 로테이션.
     key: 'rotation_balanced',
-    name: 'Balanced Runner',
+    name: '균형 잡힌 러너',
     category: 'rotation',
     tier: 'silver',
     criterion: ctx => shoesUsedConsistentlyCount(ctx) >= 3,
   },
   {
     key: 'rotation_expert',
-    name: 'Rotation Expert',
+    name: '로테이션 전문가',
     category: 'rotation',
     tier: 'gold',
     criterion: ctx => rotationPillar(ctx) >= 0.7 && tenureDays(ctx) >= MONTH_3,
   },
   {
     key: 'rotation_master',
-    name: 'Rotation Master',
+    name: '로테이션 마스터',
     category: 'rotation',
     tier: 'platinum',
     criterion: ctx => rotationPillar(ctx) >= 0.7 && tenureDays(ctx) >= YEAR_1,
   },
   {
     key: 'rotation_perfect',
-    name: 'Perfect Rotator',
+    name: '완벽한 로테이터',
     category: 'rotation',
     tier: 'diamond',
     criterion: ctx => rotationPillar(ctx) >= 0.7 && tenureDays(ctx) >= YEAR_2,
@@ -317,7 +317,7 @@ const ROTATION_TITLES: TitleDef[] = [
   {
     // 탁월한 장기 로테이션(더 높은 균형 + 다년).
     key: 'rotation_architect',
-    name: 'Rotation Architect',
+    name: '로테이션 설계자',
     category: 'rotation',
     tier: 'master',
     criterion: ctx => rotationPillar(ctx) >= 0.8 && tenureDays(ctx) >= YEAR_2,
@@ -325,7 +325,7 @@ const ROTATION_TITLES: TitleDef[] = [
   {
     // 엘리트 로테이션(거의 완벽한 균형 + 다년).
     key: 'rotation_legend',
-    name: 'Rotation Legend',
+    name: '로테이션 레전드',
     category: 'rotation',
     tier: 'legend',
     criterion: ctx => rotationPillar(ctx) >= 0.9 && tenureDays(ctx) >= YEAR_2,
@@ -336,14 +336,14 @@ const ROTATION_TITLES: TitleDef[] = [
 const INJURY_TITLES: TitleDef[] = [
   {
     key: 'injury_smart',
-    name: 'Smart Runner',
+    name: '현명한 러너',
     category: 'injuryPrevention',
     tier: 'bronze',
     criterion: ctx => hasEarlyReplacement(ctx),
   },
   {
     key: 'injury_wise',
-    name: 'Wise Runner',
+    name: '지혜로운 러너',
     category: 'injuryPrevention',
     tier: 'silver',
     criterion: ctx => allActiveHealthy(ctx),
@@ -351,14 +351,14 @@ const INJURY_TITLES: TitleDef[] = [
   {
     // 6개월간 초과 마모 신발 없음 — 현재 전부 건강 + 테뉴어로 게이트.
     key: 'injury_prevention_expert',
-    name: 'Prevention Expert',
+    name: '예방 전문가',
     category: 'injuryPrevention',
     tier: 'gold',
     criterion: ctx => allActiveHealthy(ctx) && tenureDays(ctx) >= MONTH_6,
   },
   {
     key: 'injury_running_coach',
-    name: 'Running Coach',
+    name: '러닝 코치',
     category: 'injuryPrevention',
     tier: 'platinum',
     criterion: ctx => allActiveHealthy(ctx) && tenureDays(ctx) >= YEAR_1,
@@ -366,21 +366,21 @@ const INJURY_TITLES: TitleDef[] = [
   {
     // 탁월한 부상예방(평가축 ≥0.9, 은퇴 포함 전반 건강) + 1년.
     key: 'injury_master',
-    name: 'Injury Prevention Master',
+    name: '부상 예방 마스터',
     category: 'injuryPrevention',
     tier: 'diamond',
     criterion: ctx => injuryPillar(ctx) >= 0.9 && tenureDays(ctx) >= YEAR_1,
   },
   {
     key: 'injury_guardian',
-    name: 'Running Guardian',
+    name: '러닝 가디언',
     category: 'injuryPrevention',
     tier: 'master',
     criterion: ctx => injuryPillar(ctx) >= 0.9 && tenureDays(ctx) >= YEAR_2,
   },
   {
     key: 'injury_iron',
-    name: 'Iron Runner',
+    name: '철인 러너',
     category: 'injuryPrevention',
     tier: 'legend',
     criterion: ctx => injuryPillar(ctx) >= 0.95 && tenureDays(ctx) >= YEAR_2,
@@ -397,14 +397,14 @@ const CONSISTENCY_TITLES: TitleDef[] = [
   {
     // 첫 달 목표 — 첫 달 동안 ~주간(런 ≥4)으로 달림.
     key: 'consistency_start',
-    name: 'Consistent Start',
+    name: '꾸준한 시작',
     category: 'consistency',
     tier: 'bronze',
     criterion: ctx => nonNeg(ctx.runCount) >= 4,
   },
   {
     key: 'consistency_runner',
-    name: 'Consistent Runner',
+    name: '꾸준한 러너',
     category: 'consistency',
     tier: 'silver',
     criterion: ctx =>
@@ -413,7 +413,7 @@ const CONSISTENCY_TITLES: TitleDef[] = [
   },
   {
     key: 'consistency_habit',
-    name: 'Habit Builder',
+    name: '습관의 완성',
     category: 'consistency',
     tier: 'gold',
     criterion: ctx =>
@@ -422,7 +422,7 @@ const CONSISTENCY_TITLES: TitleDef[] = [
   },
   {
     key: 'consistency_monthly',
-    name: 'Monthly Champion',
+    name: '월간 챔피언',
     category: 'consistency',
     tier: 'platinum',
     criterion: ctx =>
@@ -431,7 +431,7 @@ const CONSISTENCY_TITLES: TitleDef[] = [
   },
   {
     key: 'consistency_annual',
-    name: 'Annual Champion',
+    name: '연간 챔피언',
     category: 'consistency',
     tier: 'diamond',
     criterion: ctx =>
@@ -440,7 +440,7 @@ const CONSISTENCY_TITLES: TitleDef[] = [
   },
   {
     key: 'consistency_steady',
-    name: 'Steady Runner',
+    name: '한결같은 러너',
     category: 'consistency',
     tier: 'master',
     criterion: ctx =>
@@ -449,7 +449,7 @@ const CONSISTENCY_TITLES: TitleDef[] = [
   },
   {
     key: 'consistency_never_stop',
-    name: 'Never Stop',
+    name: '멈추지 않는 마음',
     category: 'consistency',
     tier: 'legend',
     criterion: ctx =>
@@ -463,7 +463,7 @@ const CONSISTENCY_TITLES: TitleDef[] = [
 const HIDDEN_TITLES: TitleDef[] = [
   {
     key: 'hidden_early_bird',
-    name: 'Early Bird',
+    name: '얼리버드',
     category: 'hidden',
     tier: 'gold',
     hidden: true,
@@ -471,7 +471,7 @@ const HIDDEN_TITLES: TitleDef[] = [
   },
   {
     key: 'hidden_night_runner',
-    name: 'Night Runner',
+    name: '나이트 러너',
     category: 'hidden',
     tier: 'gold',
     hidden: true,
@@ -480,7 +480,7 @@ const HIDDEN_TITLES: TitleDef[] = [
   {
     // 30일 이상 공백 후 복귀 런.
     key: 'hidden_comeback',
-    name: 'Comeback Runner',
+    name: '컴백 러너',
     category: 'hidden',
     tier: 'silver',
     hidden: true,
@@ -489,7 +489,7 @@ const HIDDEN_TITLES: TitleDef[] = [
   {
     // 365일 넘게 함께한(은퇴하지 않은) 신발 1켤레 이상.
     key: 'hidden_long_relationship',
-    name: 'Long Relationship',
+    name: '오랜 동반자',
     category: 'hidden',
     tier: 'platinum',
     hidden: true,
@@ -508,14 +508,14 @@ const HIDDEN_TITLES: TitleDef[] = [
 const RETIREMENT_TITLES: TitleDef[] = [
   {
     key: 'retire_starter',
-    name: 'Shoe Care Starter',
+    name: '신발 관리 입문',
     category: 'retirement',
     tier: 'bronze',
     criterion: ctx => retirementCount(ctx) >= 1,
   },
   {
     key: 'retire_mindful',
-    name: 'Mindful Retirer',
+    name: '사려 깊은 은퇴',
     category: 'retirement',
     tier: 'silver',
     criterion: ctx => retirementCount(ctx) >= 3,
@@ -523,7 +523,7 @@ const RETIREMENT_TITLES: TitleDef[] = [
   {
     // 5켤레 은퇴 + 그중 하나라도 smart 이상(잘 교체한 흔적).
     key: 'retire_smart',
-    name: 'Smart Retirer',
+    name: '현명한 은퇴',
     category: 'retirement',
     tier: 'gold',
     criterion: ctx =>
@@ -532,7 +532,7 @@ const RETIREMENT_TITLES: TitleDef[] = [
   {
     // 5켤레 은퇴 + smart 이상 3회(꾸준히 잘 교체).
     key: 'retire_curator',
-    name: 'Curation Pro',
+    name: '큐레이션 프로',
     category: 'retirement',
     tier: 'platinum',
     criterion: ctx =>
@@ -540,7 +540,7 @@ const RETIREMENT_TITLES: TitleDef[] = [
   },
   {
     key: 'retire_hall',
-    name: 'Hall of Shoes Keeper',
+    name: '명예의 전당 키퍼',
     category: 'retirement',
     tier: 'diamond',
     criterion: ctx => retirementCount(ctx) >= 10,
@@ -548,7 +548,7 @@ const RETIREMENT_TITLES: TitleDef[] = [
   {
     // 10켤레 은퇴 + perfect 타이밍 1회(완벽한 교체를 해본 명예의 전당).
     key: 'retire_perfect',
-    name: 'Perfect Curator',
+    name: '완벽한 큐레이터',
     category: 'retirement',
     tier: 'master',
     criterion: ctx =>

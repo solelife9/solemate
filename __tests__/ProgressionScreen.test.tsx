@@ -94,7 +94,7 @@ describe('ProgressionScreen — 진척 표면', () => {
     // 닉네임 옆 장착 타이틀이 표시된다.
     const equipped = byTestID(root, 'equipped-title');
     expect(equipped.length).toBeGreaterThanOrEqual(1);
-    expect(textOf(equipped[0])).toContain('Running Beginner');
+    expect(textOf(equipped[0])).toContain('러닝 입문');
 
     // progression_v1 에 장착 키가 영속된다.
     const raw = await AsyncStorage.getItem(PROGRESSION_KEY);
@@ -180,7 +180,7 @@ describe('ProgressionScreen — 진척 표면', () => {
     expect(textOf(byTestID(root, 'progression-nick')[0])).toContain('김민준');
     const equipped = byTestID(root, 'equipped-title');
     expect(equipped.length).toBeGreaterThanOrEqual(1);
-    expect(textOf(equipped[0])).toContain('Running Beginner');
+    expect(textOf(equipped[0])).toContain('러닝 입문');
   });
 });
 
