@@ -36,6 +36,29 @@ export const KAKAO_LABEL = '#000000';
 export const NAVER_GREEN = '#03C75A';
 export const NAVER_LABEL = '#FFFFFF';
 
+// ── rank tier colors (progression Slice A — AUTHORITATIVE) ───────────────────
+// 합성 랭크 티어 색. 진척 엔진/칩/링은 이 토큰만 참조한다(화면·lib 하드코딩 금지).
+// 값은 spec 권위표: Bronze→Legend. Legend = KEEGO 오렌지(#FF6500, ACCENT 와 동일 의도).
+// 키 타입은 lib/progression/types 의 RankTier 와 일치하지만, theme.ts 는 의존을 최소화하기
+// 위해 리터럴 유니온으로 둔다(RankTier 가 theme 를 import 하지 않게 단방향 유지).
+export type ThemeRankTier =
+  | 'bronze'
+  | 'silver'
+  | 'gold'
+  | 'platinum'
+  | 'diamond'
+  | 'master'
+  | 'legend';
+export const TIER_COLORS: Record<ThemeRankTier, string> = {
+  bronze: '#CD7F32',
+  silver: '#C0C0C0',
+  gold: '#FFD700',
+  platinum: '#14B8A6',
+  diamond: '#3B82F6',
+  master: '#9333EA',
+  legend: '#FF6500',
+};
+
 // ── alpha helper ─────────────────────────────────────────────────────────────
 // Derive a translucent fill from an existing #RRGGBB token so semi-transparent
 // surfaces (e.g. badge backgrounds) stay a single source of truth: change the
