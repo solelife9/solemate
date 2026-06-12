@@ -18,6 +18,7 @@ import {
 } from '../../../lib/progression/retirement';
 import {defaultProgressionState} from '../../../lib/progression/storage';
 import {RetiredShoeRecord} from '../../../lib/progression/types';
+import {targetKmFor} from '../../../lib/wearModel';
 
 function run(over: Partial<BackendRun> & {shoe_id: string}): BackendRun {
   return {
@@ -189,6 +190,105 @@ describe('addRetiredShoeRecord 순수/멱등', () => {
     const next = addRetiredShoeRecord(state, rec);
     expect(next.points).toBe(75);
     expect(next.seenUnlocks).toEqual(['x']);
+  });
+});
+
+// ── 등급/하이라이트 통합 배선(signature: retirement.ts → grade) ────────────────
+// buildRetirementSummary 안에서만 사는 배선(recommendedKmFor + usedKm 우선순위 +
+// 하이라이트→등급)이 실제로 grade 를 움직이는지를 end-to-end 로 못박는다. 은퇴 신발은
+// retired:true 라 shoeManagement 분모에서 빠지므로(mgmt=0) Hall of Fame 승격이 일어나지
+// 않아 base 밴드가 그대로 노출된다 — 밴드 수학만으로 등급을 결정적으로 검증할 수 있다.
+describe('등급/하이라이트 통합 배선(signature)', () => {
+  test('시나리오 11: max_km=500 + 누적 ~512km → grade==="perfect"', () => {
+    // 512/500 = 1.024 → |c−1|=0.024 ≤ 0.05 → perfect. recommendedKmFor(max_km) +
+    // usedKm(perShoe.km) 배선이 모두 옳아야만 이 등급이 나온다(tautology 아님).
+    const retired: BackendShoe = {...SHOE, retired: true};
+    const runs: BackendRun[] = [
+      run({shoe_id: 's1', km: 200, duration: 60000, run_date: '2026-01-01'}),
+      run({shoe_id: 's1', km: 200, duration: 60000, run_date: '2026-02-01'}),
+      run({shoe_id: 's1', km: 112, duration: 33600, run_date: '2026-03-01'}),
+    ];
+    const ctx = buildContext(runs, [retired], [], [], NOW);
+    const s = buildRetirementSummary(retired, runs, ctx, NOW);
+    expect(s.totalKm).toBe(512);
+    expect(s.grade).toBe('perfect');
+  });
+
+  test('usedKm 서버 truth(perShoe.km) 우선 — 런 합과 다르면 perShoe.km 가 등급을 결정', () => {
+    // 서버 total_km=500(→ perShoe.km=500)인데 동기된 런은 100km뿐. usedKm 가 런 합(100)
+    // 을 쓰면 c=0.2 → standard, perShoe.km(500)를 쓰면 c=1.0 → perfect. perfect 면 우선순위
+    // (usedKm = perShoe.km>0 ? perShoe.km : totalKm)가 지켜진 것.
+    const shoe: BackendShoe = {
+      id: 's1',
+      name: 'Nike Pegasus 40',
+      max_km: 500,
+      total_km: 500,
+      retired: true,
+    };
+    const runs: BackendRun[] = [
+      run({shoe_id: 's1', km: 60, duration: 18000, run_date: '2026-01-01'}),
+      run({shoe_id: 's1', km: 40, duration: 12000, run_date: '2026-02-01'}),
+    ];
+    const ctx = buildContext(runs, [shoe], [], [], NOW);
+    const s = buildRetirementSummary(shoe, runs, ctx, NOW);
+    expect(s.totalKm).toBe(100); // 런 합만으로는 standard(c=0.2)일 거리
+    expect(ctx.perShoe.s1.km).toBe(500); // 서버 truth
+    expect(s.grade).toBe('perfect'); // perShoe.km 우선이 적용된 증거
+  });
+
+  test('recommendedKm 폴백(max_km 없음 → targetKmFor(name))이 등급을 구동', () => {
+    // max_km 부재 → recommendedKmFor 는 모델명 파싱(wearModel.targetKmFor)로 폴백.
+    // 폴백이 안 먹으면 rec≤0 → standard. 누적을 rec 에 맞추면 perfect 가 나와 폴백 분기 확인.
+    const name = 'Mystery Runner 9000'; // 미등록 모델 → DEFAULT_LIFESPAN_KM
+    const rec = targetKmFor({name}); // == 700
+    expect(rec).toBeGreaterThan(0);
+    const shoe: BackendShoe = {id: 's1', name, retired: true}; // max_km 없음
+    const runs: BackendRun[] = [
+      run({shoe_id: 's1', km: rec / 2, duration: 100000, run_date: '2026-01-01'}),
+      run({shoe_id: 's1', km: rec / 2, duration: 100000, run_date: '2026-02-01'}),
+    ];
+    const ctx = buildContext(runs, [shoe], [], [], NOW);
+    const s = buildRetirementSummary(shoe, runs, ctx, NOW);
+    expect(s.totalKm).toBe(rec); // usedKm ≈ rec → c=1.0
+    expect(s.grade).toBe('perfect'); // 폴백 rec 가 없으면 불가능한 등급
+  });
+
+  test('pbLongestRun: 그 신발 최장 런이 전역 최장과 동률이면 하이라이트에 포함(positive)', () => {
+    // 단일 신발 → 그 신발 최장 런이 곧 전역 최장 → holdsDistancePB. hasRealPB 도 충족.
+    const runs: BackendRun[] = [
+      run({shoe_id: 's1', km: 15, duration: 5400, run_date: '2026-01-01'}),
+      run({shoe_id: 's1', km: 8, duration: 3000, run_date: '2026-02-01'}),
+    ];
+    const ctx = buildContext(runs, [SHOE], [], [], NOW);
+    expect(ctx.longestRunKm).toBe(15); // 전역 최장
+    const s = buildRetirementSummary(SHOE, runs, ctx, NOW);
+    expect(s.longestRunKm).toBe(15);
+    expect(s.highlights).toContain(H.pbLongestRun);
+  });
+
+  test('longHaul1000: 누적 ≥1000km → longHaul1000 포함 & trustedPartner500 상호배타로 제외', () => {
+    const runs: BackendRun[] = [
+      run({shoe_id: 's1', km: 600, duration: 200000, run_date: '2026-01-01'}),
+      run({shoe_id: 's1', km: 500, duration: 170000, run_date: '2026-02-01'}),
+    ];
+    const ctx = buildContext(runs, [SHOE], [], [], NOW);
+    const s = buildRetirementSummary(SHOE, runs, ctx, NOW);
+    expect(s.totalKm).toBe(1100);
+    expect(s.highlights).toContain(H.longHaul1000);
+    expect(s.highlights).not.toContain(H.trustedPartner500); // 누적 마일스톤은 최고 1개
+  });
+
+  test('NULL PACE 안전 경로: 시간 결측/0 런 → avgPaceSec/bestPaceSec 모두 null', () => {
+    const runs: BackendRun[] = [
+      run({shoe_id: 's1', km: 10, run_date: '2026-01-01'}), // duration 결측
+      run({shoe_id: 's1', km: 5, duration: 0, run_date: '2026-02-01'}), // duration 0
+    ];
+    const ctx = buildContext(runs, [SHOE], [], [], NOW);
+    const s = buildRetirementSummary(SHOE, runs, ctx, NOW);
+    expect(s.totalDurationS).toBe(0);
+    expect(s.avgPaceSec).toBeNull();
+    expect(s.bestPaceSec).toBeNull();
+    expect(s.longestRunKm).toBe(10); // 거리 집계는 정상
   });
 });
 
