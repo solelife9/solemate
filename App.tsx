@@ -72,6 +72,7 @@ import {presentDue} from './lib/pushMessaging';
 import {weeklyProgress, currentStreak, personalRecords} from './lib/goals';
 import {serializeBackup, BackupV1, BackupPayload} from './lib/backup';
 import {Challenge, ChallengeRun} from './lib/challenges';
+import {ExtChallenge} from './lib/progression/challengesExt';
 import {createFirebaseCloudPort} from './lib/firebaseCloudPort';
 import {resolveGoogleCredential} from './lib/googleAuth';
 import {resolveKakaoFirebaseToken} from './lib/kakaoAuth';
@@ -182,6 +183,9 @@ function Main(){
   // 개인 챌린지 목록(거리·연속일). 신규 키(K_CHALLENGES)로 영속하며 런 기록에서
   // 진행률을 파생한다(lib/challenges). 기존 키와 분리돼 데이터 파괴 위험이 없다.
   const [challenges,setChallenges]=useState<Challenge[]>([]);
+  // 확장 챌린지(monthly/shoe/rotation, 스마트 추천 수락분). 기존 distance/streak 과 같은
+  // 키(K_CHALLENGES)에 한 배열로 함께 영속하되, kind 로 분리해 서로를 건드리지 않는다.
+  const [extChallenges,setExtChallenges]=useState<ExtChallenge[]>([]);
   // 프로필 이름/사진(로컬 영속). 이름 기본은 '러너', 사진은 없으면 빈 문자열(아바타
   // 아이콘 폴백). 신규 키라 기존 신발/런 데이터와 격리돼 파괴 위험이 없다.
   const [profileName,setProfileName]=useState(DEFAULT_PROFILE_NAME);
@@ -211,7 +215,11 @@ function Main(){
         const raw=await AsyncStorage.getItem(K_CHALLENGES);
         if(!raw)return;
         const arr=JSON.parse(raw);
-        if(Array.isArray(arr))setChallenges(arr.filter((c:any)=>c&&typeof c.id==='string'));
+        if(!Array.isArray(arr))return;
+        const valid=arr.filter((c:any)=>c&&typeof c.id==='string');
+        // kind 로 분리: distance/streak → 기존 개인 챌린지, monthly/shoe/rotation → 확장.
+        setChallenges(valid.filter((c:any)=>c.kind==='distance'||c.kind==='streak'));
+        setExtChallenges(valid.filter((c:any)=>c.kind==='monthly'||c.kind==='shoe'||c.kind==='rotation'));
       }catch(e){console.log('challenges load error',e);}
     })();
   },[]);
@@ -630,9 +638,14 @@ function Main(){
   // ── 개인 챌린지 생성/삭제(영속 + 상태 갱신) ─────────────────────────────────
   // 신규 키(K_CHALLENGES)에만 쓰므로 기존 데이터(신발/런/설정)와 격리된다. 진행률은
   // 저장하지 않고 런 기록에서 매번 파생(challengeProgress)해 단일 진실원을 유지한다.
+  // base(distance/streak) + ext(monthly/shoe/rotation)를 한 배열로 합쳐 K_CHALLENGES 에 쓴다.
+  // 두 부분집합을 항상 함께 직렬화하므로, 한쪽을 갱신해도 다른 쪽이 사라지지 않는다(상호 비파괴).
+  const persistAllChallenges=(base:Challenge[],ext:ExtChallenge[])=>{
+    try{void AsyncStorage.setItem(K_CHALLENGES,JSON.stringify([...base,...ext]));}catch(e){console.log('challenges save error',e);}
+  };
   const persistChallenges=(next:Challenge[])=>{
     setChallenges(next);
-    try{void AsyncStorage.setItem(K_CHALLENGES,JSON.stringify(next));}catch(e){console.log('challenges save error',e);}
+    persistAllChallenges(next,extChallenges);
   };
   const createChallenge=(c:Challenge)=>{
     // 같은 id(같은 종류·기간·목표) 중복 생성은 덮어쓴다(목록 비대화 방지).
@@ -640,6 +653,12 @@ function Main(){
   };
   const deleteChallenge=(id:string)=>{
     persistChallenges(challenges.filter(c=>c.id!==id));
+  };
+  // 스마트 추천 수락 → 확장 챌린지로 영속(기존 distance/streak 은 그대로). 같은 id 는 덮어쓴다.
+  const acceptChallenge=(c:ExtChallenge)=>{
+    const next=[...extChallenges.filter(x=>x.id!==c.id),c];
+    setExtChallenges(next);
+    persistAllChallenges(challenges,next);
   };
 
   // ── 프로필 이름/사진(영속 + 상태) ───────────────────────────────────────────
@@ -1093,6 +1112,7 @@ function Main(){
             backupData={backupData} onImport={importBackup}
             challenges={challenges} challengeRuns={challengeRuns}
             onCreateChallenge={createChallenge} onDeleteChallenge={deleteChallenge}
+            extChallenges={extChallenges} onAcceptChallenge={acceptChallenge}
             todayISO={today()}
             cloudPort={cloudPortRef.current} onCloudMerged={applyBackupPayload}
             onOpenProgression={()=>setShowProgression(true)}
