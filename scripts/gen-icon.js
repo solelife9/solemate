@@ -4,6 +4,8 @@
 // Adaptive icon coords viewport = 108×108; same proportions scaled to each size.
 // Run from project root: node scripts/gen-icon.js
 'use strict';
+/* eslint-env node */
+/* eslint-disable no-bitwise -- CRC32/PNG 인코딩에 비트연산 필수 */
 const zlib = require('zlib');
 const fs   = require('fs');
 const path = require('path');

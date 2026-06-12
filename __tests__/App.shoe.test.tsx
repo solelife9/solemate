@@ -130,13 +130,6 @@ function autoConfirmAlerts() {
   });
 }
 
-// Colors applied to every Text whose content is exactly `value`.
-function colorsOf(root: ReactTestRenderer.ReactTestInstance, value: string): (string | undefined)[] {
-  return root
-    .findAll((n: any) => n && n.props && n.props.children === value)
-    .map((n: any) => (StyleSheet.flatten(n.props.style) || {}).color);
-}
-
 // 락커 컨디션 상태색은 텍스트가 아니라 상태 점(testID='cond-dot-<tier>')의 배경색에
 // 실린다(목업 리스킨: 글씨는 중립 T2, 점만 색). 점 배경색으로 3-tier 색 계약을 검증한다.
 function dotColorsOf(root: ReactTestRenderer.ReactTestInstance, condition: string): (string | undefined)[] {
