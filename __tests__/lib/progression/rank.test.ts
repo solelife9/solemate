@@ -222,6 +222,36 @@ describe('평가축 동작', () => {
     expect(halfOverdue.pillars.shoeManagement).toBe(0.5);
   });
 
+  test('shoeManagement: 수명(maxKm) 미상 신발만 있으면 0 — 누락이 점수를 부풀리지 않고 injuryPrevention 과 일관', () => {
+    // 활성 신발이 전부 maxKm 미상/쓰레기값(buildContext 가 0 으로 정규화) →
+    // overdue 판정 불가이므로 '건강'으로 셀 수 없다. shoeManagement 기여 0 이어야.
+    const unknownOnly = computeRank(
+      emptyCtx({
+        perShoe: {
+          a: shoe({id: 'a', km: 320, maxKm: 0}), // 수명 미상
+          b: shoe({id: 'b', km: 80, maxKm: 0}), // 수명 미상(쓰레기값 정규화)
+        },
+      }),
+    );
+    expect(unknownOnly.pillars.shoeManagement).toBe(0);
+    // 동일 컨텍스트에서 injuryPrevention 도 0 — 두 평가축이 maxKm 미상을 동일하게 취급.
+    expect(unknownOnly.pillars.injuryPrevention).toBe(0);
+    expect(unknownOnly.pillars.shoeManagement).toBe(
+      unknownOnly.pillars.injuryPrevention,
+    );
+
+    // 수명 미상 신발은 분모에서 제외 — 알려진 신발만 평가한다(미상이 깨끗한 비율을 희석 안 함).
+    const mixed = computeRank(
+      emptyCtx({
+        perShoe: {
+          known: shoe({id: 'known', km: 100, maxKm: 600}), // 정상(건강)
+          unknown: shoe({id: 'unknown', km: 999, maxKm: 0}), // 미상 → 무시
+        },
+      }),
+    );
+    expect(mixed.pillars.shoeManagement).toBe(1); // 미상 제외 → 알려진 1켤레 모두 건강
+  });
+
   test('rotation: 균등 사용일수록 높고, 1켤레면 0', () => {
     const single = computeRank(
       emptyCtx({perShoe: {a: shoe({id: 'a', km: 300, maxKm: 600})}}),

@@ -138,14 +138,18 @@ function consistencyPillar(ctx: ProgressionContext): number {
 }
 
 /**
- * shoeManagement — 활성(미은퇴) 신발 중 overdue 가 아닌 신발의 비율(클린 셰어).
- * 활성 신발이 없으면 0(관리할 대상 없음). overdue 개념은 wearModel/replacementForecast 재사용.
+ * shoeManagement — 활성(미은퇴)·수명(maxKm) 알려진 신발 중 overdue 가 아닌 신발의 비율(클린 셰어).
+ * 수명 미상(maxKm≤0) 신발은 분모에서 제외한다 — overdue 판정이 불가하므로 '건강'으로 셀 수 없다
+ * (injuryPreventionPillar 과 동일한 'missing→0' 규약: 누락 데이터가 점수를 부풀리지 못하게).
+ * 평가 대상(수명 알려진 활성 신발)이 없으면 0. overdue 개념은 wearModel/replacementForecast 재사용.
  */
 function shoeManagementPillar(ctx: ProgressionContext): number {
-  const active = Object.values(ctx.perShoe).filter(s => s && !s.retired);
-  if (active.length === 0) return 0;
-  const healthy = active.filter(s => !isOverdue(s)).length;
-  return clamp01(healthy / active.length);
+  const assessed = Object.values(ctx.perShoe).filter(
+    s => s && !s.retired && nonNeg(s.maxKm) > 0,
+  );
+  if (assessed.length === 0) return 0;
+  const healthy = assessed.filter(s => !isOverdue(s)).length;
+  return clamp01(healthy / assessed.length);
 }
 
 /**
