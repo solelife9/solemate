@@ -235,7 +235,7 @@ export default function RunActiveScreen({
 const r = StyleSheet.create({
   screen: { flex: 1, backgroundColor: C.bg, paddingHorizontal: 24 },
 
-  toast: { position: 'absolute', left: 18, right: 18, top: 50, zIndex: 20, flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 13, paddingHorizontal: 15, borderRadius: 16, backgroundColor: C.accent, shadowColor: C.accent, shadowOpacity: 0.5, shadowRadius: 18, shadowOffset: { width: 0, height: 12 }, elevation: 12 },
+  toast: { position: 'absolute', left: 18, right: 18, top: 50, zIndex: 20, flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 13, paddingHorizontal: 15, borderRadius: 16, backgroundColor: C.accent },
   toastTick: { width: 34, height: 34, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' },
   toastA: { color: '#fff', fontFamily: UI, fontSize: 14.5, fontWeight: '700', letterSpacing: -0.2 },
   toastB: { color: 'rgba(255,255,255,0.88)', fontFamily: UI, fontSize: 12, fontWeight: '500', marginTop: 2 },
@@ -273,7 +273,7 @@ const r = StyleSheet.create({
   smL: { color: C.t4, fontFamily: UI, fontSize: 10.5, fontWeight: '500', marginTop: 3 },
 
   controls: { flexDirection: 'row', justifyContent: 'center', gap: 48, paddingBottom: 8 },
-  cPrimary: { width: 88, height: 88, borderRadius: 999, backgroundColor: C.accent, alignItems: 'center', justifyContent: 'center', shadowColor: C.accent, shadowOpacity: 0.5, shadowRadius: 16, shadowOffset: { width: 0, height: 12 }, elevation: 10 },
+  cPrimary: { width: 88, height: 88, borderRadius: 999, backgroundColor: C.accent, alignItems: 'center', justifyContent: 'center' },
   cResume: { width: 76, height: 76, borderRadius: 999, backgroundColor: C.accent, alignItems: 'center', justifyContent: 'center' },
   cStop: { width: 76, height: 76, borderRadius: 999, backgroundColor: C.surface, borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(255,69,58,0.5)', alignItems: 'center', justifyContent: 'center' },
   ctrlHint: { color: C.t3, fontFamily: UI, fontSize: 12, fontWeight: '500' },

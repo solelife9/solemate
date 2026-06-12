@@ -203,7 +203,7 @@ const s = StyleSheet.create({
   chipB: { color: C.t1, fontFamily: DP, fontWeight: '600' },
 
   foot: { paddingHorizontal: 22, alignItems: 'center', gap: 16, minHeight: 104, justifyContent: 'flex-end' },
-  startNow: { width: '100%', height: 58, borderRadius: 18, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, backgroundColor: C.accent, shadowColor: C.accent, shadowOpacity: 0.5, shadowRadius: 18, shadowOffset: { width: 0, height: 12 }, elevation: 10 },
+  startNow: { width: '100%', height: 58, borderRadius: 18, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, backgroundColor: C.accent },
   startNowText: { color: '#fff', fontFamily: UI, fontSize: 16, fontWeight: '700', letterSpacing: 0.3 },
   skip: { color: C.t3, fontFamily: UI, fontSize: 13, fontWeight: '500' },
 });
