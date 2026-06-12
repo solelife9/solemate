@@ -144,11 +144,20 @@ export default function ProgressionScreen({
   const [state, setState] = useState<ProgressionState>(
     initialState ?? defaultProgressionState(),
   );
+  // loaded: 영속 상태가 실제로 자리잡기 전엔 어떤 쓰기도 금지한다(데이터 파괴 방지).
+  // 비동기 loadProgression() 이 끝나기 전 state 는 default(빈 seenUnlocks)다. 이때
+  // 언락 배너/장착 경로가 saveProgression 을 부르면 디스크의 실제 earnedTitles·
+  // equippedTitleKey·retiredShoes·points 를 default 로 덮어써(클로버) 사용자 데이터가
+  // 영구 소실된다(iron law 위반). initialState 주입(테스트)은 즉시 loaded=true.
+  const [loaded, setLoaded] = useState<boolean>(initialState != null);
   useEffect(() => {
     if (initialState) return;
     let alive = true;
     loadProgression().then(s => {
-      if (alive) setState(s);
+      if (alive) {
+        setState(s);
+        setLoaded(true);
+      }
     });
     return () => {
       alive = false;
@@ -185,6 +194,10 @@ export default function ProgressionScreen({
   const [banner, setBanner] = useState<string[] | null>(null);
   const bannerTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
+    // 로드 전엔 절대 진단/영속하지 않는다 — 빈 default seenUnlocks 로 detectNewUnlocks 가
+    // 모든 충족 키를 "새 언락"으로 오판해 배너를 도배하고, default 상태를 디스크에 써
+    // 실제 사용자 데이터를 덮어쓰는 것을 막는다. loaded 후 실제 seenUnlocks 로 diff 한다.
+    if (!loaded) return undefined;
     const notice = detectNewUnlocks(state.seenUnlocks, unlockedKeys);
     if (notice.newlyUnlocked.length === 0) return undefined;
     setBanner(notice.newlyUnlocked);
@@ -196,12 +209,15 @@ export default function ProgressionScreen({
     return () => {
       if (bannerTimer.current) clearTimeout(bannerTimer.current);
     };
-    // seenUnlocks 영속은 unlockedSig 변화에만 반응한다(state 전체 의존 시 무한 루프).
+    // seenUnlocks 영속은 unlockedSig/loaded 변화에만 반응한다(state 전체 의존 시 무한 루프).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [unlockedSig]);
+  }, [unlockedSig, loaded]);
 
   // ── 타이틀 장착(한 번에 1개) ──────────────────────────────────────────────────
   const equip = (key: string) => {
+    // 로드 전 장착은 무시한다 — default 파생 earnedTitles 를 디스크에 써
+    // 실제 보유 타이틀/은퇴 기록/포인트를 덮어쓰는 클로버를 막는다.
+    if (!loaded) return;
     setState(prev => {
       const base = prev ?? defaultProgressionState();
       const next: ProgressionState = {

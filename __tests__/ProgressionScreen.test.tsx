@@ -18,6 +18,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import ProgressionScreen from '../ProgressionScreen.rn';
 import {getProgression, collectUnlockedKeys} from '../lib/progression';
 import {defaultProgressionState, PROGRESSION_KEY} from '../lib/progression/storage';
+import * as storage from '../lib/progression/storage';
 import type {ProgressionState} from '../lib/progression/types';
 import {TIER_COLORS} from '../theme';
 
@@ -184,5 +185,81 @@ describe('ProgressionScreen — 진척 표면', () => {
     const equipped = byTestID(root, 'equipped-title');
     expect(equipped.length).toBeGreaterThanOrEqual(1);
     expect(textOf(equipped[0])).toContain('Running Beginner');
+  });
+});
+
+// ── 회귀 가드: 프로덕션 마운트(initialState 없음) 데이터 파괴 금지 ─────────────────
+// iron law('사용자 데이터 파괴 금지'). 비동기 loadProgression() 이 끝나기 전 화면은
+// default(빈 seenUnlocks) 상태다. 이때 언락 배너 효과가 detectNewUnlocks([], keys) 로
+// 모든 충족 키를 "새 언락"으로 오판하면 (a) 이미 본 언락까지 배너 도배(anti-scenario 8),
+// (b) default 파생 상태를 progression_v1 에 저장해 디스크의 실제 earnedTitles·
+// equippedTitleKey·retiredShoes·points 를 덮어써(클로버) 영구 소실시킨다.
+// 가드: loaded 전엔 어떤 저장도 일어나지 않아야 한다.
+describe('ProgressionScreen — 프로덕션 마운트 데이터 보존', () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  test('로드 전 default 상태로 saveProgression 을 호출해 실제 데이터를 덮어쓰지 않는다', async () => {
+    await AsyncStorage.clear();
+
+    // 디스크에 실제로 저장돼 있던(=loadProgression 이 돌려줄) 사용자 상태.
+    // 이미 충족된 모든 키가 seen 처리돼 있어 "새 언락"은 없어야 한다.
+    const view = getProgression(RUNS, SHOES, null, NOW);
+    const realState: ProgressionState = {
+      earnedTitles: [
+        {key: 'running_beginner', unlockedAt: '2026-05-01T00:00:00Z', isEquipped: true},
+      ],
+      equippedTitleKey: 'running_beginner',
+      seenUnlocks: collectUnlockedKeys(view),
+      retiredShoes: [
+        {
+          shoeId: 'old1',
+          name: '은퇴한 페가수스',
+          km: 620,
+          retiredAt: '2026-04-01T00:00:00Z',
+          retireYear: 2026,
+          grade: 'standard',
+        },
+      ],
+      points: 1234,
+    };
+
+    // 프로덕션 경로: 마운트 시 storage 에서 비동기 로드한다.
+    const loadSpy = jest
+      .spyOn(storage, 'loadProgression')
+      .mockResolvedValue(realState);
+    const saveSpy = jest
+      .spyOn(storage, 'saveProgression')
+      .mockResolvedValue(undefined);
+
+    let r!: ReactTestRenderer.ReactTestRenderer;
+    // initialState 미주입 → 진짜 프로덕션 마운트.
+    await act(async () => {
+      r = ReactTestRenderer.create(
+        <ProgressionScreen runs={RUNS} shoes={SHOES} profileName="김민준" now={NOW} />,
+      );
+    });
+    // 비동기 loadProgression 의 .then 을 흘려보낸다(load 완료 → loaded=true).
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    const root = r.root;
+    expect(loadSpy).toHaveBeenCalled();
+
+    // 핵심: 저장이 일어났다면 단 한 번도 default/빈 상태로 디스크를 덮어쓰지 않았다.
+    // (구버전은 로드 전 {...default, seenUnlocks: allKeys} 를 저장해 여기서 실패한다.)
+    for (const call of saveSpy.mock.calls) {
+      const saved = call[0];
+      expect(saved.earnedTitles.length).toBeGreaterThan(0);
+      expect(saved.equippedTitleKey).toBe('running_beginner');
+      expect(saved.points).toBe(1234);
+      expect(saved.retiredShoes.length).toBeGreaterThan(0);
+    }
+
+    // 이미 본(seen) 언락은 배너로 다시 뜨지 않는다(멱등 · 도배 금지).
+    expect(byTestID(root, 'unlock-banner').length).toBe(0);
   });
 });
