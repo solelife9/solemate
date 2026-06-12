@@ -1,6 +1,6 @@
 # Job Queue
 
-Updated: 2026-06-12T16:43:33.878Z
+Updated: 2026-06-12T18:35:56.874Z
 
 - [x] eval-mptta2gb — 37s
 - [x] eval-mptu16xl — 27s
@@ -378,3 +378,29 @@ Updated: 2026-06-12T16:43:33.878Z
 - [x] code_critic for 64522b20 — 2m 15s
 - [x] test_critic for 64522b20 — 1m 25s
 - [x] playwright_eval for 64522b20 — 1m 51s
+- [x] 은퇴 요약+등급 로직(lib/progression/retirement.ts) (slice-b-retirement-logic) — 4m 8s
+- [x] 은퇴 업적+타이틀 (slice-b-retire-achievements) — 11m 17s
+- [x] 은퇴 카드 렌더러(4포맷)+공유 (slice-b-card) — 4m 10s
+- [x] 은퇴 플로우 UI + Hall of Shoes (slice-b-ui) — 9m 11s
+- [x] 통합검증: Slice B (은퇴 수용 sweep) (slice-b-e2e) — 2m 34s
+- [x] code_critic for ba893d69 — 2m 49s
+- [x] test_critic for ba893d69 — 2m 19s
+- [x] playwright_eval for ba893d69 — 1m 55s
+- [x] code_critic for ba893d69 — 1m 32s
+- [x] test_critic for ba893d69 — 1m 21s
+- [x] playwright_eval for ba893d69 — 1m 27s
+- [x] code_critic for 59760eba — 2m 41s
+- [x] test_critic for 59760eba — 1m 22s
+- [x] playwright_eval for 59760eba — 1m 20s
+- [x] code_critic for 8e109e12 — 6m 17s
+- [x] test_critic for 8e109e12 — 1m 49s
+- [x] playwright_eval for 8e109e12 — 2m 50s
+- [x] code_critic for 8e109e12 — 1m 36s
+- [x] test_critic for 8e109e12 — 1m 29s
+- [x] playwright_eval for 8e109e12 — 2m 5s
+- [x] code_critic for 7c6d4820 — 3m 43s
+- [x] test_critic for 7c6d4820 — 1m 48s
+- [x] playwright_eval for 7c6d4820 — 1m 44s
+- [x] code_critic for 7c6d4820 — 1m 57s
+- [x] test_critic for 7c6d4820 — 2m 0s
+- [x] playwright_eval for 7c6d4820 — 1m 51s
