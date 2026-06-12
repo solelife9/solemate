@@ -442,16 +442,17 @@ function ShoeDetail({
           </View>
         )}
 
-        {/* 신발 은퇴(보관) — 목업처럼 하단 전체폭 버튼(danger 외곽선). 상단 아이콘 대신
-            여기서 명확히 처리한다. 이미 보관된 신발은 '보관 복원'으로 토글. */}
+        {/* 신발 보관(아카이브) — 하단 전체폭 버튼(danger 외곽선). 키프세이크 '은퇴'(명예의
+            전당 기록)와 구분되는 단순 보관 동선이다: 런 기록은 보존한 채 선택목록에서만
+            숨긴다. 이미 보관된 신발은 '복원'으로 토글한다(키프세이크 기록 없음). */}
         {shoe.id && onRetire && (
           <Pressable
             onPress={toggleRetire}
             accessibilityRole="button"
-            accessibilityLabel={retired ? '보관 복원' : '신발 은퇴 처리'}
+            accessibilityLabel={retired ? '복원' : '보관 처리'}
             style={({ pressed }) => [retired ? s.restoreBtn : s.retireBtn, pressed && s.pressed]}>
             <Ionicons name={retired ? 'arrow-undo-outline' : 'archive-outline'} size={16} color={retired ? T2 : DANGER} />
-            <Text style={[s.retireBtnText, { color: retired ? T2 : DANGER }]}>{retired ? '보관 복원' : '신발 은퇴 처리'}</Text>
+            <Text style={[s.retireBtnText, { color: retired ? T2 : DANGER }]}>{retired ? '복원' : '보관 처리'}</Text>
           </Pressable>
         )}
       </ScrollView>

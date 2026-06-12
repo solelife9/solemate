@@ -173,6 +173,37 @@ describe('addRetiredShoeRecord 순수/멱등', () => {
     expect(n2.retiredShoes.map(r => r.shoeId)).toEqual(['s1', 's2']);
   });
 
+  // 회귀 가드(code_critic product_bug #3): UPSERT — 보관 복원 후 재은퇴 시 km/등급 갱신.
+  test('같은 shoeId 재은퇴(내용 다름)는 stale 레코드를 최신으로 교체(여전히 1개)', () => {
+    const first = addRetiredShoeRecord(defaultProgressionState(), {
+      ...rec,
+      km: 200,
+      grade: 'standard',
+      retireYear: 2025,
+    });
+    // 복원 → 추가 런 → 재은퇴: 더 큰 km/높은 등급/새 연도로 다시 기록.
+    const updated = addRetiredShoeRecord(first, {
+      ...rec,
+      km: 540,
+      grade: 'perfect',
+      retireYear: 2026,
+    });
+    expect(updated.retiredShoes).toHaveLength(1); // 신발당 1개 유지(사라지지 않음)
+    expect(updated.retiredShoes[0].km).toBe(540); // 최신 거리로 갱신
+    expect(updated.retiredShoes[0].grade).toBe('perfect'); // 최신 등급으로 갱신
+    expect(updated.retiredShoes[0].retireYear).toBe(2026);
+    expect(updated).not.toBe(first); // 내용 변경 → 새 상태
+  });
+
+  test('교체 시 원래 위치를 유지(다른 신발 순서 보존)', () => {
+    let st = addRetiredShoeRecord(defaultProgressionState(), {...rec, shoeId: 's1', km: 100});
+    st = addRetiredShoeRecord(st, {...rec, shoeId: 's2', km: 200});
+    st = addRetiredShoeRecord(st, {...rec, shoeId: 's1', km: 999}); // s1 재은퇴
+    expect(st.retiredShoes.map(r => r.shoeId)).toEqual(['s1', 's2']); // 순서 보존
+    expect(st.retiredShoes[0].km).toBe(999); // s1 갱신
+    expect(st.retiredShoes[1].km).toBe(200); // s2 불변
+  });
+
   test('무효 레코드(null/빈 shoeId) → 입력 그대로', () => {
     const state = defaultProgressionState();
     expect(addRetiredShoeRecord(state, null)).toBe(state);

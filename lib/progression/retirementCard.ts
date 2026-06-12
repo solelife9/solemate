@@ -208,6 +208,12 @@ export interface RetirementCardOptions {
   equippedTitle?: string | null;
   /** 은퇴 시각(epoch ms) — Class of YYYY/종료일. 없으면 lastRunDate 연도로 폴백. */
   retiredAtMs?: number;
+  /**
+   * 권위 누적 거리(km) — 서버 truth(total_km, 등록 마일리지/타 기기 미동기 런 포함) 우선.
+   * 지정(유한 양수)되면 카드/명패 거리가 이 값을 따른다(런 합산만으로 인한 과소표시 방지).
+   * 미지정/비정상이면 summary.totalKm(런 합)로 폴백. 명패(record.km)와 카드가 항상 일치.
+   */
+  distanceKm?: number;
 }
 
 /**
@@ -224,7 +230,9 @@ export function buildRetirementCardModel(
   const g = grade ?? s.grade ?? 'standard';
   const badge = retirementGradeBadge(g);
 
-  const totalKm = nonNeg(s.totalKm);
+  // 거리: 권위 distanceKm(서버 truth) 우선, 미지정/비정상이면 summary.totalKm(런 합) 폴백.
+  const overrideKm = nonNeg(opts?.distanceKm);
+  const totalKm = overrideKm > 0 ? overrideKm : nonNeg(s.totalKm);
   const distNum = displayNum(totalKm, unit, 0);
   const distance = String(distNum);
   const distanceLabel = `${distance}${unit}`;

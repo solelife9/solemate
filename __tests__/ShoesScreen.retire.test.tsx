@@ -41,6 +41,9 @@ function render(el: React.ReactElement) {
 function has(root: ReactTestRenderer.ReactTestInstance, testID: string) {
   return root.findAll((n: any) => n.props?.testID === testID).length > 0;
 }
+function hasLabel(root: ReactTestRenderer.ReactTestInstance, label: string) {
+  return root.findAll((n: any) => n.props?.accessibilityLabel === label).length > 0;
+}
 function press(root: ReactTestRenderer.ReactTestInstance, testID: string) {
   const node = root.find((n: any) => n.props?.testID === testID);
   act(() => {
@@ -99,6 +102,37 @@ describe('ShoesScreen — 은퇴 키프세이크 트리거(사용자 제어)', (
     // 플로우가 열렸다(닫기/다음 버튼 존재) — 아직 확정 아님.
     expect(has(r.root, 'retire-flow-next-0')).toBe(true);
     expect(onRetire).not.toHaveBeenCalled();
+  });
+
+  // 회귀 가드(code_critic product_bug #2): 두 '은퇴' 컨트롤의 의미 분리.
+  // 키프세이크 '은퇴'(명예의 전당 기록) vs 하단 단순 '보관 처리'(기록 없음)가 모두 있되
+  // 라벨이 구분돼야 한다(과거 하단 버튼이 '신발 은퇴 처리'라 혼동되던 버그 방지).
+  test('하단 토글은 "보관 처리"로, 키프세이크 트리거는 "은퇴"로 라벨이 구분된다', () => {
+    const r = renderDetail({onRetire: jest.fn()});
+    expect(hasLabel(r.root, '보관 처리')).toBe(true); // 단순 보관(아카이브)
+    expect(hasLabel(r.root, '은퇴')).toBe(true); // 키프세이크 은퇴 트리거
+    expect(hasLabel(r.root, '신발 은퇴 처리')).toBe(false); // 옛 혼동 라벨 제거
+  });
+
+  test('보관된 신발의 하단 토글은 "복원" 라벨', () => {
+    const archived: Shoe = {...UI_SHOE, retired: true};
+    const r = render(
+      <ShoesScreen
+        shoes={[archived]}
+        runs={[]}
+        totals={{0: {totalRuns: 3, totalTime: '3:00:00', avgPace: "5'00\""}}}
+        unit="km"
+        rawShoes={[{...RAW_SHOE, retired: true}]}
+        rawRuns={[]}
+        progressionCtx={ctxOf()}
+        now={Date.UTC(2026, 5, 13)}
+        detailShoeId="s1"
+        onConsumeDetail={() => {}}
+        onRetire={jest.fn()}
+      />,
+    );
+    expect(hasLabel(r.root, '복원')).toBe(true);
+    expect(hasLabel(r.root, '보관 복원')).toBe(false); // 옛 라벨 제거
   });
 
   test('정상 수명 신발에는 키프세이크 트리거가 없다', () => {

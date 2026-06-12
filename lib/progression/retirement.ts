@@ -331,10 +331,29 @@ function isUsableState(state: unknown): state is ProgressionState {
   return !!state && typeof state === 'object';
 }
 
+/** 두 레코드가 영속상 동일한가(km/등급/시각/연도/이름/요약 동일) — 불필요한 재저장 회피용. */
+function sameRetiredRecord(
+  a: RetiredShoeRecord,
+  b: RetiredShoeRecord,
+): boolean {
+  return (
+    a.name === b.name &&
+    a.km === b.km &&
+    a.retiredAt === b.retiredAt &&
+    a.retireYear === b.retireYear &&
+    a.grade === b.grade &&
+    a.summary === b.summary
+  );
+}
+
 /**
- * 은퇴 레코드를 ADDITIVE 하게 덧붙인 **새** 상태를 돌려준다(입력 불변). shoeId 기준 멱등:
- * 이미 같은 신발이 있으면(또는 무효 레코드면) 입력 상태를 **그대로**(변경 없이) 돌려준다.
- * run/shoe/기타 키는 손대지 않는다(retiredShoes 만 확장).
+ * 은퇴 레코드를 신발당 **한 항목**으로 UPSERT 한 새 상태를 돌려준다(입력 불변).
+ *   · 신규 신발 → retiredShoes 끝에 덧붙인다(절대 사라지지 않음).
+ *   · 같은 shoeId 가 이미 있고 내용이 다르면 → 그 자리(원래 위치)를 최신 레코드로 **교체**
+ *     한다(보관 복원 후 추가 런 → 재은퇴 시 km/등급/연도가 최신으로 갱신). 여전히 1개만.
+ *   · 같은 shoeId 가 있고 내용이 동일하면 → 입력 상태를 **그대로**(동일 참조) 돌려준다
+ *     (재저장 IO 회피 — persistRetiredShoe 가 참조 비교로 스킵).
+ * 무효 레코드(null/빈 shoeId)는 변경 없이 입력 그대로. run/shoe/기타 키는 손대지 않는다.
  */
 export function addRetiredShoeRecord(
   state: ProgressionState | null | undefined,
@@ -345,8 +364,14 @@ export function addRetiredShoeRecord(
     return base; // 무효 레코드 → 변경 없음.
   }
   const existing = Array.isArray(base.retiredShoes) ? base.retiredShoes : [];
-  if (existing.some(r => r && r.shoeId === record.shoeId)) {
-    return base; // 멱등 — 같은 신발 중복 추가 금지.
+  const idx = existing.findIndex(r => r && r.shoeId === record.shoeId);
+  if (idx >= 0) {
+    if (sameRetiredRecord(existing[idx], record)) {
+      return base; // 동일 내용 → 변경 없음(동일 참조).
+    }
+    const nextList = existing.slice();
+    nextList[idx] = record; // UPSERT — 원래 위치를 최신 레코드로 교체(신발당 1개 유지).
+    return {...base, retiredShoes: nextList};
   }
   return {...base, retiredShoes: [...existing, record]};
 }

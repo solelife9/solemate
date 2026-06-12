@@ -744,11 +744,17 @@ function Main(){
     [runs,shoes,progState],
   );
   // 은퇴 확정 후 UI 상태 즉시 갱신(디스크 영속은 flow 가 persistRetiredShoe 로 이미 처리).
-  // shoeId 기준 멱등 — 같은 신발 중복 추가 금지. run/shoe 상태는 건드리지 않는다.
+  // shoeId 기준 UPSERT — 신발당 1개를 유지하되, 보관 복원 후 재은퇴 시 km/등급을 최신으로
+  // 교체한다(stale 레코드 방지). run/shoe 상태는 건드리지 않는다.
   const onRetiredKeepsake=(record:RetiredShoeRecord)=>{
     setProgState(prev=>{
       const base=prev??{earnedTitles:[],equippedTitleKey:null,seenUnlocks:[],retiredShoes:[],points:0};
-      if(base.retiredShoes.some(r=>r.shoeId===record.shoeId)) return base;
+      const idx=base.retiredShoes.findIndex(r=>r.shoeId===record.shoeId);
+      if(idx>=0){
+        const next=base.retiredShoes.slice();
+        next[idx]=record; // 최신 은퇴 레코드로 교체(여전히 신발당 1개)
+        return {...base,retiredShoes:next};
+      }
       return {...base,retiredShoes:[...base.retiredShoes,record]};
     });
   };

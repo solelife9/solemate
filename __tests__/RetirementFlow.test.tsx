@@ -17,6 +17,7 @@ import React from 'react';
 import ReactTestRenderer, {act} from 'react-test-renderer';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import RetirementFlow from '../RetirementFlow.rn';
+import HallOfShoes from '../HallOfShoes.rn';
 import {buildContext} from '../lib/progression/context';
 import {loadProgression, PROGRESSION_KEY} from '../lib/progression/storage';
 
@@ -76,8 +77,9 @@ describe('RetirementFlow — 3스텝 회고 + 사용자 제어 은퇴', () => {
     );
     const txt = textOf(r.root);
     expect(txt).toContain('Pegasus 40'); // 신발명(브랜드는 이름에서 파싱)
-    expect(txt).toContain('65km'); // 43+10+12 = 65km (s2 런 제외)
-    expect(txt).toContain('3회'); // 이 신발 런 3개만
+    // 누적 거리 = 서버 truth(perShoe.km=total_km 590), 런 합(65)이 아님 — 과소표시 방지.
+    expect(txt).toContain('590km');
+    expect(txt).toContain('3회'); // 이 신발 런 3개만(런수는 실제 런 기준)
   });
 
   test('마운트만으로는 절대 자동 은퇴되지 않는다(onRetire 미호출, 영속 0)', async () => {
@@ -158,6 +160,58 @@ describe('RetirementFlow — 3스텝 회고 + 사용자 제어 은퇴', () => {
     expect(
       r.root.findAll((n: any) => n.props?.testID === 'retire-card-share').length,
     ).toBeGreaterThanOrEqual(1);
+  });
+
+  // 회귀 가드(code_critic product_bug #1): 서버 truth(total_km) 권위 거리.
+  // 로컬 런이 0이어도(다른 기기에서만 달린 신발/등록 마일리지) 카드·명패가 0km 가 아니라
+  // total_km(590) 을 보여줘야 한다. 런 합만 쓰던 과소표시/0km 버그를 못박는다.
+  test('로컬 런 0 + 서버 total_km=590 → 카드 590km(0 아님) & 명패도 590km', async () => {
+    const SHOE_NORUN: BackendShoe = {
+      id: 's9',
+      name: 'Asics Nimbus 25',
+      max_km: 600,
+      total_km: 590,
+    };
+    // 이 신발(s9) 런은 하나도 없다(다른 신발 런만 존재) — 런 합 = 0.
+    const otherRuns: BackendRun[] = [
+      {id: 'x1', shoe_id: 's2', km: 99, run_date: '2026-04-01', duration: 30000},
+    ];
+    const ctx = buildContext(otherRuns, [SHOE_NORUN], [], null, NOW, []);
+    expect(ctx.perShoe.s9.km).toBe(590); // 서버 truth 시드
+
+    const r = render(
+      <RetirementFlow
+        shoe={SHOE_NORUN}
+        runs={otherRuns}
+        ctx={ctx}
+        now={NOW}
+        onClose={() => {}}
+      />,
+    );
+    // 확인 스텝: 누적 거리 590km(런 합 0 → 0km 가 아님). 런 횟수만 0회.
+    const txt = textOf(r.root);
+    expect(txt).toContain('590km');
+    expect(txt).toContain('0회'); // 런 횟수는 실제(0) — 거리만 서버 truth
+
+    // 확정 → 영속 레코드 km = 590(authoritative).
+    press(r.root, 'retire-flow-next-0');
+    press(r.root, 'retire-flow-next-1');
+    await act(async () => {
+      press(r.root, 'retire-flow-commit');
+      await Promise.resolve();
+    });
+    const loaded = await loadProgression();
+    expect(loaded.retiredShoes).toHaveLength(1);
+    expect(loaded.retiredShoes[0].km).toBe(590);
+
+    // Hall of Shoes 명패가 590km 를 전시한다(0km 아님).
+    const hall = render(<HallOfShoes records={loaded.retiredShoes} unit="km" />);
+    const hallTxt = textOf(hall.root);
+    expect(hallTxt).toContain('590');
+    const plaque = hall.root.find(
+      (n: any) => n.props?.testID === 'hall-plaque-s9',
+    );
+    expect(textOf(plaque)).toContain('590km');
   });
 
   test('영속은 progression_v1 만 쓴다 — run/shoe 키 불변(데이터 파괴 0)', async () => {

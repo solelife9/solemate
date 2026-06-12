@@ -114,14 +114,24 @@ function RetirementFlow({
     () => buildRetirementSummary(shoe, runs, ctx, nowMs),
     [shoe, runs, ctx, nowMs],
   );
+  // 권위 누적 거리 = 서버 truth(perShoe.km, 등록 마일리지/타 기기 미동기 런 포함) 우선.
+  // 런 합(summary.totalKm)만 쓰면 과소표시(또는 로컬 런 0 → 0km) — context.ts·lib/shoe 와
+  // 동일하게 서버 total_km 을 우선해 명패(record.km)와 카드 거리가 항상 일치하게 한다.
+  const authoritativeKm = useMemo(() => {
+    const perShoeKm = shoe.id ? ctx?.perShoe?.[shoe.id]?.km : undefined;
+    return Number.isFinite(perShoeKm) && (perShoeKm as number) > 0
+      ? (perShoeKm as number)
+      : summary.totalKm;
+  }, [ctx, shoe.id, summary.totalKm]);
   const model = useMemo(
     () =>
       buildRetirementCardModel(summary, summary.grade, {
         unit,
         equippedTitle,
         retiredAtMs: nowMs,
+        distanceKm: authoritativeKm,
       }),
-    [summary, unit, equippedTitle, nowMs],
+    [summary, unit, equippedTitle, nowMs, authoritativeKm],
   );
 
   const [step, setStep] = useState<Step>(0);
@@ -136,7 +146,8 @@ function RetirementFlow({
   const commitRetire = () => {
     if (!committed.current) {
       committed.current = true;
-      const record = buildRetiredShoeRecord(summary, summary.totalKm, nowMs);
+      // 명패 km = 권위 누적 거리(서버 truth 우선) — 카드 거리와 동일 값으로 영속한다.
+      const record = buildRetiredShoeRecord(summary, authoritativeKm, nowMs);
       if (shoe.id) onRetire?.(shoe.id, true);
       // 영속은 ADDITIVE·멱등(progression_v1.retiredShoes 만) — run/shoe 불변.
       void persistRetiredShoe(record);
