@@ -19,6 +19,8 @@ import { buildWearView, forecastBasisKo, forecastConfidenceKo, type Surface } fr
 import { recommendNextShoes, buildShopLinks, categoryLabelKo, AFFILIATE_DISCLOSURE } from './lib/affiliate';
 import { findShoeClass, typeLabel, TYPE_DESCRIPTIONS, purposeSentenceKo } from './data/shoeClass';
 import { shouldRecommendNextShoe } from './lib/recommendTrigger';
+import RetirementFlow from './RetirementFlow.rn';
+import type { ProgressionContext, RetiredShoeRecord } from './lib/progression/types';
 
 // 수익화 v1(차별점 정합): 이 신발이 교체임박(forecast overdue/≤3주)일 때, 같은 카테고리의
 // '다음 러닝화'를 상세에서도 추천한다(구매 의도 최고 시점의 contextual 추천 — 배너광고 아님).
@@ -75,6 +77,7 @@ const condLabel = (c: string) => (c === '교체' ? '교체 권장' : c === '주�
 // ── shoe detail ───────────────────────────────────────────────────────────────
 function ShoeDetail({
   shoe, idx, runs, totals, unit, weightKg, surfaceOf, onBack, onRename, onDelete, onRetire, onSetMaxKm,
+  rawShoe, rawRuns, progressionCtx, equippedTitle, onRetiredKeepsake, now,
 }: {
   shoe: Shoe;
   idx: number;
@@ -91,6 +94,14 @@ function ShoeDetail({
   onRetire?: (id: string, retired: boolean) => void;
   // 신발별 수명(max_km) 조정 — 교체 임계의 분모를 사용자가 직접 보정한다.
   onSetMaxKm?: (id: string, maxKm: number) => void;
+  // 키프세이크 은퇴 플로우 입력(선택). 셋 다 있으면 수명 도달 시 [계속 사용]/[은퇴]
+  // 트리거 + 3스텝 회고 + 카드를 띄운다(buildRetirementSummary 가 실데이터로 요약).
+  rawShoe?: BackendShoe | null;
+  rawRuns?: readonly BackendRun[];
+  progressionCtx?: ProgressionContext;
+  equippedTitle?: string | null;
+  onRetiredKeepsake?: (record: RetiredShoeRecord) => void;
+  now?: number;
 }) {
   // 비율은 km 절대값, 표시 숫자만 표시 단위로 환산한다.
   const remainKm = Math.max(0, shoe.max - shoe.used);
@@ -132,6 +143,14 @@ function ShoeDetail({
   // 직접 입력 임시값(표시 단위 문자열). null이면 '입력 중 아님' → shoe.max를 그대로 보여준다.
   // 매 타건마다 커밋하지 않고 blur/제출 시 한 번만 onSetMaxKm으로 영속화한다.
   const [maxDraft, setMaxDraft] = useState<string | null>(null);
+
+  // 키프세이크 은퇴 플로우: 수명 도달 신발만 [계속 사용]/[은퇴]를 노출한다(자동 은퇴 절대
+  // 금지 — 사용자가 [은퇴]를 눌러야만 flowOpen). [계속 사용]을 누르면 이번 세션 동안
+  // 트리거를 접는다(kept). 영속 데이터·런/신발은 건드리지 않는다.
+  const [flowOpen, setFlowOpen] = useState(false);
+  const [kept, setKept] = useState(false);
+  const atLifespan = shoe.condition === '교체';
+  const keepsakeReady = !retired && !!rawShoe && !!progressionCtx;
 
   // 신발 수명(max_km) 조정: ＋/− 10km씩 보정 + 직접 입력. 비율(percentUsed)은 km 절대값
   // 으로 계산하지만 표시·스텝·입력은 단위를 따른다. 임계 tier는 새 max로 즉시 재판정해,
@@ -183,6 +202,26 @@ function ShoeDetail({
   };
 
   const insets = useSafeAreaInsets();
+
+  // 은퇴 키프세이크 플로우(전체화면 오버레이) — 사용자가 [은퇴]를 눌렀을 때만. 확정은
+  // flow 내부에서 기존 경로(onRetire)를 호출하고 키프세이크를 영속한다. 완료/취소 시 닫고,
+  // 실제 은퇴가 됐으면(rawShoe.retired 반영 전이라도) 상세를 빠져나가 잠금장으로 복귀한다.
+  if (flowOpen && keepsakeReady && rawShoe) {
+    return (
+      <RetirementFlow
+        shoe={rawShoe}
+        runs={rawRuns ?? []}
+        ctx={progressionCtx!}
+        now={now}
+        unit={unit}
+        equippedTitle={equippedTitle ?? null}
+        onRetire={onRetire}
+        onRetired={onRetiredKeepsake}
+        onClose={() => { setFlowOpen(false); onBack(); }}
+      />
+    );
+  }
+
   return (
     <View style={[s.screen, { paddingTop: insets.top }]}>
       <View style={s.detailNav}>
@@ -304,6 +343,38 @@ function ShoeDetail({
           <View style={s.keepGoing}>
             <Ionicons name="shield-checkmark" size={17} color={ACCENT} />
             <Text style={s.keepGoingText}>{`${KEEP_GOING_REPLACE} 달릴 수 있어요`}</Text>
+          </View>
+        )}
+
+        {/* 은퇴 키프세이크 트리거(수명 도달 시) — 절대 자동 은퇴하지 않는다. 사용자가
+            [계속 사용] 또는 [은퇴]를 직접 고른다. [은퇴]는 3스텝 회고+카드 플로우를 연다.
+            rawShoe/ctx 가 주입된 경우에만(요약을 실데이터로 만들 수 있을 때) 노출. */}
+        {keepsakeReady && atLifespan && !kept && (
+          <View testID="retire-keepsake-trigger" style={[s.card, s.keepsakeCard]}>
+            <Text style={s.keepsakeTitle}>훌륭한 여정이었어요</Text>
+            <Text style={s.keepsakeSub}>
+              {shoe.model}이(가) 권장 수명에 도달했어요. 계속 신을지, 멋지게
+              은퇴시킬지는 직접 정해요.
+            </Text>
+            <View style={s.keepsakeBtns}>
+              <Pressable
+                onPress={() => setKept(true)}
+                accessibilityRole="button"
+                accessibilityLabel="계속 사용"
+                testID="retire-keep-using"
+                style={({ pressed }) => [s.keepsakeBtn, s.keepUsingBtn, pressed && s.pressed]}>
+                <Text style={[s.keepsakeBtnTxt, { color: T1 }]}>계속 사용</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => setFlowOpen(true)}
+                accessibilityRole="button"
+                accessibilityLabel="은퇴"
+                testID="retire-open-flow"
+                style={({ pressed }) => [s.keepsakeBtn, s.retireFlowBtn, pressed && s.pressed]}>
+                <Ionicons name="ribbon-outline" size={16} color={BG} />
+                <Text style={[s.keepsakeBtnTxt, { color: BG }]}>은퇴</Text>
+              </Pressable>
+            </View>
           </View>
         )}
 
@@ -452,6 +523,7 @@ function ShoeCard({ shoe, featured, onPress, onPlay, unit, pace }: { shoe: Shoe;
 export default function ShoesScreen({
   shoes = SHOES, runs = [], totals = {}, activeIdx = 0, unit = 'km', weightKg, surfaceOf, onAddShoe, onTab, onRename, onDelete, onRetire, onSetMaxKm, onStartRun,
   detailShoeId, onConsumeDetail,
+  rawShoes, rawRuns, progressionCtx, equippedTitle, onRetiredKeepsake, now,
 }: {
   shoes?: Shoe[];
   runs?: Run[];
@@ -476,6 +548,14 @@ export default function ShoesScreen({
   onSetMaxKm?: (id: string, maxKm: number) => void;
   // shoe-first 동선: 상세 CTA·락커 카드 play에서 해당 신발 id로 런 시작을 알린다.
   onStartRun?: (id: string) => void;
+  // 은퇴 키프세이크 플로우 입력(선택, 상세 화면으로 전달). 서버 행/진척 컨텍스트가
+  // 있어야 buildRetirementSummary 가 실데이터 요약을 만들 수 있다.
+  rawShoes?: readonly BackendShoe[];
+  rawRuns?: readonly BackendRun[];
+  progressionCtx?: ProgressionContext;
+  equippedTitle?: string | null;
+  onRetiredKeepsake?: (record: RetiredShoeRecord) => void;
+  now?: number;
 }) {
   const [detail, setDetail] = useState<number | null>(null);
   // 홈 히어로에서 넘어온 신발 id를 상세로 연다(한 번만 소비). id→index 매핑 후 detail 세팅.
@@ -504,6 +584,12 @@ export default function ShoesScreen({
         onDelete={onDelete}
         onRetire={onRetire}
         onSetMaxKm={onSetMaxKm}
+        rawShoe={rawShoes?.find((rs) => rs.id === dShoe.id) ?? null}
+        rawRuns={rawRuns}
+        progressionCtx={progressionCtx}
+        equippedTitle={equippedTitle}
+        onRetiredKeepsake={onRetiredKeepsake}
+        now={now}
       />
     );
   }
@@ -633,6 +719,15 @@ const s = StyleSheet.create({
   // 교체 내러티브 배너(keep-going 보이스) — accent 톤 반투명 표면(withAlpha 파생).
   keepGoing: { flexDirection: 'row', alignItems: 'center', gap: 9, backgroundColor: withAlpha(ACCENT, 0.12), borderRadius: 16, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.35), paddingHorizontal: 16, paddingVertical: 13 },
   keepGoingText: { flex: 1, color: ACCENT, fontFamily: FONT, fontSize: 13, fontWeight: '600', letterSpacing: -0.1, lineHeight: 18 },
+  // 은퇴 키프세이크 트리거 카드(수명 도달) — 자랑스러운 톤. accent 보더로 주목.
+  keepsakeCard: { padding: 18, gap: 6, borderColor: withAlpha(ACCENT, 0.3) },
+  keepsakeTitle: { color: T1, fontFamily: DISPLAY, fontSize: 18, fontWeight: '800', letterSpacing: -0.2 },
+  keepsakeSub: { color: T3, fontFamily: FONT, fontSize: 13, lineHeight: 19 },
+  keepsakeBtns: { flexDirection: 'row', gap: 10, marginTop: 8 },
+  keepsakeBtn: { flex: 1, height: 50, borderRadius: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7 },
+  keepUsingBtn: { backgroundColor: CARD_HI },
+  retireFlowBtn: { backgroundColor: ACCENT },
+  keepsakeBtnTxt: { fontFamily: FONT, fontSize: 15, fontWeight: '700' },
   // 실효 마모 + 교체 예측 카드(차별점) — 본문 카드 톤에 accent 절제(라벨 아이콘/예측 라인만).
   wearCard: { padding: 18, gap: 2 },
   wearLabel: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600', letterSpacing: 0.2 },

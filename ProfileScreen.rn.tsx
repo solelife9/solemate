@@ -112,6 +112,7 @@ export default function ProfileScreen({
   backupData = { shoes: [], runs: [], settings: {} },
   cloudPort, onCloudMerged, cloudClock = () => Date.now(),
   onOpenProgression,
+  onOpenHallOfShoes, retiredCount = 0,
 }: {
   profile?: Profile;
   badges?: Badge[];
@@ -178,6 +179,10 @@ export default function ProfileScreen({
   // 진척(랭크·타이틀·업적) 화면 진입. App 이 전체화면 ProgressionScreen 으로 전환한다.
   // 없으면 진척 진입 버튼은 표시되지 않는다(안전한 no-op).
   onOpenProgression?: () => void;
+  // 명예의 전당(은퇴 신발 박물관) 진입. 없으면 진입 버튼 미표시(안전한 no-op).
+  onOpenHallOfShoes?: () => void;
+  // 은퇴한 신발 수(전당 진입 행의 부제에 표시). 0이어도 진입은 가능(빈 전당 안내).
+  retiredCount?: number;
 }) {
   // 어떤 설정 행이 펼쳐졌는지(단위는 패널 없이 즉시 토글). 한 번에 하나만 펼친다.
   const [open, setOpen] = useState<null | 'goal' | 'weight' | 'alerts' | 'notif' | 'account' | 'import'>(null);
@@ -509,6 +514,23 @@ export default function ProfileScreen({
             <View style={{ flex: 1, minWidth: 0 }}>
               <Text style={s.progressTitle}>진척</Text>
               <Text style={s.progressSub}>랭크 · 타이틀 · 업적</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={T3} />
+          </Pressable>
+        )}
+
+        {/* 명예의 전당(은퇴 신발 박물관) 진입 — 전체화면 HallOfShoes 로 전환 */}
+        {onOpenHallOfShoes && (
+          <Pressable
+            onPress={onOpenHallOfShoes}
+            testID="open-hall-of-shoes"
+            accessibilityRole="button"
+            accessibilityLabel="명예의 전당 열기"
+            style={({ pressed }) => [s.card, s.progressRow, pressed && { backgroundColor: CARD_HI }]}>
+            <View style={s.progressIcon}><Ionicons name="ribbon-outline" size={19} color={ACCENT} /></View>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text style={s.progressTitle}>명예의 전당</Text>
+              <Text style={s.progressSub}>{retiredCount > 0 ? `은퇴한 신발 ${retiredCount}켤레` : '은퇴한 신발들의 박물관'}</Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={T3} />
           </Pressable>

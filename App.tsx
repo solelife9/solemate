@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useRef} from 'react';
+import React, {useState, useEffect, useRef, useMemo} from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, TextInput, Alert, StatusBar,
   Linking, AppState,
@@ -30,6 +30,10 @@ import RunGoalScreen from './RunGoalScreen.rn';
 import RunCountdownScreen from './RunCountdownScreen.rn';
 import RunActiveScreenView from './RunActiveScreen.rn';
 import ProgressionScreen from './ProgressionScreen.rn';
+import HallOfShoes from './HallOfShoes.rn';
+import {buildContext} from './lib/progression/context';
+import {loadProgression} from './lib/progression/storage';
+import type {ProgressionState, RetiredShoeRecord} from './lib/progression/types';
 
 import {simplifyRoute} from './lib/geo';
 import {runTracker} from './lib/runTracker';
@@ -150,6 +154,12 @@ function Main(){
   // 진척(랭크·타이틀·업적) 전체화면 표시 여부. 프로필의 '진척' 버튼이 열고, 화면의
   // 뒤로 버튼이 닫는다. 기존 탭/온보딩 부트 흐름과 독립적인 오버레이형 게이트다.
   const [showProgression,setShowProgression]=useState(false);
+  // 명예의 전당(은퇴 신발 박물관) 전체화면 표시 여부. 프로필 진입 버튼이 열고 화면
+  // 뒤로 버튼이 닫는다. 진척과 같은 오버레이형 게이트(부트 흐름과 독립).
+  const [showHallOfShoes,setShowHallOfShoes]=useState(false);
+  // 진척 영속 상태(progression_v1) — Hall of Shoes 레코드 + 은퇴 키프세이크 컨텍스트의
+  // 소스. 마운트 시 로드하고, 은퇴 확정 시 레코드를 ADDITIVE 하게 덧붙인다(파생값은 재계산).
+  const [progState,setProgState]=useState<ProgressionState|null>(null);
   const [overlay,setOverlay]=useState<'none'|'add'|'goal'|'countdown'|'run'>('none');
   const [pendingShoe,setPendingShoe]=useState<{id:string;name:string;ui:Shoe}|null>(null);
   const [activeRun,setActiveRun]=useState<{id:string;name:string;goalKm:number}|null>(null);
@@ -188,6 +198,10 @@ function Main(){
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(()=>{initUser();},[]);
+
+  // 진척 영속 상태(progression_v1) 복원 — Hall of Shoes 레코드 + 은퇴 컨텍스트의 소스.
+  // 손상/누락은 storage 가 안전 기본값으로 복구한다(절대 throw 없음). 1회 로드.
+  useEffect(()=>{let alive=true;loadProgression().then(s=>{if(alive)setProgState(s);});return()=>{alive=false;};},[]);
 
   // 개인 챌린지 목록 복원(신규 키 — 네트워크 무관, 1회). 손상/형식오류는 조용히
   // 무시해 빈 목록으로 시작한다(기존 데이터 보존, 크래시 금지).
@@ -720,6 +734,25 @@ function Main(){
   const homeForecasts:Record<string,ReplacementForecast|null>={};
   for(const s of shoes){ if(s.id) homeForecasts[s.id]=forecastForRaw(s); }
 
+  // ── 은퇴 키프세이크 컨텍스트(Slice B) ────────────────────────────────────────
+  // 영속된 은퇴 레코드(Hall of Shoes 소스) + 진척 컨텍스트(요약/등급 판정용). buildContext
+  // 는 순수·읽기 전용(런/신발 불변). progState 미로드 시 빈 레코드로 안전 동작.
+  const retiredRecords:RetiredShoeRecord[]=progState?.retiredShoes??[];
+  const progressionCtx=useMemo(
+    ()=>buildContext(runs,shoes,progState?.earnedTitles??[],null,Date.now(),retiredRecords),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [runs,shoes,progState],
+  );
+  // 은퇴 확정 후 UI 상태 즉시 갱신(디스크 영속은 flow 가 persistRetiredShoe 로 이미 처리).
+  // shoeId 기준 멱등 — 같은 신발 중복 추가 금지. run/shoe 상태는 건드리지 않는다.
+  const onRetiredKeepsake=(record:RetiredShoeRecord)=>{
+    setProgState(prev=>{
+      const base=prev??{earnedTitles:[],equippedTitleKey:null,seenUnlocks:[],retiredShoes:[],points:0};
+      if(base.retiredShoes.some(r=>r.shoeId===record.shoeId)) return base;
+      return {...base,retiredShoes:[...base.retiredShoes,record]};
+    });
+  };
+
   const sortedRaw=[...runs].sort((a,b)=>String(b.run_date).localeCompare(String(a.run_date)));
   function toUiRun(run:any):Run{
     const km=parseFloat(run.km)||0;
@@ -995,6 +1028,12 @@ function Main(){
     return <ProgressionScreen runs={runs} shoes={shoes} profileName={profileName} onBack={()=>setShowProgression(false)}/>;
   }
 
+  // 명예의 전당(은퇴 신발 박물관) 전체화면 — 영속된 은퇴 레코드를 그대로 전시한다
+  // (리로드에도 보존). 데이터를 만들지 않고 progState.retiredShoes 만 읽는다(읽기 전용).
+  if(showHallOfShoes){
+    return <HallOfShoes records={retiredRecords} unit={unit} onBack={()=>setShowHallOfShoes(false)}/>;
+  }
+
   return(
     <View style={{flex:1,backgroundColor:BG}}>
       <View style={{flex:1}}>
@@ -1025,6 +1064,8 @@ function Main(){
             onRename={updateShoeName} onDelete={deleteShoe} onRetire={retireShoe}
             onSetMaxKm={updateShoeMaxKm} onStartRun={startFromShoeId}
             detailShoeId={shoesDetailId} onConsumeDetail={()=>setShoesDetailId(null)}
+            rawShoes={shoes} rawRuns={runs} progressionCtx={progressionCtx}
+            onRetiredKeepsake={onRetiredKeepsake}
           />
         )}
         {tab===3&&(
@@ -1049,6 +1090,8 @@ function Main(){
             todayISO={today()}
             cloudPort={cloudPortRef.current} onCloudMerged={applyBackupPayload}
             onOpenProgression={()=>setShowProgression(true)}
+            onOpenHallOfShoes={()=>setShowHallOfShoes(true)}
+            retiredCount={retiredRecords.length}
           />
         )}
       </View>
