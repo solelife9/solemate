@@ -1,6 +1,6 @@
 # Job Queue
 
-Updated: 2026-06-12T19:27:47.773Z
+Updated: 2026-06-12T19:53:14.038Z
 
 - [x] eval-mptta2gb — 37s
 - [x] eval-mptu16xl — 27s
@@ -419,3 +419,11 @@ Updated: 2026-06-12T19:27:47.773Z
 - [x] code_critic for 597a1618 — 2m 48s
 - [x] test_critic for 597a1618 — 2m 26s
 - [x] playwright_eval for 597a1618 — 2m 39s
+- [x] 홈 진척 통합(랭크·타이틀·챌린지·업적) (slice-d-home) — 3m 46s
+- [x] 통합검증: Slice D (홈 통합 sweep) (slice-d-e2e) — 1m 34s
+- [x] code_critic for 3159c3f7 — 2m 58s
+- [x] test_critic for 3159c3f7 — 2m 4s
+- [x] playwright_eval for 3159c3f7 — 2m 26s
+- [x] code_critic for 3159c3f7 — 1m 35s
+- [x] test_critic for 3159c3f7 — 1m 41s
+- [x] playwright_eval for 3159c3f7 — 2m 36s
