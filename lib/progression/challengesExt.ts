@@ -354,8 +354,11 @@ interface ShoeUsage {
  *   4) 덜 신은 신발에 거리 목표 = clamp(roundTo5(과사용 최근거리 / 2), 10..50)km.
  *   5) 투명한 한국어 사유: '<과사용>를 많이 신었어요 → <덜신은>로 <target>km'.
  *
- * 실제 등록된 활성 신발만 대상으로 하며(날조 금지), 반환 챌린지는 kind 'shoe'(이번 달
- * 윈도우, 대상 shoeId=덜 신은 신발)로 즉시 추적 가능하다.
+ * 실제 등록된 활성 신발만 대상으로 하며(날조 금지), 반환 챌린지는 kind 'shoe'(대상
+ * shoeId=덜 신은 신발)로 즉시 추적 가능하다. **전진(forward) 윈도우**를 박는다:
+ * startDate=now(추천 시점) ~ endDate=이번 달 말일. 추천 이후 달린 거리만 진행으로 세므로,
+ * 덜 신은 신발의 과거 누적(평생) 거리가 targetKm 을 넘더라도 '태어나자마자 완료'되지
+ * 않는다(current=0 에서 시작 — 'never fabricate'·참여도 오염 방지).
  *
  * @param now 기준일('YYYY-MM-DD').
  */
@@ -418,6 +421,10 @@ export function generateSmartChallenge(
   const leastName = least.shoe.name || least.shoe.id;
   const reason = `${overName}를 많이 신었어요 → ${leastName}로 ${targetKm}km`;
 
+  // 전진 윈도우: 추천 시점(now) 이후 ~ 이번 달 말일. shoeProgress 가 startDate 를 존중하므로
+  // 덜 신은 신발의 추천 이전(평생) 거리는 제외되고, 사용자가 실제로 신어 달린 거리만 센다.
+  const {end: monthEnd} = monthWindow(safeNow);
+
   return {
     id: `smart-${overused.shoe.id}-${least.shoe.id}`,
     kind: 'shoe',
@@ -425,6 +432,8 @@ export function generateSmartChallenge(
     shoeId: least.shoe.id,
     targetKm,
     reason,
+    startDate: safeNow,
+    endDate: monthEnd,
   };
 }
 

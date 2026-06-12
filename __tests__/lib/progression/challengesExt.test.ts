@@ -197,6 +197,61 @@ describe('generateSmartChallenge', () => {
     ];
     expect(generateSmartChallenge(runs, oneActive, NOW)).toBeNull();
   });
+
+  // 가드(product_bug 회귀 방지): 덜 신은 신발이 '평생' 거리는 targetKm 을 넘지만
+  // 추천 이후엔 0km 인 경우, 추천 즉시 '완료'로 태어나면 안 된다(전진 윈도우).
+  describe('전진 윈도우 가드 — 추천 이전 거리는 진행으로 세지 않는다', () => {
+    // s1(Alphafly): 최근 28일 60km → 과사용. targetKm = clamp(roundTo5(60/2)) = 30.
+    // s2(Novablast): 최근 0km(가장 덜 신음)인데 '평생' 누적 100km(> 30) — 모두 추천 이전.
+    const lifetimeRuns: ExtRun[] = [
+      {date: '2026-06-01', dist: 30, shoeId: 's1'}, // s1 최근
+      {date: '2026-06-10', dist: 30, shoeId: 's1'}, // s1 최근 → 합 60
+      {date: '2026-01-05', dist: 50, shoeId: 's2'}, // s2 과거(추천 이전)
+      {date: '2026-02-05', dist: 50, shoeId: 's2'}, // s2 과거 → 평생 100km
+    ];
+
+    test('덜 신은 신발(s2)에 전진 윈도우(startDate=now)가 박힌다', () => {
+      const ch = generateSmartChallenge(lifetimeRuns, SHOES, NOW);
+      expect(ch).not.toBeNull();
+      expect(ch!.shoeId).toBe('s2');
+      expect(ch!.targetKm).toBe(30);
+      expect(ch!.startDate).toBe(NOW); // 추천 시점부터
+      expect(ch!.endDate).toBe('2026-06-30'); // 이번 달 말일
+    });
+
+    test('평생 100km(> target 30) 이지만 추천 이후 0km → current=0·미완(태어나자마자 완료 금지)', () => {
+      const ch = generateSmartChallenge(lifetimeRuns, SHOES, NOW)!;
+      const p = challengeExtProgress(ch, lifetimeRuns, SHOES, NOW);
+      expect(p.current).toBe(0); // 추천 이전 100km 는 제외
+      expect(p.completed).toBe(false);
+      expect(p.pct).toBe(0);
+    });
+
+    test('추천 이후(now 이상) 달린 거리는 진행을 증가시킨다', () => {
+      const ch = generateSmartChallenge(lifetimeRuns, SHOES, NOW)!;
+      const after: ExtRun[] = [
+        ...lifetimeRuns,
+        {date: '2026-06-20', dist: 12, shoeId: 's2'}, // 추천 이후 12km
+      ];
+      const p = challengeExtProgress(ch, after, SHOES, NOW);
+      expect(p.current).toBeCloseTo(12, 5);
+      expect(p.completed).toBe(false); // 12 < 30
+    });
+
+    test('갓 생성된(미시작) 스마트 챌린지는 참여도(completedChallengeCount)를 부풀리지 않는다', () => {
+      const ch = generateSmartChallenge(lifetimeRuns, SHOES, NOW)!;
+      const ctxChallenges = extChallengesToContext([ch], lifetimeRuns, SHOES, NOW);
+      expect(ctxChallenges).toEqual([{completed: false}]);
+      const ctx = buildContext(
+        [],
+        [],
+        [],
+        ctxChallenges,
+        new Date(2026, 5, 13).getTime(),
+      );
+      expect(ctx.completedChallengeCount).toBe(0); // 무활동 챌린지가 끼지 않음
+    });
+  });
 });
 
 describe('확장 챌린지 완료 → 참여도(engagement) 카운트', () => {
