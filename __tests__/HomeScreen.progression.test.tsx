@@ -72,9 +72,9 @@ describe('홈 진척 띠 — 표면', () => {
     expect(chipText).toBeTruthy();
     const color = (StyleSheet.flatten(chipText.props.style) as any).color;
     expect(color).toBe(TIER_COLORS.gold);
-    // 칩에 티어명/점수가 표시된다.
+    // 칩에 티어명만 표시된다(점수 제거 — 색+등급명으로 직관화).
     expect(textOf(byTestID(root, 'home-rank-chip')[0])).toContain('Gold');
-    expect(textOf(byTestID(root, 'home-rank-chip')[0])).toContain('62');
+    expect(textOf(byTestID(root, 'home-rank-chip')[0])).not.toContain('62');
   });
 
   test('장착 타이틀이 인사(닉네임) 옆에 렌더된다', () => {

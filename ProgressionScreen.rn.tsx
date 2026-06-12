@@ -45,7 +45,7 @@ import {
   TIER_COLORS,
   withAlpha,
 } from './theme';
-import {Ring, SectionTitle} from './primitives';
+import {SectionTitle} from './primitives';
 import {ExtChallengeCard, SmartChallengeCard} from './ChallengesSection';
 import {
   generateSmartChallenge,
@@ -355,20 +355,8 @@ export default function ProgressionScreen({
           </View>
         ) : null}
 
-        {/* 히어로 — 티어 링 + 랭크 칩 + 닉네임 + 장착 타이틀 */}
+        {/* 히어로 — 랭크 칩 + 닉네임 + 장착 타이틀 (링·점수 제거로 단순화) */}
         <View style={s.hero} testID="rank-hero">
-          <Ring
-            size={84}
-            stroke={8}
-            progress={Math.max(0, Math.min(1, view.rank.score / 100))}
-            color={rankColor}
-            color2={rankColor}>
-            <View style={s.ringCenter} testID="rank-ring">
-              <Text style={[s.ringScore, {color: rankColor}]}>
-                {Math.round(view.rank.score)}
-              </Text>
-            </View>
-          </Ring>
           <View style={{flex: 1, minWidth: 0}}>
             <View
               testID="rank-chip"
@@ -380,7 +368,7 @@ export default function ProgressionScreen({
                 },
               ]}>
               <Text style={[s.rankChipTxt, {color: rankColor}]}>
-                {`${TIER_LABEL[view.rank.tier]} · ${Math.round(view.rank.score)}`}
+                {TIER_LABEL[view.rank.tier]}
               </Text>
             </View>
             <Text style={s.nick} numberOfLines={1} testID="progression-nick">

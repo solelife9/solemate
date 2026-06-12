@@ -92,7 +92,7 @@ function ProgressionStrip({ prog, onOpen }: { prog: HomeProgression; onOpen?: ()
           style={[s.rankChip, { backgroundColor: withAlpha(color, 0.16), borderColor: withAlpha(color, 0.5) }]}>
           <Ionicons name="trophy" size={11} color={color} />
           <Text testID="home-rank-chip-text" style={[s.rankChipTxt, { color }]} numberOfLines={1}>
-            {`${TIER_LABEL[prog.tier]} · ${Math.round(prog.score)}`}
+            {TIER_LABEL[prog.tier]}
           </Text>
         </View>
         {ach && (

@@ -114,12 +114,7 @@ describe('ProgressionScreen — 진척 표면', () => {
     );
     const root = r.root;
 
-    // 링 중앙 점수 텍스트가 티어 색이다.
-    const ring = byTestID(root, 'rank-ring')[0];
-    const ringText = ring.findAll((n: any) => n.type === 'Text')[0];
-    expect(colorOf(ringText)).toBe(expected.color);
-
-    // 랭크 칩 라벨도 티어 색이다.
+    // 랭크 칩 라벨이 티어 색이다(링·점수 제거 — 칩이 단일 랭크 신호).
     const chip = byTestID(root, 'rank-chip')[0];
     const chipText = chip.findAll((n: any) => n.type === 'Text')[0];
     expect(colorOf(chipText)).toBe(expected.color);
