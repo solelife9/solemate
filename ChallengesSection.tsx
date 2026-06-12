@@ -92,7 +92,8 @@ function extProgressText(ch: ExtChallenge, p: ChallengeProgressResult): string {
 
 // 확장 챌린지 카드(monthly/shoe/rotation). 진행률은 challengeExtProgress 로 매번 파생(영속
 // 금지) — run/shoe 데이터를 변형하지 않는다. 기존 ChallengeCard 와 같은 링+제목+진행 레이아웃.
-function ExtChallengeCard({
+// export: ProgressionScreen('진척' 화면 챌린지 섹션)이 같은 카드를 재사용한다(단일 출처).
+export function ExtChallengeCard({
   ch,
   runs,
   shoes,
@@ -135,7 +136,8 @@ function ExtChallengeCard({
 // 사유(reason)와 함께 보여주고, '시작'을 누르면 onAccept 로 영속 위임한다(컴포넌트는
 // AsyncStorage 를 직접 만지지 않는다 — App 이 K_CHALLENGES 로 영속). 전진 윈도우라 갓
 // 생성 시 진행 0 에서 출발한다.
-function SmartChallengeCard({
+// export: ProgressionScreen 챌린지 섹션이 동일한 스마트 추천 카드를 재사용한다(단일 출처).
+export function SmartChallengeCard({
   ch,
   shoes,
   onAccept,

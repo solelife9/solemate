@@ -46,6 +46,13 @@ import {
   withAlpha,
 } from './theme';
 import {Ring, SectionTitle} from './primitives';
+import {ExtChallengeCard, SmartChallengeCard} from './ChallengesSection';
+import {
+  generateSmartChallenge,
+  type ExtChallenge,
+  type ExtRun,
+  type ExtShoe,
+} from './lib/progression/challengesExt';
 import {buildContext} from './lib/progression/context';
 import {
   getProgression,
@@ -113,6 +120,11 @@ export interface ProgressionScreenProps {
   initialState?: ProgressionState;
   /** 뒤로(프로필로 복귀). */
   onBack?: () => void;
+  // ── 챌린지(Slice C) — 표시 전용. 진행률은 challengeExtProgress 로 카드 내부에서 파생. ──
+  /** 사용자가 수락(영속)한 확장 챌린지(monthly/shoe/rotation). App 이 K_CHALLENGES 로 영속한다. */
+  extChallenges?: readonly ExtChallenge[];
+  /** 스마트 추천 수락 핸들러 — App 의 acceptChallenge 가 K_CHALLENGES 에 영속한다(기존 distance/streak 비파괴 공존). */
+  onAcceptChallenge?: (c: ExtChallenge) => void;
 }
 
 /** 장착 시 earnedTitles 에 키를 보장하고(없으면 추가) isEquipped 플래그를 한 곳에 모은다.
@@ -136,6 +148,8 @@ export default function ProgressionScreen({
   now,
   initialState,
   onBack,
+  extChallenges = [],
+  onAcceptChallenge,
 }: ProgressionScreenProps) {
   const insets = useSafeAreaInsets();
 
@@ -185,6 +199,43 @@ export default function ProgressionScreen({
       ),
     [runs, shoes, state.earnedTitles, state.retiredShoes, resolvedNow],
   );
+
+  // ── 챌린지(Slice C) 파생값 ────────────────────────────────────────────────────
+  // 런/신발 원본(BackendRun/BackendShoe)을 challengesExt 가 읽는 최소 모양(ExtRun/ExtShoe)
+  // 으로 매핑한다(읽기 전용 — 원본 불변). 진행률은 카드 내부에서 challengeExtProgress 로
+  // 매번 파생하고(영속 금지), 스마트 추천은 generateSmartChallenge 로 결정적으로 만든다.
+  const nowISO = useMemo(() => {
+    const d = new Date(resolvedNow);
+    const p = (x: number) => String(x).padStart(2, '0');
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+  }, [resolvedNow]);
+  const extRuns = useMemo<ExtRun[]>(
+    () =>
+      (runs ?? []).map(r => ({
+        date: String(r.run_date || '').slice(0, 10),
+        dist: Number(r.km) || 0,
+        shoeId: r.shoe_id,
+        durationS: r.duration,
+      })),
+    [runs],
+  );
+  const extShoes = useMemo<ExtShoe[]>(
+    () =>
+      (shoes ?? []).map(sh => ({
+        id: sh.id,
+        name: sh.name,
+        retired: !!sh.retired,
+        createdAt: sh.purchase_date,
+        targetKm: sh.max_km,
+      })),
+    [shoes],
+  );
+  // 스마트 추천: 활성 신발<2면 null. 이미 수락(같은 id 가 extChallenges 에 존재)했으면 숨긴다.
+  const smart = useMemo(
+    () => generateSmartChallenge(extRuns, extShoes, nowISO),
+    [extRuns, extShoes, nowISO],
+  );
+  const showSmart = !!smart && !extChallenges.some(c => c.id === smart.id);
 
   // 키 → 표시명(언락 배너 카피용). 타이틀+업적을 합쳐 찾는다.
   const nameByKey = useMemo(() => {
@@ -497,6 +548,31 @@ export default function ProgressionScreen({
             </View>
           );
         })}
+
+        {/* 챌린지 — 확장 챌린지(monthly/shoe/rotation) + 스마트 추천 카드.
+            ChallengesSection 과 동일한 카드를 재사용(단일 출처)하고, 수락은 onAcceptChallenge
+            로 App 에 위임한다(K_CHALLENGES 영속 — 화면은 AsyncStorage 를 직접 만지지 않는다). */}
+        {(showSmart || extChallenges.length > 0) && (
+          <View style={{gap: SPACE.sm}} testID="progression-challenges">
+            <SectionTitle style={{marginTop: SPACE.sm}}>챌린지</SectionTitle>
+            {showSmart ? (
+              <SmartChallengeCard
+                ch={smart!}
+                shoes={extShoes}
+                onAccept={onAcceptChallenge}
+              />
+            ) : null}
+            {extChallenges.map(ch => (
+              <ExtChallengeCard
+                key={ch.id}
+                ch={ch}
+                runs={extRuns}
+                shoes={extShoes}
+                now={nowISO}
+              />
+            ))}
+          </View>
+        )}
 
         {/* 진척 포인트 총합 */}
         <View

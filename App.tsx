@@ -1050,7 +1050,9 @@ function Main(){
   // 진척 전체화면(오버레이형) — 프로필 '진척' 버튼이 열고 뒤로 버튼이 닫는다. 런/신발
   // 원본은 읽기 전용으로 넘기고(데이터 파괴 0), 닉네임은 profile_name 을 그대로 쓴다.
   if(showProgression){
-    return <ProgressionScreen runs={runs} shoes={shoes} profileName={profileName} onBack={()=>setShowProgression(false)}/>;
+    return <ProgressionScreen runs={runs} shoes={shoes} profileName={profileName}
+      extChallenges={extChallenges} onAcceptChallenge={acceptChallenge}
+      onBack={()=>setShowProgression(false)}/>;
   }
 
   // 명예의 전당(은퇴 신발 박물관) 전체화면 — 영속된 은퇴 레코드를 그대로 전시한다
@@ -1112,7 +1114,6 @@ function Main(){
             backupData={backupData} onImport={importBackup}
             challenges={challenges} challengeRuns={challengeRuns}
             onCreateChallenge={createChallenge} onDeleteChallenge={deleteChallenge}
-            extChallenges={extChallenges} onAcceptChallenge={acceptChallenge}
             todayISO={today()}
             cloudPort={cloudPortRef.current} onCloudMerged={applyBackupPayload}
             onOpenProgression={()=>setShowProgression(true)}

@@ -26,7 +26,6 @@ import { NotifSettings, DEFAULT_NOTIF_SETTINGS } from './lib/notifications';
 import { requestPushPermission as defaultRequestPushPermission } from './lib/pushMessaging';
 import { BackupPayload, BackupV1 } from './lib/backup';
 import { Challenge, ChallengeRun } from './lib/challenges';
-import { ExtChallenge } from './lib/progression/challengesExt';
 import { mergeCloudData, nextAuthState, AuthState } from './lib/cloudSync';
 import type { CloudPort, CloudProvider, CloudUser } from './lib/cloudPort';
 
@@ -168,10 +167,6 @@ export default function ProfileScreen({
   onCreateChallenge?: (c: Challenge) => void;
   onDeleteChallenge?: (id: string) => void;
   todayISO?: string;
-  // 확장 챌린지(Slice C — monthly/shoe/rotation·스마트 추천 수락분). App 이 K_CHALLENGES 로
-  // 함께 영속한다(기존 distance/streak 과 비파괴 공존). 수락 콜백만 받는다.
-  extChallenges?: ExtChallenge[];
-  onAcceptChallenge?: (c: ExtChallenge) => void;
   // ── 계정·클라우드 동기 ───────────────────────────────────────────────────────
   // 백엔드 포트(주입). App 은 firebaseCloudPort 를, 테스트는 메모리 목 포트를 넣는다.
   // 없으면 계정 섹션의 버튼은 동작하지 않는다(안전한 no-op).
