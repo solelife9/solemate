@@ -179,9 +179,11 @@ const SCREEN_W = Dimensions.get('window').width;
 const HERO_W = SCREEN_W - SPACE.xl * 2;
 const HERO_SNAP = HERO_W + SPACE.md;
 
-function ShoeCarousel({ shoes, activeIdx, onSelect, unit, forecast, onOpenShoe, onStart }: {
+function ShoeCarousel({ shoes, activeIdx, onSelect, unit, forecast, forecasts, onOpenShoe, onStart }: {
   shoes: Shoe[]; activeIdx: number; onSelect: (i: number) => void; unit: Unit;
-  forecast?: ReplacementForecast | null; onOpenShoe?: (shoeId: string) => void; onStart?: (idx: number) => void;
+  forecast?: ReplacementForecast | null;
+  forecasts?: Record<string, ReplacementForecast | null>;
+  onOpenShoe?: (shoeId: string) => void; onStart?: (idx: number) => void;
 }) {
   const ref = useRef<ScrollView>(null);
   const onEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -211,7 +213,9 @@ function ShoeCarousel({ shoes, activeIdx, onSelect, unit, forecast, onOpenShoe, 
               unit={unit}
               tappable={!!onOpenShoe}
               active={i === activeIdx}
-              forecast={i === activeIdx ? forecast : null}
+              // 카드마다 자기 신발 예측을 바로 표시(맵에서 조회). 맵 미주입(테스트 등)이면
+              // 기존처럼 active 카드만 forecast 로 폴백 — 스와이프 시 한 박자 지연이 사라진다.
+              forecast={forecasts ? (shoe.id ? forecasts[shoe.id] ?? null : null) : (i === activeIdx ? forecast : null)}
               onOpenShoe={shoe.id && onOpenShoe ? () => onOpenShoe(shoe.id!) : undefined}
               onStart={onStart ? () => onStart(i) : undefined}
             />
@@ -376,12 +380,15 @@ function EmptyHome({ onAddShoe }: { onAddShoe?: () => void }) {
 export default function HomeScreen({
   shoes = SHOES, dateLabel = '', onStart, onAddShoe, onTab,
   activeIdx: activeIdxProp, onSelect, unit = 'km', goal, week, rotation, onPickShoe,
-  onChangeGoal, onOpenShoe, forecast,
+  onChangeGoal, onOpenShoe, forecast, forecasts,
 }: {
   shoes?: Shoe[];
   // 선택(히어로) 신발의 교체 예측(App이 실효마모 모델로 계산해 내려준다). ok/overdue일 때
   // 히어로에 ETA 한 줄을 보강한다. 표시 전용(없으면 숨김).
   forecast?: ReplacementForecast | null;
+  // 신발 id별 교체 예측 맵 — 캐러셀 카드마다 자기 신발 예측을 바로 보여준다(스와이프
+  // 지연 제거). 미주입이면 active 카드만 forecast 로 폴백(테스트 호환).
+  forecasts?: Record<string, ReplacementForecast | null>;
   week?: WeekStats;
   dateLabel?: string;
   onStart?: (idx: number) => void;
@@ -440,7 +447,7 @@ export default function HomeScreen({
               </Pressable>
             )}
           </View>
-          <ShoeCarousel shoes={shoes} activeIdx={idx} onSelect={select} unit={unit} forecast={forecast} onOpenShoe={onOpenShoe} onStart={onStart} />
+          <ShoeCarousel shoes={shoes} activeIdx={idx} onSelect={select} unit={unit} forecast={forecast} forecasts={forecasts} onOpenShoe={onOpenShoe} onStart={onStart} />
           {/* 현재 상태 — 선택(스와이프) 신발의 사용거리/교체예상. 캐러셀과 연동돼 함께 바뀐다. */}
           <View style={[s.sectionRow, { marginTop: SPACE.lg }]}>
             <SectionTitle style={s.sectionLabelInline}>현재 상태</SectionTitle>

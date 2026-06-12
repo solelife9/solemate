@@ -702,13 +702,19 @@ function Main(){
   // 홈 히어로(선택 신발)의 교체 예측. 신발 상세와 동일 입력(target=max_km, 거리/시간/날짜,
   // weightKg, surfaceOf)으로 계산해 두 화면 예측이 일치한다. ok/overdue일 때만 히어로에 노출.
   const homeActiveRaw=shoes.find(s=>s.id===effectiveId)||null;
-  const homeForecast:ReplacementForecast|null=homeActiveRaw?forecastReplacement(
-    {name:homeActiveRaw.name,target_km:Number(homeActiveRaw.max_km)},
-    runs.filter(r=>r.shoe_id===effectiveId).map(r=>({
+  // 한 신발의 교체 예측(상세와 동일 보정: target=max_km, 거리/시간/날짜, weightKg, surfaceOf).
+  const forecastForRaw=(raw:BackendShoe|null):ReplacementForecast|null=>raw?forecastReplacement(
+    {name:raw.name,target_km:Number(raw.max_km)},
+    runs.filter(r=>r.shoe_id===raw.id).map(r=>({
       id:r.id,distance_km:parseFloat(String(r.km))||0,duration_s:r.duration||0,date:String(r.run_date||''),
     })),
     {weightKg,surfaceOf},
   ):null;
+  const homeForecast:ReplacementForecast|null=forecastForRaw(homeActiveRaw);
+  // 캐러셀 카드마다 자기 신발의 예측을 바로 보여주려고 전 신발 예측을 맵으로 모은다
+  // (활성 1개만 내려주던 구조 → 스와이프 시 forecast 가 한 박자 늦게 뜨던 지연 제거).
+  const homeForecasts:Record<string,ReplacementForecast|null>={};
+  for(const s of shoes){ if(s.id) homeForecasts[s.id]=forecastForRaw(s); }
 
   const sortedRaw=[...runs].sort((a,b)=>String(b.run_date).localeCompare(String(a.run_date)));
   function toUiRun(run:any):Run{
@@ -991,6 +997,7 @@ function Main(){
             rotation={rotationPicks} onPickShoe={setSelectedShoeId}
             onChangeGoal={changeGoal}
             forecast={homeForecast}
+            forecasts={homeForecasts}
             onOpenShoe={(id)=>{setSelectedShoeId(id);setShoesDetailId(id);setTab(1);}}
           />
         )}
