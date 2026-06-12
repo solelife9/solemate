@@ -149,10 +149,13 @@ function HeroShoe({ shoe, unit, tappable, forecast, active, onOpenShoe, onStart 
         </Text>
         <View style={s.gauge}><View style={[s.gaugeFill, { width: `${Math.round(pct * 100)}%`, backgroundColor: ring }]} /></View>
         <Text style={s.usage}>{used} / {max}{unit} 사용</Text>
-        {!shoe.retired && !!forecastLine && (
-          <View style={s.heroForecast}>
+        {/* 교체 예상 행 — 캐러셀 카드 높이를 통일하려고 항상 공간을 예약한다(forecast 가
+            없는 신발은 같은 높이의 투명 플레이스홀더). 텍스트는 1줄 고정(긴 ETA 가 2줄로
+            줄바꿈해 높이가 흔들리지 않게). */}
+        {!shoe.retired && (
+          <View style={[s.heroForecast, !forecastLine && s.heroForecastHidden]}>
             <Ionicons name="time-outline" size={13} color={T3} />
-            <Text style={s.heroForecastText}>{forecastLine}</Text>
+            <Text style={s.heroForecastText} numberOfLines={1}>{forecastLine || '교체 예상 계산 중'}</Text>
             {tappable && <Ionicons name="chevron-forward" size={14} color={T4} style={{ marginLeft: 'auto' }} />}
           </View>
         )}
@@ -560,7 +563,9 @@ const s = StyleSheet.create({
   catChip: { backgroundColor: withAlpha(ACCENT, 0.14), borderRadius: 6, paddingHorizontal: SPACE.sm, paddingVertical: 2 },
   catChipText: { color: ACCENT, fontFamily: FONT, fontSize: 10, fontWeight: '700', letterSpacing: 0.1 },
   heroModel: { color: T1, fontFamily: DISPLAY, fontSize: 27, fontWeight: '800', letterSpacing: -0.6, marginTop: 7, lineHeight: 32 },
-  heroReason: { color: T2, fontFamily: FONT, fontSize: 14, fontWeight: '500', letterSpacing: -0.2, marginTop: 8, lineHeight: 20 },
+  // minHeight = 2줄(lineHeight 20×2) — 1줄짜리 reason 도 2줄 공간을 차지해 캐러셀 카드
+  // 높이가 신발마다 흔들리지 않게 한다(numberOfLines={2} 와 짝).
+  heroReason: { color: T2, fontFamily: FONT, fontSize: 14, fontWeight: '500', letterSpacing: -0.2, marginTop: 8, lineHeight: 20, minHeight: 40 },
   // 교체까지 남은 거리 — 문장형(목업 .remain). 숫자만 디스플레이 강조.
   heroRemainLine: { color: T2, fontFamily: FONT, fontSize: 15, fontWeight: '500', letterSpacing: -0.2, marginTop: 16 },
   heroRemainNum: { color: T1, fontFamily: DISPLAY, fontSize: 26, fontWeight: '800', letterSpacing: -0.6 },
@@ -572,6 +577,8 @@ const s = StyleSheet.create({
   // 교체 예측 ETA 한 줄(목업 .fore — 회색·상단 구분선).
   heroForecast: { flexDirection: 'row', alignItems: 'center', gap: 7, marginTop: 14, paddingTop: 13, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.06) },
   heroForecastText: { flex: 1, color: T3, fontFamily: FONT, fontSize: 12.5, fontWeight: '500', letterSpacing: -0.1, lineHeight: 16 },
+  // forecast 가 없는 신발: 같은 높이를 차지하되 보이지 않게(공간만 예약 → 카드 높이 통일).
+  heroForecastHidden: { opacity: 0 },
   condpill: { flexDirection: 'row', alignItems: 'center', gap: 7, flexShrink: 0, marginTop: 2 },
   dot: { width: 7, height: 7, borderRadius: RADIUS.pill },
   condText: { fontFamily: FONT, fontSize: 12.5, fontWeight: '500' },
