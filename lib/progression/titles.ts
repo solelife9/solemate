@@ -48,8 +48,6 @@ const YEAR_2 = 730;
 // ── 신발 마모 비율 임계 ────────────────────────────────────────────────────────
 /** 초과 마모(overdue) 경고 비율 — rank/lib.shoe SHOE_REPLACE_PCT(90%)과 동일. */
 const OVERDUE_RATIO = 0.9;
-/** 권장 수명 도달 비율 — 이 이하로 은퇴하면 "초과 전 교체"(Smart). */
-const LIFESPAN_RATIO = 1.0;
 
 // ── trainingStyle 프록시 임계(페이스 sec/km, 거리 km) ────────────────────────────
 /** Tempo: 최고 페이스가 이보다 빠르면(≤) 템포 능력 보유 — 5:00/km. */
@@ -134,12 +132,17 @@ function allActiveHealthy(ctx: ProgressionContext): boolean {
   return assessed.every(s => (wearRatio(s) ?? 1) < OVERDUE_RATIO);
 }
 
-/** 초과 마모 전(권장 수명 이내)에 교체한 은퇴 신발이 ≥1 인가 — Smart Runner. */
+/**
+ * 초과(overdue) 도달 **전**에 교체한 은퇴 신발이 ≥1 인가 — Smart Runner.
+ * 0.9(OVERDUE_RATIO) 미만에서 은퇴해야 "조기 교체"다 — 0.9~1.0 밴드는 이미 overdue 라
+ * allActiveHealthy(<0.9)·rank.isOverdue 와 일관되게 조기 교체로 치지 않는다.
+ * 하한 r>0: 한 번도 신지 않은(km=0/ratio 0) 은퇴 신발은 똑똑한 조기 교체가 아니다.
+ */
 function hasEarlyReplacement(ctx: ProgressionContext): boolean {
   return shoeStats(ctx).some(s => {
     if (!s.retired) return false;
     const r = wearRatio(s);
-    return r !== null && r <= LIFESPAN_RATIO;
+    return r !== null && r > 0 && r < OVERDUE_RATIO;
   });
 }
 

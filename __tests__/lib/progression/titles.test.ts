@@ -231,7 +231,7 @@ describe('rotation 사다리', () => {
 // 4) injuryPrevention 사다리
 // ============================================================================
 describe('injuryPrevention 사다리', () => {
-  test('Smart Runner: 권장 수명 이내(≤1.0)에 교체(은퇴)한 신발', () => {
+  test('Smart Runner: overdue(0.9) 전에 교체(은퇴)한 신발', () => {
     const smart = emptyCtx({
       perShoe: perShoeMap(
         shoe({id: 'a', km: 480, maxKm: 600, retired: true}), // ratio 0.8 → 조기교체
@@ -243,6 +243,26 @@ describe('injuryPrevention 사다리', () => {
       perShoe: perShoeMap(shoe({id: 'a', km: 780, maxKm: 600, retired: true})),
     });
     expect(evaluateTitles(late)).not.toContain('injury_smart');
+  });
+
+  test('Smart Runner 경계(0.9 밴드): 0.85 는 조기교체, 0.95 는 이미 overdue → 아님', () => {
+    // ratio 0.85(<0.9) → overdue 전 교체 = Smart.
+    const below = emptyCtx({
+      perShoe: perShoeMap(shoe({id: 'a', km: 510, maxKm: 600, retired: true})),
+    });
+    expect(evaluateTitles(below)).toContain('injury_smart');
+    // ratio 0.95(≥0.9) → 이미 overdue 밴드라 "조기 교체" 아님(allActiveHealthy·isOverdue 와 일관).
+    const inBand = emptyCtx({
+      perShoe: perShoeMap(shoe({id: 'a', km: 570, maxKm: 600, retired: true})),
+    });
+    expect(evaluateTitles(inBand)).not.toContain('injury_smart');
+  });
+
+  test('Smart Runner: 한 번도 신지 않은(ratio 0) 은퇴 신발은 조기교체 아님', () => {
+    const neverWorn = emptyCtx({
+      perShoe: perShoeMap(shoe({id: 'a', km: 0, maxKm: 600, retired: true})),
+    });
+    expect(evaluateTitles(neverWorn)).not.toContain('injury_smart');
   });
 
   test('Wise Runner: 활성 신발 전부 건강(초과 없음)', () => {
