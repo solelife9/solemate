@@ -32,8 +32,11 @@ import RunActiveScreenView from './RunActiveScreen.rn';
 import ProgressionScreen from './ProgressionScreen.rn';
 import HallOfShoes from './HallOfShoes.rn';
 import {buildContext} from './lib/progression/context';
+import {getProgression} from './lib/progression';
 import {loadProgression} from './lib/progression/storage';
 import type {ProgressionState, RetiredShoeRecord} from './lib/progression/types';
+import type {HomeProgression, HomeChallengeView} from './HomeScreen.rn';
+import {challengeProgress} from './lib/challenges';
 
 import {simplifyRoute} from './lib/geo';
 import {runTracker} from './lib/runTracker';
@@ -72,7 +75,7 @@ import {presentDue} from './lib/pushMessaging';
 import {weeklyProgress, currentStreak, personalRecords} from './lib/goals';
 import {serializeBackup, BackupV1, BackupPayload} from './lib/backup';
 import {Challenge, ChallengeRun} from './lib/challenges';
-import {ExtChallenge} from './lib/progression/challengesExt';
+import {ExtChallenge, challengeExtProgress, type ExtRun, type ExtShoe} from './lib/progression/challengesExt';
 import {createFirebaseCloudPort} from './lib/firebaseCloudPort';
 import {resolveGoogleCredential} from './lib/googleAuth';
 import {resolveKakaoFirebaseToken} from './lib/kakaoAuth';
@@ -111,6 +114,30 @@ function nowTimeLabel():string{
 }
 
 function today():string{return ymdLocal(new Date());}
+
+// ── 진척 홈 띠(Slice D) 챌린지 라벨/단위 — 표시 전용 순수 헬퍼 ─────────────────────
+// 홈 띠에 한 줄로 보일 짧은 라벨/단위. 진행 수치는 challengeProgress/challengeExtProgress
+// 가 권위(여긴 카피만). 결정적·방어적(누락 → 기본값).
+function baseChallengeLabel(c:Challenge):string{
+  return c.kind==='streak'
+    ? `${Number(c.targetDays)||0}일 연속 달리기`
+    : `${Number(c.targetKm)||0}km 달리기`;
+}
+function extChallengeLabel(c:ExtChallenge):string{
+  if(c.kind==='monthly')
+    return c.metric==='count' ? `이번 달 ${Number(c.targetRuns)||0}회` : `이번 달 ${Number(c.targetKm)||0}km`;
+  if(c.kind==='shoe')
+    return `한 신발로 ${Number(c.targetKm)||0}km`;
+  // rotation
+  return c.rotationMode==='balance'
+    ? `로테이션 균형 ${Number(c.maxSharePct)||60}% 이하`
+    : `로테이션 ${Number(c.targetShoes)||2}켤레`;
+}
+function extChallengeUnit(c:ExtChallenge):string{
+  if(c.kind==='monthly') return c.metric==='count' ? '회' : 'km';
+  if(c.kind==='shoe') return 'km';
+  return c.rotationMode==='balance' ? '%' : '켤레';
+}
 
 // 위치 권한이 없거나 회수됐을 때의 한국어 안내 + 설정 딥링크. 앱은 권한을 직접
 // 되돌릴 수 없으므로 OS 설정 화면으로 보내 사용자가 다시 허용하게 한다. openSettings
@@ -753,6 +780,45 @@ function Main(){
   const homeForecasts:Record<string,ReplacementForecast|null>={};
   for(const s of shoes){ if(s.id) homeForecasts[s.id]=forecastForRaw(s); }
 
+  // ── 진척 홈 노출(Slice D) ───────────────────────────────────────────────────────
+  // getProgression(읽기 전용 — 런/신발/progression_v1 불변)으로 랭크·장착 타이틀·업적을
+  // 읽고, 수락한 챌린지(base distance/streak + ext monthly/shoe/rotation) 중 활성 1개의
+  // 진행을 골라 홈 띠로 내려준다. 데이터를 만들지 않고 표시 파생만 한다(getProgression
+  // 내부 메모 + 작은 루프라 매 렌더 비용은 무시 가능). 미주입 progState 도 안전 기본값.
+  const homeProgression:HomeProgression=(()=>{
+    const view=getProgression(runs,shoes,progState??undefined);
+    const equipped=view.titles.equipped
+      ? (view.titles.unlocked.find(t=>t.key===view.titles.equipped)?.name??null)
+      : null;
+    // 최근(하이라이트) 업적: 언락된 것 중 포인트 최고(동률은 카탈로그 순서) — 결정적.
+    let topAch:{name:string;points:number}|null=null;
+    for(const a of view.achievements){
+      if(a.unlocked&&(!topAch||a.points>topAch.points)) topAch={name:a.name,points:a.points};
+    }
+    // 활성 챌린지 후보: base + ext 진행 파생 → (미완료 우선, pct 내림차순) 1개.
+    const nowISO=today();
+    const extRuns:ExtRun[]=runs.map(r=>({date:String(r.run_date||'').slice(0,10),dist:Number(r.km)||0,shoeId:r.shoe_id,durationS:r.duration}));
+    const extShoes:ExtShoe[]=shoes.map(sh=>({id:sh.id,name:sh.name,retired:!!sh.retired,createdAt:sh.purchase_date,targetKm:sh.max_km}));
+    const cands:{v:HomeChallengeView;completed:boolean;pct:number}[]=[];
+    for(const c of challenges){
+      const p=challengeProgress(c,challengeRuns);
+      cands.push({v:{label:baseChallengeLabel(c),current:p.current,target:p.target,pct:p.pct,unit:c.kind==='streak'?'일':'km'},completed:p.completed,pct:p.pct});
+    }
+    for(const c of extChallenges){
+      const p=challengeExtProgress(c,extRuns,extShoes,nowISO);
+      cands.push({v:{label:extChallengeLabel(c),current:p.current,target:p.target,pct:p.pct,unit:extChallengeUnit(c)},completed:p.completed,pct:p.pct});
+    }
+    const active=cands.filter(c=>c.v.target>0)
+      .sort((a,b)=>(Number(a.completed)-Number(b.completed))||(b.pct-a.pct))[0]??null;
+    return {
+      tier:view.rank.tier,
+      score:view.rank.score,
+      equippedTitle:equipped,
+      challenge:active?active.v:null,
+      achievement:topAch?{name:topAch.name}:null,
+    };
+  })();
+
   // ── 은퇴 키프세이크 컨텍스트(Slice B) ────────────────────────────────────────
   // 영속된 은퇴 레코드(Hall of Shoes 소스) + 진척 컨텍스트(요약/등급 판정용). buildContext
   // 는 순수·읽기 전용(런/신발 불변). progState 미로드 시 빈 레코드로 안전 동작.
@@ -1075,6 +1141,8 @@ function Main(){
             forecast={homeForecast}
             forecasts={homeForecasts}
             onOpenShoe={(id)=>{setSelectedShoeId(id);setShoesDetailId(id);setTab(1);}}
+            progression={homeProgression}
+            onOpenProgression={()=>setShowProgression(true)}
           />
         )}
         {tab===2&&(

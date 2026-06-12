@@ -14,8 +14,9 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {
   BG, CARD, CARD_DIM, CARD_HI, HERO_BG, ACCENT, DANGER, WARN, GOOD, T1, T2, T3, T4,
-  FONT, DISPLAY, SPACE, RADIUS, withAlpha, Shoe, SHOES,
+  FONT, DISPLAY, SPACE, RADIUS, withAlpha, Shoe, SHOES, TIER_COLORS,
 } from './theme';
+import type { RankTier } from './lib/progression/types';
 import { TabBar, TierBadge, KeegoWordmark, Button, SectionTitle, Pill, conditionColor, InjuryBanner } from './primitives';
 import { Unit, displayNum, displayToKm } from './lib/units';
 import { GOAL_STEP_DISPLAY } from './lib/settings';
@@ -30,6 +31,94 @@ export type WeekStats = { km: string; runs: number; pace: string };
 // 주간 목표 + keep-going 동기 지표. 거리는 km 표준, pct는 이번 주 달성률 %(목표
 // 설정 행이 구동), streak은 오늘까지 이어지는 연속 러닝 일수(lib/goals.currentStreak).
 export type GoalInfo = { km: number; pct: number; streak: number };
+
+// ── 진척(랭크·타이틀·챌린지·업적) 홈 노출 (Slice D) ──────────────────────────────
+// shoe-first 히어로를 밀어내지 않는 '얇은 띠'로 진척을 표면화한다. 값은 App 이
+// getProgression + challengeExt/challengeProgress 로 읽기 전용 파생해 내려준다(여긴
+// 표시 전용 — 데이터 생성/날조 0). 색은 TIER_COLORS 권위(하드코딩 0).
+export type HomeChallengeView = {
+  /** 카드 한 줄 라벨(예: '이번 달 100km'). */
+  label: string;
+  /** 진행 수치(반올림 전 원시값). */
+  current: number;
+  target: number;
+  /** 0..1 진행 비율(막대 폭). */
+  pct: number;
+  /** 표시 단위(km/회/켤레/일/%). 미지정이면 단위 생략. */
+  unit?: string;
+};
+export type HomeProgression = {
+  /** 합성 랭크 티어 — 칩 색은 TIER_COLORS[tier]. */
+  tier: RankTier;
+  /** 0..100 합성 점수(칩에 표시). */
+  score: number;
+  /** 장착 타이틀명(닉네임/인사 옆에 노출). 없으면 미장착. */
+  equippedTitle?: string | null;
+  /** 노출할 활성 챌린지 1개(진행 바). 없으면 챌린지 줄 숨김. */
+  challenge?: HomeChallengeView | null;
+  /** 가장 최근 달성 업적 1개. 없으면 업적 줄 숨김. */
+  achievement?: { name: string } | null;
+};
+
+// 티어 표시명(영문 — ProgressionScreen 과 동일 관용). 본문 라벨은 한국어, 티어명만 영문.
+const TIER_LABEL: Record<RankTier, string> = {
+  bronze: 'Bronze', silver: 'Silver', gold: 'Gold', platinum: 'Platinum',
+  diamond: 'Diamond', master: 'Master', legend: 'Legend',
+};
+
+// 진척 띠 — 랭크 칩 + 활성 챌린지 진행 + 최근 업적. 통째로 탭하면 진척 화면으로 이동
+// (rank 칩/띠 어디를 눌러도 동일 — 단일 Pressable 로 중첩 매칭 혼동을 피한다). 히어로
+// 위에 얇게 얹혀 주인공(신발 히어로)을 밀어내지 않는다. 토큰만 — 색은 TIER_COLORS 권위.
+function ProgressionStrip({ prog, onOpen }: { prog: HomeProgression; onOpen?: () => void }) {
+  const color = TIER_COLORS[prog.tier] ?? ACCENT;
+  const ch = prog.challenge;
+  const ach = prog.achievement;
+  const pct = ch ? Math.max(0, Math.min(1, ch.pct)) : 0;
+  const fmt = (n: number) => {
+    const v = Math.round((Number(n) || 0) * 10) / 10;
+    return Number.isInteger(v) ? String(v) : v.toFixed(1);
+  };
+  return (
+    <Pressable
+      testID="home-progression"
+      onPress={onOpen}
+      disabled={!onOpen}
+      accessibilityRole="button"
+      accessibilityLabel="진척 보기"
+      style={({ pressed }) => [s.progStrip, pressed && onOpen ? s.pressed : null]}>
+      <View style={s.progTopRow}>
+        <View
+          testID="home-rank-chip"
+          style={[s.rankChip, { backgroundColor: withAlpha(color, 0.16), borderColor: withAlpha(color, 0.5) }]}>
+          <Ionicons name="trophy" size={11} color={color} />
+          <Text testID="home-rank-chip-text" style={[s.rankChipTxt, { color }]} numberOfLines={1}>
+            {`${TIER_LABEL[prog.tier]} · ${Math.round(prog.score)}`}
+          </Text>
+        </View>
+        {ach && (
+          <View testID="home-recent-achievement" style={s.achChip}>
+            <Ionicons name="ribbon" size={11} color={T3} />
+            <Text style={s.achChipTxt} numberOfLines={1}>최근 달성 · {ach.name}</Text>
+          </View>
+        )}
+        <Ionicons name="chevron-forward" size={15} color={T4} style={{ marginLeft: 'auto' }} />
+      </View>
+      {ch && (
+        <View testID="home-challenge" style={s.progChallenge}>
+          <View style={s.progChallengeHead}>
+            <Text style={s.progChallengeLabel} numberOfLines={1}>{ch.label}</Text>
+            <Text style={s.progChallengeVal}>
+              {fmt(ch.current)}<Text style={s.progChallengeValT}> / {fmt(ch.target)}{ch.unit ?? ''}</Text>
+            </Text>
+          </View>
+          <View style={s.progBar}>
+            <View testID="home-challenge-bar" style={[s.progBarFill, { width: `${Math.round(pct * 100)}%`, backgroundColor: color }]} />
+          </View>
+        </View>
+      )}
+    </Pressable>
+  );
+}
 
 
 // Proportional condition → ring color. 양호는 accent(주인공 톤), 주의/교체는 경고색.
@@ -385,7 +474,7 @@ function EmptyHome({ onAddShoe }: { onAddShoe?: () => void }) {
 export default function HomeScreen({
   shoes = SHOES, dateLabel = '', onStart, onAddShoe, onTab,
   activeIdx: activeIdxProp, onSelect, unit = 'km', goal, week, rotation, onPickShoe,
-  onChangeGoal, onOpenShoe, forecast, forecasts,
+  onChangeGoal, onOpenShoe, forecast, forecasts, progression, onOpenProgression,
 }: {
   shoes?: Shoe[];
   // 선택(히어로) 신발의 교체 예측(App이 실효마모 모델로 계산해 내려준다). ok/overdue일 때
@@ -416,6 +505,11 @@ export default function HomeScreen({
   // 신발 탭 → 그 신발 상세로 이동. onChangeGoal(km)으로 목표를 영속 갱신한다.
   onChangeGoal?: (km: number) => void;
   onOpenShoe?: (shoeId: string) => void;
+  // 진척 홈 노출(Slice D) — App 이 getProgression + 챌린지 진행을 읽기 전용 파생해
+  // 내려준다. 미주입이면 띠/타이틀을 통째로 숨겨 기존 홈과 100% 하위호환(표시 전용).
+  progression?: HomeProgression | null;
+  // 랭크 칩/진척 띠 탭 → 진척 화면(App 의 기존 onOpenProgression 배선 재사용).
+  onOpenProgression?: () => void;
 }) {
   const [internalIdx, setInternalIdx] = useState(0);
   // 주간 목표 인라인 편집 모달(프로필로 이동하지 않고 홈에서 바로 수정).
@@ -440,9 +534,23 @@ export default function HomeScreen({
       <View style={s.greetWrap}>
         {!!dateLabel && <Text style={s.date}>{dateLabel}</Text>}
         <Text style={s.greet}>오늘은 어떤 신발로{'\n'}달려볼까요?</Text>
+        {/* 장착 타이틀 — 인사(닉네임) 옆/아래 한 줄. 진척 띠 색과 분리해 절제(T2 회색). */}
+        {progression?.equippedTitle ? (
+          <View testID="home-equipped-title" style={s.equipPill}>
+            <Ionicons name="bookmark" size={11} color={ACCENT} />
+            <Text style={s.equipPillTxt} numberOfLines={1}>{progression.equippedTitle}</Text>
+          </View>
+        ) : null}
       </View>
       {active ? (
         <>
+          {/* 진척 띠(Slice D) — 히어로 위 얇은 띠. 주입 시에만 노출(shoe-first 히어로가
+              여전히 주인공). 탭 → 진척 화면. 미주입이면 통째로 숨겨 기존 홈과 동일. */}
+          {progression && (
+            <View style={s.progStripWrap}>
+              <ProgressionStrip prog={progression} onOpen={onOpenProgression} />
+            </View>
+          )}
           {/* shoe-first 주인공: 오늘의 신발 풀폭 캐러셀(좌우 스와이프). 활성 카드가 히어로. */}
           <View style={s.sectionRow}>
             <SectionTitle style={s.sectionLabelInline}>오늘의 신발</SectionTitle>
@@ -536,6 +644,26 @@ const s = StyleSheet.create({
   greetWrap: { paddingHorizontal: SPACE.xl, paddingTop: 8 },
   date: { color: T3, fontFamily: FONT, fontSize: 13, letterSpacing: 0.2 },
   greet: { color: T1, fontFamily: FONT, fontSize: 20, fontWeight: '400', letterSpacing: -0.4, marginTop: 3, lineHeight: 26 },
+
+  // 장착 타이틀 칩(인사 옆) — 절제: 액센트 아이콘 + T2 텍스트, 옅은 카드 배경.
+  equipPill: { flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start', marginTop: 10, backgroundColor: CARD_HI, borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 4 },
+  equipPillTxt: { color: T2, fontFamily: FONT, fontSize: 12, fontWeight: '600', letterSpacing: 0.1 },
+
+  // 진척 띠 — 히어로 위 얇은 카드(주인공 신발을 밀어내지 않게 컴팩트). 칩 색만 티어색.
+  progStripWrap: { paddingHorizontal: SPACE.xl, paddingTop: SPACE.md, paddingBottom: SPACE.xs },
+  progStrip: { backgroundColor: CARD_DIM, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: withAlpha(T1, 0.07), paddingVertical: 12, paddingHorizontal: 14 },
+  progTopRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  rankChip: { flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: RADIUS.pill, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 4 },
+  rankChipTxt: { fontFamily: DISPLAY, fontSize: 12, fontWeight: '700', letterSpacing: 0.3 },
+  achChip: { flexDirection: 'row', alignItems: 'center', gap: 5, minWidth: 0, flexShrink: 1 },
+  achChipTxt: { color: T3, fontFamily: FONT, fontSize: 11.5, fontWeight: '500', letterSpacing: -0.1 },
+  progChallenge: { marginTop: 12 },
+  progChallengeHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 },
+  progChallengeLabel: { flex: 1, color: T2, fontFamily: FONT, fontSize: 12.5, fontWeight: '600', letterSpacing: -0.1 },
+  progChallengeVal: { color: T1, fontFamily: DISPLAY, fontSize: 13, fontWeight: '700', letterSpacing: 0.1 },
+  progChallengeValT: { color: T3, fontFamily: FONT, fontSize: 11, fontWeight: '500' },
+  progBar: { height: 4, borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.08), marginTop: 7, overflow: 'hidden' },
+  progBarFill: { height: '100%', borderRadius: RADIUS.pill },
 
 
   goalCard: { backgroundColor: CARD_DIM, borderRadius: 18, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.06), padding: SPACE.md, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },

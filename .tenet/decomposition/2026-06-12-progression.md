@@ -48,4 +48,19 @@ slice-c-challenges-logic ──→ slice-c-ui ──→ slice-c-e2e (report_only
 
 - **slice-c-challenges-logic** (dev, deps: slice-b-e2e): `lib/progression/challengesExt.ts` — new challenge kinds on top of `lib/challenges`: monthly (this-month distance or run-count), shoe (km with a specific/new shoe), rotation (use ≥N distinct shoes this week / no single shoe exceeds X% of week's km), smart (PERSONALIZED, deterministic — from rotation/wear: detect an over-used active shoe → recommend mileage on the least-used active shoe, with a transparent Korean reason string). Pure `challengeExtProgress(challenge, runs, shoes, now)` reusing existing helpers; `generateSmartChallenge(runs, shoes, now)` deterministic + reason; never fabricates. Tests: monthly window correctness, shoe filter, rotation balance, smart personalization + reason + determinism, completion feeds engagement.
 - **slice-c-ui** (dev, deps: challenges-logic): surface the new challenge kinds in the existing ChallengesSection (or Progression surface) — monthly/shoe/rotation cards with progress + a smart-challenge card showing its transparent reason; allow accepting the smart suggestion. Tokens+primitives, Korean. Behavior tests (render each kind, progress reflects data, smart reason shown, accept handler). No run/shoe mutation.
-- **slice-c-e2e** (integration_test, report_only, deps: ui): @slice-c acceptance sweep (tsc/lint/jest); verify monthly/shoe/rotation/smart progress correct, smart personalized+transparent, completion feeds engagement, no data destruction, no native. Report only.
+- **slice-c-e2e** (integration_test, report_only, deps: ui): @slice-c acceptance sweep (tsc/lint/jest); verify monthly/shoe/rotation/smart progress correct, smart personalized+transparent, completion feeds engagement, no data destruction, no native. Report only. ✅ DONE.
+
+## Slice D: Home integration
+
+Depends on slice-c-e2e. Surfaces progression on Home (HomeScreen.rn.tsx) naturally, keeping the shoe-first hero/carousel intact. Reuses Slice A `getProgression` + challengesExt. Final slice of this run (E/F deferred to separate backend run).
+
+```
+slice-d-home ──→ slice-d-e2e (report_only)
+```
+
+- **slice-d-home** (dev, deps: slice-c-e2e): add a compact progression strip to HomeScreen — rank chip (tier color from TIER_COLORS), equipped title next to nickname, current challenge progress (one active challenge, Ring/bar), and most-recent unlocked achievement. Wire App.tsx to pass the progression view (getProgression result) + active challenge + recent achievement into HomeScreen (read-only; no run/shoe mutation; don't disturb the existing hero carousel or the just-committed usage% row or onboarding/boot). Tap a chip to open ProgressionScreen (reuse existing onOpenProgression). Tokens+primitives, Korean, premium. Behavior tests (rank chip color = TIER_COLORS[tier], equipped title renders, challenge progress reflects data, recent achievement renders, tap opens progression; hero shoe-first preserved). ✅ DONE — HomeScreen `ProgressionStrip`(랭크 칩+활성 챌린지 바+최근 업적)+장착 타이틀 칩; App `homeProgression`(getProgression+challengeProgress/challengeExtProgress 읽기 전용 파생)·`onOpenProgression` 배선; `__tests__/HomeScreen.progression.test.tsx`(8 tests). tsc/eslint(0 errors)/jest(1175) green.
+- **slice-d-e2e** (integration_test, report_only, deps: home): @slice-d acceptance sweep (tsc/lint/jest); verify Home surfaces rank/title/challenge/achievement, hero unchanged, no data destruction, no native. Report only.
+
+## Deferred (separate backend Tenet run in solelife-backend)
+- **Slice E** (app): live ranking client wired to backend + Hall of Fame UI.
+- **Slice F** (backend): Multi-User Backend v1 (Express + SQLite + persistent disk + Firebase ID-token + server-side recompute + 6-category leaderboards). Needs Firebase Admin creds + Render deploy (user actions).
