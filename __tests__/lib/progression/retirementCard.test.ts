@@ -174,7 +174,7 @@ describe('retirementShare (저장/공유, 오프라인·크래시 금지)', () =
 
   test('shareRetirementCard: 캡처 성공 시 이미지 dataURL 을 url 로 공유한다', async () => {
     const ref = {current: {toDataURL: (cb: (b: string) => void) => cb('PNGDATA')}};
-    await shareRetirementCard(ref, model, 'story');
+    await shareRetirementCard(ref, model);
     expect(spy).toHaveBeenCalledWith({url: 'data:image/png;base64,PNGDATA'});
   });
 

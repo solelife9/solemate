@@ -151,4 +151,29 @@ describe('RetirementCardActions 누름 → 핸들러 호출', () => {
     pressByTestId(renderer.root, 'retire-card-share');
     expect(onShare).toHaveBeenCalledTimes(1);
   });
+
+  test('저장이 진행 중이면 빠른 연타·다른 버튼 누름을 무시한다(중복 트리거 가드)', async () => {
+    // onSave 는 끝나지 않는 Promise 를 돌려줘 "진행 중" 상태를 고정한다.
+    let resolveSave!: () => void;
+    const onSave = jest.fn(() => new Promise<void>(r => (resolveSave = r)));
+    const onShare = jest.fn();
+    const renderer = render(<RetirementCardActions onSave={onSave} onShare={onShare} />);
+
+    // 저장을 빠르게 두 번 눌러도 핸들러는 한 번만 실행된다.
+    pressByTestId(renderer.root, 'retire-card-save');
+    pressByTestId(renderer.root, 'retire-card-save');
+    expect(onSave).toHaveBeenCalledTimes(1);
+
+    // 저장이 진행 중인 동안엔 공유 버튼도 잠겨 호출되지 않는다.
+    pressByTestId(renderer.root, 'retire-card-share');
+    expect(onShare).not.toHaveBeenCalled();
+
+    // 진행이 끝나면 잠금이 풀려 다시 눌러진다.
+    await act(async () => {
+      resolveSave();
+      await Promise.resolve();
+    });
+    pressByTestId(renderer.root, 'retire-card-share');
+    expect(onShare).toHaveBeenCalledTimes(1);
+  });
 });

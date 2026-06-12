@@ -12,16 +12,13 @@
 // 연결할 수 있고, 미연결 시 기본 저장기는 OS 공유 시트로 폴백한다 — 공유 시트의
 // "이미지 저장 / Save to Photos" 액션은 오프라인에서 갤러리에 영속하므로 계약을 만족한다.
 //
-// 공유(Share)는 story/feed/link 어디로든 OS 시트를 연다. 대상 앱이 없거나 사용자가
-// 닫아도(또는 캡처 실패해도) 예외를 표면화하지 않고 텍스트 공유로 조용히 폴백한다 —
-// 절대 크래시하지 않는다(shareRunCard/shareRecapCard 와 같은 계약).
+// 공유(Share)는 단일 OS 공유 시트를 연다(스토리/피드/링크 대상 선택은 시트가 담당).
+// 대상 앱이 없거나 사용자가 닫아도(또는 캡처 실패해도) 예외를 표면화하지 않고 텍스트
+// 공유로 조용히 폴백한다 — 절대 크래시하지 않는다(shareRunCard/shareRecapCard 계약).
 // ============================================================================
 import {Share} from 'react-native';
 import {captureCardDataUrl, SvgRefLike} from '../shareCard';
 import {RetirementCardModel} from './retirementCard';
-
-/** 공유 대상 힌트 — OS 시트는 동일하나 동반 텍스트 톤을 살짝 달리한다. */
-export type RetirementShareTarget = 'sheet' | 'story' | 'feed' | 'link';
 
 /** 캡처된 PNG dataURL 을 받아 영속(갤러리 저장)하는 주입 가능 저장기. */
 export type CardImageSaver = (dataUrl: string) => Promise<void>;
@@ -84,14 +81,13 @@ export async function saveRetirementCardImage(
 }
 
 /**
- * 렌더된 카드를 PNG 로 캡처해 OS 공유 시트로 내보낸다(story/feed/link 공용). 캡처가
- * 실패하거나 대상 앱이 없거나 사용자가 닫아도 예외를 삼키고 텍스트 공유로 폴백한다 —
- * 절대 크래시하지 않는다.
+ * 렌더된 카드를 PNG 로 캡처해 단일 OS 공유 시트로 내보낸다(스토리/피드/링크 대상 선택은
+ * 시트가 담당). 캡처가 실패하거나 대상 앱이 없거나 사용자가 닫아도 예외를 삼키고 텍스트
+ * 공유로 폴백한다 — 절대 크래시하지 않는다.
  */
 export async function shareRetirementCard(
   ref: SvgRefLike,
   fallback?: RetirementCardModel,
-  _target: RetirementShareTarget = 'sheet',
 ): Promise<void> {
   try {
     const url = await captureCardDataUrl(ref);
