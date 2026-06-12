@@ -142,9 +142,16 @@ export interface RetirementSummary {
   /** 첫/마지막 런 일자(YYYY-MM-DD). 없으면 null. */
   firstRunDate: string | null;
   lastRunDate: string | null;
+  /** 사용 기간(일) — 첫 런부터 은퇴일(now)까지(없으면 마지막 런까지). 항상 0 이상. */
+  usageDays: number;
   grade: RetirementGrade;
-  /** 실제 달성한 업적 키만(날조 금지). */
+  /** 실제 달성한 하이라이트 키만(날조 금지). 우선순위 내림차순(강→약) 정렬. */
   highlights: string[];
+  /**
+   * Most Memorable Moment — 그 신발과 함께한 가장 강렬한 **단일 실제** 하이라이트 키
+   * (highlights 의 우선순위 1위). 하이라이트가 없으면 null(날조 금지).
+   */
+  mostMemorable: string | null;
 }
 
 /** Hall of Shoes 에 영속되는 은퇴 신발 레코드(절대 사라지지 않음). */
