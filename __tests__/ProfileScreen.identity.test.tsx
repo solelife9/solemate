@@ -23,7 +23,7 @@ const byA11y = (root: ReactTestRenderer.ReactTestInstance, label: string) =>
   root.findAll((n: any) => n && n.props && n.props.accessibilityLabel === label && typeof n.props.onPress === 'function');
 
 const PROFILE: Profile = {
-  name: '러너', since: '2026년 5월부터', totalKm: 120, totalRuns: 12, totalTime: '8', level: '러닝 레벨 2',
+  name: '러너', since: '2026년 5월부터', totalKm: 120, totalRuns: 12, totalTime: '8', rankTier: 'silver',
 };
 
 describe('ProfileScreen identity — 이름·사진', () => {

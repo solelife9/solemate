@@ -11,7 +11,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, ScrollView, Pressable, StyleSheet, TextInput, Image, Share } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { BG, CARD, CARD_DIM, CARD_HI, ACCENT, GOOD, DANGER, WARN, T1, T2, T3, SEP, FONT, DISPLAY, withAlpha, KAKAO_YELLOW, KAKAO_LABEL, NAVER_GREEN, NAVER_LABEL } from './theme';
+import { BG, CARD, CARD_DIM, CARD_HI, ACCENT, GOOD, DANGER, WARN, T1, T2, T3, SEP, FONT, DISPLAY, withAlpha, TIER_COLORS, KAKAO_YELLOW, KAKAO_LABEL, NAVER_GREEN, NAVER_LABEL } from './theme';
 import { TabBar, Ring, Pill, SectionTitle } from './primitives';
 import { Unit, unitKorean, displayNum, displayToKm } from './lib/units';
 import { weeklyRecap, monthlyRecap, type RecapRun, type RecapShoe } from './lib/recap';
@@ -28,14 +28,22 @@ import { BackupPayload, BackupV1 } from './lib/backup';
 import { Challenge, ChallengeRun } from './lib/challenges';
 import { mergeCloudData, nextAuthState, AuthState } from './lib/cloudSync';
 import type { CloudPort, CloudProvider, CloudUser } from './lib/cloudPort';
+import type { RankTier } from './lib/progression/types';
 
-export type Profile = { name: string; since: string; totalKm: number; totalRuns: number; totalTime: string; level: string };
+// 신원 칩은 진척 시스템의 단일 Rank(티어)로 통일한다 — 옛 '러닝 레벨 N'(km/100) 개념 폐기.
+export type Profile = { name: string; since: string; totalKm: number; totalRuns: number; totalTime: string; rankTier: RankTier };
 export type Badge = { icon: string; label: string; on: boolean };
 // 개인 기록(PR) 카드 한 칸. value/unit은 App이 표시 단위로 환산·포맷해 주입한다
 // (기록 없음은 value='--'). 화면은 표시만 담당한다.
 export type PersonalRecord = { icon: string; label: string; value: string; unit: string };
 
-const DEFAULT_PROFILE: Profile = { name: '러너', since: '', totalKm: 0, totalRuns: 0, totalTime: '0', level: '러닝 레벨 1' };
+// 티어 표시명(영문 — 진척 화면과 동일 표기). 색은 TIER_COLORS 권위.
+const TIER_LABEL: Record<RankTier, string> = {
+  bronze: 'Bronze', silver: 'Silver', gold: 'Gold', platinum: 'Platinum',
+  diamond: 'Diamond', master: 'Master', legend: 'Legend',
+};
+
+const DEFAULT_PROFILE: Profile = { name: '러너', since: '', totalKm: 0, totalRuns: 0, totalTime: '0', rankTier: 'bronze' };
 const APP_VERSION = '0.0.1';
 
 // 마지막 동기 시각을 HH:MM 로 짧게 포맷한다(상세 행 detail 용). null 이면 호출부가
@@ -437,7 +445,19 @@ export default function ProfileScreen({
               </Pressable>
             )}
             <View style={[s.row, { marginTop: 6 }]}>
-              <View style={s.levelChip}><Text style={s.levelChipText}>{profile.level}</Text></View>
+              <View
+                testID="profile-rank-chip"
+                style={[
+                  s.rankChip,
+                  {
+                    backgroundColor: withAlpha(TIER_COLORS[profile.rankTier], 0.16),
+                    borderColor: withAlpha(TIER_COLORS[profile.rankTier], 0.5),
+                  },
+                ]}>
+                <Text style={[s.rankChipText, { color: TIER_COLORS[profile.rankTier] }]}>
+                  {TIER_LABEL[profile.rankTier]}
+                </Text>
+              </View>
               {!!profile.since && <Text style={s.since}>{profile.since}</Text>}
             </View>
           </View>
@@ -841,8 +861,8 @@ const s = StyleSheet.create({
   nameEditRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   nameInput: { flex: 1, color: T1, fontFamily: FONT, fontSize: 22, fontWeight: '500', letterSpacing: -0.5, borderBottomWidth: 1, borderBottomColor: ACCENT, paddingVertical: 2, paddingHorizontal: 0 },
   nameSaveBtn: { width: 34, height: 34, borderRadius: 999, backgroundColor: ACCENT, alignItems: 'center', justifyContent: 'center' },
-  levelChip: { backgroundColor: withAlpha(ACCENT, 0.14), borderRadius: 7, paddingHorizontal: 8, paddingVertical: 2 },
-  levelChipText: { color: ACCENT, fontFamily: FONT, fontSize: 11.5, fontWeight: '500' },
+  rankChip: { borderWidth: StyleSheet.hairlineWidth, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3 },
+  rankChipText: { fontFamily: FONT, fontSize: 11.5, fontWeight: '800', letterSpacing: 0.2 },
   since: { color: T3, fontFamily: FONT, fontSize: 12.5, fontWeight: '600' },
 
   // 주간 목표 링 카드

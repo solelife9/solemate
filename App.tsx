@@ -969,8 +969,8 @@ function Main(){
   const profile:Profile={
     name:profileName||DEFAULT_PROFILE_NAME, since, totalKm:displayNum(sumKm(runs),unit,0), totalRuns:runs.length,
     totalTime:String(Math.round(totalSec/3600)),
-    // 레벨/배지는 km 절대값(totalKm) 기준 — 단위를 바꿔도 자격이 흔들리지 않는다.
-    level:`러닝 레벨 ${Math.floor(totalKm/100)+1}`,
+    // 신원 칩은 진척 시스템의 단일 Rank(티어)로 통일 — 옛 '러닝 레벨 N'(km/100) 폐기.
+    rankTier:homeProgression.tier,
   };
   const badges:Badge[]=[
     {icon:'trophy',label:'100km',on:totalKm>=100},
