@@ -331,7 +331,7 @@ const SHOE_ACHIEVEMENTS: AchievementDef[] = [
   }),
   metricAch({
     key: 'ach_long_haul',
-    name: '장수 신발',
+    name: '천 킬로의 동반자',
     category: 'shoeManagement',
     rarity: 'diamond',
     target: LONG_HAUL_KM,

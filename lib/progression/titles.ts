@@ -186,7 +186,7 @@ const RUNNING_TITLES: TitleDef[] = [
   },
   {
     key: 'running_500k',
-    name: '거리 사냥꾼',
+    name: '거리 정복자',
     category: 'running',
     tier: 'gold',
     criterion: ctx => nonNeg(ctx.cumulativeKm) >= 500,
@@ -487,7 +487,7 @@ const RETIREMENT_TITLES: TitleDef[] = [
   },
   {
     key: 'retire_mindful',
-    name: '사려 깊은 은퇴',
+    name: '사려 깊은 관리자',
     category: 'retirement',
     tier: 'silver',
     criterion: ctx => retirementCount(ctx) >= 3,
@@ -495,7 +495,7 @@ const RETIREMENT_TITLES: TitleDef[] = [
   {
     // 5켤레 은퇴 + 그중 하나라도 smart 이상(잘 교체한 흔적).
     key: 'retire_smart',
-    name: '현명한 은퇴',
+    name: '현명한 관리자',
     category: 'retirement',
     tier: 'gold',
     criterion: ctx =>
