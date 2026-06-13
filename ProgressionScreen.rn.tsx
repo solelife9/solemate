@@ -45,7 +45,6 @@ import {
   TIER_COLORS,
   withAlpha,
 } from './theme';
-import {SectionTitle} from './primitives';
 import {ExtChallengeCard, SmartChallengeCard} from './ChallengesSection';
 import {
   generateSmartChallenge,
@@ -61,6 +60,7 @@ import {
   type ProgressionView,
   type TitleView,
 } from './lib/progression';
+import {rankGuidance} from './lib/progression/guidance';
 import {
   defaultProgressionState,
   loadProgression,
@@ -95,6 +95,14 @@ const CATEGORY_META: Record<TitleCategory, {label: string; icon: string}> = {
   retirement: {label: '은퇴', icon: 'ribbon'},
   hidden: {label: '히든', icon: 'sparkles'},
 };
+// 진척 화면 섹션 탭(한 번에 하나만 노출 — 한눈에 보이게 IA 정리).
+type TabKey = 'titles' | 'achievements' | 'challenges';
+const TABS: ReadonlyArray<{key: TabKey; label: string}> = [
+  {key: 'titles', label: '타이틀'},
+  {key: 'achievements', label: '업적'},
+  {key: 'challenges', label: '챌린지'},
+];
+
 const CATEGORY_ORDER: TitleCategory[] = [
   'running',
   'consistency',
@@ -305,6 +313,10 @@ export default function ProgressionScreen({
   }, [view]);
 
   const rankColor = view.rank.color;
+  // 랭크 "어떻게 오르나" 안내(6필러·다음 티어·최대 지렛대) — 순수 파생.
+  const guide = useMemo(() => rankGuidance(view.rank), [view.rank]);
+  // 섹션 탭(타이틀/업적/챌린지) — 기본 타이틀.
+  const [tab, setTab] = useState<TabKey>('titles');
   const equippedTitle = view.titles.equipped
     ? view.titles.unlocked.find(t => t.key === view.titles.equipped) ?? null
     : null;
@@ -401,10 +413,70 @@ export default function ProgressionScreen({
           </View>
         </View>
 
-        <Text style={s.equipHint}>
-          💡 해제한 타이틀을 탭하면 <Text style={{color: ACCENT}}>닉네임 옆에 장착</Text>됩니다
-          (한 번에 1개)
-        </Text>
+        {/* 랭크 오르는 법 — 6필러 + 다음 티어 + 가장 빠른 길 */}
+        <View style={s.guide} testID="rank-guide">
+          <Text style={s.guideTitle}>랭크 오르는 법</Text>
+          <Text style={s.guideSub}>
+            거리만이 아니라 6가지를 종합해 등급이 올라요
+          </Text>
+
+          {guide.nextTier ? (
+            <View style={s.nextRow} testID="rank-next">
+              <Text style={[s.nextTierTxt, {color: rankColor}]}>
+                {TIER_LABEL[guide.tier]}
+              </Text>
+              <View style={s.nextTrack}>
+                <View
+                  style={[
+                    s.nextFill,
+                    {
+                      width: `${Math.round(guide.progressToNext * 100)}%`,
+                      backgroundColor: rankColor,
+                    },
+                  ]}
+                />
+              </View>
+              <Text
+                style={[s.nextTierTxt, {color: TIER_COLORS[guide.nextTier]}]}>
+                {TIER_LABEL[guide.nextTier]}
+              </Text>
+            </View>
+          ) : (
+            <Text style={[s.maxTier, {color: rankColor}]} testID="rank-max">
+              최고 등급 달성 🌟
+            </Text>
+          )}
+
+          {/* 6개 평가축 미니 바 */}
+          <View style={s.pillars}>
+            {guide.pillars.map(p => (
+              <View key={p.key} style={s.pillarRow}>
+                <Text style={s.pillarLabel}>{p.label}</Text>
+                <View style={s.pillarTrack}>
+                  <View
+                    style={[
+                      s.pillarFill,
+                      {
+                        width: `${Math.round(p.value * 100)}%`,
+                        backgroundColor: rankColor,
+                      },
+                    ]}
+                  />
+                </View>
+              </View>
+            ))}
+          </View>
+
+          {guide.topLever ? (
+            <Text style={s.lever} testID="rank-lever">
+              가장 빠른 길 ·{' '}
+              <Text style={{color: ACCENT, fontWeight: '700'}}>
+                {guide.topLever.label}
+              </Text>{' '}
+              올리기
+            </Text>
+          ) : null}
+        </View>
 
         {/* 스탯 줄 — 총 거리 / 등록 신발 / 은퇴 신발 / 현재 스트릭 */}
         <View style={s.statRow} testID="stat-row">
@@ -424,9 +496,32 @@ export default function ProgressionScreen({
           ))}
         </View>
 
-        {/* 타이틀 갤러리 — 카테고리별 그룹(해제+잠금) */}
-        <SectionTitle style={{marginTop: SPACE.xs}}>타이틀</SectionTitle>
-        {grouped.map(group => (
+        {/* 섹션 탭 — 한 번에 하나만 노출(IA 정리) */}
+        <View style={s.tabs}>
+          {TABS.map(t => {
+            const active = tab === t.key;
+            return (
+              <Pressable
+                key={t.key}
+                testID={`tab-${t.key}`}
+                onPress={() => setTab(t.key)}
+                accessibilityRole="tab"
+                accessibilityState={{selected: active}}
+                style={[s.tab, active && {backgroundColor: CARD_HI}]}>
+                <Text style={[s.tabTxt, active && {color: T1}]}>{t.label}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+
+        {/* 타이틀 탭 — 카테고리별 그룹(해제+잠금) */}
+        {tab === 'titles' && (
+          <View style={{gap: SPACE.lg}}>
+            <Text style={s.equipHint}>
+              💡 해제한 타이틀을 탭하면{' '}
+              <Text style={{color: ACCENT}}>닉네임 옆에 장착</Text>됩니다 (한 번에 1개)
+            </Text>
+            {grouped.map(group => (
           <View key={group.category} style={{gap: SPACE.sm}}>
             <Text style={s.groupLabel}>{CATEGORY_META[group.category].label}</Text>
             <View style={s.gallery}>
@@ -491,11 +586,14 @@ export default function ProgressionScreen({
               })}
             </View>
           </View>
-        ))}
+            ))}
+          </View>
+        )}
 
-        {/* 업적 진행 바 */}
-        <SectionTitle style={{marginTop: SPACE.sm}}>업적</SectionTitle>
-        {view.achievements.map(a => {
+        {/* 업적 탭 — 진행 바 + 포인트 */}
+        {tab === 'achievements' && (
+          <View style={{gap: SPACE.lg}}>
+            {view.achievements.map(a => {
           const aColor = TIER_COLORS[a.rarity];
           const ratio =
             a.progress.target > 0
@@ -533,40 +631,46 @@ export default function ProgressionScreen({
               </View>
             </View>
           );
-        })}
-
-        {/* 챌린지 — 확장 챌린지(monthly/shoe/rotation) + 스마트 추천 카드.
-            ChallengesSection 과 동일한 카드를 재사용(단일 출처)하고, 수락은 onAcceptChallenge
-            로 App 에 위임한다(K_CHALLENGES 영속 — 화면은 AsyncStorage 를 직접 만지지 않는다). */}
-        {(showSmart || extChallenges.length > 0) && (
-          <View style={{gap: SPACE.sm}} testID="progression-challenges">
-            <SectionTitle style={{marginTop: SPACE.sm}}>챌린지</SectionTitle>
-            {showSmart ? (
-              <SmartChallengeCard
-                ch={smart!}
-                shoes={extShoes}
-                onAccept={onAcceptChallenge}
-              />
-            ) : null}
-            {extChallenges.map(ch => (
-              <ExtChallengeCard
-                key={ch.id}
-                ch={ch}
-                runs={extRuns}
-                shoes={extShoes}
-                now={nowISO}
-              />
-            ))}
+            })}
+            {/* 진척 포인트 총합 — 업적 보상 합 */}
+            <View
+              style={[s.points, {borderColor: withAlpha(ACCENT, 0.35)}]}
+              testID="progression-points">
+              <Text style={s.pointsLabel}>진척 포인트</Text>
+              <Text style={s.pointsNum}>{view.points.toLocaleString()}</Text>
+            </View>
           </View>
         )}
 
-        {/* 진척 포인트 총합 */}
-        <View
-          style={[s.points, {borderColor: withAlpha(ACCENT, 0.35)}]}
-          testID="progression-points">
-          <Text style={s.pointsLabel}>진척 포인트</Text>
-          <Text style={s.pointsNum}>{view.points.toLocaleString()}</Text>
-        </View>
+        {/* 챌린지 탭 — 확장 챌린지(monthly/shoe/rotation) + 스마트 추천 카드.
+            ChallengesSection 과 동일한 카드를 재사용(단일 출처)하고, 수락은 onAcceptChallenge
+            로 App 에 위임한다(K_CHALLENGES 영속 — 화면은 AsyncStorage 를 직접 만지지 않는다). */}
+        {tab === 'challenges' &&
+          (showSmart || extChallenges.length > 0 ? (
+            <View style={{gap: SPACE.sm}} testID="progression-challenges">
+              {showSmart ? (
+                <SmartChallengeCard
+                  ch={smart!}
+                  shoes={extShoes}
+                  onAccept={onAcceptChallenge}
+                />
+              ) : null}
+              {extChallenges.map(ch => (
+                <ExtChallengeCard
+                  key={ch.id}
+                  ch={ch}
+                  runs={extRuns}
+                  shoes={extShoes}
+                  now={nowISO}
+                />
+              ))}
+            </View>
+          ) : (
+            <View style={s.empty} testID="progression-challenges-empty">
+              <Ionicons name="flag-outline" size={22} color={T3} />
+              <Text style={s.emptyTxt}>진행 중인 챌린지가 없어요</Text>
+            </View>
+          ))}
       </ScrollView>
     </View>
   );
@@ -655,6 +759,66 @@ const s = StyleSheet.create({
   titlePillTxt: {fontFamily: FONT, fontSize: 12, fontWeight: '700', flexShrink: 1},
   noTitle: {fontFamily: FONT, color: T3, fontSize: 12, fontWeight: '600', marginTop: 7},
   equipHint: {fontFamily: FONT, color: T3, fontSize: 11.5, lineHeight: 16},
+  // 랭크 오르는 법 카드
+  guide: {
+    backgroundColor: CARD,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: SEP,
+    borderRadius: RADIUS.lg,
+    padding: SPACE.lg,
+    gap: SPACE.md,
+  },
+  guideTitle: {fontFamily: DISPLAY, color: T1, fontSize: 15, fontWeight: '800', letterSpacing: -0.2},
+  guideSub: {fontFamily: FONT, color: T3, fontSize: 12, lineHeight: 16, marginTop: -4},
+  nextRow: {flexDirection: 'row', alignItems: 'center', gap: 10},
+  nextTierTxt: {fontFamily: FONT, fontSize: 12, fontWeight: '800', letterSpacing: 0.2},
+  nextTrack: {
+    flex: 1,
+    height: 6,
+    backgroundColor: CARD_HI,
+    borderRadius: RADIUS.pill,
+    overflow: 'hidden',
+  },
+  nextFill: {height: '100%', borderRadius: RADIUS.pill},
+  maxTier: {fontFamily: FONT, fontSize: 13, fontWeight: '800'},
+  pillars: {gap: 7},
+  pillarRow: {flexDirection: 'row', alignItems: 'center', gap: 10},
+  pillarLabel: {
+    width: 58,
+    fontFamily: FONT,
+    color: T2,
+    fontSize: 11.5,
+    fontWeight: '600',
+  },
+  pillarTrack: {
+    flex: 1,
+    height: 5,
+    backgroundColor: CARD_HI,
+    borderRadius: RADIUS.pill,
+    overflow: 'hidden',
+  },
+  pillarFill: {height: '100%', borderRadius: RADIUS.pill, opacity: 0.85},
+  lever: {fontFamily: FONT, color: T2, fontSize: 12, fontWeight: '600', marginTop: 2},
+  // 섹션 탭
+  tabs: {
+    flexDirection: 'row',
+    gap: 6,
+    backgroundColor: CARD,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: SEP,
+    borderRadius: RADIUS.pill,
+    padding: 4,
+  },
+  tab: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 9,
+    borderRadius: RADIUS.pill,
+  },
+  tabTxt: {fontFamily: FONT, color: T3, fontSize: 13, fontWeight: '700'},
+  // 빈 상태
+  empty: {alignItems: 'center', gap: 8, paddingVertical: 36},
+  emptyTxt: {fontFamily: FONT, color: T3, fontSize: 13, fontWeight: '600'},
   // 스탯 줄
   statRow: {
     flexDirection: 'row',

@@ -68,6 +68,16 @@ function textOf(node: ReactTestRenderer.ReactTestInstance): string {
 function colorOf(node: ReactTestRenderer.ReactTestInstance): string | undefined {
   return (StyleSheet.flatten(node.props.style) as any)?.color;
 }
+// 섹션 탭(타이틀/업적/챌린지) 전환 — IA 정리로 한 번에 한 섹션만 렌더된다.
+async function selectTab(
+  root: ReactTestRenderer.ReactTestInstance,
+  key: 'titles' | 'achievements' | 'challenges',
+) {
+  const tab = byTestID(root, `tab-${key}`)[0];
+  await act(async () => {
+    tab.props.onPress();
+  });
+}
 
 describe('ProgressionScreen — 진척 표면', () => {
   test('해제된 타이틀을 탭하면 장착되고 progression_v1 에 영속된다', async () => {
@@ -123,6 +133,20 @@ describe('ProgressionScreen — 진척 표면', () => {
     expect(textOf(chip)).toContain(tierLabel);
   });
 
+  test('랭크 안내 카드(어떻게 오르나)가 다음 티어·지렛대와 함께 렌더된다', async () => {
+    const r = await render(
+      <ProgressionScreen runs={RUNS} shoes={SHOES} now={NOW} initialState={seenSuppressedState()} />,
+    );
+    const root = r.root;
+    // 안내 카드 자체.
+    expect(byTestID(root, 'rank-guide').length).toBeGreaterThanOrEqual(1);
+    // 낮은 시드 → legend 아님 → 다음 티어 진행바 노출(최고등급 문구 아님).
+    expect(byTestID(root, 'rank-next').length).toBeGreaterThanOrEqual(1);
+    expect(byTestID(root, 'rank-max').length).toBe(0);
+    // 가장 빠른 길(지렛대) 힌트가 보인다.
+    expect(byTestID(root, 'rank-lever').length).toBeGreaterThanOrEqual(1);
+  });
+
   test('업적 진행 바가 주입한 데이터에서 파생된 current/target 을 그대로 보여준다', async () => {
     const view = getProgression(RUNS, SHOES, null, NOW);
     const a = view.achievements[0];
@@ -132,6 +156,7 @@ describe('ProgressionScreen — 진척 표면', () => {
       <ProgressionScreen runs={RUNS} shoes={SHOES} now={NOW} initialState={seenSuppressedState()} />,
     );
     const root = r.root;
+    await selectTab(root, 'achievements');
 
     const prog = byTestID(root, `ach-progress-${a.key}`)[0];
     expect(prog).toBeTruthy();
@@ -302,6 +327,7 @@ describe('ProgressionScreen — 챌린지 섹션(확장 + 스마트)', () => {
       />,
     );
     const root = r.root;
+    await selectTab(root, 'challenges');
 
     // 챌린지 섹션 컨테이너 + 3종 확장 카드가 모두 실제 트리에 존재한다.
     expect(byTestID(root, 'progression-challenges').length).toBeGreaterThanOrEqual(1);
@@ -322,6 +348,7 @@ describe('ProgressionScreen — 챌린지 섹션(확장 + 스마트)', () => {
       />,
     );
     const root = r.root;
+    await selectTab(root, 'challenges');
 
     expect(byTestID(root, 'smart-challenge').length).toBeGreaterThanOrEqual(1);
     const reason = byTestID(root, 'smart-challenge-reason')[0];
@@ -341,6 +368,7 @@ describe('ProgressionScreen — 챌린지 섹션(확장 + 스마트)', () => {
       />,
     );
     const root = r.root;
+    await selectTab(root, 'challenges');
 
     const accept = byTestID(root, 'smart-challenge-accept')[0];
     expect(accept).toBeTruthy();
@@ -376,6 +404,7 @@ describe('ProgressionScreen — 챌린지 섹션(확장 + 스마트)', () => {
       />,
     );
     const root = r.root;
+    await selectTab(root, 'challenges');
 
     // 중복 추천 카드는 숨고, 수락분은 일반 확장 카드로 노출된다.
     expect(byTestID(root, 'smart-challenge').length).toBe(0);
