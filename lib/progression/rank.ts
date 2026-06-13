@@ -32,8 +32,8 @@ import {
 
 // ── 상수 ──────────────────────────────────────────────────────────────────────
 
-/** 평가축 가중치(합 = 1.0, spec 권위). */
-const WEIGHTS: Readonly<Record<keyof PillarScores, number>> = {
+/** 평가축 가중치(합 = 1.0, spec 권위). 단일 출처 — guidance 등도 이걸 재사용한다. */
+export const WEIGHTS: Readonly<Record<keyof PillarScores, number>> = {
   running: 0.25,
   consistency: 0.2,
   shoeManagement: 0.2,

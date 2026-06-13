@@ -347,7 +347,7 @@ const SHOE_ACHIEVEMENTS: AchievementDef[] = [
   }),
   metricAch({
     key: 'ach_collection_10',
-    name: '신발 감정가',
+    name: '신발 감식가',
     category: 'shoeManagement',
     rarity: 'gold',
     target: 10,
@@ -380,7 +380,7 @@ const INJURY_ACHIEVEMENTS: AchievementDef[] = [
   // target 은 최소 2(로테이션 성립 조건) 로 깔아 신발<2 일 때도 가득 참=언락 모순을 막는다.
   {
     key: 'ach_clean_rotation',
-    name: '깨끗한 로테이션',
+    name: '건강한 로테이션',
     category: 'injuryPrevention',
     rarity: 'silver',
     points: pointsForRarity('silver'),

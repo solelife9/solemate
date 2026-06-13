@@ -205,7 +205,7 @@ describe('rotation 사다리', () => {
     expect(evaluateTitles(weak)).not.toContain('rotation_balanced');
   });
 
-  test('Rotation Expert/Master/Perfect: rotation≥0.7 & 테뉴어 3mo/1yr/2yr', () => {
+  test('Rotation Expert: rotation≥0.7 & 테뉴어 3mo / Architect·Legend: ≥0.8·0.9 & 2yr', () => {
     // 균등 사용 2켤레 → rotation 평가축 = 1.0.
     const balanced = (firstWorn: string) =>
       emptyCtx({
@@ -218,8 +218,6 @@ describe('rotation 사다리', () => {
     expect(evaluateTitles(balanced(daysAgo(89)))).not.toContain(
       'rotation_expert',
     );
-    expect(evaluateTitles(balanced(daysAgo(365)))).toContain('rotation_master');
-    expect(evaluateTitles(balanced(daysAgo(730)))).toContain('rotation_perfect');
     // 균형이 충분하면 architect/legend 도(rotation=1 ≥0.8,0.9) 2년에서 함께.
     expect(evaluateTitles(balanced(daysAgo(730)))).toEqual(
       expect.arrayContaining(['rotation_architect', 'rotation_legend']),
@@ -283,7 +281,7 @@ describe('injuryPrevention 사다리', () => {
     expect(evaluateTitles(overdue)).not.toContain('injury_wise');
   });
 
-  test('Prevention Expert/Coach + Master/Guardian/Iron: 기간 게이트', () => {
+  test('Prevention Expert(6mo) → Master(1yr) → Iron(2yr): 기간 게이트', () => {
     const healthy = (firstWorn: string) =>
       emptyCtx({perShoe: perShoeMap(healthyShoe('a', firstWorn))});
     expect(evaluateTitles(healthy(daysAgo(182)))).toContain(
@@ -292,12 +290,10 @@ describe('injuryPrevention 사다리', () => {
     expect(evaluateTitles(healthy(daysAgo(181)))).not.toContain(
       'injury_prevention_expert',
     );
-    expect(evaluateTitles(healthy(daysAgo(365)))).toEqual(
-      expect.arrayContaining(['injury_running_coach', 'injury_master']),
-    );
-    // 2년 + 전부 건강(injury 평가축=1 ≥0.95) → guardian·iron.
+    expect(evaluateTitles(healthy(daysAgo(365)))).toContain('injury_master');
+    // 2년 + 전부 건강(injury 평가축=1 ≥0.95) → iron.
     expect(evaluateTitles(healthy(daysAgo(730)))).toEqual(
-      expect.arrayContaining(['injury_guardian', 'injury_iron']),
+      expect.arrayContaining(['injury_iron']),
     );
   });
 });

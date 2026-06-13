@@ -193,7 +193,7 @@ const RUNNING_TITLES: TitleDef[] = [
   },
   {
     key: 'running_1000k',
-    name: '천 킬로의 마음가짐',
+    name: '마라토너의 길',
     category: 'running',
     tier: 'platinum',
     criterion: ctx => nonNeg(ctx.cumulativeKm) >= 1000,
@@ -301,20 +301,6 @@ const ROTATION_TITLES: TitleDef[] = [
     criterion: ctx => rotationPillar(ctx) >= 0.7 && tenureDays(ctx) >= MONTH_3,
   },
   {
-    key: 'rotation_master',
-    name: '로테이션 마스터',
-    category: 'rotation',
-    tier: 'platinum',
-    criterion: ctx => rotationPillar(ctx) >= 0.7 && tenureDays(ctx) >= YEAR_1,
-  },
-  {
-    key: 'rotation_perfect',
-    name: '완벽한 로테이터',
-    category: 'rotation',
-    tier: 'diamond',
-    criterion: ctx => rotationPillar(ctx) >= 0.7 && tenureDays(ctx) >= YEAR_2,
-  },
-  {
     // 탁월한 장기 로테이션(더 높은 균형 + 다년).
     key: 'rotation_architect',
     name: '로테이션 설계자',
@@ -357,26 +343,12 @@ const INJURY_TITLES: TitleDef[] = [
     criterion: ctx => allActiveHealthy(ctx) && tenureDays(ctx) >= MONTH_6,
   },
   {
-    key: 'injury_running_coach',
-    name: '러닝 코치',
-    category: 'injuryPrevention',
-    tier: 'platinum',
-    criterion: ctx => allActiveHealthy(ctx) && tenureDays(ctx) >= YEAR_1,
-  },
-  {
     // 탁월한 부상예방(평가축 ≥0.9, 은퇴 포함 전반 건강) + 1년.
     key: 'injury_master',
     name: '부상 예방 마스터',
     category: 'injuryPrevention',
     tier: 'diamond',
     criterion: ctx => injuryPillar(ctx) >= 0.9 && tenureDays(ctx) >= YEAR_1,
-  },
-  {
-    key: 'injury_guardian',
-    name: '러닝 가디언',
-    category: 'injuryPrevention',
-    tier: 'master',
-    criterion: ctx => injuryPillar(ctx) >= 0.9 && tenureDays(ctx) >= YEAR_2,
   },
   {
     key: 'injury_iron',
@@ -449,7 +421,7 @@ const CONSISTENCY_TITLES: TitleDef[] = [
   },
   {
     key: 'consistency_never_stop',
-    name: '멈추지 않는 마음',
+    name: '쉼 없는 러너',
     category: 'consistency',
     tier: 'legend',
     criterion: ctx =>

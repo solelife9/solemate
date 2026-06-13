@@ -23,10 +23,10 @@ beforeEach(async () => {
 const sample: ProgressionState = {
   earnedTitles: [
     {key: 'running_100k', unlockedAt: '2026-06-01T00:00:00.000Z', isEquipped: true},
-    {key: 'rotation_master', unlockedAt: '2026-06-02T00:00:00.000Z', isEquipped: false},
+    {key: 'rotation_architect', unlockedAt: '2026-06-02T00:00:00.000Z', isEquipped: false},
   ],
   equippedTitleKey: 'running_100k',
-  seenUnlocks: ['running_100k', 'rotation_master'],
+  seenUnlocks: ['running_100k', 'rotation_architect'],
   retiredShoes: [
     {
       shoeId: 's1',
