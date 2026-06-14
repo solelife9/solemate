@@ -54,8 +54,14 @@ const SINGLE_SATURATION_KM = 42.195;
 const STREAK_SATURATION_DAYS = 30;
 const CURRENT_STREAK_SATURATION_DAYS = 14;
 
-/** engagement 상한 — (획득 타이틀 + 완료 챌린지) 합이 이 값이면 포화. */
+/** engagement 활동 상한 — (획득 타이틀 + 완료 챌린지) 합이 이 값이면 포화. */
 const ENGAGEMENT_CAP = 24;
+
+/**
+ * engagement 업적 성분 포화 기준 — 언락 업적의 난이도(rarity) 가중 포인트 합이 이 값이면
+ * ~1.0 으로 포화. 난이도가 높은 업적(Master 500p 등)일수록 더 크게 기여한다(POINTS_BY_RARITY).
+ */
+const ACH_POINTS_SATURATION = 1200;
 
 /** 한참 초과(이 비율 초과) 후 은퇴는 절반만 '건강한 교체'로 인정. */
 const LATE_RETIRE_RATIO = 1.3;
@@ -206,13 +212,20 @@ function injuryPreventionPillar(ctx: ProgressionContext): number {
 }
 
 /**
- * engagement — (획득 타이틀 + 완료 챌린지) 합을 상한(ENGAGEMENT_CAP)으로 정규화.
- * 업적/타이틀 획득과 챌린지 완수는 모두 실제 달성 기준에서만 누적된다(날조 없음).
+ * engagement — 진척 활동(획득 타이틀 + 완료 챌린지)과 **업적 난이도 포인트**를 합성한다.
+ *   · 활동 성분  = (타이틀 + 챌린지) / ENGAGEMENT_CAP
+ *   · 업적 성분  = 업적 난이도 포인트 / ACH_POINTS_SATURATION (어려운 업적일수록 더 기여)
+ * 두 성분을 **가산 후 0..1 로 포화**한다(clamp01). 가산이라 업적이 더 쌓일수록 점수가
+ * 내려가지 않으며, 기존(타이틀/챌린지만 반영) 사용자 점수도 떨어지지 않는다. 타이틀/챌린지/
+ * 업적은 모두 실제 달성 기준에서만 누적된다(날조 없음). 포화 때문에 쉬운 업적 양치기로
+ * 평가축을 독식하지 못한다(난이도 가중 + 상한).
  */
 function engagementPillar(ctx: ProgressionContext): number {
   const titles = nonNeg(ctx.earnedTitleCount);
   const challenges = nonNeg(ctx.completedChallengeCount);
-  return clamp01((titles + challenges) / ENGAGEMENT_CAP);
+  const activity = (titles + challenges) / ENGAGEMENT_CAP;
+  const achievements = nonNeg(ctx.achievementPoints ?? 0) / ACH_POINTS_SATURATION;
+  return clamp01(activity + achievements);
 }
 
 /** 모든 평가축 0(빈/비정상 컨텍스트용). */

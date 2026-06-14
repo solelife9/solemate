@@ -289,6 +289,34 @@ describe('평가축 동작', () => {
     expect(some.pillars.engagement).toBeGreaterThan(0);
     expect(capped.pillars.engagement).toBe(1);
   });
+
+  test('engagement: 업적 난이도 포인트도 반영(가산), 높은 rarity일수록 더 큼', () => {
+    const base = computeRank(emptyCtx()).pillars.engagement;
+    const withAch = computeRank(emptyCtx({achievementPoints: 300})).pillars
+      .engagement;
+    // 업적 포인트가 더해지면 engagement 가 오른다(타이틀/챌린지 0이어도).
+    expect(withAch).toBeGreaterThan(base);
+
+    // 동일 활동에서 더 어려운 업적(=더 많은 포인트)이 더 크게 기여.
+    const lowRarity = computeRank(emptyCtx({achievementPoints: 50})).pillars
+      .engagement; // 예: bronze 5개
+    const highRarity = computeRank(emptyCtx({achievementPoints: 500})).pillars
+      .engagement; // 예: master 1개
+    expect(highRarity).toBeGreaterThan(lowRarity);
+
+    // 가산이라 기존(타이틀+챌린지) 점수가 업적 추가로 내려가지 않는다.
+    const titlesOnly = computeRank(
+      emptyCtx({earnedTitleCount: 6, completedChallengeCount: 3}),
+    ).pillars.engagement;
+    const titlesPlusAch = computeRank(
+      emptyCtx({
+        earnedTitleCount: 6,
+        completedChallengeCount: 3,
+        achievementPoints: 250,
+      }),
+    ).pillars.engagement;
+    expect(titlesPlusAch).toBeGreaterThanOrEqual(titlesOnly);
+  });
 });
 
 // ============================================================================

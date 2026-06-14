@@ -199,12 +199,12 @@ describe('anti-scenario: 은퇴 0건 무언락', () => {
 // 4) 은퇴 업적 포인트 = rarity 권위
 // ============================================================================
 describe('은퇴 업적 포인트 = rarity 권위', () => {
+  // 은퇴 그룹은 '개수' 업적만 보유한다. 교체 타이밍 품질(좋은 타이밍/완벽한 타이밍)은
+  // 부상 예방 그룹으로 이동했다 — 카테고리 단언은 부상 예방 쪽 케이스 참조.
   const expected: Array<[string, keyof typeof POINTS_BY_RARITY]> = [
     ['ach_first_retirement', 'bronze'],
     ['ach_retire_5', 'silver'],
     ['ach_retire_10', 'gold'],
-    ['ach_smart_replacement', 'silver'],
-    ['ach_perfect_timing', 'gold'],
   ];
 
   test.each(expected)('%s points == POINTS_BY_RARITY[%s]', (key, rarity) => {
@@ -213,6 +213,37 @@ describe('은퇴 업적 포인트 = rarity 권위', () => {
     expect(def.category).toBe('retirement');
     expect(def.rarity).toBe(rarity);
     expect(def.points).toBe(POINTS_BY_RARITY[rarity]);
+  });
+});
+
+// ============================================================================
+// 4-b) 그룹 정합: 은퇴 그룹 = 개수만 / 교체 타이밍 품질 = 부상 예방으로 이동
+// ============================================================================
+describe('업적 그룹 정합(은퇴=개수 / 타이밍품질=부상예방)', () => {
+  test('은퇴 그룹은 개수 업적(첫·3·5·10)만 보유한다', () => {
+    const retireGroup = Object.values(ACHIEVEMENTS_BY_KEY).filter(
+      d => d.group === 'retirement',
+    );
+    expect(retireGroup.map(d => d.key).sort()).toEqual([
+      'ach_first_retirement',
+      'ach_retire_10',
+      'ach_retire_3',
+      'ach_retire_5',
+    ]);
+  });
+
+  test('좋은 타이밍/완벽한 타이밍은 부상 예방(category·group)으로 이동', () => {
+    for (const key of ['ach_smart_replacement', 'ach_perfect_timing']) {
+      const def = achievementDef(key)!;
+      expect(def.category).toBe('injuryPrevention');
+      expect(def.group).toBe('injuryPrevention');
+    }
+    // '스마트 교체' → '좋은 타이밍' 으로 이름 정리(부상예방 '현명한 교체'와 구분).
+    expect(achievementDef('ach_smart_replacement')!.name).toBe('좋은 타이밍');
+  });
+
+  test('스마트 교체 5회 업적은 제거됐다', () => {
+    expect(achievementDef('ach_smart_5')).toBeUndefined();
   });
 });
 

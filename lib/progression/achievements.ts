@@ -300,7 +300,13 @@ const ROTATION_ACHIEVEMENTS: AchievementDef[] = [
   metricAch({key: 'ach_rotation_1yr', name: '1년 로테이션', category: 'rotation', group: 'rotation', rarity: 'platinum', target: 365, value: balancedRotationTenureDays}),
 ];
 
-// ── Injury Prevention: 조기 교체 + 건강 유지 ───────────────────────────────────
+// ── Injury Prevention: 조기 교체 + 건강 유지 + 교체 타이밍 품질 ─────────────────
+// 부상 예방의 핵심은 "신발을 제때 교체"하는 것. 그래서 (1) 초과 마모 전 조기 교체,
+// (2) 활성 신발 건강 유지에 더해, (3) **권장수명에 맞춰 교체한 타이밍 품질**(은퇴 등급
+// smart/perfect)까지 이 그룹이 보상한다. 타이밍 품질 지표는 은퇴 레코드의 등급에서 오지만
+// (smartOrBetterRetirementCount/perfectRetirementCount), 보상하는 행위는 "잘 교체해 부상을
+// 예방"하는 것이므로 '은퇴(개수)' 그룹이 아니라 여기에 둔다. '현명한 교체'(조기)와
+// '좋은 타이밍/완벽한 타이밍'(권장 근접)은 서로 다른 밴드를 보상한다(중복 아님).
 const INJURY_ACHIEVEMENTS: AchievementDef[] = [
   metricAch({key: 'ach_smart_swap', name: '현명한 교체', category: 'injuryPrevention', group: 'injuryPrevention', rarity: 'silver', target: 1, value: earlyReplacementCount}),
   metricAch({key: 'ach_health_guardian', name: '건강 지킴이', category: 'injuryPrevention', group: 'injuryPrevention', rarity: 'gold', target: 3, value: earlyReplacementCount}),
@@ -322,18 +328,20 @@ const INJURY_ACHIEVEMENTS: AchievementDef[] = [
       return assessed >= 2 && healthyActiveCount(ctx) === assessed;
     },
   },
+  // 교체 타이밍 품질(은퇴 등급) — 권장수명 ±10%(좋은) / ±5%(완벽). 등급 지표는 은퇴
+  // 레코드에서 오므로 은퇴가 0건이면 절대 언락되지 않는다(날조 금지).
+  metricAch({key: 'ach_smart_replacement', name: '좋은 타이밍', category: 'injuryPrevention', group: 'injuryPrevention', rarity: 'silver', target: 1, value: smartOrBetterRetirementCount}),
+  metricAch({key: 'ach_perfect_timing', name: '완벽한 타이밍', category: 'injuryPrevention', group: 'injuryPrevention', rarity: 'gold', target: 1, value: perfectRetirementCount}),
 ];
 
-// ── Retirement: 은퇴 수 + 등급 품질(progression_v1.retiredShoes) ──────────────
+// ── Retirement(Hall of Shoes): 은퇴시킨 신발 **수**만 보상 ──────────────────────
+// 순수 카운트 사다리(1/3/5/10) — "몇 켤레를 떠나보냈나". 교체 '타이밍 품질'(등급) 보상은
+// 개념이 달라 부상 예방 그룹으로 옮겼다(은퇴 그룹은 개수만 유지해 의미를 깔끔히 한다).
 const RETIREMENT_ACHIEVEMENTS: AchievementDef[] = [
   metricAch({key: 'ach_first_retirement', name: '첫 은퇴', category: 'retirement', group: 'retirement', rarity: 'bronze', target: 1, value: retirementCount}),
   metricAch({key: 'ach_retire_3', name: '3켤레 은퇴', category: 'retirement', group: 'retirement', rarity: 'silver', target: 3, value: retirementCount}),
   metricAch({key: 'ach_retire_5', name: '5켤레 은퇴', category: 'retirement', group: 'retirement', rarity: 'silver', target: 5, value: retirementCount}),
   metricAch({key: 'ach_retire_10', name: '명예의 전당', category: 'retirement', group: 'retirement', rarity: 'gold', target: 10, value: retirementCount}),
-  // 등급형: 해당 등급 은퇴 ≥N(smart 이상 / perfect 이상).
-  metricAch({key: 'ach_smart_replacement', name: '스마트 교체', category: 'retirement', group: 'retirement', rarity: 'silver', target: 1, value: smartOrBetterRetirementCount}),
-  metricAch({key: 'ach_perfect_timing', name: '완벽한 타이밍', category: 'retirement', group: 'retirement', rarity: 'gold', target: 1, value: perfectRetirementCount}),
-  metricAch({key: 'ach_smart_5', name: '스마트 교체 5회', category: 'retirement', group: 'retirement', rarity: 'platinum', target: 5, value: smartOrBetterRetirementCount}),
 ];
 
 // ── Hidden: 달성 전까지 숨김(달성 순간 공개). Rain Runner 는 날씨 미추적으로 제외. ─

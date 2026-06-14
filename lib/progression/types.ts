@@ -287,6 +287,11 @@ export interface ProgressionContext {
   earnedTitleCount: number;
   /** 완료한 챌린지 수(engagement 평가축). */
   completedChallengeCount: number;
+  /**
+   * 언락한 업적의 난이도(rarity) 가중 포인트 합 — engagement 평가축에 환산된다.
+   * 선택(미설정→0): buildContext 가 사전집계로 채운다. 직접 만든 ctx(테스트 등)는 0 취급.
+   */
+  achievementPoints?: number;
 }
 
 // ── Ranking seam (크로스유저 백엔드 부재 시 로컬 전용 placeholder) ─────────────

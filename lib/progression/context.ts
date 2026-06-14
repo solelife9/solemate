@@ -15,6 +15,8 @@
 import {Run} from '../../theme';
 import {personalRecords} from '../records';
 import {maxDayStreak} from '../stats';
+import {unlockedAchievements} from './achievements';
+import {totalPoints} from './points';
 import {
   ContextChallengeInput,
   EarnedTitle,
@@ -276,7 +278,12 @@ export function buildContext(
   const completedChallengeCount = challengeList.filter(c => c?.completed === true)
     .length;
 
-  return {
+  // ── 베이스 컨텍스트(업적 포인트 제외) ──────────────────────────────────────
+  // 업적 포인트는 ctx 자체로부터 파생되므로 2-pass 로 채운다: 먼저 베이스 ctx 를 만들고
+  // (achievementPoints=0), 그 위에서 언락 업적의 난이도 포인트를 합산해 최종 ctx 에 싣는다.
+  // 업적 판정은 rotation/shoeManagement 평가축만 참조하고 engagement(=포인트)에는 의존하지
+  // 않으므로 순환·재귀가 없다(베이스/최종 ctx 에서 언락 집합은 동일).
+  const baseCtx: ProgressionContext = {
     now: safeNow,
     cumulativeKm,
     runCount: runList.length,
@@ -301,5 +308,9 @@ export function buildContext(
     earnedTitleKeys,
     earnedTitleCount: earnedTitleKeys.length,
     completedChallengeCount,
+    achievementPoints: 0,
   };
+
+  const achievementPoints = totalPoints(unlockedAchievements(baseCtx));
+  return {...baseCtx, achievementPoints};
 }
