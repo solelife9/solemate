@@ -331,10 +331,48 @@ export interface LocalLeaderboard {
 }
 
 /**
- * 랭킹 데이터 소스 seam. 지금은 로컬 stub(ranking.ts)이 LocalMyRanking/LocalLeaderboard
- * 를 반환하고, slice E 에서 네트워크 구현으로 교체한다(인터페이스 불변).
+ * 네트워크(멀티유저 백엔드) 리더보드 — slice E. 백엔드가 검증된 데이터로 집계한 실제
+ * 엔트리를 담는다. available 은 런타임 값(백엔드 응답/네트워크 성공 여부)이라 boolean 이며,
+ * 실패/빈 결과는 available:false + entries:[] 로 떨어진다(가짜 경쟁자 발명 금지).
+ */
+export interface RemoteLeaderboard {
+  kind: 'remote';
+  available: boolean;
+  category: string;
+  yearMonth: string;
+  entries: LeaderboardEntry[];
+}
+
+/**
+ * 네트워크 내 랭킹 — slice E. 내 순위/상위%/주변(±2)까지 크로스유저 값을 담는다.
+ * 미참여/실패면 available:false, me=null, nearby:[].
+ */
+export interface RemoteMyRanking {
+  kind: 'remote';
+  available: boolean;
+  category: string;
+  yearMonth: string;
+  /** 카테고리 전체 참여자 수(상위% 산정 분모). */
+  total: number;
+  /** 내 상위 백분율(0..100, 작을수록 상위). 미참여 → null. */
+  topPercent: number | null;
+  /** 내 엔트리(순위/점수 포함). 미참여 → null. */
+  me: LeaderboardEntry | null;
+  /** 내 위 2 + 나 + 아래 2 (백엔드 nearby). */
+  nearby: LeaderboardEntry[];
+}
+
+/**
+ * 랭킹 데이터 소스 seam. 로컬 stub(ranking.ts)은 Local* 를, 네트워크 구현
+ * (remoteRanking.ts, slice E)은 Remote* 를 반환한다. 소비자는 result.kind 로 분기한다.
  */
 export interface RankingProvider {
-  getLeaderboard(category: string, yearMonth: string): Promise<LocalLeaderboard>;
-  getMyRanking(category: string, yearMonth: string): Promise<LocalMyRanking>;
+  getLeaderboard(
+    category: string,
+    yearMonth: string,
+  ): Promise<LocalLeaderboard | RemoteLeaderboard>;
+  getMyRanking(
+    category: string,
+    yearMonth: string,
+  ): Promise<LocalMyRanking | RemoteMyRanking>;
 }

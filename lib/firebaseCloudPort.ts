@@ -83,6 +83,21 @@ function payloadToDoc(data: BackupPayload): Record<string, unknown> {
 }
 
 /**
+ * 로그인된 사용자의 Firebase ID 토큰(없으면 null). 백엔드 /api/v1 보호 라우트의
+ * Authorization Bearer 토큰으로 쓴다(progression 랭킹 provider). 미로그인/실패 → null
+ * (호출부가 빈 결과로 안전 처리하도록 throw 하지 않는다).
+ */
+export async function getFirebaseIdToken(): Promise<string | null> {
+  try {
+    const user = getAuth().currentUser;
+    if (!user) return null;
+    return await user.getIdToken();
+  } catch {
+    return null;
+  }
+}
+
+/**
  * CloudPort 의 firebase 구현을 만든다. 옵션으로 google 자격증명 리졸버를 주입한다.
  */
 export function createFirebaseCloudPort(
