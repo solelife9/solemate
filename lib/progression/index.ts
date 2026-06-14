@@ -27,6 +27,7 @@ import {totalPoints} from './points';
 import {computeRank} from './rank';
 import {evaluateTitles, TITLES} from './titles';
 import {
+  AchievementGroup,
   AchievementProgress,
   ContextChallengeInput,
   ProgressionContext,
@@ -53,8 +54,12 @@ export interface AchievementView {
   key: string;
   name: string;
   category: TitleCategory;
+  /** 표시 그룹(수집 카탈로그 헤더). */
+  group: AchievementGroup;
   rarity: RankTier;
   points: number;
+  /** 히든 업적 여부(잠금 상태에선 갤러리에서 제외됨 — 여긴 항상 false 만 노출). */
+  hidden: boolean;
   progress: AchievementProgress;
   unlocked: boolean;
 }
@@ -124,12 +129,17 @@ function viewFromContext(
   }
 
   const unlockedAchKeys = new Set(evaluateAchievements(ctx));
-  const achievements: AchievementView[] = ACHIEVEMENTS.map(def => ({
+  // 히든 업적은 달성 전까지 갤러리에서 숨긴다(타이틀과 동일 — 달성 순간 공개).
+  const achievements: AchievementView[] = ACHIEVEMENTS.filter(
+    def => !def.hidden || unlockedAchKeys.has(def.key),
+  ).map(def => ({
     key: def.key,
     name: def.name,
     category: def.category,
+    group: def.group,
     rarity: def.rarity,
     points: def.points,
+    hidden: def.hidden === true,
     progress: achievementProgress(def, ctx),
     unlocked: unlockedAchKeys.has(def.key),
   }));

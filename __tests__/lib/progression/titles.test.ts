@@ -18,7 +18,6 @@ import {
 import {
   equip,
   evaluateTitles,
-  titleDef,
   TITLES,
   TITLES_BY_KEY,
 } from '../../../lib/progression/titles';
@@ -345,69 +344,7 @@ describe('consistency 사다리', () => {
   });
 });
 
-// ============================================================================
-// 6) hidden 타이틀
-// ============================================================================
-describe('hidden 타이틀', () => {
-  test('Early Bird: 새벽 런≥20', () => {
-    expect(evaluateTitles(emptyCtx({earlyRunCount: 20}))).toContain(
-      'hidden_early_bird',
-    );
-    expect(evaluateTitles(emptyCtx({earlyRunCount: 19}))).not.toContain(
-      'hidden_early_bird',
-    );
-  });
-
-  test('Night Runner: 야간 런≥20', () => {
-    expect(evaluateTitles(emptyCtx({nightRunCount: 20}))).toContain(
-      'hidden_night_runner',
-    );
-    expect(evaluateTitles(emptyCtx({nightRunCount: 19}))).not.toContain(
-      'hidden_night_runner',
-    );
-  });
-
-  test('Comeback Runner: 30일 이상 공백 후 복귀', () => {
-    expect(evaluateTitles(emptyCtx({longestGapDays: 30}))).toContain(
-      'hidden_comeback',
-    );
-    expect(evaluateTitles(emptyCtx({longestGapDays: 29}))).not.toContain(
-      'hidden_comeback',
-    );
-  });
-
-  test('Long Relationship: 미은퇴 신발 첫 착용 >365일 전', () => {
-    const old = emptyCtx({
-      perShoe: perShoeMap(
-        shoe({id: 'a', km: 200, maxKm: 600, firstWorn: daysAgo(366)}),
-      ),
-    });
-    expect(evaluateTitles(old)).toContain('hidden_long_relationship');
-    // 정확히 365일은 ">365" 미충족.
-    const exactly = emptyCtx({
-      perShoe: perShoeMap(
-        shoe({id: 'a', km: 200, maxKm: 600, firstWorn: daysAgo(365)}),
-      ),
-    });
-    expect(evaluateTitles(exactly)).not.toContain('hidden_long_relationship');
-    // 은퇴 신발은 제외(여전히 함께가 아님).
-    const retired = emptyCtx({
-      perShoe: perShoeMap(
-        shoe({id: 'a', km: 200, maxKm: 600, retired: true, firstWorn: daysAgo(400)}),
-      ),
-    });
-    expect(evaluateTitles(retired)).not.toContain('hidden_long_relationship');
-  });
-
-  test('hidden 타이틀은 hidden:true 로 표시된다', () => {
-    [
-      'hidden_early_bird',
-      'hidden_night_runner',
-      'hidden_comeback',
-      'hidden_long_relationship',
-    ].forEach(k => expect(titleDef(k)?.hidden).toBe(true));
-  });
-});
+// (히든은 '업적'으로 이동 — achievements.test.ts 에서 검증. 타이틀엔 더 이상 hidden 없음.)
 
 // ============================================================================
 // 8) 멱등 재평가 + 빈 ctx 무언락(날조 금지)
@@ -509,7 +446,6 @@ describe('카탈로그 무결성', () => {
       'rotation',
       'injuryPrevention',
       'consistency',
-      'hidden',
     ].forEach(c => expect(cats.has(c as never)).toBe(true));
   });
 });

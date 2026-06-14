@@ -264,8 +264,10 @@ describe('pickRecentAchievement: recency가 포인트를 이긴다', () => {
     key,
     name,
     category: 'running',
+    group: 'distance',
     rarity: 'bronze',
     points,
+    hidden: false,
     progress: {current: 1, target: 1},
     unlocked: true,
   });

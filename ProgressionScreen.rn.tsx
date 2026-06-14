@@ -67,6 +67,7 @@ import {
   saveProgression,
 } from './lib/progression/storage';
 import type {
+  AchievementGroup,
   EarnedTitle,
   ProgressionState,
   RankTier,
@@ -95,6 +96,32 @@ const CATEGORY_META: Record<TitleCategory, {label: string; icon: string}> = {
   retirement: {label: '은퇴', icon: 'ribbon'},
   hidden: {label: '히든', icon: 'sparkles'},
 };
+// 업적 표시 그룹 라벨 + 고정 순서(수집 카탈로그 헤더).
+const ACH_GROUP_META: Record<AchievementGroup, string> = {
+  firstMilestone: '러닝 이정표',
+  distance: '거리',
+  runCount: '러닝 횟수',
+  consistency: '꾸준함',
+  shoeCollection: '신발 수집',
+  shoeLife: '신발 수명',
+  rotation: '로테이션',
+  injuryPrevention: '부상 예방',
+  retirement: '은퇴',
+  hidden: '히든',
+};
+const ACH_GROUP_ORDER: AchievementGroup[] = [
+  'firstMilestone',
+  'distance',
+  'runCount',
+  'consistency',
+  'shoeCollection',
+  'shoeLife',
+  'rotation',
+  'injuryPrevention',
+  'retirement',
+  'hidden',
+];
+
 // 진척 화면 섹션 탭(한 번에 하나만 노출 — 한눈에 보이게 IA 정리).
 type TabKey = 'titles' | 'achievements' | 'challenges';
 const TABS: ReadonlyArray<{key: TabKey; label: string}> = [
@@ -593,44 +620,58 @@ export default function ProgressionScreen({
         {/* 업적 탭 — 진행 바 + 포인트 */}
         {tab === 'achievements' && (
           <View style={{gap: SPACE.lg}}>
-            {view.achievements.map(a => {
-          const aColor = TIER_COLORS[a.rarity];
-          const ratio =
-            a.progress.target > 0
-              ? Math.max(0, Math.min(1, a.progress.current / a.progress.target))
-              : a.unlocked
-              ? 1
-              : 0;
-          return (
-            <View key={a.key} style={s.ach} testID={`ach-${a.key}`}>
-              <View style={s.achTop}>
-                <Text style={s.achName} numberOfLines={1}>
-                  {a.unlocked ? '✓ ' : ''}
-                  {a.name}
-                </Text>
-                <View
-                  style={[s.rar, {backgroundColor: withAlpha(aColor, 0.16)}]}>
-                  <Text style={[s.rarTxt, {color: aColor}]}>
-                    {`${TIER_LABEL[a.rarity].toUpperCase()} · ${a.points}P`}
+            {ACH_GROUP_ORDER.map(g => {
+              const items = view.achievements.filter(a => a.group === g);
+              if (items.length === 0) return null;
+              const done = items.filter(a => a.unlocked).length;
+              return (
+                <View key={g} style={{gap: SPACE.sm}}>
+                  <Text style={s.groupLabel}>
+                    {ACH_GROUP_META[g]}{' '}
+                    <Text style={s.groupCount}>
+                      {done}/{items.length}
+                    </Text>
                   </Text>
+                  {items.map(a => {
+                    const aColor = TIER_COLORS[a.rarity];
+                    const ratio =
+                      a.progress.target > 0
+                        ? Math.max(0, Math.min(1, a.progress.current / a.progress.target))
+                        : a.unlocked
+                        ? 1
+                        : 0;
+                    return (
+                      <View key={a.key} style={s.ach} testID={`ach-${a.key}`}>
+                        <View style={s.achTop}>
+                          <Text style={s.achName} numberOfLines={1}>
+                            {a.unlocked ? '✓ ' : ''}
+                            {a.name}
+                          </Text>
+                          <View style={[s.rar, {backgroundColor: withAlpha(aColor, 0.16)}]}>
+                            <Text style={[s.rarTxt, {color: aColor}]}>
+                              {`${TIER_LABEL[a.rarity].toUpperCase()} · ${a.points}P`}
+                            </Text>
+                          </View>
+                        </View>
+                        <View style={s.achProgRow}>
+                          <Text style={s.achProgTxt} testID={`ach-progress-${a.key}`}>
+                            {`${a.progress.current.toLocaleString()} / ${a.progress.target.toLocaleString()}`}
+                          </Text>
+                        </View>
+                        <View style={s.track}>
+                          <View
+                            testID={`ach-fill-${a.key}`}
+                            style={[
+                              s.fill,
+                              {width: `${Math.round(ratio * 100)}%`, backgroundColor: aColor},
+                            ]}
+                          />
+                        </View>
+                      </View>
+                    );
+                  })}
                 </View>
-              </View>
-              <View style={s.achProgRow}>
-                <Text style={s.achProgTxt} testID={`ach-progress-${a.key}`}>
-                  {`${a.progress.current.toLocaleString()} / ${a.progress.target.toLocaleString()}`}
-                </Text>
-              </View>
-              <View style={s.track}>
-                <View
-                  testID={`ach-fill-${a.key}`}
-                  style={[
-                    s.fill,
-                    {width: `${Math.round(ratio * 100)}%`, backgroundColor: aColor},
-                  ]}
-                />
-              </View>
-            </View>
-          );
+              );
             })}
             {/* 진척 포인트 총합 — 업적 보상 합 */}
             <View
@@ -842,6 +883,7 @@ const s = StyleSheet.create({
   statLabel: {fontFamily: FONT, color: T3, fontSize: 11, fontWeight: '600', marginTop: 5},
   // 갤러리
   groupLabel: {fontFamily: FONT, color: T2, fontSize: 13, fontWeight: '700'},
+  groupCount: {fontFamily: FONT, color: T3, fontSize: 11, fontWeight: '700'},
   gallery: {flexDirection: 'row', flexWrap: 'wrap', gap: 10},
   tcard: {
     width: '31.5%',

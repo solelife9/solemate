@@ -69,6 +69,7 @@ function ach(rarity: RankTier, key = `k_${rarity}`): AchievementDef {
     key,
     name: key,
     category: 'running',
+    group: 'distance',
     rarity,
     points: pointsForRarity(rarity),
     progress: () => ({current: 1, target: 1}),

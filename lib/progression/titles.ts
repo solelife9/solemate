@@ -83,15 +83,6 @@ function tenureDays(ctx: ProgressionContext): number {
   return Math.max(0, Math.floor((now - ms) / DAY_MS));
 }
 
-/** 특정 신발의 보유(첫 착용 이후) 경과일 — firstWorn 없으면 0. */
-function shoeAgeDays(s: PerShoeStats, now: number): number {
-  if (!s.firstWorn) return 0;
-  const ms = ymdToMs(s.firstWorn);
-  const n = Number.isFinite(now) ? now : 0;
-  if (!Number.isFinite(ms)) return 0;
-  return Math.max(0, Math.floor((n - ms) / DAY_MS));
-}
-
 /** 실제로 사용한(런 ≥1) 신발 수. */
 function shoesUsedCount(ctx: ProgressionContext): number {
   return shoeStats(ctx).filter(s => nonNeg(s.runs) >= 1).length;
@@ -430,47 +421,9 @@ const CONSISTENCY_TITLES: TitleDef[] = [
   },
 ];
 
-// ── hidden: 미달성 시 갤러리 비노출(달성 순간 공개) ──────────────────────────────
-// Rain Runner 는 여기 들어가야 했으나 날씨 미추적으로 OMITTED(위 헤더 주석 참조).
-const HIDDEN_TITLES: TitleDef[] = [
-  {
-    key: 'hidden_early_bird',
-    name: '얼리버드',
-    category: 'hidden',
-    tier: 'gold',
-    hidden: true,
-    criterion: ctx => nonNeg(ctx.earlyRunCount) >= 20,
-  },
-  {
-    key: 'hidden_night_runner',
-    name: '나이트 러너',
-    category: 'hidden',
-    tier: 'gold',
-    hidden: true,
-    criterion: ctx => nonNeg(ctx.nightRunCount) >= 20,
-  },
-  {
-    // 30일 이상 공백 후 복귀 런.
-    key: 'hidden_comeback',
-    name: '컴백 러너',
-    category: 'hidden',
-    tier: 'silver',
-    hidden: true,
-    criterion: ctx => nonNeg(ctx.longestGapDays) >= 30,
-  },
-  {
-    // 365일 넘게 함께한(은퇴하지 않은) 신발 1켤레 이상.
-    key: 'hidden_long_relationship',
-    name: '오랜 동반자',
-    category: 'hidden',
-    tier: 'platinum',
-    hidden: true,
-    criterion: ctx => {
-      const now = Number.isFinite(ctx.now) ? ctx.now : 0;
-      return shoeStats(ctx).some(s => !s.retired && shoeAgeDays(s, now) > YEAR_1);
-    },
-  },
-];
+// ── 히든은 '업적'으로 이동했다(achievements.ts: 얼리버드·나이트러너·컴백·오랜 동반자).
+//    철학상 히든은 잘게 쌓는 '수집'에 가까워 업적이 더 자연스럽다(타이틀은 사다리·고난도).
+//    Rain Runner 는 날씨 미추적으로 여전히 제외.
 
 // ── retirement: 은퇴 수 + 등급 품질 사다리(Shoe Care Starter → … → Keep Going) ──
 // progression_v1.retiredShoes 의 실제 은퇴 수(retirementCount)와 등급 품질
@@ -548,7 +501,6 @@ export const TITLES: readonly TitleDef[] = [
   ...INJURY_TITLES,
   ...CONSISTENCY_TITLES,
   ...RETIREMENT_TITLES,
-  ...HIDDEN_TITLES,
 ];
 
 /** key → TitleDef 조회 맵(O(1)). */

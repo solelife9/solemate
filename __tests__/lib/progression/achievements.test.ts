@@ -330,4 +330,78 @@ describe('카탈로그 무결성', () => {
       expect(TITLES_BY_KEY[titleKey]).toBeDefined();
     }
   });
+
+  test('모든 표시 그룹이 카탈로그에 존재한다', () => {
+    const groups = new Set(ACHIEVEMENTS.map(a => a.group));
+    [
+      'firstMilestone',
+      'distance',
+      'runCount',
+      'consistency',
+      'shoeCollection',
+      'shoeLife',
+      'rotation',
+      'injuryPrevention',
+      'retirement',
+      'hidden',
+    ].forEach(g => expect(groups.has(g as never)).toBe(true));
+  });
+
+  test('업적 수가 충분히 많다(타이틀보다 많은 수집 카탈로그)', () => {
+    // 철학: 업적 = 많고 잘게, 타이틀 = 적고 어렵게. 업적이 타이틀(=42 미만으로 정리됨)보다 많아야 한다.
+    expect(ACHIEVEMENTS.length).toBeGreaterThanOrEqual(45);
+  });
 });
+
+// ============================================================================
+// 6) 히든 업적 — 달성 전 미노출, 실제 데이터로만 언락(날조 금지)
+// ============================================================================
+describe('히든 업적', () => {
+  test('얼리버드: 새벽 런 ≥20 에서만 언락 + hidden:true', () => {
+    const def = achievementDef('ach_hidden_early_bird')!;
+    expect(def.hidden).toBe(true);
+    expect(def.group).toBe('hidden');
+    expect(def.unlocked(emptyCtx({earlyRunCount: 20}))).toBe(true);
+    expect(def.unlocked(emptyCtx({earlyRunCount: 19}))).toBe(false);
+  });
+
+  test('나이트 러너: 야간 런 ≥20', () => {
+    const def = achievementDef('ach_hidden_night_runner')!;
+    expect(def.unlocked(emptyCtx({nightRunCount: 20}))).toBe(true);
+    expect(def.unlocked(emptyCtx({nightRunCount: 19}))).toBe(false);
+  });
+
+  test('컴백 러너: 30일 이상 공백', () => {
+    const def = achievementDef('ach_hidden_comeback')!;
+    expect(def.unlocked(emptyCtx({longestGapDays: 30}))).toBe(true);
+    expect(def.unlocked(emptyCtx({longestGapDays: 29}))).toBe(false);
+  });
+
+  test('오랜 동반자: 미은퇴 신발 보유 ≥365일', () => {
+    const def = achievementDef('ach_hidden_long_relationship')!;
+    const old = emptyCtx({
+      perShoe: {
+        a: shoe({id: 'a', km: 200, maxKm: 600, firstWorn: daysAgoISO(366)}),
+      },
+    });
+    expect(def.unlocked(old)).toBe(true);
+    // 은퇴 신발은 제외.
+    const retired = emptyCtx({
+      perShoe: {
+        a: shoe({id: 'a', km: 200, maxKm: 600, retired: true, firstWorn: daysAgoISO(400)}),
+      },
+    });
+    expect(def.unlocked(retired)).toBe(false);
+  });
+
+  test('Rain Runner 는 카탈로그에 없다(날씨 미추적)', () => {
+    expect(ACHIEVEMENTS.some(a => /rain/i.test(a.key))).toBe(false);
+  });
+});
+
+/** NOW 기준 n일 전 'YYYY-MM-DD'. */
+function daysAgoISO(n: number): string {
+  const d = new Date(NOW - n * 86400000);
+  const p = (x: number) => String(x).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}

@@ -97,6 +97,22 @@ export interface AchievementProgress {
 }
 
 /**
+ * 업적 표시 그룹(수집 카탈로그의 묶음 — 타이틀의 사다리보다 잘게 쌓는 단위).
+ * category(평가축 필러)와 별개로 화면 그룹 헤더에만 쓴다.
+ */
+export type AchievementGroup =
+  | 'firstMilestone'
+  | 'distance'
+  | 'runCount'
+  | 'consistency'
+  | 'shoeCollection'
+  | 'shoeLife'
+  | 'rotation'
+  | 'injuryPrevention'
+  | 'retirement'
+  | 'hidden';
+
+/**
  * 업적 정의(정적). progress 는 라이브 진행률, unlocked 는 달성 판정(둘 다 순수).
  * 포인트는 rarity 로 결정(Bronze10 … Legend1000) — engagement 평가축에 환산된다.
  * 날조 금지(iron): unlocked 는 실제 충족 기준에서만 true.
@@ -104,11 +120,16 @@ export interface AchievementProgress {
 export interface AchievementDef {
   key: string;
   name: string;
+  /** 평가축 필러(엔진/커버리지용). */
   category: TitleCategory;
+  /** 화면 표시 그룹(수집 카탈로그 헤더용). */
+  group: AchievementGroup;
   /** 희귀도(포인트/색 결정). */
   rarity: RankTier;
   /** rarity 에 대응하는 포인트(POINTS_BY_RARITY 와 일치). */
   points: number;
+  /** true 면 달성 전까지 갤러리에서 숨긴다(히든 업적 — 달성 순간 공개). */
+  hidden?: boolean;
   progress: (ctx: ProgressionContext) => AchievementProgress;
   unlocked: (ctx: ProgressionContext) => boolean;
 }
