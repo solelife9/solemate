@@ -31,6 +31,7 @@ import RunCountdownScreen from './RunCountdownScreen.rn';
 import RunActiveScreenView from './RunActiveScreen.rn';
 import ProgressionScreen from './ProgressionScreen.rn';
 import HallOfShoes from './HallOfShoes.rn';
+import HallOfFameScreen from './HallOfFameScreen.rn';
 import {buildContext} from './lib/progression/context';
 import {getProgression, pickRecentAchievement} from './lib/progression';
 import {loadProgression} from './lib/progression/storage';
@@ -185,6 +186,8 @@ function Main(){
   // 명예의 전당(은퇴 신발 박물관) 전체화면 표시 여부. 프로필 진입 버튼이 열고 화면
   // 뒤로 버튼이 닫는다. 진척과 같은 오버레이형 게이트(부트 흐름과 독립).
   const [showHallOfShoes,setShowHallOfShoes]=useState(false);
+  // 명예의 전당(라이브 리더보드) 전체화면 표시 여부 — 진척 화면 헤더 버튼이 연다.
+  const [showHallOfFame,setShowHallOfFame]=useState(false);
   // 진척 영속 상태(progression_v1) — Hall of Shoes 레코드 + 은퇴 키프세이크 컨텍스트의
   // 소스. 마운트 시 로드하고, 은퇴 확정 시 레코드를 ADDITIVE 하게 덧붙인다(파생값은 재계산).
   const [progState,setProgState]=useState<ProgressionState|null>(null);
@@ -1123,7 +1126,15 @@ function Main(){
   if(showProgression){
     return <ProgressionScreen runs={runs} shoes={shoes} profileName={profileName}
       extChallenges={extChallenges} onAcceptChallenge={acceptChallenge}
-      onBack={()=>setShowProgression(false)}/>;
+      onBack={()=>setShowProgression(false)}
+      onOpenHallOfFame={()=>setShowHallOfFame(true)}/>;
+  }
+
+  // 명예의 전당(라이브 리더보드) 전체화면 — 백엔드(/api/v1) 카테고리별 랭킹. provider 가
+  // 미배포/미로그인이면 빈 상태로 떨어진다(가짜 경쟁자 금지). userId 로 백엔드 연결+재계산.
+  if(showHallOfFame){
+    return <HallOfFameScreen profileName={profileName} deviceUserId={userId}
+      onBack={()=>setShowHallOfFame(false)}/>;
   }
 
   // 명예의 전당(은퇴 신발 박물관) 전체화면 — 영속된 은퇴 레코드를 그대로 전시한다
