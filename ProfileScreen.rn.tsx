@@ -31,7 +31,8 @@ import type { CloudPort, CloudProvider, CloudUser } from './lib/cloudPort';
 import type { RankTier } from './lib/progression/types';
 
 // 신원 칩은 진척 시스템의 단일 Rank(티어)로 통일한다 — 옛 '러닝 레벨 N'(km/100) 개념 폐기.
-export type Profile = { name: string; since: string; totalKm: number; totalRuns: number; totalTime: string; rankTier: RankTier };
+// equippedTitle·achievementCount·retiredShoes 는 진척 신원 블록(스펙)용(없으면 미표시/0).
+export type Profile = { name: string; since: string; totalKm: number; totalRuns: number; totalTime: string; rankTier: RankTier; equippedTitle?: string | null; achievementCount?: number; retiredShoes?: number };
 export type Badge = { icon: string; label: string; on: boolean };
 // 개인 기록(PR) 카드 한 칸. value/unit은 App이 표시 단위로 환산·포맷해 주입한다
 // (기록 없음은 value='--'). 화면은 표시만 담당한다.
@@ -458,7 +459,17 @@ export default function ProfileScreen({
                   {TIER_LABEL[profile.rankTier]}
                 </Text>
               </View>
+              {!!profile.equippedTitle && (
+                <View style={s.titlePill} testID="profile-title-pill">
+                  <Ionicons name="ribbon" size={11} color={ACCENT} />
+                  <Text style={s.titlePillText} numberOfLines={1}>{profile.equippedTitle}</Text>
+                </View>
+              )}
               {!!profile.since && <Text style={s.since}>{profile.since}</Text>}
+            </View>
+            <View style={[s.row, { marginTop: 7, gap: 14 }]} testID="profile-progression-stats">
+              <Text style={s.idStat}>업적 <Text style={s.idStatNum}>{profile.achievementCount ?? 0}</Text></Text>
+              <Text style={s.idStat}>은퇴 신발 <Text style={s.idStatNum}>{profile.retiredShoes ?? 0}</Text></Text>
             </View>
           </View>
           {streakDays > 0 && (
@@ -863,6 +874,10 @@ const s = StyleSheet.create({
   nameSaveBtn: { width: 34, height: 34, borderRadius: 999, backgroundColor: ACCENT, alignItems: 'center', justifyContent: 'center' },
   rankChip: { borderWidth: StyleSheet.hairlineWidth, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3 },
   rankChipText: { fontFamily: FONT, fontSize: 11.5, fontWeight: '800', letterSpacing: 0.2 },
+  titlePill: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: withAlpha(ACCENT, 0.12), borderRadius: 999, paddingHorizontal: 9, paddingVertical: 3, maxWidth: '60%' },
+  titlePillText: { color: ACCENT, fontFamily: FONT, fontSize: 11.5, fontWeight: '700', flexShrink: 1 },
+  idStat: { fontFamily: FONT, color: T3, fontSize: 12, fontWeight: '600' },
+  idStatNum: { fontFamily: DISPLAY, color: T1, fontSize: 13, fontWeight: '800' },
   since: { color: T3, fontFamily: FONT, fontSize: 12.5, fontWeight: '600' },
 
   // 주간 목표 링 카드

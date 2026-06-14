@@ -966,11 +966,18 @@ function Main(){
   const firstDate=runs.length?runs.reduce((m:string,r:any)=>r.run_date<m?r.run_date:m,runs[0].run_date):'';
   const since=firstDate?(()=>{const d=new Date(firstDate+'T00:00:00');return `${d.getFullYear()}년 ${d.getMonth()+1}월부터`;})():'';
   const streak=maxDayStreak(runs.map(r=>r.run_date).filter(Boolean));
+  // 프로필 신원 블록(스펙): Rank·장착 타이틀 + 업적 수·은퇴 신발 수. getProgression 은
+  // homeProgression 과 동일 참조라 메모 히트(재계산 없음). 은퇴 수는 영속 레코드 권위.
+  const profView=getProgression(runs,shoes,progState??undefined);
+  const achievementCount=profView.achievements.filter(a=>a.unlocked).length;
   const profile:Profile={
     name:profileName||DEFAULT_PROFILE_NAME, since, totalKm:displayNum(sumKm(runs),unit,0), totalRuns:runs.length,
     totalTime:String(Math.round(totalSec/3600)),
     // 신원 칩은 진척 시스템의 단일 Rank(티어)로 통일 — 옛 '러닝 레벨 N'(km/100) 폐기.
     rankTier:homeProgression.tier,
+    equippedTitle:homeProgression.equippedTitle,
+    achievementCount,
+    retiredShoes:progState?.retiredShoes?.length??0,
   };
   const badges:Badge[]=[
     {icon:'trophy',label:'100km',on:totalKm>=100},
