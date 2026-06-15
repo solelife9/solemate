@@ -170,7 +170,7 @@ describe('ProgressionScreen — 진척 표면', () => {
     expect(w.endsWith('%')).toBe(true);
   });
 
-  test('갤러리가 해제(누름 가능)와 잠금(누름 불가) 타이틀을 함께 렌더한다', async () => {
+  test('갤러리가 해제(탭=장착)와 잠금(탭=획득 조건) 타이틀을 함께 렌더한다', async () => {
     const r = await render(
       <ProgressionScreen runs={RUNS} shoes={SHOES} now={NOW} initialState={seenSuppressedState()} />,
     );
@@ -181,10 +181,39 @@ describe('ProgressionScreen — 진척 표면', () => {
     expect(unlocked).toBeTruthy();
     expect(typeof unlocked.props.onPress).toBe('function');
 
-    // 잠금: 상위 사다리(Endless Runner, legend)는 잠겨 누를 수 없다(View).
+    // 잠금: 이제 눌러서 '획득 조건'을 볼 수 있다(Pressable).
     const locked = byTestID(root, 'title-running_25000k')[0];
     expect(locked).toBeTruthy();
-    expect(locked.props.onPress).toBeUndefined();
+    expect(typeof locked.props.onPress).toBe('function');
+  });
+
+  test('잠긴 타이틀을 탭하면 획득 조건 모달이 뜬다', async () => {
+    const r = await render(
+      <ProgressionScreen runs={RUNS} shoes={SHOES} now={NOW} initialState={seenSuppressedState()} />,
+    );
+    const root = r.root;
+
+    // 탭 전엔 모달 없음.
+    expect(byTestID(root, 'title-detail').length).toBe(0);
+
+    // 잠긴 타이틀(누적 25,000km — running_25000k) 탭.
+    const locked = byTestID(root, 'title-running_25000k')[0];
+    await act(async () => {
+      locked.props.onPress();
+    });
+
+    // 모달이 뜨고, 그 타이틀의 획득 조건 문구를 보여준다.
+    const modal = byTestID(root, 'title-detail');
+    expect(modal.length).toBeGreaterThanOrEqual(1);
+    const req = byTestID(root, 'title-detail-requirement')[0];
+    expect(textOf(req)).toContain('25,000km');
+
+    // 배경 탭으로 닫힌다.
+    const backdrop = byTestID(root, 'title-detail-backdrop')[0];
+    await act(async () => {
+      backdrop.props.onPress();
+    });
+    expect(byTestID(root, 'title-detail').length).toBe(0);
   });
 
   test('장착 타이틀이 닉네임 옆에 렌더된다', async () => {

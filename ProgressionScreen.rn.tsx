@@ -85,6 +85,55 @@ const TIER_LABEL: Record<RankTier, string> = {
   legend: 'Legend',
 };
 
+// 타이틀별 '획득 조건' 카피(프레젠테이션 전용). titles.ts 의 criterion 과 1:1로 맞춘 사람용
+// 설명 — 잠긴 타이틀을 탭하면 이 문구를 모달로 보여준다("뭘 해야 얻나"). key 누락 시 폴백.
+const TITLE_REQUIREMENT: Record<string, string> = {
+  // running — 누적 거리
+  running_beginner: '첫 러닝 1회 기록하기',
+  running_100k: '누적 거리 100km 달성',
+  running_500k: '누적 거리 500km 달성',
+  running_1000k: '누적 거리 1,000km 달성',
+  running_5000k: '누적 거리 5,000km 달성',
+  running_10000k: '누적 거리 10,000km 달성',
+  running_25000k: '누적 거리 25,000km 달성',
+  // shoeManagement — 컬렉션 + 관리 품질·기간
+  shoe_beginner: '신발 1켤레 등록',
+  shoe_enthusiast: '신발 3켤레 등록',
+  shoe_rotation_runner: '신발 5켤레 등록',
+  shoe_collector: '신발 10켤레 등록',
+  shoe_master: '신발 관리 점수 90% 이상을 6개월 이상 유지',
+  keego_master: '신발 관리 점수 90% 이상을 1년 이상 유지',
+  keep_going: '신발 관리 점수 95% 이상을 1년 이상 유지',
+  // rotation — 사용 켤레 + 균형·기간
+  rotation_starter: '서로 다른 신발 2켤레 사용',
+  rotation_balanced: '3켤레를 각각 3회 이상 사용',
+  rotation_expert: '로테이션 균형 70% 이상을 3개월 이상 유지',
+  rotation_architect: '로테이션 균형 80% 이상을 2년 이상 유지',
+  rotation_legend: '로테이션 균형 90% 이상을 2년 이상 유지',
+  // injuryPrevention — 조기 교체·건강 유지
+  injury_smart: '마모 한계 전에 신발 1켤레 교체(은퇴)',
+  injury_wise: '활성 신발 전부를 건강 상태로 유지',
+  injury_prevention_expert: '활성 신발 전부 건강을 6개월 이상 유지',
+  injury_master: '부상 예방 점수 90% 이상을 1년 이상 유지',
+  injury_iron: '부상 예방 점수 95% 이상을 2년 이상 유지',
+  // consistency — 횟수 + 주간 일관성·기간
+  consistency_start: '러닝 4회 기록',
+  consistency_runner: '주간 활성 75% 이상을 1개월 이상 유지',
+  consistency_habit: '주간 활성 75% 이상을 3개월 이상 유지',
+  consistency_monthly: '주간 활성 75% 이상을 6개월 이상 유지',
+  consistency_annual: '주간 활성 75% 이상을 1년 이상 유지',
+  consistency_steady: '주간 활성 75% 이상을 2년 이상 유지',
+  consistency_never_stop: '주간 활성 90% 이상을 2년 이상 유지',
+  // retirement — 은퇴 수 + 교체 타이밍 품질
+  retire_starter: '신발 1켤레 은퇴',
+  retire_mindful: '신발 3켤레 은퇴',
+  retire_smart: '신발 5켤레 은퇴 + 그중 1켤레 이상 적정 시점 교체(Smart 등급)',
+  retire_curator: '신발 5켤레 은퇴 + 3켤레 이상 적정 시점 교체(Smart 등급)',
+  retire_hall: '신발 10켤레 은퇴',
+  retire_perfect: '신발 10켤레 은퇴 + 1켤레 이상 완벽한 시점 교체(Perfect 등급)',
+  retire_keep_going: '신발 10켤레 은퇴 + 3켤레 이상 완벽한 시점 교체(Perfect 등급)',
+};
+
 // 카테고리 한국어 라벨 + 아이콘(프레젠테이션 전용 — 데이터 아님). 갤러리 그룹 헤더와
 // 타이틀 카드 아이콘에 쓴다. 고정 순서로 그룹을 노출한다(결정적 레이아웃).
 const CATEGORY_META: Record<TitleCategory, {label: string; icon: string}> = {
@@ -347,6 +396,8 @@ export default function ProgressionScreen({
   const guide = useMemo(() => rankGuidance(view.rank), [view.rank]);
   // 섹션 탭(타이틀/업적/챌린지) — 기본 타이틀.
   const [tab, setTab] = useState<TabKey>('titles');
+  // 타이틀 상세(획득 조건) 모달 — 잠긴 타이틀을 탭하면 "뭘 해야 얻나"를 보여준다.
+  const [detail, setDetail] = useState<TitleView | null>(null);
   const equippedTitle = view.titles.equipped
     ? view.titles.unlocked.find(t => t.key === view.titles.equipped) ?? null
     : null;
@@ -615,14 +666,19 @@ export default function ProgressionScreen({
                   );
                 }
                 return (
-                  <View
+                  <Pressable
                     key={t.key}
                     testID={`title-${t.key}`}
-                    accessible
-                    accessibilityLabel={`${t.name} 타이틀 잠김`}
-                    style={[s.tcard, s.tcardLocked]}>
+                    onPress={() => setDetail(t)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${t.name} 타이틀 잠김 — 획득 조건 보기`}
+                    style={({pressed}) => [
+                      s.tcard,
+                      s.tcardLocked,
+                      pressed && {opacity: 0.85},
+                    ]}>
                     {inner}
-                  </View>
+                  </Pressable>
                 );
               })}
             </View>
@@ -727,6 +783,73 @@ export default function ProgressionScreen({
             </View>
           ))}
       </ScrollView>
+
+      {/* 타이틀 상세(획득 조건) 모달 — 잠긴 타이틀 탭 시. 배경 탭으로 닫는다. */}
+      {detail ? (
+        <Pressable
+          style={s.modalBackdrop}
+          testID="title-detail-backdrop"
+          accessibilityRole="button"
+          accessibilityLabel="닫기"
+          onPress={() => setDetail(null)}>
+          <Pressable style={s.modalCard} testID="title-detail" onPress={() => {}}>
+            <View style={s.modalHead}>
+              <Ionicons
+                name={CATEGORY_META[detail.category].icon}
+                size={20}
+                color={detail.unlocked ? TIER_COLORS[detail.tier] : T3}
+              />
+              <Text style={s.modalName} numberOfLines={2}>
+                {detail.name}
+              </Text>
+              <View
+                style={[
+                  s.modalTierChip,
+                  {
+                    backgroundColor: withAlpha(TIER_COLORS[detail.tier], 0.16),
+                    borderColor: withAlpha(TIER_COLORS[detail.tier], 0.5),
+                  },
+                ]}>
+                <Text style={[s.modalTierTxt, {color: TIER_COLORS[detail.tier]}]}>
+                  {TIER_LABEL[detail.tier]}
+                </Text>
+              </View>
+            </View>
+            <Text style={s.modalCategory}>
+              {CATEGORY_META[detail.category].label} 타이틀
+            </Text>
+            <View style={s.modalReqBox}>
+              <Text style={s.modalReqLabel}>획득 조건</Text>
+              <Text style={s.modalReqTxt} testID="title-detail-requirement">
+                {TITLE_REQUIREMENT[detail.key] ?? '러닝·신발 관리를 꾸준히 이어가면 해제돼요.'}
+              </Text>
+            </View>
+            <View
+              style={[
+                s.modalStatus,
+                {
+                  backgroundColor: withAlpha(
+                    detail.unlocked ? TIER_COLORS[detail.tier] : T3,
+                    0.14,
+                  ),
+                },
+              ]}>
+              <Ionicons
+                name={detail.unlocked ? 'checkmark-circle' : 'lock-closed'}
+                size={14}
+                color={detail.unlocked ? TIER_COLORS[detail.tier] : T3}
+              />
+              <Text
+                style={[
+                  s.modalStatusTxt,
+                  {color: detail.unlocked ? TIER_COLORS[detail.tier] : T3},
+                ]}>
+                {detail.unlocked ? '획득 완료' : '아직 잠김'}
+              </Text>
+            </View>
+          </Pressable>
+        </Pressable>
+      ) : null}
     </View>
   );
 }
@@ -971,4 +1094,62 @@ const s = StyleSheet.create({
     letterSpacing: -0.5,
     fontVariant: ['tabular-nums'],
   },
+  // 타이틀 상세(획득 조건) 모달
+  modalBackdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 28,
+  },
+  modalCard: {
+    width: '100%',
+    backgroundColor: CARD,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: SEP,
+    borderRadius: RADIUS.xl,
+    padding: SPACE.xl,
+    gap: SPACE.md,
+  },
+  modalHead: {flexDirection: 'row', alignItems: 'center', gap: 10},
+  modalName: {
+    flex: 1,
+    fontFamily: DISPLAY,
+    color: T1,
+    fontSize: 18,
+    fontWeight: '800',
+    letterSpacing: -0.3,
+  },
+  modalTierChip: {
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: RADIUS.pill,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  modalTierTxt: {fontFamily: FONT, fontSize: 11, fontWeight: '800', letterSpacing: 0.2},
+  modalCategory: {fontFamily: FONT, color: T3, fontSize: 12, fontWeight: '600', marginTop: -4},
+  modalReqBox: {
+    backgroundColor: BG,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: SEP,
+    borderRadius: RADIUS.md,
+    padding: SPACE.lg,
+    gap: 6,
+  },
+  modalReqLabel: {fontFamily: FONT, color: ACCENT, fontSize: 11.5, fontWeight: '800', letterSpacing: 0.3},
+  modalReqTxt: {fontFamily: FONT, color: T1, fontSize: 14, fontWeight: '600', lineHeight: 20},
+  modalStatus: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 6,
+    borderRadius: RADIUS.pill,
+    paddingHorizontal: 11,
+    paddingVertical: 6,
+  },
+  modalStatusTxt: {fontFamily: FONT, fontSize: 12, fontWeight: '700'},
 });
