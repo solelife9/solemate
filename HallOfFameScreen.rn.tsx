@@ -1,7 +1,9 @@
 // ============================================================================
-// HallOfFameScreen.rn.tsx — 명예의 전당(라이브 리더보드) (Slice E · UI)
+// HallOfFameScreen.rn.tsx — 랭킹(라이브 리더보드) (Slice E · UI)
 // ============================================================================
-// 멀티유저 백엔드(/api/v1)의 카테고리별 리더보드와 내 순위를 보여준다. 데이터는 서버가
+// 화면 표시명은 "랭킹"이다("명예의 전당"은 은퇴 신발 박물관 HallOfShoes 전용 — 이름 충돌
+// 회피). 파일/식별자명은 HallOfFame 으로 유지(내부 구현 일관). 멀티유저 백엔드(/api/v1)의
+// 카테고리별 리더보드와 내 순위를 보여준다. 데이터는 서버가
 // 검증된 run/shoe 로 재계산한 값만 쓴다(클라 점수 불신) — 화면은 표시 + 카테고리 선택만.
 //
 // 데이터 소스 seam: lib/progression RankingProvider(keegoRankingProvider). 백엔드 미배포/
@@ -247,7 +249,7 @@ export default function HallOfFameScreen({
           ) : (
             <View style={{width: 38}} />
           )}
-          <Text style={s.title}>명예의 전당</Text>
+          <Text style={s.title}>랭킹</Text>
           <View style={{width: 38}} />
         </View>
         <Text style={s.monthLabel}>{yearMonth} · 이번 달 랭킹</Text>

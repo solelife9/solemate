@@ -153,7 +153,7 @@ export interface ProgressionScreenProps {
   initialState?: ProgressionState;
   /** 뒤로(프로필로 복귀). */
   onBack?: () => void;
-  /** 명예의 전당(라이브 리더보드) 열기 — 헤더 트로피 버튼. 미주입 시 버튼 숨김. */
+  /** 랭킹(라이브 리더보드) 열기 — 헤더 트로피 버튼. 미주입 시 버튼 숨김. */
   onOpenHallOfFame?: () => void;
   // ── 챌린지(Slice C) — 표시 전용. 진행률은 challengeExtProgress 로 카드 내부에서 파생. ──
   /** 사용자가 수락(영속)한 확장 챌린지(monthly/shoe/rotation). App 이 K_CHALLENGES 로 영속한다. */
@@ -383,7 +383,7 @@ export default function ProgressionScreen({
               onPress={onOpenHallOfFame}
               testID="open-hall-of-fame"
               accessibilityRole="button"
-              accessibilityLabel="명예의 전당"
+              accessibilityLabel="랭킹"
               style={({pressed}) => [s.iconBtn, pressed && {backgroundColor: CARD}]}>
               <Ionicons name="trophy" size={19} color={ACCENT} />
             </Pressable>
