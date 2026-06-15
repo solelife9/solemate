@@ -108,11 +108,19 @@ describe('HistoryScreen course map', () => {
     const lines = polylines(root);
     expect(lines.length).toBe(1);
 
-    const expected = projectRoute(ROUTE, {width: 300, height: 180, padding: 16}).svgPoints;
-    expect(expected).not.toBe('');
-    expect(lines[0].props.points).toBe(expected);
-    // four fixes → four "x,y" pairs drawn.
-    expect(lines[0].props.points.split(' ')).toHaveLength(ROUTE.length);
+    // 렌더러 무관 검증: 경로가 Polyline 에 실렸는가 — 진짜 지도(react-native-maps)면
+    // coordinates(위경도 배열), SVG 폴백이면 points(projectRoute 문자열). 둘 중 무엇이든
+    // ROUTE 의 4개 좌표를 그대로 그려야 한다.
+    const p = lines[0].props as {points?: string; coordinates?: unknown[]};
+    if (p.points != null) {
+      const expected = projectRoute(ROUTE, {width: 300, height: 180, padding: 16}).svgPoints;
+      expect(expected).not.toBe('');
+      expect(p.points).toBe(expected);
+      expect(p.points.split(' ')).toHaveLength(ROUTE.length);
+    } else {
+      expect(Array.isArray(p.coordinates)).toBe(true);
+      expect(p.coordinates).toHaveLength(ROUTE.length);
+    }
   });
 
   test('a run WITHOUT a stored route renders no polyline (map hidden gracefully)', async () => {

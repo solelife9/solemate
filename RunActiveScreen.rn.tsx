@@ -19,37 +19,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Svg, { Path, Circle } from 'react-native-svg';
 
-// react-native-maps 는 네이티브 모듈(RNMapsAirModule)을 요구한다. maps 가 아직 네이티브
-// 바이너리에 링크되지 않은 빌드(부분 통합 디버그 등)에서는 top-level import 만으로
-// getEnforcing 이 throw 해 앱 전체가 죽는다. 옵셔널 require 로 감싸 그 경우 지도만
-// 플레이스홀더로 폴백하고 나머지 화면·기능은 정상 동작하게 한다(네이티브 재빌드 후 자동 복구).
-let MapView: any = null;
-let Polyline: any = null;
-let Marker: any = null;
-let PROVIDER_GOOGLE: any = undefined;
-try {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const maps = require('react-native-maps');
-  MapView = maps.default ?? maps.MapView;
-  Polyline = maps.Polyline;
-  Marker = maps.Marker;
-  PROVIDER_GOOGLE = maps.PROVIDER_GOOGLE;
-} catch {
-  // 네이티브 미링크 — 지도는 플레이스홀더로 폴백.
-}
-const MAPS_AVAILABLE = !!MapView;
-
-const DARK_MAP_STYLE = [
-  { elementType: 'geometry', stylers: [{ color: '#0f0f10' }] },
-  { elementType: 'labels.text.fill', stylers: [{ color: '#6b6b72' }] },
-  { elementType: 'labels.text.stroke', stylers: [{ color: '#0f0f10' }] },
-  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#262626' }] },
-  { featureType: 'road.arterial', elementType: 'geometry', stylers: [{ color: '#333338' }] },
-  { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#3a3a3f' }] },
-  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#07070a' }] },
-  { featureType: 'poi', stylers: [{ visibility: 'off' }] },
-  { featureType: 'transit', stylers: [{ visibility: 'off' }] },
-];
+// 러닝 중 화면엔 지도를 두지 않는다. 야외·데이터 없음(공기계)에서 Google Maps 타일이
+// 안 떠 흰 "Google" 화면이 컨트롤(일시정지/정지)을 가려 저장조차 못 하는 사고가 있었다.
+// → 라이브 경로 지도는 러닝이 끝난 뒤 "상세보기"에서 보여준다(보통 WiFi 환경). GPS 거리·
+// 페이스 기록은 지도와 무관하게 계속된다.
 
 const C = {
   bg: '#000000', surface: '#0F0F10',
@@ -121,7 +94,6 @@ export default function RunActiveScreen({
   cadence = 174, calories = 205, elevationM = 46, gpsLevel = 3,
   paused: pausedProp, onPause, onStop,
   permLost = false, onOpenSettings, statusLabel,
-  liveCoords,
 }: {
   shoeLabel?: string; distanceKm?: number; goalKm?: number;
   timeLabel?: string; paceLabel?: string;
@@ -237,45 +209,10 @@ export default function RunActiveScreen({
         ))}
       </View>
 
-      {/* 라이브 지도: 좌표 2개 이상 + maps 네이티브 사용 가능일 때 표시.
-          maps 미링크 빌드에서는 좌표가 있어도 어두운 플레이스홀더로 폴백(앱 안 죽음). */}
-      {liveCoords && liveCoords.length >= 2 && MAPS_AVAILABLE ? (
-        <View style={r.mapWrap}>
-          <MapView
-            provider={PROVIDER_GOOGLE}
-            style={StyleSheet.absoluteFill}
-            customMapStyle={DARK_MAP_STYLE}
-            region={{
-              latitude: liveCoords[liveCoords.length - 1].lat,
-              longitude: liveCoords[liveCoords.length - 1].lon,
-              latitudeDelta: 0.006,
-              longitudeDelta: 0.006,
-            }}
-            scrollEnabled={false}
-            zoomEnabled={false}
-            rotateEnabled={false}
-            pitchEnabled={false}
-            toolbarEnabled={false}
-          >
-            <Polyline
-              coordinates={liveCoords.map(p => ({ latitude: p.lat, longitude: p.lon }))}
-              strokeColor={C.accent}
-              strokeWidth={4}
-              lineCap="round"
-              lineJoin="round"
-            />
-            <Marker
-              coordinate={{ latitude: liveCoords[liveCoords.length - 1].lat, longitude: liveCoords[liveCoords.length - 1].lon }}
-              anchor={{ x: 0.5, y: 0.5 }}
-              tracksViewChanges={false}
-            >
-              <View style={r.positionDot} />
-            </Marker>
-          </MapView>
-        </View>
-      ) : (
-        <View style={{ flex: 1 }} />
-      )}
+      {/* 러닝 중엔 지도를 두지 않는다(야외·데이터 없음에서 타일 실패로 컨트롤이 가려지는
+          사고 방지). 경로 지도는 종료 후 상세보기에서 표시. 여기선 컨트롤을 하단에
+          고정하는 여백만 둔다. */}
+      <View style={{ flex: 1 }} />
 
       {/* controls */}
       <View style={r.controls}>
