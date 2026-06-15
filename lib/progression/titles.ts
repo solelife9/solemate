@@ -23,7 +23,6 @@
 // Rain Runner: OMITTED — 날씨가 추적되지 않아 정직하게 판정할 수 없으므로 v1 에서 제외한다
 // (spec Out of Scope). 데이터가 생기면 hidden 으로 추가.
 // ============================================================================
-import {computeRank} from './rank';
 import {isPerfectOrBetter, isSmartOrBetter} from './retirementGrade';
 import {
   PerShoeStats,
@@ -83,16 +82,6 @@ function tenureDays(ctx: ProgressionContext): number {
   return Math.max(0, Math.floor((now - ms) / DAY_MS));
 }
 
-/** 실제로 사용한(런 ≥1) 신발 수. */
-function shoesUsedCount(ctx: ProgressionContext): number {
-  return shoeStats(ctx).filter(s => nonNeg(s.runs) >= 1).length;
-}
-
-/** 일관되게 사용한(런 ≥3) 신발 수 — 일회성 착용 제외. */
-function shoesUsedConsistentlyCount(ctx: ProgressionContext): number {
-  return shoeStats(ctx).filter(s => nonNeg(s.runs) >= 3).length;
-}
-
 /** km/maxKm 비율 — maxKm 미상이면 null(판정 불가). */
 function wearRatio(s: PerShoeStats): number | null {
   const max = nonNeg(s.maxKm);
@@ -144,16 +133,8 @@ function perfectRetirementCount(ctx: ProgressionContext): number {
   return retirementGrades(ctx).filter(isPerfectOrBetter).length;
 }
 
-// 평가축 재사용(권위=rank.ts). computeRank 는 순수·메모이즈 → ctx 참조당 1회만 계산.
-function mgmtPillar(ctx: ProgressionContext): number {
-  return computeRank(ctx).pillars.shoeManagement;
-}
-function rotationPillar(ctx: ProgressionContext): number {
-  return computeRank(ctx).pillars.rotation;
-}
-function injuryPillar(ctx: ProgressionContext): number {
-  return computeRank(ctx).pillars.injuryPrevention;
-}
+// 신발관리 품질은 rank 평가축(이제 업적 기반)에 의존하지 않고 **직접 ctx**로 판정한다
+// (순환 제거). 핵심 지표 = allActiveHealthy(활성 신발 전부 과사용 아님) + 테뉴어/은퇴 품질.
 
 // ============================================================================
 // 타이틀 카탈로그(권위) — 카테고리별 사다리 + hidden
@@ -243,69 +224,28 @@ const SHOE_TITLES: TitleDef[] = [
     criterion: ctx => nonNeg(ctx.registeredShoeCount) >= 10,
   },
   {
-    // mgmt≥0.9 를 ≥6개월 유지 — 현재 mgmt + 충분한 테뉴어로 게이트(히스토리 충족 전 잠금).
+    // 활성 신발 전부 건강(과사용 0)을 6개월 이상 유지.
     key: 'shoe_master',
     name: '신발 마스터',
     category: 'shoeManagement',
     tier: 'diamond',
-    criterion: ctx => mgmtPillar(ctx) >= 0.9 && tenureDays(ctx) >= MONTH_6,
+    criterion: ctx => allActiveHealthy(ctx) && tenureDays(ctx) >= MONTH_6,
   },
   {
     key: 'keego_master',
     name: 'KEEGO 마스터',
     category: 'shoeManagement',
     tier: 'master',
-    criterion: ctx => mgmtPillar(ctx) >= 0.9 && tenureDays(ctx) >= YEAR_1,
+    criterion: ctx => allActiveHealthy(ctx) && tenureDays(ctx) >= YEAR_1,
   },
   {
-    // Keep Going — mgmt≥0.95 & ≥12개월(상위 0.1% 로컬 프록시; 크로스유저 백엔드는 slice E/F).
+    // Keep Going — 1년 이상 신발을 건강하게 + 여러 켤레를 제대로 은퇴(잘 관리한 흔적).
     key: 'keep_going',
     name: 'Keep Going',
     category: 'shoeManagement',
     tier: 'legend',
-    criterion: ctx => mgmtPillar(ctx) >= 0.95 && tenureDays(ctx) >= YEAR_1,
-  },
-];
-
-// ── rotation: 사용 켤레 수 → 로테이션 균형·기간 ───────────────────────────────────
-const ROTATION_TITLES: TitleDef[] = [
-  {
-    key: 'rotation_starter',
-    name: '로테이션 입문',
-    category: 'rotation',
-    tier: 'bronze',
-    criterion: ctx => shoesUsedCount(ctx) >= 2,
-  },
-  {
-    // 3켤레를 일관되게(각 런 ≥3) 사용 — 일회성 보유가 아닌 실제 로테이션.
-    key: 'rotation_balanced',
-    name: '균형 잡힌 러너',
-    category: 'rotation',
-    tier: 'silver',
-    criterion: ctx => shoesUsedConsistentlyCount(ctx) >= 3,
-  },
-  {
-    key: 'rotation_expert',
-    name: '로테이션 전문가',
-    category: 'rotation',
-    tier: 'gold',
-    criterion: ctx => rotationPillar(ctx) >= 0.7 && tenureDays(ctx) >= MONTH_3,
-  },
-  {
-    // 탁월한 장기 로테이션(더 높은 균형 + 다년).
-    key: 'rotation_architect',
-    name: '로테이션 설계자',
-    category: 'rotation',
-    tier: 'master',
-    criterion: ctx => rotationPillar(ctx) >= 0.8 && tenureDays(ctx) >= YEAR_2,
-  },
-  {
-    // 엘리트 로테이션(거의 완벽한 균형 + 다년).
-    key: 'rotation_legend',
-    name: '로테이션 레전드',
-    category: 'rotation',
-    tier: 'legend',
-    criterion: ctx => rotationPillar(ctx) >= 0.9 && tenureDays(ctx) >= YEAR_2,
+    criterion: ctx =>
+      allActiveHealthy(ctx) && tenureDays(ctx) >= YEAR_1 && retirementCount(ctx) >= 3,
   },
 ];
 
@@ -334,19 +274,22 @@ const INJURY_TITLES: TitleDef[] = [
     criterion: ctx => allActiveHealthy(ctx) && tenureDays(ctx) >= MONTH_6,
   },
   {
-    // 탁월한 부상예방(평가축 ≥0.9, 은퇴 포함 전반 건강) + 1년.
+    // 1년간 활성 신발 건강 유지 + 제때 교체(grade good 이상) 1켤레 이상.
     key: 'injury_master',
     name: '부상 예방 마스터',
     category: 'injuryPrevention',
     tier: 'diamond',
-    criterion: ctx => injuryPillar(ctx) >= 0.9 && tenureDays(ctx) >= YEAR_1,
+    criterion: ctx =>
+      allActiveHealthy(ctx) && tenureDays(ctx) >= YEAR_1 && smartOrBetterRetirementCount(ctx) >= 1,
   },
   {
+    // 2년간 건강 유지 + 제때 교체 3켤레 이상(꾸준히 잘 교체).
     key: 'injury_iron',
     name: '철인 러너',
     category: 'injuryPrevention',
     tier: 'legend',
-    criterion: ctx => injuryPillar(ctx) >= 0.95 && tenureDays(ctx) >= YEAR_2,
+    criterion: ctx =>
+      allActiveHealthy(ctx) && tenureDays(ctx) >= YEAR_2 && smartOrBetterRetirementCount(ctx) >= 3,
   },
 ];
 
@@ -497,7 +440,6 @@ const RETIREMENT_TITLES: TitleDef[] = [
 export const TITLES: readonly TitleDef[] = [
   ...RUNNING_TITLES,
   ...SHOE_TITLES,
-  ...ROTATION_TITLES,
   ...INJURY_TITLES,
   ...CONSISTENCY_TITLES,
   ...RETIREMENT_TITLES,

@@ -1,10 +1,10 @@
 // ============================================================================
 // lib/progression/guidance.ts — 랭크 "어떻게 오르나" 안내(순수 셀렉터)
 // ============================================================================
-// 랭크가 6개 평가축의 가중합이라는 사실을 사용자에게 **보여주기 위한** 파생 뷰.
+// 랭크가 3개 평가축의 가중합이라는 사실을 사용자에게 **보여주기 위한** 파생 뷰.
 // rank.computeRank 가 만든 RankResult(점수·티어·필러)만 읽어:
 //   · 다음 티어와 거기까지의 진행도(현재 티어 밴드 안에서 0..1),
-//   · 6개 평가축을 표시 순서·라벨·가중치와 함께,
+//   · 3개 평가축을 표시 순서·라벨·가중치와 함께,
 //   · "가장 빠른 길"(가중 여유 weight×(1-value) 최대인 축)
 // 을 돌려준다. 가중치/티어 컷오프의 권위는 rank.ts 한곳(WEIGHTS·TIER_CUTOFFS) — 재정의 금지.
 //
@@ -28,7 +28,7 @@ export interface RankGuidance {
   nextTier: RankTier | null;
   /** 다음 티어까지 진행도(현재 티어 밴드 내 0..1). legend → 1. */
   progressToNext: number;
-  /** 6개 평가축(고정 표시 순서). */
+  /** 3개 평가축(고정 표시 순서). */
   pillars: PillarGuide[];
   /** 가장 효율적으로 점수를 올릴 축(가중 여유 최대). legend/포화면 null. */
   topLever: PillarGuide | null;
@@ -36,12 +36,9 @@ export interface RankGuidance {
 
 /** 표시 순서 + 한국어 라벨(프레젠테이션 전용 — 데이터 아님). */
 const PILLAR_META: ReadonlyArray<{key: keyof PillarScores; label: string}> = [
-  {key: 'running', label: '러닝'},
+  {key: 'running', label: '거리'},
   {key: 'consistency', label: '꾸준함'},
   {key: 'shoeManagement', label: '신발 관리'},
-  {key: 'rotation', label: '로테이션'},
-  {key: 'injuryPrevention', label: '부상 예방'},
-  {key: 'engagement', label: '참여'},
 ];
 
 /** 티어 오름차순(Bronze→Legend) — TIER_CUTOFFS(내림차순)에서 파생, 단일 출처. */

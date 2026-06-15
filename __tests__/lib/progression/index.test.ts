@@ -112,8 +112,7 @@ describe('getProgression: 시드 데이터 → 일관된 뷰', () => {
     for (const a of view.achievements) {
       expect(collected.has(a.key)).toBe(a.unlocked);
     }
-    // 조기 은퇴(s2 0.8) → Smart Swap 업적 + injury_smart 타이틀 함께 충족.
-    expect(collected.has('ach_smart_swap')).toBe(true);
+    // 조기 은퇴(s2 0.8) → injury_smart(현명한 러너) 타이틀 충족.
     expect(view.titles.unlocked.map(t => t.key)).toContain('injury_smart');
   });
 });

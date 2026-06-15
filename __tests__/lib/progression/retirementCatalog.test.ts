@@ -133,36 +133,36 @@ describe('은퇴 카운트 업적: 임계 경계', () => {
 });
 
 // ============================================================================
-// 2) 등급 업적 — Smart Replacement(smart 이상) / Perfect Timing(perfect)
+// 2) 제때 교체(타이밍) 업적 — 권장수명 근처(good 이상)에 교체한 수(히든 보너스, 랭크 제외)
 // ============================================================================
-describe('은퇴 등급 업적', () => {
-  test('Smart Replacement: smart/perfect/hallOfFame 등급 은퇴가 ≥1 이면 언락', () => {
-    const def = achievementDef('ach_smart_replacement')!;
-    expect(def.unlocked(ctxWithRetired(retiredRecords(1, 'smart')))).toBe(true);
-    expect(def.unlocked(ctxWithRetired(retiredRecords(1, 'perfect')))).toBe(true);
-    expect(def.unlocked(ctxWithRetired(retiredRecords(1, 'hallOfFame')))).toBe(true);
-    // standard/good 만으로는 미언락(아무리 많아도).
+describe('제때 교체 타이밍 업적', () => {
+  test('제때 교체 1: good/smart/perfect/hallOfFame ≥1 이면 언락(standard 는 불가)', () => {
+    const def = achievementDef('ach_good_timing_1')!;
+    for (const g of ['good', 'smart', 'perfect', 'hallOfFame'] as RetirementGrade[]) {
+      expect(def.unlocked(ctxWithRetired(retiredRecords(1, g)))).toBe(true);
+    }
+    // standard(너무 일찍/늦게)만으로는 아무리 많아도 미언락.
     expect(def.unlocked(ctxWithRetired(retiredRecords(9, 'standard')))).toBe(false);
-    expect(def.unlocked(ctxWithRetired(retiredRecords(9, 'good')))).toBe(false);
   });
 
-  test('Perfect Timing: perfect/hallOfFame 등급 은퇴가 ≥1 이면 언락(smart 로는 불가)', () => {
-    const def = achievementDef('ach_perfect_timing')!;
-    expect(def.unlocked(ctxWithRetired(retiredRecords(1, 'perfect')))).toBe(true);
-    expect(def.unlocked(ctxWithRetired(retiredRecords(1, 'hallOfFame')))).toBe(true);
-    // smart 는 "perfect" 미만 → 미언락(smart-or-better 와 구분).
-    expect(def.unlocked(ctxWithRetired(retiredRecords(5, 'smart')))).toBe(false);
+  test('제때 교체 3: good 이상 3건 필요', () => {
+    const def = achievementDef('ach_good_timing_3')!;
+    expect(
+      def.unlocked(ctxWithRetired(recordsByGrade({good: 2, smart: 1, standard: 5}))),
+    ).toBe(true);
+    expect(
+      def.unlocked(ctxWithRetired(recordsByGrade({smart: 2, standard: 9}))),
+    ).toBe(false);
   });
 
-  test('등급 업적 진행: 이진(0/1 ↔ 1/1)이 언락과 일치', () => {
-    const smart = achievementDef('ach_smart_replacement')!;
-    expect(achievementProgress(smart, ctxWithRetired(retiredRecords(3, 'standard')))).toEqual(
-      {current: 0, target: 1},
-    );
-    expect(achievementProgress(smart, ctxWithRetired(retiredRecords(3, 'smart')))).toEqual({
-      current: 1,
-      target: 1,
-    });
+  test('진행: good 이상 수 / target (초과 캡)', () => {
+    const def = achievementDef('ach_good_timing_3')!;
+    expect(
+      achievementProgress(def, ctxWithRetired(recordsByGrade({good: 2, standard: 1}))),
+    ).toEqual({current: 2, target: 3});
+    expect(
+      achievementProgress(def, ctxWithRetired(recordsByGrade({perfect: 5}))),
+    ).toEqual({current: 3, target: 3});
   });
 });
 
@@ -172,10 +172,10 @@ describe('은퇴 등급 업적', () => {
 describe('anti-scenario: 은퇴 0건 무언락', () => {
   const RETIREMENT_ACH_KEYS = [
     'ach_first_retirement',
+    'ach_retire_3',
     'ach_retire_5',
     'ach_retire_10',
-    'ach_smart_replacement',
-    'ach_perfect_timing',
+    'ach_good_timing_1',
   ];
 
   test('은퇴 레코드 0건이면 모든 은퇴 업적이 잠금', () => {
@@ -203,8 +203,9 @@ describe('은퇴 업적 포인트 = rarity 권위', () => {
   // 부상 예방 그룹으로 이동했다 — 카테고리 단언은 부상 예방 쪽 케이스 참조.
   const expected: Array<[string, keyof typeof POINTS_BY_RARITY]> = [
     ['ach_first_retirement', 'bronze'],
-    ['ach_retire_5', 'silver'],
-    ['ach_retire_10', 'gold'],
+    ['ach_retire_3', 'silver'],
+    ['ach_retire_5', 'gold'],
+    ['ach_retire_10', 'diamond'],
   ];
 
   test.each(expected)('%s points == POINTS_BY_RARITY[%s]', (key, rarity) => {
@@ -232,17 +233,19 @@ describe('업적 그룹 정합(은퇴=개수 / 타이밍품질=부상예방)', (
     ]);
   });
 
-  test('좋은 타이밍/완벽한 타이밍은 부상 예방(category·group)으로 이동', () => {
-    for (const key of ['ach_smart_replacement', 'ach_perfect_timing']) {
+  test('제때 교체 타이밍 업적은 히든(group)·부상예방(category)이며 랭크 제외', () => {
+    for (const key of ['ach_good_timing_1', 'ach_good_timing_3', 'ach_good_timing_5']) {
       const def = achievementDef(key)!;
       expect(def.category).toBe('injuryPrevention');
-      expect(def.group).toBe('injuryPrevention');
+      expect(def.group).toBe('hidden'); // 히든 보너스 — 랭크 축(신발관리)엔 안 들어감
     }
-    // '스마트 교체' → '좋은 타이밍' 으로 이름 정리(부상예방 '현명한 교체'와 구분).
-    expect(achievementDef('ach_smart_replacement')!.name).toBe('좋은 타이밍');
+    expect(achievementDef('ach_good_timing_1')!.name).toBe('제때 교체');
   });
 
-  test('스마트 교체 5회 업적은 제거됐다', () => {
+  test('옛 등급 업적(스마트/완벽 타이밍·현명한 교체)은 제거됐다', () => {
+    expect(achievementDef('ach_smart_replacement')).toBeUndefined();
+    expect(achievementDef('ach_perfect_timing')).toBeUndefined();
+    expect(achievementDef('ach_smart_swap')).toBeUndefined();
     expect(achievementDef('ach_smart_5')).toBeUndefined();
   });
 });

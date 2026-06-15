@@ -24,21 +24,16 @@ export type RankTier =
   | 'legend';
 
 /**
- * 6개 평가축 점수(각 0..1로 정규화). 거리 단독이 랭크를 좌우하지 못하게 가중 분산한다.
- *   · running           — 누적/단일 거리 (log 스케일로 포화)
- *   · consistency       — 스트릭/주간 활성도
- *   · shoeManagement    — 신발 등록·수명 관리 품질
- *   · rotation          — 신발 로테이션 다양성
- *   · injuryPrevention  — 과사용/급증 회피
- *   · engagement        — 업적 포인트/챌린지/타이틀 참여
+ * 3개 랭크 축 진행도(각 0..1). 업적 진행률을 축별로 가중 집계한 값(achievements.axisProgress).
+ *   · running          — 거리(첫 이정표 + 누적 거리 업적)
+ *   · consistency      — 꾸준함(러닝 횟수 + 지속가능 습관 업적)
+ *   · shoeManagement   — 신발관리(소유 + 은퇴 + 건강 유지 업적)
+ * 거리 단독은 한 축(0.35)이라 골드가 천장 — 상위 티어는 세 축이 필요(다차원 철학).
  */
 export interface PillarScores {
   running: number;
   consistency: number;
   shoeManagement: number;
-  rotation: number;
-  injuryPrevention: number;
-  engagement: number;
 }
 
 /** computeRank 결과. score 0..100, 티어, 티어 색(TIER_COLORS), 평가축 스냅샷. */
@@ -58,7 +53,6 @@ export type TitleCategory =
   | 'running'
   | 'consistency'
   | 'shoeManagement'
-  | 'rotation'
   | 'injuryPrevention'
   | 'hidden'
   | 'retirement';
@@ -107,7 +101,6 @@ export type AchievementGroup =
   | 'consistency'
   | 'shoeCollection'
   | 'shoeLife'
-  | 'rotation'
   | 'injuryPrevention'
   | 'retirement'
   | 'hidden';

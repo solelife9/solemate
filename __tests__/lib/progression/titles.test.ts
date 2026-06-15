@@ -154,75 +154,25 @@ describe('shoeManagement 사다리', () => {
     expect(evaluateTitles(below)).not.toContain('shoe_master');
   });
 
-  test('KEEGO Master: ≥12개월, Keep Going: mgmt≥0.95 & ≥12개월', () => {
+  test('KEEGO Master(1년 건강) / Keep Going(1년 건강 + 은퇴 3켤레)', () => {
     const yr = emptyCtx({perShoe: perShoeMap(healthyShoe('a', daysAgo(365)))});
-    const keys = evaluateTitles(yr);
-    expect(keys).toContain('keego_master');
-    expect(keys).toContain('keep_going'); // 전부 건강 → mgmt=1 ≥0.95
+    expect(evaluateTitles(yr)).toContain('keego_master');
+    // Keep Going 은 1년 건강 + 은퇴 3켤레 필요 — 은퇴 없으면 잠금.
+    expect(evaluateTitles(yr)).not.toContain('keep_going');
+    const withRetire = emptyCtx({
+      perShoe: perShoeMap(healthyShoe('a', daysAgo(365))),
+      retirementCount: 3,
+    });
+    expect(evaluateTitles(withRetire)).toContain('keep_going');
     // 6개월만으론 12개월 타이틀은 잠금.
     const half = evaluateTitles(
       emptyCtx({perShoe: perShoeMap(healthyShoe('a', daysAgo(182)))}),
     );
     expect(half).not.toContain('keego_master');
-    expect(half).not.toContain('keep_going');
   });
 });
 
-// ============================================================================
-// 3) rotation 사다리 — 사용 켤레 + 균형·기간
-// ============================================================================
-describe('rotation 사다리', () => {
-  test('Rotation Starter: 사용(런≥1) 2켤레 경계', () => {
-    const two = emptyCtx({
-      perShoe: perShoeMap(
-        shoe({id: 'a', runs: 1, km: 10}),
-        shoe({id: 'b', runs: 1, km: 10}),
-      ),
-    });
-    const one = emptyCtx({perShoe: perShoeMap(shoe({id: 'a', runs: 5, km: 50}))});
-    expect(evaluateTitles(two)).toContain('rotation_starter');
-    expect(evaluateTitles(one)).not.toContain('rotation_starter');
-  });
-
-  test('Balanced Runner: 일관 사용(런≥3) 3켤레', () => {
-    const three = emptyCtx({
-      perShoe: perShoeMap(
-        shoe({id: 'a', runs: 3, km: 30}),
-        shoe({id: 'b', runs: 3, km: 30}),
-        shoe({id: 'c', runs: 3, km: 30}),
-      ),
-    });
-    expect(evaluateTitles(three)).toContain('rotation_balanced');
-    // 한 켤레만 일회성(런 2) → 일관 3켤레 미충족.
-    const weak = emptyCtx({
-      perShoe: perShoeMap(
-        shoe({id: 'a', runs: 3, km: 30}),
-        shoe({id: 'b', runs: 3, km: 30}),
-        shoe({id: 'c', runs: 2, km: 20}),
-      ),
-    });
-    expect(evaluateTitles(weak)).not.toContain('rotation_balanced');
-  });
-
-  test('Rotation Expert: rotation≥0.7 & 테뉴어 3mo / Architect·Legend: ≥0.8·0.9 & 2yr', () => {
-    // 균등 사용 2켤레 → rotation 평가축 = 1.0.
-    const balanced = (firstWorn: string) =>
-      emptyCtx({
-        perShoe: perShoeMap(
-          shoe({id: 'a', km: 300, maxKm: 600, runs: 30, firstWorn}),
-          shoe({id: 'b', km: 300, maxKm: 600, runs: 30, firstWorn}),
-        ),
-      });
-    expect(evaluateTitles(balanced(daysAgo(90)))).toContain('rotation_expert');
-    expect(evaluateTitles(balanced(daysAgo(89)))).not.toContain(
-      'rotation_expert',
-    );
-    // 균형이 충분하면 architect/legend 도(rotation=1 ≥0.8,0.9) 2년에서 함께.
-    expect(evaluateTitles(balanced(daysAgo(730)))).toEqual(
-      expect.arrayContaining(['rotation_architect', 'rotation_legend']),
-    );
-  });
-});
+// (로테이션 사다리는 제거됨 — 로테이션은 정상 행동을 페널티화해 랭크·타이틀에서 삭제.)
 
 // ============================================================================
 // 4) injuryPrevention 사다리
@@ -280,20 +230,23 @@ describe('injuryPrevention 사다리', () => {
     expect(evaluateTitles(overdue)).not.toContain('injury_wise');
   });
 
-  test('Prevention Expert(6mo) → Master(1yr) → Iron(2yr): 기간 게이트', () => {
-    const healthy = (firstWorn: string) =>
-      emptyCtx({perShoe: perShoeMap(healthyShoe('a', firstWorn))});
-    expect(evaluateTitles(healthy(daysAgo(182)))).toContain(
-      'injury_prevention_expert',
-    );
-    expect(evaluateTitles(healthy(daysAgo(181)))).not.toContain(
-      'injury_prevention_expert',
-    );
-    expect(evaluateTitles(healthy(daysAgo(365)))).toContain('injury_master');
-    // 2년 + 전부 건강(injury 평가축=1 ≥0.95) → iron.
-    expect(evaluateTitles(healthy(daysAgo(730)))).toEqual(
-      expect.arrayContaining(['injury_iron']),
-    );
+  test('Prevention Expert(6mo) → Master(1yr+제때1) → Iron(2yr+제때3): 기간·교체 게이트', () => {
+    const healthy = (firstWorn: string, grades: string[] = []) =>
+      emptyCtx({
+        perShoe: perShoeMap(healthyShoe('a', firstWorn)),
+        retirementGrades: grades as never,
+        retirementCount: grades.length,
+      });
+    // Expert: 6개월 건강 유지만으로 충족.
+    expect(evaluateTitles(healthy(daysAgo(182)))).toContain('injury_prevention_expert');
+    expect(evaluateTitles(healthy(daysAgo(181)))).not.toContain('injury_prevention_expert');
+    // Master: 1년 건강 + 제때 교체(smart 이상) 1켤레.
+    expect(evaluateTitles(healthy(daysAgo(365), ['smart']))).toContain('injury_master');
+    expect(evaluateTitles(healthy(daysAgo(365)))).not.toContain('injury_master'); // 은퇴 없음 → 잠금
+    // Iron: 2년 + 제때 교체 3켤레.
+    expect(
+      evaluateTitles(healthy(daysAgo(730), ['smart', 'perfect', 'smart'])),
+    ).toContain('injury_iron');
   });
 });
 
@@ -438,14 +391,15 @@ describe('카탈로그 무결성', () => {
     expect(Object.keys(TITLES_BY_KEY).length).toBe(TITLES.length);
   });
 
-  test('모든 카테고리 사다리가 존재한다', () => {
+  test('카테고리 사다리가 존재한다(로테이션 제거)', () => {
     const cats = new Set(TITLES.map(t => t.category));
     [
       'running',
       'shoeManagement',
-      'rotation',
       'injuryPrevention',
       'consistency',
+      'retirement',
     ].forEach(c => expect(cats.has(c as never)).toBe(true));
+    expect(cats.has('rotation' as never)).toBe(false);
   });
 });

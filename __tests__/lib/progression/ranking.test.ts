@@ -22,9 +22,6 @@ const rank: RankResult = {
     running: 0.5,
     consistency: 0.5,
     shoeManagement: 0.5,
-    rotation: 0.5,
-    injuryPrevention: 0.5,
-    engagement: 0.5,
   },
 };
 

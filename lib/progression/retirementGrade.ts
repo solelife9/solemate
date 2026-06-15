@@ -20,7 +20,6 @@
 // PURE(iron law): 입력 불변, NaN/음수/누락 → 안전값(usedKm<0→0, recommendedKm≤0→standard),
 // 어떤 입력에서도 throw 금지.
 // ============================================================================
-import {computeRank} from './rank';
 // PB 하이라이트 키의 단일 출처는 retirement.ts (날조 금지 — 실제 PB 키만 인정).
 // retirement.ts ↔ retirementGrade.ts 는 상호 import 하지만, 양쪽 모두 상대 export 를
 // **함수 본문에서 지연 참조**(모듈 평가 시점이 아님)하므로 순환은 무해하다.
@@ -108,13 +107,19 @@ function isHealthyLifecycle(grade: RetirementGrade): boolean {
   return grade === 'smart' || grade === 'perfect';
 }
 
-/** shoeManagement pillar(0..1). rank 엔진 재사용(권위=rank.ts), 방어적. */
-function mgmtPillar(ctx: ProgressionContext): number {
-  try {
-    return nonNeg(computeRank(ctx)?.pillars?.shoeManagement);
-  } catch {
-    return 0;
-  }
+/**
+ * 신발 관리 품질(0..1) = 활성·수명 알려진 신발 중 과사용(권장수명 100% 초과) 아닌 비율.
+ * rank 엔진(이제 업적 기반)에 의존하지 않고 직접 ctx 로 판정한다(순환 제거). 방어적.
+ */
+function mgmtHealthyShare(ctx: ProgressionContext): number {
+  const map = ctx?.perShoe;
+  if (!map || typeof map !== 'object') return 0;
+  const active = Object.values(map).filter(
+    s => s && !s.retired && nonNeg(s.maxKm) > 0,
+  );
+  if (active.length === 0) return 0;
+  const healthy = active.filter(s => nonNeg(s.km) / nonNeg(s.maxKm) <= 1).length;
+  return healthy / active.length;
 }
 
 /** 요약 하이라이트에 그 신발로 실제 세운 PB 키가 있는가(날조 금지). */
@@ -145,7 +150,7 @@ export function gradeRetirement(
     isHealthyLifecycle(base) &&
     ctx &&
     typeof ctx === 'object' &&
-    mgmtPillar(ctx) >= MGMT_HIGH_THRESHOLD &&
+    mgmtHealthyShare(ctx) >= MGMT_HIGH_THRESHOLD &&
     hasRealPB(summary)
   ) {
     return 'hallOfFame';

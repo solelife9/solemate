@@ -160,9 +160,9 @@ describe('Hall of Fame 특별 등급', () => {
   });
 
   test('관리 점수 낮음 → 승격 안 함(기본 perfect)', () => {
-    // 활성·수명알려진 신발이 overdue(초과 마모) → shoeManagement 낮음.
+    // 활성·수명알려진 신발이 과사용(권장수명 100% 초과) → 건강 비율 0 → 관리 점수 낮음.
     const lowMgmt = emptyCtx({
-      perShoe: {s1: shoe({id: 's1', km: 490, maxKm: 500, retired: false})},
+      perShoe: {s1: shoe({id: 's1', km: 600, maxKm: 500, retired: false})},
     });
     expect(gradeRetirement(REC, REC, pbSummary, lowMgmt)).toBe('perfect');
   });

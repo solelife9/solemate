@@ -83,29 +83,7 @@ function progressOf(key: string, ctx: ProgressionContext) {
 // 1) progress current/target — 명시 예시 Trusted Partner 348/500km
 // ============================================================================
 describe('progress current/target', () => {
-  test('Trusted Partner: 한 켤레 348km → {current:348, target:500}, 미언락', () => {
-    const ctx = emptyCtx({
-      perShoe: perShoeMap(shoe({id: 'a', km: 348, maxKm: 600, runs: 30})),
-    });
-    expect(progressOf('ach_trusted_partner', ctx)).toEqual({
-      current: 348,
-      target: 500,
-    });
-    expect(achievementDef('ach_trusted_partner')!.unlocked(ctx)).toBe(false);
-  });
-
-  test('Trusted Partner: 500km 도달 → 언락 + current=target(초과는 target 으로 캡)', () => {
-    const at = emptyCtx({perShoe: perShoeMap(shoe({id: 'a', km: 500, maxKm: 600}))});
-    expect(achievementDef('ach_trusted_partner')!.unlocked(at)).toBe(true);
-    const over = emptyCtx({perShoe: perShoeMap(shoe({id: 'a', km: 720, maxKm: 800}))});
-    expect(progressOf('ach_trusted_partner', over)).toEqual({
-      current: 500,
-      target: 500,
-    });
-    expect(achievementDef('ach_trusted_partner')!.unlocked(over)).toBe(true);
-  });
-
-  test('누적 거리 진행: 1000km Journey 가 실제 누적과 일치', () => {
+  test('누적 거리 진행: 1000km 가 실제 누적과 일치', () => {
     const ctx = emptyCtx({cumulativeKm: 640});
     expect(progressOf('ach_distance_1000', ctx)).toEqual({
       current: 640,
@@ -113,22 +91,17 @@ describe('progress current/target', () => {
     });
   });
 
-  test('스트릭 진행: Week Warrior current=longestStreak', () => {
-    expect(progressOf('ach_streak_7', emptyCtx({longestStreak: 5}))).toEqual({
-      current: 5,
-      target: 7,
-    });
+  test('누적 거리 진행: 5000km 도달 → 언락 + current=target(초과 캡)', () => {
+    const at = emptyCtx({cumulativeKm: 5200});
+    expect(progressOf('ach_distance_5000', at)).toEqual({current: 5000, target: 5000});
+    expect(achievementDef('ach_distance_5000')!.unlocked(at)).toBe(true);
   });
 
-  test('로테이션 진행: Three\'s Company = 사용(런≥1) 신발 수', () => {
-    const ctx = emptyCtx({
-      perShoe: perShoeMap(
-        shoe({id: 'a', runs: 2, km: 10}),
-        shoe({id: 'b', runs: 1, km: 5}),
-        shoe({id: 'c', runs: 0, km: 0}), // 미사용 → 카운트 제외
-      ),
+  test('러닝 횟수 진행: 100회 가 실제 runCount 와 일치', () => {
+    expect(progressOf('ach_century_runs', emptyCtx({runCount: 73}))).toEqual({
+      current: 73,
+      target: 100,
     });
-    expect(progressOf('ach_rotation_3', ctx)).toEqual({current: 2, target: 3});
   });
 });
 
@@ -187,51 +160,48 @@ describe('anti-scenario 1: 미충족 무언락', () => {
   });
 
   test('각 업적: 진행이 target 미만이면 unlocked=false (개별)', () => {
-    // Trusted Partner 만 약간 미달(499) → 언락 금지.
-    const ctx = emptyCtx({perShoe: perShoeMap(shoe({id: 'a', km: 499, maxKm: 600}))});
-    expect(achievementDef('ach_trusted_partner')!.unlocked(ctx)).toBe(false);
-    expect(evaluateAchievements(ctx)).not.toContain('ach_trusted_partner');
+    // 누적 거리만 약간 미달(499 < 500) → ach_dist_500 언락 금지.
+    const ctx = emptyCtx({cumulativeKm: 499});
+    expect(achievementDef('ach_dist_500')!.unlocked(ctx)).toBe(false);
+    expect(evaluateAchievements(ctx)).not.toContain('ach_dist_500');
   });
 
-  test('Clean Rotation: 한 켤레라도 초과(overdue)면 미언락', () => {
-    const def = achievementDef('ach_clean_rotation')!;
+  test('건강한 신발장: 한 켤레라도 과사용(>100%)이면 미언락', () => {
+    const def = achievementDef('ach_healthy_closet')!;
     const dirty = emptyCtx({
       perShoe: perShoeMap(
         shoe({id: 'a', km: 100, maxKm: 600}),
-        shoe({id: 'b', km: 590, maxKm: 600}), // ratio≈0.98 ≥0.9 → overdue
+        shoe({id: 'b', km: 700, maxKm: 600}), // ratio≈1.17 > 1.0 → 과사용
       ),
     });
     expect(def.unlocked(dirty)).toBe(false);
     const clean = emptyCtx({
       perShoe: perShoeMap(
         shoe({id: 'a', km: 100, maxKm: 600}),
-        shoe({id: 'b', km: 200, maxKm: 600}),
+        shoe({id: 'b', km: 600, maxKm: 600}), // ratio=1.0(권장 다 씀)도 건강
       ),
     });
     expect(def.unlocked(clean)).toBe(true);
   });
 
-  // 회귀(code_critic): 진행바·언락 모순 금지(spec 시나리오5 — target 도달 ⟺ 언락).
-  // 혼합(건강2+초과1) 컨텍스트에서 바가 가득 차면(2/2) 언락은 false 인 모순이 났었다.
-  // 이제 바는 healthy/total 로 읽혀 overdue 가 하나라도 있으면 절대 가득 차지 않는다.
-  test('Clean Rotation: 혼합(건강/초과)이면 바가 가득 차지 않고 미언락', () => {
-    const def = achievementDef('ach_clean_rotation')!;
+  // 진행바·언락 모순 금지: 바는 healthy/total 로 읽혀 과사용이 하나라도 있으면 안 참.
+  test('건강한 신발장: 혼합(건강/과사용)이면 바가 가득 차지 않고 미언락', () => {
+    const def = achievementDef('ach_healthy_closet')!;
     const mixed = emptyCtx({
       perShoe: perShoeMap(
-        shoe({id: 'a', km: 100, maxKm: 600}), // ratio≈0.17 건강
-        shoe({id: 'b', km: 200, maxKm: 600}), // ratio≈0.33 건강
-        shoe({id: 'c', km: 590, maxKm: 600}), // ratio≈0.98 ≥0.9 초과
+        shoe({id: 'a', km: 100, maxKm: 600}), // 건강
+        shoe({id: 'b', km: 200, maxKm: 600}), // 건강
+        shoe({id: 'c', km: 700, maxKm: 600}), // >1.0 과사용
       ),
     });
-    const p = progressOf('ach_clean_rotation', mixed);
-    expect(p.current).toBeLessThan(p.target); // 바가 가득 차지 않음(2/3)
+    const p = progressOf('ach_healthy_closet', mixed);
+    expect(p.current).toBeLessThan(p.target); // 2/3
     expect(def.unlocked(mixed)).toBe(false);
-    // 불변: current===target ⟺ unlocked.
     expect(p.current === p.target).toBe(def.unlocked(mixed));
   });
 
-  test('Clean Rotation: 전부 건강이면 바가 가득 차고(current===target) 언락', () => {
-    const def = achievementDef('ach_clean_rotation')!;
+  test('건강한 신발장: 전부 건강이면 바가 가득 차고(current===target) 언락', () => {
+    const def = achievementDef('ach_healthy_closet')!;
     const allHealthy = emptyCtx({
       perShoe: perShoeMap(
         shoe({id: 'a', km: 100, maxKm: 600}),
@@ -239,8 +209,8 @@ describe('anti-scenario 1: 미충족 무언락', () => {
         shoe({id: 'c', km: 300, maxKm: 600}),
       ),
     });
-    const p = progressOf('ach_clean_rotation', allHealthy);
-    expect(p.current).toBe(p.target); // 3/3 가득 참
+    const p = progressOf('ach_healthy_closet', allHealthy);
+    expect(p.current).toBe(p.target); // 3/3
     expect(def.unlocked(allHealthy)).toBe(true);
     expect(p.current === p.target).toBe(def.unlocked(allHealthy));
   });
@@ -307,20 +277,22 @@ describe('카탈로그 무결성', () => {
     expect(Object.keys(ACHIEVEMENTS_BY_KEY).length).toBe(ACHIEVEMENTS.length);
   });
 
-  test('5개 필러 카테고리를 모두 커버한다', () => {
+  test('5개 카테고리를 모두 커버한다(로테이션 제거)', () => {
     const cats = new Set(ACHIEVEMENTS.map(a => a.category));
     [
       'running',
       'consistency',
-      'rotation',
       'shoeManagement',
       'injuryPrevention',
+      'retirement',
     ].forEach(c => expect(cats.has(c as never)).toBe(true));
+    // 로테이션 카테고리는 더 이상 없다.
+    expect(cats.has('rotation' as never)).toBe(false);
   });
 
-  test('Trusted Partner(명시 예시)가 카탈로그에 존재한다', () => {
-    const def = achievementDef('ach_trusted_partner');
-    expect(def?.name).toBe('믿음직한 파트너');
+  test('건강한 신발장이 카탈로그에 존재한다(신발관리)', () => {
+    const def = achievementDef('ach_healthy_closet');
+    expect(def?.name).toBe('건강한 신발장');
     expect(def?.category).toBe('shoeManagement');
   });
 
@@ -331,7 +303,7 @@ describe('카탈로그 무결성', () => {
     }
   });
 
-  test('모든 표시 그룹이 카탈로그에 존재한다', () => {
+  test('표시 그룹이 카탈로그에 존재한다(로테이션 제거)', () => {
     const groups = new Set(ACHIEVEMENTS.map(a => a.group));
     [
       'firstMilestone',
@@ -340,16 +312,16 @@ describe('카탈로그 무결성', () => {
       'consistency',
       'shoeCollection',
       'shoeLife',
-      'rotation',
-      'injuryPrevention',
       'retirement',
       'hidden',
     ].forEach(g => expect(groups.has(g as never)).toBe(true));
+    // 로테이션 그룹은 더 이상 없다.
+    expect(groups.has('rotation' as never)).toBe(false);
   });
 
-  test('업적 수가 충분히 많다(타이틀보다 많은 수집 카탈로그)', () => {
-    // 철학: 업적 = 많고 잘게, 타이틀 = 적고 어렵게. 업적이 타이틀(=42 미만으로 정리됨)보다 많아야 한다.
-    expect(ACHIEVEMENTS.length).toBeGreaterThanOrEqual(45);
+  test('업적이 타이틀보다 많다(수집 카탈로그)', () => {
+    // 철학: 업적 = 많고 잘게, 타이틀 = 적고 어렵게.
+    expect(ACHIEVEMENTS.length).toBeGreaterThan(Object.keys(TITLES_BY_KEY).length);
   });
 });
 

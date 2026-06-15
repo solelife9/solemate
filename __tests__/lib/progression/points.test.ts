@@ -140,13 +140,9 @@ describe('totalPoints ∘ unlockedAchievements (end-to-end)', () => {
     expect(totalPoints(unlocked)).toBe(10);
   });
 
-  test('Trusted Partner(gold=50) 달성 시 총합이 정확히 그만큼 증가', () => {
-    const before = emptyCtx({
-      perShoe: {a: shoe({id: 'a', km: 499, maxKm: 600})},
-    });
-    const after = emptyCtx({
-      perShoe: {a: shoe({id: 'a', km: 500, maxKm: 600})},
-    });
+  test('누적 1,000km(ach_distance_1000, gold=50) 달성 시 총합이 정확히 그만큼 증가', () => {
+    const before = emptyCtx({cumulativeKm: 999});
+    const after = emptyCtx({cumulativeKm: 1000});
     const delta =
       totalPoints(unlockedAchievements(after)) -
       totalPoints(unlockedAchievements(before));
