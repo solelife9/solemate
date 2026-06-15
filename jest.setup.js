@@ -78,6 +78,25 @@ jest.mock('expo-image-picker', () => ({
   ),
 }));
 
+// ── expo-sensors (Pedometer) ─────────────────────────────────────────────────
+// Cadence source (OS step counter). watchStepCount records its callback so tests
+// inject cumulative step counts via mock.calls[0][0], and returns a removable
+// subscription. Availability + ACTIVITY_RECOGNITION permission resolve granted so
+// the cadence path engages.
+jest.mock('expo-sensors', () => ({
+  __esModule: true,
+  Pedometer: {
+    watchStepCount: jest.fn(() => ({remove: jest.fn()})),
+    isAvailableAsync: jest.fn(() => Promise.resolve(true)),
+    requestPermissionsAsync: jest.fn(() =>
+      Promise.resolve({granted: true, status: 'granted'}),
+    ),
+    getPermissionsAsync: jest.fn(() =>
+      Promise.resolve({granted: true, status: 'granted'}),
+    ),
+  },
+}));
+
 // ── react-native-sensors ─────────────────────────────────────────────────────
 // accelerometer.subscribe() returns a subscription with a no-op unsubscribe and
 // never emits, so step/cadence logic stays inert during tests.

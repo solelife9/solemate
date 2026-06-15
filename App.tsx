@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import {SafeAreaProvider, useSafeAreaInsets} from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {accelerometer, setUpdateIntervalForType, SensorTypes} from 'react-native-sensors';
+import {Pedometer} from 'expo-sensors';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import Tts from 'react-native-tts';
@@ -45,7 +45,7 @@ import {
   requestRunPermissions, startTracking, stopTracking, isPermissionError,
   RunPermissions,
 } from './lib/locationService';
-import {initCadenceState, feedAccelSample} from './lib/cadence';
+import {initStepCadence, feedStepCount} from './lib/stepCadence';
 import {fmtPace, fmtTime, fmtKDate, getMonday, ymdLocal} from './lib/format';
 import {
   sumKm, avgPaceLabel, totalTimeLabel, durationLabel, summaryOf, maxDayStreak,
@@ -1322,7 +1322,7 @@ function RunActiveScreen({shoe,insets,goalKm,weightKg,onSave,onDiscard,resume}:{
   // 케이던스(spm) 순수 상태기계 — 가속도 피크검출+윈도우 정규화는 lib/cadence.ts.
   // 케이던스만 화면이 소유한다(가속도계 기반). 거리/시간/일시정지/死구간/권한 회수는
   // 모두 공유 GPS 엔진(runTracker)이 소유하고 subscribe로 화면에 흘려보낸다.
-  const cadenceState=useRef(initCadenceState());
+  const cadenceState=useRef(initStepCadence());
   const cadRef=useRef(0);
   const locationRef=useRef('');
   const locationFetched=useRef(false);
@@ -1468,19 +1468,25 @@ function RunActiveScreen({shoe,insets,goalKm,weightKg,onSave,onDiscard,resume}:{
     splitsRef.current=[];lastSplitRef.current={elapsed:0,elevM:0};
     setKm(0);setElapsed(0);setCadence(0);setAccuracyM(null);
     setGpsStalled(false);setPermLost(false);setGpsStatus('GPS 신호 찾는 중...');
-    cadenceState.current=initCadenceState();cadRef.current=0;
+    cadenceState.current=initStepCadence();cadRef.current=0;
     locationRef.current='';locationFetched.current=false;announcedKm.current=0;
-    setUpdateIntervalForType(SensorTypes.accelerometer,100);
-    stepSub.current=accelerometer.subscribe(({x,y,z})=>{
-      // 가속도계는 케이던스(걸음수)만 담당한다. 자동 일시정지/재개는 GPS 속도
-      // 기반 상태기계(엔진의 decideAutoPause)가 fix마다 판정한다.
-      if(runTracker.pausedFlag())return;
-      const mag=Math.sqrt(x*x+y*y+z*z),nowT=Date.now();
-      // 순수함수에 가속도 표본 공급 → 피크검출+분당비율 정규화된 spm 산출(audit#14).
-      const c=feedAccelSample(cadenceState.current,mag,nowT);
-      cadenceState.current=c.state;
-      if(c.spm!==cadRef.current){cadRef.current=c.spm;setCadence(c.spm);runTracker.setMeta({cadence:c.spm});}
-    });
+    // 케이던스(걸음수): OS 걸음 센서(expo-sensors Pedometer)의 누적 걸음수를 받아 분당
+    // 비율로 spm 을 산출한다(가속도 10Hz 피크검출은 ~170을 ~90으로 절반 누락해 교체).
+    // ACTIVITY_RECOGNITION 런타임 권한 필요 — 거부/미지원 기기에선 케이던스만 0(러닝은 계속).
+    // 자동 일시정지/재개는 여전히 GPS 속도 상태기계(decideAutoPause)가 fix마다 판정한다.
+    try{
+      const perm=await Pedometer.requestPermissionsAsync();
+      const available=perm.granted?await Pedometer.isAvailableAsync():false;
+      if(available){
+        stepSub.current=Pedometer.watchStepCount(({steps})=>{
+          if(runTracker.pausedFlag())return;
+          // 누적 걸음수 표본 공급 → 롤링 윈도우 분당비율 spm(순수 stepCadence).
+          const c=feedStepCount(cadenceState.current,steps,Date.now());
+          cadenceState.current=c.state;
+          if(c.spm!==cadRef.current){cadRef.current=c.spm;setCadence(c.spm);runTracker.setMeta({cadence:c.spm});}
+        });
+      }
+    }catch{/* 걸음 센서 미지원/권한 거부 — 케이던스만 비활성, 러닝은 계속 */}
     // 1초 틱: fix가 없어도 경과/死구간을 다시 계산해 화면을 갱신한다(엔진이 판정).
     timer.current=setInterval(()=>runTracker.tick(),1000);
     // 진행중 스냅샷: 3초마다 영속(audit#2). fix마다도 persist되지만, 무신호 구간에서
@@ -1498,7 +1504,7 @@ function RunActiveScreen({shoe,insets,goalKm,weightKg,onSave,onDiscard,resume}:{
   }
 
   function stop(){
-    if(stepSub.current){stepSub.current.unsubscribe();stepSub.current=null;}
+    if(stepSub.current){const sub=stepSub.current;if(typeof sub.remove==='function')sub.remove();else if(typeof sub.unsubscribe==='function')sub.unsubscribe();stepSub.current=null;}
     clearInterval(timer.current);
     clearInterval(snapTimer.current);
     void stopTracking();

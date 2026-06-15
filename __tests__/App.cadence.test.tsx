@@ -1,28 +1,25 @@
 /**
  * App.tsx cadence wiring integration test.
  *
- * Drives the real App to the live-run screen, then injects a synthetic
- * accelerometer trace through the registered react-native-sensors
- * accelerometer.subscribe() callback — the same end-to-end path the device
- * uses: accel sample → feedAccelSample (peak detection + window normalization)
- * → setCadence → run-screen render. Assertions are on the observable cadence
- * metric ('--' placeholder vs a rendered spm number), so this verifies the
- * accel→setCadence→UI batter, not the pure lib in isolation (that lives in
- * __tests__/lib/cadence.test.ts).
+ * Drives the real App to the live-run screen, then injects a synthetic step
+ * stream through the registered expo-sensors Pedometer.watchStepCount()
+ * callback — the same end-to-end path the device uses: OS step count →
+ * feedStepCount (rolling Δsteps/Δt rate) → setCadence → run-screen render.
+ * Assertions are on the observable cadence metric ('--' placeholder vs a
+ * rendered spm number), so this verifies the steps→setCadence→UI wiring, not
+ * the pure lib in isolation (that lives in __tests__/lib/stepCadence.test.ts).
  *
- * The accel callback reads Date.now() for each sample's timestamp, so fake
- * timers + setSystemTime let us place strikes on a real ~170 spm cadence. We
- * assert the metric shows '--' before the 3s minimum window has been observed,
- * then renders a value inside the 160-180 running-standard band once ~12s of
- * strikes have streamed through.
+ * The watch callback reads Date.now() per sample, so fake timers + setSystemTime
+ * let us place cumulative step counts on a real ~170 spm cadence. We assert the
+ * metric shows '--' before the 3s minimum window has been observed, then renders
+ * a value inside the 160-180 running-standard band once ~12s of steps streamed.
  *
  * @format
  */
 
 import React from 'react';
 import ReactTestRenderer, {act} from 'react-test-renderer';
-import {accelerometer} from 'react-native-sensors';
-import {STEP_PEAK_THRESHOLD} from '../lib/engineConstants';
+import {Pedometer} from 'expo-sensors';
 import App from '../App';
 
 function mockBackendWithShoe() {
@@ -66,12 +63,7 @@ function pressByText(root: ReactTestRenderer.ReactTestInstance, label: string) {
   });
 }
 
-// Read the cadence metric value ('--' when there is no cadence, else the spm
-// number as a string). The metric icons were removed (UI polish slice-4), so the
-// cadence metric View now renders as [<value>, '케이던스']. The bare '케이던스'
-// label Text also contains the needle, so we keep only host nodes whose text has
-// MORE than the label (i.e. the value too) and take the smallest — the metric
-// View itself ('<value>케이던스'); ancestors are strictly longer.
+// Read the cadence metric value ('--' when no cadence, else the spm number).
 function readCadence(root: ReactTestRenderer.ReactTestInstance): string {
   const metric = root
     .findAll(n => typeof n.type === 'string')
@@ -95,49 +87,46 @@ async function startRun() {
   await act(async () => {
     pressByText(root, '러닝 시작'); // goal → 카운트다운
   });
-  // 카운트다운(준비·GPS락·3·2·1·GO) 자동 진행을 건너뛰어 라이브 런으로 진입한다.
+  // 카운트다운(준비·GPS락·3·2·1·GO) 자동 진행을 건너뛰어 라이브 런으로 진입.
   await act(async () => {
     jest.advanceTimersByTime(6000);
   });
+  // beginRun 의 Pedometer 권한/가용성 await 가 풀리도록 마이크로태스크 플러시.
+  await act(async () => {
+    await Promise.resolve();
+    await Promise.resolve();
+  });
 
-  // The run engine called accelerometer.subscribe(cb) in beginRun — grab cb so
-  // we can feed it synthetic magnitude samples.
-  const calls = (accelerometer.subscribe as jest.Mock).mock.calls;
+  // beginRun 이 Pedometer.watchStepCount(cb) 를 호출했다 — cb 를 잡아 누적 걸음수를 주입.
+  const calls = (Pedometer.watchStepCount as jest.Mock).mock.calls;
   expect(calls.length).toBeGreaterThan(0);
-  const onAccel = calls[calls.length - 1][0] as (s: {x: number; y: number; z: number}) => void;
+  const onStep = calls[calls.length - 1][0] as (e: {steps: number}) => void;
 
-  return {renderer, root, onAccel};
+  return {renderer, root, onStep};
 }
 
-const DIP = STEP_PEAK_THRESHOLD - 2; // mag below threshold → arms the next rising edge
-const PEAK = STEP_PEAK_THRESHOLD + 3; // mag above threshold → a foot strike
 const BASE = 100000;
+const intervalMs = Math.round(60000 / 170); // 353ms → 170 spm
 
-test('accelerometer ~170spm trace renders cadence in the 160-180 band, and "--" before 3s', async () => {
+test('Pedometer ~170spm 스트림이 160-180 밴드로 렌더되고, 3s 전엔 "--"', async () => {
   jest.useFakeTimers();
   jest.setSystemTime(BASE);
   try {
-    const {renderer, root, onAccel} = await startRun();
-    expect(readCadence(root)).toBe('--'); // no strikes yet
+    const {renderer, root, onStep} = await startRun();
+    expect(readCadence(root)).toBe('--'); // 걸음 없음
 
-    const intervalMs = Math.round(60000 / 170); // 353ms → 170 spm
-    // Emit strike k as a dip→peak rising edge at wall-clock BASE + k*interval.
-    // mag = sqrt(x²+y²+z²); a single-axis x feeds mag = x directly.
-    const strike = (k: number) => {
-      const at = BASE + k * intervalMs;
-      jest.setSystemTime(at - 1);
-      act(() => onAccel({x: DIP, y: 0, z: 0}));
-      jest.setSystemTime(at);
-      act(() => onAccel({x: PEAK, y: 0, z: 0}));
+    // 누적 걸음수 k 를 시각 BASE + k*interval 에 공급.
+    const step = (k: number) => {
+      jest.setSystemTime(BASE + k * intervalMs);
+      act(() => onStep({steps: k}));
     };
 
-    // First few strikes land inside the 3s minimum window → cadence withheld.
-    for (let k = 0; k <= 6; k++) strike(k); // up to ~2.1s of observed span
+    // 첫 표본들은 3s 최소창 안 → 케이던스 보류('--').
+    for (let k = 0; k <= 6; k++) step(k); // ~2.1s span
     expect(readCadence(root)).toBe('--');
 
-    // Keep streaming to ~12s of observed span — the window normalization now has
-    // a stable rate and the metric must render a real spm value in-band.
-    for (let k = 7; k <= 34; k++) strike(k);
+    // ~12s span 까지 스트리밍 → 안정된 분당비율, 인밴드 값 렌더.
+    for (let k = 7; k <= 34; k++) step(k);
     const shown = readCadence(root);
     expect(shown).not.toBe('--');
     const spm = Number(shown);
@@ -151,31 +140,21 @@ test('accelerometer ~170spm trace renders cadence in the 160-180 band, and "--" 
   }
 });
 
-// Regression for the audit#14b bug: idle before the first footfall must NOT
-// dilute the displayed cadence. The accel stream starts only after a long GPS
-// warm-up; the metric must still render the true ~170 spm, not a fraction of it.
-test('idle before the first strike does not under-report the displayed cadence', async () => {
+// 첫 걸음 전 idle(GPS 워밍업/출발선 대기)이 표시 케이던스를 희석하면 안 된다.
+test('첫 걸음 전 idle 은 표시 케이던스를 낮추지 않는다', async () => {
   jest.useFakeTimers();
   jest.setSystemTime(BASE);
   try {
-    const {renderer, root, onAccel} = await startRun();
+    const {renderer, root, onStep} = await startRun();
 
-    // 30s of silence (GPS warm-up / start-line wait) — no accel samples emitted.
-    const firstStrikeAt = BASE + 30000;
-    const intervalMs = Math.round(60000 / 170);
-    const strike = (k: number) => {
-      const at = firstStrikeAt + k * intervalMs;
-      jest.setSystemTime(at - 1);
-      act(() => onAccel({x: DIP, y: 0, z: 0}));
-      jest.setSystemTime(at);
-      act(() => onAccel({x: PEAK, y: 0, z: 0}));
+    const firstAt = BASE + 30000; // 30s 무음
+    const step = (k: number) => {
+      jest.setSystemTime(firstAt + k * intervalMs);
+      act(() => onStep({steps: k}));
     };
-
-    // ~12s of real 170 spm running after the idle gap.
-    for (let k = 0; k <= 34; k++) strike(k);
-    const shown = readCadence(root);
-    const spm = Number(shown);
-    expect(spm).toBeGreaterThanOrEqual(160); // real cadence, NOT pulled toward ~26
+    for (let k = 0; k <= 34; k++) step(k); // ~12s 의 진짜 170spm
+    const spm = Number(readCadence(root));
+    expect(spm).toBeGreaterThanOrEqual(160); // ~26 으로 끌려가지 않음
     expect(spm).toBeLessThanOrEqual(180);
 
     act(() => renderer.unmount());
