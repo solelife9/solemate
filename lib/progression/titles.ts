@@ -4,21 +4,18 @@
 // 모든 카테고리 사다리(ladder)와 hidden 타이틀의 **단일 정의 출처**. 각 TitleDef.criterion
 // 은 사전 집계 사실(ProgressionContext)만 읽어 달성 여부를 **순수 판정**한다(입력 불변,
 // NaN/음수/누락 → false, throw 금지). 랭크처럼 "거리 단독"이 아니라 러너됨의 여러 축
-// (거리·일관성·신발관리·로테이션·부상예방)을 보상한다.
+// (거리·일관성·신발관리)을 보상한다. 로테이션은 정상 행동(단일화·직렬 사용)을 페널티화하므로 제외.
 //
-// 권위 매핑(브리프 verbatim — 이름/기준을 발명·누락하지 않는다):
+// 권위 매핑(이름/기준을 발명·누락하지 않는다):
 //   running          1런 / 100 / 500 / 1000 / 5000 / 10000 / 25000 km (bronze→legend)
-//   shoeManagement   1 / 3 / 5 / 10 켤레 + mgmt≥0.9(6·12mo) + mgmt≥0.95&12mo
-//   rotation         2 사용 / 3 일관 / rotation≥0.7(3mo·1yr·2yr) + 탁월·엘리트
-//   injuryPrevention 조기교체 / 전부건강 / 무초과(6mo·1yr) + 탁월·장기·다년
+//   shoeManagement   1 / 3 / 5 / 10 켤레 + 전부건강&테뉴어 + 제때교체 누적
 //   consistency      첫달 / 주간(1·3·6·12·24mo) + 엘리트
-//   hidden           Early Bird / Night Runner / Comeback / Long Relationship
+//   hidden           Early Bird / Night Runner / Comeback / Long Relationship / 제때교체
 //
 // 시간 기반 타이틀("≥6개월" 등)은 히스토리 사실이 충족될 때까지 **잠긴 채로 둔다**
 // (날조 금지). 테뉴어(러닝 시작 이후 경과일)는 ctx.now 와 가장 이른 firstWorn 으로 파생.
 //
-// 평가축 임계(mgmt≥0.9, rotation≥0.7, injuryPrevention≥0.9)는 rank.computeRank 의 평가축을
-// 그대로 재사용한다 — 평가축 정의의 권위는 rank.ts 한곳(중복 정의 금지·일관).
+// 과사용 임계(OVERDUE_RATIO=0.9)는 타이틀 판정에서만 쓰는 보수적 기준이다(업적의 1.0 과 별개).
 //
 // Rain Runner: OMITTED — 날씨가 추적되지 않아 정직하게 판정할 수 없으므로 v1 에서 제외한다
 // (spec Out of Scope). 데이터가 생기면 hidden 으로 추가.

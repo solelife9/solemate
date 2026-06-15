@@ -110,12 +110,12 @@ describe('HallOfFameScreen', () => {
     const r = await render(
       <HallOfFameScreen provider={provider} now={NOW} sync={async () => false} />,
     );
-    const chip = one(r.root, 'hof-category-rotation');
+    const chip = one(r.root, 'hof-category-shoeHealth');
     await act(async () => {
       (chip.props as any).onPress();
     });
     await settle();
-    expect(provider.getLeaderboard).toHaveBeenCalledWith('rotation', '2026-06');
+    expect(provider.getLeaderboard).toHaveBeenCalledWith('shoeHealth', '2026-06');
   });
 
   test('unavailable: 빈 상태 + 내 순위 미가용 힌트', async () => {

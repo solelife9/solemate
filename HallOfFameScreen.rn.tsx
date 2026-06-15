@@ -51,16 +51,15 @@ import type {
 type Category =
   | 'distance'
   | 'consistency'
-  | 'rotation'
   | 'shoeHealth'
   | 'collection'
   | 'progressPoints';
 
 // 카테고리 메타(라벨/아이콘/점수 표기). 고정 순서로 칩을 노출(결정적 레이아웃).
+// 로테이션은 제거(정상 행동 페널티화 회피).
 const CATEGORIES: ReadonlyArray<{key: Category; label: string; icon: string}> = [
   {key: 'distance', label: '거리', icon: 'walk'},
   {key: 'consistency', label: '꾸준함', icon: 'flame'},
-  {key: 'rotation', label: '로테이션', icon: 'sync'},
   {key: 'shoeHealth', label: '신발 관리', icon: 'shield-checkmark'},
   {key: 'collection', label: '컬렉션', icon: 'albums'},
   {key: 'progressPoints', label: '진척 포인트', icon: 'sparkles'},
@@ -74,7 +73,7 @@ function yearMonthOf(now: number): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
 
-/** 카테고리별 점수 표기(거리 km / 포인트 P / 켤레 / 일 / 로테이션·관리 0..100). */
+/** 카테고리별 점수 표기(거리 km / 포인트 P / 켤레 / 일 / 신발관리 0..100). */
 function formatScore(category: Category, score: number): string {
   const n = Number.isFinite(score) ? score : 0;
   switch (category) {
@@ -86,7 +85,6 @@ function formatScore(category: Category, score: number): string {
       return `${Math.round(n)} 켤레`;
     case 'consistency':
       return `${Math.round(n)} 일`;
-    case 'rotation':
     case 'shoeHealth':
       return `${Math.round(n * 100)}`;
     default:

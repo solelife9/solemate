@@ -44,7 +44,10 @@
       "mcp__tenet__tenet_get_status",
       "mcp__tenet__tenet_retry_job",
       "mcp__tenet__tenet_report_blocking_finding",
-      "Skill(tenet)"
+      "Skill(tenet)",
+      "Bash(git -C \"C:/Users/user/SoleMate\" status --short)",
+      "Bash(git -C \"C:/Users/user/SoleMate\" branch --show-current)",
+      "Bash(git -C \"C:/Users/user/SoleMate\" log -1 --oneline)"
     ]
   },
   "enabledMcpjsonServers": [
