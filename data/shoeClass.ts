@@ -27,11 +27,11 @@ export const TYPE_DESCRIPTIONS: Record<string, string> =
  */
 export const TYPE_LABEL_KO: Record<string, string> = {
   '카본화': '카본 레이싱',
-  '슈퍼트레이너': '트레이너',
+  '슈퍼트레이너': '슈퍼 트레이너',
   '데일리': '데일리',
   '안정화': '안정화',
   '트레일': '트레일',
-  '맥스쿠셔닝': '맥스 쿠션',
+  '맥스쿠셔닝': '쿠션화',
 };
 
 /** 신발 종류 표시 라벨(매핑 없으면 원문 type). */
