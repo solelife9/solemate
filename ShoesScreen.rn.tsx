@@ -280,6 +280,10 @@ function ShoeDetail({
             usedLabel={String(usedDisp)}
             maxLabel={String(maxDisp)}
           />
+          {/* 권장수명의 의미: 쿠셔닝(성능) 기준 가이드이지 '실착 한계'가 아님을 명확히. */}
+          <Text style={s.gaugeNote}>
+            쿠셔닝(성능)이 유지되는 권장 교체 거리예요. 넘어도 신을 수 있지만 충격 흡수는 줄어요.
+          </Text>
           {!retired && shoe.id && onSetMaxKm && (
             <Pressable onPress={() => setEditingMax((e) => !e)} hitSlop={8} accessibilityRole="button" accessibilityLabel="신발 수명 수정" style={s.maxEditRow}>
               <Ionicons name={editingMax ? 'checkmark' : 'create-outline'} size={13} color={editingMax ? ACCENT : T3} />
@@ -749,6 +753,7 @@ const s = StyleSheet.create({
   wearBasisText: { color: T3, fontFamily: FONT, fontSize: 12.5, fontWeight: '500', letterSpacing: -0.1, lineHeight: 18, marginTop: 8 },
   maxEditRow: { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-end', marginTop: 12 },
   maxEditTxt: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500' },
+  gaugeNote: { marginTop: 10, color: T3, fontFamily: FONT, fontSize: 12, lineHeight: 17 },
 
   dHero: { padding: 24, flexDirection: 'row', alignItems: 'center', gap: 22 },
   dHeroPct: { color: T1, fontFamily: DISPLAY, fontSize: 30 },

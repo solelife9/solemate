@@ -136,9 +136,9 @@ export default function AddShoeScreen({
           <Ionicons name="chevron-down" size={18} color={T3} />
         </Pressable>
 
-        {/* max life — auto-filled recommendation, editable; '권장' badge when unchanged */}
+        {/* 권장 교체 거리 — 쿠셔닝(성능) 기준 가이드. 자동 입력·수정 가능, 미수정 시 '권장' 배지 */}
         <View style={s.maxHead}>
-          <Text style={[s.label, { paddingBottom: 0 }]}>최대 수명</Text>
+          <Text style={[s.label, { paddingBottom: 0 }]}>권장 교체 거리</Text>
           {isRecommended && <Pill tone="accent" label="권장" icon="sparkles-outline" />}
         </View>
         <View style={s.usedRow}>
@@ -150,7 +150,10 @@ export default function AddShoeScreen({
           />
           <Text style={s.usedUnit}>km</Text>
         </View>
-        <Text style={s.hint}>모델을 선택하면 권장 수명이 자동으로 채워져요. 직접 바꿀 수도 있어요.</Text>
+        <Text style={s.hint}>
+          쿠셔닝(성능)이 좋게 유지되는 권장 교체 거리예요. 더 신어도 되지만 충격 흡수는 점점 줄어요.
+          모델 선택 시 자동 입력되며 직접 바꿀 수 있어요.
+        </Text>
 
         {/* current mileage */}
         <Text style={[s.label, { marginTop: 22 }]}>현재 누적 거리</Text>

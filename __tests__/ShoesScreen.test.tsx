@@ -85,6 +85,8 @@ test('락커 카드를 누르면 그 신발의 상세(모델 + 내구도 링)가
   const txt = textOf(root);
   expect(txt).toContain('잔여 수명');
   expect(txt).toContain('Pegasus 41');
+  // 권장수명의 의미(성능 기준·실착 한계 아님)를 명확히 안내한다.
+  expect(txt).toContain('쿠셔닝');
 });
 
 // ── 2) 교체-tier detail closes with the keep-going narrative + tier badge ──────
