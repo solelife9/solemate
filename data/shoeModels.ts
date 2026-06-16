@@ -71,7 +71,7 @@ export const DEFAULT_LIFESPAN_KM = categoryLifespanKm.daily_trainer; // 650
 // 시드 데이터 (164 모델)
 // ────────────────────────────────────────────────────────────
 
-export const SHOE_MODELS: ShoeModel[] = [
+const RAW_SHOE_MODELS: ShoeModel[] = [
   // NIKE (17)
   { brand: 'Nike', model: 'Pegasus 41', category: 'daily_trainer', recommendedKm: 650, year: 2024 },
   { brand: 'Nike', model: 'Pegasus 42', category: 'daily_trainer', recommendedKm: 650, year: 2025 },
@@ -262,6 +262,52 @@ export const SHOE_MODELS: ShoeModel[] = [
   { brand: 'Topo Athletic', model: 'Specter 2', category: 'super_trainer', recommendedKm: 650, year: 2025 },
   { brand: 'Topo Athletic', model: 'Cyclone 3', category: 'super_trainer', recommendedKm: 650, year: 2025 },
 ];
+
+// ────────────────────────────────────────────────────────────
+// 유명 모델 개별 보정(per-model override)
+// ────────────────────────────────────────────────────────────
+// 권장 교체 거리는 기본적으로 카테고리 값을 따르되, 내구도가 확실히 다른 **유명 모델만**
+// 여기서 개별 보정한다(나머지는 카테고리 기본값). 키 = `${brand}::${model}`(시드 행과 동일).
+// 카테고리 기본값과 같은 값은 적지 않는다(불필요). SHOE_MODELS 는 이 맵을 행에 합성한다.
+export const LIFESPAN_OVERRIDES: Readonly<Record<string, number>> = {
+  // 카본화(기본 450) — 초경량↓ / 데일리성 카본↑
+  'Nike::Alphafly 3': 400,
+  'Adidas::Adizero Adios Pro 4': 550,
+  'Saucony::Endorphin Elite 2': 500,
+  'Puma::Deviate Nitro Elite 3': 550,
+  'Hoka::Cielo X1 2.0': 550,
+  // 슈퍼 트레이너(기본 650)
+  'Asics::Superblast 2': 700,
+  'Asics::Novablast 5': 700,
+  'New Balance::FuelCell SuperComp Trainer v3': 700,
+  'New Balance::FuelCell Rebel v5': 600,
+  'Puma::Deviate Nitro 3': 700,
+  // 데일리(기본 650) — 워크호스↑
+  'Puma::Velocity Nitro 4': 700,
+  'Brooks::Ghost 17': 700,
+  // 쿠션화(기본 700) — 두꺼운 폼↑
+  'Asics::Gel-Nimbus 27': 750,
+  'New Balance::Fresh Foam X More v5': 750,
+  'Brooks::Glycerin Max': 750,
+  'Hoka::Bondi 9': 750,
+  'Saucony::Triumph 23': 750,
+  'Puma::MagMax Nitro 2': 750,
+  // 안정화(기본 700) — 튼튼한 탱크↑
+  'Asics::Gel-Kayano 32': 750,
+  'Brooks::Adrenaline GTS 24': 750,
+  // 트레일(기본 650) — 내구 아웃솔↑
+  'Hoka::Speedgoat 6': 700,
+  'Asics::Trabuco Max 4': 700,
+};
+
+/**
+ * 전체 시드 모델 — RAW(카테고리 기본 권장거리)에 유명 모델 개별 보정을 합성한 단일 소스.
+ * 화면/추천/매칭이 모두 이 배열을 소비한다.
+ */
+export const SHOE_MODELS: ShoeModel[] = RAW_SHOE_MODELS.map((m) => {
+  const o = LIFESPAN_OVERRIDES[`${m.brand}::${m.model}`];
+  return Number.isFinite(o) ? {...m, recommendedKm: o} : m;
+});
 
 // ────────────────────────────────────────────────────────────
 // 파생 데이터

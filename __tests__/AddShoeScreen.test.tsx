@@ -235,14 +235,14 @@ test('전체 목록에서 항목을 선택하면 model과 권장 수명(max)이 
   const root = await mountScreen(onSave);
 
   await openPicker(root);
-  await tap(pressBy(root, 'Alphafly 3')); // 카본 카테고리 기본 450km
+  await tap(pressBy(root, 'Alphafly 3')); // 유명 모델 개별 보정 400km
 
   expect(modelDisplay(root)).toContain('Alphafly 3'); // 트리거에 선택 모델 표시
-  expect(maxInput(root).props.value).toBe('450');
+  expect(maxInput(root).props.value).toBe('400');
   expect(badgeShown(root)).toBe(true);
 
   await tap(pressBy(root, '러닝화 등록'));
-  expect(onSave.mock.calls[0][0]).toMatchObject({brand: 'Nike', model: 'Alphafly 3', max: 450});
+  expect(onSave.mock.calls[0][0]).toMatchObject({brand: 'Nike', model: 'Alphafly 3', max: 400});
 });
 
 // ── 8) DB에 없는 모델명은 '직접 추가'로 등록할 수 있다 ────────────────────────────────

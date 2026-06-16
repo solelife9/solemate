@@ -9,6 +9,7 @@ import {
   BRANDS,
   categoryLifespanKm,
   DEFAULT_LIFESPAN_KM,
+  LIFESPAN_OVERRIDES,
   getRecommendedLifespanKm,
   findShoeModel,
   modelsForBrand,
@@ -39,9 +40,24 @@ describe('SHOE_MODELS 시드 데이터', () => {
     expect(new Set(keys).size).toBe(keys.length);
   });
 
-  test('각 모델 recommendedKm은 카테고리 기본값과 일치한다', () => {
+  test('각 모델 recommendedKm은 (유명모델 override ?? 카테고리 기본값)과 일치한다', () => {
     for (const m of SHOE_MODELS) {
-      expect(m.recommendedKm).toBe(categoryLifespanKm[m.category]);
+      const key = `${m.brand}::${m.model}`;
+      const expected = LIFESPAN_OVERRIDES[key] ?? categoryLifespanKm[m.category];
+      expect(m.recommendedKm).toBe(expected);
+    }
+  });
+
+  test('유명 모델 개별 보정(override)이 실제로 적용된다', () => {
+    expect(getRecommendedLifespanKm({brand: 'Nike', model: 'Alphafly 3'})).toBe(400); // 초경량 카본↓
+    expect(getRecommendedLifespanKm({brand: 'Adidas', model: 'Adizero Adios Pro 4'})).toBe(550);
+    expect(getRecommendedLifespanKm({brand: 'Asics', model: 'Superblast 2'})).toBe(700);
+    expect(getRecommendedLifespanKm({brand: 'Asics', model: 'Gel-Kayano 32'})).toBe(750);
+    expect(getRecommendedLifespanKm({brand: 'New Balance', model: 'FuelCell Rebel v5'})).toBe(600);
+    // override 키는 모두 실제 시드 모델과 매칭(오타 방지)
+    for (const key of Object.keys(LIFESPAN_OVERRIDES)) {
+      const [brand, model] = key.split('::');
+      expect(findShoeModel(brand, model)).toBeDefined();
     }
   });
 });
@@ -107,7 +123,7 @@ describe('findShoeModel', () => {
     const found = findShoeModel('Hoka', 'Speedgoat 6') as ShoeModel;
     expect(found).toBeDefined();
     expect(found.category).toBe('trail');
-    expect(found.recommendedKm).toBe(650);
+    expect(found.recommendedKm).toBe(700); // Speedgoat 6 = 유명 모델 개별 보정(700)
     expect(found.year).toBe(2024);
   });
 
@@ -141,9 +157,9 @@ describe('getRecommendedLifespanKm 추천 로직', () => {
     expect(getRecommendedLifespanKm({ brand: 'nike', model: '  vaporfly 4 ' })).toBe(450);
   });
 
-  test('카본 레이싱 모델 → 450km(상향된 기본값)', () => {
-    expect(getRecommendedLifespanKm({ brand: 'Nike', model: 'Alphafly 3' })).toBe(450);
+  test('카본 레이싱 기본값 → 450km(개별 보정 없는 모델)', () => {
     expect(getRecommendedLifespanKm({ brand: 'Nike', model: 'Vaporfly 4' })).toBe(450);
+    expect(getRecommendedLifespanKm({ brand: 'Asics', model: 'Metaspeed Sky Paris' })).toBe(450);
   });
 
   test('미매칭 + category → 카테고리 기본값', () => {
