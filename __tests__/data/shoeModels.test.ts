@@ -9,6 +9,7 @@ import {
   BRANDS,
   categoryLifespanKm,
   DEFAULT_LIFESPAN_KM,
+  LIFESPAN_OVERRIDES,
   getRecommendedLifespanKm,
   findShoeModel,
   modelsForBrand,
@@ -39,9 +40,24 @@ describe('SHOE_MODELS 시드 데이터', () => {
     expect(new Set(keys).size).toBe(keys.length);
   });
 
-  test('각 모델 recommendedKm은 카테고리 기본값과 일치한다', () => {
+  test('각 모델 recommendedKm은 (핵심모델 override ?? 카테고리 기본값)과 일치한다', () => {
     for (const m of SHOE_MODELS) {
-      expect(m.recommendedKm).toBe(categoryLifespanKm[m.category]);
+      const key = `${m.brand}::${m.model}`;
+      const expected = LIFESPAN_OVERRIDES[key] ?? categoryLifespanKm[m.category];
+      expect(m.recommendedKm).toBe(expected);
+    }
+  });
+
+  test('핵심 모델 개별 보정(override)이 실제로 적용된다', () => {
+    // 초경량 레이서는 카본 평균(400)보다 짧게
+    expect(getRecommendedLifespanKm({brand: 'Adidas', model: 'Adizero Adios Pro Evo 1'})).toBe(250);
+    // 워크호스 데일리/안정화는 700보다 길게
+    expect(getRecommendedLifespanKm({brand: 'Brooks', model: 'Ghost 17'})).toBe(800);
+    expect(getRecommendedLifespanKm({brand: 'Asics', model: 'Gel-Kayano 32'})).toBe(800);
+    // override 키는 모두 실제 시드 모델과 매칭되어야 한다(오타 방지)
+    for (const key of Object.keys(LIFESPAN_OVERRIDES)) {
+      const [brand, model] = key.split('::');
+      expect(findShoeModel(brand, model)).toBeDefined();
     }
   });
 });
