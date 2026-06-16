@@ -23,20 +23,37 @@ import {PB_HIGHLIGHT_KEYS, RETIREMENT_HIGHLIGHT_KEYS as H} from './retirement';
 import type {RankTier, RetirementGrade, RetirementSummary} from './types';
 
 // ── 레이아웃 포맷 ──────────────────────────────────────────────────────────────
-/** 카드 레이아웃: A Nike / B Modern / C Apple(기본) / D Hall of Fame. */
-export type RetirementCardFormat = 'A' | 'B' | 'C' | 'D';
+/** 카드 레이아웃: E Midnight(기본) / A Nike / B Modern / C Apple / D Hall of Fame. */
+export type RetirementCardFormat = 'E' | 'A' | 'B' | 'C' | 'D';
 
-/** 선택 가능한 4개 포맷(렌더러/포맷 스위처가 소비). */
-export const RETIREMENT_CARD_FORMATS: readonly RetirementCardFormat[] = ['A', 'B', 'C', 'D'];
+/** 선택 가능한 5개 포맷(렌더러/포맷 스위처가 소비). E(Midnight)를 먼저 노출. */
+export const RETIREMENT_CARD_FORMATS: readonly RetirementCardFormat[] = ['E', 'A', 'B', 'C', 'D'];
 
-/** 기본 포맷 — C(Apple/한국어, 감성-자랑 톤). DESIGN.md 권위. */
-export const DEFAULT_RETIREMENT_CARD_FORMAT: RetirementCardFormat = 'C';
+/** 기본 포맷 — E(Midnight + 배웅, 디자인 마무리 핸드오프 키프세이크). */
+export const DEFAULT_RETIREMENT_CARD_FORMAT: RetirementCardFormat = 'E';
 
 // ── 브랜드/카피 상수 ───────────────────────────────────────────────────────────
 const BRAND = 'KEEGO';
 const WORDMARK = 'Keep Going';
 /** 신발명 폴백(이름 없는 요약도 카드가 비지 않게). */
 const FALLBACK_SHOE_NAME = '내 러닝화';
+/** E(Midnight) 상단 라벨 + 완주 한 줄(디자인 핸드오프 verbatim). */
+const RETIRE_LABEL_E = 'Running Shoe Retirement';
+const COMPLETED_E = '이 신발은 여정을 완주했습니다.';
+
+/** 사용 기간(일) → 배웅 한 줄(Keep-going 보이스, 실제 기간 기반·날조 금지). */
+function farewellLine(usageDays: number): string {
+  const d = nonNeg(usageDays);
+  if (d >= 365) {
+    const years = Math.max(1, Math.round(d / 365));
+    return `함께한 ${years}년, 고마웠어.`;
+  }
+  if (d >= 30) {
+    const months = Math.max(1, Math.round(d / 30));
+    return `함께한 ${months}개월, 고마웠어.`;
+  }
+  return '함께 달려줘서 고마웠어.';
+}
 /** 기본(C) 감성 클로징 — 강요 아닌, bittersweet-proud 톤(mockup verbatim). */
 const CLOSING_TOP = '수명을 다했습니다.';
 const CLOSING_BOTTOM = '훌륭한 여정이었습니다.';
@@ -199,6 +216,17 @@ export interface RetirementCardModel {
   /** C: '수명을 다했습니다.' / '훌륭한 여정이었습니다.'. */
   closingTop: string;
   closingBottom: string;
+  // E(Midnight) 전용 카피 ─────────────────────────────────────────
+  /** E 상단 라벨: 'Running Shoe Retirement'. */
+  retireLabel: string;
+  /** E 거리 그라데이션: '512km 함께'. */
+  togetherDistance: string;
+  /** E 기간: '2024.01 ~ 2024.12'(한쪽만 있으면 그것만, 없으면 dateRange/''). */
+  periodRange: string;
+  /** E 배웅 그라데이션: '함께한 1년, 고마웠어.'(사용 기간 기반). */
+  farewell: string;
+  /** E 완주 한 줄: '이 신발은 여정을 완주했습니다.'. */
+  completed: string;
 }
 
 export interface RetirementCardOptions {
@@ -297,5 +325,14 @@ export function buildRetirementCardModel(
     eyebrowB: 'A Journey Completed',
     closingTop: CLOSING_TOP,
     closingBottom: CLOSING_BOTTOM,
+    retireLabel: RETIRE_LABEL_E,
+    togetherDistance: `${distanceLabel} 함께`,
+    periodRange: (() => {
+      const sm = shortDate(startDate);
+      const em = shortDate(endDate);
+      return sm && em ? `${sm} ~ ${em}` : sm || em || dateRange;
+    })(),
+    farewell: farewellLine(Math.round(nonNeg(s.usageDays))),
+    completed: COMPLETED_E,
   };
 }

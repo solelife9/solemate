@@ -14,7 +14,7 @@
 //   0 확인(確認)     — 신발명 · 누적 거리 · 러닝 횟수 · 사용 기간 (마지막 인사 준비)
 //   1 여정 요약      — 전체 일대기(거리/횟수/시간/페이스/최장 런/기간)
 //   2 하이라이트     — 실제 달성한 하이라이트 + Most Memorable Moment + 등급
-//   3 키프세이크 카드 — RetirementCard(포맷 A/B/C/D, 기본 C) + 이미지 저장 / 공유
+//   3 키프세이크 카드 — RetirementCard(포맷 E/A/B/C/D, 기본 E Midnight) + 이미지 저장 / 공유
 // 은퇴 확정은 스텝 2 → 3 전환에서 단 한 번 일어난다.
 // ============================================================================
 import React, {useMemo, useRef, useState} from 'react';
@@ -447,7 +447,7 @@ function CardStep({
       <Text style={s.eyebrow}>키프세이크 카드</Text>
       <Text style={s.stepTitle}>훌륭한 여정이었어요</Text>
 
-      {/* 포맷 스위처 A/B/C/D(기본 C) */}
+      {/* 포맷 스위처 E/A/B/C/D(기본 E Midnight) */}
       <View style={s.formatRow}>
         {RETIREMENT_CARD_FORMATS.map(f => {
           const on = f === format;

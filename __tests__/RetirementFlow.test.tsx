@@ -145,11 +145,11 @@ describe('RetirementFlow — 3스텝 회고 + 사용자 제어 은퇴', () => {
       press(r.root, 'retire-flow-commit');
       await Promise.resolve();
     });
-    // 카드 미리보기 + 4개 포맷 버튼 + 저장/공유
+    // 카드 미리보기 + 5개 포맷 버튼 + 저장/공유
     expect(
       r.root.findAll((n: any) => n.props?.testID === 'retire-card-preview').length,
     ).toBeGreaterThanOrEqual(1);
-    for (const f of ['A', 'B', 'C', 'D']) {
+    for (const f of ['E', 'A', 'B', 'C', 'D']) {
       expect(
         r.root.findAll((n: any) => n.props?.testID === `retire-card-format-${f}`).length,
       ).toBeGreaterThanOrEqual(1);

@@ -3,7 +3,7 @@
  *
  * 관찰 가능한 효과:
  *   1) 4개 포맷(A/B/C/D) 모두 하나의 요약에서 카드를 렌더한다(거리/신발명/등급 배지).
- *   2) format 미지정 시 기본은 C(감성 카피 '함께했습니다 / 훌륭한 여정이었습니다').
+ *   2) format 미지정 시 기본은 E(Midnight 배웅 키프세이크).
  *   3) Smart Retirement Grade 배지(이모지+라벨)가 모든 포맷에 보인다.
  *   4) 장착 타이틀이 KEEGO/Keep Going 워드마크 근처에 은은하게 렌더된다.
  *   5) 결손(하이라이트 없음) 요약도 크래시 없이 렌더된다.
@@ -66,8 +66,10 @@ function render(el: React.ReactElement) {
 
 const MODEL = buildRetirementCardModel(SAMPLE, 'perfect', {equippedTitle: 'Marathon Mindset'});
 
-describe('RetirementCard 4개 포맷 렌더', () => {
+describe('RetirementCard 5개 포맷 렌더', () => {
+  // 등급 배지를 싣는 포맷(A~D). E(Midnight)는 감정 keepsake라 배지를 비운다(별도 검증).
   const formats: RetirementCardFormat[] = ['A', 'B', 'C', 'D'];
+  const allFormats: RetirementCardFormat[] = ['E', 'A', 'B', 'C', 'D'];
 
   test.each(formats)('포맷 %s 는 하나의 요약에서 거리/신발명/등급 배지를 렌더한다', fmt => {
     const txt = textOf(render(<RetirementCard model={MODEL} format={fmt} />).root);
@@ -91,13 +93,22 @@ describe('RetirementCard 4개 포맷 렌더', () => {
     expect(d).toContain('2026');
   });
 
-  test('format 미지정 시 기본은 C(감성 카피), A/B/D 시그니처는 없다', () => {
+  test('format 미지정 시 기본은 E(Midnight 배웅), A/C/D 시그니처는 없다', () => {
     const txt = textOf(render(<RetirementCard model={MODEL} />).root);
-    expect(txt).toContain('함께했습니다');
-    expect(txt).toContain('훌륭한 여정이었습니다.');
+    expect(txt.toUpperCase()).toContain('RUNNING SHOE RETIREMENT'); // E 상단 라벨
+    expect(txt).toContain('512km 함께'); // E 거리 그라데이션
+    expect(txt).toContain('이 신발은 여정을 완주했습니다.'); // E 완주 한 줄
+    expect(txt).toContain('고마웠어.'); // E 배웅
+    expect(txt).toContain('KEEGO');
     expect(txt).not.toContain('MISSION COMPLETE'); // A
+    expect(txt).not.toContain('함께했습니다'); // C
     expect(txt).not.toContain('SHOE SCORE'); // D
-    expect(txt).not.toContain('CLASS OF'); // D
+  });
+
+  test('E(Midnight)는 등급 배지 대신 배웅을 중심에 둔다', () => {
+    const txt = textOf(render(<RetirementCard model={MODEL} format="E" />).root);
+    expect(txt).toContain('고마웠어.');
+    expect(txt).not.toContain('Perfect Retirement'); // 배지 없음(디자인 정합)
   });
 
   test('장착 타이틀이 워드마크(Keep Going) 근처에 은은하게 렌더된다', () => {
@@ -115,7 +126,7 @@ describe('RetirementCard 4개 포맷 렌더', () => {
       {...SAMPLE, highlights: [], mostMemorable: null, avgPaceSec: null, bestPaceSec: null, longestRunKm: 0},
       'standard',
     );
-    for (const fmt of formats) {
+    for (const fmt of allFormats) {
       expect(() => render(<RetirementCard model={lean} format={fmt} />)).not.toThrow();
     }
     // PB 0 → '×0' 폴백이 보이고 등급은 standard 배지

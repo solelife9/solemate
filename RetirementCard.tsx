@@ -7,13 +7,14 @@
 // /retirementShare). 새 네이티브 의존 0 — 런/리캡 카드(ShareCard·RecapShareCard)와 동일
 // 패턴. 색은 theme 토큰 + 등급 티어색(model.grade.color = TIER_COLORS)만(raw hex 0).
 //
-// `format` prop 으로 4개 레이아웃을 고른다(기본 'C'):
+// `format` prop 으로 5개 레이아웃을 고른다(기본 'E'):
+//   E — Midnight + 배웅(기본, 디자인 마무리 핸드오프 키프세이크 · 보랏빛 글로우·그라데이션)
 //   A — Nike 캠페인(거대 타이포 · 오렌지 바 · MISSION COMPLETE)
 //   B — Modern premium(가는 굵기 · 디바이더 · '512 km Together')
-//   C — Apple/한국어 감성(기본, '512km 함께했습니다 / 훌륭한 여정이었습니다')
+//   C — Apple/한국어 감성('512km 함께했습니다 / 훌륭한 여정이었습니다')
 //   D — Hall of Fame(인증서 프레임 · Shoe Score · Class of YYYY)
-// 모든 포맷이 Smart Retirement Grade 배지 + KEEGO/Keep Going 워드마크(+ 장착 타이틀 은은)
-// 를 함께 싣는다.
+// A~D 는 Smart Retirement Grade 배지 + KEEGO/Keep Going 워드마크를 싣고, E 는 감정적
+// keepsake 라 배지를 비우고 배웅 메시지를 중심에 둔다(디자인 정합).
 // ============================================================================
 import React from 'react';
 import Svg, {
@@ -23,6 +24,8 @@ import Svg, {
   Line,
   Defs,
   LinearGradient,
+  RadialGradient,
+  ClipPath,
   Stop,
 } from 'react-native-svg';
 import {
@@ -37,6 +40,9 @@ import {
   FONT,
   DISPLAY,
   TIER_COLORS,
+  RETIRE_MIDNIGHT_BG,
+  RETIRE_MIDNIGHT_GLOW,
+  RETIRE_GRAD_STOPS,
   withAlpha,
 } from './theme';
 import {
@@ -363,7 +369,90 @@ function FormatD({model}: {model: RetirementCardModel}) {
   );
 }
 
+// ── E · Midnight + 배웅(디자인 마무리 핸드오프 키프세이크) ──────────────────────────
+// 보랏빛 미드나잇 배경 + 상단 radial 글로우 + 거리/배웅 그라데이션 텍스트. 감정적 keepsake라
+// 게임화 배지(등급)는 의도적으로 비운다(디자인 정합). 색은 RETIRE_* 토큰만(raw hex 0).
+function FormatE({model}: {model: RetirementCardModel}) {
+  const innerX = PAD / 2;
+  const innerW = CARD_W - PAD;
+  const innerH = CARD_H - PAD;
+  const ruleX1 = PAD + 20;
+  const ruleX2 = CARD_W - PAD - 20;
+  const hair = withAlpha(T1, 0.16);
+  const stopOff = ['0', '0.55', '1'];
+  const hasMoment = !!model.mostMemorable;
+  return (
+    <G>
+      <Defs>
+        <ClipPath id="eClip">
+          <Rect x={innerX} y={innerX} width={innerW} height={innerH} rx={56} />
+        </ClipPath>
+        <RadialGradient id="eGlow" cx="50%" cy="7%" rx="62%" ry="46%">
+          <Stop offset="0" stopColor={RETIRE_MIDNIGHT_GLOW} stopOpacity={1} />
+          <Stop offset="0.56" stopColor={RETIRE_MIDNIGHT_GLOW} stopOpacity={0} />
+        </RadialGradient>
+        <LinearGradient id="eGrad" x1="0" y1="0" x2="1" y2="0.16">
+          {RETIRE_GRAD_STOPS.map((c, i) => (
+            <Stop key={c} offset={stopOff[i]} stopColor={c} stopOpacity={1} />
+          ))}
+        </LinearGradient>
+      </Defs>
+      {/* 상단 radial 글로우(둥근 카드에 클립) */}
+      <G clipPath="url(#eClip)">
+        <Rect x={innerX} y={innerX} width={innerW} height={innerH} fill="url(#eGlow)" />
+      </G>
+
+      {/* 상단: 헤어라인 + 라벨 */}
+      <Line x1={ruleX1} y1={172} x2={ruleX2} y2={172} stroke={hair} strokeWidth={2} />
+      <SvgText x={CX} y={224} fill={withAlpha(T1, 0.62)} fontFamily={FONT} fontSize={26} fontWeight="800" letterSpacing={8} textAnchor="middle">
+        {model.retireLabel.toUpperCase()}
+      </SvgText>
+
+      {/* 중단: 브랜드 / 모델 / 거리(그라데이션) / 기간 */}
+      <SvgText x={CX} y={362} fill={withAlpha(T1, 0.5)} fontFamily={FONT} fontSize={28} fontWeight="800" letterSpacing={6} textAnchor="middle">
+        {model.brand.toUpperCase()}
+      </SvgText>
+      <SvgText x={CX} y={446} fill={T1} fontFamily={DISPLAY} fontSize={76} fontWeight="800" letterSpacing={-2} textAnchor="middle">
+        {model.shoeName}
+      </SvgText>
+      <SvgText x={CX} y={534} fill="url(#eGrad)" fontFamily={DISPLAY} fontSize={56} fontWeight="800" textAnchor="middle">
+        {model.togetherDistance}
+      </SvgText>
+      {!!model.periodRange && (
+        <SvgText x={CX} y={596} fill={withAlpha(T1, 0.6)} fontFamily={FONT} fontSize={30} fontWeight="600" textAnchor="middle">
+          {model.periodRange}
+        </SvgText>
+      )}
+
+      {/* 기억에 남는 순간(있으면) */}
+      {hasMoment && (
+        <G>
+          <SvgText x={CX} y={712} fill={withAlpha(T1, 0.56)} fontFamily={FONT} fontSize={24} fontWeight="800" letterSpacing={5} textAnchor="middle">
+            MOST MEMORABLE MOMENT
+          </SvgText>
+          <SvgText x={CX} y={770} fill={T1} fontFamily={FONT} fontSize={38} fontWeight="800" textAnchor="middle">
+            {model.mostMemorable}
+          </SvgText>
+        </G>
+      )}
+
+      {/* 하단: 배웅(그라데이션) / 완주 / 헤어라인 / KEEGO */}
+      <SvgText x={CX} y={892} fill="url(#eGrad)" fontFamily={DISPLAY} fontSize={60} fontWeight="800" textAnchor="middle">
+        {model.farewell}
+      </SvgText>
+      <SvgText x={CX} y={950} fill={withAlpha(T1, 0.72)} fontFamily={FONT} fontSize={32} fontWeight="600" textAnchor="middle">
+        {model.completed}
+      </SvgText>
+      <Line x1={ruleX1} y1={1000} x2={ruleX2} y2={1000} stroke={hair} strokeWidth={2} />
+      <SvgText x={CX} y={1052} fill={T1} fontFamily={DISPLAY} fontSize={30} fontWeight="800" letterSpacing={11} textAnchor="middle">
+        {model.brand}
+      </SvgText>
+    </G>
+  );
+}
+
 const LAYOUTS: Record<RetirementCardFormat, (p: {model: RetirementCardModel}) => React.JSX.Element> = {
+  E: FormatE,
   A: FormatA,
   B: FormatB,
   C: FormatC,
@@ -374,8 +463,9 @@ const RetirementCard = React.forwardRef<unknown, RetirementCardProps>(
   ({model, format = DEFAULT_RETIREMENT_CARD_FORMAT}, ref) => {
     const fmt: RetirementCardFormat = LAYOUTS[format] ? format : DEFAULT_RETIREMENT_CARD_FORMAT;
     const Layout = LAYOUTS[fmt];
-    // 포맷별 배경 — D 는 골드 음영, 그 외는 카드 토큰.
-    const bgFill = fmt === 'D' ? CARD_DIM : fmt === 'A' ? BG : CARD;
+    // 포맷별 배경 — E 미드나잇, D 골드 음영, A 순흑, 그 외 카드 토큰.
+    const bgFill =
+      fmt === 'E' ? RETIRE_MIDNIGHT_BG : fmt === 'D' ? CARD_DIM : fmt === 'A' ? BG : CARD;
     return (
       <Svg ref={ref as never} width={CARD_W} height={CARD_H}>
         <Rect x={0} y={0} width={CARD_W} height={CARD_H} fill={BG} />

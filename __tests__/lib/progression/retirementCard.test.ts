@@ -130,9 +130,17 @@ describe('buildRetirementCardModel (필드 매핑)', () => {
     expect(m.grade.grade).toBe('standard');
   });
 
-  test('포맷 상수: 4개 포맷 + 기본 C', () => {
-    expect(RETIREMENT_CARD_FORMATS).toEqual(['A', 'B', 'C', 'D']);
-    expect(DEFAULT_RETIREMENT_CARD_FORMAT).toBe('C');
+  test('포맷 상수: 5개 포맷 + 기본 E(Midnight)', () => {
+    expect(RETIREMENT_CARD_FORMATS).toEqual(['E', 'A', 'B', 'C', 'D']);
+    expect(DEFAULT_RETIREMENT_CARD_FORMAT).toBe('E');
+  });
+
+  test('E(Midnight) 카피 필드: 거리 함께 · 기간 · 배웅 · 완주', () => {
+    const m = buildRetirementCardModel(SAMPLE, 'perfect');
+    expect(m.togetherDistance).toBe(`${m.distanceLabel} 함께`);
+    expect(m.retireLabel).toBe('Running Shoe Retirement');
+    expect(m.completed).toBe('이 신발은 여정을 완주했습니다.');
+    expect(m.farewell).toMatch(/고마웠어\.$/);
   });
 });
 

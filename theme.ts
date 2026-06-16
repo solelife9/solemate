@@ -38,6 +38,14 @@ export const KAKAO_LABEL = '#000000';
 export const NAVER_GREEN = '#03C75A';
 export const NAVER_LABEL = '#FFFFFF';
 
+// ── 은퇴 키프세이크 카드(Midnight) 팔레트 ──────────────────────────────────────
+// 디자인 마무리 핸드오프(keego-rn/components/RetirementCard.js)의 'Midnight + 배웅' 카드
+// 전용 색. 일반 다크 표면(BG/CARD)과 다른 보랏빛 무드라 별도 토큰으로 모아 둔다(카드만 참조).
+export const RETIRE_MIDNIGHT_BG = '#130B11';     // 카드 배경(미드나잇 자줏빛 블랙)
+export const RETIRE_MIDNIGHT_GLOW = '#3A1430';   // 상단 radial 글로우
+// 거리/배웅 그라데이션 스톱(웜오렌지→코랄→바이올렛). 카드 GradientText 가 소비.
+export const RETIRE_GRAD_STOPS: readonly string[] = ['#FFB060', '#FF6C7E', '#B57BFF'];
+
 // ── rank tier colors (progression Slice A — AUTHORITATIVE) ───────────────────
 // 합성 랭크 티어 색. 진척 엔진/칩/링은 이 토큰만 참조한다(화면·lib 하드코딩 금지).
 // 값은 spec 권위표: Bronze→Legend. Legend = KEEGO 오렌지(#FF6500, ACCENT 와 동일 의도).
