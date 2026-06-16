@@ -17,9 +17,9 @@ import {
 } from '../../data/shoeModels';
 
 describe('SHOE_MODELS 시드 데이터', () => {
-  test('134개(≥100) 모델을 제공한다', () => {
+  test('164개(≥100) 모델을 제공한다', () => {
     expect(Array.isArray(SHOE_MODELS)).toBe(true);
-    expect(SHOE_MODELS.length).toBe(134);
+    expect(SHOE_MODELS.length).toBe(164);
   });
 
   test('모든 레코드가 brand·model·category·recommendedKm·year를 갖는다', () => {
@@ -69,9 +69,9 @@ describe('categoryLifespanKm 매핑(스펙 값)', () => {
 });
 
 describe('BRANDS 파생', () => {
-  test('11개 브랜드를 중복 없이 제공한다', () => {
+  test('13개 브랜드를 중복 없이 제공한다', () => {
     expect(new Set(BRANDS).size).toBe(BRANDS.length);
-    expect(BRANDS.length).toBe(11);
+    expect(BRANDS.length).toBe(13);
   });
 
   test('SHOE_MODELS의 brand 집합과 정확히 일치한다', () => {
