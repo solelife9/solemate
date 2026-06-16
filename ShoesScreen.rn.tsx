@@ -13,7 +13,7 @@ import { TabBar, TierBadge, Pill, InjuryBanner, SectionTitle } from './primitive
 import { FuelGauge } from './FuelGauge';
 import FirstShoeScreen from './FirstShoeScreen.rn';
 import { Unit, displayNum, displayToKm } from './lib/units';
-import { clampMaxKm, KEEP_GOING_REPLACE, SHOE_MAX_STEP_KM, SHOE_REPLACE_PCT } from './lib/shoe';
+import { clampMaxKm, KEEP_GOING_REPLACE, SHOE_MAX_STEP_KM, SHOE_REPLACE_PCT, wearTier, WearTierTone } from './lib/shoe';
 import { assessShoeInjuryRisk } from './lib/injury';
 import { buildWearView, forecastBasisKo, forecastConfidenceKo, type Surface } from './lib/wearView';
 import { recommendNextShoes, buildShopLinks, categoryLabelKo, AFFILIATE_DISCLOSURE } from './lib/affiliate';
@@ -68,11 +68,11 @@ function NextShoeCard({ shoe }: { shoe: Shoe }) {
 // 페이스를 비교할 수 있게 상세·목록 카드에 함께 노출한다.
 export type ShoeTotals = { totalRuns: number; totalTime: string; avgPace: string; lastWorn?: string };
 
-// Proportional condition → color (shoeHealth tiers: 양호 / 주의 / 교체).
-const condColor = (c: string) => (c === '교체' ? DANGER : c === '주의' ? WARN : GOOD);
-const ringColor = (c: string) => (c === '교체' ? DANGER : c === '주의' ? WARN : ACCENT);
-// 락커 카드 컨디션 라벨 — 목업 정합(친근한 표현). 홈 히어로와 동일 매핑.
-const condLabel = (c: string) => (c === '교체' ? '교체 권장' : c === '주의' ? '주의 필요' : '최상의 컨디션');
+// 마모 4단계(사용률%) → 색/라벨. 톤→theme 토큰(raw hex 0). 최상🟢/좋음🟡/교체고려🟠/교체권장🔴.
+const TONE_COLOR: Record<WearTierTone, string> = { good: GOOD, mid: WARN, warn: ACCENT, danger: DANGER };
+const condColor = (pct: number) => TONE_COLOR[wearTier(pct).tone];
+const ringColor = (pct: number) => TONE_COLOR[wearTier(pct).tone];
+const condLabel = (pct: number) => { const t = wearTier(pct); return `${t.emoji} ${t.label}`; };
 
 // ── shoe detail ───────────────────────────────────────────────────────────────
 function ShoeDetail({
@@ -467,12 +467,14 @@ function ShoeDetail({
 // ── locker ─────────────────────────────────────────────────────────────────
 function ShoeCard({ shoe, featured, onPress, onPlay, unit, pace }: { shoe: Shoe; featured: boolean; onPress: () => void; onPlay?: () => void; unit: Unit; pace?: string }) {
   const remainKm = Math.max(0, shoe.max - shoe.used);
-  const ring = ringColor(shoe.condition);
   const retired = !!shoe.retired;
   const usedDisp = displayNum(shoe.used, unit);
   const maxDisp = displayNum(shoe.max, unit);
   // 사용률(%) — 라벨바 채움(목업 LifeBar 정합). 비율은 km 절대값으로(단위 불변).
   const usedPct = shoe.max > 0 ? Math.min(100, Math.round((shoe.used / shoe.max) * 100)) : 0;
+  // 마모 색/라벨은 실제 사용률(km 기준, 100% 초과 가능)로 — 4단계 컨디션.
+  const wearPct = shoe.max > 0 ? (shoe.used / shoe.max) * 100 : 0;
+  const ring = ringColor(wearPct);
   // 사용자 DB: 종류(type)→칩, 추천 용도(recommended)→자연어 문장(핸드오프 purpose 정합).
   const cardClass = findShoeClass(shoe.brand, shoe.model);
   const cardType = typeLabel(cardClass?.type);
@@ -492,8 +494,8 @@ function ShoeCard({ shoe, featured, onPress, onPlay, unit, pace }: { shoe: Shoe;
         </View>
         <View style={s.shoeRightCol}>
           <View style={s.shoeCondRow}>
-            <View testID={`cond-dot-${shoe.condition}`} style={[s.shoeCondDot, { backgroundColor: condColor(shoe.condition) }]} />
-            <Text style={[s.shoeCondText, { color: T2 }]} numberOfLines={1}>{condLabel(shoe.condition)}</Text>
+            <View testID={`cond-dot-${wearTier(wearPct).key}`} style={[s.shoeCondDot, { backgroundColor: condColor(wearPct) }]} />
+            <Text style={[s.shoeCondText, { color: T2 }]} numberOfLines={1}>{condLabel(wearPct)}</Text>
           </View>
           {!retired && onPlay ? (
             <Pressable onPress={onPlay} hitSlop={10} accessibilityRole="button" accessibilityLabel={`${shoe.brand} ${shoe.model}로 달리기`} style={({ pressed }) => [s.cardPlay, pressed && s.pressed]} testID={shoe.id ? `shoe-play-${shoe.id}` : undefined}>

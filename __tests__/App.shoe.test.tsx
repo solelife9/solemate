@@ -27,7 +27,7 @@ import ReactTestRenderer, {act} from 'react-test-renderer';
 import {Alert, StyleSheet} from 'react-native';
 import App from '../App';
 import ShoesScreen from '../ShoesScreen.rn';
-import {DANGER, WARN, GOOD, Shoe} from '../theme';
+import {DANGER, WARN, GOOD, ACCENT, Shoe} from '../theme';
 
 type ApiShoe = {id: string; name: string; max_km: number; start_km: number; retired?: boolean};
 type ApiRun = {id: string; shoe_id: string; km: number; run_date: string; duration: number};
@@ -257,21 +257,23 @@ test('restore(복원) PATCHes retired=false and the shoe reappears in the home p
   expect(home).toContain('러닝 시작'); // start CTA present → startable
 });
 
-// ── 4) ShoesScreen: three wear tiers + retire/restore from the locker ──────────
-test('ShoesScreen renders 양호/주의/교체 in distinct colors', async () => {
+// ── 4) ShoesScreen: 4단계 마모 컨디션(사용률%) + retire/restore from the locker ──
+test('ShoesScreen renders 4단계 마모 컨디션을 사용률별 색으로', async () => {
   const shoes: Shoe[] = [
-    {id: 'w', brand: 'NIKE', model: 'Pegasus', used: 560, max: 600, condition: '교체'},
-    {id: 'm', brand: 'HOKA', model: 'Clifton', used: 480, max: 600, condition: '주의'},
-    {id: 'n', brand: 'ASICS', model: 'Nimbus', used: 50, max: 600, condition: '양호'},
+    {id: 'a', brand: 'NIKE', model: 'Pegasus', used: 60, max: 600, condition: '양호'},   // 10% best→green
+    {id: 'b', brand: 'HOKA', model: 'Clifton', used: 390, max: 600, condition: '양호'},  // 65% good→yellow
+    {id: 'c', brand: 'ASICS', model: 'Nimbus', used: 540, max: 600, condition: '교체'},  // 90% consider→orange
+    {id: 'd', brand: 'BROOKS', model: 'Ghost', used: 660, max: 600, condition: '교체'},  // 110% replace→red
   ];
   const root = await mountComponent(
     <ShoesScreen shoes={shoes} runs={[]} totals={{}} onTab={() => {}} onAddShoe={() => {}} />,
   );
 
-  // 3-tier color contract: 교체→DANGER, 주의→WARN, 양호→GOOD (상태 점에 실린다).
-  expect(dotColorsOf(root, '교체')).toContain(DANGER);
-  expect(dotColorsOf(root, '주의')).toContain(WARN);
-  expect(dotColorsOf(root, '양호')).toContain(GOOD);
+  // 4-tier color contract(사용률%): best→GOOD / good→WARN / consider→ACCENT / replace→DANGER.
+  expect(dotColorsOf(root, 'best')).toContain(GOOD);
+  expect(dotColorsOf(root, 'good')).toContain(WARN);
+  expect(dotColorsOf(root, 'consider')).toContain(ACCENT);
+  expect(dotColorsOf(root, 'replace')).toContain(DANGER);
 });
 
 test('ShoesScreen locker drives retire (archive) and restore (undo) through props', async () => {

@@ -50,6 +50,31 @@ export type ShoeHealth = {
 export const SHOE_CAUTION_PCT = 75; // ≥75% → 주의
 export const SHOE_REPLACE_PCT = 90; // ≥90% → 교체
 
+// ─── 마모 상태 4단계(표시용 단일 출처) ──────────────────────────────────────────
+// 사용률(%)을 4단계 컨디션으로 매핑한다(화면 표시 전용 — 알림/교체 로직의 3단계
+// conditionForPercent 와 별개). 0~50 최상 / 50~80 좋음 / 80~100 교체 고려 / 100%+ 교체 권장.
+export type WearTierKey = 'best' | 'good' | 'consider' | 'replace';
+export type WearTierTone = 'good' | 'mid' | 'warn' | 'danger';
+export type WearTier = {
+  key: WearTierKey;
+  label: string; // 최상의 컨디션 / 좋은 상태 / 교체 고려 / 교체 권장
+  emoji: string; // 🟢 🟡 🟠 🔴
+  tone: WearTierTone; // 화면이 theme 토큰으로 매핑(raw hex 0)
+};
+
+export const WEAR_GOOD_PCT = 50; // <50% → 최상
+export const WEAR_FAIR_PCT = 80; // 50~80% → 좋음
+export const WEAR_CONSIDER_PCT = 100; // 80~100% → 교체 고려, 100%+ → 교체 권장
+
+/** 사용률(%) → 4단계 마모 컨디션(라벨·이모지·톤). 입력 비정상 → 최상(0%). */
+export function wearTier(percentUsed: number): WearTier {
+  const p = Number.isFinite(percentUsed) && percentUsed > 0 ? percentUsed : 0;
+  if (p >= WEAR_CONSIDER_PCT) return {key: 'replace', label: '교체 권장', emoji: '🔴', tone: 'danger'};
+  if (p >= WEAR_FAIR_PCT) return {key: 'consider', label: '교체 고려', emoji: '🟠', tone: 'warn'};
+  if (p >= WEAR_GOOD_PCT) return {key: 'good', label: '좋은 상태', emoji: '🟡', tone: 'mid'};
+  return {key: 'best', label: '최상의 컨디션', emoji: '🟢', tone: 'good'};
+}
+
 // Fallback category lifespan when a shoe carries no max_km (mirrors App default).
 export const DEFAULT_MAX_KM = 600;
 

@@ -6,6 +6,7 @@ import {
   conditionForPercent,
   clampMaxKm,
   tierBadge,
+  wearTier,
   reconcileShoeAlerts,
   DEFAULT_MAX_KM,
   MIN_SHOE_MAX_KM,
@@ -198,6 +199,29 @@ describe('tierBadge — 앱내 배지 매핑', () => {
   });
   test('교체 → danger 톤', () => {
     expect(tierBadge('교체')).toEqual({label: '교체', tone: 'danger'});
+  });
+});
+
+describe('wearTier — 마모 4단계(사용률%)', () => {
+  test('0~50% → 최상의 컨디션(🟢/good)', () => {
+    expect(wearTier(0)).toMatchObject({key: 'best', label: '최상의 컨디션', emoji: '🟢', tone: 'good'});
+    expect(wearTier(49.9).key).toBe('best');
+  });
+  test('50~80% → 좋은 상태(🟡/mid)', () => {
+    expect(wearTier(50)).toMatchObject({key: 'good', label: '좋은 상태', tone: 'mid'});
+    expect(wearTier(79.9).key).toBe('good');
+  });
+  test('80~100% → 교체 고려(🟠/warn)', () => {
+    expect(wearTier(80)).toMatchObject({key: 'consider', label: '교체 고려', tone: 'warn'});
+    expect(wearTier(99.9).key).toBe('consider');
+  });
+  test('100%+ → 교체 권장(🔴/danger)', () => {
+    expect(wearTier(100)).toMatchObject({key: 'replace', label: '교체 권장', emoji: '🔴', tone: 'danger'});
+    expect(wearTier(150).key).toBe('replace');
+  });
+  test('비정상 입력 → 최상(0%)', () => {
+    expect(wearTier(NaN).key).toBe('best');
+    expect(wearTier(-10).key).toBe('best');
   });
 });
 

@@ -10,6 +10,7 @@
 import React from 'react';
 import {View, Text, StyleSheet} from 'react-native';
 import {ACCENT, GOOD, WARN, DANGER, T1, T2, T3, FONT, DISPLAY, withAlpha} from './theme';
+import {wearTier, WearTierTone} from './lib/shoe';
 
 type Props = {
   remainLabel: string;          // 예 "382" (이미 단위 환산된 숫자 문자열)
@@ -23,11 +24,14 @@ type Props = {
   editSlot?: React.ReactNode;   // '잔여 수명' 우측 편집 어포던스(선택)
 };
 
-const condColor = (c: string) => (c === '교체' ? DANGER : c === '주의' ? WARN : GOOD);
+// 마모 4단계 톤 → theme 토큰(raw hex 0). 최상🟢/좋음🟡/교체고려🟠/교체권장🔴.
+const TONE_COLOR: Record<WearTierTone, string> = {good: GOOD, mid: WARN, warn: ACCENT, danger: DANGER};
 
 export function FuelGauge({remainLabel, unit, fillPct, condition, usedLabel, maxLabel, replaceLabel, editSlot}: Props) {
   const p = Math.max(0, Math.min(1, fillPct));
-  const cc = condColor(condition);
+  // 색은 사용률(%) 기반 4단계 — condition(3단계)은 호환 위해 prop 으로 받되 색엔 안 씀.
+  const tier = wearTier(p * 100);
+  const cc = TONE_COLOR[tier.tone];
   return (
     <View style={g.wrap}>
       <View style={g.labelRow}>
@@ -38,7 +42,7 @@ export function FuelGauge({remainLabel, unit, fillPct, condition, usedLabel, max
       <Text style={g.lead}>교체까지 약 <Text style={g.leadBold}>{remainLabel}{unit}</Text> 남았어요</Text>
       {/* 수명 바 — 단색 중립 트랙 + 채움(양호=흰색·주의=주황·교체=빨강). 색 구간/마커 없음. */}
       <View style={[g.track, {marginTop: 14}]}>
-        <View style={[g.fill, {width: `${p * 100}%`, backgroundColor: condition === '양호' ? withAlpha(T1, 0.85) : cc}]} />
+        <View style={[g.fill, {width: `${p * 100}%`, backgroundColor: tier.key === 'best' ? withAlpha(T1, 0.85) : cc}]} />
       </View>
       <View style={g.scale}>
         <Text style={g.scaleTxt}>{usedLabel ?? '0'}{unit}</Text>
