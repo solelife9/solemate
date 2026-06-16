@@ -143,6 +143,36 @@ test('cold backend: a FAILED boot fetch shows a retry card, and 다시 시도 re
   act(() => renderer.unmount());
 });
 
+// ── 2.5) 로컬-퍼스트 폴백: 오프라인이라도 캐시가 있으면 재시도 카드 대신 부팅 ──────────
+test('offline boot: 마지막 성공 데이터 캐시가 있으면 fetch 실패해도 재시도 카드 대신 그 데이터로 부팅', async () => {
+  // 직전 성공 부팅이 남긴 캐시(신발/런).
+  await AsyncStorage.setItem(
+    'cache_shoes_v1',
+    JSON.stringify([{id: 's1', name: 'Nike Pegasus', max_km: 600, start_km: 0}]),
+  );
+  await AsyncStorage.setItem(
+    'cache_runs_v1',
+    JSON.stringify([{id: 'r1', shoe_id: 's1', km: 5, run_date: '2026-05-31', duration: 1800}]),
+  );
+  // 백엔드는 콜드/다운(모든 요청 reject).
+  (globalThis.fetch as jest.Mock).mockImplementation(() => Promise.reject(new Error('cold backend')));
+
+  let renderer!: ReactTestRenderer.ReactTestRenderer;
+  await act(async () => {
+    renderer = ReactTestRenderer.create(<App />);
+  });
+  await flush();
+  const root = renderer.root;
+
+  // 재시도 카드/스켈레톤이 아니라 홈이 캐시 데이터로 렌더된다.
+  expect(has(root, 'boot-error')).toBe(false);
+  expect(has(root, 'boot-skeleton')).toBe(false);
+  expect(textOf(root)).toContain('오늘은 어떤 신발로');
+  expect(textOf(root)).toContain('Pegasus');
+
+  act(() => renderer.unmount());
+});
+
 test('empty-new account is DISTINCT from a boot error: an empty successful load shows onboarding, never the retry card', async () => {
   // Brand-new user: not onboarded, and the backend returns an empty (but OK) set.
   await AsyncStorage.removeItem('onboarded');

@@ -103,6 +103,25 @@ type BootState = 'loading' | 'ready' | 'error';
 // 첫 실행 온보딩 / 위치 권한 priming 의 1회성 플래그 키(AsyncStorage 영속).
 const ONBOARD_KEY = 'onboarded';        // 온보딩 완료
 const LOC_PRIME_KEY = 'loc_perm_primed'; // 위치 권한 사전 안내 완료
+// 로컬-퍼스트 폴백 캐시: 마지막으로 성공한 신발/런을 보관해, 콜드/다운 백엔드에서도
+// 재시도 카드 대신 '오프라인 부팅'으로 마지막 데이터를 보여준다(랭킹·동기화는 복구 시).
+const CACHE_SHOES_KEY = 'cache_shoes_v1';
+const CACHE_RUNS_KEY = 'cache_runs_v1';
+/** 부팅 폴백 캐시 로드 — 신발 배열이 있으면 {shoes,runs}, 없으면(미존재/손상) null. */
+async function loadBootCache(): Promise<{shoes: any[]; runs: any[]} | null> {
+  try {
+    const [s, r] = await Promise.all([
+      AsyncStorage.getItem(CACHE_SHOES_KEY),
+      AsyncStorage.getItem(CACHE_RUNS_KEY),
+    ]);
+    const shoes = JSON.parse(s || 'null');
+    if (!Array.isArray(shoes)) return null;
+    const runs = JSON.parse(r || 'null');
+    return {shoes, runs: Array.isArray(runs) ? runs : []};
+  } catch {
+    return null;
+  }
+}
 
 // keep-going 톤: 실패를 '끝'이 아니라 '잠깐 멈춤'으로 프레이밍해 재시도를 유도한다.
 const KEEP_GOING_RETRY = '잠깐 숨 고르는 중이에요. 다시 시도하면 계속 달릴 수 있어요.';
@@ -375,6 +394,9 @@ function Main(){
         return merged;
       }));
       setShoes(safeShoes);setRuns(runsWithRoute);
+      // 로컬-퍼스트 폴백 캐시 갱신(실데이터만). 다음 부팅에 백엔드가 죽어도 마지막
+      // 데이터로 'ready'가 되도록. 쓰기 실패는 비차단(부팅 영향 0).
+      try{await AsyncStorage.setItem(CACHE_SHOES_KEY,JSON.stringify(safeShoes));await AsyncStorage.setItem(CACHE_RUNS_KEY,JSON.stringify(runsWithRoute));}catch{}
       // 개발 전용 데모 시드(디자인/에뮬 검증용 로컬 목). 운영 안전 3중 게이트:
       //   ① __DEV__  — 릴리스 빌드에선 false → 실사용자에게 절대 노출 안 됨.
       //   ② NODE_ENV!=='test' — 테스트에선 주입한 신발을 보존(시드가 덮지 않음).
@@ -390,10 +412,18 @@ function Main(){
       // 사용자 id를 갓 받은 값으로 넘겨, 재-POST 전 클라이언트 화해로 중복을 막는다.
       await syncPendingRuns(safeRuns,d.user_id);
     }catch{
-      // 콜드 백엔드/오프라인: fetch 실패는 빈-신규와 다르다. 재시도 카드를 띄워
-      // 사용자가 직접 재시도하게 한다(데이터 없음 ≠ 불러오기 실패).
       console.log('offline');
-      setBootState('error');
+      // 오프라인 폴백(로컬-퍼스트): 마지막 성공 데이터가 캐시에 있으면 그것으로 'ready'
+      // 부팅한다(재시도 카드 대신 — 백엔드 다운에도 앱이 쓸모 있게). 캐시가 없으면(진짜
+      // 신규/첫 실행 오프라인) 기존대로 재시도 카드. 동기화·랭킹은 백엔드 복구 시 재개.
+      const cached=await loadBootCache();
+      if(cached){
+        setShoes(cached.shoes);setRuns(cached.runs);
+        setBootState('ready');
+        checkShoeAlerts(cached.shoes,cached.runs,st.alerts);
+      }else{
+        setBootState('error');
+      }
     }
   }
 
