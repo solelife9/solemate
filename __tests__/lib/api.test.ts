@@ -6,7 +6,14 @@
 //
 // jest.setup 의 global.fetch 목을 테스트별로 교체했다가 복원한다(격리).
 
-import {fetchWithTimeout, API_TIMEOUT_MS} from '../../lib/api';
+import {
+  fetchWithTimeout,
+  API_TIMEOUT_MS,
+  apiPatchShoe,
+  apiDeleteShoe,
+  apiPatchRun,
+  apiDeleteRun,
+} from '../../lib/api';
 
 const origFetch = global.fetch;
 
@@ -47,5 +54,26 @@ describe('fetchWithTimeout', () => {
     const assertion = expect(p).rejects.toThrow();
     jest.advanceTimersByTime(100); // 타임아웃 발화 → abort
     await assertion;
+  });
+});
+
+describe('PATCH/DELETE 실패는 무음이 아니라 throw (호출부 Alert/큐로 분기)', () => {
+  const okResp = {ok: true, status: 200, json: () => Promise.resolve({})};
+  const failResp = {ok: false, status: 500, json: () => Promise.resolve({})};
+
+  test('ok 응답이면 정상 resolve', async () => {
+    global.fetch = jest.fn(() => Promise.resolve(okResp)) as any;
+    await expect(apiPatchShoe('u', 's1', {name: 'x'})).resolves.toBeUndefined();
+    await expect(apiDeleteShoe('u', 's1')).resolves.toBeUndefined();
+    await expect(apiPatchRun('u', 'r1', {km: 5})).resolves.toBeUndefined();
+    await expect(apiDeleteRun('u', 'r1')).resolves.toBeUndefined();
+  });
+
+  test('!ok 응답이면 throw (조용히 묻히지 않음)', async () => {
+    global.fetch = jest.fn(() => Promise.resolve(failResp)) as any;
+    await expect(apiPatchShoe('u', 's1', {name: 'x'})).rejects.toThrow();
+    await expect(apiDeleteShoe('u', 's1')).rejects.toThrow();
+    await expect(apiPatchRun('u', 'r1', {km: 5})).rejects.toThrow();
+    await expect(apiDeleteRun('u', 'r1')).rejects.toThrow();
   });
 });

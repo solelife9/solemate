@@ -86,20 +86,22 @@ export async function apiPatchShoe(
   id: string,
   fields: Record<string, unknown>,
 ): Promise<void> {
-  await fetchWithTimeout(API + '/api/shoes/' + id, {
+  const r = await fetchWithTimeout(API + '/api/shoes/' + id, {
     method: 'PATCH',
     headers: JSON_HEADERS,
     body: JSON.stringify({user_id: userId, ...fields}),
   });
+  if (!r || !r.ok) throw new Error('shoe PATCH failed');
 }
 
 /** 신발 삭제(DELETE). */
 export async function apiDeleteShoe(userId: string | null, id: string): Promise<void> {
-  await fetchWithTimeout(API + '/api/shoes/' + id, {
+  const r = await fetchWithTimeout(API + '/api/shoes/' + id, {
     method: 'DELETE',
     headers: JSON_HEADERS,
     body: JSON.stringify({user_id: userId}),
   });
+  if (!r || !r.ok) throw new Error('shoe DELETE failed');
 }
 
 /**
@@ -135,18 +137,20 @@ export async function apiPatchRun(
   id: string,
   fields: Record<string, unknown>,
 ): Promise<void> {
-  await fetchWithTimeout(API + '/api/runs/' + id, {
+  const r = await fetchWithTimeout(API + '/api/runs/' + id, {
     method: 'PATCH',
     headers: JSON_HEADERS,
     body: JSON.stringify({user_id: userId, ...fields}),
   });
+  if (!r || !r.ok) throw new Error('run PATCH failed');
 }
 
 /** 런 삭제(DELETE). */
 export async function apiDeleteRun(userId: string | null, id: string): Promise<void> {
-  await fetchWithTimeout(API + '/api/runs/' + id, {
+  const r = await fetchWithTimeout(API + '/api/runs/' + id, {
     method: 'DELETE',
     headers: JSON_HEADERS,
     body: JSON.stringify({user_id: userId}),
   });
+  if (!r || !r.ok) throw new Error('run DELETE failed');
 }
