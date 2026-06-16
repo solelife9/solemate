@@ -10,9 +10,31 @@ export const API = 'https://solelife-backend.onrender.com';
 
 const JSON_HEADERS = {'Content-Type': 'application/json'};
 
+/** 기본 네트워크 타임아웃(ms). 콜드/다운 백엔드에서 무한 대기(부팅 행·저장 멈춤)를 막는다. */
+export const API_TIMEOUT_MS = 8000;
+
+/**
+ * fetch + 타임아웃/중단. timeoutMs(기본 8s) 안에 응답이 없으면 AbortController 로 끊어
+ * reject 한다 → 호출부 catch 가 즉시 재시도 카드/큐로 분기(무한 스피너 방지). 성공 시
+ * 타이머는 즉시 해제(test 의 fetch 목은 동기 resolve 라 타임아웃 미발화).
+ */
+export async function fetchWithTimeout(
+  input: string,
+  init?: RequestInit,
+  timeoutMs: number = API_TIMEOUT_MS,
+): Promise<Response> {
+  const ctrl = new AbortController();
+  const id = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    return await fetch(input, {...(init || {}), signal: ctrl.signal});
+  } finally {
+    clearTimeout(id);
+  }
+}
+
 /** 디바이스 id 로 익명 인증 → { user_id } 파싱 반환. */
 export async function apiAuth(deviceId: string): Promise<any> {
-  const r = await fetch(API + '/api/auth', {
+  const r = await fetchWithTimeout(API + '/api/auth', {
     method: 'POST',
     headers: JSON_HEADERS,
     body: JSON.stringify({device_id: deviceId}),
@@ -22,13 +44,13 @@ export async function apiAuth(deviceId: string): Promise<any> {
 
 /** 사용자 신발 목록(파싱 반환). */
 export async function apiGetShoes(userId: string): Promise<any> {
-  const r = await fetch(API + '/api/shoes?user_id=' + userId);
+  const r = await fetchWithTimeout(API + '/api/shoes?user_id=' + userId);
   return r.json();
 }
 
 /** 사용자 런 목록(파싱 반환). */
 export async function apiGetRuns(userId: string): Promise<any> {
-  const r = await fetch(API + '/api/runs?user_id=' + userId);
+  const r = await fetchWithTimeout(API + '/api/runs?user_id=' + userId);
   return r.json();
 }
 
@@ -40,7 +62,7 @@ export async function apiAddShoe(
   userId: string | null,
   fields: {name: string; maxKm: number; startKm: number; date: string},
 ): Promise<any> {
-  const r = await fetch(API + '/api/shoes', {
+  const r = await fetchWithTimeout(API + '/api/shoes', {
     method: 'POST',
     headers: JSON_HEADERS,
     body: JSON.stringify({
@@ -64,7 +86,7 @@ export async function apiPatchShoe(
   id: string,
   fields: Record<string, unknown>,
 ): Promise<void> {
-  await fetch(API + '/api/shoes/' + id, {
+  await fetchWithTimeout(API + '/api/shoes/' + id, {
     method: 'PATCH',
     headers: JSON_HEADERS,
     body: JSON.stringify({user_id: userId, ...fields}),
@@ -73,7 +95,7 @@ export async function apiPatchShoe(
 
 /** 신발 삭제(DELETE). */
 export async function apiDeleteShoe(userId: string | null, id: string): Promise<void> {
-  await fetch(API + '/api/shoes/' + id, {
+  await fetchWithTimeout(API + '/api/shoes/' + id, {
     method: 'DELETE',
     headers: JSON_HEADERS,
     body: JSON.stringify({user_id: userId}),
@@ -85,7 +107,7 @@ export async function apiDeleteShoe(userId: string | null, id: string): Promise<
  * 실패(!ok/무응답)는 throw 해 호출부(동기화 큐)가 재시도 대상으로 남기게 한다.
  */
 export async function apiAddRun(userId: string | null, p: any): Promise<any> {
-  const r = await fetch(API + '/api/runs', {
+  const r = await fetchWithTimeout(API + '/api/runs', {
     method: 'POST',
     headers: JSON_HEADERS,
     body: JSON.stringify({
@@ -113,7 +135,7 @@ export async function apiPatchRun(
   id: string,
   fields: Record<string, unknown>,
 ): Promise<void> {
-  await fetch(API + '/api/runs/' + id, {
+  await fetchWithTimeout(API + '/api/runs/' + id, {
     method: 'PATCH',
     headers: JSON_HEADERS,
     body: JSON.stringify({user_id: userId, ...fields}),
@@ -122,7 +144,7 @@ export async function apiPatchRun(
 
 /** 런 삭제(DELETE). */
 export async function apiDeleteRun(userId: string | null, id: string): Promise<void> {
-  await fetch(API + '/api/runs/' + id, {
+  await fetchWithTimeout(API + '/api/runs/' + id, {
     method: 'DELETE',
     headers: JSON_HEADERS,
     body: JSON.stringify({user_id: userId}),

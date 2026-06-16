@@ -17,7 +17,7 @@ import {
 import {Ring} from './primitives';
 import ErrorBoundary from './ErrorBoundary';
 import {installCrashHandler, setCrashUser} from './lib/crashlytics';
-import {apiAuth, apiGetShoes, apiGetRuns, apiAddShoe, apiPatchShoe, apiDeleteShoe, apiAddRun, apiPatchRun, apiDeleteRun} from './lib/api';
+import {apiAuth, apiGetShoes, apiGetRuns, apiAddShoe, apiPatchShoe, apiDeleteShoe, apiAddRun, apiPatchRun, apiDeleteRun, fetchWithTimeout} from './lib/api';
 import {devSeedShoes, devSeedRuns} from './lib/devSeed';
 // BackendShoe / BackendRun 은 types.d.ts 의 전역 ambient 인터페이스(import 불필요).
 import HomeScreen, {WeekStats} from './HomeScreen.rn';
@@ -1548,7 +1548,7 @@ function RunActiveScreen({shoe,insets,goalKm,weightKg,onSave,onDiscard,resume}:{
           const pts2=JSON.parse(finRoute);
           if(pts2.length>0){
             const {lat,lon}=pts2[0];
-            const d=await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=ko`,{headers:{'User-Agent':'Keego/1.0'}}).then(r=>r.json());
+            const d=await fetchWithTimeout(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=ko`,{headers:{'User-Agent':'Keego/1.0'}},5000).then(r=>r.json());
             const addr=d.address||{};
             const parts=[addr.suburb||addr.neighbourhood||addr.quarter||addr.city_district||addr.town,addr.city||addr.county||addr.state].filter(Boolean);
             loc=parts.length>0?parts.join(', '):(d.display_name||'').split(',').slice(0,2).join(',').trim()||'';
