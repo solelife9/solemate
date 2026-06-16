@@ -280,9 +280,9 @@ function ShoeDetail({
             usedLabel={String(usedDisp)}
             maxLabel={String(maxDisp)}
           />
-          {/* 권장수명의 의미: 쿠셔닝(성능) 기준 가이드이지 '실착 한계'가 아님을 명확히. */}
+          {/* 교체권장의 의미: 쿠셔닝(성능) 기준 가이드이지 '실착 한계'가 아님을 명확히. */}
           <Text style={s.gaugeNote}>
-            쿠셔닝(성능)이 유지되는 권장 교체 거리예요. 넘어도 신을 수 있지만 충격 흡수는 줄어요.
+            쿠셔닝(성능)이 유지되는 교체 권장 거리예요. 넘어도 신을 수 있지만 충격 흡수는 줄어요.
           </Text>
           {!retired && shoe.id && onSetMaxKm && (
             <Pressable onPress={() => setEditingMax((e) => !e)} hitSlop={8} accessibilityRole="button" accessibilityLabel="신발 수명 수정" style={s.maxEditRow}>

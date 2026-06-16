@@ -49,11 +49,11 @@ describe('SHOE_MODELS 시드 데이터', () => {
 describe('categoryLifespanKm 매핑(스펙 값)', () => {
   test.each([
     ['daily_trainer', 700],
-    ['max_cushion', 650],
+    ['max_cushion', 750],
     ['stability', 750],
-    ['super_trainer', 560],
-    ['tempo', 560],
-    ['carbon_racing', 400],
+    ['super_trainer', 700],
+    ['tempo', 650],
+    ['carbon_racing', 450],
     ['trail', 700],
   ] as const)('%s → %i km', (cat, km) => {
     expect(categoryLifespanKm[cat]).toBe(km);
@@ -134,22 +134,22 @@ describe('getRecommendedLifespanKm 추천 로직', () => {
   test('brand+model 매칭 → 모델 권장 km', () => {
     expect(getRecommendedLifespanKm({ brand: 'Nike', model: 'Pegasus 41' })).toBe(700);
     expect(getRecommendedLifespanKm({ brand: 'Saucony', model: 'Peregrine 15' })).toBe(700);
-    expect(getRecommendedLifespanKm({ brand: 'Asics', model: 'Metaspeed Sky Paris' })).toBe(400);
+    expect(getRecommendedLifespanKm({ brand: 'Asics', model: 'Metaspeed Sky Paris' })).toBe(450);
   });
 
   test('대문자 브랜드/여백 차이도 매칭한다(App parseShoeName 호환)', () => {
     expect(getRecommendedLifespanKm({ brand: 'NIKE', model: 'Pegasus 41' })).toBe(700);
-    expect(getRecommendedLifespanKm({ brand: 'nike', model: '  vaporfly 4 ' })).toBe(400);
+    expect(getRecommendedLifespanKm({ brand: 'nike', model: '  vaporfly 4 ' })).toBe(450);
   });
 
-  test('카본 레이싱 모델 → 400km(상향된 기본값)', () => {
-    expect(getRecommendedLifespanKm({ brand: 'Nike', model: 'Alphafly 3' })).toBe(400);
-    expect(getRecommendedLifespanKm({ brand: 'Nike', model: 'Vaporfly 4' })).toBe(400);
+  test('카본 레이싱 모델 → 450km(상향된 기본값)', () => {
+    expect(getRecommendedLifespanKm({ brand: 'Nike', model: 'Alphafly 3' })).toBe(450);
+    expect(getRecommendedLifespanKm({ brand: 'Nike', model: 'Vaporfly 4' })).toBe(450);
   });
 
   test('미매칭 + category → 카테고리 기본값', () => {
     expect(getRecommendedLifespanKm({ brand: 'X', model: 'Y', category: 'trail' })).toBe(700);
-    expect(getRecommendedLifespanKm({ category: 'carbon_racing' })).toBe(400);
+    expect(getRecommendedLifespanKm({ category: 'carbon_racing' })).toBe(450);
   });
 
   test('모델·category 모두 없으면 daily 700', () => {
@@ -161,6 +161,6 @@ describe('getRecommendedLifespanKm 추천 로직', () => {
     expect(getRecommendedLifespanKm({ brand: 'Nike', model: 'Pegasus 41', weightKg: 95 })).toBe(595); // 700×0.85
     expect(getRecommendedLifespanKm({ brand: 'Nike', model: 'Pegasus 41', weightKg: 55 })).toBe(770); // 700×1.1
     expect(getRecommendedLifespanKm({ brand: 'Nike', model: 'Pegasus 41', weightKg: 72 })).toBe(700);
-    expect(getRecommendedLifespanKm({ category: 'carbon_racing', weightKg: 95 })).toBe(340); // 400×0.85
+    expect(getRecommendedLifespanKm({ category: 'carbon_racing', weightKg: 95 })).toBe(383); // 450×0.85=382.5→383
   });
 });

@@ -121,19 +121,19 @@ function suggestedModels(root: ReactTestRenderer.ReactTestInstance): string[] {
 }
 
 // ── 1) model pick → recommended km auto-fills + '권장' badge ────────────────────
-test('모델을 검색해 카본화를 고르면 권장 400km가 자동 입력되고 권장 배지가 뜬다', async () => {
+test('모델을 검색해 카본화를 고르면 권장 450km가 자동 입력되고 권장 배지가 뜬다', async () => {
   const onSave = jest.fn();
   const root = await mountScreen(onSave);
 
   await typeModel(root, 'Vaporfly');
   await tap(pressBy(root, 'Vaporfly 4')); // 모달 추천 선택 → 모달 닫힘
 
-  expect(maxInput(root).props.value).toBe('400');
+  expect(maxInput(root).props.value).toBe('450');
   expect(badgeShown(root)).toBe(true);
 
   await tap(pressBy(root, '러닝화 등록'));
   expect(onSave).toHaveBeenCalledTimes(1);
-  expect(onSave.mock.calls[0][0]).toMatchObject({brand: 'Nike', model: 'Vaporfly 4', max: 400});
+  expect(onSave.mock.calls[0][0]).toMatchObject({brand: 'Nike', model: 'Vaporfly 4', max: 450});
 });
 
 // ── 2) editing the recommended value drops the badge and is what gets saved ─────
@@ -235,14 +235,14 @@ test('전체 목록에서 항목을 선택하면 model과 권장 수명(max)이 
   const root = await mountScreen(onSave);
 
   await openPicker(root);
-  await tap(pressBy(root, 'Alphafly 3')); // per-model 오버라이드 400km
+  await tap(pressBy(root, 'Alphafly 3')); // 카본 카테고리 기본 450km
 
   expect(modelDisplay(root)).toContain('Alphafly 3'); // 트리거에 선택 모델 표시
-  expect(maxInput(root).props.value).toBe('400');
+  expect(maxInput(root).props.value).toBe('450');
   expect(badgeShown(root)).toBe(true);
 
   await tap(pressBy(root, '러닝화 등록'));
-  expect(onSave.mock.calls[0][0]).toMatchObject({brand: 'Nike', model: 'Alphafly 3', max: 400});
+  expect(onSave.mock.calls[0][0]).toMatchObject({brand: 'Nike', model: 'Alphafly 3', max: 450});
 });
 
 // ── 8) DB에 없는 모델명은 '직접 추가'로 등록할 수 있다 ────────────────────────────────
