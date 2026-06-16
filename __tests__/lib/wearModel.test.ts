@@ -130,7 +130,7 @@ describe('targetKmFor', () => {
     expect(targetKmFor({id: 's', name: 'Nike Pegasus 41'})).toBe(
       categoryLifespanKm.daily_trainer,
     );
-    // Hoka Speedgoat 6 = trail → 850.
+    // Hoka Speedgoat 6 = trail → 700.
     expect(targetKmFor({id: 's', name: 'Hoka Speedgoat 6'})).toBe(
       categoryLifespanKm.trail,
     );

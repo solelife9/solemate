@@ -29,15 +29,15 @@ describe('차별점: 신발 모델 DB 권장 수명 자동 추천', () => {
     expect(SHOE_MODELS.length).toBeGreaterThanOrEqual(100);
   });
 
-  test('데일리 트레이너는 ~700km, 카본 레이싱은 ~320km 권장', () => {
+  test('데일리 트레이너는 ~700km, 카본 레이싱은 ~400km 권장', () => {
     // 알려진 모델 → 카테고리 기반 권장 수명
     expect(getRecommendedLifespanKm({ brand: 'NIKE', model: 'Pegasus 41' })).toBe(700);
-    expect(getRecommendedLifespanKm({ brand: 'NIKE', model: 'Vaporfly 4' })).toBe(320);
+    expect(getRecommendedLifespanKm({ brand: 'NIKE', model: 'Vaporfly 4' })).toBe(400);
   });
 
   test('모델 미지정/미매칭 → 카테고리 기본, 없으면 데일리(700) fallback', () => {
     expect(getRecommendedLifespanKm({ brand: 'NIKE', model: '존재하지않는모델XYZ' })).toBe(700);
-    expect(getRecommendedLifespanKm({ category: 'carbon_racing' })).toBe(320);
+    expect(getRecommendedLifespanKm({ category: 'carbon_racing' })).toBe(400);
     expect(getRecommendedLifespanKm({})).toBe(700);
   });
 });
