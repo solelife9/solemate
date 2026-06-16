@@ -19,7 +19,6 @@ export type ShoeCategory =
   | 'max_cushion'
   | 'stability'
   | 'super_trainer'
-  | 'tempo'
   | 'carbon_racing'
   | 'trail';
 
@@ -50,15 +49,14 @@ export interface RecommendInput {
 /**
  * 카테고리별 기본 교체 권장 거리(km) = 쿠셔닝(성능)이 유지되는 기준(실착 한계가 아님).
  * 안정화 750·맥스 750: 단단한 지지 폼 / 두꺼운 폼 볼륨으로 가장 오래 간다.
- * 데일리 700·슈퍼트레이너 700: 기준. 템포 650: 경량 업템포라 고무·폼이 적어 조금 짧게.
- * 카본 450: PEBA 폼의 반발 수명(요즘 1세대보다 내구성↑). 트레일 700: 지형 의존(로드화와 비슷).
+ * 데일리 700·트레이너 700: 기준. 카본 450: PEBA 폼의 반발 수명(요즘 1세대보다 내구성↑).
+ * 트레일 700: 지형 의존(로드화와 비슷). (경량 업템포화는 별도 카테고리 없이 트레이너로 묶는다.)
  */
 export const categoryLifespanKm: Record<ShoeCategory, number> = {
   daily_trainer: 700,
   max_cushion: 750,
   stability: 750,
   super_trainer: 700,
-  tempo: 650,
   carbon_racing: 450,
   trail: 700,
 };
@@ -86,7 +84,7 @@ export const SHOE_MODELS: ShoeModel[] = [
   { brand: 'Nike', model: 'Invincible 3', category: 'max_cushion', recommendedKm: 750, year: 2023 },
   { brand: 'Nike', model: 'Structure 26', category: 'stability', recommendedKm: 750, year: 2025 },
   { brand: 'Nike', model: 'Zoom Fly 6', category: 'super_trainer', recommendedKm: 700, year: 2024 },
-  { brand: 'Nike', model: 'Streakfly 2', category: 'tempo', recommendedKm: 650, year: 2025 },
+  { brand: 'Nike', model: 'Streakfly 2', category: 'super_trainer', recommendedKm: 700, year: 2025 },
   { brand: 'Nike', model: 'Vaporfly 4', category: 'carbon_racing', recommendedKm: 450, year: 2025 },
   { brand: 'Nike', model: 'Alphafly 3', category: 'carbon_racing', recommendedKm: 450, year: 2024 },
   { brand: 'Nike', model: 'Pegasus Trail 5', category: 'trail', recommendedKm: 700, year: 2024 },
@@ -101,8 +99,8 @@ export const SHOE_MODELS: ShoeModel[] = [
   { brand: 'Adidas', model: 'Adizero SL2', category: 'daily_trainer', recommendedKm: 700, year: 2024 },
   { brand: 'Adidas', model: 'Adizero Evo SL', category: 'super_trainer', recommendedKm: 700, year: 2025 },
   { brand: 'Adidas', model: 'Adizero Boston 13', category: 'super_trainer', recommendedKm: 700, year: 2025 },
-  { brand: 'Adidas', model: 'Adizero Adios 9', category: 'tempo', recommendedKm: 650, year: 2025 },
-  { brand: 'Adidas', model: 'Adizero Takumi Sen 11', category: 'tempo', recommendedKm: 650, year: 2025 },
+  { brand: 'Adidas', model: 'Adizero Adios 9', category: 'super_trainer', recommendedKm: 700, year: 2025 },
+  { brand: 'Adidas', model: 'Adizero Takumi Sen 11', category: 'super_trainer', recommendedKm: 700, year: 2025 },
   { brand: 'Adidas', model: 'Adizero Adios Pro 4', category: 'carbon_racing', recommendedKm: 450, year: 2024 },
   { brand: 'Adidas', model: 'Adizero Adios Pro Evo 1', category: 'carbon_racing', recommendedKm: 450, year: 2024 },
   { brand: 'Adidas', model: 'Adistar 3', category: 'max_cushion', recommendedKm: 750, year: 2024 },
@@ -133,14 +131,14 @@ export const SHOE_MODELS: ShoeModel[] = [
   { brand: 'Asics', model: 'Gel-Nimbus 28', category: 'max_cushion', recommendedKm: 750, year: 2026 },
   { brand: 'Asics', model: 'Gel-Kayano 33', category: 'stability', recommendedKm: 750, year: 2026 },
   { brand: 'Asics', model: 'Superblast 3', category: 'super_trainer', recommendedKm: 700, year: 2026 },
-  { brand: 'Asics', model: 'Magic Speed 5', category: 'tempo', recommendedKm: 650, year: 2026 },
+  { brand: 'Asics', model: 'Magic Speed 5', category: 'super_trainer', recommendedKm: 700, year: 2026 },
   { brand: 'Asics', model: 'Gel-Nimbus 27', category: 'max_cushion', recommendedKm: 750, year: 2025 },
   { brand: 'Asics', model: 'Gel-Kayano 32', category: 'stability', recommendedKm: 750, year: 2025 },
   { brand: 'Asics', model: 'GT-2000 14', category: 'stability', recommendedKm: 750, year: 2025 },
   { brand: 'Asics', model: 'Novablast 5', category: 'super_trainer', recommendedKm: 700, year: 2025 },
   { brand: 'Asics', model: 'Superblast 2', category: 'super_trainer', recommendedKm: 700, year: 2024 },
-  { brand: 'Asics', model: 'Magic Speed 4', category: 'tempo', recommendedKm: 650, year: 2024 },
-  { brand: 'Asics', model: 'Noosa Tri 16', category: 'tempo', recommendedKm: 650, year: 2024 },
+  { brand: 'Asics', model: 'Magic Speed 4', category: 'super_trainer', recommendedKm: 700, year: 2024 },
+  { brand: 'Asics', model: 'Noosa Tri 16', category: 'super_trainer', recommendedKm: 700, year: 2024 },
   { brand: 'Asics', model: 'Metaspeed Sky Paris', category: 'carbon_racing', recommendedKm: 450, year: 2024 },
   { brand: 'Asics', model: 'Metaspeed Edge Paris', category: 'carbon_racing', recommendedKm: 450, year: 2024 },
   { brand: 'Asics', model: 'Gel-Trabuco 13', category: 'trail', recommendedKm: 700, year: 2025 },
@@ -159,14 +157,14 @@ export const SHOE_MODELS: ShoeModel[] = [
   { brand: 'New Balance', model: 'Fresh Foam X More v5', category: 'max_cushion', recommendedKm: 750, year: 2024 },
   { brand: 'New Balance', model: 'Fresh Foam X Vongo v6', category: 'stability', recommendedKm: 750, year: 2024 },
   { brand: 'New Balance', model: 'Fresh Foam X Hierro v9', category: 'trail', recommendedKm: 700, year: 2025 },
-  { brand: 'New Balance', model: 'FuelCell SuperComp Pacer', category: 'tempo', recommendedKm: 650, year: 2023 },
+  { brand: 'New Balance', model: 'FuelCell SuperComp Pacer', category: 'super_trainer', recommendedKm: 700, year: 2023 },
 
   // SAUCONY (19)
   { brand: 'Saucony', model: 'Endorphin Speed 4', category: 'super_trainer', recommendedKm: 700, year: 2024 },
   { brand: 'Saucony', model: 'Ride 19', category: 'daily_trainer', recommendedKm: 700, year: 2026 },
   { brand: 'Saucony', model: 'Triumph 24', category: 'max_cushion', recommendedKm: 750, year: 2026 },
   { brand: 'Saucony', model: 'Guide 19', category: 'stability', recommendedKm: 750, year: 2026 },
-  { brand: 'Saucony', model: 'Kinvara 16', category: 'tempo', recommendedKm: 650, year: 2026 },
+  { brand: 'Saucony', model: 'Kinvara 16', category: 'super_trainer', recommendedKm: 700, year: 2026 },
   { brand: 'Saucony', model: 'Peregrine 16', category: 'trail', recommendedKm: 700, year: 2026 },
   { brand: 'Saucony', model: 'Endorphin Speed 5', category: 'super_trainer', recommendedKm: 700, year: 2025 },
   { brand: 'Saucony', model: 'Endorphin Pro 4', category: 'carbon_racing', recommendedKm: 450, year: 2024 },
@@ -178,7 +176,7 @@ export const SHOE_MODELS: ShoeModel[] = [
   { brand: 'Saucony', model: 'Guide 18', category: 'stability', recommendedKm: 750, year: 2025 },
   { brand: 'Saucony', model: 'Hurricane 25', category: 'stability', recommendedKm: 750, year: 2025 },
   { brand: 'Saucony', model: 'Tempus 2', category: 'stability', recommendedKm: 750, year: 2024 },
-  { brand: 'Saucony', model: 'Kinvara 15', category: 'tempo', recommendedKm: 650, year: 2024 },
+  { brand: 'Saucony', model: 'Kinvara 15', category: 'super_trainer', recommendedKm: 700, year: 2024 },
   { brand: 'Saucony', model: 'Peregrine 15', category: 'trail', recommendedKm: 700, year: 2025 },
   { brand: 'Saucony', model: 'Xodus Ultra 4', category: 'trail', recommendedKm: 700, year: 2025 },
 
@@ -192,7 +190,7 @@ export const SHOE_MODELS: ShoeModel[] = [
   { brand: 'Brooks', model: 'Glycerin Max', category: 'max_cushion', recommendedKm: 750, year: 2024 },
   { brand: 'Brooks', model: 'Adrenaline GTS 24', category: 'stability', recommendedKm: 750, year: 2024 },
   { brand: 'Brooks', model: 'Adrenaline GTS 25', category: 'stability', recommendedKm: 750, year: 2025 },
-  { brand: 'Brooks', model: 'Hyperion 2', category: 'tempo', recommendedKm: 650, year: 2024 },
+  { brand: 'Brooks', model: 'Hyperion 2', category: 'super_trainer', recommendedKm: 700, year: 2024 },
   { brand: 'Brooks', model: 'Hyperion Max 2', category: 'super_trainer', recommendedKm: 700, year: 2024 },
   { brand: 'Brooks', model: 'Hyperion Elite 4 PB', category: 'carbon_racing', recommendedKm: 450, year: 2025 },
   { brand: 'Brooks', model: 'Launch 11', category: 'daily_trainer', recommendedKm: 700, year: 2024 },
@@ -254,7 +252,7 @@ export const SHOE_MODELS: ShoeModel[] = [
 
   // ALTRA (4) — 제로드롭 신규 브랜드
   { brand: 'Altra', model: 'Torin 8', category: 'daily_trainer', recommendedKm: 700, year: 2025 },
-  { brand: 'Altra', model: 'Escalante 5', category: 'tempo', recommendedKm: 650, year: 2026 },
+  { brand: 'Altra', model: 'Escalante 5', category: 'super_trainer', recommendedKm: 700, year: 2026 },
   { brand: 'Altra', model: 'Vanish Carbon 2', category: 'carbon_racing', recommendedKm: 450, year: 2024 },
   { brand: 'Altra', model: 'Lone Peak 9', category: 'trail', recommendedKm: 700, year: 2025 },
 
@@ -262,7 +260,7 @@ export const SHOE_MODELS: ShoeModel[] = [
   { brand: 'Topo Athletic', model: 'Phantom 4', category: 'daily_trainer', recommendedKm: 700, year: 2025 },
   { brand: 'Topo Athletic', model: 'Atmos', category: 'max_cushion', recommendedKm: 750, year: 2025 },
   { brand: 'Topo Athletic', model: 'Specter 2', category: 'super_trainer', recommendedKm: 700, year: 2025 },
-  { brand: 'Topo Athletic', model: 'Cyclone 3', category: 'tempo', recommendedKm: 650, year: 2025 },
+  { brand: 'Topo Athletic', model: 'Cyclone 3', category: 'super_trainer', recommendedKm: 700, year: 2025 },
 ];
 
 // ────────────────────────────────────────────────────────────

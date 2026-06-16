@@ -43,7 +43,7 @@ export const RUNTYPE_CATEGORIES: Record<RunType, ShoeCategory[]> = {
   easy: ['daily_trainer', 'max_cushion', 'stability'],
   recovery: ['max_cushion', 'daily_trainer', 'stability'],
   long: ['max_cushion', 'daily_trainer', 'super_trainer'],
-  tempo: ['tempo', 'super_trainer'],
+  tempo: ['super_trainer', 'carbon_racing'],
   race: ['carbon_racing', 'super_trainer'],
 };
 
@@ -60,8 +60,7 @@ const CATEGORY_LABEL: Record<ShoeCategory, string> = {
   daily_trainer: '데일리화',
   max_cushion: '쿠션화',
   stability: '안정화',
-  super_trainer: '슈퍼트레이너',
-  tempo: '템포화',
+  super_trainer: '트레이너',
   carbon_racing: '카본화',
   trail: '트레일화',
 };

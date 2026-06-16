@@ -52,7 +52,6 @@ describe('categoryLifespanKm 매핑(스펙 값)', () => {
     ['max_cushion', 750],
     ['stability', 750],
     ['super_trainer', 700],
-    ['tempo', 650],
     ['carbon_racing', 450],
     ['trail', 700],
   ] as const)('%s → %i km', (cat, km) => {

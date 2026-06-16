@@ -17,8 +17,7 @@ export const categoryLabelKo: Record<ShoeCategory, string> = {
   daily_trainer: '데일리 트레이너',
   max_cushion: '맥스 쿠션',
   stability: '안정화',
-  super_trainer: '슈퍼 트레이너',
-  tempo: '템포',
+  super_trainer: '트레이너',
   carbon_racing: '카본 레이싱',
   trail: '트레일',
 };
