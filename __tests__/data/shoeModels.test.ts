@@ -49,8 +49,8 @@ describe('SHOE_MODELS 시드 데이터', () => {
 describe('categoryLifespanKm 매핑(스펙 값)', () => {
   test.each([
     ['daily_trainer', 700],
-    ['max_cushion', 700],
-    ['stability', 700],
+    ['max_cushion', 650],
+    ['stability', 750],
     ['super_trainer', 560],
     ['tempo', 560],
     ['carbon_racing', 400],
