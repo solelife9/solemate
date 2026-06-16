@@ -60,7 +60,7 @@ const CATEGORY_LABEL: Record<ShoeCategory, string> = {
   daily_trainer: '데일리화',
   max_cushion: '쿠션화',
   stability: '안정화',
-  super_trainer: '슈퍼트레이너',
+  super_trainer: '슈퍼 트레이너',
   carbon_racing: '카본화',
   trail: '트레일화',
 };
