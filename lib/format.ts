@@ -11,9 +11,11 @@ const DOW = ['일', '월', '화', '수', '목', '금', '토'];
 
 /** Elapsed seconds → "H:MM:SS" (with hours) or "MM:SS". */
 export function fmtTime(s: number): string {
-  const h = Math.floor(s / 3600),
-    m = Math.floor((s % 3600) / 60),
-    sec = s % 60;
+  // 비유한/음수 입력은 0초로 정규화(NaN:NaN 같은 깨진 표기 방지).
+  const t = Number.isFinite(s) && s > 0 ? Math.floor(s) : 0;
+  const h = Math.floor(t / 3600),
+    m = Math.floor((t % 3600) / 60),
+    sec = t % 60;
   if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
   return `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
 }
@@ -24,7 +26,8 @@ export function fmtTime(s: number): string {
  * pace derived from near-zero distance.
  */
 export function fmtPace(km: number, s: number): string {
-  if (km < 0.01) return '--';
+  // 의미 없는 거리(<0.01km)·비유한·0 이하 시간은 가짜 페이스 대신 '--'.
+  if (!Number.isFinite(km) || km < 0.01 || !Number.isFinite(s) || s <= 0) return '--';
   const p = s / km;
   return `${Math.floor(p / 60)}'${String(Math.round(p % 60)).padStart(2, '0')}"`;
 }

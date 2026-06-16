@@ -8,12 +8,23 @@ describe('fmtTime', () => {
   test('an hour or more → H:MM:SS', () => {
     expect(fmtTime(3661)).toBe('1:01:01');
   });
+  test('비유한/음수 입력 → 00:00 (NaN:NaN 방지)', () => {
+    expect(fmtTime(NaN)).toBe('00:00');
+    expect(fmtTime(-5)).toBe('00:00');
+    expect(fmtTime(Infinity)).toBe('00:00');
+  });
 });
 
 describe('fmtPace', () => {
   test('meaningless distance guarded with --', () => {
     expect(fmtPace(0, 100)).toBe('--');
     expect(fmtPace(0.005, 100)).toBe('--');
+  });
+  test('비유한/0이하 시간 → 가짜 페이스 대신 --', () => {
+    expect(fmtPace(1, 0)).toBe('--');
+    expect(fmtPace(1, -10)).toBe('--');
+    expect(fmtPace(1, NaN)).toBe('--');
+    expect(fmtPace(NaN, 300)).toBe('--');
   });
   test("1km in 300s → 5'00\"", () => {
     expect(fmtPace(1, 300)).toBe("5'00\"");

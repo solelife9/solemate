@@ -15,14 +15,19 @@ export interface PeriodSummary {
   time: string;
 }
 
+/** 비배열 입력(손상/스칼라 백엔드 응답 등)을 빈 배열로 정규화 — 집계 함수 크래시 방지. */
+function asList(list: any[]): any[] {
+  return Array.isArray(list) ? list.filter(Boolean) : [];
+}
+
 /** Sum of `km` (parsed) over a run list. */
 export function sumKm(list: any[]): number {
-  return list.reduce((a, r) => a + (parseFloat(r.km) || 0), 0);
+  return asList(list).reduce((a, r) => a + (parseFloat(r.km) || 0), 0);
 }
 
 /** Average pace label across runs with usable duration & distance, else '--'. */
 export function avgPaceLabel(list: any[]): string {
-  const p = list.filter(r => (r.duration || 0) > 0 && parseFloat(r.km) > 0.1);
+  const p = asList(list).filter(r => (r.duration || 0) > 0 && parseFloat(r.km) > 0.1);
   if (!p.length) return '--';
   const sec = p.reduce((a, r) => a + r.duration / parseFloat(r.km), 0) / p.length;
   return fmtPace(1, sec);
@@ -41,22 +46,23 @@ export function durationLabel(seconds: number): string {
 
 /** Total moving time as "Hh Mm" / "Mm", or '--' when zero. */
 export function totalTimeLabel(list: any[]): string {
-  return durationLabel(list.reduce((a, r) => a + (r.duration || 0), 0));
+  return durationLabel(asList(list).reduce((a, r) => a + (r.duration || 0), 0));
 }
 
 /** Period summary (distance/count/pace/time) for a run list. */
 export function summaryOf(list: any[]): PeriodSummary {
+  const l = asList(list);
   return {
-    km: sumKm(list).toFixed(1),
-    runs: list.length,
-    pace: avgPaceLabel(list),
-    time: totalTimeLabel(list),
+    km: sumKm(l).toFixed(1),
+    runs: l.length,
+    pace: avgPaceLabel(l),
+    time: totalTimeLabel(l),
   };
 }
 
 /** Longest run of consecutive calendar days present in `dates` (YYYY-MM-DD). */
 export function maxDayStreak(dates: string[]): number {
-  const uniq = [...new Set(dates)].sort();
+  const uniq = [...new Set(asList(dates))].sort();
   let best = 0,
     cur = 0;
   let prev: Date | null = null;
@@ -77,11 +83,12 @@ export function maxDayStreak(dates: string[]): number {
  * Returns raw sums; callers round for display.
  */
 export function weekBuckets(runs: any[], monday: Date): number[] {
+  const safe = asList(runs);
   const out: number[] = [];
   for (let i = 0; i < 7; i++) {
     const d = new Date(monday);
     d.setDate(monday.getDate() + i);
-    out.push(sumKm(runs.filter(r => r.run_date === ymdLocal(d))));
+    out.push(sumKm(safe.filter(r => r.run_date === ymdLocal(d))));
   }
   return out;
 }
@@ -94,7 +101,7 @@ export function monthBuckets(monthRuns: any[], year: number, monthIndex: number)
   const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
   const weekCount = Math.ceil(daysInMonth / 7);
   const out: number[] = Array(weekCount).fill(0);
-  monthRuns.forEach(r => {
+  asList(monthRuns).forEach(r => {
     const day = new Date(r.run_date + 'T00:00:00').getDate();
     const b = Math.min(weekCount - 1, Math.ceil(day / 7) - 1);
     out[b] += parseFloat(r.km) || 0;
@@ -105,7 +112,7 @@ export function monthBuckets(monthRuns: any[], year: number, monthIndex: number)
 /** Monthly-bucketed distance (km) for a year (Jan..Dec). Returns raw sums. */
 export function yearBuckets(yearRuns: any[]): number[] {
   const out: number[] = Array(12).fill(0);
-  yearRuns.forEach(r => {
+  asList(yearRuns).forEach(r => {
     const m = new Date(r.run_date + 'T00:00:00').getMonth();
     out[m] += parseFloat(r.km) || 0;
   });

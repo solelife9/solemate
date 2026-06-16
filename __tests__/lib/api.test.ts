@@ -28,7 +28,7 @@ describe('fetchWithTimeout', () => {
     const out = await fetchWithTimeout('https://e/x', {method: 'GET'});
     expect(out).toBe(res);
     // signal 이 init 에 주입되어 전달된다(중단 가능).
-    const init = spy.mock.calls[0][1] as any;
+    const init: any = (spy.mock.calls as any[])[0][1];
     expect(init.signal).toBeDefined();
     expect(init.method).toBe('GET');
   });

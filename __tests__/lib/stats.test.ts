@@ -19,6 +19,23 @@ describe('sumKm', () => {
   });
 });
 
+// 손상/스칼라 백엔드 응답(비배열·null)에서도 집계가 크래시하지 않아야 한다(견고함).
+describe('비배열 입력 방어(크래시 없음)', () => {
+  test.each([null, undefined, 42, 'oops', {}])('입력 %p → 안전 기본값', (bad: any) => {
+    expect(sumKm(bad)).toBe(0);
+    expect(avgPaceLabel(bad)).toBe('--');
+    expect(totalTimeLabel(bad)).toBe('--');
+    expect(summaryOf(bad)).toEqual({km: '0.0', runs: 0, pace: '--', time: '--'});
+    expect(maxDayStreak(bad)).toBe(0);
+    expect(weekBuckets(bad, new Date(2026, 5, 15))).toHaveLength(7);
+    expect(yearBuckets(bad)).toHaveLength(12);
+    expect(() => monthBuckets(bad, 2026, 5)).not.toThrow();
+  });
+  test('손상 요소(null) 섞여도 무시', () => {
+    expect(sumKm([{km: 5}, null, undefined, {km: '2'}] as any)).toBeCloseTo(7, 5);
+  });
+});
+
 describe('avgPaceLabel', () => {
   test('-- when no run has usable duration & distance', () => {
     expect(avgPaceLabel([{km: 0.05, duration: 100}, {km: 5, duration: 0}])).toBe('--');
