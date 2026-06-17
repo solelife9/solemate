@@ -345,8 +345,11 @@ jest.mock('@react-native-firebase/messaging', () => {
     getMessaging: jest.fn(() => messagingInstance),
     requestPermission: jest.fn(() => Promise.resolve(AuthorizationStatus.AUTHORIZED)),
     getToken: jest.fn(() => Promise.resolve('mock-fcm-token')),
-    // onMessage returns the unsubscribe fn, like the real subscriber contract.
+    // onMessage / onTokenRefresh each return the unsubscribe fn, like the real
+    // subscriber contract. Tests override per-case to capture the registered
+    // listener (and to exercise the throw → no-op-unsubscribe graceful branch).
     onMessage: jest.fn(() => jest.fn()),
+    onTokenRefresh: jest.fn(() => jest.fn()),
   };
 });
 

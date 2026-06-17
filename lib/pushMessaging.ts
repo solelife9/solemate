@@ -13,11 +13,13 @@
 //     로만 처리한다 — dueNotifications 가 "무엇을" 정하고, 여기서 "지금" 띄운다.
 
 import {Alert} from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   getMessaging,
   requestPermission,
   getToken,
   onMessage,
+  onTokenRefresh,
   AuthorizationStatus,
 } from '@react-native-firebase/messaging';
 
@@ -136,4 +138,135 @@ export async function initPushMessaging(opts?: {
     ? registerForegroundMessageHandler(opts.onForegroundMessage)
     : () => {};
   return {granted, token, unsubscribe};
+}
+
+// ── 토큰 등록 배선(audit a4) ─────────────────────────────────────────────────
+// 취득한 FCM 토큰을 백엔드에 등록(POST)하기 전까지 보관하는 AsyncStorage 키. 백엔드
+// 등록 API 가 준비되기 전엔 여기 토큰을 큐잉만 하고(등록 no-op), API 가 생기면 이 큐를
+// 비우며 POST 한다. App 부팅 배선이 이 키만 알면 되도록 한 곳에 둔다.
+export const FCM_TOKEN_PENDING_KEY = 'fcm_token_pending';
+
+/**
+ * FCM 토큰을 백엔드에 등록할 절대경로 엔드포인트. 아직 백엔드에 등록 라우트가 없으므로
+ * 빈 문자열이다 — 이 경우 등록은 graceful no-op(토큰을 pending 키에 큐잉만 하고 POST 안
+ * 함). 백엔드에 라우트가 생기면 이 상수에 URL 을 채우면 그때부터 POST 한다. (이 잡에서
+ * 백엔드 repo 는 건드리지 않는다 — 앱 측 배선만.)
+ */
+export const FCM_REGISTER_ENDPOINT = '';
+
+/**
+ * 토큰을 pending 키에 영속한다(비차단). 실패(스토리지 부재 등)는 삼킨다 — 토큰 영속
+ * 실패가 부팅/등록 흐름을 막지 않는다(iron law: 비차단).
+ */
+export async function persistPendingToken(token: string): Promise<void> {
+  try {
+    await AsyncStorage.setItem(FCM_TOKEN_PENDING_KEY, token);
+  } catch {
+    // 영속 실패는 비차단 — 다음 부팅/토큰갱신에서 다시 시도된다.
+  }
+}
+
+/** registerPushToken 의 결과 — 관찰용. */
+export type RegisterResult = 'skipped' | 'queued' | 'registered';
+
+/**
+ * 취득한 FCM 토큰을 백엔드에 등록한다. 토큰이 없으면(null/빈) 아무것도 하지 않는다
+ * ('skipped'). 토큰이 있으면 *항상 먼저* pending 키에 영속하고(다음 부팅/재시도에서 합류
+ * 가능), 등록 엔드포인트가:
+ *   · 비어 있으면 — 'queued'. 백엔드 등록 API 가 아직 없으므로 POST 하지 않고 큐잉만 한다
+ *     (graceful no-op). 라우트가 생기면 다음 호출이 POST 한다.
+ *   · 채워져 있으면 — POST 한다. 성공(ok)하면 pending 키를 비우고 'registered', 서버 거부/
+ *     네트워크 실패면 pending 을 보존한 채 'queued'(다음 기회 재시도).
+ * 어떤 실패(영속·네트워크·미설정)도 throw 하지 않는다 — 등록 실패가 부팅을 막지 않는다.
+ * endpoint/userId 는 테스트·미래 백엔드 연결을 위해 주입 가능하다.
+ */
+export async function registerPushToken(
+  token: string | null,
+  opts?: {endpoint?: string; userId?: string | null},
+): Promise<RegisterResult> {
+  if (!token) return 'skipped';
+  await persistPendingToken(token);
+  const endpoint = opts?.endpoint ?? FCM_REGISTER_ENDPOINT;
+  if (!endpoint) return 'queued'; // 백엔드 등록 API 미존재 — 큐잉만(graceful no-op)
+  try {
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({user_id: opts?.userId ?? null, token}),
+    });
+    if (res && res.ok) {
+      try {
+        await AsyncStorage.removeItem(FCM_TOKEN_PENDING_KEY); // 등록 완료 — 큐 비움
+      } catch {
+        // 큐 비우기 실패는 비차단(다음 등록이 같은 토큰을 멱등 재POST).
+      }
+      return 'registered';
+    }
+    return 'queued'; // 서버 거부 → pending 유지
+  } catch {
+    return 'queued'; // 네트워크 실패 → pending 유지
+  }
+}
+
+/**
+ * FCM 토큰 갱신(onTokenRefresh) 핸들러를 등록한다. 토큰은 시간/재설치/복원에 따라 바뀌므로
+ * 갱신될 때마다 다시 영속·등록해야 푸시가 끊기지 않는다. 등록 실패(네이티브 부재 등)는
+ * 삼키고 no-op 해제 함수를 돌려줘 호출부가 항상 안전하게 정리할 수 있게 한다.
+ */
+export function registerTokenRefreshHandler(
+  handler: (token: string) => void,
+): Unsubscribe {
+  try {
+    const unsubscribe = onTokenRefresh(getMessaging(), handler);
+    return typeof unsubscribe === 'function' ? unsubscribe : () => {};
+  } catch {
+    return () => {};
+  }
+}
+
+/** setupPushMessaging 결과 — 포그라운드/토큰갱신 핸들러 해제 함수(언마운트 정리용). */
+export interface PushWiring {
+  unsubscribeForeground: Unsubscribe;
+  unsubscribeTokenRefresh: Unsubscribe;
+}
+
+/**
+ * 앱 부팅(또는 로그인 직후) 1회 배선: 권한 요청 → 토큰 취득 → pending 영속+등록(graceful)
+ * → 포그라운드 메시지 핸들러 + onTokenRefresh 등록을 한 번에 수행한다. 전 과정을 try/catch
+ * 로 감싸 *어떤 단계가 실패해도 절대 throw 하지 않는다* — 토큰 배선 실패가 부팅을 막지
+ * 않는다(iron law: 비차단). 항상 두 해제 함수를 돌려줘(실패 시 no-op) 호출부(언마운트)가
+ * 안전하게 정리할 수 있다.
+ */
+export async function setupPushMessaging(opts?: {
+  userId?: string | null;
+  onForegroundMessage?: (message: unknown) => void;
+  endpoint?: string;
+}): Promise<PushWiring> {
+  const noop: PushWiring = {
+    unsubscribeForeground: () => {},
+    unsubscribeTokenRefresh: () => {},
+  };
+  try {
+    const setup = await initPushMessaging({
+      onForegroundMessage: opts?.onForegroundMessage,
+    });
+    await registerPushToken(setup.token, {
+      userId: opts?.userId,
+      endpoint: opts?.endpoint,
+    });
+    // 토큰 갱신 시마다 다시 영속+등록(graceful) — 위와 같은 비차단 규약.
+    const unsubscribeTokenRefresh = registerTokenRefreshHandler(token => {
+      void registerPushToken(token, {
+        userId: opts?.userId,
+        endpoint: opts?.endpoint,
+      });
+    });
+    return {
+      unsubscribeForeground: setup.unsubscribe,
+      unsubscribeTokenRefresh,
+    };
+  } catch {
+    // 어떤 실패도 비차단 — 부팅을 막지 않는다(no-op 해제 함수 반환).
+    return noop;
+  }
 }

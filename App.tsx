@@ -72,7 +72,7 @@ import {
   getNotifSettings, setNotifSettings, dueNotifications,
   DEFAULT_NOTIF_SETTINGS, type NotifSettings, type NotifState, type ShoeForecast,
 } from './lib/notifications';
-import {presentDue} from './lib/pushMessaging';
+import {presentDue, setupPushMessaging, type PushWiring} from './lib/pushMessaging';
 import {weeklyProgress, currentStreak, personalRecords} from './lib/goals';
 import {serializeBackup, BackupV1, BackupPayload} from './lib/backup';
 import {Challenge, ChallengeRun} from './lib/challenges';
@@ -378,6 +378,30 @@ function Main(){
       if(next==='active')presentDueRef.current?.();
     });
     return ()=>sub.remove();
+  },[]);
+
+  // audit a4: 앱측 FCM 배선(부팅 직후 1회). setupPushMessaging 가 권한→토큰 취득→
+  // 'fcm_token_pending' 영속+등록(백엔드 등록 API 미존재 → graceful no-op 큐잉)→포그라운드
+  // 메시지/onTokenRefresh 핸들러를 한 번에 처리한다. 내부가 전 과정을 try/catch 로 감싸므로
+  // 권한 거부·토큰 실패·네이티브 부재 등 어떤 실패도 throw 하지 않는다 — 토큰 배선이 부팅을
+  // 막지 않는다(iron law: 비차단). 포그라운드 FCM 수신 시 dueNotifications 표시를 트리거하고,
+  // 언마운트 시 두 핸들러를 해제한다. mount 1회만 배선한다(중복 등록 방지).
+  useEffect(()=>{
+    let wiring:PushWiring|null=null;
+    let cancelled=false;
+    void (async()=>{
+      try{
+        const w=await setupPushMessaging({
+          onForegroundMessage:()=>{presentDueRef.current?.();},
+        });
+        if(cancelled){w.unsubscribeForeground();w.unsubscribeTokenRefresh();}
+        else wiring=w;
+      }catch(e){console.log('push wiring error',e);} // 비차단(이중 방어)
+    })();
+    return ()=>{
+      cancelled=true;
+      try{wiring?.unsubscribeForeground();wiring?.unsubscribeTokenRefresh();}catch{/* no-op */}
+    };
   },[]);
 
   // 런별 노면 태그(surface_<runId>) 일괄 로드 → 실효 마모/예측 보정에 반영. runs가 바뀔

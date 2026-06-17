@@ -10,10 +10,12 @@
  */
 
 import {Alert} from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   requestPermission,
   getToken,
   onMessage,
+  onTokenRefresh,
   AuthorizationStatus,
 } from '@react-native-firebase/messaging';
 
@@ -24,12 +26,17 @@ import {
   registerForegroundMessageHandler,
   presentDue,
   initPushMessaging,
+  registerPushToken,
+  registerTokenRefreshHandler,
+  setupPushMessaging,
+  FCM_TOKEN_PENDING_KEY,
 } from '../../lib/pushMessaging';
 import {type NotificationIntent} from '../../lib/notifications';
 
 const reqMock = requestPermission as jest.Mock;
 const tokenMock = getToken as jest.Mock;
 const onMessageMock = onMessage as jest.Mock;
+const onTokenRefreshMock = onTokenRefresh as jest.Mock;
 
 const intent = (over: Partial<NotificationIntent> = {}): NotificationIntent => ({
   type: 'run_reminder',
@@ -181,5 +188,112 @@ describe('initPushMessaging', () => {
     expect(tokenMock).not.toHaveBeenCalled();
     // 핸들러 미지정 시 해제 함수는 안전한 no-op.
     expect(() => setup.unsubscribe()).not.toThrow();
+  });
+});
+
+describe('registerPushToken (a4 토큰 등록 배선)', () => {
+  test('토큰을 fcm_token_pending 키에 영속하고, 등록 엔드포인트가 비면 큐잉만(queued, POST 없음)', async () => {
+    const fetchMock = global.fetch as jest.Mock;
+    const result = await registerPushToken('tok-abc'); // 기본 endpoint='' → no-op 큐잉
+    expect(result).toBe('queued');
+    await expect(AsyncStorage.getItem(FCM_TOKEN_PENDING_KEY)).resolves.toBe('tok-abc');
+    // graceful no-op: 등록 POST 가 일어나지 않았다(엔드포인트 부재).
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  test('엔드포인트가 있으면 POST 하고, 성공 시 pending 큐를 비운 뒤 registered', async () => {
+    const fetchMock = global.fetch as jest.Mock;
+    fetchMock.mockResolvedValueOnce({ok: true, status: 200});
+    const result = await registerPushToken('tok-xyz', {
+      endpoint: 'https://example.test/fcm/register',
+      userId: 'u-1',
+    });
+    expect(result).toBe('registered');
+    // 실제로 그 엔드포인트로 토큰을 POST 했다(관찰 가능 결과).
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe('https://example.test/fcm/register');
+    expect(init.method).toBe('POST');
+    expect(JSON.parse(init.body)).toEqual({user_id: 'u-1', token: 'tok-xyz'});
+    // 등록 완료 → pending 큐는 비워진다(중복 등록 방지).
+    await expect(AsyncStorage.getItem(FCM_TOKEN_PENDING_KEY)).resolves.toBeNull();
+  });
+
+  test('POST 가 reject 해도 throw 없이 queued 로 폴백하고 토큰을 pending 에 보존(다음 기회 재시도)', async () => {
+    const fetchMock = global.fetch as jest.Mock;
+    fetchMock.mockRejectedValueOnce(new Error('network down'));
+    const result = await registerPushToken('tok-keep', {
+      endpoint: 'https://example.test/fcm/register',
+    });
+    expect(result).toBe('queued');
+    await expect(AsyncStorage.getItem(FCM_TOKEN_PENDING_KEY)).resolves.toBe('tok-keep');
+  });
+
+  test('토큰이 null 이면 아무것도 등록/영속하지 않는다(skipped)', async () => {
+    // 인메모리 AsyncStorage 목은 테스트 간 잔존하므로(clearAllMockStorages 누수) 키를 먼저
+    // 비우고, null 토큰이 그 비움을 바꾸지 않음을 단언한다.
+    await AsyncStorage.removeItem(FCM_TOKEN_PENDING_KEY);
+    const result = await registerPushToken(null);
+    expect(result).toBe('skipped');
+    await expect(AsyncStorage.getItem(FCM_TOKEN_PENDING_KEY)).resolves.toBeNull();
+  });
+});
+
+describe('registerTokenRefreshHandler (a4 onTokenRefresh)', () => {
+  test('onTokenRefresh 에 핸들러를 등록하고, 갱신된 토큰을 핸들러로 전달하며, 해제 함수를 돌려준다', () => {
+    const unsub = jest.fn();
+    let captured: ((t: string) => void) | undefined;
+    onTokenRefreshMock.mockImplementationOnce((_messaging, listener) => {
+      captured = listener;
+      return unsub;
+    });
+    const handler = jest.fn();
+    const returned = registerTokenRefreshHandler(handler);
+    expect(typeof captured).toBe('function');
+    captured?.('refreshed-token');
+    expect(handler).toHaveBeenCalledWith('refreshed-token');
+    expect(returned).toBe(unsub);
+  });
+
+  test('onTokenRefresh 가 throw 해도 no-op 해제 함수를 돌려준다(호출해도 안전)', () => {
+    onTokenRefreshMock.mockImplementationOnce(() => {
+      throw new Error('no native module');
+    });
+    const returned = registerTokenRefreshHandler(jest.fn());
+    expect(typeof returned).toBe('function');
+    expect(() => returned()).not.toThrow();
+  });
+});
+
+describe('setupPushMessaging (a4 부팅 배선 — 비차단)', () => {
+  test('정상 경로: 토큰을 fcm_token_pending 에 영속하고 포그라운드/토큰갱신 핸들러를 등록한다', async () => {
+    const wiring = await setupPushMessaging({onForegroundMessage: jest.fn()});
+    await expect(AsyncStorage.getItem(FCM_TOKEN_PENDING_KEY)).resolves.toBe('mock-fcm-token');
+    expect(onMessageMock).toHaveBeenCalledTimes(1);
+    expect(onTokenRefreshMock).toHaveBeenCalledTimes(1);
+    expect(() => {
+      wiring.unsubscribeForeground();
+      wiring.unsubscribeTokenRefresh();
+    }).not.toThrow();
+  });
+
+  test('토큰 배선의 어느 단계가 실패해도 throw 하지 않는다 — 부팅을 막지 않는다(iron law 비차단)', async () => {
+    // 권한·토큰·핸들러 등록이 모두 네이티브 부재로 reject/throw 하는 최악의 경우.
+    reqMock.mockRejectedValueOnce(new Error('no native'));
+    tokenMock.mockRejectedValueOnce(new Error('no native'));
+    onMessageMock.mockImplementationOnce(() => {
+      throw new Error('no native');
+    });
+    onTokenRefreshMock.mockImplementationOnce(() => {
+      throw new Error('no native');
+    });
+    // resolve(=throw 안 함)만으로 '부팅 비차단'이 관찰된다. 항상 안전한 해제 함수를 받는다.
+    const wiring = await setupPushMessaging({onForegroundMessage: jest.fn()});
+    expect(typeof wiring.unsubscribeForeground).toBe('function');
+    expect(typeof wiring.unsubscribeTokenRefresh).toBe('function');
+    expect(() => {
+      wiring.unsubscribeForeground();
+      wiring.unsubscribeTokenRefresh();
+    }).not.toThrow();
   });
 });
