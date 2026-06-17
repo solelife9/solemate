@@ -17,19 +17,19 @@ import {
   LayoutChangeEvent, NativeSyntheticEvent, NativeScrollEvent, StatusBar,
 } from 'react-native';
 import Svg, { Path, Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
-
-// ── 토큰(목업과 동일) ─────────────────────────────────────────────────────────
-const C = {
-  bg: '#000000', surface: '#0F0F10',
-  accent: '#FF6500', sage: '#30D158', amber: '#FF9F0A', red: '#FF453A',
-  t1: '#F4F4F6', t2: '#C2C2C8', t3: '#7E7E85', t4: '#54545b',
-  hair: 'rgba(255,255,255,0.07)', hair2: 'rgba(255,255,255,0.045)',
-};
-const UI = 'PretendardVariable';
-const DP = 'PretendardVariable';
+// 색·폰트는 전역 디자인 토큰(theme.ts)만 참조한다 — 사설 색객체(const C) 폐기.
+// 매핑: bg→BG · surface→CARD · accent→ACCENT · sage→GOOD · amber→WARN · red→DANGER
+// · text→T1–T4 · hair→SEP · 그라데이션→GRAD_TOP/GRAD_BOT. 폰트 UI/DP → FONT/DISPLAY.
+// (시각 동등: 다크+오렌지 유지)
+import {
+  BG, CARD, HERO_BG, ACCENT, GOOD, WARN, DANGER, T1, T2, T3, T4, SEP,
+  GRAD_TOP, GRAD_BOT, FONT, DISPLAY, withAlpha,
+} from './theme';
+// lib/haptics 배선: '러닝 시작' CTA(런 시작) → tap.
+import { tap } from './lib/haptics';
 
 // ── SVG 아이콘(자체 그림 — vector-icons 의존 제거) ───────────────────────────
-function Icon({ name, size = 22, color = C.t2, fill }: { name: string; size?: number; color?: string; fill?: string }) {
+function Icon({ name, size = 22, color = T2, fill }: { name: string; size?: number; color?: string; fill?: string }) {
   const sw = 2;
   const p: Record<string, React.ReactNode> = {
     back: <Path d="M15 18l-6-6 6-6" stroke={color} strokeWidth={sw} fill="none" strokeLinecap="round" strokeLinejoin="round" />,
@@ -111,15 +111,17 @@ export default function RunGoalScreen({
     if (m !== 'free') { const d = CFG[m].def; setVal(d); requestAnimationFrame(() => scrollToVal(d, false)); }
   };
   const pickPreset = (v: number) => { setVal(v); scrollToVal(v, true); };
-  const condColor = shoeCondition === '교체' ? C.red : shoeCondition === '주의' ? C.amber : C.sage;
+  const condColor = shoeCondition === '교체' ? DANGER : shoeCondition === '주의' ? WARN : GOOD;
   const half = vpW / 2;
+  // 런 시작: 햅틱(tap) → onStart(goalKm). 자유 러닝이면 0.
+  const startRun = () => { tap(); onStart?.(mode === 'free' ? 0 : val); };
 
   return (
     <View style={s.screen}>
       <StatusBar barStyle="light-content" />
       {/* nav */}
       <View style={s.nav}>
-        <Pressable onPress={onBack} hitSlop={8} style={s.navIc}><Icon name="back" size={24} color={C.t2} /></Pressable>
+        <Pressable onPress={onBack} hitSlop={8} style={s.navIc} accessibilityRole="button" accessibilityLabel="뒤로"><Icon name="back" size={24} color={T2} /></Pressable>
         <Text style={s.navTitle}>러닝 목표</Text>
         <View style={s.navIc} />
       </View>
@@ -129,7 +131,7 @@ export default function RunGoalScreen({
         {([['km', '거리'], ['min', '시간'], ['free', '자유 러닝']] as [Mode, string][]).map(([m, label]) => {
           const on = mode === m;
           return (
-            <Pressable key={m} onPress={() => pickMode(m)} style={[s.segBtn, on && s.segBtnOn]}>
+            <Pressable key={m} onPress={() => pickMode(m)} style={[s.segBtn, on && s.segBtnOn]} accessibilityRole="button" accessibilityState={{ selected: on }} accessibilityLabel={`${label} 목표`}>
               <Text style={[s.segText, on && s.segTextOn]}>{label}</Text>
             </Pressable>
           );
@@ -140,13 +142,13 @@ export default function RunGoalScreen({
       <View style={s.center}>
         {mode === 'free' ? (
           <View style={s.free}>
-            <View style={s.freeGlyph}><Icon name="infinite" size={40} color={C.accent} /></View>
+            <View style={s.freeGlyph}><Icon name="infinite" size={40} color={ACCENT} /></View>
             <Text style={s.freeTitle}>목표 없이 자유롭게</Text>
             <Text style={s.freeSub}>거리·시간 제한 없이 달려요. 기록은 그대로 신발에 쌓입니다.</Text>
           </View>
         ) : (
           <>
-            <View style={s.bigRow}>
+            <View style={s.bigRow} accessibilityRole="text" accessibilityLiveRegion="polite" accessibilityLabel={`목표 ${fmt(val)} ${cfg!.unit}`}>
               <Text style={s.bigVal}>{fmt(val)}</Text>
               <Text style={s.bigUnit}>{cfg!.unit}</Text>
             </View>
@@ -174,7 +176,7 @@ export default function RunGoalScreen({
               {cfg!.presets.map(p => {
                 const on = Math.abs(p.v - val) < (mode === 'km' ? 0.05 : 0.5);
                 return (
-                  <Pressable key={p.label} onPress={() => pickPreset(p.v)} style={[s.preset, on && s.presetOn]}>
+                  <Pressable key={p.label} onPress={() => pickPreset(p.v)} style={[s.preset, on && s.presetOn]} accessibilityRole="button" accessibilityState={{ selected: on }} accessibilityLabel={`${p.label} 목표 선택`}>
                     <Text style={[s.presetText, on && s.presetTextOn]}>{p.label}</Text>
                   </Pressable>
                 );
@@ -186,8 +188,8 @@ export default function RunGoalScreen({
 
       {/* footer */}
       <View style={s.foot}>
-        <Pressable style={s.shoeSel}>
-          <View style={s.shoeThumb}><ShoeGlyph color={C.t2} size={24} /></View>
+        <Pressable style={s.shoeSel} accessibilityRole="button" accessibilityLabel={`신발 선택: ${shoeBrand} ${shoeLabel}, 상태 ${shoeCondition}${remainKm != null ? `, 남은 수명 ${Math.round(remainKm)}킬로미터` : ''}`}>
+          <View style={s.shoeThumb}><ShoeGlyph color={T2} size={24} /></View>
           <View style={{ flex: 1, minWidth: 0 }}>
             <Text style={s.shoeBrand}>{shoeBrand}</Text>
             <Text style={s.shoeModel} numberOfLines={1}>{shoeLabel}</Text>
@@ -196,12 +198,12 @@ export default function RunGoalScreen({
               <Text style={s.shoeCondText}>{shoeCondition}{remainKm != null ? ` · 남은 수명 ${Math.round(remainKm)}km` : ''}</Text>
             </View>
           </View>
-          <Icon name="forward" size={20} color={C.t4} />
+          <Icon name="forward" size={20} color={T4} />
         </Pressable>
 
-        <Pressable onPress={() => onStart?.(mode === 'free' ? 0 : val)} style={({ pressed }) => [s.cta, pressed && { opacity: 0.92 }]}>
+        <Pressable onPress={startRun} style={({ pressed }) => [s.cta, pressed && { opacity: 0.92 }]} accessibilityRole="button" accessibilityLabel="러닝 시작">
           <Svg style={StyleSheet.absoluteFill}>
-            <Defs><LinearGradient id="ctaGrad" x1="0" y1="0" x2="0" y2="1"><Stop offset="0" stopColor="#FF7A2E" /><Stop offset="1" stopColor="#F25E00" /></LinearGradient></Defs>
+            <Defs><LinearGradient id="ctaGrad" x1="0" y1="0" x2="0" y2="1"><Stop offset="0" stopColor={GRAD_TOP} /><Stop offset="1" stopColor={GRAD_BOT} /></LinearGradient></Defs>
             <Rect x="0" y="0" width="100%" height="100%" rx={18} ry={18} fill="url(#ctaGrad)" />
           </Svg>
           <View pointerEvents="none" style={s.ctaGloss} />
@@ -214,51 +216,51 @@ export default function RunGoalScreen({
 }
 
 const s = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: C.bg, paddingTop: 54 },
+  screen: { flex: 1, backgroundColor: BG, paddingTop: 54 },
   nav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, height: 44 },
   navIc: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
-  navTitle: { color: C.t1, fontFamily: DP, fontSize: 16, fontWeight: '600', letterSpacing: -0.2 },
+  navTitle: { color: T1, fontFamily: DISPLAY, fontSize: 16, fontWeight: '600', letterSpacing: -0.2 },
 
-  seg: { flexDirection: 'row', gap: 4, marginHorizontal: 22, marginTop: 14, padding: 4, borderRadius: 14, backgroundColor: C.surface, borderWidth: StyleSheet.hairlineWidth, borderColor: C.hair },
+  seg: { flexDirection: 'row', gap: 4, marginHorizontal: 22, marginTop: 14, padding: 4, borderRadius: 14, backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
   segBtn: { flex: 1, height: 38, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  segBtnOn: { backgroundColor: 'rgba(255,101,0,0.16)', borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(255,101,0,0.28)' },
-  segText: { color: C.t3, fontFamily: UI, fontSize: 13.5, fontWeight: '600' },
-  segTextOn: { color: C.accent },
+  segBtnOn: { backgroundColor: withAlpha(ACCENT, 0.16), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.28) },
+  segText: { color: T3, fontFamily: FONT, fontSize: 13.5, fontWeight: '600' },
+  segTextOn: { color: ACCENT },
 
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 22 },
   bigRow: { flexDirection: 'row', alignItems: 'flex-end' },
-  bigVal: { color: C.t1, fontFamily: DP, fontSize: 104, fontWeight: '600', letterSpacing: -3, lineHeight: 104, includeFontPadding: false },
-  bigUnit: { color: C.t2, fontFamily: UI, fontSize: 26, fontWeight: '600', marginLeft: 8, marginBottom: 12 },
-  estimate: { color: C.t3, fontFamily: UI, fontSize: 13, fontWeight: '500', marginTop: 14 },
+  bigVal: { color: T1, fontFamily: DISPLAY, fontSize: 104, fontWeight: '600', letterSpacing: -3, lineHeight: 104, includeFontPadding: false },
+  bigUnit: { color: T2, fontFamily: FONT, fontSize: 26, fontWeight: '600', marginLeft: 8, marginBottom: 12 },
+  estimate: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '500', marginTop: 14 },
 
   rulerWrap: { width: '100%', height: 78, marginTop: 30, position: 'relative' },
   tick: { position: 'absolute', bottom: 26, width: 2, borderRadius: 2 },
-  tickMinor: { height: 14, backgroundColor: 'rgba(255,255,255,0.18)' },
-  tickMajor: { height: 26, backgroundColor: 'rgba(255,255,255,0.38)' },
-  tickLabel: { position: 'absolute', bottom: 2, width: 28, textAlign: 'center', color: C.t3, fontFamily: DP, fontSize: 12, fontWeight: '500' },
-  pointer: { position: 'absolute', left: '50%', marginLeft: -1.5, top: 2, bottom: 24, width: 3, borderRadius: 3, backgroundColor: C.accent },
+  tickMinor: { height: 14, backgroundColor: withAlpha(T1, 0.18) },
+  tickMajor: { height: 26, backgroundColor: withAlpha(T1, 0.38) },
+  tickLabel: { position: 'absolute', bottom: 2, width: 28, textAlign: 'center', color: T3, fontFamily: DISPLAY, fontSize: 12, fontWeight: '500' },
+  pointer: { position: 'absolute', left: '50%', marginLeft: -1.5, top: 2, bottom: 24, width: 3, borderRadius: 3, backgroundColor: ACCENT },
 
   presets: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, marginTop: 26 },
-  preset: { height: 36, paddingHorizontal: 16, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: StyleSheet.hairlineWidth, borderColor: C.hair },
-  presetOn: { backgroundColor: 'rgba(255,101,0,0.14)', borderColor: 'rgba(255,101,0,0.4)' },
-  presetText: { color: C.t2, fontFamily: DP, fontSize: 13, fontWeight: '600' },
-  presetTextOn: { color: C.accent },
+  preset: { height: 36, paddingHorizontal: 16, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(T1, 0.04), borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
+  presetOn: { backgroundColor: withAlpha(ACCENT, 0.14), borderColor: withAlpha(ACCENT, 0.4) },
+  presetText: { color: T2, fontFamily: DISPLAY, fontSize: 13, fontWeight: '600' },
+  presetTextOn: { color: ACCENT },
 
   free: { alignItems: 'center', paddingHorizontal: 14 },
-  freeGlyph: { width: 88, height: 88, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,101,0,0.1)', borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(255,101,0,0.26)', marginBottom: 22 },
-  freeTitle: { color: C.t1, fontFamily: DP, fontSize: 24, fontWeight: '600', letterSpacing: -0.4, marginBottom: 10 },
-  freeSub: { color: C.t3, fontFamily: UI, fontSize: 14, fontWeight: '500', lineHeight: 21, textAlign: 'center', maxWidth: 250 },
+  freeGlyph: { width: 88, height: 88, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(ACCENT, 0.1), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.26), marginBottom: 22 },
+  freeTitle: { color: T1, fontFamily: DISPLAY, fontSize: 24, fontWeight: '600', letterSpacing: -0.4, marginBottom: 10 },
+  freeSub: { color: T3, fontFamily: FONT, fontSize: 14, fontWeight: '500', lineHeight: 21, textAlign: 'center', maxWidth: 250 },
 
   foot: { paddingHorizontal: 22, paddingTop: 4, paddingBottom: 30 },
-  shoeSel: { flexDirection: 'row', alignItems: 'center', gap: 13, padding: 13, borderRadius: 20, backgroundColor: C.surface, borderWidth: StyleSheet.hairlineWidth, borderColor: C.hair },
-  shoeThumb: { width: 46, height: 46, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: '#161618', borderWidth: StyleSheet.hairlineWidth, borderColor: C.hair },
-  shoeBrand: { color: C.t3, fontFamily: DP, fontSize: 10, fontWeight: '600', letterSpacing: 1.4 },
-  shoeModel: { color: C.t1, fontFamily: UI, fontSize: 15, fontWeight: '600', letterSpacing: -0.2, marginTop: 2 },
+  shoeSel: { flexDirection: 'row', alignItems: 'center', gap: 13, padding: 13, borderRadius: 20, backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
+  shoeThumb: { width: 46, height: 46, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: HERO_BG, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
+  shoeBrand: { color: T3, fontFamily: DISPLAY, fontSize: 10, fontWeight: '600', letterSpacing: 1.4 },
+  shoeModel: { color: T1, fontFamily: FONT, fontSize: 15, fontWeight: '600', letterSpacing: -0.2, marginTop: 2 },
   shoeCond: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 4 },
   shoeDot: { width: 6, height: 6, borderRadius: 999 },
-  shoeCondText: { color: C.t3, fontFamily: UI, fontSize: 11.5, fontWeight: '500' },
+  shoeCondText: { color: T3, fontFamily: FONT, fontSize: 11.5, fontWeight: '500' },
 
   cta: { marginTop: 14, height: 60, borderRadius: 18, overflow: 'hidden', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
-  ctaGloss: { position: 'absolute', top: 0, left: 0, right: 0, height: 1, backgroundColor: 'rgba(255,255,255,0.22)' },
-  ctaText: { color: '#fff', fontFamily: UI, fontSize: 16.5, fontWeight: '700', letterSpacing: 0.3 },
+  ctaGloss: { position: 'absolute', top: 0, left: 0, right: 0, height: 1, backgroundColor: withAlpha(T1, 0.22) },
+  ctaText: { color: '#fff', fontFamily: FONT, fontSize: 16.5, fontWeight: '700', letterSpacing: 0.3 },
 });
