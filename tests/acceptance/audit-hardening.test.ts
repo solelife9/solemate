@@ -34,6 +34,7 @@ import {
   enqueuePendingRun,
   loadPendingRuns,
   overlayPendingRuns,
+  sanitizePendingRun,
   type PendingRun,
 } from '../../lib/runPersistence';
 import {setupPushMessaging, FCM_TOKEN_PENDING_KEY} from '../../lib/pushMessaging';
@@ -58,7 +59,7 @@ jest.mock('../../lib/haptics', () => ({
 }));
 
 import * as haptics from '../../lib/haptics';
-import {KeyboardAvoidingView, Alert} from 'react-native';
+import {KeyboardAvoidingView, Alert, FlatList} from 'react-native';
 import App from '../../App';
 import OnboardingScreen from '../../OnboardingScreen.rn';
 import RunActiveScreen from '../../RunActiveScreen.rn';
@@ -70,7 +71,7 @@ import HistoryScreen from '../../HistoryScreen.rn';
 import {runToastAction, getCurrentToast, dismissToast, TOAST_UNDO_LABEL} from '../../lib/toast';
 import {maskDuration, maskDate, validateRunForm} from '../../lib/inputMask';
 import {syncLabel} from '../../lib/syncStatus';
-import type {Shoe} from '../../theme';
+import type {Shoe, Run} from '../../theme';
 import {TIER_LABEL} from '../../theme';
 import {ymLocal, ymdLocal} from '../../lib/format';
 
@@ -642,7 +643,33 @@ describe('Audit Hardening 수용', () => {
   });
 
   describe('D. 코드 품질', () => {
-    it.todo('타입: lib/api.ts·lib/stats.ts에 any 0, 도메인 타입 사용');
+    // 코드(주석 제외)만 남긴다 — 설명/이력 주석의 'any' 단어는 스캔 대상이 아니다.
+    // 블록(/* */·/** */) + 라인(//) 주석을 걷어내고, CRLF 의 \r 도 먼저 제거한다.
+    const stripComments = (src: string) =>
+      src
+        .replace(/\r/g, '')
+        .replace(/\/\*[\s\S]*?\*\//g, '')
+        .split('\n')
+        .map(l => l.replace(/\/\/.*$/, ''))
+        .join('\n');
+
+    test('타입: lib/api.ts·lib/stats.ts·lib/runPersistence.ts 에 명시적 any 0(도메인/unknown 타입)', () => {
+      const read = (rel: string) => fs.readFileSync(path.join(__dirname, '../../', rel), 'utf8');
+      // 세 모듈 모두 명시적 any 토큰(`: any` · `any[]` · `as any` · `<any>` 등)이 한 번도
+      // 나오지 않는다 — api/stats 는 도메인 타입, runPersistence sanitizer 는 unknown+런타임
+      // 가드로 좁힌다. 주석을 제거한 코드에서 단어 'any' 가 0이면 명시적 any 도 0이다.
+      for (const rel of ['lib/api.ts', 'lib/stats.ts', 'lib/runPersistence.ts']) {
+        const code = stripComments(read(rel));
+        expect(code).not.toMatch(/\bany\b/);
+      }
+      // runPersistence 의 unknown 전환은 타입만 바꾼다 — 런타임 가드는 그대로다(비정상 입력
+      // → 음수/유실 0 으로 좁혀짐). 관찰 가능한 결과로 확인한다.
+      expect(sanitizePendingRun({localId: 'L', shoe_id: 's', km: -5, duration: NaN})).toMatchObject({
+        localId: 'L', shoe_id: 's', km: 0, duration: 0,
+      });
+      expect(sanitizePendingRun(null)).toBeNull();
+      expect(sanitizePendingRun({km: 5})).toBeNull(); // localId/shoe_id 없으면 버린다
+    });
 
     test('중복제거: TIER_LABEL 정의가 theme.ts 1곳, MM:SS/YYYY-MM 빌더 단일화', () => {
       const read = (rel: string) => fs.readFileSync(path.join(__dirname, '../../', rel), 'utf8');
@@ -678,7 +705,34 @@ describe('Audit Hardening 수용', () => {
       expect(ymLocal(new Date(2026, 5, 18, 1, 30))).toBe(ymdLocal(new Date(2026, 5, 18, 1, 30)).slice(0, 7));
     });
 
-    it.todo('가상화: HistoryScreen 런 리스트가 FlatList(keyExtractor) 사용');
+    test('가상화: HistoryScreen 런 리스트가 FlatList(안정 keyExtractor)로 렌더된다', () => {
+      // 런 행은 ScrollView+runs.map(전부 마운트) 가 아니라 FlatList(보이는 행만 마운트)로
+      // 가상화된다. 관찰 가능한 결과: 트리에 FlatList 가 정확히 1개 있고, 전체 런 배열을
+      // data 로 받으며, keyExtractor 가 안정 키(run.id)를 만든다(리렌더 시 행 재사용).
+      const mkRun = (over: Partial<Run> = {}): Run => ({
+        id: 'r1', date: '5월 28일', day: '수', dateNum: '28', dist: 5,
+        pace: "5'02\"", time: '40:41', shoe: 0, cal: 0, cadence: 0, bpm: 0, elev: 0, ...over,
+      });
+      const runs = [mkRun({id: 'r1'}), mkRun({id: 'r2', date: '5월 29일'})];
+      const shoe: Shoe = {id: 'a', brand: 'Nike', model: 'Pegasus 41', used: 100, max: 600, condition: '양호'};
+      const r = renderTree(el(HistoryScreen, {shoes: [shoe], runs}));
+
+      const lists = r.root.findAllByType(FlatList);
+      expect(lists.length).toBe(1);
+      const list = lists[0];
+      expect(list.props.data).toBe(runs); // 전체 런 배열을 data 로 받아 가상화
+      // 안정 키 — id 가 있으면 id, 없으면 인덱스. 같은 런이 같은 키를 받는다.
+      expect(list.props.keyExtractor(runs[0], 0)).toBe('r1');
+      expect(list.props.keyExtractor(runs[1], 1)).toBe('r2');
+      expect(list.props.keyExtractor(mkRun({id: undefined}), 3)).toBe('3');
+      // 보이는 행이 실제 RunCard 로 마운트된다(신발 브랜드 + 런 날짜가 화면에 뜬다).
+      const txt = renderedText(r.root);
+      expect(txt).toContain('Nike');
+      expect(txt).toContain('5월 28일');
+      // FlatList(VirtualizedList)가 셀 렌더용 타이머를 예약하므로 teardown 전에 언마운트해
+      // act() 밖 setState 경고를 막는다.
+      act(() => r.unmount());
+    });
   });
 
   describe('E. 디자인 시스템 통합', () => {

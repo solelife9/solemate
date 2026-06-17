@@ -3,7 +3,7 @@
 // (sample data removed — real summary/chart/runs are injected via props)
 // ============================================================================
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet, LayoutChangeEvent, Share, TextInput, Alert, KeyboardAvoidingView, Platform, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, FlatList, Pressable, StyleSheet, LayoutChangeEvent, Share, TextInput, Alert, KeyboardAvoidingView, Platform, RefreshControl } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Polyline, Circle } from 'react-native-svg';
@@ -637,88 +637,96 @@ export default function HistoryScreen({
           </Pressable>
         )}
       </View>
-      {/* 당겨서 새로고침 — RN 내장 RefreshControl 만(새 네이티브 0). onRefresh 가 있을 때만 단다. */}
-      <ScrollView contentContainerStyle={{ padding: 14, paddingBottom: 8, gap: 10 }}
-        refreshControl={onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={ACCENT} colors={[ACCENT]} /> : undefined}>
-        {/* period segment */}
-        <View style={s.segment}>
-          {PERIODS.map((p) => {
-            const on = p === period;
-            return (
-              <Pressable key={p} onPress={() => setPeriod(p)} accessibilityRole="button" accessibilityLabel={p} accessibilityState={{ selected: on }} style={({ pressed }) => [s.segItem, on && s.segItemOn, pressed && !on && { opacity: 0.7 }]}>
-                <Text style={[s.segText, { color: on ? T1 : T3, fontWeight: on ? '700' : '500' }]}>{p}</Text>
-              </Pressable>
-            );
-          })}
-        </View>
-
-        {/* 요약 카드 — 목업 기록(10): 기간 제목 + 큰 거리 + 'N번 달렸어요' + 횟수·평균페이스·총시간 */}
-        <View style={[s.card, { padding: 20 }]}>
-          <Text style={s.sumTitle}>{periodTitle}</Text>
-          <View style={[s.baselineRow, { marginTop: 6 }]}>
-            <Text style={s.sumBigKm}>{sum.km}</Text><Text style={s.sumBigU}>{unit}</Text>
-          </View>
-          <Text style={s.sumSub}>{periodTitle} {sum.runs}번 달렸어요</Text>
-          <View style={s.sumMetricRow}>
-            <View style={s.sumMetric}><Text style={s.sumMetricV}>{sum.runs}<Text style={s.sumMetricU}> 회</Text></Text><Text style={s.sumMetricL}>횟수</Text></View>
-            <View style={s.sumMetric}><Text style={s.sumMetricV}>{sum.pace}</Text><Text style={s.sumMetricL}>평균 페이스</Text></View>
-            <View style={s.sumMetric}><Text style={s.sumMetricV}>{sum.time}</Text><Text style={s.sumMetricL}>총 시간</Text></View>
-          </View>
-        </View>
-
-        {/* chart (hidden for 전체) */}
-        {ch && ch.data.length > 0 && (
-          <View style={[s.card, { padding: 22 }]}>
-            <Text style={s.cardTitle}>{ch.title}</Text>
-            <View style={{ marginTop: 18 }}><PeriodChartView data={ch.data} labels={ch.labels} unit={unit} /></View>
-          </View>
+      {/* recent runs 리스트는 FlatList 로 가상화한다(런이 수백 건이어도 보이는 행만 마운트).
+          세그먼트·요약·차트·PR·섹션 라벨은 스크롤과 함께 움직이도록 ListHeaderComponent 로
+          얹고, 빈 상태는 ListEmptyComponent 로 둔다. 당겨서 새로고침은 RN 내장 RefreshControl
+          만 쓴다(새 네이티브 0) — onRefresh 가 있을 때만 단다. keyExtractor 는 안정 키(run.id,
+          없으면 인덱스)로 리렌더 시 행 재사용을 보장한다. */}
+      <FlatList
+        data={runs}
+        keyExtractor={(r, i) => r.id || String(i)}
+        renderItem={({ item }) => (
+          <RunCard run={item} shoes={shoes} onPress={() => setDetail(item)} unit={unit} />
         )}
+        contentContainerStyle={{ padding: 14, paddingBottom: 8, gap: 10 }}
+        refreshControl={onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={ACCENT} colors={[ACCENT]} /> : undefined}
+        ListHeaderComponent={
+          <View style={{ gap: 10 }}>
+            {/* period segment */}
+            <View style={s.segment}>
+              {PERIODS.map((p) => {
+                const on = p === period;
+                return (
+                  <Pressable key={p} onPress={() => setPeriod(p)} accessibilityRole="button" accessibilityLabel={p} accessibilityState={{ selected: on }} style={({ pressed }) => [s.segItem, on && s.segItemOn, pressed && !on && { opacity: 0.7 }]}>
+                    <Text style={[s.segText, { color: on ? T1 : T3, fontWeight: on ? '700' : '500' }]}>{p}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
 
-        {/* 개인 기록(PR, 1-3) — 올타임 최장거리·최고페이스·최장시간·최장 스트릭. 동기부여. */}
-        {pr.count > 0 && (
-          <View style={[s.card, { padding: 20 }]}>
-            <Text style={s.cardTitle}>개인 기록</Text>
-            <View style={s.prGrid}>
-              <View style={s.prCell}>
-                <View style={s.baselineRow}>
-                  <Text style={s.prV}>{displayNum(pr.longestKm, unit, 1)}</Text>
-                  <Text style={s.prU}>{unit}</Text>
-                </View>
-                <Text style={s.prL}>최장 거리</Text>
+            {/* 요약 카드 — 목업 기록(10): 기간 제목 + 큰 거리 + 'N번 달렸어요' + 횟수·평균페이스·총시간 */}
+            <View style={[s.card, { padding: 20 }]}>
+              <Text style={s.sumTitle}>{periodTitle}</Text>
+              <View style={[s.baselineRow, { marginTop: 6 }]}>
+                <Text style={s.sumBigKm}>{sum.km}</Text><Text style={s.sumBigU}>{unit}</Text>
               </View>
-              <View style={s.prCell}>
-                <Text style={s.prV}>{pr.fastestPaceSec != null ? fmtPace(1, pr.fastestPaceSec) : '--'}</Text>
-                <Text style={s.prL}>최고 페이스</Text>
-              </View>
-              <View style={s.prCell}>
-                <Text style={s.prV}>{pr.longestDurationS > 0 ? durationLabel(pr.longestDurationS) : '--'}</Text>
-                <Text style={s.prL}>최장 시간</Text>
-              </View>
-              <View style={s.prCell}>
-                <View style={s.baselineRow}>
-                  <Text style={s.prV}>{pr.longestStreakDays}</Text>
-                  <Text style={s.prU}>일</Text>
-                </View>
-                <Text style={s.prL}>최장 스트릭</Text>
+              <Text style={s.sumSub}>{periodTitle} {sum.runs}번 달렸어요</Text>
+              <View style={s.sumMetricRow}>
+                <View style={s.sumMetric}><Text style={s.sumMetricV}>{sum.runs}<Text style={s.sumMetricU}> 회</Text></Text><Text style={s.sumMetricL}>횟수</Text></View>
+                <View style={s.sumMetric}><Text style={s.sumMetricV}>{sum.pace}</Text><Text style={s.sumMetricL}>평균 페이스</Text></View>
+                <View style={s.sumMetric}><Text style={s.sumMetricV}>{sum.time}</Text><Text style={s.sumMetricL}>총 시간</Text></View>
               </View>
             </View>
-          </View>
-        )}
 
-        {/* recent runs — 런마다 별도 카드(목업 정합) */}
-        <Text style={s.sectionLabel}>최근 러닝</Text>
-        {runs.length === 0 ? (
+            {/* chart (hidden for 전체) */}
+            {ch && ch.data.length > 0 && (
+              <View style={[s.card, { padding: 22 }]}>
+                <Text style={s.cardTitle}>{ch.title}</Text>
+                <View style={{ marginTop: 18 }}><PeriodChartView data={ch.data} labels={ch.labels} unit={unit} /></View>
+              </View>
+            )}
+
+            {/* 개인 기록(PR, 1-3) — 올타임 최장거리·최고페이스·최장시간·최장 스트릭. 동기부여. */}
+            {pr.count > 0 && (
+              <View style={[s.card, { padding: 20 }]}>
+                <Text style={s.cardTitle}>개인 기록</Text>
+                <View style={s.prGrid}>
+                  <View style={s.prCell}>
+                    <View style={s.baselineRow}>
+                      <Text style={s.prV}>{displayNum(pr.longestKm, unit, 1)}</Text>
+                      <Text style={s.prU}>{unit}</Text>
+                    </View>
+                    <Text style={s.prL}>최장 거리</Text>
+                  </View>
+                  <View style={s.prCell}>
+                    <Text style={s.prV}>{pr.fastestPaceSec != null ? fmtPace(1, pr.fastestPaceSec) : '--'}</Text>
+                    <Text style={s.prL}>최고 페이스</Text>
+                  </View>
+                  <View style={s.prCell}>
+                    <Text style={s.prV}>{pr.longestDurationS > 0 ? durationLabel(pr.longestDurationS) : '--'}</Text>
+                    <Text style={s.prL}>최장 시간</Text>
+                  </View>
+                  <View style={s.prCell}>
+                    <View style={s.baselineRow}>
+                      <Text style={s.prV}>{pr.longestStreakDays}</Text>
+                      <Text style={s.prU}>일</Text>
+                    </View>
+                    <Text style={s.prL}>최장 스트릭</Text>
+                  </View>
+                </View>
+              </View>
+            )}
+
+            {/* recent runs — 런마다 별도 카드(목업 정합) */}
+            <Text style={s.sectionLabel}>최근 러닝</Text>
+          </View>
+        }
+        ListEmptyComponent={
           <View style={[s.card, { padding: 28, alignItems: 'center' }]}>
             <Text style={s.emptyHint}>아직 기록이 없어요 — 첫 러닝이 여기 쌓여요</Text>
           </View>
-        ) : (
-          <View style={{ gap: 10 }}>
-            {runs.map((r, i) => (
-              <RunCard key={r.id || i} run={r} shoes={shoes} onPress={() => setDetail(r)} unit={unit} />
-            ))}
-          </View>
-        )}
-      </ScrollView>
+        }
+      />
       <TabBar active={2} onTab={(i) => onTab?.(i)} />
     </View>
   );

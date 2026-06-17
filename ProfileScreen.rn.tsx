@@ -282,7 +282,20 @@ export default function ProfileScreen({
   };
   // 자동 동기: 로그인(signedIn 전환) + 로컬 데이터(신발/런/설정) 변경 시 디바운스로
   // 백그라운드 동기한다(수동 '지금 동기' 버튼 없음). 변경 폭주는 1초 디바운스로 합친다.
-  const dataSig = JSON.stringify(backupData);
+  // 변경 감지는 렌더마다 전체 backupData 를 JSON.stringify(런 수백 건·route 블롭 포함,
+  // 비싸다) 하는 대신 경량 시그니처(개수 + 최종 수정시각 + 설정)로 한다: 신발/런 추가·
+  // 삭제(개수)·수정(updatedAt 증가)·설정 변경이면 시그니처가 바뀌어 재동기한다. settings
+  // 만 stringify 하므로 비용이 데이터 크기에 비례하지 않는다.
+  const dataSig = useMemo(() => {
+    const maxUpdated = (arr: readonly unknown[]) =>
+      arr.reduce<number>((m, x) => {
+        const u = (x as { updatedAt?: unknown }).updatedAt;
+        return typeof u === 'number' && u > m ? u : m;
+      }, 0);
+    const shoes = backupData.shoes || [];
+    const runs = backupData.runs || [];
+    return `${shoes.length}:${runs.length}:${Math.max(maxUpdated(shoes), maxUpdated(runs))}:${JSON.stringify(backupData.settings || {})}`;
+  }, [backupData]);
   useEffect(() => {
     if (!signedIn) return;
     const t = setTimeout(() => { void runSync(true); }, 1000);

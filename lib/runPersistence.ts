@@ -62,16 +62,17 @@ export interface PendingRun {
 
 // ── pure helpers (no I/O) — exported for direct unit testing ─────
 /** Clamp to a finite, non-negative number (iron law). NaN/Infinity/neg → 0. */
-export function nonNeg(n: any): number {
+export function nonNeg(n: unknown): number {
   const v = typeof n === 'number' ? n : parseFloat(String(n));
   return Number.isFinite(v) && v > 0 ? v : 0;
 }
 
 /** Keep only well-formed {lat,lon} fixes; drop anything non-finite. */
-export function sanitizePoints(pts: any): RoutePoint[] {
+export function sanitizePoints(pts: unknown): RoutePoint[] {
   if (!Array.isArray(pts)) return [];
   const out: RoutePoint[] = [];
-  for (const p of pts) {
+  for (const raw of pts) {
+    const p = raw as {lat?: unknown; lon?: unknown} | null | undefined;
     const lat = p && typeof p.lat === 'number' ? p.lat : parseFloat(String(p?.lat));
     const lon = p && typeof p.lon === 'number' ? p.lon : parseFloat(String(p?.lon));
     if (Number.isFinite(lat) && Number.isFinite(lon)) out.push({lat, lon});
@@ -84,21 +85,23 @@ export function sanitizePoints(pts: any): RoutePoint[] {
  * identifiable run. Never throws — a corrupt persisted blob degrades to null so
  * startup recovery can simply skip it.
  */
-export function sanitizeSnapshot(raw: any): RunSnapshot | null {
+export function sanitizeSnapshot(raw: unknown): RunSnapshot | null {
   if (!raw || typeof raw !== 'object') return null;
-  const shoe = raw.shoe && typeof raw.shoe === 'object' ? raw.shoe : null;
+  const r = raw as Record<string, unknown>;
+  const shoe =
+    r.shoe && typeof r.shoe === 'object' ? (r.shoe as Record<string, unknown>) : null;
   if (!shoe || shoe.id == null) return null;
   return {
-    dist: nonNeg(raw.dist),
-    elapsed: Math.floor(nonNeg(raw.elapsed)),
-    pts: sanitizePoints(raw.pts),
-    pausedMs: nonNeg(raw.pausedMs),
-    t0: nonNeg(raw.t0),
+    dist: nonNeg(r.dist),
+    elapsed: Math.floor(nonNeg(r.elapsed)),
+    pts: sanitizePoints(r.pts),
+    pausedMs: nonNeg(r.pausedMs),
+    t0: nonNeg(r.t0),
     shoe: {id: String(shoe.id), name: String(shoe.name ?? '')},
-    goalKm: nonNeg(raw.goalKm),
-    cadence: Math.floor(nonNeg(raw.cadence)),
-    location: typeof raw.location === 'string' ? raw.location : '',
-    savedAt: nonNeg(raw.savedAt),
+    goalKm: nonNeg(r.goalKm),
+    cadence: Math.floor(nonNeg(r.cadence)),
+    location: typeof r.location === 'string' ? r.location : '',
+    savedAt: nonNeg(r.savedAt),
   };
 }
 
@@ -108,27 +111,28 @@ export function isResumable(snap: RunSnapshot | null): boolean {
 }
 
 /** Coerce arbitrary input into a valid PendingRun, or null if unusable. */
-export function sanitizePendingRun(raw: any): PendingRun | null {
+export function sanitizePendingRun(raw: unknown): PendingRun | null {
   if (!raw || typeof raw !== 'object') return null;
-  if (raw.shoe_id == null || !raw.localId) return null;
+  const r = raw as Record<string, unknown>;
+  if (r.shoe_id == null || !r.localId) return null;
   return {
-    localId: String(raw.localId),
-    shoe_id: String(raw.shoe_id),
-    km: nonNeg(raw.km),
-    run_date: String(raw.run_date ?? ''),
-    memo: typeof raw.memo === 'string' ? raw.memo : '',
-    source: typeof raw.source === 'string' ? raw.source : 'gps',
-    duration: Math.floor(nonNeg(raw.duration)),
-    cadence: Math.floor(nonNeg(raw.cadence)),
-    route: typeof raw.route === 'string' ? raw.route : '',
-    location: typeof raw.location === 'string' ? raw.location : '',
-    heart_rate: Math.floor(nonNeg(raw.heart_rate)),
-    run_time: typeof raw.run_time === 'string' ? raw.run_time : '',
-    queuedAt: nonNeg(raw.queuedAt),
+    localId: String(r.localId),
+    shoe_id: String(r.shoe_id),
+    km: nonNeg(r.km),
+    run_date: String(r.run_date ?? ''),
+    memo: typeof r.memo === 'string' ? r.memo : '',
+    source: typeof r.source === 'string' ? r.source : 'gps',
+    duration: Math.floor(nonNeg(r.duration)),
+    cadence: Math.floor(nonNeg(r.cadence)),
+    route: typeof r.route === 'string' ? r.route : '',
+    location: typeof r.location === 'string' ? r.location : '',
+    heart_rate: Math.floor(nonNeg(r.heart_rate)),
+    run_time: typeof r.run_time === 'string' ? r.run_time : '',
+    queuedAt: nonNeg(r.queuedAt),
     // updatedAt 은 선택 — 유한·양수일 때만 보존한다(부재/비정상은 키를 만들지 않아 머지에서
     // -Infinity(=동률, local 우선)로 떨어진다. 0 같은 가짜 타임스탬프를 심지 않는다).
-    ...(typeof raw.updatedAt === 'number' && Number.isFinite(raw.updatedAt) && raw.updatedAt > 0
-      ? { updatedAt: raw.updatedAt }
+    ...(typeof r.updatedAt === 'number' && Number.isFinite(r.updatedAt) && r.updatedAt > 0
+      ? { updatedAt: r.updatedAt }
       : {}),
   };
 }
@@ -281,8 +285,9 @@ export async function removePendingRun(localId: string): Promise<PendingRun[]> {
  * Does this server row carry back the echoed client idempotency key (`localId`)
  * we POSTed? An echoed id is DEFINITIVE proof the server stored exactly this run.
  */
-function echoesLocalId(serverRun: any, localId: string): boolean {
-  const echoed = serverRun.localId ?? serverRun.client_id ?? serverRun.local_id;
+function echoesLocalId(serverRun: unknown, localId: string): boolean {
+  const r = serverRun as Record<string, unknown>;
+  const echoed = r.localId ?? r.client_id ?? r.local_id;
   return echoed != null && String(echoed) === localId;
 }
 
@@ -291,10 +296,11 @@ function echoesLocalId(serverRun: any, localId: string): boolean {
  * noise (<0.005km). This is only a HEURISTIC — two genuinely distinct runs can
  * share (shoe, date, km) by coincidence — so callers must not treat it as proof.
  */
-function signatureMatches(serverRun: any, pending: PendingRun): boolean {
-  if (String(serverRun.shoe_id) !== pending.shoe_id) return false;
-  if (String(serverRun.run_date) !== pending.run_date) return false;
-  const km = typeof serverRun.km === 'number' ? serverRun.km : parseFloat(String(serverRun.km));
+function signatureMatches(serverRun: unknown, pending: PendingRun): boolean {
+  const r = serverRun as Record<string, unknown>;
+  if (String(r.shoe_id) !== pending.shoe_id) return false;
+  if (String(r.run_date) !== pending.run_date) return false;
+  const km = typeof r.km === 'number' ? r.km : parseFloat(String(r.km));
   return Number.isFinite(km) && Math.abs(km - pending.km) < 0.005;
 }
 
@@ -303,7 +309,7 @@ function signatureMatches(serverRun: any, pending: PendingRun): boolean {
  * natural signature? A non-consuming detection helper (kept for callers that
  * just need a yes/no); the dequeue path uses `matchServerRun` for 1:1 matching.
  */
-export function serverHasRun(pending: PendingRun, serverRuns: any[]): boolean {
+export function serverHasRun(pending: PendingRun, serverRuns: unknown[]): boolean {
   if (!Array.isArray(serverRuns)) return false;
   return serverRuns.some(
     r =>
@@ -323,7 +329,7 @@ export function serverHasRun(pending: PendingRun, serverRuns: any[]): boolean {
  */
 export function matchServerRun(
   pending: PendingRun,
-  serverRuns: any[],
+  serverRuns: unknown[],
   consumed?: Set<number>,
 ): {index: number; kind: 'echo' | 'signature'} | null {
   if (!Array.isArray(serverRuns)) return null;
@@ -353,7 +359,7 @@ export function matchServerRun(
  * persisting `removePendingRun` first on a successful sync. Matching is 1:1 so a
  * single server row can never drop more than one queued run.
  */
-export async function reconcilePendingWithServer(serverRuns: any[]): Promise<{
+export async function reconcilePendingWithServer(serverRuns: unknown[]): Promise<{
   stillPending: PendingRun[];
   dropped: PendingRun[];
 }> {
