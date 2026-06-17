@@ -21,14 +21,14 @@ export const MAX_SEG_DIST_KM = 0.3;
 /** 자동 일시정지 진입 속도 임계값(m/s). */
 export const AUTO_PAUSE_SPEED_MPS = 0.6;
 
-/** 자동 일시정지 진입까지 정지 지속 시간(s). */
-export const AUTO_PAUSE_HOLD_S = 6;
+/** 자동 일시정지 진입까지 정지 지속 시간(s). 나이키 수준 반응성 위해 3s(기존 6s). */
+export const AUTO_PAUSE_HOLD_S = 3;
 
 /** 자동 재개 속도 임계값(m/s). */
 export const AUTO_RESUME_SPEED_MPS = 1.0;
 
-/** 자동 재개까지 이동 지속 시간(s). */
-export const AUTO_RESUME_HOLD_S = 2;
+/** 자동 재개까지 이동 지속 시간(s). 출발/재개 반응을 빠르게 1s(기존 2s). */
+export const AUTO_RESUME_HOLD_S = 1;
 
 /** GPS 死구간(dead-zone) 판정 임계값(ms). 마지막 fix 수신 후 이 시간 동안 새 fix가
  *  들어오지 않으면 거리는 멈춘 채 시간만 누적되어 페이스가 왜곡된다(audit#9). 이때

@@ -7,7 +7,7 @@
  * status label ("자동 일시정지") and the displayed distance — so they verify the
  * end-to-end wiring of lib/autoPause's decideAutoPause into the run engine:
  *
- *   1) Standing still for >6s auto-pauses the run (label flips to 자동 일시정지).
+ *   1) Standing still for >3s auto-pauses the run (label flips to 자동 일시정지).
  *   2) While paused, distance does NOT accumulate (the audit#4 / freeze fix).
  *   3) The displayed elapsed timer freezes while paused — it does not advance and
  *      never goes negative/garbage (audit#4: elapsed = max(0, now-t0-pausedMs)
@@ -155,7 +155,7 @@ async function startRun() {
 
 const LON = 127.0;
 
-test('standing still for over 6s auto-pauses the run', async () => {
+test('standing still for over 3s auto-pauses the run', async () => {
   const {renderer, root, emit} = await startRun();
 
   // Warmup at P0 (idx0..2) then one real move so the run is genuinely running.
@@ -167,7 +167,7 @@ test('standing still for over 6s auto-pauses the run', async () => {
   expect(isAutoPaused(root)).toBe(false);
 
   // Now stand still: many fixes at the same point, 3s apart. Once the Kalman
-  // residual settles below the 0.6 m/s floor, slowSec crosses the 6s hold → pause.
+  // residual settles below the 0.6 m/s floor, slowSec crosses the 3s hold → pause.
   for (let i = 0; i < 12; i++) {
     await emit(37.5003, LON, 5, (t += 3000));
   }
@@ -190,14 +190,14 @@ test('distance does not accumulate while auto-paused, then auto-resumes on susta
   expect(isAutoPaused(root)).toBe(true);
   const kmAtPause = km();
 
-  // A moving fix while paused but BELOW the 2s resume hold (dt=1s): the run must
+  // A moving fix while paused but BELOW the 1s resume hold (dt=0.8s): the run must
   // stay paused AND must not add distance (accumulation is frozen during pause).
-  await emit(37.5004, LON, 5, (t += 1000)); // ~11m in 1s → fast, fastSec=1 < 2
+  await emit(37.50035, LON, 5, (t += 800)); // ~6m in 0.8s → fast, fastSec=0.8 < 1
   expect(isAutoPaused(root)).toBe(true);
   expect(km()).toBe(kmAtPause);
 
-  // A second moving fix pushes sustained fast time past 2s → auto-resume.
-  await emit(37.5005, LON, 5, (t += 1500)); // fastSec ≥ 2 → resume
+  // A second moving fix pushes sustained fast time past 1s → auto-resume.
+  await emit(37.5004, LON, 5, (t += 800)); // fastSec ≥ 1 → resume
   expect(isAutoPaused(root)).toBe(false);
 
   act(() => renderer.unmount());
@@ -281,15 +281,15 @@ test('distance engine restarts after auto-resume — km climbs above the paused 
   const kmAtPause = km();
   expect(kmAtPause).toBe(kmBeforePause);
 
-  // Two sustained fast fixes (>1.0 m/s for ≥2s) → auto-resume.
-  await emit(37.5004, LON, 5, (t += 1500)); // fastSec 1.5 < 2 → still paused
+  // Two sustained fast fixes (>1.0 m/s for ≥1s) → auto-resume.
+  await emit(37.50025, LON, 5, (t += 800)); // ~6m/0.8s fast, fastSec 0.8 < 1 → still paused
   expect(isAutoPaused(root)).toBe(true);
-  await emit(37.5006, LON, 5, (t += 2000)); // fastSec ≥ 2 → resume
+  await emit(37.5003, LON, 5, (t += 800)); // fastSec ≥ 1 → resume
   expect(isAutoPaused(root)).toBe(false);
 
   // A further accepted move after resume must accumulate: if the engine were
   // frozen (label-only resume bug), km() would stay at kmAtPause forever.
-  await emit(37.5009, LON, 5, (t += 3000));
+  await emit(37.5006, LON, 5, (t += 3000)); // ~33m/3s ≈ 11 m/s → accepted
   expect(km()).toBeGreaterThan(kmAtPause);
 
   act(() => renderer.unmount());
