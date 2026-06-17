@@ -62,6 +62,12 @@ import * as haptics from '../../lib/haptics';
 import {KeyboardAvoidingView, Alert, FlatList, StyleSheet} from 'react-native';
 import App from '../../App';
 import {Button} from '../../primitives';
+// E 묶음(디자인 시스템) — CTA '단일 Button 프리미티브 경유'를 화면째 렌더해 단언하기 위한 컴포넌트.
+import ChallengesSection from '../../ChallengesSection';
+import RetirementFlow from '../../RetirementFlow.rn';
+import ShoesScreen from '../../ShoesScreen.rn';
+import ProfileScreen from '../../ProfileScreen.rn';
+import {buildContext} from '../../lib/progression/context';
 import OnboardingScreen from '../../OnboardingScreen.rn';
 import RunActiveScreen from '../../RunActiveScreen.rn';
 import RunGoalScreen from '../../RunGoalScreen.rn';
@@ -766,6 +772,21 @@ describe('Audit Hardening 수용', () => {
       const st = node.props.style;
       return StyleSheet.flatten(typeof st === 'function' ? st({pressed: false}) : st) || {};
     };
+    // 라벨로 찾은 CTA 가 '단일 Button 프리미티브'임을 관찰 가능한 렌더 산출물로 단언한다(부분 롤백 가드).
+    //   ① 그 버튼 **서브트리**에 GRAD_TOP→GRAD_BOT Stop(=GradientFill) — 트리 전체가 아니라 이 버튼으로
+    //      스코프해 타 CTA 의 그라데이션 누출을 차단한다. ② 자기 style 에 ACCENT 글로우. ③ RADIUS.btn 모서리.
+    //   raw <View backgroundColor:ACCENT> + 상수 radius 로 손수 만든 오렌지 버튼은 GradientFill/glow 가
+    //   없어 통과 못 한다 — '프리미티브 사용'과 'radius 상수만 통일'을 구분한다(Finding3 false-completeness 해소).
+    const expectPrimitiveCta = (root: ReactTestRenderer.ReactTestInstance, label: string) => {
+      const node = pressableByLabel(root, label);
+      const stops = stopColors(node);
+      expect(stops).toContain(GRAD_TOP);
+      expect(stops).toContain(GRAD_BOT);
+      const st = flatBtnStyle(root, label);
+      expect(st.shadowColor).toBe(ACCENT);
+      expect(st.borderRadius).toBe(RADIUS.btn);
+      return node;
+    };
 
     test('CTA: 단일 Button 프리미티브, MockupButton/인라인 그라데이션 제거', () => {
       const srcFiles = listSrc();
@@ -809,20 +830,91 @@ describe('Audit Hardening 수용', () => {
       act(() => goal.unmount());
     });
 
-    test('radius 단일화: 전환 대상 파일에 backgroundColor:ACCENT + raw 14/16 radius 사각 CTA 부재 + 단일 Button 채택', () => {
-      // code_critic(Finding 1·3): "CTA 단일 Button" 스펙은 라이브 렌더되는 사각 ACCENT
-      // 버튼들(App 재시도·저장, 챌린지 만들기, 신발 편집·은퇴, Profile Google, RetirementFlow)을
-      // 단일 Button 프리미티브로 라우팅하고 radius 14/16/18 혼재를 제거하라고 요구한다.
-      // 과거 수용 테스트는 Button/RunGoal 렌더와 hex-dedup 만 봐서 이 잔존을 가드하지 못했다
-      // (false completeness). 여기서 전환 대상 소스를 직접 스캔해 강제한다.
-      const targets = [
-        'App.tsx',
-        'ChallengesSection.tsx',
-        'ShoesScreen.rn.tsx',
-        'ProfileScreen.rn.tsx',
-        'RetirementFlow.rn.tsx',
+    test('radius 단일화: Finding1 대상 사각 ACCENT CTA 들이 실제로 단일 Button 프리미티브로 렌더된다(부분 롤백 가드)', () => {
+      // code_critic(Finding 1·3) + test_critic(missing_tests): "CTA 단일 Button" 스펙은 라이브
+      // 렌더되는 사각 ACCENT 버튼들을 단일 Button 프리미티브로 라우팅하라고 요구한다. 과거 수용
+      // 테스트는 (a) per-file `import {Button}`(전환 대상 5파일이 모두 이미 Button 을 import 하므로
+      // tautological — 특정 CTA 가 실제로 프리미티브를 거치는지와 무관하게 통과) 와 (b) `backgroundColor:
+      // ACCENT` & raw `borderRadius:14|16` **둘 다** 가진 객체 스캔만 봤다. 후자는 토큰 radius 로 손수
+      // 만든 오렌지 CTA(`{backgroundColor:ACCENT, borderRadius:RADIUS.btn}`)를 '전환됨'으로 통과시켜
+      // false-completeness 를 남긴다('프리미티브 사용'과 'raw View+radius 상수만 통일'을 구분 못 함).
+      // 여기서는 대표 CTA 4종을 실제로 렌더해 '프리미티브 경유(그라데이션+ACCENT 글로우+RADIUS.btn)'를
+      // 관찰 산출물로 단언한다 — 6개 중 하나라도 raw 오렌지 버튼으로 부분 롤백하면 GradientFill/glow
+      // 부재로 즉시 깨진다(직전 커밋 RunGoal 패턴을 다른 5개 CTA 에 미러).
+      const NOW = Date.UTC(2026, 5, 13);
+      const SHOE: BackendShoe = {id: 's1', name: 'Nike Pegasus 40', max_km: 600, total_km: 590};
+      const RUNS: BackendRun[] = [
+        {id: 'r1', shoe_id: 's1', km: 12, run_date: '2026-03-20', duration: 3600},
       ];
-      // 주석(블록/라인) 제거 — 설명 주석의 토큰 이름은 스캔 대상이 아니다(CRLF \r 선제거).
+      const ctx = buildContext(RUNS, [SHOE], [], null, NOW, []);
+
+      // ① ChallengesSection createBtn('챌린지 만들기') — 폼을 열어야 노출된다.
+      const ch = renderTree(
+        el(ChallengesSection, {challenges: [], onCreate: () => {}, today: '2026-06-03'}),
+      );
+      act(() => pressableByLabel(ch.root, '새 챌린지').props.onPress());
+      expectPrimitiveCta(ch.root, '챌린지 만들기');
+      act(() => ch.unmount());
+
+      // ② RetirementFlow btnPrimary(step0 '여정 돌아보기').
+      const ret = renderTree(
+        el(RetirementFlow, {shoe: SHOE, runs: RUNS, ctx, now: NOW, onClose: () => {}}),
+      );
+      expectPrimitiveCta(ret.root, '여정 돌아보기');
+      act(() => ret.unmount());
+
+      // ③ ShoesScreen 은퇴 키프세이크 CTA(retire-open-flow, '은퇴') — 수명도달 신발 상세에 노출.
+      const UI_SHOE: Shoe = {
+        id: 's1',
+        brand: 'Nike',
+        model: 'Pegasus 40',
+        used: 590,
+        max: 600,
+        condition: '교체',
+      };
+      const shoes = renderTree(
+        el(ShoesScreen, {
+          shoes: [UI_SHOE],
+          runs: [],
+          totals: {0: {totalRuns: 3, totalTime: '3:00:00', avgPace: "5'00\""}},
+          unit: 'km',
+          rawShoes: [SHOE],
+          rawRuns: [],
+          progressionCtx: ctx,
+          now: NOW,
+          detailShoeId: 's1',
+          onConsumeDetail: () => {},
+        }),
+      );
+      expectPrimitiveCta(shoes.root, '은퇴');
+      act(() => shoes.unmount());
+
+      // ④ ProfileScreen cloudBtnGoogle('Google로 계속') — Google iconNode 가 프리미티브 **안에**
+      //    렌더된다(별도 손수 오렌지 버튼이 아님): logo-google 아이콘이 그 Button 서브트리에 있어야 한다.
+      const NOOP_PORT = {
+        signIn: () => Promise.resolve({uid: 'u', email: 'e'}),
+        signOut: () => Promise.resolve(),
+        pull: () => Promise.resolve(null),
+        push: () => Promise.resolve(),
+      };
+      const prof = renderTree(
+        el(ProfileScreen, {cloudPort: NOOP_PORT, backupData: {shoes: [], runs: [], settings: {}}}),
+      );
+      act(() => {
+        prof.root
+          .findAll((n: ReactTestRenderer.ReactTestInstance) => n.props?.accessibilityLabel === '설정 열기')[0]
+          ?.props?.onPress?.();
+      });
+      const googleBtn = expectPrimitiveCta(prof.root, 'Google로 계속');
+      const logo = googleBtn.findAll(
+        (n: ReactTestRenderer.ReactTestInstance) =>
+          !!n.props && (n.props as {name?: string}).name === 'logo-google',
+      );
+      expect(logo.length).toBeGreaterThan(0); // 아이콘이 프리미티브 내부 — 손수 만든 오렌지 버튼 아님.
+      act(() => prof.unmount());
+
+      // 보조 가드(소스 스캔): 전환 대상 파일에 backgroundColor:ACCENT + raw 14/16 사각 CTA 객체 0.
+      // (literal r14/r16 잔존만 잡는 약한 가드 — '프리미티브 경유'의 본 단언은 위 ①~④ 렌더다.)
       const strip = (src: string) =>
         src
           .replace(/\r/g, '')
@@ -830,29 +922,13 @@ describe('Audit Hardening 수용', () => {
           .split('\n')
           .map(l => l.replace(/\/\/.*$/, ''))
           .join('\n');
-
-      for (const f of targets) {
-        const raw = readFile(path.join(repoRoot, f));
-        // (1) 단일 Button 프리미티브를 import 한다(전환의 증거 — 자체 주황 버튼 0).
-        expect(raw).toMatch(/import\s*\{[^}]*\bButton\b[^}]*\}\s*from\s*['"]\.\/primitives['"]/);
-
-        // (2) 어떤 스타일 객체도 backgroundColor:ACCENT + raw 14/16 모서리를 함께 갖지 않는다.
-        //     (사각 ACCENT CTA = 옛 r14/r16 주황 버튼) — 그런 객체가 0이어야 전환 완료.
-        //     원형 컨트롤(RADIUS.pill/999)·반투명(withAlpha)·점/탭/토글은 14/16 이 아니므로 비대상.
-        const code = strip(raw);
-        const innerObjects = code.match(/\{[^{}]*\}/g) || [];
-        const squareAccentCta = innerObjects.filter(
+      for (const f of ['App.tsx', 'ChallengesSection.tsx', 'ShoesScreen.rn.tsx', 'ProfileScreen.rn.tsx', 'RetirementFlow.rn.tsx']) {
+        const code = strip(readFile(path.join(repoRoot, f)));
+        const squareAccentCta = (code.match(/\{[^{}]*\}/g) || []).filter(
           o => /backgroundColor:\s*ACCENT\b/.test(o) && /borderRadius:\s*1[46]\b/.test(o),
         );
         expect(squareAccentCta).toEqual([]);
       }
-
-      // (3) 회귀 가드: 단일 Button 프리미티브의 모서리는 RADIUS.btn 단일 토큰이다(렌더 확인).
-      //     사각 CTA 가 Button 으로 라우팅되면 자동으로 이 모서리를 물려받는다(혼재 종식).
-      const b = renderTree(el(Button, {label: '저장', onPress: () => {}}));
-      const st = flatBtnStyle(b.root, '저장');
-      expect(st.borderRadius).toBe(RADIUS.btn);
-      act(() => b.unmount());
     });
 
     test('gloss 클립: 단일 Button 의 상단 광택이 위쪽 모서리를 RADIUS.btn 으로 둥글린다(모서리 삐짐 회귀 가드)', () => {
