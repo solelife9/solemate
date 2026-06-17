@@ -1230,7 +1230,7 @@ const s = StyleSheet.create({
 
   // Welcome
   wordmark: {position: 'absolute', left: 24, fontFamily: DISP, fontSize: 26, letterSpacing: 1.2, color: '#fff'},
-  heroHeadline: {fontFamily: DISP, fontSize: 88, lineHeight: 76, color: '#fff'},
+  heroHeadline: {fontFamily: DISP, fontSize: 88, lineHeight: 90, color: '#fff'},
   heroSub: {fontFamily: UI, fontSize: 17, fontWeight: '600', color: '#fff', marginTop: 18},
   heroBody: {fontFamily: UI, fontSize: 14.5, lineHeight: 22, color: 'rgba(246,246,248,0.66)', marginTop: 7},
 
