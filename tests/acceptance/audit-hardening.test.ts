@@ -58,7 +58,8 @@ jest.mock('../../lib/haptics', () => ({
 }));
 
 import * as haptics from '../../lib/haptics';
-import {KeyboardAvoidingView} from 'react-native';
+import {KeyboardAvoidingView, Alert} from 'react-native';
+import App from '../../App';
 import OnboardingScreen from '../../OnboardingScreen.rn';
 import RunActiveScreen from '../../RunActiveScreen.rn';
 import RunGoalScreen from '../../RunGoalScreen.rn';
@@ -66,7 +67,7 @@ import RunCountdownScreen from '../../RunCountdownScreen.rn';
 // ── C 묶음(폼 + 피드백) 도구 ─────────────────────────────────────────────────
 import HomeScreen from '../../HomeScreen.rn';
 import HistoryScreen from '../../HistoryScreen.rn';
-import {showToast, runToastAction, getCurrentToast, dismissToast, TOAST_UNDO_LABEL} from '../../lib/toast';
+import {runToastAction, getCurrentToast, dismissToast, TOAST_UNDO_LABEL} from '../../lib/toast';
 import {maskDuration, maskDate, validateRunForm} from '../../lib/inputMask';
 import {syncLabel} from '../../lib/syncStatus';
 import type {Shoe} from '../../theme';
@@ -131,6 +132,39 @@ function renderedText(root: ReactTestRenderer.ReactTestInstance): string {
     });
   });
   return out.join(' ');
+}
+// 콜백 prop(onTab/onDeleteRun/onSetMaxKm…)을 가진 첫 노드를 찾는다(실제 <App/> 트리 탐색용).
+function findByProp(root: ReactTestRenderer.ReactTestInstance, prop: string) {
+  const hits = root.findAll(n => !!n.props && typeof n.props[prop] === 'function');
+  if (!hits.length) throw new Error(`no component with prop: ${prop}`);
+  return hits[0];
+}
+// ShoesScreen(tab 1)의 uiShoes 에서 한 신발의 사이드키(used=사용거리)를 읽는다.
+function usedKmOf(root: ReactTestRenderer.ReactTestInstance, shoeId: string): number {
+  const uiShoes = findByProp(root, 'onSetMaxKm').props.shoes as Array<{id: unknown; used: number}>;
+  const s = uiShoes.find(x => String(x.id) === shoeId);
+  if (!s) throw new Error(`no ui shoe: ${shoeId}`);
+  return s.used;
+}
+// ShoesScreen 의 rawRuns(=live runs 그대로)에서 런 1건(deleted 플래그 확인용).
+function rawRunOf(root: ReactTestRenderer.ReactTestInstance, id: string): {deleted?: boolean} | undefined {
+  const rawRuns = findByProp(root, 'onSetMaxKm').props.rawRuns as Array<{id: unknown; deleted?: boolean}>;
+  return rawRuns.find(r => String(r.id) === id);
+}
+// 마운트 직후/액션 사이의 pending microtask(부팅 fetch·setState)를 여러 번 흘려보낸다.
+async function tickAsync(n = 6) {
+  for (let i = 0; i < n; i++) {
+    // eslint-disable-next-line no-await-in-loop
+    await act(async () => {
+      await Promise.resolve();
+    });
+  }
+}
+// ToastHost 의 입/퇴장 Animated 콜백(~220ms)을 teardown 전에 흘려 누수/teardown 에러를 막는다.
+async function flushAnim() {
+  await act(async () => {
+    await new Promise(r => setTimeout(r, 260));
+  });
 }
 
 const payload = (over: Partial<BackupPayload> = {}): BackupPayload => ({
@@ -448,37 +482,98 @@ describe('Audit Hardening 수용', () => {
     // 토스트는 전역 store + 실타이머를 쓰므로 각 테스트 후 닫아 다음 테스트로 새지 않게 한다.
     afterEach(() => dismissToast());
 
-    test('토스트: 삭제 시 undo 스낵바가 뜨고 undo가 레코드를 사이드키까지 복원', () => {
-      // App.offerRunUndo/restoreRun 의 계약을 lib/toast 로 그대로 검증한다(관찰 가능한 피드백).
-      // 모델: 라이브 런 레코드 + 사이드키(신발 사용거리). 삭제는 둘 다 줄이고, undo 는 둘 다 되살린다.
-      let runs = [{id: 'r1', km: 5}];
-      let shoeUsedKm = 120; // 사이드키 — 삭제 시 차감되고 복원 시 정확히 되돌아와야 한다(부분복원 금지).
-      const removed = runs.find(r => r.id === 'r1')!;
-
-      // 삭제: 라이브에서 제거 + 신발 사용거리 차감 + undo 스낵바 제시(offerRunUndo 와 동형).
-      runs = runs.filter(r => r.id !== 'r1');
-      shoeUsedKm -= removed.km;
-      showToast({
-        message: '러닝 기록 삭제됨',
-        actionLabel: TOAST_UNDO_LABEL,
-        onAction: () => {
-          runs = [removed, ...runs];
-          shoeUsedKm += removed.km;
-        },
+    test('토스트: 삭제 시 undo 스낵바가 뜨고 undo가 production restoreRun 으로 사이드키까지 완전복원', async () => {
+      // tautology 금지(이전 버전 결함): 로컬 클로저를 직접 변형하는 게 아니라 실제 <App/> 를
+      // 마운트해 production 의 onDeleteRun → offerRunUndo(토스트) → runToastAction → restoreRun
+      // 경로를 그대로 태운다. 관측 가능한 결과만 단언한다 — ShoesScreen 의 shoes.used(사이드키=
+      // 신발 사용거리), rawRuns 의 deleted 플래그, route_/time_ 로컬키 원복. 복원이 깨지면(런만
+      // 살고 사이드키 유실, 또는 집계 미회복) 이 단언들이 실패한다. (참고: __tests__/App.deleteUndo)
+      // 백엔드: 신발 s1(600km) + s1 로 달린 동기 런 r1(50km).
+      (global.fetch as jest.Mock).mockImplementation((url: unknown, init?: {method?: string}) => {
+        const u = String(url);
+        const method = (init && init.method ? String(init.method) : 'GET').toUpperCase();
+        let body: unknown = {};
+        if (u.includes('/api/auth')) body = {user_id: 'u1'};
+        else if (u.includes('/api/shoes') && method === 'GET')
+          body = [{id: 's1', name: 'Nike Pegasus', max_km: 600, start_km: 0}];
+        else if (u.includes('/api/runs') && method === 'GET')
+          body = [{id: 'r1', shoe_id: 's1', km: 50, run_date: '2026-06-01', duration: 1800}];
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: () => Promise.resolve(body),
+          text: () => Promise.resolve(JSON.stringify(body)),
+        });
       });
+      // 격리: 전역 beforeEach 의 clearAllMockStorages 는 누수가 있어(메모리: asyncstorage-mock-clear-quirk)
+      // 앞 잡(A/B)이 큐잉한 pending_runs·캐시가 남아 부팅 집계를 오염시킨다. 명시적 clear 후 부팅 키만 재설정.
+      await AsyncStorage.clear();
+      await AsyncStorage.setItem('onboarded', '1');
+      await AsyncStorage.setItem('loc_perm_primed', '1');
+      // r1 의 사이드키 원본(완주 저장이 남긴 것과 동형) — 삭제 시 지워지고 undo 시 바이트 그대로 원복돼야 한다.
+      await AsyncStorage.setItem('route_r1', 'RT');
+      await AsyncStorage.setItem('time_r1', '08:30');
+      jest.spyOn(Alert, 'alert').mockImplementation((() => {}) as never);
 
-      // 관찰: 스낵바가 떴고 '실행취소' 액션을 노출한다(삭제 직후엔 레코드도 사이드키도 빠진 상태).
+      let renderer!: ReactTestRenderer.ReactTestRenderer;
+      await act(async () => {
+        renderer = ReactTestRenderer.create(el(App));
+      });
+      await tickAsync();
+
+      // (전) ShoesScreen(tab 1)의 s1 used = 50.
+      await act(async () => {
+        findByProp(renderer.root, 'onTab').props.onTab(1);
+      });
+      await tickAsync(3);
+      expect(usedKmOf(renderer.root, 's1')).toBe(50);
+
+      // ── 삭제: History(tab 2)의 onDeleteRun(production deleteRun) ──
+      await act(async () => {
+        findByProp(renderer.root, 'onTab').props.onTab(2);
+      });
+      await tickAsync(3);
+      await act(async () => {
+        findByProp(renderer.root, 'onDeleteRun').props.onDeleteRun('r1');
+      });
+      await tickAsync(5);
+
+      // 토스트: '삭제됨' 메시지 + '실행취소' 액션(offerRunUndo 가 띄운 것).
       const toast = getCurrentToast();
-      expect(toast?.message).toBe('러닝 기록 삭제됨');
-      expect(toast?.actionLabel).toBe('실행취소');
-      expect(runs).toHaveLength(0);
-      expect(shoeUsedKm).toBe(115);
+      expect(toast).toBeTruthy();
+      expect(toast!.message).toContain('삭제됨');
+      expect(toast!.actionLabel).toBe(TOAST_UNDO_LABEL);
 
-      // undo 탭 → onAction 실행 + 토스트 닫힘. 레코드와 사이드키(신발 사용거리)가 완전복원된다.
-      runToastAction(toast!.id);
-      expect(runs).toEqual([{id: 'r1', km: 5}]);
-      expect(shoeUsedKm).toBe(120);
+      // 삭제 후: 사이드키 제거 + live 집계 제외(used 0).
+      expect(await AsyncStorage.getItem('route_r1')).toBeNull();
+      expect(await AsyncStorage.getItem('time_r1')).toBeNull();
+      await act(async () => {
+        findByProp(renderer.root, 'onTab').props.onTab(1);
+      });
+      await tickAsync(3);
+      expect(usedKmOf(renderer.root, 's1')).toBe(0);
+
+      // ── 실행취소: 토스트의 onAction(runToastAction) = production restoreRun ──
+      await act(async () => {
+        runToastAction(toast!.id);
+      });
+      await tickAsync(6);
+
+      // 완전복원(부분복원 거부): 사이드키 2종 바이트 원복 + used 50 회복 + 레코드 deleted 아님 + 토스트 닫힘.
+      expect(await AsyncStorage.getItem('route_r1')).toBe('RT');
+      expect(await AsyncStorage.getItem('time_r1')).toBe('08:30');
+      await act(async () => {
+        findByProp(renderer.root, 'onTab').props.onTab(1);
+      });
+      await tickAsync(3);
+      expect(usedKmOf(renderer.root, 's1')).toBe(50);
+      const restored = rawRunOf(renderer.root, 'r1');
+      expect(restored).toBeTruthy();
+      expect(restored!.deleted).toBeFalsy();
       expect(getCurrentToast()).toBeNull();
+
+      await flushAnim();
+      act(() => renderer.unmount());
     });
 
     test('폼: RunForm/AddShoe가 KeyboardAvoidingView + 입력 마스킹 + 인라인 검증', () => {

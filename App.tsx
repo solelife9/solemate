@@ -552,7 +552,9 @@ function Main(){
       await AsyncStorage.removeItem('route_'+d.localId);
       await AsyncStorage.removeItem('time_'+d.localId);
     }
-    await flushPendingRuns(async(p)=>{
+    // flush 결과({synced,remaining})를 그대로 돌려준다 — 호출자(오프라인 새로고침 분기)가
+    // '실제로 서버에 도달한 POST 가 있었는지(synced>0)'로 lastSyncAt 스탬프 여부를 가른다.
+    return await flushPendingRuns(async(p)=>{
       const server=await postRun(p,uid);
       await reconcileSynced(p,server);
     });
@@ -587,7 +589,14 @@ function Main(){
     }catch{
       // 오프라인/백엔드 다운: 재fetch 는 실패해도 큐 flush 만이라도 시도(네트워크 복구 직후
       // 첫 새로고침에서 미동기 런을 밀어낼 수 있게). 그조차 실패하면 조용히 무시.
-      try{await syncPendingRuns(runs,userId);setLastSyncAt(Date.now());}catch{/* 여전히 오프라인 — 비차단 */}
+      try{
+        const {synced}=await syncPendingRuns(runs,userId);
+        // 칩 계약: lastSyncAt 은 '마지막 동기화 **성공** 시각'. 서버 재fetch 가 실패한 이 분기에선
+        // 큐의 미동기 런을 실제로 서버에 밀어낸 경우(synced>0 = 진짜 서버 도달)에만 스탬프한다.
+        // 오프라인 bare 새로고침(빈 큐 단락/per-run POST 실패=synced 0)은 절대 스탬프하지 않는다 —
+        // 그러지 않으면 칩이 '방금 동기화'로 거짓표시된다(성공 try 분기·initUser 오프라인 캐시부팅과 대칭).
+        if(synced>0)setLastSyncAt(Date.now());
+      }catch{/* 여전히 오프라인 — 비차단 */}
     }
   }
 
