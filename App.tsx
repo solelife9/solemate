@@ -78,7 +78,7 @@ import {serializeBackup, BackupV1, BackupPayload} from './lib/backup';
 import {Challenge, ChallengeRun} from './lib/challenges';
 import {ExtChallenge, challengeExtProgress, type ExtRun, type ExtShoe} from './lib/progression/challengesExt';
 import {createFirebaseCloudPort} from './lib/firebaseCloudPort';
-import {stampUpdatedAt} from './lib/cloudSync';
+import {stampUpdatedAt, markDeleted, partitionTombstones} from './lib/cloudSync';
 import {migrateStorageSchema} from './lib/storageMigration';
 import {resolveGoogleCredential} from './lib/googleAuth';
 import {resolveKakaoFirebaseToken} from './lib/kakaoAuth';
@@ -109,6 +109,11 @@ const LOC_PRIME_KEY = 'loc_perm_primed'; // 위치 권한 사전 안내 완료
 // 재시도 카드 대신 '오프라인 부팅'으로 마지막 데이터를 보여준다(랭킹·동기화는 복구 시).
 const CACHE_SHOES_KEY = 'cache_shoes_v1';
 const CACHE_RUNS_KEY = 'cache_runs_v1';
+// audit a2: soft-delete 묘비(tombstone) 영속 키. 삭제는 하드삭제 대신 {id,deleted:true,
+// updatedAt} 묘비로 표현해, 라이브 신발/런 배열엔 안 보이게 하면서도 backupData 에 실어
+// 클라우드 머지로 삭제가 전파되고(다른 기기에서도 사라짐) 부활하지 않게 한다. REST 는 정본
+// (실제 DELETE)이고, 묘비는 Firestore 백업 머지가 지워진 레코드를 되살리지 못하게 막는다.
+const K_TOMBSTONES = 'tombstones_v1';
 /** 부팅 폴백 캐시 로드 — 신발 배열이 있으면 {shoes,runs}, 없으면(미존재/손상) null. */
 async function loadBootCache(): Promise<{shoes: any[]; runs: any[]} | null> {
   try {
@@ -191,6 +196,11 @@ function Main(){
   const [userId,setUserId]=useState<string|null>(null);
   const [shoes,setShoes]=useState<BackendShoe[]>([]);
   const [runs,setRuns]=useState<BackendRun[]>([]);
+  // audit a2: soft-delete 묘비 저장소. 라이브 shoes/runs 는 항상 묘비-free(삭제 레코드 0)라
+  // 화면/집계가 자동으로 삭제를 제외한다. 묘비는 여기에만 모아 backupData 에 합류시켜 동기로
+  // 삭제를 전파하고, 머지 결과는 applyBackupPayload 가 다시 live/묘비로 분리해 이 불변식을
+  // 유지한다(한 id 가 live 와 묘비에 동시에 있지 않는다 → 자기충돌 부활 없음).
+  const [tombstones,setTombstones]=useState<{shoes:BackendShoe[];runs:BackendRun[]}>({shoes:[],runs:[]});
   // 런별 노면 태그 캐시(surface_<runId> → Surface). 실효 마모/교체 예측 보정용. 미태그는
   // road로 동작(차단 아님). runs 변경 시 한 번에 읽어들이고, 손상/실패는 무시한다.
   const [runSurfaces,setRunSurfaces]=useState<Record<string,Surface>>({});
@@ -308,6 +318,24 @@ function Main(){
         const arr=JSON.parse(raw||'[]');
         if(Array.isArray(arr))presentedNotifKeys.current=new Set(arr.filter((k:any)=>typeof k==='string'));
       }catch{/* 손상/부재는 무시 — 빈 집합으로 시작 */}
+    })();
+  },[]);
+
+  // audit a2: soft-delete 묘비 복원(영속 → 상태). 네트워크와 무관하므로 마운트 시 1회 읽어,
+  // 온라인 부팅이 REST 데이터로 라이브 배열을 교체해도(묘비는 별도 저장) backupData 가 계속
+  // 묘비를 싣게 한다 — 동기 직전 강제종료(묘비 미푸시) 후 재부팅에서도 삭제가 부활하지 않는다.
+  useEffect(()=>{
+    (async()=>{
+      try{
+        const raw=await AsyncStorage.getItem(K_TOMBSTONES);
+        const parsed=JSON.parse(raw||'{}');
+        if(parsed&&typeof parsed==='object'){
+          setTombstones({
+            shoes:Array.isArray(parsed.shoes)?parsed.shoes:[],
+            runs:Array.isArray(parsed.runs)?parsed.runs:[],
+          });
+        }
+      }catch{/* 손상/부재는 무시 — 빈 묘비로 시작 */}
     })();
   },[]);
 
@@ -488,13 +516,39 @@ function Main(){
     }catch{Alert.alert('오류','수명 수정 실패');}
   }
 
+  // audit a2: 묘비 저장소 영속(비차단). 실패해도 메모리 상태는 갱신돼 동기로 전파된다.
+  const persistTombstones=(t:{shoes:BackendShoe[];runs:BackendRun[]})=>{
+    try{void AsyncStorage.setItem(K_TOMBSTONES,JSON.stringify(t));}catch(e){console.log('tombstone persist error',e);}
+  };
+  // 한 레코드를 묘비(markDeleted: deleted+updatedAt)로 만들어 해당 묶음 저장소에 더한다.
+  // 같은 id 의 옛 묘비는 교체해(중복 방지) 최신 updatedAt 만 남긴다. 라이브 배열에선 이미
+  // 제거됐으므로 한 id 가 live·묘비에 동시에 있지 않는다(자기충돌 부활 없음).
+  const addShoeTombstone=(rec:BackendShoe)=>{
+    setTombstones(prev=>{
+      const next={...prev,shoes:[...prev.shoes.filter(s=>String(s.id)!==String(rec.id)),markDeleted(rec)]};
+      persistTombstones(next);
+      return next;
+    });
+  };
+  const addRunTombstone=(rec:BackendRun)=>{
+    setTombstones(prev=>{
+      const next={...prev,runs:[...prev.runs.filter(r=>String(r.id)!==String(rec.id)),markDeleted(rec)]};
+      persistTombstones(next);
+      return next;
+    });
+  };
+
   // 신발 삭제는 더 이상 런 기록을 동반삭제하지 않는다(iron law: 데이터 파괴 금지).
   // 런은 보존되어 기록/통계에 남고, 신발만 잠금장(locker)에서 제거된다. 신발을
   // 영구히 지우는 대신 보존이 목적이면 retireShoe(보관)를 쓴다.
+  // audit a2: REST DELETE(정본)는 유지하되, 라이브 배열에서 빼는 동시에 묘비를 남긴다 —
+  // Firestore 백업 머지가 다른 기기의 옛 라이브 신발로 삭제를 되돌리지 못하게 한다(부활 방지).
   async function deleteShoe(id:string){
     try{
       await apiDeleteShoe(userId,id);
+      const target=shoes.find(s=>s.id===id);
       setShoes(prev=>prev.filter(s=>s.id!==id));
+      addShoeTombstone(target??({id} as BackendShoe));
     }catch{Alert.alert('오류','삭제 실패');}
   }
 
@@ -615,11 +669,15 @@ function Main(){
   // runs에서 제거하면 shoeHealth가 줄어 신발 사용거리도 자동 감소한다(파생값). 미동기
   // 런은 서버에 없으므로 네트워크 없이 로컬에서만 제거하고, 동기된 런은 서버 삭제 성공
   // 후 제거한다(실패 시 보존). route_/time_ 로컬키도 함께 정리해 누수를 막는다.
+  // audit a2: 라이브 배열에서 빼는 동시에 묘비를 남긴다. 미동기(_pending) 런도 자동 동기가
+  // backupData(라이브 런 포함)를 이미 Firestore 에 올렸을 수 있으므로 똑같이 묘비를 남겨,
+  // 어느 경로로든 클라우드에 올라간 런이 다른 기기 머지로 부활하지 않게 한다.
   async function deleteRun(id:string){
     const sid=String(id);
     const target=runs.find(r=>String(r.id)===sid);
     const finishLocal=async()=>{
       setRuns(prev=>prev.filter(r=>String(r.id)!==sid));
+      if(target)addRunTombstone(target);
       await removePendingRun(sid);
       await AsyncStorage.removeItem('route_'+sid);
       await AsyncStorage.removeItem('time_'+sid);
@@ -672,16 +730,35 @@ function Main(){
   // ── 로컬 백업/복원(Slice 4) ─────────────────────────────────────────────────
   // 내보내기 대상: 현재 신발+런+설정을 그대로 모은다(km 표준 settings). ProfileScreen이
   // serializeBackup→RN Share로 내보낸다.
-  const backupData={shoes,runs,settings:{unit,goal_weekly_km:goalWeeklyKm,alerts}};
+  // audit a2: 묘비를 라이브 레코드 뒤에 합류시켜 동기(mergeCloudData)가 삭제를 전파하게 한다.
+  // 라이브 배열은 묘비-free 이고 한 id 가 양쪽에 동시에 있지 않으므로 합집합이 깨끗하다.
+  const backupData={
+    shoes:[...shoes,...tombstones.shoes],
+    runs:[...runs,...tombstones.runs],
+    settings:{unit,goal_weekly_km:goalWeeklyKm,alerts},
+  };
   // 가져오기: ProfileScreen이 parseBackup으로 *검증에 성공한* BackupV1만 넘겨준다.
   // 검증 실패 시엔 호출 자체가 없으므로 여기 도달하면 기존 데이터를 안전하게 교체한다.
   // 신규 키(K_BACKUP_IMPORT)에 원본을 영속해 두어 추후 추적/롤백 근거를 남기고,
   // 기존 키(settings_*)는 changeX(=saveX)가 정상 경로로만 갱신해 파괴를 막는다.
   // 백업 페이로드(신발+런+설정)를 현재 상태로 반영한다. 로컬 가져오기와 클라우드 동기
   // 병합 결과가 공유한다. 설정은 changeX(=saveX) 정상 경로로만 갱신해 기존 키 파괴를 막는다.
+  // audit a2: 머지/백업 결과를 받을 때 묘비를 라이브에서 분리한다 — live(!deleted)는 화면
+  // 상태로, 묘비는 저장소로 보내 (a) 삭제 레코드가 거리/수명 계산에 안 끼고 (b) 다음 동기에서도
+  // 삭제가 계속 전파되게 한다. merged 는 id 당 1개(머지가 dedupe)라 한 id 가 live·묘비에 동시에
+  // 남지 않는다 → 자기충돌 부활 없음.
   const applyBackupPayload=(data:BackupPayload)=>{
-    if(Array.isArray(data.shoes))setShoes(data.shoes as BackendShoe[]);
-    if(Array.isArray(data.runs))setRuns(data.runs as BackendRun[]);
+    const sPart=Array.isArray(data.shoes)?partitionTombstones(data.shoes as BackendShoe[]):null;
+    const rPart=Array.isArray(data.runs)?partitionTombstones(data.runs as BackendRun[]):null;
+    if(sPart)setShoes(sPart.live);
+    if(rPart)setRuns(rPart.live);
+    if(sPart||rPart){
+      setTombstones(prev=>{
+        const next={shoes:sPart?sPart.tombstones:prev.shoes,runs:rPart?rPart.tombstones:prev.runs};
+        persistTombstones(next);
+        return next;
+      });
+    }
     const st:any=data.settings||{};
     if(st.unit==='km'||st.unit==='mi')changeUnit(st.unit);
     if(typeof st.goal_weekly_km==='number')changeGoal(st.goal_weekly_km);

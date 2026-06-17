@@ -62,6 +62,55 @@ export function stampUpdatedAt<T extends object>(
   return { ...record, updatedAt: now };
 }
 
+/**
+ * 레코드를 soft-delete 묘비(tombstone)로 만든다 — 하드삭제 대신 `deleted:true` 를 박고
+ * updatedAt 을 갱신해, mergeRecords 의 '최신 우선' 머지가 삭제를 *최신 사실*로 보고 존중하게
+ * 한다(부활 방지). stampUpdatedAt 과 같은 규약:
+ *   · 불변   — 원본을 변형하지 않고 새 객체를 돌려준다.
+ *   · 비파괴 — 기존 필드를 모두 보존한 채 deleted/updatedAt 만 더한다(원본 데이터 유지 →
+ *              undo/머지 진단에 쓸 수 있다).
+ * now 는 테스트 결정성을 위해 주입 가능하며, 생략하면 현재 시각을 쓴다.
+ */
+export function markDeleted<T extends object>(
+  record: T,
+  now: number = Date.now(),
+): T & { deleted: true; updatedAt: number } {
+  return { ...record, deleted: true, updatedAt: now };
+}
+
+/** 레코드가 tombstone(soft-delete)인지. deleted===true 일 때만 참(방어적). */
+export function isDeleted(rec: unknown): boolean {
+  return !!(
+    rec &&
+    typeof rec === 'object' &&
+    (rec as { deleted?: unknown }).deleted === true
+  );
+}
+
+/**
+ * 살아있는(삭제되지 않은) 레코드만 남긴다 — UI 렌더/집계(거리·수명 계산)가 tombstone 을
+ * 제외하도록 하는 단일 필터. 머지 결과는 tombstone 을 보존하지만(삭제 전파), 화면/통계는
+ * 이 필터를 통과한 live 레코드만 본다.
+ */
+export function liveRecords<T>(list: readonly T[]): T[] {
+  return list.filter((r) => !isDeleted(r));
+}
+
+/**
+ * 레코드 목록을 live 와 tombstone 으로 분리한다. 머지 결과를 받을 때 live 는 화면 상태로,
+ * tombstone 은 묘비 저장소로 보내 (a) 화면엔 안 보이고 (b) 다음 동기에서도 삭제가 계속
+ * 전파되게 한다. 입력 순서를 각 묶음 안에서 유지한다.
+ */
+export function partitionTombstones<T>(list: readonly T[]): { live: T[]; tombstones: T[] } {
+  const live: T[] = [];
+  const tombstones: T[] = [];
+  for (const r of list) {
+    if (isDeleted(r)) tombstones.push(r);
+    else live.push(r);
+  }
+  return { live, tombstones };
+}
+
 // ── id/updatedAt 추출 (레코드는 unknown 이므로 방어적으로 읽는다) ───────────────
 
 /** 레코드에서 비교용 id 를 뽑는다. 없으면 null(→ 합치되 dedupe 하지 않음). */
@@ -92,9 +141,16 @@ function recordUpdatedAt(rec: unknown): number {
 /**
  * 두 레코드 배열을 id 합집합으로 병합한다. iron law: 어느 쪽 레코드도 버리지 않는다.
  *   · 한쪽에만 있는 id      → 그대로 보존
- *   · 양쪽에 같은 id(충돌)  → updatedAt 큰(최신) 쪽 채택. 동률/없음이면 local 우선.
+ *   · 양쪽에 같은 id(충돌)  → updatedAt 큰(최신) 쪽 채택. 동률이면 tombstone(삭제) 우선,
+ *                            그 외 동률/없음이면 local 우선.
  *   · id 가 없는 레코드     → dedupe 불가하므로 전부 그대로 뒤에 보존.
  * local 의 순서를 먼저 유지하고, remote 에만 있는 신규 id 를 그 뒤로 덧붙인다.
+ *
+ * tombstone(soft-delete) 존중: 삭제는 `markDeleted` 로 `deleted:true + 갱신된 updatedAt`
+ * 묘비가 되므로, 위 '최신 우선' 규칙만으로도 (한 기기서 지운) 묘비가 (다른 기기의 더 오래된)
+ * live 레코드를 이긴다 → 합집합 머지가 삭제를 *부활시키지 않는다*. 동률(시계가 같은 ms)일
+ * 때만 추가로 tombstone 을 우선해, 경계 케이스에서도 부활을 막는다. 묘비 자체는 결과에 그대로
+ * 남아(드롭하지 않음) 다음 동기에서도 삭제가 계속 전파된다 — 화면/집계는 liveRecords 로 거른다.
  */
 function mergeRecords(local: unknown[], remote: unknown[]): unknown[] {
   const byId = new Map<string, unknown>();
@@ -118,9 +174,12 @@ function mergeRecords(local: unknown[], remote: unknown[]): unknown[] {
         byId.set(id, rec);
         continue;
       }
-      // remote 충돌: 더 최신(updatedAt 큰)일 때만 교체. 동률이면 local 유지.
+      // remote 충돌: 더 최신(updatedAt 큰)일 때 교체. 동률이면 tombstone(삭제)을 우선해
+      // 부활을 막고, 그 밖의 동률은 local 유지.
       const existing = byId.get(id);
-      if (recordUpdatedAt(rec) > recordUpdatedAt(existing)) {
+      const ru = recordUpdatedAt(rec);
+      const eu = recordUpdatedAt(existing);
+      if (ru > eu || (ru === eu && isDeleted(rec) && !isDeleted(existing))) {
         byId.set(id, rec);
       }
     }
