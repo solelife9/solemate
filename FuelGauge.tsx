@@ -27,7 +27,7 @@ type Props = {
 // 마모 4단계 톤 → theme 토큰(raw hex 0). 최상🟢/좋음🟡/교체고려🟠/교체권장🔴.
 const TONE_COLOR: Record<WearTierTone, string> = {good: GOOD, mid: WARN, warn: ACCENT, danger: DANGER};
 
-export function FuelGauge({remainLabel, unit, fillPct, condition, usedLabel, maxLabel, replaceLabel, editSlot}: Props) {
+export function FuelGauge({remainLabel, unit, fillPct, usedLabel, maxLabel, replaceLabel, editSlot}: Props) {
   const p = Math.max(0, Math.min(1, fillPct));
   // 색은 사용률(%) 기반 4단계 — condition(3단계)은 호환 위해 prop 으로 받되 색엔 안 씀.
   const tier = wearTier(p * 100);
