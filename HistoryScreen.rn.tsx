@@ -9,9 +9,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Polyline, Circle } from 'react-native-svg';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {
-  BG, CARD, CARD_DIM, CARD_HI, ACCENT, DANGER, T1, T2, T3, T4, SEP, FONT, DISPLAY, Shoe, Run, SHOES, withAlpha, RADIUS,
+  BG, CARD, CARD_DIM, CARD_HI, ACCENT, DANGER, T1, T2, T3, T4, SEP, CARD_BORDER, FONT, DISPLAY, Shoe, Run, SHOES, withAlpha, RADIUS,
 } from './theme';
-import { TabBar, Button } from './primitives';
+// 기간 탭 스트립 = SegmentedControl(neutral), 러닝 상세 2×3 메트릭 = StatGrid 프리미티브.
+import { TabBar, Button, SegmentedControl, StatGrid } from './primitives';
 import { Unit, displayNum, displayToKm } from './lib/units';
 import { ymdLocal, fmtPace } from './lib/format';
 import { durationLabel } from './lib/stats';
@@ -502,15 +503,13 @@ function RunDetail({ run, shoe, onBack, unit, onEdit, onDelete }: { run: Run; sh
           <Text style={s.detailDist}>{displayNum(run.dist, unit, 2)}</Text>
           <Text style={s.detailDistU}>{unit}</Text>
         </View>
-        {/* 메트릭 한 카드(디자인 11): 2x3 그리드(값 위 · 라벨 아래, 좌측 정렬). */}
-        <View style={[s.card, s.statGrid]}>
-          {stats.map((x, i) => (
-            <View key={i} style={s.statCell}>
-              <Text style={s.statValue}>{x.v}{x.u ? <Text style={s.statUnit}> {x.u}</Text> : null}</Text>
-              <Text style={s.statLabel}>{x.l}</Text>
-            </View>
-          ))}
-        </View>
+        {/* 메트릭 한 카드(디자인 11): 2x3 그리드(값 위 · 라벨 아래, 좌측 정렬) — StatGrid */}
+        <StatGrid
+          style={[s.card, s.statGrid]}
+          columns={3}
+          align="left"
+          items={stats.map((x) => ({ value: x.v, unit: x.u ? ` ${x.u}` : undefined, label: x.l }))}
+        />
         {/* 달린 위치(경로) 지도 — route_<id> 가 있으면 SVG 코스맵으로 표시(없으면 자동 숨김). */}
         <CourseMap points={route} />
         {/* 구간별 페이스 스플릿 — run.splits(구간 데이터)가 있을 때만 표시(없으면 자동 숨김) */}
@@ -650,17 +649,13 @@ export default function HistoryScreen({
         refreshControl={onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={ACCENT} colors={[ACCENT]} /> : undefined}
         ListHeaderComponent={
           <View style={{ gap: 10 }}>
-            {/* period segment */}
-            <View style={s.segment}>
-              {PERIODS.map((p) => {
-                const on = p === period;
-                return (
-                  <Pressable key={p} onPress={() => setPeriod(p)} accessibilityRole="button" accessibilityLabel={p} accessibilityState={{ selected: on }} style={({ pressed }) => [s.segItem, on && s.segItemOn, pressed && !on && { opacity: 0.7 }]}>
-                    <Text style={[s.segText, { color: on ? T1 : T3, fontWeight: on ? '700' : '500' }]}>{p}</Text>
-                  </Pressable>
-                );
-              })}
-            </View>
+            {/* period segment — SegmentedControl(neutral) */}
+            <SegmentedControl
+              variant="neutral"
+              items={PERIODS.map((p) => ({ key: p, label: p }))}
+              value={period}
+              onChange={setPeriod}
+            />
 
             {/* 요약 카드 — 목업 기록(10): 기간 제목 + 큰 거리 + 'N번 달렸어요' + 횟수·평균페이스·총시간 */}
             <View style={[s.card, { padding: 20 }]}>
@@ -735,7 +730,7 @@ const s = StyleSheet.create({
   // 공유 카드 캡처용: 화면 밖(좌측 far-off)으로 밀어 보이지 않게 하되 마운트는 유지.
   offscreen: { position: 'absolute', left: -10000, top: 0, opacity: 0 },
   baselineRow: { flexDirection: 'row', alignItems: 'flex-end' },
-  card: { backgroundColor: CARD, borderRadius: 22, borderWidth: 1, borderColor: SEP },
+  card: { backgroundColor: CARD, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER },
   cardTitle: { color: T2, fontFamily: FONT, fontSize: 13.5, fontWeight: '500' },
   sectionLabel: { color: T2, fontFamily: FONT, fontSize: 14, fontWeight: '500', letterSpacing: 0.2, paddingHorizontal: 4 },
   // 요약 카드(큰 거리) — 목업 기록(10)
@@ -755,7 +750,7 @@ const s = StyleSheet.create({
   prU: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '600', marginLeft: 3 },
   prL: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500', marginTop: 5 },
   // 런 카드 — 목업 기록(10): 신발+날짜 + 거리·평균페이스·시간
-  runCard: { backgroundColor: CARD, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: SEP, padding: 18 },
+  runCard: { backgroundColor: CARD, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER, padding: 18 },
   runCardTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, marginBottom: 14 },
   runCardBrand: { color: T3, fontFamily: DISPLAY, fontSize: 11, fontWeight: '500', letterSpacing: 1.2 },
   runCardModel: { color: T1, fontFamily: DISPLAY, fontSize: 16, fontWeight: '700', letterSpacing: -0.2, marginTop: 2 },
@@ -769,12 +764,8 @@ const s = StyleSheet.create({
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   title: { color: T1, fontFamily: FONT, fontSize: 28, fontWeight: '500', letterSpacing: -0.8 },
 
-  // 콤팩트: 세그먼트 컨테이너 패딩·항목 내부 패딩·폰트를 줄여 세로를 압축한다.
-  // 단, 터치 타깃은 접근성(≥44pt)을 위해 minHeight 44 를 유지한다(폴리시 회귀 가드).
-  segment: { flexDirection: 'row', gap: 3, backgroundColor: withAlpha(T1, 0.035), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.07), borderRadius: 13, padding: 3 },
-  segItem: { flex: 1, minHeight: 44, alignItems: 'center', justifyContent: 'center', paddingVertical: 6, borderRadius: 10 },
-  segItemOn: { backgroundColor: withAlpha(T1, 0.09) },
-  segText: { fontFamily: FONT, fontSize: 13.5 },
+  // 기간 세그먼트는 SegmentedControl(neutral) 프리미티브로 이전 — 컨테이너/항목/선택칩
+  // 토큰을 그쪽이 책임진다(과거 segment/segItem/segItemOn/segText 제거, 시각 동등).
 
   // bar chart (right-side km gridlines · accent bars)
   chartGrid: { position: 'absolute', left: 0, right: 0 },
@@ -850,11 +841,7 @@ const s = StyleSheet.create({
   detailDistU: { color: T2, fontFamily: FONT, fontSize: 20, marginLeft: 6, marginBottom: 8 },
   detailBrand: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '600', letterSpacing: 1.4 },
   detailModel: { color: T1, fontFamily: FONT, fontSize: 24, fontWeight: '700', letterSpacing: -0.4, marginTop: 4 },
-  // 메트릭 한 카드(디자인 11) — 2x3 그리드. 값(위)·라벨(아래) 좌측 정렬, 칸마다 별도
-  // 박스 없이 한 카드 안에 균등 1/3 폭으로 배치(이전 칸별 카드 → 한 카드).
-  statGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingVertical: 16, paddingHorizontal: 20, rowGap: 18, marginTop: 16 },
-  statCell: { width: '33.33%', paddingVertical: 6 },
-  statValue: { color: T1, fontFamily: DISPLAY, fontSize: 21, fontWeight: '700', letterSpacing: 0.2, fontVariant: ['tabular-nums'] },
-  statUnit: { color: T3, fontFamily: FONT, fontSize: 11.5, fontWeight: '500' },
-  statLabel: { color: T3, fontFamily: FONT, fontSize: 11.5, marginTop: 4 },
+  // 메트릭 한 카드(디자인 11) — 2x3 그리드. 칸 레이아웃·값/단위/라벨은 StatGrid
+  // 프리미티브가 책임지고(columns=3·align=left), 여기선 카드 내부 여백만 얹는다.
+  statGrid: { paddingVertical: 16, paddingHorizontal: 20, rowGap: 18, marginTop: 16 },
 });

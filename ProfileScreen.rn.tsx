@@ -11,8 +11,9 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, ScrollView, Pressable, StyleSheet, TextInput, Image, Share } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { BG, CARD, CARD_DIM, CARD_HI, ACCENT, GOOD, DANGER, WARN, T1, T2, T3, SEP, FONT, DISPLAY, withAlpha, TIER_COLORS, TIER_LABEL, KAKAO_YELLOW, KAKAO_LABEL, NAVER_GREEN, NAVER_LABEL, RADIUS } from './theme';
-import { TabBar, Ring, Pill, SectionTitle, Button } from './primitives';
+import { BG, CARD, CARD_DIM, CARD_HI, ACCENT, GOOD, DANGER, WARN, T1, T2, T3, SEP, CARD_BORDER, FONT, DISPLAY, withAlpha, TIER_COLORS, TIER_LABEL, KAKAO_YELLOW, KAKAO_LABEL, NAVER_GREEN, NAVER_LABEL, RADIUS } from './theme';
+// recap 토글 = SegmentedControl(accentSolid), 스탯 그리드들 = StatGrid 단일 프리미티브.
+import { TabBar, Ring, Pill, SectionTitle, Button, SegmentedControl, StatGrid } from './primitives';
 import { Unit, unitKorean, displayNum, displayToKm } from './lib/units';
 import { weeklyRecap, monthlyRecap, type RecapRun, type RecapShoe } from './lib/recap';
 import { buildRecapShareCardModel, shareRecapCard, formatRecapPRs, type RecapKind, type SvgCapturable } from './lib/shareCard';
@@ -526,18 +527,17 @@ export default function ProfileScreen({
         {/* lifetime stats */}
         <View style={[s.card, { padding: 22 }]}>
           <Text style={s.cardTitle}>누적 기록</Text>
-          <View style={s.statRow}>
-            {[
-              { v: profile.totalKm.toLocaleString(), u: unit, l: '총 거리' },
-              { v: String(profile.totalRuns), u: '회', l: '총 러닝' },
-              { v: profile.totalTime, u: 'h', l: '총 시간' },
-            ].map((x, i) => (
-              <View key={i} style={[s.statCell, i > 0 && s.statDivider]}>
-                <Text style={s.statValue}>{x.v}<Text style={s.statUnit}>{x.u}</Text></Text>
-                <Text style={s.statLabel}>{x.l}</Text>
-              </View>
-            ))}
-          </View>
+          <StatGrid
+            divider
+            valueSize={26}
+            valueWeight="400"
+            valueLS={0.3}
+            items={[
+              { value: profile.totalKm.toLocaleString(), unit: unit, label: '총 거리' },
+              { value: String(profile.totalRuns), unit: '회', label: '총 러닝' },
+              { value: profile.totalTime, unit: 'h', label: '총 시간' },
+            ]}
+          />
         </View>
 
         {/* 진척(랭크·타이틀·업적) 진입 — 전체화면 ProgressionScreen 으로 전환 */}
@@ -578,15 +578,18 @@ export default function ProfileScreen({
         {records.length > 0 && (
           <View style={[s.card, { padding: 22 }]}>
             <Text style={s.cardTitle}>개인 기록</Text>
-            <View style={s.statRow}>
-              {records.map((r, i) => (
-                <View key={i} style={[s.statCell, i > 0 && s.statDivider]}>
-                  <Ionicons name={r.icon} size={18} color={T2} style={{ marginBottom: 6 }} />
-                  <Text style={s.statValue}>{r.value}{!!r.unit && <Text style={s.statUnit}>{r.unit}</Text>}</Text>
-                  <Text style={s.statLabel}>{r.label}</Text>
-                </View>
-              ))}
-            </View>
+            <StatGrid
+              divider
+              valueSize={26}
+              valueWeight="400"
+              valueLS={0.3}
+              items={records.map((r) => ({
+                value: r.value,
+                unit: r.unit || undefined,
+                label: r.label,
+                top: <Ionicons name={r.icon} size={18} color={T2} style={{ marginBottom: 6 }} />,
+              }))}
+            />
           </View>
         )}
 
@@ -594,26 +597,15 @@ export default function ProfileScreen({
         <View testID="recap-section">
           <View style={s.recapHead}>
             <Text style={s.sectionLabel}>돌아보기</Text>
-            <View style={s.recapToggle}>
-              <Pressable
-                onPress={() => setRecapMode('weekly')}
-                testID="recap-toggle-weekly"
-                accessibilityRole="button"
-                accessibilityLabel="주간 리캡"
-                accessibilityState={{ selected: recapMode === 'weekly' }}
-                style={[s.recapTab, recapMode === 'weekly' && s.recapTabOn]}>
-                <Text style={[s.recapTabTxt, recapMode === 'weekly' && s.recapTabTxtOn]}>주간</Text>
-              </Pressable>
-              <Pressable
-                onPress={() => setRecapMode('monthly')}
-                testID="recap-toggle-monthly"
-                accessibilityRole="button"
-                accessibilityLabel="월간 리캡"
-                accessibilityState={{ selected: recapMode === 'monthly' }}
-                style={[s.recapTab, recapMode === 'monthly' && s.recapTabOn]}>
-                <Text style={[s.recapTabTxt, recapMode === 'monthly' && s.recapTabTxtOn]}>월간</Text>
-              </Pressable>
-            </View>
+            <SegmentedControl
+              variant="accentSolid"
+              block={false}
+              items={[{ key: 'weekly', label: '주간' }, { key: 'monthly', label: '월간' }]}
+              value={recapMode}
+              onChange={(k) => setRecapMode(k as RecapKind)}
+              labelFor={(it) => `${it.label} 리캡`}
+              testIDFor={(it) => `recap-toggle-${it.key}`}
+            />
           </View>
           <View style={[s.card, { padding: 20 }]} testID="recap-card">
             <View style={s.recapTopRow}>
@@ -641,21 +633,19 @@ export default function ProfileScreen({
               </View>
             ) : (
               <>
-                {/* 총거리·런수·평균 페이스 3칸 */}
-                <View style={[s.statRow, { marginTop: 6 }]}>
-                  <View style={s.statCell} testID="recap-total">
-                    <Text style={s.statValue}>{recapTotalDisplay}<Text style={s.statUnit}>{unit}</Text></Text>
-                    <Text style={s.statLabel}>총 거리</Text>
-                  </View>
-                  <View style={[s.statCell, s.statDivider]} testID="recap-runcount">
-                    <Text style={s.statValue}>{recap.runCount}<Text style={s.statUnit}>회</Text></Text>
-                    <Text style={s.statLabel}>런 수</Text>
-                  </View>
-                  <View style={[s.statCell, s.statDivider]} testID="recap-pace">
-                    <Text style={s.statValue}>{recap.avgPaceLabel}<Text style={s.statUnit}>{recap.avgPaceLabel === '--' ? '' : '/km'}</Text></Text>
-                    <Text style={s.statLabel}>평균 페이스</Text>
-                  </View>
-                </View>
+                {/* 총거리·런수·평균 페이스 3칸 (StatGrid) */}
+                <StatGrid
+                  style={{ marginTop: 6 }}
+                  divider
+                  valueSize={26}
+                  valueWeight="400"
+                  valueLS={0.3}
+                  items={[
+                    { value: recapTotalDisplay, unit: unit, label: '총 거리', testID: 'recap-total' },
+                    { value: recap.runCount, unit: '회', label: '런 수', testID: 'recap-runcount' },
+                    { value: recap.avgPaceLabel, unit: recap.avgPaceLabel === '--' ? undefined : '/km', label: '평균 페이스', testID: 'recap-pace' },
+                  ]}
+                />
 
                 {/* 최다 착용 신발 */}
                 {recap.mostWornShoe && (
@@ -861,7 +851,7 @@ export default function ProfileScreen({
 const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: BG },
   row: { flexDirection: 'row', alignItems: 'center', gap: 7 },
-  card: { backgroundColor: CARD_DIM, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: withAlpha(T1, 0.07) },
+  card: { backgroundColor: CARD_DIM, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER },
   cardTitle: { color: T2, fontFamily: FONT, fontSize: 13.5, fontWeight: '500', marginBottom: 16 },
   sectionLabel: { color: T2, fontFamily: FONT, fontSize: 14, fontWeight: '500', letterSpacing: 0.2, paddingHorizontal: 4 },
   progressRow: { flexDirection: 'row', alignItems: 'center', gap: 13, padding: 16 },
@@ -916,14 +906,10 @@ const s = StyleSheet.create({
   streakDayLabel: { color: T3, fontFamily: FONT, fontSize: 10, fontWeight: '600' },
   streakDayLabelToday: { color: T2 },
 
-  statRow: { flexDirection: 'row' },
-  statCell: { flex: 1, alignItems: 'center' },
-  statDivider: { borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: SEP },
-  statValue: { color: T1, fontFamily: DISPLAY, fontSize: 26, letterSpacing: 0.3, fontVariant: ['tabular-nums'] },
-  statUnit: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '600' },
-  statLabel: { color: T3, fontFamily: FONT, fontSize: 11.5, fontWeight: '600', marginTop: 4 },
+  // 누적/개인 기록·리캡 요약 스탯 줄은 StatGrid 프리미티브로 이전(셀·값·라벨 토큰을
+  // 그쪽이 단일 소스로 책임 — 과거 statRow/statCell/statDivider/statValue/Unit/Label 제거).
 
-  badge: { flex: 1, backgroundColor: CARD, borderRadius: 22, paddingVertical: 16, paddingHorizontal: 8, alignItems: 'center', gap: 8, borderWidth: 1, borderColor: withAlpha(T1, 0.07) },
+  badge: { flex: 1, backgroundColor: CARD, borderRadius: RADIUS.lg, paddingVertical: 16, paddingHorizontal: 8, alignItems: 'center', gap: 8, borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER },
   badgeIcon: { width: 44, height: 44, borderRadius: RADIUS.pill, alignItems: 'center', justifyContent: 'center' },
   badgeLabel: { fontFamily: FONT, fontSize: 10.5, fontWeight: '500', textAlign: 'center' },
 
@@ -946,11 +932,8 @@ const s = StyleSheet.create({
 
   // ── 돌아보기(리캡) ───────────────────────────────────────────────────────────
   recapHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 12, paddingHorizontal: 4 },
-  recapToggle: { flexDirection: 'row', backgroundColor: CARD_DIM, borderRadius: RADIUS.pill, padding: 3, gap: 2 },
-  recapTab: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: RADIUS.pill },
-  recapTabOn: { backgroundColor: ACCENT },
-  recapTabTxt: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600' },
-  recapTabTxtOn: { color: T1 },
+  // 주/월 토글은 SegmentedControl(accentSolid, block=false)로 이전(과거 recapToggle/
+  // recapTab/recapTabOn/recapTabTxt/recapTabTxtOn 제거, 시각 동등).
   recapTopRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
   recapPeriod: { color: T2, fontFamily: FONT, fontSize: 14, fontWeight: '700' },
   recapShareBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 7, borderRadius: RADIUS.pill, backgroundColor: withAlpha(ACCENT, 0.12) },

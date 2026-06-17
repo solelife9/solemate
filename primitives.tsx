@@ -33,6 +33,7 @@ import Svg, {
 import {
   BG,
   CARD,
+  CARD_DIM,
   CARD_HI,
   ACCENT,
   ACCENT_2,
@@ -44,6 +45,7 @@ import {
   T1,
   T3,
   SEP,
+  CARD_BORDER,
   FONT,
   DISPLAY,
   SPACE,
@@ -307,9 +309,275 @@ const card = StyleSheet.create({
     backgroundColor: CARD,
     borderRadius: RADIUS.lg,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: SEP,
+    borderColor: CARD_BORDER,
   },
   padded: {padding: SPACE.lg},
+});
+
+// ── SegmentedControl (탭 스트립 단일 프리미티브) ───────────────────────────────
+// 앱 전역에 흩어져 있던 4개 탭 스트립(History 기간 · Profile recap · Progression 섹션 ·
+// RunGoal 모드)을 하나로 통합한다. 선택 상태·접근성(role/selected/label)·press 동작을
+// 이 컴포넌트가 책임지고, 표면(컨테이너 배경/보더/반경 + 선택칩 색)은 variant 토큰으로
+// 고정해 각 사용처의 기존 모양을 1:1 재현한다(시각 동등). variant 4종은 현재 4개 스트립의
+// 외형을 그대로 옮긴 것:
+//   • neutral    — 흰색 3.5% 컨테이너 + 흰색 9% 선택칩(History 기간)
+//   • raised     — CARD 컨테이너(pill) + CARD_HI 선택칩(Progression 섹션)
+//   • accentTint — CARD 컨테이너 + 주황 16% 틴트 선택칩(RunGoal 모드)
+//   • accentSolid— CARD_DIM 컨테이너(pill, hug) + 주황 채움 선택칩(Profile recap)
+// block=false 면 항목이 내용폭(hug)으로 줄고(profile recap 처럼 인라인), 기본은 flex 균등.
+export type SegmentItem = {key: string; label: string};
+type SegVariant = 'neutral' | 'raised' | 'accentTint' | 'accentSolid';
+
+const SEG_VARIANTS: Record<
+  SegVariant,
+  {
+    container: ViewStyle;
+    item: ViewStyle;
+    itemOn: ViewStyle;
+    textOff: TextStyle;
+    textOn: TextStyle;
+  }
+> = {
+  neutral: {
+    container: {
+      backgroundColor: withAlpha(T1, 0.035),
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: CARD_BORDER,
+      borderRadius: 13,
+      padding: 3,
+      gap: 3,
+    },
+    item: {minHeight: 44, paddingVertical: 6, borderRadius: 10},
+    itemOn: {backgroundColor: withAlpha(T1, 0.09)},
+    textOff: {color: T3, fontSize: 13.5, fontWeight: '500'},
+    textOn: {color: T1, fontSize: 13.5, fontWeight: '700'},
+  },
+  raised: {
+    container: {
+      backgroundColor: CARD,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: CARD_BORDER,
+      borderRadius: RADIUS.pill,
+      padding: 4,
+      gap: 6,
+    },
+    item: {paddingVertical: 9, borderRadius: RADIUS.pill},
+    itemOn: {backgroundColor: CARD_HI},
+    textOff: {color: T3, fontSize: 13, fontWeight: '700'},
+    textOn: {color: T1, fontSize: 13, fontWeight: '700'},
+  },
+  accentTint: {
+    container: {
+      backgroundColor: CARD,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: CARD_BORDER,
+      borderRadius: 14,
+      padding: 4,
+      gap: 4,
+    },
+    item: {height: 38, borderRadius: 10},
+    itemOn: {
+      backgroundColor: withAlpha(ACCENT, 0.16),
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: withAlpha(ACCENT, 0.28),
+    },
+    textOff: {color: T3, fontSize: 13.5, fontWeight: '600'},
+    textOn: {color: ACCENT, fontSize: 13.5, fontWeight: '600'},
+  },
+  accentSolid: {
+    container: {
+      backgroundColor: CARD_DIM,
+      borderRadius: RADIUS.pill,
+      padding: 3,
+      gap: 2,
+    },
+    item: {paddingHorizontal: 14, paddingVertical: 6, borderRadius: RADIUS.pill},
+    itemOn: {backgroundColor: ACCENT},
+    textOff: {color: T3, fontSize: 13, fontWeight: '600'},
+    textOn: {color: T1, fontSize: 13, fontWeight: '600'},
+  },
+};
+
+export function SegmentedControl({
+  items,
+  value,
+  onChange,
+  variant = 'neutral',
+  block = true,
+  role = 'button',
+  labelFor,
+  testIDFor,
+  style,
+}: {
+  items: SegmentItem[];
+  value: string;
+  onChange: (key: string) => void;
+  variant?: SegVariant;
+  block?: boolean;
+  role?: 'button' | 'tab';
+  labelFor?: (item: SegmentItem, selected: boolean) => string;
+  testIDFor?: (item: SegmentItem) => string;
+  style?: StyleProp<ViewStyle>;
+}) {
+  const v = SEG_VARIANTS[variant];
+  return (
+    <View style={[seg.row, v.container, style]}>
+      {items.map(item => {
+        const on = item.key === value;
+        return (
+          <Pressable
+            key={item.key}
+            testID={testIDFor ? testIDFor(item) : undefined}
+            onPress={() => onChange(item.key)}
+            accessibilityRole={role}
+            accessibilityState={{selected: on}}
+            accessibilityLabel={labelFor ? labelFor(item, on) : item.label}
+            style={({pressed}) => [
+              seg.item,
+              block && seg.block,
+              v.item,
+              on && v.itemOn,
+              pressed && !on && {opacity: 0.7},
+            ]}>
+            <Text style={[seg.label, on ? v.textOn : v.textOff]}>{item.label}</Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
+const seg = StyleSheet.create({
+  row: {flexDirection: 'row'},
+  item: {alignItems: 'center', justifyContent: 'center'},
+  block: {flex: 1},
+  label: {fontFamily: FONT},
+});
+
+// ── Stat / StatGrid (스탯 셀 + 그리드 단일 프리미티브) ─────────────────────────
+// 화면마다 손으로 짜던 스탯 그리드(누적 기록 · 개인 기록 · 리캡 요약 · 진척 스탯줄 ·
+// 러닝 상세 2×3)를 하나로 통합한다. 한 셀 = 큰 값(DISPLAY·tabular-nums) + 위첨자 단위
+// (T3) + 라벨(T3). 색/폰트패밀리/tabular/구조는 토큰으로 고정(단일 진실원)하고, 크기·
+// 굵기·자간만 사용처 타입스케일로 받는다(시각 동등). align='center' 는 카드 안 균등 줄,
+// 'left' 는 2×3 좌측 정렬 그리드. divided 면 좌측 헤어라인 구분선(첫 칸 제외).
+export type StatItem = {
+  value: string | number;
+  unit?: string;
+  label?: string;
+  top?: React.ReactNode;
+  testID?: string;
+};
+
+export function Stat({
+  value,
+  unit,
+  label,
+  top,
+  align = 'center',
+  valueSize = 21,
+  valueWeight = '700',
+  valueLS = 0.2,
+  divided = false,
+  style,
+  testID,
+}: {
+  value: string | number;
+  unit?: string;
+  label?: string;
+  top?: React.ReactNode;
+  align?: 'center' | 'left';
+  valueSize?: number;
+  valueWeight?: TextStyle['fontWeight'];
+  valueLS?: number;
+  divided?: boolean;
+  style?: StyleProp<ViewStyle>;
+  testID?: string;
+}) {
+  return (
+    <View
+      testID={testID}
+      style={[
+        statS.cell,
+        align === 'center' ? statS.center : statS.left,
+        divided && statS.divided,
+        style,
+      ]}>
+      {top}
+      <Text
+        style={[
+          statS.value,
+          {fontSize: valueSize, fontWeight: valueWeight, letterSpacing: valueLS},
+        ]}>
+        {value}
+        {unit ? <Text style={statS.unit}>{unit}</Text> : null}
+      </Text>
+      {label != null ? <Text style={statS.label}>{label}</Text> : null}
+    </View>
+  );
+}
+
+export function StatGrid({
+  items,
+  align = 'center',
+  divider = false,
+  columns,
+  valueSize = 21,
+  valueWeight = '700',
+  valueLS = 0.2,
+  style,
+  testID,
+}: {
+  items: StatItem[];
+  align?: 'center' | 'left';
+  divider?: boolean;
+  // columns 지정 시 wrap 그리드(각 칸 100/columns% 폭, 예 2×3=3). 미지정이면 flex 균등 줄.
+  columns?: number;
+  valueSize?: number;
+  valueWeight?: TextStyle['fontWeight'];
+  valueLS?: number;
+  style?: StyleProp<ViewStyle>;
+  testID?: string;
+}) {
+  const wrap = columns != null;
+  return (
+    <View
+      testID={testID}
+      style={[wrap ? statS.gridWrap : statS.gridRow, style]}>
+      {items.map((it, i) => (
+        <Stat
+          key={it.testID ?? `${it.label ?? ''}-${i}`}
+          value={it.value}
+          unit={it.unit}
+          label={it.label}
+          top={it.top}
+          testID={it.testID}
+          align={align}
+          valueSize={valueSize}
+          valueWeight={valueWeight}
+          valueLS={valueLS}
+          divided={divider && i > 0}
+          style={wrap ? {width: `${100 / columns!}%`} : undefined}
+        />
+      ))}
+    </View>
+  );
+}
+
+const statS = StyleSheet.create({
+  gridRow: {flexDirection: 'row'},
+  gridWrap: {flexDirection: 'row', flexWrap: 'wrap'},
+  cell: {},
+  center: {flex: 1, alignItems: 'center'},
+  left: {},
+  divided: {borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: SEP},
+  value: {
+    color: T1,
+    fontFamily: DISPLAY,
+    fontVariant: ['tabular-nums'],
+    includeFontPadding: false,
+  },
+  unit: {color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '600'},
+  label: {color: T3, fontFamily: FONT, fontSize: 11.5, fontWeight: '600', marginTop: 4},
 });
 
 // ── Pill / Badge (상태색 톤 + 반투명 배경) ────────────────────────────────────

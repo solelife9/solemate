@@ -36,7 +36,7 @@ import {
   T1,
   T2,
   T3,
-  SEP,
+  CARD_BORDER,
   FONT,
   DISPLAY,
   SPACE,
@@ -46,6 +46,8 @@ import {
   TIER_LABEL,
   withAlpha,
 } from './theme';
+// 섹션 탭 스트립 = SegmentedControl(raised), 스탯 줄 = StatGrid 단일 프리미티브.
+import {SegmentedControl, StatGrid} from './primitives';
 import {ymdLocal} from './lib/format';
 import {ExtChallengeCard, SmartChallengeCard} from './ChallengesSection';
 import {
@@ -546,41 +548,31 @@ export default function ProgressionScreen({
           ) : null}
         </View>
 
-        {/* 스탯 줄 — 총 거리 / 등록 신발 / 은퇴 신발 / 현재 스트릭 */}
-        <View style={s.statRow} testID="stat-row">
-          {[
-            {v: Math.round(ctx.cumulativeKm).toLocaleString(), u: 'km', l: '총 거리'},
-            {v: String(ctx.registeredShoeCount), u: '켤레', l: '등록 신발'},
-            {v: String(ctx.retiredShoeCount), u: '켤레', l: '은퇴 신발'},
-            {v: String(ctx.currentStreak), u: '일', l: '현재 스트릭'},
-          ].map((x, i) => (
-            <View key={i} style={[s.statCell, i > 0 && s.statDivider]}>
-              <Text style={s.statValue}>
-                {x.v}
-                <Text style={s.statUnit}>{x.u}</Text>
-              </Text>
-              <Text style={s.statLabel}>{x.l}</Text>
-            </View>
-          ))}
-        </View>
+        {/* 스탯 줄 — 총 거리 / 등록 신발 / 은퇴 신발 / 현재 스트릭 (StatGrid) */}
+        <StatGrid
+          testID="stat-row"
+          style={s.statCard}
+          divider
+          valueSize={19}
+          valueWeight="800"
+          valueLS={-0.4}
+          items={[
+            {value: Math.round(ctx.cumulativeKm).toLocaleString(), unit: 'km', label: '총 거리'},
+            {value: String(ctx.registeredShoeCount), unit: '켤레', label: '등록 신발'},
+            {value: String(ctx.retiredShoeCount), unit: '켤레', label: '은퇴 신발'},
+            {value: String(ctx.currentStreak), unit: '일', label: '현재 스트릭'},
+          ]}
+        />
 
-        {/* 섹션 탭 — 한 번에 하나만 노출(IA 정리) */}
-        <View style={s.tabs}>
-          {TABS.map(t => {
-            const active = tab === t.key;
-            return (
-              <Pressable
-                key={t.key}
-                testID={`tab-${t.key}`}
-                onPress={() => setTab(t.key)}
-                accessibilityRole="tab"
-                accessibilityState={{selected: active}}
-                style={[s.tab, active && {backgroundColor: CARD_HI}]}>
-                <Text style={[s.tabTxt, active && {color: T1}]}>{t.label}</Text>
-              </Pressable>
-            );
-          })}
-        </View>
+        {/* 섹션 탭 — 한 번에 하나만 노출(IA 정리, SegmentedControl raised) */}
+        <SegmentedControl
+          variant="raised"
+          role="tab"
+          items={TABS.map(t => ({key: t.key, label: t.label}))}
+          value={tab}
+          onChange={k => setTab(k as TabKey)}
+          testIDFor={it => `tab-${it.key}`}
+        />
 
         {/* 타이틀 탭 — 카테고리별 그룹(해제+잠금) */}
         {tab === 'titles' && (
@@ -870,7 +862,7 @@ const s = StyleSheet.create({
     gap: SPACE.lg,
     backgroundColor: HERO_BG,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: SEP,
+    borderColor: CARD_BORDER,
     borderRadius: RADIUS.xl,
     padding: SPACE.xl,
   },
@@ -917,7 +909,7 @@ const s = StyleSheet.create({
   guide: {
     backgroundColor: CARD,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: SEP,
+    borderColor: CARD_BORDER,
     borderRadius: RADIUS.lg,
     padding: SPACE.lg,
     gap: SPACE.md,
@@ -953,47 +945,17 @@ const s = StyleSheet.create({
   },
   pillarFill: {height: '100%', borderRadius: RADIUS.pill, opacity: 0.85},
   lever: {fontFamily: FONT, color: T2, fontSize: 12, fontWeight: '600', marginTop: 2},
-  // 섹션 탭
-  tabs: {
-    flexDirection: 'row',
-    gap: 6,
-    backgroundColor: CARD,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: SEP,
-    borderRadius: RADIUS.pill,
-    padding: 4,
-  },
-  tab: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 9,
-    borderRadius: RADIUS.pill,
-  },
-  tabTxt: {fontFamily: FONT, color: T3, fontSize: 13, fontWeight: '700'},
   // 빈 상태
   empty: {alignItems: 'center', gap: 8, paddingVertical: 36},
   emptyTxt: {fontFamily: FONT, color: T3, fontSize: 13, fontWeight: '600'},
-  // 스탯 줄
-  statRow: {
-    flexDirection: 'row',
+  // 스탯 줄 카드 표면(셀 레이아웃·값/라벨은 StatGrid 프리미티브가 책임)
+  statCard: {
     backgroundColor: CARD,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: SEP,
+    borderColor: CARD_BORDER,
     borderRadius: RADIUS.lg,
     paddingVertical: 16,
   },
-  statCell: {flex: 1, alignItems: 'center'},
-  statDivider: {borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: SEP},
-  statValue: {
-    fontFamily: DISPLAY,
-    color: T1,
-    fontSize: 19,
-    fontWeight: '800',
-    letterSpacing: -0.4,
-    fontVariant: ['tabular-nums'],
-  },
-  statUnit: {fontFamily: FONT, color: T3, fontSize: 11, fontWeight: '700'},
-  statLabel: {fontFamily: FONT, color: T3, fontSize: 11, fontWeight: '600', marginTop: 5},
   // 갤러리
   groupLabel: {fontFamily: FONT, color: T2, fontSize: 13, fontWeight: '700'},
   groupCount: {fontFamily: FONT, color: T3, fontSize: 11, fontWeight: '700'},
@@ -1003,7 +965,7 @@ const s = StyleSheet.create({
     minHeight: 92,
     backgroundColor: CARD,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: SEP,
+    borderColor: CARD_BORDER,
     borderRadius: RADIUS.sm,
     padding: 11,
   },
@@ -1031,7 +993,7 @@ const s = StyleSheet.create({
   ach: {
     backgroundColor: CARD,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: SEP,
+    borderColor: CARD_BORDER,
     borderRadius: RADIUS.sm,
     padding: 14,
   },
@@ -1086,7 +1048,7 @@ const s = StyleSheet.create({
     width: '100%',
     backgroundColor: CARD,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: SEP,
+    borderColor: CARD_BORDER,
     borderRadius: RADIUS.xl,
     padding: SPACE.xl,
     gap: SPACE.md,
@@ -1111,7 +1073,7 @@ const s = StyleSheet.create({
   modalReqBox: {
     backgroundColor: BG,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: SEP,
+    borderColor: CARD_BORDER,
     borderRadius: RADIUS.md,
     padding: SPACE.lg,
     gap: 6,

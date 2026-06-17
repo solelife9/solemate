@@ -22,13 +22,14 @@ import Svg, { Path } from 'react-native-svg';
 // · text→T1–T4 · hair→SEP · 그라데이션→GRAD_TOP/GRAD_BOT. 폰트 UI/DP → FONT/DISPLAY.
 // (시각 동등: 다크+오렌지 유지)
 import {
-  BG, CARD, HERO_BG, ACCENT, GOOD, WARN, DANGER, T1, T2, T3, T4, SEP,
-  FONT, DISPLAY, withAlpha,
+  BG, CARD, HERO_BG, ACCENT, GOOD, WARN, DANGER, T1, T2, T3, T4, SEP, CARD_BORDER,
+  FONT, DISPLAY, RADIUS, withAlpha,
 } from './theme';
 // lib/haptics 배선: '러닝 시작' CTA(런 시작) → tap.
 import { tap } from './lib/haptics';
 // CTA 는 앱 전역 단일 Button 프리미티브(그라데이션 GRAD_TOP/BOT·글로우·radius 토큰).
-import { Button } from './primitives';
+// 모드 탭 스트립은 SegmentedControl 단일 프리미티브(accentTint variant).
+import { Button, SegmentedControl } from './primitives';
 
 // ── SVG 아이콘(자체 그림 — vector-icons 의존 제거) ───────────────────────────
 function Icon({ name, size = 22, color = T2, fill }: { name: string; size?: number; color?: string; fill?: string }) {
@@ -128,17 +129,15 @@ export default function RunGoalScreen({
         <View style={s.navIc} />
       </View>
 
-      {/* segmented */}
-      <View style={s.seg}>
-        {([['km', '거리'], ['min', '시간'], ['free', '자유 러닝']] as [Mode, string][]).map(([m, label]) => {
-          const on = mode === m;
-          return (
-            <Pressable key={m} onPress={() => pickMode(m)} style={[s.segBtn, on && s.segBtnOn]} accessibilityRole="button" accessibilityState={{ selected: on }} accessibilityLabel={`${label} 목표`}>
-              <Text style={[s.segText, on && s.segTextOn]}>{label}</Text>
-            </Pressable>
-          );
-        })}
-      </View>
+      {/* segmented — 모드 탭 스트립(SegmentedControl accentTint) */}
+      <SegmentedControl
+        style={s.seg}
+        variant="accentTint"
+        items={[{ key: 'km', label: '거리' }, { key: 'min', label: '시간' }, { key: 'free', label: '자유 러닝' }]}
+        value={mode}
+        onChange={(k) => pickMode(k as Mode)}
+        labelFor={(it) => `${it.label} 목표`}
+      />
 
       {/* center */}
       <View style={s.center}>
@@ -220,11 +219,9 @@ const s = StyleSheet.create({
   navIc: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
   navTitle: { color: T1, fontFamily: DISPLAY, fontSize: 16, fontWeight: '600', letterSpacing: -0.2 },
 
-  seg: { flexDirection: 'row', gap: 4, marginHorizontal: 22, marginTop: 14, padding: 4, borderRadius: 14, backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
-  segBtn: { flex: 1, height: 38, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  segBtnOn: { backgroundColor: withAlpha(ACCENT, 0.16), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.28) },
-  segText: { color: T3, fontFamily: FONT, fontSize: 13.5, fontWeight: '600' },
-  segTextOn: { color: ACCENT },
+  // 컨테이너 표면(배경/보더/반경/패딩)은 SegmentedControl accentTint variant 가 책임진다.
+  // 화면 고유 레이아웃(좌우·상단 여백)만 남긴다(과거 segBtn/On·segText/On 제거).
+  seg: { marginHorizontal: 22, marginTop: 14 },
 
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 22 },
   bigRow: { flexDirection: 'row', alignItems: 'flex-end' },
@@ -251,7 +248,7 @@ const s = StyleSheet.create({
   freeSub: { color: T3, fontFamily: FONT, fontSize: 14, fontWeight: '500', lineHeight: 21, textAlign: 'center', maxWidth: 250 },
 
   foot: { paddingHorizontal: 22, paddingTop: 4, paddingBottom: 30 },
-  shoeSel: { flexDirection: 'row', alignItems: 'center', gap: 13, padding: 13, borderRadius: 20, backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
+  shoeSel: { flexDirection: 'row', alignItems: 'center', gap: 13, padding: 13, borderRadius: RADIUS.lg, backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER },
   shoeThumb: { width: 46, height: 46, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: HERO_BG, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
   shoeBrand: { color: T3, fontFamily: DISPLAY, fontSize: 10, fontWeight: '600', letterSpacing: 1.4 },
   shoeModel: { color: T1, fontFamily: FONT, fontSize: 15, fontWeight: '600', letterSpacing: -0.2, marginTop: 2 },
