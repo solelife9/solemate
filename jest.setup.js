@@ -262,6 +262,16 @@ jest.mock('@react-native-firebase/auth', () => {
         uid: idToken ? `google:${idToken}` : undefined,
       })),
     },
+    // AppleAuthProvider.credential(idToken, nonce) — apple identityToken 을 firebase
+    // OAuth 자격증명으로 감싼다. uid 를 토큰에서 노출해 라운드트립 단언을 가능케 한다.
+    AppleAuthProvider: {
+      credential: jest.fn((idToken, nonce = null) => ({
+        providerId: 'apple.com',
+        token: idToken,
+        secret: nonce,
+        uid: idToken ? `apple:${idToken}` : undefined,
+      })),
+    },
     signInAnonymously: jest.fn(() => {
       state.current = {uid: 'anon-test-uid'};
       return Promise.resolve({user: state.current});
@@ -279,6 +289,11 @@ jest.mock('@react-native-firebase/auth', () => {
       return Promise.resolve({user: state.current});
     }),
     signOut: jest.fn(() => {
+      state.current = null;
+      return Promise.resolve();
+    }),
+    // deleteUser(user) — 계정 영구 삭제. 목은 currentUser 를 비운다(로그아웃과 동일 효과).
+    deleteUser: jest.fn(() => {
       state.current = null;
       return Promise.resolve();
     }),
@@ -313,6 +328,10 @@ jest.mock('@react-native-firebase/firestore', () => {
         exists: () => has,
         data: () => (has ? data : undefined),
       });
+    }),
+    deleteDoc: jest.fn(ref => {
+      store.delete(ref.__path);
+      return Promise.resolve();
     }),
     // test-only helper
     __reset: () => {
@@ -368,6 +387,28 @@ jest.mock('@react-native-firebase/crashlytics', () => {
     setUserId: jest.fn(),
   };
 });
+
+// ── expo-apple-authentication (네이티브 목) ──────────────────────────────────
+// 기본 해피패스: isAvailableAsync → true, signInAsync → identityToken 보유 자격증명.
+// 취소/토큰없음 분기는 테스트에서 per-case 로 override 한다.
+jest.mock('expo-apple-authentication', () => ({
+  __esModule: true,
+  isAvailableAsync: jest.fn(() => Promise.resolve(true)),
+  signInAsync: jest.fn(() =>
+    Promise.resolve({identityToken: 'apple-identity-token', fullName: null, email: null}),
+  ),
+  AppleAuthenticationScope: {FULL_NAME: 0, EMAIL: 1},
+}));
+
+// ── expo-crypto (네이티브 목) ────────────────────────────────────────────────
+jest.mock('expo-crypto', () => ({
+  __esModule: true,
+  CryptoDigestAlgorithm: {SHA256: 'SHA-256'},
+  digestStringAsync: jest.fn((_algo, data) => Promise.resolve(`sha256(${data})`)),
+  getRandomBytesAsync: jest.fn(len =>
+    Promise.resolve(Uint8Array.from({length: len}, (_v, i) => i % 256)),
+  ),
+}));
 
 // ── @react-native-google-signin/google-signin ───────────────────────────────
 // Native Google account login. The default happy path resolves a signed-in user

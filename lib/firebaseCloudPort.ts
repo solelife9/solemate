@@ -14,12 +14,14 @@ import {
   signInWithCredential,
   signInWithCustomToken,
   signOut as firebaseSignOut,
+  deleteUser,
 } from '@react-native-firebase/auth';
 import {
   getFirestore,
   doc,
   getDoc,
   setDoc,
+  deleteDoc,
 } from '@react-native-firebase/firestore';
 
 import type { BackupPayload } from './backup';
@@ -145,6 +147,30 @@ export function createFirebaseCloudPort(
 
     async signOut(): Promise<void> {
       await firebaseSignOut(getAuth());
+    },
+
+    async deleteAccount(): Promise<void> {
+      const user = getAuth().currentUser;
+      if (!user) {
+        throw new Error('삭제할 로그인 계정이 없습니다.');
+      }
+      // 1) 클라우드 백업 문서를 먼저 지운다(계정 삭제 후엔 권한이 사라져 못 지움).
+      //    백업이 없을 수도 있으므로 실패는 삼키고 계정 삭제로 진행한다.
+      try {
+        await deleteDoc(backupRef(user.uid));
+      } catch {
+        // 백업 문서 부재/일시 오류 — 계정 삭제를 막지 않는다.
+      }
+      // 2) 인증 계정 자체를 삭제. 세션이 오래되면 'requires-recent-login' 으로 막히므로
+      //    재로그인 후 재시도하도록 정직한 한국어 에러로 바꿔 전파한다.
+      try {
+        await deleteUser(user);
+      } catch (e: any) {
+        if (e?.code === 'auth/requires-recent-login') {
+          throw new Error('보안을 위해 다시 로그인한 뒤 탈퇴를 진행해주세요.');
+        }
+        throw e;
+      }
     },
 
     async pull(): Promise<BackupPayload | null> {

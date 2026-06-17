@@ -125,4 +125,44 @@ describe('firebaseCloudPort (Firebase 클라우드 포트)', () => {
     await expect(port.signIn('kakao')).rejects.toThrow(/kakao/i);
     await expect(port.signIn('naver')).rejects.toThrow(/naver/i);
   });
+
+  test('apple 로그인은 주입된 자격증명 리졸버로 로그인한다', async () => {
+    const resolveAppleCredential = jest.fn(() =>
+      Promise.resolve({uid: 'apple-xyz'} as never),
+    );
+    const port = createFirebaseCloudPort({resolveAppleCredential});
+    const user = await port.signIn('apple');
+    expect(resolveAppleCredential).toHaveBeenCalledTimes(1);
+    expect(user.uid).toBe('apple-xyz');
+    expect(currentUid()).toBe('apple-xyz');
+  });
+
+  test('리졸버 없이 apple 로그인은 명확한 에러로 거부된다', async () => {
+    const port = createFirebaseCloudPort();
+    await expect(port.signIn('apple')).rejects.toThrow(/apple/i);
+  });
+
+  // ── 회원 탈퇴(deleteAccount) ────────────────────────────────────────────────
+  test('deleteAccount 는 백업 문서를 지우고 인증 계정을 삭제한다', async () => {
+    const port = createFirebaseCloudPort();
+    await port.signIn('anonymous');
+    await port.push({shoes: [{id: 'a'}], runs: [], settings: {}});
+    expect(currentUid()).toBe('anon-test-uid');
+
+    await port.deleteAccount();
+
+    // 계정이 비워진다(로그아웃과 동일 효과의 목).
+    expect(currentUid()).toBeUndefined();
+
+    // 백업 문서도 삭제됨: 같은 uid 로 되돌려도 pull 은 null.
+    (authMock as unknown as {__setCurrentUser: (u: {uid: string}) => void}).__setCurrentUser({
+      uid: 'anon-test-uid',
+    });
+    expect(await port.pull()).toBeNull();
+  });
+
+  test('로그인하지 않은 상태의 deleteAccount 는 명확한 에러로 거부된다', async () => {
+    const port = createFirebaseCloudPort();
+    await expect(port.deleteAccount()).rejects.toThrow(/계정/);
+  });
 });

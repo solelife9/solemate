@@ -45,6 +45,12 @@ export interface CloudPort {
   signIn(provider: CloudProvider): Promise<CloudUser>;
   /** 로그아웃. */
   signOut(): Promise<void>;
+  /**
+   * 계정 영구 삭제(앱스토어 심사 5.1.1(v) 인앱 탈퇴 요건). 클라우드 백업 문서를 지우고
+   * 인증 계정 자체를 삭제한다. 최근 로그인이 필요할 수 있으며(재인증 요구) 그 경우
+   * 명확한 에러로 reject 한다. 로컬 데이터 정리는 호출부(앱)가 담당한다.
+   */
+  deleteAccount(): Promise<void>;
   /** 계정에 저장된 백업 페이로드. 한 번도 push 한 적 없으면 null. */
   pull(): Promise<BackupPayload | null>;
   /** 백업 페이로드를 계정에 기록(전체 덮어쓰기 — 병합은 호출부가 cloudSync 로 끝낸 뒤). */

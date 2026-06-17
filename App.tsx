@@ -83,6 +83,7 @@ import {stampUpdatedAt, markDeleted, partitionTombstones, recordsToBackRegister}
 import {showToast, TOAST_UNDO_LABEL} from './lib/toast';
 import {migrateStorageSchema} from './lib/storageMigration';
 import {resolveGoogleCredential} from './lib/googleAuth';
+import {resolveAppleCredential} from './lib/appleAuth';
 import {resolveKakaoFirebaseToken} from './lib/kakaoAuth';
 import {resolveNaverFirebaseToken} from './lib/naverAuth';
 import {pickShoePhoto} from './lib/photo';
@@ -1057,9 +1058,24 @@ function Main(){
   // pull→merge→onCloudMerged(역등록) 경로를 네이티브 없이 검증한다.
   const cloudPortRef=useRef((globalThis as any).__KEEGO_CLOUD_PORT__ ?? createFirebaseCloudPort({
     resolveGoogleCredential,
+    resolveAppleCredential,
     resolveKakaoToken:resolveKakaoFirebaseToken,
     resolveNaverToken:resolveNaverFirebaseToken,
   }));
+
+  // ── 회원 탈퇴(계정 영구 삭제) — 앱스토어 5.1.1(v) 인앱 탈퇴 요건 ──────────────
+  // 1) 클라우드 계정+백업 삭제(실패 시 throw → 화면이 안내하고 로컬은 보존). 2) 성공 시
+  // 로컬 전체 삭제 + 상태를 신규(온보딩)로 초기화. 사용자가 명시적으로 요청한 파기이므로
+  // '데이터 파괴 금지' 불변식의 정당한 예외다(되돌릴 수 없음을 화면에서 분명히 고지).
+  const handleDeleteAccount=async()=>{
+    await cloudPortRef.current.deleteAccount();
+    try{await AsyncStorage.clear();}catch{}
+    setShoes([]);setRuns([]);
+    setTombstones({shoes:[],runs:[]});
+    setChallenges([]);
+    setProgState(null);
+    setOnboarded(false);
+  };
 
   // ── 개인 챌린지 생성/삭제(영속 + 상태 갱신) ─────────────────────────────────
   // 신규 키(K_CHALLENGES)에만 쓰므로 기존 데이터(신발/런/설정)와 격리된다. 진행률은
@@ -1599,6 +1615,7 @@ function Main(){
             onCreateChallenge={createChallenge} onDeleteChallenge={deleteChallenge}
             todayISO={today()}
             cloudPort={cloudPortRef.current} onCloudMerged={onCloudMerged}
+            onDeleteAccount={handleDeleteAccount}
             onOpenProgression={()=>setShowProgression(true)}
             onOpenHallOfShoes={()=>setShowHallOfShoes(true)}
             retiredCount={retiredRecords.length}

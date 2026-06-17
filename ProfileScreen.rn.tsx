@@ -8,7 +8,7 @@
 // 값은 App이 소유(영속은 lib/settings)하고, 이 화면은 표시 + 변경 콜백만 담당한다.
 // ============================================================================
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet, TextInput, Image, Share } from 'react-native';
+import { View, Text, ScrollView, Pressable, StyleSheet, TextInput, Image, Share, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { BG, CARD, CARD_DIM, CARD_HI, ACCENT, GOOD, DANGER, WARN, T1, T2, T3, SEP, CARD_BORDER, FONT, DISPLAY, withAlpha, TIER_COLORS, TIER_LABEL, KAKAO_YELLOW, KAKAO_LABEL, NAVER_GREEN, NAVER_LABEL, RADIUS } from './theme';
@@ -114,7 +114,7 @@ export default function ProfileScreen({
   recapRuns = [], recapShoes = [], recapNow,
   deviceId = '',
   backupData = { shoes: [], runs: [], settings: {} },
-  cloudPort, onCloudMerged, cloudClock = () => Date.now(),
+  cloudPort, onCloudMerged, onDeleteAccount, cloudClock = () => Date.now(),
   onOpenProgression,
   onOpenHallOfShoes, retiredCount = 0,
 }: {
@@ -187,6 +187,9 @@ export default function ProfileScreen({
   onOpenHallOfShoes?: () => void;
   // 은퇴한 신발 수(전당 진입 행의 부제에 표시). 0이어도 진입은 가능(빈 전당 안내).
   retiredCount?: number;
+  // 회원 탈퇴(계정+클라우드+로컬 영구 삭제). App 이 cloudPort.deleteAccount + 로컬 초기화를
+  // 수행한다. 없으면 탈퇴 행 미표시(안전한 no-op).
+  onDeleteAccount?: () => Promise<void>;
 }) {
   // 어떤 설정 행이 펼쳐졌는지(단위는 패널 없이 즉시 토글). 한 번에 하나만 펼친다.
   const [open, setOpen] = useState<null | 'goal' | 'weight' | 'alerts' | 'notif' | 'account' | 'import'>(null);
@@ -256,6 +259,35 @@ export default function ProfileScreen({
     setLastSyncAt(null);
     setCloudMsg(null);
     setAuthState((s) => nextAuthState(s, 'signOut'));
+  };
+
+  // 회원 탈퇴: 되돌릴 수 없는 영구 삭제이므로 확인 다이얼로그를 거친다. 확인 시 App 의
+  // onDeleteAccount(클라우드 계정+백업 삭제 → 로컬 전체 삭제 → 온보딩 초기화)를 호출하고,
+  // 성공하면 화면도 signedOut 으로 떨군다. 실패(재인증 필요 등)는 정직한 메시지로 안내.
+  const handleDeleteAccount = () => {
+    if (!onDeleteAccount) return;
+    Alert.alert(
+      '회원 탈퇴',
+      '계정과 모든 데이터(신발·러닝 기록·설정)가 영구 삭제되며 복구할 수 없어요. 정말 탈퇴할까요?',
+      [
+        { text: '취소', style: 'cancel' },
+        {
+          text: '탈퇴',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await onDeleteAccount();
+              setCloudUser(null);
+              setLastSyncAt(null);
+              setAuthState((s) => nextAuthState(s, 'signOut'));
+              setCloudMsg({ ok: true, text: '계정이 삭제되었습니다.' });
+            } catch (e: any) {
+              setCloudMsg({ ok: false, text: e?.message || '계정 삭제에 실패했습니다.' });
+            }
+          },
+        },
+      ],
+    );
   };
 
   // 동기 본체: pull(원격) → mergeCloudData(로컬, 원격) → push(병합 결과). 양방향 무손실
@@ -799,6 +831,18 @@ export default function ProfileScreen({
                   <Text style={[s.settingLabel, { color: DANGER }]}>로그아웃</Text>
                   <Ionicons name="chevron-forward" size={16} color={T3} />
                 </Pressable>
+
+                {/* 회원 탈퇴(영구 삭제) — 앱스토어 인앱 탈퇴 요건 */}
+                {onDeleteAccount && (
+                  <Pressable testID="account-delete" onPress={handleDeleteAccount} accessibilityRole="button" accessibilityLabel="회원 탈퇴" style={({ pressed }) => [s.settingRow, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.07) }, pressed && { backgroundColor: CARD_HI }]}>
+                    <View style={s.settingIcon}><Ionicons name="trash-outline" size={16} color={DANGER} /></View>
+                    <View style={{ flex: 1, minWidth: 0 }}>
+                      <Text style={[s.settingLabel, { color: DANGER }]}>회원 탈퇴</Text>
+                      <Text style={s.cloudSub}>계정·데이터 영구 삭제(복구 불가)</Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={16} color={T3} />
+                  </Pressable>
+                )}
               </>
             ) : (
               <View style={s.cloudPad}>
