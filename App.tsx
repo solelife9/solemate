@@ -495,11 +495,13 @@ function Main(){
         }));
         const mergedRuns=[...pendingOverlay,...cached.runs];
         setShoes(cached.shoes);setRuns(mergedRuns);
-        // 캐시는 마지막 REST fetch 스냅샷이므로 'REST 확정' 집합의 보수적 시드로 쓴다(pending
-        // 오버레이는 아직 미확정이라 제외) — 오프라인 부팅 중 클라우드 sync 가 캐시된 REST 신발/런을
-        // 다시 역등록(중복 POST)하지 않게 한다.
-        restShoeIdsRef.current=new Set(cached.shoes.map((s:any)=>String(s.id)));
-        restRunIdsRef.current=new Set(cached.runs.map((r:any)=>String(r.id)));
+        // 'REST 확정' 집합은 **실제 REST fetch(initUser try 분기)로만** 시드한다 — 오프라인 부팅
+        // 분기에선 캐시로 시드하지 않는다. 부팅캐시는 매 mutation 마다 full live state 로 재기록되어
+        // applyBackupPayload(클라우드 머지)가 낙관적으로 끼운 **미POST cloud-only 레코드**가 섞일 수
+        // 있다. 이를 'REST 확정'으로 시드하면 미POST 레코드가 확정으로 오인돼, 오프라인 재시작 후
+        // 온라인 복귀 시 그 레코드의 역등록(back-register)이 영구 마스킹된다(유실). 두 ref 는 빈 채로
+        // 두어, REST 도달 가능 시점(다음 온라인 initUser fetch)/다음 sync 에서 실제 POST 성공분으로만
+        // 채워지게 한다. (옛 cloud id 의 중복 POST 는 tombstone+멱등 reconcile 이 별도로 막는다.)
         setBootState('ready');
         checkShoeAlerts(cached.shoes,mergedRuns,st.alerts);
       }else{
@@ -863,6 +865,15 @@ function Main(){
         if(newId&&newId!==String(sh.id)){
           shoeIdMap.set(String(sh.id),newId);
           setShoes(prev=>prev.map(s=>String(s.id)===String(sh.id)?stampUpdatedAt({...s,id:newId}):s));
+          // **자식 런 즉시 re-key(영구 deferral deadlock 차단)**: 부모 신발이 서버 id 로 바뀌면
+          // 그 신발의 모든 자식 런의 live shoe_id 를 곧바로 서버 id 로 옮긴다 — 각 런의 POST 성공
+          // 여부와 무관하게. 안 그러면, 같은 패스에서 자식 런 POST 가 *일시 실패*할 때 런의 live
+          // shoe_id 가 옛 cloud id 로 남고(런 re-key 는 run-POST 성공시에만 일어나므로), 다음 패스부터
+          // 옛 신발 id 는 tombstone+known 이라 restParentShoeIds 에 다시 안 들어와 게이트
+          // `if(!restParentShoeIds.has(cloudId))continue` 가 영구 false → 런이 영영 skip 된다.
+          // 즉시 re-key 하면 deferred 런의 shoe_id 가 이미 known REST id 라 다음 패스 게이트를 통과한다
+          // (stampUpdatedAt 으로 머지 '최신 우선'에서 이 re-key 가 원격의 옛 shoe_id 를 이긴다).
+          setRuns(prev=>prev.map(r=>String(r.shoe_id)===String(sh.id)?stampUpdatedAt({...r,shoe_id:newId}):r));
           addShoeTombstone({id:sh.id} as BackendShoe); // 옛 클라우드 id 부활/재등록 차단
         }
       }catch(e){console.log('back-register shoe error',e);} // 실패 → restParent/REST확정 미반영 → 다음 sync 재시도

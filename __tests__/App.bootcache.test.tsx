@@ -436,3 +436,215 @@ test('cloud merge: 일시적 신발 POST 실패 후 다음 sync 에서 재시도
     delete (globalThis as any).__KEEGO_CLOUD_PORT__;
   }
 });
+
+// ── 버그1) 런 영구 deferral deadlock 방지: 신발 POST 성공 + 같은 패스 런 POST 일시실패 ──────────
+// 부모 신발(C1)이 서버 id(S1)로 역등록 성공한 뒤 같은 패스에서 자식 런(rC1) POST 가 *일시 실패*해도,
+// 부모 성공 시 자식 런의 live shoe_id 를 즉시 S1 로 re-key 하므로, 다음 sync 에서 그 런은 이미 known
+// REST id(S1)라 게이트를 통과해 **서버 신발 id(S1)로 정상 재시도·POST 된다**(영구 deferral 0, 고아 0).
+// 이 fix 가 없으면 런의 shoe_id 가 옛 cloud id(C1)로 남고 C1 은 tombstone+known 이 되어 게이트가
+// 영구 false → 런이 매 패스 영영 skip 된다(재-POST 0).
+test('cloud merge: 신발 POST 성공+같은 패스 런 POST 일시실패 → 다음 sync 에서 그 런이 서버 신발 id로 POST 성공(영구 deferral 0)', async () => {
+  await AsyncStorage.clear();
+  await AsyncStorage.setItem('onboarded', '1'); // 빈 REST 정본이라도 온보딩이 아닌 탭 화면으로 부팅.
+  const day = todayYmd();
+  let runPostAttempts = 0;
+  const calls: {method: string; url: string; body: any}[] = [];
+  (globalThis.fetch as jest.Mock).mockImplementation((url: any, init: any) => {
+    const u = String(url);
+    const method = (init && init.method ? String(init.method) : 'GET').toUpperCase();
+    let body: any;
+    try {
+      body = init && init.body ? JSON.parse(init.body) : undefined;
+    } catch {
+      body = undefined;
+    }
+    calls.push({method, url: u, body});
+    if (u.includes('/api/auth')) return Promise.resolve(ok({user_id: 'u1'}));
+    // 신발 역등록은 항상 성공하고 새 서버 id(S1)를 부여한다.
+    if (u.includes('/api/shoes') && method === 'POST') return Promise.resolve(ok({id: 'S1-server'}));
+    // 런 역등록: 1차 시도는 일시 실패(네트워크 장애), 2차부터 성공.
+    if (u.includes('/api/runs') && method === 'POST') {
+      runPostAttempts += 1;
+      if (runPostAttempts === 1) {
+        return Promise.resolve({ok: false, status: 503, json: () => Promise.resolve({}), text: () => Promise.resolve('temp')});
+      }
+      return Promise.resolve(ok({id: 'R1-server'}));
+    }
+    // REST 정본: 비어 있음(모든 클라우드 레코드가 역등록 대상).
+    if (u.includes('/api/shoes')) return Promise.resolve(ok([]));
+    if (u.includes('/api/runs')) return Promise.resolve(ok([]));
+    return Promise.resolve(ok({}));
+  });
+
+  const remote = {
+    shoes: [{id: 'C1', name: 'Adidas Boston', max_km: 700, start_km: 0, purchase_date: day}],
+    runs: [{id: 'rC1', shoe_id: 'C1', km: 9, run_date: day, duration: 2400}],
+    settings: {},
+  };
+  const port = {
+    signIn: jest.fn(() => Promise.resolve({uid: 'u-1', email: 'runner@keego.app'})),
+    signOut: jest.fn(() => Promise.resolve()),
+    pull: jest.fn(() => Promise.resolve(remote)),
+    push: jest.fn(() => Promise.resolve()),
+  };
+  (globalThis as any).__KEEGO_CLOUD_PORT__ = port;
+
+  try {
+    let renderer!: ReactTestRenderer.ReactTestRenderer;
+    await act(async () => {
+      renderer = ReactTestRenderer.create(<App />);
+    });
+    await flush();
+    const root = renderer.root;
+
+    pressByLabel(root, '마이');
+    await flush();
+    pressByLabel(root, '설정 열기');
+    await flush();
+
+    jest.useFakeTimers();
+    await act(async () => {
+      pressTestID(root, 'cloud-signin-google');
+    });
+    const settle = async () => {
+      await act(async () => {
+        jest.advanceTimersByTime(1300);
+      });
+      for (let i = 0; i < 16; i++) {
+        await act(async () => {
+          await Promise.resolve();
+        });
+      }
+    };
+
+    // 1차 동기: 신발 C1 POST 성공(S1). 같은 패스에서 자식 런 rC1 POST 는 1차 시도가 일시 실패.
+    await settle();
+    expect(calls.filter(c => c.method === 'POST' && c.url.includes('/api/shoes')).length).toBe(1);
+    expect(runPostAttempts).toBe(1);
+
+    // 2차 동기: deferred 런이 *영구 skip 되지 않고* 재시도된다 — 부모가 이미 서버 id(S1)로 옮겨졌고
+    // 런의 live shoe_id 도 즉시 S1 로 re-key 됐으므로 게이트 통과 → 이번엔 서버 신발 id(S1)로 POST 성공.
+    await settle();
+    expect(runPostAttempts).toBe(2);
+    const runPosts = calls.filter(c => c.method === 'POST' && c.url.includes('/api/runs'));
+    expect(runPosts.length).toBe(2);
+    // 두 번의 런 POST 모두 서버 신발 id(S1)로 나갔다 — 절대 cloud shoe id(C1)로 POST 되지 않는다(고아 0).
+    expect(runPosts.every(c => String(c.body.shoe_id) === 'S1-server')).toBe(true);
+    expect(runPosts.some(c => String(c.body.shoe_id) === 'C1')).toBe(false);
+    // 신발은 재-POST 되지 않는다(멱등, 중복 0).
+    expect(calls.filter(c => c.method === 'POST' && c.url.includes('/api/shoes')).length).toBe(1);
+
+    // 3차 동기: 런도 서버 id 로 reconcile + 묘비라 멱등 — 재-POST 0(영구 deferral 0이 확정).
+    await settle();
+    expect(runPostAttempts).toBe(2);
+    expect(calls.filter(c => c.method === 'POST' && c.url.includes('/api/shoes')).length).toBe(1);
+
+    act(() => renderer.unmount());
+  } finally {
+    jest.useRealTimers();
+    delete (globalThis as any).__KEEGO_CLOUD_PORT__;
+  }
+});
+
+// ── 버그2) 오프라인 부팅 seed: 미POST cloud-only 캐시 레코드를 'REST 확정'으로 오인하지 않는다 ─────
+// 부팅캐시는 매 mutation 마다 full live state 로 재기록되어 applyBackupPayload(클라우드 머지)가 낙관적으로
+// 끼운 **미POST cloud-only 레코드**를 포함할 수 있다. 오프라인 부팅(데이터 fetch 실패) 분기에서 이를
+// 'REST 확정'으로 seed 하면, 온라인 복귀 후 cloud sync 가 그 레코드를 known 으로 보고 역등록을 영구
+// 마스킹한다(REST 정본에 영영 합류 못 함). fix: 오프라인 분기에선 캐시로 seed 하지 않는다 → 캐시의
+// cloud-only 신발/런이 온라인 복귀 시 정상 back-register 된다.
+test('offline boot: 미POST cloud-only 캐시 레코드가 REST-확정으로 오인되지 않고, 온라인 복귀 시 back-register 된다', async () => {
+  await AsyncStorage.clear();
+  await AsyncStorage.setItem('onboarded', '1');
+  const day = todayYmd();
+  // 부팅캐시에 미POST cloud-only 신발 C9 + 런 rC9 가 들어 있다(이전 세션의 클라우드 머지가
+  // 낙관적으로 끼운 뒤 디바운스 캐시 writer 가 live state 로 영속한 것 — REST 엔 아직 없음).
+  await AsyncStorage.setItem(
+    'cache_shoes_v1',
+    JSON.stringify([{id: 'C9', name: 'Hoka Clifton', max_km: 750, start_km: 0, purchase_date: day}]),
+  );
+  await AsyncStorage.setItem(
+    'cache_runs_v1',
+    JSON.stringify([{id: 'rC9', shoe_id: 'C9', km: 7, run_date: day, duration: 2100}]),
+  );
+
+  const calls: {method: string; url: string; body: any}[] = [];
+  (globalThis.fetch as jest.Mock).mockImplementation((url: any, init: any) => {
+    const u = String(url);
+    const method = (init && init.method ? String(init.method) : 'GET').toUpperCase();
+    let body: any;
+    try {
+      body = init && init.body ? JSON.parse(init.body) : undefined;
+    } catch {
+      body = undefined;
+    }
+    calls.push({method, url: u, body});
+    // 인증은 성공(userId 연결)하지만 데이터 fetch(GET)는 일시 실패 → 오프라인 캐시 부팅 분기.
+    // (auth 성공으로 userId 가 잡혀, 온라인 복귀 후 cloud sync 의 back-register 가 실제로 동작한다.)
+    if (u.includes('/api/auth')) return Promise.resolve(ok({user_id: 'u1'}));
+    if ((u.includes('/api/shoes') || u.includes('/api/runs')) && method === 'GET') {
+      return Promise.reject(new Error('cold backend (data fetch)'));
+    }
+    // 복귀 후 역등록 POST 는 성공하고 새 서버 id 를 부여한다.
+    if (u.includes('/api/shoes') && method === 'POST') return Promise.resolve(ok({id: 'S9-server'}));
+    if (u.includes('/api/runs') && method === 'POST') return Promise.resolve(ok({id: 'R9-server'}));
+    return Promise.resolve(ok({}));
+  });
+
+  // 원격(클라우드)에도 같은 cloud-only 레코드가 있다(이 레코드의 출처).
+  const remote = {
+    shoes: [{id: 'C9', name: 'Hoka Clifton', max_km: 750, start_km: 0, purchase_date: day}],
+    runs: [{id: 'rC9', shoe_id: 'C9', km: 7, run_date: day, duration: 2100}],
+    settings: {},
+  };
+  const port = {
+    signIn: jest.fn(() => Promise.resolve({uid: 'u-1', email: 'runner@keego.app'})),
+    signOut: jest.fn(() => Promise.resolve()),
+    pull: jest.fn(() => Promise.resolve(remote)),
+    push: jest.fn(() => Promise.resolve()),
+  };
+  (globalThis as any).__KEEGO_CLOUD_PORT__ = port;
+
+  try {
+    let renderer!: ReactTestRenderer.ReactTestRenderer;
+    await act(async () => {
+      renderer = ReactTestRenderer.create(<App />);
+    });
+    await flush();
+    const root = renderer.root;
+
+    // 오프라인 캐시 폴백으로 부팅됐다(재시도 카드 아님).
+    expect(has(root, 'boot-error')).toBe(false);
+
+    pressByLabel(root, '마이');
+    await flush();
+    pressByLabel(root, '설정 열기');
+    await flush();
+
+    jest.useFakeTimers();
+    await act(async () => {
+      pressTestID(root, 'cloud-signin-google');
+    });
+    await act(async () => {
+      jest.advanceTimersByTime(1300);
+    });
+    for (let i = 0; i < 16; i++) {
+      await act(async () => {
+        await Promise.resolve();
+      });
+    }
+
+    // 핵심: 캐시의 cloud-only 신발 C9 가 'REST 확정'으로 오인돼 마스킹되지 *않고* 실제 역등록(POST)된다.
+    const shoePosts = calls.filter(c => c.method === 'POST' && c.url.includes('/api/shoes'));
+    expect(shoePosts.length).toBe(1);
+    expect(shoePosts[0].body.name).toBe('Hoka Clifton');
+    // 자식 런도 서버 신발 id(S9)로 re-key 되어 back-register 된다(완전 reconcile, 마스킹 0).
+    const runPosts = calls.filter(c => c.method === 'POST' && c.url.includes('/api/runs'));
+    expect(runPosts.length).toBe(1);
+    expect(String(runPosts[0].body.shoe_id)).toBe('S9-server');
+
+    act(() => renderer.unmount());
+  } finally {
+    jest.useRealTimers();
+    delete (globalThis as any).__KEEGO_CLOUD_PORT__;
+  }
+});
