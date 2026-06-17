@@ -5,8 +5,8 @@
 // near a threshold does not flap the run state on and off.
 //
 // Thresholds live in engineConstants.ts:
-//   pause  : sustained < AUTO_PAUSE_SPEED_MPS (0.6 m/s) for AUTO_PAUSE_HOLD_S (6s)
-//   resume : sustained > AUTO_RESUME_SPEED_MPS (1.0 m/s) for AUTO_RESUME_HOLD_S (2s)
+//   pause  : sustained < AUTO_PAUSE_SPEED_MPS (0.6 m/s) for AUTO_PAUSE_HOLD_S (3s)
+//   resume : sustained > AUTO_RESUME_SPEED_MPS (1.0 m/s) for AUTO_RESUME_HOLD_S (1s)
 // The 0.6/1.0 gap IS the hysteresis band: speeds between the two thresholds
 // neither pause nor resume, so a runner hovering near walking pace is stable.
 

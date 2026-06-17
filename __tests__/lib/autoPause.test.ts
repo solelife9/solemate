@@ -24,15 +24,15 @@ describe('initAutoPauseState', () => {
 
 describe('decideAutoPause — pause on sustained slow speed', () => {
   test('does not pause before the hold window elapses', () => {
-    const r = run([[0.3, 3]]); // 3s slow < 6s hold
+    const r = run([[0.3, 2]]); // 2s slow < 3s hold
     expect(r.paused).toBe(false);
     expect(r.justPaused).toBe(false);
   });
 
   test('pauses once sub-threshold speed is sustained past AUTO_PAUSE_HOLD_S', () => {
-    let r = decideAutoPause(initAutoPauseState(), 0.3, 3);
+    let r = decideAutoPause(initAutoPauseState(), 0.3, 2);
     expect(r.paused).toBe(false);
-    r = decideAutoPause(r.state, 0.3, 3.5); // cumulative 6.5s ≥ 6s
+    r = decideAutoPause(r.state, 0.3, 1.5); // cumulative 3.5s ≥ 3s
     expect(r.paused).toBe(true);
     expect(r.justPaused).toBe(true);
     expect(r.justResumed).toBe(false);
@@ -47,8 +47,8 @@ describe('decideAutoPause — pause on sustained slow speed', () => {
   });
 
   test('a moving sample at or above the pause threshold resets accumulated slow time', () => {
-    // 5s slow, then one fast sample, then 5s slow again → still under 6s of *sustained* slow.
-    const r = run([[0.2, 5], [3.0, 1], [0.2, 5]]);
+    // 2s slow, then one fast sample, then 2s slow again → still under 3s of *sustained* slow.
+    const r = run([[0.2, 2], [3.0, 1], [0.2, 2]]);
     expect(r.paused).toBe(false);
   });
 
@@ -63,7 +63,7 @@ describe('decideAutoPause — resume on sustained fast speed', () => {
   test('resumes once super-threshold speed is sustained past AUTO_RESUME_HOLD_S', () => {
     let r = run([[0.2, 7]]); // paused
     expect(r.paused).toBe(true);
-    r = decideAutoPause(r.state, 1.5, 2.5); // 2.5s fast ≥ 2s
+    r = decideAutoPause(r.state, 1.5, 1.5); // 1.5s fast ≥ 1s
     expect(r.paused).toBe(false);
     expect(r.justResumed).toBe(true);
     expect(r.justPaused).toBe(false);
@@ -71,7 +71,7 @@ describe('decideAutoPause — resume on sustained fast speed', () => {
 
   test('does not resume before the fast hold window elapses', () => {
     let r = run([[0.2, 7]]); // paused
-    r = decideAutoPause(r.state, 1.5, 1); // 1s fast < 2s
+    r = decideAutoPause(r.state, 1.5, 0.5); // 0.5s fast < 1s
     expect(r.paused).toBe(true);
     expect(r.justResumed).toBe(false);
   });
@@ -130,13 +130,13 @@ describe('decideAutoPause — purity', () => {
 
 describe('engine constants are pinned to the tuned spec', () => {
   // The hysteresis behavior above is described in terms of concrete numbers
-  // (0.6/1.0 m/s, 6s/2s). Pin those exact values so a stray retune of
+  // (0.6/1.0 m/s, 3s/1s). Pin those exact values so a stray retune of
   // engineConstants.ts that would silently change auto-pause feel — or break the
   // 0.6→1.0 hysteresis gap that prevents flapping — fails the suite loudly.
   test('pause/resume speed thresholds and hold windows match', () => {
     expect(AUTO_PAUSE_SPEED_MPS).toBe(0.6);
     expect(AUTO_RESUME_SPEED_MPS).toBe(1.0);
-    expect(AUTO_PAUSE_HOLD_S).toBe(6);
-    expect(AUTO_RESUME_HOLD_S).toBe(2);
+    expect(AUTO_PAUSE_HOLD_S).toBe(3);
+    expect(AUTO_RESUME_HOLD_S).toBe(1);
   });
 });

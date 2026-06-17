@@ -98,5 +98,7 @@ web-build/
 # ⚠️ Firebase Admin 서비스계정 JSON(서버 전권 시크릿)은 절대 커밋 금지 — Render 환경변수로만.
 serviceAccount*.json
 firebase-adminsdk*.json
+# Kakao 네이티브 앱 키 (머신별 주입, 공개 저장소 미커밋)
+ios/Secrets.xcconfig
 # Generated JS bundle for release APK (regenerated via npm run bundle:android)
 android/app/src/main/assets/index.android.bundle

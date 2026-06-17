@@ -6,18 +6,21 @@ require Pod::Executable.execute_command('node', ['-p',
     {paths: [process.argv[1]]},
   )', __dir__]).strip
 
+# RN 0.84+ 는 prebuilt React core(React-Core-prebuilt)가 기본인데, 그 모듈 구조가
+# @react-native-firebase 의 Obj-C 모듈(<React/RCTBridgeModule.h> 등)과 충돌해
+# "could not build Objective-C module 'RNFBFirestore'" 를 일으킨다.
+# React 를 소스에서 빌드하도록 prebuilt core 를 끈다. (invertase/react-native-firebase#8883)
+ENV['RCT_USE_PREBUILT_RNCORE'] = '0'
+
 platform :ios, '16.4'
 prepare_react_native_project!
 
-# @react-native-firebase: Firebase iOS SDK 를 정적 프레임워크로 링크한다.
-# react-native.config.js 의 forceStaticLinking(RN 0.84+ prebuilt core 대응)과 짝.
+# @react-native-firebase v22+ : Firebase iOS SDK(Swift Pod)는 static framework 로
+# 링크해야 Swift 인터페이스 헤더(FirebaseAuth-Swift.h)와 module map 이 프레임워크별로
+# 올바로 격리된다. use_modular_headers! 방식은 모놀리식 Firebase 엄브렐러가 전역 헤더를
+# 통해 FirebaseAuth-Swift.h 를 강제 include 해 "file not found" 로 실패하므로 사용하지 않는다.
 $RNFirebaseAsStaticFramework = true
-
-linkage = ENV['USE_FRAMEWORKS']
-if linkage != nil
-  Pod::UI.puts "Configuring Pod with #{linkage}ally linked Frameworks".green
-  use_frameworks! :linkage => linkage.to_sym
-end
+use_frameworks! :linkage => :static
 
 target 'SoleMate' do
   use_expo_modules!
@@ -52,5 +55,13 @@ target 'SoleMate' do
       :mac_catalyst_enabled => false,
       # :ccache_enabled => true
     )
+
+    # static framework 링크 시 @react-native-firebase Obj-C 모듈이 React 헤더를
+    # 비모듈 include 로 끌어오는 것을 허용해 모듈 빌드 실패를 막는다.
+    installer.pods_project.targets.each do |target|
+      target.build_configurations.each do |config|
+        config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
+      end
+    end
   end
 end

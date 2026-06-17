@@ -28,6 +28,8 @@ import {
   ViewStyle,
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
+// 신발 브랜드/모델·권장수명은 data/shoeModels(단일 소스)에서 — 메인 AddShoe 화면과 동일.
+import {BRANDS, modelsForBrand, getRecommendedLifespanKm} from './data/shoeModels';
 import Svg, {
   Circle,
   Path,
@@ -75,16 +77,6 @@ function statusFor(km: number, max: number): StatusKey {
   if (r >= 0.6) return 'caution';
   return 'good';
 }
-
-const BRANDS = ['Nike', 'ASICS', 'adidas', 'HOKA', 'New Balance', 'Saucony'];
-const MODELS: Record<string, string[]> = {
-  Nike: ['Alphafly 3', 'Vaporfly 3', 'Pegasus 41', 'Invincible 3'],
-  ASICS: ['Novablast 5', 'Superblast 2', 'Gel-Nimbus 26', 'Metaspeed Sky'],
-  adidas: ['Adizero Adios Pro 4', 'Adizero Boston 12', 'Ultraboost Light'],
-  HOKA: ['Mach 6', 'Clifton 9', 'Rocket X 2'],
-  'New Balance': ['SC Elite v4', 'Rebel v4', 'More v4'],
-  Saucony: ['Endorphin Pro 4', 'Kinvara 15', 'Triumph 22'],
-};
 
 // 관리 화면 데모용 신발(핸드오프 데이터).
 const SHOES = [
@@ -943,7 +935,10 @@ function Register({goNext, onSkip, onRegister, insetTop, insetBottom}: ScreenPro
   const [km, setKm] = useState(60);
   const [done, setDone] = useState(false);
   const ready = !!brand && !!model;
-  const max = 600;
+  // 권장 수명은 선택한 브랜드/모델 기준(data/shoeModels) — 메인 AddShoe 화면과 동일.
+  const max = useMemo(() => getRecommendedLifespanKm({brand: brand ?? undefined, model: model ?? undefined}), [brand, model]);
+  // 모델 변경으로 권장수명이 줄면 기존 누적거리 입력이 수명을 넘지 않도록 클램프.
+  useEffect(() => { setKm(k => Math.min(k, max)); }, [max]);
   const st = statusFor(km, max);
   const col = STATUS[st].c;
   const remain = Math.round((1 - km / max) * 100);
@@ -1007,7 +1002,7 @@ function Register({goNext, onSkip, onRegister, insetTop, insetBottom}: ScreenPro
           <FieldLabel n="2" label="모델" />
           {brand ? (
             <View style={s.chipWrap}>
-              {MODELS[brand].map(m => (
+              {modelsForBrand(brand).map(m => (
                 <Chip key={m} label={m} active={model === m} onPress={() => setModel(m)} />
               ))}
             </View>
@@ -1033,11 +1028,11 @@ function Register({goNext, onSkip, onRegister, insetTop, insetBottom}: ScreenPro
             <Metric value={km} unit="KM" size={22} />
           </View>
           <View style={{marginTop: 10}}>
-            <KmSlider value={km} min={0} max={600} step={10} onChange={setKm} />
+            <KmSlider value={km} min={0} max={max} step={10} onChange={setKm} />
             <View style={{flexDirection: 'row', justifyContent: 'space-between', marginTop: 6}}>
               <Text style={s.tick}>새 신발</Text>
-              <Text style={s.tick}>300 km</Text>
-              <Text style={s.tick}>600 km+</Text>
+              <Text style={s.tick}>{Math.round(max / 2)} km</Text>
+              <Text style={s.tick}>{max} km+</Text>
             </View>
           </View>
         </View>
@@ -1256,7 +1251,8 @@ const s = StyleSheet.create({
 
   // Welcome
   wordmark: {position: 'absolute', left: 24, fontFamily: DISPLAY, fontSize: 26, letterSpacing: 1.2, color: '#fff'},
-  heroHeadline: {fontFamily: DISPLAY, fontSize: 88, lineHeight: 76, color: '#fff'},
+  // lineHeight 90: 맥의 'KEEP GOING' 헤드라인 글자 잘림 수정 보존(76→90).
+  heroHeadline: {fontFamily: DISPLAY, fontSize: 88, lineHeight: 90, color: '#fff'},
   heroSub: {fontFamily: FONT, fontSize: 17, fontWeight: '600', color: '#fff', marginTop: 18},
   heroBody: {fontFamily: FONT, fontSize: 15, lineHeight: 22, color: 'rgba(246,246,248,0.66)', marginTop: 7},
 

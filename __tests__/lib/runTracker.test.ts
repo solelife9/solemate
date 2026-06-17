@@ -113,14 +113,14 @@ test('standing still auto-pauses, sustained motion auto-resumes', () => {
   t.ingestFix(fix(37.5003, LON, 5, (ts += 2000))); // a real move
   expect(t.getState().autoPaused).toBe(false);
 
-  // Stand still: repeated fixes at one point → slowSec crosses the 6s hold.
+  // Stand still: repeated fixes at one point → slowSec crosses the 3s hold.
   for (let i = 0; i < 12; i++) t.ingestFix(fix(37.5003, LON, 5, (ts += 3000)));
   expect(t.getState().autoPaused).toBe(true);
 
-  // Two sustained fast fixes (>1 m/s for ≥2s) → auto-resume.
-  t.ingestFix(fix(37.5005, LON, 5, (ts += 1500))); // fastSec 1.5 < 2 → still paused
+  // Two sustained fast fixes (>1 m/s for ≥1s) → auto-resume.
+  t.ingestFix(fix(37.50035, LON, 5, (ts += 800))); // ~6m/0.8s fast, fastSec 0.8 < 1 → still paused
   expect(t.getState().autoPaused).toBe(true);
-  t.ingestFix(fix(37.5007, LON, 5, (ts += 2000))); // fastSec ≥ 2 → resume
+  t.ingestFix(fix(37.5004, LON, 5, (ts += 800))); // fastSec ≥ 1 → resume
   expect(t.getState().autoPaused).toBe(false);
 });
 

@@ -1,0 +1,3 @@
+// CocoaPods 기본 설정을 그대로 가져오고, 그 위에 추적 제외 비밀값을 얹는다.
+#include "Pods/Target Support Files/Pods-SoleMate/Pods-SoleMate.release.xcconfig"
+#include? "Secrets.xcconfig"

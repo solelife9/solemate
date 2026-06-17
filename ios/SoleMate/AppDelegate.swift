@@ -3,6 +3,7 @@ import UIKit
 import React
 import React_RCTAppDelegate
 import ReactAppDependencyProvider
+import FirebaseCore
 
 @main
 class AppDelegate: ExpoAppDelegate {
@@ -15,6 +16,10 @@ class AppDelegate: ExpoAppDelegate {
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
   ) -> Bool {
+    // @react-native-firebase: 네이티브 Firebase 기본 앱 초기화. 이 호출이 없으면
+    // JS 에서 "No Firebase App '[DEFAULT]' has been created" 런타임 에러가 난다.
+    FirebaseApp.configure()
+
     let delegate = ReactNativeDelegate()
     let factory = ExpoReactNativeFactory(delegate: delegate)
     delegate.dependencyProvider = RCTAppDependencyProvider()

@@ -72,7 +72,8 @@ export type ShoeTotals = { totalRuns: number; totalTime: string; avgPace: string
 const TONE_COLOR: Record<WearTierTone, string> = { good: GOOD, mid: WARN, warn: ACCENT, danger: DANGER };
 const condColor = (pct: number) => TONE_COLOR[wearTier(pct).tone];
 const ringColor = (pct: number) => TONE_COLOR[wearTier(pct).tone];
-const condLabel = (pct: number) => { const t = wearTier(pct); return `${t.emoji} ${t.label}`; };
+// 상태 점(shoeCondDot)이 이미 색 동그라미라, 라벨의 이모지(🟢/🟡/🟠/🔴)는 중복이므로 뺀다.
+const condLabel = (pct: number) => wearTier(pct).label;
 
 // ── shoe detail ───────────────────────────────────────────────────────────────
 function ShoeDetail({

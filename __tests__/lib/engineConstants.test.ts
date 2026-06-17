@@ -21,8 +21,8 @@ describe('engineConstants — Interface Contract values', () => {
 
   test('auto-pause / auto-resume constants match the contract', () => {
     expect(AUTO_PAUSE_SPEED_MPS).toBe(0.6);
-    expect(AUTO_PAUSE_HOLD_S).toBe(6);
+    expect(AUTO_PAUSE_HOLD_S).toBe(3);
     expect(AUTO_RESUME_SPEED_MPS).toBe(1.0);
-    expect(AUTO_RESUME_HOLD_S).toBe(2);
+    expect(AUTO_RESUME_HOLD_S).toBe(1);
   });
 });
