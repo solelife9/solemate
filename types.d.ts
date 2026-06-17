@@ -29,6 +29,11 @@ interface BackendShoe {
   // 폴백한다(점진 마이그레이션 — 백엔드가 채우기 전에도 안전).
   total_km?: number;      // 서버 누적 주행거리(km)
   run_time?: number;      // 서버 누적 러닝 시간(초)
+  // ── 클라우드 머지용 선택필드(audit a1) ────────────────────────────────────────
+  // updatedAt(epoch ms): mutation 마다 갱신. cloudSync.mergeRecords 의 '최신 우선'
+  // 머지가 읽는다. deleted: tombstone(a2). 둘 다 선택 — 부재 시 기존 동작 유지(하위호환).
+  updatedAt?: number;
+  deleted?: boolean;
 }
 
 // 서버 런 행. km 은 백엔드가 문자열로도 보내므로 string|number. _pending 는 낙관적
@@ -48,4 +53,7 @@ interface BackendRun {
   run_time?: string;      // "HH:MM"
   heart_rate?: number;
   _pending?: boolean;     // 미동기(큐) 낙관적 항목
+  // 클라우드 머지용 선택필드(audit a1) — BackendShoe 와 동일 의미(updatedAt/deleted).
+  updatedAt?: number;
+  deleted?: boolean;
 }

@@ -78,6 +78,8 @@ import {serializeBackup, BackupV1, BackupPayload} from './lib/backup';
 import {Challenge, ChallengeRun} from './lib/challenges';
 import {ExtChallenge, challengeExtProgress, type ExtRun, type ExtShoe} from './lib/progression/challengesExt';
 import {createFirebaseCloudPort} from './lib/firebaseCloudPort';
+import {stampUpdatedAt} from './lib/cloudSync';
+import {migrateStorageSchema} from './lib/storageMigration';
 import {resolveGoogleCredential} from './lib/googleAuth';
 import {resolveKakaoFirebaseToken} from './lib/kakaoAuth';
 import {resolveNaverFirebaseToken} from './lib/naverAuth';
@@ -369,6 +371,10 @@ function Main(){
     let did=await AsyncStorage.getItem('device_id');
     if(!did){did='sl_'+Date.now()+'_'+Math.random().toString(36).substr(2,9);await AsyncStorage.setItem('device_id',did);}
     setDeviceId(did);
+    // audit a1: 로컬 스토리지 스키마 마이그레이션(1회). 이전 빌드의 캐시 신발/런 레코드엔
+    // updatedAt 이 없어 클라우드 '최신 우선' 머지가 무력했다 — 부재 레코드에 updatedAt 을
+    // 시드한다. 멱등·비파괴이며, 실패해도 내부에서 스킵+로그하므로 부팅을 막지 않는다.
+    await migrateStorageSchema();
     // 1회성 플래그(온보딩/권한 priming) 복원. 네트워크와 무관하므로 fetch try 밖에서
     // 먼저 읽어, 콜드 백엔드라도 첫 실행 안내가 정상 동작하게 한다.
     const [onbRaw,primeRaw]=await Promise.all([
@@ -457,7 +463,8 @@ function Main(){
     try{
       // 실패는 apiAddShoe 가 상태코드+본문을 담아 throw → 아래 catch 가 안내한다.
       const newShoe=await apiAddShoe(userId,{name,maxKm,startKm,date});
-      setShoes(prev=>[newShoe,...prev]);
+      // audit a1: 신규 신발에 updatedAt 스탬프 → 클라우드 머지 '최신 우선'이 작동.
+      setShoes(prev=>[stampUpdatedAt(newShoe),...prev]);
     }catch(e:any){
       Alert.alert('등록 실패',String(e?.message||e||'알 수 없는 오류')+'\n\n네트워크를 확인하고 다시 시도해 주세요.');
     }
@@ -466,7 +473,7 @@ function Main(){
   async function updateShoeName(id:string,name:string){
     try{
       await apiPatchShoe(userId,id,{name});
-      setShoes(prev=>prev.map(s=>s.id===id?{...s,name}:s));
+      setShoes(prev=>prev.map(s=>s.id===id?stampUpdatedAt({...s,name}):s));
     }catch{Alert.alert('오류','수정 실패');}
   }
 
@@ -475,7 +482,7 @@ function Main(){
   // 임계 아래로 내려간 신발은 다음 checkShoeAlerts에서 추적 집합에서 빠진다.
   async function updateShoeMaxKm(id:string,maxKm:number){
     const v=clampMaxKm(maxKm);
-    setShoes(prev=>prev.map(s=>s.id===id?{...s,max_km:v}:s));
+    setShoes(prev=>prev.map(s=>s.id===id?stampUpdatedAt({...s,max_km:v}):s));
     try{
       await apiPatchShoe(userId,id,{max_km:v});
     }catch{Alert.alert('오류','수명 수정 실패');}
@@ -496,7 +503,7 @@ function Main(){
   async function retireShoe(id:string,retired:boolean){
     try{
       await apiPatchShoe(userId,id,{retired});
-      setShoes(prev=>prev.map(s=>s.id===id?{...s,retired}:s));
+      setShoes(prev=>prev.map(s=>s.id===id?stampUpdatedAt({...s,retired}):s));
     }catch{Alert.alert('오류',retired?'보관 처리 실패':'복원 실패');}
   }
 
@@ -509,11 +516,14 @@ function Main(){
   //      실패 시 큐에 남겨 다음 flushPendingRuns가 재전송.
   async function addRun(shoeId:string,km:number,date:string,memo:string,source:string,duration?:number,cadence?:number,route?:string,location?:string,heart_rate?:number){
     const timeStr=nowTimeLabel();
-    const localId='run_'+Date.now()+'_'+Math.random().toString(36).slice(2,9);
+    const stampedAt=Date.now();
+    const localId='run_'+stampedAt+'_'+Math.random().toString(36).slice(2,9);
+    // audit a1: updatedAt(epoch ms) 스탬프 — 큐/낙관적/화해 레코드 모두에 실어 클라우드
+    // 머지 '최신 우선'이 작동하게 한다(선택필드라 부재 시 기존 동작 유지).
     const pending:PendingRun={
       localId, shoe_id:shoeId, km, run_date:date, memo:memo||'', source,
       duration:duration||0, cadence:cadence||0, route:route||'', location:location||'',
-      heart_rate:heart_rate||0, run_time:timeStr, queuedAt:Date.now(),
+      heart_rate:heart_rate||0, run_time:timeStr, queuedAt:stampedAt, updatedAt:stampedAt,
     };
 
     // ── 1) 로컬 우선 영속화(네트워크 try 밖) ──
@@ -521,7 +531,7 @@ function Main(){
     if(route) await AsyncStorage.setItem('route_'+localId, route);
     await AsyncStorage.setItem('time_'+localId, timeStr);
     setRuns(prev=>[{id:localId,shoe_id:shoeId,km,run_date:date,duration:duration||0,
-      cadence:cadence||0,memo:memo||'',route:route||'',run_time:timeStr,_pending:true},...prev]);
+      cadence:cadence||0,memo:memo||'',route:route||'',run_time:timeStr,updatedAt:stampedAt,_pending:true},...prev]);
 
     // ── 2) 네트워크 동기화(별도 try). 실패해도 위 로컬 기록·큐는 보존된다. ──
     try{
@@ -566,9 +576,10 @@ function Main(){
         if(spl!=null) await AsyncStorage.removeItem('splits_'+p.localId);
       }
     }
-    const merged={...(server||{}),id:serverId??p.localId,shoe_id:p.shoe_id,km:p.km,run_date:p.run_date,
+    // audit a1: 화해(동기 성공) 레코드에도 updatedAt 을 유지한다(큐의 값 우선, 없으면 갱신).
+    const merged=stampUpdatedAt({...(server||{}),id:serverId??p.localId,shoe_id:p.shoe_id,km:p.km,run_date:p.run_date,
       duration:p.duration,cadence:p.cadence,memo:p.memo,route:p.route||((server&&server.route)||''),
-      run_time:p.run_time,_pending:false};
+      run_time:p.run_time,_pending:false}, p.updatedAt ?? Date.now());
     setRuns(prev=>[merged,...prev.filter(r=>r.id!==p.localId&&(serverId==null||r.id!==serverId))]);
   }
 
@@ -588,9 +599,11 @@ function Main(){
   async function editRun(id:string,fields:{shoe_id?:string;km?:number;run_date?:string;duration?:number}){
     const sid=String(id);
     const target=runs.find(r=>String(r.id)===sid);
-    setRuns(prev=>prev.map(r=>String(r.id)===sid?{...r,...fields}:r));
+    const editedAt=Date.now();
+    // audit a1: 편집은 레코드를 바꾸므로 updatedAt 을 갱신한다(상태 + 미동기 큐 양쪽).
+    setRuns(prev=>prev.map(r=>String(r.id)===sid?stampUpdatedAt({...r,...fields},editedAt):r));
     if(target&&target._pending){
-      await updatePendingRun(sid,fields as Partial<PendingRun>);
+      await updatePendingRun(sid,{...fields,updatedAt:editedAt} as Partial<PendingRun>);
       return;
     }
     try{

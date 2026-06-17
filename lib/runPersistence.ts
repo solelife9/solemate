@@ -55,6 +55,9 @@ export interface PendingRun {
   heart_rate: number; // >= 0
   run_time: string; // 'HH:MM' captured at save time
   queuedAt: number; // epoch ms first enqueued
+  // audit a1: 레코드 갱신 시각(epoch ms). 클라우드 머지(cloudSync.recordUpdatedAt)의
+  // '최신 우선'이 읽는다. 선택필드 — 이전 빌드에서 큐에 남은 런엔 없을 수 있다(하위호환).
+  updatedAt?: number;
 }
 
 // ── pure helpers (no I/O) — exported for direct unit testing ─────
@@ -122,6 +125,11 @@ export function sanitizePendingRun(raw: any): PendingRun | null {
     heart_rate: Math.floor(nonNeg(raw.heart_rate)),
     run_time: typeof raw.run_time === 'string' ? raw.run_time : '',
     queuedAt: nonNeg(raw.queuedAt),
+    // updatedAt 은 선택 — 유한·양수일 때만 보존한다(부재/비정상은 키를 만들지 않아 머지에서
+    // -Infinity(=동률, local 우선)로 떨어진다. 0 같은 가짜 타임스탬프를 심지 않는다).
+    ...(typeof raw.updatedAt === 'number' && Number.isFinite(raw.updatedAt) && raw.updatedAt > 0
+      ? { updatedAt: raw.updatedAt }
+      : {}),
   };
 }
 

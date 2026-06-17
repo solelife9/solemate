@@ -14,6 +14,7 @@ import {
   nextAuthState,
   mergeCloudData,
   migrateDeviceToAccount,
+  stampUpdatedAt,
   type AuthState,
 } from '../../lib/cloudSync';
 
@@ -110,6 +111,62 @@ describe('mergeCloudData', () => {
     const remote = payload({ shoes: [{ noId: 2 }, { id: 'x' }] });
     const merged = mergeCloudData(local, remote);
     expect(merged.shoes).toHaveLength(3);
+  });
+});
+
+describe('stampUpdatedAt', () => {
+  test('주어진 now 로 updatedAt 을 스탬프하고 기존 필드를 모두 보존한다', () => {
+    const out = stampUpdatedAt({id: 'a', name: 'Nike', max_km: 600}, 12345);
+    expect(out).toEqual({id: 'a', name: 'Nike', max_km: 600, updatedAt: 12345});
+  });
+
+  test('원본을 변형하지 않고 새 객체를 돌려준다(불변)', () => {
+    const src = {id: 'a'};
+    const out = stampUpdatedAt(src, 1);
+    expect(out).not.toBe(src);
+    expect((src as any).updatedAt).toBeUndefined(); // 원본 불변
+  });
+
+  test('기존 updatedAt 도 새 값으로 갱신한다(mutation = 최신 시각)', () => {
+    const out = stampUpdatedAt({id: 'a', updatedAt: 1}, 999);
+    expect(out.updatedAt).toBe(999);
+  });
+
+  test('now 생략 시 현재 시각(epoch ms 양수)을 스탬프한다', () => {
+    const before = Date.now();
+    const out = stampUpdatedAt({id: 'a'});
+    expect(typeof out.updatedAt).toBe('number');
+    expect(out.updatedAt).toBeGreaterThanOrEqual(before);
+  });
+});
+
+describe('mergeCloudData — 같은 id 충돌은 updatedAt 큰(최신) 쪽을 채택', () => {
+  test('remote 가 더 최신이면 remote 를, local 이 더 최신이면 local 을 채택', () => {
+    const local = payload({
+      runs: [
+        {id: 'r1', v: 'localR1', updatedAt: 100}, // remote 가 더 최신 → 교체됨
+        {id: 'r2', v: 'localR2', updatedAt: 900}, // local 이 더 최신 → 유지됨
+      ],
+    });
+    const remote = payload({
+      runs: [
+        {id: 'r1', v: 'remoteR1', updatedAt: 200},
+        {id: 'r2', v: 'remoteR2', updatedAt: 300},
+      ],
+    });
+    const byId = Object.fromEntries(
+      mergeCloudData(local, remote).runs.map((r: any) => [r.id, r.v]),
+    );
+    expect(byId.r1).toBe('remoteR1'); // 최신 우선
+    expect(byId.r2).toBe('localR2'); // 최신 우선
+  });
+
+  test('stampUpdatedAt 로 찍은 실데이터 형태에서도 최신 우선이 성립한다', () => {
+    const older = stampUpdatedAt({id: 'r1', v: 'old'}, 1000);
+    const newer = stampUpdatedAt({id: 'r1', v: 'new'}, 2000);
+    const merged = mergeCloudData(payload({runs: [older]}), payload({runs: [newer]}));
+    expect(merged.runs).toHaveLength(1);
+    expect((merged.runs[0] as any).v).toBe('new');
   });
 });
 

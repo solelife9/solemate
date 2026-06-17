@@ -47,6 +47,21 @@ export function nextAuthState(current: AuthState, event: AuthEvent): AuthState {
   return current;
 }
 
+/**
+ * 레코드에 updatedAt(epoch ms)을 스탬프해 *새* 객체로 돌려준다. 모든 신발/런 mutation
+ * (App.tsx addRun/editRun/addShoe/updateShoeMaxKm/retireShoe 등)이 이 한 경로로 스탬프해,
+ * 아래 recordUpdatedAt 가 읽는 '최신 우선' 머지가 실데이터에서 작동하게 한다.
+ *   · 불변   — 원본을 변형하지 않는다(spread 로 새 객체 생성).
+ *   · 비파괴 — 기존 필드를 모두 보존하고 updatedAt 만 갱신한다.
+ * now 는 테스트 결정성을 위해 주입 가능하며, 생략하면 현재 시각(Date.now)을 쓴다.
+ */
+export function stampUpdatedAt<T extends object>(
+  record: T,
+  now: number = Date.now(),
+): T & { updatedAt: number } {
+  return { ...record, updatedAt: now };
+}
+
 // ── id/updatedAt 추출 (레코드는 unknown 이므로 방어적으로 읽는다) ───────────────
 
 /** 레코드에서 비교용 id 를 뽑는다. 없으면 null(→ 합치되 dedupe 하지 않음). */
