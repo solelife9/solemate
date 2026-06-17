@@ -80,6 +80,7 @@ import {Challenge, ChallengeRun} from './lib/challenges';
 import {ExtChallenge, challengeExtProgress, type ExtRun, type ExtShoe} from './lib/progression/challengesExt';
 import {createFirebaseCloudPort} from './lib/firebaseCloudPort';
 import {stampUpdatedAt, markDeleted, partitionTombstones, recordsToBackRegister} from './lib/cloudSync';
+import {showToast, TOAST_UNDO_LABEL} from './lib/toast';
 import {migrateStorageSchema} from './lib/storageMigration';
 import {resolveGoogleCredential} from './lib/googleAuth';
 import {resolveKakaoFirebaseToken} from './lib/kakaoAuth';
@@ -610,6 +611,59 @@ function Main(){
     });
   };
 
+  // ── 삭제 undo(실행취소) ────────────────────────────────────────────────────────
+  // 삭제는 묘비(soft-delete)일 뿐 데이터 파괴가 아니므로 '실행취소'로 *완전복원*할 수 있다.
+  // 완전복원의 의미(부분복원 금지): 라이브 레코드 + 사이드키(런의 route_/time_/surface_/
+  // splits_)까지 전부 되살리고, 묘비를 되돌린다. 묘비 되돌림은 (a) tombstones store 에서 해당
+  // id 를 빼고 (b) 라이브 레코드를 deleted:false + updatedAt 갱신으로 다시 넣는 것 — updatedAt 을
+  // 새로 찍어야 머지 '최신 우선'이 (다른 기기/클라우드 백업에 남은) 옛 묘비보다 un-delete 를
+  // 최신 사실로 보고 부활(삭제 재적용)을 막는다.
+
+  // 삭제 직전 런 스냅샷: 레코드 + 사이드키 + (미동기였다면)큐 항목. 사이드키를 지우기 전에
+  // 읽어 담아야 유실 없이 되살릴 수 있다(부분복원=런만 살고 사이드키 유실 방지).
+  type RunUndo={
+    record:BackendRun;
+    sidecars:{route:string|null;time:string|null;surface:string|null;splits:string|null};
+    pending:PendingRun|null;
+  };
+  const restoreRun=async(undo:RunUndo)=>{
+    const sid=String(undo.record.id);
+    const sc=undo.sidecars;
+    // 1) 사이드키 복원 — 원래 값이 있던 키만 되쓴다(없던 키를 새로 만들지 않음).
+    if(sc.route!=null)await AsyncStorage.setItem('route_'+sid,sc.route);
+    if(sc.time!=null)await AsyncStorage.setItem('time_'+sid,sc.time);
+    if(sc.surface!=null)await AsyncStorage.setItem('surface_'+sid,sc.surface);
+    if(sc.splits!=null)await AsyncStorage.setItem('splits_'+sid,sc.splits);
+    // 2) 묘비 되돌림 — store 에서 해당 id 제거(삭제 전파 취소).
+    setTombstones(prev=>{
+      const next={...prev,runs:prev.runs.filter(r=>String(r.id)!==sid)};
+      persistTombstones(next);
+      return next;
+    });
+    // 3) 라이브 복원 — deleted:false + updatedAt 갱신(un-delete 가 머지에서 이기게).
+    const restored=stampUpdatedAt({...undo.record,deleted:false});
+    setRuns(prev=>prev.some(r=>String(r.id)===sid)?prev:[restored,...prev]);
+    // 4) 미동기였던 런이면 큐도 되살려 다음 flush 가 다시 POST 하게 한다.
+    if(undo.pending){try{await enqueuePendingRun(undo.pending);}catch{/* 큐 복원 실패는 라이브 복원을 막지 않는다 */}}
+  };
+  const offerRunUndo=(undo:RunUndo)=>{
+    showToast({message:'러닝 기록 삭제됨',actionLabel:TOAST_UNDO_LABEL,onAction:()=>{void restoreRun(undo);}});
+  };
+
+  const restoreShoe=(record:BackendShoe)=>{
+    const sid=String(record.id);
+    setTombstones(prev=>{
+      const next={...prev,shoes:prev.shoes.filter(s=>String(s.id)!==sid)};
+      persistTombstones(next);
+      return next;
+    });
+    const restored=stampUpdatedAt({...record,deleted:false});
+    setShoes(prev=>prev.some(s=>String(s.id)===sid)?prev:[restored,...prev]);
+  };
+  const offerShoeUndo=(record:BackendShoe)=>{
+    showToast({message:'신발 삭제됨',actionLabel:TOAST_UNDO_LABEL,onAction:()=>{restoreShoe(record);}});
+  };
+
   // 신발 삭제는 더 이상 런 기록을 동반삭제하지 않는다(iron law: 데이터 파괴 금지).
   // 런은 보존되어 기록/통계에 남고, 신발만 잠금장(locker)에서 제거된다. 신발을
   // 영구히 지우는 대신 보존이 목적이면 retireShoe(보관)를 쓴다.
@@ -621,6 +675,8 @@ function Main(){
       const target=shoes.find(s=>s.id===id);
       setShoes(prev=>prev.filter(s=>s.id!==id));
       addShoeTombstone(target??({id} as BackendShoe));
+      // 삭제됨 · 실행취소: 신발만 잠금장에서 빠졌을 뿐이므로 완전복원할 수 있다.
+      if(target)offerShoeUndo(target);
     }catch{Alert.alert('오류','삭제 실패');}
   }
 
@@ -750,6 +806,17 @@ function Main(){
   async function deleteRun(id:string){
     const sid=String(id);
     const target=runs.find(r=>String(r.id)===sid);
+    // undo 스냅샷: 사이드키/큐 항목을 *지우기 전에* 읽어 담는다 — '실행취소' 시 런만 살고
+    // route_/time_/surface_/splits_ 가 유실되는 부분복원을 막는다(완전복원 보장).
+    const [route,time,surface,splits]=await Promise.all([
+      AsyncStorage.getItem('route_'+sid),
+      AsyncStorage.getItem('time_'+sid),
+      AsyncStorage.getItem('surface_'+sid),
+      AsyncStorage.getItem('splits_'+sid),
+    ]);
+    let pendingEntry:PendingRun|null=null;
+    try{pendingEntry=(await loadPendingRuns()).find(p=>String(p.localId)===sid)??null;}catch{pendingEntry=null;}
+    const undo:RunUndo|null=target?{record:target,sidecars:{route,time,surface,splits},pending:pendingEntry}:null;
     const finishLocal=async()=>{
       setRuns(prev=>prev.filter(r=>String(r.id)!==sid));
       if(target)addRunTombstone(target);
@@ -759,10 +826,11 @@ function Main(){
       await AsyncStorage.removeItem('surface_'+sid);
       await AsyncStorage.removeItem('splits_'+sid);
     };
-    if(target&&target._pending){await finishLocal();return;}
+    if(target&&target._pending){await finishLocal();if(undo)offerRunUndo(undo);return;}
     try{
       await apiDeleteRun(userId,sid);
       await finishLocal();
+      if(undo)offerRunUndo(undo);
     }catch{Alert.alert('오류','삭제 실패');}
   }
 
