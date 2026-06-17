@@ -263,6 +263,45 @@ describe('ProfileScreen 자동 동기 (로그인/변경 시 pull→merge→push,
     }
   });
 
+  test('개수·settings 동일해도 기존 런의 updatedAt 만 증가하면 자동 동기가 재발화한다(maxUpdated 세그먼트 고정)', async () => {
+    jest.useFakeTimers();
+    try {
+      // 개수·settings 가 동일한 한 쌍의 픽스처 — 차이는 기존 런 1건의 updatedAt 뿐.
+      // 시그니처에서 Math.max(maxUpdated(...)) 항을 지우면 두 시그니처가 같아져
+      // 재동기가 일어나지 않으므로(아래 push 2회 단언이 깨진다) maxUpdated 세그먼트를 고정한다.
+      const before: BackupPayload = {
+        shoes: [{id: 'L1', brand: 'Nike', model: 'Pegasus'}],
+        runs: [{id: 'r-local', km: 5, updatedAt: 1000}],
+        settings: {unit: 'km'},
+      };
+      // remote=null → merge 가 로컬을 그대로 push 하므로 push 페이로드로 updatedAt 반영을 관측할 수 있다.
+      const port = mockPort(null);
+      const props = {cloudPort: port, backupData: before};
+      const renderer = renderWithRenderer(props);
+
+      await press(byTestId(renderer.root, 'cloud-signin-google'));
+      await flushAutoSync();
+      expect(port.push).toHaveBeenCalledTimes(1);
+
+      // 개수(신발 1·런 1)·settings 동일, 기존 런의 updatedAt 만 1000→2000 으로 증가(편집).
+      const edited: BackupPayload = {
+        shoes: [{id: 'L1', brand: 'Nike', model: 'Pegasus'}],
+        runs: [{id: 'r-local', km: 5, updatedAt: 2000}],
+        settings: {unit: 'km'},
+      };
+      updateProps(renderer, {...props, backupData: edited});
+      await flushAutoSync();
+
+      // 재동기 발화(push 2회)하고, 마지막 payload 가 갱신된 런(증가된 updatedAt)을 반영한다.
+      expect(port.push).toHaveBeenCalledTimes(2);
+      const pushed: BackupPayload = port.push.mock.calls[1][0];
+      expect(pushed.runs.map((x: any) => x.id)).toEqual(['r-local']);
+      expect((pushed.runs[0] as any).updatedAt).toBe(2000);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
   test('settings(unit)만 바뀌어도 자동 동기가 재발화한다(시그니처의 settings 세그먼트 고정)', async () => {
     jest.useFakeTimers();
     try {
