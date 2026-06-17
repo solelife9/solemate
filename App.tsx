@@ -59,7 +59,7 @@ import {recommendRotation} from './lib/rotation';
 import {
   loadSnapshot, clearSnapshot, isResumable,
   enqueuePendingRun, removePendingRun, updatePendingRun, flushPendingRuns,
-  reconcilePendingWithServer,
+  reconcilePendingWithServer, loadPendingRuns,
   RunSnapshot, PendingRun,
 } from './lib/runPersistence';
 import {Unit, kmToDisplay, displayNum} from './lib/units';
@@ -78,7 +78,7 @@ import {serializeBackup, BackupV1, BackupPayload} from './lib/backup';
 import {Challenge, ChallengeRun} from './lib/challenges';
 import {ExtChallenge, challengeExtProgress, type ExtRun, type ExtShoe} from './lib/progression/challengesExt';
 import {createFirebaseCloudPort} from './lib/firebaseCloudPort';
-import {stampUpdatedAt, markDeleted, partitionTombstones} from './lib/cloudSync';
+import {stampUpdatedAt, markDeleted, partitionTombstones, recordsToBackRegister} from './lib/cloudSync';
 import {migrateStorageSchema} from './lib/storageMigration';
 import {resolveGoogleCredential} from './lib/googleAuth';
 import {resolveKakaoFirebaseToken} from './lib/kakaoAuth';
@@ -201,6 +201,11 @@ function Main(){
   // 삭제를 전파하고, 머지 결과는 applyBackupPayload 가 다시 live/묘비로 분리해 이 불변식을
   // 유지한다(한 id 가 live 와 묘비에 동시에 있지 않는다 → 자기충돌 부활 없음).
   const [tombstones,setTombstones]=useState<{shoes:BackendShoe[];runs:BackendRun[]}>({shoes:[],runs:[]});
+  // 최신 커밋된 shoes/runs 를 항상 가리키는 ref. 클라우드 머지 콜백(onCloudMerged)이
+  // ProfileScreen 의 디바운스 sync 에서 *늦게* 호출될 때 stale 클로저의 빈 배열을 읽어
+  // 역등록 판정(knownIds)을 그르치는 것을 막는다 — ref 는 항상 머지 직전의 실상태를 준다.
+  const shoesRef=useRef(shoes);
+  const runsRef=useRef(runs);
   // 런별 노면 태그 캐시(surface_<runId> → Surface). 실효 마모/교체 예측 보정용. 미태그는
   // road로 동작(차단 아님). runs 변경 시 한 번에 읽어들이고, 손상/실패는 무시한다.
   const [runSurfaces,setRunSurfaces]=useState<Record<string,Surface>>({});
@@ -339,6 +344,28 @@ function Main(){
     })();
   },[]);
 
+  // shoes/runs 가 커밋될 때마다 ref 를 최신으로 동기화(stale-closure 가드용 — 위 ref 주석 참고).
+  useEffect(()=>{shoesRef.current=shoes;runsRef.current=runs;},[shoes,runs]);
+
+  // 부팅 폴백 캐시(cache_shoes_v1/cache_runs_v1) 상시 갱신(디바운스). 기존엔 initUser 의
+  // 서버 fetch 성공 직후에만 캐시를 썼다 — 그 뒤 신발/런 mutation(추가/편집/삭제/동기 화해)이
+  // 캐시에 반영되지 않아, 오프라인 재부팅 시 *마지막 fetch 시점*의 낡은 데이터만 보였다.
+  // shoes/runs 가 바뀔 때마다 현재 라이브 상태를 캐시에 덮어써(800ms 디바운스로 폭주 합침)
+  // 다음 오프라인 부팅이 최신 데이터로 'ready' 되게 한다. 'ready' 일 때만 써, 부팅 'loading'
+  // 의 빈 초기상태가 멀쩡한 캐시를 지우지 않게 한다(쓰기 실패는 비차단 — 부팅 영향 0).
+  useEffect(()=>{
+    if(bootState!=='ready') return;
+    const t=setTimeout(()=>{
+      (async()=>{
+        try{
+          await AsyncStorage.setItem(CACHE_SHOES_KEY,JSON.stringify(shoes));
+          await AsyncStorage.setItem(CACHE_RUNS_KEY,JSON.stringify(runs));
+        }catch{/* 캐시 쓰기 실패는 삼킨다(다음 mutation 에서 재시도) */}
+      })();
+    },800);
+    return ()=>clearTimeout(t);
+  },[shoes,runs,bootState]);
+
   // 포그라운드 진입 시 띄울 알림 계산/표시 함수의 최신 클로저를 담는 ref. 아래 render 에서
   // 신발 forecast·weekly·lastRun·settings 가 모두 준비된 뒤 갱신한다(AppState 리스너는
   // 1회만 구독하므로 stale 클로저를 피하려 ref 로 우회한다).
@@ -452,9 +479,21 @@ function Main(){
       // 신규/첫 실행 오프라인) 기존대로 재시도 카드. 동기화·랭킹은 백엔드 복구 시 재개.
       const cached=await loadBootCache();
       if(cached){
-        setShoes(cached.shoes);setRuns(cached.runs);
+        // 미동기 런(pending 큐)을 캐시 런 위에 오버레이한다. 캐시는 마지막 fetch/디바운스
+        // 시점의 스냅샷이라, 그 뒤 오프라인에서 추가됐지만 아직 서버로 못 간 런이 빠져 있을 수
+        // 있다 — 큐의 런을 합쳐 UI 에 보이게 한다(데이터 가시성). 이미 캐시에 든 런(localId==id)은
+        // 건너뛰어 중복을 막고, 큐 런은 _pending 으로 표시해 낙관적 삽입과 같은 모양으로 둔다.
+        const pending=await loadPendingRuns();
+        const cachedIds=new Set(cached.runs.map((r:any)=>String(r.id)));
+        const pendingOverlay=pending.filter(p=>!cachedIds.has(String(p.localId))).map(p=>({
+          id:p.localId,shoe_id:p.shoe_id,km:p.km,run_date:p.run_date,duration:p.duration,
+          cadence:p.cadence,memo:p.memo,route:p.route,location:p.location,heart_rate:p.heart_rate,
+          run_time:p.run_time,updatedAt:p.updatedAt,_pending:true,
+        }));
+        const mergedRuns=[...pendingOverlay,...cached.runs];
+        setShoes(cached.shoes);setRuns(mergedRuns);
         setBootState('ready');
-        checkShoeAlerts(cached.shoes,cached.runs,st.alerts);
+        checkShoeAlerts(cached.shoes,mergedRuns,st.alerts);
       }else{
         setBootState('error');
       }
@@ -773,13 +812,73 @@ function Main(){
     applyBackupPayload({shoes:data.shoes,runs:data.runs,settings:data.settings});
   };
 
+  // 클라우드 머지(applyBackupPayload 경로) 직후 REST 정본 합류. 다른 기기가 클라우드에만
+  // 올린(우리 REST 백엔드엔 없는) 레코드를 apiAddShoe/apiAddRun 으로 역등록해 REST 를 완전한
+  // 정본으로 만든다. 멱등성:
+  //   · 머지 *적용 전* 로컬 상태 id(=REST 정본 + 우리 pending)에 이미 있는 레코드는 건너뛴다.
+  //   · 역등록 성공 시 서버가 부여한 id 로 상태를 reconcile 하고, 옛 클라우드 id 는 묘비로 남긴다.
+  //     → 다음 동기에서 (a) 새 id 는 knownIds 에 들어와 다시 안 잡히고 (b) 옛 id 묘비가 클라우드의
+  //       옛-id 레코드 부활/재-POST 를 막는다(없으면 옛 id 가 원격에서 계속 돌아와 무한 재등록).
+  //   · tombstone(삭제 전파)·id 없는 레코드는 역등록 대상에서 제외(부활/무한루프 방지).
+  // userId(REST 계정) 미연결이면 건너뛴다 — 레코드는 화면/캐시엔 남아(유실 0) 다음 기회에 합류.
+  const backRegisterMerged=async(merged:BackupPayload,knownShoeIds:Set<string>,knownRunIds:Set<string>)=>{
+    if(!userId) return;
+    // 신발 먼저: cloud id → server id 매핑을 만들어 런의 shoe_id 참조를 재키잉(고아 방지).
+    const shoeIdMap=new Map<string,string>();
+    for(const sh of recordsToBackRegister(merged.shoes as BackendShoe[],knownShoeIds)){
+      try{
+        const created=await apiAddShoe(userId,{
+          name:sh.name,maxKm:Number(sh.max_km)||DEFAULT_MAX_KM,
+          startKm:Number(sh.start_km)||0,date:sh.purchase_date||today(),
+        });
+        const newId=created&&created.id!=null?String(created.id):null;
+        if(newId&&newId!==String(sh.id)){
+          shoeIdMap.set(String(sh.id),newId);
+          setShoes(prev=>prev.map(s=>String(s.id)===String(sh.id)?stampUpdatedAt({...s,id:newId}):s));
+          addShoeTombstone({id:sh.id} as BackendShoe); // 옛 클라우드 id 부활/재등록 차단
+        }
+      }catch(e){console.log('back-register shoe error',e);}
+    }
+    for(const rn of recordsToBackRegister(merged.runs as BackendRun[],knownRunIds)){
+      const shoeId=shoeIdMap.get(String(rn.shoe_id))??String(rn.shoe_id);
+      try{
+        const created=await apiAddRun(userId,{
+          localId:String(rn.id),shoe_id:shoeId,km:rn.km,run_date:rn.run_date,
+          memo:rn.memo||'',source:rn.source||'cloud',duration:rn.duration||0,cadence:rn.cadence||0,
+          route:rn.route||'',location:rn.location||'',heart_rate:rn.heart_rate||0,
+        });
+        const newId=created&&created.id!=null?String(created.id):null;
+        const reId=!!(newId&&newId!==String(rn.id));
+        setRuns(prev=>prev.map(r=>{
+          if(String(r.id)!==String(rn.id)) return r;
+          const next={...r,shoe_id:shoeId,_pending:false};
+          return stampUpdatedAt(reId?{...next,id:newId}:next);
+        }));
+        if(reId) addRunTombstone({id:rn.id} as BackendRun); // 옛 클라우드 id 부활/재등록 차단
+      }catch(e){console.log('back-register run error',e);}
+    }
+  };
+  // ProfileScreen 자동 동기(pull→mergeCloudData→push)의 병합 결과를 받는 콜백. 먼저
+  // applyBackupPayload 로 상태/묘비를 반영(원격→로컬)하고, 머지 *적용 전* 로컬 id 를 기준으로
+  // REST 미존재 레코드를 역등록한다(현재 closure 의 shoes/runs 는 setState 전이라 머지 전 값).
+  const onCloudMerged=(merged:BackupPayload)=>{
+    // ref 로 최신 커밋 상태를 읽어 stale 클로저(빈 배열)로 인한 오역등록을 막는다.
+    const knownShoeIds=new Set(shoesRef.current.map(s=>String(s.id)));
+    const knownRunIds=new Set(runsRef.current.map(r=>String(r.id)));
+    applyBackupPayload(merged);
+    void backRegisterMerged(merged,knownShoeIds,knownRunIds);
+  };
+
   // ── 계정·클라우드 동기(Slice 5) ─────────────────────────────────────────────
   // firebase 구현 포트를 한 번만 만든다(getAuth/getFirestore 는 메서드 안에서 지연
   // 호출 — 생성 자체는 네이티브를 건드리지 않는다). ProfileScreen 이 이 포트로 로그인/
   // 동기를 트리거하고, 병합(cloudSync.mergeCloudData) 결과를 applyBackupPayload 로 받는다.
   // resolveGoogleCredential 주입으로 'Google로 계속' 버튼이 실제 네이티브 로그인을 탄다
   // (리졸버는 hasPlayServices→signIn→idToken→OAuth 자격증명; 실패는 정직한 에러로 전파).
-  const cloudPortRef=useRef(createFirebaseCloudPort({
+  // 테스트 주입 seam(__KEEGO_CLOUD_PORT__) — devSeed 게이트와 같은 패턴. 운영 빌드엔
+  // 주입이 없어(undefined) 항상 실제 firebase 포트를 쓴다. 테스트는 메모리 목 포트를 꽂아
+  // pull→merge→onCloudMerged(역등록) 경로를 네이티브 없이 검증한다.
+  const cloudPortRef=useRef((globalThis as any).__KEEGO_CLOUD_PORT__ ?? createFirebaseCloudPort({
     resolveGoogleCredential,
     resolveKakaoToken:resolveKakaoFirebaseToken,
     resolveNaverToken:resolveNaverFirebaseToken,
@@ -1320,7 +1419,7 @@ function Main(){
             challenges={challenges} challengeRuns={challengeRuns}
             onCreateChallenge={createChallenge} onDeleteChallenge={deleteChallenge}
             todayISO={today()}
-            cloudPort={cloudPortRef.current} onCloudMerged={applyBackupPayload}
+            cloudPort={cloudPortRef.current} onCloudMerged={onCloudMerged}
             onOpenProgression={()=>setShowProgression(true)}
             onOpenHallOfShoes={()=>setShowHallOfShoes(true)}
             retiredCount={retiredRecords.length}

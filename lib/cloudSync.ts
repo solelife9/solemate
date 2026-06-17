@@ -114,7 +114,7 @@ export function partitionTombstones<T>(list: readonly T[]): { live: T[]; tombsto
 // ── id/updatedAt 추출 (레코드는 unknown 이므로 방어적으로 읽는다) ───────────────
 
 /** 레코드에서 비교용 id 를 뽑는다. 없으면 null(→ 합치되 dedupe 하지 않음). */
-function recordId(rec: unknown): string | null {
+export function recordId(rec: unknown): string | null {
   if (rec && typeof rec === 'object' && 'id' in rec) {
     const id = (rec as { id?: unknown }).id;
     if (typeof id === 'string' || typeof id === 'number') return String(id);
@@ -210,6 +210,27 @@ export function mergeCloudData(local: BackupPayload, remote: BackupPayload | nul
     runs: mergeRecords(local.runs, remote.runs),
     settings: { ...remote.settings, ...local.settings },
   };
+}
+
+/**
+ * 클라우드 머지 결과 중 REST(정본)에 아직 없는 live 레코드만 가려낸다 — 역등록(apiAddShoe/
+ * apiAddRun) 대상. REST 정본을 완전하게 만들기 위해, 다른 기기가 클라우드에만 올린 레코드를
+ * 우리 REST 백엔드에도 합류시킨다.
+ *   · knownIds  — 머지 *적용 전* 로컬 상태의 id 집합(= REST 정본 + 우리 pending). 여기 든 id 는
+ *                 이미 우리 백엔드/큐에 있으므로 역등록하지 않는다(중복 POST 금지).
+ *   · tombstone — 삭제 레코드는 제외한다. 역등록은 곧 부활이므로(iron law: 삭제 존중).
+ *   · id 없는 레코드 — dedupe 불가하므로 보수적으로 제외(무한 재-POST 방지).
+ * 멱등성: 역등록 성공 후 호출부가 서버 id 로 reconcile 하면 그 id 가 다음 머지의 knownIds 에
+ * 들어와 다시 잡히지 않는다 → 재동기화 시 같은 레코드를 두 번 POST 하지 않는다.
+ */
+export function recordsToBackRegister<T>(
+  merged: readonly T[],
+  knownIds: ReadonlySet<string>,
+): T[] {
+  return liveRecords(merged).filter((r) => {
+    const id = recordId(r);
+    return id !== null && !knownIds.has(id);
+  });
 }
 
 /**
