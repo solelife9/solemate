@@ -14,7 +14,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {
   BG, CARD, CARD_DIM, CARD_HI, HERO_BG, ACCENT, DANGER, WARN, GOOD, T1, T2, T3, T4,
-  FONT, DISPLAY, SPACE, RADIUS, withAlpha, Shoe, SHOES, TIER_COLORS,
+  FONT, DISPLAY, SPACE, RADIUS, withAlpha, Shoe, SHOES, TIER_COLORS, TIER_LABEL,
 } from './theme';
 import type { RankTier } from './lib/progression/types';
 import { TabBar, TierBadge, KeegoWordmark, Button, SectionTitle, Pill, conditionColor, InjuryBanner } from './primitives';
@@ -59,12 +59,6 @@ export type HomeProgression = {
   challenge?: HomeChallengeView | null;
   /** 가장 최근 달성 업적 1개. 없으면 업적 줄 숨김. */
   achievement?: { name: string } | null;
-};
-
-// 티어 표시명(영문 — ProgressionScreen 과 동일 관용). 본문 라벨은 한국어, 티어명만 영문.
-const TIER_LABEL: Record<RankTier, string> = {
-  bronze: 'Bronze', silver: 'Silver', gold: 'Gold', platinum: 'Platinum',
-  diamond: 'Diamond', master: 'Master', legend: 'Legend',
 };
 
 // 진척 띠 — 랭크 칩 + 활성 챌린지 진행 + 최근 업적. 통째로 탭하면 진척 화면으로 이동

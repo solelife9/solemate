@@ -31,6 +31,7 @@ import {
   type WearShoe,
 } from '../wearModel';
 import {ContextChallengeInput} from './types';
+import {ymdLocal} from '../format';
 
 // ── 입력 모양(최소·순수) ──────────────────────────────────────────────────────
 // lib/challenges 의 ChallengeRun({date,dist})을 확장해 신발 귀속(shoeId)만 더한다.
@@ -117,9 +118,7 @@ function shiftDate(d: string, delta: number): string {
   const [y, m, dd] = ymd(d).split('-').map(Number);
   if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(dd)) return ymd(d);
   const t = new Date(y, m - 1, dd + delta);
-  const mm = String(t.getMonth() + 1).padStart(2, '0');
-  const day = String(t.getDate()).padStart(2, '0');
-  return `${t.getFullYear()}-${mm}-${day}`;
+  return ymdLocal(t); // 'YYYY-MM-DD' 로컬 빌더 단일화(lib/format)
 }
 
 /** now 가 속한 달의 [첫날, 끝날] 윈도우('YYYY-MM-DD'). month 오버라이드 가능('YYYY-MM'). */

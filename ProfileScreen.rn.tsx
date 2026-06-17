@@ -11,7 +11,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, ScrollView, Pressable, StyleSheet, TextInput, Image, Share } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { BG, CARD, CARD_DIM, CARD_HI, ACCENT, GOOD, DANGER, WARN, T1, T2, T3, SEP, FONT, DISPLAY, withAlpha, TIER_COLORS, KAKAO_YELLOW, KAKAO_LABEL, NAVER_GREEN, NAVER_LABEL, RADIUS } from './theme';
+import { BG, CARD, CARD_DIM, CARD_HI, ACCENT, GOOD, DANGER, WARN, T1, T2, T3, SEP, FONT, DISPLAY, withAlpha, TIER_COLORS, TIER_LABEL, KAKAO_YELLOW, KAKAO_LABEL, NAVER_GREEN, NAVER_LABEL, RADIUS } from './theme';
 import { TabBar, Ring, Pill, SectionTitle } from './primitives';
 import { Unit, unitKorean, displayNum, displayToKm } from './lib/units';
 import { weeklyRecap, monthlyRecap, type RecapRun, type RecapShoe } from './lib/recap';
@@ -37,12 +37,6 @@ export type Badge = { icon: string; label: string; on: boolean };
 // 개인 기록(PR) 카드 한 칸. value/unit은 App이 표시 단위로 환산·포맷해 주입한다
 // (기록 없음은 value='--'). 화면은 표시만 담당한다.
 export type PersonalRecord = { icon: string; label: string; value: string; unit: string };
-
-// 티어 표시명(영문 — 진척 화면과 동일 표기). 색은 TIER_COLORS 권위.
-const TIER_LABEL: Record<RankTier, string> = {
-  bronze: 'Bronze', silver: 'Silver', gold: 'Gold', platinum: 'Platinum',
-  diamond: 'Diamond', master: 'Master', legend: 'Legend',
-};
 
 const DEFAULT_PROFILE: Profile = { name: '러너', since: '', totalKm: 0, totalRuns: 0, totalTime: '0', rankTier: 'bronze' };
 const APP_VERSION = '0.0.1';

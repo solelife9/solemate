@@ -40,6 +40,15 @@ export function ymdLocal(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
+/**
+ * Local calendar month as `YYYY-MM` (audit#11: local, not UTC).
+ * Derived from `ymdLocal` so the two stay byte-identical on their shared prefix
+ * — month bucketing can never desync from the day bucketing it slices.
+ */
+export function ymLocal(d: Date): string {
+  return ymdLocal(d).slice(0, 7);
+}
+
 /** Monday (00:00 local) of the week containing `d`. Sunday rolls back 6 days. */
 export function getMonday(d: Date): Date {
   const r = new Date(d);

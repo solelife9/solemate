@@ -7,6 +7,8 @@ import {
   BG,
   ACCENT,
   T1,
+  TIER_COLORS,
+  TIER_LABEL,
 } from '../theme';
 
 describe('SPACE scale', () => {
@@ -60,6 +62,18 @@ describe('DISPLAY face (디자인 마무리: Pretendard 전면 통일)', () => {
     expect(FONT).toBe('PretendardVariable');
     expect(DISPLAY).toBe('PretendardVariable');
     expect(DISPLAY).toBe(FONT);
+  });
+});
+
+describe('TIER_LABEL (d2-dedup: 홈·프로필·진척 복붙 → theme 단일화)', () => {
+  test('canonical 티어명(옛 3화면 복붙과 동일 값)을 그대로 노출', () => {
+    expect(TIER_LABEL).toEqual({
+      bronze: 'Bronze', silver: 'Silver', gold: 'Gold', platinum: 'Platinum',
+      diamond: 'Diamond', master: 'Master', legend: 'Legend',
+    });
+  });
+  test('TIER_COLORS 와 키 집합이 일치 — 라벨/색이 같은 티어 집합을 덮는다', () => {
+    expect(Object.keys(TIER_LABEL).sort()).toEqual(Object.keys(TIER_COLORS).sort());
   });
 });
 

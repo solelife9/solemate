@@ -71,6 +71,8 @@ import {runToastAction, getCurrentToast, dismissToast, TOAST_UNDO_LABEL} from '.
 import {maskDuration, maskDate, validateRunForm} from '../../lib/inputMask';
 import {syncLabel} from '../../lib/syncStatus';
 import type {Shoe} from '../../theme';
+import {TIER_LABEL} from '../../theme';
+import {ymLocal, ymdLocal} from '../../lib/format';
 
 // createElement 단축(JSX 미사용) + 트리 렌더 헬퍼.
 const el = (C: unknown, props: Record<string, unknown> = {}) =>
@@ -641,7 +643,35 @@ describe('Audit Hardening 수용', () => {
 
   describe('D. 코드 품질', () => {
     it.todo('타입: lib/api.ts·lib/stats.ts에 any 0, 도메인 타입 사용');
-    it.todo('중복제거: TIER_LABEL 정의가 theme.ts 1곳, MM:SS/YYYY-MM 빌더 단일화');
+
+    test('중복제거: TIER_LABEL 정의가 theme.ts 1곳, MM:SS/YYYY-MM 빌더 단일화', () => {
+      const read = (rel: string) => fs.readFileSync(path.join(__dirname, '../../', rel), 'utf8');
+
+      // (1) TIER_LABEL — theme.ts 1곳 정의, 홈·프로필·진척은 import 만(로컬 재정의 0).
+      expect(/export const TIER_LABEL\s*:/.test(read('theme.ts'))).toBe(true);
+      for (const screen of ['HomeScreen.rn.tsx', 'ProfileScreen.rn.tsx', 'ProgressionScreen.rn.tsx']) {
+        const src = read(screen);
+        expect(/(?:const|let|var)\s+TIER_LABEL\b/.test(src)).toBe(false); // 복붙 정의 없음
+        expect(/\bTIER_LABEL\b/.test(src)).toBe(true);                    // theme 에서 가져와 사용
+      }
+      expect(TIER_LABEL.diamond).toBe('Diamond'); // 단일 정의가 canonical 매핑을 노출
+
+      // (2) MM:SS — HistoryScreen 의 프리필 포맷터가 자체 분/초 조립 대신 fmtTime 재사용.
+      const hist = read('HistoryScreen.rn.tsx');
+      expect(/from '\.\/lib\/format'/.test(hist)).toBe(true);
+      expect(/function fmtDurationInput[\s\S]*?fmtTime\(/.test(hist)).toBe(true);
+
+      // (3) YYYY-MM(-DD) — 인라인 Date 빌더(getFullYear()+padStart) 제거, lib/format 재사용.
+      const ymBuilder = /getFullYear\(\)[\s\S]{0,80}?padStart\(2, '0'\)/;
+      for (const rel of ['HallOfFameScreen.rn.tsx', 'ProgressionScreen.rn.tsx', 'lib/notifications.ts', 'lib/progression/challengesExt.ts']) {
+        const src = read(rel);
+        expect(ymBuilder.test(src)).toBe(false);                      // 인라인 날짜 빌더 없음
+        expect(/from '(?:\.\.?\/)+(?:lib\/)?format'/.test(src)).toBe(true); // lib/format 재사용
+      }
+      // 신규 ymLocal 이 ymdLocal 의 YYYY-MM 접두와 byte-동등(단일 소스).
+      expect(ymLocal(new Date(2026, 5, 18, 1, 30))).toBe(ymdLocal(new Date(2026, 5, 18, 1, 30)).slice(0, 7));
+    });
+
     it.todo('가상화: HistoryScreen 런 리스트가 FlatList(keyExtractor) 사용');
   });
 

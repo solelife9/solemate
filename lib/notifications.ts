@@ -22,6 +22,7 @@ import {type ReplacementForecast} from './replacementForecast';
 import {shouldRecommendNextShoe} from './recommendTrigger';
 import {type WeeklyProgress} from './goals';
 import {type WearShoe} from './wearModel';
+import {ymdLocal} from './format';
 
 // ─── 타입 ─────────────────────────────────────────────────────────
 export type NotifType = 'shoe_replacement' | 'weekly_goal' | 'run_reminder';
@@ -84,13 +85,8 @@ function resolveNow(now: Date | undefined | null): Date {
   return new Date();
 }
 
-/** 로컬 달력 날짜 'YYYY-MM-DD'(타임존 안전 — 로컬 필드만 사용). */
-function localYmd(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-}
+/** 로컬 달력 날짜 'YYYY-MM-DD'(타임존 안전 — lib/format.ymdLocal 단일화). */
+const localYmd = ymdLocal;
 
 /** ISO 요일(월=1 … 일=7). 주 기준이 월요일(lib/goals)이라 일요일을 7로 둔다. */
 function isoDayOfWeek(d: Date): number {

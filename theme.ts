@@ -62,6 +62,20 @@ export const TIER_COLORS: Record<RankTier, string> = {
   legend: '#FF6500',
 };
 
+// 티어 표시명(영문 — 본문/라벨은 한국어, 티어명만 영문. PS Trophies/WHOOP 관용).
+// AUTHORITATIVE 단일 정의: 홈·프로필·진척 화면이 각자 복붙하던 것을 여기로 통합한다
+// (TIER_COLORS 와 동일 위계 — 색·라벨 모두 theme 권위, 화면 하드코딩 0). 키 타입은
+// RankTier 라 티어가 추가되면 누락이 컴파일타임에 잡힌다.
+export const TIER_LABEL: Record<RankTier, string> = {
+  bronze: 'Bronze',
+  silver: 'Silver',
+  gold: 'Gold',
+  platinum: 'Platinum',
+  diamond: 'Diamond',
+  master: 'Master',
+  legend: 'Legend',
+};
+
 // ── alpha helper ─────────────────────────────────────────────────────────────
 // Derive a translucent fill from an existing #RRGGBB token so semi-transparent
 // surfaces (e.g. badge backgrounds) stay a single source of truth: change the

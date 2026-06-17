@@ -1,4 +1,4 @@
-import {fmtTime, fmtPace, ymdLocal, getMonday, fmtKDate} from '../../lib/format';
+import {fmtTime, fmtPace, ymdLocal, ymLocal, getMonday, fmtKDate} from '../../lib/format';
 
 describe('fmtTime', () => {
   test('under an hour → MM:SS', () => {
@@ -46,6 +46,47 @@ describe('ymdLocal (audit#11 — local, not UTC)', () => {
     const d = new Date(2026, 2, 15, 1, 0); // Mar 15 01:00 local
     // toISOString could roll to Mar 14 in positive-offset zones; ymdLocal must not.
     expect(ymdLocal(d)).toBe('2026-03-15');
+  });
+});
+
+describe('ymLocal (YYYY-MM — local, not UTC)', () => {
+  test('local calendar month, zero-padded', () => {
+    expect(ymLocal(new Date(2026, 0, 5, 1, 30))).toBe('2026-01');
+    expect(ymLocal(new Date(2026, 8, 9))).toBe('2026-09');
+  });
+  test('a 01:00-local date keeps its local month regardless of UTC offset', () => {
+    // 월 첫날 01:00 — UTC 환산 시 전월로 굴러갈 수 있으나 로컬 월을 유지해야.
+    expect(ymLocal(new Date(2026, 2, 1, 1, 0))).toBe('2026-03');
+  });
+  test('byte-identical to ymdLocal on the shared YYYY-MM prefix (no desync)', () => {
+    // 옛 인라인 빌더(HallOfFameScreen.yearMonthOf)와 동일 출력임을 고정.
+    for (const d of [new Date(2026, 0, 1), new Date(2026, 11, 31, 23, 59), new Date(2025, 5, 15)]) {
+      expect(ymLocal(d)).toBe(ymdLocal(d).slice(0, 7));
+    }
+  });
+});
+
+describe('fmtTime ↔ duration input round-trip (HistoryScreen 프리필 재사용 보존)', () => {
+  // HistoryScreen.fmtDurationInput 이 fmtTime 으로 단일화된 뒤에도, 초→문자열→초
+  // 라운드트립이 보존돼야 함을 format 층에서 고정한다(1시간 이상 H:MM:SS 포함).
+  // parseDurationInput 과 동일한 파싱 규칙(2분절 MM:SS / 3분절 H:MM:SS)을 재현.
+  const parse = (text: string): number => {
+    const t = (text || '').trim();
+    if (!t) return 0;
+    if (t.includes(':')) {
+      const parts = t.split(':');
+      const n = (x: string) => { const v = parseInt(x, 10); return Number.isFinite(v) ? v : 0; };
+      if (parts.length >= 3) return Math.max(0, n(parts[0]) * 3600 + n(parts[1]) * 60 + n(parts[2]));
+      return Math.max(0, n(parts[0]) * 60 + n(parts[1]));
+    }
+    const mins = parseFloat(t);
+    return Number.isFinite(mins) && mins > 0 ? Math.round(mins * 60) : 0;
+  };
+  test('sub-hour 값 라운드트립', () => {
+    for (const s of [330, 65, 2705, 59, 3599]) expect(parse(fmtTime(s))).toBe(s);
+  });
+  test('1시간 이상(H:MM:SS) 값도 라운드트립 — 옛 M:SS 형식이 깨뜨리던 케이스', () => {
+    for (const s of [3900, 3661, 7325, 3600]) expect(parse(fmtTime(s))).toBe(s);
   });
 });
 

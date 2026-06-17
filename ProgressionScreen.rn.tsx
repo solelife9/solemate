@@ -43,8 +43,10 @@ import {
   RADIUS,
   TYPE,
   TIER_COLORS,
+  TIER_LABEL,
   withAlpha,
 } from './theme';
+import {ymdLocal} from './lib/format';
 import {ExtChallengeCard, SmartChallengeCard} from './ChallengesSection';
 import {
   generateSmartChallenge,
@@ -70,20 +72,8 @@ import type {
   AchievementGroup,
   EarnedTitle,
   ProgressionState,
-  RankTier,
   TitleCategory,
 } from './lib/progression/types';
-
-// 티어 표시명(영문 — PS Trophies/WHOOP 관용. 본문/라벨은 한국어, 티어명만 영문).
-const TIER_LABEL: Record<RankTier, string> = {
-  bronze: 'Bronze',
-  silver: 'Silver',
-  gold: 'Gold',
-  platinum: 'Platinum',
-  diamond: 'Diamond',
-  master: 'Master',
-  legend: 'Legend',
-};
 
 // 타이틀별 '획득 조건' 카피(프레젠테이션 전용). titles.ts 의 criterion 과 1:1로 맞춘 사람용
 // 설명 — 잠긴 타이틀을 탭하면 이 문구를 모달로 보여준다("뭘 해야 얻나"). key 누락 시 폴백.
@@ -279,11 +269,7 @@ export default function ProgressionScreen({
   // 런/신발 원본(BackendRun/BackendShoe)을 challengesExt 가 읽는 최소 모양(ExtRun/ExtShoe)
   // 으로 매핑한다(읽기 전용 — 원본 불변). 진행률은 카드 내부에서 challengeExtProgress 로
   // 매번 파생하고(영속 금지), 스마트 추천은 generateSmartChallenge 로 결정적으로 만든다.
-  const nowISO = useMemo(() => {
-    const d = new Date(resolvedNow);
-    const p = (x: number) => String(x).padStart(2, '0');
-    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
-  }, [resolvedNow]);
+  const nowISO = useMemo(() => ymdLocal(new Date(resolvedNow)), [resolvedNow]);
   const extRuns = useMemo<ExtRun[]>(
     () =>
       (runs ?? []).map(r => ({

@@ -41,6 +41,7 @@ import {
   TIER_COLORS,
   withAlpha,
 } from './theme';
+import {ymLocal} from './lib/format';
 import {keegoRankingProvider, ensureBackendSynced} from './lib/progression/rankingProvider';
 import {titleDef} from './lib/progression/titles';
 import type {
@@ -67,10 +68,9 @@ const CATEGORIES: ReadonlyArray<{key: Category; label: string; icon: string}> = 
 
 const MEDALS: Record<number, string> = {1: '🥇', 2: '🥈', 3: '🥉'};
 
-/** 'YYYY-MM'(로컬 달). 테스트는 now 주입으로 결정성 확보. */
+/** 'YYYY-MM'(로컬 달, lib/format.ymLocal 단일화). 테스트는 now 주입으로 결정성 확보. */
 function yearMonthOf(now: number): string {
-  const d = new Date(now);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  return ymLocal(new Date(now));
 }
 
 /** 카테고리별 점수 표기(거리 km / 포인트 P / 켤레 / 일 / 신발관리 0..100). */

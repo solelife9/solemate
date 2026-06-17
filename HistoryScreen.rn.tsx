@@ -13,7 +13,7 @@ import {
 } from './theme';
 import { TabBar } from './primitives';
 import { Unit, displayNum, displayToKm } from './lib/units';
-import { ymdLocal, fmtPace } from './lib/format';
+import { ymdLocal, fmtPace, fmtTime } from './lib/format';
 import { durationLabel } from './lib/stats';
 import { personalRecords } from './lib/records';
 import { getRunSurface, setRunSurface, type Surface } from './lib/wearModel';
@@ -27,25 +27,30 @@ import { maskDuration, maskDate, validateRunForm, type RunFormErrors } from './l
 import ShareCard from './ShareCard';
 
 // ── manual-run / edit form helpers ──────────────────────────────────────────
-// 소요 시간 입력은 'MM:SS'(또는 분 단위 숫자)를 초로 변환한다. 빈 값/파싱 불가 → 0.
+// 소요 시간 입력은 'MM:SS'·'H:MM:SS'(또는 분 단위 숫자)를 초로 변환한다. 빈 값/파싱 불가 → 0.
+// 'H:MM:SS' 3분절도 받는 이유: 프리필(fmtDurationInput)이 앱 전역 fmtTime 을 재사용하면서
+// 1시간 이상 런을 'H:MM:SS' 로 표시하므로, 사용자가 그대로 저장해도 라운드트립(초→문자열→초)
+// 이 보존돼야 한다. 2분절('MM:SS')은 기존과 동일한 분·초 계산을 그대로 유지한다.
 function parseDurationInput(text: string): number {
   const t = (text || '').trim();
   if (!t) return 0;
   if (t.includes(':')) {
-    const [m, sec] = t.split(':');
-    const mm = parseInt(m, 10);
-    const ss = parseInt(sec, 10);
-    return Math.max(0, (Number.isFinite(mm) ? mm : 0) * 60 + (Number.isFinite(ss) ? ss : 0));
+    const parts = t.split(':');
+    const n = (x: string) => { const v = parseInt(x, 10); return Number.isFinite(v) ? v : 0; };
+    if (parts.length >= 3) {
+      // H:MM:SS — fmtTime 시간 표기를 되돌려 읽는다.
+      return Math.max(0, n(parts[0]) * 3600 + n(parts[1]) * 60 + n(parts[2]));
+    }
+    return Math.max(0, n(parts[0]) * 60 + n(parts[1]));
   }
   const mins = parseFloat(t);
   return Number.isFinite(mins) && mins > 0 ? Math.round(mins * 60) : 0;
 }
-// 초 → 'M:SS' (프리필용). 0 이하면 빈 문자열.
+// 초 → 편집 폼 프리필 문자열. 0 이하면 빈칸(프리필 없음). 포맷은 앱 전역 fmtTime 재사용
+// (MM:SS / 1시간↑ H:MM:SS) — 시간 표기 규칙 단일화. parseDurationInput 이 H:MM:SS 도
+// 되돌려 읽어 라운드트립을 보존한다.
 function fmtDurationInput(sec: number): string {
-  if (!sec || sec <= 0) return '';
-  const m = Math.floor(sec / 60);
-  const s = Math.floor(sec % 60);
-  return `${m}:${String(s).padStart(2, '0')}`;
+  return !sec || sec <= 0 ? '' : fmtTime(sec);
 }
 
 // 노면(surface) 선택 옵션 — 실효 마모 보정용(트레일>로드, 트랙·트레드밀<로드). 기본
