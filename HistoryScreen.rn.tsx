@@ -3,7 +3,7 @@
 // (sample data removed — real summary/chart/runs are injected via props)
 // ============================================================================
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet, LayoutChangeEvent, Share, TextInput, Alert } from 'react-native';
+import { View, Text, ScrollView, Pressable, StyleSheet, LayoutChangeEvent, Share, TextInput, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Polyline, Circle } from 'react-native-svg';
@@ -23,6 +23,7 @@ import { RunSplits, Split } from './RunSplits';
 import { buildSplits } from './lib/splits';
 import { buildRunShareText } from './lib/share';
 import { buildShareCardModel, shareRunCard, SvgCapturable } from './lib/shareCard';
+import { maskDuration, maskDate, validateRunForm, type RunFormErrors } from './lib/inputMask';
 import ShareCard from './ShareCard';
 
 // ── manual-run / edit form helpers ──────────────────────────────────────────
@@ -239,6 +240,10 @@ function RunForm({
   const [dist, setDist] = useState(editing ? String(displayNum(initial!.dist, unit, 2)) : '');
   const [dur, setDur] = useState(editing ? fmtDurationInput(initial!.durationS || 0) : '');
   const [date, setDate] = useState(editing ? (initial!.runDate || '') : ymdLocal(new Date()));
+  // 검증 에러는 제출 시 채워지고 필드 아래 빨강 헬퍼텍스트로 표시된다(Alert 대체).
+  // 해당 필드를 다시 건드리면 그 필드 에러만 즉시 지워 사용자 흐름을 막지 않는다.
+  const [errors, setErrors] = useState<RunFormErrors>({});
+  const clearError = (k: keyof RunFormErrors) => setErrors((e) => (e[k] ? { ...e, [k]: undefined } : e));
   // 노면 태그(실효 마모 보정). 편집 시 영속값을 프리필하고, 칩을 누르면 편집 런은 즉시
   // 영속(setRunSurface)한다. 수동 추가는 런 id가 아직 없으므로 제출 시 onSubmit으로
   // 올려 App이 새 런 id에 영속한다. 기본 road(미선택/미태그도 road로 동작 — 차단 아님).
@@ -256,12 +261,13 @@ function RunForm({
     if (editId) void setRunSurface(editId, s); // 편집 런은 즉시 영속(추가 런은 제출 시)
   };
 
+  // 제출 시 한 번에 검증한다. 에러가 있으면 Alert 대신 필드 아래 인라인 헬퍼텍스트로
+  // 표시하고 멈춘다(거리 0/비정상값·날짜 형식 인라인 차단). 통과 시에만 onSubmit.
   const submit = () => {
-    const dispKm = parseFloat(dist);
-    if (!shoeId) { Alert.alert('알림', '신발을 선택하세요'); return; }
-    if (!Number.isFinite(dispKm) || dispKm <= 0) { Alert.alert('알림', '거리를 0보다 크게 입력하세요'); return; }
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) { Alert.alert('알림', '날짜는 YYYY-MM-DD 형식으로 입력하세요'); return; }
-    onSubmit({ shoeId, km: displayToKm(dispKm, unit), date, durationSec: parseDurationInput(dur), surface });
+    const errs = validateRunForm({ shoeId, dist, date });
+    setErrors(errs);
+    if (errs.shoe || errs.dist || errs.date) return;
+    onSubmit({ shoeId: shoeId!, km: displayToKm(parseFloat(dist), unit), date, durationSec: parseDurationInput(dur), surface });
   };
 
   const insets = useSafeAreaInsets();
@@ -272,7 +278,10 @@ function RunForm({
         <Text style={s.formTitle}>{editing ? '러닝 편집' : '수동 기록 추가'}</Text>
         <View style={s.iconBtn} />
       </View>
-      <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: 40, gap: 18 }}>
+      {/* 키보드가 입력칸·저장 버튼을 가리지 않게 폼 전체를 KeyboardAvoidingView로 감싼다
+          (iOS=padding, Android는 windowSoftInputMode adjustResize에 맡겨 undefined). */}
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={insets.top + 8}>
+      <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: 40, gap: 18 }} keyboardShouldPersistTaps="handled">
         {/* 신발 선택 */}
         <View>
           <Text style={s.formLabel}>신발</Text>
@@ -285,7 +294,7 @@ function RunForm({
                 return (
                   <Pressable
                     key={sh.id || i}
-                    onPress={() => sh.id && setShoeId(sh.id)}
+                    onPress={() => { if (sh.id) { setShoeId(sh.id); clearError('shoe'); } }}
                     style={[s.chip, on && s.chipOn]}
                     accessibilityRole="button"
                     accessibilityState={{ selected: on }}
@@ -298,43 +307,48 @@ function RunForm({
               })}
             </View>
           )}
+          {!!errors.shoe && <Text style={s.errText} accessibilityLabel="신발 오류">{errors.shoe}</Text>}
         </View>
         {/* 거리 */}
         <View>
           <Text style={s.formLabel}>거리 ({unit})</Text>
           <TextInput
             value={dist}
-            onChangeText={setDist}
+            onChangeText={(t) => { setDist(t); clearError('dist'); }}
             keyboardType="decimal-pad"
             placeholder={`예: 5.0`}
             placeholderTextColor={T3}
-            style={s.input}
+            style={[s.input, !!errors.dist && s.inputErr]}
             accessibilityLabel="거리"
           />
+          {!!errors.dist && <Text style={s.errText} accessibilityLabel="거리 오류">{errors.dist}</Text>}
         </View>
-        {/* 시간 */}
+        {/* 시간 — 숫자만 받아 MM:SS로 자동 마스킹(JS-only, 네이티브 피커 없음). */}
         <View>
           <Text style={s.formLabel}>시간 (MM:SS)</Text>
           <TextInput
             value={dur}
-            onChangeText={setDur}
+            onChangeText={(t) => setDur(maskDuration(t))}
+            keyboardType="number-pad"
             placeholder="예: 30:00 (선택)"
             placeholderTextColor={T3}
             style={s.input}
             accessibilityLabel="시간"
           />
         </View>
-        {/* 날짜 */}
+        {/* 날짜 — 숫자만 받아 YYYY-MM-DD로 자동 하이픈 삽입(JS-only, 네이티브 피커 없음). */}
         <View>
           <Text style={s.formLabel}>날짜 (YYYY-MM-DD)</Text>
           <TextInput
             value={date}
-            onChangeText={setDate}
+            onChangeText={(t) => { setDate(maskDate(t)); clearError('date'); }}
+            keyboardType="number-pad"
             placeholder="2026-06-01"
             placeholderTextColor={T3}
-            style={s.input}
+            style={[s.input, !!errors.date && s.inputErr]}
             accessibilityLabel="날짜"
           />
+          {!!errors.date && <Text style={s.errText} accessibilityLabel="날짜 오류">{errors.date}</Text>}
         </View>
         {/* 노면 — 실효 마모 보정용 태그(기본 로드). 토큰화 칩 세그먼트. */}
         <View>
@@ -361,6 +375,7 @@ function RunForm({
           <Text style={s.saveBtnTxt}>{editing ? '저장하기' : '추가하기'}</Text>
         </Pressable>
       </ScrollView>
+      </KeyboardAvoidingView>
     </View>
   );
 }
@@ -795,6 +810,9 @@ const s = StyleSheet.create({
   chipOn: { backgroundColor: ACCENT, borderColor: ACCENT },
   chipTxt: { fontFamily: FONT, fontSize: 13.5, fontWeight: '600' },
   input: { backgroundColor: CARD, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14, color: T1, fontFamily: FONT, fontSize: 16, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
+  // 검증 실패 시 입력칸 테두리를 빨강으로 강조하고, 아래에 인라인 헬퍼텍스트를 띄운다.
+  inputErr: { borderColor: DANGER, borderWidth: 1 },
+  errText: { color: DANGER, fontFamily: FONT, fontSize: 12.5, fontWeight: '500', marginTop: 7, paddingHorizontal: 2 },
   saveBtn: { backgroundColor: ACCENT, borderRadius: RADIUS.md, paddingVertical: 16, alignItems: 'center', marginTop: 6 },
   saveBtnTxt: { color: BG, fontFamily: FONT, fontSize: 16, fontWeight: '700' },
   detailDate: { color: T3, fontFamily: FONT, fontSize: 13 },

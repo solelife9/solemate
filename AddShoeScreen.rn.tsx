@@ -3,16 +3,18 @@
 // auto-filled recommended life with a '권장' badge, real photo attach)
 // ============================================================================
 import React, { useState } from 'react';
-import { View, Text, TextInput, ScrollView, Pressable, Image, StyleSheet, Modal } from 'react-native';
+import { View, Text, TextInput, ScrollView, Pressable, Image, StyleSheet, Modal, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {
-  BG, CARD_DIM, CARD_HI, ACCENT, T1, T2, T3, T4, FONT, DISPLAY, withAlpha, Shoe,
+  BG, CARD_DIM, CARD_HI, ACCENT, DANGER, T1, T2, T3, T4, FONT, DISPLAY, withAlpha, Shoe,
 } from './theme';
 import { Pill } from './primitives';
 import { MockupButton } from './MockupButton.rn';
 // 신발 모델 카탈로그·권장수명은 data/shoeModels(단일 소스)에서 가져온다.
 import { BRANDS, modelsForBrand, getRecommendedLifespanKm } from './data/shoeModels';
+// maxKm 0 같은 비정상값을 제출 시 인라인으로 차단(빨강 헬퍼텍스트).
+import { validateMaxKm } from './lib/inputMask';
 // 사진 첨부는 expo-image-picker 래퍼(lib/photo)를 통해 실제로 동작한다.
 import { pickShoePhoto } from './lib/photo';
 
@@ -28,6 +30,8 @@ export default function AddShoeScreen({
   // 권장 수명(km) — 모델 선택 시 자동 채워지며 사용자가 직접 수정 가능.
   const [max, setMax] = useState(getRecommendedLifespanKm({ brand: BRANDS[0] }));
   const [used, setUsed] = useState('0');
+  // maxKm 0/비정상값 인라인 차단 — 제출 시 검증해 필드 아래 빨강 헬퍼텍스트로 표시한다.
+  const [maxErr, setMaxErr] = useState<string | undefined>(undefined);
   // 사진: 선택 성공 시 uri, 실패 시 에러 플래그(저장은 비차단 — 사진 없이 진행 가능).
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [photoError, setPhotoError] = useState(false);
@@ -54,9 +58,9 @@ export default function AddShoeScreen({
 
   const openPicker = () => { setSearch(''); setPickerOpen(true); };
   const closePicker = () => setPickerOpen(false);
-  const pickModel = (name: string, km: number) => { setModel(name); setMax(km); setPickerOpen(false); setSearch(''); };
+  const pickModel = (name: string, km: number) => { setModel(name); setMax(km); setMaxErr(undefined); setPickerOpen(false); setSearch(''); };
   // 브랜드를 바꾸면 모델을 비우고 권장 수명도 새 브랜드 기준으로 되돌린다.
-  const pickBrand = (b: string) => { setBrand(b); setModel(''); setMax(getRecommendedLifespanKm({ brand: b })); };
+  const pickBrand = (b: string) => { setBrand(b); setModel(''); setMax(getRecommendedLifespanKm({ brand: b })); setMaxErr(undefined); };
 
   const onPickPhoto = async () => {
     if (picking) return;
@@ -75,6 +79,10 @@ export default function AddShoeScreen({
 
   const save = () => {
     if (!valid) return;
+    // maxKm 0 같은 비정상값을 인라인으로 차단한다(Alert 없이 필드 아래 빨강 헬퍼텍스트).
+    const me = validateMaxKm(max);
+    setMaxErr(me);
+    if (me) return;
     onSave?.({
       brand,
       model: model.trim(),
@@ -97,6 +105,9 @@ export default function AddShoeScreen({
         <View style={{ width: 38 }} />
       </View>
 
+      {/* 키보드가 입력칸·등록 버튼을 가리지 않게 폼+CTA를 KeyboardAvoidingView로 감싼다
+          (iOS=padding, Android는 adjustResize에 맡겨 undefined). */}
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={insets.top + 8}>
       <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: 20 }} keyboardShouldPersistTaps="handled">
         {/* photo — tap to pick from library; non-blocking on failure */}
         <Pressable onPress={onPickPhoto} disabled={picking} style={({ pressed }) => [s.photo, pressed && s.pressed]}>
@@ -141,15 +152,17 @@ export default function AddShoeScreen({
           <Text style={[s.label, { paddingBottom: 0 }]}>교체 권장 거리</Text>
           {isRecommended && <Pill tone="accent" label="권장" icon="sparkles-outline" />}
         </View>
-        <View style={s.usedRow}>
+        <View style={[s.usedRow, !!maxErr && s.usedRowErr]}>
           <TextInput
             value={max ? String(max) : ''}
-            onChangeText={(v) => setMax(Number(v.replace(/[^0-9]/g, '')) || 0)}
+            onChangeText={(v) => { setMax(Number(v.replace(/[^0-9]/g, '')) || 0); setMaxErr(undefined); }}
             keyboardType="number-pad"
             style={s.usedInput}
+            accessibilityLabel="교체 권장 거리"
           />
           <Text style={s.usedUnit}>km</Text>
         </View>
+        {!!maxErr && <Text style={s.errText} accessibilityLabel="권장 거리 오류">{maxErr}</Text>}
         <Text style={s.hint}>
           쿠셔닝(성능)이 좋게 유지되는 교체 권장 거리예요. 더 신어도 되지만 충격 흡수는 점점 줄어요.
           모델 선택 시 자동 입력되며 직접 바꿀 수 있어요.
@@ -173,6 +186,7 @@ export default function AddShoeScreen({
       <View style={s.ctaWrap}>
         <MockupButton label="러닝화 등록" onPress={save} disabled={!valid} />
       </View>
+      </KeyboardAvoidingView>
 
       {/* 전용 모델 검색 모달 — 검색창(상단) + 알파벳 목록(중간, flex) + 키보드(하단).
           목록이 키보드에 가리지 않고, DB에 없는 모델은 '직접 추가'로 입력할 수 있다. */}
@@ -273,6 +287,9 @@ const s = StyleSheet.create({
   hint: { color: T3, fontFamily: FONT, fontSize: 11.5, paddingHorizontal: 4, paddingTop: 9 },
 
   usedRow: { backgroundColor: CARD_DIM, borderRadius: 16, borderWidth: 1, borderColor: withAlpha(T1, 0.07), flexDirection: 'row', alignItems: 'center', paddingHorizontal: 18 },
+  // 검증 실패 시 입력칸 테두리를 빨강으로 강조하고 아래 인라인 헬퍼텍스트를 띄운다.
+  usedRowErr: { borderColor: DANGER },
+  errText: { color: DANGER, fontFamily: FONT, fontSize: 12, fontWeight: '500', paddingHorizontal: 4, paddingTop: 8 },
   usedInput: { flex: 1, color: T1, fontFamily: DISPLAY, fontSize: 24, paddingVertical: 12 },
   usedUnit: { color: T3, fontFamily: FONT, fontSize: 15 },
 
