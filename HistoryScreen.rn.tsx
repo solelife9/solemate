@@ -511,7 +511,7 @@ function RunCard({ run, shoes, onPress, unit }: { run: Run; shoes: Shoe[]; onPre
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${run.date} ${shoe ? shoe.brand + ' ' + shoe.model : '삭제된 신발'} 기록`} style={({ pressed }) => [s.runCard, pressed && { opacity: 0.85 }]}>
       <View style={s.runCardTop}>
         <View style={{ flex: 1, minWidth: 0 }}>
-          <Text style={s.runCardBrand}>{shoe ? shoe.brand : '삭제된 신발'}</Text>
+          <Text style={s.runCardBrand} numberOfLines={1}>{shoe ? shoe.brand : '삭제된 신발'}</Text>
           <Text style={s.runCardModel} numberOfLines={1}>{shoe ? shoe.model : ''}</Text>
         </View>
         <Text style={s.runCardDate}>{run.date} {run.day}요일</Text>
@@ -696,7 +696,7 @@ const s = StyleSheet.create({
   sectionLabel: { color: T2, fontFamily: FONT, fontSize: 14, fontWeight: '500', letterSpacing: 0.2, paddingHorizontal: 4 },
   // 요약 카드(큰 거리) — 목업 기록(10)
   sumTitle: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600', letterSpacing: 0.2 },
-  sumBigKm: { color: T1, fontFamily: DISPLAY, fontSize: 42, fontWeight: '800', letterSpacing: -1 },
+  sumBigKm: { color: T1, fontFamily: DISPLAY, fontSize: 42, fontWeight: '800', letterSpacing: -1, fontVariant: ['tabular-nums'] },
   sumBigU: { color: T3, fontFamily: FONT, fontSize: 18, fontWeight: '600', marginLeft: 4 },
   sumSub: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '500', marginTop: 2 },
   sumMetricRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 18, paddingTop: 16, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP },
@@ -760,7 +760,7 @@ const s = StyleSheet.create({
   sumRow: { flexDirection: 'row', marginTop: 6, marginBottom: 2 },
   sumCell: { flex: 1, paddingHorizontal: 2 },
   sumCellDiv: { borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: withAlpha(T1, 0.045), paddingLeft: 12 },
-  sumValue: { color: T1, fontFamily: DISPLAY, fontSize: 22, fontWeight: '500', letterSpacing: -0.4 },
+  sumValue: { color: T1, fontFamily: DISPLAY, fontSize: 22, fontWeight: '500', letterSpacing: -0.4, fontVariant: ['tabular-nums'] },
   sumUnit: { color: T4, fontFamily: FONT, fontSize: 10.5, fontWeight: '500' },
   sumLabel: { color: T3, fontFamily: FONT, fontSize: 11, fontWeight: '500', marginTop: 5 },
   summaryLabel: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '600', letterSpacing: 0.2 },
@@ -776,7 +776,7 @@ const s = StyleSheet.create({
   runBrand: { color: T3, fontFamily: FONT, fontSize: 10, fontWeight: '500', letterSpacing: 1.3 },
   runModel: { color: T1, fontFamily: FONT, fontSize: 13.5, fontWeight: '500', marginTop: 1 },
   runMetrics: { flexDirection: 'row', gap: 18, marginTop: 10 },
-  runV: { color: T1, fontFamily: DISPLAY, fontSize: 20, letterSpacing: 0.2 },
+  runV: { color: T1, fontFamily: DISPLAY, fontSize: 20, letterSpacing: 0.2, fontVariant: ['tabular-nums'] },
   runU: { color: T3, fontFamily: FONT, fontSize: 11.5, marginLeft: 3, marginBottom: 1 },
   runML: { color: T2, fontFamily: FONT, fontSize: 11, fontWeight: '500', marginTop: 3 },
 
@@ -806,7 +806,7 @@ const s = StyleSheet.create({
   // 박스 없이 한 카드 안에 균등 1/3 폭으로 배치(이전 칸별 카드 → 한 카드).
   statGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingVertical: 16, paddingHorizontal: 20, rowGap: 18, marginTop: 16 },
   statCell: { width: '33.33%', paddingVertical: 6 },
-  statValue: { color: T1, fontFamily: DISPLAY, fontSize: 21, fontWeight: '700', letterSpacing: 0.2 },
+  statValue: { color: T1, fontFamily: DISPLAY, fontSize: 21, fontWeight: '700', letterSpacing: 0.2, fontVariant: ['tabular-nums'] },
   statUnit: { color: T3, fontFamily: FONT, fontSize: 11.5, fontWeight: '500' },
   statLabel: { color: T3, fontFamily: FONT, fontSize: 11.5, marginTop: 4 },
 });

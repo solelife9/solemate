@@ -908,7 +908,7 @@ const s = StyleSheet.create({
   statRow: { flexDirection: 'row' },
   statCell: { flex: 1, alignItems: 'center' },
   statDivider: { borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: SEP },
-  statValue: { color: T1, fontFamily: DISPLAY, fontSize: 26, letterSpacing: 0.3 },
+  statValue: { color: T1, fontFamily: DISPLAY, fontSize: 26, letterSpacing: 0.3, fontVariant: ['tabular-nums'] },
   statUnit: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '600' },
   statLabel: { color: T3, fontFamily: FONT, fontSize: 11.5, fontWeight: '600', marginTop: 4 },
 

@@ -257,7 +257,7 @@ function ShoeDetail({
                 {retired && <Pill tone="dim" label="보관됨" />}
               </View>
             </View>
-            <Text style={s.dModel}>{shoe.model}</Text>
+            <Text style={s.dModel} numberOfLines={2}>{shoe.model}</Text>
             {/* 용도 문장(핸드오프처럼 자연어) + 추천 용도 칩(디자인 09 정합). */}
             {!!purposeSentence && <Text style={s.dPurpose}>{purposeSentence}</Text>}
             {!!detailClass && detailClass.recommended.length > 0 && (
