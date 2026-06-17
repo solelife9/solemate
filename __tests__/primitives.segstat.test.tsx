@@ -218,3 +218,85 @@ describe('Stat / StatGrid — stat cell composition', () => {
     expect(root.findAll((n: any) => n.props?.testID === 'stat-top').length).toBeGreaterThanOrEqual(1);
   });
 });
+
+// ── Per-site unit/label typography fidelity (시각 동등 회귀 가드) ───────────────
+// StatGrid 초기 통합은 value 타입만 파라미터화하고 unit/label 을 Profile 값(12/600,
+// 11.5/600)으로 하드코딩해 다른 두 사이트(러닝 상세·진척)에서 픽셀이 어긋났다.
+// 아래 테스트는 각 사이트가 호출부에 넘기는 unit/label fontSize·fontWeight·marginTop·
+// 셀 paddingVertical 이 마이그레이션 전 원본 StyleSheet 값과 정확히 일치함을 단언한다.
+describe('Stat / StatGrid — per-site unit & label typography', () => {
+  // unit Text 는 value Text 안에 중첩되며 children 이 단일 문자열(단위 텍스트).
+  // label Text 는 셀 최상위에서 children 이 라벨 문자열.
+  const textByString = (root: ReactTestRenderer.ReactTestInstance, s: string) =>
+    StyleSheet.flatten(
+      root.findAllByType(Text).find(t => t.props.children === s)!.props.style,
+    ) as any;
+
+  const cellHostStyle = (root: ReactTestRenderer.ReactTestInstance, id: string) => {
+    const hosts = root.findAll(
+      (n: any) => n.props?.testID === id && typeof n.type === 'string',
+    );
+    return StyleSheet.flatten(hosts[hosts.length - 1].props.style) as any;
+  };
+
+  test('Profile (defaults): unit 12/600, label 11.5/600 mt4, no extra cell padding', () => {
+    const {root} = render(
+      <Stat value="42" unit="km" label="총 거리" valueSize={26} testID="p" />,
+    );
+    const unit = textByString(root, 'km');
+    expect(unit.fontSize).toBe(12);
+    expect(unit.fontWeight).toBe('600');
+    const label = textByString(root, '총 거리');
+    expect(label.fontSize).toBe(11.5);
+    expect(label.fontWeight).toBe('600');
+    expect(label.marginTop).toBe(4);
+    expect(cellHostStyle(root, 'p').paddingVertical).toBeFalsy();
+  });
+
+  test('History RunDetail 2×3: unit 11.5/500, label 11.5/normal mt4, cell paddingVertical 6', () => {
+    const {root} = render(
+      <StatGrid
+        columns={3}
+        align="left"
+        unitSize={11.5}
+        unitWeight="500"
+        labelSize={11.5}
+        labelWeight="normal"
+        labelMarginTop={4}
+        verticalPadding={6}
+        items={[{value: '8', unit: ' km', label: '거리', testID: 'h0'}]}
+      />,
+    );
+    const unit = textByString(root, ' km');
+    expect(unit.fontSize).toBe(11.5);
+    expect(unit.fontWeight).toBe('500');
+    const label = textByString(root, '거리');
+    expect(label.fontSize).toBe(11.5);
+    expect(label.fontWeight).toBe('normal');
+    expect(label.marginTop).toBe(4);
+    expect(cellHostStyle(root, 'h0').paddingVertical).toBe(6);
+  });
+
+  test('Progression stat-row: unit 11/700, label 11/600 mt5', () => {
+    const {root} = render(
+      <StatGrid
+        valueSize={19}
+        valueWeight="800"
+        valueLS={-0.4}
+        unitSize={11}
+        unitWeight="700"
+        labelSize={11}
+        labelWeight="600"
+        labelMarginTop={5}
+        items={[{value: '120', unit: 'km', label: '총 거리', testID: 'pr0'}]}
+      />,
+    );
+    const unit = textByString(root, 'km');
+    expect(unit.fontSize).toBe(11);
+    expect(unit.fontWeight).toBe('700');
+    const label = textByString(root, '총 거리');
+    expect(label.fontSize).toBe(11);
+    expect(label.fontWeight).toBe('600');
+    expect(label.marginTop).toBe(5);
+  });
+});

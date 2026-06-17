@@ -477,6 +477,12 @@ export function Stat({
   valueSize = 21,
   valueWeight = '700',
   valueLS = 0.2,
+  unitSize = 12,
+  unitWeight = '600',
+  labelSize = 11.5,
+  labelWeight = '600',
+  labelMarginTop = 4,
+  verticalPadding = 0,
   divided = false,
   style,
   testID,
@@ -489,6 +495,15 @@ export function Stat({
   valueSize?: number;
   valueWeight?: TextStyle['fontWeight'];
   valueLS?: number;
+  // unit/label 타이포는 사이트마다 원본이 다르다(Profile 12/600·11.5/600 vs 러닝상세
+  // 11.5/500·11.5/normal vs 진척 11/700·11/600). 색/패밀리는 토큰 고정, 크기·굵기·라벨
+  // 마진·셀 세로패딩만 prop 으로 노출해 각 사이트가 픽셀 단위 원본을 복원한다.
+  unitSize?: number;
+  unitWeight?: TextStyle['fontWeight'];
+  labelSize?: number;
+  labelWeight?: TextStyle['fontWeight'];
+  labelMarginTop?: number;
+  verticalPadding?: number;
   divided?: boolean;
   style?: StyleProp<ViewStyle>;
   testID?: string;
@@ -499,6 +514,7 @@ export function Stat({
       style={[
         statS.cell,
         align === 'center' ? statS.center : statS.left,
+        verticalPadding ? {paddingVertical: verticalPadding} : null,
         divided && statS.divided,
         style,
       ]}>
@@ -509,9 +525,21 @@ export function Stat({
           {fontSize: valueSize, fontWeight: valueWeight, letterSpacing: valueLS},
         ]}>
         {value}
-        {unit ? <Text style={statS.unit}>{unit}</Text> : null}
+        {unit ? (
+          <Text style={[statS.unit, {fontSize: unitSize, fontWeight: unitWeight}]}>
+            {unit}
+          </Text>
+        ) : null}
       </Text>
-      {label != null ? <Text style={statS.label}>{label}</Text> : null}
+      {label != null ? (
+        <Text
+          style={[
+            statS.label,
+            {fontSize: labelSize, fontWeight: labelWeight, marginTop: labelMarginTop},
+          ]}>
+          {label}
+        </Text>
+      ) : null}
     </View>
   );
 }
@@ -524,6 +552,12 @@ export function StatGrid({
   valueSize = 21,
   valueWeight = '700',
   valueLS = 0.2,
+  unitSize = 12,
+  unitWeight = '600',
+  labelSize = 11.5,
+  labelWeight = '600',
+  labelMarginTop = 4,
+  verticalPadding = 0,
   style,
   testID,
 }: {
@@ -535,6 +569,12 @@ export function StatGrid({
   valueSize?: number;
   valueWeight?: TextStyle['fontWeight'];
   valueLS?: number;
+  unitSize?: number;
+  unitWeight?: TextStyle['fontWeight'];
+  labelSize?: number;
+  labelWeight?: TextStyle['fontWeight'];
+  labelMarginTop?: number;
+  verticalPadding?: number;
   style?: StyleProp<ViewStyle>;
   testID?: string;
 }) {
@@ -555,6 +595,12 @@ export function StatGrid({
           valueSize={valueSize}
           valueWeight={valueWeight}
           valueLS={valueLS}
+          unitSize={unitSize}
+          unitWeight={unitWeight}
+          labelSize={labelSize}
+          labelWeight={labelWeight}
+          labelMarginTop={labelMarginTop}
+          verticalPadding={verticalPadding}
           divided={divider && i > 0}
           style={wrap ? {width: `${100 / columns!}%`} : undefined}
         />
@@ -576,8 +622,9 @@ const statS = StyleSheet.create({
     fontVariant: ['tabular-nums'],
     includeFontPadding: false,
   },
-  unit: {color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '600'},
-  label: {color: T3, fontFamily: FONT, fontSize: 11.5, fontWeight: '600', marginTop: 4},
+  // 크기·굵기·마진은 prop 으로 받는다(사이트별 원본 복원). 여기선 색·패밀리만 토큰 고정.
+  unit: {color: T3, fontFamily: FONT},
+  label: {color: T3, fontFamily: FONT},
 });
 
 // ── Pill / Badge (상태색 톤 + 반투명 배경) ────────────────────────────────────

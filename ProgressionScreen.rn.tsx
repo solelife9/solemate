@@ -556,6 +556,12 @@ export default function ProgressionScreen({
           valueSize={19}
           valueWeight="800"
           valueLS={-0.4}
+          // 원본 statUnit/Label 타이포 복원: unit 11/700, label 11/600 mt5.
+          unitSize={11}
+          unitWeight="700"
+          labelSize={11}
+          labelWeight="600"
+          labelMarginTop={5}
           items={[
             {value: Math.round(ctx.cumulativeKm).toLocaleString(), unit: 'km', label: '총 거리'},
             {value: String(ctx.registeredShoeCount), unit: '켤레', label: '등록 신발'},

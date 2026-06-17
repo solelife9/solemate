@@ -508,6 +508,13 @@ function RunDetail({ run, shoe, onBack, unit, onEdit, onDelete }: { run: Run; sh
           style={[s.card, s.statGrid]}
           columns={3}
           align="left"
+          // 원본 statCell/Unit/Label 타이포 복원: unit 11.5/500, label 11.5/normal, 셀 세로패딩 6.
+          unitSize={11.5}
+          unitWeight="500"
+          labelSize={11.5}
+          labelWeight="normal"
+          labelMarginTop={4}
+          verticalPadding={6}
           items={stats.map((x) => ({ value: x.v, unit: x.u ? ` ${x.u}` : undefined, label: x.l }))}
         />
         {/* 달린 위치(경로) 지도 — route_<id> 가 있으면 SVG 코스맵으로 표시(없으면 자동 숨김). */}
