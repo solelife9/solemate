@@ -374,14 +374,12 @@ export default function ChallengesSection({
             })}
           </View>
 
-          <Pressable
+          <Button
+            label="챌린지 만들기"
             onPress={create}
-            accessibilityRole="button"
-            accessibilityLabel="챌린지 만들기"
-            style={({pressed}) => [s.createBtn, pressed && {opacity: 0.85}]}>
-            <Ionicons name="flag" size={16} color={T1} />
-            <Text style={s.createBtnTxt}>챌린지 만들기</Text>
-          </Pressable>
+            icon="flag"
+            style={s.createBtn}
+          />
         </View>
       )}
 
@@ -492,8 +490,8 @@ const s = StyleSheet.create({
   stepVal: {flex: 1, alignItems: 'center'},
   stepNum: {color: T1, fontFamily: DISPLAY, fontSize: 26, letterSpacing: 0.3},
   stepUnit: {color: T3, fontFamily: FONT, fontSize: 11.5, fontWeight: '600', marginTop: 2},
-  createBtn: {flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 46, borderRadius: 14, backgroundColor: ACCENT},
-  createBtnTxt: {color: T1, fontFamily: FONT, fontSize: 14.5, fontWeight: '700'},
+  // 단일 Button 프리미티브로 라우팅(그라데이션/글로우/RADIUS.btn). 여기선 높이만 얹는다.
+  createBtn: {height: 46},
 
   // ── 확장 챌린지(Slice C) ──
   extWrap: {marginTop: 18, gap: 10},

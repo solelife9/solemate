@@ -37,6 +37,7 @@ import {
   RADIUS,
   withAlpha,
 } from './theme';
+import {Button} from './primitives';
 import {Unit} from './lib/units';
 import {
   buildRetirementSummary,
@@ -218,14 +219,12 @@ function RetirementFlow({
               style={({pressed}) => [s.btn, s.btnGhost, pressed && s.pressed]}>
               <Text style={[s.btnTxt, {color: T2}]}>취소</Text>
             </Pressable>
-            <Pressable
+            <Button
+              label="여정 돌아보기"
               onPress={() => setStep(1)}
-              accessibilityRole="button"
-              accessibilityLabel="여정 돌아보기"
               testID="retire-flow-next-0"
-              style={({pressed}) => [s.btn, s.btnPrimary, pressed && s.pressed]}>
-              <Text style={[s.btnTxt, {color: BG}]}>여정 돌아보기</Text>
-            </Pressable>
+              style={s.btnPrimary}
+            />
           </View>
         )}
         {step === 1 && (
@@ -237,14 +236,12 @@ function RetirementFlow({
               style={({pressed}) => [s.btn, s.btnGhost, pressed && s.pressed]}>
               <Text style={[s.btnTxt, {color: T2}]}>이전</Text>
             </Pressable>
-            <Pressable
+            <Button
+              label="하이라이트 보기"
               onPress={() => setStep(2)}
-              accessibilityRole="button"
-              accessibilityLabel="하이라이트 보기"
               testID="retire-flow-next-1"
-              style={({pressed}) => [s.btn, s.btnPrimary, pressed && s.pressed]}>
-              <Text style={[s.btnTxt, {color: BG}]}>하이라이트 보기</Text>
-            </Pressable>
+              style={s.btnPrimary}
+            />
           </View>
         )}
         {step === 2 && (
@@ -256,30 +253,21 @@ function RetirementFlow({
               style={({pressed}) => [s.btn, s.btnGhost, pressed && s.pressed]}>
               <Text style={[s.btnTxt, {color: T2}]}>이전</Text>
             </Pressable>
-            <Pressable
+            <Button
+              label="은퇴하고 카드 만들기"
               onPress={commitRetire}
-              accessibilityRole="button"
-              accessibilityLabel="은퇴 확정"
               testID="retire-flow-commit"
-              style={({pressed}) => [s.btn, s.btnPrimary, pressed && s.pressed]}>
-              <Text style={[s.btnTxt, {color: BG}]}>은퇴하고 카드 만들기</Text>
-            </Pressable>
+              style={s.btnPrimary}
+            />
           </View>
         )}
         {step === 3 && (
-          <Pressable
+          <Button
+            label="완료"
             onPress={onClose}
-            accessibilityRole="button"
-            accessibilityLabel="완료"
             testID="retire-flow-done"
-            style={({pressed}) => [
-              s.btn,
-              s.btnPrimary,
-              s.btnFull,
-              pressed && s.pressed,
-            ]}>
-            <Text style={[s.btnTxt, {color: BG}]}>완료</Text>
-          </Pressable>
+            style={[s.btnPrimary, s.btnFull]}
+          />
         )}
       </View>
     </View>
@@ -660,10 +648,11 @@ const s = StyleSheet.create({
     borderTopColor: SEP,
   },
   footRow: {flexDirection: 'row', gap: SPACE.md},
+  // 보조(취소/이전) ghost 버튼 박스 — 모서리는 primary(단일 Button=RADIUS.btn)와 통일.
   btn: {
     flex: 1,
     height: 54,
-    borderRadius: RADIUS.md,
+    borderRadius: RADIUS.btn,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -673,7 +662,9 @@ const s = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: withAlpha(T1, 0.16),
   },
-  btnPrimary: {backgroundColor: ACCENT},
+  // primary(다음/확정/완료)는 단일 Button 프리미티브로 라우팅 — 그라데이션/글로우/RADIUS.btn.
+  // 여기선 박스 크기만(ghost 형제와 동일 flex/height 로 페어 정렬).
+  btnPrimary: {flex: 1, height: 54},
   btnTxt: {fontFamily: FONT, fontSize: 16, fontWeight: '700'},
 });
 

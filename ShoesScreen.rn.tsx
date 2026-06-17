@@ -9,7 +9,7 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {
   BG, CARD, CARD_DIM, CARD_HI, HERO_BG, ACCENT, DANGER, WARN, GOOD, T1, T2, T3, T4, SEP, FONT, DISPLAY, withAlpha, RADIUS, Shoe, Run, SHOES,
 } from './theme';
-import { TabBar, TierBadge, Pill, InjuryBanner, SectionTitle } from './primitives';
+import { TabBar, TierBadge, Pill, InjuryBanner, SectionTitle, Button } from './primitives';
 import { FuelGauge } from './FuelGauge';
 import FirstShoeScreen from './FirstShoeScreen.rn';
 import { Unit, displayNum, displayToKm } from './lib/units';
@@ -238,7 +238,7 @@ function ShoeDetail({
             <TextInput value={name} onChangeText={setName} style={s.editInput} placeholderTextColor={T3} autoFocus />
             <View style={{ flexDirection: 'row', gap: 10 }}>
               <Pressable onPress={() => setEditing(false)} style={[s.editBtn, { backgroundColor: CARD_HI }]}><Text style={[s.editBtnTxt, { color: T2 }]}>취소</Text></Pressable>
-              <Pressable onPress={saveName} style={[s.editBtn, { backgroundColor: ACCENT }]}><Text style={[s.editBtnTxt, { color: T1 }]}>저장</Text></Pressable>
+              <Button label="저장" onPress={saveName} style={s.editBtn} />
             </View>
           </View>
         ) : (
@@ -369,15 +369,13 @@ function ShoeDetail({
                 style={({ pressed }) => [s.keepsakeBtn, s.keepUsingBtn, pressed && s.pressed]}>
                 <Text style={[s.keepsakeBtnTxt, { color: T1 }]}>계속 사용</Text>
               </Pressable>
-              <Pressable
+              <Button
+                label="은퇴"
                 onPress={() => setFlowOpen(true)}
-                accessibilityRole="button"
-                accessibilityLabel="은퇴"
+                icon="ribbon-outline"
                 testID="retire-open-flow"
-                style={({ pressed }) => [s.keepsakeBtn, s.retireFlowBtn, pressed && s.pressed]}>
-                <Ionicons name="ribbon-outline" size={16} color={BG} />
-                <Text style={[s.keepsakeBtnTxt, { color: BG }]}>은퇴</Text>
-              </Pressable>
+                style={s.retireFlowBtn}
+              />
             </View>
           </View>
         )}
@@ -731,9 +729,11 @@ const s = StyleSheet.create({
   keepsakeTitle: { color: T1, fontFamily: DISPLAY, fontSize: 18, fontWeight: '800', letterSpacing: -0.2 },
   keepsakeSub: { color: T3, fontFamily: FONT, fontSize: 13, lineHeight: 19 },
   keepsakeBtns: { flexDirection: 'row', gap: 10, marginTop: 8 },
-  keepsakeBtn: { flex: 1, height: 50, borderRadius: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7 },
+  // 계속 사용(CARD_HI flat) — 모서리는 은퇴(단일 Button=RADIUS.btn)와 맞춰 통일.
+  keepsakeBtn: { flex: 1, height: 50, borderRadius: RADIUS.btn, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7 },
   keepUsingBtn: { backgroundColor: CARD_HI },
-  retireFlowBtn: { backgroundColor: ACCENT },
+  // 은퇴는 단일 Button 프리미티브로 라우팅(그라데이션/글로우/RADIUS.btn). 여기선 박스 크기만.
+  retireFlowBtn: { flex: 1, height: 50 },
   keepsakeBtnTxt: { fontFamily: FONT, fontSize: 15, fontWeight: '700' },
   // 실효 마모 + 교체 예측 카드(차별점) — 본문 카드 톤에 accent 절제(라벨 아이콘/예측 라인만).
   wearCard: { padding: 18, gap: 2 },
@@ -767,7 +767,7 @@ const s = StyleSheet.create({
   dHeroRemainU: { color: T2, fontFamily: FONT, fontSize: 16, marginLeft: 5, marginBottom: 6 },
 
   editInput: { backgroundColor: CARD_HI, borderRadius: 14, color: T1, fontFamily: FONT, fontSize: 16, fontWeight: '500', paddingHorizontal: 16, paddingVertical: 13 },
-  editBtn: { flex: 1, height: 46, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  editBtn: { flex: 1, height: 46, borderRadius: RADIUS.btn, alignItems: 'center', justifyContent: 'center' },
   editBtnTxt: { fontFamily: FONT, fontSize: 15, fontWeight: '600' },
 
   statRow: { flexDirection: 'row', paddingVertical: 20, paddingHorizontal: 14 },

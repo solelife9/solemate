@@ -12,9 +12,9 @@ import Tts from 'react-native-tts';
 
 import {
   BG, CARD, CARD_HI as SURFACE, ACCENT, WARN, DANGER, T1, T2, T3,
-  FONT as FP, DISPLAY as FH, SEP, Shoe, Run,
+  FONT as FP, DISPLAY as FH, SEP, RADIUS, Shoe, Run,
 } from './theme';
-import {Ring} from './primitives';
+import {Ring, Button} from './primitives';
 import ErrorBoundary from './ErrorBoundary';
 import ToastHost from './ToastHost';
 import {installCrashHandler, setCrashUser} from './lib/crashlytics';
@@ -1654,10 +1654,7 @@ function BootError({onRetry}:{onRetry:()=>void}){
         <Ionicons name="cloud-offline-outline" size={40} color={WARN}/>
         <Text style={boot.cardTitle}>연결이 잠시 끊겼어요</Text>
         <Text style={boot.cardBody}>{KEEP_GOING_RETRY}</Text>
-        <TouchableOpacity testID="boot-retry" onPress={onRetry} style={boot.retryBtn} activeOpacity={0.85} accessibilityRole="button" accessibilityLabel="다시 시도">
-          <Ionicons name="refresh" size={18} color={'#000'}/>
-          <Text style={boot.retryText}>다시 시도</Text>
-        </TouchableOpacity>
+        <Button testID="boot-retry" label="다시 시도" onPress={onRetry} icon="refresh" style={boot.retryBtn}/>
       </View>
     </View>
   );
@@ -1670,9 +1667,9 @@ const boot=StyleSheet.create({
   cardTitle:{color:T1,fontFamily:FP,fontSize:18,fontWeight:'700',marginTop:4},
   cardBody:{color:T3,fontFamily:FP,fontSize:14,lineHeight:20,textAlign:'center'},
   loadingCaption:{color:T3,fontFamily:FP,fontSize:13,lineHeight:19},
-  retryBtn:{flexDirection:'row',alignItems:'center',justifyContent:'center',gap:8,
-    backgroundColor:ACCENT,borderRadius:14,paddingVertical:14,paddingHorizontal:24,marginTop:8,alignSelf:'stretch'},
-  retryText:{color:'#000',fontFamily:FP,fontSize:16,fontWeight:'700'},
+  // 단일 Button 프리미티브로 라우팅 — 모서리/그라데이션/글로우는 Button 이 책임진다.
+  // 여기선 레이아웃(가로 stretch + 위 여백)만 얹는다.
+  retryBtn:{marginTop:8,alignSelf:'stretch'},
 });
 
 // ─── Live run screen (GPS / sensors / TTS engine + handoff Ring UI) ─────────
@@ -1997,7 +1994,7 @@ function RunActiveScreen({shoe,insets,goalKm,weightKg,onSave,onDiscard,resume}:{
       <TextInput style={run.memo} value={memo} onChangeText={setMemo} placeholder="메모 (선택)" placeholderTextColor={T3} autoCorrect={false} autoCapitalize="none"/>
       <View style={run.actionRow}>
         <TouchableOpacity style={run.discardBtn} onPress={onDiscard} accessibilityRole="button" accessibilityLabel="버리기"><Text style={run.discardTxt}>버리기</Text></TouchableOpacity>
-        <TouchableOpacity style={run.saveBtn} onPress={handleSave} disabled={saving} accessibilityRole="button" accessibilityLabel="저장하기" accessibilityState={{disabled:saving}}><Text style={run.saveTxt}>{saving?'저장 중...':'저장하기'}</Text></TouchableOpacity>
+        <Button style={run.saveBtn} label={saving?'저장 중...':'저장하기'} onPress={handleSave} disabled={saving}/>
       </View>
     </View>
   );
@@ -2075,8 +2072,9 @@ const run=StyleSheet.create({
   ctrlHint:{color:T3,fontFamily:FP,fontSize:11,letterSpacing:0.5,textAlign:'center'},
   memo:{backgroundColor:SURFACE,borderRadius:14,padding:14,color:T1,fontSize:15,fontFamily:FP,marginBottom:16},
   actionRow:{flexDirection:'row',gap:12},
-  discardBtn:{flex:1,backgroundColor:SURFACE,borderRadius:16,padding:16,alignItems:'center'},
+  // 버리기는 SURFACE flat 보조 버튼 — 모서리는 saveBtn(단일 Button=RADIUS.btn)과 맞춰 통일.
+  discardBtn:{flex:1,backgroundColor:SURFACE,borderRadius:RADIUS.btn,padding:16,alignItems:'center'},
   discardTxt:{color:T1,fontSize:16,fontFamily:FP,fontWeight:'600'},
-  saveBtn:{flex:2,backgroundColor:ACCENT,borderRadius:16,padding:16,alignItems:'center'},
-  saveTxt:{color:'#fff',fontSize:16,fontFamily:FP,fontWeight:'600'},
+  // 저장하기는 단일 Button 프리미티브로 라우팅(그라데이션/글로우/RADIUS.btn). 여기선 flex 비율만.
+  saveBtn:{flex:2},
 });

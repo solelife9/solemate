@@ -12,7 +12,7 @@ import { View, Text, ScrollView, Pressable, StyleSheet, TextInput, Image, Share 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { BG, CARD, CARD_DIM, CARD_HI, ACCENT, GOOD, DANGER, WARN, T1, T2, T3, SEP, FONT, DISPLAY, withAlpha, TIER_COLORS, TIER_LABEL, KAKAO_YELLOW, KAKAO_LABEL, NAVER_GREEN, NAVER_LABEL, RADIUS } from './theme';
-import { TabBar, Ring, Pill, SectionTitle } from './primitives';
+import { TabBar, Ring, Pill, SectionTitle, Button } from './primitives';
 import { Unit, unitKorean, displayNum, displayToKm } from './lib/units';
 import { weeklyRecap, monthlyRecap, type RecapRun, type RecapShoe } from './lib/recap';
 import { buildRecapShareCardModel, shareRecapCard, formatRecapPRs, type RecapKind, type SvgCapturable } from './lib/shareCard';
@@ -821,10 +821,14 @@ export default function ProfileScreen({
                   <Text style={[s.brandMark, { color: NAVER_LABEL }]}>N</Text>
                   <Text style={[s.cloudBtnTxt, { color: NAVER_LABEL }]}>{signingIn ? '로그인 중…' : '네이버로 계속'}</Text>
                 </Pressable>
-                <Pressable testID="cloud-signin-google" onPress={() => handleSignIn('google')} disabled={signingIn} accessibilityRole="button" accessibilityLabel="Google로 로그인" accessibilityState={{ disabled: signingIn }} style={({ pressed }) => [s.cloudBtn, s.cloudBtnGoogle, pressed && { opacity: 0.85 }]}>
-                  <Ionicons name="logo-google" size={17} color={T1} />
-                  <Text style={s.cloudBtnTxt}>{signingIn ? '로그인 중…' : 'Google로 계속'}</Text>
-                </Pressable>
+                <Button
+                  testID="cloud-signin-google"
+                  label={signingIn ? '로그인 중…' : 'Google로 계속'}
+                  onPress={() => handleSignIn('google')}
+                  disabled={signingIn}
+                  iconNode={<Ionicons name="logo-google" size={17} color={signingIn ? T3 : T1} />}
+                  style={s.cloudBtnGoogle}
+                />
                 <Pressable testID="cloud-signin-apple" onPress={() => handleSignIn('apple')} disabled={signingIn} accessibilityRole="button" accessibilityLabel="Apple로 로그인" accessibilityState={{ disabled: signingIn }} style={({ pressed }) => [s.cloudBtn, s.cloudBtnApple, pressed && { opacity: 0.85 }]}>
                   <Ionicons name="logo-apple" size={18} color={T1} />
                   <Text style={s.cloudBtnTxt}>{signingIn ? '로그인 중…' : 'Apple로 계속'}</Text>
@@ -980,8 +984,11 @@ const s = StyleSheet.create({
   cloudSub: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '600', marginTop: 2 },
   cloudPad: { padding: 16, gap: 12 },
   cloudIntro: { color: T3, fontFamily: FONT, fontSize: 12.5, lineHeight: 18 },
-  cloudBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 48, borderRadius: 14 },
-  cloudBtnGoogle: { backgroundColor: ACCENT },
+  // 브랜드 로그인 버튼(카카오/네이버/애플) 공용 박스 — 모서리는 Google(단일 Button=
+  // RADIUS.btn)과 맞춰 통일. Google 은 단일 Button 프리미티브로 라우팅(아래 cloudBtnGoogle).
+  cloudBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 48, borderRadius: RADIUS.btn },
+  // Google = 앱 accent CTA → 단일 Button(그라데이션/글로우/RADIUS.btn). 여기선 높이만.
+  cloudBtnGoogle: { height: 48 },
   cloudBtnApple: { backgroundColor: CARD_HI },
   cloudBtnKakao: { backgroundColor: KAKAO_YELLOW },
   cloudBtnNaver: { backgroundColor: NAVER_GREEN },

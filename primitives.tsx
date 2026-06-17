@@ -91,8 +91,10 @@ export const TONE_BG: Record<Tone, string> = {
 
 // ── Gradient fill (orange CTA surface, accent → accent2) ──────────────────────
 // CTA 버튼 배경의 오렌지 그라데이션을 absolute SVG 레이어로 깐다(expo-linear-gradient
-// 의존 없이 react-native-svg 만으로). 부모 Pressable 의 overflow:hidden 이 모서리를
-// radius 로 잘라준다. useId 로 그라데이션 id 충돌을 막는다(같은 화면 다중 CTA 안전).
+// 의존 없이 react-native-svg 만으로). 부모 Pressable 엔 overflow:hidden 이 없지만(글로우
+// 보존), 그라데이션 Rect 가 rx 로 자체 라운딩하므로 모서리 클립이 필요 없다(이건 SVG
+// gradient 에만 참 — plain View 인 gloss 는 자기 모서리를 직접 둥글린다, btn.gloss 참고).
+// useId 로 그라데이션 id 충돌을 막는다(같은 화면 다중 CTA 안전).
 function GradientFill({
   radius,
   colors = [GRAD_TOP, GRAD_BOT],
@@ -186,15 +188,19 @@ const ring = StyleSheet.create({
 // ── Button — 단일 CTA 프리미티브 (앱 전역 주황 버튼의 유일한 출처) ──────────────
 // 목업 주황 버튼을 1:1 재현한다:
 //   • 세로 그라데이션 GRAD_TOP→GRAD_BOT (theme 토큰, GradientFill 단일 정의)
-//   • 상단 1px 안쪽 하이라이트(유리 광택)
+//   • 상단 1px 안쪽 하이라이트(유리 광택) — gloss 가 위쪽 모서리를 RADIUS.btn 으로
+//     스스로 둥글린다(base 에 overflow:hidden 이 없으므로 클립을 못 받는다)
 //   • 주황 글로우 그림자(ACCENT) — overflow 를 걸지 않아 iOS 에서도 잘리지 않는다
-//     (그라데이션 Rect 가 rx 로 모서리를 둥글리므로 클립이 필요 없다)
+//     (그라데이션 Rect 는 rx 로, gloss 는 borderTopRadius 로 각자 모서리를 둥글린다)
 //   • 누르면 살짝 작아짐(scale .97)
-// 모서리는 RADIUS.btn 단일 토큰(과거 14/16/18/999 혼재 제거). disabled 거나
+// 모서리는 RADIUS.btn 단일 토큰(과거 14/16/18 사각 CTA 혼재 제거). disabled 거나
 // ghost 면 그라데이션/글로우를 끄고 CARD_HI 표면으로 떨어진다(disabled 라벨 dim).
 // icon: Ionicons 이름(문자열). iconNode: 커스텀 아이콘 노드(SVG·MaterialCommunityIcons
-// 등) — 둘 중 하나만. 과거 MockupButton/Onboarding PrimaryButton/인라인 SVG CTA·
-// backgroundColor:ACCENT 사각형 버튼들이 전부 이 컴포넌트로 통합된다.
+// 등) — 둘 중 하나만. 과거 MockupButton/Onboarding PrimaryButton/인라인 SVG CTA 와
+// 화면별 backgroundColor:ACCENT '사각형' 버튼들이 이 컴포넌트로 통합된다(App 재시도·
+// 저장, 챌린지 만들기, 신발 편집·은퇴, Profile Google 로그인, RetirementFlow 등).
+// 단, 모양이 다른 원형 런 컨트롤(App run.ctrlPrimary, RADIUS.pill)은 합치지 않는다 —
+// 사각 CTA 가 아니므로 radius 토큰만 공유하고 이 통합 대상에서 제외한다.
 export function Button({
   label,
   onPress,
@@ -259,7 +265,19 @@ const btn = StyleSheet.create({
   },
   // ghost / disabled 표면(올린 카드 톤). 그라데이션·글로우 없음.
   flat: {backgroundColor: CARD_HI},
-  gloss: {position: 'absolute', top: 0, left: 0, right: 0, height: 1, backgroundColor: 'rgba(255,255,255,0.22)'},
+  // 상단 1px 유리 광택. base 에 overflow:hidden 이 없으므로(글로우 보존) 이 plain
+  // View 는 스스로 위쪽 두 모서리를 RADIUS.btn 으로 둥글려야 한다 — 안 그러면 흰
+  // 사각 픽셀이 둥근 모서리 밖으로 삐져나온다(과거 MockupButton 의 inner clip 대체).
+  gloss: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.22)',
+    borderTopLeftRadius: RADIUS.btn,
+    borderTopRightRadius: RADIUS.btn,
+  },
   pressed: {opacity: 0.92, transform: [{scale: 0.97}]},
   label: {
     color: T1,

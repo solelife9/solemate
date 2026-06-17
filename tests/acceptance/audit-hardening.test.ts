@@ -809,6 +809,93 @@ describe('Audit Hardening 수용', () => {
       act(() => goal.unmount());
     });
 
+    test('radius 단일화: 전환 대상 파일에 backgroundColor:ACCENT + raw 14/16 radius 사각 CTA 부재 + 단일 Button 채택', () => {
+      // code_critic(Finding 1·3): "CTA 단일 Button" 스펙은 라이브 렌더되는 사각 ACCENT
+      // 버튼들(App 재시도·저장, 챌린지 만들기, 신발 편집·은퇴, Profile Google, RetirementFlow)을
+      // 단일 Button 프리미티브로 라우팅하고 radius 14/16/18 혼재를 제거하라고 요구한다.
+      // 과거 수용 테스트는 Button/RunGoal 렌더와 hex-dedup 만 봐서 이 잔존을 가드하지 못했다
+      // (false completeness). 여기서 전환 대상 소스를 직접 스캔해 강제한다.
+      const targets = [
+        'App.tsx',
+        'ChallengesSection.tsx',
+        'ShoesScreen.rn.tsx',
+        'ProfileScreen.rn.tsx',
+        'RetirementFlow.rn.tsx',
+      ];
+      // 주석(블록/라인) 제거 — 설명 주석의 토큰 이름은 스캔 대상이 아니다(CRLF \r 선제거).
+      const strip = (src: string) =>
+        src
+          .replace(/\r/g, '')
+          .replace(/\/\*[\s\S]*?\*\//g, '')
+          .split('\n')
+          .map(l => l.replace(/\/\/.*$/, ''))
+          .join('\n');
+
+      for (const f of targets) {
+        const raw = readFile(path.join(repoRoot, f));
+        // (1) 단일 Button 프리미티브를 import 한다(전환의 증거 — 자체 주황 버튼 0).
+        expect(raw).toMatch(/import\s*\{[^}]*\bButton\b[^}]*\}\s*from\s*['"]\.\/primitives['"]/);
+
+        // (2) 어떤 스타일 객체도 backgroundColor:ACCENT + raw 14/16 모서리를 함께 갖지 않는다.
+        //     (사각 ACCENT CTA = 옛 r14/r16 주황 버튼) — 그런 객체가 0이어야 전환 완료.
+        //     원형 컨트롤(RADIUS.pill/999)·반투명(withAlpha)·점/탭/토글은 14/16 이 아니므로 비대상.
+        const code = strip(raw);
+        const innerObjects = code.match(/\{[^{}]*\}/g) || [];
+        const squareAccentCta = innerObjects.filter(
+          o => /backgroundColor:\s*ACCENT\b/.test(o) && /borderRadius:\s*1[46]\b/.test(o),
+        );
+        expect(squareAccentCta).toEqual([]);
+      }
+
+      // (3) 회귀 가드: 단일 Button 프리미티브의 모서리는 RADIUS.btn 단일 토큰이다(렌더 확인).
+      //     사각 CTA 가 Button 으로 라우팅되면 자동으로 이 모서리를 물려받는다(혼재 종식).
+      const b = renderTree(el(Button, {label: '저장', onPress: () => {}}));
+      const st = flatBtnStyle(b.root, '저장');
+      expect(st.borderRadius).toBe(RADIUS.btn);
+      act(() => b.unmount());
+    });
+
+    test('gloss 클립: 단일 Button 의 상단 광택이 위쪽 모서리를 RADIUS.btn 으로 둥글린다(모서리 삐짐 회귀 가드)', () => {
+      // code_critic(Finding 2): base 에 overflow:hidden 이 없어(글로우 보존) gloss(full-width
+      // 1px plain View)의 top-left/right 모서리가 클립되지 않으면 흰 사각 픽셀이 둥근 모서리
+      // 밖으로 삐져나온다. gloss 가 스스로 borderTopLeft/RightRadius(=RADIUS.btn)를 가져
+      // 시각 동등을 회복해야 한다. 활성 CTA 에서만 gloss 가 렌더된다(disabled/ghost 엔 없음).
+      const b = renderTree(el(Button, {label: '시작', onPress: () => {}}));
+      // gloss = 높이 1px 의 흰 반투명 plain View(아이콘/라벨/그라데이션 Svg 와 구분).
+      const glossNodes = b.root.findAll((n: ReactTestRenderer.ReactTestInstance) => {
+        const flat = StyleSheet.flatten(n.props && n.props.style) as
+          | {height?: number; backgroundColor?: string; borderTopLeftRadius?: number; borderTopRightRadius?: number}
+          | undefined;
+        return (
+          !!flat &&
+          flat.height === 1 &&
+          typeof flat.backgroundColor === 'string' &&
+          /rgba\(255,\s*255,\s*255/.test(flat.backgroundColor)
+        );
+      });
+      // RN 의 View 는 composite+host 두 인스턴스로 잡히므로 ≥1(둘 다 동일 gloss 스타일).
+      expect(glossNodes.length).toBeGreaterThanOrEqual(1);
+      // 매칭된 gloss 노드는 모두 위쪽 두 모서리를 RADIUS.btn 으로 둥글린다(삐짐 방지).
+      glossNodes.forEach(n => {
+        const flat = StyleSheet.flatten(n.props.style) as {
+          borderTopLeftRadius?: number;
+          borderTopRightRadius?: number;
+        };
+        expect(flat.borderTopLeftRadius).toBe(RADIUS.btn);
+        expect(flat.borderTopRightRadius).toBe(RADIUS.btn);
+      });
+      act(() => b.unmount());
+
+      // disabled CTA 는 그라데이션/글로우/gloss 를 끄고 flat 표면으로 떨어진다(gloss 0).
+      const d = renderTree(el(Button, {label: '비활성', onPress: () => {}, disabled: true}));
+      const dGloss = d.root.findAll((n: ReactTestRenderer.ReactTestInstance) => {
+        const fl = StyleSheet.flatten(n.props && n.props.style) as {height?: number; backgroundColor?: string} | undefined;
+        return !!fl && fl.height === 1 && typeof fl.backgroundColor === 'string' && /rgba\(255,\s*255,\s*255/.test(fl.backgroundColor);
+      });
+      expect(dGloss.length).toBe(0);
+      act(() => d.unmount());
+    });
+
     it.todo('Card/SegmentedControl/StatGrid 프리미티브 채택, 단일 보더 토큰');
     it.todo('TYPE: 반px 사이즈 제거, hero/scrim/screen-padding 토큰 도입');
   });
