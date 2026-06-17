@@ -182,6 +182,114 @@ describe('ProfileScreen 자동 동기 (로그인/변경 시 pull→merge→push,
       jest.useRealTimers();
     }
   });
+
+  // ── 변경 감지 계약 (dataSig) ────────────────────────────────────────────────
+  // 자동 동기는 signedIn 전환만이 아니라 backupData 변경에도 재발화해야 한다. 변경 감지는
+  // 전체 JSON.stringify 대신 경량 시그니처(개수:개수:max updatedAt:settings)로 한다.
+  // 아래 두 테스트가 그 시그니처를 양쪽에서 고정한다(아래 dataSig 를 상수 '' 로 바꾸면 (1)이,
+  // 매 렌더 변하는 값으로 바꾸면 (2)가 깨진다 — 오라클 누출 차단).
+  // signedIn 상태에서 props(backupData)만 갈아끼우려면 renderer 핸들이 필요하다.
+  function renderWithRenderer(props: any) {
+    let renderer!: ReactTestRenderer.ReactTestRenderer;
+    act(() => {
+      renderer = ReactTestRenderer.create(<ProfileScreen {...props} />);
+    });
+    act(() => {
+      renderer.root
+        .findAll((n: any) => n.props?.accessibilityLabel === '설정 열기')[0]
+        ?.props?.onPress?.();
+    });
+    return renderer;
+  }
+  function updateProps(renderer: ReactTestRenderer.ReactTestRenderer, props: any) {
+    act(() => {
+      renderer.update(<ProfileScreen {...props} />);
+    });
+  }
+
+  test('signedIn 상태에서 backupData(런 추가)가 바뀌면 자동 동기가 재발화한다', async () => {
+    jest.useFakeTimers();
+    try {
+      const port = mockPort(null);
+      const props = {cloudPort: port, backupData: LOCAL};
+      const renderer = renderWithRenderer(props);
+
+      await press(byTestId(renderer.root, 'cloud-signin-google')); // signedIn → 1회 동기
+      await flushAutoSync();
+      expect(port.push).toHaveBeenCalledTimes(1);
+
+      // 런 1건 추가 → 개수 세그먼트가 바뀌어 시그니처가 변한다(재동기 예약).
+      const changed: BackupPayload = {
+        ...LOCAL,
+        runs: [...LOCAL.runs, {id: 'r-new', km: 9}],
+      };
+      updateProps(renderer, {...props, backupData: changed});
+      await flushAutoSync();
+
+      // 추가로 push 가 호출되고, 마지막 payload 가 변경(추가된 런)을 반영한다.
+      expect(port.push).toHaveBeenCalledTimes(2);
+      const pushed: BackupPayload = port.push.mock.calls[1][0];
+      expect(pushed.runs.map((x: any) => x.id).sort()).toEqual(['r-local', 'r-new']);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  test('동일 backupData 로 재렌더되면 시그니처가 안정해 중복 동기하지 않는다', async () => {
+    jest.useFakeTimers();
+    try {
+      const port = mockPort(null);
+      const props = {cloudPort: port, backupData: LOCAL};
+      const renderer = renderWithRenderer(props);
+
+      await press(byTestId(renderer.root, 'cloud-signin-google'));
+      await flushAutoSync();
+      expect(port.push).toHaveBeenCalledTimes(1);
+
+      // 내용·개수·max updatedAt·settings 가 모두 동일한 '다른 객체'로 재렌더.
+      // 시그니처는 데이터 식별값에만 의존하므로 불변 → 재동기 없어야 한다.
+      const sameData: BackupPayload = {
+        shoes: [{id: 'L1', brand: 'Nike', model: 'Pegasus'}],
+        runs: [{id: 'r-local', km: 5}],
+        settings: {unit: 'km'},
+      };
+      updateProps(renderer, {...props, backupData: sameData});
+      await flushAutoSync();
+
+      // 객체 정체성이 달라져도 시그니처가 같으므로 push 추가 호출 없음(과도 시그니처 차단).
+      expect(port.push).toHaveBeenCalledTimes(1);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  test('settings(unit)만 바뀌어도 자동 동기가 재발화한다(시그니처의 settings 세그먼트 고정)', async () => {
+    jest.useFakeTimers();
+    try {
+      const port = mockPort(null);
+      const props = {cloudPort: port, backupData: LOCAL};
+      const renderer = renderWithRenderer(props);
+
+      await press(byTestId(renderer.root, 'cloud-signin-google'));
+      await flushAutoSync();
+      expect(port.push).toHaveBeenCalledTimes(1);
+
+      // 개수·max updatedAt 동일, settings.unit 만 변경 → settings 세그먼트로 시그니처가 변한다.
+      const changed: BackupPayload = {
+        shoes: [{id: 'L1', brand: 'Nike', model: 'Pegasus'}],
+        runs: [{id: 'r-local', km: 5}],
+        settings: {unit: 'mi'},
+      };
+      updateProps(renderer, {...props, backupData: changed});
+      await flushAutoSync();
+
+      expect(port.push).toHaveBeenCalledTimes(2);
+      const pushed: BackupPayload = port.push.mock.calls[1][0];
+      expect(pushed.settings.unit).toBe('mi'); // remote=null → merge 가 로컬 settings 그대로 보존
+    } finally {
+      jest.useRealTimers();
+    }
+  });
 });
 
 describe('ProfileScreen 로그아웃', () => {
