@@ -13,7 +13,7 @@ import {
 } from './theme';
 import { TabBar } from './primitives';
 import { Unit, displayNum, displayToKm } from './lib/units';
-import { ymdLocal, fmtPace, fmtTime } from './lib/format';
+import { ymdLocal, fmtPace } from './lib/format';
 import { durationLabel } from './lib/stats';
 import { personalRecords } from './lib/records';
 import { getRunSurface, setRunSurface, type Surface } from './lib/wearModel';
@@ -28,9 +28,9 @@ import ShareCard from './ShareCard';
 
 // ── manual-run / edit form helpers ──────────────────────────────────────────
 // 소요 시간 입력은 'MM:SS'·'H:MM:SS'(또는 분 단위 숫자)를 초로 변환한다. 빈 값/파싱 불가 → 0.
-// 'H:MM:SS' 3분절도 받는 이유: 프리필(fmtDurationInput)이 앱 전역 fmtTime 을 재사용하면서
-// 1시간 이상 런을 'H:MM:SS' 로 표시하므로, 사용자가 그대로 저장해도 라운드트립(초→문자열→초)
-// 이 보존돼야 한다. 2분절('MM:SS')은 기존과 동일한 분·초 계산을 그대로 유지한다.
+// 'H:MM:SS' 3분절도 받는 이유: 사용자가 시간 단위가 붙은 문자열(앱 전역 시간 표기와 동일한
+// 형태)을 손으로 넣어도 라운드트립(문자열→초)이 깨지지 않게 하기 위함이다. 프리필 자체는
+// MM:SS-total(fmtDurationInput)이라 보통 2분절 경로를 타며, 그 계산은 기존과 동일하다.
 function parseDurationInput(text: string): number {
   const t = (text || '').trim();
   if (!t) return 0;
@@ -46,11 +46,16 @@ function parseDurationInput(text: string): number {
   const mins = parseFloat(t);
   return Number.isFinite(mins) && mins > 0 ? Math.round(mins * 60) : 0;
 }
-// 초 → 편집 폼 프리필 문자열. 0 이하면 빈칸(프리필 없음). 포맷은 앱 전역 fmtTime 재사용
-// (MM:SS / 1시간↑ H:MM:SS) — 시간 표기 규칙 단일화. parseDurationInput 이 H:MM:SS 도
-// 되돌려 읽어 라운드트립을 보존한다.
+// 초 → 편집 폼 프리필 문자열 'MM:SS-total'(분 무패딩, 1시간↑는 분이 60 초과: 3900s→'65:00').
+// fmtTime(H:MM:SS)으로 대체하지 않는다 — 입력 마스크(maskDuration)는 MM:SS(콜론 1개)만 다뤄
+// 'H:MM:SS' 프리필을 편집 첫 타건에 collapse(예 '1:05:00'→'10:50')시켜 duration 을 손상시킨다.
+// 이 MM:SS-total 표기는 maskDuration 과 왕복 안정(예 '65:00'→digits'6500'→'65:00')하다.
+// 0 이하면 빈칸(프리필 없음). parseDurationInput 은 MM:SS·H:MM:SS 둘 다 되돌려 읽는다.
 function fmtDurationInput(sec: number): string {
-  return !sec || sec <= 0 ? '' : fmtTime(sec);
+  if (!sec || sec <= 0) return '';
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60);
+  return `${m}:${String(s).padStart(2, '0')}`;
 }
 
 // 노면(surface) 선택 옵션 — 실효 마모 보정용(트레일>로드, 트랙·트레드밀<로드). 기본

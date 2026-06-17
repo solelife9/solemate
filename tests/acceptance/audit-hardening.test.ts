@@ -656,10 +656,16 @@ describe('Audit Hardening 수용', () => {
       }
       expect(TIER_LABEL.diamond).toBe('Diamond'); // 단일 정의가 canonical 매핑을 노출
 
-      // (2) MM:SS — HistoryScreen 의 프리필 포맷터가 자체 분/초 조립 대신 fmtTime 재사용.
+      // (2) MM:SS — HistoryScreen 의 시간 프리필 포맷터는 입력 마스크(maskDuration, MM:SS)와
+      // 호환되는 MM:SS-total 을 낸다. fmtTime(H:MM:SS)으로 단일화하면 1시간↑ 런 편집 첫 타건에
+      // 마스크가 collapse 시켜 duration 을 손상시키므로(회귀), fmtDurationInput 은 fmtTime 을
+      // 호출하면 안 된다(왕복 안정성은 durationRoundtrip 행동 테스트가 보장).
       const hist = read('HistoryScreen.rn.tsx');
       expect(/from '\.\/lib\/format'/.test(hist)).toBe(true);
-      expect(/function fmtDurationInput[\s\S]*?fmtTime\(/.test(hist)).toBe(true);
+      const durFn = hist.match(/function fmtDurationInput[\s\S]*?\n}/);
+      expect(durFn).not.toBeNull();
+      expect(/fmtTime\(/.test(durFn![0])).toBe(false);                   // H:MM:SS 위임 금지
+      expect(/padStart\(2, '0'\)/.test(durFn![0])).toBe(true);           // MM:SS-total 직접 조립
 
       // (3) YYYY-MM(-DD) — 인라인 Date 빌더(getFullYear()+padStart) 제거, lib/format 재사용.
       const ymBuilder = /getFullYear\(\)[\s\S]{0,80}?padStart\(2, '0'\)/;
