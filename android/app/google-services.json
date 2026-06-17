@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "404780715201",
+    "project_id": "keego-620b8",
+    "storage_bucket": "keego-620b8.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:404780715201:android:7c0b7373bdc4daa1351840",
+        "android_client_info": {
+          "package_name": "com.solemate"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "404780715201-06ie9154e0c279l1vaoee4q5kvchhtno.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.solemate",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
+          "client_id": "404780715201-8lrp04ttqshdaq3fs0ln9g2hrr7tvs0v.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCKISf4Oh9MdRCjDiZUdJ1Xf5MMur956dY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "404780715201-8lrp04ttqshdaq3fs0ln9g2hrr7tvs0v.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
