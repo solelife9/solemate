@@ -89,6 +89,18 @@ function hasLabel(root: ReactTestRenderer.ReactTestInstance, label: string): boo
     (n: ReactTestRenderer.ReactTestInstance) => !!n.props && n.props.accessibilityLabel === label,
   ).length > 0;
 }
+// 트리에 렌더된 모든 문자열 자식을 이어붙인다(어떤 Text가 실제로 화면에 떴는지 검사용).
+function renderedText(root: ReactTestRenderer.ReactTestInstance): string {
+  const out: string[] = [];
+  root.findAll(() => true).forEach(n => {
+    const kids = n.props ? (n.props.children as unknown) : undefined;
+    const arr = Array.isArray(kids) ? kids : [kids];
+    arr.forEach(k => {
+      if (typeof k === 'string' || typeof k === 'number') out.push(String(k));
+    });
+  });
+  return out.join(' ');
+}
 
 const payload = (over: Partial<BackupPayload> = {}): BackupPayload => ({
   shoes: [],
@@ -388,6 +400,15 @@ describe('Audit Hardening 수용', () => {
       expect(hasLabel(root, '이메일로 계속하기')).toBe(true);
       // 온보딩 소개 단계의 '다음' CTA 는 뜨지 않았다(=순차 진행이 아니라 로그인 점프).
       expect(hasLabel(root, '다음')).toBe(false);
+
+      // 날조 금지: 등록한 신발이 없는 로그인 진입(registered=null)이므로, 폴백 신발
+      // 카드(Nike Alphafly 3 / 60·600km / '추적 시작됨')도 '준비됐다' 축하문구도 뜨면 안 된다.
+      const text = renderedText(root);
+      expect(text).not.toContain('Alphafly 3');
+      expect(text).not.toContain('추적 시작됨');
+      expect(text).not.toContain('이제 달릴 준비가');
+      // 대신 로그인 맥락의 환영 문구가 보인다.
+      expect(text).toContain('다시 오신 걸');
     });
   });
 

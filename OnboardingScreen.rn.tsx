@@ -1132,10 +1132,15 @@ function LoginBtn({
 
 function Ready({registered, onFinish, onSkip, insetTop, insetBottom}: ScreenProps & {registered: RegisteredShoe | null; onFinish: () => void}) {
   const [busy, setBusy] = useState<string | null>(null);
-  const shoe = registered || {brand: 'Nike', model: 'Alphafly 3', km: 60, max: 600};
-  const st = statusFor(shoe.km, shoe.max || 600);
+  // 신발 요약 카드는 *실제로 등록한 신발이 있을 때만* 보여준다. 과거엔 폴백
+  // {Nike Alphafly 3, 60/600}을 깔아 두었는데, '이미 계정이 있나요? 로그인'으로 진입한
+  // 복귀 유저(registered=null)에게 그 날조 신발 + '추적 시작됨' + '이제 달릴 준비가
+  // 되었습니다' 축하문구가 노출돼 오해를 줬다(날조 금지 위배). 등록이 없으면 카드를
+  // 숨기고 헤드라인/본문을 로그인 맥락으로 바꾼다.
+  const shoe = registered;
+  const st = shoe ? statusFor(shoe.km, shoe.max || 600) : 'good';
   const col = STATUS[st].c;
-  const remain = Math.round((1 - shoe.km / (shoe.max || 600)) * 100);
+  const remain = shoe ? Math.round((1 - shoe.km / (shoe.max || 600)) * 100) : 0;
   const press = (k: string) => {
     setBusy(k);
     setTimeout(() => {
@@ -1162,25 +1167,31 @@ function Ready({registered, onFinish, onSkip, insetTop, insetBottom}: ScreenProp
           </View>
         </Rise>
         <Rise delay={120} style={{alignSelf: 'stretch'}}>
-          <Text style={[s.title, {textAlign: 'center', marginTop: 14}]}>이제 달릴 준비가{'\n'}되었습니다</Text>
-          <Text style={[s.body, {textAlign: 'center'}]}>Keego와 함께 더 오래,{'\n'}더 건강하게 달리세요.</Text>
+          <Text style={[s.title, {textAlign: 'center', marginTop: 14}]}>
+            {shoe ? '이제 달릴 준비가\n되었습니다' : '다시 오신 걸\n환영합니다'}
+          </Text>
+          <Text style={[s.body, {textAlign: 'center'}]}>
+            {shoe ? 'Keego와 함께 더 오래,\n더 건강하게 달리세요.' : '로그인하고 이어서 달려보세요.'}
+          </Text>
         </Rise>
 
-        {/* 등록 신발 요약 */}
-        <Rise delay={240} style={[s.readyShoeCard, {alignSelf: 'stretch'}]}>
-          <PctRing pct={remain} color={col} size={52} stroke={6} />
-          <View style={{flex: 1, minWidth: 0, marginLeft: 15}}>
-            <Text style={[s.brandEyebrow, {fontSize: 11}]}>추적 시작됨</Text>
-            <Text numberOfLines={1} style={{fontFamily: FONT, fontSize: 16, fontWeight: '700', color: '#fff', marginTop: 1}}>
-              {shoe.brand} {shoe.model}
-            </Text>
-            <Text style={{fontFamily: FONT, fontSize: 13, color: T3, marginTop: 5}}>
-              {shoe.km.toLocaleString()} / {(shoe.max || 600).toLocaleString()} km
-              <Text style={{color: T4}}> · </Text>
-              <Text style={{color: col, fontWeight: '600'}}>{STATUS[st].label}</Text>
-            </Text>
-          </View>
-        </Rise>
+        {/* 등록 신발 요약 — 실제 등록한 신발이 있을 때만(로그인 진입 시엔 숨김, 날조 금지) */}
+        {shoe && (
+          <Rise delay={240} style={[s.readyShoeCard, {alignSelf: 'stretch'}]}>
+            <PctRing pct={remain} color={col} size={52} stroke={6} />
+            <View style={{flex: 1, minWidth: 0, marginLeft: 15}}>
+              <Text style={[s.brandEyebrow, {fontSize: 11}]}>추적 시작됨</Text>
+              <Text numberOfLines={1} style={{fontFamily: FONT, fontSize: 16, fontWeight: '700', color: '#fff', marginTop: 1}}>
+                {shoe.brand} {shoe.model}
+              </Text>
+              <Text style={{fontFamily: FONT, fontSize: 13, color: T3, marginTop: 5}}>
+                {shoe.km.toLocaleString()} / {(shoe.max || 600).toLocaleString()} km
+                <Text style={{color: T4}}> · </Text>
+                <Text style={{color: col, fontWeight: '600'}}>{STATUS[st].label}</Text>
+              </Text>
+            </View>
+          </Rise>
+        )}
       </ScrollView>
 
       {/* 로그인 */}
