@@ -266,6 +266,9 @@ function Main(){
   // audit#9/#10: 콜드 백엔드 부팅 상태(스켈레톤/재시도 카드). 최초엔 'loading'으로 떠
   // 스켈레톤을 보여주고, initUser 성공 시 'ready', fetch 실패 시 'error'로 간다.
   const [bootState,setBootState]=useState<BootState>('loading');
+  // 마지막 동기화 성공 시각(epoch ms). REST 재fetch + pending flush 가 성공한 순간 갱신되어
+  // Home 의 '방금 동기화'/'N분 전' 칩으로 노출된다. 초기 null(미동기). 표시 전용.
+  const [lastSyncAt,setLastSyncAt]=useState<number|null>(null);
   // 첫 실행 온보딩 노출 여부(완료 시 영속). 신규(신발 0개·미완료)에게만 1회 보여준다.
   const [onboarded,setOnboarded]=useState(true);
   // 위치 권한 사전 안내(priming) 완료 여부. false면 첫 GPS 런 시작 직전 이유를
@@ -503,6 +506,8 @@ function Main(){
       // audit#3 재동기: 네트워크 실패로 큐에 남은 완주 런을 재전송. 서버 런 목록과
       // 사용자 id를 갓 받은 값으로 넘겨, 재-POST 전 클라이언트 화해로 중복을 막는다.
       await syncPendingRuns(safeRuns,d.user_id);
+      // 동기화 성공 — Home '마지막 동기화' 칩 시각을 갱신(REST fetch + pending flush 완료 시점).
+      setLastSyncAt(Date.now());
     }catch{
       console.log('offline');
       // 오프라인 폴백(로컬-퍼스트): 마지막 성공 데이터가 캐시에 있으면 그것으로 'ready'
@@ -551,6 +556,39 @@ function Main(){
       const server=await postRun(p,uid);
       await reconcileSynced(p,server);
     });
+  }
+
+  // 당겨서 새로고침(RefreshControl) 진입점 — Home/History 가 호출한다. 콜드 부팅 스켈레톤을
+  // 띄우지 않고(bootState 미변경) 조용히 REST 를 재fetch 하고 pending 런을 다시 flush 한다.
+  // 성공하면 'REST 확정' id 집합·로컬 캐시·lastSyncAt 칩을 갱신한다. 실패(오프라인 등)는
+  // 던지지 않고 조용히 무시 — 화면은 기존 데이터를 그대로 유지하고 스피너만 내린다(비차단).
+  async function refreshData(){
+    // 계정 미연결(첫 실행/콜드 백엔드)이면 풀 부팅으로 위임 — 재시도가 곧 동기화다.
+    if(!deviceId){await initUser();return;}
+    try{
+      const auth=await apiAuth(deviceId);
+      const uid=auth.user_id;setUserId(uid);
+      const[sd,rd]=await Promise.all([apiGetShoes(uid),apiGetRuns(uid)]);
+      const safeShoes=Array.isArray(sd)?sd:[];
+      const safeRuns=Array.isArray(rd)?rd:[];
+      const runsWithRoute=await Promise.all(safeRuns.map(async(run:any)=>{
+        let merged={...run};
+        if(!merged.route&&merged.id){const local=await AsyncStorage.getItem('route_'+merged.id);if(local) merged={...merged,route:local};}
+        if(!merged.run_time&&merged.id){const localTime=await AsyncStorage.getItem('time_'+merged.id);if(localTime) merged={...merged,run_time:localTime};}
+        return merged;
+      }));
+      setShoes(safeShoes);setRuns(runsWithRoute);
+      restShoeIdsRef.current=new Set(safeShoes.map((s:any)=>String(s.id)));
+      restRunIdsRef.current=new Set(runsWithRoute.map((r:any)=>String(r.id)));
+      try{await AsyncStorage.setItem(CACHE_SHOES_KEY,JSON.stringify(safeShoes));await AsyncStorage.setItem(CACHE_RUNS_KEY,JSON.stringify(runsWithRoute));}catch{}
+      // 큐에 남아 있던(오프라인 중 완주한) 런을 다시 POST 재시도.
+      await syncPendingRuns(safeRuns,uid);
+      setLastSyncAt(Date.now());
+    }catch{
+      // 오프라인/백엔드 다운: 재fetch 는 실패해도 큐 flush 만이라도 시도(네트워크 복구 직후
+      // 첫 새로고침에서 미동기 런을 밀어낼 수 있게). 그조차 실패하면 조용히 무시.
+      try{await syncPendingRuns(runs,userId);setLastSyncAt(Date.now());}catch{/* 여전히 오프라인 — 비차단 */}
+    }
   }
 
   async function addShoe(name:string,maxKm:number,startKm:number,date:string){
@@ -1509,12 +1547,14 @@ function Main(){
             onOpenShoe={(id)=>{setSelectedShoeId(id);setShoesDetailId(id);setTab(1);}}
             progression={homeProgression}
             onOpenProgression={()=>setShowProgression(true)}
+            onRefresh={refreshData} lastSyncAt={lastSyncAt}
           />
         )}
         {tab===2&&(
           <HistoryScreen
             shoes={uiShoes} runs={uiRuns} summary={summary} chart={chart} unit={unit} onTab={setTab}
             onAddRun={addManualRun} onEditRun={editRun} onDeleteRun={deleteRun}
+            onRefresh={refreshData}
           />
         )}
         {tab===1&&(

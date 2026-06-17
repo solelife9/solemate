@@ -3,7 +3,7 @@
 // (sample data removed — real summary/chart/runs are injected via props)
 // ============================================================================
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet, LayoutChangeEvent, Share, TextInput, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, ScrollView, Pressable, StyleSheet, LayoutChangeEvent, Share, TextInput, Alert, KeyboardAvoidingView, Platform, RefreshControl } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Polyline, Circle } from 'react-native-svg';
@@ -542,7 +542,7 @@ function RunCard({ run, shoes, onPress, unit }: { run: Run; shoes: Shoe[]; onPre
 
 export default function HistoryScreen({
   shoes = SHOES, runs = [], summary = {}, chart = {}, onTab, unit = 'km',
-  onAddRun, onEditRun, onDeleteRun,
+  onAddRun, onEditRun, onDeleteRun, onRefresh,
 }: {
   shoes?: Shoe[];
   runs?: Run[];
@@ -555,11 +555,22 @@ export default function HistoryScreen({
   onAddRun?: (shoeId: string, km: number, date: string, durationSec: number, surface?: Surface) => void;
   onEditRun?: (id: string, fields: { shoe_id?: string; km?: number; run_date?: string; duration?: number }) => void;
   onDeleteRun?: (id: string) => void;
+  // 당겨서 새로고침 — 서버 재fetch + pending flush 재시도(App 의 initUser/sync 재진입).
+  // RN 내장 RefreshControl 만 사용한다(새 네이티브 0). 미주입이면 RefreshControl 미장착.
+  onRefresh?: () => void | Promise<void>;
 }) {
   const [period, setPeriod] = useState('월');
   const [detail, setDetail] = useState<Run | null>(null);
   // 폼 상태: 'add'(수동 입력) | {edit, run}(편집). null이면 목록 화면.
   const [form, setForm] = useState<null | { mode: 'add' } | { mode: 'edit'; run: Run }>(null);
+  // 당겨서 새로고침 스피너 상태. onRefresh(서버 재fetch/pending flush)가 끝나면 내린다.
+  const [refreshing, setRefreshing] = useState(false);
+  const handleRefresh = async () => {
+    if (!onRefresh || refreshing) return;
+    setRefreshing(true);
+    try { await onRefresh(); } catch { /* 새로고침 실패는 스피너만 내리고 조용히 무시 */ }
+    finally { setRefreshing(false); }
+  };
   const insets = useSafeAreaInsets();
 
   const sum = summary[period] || EMPTY_SUMMARY;
@@ -616,7 +627,9 @@ export default function HistoryScreen({
           </Pressable>
         )}
       </View>
-      <ScrollView contentContainerStyle={{ padding: 14, paddingBottom: 8, gap: 10 }}>
+      {/* 당겨서 새로고침 — RN 내장 RefreshControl 만(새 네이티브 0). onRefresh 가 있을 때만 단다. */}
+      <ScrollView contentContainerStyle={{ padding: 14, paddingBottom: 8, gap: 10 }}
+        refreshControl={onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={ACCENT} colors={[ACCENT]} /> : undefined}>
         {/* period segment */}
         <View style={s.segment}>
           {PERIODS.map((p) => {

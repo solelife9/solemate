@@ -8,7 +8,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import {
   View, Text, ScrollView, Pressable, StyleSheet, Linking, Modal, Dimensions,
-  NativeSyntheticEvent, NativeScrollEvent,
+  RefreshControl, NativeSyntheticEvent, NativeScrollEvent,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
@@ -25,6 +25,7 @@ import { RotationPick } from './lib/rotation';
 import { recommendNextShoes, buildShopLinks, categoryLabelKo, AFFILIATE_DISCLOSURE } from './lib/affiliate';
 import { forecastLineKo, type ReplacementForecast } from './lib/wearView';
 import { shouldRecommendNextShoe } from './lib/recommendTrigger';
+import { syncLabel } from './lib/syncStatus';
 import { findShoeClass, typeLabel, purposeSentenceKo } from './data/shoeClass';
 
 export type WeekStats = { km: string; runs: number; pace: string };
@@ -475,6 +476,7 @@ export default function HomeScreen({
   shoes = SHOES, dateLabel = '', onStart, onAddShoe, onTab,
   activeIdx: activeIdxProp, onSelect, unit = 'km', goal, week, rotation, onPickShoe,
   onChangeGoal, onOpenShoe, forecast, forecasts, progression, onOpenProgression,
+  onRefresh, lastSyncAt,
 }: {
   shoes?: Shoe[];
   // 선택(히어로) 신발의 교체 예측(App이 실효마모 모델로 계산해 내려준다). ok/overdue일 때
@@ -510,10 +512,26 @@ export default function HomeScreen({
   progression?: HomeProgression | null;
   // 랭크 칩/진척 띠 탭 → 진척 화면(App 의 기존 onOpenProgression 배선 재사용).
   onOpenProgression?: () => void;
+  // 당겨서 새로고침 — 서버 재fetch + pending flush 재시도(App 의 initUser/sync 재진입).
+  // RN 내장 RefreshControl 만 사용한다(새 네이티브 0). 미주입이면 RefreshControl 을 달지
+  // 않아 기존 홈과 100% 하위호환(표시 전용). 동기/비동기 모두 허용(완료 시 스피너 정지).
+  onRefresh?: () => void | Promise<void>;
+  // 마지막 동기화 성공 시각(epoch ms). 인사 영역 칩에 '방금 동기화'/'N분 전'으로 표시한다.
+  // null/미주입이면 '동기화 안 됨' 칩(또는 미표시) — 표시 전용(lib/syncStatus 가 라벨 생성).
+  lastSyncAt?: number | null;
 }) {
   const [internalIdx, setInternalIdx] = useState(0);
   // 주간 목표 인라인 편집 모달(프로필로 이동하지 않고 홈에서 바로 수정).
   const [goalEditOpen, setGoalEditOpen] = useState(false);
+  // 당겨서 새로고침 스피너 상태. onRefresh(서버 재fetch/pending flush)가 끝나면 내린다.
+  // onRefresh 가 던져도 finally 로 스피너를 반드시 내려 멈춤 상태로 끼지 않게 한다.
+  const [refreshing, setRefreshing] = useState(false);
+  const handleRefresh = async () => {
+    if (!onRefresh || refreshing) return;
+    setRefreshing(true);
+    try { await onRefresh(); } catch { /* 새로고침 실패는 스피너만 내리고 조용히 무시 */ }
+    finally { setRefreshing(false); }
+  };
   const stepGoal = (dir: 1 | -1) => {
     if (!goal) return;
     const next = displayNum(goal.km, unit, 0) + dir * GOAL_STEP_DISPLAY;
@@ -530,10 +548,22 @@ export default function HomeScreen({
     <View style={[s.screen, { paddingTop: insets.top }]}>
       <TopBar onAddShoe={onAddShoe} />
       {/* 콘텐츠는 스크롤되고 TabBar는 화면 바닥에 고정된다(신발 많을 때 탭바가 밀려 사라지던 문제 해결) */}
-      <ScrollView style={s.scroll} contentContainerStyle={s.scrollContent} showsVerticalScrollIndicator={false}>
+      {/* 당겨서 새로고침 — RN 내장 RefreshControl 만(새 네이티브 0). onRefresh 가 있을 때만 단다. */}
+      <ScrollView style={s.scroll} contentContainerStyle={s.scrollContent} showsVerticalScrollIndicator={false}
+        refreshControl={onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={ACCENT} colors={[ACCENT]} /> : undefined}>
       <View style={s.greetWrap}>
         {!!dateLabel && <Text style={s.date}>{dateLabel}</Text>}
         <Text style={s.greet}>오늘은 어떤 신발로{'\n'}달려볼까요?</Text>
+        {/* 마지막 동기화 시각 칩 — 당겨서 새로고침이 성공하면 App 이 lastSyncAt 을 갱신한다.
+            onRefresh 가 배선됐을 때만 노출(동기화 개념이 있는 화면에서만). 표시 전용. */}
+        {onRefresh && (
+          <View testID="home-sync-chip" style={s.syncChip}>
+            <Ionicons name="sync" size={11} color={T3} />
+            <Text testID="home-sync-label" style={s.syncChipTxt} numberOfLines={1}>
+              {syncLabel(lastSyncAt, Date.now())}
+            </Text>
+          </View>
+        )}
         {/* 장착 타이틀 — 인사(닉네임) 옆/아래 한 줄. 진척 띠 색과 분리해 절제(T2 회색). */}
         {progression?.equippedTitle ? (
           <View testID="home-equipped-title" style={s.equipPill}>
@@ -644,6 +674,10 @@ const s = StyleSheet.create({
   greetWrap: { paddingHorizontal: SPACE.xl, paddingTop: 8 },
   date: { color: T3, fontFamily: FONT, fontSize: 13, letterSpacing: 0.2 },
   greet: { color: T1, fontFamily: FONT, fontSize: 20, fontWeight: '400', letterSpacing: -0.4, marginTop: 3, lineHeight: 26 },
+
+  // 마지막 동기화 칩 — 인사 아래 절제된 회색(아이콘 T3 + 텍스트 T3). 당겨서 새로고침 안내.
+  syncChip: { flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start', marginTop: 10, backgroundColor: CARD_DIM, borderRadius: RADIUS.pill, paddingHorizontal: 9, paddingVertical: 4 },
+  syncChipTxt: { color: T3, fontFamily: FONT, fontSize: 11.5, fontWeight: '500', letterSpacing: 0.1 },
 
   // 장착 타이틀 칩(인사 옆) — 절제: 액센트 아이콘 + T2 텍스트, 옅은 카드 배경.
   equipPill: { flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start', marginTop: 10, backgroundColor: CARD_HI, borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 4 },

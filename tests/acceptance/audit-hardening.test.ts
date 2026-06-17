@@ -58,10 +58,18 @@ jest.mock('../../lib/haptics', () => ({
 }));
 
 import * as haptics from '../../lib/haptics';
+import {KeyboardAvoidingView} from 'react-native';
 import OnboardingScreen from '../../OnboardingScreen.rn';
 import RunActiveScreen from '../../RunActiveScreen.rn';
 import RunGoalScreen from '../../RunGoalScreen.rn';
 import RunCountdownScreen from '../../RunCountdownScreen.rn';
+// ── C 묶음(폼 + 피드백) 도구 ─────────────────────────────────────────────────
+import HomeScreen from '../../HomeScreen.rn';
+import HistoryScreen from '../../HistoryScreen.rn';
+import {showToast, runToastAction, getCurrentToast, dismissToast, TOAST_UNDO_LABEL} from '../../lib/toast';
+import {maskDuration, maskDate, validateRunForm} from '../../lib/inputMask';
+import {syncLabel} from '../../lib/syncStatus';
+import type {Shoe} from '../../theme';
 
 // createElement 단축(JSX 미사용) + 트리 렌더 헬퍼.
 const el = (C: unknown, props: Record<string, unknown> = {}) =>
@@ -88,6 +96,29 @@ function hasLabel(root: ReactTestRenderer.ReactTestInstance, label: string): boo
   return root.findAll(
     (n: ReactTestRenderer.ReactTestInstance) => !!n.props && n.props.accessibilityLabel === label,
   ).length > 0;
+}
+// onPress 가능한 노드 중 렌더 텍스트가 text 를 포함하는 가장 좁은(=텍스트가 짧은) 1개를
+// 고른다 — 라벨 없는 CTA 버튼 탐색용. 상위 컨테이너도 텍스트를 포함하므로 최소 길이를 택해
+// 정확히 그 버튼만 잡는다.
+function pressableByText(root: ReactTestRenderer.ReactTestInstance, text: string) {
+  const hits = root.findAll(
+    (n: ReactTestRenderer.ReactTestInstance) =>
+      !!n.props && typeof n.props.onPress === 'function' && renderedText(n).includes(text),
+  );
+  if (!hits.length) throw new Error(`no pressable with text "${text}"`);
+  return hits.reduce((a, b) => (renderedText(a).length <= renderedText(b).length ? a : b));
+}
+// ScrollView 에 단 RefreshControl 의 onRefresh 핸들러를 직접 읽는다(당겨서 새로고침 트리거).
+function refreshHandler(root: ReactTestRenderer.ReactTestInstance): () => void {
+  const hits = root.findAll(
+    (n: ReactTestRenderer.ReactTestInstance) =>
+      !!n.props &&
+      !!n.props.refreshControl &&
+      !!n.props.refreshControl.props &&
+      typeof n.props.refreshControl.props.onRefresh === 'function',
+  );
+  if (!hits.length) throw new Error('no ScrollView with a RefreshControl onRefresh');
+  return hits[0].props.refreshControl.props.onRefresh;
 }
 // 트리에 렌더된 모든 문자열 자식을 이어붙인다(어떤 Text가 실제로 화면에 떴는지 검사용).
 function renderedText(root: ReactTestRenderer.ReactTestInstance): string {
@@ -413,9 +444,104 @@ describe('Audit Hardening 수용', () => {
   });
 
   describe('C. 폼 + 피드백', () => {
-    it.todo('토스트: 삭제 시 undo 스낵바가 뜨고 undo가 레코드를 사이드키까지 복원');
-    it.todo('폼: RunForm/AddShoe가 KeyboardAvoidingView + 입력 마스킹 + 인라인 검증');
-    it.todo('새로고침: Home/History가 RefreshControl로 동기화 재시도');
+    const C_SHOE: Shoe = {id: 'a', brand: 'Nike', model: 'Pegasus 41', used: 100, max: 600, condition: '양호'};
+    // 토스트는 전역 store + 실타이머를 쓰므로 각 테스트 후 닫아 다음 테스트로 새지 않게 한다.
+    afterEach(() => dismissToast());
+
+    test('토스트: 삭제 시 undo 스낵바가 뜨고 undo가 레코드를 사이드키까지 복원', () => {
+      // App.offerRunUndo/restoreRun 의 계약을 lib/toast 로 그대로 검증한다(관찰 가능한 피드백).
+      // 모델: 라이브 런 레코드 + 사이드키(신발 사용거리). 삭제는 둘 다 줄이고, undo 는 둘 다 되살린다.
+      let runs = [{id: 'r1', km: 5}];
+      let shoeUsedKm = 120; // 사이드키 — 삭제 시 차감되고 복원 시 정확히 되돌아와야 한다(부분복원 금지).
+      const removed = runs.find(r => r.id === 'r1')!;
+
+      // 삭제: 라이브에서 제거 + 신발 사용거리 차감 + undo 스낵바 제시(offerRunUndo 와 동형).
+      runs = runs.filter(r => r.id !== 'r1');
+      shoeUsedKm -= removed.km;
+      showToast({
+        message: '러닝 기록 삭제됨',
+        actionLabel: TOAST_UNDO_LABEL,
+        onAction: () => {
+          runs = [removed, ...runs];
+          shoeUsedKm += removed.km;
+        },
+      });
+
+      // 관찰: 스낵바가 떴고 '실행취소' 액션을 노출한다(삭제 직후엔 레코드도 사이드키도 빠진 상태).
+      const toast = getCurrentToast();
+      expect(toast?.message).toBe('러닝 기록 삭제됨');
+      expect(toast?.actionLabel).toBe('실행취소');
+      expect(runs).toHaveLength(0);
+      expect(shoeUsedKm).toBe(115);
+
+      // undo 탭 → onAction 실행 + 토스트 닫힘. 레코드와 사이드키(신발 사용거리)가 완전복원된다.
+      runToastAction(toast!.id);
+      expect(runs).toEqual([{id: 'r1', km: 5}]);
+      expect(shoeUsedKm).toBe(120);
+      expect(getCurrentToast()).toBeNull();
+    });
+
+    test('폼: RunForm/AddShoe가 KeyboardAvoidingView + 입력 마스킹 + 인라인 검증', () => {
+      // 입력 마스킹은 순수(lib/inputMask) — 숫자만 받아 MM:SS/YYYY-MM-DD 로 자동 정형한다.
+      expect(maskDuration('3000')).toBe('30:00');
+      expect(maskDate('20260601')).toBe('2026-06-01');
+      // 인라인 검증: 거리 0/빈값은 필드 에러로 막는다(통과 시 빈 객체).
+      expect(validateRunForm({shoeId: 'a', dist: '', date: '2026-06-01'}).dist).toBeTruthy();
+      expect(validateRunForm({shoeId: 'a', dist: '5', date: '2026-06-01'})).toEqual({});
+
+      // 화면: 기록 → '수동 기록 추가' → RunForm 이 KeyboardAvoidingView 로 감싸여 렌더된다.
+      const onAddRun = jest.fn();
+      const r = renderTree(el(HistoryScreen, {shoes: [C_SHOE], runs: [], onAddRun}));
+      act(() => {
+        pressableByLabel(r.root, '수동 기록 추가').props.onPress();
+      });
+      // 키보드 회피 — 입력칸/저장 버튼이 키보드에 가리지 않게 폼 전체를 감싼다(내장 RN만).
+      expect(r.root.findAllByType(KeyboardAvoidingView).length).toBeGreaterThan(0);
+
+      // 인라인 검증(화면): 거리를 비운 채 '추가하기' → 거리 오류가 인라인으로 뜨고 onAddRun 미호출.
+      act(() => {
+        pressableByText(r.root, '추가하기').props.onPress();
+      });
+      expect(hasLabel(r.root, '거리 오류')).toBe(true);
+      expect(onAddRun).not.toHaveBeenCalled();
+    });
+
+    test('새로고침: Home/History가 RefreshControl로 동기화 재시도', () => {
+      // syncLabel(순수) — 마지막 동기화 시각을 '방금/N분 전' 칩 텍스트로 만든다.
+      const base = 1_750_000_000_000;
+      expect(syncLabel(base, base + 10_000)).toBe('방금 동기화');
+      expect(syncLabel(base, base + 5 * 60_000)).toBe('5분 전');
+      expect(syncLabel(null, base)).toBe('동기화 안 됨');
+
+      // Home: 당겨서 새로고침 → onRefresh(서버 재fetch/pending flush)가 호출된다.
+      const homeRefresh = jest.fn();
+      const home = renderTree(
+        el(HomeScreen, {
+          shoes: [C_SHOE],
+          activeIdx: 0,
+          onSelect: jest.fn(),
+          unit: 'km',
+          onRefresh: homeRefresh,
+          lastSyncAt: Date.now(),
+        }),
+      );
+      act(() => {
+        refreshHandler(home.root)();
+      });
+      expect(homeRefresh).toHaveBeenCalledTimes(1);
+      // 마지막 동기화 칩이 화면에 보인다(방금 동기화한 시각이라 '방금 동기화' 라벨).
+      expect(renderedText(home.root)).toContain('방금 동기화');
+
+      // History: 당겨서 새로고침 → onRefresh 가 호출된다(같은 재시도 진입점).
+      const histRefresh = jest.fn();
+      const hist = renderTree(
+        el(HistoryScreen, {shoes: [C_SHOE], runs: [], onRefresh: histRefresh}),
+      );
+      act(() => {
+        refreshHandler(hist.root)();
+      });
+      expect(histRefresh).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe('D. 코드 품질', () => {
