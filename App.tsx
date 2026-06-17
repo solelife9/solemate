@@ -201,11 +201,14 @@ function Main(){
   // 삭제를 전파하고, 머지 결과는 applyBackupPayload 가 다시 live/묘비로 분리해 이 불변식을
   // 유지한다(한 id 가 live 와 묘비에 동시에 있지 않는다 → 자기충돌 부활 없음).
   const [tombstones,setTombstones]=useState<{shoes:BackendShoe[];runs:BackendRun[]}>({shoes:[],runs:[]});
-  // 최신 커밋된 shoes/runs 를 항상 가리키는 ref. 클라우드 머지 콜백(onCloudMerged)이
-  // ProfileScreen 의 디바운스 sync 에서 *늦게* 호출될 때 stale 클로저의 빈 배열을 읽어
-  // 역등록 판정(knownIds)을 그르치는 것을 막는다 — ref 는 항상 머지 직전의 실상태를 준다.
-  const shoesRef=useRef(shoes);
-  const runsRef=useRef(runs);
+  // audit a3(fix): REST(정본)에 *실제로 존재가 확정된* 신발/런 id 집합. 클라우드→REST 역등록
+  // (backRegisterMerged)의 knownIds 는 낙관적 라이브 상태가 아니라 이 집합으로 판정한다 —
+  // applyBackupPayload 가 클라우드-only 레코드를 화면엔 낙관적으로 끼워도(가시성), POST 가
+  // 성공해 REST 에 확정 합류하기 전엔 'known'에 넣지 않아, 실패한 역등록이 다음 sync 에서 다시
+  // 시도되게(in-session 재시도) 한다. initUser fetch 성공분·addShoe/postRun 성공분·역등록 성공분만
+  // 채운다(실패분은 미반영 → 재시도 대상 유지). 부모-신발 실재 판정(고아 런 방지)에도 쓴다.
+  const restShoeIdsRef=useRef<Set<string>>(new Set());
+  const restRunIdsRef=useRef<Set<string>>(new Set());
   // 런별 노면 태그 캐시(surface_<runId> → Surface). 실효 마모/교체 예측 보정용. 미태그는
   // road로 동작(차단 아님). runs 변경 시 한 번에 읽어들이고, 손상/실패는 무시한다.
   const [runSurfaces,setRunSurfaces]=useState<Record<string,Surface>>({});
@@ -344,9 +347,6 @@ function Main(){
     })();
   },[]);
 
-  // shoes/runs 가 커밋될 때마다 ref 를 최신으로 동기화(stale-closure 가드용 — 위 ref 주석 참고).
-  useEffect(()=>{shoesRef.current=shoes;runsRef.current=runs;},[shoes,runs]);
-
   // 부팅 폴백 캐시(cache_shoes_v1/cache_runs_v1) 상시 갱신(디바운스). 기존엔 initUser 의
   // 서버 fetch 성공 직후에만 캐시를 썼다 — 그 뒤 신발/런 mutation(추가/편집/삭제/동기 화해)이
   // 캐시에 반영되지 않아, 오프라인 재부팅 시 *마지막 fetch 시점*의 낡은 데이터만 보였다.
@@ -455,6 +455,9 @@ function Main(){
         return merged;
       }));
       setShoes(safeShoes);setRuns(runsWithRoute);
+      // REST 정본으로 막 받아온 신발/런 id 를 'REST 확정' 집합으로 시드(역등록 known 기준).
+      restShoeIdsRef.current=new Set(safeShoes.map((s:any)=>String(s.id)));
+      restRunIdsRef.current=new Set(runsWithRoute.map((r:any)=>String(r.id)));
       // 로컬-퍼스트 폴백 캐시 갱신(실데이터만). 다음 부팅에 백엔드가 죽어도 마지막
       // 데이터로 'ready'가 되도록. 쓰기 실패는 비차단(부팅 영향 0).
       try{await AsyncStorage.setItem(CACHE_SHOES_KEY,JSON.stringify(safeShoes));await AsyncStorage.setItem(CACHE_RUNS_KEY,JSON.stringify(runsWithRoute));}catch{}
@@ -492,6 +495,11 @@ function Main(){
         }));
         const mergedRuns=[...pendingOverlay,...cached.runs];
         setShoes(cached.shoes);setRuns(mergedRuns);
+        // 캐시는 마지막 REST fetch 스냅샷이므로 'REST 확정' 집합의 보수적 시드로 쓴다(pending
+        // 오버레이는 아직 미확정이라 제외) — 오프라인 부팅 중 클라우드 sync 가 캐시된 REST 신발/런을
+        // 다시 역등록(중복 POST)하지 않게 한다.
+        restShoeIdsRef.current=new Set(cached.shoes.map((s:any)=>String(s.id)));
+        restRunIdsRef.current=new Set(cached.runs.map((r:any)=>String(r.id)));
         setBootState('ready');
         checkShoeAlerts(cached.shoes,mergedRuns,st.alerts);
       }else{
@@ -532,6 +540,8 @@ function Main(){
       const newShoe=await apiAddShoe(userId,{name,maxKm,startKm,date});
       // audit a1: 신규 신발에 updatedAt 스탬프 → 클라우드 머지 '최신 우선'이 작동.
       setShoes(prev=>[stampUpdatedAt(newShoe),...prev]);
+      // REST POST 성공 → 'REST 확정' 집합에 등록(역등록 중복 방지).
+      if(newShoe&&newShoe.id!=null)restShoeIdsRef.current.add(String(newShoe.id));
     }catch(e:any){
       Alert.alert('등록 실패',String(e?.message||e||'알 수 없는 오류')+'\n\n네트워크를 확인하고 다시 시도해 주세요.');
     }
@@ -649,6 +659,9 @@ function Main(){
   // 방지), 마지막으로 낙관적 항목을 서버 항목으로 교체. localId/serverId 중복은 제거.
   async function reconcileSynced(p:PendingRun,server:any){
     const serverId=server&&server.id!=null?server.id:null;
+    // postRun(REST POST) 성공분 → 'REST 확정' 집합에 등록. 서버 id(없으면 localId)로 잡아
+    // 이후 클라우드 역등록이 같은 런을 다시 POST 하지 않게 한다.
+    restRunIdsRef.current.add(String(serverId??p.localId));
     // (c) 다른 어떤 작업보다 먼저 dequeue를 영속한다.
     await removePendingRun(p.localId);
     if(serverId){
@@ -814,17 +827,29 @@ function Main(){
 
   // 클라우드 머지(applyBackupPayload 경로) 직후 REST 정본 합류. 다른 기기가 클라우드에만
   // 올린(우리 REST 백엔드엔 없는) 레코드를 apiAddShoe/apiAddRun 으로 역등록해 REST 를 완전한
-  // 정본으로 만든다. 멱등성:
-  //   · 머지 *적용 전* 로컬 상태 id(=REST 정본 + 우리 pending)에 이미 있는 레코드는 건너뛴다.
-  //   · 역등록 성공 시 서버가 부여한 id 로 상태를 reconcile 하고, 옛 클라우드 id 는 묘비로 남긴다.
-  //     → 다음 동기에서 (a) 새 id 는 knownIds 에 들어와 다시 안 잡히고 (b) 옛 id 묘비가 클라우드의
-  //       옛-id 레코드 부활/재-POST 를 막는다(없으면 옛 id 가 원격에서 계속 돌아와 무한 재등록).
+  // 정본으로 만든다. 멱등성·견고함:
+  //   · known = **REST 확정 집합**(restShoeIdsRef/restRunIdsRef) 기준. 낙관적으로 화면에 끼운
+  //     클라우드-only 레코드는 POST 성공 전엔 known 에 없어, 역등록이 실패하면 다음 sync 에서
+  //     다시 시도된다(in-session 재시도 — 앱 재시작 전 영구 마스킹 금지).
+  //   · 역등록 성공 시 서버 id 로 상태를 reconcile 하고 그 id 를 REST 확정 집합에 넣는다(다시 안 잡힘).
+  //     옛 클라우드 id 는 묘비로 남겨 원격의 옛-id 레코드 부활/재-POST 를 막는다.
+  //   · **고아 런 방지**: 런은 부모 신발이 REST 에 실재할 때만 POST 한다 — (a) 이미 REST 확정 신발이거나
+  //     (b) 이번 패스에서 신발 역등록 성공. 부모가 실패/미존재면 그 자식 런은 이번엔 건너뛰고(defer)
+  //     다음 sync 에서 재시도한다. 절대 cloud shoe id 로 폴백해 POST 하지 않는다(영구 고아 차단).
+  //   · 우리 pending 큐(localId)의 런은 syncPendingRuns 가 REST 로 보내는 중이므로 known 에 합쳐 제외(중복 POST 방지).
   //   · tombstone(삭제 전파)·id 없는 레코드는 역등록 대상에서 제외(부활/무한루프 방지).
   // userId(REST 계정) 미연결이면 건너뛴다 — 레코드는 화면/캐시엔 남아(유실 0) 다음 기회에 합류.
-  const backRegisterMerged=async(merged:BackupPayload,knownShoeIds:Set<string>,knownRunIds:Set<string>)=>{
+  const backRegisterMerged=async(merged:BackupPayload)=>{
     if(!userId) return;
-    // 신발 먼저: cloud id → server id 매핑을 만들어 런의 shoe_id 참조를 재키잉(고아 방지).
+    const knownShoeIds=new Set(restShoeIdsRef.current);
+    // 우리 pending 큐의 런(localId)은 곧 REST 로 가므로 역등록 대상에서 제외(이중 POST 방지).
+    let pendingRunIds=new Set<string>();
+    try{pendingRunIds=new Set((await loadPendingRuns()).map(p=>String(p.localId)));}catch(e){console.log('pending read error',e);}
+    const knownRunIds=new Set<string>([...restRunIdsRef.current,...pendingRunIds]);
+    // 신발 먼저: cloud id → server id 매핑(런 shoe_id 재키잉). restParent = 런의 부모-신발이 REST 에
+    // 실재한다고 볼 수 있는 cloud-shoe-id 집합(이미 REST 확정 + 이번 패스 역등록 성공). 고아 방지 게이트.
     const shoeIdMap=new Map<string,string>();
+    const restParentShoeIds=new Set<string>(knownShoeIds);
     for(const sh of recordsToBackRegister(merged.shoes as BackendShoe[],knownShoeIds)){
       try{
         const created=await apiAddShoe(userId,{
@@ -832,15 +857,21 @@ function Main(){
           startKm:Number(sh.start_km)||0,date:sh.purchase_date||today(),
         });
         const newId=created&&created.id!=null?String(created.id):null;
+        // POST 성공: 부모-실재 집합에 옛(cloud) id 등록 + REST 확정 집합에 실제 id 등록.
+        restParentShoeIds.add(String(sh.id));
+        restShoeIdsRef.current.add(newId??String(sh.id));
         if(newId&&newId!==String(sh.id)){
           shoeIdMap.set(String(sh.id),newId);
           setShoes(prev=>prev.map(s=>String(s.id)===String(sh.id)?stampUpdatedAt({...s,id:newId}):s));
           addShoeTombstone({id:sh.id} as BackendShoe); // 옛 클라우드 id 부활/재등록 차단
         }
-      }catch(e){console.log('back-register shoe error',e);}
+      }catch(e){console.log('back-register shoe error',e);} // 실패 → restParent/REST확정 미반영 → 다음 sync 재시도
     }
     for(const rn of recordsToBackRegister(merged.runs as BackendRun[],knownRunIds)){
-      const shoeId=shoeIdMap.get(String(rn.shoe_id))??String(rn.shoe_id);
+      const cloudShoeId=String(rn.shoe_id);
+      // 고아 방지: 부모 신발이 REST 에 실재할 때만 POST. 미존재면 이번엔 건너뛰고 다음 sync 에서 재시도.
+      if(!restParentShoeIds.has(cloudShoeId)) continue;
+      const shoeId=shoeIdMap.get(cloudShoeId)??cloudShoeId; // 역등록으로 id 바뀐 부모면 재키잉
       try{
         const created=await apiAddRun(userId,{
           localId:String(rn.id),shoe_id:shoeId,km:rn.km,run_date:rn.run_date,
@@ -849,24 +880,23 @@ function Main(){
         });
         const newId=created&&created.id!=null?String(created.id):null;
         const reId=!!(newId&&newId!==String(rn.id));
+        restRunIdsRef.current.add(newId??String(rn.id)); // POST 성공 → REST 확정 등록
         setRuns(prev=>prev.map(r=>{
           if(String(r.id)!==String(rn.id)) return r;
           const next={...r,shoe_id:shoeId,_pending:false};
           return stampUpdatedAt(reId?{...next,id:newId}:next);
         }));
         if(reId) addRunTombstone({id:rn.id} as BackendRun); // 옛 클라우드 id 부활/재등록 차단
-      }catch(e){console.log('back-register run error',e);}
+      }catch(e){console.log('back-register run error',e);} // 실패 → REST 확정 미반영 → 다음 sync 재시도
     }
   };
   // ProfileScreen 자동 동기(pull→mergeCloudData→push)의 병합 결과를 받는 콜백. 먼저
-  // applyBackupPayload 로 상태/묘비를 반영(원격→로컬)하고, 머지 *적용 전* 로컬 id 를 기준으로
-  // REST 미존재 레코드를 역등록한다(현재 closure 의 shoes/runs 는 setState 전이라 머지 전 값).
+  // applyBackupPayload 로 상태/묘비를 화면에 낙관적으로 반영(원격→로컬)하고, REST 역등록은
+  // backRegisterMerged 가 'REST 확정 집합'(낙관적 상태가 아님)을 기준으로 수행한다 — 그래서
+  // 실패한 역등록은 다음 sync 에서 다시 시도되고, 화면 가시성은 유지된다.
   const onCloudMerged=(merged:BackupPayload)=>{
-    // ref 로 최신 커밋 상태를 읽어 stale 클로저(빈 배열)로 인한 오역등록을 막는다.
-    const knownShoeIds=new Set(shoesRef.current.map(s=>String(s.id)));
-    const knownRunIds=new Set(runsRef.current.map(r=>String(r.id)));
     applyBackupPayload(merged);
-    void backRegisterMerged(merged,knownShoeIds,knownRunIds);
+    void backRegisterMerged(merged);
   };
 
   // ── 계정·클라우드 동기(Slice 5) ─────────────────────────────────────────────
