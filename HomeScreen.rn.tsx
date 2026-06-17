@@ -779,12 +779,12 @@ const s = StyleSheet.create({
   goalSheetHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 20 },
   goalSheetTitle: { color: T1, fontFamily: FONT, fontSize: 16, fontWeight: '600' },
   goalStepper: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 16 },
-  goalStepBtn: { width: 52, height: 52, borderRadius: 16, backgroundColor: CARD_HI, alignItems: 'center', justifyContent: 'center' },
+  goalStepBtn: { width: 52, height: 52, borderRadius: RADIUS.md, backgroundColor: CARD_HI, alignItems: 'center', justifyContent: 'center' },
   goalStepVal: { flex: 1, alignItems: 'center' },
   goalStepNum: { color: T1, fontFamily: DISPLAY, fontSize: 40, letterSpacing: 0.3 },
   goalStepUnit: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '600', marginTop: 2 },
   goalSheetHint: { color: T3, fontFamily: FONT, fontSize: 12.5, textAlign: 'center', marginTop: 16 },
-  goalDone: { marginTop: 20, height: 50, borderRadius: 16, backgroundColor: ACCENT, alignItems: 'center', justifyContent: 'center' },
+  goalDone: { marginTop: 20, height: 50, borderRadius: RADIUS.md, backgroundColor: ACCENT, alignItems: 'center', justifyContent: 'center' },
   goalDoneText: { color: T1, fontFamily: FONT, fontSize: 15, fontWeight: '600' },
 
 
