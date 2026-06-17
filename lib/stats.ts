@@ -15,21 +15,35 @@ export interface PeriodSummary {
   time: string;
 }
 
+/**
+ * 집계가 실제로 읽는 런 행의 최소 형태. 백엔드는 km 을 문자열로도 숫자로도 보내므로
+ * `string | number`. 세 필드 모두 선택(?)으로 둔다 — BackendRun(서버 truth) · RecapRun ·
+ * pending 오버레이 등 호출부마다 채워진 필드가 달라, 이 인터페이스를 좁은 교집합으로
+ * 유지해야 모두 그대로 넘길 수 있다(타입만 좁히고 런타임 방어 로직은 불변).
+ * 집계 함수들은 이미 누락 필드를 방어(`parseFloat(km)||0`, `duration||0`)하므로
+ * 선택 필드가 동작을 바꾸지 않는다. 필드명 오타는 이 형태로 컴파일에러로 잡힌다.
+ */
+export interface RunRow {
+  km?: string | number;
+  duration?: number;
+  run_date?: string;
+}
+
 /** 비배열 입력(손상/스칼라 백엔드 응답 등)을 빈 배열로 정규화 — 집계 함수 크래시 방지. */
-function asList(list: any[]): any[] {
+function asList<T>(list: T[]): T[] {
   return Array.isArray(list) ? list.filter(Boolean) : [];
 }
 
 /** Sum of `km` (parsed) over a run list. */
-export function sumKm(list: any[]): number {
-  return asList(list).reduce((a, r) => a + (parseFloat(r.km) || 0), 0);
+export function sumKm(list: RunRow[]): number {
+  return asList(list).reduce((a, r) => a + (parseFloat(r.km as string) || 0), 0);
 }
 
 /** Average pace label across runs with usable duration & distance, else '--'. */
-export function avgPaceLabel(list: any[]): string {
-  const p = asList(list).filter(r => (r.duration || 0) > 0 && parseFloat(r.km) > 0.1);
+export function avgPaceLabel(list: RunRow[]): string {
+  const p = asList(list).filter(r => (r.duration || 0) > 0 && parseFloat(r.km as string) > 0.1);
   if (!p.length) return '--';
-  const sec = p.reduce((a, r) => a + r.duration / parseFloat(r.km), 0) / p.length;
+  const sec = p.reduce((a, r) => a + r.duration! / parseFloat(r.km as string), 0) / p.length;
   return fmtPace(1, sec);
 }
 
@@ -45,12 +59,12 @@ export function durationLabel(seconds: number): string {
 }
 
 /** Total moving time as "Hh Mm" / "Mm", or '--' when zero. */
-export function totalTimeLabel(list: any[]): string {
+export function totalTimeLabel(list: RunRow[]): string {
   return durationLabel(asList(list).reduce((a, r) => a + (r.duration || 0), 0));
 }
 
 /** Period summary (distance/count/pace/time) for a run list. */
-export function summaryOf(list: any[]): PeriodSummary {
+export function summaryOf(list: RunRow[]): PeriodSummary {
   const l = asList(list);
   return {
     km: sumKm(l).toFixed(1),
@@ -82,7 +96,7 @@ export function maxDayStreak(dates: string[]): number {
  * Daily distance (km) for the 7 days starting at `monday` (Mon..Sun).
  * Returns raw sums; callers round for display.
  */
-export function weekBuckets(runs: any[], monday: Date): number[] {
+export function weekBuckets(runs: RunRow[], monday: Date): number[] {
   const safe = asList(runs);
   const out: number[] = [];
   for (let i = 0; i < 7; i++) {
@@ -97,24 +111,24 @@ export function weekBuckets(runs: any[], monday: Date): number[] {
  * Weekly-bucketed distance (km) within a month. Bucket count = ceil(days/7).
  * Day-of-month is read from local Date components. Returns raw sums.
  */
-export function monthBuckets(monthRuns: any[], year: number, monthIndex: number): number[] {
+export function monthBuckets(monthRuns: RunRow[], year: number, monthIndex: number): number[] {
   const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
   const weekCount = Math.ceil(daysInMonth / 7);
   const out: number[] = Array(weekCount).fill(0);
   asList(monthRuns).forEach(r => {
     const day = new Date(r.run_date + 'T00:00:00').getDate();
     const b = Math.min(weekCount - 1, Math.ceil(day / 7) - 1);
-    out[b] += parseFloat(r.km) || 0;
+    out[b] += parseFloat(r.km as string) || 0;
   });
   return out;
 }
 
 /** Monthly-bucketed distance (km) for a year (Jan..Dec). Returns raw sums. */
-export function yearBuckets(yearRuns: any[]): number[] {
+export function yearBuckets(yearRuns: RunRow[]): number[] {
   const out: number[] = Array(12).fill(0);
   asList(yearRuns).forEach(r => {
     const m = new Date(r.run_date + 'T00:00:00').getMonth();
-    out[m] += parseFloat(r.km) || 0;
+    out[m] += parseFloat(r.km as string) || 0;
   });
   return out;
 }

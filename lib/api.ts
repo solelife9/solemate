@@ -5,8 +5,39 @@
 // 그대로 green 이다(행동 보존 리팩터).
 //
 // BackendShoe / BackendRun 은 types.d.ts 의 전역 ambient 인터페이스(import 불필요).
+// PendingRun 은 동기화 큐 행(payload)의 정본 형태 — apiAddRun 이 그 부분집합을 전송한다.
+
+import type {PendingRun} from './runPersistence';
 
 export const API = 'https://solelife-backend.onrender.com';
+
+/** 익명 인증 응답(파싱) — 호출부가 user_id 로 후속 fetch 한다. */
+export interface AuthResult {
+  user_id: string;
+}
+
+/**
+ * apiAddRun 이 백엔드로 직렬화하는 런 페이로드. PendingRun(동기화 큐 행)에서 서버로
+ * 보내는 필드만 추린 부분집합 — run_time/queuedAt/updatedAt 같은 클라이언트 전용/메타
+ * 필드는 보내지 않는다. PendingRun 과 클라우드 역등록 리터럴 둘 다 이 형태를 만족한다.
+ */
+export type RunPostPayload = Pick<
+  PendingRun,
+  | 'localId'
+  | 'shoe_id'
+  | 'run_date'
+  | 'memo'
+  | 'source'
+  | 'duration'
+  | 'cadence'
+  | 'route'
+  | 'location'
+  | 'heart_rate'
+> & {
+  // km: PendingRun(number)뿐 아니라 클라우드 역등록이 넘기는 BackendRun.km(string|number)도
+  // 받도록 넓힌다 — 직렬화는 값을 그대로 JSON.stringify 하므로 둘 다 안전(동작 불변).
+  km: string | number;
+};
 
 const JSON_HEADERS = {'Content-Type': 'application/json'};
 
@@ -33,7 +64,7 @@ export async function fetchWithTimeout(
 }
 
 /** 디바이스 id 로 익명 인증 → { user_id } 파싱 반환. */
-export async function apiAuth(deviceId: string): Promise<any> {
+export async function apiAuth(deviceId: string): Promise<AuthResult> {
   const r = await fetchWithTimeout(API + '/api/auth', {
     method: 'POST',
     headers: JSON_HEADERS,
@@ -43,13 +74,13 @@ export async function apiAuth(deviceId: string): Promise<any> {
 }
 
 /** 사용자 신발 목록(파싱 반환). */
-export async function apiGetShoes(userId: string): Promise<any> {
+export async function apiGetShoes(userId: string): Promise<BackendShoe[]> {
   const r = await fetchWithTimeout(API + '/api/shoes?user_id=' + userId);
   return r.json();
 }
 
 /** 사용자 런 목록(파싱 반환). */
-export async function apiGetRuns(userId: string): Promise<any> {
+export async function apiGetRuns(userId: string): Promise<BackendRun[]> {
   const r = await fetchWithTimeout(API + '/api/runs?user_id=' + userId);
   return r.json();
 }
@@ -61,7 +92,7 @@ export async function apiGetRuns(userId: string): Promise<any> {
 export async function apiAddShoe(
   userId: string | null,
   fields: {name: string; maxKm: number; startKm: number; date: string},
-): Promise<any> {
+): Promise<BackendShoe> {
   const r = await fetchWithTimeout(API + '/api/shoes', {
     method: 'POST',
     headers: JSON_HEADERS,
@@ -108,7 +139,10 @@ export async function apiDeleteShoe(userId: string | null, id: string): Promise<
  * 런 추가(POST) — PendingRun 페이로드를 그대로 전송하고 생성된 런을 파싱 반환.
  * 실패(!ok/무응답)는 throw 해 호출부(동기화 큐)가 재시도 대상으로 남기게 한다.
  */
-export async function apiAddRun(userId: string | null, p: any): Promise<any> {
+export async function apiAddRun(
+  userId: string | null,
+  p: RunPostPayload,
+): Promise<BackendRun> {
   const r = await fetchWithTimeout(API + '/api/runs', {
     method: 'POST',
     headers: JSON_HEADERS,
