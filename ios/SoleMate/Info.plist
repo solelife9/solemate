@@ -51,6 +51,8 @@
 		<string>Barlow-Regular.ttf</string>
 		<string>BebasNeue-Regular.ttf</string>
 		<string>PretendardVariable.ttf</string>
+		<string>Ionicons.ttf</string>
+		<string>MaterialCommunityIcons.ttf</string>
 	</array>
 	<key>UIBackgroundModes</key>
 	<array>
