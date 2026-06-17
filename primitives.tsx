@@ -659,7 +659,7 @@ export function Pill({
         style,
       ]}>
       {icon ? <Ionicons name={icon} size={md ? 13 : 11} color={fg} /> : null}
-      <Text style={[pill.label, {color: fg, fontSize: md ? 12 : 10.5}]}>{label}</Text>
+      <Text style={[pill.label, {color: fg, fontSize: md ? 12 : 11}]}>{label}</Text>
     </View>
   );
 }
