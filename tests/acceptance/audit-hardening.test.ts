@@ -38,6 +38,58 @@ import {
 } from '../../lib/runPersistence';
 import {setupPushMessaging, FCM_TOKEN_PENDING_KEY} from '../../lib/pushMessaging';
 
+// ── B 묶음(런플로우/온보딩 + 햅틱 + a11y) 렌더 도구 ────────────────────────────
+// B 수용은 실제 컴포넌트 트리를 그려 관찰 가능한 결과를 단언한다(JSX 없이 createElement —
+// 이 파일은 .ts). 의미 햅틱은 모킹해 '화면이 어떤 의미 메서드를 부르는지'만 본다.
+import fs from 'fs';
+import path from 'path';
+import React from 'react';
+import ReactTestRenderer, {act} from 'react-test-renderer';
+
+jest.mock('../../lib/haptics', () => ({
+  tap: jest.fn(),
+  success: jest.fn(),
+  warning: jest.fn(),
+  countdownBeat: jest.fn(),
+  go: jest.fn(),
+  impactHeavy: jest.fn(),
+  setHapticsEnabled: jest.fn(),
+  isHapticsEnabled: jest.fn(() => true),
+}));
+
+import * as haptics from '../../lib/haptics';
+import OnboardingScreen from '../../OnboardingScreen.rn';
+import RunActiveScreen from '../../RunActiveScreen.rn';
+import RunGoalScreen from '../../RunGoalScreen.rn';
+import RunCountdownScreen from '../../RunCountdownScreen.rn';
+
+// createElement 단축(JSX 미사용) + 트리 렌더 헬퍼.
+const el = (C: unknown, props: Record<string, unknown> = {}) =>
+  React.createElement(C as React.ComponentType<Record<string, unknown>>, props);
+function renderTree(node: React.ReactElement): ReactTestRenderer.ReactTestRenderer {
+  let r!: ReactTestRenderer.ReactTestRenderer;
+  act(() => {
+    r = ReactTestRenderer.create(node);
+  });
+  return r;
+}
+// accessibilityLabel 로 누를 수 있는(onPress|onLongPress) 노드 1개를 찾는다.
+function pressableByLabel(root: ReactTestRenderer.ReactTestInstance, label: string) {
+  const hits = root.findAll(
+    (n: ReactTestRenderer.ReactTestInstance) =>
+      !!n.props &&
+      n.props.accessibilityLabel === label &&
+      (typeof n.props.onPress === 'function' || typeof n.props.onLongPress === 'function'),
+  );
+  if (!hits.length) throw new Error(`no pressable with label "${label}"`);
+  return hits[0];
+}
+function hasLabel(root: ReactTestRenderer.ReactTestInstance, label: string): boolean {
+  return root.findAll(
+    (n: ReactTestRenderer.ReactTestInstance) => !!n.props && n.props.accessibilityLabel === label,
+  ).length > 0;
+}
+
 const payload = (over: Partial<BackupPayload> = {}): BackupPayload => ({
   shoes: [],
   runs: [],
@@ -208,10 +260,135 @@ describe('Audit Hardening 수용', () => {
   });
 
   describe('B. 런플로우/온보딩 통합 + 햅틱 + 접근성', () => {
-    it.todo('theme 수렴: Run*/Onboarding에 사설 팔레트(C/KG)·BebasNeue 참조 0');
-    it.todo('햅틱: 카운트다운/GO/시작·정지/목표달성/길게눌러종료가 lib/haptics 호출');
-    it.todo('a11y: 런플로우 터치요소가 accessibilityRole/Label 보유');
-    it.todo('온보딩 로그인 링크가 의도한 동작(로그인 경로)을 수행한다');
+    const ROOT = path.resolve(__dirname, '../..');
+    // 라인 주석(// ...) 제거 — 설명/이력 주석의 토큰 이름은 스캔 대상이 아니다.
+    // CRLF 의 \r 은 `.` 에 안 잡혀 `$` 앵커가 빗나가므로 먼저 \r 을 걷어낸다.
+    const codeOnly = (src: string) =>
+      src
+        .replace(/\r/g, '')
+        .split('\n')
+        .map(l => l.replace(/\/\/.*$/, ''))
+        .join('\n');
+
+    beforeEach(() => {
+      jest.clearAllMocks();
+    });
+
+    test('theme 수렴: Run*/Onboarding 소스에 사설 팔레트(const C/KG)·BebasNeue 0, theme import 존재', () => {
+      const files = [
+        'RunActiveScreen.rn.tsx',
+        'RunGoalScreen.rn.tsx',
+        'RunCountdownScreen.rn.tsx',
+        'OnboardingScreen.rn.tsx',
+      ];
+      for (const f of files) {
+        const code = codeOnly(fs.readFileSync(path.join(ROOT, f), 'utf8'));
+        // 사설 색객체(Run* 의 const C / Onboarding 의 const KG)가 되살아나지 않았다.
+        expect(code).not.toMatch(/const\s+C\s*=\s*\{/);
+        expect(code).not.toMatch(/const\s+KG\s*=/);
+        // BebasNeue 디스플레이 폰트 참조가 코드에 없다(theme DISPLAY=Pretendard 로 흡수).
+        expect(code).not.toMatch(/BebasNeue/);
+        // theme 토큰을 실제로 import 한다(흡수의 증거).
+        expect(code).toMatch(/from ['"]\.\/theme['"]/);
+      }
+    });
+
+    test('햅틱(동기): 런 시작=tap · 일시정지=tap · 목표달성=impactHeavy · 종료확정=warning', () => {
+      // 런 시작 CTA → tap
+      const goal = renderTree(el(RunGoalScreen, {onStart: jest.fn()}));
+      act(() => {
+        pressableByLabel(goal.root, '러닝 시작').props.onPress();
+      });
+      expect(haptics.tap).toHaveBeenCalledTimes(1);
+
+      // 일시정지 → tap (가벼운 피드백)
+      jest.clearAllMocks();
+      const active = renderTree(el(RunActiveScreen, {distanceKm: 2, goalKm: 5}));
+      act(() => {
+        pressableByLabel(active.root, '일시정지').props.onPress();
+      });
+      expect(haptics.tap).toHaveBeenCalledTimes(1);
+
+      // 목표 달성(거리 ≥ 목표) → impactHeavy 한 번
+      jest.clearAllMocks();
+      renderTree(el(RunActiveScreen, {distanceKm: 5.2, goalKm: 5}));
+      expect(haptics.impactHeavy).toHaveBeenCalledTimes(1);
+
+      // 길게 눌러 종료 확정 → warning + onStop
+      jest.clearAllMocks();
+      const onStop = jest.fn();
+      const stopping = renderTree(el(RunActiveScreen, {distanceKm: 2, goalKm: 5, paused: true, onStop}));
+      act(() => {
+        pressableByLabel(stopping.root, '길게 눌러 종료').props.onLongPress();
+      });
+      expect(haptics.warning).toHaveBeenCalledTimes(1);
+      expect(onStop).toHaveBeenCalledTimes(1);
+    });
+
+    test('햅틱(카운트다운): 3·2·1 각 비트 countdownBeat, GO 에서 go', () => {
+      jest.useFakeTimers();
+      let r!: ReactTestRenderer.ReactTestRenderer;
+      try {
+        act(() => {
+          r = ReactTestRenderer.create(
+            el(RunCountdownScreen, {goalKm: 5, onDone: () => {}, onCancel: () => {}}),
+          );
+        });
+        // GPS 락 → 비트 3개 → GO. 넉넉히 시간을 흘려 카운트다운을 끝까지 진행.
+        act(() => {
+          jest.advanceTimersByTime(5000);
+        });
+        expect(haptics.countdownBeat).toHaveBeenCalledTimes(3);
+        expect(haptics.go).toHaveBeenCalledTimes(1);
+      } finally {
+        // 잔여 타이머가 teardown 후 발화하지 않도록: 언마운트 → 한 번 흘림 → 비움 → 실시간 복원.
+        act(() => {
+          r?.unmount();
+        });
+        act(() => {
+          jest.advanceTimersByTime(2000);
+        });
+        jest.clearAllTimers();
+        jest.useRealTimers();
+      }
+    });
+
+    test('a11y: 런플로우 컨트롤과 온보딩 로그인 링크가 role/label 을 노출한다', () => {
+      // 런 시작 CTA
+      const goal = renderTree(el(RunGoalScreen, {onStart: jest.fn()})).root;
+      const start = pressableByLabel(goal, '러닝 시작');
+      expect(start.props.accessibilityRole).toBe('button');
+
+      // 라이브 런 컨트롤(일시정지) + 길게눌러종료
+      const active = renderTree(el(RunActiveScreen, {distanceKm: 2, goalKm: 5})).root;
+      expect(pressableByLabel(active, '일시정지').props.accessibilityRole).toBe('button');
+
+      // 온보딩 Welcome: 시작/로그인 링크 모두 role=button + 라벨
+      const onb = renderTree(el(OnboardingScreen, {onDone: jest.fn()})).root;
+      const login = pressableByLabel(onb, '이미 계정이 있나요? 로그인');
+      expect(login.props.accessibilityRole).toBe('button');
+      expect(pressableByLabel(onb, '시작하기').props.accessibilityRole).toBe('button');
+    });
+
+    test('온보딩 로그인 링크가 로그인 화면(Ready)으로 진입한다(goNext 아님)', () => {
+      const onDone = jest.fn();
+      const root = renderTree(el(OnboardingScreen, {onDone})).root;
+
+      // Welcome 단계: 로그인 화면(Ready)의 소셜 로그인 버튼은 아직 없다.
+      expect(hasLabel(root, '카카오로 시작하기')).toBe(false);
+
+      // '이미 계정이 있나요? 로그인' 을 누른다.
+      act(() => {
+        pressableByLabel(root, '이미 계정이 있나요? 로그인').props.onPress();
+      });
+
+      // 이제 로그인(Ready, index 5) 화면이 보인다 — 소셜/이메일 로그인 진입점이 렌더된다.
+      // (과거 버그였다면 goNext 로 1단계 'Shoes Matter'(다음 CTA)가 떴을 것.)
+      expect(hasLabel(root, '카카오로 시작하기')).toBe(true);
+      expect(hasLabel(root, '이메일로 계속하기')).toBe(true);
+      // 온보딩 소개 단계의 '다음' CTA 는 뜨지 않았다(=순차 진행이 아니라 로그인 점프).
+      expect(hasLabel(root, '다음')).toBe(false);
+    });
   });
 
   describe('C. 폼 + 피드백', () => {

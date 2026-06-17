@@ -5,7 +5,7 @@
 //   0 Welcome → 1 Shoes Matter → 2 Injury → 3 Management → 4 Register → 5 Ready
 // 프로토타입(HTML/React)을 시각·인터랙션 스펙으로 삼아 RN 패턴으로 옮겼다.
 //
-// - 큰 숫자/헤드라인은 Bebas(=assets/fonts BebasNeue-Regular), 본문은 Pretendard.
+// - 큰 숫자/헤드라인은 디스플레이 페이스(theme DISPLAY=Pretendard), 본문은 FONT(Pretendard).
 // - 그라데이션/링/마모 곡선은 react-native-svg(앱에 expo-linear-gradient 미설치).
 // - 등록 단계는 프로토타입과 동일하게 화면-로컬 상태로 동작하고, 완료 시 onDone로
 //   브랜드/모델/거리를 상위(App)에 넘겨 실제 신발 등록에 연결할 수 있게 한다.
@@ -37,34 +37,36 @@ import Svg, {
   LinearGradient as SvgGradient,
   Stop,
 } from 'react-native-svg';
+import {
+  BG,
+  CARD,
+  ACCENT,
+  ACCENT_2,
+  GOOD,
+  WARN,
+  DANGER,
+  T1,
+  T3,
+  T4,
+  SEP,
+  FONT,
+  DISPLAY,
+  withAlpha,
+} from './theme';
 
-// ── 핸드오프 디자인 토큰(이 화면 전용 시네마틱 팔레트) ───────────────────────────
-// 메인 앱은 theme.ts 토큰을 쓰지만, 온보딩은 핸드오프가 명시한 자체 다크 팔레트를
-// 그대로 재현한다(단일 소스로 이 파일에 모음 — raw hex 산재 방지).
-const KG = {
-  orange: '#FF6500',
-  orangeSoft: '#FF8A3D',
-  bg: '#0A0A0C',
-  bgDeep: '#050506',
-  card: '#16161A',
-  card2: '#1C1C21',
-  line: 'rgba(255,255,255,0.08)',
-  line2: 'rgba(255,255,255,0.14)',
-  text: '#F6F6F8',
-  dim: 'rgba(246,246,248,0.58)',
-  faint: 'rgba(246,246,248,0.38)',
-  green: '#37D67A',
-  amber: '#FFB23E',
-  red: '#FF4D4D',
-};
-const DISP = 'BebasNeue-Regular'; // 디스플레이(큰 숫자/헤드라인)
-const UI = 'PretendardVariable'; // 본문(한글 포함)
+// ── 디자인 토큰 흡수 ──────────────────────────────────────────────────────────
+// 과거 이 화면은 자체 다크 팔레트(const KG)와 BebasNeue 디스플레이 별칭(DISP)을 들고
+// 있었으나, 메인 앱과 단일 소스를 공유하도록 theme.ts 토큰으로 흡수했다(시각 동등):
+//   bg→BG · card→CARD · orange→ACCENT · green→GOOD · amber→WARN · red→DANGER ·
+//   text→T1 · dim→T3 · faint→T4 · line→SEP · line2→withAlpha(T1,.14). 디스플레이/본문
+//   폰트는 DISPLAY/FONT(둘 다 Pretendard — 핸드오프 정합). 알파 틴트는 withAlpha 로
+//   토큰에서 파생해 raw rgba desync 를 막는다. 시네마틱 그라데이션 스톱(장식)만 인라인.
 
 type StatusKey = 'good' | 'caution' | 'replace';
 const STATUS: Record<StatusKey, {c: string; label: string; bg: string}> = {
-  good: {c: KG.green, label: '좋음', bg: 'rgba(55,214,122,0.14)'},
-  caution: {c: KG.amber, label: '점검', bg: 'rgba(255,178,62,0.14)'},
-  replace: {c: KG.red, label: '교체 권장', bg: 'rgba(255,77,77,0.14)'},
+  good: {c: GOOD, label: '좋음', bg: withAlpha(GOOD, 0.14)},
+  caution: {c: WARN, label: '점검', bg: withAlpha(WARN, 0.14)},
+  replace: {c: DANGER, label: '교체 권장', bg: withAlpha(DANGER, 0.14)},
 };
 function statusFor(km: number, max: number): StatusKey {
   const r = km / max;
@@ -170,7 +172,7 @@ function useCountUp(target: number, animate = true, duration = 1200): number {
 }
 
 // 등록 성공 컨페티(가벼운 낙하). reduce-motion이면 렌더 안 함.
-const CONFETTI_COLORS = [KG.orange, KG.orangeSoft, KG.green, KG.amber, '#fff'];
+const CONFETTI_COLORS = [ACCENT, ACCENT_2, GOOD, WARN, '#fff'];
 function Confetti() {
   const rm = useContext(ReduceMotionCtx);
   const pieces = useMemo(
@@ -343,8 +345,8 @@ function LifespanRing({km, max, size = 128, stroke = 11, animate = true}: {km: n
   return (
     <ProgressRing size={size} stroke={stroke} progress={km / max} color={col} animate={animate}>
       <View style={{alignItems: 'center'}}>
-        <Text style={{fontFamily: DISP, fontSize: Math.round(size * 0.3), color: KG.text}}>{shown}</Text>
-        <Text style={{fontFamily: UI, fontSize: 11, color: KG.dim, marginTop: 2, letterSpacing: 0.5}}>/ {max} KM</Text>
+        <Text style={{fontFamily: DISPLAY, fontSize: Math.round(size * 0.3), color: T1}}>{shown}</Text>
+        <Text style={{fontFamily: FONT, fontSize: 11, color: T3, marginTop: 2, letterSpacing: 0.5}}>/ {max} KM</Text>
       </View>
     </ProgressRing>
   );
@@ -356,8 +358,8 @@ function PctRing({pct, color, size = 72, stroke = 7, animate = true}: {pct: numb
   return (
     <ProgressRing size={size} stroke={stroke} progress={pct / 100} color={color} animate={animate}>
       <View style={{flexDirection: 'row', alignItems: 'baseline'}}>
-        <Text style={{fontFamily: DISP, fontSize: Math.round(size * 0.3), color: '#fff'}}>{shown}</Text>
-        <Text style={{fontFamily: UI, fontSize: Math.round(size * 0.16), color: KG.dim}}>%</Text>
+        <Text style={{fontFamily: DISPLAY, fontSize: Math.round(size * 0.3), color: '#fff'}}>{shown}</Text>
+        <Text style={{fontFamily: FONT, fontSize: Math.round(size * 0.16), color: T3}}>%</Text>
       </View>
     </ProgressRing>
   );
@@ -368,7 +370,7 @@ function Metric({
   unit,
   size = 40,
   color = '#fff',
-  unitColor = KG.faint,
+  unitColor = T4,
   countUp = false,
 }: {
   value: string | number;
@@ -385,9 +387,9 @@ function Metric({
   const display = numeric ? counted : value;
   return (
     <View style={{flexDirection: 'row', alignItems: 'baseline'}}>
-      <Text style={{fontFamily: DISP, fontSize: size, color, letterSpacing: 0.2}}>{display}</Text>
+      <Text style={{fontFamily: DISPLAY, fontSize: size, color, letterSpacing: 0.2}}>{display}</Text>
       {unit ? (
-        <Text style={{fontFamily: UI, fontSize: us, fontWeight: '600', color: unitColor, marginLeft: Math.max(5, Math.round(size * 0.14))}}>
+        <Text style={{fontFamily: FONT, fontSize: us, fontWeight: '600', color: unitColor, marginLeft: Math.max(5, Math.round(size * 0.14))}}>
           {unit}
         </Text>
       ) : null}
@@ -421,7 +423,7 @@ function StatusPill({status}: {status: StatusKey}) {
   return (
     <View style={[s.pill, {backgroundColor: st.bg}]}>
       <View style={{width: 6, height: 6, borderRadius: 3, backgroundColor: st.c}} />
-      <Text style={{color: st.c, fontFamily: UI, fontSize: 12.5, fontWeight: '600'}}>{st.label}</Text>
+      <Text style={{color: st.c, fontFamily: FONT, fontSize: 12.5, fontWeight: '600'}}>{st.label}</Text>
     </View>
   );
 }
@@ -474,7 +476,7 @@ function Chip({label, active, onPress, small}: {label: string; active: boolean; 
         active ? s.chipActive : s.chipIdle,
         pressed && {opacity: 0.8},
       ]}>
-      <Text style={[s.chipLabel, {color: active ? '#fff' : KG.text, fontSize: small ? 13 : 13.5}]}>{label}</Text>
+      <Text style={[s.chipLabel, {color: active ? '#fff' : T1, fontSize: small ? 13 : 13.5}]}>{label}</Text>
     </Pressable>
   );
 }
@@ -507,6 +509,9 @@ function KmSlider({value, min, max, step, onChange}: {value: number; min: number
       onPanResponderMove: e => handle(e.nativeEvent.locationX),
     }),
   ).current;
+  // 접근성: 스크린리더가 트랙을 '조절 가능' 슬라이더로 읽고 현재/최소/최대 km 를 announce
+  // 한다. adjustmentAction(증가/감소)으로 step 만큼 키보드/제스처 조절도 지원한다.
+  const adjust = (dir: 1 | -1) => onChange(Math.max(min, Math.min(max, value + dir * step)));
   return (
     <View
       onLayout={e => {
@@ -515,9 +520,17 @@ function KmSlider({value, min, max, step, onChange}: {value: number; min: number
         setW(ww);
       }}
       {...pan.panHandlers}
+      accessibilityRole="adjustable"
+      accessibilityLabel="현재 누적 거리"
+      accessibilityValue={{min, max, now: value, text: `${value} 킬로미터`}}
+      onAccessibilityAction={e => {
+        if (e.nativeEvent.actionName === 'increment') adjust(1);
+        else if (e.nativeEvent.actionName === 'decrement') adjust(-1);
+      }}
+      accessibilityActions={[{name: 'increment'}, {name: 'decrement'}]}
       style={{height: 26, justifyContent: 'center'}}>
       <View style={{position: 'absolute', left: 0, right: 0, height: 8, borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.09)'}} />
-      <View style={{position: 'absolute', left: 0, width: pct * w, height: 8, borderRadius: 8, backgroundColor: KG.orange}} />
+      <View style={{position: 'absolute', left: 0, width: pct * w, height: 8, borderRadius: 8, backgroundColor: ACCENT}} />
       <View
         style={{
           position: 'absolute',
@@ -527,7 +540,7 @@ function KmSlider({value, min, max, step, onChange}: {value: number; min: number
           borderRadius: 13,
           backgroundColor: '#fff',
           borderWidth: 5,
-          borderColor: KG.orange,
+          borderColor: ACCENT,
         }}
       />
     </View>
@@ -579,14 +592,14 @@ function SparkIcon({size = 18, color = '#fff'}: {size?: number; color?: string})
     </Svg>
   );
 }
-function HeartIcon({size = 17, color = KG.dim}: {size?: number; color?: string}) {
+function HeartIcon({size = 17, color = T3}: {size?: number; color?: string}) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <Path d="M12 20s-7-4.6-7-9.5A4.5 4.5 0 0112 7a4.5 4.5 0 017 3.5C19 15.4 12 20 12 20z" stroke={color} strokeWidth={1.8} strokeLinejoin="round" />
     </Svg>
   );
 }
-function RulerIcon({size = 17, color = KG.dim}: {size?: number; color?: string}) {
+function RulerIcon({size = 17, color = T3}: {size?: number; color?: string}) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <Rect x="3" y="8" width="18" height="8" rx="1.5" stroke={color} strokeWidth={1.8} />
@@ -643,9 +656,9 @@ function FlowHeader({step, total, onSkip, insetTop}: {step: number; total: numbe
 // ════════════════════════════════════════════════════════════════════════════
 // 0 · Welcome
 // ════════════════════════════════════════════════════════════════════════════
-function Welcome({goNext, insetTop, insetBottom}: {goNext: () => void; insetTop: number; insetBottom: number}) {
+function Welcome({goNext, goLogin, insetTop, insetBottom}: {goNext: () => void; goLogin: () => void; insetTop: number; insetBottom: number}) {
   return (
-    <View style={{flex: 1, backgroundColor: KG.bgDeep}}>
+    <View style={{flex: 1, backgroundColor: BG}}>
       <ImageBackground
         source={require('./assets/onboarding/hero-runner-bw.png')}
         resizeMode="cover"
@@ -663,7 +676,7 @@ function Welcome({goNext, insetTop, insetBottom}: {goNext: () => void; insetTop:
             {color: 'rgba(0,0,0,0.55)', offset: 0},
             {color: 'rgba(0,0,0,0)', offset: 0.28},
             {color: 'rgba(5,5,6,0.78)', offset: 0.66},
-            {color: KG.bgDeep, offset: 1},
+            {color: BG, offset: 1},
           ]}
         />
       </ImageBackground>
@@ -675,7 +688,7 @@ function Welcome({goNext, insetTop, insetBottom}: {goNext: () => void; insetTop:
       <View style={{flex: 1, justifyContent: 'flex-end', paddingHorizontal: 24, paddingBottom: Math.max(insetBottom, 24) + 8}}>
         <Rise delay={80}>
           <Text style={s.heroHeadline}>
-            KEEP{'\n'}GOING<Text style={{color: KG.orange}}>.</Text>
+            KEEP{'\n'}GOING<Text style={{color: ACCENT}}>.</Text>
           </Text>
         </Rise>
         <Rise delay={220}>
@@ -686,8 +699,17 @@ function Welcome({goNext, insetTop, insetBottom}: {goNext: () => void; insetTop:
         </Rise>
         <Rise delay={440} style={{marginTop: 26}}>
           <PrimaryButton testID="onboarding-start" label="시작하기" onPress={goNext} />
-          <Pressable onPress={goNext} style={{alignItems: 'center', marginTop: 14}} accessibilityRole="button">
-            <Text style={{fontFamily: UI, fontSize: 14, color: KG.dim, fontWeight: '500'}}>
+          {/* 이미 계정이 있는 사용자: 온보딩 투어를 건너뛰고 곧장 로그인(Ready) 화면으로.
+              과거 버그 — 이 링크가 goNext()를 불러 '다음 온보딩 단계'로 갈 뿐 로그인이
+              아니었다. 이제 goLogin()이 마지막 로그인 화면(소셜/이메일 인증)으로 점프한다. */}
+          <Pressable
+            testID="onboarding-login"
+            onPress={goLogin}
+            hitSlop={8}
+            style={{alignItems: 'center', marginTop: 14}}
+            accessibilityRole="button"
+            accessibilityLabel="이미 계정이 있나요? 로그인">
+            <Text style={{fontFamily: FONT, fontSize: 14, color: T3, fontWeight: '500'}}>
               이미 계정이 있나요? <Text style={{color: '#fff'}}>로그인</Text>
             </Text>
           </Pressable>
@@ -743,17 +765,17 @@ function ShoesMatter({goNext, onSkip, insetTop, insetBottom}: ScreenProps) {
           <LinearGrad stops={[{color: '#1A1A1F', offset: 0}, {color: '#141417', offset: 1}]} radius={22} />
           <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', padding: 14, paddingBottom: 0}}>
             <View>
-              <Text style={{fontFamily: UI, fontSize: 12.5, color: KG.dim}}>당신의 데일리 러닝화</Text>
-              <Text style={{fontFamily: UI, fontSize: 16, fontWeight: '700', color: '#fff', marginTop: 2}}>
-                누적 <Text style={{color: KG.red}}>742 km</Text>
+              <Text style={{fontFamily: FONT, fontSize: 12.5, color: T3}}>당신의 데일리 러닝화</Text>
+              <Text style={{fontFamily: FONT, fontSize: 16, fontWeight: '700', color: '#fff', marginTop: 2}}>
+                누적 <Text style={{color: DANGER}}>742 km</Text>
               </Text>
             </View>
             <StatusPill status="replace" />
           </View>
           <View style={{paddingHorizontal: 14, paddingTop: 10, paddingBottom: 14}}>
             <View style={{flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8}}>
-              <Text style={{fontFamily: UI, fontSize: 12, color: KG.faint, letterSpacing: 0.8}}>쿠셔닝 성능</Text>
-              <Text style={{fontFamily: UI, fontSize: 12, color: KG.faint}}>0 → 800 KM</Text>
+              <Text style={{fontFamily: FONT, fontSize: 12, color: T4, letterSpacing: 0.8}}>쿠셔닝 성능</Text>
+              <Text style={{fontFamily: FONT, fontSize: 12, color: T4}}>0 → 800 KM</Text>
             </View>
             <DegradeCurve />
           </View>
@@ -762,10 +784,10 @@ function ShoesMatter({goNext, onSkip, insetTop, insetBottom}: ScreenProps) {
         {/* 권장 수명 팩트 스트립 */}
         <Rise delay={240} style={s.factStrip}>
           <View>
-            <Text style={{fontFamily: UI, fontSize: 13.5, color: KG.dim}}>러닝화 권장 수명</Text>
+            <Text style={{fontFamily: FONT, fontSize: 13.5, color: T3}}>러닝화 권장 수명</Text>
             <Metric value="500–800" unit="KM" size={30} />
           </View>
-          <Text style={{marginLeft: 'auto', fontFamily: UI, fontSize: 12.5, color: KG.dim, textAlign: 'right', lineHeight: 18}}>
+          <Text style={{marginLeft: 'auto', fontFamily: FONT, fontSize: 12.5, color: T3, textAlign: 'right', lineHeight: 18}}>
             대부분의 러너가{'\n'}이 시기를 놓칩니다
           </Text>
         </Rise>
@@ -799,9 +821,9 @@ function Injury({goNext, onSkip, insetTop, insetBottom}: ScreenProps) {
           <LifespanRing km={540} max={800} size={104} stroke={9} />
           <View style={{flex: 1}}>
             <StatusPill status="caution" />
-            <Text style={{fontFamily: UI, fontSize: 17, fontWeight: '700', color: '#fff', marginTop: 10}}>ASICS Novablast 5</Text>
-            <Text style={{fontFamily: UI, fontSize: 13, color: KG.dim, marginTop: 3, lineHeight: 19}}>
-              수명의 <Text style={{color: KG.amber, fontWeight: '600'}}>68%</Text>를 사용했어요.
+            <Text style={{fontFamily: FONT, fontSize: 17, fontWeight: '700', color: '#fff', marginTop: 10}}>ASICS Novablast 5</Text>
+            <Text style={{fontFamily: FONT, fontSize: 13, color: T3, marginTop: 3, lineHeight: 19}}>
+              수명의 <Text style={{color: WARN, fontWeight: '600'}}>68%</Text>를 사용했어요.
             </Text>
           </View>
         </Rise>
@@ -811,30 +833,30 @@ function Injury({goNext, onSkip, insetTop, insetBottom}: ScreenProps) {
           <View style={[s.analyticCard, {flex: 1}]}>
             <View style={{flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 8}}>
               <HeartIcon />
-              <Text style={{fontFamily: UI, fontSize: 12.5, color: KG.dim}}>충격 흡수율</Text>
+              <Text style={{fontFamily: FONT, fontSize: 12.5, color: T3}}>충격 흡수율</Text>
             </View>
             <Metric value={78} unit="%" size={32} countUp />
             <View style={{marginTop: 8}}>
-              <WearBar pct={78} color={KG.amber} />
+              <WearBar pct={78} color={WARN} />
             </View>
           </View>
           <View style={[s.analyticCard, {flex: 1}]}>
             <View style={{flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 8}}>
               <RulerIcon />
-              <Text style={{fontFamily: UI, fontSize: 12.5, color: KG.dim}}>교체까지</Text>
+              <Text style={{fontFamily: FONT, fontSize: 12.5, color: T3}}>교체까지</Text>
             </View>
             <Metric value={260} unit="KM" size={32} countUp />
-            <Text style={{fontFamily: UI, fontSize: 12, color: KG.dim, marginTop: 8}}>약 3주 후 예상</Text>
+            <Text style={{fontFamily: FONT, fontSize: 12, color: T3, marginTop: 8}}>약 3주 후 예상</Text>
           </View>
         </Rise>
 
         {/* 알림 배너 */}
         <Rise delay={340} style={s.alertBanner}>
           <View style={s.alertIconChip}>
-            <SparkIcon size={18} color={KG.orange} />
+            <SparkIcon size={18} color={ACCENT} />
           </View>
-          <Text style={{flex: 1, fontFamily: UI, fontSize: 13.5, color: KG.text, lineHeight: 19}}>
-            교체 시점 <Text style={{color: KG.orange, fontWeight: '600'}}>50 km 전</Text> 미리 알림을 보내드려요.
+          <Text style={{flex: 1, fontFamily: FONT, fontSize: 13.5, color: T1, lineHeight: 19}}>
+            교체 시점 <Text style={{color: ACCENT, fontWeight: '600'}}>50 km 전</Text> 미리 알림을 보내드려요.
           </Text>
         </Rise>
       </ScrollView>
@@ -858,12 +880,12 @@ function ShoeCard({shoe}: {shoe: (typeof SHOES)[number]}) {
       <PctRing pct={remain} color={col} size={56} stroke={6} />
       <View style={{flex: 1, minWidth: 0}}>
         <Text style={s.brandEyebrow}>{shoe.brand.toUpperCase()}</Text>
-        <Text numberOfLines={1} style={{fontFamily: UI, fontSize: 18, fontWeight: '700', color: '#fff', marginTop: 2}}>
+        <Text numberOfLines={1} style={{fontFamily: FONT, fontSize: 18, fontWeight: '700', color: '#fff', marginTop: 2}}>
           {shoe.model}
         </Text>
-        <Text style={{fontFamily: UI, fontSize: 13.5, color: KG.dim, marginTop: 7}}>
+        <Text style={{fontFamily: FONT, fontSize: 13.5, color: T3, marginTop: 7}}>
           {shoe.km.toLocaleString()} / {shoe.max.toLocaleString()} km
-          <Text style={{color: KG.faint}}> · </Text>
+          <Text style={{color: T4}}> · </Text>
           <Text style={{color: col, fontWeight: '600'}}>{STATUS[st].label}</Text>
         </Text>
       </View>
@@ -884,12 +906,12 @@ function Management({goNext, onSkip, insetTop, insetBottom}: ScreenProps) {
         {/* 요약 히어로 */}
         <Rise delay={120} style={[s.summaryHero, {marginTop: 12}]}>
           <View>
-            <Text style={{fontFamily: UI, fontSize: 12, color: KG.dim, letterSpacing: 0.8}}>전체 누적 거리</Text>
-            <Metric value="1,410" unit="KM" size={40} unitColor={KG.dim} />
+            <Text style={{fontFamily: FONT, fontSize: 12, color: T3, letterSpacing: 0.8}}>전체 누적 거리</Text>
+            <Metric value="1,410" unit="KM" size={40} unitColor={T3} />
           </View>
           <View style={{alignItems: 'flex-end'}}>
-            <Text style={{fontFamily: DISP, fontSize: 34, color: '#fff'}}>3</Text>
-            <Text style={{fontFamily: UI, fontSize: 12, color: KG.dim}}>켤레 관리 중</Text>
+            <Text style={{fontFamily: DISPLAY, fontSize: 34, color: '#fff'}}>3</Text>
+            <Text style={{fontFamily: FONT, fontSize: 12, color: T3}}>켤레 관리 중</Text>
           </View>
         </Rise>
 
@@ -904,8 +926,8 @@ function Management({goNext, onSkip, insetTop, insetBottom}: ScreenProps) {
 
         {/* 추천 스트립 */}
         <Rise delay={220 + SHOES.length * 90} style={s.recoStrip}>
-          <SparkIcon size={18} color={KG.red} />
-          <Text style={{flex: 1, fontFamily: UI, fontSize: 13.5, color: KG.text, lineHeight: 19}}>
+          <SparkIcon size={18} color={DANGER} />
+          <Text style={{flex: 1, fontFamily: FONT, fontSize: 13.5, color: T1, lineHeight: 19}}>
             <Text style={{fontWeight: '700'}}>Adizero Adios Pro 4</Text> 교체 시기예요. 새 러닝화를 추천받아 보세요.
           </Text>
         </Rise>
@@ -924,9 +946,9 @@ function FieldLabel({n, label}: {n: string; label: string}) {
   return (
     <View style={{flexDirection: 'row', alignItems: 'center', gap: 9}}>
       <View style={s.fieldBadge}>
-        <Text style={{fontFamily: UI, fontSize: 11.5, fontWeight: '700', color: KG.dim}}>{n}</Text>
+        <Text style={{fontFamily: FONT, fontSize: 11.5, fontWeight: '700', color: T3}}>{n}</Text>
       </View>
-      <Text style={{fontFamily: UI, fontSize: 14, fontWeight: '600', color: KG.text}}>{label}</Text>
+      <Text style={{fontFamily: FONT, fontSize: 14, fontWeight: '600', color: T1}}>{label}</Text>
     </View>
   );
 }
@@ -955,7 +977,7 @@ function Register({goNext, onSkip, onRegister, insetTop, insetBottom}: ScreenPro
       <ScrollView style={s.flex1} contentContainerStyle={s.bodyContent} showsVerticalScrollIndicator={false}>
         <Rise>
           <View style={{flexDirection: 'row', alignItems: 'center', gap: 8}}>
-            <SparkIcon size={15} color={KG.orange} />
+            <SparkIcon size={15} color={ACCENT} />
             <Text style={[s.eyebrow, {marginBottom: 0}]}>거의 다 왔어요</Text>
           </View>
           <Text style={[s.title, {fontSize: 22}]}>첫 러닝화를{'\n'}등록해볼까요?</Text>
@@ -963,17 +985,17 @@ function Register({goNext, onSkip, onRegister, insetTop, insetBottom}: ScreenPro
         </Rise>
 
         {/* 라이브 프리뷰 카드 */}
-        <Rise delay={120} style={[s.previewCard, {borderColor: ready ? 'rgba(255,101,0,0.3)' : KG.line, overflow: 'hidden'}]}>
+        <Rise delay={120} style={[s.previewCard, {borderColor: ready ? 'rgba(255,101,0,0.3)' : SEP, overflow: 'hidden'}]}>
           <LinearGrad stops={[{color: '#1C1C22', offset: 0}, {color: '#141417', offset: 1}]} radius={18} />
           <PctRing pct={remain} color={col} size={52} stroke={6} animate={false} />
           <View style={{flex: 1, minWidth: 0, marginLeft: 14}}>
             <Text style={s.brandEyebrow}>{brand || '브랜드'}</Text>
-            <Text numberOfLines={1} style={{fontFamily: UI, fontSize: 16, fontWeight: '700', color: model ? '#fff' : KG.faint, marginTop: 2}}>
+            <Text numberOfLines={1} style={{fontFamily: FONT, fontSize: 16, fontWeight: '700', color: model ? '#fff' : T4, marginTop: 2}}>
               {model || '모델을 선택하세요'}
             </Text>
-            <Text style={{fontFamily: UI, fontSize: 13, color: KG.dim, marginTop: 5}}>
+            <Text style={{fontFamily: FONT, fontSize: 13, color: T3, marginTop: 5}}>
               {km.toLocaleString()} / {max} km
-              <Text style={{color: KG.faint}}> · </Text>
+              <Text style={{color: T4}}> · </Text>
               <Text style={{color: col, fontWeight: '600'}}>{STATUS[st].label}</Text>
             </Text>
           </View>
@@ -1007,7 +1029,7 @@ function Register({goNext, onSkip, onRegister, insetTop, insetBottom}: ScreenPro
               ))}
             </View>
           ) : (
-            <Text style={{fontFamily: UI, fontSize: 13, color: KG.faint, marginTop: 8, paddingVertical: 3}}>브랜드를 먼저 선택하세요</Text>
+            <Text style={{fontFamily: FONT, fontSize: 13, color: T4, marginTop: 8, paddingVertical: 3}}>브랜드를 먼저 선택하세요</Text>
           )}
         </View>
 
@@ -1049,8 +1071,8 @@ function Register({goNext, onSkip, onRegister, insetTop, insetBottom}: ScreenPro
           <View style={s.successBadge}>
             <CheckIcon size={44} />
           </View>
-          <Text style={{fontFamily: DISP, fontSize: 46, color: '#fff', marginTop: 24}}>등록 완료!</Text>
-          <Text style={{fontFamily: UI, fontSize: 15, color: KG.dim, marginTop: 12, lineHeight: 22, textAlign: 'center'}}>
+          <Text style={{fontFamily: DISPLAY, fontSize: 46, color: '#fff', marginTop: 24}}>등록 완료!</Text>
+          <Text style={{fontFamily: FONT, fontSize: 15, color: T3, marginTop: 12, lineHeight: 22, textAlign: 'center'}}>
             <Text style={{color: '#fff', fontWeight: '600'}}>
               {brand} {model}
             </Text>
@@ -1101,7 +1123,7 @@ function LoginBtn({
       ) : (
         <>
           <View style={{position: 'absolute', left: 18}}>{icon}</View>
-          <Text style={{fontFamily: UI, fontSize: 15.5, fontWeight: '600', color}}>{label}</Text>
+          <Text style={{fontFamily: FONT, fontSize: 15.5, fontWeight: '600', color}}>{label}</Text>
         </>
       )}
     </Pressable>
@@ -1149,12 +1171,12 @@ function Ready({registered, onFinish, onSkip, insetTop, insetBottom}: ScreenProp
           <PctRing pct={remain} color={col} size={52} stroke={6} />
           <View style={{flex: 1, minWidth: 0, marginLeft: 15}}>
             <Text style={[s.brandEyebrow, {fontSize: 11}]}>추적 시작됨</Text>
-            <Text numberOfLines={1} style={{fontFamily: UI, fontSize: 16, fontWeight: '700', color: '#fff', marginTop: 1}}>
+            <Text numberOfLines={1} style={{fontFamily: FONT, fontSize: 16, fontWeight: '700', color: '#fff', marginTop: 1}}>
               {shoe.brand} {shoe.model}
             </Text>
-            <Text style={{fontFamily: UI, fontSize: 13, color: KG.dim, marginTop: 5}}>
+            <Text style={{fontFamily: FONT, fontSize: 13, color: T3, marginTop: 5}}>
               {shoe.km.toLocaleString()} / {(shoe.max || 600).toLocaleString()} km
-              <Text style={{color: KG.faint}}> · </Text>
+              <Text style={{color: T4}}> · </Text>
               <Text style={{color: col, fontWeight: '600'}}>{STATUS[st].label}</Text>
             </Text>
           </View>
@@ -1166,10 +1188,16 @@ function Ready({registered, onFinish, onSkip, insetTop, insetBottom}: ScreenProp
         <LoginBtn label="카카오로 시작하기" bg="#FEE500" color="#191600" icon={<KakaoMark />} busy={busy === 'kakao'} onPress={() => press('kakao')} />
         <LoginBtn label="네이버로 시작하기" bg="#03C75A" color="#fff" icon={<NaverMark />} busy={busy === 'naver'} onPress={() => press('naver')} />
         <LoginBtn label="Google로 시작하기" bg="#fff" color="#1A1A1A" border icon={<GoogleMark />} busy={busy === 'google'} onPress={() => press('google')} />
-        <Pressable onPress={() => press('email')} style={{alignItems: 'center', marginTop: 6}} accessibilityRole="button">
-          <Text style={{fontFamily: UI, fontSize: 14.5, color: KG.dim, fontWeight: '500'}}>이메일로 계속하기</Text>
+        <Pressable
+          testID="onboarding-email-login"
+          onPress={() => press('email')}
+          hitSlop={8}
+          style={{alignItems: 'center', marginTop: 6}}
+          accessibilityRole="button"
+          accessibilityLabel="이메일로 계속하기">
+          <Text style={{fontFamily: FONT, fontSize: 14.5, color: T3, fontWeight: '500'}}>이메일로 계속하기</Text>
         </Pressable>
-        <Text style={{fontFamily: UI, fontSize: 11, color: KG.faint, textAlign: 'center', lineHeight: 17, marginTop: 8}}>
+        <Text style={{fontFamily: FONT, fontSize: 11, color: T4, textAlign: 'center', lineHeight: 17, marginTop: 8}}>
           계속 진행하면 Keego의 <Text style={{textDecorationLine: 'underline'}}>이용약관</Text>과 <Text style={{textDecorationLine: 'underline'}}>개인정보 처리방침</Text>에{'\n'}동의하는 것으로 간주됩니다.
         </Text>
       </View>
@@ -1193,14 +1221,18 @@ export default function OnboardingScreen({onDone}: {onDone: (registered: Registe
   const [index, setIndex] = useState(0);
   const [registered, setRegistered] = useState<RegisteredShoe | null>(null);
   const goNext = () => setIndex(i => Math.min(5, i + 1));
+  // 로그인 진입: 기존 계정 사용자는 온보딩 소개(1~4)를 건너뛰고 마지막 인증 화면(Ready,
+  // index 5)으로 곧장 간다. 거기 소셜/이메일 로그인이 끝나면 onFinish→onDone 로 온보딩이
+  // 종료되고 App 이 로그인 후 홈으로 전환한다.
+  const goLogin = () => setIndex(5);
   const onSkip = () => onDone(null);
   const common = {insetTop: insets.top, insetBottom: insets.bottom, onSkip, goNext};
 
   // 각 화면은 index 전환 시 마운트/언마운트되므로, 도착할 때마다 Rise 진입이 1회 재생된다.
   return (
     <ReduceMotionCtx.Provider value={reduceMotion}>
-      <View testID="onboarding" style={{flex: 1, backgroundColor: KG.bg}}>
-        {index === 0 && <Welcome goNext={goNext} insetTop={insets.top} insetBottom={insets.bottom} />}
+      <View testID="onboarding" style={{flex: 1, backgroundColor: BG}}>
+        {index === 0 && <Welcome goNext={goNext} goLogin={goLogin} insetTop={insets.top} insetBottom={insets.bottom} />}
         {index === 1 && <ShoesMatter {...common} />}
         {index === 2 && <Injury {...common} />}
         {index === 3 && <Management {...common} />}
@@ -1215,24 +1247,24 @@ export default function OnboardingScreen({onDone}: {onDone: (registered: Registe
 // 스타일
 // ════════════════════════════════════════════════════════════════════════════
 const s = StyleSheet.create({
-  screen: {flex: 1, backgroundColor: KG.bg},
+  screen: {flex: 1, backgroundColor: BG},
   flowHeader: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24, paddingBottom: 6},
-  skip: {fontFamily: UI, fontSize: 13, color: KG.faint, fontWeight: '500'},
+  skip: {fontFamily: FONT, fontSize: 13, color: T4, fontWeight: '500'},
   // 본문은 ScrollView로 감싸되 contentContainerStyle에 flexGrow:1을 줘, 콘텐츠가 화면에
   // 들어오면 스크롤이 생기지 않고(=한 화면), 넘칠 때만 스크롤된다. footer(CTA)는 ScrollView
   // 바깥 형제로 항상 하단에 고정돼 어떤 선택 상태에서도 사라지지 않는다.
   flex1: {flex: 1},
   bodyContent: {flexGrow: 1, paddingHorizontal: 24, paddingTop: 8},
-  eyebrow: {fontFamily: UI, fontSize: 12, fontWeight: '700', letterSpacing: 1.4, color: KG.orange, textTransform: 'uppercase', marginBottom: 6},
-  title: {fontFamily: UI, fontSize: 23, lineHeight: 29, fontWeight: '700', letterSpacing: -0.5, color: KG.text},
-  body: {fontFamily: UI, fontSize: 13.5, lineHeight: 19, color: KG.dim, marginTop: 8, maxWidth: 360},
+  eyebrow: {fontFamily: FONT, fontSize: 12, fontWeight: '700', letterSpacing: 1.4, color: ACCENT, textTransform: 'uppercase', marginBottom: 6},
+  title: {fontFamily: FONT, fontSize: 23, lineHeight: 29, fontWeight: '700', letterSpacing: -0.5, color: T1},
+  body: {fontFamily: FONT, fontSize: 13.5, lineHeight: 19, color: T3, marginTop: 8, maxWidth: 360},
   bodyStrong: {color: '#fff', fontWeight: '600'},
 
   // Welcome
-  wordmark: {position: 'absolute', left: 24, fontFamily: DISP, fontSize: 26, letterSpacing: 1.2, color: '#fff'},
-  heroHeadline: {fontFamily: DISP, fontSize: 88, lineHeight: 76, color: '#fff'},
-  heroSub: {fontFamily: UI, fontSize: 17, fontWeight: '600', color: '#fff', marginTop: 18},
-  heroBody: {fontFamily: UI, fontSize: 14.5, lineHeight: 22, color: 'rgba(246,246,248,0.66)', marginTop: 7},
+  wordmark: {position: 'absolute', left: 24, fontFamily: DISPLAY, fontSize: 26, letterSpacing: 1.2, color: '#fff'},
+  heroHeadline: {fontFamily: DISPLAY, fontSize: 88, lineHeight: 76, color: '#fff'},
+  heroSub: {fontFamily: FONT, fontSize: 17, fontWeight: '600', color: '#fff', marginTop: 18},
+  heroBody: {fontFamily: FONT, fontSize: 14.5, lineHeight: 22, color: 'rgba(246,246,248,0.66)', marginTop: 7},
 
   // CTA
   cta: {
@@ -1250,17 +1282,17 @@ const s = StyleSheet.create({
   ctaGhost: {
     backgroundColor: 'rgba(255,255,255,0.06)',
     borderWidth: 1,
-    borderColor: KG.line2,
+    borderColor: withAlpha(T1, 0.14),
     shadowOpacity: 0,
     elevation: 0,
   },
   ctaGloss: {position: 'absolute', top: 0, left: 0, right: 0, height: 1, backgroundColor: 'rgba(255,255,255,0.18)'},
-  ctaLabel: {fontFamily: UI, fontSize: 16.5, fontWeight: '700', color: '#fff', letterSpacing: -0.2},
+  ctaLabel: {fontFamily: FONT, fontSize: 16.5, fontWeight: '700', color: '#fff', letterSpacing: -0.2},
 
   footer: {paddingHorizontal: 24, paddingTop: 8},
 
   // cards
-  heroCard: {marginTop: 12, borderRadius: 22, backgroundColor: KG.card, borderWidth: StyleSheet.hairlineWidth, borderColor: KG.line},
+  heroCard: {marginTop: 12, borderRadius: 22, backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP},
   factStrip: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1272,7 +1304,7 @@ const s = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: 'rgba(255,101,0,0.22)',
   },
-  analyticCard: {padding: 13, borderRadius: 18, backgroundColor: KG.card, borderWidth: StyleSheet.hairlineWidth, borderColor: KG.line},
+  analyticCard: {padding: 13, borderRadius: 18, backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP},
   alertBanner: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1282,7 +1314,7 @@ const s = StyleSheet.create({
     borderRadius: 16,
     backgroundColor: 'rgba(255,255,255,0.04)',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: KG.line,
+    borderColor: SEP,
   },
   alertIconChip: {width: 34, height: 34, borderRadius: 11, backgroundColor: 'rgba(255,101,0,0.14)', alignItems: 'center', justifyContent: 'center'},
 
@@ -1303,11 +1335,11 @@ const s = StyleSheet.create({
     gap: 14,
     padding: 13,
     borderRadius: 18,
-    backgroundColor: KG.card,
+    backgroundColor: CARD,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: KG.line,
+    borderColor: SEP,
   },
-  brandEyebrow: {fontFamily: UI, fontSize: 11.5, color: KG.faint, letterSpacing: 0.7},
+  brandEyebrow: {fontFamily: FONT, fontSize: 11.5, color: T4, letterSpacing: 0.7},
   recoStrip: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1321,15 +1353,15 @@ const s = StyleSheet.create({
   },
 
   // Register
-  previewCard: {marginTop: 12, padding: 12, borderRadius: 18, flexDirection: 'row', alignItems: 'center', backgroundColor: KG.card, borderWidth: 1},
+  previewCard: {marginTop: 12, padding: 12, borderRadius: 18, flexDirection: 'row', alignItems: 'center', backgroundColor: CARD, borderWidth: 1},
   chipWrap: {flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginTop: 8},
   chip: {paddingVertical: 7, paddingHorizontal: 13, borderRadius: 11, borderWidth: StyleSheet.hairlineWidth},
   chipSmall: {paddingVertical: 6, paddingHorizontal: 11},
-  chipIdle: {backgroundColor: 'rgba(255,255,255,0.05)', borderColor: KG.line2},
-  chipActive: {backgroundColor: KG.orange, borderColor: KG.orange},
-  chipLabel: {fontFamily: UI, fontWeight: '600', letterSpacing: -0.1},
+  chipIdle: {backgroundColor: 'rgba(255,255,255,0.05)', borderColor: withAlpha(T1, 0.14)},
+  chipActive: {backgroundColor: ACCENT, borderColor: ACCENT},
+  chipLabel: {fontFamily: FONT, fontWeight: '600', letterSpacing: -0.1},
   fieldBadge: {width: 20, height: 20, borderRadius: 6, backgroundColor: 'rgba(255,255,255,0.08)', alignItems: 'center', justifyContent: 'center'},
-  tick: {fontFamily: UI, fontSize: 11, color: KG.faint},
+  tick: {fontFamily: FONT, fontSize: 11, color: T4},
   pill: {flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 5, paddingHorizontal: 11, borderRadius: 100, alignSelf: 'flex-start'},
   successOverlay: {
     position: 'absolute',
@@ -1346,7 +1378,7 @@ const s = StyleSheet.create({
     width: 88,
     height: 88,
     borderRadius: 44,
-    backgroundColor: KG.orange,
+    backgroundColor: ACCENT,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1369,9 +1401,9 @@ const s = StyleSheet.create({
     marginTop: 16,
     padding: 14,
     borderRadius: 18,
-    backgroundColor: KG.card,
+    backgroundColor: CARD,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: KG.line,
+    borderColor: SEP,
     alignSelf: 'stretch',
   },
   loginBtn: {height: 54, borderRadius: 15, alignItems: 'center', justifyContent: 'center', flexDirection: 'row'},
