@@ -655,7 +655,7 @@ const s = StyleSheet.create({
   title: { color: T1, fontFamily: FONT, fontSize: 28, fontWeight: '600', letterSpacing: -0.6 },
   shoesSub: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '500', marginTop: 5, letterSpacing: -0.2 },
   addPill: { height: 34, paddingHorizontal: 14, borderRadius: RADIUS.pill, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.1), flexDirection: 'row', alignItems: 'center', gap: 6 },
-  addPillText: { color: T2, fontFamily: FONT, fontSize: 12.5, fontWeight: '600' },
+  addPillText: { color: T2, fontFamily: FONT, fontSize: 13, fontWeight: '600' },
 
   // 카드 하단 중복 진행바(track/trackFill)를 제거하고 원형 Ring 만 유지한다. 바가
   // 빠진 만큼 카드 패딩을 살짝 줄이고(20), 링(78)·모델 폰트(20)를 키워 비율을
@@ -670,22 +670,22 @@ const s = StyleSheet.create({
   shoeTopSection: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 },
   shoeRightCol: { alignItems: 'flex-end', gap: 10, flexShrink: 0 },
   shoeBrand: { color: T3, fontFamily: DISPLAY, fontSize: 11, fontWeight: '500', letterSpacing: 1.3 },
-  shoeUsing: { color: T3, fontFamily: FONT, fontSize: 11.5, fontWeight: '500' },
+  shoeUsing: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500' },
   shoeModel: { color: T1, fontFamily: DISPLAY, fontSize: 22, fontWeight: '800', letterSpacing: -0.5, lineHeight: 27, marginTop: 4 },
   shoeCondRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   // 종류 칩(카본 레이싱 등) — 브랜드 옆
   cardTypeChip: { backgroundColor: withAlpha(ACCENT, 0.14), borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2 },
   cardTypeChipText: { color: ACCENT, fontFamily: FONT, fontSize: 10, fontWeight: '700', letterSpacing: 0.1 },
   // 추천 용도(러닝 종류) 한 줄 — 카드 중간
-  shoePurpose: { color: T3, fontFamily: FONT, fontSize: 12.5, fontWeight: '500', letterSpacing: -0.1, marginTop: 10 },
+  shoePurpose: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '500', letterSpacing: -0.1, marginTop: 10 },
   cardPlay: { width: 32, height: 32, borderRadius: RADIUS.pill, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.14), alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(BG, 0.3) },
   shoeCondDot: { width: 7, height: 7, borderRadius: RADIUS.pill },
-  shoeCondText: { color: T2, fontFamily: FONT, fontSize: 12.5, fontWeight: '500' },
+  shoeCondText: { color: T2, fontFamily: FONT, fontSize: 13, fontWeight: '500' },
   // 누적 거리(큰 숫자) + 교체까지 남은 거리 — 목업 lifeRow 정합
   shoeLifeRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 14, marginBottom: 10 },
   shoeUsedNum: { color: T1, fontFamily: DISPLAY, fontSize: 25, fontWeight: '800', letterSpacing: -0.6 },
   shoeUsedU: { color: T2, fontFamily: FONT, fontSize: 13, fontWeight: '500', marginLeft: 2 },
-  shoeRemain: { color: T3, fontFamily: FONT, fontSize: 12.5, fontWeight: '500' },
+  shoeRemain: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '500' },
   // 라벨바(목업 LifeBar): 사용/총 수명 양끝 라벨 + 가운데 평균 페이스
   shoeBar: { height: 6, borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.1), overflow: 'hidden' },
   shoeBarFill: { height: '100%', borderRadius: RADIUS.pill },
@@ -719,7 +719,7 @@ const s = StyleSheet.create({
   dTypeChipText: { color: ACCENT, fontFamily: FONT, fontSize: 12, fontWeight: '700', letterSpacing: 0.1 },
   dPurposeLabel: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600', marginTop: 16 },
   runCta: { height: 46, borderRadius: 14, backgroundColor: 'transparent', borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.14), flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
-  runCtaText: { color: T2, fontFamily: FONT, fontSize: 14.5, fontWeight: '600', letterSpacing: -0.2 },
+  runCtaText: { color: T2, fontFamily: FONT, fontSize: 15, fontWeight: '600', letterSpacing: -0.2 },
 
   // 교체 내러티브 배너(keep-going 보이스) — accent 톤 반투명 표면(withAlpha 파생).
   keepGoing: { flexDirection: 'row', alignItems: 'center', gap: 9, backgroundColor: withAlpha(ACCENT, 0.12), borderRadius: RADIUS.md, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.35), paddingHorizontal: 16, paddingVertical: 13 },
@@ -741,7 +741,7 @@ const s = StyleSheet.create({
   wearValue: { color: T1, fontFamily: DISPLAY, fontSize: 30, letterSpacing: 0.3 },
   wearUnit: { color: T2, fontFamily: FONT, fontSize: 14, marginLeft: 4, marginBottom: 4 },
   wearTarget: { color: T3, fontFamily: FONT, fontSize: 13, marginBottom: 4 },
-  wearForecast: { color: T3, fontFamily: FONT, fontSize: 12.5, fontWeight: '500', letterSpacing: -0.1, lineHeight: 18, marginTop: 8 },
+  wearForecast: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '500', letterSpacing: -0.1, lineHeight: 18, marginTop: 8 },
   // 교체 예상 lead(핸드오프 lead 정합: 16px·lineHeight 23) + 주수 강조(bold·T1).
   replaceForecastText: { color: T2, fontFamily: FONT, fontSize: 16, fontWeight: '500', letterSpacing: -0.2, lineHeight: 23, marginTop: 8 },
   dForecastBold: { color: T1, fontWeight: '700' },
@@ -752,7 +752,7 @@ const s = StyleSheet.create({
   confChipLo: { backgroundColor: withAlpha(T1, 0.06) },
   confDot: { width: 5, height: 5, borderRadius: RADIUS.pill },
   confChipText: { fontFamily: FONT, fontSize: 11, fontWeight: '700', letterSpacing: 0.1 },
-  wearBasisText: { color: T3, fontFamily: FONT, fontSize: 12.5, fontWeight: '500', letterSpacing: -0.1, lineHeight: 18, marginTop: 8 },
+  wearBasisText: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '500', letterSpacing: -0.1, lineHeight: 18, marginTop: 8 },
   maxEditRow: { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-end', marginTop: 12 },
   maxEditTxt: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500' },
   gaugeNote: { marginTop: 10, color: T3, fontFamily: FONT, fontSize: 12, lineHeight: 17 },
@@ -776,16 +776,16 @@ const s = StyleSheet.create({
   // 2x2 통계 그리드(총거리/총횟수/총시간/평균페이스). 한 카드 안에 4칸을 넉넉히.
   nextSectionLabel: { paddingHorizontal: 4 },
   nextCard: { backgroundColor: CARD_DIM, borderWidth: 1, borderColor: withAlpha(ACCENT, 0.3), padding: 16 },
-  nextSub: { color: T3, fontFamily: FONT, fontSize: 12.5, lineHeight: 18, marginBottom: 6 },
+  nextSub: { color: T3, fontFamily: FONT, fontSize: 13, lineHeight: 18, marginBottom: 6 },
   nextRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 11 },
   nextRowSep: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.07) },
   nextBrand: { color: T3, fontFamily: DISPLAY, fontSize: 10, fontWeight: '500', letterSpacing: 1.2 },
-  nextModel: { color: T1, fontFamily: DISPLAY, fontSize: 14.5, fontWeight: '600', letterSpacing: -0.1, marginTop: 3 },
+  nextModel: { color: T1, fontFamily: DISPLAY, fontSize: 15, fontWeight: '600', letterSpacing: -0.1, marginTop: 3 },
   nextCat: { color: T3, fontFamily: FONT, fontSize: 11, marginTop: 3 },
   shopBtns: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, justifyContent: 'flex-end', maxWidth: 132 },
   shopBtn: { borderRadius: RADIUS.pill, borderWidth: 1, borderColor: withAlpha(ACCENT, 0.4), backgroundColor: withAlpha(ACCENT, 0.1), paddingHorizontal: 11, paddingVertical: 6 },
-  shopBtnTxt: { color: ACCENT, fontFamily: FONT, fontSize: 11.5, fontWeight: '600' },
-  nextDisclosure: { color: T3, fontFamily: FONT, fontSize: 10.5, lineHeight: 15, marginTop: 12, opacity: 0.85 },
+  shopBtnTxt: { color: ACCENT, fontFamily: FONT, fontSize: 12, fontWeight: '600' },
+  nextDisclosure: { color: T3, fontFamily: FONT, fontSize: 11, lineHeight: 15, marginTop: 12, opacity: 0.85 },
   // stats 2x2 — 사진(디자인 09)처럼 왼쪽 정렬. 글씨 비율에 맞게 패딩을 조여 카드가
   // 과하게 커지지 않게 한다(사용자 요청).
   statGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingVertical: 6, paddingHorizontal: 18 },
@@ -803,7 +803,7 @@ const s = StyleSheet.create({
   maxInputRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'center' },
   maxInput: { color: T1, fontFamily: DISPLAY, fontSize: 28, letterSpacing: 0.3, textAlign: 'center', minWidth: 70, paddingVertical: 0, paddingBottom: 2, borderBottomWidth: 1, borderBottomColor: withAlpha(ACCENT, 0.4) },
   maxStepUnit: { color: T3, fontFamily: FONT, fontSize: 13, marginBottom: 3 },
-  maxStepCaption: { color: T3, fontFamily: FONT, fontSize: 11.5, fontWeight: '600', marginTop: 3 },
+  maxStepCaption: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '600', marginTop: 3 },
   maxHint: { color: T3, fontFamily: FONT, fontSize: 12, lineHeight: 18 },
 
   runRow: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 15, paddingHorizontal: 18 },
@@ -813,6 +813,6 @@ const s = StyleSheet.create({
   runDateNum: { color: T1, fontFamily: DISPLAY, fontSize: 16 },
   runDivider: { width: StyleSheet.hairlineWidth, alignSelf: 'stretch', backgroundColor: SEP, marginVertical: 2 },
   runDist: { color: T1, fontFamily: DISPLAY, fontSize: 21, letterSpacing: 0.3 },
-  runDistU: { color: T3, fontFamily: FONT, fontSize: 12.5, marginLeft: 4, marginBottom: 1 },
+  runDistU: { color: T3, fontFamily: FONT, fontSize: 13, marginLeft: 4, marginBottom: 1 },
   runSub: { color: T3, fontFamily: FONT, fontSize: 12, marginTop: 3 },
 });

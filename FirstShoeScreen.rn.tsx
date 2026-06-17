@@ -233,21 +233,21 @@ const s = StyleSheet.create({
   emptyBody: {flex: 1, paddingHorizontal: 30},
   hero: {flex: 1, alignItems: 'center', justifyContent: 'center'},
   emptyTitle: {marginTop: 30, color: T1, fontFamily: FONT, fontSize: 29, fontWeight: '700', letterSpacing: -0.6, lineHeight: 34, textAlign: 'center'},
-  emptyDesc: {marginTop: 13, color: T3, fontFamily: FONT, fontSize: 13.5, lineHeight: 21, textAlign: 'center', maxWidth: 270},
+  emptyDesc: {marginTop: 13, color: T3, fontFamily: FONT, fontSize: 14, lineHeight: 21, textAlign: 'center', maxWidth: 270},
 
   benefits: {marginBottom: 8},
   benefit: {flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 14},
   benefitDivider: {borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.045)},
   benefitIcon: {width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(ACCENT, 0.10), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.22)},
   benefitTitle: {color: T1, fontFamily: FONT, fontSize: 14, fontWeight: '600', letterSpacing: -0.2},
-  benefitSub: {marginTop: 2, color: T3, fontFamily: FONT, fontSize: 11.5, lineHeight: 16},
+  benefitSub: {marginTop: 2, color: T3, fontFamily: FONT, fontSize: 12, lineHeight: 16},
 
   ctaWrap: {paddingHorizontal: 22, paddingTop: 14, paddingBottom: 6},
 
   // success
   checkBadge: {alignSelf: 'center', width: 64, height: 64, borderRadius: 999, alignItems: 'center', justifyContent: 'center', marginTop: 18, marginBottom: 18, backgroundColor: withAlpha(GOOD, 0.14), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(GOOD, 0.4)},
   successTitle: {color: T1, fontFamily: FONT, fontSize: 26, fontWeight: '700', letterSpacing: -0.6, textAlign: 'center'},
-  successSub: {marginTop: 11, color: T3, fontFamily: FONT, fontSize: 13.5, lineHeight: 21, textAlign: 'center', alignSelf: 'center', maxWidth: 264},
+  successSub: {marginTop: 11, color: T3, fontFamily: FONT, fontSize: 14, lineHeight: 21, textAlign: 'center', alignSelf: 'center', maxWidth: 264},
 
   shoeCard: {marginTop: 26, backgroundColor: CARD, borderRadius: 22, borderWidth: 1, borderColor: SEP, padding: 20},
   shoeRow: {flexDirection: 'row', alignItems: 'center', gap: 18},
@@ -257,10 +257,10 @@ const s = StyleSheet.create({
   track: {height: 12, borderRadius: 999, overflow: 'hidden', backgroundColor: withAlpha(T1, 0.04)},
   trackFill: {position: 'absolute', left: 0, top: 0, bottom: 0, borderRadius: 999, backgroundColor: ACCENT},
   scaleRow: {flexDirection: 'row', justifyContent: 'space-between', marginTop: 9},
-  scaleText: {color: T3, fontFamily: FONT, fontSize: 10.5, fontWeight: '500'},
+  scaleText: {color: T3, fontFamily: FONT, fontSize: 11, fontWeight: '500'},
 
   nextCard: {flexDirection: 'row', alignItems: 'center', gap: 13, marginTop: 14, borderRadius: 18, paddingHorizontal: 16, paddingVertical: 15, backgroundColor: withAlpha(ACCENT, 0.07), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.22)},
   nextIcon: {width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(ACCENT, 0.14)},
   nextTitle: {color: T1, fontFamily: FONT, fontSize: 14, fontWeight: '600', letterSpacing: -0.2},
-  nextSub: {marginTop: 2, color: T3, fontFamily: FONT, fontSize: 11.5},
+  nextSub: {marginTop: 2, color: T3, fontFamily: FONT, fontSize: 12},
 });

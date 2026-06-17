@@ -464,7 +464,7 @@ const s = StyleSheet.create({
   headerRow: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 4, paddingBottom: 12},
   sectionLabel: {color: T2, fontFamily: FONT, fontSize: 14, fontWeight: '500', letterSpacing: 0.2},
   addBtn: {flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: RADIUS.pill, backgroundColor: withAlpha(ACCENT, 0.14)},
-  addBtnTxt: {color: ACCENT, fontFamily: FONT, fontSize: 12.5, fontWeight: '700'},
+  addBtnTxt: {color: ACCENT, fontFamily: FONT, fontSize: 13, fontWeight: '700'},
 
   empty: {color: T3, fontFamily: FONT, fontSize: 13, lineHeight: 19, paddingHorizontal: 4},
 
@@ -472,7 +472,7 @@ const s = StyleSheet.create({
   cardDone: {borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(GOOD, 0.5)},
   ringPct: {color: T1, fontFamily: DISPLAY, fontSize: 14, letterSpacing: 0.2},
   titleRow: {flexDirection: 'row', alignItems: 'center', gap: 8},
-  title: {flex: 1, color: T1, fontFamily: FONT, fontSize: 15.5, fontWeight: '700', letterSpacing: -0.2},
+  title: {flex: 1, color: T1, fontFamily: FONT, fontSize: 16, fontWeight: '700', letterSpacing: -0.2},
   progressTxt: {marginTop: 4},
   progressCur: {color: T1, fontFamily: DISPLAY, fontSize: 18, letterSpacing: 0.2},
   progressTot: {color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '700'},
@@ -483,13 +483,13 @@ const s = StyleSheet.create({
   segRow: {flexDirection: 'row', gap: 8},
   seg: {flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: RADIUS.md, backgroundColor: CARD_HI, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP},
   segOn: {backgroundColor: withAlpha(ACCENT, 0.16), borderColor: ACCENT},
-  segTxt: {color: T2, fontFamily: FONT, fontSize: 13.5, fontWeight: '600'},
+  segTxt: {color: T2, fontFamily: FONT, fontSize: 14, fontWeight: '600'},
   segTxtOn: {color: ACCENT, fontWeight: '700'},
   stepper: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 14},
   stepBtn: {width: 44, height: 44, borderRadius: 14, backgroundColor: CARD_HI, alignItems: 'center', justifyContent: 'center'},
   stepVal: {flex: 1, alignItems: 'center'},
   stepNum: {color: T1, fontFamily: DISPLAY, fontSize: 26, letterSpacing: 0.3},
-  stepUnit: {color: T3, fontFamily: FONT, fontSize: 11.5, fontWeight: '600', marginTop: 2},
+  stepUnit: {color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '600', marginTop: 2},
   // 단일 Button 프리미티브로 라우팅(그라데이션/글로우/RADIUS.btn). 여기선 높이만 얹는다.
   createBtn: {height: 46},
 
@@ -499,7 +499,7 @@ const s = StyleSheet.create({
   extProgress: {color: T1, fontFamily: DISPLAY, fontSize: 17, letterSpacing: 0.2, marginTop: 4},
   smartCard: {backgroundColor: CARD, borderRadius: RADIUS.xl, padding: 16, gap: 10, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.45)},
   smartHead: {flexDirection: 'row', alignItems: 'center'},
-  smartTitle: {color: T1, fontFamily: FONT, fontSize: 16.5, fontWeight: '700', letterSpacing: -0.2},
-  smartReason: {color: T2, fontFamily: FONT, fontSize: 13.5, fontWeight: '500', lineHeight: 19},
+  smartTitle: {color: T1, fontFamily: FONT, fontSize: 17, fontWeight: '700', letterSpacing: -0.2},
+  smartReason: {color: T2, fontFamily: FONT, fontSize: 14, fontWeight: '500', lineHeight: 19},
   smartCta: {marginTop: 4},
 });

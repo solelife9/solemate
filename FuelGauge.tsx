@@ -72,7 +72,7 @@ const g = StyleSheet.create({
   marker: {position: 'absolute', top: '50%', width: 18, height: 18, borderRadius: 999, backgroundColor: '#fff',
     borderWidth: 3, borderColor: ACCENT, marginTop: -9, marginLeft: -9},
   scale: {flexDirection: 'row', justifyContent: 'space-between', marginTop: 10},
-  scaleTxt: {color: T3, fontFamily: DISPLAY, fontSize: 10.5, opacity: 0.8},
+  scaleTxt: {color: T3, fontFamily: DISPLAY, fontSize: 11, opacity: 0.8},
 });
 
 export default FuelGauge;

@@ -254,7 +254,7 @@ const s = StyleSheet.create({
   shoeModel: { color: T1, fontFamily: FONT, fontSize: 15, fontWeight: '600', letterSpacing: -0.2, marginTop: 2 },
   shoeCond: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 4 },
   shoeDot: { width: 6, height: 6, borderRadius: 999 },
-  shoeCondText: { color: T3, fontFamily: FONT, fontSize: 11.5, fontWeight: '500' },
+  shoeCondText: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500' },
 
   // CTA 는 단일 Button 프리미티브(그라데이션·글로우·radius 토큰). 화면 고유 레이아웃
   // (상단 여백·높이)만 style 로 넘기고 모양/그라데이션/광택은 Button 이 책임진다.

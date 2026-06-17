@@ -349,8 +349,8 @@ const SEG_VARIANTS: Record<
     },
     item: {minHeight: 44, paddingVertical: 6, borderRadius: 10},
     itemOn: {backgroundColor: withAlpha(T1, 0.09)},
-    textOff: {color: T3, fontSize: 13.5, fontWeight: '500'},
-    textOn: {color: T1, fontSize: 13.5, fontWeight: '700'},
+    textOff: {color: T3, fontSize: 14, fontWeight: '500'},
+    textOn: {color: T1, fontSize: 14, fontWeight: '700'},
   },
   raised: {
     container: {
@@ -381,8 +381,8 @@ const SEG_VARIANTS: Record<
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: withAlpha(ACCENT, 0.28),
     },
-    textOff: {color: T3, fontSize: 13.5, fontWeight: '600'},
-    textOn: {color: ACCENT, fontSize: 13.5, fontWeight: '600'},
+    textOff: {color: T3, fontSize: 14, fontWeight: '600'},
+    textOn: {color: ACCENT, fontSize: 14, fontWeight: '600'},
   },
   accentSolid: {
     container: {
@@ -479,7 +479,7 @@ export function Stat({
   valueLS = 0.2,
   unitSize = 12,
   unitWeight = '600',
-  labelSize = 11.5,
+  labelSize = 12,
   labelWeight = '600',
   labelMarginTop = 4,
   verticalPadding = 0,
@@ -554,7 +554,7 @@ export function StatGrid({
   valueLS = 0.2,
   unitSize = 12,
   unitWeight = '600',
-  labelSize = 11.5,
+  labelSize = 12,
   labelWeight = '600',
   labelMarginTop = 4,
   verticalPadding = 0,

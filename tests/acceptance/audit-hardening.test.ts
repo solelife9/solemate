@@ -59,9 +59,9 @@ jest.mock('../../lib/haptics', () => ({
 }));
 
 import * as haptics from '../../lib/haptics';
-import {KeyboardAvoidingView, Alert, FlatList, StyleSheet} from 'react-native';
+import {KeyboardAvoidingView, Alert, FlatList, StyleSheet, Text} from 'react-native';
 import App from '../../App';
-import {Button} from '../../primitives';
+import {Button, Card, SegmentedControl, StatGrid, Stat} from '../../primitives';
 // E 묶음(디자인 시스템) — CTA '단일 Button 프리미티브 경유'를 화면째 렌더해 단언하기 위한 컴포넌트.
 import ChallengesSection from '../../ChallengesSection';
 import RetirementFlow from '../../RetirementFlow.rn';
@@ -79,7 +79,10 @@ import {runToastAction, getCurrentToast, dismissToast, TOAST_UNDO_LABEL} from '.
 import {maskDuration, maskDate, validateRunForm} from '../../lib/inputMask';
 import {syncLabel} from '../../lib/syncStatus';
 import type {Shoe, Run} from '../../theme';
-import {TIER_LABEL, GRAD_TOP, GRAD_BOT, ACCENT, RADIUS} from '../../theme';
+import {
+  TIER_LABEL, GRAD_TOP, GRAD_BOT, ACCENT, RADIUS,
+  TYPE, HERO, GUTTER, SCRIM, CARD, CARD_BORDER, DISPLAY,
+} from '../../theme';
 import {ymLocal, ymdLocal} from '../../lib/format';
 
 // createElement 단축(JSX 미사용) + 트리 렌더 헬퍼.
@@ -972,7 +975,129 @@ describe('Audit Hardening 수용', () => {
       act(() => d.unmount());
     });
 
-    it.todo('Card/SegmentedControl/StatGrid 프리미티브 채택, 단일 보더 토큰');
-    it.todo('TYPE: 반px 사이즈 제거, hero/scrim/screen-padding 토큰 도입');
+    test('Card·SegmentedControl·StatGrid 프리미티브가 단일 보더 토큰 + 관찰 가능한 동작으로 렌더된다', () => {
+      // ① Card — 단일 표면(CARD) + 단일 보더 토큰(CARD_BORDER) + 단일 반경(RADIUS.lg).
+      //    화면마다 SEP·withAlpha(T1,.07)·borderWidth 1 로 흩어졌던 카드 외곽선이 한 토큰으로
+      //    모인다. 관찰: 카드 호스트 style 의 backgroundColor/borderColor/borderRadius.
+      const c = renderTree(el(Card, {children: el(Text, {children: '카드 본문'})}));
+      const cardHosts = c.root.findAll((n: ReactTestRenderer.ReactTestInstance) => {
+        const f = StyleSheet.flatten(n.props && n.props.style) as
+          | {backgroundColor?: string; borderRadius?: number; borderColor?: string; borderWidth?: number}
+          | undefined;
+        return !!f && f.backgroundColor === CARD && f.borderRadius === RADIUS.lg;
+      });
+      expect(cardHosts.length).toBeGreaterThanOrEqual(1);
+      cardHosts.forEach(n => {
+        const f = StyleSheet.flatten(n.props.style) as {borderColor?: string; borderWidth?: number};
+        expect(f.borderColor).toBe(CARD_BORDER);          // 단일 보더 토큰
+        expect(f.borderWidth).toBe(StyleSheet.hairlineWidth);
+      });
+      expect(renderedText(c.root)).toContain('카드 본문');
+      act(() => c.unmount());
+
+      // ② SegmentedControl — 선택 상태가 accessibilityState.selected 로 관찰되고, press 시
+      //    onChange 가 그 키로 호출된다(앱 전역 4개 탭 스트립을 대체한 단일 프리미티브).
+      //    컨테이너 보더 = 단일 CARD_BORDER 토큰(neutral variant).
+      let segVal = 'a';
+      const items = [{key: 'a', label: '주간'}, {key: 'b', label: '월간'}];
+      const sc = renderTree(
+        el(SegmentedControl, {items, value: 'a', onChange: (k: string) => {segVal = k;}, variant: 'neutral'}),
+      );
+      const selA = pressableByLabel(sc.root, '주간');
+      const selB = pressableByLabel(sc.root, '월간');
+      expect(selA.props.accessibilityState.selected).toBe(true);
+      expect(selB.props.accessibilityState.selected).toBe(false);
+      const segContainer = sc.root.findAll((n: ReactTestRenderer.ReactTestInstance) => {
+        const f = StyleSheet.flatten(n.props && n.props.style) as
+          | {borderColor?: string; flexDirection?: string}
+          | undefined;
+        return !!f && f.borderColor === CARD_BORDER && f.flexDirection === 'row';
+      });
+      expect(segContainer.length).toBeGreaterThanOrEqual(1);
+      act(() => selB.props.onPress());
+      expect(segVal).toBe('b');                            // 관찰 가능한 동작
+      act(() => sc.unmount());
+
+      // ③ StatGrid — value/unit/label 을 모두 렌더하고, 값 Text 는 DISPLAY 폰트 +
+      //    tabular-nums(자리수 흔들림 방지) 단일 소스(화면별 손짠 스탯 그리드 대체).
+      const sg = renderTree(
+        el(StatGrid, {items: [
+          {value: '12', unit: 'km', label: '거리', testID: 'sg0'},
+          {value: '5', unit: '회', label: '횟수', testID: 'sg1'},
+        ]}),
+      );
+      const txt = renderedText(sg.root);
+      for (const s of ['12', 'km', '거리', '5', '회', '횟수']) expect(txt).toContain(s);
+      const valNodes = sg.root.findAll((n: ReactTestRenderer.ReactTestInstance) => {
+        const f = StyleSheet.flatten(n.props && n.props.style) as
+          | {fontFamily?: string; fontVariant?: string[]}
+          | undefined;
+        return !!f && f.fontFamily === DISPLAY && Array.isArray(f.fontVariant) && f.fontVariant.includes('tabular-nums');
+      });
+      expect(valNodes.length).toBeGreaterThanOrEqual(2); // 두 셀의 값이 모두 DISPLAY/tabular
+      act(() => sg.unmount());
+
+      // ④ 정적 가드: SegmentedControl·StatGrid 가 정의(primitives)뿐 아니라 실제 화면에서
+      //    채택된다(per-screen 탭 스트립/스탯 그리드 복제 0 = 단일 프리미티브 경유).
+      const src = listSrc();
+      const adopt = (name: string) =>
+        src.filter(f => path.basename(f) !== 'primitives.tsx' && new RegExp(`\\b${name}\\b`).test(readFile(f)));
+      expect(adopt('SegmentedControl').length).toBeGreaterThan(0);
+      expect(adopt('StatGrid').length).toBeGreaterThan(0);
+    });
+
+    test('TYPE 정수 스케일 수렴 + hero/scrim/screen-padding 토큰 도입 (반px 사이즈 제거)', () => {
+      // 주석/CRLF 안전 strip(라인 // 제거 전 \r 선제거 — CRLF 풋건 회피) + 소스 코드만 스캔.
+      const strip = (s: string) =>
+        s.replace(/\r/g, '').replace(/\/\*[\s\S]*?\*\//g, '').split('\n').map(l => l.replace(/\/\/.*$/, '')).join('\n');
+
+      // ① TYPE 모든 프리셋 fontSize 가 정수(반px 0) — 본문 위계 스케일.
+      for (const k of Object.keys(TYPE) as (keyof typeof TYPE)[]) {
+        expect(Number.isInteger(TYPE[k].fontSize)).toBe(true);
+      }
+
+      // ② HERO — 명명된 hero 사이즈(hero<heroLg<mega), 모두 정수, 본문 최대(display) 위.
+      expect([...Object.keys(HERO)].sort()).toEqual(['hero', 'heroLg', 'mega'].sort());
+      expect(Number.isInteger(HERO.hero)).toBe(true);
+      expect(Number.isInteger(HERO.heroLg)).toBe(true);
+      expect(Number.isInteger(HERO.mega)).toBe(true);
+      expect(HERO.hero).toBeLessThan(HERO.heroLg);
+      expect(HERO.heroLg).toBeLessThan(HERO.mega);
+      expect(HERO.hero).toBeGreaterThan(TYPE.display.fontSize);
+
+      // ③ GUTTER(단일 거터, 정수) + SCRIM(단일 모달 딤).
+      expect(Number.isInteger(GUTTER)).toBe(true);
+      expect(GUTTER).toBeGreaterThan(0);
+      expect(SCRIM).toBe('rgba(0,0,0,0.6)');
+
+      // ④ 정적 스캔: 어떤 소스도 반px fontSize/Size 를 갖지 않는다(11.5/12.5/13.5/14.5/16.5 …
+      //    가 정수 스케일로 수렴). SVG path 좌표(d=…)는 fontSize/Size 키가 아니라 잡지 않는다.
+      const halfPx = /\b(?:fontSize|valueSize|unitSize|labelSize)\s*[:=]\s*\{?\s*\d+\.5\b/;
+      const offenders = listSrc().filter(f => halfPx.test(strip(readFile(f))));
+      expect(offenders).toEqual([]);
+
+      // ⑤ scrim 단일화: raw 'rgba(0,0,0,0.6)' 리터럴은 theme.ts 에만(화면은 SCRIM 토큰 참조).
+      const rawScrim = listSrc().filter(
+        f => path.basename(f) !== 'theme.ts' && /rgba\(\s*0\s*,\s*0\s*,\s*0\s*,\s*0?\.6\s*\)/.test(strip(readFile(f))),
+      );
+      expect(rawScrim).toEqual([]);
+
+      // ⑥ 토큰이 정의에 그치지 않고 실제 화면에서 소비된다(hero/scrim/gutter 각 ≥1 화면).
+      //    \bHERO\b 는 HERO_BG(뒤가 단어문자 _)를 매칭하지 않아 hero 스케일 사용만 센다.
+      const consumes = (tok: string) =>
+        listSrc().filter(f => path.basename(f) !== 'theme.ts' && new RegExp(`\\b${tok}\\b`).test(strip(readFile(f))));
+      expect(consumes('HERO').length).toBeGreaterThan(0);
+      expect(consumes('SCRIM').length).toBeGreaterThan(0);
+      expect(consumes('GUTTER').length).toBeGreaterThan(0);
+
+      // ⑦ hero 사이즈가 실제 렌더 산출물에 반영된다(관찰): Stat 값 Text 의 fontSize === HERO.heroLg.
+      const h = renderTree(el(Stat, {value: '42', unit: 'km', valueSize: HERO.heroLg, testID: 'hero'}));
+      const heroVal = h.root.findAll((n: ReactTestRenderer.ReactTestInstance) => {
+        const f = StyleSheet.flatten(n.props && n.props.style) as {fontSize?: number; fontFamily?: string} | undefined;
+        return !!f && f.fontSize === HERO.heroLg && f.fontFamily === DISPLAY;
+      });
+      expect(heroVal.length).toBeGreaterThanOrEqual(1);
+      act(() => h.unmount());
+    });
   });
 });

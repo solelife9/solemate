@@ -58,7 +58,7 @@ const r = StyleSheet.create({
   wrap: {marginTop: 24},
   title: {color: T2, fontFamily: FONT, fontSize: 15, fontWeight: '600', letterSpacing: -0.2, paddingHorizontal: 2, marginBottom: 8},
   head: {flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 2, paddingBottom: 8},
-  hcell: {color: T3, fontFamily: FONT, fontSize: 10.5, fontWeight: '600', opacity: 0.8},
+  hcell: {color: T3, fontFamily: FONT, fontSize: 11, fontWeight: '600', opacity: 0.8},
   row: {flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 9, paddingHorizontal: 2},
   rowSep: {borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: 'rgba(255,255,255,0.045)'},
   km: {width: 34, fontFamily: DISPLAY, fontSize: 17, fontWeight: '600', color: T1},

@@ -221,7 +221,7 @@ describe('Stat / StatGrid — stat cell composition', () => {
 
 // ── Per-site unit/label typography fidelity (시각 동등 회귀 가드) ───────────────
 // StatGrid 초기 통합은 value 타입만 파라미터화하고 unit/label 을 Profile 값(12/600,
-// 11.5/600)으로 하드코딩해 다른 두 사이트(러닝 상세·진척)에서 픽셀이 어긋났다.
+// 12/600)으로 하드코딩해 다른 두 사이트(러닝 상세·진척)에서 픽셀이 어긋났다.
 // 아래 테스트는 각 사이트가 호출부에 넘기는 unit/label fontSize·fontWeight·marginTop·
 // 셀 paddingVertical 이 마이그레이션 전 원본 StyleSheet 값과 정확히 일치함을 단언한다.
 describe('Stat / StatGrid — per-site unit & label typography', () => {
@@ -239,7 +239,7 @@ describe('Stat / StatGrid — per-site unit & label typography', () => {
     return StyleSheet.flatten(hosts[hosts.length - 1].props.style) as any;
   };
 
-  test('Profile (defaults): unit 12/600, label 11.5/600 mt4, no extra cell padding', () => {
+  test('Profile (defaults): unit 12/600, label 12/600 mt4, no extra cell padding', () => {
     const {root} = render(
       <Stat value="42" unit="km" label="총 거리" valueSize={26} testID="p" />,
     );
@@ -247,20 +247,20 @@ describe('Stat / StatGrid — per-site unit & label typography', () => {
     expect(unit.fontSize).toBe(12);
     expect(unit.fontWeight).toBe('600');
     const label = textByString(root, '총 거리');
-    expect(label.fontSize).toBe(11.5);
+    expect(label.fontSize).toBe(12);
     expect(label.fontWeight).toBe('600');
     expect(label.marginTop).toBe(4);
     expect(cellHostStyle(root, 'p').paddingVertical).toBeFalsy();
   });
 
-  test('History RunDetail 2×3: unit 11.5/500, label 11.5/normal mt4, cell paddingVertical 6', () => {
+  test('History RunDetail 2×3: unit 12/500, label 12/normal mt4, cell paddingVertical 6', () => {
     const {root} = render(
       <StatGrid
         columns={3}
         align="left"
-        unitSize={11.5}
+        unitSize={12}
         unitWeight="500"
-        labelSize={11.5}
+        labelSize={12}
         labelWeight="normal"
         labelMarginTop={4}
         verticalPadding={6}
@@ -268,10 +268,10 @@ describe('Stat / StatGrid — per-site unit & label typography', () => {
       />,
     );
     const unit = textByString(root, ' km');
-    expect(unit.fontSize).toBe(11.5);
+    expect(unit.fontSize).toBe(12);
     expect(unit.fontWeight).toBe('500');
     const label = textByString(root, '거리');
-    expect(label.fontSize).toBe(11.5);
+    expect(label.fontSize).toBe(12);
     expect(label.fontWeight).toBe('normal');
     expect(label.marginTop).toBe(4);
     expect(cellHostStyle(root, 'h0').paddingVertical).toBe(6);

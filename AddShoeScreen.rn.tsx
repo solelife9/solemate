@@ -257,7 +257,7 @@ const s = StyleSheet.create({
   photo: { alignSelf: 'center', width: 120, height: 120, borderRadius: 26, borderWidth: 1, borderStyle: 'dashed', borderColor: withAlpha(T1, 0.14), backgroundColor: withAlpha(T1, 0.02), alignItems: 'center', justifyContent: 'center', gap: 7, marginBottom: 10, overflow: 'hidden' },
   photoImg: { width: '100%', height: '100%' },
   photoText: { color: T3, fontFamily: FONT, fontSize: 12 },
-  photoErr: { color: T3, fontFamily: FONT, fontSize: 11.5, textAlign: 'center', marginBottom: 16, paddingHorizontal: 12 },
+  photoErr: { color: T3, fontFamily: FONT, fontSize: 12, textAlign: 'center', marginBottom: 16, paddingHorizontal: 12 },
   photoOpt: { color: T4, fontFamily: FONT, fontSize: 11, textAlign: 'center', marginBottom: 18 },
 
   label: { color: T2, fontFamily: FONT, fontSize: 13, fontWeight: '500', letterSpacing: 0.2, paddingHorizontal: 4, paddingBottom: 10 },
@@ -265,7 +265,7 @@ const s = StyleSheet.create({
   chip: { height: 40, paddingHorizontal: 18, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
   chipOn: { borderWidth: 1, borderColor: withAlpha(T1, 0.22), backgroundColor: withAlpha(T1, 0.10) },
   chipOff: { borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.12), backgroundColor: CARD_HI },
-  chipText: { fontFamily: FONT, fontSize: 12.5, fontWeight: '600', letterSpacing: 0.6 },
+  chipText: { fontFamily: FONT, fontSize: 13, fontWeight: '600', letterSpacing: 0.6 },
 
   // 모델 선택 트리거(탭하면 검색 모달). 입력칸처럼 보이되 누르면 모달이 열린다.
   selector: { backgroundColor: CARD_DIM, borderRadius: 16, borderWidth: 1, borderColor: withAlpha(T1, 0.07), flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingVertical: 16 },
@@ -274,16 +274,16 @@ const s = StyleSheet.create({
   searchBar: { flexDirection: 'row', alignItems: 'center', gap: 9, marginHorizontal: 18, marginTop: 4, marginBottom: 10, backgroundColor: CARD_DIM, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 12, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.07) },
   searchInput: { flex: 1, color: T1, fontFamily: FONT, fontSize: 16, fontWeight: '500', letterSpacing: -0.2, paddingVertical: 0 },
   customRow: { borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.4), backgroundColor: withAlpha(ACCENT, 0.08), marginTop: 6 },
-  customText: { flex: 1, color: ACCENT, fontFamily: FONT, fontSize: 14.5, fontWeight: '600', letterSpacing: -0.2 },
-  noResult: { color: T3, fontFamily: FONT, fontSize: 13.5, textAlign: 'center', paddingVertical: 28 },
+  customText: { flex: 1, color: ACCENT, fontFamily: FONT, fontSize: 15, fontWeight: '600', letterSpacing: -0.2 },
+  noResult: { color: T3, fontFamily: FONT, fontSize: 14, textAlign: 'center', paddingVertical: 28 },
   suggestion: { flexDirection: 'row', alignItems: 'center', gap: 9, paddingVertical: 14, paddingHorizontal: 12, borderRadius: 11 },
   sugBrand: { color: T3, fontFamily: FONT, fontSize: 10, fontWeight: '600', letterSpacing: 0.8 },
-  sugModel: { flex: 1, color: T1, fontFamily: FONT, fontSize: 14.5, fontWeight: '500', letterSpacing: -0.2 },
+  sugModel: { flex: 1, color: T1, fontFamily: FONT, fontSize: 15, fontWeight: '500', letterSpacing: -0.2 },
   sugKm: { color: T3, fontFamily: FONT, fontSize: 11, fontWeight: '500' },
 
   maxHead: { marginTop: 22, flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 4, paddingBottom: 10 },
 
-  hint: { color: T3, fontFamily: FONT, fontSize: 11.5, paddingHorizontal: 4, paddingTop: 9 },
+  hint: { color: T3, fontFamily: FONT, fontSize: 12, paddingHorizontal: 4, paddingTop: 9 },
 
   usedRow: { backgroundColor: CARD_DIM, borderRadius: 16, borderWidth: 1, borderColor: withAlpha(T1, 0.07), flexDirection: 'row', alignItems: 'center', paddingHorizontal: 18 },
   // 검증 실패 시 입력칸 테두리를 빨강으로 강조하고 아래 인라인 헬퍼텍스트를 띄운다.

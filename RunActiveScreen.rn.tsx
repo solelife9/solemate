@@ -24,7 +24,7 @@ import Svg, { Path, Circle } from 'react-native-svg';
 // (시각 동등: 다크+오렌지 유지)
 import {
   BG, CARD, ACCENT, GOOD, WARN, DANGER, T1, T2, T3, T4, SEP,
-  FONT, DISPLAY, withAlpha,
+  FONT, DISPLAY, HERO, withAlpha,
 } from './theme';
 // lib/haptics 배선: 일시정지/재개 → tap · 목표 달성 → impactHeavy · 종료 확정 → warning.
 import { tap, impactHeavy, warning } from './lib/haptics';
@@ -284,7 +284,7 @@ const r = StyleSheet.create({
 
   toast: { position: 'absolute', left: 18, right: 18, top: 50, zIndex: 20, flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 13, paddingHorizontal: 15, borderRadius: 16, backgroundColor: ACCENT },
   toastTick: { width: 34, height: 34, borderRadius: 999, backgroundColor: withAlpha(T1, 0.2), alignItems: 'center', justifyContent: 'center' },
-  toastA: { color: '#fff', fontFamily: FONT, fontSize: 14.5, fontWeight: '700', letterSpacing: -0.2 },
+  toastA: { color: '#fff', fontFamily: FONT, fontSize: 15, fontWeight: '700', letterSpacing: -0.2 },
   toastB: { color: withAlpha(T1, 0.88), fontFamily: FONT, fontSize: 12, fontWeight: '500', marginTop: 2 },
 
   top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
@@ -292,32 +292,32 @@ const r = StyleSheet.create({
   liveDot: { width: 8, height: 8, borderRadius: 999, backgroundColor: ACCENT },
   liveText: { color: ACCENT, fontFamily: FONT, fontSize: 14, fontWeight: '500', letterSpacing: 0.2 },
   shoeChip: { flexDirection: 'row', alignItems: 'center', gap: 7, backgroundColor: CARD, borderRadius: 999, paddingHorizontal: 12, height: 30, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
-  shoeText: { color: T3, fontFamily: DISPLAY, fontSize: 12.5, fontWeight: '600' },
+  shoeText: { color: T3, fontFamily: DISPLAY, fontSize: 13, fontWeight: '600' },
 
   gpsRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 14, justifyContent: 'center' },
-  gpsLabel: { fontFamily: FONT, fontSize: 12.5, fontWeight: '600' },
+  gpsLabel: { fontFamily: FONT, fontSize: 13, fontWeight: '600' },
 
   permBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 12, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 12, borderWidth: StyleSheet.hairlineWidth, borderColor: DANGER, backgroundColor: withAlpha(DANGER, 0.14) },
-  permBannerText: { flex: 1, color: T1, fontFamily: FONT, fontSize: 12.5, fontWeight: '500', lineHeight: 17 },
+  permBannerText: { flex: 1, color: T1, fontFamily: FONT, fontSize: 13, fontWeight: '500', lineHeight: 17 },
 
   ringWrap: { alignItems: 'center', marginTop: 24 },
   goal: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '500', marginBottom: 10 },
   goalMet: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 10 },
   goalMetText: { color: GOOD, fontFamily: FONT, fontSize: 13, fontWeight: '600' },
-  bigDist: { color: T1, fontFamily: DISPLAY, fontSize: 76, fontWeight: '800', letterSpacing: -2, lineHeight: 80, includeFontPadding: false },
-  bigUnit: { color: T3, fontFamily: FONT, fontSize: 13.5, fontWeight: '600', marginTop: 8 },
+  bigDist: { color: T1, fontFamily: DISPLAY, fontSize: HERO.mega, fontWeight: '800', letterSpacing: -2, lineHeight: 80, includeFontPadding: false },
+  bigUnit: { color: T3, fontFamily: FONT, fontSize: 14, fontWeight: '600', marginTop: 8 },
 
   heroMetrics: { flexDirection: 'row', marginTop: 26, paddingVertical: 16, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: SEP },
   hm: { flex: 1, alignItems: 'center' },
   hmDivider: { borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: withAlpha(T1, 0.045) },
   hmV: { color: T1, fontFamily: DISPLAY, fontSize: 34, fontWeight: '700', letterSpacing: -1 },
-  hmL: { color: T3, fontFamily: FONT, fontSize: 11.5, fontWeight: '500', marginTop: 5 },
+  hmL: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500', marginTop: 5 },
 
   subMetrics: { flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 14 },
   sm: { alignItems: 'center' },
   smV: { color: T2, fontFamily: DISPLAY, fontSize: 16, fontWeight: '500' },
   smU: { color: T4, fontFamily: FONT, fontSize: 10 },
-  smL: { color: T4, fontFamily: FONT, fontSize: 10.5, fontWeight: '500', marginTop: 3 },
+  smL: { color: T4, fontFamily: FONT, fontSize: 11, fontWeight: '500', marginTop: 3 },
 
   mapWrap: {
     flex: 1,

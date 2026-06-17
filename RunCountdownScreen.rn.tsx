@@ -198,7 +198,7 @@ const s = StyleSheet.create({
 
   chips: { flexDirection: 'row', gap: 8, marginTop: 14 },
   chip: { flexDirection: 'row', alignItems: 'center', gap: 7, height: 32, paddingHorizontal: 14, borderRadius: 999, backgroundColor: withAlpha(T1, 0.04), borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
-  chipText: { color: T2, fontFamily: FONT, fontSize: 12.5, fontWeight: '500' },
+  chipText: { color: T2, fontFamily: FONT, fontSize: 13, fontWeight: '500' },
   chipB: { color: T1, fontFamily: DISPLAY, fontWeight: '600' },
 
   foot: { paddingHorizontal: 22, alignItems: 'center', gap: 16, minHeight: 104, justifyContent: 'flex-end' },

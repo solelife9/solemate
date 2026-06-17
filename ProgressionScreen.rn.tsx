@@ -42,6 +42,7 @@ import {
   SPACE,
   RADIUS,
   TYPE,
+  SCRIM,
   TIER_COLORS,
   TIER_LABEL,
   withAlpha,
@@ -910,7 +911,7 @@ const s = StyleSheet.create({
   },
   titlePillTxt: {fontFamily: FONT, fontSize: 12, fontWeight: '700', flexShrink: 1},
   noTitle: {fontFamily: FONT, color: T3, fontSize: 12, fontWeight: '600', marginTop: 7},
-  equipHint: {fontFamily: FONT, color: T3, fontSize: 11.5, lineHeight: 16},
+  equipHint: {fontFamily: FONT, color: T3, fontSize: 12, lineHeight: 16},
   // 랭크 오르는 법 카드
   guide: {
     backgroundColor: CARD,
@@ -939,7 +940,7 @@ const s = StyleSheet.create({
     width: 58,
     fontFamily: FONT,
     color: T2,
-    fontSize: 11.5,
+    fontSize: 12,
     fontWeight: '600',
   },
   pillarTrack: {
@@ -993,7 +994,7 @@ const s = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 2,
   },
-  equipTagTxt: {fontFamily: FONT, color: BG, fontSize: 8.5, fontWeight: '800', letterSpacing: 0.3},
+  equipTagTxt: {fontFamily: FONT, color: BG, fontSize: 9, fontWeight: '800', letterSpacing: 0.3},
   lockIcon: {position: 'absolute', top: 10, right: 10},
   // 업적
   ach: {
@@ -1004,7 +1005,7 @@ const s = StyleSheet.create({
     padding: 14,
   },
   achTop: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8},
-  achName: {flex: 1, fontFamily: FONT, color: T1, fontSize: 13.5, fontWeight: '700'},
+  achName: {flex: 1, fontFamily: FONT, color: T1, fontSize: 14, fontWeight: '700'},
   rar: {borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2},
   rarTxt: {fontFamily: FONT, fontSize: 9, fontWeight: '800', letterSpacing: 0.3},
   achProgRow: {flexDirection: 'row', justifyContent: 'flex-end', marginTop: 10, marginBottom: 6},
@@ -1045,7 +1046,7 @@ const s = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: SCRIM,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 28,
@@ -1084,7 +1085,7 @@ const s = StyleSheet.create({
     padding: SPACE.lg,
     gap: 6,
   },
-  modalReqLabel: {fontFamily: FONT, color: ACCENT, fontSize: 11.5, fontWeight: '800', letterSpacing: 0.3},
+  modalReqLabel: {fontFamily: FONT, color: ACCENT, fontSize: 12, fontWeight: '800', letterSpacing: 0.3},
   modalReqTxt: {fontFamily: FONT, color: T1, fontSize: 14, fontWeight: '600', lineHeight: 20},
   modalStatus: {
     flexDirection: 'row',

@@ -38,6 +38,7 @@ import {
   SPACE,
   RADIUS,
   TYPE,
+  GUTTER,
   TIER_COLORS,
   withAlpha,
 } from './theme';
@@ -365,7 +366,7 @@ const s = StyleSheet.create({
     paddingHorizontal: 13,
     paddingVertical: 8,
   },
-  catChipTxt: {fontFamily: FONT, color: T3, fontSize: 12.5, fontWeight: '700'},
+  catChipTxt: {fontFamily: FONT, color: T3, fontSize: 13, fontWeight: '700'},
   // 내 순위 카드
   myCard: {
     flexDirection: 'row',
@@ -408,7 +409,7 @@ const s = StyleSheet.create({
     paddingHorizontal: SPACE.lg,
     paddingVertical: 13,
   },
-  hintTxt: {flex: 1, fontFamily: FONT, color: T2, fontSize: 12.5, fontWeight: '600'},
+  hintTxt: {flex: 1, fontFamily: FONT, color: T2, fontSize: 13, fontWeight: '600'},
   // 리더보드 행
   row: {
     flexDirection: 'row',
@@ -445,14 +446,14 @@ const s = StyleSheet.create({
   rowScore: {
     fontFamily: DISPLAY,
     color: T1,
-    fontSize: 14.5,
+    fontSize: 15,
     fontWeight: '800',
     letterSpacing: -0.2,
     fontVariant: ['tabular-nums'],
   },
   // 상태
   center: {paddingVertical: 48, alignItems: 'center'},
-  empty: {alignItems: 'center', gap: 8, paddingVertical: 40, paddingHorizontal: 20},
+  empty: {alignItems: 'center', gap: 8, paddingVertical: 40, paddingHorizontal: GUTTER},
   emptyTitle: {fontFamily: DISPLAY, color: T1, fontSize: 16, fontWeight: '800', marginTop: 4},
-  emptyTxt: {fontFamily: FONT, color: T3, fontSize: 12.5, fontWeight: '600', lineHeight: 18, textAlign: 'center'},
+  emptyTxt: {fontFamily: FONT, color: T3, fontSize: 13, fontWeight: '600', lineHeight: 18, textAlign: 'center'},
 });

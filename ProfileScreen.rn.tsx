@@ -852,7 +852,7 @@ const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: BG },
   row: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   card: { backgroundColor: CARD_DIM, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER },
-  cardTitle: { color: T2, fontFamily: FONT, fontSize: 13.5, fontWeight: '500', marginBottom: 16 },
+  cardTitle: { color: T2, fontFamily: FONT, fontSize: 14, fontWeight: '500', marginBottom: 16 },
   sectionLabel: { color: T2, fontFamily: FONT, fontSize: 14, fontWeight: '500', letterSpacing: 0.2, paddingHorizontal: 4 },
   progressRow: { flexDirection: 'row', alignItems: 'center', gap: 13, padding: 16 },
   progressIcon: { width: 38, height: 38, borderRadius: RADIUS.sm, backgroundColor: withAlpha(ACCENT, 0.12), alignItems: 'center', justifyContent: 'center' },
@@ -874,12 +874,12 @@ const s = StyleSheet.create({
   nameInput: { flex: 1, color: T1, fontFamily: FONT, fontSize: 22, fontWeight: '500', letterSpacing: -0.5, borderBottomWidth: 1, borderBottomColor: ACCENT, paddingVertical: 2, paddingHorizontal: 0 },
   nameSaveBtn: { width: 34, height: 34, borderRadius: RADIUS.pill, backgroundColor: ACCENT, alignItems: 'center', justifyContent: 'center' },
   rankChip: { borderWidth: StyleSheet.hairlineWidth, borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 3 },
-  rankChipText: { fontFamily: FONT, fontSize: 11.5, fontWeight: '800', letterSpacing: 0.2 },
+  rankChipText: { fontFamily: FONT, fontSize: 12, fontWeight: '800', letterSpacing: 0.2 },
   titlePill: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: withAlpha(ACCENT, 0.12), borderRadius: RADIUS.pill, paddingHorizontal: 9, paddingVertical: 3, maxWidth: '60%' },
-  titlePillText: { color: ACCENT, fontFamily: FONT, fontSize: 11.5, fontWeight: '700', flexShrink: 1 },
+  titlePillText: { color: ACCENT, fontFamily: FONT, fontSize: 12, fontWeight: '700', flexShrink: 1 },
   idStat: { fontFamily: FONT, color: T3, fontSize: 12, fontWeight: '600' },
   idStatNum: { fontFamily: DISPLAY, color: T1, fontSize: 13, fontWeight: '800' },
-  since: { color: T3, fontFamily: FONT, fontSize: 12.5, fontWeight: '600' },
+  since: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600' },
 
   // 주간 목표 링 카드
   goalCard: { flexDirection: 'row', alignItems: 'center', gap: 18, padding: 18 },
@@ -890,13 +890,13 @@ const s = StyleSheet.create({
   goalNumRow: { alignItems: 'baseline', gap: 0, marginTop: 4 },
   goalDone: { color: T1, fontFamily: DISPLAY, fontSize: 26, letterSpacing: 0.3 },
   goalTotal: { color: T3, fontFamily: FONT, fontSize: 14, fontWeight: '700' },
-  keepGoing: { color: ACCENT, fontFamily: FONT, fontSize: 12.5, fontWeight: '700', marginTop: 6 },
+  keepGoing: { color: ACCENT, fontFamily: FONT, fontSize: 13, fontWeight: '700', marginTop: 6 },
   keepGoingDone: { color: GOOD },
 
   // 이번 주 스트릭 카드
   streakCard: { padding: 16 },
   streakHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 },
-  streakCount: { color: ACCENT, fontFamily: FONT, fontSize: 11.5, fontWeight: '700' },
+  streakCount: { color: ACCENT, fontFamily: FONT, fontSize: 12, fontWeight: '700' },
   streakRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   streakDay: { alignItems: 'center', gap: 6 },
   streakDot: { width: 30, height: 30, borderRadius: RADIUS.pill, alignItems: 'center', justifyContent: 'center' },
@@ -911,7 +911,7 @@ const s = StyleSheet.create({
 
   badge: { flex: 1, backgroundColor: CARD, borderRadius: RADIUS.lg, paddingVertical: 16, paddingHorizontal: 8, alignItems: 'center', gap: 8, borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER },
   badgeIcon: { width: 44, height: 44, borderRadius: RADIUS.pill, alignItems: 'center', justifyContent: 'center' },
-  badgeLabel: { fontFamily: FONT, fontSize: 10.5, fontWeight: '500', textAlign: 'center' },
+  badgeLabel: { fontFamily: FONT, fontSize: 11, fontWeight: '500', textAlign: 'center' },
 
   settingRow: { flexDirection: 'row', alignItems: 'center', gap: 13, paddingVertical: 14, paddingHorizontal: 16 },
   settingBorder: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: SEP },
@@ -921,14 +921,14 @@ const s = StyleSheet.create({
 
   // expandable panels
   panel: { paddingHorizontal: 18, paddingVertical: 16, gap: 14, backgroundColor: withAlpha(T1, 0.02) },
-  panelHint: { color: T3, fontFamily: FONT, fontSize: 12.5, lineHeight: 18 },
+  panelHint: { color: T3, fontFamily: FONT, fontSize: 13, lineHeight: 18 },
   stepper: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 14 },
   stepBtn: { width: 46, height: 46, borderRadius: 14, backgroundColor: CARD_HI, alignItems: 'center', justifyContent: 'center' },
   stepVal: { flex: 1, alignItems: 'center' },
   stepNum: { color: T1, fontFamily: DISPLAY, fontSize: 30, letterSpacing: 0.3 },
-  stepUnit: { color: T3, fontFamily: FONT, fontSize: 11.5, fontWeight: '600', marginTop: 2 },
+  stepUnit: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '600', marginTop: 2 },
 
-  notifDenied: { color: WARN, fontFamily: FONT, fontSize: 12.5, lineHeight: 18 },
+  notifDenied: { color: WARN, fontFamily: FONT, fontSize: 13, lineHeight: 18 },
 
   // ── 돌아보기(리캡) ───────────────────────────────────────────────────────────
   recapHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 12, paddingHorizontal: 4 },
@@ -937,9 +937,9 @@ const s = StyleSheet.create({
   recapTopRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
   recapPeriod: { color: T2, fontFamily: FONT, fontSize: 14, fontWeight: '700' },
   recapShareBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 7, borderRadius: RADIUS.pill, backgroundColor: withAlpha(ACCENT, 0.12) },
-  recapShareTxt: { color: ACCENT, fontFamily: FONT, fontSize: 12.5, fontWeight: '700' },
+  recapShareTxt: { color: ACCENT, fontFamily: FONT, fontSize: 13, fontWeight: '700' },
   recapEmpty: { alignItems: 'center', paddingVertical: 22 },
-  recapEmptyTxt: { color: T3, fontFamily: FONT, fontSize: 13.5, fontWeight: '600', lineHeight: 20, textAlign: 'center' },
+  recapEmptyTxt: { color: T3, fontFamily: FONT, fontSize: 14, fontWeight: '600', lineHeight: 20, textAlign: 'center' },
   recapMostWorn: { flexDirection: 'row', alignItems: 'center', gap: 7, marginTop: 16, paddingTop: 14, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP },
   recapMostWornTxt: { flex: 1, color: T2, fontFamily: FONT, fontSize: 13, fontWeight: '600' },
   recapPrBox: { marginTop: 14, gap: 2 },
@@ -951,11 +951,11 @@ const s = StyleSheet.create({
   toggle: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 44, borderRadius: 14 },
   toggleOn: { backgroundColor: ACCENT },
   toggleOff: { backgroundColor: CARD_HI },
-  toggleTxt: { fontFamily: FONT, fontSize: 14.5, fontWeight: '600' },
+  toggleTxt: { fontFamily: FONT, fontSize: 15, fontWeight: '600' },
 
   acctRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 14 },
-  acctK: { color: T3, fontFamily: FONT, fontSize: 13.5, fontWeight: '500' },
-  acctV: { flex: 1, textAlign: 'right', color: T2, fontFamily: FONT, fontSize: 13.5, fontWeight: '500' },
+  acctK: { color: T3, fontFamily: FONT, fontSize: 14, fontWeight: '500' },
+  acctV: { flex: 1, textAlign: 'right', color: T2, fontFamily: FONT, fontSize: 14, fontWeight: '500' },
 
   // 데이터 가져오기 패널 — dataInput/dataBtn/dataBtnTxt/dataMsg(사각 radius:14 ACCENT
   // 버튼 포함)은 미사용 dead 스타일이라 제거(버튼 radius 혼재 정리). 클라우드 메시지
@@ -966,7 +966,7 @@ const s = StyleSheet.create({
   // 계정 · 클라우드 동기
   cloudSub: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '600', marginTop: 2 },
   cloudPad: { padding: 16, gap: 12 },
-  cloudIntro: { color: T3, fontFamily: FONT, fontSize: 12.5, lineHeight: 18 },
+  cloudIntro: { color: T3, fontFamily: FONT, fontSize: 13, lineHeight: 18 },
   // 브랜드 로그인 버튼(카카오/네이버/애플) 공용 박스 — 모서리는 Google(단일 Button=
   // RADIUS.btn)과 맞춰 통일. Google 은 단일 Button 프리미티브로 라우팅(아래 cloudBtnGoogle).
   cloudBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 48, borderRadius: RADIUS.btn },
@@ -977,5 +977,5 @@ const s = StyleSheet.create({
   cloudBtnNaver: { backgroundColor: NAVER_GREEN },
   brandMark: { fontFamily: DISPLAY, fontSize: 17, fontWeight: '800' },
   cloudBtnTxt: { color: T1, fontFamily: FONT, fontSize: 15, fontWeight: '600' },
-  cloudMsg: { fontFamily: FONT, fontSize: 12.5, fontWeight: '600', lineHeight: 18, paddingHorizontal: 16, paddingBottom: 14 },
+  cloudMsg: { fontFamily: FONT, fontSize: 13, fontWeight: '600', lineHeight: 18, paddingHorizontal: 16, paddingBottom: 14 },
 });

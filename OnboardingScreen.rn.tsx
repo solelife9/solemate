@@ -424,7 +424,7 @@ function StatusPill({status}: {status: StatusKey}) {
   return (
     <View style={[s.pill, {backgroundColor: st.bg}]}>
       <View style={{width: 6, height: 6, borderRadius: 3, backgroundColor: st.c}} />
-      <Text style={{color: st.c, fontFamily: FONT, fontSize: 12.5, fontWeight: '600'}}>{st.label}</Text>
+      <Text style={{color: st.c, fontFamily: FONT, fontSize: 13, fontWeight: '600'}}>{st.label}</Text>
     </View>
   );
 }
@@ -748,7 +748,7 @@ function ShoesMatter({goNext, onSkip, insetTop, insetBottom}: ScreenProps) {
           <LinearGrad stops={[{color: '#1A1A1F', offset: 0}, {color: '#141417', offset: 1}]} radius={22} />
           <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', padding: 14, paddingBottom: 0}}>
             <View>
-              <Text style={{fontFamily: FONT, fontSize: 12.5, color: T3}}>당신의 데일리 러닝화</Text>
+              <Text style={{fontFamily: FONT, fontSize: 13, color: T3}}>당신의 데일리 러닝화</Text>
               <Text style={{fontFamily: FONT, fontSize: 16, fontWeight: '700', color: '#fff', marginTop: 2}}>
                 누적 <Text style={{color: DANGER}}>742 km</Text>
               </Text>
@@ -767,10 +767,10 @@ function ShoesMatter({goNext, onSkip, insetTop, insetBottom}: ScreenProps) {
         {/* 권장 수명 팩트 스트립 */}
         <Rise delay={240} style={s.factStrip}>
           <View>
-            <Text style={{fontFamily: FONT, fontSize: 13.5, color: T3}}>러닝화 권장 수명</Text>
+            <Text style={{fontFamily: FONT, fontSize: 14, color: T3}}>러닝화 권장 수명</Text>
             <Metric value="500–800" unit="KM" size={30} />
           </View>
-          <Text style={{marginLeft: 'auto', fontFamily: FONT, fontSize: 12.5, color: T3, textAlign: 'right', lineHeight: 18}}>
+          <Text style={{marginLeft: 'auto', fontFamily: FONT, fontSize: 13, color: T3, textAlign: 'right', lineHeight: 18}}>
             대부분의 러너가{'\n'}이 시기를 놓칩니다
           </Text>
         </Rise>
@@ -816,7 +816,7 @@ function Injury({goNext, onSkip, insetTop, insetBottom}: ScreenProps) {
           <View style={[s.analyticCard, {flex: 1}]}>
             <View style={{flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 8}}>
               <HeartIcon />
-              <Text style={{fontFamily: FONT, fontSize: 12.5, color: T3}}>충격 흡수율</Text>
+              <Text style={{fontFamily: FONT, fontSize: 13, color: T3}}>충격 흡수율</Text>
             </View>
             <Metric value={78} unit="%" size={32} countUp />
             <View style={{marginTop: 8}}>
@@ -826,7 +826,7 @@ function Injury({goNext, onSkip, insetTop, insetBottom}: ScreenProps) {
           <View style={[s.analyticCard, {flex: 1}]}>
             <View style={{flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 8}}>
               <RulerIcon />
-              <Text style={{fontFamily: FONT, fontSize: 12.5, color: T3}}>교체까지</Text>
+              <Text style={{fontFamily: FONT, fontSize: 13, color: T3}}>교체까지</Text>
             </View>
             <Metric value={260} unit="KM" size={32} countUp />
             <Text style={{fontFamily: FONT, fontSize: 12, color: T3, marginTop: 8}}>약 3주 후 예상</Text>
@@ -838,7 +838,7 @@ function Injury({goNext, onSkip, insetTop, insetBottom}: ScreenProps) {
           <View style={s.alertIconChip}>
             <SparkIcon size={18} color={ACCENT} />
           </View>
-          <Text style={{flex: 1, fontFamily: FONT, fontSize: 13.5, color: T1, lineHeight: 19}}>
+          <Text style={{flex: 1, fontFamily: FONT, fontSize: 14, color: T1, lineHeight: 19}}>
             교체 시점 <Text style={{color: ACCENT, fontWeight: '600'}}>50 km 전</Text> 미리 알림을 보내드려요.
           </Text>
         </Rise>
@@ -866,7 +866,7 @@ function ShoeCard({shoe}: {shoe: (typeof SHOES)[number]}) {
         <Text numberOfLines={1} style={{fontFamily: FONT, fontSize: 18, fontWeight: '700', color: '#fff', marginTop: 2}}>
           {shoe.model}
         </Text>
-        <Text style={{fontFamily: FONT, fontSize: 13.5, color: T3, marginTop: 7}}>
+        <Text style={{fontFamily: FONT, fontSize: 14, color: T3, marginTop: 7}}>
           {shoe.km.toLocaleString()} / {shoe.max.toLocaleString()} km
           <Text style={{color: T4}}> · </Text>
           <Text style={{color: col, fontWeight: '600'}}>{STATUS[st].label}</Text>
@@ -910,7 +910,7 @@ function Management({goNext, onSkip, insetTop, insetBottom}: ScreenProps) {
         {/* 추천 스트립 */}
         <Rise delay={220 + SHOES.length * 90} style={s.recoStrip}>
           <SparkIcon size={18} color={DANGER} />
-          <Text style={{flex: 1, fontFamily: FONT, fontSize: 13.5, color: T1, lineHeight: 19}}>
+          <Text style={{flex: 1, fontFamily: FONT, fontSize: 14, color: T1, lineHeight: 19}}>
             <Text style={{fontWeight: '700'}}>Adizero Adios Pro 4</Text> 교체 시기예요. 새 러닝화를 추천받아 보세요.
           </Text>
         </Rise>
@@ -929,7 +929,7 @@ function FieldLabel({n, label}: {n: string; label: string}) {
   return (
     <View style={{flexDirection: 'row', alignItems: 'center', gap: 9}}>
       <View style={s.fieldBadge}>
-        <Text style={{fontFamily: FONT, fontSize: 11.5, fontWeight: '700', color: T3}}>{n}</Text>
+        <Text style={{fontFamily: FONT, fontSize: 12, fontWeight: '700', color: T3}}>{n}</Text>
       </View>
       <Text style={{fontFamily: FONT, fontSize: 14, fontWeight: '600', color: T1}}>{label}</Text>
     </View>
@@ -1106,7 +1106,7 @@ function LoginBtn({
       ) : (
         <>
           <View style={{position: 'absolute', left: 18}}>{icon}</View>
-          <Text style={{fontFamily: FONT, fontSize: 15.5, fontWeight: '600', color}}>{label}</Text>
+          <Text style={{fontFamily: FONT, fontSize: 16, fontWeight: '600', color}}>{label}</Text>
         </>
       )}
     </Pressable>
@@ -1189,7 +1189,7 @@ function Ready({registered, onFinish, onSkip, insetTop, insetBottom}: ScreenProp
           style={{alignItems: 'center', marginTop: 6}}
           accessibilityRole="button"
           accessibilityLabel="이메일로 계속하기">
-          <Text style={{fontFamily: FONT, fontSize: 14.5, color: T3, fontWeight: '500'}}>이메일로 계속하기</Text>
+          <Text style={{fontFamily: FONT, fontSize: 15, color: T3, fontWeight: '500'}}>이메일로 계속하기</Text>
         </Pressable>
         <Text style={{fontFamily: FONT, fontSize: 11, color: T4, textAlign: 'center', lineHeight: 17, marginTop: 8}}>
           계속 진행하면 Keego의 <Text style={{textDecorationLine: 'underline'}}>이용약관</Text>과 <Text style={{textDecorationLine: 'underline'}}>개인정보 처리방침</Text>에{'\n'}동의하는 것으로 간주됩니다.
@@ -1251,14 +1251,14 @@ const s = StyleSheet.create({
   bodyContent: {flexGrow: 1, paddingHorizontal: 24, paddingTop: 8},
   eyebrow: {fontFamily: FONT, fontSize: 12, fontWeight: '700', letterSpacing: 1.4, color: ACCENT, textTransform: 'uppercase', marginBottom: 6},
   title: {fontFamily: FONT, fontSize: 23, lineHeight: 29, fontWeight: '700', letterSpacing: -0.5, color: T1},
-  body: {fontFamily: FONT, fontSize: 13.5, lineHeight: 19, color: T3, marginTop: 8, maxWidth: 360},
+  body: {fontFamily: FONT, fontSize: 14, lineHeight: 19, color: T3, marginTop: 8, maxWidth: 360},
   bodyStrong: {color: '#fff', fontWeight: '600'},
 
   // Welcome
   wordmark: {position: 'absolute', left: 24, fontFamily: DISPLAY, fontSize: 26, letterSpacing: 1.2, color: '#fff'},
   heroHeadline: {fontFamily: DISPLAY, fontSize: 88, lineHeight: 76, color: '#fff'},
   heroSub: {fontFamily: FONT, fontSize: 17, fontWeight: '600', color: '#fff', marginTop: 18},
-  heroBody: {fontFamily: FONT, fontSize: 14.5, lineHeight: 22, color: 'rgba(246,246,248,0.66)', marginTop: 7},
+  heroBody: {fontFamily: FONT, fontSize: 15, lineHeight: 22, color: 'rgba(246,246,248,0.66)', marginTop: 7},
 
   // CTA
   // CTA 사각 스타일(cta/ctaGhost/ctaGloss/ctaLabel)은 단일 Button 프리미티브로
@@ -1314,7 +1314,7 @@ const s = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: SEP,
   },
-  brandEyebrow: {fontFamily: FONT, fontSize: 11.5, color: T4, letterSpacing: 0.7},
+  brandEyebrow: {fontFamily: FONT, fontSize: 12, color: T4, letterSpacing: 0.7},
   recoStrip: {
     flexDirection: 'row',
     alignItems: 'center',

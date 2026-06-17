@@ -130,6 +130,8 @@ export type TypePreset = {
   fontWeight: '400' | '500' | '600' | '700';
   letterSpacing: number;
 };
+// 본문 위계 타입 스케일(≤ display 32). 모든 사이즈는 정수 — 화면들이 흩어 쓰던 반px
+// (11.5/12.5/13.5/14.5/16.5 …)은 이 정수 스케일로 수렴한다(반올림 ≤0.5px = 시각 동등).
 export const TYPE = {
   display: { fontSize: 32, fontWeight: '500', letterSpacing: -0.8 },
   title:   { fontSize: 22, fontWeight: '600', letterSpacing: -0.4 },
@@ -140,6 +142,25 @@ export const TYPE = {
   micro:   { fontSize: 10, fontWeight: '600', letterSpacing: 0.8 },
 } as const satisfies Record<string, TypePreset>;
 export type TypeKey = keyof typeof TYPE;
+
+// ── hero display sizes (대형 숫자/타이머 — TYPE 스케일 위 영역) ─────────────────
+// TYPE 프리셋(≤ display 32)보다 큰 '명명된 hero 사이즈'. 런 타이머·카운트다운·대형
+// 통계 숫자가 화면마다 raw 로 흩어 쓰던 40/56/76 을 이 단일 스케일로 모은다. TYPE 와
+// 분리한 이유: TYPE.display 가 '본문 최대' 위계를 유지해야 하기 때문(theme.test 의
+// display=max(TYPE) 계약). 화면은 이 토큰을 참조해 대형 숫자를 단일 소스로 둔다.
+export const HERO = { hero: 40, heroLg: 56, mega: 76 } as const;
+export type HeroKey = keyof typeof HERO;
+
+// ── screen gutter (화면 좌우 거터 단일 토큰) ───────────────────────────────────
+// 화면마다 14/18/20/22 로 흩어져 있던 좌우 거터(스크린 가장자리 패딩)를 단일 토큰으로
+// 모은다. 값 20 = 기존 최빈 거터라 대표 화면들의 가장자리 패딩이 픽셀 그대로 유지된다
+// (시각 동등). 토큰 하나를 바꾸면 채택한 화면 거터가 함께 따라간다(단일 진실원).
+export const GUTTER = 20;
+
+// ── scrim (모달/시트 뒤 배경 딤) ───────────────────────────────────────────────
+// 모달·바텀시트 뒤를 어둡게 까는 반투명 검정. 화면들이 각자 복제하던 rgba(0,0,0,0.6)
+// 리터럴을 이 단일 토큰으로 모은다(값 동일 → 시각 동등).
+export const SCRIM = 'rgba(0,0,0,0.6)';
 
 // ── shared UI types (presentational shapes used by the handoff screens) ───────
 export type Shoe = {
