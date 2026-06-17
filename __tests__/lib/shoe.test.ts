@@ -14,6 +14,20 @@ import {
   SHOE_CAUTION_PCT,
   SHOE_REPLACE_PCT,
 } from '../../lib/shoe';
+import type {BackupPayload} from '../../lib/backup';
+import {
+  markDeleted,
+  liveRecords,
+  partitionTombstones,
+  mergeCloudData,
+} from '../../lib/cloudSync';
+
+const payload = (over: Partial<BackupPayload> = {}): BackupPayload => ({
+  shoes: [],
+  runs: [],
+  settings: {},
+  ...over,
+});
 
 describe('parseShoeName', () => {
   test('empty name → empty brand & model', () => {
@@ -158,6 +172,72 @@ describe('shoeHealth — 카테고리 수명 비례 condition 티어', () => {
     expect(conditionForPercent(SHOE_CAUTION_PCT)).toBe('주의');
     expect(conditionForPercent(SHOE_REPLACE_PCT - 0.01)).toBe('주의');
     expect(conditionForPercent(SHOE_REPLACE_PCT)).toBe('교체');
+  });
+});
+
+// ── audit a2: 거리/수명 집계가 삭제(tombstone) 런을 제외한다는 *행동* 계약 ──────────
+// 회귀의 핵심: shoeHealth 는 deleted 를 직접 필터하지 않는다(lib/shoe.ts). 제외 보장은
+// '집계 입력을 liveRecords 로 거른다'는 호출부 계약에 달려 있다. 아래 테스트는 그 계약을
+// 관측 가능한 usedKm(거리/수명의 단일 출처)로 고정한다 — 묘비가 런 배열에 새면 거리/수명이
+// 부풀어 오르는 brittleness 를 대조로 함께 드러낸다.
+describe('shoeHealth — 삭제(tombstone) 런 제외 계약 (a2 집계-제외)', () => {
+  const shoe = {id: 's1', max_km: 600, start_km: 0};
+
+  test('liveRecords 로 거른 런만 먹이면 삭제 런 km 가 usedKm 에서 빠진다(raw 리스트엔 포함 — brittleness 노출)', () => {
+    const liveRun = {id: 'r1', shoe_id: 's1', km: 30};
+    const deletedRun = markDeleted({id: 'r2', shoe_id: 's1', km: 100}, 5000);
+    const raw = [liveRun, deletedRun];
+
+    // 대조: raw(필터 안 한) 리스트를 그대로 먹이면 삭제 런 100km 까지 합산돼 거리/수명이
+    // 부풀어 오른다 → shoeHealth 가 deleted 를 직접 거르지 않음을 드러낸다(plumbing 의존).
+    expect(shoeHealth(shoe, raw).usedKm).toBeCloseTo(130, 5);
+
+    // 계약: 집계 입력은 liveRecords 로 걸러야 한다 — 그러면 usedKm 는 live 런(30)만 센다.
+    const h = shoeHealth(shoe, liveRecords(raw));
+    expect(h.usedKm).toBeCloseTo(30, 5); // 삭제 런 100km 제외
+    expect(h.remainingKm).toBeCloseTo(570, 5);
+    expect(h.condition).toBe('양호'); // 100km 가 새면 안 됐고, 수명 비례 티어도 그대로
+  });
+
+  test('한 신발의 모든 런이 삭제되면 거리/수명이 삭제분만큼 0으로 복귀', () => {
+    const runs = [
+      markDeleted({id: 'r1', shoe_id: 's1', km: 250}, 1),
+      markDeleted({id: 'r2', shoe_id: 's1', km: 90}, 2),
+    ];
+    expect(shoeHealth(shoe, liveRecords(runs)).usedKm).toBe(0);
+    expect(shoeHealth(shoe, liveRecords(runs)).remainingKm).toBe(600);
+  });
+});
+
+// partition→aggregate 링크: 머지 결과를 partitionTombstones 로 가른 뒤 *live* 만 집계에
+// 먹였을 때 삭제 런이 실제로 거리/수명에서 빠지는지를 한 흐름으로 잇는다(고립 순수함수
+// 테스트의 갭 메움).
+describe('partition→aggregate 링크 — tombstone 머지 결과가 거리/수명에서 빠진다', () => {
+  test('merge(런 X 묘비 포함) → partitionTombstones 가 X 를 tombstones 로 보내 live 입력에서 제외 → usedKm 가 X 만큼 감소', () => {
+    const shoe = {id: 's1', max_km: 600, start_km: 0};
+    // 폰A: 런 X 삭제(묘비, 최신). 폰B(원격): X 를 아직 live 로 보유 + 살아있는 런 Y 보유.
+    const phoneA = payload({
+      runs: [
+        markDeleted({id: 'X', shoe_id: 's1', km: 120}, 2000),
+        {id: 'Y', shoe_id: 's1', km: 40, updatedAt: 100},
+      ],
+    });
+    const phoneB = payload({
+      runs: [
+        {id: 'X', shoe_id: 's1', km: 120, updatedAt: 1000},
+        {id: 'Y', shoe_id: 's1', km: 40, updatedAt: 100},
+      ],
+    });
+    const merged = mergeCloudData(phoneA, phoneB);
+
+    const {live, tombstones} = partitionTombstones(merged.runs);
+    expect(tombstones.map((r: any) => r.id)).toEqual(['X']); // X 는 묘비로 분리(live 아님)
+    expect(live.map((r: any) => r.id)).toEqual(['Y']);
+
+    // live 배열을 집계에 먹이면 X(120km)가 빠지고 Y(40km)만 센다.
+    expect(shoeHealth(shoe, live as any[]).usedKm).toBeCloseTo(40, 5);
+    // 대조: 머지 결과 전체(묘비 포함)를 먹이면 X 가 거리/수명을 부풀린다(160km).
+    expect(shoeHealth(shoe, merged.runs as any[]).usedKm).toBeCloseTo(160, 5);
   });
 });
 
