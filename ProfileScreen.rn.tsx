@@ -11,7 +11,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, ScrollView, Pressable, StyleSheet, TextInput, Image, Share } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { BG, CARD, CARD_DIM, CARD_HI, ACCENT, GOOD, DANGER, WARN, T1, T2, T3, SEP, FONT, DISPLAY, withAlpha, TIER_COLORS, KAKAO_YELLOW, KAKAO_LABEL, NAVER_GREEN, NAVER_LABEL } from './theme';
+import { BG, CARD, CARD_DIM, CARD_HI, ACCENT, GOOD, DANGER, WARN, T1, T2, T3, SEP, FONT, DISPLAY, withAlpha, TIER_COLORS, KAKAO_YELLOW, KAKAO_LABEL, NAVER_GREEN, NAVER_LABEL, RADIUS } from './theme';
 import { TabBar, Ring, Pill, SectionTitle } from './primitives';
 import { Unit, unitKorean, displayNum, displayToKm } from './lib/units';
 import { weeklyRecap, monthlyRecap, type RecapRun, type RecapShoe } from './lib/recap';
@@ -850,31 +850,31 @@ export default function ProfileScreen({
 const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: BG },
   row: { flexDirection: 'row', alignItems: 'center', gap: 7 },
-  card: { backgroundColor: CARD_DIM, borderRadius: 20, borderWidth: 1, borderColor: withAlpha(T1, 0.07) },
+  card: { backgroundColor: CARD_DIM, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: withAlpha(T1, 0.07) },
   cardTitle: { color: T2, fontFamily: FONT, fontSize: 13.5, fontWeight: '500', marginBottom: 16 },
   sectionLabel: { color: T2, fontFamily: FONT, fontSize: 14, fontWeight: '500', letterSpacing: 0.2, paddingHorizontal: 4 },
   progressRow: { flexDirection: 'row', alignItems: 'center', gap: 13, padding: 16 },
-  progressIcon: { width: 38, height: 38, borderRadius: 12, backgroundColor: withAlpha(ACCENT, 0.12), alignItems: 'center', justifyContent: 'center' },
+  progressIcon: { width: 38, height: 38, borderRadius: RADIUS.sm, backgroundColor: withAlpha(ACCENT, 0.12), alignItems: 'center', justifyContent: 'center' },
   progressTitle: { color: T1, fontFamily: FONT, fontSize: 15, fontWeight: '700' },
   progressSub: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500', marginTop: 3 },
 
   headerRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', paddingHorizontal: 4 },
   title: { color: T1, fontFamily: FONT, fontSize: 32, fontWeight: '500', letterSpacing: -0.8 },
-  iconBtn: { width: 38, height: 38, borderRadius: 999, backgroundColor: CARD_HI, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.12), alignItems: 'center', justifyContent: 'center' },
+  iconBtn: { width: 38, height: 38, borderRadius: RADIUS.pill, backgroundColor: CARD_HI, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.12), alignItems: 'center', justifyContent: 'center' },
 
   identity: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 4, paddingTop: 4 },
-  avatarRing: { padding: 2, borderRadius: 999, backgroundColor: withAlpha(T1, 0.12) },
-  avatarInner: { padding: 2.5, borderRadius: 999, backgroundColor: BG, alignItems: 'center', justifyContent: 'center' },
-  avatarImg: { width: 50, height: 50, borderRadius: 999 },
-  avatarEdit: { position: 'absolute', right: -1, bottom: -1, width: 18, height: 18, borderRadius: 999, backgroundColor: T3, borderWidth: 2, borderColor: BG, alignItems: 'center', justifyContent: 'center' },
+  avatarRing: { padding: 2, borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.12) },
+  avatarInner: { padding: 2.5, borderRadius: RADIUS.pill, backgroundColor: BG, alignItems: 'center', justifyContent: 'center' },
+  avatarImg: { width: 50, height: 50, borderRadius: RADIUS.pill },
+  avatarEdit: { position: 'absolute', right: -1, bottom: -1, width: 18, height: 18, borderRadius: RADIUS.pill, backgroundColor: T3, borderWidth: 2, borderColor: BG, alignItems: 'center', justifyContent: 'center' },
   name: { color: T1, fontFamily: FONT, fontSize: 24, fontWeight: '500', letterSpacing: -0.5 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   nameEditRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   nameInput: { flex: 1, color: T1, fontFamily: FONT, fontSize: 22, fontWeight: '500', letterSpacing: -0.5, borderBottomWidth: 1, borderBottomColor: ACCENT, paddingVertical: 2, paddingHorizontal: 0 },
-  nameSaveBtn: { width: 34, height: 34, borderRadius: 999, backgroundColor: ACCENT, alignItems: 'center', justifyContent: 'center' },
-  rankChip: { borderWidth: StyleSheet.hairlineWidth, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3 },
+  nameSaveBtn: { width: 34, height: 34, borderRadius: RADIUS.pill, backgroundColor: ACCENT, alignItems: 'center', justifyContent: 'center' },
+  rankChip: { borderWidth: StyleSheet.hairlineWidth, borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 3 },
   rankChipText: { fontFamily: FONT, fontSize: 11.5, fontWeight: '800', letterSpacing: 0.2 },
-  titlePill: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: withAlpha(ACCENT, 0.12), borderRadius: 999, paddingHorizontal: 9, paddingVertical: 3, maxWidth: '60%' },
+  titlePill: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: withAlpha(ACCENT, 0.12), borderRadius: RADIUS.pill, paddingHorizontal: 9, paddingVertical: 3, maxWidth: '60%' },
   titlePillText: { color: ACCENT, fontFamily: FONT, fontSize: 11.5, fontWeight: '700', flexShrink: 1 },
   idStat: { fontFamily: FONT, color: T3, fontSize: 12, fontWeight: '600' },
   idStatNum: { fontFamily: DISPLAY, color: T1, fontSize: 13, fontWeight: '800' },
@@ -898,7 +898,7 @@ const s = StyleSheet.create({
   streakCount: { color: ACCENT, fontFamily: FONT, fontSize: 11.5, fontWeight: '700' },
   streakRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   streakDay: { alignItems: 'center', gap: 6 },
-  streakDot: { width: 30, height: 30, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
+  streakDot: { width: 30, height: 30, borderRadius: RADIUS.pill, alignItems: 'center', justifyContent: 'center' },
   streakDotDone: { backgroundColor: ACCENT },
   streakDotIdle: { backgroundColor: CARD_DIM },
   streakDotToday: { backgroundColor: CARD_DIM, borderWidth: 1.5, borderStyle: 'dashed', borderColor: T3 },
@@ -913,7 +913,7 @@ const s = StyleSheet.create({
   statLabel: { color: T3, fontFamily: FONT, fontSize: 11.5, fontWeight: '600', marginTop: 4 },
 
   badge: { flex: 1, backgroundColor: CARD, borderRadius: 22, paddingVertical: 16, paddingHorizontal: 8, alignItems: 'center', gap: 8, borderWidth: 1, borderColor: withAlpha(T1, 0.07) },
-  badgeIcon: { width: 44, height: 44, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
+  badgeIcon: { width: 44, height: 44, borderRadius: RADIUS.pill, alignItems: 'center', justifyContent: 'center' },
   badgeLabel: { fontFamily: FONT, fontSize: 10.5, fontWeight: '500', textAlign: 'center' },
 
   settingRow: { flexDirection: 'row', alignItems: 'center', gap: 13, paddingVertical: 14, paddingHorizontal: 16 },
@@ -935,14 +935,14 @@ const s = StyleSheet.create({
 
   // ── 돌아보기(리캡) ───────────────────────────────────────────────────────────
   recapHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 12, paddingHorizontal: 4 },
-  recapToggle: { flexDirection: 'row', backgroundColor: CARD_DIM, borderRadius: 999, padding: 3, gap: 2 },
-  recapTab: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 999 },
+  recapToggle: { flexDirection: 'row', backgroundColor: CARD_DIM, borderRadius: RADIUS.pill, padding: 3, gap: 2 },
+  recapTab: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: RADIUS.pill },
   recapTabOn: { backgroundColor: ACCENT },
   recapTabTxt: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600' },
   recapTabTxtOn: { color: T1 },
   recapTopRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
   recapPeriod: { color: T2, fontFamily: FONT, fontSize: 14, fontWeight: '700' },
-  recapShareBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999, backgroundColor: withAlpha(ACCENT, 0.12) },
+  recapShareBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 7, borderRadius: RADIUS.pill, backgroundColor: withAlpha(ACCENT, 0.12) },
   recapShareTxt: { color: ACCENT, fontFamily: FONT, fontSize: 12.5, fontWeight: '700' },
   recapEmpty: { alignItems: 'center', paddingVertical: 22 },
   recapEmptyTxt: { color: T3, fontFamily: FONT, fontSize: 13.5, fontWeight: '600', lineHeight: 20, textAlign: 'center' },
@@ -964,7 +964,7 @@ const s = StyleSheet.create({
   acctV: { flex: 1, textAlign: 'right', color: T2, fontFamily: FONT, fontSize: 13.5, fontWeight: '500' },
 
   // 데이터 가져오기 패널
-  dataInput: { minHeight: 84, maxHeight: 160, borderRadius: 12, backgroundColor: CARD_HI, color: T1, fontFamily: FONT, fontSize: 13, padding: 12, textAlignVertical: 'top' },
+  dataInput: { minHeight: 84, maxHeight: 160, borderRadius: RADIUS.sm, backgroundColor: CARD_HI, color: T1, fontFamily: FONT, fontSize: 13, padding: 12, textAlignVertical: 'top' },
   dataBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 44, borderRadius: 14, backgroundColor: ACCENT },
   dataBtnTxt: { color: T1, fontFamily: FONT, fontSize: 14.5, fontWeight: '600' },
   dataMsg: { fontFamily: FONT, fontSize: 12.5, fontWeight: '600', lineHeight: 18 },

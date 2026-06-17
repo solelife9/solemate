@@ -9,7 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Polyline, Circle } from 'react-native-svg';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {
-  BG, CARD, CARD_DIM, CARD_HI, ACCENT, DANGER, T1, T2, T3, T4, SEP, FONT, DISPLAY, Shoe, Run, SHOES, withAlpha,
+  BG, CARD, CARD_DIM, CARD_HI, ACCENT, DANGER, T1, T2, T3, T4, SEP, FONT, DISPLAY, Shoe, Run, SHOES, withAlpha, RADIUS,
 } from './theme';
 import { TabBar } from './primitives';
 import { Unit, displayNum, displayToKm } from './lib/units';
@@ -711,7 +711,7 @@ const s = StyleSheet.create({
   prU: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '600', marginLeft: 3 },
   prL: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500', marginTop: 5 },
   // 런 카드 — 목업 기록(10): 신발+날짜 + 거리·평균페이스·시간
-  runCard: { backgroundColor: CARD, borderRadius: 20, borderWidth: 1, borderColor: SEP, padding: 18 },
+  runCard: { backgroundColor: CARD, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: SEP, padding: 18 },
   runCardTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, marginBottom: 14 },
   runCardBrand: { color: T3, fontFamily: DISPLAY, fontSize: 11, fontWeight: '500', letterSpacing: 1.2 },
   runCardModel: { color: T1, fontFamily: DISPLAY, fontSize: 16, fontWeight: '700', letterSpacing: -0.2, marginTop: 2 },
@@ -738,7 +738,7 @@ const s = StyleSheet.create({
   chartTick: { position: 'absolute', right: 0, width: 42, textAlign: 'right', color: T3, fontFamily: DISPLAY, fontSize: 11, marginBottom: -7 },
   chartBars: { position: 'absolute', left: 0, right: 42, top: 0, bottom: 0, flexDirection: 'row', alignItems: 'flex-end' },
   chartBarSlot: { flex: 1, alignItems: 'center' },
-  chartBar: { width: '100%', borderRadius: 999, backgroundColor: ACCENT },
+  chartBar: { width: '100%', borderRadius: RADIUS.pill, backgroundColor: ACCENT },
   chartLabels: { flexDirection: 'row', marginTop: 8, paddingRight: 42 },
   chartLabel: { flex: 1, textAlign: 'center', color: T3, fontFamily: FONT, fontWeight: '600' },
   chartTipWrap: { position: 'absolute', left: -26, right: -26, alignItems: 'center', zIndex: 5 },
@@ -755,7 +755,7 @@ const s = StyleSheet.create({
   // 콤팩트: 요약 4칸(거리/횟수/페이스/시간)의 패딩·값 폰트·여백을 줄여 세로 높이를
   // 압축한다(정보는 그대로 유지 — 라벨/값/단위 모두 렌더). 리스트가 위로 올라온다.
   summaryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  summaryCell: { width: '47.5%', flexGrow: 1, backgroundColor: CARD_DIM, borderRadius: 16, borderWidth: 1, borderColor: SEP, padding: 13 },
+  summaryCell: { width: '47.5%', flexGrow: 1, backgroundColor: CARD_DIM, borderRadius: RADIUS.md, borderWidth: 1, borderColor: SEP, padding: 13 },
   // 4열 요약 행(Screens Refined) — 카드 없이 헤어라인 구분.
   sumRow: { flexDirection: 'row', marginTop: 6, marginBottom: 2 },
   sumCell: { flex: 1, paddingHorizontal: 2 },
@@ -784,18 +784,18 @@ const s = StyleSheet.create({
   nav: { paddingTop: 12, paddingHorizontal: 16, paddingBottom: 6 },
   navRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   navActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  iconBtn: { width: 38, height: 38, borderRadius: 999, backgroundColor: CARD_HI, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.12), alignItems: 'center', justifyContent: 'center' },
+  iconBtn: { width: 38, height: 38, borderRadius: RADIUS.pill, backgroundColor: CARD_HI, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.12), alignItems: 'center', justifyContent: 'center' },
 
   // manual-run / edit form
   formTitle: { color: T1, fontFamily: FONT, fontSize: 17, fontWeight: '600' },
   formLabel: { color: T2, fontFamily: FONT, fontSize: 13.5, fontWeight: '600', marginBottom: 8, paddingHorizontal: 2 },
   formHint: { color: T3, fontFamily: FONT, fontSize: 13 },
   chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { maxWidth: '100%', backgroundColor: CARD_HI, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 9, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
+  chip: { maxWidth: '100%', backgroundColor: CARD_HI, borderRadius: RADIUS.pill, paddingHorizontal: 14, paddingVertical: 9, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
   chipOn: { backgroundColor: ACCENT, borderColor: ACCENT },
   chipTxt: { fontFamily: FONT, fontSize: 13.5, fontWeight: '600' },
   input: { backgroundColor: CARD, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14, color: T1, fontFamily: FONT, fontSize: 16, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
-  saveBtn: { backgroundColor: ACCENT, borderRadius: 16, paddingVertical: 16, alignItems: 'center', marginTop: 6 },
+  saveBtn: { backgroundColor: ACCENT, borderRadius: RADIUS.md, paddingVertical: 16, alignItems: 'center', marginTop: 6 },
   saveBtnTxt: { color: BG, fontFamily: FONT, fontSize: 16, fontWeight: '700' },
   detailDate: { color: T3, fontFamily: FONT, fontSize: 13 },
   detailDist: { color: T1, fontFamily: DISPLAY, fontSize: 56, letterSpacing: 0.5 },
