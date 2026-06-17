@@ -11,7 +11,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import {
   BG, CARD, CARD_DIM, CARD_HI, ACCENT, DANGER, T1, T2, T3, T4, SEP, FONT, DISPLAY, Shoe, Run, SHOES, withAlpha, RADIUS,
 } from './theme';
-import { TabBar } from './primitives';
+import { TabBar, Button } from './primitives';
 import { Unit, displayNum, displayToKm } from './lib/units';
 import { ymdLocal, fmtPace } from './lib/format';
 import { durationLabel } from './lib/stats';
@@ -381,9 +381,7 @@ function RunForm({
             })}
           </View>
         </View>
-        <Pressable onPress={submit} style={({ pressed }) => [s.saveBtn, pressed && { opacity: 0.85 }]} accessibilityRole="button">
-          <Text style={s.saveBtnTxt}>{editing ? '저장하기' : '추가하기'}</Text>
-        </Pressable>
+        <Button label={editing ? '저장하기' : '추가하기'} onPress={submit} style={s.saveBtn} />
       </ScrollView>
       </KeyboardAvoidingView>
     </View>
@@ -844,8 +842,9 @@ const s = StyleSheet.create({
   // 검증 실패 시 입력칸 테두리를 빨강으로 강조하고, 아래에 인라인 헬퍼텍스트를 띄운다.
   inputErr: { borderColor: DANGER, borderWidth: 1 },
   errText: { color: DANGER, fontFamily: FONT, fontSize: 12.5, fontWeight: '500', marginTop: 7, paddingHorizontal: 2 },
-  saveBtn: { backgroundColor: ACCENT, borderRadius: RADIUS.md, paddingVertical: 16, alignItems: 'center', marginTop: 6 },
-  saveBtnTxt: { color: BG, fontFamily: FONT, fontSize: 16, fontWeight: '700' },
+  // 저장/추가 CTA 는 단일 Button 프리미티브(그라데이션·글로우·radius 토큰). 화면
+  // 고유 여백만 남긴다(과거 RADIUS.md 사각 ACCENT 버튼 제거).
+  saveBtn: { marginTop: 6 },
   detailDate: { color: T3, fontFamily: FONT, fontSize: 13 },
   detailDist: { color: T1, fontFamily: DISPLAY, fontSize: 56, letterSpacing: 0.5 },
   detailDistU: { color: T2, fontFamily: FONT, fontSize: 20, marginLeft: 6, marginBottom: 8 },

@@ -111,7 +111,9 @@ export const SPACE = { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 32 } as const;
 export type SpaceKey = keyof typeof SPACE;
 
 // ── corner radius scale (dp) ─────────────────────────────────────────────────
-export const RADIUS = { sm: 12, md: 16, lg: 20, xl: 24, pill: 999 } as const;
+// btn 은 단일 CTA(Button 프리미티브) 모서리 — 과거 화면마다 14/16/18/999 로 흩어져
+// 있던 버튼 radius 를 이 한 토큰(18)으로 통일한다(시각: 다크+오렌지 동등 유지).
+export const RADIUS = { sm: 12, md: 16, btn: 18, lg: 20, xl: 24, pill: 999 } as const;
 export type RadiusKey = keyof typeof RADIUS;
 
 // ── type scale ───────────────────────────────────────────────────────────────

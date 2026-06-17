@@ -183,12 +183,24 @@ const ring = StyleSheet.create({
   svg: {position: 'absolute', transform: [{rotate: '-90deg'}]},
 });
 
-// ── Button (CTA = orange gradient radius16 · ghost = CARD_HI surface) ─────────
+// ── Button — 단일 CTA 프리미티브 (앱 전역 주황 버튼의 유일한 출처) ──────────────
+// 목업 주황 버튼을 1:1 재현한다:
+//   • 세로 그라데이션 GRAD_TOP→GRAD_BOT (theme 토큰, GradientFill 단일 정의)
+//   • 상단 1px 안쪽 하이라이트(유리 광택)
+//   • 주황 글로우 그림자(ACCENT) — overflow 를 걸지 않아 iOS 에서도 잘리지 않는다
+//     (그라데이션 Rect 가 rx 로 모서리를 둥글리므로 클립이 필요 없다)
+//   • 누르면 살짝 작아짐(scale .97)
+// 모서리는 RADIUS.btn 단일 토큰(과거 14/16/18/999 혼재 제거). disabled 거나
+// ghost 면 그라데이션/글로우를 끄고 CARD_HI 표면으로 떨어진다(disabled 라벨 dim).
+// icon: Ionicons 이름(문자열). iconNode: 커스텀 아이콘 노드(SVG·MaterialCommunityIcons
+// 등) — 둘 중 하나만. 과거 MockupButton/Onboarding PrimaryButton/인라인 SVG CTA·
+// backgroundColor:ACCENT 사각형 버튼들이 전부 이 컴포넌트로 통합된다.
 export function Button({
   label,
   onPress,
   variant = 'cta',
   icon,
+  iconNode,
   disabled = false,
   style,
   testID,
@@ -197,30 +209,31 @@ export function Button({
   onPress?: () => void;
   variant?: 'cta' | 'ghost';
   icon?: string;
+  iconNode?: React.ReactNode;
   disabled?: boolean;
   style?: StyleProp<ViewStyle>;
   testID?: string;
 }) {
-  const cta = variant === 'cta';
+  // filled = 주황 그라데이션 CTA 표면(활성 cta 일 때만). ghost·disabled 는 CARD_HI 표면.
+  const filled = variant === 'cta' && !disabled;
   return (
     <Pressable
       testID={testID}
-      onPress={onPress}
+      onPress={disabled ? undefined : onPress}
       disabled={disabled}
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityState={{disabled}}
       style={({pressed}) => [
         btn.base,
-        cta ? null : btn.ghost,
-        disabled && btn.disabled,
-        pressed && btn.pressed,
+        filled ? btn.glow : btn.flat,
+        pressed && !disabled && btn.pressed,
         style,
       ]}>
-      {cta ? <GradientFill radius={18} /> : null}
-      {cta ? <View pointerEvents="none" style={btn.gloss} /> : null}
-      {icon ? <Ionicons name={icon} size={20} color={T1} /> : null}
-      <Text style={btn.label}>{label}</Text>
+      {filled ? <GradientFill radius={RADIUS.btn} /> : null}
+      {filled ? <View pointerEvents="none" style={btn.gloss} /> : null}
+      {iconNode ?? (icon ? <Ionicons name={icon} size={20} color={disabled ? T3 : T1} /> : null)}
+      <Text style={[btn.label, disabled && btn.labelDim]}>{label}</Text>
     </Pressable>
   );
 }
@@ -233,13 +246,21 @@ const btn = StyleSheet.create({
     gap: SPACE.sm,
     paddingVertical: SPACE.lg,
     paddingHorizontal: SPACE.xl,
-    borderRadius: 18,
-    overflow: 'hidden',
+    borderRadius: RADIUS.btn,
   },
+  // 주황 글로우 그림자(목업 0 14px 30px -12px rgba(255,101,0,.6) 대응). base 에
+  // overflow 가 없어 iOS 에서도 그림자가 살아있다.
+  glow: {
+    shadowColor: ACCENT,
+    shadowOpacity: 0.5,
+    shadowRadius: 16,
+    shadowOffset: {width: 0, height: 12},
+    elevation: 10,
+  },
+  // ghost / disabled 표면(올린 카드 톤). 그라데이션·글로우 없음.
+  flat: {backgroundColor: CARD_HI},
   gloss: {position: 'absolute', top: 0, left: 0, right: 0, height: 1, backgroundColor: 'rgba(255,255,255,0.22)'},
-  ghost: {backgroundColor: CARD_HI},
-  disabled: {opacity: 0.5},
-  pressed: {opacity: 0.85},
+  pressed: {opacity: 0.92, transform: [{scale: 0.97}]},
   label: {
     color: T1,
     fontFamily: FONT,
@@ -247,6 +268,7 @@ const btn = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 0.3,
   },
+  labelDim: {color: T3},
 });
 
 // ── Card (CARD surface · SEP hairline border · radius) ────────────────────────

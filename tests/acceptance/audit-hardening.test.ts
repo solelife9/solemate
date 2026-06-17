@@ -59,8 +59,9 @@ jest.mock('../../lib/haptics', () => ({
 }));
 
 import * as haptics from '../../lib/haptics';
-import {KeyboardAvoidingView, Alert, FlatList} from 'react-native';
+import {KeyboardAvoidingView, Alert, FlatList, StyleSheet} from 'react-native';
 import App from '../../App';
+import {Button} from '../../primitives';
 import OnboardingScreen from '../../OnboardingScreen.rn';
 import RunActiveScreen from '../../RunActiveScreen.rn';
 import RunGoalScreen from '../../RunGoalScreen.rn';
@@ -72,7 +73,7 @@ import {runToastAction, getCurrentToast, dismissToast, TOAST_UNDO_LABEL} from '.
 import {maskDuration, maskDate, validateRunForm} from '../../lib/inputMask';
 import {syncLabel} from '../../lib/syncStatus';
 import type {Shoe, Run} from '../../theme';
-import {TIER_LABEL} from '../../theme';
+import {TIER_LABEL, GRAD_TOP, GRAD_BOT, ACCENT, RADIUS} from '../../theme';
 import {ymLocal, ymdLocal} from '../../lib/format';
 
 // createElement 단축(JSX 미사용) + 트리 렌더 헬퍼.
@@ -736,7 +737,78 @@ describe('Audit Hardening 수용', () => {
   });
 
   describe('E. 디자인 시스템 통합', () => {
-    it.todo('CTA: 단일 Button 프리미티브, MockupButton/인라인 그라데이션 제거');
+    // 소스 파일 목록(테스트·빌드 산출물 제외) — 그라데이션 중복 정의/잔존 import 스캔용.
+    const repoRoot = path.join(__dirname, '..', '..');
+    const readFile = (p: string) => fs.readFileSync(p, 'utf8');
+    function listSrc(): string[] {
+      const out: string[] = [];
+      const skip = new Set([
+        'node_modules', 'android', 'ios', 'build', 'dist', 'coverage', 'tests', '__tests__',
+      ]);
+      (function walk(dir: string) {
+        for (const e of fs.readdirSync(dir, {withFileTypes: true})) {
+          if (e.isDirectory()) {
+            if (e.name.startsWith('.') || skip.has(e.name)) continue;
+            walk(path.join(dir, e.name));
+          } else if (/\.(ts|tsx)$/.test(e.name)) {
+            out.push(path.join(dir, e.name));
+          }
+        }
+      })(repoRoot);
+      return out;
+    }
+    const stopColors = (root: ReactTestRenderer.ReactTestInstance) =>
+      root
+        .findAll(n => !!n.type && (n.type as {displayName?: string}).displayName === 'Stop')
+        .map(n => n.props.stopColor as string);
+    const flatBtnStyle = (root: ReactTestRenderer.ReactTestInstance, label: string) => {
+      const node = pressableByLabel(root, label);
+      const st = node.props.style;
+      return StyleSheet.flatten(typeof st === 'function' ? st({pressed: false}) : st) || {};
+    };
+
+    test('CTA: 단일 Button 프리미티브, MockupButton/인라인 그라데이션 제거', () => {
+      const srcFiles = listSrc();
+
+      // 1) MockupButton 컴포넌트가 제거되고, 어떤 소스도 그것을 import 하지 않는다
+      //    (FirstShoe/AddShoe 가 단일 Button 으로 이주 — 별도 주황 버튼 컴포넌트 0).
+      expect(fs.existsSync(path.join(repoRoot, 'MockupButton.rn.tsx'))).toBe(false);
+      const importsMockup = srcFiles.filter(f =>
+        /from\s+['"][^'"]*MockupButton/.test(readFile(f)),
+      );
+      expect(importsMockup).toEqual([]);
+
+      // 2) CTA 그라데이션 정지점 hex(#FF7A2E/#F25E00/#EE5800)는 theme.ts 토큰에만 산다 —
+      //    화면/컴포넌트가 자체 그라데이션을 복제하지 않는다(단일 소스 = GRAD_TOP/GRAD_BOT).
+      const ctaHex = /#FF7A2E|#F25E00|#EE5800/i;
+      const dupeGradients = srcFiles.filter(
+        f => path.basename(f) !== 'theme.ts' && ctaHex.test(readFile(f)),
+      );
+      expect(dupeGradients).toEqual([]);
+
+      // 3) 단일 Button 프리미티브 CTA = GRAD_TOP→GRAD_BOT 그라데이션 + ACCENT 글로우 그림자
+      //    + RADIUS.btn 단일 모서리 토큰(관찰 가능한 렌더 트리/스타일).
+      const b = renderTree(el(Button, {label: '시작', onPress: () => {}}));
+      const stops = stopColors(b.root);
+      expect(stops).toContain(GRAD_TOP);
+      expect(stops).toContain(GRAD_BOT);
+      const st = flatBtnStyle(b.root, '시작');
+      expect(st.shadowColor).toBe(ACCENT);
+      expect(st.borderRadius).toBe(RADIUS.btn);
+      act(() => b.unmount());
+
+      // 4) 화면들이 그 단일 CTA 로 라우팅된다 — RunGoal '러닝 시작' 인라인 SVG CTA 가
+      //    사라지고 동일 토큰 그라데이션 + ACCENT 글로우 + RADIUS.btn 의 Button 으로 뜬다.
+      const goal = renderTree(el(RunGoalScreen, {onStart: () => {}}));
+      const goalStops = stopColors(goal.root);
+      expect(goalStops).toContain(GRAD_TOP);
+      expect(goalStops).toContain(GRAD_BOT);
+      const goalSt = flatBtnStyle(goal.root, '러닝 시작');
+      expect(goalSt.shadowColor).toBe(ACCENT);
+      expect(goalSt.borderRadius).toBe(RADIUS.btn);
+      act(() => goal.unmount());
+    });
+
     it.todo('Card/SegmentedControl/StatGrid 프리미티브 채택, 단일 보더 토큰');
     it.todo('TYPE: 반px 사이즈 제거, hero/scrim/screen-padding 토큰 도입');
   });

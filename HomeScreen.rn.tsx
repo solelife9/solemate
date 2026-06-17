@@ -454,13 +454,7 @@ function EmptyHome({ onAddShoe }: { onAddShoe?: () => void }) {
       <View style={s.emptyCard}>
         <Text style={s.emptyTitle}>첫 러닝화를 등록해볼까요?</Text>
         <Text style={s.emptyText}>신발을 추가하면, 달릴 때마다{'\n'}수명을 함께 추적하며 계속 달릴 수 있어요</Text>
-        <Pressable
-          onPress={onAddShoe}
-          accessibilityRole="button"
-          accessibilityLabel="러닝화 등록하기"
-          style={({ pressed }) => [s.emptyBtn, pressed && s.pressed]}>
-          <Text style={s.emptyBtnText}>러닝화 등록하기</Text>
-        </Pressable>
+        <Button label="러닝화 등록하기" onPress={onAddShoe} style={s.emptyBtn} />
       </View>
     </View>
   );
@@ -642,9 +636,7 @@ export default function HomeScreen({
                 </Pressable>
               </View>
               <Text style={s.goalSheetHint}>이번 주 <Text style={{ color: ACCENT }}>{Math.max(0, goal.pct)}%</Text> 달성</Text>
-              <Pressable onPress={() => setGoalEditOpen(false)} accessibilityRole="button" accessibilityLabel="완료" style={({ pressed }) => [s.goalDone, pressed && s.pressed]}>
-                <Text style={s.goalDoneText}>완료</Text>
-              </Pressable>
+              <Button label="완료" onPress={() => setGoalEditOpen(false)} style={s.goalDone} />
             </Pressable>
           </Pressable>
         </Modal>
@@ -812,14 +804,14 @@ const s = StyleSheet.create({
   goalStepNum: { color: T1, fontFamily: DISPLAY, fontSize: 40, letterSpacing: 0.3 },
   goalStepUnit: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '600', marginTop: 2 },
   goalSheetHint: { color: T3, fontFamily: FONT, fontSize: 12.5, textAlign: 'center', marginTop: 16 },
-  goalDone: { marginTop: 20, height: 50, borderRadius: RADIUS.md, backgroundColor: ACCENT, alignItems: 'center', justifyContent: 'center' },
-  goalDoneText: { color: T1, fontFamily: FONT, fontSize: 15, fontWeight: '600' },
+  // goalDone/emptyBtn 은 단일 Button 프리미티브로 대체 — 화면 고유 여백만 남긴다
+  // (모양·배경·radius 는 Button 토큰이 책임. 과거 RADIUS.md/pill 사각 버튼 제거).
+  goalDone: { marginTop: 20 },
 
 
   empty: { paddingHorizontal: SPACE.xl, paddingTop: 30 },
   emptyCard: { alignSelf: 'stretch', alignItems: 'center', backgroundColor: CARD_DIM, borderRadius: RADIUS.xl, borderWidth: 1, borderColor: withAlpha(T1, 0.12), paddingVertical: 40, paddingHorizontal: 24 },
   emptyTitle: { color: T1, fontFamily: FONT, fontSize: 18, fontWeight: '600' },
   emptyText: { color: T3, fontFamily: FONT, fontSize: 13.5, textAlign: 'center', lineHeight: 20, marginTop: 10 },
-  emptyBtn: { alignSelf: 'stretch', marginTop: 22, height: 50, borderRadius: RADIUS.pill, backgroundColor: ACCENT, alignItems: 'center', justifyContent: 'center' },
-  emptyBtnText: { color: T1, fontFamily: FONT, fontSize: 15, fontWeight: '600' },
+  emptyBtn: { alignSelf: 'stretch', marginTop: 22 },
 });

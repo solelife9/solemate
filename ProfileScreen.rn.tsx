@@ -970,11 +970,9 @@ const s = StyleSheet.create({
   acctK: { color: T3, fontFamily: FONT, fontSize: 13.5, fontWeight: '500' },
   acctV: { flex: 1, textAlign: 'right', color: T2, fontFamily: FONT, fontSize: 13.5, fontWeight: '500' },
 
-  // 데이터 가져오기 패널
-  dataInput: { minHeight: 84, maxHeight: 160, borderRadius: RADIUS.sm, backgroundColor: CARD_HI, color: T1, fontFamily: FONT, fontSize: 13, padding: 12, textAlignVertical: 'top' },
-  dataBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 44, borderRadius: 14, backgroundColor: ACCENT },
-  dataBtnTxt: { color: T1, fontFamily: FONT, fontSize: 14.5, fontWeight: '600' },
-  dataMsg: { fontFamily: FONT, fontSize: 12.5, fontWeight: '600', lineHeight: 18 },
+  // 데이터 가져오기 패널 — dataInput/dataBtn/dataBtnTxt/dataMsg(사각 radius:14 ACCENT
+  // 버튼 포함)은 미사용 dead 스타일이라 제거(버튼 radius 혼재 정리). 클라우드 메시지
+  // 톤(dataMsgOk/Err)만 cloud-msg 가 계속 참조한다.
   dataMsgOk: { color: GOOD },
   dataMsgErr: { color: DANGER },
 

@@ -9,8 +9,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import {
   BG, CARD_DIM, CARD_HI, ACCENT, DANGER, T1, T2, T3, T4, FONT, DISPLAY, withAlpha, Shoe,
 } from './theme';
-import { Pill } from './primitives';
-import { MockupButton } from './MockupButton.rn';
+import { Pill, Button } from './primitives';
 // 신발 모델 카탈로그·권장수명은 data/shoeModels(단일 소스)에서 가져온다.
 import { BRANDS, modelsForBrand, getRecommendedLifespanKm } from './data/shoeModels';
 // maxKm 0 같은 비정상값을 제출 시 인라인으로 차단(빨강 헬퍼텍스트).
@@ -184,7 +183,7 @@ export default function AddShoeScreen({
 
       {/* CTA — 목업 그라데이션+글로우 버튼(MockupButton). 미선택 시 ghost 비활성. */}
       <View style={s.ctaWrap}>
-        <MockupButton label="러닝화 등록" onPress={save} disabled={!valid} />
+        <Button label="러닝화 등록" onPress={save} disabled={!valid} />
       </View>
       </KeyboardAvoidingView>
 
@@ -293,8 +292,7 @@ const s = StyleSheet.create({
   usedInput: { flex: 1, color: T1, fontFamily: DISPLAY, fontSize: 24, paddingVertical: 12 },
   usedUnit: { color: T3, fontFamily: FONT, fontSize: 15 },
 
+  // CTA 는 단일 Button 프리미티브(그라데이션·글로우·radius 토큰 일원화)로 대체했다.
+  // 과거 사각 cta/ctaDisabled/ctaText 스타일은 제거 — ctaWrap 레이아웃만 남긴다.
   ctaWrap: { paddingHorizontal: 18, paddingTop: 6, paddingBottom: 34, backgroundColor: BG },
-  cta: { height: 58, borderRadius: 18, backgroundColor: ACCENT, alignItems: 'center', justifyContent: 'center' },
-  ctaDisabled: { backgroundColor: CARD_HI },
-  ctaText: { color: T1, fontFamily: FONT, fontSize: 17, fontWeight: '600', letterSpacing: 0.2 },
 });

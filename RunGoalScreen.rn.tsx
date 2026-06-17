@@ -16,17 +16,19 @@ import {
   View, Text, Pressable, ScrollView, StyleSheet,
   LayoutChangeEvent, NativeSyntheticEvent, NativeScrollEvent, StatusBar,
 } from 'react-native';
-import Svg, { Path, Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
+import Svg, { Path } from 'react-native-svg';
 // 색·폰트는 전역 디자인 토큰(theme.ts)만 참조한다 — 사설 색객체(const C) 폐기.
 // 매핑: bg→BG · surface→CARD · accent→ACCENT · sage→GOOD · amber→WARN · red→DANGER
 // · text→T1–T4 · hair→SEP · 그라데이션→GRAD_TOP/GRAD_BOT. 폰트 UI/DP → FONT/DISPLAY.
 // (시각 동등: 다크+오렌지 유지)
 import {
   BG, CARD, HERO_BG, ACCENT, GOOD, WARN, DANGER, T1, T2, T3, T4, SEP,
-  GRAD_TOP, GRAD_BOT, FONT, DISPLAY, withAlpha,
+  FONT, DISPLAY, withAlpha,
 } from './theme';
 // lib/haptics 배선: '러닝 시작' CTA(런 시작) → tap.
 import { tap } from './lib/haptics';
+// CTA 는 앱 전역 단일 Button 프리미티브(그라데이션 GRAD_TOP/BOT·글로우·radius 토큰).
+import { Button } from './primitives';
 
 // ── SVG 아이콘(자체 그림 — vector-icons 의존 제거) ───────────────────────────
 function Icon({ name, size = 22, color = T2, fill }: { name: string; size?: number; color?: string; fill?: string }) {
@@ -201,15 +203,12 @@ export default function RunGoalScreen({
           <Icon name="forward" size={20} color={T4} />
         </Pressable>
 
-        <Pressable onPress={startRun} style={({ pressed }) => [s.cta, pressed && { opacity: 0.92 }]} accessibilityRole="button" accessibilityLabel="러닝 시작">
-          <Svg style={StyleSheet.absoluteFill}>
-            <Defs><LinearGradient id="ctaGrad" x1="0" y1="0" x2="0" y2="1"><Stop offset="0" stopColor={GRAD_TOP} /><Stop offset="1" stopColor={GRAD_BOT} /></LinearGradient></Defs>
-            <Rect x="0" y="0" width="100%" height="100%" rx={18} ry={18} fill="url(#ctaGrad)" />
-          </Svg>
-          <View pointerEvents="none" style={s.ctaGloss} />
-          <Icon name="play" size={22} color="#fff" fill="#fff" />
-          <Text style={s.ctaText}>러닝 시작</Text>
-        </Pressable>
+        <Button
+          label="러닝 시작"
+          onPress={startRun}
+          iconNode={<Icon name="play" size={22} color="#fff" fill="#fff" />}
+          style={s.cta}
+        />
       </View>
     </View>
   );
@@ -260,7 +259,7 @@ const s = StyleSheet.create({
   shoeDot: { width: 6, height: 6, borderRadius: 999 },
   shoeCondText: { color: T3, fontFamily: FONT, fontSize: 11.5, fontWeight: '500' },
 
-  cta: { marginTop: 14, height: 60, borderRadius: 18, overflow: 'hidden', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
-  ctaGloss: { position: 'absolute', top: 0, left: 0, right: 0, height: 1, backgroundColor: withAlpha(T1, 0.22) },
-  ctaText: { color: '#fff', fontFamily: FONT, fontSize: 16.5, fontWeight: '700', letterSpacing: 0.3 },
+  // CTA 는 단일 Button 프리미티브(그라데이션·글로우·radius 토큰). 화면 고유 레이아웃
+  // (상단 여백·높이)만 style 로 넘기고 모양/그라데이션/광택은 Button 이 책임진다.
+  cta: { marginTop: 14, height: 60 },
 });

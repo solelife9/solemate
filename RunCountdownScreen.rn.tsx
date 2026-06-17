@@ -26,6 +26,8 @@ import Svg, { Path, Circle } from 'react-native-svg';
 import { BG, CARD, ACCENT, GOOD, T1, T2, T3, SEP, FONT, DISPLAY, withAlpha } from './theme';
 // lib/haptics 배선: 카운트다운 비트(3·2·1) → countdownBeat, 시작(GO) → go.
 import { countdownBeat, go as goHaptic } from './lib/haptics';
+// '지금 시작' CTA 는 앱 전역 단일 Button 프리미티브(그라데이션·글로우·radius 토큰).
+import { Button } from './primitives';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
@@ -165,9 +167,7 @@ export default function RunCountdownScreen({
       <View style={s.foot}>
         {phase === 'gps' && (
           <>
-            <Pressable onPress={skip} style={({ pressed }) => [s.startNow, pressed && { opacity: 0.92 }]} accessibilityRole="button" accessibilityLabel="지금 시작">
-              <Icon name="play" size={22} color="#fff" /><Text style={s.startNowText}>지금 시작</Text>
-            </Pressable>
+            <Button label="지금 시작" onPress={skip} iconNode={<Icon name="play" size={22} color="#fff" />} style={s.startNow} />
             <Pressable onPress={skip} hitSlop={8} accessibilityRole="button" accessibilityLabel="카운트다운 건너뛰기"><Text style={s.skip}>카운트다운 건너뛰기</Text></Pressable>
           </>
         )}
@@ -202,7 +202,8 @@ const s = StyleSheet.create({
   chipB: { color: T1, fontFamily: DISPLAY, fontWeight: '600' },
 
   foot: { paddingHorizontal: 22, alignItems: 'center', gap: 16, minHeight: 104, justifyContent: 'flex-end' },
-  startNow: { width: '100%', height: 58, borderRadius: 18, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, backgroundColor: ACCENT },
-  startNowText: { color: '#fff', fontFamily: FONT, fontSize: 16, fontWeight: '700', letterSpacing: 0.3 },
+  // '지금 시작' CTA 는 단일 Button 프리미티브(그라데이션·글로우·radius 토큰). 화면
+  // 고유 레이아웃(가로 꽉참·높이)만 남긴다(과거 사각 ACCENT 버튼 제거).
+  startNow: { width: '100%', height: 58 },
   skip: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '500' },
 });

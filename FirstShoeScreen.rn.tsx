@@ -26,8 +26,7 @@ import {
   BG, CARD, ACCENT, GOOD, WARN, DANGER, T1, T2, T3, SEP,
   FONT, withAlpha, Shoe,
 } from './theme';
-import {Pill, TabBar} from './primitives';
-import {MockupButton} from './MockupButton.rn';
+import {Pill, TabBar, Button} from './primitives';
 
 // ── 공용 헤더 ("내 신발" + 검색) ───────────────────────────────────────────────
 function Header({onSearch}: {onSearch?: () => void}) {
@@ -111,7 +110,7 @@ function EmptyState({onRegister, onSearch, onTab}: FirstShoeProps) {
         </View>
       </View>
       <View style={s.ctaWrap}>
-        <MockupButton
+        <Button
           label="첫 러닝화 등록하기"
           iconNode={<MaterialCommunityIcons name="shoe-sneaker" size={18} color={T1} />}
           onPress={onRegister}
@@ -200,7 +199,7 @@ function SuccessState({shoe, onStartRun, onDone, onSearch, onTab}: FirstShoeProp
       </ScrollView>
 
       <View style={s.ctaWrap}>
-        <MockupButton label="완료" onPress={onDone} />
+        <Button label="완료" onPress={onDone} />
       </View>
       <TabBar active={1} onTab={(i) => onTab?.(i)} />
     </View>

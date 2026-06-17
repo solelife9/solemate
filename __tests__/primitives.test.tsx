@@ -20,7 +20,18 @@ import {
   Button,
   TONE_BG,
 } from '../primitives';
-import {GOOD, WARN, DANGER, ACCENT, ACCENT_2, CARD_HI} from '../theme';
+import {
+  GOOD,
+  WARN,
+  DANGER,
+  ACCENT,
+  ACCENT_2,
+  CARD_HI,
+  GRAD_TOP,
+  GRAD_BOT,
+  RADIUS,
+  T3,
+} from '../theme';
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 function render(el: React.ReactElement): ReactTestRenderer.ReactTestRenderer {
@@ -140,6 +151,94 @@ describe('Button variant branch produces different output', () => {
   test('cta surface is not the ghost CARD_HI surface', () => {
     const {root} = render(<Button label="시작" variant="cta" />);
     expect(pressableStyle(root).backgroundColor).not.toBe(CARD_HI);
+  });
+});
+
+// ── Button is the single CTA primitive (gradient/glow/radius unified) ─────────
+// Resolve the Button's Pressable style under an arbitrary press state.
+const pressableStyleAt = (
+  root: ReactTestRenderer.ReactTestInstance,
+  pressed: boolean,
+) => {
+  const node = root.find(
+    (n: any) =>
+      n &&
+      n.props &&
+      n.props.accessibilityRole === 'button' &&
+      typeof n.props.style === 'function',
+  );
+  return StyleSheet.flatten(node.props.style({pressed}));
+};
+
+describe('Button — unified CTA surface (gradient · glow · radius token)', () => {
+  test('cta gradient stops are the GRAD_TOP → GRAD_BOT theme token pair', () => {
+    // Single source of truth: the orange fill comes from theme tokens, never a
+    // hand-copied hex. A desync (or a screen re-introducing its own gradient)
+    // would no longer match these tokens.
+    const {root} = render(<Button label="시작" variant="cta" />);
+    const stops = byName(root, 'Stop').map(s => s.props.stopColor);
+    expect(stops).toContain(GRAD_TOP);
+    expect(stops).toContain(GRAD_BOT);
+  });
+
+  test('cta carries an orange (ACCENT) glow shadow', () => {
+    const {root} = render(<Button label="시작" variant="cta" />);
+    expect(pressableStyle(root).shadowColor).toBe(ACCENT);
+  });
+
+  test('cta corners use the single RADIUS.btn token (surface + gradient rect)', () => {
+    const {root} = render(<Button label="시작" variant="cta" />);
+    expect(pressableStyle(root).borderRadius).toBe(RADIUS.btn);
+    // The gradient Rect rounds itself to the same token (no overflow clip needed).
+    const rects = byName(root, 'Rect');
+    expect(rects.length).toBeGreaterThanOrEqual(1);
+    expect(rects.some((r: any) => r.props.rx === RADIUS.btn)).toBe(true);
+  });
+
+  test('pressing a cta shrinks it (scale 0.97) — visible press feedback', () => {
+    const {root} = render(<Button label="시작" variant="cta" />);
+    const off = pressableStyleAt(root, false);
+    const on = pressableStyleAt(root, true);
+    expect(on).not.toEqual(off);
+    expect(on.transform).toEqual([{scale: 0.97}]);
+  });
+
+  test('disabled cta drops the gradient and falls to the CARD_HI flat surface with a dimmed label', () => {
+    const {root} = render(<Button label="브랜드를 선택하세요" disabled />);
+    // No gradient layer when disabled.
+    expect(byName(root, 'Svg')).toHaveLength(0);
+    expect(pressableStyle(root).backgroundColor).toBe(CARD_HI);
+    // Label is dimmed to the muted token (T3), not the bright T1.
+    const label = root
+      .findAllByType(Text)
+      .find(t => t.props.children === '브랜드를 선택하세요')!;
+    expect(StyleSheet.flatten(label.props.style).color).toBe(T3);
+  });
+
+  test('disabled cta does not fire onPress', () => {
+    const onPress = jest.fn();
+    const {root} = render(
+      <Button label="대기" disabled onPress={onPress} />,
+    );
+    const node = root.find(
+      (n: any) => n.props && n.props.accessibilityRole === 'button',
+    );
+    // onPress is gated to undefined while disabled (no-op even if invoked).
+    expect(node.props.onPress).toBeUndefined();
+    expect(node.props.accessibilityState).toEqual({disabled: true});
+  });
+
+  test('iconNode is rendered alongside the label (custom glyph passthrough)', () => {
+    const {root} = render(
+      <Button
+        label="첫 러닝화 등록하기"
+        iconNode={<View testID="cta-icon-node" />}
+      />,
+    );
+    expect(
+      root.findAll((n: any) => n.props && n.props.testID === 'cta-icon-node')
+        .length,
+    ).toBeGreaterThan(0);
   });
 });
 

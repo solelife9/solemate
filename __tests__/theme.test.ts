@@ -24,10 +24,17 @@ describe('SPACE scale', () => {
 
 describe('RADIUS scale', () => {
   test('exposes the corner-radius ramp with a pill sentinel', () => {
-    expect(RADIUS).toEqual({sm: 12, md: 16, lg: 20, xl: 24, pill: 999});
+    // btn(18) is the single CTA-button corner token (Button primitive), sitting
+    // between md(16) and lg(20) — it unifies the old 14/16/18/999 button mix.
+    expect(RADIUS).toEqual({sm: 12, md: 16, btn: 18, lg: 20, xl: 24, pill: 999});
   });
   test('pill is large enough to fully round any reasonable control', () => {
     expect(RADIUS.pill).toBeGreaterThanOrEqual(999);
+  });
+  test('btn corner token sits between md and lg (single CTA radius)', () => {
+    expect(RADIUS.btn).toBe(18);
+    expect(RADIUS.btn).toBeGreaterThan(RADIUS.md);
+    expect(RADIUS.btn).toBeLessThan(RADIUS.lg);
   });
 });
 

@@ -53,6 +53,7 @@ import {
   DISPLAY,
   withAlpha,
 } from './theme';
+import {Button} from './primitives';
 
 // ── 디자인 토큰 흡수 ──────────────────────────────────────────────────────────
 // 과거 이 화면은 자체 다크 팔레트(const KG)와 BebasNeue 디스플레이 별칭(DISP)을 들고
@@ -428,9 +429,9 @@ function StatusPill({status}: {status: StatusKey}) {
   );
 }
 
-// 1차 CTA — 오렌지 그라데이션 알약(#FF7A2E→#EE5800 수직). expo-linear-gradient
-// 대신 react-native-svg(LinearGrad)로 채우고, 상단에 1px 광택 라인 + iOS 그림자
-// /Android elevation으로 입체감을 준다. 비활성은 ghost(반투명 흰색, 그림자 없음).
+// 온보딩 1차 CTA. 과거엔 자체 LinearGrad(오렌지 그라데이션) + cta 스타일로 주황
+// 그라데이션 버튼을 복제했으나, 앱 전역 단일 Button 프리미티브로 위임한다(그라데이션은
+// GRAD_TOP/BOT 토큰·글로우·radius 토큰 일원화 — 중복 그라데이션 정의 제거). 시각 동등.
 function PrimaryButton({
   label,
   onPress,
@@ -442,25 +443,7 @@ function PrimaryButton({
   disabled?: boolean;
   testID?: string;
 }) {
-  return (
-    <Pressable
-      testID={testID}
-      onPress={disabled ? undefined : onPress}
-      disabled={disabled}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      accessibilityState={{disabled}}
-      style={({pressed}) => [s.cta, disabled && s.ctaGhost, pressed && !disabled && {transform: [{scale: 0.97}]}]}>
-      {!disabled && (
-        <>
-          <LinearGrad stops={[{color: '#FF7A2E', offset: 0}, {color: '#EE5800', offset: 1}]} radius={15} />
-          {/* 상단 광택 엣지(그라데이션 위에 렌더) */}
-          <View pointerEvents="none" style={s.ctaGloss} />
-        </>
-      )}
-      <Text style={[s.ctaLabel, disabled && {opacity: 0.5}]}>{label}</Text>
-    </Pressable>
-  );
+  return <Button label={label} onPress={onPress} disabled={disabled} testID={testID} />;
 }
 
 function Chip({label, active, onPress, small}: {label: string; active: boolean; onPress: () => void; small?: boolean}) {
@@ -1278,27 +1261,8 @@ const s = StyleSheet.create({
   heroBody: {fontFamily: FONT, fontSize: 14.5, lineHeight: 22, color: 'rgba(246,246,248,0.66)', marginTop: 7},
 
   // CTA
-  cta: {
-    height: 54,
-    borderRadius: 15,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 8},
-    shadowOpacity: 0.4,
-    shadowRadius: 14,
-    elevation: 6,
-  },
-  ctaGhost: {
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderWidth: 1,
-    borderColor: withAlpha(T1, 0.14),
-    shadowOpacity: 0,
-    elevation: 0,
-  },
-  ctaGloss: {position: 'absolute', top: 0, left: 0, right: 0, height: 1, backgroundColor: 'rgba(255,255,255,0.18)'},
-  ctaLabel: {fontFamily: FONT, fontSize: 16.5, fontWeight: '700', color: '#fff', letterSpacing: -0.2},
+  // CTA 사각 스타일(cta/ctaGhost/ctaGloss/ctaLabel)은 단일 Button 프리미티브로
+  // 대체하며 제거했다(PrimaryButton 참조).
 
   footer: {paddingHorizontal: 24, paddingTop: 8},
 
