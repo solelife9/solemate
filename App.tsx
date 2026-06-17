@@ -59,7 +59,7 @@ import {recommendRotation} from './lib/rotation';
 import {
   loadSnapshot, clearSnapshot, isResumable,
   enqueuePendingRun, removePendingRun, updatePendingRun, flushPendingRuns,
-  reconcilePendingWithServer, loadPendingRuns,
+  reconcilePendingWithServer, loadPendingRuns, overlayPendingRuns,
   RunSnapshot, PendingRun,
 } from './lib/runPersistence';
 import {Unit, kmToDisplay, displayNum} from './lib/units';
@@ -511,13 +511,7 @@ function Main(){
         // 있다 — 큐의 런을 합쳐 UI 에 보이게 한다(데이터 가시성). 이미 캐시에 든 런(localId==id)은
         // 건너뛰어 중복을 막고, 큐 런은 _pending 으로 표시해 낙관적 삽입과 같은 모양으로 둔다.
         const pending=await loadPendingRuns();
-        const cachedIds=new Set(cached.runs.map((r:any)=>String(r.id)));
-        const pendingOverlay=pending.filter(p=>!cachedIds.has(String(p.localId))).map(p=>({
-          id:p.localId,shoe_id:p.shoe_id,km:p.km,run_date:p.run_date,duration:p.duration,
-          cadence:p.cadence,memo:p.memo,route:p.route,location:p.location,heart_rate:p.heart_rate,
-          run_time:p.run_time,updatedAt:p.updatedAt,_pending:true,
-        }));
-        const mergedRuns=[...pendingOverlay,...cached.runs];
+        const mergedRuns=overlayPendingRuns(cached.runs,pending);
         setShoes(cached.shoes);setRuns(mergedRuns);
         // 'REST 확정' 집합은 **실제 REST fetch(initUser try 분기)로만** 시드한다 — 오프라인 부팅
         // 분기에선 캐시로 시드하지 않는다. 부팅캐시는 매 mutation 마다 full live state 로 재기록되어

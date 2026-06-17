@@ -157,6 +157,61 @@ export async function clearSnapshot(): Promise<void> {
   await AsyncStorage.removeItem(SNAPSHOT_KEY);
 }
 
+/**
+ * A pending(미동기) run projected into the run-row shape the UI/aggregation reads:
+ * id=localId 으로 두고 `_pending:true` 마커를 단다(낙관적 삽입과 같은 모양). 캐시에
+ * 든 신발/런과 같은 필드를 가져 '이번 주 거리' 등 집계에 그대로 합산된다.
+ */
+export interface PendingRunOverlay {
+  id: string;
+  shoe_id: string;
+  km: number;
+  run_date: string;
+  duration: number;
+  cadence: number;
+  memo: string;
+  route: string;
+  location: string;
+  heart_rate: number;
+  run_time: string;
+  updatedAt?: number;
+  _pending: true;
+}
+
+/**
+ * 오프라인 부팅 오버레이(순수): 부팅 폴백 캐시의 런 위에 아직 서버로 못 간 pending 런을
+ * 얹는다. 캐시는 마지막 fetch/디바운스 스냅샷이라 그 뒤 오프라인에서 추가됐지만 아직
+ * 서버로 못 간 런이 빠져 있을 수 있으므로, 큐의 런을 합쳐 화면에 보이게 한다(가시성).
+ *   · dedup  — 이미 캐시에 든 런(localId === 캐시 run.id)은 건너뛰어 중복을 막는다.
+ *   · 표시   — 새로 얹는 런은 `_pending:true` 로 표시(낙관적 삽입과 같은 모양).
+ *   · 순서   — pending 오버레이를 앞(prepend)에, 그다음 캐시 런(원래 순서 보존).
+ * 비파괴: 입력 배열을 변형하지 않고 새 배열을 돌려준다(데이터 파괴 금지).
+ */
+export function overlayPendingRuns<T extends {id?: unknown}>(
+  cachedRuns: readonly T[],
+  pending: readonly PendingRun[],
+): Array<T | PendingRunOverlay> {
+  const cachedIds = new Set(cachedRuns.map(r => String((r as {id?: unknown}).id)));
+  const overlay: PendingRunOverlay[] = pending
+    .filter(p => !cachedIds.has(String(p.localId)))
+    .map(p => ({
+      id: p.localId,
+      shoe_id: p.shoe_id,
+      km: p.km,
+      run_date: p.run_date,
+      duration: p.duration,
+      cadence: p.cadence,
+      memo: p.memo,
+      route: p.route,
+      location: p.location,
+      heart_rate: p.heart_rate,
+      run_time: p.run_time,
+      updatedAt: p.updatedAt,
+      _pending: true,
+    }));
+  return [...overlay, ...cachedRuns];
+}
+
 // ── pending-sync queue I/O (storage only — network is injected) ──
 /** Read the pending-run queue, dropping any corrupt entries. */
 export async function loadPendingRuns(): Promise<PendingRun[]> {

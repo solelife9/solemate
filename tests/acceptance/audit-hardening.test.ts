@@ -30,7 +30,12 @@ import {
   STORAGE_SCHEMA_VERSION_KEY,
   CURRENT_STORAGE_SCHEMA_VERSION,
 } from '../../lib/storageMigration';
-import {enqueuePendingRun, loadPendingRuns, type PendingRun} from '../../lib/runPersistence';
+import {
+  enqueuePendingRun,
+  loadPendingRuns,
+  overlayPendingRuns,
+  type PendingRun,
+} from '../../lib/runPersistence';
 import {setupPushMessaging, FCM_TOKEN_PENDING_KEY} from '../../lib/pushMessaging';
 
 const payload = (over: Partial<BackupPayload> = {}): BackupPayload => ({
@@ -107,21 +112,37 @@ describe('Audit Hardening 수용', () => {
     });
 
     test('오프라인 부팅: 캐시 + pending_runs 오버레이로 미동기 런이 보인다', async () => {
-      // 오프라인에서 완주한 런은 pending_runs 큐에 영속된다(서버 POST 전).
+      // 오프라인에서 완주한 런은 pending_runs 큐에 영속된다(서버 POST 전). 둘을 큐잉한다:
+      //   offline-1 — 캐시에 *없는* 미동기 런(오버레이로 보여야 함, 가시성)
+      //   dup-1     — 이미 캐시에 든(디바운스가 반영한) 런(오버레이로 *중복되면 안 됨*, dedup)
       await enqueuePendingRun(pendingRun({localId: 'offline-1', km: 7}));
+      await enqueuePendingRun(pendingRun({localId: 'dup-1', km: 6}));
       const queued = await loadPendingRuns();
-      expect(queued.map(r => r.localId)).toContain('offline-1');
+      expect(queued.map(r => r.localId)).toEqual(
+        expect.arrayContaining(['offline-1', 'dup-1']),
+      );
 
-      // App 오프라인 부팅 오버레이 규칙: 캐시에 없는(localId∉캐시 id) pending 런만 얹는다.
-      // → 캐시엔 빠진 미동기 런이 화면에 보이고(가시성), 이미 캐시에 든 런은 중복되지 않는다.
-      const cachedRuns = [{id: 'srv-9', km: 3}]; // 마지막 fetch 스냅샷(offline-1 은 없음)
-      const cachedIds = new Set(cachedRuns.map(r => String(r.id)));
-      const overlay = queued.filter(p => !cachedIds.has(String(p.localId)));
-      const mergedRuns = [...overlay.map(p => ({id: p.localId, km: p.km, _pending: true})), ...cachedRuns];
-      const ids = mergedRuns.map(r => String(r.id));
-      expect(ids).toEqual(expect.arrayContaining(['offline-1', 'srv-9']));
-      // dedup: 같은 런이 두 번 나타나지 않는다.
+      // production 오버레이(App.tsx:509-516 오프라인 부팅 분기가 호출하는 바로 그 함수)를
+      // 직접 호출한다 — 테스트가 머지를 재구현하지 않으므로, App 오버레이가 회귀하면(가시성
+      // 누락이든 dedup 깨짐이든) 이 단언이 실패한다.
+      const cachedRuns = [
+        {id: 'srv-9', km: 3}, // 마지막 fetch 스냅샷(offline-1 은 없음)
+        {id: 'dup-1', km: 6}, // 이미 캐시에 든 런(localId==id)
+      ];
+      const merged = overlayPendingRuns(cachedRuns, queued);
+      const ids = merged.map(r => String((r as {id?: unknown}).id));
+
+      // 가시성: 캐시에 없던 미동기 런 offline-1 이 _pending 행으로 화면에 보인다.
+      expect(ids).toEqual(expect.arrayContaining(['offline-1', 'srv-9', 'dup-1']));
+      const offline = merged.find(r => String((r as {id?: unknown}).id) === 'offline-1');
+      expect((offline as {_pending?: boolean})._pending).toBe(true);
+      expect((offline as {km?: number}).km).toBe(7);
+      // dedup: 이미 캐시에 든 dup-1 은 오버레이로 두 번 나타나지 않는다(정확히 1회).
+      expect(ids.filter(id => id === 'dup-1')).toHaveLength(1);
       expect(new Set(ids).size).toBe(ids.length);
+      // 캐시 런은 _pending 오버레이로 덮이지 않는다(원래 캐시 행 보존).
+      const dup = merged.find(r => String((r as {id?: unknown}).id) === 'dup-1');
+      expect((dup as {_pending?: boolean})._pending).toBeUndefined();
     });
 
     test('클라우드→REST 역등록: REST에 없는 머지 레코드를 apiAdd*로 합류시킨다', () => {
