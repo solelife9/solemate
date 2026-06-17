@@ -16,6 +16,7 @@ import {
 } from './theme';
 import {Ring} from './primitives';
 import ErrorBoundary from './ErrorBoundary';
+import ToastHost from './ToastHost';
 import {installCrashHandler, setCrashUser} from './lib/crashlytics';
 import {apiAuth, apiGetShoes, apiGetRuns, apiAddShoe, apiPatchShoe, apiDeleteShoe, apiAddRun, apiPatchRun, apiDeleteRun, fetchWithTimeout} from './lib/api';
 import {devSeedShoes, devSeedRuns} from './lib/devSeed';
@@ -187,6 +188,8 @@ export default function App(){
       <ErrorBoundary>
         <Main/>
       </ErrorBoundary>
+      {/* 전역 스낵바 호스트 — 앱 어디서든 showToast()를 부르면 여기서 그린다(루트 1회 마운트). */}
+      <ToastHost/>
     </SafeAreaProvider>
   );
 }
