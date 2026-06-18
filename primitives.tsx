@@ -256,11 +256,12 @@ const btn = StyleSheet.create({
   // 주황 글로우 그림자(목업 0 14px 30px -12px rgba(255,101,0,.6) 대응). base 에
   // overflow 가 없어 iOS 에서도 그림자가 살아있다.
   glow: {
+    // 주황 글로우를 은은하게 — 기존 0.5/16 은 너무 강해 "빛이 난다"는 피드백.
     shadowColor: ACCENT,
-    shadowOpacity: 0.5,
-    shadowRadius: 16,
-    shadowOffset: {width: 0, height: 12},
-    elevation: 10,
+    shadowOpacity: 0.22,
+    shadowRadius: 9,
+    shadowOffset: {width: 0, height: 6},
+    elevation: 5,
   },
   // ghost / disabled 표면(올린 카드 톤). 그라데이션·글로우 없음.
   flat: {backgroundColor: CARD_HI},
