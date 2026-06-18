@@ -1,8 +1,9 @@
 /**
  * ShoesScreen.rn.tsx — 신발별 평균 페이스 비교 행동 테스트.
  *
- * 신발끼리 페이스를 비교할 수 있도록 (1) 목록 카드에 평균 페이스가 보이고,
- * (2) 신발 상세 통계에 '평균 페이스' 칸이 추가됐는지 검증한다.
+ * 평균 페이스는 (목록 간결화로) 목록 카드에서는 빼고 **신발 상세 통계에서만** 비교한다.
+ * (1) 목록 카드 km 바 밑에는 평균 페이스를 표시하지 않고, (2) 신발 상세 통계에 '평균 페이스'
+ * 칸이 있는지 검증한다.
  *
  * @format
  */
@@ -44,12 +45,12 @@ const TOTALS: Record<number, ShoeTotals> = {
 };
 
 describe('ShoesScreen — 신발별 평균 페이스 비교', () => {
-  test('목록 카드에 각 신발의 평균 페이스가 보인다(비교 가능)', () => {
+  test('목록 카드는 평균 페이스를 표시하지 않는다(목록 간결화 — 상세에서 비교)', () => {
     const root = render(<ShoesScreen shoes={SHOES} totals={TOTALS} />).root;
     const screen = textOf(root);
-    expect(screen).toContain("5'30\""); // Nike 평균 페이스
-    expect(screen).toContain("6'10\""); // Hoka 평균 페이스
-    expect(screen).toContain('평균');
+    // 목록 카드 km 바 밑에는 누적/총 수명 km 만 양끝에 두고, 평균 페이스는 빼서 간결화했다.
+    expect(screen).not.toContain("5'30\"");
+    expect(screen).not.toContain("6'10\"");
   });
 
   test('신발 상세 통계에 평균 페이스 칸이 있다', () => {
