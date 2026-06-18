@@ -508,6 +508,20 @@ function Main(){
     // alerts 설정을 직접 넘긴다(setAlerts state 갱신 전이라 클로저가 옛값일 수 있음).
     const st=await loadSettings();
     setUnit(st.unit);setGoalWeeklyKm(st.goalWeeklyKm);setAlerts(st.alerts);setWeightKg(st.weightKg);
+    // 캐시-퍼스트 렌더: 부팅 폴백 캐시가 있으면 네트워크(apiAuth→fetch, 콜드 백엔드면 최대 8s)
+    // 를 기다리지 않고 **즉시** 화면을 띄운다 — 두 번째 실행부터(=캐시 존재) 백엔드가 잠들어
+    // 있어도 콜드 스타트 대기 없이 바로 부팅. 이어지는 try 의 REST fetch 는 백그라운드에서
+    // 병합·갱신(reconcileFetchedLocalFirst)되어 화면이 매끄럽게 최신화된다. pending 런을
+    // 오버레이해 미동기 런까지 보인다(오프라인 분기와 동일 가시성). 첫 실행(캐시 없음)은
+    // 기존대로 fetch 완료까지 스켈레톤을 유지한다.
+    const bootCache=await loadBootCache();
+    if(bootCache){
+      let pending:any[]=[];
+      try{pending=await loadPendingRuns();}catch{}
+      setShoes(bootCache.shoes);
+      setRuns(overlayPendingRuns(bootCache.runs,pending));
+      setBootState('ready');
+    }
     try{
       const d=await apiAuth(did);setUserId(d.user_id);setCrashUser(String(d.user_id||''));
       const[sd,rd]=await Promise.all([apiGetShoes(d.user_id),apiGetRuns(d.user_id)]);
