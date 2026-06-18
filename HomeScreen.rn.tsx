@@ -634,9 +634,9 @@ const s = StyleSheet.create({
 
   // 진척 띠 — 히어로 위 얇은 카드(주인공 신발을 밀어내지 않게 컴팩트). 칩 색만 티어색.
   progStripWrap: { paddingHorizontal: GUTTER, paddingTop: SPACE.md, paddingBottom: SPACE.xs },
-  progStrip: { backgroundColor: CARD_DIM, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: withAlpha(T1, 0.07), paddingVertical: 12, paddingHorizontal: 14 },
+  progStrip: { backgroundColor: CARD_DIM, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.07), paddingVertical: 12, paddingHorizontal: 14 },
   progTopRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  rankChip: { flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: RADIUS.pill, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 4 },
+  rankChip: { flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: RADIUS.pill, borderWidth: StyleSheet.hairlineWidth, paddingHorizontal: 10, paddingVertical: 4 },
   rankChipTxt: { fontFamily: DISPLAY, fontSize: 12, fontWeight: '700', letterSpacing: 0.3 },
   achChip: { flexDirection: 'row', alignItems: 'center', gap: 5, minWidth: 0, flexShrink: 1 },
   achChipTxt: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500', letterSpacing: -0.1 },
@@ -660,10 +660,10 @@ const s = StyleSheet.create({
   goalRingU: { color: T3, fontFamily: FONT, fontSize: 10 },
 
   // 목업 카드: radius 20(RADIUS.lg) · 테두리 1px. 비활성 라인(흰 7%), 활성 오렌지(0.55).
-  hero: { backgroundColor: HERO_BG, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: withAlpha(T1, 0.07), padding: 20 },
+  hero: { backgroundColor: HERO_BG, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.07), padding: 20 },
   heroActive: { borderColor: withAlpha(ACCENT, 0.55) },
   // 현재 상태 인사이트 카드(사용거리 | 교체예상) — 활성 신발 반영
-  insightCard: { backgroundColor: CARD_DIM, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: withAlpha(T1, 0.07), padding: SPACE.lg },
+  insightCard: { backgroundColor: CARD_DIM, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.07), padding: SPACE.lg },
   insightGrid: { flexDirection: 'row', alignItems: 'flex-start' },
   insightDivider: { width: StyleSheet.hairlineWidth, alignSelf: 'stretch', backgroundColor: withAlpha(T1, 0.08), marginHorizontal: SPACE.lg },
   insightLabel: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600', letterSpacing: -0.1 },
@@ -720,7 +720,7 @@ const s = StyleSheet.create({
   swipeHint: { textAlign: 'center', color: T3, fontFamily: FONT, fontSize: 12, marginTop: 10 },
 
   // 홈 챌린지 카드
-  chalWrap: { marginHorizontal: SPACE.xl, marginTop: SPACE.lg, backgroundColor: CARD_DIM, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: withAlpha(T1, 0.07), padding: SPACE.lg },
+  chalWrap: { marginHorizontal: SPACE.xl, marginTop: SPACE.lg, backgroundColor: CARD_DIM, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.07), padding: SPACE.lg },
   chalLabel: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '600', letterSpacing: 0.6, textTransform: 'uppercase', flex: 1 },
   chalMore: { color: ACCENT, fontFamily: FONT, fontSize: 12, fontWeight: '600' },
   chalEmpty: { alignItems: 'center', paddingVertical: 8 },
@@ -735,7 +735,7 @@ const s = StyleSheet.create({
   chalPct: { color: T3, fontFamily: FONT, fontSize: 11, marginTop: 5 },
 
   rotaWrap: { marginTop: SPACE.lg },
-  rotaCard: { marginHorizontal: SPACE.xl, backgroundColor: CARD_DIM, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: withAlpha(T1, 0.07), paddingHorizontal: SPACE.lg },
+  rotaCard: { marginHorizontal: SPACE.xl, backgroundColor: CARD_DIM, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.07), paddingHorizontal: SPACE.lg },
   rotaRow: { flexDirection: 'row', alignItems: 'center', gap: SPACE.md, paddingVertical: 14 },
   rotaRowSep: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.07) },
   rotaBrand: { color: T3, fontFamily: DISPLAY, fontSize: 11, fontWeight: '500', letterSpacing: 1.2 },
@@ -744,7 +744,7 @@ const s = StyleSheet.create({
 
   // 수익화 v1: 교체 시점 '다음 러닝화' 추천 카드(오렌지 절제 — 테두리만 액센트)
   nextWrap: { marginTop: SPACE.lg },
-  nextCard: { marginHorizontal: SPACE.xl, backgroundColor: CARD_DIM, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: withAlpha(ACCENT, 0.3), padding: SPACE.lg },
+  nextCard: { marginHorizontal: SPACE.xl, backgroundColor: CARD_DIM, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.3), padding: SPACE.lg },
   nextSub: { color: T3, fontFamily: FONT, fontSize: 13, lineHeight: 18, marginBottom: SPACE.sm },
   nextRow: { flexDirection: 'row', alignItems: 'center', gap: SPACE.md, paddingVertical: 11 },
   nextRowSep: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.07) },
@@ -752,14 +752,14 @@ const s = StyleSheet.create({
   nextModel: { color: T1, fontFamily: DISPLAY, fontSize: 15, fontWeight: '600', letterSpacing: -0.1, marginTop: 3 },
   nextCat: { color: T3, fontFamily: FONT, fontSize: 11, marginTop: 3 },
   shopBtns: { flexDirection: 'row', gap: 6 },
-  shopBtn: { borderRadius: RADIUS.pill, borderWidth: 1, borderColor: withAlpha(ACCENT, 0.4), backgroundColor: withAlpha(ACCENT, 0.1), paddingHorizontal: 11, paddingVertical: 6 },
+  shopBtn: { borderRadius: RADIUS.pill, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.4), backgroundColor: withAlpha(ACCENT, 0.1), paddingHorizontal: 11, paddingVertical: 6 },
   shopBtnTxt: { color: ACCENT, fontFamily: FONT, fontSize: 12, fontWeight: '600' },
   nextDisclosure: { color: T3, fontFamily: FONT, fontSize: 11, lineHeight: 15, marginTop: SPACE.md, opacity: 0.85 },
 
 
 
   empty: { paddingHorizontal: SPACE.xl, paddingTop: 30 },
-  emptyCard: { alignSelf: 'stretch', alignItems: 'center', backgroundColor: CARD_DIM, borderRadius: RADIUS.xl, borderWidth: 1, borderColor: withAlpha(T1, 0.12), paddingVertical: 40, paddingHorizontal: 24 },
+  emptyCard: { alignSelf: 'stretch', alignItems: 'center', backgroundColor: CARD_DIM, borderRadius: RADIUS.xl, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.12), paddingVertical: 40, paddingHorizontal: 24 },
   emptyTitle: { color: T1, fontFamily: FONT, fontSize: 18, fontWeight: '600' },
   emptyText: { color: T3, fontFamily: FONT, fontSize: 14, textAlign: 'center', lineHeight: 20, marginTop: 10 },
   emptyBtn: { alignSelf: 'stretch', marginTop: 22 },

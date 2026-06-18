@@ -645,7 +645,7 @@ const s = StyleSheet.create({
   pressed: { opacity: 0.85 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   baselineRow: { flexDirection: 'row', alignItems: 'flex-end' },
-  card: { backgroundColor: CARD_DIM, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: withAlpha(T1, 0.07) },
+  card: { backgroundColor: CARD_DIM, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.07) },
   sectionLabel: { color: T2, fontFamily: FONT, fontSize: 14, fontWeight: '500', letterSpacing: 0.2, paddingHorizontal: 4 },
   dot: { width: 7, height: 7, borderRadius: RADIUS.pill },
   condText: { fontFamily: FONT, fontSize: 13, fontWeight: '500' },
@@ -664,8 +664,8 @@ const s = StyleSheet.create({
   // 목업 정합: 카드 배경을 near-black(CARD_DIM)에서 살짝 떠 보이는 회색(HERO_BG — 홈
   // 히어로 카드와 동일 톤)으로 올려 black-on-black 을 피한다.
   shoeCard: { backgroundColor: HERO_BG, borderRadius: RADIUS.lg, padding: 16 },
-  shoeCardFeatured: { borderWidth: 1, borderColor: withAlpha(T1, 0.2) },
-  shoeCardIdle: { borderWidth: 1, borderColor: withAlpha(T1, 0.08) },
+  shoeCardFeatured: { borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.2) },
+  shoeCardIdle: { borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.08) },
   shoeCardRetired: { opacity: 0.55, borderColor: withAlpha(T1, 0.05) },
   // 상단: 좌(브랜드·모델) ↔ 우(컨디션 위 · ▶/화살표 아래) — 사진 정합
   shoeTopSection: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 },
@@ -776,7 +776,7 @@ const s = StyleSheet.create({
   statDivider: { borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: SEP },
   // 2x2 통계 그리드(총거리/총횟수/총시간/평균페이스). 한 카드 안에 4칸을 넉넉히.
   nextSectionLabel: { paddingHorizontal: 4 },
-  nextCard: { backgroundColor: CARD_DIM, borderWidth: 1, borderColor: withAlpha(ACCENT, 0.3), padding: 16 },
+  nextCard: { backgroundColor: CARD_DIM, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.3), padding: 16 },
   nextSub: { color: T3, fontFamily: FONT, fontSize: 13, lineHeight: 18, marginBottom: 6 },
   nextRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 11 },
   nextRowSep: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.07) },
@@ -784,7 +784,7 @@ const s = StyleSheet.create({
   nextModel: { color: T1, fontFamily: DISPLAY, fontSize: 15, fontWeight: '600', letterSpacing: -0.1, marginTop: 3 },
   nextCat: { color: T3, fontFamily: FONT, fontSize: 11, marginTop: 3 },
   shopBtns: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, justifyContent: 'flex-end', maxWidth: 132 },
-  shopBtn: { borderRadius: RADIUS.pill, borderWidth: 1, borderColor: withAlpha(ACCENT, 0.4), backgroundColor: withAlpha(ACCENT, 0.1), paddingHorizontal: 11, paddingVertical: 6 },
+  shopBtn: { borderRadius: RADIUS.pill, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.4), backgroundColor: withAlpha(ACCENT, 0.1), paddingHorizontal: 11, paddingVertical: 6 },
   shopBtnTxt: { color: ACCENT, fontFamily: FONT, fontSize: 12, fontWeight: '600' },
   nextDisclosure: { color: T3, fontFamily: FONT, fontSize: 11, lineHeight: 15, marginTop: 12, opacity: 0.85 },
   // stats 2x2 — 사진(디자인 09)처럼 왼쪽 정렬. 글씨 비율에 맞게 패딩을 조여 카드가
