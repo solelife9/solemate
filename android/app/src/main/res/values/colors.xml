@@ -1,4 +1,4 @@
 <resources>
-    <!-- Keego brand: orange accent on near-black. Launcher icon background. -->
-    <color name="ic_launcher_background">#FF6500</color>
+    <!-- Keego brand: orange "K" on near-black. Launcher icon background. -->
+    <color name="ic_launcher_background">#0A0A0A</color>
 </resources>
