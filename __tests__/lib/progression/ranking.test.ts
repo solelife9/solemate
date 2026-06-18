@@ -15,14 +15,13 @@ import {
 import {RankResult} from '../../../lib/progression/types';
 
 const rank: RankResult = {
-  score: 73.2,
+  xp: 732,
   tier: 'platinum',
   color: '#14B8A6',
-  pillars: {
-    running: 0.5,
-    consistency: 0.5,
-    shoeManagement: 0.5,
-  },
+  nextTier: 'diamond',
+  xpForNext: 768,
+  progressPercent: 5,
+  score: 732,
 };
 
 describe('localRankingProvider: 리더보드 placeholder(가짜 경쟁자 금지)', () => {
@@ -48,7 +47,7 @@ describe('createLocalRankingProvider: 내 랭크 바인딩', () => {
     const provider = createLocalRankingProvider(rank);
     const mine = await provider.getMyRanking('running', '2026-06');
     expect(mine.available).toBe(false);
-    expect(mine.me).toEqual({score: 73.2, tier: 'platinum', color: '#14B8A6'});
+    expect(mine.me).toEqual({score: 732, tier: 'platinum', color: '#14B8A6'});
     // 크로스유저 값(순위/상위%)은 me 에 없다.
     expect(mine.me).not.toHaveProperty('rank');
     expect(mine.me).not.toHaveProperty('percentile');

@@ -63,19 +63,24 @@ describe('getProgression: 시드 데이터 → 일관된 뷰', () => {
   });
   const view = getProgression(runs, shoes, state, NOW);
 
-  test('rank: 유효 티어·일치 색·0..100 점수', () => {
+  test('rank: 유효 티어·일치 색·XP≥0·티어내 진행률 0..100', () => {
     expect(ALL_TIERS).toContain(view.rank.tier);
     expect(view.rank.color).toBe(TIER_COLORS[view.rank.tier]);
-    expect(view.rank.score).toBeGreaterThanOrEqual(0);
-    expect(view.rank.score).toBeLessThanOrEqual(100);
+    // XP 기반 랭크: xp 는 누적 적립이라 100 을 넘을 수 있다(상한 없음).
+    expect(view.rank.xp).toBeGreaterThanOrEqual(0);
+    expect(view.rank.score).toBe(view.rank.xp); // backward-compat alias
+    // 티어 내 진행률만 0..100 으로 정규화된다.
+    expect(view.rank.progressPercent).toBeGreaterThanOrEqual(0);
+    expect(view.rank.progressPercent).toBeLessThanOrEqual(100);
   });
 
-  test('titles: 거리 사다리 언락(beginner·100k), 장착 키 반영', () => {
+  test('titles: 거리 사다리 언락(beginner·100k), equipped 는 폐지되어 항상 null', () => {
     const unlockedKeys = view.titles.unlocked.map(t => t.key);
     expect(unlockedKeys).toEqual(
       expect.arrayContaining(['running_beginner', 'running_100k']),
     );
-    expect(view.titles.equipped).toBe('running_100k');
+    // 타이틀 장착은 폐지 — 영속된 equippedTitleKey 가 있어도 셀렉터는 노출하지 않는다.
+    expect(view.titles.equipped).toBeNull();
   });
 
   test('hidden 타이틀은 미달성 시 locked 갤러리에 없다(전부 unlocked=false)', () => {
@@ -93,17 +98,21 @@ describe('getProgression: 시드 데이터 → 일관된 뷰', () => {
       expect(a.progress.current).toBeGreaterThanOrEqual(0);
       expect(a.progress.current).toBeLessThanOrEqual(a.progress.target);
     }
-    // First Steps(첫 런)는 달성 → 진행률이 가득 차고 unlocked.
-    const first = view.achievements.find(a => a.key === 'ach_first_run');
+    // 첫 걸음(첫 런)은 달성 → 진행률이 가득 차고 unlocked.
+    const first = view.achievements.find(a => a.key === 'first_run');
     expect(first?.unlocked).toBe(true);
     expect(first?.progress).toEqual({current: 1, target: 1});
   });
 
-  test('points: 언락 업적 포인트 합과 정확히 일치하고 > 0', () => {
+  test('points(=totalXp): 언락 업적의 실제 적립 XP 합과 정확히 일치하고 > 0', () => {
+    // 새 시스템: points = totalXp = rank.xp = 언락 업적의 earnedXp 합
+    // (반복형은 earnedCount × xp 라 earnedXp 가 실적립). 기본 xp 합과 다를 수 있다.
     const manual = view.achievements
       .filter(a => a.unlocked)
-      .reduce((s, a) => s + a.points, 0);
+      .reduce((s, a) => s + a.earnedXp, 0);
     expect(view.points).toBe(manual);
+    expect(view.points).toBe(view.totalXp);
+    expect(view.points).toBe(view.rank.xp);
     expect(view.points).toBeGreaterThan(0);
   });
 
@@ -157,14 +166,15 @@ describe('getProgression: equipped 검증(anti-scenario 1)', () => {
     expect(view.titles.equipped).toBeNull();
   });
 
-  test('지금 충족된 타이틀을 장착 → 그 키가 그대로 노출', () => {
+  test('지금 충족된 타이틀은 unlocked 목록에 노출되되, equipped 는 폐지로 항상 null', () => {
     const state = stateWith({
       earnedTitles: [{key: 'running_100k', unlockedAt: '', isEquipped: true}],
       equippedTitleKey: 'running_100k',
     });
     const view = getProgression(runs, shoes, state, NOW);
     expect(view.titles.unlocked.map(t => t.key)).toContain('running_100k');
-    expect(view.titles.equipped).toBe('running_100k');
+    // 충족 여부와 무관하게 장착 표면화는 폐지됐다(equipped 항상 null).
+    expect(view.titles.equipped).toBeNull();
   });
 });
 
@@ -259,13 +269,18 @@ describe('detectNewUnlocks: 멱등 알림', () => {
 // 5) pickRecentAchievement — 홈 '최근 달성'은 포인트가 아니라 해제 순서(recency)
 // ============================================================================
 describe('pickRecentAchievement: recency가 포인트를 이긴다', () => {
-  const ach = (key: string, name: string, points: number): AchievementView => ({
+  // xp 인자는 폴백(=earnedXp 최고) 신호로 쓰인다. 새 AchievementView 형태에 맞춘다.
+  const ach = (key: string, name: string, xp: number): AchievementView => ({
     key,
     name,
-    category: 'running',
-    group: 'distance',
-    rarity: 'bronze',
-    points,
+    description: '',
+    category: 'distanceMilestone',
+    rarity: 'common',
+    xp,
+    earnedXp: xp,
+    earnedCount: 1,
+    repeatablePerShoe: false,
+    signature: false,
     hidden: false,
     progress: {current: 1, target: 1},
     unlocked: true,

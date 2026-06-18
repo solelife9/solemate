@@ -1,27 +1,27 @@
 // lib/progression/achievements — 업적 카탈로그(라이브 진행 + 정직 언락).
 //
 // 관찰 가능한 동작(behavioral):
-//   · progress(ctx) 의 current/target 이 실제 데이터와 일치한다(예: Trusted Partner 348/500km).
+//   · progress(ctx) 의 current/target 이 실제 데이터와 일치한다(예: 누적 거리 640/1000km).
 //   · 진행이 target 에 닿는 순간이 정확히 언락 순간(진행바·언락 모순 불가).
 //   · 미충족 업적은 절대 unlocked 를 보고하지 않는다(anti-scenario 1 — 날조 금지).
-//   · 6개 필러 카테고리를 모두 커버한다.
+//   · 6개 카테고리를 모두 커버한다.
 //   · 빈/비정상 컨텍스트 → 아무 업적도 언락 안 함, throw 없음.
-//   · 업적 포인트는 rarity 권위(POINTS_BY_RARITY)와 일치한다.
+//   · 업적 XP(반복형 포함)가 카탈로그 정의와 일치한다.
 //
 // 순수 엔진(ctx 만 읽음)이라 AsyncStorage 를 쓰지 않는다 — 키 격리 자명.
 
 import {
   ACHIEVEMENTS,
   ACHIEVEMENTS_BY_KEY,
-  ACHIEVEMENT_UNLOCKS_TITLE,
   achievementDef,
   achievementProgress,
+  computeTotalXp,
+  earnedXpFor,
   evaluateAchievements,
   unlockedAchievements,
 } from '../../../lib/progression/achievements';
-import {POINTS_BY_RARITY} from '../../../lib/progression/points';
-import {TITLES_BY_KEY} from '../../../lib/progression/titles';
 import {
+  AchievementCategory,
   PerShoeStats,
   ProgressionContext,
 } from '../../../lib/progression/types';
@@ -80,12 +80,12 @@ function progressOf(key: string, ctx: ProgressionContext) {
 }
 
 // ============================================================================
-// 1) progress current/target — 명시 예시 Trusted Partner 348/500km
+// 1) progress current/target — 실제 데이터와 정합
 // ============================================================================
 describe('progress current/target', () => {
   test('누적 거리 진행: 1000km 가 실제 누적과 일치', () => {
     const ctx = emptyCtx({cumulativeKm: 640});
-    expect(progressOf('ach_distance_1000', ctx)).toEqual({
+    expect(progressOf('dist_1000', ctx)).toEqual({
       current: 640,
       target: 1000,
     });
@@ -93,12 +93,12 @@ describe('progress current/target', () => {
 
   test('누적 거리 진행: 5000km 도달 → 언락 + current=target(초과 캡)', () => {
     const at = emptyCtx({cumulativeKm: 5200});
-    expect(progressOf('ach_distance_5000', at)).toEqual({current: 5000, target: 5000});
-    expect(achievementDef('ach_distance_5000')!.unlocked(at)).toBe(true);
+    expect(progressOf('dist_5000', at)).toEqual({current: 5000, target: 5000});
+    expect(achievementDef('dist_5000')!.unlocked(at)).toBe(true);
   });
 
-  test('러닝 횟수 진행: 100회 가 실제 runCount 와 일치', () => {
-    expect(progressOf('ach_century_runs', emptyCtx({runCount: 73}))).toEqual({
+  test('누적 거리 진행: 100km 가 실제 누적과 일치', () => {
+    expect(progressOf('dist_100', emptyCtx({cumulativeKm: 73}))).toEqual({
       current: 73,
       target: 100,
     });
@@ -109,18 +109,19 @@ describe('progress current/target', () => {
 // 2) 진행이 target 에 닿는 순간 = 언락 순간(경계 일관성)
 // ============================================================================
 describe('진행·언락 경계 일관성', () => {
-  test('Marathon Finisher: 42.195km 경계', () => {
-    const def = achievementDef('ach_marathon')!;
+  test('마라톤 완주: 42.195km 경계', () => {
+    const def = achievementDef('first_marathon')!;
     expect(def.unlocked(emptyCtx({longestRunKm: 42.195}))).toBe(true);
     expect(def.unlocked(emptyCtx({longestRunKm: 42.19}))).toBe(false);
     // 미달 진행은 current<target.
-    const p = progressOf('ach_marathon', emptyCtx({longestRunKm: 40}));
+    const p = progressOf('first_marathon', emptyCtx({longestRunKm: 40}));
     expect(p.current).toBeCloseTo(40);
     expect(p.target).toBeCloseTo(42.195);
   });
 
   test('모든 metric 업적: unlocked ⟺ progress.current ≥ target', () => {
     // 충분히 큰 사실로 모두 채운 컨텍스트 — 닿은 업적은 모두 언락이어야.
+    // (반복형 shoeMemory 업적은 target=신발수로 동작이 달라 별도 검증; 여기선 제외.)
     const rich = emptyCtx({
       runCount: 500,
       cumulativeKm: 9000,
@@ -129,6 +130,12 @@ describe('진행·언락 경계 일관성', () => {
       weeklyActiveRatio: 1,
       registeredShoeCount: 12,
       bestPaceSec: 250,
+      earlyRunCount: 30,
+      nightRunCount: 30,
+      hasWinterRun: true,
+      hasSummerRun: true,
+      completedChallengeCount: 20,
+      retirementCount: 12,
       perShoe: perShoeMap(
         shoe({id: 'a', km: 1200, maxKm: 1500, runs: 100}),
         shoe({id: 'b', km: 1100, maxKm: 1500, runs: 90}),
@@ -138,6 +145,7 @@ describe('진행·언락 경계 일관성', () => {
       ),
     });
     for (const def of ACHIEVEMENTS) {
+      if (def.repeatablePerShoe) continue;
       const p = achievementProgress(def, rich);
       const reached = p.current >= p.target && p.target > 0;
       expect(def.unlocked(rich)).toBe(reached);
@@ -154,77 +162,87 @@ describe('anti-scenario 1: 미충족 무언락', () => {
     expect(unlockedAchievements(emptyCtx())).toEqual([]);
   });
 
-  test('≥42km 런 없는 유저는 Marathon Finisher 를 절대 보고하지 않는다', () => {
+  test('≥42km 런 없는 유저는 마라톤 완주를 절대 보고하지 않는다', () => {
     const ctx = emptyCtx({runCount: 300, cumulativeKm: 4000, longestRunKm: 30});
-    expect(evaluateAchievements(ctx)).not.toContain('ach_marathon');
+    expect(evaluateAchievements(ctx)).not.toContain('first_marathon');
   });
 
   test('각 업적: 진행이 target 미만이면 unlocked=false (개별)', () => {
-    // 누적 거리만 약간 미달(499 < 500) → ach_dist_500 언락 금지.
+    // 누적 거리만 약간 미달(499 < 500) → dist_500 언락 금지.
     const ctx = emptyCtx({cumulativeKm: 499});
-    expect(achievementDef('ach_dist_500')!.unlocked(ctx)).toBe(false);
-    expect(evaluateAchievements(ctx)).not.toContain('ach_dist_500');
+    expect(achievementDef('dist_500')!.unlocked(ctx)).toBe(false);
+    expect(evaluateAchievements(ctx)).not.toContain('dist_500');
   });
 
-  test('건강한 신발장: 한 켤레라도 과사용(>100%)이면 미언락', () => {
-    const def = achievementDef('ach_healthy_closet')!;
-    const dirty = emptyCtx({
+  test('shoeMemory(함께 500km): 모든 신발 미달이면 미언락, 도달 신발 있으면 언락', () => {
+    const def = achievementDef('together_500')!;
+    // 가장 먼 신발도 499km → 미언락, 진행은 best/threshold.
+    const below = emptyCtx({
       perShoe: perShoeMap(
         shoe({id: 'a', km: 100, maxKm: 600}),
-        shoe({id: 'b', km: 700, maxKm: 600}), // ratio≈1.17 > 1.0 → 과사용
+        shoe({id: 'b', km: 499, maxKm: 600}),
       ),
     });
-    expect(def.unlocked(dirty)).toBe(false);
-    const clean = emptyCtx({
+    expect(def.unlocked(below)).toBe(false);
+    expect(progressOf('together_500', below)).toEqual({current: 499, target: 500});
+
+    // 한 켤레라도 500km 이상이면 언락.
+    const reached = emptyCtx({
       perShoe: perShoeMap(
         shoe({id: 'a', km: 100, maxKm: 600}),
-        shoe({id: 'b', km: 600, maxKm: 600}), // ratio=1.0(권장 다 씀)도 건강
+        shoe({id: 'b', km: 500, maxKm: 600}),
       ),
     });
-    expect(def.unlocked(clean)).toBe(true);
+    expect(def.unlocked(reached)).toBe(true);
   });
 
-  // 진행바·언락 모순 금지: 바는 healthy/total 로 읽혀 과사용이 하나라도 있으면 안 참.
-  test('건강한 신발장: 혼합(건강/과사용)이면 바가 가득 차지 않고 미언락', () => {
-    const def = achievementDef('ach_healthy_closet')!;
-    const mixed = emptyCtx({
+  test('shoeMemory 반복 적립: earnedCount = 임계 충족 신발 수', () => {
+    const def = achievementDef('together_100')!;
+    const ctx = emptyCtx({
       perShoe: perShoeMap(
-        shoe({id: 'a', km: 100, maxKm: 600}), // 건강
-        shoe({id: 'b', km: 200, maxKm: 600}), // 건강
-        shoe({id: 'c', km: 700, maxKm: 600}), // >1.0 과사용
+        shoe({id: 'a', km: 120}),
+        shoe({id: 'b', km: 300}),
+        shoe({id: 'c', km: 50}), // 100km 미달
       ),
     });
-    const p = progressOf('ach_healthy_closet', mixed);
-    expect(p.current).toBeLessThan(p.target); // 2/3
-    expect(def.unlocked(mixed)).toBe(false);
-    expect(p.current === p.target).toBe(def.unlocked(mixed));
+    expect(def.repeatablePerShoe).toBe(true);
+    expect(def.earnedCount!(ctx)).toBe(2);
+    // 적립 XP = xp × earnedCount.
+    expect(earnedXpFor(def, ctx)).toBe(def.xp * 2);
+    // 진행 바는 충족 신발 수.
+    expect(progressOf('together_100', ctx)).toEqual({current: 2, target: 2});
   });
 
-  test('건강한 신발장: 전부 건강이면 바가 가득 차고(current===target) 언락', () => {
-    const def = achievementDef('ach_healthy_closet')!;
-    const allHealthy = emptyCtx({
-      perShoe: perShoeMap(
-        shoe({id: 'a', km: 100, maxKm: 600}),
-        shoe({id: 'b', km: 200, maxKm: 600}),
-        shoe({id: 'c', km: 300, maxKm: 600}),
-      ),
+  test('나이트 런: 야간 런 ≥1 에서만 언락', () => {
+    const def = achievementDef('night_run')!;
+    expect(def.unlocked(emptyCtx({nightRunCount: 1}))).toBe(true);
+    expect(def.unlocked(emptyCtx({nightRunCount: 0}))).toBe(false);
+  });
+
+  test('일출 런: 새벽 런 ≥1 에서만 언락', () => {
+    const def = achievementDef('sunrise_run')!;
+    expect(def.unlocked(emptyCtx({earlyRunCount: 1}))).toBe(true);
+    expect(def.unlocked(emptyCtx({earlyRunCount: 0}))).toBe(false);
+  });
+
+  test('계절 런: 겨울/여름 플래그가 정확히 언락을 좌우', () => {
+    expect(achievementDef('winter_run')!.unlocked(emptyCtx({hasWinterRun: true}))).toBe(true);
+    expect(achievementDef('winter_run')!.unlocked(emptyCtx({hasWinterRun: false}))).toBe(false);
+    expect(achievementDef('summer_run')!.unlocked(emptyCtx({hasSummerRun: true}))).toBe(true);
+    expect(achievementDef('summer_run')!.unlocked(emptyCtx({hasSummerRun: false}))).toBe(false);
+  });
+
+  test('데이터 없는 경험 업적(트레일·빗속)은 항상 잠금', () => {
+    const rich = emptyCtx({
+      cumulativeKm: 99999,
+      longestRunKm: 99,
+      earlyRunCount: 99,
+      nightRunCount: 99,
+      hasWinterRun: true,
+      hasSummerRun: true,
     });
-    const p = progressOf('ach_healthy_closet', allHealthy);
-    expect(p.current).toBe(p.target); // 3/3
-    expect(def.unlocked(allHealthy)).toBe(true);
-    expect(p.current === p.target).toBe(def.unlocked(allHealthy));
-  });
-
-  test('Speedster: 5km 이상 단일 런 평균 ≤5:00/km 한 번이면 언락(런 수 무관)', () => {
-    const def = achievementDef('ach_speedster')!;
-    // 5km+ 런 평균 300s(=5:00/km) → 단 1회로도 언락.
-    expect(def.unlocked(emptyCtx({bestPace5kSec: 300, runCount: 1}))).toBe(true);
-    // 5:00/km 보다 느리면 미언락.
-    expect(def.unlocked(emptyCtx({bestPace5kSec: 301, runCount: 50}))).toBe(false);
-    // 5km+ 빠른 런 없음(짧은 질주만) → 미언락. bestPaceSec 가 빨라도 거리 바닥 미충족.
-    expect(
-      def.unlocked(emptyCtx({bestPace5kSec: null, bestPaceSec: 200, runCount: 50})),
-    ).toBe(false);
+    expect(achievementDef('trail_run')!.unlocked(rich)).toBe(false);
+    expect(achievementDef('rain_run')!.unlocked(rich)).toBe(false);
   });
 
   test('비정상 입력에서 throw 없이 [] 반환', () => {
@@ -245,25 +263,40 @@ describe('anti-scenario 1: 미충족 무언락', () => {
 });
 
 // ============================================================================
-// 4) 포인트 — rarity 권위 일치
+// 4) XP — 카탈로그 정의 일치 + 총합(2-pass)
 // ============================================================================
-describe('업적 포인트 = rarity 권위', () => {
-  test('모든 업적의 points 가 POINTS_BY_RARITY[rarity] 와 일치', () => {
-    for (const def of ACHIEVEMENTS) {
-      expect(def.points).toBe(POINTS_BY_RARITY[def.rarity]);
-    }
+describe('업적 XP 정합', () => {
+  test('단발 업적: 언락 시 정확히 def.xp 적립, 미언락이면 0', () => {
+    const def = achievementDef('first_marathon')!;
+    expect(earnedXpFor(def, emptyCtx({longestRunKm: 42.195}))).toBe(def.xp);
+    expect(earnedXpFor(def, emptyCtx({longestRunKm: 10}))).toBe(0);
   });
 
-  test('rarity 별 포인트 사다리(Bronze10…Legend1000)', () => {
-    expect(POINTS_BY_RARITY).toEqual({
-      bronze: 10,
-      silver: 25,
-      gold: 50,
-      platinum: 100,
-      diamond: 250,
-      master: 500,
-      legend: 1000,
+  test('computeTotalXp = 언락 업적 XP 합(반복형은 신발수 배수)', () => {
+    const ctx = emptyCtx({
+      cumulativeKm: 120,
+      longestRunKm: 6,
+      runCount: 3,
+      registeredShoeCount: 1,
+      perShoe: perShoeMap(shoe({id: 'a', km: 120})),
     });
+    // 직접 합산과 일치해야 한다(권위 단일).
+    const manual = ACHIEVEMENTS.reduce((s, d) => s + earnedXpFor(d, ctx), 0);
+    expect(computeTotalXp(ctx)).toBe(manual);
+    expect(manual).toBeGreaterThan(0);
+  });
+
+  test('빈/비정상 컨텍스트의 총 XP 는 0', () => {
+    expect(computeTotalXp(emptyCtx())).toBe(0);
+    // @ts-expect-error 의도적 비정상 입력.
+    expect(computeTotalXp(null)).toBe(0);
+  });
+
+  test('모든 업적의 xp 는 양의 유한값', () => {
+    for (const def of ACHIEVEMENTS) {
+      expect(Number.isFinite(def.xp)).toBe(true);
+      expect(def.xp).toBeGreaterThan(0);
+    }
   });
 });
 
@@ -277,97 +310,75 @@ describe('카탈로그 무결성', () => {
     expect(Object.keys(ACHIEVEMENTS_BY_KEY).length).toBe(ACHIEVEMENTS.length);
   });
 
-  test('5개 카테고리를 모두 커버한다(로테이션 제거)', () => {
+  test('6개 카테고리를 모두 커버한다', () => {
     const cats = new Set(ACHIEVEMENTS.map(a => a.category));
-    [
-      'running',
-      'consistency',
-      'shoeManagement',
-      'injuryPrevention',
-      'retirement',
-    ].forEach(c => expect(cats.has(c as never)).toBe(true));
-    // 로테이션 카테고리는 더 이상 없다.
-    expect(cats.has('rotation' as never)).toBe(false);
+    (
+      [
+        'runningMilestone',
+        'distanceMilestone',
+        'shoeJourney',
+        'shoeMemory',
+        'experience',
+        'keego',
+      ] as AchievementCategory[]
+    ).forEach(c => expect(cats.has(c)).toBe(true));
   });
 
-  test('건강한 신발장이 카탈로그에 존재한다(신발관리)', () => {
-    const def = achievementDef('ach_healthy_closet');
-    expect(def?.name).toBe('건강한 신발장');
-    expect(def?.category).toBe('shoeManagement');
-  });
-
-  test('ACHIEVEMENT_UNLOCKS_TITLE 의 타이틀 키는 모두 실재한다', () => {
-    for (const [achKey, titleKey] of Object.entries(ACHIEVEMENT_UNLOCKS_TITLE)) {
-      expect(ACHIEVEMENTS_BY_KEY[achKey]).toBeDefined();
-      expect(TITLES_BY_KEY[titleKey]).toBeDefined();
+  test('모든 rarity 는 신규 4단계 집합에 속한다', () => {
+    const allowed = new Set(['common', 'rare', 'epic', 'legendary']);
+    for (const def of ACHIEVEMENTS) {
+      expect(allowed.has(def.rarity)).toBe(true);
     }
   });
 
-  test('표시 그룹이 카탈로그에 존재한다(로테이션 제거)', () => {
-    const groups = new Set(ACHIEVEMENTS.map(a => a.group));
-    [
-      'firstMilestone',
-      'distance',
-      'runCount',
-      'consistency',
-      'shoeCollection',
-      'shoeLife',
-      'retirement',
-      'hidden',
-    ].forEach(g => expect(groups.has(g as never)).toBe(true));
-    // 로테이션 그룹은 더 이상 없다.
-    expect(groups.has('rotation' as never)).toBe(false);
+  test('반복형 업적은 earnedCount 를 제공한다(계약 보장)', () => {
+    for (const def of ACHIEVEMENTS) {
+      if (def.repeatablePerShoe) {
+        expect(typeof def.earnedCount).toBe('function');
+      }
+    }
   });
 
-  test('업적이 타이틀보다 많다(수집 카탈로그)', () => {
-    // 철학: 업적 = 많고 잘게, 타이틀 = 적고 어렵게.
-    expect(ACHIEVEMENTS.length).toBeGreaterThan(Object.keys(TITLES_BY_KEY).length);
+  test('마라톤 완주가 카탈로그에 존재한다(단일 런 이정표·legendary)', () => {
+    const def = achievementDef('first_marathon');
+    expect(def?.name).toBe('마라톤 완주');
+    expect(def?.category).toBe('runningMilestone');
+    expect(def?.rarity).toBe('legendary');
   });
 });
 
 // ============================================================================
-// 6) 히든 업적 — 달성 전 미노출, 실제 데이터로만 언락(날조 금지)
+// 6) keego — 오랜 동반자(여정 일수 기반)
 // ============================================================================
-describe('히든 업적', () => {
-  test('얼리버드: 새벽 런 ≥20 에서만 언락 + hidden:true', () => {
-    const def = achievementDef('ach_hidden_early_bird')!;
-    expect(def.hidden).toBe(true);
-    expect(def.group).toBe('hidden');
-    expect(def.unlocked(emptyCtx({earlyRunCount: 20}))).toBe(true);
-    expect(def.unlocked(emptyCtx({earlyRunCount: 19}))).toBe(false);
-  });
-
-  test('나이트 러너: 야간 런 ≥20', () => {
-    const def = achievementDef('ach_hidden_night_runner')!;
-    expect(def.unlocked(emptyCtx({nightRunCount: 20}))).toBe(true);
-    expect(def.unlocked(emptyCtx({nightRunCount: 19}))).toBe(false);
-  });
-
-  test('컴백 러너: 30일 이상 공백', () => {
-    const def = achievementDef('ach_hidden_comeback')!;
-    expect(def.unlocked(emptyCtx({longestGapDays: 30}))).toBe(true);
-    expect(def.unlocked(emptyCtx({longestGapDays: 29}))).toBe(false);
-  });
-
-  test('오랜 동반자: 미은퇴 신발 보유 ≥365일', () => {
-    const def = achievementDef('ach_hidden_long_relationship')!;
+describe('keego: 오랜 동반자', () => {
+  test('한 켤레와 ≥365일 동행하면 언락, 미만이면 미언락', () => {
+    const def = achievementDef('longtime_partner')!;
     const old = emptyCtx({
-      perShoe: {
-        a: shoe({id: 'a', km: 200, maxKm: 600, firstWorn: daysAgoISO(366)}),
-      },
+      perShoe: perShoeMap(
+        shoe({id: 'a', km: 200, maxKm: 600, firstWorn: daysAgoISO(366)}),
+      ),
     });
     expect(def.unlocked(old)).toBe(true);
-    // 은퇴 신발은 제외.
-    const retired = emptyCtx({
-      perShoe: {
-        a: shoe({id: 'a', km: 200, maxKm: 600, retired: true, firstWorn: daysAgoISO(400)}),
-      },
+
+    const young = emptyCtx({
+      perShoe: perShoeMap(
+        shoe({id: 'a', km: 200, maxKm: 600, firstWorn: daysAgoISO(300)}),
+      ),
     });
-    expect(def.unlocked(retired)).toBe(false);
+    expect(def.unlocked(young)).toBe(false);
   });
 
-  test('Rain Runner 는 카탈로그에 없다(날씨 미추적)', () => {
-    expect(ACHIEVEMENTS.some(a => /rain/i.test(a.key))).toBe(false);
+  test('진행 바는 일수/365 로 캡된다', () => {
+    const def = achievementDef('longtime_partner')!;
+    const ctx = emptyCtx({
+      perShoe: perShoeMap(
+        shoe({id: 'a', km: 200, firstWorn: daysAgoISO(100)}),
+      ),
+    });
+    const p = achievementProgress(def, ctx);
+    expect(p.target).toBe(365);
+    expect(p.current).toBeCloseTo(100, 0);
+    expect(p.current).toBeLessThan(p.target);
   });
 });
 

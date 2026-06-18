@@ -143,32 +143,52 @@ describe('shoeManagement 사다리', () => {
     ).not.toContain(key);
   });
 
-  test('Shoe Master: mgmt≥0.9 & 테뉴어≥6개월 — 경계(182일)', () => {
+  test('Shoe Master: 10켤레 보유 + 활성 신발 전부 건강 — 컬렉션 게이트', () => {
+    // 10켤레 등록 + 활성 신발 건강 → 언락.
     const at = emptyCtx({
+      registeredShoeCount: 10,
       perShoe: perShoeMap(healthyShoe('a', daysAgo(182))),
     });
-    const below = emptyCtx({
-      perShoe: perShoeMap(healthyShoe('a', daysAgo(181))),
-    });
     expect(evaluateTitles(at)).toContain('shoe_master');
-    expect(evaluateTitles(below)).not.toContain('shoe_master');
+    // 9켤레만으론 컬렉션 게이트 미충족 → 잠금.
+    const fewer = emptyCtx({
+      registeredShoeCount: 9,
+      perShoe: perShoeMap(healthyShoe('a', daysAgo(182))),
+    });
+    expect(evaluateTitles(fewer)).not.toContain('shoe_master');
+    // 10켤레라도 활성 신발이 과사용(초과)이면 잠금(건강 게이트).
+    const overdue = emptyCtx({
+      registeredShoeCount: 10,
+      perShoe: perShoeMap(shoe({id: 'a', km: 600, maxKm: 600, retired: false})),
+    });
+    expect(evaluateTitles(overdue)).not.toContain('shoe_master');
   });
 
-  test('KEEGO Master(1년 건강) / Keep Going(1년 건강 + 은퇴 3켤레)', () => {
-    const yr = emptyCtx({perShoe: perShoeMap(healthyShoe('a', daysAgo(365)))});
-    expect(evaluateTitles(yr)).toContain('keego_master');
-    // Keep Going 은 1년 건강 + 은퇴 3켤레 필요 — 은퇴 없으면 잠금.
-    expect(evaluateTitles(yr)).not.toContain('keep_going');
-    const withRetire = emptyCtx({
+  test('KEEGO Master(10켤레+건강+은퇴3) / Keep Going(10켤레+건강+은퇴5)', () => {
+    // 10켤레 + 건강 + 은퇴 3켤레 → KEEGO Master.
+    const keego = emptyCtx({
+      registeredShoeCount: 10,
       perShoe: perShoeMap(healthyShoe('a', daysAgo(365))),
       retirementCount: 3,
     });
-    expect(evaluateTitles(withRetire)).toContain('keep_going');
-    // 6개월만으론 12개월 타이틀은 잠금.
-    const half = evaluateTitles(
-      emptyCtx({perShoe: perShoeMap(healthyShoe('a', daysAgo(182)))}),
+    expect(evaluateTitles(keego)).toContain('keego_master');
+    // Keep Going 은 은퇴 5켤레 필요 — 3켤레로는 잠금.
+    expect(evaluateTitles(keego)).not.toContain('keep_going');
+    const keepGoing = emptyCtx({
+      registeredShoeCount: 10,
+      perShoe: perShoeMap(healthyShoe('a', daysAgo(365))),
+      retirementCount: 5,
+    });
+    expect(evaluateTitles(keepGoing)).toContain('keep_going');
+    // 은퇴는 충분해도 컬렉션(10켤레) 게이트 미충족이면 KEEGO Master 잠금.
+    const fewShoes = evaluateTitles(
+      emptyCtx({
+        registeredShoeCount: 5,
+        perShoe: perShoeMap(healthyShoe('a', daysAgo(365))),
+        retirementCount: 3,
+      }),
     );
-    expect(half).not.toContain('keego_master');
+    expect(fewShoes).not.toContain('keego_master');
   });
 });
 

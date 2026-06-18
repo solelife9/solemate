@@ -1,12 +1,13 @@
 /**
- * ProgressionScreen.rn.tsx — 진척 화면 행동 테스트 (Slice A · UI).
+ * ProgressionScreen.rn.tsx — 진척 화면 행동 테스트 (재설계 · UI).
  *
- * 관찰 가능한 동작만 검증한다(내부 상태/에러 부재 아님):
- *  1) 해제된 타이틀을 탭 → 그 타이틀이 장착되고(닉네임 옆 표시) progression_v1 에 영속된다.
- *  2) 랭크 칩/링이 그 티어의 TIER_COLORS 값으로 칠해진다.
- *  3) 업적 진행 바가 주입한 런/신발에서 파생된 current/target 을 그대로 보여준다.
- *  4) 갤러리가 해제(누름 가능)와 잠금(누름 불가) 타이틀을 함께 렌더한다.
- *  5) 장착 타이틀이 닉네임 옆에 렌더된다.
+ * 타이틀 시스템 폐지 → XP 기반 랭크 + 6카테고리 업적. 관찰 가능한 동작만 검증한다:
+ *  1) 히어로가 닉네임 + 티어 칩(TIER_LABEL) + 총 XP·업적 달성 수를 렌더한다.
+ *  2) 랭크 칩 라벨이 그 티어의 TIER_COLORS 값으로 칠해진다.
+ *  3) 랭크 진행 카드가 다음 티어 진행바와 함께 렌더된다(낮은 시드 → 최고등급 아님).
+ *  4) 업적 진행 바가 주입한 런/신발에서 파생된 current/target 을 그대로 보여준다.
+ *  5) 총 획득 XP 합산이 view.totalXp 를 그대로 보여준다.
+ *  6) 업적/챌린지 세그먼트 탭이 한 번에 한 섹션만 렌더한다.
  *
  * props-driven · 네트워크 없음 · jest.setup 목 · AsyncStorage.clear() per test.
  * @format
@@ -17,7 +18,7 @@ import ReactTestRenderer, {act} from 'react-test-renderer';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ProgressionScreen from '../ProgressionScreen.rn';
 import {getProgression, collectUnlockedKeys} from '../lib/progression';
-import {defaultProgressionState, PROGRESSION_KEY} from '../lib/progression/storage';
+import {defaultProgressionState} from '../lib/progression/storage';
 import * as storage from '../lib/progression/storage';
 import type {ProgressionState} from '../lib/progression/types';
 import type {ExtChallenge} from '../lib/progression/challengesExt';
@@ -35,9 +36,15 @@ const RUNS: BackendRun[] = [
   {id: 'r2', shoe_id: 's1', km: 8, run_date: '2026-06-03', duration: 2400} as any,
 ];
 
-// 언락 배너가 영속/표시를 흔들지 않도록, 지금 충족된 모든 키를 미리 seen 처리한 초기 상태.
-function seenSuppressedState(extra?: Partial<ProgressionState>): ProgressionState {
-  const view = getProgression(RUNS, SHOES, null, NOW);
+// 언락 배너가 영속/표시(및 setTimeout 누수)를 흔들지 않도록, 주어진 런/신발에서 지금
+// 충족된 모든 키를 미리 seen 처리한 초기 상태. 데이터셋마다 충족 키가 다르므로 호출부가
+// 자신의 런/신발을 넘겨 자신의 언락을 정확히 억제해야 한다(미스매치 시 배너 타이머 누수).
+function seenSuppressedState(
+  runs: readonly BackendRun[] = RUNS,
+  shoes: readonly BackendShoe[] = SHOES,
+  extra?: Partial<ProgressionState>,
+): ProgressionState {
+  const view = getProgression(runs, shoes, null, NOW);
   return {
     ...defaultProgressionState(),
     seenUnlocks: collectUnlockedKeys(view),
@@ -68,19 +75,22 @@ function textOf(node: ReactTestRenderer.ReactTestInstance): string {
 function colorOf(node: ReactTestRenderer.ReactTestInstance): string | undefined {
   return (StyleSheet.flatten(node.props.style) as any)?.color;
 }
-// 섹션 탭(타이틀/업적/챌린지) 전환 — IA 정리로 한 번에 한 섹션만 렌더된다.
+// 세그먼트 탭(업적/챌린지) 전환 — 한 번에 한 섹션만 렌더된다.
 async function selectTab(
   root: ReactTestRenderer.ReactTestInstance,
-  key: 'titles' | 'achievements' | 'challenges',
+  key: 'achievements' | 'challenges',
 ) {
   const tab = byTestID(root, `tab-${key}`)[0];
   await act(async () => {
-    tab.props.onPress();
+    tab.props.onPress(key);
   });
 }
 
 describe('ProgressionScreen — 진척 표면', () => {
-  test('해제된 타이틀을 탭하면 장착되고 progression_v1 에 영속된다', async () => {
+  test('히어로가 닉네임 + 티어 칩 + 총 XP·업적 달성 수를 렌더한다', async () => {
+    const view = getProgression(RUNS, SHOES, null, NOW);
+    const achievementCount = view.achievements.filter(a => a.unlocked).length;
+
     const r = await render(
       <ProgressionScreen
         runs={RUNS}
@@ -92,29 +102,22 @@ describe('ProgressionScreen — 진척 표면', () => {
     );
     const root = r.root;
 
-    // 해제된 타이틀 카드(running_beginner)는 누름 가능해야 한다.
-    const card = byTestID(root, 'title-running_beginner')[0];
-    expect(card).toBeTruthy();
-    expect(typeof card.props.onPress).toBe('function');
+    // 히어로 컨테이너.
+    expect(byTestID(root, 'rank-hero').length).toBeGreaterThanOrEqual(1);
 
-    await act(async () => {
-      card.props.onPress();
-    });
+    // 닉네임이 그대로 렌더된다(타이틀 장착 폐지 — 닉네임 단독).
+    expect(textOf(byTestID(root, 'progression-nick')[0])).toContain('김민준');
 
-    // 닉네임 옆 장착 타이틀이 표시된다.
-    const equipped = byTestID(root, 'equipped-title');
-    expect(equipped.length).toBeGreaterThanOrEqual(1);
-    expect(textOf(equipped[0])).toContain('러닝 입문');
+    // 히어로 부제: 총 XP(천단위) + 업적 달성 수.
+    const sub = byTestID(root, 'progression-xp')[0];
+    expect(textOf(sub)).toContain(`${view.rank.xp.toLocaleString()} XP`);
+    expect(textOf(sub)).toContain(`업적 ${achievementCount}개 달성`);
 
-    // progression_v1 에 장착 키가 영속된다.
-    const raw = await AsyncStorage.getItem(PROGRESSION_KEY);
-    expect(raw).toBeTruthy();
-    const saved = JSON.parse(raw as string);
-    expect(saved.equippedTitleKey).toBe('running_beginner');
-    expect(saved.earnedTitles.some((t: any) => t.key === 'running_beginner')).toBe(true);
+    // 타이틀 시스템 폐지 회귀 가드: 더 이상 장착 타이틀 표시가 없다.
+    expect(byTestID(root, 'equipped-title').length).toBe(0);
   });
 
-  test('랭크 칩/링이 그 티어의 TIER_COLORS 값으로 칠해진다', async () => {
+  test('랭크 칩 라벨이 그 티어의 TIER_COLORS 값으로 칠해진다', async () => {
     const expected = getProgression(RUNS, SHOES, null, NOW).rank;
     // 엔진의 색이 곧 권위 토큰 값이어야 한다(하드코딩 금지).
     expect(expected.color).toBe(TIER_COLORS[expected.tier]);
@@ -124,27 +127,25 @@ describe('ProgressionScreen — 진척 표면', () => {
     );
     const root = r.root;
 
-    // 랭크 칩 라벨이 티어 색이다(링·점수 제거 — 칩이 단일 랭크 신호).
+    // 랭크 칩 라벨이 티어 색이다(칩이 단일 랭크 신호).
     const chip = byTestID(root, 'rank-chip')[0];
     const chipText = chip.findAll((n: any) => n.type === 'Text')[0];
     expect(colorOf(chipText)).toBe(expected.color);
-    // 칩에 티어명이 표시된다(Bronze … Legend).
+    // 칩에 TIER_LABEL 티어명이 표시된다(Bronze … Legend).
     const tierLabel = expected.tier[0].toUpperCase() + expected.tier.slice(1);
     expect(textOf(chip)).toContain(tierLabel);
   });
 
-  test('랭크 안내 카드(어떻게 오르나)가 다음 티어·지렛대와 함께 렌더된다', async () => {
+  test('랭크 진행 카드가 다음 티어 진행바와 함께 렌더된다', async () => {
     const r = await render(
       <ProgressionScreen runs={RUNS} shoes={SHOES} now={NOW} initialState={seenSuppressedState()} />,
     );
     const root = r.root;
-    // 안내 카드 자체.
+    // 진행 카드 자체.
     expect(byTestID(root, 'rank-guide').length).toBeGreaterThanOrEqual(1);
     // 낮은 시드 → legend 아님 → 다음 티어 진행바 노출(최고등급 문구 아님).
     expect(byTestID(root, 'rank-next').length).toBeGreaterThanOrEqual(1);
     expect(byTestID(root, 'rank-max').length).toBe(0);
-    // 가장 빠른 길(지렛대) 힌트가 보인다.
-    expect(byTestID(root, 'rank-lever').length).toBeGreaterThanOrEqual(1);
   });
 
   test('업적 진행 바가 주입한 데이터에서 파생된 current/target 을 그대로 보여준다', async () => {
@@ -158,6 +159,9 @@ describe('ProgressionScreen — 진척 표면', () => {
     const root = r.root;
     await selectTab(root, 'achievements');
 
+    // 업적 카드 자체가 트리에 존재한다.
+    expect(byTestID(root, `ach-${a.key}`).length).toBeGreaterThanOrEqual(1);
+
     const prog = byTestID(root, `ach-progress-${a.key}`)[0];
     expect(prog).toBeTruthy();
     const want = `${a.progress.current.toLocaleString()} / ${a.progress.target.toLocaleString()}`;
@@ -170,71 +174,44 @@ describe('ProgressionScreen — 진척 표면', () => {
     expect(w.endsWith('%')).toBe(true);
   });
 
-  test('갤러리가 해제(탭=장착)와 잠금(탭=획득 조건) 타이틀을 함께 렌더한다', async () => {
+  test('총 획득 XP 합산이 view.totalXp 를 그대로 보여준다', async () => {
+    const view = getProgression(RUNS, SHOES, null, NOW);
+
+    const r = await render(
+      <ProgressionScreen runs={RUNS} shoes={SHOES} now={NOW} initialState={seenSuppressedState()} />,
+    );
+    const root = r.root;
+    await selectTab(root, 'achievements');
+
+    const total = byTestID(root, 'progression-points')[0];
+    expect(total).toBeTruthy();
+    expect(textOf(total)).toContain(`${view.totalXp.toLocaleString()} XP`);
+  });
+
+  test('업적/챌린지 세그먼트 탭이 한 번에 한 섹션만 렌더한다', async () => {
+    const view = getProgression(RUNS, SHOES, null, NOW);
+    const a = view.achievements[0];
+
     const r = await render(
       <ProgressionScreen runs={RUNS} shoes={SHOES} now={NOW} initialState={seenSuppressedState()} />,
     );
     const root = r.root;
 
-    // 해제: 눌러서 장착 가능.
-    const unlocked = byTestID(root, 'title-running_beginner')[0];
-    expect(unlocked).toBeTruthy();
-    expect(typeof unlocked.props.onPress).toBe('function');
+    // 두 탭 컨트롤이 모두 존재한다.
+    expect(byTestID(root, 'tab-achievements').length).toBeGreaterThanOrEqual(1);
+    expect(byTestID(root, 'tab-challenges').length).toBeGreaterThanOrEqual(1);
 
-    // 잠금: 이제 눌러서 '획득 조건'을 볼 수 있다(Pressable).
-    const locked = byTestID(root, 'title-running_25000k')[0];
-    expect(locked).toBeTruthy();
-    expect(typeof locked.props.onPress).toBe('function');
-  });
+    // 기본 = 업적 탭: 업적 카드/총 XP 노출, 챌린지 섹션 없음.
+    await selectTab(root, 'achievements');
+    expect(byTestID(root, `ach-${a.key}`).length).toBeGreaterThanOrEqual(1);
+    expect(byTestID(root, 'progression-points').length).toBeGreaterThanOrEqual(1);
+    expect(byTestID(root, 'challenges-section').length).toBe(0);
 
-  test('잠긴 타이틀을 탭하면 획득 조건 모달이 뜬다', async () => {
-    const r = await render(
-      <ProgressionScreen runs={RUNS} shoes={SHOES} now={NOW} initialState={seenSuppressedState()} />,
-    );
-    const root = r.root;
-
-    // 탭 전엔 모달 없음.
-    expect(byTestID(root, 'title-detail').length).toBe(0);
-
-    // 잠긴 타이틀(누적 25,000km — running_25000k) 탭.
-    const locked = byTestID(root, 'title-running_25000k')[0];
-    await act(async () => {
-      locked.props.onPress();
-    });
-
-    // 모달이 뜨고, 그 타이틀의 획득 조건 문구를 보여준다.
-    const modal = byTestID(root, 'title-detail');
-    expect(modal.length).toBeGreaterThanOrEqual(1);
-    const req = byTestID(root, 'title-detail-requirement')[0];
-    expect(textOf(req)).toContain('25,000km');
-
-    // 배경 탭으로 닫힌다.
-    const backdrop = byTestID(root, 'title-detail-backdrop')[0];
-    await act(async () => {
-      backdrop.props.onPress();
-    });
-    expect(byTestID(root, 'title-detail').length).toBe(0);
-  });
-
-  test('장착 타이틀이 닉네임 옆에 렌더된다', async () => {
-    const r = await render(
-      <ProgressionScreen
-        runs={RUNS}
-        shoes={SHOES}
-        profileName="김민준"
-        now={NOW}
-        initialState={seenSuppressedState({
-          equippedTitleKey: 'running_beginner',
-          earnedTitles: [{key: 'running_beginner', unlockedAt: '', isEquipped: true}],
-        })}
-      />,
-    );
-    const root = r.root;
-
-    expect(textOf(byTestID(root, 'progression-nick')[0])).toContain('김민준');
-    const equipped = byTestID(root, 'equipped-title');
-    expect(equipped.length).toBeGreaterThanOrEqual(1);
-    expect(textOf(equipped[0])).toContain('러닝 입문');
+    // 챌린지 탭: 챌린지 섹션 노출, 업적 카드/총 XP 사라짐.
+    await selectTab(root, 'challenges');
+    expect(byTestID(root, 'challenges-section').length).toBeGreaterThanOrEqual(1);
+    expect(byTestID(root, `ach-${a.key}`).length).toBe(0);
+    expect(byTestID(root, 'progression-points').length).toBe(0);
   });
 });
 
@@ -351,7 +328,7 @@ describe('ProgressionScreen — 챌린지 섹션(확장 + 스마트)', () => {
         runs={CH_RUNS}
         shoes={CH_SHOES}
         now={NOW}
-        initialState={seenSuppressedState()}
+        initialState={seenSuppressedState(CH_RUNS, CH_SHOES)}
         extChallenges={EXT_CHALLENGES}
       />,
     );
@@ -373,7 +350,7 @@ describe('ProgressionScreen — 챌린지 섹션(확장 + 스마트)', () => {
         runs={CH_RUNS}
         shoes={CH_SHOES}
         now={NOW}
-        initialState={seenSuppressedState()}
+        initialState={seenSuppressedState(CH_RUNS, CH_SHOES)}
       />,
     );
     const root = r.root;
@@ -393,7 +370,7 @@ describe('ProgressionScreen — 챌린지 섹션(확장 + 스마트)', () => {
         runs={CH_RUNS}
         shoes={CH_SHOES}
         now={NOW}
-        initialState={seenSuppressedState()}
+        initialState={seenSuppressedState(CH_RUNS, CH_SHOES)}
         onAcceptChallenge={onAcceptChallenge}
       />,
     );
@@ -428,7 +405,7 @@ describe('ProgressionScreen — 챌린지 섹션(확장 + 스마트)', () => {
         runs={CH_RUNS}
         shoes={CH_SHOES}
         now={NOW}
-        initialState={seenSuppressedState()}
+        initialState={seenSuppressedState(CH_RUNS, CH_SHOES)}
         extChallenges={[accepted]}
       />,
     );

@@ -1,11 +1,12 @@
 // lib/progression — 은퇴(Retirement) 업적 + 타이틀 카탈로그.
 //
-// 관찰 가능한 동작(behavioral):
-//   · 은퇴 업적은 각자의 임계에서 정확히 언락된다(1/5/10 은퇴, smart/perfect 등급 ≥1).
+// 재설계 후 동작(behavioral):
+//   · 은퇴 카운트 업적(retire_1/3/5/10)은 각자의 임계에서 정확히 언락된다.
+//   · 은퇴 카운트 업적은 shoeJourney 카테고리이며 명시적 xp 를 보유한다(첫은퇴=signature).
+//   · progress current/target 이 실제 은퇴 수와 일치한다(진행바·언락 모순 불가, 초과 캡).
+//   · 은퇴 0건이면 어떤 은퇴 업적도 언락되지 않는다(날조 금지 — 실제 은퇴만).
+//   · 등급(grade) 품질은 업적이 아닌 **타이틀 사다리**(retire_*)로만 구동된다(재설계).
 //   · 은퇴 타이틀은 은퇴 수 + 등급 품질로 사다리를 따라 언락된다.
-//   · progress current/target 이 실제 은퇴 수와 일치한다(진행바·언락 모순 불가).
-//   · 은퇴 0건이면 어떤 은퇴 업적/타이틀도 언락되지 않는다(날조 금지 — 실제 은퇴만).
-//   · 은퇴 업적 포인트는 rarity 권위(POINTS_BY_RARITY)와 일치한다.
 //   · buildContext 가 progression_v1.retiredShoes 를 retirementCount/grades 로 표면화한다.
 //
 // 와이어링까지 못박기 위해 가능한 곳은 buildContext(영속 레코드 → ctx)로 end-to-end 구성한다.
@@ -16,7 +17,6 @@ import {
   evaluateAchievements,
 } from '../../../lib/progression/achievements';
 import {buildContext} from '../../../lib/progression/context';
-import {POINTS_BY_RARITY} from '../../../lib/progression/points';
 import {evaluateTitles} from '../../../lib/progression/titles';
 import {
   ProgressionContext,
@@ -94,13 +94,14 @@ describe('buildContext: progression_v1.retiredShoes 표면화', () => {
 });
 
 // ============================================================================
-// 1) 카운트 업적 — First Retirement(1) / Shoe Curator(5) / Hall of Shoes(10)
+// 1) 은퇴 카운트 업적 — retire_1(첫) / retire_3 / retire_5 / retire_10(명예의 전당)
 // ============================================================================
 describe('은퇴 카운트 업적: 임계 경계', () => {
   const cases: Array<[string, number]> = [
-    ['ach_first_retirement', 1],
-    ['ach_retire_5', 5],
-    ['ach_retire_10', 10],
+    ['retire_1', 1],
+    ['retire_3', 3],
+    ['retire_5', 5],
+    ['retire_10', 10],
   ];
 
   test.each(cases)('%s: 은퇴 %d건에서 언락(경계: 1건 모자라면 잠금)', (key, n) => {
@@ -110,20 +111,20 @@ describe('은퇴 카운트 업적: 임계 경계', () => {
   });
 
   test('progress current/target 이 실제 은퇴 수와 일치(미달·초과 캡)', () => {
-    const curator = achievementDef('ach_retire_5')!;
-    expect(achievementProgress(curator, ctxWithRetired(retiredRecords(3)))).toEqual({
+    const r5 = achievementDef('retire_5')!;
+    expect(achievementProgress(r5, ctxWithRetired(retiredRecords(3)))).toEqual({
       current: 3,
       target: 5,
     });
     // 초과는 target 으로 캡(진행바·언락 일치).
-    expect(achievementProgress(curator, ctxWithRetired(retiredRecords(8)))).toEqual({
+    expect(achievementProgress(r5, ctxWithRetired(retiredRecords(8)))).toEqual({
       current: 5,
       target: 5,
     });
   });
 
-  test('Hall of Shoes 진행: 7/10', () => {
-    const hall = achievementDef('ach_retire_10')!;
+  test('명예의 전당(retire_10) 진행: 7/10', () => {
+    const hall = achievementDef('retire_10')!;
     expect(achievementProgress(hall, ctxWithRetired(retiredRecords(7)))).toEqual({
       current: 7,
       target: 10,
@@ -133,36 +134,16 @@ describe('은퇴 카운트 업적: 임계 경계', () => {
 });
 
 // ============================================================================
-// 2) 제때 교체(타이밍) 업적 — 권장수명 근처(good 이상)에 교체한 수(히든 보너스, 랭크 제외)
+// 2) 등급(grade) 품질은 업적이 아닌 타이틀로만 구동된다(재설계)
 // ============================================================================
-describe('제때 교체 타이밍 업적', () => {
-  test('제때 교체 1: good/smart/perfect/hallOfFame ≥1 이면 언락(standard 는 불가)', () => {
-    const def = achievementDef('ach_good_timing_1')!;
-    for (const g of ['good', 'smart', 'perfect', 'hallOfFame'] as RetirementGrade[]) {
-      expect(def.unlocked(ctxWithRetired(retiredRecords(1, g)))).toBe(true);
-    }
-    // standard(너무 일찍/늦게)만으로는 아무리 많아도 미언락.
-    expect(def.unlocked(ctxWithRetired(retiredRecords(9, 'standard')))).toBe(false);
-  });
-
-  test('제때 교체 3: good 이상 3건 필요', () => {
-    const def = achievementDef('ach_good_timing_3')!;
-    expect(
-      def.unlocked(ctxWithRetired(recordsByGrade({good: 2, smart: 1, standard: 5}))),
-    ).toBe(true);
-    expect(
-      def.unlocked(ctxWithRetired(recordsByGrade({smart: 2, standard: 9}))),
-    ).toBe(false);
-  });
-
-  test('진행: good 이상 수 / target (초과 캡)', () => {
-    const def = achievementDef('ach_good_timing_3')!;
-    expect(
-      achievementProgress(def, ctxWithRetired(recordsByGrade({good: 2, standard: 1}))),
-    ).toEqual({current: 2, target: 3});
-    expect(
-      achievementProgress(def, ctxWithRetired(recordsByGrade({perfect: 5}))),
-    ).toEqual({current: 3, target: 3});
+describe('은퇴 카운트 업적은 등급(grade)을 보지 않는다', () => {
+  test('카운트 업적은 등급과 무관하게 수(count)만으로 언락된다', () => {
+    // 전부 standard 여도 5건이면 retire_5 언락(품질 게이트 없음 — 카운트 업적).
+    const allStandard = ctxWithRetired(retiredRecords(5, 'standard'));
+    expect(achievementDef('retire_5')!.unlocked(allStandard)).toBe(true);
+    // 전부 perfect 여도 4건뿐이면 retire_5 잠금(등급이 카운트를 못 메운다).
+    const fewPerfect = ctxWithRetired(retiredRecords(4, 'perfect'));
+    expect(achievementDef('retire_5')!.unlocked(fewPerfect)).toBe(false);
   });
 });
 
@@ -170,13 +151,7 @@ describe('제때 교체 타이밍 업적', () => {
 // 3) 은퇴 0건 — 어떤 은퇴 업적도 언락 안 함(날조 금지)
 // ============================================================================
 describe('anti-scenario: 은퇴 0건 무언락', () => {
-  const RETIREMENT_ACH_KEYS = [
-    'ach_first_retirement',
-    'ach_retire_3',
-    'ach_retire_5',
-    'ach_retire_10',
-    'ach_good_timing_1',
-  ];
+  const RETIREMENT_ACH_KEYS = ['retire_1', 'retire_3', 'retire_5', 'retire_10'];
 
   test('은퇴 레코드 0건이면 모든 은퇴 업적이 잠금', () => {
     const ctx = ctxWithRetired([]);
@@ -196,62 +171,48 @@ describe('anti-scenario: 은퇴 0건 무언락', () => {
 });
 
 // ============================================================================
-// 4) 은퇴 업적 포인트 = rarity 권위
+// 4) 은퇴 업적 메타데이터 — shoeJourney 카테고리 · 명시적 xp · 희귀도
 // ============================================================================
-describe('은퇴 업적 포인트 = rarity 권위', () => {
-  // 은퇴 그룹은 '개수' 업적만 보유한다. 교체 타이밍 품질(좋은 타이밍/완벽한 타이밍)은
-  // 부상 예방 그룹으로 이동했다 — 카테고리 단언은 부상 예방 쪽 케이스 참조.
-  const expected: Array<[string, keyof typeof POINTS_BY_RARITY]> = [
-    ['ach_first_retirement', 'bronze'],
-    ['ach_retire_3', 'silver'],
-    ['ach_retire_5', 'gold'],
-    ['ach_retire_10', 'diamond'],
+describe('은퇴 업적 메타데이터(카테고리·희귀도·xp)', () => {
+  // 재설계: 은퇴 업적은 '신발 여정(shoeJourney)' 카테고리로 통합됐고 명시적 xp 를 보유한다.
+  const expected: Array<[string, string, number]> = [
+    ['retire_1', 'epic', 150],
+    ['retire_3', 'epic', 250],
+    ['retire_5', 'legendary', 400],
+    ['retire_10', 'legendary', 700],
   ];
 
-  test.each(expected)('%s points == POINTS_BY_RARITY[%s]', (key, rarity) => {
+  test.each(expected)('%s: shoeJourney · %s · xp=%d', (key, rarity, xp) => {
     const def = ACHIEVEMENTS_BY_KEY[key];
     expect(def).toBeDefined();
-    expect(def.category).toBe('retirement');
+    expect(def.category).toBe('shoeJourney');
     expect(def.rarity).toBe(rarity);
-    expect(def.points).toBe(POINTS_BY_RARITY[rarity]);
+    expect(def.xp).toBe(xp);
   });
-});
 
-// ============================================================================
-// 4-b) 그룹 정합: 은퇴 그룹 = 개수만 / 교체 타이밍 품질 = 부상 예방으로 이동
-// ============================================================================
-describe('업적 그룹 정합(은퇴=개수 / 타이밍품질=부상예방)', () => {
-  test('은퇴 그룹은 개수 업적(첫·3·5·10)만 보유한다', () => {
-    const retireGroup = Object.values(ACHIEVEMENTS_BY_KEY).filter(
-      d => d.group === 'retirement',
-    );
-    expect(retireGroup.map(d => d.key).sort()).toEqual([
+  test('첫 은퇴(retire_1)와 명예의 전당(retire_10)은 signature 카드다', () => {
+    expect(achievementDef('retire_1')!.signature).toBe(true);
+    expect(achievementDef('retire_10')!.signature).toBe(true);
+  });
+
+  test('옛 은퇴/타이밍 업적 키(ach_*)는 제거됐다(타이밍은 타이틀로 이동)', () => {
+    for (const key of [
       'ach_first_retirement',
-      'ach_retire_10',
       'ach_retire_3',
       'ach_retire_5',
-    ]);
-  });
-
-  test('제때 교체 타이밍 업적은 히든(group)·부상예방(category)이며 랭크 제외', () => {
-    for (const key of ['ach_good_timing_1', 'ach_good_timing_3', 'ach_good_timing_5']) {
-      const def = achievementDef(key)!;
-      expect(def.category).toBe('injuryPrevention');
-      expect(def.group).toBe('hidden'); // 히든 보너스 — 랭크 축(신발관리)엔 안 들어감
+      'ach_retire_10',
+      'ach_good_timing_1',
+      'ach_good_timing_3',
+      'ach_smart_replacement',
+      'ach_perfect_timing',
+    ]) {
+      expect(achievementDef(key)).toBeUndefined();
     }
-    expect(achievementDef('ach_good_timing_1')!.name).toBe('제때 교체');
-  });
-
-  test('옛 등급 업적(스마트/완벽 타이밍·현명한 교체)은 제거됐다', () => {
-    expect(achievementDef('ach_smart_replacement')).toBeUndefined();
-    expect(achievementDef('ach_perfect_timing')).toBeUndefined();
-    expect(achievementDef('ach_smart_swap')).toBeUndefined();
-    expect(achievementDef('ach_smart_5')).toBeUndefined();
   });
 });
 
 // ============================================================================
-// 5) 은퇴 타이틀 사다리 — 은퇴 수 + 등급 품질
+// 5) 은퇴 타이틀 사다리 — 은퇴 수 + 등급 품질(grade quality)
 // ============================================================================
 describe('은퇴 타이틀 사다리', () => {
   test('Shoe Care Starter: 은퇴 1건에서 언락(0건은 잠금)', () => {

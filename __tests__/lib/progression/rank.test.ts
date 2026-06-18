@@ -1,13 +1,15 @@
-// lib/progression/rank — 업적 기반 3축 연속 랭크 엔진(재설계).
+// lib/progression/rank — XP 기반 7단계 랭크 엔진(재설계).
 //
 // 관찰 가능한 동작:
-//   · 경계 점수 → 정확한 티어 + 색(새 컷오프 15/33/55/72/86/95).
-//   · 빈 컨텍스트 → Bronze, score 0, pillars 3축 0.
-//   · 신규(3.5km/1run/새 신발) → Bronze(공짜 점수 없음 — 핵심 수정).
-//   · 거리 단독 최대 → 거리축 ~1.0 이지만 한 축(0.35)이라 골드가 천장(다차원 철학).
-//   · 세 축 모두 최대 → Legend.
-//   · 업적 진행률 기반이라 연속(달린 만큼 부드럽게 상승).
-//   · NaN/음수/누락 → 유한 점수, throw 없음.
+//   · 랭크 = 총 획득 XP(ctx.achievementPoints, 업적 합산). 계단식 7단계 티어.
+//   · 티어 XP 하한: bronze 0 / silver 100 / gold 300 / platinum 700 /
+//     diamond 1,500 / master 3,000 / legend 5,000.
+//   · 경계 XP → 정확한 티어 + 색(theme.TIER_COLORS).
+//   · 빈 컨텍스트 → Bronze, xp 0.
+//   · 신규(3.5km/1run/새 신발) → Bronze, 낮은 XP(공짜 점수 없음).
+//   · XP 가 늘수록 종합 점수 단조 증가.
+//   · NaN/음수/누락 → 유한 XP(≥0), throw 없음.
+//   · score = xp(backward-compat alias).
 //
 // ctx 만 읽는 순수 함수(AsyncStorage 미사용).
 
@@ -16,8 +18,8 @@ import {buildContext} from '../../../lib/progression/context';
 import {
   colorForTier,
   computeRank,
-  tierForScore,
-  TIER_CUTOFFS,
+  tierForXp,
+  RANK_XP,
 } from '../../../lib/progression/rank';
 import {
   PerShoeStats,
@@ -46,6 +48,7 @@ function emptyCtx(over: Partial<ProgressionContext> = {}): ProgressionContext {
     earnedTitleKeys: [],
     earnedTitleCount: 0,
     completedChallengeCount: 0,
+    achievementPoints: 0,
     ...over,
   };
 }
@@ -63,182 +66,213 @@ function shoe(over: Partial<PerShoeStats> & {id: string}): PerShoeStats {
   };
 }
 
-// 세 축을 모두 최대로 채우는 컨텍스트(Legend).
-function maxedCtx(): ProgressionContext {
-  const now = Date.UTC(2027, 0, 1);
-  return emptyCtx({
-    now,
-    cumulativeKm: 12000, // 거리축 전 사다리(≤10000) 충족
-    longestRunKm: 42.3, // 하프·마라톤
-    bestPace5kSec: 280, // 스피드스터
-    runCount: 1100, // 러닝 횟수 전 사다리(≤1000)
-    weeklyActiveRatio: 1, // 습관 형성 + 지속가능 습관 게이트
-    registeredShoeCount: 12, // 소유 전 사다리(≤10)
-    retiredShoeCount: 10,
-    retirementCount: 10, // 은퇴 전 사다리(≤10)
-    retirementGrades: Array(10).fill('perfect'),
-    perShoe: {
-      a: shoe({id: 'a', km: 100, maxKm: 600, firstWorn: '2025-01-01'}), // 활성·건강·장기
-      b: shoe({id: 'b', km: 200, maxKm: 600, firstWorn: '2025-01-01'}),
-    },
-  });
-}
-
-// ── 1) 경계 점수 → 티어 + 색 ──────────────────────────────────────────────────
-describe('tierForScore: 경계 점수 → 티어 + 색', () => {
-  const cases: Array<[number, RankTier]> = [
-    [14, 'bronze'],
-    [15, 'silver'],
-    [32, 'silver'],
-    [33, 'gold'],
-    [54, 'gold'],
-    [55, 'platinum'],
-    [71, 'platinum'],
-    [72, 'diamond'],
-    [85, 'diamond'],
-    [86, 'master'],
-    [94, 'master'],
-    [95, 'legend'],
-    [100, 'legend'],
-  ];
-  test.each(cases)('score %d → %s', (score, tier) => {
-    expect(tierForScore(score)).toBe(tier);
-    expect(colorForTier(tierForScore(score))).toBe(TIER_COLORS[tier]);
+// ── 1) 티어 XP 하한 노출 ────────────────────────────────────────────────────────
+describe('RANK_XP: 7단계 티어 XP 하한', () => {
+  test('계단식 하한 = 0/100/300/700/1500/3000/5000', () => {
+    expect(RANK_XP).toEqual({
+      bronze: 0,
+      silver: 100,
+      gold: 300,
+      platinum: 700,
+      diamond: 1500,
+      master: 3000,
+      legend: 5000,
+    });
   });
 
-  test('0·음수·NaN → Bronze', () => {
-    expect(tierForScore(0)).toBe('bronze');
-    expect(tierForScore(-50)).toBe('bronze');
-    expect(tierForScore(NaN)).toBe('bronze');
-  });
-
-  test('TIER_CUTOFFS 노출(3축 보정)', () => {
-    expect(TIER_CUTOFFS).toEqual([
-      [95, 'legend'],
-      [86, 'master'],
-      [72, 'diamond'],
-      [55, 'platinum'],
-      [33, 'gold'],
-      [15, 'silver'],
-      [0, 'bronze'],
-    ]);
+  test('하한이 단조 증가(엄격)', () => {
+    const order: RankTier[] = [
+      'bronze',
+      'silver',
+      'gold',
+      'platinum',
+      'diamond',
+      'master',
+      'legend',
+    ];
+    for (let i = 1; i < order.length; i++) {
+      expect(RANK_XP[order[i]]).toBeGreaterThan(RANK_XP[order[i - 1]]);
+    }
   });
 });
 
-// ── 2) 빈 컨텍스트 ──────────────────────────────────────────────────────────────
+// ── 2) 경계 XP → 티어 + 색 ──────────────────────────────────────────────────────
+describe('tierForXp: 경계 XP → 티어 + 색', () => {
+  // 각 티어 직전(하한-1)은 이전 티어, 하한 정각은 새 티어.
+  const cases: Array<[number, RankTier]> = [
+    [0, 'bronze'],
+    [99, 'bronze'],
+    [100, 'silver'],
+    [299, 'silver'],
+    [300, 'gold'],
+    [699, 'gold'],
+    [700, 'platinum'],
+    [1499, 'platinum'],
+    [1500, 'diamond'],
+    [2999, 'diamond'],
+    [3000, 'master'],
+    [4999, 'master'],
+    [5000, 'legend'],
+    [99999, 'legend'],
+  ];
+  test.each(cases)('xp %d → %s', (xp, tier) => {
+    expect(tierForXp(xp)).toBe(tier);
+    expect(colorForTier(tierForXp(xp))).toBe(TIER_COLORS[tier]);
+  });
+
+  test('0·음수·NaN → Bronze', () => {
+    expect(tierForXp(0)).toBe('bronze');
+    expect(tierForXp(-50)).toBe('bronze');
+    expect(tierForXp(NaN)).toBe('bronze');
+  });
+});
+
+// ── 3) computeRank: 결과 형태 + 다음 티어/진행도 ─────────────────────────────────
+describe('computeRank: XP → 랭크 결과', () => {
+  test('티어 하한 정각 → progressPercent 0, 다음 티어/필요 XP 정확', () => {
+    const r = computeRank(emptyCtx({achievementPoints: 100})); // silver 하한
+    expect(r.xp).toBe(100);
+    expect(r.tier).toBe('silver');
+    expect(r.color).toBe(TIER_COLORS.silver);
+    expect(r.nextTier).toBe('gold');
+    expect(r.xpForNext).toBe(200); // 300 - 100
+    expect(r.progressPercent).toBe(0);
+    expect(r.score).toBe(r.xp); // backward-compat alias
+  });
+
+  test('티어 중간 → progressPercent 비례', () => {
+    // silver(100)~gold(300) 구간 절반 = 200
+    const r = computeRank(emptyCtx({achievementPoints: 200}));
+    expect(r.tier).toBe('silver');
+    expect(r.progressPercent).toBe(50);
+    expect(r.xpForNext).toBe(100);
+  });
+
+  test('legend(최고 티어) → nextTier null, xpForNext 0, progress 100', () => {
+    const r = computeRank(emptyCtx({achievementPoints: 5000}));
+    expect(r.tier).toBe('legend');
+    expect(r.color).toBe(TIER_COLORS.legend);
+    expect(r.nextTier).toBeNull();
+    expect(r.xpForNext).toBe(0);
+    expect(r.progressPercent).toBe(100);
+  });
+});
+
+// ── 4) 빈 컨텍스트 ──────────────────────────────────────────────────────────────
 describe('빈 컨텍스트', () => {
-  test('모든 사실 0 → score 0, Bronze, 3축 0, throw 없음', () => {
+  test('모든 사실 0 → xp 0, Bronze, throw 없음', () => {
     const r = computeRank(emptyCtx());
+    expect(r.xp).toBe(0);
     expect(r.score).toBe(0);
     expect(r.tier).toBe('bronze');
     expect(r.color).toBe(TIER_COLORS.bronze);
-    expect(r.pillars).toEqual({running: 0, consistency: 0, shoeManagement: 0});
+    expect(r.nextTier).toBe('silver');
   });
 
   test('null/비정상 입력 → Bronze 0, throw 없음', () => {
     // @ts-expect-error 의도적 비정상 입력
     const r = computeRank(null);
+    expect(r.xp).toBe(0);
     expect(r.score).toBe(0);
     expect(r.tier).toBe('bronze');
   });
 
   test('buildContext(빈 입력)도 Bronze 0', () => {
     const r = computeRank(buildContext([], [], [], [], 0));
-    expect(r.score).toBe(0);
+    expect(r.xp).toBe(0);
     expect(r.tier).toBe('bronze');
   });
 });
 
-// ── 3) 신규(3.5km) → Bronze (공짜 점수 없음·핵심 수정) ───────────────────────────
+// ── 5) 신규 사용자는 공짜 점수를 받지 않는다 ────────────────────────────────────
 describe('신규 사용자는 공짜 점수를 받지 않는다', () => {
-  test('3.5km · 1런 · 새 신발 1켤레 → Bronze, 낮은 점수', () => {
-    const r = computeRank(
-      emptyCtx({
-        cumulativeKm: 3.5,
-        runCount: 1,
-        longestRunKm: 3.5,
-        weeklyActiveRatio: 1, // 이번 주 1회여도
-        registeredShoeCount: 1,
-        perShoe: {s1: shoe({id: 's1', km: 3.5, maxKm: 600})},
-      }),
+  test('3.5km · 1런 · 새 신발 1켤레 → Bronze, 낮은 XP', () => {
+    const ctx = buildContext(
+      [{id: 'r', shoe_id: 's', km: 3.5, run_date: '2026-06-01', duration: 1200, run_time: '07:00'}] as BackendRun[],
+      [{id: 's', name: 'S', max_km: 600, total_km: 3.5, retired: false}] as BackendShoe[],
+      [],
+      [],
+      Date.UTC(2026, 5, 2),
     );
+    const r = computeRank(ctx);
     expect(r.tier).toBe('bronze');
-    expect(r.score).toBeLessThan(15);
-    // 새 신발이 건강하다고 신발관리 축이 만점이 되지 않는다.
-    expect(r.pillars.shoeManagement).toBeLessThan(0.3);
+    expect(r.xp).toBeLessThan(RANK_XP.silver); // < 100
   });
 });
 
-// ── 4) 거리 단독 → 골드 천장(다차원 철학) ──────────────────────────────────────
-describe('거리 단독으로는 골드가 천장', () => {
-  test('거리 업적 전부 최대(나머지 0) → 거리축 ~1.0, 골드 이하, 플래티넘 아님', () => {
-    const r = computeRank(
-      emptyCtx({
-        cumulativeKm: 12000,
-        longestRunKm: 42.3,
-        bestPace5kSec: 280,
-        runCount: 1, // 거리 자체는 최대지만 꾸준함/신발은 0
-      }),
-    );
-    expect(r.pillars.running).toBeGreaterThan(0.9);
-    expect(r.pillars.shoeManagement).toBe(0);
-    expect(r.score).toBeLessThanOrEqual(55); // 플래티넘(55) 미만 = 골드 이하
-    expect(['bronze', 'silver', 'gold']).toContain(r.tier);
-  });
-});
-
-// ── 5) 세 축 최대 → Legend ──────────────────────────────────────────────────────
-describe('세 축 모두 최대 → Legend', () => {
-  test('거리+꾸준함+신발관리 만점 → Legend, score ~100', () => {
-    const r = computeRank(maxedCtx());
-    expect(r.pillars.running).toBeGreaterThan(0.9);
-    expect(r.pillars.consistency).toBeGreaterThan(0.9);
-    expect(r.pillars.shoeManagement).toBeGreaterThan(0.9);
-    expect(r.tier).toBe('legend');
-    expect(r.score).toBeGreaterThanOrEqual(95);
-  });
-});
-
-// ── 6) 연속성: 달린 만큼 부드럽게 상승(계단 아님) ───────────────────────────────
-describe('업적 진행률 기반 연속 상승', () => {
-  test('거리축: 누적 거리가 늘면 (업적 미해제여도) 거리축이 오른다', () => {
-    const a = computeRank(emptyCtx({cumulativeKm: 30, runCount: 5})); // 업적 거의 미해제
-    const b = computeRank(emptyCtx({cumulativeKm: 300, runCount: 5}));
-    const c = computeRank(emptyCtx({cumulativeKm: 3000, runCount: 5}));
-    expect(b.pillars.running).toBeGreaterThan(a.pillars.running);
-    expect(c.pillars.running).toBeGreaterThan(b.pillars.running);
-  });
-
-  test('종합 점수도 활동이 늘수록 단조 증가', () => {
-    const low = computeRank(emptyCtx({cumulativeKm: 100, runCount: 20}));
-    const mid = computeRank(
-      emptyCtx({cumulativeKm: 1500, runCount: 150, registeredShoeCount: 3}),
-    );
+// ── 6) XP 가 늘수록 종합 점수 단조 증가 ─────────────────────────────────────────
+describe('XP 단조 증가', () => {
+  test('achievementPoints 가 늘면 score(=xp)가 오른다', () => {
+    const low = computeRank(emptyCtx({achievementPoints: 100}));
+    const mid = computeRank(emptyCtx({achievementPoints: 1500}));
+    const high = computeRank(emptyCtx({achievementPoints: 5000}));
     expect(mid.score).toBeGreaterThan(low.score);
+    expect(high.score).toBeGreaterThan(mid.score);
+    expect(low.tier).toBe('silver');
+    expect(mid.tier).toBe('diamond');
+    expect(high.tier).toBe('legend');
+  });
+
+  test('실데이터: 활동 많은 ctx 가 적은 ctx 보다 높은 티어/점수', () => {
+    const small = computeRank(
+      buildContext(
+        [{id: 'r', shoe_id: 's', km: 5, run_date: '2026-01-01', duration: 1800, run_time: '07:00'}] as BackendRun[],
+        [{id: 's', name: 'S', max_km: 600, total_km: 5, retired: false}] as BackendShoe[],
+        [],
+        [],
+        Date.UTC(2026, 0, 2),
+      ),
+    );
+
+    const bigRuns: BackendRun[] = [];
+    for (let i = 0; i < 300; i++) {
+      const day = String((i % 27) + 1).padStart(2, '0');
+      bigRuns.push({
+        id: `r${i}`,
+        shoe_id: `s${i % 5}`,
+        km: 20 + (i % 25),
+        run_date: `2026-${String((i % 12) + 1).padStart(2, '0')}-${day}`,
+        duration: 1800,
+        run_time: '04:00',
+      } as BackendRun);
+    }
+    const bigShoes: BackendShoe[] = [];
+    for (let i = 0; i < 5; i++) {
+      bigShoes.push({id: `s${i}`, name: `S${i}`, max_km: 600, total_km: 600, retired: i < 3} as BackendShoe);
+    }
+    const big = computeRank(buildContext(bigRuns, bigShoes, [], [], Date.UTC(2027, 0, 1)));
+
+    expect(big.score).toBeGreaterThan(small.score);
+    expect(RANK_XP[big.tier]).toBeGreaterThanOrEqual(RANK_XP[small.tier]);
   });
 });
 
 // ── 7) NaN/음수/누락 방어 ──────────────────────────────────────────────────────
 describe('NaN/음수/누락 방어', () => {
-  test('비정상 사실 → score 유한(0..100), pillars 0..1, throw 없음', () => {
+  test('비정상 achievementPoints → xp 유한(≥0), throw 없음', () => {
+    for (const bad of [NaN, -50, Infinity, -Infinity, undefined]) {
+      const r = computeRank(emptyCtx({achievementPoints: bad as number}));
+      expect(Number.isFinite(r.xp)).toBe(true);
+      expect(r.xp).toBeGreaterThanOrEqual(0);
+      expect(r.score).toBe(r.xp);
+      expect(r.progressPercent).toBeGreaterThanOrEqual(0);
+      expect(r.progressPercent).toBeLessThanOrEqual(100);
+    }
+  });
+
+  test('비정상 사실(buildContext 경유) → 유한 xp, Bronze 근처, throw 없음', () => {
     const r = computeRank(
-      emptyCtx({
-        cumulativeKm: NaN,
-        longestRunKm: -50,
-        weeklyActiveRatio: NaN,
-        runCount: Infinity,
-        registeredShoeCount: -3,
-        perShoe: {s1: shoe({id: 's1', km: NaN, maxKm: -100})},
-      }),
+      buildContext(
+        [{id: 'r', shoe_id: 's', km: NaN as unknown as number, run_date: 'bad', duration: -10, run_time: 'xx'}] as BackendRun[],
+        [{id: 's', name: 'S', max_km: -100, total_km: NaN as unknown as number, retired: false}] as BackendShoe[],
+        [],
+        [],
+        NaN,
+      ),
     );
-    expect(Number.isFinite(r.score)).toBe(true);
-    expect(r.score).toBeGreaterThanOrEqual(0);
-    expect(r.score).toBeLessThanOrEqual(100);
-    Object.values(r.pillars).forEach(v => {
-      expect(Number.isFinite(v)).toBe(true);
-      expect(v).toBeGreaterThanOrEqual(0);
-      expect(v).toBeLessThanOrEqual(1);
-    });
+    expect(Number.isFinite(r.xp)).toBe(true);
+    expect(r.xp).toBeGreaterThanOrEqual(0);
+    expect(r.tier).toBe('bronze');
   });
 });
 

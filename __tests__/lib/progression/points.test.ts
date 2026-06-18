@@ -1,8 +1,9 @@
-// lib/progression/points — rarity→포인트 권위 + 언락 업적 총합.
+// lib/progression/points — rarity→포인트 권위(레거시) + 언락 업적 XP 총합.
 //
-// 관찰 가능한 동작:
-//   · POINTS_BY_RARITY 가 spec 사다리(Bronze10…Legend1000)와 정확히 일치.
-//   · totalPoints 가 언락 업적들의 포인트를 rarity 기준으로 정확히 합산.
+// 관찰 가능한 동작(재설계 후):
+//   · POINTS_BY_RARITY 가 구 spec 사다리(Bronze10…Legend1000)와 정확히 일치.
+//   · totalPoints 가 언락 업적들의 XP(def.xp 우선)를 정확히 합산.
+//   · def.xp 누락/손상 시 def.rarity 폴백으로 복구해 합산.
 //   · 비정상 입력(null/비배열/손상 요소)에서 throw 없이 0/부분합.
 //
 // 순수 함수 — AsyncStorage 미사용.
@@ -17,7 +18,9 @@ import {
   unlockedAchievements,
 } from '../../../lib/progression/achievements';
 import {
+  AchievementCategory,
   AchievementDef,
+  AchievementRarity,
   PerShoeStats,
   ProgressionContext,
   RankTier,
@@ -63,15 +66,22 @@ function shoe(over: Partial<PerShoeStats> & {id: string}): PerShoeStats {
   };
 }
 
-/** rarity 로 더미 업적 정의(points 는 권위에서). */
-function ach(rarity: RankTier, key = `k_${rarity}`): AchievementDef {
+/**
+ * 더미 업적 정의: XP 는 구 rarity 사다리(RankTier)에서 끌어와 totalPoints 의
+ * 실제 합산 경로(def.xp 우선)를 검증한다. category/rarity 는 새 타입 계약을
+ * 만족시키는 임의 유효값(합산 수치와 무관).
+ */
+const CAT: AchievementCategory = 'distanceMilestone';
+const RAR: AchievementRarity = 'common';
+
+function ach(tier: RankTier, key = `k_${tier}`): AchievementDef {
   return {
     key,
     name: key,
-    category: 'running',
-    group: 'distance',
-    rarity,
-    points: pointsForRarity(rarity),
+    description: key,
+    category: CAT,
+    rarity: RAR,
+    xp: pointsForRarity(tier),
     progress: () => ({current: 1, target: 1}),
     unlocked: () => true,
   };
@@ -115,8 +125,21 @@ describe('totalPoints: rarity 합산', () => {
     );
   });
 
-  test('points 손상(NaN/0)이면 rarity 로 복구해 합산', () => {
-    const broken: AchievementDef = {...ach('gold'), points: NaN as unknown as number};
+  test('xp 손상(NaN)이면 레거시 points 폴백으로 복구해 합산', () => {
+    const broken = {
+      ...ach('gold'),
+      xp: NaN as unknown as number,
+      points: 50,
+    } as unknown as AchievementDef;
+    expect(totalPoints([broken])).toBe(50);
+  });
+
+  test('xp·points 모두 없으면 RankTier rarity 폴백으로 복구해 합산', () => {
+    const broken = {
+      ...ach('gold'),
+      xp: 0 as unknown as number,
+      rarity: 'gold' as unknown as AchievementRarity,
+    } as AchievementDef;
     expect(totalPoints([broken])).toBe(50);
   });
 
@@ -133,33 +156,37 @@ describe('totalPoints ∘ unlockedAchievements (end-to-end)', () => {
     expect(totalPoints(unlockedAchievements(emptyCtx()))).toBe(0);
   });
 
-  test('첫 런(First Steps, bronze=10)만 언락 → 10점', () => {
+  test('첫 런(first_run, xp=10)만 언락 → 10점', () => {
     const ctx = emptyCtx({runCount: 1});
     const unlocked = unlockedAchievements(ctx);
-    expect(unlocked.map(a => a.key)).toEqual(['ach_first_run']);
+    expect(unlocked.map(a => a.key)).toEqual(['first_run']);
     expect(totalPoints(unlocked)).toBe(10);
   });
 
-  test('누적 1,000km(ach_distance_1000, gold=50) 달성 시 총합이 정확히 그만큼 증가', () => {
+  test('누적 1,000km(dist_1000, xp=100) 달성 시 총합이 정확히 그만큼 증가', () => {
     const before = emptyCtx({cumulativeKm: 999});
     const after = emptyCtx({cumulativeKm: 1000});
     const delta =
       totalPoints(unlockedAchievements(after)) -
       totalPoints(unlockedAchievements(before));
-    expect(delta).toBe(50);
+    expect(delta).toBe(100);
   });
 
-  test('총합은 언락된 업적 points 의 단순 합과 같다(불변식)', () => {
+  test('총합은 언락된 업적 xp 의 단순 합과 같다(불변식)', () => {
     const ctx = emptyCtx({
       runCount: 1,
       longestRunKm: 25,
       perShoe: {a: shoe({id: 'a', km: 500, maxKm: 600})},
     });
     const unlocked = unlockedAchievements(ctx);
-    const manual = unlocked.reduce((s, a) => s + a.points, 0);
-    expect(totalPoints(unlocked)).toBe(manual);
-    // 카탈로그 전체 합보다는 작아야(부분 언락).
-    const catalogTotal = ACHIEVEMENTS.reduce((s, a) => s + a.points, 0);
+    // 반복형(shoeMemory) 업적은 earnedCount 배수로 적립되므로 단순 def.xp 합과
+    // 어긋날 수 있다 → 1회성 업적만으로 불변식을 검증한다.
+    const oneShot = unlocked.filter(a => !a.repeatablePerShoe);
+    expect(oneShot.length).toBeGreaterThan(0);
+    const manual = oneShot.reduce((s, a) => s + a.xp, 0);
+    expect(totalPoints(oneShot)).toBe(manual);
+    // 카탈로그 전체 XP 합보다는 작아야(부분 언락).
+    const catalogTotal = ACHIEVEMENTS.reduce((s, a) => s + a.xp, 0);
     expect(totalPoints(unlocked)).toBeLessThan(catalogTotal);
   });
 });
