@@ -665,22 +665,8 @@ export default function ProfileScreen({
           </View>
         </View>
 
-        {/* achievements */}
-        {badges.length > 0 && (
-          <View>
-            <Text style={[s.sectionLabel, { paddingBottom: 12 }]}>업적</Text>
-            <View style={{ flexDirection: 'row', gap: 12 }}>
-              {badges.map((b, i) => (
-                <View key={i} style={[s.badge, { opacity: b.on ? 1 : 0.4 }]}>
-                  <View style={[s.badgeIcon, { backgroundColor: b.on ? withAlpha(ACCENT, 0.12) : CARD_HI }]}>
-                    <Ionicons name={b.icon} size={22} color={b.on ? ACCENT : T3} />
-                  </View>
-                  <Text style={[s.badgeLabel, { color: b.on ? T2 : T3 }]}>{b.label}</Text>
-                </View>
-              ))}
-            </View>
-          </View>
-        )}
+        {/* 업적 배지 그리드는 제거 — 진척(ProgressionScreen)의 업적 탭에 진행도/XP까지
+            더 자세히 있어 중복이었다. 마이탭은 정체성·기록 중심으로 정리. */}
         </>)}
 
         {showSettings && (<>

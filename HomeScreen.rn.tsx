@@ -24,7 +24,6 @@ import { RotationPick } from './lib/rotation';
 import { recommendNextShoes, buildShopLinks, categoryLabelKo, AFFILIATE_DISCLOSURE } from './lib/affiliate';
 import { forecastLineKo, type ReplacementForecast } from './lib/wearView';
 import { shouldRecommendNextShoe } from './lib/recommendTrigger';
-import { syncLabel } from './lib/syncStatus';
 import { findShoeClass, typeLabel, purposeSentenceKo } from './data/shoeClass';
 
 export type WeekStats = { km: string; runs: number; pace: string };
@@ -491,16 +490,8 @@ export default function HomeScreen({
       <View style={s.greetWrap}>
         {!!dateLabel && <Text style={s.date}>{dateLabel}</Text>}
         <Text style={s.greet}>오늘은 어떤 신발로{'\n'}달려볼까요?</Text>
-        {/* 마지막 동기화 시각 칩 — 당겨서 새로고침이 성공하면 App 이 lastSyncAt 을 갱신한다.
-            onRefresh 가 배선됐을 때만 노출(동기화 개념이 있는 화면에서만). 표시 전용. */}
-        {onRefresh && (
-          <View testID="home-sync-chip" style={s.syncChip}>
-            <Ionicons name="sync" size={11} color={T3} />
-            <Text testID="home-sync-label" style={s.syncChipTxt} numberOfLines={1}>
-              {syncLabel(lastSyncAt, Date.now())}
-            </Text>
-          </View>
-        )}
+        {/* 동기화 상태 칩 제거 — 사용자 요청(불필요한 '동기화 안 됨' 표시). 동기화는
+            백그라운드 자동이며, 당겨서 새로고침(RefreshControl)은 그대로 동작한다. */}
         {/* 장착 타이틀 — 인사(닉네임) 옆/아래 한 줄. 진척 띠 색과 분리해 절제(T2 회색). */}
         {progression?.equippedTitle ? (
           <View testID="home-equipped-title" style={s.equipPill}>
