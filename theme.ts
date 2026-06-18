@@ -6,11 +6,12 @@ import type {RankTier} from './lib/progression/types';
 // 색 토큰은 디자인 마무리 핸드오프(keego-rn/theme.js) 값 그대로:
 // bg #0A0A0A · card #141414 · card2 #171717. (이전 순흑 #000 + #161618 보다 사진과 정합)
 export const BG = '#0A0A0A';
-export const CARD = '#141414';           // 기본 카드(상세·기록·마이 등) = 디자인 card
-export const CARD_HI = '#232326';        // raised surface (chips / pressed) — card2 보다 약간 위
-// 카드 배경(앱 전역 '어두운 카드') = 디자인 card #141414. 한 토큰이 홈·신발·기록·마이·등록 카드를 좌우.
-export const CARD_DIM = '#141414';       // recessed card = 디자인 card
-export const HERO_BG = '#171717';        // selected/featured card surface = 디자인 card2
+// 카드 표면을 애플 헬스 수준(secondary #1C1C1E)으로 올려 검정 배경과 또렷이 구분되게 한다
+// (기존 #141414 는 BG #0A0A0A 와 거의 같아 카드가 안 보였다). 홈·신발·기록·마이·등록 공통.
+export const CARD = '#1C1C1E';           // 기본 카드(상세·기록·마이 등) — 애플헬스 secondary
+export const CARD_HI = '#2C2C2E';        // raised surface (chips / pressed) — 애플헬스 tertiary
+export const CARD_DIM = '#1C1C1E';       // recessed card = CARD 와 통일
+export const HERO_BG = '#242426';        // selected/featured card surface (CARD 보다 한 단 위)
 export const ACCENT = '#FF6500';
 export const ACCENT_2 = '#FF9F4A';       // gradient top stop
 export const GRAD_TOP = '#FF7A2E';       // button CTA gradient top stop

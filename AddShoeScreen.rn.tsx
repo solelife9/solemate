@@ -39,8 +39,17 @@ export default function AddShoeScreen({
   const q = search.trim().toLowerCase();
   // 모델 목록은 data/shoeModels(modelsForBrand)를 단일 소스로 쓰고 알파벳순(localeCompare)으로 정렬.
   const sortedModels = modelsForBrand(brand).slice().sort((a, b) => a.localeCompare(b));
-  // 모달 검색: 비면 브랜드 전체(알파벳순), 입력하면 부분일치 전체(모달은 스크롤 가능하므로 상위 5개 제한 없음).
-  const matches = q ? sortedModels.filter((m) => m.toLowerCase().includes(q)) : sortedModels;
+  // 모달 검색: 비면 브랜드 전체(알파벳순). 입력하면 부분일치 전체를, '검색어로 시작'하는
+  // 모델을 앞에(그다음 '포함'), 각 그룹은 알파벳순으로 정렬한다(예: s → Superblast 먼저).
+  const matches = q
+    ? sortedModels
+        .filter((m) => m.toLowerCase().includes(q))
+        .sort((a, b) => {
+          const sa = a.toLowerCase().startsWith(q) ? 0 : 1;
+          const sb = b.toLowerCase().startsWith(q) ? 0 : 1;
+          return sa - sb || a.localeCompare(b);
+        })
+    : sortedModels;
   const suggestions = matches.map(
     (m) => [m, getRecommendedLifespanKm({ brand, model: m })] as [string, number],
   );
