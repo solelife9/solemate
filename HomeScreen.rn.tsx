@@ -141,52 +141,6 @@ function TopBar({ onAddShoe }: { onAddShoe?: () => void }) {
   );
 }
 
-// 홈 챌린지 카드 — 활성 챌린지 목록을 컴팩트하게 보여준다. 빈 상태면 "진척" 화면으로
-// 유도하는 CTA를 노출한다. 탭하면 onOpenProgression 으로 ProgressionScreen을 연다.
-function HomeChallengesCard({
-  challenges,
-  onOpenProgression,
-}: {
-  challenges?: readonly HomeChallengeView[];
-  onOpenProgression?: () => void;
-}) {
-  const list = challenges ?? [];
-  return (
-    <View style={s.chalWrap} testID="home-challenges-card">
-      <View style={[s.row, { marginBottom: 12 }]}>
-        <Ionicons name="flag" size={13} color={T3} />
-        <Text style={s.chalLabel}>챌린지</Text>
-        <Pressable onPress={onOpenProgression} hitSlop={8} accessibilityRole="button" accessibilityLabel="챌린지 추가">
-          <Text style={s.chalMore}>+ 추가 ›</Text>
-        </Pressable>
-      </View>
-      {list.length === 0 ? (
-        <Pressable onPress={onOpenProgression} accessibilityRole="button" accessibilityLabel="챌린지 시작하기" style={s.chalEmpty}>
-          <Text style={s.chalEmptyTxt}>진행 중인 챌린지가 없어요</Text>
-          <Text style={s.chalEmptyHint}>탭해서 챌린지를 만들고 XP를 받아요</Text>
-        </Pressable>
-      ) : (
-        list.map((ch, i) => {
-          const pct = Math.max(0, Math.min(1, ch.pct));
-          const done = ch.pct >= 1;
-          return (
-            <Pressable key={i} onPress={onOpenProgression} accessibilityRole="button" style={[s.chalItem, i > 0 && s.chalItemSep]}>
-              <View style={s.chalItemTop}>
-                <Text style={s.chalItemLabel} numberOfLines={1}>{ch.label}</Text>
-                {done && <Ionicons name="checkmark-circle" size={14} color={GOOD} />}
-              </View>
-              <View style={s.chalBar}>
-                <View style={[s.chalBarFill, { width: `${Math.round(pct * 100)}%`, backgroundColor: done ? GOOD : ACCENT }]} />
-              </View>
-              <Text style={s.chalPct}>{Math.round(pct * 100)}% {ch.unit ? `· ${Math.round(ch.current * 10) / 10}${ch.unit}` : ''}</Text>
-            </Pressable>
-          );
-        })
-      )}
-    </View>
-  );
-}
-
 function HeroShoe({ shoe, unit, tappable, forecast, active, onOpenShoe, onStart }: { shoe: Shoe; unit: Unit; tappable?: boolean; forecast?: ReplacementForecast | null; active?: boolean; onOpenShoe?: () => void; onStart?: () => void }) {
   // 비율(pct)은 km 절대값으로 계산(단위 불변), 표시 숫자만 표시 단위로 환산한다.
   const remainKm = Math.max(0, shoe.max - shoe.used);
@@ -262,7 +216,7 @@ function HeroShoe({ shoe, unit, tappable, forecast, active, onOpenShoe, onStart 
         )}
       </Pressable>
       {/* 러닝 시작 — 카드 배경 안(목업 정합). 이 카드 신발로 바로 시작. */}
-      {onStart && <Button label="러닝 시작" icon="play" onPress={onStart} style={{ marginTop: SPACE.md }} />}
+      {onStart && <Button label="러닝 시작" icon="play" onPress={onStart} style={{ marginTop: SPACE.sm }} />}
     </View>
   );
 }
@@ -584,11 +538,8 @@ export default function HomeScreen({
           <View style={{ paddingHorizontal: SPACE.xl }}>
             <InsightCard shoe={active} unit={unit} forecast={forecast} />
           </View>
-          {/* 챌린지 카드 */}
-          <HomeChallengesCard
-            challenges={progression?.challenges}
-            onOpenProgression={onOpenProgression}
-          />
+          {/* 챌린지는 상단 진척 띠(ProgressionStrip)로 일원화 — 하단 중복 카드 제거.
+              챌린지 생성·전체 관리는 챌린지 탭에서. */}
           {/* 휴식·마모 분산 로테이션 추천(2켤레+에서만 채워짐, 비면 자동 숨김) */}
           <RotationCard rotation={rotation ?? []} onPickShoe={onPickShoe} />
           {/* 수익화 v1: 다음 러닝화 추천 노출 트리거 — Slice 6 교체 예측 기반(overdue/임박).
@@ -660,7 +611,7 @@ const s = StyleSheet.create({
   goalRingU: { color: T3, fontFamily: FONT, fontSize: 10 },
 
   // 목업 카드: radius 20(RADIUS.lg) · 테두리 1px. 비활성 라인(흰 7%), 활성 오렌지(0.55).
-  hero: { backgroundColor: HERO_BG, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.07), padding: 20 },
+  hero: { backgroundColor: HERO_BG, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.07), padding: 16 },
   heroActive: { borderColor: withAlpha(ACCENT, 0.55) },
   // 현재 상태 인사이트 카드(사용거리 | 교체예상) — 활성 신발 반영
   insightCard: { backgroundColor: CARD_DIM, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.07), padding: SPACE.lg },
@@ -687,7 +638,7 @@ const s = StyleSheet.create({
   heroModel: { color: T1, fontFamily: DISPLAY, fontSize: 27, fontWeight: '800', letterSpacing: -0.6, marginTop: 7, lineHeight: 32 },
   // minHeight = 2줄(lineHeight 20×2) — 1줄짜리 reason 도 2줄 공간을 차지해 캐러셀 카드
   // 높이가 신발마다 흔들리지 않게 한다(numberOfLines={2} 와 짝).
-  heroReason: { color: T2, fontFamily: FONT, fontSize: 14, fontWeight: '500', letterSpacing: -0.2, marginTop: 8, lineHeight: 20, minHeight: 40 },
+  heroReason: { color: T2, fontFamily: FONT, fontSize: 14, fontWeight: '500', letterSpacing: -0.2, marginTop: 6, lineHeight: 20, minHeight: 20 },
   // 교체까지 남은 거리 — 문장형(목업 .remain). 숫자만 디스플레이 강조.
   heroRemainLine: { color: T2, fontFamily: FONT, fontSize: 15, fontWeight: '500', letterSpacing: -0.2, marginTop: 16 },
   heroRemainNum: { color: T1, fontFamily: DISPLAY, fontSize: 26, fontWeight: '800', letterSpacing: -0.6 },
