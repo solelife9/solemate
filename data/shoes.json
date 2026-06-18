@@ -1,8 +1,35 @@
 {
   "source": "사용자 분류(러닝화 타입 · 추천 러닝)",
-  "updated": "2026-06-10",
-  "brands": ["Adidas", "ASICS", "Brooks", "Hoka", "New Balance", "Nike", "On", "Saucony", "Puma", "Mizuno", "Salomon", "Altra", "Topo Athletic", "Under Armour", "Inov-8", "La Sportiva", "Karhu", "Lululemon", "Reebok"],
-  "types": ["카본화", "슈퍼트레이너", "데일리", "안정화", "트레일", "맥스쿠셔닝"],
+  "updated": "2026-06-18-merged",
+  "brands": [
+    "Adidas",
+    "ASICS",
+    "Brooks",
+    "Hoka",
+    "New Balance",
+    "Nike",
+    "On",
+    "Saucony",
+    "Puma",
+    "Mizuno",
+    "Salomon",
+    "Altra",
+    "Topo Athletic",
+    "Under Armour",
+    "Inov-8",
+    "La Sportiva",
+    "Karhu",
+    "Lululemon",
+    "Reebok"
+  ],
+  "types": [
+    "카본화",
+    "슈퍼트레이너",
+    "데일리",
+    "안정화",
+    "트레일",
+    "맥스쿠셔닝"
+  ],
   "typeDescriptions": {
     "데일리": "가장 범용적인 러닝화",
     "안정화": "발을 지지해주는 러닝화",
@@ -11,253 +38,3981 @@
     "카본화": "기록·레이스용 러닝화",
     "트레일": "비포장로·산길용 러닝화"
   },
-  "runKinds": ["데일리", "장거리", "템포", "인터벌", "레이스", "회복", "트레일"],
-  "count": 226,
-  "brandsInferred": ["Saucony", "Puma", "Mizuno", "Salomon", "Altra", "Topo Athletic", "Under Armour", "Inov-8", "La Sportiva", "Karhu", "Lululemon", "Reebok"],
+  "runKinds": [
+    "데일리",
+    "장거리",
+    "템포",
+    "인터벌",
+    "레이스",
+    "회복",
+    "트레일"
+  ],
+  "count": 336,
+  "brandsInferred": [
+    "Saucony",
+    "Puma",
+    "Mizuno",
+    "Salomon",
+    "Altra",
+    "Topo Athletic",
+    "Under Armour",
+    "Inov-8",
+    "La Sportiva",
+    "Karhu",
+    "Lululemon",
+    "Reebok"
+  ],
   "shoes": [
-    { "brand": "Adidas", "model": "Adios Pro 3",        "type": "카본화",     "recommended": ["템포", "인터벌", "레이스"] },
-    { "brand": "Adidas", "model": "Adios Pro 4",        "type": "카본화",     "recommended": ["템포", "인터벌", "레이스"] },
-    { "brand": "Adidas", "model": "Adios Pro Evo 1",    "type": "카본화",     "recommended": ["레이스"] },
-    { "brand": "Adidas", "model": "Boston 11",          "type": "슈퍼트레이너", "recommended": ["장거리", "템포"] },
-    { "brand": "Adidas", "model": "Boston 12",          "type": "슈퍼트레이너", "recommended": ["장거리", "템포", "인터벌"] },
-    { "brand": "Adidas", "model": "Boston 13",          "type": "슈퍼트레이너", "recommended": ["장거리", "템포", "인터벌"] },
-    { "brand": "Adidas", "model": "Prime X 2 Strung",   "type": "슈퍼트레이너", "recommended": ["장거리", "템포", "인터벌"] },
-    { "brand": "Adidas", "model": "Adizero SL",         "type": "데일리",     "recommended": ["데일리", "장거리"] },
-    { "brand": "Adidas", "model": "Adizero SL 2",       "type": "데일리",     "recommended": ["데일리", "장거리", "템포"] },
-    { "brand": "Adidas", "model": "Duramo SL",          "type": "데일리",     "recommended": ["데일리"] },
-    { "brand": "Adidas", "model": "Solarboost 5",       "type": "데일리",     "recommended": ["데일리", "장거리"] },
-    { "brand": "Adidas", "model": "Supernova Rise",     "type": "데일리",     "recommended": ["데일리", "장거리"] },
-    { "brand": "Adidas", "model": "Supernova Solution", "type": "안정화",     "recommended": ["데일리", "장거리", "회복"] },
-    { "brand": "Adidas", "model": "Terrex Agravic 3",   "type": "트레일",     "recommended": ["트레일", "장거리"] },
-    { "brand": "Adidas", "model": "Ultraboost 22",      "type": "맥스쿠셔닝",  "recommended": ["회복", "장거리"] },
-    { "brand": "Adidas", "model": "Ultraboost 23",      "type": "맥스쿠셔닝",  "recommended": ["회복", "장거리"] },
-    { "brand": "Adidas", "model": "Ultraboost 24",      "type": "맥스쿠셔닝",  "recommended": ["회복", "장거리"] },
-    { "brand": "Adidas", "model": "Ultraboost 25",      "type": "맥스쿠셔닝",  "recommended": ["회복", "장거리"] },
-    { "brand": "Adidas", "model": "Ultraboost Light",   "type": "맥스쿠셔닝",  "recommended": ["회복", "장거리"] },
-
-    { "brand": "ASICS", "model": "Gel-Contend 9",        "type": "데일리",     "recommended": ["데일리"] },
-    { "brand": "ASICS", "model": "Gel-Cumulus 25",       "type": "데일리",     "recommended": ["데일리", "장거리"] },
-    { "brand": "ASICS", "model": "Gel-Cumulus 26",       "type": "데일리",     "recommended": ["데일리", "장거리"] },
-    { "brand": "ASICS", "model": "Gel-Cumulus 27",       "type": "데일리",     "recommended": ["데일리", "장거리"] },
-    { "brand": "ASICS", "model": "Gel-DS Trainer 28",    "type": "안정화",     "recommended": ["데일리", "템포"] },
-    { "brand": "ASICS", "model": "Gel-Excite 10",        "type": "데일리",     "recommended": ["데일리"] },
-    { "brand": "ASICS", "model": "Gel-Kayano 29",        "type": "안정화",     "recommended": ["데일리", "장거리", "회복"] },
-    { "brand": "ASICS", "model": "Gel-Kayano 30",        "type": "안정화",     "recommended": ["데일리", "장거리", "회복"] },
-    { "brand": "ASICS", "model": "Gel-Kayano 31",        "type": "안정화",     "recommended": ["데일리", "장거리", "회복"] },
-    { "brand": "ASICS", "model": "Gel-Kayano 32",        "type": "안정화",     "recommended": ["데일리", "장거리", "회복"] },
-    { "brand": "ASICS", "model": "Gel-Kayano 33",        "type": "안정화",     "recommended": ["데일리", "장거리", "회복"] },
-    { "brand": "ASICS", "model": "Gel-Nimbus 25",        "type": "맥스쿠셔닝",  "recommended": ["회복", "장거리"] },
-    { "brand": "ASICS", "model": "Gel-Nimbus 26",        "type": "맥스쿠셔닝",  "recommended": ["회복", "장거리"] },
-    { "brand": "ASICS", "model": "Gel-Nimbus 27",        "type": "맥스쿠셔닝",  "recommended": ["회복", "장거리"] },
-    { "brand": "ASICS", "model": "Gel-Nimbus Lite 4",    "type": "맥스쿠셔닝",  "recommended": ["회복", "장거리"] },
-    { "brand": "ASICS", "model": "Gel-Pulse 15",         "type": "데일리",     "recommended": ["데일리", "장거리"] },
-    { "brand": "ASICS", "model": "Gel-Pulse 16",         "type": "데일리",     "recommended": ["데일리", "장거리"] },
-    { "brand": "ASICS", "model": "Gel-Sonoma 7",         "type": "트레일",     "recommended": ["트레일"] },
-    { "brand": "ASICS", "model": "Gel-Trabuco 13",       "type": "트레일",     "recommended": ["트레일", "장거리"] },
-    { "brand": "ASICS", "model": "Gel-Venture 9",        "type": "트레일",     "recommended": ["트레일"] },
-    { "brand": "ASICS", "model": "GT-1000 12",           "type": "안정화",     "recommended": ["데일리", "장거리"] },
-    { "brand": "ASICS", "model": "GT-2000 12",           "type": "안정화",     "recommended": ["데일리", "장거리"] },
-    { "brand": "ASICS", "model": "GT-2000 13",           "type": "안정화",     "recommended": ["데일리", "장거리"] },
-    { "brand": "ASICS", "model": "Metaspeed Edge Paris", "type": "카본화",     "recommended": ["템포", "인터벌", "레이스"] },
-    { "brand": "ASICS", "model": "Metaspeed Edge+",      "type": "카본화",     "recommended": ["템포", "인터벌", "레이스"] },
-    { "brand": "ASICS", "model": "Metaspeed Sky Paris",  "type": "카본화",     "recommended": ["템포", "인터벌", "레이스"] },
-    { "brand": "ASICS", "model": "Metaspeed Sky+",       "type": "카본화",     "recommended": ["템포", "인터벌", "레이스"] },
-    { "brand": "ASICS", "model": "Novablast 3",          "type": "데일리",     "recommended": ["데일리", "장거리", "템포"] },
-    { "brand": "ASICS", "model": "Novablast 4",          "type": "데일리",     "recommended": ["데일리", "장거리", "템포"] },
-    { "brand": "ASICS", "model": "Novablast 5",          "type": "데일리",     "recommended": ["데일리", "장거리", "템포"] },
-    { "brand": "ASICS", "model": "Superblast 2",         "type": "슈퍼트레이너", "recommended": ["장거리", "템포", "인터벌"] },
-    { "brand": "ASICS", "model": "Superblast 3",         "type": "슈퍼트레이너", "recommended": ["장거리", "템포", "인터벌"] },
-
-    { "brand": "Brooks", "model": "Adrenaline GTS 23", "type": "안정화",     "recommended": ["데일리", "장거리", "회복"] },
-    { "brand": "Brooks", "model": "Adrenaline GTS 24", "type": "안정화",     "recommended": ["데일리", "장거리", "회복"] },
-    { "brand": "Brooks", "model": "Adrenaline GTS 25", "type": "안정화",     "recommended": ["데일리", "장거리", "회복"] },
-    { "brand": "Brooks", "model": "Aurora-BL",         "type": "맥스쿠셔닝",  "recommended": ["회복", "장거리"] },
-    { "brand": "Brooks", "model": "Caldera 7",         "type": "트레일",     "recommended": ["트레일", "장거리"] },
-    { "brand": "Brooks", "model": "Cascadia 17",       "type": "트레일",     "recommended": ["트레일", "장거리"] },
-    { "brand": "Brooks", "model": "Divide 4",          "type": "트레일",     "recommended": ["트레일"] },
-    { "brand": "Brooks", "model": "Ghost 14",          "type": "데일리",     "recommended": ["데일리", "장거리"] },
-    { "brand": "Brooks", "model": "Ghost 15",          "type": "데일리",     "recommended": ["데일리", "장거리"] },
-    { "brand": "Brooks", "model": "Ghost 16",          "type": "데일리",     "recommended": ["데일리", "장거리"] },
-    { "brand": "Brooks", "model": "Ghost 17",          "type": "데일리",     "recommended": ["데일리", "장거리"] },
-    { "brand": "Brooks", "model": "Glycerin 20",       "type": "맥스쿠셔닝",  "recommended": ["회복", "장거리"] },
-    { "brand": "Brooks", "model": "Glycerin 21",       "type": "맥스쿠셔닝",  "recommended": ["회복", "장거리"] },
-    { "brand": "Brooks", "model": "Glycerin 22",       "type": "맥스쿠셔닝",  "recommended": ["회복", "장거리"] },
-    { "brand": "Brooks", "model": "Hyperion Elite 3",  "type": "카본화",     "recommended": ["템포", "인터벌", "레이스"] },
-    { "brand": "Brooks", "model": "Hyperion Elite 4",  "type": "카본화",     "recommended": ["템포", "인터벌", "레이스"] },
-    { "brand": "Brooks", "model": "Hyperion Max 2",    "type": "슈퍼트레이너", "recommended": ["장거리", "템포", "인터벌"] },
-    { "brand": "Brooks", "model": "Launch 10",         "type": "데일리",     "recommended": ["데일리", "템포"] },
-    { "brand": "Brooks", "model": "Levitate 7",        "type": "데일리",     "recommended": ["데일리", "템포"] },
-    { "brand": "Brooks", "model": "Revel 6",           "type": "데일리",     "recommended": ["데일리"] },
-    { "brand": "Brooks", "model": "Trace 3",           "type": "데일리",     "recommended": ["데일리"] },
-
-    { "brand": "Hoka", "model": "Arahi 7",       "type": "안정화",     "recommended": ["데일리", "장거리", "회복"] },
-    { "brand": "Hoka", "model": "Arahi 8",       "type": "안정화",     "recommended": ["데일리", "장거리", "회복"] },
-    { "brand": "Hoka", "model": "Bondi 8",       "type": "맥스쿠셔닝",  "recommended": ["회복", "장거리"] },
-    { "brand": "Hoka", "model": "Bondi 9",       "type": "맥스쿠셔닝",  "recommended": ["회복", "장거리"] },
-    { "brand": "Hoka", "model": "Bondi X",       "type": "슈퍼트레이너", "recommended": ["장거리", "템포"] },
-    { "brand": "Hoka", "model": "Carbon X 3",    "type": "카본화",     "recommended": ["템포", "인터벌", "레이스"] },
-    { "brand": "Hoka", "model": "Challenger 7",  "type": "트레일",     "recommended": ["트레일", "데일리"] },
-    { "brand": "Hoka", "model": "Cielo X1",      "type": "카본화",     "recommended": ["템포", "인터벌", "레이스"] },
-    { "brand": "Hoka", "model": "Clifton 8",     "type": "데일리",     "recommended": ["데일리", "장거리"] },
-    { "brand": "Hoka", "model": "Clifton 9",     "type": "데일리",     "recommended": ["데일리", "장거리"] },
-    { "brand": "Hoka", "model": "Clifton 10",    "type": "데일리",     "recommended": ["데일리", "장거리"] },
-    { "brand": "Hoka", "model": "EVO Speedgoat", "type": "트레일",     "recommended": ["트레일", "레이스"] },
-    { "brand": "Hoka", "model": "Gaviota 5",     "type": "안정화",     "recommended": ["데일리", "장거리", "회복"] },
-    { "brand": "Hoka", "model": "Kawana 2",      "type": "데일리",     "recommended": ["데일리"] },
-    { "brand": "Hoka", "model": "Kawana 3",      "type": "데일리",     "recommended": ["데일리"] },
-    { "brand": "Hoka", "model": "Mach 5",        "type": "데일리",     "recommended": ["데일리", "템포"] },
-    { "brand": "Hoka", "model": "Mach 6",        "type": "데일리",     "recommended": ["데일리", "템포"] },
-    { "brand": "Hoka", "model": "Mach X",        "type": "슈퍼트레이너", "recommended": ["장거리", "템포", "인터벌"] },
-    { "brand": "Hoka", "model": "Mach X 2",      "type": "슈퍼트레이너", "recommended": ["장거리", "템포", "인터벌"] },
-    { "brand": "Hoka", "model": "Rincon 3",      "type": "데일리",     "recommended": ["데일리", "템포"] },
-    { "brand": "Hoka", "model": "Rincon 4",      "type": "데일리",     "recommended": ["데일리", "템포"] },
-    { "brand": "Hoka", "model": "Skyward X",     "type": "슈퍼트레이너", "recommended": ["장거리", "템포"] },
-    { "brand": "Hoka", "model": "Speedgoat 5",   "type": "트레일",     "recommended": ["트레일", "장거리"] },
-    { "brand": "Hoka", "model": "Speedgoat 6",   "type": "트레일",     "recommended": ["트레일", "장거리"] },
-    { "brand": "Hoka", "model": "Speedgoat 7",   "type": "트레일",     "recommended": ["트레일", "장거리"] },
-    { "brand": "Hoka", "model": "Stinson 7",     "type": "트레일",     "recommended": ["트레일", "장거리"] },
-    { "brand": "Hoka", "model": "Torrent 3",     "type": "트레일",     "recommended": ["트레일", "템포"] },
-
-    { "brand": "New Balance", "model": "Fresh Foam X 1080 v13",  "type": "맥스쿠셔닝",  "recommended": ["회복", "장거리"] },
-    { "brand": "New Balance", "model": "Fresh Foam X 1080 v14",  "type": "맥스쿠셔닝",  "recommended": ["회복", "장거리"] },
-    { "brand": "New Balance", "model": "Fresh Foam X 1080 v15",  "type": "맥스쿠셔닝",  "recommended": ["회복", "장거리"] },
-    { "brand": "New Balance", "model": "Fresh Foam X 840 v2",    "type": "데일리",     "recommended": ["데일리"] },
-    { "brand": "New Balance", "model": "Fresh Foam X 860 v14",   "type": "안정화",     "recommended": ["데일리", "장거리", "회복"] },
-    { "brand": "New Balance", "model": "Fresh Foam X 860 v15",   "type": "안정화",     "recommended": ["데일리", "장거리", "회복"] },
-    { "brand": "New Balance", "model": "Fresh Foam X 880 v14",   "type": "데일리",     "recommended": ["데일리", "장거리"] },
-    { "brand": "New Balance", "model": "Fresh Foam X 880 v15",   "type": "데일리",     "recommended": ["데일리", "장거리"] },
-    { "brand": "New Balance", "model": "FuelCell Propel v4",     "type": "데일리",     "recommended": ["데일리", "템포"] },
-    { "brand": "New Balance", "model": "FuelCell Rebel v4",      "type": "데일리",     "recommended": ["템포", "인터벌"] },
-    { "brand": "New Balance", "model": "FuelCell SC Elite v4",   "type": "카본화",     "recommended": ["템포", "인터벌", "레이스"] },
-    { "brand": "New Balance", "model": "FuelCell SC Elite v5",   "type": "카본화",     "recommended": ["템포", "인터벌", "레이스"] },
-    { "brand": "New Balance", "model": "FuelCell SC Trainer v2", "type": "슈퍼트레이너", "recommended": ["장거리", "템포", "인터벌"] },
-    { "brand": "New Balance", "model": "Hierro v8",              "type": "트레일",     "recommended": ["트레일", "장거리"] },
-    { "brand": "New Balance", "model": "More v4",                "type": "맥스쿠셔닝",  "recommended": ["회복", "장거리"] },
-    { "brand": "New Balance", "model": "Trail 410 v8",           "type": "트레일",     "recommended": ["트레일"] },
-
-    { "brand": "Nike", "model": "Alphafly 2",           "type": "카본화",     "recommended": ["템포", "인터벌", "레이스"] },
-    { "brand": "Nike", "model": "Alphafly 3",           "type": "카본화",     "recommended": ["템포", "인터벌", "레이스"] },
-    { "brand": "Nike", "model": "Free Run 5.0",         "type": "데일리",     "recommended": ["데일리"] },
-    { "brand": "Nike", "model": "Infinity Run 3",       "type": "안정화",     "recommended": ["데일리", "장거리", "회복"] },
-    { "brand": "Nike", "model": "Infinity Run 4",       "type": "안정화",     "recommended": ["데일리", "장거리", "회복"] },
-    { "brand": "Nike", "model": "Infinity Run 5",       "type": "안정화",     "recommended": ["데일리", "장거리", "회복"] },
-    { "brand": "Nike", "model": "Invincible 2",         "type": "맥스쿠셔닝",  "recommended": ["회복", "장거리"] },
-    { "brand": "Nike", "model": "Invincible 3",         "type": "맥스쿠셔닝",  "recommended": ["회복", "장거리"] },
-    { "brand": "Nike", "model": "Invincible 4",         "type": "맥스쿠셔닝",  "recommended": ["회복", "장거리"] },
-    { "brand": "Nike", "model": "Pegasus 39",           "type": "데일리",     "recommended": ["데일리", "장거리", "템포"] },
-    { "brand": "Nike", "model": "Pegasus 40",           "type": "데일리",     "recommended": ["데일리", "장거리", "템포"] },
-    { "brand": "Nike", "model": "Pegasus 41",           "type": "데일리",     "recommended": ["데일리", "장거리", "템포"] },
-    { "brand": "Nike", "model": "Pegasus 42",           "type": "데일리",     "recommended": ["데일리", "장거리", "템포"] },
-    { "brand": "Nike", "model": "Pegasus Plus",         "type": "슈퍼트레이너", "recommended": ["장거리", "템포", "인터벌"] },
-    { "brand": "Nike", "model": "React Infinity Run 3", "type": "안정화",     "recommended": ["데일리", "장거리", "회복"] },
-    { "brand": "Nike", "model": "React Miler 3",        "type": "안정화",     "recommended": ["데일리", "장거리", "회복"] },
-    { "brand": "Nike", "model": "Streakfly",            "type": "카본화",     "recommended": ["인터벌", "레이스"] },
-    { "brand": "Nike", "model": "Structure 24",         "type": "안정화",     "recommended": ["데일리", "장거리", "회복"] },
-    { "brand": "Nike", "model": "Structure 25",         "type": "안정화",     "recommended": ["데일리", "장거리", "회복"] },
-    { "brand": "Nike", "model": "Structure 26",         "type": "안정화",     "recommended": ["데일리", "장거리", "회복"] },
-    { "brand": "Nike", "model": "Ultrafly",             "type": "트레일",     "recommended": ["트레일", "레이스"] },
-    { "brand": "Nike", "model": "Vaporfly 2",           "type": "카본화",     "recommended": ["템포", "인터벌", "레이스"] },
-    { "brand": "Nike", "model": "Vaporfly 3",           "type": "카본화",     "recommended": ["템포", "인터벌", "레이스"] },
-    { "brand": "Nike", "model": "Vaporfly 4",           "type": "카본화",     "recommended": ["템포", "인터벌", "레이스"] },
-    { "brand": "Nike", "model": "Winflo 9",             "type": "데일리",     "recommended": ["데일리"] },
-    { "brand": "Nike", "model": "Winflo 10",            "type": "데일리",     "recommended": ["데일리", "장거리"] },
-    { "brand": "Nike", "model": "Winflo 11",            "type": "데일리",     "recommended": ["데일리", "장거리"] },
-    { "brand": "Nike", "model": "Zegama 2",             "type": "트레일",     "recommended": ["트레일", "장거리"] },
-    { "brand": "Nike", "model": "Zoom Fly 4",           "type": "슈퍼트레이너", "recommended": ["장거리", "템포"] },
-    { "brand": "Nike", "model": "Zoom Fly 5",           "type": "슈퍼트레이너", "recommended": ["장거리", "템포"] },
-    { "brand": "Nike", "model": "Zoom Tempo NEXT%",     "type": "슈퍼트레이너", "recommended": ["템포", "인터벌"] },
-
-    { "brand": "On", "model": "Cloud 5",             "type": "데일리",     "recommended": ["데일리"] },
-    { "brand": "On", "model": "Cloud X 3",           "type": "데일리",     "recommended": ["데일리", "템포"] },
-    { "brand": "On", "model": "Cloudboom Echo 3",    "type": "카본화",     "recommended": ["템포", "인터벌", "레이스"] },
-    { "brand": "On", "model": "Cloudboom Strike LS", "type": "카본화",     "recommended": ["템포", "인터벌", "레이스"] },
-    { "brand": "On", "model": "Cloudflow 4",         "type": "데일리",     "recommended": ["템포", "인터벌"] },
-    { "brand": "On", "model": "Cloudgo",             "type": "데일리",     "recommended": ["데일리", "장거리"] },
-    { "brand": "On", "model": "Cloudmonster",        "type": "맥스쿠셔닝",  "recommended": ["장거리", "회복"] },
-    { "brand": "On", "model": "Cloudmonster 2",      "type": "맥스쿠셔닝",  "recommended": ["장거리", "회복"] },
-    { "brand": "On", "model": "Cloudmonster Hyper",  "type": "슈퍼트레이너", "recommended": ["장거리", "템포", "인터벌"] },
-    { "brand": "On", "model": "Cloudrunner 2",       "type": "안정화",     "recommended": ["데일리", "장거리", "회복"] },
-    { "brand": "On", "model": "Cloudstratus 3",      "type": "안정화",     "recommended": ["데일리", "장거리"] },
-    { "brand": "On", "model": "Cloudsurfer 7",       "type": "데일리",     "recommended": ["데일리", "장거리"] },
-    { "brand": "On", "model": "Cloudsurfer Next",    "type": "슈퍼트레이너", "recommended": ["장거리", "템포"] },
-    { "brand": "On", "model": "Cloudswift 3",        "type": "데일리",     "recommended": ["데일리"] },
-    { "brand": "On", "model": "Cloudultra 2",        "type": "트레일",     "recommended": ["트레일", "장거리"] },
-    { "brand": "On", "model": "Cloudvista",          "type": "트레일",     "recommended": ["트레일"] },
-
-    { "brand": "Saucony", "model": "Endorphin Pro 3",   "type": "카본화",     "recommended": ["템포", "인터벌", "레이스"] },
-    { "brand": "Saucony", "model": "Endorphin Pro 4",   "type": "카본화",     "recommended": ["템포", "인터벌", "레이스"] },
-    { "brand": "Saucony", "model": "Endorphin Shift 3", "type": "맥스쿠셔닝",  "recommended": ["회복", "장거리"] },
-    { "brand": "Saucony", "model": "Endorphin Speed 3", "type": "슈퍼트레이너", "recommended": ["장거리", "템포", "인터벌"] },
-    { "brand": "Saucony", "model": "Endorphin Speed 4", "type": "슈퍼트레이너", "recommended": ["장거리", "템포", "인터벌"] },
-    { "brand": "Saucony", "model": "Endorphin Speed 5", "type": "슈퍼트레이너", "recommended": ["장거리", "템포", "인터벌"] },
-    { "brand": "Saucony", "model": "Guide 17",          "type": "안정화",     "recommended": ["데일리", "장거리", "회복"] },
-    { "brand": "Saucony", "model": "Guide 18",          "type": "안정화",     "recommended": ["데일리", "장거리", "회복"] },
-    { "brand": "Saucony", "model": "Kinvara 14",        "type": "데일리",     "recommended": ["템포", "인터벌"] },
-    { "brand": "Saucony", "model": "Kinvara 15",        "type": "데일리",     "recommended": ["템포", "인터벌"] },
-    { "brand": "Saucony", "model": "Kinvara Pro",       "type": "슈퍼트레이너", "recommended": ["장거리", "템포", "인터벌"] },
-    { "brand": "Saucony", "model": "Peregrine 14",      "type": "트레일",     "recommended": ["트레일"] },
-    { "brand": "Saucony", "model": "Peregrine 15",      "type": "트레일",     "recommended": ["트레일"] },
-    { "brand": "Saucony", "model": "Ride 16",           "type": "데일리",     "recommended": ["데일리", "장거리"] },
-    { "brand": "Saucony", "model": "Ride 17",           "type": "데일리",     "recommended": ["데일리", "장거리"] },
-    { "brand": "Saucony", "model": "Ride 18",           "type": "데일리",     "recommended": ["데일리", "장거리"] },
-    { "brand": "Saucony", "model": "Triumph 21",        "type": "맥스쿠셔닝",  "recommended": ["회복", "장거리"] },
-    { "brand": "Saucony", "model": "Triumph 22",        "type": "맥스쿠셔닝",  "recommended": ["회복", "장거리"] },
-    { "brand": "Saucony", "model": "Triumph 23",        "type": "맥스쿠셔닝",  "recommended": ["회복", "장거리"] },
-    { "brand": "Saucony", "model": "Xodus Ultra 2",     "type": "트레일",     "recommended": ["트레일", "장거리"] },
-
-    { "brand": "Puma", "model": "Deviate Nitro Elite 2", "type": "카본화",     "recommended": ["템포", "인터벌", "레이스"] },
-    { "brand": "Puma", "model": "Deviate Nitro Elite 3", "type": "카본화",     "recommended": ["템포", "인터벌", "레이스"] },
-    { "brand": "Puma", "model": "Fast-R Nitro Elite 3",  "type": "카본화",     "recommended": ["인터벌", "레이스"] },
-    { "brand": "Puma", "model": "Magnify Nitro 2",       "type": "맥스쿠셔닝",  "recommended": ["회복", "장거리"] },
-    { "brand": "Puma", "model": "Velocity Nitro 3",      "type": "데일리",     "recommended": ["데일리", "장거리", "템포"] },
-
-    { "brand": "Mizuno", "model": "Wave Creation 21",     "type": "맥스쿠셔닝",  "recommended": ["회복", "장거리"] },
-    { "brand": "Mizuno", "model": "Wave Daichi 7",        "type": "트레일",     "recommended": ["트레일", "장거리"] },
-    { "brand": "Mizuno", "model": "Wave Horizon 7",       "type": "안정화",     "recommended": ["데일리", "장거리", "회복"] },
-    { "brand": "Mizuno", "model": "Wave Inspire 20",      "type": "안정화",     "recommended": ["데일리", "장거리", "회복"] },
-    { "brand": "Mizuno", "model": "Wave Inspire 21",      "type": "안정화",     "recommended": ["데일리", "장거리", "회복"] },
-    { "brand": "Mizuno", "model": "Wave Neo Ultra",       "type": "맥스쿠셔닝",  "recommended": ["장거리", "회복"] },
-    { "brand": "Mizuno", "model": "Wave Prodigy 5",       "type": "데일리",     "recommended": ["데일리", "장거리"] },
-    { "brand": "Mizuno", "model": "Wave Rebellion Flash", "type": "슈퍼트레이너", "recommended": ["장거리", "템포", "인터벌"] },
-    { "brand": "Mizuno", "model": "Wave Rebellion Pro 2", "type": "카본화",     "recommended": ["템포", "인터벌", "레이스"] },
-    { "brand": "Mizuno", "model": "Wave Rider 26",        "type": "데일리",     "recommended": ["데일리", "장거리"] },
-    { "brand": "Mizuno", "model": "Wave Rider 27",        "type": "데일리",     "recommended": ["데일리", "장거리"] },
-    { "brand": "Mizuno", "model": "Wave Rider 28",        "type": "데일리",     "recommended": ["데일리", "장거리"] },
-    { "brand": "Mizuno", "model": "Wave Sky 7",           "type": "맥스쿠셔닝",  "recommended": ["회복", "장거리"] },
-    { "brand": "Mizuno", "model": "Wave Sky 8",           "type": "맥스쿠셔닝",  "recommended": ["회복", "장거리"] },
-
-    { "brand": "Salomon", "model": "Genesis",            "type": "트레일",     "recommended": ["트레일", "장거리"] },
-    { "brand": "Salomon", "model": "Pulsar Trail Pro 2", "type": "트레일",     "recommended": ["트레일", "레이스"] },
-    { "brand": "Salomon", "model": "S/LAB Ultra 3",      "type": "트레일",     "recommended": ["트레일", "장거리", "레이스"] },
-    { "brand": "Salomon", "model": "Sense Ride 5",       "type": "트레일",     "recommended": ["트레일", "장거리"] },
-    { "brand": "Salomon", "model": "Speedcross 5",       "type": "트레일",     "recommended": ["트레일"] },
-    { "brand": "Salomon", "model": "Speedcross 6",       "type": "트레일",     "recommended": ["트레일"] },
-    { "brand": "Salomon", "model": "Speedcross 6 GTX",   "type": "트레일",     "recommended": ["트레일"] },
-    { "brand": "Salomon", "model": "Thundercross",       "type": "트레일",     "recommended": ["트레일", "장거리"] },
-
-    { "brand": "Altra", "model": "Lone Peak 8", "type": "트레일", "recommended": ["트레일", "장거리"] },
-    { "brand": "Altra", "model": "Torin 7",     "type": "데일리", "recommended": ["데일리", "장거리"] },
-
-    { "brand": "Topo Athletic", "model": "MT-5",       "type": "트레일", "recommended": ["트레일"] },
-    { "brand": "Topo Athletic", "model": "Ultrafly 5", "type": "안정화", "recommended": ["데일리", "장거리", "회복"] },
-
-    { "brand": "Under Armour", "model": "Flow Machina 3",        "type": "데일리", "recommended": ["데일리", "장거리", "템포"] },
-    { "brand": "Under Armour", "model": "Flow Velociti Elite 2", "type": "카본화", "recommended": ["템포", "인터벌", "레이스"] },
-
-    { "brand": "Inov-8", "model": "Mudclaw G 260 v2",         "type": "트레일", "recommended": ["트레일"] },
-    { "brand": "Inov-8", "model": "Trailfly Ultra G 300 Max", "type": "트레일", "recommended": ["트레일", "장거리"] },
-
-    { "brand": "La Sportiva", "model": "Jackal II", "type": "트레일", "recommended": ["트레일", "장거리"] },
-    { "brand": "La Sportiva", "model": "Mutant",    "type": "트레일", "recommended": ["트레일"] },
-    { "brand": "La Sportiva", "model": "Prodigio",  "type": "트레일", "recommended": ["트레일", "장거리"] },
-
-    { "brand": "Karhu", "model": "Fusion 4.5",  "type": "데일리", "recommended": ["데일리", "장거리"] },
-    { "brand": "Karhu", "model": "Ikoni 3 Evo", "type": "안정화", "recommended": ["데일리", "장거리"] },
-
-    { "brand": "Lululemon", "model": "Beyondfeel",  "type": "맥스쿠셔닝", "recommended": ["회복", "장거리"] },
-    { "brand": "Lululemon", "model": "Blissfeel 2", "type": "데일리",    "recommended": ["데일리", "장거리"] },
-
-    { "brand": "Reebok", "model": "Floatride Energy 5",     "type": "데일리", "recommended": ["데일리", "장거리", "템포"] },
-    { "brand": "Reebok", "model": "Forever Floatride Grow", "type": "데일리", "recommended": ["데일리", "장거리"] }
+    {
+      "brand": "Adidas",
+      "model": "Adios Pro 3",
+      "type": "카본화",
+      "recommended": [
+        "템포",
+        "인터벌",
+        "레이스"
+      ],
+      "category": "carbon_racing",
+      "recommendedKm": 450
+    },
+    {
+      "brand": "Adidas",
+      "model": "Adios Pro 4",
+      "type": "카본화",
+      "recommended": [
+        "템포",
+        "인터벌",
+        "레이스"
+      ],
+      "category": "carbon_racing",
+      "recommendedKm": 450
+    },
+    {
+      "brand": "Adidas",
+      "model": "Adios Pro Evo 1",
+      "type": "카본화",
+      "recommended": [
+        "레이스"
+      ],
+      "category": "carbon_racing",
+      "recommendedKm": 450
+    },
+    {
+      "brand": "Adidas",
+      "model": "Adistar 3",
+      "type": "맥스쿠셔닝",
+      "recommended": [
+        "데일리",
+        "회복",
+        "장거리"
+      ],
+      "category": "max_cushion",
+      "recommendedKm": 700,
+      "year": 2024
+    },
+    {
+      "brand": "Adidas",
+      "model": "Adizero Adios 9",
+      "type": "슈퍼트레이너",
+      "recommended": [
+        "템포",
+        "장거리",
+        "데일리"
+      ],
+      "category": "super_trainer",
+      "recommendedKm": 650,
+      "year": 2025
+    },
+    {
+      "brand": "Adidas",
+      "model": "Adizero Adios Pro 4",
+      "type": "카본화",
+      "recommended": [
+        "레이스",
+        "템포",
+        "인터벌"
+      ],
+      "category": "carbon_racing",
+      "recommendedKm": 550,
+      "year": 2024
+    },
+    {
+      "brand": "Adidas",
+      "model": "Adizero Adios Pro Evo 1",
+      "type": "카본화",
+      "recommended": [
+        "레이스",
+        "템포",
+        "인터벌"
+      ],
+      "category": "carbon_racing",
+      "recommendedKm": 450,
+      "year": 2024
+    },
+    {
+      "brand": "Adidas",
+      "model": "Adizero Adios Pro Evo 2",
+      "type": "카본화",
+      "recommended": [
+        "레이스",
+        "템포",
+        "인터벌"
+      ],
+      "category": "carbon_racing",
+      "recommendedKm": 450,
+      "year": 2025
+    },
+    {
+      "brand": "Adidas",
+      "model": "Adizero Boston 13",
+      "type": "슈퍼트레이너",
+      "recommended": [
+        "템포",
+        "장거리",
+        "데일리"
+      ],
+      "category": "super_trainer",
+      "recommendedKm": 650,
+      "year": 2025
+    },
+    {
+      "brand": "Adidas",
+      "model": "Adizero Evo SL",
+      "type": "슈퍼트레이너",
+      "recommended": [
+        "템포",
+        "장거리",
+        "데일리"
+      ],
+      "category": "super_trainer",
+      "recommendedKm": 650,
+      "year": 2025
+    },
+    {
+      "brand": "Adidas",
+      "model": "Adizero SL",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Adidas",
+      "model": "Adizero SL 2",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리",
+        "템포"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Adidas",
+      "model": "Adizero SL2",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650,
+      "year": 2024
+    },
+    {
+      "brand": "Adidas",
+      "model": "Adizero Takumi Sen 11",
+      "type": "슈퍼트레이너",
+      "recommended": [
+        "템포",
+        "장거리",
+        "데일리"
+      ],
+      "category": "super_trainer",
+      "recommendedKm": 650,
+      "year": 2025
+    },
+    {
+      "brand": "Adidas",
+      "model": "Boston 11",
+      "type": "슈퍼트레이너",
+      "recommended": [
+        "장거리",
+        "템포"
+      ],
+      "category": "super_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Adidas",
+      "model": "Boston 12",
+      "type": "슈퍼트레이너",
+      "recommended": [
+        "장거리",
+        "템포",
+        "인터벌"
+      ],
+      "category": "super_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Adidas",
+      "model": "Boston 13",
+      "type": "슈퍼트레이너",
+      "recommended": [
+        "장거리",
+        "템포",
+        "인터벌"
+      ],
+      "category": "super_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Adidas",
+      "model": "Duramo SL",
+      "type": "데일리",
+      "recommended": [
+        "데일리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Adidas",
+      "model": "Prime X 2 Strung",
+      "type": "슈퍼트레이너",
+      "recommended": [
+        "장거리",
+        "템포",
+        "인터벌"
+      ],
+      "category": "super_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Adidas",
+      "model": "Solarboost 5",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Adidas",
+      "model": "Supernova Rise",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Adidas",
+      "model": "Supernova Rise 2",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650,
+      "year": 2025
+    },
+    {
+      "brand": "Adidas",
+      "model": "Supernova Solution",
+      "type": "안정화",
+      "recommended": [
+        "데일리",
+        "장거리",
+        "회복"
+      ],
+      "category": "stability",
+      "recommendedKm": 700
+    },
+    {
+      "brand": "Adidas",
+      "model": "Supernova Stride",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650,
+      "year": 2024
+    },
+    {
+      "brand": "Adidas",
+      "model": "Terrex Agravic 3",
+      "type": "트레일",
+      "recommended": [
+        "트레일",
+        "장거리"
+      ],
+      "category": "trail",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Adidas",
+      "model": "Terrex Agravic Speed Ultra",
+      "type": "트레일",
+      "recommended": [
+        "트레일"
+      ],
+      "category": "trail",
+      "recommendedKm": 650,
+      "year": 2025
+    },
+    {
+      "brand": "Adidas",
+      "model": "Terrex Soulstride Ultra",
+      "type": "트레일",
+      "recommended": [
+        "트레일"
+      ],
+      "category": "trail",
+      "recommendedKm": 650,
+      "year": 2024
+    },
+    {
+      "brand": "Adidas",
+      "model": "Ultraboost 22",
+      "type": "맥스쿠셔닝",
+      "recommended": [
+        "회복",
+        "장거리"
+      ],
+      "category": "max_cushion",
+      "recommendedKm": 700
+    },
+    {
+      "brand": "Adidas",
+      "model": "Ultraboost 23",
+      "type": "맥스쿠셔닝",
+      "recommended": [
+        "회복",
+        "장거리"
+      ],
+      "category": "max_cushion",
+      "recommendedKm": 700
+    },
+    {
+      "brand": "Adidas",
+      "model": "Ultraboost 24",
+      "type": "맥스쿠셔닝",
+      "recommended": [
+        "회복",
+        "장거리"
+      ],
+      "category": "max_cushion",
+      "recommendedKm": 700
+    },
+    {
+      "brand": "Adidas",
+      "model": "Ultraboost 25",
+      "type": "맥스쿠셔닝",
+      "recommended": [
+        "회복",
+        "장거리"
+      ],
+      "category": "max_cushion",
+      "recommendedKm": 700
+    },
+    {
+      "brand": "Adidas",
+      "model": "Ultraboost 5",
+      "type": "맥스쿠셔닝",
+      "recommended": [
+        "데일리",
+        "회복",
+        "장거리"
+      ],
+      "category": "max_cushion",
+      "recommendedKm": 700,
+      "year": 2025
+    },
+    {
+      "brand": "Adidas",
+      "model": "Ultraboost Light",
+      "type": "맥스쿠셔닝",
+      "recommended": [
+        "회복",
+        "장거리"
+      ],
+      "category": "max_cushion",
+      "recommendedKm": 700
+    },
+    {
+      "brand": "Altra",
+      "model": "Escalante 5",
+      "type": "슈퍼트레이너",
+      "recommended": [
+        "템포",
+        "장거리",
+        "데일리"
+      ],
+      "category": "super_trainer",
+      "recommendedKm": 650,
+      "year": 2026
+    },
+    {
+      "brand": "Altra",
+      "model": "Lone Peak 8",
+      "type": "트레일",
+      "recommended": [
+        "트레일",
+        "장거리"
+      ],
+      "category": "trail",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Altra",
+      "model": "Lone Peak 9",
+      "type": "트레일",
+      "recommended": [
+        "트레일"
+      ],
+      "category": "trail",
+      "recommendedKm": 650,
+      "year": 2025
+    },
+    {
+      "brand": "Altra",
+      "model": "Torin 7",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Altra",
+      "model": "Torin 8",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650,
+      "year": 2025
+    },
+    {
+      "brand": "Altra",
+      "model": "Vanish Carbon 2",
+      "type": "카본화",
+      "recommended": [
+        "레이스",
+        "템포",
+        "인터벌"
+      ],
+      "category": "carbon_racing",
+      "recommendedKm": 450,
+      "year": 2024
+    },
+    {
+      "brand": "Asics",
+      "model": "Fuji Lite 5",
+      "type": "트레일",
+      "recommended": [
+        "트레일"
+      ],
+      "category": "trail",
+      "recommendedKm": 650,
+      "year": 2024
+    },
+    {
+      "brand": "ASICS",
+      "model": "Gel-Contend 9",
+      "type": "데일리",
+      "recommended": [
+        "데일리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "ASICS",
+      "model": "Gel-Cumulus 25",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "ASICS",
+      "model": "Gel-Cumulus 26",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "ASICS",
+      "model": "Gel-Cumulus 27",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650,
+      "year": 2025
+    },
+    {
+      "brand": "Asics",
+      "model": "Gel-Cumulus 28",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650,
+      "year": 2026
+    },
+    {
+      "brand": "ASICS",
+      "model": "Gel-DS Trainer 28",
+      "type": "안정화",
+      "recommended": [
+        "데일리",
+        "템포"
+      ],
+      "category": "stability",
+      "recommendedKm": 700
+    },
+    {
+      "brand": "ASICS",
+      "model": "Gel-Excite 10",
+      "type": "데일리",
+      "recommended": [
+        "데일리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "ASICS",
+      "model": "Gel-Kayano 29",
+      "type": "안정화",
+      "recommended": [
+        "데일리",
+        "장거리",
+        "회복"
+      ],
+      "category": "stability",
+      "recommendedKm": 700
+    },
+    {
+      "brand": "ASICS",
+      "model": "Gel-Kayano 30",
+      "type": "안정화",
+      "recommended": [
+        "데일리",
+        "장거리",
+        "회복"
+      ],
+      "category": "stability",
+      "recommendedKm": 700
+    },
+    {
+      "brand": "ASICS",
+      "model": "Gel-Kayano 31",
+      "type": "안정화",
+      "recommended": [
+        "데일리",
+        "장거리",
+        "회복"
+      ],
+      "category": "stability",
+      "recommendedKm": 700
+    },
+    {
+      "brand": "ASICS",
+      "model": "Gel-Kayano 32",
+      "type": "안정화",
+      "recommended": [
+        "데일리",
+        "장거리",
+        "회복"
+      ],
+      "category": "stability",
+      "recommendedKm": 750,
+      "year": 2025
+    },
+    {
+      "brand": "ASICS",
+      "model": "Gel-Kayano 33",
+      "type": "안정화",
+      "recommended": [
+        "데일리",
+        "장거리",
+        "회복"
+      ],
+      "category": "stability",
+      "recommendedKm": 700,
+      "year": 2026
+    },
+    {
+      "brand": "ASICS",
+      "model": "Gel-Nimbus 25",
+      "type": "맥스쿠셔닝",
+      "recommended": [
+        "회복",
+        "장거리"
+      ],
+      "category": "max_cushion",
+      "recommendedKm": 700
+    },
+    {
+      "brand": "ASICS",
+      "model": "Gel-Nimbus 26",
+      "type": "맥스쿠셔닝",
+      "recommended": [
+        "회복",
+        "장거리"
+      ],
+      "category": "max_cushion",
+      "recommendedKm": 700
+    },
+    {
+      "brand": "ASICS",
+      "model": "Gel-Nimbus 27",
+      "type": "맥스쿠셔닝",
+      "recommended": [
+        "회복",
+        "장거리"
+      ],
+      "category": "max_cushion",
+      "recommendedKm": 750,
+      "year": 2025
+    },
+    {
+      "brand": "Asics",
+      "model": "Gel-Nimbus 28",
+      "type": "맥스쿠셔닝",
+      "recommended": [
+        "데일리",
+        "회복",
+        "장거리"
+      ],
+      "category": "max_cushion",
+      "recommendedKm": 700,
+      "year": 2026
+    },
+    {
+      "brand": "ASICS",
+      "model": "Gel-Nimbus Lite 4",
+      "type": "맥스쿠셔닝",
+      "recommended": [
+        "회복",
+        "장거리"
+      ],
+      "category": "max_cushion",
+      "recommendedKm": 700
+    },
+    {
+      "brand": "ASICS",
+      "model": "Gel-Pulse 15",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "ASICS",
+      "model": "Gel-Pulse 16",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "ASICS",
+      "model": "Gel-Sonoma 7",
+      "type": "트레일",
+      "recommended": [
+        "트레일"
+      ],
+      "category": "trail",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "ASICS",
+      "model": "Gel-Trabuco 13",
+      "type": "트레일",
+      "recommended": [
+        "트레일",
+        "장거리"
+      ],
+      "category": "trail",
+      "recommendedKm": 650,
+      "year": 2025
+    },
+    {
+      "brand": "ASICS",
+      "model": "Gel-Venture 9",
+      "type": "트레일",
+      "recommended": [
+        "트레일"
+      ],
+      "category": "trail",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "ASICS",
+      "model": "GT-1000 12",
+      "type": "안정화",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "stability",
+      "recommendedKm": 700
+    },
+    {
+      "brand": "ASICS",
+      "model": "GT-2000 12",
+      "type": "안정화",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "stability",
+      "recommendedKm": 700
+    },
+    {
+      "brand": "ASICS",
+      "model": "GT-2000 13",
+      "type": "안정화",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "stability",
+      "recommendedKm": 700
+    },
+    {
+      "brand": "Asics",
+      "model": "GT-2000 14",
+      "type": "안정화",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "stability",
+      "recommendedKm": 700,
+      "year": 2025
+    },
+    {
+      "brand": "Asics",
+      "model": "Magic Speed 4",
+      "type": "슈퍼트레이너",
+      "recommended": [
+        "템포",
+        "장거리",
+        "데일리"
+      ],
+      "category": "super_trainer",
+      "recommendedKm": 650,
+      "year": 2024
+    },
+    {
+      "brand": "Asics",
+      "model": "Magic Speed 5",
+      "type": "슈퍼트레이너",
+      "recommended": [
+        "템포",
+        "장거리",
+        "데일리"
+      ],
+      "category": "super_trainer",
+      "recommendedKm": 650,
+      "year": 2026
+    },
+    {
+      "brand": "ASICS",
+      "model": "Metaspeed Edge Paris",
+      "type": "카본화",
+      "recommended": [
+        "템포",
+        "인터벌",
+        "레이스"
+      ],
+      "category": "carbon_racing",
+      "recommendedKm": 450,
+      "year": 2024
+    },
+    {
+      "brand": "ASICS",
+      "model": "Metaspeed Edge+",
+      "type": "카본화",
+      "recommended": [
+        "템포",
+        "인터벌",
+        "레이스"
+      ],
+      "category": "carbon_racing",
+      "recommendedKm": 450
+    },
+    {
+      "brand": "ASICS",
+      "model": "Metaspeed Sky Paris",
+      "type": "카본화",
+      "recommended": [
+        "템포",
+        "인터벌",
+        "레이스"
+      ],
+      "category": "carbon_racing",
+      "recommendedKm": 450,
+      "year": 2024
+    },
+    {
+      "brand": "ASICS",
+      "model": "Metaspeed Sky+",
+      "type": "카본화",
+      "recommended": [
+        "템포",
+        "인터벌",
+        "레이스"
+      ],
+      "category": "carbon_racing",
+      "recommendedKm": 450
+    },
+    {
+      "brand": "Asics",
+      "model": "Noosa Tri 16",
+      "type": "슈퍼트레이너",
+      "recommended": [
+        "템포",
+        "장거리",
+        "데일리"
+      ],
+      "category": "super_trainer",
+      "recommendedKm": 650,
+      "year": 2024
+    },
+    {
+      "brand": "ASICS",
+      "model": "Novablast 3",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리",
+        "템포"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "ASICS",
+      "model": "Novablast 4",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리",
+        "템포"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "ASICS",
+      "model": "Novablast 5",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리",
+        "템포"
+      ],
+      "category": "super_trainer",
+      "recommendedKm": 700,
+      "year": 2025
+    },
+    {
+      "brand": "ASICS",
+      "model": "Superblast 2",
+      "type": "슈퍼트레이너",
+      "recommended": [
+        "장거리",
+        "템포",
+        "인터벌"
+      ],
+      "category": "super_trainer",
+      "recommendedKm": 700,
+      "year": 2024
+    },
+    {
+      "brand": "ASICS",
+      "model": "Superblast 3",
+      "type": "슈퍼트레이너",
+      "recommended": [
+        "장거리",
+        "템포",
+        "인터벌"
+      ],
+      "category": "super_trainer",
+      "recommendedKm": 650,
+      "year": 2026
+    },
+    {
+      "brand": "Asics",
+      "model": "Trabuco Max 4",
+      "type": "트레일",
+      "recommended": [
+        "트레일"
+      ],
+      "category": "trail",
+      "recommendedKm": 700,
+      "year": 2025
+    },
+    {
+      "brand": "Brooks",
+      "model": "Adrenaline GTS 23",
+      "type": "안정화",
+      "recommended": [
+        "데일리",
+        "장거리",
+        "회복"
+      ],
+      "category": "stability",
+      "recommendedKm": 700
+    },
+    {
+      "brand": "Brooks",
+      "model": "Adrenaline GTS 24",
+      "type": "안정화",
+      "recommended": [
+        "데일리",
+        "장거리",
+        "회복"
+      ],
+      "category": "stability",
+      "recommendedKm": 750,
+      "year": 2024
+    },
+    {
+      "brand": "Brooks",
+      "model": "Adrenaline GTS 25",
+      "type": "안정화",
+      "recommended": [
+        "데일리",
+        "장거리",
+        "회복"
+      ],
+      "category": "stability",
+      "recommendedKm": 700,
+      "year": 2025
+    },
+    {
+      "brand": "Brooks",
+      "model": "Aurora-BL",
+      "type": "맥스쿠셔닝",
+      "recommended": [
+        "회복",
+        "장거리"
+      ],
+      "category": "max_cushion",
+      "recommendedKm": 700
+    },
+    {
+      "brand": "Brooks",
+      "model": "Caldera 7",
+      "type": "트레일",
+      "recommended": [
+        "트레일",
+        "장거리"
+      ],
+      "category": "trail",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Brooks",
+      "model": "Caldera 8",
+      "type": "트레일",
+      "recommended": [
+        "트레일"
+      ],
+      "category": "trail",
+      "recommendedKm": 650,
+      "year": 2025
+    },
+    {
+      "brand": "Brooks",
+      "model": "Cascadia 17",
+      "type": "트레일",
+      "recommended": [
+        "트레일",
+        "장거리"
+      ],
+      "category": "trail",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Brooks",
+      "model": "Cascadia 19",
+      "type": "트레일",
+      "recommended": [
+        "트레일"
+      ],
+      "category": "trail",
+      "recommendedKm": 650,
+      "year": 2025
+    },
+    {
+      "brand": "Brooks",
+      "model": "Catamount 4",
+      "type": "트레일",
+      "recommended": [
+        "트레일"
+      ],
+      "category": "trail",
+      "recommendedKm": 650,
+      "year": 2025
+    },
+    {
+      "brand": "Brooks",
+      "model": "Divide 4",
+      "type": "트레일",
+      "recommended": [
+        "트레일"
+      ],
+      "category": "trail",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Brooks",
+      "model": "Ghost 14",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Brooks",
+      "model": "Ghost 15",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Brooks",
+      "model": "Ghost 16",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650,
+      "year": 2024
+    },
+    {
+      "brand": "Brooks",
+      "model": "Ghost 17",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 700,
+      "year": 2025
+    },
+    {
+      "brand": "Brooks",
+      "model": "Ghost Max 2",
+      "type": "맥스쿠셔닝",
+      "recommended": [
+        "데일리",
+        "회복",
+        "장거리"
+      ],
+      "category": "max_cushion",
+      "recommendedKm": 700,
+      "year": 2024
+    },
+    {
+      "brand": "Brooks",
+      "model": "Glycerin 20",
+      "type": "맥스쿠셔닝",
+      "recommended": [
+        "회복",
+        "장거리"
+      ],
+      "category": "max_cushion",
+      "recommendedKm": 700
+    },
+    {
+      "brand": "Brooks",
+      "model": "Glycerin 21",
+      "type": "맥스쿠셔닝",
+      "recommended": [
+        "회복",
+        "장거리"
+      ],
+      "category": "max_cushion",
+      "recommendedKm": 700
+    },
+    {
+      "brand": "Brooks",
+      "model": "Glycerin 22",
+      "type": "맥스쿠셔닝",
+      "recommended": [
+        "회복",
+        "장거리"
+      ],
+      "category": "max_cushion",
+      "recommendedKm": 700,
+      "year": 2025
+    },
+    {
+      "brand": "Brooks",
+      "model": "Glycerin GTS 22",
+      "type": "안정화",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "stability",
+      "recommendedKm": 700,
+      "year": 2025
+    },
+    {
+      "brand": "Brooks",
+      "model": "Glycerin GTS 23",
+      "type": "안정화",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "stability",
+      "recommendedKm": 700,
+      "year": 2026
+    },
+    {
+      "brand": "Brooks",
+      "model": "Glycerin Max",
+      "type": "맥스쿠셔닝",
+      "recommended": [
+        "데일리",
+        "회복",
+        "장거리"
+      ],
+      "category": "max_cushion",
+      "recommendedKm": 750,
+      "year": 2024
+    },
+    {
+      "brand": "Brooks",
+      "model": "Hyperion 2",
+      "type": "슈퍼트레이너",
+      "recommended": [
+        "템포",
+        "장거리",
+        "데일리"
+      ],
+      "category": "super_trainer",
+      "recommendedKm": 650,
+      "year": 2024
+    },
+    {
+      "brand": "Brooks",
+      "model": "Hyperion Elite 3",
+      "type": "카본화",
+      "recommended": [
+        "템포",
+        "인터벌",
+        "레이스"
+      ],
+      "category": "carbon_racing",
+      "recommendedKm": 450
+    },
+    {
+      "brand": "Brooks",
+      "model": "Hyperion Elite 4",
+      "type": "카본화",
+      "recommended": [
+        "템포",
+        "인터벌",
+        "레이스"
+      ],
+      "category": "carbon_racing",
+      "recommendedKm": 450
+    },
+    {
+      "brand": "Brooks",
+      "model": "Hyperion Elite 4 PB",
+      "type": "카본화",
+      "recommended": [
+        "레이스",
+        "템포",
+        "인터벌"
+      ],
+      "category": "carbon_racing",
+      "recommendedKm": 450,
+      "year": 2025
+    },
+    {
+      "brand": "Brooks",
+      "model": "Hyperion Max 2",
+      "type": "슈퍼트레이너",
+      "recommended": [
+        "장거리",
+        "템포",
+        "인터벌"
+      ],
+      "category": "super_trainer",
+      "recommendedKm": 650,
+      "year": 2024
+    },
+    {
+      "brand": "Brooks",
+      "model": "Launch 10",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "템포"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Brooks",
+      "model": "Launch 11",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650,
+      "year": 2024
+    },
+    {
+      "brand": "Brooks",
+      "model": "Levitate 7",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "템포"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Brooks",
+      "model": "Revel 6",
+      "type": "데일리",
+      "recommended": [
+        "데일리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Brooks",
+      "model": "Trace 3",
+      "type": "데일리",
+      "recommended": [
+        "데일리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Hoka",
+      "model": "Arahi 7",
+      "type": "안정화",
+      "recommended": [
+        "데일리",
+        "장거리",
+        "회복"
+      ],
+      "category": "stability",
+      "recommendedKm": 700,
+      "year": 2024
+    },
+    {
+      "brand": "Hoka",
+      "model": "Arahi 8",
+      "type": "안정화",
+      "recommended": [
+        "데일리",
+        "장거리",
+        "회복"
+      ],
+      "category": "stability",
+      "recommendedKm": 700
+    },
+    {
+      "brand": "Hoka",
+      "model": "Bondi 8",
+      "type": "맥스쿠셔닝",
+      "recommended": [
+        "회복",
+        "장거리"
+      ],
+      "category": "max_cushion",
+      "recommendedKm": 700
+    },
+    {
+      "brand": "Hoka",
+      "model": "Bondi 9",
+      "type": "맥스쿠셔닝",
+      "recommended": [
+        "회복",
+        "장거리"
+      ],
+      "category": "max_cushion",
+      "recommendedKm": 750,
+      "year": 2025
+    },
+    {
+      "brand": "Hoka",
+      "model": "Bondi X",
+      "type": "슈퍼트레이너",
+      "recommended": [
+        "장거리",
+        "템포"
+      ],
+      "category": "super_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Hoka",
+      "model": "Carbon X 3",
+      "type": "카본화",
+      "recommended": [
+        "템포",
+        "인터벌",
+        "레이스"
+      ],
+      "category": "carbon_racing",
+      "recommendedKm": 450
+    },
+    {
+      "brand": "Hoka",
+      "model": "Challenger 7",
+      "type": "트레일",
+      "recommended": [
+        "트레일",
+        "데일리"
+      ],
+      "category": "trail",
+      "recommendedKm": 650,
+      "year": 2024
+    },
+    {
+      "brand": "Hoka",
+      "model": "Cielo X1",
+      "type": "카본화",
+      "recommended": [
+        "템포",
+        "인터벌",
+        "레이스"
+      ],
+      "category": "carbon_racing",
+      "recommendedKm": 450
+    },
+    {
+      "brand": "Hoka",
+      "model": "Cielo X1 2.0",
+      "type": "카본화",
+      "recommended": [
+        "레이스",
+        "템포",
+        "인터벌"
+      ],
+      "category": "carbon_racing",
+      "recommendedKm": 550,
+      "year": 2025
+    },
+    {
+      "brand": "Hoka",
+      "model": "Clifton 10",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650,
+      "year": 2025
+    },
+    {
+      "brand": "Hoka",
+      "model": "Clifton 8",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Hoka",
+      "model": "Clifton 9",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Hoka",
+      "model": "EVO Speedgoat",
+      "type": "트레일",
+      "recommended": [
+        "트레일",
+        "레이스"
+      ],
+      "category": "trail",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Hoka",
+      "model": "Gaviota 5",
+      "type": "안정화",
+      "recommended": [
+        "데일리",
+        "장거리",
+        "회복"
+      ],
+      "category": "stability",
+      "recommendedKm": 700,
+      "year": 2024
+    },
+    {
+      "brand": "Hoka",
+      "model": "Kawana 2",
+      "type": "데일리",
+      "recommended": [
+        "데일리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Hoka",
+      "model": "Kawana 3",
+      "type": "데일리",
+      "recommended": [
+        "데일리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Hoka",
+      "model": "Mach 5",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "템포"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Hoka",
+      "model": "Mach 6",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "템포"
+      ],
+      "category": "super_trainer",
+      "recommendedKm": 650,
+      "year": 2024
+    },
+    {
+      "brand": "Hoka",
+      "model": "Mach 7",
+      "type": "슈퍼트레이너",
+      "recommended": [
+        "템포",
+        "장거리",
+        "데일리"
+      ],
+      "category": "super_trainer",
+      "recommendedKm": 650,
+      "year": 2026
+    },
+    {
+      "brand": "Hoka",
+      "model": "Mach X",
+      "type": "슈퍼트레이너",
+      "recommended": [
+        "장거리",
+        "템포",
+        "인터벌"
+      ],
+      "category": "super_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Hoka",
+      "model": "Mach X 2",
+      "type": "슈퍼트레이너",
+      "recommended": [
+        "장거리",
+        "템포",
+        "인터벌"
+      ],
+      "category": "super_trainer",
+      "recommendedKm": 650,
+      "year": 2024
+    },
+    {
+      "brand": "Hoka",
+      "model": "Mafate Speed 4",
+      "type": "트레일",
+      "recommended": [
+        "트레일"
+      ],
+      "category": "trail",
+      "recommendedKm": 650,
+      "year": 2023
+    },
+    {
+      "brand": "Hoka",
+      "model": "Rincon 3",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "템포"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Hoka",
+      "model": "Rincon 4",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "템포"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650,
+      "year": 2024
+    },
+    {
+      "brand": "Hoka",
+      "model": "Rocket X 2",
+      "type": "카본화",
+      "recommended": [
+        "레이스",
+        "템포",
+        "인터벌"
+      ],
+      "category": "carbon_racing",
+      "recommendedKm": 450,
+      "year": 2023
+    },
+    {
+      "brand": "Hoka",
+      "model": "Skyflow",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650,
+      "year": 2024
+    },
+    {
+      "brand": "Hoka",
+      "model": "Skyward X",
+      "type": "슈퍼트레이너",
+      "recommended": [
+        "장거리",
+        "템포"
+      ],
+      "category": "max_cushion",
+      "recommendedKm": 700,
+      "year": 2024
+    },
+    {
+      "brand": "Hoka",
+      "model": "Speedgoat 5",
+      "type": "트레일",
+      "recommended": [
+        "트레일",
+        "장거리"
+      ],
+      "category": "trail",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Hoka",
+      "model": "Speedgoat 6",
+      "type": "트레일",
+      "recommended": [
+        "트레일",
+        "장거리"
+      ],
+      "category": "trail",
+      "recommendedKm": 700,
+      "year": 2024
+    },
+    {
+      "brand": "Hoka",
+      "model": "Speedgoat 7",
+      "type": "트레일",
+      "recommended": [
+        "트레일",
+        "장거리"
+      ],
+      "category": "trail",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Hoka",
+      "model": "Stinson 7",
+      "type": "트레일",
+      "recommended": [
+        "트레일",
+        "장거리"
+      ],
+      "category": "trail",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Hoka",
+      "model": "Torrent 3",
+      "type": "트레일",
+      "recommended": [
+        "트레일",
+        "템포"
+      ],
+      "category": "trail",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Hoka",
+      "model": "Torrent 4",
+      "type": "트레일",
+      "recommended": [
+        "트레일"
+      ],
+      "category": "trail",
+      "recommendedKm": 650,
+      "year": 2025
+    },
+    {
+      "brand": "Inov-8",
+      "model": "Mudclaw G 260 v2",
+      "type": "트레일",
+      "recommended": [
+        "트레일"
+      ],
+      "category": "trail",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Inov-8",
+      "model": "Trailfly Ultra G 300 Max",
+      "type": "트레일",
+      "recommended": [
+        "트레일",
+        "장거리"
+      ],
+      "category": "trail",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Karhu",
+      "model": "Fusion 4.5",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Karhu",
+      "model": "Ikoni 3 Evo",
+      "type": "안정화",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "stability",
+      "recommendedKm": 700
+    },
+    {
+      "brand": "La Sportiva",
+      "model": "Jackal II",
+      "type": "트레일",
+      "recommended": [
+        "트레일",
+        "장거리"
+      ],
+      "category": "trail",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "La Sportiva",
+      "model": "Mutant",
+      "type": "트레일",
+      "recommended": [
+        "트레일"
+      ],
+      "category": "trail",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "La Sportiva",
+      "model": "Prodigio",
+      "type": "트레일",
+      "recommended": [
+        "트레일",
+        "장거리"
+      ],
+      "category": "trail",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Lululemon",
+      "model": "Beyondfeel",
+      "type": "맥스쿠셔닝",
+      "recommended": [
+        "회복",
+        "장거리"
+      ],
+      "category": "max_cushion",
+      "recommendedKm": 700
+    },
+    {
+      "brand": "Lululemon",
+      "model": "Blissfeel 2",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Mizuno",
+      "model": "Neo Vista",
+      "type": "슈퍼트레이너",
+      "recommended": [
+        "템포",
+        "장거리",
+        "데일리"
+      ],
+      "category": "super_trainer",
+      "recommendedKm": 650,
+      "year": 2024
+    },
+    {
+      "brand": "Mizuno",
+      "model": "Neo Vista 2",
+      "type": "슈퍼트레이너",
+      "recommended": [
+        "템포",
+        "장거리",
+        "데일리"
+      ],
+      "category": "super_trainer",
+      "recommendedKm": 650,
+      "year": 2025
+    },
+    {
+      "brand": "Mizuno",
+      "model": "Wave Creation 21",
+      "type": "맥스쿠셔닝",
+      "recommended": [
+        "회복",
+        "장거리"
+      ],
+      "category": "max_cushion",
+      "recommendedKm": 700
+    },
+    {
+      "brand": "Mizuno",
+      "model": "Wave Daichi 7",
+      "type": "트레일",
+      "recommended": [
+        "트레일",
+        "장거리"
+      ],
+      "category": "trail",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Mizuno",
+      "model": "Wave Daichi 9",
+      "type": "트레일",
+      "recommended": [
+        "트레일"
+      ],
+      "category": "trail",
+      "recommendedKm": 650,
+      "year": 2025
+    },
+    {
+      "brand": "Mizuno",
+      "model": "Wave Horizon 7",
+      "type": "안정화",
+      "recommended": [
+        "데일리",
+        "장거리",
+        "회복"
+      ],
+      "category": "stability",
+      "recommendedKm": 700
+    },
+    {
+      "brand": "Mizuno",
+      "model": "Wave Inspire 20",
+      "type": "안정화",
+      "recommended": [
+        "데일리",
+        "장거리",
+        "회복"
+      ],
+      "category": "stability",
+      "recommendedKm": 700
+    },
+    {
+      "brand": "Mizuno",
+      "model": "Wave Inspire 21",
+      "type": "안정화",
+      "recommended": [
+        "데일리",
+        "장거리",
+        "회복"
+      ],
+      "category": "stability",
+      "recommendedKm": 700
+    },
+    {
+      "brand": "Mizuno",
+      "model": "Wave Inspire 22",
+      "type": "안정화",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "stability",
+      "recommendedKm": 700,
+      "year": 2025
+    },
+    {
+      "brand": "Mizuno",
+      "model": "Wave Mujin 10",
+      "type": "트레일",
+      "recommended": [
+        "트레일"
+      ],
+      "category": "trail",
+      "recommendedKm": 650,
+      "year": 2025
+    },
+    {
+      "brand": "Mizuno",
+      "model": "Wave Neo Ultra",
+      "type": "맥스쿠셔닝",
+      "recommended": [
+        "장거리",
+        "회복"
+      ],
+      "category": "max_cushion",
+      "recommendedKm": 700,
+      "year": 2024
+    },
+    {
+      "brand": "Mizuno",
+      "model": "Wave Neo Wind",
+      "type": "슈퍼트레이너",
+      "recommended": [
+        "템포",
+        "장거리",
+        "데일리"
+      ],
+      "category": "super_trainer",
+      "recommendedKm": 650,
+      "year": 2024
+    },
+    {
+      "brand": "Mizuno",
+      "model": "Wave Prodigy 5",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Mizuno",
+      "model": "Wave Rebellion Flash",
+      "type": "슈퍼트레이너",
+      "recommended": [
+        "장거리",
+        "템포",
+        "인터벌"
+      ],
+      "category": "super_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Mizuno",
+      "model": "Wave Rebellion Flash 3",
+      "type": "슈퍼트레이너",
+      "recommended": [
+        "템포",
+        "장거리",
+        "데일리"
+      ],
+      "category": "super_trainer",
+      "recommendedKm": 650,
+      "year": 2025
+    },
+    {
+      "brand": "Mizuno",
+      "model": "Wave Rebellion Pro 2",
+      "type": "카본화",
+      "recommended": [
+        "템포",
+        "인터벌",
+        "레이스"
+      ],
+      "category": "carbon_racing",
+      "recommendedKm": 450
+    },
+    {
+      "brand": "Mizuno",
+      "model": "Wave Rebellion Pro 3",
+      "type": "카본화",
+      "recommended": [
+        "레이스",
+        "템포",
+        "인터벌"
+      ],
+      "category": "carbon_racing",
+      "recommendedKm": 450,
+      "year": 2024
+    },
+    {
+      "brand": "Mizuno",
+      "model": "Wave Rider 26",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Mizuno",
+      "model": "Wave Rider 27",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Mizuno",
+      "model": "Wave Rider 28",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Mizuno",
+      "model": "Wave Rider 29",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650,
+      "year": 2025
+    },
+    {
+      "brand": "Mizuno",
+      "model": "Wave Rider 30",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650,
+      "year": 2026
+    },
+    {
+      "brand": "Mizuno",
+      "model": "Wave Sky 7",
+      "type": "맥스쿠셔닝",
+      "recommended": [
+        "회복",
+        "장거리"
+      ],
+      "category": "max_cushion",
+      "recommendedKm": 700
+    },
+    {
+      "brand": "Mizuno",
+      "model": "Wave Sky 8",
+      "type": "맥스쿠셔닝",
+      "recommended": [
+        "회복",
+        "장거리"
+      ],
+      "category": "max_cushion",
+      "recommendedKm": 700
+    },
+    {
+      "brand": "Mizuno",
+      "model": "Wave Sky 9",
+      "type": "맥스쿠셔닝",
+      "recommended": [
+        "데일리",
+        "회복",
+        "장거리"
+      ],
+      "category": "max_cushion",
+      "recommendedKm": 700,
+      "year": 2025
+    },
+    {
+      "brand": "New Balance",
+      "model": "Fresh Foam X 1080 v13",
+      "type": "맥스쿠셔닝",
+      "recommended": [
+        "회복",
+        "장거리"
+      ],
+      "category": "max_cushion",
+      "recommendedKm": 700
+    },
+    {
+      "brand": "New Balance",
+      "model": "Fresh Foam X 1080 v14",
+      "type": "맥스쿠셔닝",
+      "recommended": [
+        "회복",
+        "장거리"
+      ],
+      "category": "max_cushion",
+      "recommendedKm": 700
+    },
+    {
+      "brand": "New Balance",
+      "model": "Fresh Foam X 1080 v15",
+      "type": "맥스쿠셔닝",
+      "recommended": [
+        "회복",
+        "장거리"
+      ],
+      "category": "max_cushion",
+      "recommendedKm": 700
+    },
+    {
+      "brand": "New Balance",
+      "model": "Fresh Foam X 1080v14",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650,
+      "year": 2024
+    },
+    {
+      "brand": "New Balance",
+      "model": "Fresh Foam X 1080v15",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650,
+      "year": 2025
+    },
+    {
+      "brand": "New Balance",
+      "model": "Fresh Foam X 840 v2",
+      "type": "데일리",
+      "recommended": [
+        "데일리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "New Balance",
+      "model": "Fresh Foam X 860 v14",
+      "type": "안정화",
+      "recommended": [
+        "데일리",
+        "장거리",
+        "회복"
+      ],
+      "category": "stability",
+      "recommendedKm": 700
+    },
+    {
+      "brand": "New Balance",
+      "model": "Fresh Foam X 860 v15",
+      "type": "안정화",
+      "recommended": [
+        "데일리",
+        "장거리",
+        "회복"
+      ],
+      "category": "stability",
+      "recommendedKm": 700
+    },
+    {
+      "brand": "New Balance",
+      "model": "Fresh Foam X 880 v14",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "New Balance",
+      "model": "Fresh Foam X 880 v15",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "New Balance",
+      "model": "Fresh Foam X 880v15",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650,
+      "year": 2024
+    },
+    {
+      "brand": "New Balance",
+      "model": "Fresh Foam X 880v16",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650,
+      "year": 2026
+    },
+    {
+      "brand": "New Balance",
+      "model": "Fresh Foam X Hierro v9",
+      "type": "트레일",
+      "recommended": [
+        "트레일"
+      ],
+      "category": "trail",
+      "recommendedKm": 650,
+      "year": 2025
+    },
+    {
+      "brand": "New Balance",
+      "model": "Fresh Foam X More v5",
+      "type": "맥스쿠셔닝",
+      "recommended": [
+        "데일리",
+        "회복",
+        "장거리"
+      ],
+      "category": "max_cushion",
+      "recommendedKm": 750,
+      "year": 2024
+    },
+    {
+      "brand": "New Balance",
+      "model": "Fresh Foam X Vongo v6",
+      "type": "안정화",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "stability",
+      "recommendedKm": 700,
+      "year": 2024
+    },
+    {
+      "brand": "New Balance",
+      "model": "FuelCell Propel v4",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "템포"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "New Balance",
+      "model": "FuelCell Rebel v4",
+      "type": "데일리",
+      "recommended": [
+        "템포",
+        "인터벌"
+      ],
+      "category": "super_trainer",
+      "recommendedKm": 650,
+      "year": 2024
+    },
+    {
+      "brand": "New Balance",
+      "model": "FuelCell Rebel v5",
+      "type": "슈퍼트레이너",
+      "recommended": [
+        "템포",
+        "장거리",
+        "데일리"
+      ],
+      "category": "super_trainer",
+      "recommendedKm": 600,
+      "year": 2025
+    },
+    {
+      "brand": "New Balance",
+      "model": "FuelCell SC Elite v4",
+      "type": "카본화",
+      "recommended": [
+        "템포",
+        "인터벌",
+        "레이스"
+      ],
+      "category": "carbon_racing",
+      "recommendedKm": 450
+    },
+    {
+      "brand": "New Balance",
+      "model": "FuelCell SC Elite v5",
+      "type": "카본화",
+      "recommended": [
+        "템포",
+        "인터벌",
+        "레이스"
+      ],
+      "category": "carbon_racing",
+      "recommendedKm": 450
+    },
+    {
+      "brand": "New Balance",
+      "model": "FuelCell SC Trainer v2",
+      "type": "슈퍼트레이너",
+      "recommended": [
+        "장거리",
+        "템포",
+        "인터벌"
+      ],
+      "category": "super_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "New Balance",
+      "model": "FuelCell SuperComp Elite v5",
+      "type": "카본화",
+      "recommended": [
+        "레이스",
+        "템포",
+        "인터벌"
+      ],
+      "category": "carbon_racing",
+      "recommendedKm": 450,
+      "year": 2025
+    },
+    {
+      "brand": "New Balance",
+      "model": "FuelCell SuperComp Pacer",
+      "type": "슈퍼트레이너",
+      "recommended": [
+        "템포",
+        "장거리",
+        "데일리"
+      ],
+      "category": "super_trainer",
+      "recommendedKm": 650,
+      "year": 2023
+    },
+    {
+      "brand": "New Balance",
+      "model": "FuelCell SuperComp Trainer v3",
+      "type": "슈퍼트레이너",
+      "recommended": [
+        "템포",
+        "장거리",
+        "데일리"
+      ],
+      "category": "super_trainer",
+      "recommendedKm": 700,
+      "year": 2024
+    },
+    {
+      "brand": "New Balance",
+      "model": "Hierro v8",
+      "type": "트레일",
+      "recommended": [
+        "트레일",
+        "장거리"
+      ],
+      "category": "trail",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "New Balance",
+      "model": "More v4",
+      "type": "맥스쿠셔닝",
+      "recommended": [
+        "회복",
+        "장거리"
+      ],
+      "category": "max_cushion",
+      "recommendedKm": 700
+    },
+    {
+      "brand": "New Balance",
+      "model": "Trail 410 v8",
+      "type": "트레일",
+      "recommended": [
+        "트레일"
+      ],
+      "category": "trail",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Nike",
+      "model": "Alphafly 2",
+      "type": "카본화",
+      "recommended": [
+        "템포",
+        "인터벌",
+        "레이스"
+      ],
+      "category": "carbon_racing",
+      "recommendedKm": 450
+    },
+    {
+      "brand": "Nike",
+      "model": "Alphafly 3",
+      "type": "카본화",
+      "recommended": [
+        "템포",
+        "인터벌",
+        "레이스"
+      ],
+      "category": "carbon_racing",
+      "recommendedKm": 400,
+      "year": 2024
+    },
+    {
+      "brand": "Nike",
+      "model": "Free Run 5.0",
+      "type": "데일리",
+      "recommended": [
+        "데일리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Nike",
+      "model": "Infinity Run 3",
+      "type": "안정화",
+      "recommended": [
+        "데일리",
+        "장거리",
+        "회복"
+      ],
+      "category": "stability",
+      "recommendedKm": 700
+    },
+    {
+      "brand": "Nike",
+      "model": "Infinity Run 4",
+      "type": "안정화",
+      "recommended": [
+        "데일리",
+        "장거리",
+        "회복"
+      ],
+      "category": "stability",
+      "recommendedKm": 700
+    },
+    {
+      "brand": "Nike",
+      "model": "Infinity Run 5",
+      "type": "안정화",
+      "recommended": [
+        "데일리",
+        "장거리",
+        "회복"
+      ],
+      "category": "stability",
+      "recommendedKm": 700
+    },
+    {
+      "brand": "Nike",
+      "model": "Invincible 2",
+      "type": "맥스쿠셔닝",
+      "recommended": [
+        "회복",
+        "장거리"
+      ],
+      "category": "max_cushion",
+      "recommendedKm": 700
+    },
+    {
+      "brand": "Nike",
+      "model": "Invincible 3",
+      "type": "맥스쿠셔닝",
+      "recommended": [
+        "회복",
+        "장거리"
+      ],
+      "category": "max_cushion",
+      "recommendedKm": 700,
+      "year": 2023
+    },
+    {
+      "brand": "Nike",
+      "model": "Invincible 4",
+      "type": "맥스쿠셔닝",
+      "recommended": [
+        "회복",
+        "장거리"
+      ],
+      "category": "max_cushion",
+      "recommendedKm": 700
+    },
+    {
+      "brand": "Nike",
+      "model": "Pegasus 39",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리",
+        "템포"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Nike",
+      "model": "Pegasus 40",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리",
+        "템포"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Nike",
+      "model": "Pegasus 41",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리",
+        "템포"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650,
+      "year": 2024
+    },
+    {
+      "brand": "Nike",
+      "model": "Pegasus 42",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리",
+        "템포"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650,
+      "year": 2025
+    },
+    {
+      "brand": "Nike",
+      "model": "Pegasus Plus",
+      "type": "슈퍼트레이너",
+      "recommended": [
+        "장거리",
+        "템포",
+        "인터벌"
+      ],
+      "category": "super_trainer",
+      "recommendedKm": 650,
+      "year": 2024
+    },
+    {
+      "brand": "Nike",
+      "model": "Pegasus Premium",
+      "type": "맥스쿠셔닝",
+      "recommended": [
+        "데일리",
+        "회복",
+        "장거리"
+      ],
+      "category": "max_cushion",
+      "recommendedKm": 700,
+      "year": 2025
+    },
+    {
+      "brand": "Nike",
+      "model": "Pegasus Trail 5",
+      "type": "트레일",
+      "recommended": [
+        "트레일"
+      ],
+      "category": "trail",
+      "recommendedKm": 650,
+      "year": 2024
+    },
+    {
+      "brand": "Nike",
+      "model": "React Infinity Run 3",
+      "type": "안정화",
+      "recommended": [
+        "데일리",
+        "장거리",
+        "회복"
+      ],
+      "category": "stability",
+      "recommendedKm": 700
+    },
+    {
+      "brand": "Nike",
+      "model": "React Miler 3",
+      "type": "안정화",
+      "recommended": [
+        "데일리",
+        "장거리",
+        "회복"
+      ],
+      "category": "stability",
+      "recommendedKm": 700
+    },
+    {
+      "brand": "Nike",
+      "model": "Streakfly",
+      "type": "카본화",
+      "recommended": [
+        "인터벌",
+        "레이스"
+      ],
+      "category": "carbon_racing",
+      "recommendedKm": 450
+    },
+    {
+      "brand": "Nike",
+      "model": "Streakfly 2",
+      "type": "슈퍼트레이너",
+      "recommended": [
+        "템포",
+        "장거리",
+        "데일리"
+      ],
+      "category": "super_trainer",
+      "recommendedKm": 650,
+      "year": 2025
+    },
+    {
+      "brand": "Nike",
+      "model": "Structure 24",
+      "type": "안정화",
+      "recommended": [
+        "데일리",
+        "장거리",
+        "회복"
+      ],
+      "category": "stability",
+      "recommendedKm": 700
+    },
+    {
+      "brand": "Nike",
+      "model": "Structure 25",
+      "type": "안정화",
+      "recommended": [
+        "데일리",
+        "장거리",
+        "회복"
+      ],
+      "category": "stability",
+      "recommendedKm": 700
+    },
+    {
+      "brand": "Nike",
+      "model": "Structure 26",
+      "type": "안정화",
+      "recommended": [
+        "데일리",
+        "장거리",
+        "회복"
+      ],
+      "category": "stability",
+      "recommendedKm": 700,
+      "year": 2025
+    },
+    {
+      "brand": "Nike",
+      "model": "Ultrafly",
+      "type": "트레일",
+      "recommended": [
+        "트레일",
+        "레이스"
+      ],
+      "category": "trail",
+      "recommendedKm": 650,
+      "year": 2023
+    },
+    {
+      "brand": "Nike",
+      "model": "Vaporfly 2",
+      "type": "카본화",
+      "recommended": [
+        "템포",
+        "인터벌",
+        "레이스"
+      ],
+      "category": "carbon_racing",
+      "recommendedKm": 450
+    },
+    {
+      "brand": "Nike",
+      "model": "Vaporfly 3",
+      "type": "카본화",
+      "recommended": [
+        "템포",
+        "인터벌",
+        "레이스"
+      ],
+      "category": "carbon_racing",
+      "recommendedKm": 450
+    },
+    {
+      "brand": "Nike",
+      "model": "Vaporfly 4",
+      "type": "카본화",
+      "recommended": [
+        "템포",
+        "인터벌",
+        "레이스"
+      ],
+      "category": "carbon_racing",
+      "recommendedKm": 450,
+      "year": 2025
+    },
+    {
+      "brand": "Nike",
+      "model": "Vomero 18",
+      "type": "맥스쿠셔닝",
+      "recommended": [
+        "데일리",
+        "회복",
+        "장거리"
+      ],
+      "category": "max_cushion",
+      "recommendedKm": 700,
+      "year": 2025
+    },
+    {
+      "brand": "Nike",
+      "model": "Vomero 19",
+      "type": "맥스쿠셔닝",
+      "recommended": [
+        "데일리",
+        "회복",
+        "장거리"
+      ],
+      "category": "max_cushion",
+      "recommendedKm": 700,
+      "year": 2026
+    },
+    {
+      "brand": "Nike",
+      "model": "Vomero Plus",
+      "type": "맥스쿠셔닝",
+      "recommended": [
+        "데일리",
+        "회복",
+        "장거리"
+      ],
+      "category": "max_cushion",
+      "recommendedKm": 700,
+      "year": 2025
+    },
+    {
+      "brand": "Nike",
+      "model": "Vomero Premium",
+      "type": "맥스쿠셔닝",
+      "recommended": [
+        "데일리",
+        "회복",
+        "장거리"
+      ],
+      "category": "max_cushion",
+      "recommendedKm": 700,
+      "year": 2026
+    },
+    {
+      "brand": "Nike",
+      "model": "Wildhorse 10",
+      "type": "트레일",
+      "recommended": [
+        "트레일"
+      ],
+      "category": "trail",
+      "recommendedKm": 650,
+      "year": 2025
+    },
+    {
+      "brand": "Nike",
+      "model": "Winflo 10",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Nike",
+      "model": "Winflo 11",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Nike",
+      "model": "Winflo 9",
+      "type": "데일리",
+      "recommended": [
+        "데일리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Nike",
+      "model": "Zegama 2",
+      "type": "트레일",
+      "recommended": [
+        "트레일",
+        "장거리"
+      ],
+      "category": "trail",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Nike",
+      "model": "Zoom Fly 4",
+      "type": "슈퍼트레이너",
+      "recommended": [
+        "장거리",
+        "템포"
+      ],
+      "category": "super_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Nike",
+      "model": "Zoom Fly 5",
+      "type": "슈퍼트레이너",
+      "recommended": [
+        "장거리",
+        "템포"
+      ],
+      "category": "super_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Nike",
+      "model": "Zoom Fly 6",
+      "type": "슈퍼트레이너",
+      "recommended": [
+        "템포",
+        "장거리",
+        "데일리"
+      ],
+      "category": "super_trainer",
+      "recommendedKm": 650,
+      "year": 2024
+    },
+    {
+      "brand": "Nike",
+      "model": "Zoom Tempo NEXT%",
+      "type": "슈퍼트레이너",
+      "recommended": [
+        "템포",
+        "인터벌"
+      ],
+      "category": "super_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "On",
+      "model": "Cloud 5",
+      "type": "데일리",
+      "recommended": [
+        "데일리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "On",
+      "model": "Cloud X 3",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "템포"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "On",
+      "model": "Cloudboom Echo 3",
+      "type": "카본화",
+      "recommended": [
+        "템포",
+        "인터벌",
+        "레이스"
+      ],
+      "category": "carbon_racing",
+      "recommendedKm": 450,
+      "year": 2024
+    },
+    {
+      "brand": "On",
+      "model": "Cloudboom Strike",
+      "type": "카본화",
+      "recommended": [
+        "레이스",
+        "템포",
+        "인터벌"
+      ],
+      "category": "carbon_racing",
+      "recommendedKm": 450,
+      "year": 2024
+    },
+    {
+      "brand": "On",
+      "model": "Cloudboom Strike LS",
+      "type": "카본화",
+      "recommended": [
+        "템포",
+        "인터벌",
+        "레이스"
+      ],
+      "category": "carbon_racing",
+      "recommendedKm": 450,
+      "year": 2025
+    },
+    {
+      "brand": "On",
+      "model": "Cloudeclipse",
+      "type": "맥스쿠셔닝",
+      "recommended": [
+        "데일리",
+        "회복",
+        "장거리"
+      ],
+      "category": "max_cushion",
+      "recommendedKm": 700,
+      "year": 2024
+    },
+    {
+      "brand": "On",
+      "model": "Cloudflow 4",
+      "type": "데일리",
+      "recommended": [
+        "템포",
+        "인터벌"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "On",
+      "model": "Cloudflow 5",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650,
+      "year": 2025
+    },
+    {
+      "brand": "On",
+      "model": "Cloudflyer 5",
+      "type": "안정화",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "stability",
+      "recommendedKm": 700,
+      "year": 2025
+    },
+    {
+      "brand": "On",
+      "model": "Cloudgo",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "On",
+      "model": "Cloudmonster",
+      "type": "맥스쿠셔닝",
+      "recommended": [
+        "장거리",
+        "회복"
+      ],
+      "category": "max_cushion",
+      "recommendedKm": 700
+    },
+    {
+      "brand": "On",
+      "model": "Cloudmonster 2",
+      "type": "맥스쿠셔닝",
+      "recommended": [
+        "장거리",
+        "회복"
+      ],
+      "category": "max_cushion",
+      "recommendedKm": 700
+    },
+    {
+      "brand": "On",
+      "model": "Cloudmonster 3",
+      "type": "맥스쿠셔닝",
+      "recommended": [
+        "데일리",
+        "회복",
+        "장거리"
+      ],
+      "category": "max_cushion",
+      "recommendedKm": 700,
+      "year": 2026
+    },
+    {
+      "brand": "On",
+      "model": "Cloudmonster Hyper",
+      "type": "슈퍼트레이너",
+      "recommended": [
+        "장거리",
+        "템포",
+        "인터벌"
+      ],
+      "category": "super_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "On",
+      "model": "Cloudrunner 2",
+      "type": "안정화",
+      "recommended": [
+        "데일리",
+        "장거리",
+        "회복"
+      ],
+      "category": "stability",
+      "recommendedKm": 700
+    },
+    {
+      "brand": "On",
+      "model": "Cloudrunner 3",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650,
+      "year": 2026
+    },
+    {
+      "brand": "On",
+      "model": "Cloudstratus 3",
+      "type": "안정화",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "stability",
+      "recommendedKm": 700
+    },
+    {
+      "brand": "On",
+      "model": "Cloudsurfer 3",
+      "type": "슈퍼트레이너",
+      "recommended": [
+        "템포",
+        "장거리",
+        "데일리"
+      ],
+      "category": "super_trainer",
+      "recommendedKm": 650,
+      "year": 2025
+    },
+    {
+      "brand": "On",
+      "model": "Cloudsurfer 7",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "On",
+      "model": "Cloudsurfer Max",
+      "type": "맥스쿠셔닝",
+      "recommended": [
+        "데일리",
+        "회복",
+        "장거리"
+      ],
+      "category": "max_cushion",
+      "recommendedKm": 700,
+      "year": 2025
+    },
+    {
+      "brand": "On",
+      "model": "Cloudsurfer Next",
+      "type": "슈퍼트레이너",
+      "recommended": [
+        "장거리",
+        "템포"
+      ],
+      "category": "super_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "On",
+      "model": "Cloudswift 3",
+      "type": "데일리",
+      "recommended": [
+        "데일리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "On",
+      "model": "Cloudultra 2",
+      "type": "트레일",
+      "recommended": [
+        "트레일",
+        "장거리"
+      ],
+      "category": "trail",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "On",
+      "model": "Cloudultra 3",
+      "type": "트레일",
+      "recommended": [
+        "트레일"
+      ],
+      "category": "trail",
+      "recommendedKm": 650,
+      "year": 2025
+    },
+    {
+      "brand": "On",
+      "model": "Cloudvista",
+      "type": "트레일",
+      "recommended": [
+        "트레일"
+      ],
+      "category": "trail",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "On",
+      "model": "Cloudvista 2",
+      "type": "트레일",
+      "recommended": [
+        "트레일"
+      ],
+      "category": "trail",
+      "recommendedKm": 650,
+      "year": 2024
+    },
+    {
+      "brand": "Puma",
+      "model": "Deviate Nitro 3",
+      "type": "슈퍼트레이너",
+      "recommended": [
+        "템포",
+        "장거리",
+        "데일리"
+      ],
+      "category": "super_trainer",
+      "recommendedKm": 700,
+      "year": 2024
+    },
+    {
+      "brand": "Puma",
+      "model": "Deviate Nitro 4",
+      "type": "슈퍼트레이너",
+      "recommended": [
+        "템포",
+        "장거리",
+        "데일리"
+      ],
+      "category": "super_trainer",
+      "recommendedKm": 650,
+      "year": 2025
+    },
+    {
+      "brand": "Puma",
+      "model": "Deviate Nitro Elite 2",
+      "type": "카본화",
+      "recommended": [
+        "템포",
+        "인터벌",
+        "레이스"
+      ],
+      "category": "carbon_racing",
+      "recommendedKm": 450
+    },
+    {
+      "brand": "Puma",
+      "model": "Deviate Nitro Elite 3",
+      "type": "카본화",
+      "recommended": [
+        "템포",
+        "인터벌",
+        "레이스"
+      ],
+      "category": "carbon_racing",
+      "recommendedKm": 550,
+      "year": 2024
+    },
+    {
+      "brand": "Puma",
+      "model": "Deviate Nitro Elite 4",
+      "type": "카본화",
+      "recommended": [
+        "레이스",
+        "템포",
+        "인터벌"
+      ],
+      "category": "carbon_racing",
+      "recommendedKm": 450,
+      "year": 2025
+    },
+    {
+      "brand": "Puma",
+      "model": "Fast-R Nitro Elite 3",
+      "type": "카본화",
+      "recommended": [
+        "인터벌",
+        "레이스"
+      ],
+      "category": "carbon_racing",
+      "recommendedKm": 450,
+      "year": 2025
+    },
+    {
+      "brand": "Puma",
+      "model": "ForeverRun Nitro 2",
+      "type": "안정화",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "stability",
+      "recommendedKm": 700,
+      "year": 2025
+    },
+    {
+      "brand": "Puma",
+      "model": "MagMax Nitro 2",
+      "type": "맥스쿠셔닝",
+      "recommended": [
+        "데일리",
+        "회복",
+        "장거리"
+      ],
+      "category": "max_cushion",
+      "recommendedKm": 750,
+      "year": 2025
+    },
+    {
+      "brand": "Puma",
+      "model": "Magnify Nitro 2",
+      "type": "맥스쿠셔닝",
+      "recommended": [
+        "회복",
+        "장거리"
+      ],
+      "category": "max_cushion",
+      "recommendedKm": 700
+    },
+    {
+      "brand": "Puma",
+      "model": "Magnify Nitro 3",
+      "type": "맥스쿠셔닝",
+      "recommended": [
+        "데일리",
+        "회복",
+        "장거리"
+      ],
+      "category": "max_cushion",
+      "recommendedKm": 700,
+      "year": 2025
+    },
+    {
+      "brand": "Puma",
+      "model": "Velocity Nitro 3",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리",
+        "템포"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Puma",
+      "model": "Velocity Nitro 4",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 700,
+      "year": 2025
+    },
+    {
+      "brand": "Reebok",
+      "model": "Floatride Energy 5",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리",
+        "템포"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Reebok",
+      "model": "Forever Floatride Grow",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Salomon",
+      "model": "Aero Blaze 2",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650,
+      "year": 2024
+    },
+    {
+      "brand": "Salomon",
+      "model": "Aero Glide 3",
+      "type": "맥스쿠셔닝",
+      "recommended": [
+        "데일리",
+        "회복",
+        "장거리"
+      ],
+      "category": "max_cushion",
+      "recommendedKm": 700,
+      "year": 2025
+    },
+    {
+      "brand": "Salomon",
+      "model": "Genesis",
+      "type": "트레일",
+      "recommended": [
+        "트레일",
+        "장거리"
+      ],
+      "category": "trail",
+      "recommendedKm": 650,
+      "year": 2024
+    },
+    {
+      "brand": "Salomon",
+      "model": "Pulsar Trail 2",
+      "type": "트레일",
+      "recommended": [
+        "트레일"
+      ],
+      "category": "trail",
+      "recommendedKm": 650,
+      "year": 2024
+    },
+    {
+      "brand": "Salomon",
+      "model": "Pulsar Trail Pro 2",
+      "type": "트레일",
+      "recommended": [
+        "트레일",
+        "레이스"
+      ],
+      "category": "trail",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Salomon",
+      "model": "S/Lab Phantasm 2",
+      "type": "카본화",
+      "recommended": [
+        "레이스",
+        "템포",
+        "인터벌"
+      ],
+      "category": "carbon_racing",
+      "recommendedKm": 450,
+      "year": 2024
+    },
+    {
+      "brand": "Salomon",
+      "model": "S/Lab Pulsar 3",
+      "type": "트레일",
+      "recommended": [
+        "트레일"
+      ],
+      "category": "trail",
+      "recommendedKm": 650,
+      "year": 2024
+    },
+    {
+      "brand": "Salomon",
+      "model": "S/LAB Ultra 3",
+      "type": "트레일",
+      "recommended": [
+        "트레일",
+        "장거리",
+        "레이스"
+      ],
+      "category": "trail",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Salomon",
+      "model": "S/Lab Ultra Glide",
+      "type": "트레일",
+      "recommended": [
+        "트레일"
+      ],
+      "category": "trail",
+      "recommendedKm": 650,
+      "year": 2025
+    },
+    {
+      "brand": "Salomon",
+      "model": "Sense Ride 5",
+      "type": "트레일",
+      "recommended": [
+        "트레일",
+        "장거리"
+      ],
+      "category": "trail",
+      "recommendedKm": 650,
+      "year": 2024
+    },
+    {
+      "brand": "Salomon",
+      "model": "Speedcross 5",
+      "type": "트레일",
+      "recommended": [
+        "트레일"
+      ],
+      "category": "trail",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Salomon",
+      "model": "Speedcross 6",
+      "type": "트레일",
+      "recommended": [
+        "트레일"
+      ],
+      "category": "trail",
+      "recommendedKm": 650,
+      "year": 2023
+    },
+    {
+      "brand": "Salomon",
+      "model": "Speedcross 6 GTX",
+      "type": "트레일",
+      "recommended": [
+        "트레일"
+      ],
+      "category": "trail",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Salomon",
+      "model": "Thundercross",
+      "type": "트레일",
+      "recommended": [
+        "트레일",
+        "장거리"
+      ],
+      "category": "trail",
+      "recommendedKm": 650,
+      "year": 2023
+    },
+    {
+      "brand": "Salomon",
+      "model": "Ultra Glide 3",
+      "type": "트레일",
+      "recommended": [
+        "트레일"
+      ],
+      "category": "trail",
+      "recommendedKm": 650,
+      "year": 2024
+    },
+    {
+      "brand": "Saucony",
+      "model": "Endorphin Elite 2",
+      "type": "카본화",
+      "recommended": [
+        "레이스",
+        "템포",
+        "인터벌"
+      ],
+      "category": "carbon_racing",
+      "recommendedKm": 500,
+      "year": 2025
+    },
+    {
+      "brand": "Saucony",
+      "model": "Endorphin Pro 3",
+      "type": "카본화",
+      "recommended": [
+        "템포",
+        "인터벌",
+        "레이스"
+      ],
+      "category": "carbon_racing",
+      "recommendedKm": 450
+    },
+    {
+      "brand": "Saucony",
+      "model": "Endorphin Pro 4",
+      "type": "카본화",
+      "recommended": [
+        "템포",
+        "인터벌",
+        "레이스"
+      ],
+      "category": "carbon_racing",
+      "recommendedKm": 450,
+      "year": 2024
+    },
+    {
+      "brand": "Saucony",
+      "model": "Endorphin Shift 3",
+      "type": "맥스쿠셔닝",
+      "recommended": [
+        "회복",
+        "장거리"
+      ],
+      "category": "max_cushion",
+      "recommendedKm": 700
+    },
+    {
+      "brand": "Saucony",
+      "model": "Endorphin Speed 3",
+      "type": "슈퍼트레이너",
+      "recommended": [
+        "장거리",
+        "템포",
+        "인터벌"
+      ],
+      "category": "super_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Saucony",
+      "model": "Endorphin Speed 4",
+      "type": "슈퍼트레이너",
+      "recommended": [
+        "장거리",
+        "템포",
+        "인터벌"
+      ],
+      "category": "super_trainer",
+      "recommendedKm": 650,
+      "year": 2024
+    },
+    {
+      "brand": "Saucony",
+      "model": "Endorphin Speed 5",
+      "type": "슈퍼트레이너",
+      "recommended": [
+        "장거리",
+        "템포",
+        "인터벌"
+      ],
+      "category": "super_trainer",
+      "recommendedKm": 650,
+      "year": 2025
+    },
+    {
+      "brand": "Saucony",
+      "model": "Guide 17",
+      "type": "안정화",
+      "recommended": [
+        "데일리",
+        "장거리",
+        "회복"
+      ],
+      "category": "stability",
+      "recommendedKm": 700
+    },
+    {
+      "brand": "Saucony",
+      "model": "Guide 18",
+      "type": "안정화",
+      "recommended": [
+        "데일리",
+        "장거리",
+        "회복"
+      ],
+      "category": "stability",
+      "recommendedKm": 700,
+      "year": 2025
+    },
+    {
+      "brand": "Saucony",
+      "model": "Guide 19",
+      "type": "안정화",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "stability",
+      "recommendedKm": 700,
+      "year": 2026
+    },
+    {
+      "brand": "Saucony",
+      "model": "Hurricane 25",
+      "type": "안정화",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "stability",
+      "recommendedKm": 700,
+      "year": 2025
+    },
+    {
+      "brand": "Saucony",
+      "model": "Kinvara 14",
+      "type": "데일리",
+      "recommended": [
+        "템포",
+        "인터벌"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Saucony",
+      "model": "Kinvara 15",
+      "type": "데일리",
+      "recommended": [
+        "템포",
+        "인터벌"
+      ],
+      "category": "super_trainer",
+      "recommendedKm": 650,
+      "year": 2024
+    },
+    {
+      "brand": "Saucony",
+      "model": "Kinvara 16",
+      "type": "슈퍼트레이너",
+      "recommended": [
+        "템포",
+        "장거리",
+        "데일리"
+      ],
+      "category": "super_trainer",
+      "recommendedKm": 650,
+      "year": 2026
+    },
+    {
+      "brand": "Saucony",
+      "model": "Kinvara Pro",
+      "type": "슈퍼트레이너",
+      "recommended": [
+        "장거리",
+        "템포",
+        "인터벌"
+      ],
+      "category": "super_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Saucony",
+      "model": "Peregrine 14",
+      "type": "트레일",
+      "recommended": [
+        "트레일"
+      ],
+      "category": "trail",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Saucony",
+      "model": "Peregrine 15",
+      "type": "트레일",
+      "recommended": [
+        "트레일"
+      ],
+      "category": "trail",
+      "recommendedKm": 650,
+      "year": 2025
+    },
+    {
+      "brand": "Saucony",
+      "model": "Peregrine 16",
+      "type": "트레일",
+      "recommended": [
+        "트레일"
+      ],
+      "category": "trail",
+      "recommendedKm": 650,
+      "year": 2026
+    },
+    {
+      "brand": "Saucony",
+      "model": "Ride 16",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Saucony",
+      "model": "Ride 17",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650,
+      "year": 2024
+    },
+    {
+      "brand": "Saucony",
+      "model": "Ride 18",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650,
+      "year": 2025
+    },
+    {
+      "brand": "Saucony",
+      "model": "Ride 19",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650,
+      "year": 2026
+    },
+    {
+      "brand": "Saucony",
+      "model": "Tempus 2",
+      "type": "안정화",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "stability",
+      "recommendedKm": 700,
+      "year": 2024
+    },
+    {
+      "brand": "Saucony",
+      "model": "Triumph 21",
+      "type": "맥스쿠셔닝",
+      "recommended": [
+        "회복",
+        "장거리"
+      ],
+      "category": "max_cushion",
+      "recommendedKm": 700
+    },
+    {
+      "brand": "Saucony",
+      "model": "Triumph 22",
+      "type": "맥스쿠셔닝",
+      "recommended": [
+        "회복",
+        "장거리"
+      ],
+      "category": "max_cushion",
+      "recommendedKm": 700,
+      "year": 2024
+    },
+    {
+      "brand": "Saucony",
+      "model": "Triumph 23",
+      "type": "맥스쿠셔닝",
+      "recommended": [
+        "회복",
+        "장거리"
+      ],
+      "category": "max_cushion",
+      "recommendedKm": 750,
+      "year": 2025
+    },
+    {
+      "brand": "Saucony",
+      "model": "Triumph 24",
+      "type": "맥스쿠셔닝",
+      "recommended": [
+        "데일리",
+        "회복",
+        "장거리"
+      ],
+      "category": "max_cushion",
+      "recommendedKm": 700,
+      "year": 2026
+    },
+    {
+      "brand": "Saucony",
+      "model": "Xodus Ultra 2",
+      "type": "트레일",
+      "recommended": [
+        "트레일",
+        "장거리"
+      ],
+      "category": "trail",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Saucony",
+      "model": "Xodus Ultra 4",
+      "type": "트레일",
+      "recommended": [
+        "트레일"
+      ],
+      "category": "trail",
+      "recommendedKm": 650,
+      "year": 2025
+    },
+    {
+      "brand": "Topo Athletic",
+      "model": "Atmos",
+      "type": "맥스쿠셔닝",
+      "recommended": [
+        "데일리",
+        "회복",
+        "장거리"
+      ],
+      "category": "max_cushion",
+      "recommendedKm": 700,
+      "year": 2025
+    },
+    {
+      "brand": "Topo Athletic",
+      "model": "Cyclone 3",
+      "type": "슈퍼트레이너",
+      "recommended": [
+        "템포",
+        "장거리",
+        "데일리"
+      ],
+      "category": "super_trainer",
+      "recommendedKm": 650,
+      "year": 2025
+    },
+    {
+      "brand": "Topo Athletic",
+      "model": "MT-5",
+      "type": "트레일",
+      "recommended": [
+        "트레일"
+      ],
+      "category": "trail",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Topo Athletic",
+      "model": "Phantom 4",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650,
+      "year": 2025
+    },
+    {
+      "brand": "Topo Athletic",
+      "model": "Specter 2",
+      "type": "슈퍼트레이너",
+      "recommended": [
+        "템포",
+        "장거리",
+        "데일리"
+      ],
+      "category": "super_trainer",
+      "recommendedKm": 650,
+      "year": 2025
+    },
+    {
+      "brand": "Topo Athletic",
+      "model": "Ultrafly 5",
+      "type": "안정화",
+      "recommended": [
+        "데일리",
+        "장거리",
+        "회복"
+      ],
+      "category": "stability",
+      "recommendedKm": 700
+    },
+    {
+      "brand": "Under Armour",
+      "model": "Flow Machina 3",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리",
+        "템포"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Under Armour",
+      "model": "Flow Velociti Elite 2",
+      "type": "카본화",
+      "recommended": [
+        "템포",
+        "인터벌",
+        "레이스"
+      ],
+      "category": "carbon_racing",
+      "recommendedKm": 450
+    }
   ]
 }

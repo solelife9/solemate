@@ -9,7 +9,6 @@ import {
   BRANDS,
   categoryLifespanKm,
   DEFAULT_LIFESPAN_KM,
-  LIFESPAN_OVERRIDES,
   getRecommendedLifespanKm,
   findShoeModel,
   modelsForBrand,
@@ -18,12 +17,12 @@ import {
 } from '../../data/shoeModels';
 
 describe('SHOE_MODELS 시드 데이터', () => {
-  test('164개(≥100) 모델을 제공한다', () => {
+  test('통합 카탈로그(shoes.json) 모델을 제공한다(≥300)', () => {
     expect(Array.isArray(SHOE_MODELS)).toBe(true);
-    expect(SHOE_MODELS.length).toBe(164);
+    expect(SHOE_MODELS.length).toBeGreaterThanOrEqual(300);
   });
 
-  test('모든 레코드가 brand·model·category·recommendedKm·year를 갖는다', () => {
+  test('모든 레코드가 brand·model·category·recommendedKm를 갖는다', () => {
     for (const m of SHOE_MODELS) {
       expect(typeof m.brand).toBe('string');
       expect(m.brand.length).toBeGreaterThan(0);
@@ -31,7 +30,8 @@ describe('SHOE_MODELS 시드 데이터', () => {
       expect(m.model.length).toBeGreaterThan(0);
       expect(Object.keys(categoryLifespanKm)).toContain(m.category);
       expect(m.recommendedKm).toBeGreaterThan(0);
-      expect(m.year).toBeGreaterThanOrEqual(2023);
+      // year 는 통합 시 카탈로그 출신만 보유(분류 전용 모델은 미상=0). 타입만 보장.
+      expect(typeof m.year).toBe('number');
     }
   });
 
@@ -40,25 +40,12 @@ describe('SHOE_MODELS 시드 데이터', () => {
     expect(new Set(keys).size).toBe(keys.length);
   });
 
-  test('각 모델 recommendedKm은 (유명모델 override ?? 카테고리 기본값)과 일치한다', () => {
-    for (const m of SHOE_MODELS) {
-      const key = `${m.brand}::${m.model}`;
-      const expected = LIFESPAN_OVERRIDES[key] ?? categoryLifespanKm[m.category];
-      expect(m.recommendedKm).toBe(expected);
-    }
-  });
-
-  test('유명 모델 개별 보정(override)이 실제로 적용된다', () => {
+  test('유명 모델 개별 보정(override)이 통합본에 보존된다', () => {
     expect(getRecommendedLifespanKm({brand: 'Nike', model: 'Alphafly 3'})).toBe(400); // 초경량 카본↓
     expect(getRecommendedLifespanKm({brand: 'Adidas', model: 'Adizero Adios Pro 4'})).toBe(550);
     expect(getRecommendedLifespanKm({brand: 'Asics', model: 'Superblast 2'})).toBe(700);
     expect(getRecommendedLifespanKm({brand: 'Asics', model: 'Gel-Kayano 32'})).toBe(750);
     expect(getRecommendedLifespanKm({brand: 'New Balance', model: 'FuelCell Rebel v5'})).toBe(600);
-    // override 키는 모두 실제 시드 모델과 매칭(오타 방지)
-    for (const key of Object.keys(LIFESPAN_OVERRIDES)) {
-      const [brand, model] = key.split('::');
-      expect(findShoeModel(brand, model)).toBeDefined();
-    }
   });
 });
 
@@ -80,9 +67,9 @@ describe('categoryLifespanKm 매핑(스펙 값)', () => {
 });
 
 describe('BRANDS 파생', () => {
-  test('13개 브랜드를 중복 없이 제공한다', () => {
+  test('통합 브랜드를 중복 없이 제공한다(≥13)', () => {
     expect(new Set(BRANDS).size).toBe(BRANDS.length);
-    expect(BRANDS.length).toBe(13);
+    expect(BRANDS.length).toBeGreaterThanOrEqual(13);
   });
 
   test('SHOE_MODELS의 brand 집합과 정확히 일치한다', () => {
