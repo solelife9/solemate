@@ -183,6 +183,7 @@ export default function AddShoeScreen({
             value={used}
             onChangeText={(v) => setUsed(v.replace(/[^0-9.]/g, ''))}
             keyboardType="decimal-pad"
+            accessibilityLabel="현재 누적 거리"
             style={s.usedInput}
           />
           <Text style={s.usedUnit}>km</Text>

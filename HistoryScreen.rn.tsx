@@ -473,18 +473,18 @@ function RunDetail({ run, shoe, onBack, unit, onEdit, onDelete }: { run: Run; sh
         <Pressable onPress={onBack} hitSlop={6} accessibilityRole="button" accessibilityLabel="뒤로" style={s.iconBtn}><Ionicons name="chevron-back" size={20} color={T1} /></Pressable>
         <View style={s.navActions}>
           {!!onEdit && (
-            <Pressable onPress={onEdit} style={s.iconBtn} accessibilityRole="button" accessibilityLabel="편집">
+            <Pressable onPress={onEdit} hitSlop={6} style={s.iconBtn} accessibilityRole="button" accessibilityLabel="편집">
               <Ionicons name="create-outline" size={18} color={T1} />
             </Pressable>
           )}
-          <Pressable onPress={onShareCard} style={s.iconBtn} accessibilityRole="button" accessibilityLabel="카드 공유">
+          <Pressable onPress={onShareCard} hitSlop={6} style={s.iconBtn} accessibilityRole="button" accessibilityLabel="카드 공유">
             <Ionicons name="image-outline" size={18} color={ACCENT} />
           </Pressable>
-          <Pressable onPress={onShare} style={s.iconBtn} accessibilityRole="button" accessibilityLabel="공유">
+          <Pressable onPress={onShare} hitSlop={6} style={s.iconBtn} accessibilityRole="button" accessibilityLabel="공유">
             <Ionicons name="share-outline" size={18} color={T1} />
           </Pressable>
           {!!onDelete && (
-            <Pressable onPress={confirmDelete} style={s.iconBtn} accessibilityRole="button" accessibilityLabel="삭제">
+            <Pressable onPress={confirmDelete} hitSlop={6} style={s.iconBtn} accessibilityRole="button" accessibilityLabel="삭제">
               <Ionicons name="trash-outline" size={18} color={DANGER} />
             </Pressable>
           )}

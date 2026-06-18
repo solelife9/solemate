@@ -239,7 +239,7 @@ function ShoeDetail({
         {editing ? (
           <View style={[s.card, { padding: 16, gap: 12 }]}>
             <Text style={s.dHeroLabel}>신발 이름</Text>
-            <TextInput value={name} onChangeText={setName} style={s.editInput} placeholderTextColor={T3} autoFocus />
+            <TextInput value={name} onChangeText={setName} style={s.editInput} placeholderTextColor={T3} accessibilityLabel="신발 이름" autoFocus />
             <View style={{ flexDirection: 'row', gap: 10 }}>
               <Pressable onPress={() => setEditing(false)} style={[s.editBtn, { backgroundColor: CARD_HI }]}><Text style={[s.editBtnTxt, { color: T2 }]}>취소</Text></Pressable>
               <Button label="저장" onPress={saveName} style={s.editBtn} />

@@ -304,18 +304,18 @@ const r = StyleSheet.create({
   goal: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '500', marginBottom: 10 },
   goalMet: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 10 },
   goalMetText: { color: GOOD, fontFamily: FONT, fontSize: 13, fontWeight: '600' },
-  bigDist: { color: T1, fontFamily: DISPLAY, fontSize: HERO.mega, fontWeight: '800', letterSpacing: -2, lineHeight: 80, includeFontPadding: false },
+  bigDist: { color: T1, fontFamily: DISPLAY, fontSize: HERO.mega, fontWeight: '800', letterSpacing: -2, lineHeight: 80, includeFontPadding: false, fontVariant: ['tabular-nums'] },
   bigUnit: { color: T3, fontFamily: FONT, fontSize: 14, fontWeight: '600', marginTop: 8 },
 
   heroMetrics: { flexDirection: 'row', marginTop: 26, paddingVertical: 16, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: SEP },
   hm: { flex: 1, alignItems: 'center' },
   hmDivider: { borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: withAlpha(T1, 0.045) },
-  hmV: { color: T1, fontFamily: DISPLAY, fontSize: 34, fontWeight: '700', letterSpacing: -1 },
+  hmV: { color: T1, fontFamily: DISPLAY, fontSize: 34, fontWeight: '700', letterSpacing: -1, fontVariant: ['tabular-nums'] },
   hmL: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500', marginTop: 5 },
 
   subMetrics: { flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 14 },
   sm: { alignItems: 'center' },
-  smV: { color: T2, fontFamily: DISPLAY, fontSize: 16, fontWeight: '500' },
+  smV: { color: T2, fontFamily: DISPLAY, fontSize: 16, fontWeight: '500', fontVariant: ['tabular-nums'] },
   smU: { color: T4, fontFamily: FONT, fontSize: 10 },
   smL: { color: T4, fontFamily: FONT, fontSize: 11, fontWeight: '500', marginTop: 3 },
 
