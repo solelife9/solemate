@@ -25,6 +25,7 @@
 import React from 'react';
 import ReactTestRenderer, {act} from 'react-test-renderer';
 import {Alert, StyleSheet} from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import App from '../App';
 import ShoesScreen from '../ShoesScreen.rn';
 import {DANGER, WARN, GOOD, ACCENT, Shoe} from '../theme';
@@ -87,6 +88,9 @@ async function flush() {
 }
 
 async function mount(shoes: ApiShoe[], runs: ApiRun[]) {
+  // 테스트 격리: 직전 테스트가 남긴 부팅 캐시(cache_shoes_v1)/묘비가 로컬-퍼스트 병합으로
+  // 이 테스트의 서버 데이터를 덮어쓰지 않도록 매 마운트마다 스토리지를 비운다.
+  await AsyncStorage.clear();
   const calls = mockBackend(shoes, runs);
   let renderer!: ReactTestRenderer.ReactTestRenderer;
   await act(async () => {
@@ -206,13 +210,18 @@ test('retire(보관) PATCHes retired=true, never DELETE, and keeps the shoe\'s r
 // ── deleting a shoe deletes only the shoe, never cascades to its runs ─────────
 test('delete(삭제) DELETEs only the shoe; the run is preserved (no cascade)', async () => {
   autoConfirmAlerts();
+  // 두 켤레 중 s1 만 삭제(현실적인 '여러 신발 중 하나 삭제'). 마지막 한 켤레를 지우면 빈 신발장
+  // → FirstShoeScreen 으로 전환되는 별개 경로라, 이 테스트(no-cascade 삭제)의 의도와 분리한다.
   const {root, calls} = await mount(
-    [{id: 's1', name: 'Nike Pegasus', max_km: 600, start_km: 0}],
+    [
+      {id: 's1', name: 'Nike Pegasus', max_km: 600, start_km: 0},
+      {id: 's2', name: 'Hoka Clifton', max_km: 600, start_km: 0},
+    ],
     [{id: 'r1', shoe_id: 's1', km: 5, run_date: '2026-06-01', duration: 1800}],
   );
 
   await tap(pressBy(root, '신발')); // → Shoes tab
-  await tap(pressBy(root, 'Pegasus')); // open shoe detail
+  await tap(pressBy(root, 'Pegasus')); // open s1 shoe detail
   await tap(pressBy(root, 'trash-outline')); // 삭제 → Alert auto-confirm
 
   // the shoe is DELETEd; the run endpoint is never touched with a destructive verb.

@@ -9,7 +9,7 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {
   BG, CARD, CARD_DIM, CARD_HI, HERO_BG, ACCENT, DANGER, WARN, GOOD, T1, T2, T3, T4, SEP, FONT, DISPLAY, withAlpha, RADIUS, Shoe, Run, SHOES,
 } from './theme';
-import { TabBar, TierBadge, Pill, InjuryBanner, SectionTitle, Button } from './primitives';
+import { TabBar, Pill, InjuryBanner, SectionTitle, Button } from './primitives';
 import { FuelGauge } from './FuelGauge';
 import FirstShoeScreen from './FirstShoeScreen.rn';
 import { Unit, displayNum, displayToKm } from './lib/units';
@@ -109,6 +109,9 @@ function ShoeDetail({
   const remain = displayNum(remainKm, unit);
   const usedDisp = displayNum(shoe.used, unit);
   const maxDisp = displayNum(shoe.max, unit);
+  // 상세 컨디션은 목록 카드와 **동일하게** 사용률(km%) 기반 wearTier(4단계)로 판정한다.
+  // (이전엔 shoe.condition 3단계라 '양호'를 무조건 '최상의 컨디션'으로 표시 → 목록과 불일치 버그.)
+  const detailWearPct = shoe.max > 0 ? (shoe.used / shoe.max) * 100 : 0;
   const retired = !!shoe.retired;
   const shoeRuns = runs.filter((r) => r.shoe === idx);
   // 사용자 DB(shoes.json): 종류(type)+추천 용도(recommended). 종류는 칩, 추천 용도는 recommended.
@@ -252,9 +255,11 @@ function ShoeDetail({
                 {!!detailType && <View style={s.dTypeChip}><Text style={s.dTypeChipText}>{detailType}</Text></View>}
               </View>
               <View style={s.row}>
-                {shoe.condition === '양호'
-                  ? <View style={s.statusPill}><View style={s.statusDot} /><Text style={s.statusPillText}>최상의 컨디션</Text></View>
-                  : <TierBadge condition={shoe.condition} size="md" />}
+                {/* 목록 카드와 동일한 wearTier(4단계) 라벨·색 — 최상🟢/좋음🟡/교체고려🟠/교체권장🔴 */}
+                <View style={s.statusPill} testID={`detail-cond-${wearTier(detailWearPct).key}`}>
+                  <View style={[s.statusDot, { backgroundColor: condColor(detailWearPct) }]} />
+                  <Text style={s.statusPillText}>{condLabel(detailWearPct)}</Text>
+                </View>
                 {retired && <Pill tone="dim" label="보관됨" />}
               </View>
             </View>

@@ -91,14 +91,16 @@ test('락커 카드를 누르면 그 신발의 상세(모델 + 내구도 링)가
 
 // ── 2) 교체-tier detail closes with the keep-going narrative + tier badge ──────
 describe('교체 내러티브(keep-going 보이스)는 교체 tier에서만 노출된다', () => {
-  test('교체 신발 상세 = keep-going 카피 + 교체 tier 배지', () => {
+  test('교체 신발 상세 = keep-going 카피 + 목록과 동일한 wearTier 컨디션 칩', () => {
     const root = render(<ShoesScreen shoes={SHOES} runs={RUNS} />).root;
     tap(pressBy(root, 'Clifton 9'));
 
     const txt = textOf(root);
     expect(txt).toContain('지금 교체하면 부상 없이 계속 달릴 수 있어요');
-    // 교체 tier 배지(Pill 기반 TierBadge)가 상세 헤더에 뜬다.
-    expect(byTestID(root, 'tier-badge-교체').length).toBeGreaterThanOrEqual(1);
+    // 상세 헤더 컨디션 칩은 목록 카드와 동일한 wearTier(원시 used/max%) 기반이다.
+    // Clifton 580/600 ≈ 96.7% → consider(교체 고려). (이전엔 shoe.condition 3단계 TierBadge라 목록과 불일치했다.)
+    expect(byTestID(root, 'detail-cond-consider').length).toBeGreaterThanOrEqual(1);
+    expect(txt).toContain('교체 고려');
   });
 
   test('양호 신발 상세에는 keep-going 카피도 교체 배지도 없다', () => {
