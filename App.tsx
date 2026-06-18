@@ -79,7 +79,7 @@ import {serializeBackup, BackupV1, BackupPayload} from './lib/backup';
 import {Challenge, ChallengeRun} from './lib/challenges';
 import {ExtChallenge, challengeExtProgress, type ExtRun, type ExtShoe} from './lib/progression/challengesExt';
 import {createFirebaseCloudPort} from './lib/firebaseCloudPort';
-import {stampUpdatedAt, markDeleted, partitionTombstones, recordsToBackRegister} from './lib/cloudSync';
+import {stampUpdatedAt, markDeleted, partitionTombstones, recordsToBackRegister, mergeCloudData, liveRecords} from './lib/cloudSync';
 import {showToast, TOAST_UNDO_LABEL} from './lib/toast';
 import {migrateStorageSchema} from './lib/storageMigration';
 import {resolveGoogleCredential} from './lib/googleAuth';
@@ -131,6 +131,39 @@ async function loadBootCache(): Promise<{shoes: any[]; runs: any[]} | null> {
   } catch {
     return null;
   }
+}
+
+/**
+ * 부팅/새로고침 공통: 백엔드 fetch 결과를 로컬 캐시·묘비와 **로컬-퍼스트**로 병합한다.
+ * 기존 버그: 성공 경로가 `setShoes(serverShoes)` 로 라이브 상태를 서버 응답으로 통째 교체해,
+ * Render 무료 백엔드가 스핀다운 때 데이터를 잃고 빈/부분 목록을 돌려주면 사용자가 추가한
+ * 신발/런이 영구 증발했다(신발엔 런과 달리 재시도 큐도 없음). 캐시는 매 mutation 마다
+ * 기록되는 로컬 정본이므로, 그것을 local 로 두고 mergeCloudData(무손실·최신우선·묘비
+ * 부활방지)로 합치면 서버가 비어도 로컬-only 레코드가 보존된다(iron law: 데이터 파괴 금지).
+ * 묘비는 local 측에 합류시켜, 이 기기서 삭제한 레코드를 서버의 오래된 live 가 부활시키지 못하게 한다.
+ * 반환은 화면/캐시에 쓸 live 배열. 서버에 실제 있는 id(역등록 known 기준)는 호출부가 따로 시드한다.
+ */
+async function reconcileFetchedLocalFirst(
+  serverShoes: any[],
+  serverRuns: any[],
+): Promise<{shoes: any[]; runs: any[]}> {
+  const cache = await loadBootCache();
+  let tomb: {shoes: any[]; runs: any[]} = {shoes: [], runs: []};
+  try {
+    const raw = await AsyncStorage.getItem(K_TOMBSTONES);
+    const p = JSON.parse(raw || '{}');
+    if (p && typeof p === 'object') {
+      tomb = {shoes: Array.isArray(p.shoes) ? p.shoes : [], runs: Array.isArray(p.runs) ? p.runs : []};
+    }
+  } catch {/* 손상/부재 → 빈 묘비 */}
+  const local: BackupPayload = {
+    shoes: [...(cache?.shoes ?? []), ...tomb.shoes],
+    runs: [...(cache?.runs ?? []), ...tomb.runs],
+    settings: {},
+  };
+  const remote: BackupPayload = {shoes: serverShoes, runs: serverRuns, settings: {}};
+  const merged = mergeCloudData(local, remote);
+  return {shoes: liveRecords(merged.shoes), runs: liveRecords(merged.runs)};
 }
 
 // keep-going 톤: 실패를 '끝'이 아니라 '잠깐 멈춤'으로 프레이밍해 재시도를 유도한다.
@@ -486,24 +519,31 @@ function Main(){
         if(!merged.run_time&&merged.id){const localTime=await AsyncStorage.getItem('time_'+merged.id);if(localTime) merged={...merged,run_time:localTime};}
         return merged;
       }));
-      setShoes(safeShoes);setRuns(runsWithRoute);
-      // REST 정본으로 막 받아온 신발/런 id 를 'REST 확정' 집합으로 시드(역등록 known 기준).
+      // 'REST 확정' 집합: 서버가 **실제로 가진** id 만(역등록 known 기준 — 로컬-only 는 여기서
+      // 빠져 아래 backRegisterMerged 의 재등록 대상이 된다). 머지 결과가 아니라 서버 응답으로 시드.
       restShoeIdsRef.current=new Set(safeShoes.map((s:any)=>String(s.id)));
       restRunIdsRef.current=new Set(runsWithRoute.map((r:any)=>String(r.id)));
-      // 로컬-퍼스트 폴백 캐시 갱신(실데이터만). 다음 부팅에 백엔드가 죽어도 마지막
-      // 데이터로 'ready'가 되도록. 쓰기 실패는 비차단(부팅 영향 0).
-      try{await AsyncStorage.setItem(CACHE_SHOES_KEY,JSON.stringify(safeShoes));await AsyncStorage.setItem(CACHE_RUNS_KEY,JSON.stringify(runsWithRoute));}catch{}
+      // 로컬-퍼스트 병합: 백엔드(무료=스핀다운 시 휘발)가 빠뜨린 신발/런을 캐시에서 보존한다.
+      // setShoes(safeShoes) 통째 교체가 신발 유실의 근본 원인이었다(데이터 파괴 금지).
+      const lf=await reconcileFetchedLocalFirst(safeShoes,runsWithRoute);
+      let liveShoes=lf.shoes, liveRuns=lf.runs, seeded=false;
       // 개발 전용 데모 시드(디자인/에뮬 검증용 로컬 목). 운영 안전 3중 게이트:
       //   ① __DEV__  — 릴리스 빌드에선 false → 실사용자에게 절대 노출 안 됨.
       //   ② NODE_ENV!=='test' — 테스트에선 주입한 신발을 보존(시드가 덮지 않음).
-      //   ③ safeShoes.length===0 — 백엔드가 빈 경우에만 시드(실데이터 안 덮음).
-      if(__DEV__ && process.env.NODE_ENV!=='test' && safeShoes.length===0 && (globalThis as any).__KEEGO_DEV_SEED__!==false){
-        setShoes(devSeedShoes());setRuns(devSeedRuns());
+      //   ③ liveShoes.length===0 — 병합 후에도 비었을 때만 시드(실데이터 안 덮음).
+      if(__DEV__ && process.env.NODE_ENV!=='test' && liveShoes.length===0 && (globalThis as any).__KEEGO_DEV_SEED__!==false){
+        liveShoes=devSeedShoes();liveRuns=devSeedRuns();seeded=true;
       }
+      setShoes(liveShoes);setRuns(liveRuns);
+      // 캐시 갱신: 병합된 live 전체(로컬-only 포함)로 — 다음 부팅에도 보존. 비차단.
+      try{await AsyncStorage.setItem(CACHE_SHOES_KEY,JSON.stringify(liveShoes));await AsyncStorage.setItem(CACHE_RUNS_KEY,JSON.stringify(liveRuns));}catch{}
       // 부팅 성공: fetch가 성공한 순간 'ready'. 빈 배열이어도 'error'가 아니다 —
       // 빈-신규 사용자는 재시도 카드가 아니라 온보딩/빈 홈을 봐야 한다(구분).
       setBootState('ready');
-      checkShoeAlerts(safeShoes,safeRuns,st.alerts);
+      checkShoeAlerts(liveShoes,liveRuns,st.alerts);
+      // 로컬-only 레코드를 (휘발됐을) 백엔드에 역등록해 REST 정본을 복원한다. restShoeIdsRef
+      // (서버 실재 id) 기준이라 멱등 — 서버에 이미 있으면 건너뛴다(정상 부팅 시 no-op). 시드는 제외.
+      if(!seeded) await backRegisterMerged({shoes:liveShoes,runs:liveRuns,settings:{}},d.user_id);
       // audit#3 재동기: 네트워크 실패로 큐에 남은 완주 런을 재전송. 서버 런 목록과
       // 사용자 id를 갓 받은 값으로 넘겨, 재-POST 전 클라이언트 화해로 중복을 막는다.
       await syncPendingRuns(safeRuns,d.user_id);
@@ -580,10 +620,15 @@ function Main(){
         if(!merged.run_time&&merged.id){const localTime=await AsyncStorage.getItem('time_'+merged.id);if(localTime) merged={...merged,run_time:localTime};}
         return merged;
       }));
-      setShoes(safeShoes);setRuns(runsWithRoute);
+      // 'REST 확정' 집합은 서버 실재 id 로 시드(initUser 와 동일 — 로컬-only 는 backRegister 대상).
       restShoeIdsRef.current=new Set(safeShoes.map((s:any)=>String(s.id)));
       restRunIdsRef.current=new Set(runsWithRoute.map((r:any)=>String(r.id)));
-      try{await AsyncStorage.setItem(CACHE_SHOES_KEY,JSON.stringify(safeShoes));await AsyncStorage.setItem(CACHE_RUNS_KEY,JSON.stringify(runsWithRoute));}catch{}
+      // 로컬-퍼스트 병합: 새로고침도 백엔드가 잃은 로컬 신발/런을 캐시에서 보존(initUser 와 대칭).
+      const lf=await reconcileFetchedLocalFirst(safeShoes,runsWithRoute);
+      setShoes(lf.shoes);setRuns(lf.runs);
+      try{await AsyncStorage.setItem(CACHE_SHOES_KEY,JSON.stringify(lf.shoes));await AsyncStorage.setItem(CACHE_RUNS_KEY,JSON.stringify(lf.runs));}catch{}
+      // 로컬-only 레코드를 (휘발됐을) 백엔드에 역등록(멱등 — 서버에 있으면 no-op).
+      await backRegisterMerged({shoes:lf.shoes,runs:lf.runs,settings:{}},uid);
       // 큐에 남아 있던(오프라인 중 완주한) 런을 다시 POST 재시도.
       await syncPendingRuns(safeRuns,uid);
       setLastSyncAt(Date.now());
@@ -978,8 +1023,11 @@ function Main(){
   //   · 우리 pending 큐(localId)의 런은 syncPendingRuns 가 REST 로 보내는 중이므로 known 에 합쳐 제외(중복 POST 방지).
   //   · tombstone(삭제 전파)·id 없는 레코드는 역등록 대상에서 제외(부활/무한루프 방지).
   // userId(REST 계정) 미연결이면 건너뛴다 — 레코드는 화면/캐시엔 남아(유실 0) 다음 기회에 합류.
-  const backRegisterMerged=async(merged:BackupPayload)=>{
-    if(!userId) return;
+  const backRegisterMerged=async(merged:BackupPayload,uidArg?:string|null)=>{
+    // uid: 호출부가 갓 받은 user_id 를 넘길 수 있다(initUser 부팅 경로 — setUserId 직후라
+    // state 클로저의 userId 는 아직 stale/null). 없으면 state 의 userId 로 폴백.
+    const uid=uidArg??userId;
+    if(!uid) return;
     const knownShoeIds=new Set(restShoeIdsRef.current);
     // 우리 pending 큐의 런(localId)은 곧 REST 로 가므로 역등록 대상에서 제외(이중 POST 방지).
     let pendingRunIds=new Set<string>();
@@ -991,7 +1039,7 @@ function Main(){
     const restParentShoeIds=new Set<string>(knownShoeIds);
     for(const sh of recordsToBackRegister(merged.shoes as BackendShoe[],knownShoeIds)){
       try{
-        const created=await apiAddShoe(userId,{
+        const created=await apiAddShoe(uid,{
           name:sh.name,maxKm:Number(sh.max_km)||DEFAULT_MAX_KM,
           startKm:Number(sh.start_km)||0,date:sh.purchase_date||today(),
         });
@@ -1021,7 +1069,7 @@ function Main(){
       if(!restParentShoeIds.has(cloudShoeId)) continue;
       const shoeId=shoeIdMap.get(cloudShoeId)??cloudShoeId; // 역등록으로 id 바뀐 부모면 재키잉
       try{
-        const created=await apiAddRun(userId,{
+        const created=await apiAddRun(uid,{
           localId:String(rn.id),shoe_id:shoeId,km:rn.km,run_date:rn.run_date,
           memo:rn.memo||'',source:rn.source||'cloud',duration:rn.duration||0,cadence:rn.cadence||0,
           route:rn.route||'',location:rn.location||'',heart_rate:rn.heart_rate||0,
