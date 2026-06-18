@@ -874,14 +874,32 @@ const TABS: {icon: string; label: string; shoe?: boolean; flip?: boolean}[] = [
   {icon: 'person', label: '마이'},
 ];
 
+// 탭바는 화면마다 별도 인스턴스로 마운트된다(각 화면이 자기 TabBar 를 active 고정으로 렌더).
+// 그래서 인스턴스 안의 Animated.Value 만으로는 탭 전환 시 '이전 위치'를 알 수 없어 슬라이드가
+// 불가능하다(매 마운트가 0 또는 제자리에서 시작). 모든 화면의 독 레이아웃이 동일하므로,
+// '직전 활성 탭'과 '측정된 슬롯 geometry'를 모듈 레벨에 공유해 — 새로 마운트된 TabBar 가
+// 직전 탭 위치에서 시작해 현재 탭으로 스프링하게 한다(= 탭 간 미끄러지는 하이라이트).
+// 한 번에 한 TabBar 만 마운트되므로(화면 상호배타) 공유 가변상태에 경쟁이 없다.
+let tabLastActive = 0;
+let tabCachedSlots: {x: number; w: number}[] = [];
+const HL_PAD = 6;               // 좌우로 살짝 넓게(위아래 여백과 균형)
+const hlGeom = (s: {x: number; w: number}) => {
+  const w = s.w + HL_PAD;
+  return {x: s.x + (s.w - w) / 2, w};
+};
+
 export function TabBar({active, onTab}: {active: number; onTab: (i: number) => void}) {
   const insets = useSafeAreaInsets();
-  // 각 탭의 x중심/폭을 onLayout 으로 측정해 하이라이트를 정확히 정렬한다.
-  const [slots, setSlots] = useState<{x: number; w: number}[]>([]);
-  const hlX = useRef(new Animated.Value(0)).current;
-  const hlW = useRef(new Animated.Value(0)).current;
-  // 첫 배치 여부. 최초 측정 때 (0,0)→활성탭으로 스프링하면 하이라이트가 '왼쪽에서 날아오는'
-  // 글리치가 보인다 — 첫 배치는 즉시 점프(setValue), 이후 탭 전환만 애니메이션한다.
+  // 각 탭의 x중심/폭을 onLayout 으로 측정해 하이라이트를 정확히 정렬한다. 초기값은 모듈 캐시
+  // (직전 마운트가 측정해 둔 동일 레이아웃) — 마운트 즉시 직전 탭→현재 탭 슬라이드를 시작할 수 있다.
+  const [slots, setSlots] = useState<{x: number; w: number}[]>(() => tabCachedSlots.slice());
+  // 초기값을 직전 탭 위치로(모듈 캐시) — 첫 프레임에 (0,0)에서 잠깐 보이는 깜빡임 방지. 그 다음
+  // effect 가 현재 탭으로 스프링한다. 캐시가 없으면(앱 첫 부팅) 0 에서 시작하되 effect 가 즉시 점프.
+  const hlInit = useRef(tabCachedSlots[tabLastActive] ? hlGeom(tabCachedSlots[tabLastActive]) : {x: 0, w: 0}).current;
+  const hlX = useRef(new Animated.Value(hlInit.x)).current;
+  const hlW = useRef(new Animated.Value(hlInit.w)).current;
+  // 이 인스턴스가 최초 배치를 끝냈는지. 최초엔 직전 탭 위치에서 현재 탭으로 슬라이드(앱 첫 부팅
+  // = 직전==현재 이면 점프)하고, 이후 같은 인스턴스 내 변경은 일반 스프링.
   const posed = useRef(false);
 
   const onSlot = (i: number) => (e: LayoutChangeEvent) => {
@@ -891,22 +909,31 @@ export function TabBar({active, onTab}: {active: number; onTab: (i: number) => v
       next[i] = {x, w: width};
       return next;
     });
+    tabCachedSlots[i] = {x, w: width};   // 모듈 캐시 갱신(다음 화면의 TabBar 가 즉시 재사용)
   };
 
   // 활성 인덱스/측정값이 바뀌면 하이라이트를 그 탭으로 이동(살짝 오버슈트).
   useEffect(() => {
     const s = slots[active];
     if (!s) return;
-    const pad = 6;                 // 좌우로 살짝 넓게(위아래 여백과 균형)
-    const w = s.w + pad;
-    const x = s.x + (s.w - w) / 2;
+    const {x, w} = hlGeom(s);
     if (!posed.current) {
-      // 첫 배치: 애니메이션 없이 즉시 자리잡기(왼쪽에서 날아오는 글리치 방지).
-      hlX.setValue(x);
-      hlW.setValue(w);
       posed.current = true;
-      return;
+      const from = slots[tabLastActive];
+      if (from && tabLastActive !== active) {
+        // 다른 탭에서 넘어옴: 직전 탭 위치에서 시작 → 현재 탭으로 스프링(미끄러짐).
+        const f = hlGeom(from);
+        hlX.setValue(f.x);
+        hlW.setValue(f.w);
+      } else {
+        // 앱 첫 부팅(직전==현재) 또는 직전 geometry 미상: 글리치 없이 즉시 자리잡기.
+        hlX.setValue(x);
+        hlW.setValue(w);
+        tabLastActive = active;
+        return;
+      }
     }
+    tabLastActive = active;
     Animated.parallel([
       Animated.spring(hlX, {toValue: x, useNativeDriver: false, speed: 16, bounciness: 9}),
       Animated.spring(hlW, {toValue: w, useNativeDriver: false, speed: 16, bounciness: 9}),
