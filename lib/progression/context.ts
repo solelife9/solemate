@@ -1,22 +1,21 @@
 // ============================================================================
-// lib/progression/context.ts — buildContext 집계 (Slice A foundation)
+// lib/progression/context.ts — buildContext 집계 (재설계 후 확장)
 // ============================================================================
-// 런/신발/타이틀/챌린지 원시 데이터를 진척 엔진이 읽는 **사전 집계 사실(facts)** 한
-// 묶음(ProgressionContext)으로 변환한다. rank/titles/achievements 는 이 컨텍스트만
-// 읽어 평가축·기준을 판정하므로, 모든 데이터 파싱·집계는 여기 한곳에 모인다.
+// 런/신발/타이틀/챌린지 원시 데이터를 진척 엔진이 읽는 사전 집계 사실(ProgressionContext)
+// 한 묶음으로 변환한다. rank/achievements 는 이 컨텍스트만 읽어 평가 기준을 판정한다.
+//
+// 주요 추가(재설계):
+//   · hasWinterRun  — 12·1·2월 런 여부(겨울 런 업적)
+//   · hasSummerRun  — 6·7·8월 런 여부(여름 런 업적)
+//   · achievementPoints — computeTotalXp(baseCtx) 로 XP 합산(2-pass)
 //
 // PURE(iron law): 입력을 변형하지 않고, NaN/음수/누락은 0(또는 null)으로 방어하며,
-// 어떤 입력에서도 throw 하지 않는다. 시각은 호출자가 `now`(epoch ms)로 주입한다
-// (Date.now 직접 호출 금지 — 결정적 테스트).
-//
-// 입력 모양: 상태 배열의 원시 행 BackendRun/BackendShoe(types.d.ts 전역 ambient).
-// 재사용: lib/stats.maxDayStreak(연속일), lib/records.personalRecords(페이스/최장 런).
+// 어떤 입력에서도 throw 하지 않는다. 시각은 호출자가 `now`(epoch ms)로 주입한다.
 // ============================================================================
 import {Run} from '../../theme';
 import {personalRecords} from '../records';
 import {maxDayStreak} from '../stats';
-import {unlockedAchievements} from './achievements';
-import {totalPoints} from './points';
+import {computeTotalXp} from './achievements';
 import {
   ContextChallengeInput,
   EarnedTitle,
@@ -27,33 +26,31 @@ import {
 } from './types';
 
 const DAY_MS = 86400000;
-/** Early Bird: 시작 시각 < 05:00. */
 const EARLY_BEFORE_HOUR = 5;
-/** Night Runner: 시작 시각 >= 22:00. */
 const NIGHT_AT_OR_AFTER_HOUR = 22;
-/** Speedster: 이 거리(km) 이상인 단일 런만 5km+ 페이스 집계에 포함. */
 const SPEEDSTER_MIN_KM = 5;
 
-/** km(string|number) → 유한 비음수 숫자. 비정상은 0. */
+/** 겨울 달: 12, 1, 2월. */
+const WINTER_MONTHS = new Set([12, 1, 2]);
+/** 여름 달: 6, 7, 8월. */
+const SUMMER_MONTHS = new Set([6, 7, 8]);
+
 function parseKm(v: unknown): number {
   const n = typeof v === 'number' ? v : parseFloat(String(v));
   return Number.isFinite(n) && n > 0 ? n : 0;
 }
 
-/** 초 단위 숫자 → 유한 비음수. 비정상은 0. */
 function parseSeconds(v: unknown): number {
   const n = Number(v);
   return Number.isFinite(n) && n > 0 ? n : 0;
 }
 
-/** 'YYYY-MM-DD' 앞 10자만(정규화). 비문자/빈 값은 null. */
 function ymd(v: unknown): string | null {
   if (typeof v !== 'string' || v.length < 10) return null;
   const s = v.slice(0, 10);
   return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : null;
 }
 
-/** 'HH:MM' 시작 시각의 시(hour) — 0..23. 파싱 불가면 null(시간대 집계 제외). */
 function startHour(v: unknown): number | null {
   if (typeof v !== 'string') return null;
   const m = /^(\d{1,2}):(\d{2})/.exec(v.trim());
@@ -62,21 +59,15 @@ function startHour(v: unknown): number | null {
   return Number.isFinite(h) && h >= 0 && h <= 23 ? h : null;
 }
 
-/** 'YYYY-MM-DD' → 로컬 자정 epoch ms(타임존/DST 안전 — 같은 규약 재사용). */
 function ymdToMs(d: string): number {
   const [y, m, dd] = d.split('-').map(Number);
   return new Date(y, m - 1, dd).getTime();
 }
 
-/** 두 'YYYY-MM-DD' 사이 일수(b-a). */
 function daysBetween(a: string, b: string): number {
   return Math.round((ymdToMs(b) - ymdToMs(a)) / DAY_MS);
 }
 
-/**
- * 정렬된 고유 런 일자에서 마지막 런부터 이어지는 연속 일수.
- * (현재 스트릭 — 오늘까지 이어졌는지는 호출자/엔진이 now 로 별도 판단 가능.)
- */
 function currentStreakFromDates(sortedUniq: string[]): number {
   if (sortedUniq.length === 0) return 0;
   let streak = 1;
@@ -88,7 +79,6 @@ function currentStreakFromDates(sortedUniq: string[]): number {
   return streak;
 }
 
-/** 정렬된 고유 일자에서 연속 두 런 사이 최장 공백(일). 1개 이하면 0. */
 function longestGapFromDates(sortedUniq: string[]): number {
   let gap = 0;
   for (let i = 1; i < sortedUniq.length; i++) {
@@ -97,10 +87,6 @@ function longestGapFromDates(sortedUniq: string[]): number {
   return gap;
 }
 
-/**
- * 첫 런 주(week)부터 now 주까지 중 런이 있었던 주의 비율(0..1).
- * 주 인덱스 = floor(첫 런으로부터의 일수 / 7).
- */
 function weeklyActiveRatio(sortedUniq: string[], now: number): number {
   if (sortedUniq.length === 0) return 0;
   const first = sortedUniq[0];
@@ -114,7 +100,6 @@ function weeklyActiveRatio(sortedUniq: string[], now: number): number {
   return Math.min(1, activeWeeks.size / totalWeeks);
 }
 
-/** BackendRun → 최소 UI Run(personalRecords 가 읽는 dist/durationS/runDate 만 의미). */
 function toUiRun(r: BackendRun): Run {
   const rd = ymd(r.run_date);
   return {
@@ -135,17 +120,6 @@ function toUiRun(r: BackendRun): Run {
   };
 }
 
-/**
- * 진척 엔진용 컨텍스트를 집계한다.
- *
- * @param runs       서버/상태 런 행(BackendRun[]). 비배열/null 안전.
- * @param shoes      서버/상태 신발 행(BackendShoe[]). 비배열/null 안전.
- * @param earned     이미 획득한 타이틀(중복 언락 방지/참여도).
- * @param challenges 챌린지(완료 수만 집계) — engagement 평가축.
- * @param now        기준 시각(epoch ms) — 주간 활성도 계산에 주입.
- * @param retiredShoes 영속된 은퇴 레코드(progression_v1.retiredShoes) — 은퇴 업적/타이틀의
- *                    권위 소스. 생략 시 은퇴 카운트/등급은 비어 있는 것으로 본다(하위호환).
- */
 export function buildContext(
   runs: readonly BackendRun[] | null | undefined,
   shoes: readonly BackendShoe[] | null | undefined,
@@ -161,8 +135,7 @@ export function buildContext(
   const retiredList = Array.isArray(retiredShoes) ? retiredShoes.filter(Boolean) : [];
   const safeNow = Number.isFinite(now) ? now : 0;
 
-  // ── 은퇴(Hall of Shoes) 레코드: 실제 은퇴 이벤트 + 등급(날조 금지) ──────────────
-  // shoeId 누락 레코드는 무효로 제외(storage 정규화와 동일 규약). 등급 누락 → 'standard'.
+  // ── 은퇴(Hall of Shoes) 레코드 ──────────────────────────────────────────────
   const retirementGrades: RetirementGrade[] = [];
   for (const r of retiredList) {
     if (!r || typeof r.shoeId !== 'string' || !r.shoeId) continue;
@@ -170,7 +143,7 @@ export function buildContext(
   }
   const retirementCount = retirementGrades.length;
 
-  // ── perShoe 시드: 등록된 모든 신발(런 0인 신발·은퇴 신발도 포함) ──────────────
+  // ── perShoe 시드 ─────────────────────────────────────────────────────────────
   const perShoe: Record<string, PerShoeStats> = {};
   let retiredShoeCount = 0;
   for (const s of shoeList) {
@@ -178,7 +151,6 @@ export function buildContext(
     const retired = s.retired === true;
     if (retired) retiredShoeCount += 1;
     const maxKm = Number(s.max_km);
-    // 서버 truth(total_km) 우선 — 다른 기기 미동기 런으로 인한 과소표시 방지.
     const serverKm = Number(s.total_km);
     perShoe[s.id] = {
       id: s.id,
@@ -192,15 +164,15 @@ export function buildContext(
     };
   }
 
-  // ── 런 1패스: 누적 집계 ────────────────────────────────────────────────────
+  // ── 런 1패스: 누적 집계 ─────────────────────────────────────────────────────
   let cumulativeKm = 0;
   let totalDurationS = 0;
   let earlyRunCount = 0;
   let nightRunCount = 0;
-  // 단일 런 ≥5km 중 최고(최소) 평균 페이스(sec/km) — Speedster 판정용.
+  let hasWinterRun = false;
+  let hasSummerRun = false;
   let bestPace5kSec: number | null = null;
   const dates: string[] = [];
-  // 신발별 런 합산(서버 total_km 가 없을 때만 km 폴백에 사용).
   const perShoeDerivedKm: Record<string, number> = {};
 
   for (const r of runList) {
@@ -210,7 +182,6 @@ export function buildContext(
     cumulativeKm += km;
     totalDurationS += dur;
 
-    // 5km 이상 단일 런의 평균 페이스 후보(거리 바닥으로 "짧은 질주" 배제).
     if (km >= SPEEDSTER_MIN_KM && dur > 0) {
       const pace = dur / km;
       if (
@@ -229,11 +200,16 @@ export function buildContext(
     }
 
     const rd = ymd(r.run_date);
-    if (rd) dates.push(rd);
+    if (rd) {
+      dates.push(rd);
+      // 계절 감지: 'YYYY-MM-DD'에서 월 추출
+      const month = Number(rd.slice(5, 7));
+      if (WINTER_MONTHS.has(month)) hasWinterRun = true;
+      if (SUMMER_MONTHS.has(month)) hasSummerRun = true;
+    }
 
     const sid = typeof r.shoe_id === 'string' ? r.shoe_id : '';
     if (sid) {
-      // 미등록 신발 id 의 런도 perShoe 에 흡수(데이터 일관성).
       const stat =
         perShoe[sid] ??
         (perShoe[sid] = {
@@ -255,19 +231,19 @@ export function buildContext(
     }
   }
 
-  // 신발 누적거리: 서버 truth(시드 km>0) 우선, 없으면 런 합산으로 채운다.
+  // 신발 누적거리: 서버 truth 우선, 없으면 런 합산.
   for (const id of Object.keys(perShoe)) {
     if (perShoe[id].km <= 0) perShoe[id].km = perShoeDerivedKm[id] ?? 0;
   }
 
-  // ── 스트릭/공백/주간(고유 정렬 일자 기준) ──────────────────────────────────
+  // ── 스트릭/공백/주간 ─────────────────────────────────────────────────────────
   const sortedUniq = [...new Set(dates)].sort();
   const longestStreak = sortedUniq.length ? maxDayStreak(sortedUniq) : 0;
   const currentStreak = currentStreakFromDates(sortedUniq);
   const longestGapDays = longestGapFromDates(sortedUniq);
   const wActive = weeklyActiveRatio(sortedUniq, safeNow);
 
-  // ── 페이스/최장 런(lib/records 재사용) ──────────────────────────────────────
+  // ── 페이스/최장 런 ───────────────────────────────────────────────────────────
   const pr = personalRecords(runList.map(toUiRun));
   const avgPaceSec =
     cumulativeKm > 0 && totalDurationS > 0 ? totalDurationS / cumulativeKm : null;
@@ -275,14 +251,9 @@ export function buildContext(
   const earnedTitleKeys = earnedList
     .map(t => (t && typeof t.key === 'string' ? t.key : ''))
     .filter(Boolean);
-  const completedChallengeCount = challengeList.filter(c => c?.completed === true)
-    .length;
+  const completedChallengeCount = challengeList.filter(c => c?.completed === true).length;
 
-  // ── 베이스 컨텍스트(업적 포인트 제외) ──────────────────────────────────────
-  // 업적 포인트는 ctx 자체로부터 파생되므로 2-pass 로 채운다: 먼저 베이스 ctx 를 만들고
-  // (achievementPoints=0), 그 위에서 언락 업적의 난이도 포인트를 합산해 최종 ctx 에 싣는다.
-  // 업적 판정은 rotation/shoeManagement 평가축만 참조하고 engagement(=포인트)에는 의존하지
-  // 않으므로 순환·재귀가 없다(베이스/최종 ctx 에서 언락 집합은 동일).
+  // ── 베이스 컨텍스트(2-pass: XP 먼저 0, 그 다음 실제 합산) ─────────────────────
   const baseCtx: ProgressionContext = {
     now: safeNow,
     cumulativeKm,
@@ -298,9 +269,7 @@ export function buildContext(
     earlyRunCount,
     nightRunCount,
     longestGapDays,
-    registeredShoeCount: shoeList.filter(
-      s => s && typeof s.id === 'string' && s.id,
-    ).length,
+    registeredShoeCount: shoeList.filter(s => s && typeof s.id === 'string' && s.id).length,
     retiredShoeCount,
     retirementCount,
     retirementGrades,
@@ -309,8 +278,10 @@ export function buildContext(
     earnedTitleCount: earnedTitleKeys.length,
     completedChallengeCount,
     achievementPoints: 0,
+    hasWinterRun,
+    hasSummerRun,
   };
 
-  const achievementPoints = totalPoints(unlockedAchievements(baseCtx));
+  const achievementPoints = computeTotalXp(baseCtx);
   return {...baseCtx, achievementPoints};
 }

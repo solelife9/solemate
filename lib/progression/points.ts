@@ -1,21 +1,15 @@
 // ============================================================================
-// lib/progression/points.ts — 진척 포인트(Progress Points) (Slice A)
+// lib/progression/points.ts — 진척 포인트 헬퍼 (업데이트)
 // ============================================================================
-// rarity(RankTier) → 포인트의 **단일 권위 매핑**과, 언락된 업적들의 총합 계산.
-// achievements.ts 는 이 맵에서 각 정의의 points 를 끌어오므로(중복 정의 금지),
-// "Bronze 10 … Legend 1000" 라는 spec 권위 수치가 이 파일 한곳에만 존재한다.
+// XP 시스템 재설계 후: 각 업적이 명시적 xp 값을 보유한다. 이 모듈은 역호환 유지용으로
+// 남겨 두며, 새 코드는 computeTotalXp(achievements.ts)를 직접 사용한다.
 //
-// 포인트는 rank.engagement 평가축에 환산되고 화면에 표시되지만, **RPG 레벨이 아니다**
-// (spec: "they are NOT an RPG level"). 그저 누적 달성의 합.
-//
-// PURE(iron law): 입력 불변, NaN/음수/누락 → 0, 어떤 입력에서도 throw 금지.
+// POINTS_BY_RARITY: 구 시스템 값 유지(테스트/레거시 코드 참조용).
+// totalPoints: def.xp 우선, 없으면 def.points 폴백, 그래도 없으면 rarity 폴백.
 // ============================================================================
-import {AchievementDef, RankTier} from './types';
+import {AchievementDef, AchievementRarity, RankTier} from './types';
 
-/**
- * 희귀도(rarity)별 포인트 — spec 권위(Bronze 10 · Silver 25 · Gold 50 ·
- * Platinum 100 · Diamond 250 · Master 500 · Legend 1000).
- */
+/** 구 희귀도별 포인트(레거시 역호환). */
 export const POINTS_BY_RARITY: Readonly<Record<RankTier, number>> = {
   bronze: 10,
   silver: 25,
@@ -26,17 +20,24 @@ export const POINTS_BY_RARITY: Readonly<Record<RankTier, number>> = {
   legend: 1000,
 };
 
-/** rarity → 포인트(미지의 티어/비정상 → 0). */
+/** 새 희귀도(AchievementRarity) → 참고 포인트(표시용 기준치). */
+export const XP_BY_RARITY: Readonly<Record<AchievementRarity, number>> = {
+  common: 20,
+  rare: 50,
+  epic: 150,
+  legendary: 400,
+};
+
+/** rarity → 포인트(구 시스템 역호환). */
 export function pointsForRarity(tier: RankTier): number {
   const p = POINTS_BY_RARITY[tier];
   return Number.isFinite(p) ? p : 0;
 }
 
 /**
- * 언락된 업적들의 포인트 총합. 입력은 **이미 언락된** 업적 정의 배열이어야 한다
- * (날조 금지 — 호출자가 unlocked 판정을 통과한 정의만 넘긴다).
- * 각 정의의 points 가 비정상이면 rarity 로부터 복구하고, 그래도 안 되면 0 으로 친다.
+ * 언락된 업적들의 XP 총합. def.xp 우선, 없으면 def.points, 없으면 rarity 폴백.
  * PURE: 입력 배열/요소를 변형하지 않는다.
+ * @deprecated 새 코드는 computeTotalXp(context 2-pass)를 사용한다.
  */
 export function totalPoints(
   unlockedAchievements: readonly AchievementDef[] | null | undefined,
@@ -45,10 +46,11 @@ export function totalPoints(
   let sum = 0;
   for (const a of unlockedAchievements) {
     if (!a || typeof a !== 'object') continue;
-    const raw = Number((a as AchievementDef).points);
-    const pts =
-      Number.isFinite(raw) && raw > 0 ? raw : pointsForRarity((a as AchievementDef).rarity);
-    if (Number.isFinite(pts) && pts > 0) sum += pts;
+    // xp 우선(새 시스템), 없으면 points(구 시스템), 없으면 rarity 폴백
+    const xp = Number((a as any).xp);
+    const pts = Number((a as any).points ?? 0);
+    const raw = xp > 0 ? xp : pts > 0 ? pts : pointsForRarity((a as any).rarity ?? 'bronze');
+    if (Number.isFinite(raw) && raw > 0) sum += raw;
   }
   return sum;
 }
