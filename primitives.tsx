@@ -43,6 +43,7 @@ import {
   DANGER,
   GOOD,
   T1,
+  T2,
   T3,
   SEP,
   CARD_BORDER,
@@ -190,10 +191,7 @@ const ring = StyleSheet.create({
 // ── Button — 단일 CTA 프리미티브 (앱 전역 주황 버튼의 유일한 출처) ──────────────
 // 목업 주황 버튼을 1:1 재현한다:
 //   • 세로 그라데이션 GRAD_TOP→GRAD_BOT (theme 토큰, GradientFill 단일 정의)
-//   • 상단 1px 안쪽 하이라이트(유리 광택) — gloss 가 위쪽 모서리를 RADIUS.btn 으로
-//     스스로 둥글린다(base 에 overflow:hidden 이 없으므로 클립을 못 받는다)
 //   • 주황 글로우 그림자(ACCENT) — overflow 를 걸지 않아 iOS 에서도 잘리지 않는다
-//     (그라데이션 Rect 는 rx 로, gloss 는 borderTopRadius 로 각자 모서리를 둥글린다)
 //   • 누르면 살짝 작아짐(scale .97)
 // 모서리는 RADIUS.btn 단일 토큰(과거 14/16/18 사각 CTA 혼재 제거). disabled 거나
 // ghost 면 그라데이션/글로우를 끄고 CARD_HI 표면으로 떨어진다(disabled 라벨 dim).
@@ -239,7 +237,6 @@ export function Button({
         style,
       ]}>
       {filled ? <GradientFill radius={RADIUS.btn} /> : null}
-      {filled ? <View pointerEvents="none" style={btn.gloss} /> : null}
       {iconNode ?? (icon ? <Ionicons name={icon} size={20} color={disabled ? T3 : T1} /> : null)}
       <Text style={[btn.label, disabled && btn.labelDim]}>{label}</Text>
     </Pressable>
@@ -267,19 +264,6 @@ const btn = StyleSheet.create({
   },
   // ghost / disabled 표면(올린 카드 톤). 그라데이션·글로우 없음.
   flat: {backgroundColor: CARD_HI},
-  // 상단 1px 유리 광택. base 에 overflow:hidden 이 없으므로(글로우 보존) 이 plain
-  // View 는 스스로 위쪽 두 모서리를 RADIUS.btn 으로 둥글려야 한다 — 안 그러면 흰
-  // 사각 픽셀이 둥근 모서리 밖으로 삐져나온다(과거 MockupButton 의 inner clip 대체).
-  gloss: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 1,
-    backgroundColor: 'rgba(255,255,255,0.22)',
-    borderTopLeftRadius: RADIUS.btn,
-    borderTopRightRadius: RADIUS.btn,
-  },
   pressed: {opacity: 0.92, transform: [{scale: 0.97}]},
   label: {
     color: T1,
@@ -928,7 +912,9 @@ export function TabBar({active, onTab}: {active: number; onTab: (i: number) => v
         <Animated.View pointerEvents="none" style={[t.hl, {left: hlX, width: hlW}]} />
         {TABS.map((tab, i) => {
           const on = i === active;
-          const color = on ? T1 : T3;
+          // 비활성도 밝게(T2) — 어두운 독+검정 배경에서 햇빛에도 보이도록. 활성 구분은
+          // 채워진 아이콘 + 하이라이트 오벌이 담당한다(색 대비에만 의존하지 않음).
+          const color = on ? T1 : T2;
           return (
             <Pressable
               key={i}
@@ -965,10 +951,11 @@ const t = StyleSheet.create({
     borderRadius: RADIUS.pill,
     overflow: 'hidden',                       // 하이라이트를 알약으로 클립
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(255,255,255,0.10)',
-    // iOS는 BlurView(프로스트 글래스)가 살아있어 어두운 막만 얹는다. 안드로이드는 블러
-    // 미지원이 흔해(특히 에뮬레이터) 회색 캡슐이 보이도록 더 밝은 반투명 회색으로 대체한다 — 목업 정합.
-    backgroundColor: Platform.OS === 'android' ? 'rgba(46,46,52,0.82)' : 'rgba(20,20,24,0.4)',
+    // 테두리를 또렷이(0.10→0.20) — 캡슐이 검정 배경과 분리돼 보이도록.
+    borderColor: 'rgba(255,255,255,0.20)',
+    // iOS는 BlurView(프로스트 글래스) 위에 막을 얹는다. 검정 배경과 구분되게 더 밝은 회색
+    // 막으로 올린다(기존 0.4 막은 검정에 묻혔다). 안드로이드는 블러 미지원이 흔해 불투명 회색.
+    backgroundColor: Platform.OS === 'android' ? 'rgba(46,46,52,0.86)' : 'rgba(48,48,56,0.62)',
     shadowColor: BG,
     shadowOpacity: 0.7,
     shadowRadius: 20,
@@ -981,7 +968,8 @@ const t = StyleSheet.create({
     height: 50,
     marginTop: -25,            // 세로 정중앙(translateY(-50%) 대응)
     borderRadius: RADIUS.pill,
-    backgroundColor: 'rgba(255,255,255,0.15)',
+    // 활성 하이라이트 강화(0.15→0.24) — 비활성 아이콘이 밝아진 만큼 활성 탭을 또렷이.
+    backgroundColor: 'rgba(255,255,255,0.24)',
   },
   item: {flex: 1, height: 62, alignItems: 'center', justifyContent: 'center'},
   label: {fontFamily: FONT, fontSize: 10, letterSpacing: 0.1},

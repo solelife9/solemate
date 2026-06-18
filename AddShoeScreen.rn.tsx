@@ -220,7 +220,7 @@ export default function AddShoeScreen({
               )}
             </View>
 
-            <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 12, paddingBottom: 24 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+            <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 12, paddingBottom: 24 }} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets showsVerticalScrollIndicator={false}>
               {suggestions.map(([m, km]) => (
                 <Pressable key={m} onPress={() => pickModel(m, km)} accessibilityRole="button" accessibilityLabel={m} style={({ pressed }) => [s.suggestion, pressed && { backgroundColor: CARD_HI }]}>
                   <Text style={s.sugBrand}>{brand}</Text>
