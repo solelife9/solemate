@@ -123,6 +123,7 @@ export function ExtChallengeCard({
             <Pill tone="good" icon="trophy" label="달성!" testID={`ext-challenge-badge-${ch.id}`} />
           )}
         </View>
+        {p.completed && <Text style={s.xpEarned}>+30 XP 업적 달성 가능</Text>}
         <Text style={s.extProgress} testID={`ext-challenge-progress-${ch.id}`}>
           {extProgressText(ch, p)}
         </Text>
@@ -213,6 +214,7 @@ function ChallengeCard({
             <Pill tone="good" icon="trophy" label="달성!" testID={`challenge-badge-${ch.id}`} />
           )}
         </View>
+        {p.completed && <Text style={s.xpEarned}>+30 XP 업적 달성 가능</Text>}
         <Text style={s.progressTxt}>
           <Text style={s.progressCur}>{cur}</Text>
           <Text style={s.progressTot}>
@@ -380,6 +382,10 @@ export default function ChallengesSection({
             icon="flag"
             style={s.createBtn}
           />
+          <View style={s.xpHint}>
+            <Ionicons name="trophy-outline" size={13} color={ACCENT} />
+            <Text style={s.xpHintTxt}>달성 시 업적 XP 획득 · 1개 +30 / 3개 +60 / 10개 +100</Text>
+          </View>
         </View>
       )}
 
@@ -492,6 +498,9 @@ const s = StyleSheet.create({
   stepUnit: {color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '600', marginTop: 2},
   // 단일 Button 프리미티브로 라우팅(그라데이션/글로우/RADIUS.btn). 여기선 높이만 얹는다.
   createBtn: {height: 46},
+  xpHint: {flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10, justifyContent: 'center'},
+  xpHintTxt: {color: ACCENT, fontFamily: FONT, fontSize: 12, fontWeight: '600'},
+  xpEarned: {color: ACCENT, fontFamily: FONT, fontSize: 12, fontWeight: '700', marginTop: 2},
 
   // ── 확장 챌린지(Slice C) ──
   extWrap: {marginTop: 18, gap: 10},
