@@ -1,13 +1,12 @@
 // ============================================================================
 // lib/progression/challengesExt.ts — 확장 챌린지 로직 (Slice C)
 // ============================================================================
-// 기존 개인 챌린지(lib/challenges 의 distance/streak)를 확장해 4종을 더한다:
-//   · monthly  — 이번 달 거리(km) 또는 런 횟수 목표
+// 기존 개인 챌린지(lib/challenges 의 distance/streak)를 확장해 3종을 더한다:
+//   · weekly   — 이번 주 거리(km) 목표 (주 3회 습관 유도, 스마트 추천 기반)
 //   · shoe     — 특정 신발(혹은 새로 등록한 신발)로 누적한 거리(km) 목표
 //   · rotation — 이번 주에 활성 신발 N켤레 이상 사용(distinct) 또는
 //                한 신발이 주간 거리의 X% 를 넘지 않게 분산(balance)
-//   · smart    — generateSmartChallenge: 로테이션/마모에서 파생한 **개인화·결정적**
-//                추천(과사용 신발 → 가장 덜 신은 신발에 거리 목표 + 투명한 한국어 사유)
+//   · smart    — generateSmartChallenge: 평균 런 거리 × 3 기반 주간 목표 자동 생성
 //
 // PURE(iron law): 입력을 변형하지 않고, NaN/음수/누락은 안전값으로 방어하며, throw 하지
 // 않는다. 기간 판정은 lib/challenges 와 동일한 'YYYY-MM-DD' 사전식 비교(타임존 안전)로
@@ -24,12 +23,6 @@ import {
   ChallengeRun,
   ChallengeProgressResult,
 } from '../challenges';
-import {
-  effectiveWearKm,
-  targetKmFor,
-  type WearRun,
-  type WearShoe,
-} from '../wearModel';
 import {ContextChallengeInput} from './types';
 import {ymdLocal} from '../format';
 
@@ -54,9 +47,9 @@ export interface ExtShoe {
   targetKm?: number;
 }
 
-export type ExtChallengeKind = 'monthly' | 'shoe' | 'rotation';
+export type ExtChallengeKind = 'weekly' | 'shoe' | 'rotation';
 
-/** monthly 목표 종류. */
+/** weekly 목표 종류(거리 only — 스마트 추천은 항상 distance). */
 export type MonthlyMetric = 'distance' | 'count';
 /** rotation 모드. distinct=N켤레 이상 / balance=한 신발 X% 이하. */
 export type RotationMode = 'distinct' | 'balance';
@@ -64,13 +57,11 @@ export type RotationMode = 'distinct' | 'balance';
 export interface ExtChallenge {
   id: string;
   kind: ExtChallengeKind;
-  // ── monthly ──
-  /** 'distance'(거리 km) | 'count'(런 횟수). 기본 distance. */
+  // ── weekly ──
+  /** 'distance'(거리 km) | 'count'(런 횟수). 스마트 추천은 항상 distance. */
   metric?: MonthlyMetric;
   targetKm?: number;
   targetRuns?: number;
-  /** 기준 달('YYYY-MM'). 없으면 now 의 달. */
-  month?: string;
   // ── shoe ──
   /** 대상 신발 id. 'new'(또는 미지정+newShoe=true)면 가장 최근 등록 활성 신발. */
   shoeId?: string;
@@ -97,7 +88,7 @@ const DEFAULT_ROTATION_SHOES = 2;
 const DEFAULT_MAX_SHARE_PCT = 60;
 /** smart: '최근' 사용량을 보는 창(일). now 포함 직전 28일. */
 const SMART_RECENT_DAYS = 28;
-const SMART_TARGET_MIN = 10;
+const SMART_TARGET_MIN = 5;
 const SMART_TARGET_MAX = 50;
 
 // ── 순수 헬퍼(challenges.ts 규약 재사용) ───────────────────────────────────────
@@ -149,18 +140,17 @@ function inWindow(date: string, start: string, end: string): boolean {
 
 const EMPTY: ChallengeProgressResult = {current: 0, target: 0, pct: 0, completed: false};
 
-// ── monthly ──────────────────────────────────────────────────────────────────
+// ── weekly ───────────────────────────────────────────────────────────────────
 /**
- * 이번 달(또는 challenge.month) 거리 합 또는 런 횟수. distance 는 기존 challengeProgress
- * 를 재사용(달 윈도우를 distance 챌린지로 환산)하고, count 는 달 윈도우 내 '달린 날의 런'
- * (dist>0) 수를 센다.
+ * 이번 주(월~일) 거리 합 또는 런 횟수. 주 윈도우는 weekWindow(now)로 동적 계산하므로
+ * 수락 시점의 startDate/endDate 와 무관하게 항상 현재 주를 반영한다.
  */
-function monthlyProgress(
+function weeklyProgress(
   ch: ExtChallenge,
   runs: ExtRun[],
   now: string,
 ): ChallengeProgressResult {
-  const {start, end} = monthWindow(now, ch.month);
+  const {start, end} = weekWindow(now);
   const metric: MonthlyMetric = ch.metric === 'count' ? 'count' : 'distance';
 
   if (metric === 'distance') {
@@ -174,7 +164,7 @@ function monthlyProgress(
     return challengeProgress(inner, runs as ChallengeRun[]);
   }
 
-  // count: 달 윈도우 내, 실제로 달린(dist>0) 런의 수.
+  // count: 이번 주 내 실제로 달린(dist>0) 런의 수.
   const target = Number(ch.targetRuns);
   const tgt = Number.isFinite(target) && target > 0 ? Math.floor(target) : 0;
   let current = 0;
@@ -294,10 +284,10 @@ function rotationProgress(
 
 // ── 디스패치 ──────────────────────────────────────────────────────────────────
 /**
- * 확장 챌린지 진행률. kind 에 따라 monthly/shoe/rotation 으로 분기한다. 순수·방어적:
+ * 확장 챌린지 진행률. kind 에 따라 weekly/shoe/rotation 으로 분기한다. 순수·방어적:
  * 잘못된 입력/누락은 안전한 0 진행으로 떨어지고 throw 하지 않는다.
  *
- * @param now 기준일('YYYY-MM-DD'). 달/주 윈도우의 기준.
+ * @param now 기준일('YYYY-MM-DD'). 주 윈도우의 기준.
  */
 export function challengeExtProgress(
   challenge: ExtChallenge,
@@ -310,8 +300,8 @@ export function challengeExtProgress(
   const safeShoes = Array.isArray(shoes) ? shoes : [];
   const safeNow = ymd(now);
   switch (challenge.kind) {
-    case 'monthly':
-      return monthlyProgress(challenge, safeRuns, safeNow);
+    case 'weekly':
+      return weeklyProgress(challenge, safeRuns, safeNow);
     case 'shoe':
       return shoeProgress(challenge, safeRuns, safeShoes, safeNow);
     case 'rotation':
@@ -321,118 +311,60 @@ export function challengeExtProgress(
   }
 }
 
-// ── smart(개인화·결정적) ───────────────────────────────────────────────────────
+// ── smart(개인화·결정적 주간 챌린지) ────────────────────────────────────────────
 function roundTo5(x: number): number {
   return Math.round(x / 5) * 5;
 }
 
-/** ExtShoe → wearModel WearShoe 어댑터(읽기 전용). */
-function toWearShoe(s: ExtShoe): WearShoe {
-  return {name: s.name ?? '', target_km: s.targetKm, created_at: s.createdAt};
-}
-
-/** ExtRun → wearModel WearRun 어댑터(읽기 전용). */
-function toWearRun(r: ExtRun): WearRun {
-  return {distance_km: safeKm(r.dist), duration_s: r.durationS} as WearRun;
-}
-
-interface ShoeUsage {
-  shoe: ExtShoe;
-  recentKm: number;
-  /** 마모/권장수명 비율(클수록 과사용·교체 임박). */
-  wearRatio: number;
-}
-
 /**
- * 개인화·결정적 스마트 챌린지를 만든다. 활성 신발이 2켤레 미만이면 null(로테이션 무의미).
+ * 개인화·결정적 스마트 주간 챌린지를 만든다. 런 기록이 없으면 null(빈 상태 표시).
  *
  * 로직(같은 입력 → 항상 같은 출력, Math.random/Date.now 미사용):
- *   1) 활성 신발별 최근 28일 거리(recentKm)와 wearModel 마모비율(wearRatio)을 구한다.
- *   2) 과사용 신발 = (recentKm desc, wearRatio desc, id asc) 최상위.
- *   3) 가장 덜 신은 신발 = 과사용 제외 후 (recentKm asc, wearRatio asc, id asc) 최상위.
- *   4) 덜 신은 신발에 거리 목표 = clamp(roundTo5(과사용 최근거리 / 2), 10..50)km.
- *   5) 투명한 한국어 사유: '<과사용>를 많이 신었어요 → <덜신은>로 <target>km'.
- *
- * 실제 등록된 활성 신발만 대상으로 하며(날조 금지), 반환 챌린지는 kind 'shoe'(대상
- * shoeId=덜 신은 신발)로 즉시 추적 가능하다. **전진(forward) 윈도우**를 박는다:
- * startDate=now(추천 시점) ~ endDate=이번 달 말일. 추천 이후 달린 거리만 진행으로 세므로,
- * 덜 신은 신발의 과거 누적(평생) 거리가 targetKm 을 넘더라도 '태어나자마자 완료'되지
- * 않는다(current=0 에서 시작 — 'never fabricate'·참여도 오염 방지).
+ *   1) 전체 런의 평균 1회 거리(avgRunKm)를 구한다.
+ *   2) 런 기록 없음 → null(빈 상태 메시지로 대체).
+ *   3) 주간 목표 = roundTo5(avgRunKm × 3), clamp(5..50).
+ *      → 평균 거리 × 3 = 주 3회 달리면 달성하는 목표.
+ *   4) id = 'smart-weekly-{이번 주 월요일}' — 매주 월요일 새 추천으로 교체.
+ *   5) weeklyProgress 가 항상 현재 주 윈도우를 동적으로 계산하므로, startDate/endDate 는
+ *      참고용(표시)이며 진행률 판정에는 now 기준 weekWindow 를 사용한다.
  *
  * @param now 기준일('YYYY-MM-DD').
  */
 export function generateSmartChallenge(
   runs: ExtRun[],
-  shoes: ExtShoe[],
+  _shoes: ExtShoe[],
   now: string,
 ): ExtChallenge | null {
   const safeRuns = Array.isArray(runs) ? runs : [];
   const safeNow = ymd(now);
-  const active = (Array.isArray(shoes) ? shoes : []).filter(
-    s => s && !s.retired && s.id,
-  );
-  if (active.length < 2) return null;
 
-  const recentStart = shiftDate(safeNow, -(SMART_RECENT_DAYS - 1));
-  const nowDate = (() => {
-    const [y, m, d] = safeNow.split('-').map(Number);
-    return new Date(y, m - 1, d);
-  })();
+  // 런 기록 없음 → null(빈 상태)
+  const validRuns = safeRuns.filter(r => r && safeKm(r.dist) > 0);
+  if (validRuns.length === 0) return null;
 
-  const usage: ShoeUsage[] = active.map(shoe => {
-    const owned = safeRuns.filter(r => r && r.shoeId === shoe.id);
-    let recentKm = 0;
-    for (const r of owned) {
-      if (inWindow(ymd(r.date), recentStart, safeNow)) recentKm += safeKm(r.dist);
-    }
-    const wear = effectiveWearKm(toWearShoe(shoe), owned.map(toWearRun), {
-      now: nowDate,
-    });
-    const target = targetKmFor(toWearShoe(shoe));
-    const wearRatio = target > 0 ? wear / target : 0;
-    return {shoe, recentKm, wearRatio};
-  });
+  // 평균 1회 거리
+  const totalKm = validRuns.reduce((s, r) => s + safeKm(r.dist), 0);
+  const avgRunKm = totalKm / validRuns.length;
 
-  // 과사용: 최근 거리 → 마모비율 → id(결정적 tie-break).
-  const overused = [...usage].sort(
-    (a, b) =>
-      b.recentKm - a.recentKm ||
-      b.wearRatio - a.wearRatio ||
-      (a.shoe.id < b.shoe.id ? -1 : 1),
-  )[0];
-
-  // 덜 신음: 과사용 제외 후 최근 거리 → 마모비율 → id 오름차순.
-  const least = usage
-    .filter(u => u.shoe.id !== overused.shoe.id)
-    .sort(
-      (a, b) =>
-        a.recentKm - b.recentKm ||
-        a.wearRatio - b.wearRatio ||
-        (a.shoe.id < b.shoe.id ? -1 : 1),
-    )[0];
-
+  // 주간 목표: 평균 × 3, 5단위 반올림, 5~50 캡
   const targetKm = Math.max(
     SMART_TARGET_MIN,
-    Math.min(SMART_TARGET_MAX, roundTo5(overused.recentKm / 2)),
+    Math.min(SMART_TARGET_MAX, roundTo5(avgRunKm * 3)),
   );
 
-  const overName = overused.shoe.name || overused.shoe.id;
-  const leastName = least.shoe.name || least.shoe.id;
-  const reason = `${overName}를 많이 신었어요 → ${leastName}로 ${targetKm}km`;
+  const avgDisplay = Math.round(avgRunKm * 10) / 10;
+  const reason = `평균 ${avgDisplay}km × 3회 기준 — 이번 주 ${targetKm}km`;
 
-  // 전진 윈도우: 추천 시점(now) 이후 ~ 이번 달 말일. shoeProgress 가 startDate 를 존중하므로
-  // 덜 신은 신발의 추천 이전(평생) 거리는 제외되고, 사용자가 실제로 신어 달린 거리만 센다.
-  const {end: monthEnd} = monthWindow(safeNow);
+  const {start: weekStart, end: weekEnd} = weekWindow(safeNow);
 
   return {
-    id: `smart-${overused.shoe.id}-${least.shoe.id}`,
-    kind: 'shoe',
+    id: `smart-weekly-${weekStart}`,
+    kind: 'weekly',
     metric: 'distance',
-    shoeId: least.shoe.id,
     targetKm,
     reason,
-    startDate: safeNow,
-    endDate: monthEnd,
+    startDate: weekStart,
+    endDate: weekEnd,
   };
 }
 

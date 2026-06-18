@@ -154,8 +154,8 @@ function baseChallengeLabel(c:Challenge):string{
     : `${Number(c.targetKm)||0}km 달리기`;
 }
 function extChallengeLabel(c:ExtChallenge):string{
-  if(c.kind==='monthly')
-    return c.metric==='count' ? `이번 달 ${Number(c.targetRuns)||0}회` : `이번 달 ${Number(c.targetKm)||0}km`;
+  if(c.kind==='weekly')
+    return c.metric==='count' ? `이번 주 ${Number(c.targetRuns)||0}회` : `이번 주 ${Number(c.targetKm)||0}km`;
   if(c.kind==='shoe')
     return `한 신발로 ${Number(c.targetKm)||0}km`;
   // rotation
@@ -164,7 +164,7 @@ function extChallengeLabel(c:ExtChallenge):string{
     : `로테이션 ${Number(c.targetShoes)||2}켤레`;
 }
 function extChallengeUnit(c:ExtChallenge):string{
-  if(c.kind==='monthly') return c.metric==='count' ? '회' : 'km';
+  if(c.kind==='weekly') return c.metric==='count' ? '회' : 'km';
   if(c.kind==='shoe') return 'km';
   return c.rotationMode==='balance' ? '%' : '켤레';
 }
@@ -296,7 +296,7 @@ function Main(){
         const valid=arr.filter((c:any)=>c&&typeof c.id==='string');
         // kind 로 분리: distance/streak → 기존 개인 챌린지, monthly/shoe/rotation → 확장.
         setChallenges(valid.filter((c:any)=>c.kind==='distance'||c.kind==='streak'));
-        setExtChallenges(valid.filter((c:any)=>c.kind==='monthly'||c.kind==='shoe'||c.kind==='rotation'));
+        setExtChallenges(valid.filter((c:any)=>c.kind==='weekly'||c.kind==='shoe'||c.kind==='rotation'));
       }catch(e){console.log('challenges load error',e);}
     })();
   },[]);

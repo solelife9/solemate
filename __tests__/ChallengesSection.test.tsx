@@ -214,7 +214,7 @@ describe('ChallengesSection 삭제', () => {
   });
 });
 
-// ─── 확장 챌린지(Slice C: monthly/shoe/rotation/smart) ─────────────────────────
+// ─── 확장 챌린지(Slice C: weekly/shoe/rotation/smart) ─────────────────────────
 const NOW = '2026-06-13'; // 토요일 — 주(06-08~06-14)·달(06) 윈도우 기준
 
 const EXT_SHOES: ExtShoe[] = [
@@ -223,13 +223,14 @@ const EXT_SHOES: ExtShoe[] = [
   {id: 's3', name: 'Old Trainer', retired: true, createdAt: '2025-01-01', targetKm: 700},
 ];
 
-describe('ChallengesSection 확장 챌린지 — monthly', () => {
-  test('이번 달 거리 합이 진행률(%)·현재/목표로 카드에 반영된다', () => {
-    const ch: ExtChallenge = {id: 'm1', kind: 'monthly', metric: 'distance', targetKm: 100};
+describe('ChallengesSection 확장 챌린지 — weekly', () => {
+  test('이번 주 거리 합이 진행률(%)·현재/목표로 카드에 반영된다', () => {
+    // NOW=2026-06-13(토), 이번 주=06-08(월)~06-14(일)
+    const ch: ExtChallenge = {id: 'm1', kind: 'weekly', metric: 'distance', targetKm: 100};
     const extRuns: ExtRun[] = [
-      {date: '2026-06-02', dist: 30},
-      {date: '2026-06-11', dist: 25},
-      {date: '2026-05-31', dist: 99}, // 지난 달 → 제외
+      {date: '2026-06-09', dist: 30}, // 이번 주 → 포함
+      {date: '2026-06-11', dist: 25}, // 이번 주 → 포함
+      {date: '2026-06-07', dist: 99}, // 지난 주 → 제외
     ];
     const root = render({
       challenges: [],
@@ -237,7 +238,7 @@ describe('ChallengesSection 확장 챌린지 — monthly', () => {
       extRuns,
       shoes: EXT_SHOES,
       now: NOW,
-      smartSuggestion: null, // 추천 카드는 이 테스트에서 끈다
+      smartSuggestion: null,
     });
 
     const expected = challengeExtProgress(ch, extRuns, EXT_SHOES, NOW); // 55/100 → 55%
@@ -249,16 +250,16 @@ describe('ChallengesSection 확장 챌린지 — monthly', () => {
     const prog = root.find((n: any) => n.props?.testID === 'ext-challenge-progress-m1');
     expect(textOf(prog)).toBe('55 / 100km');
 
-    // 미달성 → 달성 뱃지 없음
     expect(root.findAll((n: any) => n.props?.testID === 'ext-challenge-badge-m1').length).toBe(0);
   });
 
-  test('count 메트릭은 이번 달 달린 횟수를 현재/목표(회)로 보여준다', () => {
-    const ch: ExtChallenge = {id: 'm2', kind: 'monthly', metric: 'count', targetRuns: 3};
+  test('count 메트릭은 이번 주 달린 횟수를 현재/목표(회)로 보여준다', () => {
+    const ch: ExtChallenge = {id: 'm2', kind: 'weekly', metric: 'count', targetRuns: 3};
     const extRuns: ExtRun[] = [
-      {date: '2026-06-01', dist: 5},
-      {date: '2026-06-05', dist: 8},
-      {date: '2026-06-08', dist: 0}, // 거리 0 → 런 아님
+      {date: '2026-06-09', dist: 5}, // 이번 주 → 포함
+      {date: '2026-06-11', dist: 8}, // 이번 주 → 포함
+      {date: '2026-06-12', dist: 0}, // 거리 0 → 런 아님
+      {date: '2026-06-07', dist: 10}, // 지난 주 → 제외
     ];
     const root = render({extChallenges: [ch], extRuns, shoes: EXT_SHOES, now: NOW, smartSuggestion: null});
     const prog = root.find((n: any) => n.props?.testID === 'ext-challenge-progress-m2');
@@ -339,15 +340,16 @@ describe('ChallengesSection 스마트 챌린지(추천)', () => {
 
     const reason = root.find((n: any) => n.props?.testID === 'smart-challenge-reason');
     expect(textOf(reason)).toBe(smart.reason);
-    expect(textOf(reason)).toContain('Alphafly 3'); // 과사용 신발
-    expect(textOf(reason)).toContain('많이 신었어요');
+    // 새 로직: 평균 거리 × 3 기반 사유
+    expect(textOf(reason)).toContain('기준');
+    expect(textOf(reason)).toContain('km');
   });
 
   test('추천을 명시 주입하지 않아도 데이터에서 자동 생성해 사유를 보여준다', () => {
     const root = render({extRuns: SMART_RUNS, shoes: EXT_SHOES, now: NOW});
     const reason = root.find((n: any) => n.props?.testID === 'smart-challenge-reason');
     expect(textOf(reason).length).toBeGreaterThan(0);
-    expect(textOf(reason)).toContain('많이 신었어요');
+    expect(textOf(reason)).toContain('km');
   });
 
   test("'이 챌린지 시작'을 누르면 onAcceptChallenge가 추천 챌린지로 호출된다", () => {
@@ -380,10 +382,10 @@ describe('ChallengesSection 스마트 챌린지(추천)', () => {
     expect(root.find((n: any) => n.props?.testID === `ext-challenge-pct-${smart.id}`)).toBeTruthy();
   });
 
-  test('추천 대상이 없으면(활성 신발<2) 추천 카드를 노출하지 않는다', () => {
+  test('런 기록이 없으면 추천 카드를 노출하지 않는다', () => {
     const root = render({
-      extRuns: SMART_RUNS,
-      shoes: [{id: 's1', name: 'Solo', retired: false}],
+      extRuns: [],
+      shoes: EXT_SHOES,
       now: NOW,
     });
     expect(root.findAll((n: any) => n.props?.testID === 'smart-challenge').length).toBe(0);
@@ -392,7 +394,7 @@ describe('ChallengesSection 스마트 챌린지(추천)', () => {
 
 describe('ChallengesSection 기존 + 확장 공존', () => {
   test('기존 distance/streak 카드와 확장 카드가 함께 렌더된다', () => {
-    const ext: ExtChallenge = {id: 'm9', kind: 'monthly', metric: 'distance', targetKm: 100};
+    const ext: ExtChallenge = {id: 'm9', kind: 'weekly', metric: 'distance', targetKm: 100};
     const root = render({
       challenges: [DISTANCE_CH],
       runs: [{date: '2026-06-03', dist: 40}],

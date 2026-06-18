@@ -45,10 +45,10 @@ function resolveShoeName(ch: ExtChallenge, shoes: ExtShoe[]): string {
 // 확장 챌린지 한 줄 라벨(순수 카피). kind 별로 사람이 읽는 목표를 만든다.
 export function extChallengeLabel(ch: ExtChallenge, shoes: ExtShoe[] = []): string {
   switch (ch.kind) {
-    case 'monthly':
+    case 'weekly':
       return ch.metric === 'count'
-        ? `이번 달 ${ch.targetRuns ?? 0}회 달리기`
-        : `이번 달 ${ch.targetKm ?? 0}km`;
+        ? `이번 주 ${ch.targetRuns ?? 0}회 달리기`
+        : `이번 주 ${ch.targetKm ?? 0}km`;
     case 'shoe':
       return `${resolveShoeName(ch, shoes)}로 ${ch.targetKm ?? 0}km`;
     case 'rotation':
@@ -63,8 +63,8 @@ export function extChallengeLabel(ch: ExtChallenge, shoes: ExtShoe[] = []): stri
 // kind 별 보조 설명(기간/성격). 카드 하단 한 줄.
 function extKindHint(ch: ExtChallenge): string {
   switch (ch.kind) {
-    case 'monthly':
-      return '이번 달';
+    case 'weekly':
+      return '이번 주';
     case 'shoe':
       return '신발 챌린지';
     case 'rotation':
@@ -77,7 +77,7 @@ function extKindHint(ch: ExtChallenge): string {
 // 진행률 본문(현재/목표 + 단위). balance 는 '아래로 유지'형이라 현재 점유율·목표 상한을 함께 보인다.
 function extProgressText(ch: ExtChallenge, p: ChallengeProgressResult): string {
   const round1 = (x: number) => Math.round(x * 10) / 10;
-  if (ch.kind === 'monthly' && ch.metric === 'count') {
+  if (ch.kind === 'weekly' && ch.metric === 'count') {
     return `${p.current} / ${p.target}회`;
   }
   if (ch.kind === 'rotation' && ch.rotationMode === 'balance') {
