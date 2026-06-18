@@ -134,7 +134,7 @@ function TopBar({ onAddShoe }: { onAddShoe?: () => void }) {
         hitSlop={8}
         style={({ pressed }) => [s.addBtn, pressed && s.pressed]}>
         <Text style={s.addBtnText}>신발 추가</Text>
-        <Ionicons name="add" size={15} color={T2} />
+        <Ionicons name="add" size={15} color={T1} />
       </Pressable>
     </View>
   );
@@ -215,7 +215,7 @@ function HeroShoe({ shoe, unit, tappable, forecast, active, onOpenShoe, onStart 
         )}
       </Pressable>
       {/* 러닝 시작 — 카드 배경 안(목업 정합). 이 카드 신발로 바로 시작. */}
-      {onStart && <Button label="러닝 시작" icon="play" onPress={onStart} style={{ marginTop: SPACE.xs }} />}
+      {onStart && <Button label="러닝 시작" icon="play" onPress={onStart} style={{ marginTop: SPACE.sm }} />}
     </View>
   );
 }
@@ -559,8 +559,8 @@ const s = StyleSheet.create({
   baselineRow: { flexDirection: 'row', alignItems: 'flex-end' },
 
   topbar: { paddingTop: 8, paddingHorizontal: GUTTER, paddingBottom: SPACE.xs, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  addBtn: { height: 34, paddingHorizontal: 14, borderRadius: RADIUS.pill, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.1), flexDirection: 'row', alignItems: 'center', gap: 6 },
-  addBtnText: { color: T2, fontFamily: FONT, fontSize: 13, fontWeight: '600' },
+  addBtn: { height: 34, paddingHorizontal: 14, borderRadius: RADIUS.pill, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.2), backgroundColor: CARD_HI, flexDirection: 'row', alignItems: 'center', gap: 6 },
+  addBtnText: { color: T1, fontFamily: FONT, fontSize: 13, fontWeight: '600' },
 
   greetWrap: { paddingHorizontal: GUTTER, paddingTop: 8 },
   date: { color: T3, fontFamily: FONT, fontSize: 13, letterSpacing: 0.2 },
@@ -651,7 +651,7 @@ const s = StyleSheet.create({
   condText: { fontFamily: FONT, fontSize: 13, fontWeight: '500' },
 
   sectionLabel: { paddingHorizontal: SPACE.xl, paddingBottom: SPACE.sm },
-  sectionRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', paddingHorizontal: SPACE.xl, paddingBottom: SPACE.sm },
+  sectionRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', paddingHorizontal: SPACE.xl, paddingTop: SPACE.sm, paddingBottom: SPACE.sm },
   sectionLabelInline: { paddingHorizontal: 0, paddingBottom: 0 },
   sectionMore: { color: T4, fontFamily: FONT, fontSize: 12, fontWeight: '500' },
 

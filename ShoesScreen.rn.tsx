@@ -515,11 +515,10 @@ function ShoeCard({ shoe, featured, onPress, onPlay, unit, pace }: { shoe: Shoe;
         </View>
         <Text style={s.shoeRemain}>교체까지 약 {displayNum(remainKm, unit)}{unit} 남았어요</Text>
       </View>
-      {/* 라벨바: 사용/총 수명을 양끝 라벨로(목업 LifeBar). 가운데 평균 페이스(기록 있을 때). */}
+      {/* 라벨바: 사용/총 수명을 양끝 라벨로(목업 LifeBar). 가운데 평균 페이스는 제거(목록 간결화). */}
       <View style={s.shoeBar}><View style={[s.shoeBarFill, { width: `${usedPct}%`, backgroundColor: retired ? T3 : ring }]} /></View>
       <View style={s.shoeBarLabels}>
         <Text style={s.shoeBarLabel}>{usedDisp}{unit}</Text>
-        {pace && pace !== '--' ? <Text style={s.shoeBarLabel}>평균 <Text style={s.shoePaceVal}>{pace}</Text>/km</Text> : <View />}
         <Text style={s.shoeBarLabel}>{maxDisp}{unit}</Text>
       </View>
     </Pressable>
@@ -615,7 +614,7 @@ export default function ShoesScreen({
         </View>
         <Pressable onPress={onAddShoe} accessibilityRole="button" accessibilityLabel="신발 추가" hitSlop={8} style={({ pressed }) => [s.addPill, pressed && s.pressed]}>
           <Text style={s.addPillText}>신발 추가</Text>
-          <Ionicons name="add" size={15} color={T2} />
+          <Ionicons name="add" size={15} color={T1} />
         </Pressable>
       </View>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 18, paddingBottom: 8, gap: 14, paddingTop: 12 }}>
@@ -655,8 +654,8 @@ const s = StyleSheet.create({
   topbar: { paddingTop: 8, paddingHorizontal: 22, paddingBottom: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   title: { color: T1, fontFamily: FONT, fontSize: 28, fontWeight: '600', letterSpacing: -0.6 },
   shoesSub: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '500', marginTop: 5, letterSpacing: -0.2 },
-  addPill: { height: 34, paddingHorizontal: 14, borderRadius: RADIUS.pill, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.1), flexDirection: 'row', alignItems: 'center', gap: 6 },
-  addPillText: { color: T2, fontFamily: FONT, fontSize: 13, fontWeight: '600' },
+  addPill: { height: 34, paddingHorizontal: 14, borderRadius: RADIUS.pill, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.2), backgroundColor: CARD_HI, flexDirection: 'row', alignItems: 'center', gap: 6 },
+  addPillText: { color: T1, fontFamily: FONT, fontSize: 13, fontWeight: '600' },
 
   // 카드 하단 중복 진행바(track/trackFill)를 제거하고 원형 Ring 만 유지한다. 바가
   // 빠진 만큼 카드 패딩을 살짝 줄이고(20), 링(78)·모델 폰트(20)를 키워 비율을
