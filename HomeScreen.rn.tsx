@@ -17,7 +17,8 @@ import {
   FONT, DISPLAY, SPACE, RADIUS, GUTTER, withAlpha, Shoe, SHOES, TIER_COLORS, TIER_LABEL,
 } from './theme';
 import type { RankTier } from './lib/progression/types';
-import { TabBar, TierBadge, KeegoWordmark, Button, SectionTitle, Pill, conditionColor, InjuryBanner } from './primitives';
+import { TabBar, TierBadge, KeegoWordmark, Button, SectionTitle, Pill, InjuryBanner } from './primitives';
+import { wearTier, WearTierTone } from './lib/shoe';
 import { Unit, displayNum } from './lib/units';
 import { assessShoeInjuryRisk } from './lib/injury';
 import { RotationPick } from './lib/rotation';
@@ -113,10 +114,13 @@ function ProgressionStrip({ prog, onOpen }: { prog: HomeProgression; onOpen?: ()
 }
 
 
-// Proportional condition → ring color. 양호는 accent(주인공 톤), 주의/교체는 경고색.
-// 도트/조건 텍스트의 상태색은 primitives.conditionColor(양호=GOOD 녹색)를 재사용한다.
-const ringColor = (c: string) => (c === '교체' ? DANGER : c === '주의' ? WARN : ACCENT);
-const condLabel = (c: string) => c === '교체' ? '교체 권장' : c === '주의' ? '주의 필요' : '최상의 컨디션';
+// 컨디션 표시는 신발 목록/상세 카드와 동일하게 사용률(used/max%) 기반 wearTier(4단계)로 통일한다.
+// (이전엔 홈 히어로만 3단계 shoe.condition 이라, 같은 신발이 목록='좋은 상태'인데 홈='최상의
+//  컨디션'으로 어긋났다.) '양호' 신발은 wearTier 칩(점+라벨)으로, 주의/교체는 TierBadge 를
+//  유지한다(상세 ShoesScreen 과 동일 하이브리드). TONE→theme 토큰 매핑도 목록 카드와 동일.
+const WEAR_TONE_COLOR: Record<WearTierTone, string> = { good: GOOD, mid: WARN, warn: ACCENT, danger: DANGER };
+const wearColorOf = (pct: number) => WEAR_TONE_COLOR[wearTier(pct).tone];
+const wearLabelOf = (pct: number) => wearTier(pct).label;
 // 카드 한 줄 요약(목업 reason 정합 — keep-going 보이스). 컨디션별 오늘의 추천/안내.
 const condReason = (c: string) =>
   c === '교체' ? '교체 시기예요 — 부상 전에 바꿔주세요'
@@ -149,8 +153,9 @@ function HeroShoe({ shoe, unit, tappable, forecast, active, onOpenShoe, onStart 
   const max = displayNum(shoe.max, unit);
   // 사용률(%) — used/max. 사용량 줄 오른쪽에 표시(InsightCard '내구도 중 N%' 와 동일 규약).
   const usedPct = shoe.max > 0 ? Math.round((shoe.used / shoe.max) * 100) : 0;
-  const ring = ringColor(shoe.condition);
-  const tier = conditionColor(shoe.condition);
+  // 컨디션 점·게이지 색은 목록 카드와 동일한 wearTier(used/max%) 기반.
+  const wearPct = shoe.max > 0 ? (shoe.used / shoe.max) * 100 : 0;
+  const ring = wearColorOf(wearPct);
   // 신발 종류 — 사용자 DB(shoes.json)의 type 을 예쁜 라벨(카본 레이싱 등)로 칩 표시.
   const heroType = typeLabel(findShoeClass(shoe.brand, shoe.model)?.type);
   // 부상예방 경고(주의/위험)는 같은 마모 분모(used/max)로 판정해 히어로 하단에 띄운다.
@@ -177,13 +182,14 @@ function HeroShoe({ shoe, unit, tappable, forecast, active, onOpenShoe, onStart 
             {!!heroType && <View style={s.catChip}><Text style={s.catChipText}>{heroType}</Text></View>}
             <View style={s.usingChip}><Text style={s.usingChipText}>사용 중</Text></View>
           </View>
+          {/* 양호: 목록/상세와 동일한 wearTier 칩(점+라벨: 최상의 컨디션/좋은 상태). 주의/교체: TierBadge. */}
           <View style={s.condpill}>
             {shoe.condition !== '양호' ? (
               <TierBadge condition={shoe.condition} />
             ) : (
               <>
-                <View style={[s.dot, { backgroundColor: tier }]} />
-                <Text style={[s.condText, { color: T2 }]} numberOfLines={1}>{condLabel(shoe.condition)}</Text>
+                <View style={[s.dot, { backgroundColor: ring }]} />
+                <Text style={[s.condText, { color: T2 }]} numberOfLines={1}>{wearLabelOf(wearPct)}</Text>
               </>
             )}
           </View>
