@@ -221,28 +221,30 @@ const SHOE_TITLES: TitleDef[] = [
     criterion: ctx => nonNeg(ctx.registeredShoeCount) >= 10,
   },
   {
-    // 활성 신발 전부 건강(과사용 0)을 6개월 이상 유지.
+    // 신발 10켤레 이상 보유하면서 활성 신발 전부 건강 — 컬렉션 관리 숙련.
     key: 'shoe_master',
     name: '신발 마스터',
     category: 'shoeManagement',
     tier: 'diamond',
-    criterion: ctx => allActiveHealthy(ctx) && tenureDays(ctx) >= MONTH_6,
+    criterion: ctx => nonNeg(ctx.registeredShoeCount) >= 10 && allActiveHealthy(ctx),
   },
   {
+    // 신발 10켤레 이상 + 3켤레 이상 은퇴 + 전부 건강 — 체계적 컬렉션 운영.
     key: 'keego_master',
     name: 'KEEGO 마스터',
     category: 'shoeManagement',
     tier: 'master',
-    criterion: ctx => allActiveHealthy(ctx) && tenureDays(ctx) >= YEAR_1,
+    criterion: ctx =>
+      nonNeg(ctx.registeredShoeCount) >= 10 && allActiveHealthy(ctx) && retirementCount(ctx) >= 3,
   },
   {
-    // Keep Going — 1년 이상 신발을 건강하게 + 여러 켤레를 제대로 은퇴(잘 관리한 흔적).
+    // Keep Going — 신발 10켤레 이상 + 5켤레 이상 은퇴 + 전부 건강(오랜 관리 경험).
     key: 'keep_going',
     name: 'Keep Going',
     category: 'shoeManagement',
     tier: 'legend',
     criterion: ctx =>
-      allActiveHealthy(ctx) && tenureDays(ctx) >= YEAR_1 && retirementCount(ctx) >= 3,
+      nonNeg(ctx.registeredShoeCount) >= 10 && allActiveHealthy(ctx) && retirementCount(ctx) >= 5,
   },
 ];
 

@@ -94,9 +94,9 @@ const TITLE_REQUIREMENT: Record<string, string> = {
   shoe_enthusiast: '신발 3켤레 등록',
   shoe_rotation_runner: '신발 5켤레 등록',
   shoe_collector: '신발 10켤레 등록',
-  shoe_master: '활성 신발 전부 건강(과사용 0)을 6개월 이상 유지',
-  keego_master: '활성 신발 전부 건강을 1년 이상 유지',
-  keep_going: '1년 이상 건강 유지 + 신발 3켤레 이상 은퇴',
+  shoe_master: '신발 10켤레 이상 등록 + 활성 신발 전부 건강 상태 유지',
+  keego_master: '신발 10켤레 이상 등록 + 3켤레 이상 은퇴 + 활성 신발 전부 건강',
+  keep_going: '신발 10켤레 이상 등록 + 5켤레 이상 은퇴 + 활성 신발 전부 건강',
   // injuryPrevention — 건강 유지 + 제때 교체
   injury_smart: '마모 한계 전에 신발 1켤레 교체(은퇴)',
   injury_wise: '활성 신발 전부를 건강 상태로 유지',
