@@ -985,7 +985,9 @@ const t = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     height: 62,
-    paddingHorizontal: 6,
+    // 좌우 안쪽 패딩 9 — 끝 탭 하이라이트가 독 가장자리에서 6dp 뜨게 해(끝 pill left
+    // = paddingLeft - HL_PAD/2 = 9 - 3 = 6) 상하 여백(=(62-50)/2=6)과 정확히 일치시킨다.
+    paddingHorizontal: 9,
     borderRadius: RADIUS.pill,
     overflow: 'hidden',                       // 하이라이트를 알약으로 클립
     borderWidth: StyleSheet.hairlineWidth,
