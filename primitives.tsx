@@ -880,6 +880,9 @@ export function TabBar({active, onTab}: {active: number; onTab: (i: number) => v
   const [slots, setSlots] = useState<{x: number; w: number}[]>([]);
   const hlX = useRef(new Animated.Value(0)).current;
   const hlW = useRef(new Animated.Value(0)).current;
+  // 첫 배치 여부. 최초 측정 때 (0,0)→활성탭으로 스프링하면 하이라이트가 '왼쪽에서 날아오는'
+  // 글리치가 보인다 — 첫 배치는 즉시 점프(setValue), 이후 탭 전환만 애니메이션한다.
+  const posed = useRef(false);
 
   const onSlot = (i: number) => (e: LayoutChangeEvent) => {
     const {x, width} = e.nativeEvent.layout;
@@ -897,6 +900,13 @@ export function TabBar({active, onTab}: {active: number; onTab: (i: number) => v
     const pad = 6;                 // 좌우로 살짝 넓게(위아래 여백과 균형)
     const w = s.w + pad;
     const x = s.x + (s.w - w) / 2;
+    if (!posed.current) {
+      // 첫 배치: 애니메이션 없이 즉시 자리잡기(왼쪽에서 날아오는 글리치 방지).
+      hlX.setValue(x);
+      hlW.setValue(w);
+      posed.current = true;
+      return;
+    }
     Animated.parallel([
       Animated.spring(hlX, {toValue: x, useNativeDriver: false, speed: 16, bounciness: 9}),
       Animated.spring(hlW, {toValue: w, useNativeDriver: false, speed: 16, bounciness: 9}),
