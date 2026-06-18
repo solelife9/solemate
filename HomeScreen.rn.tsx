@@ -216,7 +216,7 @@ function HeroShoe({ shoe, unit, tappable, forecast, active, onOpenShoe, onStart 
         )}
       </Pressable>
       {/* 러닝 시작 — 카드 배경 안(목업 정합). 이 카드 신발로 바로 시작. */}
-      {onStart && <Button label="러닝 시작" icon="play" onPress={onStart} style={{ marginTop: SPACE.sm }} />}
+      {onStart && <Button label="러닝 시작" icon="play" onPress={onStart} style={{ marginTop: SPACE.xs }} />}
     </View>
   );
 }
@@ -640,7 +640,7 @@ const s = StyleSheet.create({
   // 높이가 신발마다 흔들리지 않게 한다(numberOfLines={2} 와 짝).
   heroReason: { color: T2, fontFamily: FONT, fontSize: 14, fontWeight: '500', letterSpacing: -0.2, marginTop: 6, lineHeight: 20, minHeight: 20 },
   // 교체까지 남은 거리 — 문장형(목업 .remain). 숫자만 디스플레이 강조.
-  heroRemainLine: { color: T2, fontFamily: FONT, fontSize: 15, fontWeight: '500', letterSpacing: -0.2, marginTop: 16 },
+  heroRemainLine: { color: T2, fontFamily: FONT, fontSize: 15, fontWeight: '500', letterSpacing: -0.2, marginTop: 10 },
   heroRemainNum: { color: T1, fontFamily: DISPLAY, fontSize: 26, fontWeight: '800', letterSpacing: -0.6 },
   heroRemainNumU: { color: T2, fontFamily: FONT, fontSize: 13, fontWeight: '500' },
   gauge: { height: 4, borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.08), marginTop: 14, overflow: 'hidden' },
@@ -651,7 +651,7 @@ const s = StyleSheet.create({
   usagePct: { color: T2, fontFamily: FONT, fontSize: 12, fontWeight: '700', letterSpacing: 0.2 },
   injuryWrap: { marginTop: 16 },
   // 교체 예측 ETA 한 줄(목업 .fore — 회색·상단 구분선).
-  heroForecast: { flexDirection: 'row', alignItems: 'center', gap: 7, marginTop: 14, paddingTop: 13, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.06) },
+  heroForecast: { flexDirection: 'row', alignItems: 'center', gap: 7, marginTop: 10, paddingTop: 10, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.06) },
   heroForecastText: { flex: 1, color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '500', letterSpacing: -0.1, lineHeight: 16 },
   // forecast 가 없는 신발: 같은 높이를 차지하되 보이지 않게(공간만 예약 → 카드 높이 통일).
   heroForecastHidden: { opacity: 0 },
