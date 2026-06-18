@@ -1,12 +1,8 @@
 /**
- * App.tsx 홈 화면 주간 목표 달성 링 + 연속 러닝 스트릭 통합 테스트.
+ * App.tsx 홈 화면 챌린지 카드 통합 테스트.
  *
- * 관찰 가능한 동작을 실 런 데이터로 검증한다(keep-going 동기 표시):
- *   1) 이번 주 실제 런 합(km) / 주간 목표 → 달성률(%)이 홈에 뜨고, 그 달성률이
- *      Ring(primitives 재사용)의 진행도(strokeDashoffset)에 실제로 반영된다.
- *   2) 오늘까지 끊김 없이 이어진 연속 러닝 일수(currentStreak)가 'N일 연속'으로 뜬다.
- *   3) 오늘 달리지 않았으면 스트릭이 끊겨(0일) '오늘 달리고 스트릭 시작' 유도가 뜬다.
- *   4) 목표를 채우거나 초과하면(>=100%) 달성률이 100%로 가득 찬 링으로 표시된다.
+ * 주간목표가 챌린지 카드로 교체되었다. 홈 화면에 챌린지 카드가 렌더링되고
+ * 진행 중인 챌린지가 없으면 빈 상태가 표시됨을 검증한다.
  *
  * @format
  */
@@ -14,9 +10,7 @@
 import React from 'react';
 import ReactTestRenderer, {act} from 'react-test-renderer';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {StyleSheet} from 'react-native';
 import App from '../App';
-import {ACCENT, GOOD} from '../theme';
 
 type ApiShoe = {id: string; name: string; max_km: number; start_km: number; retired?: boolean};
 type ApiRun = {id: string; shoe_id: string; km: number; run_date: string; duration: number};
@@ -24,10 +18,7 @@ type ApiRun = {id: string; shoe_id: string; km: number; run_date: string; durati
 function textOf(node: ReactTestRenderer.ReactTestInstance): string {
   let out = '';
   const walk = (n: any) => {
-    if (typeof n === 'string') {
-      out += n;
-      return;
-    }
+    if (typeof n === 'string') { out += n; return; }
     if (!n || !n.children) return;
     n.children.forEach(walk);
   };
@@ -71,149 +62,19 @@ async function mount(shoes: ApiShoe[], runs: ApiRun[]) {
   return {root: renderer.root};
 }
 
-// 오늘에서 days일 전(로컬)을 'YYYY-MM-DD'로. ymdLocal(App 내부)과 동일 규칙이라
-// 주간 윈도(월~일)·스트릭 판정이 테스트 실행 요일과 무관하게 일치한다.
-function isoOffset(days: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() - days);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
-const TODAY = isoOffset(0);
-
-// 주간 목표 진행도(0~1)를 진행 바(testID='goal-progress')의 width(%)에서 읽는다.
-// (4) 리스킨에서 목표 표시가 SVG 링 → 헤어라인 진행 바로 바뀌어, 바 채움으로 검증한다.
-function goalBarPct(root: ReactTestRenderer.ReactTestInstance): number {
-  const bars = root.findAll((n: any) => n?.props?.testID === 'goal-progress');
-  if (!bars.length) throw new Error('goal progress bar not found');
-  const w = (StyleSheet.flatten(bars[0].props.style) || {}).width;
-  return typeof w === 'string' ? parseFloat(w) / 100 : 0;
-}
-
-// 진행 바의 채움색(상태색). 달성(>=100%) 시 GOOD(녹색), 미달성 시 ACCENT —
-// '단순 채움'이 아니라 '상태 전환'을 검증한다.
-function goalBarColor(root: ReactTestRenderer.ReactTestInstance): string | undefined {
-  const bars = root.findAll((n: any) => n?.props?.testID === 'goal-progress');
-  if (!bars.length) throw new Error('goal progress bar not found');
-  return (StyleSheet.flatten(bars[0].props.style) || {}).backgroundColor as string | undefined;
-}
-
-// 연속 스트릭 일수를 주간목표 '연속' 칼럼(testID='goal-streak')의 값에서 읽는다.
-// 목업 리스킨에서 'N일 연속' 칩 → 가로 통계 칼럼으로 바뀌어, 칼럼 숫자값으로 검증한다.
-function streakOf(root: ReactTestRenderer.ReactTestInstance): number {
-  const n = root.findAll((x: any) => x?.props?.testID === 'goal-streak');
-  if (!n.length) throw new Error('streak stat not found');
-  return parseInt(textOf(n[0]), 10) || 0;
-}
-
 const SHOE: ApiShoe[] = [{id: 's1', name: 'Nike Pegasus', max_km: 600, start_km: 0}];
 
 beforeEach(async () => {
   await AsyncStorage.clear();
 });
 
-test('이번 주 실 런 합 / 목표 → 달성률(%)이 홈 + 링 진행도에 반영된다', async () => {
-  // 이번 주 합 15km, 기본 목표 30km → 50%. 모든 런을 오늘 날짜로 둬 주간 윈도 안에 보장.
-  const runs: ApiRun[] = [
-    {id: 'r1', shoe_id: 's1', km: 9, run_date: TODAY, duration: 3000},
-    {id: 'r2', shoe_id: 's1', km: 6, run_date: TODAY, duration: 2000},
-  ];
-  const {root} = await mount(SHOE, runs);
-
-  // 달성률(15/30=50%)이 진행 바 채움에 데이터 구동으로 반영된다(목업 리스킨: % 텍스트
-  // 대신 막대 게이지로 표시).
-  expect(goalBarPct(root)).toBeCloseTo(0.5, 2);
+test('홈 화면에 챌린지 카드가 렌더링된다', async () => {
+  const {root} = await mount(SHOE, []);
+  const card = root.findAll((n: any) => n?.props?.testID === 'home-challenges-card');
+  expect(card.length).toBeGreaterThan(0);
 });
 
-test('오늘까지 이어진 연속 러닝 일수가 "N일 연속"으로 뜬다', async () => {
-  // 오늘·어제·그제 각각 달림 → 끊김 없는 3일 연속.
-  const runs: ApiRun[] = [
-    {id: 'r1', shoe_id: 's1', km: 4, run_date: isoOffset(0), duration: 1500},
-    {id: 'r2', shoe_id: 's1', km: 4, run_date: isoOffset(1), duration: 1500},
-    {id: 'r3', shoe_id: 's1', km: 4, run_date: isoOffset(2), duration: 1500},
-  ];
-  const {root} = await mount(SHOE, runs);
-
-  expect(streakOf(root)).toBe(3);
-});
-
-test('오늘 달리지 않으면 스트릭 0 → "오늘 달리고 스트릭 시작" 유도', async () => {
-  // 어제·그제만 달림(오늘 미달림) → 오늘 기준 스트릭은 0(끊김).
-  const runs: ApiRun[] = [
-    {id: 'r1', shoe_id: 's1', km: 4, run_date: isoOffset(1), duration: 1500},
-    {id: 'r2', shoe_id: 's1', km: 4, run_date: isoOffset(2), duration: 1500},
-  ];
-  const {root} = await mount(SHOE, runs);
-
-  // 오늘 미달림 → 스트릭 0(끊김). 목업 리스킨: '오늘 달리고 스트릭 시작' 칩 대신
-  // 연속 칼럼이 0을 표시한다.
-  expect(streakOf(root)).toBe(0);
-});
-
-test('목표를 채우면(>=100%) 달성률 100% 가득 찬 링으로 표시된다', async () => {
-  // 이번 주 30km = 기본 목표 30km → 정확히 100%.
-  const runs: ApiRun[] = [{id: 'r1', shoe_id: 's1', km: 30, run_date: TODAY, duration: 9000}];
-  const {root} = await mount(SHOE, runs);
-
-  // 정확히 100% — 진행 바가 가득 찬다(목업 리스킨: % 텍스트 대신 막대).
-  expect(goalBarPct(root)).toBeCloseTo(1, 2);
-});
-
-test('주간 윈도우 밖 런은 달성률에서 제외된다(전체합이 아님)', async () => {
-  // 이번 주: 오늘 15km → 목표 30km의 50%. 주간 밖: 10일 전 21km(지난주/그 전).
-  // weeklyProgress가 윈도를 무시하고 전체를 더하면 36/30=120%가 떠 50% 단언이 깨진다
-  // → 식별력 있는(수정 전 구현이면 실패) 케이스.
-  const runs: ApiRun[] = [
-    {id: 'r1', shoe_id: 's1', km: 15, run_date: TODAY, duration: 4500},
-    {id: 'r2', shoe_id: 's1', km: 21, run_date: isoOffset(10), duration: 6300},
-  ];
-  const {root} = await mount(SHOE, runs);
-
-  // 주간분(15/30=50%)만 반영 — 전체합(36/30=120%)이면 바가 가득(1.0) 차므로, 0.5는
-  // 주간 윈도 필터가 동작함을 식별한다.
-  expect(goalBarPct(root)).toBeCloseTo(0.5, 2);
-});
-
-test('스트릭은 중간 gap을 넘어 세지 않는다(오늘+그제 → 1일 연속)', async () => {
-  // 오늘 달림, 어제 빠짐, 그제 달림. 오늘 기준 끊김 없는 연속은 1일뿐 —
-  // gap을 무시하고 distinct day 수를 세면 2가 떠 단언이 깨진다.
-  const runs: ApiRun[] = [
-    {id: 'r1', shoe_id: 's1', km: 5, run_date: isoOffset(0), duration: 1800},
-    {id: 'r2', shoe_id: 's1', km: 5, run_date: isoOffset(2), duration: 1800},
-  ];
-  const {root} = await mount(SHOE, runs);
-
-  // gap을 넘어 세지 않음 — 오늘 기준 끊김 없는 연속은 1일뿐(distinct day 합산이면 2).
-  expect(streakOf(root)).toBe(1);
-});
-
-test('목표 초과(>100%)는 실제 %를 보이되 링은 over-fill하지 않는다', async () => {
-  // 이번 주 45km / 목표 30km = 150%.
-  const runs: ApiRun[] = [{id: 'r1', shoe_id: 's1', km: 45, run_date: TODAY, duration: 13500}];
-  const {root} = await mount(SHOE, runs);
-
-  // 목표 초과(45/30=150%)여도 진행 바 채움은 100%에서 클램프(width: min(100, pct)%) —
-  // >1로 과채움되지 않는다.
-  expect(goalBarPct(root)).toBeCloseTo(1, 2);
-});
-
-test('정확히 100%면 링이 GOOD(달성) 상태색으로 전환된다', async () => {
-  // 이번 주 30km = 목표 30km → 정확히 100%, 달성 상태.
-  const runs: ApiRun[] = [{id: 'r1', shoe_id: 's1', km: 30, run_date: TODAY, duration: 9000}];
-  const {root} = await mount(SHOE, runs);
-
-  const color = goalBarColor(root);
-  expect(color).toBe(GOOD); // 달성 시 바가 GOOD(녹색) 상태색으로 전환
-  expect(color).not.toBe(ACCENT); // 미달성 강조색(ACCENT)이 아님 — 단순 채움이 아닌 상태 전환
-});
-
-test('스트릭은 단위(mi) 토글과 무관한 절대 일수다', async () => {
-  // mi로 로드된 상태여도 연속 일수 표시는 동일('2일 연속'). 거리만 환산, 일수는 불변.
-  await AsyncStorage.setItem('settings_unit', 'mi');
-  const runs: ApiRun[] = [
-    {id: 'r1', shoe_id: 's1', km: 5, run_date: isoOffset(0), duration: 1800},
-    {id: 'r2', shoe_id: 's1', km: 5, run_date: isoOffset(1), duration: 1800},
-  ];
-  const {root} = await mount(SHOE, runs);
-
-  expect(streakOf(root)).toBe(2);
+test('챌린지가 없으면 빈 상태 안내 문구가 표시된다', async () => {
+  const {root} = await mount(SHOE, []);
+  expect(textOf(root.children[0] as any)).toContain('진행 중인 챌린지가 없어요');
 });

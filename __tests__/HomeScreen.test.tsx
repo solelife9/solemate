@@ -145,13 +145,12 @@ test("KeegoWordmark renders 'Keego' within HomeScreen itself", () => {
   expect(textOf(root)).toContain('Keego');
 });
 
-// ── 4) orange restraint: secondary section label is bound to the T3 token ──────
-// QuickStats(이번주/러닝/평균 페이스) 행은 홈에서 제거됨 — 살아남은 보조 라벨
-// '주간 목표'(WeeklyGoal 카드)가 오렌지가 아닌 T3 회색에 묶여 있는지 검증한다.
-test("주간 목표 라벨은 T3 토큰에 묶여 있다 (회색 보조 텍스트, 오렌지 절제)", () => {
+// ── 4) orange restraint: 챌린지 라벨은 T3 회색에 묶여 있다 ────────────────────
+test("챌린지 카드 라벨은 T3 토큰에 묶여 있다 (회색 보조 텍스트, 오렌지 절제)", () => {
   const root = render(
-    <HomeScreen shoes={SHOES} activeIdx={0} onSelect={jest.fn()} goal={{km: 30, pct: 0, streak: 0}} />,
+    <HomeScreen shoes={SHOES} activeIdx={0} onSelect={jest.fn()} />,
   ).root;
-  const label = root.findAll((n: any) => n && n.props && n.props.children === '주간 목표')[0];
+  // chalLabel은 T3 색상 — 챌린지 섹션 라벨이 오렌지가 아닌 회색인지 검증
+  const label = root.findAll((n: any) => n && n.props && n.props.children === '챌린지')[0];
   expect(StyleSheet.flatten(label.props.style).color).toBe(T3);
 });

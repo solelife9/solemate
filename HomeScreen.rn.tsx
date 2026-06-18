@@ -7,19 +7,18 @@
 // ============================================================================
 import React, { useRef, useState, useEffect } from 'react';
 import {
-  View, Text, ScrollView, Pressable, StyleSheet, Linking, Modal, Dimensions,
+  View, Text, ScrollView, Pressable, StyleSheet, Linking, Dimensions,
   RefreshControl, NativeSyntheticEvent, NativeScrollEvent,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {
   BG, CARD, CARD_DIM, CARD_HI, HERO_BG, ACCENT, DANGER, WARN, GOOD, T1, T2, T3, T4,
-  FONT, DISPLAY, SPACE, RADIUS, GUTTER, HERO, SCRIM, withAlpha, Shoe, SHOES, TIER_COLORS, TIER_LABEL,
+  FONT, DISPLAY, SPACE, RADIUS, GUTTER, withAlpha, Shoe, SHOES, TIER_COLORS, TIER_LABEL,
 } from './theme';
 import type { RankTier } from './lib/progression/types';
 import { TabBar, TierBadge, KeegoWordmark, Button, SectionTitle, Pill, conditionColor, InjuryBanner } from './primitives';
-import { Unit, displayNum, displayToKm } from './lib/units';
-import { GOAL_STEP_DISPLAY } from './lib/settings';
+import { Unit, displayNum } from './lib/units';
 import { assessShoeInjuryRisk } from './lib/injury';
 import { RotationPick } from './lib/rotation';
 import { recommendNextShoes, buildShopLinks, categoryLabelKo, AFFILIATE_DISCLOSURE } from './lib/affiliate';
@@ -29,9 +28,6 @@ import { syncLabel } from './lib/syncStatus';
 import { findShoeClass, typeLabel, purposeSentenceKo } from './data/shoeClass';
 
 export type WeekStats = { km: string; runs: number; pace: string };
-// 주간 목표 + keep-going 동기 지표. 거리는 km 표준, pct는 이번 주 달성률 %(목표
-// 설정 행이 구동), streak은 오늘까지 이어지는 연속 러닝 일수(lib/goals.currentStreak).
-export type GoalInfo = { km: number; pct: number; streak: number };
 
 // ── 진척(랭크·타이틀·챌린지·업적) 홈 노출 (Slice D) ──────────────────────────────
 // shoe-first 히어로를 밀어내지 않는 '얇은 띠'로 진척을 표면화한다. 값은 App 이
@@ -55,8 +51,10 @@ export type HomeProgression = {
   score: number;
   /** 장착 타이틀명(닉네임/인사 옆에 노출). 없으면 미장착. */
   equippedTitle?: string | null;
-  /** 노출할 활성 챌린지 1개(진행 바). 없으면 챌린지 줄 숨김. */
+  /** 노출할 활성 챌린지 1개(진행 바 — ProgressionStrip 전용). 없으면 챌린지 줄 숨김. */
   challenge?: HomeChallengeView | null;
+  /** 활성 챌린지 전체 목록(홈 챌린지 카드 노출용). */
+  challenges?: readonly HomeChallengeView[];
   /** 가장 최근 달성 업적 1개. 없으면 업적 줄 숨김. */
   achievement?: { name: string } | null;
 };
@@ -143,39 +141,48 @@ function TopBar({ onAddShoe }: { onAddShoe?: () => void }) {
   );
 }
 
-// 주간 목표 진행 + 연속 러닝 스트릭(keep-going 동기). 달성률은 Ring(primitives 재사용)
-// 으로, 스트릭은 불꽃 칩으로 실데이터를 표시한다. pct는 0~999%(목표 초과 가능), 링은
-// 100%에서 가득 차고(달성 시 GOOD 색), 스트릭이 0이면 '오늘 시작' 유도 문구를 보여준다.
-// 라벨/부가 텍스트는 T3 회색(오렌지 절제), 강조는 링 수치와 활성 스트릭에만.
-// 주간 목표 — 목업 정합: 원형 링 대신 가로 통계(거리·러닝·연속) + 막대 게이지. 거리/
-// 러닝은 week(이번 주 실측)에서, 연속은 goal.streak에서 온다. week 미주입 시 0으로 폴백.
-// '주간 목표' 라벨은 T3 회색(오렌지 절제) — 테스트가 이 토큰 결속을 검증한다.
-function WeeklyGoal({ goal, week, unit, editable }: { goal: GoalInfo; week?: WeekStats; unit: Unit; editable?: boolean }) {
-  const goalDisplay = displayNum(goal.km, unit, 0);
-  const pct = Math.max(0, goal.pct);
-  const reached = pct >= 100;
-  const streak = Math.max(0, goal.streak);
-  const distKm = week ? week.km : '0';
-  const runs = week ? week.runs : 0;
-  const remainKm = Math.max(0, goal.km - (parseFloat(distKm) || 0));
-  const remainDisplay = displayNum(remainKm, unit, 0);
+// 홈 챌린지 카드 — 활성 챌린지 목록을 컴팩트하게 보여준다. 빈 상태면 "진척" 화면으로
+// 유도하는 CTA를 노출한다. 탭하면 onOpenProgression 으로 ProgressionScreen을 연다.
+function HomeChallengesCard({
+  challenges,
+  onOpenProgression,
+}: {
+  challenges?: readonly HomeChallengeView[];
+  onOpenProgression?: () => void;
+}) {
+  const list = challenges ?? [];
   return (
-    <View>
-      <View style={[s.row, { marginBottom: 14 }]}>
+    <View style={s.chalWrap} testID="home-challenges-card">
+      <View style={[s.row, { marginBottom: 12 }]}>
         <Ionicons name="flag" size={13} color={T3} />
-        <Text style={s.goalLabel}>주간 목표</Text>
-        {editable && <Ionicons name="create-outline" size={13} color={T3} />}
+        <Text style={s.chalLabel}>챌린지</Text>
+        <Pressable onPress={onOpenProgression} hitSlop={8} accessibilityRole="button" accessibilityLabel="챌린지 추가">
+          <Text style={s.chalMore}>+ 추가 ›</Text>
+        </Pressable>
       </View>
-      <View style={s.weekStats}>
-        <View style={[s.weekStat, s.weekStatLead]}><Text style={s.weekLeadV}>이번{'\n'}주</Text></View>
-        <View style={s.weekStat}><Text style={s.weekV}>{distKm}<Text style={s.weekU}>{unit}</Text></Text><Text style={s.weekK}>거리</Text></View>
-        <View style={s.weekStat}><Text style={s.weekV}>{runs}<Text style={s.weekU}>회</Text></Text><Text style={s.weekK}>러닝</Text></View>
-        <View style={s.weekStat}><Text testID="goal-streak" style={s.weekV}>{streak}<Text style={s.weekU}>일</Text></Text><Text style={s.weekK}>연속</Text></View>
-      </View>
-      <View style={s.gbar}><View style={[s.gbarFill, { width: `${Math.min(100, pct)}%`, backgroundColor: reached ? GOOD : ACCENT }]} /></View>
-      <Text style={s.gnote}>주간 목표 {goalDisplay}{unit} · {remainDisplay}{unit} 남음</Text>
-      {/* progress carrier for test instrumentation */}
-      <View testID="goal-progress" style={{ position: 'absolute', width: `${Math.min(Math.max(0, pct), 100)}%`, height: 0, backgroundColor: reached ? GOOD : ACCENT }} />
+      {list.length === 0 ? (
+        <Pressable onPress={onOpenProgression} accessibilityRole="button" accessibilityLabel="챌린지 시작하기" style={s.chalEmpty}>
+          <Text style={s.chalEmptyTxt}>진행 중인 챌린지가 없어요</Text>
+          <Text style={s.chalEmptyHint}>탭해서 챌린지를 만들고 XP를 받아요</Text>
+        </Pressable>
+      ) : (
+        list.map((ch, i) => {
+          const pct = Math.max(0, Math.min(1, ch.pct));
+          const done = ch.pct >= 1;
+          return (
+            <Pressable key={i} onPress={onOpenProgression} accessibilityRole="button" style={[s.chalItem, i > 0 && s.chalItemSep]}>
+              <View style={s.chalItemTop}>
+                <Text style={s.chalItemLabel} numberOfLines={1}>{ch.label}</Text>
+                {done && <Ionicons name="checkmark-circle" size={14} color={GOOD} />}
+              </View>
+              <View style={s.chalBar}>
+                <View style={[s.chalBarFill, { width: `${Math.round(pct * 100)}%`, backgroundColor: done ? GOOD : ACCENT }]} />
+              </View>
+              <Text style={s.chalPct}>{Math.round(pct * 100)}% {ch.unit ? `· ${Math.round(ch.current * 10) / 10}${ch.unit}` : ''}</Text>
+            </Pressable>
+          );
+        })
+      )}
     </View>
   );
 }
@@ -462,8 +469,8 @@ function EmptyHome({ onAddShoe }: { onAddShoe?: () => void }) {
 
 export default function HomeScreen({
   shoes = SHOES, dateLabel = '', onStart, onAddShoe, onTab,
-  activeIdx: activeIdxProp, onSelect, unit = 'km', goal, week, rotation, onPickShoe,
-  onChangeGoal, onOpenShoe, forecast, forecasts, progression, onOpenProgression,
+  activeIdx: activeIdxProp, onSelect, unit = 'km', week, rotation, onPickShoe,
+  onOpenShoe, forecast, forecasts, progression, onOpenProgression,
   onRefresh, lastSyncAt,
 }: {
   shoes?: Shoe[];
@@ -488,12 +495,7 @@ export default function HomeScreen({
   // 따른다. 둘 다 없으면 기존처럼 내부 상태로 동작(하위호환).
   activeIdx?: number;
   onSelect?: (i: number) => void;
-  // 표시 단위(km|mi)와 주간 목표 진행(설정 화면에서 구동). 둘 다 표시 전용.
   unit?: Unit;
-  goal?: GoalInfo;
-  // 홈 카드 인터랙션: 주간 목표 카드 탭 → 홈에서 바로 목표 수정(인라인 모달), 히어로
-  // 신발 탭 → 그 신발 상세로 이동. onChangeGoal(km)으로 목표를 영속 갱신한다.
-  onChangeGoal?: (km: number) => void;
   onOpenShoe?: (shoeId: string) => void;
   // 진척 홈 노출(Slice D) — App 이 getProgression + 챌린지 진행을 읽기 전용 파생해
   // 내려준다. 미주입이면 띠/타이틀을 통째로 숨겨 기존 홈과 100% 하위호환(표시 전용).
@@ -509,8 +511,6 @@ export default function HomeScreen({
   lastSyncAt?: number | null;
 }) {
   const [internalIdx, setInternalIdx] = useState(0);
-  // 주간 목표 인라인 편집 모달(프로필로 이동하지 않고 홈에서 바로 수정).
-  const [goalEditOpen, setGoalEditOpen] = useState(false);
   // 당겨서 새로고침 스피너 상태. onRefresh(서버 재fetch/pending flush)가 끝나면 내린다.
   // onRefresh 가 던져도 finally 로 스피너를 반드시 내려 멈춤 상태로 끼지 않게 한다.
   const [refreshing, setRefreshing] = useState(false);
@@ -519,11 +519,6 @@ export default function HomeScreen({
     setRefreshing(true);
     try { await onRefresh(); } catch { /* 새로고침 실패는 스피너만 내리고 조용히 무시 */ }
     finally { setRefreshing(false); }
-  };
-  const stepGoal = (dir: 1 | -1) => {
-    if (!goal) return;
-    const next = displayNum(goal.km, unit, 0) + dir * GOAL_STEP_DISPLAY;
-    onChangeGoal?.(displayToKm(next, unit));
   };
   const controlled = activeIdxProp != null && typeof onSelect === 'function';
   const rawIdx = controlled ? (activeIdxProp as number) : internalIdx;
@@ -589,16 +584,11 @@ export default function HomeScreen({
           <View style={{ paddingHorizontal: SPACE.xl }}>
             <InsightCard shoe={active} unit={unit} forecast={forecast} />
           </View>
-          {/* 주간 목표 — 목업 정합: 내 러닝화 아래 배치. 탭하면 인라인 편집 모달. */}
-          {goal && (
-            <Pressable
-              onPress={() => onChangeGoal && setGoalEditOpen(true)}
-              accessibilityRole="button"
-              accessibilityLabel="주간 목표 수정"
-              style={({ pressed }) => [s.weekWrap, pressed && s.pressed]}>
-              <WeeklyGoal goal={goal} week={week} unit={unit} editable={!!onChangeGoal} />
-            </Pressable>
-          )}
+          {/* 챌린지 카드 */}
+          <HomeChallengesCard
+            challenges={progression?.challenges}
+            onOpenProgression={onOpenProgression}
+          />
           {/* 휴식·마모 분산 로테이션 추천(2켤레+에서만 채워짐, 비면 자동 숨김) */}
           <RotationCard rotation={rotation ?? []} onPickShoe={onPickShoe} />
           {/* 수익화 v1: 다음 러닝화 추천 노출 트리거 — Slice 6 교체 예측 기반(overdue/임박).
@@ -614,33 +604,6 @@ export default function HomeScreen({
       </ScrollView>
       <TabBar active={0} onTab={(i) => onTab?.(i)} />
 
-      {/* 주간 목표 인라인 편집 — 홈에서 바로 ＋/－로 조정(프로필로 이동하지 않음). */}
-      {goal && (
-        <Modal visible={goalEditOpen} transparent animationType="fade" onRequestClose={() => setGoalEditOpen(false)}>
-          <Pressable style={s.goalBackdrop} onPress={() => setGoalEditOpen(false)} accessibilityRole="button" accessibilityLabel="닫기">
-            <Pressable style={s.goalSheet} onPress={() => {}}>
-              <View style={s.goalSheetHead}>
-                <Ionicons name="flag" size={15} color={ACCENT} />
-                <Text style={s.goalSheetTitle}>주간 목표</Text>
-              </View>
-              <View style={s.goalStepper}>
-                <Pressable onPress={() => stepGoal(-1)} accessibilityRole="button" accessibilityLabel="목표 줄이기" hitSlop={6} style={({ pressed }) => [s.goalStepBtn, pressed && { backgroundColor: CARD_DIM }]}>
-                  <Ionicons name="remove" size={22} color={T1} />
-                </Pressable>
-                <View style={s.goalStepVal}>
-                  <Text style={s.goalStepNum}>{displayNum(goal.km, unit, 0)}</Text>
-                  <Text style={s.goalStepUnit}>{unit}/주</Text>
-                </View>
-                <Pressable onPress={() => stepGoal(1)} accessibilityRole="button" accessibilityLabel="목표 늘리기" hitSlop={6} style={({ pressed }) => [s.goalStepBtn, pressed && { backgroundColor: CARD_DIM }]}>
-                  <Ionicons name="add" size={22} color={T1} />
-                </Pressable>
-              </View>
-              <Text style={s.goalSheetHint}>이번 주 <Text style={{ color: ACCENT }}>{Math.max(0, goal.pct)}%</Text> 달성</Text>
-              <Button label="완료" onPress={() => setGoalEditOpen(false)} style={s.goalDone} />
-            </Pressable>
-          </Pressable>
-        </Modal>
-      )}
     </View>
   );
 }
@@ -688,7 +651,6 @@ const s = StyleSheet.create({
 
   goalCard: { backgroundColor: CARD_DIM, borderRadius: 18, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.06), padding: SPACE.md, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   goalInfo: { flex: 1, gap: 6, minWidth: 0 },
-  goalLabel: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600', letterSpacing: 0.2 },
   goalSub: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500' },
   streakChip: { flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start', borderRadius: RADIUS.pill, paddingHorizontal: 9, paddingVertical: 4 },
   streakChipOn: { backgroundColor: withAlpha(ACCENT, 0.14), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.4) },
@@ -757,19 +719,20 @@ const s = StyleSheet.create({
   pageDotOn: { width: 16, backgroundColor: ACCENT },
   swipeHint: { textAlign: 'center', color: T3, fontFamily: FONT, fontSize: 12, marginTop: 10 },
 
-  // 주간 목표 — 목업 .week(상단 구분선 + 가로 통계 + 막대바)
-  // 주간 목표 카드(사용자 요청) — 현재 상태 InsightCard 와 동일한 카드 분위기로 통일.
-  weekWrap: { marginHorizontal: SPACE.xl, marginTop: SPACE.lg, backgroundColor: CARD_DIM, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: withAlpha(T1, 0.07), padding: SPACE.lg },
-  weekStats: { flexDirection: 'row', alignItems: 'flex-start' },
-  weekStat: { flex: 1 },
-  weekStatLead: {},
-  weekLeadV: { color: T2, fontFamily: FONT, fontSize: 15, fontWeight: '500', lineHeight: 19 },
-  weekV: { color: T1, fontFamily: DISPLAY, fontSize: 21, fontWeight: '500', letterSpacing: -0.4 },
-  weekU: { color: T4, fontFamily: FONT, fontSize: 11, fontWeight: '500' },
-  weekK: { color: T3, fontFamily: FONT, fontSize: 11, fontWeight: '500', marginTop: 5 },
-  gbar: { height: 3, borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.07), marginTop: 18, overflow: 'hidden' },
-  gbarFill: { height: '100%', borderRadius: RADIUS.pill },
-  gnote: { color: T4, fontFamily: FONT, fontSize: 11, marginTop: 9 },
+  // 홈 챌린지 카드
+  chalWrap: { marginHorizontal: SPACE.xl, marginTop: SPACE.lg, backgroundColor: CARD_DIM, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: withAlpha(T1, 0.07), padding: SPACE.lg },
+  chalLabel: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '600', letterSpacing: 0.6, textTransform: 'uppercase', flex: 1 },
+  chalMore: { color: ACCENT, fontFamily: FONT, fontSize: 12, fontWeight: '600' },
+  chalEmpty: { alignItems: 'center', paddingVertical: 8 },
+  chalEmptyTxt: { color: T2, fontFamily: FONT, fontSize: 14, fontWeight: '500' },
+  chalEmptyHint: { color: T3, fontFamily: FONT, fontSize: 12, marginTop: 4 },
+  chalItem: { paddingVertical: 8 },
+  chalItemSep: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.07) },
+  chalItemTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 },
+  chalItemLabel: { color: T1, fontFamily: FONT, fontSize: 13, fontWeight: '500', flex: 1 },
+  chalBar: { height: 3, borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.07), overflow: 'hidden' },
+  chalBarFill: { height: '100%', borderRadius: RADIUS.pill },
+  chalPct: { color: T3, fontFamily: FONT, fontSize: 11, marginTop: 5 },
 
   rotaWrap: { marginTop: SPACE.lg },
   rotaCard: { marginHorizontal: SPACE.xl, backgroundColor: CARD_DIM, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: withAlpha(T1, 0.07), paddingHorizontal: SPACE.lg },
@@ -793,20 +756,6 @@ const s = StyleSheet.create({
   shopBtnTxt: { color: ACCENT, fontFamily: FONT, fontSize: 12, fontWeight: '600' },
   nextDisclosure: { color: T3, fontFamily: FONT, fontSize: 11, lineHeight: 15, marginTop: SPACE.md, opacity: 0.85 },
 
-  // 주간 목표 인라인 편집 모달(홈에서 바로 수정)
-  goalBackdrop: { flex: 1, backgroundColor: SCRIM, alignItems: 'center', justifyContent: 'center', padding: 32 },
-  goalSheet: { width: '100%', maxWidth: 360, backgroundColor: CARD, borderRadius: RADIUS.xl, padding: 24, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.1) },
-  goalSheetHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 20 },
-  goalSheetTitle: { color: T1, fontFamily: FONT, fontSize: 16, fontWeight: '600' },
-  goalStepper: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 16 },
-  goalStepBtn: { width: 52, height: 52, borderRadius: RADIUS.md, backgroundColor: CARD_HI, alignItems: 'center', justifyContent: 'center' },
-  goalStepVal: { flex: 1, alignItems: 'center' },
-  goalStepNum: { color: T1, fontFamily: DISPLAY, fontSize: HERO.hero, letterSpacing: 0.3 },
-  goalStepUnit: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '600', marginTop: 2 },
-  goalSheetHint: { color: T3, fontFamily: FONT, fontSize: 13, textAlign: 'center', marginTop: 16 },
-  // goalDone/emptyBtn 은 단일 Button 프리미티브로 대체 — 화면 고유 여백만 남긴다
-  // (모양·배경·radius 는 Button 토큰이 책임. 과거 RADIUS.md/pill 사각 버튼 제거).
-  goalDone: { marginTop: 20 },
 
 
   empty: { paddingHorizontal: SPACE.xl, paddingTop: 30 },

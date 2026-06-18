@@ -8,18 +8,20 @@
 //   - 모든 함수는 try/catch 로 감싸 네이티브 부재/오류에서도 no-op 으로 폴백한다.
 //   - 화면/도메인 로직에 crashlytics 가 새어들지 않는다(이 모듈의 API 만 노출).
 
-import {
-  getCrashlytics,
-  recordError as fbRecordError,
-  log as fbLog,
-  setCrashlyticsCollectionEnabled,
-  setUserId as fbSetUserId,
-} from '@react-native-firebase/crashlytics';
+// 동적 require: 네이티브 모듈 없는 환경(에뮬레이터/테스트)에서 모듈 로드 자체가
+// throw 하는 케이스를 방어한다.
+let fbMod: any = null;
+try {
+  fbMod = require('@react-native-firebase/crashlytics');
+} catch {
+  fbMod = null;
+}
 
 /** crashlytics 인스턴스(획득 실패 시 null — 호출부는 항상 null 체크). */
 function instance() {
   try {
-    return getCrashlytics();
+    if (!fbMod) return null;
+    return fbMod.getCrashlytics();
   } catch {
     return null;
   }
@@ -29,7 +31,7 @@ function instance() {
 export function logBreadcrumb(message: string): void {
   try {
     const c = instance();
-    if (c) fbLog(c, message);
+    if (c && fbMod) fbMod.log(c, message);
   } catch {
     /* 관측성 실패는 앱을 막지 않는다 */
   }
@@ -39,10 +41,10 @@ export function logBreadcrumb(message: string): void {
 export function recordError(error: unknown, context?: string): void {
   try {
     const c = instance();
-    if (!c) return;
-    if (context) fbLog(c, context);
+    if (!c || !fbMod) return;
+    if (context) fbMod.log(c, context);
     const err = error instanceof Error ? error : new Error(String(error));
-    fbRecordError(c, err);
+    fbMod.recordError(c, err);
   } catch {
     /* 관측성 실패는 앱을 막지 않는다 */
   }
@@ -52,7 +54,7 @@ export function recordError(error: unknown, context?: string): void {
 export function setCrashUser(userId: string): void {
   try {
     const c = instance();
-    if (c && userId) fbSetUserId(c, userId);
+    if (c && userId && fbMod) fbMod.setUserId(c, userId);
   } catch {
     /* no-op */
   }
@@ -62,7 +64,7 @@ export function setCrashUser(userId: string): void {
 export function setCrashCollectionEnabled(enabled: boolean): void {
   try {
     const c = instance();
-    if (c) setCrashlyticsCollectionEnabled(c, enabled);
+    if (c && fbMod) fbMod.setCrashlyticsCollectionEnabled(c, enabled);
   } catch {
     /* no-op */
   }

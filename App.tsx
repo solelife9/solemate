@@ -223,7 +223,7 @@ function Main(){
   // 홈 카드 → 화면 이동: 히어로 신발 탭 시 그 신발 상세를 신발탭에서 열고, 주간목표 탭 시
   // 프로필의 목표 설정 패널을 펼친 채 진입한다(각각 한 번만 소비).
   const [shoesDetailId,setShoesDetailId]=useState<string|null>(null);
-  const [profileInitialOpen,setProfileInitialOpen]=useState<'goal'|'weight'|'alerts'|'account'|'import'|null>(null);
+  const [profileInitialOpen,setProfileInitialOpen]=useState<'weight'|'alerts'|'account'|'import'|null>(null);
   // 진척(랭크·타이틀·업적) 전체화면 표시 여부. 프로필의 '진척' 버튼이 열고, 화면의
   // 뒤로 버튼이 닫는다. 기존 탭/온보딩 부트 흐름과 독립적인 오버레이형 게이트다.
   const [showProgression,setShowProgression]=useState(false);
@@ -1220,13 +1220,15 @@ function Main(){
       const p=challengeExtProgress(c,extRuns,extShoes,nowISO);
       cands.push({v:{label:extChallengeLabel(c),current:p.current,target:p.target,pct:p.pct,unit:extChallengeUnit(c)},completed:p.completed,pct:p.pct});
     }
-    const active=cands.filter(c=>c.v.target>0)
-      .sort((a,b)=>(Number(a.completed)-Number(b.completed))||(b.pct-a.pct))[0]??null;
+    const sorted=cands.filter(c=>c.v.target>0)
+      .sort((a,b)=>(Number(a.completed)-Number(b.completed))||(b.pct-a.pct));
+    const activeChallenges=sorted.map(c=>c.v);
     return {
       tier:view.rank.tier,
       score:view.rank.score,
       equippedTitle:equipped,
-      challenge:active?active.v:null,
+      challenge:activeChallenges[0]??null,
+      challenges:activeChallenges,
       achievement:recentAch?{name:recentAch.name}:null,
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1546,6 +1548,9 @@ function Main(){
   if(showProgression){
     return <ProgressionScreen runs={runs} shoes={shoes} profileName={profileName}
       extChallenges={extChallenges} onAcceptChallenge={acceptChallenge}
+      challenges={challenges} challengeRuns={challengeRuns}
+      onCreateChallenge={createChallenge} onDeleteChallenge={deleteChallenge}
+      today={today()}
       onBack={()=>setShowProgression(false)}
       onOpenHallOfFame={()=>setShowHallOfFame(true)}/>;
   }
@@ -1562,11 +1567,9 @@ function Main(){
         {tab===0&&(
           <HomeScreen
             shoes={homeUiShoes} week={week} dateLabel={dateLabel} unit={unit}
-            goal={{km:goalWeeklyKm,pct:goalProgress.percent,streak:goalStreak}}
             activeIdx={homeActiveIdx} onSelect={selectHomeShoe}
             onStart={startFromIdx} onAddShoe={()=>setOverlay('add')} onTab={setTab}
             rotation={rotationPicks} onPickShoe={setSelectedShoeId}
-            onChangeGoal={changeGoal}
             forecast={homeForecast}
             forecasts={homeForecasts}
             onOpenShoe={(id)=>{setSelectedShoeId(id);setShoesDetailId(id);setTab(1);}}
@@ -1601,8 +1604,6 @@ function Main(){
             weightKg={weightKg} onChangeWeight={changeWeight}
             initialOpen={profileInitialOpen} onConsumeInitialOpen={()=>setProfileInitialOpen(null)}
             unit={unit} onChangeUnit={changeUnit}
-            goalWeeklyKm={goalWeeklyKm} weeklyPercent={goalProgress.percent}
-            weeklyDoneKm={goalProgress.totalKm} onChangeGoal={changeGoal}
             streakDays={goalStreak}
             weekDays={weekBuckets(runs, mon).map(v => v > 0)}
             weekTodayIdx={(now.getDay() + 6) % 7}

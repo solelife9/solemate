@@ -44,7 +44,8 @@ import {
 } from './theme';
 import {SegmentedControl, StatGrid} from './primitives';
 import {ymdLocal} from './lib/format';
-import {ExtChallengeCard, SmartChallengeCard} from './ChallengesSection';
+import ChallengesSection, {ExtChallengeCard, SmartChallengeCard} from './ChallengesSection';
+import type {Challenge, ChallengeRun} from './lib/challenges';
 import {
   generateSmartChallenge,
   type ExtChallenge,
@@ -122,6 +123,11 @@ export interface ProgressionScreenProps {
   onOpenHallOfFame?: () => void;
   extChallenges?: readonly ExtChallenge[];
   onAcceptChallenge?: (c: ExtChallenge) => void;
+  challenges?: Challenge[];
+  challengeRuns?: ChallengeRun[];
+  onCreateChallenge?: (c: Challenge) => void;
+  onDeleteChallenge?: (id: string) => void;
+  today?: string;
 }
 
 export default function ProgressionScreen({
@@ -134,6 +140,11 @@ export default function ProgressionScreen({
   onOpenHallOfFame,
   extChallenges = [],
   onAcceptChallenge,
+  challenges = [],
+  challengeRuns = [],
+  onCreateChallenge,
+  onDeleteChallenge,
+  today,
 }: ProgressionScreenProps) {
   const insets = useSafeAreaInsets();
 
@@ -426,32 +437,21 @@ export default function ProgressionScreen({
         )}
 
         {/* 챌린지 탭 */}
-        {tab === 'challenges' &&
-          (showSmart || extChallenges.length > 0 ? (
-            <View style={{gap: SPACE.sm}} testID="progression-challenges">
-              {showSmart ? (
-                <SmartChallengeCard
-                  ch={smart!}
-                  shoes={extShoes}
-                  onAccept={onAcceptChallenge}
-                />
-              ) : null}
-              {extChallenges.map(ch => (
-                <ExtChallengeCard
-                  key={ch.id}
-                  ch={ch}
-                  runs={extRuns}
-                  shoes={extShoes}
-                  now={nowISO}
-                />
-              ))}
-            </View>
-          ) : (
-            <View style={s.empty} testID="progression-challenges-empty">
-              <Ionicons name="flag-outline" size={22} color={T3} />
-              <Text style={s.emptyTxt}>진행 중인 챌린지가 없어요</Text>
-            </View>
-          ))}
+        {tab === 'challenges' && (
+          <ChallengesSection
+            challenges={challenges}
+            runs={challengeRuns}
+            onCreate={onCreateChallenge}
+            onDelete={onDeleteChallenge}
+            today={today}
+            extChallenges={extChallenges as ExtChallenge[]}
+            extRuns={extRuns}
+            shoes={extShoes}
+            now={nowISO}
+            smartSuggestion={smart ?? null}
+            onAcceptChallenge={onAcceptChallenge}
+          />
+        )}
       </ScrollView>
     </View>
   );

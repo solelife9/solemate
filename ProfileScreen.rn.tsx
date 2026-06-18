@@ -13,13 +13,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { BG, CARD, CARD_DIM, CARD_HI, ACCENT, GOOD, DANGER, WARN, T1, T2, T3, SEP, CARD_BORDER, FONT, DISPLAY, withAlpha, TIER_COLORS, TIER_LABEL, KAKAO_YELLOW, KAKAO_LABEL, NAVER_GREEN, NAVER_LABEL, RADIUS } from './theme';
 // recap 토글 = SegmentedControl(accentSolid), 스탯 그리드들 = StatGrid 단일 프리미티브.
-import { TabBar, Ring, Pill, SectionTitle, Button, SegmentedControl, StatGrid } from './primitives';
-import { Unit, unitKorean, displayNum, displayToKm } from './lib/units';
+import { TabBar, Pill, SectionTitle, Button, SegmentedControl, StatGrid } from './primitives';
+import { Unit, unitKorean, displayNum } from './lib/units';
 import { weeklyRecap, monthlyRecap, type RecapRun, type RecapShoe } from './lib/recap';
 import { buildRecapShareCardModel, shareRecapCard, formatRecapPRs, type RecapKind, type SvgCapturable } from './lib/shareCard';
 import RecapShareCard from './RecapShareCard';
 import {
-  AlertSettings, GOAL_STEP_DISPLAY, THRESHOLD_STEP,
+  AlertSettings, THRESHOLD_STEP,
   MIN_THRESHOLD_PCT, MAX_THRESHOLD_PCT, DEFAULT_SETTINGS, DEFAULT_ALERTS,
   WEIGHT_STEP, MIN_WEIGHT_KG, MAX_WEIGHT_KG,
 } from './lib/settings';
@@ -106,7 +106,6 @@ export default function ProfileScreen({
   weightKg = DEFAULT_SETTINGS.weightKg, onChangeWeight,
   initialOpen = null, onConsumeInitialOpen,
   unit = 'km', onChangeUnit,
-  goalWeeklyKm = DEFAULT_SETTINGS.goalWeeklyKm, weeklyPercent = 0, weeklyDoneKm = 0, onChangeGoal,
   streakDays = 0, weekDays = [], weekTodayIdx = -1,
   alerts = { ...DEFAULT_ALERTS }, onChangeAlerts,
   notifSettings = DEFAULT_NOTIF_SETTINGS, onChangeNotifSettings,
@@ -129,16 +128,10 @@ export default function ProfileScreen({
   // 체중(kg) — 칼로리 추정용. 설정 스테퍼가 조정한다.
   weightKg?: number;
   onChangeWeight?: (kg: number) => void;
-  // 외부(홈 주간목표 탭)에서 특정 설정 패널을 펼친 채 진입한다(한 번만 소비).
-  initialOpen?: 'goal' | 'weight' | 'alerts' | 'notif' | 'account' | 'import' | null;
+  initialOpen?: 'weight' | 'alerts' | 'notif' | 'account' | 'import' | null;
   onConsumeInitialOpen?: () => void;
   unit?: Unit;
   onChangeUnit?: (u: Unit) => void;
-  goalWeeklyKm?: number;
-  weeklyPercent?: number;
-  // 이번 주 누적 거리(km 표준). 주간 목표 링/카피의 분자(달성 거리)로 표시 단위 환산해 쓴다.
-  weeklyDoneKm?: number;
-  onChangeGoal?: (km: number) => void;
   // 오늘까지 이어진 연속 달림 일수(keep-going 동기). 0이면 스트릭 칩/카운트 숨김.
   streakDays?: number;
   // 이번 주 월~일(7칸) 달림 여부. weekTodayIdx는 오늘 칸(0=월..6=일, 없으면 -1).
@@ -339,13 +332,6 @@ export default function ProfileScreen({
   const accountLabel = cloudUser?.email || cloudUser?.displayName || '계정 연결됨';
   const lastSyncLabel = lastSyncAt == null ? '아직 동기 안 함' : `${fmtSyncTime(lastSyncAt)} 동기됨`;
 
-  // 목표는 km로 저장하되 화면은 표시 단위(km|mi)로 보여주고 스텝도 표시 단위로 움직인다.
-  const goalDisplay = displayNum(goalWeeklyKm, unit, 0);
-  const stepGoal = (dir: 1 | -1) => {
-    const next = goalDisplay + dir * GOAL_STEP_DISPLAY;   // 표시 단위 기준 증감
-    onChangeGoal?.(displayToKm(next, unit));               // km로 되돌려 저장(클램프는 App)
-  };
-
   const stepWeight = (dir: 1 | -1) => {
     onChangeWeight?.(Math.max(MIN_WEIGHT_KG, Math.min(MAX_WEIGHT_KG, weightKg + dir * WEIGHT_STEP)));
   };
@@ -411,16 +397,6 @@ export default function ProfileScreen({
     shareRecapCard(recapCardRef, recap, { unit, kind: recapMode });
   };
 
-  // 주간 목표 링/카피: 달성률(%)·달성 거리·남은 거리를 표시 단위로 환산해 keep-going 톤
-  // 한 줄로 묶는다. 100% 이상이면 '달성!' 축하 카피, 그 전이면 '남은 거리만 더' 격려.
-  const doneDisplay = displayNum(weeklyDoneKm, unit, 1);
-  const remainingKm = Math.max(0, goalWeeklyKm - weeklyDoneKm);
-  const remainingDisplay = displayNum(remainingKm, unit, 1);
-  const reached = weeklyPercent >= 100;
-  const ringProgress = Math.max(0, Math.min(1, weeklyPercent / 100));
-  const keepGoing = reached
-    ? '이번 주 목표 달성! 🎉 계속 이어가요'
-    : `${remainingDisplay}${unit}만 더 — 계속 달려요!`;
   // 이번 주 스트릭 점: weekDays(월~일)를 항상 7칸으로 정규화(미주입/부족분은 false).
   const week7 = Array.from({ length: 7 }, (_, i) => !!weekDays[i]);
   const DOW = ['월', '화', '수', '목', '금', '토', '일'];
@@ -515,23 +491,6 @@ export default function ProfileScreen({
           {streakDays > 0 && (
             <Pill tone="warn" icon="flame" label={`${streakDays}일 연속`} testID="streak-pill" />
           )}
-        </View>
-
-        {/* 주간 목표 달성 링 + keep-going 카피 */}
-        <View style={[s.card, s.goalCard]} testID="goal-ring-card">
-          <Ring size={92} stroke={9} progress={ringProgress}>
-            <View style={s.ringCenter}>
-              <Text style={s.ringPct}>{weeklyPercent}<Text style={s.ringPctU}>%</Text></Text>
-            </View>
-          </Ring>
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <Text style={s.goalLabel}>주간 목표</Text>
-            <View style={[s.row, s.goalNumRow]}>
-              <Text style={s.goalDone}>{doneDisplay}</Text>
-              <Text style={s.goalTotal}> / {goalDisplay} {unit}</Text>
-            </View>
-            <Text style={[s.keepGoing, reached && s.keepGoingDone]} testID="keep-going">{keepGoing}</Text>
-          </View>
         </View>
 
         {/* 이번 주 스트릭 — 월~일 달림 점 */}
@@ -729,21 +688,7 @@ export default function ProfileScreen({
         <View>
           <Text style={[s.sectionLabel, { paddingBottom: 12 }]}>설정</Text>
           <View style={[s.card, { overflow: 'hidden' }]}>
-            {/* 1) 목표 설정 */}
-            <Pressable onPress={() => toggleOpen('goal')} accessibilityRole="button" accessibilityLabel={`목표 설정, 주 ${goalDisplay}${unit}`} accessibilityState={{ expanded: open === 'goal' }} style={({ pressed }) => [s.settingRow, s.settingBorder, pressed && { backgroundColor: CARD_HI }]}>
-              <View style={s.settingIcon}><Ionicons name="flag-outline" size={17} color={ACCENT} /></View>
-              <Text style={s.settingLabel}>목표 설정</Text>
-              <Text style={s.settingDetail}>{`주 ${goalDisplay}${unit}`}</Text>
-              <Ionicons name={open === 'goal' ? 'chevron-up' : 'chevron-forward'} size={16} color={T3} />
-            </Pressable>
-            {open === 'goal' && (
-              <View style={[s.panel, s.settingBorder]}>
-                <Stepper value={goalDisplay} suffix={`${unit}/주`} onMinus={() => stepGoal(-1)} onPlus={() => stepGoal(1)} />
-                <Text style={s.panelHint}>이번 주 <Text style={{ color: ACCENT }}>{weeklyPercent}%</Text> 달성</Text>
-              </View>
-            )}
-
-            {/* 2) 알림 */}
+            {/* 1) 알림 */}
             <Pressable onPress={() => toggleOpen('alerts')} accessibilityRole="button" accessibilityLabel={`알림, ${alerts.enabled ? '켜짐' : '꺼짐'}`} accessibilityState={{ expanded: open === 'alerts' }} style={({ pressed }) => [s.settingRow, s.settingBorder, pressed && { backgroundColor: CARD_HI }]}>
               <View style={s.settingIcon}><Ionicons name="notifications-outline" size={17} color={ACCENT} /></View>
               <Text style={s.settingLabel}>알림</Text>
@@ -924,18 +869,6 @@ const s = StyleSheet.create({
   idStat: { fontFamily: FONT, color: T3, fontSize: 12, fontWeight: '600' },
   idStatNum: { fontFamily: DISPLAY, color: T1, fontSize: 13, fontWeight: '800' },
   since: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600' },
-
-  // 주간 목표 링 카드
-  goalCard: { flexDirection: 'row', alignItems: 'center', gap: 18, padding: 18 },
-  ringCenter: { alignItems: 'center', justifyContent: 'center' },
-  ringPct: { color: T1, fontFamily: DISPLAY, fontSize: 23, letterSpacing: 0.2 },
-  ringPctU: { color: T2, fontFamily: FONT, fontSize: 11, fontWeight: '700' },
-  goalLabel: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '700' },
-  goalNumRow: { alignItems: 'baseline', gap: 0, marginTop: 4 },
-  goalDone: { color: T1, fontFamily: DISPLAY, fontSize: 26, letterSpacing: 0.3 },
-  goalTotal: { color: T3, fontFamily: FONT, fontSize: 14, fontWeight: '700' },
-  keepGoing: { color: ACCENT, fontFamily: FONT, fontSize: 13, fontWeight: '700', marginTop: 6 },
-  keepGoingDone: { color: GOOD },
 
   // 이번 주 스트릭 카드
   streakCard: { padding: 16 },

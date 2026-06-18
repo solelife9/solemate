@@ -347,6 +347,30 @@ const EXPERIENCE: AchievementDef[] = [
 ];
 
 // ============================================================================
+// 카테고리 5b: challenges — 챌린지 달성
+// ============================================================================
+const CHALLENGES: AchievementDef[] = [
+  metricAch({
+    key: 'challenge_starter', name: '첫 챌린지 달성', rarity: 'common', xp: 30,
+    description: '스스로 세운 챌린지를 처음 완수한 날.',
+    category: 'experience', target: 1,
+    value: ctx => nonNeg(ctx.completedChallengeCount),
+  }),
+  metricAch({
+    key: 'challenge_dedicated', name: '챌린지 집착', rarity: 'rare', xp: 60,
+    description: '챌린지 3개를 완수했다. 목표 달성의 맛을 알았다.',
+    category: 'experience', target: 3,
+    value: ctx => nonNeg(ctx.completedChallengeCount),
+  }),
+  metricAch({
+    key: 'challenge_master', name: '챌린지 마스터', rarity: 'epic', xp: 100,
+    description: '챌린지 10개 완수. 설정하고, 달리고, 달성한다.',
+    category: 'experience', target: 10,
+    value: ctx => nonNeg(ctx.completedChallengeCount),
+  }),
+];
+
+// ============================================================================
 // 카테고리 6: keego — Keep Going 철학
 // ============================================================================
 const KEEGO: AchievementDef[] = [
@@ -372,6 +396,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   ...SHOE_JOURNEY,
   ...SHOE_MEMORY,
   ...EXPERIENCE,
+  ...CHALLENGES,
   ...KEEGO,
 ];
 
