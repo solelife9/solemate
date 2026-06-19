@@ -3,19 +3,19 @@
 // (sample data removed — real summary/chart/runs are injected via props)
 // ============================================================================
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, ScrollView, FlatList, Pressable, StyleSheet, LayoutChangeEvent, Share, TextInput, Alert, KeyboardAvoidingView, Platform, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, FlatList, Pressable, StyleSheet, LayoutChangeEvent, Share, TextInput, Alert, KeyboardAvoidingView, Platform, RefreshControl, Modal } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Polyline, Circle } from 'react-native-svg';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {
-  BG, CARD, CARD_DIM, CARD_HI, ACCENT, DANGER, T1, T2, T3, T4, SEP, CARD_BORDER, FONT, DISPLAY, Shoe, Run, SHOES, withAlpha, RADIUS, GUTTER, HERO,
+  BG, CARD, CARD_DIM, CARD_HI, ACCENT, DANGER, T1, T2, T3, T4, SEP, CARD_BORDER, FONT, DISPLAY, Shoe, Run, SHOES, withAlpha, RADIUS, GUTTER, HERO, SCRIM,
 } from './theme';
 // 기간 탭 스트립 = SegmentedControl(neutral), 러닝 상세 2×3 메트릭 = StatGrid 프리미티브.
 import { TabBar, Button, SegmentedControl, StatGrid } from './primitives';
 import { Unit, displayNum, displayToKm } from './lib/units';
 import { ymdLocal, fmtPace } from './lib/format';
-import { durationLabel } from './lib/stats';
+import { durationLabel, sumKm, summaryOf, monthBuckets, weekBuckets, yearBuckets } from './lib/stats';
 import { personalRecords } from './lib/records';
 import { getRunSurface, setRunSurface, type Surface } from './lib/wearModel';
 import { parseRoute, projectRoute, LatLon } from './lib/route';
@@ -531,6 +531,60 @@ function RunDetail({ run, shoe, onBack, unit, onEdit, onDelete }: { run: Run; sh
   );
 }
 
+// ── drum column picker ────────────────────────────────────────────────────────
+const DRUM_ITEM_H = 56;
+const DRUM_H = DRUM_ITEM_H * 5;
+
+function DrumColumn({ items, selectedIndex, onChange }: {
+  items: string[]; selectedIndex: number; onChange: (i: number) => void;
+}) {
+  const ref = useRef<FlatList<string>>(null);
+  const [active, setActive] = useState(selectedIndex);
+  useEffect(() => {
+    const t = setTimeout(() => {
+      ref.current?.scrollToOffset({ offset: Math.max(0, selectedIndex) * DRUM_ITEM_H, animated: false });
+    }, 60);
+    return () => clearTimeout(t);
+  }, []);
+  const select = (i: number) => {
+    setActive(i); onChange(i);
+    ref.current?.scrollToOffset({ offset: i * DRUM_ITEM_H, animated: true });
+  };
+  return (
+    <View style={{ flex: 1, height: DRUM_H }}>
+      <View pointerEvents="none" style={{
+        position: 'absolute', top: DRUM_ITEM_H * 2, left: 10, right: 10,
+        height: DRUM_ITEM_H, backgroundColor: '#2A2A2A', borderRadius: 12,
+      }} />
+      <FlatList
+        ref={ref}
+        data={items}
+        keyExtractor={(_, i) => String(i)}
+        getItemLayout={(_, i) => ({ length: DRUM_ITEM_H, offset: DRUM_ITEM_H * i, index: i })}
+        snapToInterval={DRUM_ITEM_H}
+        decelerationRate="fast"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingVertical: DRUM_ITEM_H * 2 }}
+        extraData={active}
+        onMomentumScrollEnd={(e) => {
+          const i = Math.max(0, Math.min(items.length - 1, Math.round(e.nativeEvent.contentOffset.y / DRUM_ITEM_H)));
+          setActive(i); onChange(i);
+        }}
+        renderItem={({ item, index }) => (
+          <Pressable onPress={() => select(index)}
+            style={{ height: DRUM_ITEM_H, alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{
+              fontFamily: FONT, fontSize: index === active ? 19 : 15,
+              fontWeight: index === active ? '700' : '400',
+              color: index === active ? T1 : T3,
+            }}>{item}</Text>
+          </Pressable>
+        )}
+      />
+    </View>
+  );
+}
+
 // ── history main ────────────────────────────────────────────────────────────
 // 런 카드 — 목업 기록(10) 정합: 신발(브랜드/모델) + 날짜(우상단) + 거리·평균페이스·시간.
 // 런마다 별도 카드 박스로 띄운다(한 카드 안 행 → 카드별).
@@ -574,25 +628,112 @@ export default function HistoryScreen({
   onRefresh?: () => void | Promise<void>;
 }) {
   const [period, setPeriod] = useState('월');
+  const now = new Date();
+  // 월
+  const [selYear, setSelYear] = useState(now.getFullYear());
+  const [selMonth, setSelMonth] = useState(now.getMonth());
+  // 주 (0 = 이번 주)
+  const [weekOffset, setWeekOffset] = useState(0);
+  // 년
+  const [selYearYear, setSelYearYear] = useState(now.getFullYear());
+  // picker modal
+  const [showPicker, setShowPicker] = useState(false);
+  const [draftYear, setDraftYear] = useState(now.getFullYear());
+  const [draftMonth, setDraftMonth] = useState(now.getMonth());
+  const [draftWeekOffset, setDraftWeekOffset] = useState(0);
+  const [draftYearYear, setDraftYearYear] = useState(now.getFullYear());
   const [detail, setDetail] = useState<Run | null>(null);
-  // 폼 상태: 'add'(수동 입력) | {edit, run}(편집). null이면 목록 화면.
   const [form, setForm] = useState<null | { mode: 'add' } | { mode: 'edit'; run: Run }>(null);
-  // 당겨서 새로고침 스피너 상태. onRefresh(서버 재fetch/pending flush)가 끝나면 내린다.
   const [refreshing, setRefreshing] = useState(false);
   const handleRefresh = async () => {
     if (!onRefresh || refreshing) return;
     setRefreshing(true);
-    try { await onRefresh(); } catch { /* 새로고침 실패는 스피너만 내리고 조용히 무시 */ }
+    try { await onRefresh(); } catch {}
     finally { setRefreshing(false); }
   };
   const insets = useSafeAreaInsets();
 
-  const sum = summary[period] || EMPTY_SUMMARY;
-  const ch = chart[period];
-  // 개인 기록(PR, 1-3) — 전체 런 기준 올타임 기록(기간 탭과 무관). 동기부여 카드.
+  const rd = (r: Run) => String((r as any).run_date || r.runDate || '');
+  // stats 함수는 { km, duration, run_date } 형태를 기대하지만
+  // UI Run 객체는 { dist, durationS, runDate }를 쓴다. 두 필드를 모두 커버하도록 매핑.
+  const toRow = (r: Run) => ({
+    km: (r as any).km ?? r.dist,
+    duration: (r as any).duration ?? r.durationS,
+    run_date: rd(r),
+  });
+
+  // 주
+  const getMondayAt = (offset: number) => {
+    const d = new Date(now);
+    const day = d.getDay();
+    d.setDate(d.getDate() + (day === 0 ? -6 : 1 - day) - offset * 7);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  };
+  const selWeekMonday = getMondayAt(weekOffset);
+  const selWeekSunday = new Date(selWeekMonday); selWeekSunday.setDate(selWeekMonday.getDate() + 6);
+  const selWeekRuns = runs.filter(r => { const d = rd(r); return d >= ymdLocal(selWeekMonday) && d <= ymdLocal(selWeekSunday); });
+  const selWeekRows = selWeekRuns.map(toRow);
+  const selWeekSummary: PeriodSummary = { ...summaryOf(selWeekRows), km: sumKm(selWeekRows).toFixed(1) };
+  const selWeekBuckets = weekBuckets(selWeekRows, selWeekMonday);
+  const WEEKDAY_LABELS = ['월', '화', '수', '목', '금', '토', '일'];
+
+  // 월
+  const selMonthPrefix = `${selYear}-${String(selMonth + 1).padStart(2, '0')}`;
+  const selMonthRuns = runs.filter(r => rd(r).startsWith(selMonthPrefix));
+  const selMonthRows = selMonthRuns.map(toRow);
+  const selMonthSummary: PeriodSummary = { ...summaryOf(selMonthRows), km: sumKm(selMonthRows).toFixed(1) };
+  const selMonthChartData = monthBuckets(selMonthRows, selYear, selMonth);
+  const selMonthWeekCount = selMonthChartData.length;
+
+  // 년
+  const selYearRuns = runs.filter(r => rd(r).startsWith(String(selYearYear)));
+  const selYearRows = selYearRuns.map(toRow);
+  const selYearSummary: PeriodSummary = { ...summaryOf(selYearRows), km: sumKm(selYearRows).toFixed(1) };
+  const selYearBuckets = yearBuckets(selYearRows);
+  const MONTH_LABELS = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+
+  // 전체 연도별 차트
+  const allYearKeys = [...new Set(runs.map(r => rd(r).slice(0, 4)).filter(y => y.length === 4))].sort();
+  const allYearsKm = allYearKeys.map(y => sumKm(runs.filter(r => rd(r).startsWith(y)).map(toRow)));
+  const allYearsChart = allYearKeys.length > 0 ? { title: '연도별 거리', data: allYearsKm.map(v => displayNum(v, unit, 0)), labels: allYearKeys.map(y => `'${y.slice(2)}`) } : undefined;
+
+  const sum = period === '주' ? selWeekSummary : period === '월' ? selMonthSummary : period === '년' ? selYearSummary : (summary['전체'] || EMPTY_SUMMARY);
+  const ch = period === '주'
+    ? (selWeekBuckets.some(v => v > 0) ? { title: '일별 거리', data: selWeekBuckets.map(v => displayNum(v, unit, 1)), labels: WEEKDAY_LABELS } : chart['주'])
+    : period === '월'
+    ? (selMonthChartData.length > 0 ? { title: '주간 거리', data: selMonthChartData.map(v => displayNum(v, unit, 1)), labels: Array.from({ length: selMonthWeekCount }, (_, i) => `${i+1}주`) } : undefined)
+    : period === '년'
+    ? (selYearBuckets.some(v => v > 0) ? { title: '월별 거리', data: selYearBuckets.map(v => displayNum(v, unit, 1)), labels: MONTH_LABELS } : chart['년'])
+    : allYearsChart;
+
   const pr = personalRecords(runs);
-  // 기간 제목(요약 카드) — 목업 TITLES 정합.
-  const periodTitle = period === '주' ? '이번 주' : period === '월' ? '이번 달' : period === '년' ? '올해' : '전체 기간';
+
+  const isCurrentMonth = selYear === now.getFullYear() && selMonth === now.getMonth();
+  const isCurrentYear = selYearYear === now.getFullYear();
+  const weekLabel = weekOffset === 0 ? '이번 주' : weekOffset === 1 ? '지난 주' : `${weekOffset}주 전`;
+  const periodTitle = period === '주' ? weekLabel
+    : period === '월' ? `${selYear}년 ${selMonth+1}월`
+    : period === '년' ? `${selYearYear}년`
+    : '전체 기간';
+
+  const displayRuns = period === '주' ? selWeekRuns : period === '월' ? selMonthRuns : period === '년' ? selYearRuns : runs;
+
+  const MIN_YEAR = runs.length > 0
+    ? Math.min(now.getFullYear(), ...runs.map(r => parseInt(rd(r).slice(0,4)) || now.getFullYear()))
+    : now.getFullYear() - 3;
+  const PICKER_YEARS = Array.from({ length: now.getFullYear() - MIN_YEAR + 1 }, (_, i) => MIN_YEAR + i);
+  const MAX_WEEK_OFFSET = Math.min(52, runs.length > 0
+    ? Math.ceil((now.getTime() - new Date(runs.reduce((a, r) => rd(r) < a ? rd(r) : a, rd(runs[0]) || ymdLocal(now)) + 'T00:00:00').getTime()) / (7*24*60*60*1000))
+    : 0);
+
+  const openPicker = () => { setDraftYear(selYear); setDraftMonth(selMonth); setDraftWeekOffset(weekOffset); setDraftYearYear(selYearYear); setShowPicker(true); };
+  const confirmPicker = () => {
+    if (period === '월') { setSelYear(draftYear); setSelMonth(Math.min(draftMonth, draftYear === now.getFullYear() ? now.getMonth() : 11)); }
+    else if (period === '주') { setWeekOffset(draftWeekOffset); }
+    else if (period === '년') { setSelYearYear(draftYearYear); }
+    setShowPicker(false);
+  };
 
   // 폼(추가/편집)이 열려 있으면 폼만 렌더. 제출 시 콜백을 호출하고 목록으로 복귀한다.
   if (form) {
@@ -647,7 +788,7 @@ export default function HistoryScreen({
           만 쓴다(새 네이티브 0) — onRefresh 가 있을 때만 단다. keyExtractor 는 안정 키(run.id,
           없으면 인덱스)로 리렌더 시 행 재사용을 보장한다. */}
       <FlatList
-        data={runs}
+        data={displayRuns}
         keyExtractor={(r, i) => r.id || String(i)}
         renderItem={({ item }) => (
           <RunCard run={item} shoes={shoes} onPress={() => setDetail(item)} unit={unit} />
@@ -656,77 +797,109 @@ export default function HistoryScreen({
         refreshControl={onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={ACCENT} colors={[ACCENT]} /> : undefined}
         ListHeaderComponent={
           <View style={{ gap: 10 }}>
-            {/* period segment — SegmentedControl(neutral) */}
             <SegmentedControl
               variant="neutral"
               items={PERIODS.map((p) => ({ key: p, label: p }))}
               value={period}
               onChange={setPeriod}
             />
-
-            {/* 요약 카드 — 목업 기록(10): 기간 제목 + 큰 거리 + 'N번 달렸어요' + 횟수·평균페이스·총시간 */}
-            <View style={[s.card, { padding: 20 }]}>
-              <Text style={s.sumTitle}>{periodTitle}</Text>
-              <View style={[s.baselineRow, { marginTop: 6 }]}>
+            {period !== '전체'
+              ? (
+                <Pressable onPress={openPicker} accessibilityRole="button"
+                  style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', gap: 5, paddingVertical: 4, paddingHorizontal: 10 }}>
+                  <Text style={{ color: T1, fontFamily: DISPLAY, fontSize: 16, fontWeight: '700' }}>{periodTitle}</Text>
+                  <Ionicons name="chevron-down" size={14} color={T3} />
+                </Pressable>
+              ) : (
+                <View style={{ paddingVertical: 4, paddingHorizontal: 10 }}>
+                  <Text style={{ color: T1, fontFamily: DISPLAY, fontSize: 16, fontWeight: '700' }}>
+                    {allYearKeys.length >= 2 ? `${allYearKeys[0]} — ${allYearKeys[allYearKeys.length - 1]}` : allYearKeys.length === 1 ? `${allYearKeys[0]}년` : '전체 기간'}
+                  </Text>
+                </View>
+              )
+            }
+            <View style={[s.card, { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 24 }]}>
+              <View style={[s.baselineRow, { marginTop: 0 }]}>
                 <Text style={s.sumBigKm}>{sum.km}</Text><Text style={s.sumBigU}>{unit}</Text>
               </View>
-              <Text style={s.sumSub}>{periodTitle} {sum.runs}번 달렸어요</Text>
+
               <View style={s.sumMetricRow}>
                 <View style={s.sumMetric}><Text style={s.sumMetricV}>{sum.runs}<Text style={s.sumMetricU}> 회</Text></Text><Text style={s.sumMetricL}>횟수</Text></View>
-                <View style={s.sumMetric}><Text style={s.sumMetricV}>{sum.pace}</Text><Text style={s.sumMetricL}>평균 페이스</Text></View>
+                <View style={[s.sumMetric, { marginLeft: 16 }]}><Text style={s.sumMetricV}>{sum.pace}</Text><Text style={s.sumMetricL}>평균 페이스</Text></View>
                 <View style={s.sumMetric}><Text style={s.sumMetricV}>{sum.time}</Text><Text style={s.sumMetricL}>총 시간</Text></View>
               </View>
-            </View>
-
-            {/* chart (hidden for 전체) */}
-            {ch && ch.data.length > 0 && (
-              <View style={[s.card, { padding: 22 }]}>
-                <Text style={s.cardTitle}>{ch.title}</Text>
-                <View style={{ marginTop: 18 }}><PeriodChartView data={ch.data} labels={ch.labels} unit={unit} /></View>
-              </View>
-            )}
-
-            {/* 개인 기록(PR, 1-3) — 올타임 최장거리·최고페이스·최장시간·최장 스트릭. 동기부여. */}
-            {pr.count > 0 && (
-              <View style={[s.card, { padding: 20 }]}>
-                <Text style={s.cardTitle}>개인 기록</Text>
-                <View style={s.prGrid}>
-                  <View style={s.prCell}>
-                    <View style={s.baselineRow}>
-                      <Text style={s.prV}>{displayNum(pr.longestKm, unit, 1)}</Text>
-                      <Text style={s.prU}>{unit}</Text>
-                    </View>
-                    <Text style={s.prL}>최장 거리</Text>
-                  </View>
-                  <View style={s.prCell}>
-                    <Text style={s.prV}>{pr.fastestPaceSec != null ? fmtPace(1, pr.fastestPaceSec) : '--'}</Text>
-                    <Text style={s.prL}>최고 페이스</Text>
-                  </View>
-                  <View style={s.prCell}>
-                    <Text style={s.prV}>{pr.longestDurationS > 0 ? durationLabel(pr.longestDurationS) : '--'}</Text>
-                    <Text style={s.prL}>최장 시간</Text>
-                  </View>
-                  <View style={s.prCell}>
-                    <View style={s.baselineRow}>
-                      <Text style={s.prV}>{pr.longestStreakDays}</Text>
-                      <Text style={s.prU}>일</Text>
-                    </View>
-                    <Text style={s.prL}>최장 스트릭</Text>
-                  </View>
+              {ch && ch.data.length > 0 && (
+                <View style={{ marginTop: 20, paddingTop: 20, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP }}>
+                  <Text style={s.cardTitle}>{ch.title}</Text>
+                  <View style={{ marginTop: 18 }}><PeriodChartView data={ch.data} labels={ch.labels} unit={unit} /></View>
                 </View>
-              </View>
-            )}
-
-            {/* recent runs — 런마다 별도 카드(목업 정합) */}
-            <Text style={s.sectionLabel}>최근 러닝</Text>
+              )}
+            </View>
+            <Text style={s.sectionLabel}>러닝 기록</Text>
           </View>
         }
         ListEmptyComponent={
           <View style={[s.card, { padding: 28, alignItems: 'center' }]}>
-            <Text style={s.emptyHint}>아직 기록이 없어요 — 첫 러닝이 여기 쌓여요</Text>
+            <Text style={s.emptyHint}>이 기간엔 기록이 없어요</Text>
           </View>
         }
       />
+
+      <Modal visible={showPicker} transparent animationType="slide" onRequestClose={() => setShowPicker(false)}>
+        <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.85)' }} onPress={() => setShowPicker(false)} />
+        <View style={{ backgroundColor: '#111111', borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingBottom: insets.bottom + 16 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 16 }}>
+            <Pressable onPress={() => setShowPicker(false)} hitSlop={8}>
+              <Text style={{ color: T3, fontFamily: FONT, fontSize: 15 }}>취소</Text>
+            </Pressable>
+            <Text style={{ color: T1, fontFamily: FONT, fontSize: 15, fontWeight: '600' }}>
+              {period === '주' ? '주 선택' : period === '월' ? '월 선택' : '연도 선택'}
+            </Text>
+            <Pressable onPress={confirmPicker} hitSlop={8}>
+              <Text style={{ color: ACCENT, fontFamily: FONT, fontSize: 15, fontWeight: '700' }}>확인</Text>
+            </Pressable>
+          </View>
+
+          {period === '주' && (
+            <View style={{ paddingHorizontal: 12, paddingBottom: 8, height: DRUM_H }}>
+              <DrumColumn
+                items={Array.from({ length: MAX_WEEK_OFFSET + 1 }, (_, i) =>
+                  i === 0 ? '이번 주' : i === 1 ? '지난 주' : `${i}주 전`
+                )}
+                selectedIndex={draftWeekOffset}
+                onChange={(i) => setDraftWeekOffset(i)}
+              />
+            </View>
+          )}
+
+          {period === '월' && (
+            <View style={{ flexDirection: 'row', paddingHorizontal: 12, paddingBottom: 8 }}>
+              <DrumColumn
+                items={PICKER_YEARS.map(y => `${y}년`)}
+                selectedIndex={Math.max(0, PICKER_YEARS.indexOf(draftYear))}
+                onChange={(i) => setDraftYear(PICKER_YEARS[i])}
+              />
+              <DrumColumn
+                items={['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월']}
+                selectedIndex={draftMonth}
+                onChange={(i) => setDraftMonth(i)}
+              />
+            </View>
+          )}
+
+          {period === '년' && (
+            <View style={{ paddingHorizontal: 12, paddingBottom: 8, height: DRUM_H }}>
+              <DrumColumn
+                items={[...PICKER_YEARS].reverse().map(y => `${y}년`)}
+                selectedIndex={Math.max(0, [...PICKER_YEARS].reverse().indexOf(draftYearYear))}
+                onChange={(i) => setDraftYearYear([...PICKER_YEARS].reverse()[i])}
+              />
+            </View>
+          )}
+
+        </View>
+      </Modal>
+
       <TabBar active={2} onTab={(i) => onTab?.(i)} />
     </View>
   );
@@ -743,9 +916,9 @@ const s = StyleSheet.create({
   // 요약 카드(큰 거리) — 목업 기록(10)
   sumTitle: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600', letterSpacing: 0.2 },
   sumBigKm: { color: T1, fontFamily: DISPLAY, fontSize: 42, fontWeight: '800', letterSpacing: -1, fontVariant: ['tabular-nums'] },
-  sumBigU: { color: T3, fontFamily: FONT, fontSize: 18, fontWeight: '600', marginLeft: 4 },
+  sumBigU: { color: T3, fontFamily: FONT, fontSize: 18, fontWeight: '600', marginLeft: 4, paddingBottom: 6 },
   sumSub: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '500', marginTop: 2 },
-  sumMetricRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 18, paddingTop: 16, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP },
+  sumMetricRow: { flexDirection: 'row', justifyContent: 'flex-start', gap: 28, marginTop: 18, paddingTop: 16, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP },
   sumMetric: {},
   sumMetricV: { color: T1, fontFamily: DISPLAY, fontSize: 19, fontWeight: '700', letterSpacing: -0.2 },
   sumMetricU: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '600' },

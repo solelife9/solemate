@@ -7,7 +7,7 @@ import { View, Text, ScrollView, Pressable, TextInput, Alert, StyleSheet, Linkin
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {
-  BG, CARD, CARD_DIM, CARD_HI, HERO_BG, ACCENT, DANGER, WARN, GOOD, T1, T2, T3, T4, SEP, FONT, DISPLAY, withAlpha, RADIUS, Shoe, Run, SHOES,
+  BG, CARD, CARD_DIM, CARD_HI, HERO_BG, ACCENT, DANGER, WARN, GOOD, BEST, T1, T2, T3, T4, SEP, FONT, DISPLAY, withAlpha, RADIUS, Shoe, Run, SHOES,
 } from './theme';
 import { TabBar, TierBadge, Pill, InjuryBanner, SectionTitle, Button } from './primitives';
 import { FuelGauge } from './FuelGauge';
@@ -69,7 +69,7 @@ function NextShoeCard({ shoe }: { shoe: Shoe }) {
 export type ShoeTotals = { totalRuns: number; totalTime: string; avgPace: string; lastWorn?: string };
 
 // 마모 4단계(사용률%) → 색/라벨. 톤→theme 토큰(raw hex 0). 최상🟢/좋음🟡/교체고려🟠/교체권장🔴.
-const TONE_COLOR: Record<WearTierTone, string> = { good: GOOD, mid: WARN, warn: ACCENT, danger: DANGER };
+const TONE_COLOR: Record<WearTierTone, string> = { good: BEST, mid: GOOD, warn: ACCENT, danger: DANGER };
 const condColor = (pct: number) => TONE_COLOR[wearTier(pct).tone];
 const ringColor = (pct: number) => TONE_COLOR[wearTier(pct).tone];
 // 상태 점(shoeCondDot)이 이미 색 동그라미라, 라벨의 이모지(🟢/🟡/🟠/🔴)는 중복이므로 뺀다.
@@ -573,8 +573,12 @@ export default function ShoesScreen({
   onRetiredKeepsake?: (record: RetiredShoeRecord) => void;
   now?: number;
 }) {
-  const [detail, setDetail] = useState<number | null>(null);
-  // 홈 히어로에서 넘어온 신발 id를 상세로 연다(한 번만 소비). id→index 매핑 후 detail 세팅.
+  const [detail, setDetail] = useState<number | null>(() => {
+    if (!detailShoeId) return null;
+    const i = shoes.findIndex((sh) => sh.id === detailShoeId);
+    return i >= 0 ? i : null;
+  });
+  // 홈 히어로에서 넘어온 신발 id를 상세로 연다(한 번만 소비).
   useEffect(() => {
     if (!detailShoeId) return;
     const i = shoes.findIndex((sh) => sh.id === detailShoeId);

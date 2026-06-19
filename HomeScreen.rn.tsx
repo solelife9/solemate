@@ -13,7 +13,7 @@ import {
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {
-  BG, CARD, CARD_DIM, CARD_HI, HERO_BG, ACCENT, DANGER, WARN, GOOD, T1, T2, T3, T4,
+  BG, CARD, CARD_DIM, CARD_HI, HERO_BG, ACCENT, DANGER, WARN, GOOD, BEST, T1, T2, T3, T4,
   FONT, DISPLAY, SPACE, RADIUS, GUTTER, withAlpha, Shoe, SHOES, TIER_COLORS, TIER_LABEL,
 } from './theme';
 import type { RankTier } from './lib/progression/types';
@@ -118,7 +118,7 @@ function ProgressionStrip({ prog, onOpen }: { prog: HomeProgression; onOpen?: ()
 // (이전엔 홈 히어로만 3단계 shoe.condition 이라, 같은 신발이 목록='좋은 상태'인데 홈='최상의
 //  컨디션'으로 어긋났다.) '양호' 신발은 wearTier 칩(점+라벨)으로, 주의/교체는 TierBadge 를
 //  유지한다(상세 ShoesScreen 과 동일 하이브리드). TONE→theme 토큰 매핑도 목록 카드와 동일.
-const WEAR_TONE_COLOR: Record<WearTierTone, string> = { good: GOOD, mid: WARN, warn: ACCENT, danger: DANGER };
+const WEAR_TONE_COLOR: Record<WearTierTone, string> = { good: BEST, mid: GOOD, warn: ACCENT, danger: DANGER };
 const wearColorOf = (pct: number) => WEAR_TONE_COLOR[wearTier(pct).tone];
 const wearLabelOf = (pct: number) => wearTier(pct).label;
 // 카드 한 줄 요약(목업 reason 정합 — keep-going 보이스). 컨디션별 오늘의 추천/안내.
@@ -180,7 +180,6 @@ function HeroShoe({ shoe, unit, tappable, forecast, active, onOpenShoe, onStart 
           <View style={[s.row, { flex: 1, minWidth: 0 }]}>
             <Text style={s.heroBrand}>{shoe.brand}</Text>
             {!!heroType && <View style={s.catChip}><Text style={s.catChipText}>{heroType}</Text></View>}
-            <View style={s.usingChip}><Text style={s.usingChipText}>사용 중</Text></View>
           </View>
           {/* 양호: 목록/상세와 동일한 wearTier 칩(점+라벨: 최상의 컨디션/좋은 상태). 주의/교체: TierBadge. */}
           <View style={s.condpill}>
@@ -195,11 +194,10 @@ function HeroShoe({ shoe, unit, tappable, forecast, active, onOpenShoe, onStart 
           </View>
         </View>
         <Text style={s.heroModel} numberOfLines={1}>{shoe.model}</Text>
-        <Text style={s.heroReason} numberOfLines={2}>{condReason(shoe.condition)}</Text>
         <Text style={s.heroRemainLine}>
           교체까지 약 <Text style={s.heroRemainNum}>{remain}<Text style={s.heroRemainNumU}>{unit}</Text></Text> 남았어요
         </Text>
-        <View style={s.gauge}><View style={[s.gaugeFill, { width: `${Math.round(pct * 100)}%`, backgroundColor: ring }]} /></View>
+        <View style={s.gauge}><View style={[s.gaugeFill, { width: `${usedPct}%`, backgroundColor: ring }]} /></View>
         <View style={s.usageRow}>
           <Text style={s.usage}>{used} / {max}{unit} 사용</Text>
           <Text style={s.usagePct}>{usedPct}%</Text>
@@ -632,7 +630,7 @@ const s = StyleSheet.create({
   // 신발 종류(카테고리) 칩 — 데이터에 적힌 카본/데일리 등을 오렌지 톤으로 표시
   catChip: { backgroundColor: withAlpha(ACCENT, 0.14), borderRadius: 6, paddingHorizontal: SPACE.sm, paddingVertical: 2 },
   catChipText: { color: ACCENT, fontFamily: FONT, fontSize: 10, fontWeight: '700', letterSpacing: 0.1 },
-  heroModel: { color: T1, fontFamily: DISPLAY, fontSize: 27, fontWeight: '800', letterSpacing: -0.6, marginTop: 7, lineHeight: 32 },
+  heroModel: { color: T1, fontFamily: DISPLAY, fontSize: 27, fontWeight: '800', letterSpacing: -0.6, marginTop: 7, lineHeight: 32, marginBottom: 24 },
   // minHeight = 2줄(lineHeight 20×2) — 1줄짜리 reason 도 2줄 공간을 차지해 캐러셀 카드
   // 높이가 신발마다 흔들리지 않게 한다(numberOfLines={2} 와 짝).
   heroReason: { color: T2, fontFamily: FONT, fontSize: 14, fontWeight: '500', letterSpacing: -0.2, marginTop: 6, lineHeight: 20, minHeight: 20 },

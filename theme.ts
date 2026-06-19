@@ -20,6 +20,7 @@ export const GRAD_BOT = '#F25E00';       // button CTA gradient bottom stop
 export const WARN = '#E6A23C';
 export const DANGER = '#FF5A45';
 export const GOOD = '#46C98B';           // healthy condition dot (핸드오프 good)
+export const BEST = '#4A9FF0';           // 최상 컨디션 파란색
 export const T1 = '#FFFFFF';
 export const T2 = '#EBEBF5';
 // Tertiary/secondary text. Lifted from iOS systemGray(#8E8E93) to #9C9CA3 so the
