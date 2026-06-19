@@ -10,9 +10,11 @@
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		1FD016C018929E07724A8819 /* Pods_SoleMate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 32DD5CD7322D8A8F57770E83 /* Pods_SoleMate.framework */; };
 		482D1634C3074355BD2B9DB7 /* Barlow-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 5D21423DEB5B4B84B0F354E6 /* Barlow-Medium.ttf */; };
+		7224CB91285DD0DB98FB80D2 /* NanumMyeongjo-ExtraBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 81280152426B42143285BA3C /* NanumMyeongjo-ExtraBold.ttf */; };
 		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
 		7D0F4CE76C2C49CF9061C003 /* BebasNeue-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 29AE797F7024459CAA462CE1 /* BebasNeue-Regular.ttf */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
+		87EAF9B449BA234FF90117DB /* NanumMyeongjo-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 37F96DE3D716D45FB1629FAE /* NanumMyeongjo-Regular.ttf */; };
 		93BE707AE292B6376205E24A /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */; };
 		94D45B79FEFB4E08B5B336B3 /* Barlow-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = CB87CDEECCE3462588478950 /* Barlow-Regular.ttf */; };
 		9DB316122F10FE302E4457FC /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F1023D5EE8A6A5A16AC7F1B /* ExpoModulesProvider.swift */; };
@@ -28,12 +30,14 @@
 		13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = PrivacyInfo.xcprivacy; path = SoleMate/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		29AE797F7024459CAA462CE1 /* BebasNeue-Regular.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "BebasNeue-Regular.ttf"; path = "../assets/fonts/BebasNeue-Regular.ttf"; sourceTree = "<group>"; };
 		32DD5CD7322D8A8F57770E83 /* Pods_SoleMate.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_SoleMate.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		37F96DE3D716D45FB1629FAE /* NanumMyeongjo-Regular.ttf */ = {isa = PBXFileReference; includeInIndex = 1; name = "NanumMyeongjo-Regular.ttf"; path = "../assets/fonts/NanumMyeongjo-Regular.ttf"; sourceTree = "<group>"; };
 		3B4392A12AC88292D35C810B /* Pods-SoleMate.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SoleMate.debug.xcconfig"; path = "Target Support Files/Pods-SoleMate/Pods-SoleMate.debug.xcconfig"; sourceTree = "<group>"; };
 		5709B34CF0A7D63546082F79 /* Pods-SoleMate.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SoleMate.release.xcconfig"; path = "Target Support Files/Pods-SoleMate/Pods-SoleMate.release.xcconfig"; sourceTree = "<group>"; };
 		5D13D234F4E1B2B118314B9C /* SoleMate.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = SoleMate.debug.xcconfig; sourceTree = "<group>"; };
 		5D21423DEB5B4B84B0F354E6 /* Barlow-Medium.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Barlow-Medium.ttf"; path = "../assets/fonts/Barlow-Medium.ttf"; sourceTree = "<group>"; };
 		5F1023D5EE8A6A5A16AC7F1B /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-SoleMate/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
 		761780EC2CA45674006654EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = SoleMate/AppDelegate.swift; sourceTree = "<group>"; };
+		81280152426B42143285BA3C /* NanumMyeongjo-ExtraBold.ttf */ = {isa = PBXFileReference; includeInIndex = 1; name = "NanumMyeongjo-ExtraBold.ttf"; path = "../assets/fonts/NanumMyeongjo-ExtraBold.ttf"; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = SoleMate/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		CB87CDEECCE3462588478950 /* Barlow-Regular.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Barlow-Regular.ttf"; path = "../assets/fonts/Barlow-Regular.ttf"; sourceTree = "<group>"; };
 		D241C27486D3F7BF2FBE79D2 /* GoogleService-Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; name = "GoogleService-Info.plist"; path = "SoleMate/GoogleService-Info.plist"; sourceTree = "<group>"; };
@@ -121,6 +125,8 @@
 				71E3968D2ADC5EC69C365E13 /* ExpoModulesProviders */,
 				5D13D234F4E1B2B118314B9C /* SoleMate.debug.xcconfig */,
 				F140792D3E517E002AEDD348 /* SoleMate.release.xcconfig */,
+				37F96DE3D716D45FB1629FAE /* NanumMyeongjo-Regular.ttf */,
+				81280152426B42143285BA3C /* NanumMyeongjo-ExtraBold.ttf */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -215,6 +221,8 @@
 				A0F56BF89B4C46768352C306 /* PretendardVariable.ttf in Resources */,
 				93BE707AE292B6376205E24A /* PrivacyInfo.xcprivacy in Resources */,
 				A99592C060E1B04239C26A0F /* GoogleService-Info.plist in Resources */,
+				87EAF9B449BA234FF90117DB /* NanumMyeongjo-Regular.ttf in Resources */,
+				7224CB91285DD0DB98FB80D2 /* NanumMyeongjo-ExtraBold.ttf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

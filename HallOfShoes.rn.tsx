@@ -10,7 +10,7 @@
 // 큰 숫자는 FoilText(골드 포일 그라데이션, react-native-svg). 데이터 날조 0.
 // ============================================================================
 import React, {useId, useMemo, useState} from 'react';
-import {View, Text, ScrollView, Pressable, Modal, StyleSheet, Platform, useWindowDimensions} from 'react-native';
+import {View, Text, ScrollView, Pressable, Modal, StyleSheet, useWindowDimensions} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Svg, {Defs, LinearGradient, RadialGradient, Stop, Rect, Path, Circle, Text as SvgText} from 'react-native-svg';
@@ -29,7 +29,10 @@ const G = {
   soft: 'rgba(214,180,120,0.46)',
   line: 'rgba(214,180,120,0.20)',
 };
-const SERIF = Platform.select({ios: 'Georgia', android: 'serif', default: undefined});
+// 나눔명조(번들 — assets/fonts + Info.plist UIAppFonts). 제목·모델명 등 대부분은 ExtraBold,
+// 기간·부제 같은 가벼운 텍스트만 Regular(SERIF_REG).
+const SERIF = 'NanumMyeongjoExtraBold';
+const SERIF_REG = 'NanumMyeongjo';
 const FOIL = [
   {o: '0', c: '#F6E2A6'},
   {o: '0.38', c: '#D0A557'},
@@ -372,7 +375,7 @@ const st = StyleSheet.create({
   badge: {flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1, borderColor: G.line, borderRadius: 999, paddingVertical: 5, paddingHorizontal: 10},
   badgeDot: {width: 5, height: 5, borderRadius: 3, backgroundColor: G.gold},
   badgeTxt: {fontSize: 9, fontWeight: '800', letterSpacing: 1.4, color: G.gold},
-  featYear: {fontFamily: SERIF, fontSize: 13, color: G.muted},
+  featYear: {fontFamily: SERIF_REG, fontSize: 13, color: G.muted},
   featBody: {flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: 14, marginTop: 26},
   featName: {flex: 1},
   featBrand: {fontSize: 10.5, fontWeight: '800', letterSpacing: 1.8, color: G.gold},
@@ -403,12 +406,12 @@ const st = StyleSheet.create({
   certFrame: {position: 'absolute', left: 16, right: 16, bottom: 16, borderRadius: 18, borderWidth: 1, borderColor: G.soft},
   certX: {position: 'absolute', right: 24, width: 34, height: 34, borderRadius: 17, borderWidth: 1, borderColor: G.line, backgroundColor: 'rgba(0,0,0,0.3)', alignItems: 'center', justifyContent: 'center', zIndex: 2},
   coDoctype: {fontSize: 11, fontWeight: '800', letterSpacing: 3, color: G.gold, marginTop: 6},
-  coDoctypeKr: {fontFamily: SERIF, fontSize: 15, fontWeight: '700', color: G.muted, marginTop: 5},
+  coDoctypeKr: {fontFamily: SERIF_REG, fontSize: 15, fontWeight: '700', color: G.muted, marginTop: 5},
   coOver: {fontSize: 9, fontWeight: '800', letterSpacing: 2.2, color: G.faint, marginTop: 30},
   coBrand: {fontSize: 11, fontWeight: '800', letterSpacing: 2.2, color: G.gold, marginTop: 14},
   coModel: {fontFamily: SERIF, fontSize: 27, fontWeight: '800', color: G.txt, marginTop: 7, textAlign: 'center'},
   coUnit: {fontSize: 11, fontWeight: '800', letterSpacing: 3.4, color: G.txt, marginTop: 12},
-  coQuote: {fontFamily: SERIF, fontSize: 16, fontWeight: '700', color: G.txt, marginTop: 20, textAlign: 'center'},
+  coQuote: {fontFamily: SERIF_REG, fontSize: 16, fontWeight: '700', color: G.txt, marginTop: 20, textAlign: 'center'},
   coMeta: {flexDirection: 'row', alignSelf: 'stretch', marginTop: 28},
   coCell: {flex: 1, gap: 5, paddingHorizontal: 8, alignItems: 'center'},
   coCellDiv: {borderLeftWidth: 1, borderLeftColor: G.line},
