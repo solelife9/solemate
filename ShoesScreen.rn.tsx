@@ -517,8 +517,9 @@ function HallOfFameCard({ shoe, unit, onPress }: { shoe: Shoe; unit: Unit; onPre
 export default function ShoesScreen({
   shoes = SHOES, runs = [], totals = {}, activeIdx = 0, unit = 'km', weightKg, surfaceOf, onAddShoe, onTab, onRename, onDelete, onRetire, onSetMaxKm, onStartRun,
   detailShoeId, onConsumeDetail,
-  rawShoes, rawRuns, progressionCtx, equippedTitle, onRetiredKeepsake, now,
+  rawShoes, rawRuns, progressionCtx, equippedTitle, onRetiredKeepsake, now, userName,
 }: {
+  userName?: string;
   shoes?: Shoe[];
   runs?: Run[];
   totals?: Record<number, ShoeTotals>;
@@ -595,7 +596,7 @@ export default function ShoesScreen({
   // 신발 0개 → 풍부한 빈 상태(첫 러닝화 등록 유도). FirstShoeScreen 을 통째로 반환해
   // 헤더·탭바 중복 없이 한 화면으로 대체한다. 등록 버튼은 AddShoe 오버레이(onAddShoe)로 열린다.
   if (shoes.length === 0) {
-    return <FirstShoeScreen onRegister={onAddShoe} onTab={onTab} />;
+    return <FirstShoeScreen onRegister={onAddShoe} onTab={onTab} userName={userName} />;
   }
 
   const activeShoes = shoes.map((sh, i) => ({ sh, i })).filter(({ sh }) => !sh.retired);

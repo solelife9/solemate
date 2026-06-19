@@ -1655,7 +1655,7 @@ function Main(){
             onRename={updateShoeName} onDelete={deleteShoe} onRetire={retireShoe}
             onSetMaxKm={updateShoeMaxKm} onStartRun={startFromShoeId}
             detailShoeId={shoesDetailId} onConsumeDetail={()=>setShoesDetailId(null)}
-            rawShoes={shoes} rawRuns={runs} progressionCtx={progressionCtx}
+            rawShoes={shoes} rawRuns={runs} progressionCtx={progressionCtx} userName={profileName}
             onRetiredKeepsake={onRetiredKeepsake}
           />
         )}
