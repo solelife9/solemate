@@ -1633,7 +1633,7 @@ function Main(){
       <View style={{flex:1}}>
         {tab===0&&(
           <HomeScreen
-            shoes={homeUiShoes} week={week} dateLabel={dateLabel} unit={unit}
+            shoes={homeUiShoes} week={week} dateLabel={dateLabel} unit={unit} userName={profileName}
             activeIdx={homeActiveIdx} onSelect={selectHomeShoe}
             onStart={startFromIdx} onAddShoe={()=>setOverlay('add')} onTab={setTab}
             rotation={rotationPicks} onPickShoe={setSelectedShoeId}

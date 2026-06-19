@@ -26,6 +26,7 @@ import { recommendNextShoes, buildShopLinks, categoryLabelKo, AFFILIATE_DISCLOSU
 import { forecastLineKo, type ReplacementForecast } from './lib/wearView';
 import { shouldRecommendNextShoe } from './lib/recommendTrigger';
 import { findShoeClass, typeLabel, purposeSentenceKo } from './data/shoeClass';
+import { ShoeGlyph } from './FirstShoeScreen.rn';
 
 export type WeekStats = { km: string; runs: number; pace: string };
 
@@ -406,15 +407,25 @@ function NextShoeCard({ shoe }: { shoe: Shoe }) {
   );
 }
 
+// 빈 상태 — design-reference/first-shoe 의 대시 슬롯 카드(신발탭 FirstShoeScreen 과 동일).
 function EmptyHome({ onAddShoe }: { onAddShoe?: () => void }) {
   return (
     <View style={s.empty}>
-      {/* 아이콘 없이 테두리 카드 안에 문구 + 버튼만 */}
-      <View style={s.emptyCard}>
-        <Text style={s.emptyTitle}>첫 러닝화를 등록해볼까요?</Text>
-        <Text style={s.emptyText}>신발을 추가하면, 달릴 때마다{'\n'}수명을 함께 추적하며 계속 달릴 수 있어요</Text>
-        <Button label="러닝화 등록하기" onPress={onAddShoe} style={s.emptyBtn} />
-      </View>
+      <Pressable
+        onPress={onAddShoe}
+        accessibilityRole="button"
+        accessibilityLabel="첫 러닝화 등록"
+        style={({ pressed }) => [s.fsSlot, pressed && s.fsSlotPressed]}>
+        <View style={s.fsGlyphWrap}>
+          <ShoeGlyph size={46} />
+          <View style={s.fsPlus}><Ionicons name="add" size={18} color={BG} /></View>
+        </View>
+        <Text style={s.fsSlotTitle}>첫 러닝화 등록</Text>
+        <Text style={s.fsSlotSub}>탭해서 시작하기</Text>
+      </Pressable>
+      <Text style={s.fsPhilosophy}>
+        신발이 얼마나 닳았는지 관리해서,{'\n'}부상 없이 더 오래 달리게 해드려요.
+      </Text>
     </View>
   );
 }
@@ -423,9 +434,10 @@ export default function HomeScreen({
   shoes = SHOES, dateLabel = '', onStart, onAddShoe, onTab,
   activeIdx: activeIdxProp, onSelect, unit = 'km', week, rotation, onPickShoe,
   onOpenShoe, forecast, forecasts, progression, onOpenProgression,
-  onRefresh, lastSyncAt,
+  onRefresh, lastSyncAt, userName,
 }: {
   shoes?: Shoe[];
+  userName?: string;
   // 선택(히어로) 신발의 교체 예측(App이 실효마모 모델로 계산해 내려준다). ok/overdue일 때
   // 히어로에 ETA 한 줄을 보강한다. 표시 전용(없으면 숨김).
   forecast?: ReplacementForecast | null;
@@ -488,7 +500,11 @@ export default function HomeScreen({
         refreshControl={onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={ACCENT} colors={[ACCENT]} /> : undefined}>
       <View style={s.greetWrap}>
         {!!dateLabel && <Text style={s.date}>{dateLabel}</Text>}
-        <Text style={s.greet}>오늘은 어떤 신발로{'\n'}달려볼까요?</Text>
+        <Text style={s.greet}>
+          {active
+            ? '오늘은 어떤 신발로\n달려볼까요?'
+            : `${(userName ?? '').trim() ? `${(userName ?? '').trim()}님,\n` : ''}첫 러닝화를 등록해볼까요?`}
+        </Text>
         {/* 동기화 상태 칩 제거 — 사용자 요청(불필요한 '동기화 안 됨' 표시). 동기화는
             백그라운드 자동이며, 당겨서 새로고침(RefreshControl)은 그대로 동작한다. */}
         {/* 장착 타이틀 — 인사(닉네임) 옆/아래 한 줄. 진척 띠 색과 분리해 절제(T2 회색). */}
@@ -699,9 +715,13 @@ const s = StyleSheet.create({
 
 
 
-  empty: { paddingHorizontal: SPACE.xl, paddingTop: 30 },
-  emptyCard: { alignSelf: 'stretch', alignItems: 'center', backgroundColor: CARD_DIM, borderRadius: RADIUS.xl, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.12), paddingVertical: 40, paddingHorizontal: 24 },
-  emptyTitle: { color: T1, fontFamily: FONT, fontSize: 18, fontWeight: '600' },
-  emptyText: { color: T3, fontFamily: FONT, fontSize: 14, textAlign: 'center', lineHeight: 20, marginTop: 10 },
-  emptyBtn: { alignSelf: 'stretch', marginTop: 22 },
+  empty: { paddingHorizontal: SPACE.xl, paddingTop: 36, alignItems: 'center', gap: 28 },
+  // 첫 러닝화 대시 슬롯(design-reference/first-shoe — 신발탭 FirstShoeScreen 과 동일 값)
+  fsSlot: { width: '100%', maxWidth: 300, aspectRatio: 5 / 4, borderRadius: 26, borderWidth: 1.5, borderColor: withAlpha(T1, 0.16), borderStyle: 'dashed', backgroundColor: withAlpha(ACCENT, 0.035), alignItems: 'center', justifyContent: 'center', gap: 4 },
+  fsSlotPressed: { transform: [{ scale: 0.975 }], borderColor: withAlpha(ACCENT, 0.55) },
+  fsGlyphWrap: { position: 'relative', marginBottom: 14 },
+  fsPlus: { position: 'absolute', top: -6, right: -12, width: 30, height: 30, borderRadius: 15, backgroundColor: ACCENT, alignItems: 'center', justifyContent: 'center', shadowColor: ACCENT, shadowOpacity: 0.4, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 4 },
+  fsSlotTitle: { color: T1, fontFamily: FONT, fontSize: 18, fontWeight: '700', letterSpacing: -0.2 },
+  fsSlotSub: { color: T3, fontFamily: FONT, fontSize: 13 },
+  fsPhilosophy: { textAlign: 'center', color: T3, fontFamily: FONT, fontSize: 15, lineHeight: 24 },
 });

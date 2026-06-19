@@ -46,7 +46,7 @@ function Header({onSearch}: {onSearch?: () => void}) {
 }
 
 // ── 운동화 글리프(SVG, design-reference 정합) ─────────────────────────────────
-function ShoeGlyph({size = 46, color = withAlpha(T1, 0.32)}: {size?: number; color?: string}) {
+export function ShoeGlyph({size = 46, color = withAlpha(T1, 0.32)}: {size?: number; color?: string}) {
   const sw = 2;
   return (
     <Svg width={size} height={size} viewBox="0 0 64 64" fill="none">
