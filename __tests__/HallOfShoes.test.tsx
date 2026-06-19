@@ -78,20 +78,17 @@ beforeEach(async () => {
 });
 
 describe('HallOfShoes — 은퇴 신발 전시', () => {
-  test('은퇴 레코드를 km + 은퇴 연도 + 등급으로 렌더한다', () => {
+  test('은퇴 레코드를 브랜드/모델 + km + 은퇴 연도로 렌더한다(골드 명패)', () => {
     const txt = textOf(render(<HallOfShoes records={RECORDS} />).root);
-    // 신발명
-    expect(txt).toContain('Nike Pegasus 40');
-    expect(txt).toContain('Vaporfly 3');
-    // km
+    // 신발명(브랜드는 첫 단어로 분리되어 모델이 명패 제목)
+    expect(txt).toContain('Pegasus 40');
+    expect(txt).toContain('Vaporfly');
+    // km(명패 + 최근 헌액 포일 숫자)
     expect(txt).toContain('512');
     expect(txt).toContain('318');
-    // 은퇴 연도(Class of)
-    expect(txt).toContain('Class of 2026');
-    expect(txt).toContain('Class of 2025');
-    // 등급(Smart Retirement Grade 이름)
-    expect(txt).toContain('Perfect');
-    expect(txt).toContain('Smart');
+    // 은퇴 연도
+    expect(txt).toContain('2026');
+    expect(txt).toContain('2025');
   });
 
   test('최근 은퇴 순으로 정렬한다(retiredAt 내림차순)', () => {
@@ -106,7 +103,7 @@ describe('HallOfShoes — 은퇴 신발 전시', () => {
   test('레코드 0개면 빈 상태(격려)를 보여준다', () => {
     const r = render(<HallOfShoes records={[]} />);
     expect(hostsWith(r.root, 'hall-empty').length).toBe(1);
-    expect(textOf(r.root)).toContain('아직 은퇴한 신발이 없어요');
+    expect(textOf(r.root)).toContain('아직 헌액된 신발이 없어요');
   });
 
   test('영속 라운드트립: 저장한 레코드를 복원해 그대로 전시한다(리로드 보존)', async () => {
@@ -114,18 +111,22 @@ describe('HallOfShoes — 은퇴 신발 전시', () => {
     const loaded = await loadProgression();
     expect(loaded.retiredShoes).toHaveLength(1);
     const txt = textOf(render(<HallOfShoes records={loaded.retiredShoes} />).root);
-    expect(txt).toContain('Nike Pegasus 40');
+    expect(txt).toContain('Pegasus 40');
     expect(txt).toContain('512');
-    expect(txt).toContain('Class of 2026');
+    expect(txt).toContain('2026');
   });
 
-  test('onOpenRecord 가 있으면 명패 누름이 그 레코드로 콜백한다', () => {
-    const onOpen = jest.fn();
-    const root = render(<HallOfShoes records={RECORDS} onOpenRecord={onOpen} />).root;
+  test('명패를 누르면 은퇴 인증서 모달이 열린다', () => {
+    const root = render(<HallOfShoes records={RECORDS} />).root;
+    // 열기 전: 인증서 모달은 닫혀 있다(visible=false).
+    const modalsBefore = root.findAll((n: any) => n.props && typeof n.props.visible === 'boolean' && typeof n.props.onRequestClose === 'function');
+    expect(modalsBefore.some((m: any) => m.props.visible)).toBe(false);
     const node = root.find((n: any) => n.props?.testID === 'hall-plaque-s1');
     act(() => {
       node.props.onPress();
     });
-    expect(onOpen).toHaveBeenCalledWith(RECORDS[0]);
+    // 누르면 인증서 모달이 열린다(visible=true).
+    const modalsAfter = root.findAll((n: any) => n.props && typeof n.props.visible === 'boolean' && typeof n.props.onRequestClose === 'function');
+    expect(modalsAfter.some((m: any) => m.props.visible)).toBe(true);
   });
 });

@@ -1620,7 +1620,7 @@ function Main(){
   // 명예의 전당(은퇴 신발 박물관) 전체화면 — 영속된 은퇴 레코드를 그대로 전시한다
   // (리로드에도 보존). 데이터를 만들지 않고 progState.retiredShoes 만 읽는다(읽기 전용).
   if(showHallOfShoes){
-    return <HallOfShoes records={retiredRecords} unit={unit} onBack={()=>setShowHallOfShoes(false)}/>;
+    return <HallOfShoes records={retiredRecords} unit={unit} userName={profileName} onBack={()=>setShowHallOfShoes(false)} onGoShoes={()=>{setShowHallOfShoes(false);setTab(1);}}/>;
   }
 
   return(
