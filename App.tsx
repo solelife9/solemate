@@ -34,7 +34,10 @@ import ProgressionScreen from './ProgressionScreen.rn';
 import HallOfShoes from './HallOfShoes.rn';
 import HallOfFameScreen from './HallOfFameScreen.rn';
 import {buildContext} from './lib/progression/context';
-import {getProgression, pickRecentAchievement} from './lib/progression';
+import {getProgression, pickRecentAchievement, collectUnlockedKeys} from './lib/progression';
+import {RANK_XP} from './lib/progression/rank';
+import {TIER_LABEL} from './theme';
+import CelebrationScreen, {CelebrationData} from './CelebrationScreen.rn';
 import {loadProgression} from './lib/progression/storage';
 import type {ProgressionState, RetiredShoeRecord} from './lib/progression/types';
 import type {HomeProgression, HomeChallengeView} from './HomeScreen.rn';
@@ -117,6 +120,11 @@ const CACHE_RUNS_KEY = 'cache_runs_v1';
 // 클라우드 머지로 삭제가 전파되고(다른 기기에서도 사라짐) 부활하지 않게 한다. REST 는 정본
 // (실제 DELETE)이고, 묘비는 Firestore 백업 머지가 지워진 레코드를 되살리지 못하게 막는다.
 const K_TOMBSTONES = 'tombstones_v1';
+// ── 셀러브레이션(등급상승/업적) 트리거 — 한글 매핑 + '이미 본 것' 베이스라인 키 ──────────
+const CELEB_SEEN_KEY = 'celebration_seen_v1';
+const CELEB_RANK_KO: Record<string, string> = {bronze: '브론즈', silver: '실버', gold: '골드', platinum: '플래티넘', diamond: '다이아몬드', master: '마스터', legend: '레전드'};
+const CELEB_CAT_KO: Record<string, string> = {runningMilestone: '러닝 마일스톤', distanceMilestone: '거리 마일스톤', shoeJourney: '신발 여정', shoeMemory: '신발 추억', experience: '경험', keego: 'Keego'};
+const CELEB_RARITY: Record<string, {ko: string; color: string}> = {common: {ko: '커먼', color: '#9A9A9A'}, rare: {ko: '레어', color: '#4B93F7'}, epic: {ko: '에픽', color: '#A468F0'}, legendary: {ko: '레전더리', color: '#E7B84B'}};
 /** 부팅 폴백 캐시 로드 — 신발 배열이 있으면 {shoes,runs}, 없으면(미존재/손상) null. */
 async function loadBootCache(): Promise<{shoes: any[]; runs: any[]} | null> {
   try {
@@ -268,6 +276,11 @@ function Main(){
   // 진척 영속 상태(progression_v1) — Hall of Shoes 레코드 + 은퇴 키프세이크 컨텍스트의
   // 소스. 마운트 시 로드하고, 은퇴 확정 시 레코드를 ADDITIVE 하게 덧붙인다(파생값은 재계산).
   const [progState,setProgState]=useState<ProgressionState|null>(null);
+  // 셀러브레이션(등급상승/업적 획득) — 현재 표출 1건 + 대기 큐 + '이미 본 것' 베이스라인.
+  const [celebration,setCelebration]=useState<CelebrationData|null>(null);
+  const celebQueueRef=useRef<CelebrationData[]>([]);
+  const celebBaselineRef=useRef<{ach:string[];tier:string}|null>(null);
+  const [celebReady,setCelebReady]=useState(false);
   const [overlay,setOverlay]=useState<'none'|'add'|'goal'|'countdown'|'run'>('none');
   const [pendingShoe,setPendingShoe]=useState<{id:string;name:string;ui:Shoe}|null>(null);
   const [activeRun,setActiveRun]=useState<{id:string;name:string;goalKm:number}|null>(null);
@@ -316,6 +329,74 @@ function Main(){
   // 진척 영속 상태(progression_v1) 복원 — Hall of Shoes 레코드 + 은퇴 컨텍스트의 소스.
   // 손상/누락은 storage 가 안전 기본값으로 복구한다(절대 throw 없음). 1회 로드.
   useEffect(()=>{let alive=true;loadProgression().then(s=>{if(alive)setProgState(s);});return()=>{alive=false;};},[]);
+
+  // 셀러브레이션 베이스라인('이미 본' 업적 + 등급) 로드 — 1회. 없으면 null(첫 감지 때 시딩).
+  useEffect(()=>{
+    let alive=true;
+    (async()=>{
+      try{
+        const raw=await AsyncStorage.getItem(CELEB_SEEN_KEY);
+        const p=raw?JSON.parse(raw):null;
+        if(alive)celebBaselineRef.current=p&&Array.isArray(p.ach)?{ach:p.ach.map(String),tier:String(p.tier||'')}:null;
+      }catch{/* 손상/부재 → null(시딩) */}
+      if(alive)setCelebReady(true);
+    })();
+    return()=>{alive=false;};
+  },[]);
+
+  // 등급상승/업적 획득 감지 → 셀러브레이션 오버레이 큐잉. 베이스라인 대비 신규만 띄우고,
+  // 첫 실행(베이스라인 없음)은 현재를 시딩만 한다(기존 업적·현재 등급 소급 축하 금지).
+  useEffect(()=>{
+    if(!celebReady||!progState)return;
+    const view=getProgression(runs,shoes,progState??undefined);
+    const currentAch=collectUnlockedKeys(view);
+    const tier=String(view.rank.tier);
+    const base=celebBaselineRef.current;
+    const persist=(next:{ach:string[];tier:string})=>{
+      celebBaselineRef.current=next;
+      try{void AsyncStorage.setItem(CELEB_SEEN_KEY,JSON.stringify(next));}catch{}
+    };
+    if(base===null){persist({ach:currentAch,tier});return;}
+    const seen=new Set(base.ach);
+    const newAch=currentAch.filter(k=>!seen.has(k));
+    const rankUp=(RANK_XP as Record<string,number>)[tier]>((RANK_XP as Record<string,number>)[base.tier]??-1)&&tier!==base.tier;
+    if(newAch.length>0||rankUp){
+      const q:CelebrationData[]=[];
+      if(rankUp){
+        q.push({
+          type:'rankup',
+          rankKo:CELEB_RANK_KO[tier]??tier,
+          rankName:(TIER_LABEL as Record<string,string>)[tier]??tier,
+          rankColor:view.rank.color,
+          prevKo:CELEB_RANK_KO[base.tier]??base.tier,
+          nextKo:view.rank.nextTier?(CELEB_RANK_KO[String(view.rank.nextTier)]??String(view.rank.nextTier)):null,
+          xpToNext:view.rank.xpForNext,
+        });
+      }
+      for(const k of newAch){
+        const a=view.achievements.find(x=>x.key===k);
+        if(!a||!a.unlocked)continue;
+        const rar=CELEB_RARITY[a.rarity]??CELEB_RARITY.common;
+        q.push({
+          type:'achievement',
+          nameKo:a.name,
+          catKo:CELEB_CAT_KO[a.category]??'러닝 기록',
+          rarityKo:rar.ko,
+          rarityColor:rar.color,
+          xp:a.xp,
+          detail:a.description,
+          legendary:a.rarity==='legendary',
+        });
+      }
+      if(q.length){
+        celebQueueRef.current.push(...q);
+        setCelebration(prev=>prev??celebQueueRef.current.shift()??null);
+      }
+    }
+    persist({ach:currentAch,tier});
+  },[runs,shoes,progState,celebReady]);
+
+  const closeCelebration=()=>setCelebration(celebQueueRef.current.shift()??null);
 
   // 개인 챌린지 목록 복원(신규 키 — 네트워크 무관, 1회). 손상/형식오류는 조용히
   // 무시해 빈 목록으로 시작한다(기존 데이터 보존, 크래시 금지).
@@ -1607,6 +1688,10 @@ function Main(){
   // 명예의 전당(라이브 리더보드) 전체화면 — 백엔드(/api/v1) 카테고리별 랭킹. provider 가
   // 미배포/미로그인이면 빈 상태로 떨어진다(가짜 경쟁자 금지). userId 로 백엔드 연결+재계산.
   // showProgression 보다 먼저 검사한다 — 진척 위에 띄우고 뒤로 가면 진척으로 복귀(스택 보존).
+  // 셀러브레이션(등급상승/업적) — 풀스크린 오버레이. 닫으면 큐의 다음 항목 또는 종료.
+  if(celebration){
+    return <CelebrationScreen data={celebration} onClose={closeCelebration}/>;
+  }
   if(showHallOfFame){
     return <HallOfFameScreen profileName={profileName} deviceUserId={userId}
       onBack={()=>setShowHallOfFame(false)}/>;
