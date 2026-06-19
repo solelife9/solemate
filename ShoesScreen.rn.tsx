@@ -491,6 +491,34 @@ function ShoeCard({ shoe, featured, onPress, onPlay, unit, pace }: { shoe: Shoe;
   );
 }
 
+function HallOfFameCard({ shoe, unit, onPress }: { shoe: Shoe; unit: Unit; onPress: () => void }) {
+  const usedDisp = displayNum(shoe.used, unit);
+  const cardClass = findShoeClass(shoe.brand, shoe.model);
+  const cardType = typeLabel(cardClass?.type);
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${shoe.brand} ${shoe.model} 상세`}
+      style={({ pressed }) => [s.hofCard, pressed && s.pressed]}>
+      <View style={s.hofTrophyBadge}>
+        <Ionicons name="trophy" size={12} color={WARN} />
+      </View>
+      <View style={{ flex: 1, minWidth: 0 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+          <Text style={s.hofBrand}>{shoe.brand}</Text>
+          {!!cardType && <View style={s.cardTypeChip}><Text style={s.cardTypeChipText}>{cardType}</Text></View>}
+        </View>
+        <Text style={s.hofModel} numberOfLines={1}>{shoe.model}</Text>
+      </View>
+      <View style={{ alignItems: 'flex-end', gap: 2 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 2 }}>
+          <Text style={s.hofKm}>{usedDisp}</Text>
+          <Text style={s.hofUnit}>{unit}</Text>
+        </View>
+        <Text style={s.hofLabel}>함께한 거리</Text>
+      </View>
+    </Pressable>
+  );
+}
+
 export default function ShoesScreen({
   shoes = SHOES, runs = [], totals = {}, activeIdx = 0, unit = 'km', weightKg, surfaceOf, onAddShoe, onTab, onRename, onDelete, onRetire, onSetMaxKm, onStartRun,
   detailShoeId, onConsumeDetail,
@@ -575,34 +603,54 @@ export default function ShoesScreen({
     return <FirstShoeScreen onRegister={onAddShoe} onTab={onTab} />;
   }
 
+  const activeShoes = shoes.map((sh, i) => ({ sh, i })).filter(({ sh }) => !sh.retired);
+  const retiredShoes = shoes.map((sh, i) => ({ sh, i })).filter(({ sh }) => !!sh.retired);
+
   return (
     <View style={[s.screen, { paddingTop: insets.top }]}>
       <View style={s.topbar}>
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={s.title}>신발</Text>
-          <Text style={s.shoesSub}>{shoes.length}켤레와 함께 총 {displayNum(shoes.reduce((a, sh) => a + (sh.used || 0), 0), unit)}{unit}를 달렸어요</Text>
+          <Text style={s.shoesSub}>{activeShoes.length}켤레와 함께 총 {displayNum(activeShoes.reduce((a, { sh }) => a + (sh.used || 0), 0), unit)}{unit}를 달렸어요</Text>
         </View>
         <Pressable onPress={onAddShoe} accessibilityRole="button" accessibilityLabel="신발 추가" hitSlop={8} style={({ pressed }) => [s.addPill, pressed && s.pressed]}>
           <Text style={s.addPillText}>신발 추가</Text>
           <Ionicons name="add" size={15} color={T1} />
         </Pressable>
       </View>
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 18, paddingBottom: 8, gap: 14, paddingTop: 12 }}>
-        {shoes.map((shoe, i) => (
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 18, paddingBottom: 24, gap: 14, paddingTop: 12 }}>
+        {activeShoes.map(({ sh, i }) => (
           <ShoeCard
-            key={shoe.id || i}
-            shoe={shoe}
+            key={sh.id || i}
+            shoe={sh}
             featured={i === activeIdx}
             unit={unit}
             pace={totals[i]?.avgPace}
             onPress={() => setDetail(i)}
-            onPlay={shoe.id && onStartRun ? () => onStartRun(shoe.id!) : undefined}
+            onPlay={sh.id && onStartRun ? () => onStartRun(sh.id!) : undefined}
           />
         ))}
         <Pressable onPress={onAddShoe} accessibilityRole="button" accessibilityLabel="러닝화 등록하기" style={({ pressed }) => [s.addCard, pressed && s.pressed]}>
           <Ionicons name="add" size={18} color={T3} />
           <Text style={s.addText}>러닝화 등록하기</Text>
         </Pressable>
+
+        {retiredShoes.length > 0 && (
+          <>
+            <View style={s.hofHeader}>
+              <Ionicons name="trophy" size={14} color={WARN} />
+              <Text style={s.hofTitle}>명예의 전당</Text>
+            </View>
+            {retiredShoes.map(({ sh, i }) => (
+              <HallOfFameCard
+                key={sh.id || i}
+                shoe={sh}
+                unit={unit}
+                onPress={() => setDetail(i)}
+              />
+            ))}
+          </>
+        )}
       </ScrollView>
       <TabBar active={1} onTab={(i) => onTab?.(i)} />
     </View>
@@ -669,6 +717,17 @@ const s = StyleSheet.create({
 
   addCard: { borderRadius: 22, borderWidth: 1.5, borderStyle: 'dashed', borderColor: withAlpha(T1, 0.12), padding: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   addText: { color: T3, fontFamily: FONT, fontSize: 15, fontWeight: '500' },
+
+  // 명예의 전당
+  hofHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8, paddingHorizontal: 4 },
+  hofTitle: { color: WARN, fontFamily: FONT, fontSize: 13, fontWeight: '700', letterSpacing: 0.4 },
+  hofCard: { backgroundColor: '#1A1500', borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(WARN, 0.25), padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  hofTrophyBadge: { width: 32, height: 32, borderRadius: 16, backgroundColor: withAlpha(WARN, 0.12), alignItems: 'center', justifyContent: 'center' },
+  hofBrand: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500' },
+  hofModel: { color: T2, fontFamily: FONT, fontSize: 15, fontWeight: '600', marginTop: 2 },
+  hofKm: { color: WARN, fontFamily: DISPLAY, fontSize: 20, fontWeight: '700', letterSpacing: -0.4 },
+  hofUnit: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500', paddingBottom: 3 },
+  hofLabel: { color: T4, fontFamily: FONT, fontSize: 11, fontWeight: '500' },
 
   // detail
   detailNav: { paddingTop: 12, paddingHorizontal: 16, paddingBottom: 6, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
