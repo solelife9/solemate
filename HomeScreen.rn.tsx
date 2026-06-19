@@ -17,7 +17,7 @@ import {
   FONT, DISPLAY, SPACE, RADIUS, GUTTER, withAlpha, Shoe, SHOES, TIER_COLORS, TIER_LABEL,
 } from './theme';
 import type { RankTier } from './lib/progression/types';
-import { TabBar, TierBadge, KeegoWordmark, Button, SectionTitle, Pill, InjuryBanner } from './primitives';
+import { TabBar, KeegoWordmark, Button, SectionTitle, Pill, InjuryBanner } from './primitives';
 import { wearTier, WearTierTone } from './lib/shoe';
 import { Unit, displayNum } from './lib/units';
 import { assessShoeInjuryRisk } from './lib/injury';
@@ -181,16 +181,11 @@ function HeroShoe({ shoe, unit, tappable, forecast, active, onOpenShoe, onStart 
             <Text style={s.heroBrand}>{shoe.brand}</Text>
             {!!heroType && <View style={s.catChip}><Text style={s.catChipText}>{heroType}</Text></View>}
           </View>
-          {/* 양호: 목록/상세와 동일한 wearTier 칩(점+라벨: 최상의 컨디션/좋은 상태). 주의/교체: TierBadge. */}
-          <View style={s.condpill}>
-            {shoe.condition !== '양호' ? (
-              <TierBadge condition={shoe.condition} />
-            ) : (
-              <>
-                <View style={[s.dot, { backgroundColor: ring }]} />
-                <Text style={[s.condText, { color: T2 }]} numberOfLines={1}>{wearLabelOf(wearPct)}</Text>
-              </>
-            )}
+          {/* 컨디션 칩: 목록/상세와 100% 동일한 wearTier 4단계(점+라벨) —
+              최상의 컨디션 / 좋은 상태 / 교체 고려 / 교체 권장. (TierBadge 3단계 폐지) */}
+          <View style={s.condpill} testID={`home-cond-${wearTier(wearPct).key}`}>
+            <View style={[s.dot, { backgroundColor: ring }]} />
+            <Text style={[s.condText, { color: T2 }]} numberOfLines={1}>{wearLabelOf(wearPct)}</Text>
           </View>
         </View>
         <Text style={s.heroModel} numberOfLines={1}>{shoe.model}</Text>

@@ -9,7 +9,7 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {
   BG, CARD, CARD_DIM, CARD_HI, HERO_BG, ACCENT, DANGER, WARN, GOOD, BEST, T1, T2, T3, T4, SEP, FONT, DISPLAY, withAlpha, RADIUS, Shoe, Run, SHOES,
 } from './theme';
-import { TabBar, TierBadge, Pill, InjuryBanner, SectionTitle, Button } from './primitives';
+import { TabBar, Pill, InjuryBanner, SectionTitle, Button } from './primitives';
 import { FuelGauge } from './FuelGauge';
 import FirstShoeScreen from './FirstShoeScreen.rn';
 import { Unit, displayNum, displayToKm } from './lib/units';
@@ -255,17 +255,12 @@ function ShoeDetail({
                 {!!detailType && <View style={s.dTypeChip}><Text style={s.dTypeChipText}>{detailType}</Text></View>}
               </View>
               <View style={s.row}>
-                {/* 양호: 목록 카드와 동일한 wearTier 칩(최상의 컨디션/좋은 상태) — 이전엔 '양호'를
-                    무조건 '최상의 컨디션'으로 하드코딩해 목록(좋은 상태)과 어긋났다. 주의/교체는
-                    기존 tier 배지(주의/교체) 유지. */}
-                {shoe.condition === '양호'
-                  ? (
-                    <View style={s.statusPill} testID={`detail-cond-${wearTier(detailWearPct).key}`}>
-                      <View style={[s.statusDot, { backgroundColor: condColor(detailWearPct) }]} />
-                      <Text style={s.statusPillText}>{condLabel(detailWearPct)}</Text>
-                    </View>
-                  )
-                  : <TierBadge condition={shoe.condition} size="md" />}
+                {/* 컨디션 칩: 목록 카드와 100% 동일한 wearTier 4단계 —
+                    최상의 컨디션 / 좋은 상태 / 교체 고려 / 교체 권장. (TierBadge 3단계 폐지) */}
+                <View style={s.statusPill} testID={`detail-cond-${wearTier(detailWearPct).key}`}>
+                  <View style={[s.statusDot, { backgroundColor: condColor(detailWearPct) }]} />
+                  <Text style={s.statusPillText}>{condLabel(detailWearPct)}</Text>
+                </View>
                 {retired && <Pill tone="dim" label="보관됨" />}
               </View>
             </View>

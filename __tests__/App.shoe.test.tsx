@@ -28,7 +28,7 @@ import {Alert, StyleSheet} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import App from '../App';
 import ShoesScreen from '../ShoesScreen.rn';
-import {DANGER, WARN, GOOD, ACCENT, Shoe} from '../theme';
+import {DANGER, WARN, GOOD, BEST, ACCENT, Shoe} from '../theme';
 
 type ApiShoe = {id: string; name: string; max_km: number; start_km: number; retired?: boolean};
 type ApiRun = {id: string; shoe_id: string; km: number; run_date: string; duration: number};
@@ -269,18 +269,19 @@ test('restore(복원) PATCHes retired=false and the shoe reappears in the home p
 // ── 4) ShoesScreen: 4단계 마모 컨디션(사용률%) + retire/restore from the locker ──
 test('ShoesScreen renders 4단계 마모 컨디션을 사용률별 색으로', async () => {
   const shoes: Shoe[] = [
-    {id: 'a', brand: 'NIKE', model: 'Pegasus', used: 60, max: 600, condition: '양호'},   // 10% best→green
-    {id: 'b', brand: 'HOKA', model: 'Clifton', used: 390, max: 600, condition: '양호'},  // 65% good→yellow
-    {id: 'c', brand: 'ASICS', model: 'Nimbus', used: 540, max: 600, condition: '교체'},  // 90% consider→orange
-    {id: 'd', brand: 'BROOKS', model: 'Ghost', used: 660, max: 600, condition: '교체'},  // 110% replace→red
+    {id: 'a', brand: 'NIKE', model: 'Pegasus', used: 60, max: 600, condition: '양호'},   // 10% best→BEST(파랑)
+    {id: 'b', brand: 'HOKA', model: 'Clifton', used: 390, max: 600, condition: '양호'},  // 65% good→GOOD(초록)
+    {id: 'c', brand: 'ASICS', model: 'Nimbus', used: 540, max: 600, condition: '교체'},  // 90% consider→ACCENT(주황)
+    {id: 'd', brand: 'BROOKS', model: 'Ghost', used: 660, max: 600, condition: '교체'},  // 110% replace→DANGER(빨강)
   ];
   const root = await mountComponent(
     <ShoesScreen shoes={shoes} runs={[]} totals={{}} onTab={() => {}} onAddShoe={() => {}} />,
   );
 
-  // 4-tier color contract(사용률%): best→GOOD / good→WARN / consider→ACCENT / replace→DANGER.
-  expect(dotColorsOf(root, 'best')).toContain(GOOD);
-  expect(dotColorsOf(root, 'good')).toContain(WARN);
+  // 4단계 색 계약(사용률%, TONE_COLOR={good:BEST, mid:GOOD, warn:ACCENT, danger:DANGER}):
+  // best→BEST / good→GOOD / consider→ACCENT / replace→DANGER.
+  expect(dotColorsOf(root, 'best')).toContain(BEST);
+  expect(dotColorsOf(root, 'good')).toContain(GOOD);
   expect(dotColorsOf(root, 'consider')).toContain(ACCENT);
   expect(dotColorsOf(root, 'replace')).toContain(DANGER);
 });
