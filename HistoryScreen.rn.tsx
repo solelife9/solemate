@@ -776,11 +776,6 @@ export default function HistoryScreen({
     <View style={[s.screen, { paddingTop: insets.top }]}>
       <View style={[s.header, s.headerRow]}>
         <Text style={s.title}>기록</Text>
-        {!!onAddRun && (
-          <Pressable onPress={() => setForm({ mode: 'add' })} hitSlop={8} style={s.iconBtn} accessibilityRole="button" accessibilityLabel="수동 기록 추가">
-            <Ionicons name="add" size={22} color={T1} />
-          </Pressable>
-        )}
       </View>
       {/* recent runs 리스트는 FlatList 로 가상화한다(런이 수백 건이어도 보이는 행만 마운트).
           세그먼트·요약·차트·PR·섹션 라벨은 스크롤과 함께 움직이도록 ListHeaderComponent 로

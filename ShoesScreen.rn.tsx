@@ -296,12 +296,6 @@ function ShoeDetail({
           <Text style={s.gaugeNote}>
             쿠셔닝(성능)이 유지되는 교체 권장 거리예요. 넘어도 신을 수 있지만 충격 흡수는 줄어요.
           </Text>
-          {!retired && shoe.id && onSetMaxKm && (
-            <Pressable onPress={() => setEditingMax((e) => !e)} hitSlop={8} accessibilityRole="button" accessibilityLabel="신발 수명 수정" style={s.maxEditRow}>
-              <Ionicons name={editingMax ? 'checkmark' : 'create-outline'} size={13} color={editingMax ? ACCENT : T3} />
-              <Text style={s.maxEditTxt}>{editingMax ? '완료' : '수명 조정'}</Text>
-            </Pressable>
-          )}
         </View>
 
         {/* 부상예방 경고 배너(주의/위험) — 마모도가 임계를 넘으면 keep-going 보이스로
@@ -312,45 +306,6 @@ function ShoeDetail({
 
         {/* '남은 수명' 옆 연필로 펼치는 신발 수명(max_km) 보정기 — ±로 교체 임계의 분모를
             직접 조정한다(기본 접힘). 보관된 신발은 조정 동선에서 제외(기록은 그대로 유지). */}
-        {editingMax && !retired && shoe.id && onSetMaxKm && (
-          <View style={[s.card, { padding: 18, gap: 12 }]}>
-            <View style={s.maxStepper}>
-              <Pressable onPress={() => stepMaxKm(-1)} hitSlop={6} accessibilityRole="button" accessibilityLabel="수명 줄이기" style={({ pressed }) => [s.maxStepBtn, pressed && { backgroundColor: CARD }]}>
-                <Ionicons name="remove" size={20} color={T1} />
-              </Pressable>
-              <View style={s.maxStepVal}>
-                <View style={s.maxInputRow}>
-                  <TextInput
-                    value={maxDraft ?? String(displayNum(shoe.max, unit, 0))}
-                    onChangeText={(v) => setMaxDraft(v.replace(/[^0-9]/g, ''))}
-                    onBlur={commitMaxDraft}
-                    onSubmitEditing={commitMaxDraft}
-                    keyboardType="number-pad"
-                    returnKeyType="done"
-                    maxLength={4}
-                    selectTextOnFocus
-                    accessibilityLabel="신발 수명 직접 입력"
-                    style={s.maxInput}
-                  />
-                  <Text style={s.maxStepUnit}> {unit}</Text>
-                </View>
-                <Text style={s.maxStepCaption}>{Math.round(percentUsed)}% 사용</Text>
-              </View>
-              <Pressable onPress={() => stepMaxKm(1)} hitSlop={6} accessibilityRole="button" accessibilityLabel="수명 늘리기" style={({ pressed }) => [s.maxStepBtn, pressed && { backgroundColor: CARD }]}>
-                <Ionicons name="add" size={20} color={T1} />
-              </Pressable>
-            </View>
-            <Text style={s.maxHint}>
-              {shoe.condition === '교체'
-                ? '교체 시점을 넘겼어요.'
-                : `교체 권장(${SHOE_REPLACE_PCT}%)까지 `}
-              {shoe.condition !== '교체' && (
-                <Text style={{ color: ACCENT }}>{displayNum(toReplaceKm, unit, 0)}{unit}</Text>
-              )}
-              {shoe.condition !== '교체' && ' 남음'}
-            </Text>
-          </View>
-        )}
 
         {/* 교체 내러티브(keep-going 보이스) — 교체 tier 도달 시, 교체를 '손실'이 아니라
             '부상 없이 계속 달리기'의 조건으로 프레이밍해 상세를 마감한다. KEEP_GOING_REPLACE
