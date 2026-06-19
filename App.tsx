@@ -777,23 +777,28 @@ function Main(){
   // audit a2: REST DELETE(정본)는 유지하되, 라이브 배열에서 빼는 동시에 묘비를 남긴다 —
   // Firestore 백업 머지가 다른 기기의 옛 라이브 신발로 삭제를 되돌리지 못하게 한다(부활 방지).
   async function deleteShoe(id:string){
-    try{
-      await apiDeleteShoe(userId,id);
-      const target=shoes.find(s=>s.id===id);
-      setShoes(prev=>prev.filter(s=>s.id!==id));
-      addShoeTombstone(target??({id} as BackendShoe));
-      // 삭제됨 · 실행취소: 신발만 잠금장에서 빠졌을 뿐이므로 완전복원할 수 있다.
-      if(target)offerShoeUndo(target);
-    }catch{Alert.alert('오류','삭제 실패');}
+    // 로컬-퍼스트 삭제: 먼저 로컬에서 제거 + 묘비(되돌아오지 않게)하고, 백엔드 DELETE 는
+    // best-effort 로 시도한다. 백엔드가 콜드/다운이거나 그 신발이 로컬-only(서버 404)여도
+    // 삭제가 막히지 않는다(이전엔 apiDeleteShoe 성공 시에만 지워 '삭제 실패'가 떴다). 묘비가
+    // 다음 동기/부팅 머지에서 서버의 잔존 레코드를 이긴다(재등장 방지).
+    const target=shoes.find(s=>s.id===id);
+    setShoes(prev=>prev.filter(s=>s.id!==id));
+    addShoeTombstone(target??({id} as BackendShoe));
+    // 삭제됨 · 실행취소: 신발만 잠금장에서 빠졌을 뿐이므로 완전복원할 수 있다.
+    if(target)offerShoeUndo(target);
+    try{await apiDeleteShoe(userId,id);}
+    catch{/* 백엔드 콜드/미존재 — 로컬 삭제 유지(묘비가 재등장 차단). 비차단. */}
   }
 
   // 보관(retire/archive): 신발을 선택목록·홈 picker에서 숨기되 신발과 런 기록은
   // 모두 보존한다. retired 토글이므로 복원도 가능하다.
   async function retireShoe(id:string,retired:boolean){
-    try{
-      await apiPatchShoe(userId,id,{retired});
-      setShoes(prev=>prev.map(s=>s.id===id?stampUpdatedAt({...s,retired}):s));
-    }catch{Alert.alert('오류',retired?'보관 처리 실패':'복원 실패');}
+    // 로컬-퍼스트: 먼저 로컬 상태(retired 토글)를 바꾸고 백엔드 PATCH 는 best-effort.
+    // 백엔드 콜드/다운이나 로컬-only 신발이어도 보관/복원이 막히지 않는다(머지 '최신 우선'이
+    // 로컬 변경을 유지). stampUpdatedAt 으로 이 변경이 서버의 옛 값을 이긴다.
+    setShoes(prev=>prev.map(s=>s.id===id?stampUpdatedAt({...s,retired}):s));
+    try{await apiPatchShoe(userId,id,{retired});}
+    catch{/* 백엔드 콜드/미존재 — 로컬 상태 유지(비차단). */}
   }
 
 
