@@ -818,7 +818,7 @@ export default function HistoryScreen({
                 </View>
               )
             }
-            <View style={[s.card, { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 24 }]}>
+            <View style={[s.card, { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 24 }]}>
               <View style={[s.baselineRow, { marginTop: 0 }]}>
                 <Text style={s.sumBigKm}>{sum.km}</Text><Text style={s.sumBigU}>{unit}</Text>
               </View>
@@ -829,7 +829,7 @@ export default function HistoryScreen({
                 <View style={s.sumMetric}><Text style={s.sumMetricV}>{sum.time}</Text><Text style={s.sumMetricL}>총 시간</Text></View>
               </View>
               {ch && ch.data.length > 0 && (
-                <View style={{ marginTop: 20, paddingTop: 20, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP }}>
+                <View style={{ marginTop: 20, paddingTop: 20, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.18)' }}>
                   <Text style={s.cardTitle}>{ch.title}</Text>
                   <View style={{ marginTop: 18 }}><PeriodChartView data={ch.data} labels={ch.labels} unit={unit} /></View>
                 </View>
@@ -915,10 +915,10 @@ const s = StyleSheet.create({
   sectionLabel: { color: T2, fontFamily: FONT, fontSize: 14, fontWeight: '500', letterSpacing: 0.2, paddingHorizontal: 4 },
   // 요약 카드(큰 거리) — 목업 기록(10)
   sumTitle: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600', letterSpacing: 0.2 },
-  sumBigKm: { color: T1, fontFamily: DISPLAY, fontSize: 42, fontWeight: '800', letterSpacing: -1, fontVariant: ['tabular-nums'] },
+  sumBigKm: { color: T1, fontFamily: DISPLAY, fontSize: 42, fontWeight: '800', letterSpacing: -1, fontVariant: ['tabular-nums'], marginLeft: 0 },
   sumBigU: { color: T3, fontFamily: FONT, fontSize: 18, fontWeight: '600', marginLeft: 4, paddingBottom: 6 },
   sumSub: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '500', marginTop: 2 },
-  sumMetricRow: { flexDirection: 'row', justifyContent: 'flex-start', gap: 28, marginTop: 18, paddingTop: 16, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP },
+  sumMetricRow: { flexDirection: 'row', justifyContent: 'flex-start', gap: 28, marginTop: 14, paddingLeft: 2 },
   sumMetric: {},
   sumMetricV: { color: T1, fontFamily: DISPLAY, fontSize: 19, fontWeight: '700', letterSpacing: -0.2 },
   sumMetricU: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '600' },
