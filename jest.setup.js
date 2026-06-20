@@ -288,6 +288,13 @@ jest.mock('@react-native-firebase/auth', () => {
       state.current = {uid: token ? `custom:${token}` : 'custom-test-uid'};
       return Promise.resolve({user: state.current});
     }),
+    // onAuthStateChanged(auth, cb) — 현재 사용자로 1회 즉시 통지하고 unsubscribe 를
+    // 돌려준다. App 의 로그인 게이트는 테스트에서 우회되므로 보통 호출되지 않지만,
+    // LoginScreen/게이트 단독 테스트가 인증 전이를 구동할 수 있게 노출한다.
+    onAuthStateChanged: jest.fn((_auth, cb) => {
+      cb(state.current);
+      return () => {};
+    }),
     signOut: jest.fn(() => {
       state.current = null;
       return Promise.resolve();

@@ -82,6 +82,8 @@ import {serializeBackup, BackupV1, BackupPayload} from './lib/backup';
 import {Challenge, ChallengeRun} from './lib/challenges';
 import {ExtChallenge, challengeExtProgress, type ExtRun, type ExtShoe} from './lib/progression/challengesExt';
 import {createFirebaseCloudPort} from './lib/firebaseCloudPort';
+import {getAuth, onAuthStateChanged} from '@react-native-firebase/auth';
+import {LoginScreen} from './LoginScreen.rn';
 import {stampUpdatedAt, markDeleted, partitionTombstones, recordsToBackRegister, mergeCloudData, liveRecords} from './lib/cloudSync';
 import {showToast, TOAST_UNDO_LABEL} from './lib/toast';
 import {migrateStorageSchema} from './lib/storageMigration';
@@ -313,6 +315,15 @@ function Main(){
   // audit#9/#10: 콜드 백엔드 부팅 상태(스켈레톤/재시도 카드). 최초엔 'loading'으로 떠
   // 스켈레톤을 보여주고, initUser 성공 시 'ready', fetch 실패 시 'error'로 간다.
   const [bootState,setBootState]=useState<BootState>('loading');
+  // 필수 로그인 게이트(Firebase 인증). undefined=확인중(스플래시) · null=미로그인(로그인 화면)
+  // · 객체=로그인됨(앱 진입). 실기기에선 onAuthStateChanged 가 채운다. 테스트(NODE_ENV
+  // ==='test')에선 게이트를 우회해 기존 App 테스트가 로그인 화면에 막히지 않게 한다
+  // (LoginScreen 은 단독 렌더로 검증). __KEEGO_AUTH_USER__ 전역으로 강제 주입도 가능.
+  const [authUser,setAuthUser]=useState<{uid:string}|null|undefined>(()=>{
+    const inj=(globalThis as any).__KEEGO_AUTH_USER__;
+    if(inj!==undefined) return inj;
+    return process.env.NODE_ENV==='test' ? {uid:'test-uid'} : undefined;
+  });
   // 마지막 동기화 성공 시각(epoch ms). REST 재fetch + pending flush 가 성공한 순간 갱신되어
   // Home 의 '방금 동기화'/'N분 전' 칩으로 노출된다. 초기 null(미동기). 표시 전용.
   const [lastSyncAt,setLastSyncAt]=useState<number|null>(null);
@@ -325,6 +336,16 @@ function Main(){
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(()=>{initUser();},[]);
+
+  // 필수 로그인 게이트 — Firebase 인증 상태를 구독해 authUser 를 채운다. 로그인/로그아웃/
+  // 토큰 만료를 한곳에서 반영한다. 테스트에선 게이트가 우회(authUser 기본 로그인)되므로
+  // 구독을 걸지 않아 기존 App 테스트의 비동기 누수를 만들지 않는다.
+  useEffect(()=>{
+    if(process.env.NODE_ENV==='test') return;
+    if((globalThis as any).__KEEGO_AUTH_USER__!==undefined) return;
+    const unsub=onAuthStateChanged(getAuth(),(u:any)=>{setAuthUser(u?{uid:u.uid}:null);});
+    return unsub;
+  },[]);
 
   // 진척 영속 상태(progression_v1) 복원 — Hall of Shoes 레코드 + 은퇴 컨텍스트의 소스.
   // 손상/누락은 storage 가 안전 기본값으로 복구한다(절대 throw 없음). 1회 로드.
@@ -1623,6 +1644,14 @@ function Main(){
   };
 
   // ── render ──────────────────────────────────────────────────
+  // 필수 로그인 게이트 — 부팅보다 먼저 검사한다. 인증 확인중이면 스플래시(스켈레톤),
+  // 미로그인이면 로그인 화면을 강제한다. 로그인되면(authUser 객체) 아래 부팅으로 진행.
+  if(authUser===undefined){
+    return <BootSkeleton/>;
+  }
+  if(authUser===null){
+    return <LoginScreen cloudPort={cloudPortRef.current} onSignedIn={(u)=>setAuthUser({uid:u.uid})}/>;
+  }
   // 콜드 백엔드 부팅: 스켈레톤(로딩) / 재시도 카드(에러). 빈-신규는 'ready'라 여기
   // 걸리지 않고 아래 온보딩/홈으로 간다(fetch 실패와 빈 데이터의 구분).
   if(bootState==='loading'){
