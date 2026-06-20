@@ -13,5 +13,10 @@ export const NAVER_CLIENT_ID = '';
 export const NAVER_CLIENT_SECRET = '';
 export const NAVER_APP_NAME = 'Keego';
 
-/** 소셜 토큰을 검증해 Firebase 커스텀 토큰을 발급하는 백엔드(App API 와 동일 호스트). */
-export const SOCIAL_BACKEND = 'https://solelife-backend.onrender.com';
+/**
+ * 소셜 토큰(카카오·네이버)을 검증해 Firebase 커스텀 토큰을 발급하는 백엔드.
+ * Render 백엔드를 버리고 Firebase Cloud Functions(functions/index.js `api`)로 이전했다.
+ * 함수 이름이 `api` 라 클라이언트의 `${SOCIAL_BACKEND}/api/auth/kakao` 호출이
+ * 함수 URL + express 라우트(/auth/kakao)와 맞물린다. region: asia-northeast3(서울).
+ */
+export const SOCIAL_BACKEND = 'https://asia-northeast3-keego-620b8.cloudfunctions.net';
