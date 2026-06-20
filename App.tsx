@@ -1232,6 +1232,51 @@ function Main(){
     resolveNaverToken:resolveNaverFirebaseToken,
   }));
 
+  // ── Phase 2: 앱 전역 클라우드 동기(Firestore 정본) ───────────────────────────
+  // 데이터 정본을 Firestore(userBackups/{uid})로 옮기는 핵심. ProfileScreen 탭에 있지
+  // 않아도 (1) 부팅/로그인 직후 1회 복원(pull→merge — 재설치·기기변경에도 데이터 복구)과
+  // (2) 신발/런/설정 변경 시 디바운스 백업(push)이 항상 돈다. 무손실 양방향 병합
+  // (mergeCloudData)이라 어느 쪽 레코드도 버리지 않는다. 동시 실행은 ref 락으로 막는다.
+  // REST 의존은 Phase 5(task#5)에서 제거 — 이 단계는 Firestore 를 정본으로 '켜는' 것.
+  const cloudSyncBusyRef=useRef(false);
+  const runCloudSync=async()=>{
+    if(cloudSyncBusyRef.current||!authUser?.uid) return;
+    cloudSyncBusyRef.current=true;
+    try{
+      const remote=await cloudPortRef.current.pull();
+      const merged=mergeCloudData(backupData,remote);
+      await cloudPortRef.current.push(merged);
+      applyBackupPayload(merged);
+      setLastSyncAt(Date.now());
+    }catch(e){console.log('cloud sync error',e);}
+    finally{cloudSyncBusyRef.current=false;}
+  };
+  // 항상 최신 클로저를 가리키는 ref — effect 가 stale backupData/applyBackupPayload 를 잡지 않게.
+  const runCloudSyncRef=useRef(runCloudSync);
+  runCloudSyncRef.current=runCloudSync;
+  // 변경 시그니처(개수+최신 updatedAt+설정). 값이 같으면 디바운스 effect 가 재실행되지 않는다
+  // (런 수백 건·route 블롭을 매 렌더 stringify 하지 않는다 — 비용이 데이터 크기에 무관).
+  const cloudDataSig=(()=>{
+    const maxU=(arr:any[])=>arr.reduce((m:number,x:any)=>{const u=x?.updatedAt;return typeof u==='number'&&u>m?u:m;},0);
+    return `${shoes.length}:${runs.length}:${Math.max(maxU(shoes),maxU(runs))}:${unit}:${goalWeeklyKm}:${JSON.stringify(alerts)}`;
+  })();
+  // 테스트(NODE_ENV==='test')에선 기본 우회 — 25개 App 스위트가 setTimeout 누수/네이티브
+  // 호출 없이 그대로 통과한다. 전용 테스트는 __KEEGO_ENABLE_CLOUD_SYNC__ 로 켜서 검증한다.
+  const cloudEnabled=process.env.NODE_ENV!=='test'||(globalThis as any).__KEEGO_ENABLE_CLOUD_SYNC__===true;
+  // 부팅/로그인 직후 즉시 1회 동기(원격 복원).
+  useEffect(()=>{
+    if(!cloudEnabled||!authUser?.uid) return;
+    void runCloudSyncRef.current();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[authUser?.uid]);
+  // 데이터 변경 시 디바운스 백업(1.2s). 폭주 변경을 한 번으로 합친다.
+  useEffect(()=>{
+    if(!cloudEnabled||!authUser?.uid) return;
+    const t=setTimeout(()=>{void runCloudSyncRef.current();},1200);
+    return ()=>clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[authUser?.uid,cloudDataSig]);
+
   // ── 회원 탈퇴(계정 영구 삭제) — 앱스토어 5.1.1(v) 인앱 탈퇴 요건 ──────────────
   // 1) 클라우드 계정+백업 삭제(실패 시 throw → 화면이 안내하고 로컬은 보존). 2) 성공 시
   // 로컬 전체 삭제 + 상태를 신규(온보딩)로 초기화. 사용자가 명시적으로 요청한 파기이므로
