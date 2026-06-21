@@ -7,7 +7,7 @@
 //
 // 이 모듈은 firebase 를 직접 import 하지 않는다 — RankingStore(쿼리 원시연산)를 주입받아
 // 순수하게 동작하므로 fake store 로 단위테스트된다. 실제 firestore 배선은
-// firestoreRankingStore.ts 가 한다(remoteRanking↔rankingProvider 와 동일한 DI 패턴).
+// firestoreRankingStore.ts 가 한다(store 주입 = firebaseCloudPort 와 동일한 DI 패턴).
 //
 // 계약(seam): 항상 resolve, throw 금지. 미로그인/쿼리 실패/엔트리 부재는 모두
 // available:false + 빈 결과로 떨어진다(가짜 경쟁자 발명 금지).

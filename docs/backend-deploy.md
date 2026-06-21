@@ -29,7 +29,9 @@
 
 ## 4. 앱 쪽 연동(이미 되어 있음)
 - `lib/api.ts` API 상수 = `https://solelife-backend.onrender.com` (배포 도메인과 일치해야 함).
-- 랭킹 provider(`keegoRankingProvider`)·`ensureBackendSynced`는 배포되면 자동 동작.
+- 신발/런 CRUD(`apiAddShoe`/`apiAddRun` 등)는 아직 REST 의존(Phase 5b 에서 Firestore 전환 예정).
+- ⚠️ **랭킹은 더 이상 REST 가 아니다**: Phase 3/5a 에서 Firestore(`leaderboards/*`)로 이전됨.
+  `keegoRankingProvider`/`remoteRanking`/`ensureBackendSynced` 는 제거됨 → `docs/firebase-deploy.md` 참고.
 
 ## 5. 주의
 - 운영 DB에 테스트 데이터 시드 금지(공용). 로컬 검증은 앱의 dev seed(`__KEEGO_DEV_SEED__`, 릴리스 미포함)로.

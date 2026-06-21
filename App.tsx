@@ -1786,15 +1786,16 @@ function Main(){
 
   // 진척 전체화면(오버레이형) — 프로필 '진척' 버튼이 열고 뒤로 버튼이 닫는다. 런/신발
   // 원본은 읽기 전용으로 넘기고(데이터 파괴 0), 닉네임은 profile_name 을 그대로 쓴다.
-  // 명예의 전당(라이브 리더보드) 전체화면 — 백엔드(/api/v1) 카테고리별 랭킹. provider 가
-  // 미배포/미로그인이면 빈 상태로 떨어진다(가짜 경쟁자 금지). userId 로 백엔드 연결+재계산.
+  // 명예의 전당(라이브 리더보드) 전체화면 — Firestore 월간 카테고리별 랭킹. provider 가
+  // 미로그인/쿼리 실패면 빈 상태로 떨어진다(가짜 경쟁자 금지). 내 엔트리 발행은 클라우드
+  // 동기(publishMyRanking)가 담당하므로 화면엔 별도 device 연결이 필요 없다.
   // showProgression 보다 먼저 검사한다 — 진척 위에 띄우고 뒤로 가면 진척으로 복귀(스택 보존).
   // 셀러브레이션(등급상승/업적) — 풀스크린 오버레이. 닫으면 큐의 다음 항목 또는 종료.
   if(celebration){
     return <CelebrationScreen data={celebration} onClose={closeCelebration}/>;
   }
   if(showHallOfFame){
-    return <HallOfFameScreen profileName={profileName} deviceUserId={userId}
+    return <HallOfFameScreen profileName={profileName}
       onBack={()=>setShowHallOfFame(false)}/>;
   }
 

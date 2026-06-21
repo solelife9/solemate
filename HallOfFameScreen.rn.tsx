@@ -2,13 +2,14 @@
 // HallOfFameScreen.rn.tsx — 랭킹(라이브 리더보드) (Slice E · UI)
 // ============================================================================
 // 화면 표시명은 "랭킹"이다("명예의 전당"은 은퇴 신발 박물관 HallOfShoes 전용 — 이름 충돌
-// 회피). 파일/식별자명은 HallOfFame 으로 유지(내부 구현 일관). 멀티유저 백엔드(/api/v1)의
-// 카테고리별 리더보드와 내 순위를 보여준다. 데이터는 서버가
-// 검증된 run/shoe 로 재계산한 값만 쓴다(클라 점수 불신) — 화면은 표시 + 카테고리 선택만.
+// 회피). 파일/식별자명은 HallOfFame 으로 유지(내부 구현 일관). Firestore 월간 리더보드
+// (leaderboards/{ym}/entries)의 카테고리별 상위 + 내 순위를 보여준다. 점수는 각 사용자가
+// 자기 엔트리에 발행한 값(App 클라우드 동기가 publishMyRanking 으로 기록) — 화면은 표시 +
+// 카테고리 선택만.
 //
-// 데이터 소스 seam: lib/progression RankingProvider(keegoRankingProvider). 백엔드 미배포/
-// 미로그인이면 provider 가 available:false 로 떨어지고, 화면은 가짜 경쟁자를 만들지 않고
-// "곧 공개" 빈 상태를 보여준다(anti-scenario 5). provider/sync 는 주입 가능(테스트 결정성).
+// 데이터 소스 seam: lib/progression RankingProvider(keegoFirestoreRankingProvider). 미로그인/
+// 쿼리 실패면 provider 가 available:false 로 떨어지고, 화면은 가짜 경쟁자를 만들지 않고
+// "곧 공개" 빈 상태를 보여준다(anti-scenario 5). provider 는 주입 가능(테스트 결정성).
 //
 // 토큰만 사용(theme.ts) — 색/폰트/간격 하드코딩 0. 티어 색은 TIER_COLORS 권위.
 // ============================================================================
@@ -107,13 +108,6 @@ export interface HallOfFameScreenProps {
   onBack?: () => void;
   /** 랭킹 데이터 소스(기본 keegoFirestoreRankingProvider). 테스트는 fake 주입. */
   provider?: RankingProvider;
-  /** 기존 device user_id — REST 시절 호환 prop(Firestore 발행은 App 동기에서 처리). */
-  deviceUserId?: string | null;
-  /**
-   * 마운트 시 1회 호출되는 동기 훅(성공하면 리로드). Firestore 정본에선 발행을 App
-   * 클라우드 동기가 담당하므로 기본은 no-op(false). 테스트/REST 호환을 위해 주입 가능.
-   */
-  sync?: (deviceUserId: string) => Promise<boolean>;
   /** 기준 시각(epoch ms) — 기본 yearMonth 결정. 미주입 시 Date.now(). */
   now?: number;
 }
@@ -122,8 +116,6 @@ export default function HallOfFameScreen({
   profileName = '나',
   onBack,
   provider = keegoFirestoreRankingProvider,
-  deviceUserId = null,
-  sync = async () => false,
   now,
 }: HallOfFameScreenProps) {
   const insets = useSafeAreaInsets();
@@ -136,24 +128,8 @@ export default function HallOfFameScreen({
   const [myEntry, setMyEntry] = useState<LeaderboardEntry | null>(null);
   const [topPercent, setTopPercent] = useState<number | null>(null);
   const [total, setTotal] = useState(0);
-  // 동기화(link+recalc) 완료 후 1회 리로드를 트리거하는 키.
-  const [reloadKey, setReloadKey] = useState(0);
 
-  // 마운트 1회: device 계정을 백엔드에 연결+재계산(베스트에포트). 성공하면 리로드.
-  useEffect(() => {
-    if (!deviceUserId) return;
-    let alive = true;
-    void sync(deviceUserId).then(ok => {
-      if (alive && ok) setReloadKey(k => k + 1);
-    });
-    return () => {
-      alive = false;
-    };
-    // 마운트 1회만(deviceUserId 고정). sync 는 주입 안정적.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [deviceUserId]);
-
-  // 카테고리/달/리로드 변화 시 리더보드 + 내 순위를 로드한다.
+  // 카테고리/달 변화 시 리더보드 + 내 순위를 로드한다(발행은 App 클라우드 동기가 담당).
   useEffect(() => {
     let alive = true;
     setLoading(true);
@@ -179,7 +155,7 @@ export default function HallOfFameScreen({
     return () => {
       alive = false;
     };
-  }, [provider, category, yearMonth, reloadKey]);
+  }, [provider, category, yearMonth]);
 
   const myUid = myEntry?.uid ?? null;
 
