@@ -1,0 +1,61 @@
+rules_version = '2';
+
+// ============================================================================
+// Keego Firestore 보안 규칙
+// ----------------------------------------------------------------------------
+// 컬렉션 두 개만 노출한다(그 외 전부 deny):
+//   1) userBackups/{uid}              — 클라우드 동기 정본(Phase 2). 본인만 읽기/쓰기.
+//   2) leaderboards/{ym}/entries/{uid} — 명예의 전당 월간 랭킹(Phase 3). 로그인 사용자는
+//      모두 읽기(리더보드 공개), 쓰기는 '자기 uid 문서'만 + 점수 필드 형태 검증(날조 완화).
+//
+// 점수 자체는 클라이언트가 계산하므로 규칙만으로 위조를 100% 막을 수는 없다(서버 재계산이
+// 필요하면 Cloud Function 후속). 여기서는 (a) 남의 엔트리 변조 불가, (b) 엔트리 형태 강제로
+// 깨진/악성 문서가 리더보드 쿼리를 오염시키지 못하게 하는 것을 보장한다.
+// ============================================================================
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 로그인 여부.
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    // 들어오는 랭킹 엔트리(request.resource.data)가 규약 형태인지 검증한다.
+    // 점수 5종 + updatedAt 은 number, 표시정보는 string, equippedTitle 은 string|null,
+    // uid 필드는 반드시 문서 id(=auth uid)와 일치(타인 사칭 차단).
+    function validRankingEntry(uid) {
+      let d = request.resource.data;
+      return d.uid == uid
+        && d.nickname is string
+        && d.rankTier is string
+        && d.rankColor is string
+        && (d.equippedTitle == null || d.equippedTitle is string)
+        && d.distance is number
+        && d.consistency is number
+        && d.shoeHealth is number
+        && d.collection is number
+        && d.progressPoints is number
+        && d.updatedAt is number;
+    }
+
+    // ── 클라우드 동기 백업: 본인 문서만 ──────────────────────────────────────
+    match /userBackups/{uid} {
+      allow read, write: if signedIn() && request.auth.uid == uid;
+    }
+
+    // ── 월간 리더보드: 읽기=로그인 사용자 전체, 쓰기=자기 엔트리만(형태 검증) ──
+    match /leaderboards/{yearMonth}/entries/{uid} {
+      allow read: if signedIn();
+      allow create, update: if signedIn()
+        && request.auth.uid == uid
+        && validRankingEntry(uid);
+      // 엔트리 삭제는 허용하지 않는다(리더보드 무결성 — 본인이라도 변조성 삭제 금지).
+      allow delete: if false;
+    }
+
+    // ── 그 외 전부 거부 ──────────────────────────────────────────────────────
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
