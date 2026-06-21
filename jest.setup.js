@@ -318,12 +318,74 @@ jest.mock('@react-native-firebase/auth', () => {
 // In-memory document store keyed by "collection/id". setDoc deep-clones (like
 // the wire would), getDoc returns a snapshot with exists()/data(). This lets
 // the cloud port's push→pull round-trip be asserted without a real backend.
+// Collection queries (query/where/orderBy/limit/getDocs/getCountFromServer) are
+// also emulated so the Firestore ranking store's leaderboard reads/counts are
+// testable against the same in-memory map (keys: "leaderboards/{ym}/entries/{uid}").
 jest.mock('@react-native-firebase/firestore', () => {
   const store = new Map();
+  // collect docs whose key sits directly under a collection path → [{id, data}].
+  const docsUnder = colPath => {
+    const prefix = `${colPath}/`;
+    const out = [];
+    for (const [key, data] of store.entries()) {
+      if (key.startsWith(prefix)) out.push({id: key.slice(prefix.length), data});
+    }
+    return out;
+  };
+  const applyWheres = (rows, wheres) =>
+    rows.filter(r =>
+      wheres.every(w => {
+        const v = Number(r.data?.[w.field]);
+        const t = Number(w.value);
+        if (w.op === '>') return v > t;
+        if (w.op === '>=') return v >= t;
+        if (w.op === '<') return v < t;
+        if (w.op === '<=') return v <= t;
+        if (w.op === '==') return r.data?.[w.field] === w.value;
+        return true;
+      }),
+    );
+  const runQuery = q => {
+    let rows = docsUnder(q.__collection);
+    const wheres = q.__constraints.filter(c => c.__type === 'where');
+    rows = applyWheres(rows, wheres);
+    const ob = q.__constraints.find(c => c.__type === 'orderBy');
+    if (ob) {
+      rows.sort((a, b) => {
+        const av = Number(a.data?.[ob.field]) || 0;
+        const bv = Number(b.data?.[ob.field]) || 0;
+        return ob.dir === 'asc' ? av - bv : bv - av;
+      });
+    }
+    const lim = q.__constraints.find(c => c.__type === 'limit');
+    if (lim) rows = rows.slice(0, lim.n);
+    return rows;
+  };
   return {
     __esModule: true,
     getFirestore: jest.fn(() => ({__db: true})),
     doc: jest.fn((_db, collection, id) => ({__path: `${collection}/${id}`})),
+    collection: jest.fn((_db, path) => ({__collection: path})),
+    query: jest.fn((col, ...constraints) => ({
+      __collection: col.__collection,
+      __constraints: constraints,
+    })),
+    where: jest.fn((field, op, value) => ({__type: 'where', field, op, value})),
+    orderBy: jest.fn((field, dir = 'asc') => ({__type: 'orderBy', field, dir})),
+    limit: jest.fn(n => ({__type: 'limit', n})),
+    getDocs: jest.fn(q => {
+      const rows = runQuery(q);
+      const docs = rows.map(r => ({id: r.id, data: () => r.data}));
+      return Promise.resolve({docs, size: docs.length, forEach: cb => docs.forEach(cb)});
+    }),
+    getCountFromServer: jest.fn(target => {
+      // accepts a collection ref or a query; count after applying where filters.
+      const count =
+        target.__constraints !== undefined
+          ? runQuery({__collection: target.__collection, __constraints: target.__constraints.filter(c => c.__type !== 'limit')}).length
+          : docsUnder(target.__collection).length;
+      return Promise.resolve({data: () => ({count})});
+    }),
     setDoc: jest.fn((ref, data) => {
       store.set(ref.__path, JSON.parse(JSON.stringify(data)));
       return Promise.resolve();

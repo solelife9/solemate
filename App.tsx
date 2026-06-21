@@ -85,6 +85,7 @@ import {createFirebaseCloudPort} from './lib/firebaseCloudPort';
 import {getAuth, onAuthStateChanged} from '@react-native-firebase/auth';
 import {LoginScreen} from './LoginScreen.rn';
 import {stampUpdatedAt, markDeleted, partitionTombstones, recordsToBackRegister, mergeCloudData, liveRecords} from './lib/cloudSync';
+import {publishMyRanking} from './lib/progression/firestoreRankingStore';
 import {showToast, TOAST_UNDO_LABEL} from './lib/toast';
 import {migrateStorageSchema} from './lib/storageMigration';
 import {resolveGoogleCredential} from './lib/googleAuth';
@@ -1239,6 +1240,28 @@ function Main(){
   // (mergeCloudData)이라 어느 쪽 레코드도 버리지 않는다. 동시 실행은 ref 락으로 막는다.
   // REST 의존은 Phase 5(task#5)에서 제거 — 이 단계는 Firestore 를 정본으로 '켜는' 것.
   const cloudSyncBusyRef=useRef(false);
+  // 머지된 payload 로 내 월간 랭킹 엔트리를 계산·발행한다. 점수는 live 레코드 기준,
+  // 표시정보(닉네임/랭크/색/장착 타이틀)는 현재 progression 파생. best-effort(throw 흡수).
+  const publishMyRankingNow=async(merged:{shoes:any[];runs:any[]})=>{
+    try{
+      const liveShoes=liveRecords(merged.shoes);
+      const liveRuns=liveRecords(merged.runs);
+      const view=getProgression(liveRuns,liveShoes,progState??undefined);
+      const equipped=view.titles.equipped
+        ? (view.titles.unlocked.find(t=>t.key===view.titles.equipped)?.name??null)
+        : null;
+      await publishMyRanking({
+        nickname:profileName||DEFAULT_PROFILE_NAME,
+        rankTier:view.rank.tier,
+        rankColor:view.rank.color,
+        equippedTitle:equipped,
+        runs:liveRuns,
+        shoes:liveShoes,
+        progressPoints:view.rank.xp,
+        nowMs:Date.now(),
+      });
+    }catch(e){console.log('publish ranking error',e);}
+  };
   const runCloudSync=async()=>{
     if(cloudSyncBusyRef.current||!authUser?.uid) return;
     cloudSyncBusyRef.current=true;
@@ -1248,6 +1271,10 @@ function Main(){
       await cloudPortRef.current.push(merged);
       applyBackupPayload(merged);
       setLastSyncAt(Date.now());
+      // Phase 3: 동기 직후 내 월간 랭킹 엔트리를 Firestore 에 발행(best-effort·논블로킹).
+      // 점수는 머지된 live 레코드로 클라이언트가 계산하고, 표시정보(닉네임/랭크/타이틀)는
+      // 현재 progression 에서 파생한다. 실패해도 동기 흐름·데이터엔 영향 없음(throw 흡수).
+      void publishMyRankingNow(merged);
     }catch(e){console.log('cloud sync error',e);}
     finally{cloudSyncBusyRef.current=false;}
   };

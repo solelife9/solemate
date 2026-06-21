@@ -100,6 +100,18 @@ export async function getFirebaseIdToken(): Promise<string | null> {
 }
 
 /**
+ * 현재 로그인된 Firebase uid(미로그인/실패 → null). Firestore 랭킹 provider 가
+ * '내 엔트리'를 찾고 publish 하는 데 쓴다(getFirebaseIdToken 과 같은 seam 계약 — throw 금지).
+ */
+export async function getFirebaseUid(): Promise<string | null> {
+  try {
+    return getAuth().currentUser?.uid ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * CloudPort 의 firebase 구현을 만든다. 옵션으로 google 자격증명 리졸버를 주입한다.
  */
 export function createFirebaseCloudPort(

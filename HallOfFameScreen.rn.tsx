@@ -43,7 +43,7 @@ import {
   withAlpha,
 } from './theme';
 import {ymLocal} from './lib/format';
-import {keegoRankingProvider, ensureBackendSynced} from './lib/progression/rankingProvider';
+import {keegoFirestoreRankingProvider} from './lib/progression/firestoreRankingStore';
 import {titleDef} from './lib/progression/titles';
 import type {
   LeaderboardEntry,
@@ -105,11 +105,14 @@ export interface HallOfFameScreenProps {
   profileName?: string;
   /** 뒤로(진척 화면으로 복귀). */
   onBack?: () => void;
-  /** 랭킹 데이터 소스(기본 keegoRankingProvider). 테스트는 fake 주입. */
+  /** 랭킹 데이터 소스(기본 keegoFirestoreRankingProvider). 테스트는 fake 주입. */
   provider?: RankingProvider;
-  /** 기존 device user_id — 마운트 시 백엔드에 연결+재계산(내가 리더보드에 반영되도록). */
+  /** 기존 device user_id — REST 시절 호환 prop(Firestore 발행은 App 동기에서 처리). */
   deviceUserId?: string | null;
-  /** device→Firebase UID 연결+재계산 트리거(기본 ensureBackendSynced). 테스트 주입용. */
+  /**
+   * 마운트 시 1회 호출되는 동기 훅(성공하면 리로드). Firestore 정본에선 발행을 App
+   * 클라우드 동기가 담당하므로 기본은 no-op(false). 테스트/REST 호환을 위해 주입 가능.
+   */
   sync?: (deviceUserId: string) => Promise<boolean>;
   /** 기준 시각(epoch ms) — 기본 yearMonth 결정. 미주입 시 Date.now(). */
   now?: number;
@@ -118,9 +121,9 @@ export interface HallOfFameScreenProps {
 export default function HallOfFameScreen({
   profileName = '나',
   onBack,
-  provider = keegoRankingProvider,
+  provider = keegoFirestoreRankingProvider,
   deviceUserId = null,
-  sync = ensureBackendSynced,
+  sync = async () => false,
   now,
 }: HallOfFameScreenProps) {
   const insets = useSafeAreaInsets();
