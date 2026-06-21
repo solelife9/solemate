@@ -86,6 +86,7 @@ import {getAuth, onAuthStateChanged} from '@react-native-firebase/auth';
 import {LoginScreen} from './LoginScreen.rn';
 import {stampUpdatedAt, markDeleted, partitionTombstones, recordsToBackRegister, mergeCloudData, liveRecords} from './lib/cloudSync';
 import {publishMyRanking} from './lib/progression/firestoreRankingStore';
+import {migrateRestToFirestore, REST_MIGRATION_KEY} from './lib/restToFirestoreMigration';
 import {showToast, TOAST_UNDO_LABEL} from './lib/toast';
 import {migrateStorageSchema} from './lib/storageMigration';
 import {resolveGoogleCredential} from './lib/googleAuth';
@@ -1290,6 +1291,32 @@ function Main(){
   // 테스트(NODE_ENV==='test')에선 기본 우회 — 25개 App 스위트가 setTimeout 누수/네이티브
   // 호출 없이 그대로 통과한다. 전용 테스트는 __KEEGO_ENABLE_CLOUD_SYNC__ 로 켜서 검증한다.
   const cloudEnabled=process.env.NODE_ENV!=='test'||(globalThis as any).__KEEGO_ENABLE_CLOUD_SYNC__===true;
+  // ── Phase 5b·Stage 0: REST→Firestore 일회성 이관(데이터 유실 가드) ──────────────
+  // Firestore 가 비어 있고 REST 에 데이터가 있으면 1회 시드(멱등·비차단). REST 에만 있던
+  // 기존 사용자 데이터가 Firestore 정본에도 반드시 존재함을 보장 → 이후 Stage 3(REST 부팅
+  // 제거)이 안전해진다. 로컬 상태는 건드리지 않는다(initUser 가 이미 REST 로 채움) — 여기선
+  // Firestore 시드만. 세션 1회(ref) + 영속 플래그(다음 세션도 멱등).
+  const restMigratedRef=useRef(false);
+  useEffect(()=>{
+    if(!cloudEnabled||!authUser?.uid||restMigratedRef.current) return;
+    restMigratedRef.current=true;
+    void migrateRestToFirestore({
+      isDone:async()=>{try{return (await AsyncStorage.getItem(REST_MIGRATION_KEY))==='1';}catch{return false;}},
+      markDone:async()=>{try{await AsyncStorage.setItem(REST_MIGRATION_KEY,'1');}catch{}},
+      pullRemote:()=>cloudPortRef.current.pull(),
+      loadRest:async()=>{
+        try{
+          const did=await AsyncStorage.getItem('device_id');
+          if(!did) return null;
+          const auth=await apiAuth(did);
+          const[sd,rd]=await Promise.all([apiGetShoes(auth.user_id),apiGetRuns(auth.user_id)]);
+          return {shoes:Array.isArray(sd)?sd:[],runs:Array.isArray(rd)?rd:[],settings:{}};
+        }catch{return null;}
+      },
+      pushRemote:(d)=>cloudPortRef.current.push(d),
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[authUser?.uid]);
   // 부팅/로그인 직후 즉시 1회 동기(원격 복원).
   useEffect(()=>{
     if(!cloudEnabled||!authUser?.uid) return;
