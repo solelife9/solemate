@@ -28,7 +28,7 @@ import {Alert, StyleSheet} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import App from '../App';
 import ShoesScreen from '../ShoesScreen.rn';
-import {DANGER, WARN, GOOD, BEST, ACCENT, Shoe} from '../theme';
+import {DANGER, GOOD, BEST, ACCENT, Shoe} from '../theme';
 
 type ApiShoe = {id: string; name: string; max_km: number; start_km: number; retired?: boolean};
 type ApiRun = {id: string; shoe_id: string; km: number; run_date: string; duration: number};
@@ -192,12 +192,8 @@ test('retire(보관) PATCHes retired=true, never DELETE, and keeps the shoe\'s r
 
   await tap(pressBy(root, 'archive-outline')); // 보관 → Alert auto-confirm
 
-  // write path: exactly a PATCH retired=true on this shoe — never a DELETE.
-  const shoeWrites = calls.filter(c => c.url.includes('/api/shoes/s1'));
-  expect(shoeWrites.map(c => c.method)).toContain('PATCH');
-  expect(shoeWrites.map(c => c.method)).not.toContain('DELETE');
-  const patch = shoeWrites.find(c => c.method === 'PATCH');
-  expect(patch!.body.retired).toBe(true);
+  // Stage 2: 신발 쓰기는 Firestore 정본 — REST 신발 엔드포인트로 쓰지 않는다(보관도 로컬 상태).
+  expect(calls.filter(c => c.url.includes('/api/shoes') && c.method !== 'GET')).toHaveLength(0);
   // no cascade: the run endpoint is never written/destroyed.
   expect(calls.filter(c => c.url.includes('/api/runs') && c.method !== 'GET')).toHaveLength(0);
 
@@ -224,9 +220,8 @@ test('delete(삭제) DELETEs only the shoe; the run is preserved (no cascade)', 
   await tap(pressBy(root, 'Pegasus')); // open s1 shoe detail
   await tap(pressBy(root, 'trash-outline')); // 삭제 → Alert auto-confirm
 
-  // the shoe is DELETEd; the run endpoint is never touched with a destructive verb.
-  const shoeDeletes = calls.filter(c => c.url.includes('/api/shoes/s1') && c.method === 'DELETE');
-  expect(shoeDeletes).toHaveLength(1);
+  // Stage 2: 삭제는 로컬 묘비(soft-delete) — REST 로 신발/런을 destructive 하게 건드리지 않는다.
+  expect(calls.filter(c => c.url.includes('/api/shoes') && c.method !== 'GET')).toHaveLength(0);
   expect(calls.filter(c => c.url.includes('/api/runs') && c.method === 'DELETE')).toHaveLength(0);
 
   // observable: the run survives the shoe — History still lists it (now orphaned).
@@ -253,10 +248,8 @@ test('restore(복원) PATCHes retired=false and the shoe reappears in the home p
   await tap(pressBy(root, 'Clifton')); // open archived shoe detail
   await tap(pressBy(root, 'arrow-undo-outline')); // 복원 (no Alert on restore)
 
-  // write path: PATCH retired=false (toggle off), not a DELETE.
-  const patch = calls.find(c => c.url.includes('/api/shoes/s2') && c.method === 'PATCH');
-  expect(patch).toBeDefined();
-  expect(patch!.body.retired).toBe(false);
+  // Stage 2: 복원도 로컬 상태(retired=false) 토글 — REST 신발 쓰기 없음.
+  expect(calls.filter(c => c.url.includes('/api/shoes') && c.method !== 'GET')).toHaveLength(0);
 
   // observable: back on home, the restored shoe is offered as a startable option.
   await tap(pressBy(root, 'chevron-back')); // detail → locker (TabBar)

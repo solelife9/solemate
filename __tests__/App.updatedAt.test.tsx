@@ -263,9 +263,10 @@ test('addShoe 는 생성 신발 레코드에 updatedAt 을 찍는다(id/name/max
   await tick(3);
 
   const shoes = findByProp(renderer.root, 'onSetMaxKm').props.rawShoes as any[];
-  const created = shoes.find(s => s.id === 'srv-shoe-1');
+  // Stage 2: 신발은 클라이언트 id(shoe_…)로 로컬 생성 — 서버 id 가 아니므로 이름으로 찾는다.
+  const created = shoes.find(s => s.name === 'Nike Pegasus');
   expect(created).toBeTruthy();
-  expect(created.name).toBe('Nike Pegasus');
+  expect(String(created.id).startsWith('shoe_')).toBe(true);
   expect(created.max_km).toBe(600);
   expect(created.start_km).toBe(50);
   expect(typeof created.updatedAt).toBe('number');

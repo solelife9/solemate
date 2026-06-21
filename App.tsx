@@ -18,7 +18,7 @@ import {Ring, Button} from './primitives';
 import ErrorBoundary from './ErrorBoundary';
 import ToastHost from './ToastHost';
 import {installCrashHandler, setCrashUser} from './lib/crashlytics';
-import {apiAuth, apiGetShoes, apiGetRuns, apiAddShoe, apiPatchShoe, apiDeleteShoe, apiAddRun, apiPatchRun, apiDeleteRun, fetchWithTimeout} from './lib/api';
+import {apiAuth, apiGetShoes, apiGetRuns, apiAddShoe, apiAddRun, apiPatchRun, apiDeleteRun, fetchWithTimeout} from './lib/api';
 import {devSeedShoes, devSeedRuns} from './lib/devSeed';
 // BackendShoe / BackendRun 은 types.d.ts 의 전역 ambient 인터페이스(import 불필요).
 import HomeScreen, {WeekStats} from './HomeScreen.rn';
@@ -87,7 +87,7 @@ import {LoginScreen} from './LoginScreen.rn';
 import {stampUpdatedAt, markDeleted, partitionTombstones, recordsToBackRegister, mergeCloudData, liveRecords} from './lib/cloudSync';
 import {publishMyRanking} from './lib/progression/firestoreRankingStore';
 import {migrateRestToFirestore, REST_MIGRATION_KEY} from './lib/restToFirestoreMigration';
-import {genRunId} from './lib/genId';
+import {genRunId, genShoeId} from './lib/genId';
 import {showToast, TOAST_UNDO_LABEL} from './lib/toast';
 import {migrateStorageSchema} from './lib/storageMigration';
 import {resolveGoogleCredential} from './lib/googleAuth';
@@ -766,28 +766,25 @@ function Main(){
   }
 
   async function addShoe(name:string,maxKm:number,startKm:number,date:string){
-    // 계정(userId)이 아직 없으면 POST가 서버에서 500을 내므로, 명확히 안내하고 막는다.
-    if(!userId){
-      Alert.alert('잠시만요','계정 연결 중이에요. 잠시 후 다시 시도해 주세요.');
+    // Stage 2: 신발 생성은 Firestore 정본. 로그인(authUser)만 있으면 클라이언트 id 로 즉시
+    // 로컬 생성(로컬-퍼스트) — 서버 왕복 없이 바로 화면 반영. 영속은 부팅캐시 + cloudSync
+    // (디바운스 push)가 담당한다(REST 의존 제거). 로그인 게이트가 이미 막지만 방어적 가드 유지.
+    if(!authUser?.uid){
+      Alert.alert('로그인이 필요해요','신발을 추가하려면 먼저 로그인해 주세요.');
       return;
     }
-    try{
-      // 실패는 apiAddShoe 가 상태코드+본문을 담아 throw → 아래 catch 가 안내한다.
-      const newShoe=await apiAddShoe(userId,{name,maxKm,startKm,date});
-      // audit a1: 신규 신발에 updatedAt 스탬프 → 클라우드 머지 '최신 우선'이 작동.
-      setShoes(prev=>[stampUpdatedAt(newShoe),...prev]);
-      // REST POST 성공 → 'REST 확정' 집합에 등록(역등록 중복 방지).
-      if(newShoe&&newShoe.id!=null)restShoeIdsRef.current.add(String(newShoe.id));
-    }catch(e:any){
-      Alert.alert('등록 실패',String(e?.message||e||'알 수 없는 오류')+'\n\n네트워크를 확인하고 다시 시도해 주세요.');
-    }
+    // 클라이언트 id + updatedAt 스탬프(머지 '최신 우선'). max_km/start_km/purchase_date 만
+    // 채우고 나머지(total_km/run_time)는 런에서 파생(서버 truth 부재 시 폴백).
+    const newShoe=stampUpdatedAt({
+      id:genShoeId(),name,max_km:maxKm,start_km:startKm,purchase_date:date,
+    } as BackendShoe);
+    setShoes(prev=>[newShoe,...prev]);
   }
 
   async function updateShoeName(id:string,name:string){
-    try{
-      await apiPatchShoe(userId,id,{name});
-      setShoes(prev=>prev.map(s=>s.id===id?stampUpdatedAt({...s,name}):s));
-    }catch{Alert.alert('오류','수정 실패');}
+    // Stage 2: 로컬 상태만 갱신(Firestore 정본 — cloudSync 가 push). stampUpdatedAt 으로
+    // 머지 '최신 우선'이 이 변경을 이긴다.
+    setShoes(prev=>prev.map(s=>s.id===id?stampUpdatedAt({...s,name}):s));
   }
 
   // 신발별 수명(max_km) 조정 — 신발별 교체 임계의 분모. clampMaxKm로 범위를 보정한
@@ -795,10 +792,8 @@ function Main(){
   // 임계 아래로 내려간 신발은 다음 checkShoeAlerts에서 추적 집합에서 빠진다.
   async function updateShoeMaxKm(id:string,maxKm:number){
     const v=clampMaxKm(maxKm);
+    // Stage 2: 로컬 상태만(Firestore 정본). 낙관적 갱신 + stampUpdatedAt(머지 최신 우선).
     setShoes(prev=>prev.map(s=>s.id===id?stampUpdatedAt({...s,max_km:v}):s));
-    try{
-      await apiPatchShoe(userId,id,{max_km:v});
-    }catch{Alert.alert('오류','수명 수정 실패');}
   }
 
   // audit a2: 묘비 저장소 영속(비차단). 실패해도 메모리 상태는 갱신돼 동기로 전파된다.
@@ -879,31 +874,24 @@ function Main(){
   // 신발 삭제는 더 이상 런 기록을 동반삭제하지 않는다(iron law: 데이터 파괴 금지).
   // 런은 보존되어 기록/통계에 남고, 신발만 잠금장(locker)에서 제거된다. 신발을
   // 영구히 지우는 대신 보존이 목적이면 retireShoe(보관)를 쓴다.
-  // audit a2: REST DELETE(정본)는 유지하되, 라이브 배열에서 빼는 동시에 묘비를 남긴다 —
+  // Stage 2: 삭제는 로컬 제거 + 묘비(soft-delete)로 표현한다. 묘비는 cloudSync 로 전파되어
   // Firestore 백업 머지가 다른 기기의 옛 라이브 신발로 삭제를 되돌리지 못하게 한다(부활 방지).
   async function deleteShoe(id:string){
-    // 로컬-퍼스트 삭제: 먼저 로컬에서 제거 + 묘비(되돌아오지 않게)하고, 백엔드 DELETE 는
-    // best-effort 로 시도한다. 백엔드가 콜드/다운이거나 그 신발이 로컬-only(서버 404)여도
-    // 삭제가 막히지 않는다(이전엔 apiDeleteShoe 성공 시에만 지워 '삭제 실패'가 떴다). 묘비가
-    // 다음 동기/부팅 머지에서 서버의 잔존 레코드를 이긴다(재등장 방지).
+    // 로컬-퍼스트 삭제: 로컬에서 제거 + 묘비(되돌아오지 않게). 묘비가 다음 동기/부팅 머지에서
+    // 잔존 레코드를 이긴다(재등장 방지). 영속은 cloudSync(묘비는 backupData 에 합류) 담당.
     const target=shoes.find(s=>s.id===id);
     setShoes(prev=>prev.filter(s=>s.id!==id));
     addShoeTombstone(target??({id} as BackendShoe));
     // 삭제됨 · 실행취소: 신발만 잠금장에서 빠졌을 뿐이므로 완전복원할 수 있다.
     if(target)offerShoeUndo(target);
-    try{await apiDeleteShoe(userId,id);}
-    catch{/* 백엔드 콜드/미존재 — 로컬 삭제 유지(묘비가 재등장 차단). 비차단. */}
   }
 
   // 보관(retire/archive): 신발을 선택목록·홈 picker에서 숨기되 신발과 런 기록은
   // 모두 보존한다. retired 토글이므로 복원도 가능하다.
   async function retireShoe(id:string,retired:boolean){
-    // 로컬-퍼스트: 먼저 로컬 상태(retired 토글)를 바꾸고 백엔드 PATCH 는 best-effort.
-    // 백엔드 콜드/다운이나 로컬-only 신발이어도 보관/복원이 막히지 않는다(머지 '최신 우선'이
-    // 로컬 변경을 유지). stampUpdatedAt 으로 이 변경이 서버의 옛 값을 이긴다.
+    // Stage 2: 로컬 상태(retired 토글)만 갱신(Firestore 정본). stampUpdatedAt 으로 이 변경이
+    // 머지에서 옛 값을 이긴다. 영속은 cloudSync 담당.
     setShoes(prev=>prev.map(s=>s.id===id?stampUpdatedAt({...s,retired}):s));
-    try{await apiPatchShoe(userId,id,{retired});}
-    catch{/* 백엔드 콜드/미존재 — 로컬 상태 유지(비차단). */}
   }
 
 
@@ -1162,7 +1150,10 @@ function Main(){
     // 실재한다고 볼 수 있는 cloud-shoe-id 집합(이미 REST 확정 + 이번 패스 역등록 성공). 고아 방지 게이트.
     const shoeIdMap=new Map<string,string>();
     const restParentShoeIds=new Set<string>(knownShoeIds);
-    for(const sh of recordsToBackRegister(merged.shoes as BackendShoe[],knownShoeIds)){
+    // Stage 2: 클라이언트 id(shoe_/run_) 레코드는 Firestore 네이티브 — REST 역등록 대상에서
+    // 제외한다. 역등록하면 서버가 새 id 를 발급·재키잉해 클라이언트 소유 id 가 깨진다.
+    const isClientId=(id:unknown)=>/^(shoe|run)_/.test(String(id));
+    for(const sh of recordsToBackRegister(merged.shoes as BackendShoe[],knownShoeIds).filter(s=>!isClientId(s.id))){
       try{
         const created=await apiAddShoe(uid,{
           name:sh.name,maxKm:Number(sh.max_km)||DEFAULT_MAX_KM,
@@ -1188,7 +1179,7 @@ function Main(){
         }
       }catch(e){console.log('back-register shoe error',e);} // 실패 → restParent/REST확정 미반영 → 다음 sync 재시도
     }
-    for(const rn of recordsToBackRegister(merged.runs as BackendRun[],knownRunIds)){
+    for(const rn of recordsToBackRegister(merged.runs as BackendRun[],knownRunIds).filter(r=>!isClientId(r.id))){
       const cloudShoeId=String(rn.shoe_id);
       // 고아 방지: 부모 신발이 REST 에 실재할 때만 POST. 미존재면 이번엔 건너뛰고 다음 sync 에서 재시도.
       if(!restParentShoeIds.has(cloudShoeId)) continue;
