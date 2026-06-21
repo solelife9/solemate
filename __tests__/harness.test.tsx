@@ -14,16 +14,16 @@ import {RUN_LOCATION_TASK} from '../lib/locationService';
 import Tts from 'react-native-tts';
 import App from '../App';
 
-test('mounting App authenticates and persists a device id via AsyncStorage', async () => {
+test('mounting App persists a device id via AsyncStorage (no REST auth on boot)', async () => {
   await ReactTestRenderer.act(async () => {
     ReactTestRenderer.create(<App />);
   });
 
-  // initUser() reached the auth endpoint through the mocked fetch.
+  // Stage 3(Firestore 정본): 부팅은 REST(/api/auth)를 타지 않는다 — 캐시 로드 + cloudSync.
   const requested = (globalThis.fetch as jest.Mock).mock.calls.map(c => String(c[0]));
-  expect(requested.some(u => u.includes('/api/auth'))).toBe(true);
+  expect(requested.some(u => u.includes('/api/auth'))).toBe(false);
 
-  // The generated device id round-trips through the AsyncStorage mock.
+  // device id 는 여전히 생성·영속된다(Stage 0 REST→Firestore 이관 등에서 사용).
   const deviceId = await AsyncStorage.getItem('device_id');
   expect(deviceId).toMatch(/^sl_/);
 });

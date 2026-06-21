@@ -1,17 +1,12 @@
 /**
- * App.tsx 당겨서 새로고침(refreshData)의 lastSyncAt 스탬프 정합성 통합 테스트.
+ * App.tsx 당겨서 새로고침(refreshData)의 lastSyncAt 정합성 (Phase 5b · Stage 3).
  *
- * 칩 계약: 동기화 칩(HomeScreen.lastSyncAt)은 '마지막 동기화 **성공** 시각'이다. 따라서
- * lastSyncAt 은 실제 서버 fetch 성공(try 분기) 또는 큐의 미동기 런을 진짜로 서버에 밀어낸
- * 경우(flushPendingRuns synced>0)에만 갱신돼야 한다.
+ * Stage 3 부터 refreshData 는 runCloudSync(pull→merge→push)를 재호출한다. lastSyncAt 은
+ * runCloudSync 가 **성공**(push 까지 완료)했을 때만 찍힌다(try 끝). 따라서:
+ *   1) 오프라인(pull reject): 부팅 동기도, 새로고침도 실패 → lastSyncAt 은 찍히지 않는다(거짓 스탬프 0).
+ *   2) 온라인: 부팅 동기 성공으로 lastSyncAt 이 찍히고, 새로고침이 그 값을 전진시킨다.
  *
- * 회귀 방어(product_bug): refreshData 의 catch(오프라인/백엔드 다운) 분기가 syncPendingRuns
- * 뒤 무조건 setLastSyncAt(Date.now()) 를 부르면, 빈 큐는 단락하고 per-run POST 실패는
- * flushPendingRuns 가 자체 삼키므로 *아무것도 동기화하지 못한 채* 칩이 '방금 동기화'로
- * 거짓표시된다. 여기서는 그 관측 가능한 결과(HomeScreen 에 흘러가는 lastSyncAt prop)를 단언한다:
- *   1) 성공 부팅 후 lastSyncAt 이 한 번 찍힌다(기준값 V0).
- *   2) 그 뒤 오프라인(fetch reject)에서 당겨서 새로고침 → 큐가 비어 synced 0 → lastSyncAt 이
- *      *갱신되지 않는다*(V0 그대로). 버그 코드라면 V0 보다 큰 새 값으로 바뀌어 이 단언이 실패한다.
+ * 동기는 __KEEGO_ENABLE_CLOUD_SYNC__ + 메모리 cloudPort 주입으로 활성화한다(다른 스위트 무영향).
  *
  * @format
  */
@@ -21,6 +16,7 @@ import ReactTestRenderer, {act} from 'react-test-renderer';
 import {Alert} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import App from '../App';
+import {seedBootCache} from './helpers/bootSeed';
 
 function findByProp(root: ReactTestRenderer.ReactTestInstance, prop: string) {
   const hits = root.findAll(n => n.props && typeof n.props[prop] === 'function');
@@ -28,7 +24,7 @@ function findByProp(root: ReactTestRenderer.ReactTestInstance, prop: string) {
   return hits[0];
 }
 
-async function tick(n = 6) {
+async function tick(n = 8) {
   for (let i = 0; i < n; i++) {
     // eslint-disable-next-line no-await-in-loop
     await act(async () => {
@@ -37,97 +33,87 @@ async function tick(n = 6) {
   }
 }
 
+function setupPort(pull: () => Promise<any>) {
+  const port = {
+    signIn: jest.fn(() => Promise.resolve({uid: 'u-1', email: null, displayName: null})),
+    signOut: jest.fn(() => Promise.resolve()),
+    deleteAccount: jest.fn(() => Promise.resolve()),
+    pull: jest.fn(pull),
+    push: jest.fn(() => Promise.resolve()),
+  };
+  (globalThis as any).__KEEGO_CLOUD_PORT__ = port;
+  (globalThis as any).__KEEGO_AUTH_USER__ = {uid: 'test-uid'};
+  (globalThis as any).__KEEGO_ENABLE_CLOUD_SYNC__ = true;
+  (globalThis as any).__KEEGO_DEV_SEED__ = false;
+  return port;
+}
+
 beforeEach(async () => {
   await AsyncStorage.clear();
   jest.restoreAllMocks();
-  // 단조 증가 시계 — 부팅 스탬프(V0)보다 '그 다음 Date.now()'가 확정적으로 크다. 그래야
-  // '오프라인 새로고침이 lastSyncAt 을 새 값으로 덮어쓰지 않았다'를 동률 충돌 없이 단언할 수 있다.
+  // 단조 증가 시계 — '새로고침이 lastSyncAt 을 새 값으로 전진/유지'를 동률 충돌 없이 단언.
   let clock = 1_700_000_000_000;
   jest.spyOn(Date, 'now').mockImplementation(() => (clock += 1000));
   await AsyncStorage.setItem('onboarded', '1');
   await AsyncStorage.setItem('loc_perm_primed', '1');
+  await seedBootCache([{id: 's1', name: 'Nike Pegasus', max_km: 600, start_km: 0}], []);
+  // Stage 0 이관 effect 의 REST 접근을 무력화(빈 응답) — 테스트 격리.
+  (global.fetch as jest.Mock).mockImplementation(() =>
+    Promise.resolve({ok: true, status: 200, json: () => Promise.resolve({}), text: () => Promise.resolve('{}')}),
+  );
+  jest.spyOn(Alert, 'alert').mockImplementation((() => {}) as never);
 });
 
-test('오프라인 당겨서 새로고침은 lastSyncAt 을 거짓 스탬프하지 않는다(빈 큐 → synced 0)', async () => {
-  // 성공 부팅용 백엔드(신발 1켤레, 런/큐 없음). offline 토글을 켜면 이후 fetch 가 거부된다.
-  let offline = false;
-  (global.fetch as jest.Mock).mockImplementation((url: unknown) => {
-    if (offline) return Promise.reject(new Error('offline'));
-    const u = String(url);
-    let body: unknown = {};
-    if (u.includes('/api/auth')) body = {user_id: 'u1'};
-    else if (u.includes('/api/shoes')) body = [{id: 's1', name: 'Nike Pegasus', max_km: 600, start_km: 0}];
-    else if (u.includes('/api/runs')) body = [];
-    return Promise.resolve({
-      ok: true,
-      status: 200,
-      json: () => Promise.resolve(body),
-      text: () => Promise.resolve(JSON.stringify(body)),
-    });
-  });
-  jest.spyOn(Alert, 'alert').mockImplementation((() => {}) as never);
+afterEach(() => {
+  delete (globalThis as any).__KEEGO_CLOUD_PORT__;
+  delete (globalThis as any).__KEEGO_AUTH_USER__;
+  delete (globalThis as any).__KEEGO_ENABLE_CLOUD_SYNC__;
+  delete (globalThis as any).__KEEGO_DEV_SEED__;
+});
+
+test('오프라인(pull reject) 새로고침은 lastSyncAt 을 거짓 스탬프하지 않는다', async () => {
+  setupPort(() => Promise.reject(new Error('offline')));
 
   let renderer!: ReactTestRenderer.ReactTestRenderer;
   await act(async () => {
     renderer = ReactTestRenderer.create(<App />);
   });
-  await tick(6);
+  await tick();
 
-  // 1) 성공 부팅 → HomeScreen(tab 0)에 lastSyncAt 기준값 V0 가 찍혔다(칩이 의미를 갖는다).
+  // 부팅 동기도 실패했으므로 lastSyncAt 은 아직 찍히지 않았다.
   const home = findByProp(renderer.root, 'onRefresh');
-  const v0 = home.props.lastSyncAt as number;
-  expect(typeof v0).toBe('number');
+  expect(home.props.lastSyncAt).toBeFalsy();
 
-  // 2) 오프라인 전환 후 당겨서 새로고침(production refreshData) — fetch 는 거부되고 큐는 비어
-  //    synced 0 이다. catch 분기가 lastSyncAt 을 덮어쓰면 안 된다.
-  offline = true;
+  // 당겨서 새로고침(여전히 오프라인) → runCloudSync 가 pull 에서 throw → catch → 스탬프 없음.
   await act(async () => {
     await home.props.onRefresh();
   });
-  await tick(6);
+  await tick();
 
-  // 관측: HomeScreen 에 흘러가는 lastSyncAt 이 V0 그대로다(오프라인 새로고침은 동기화 성공이 아니다).
-  const after = findByProp(renderer.root, 'onRefresh').props.lastSyncAt as number;
-  expect(after).toBe(v0);
-
+  expect(findByProp(renderer.root, 'onRefresh').props.lastSyncAt).toBeFalsy();
   act(() => renderer.unmount());
 });
 
-test('온라인 당겨서 새로고침은 서버 fetch 성공 시 lastSyncAt 을 갱신한다', async () => {
-  // 대칭 단언: 정상(온라인) 경로에선 try 분기가 lastSyncAt 을 새 시각으로 갱신해 칩이 전진한다.
-  (global.fetch as jest.Mock).mockImplementation((url: unknown) => {
-    const u = String(url);
-    let body: unknown = {};
-    if (u.includes('/api/auth')) body = {user_id: 'u1'};
-    else if (u.includes('/api/shoes')) body = [{id: 's1', name: 'Nike Pegasus', max_km: 600, start_km: 0}];
-    else if (u.includes('/api/runs')) body = [];
-    return Promise.resolve({
-      ok: true,
-      status: 200,
-      json: () => Promise.resolve(body),
-      text: () => Promise.resolve(JSON.stringify(body)),
-    });
-  });
-  jest.spyOn(Alert, 'alert').mockImplementation((() => {}) as never);
+test('온라인 새로고침은 동기 성공 시 lastSyncAt 을 전진시킨다', async () => {
+  setupPort(() => Promise.resolve({shoes: [], runs: [], settings: {}}));
 
   let renderer!: ReactTestRenderer.ReactTestRenderer;
   await act(async () => {
     renderer = ReactTestRenderer.create(<App />);
   });
-  await tick(6);
+  await tick();
 
-  const home = findByProp(renderer.root, 'onRefresh');
-  const v0 = home.props.lastSyncAt as number;
+  // 부팅 동기 성공 → lastSyncAt 기준값 V0(number).
+  const v0 = findByProp(renderer.root, 'onRefresh').props.lastSyncAt as number;
   expect(typeof v0).toBe('number');
 
   await act(async () => {
-    await home.props.onRefresh();
+    await findByProp(renderer.root, 'onRefresh').props.onRefresh();
   });
-  await tick(6);
+  await tick();
 
-  // 서버 재fetch 성공 → lastSyncAt 이 V0 보다 새 값으로 전진(단조 시계).
+  // 새로고침 동기 성공 → 단조 시계로 V0 보다 전진.
   const after = findByProp(renderer.root, 'onRefresh').props.lastSyncAt as number;
   expect(after).toBeGreaterThan(v0);
-
   act(() => renderer.unmount());
 });

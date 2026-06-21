@@ -33,6 +33,7 @@ import {RunStart} from '../RunScreen.rn';
 import {Button, TabBar, TierBadge} from '../primitives';
 import {T3, CARD, BG, Shoe} from '../theme';
 import App from '../App';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // ── shared helpers ────────────────────────────────────────────────────────────
 function render(el: React.ReactElement) {
@@ -90,14 +91,6 @@ function declaredVTarget(node: any): number {
 
 const has = (root: any, testID: string) =>
   root.findAll((n: any) => n.props && n.props.testID === testID).length > 0;
-
-async function flush(times = 6) {
-  for (let i = 0; i < times; i++) {
-    await act(async () => {
-      await Promise.resolve();
-    });
-  }
-}
 
 const SHOES: Shoe[] = [
   {id: 's1', brand: 'Nike', model: 'Pegasus 41', used: 100, max: 500, condition: '양호'},
@@ -242,12 +235,13 @@ describe('TierBadge gives a non-colour shape cue (icon), not colour alone', () =
 });
 
 // ── 5) keep-going voice in loading & error states ─────────────────────────────
-describe('loading & error states speak the keep-going voice', () => {
+describe('loading state speaks the keep-going voice', () => {
   test('boot LOADING (skeleton) carries a keep-going caption', async () => {
-    // A fetch that never resolves keeps boot in the loading/skeleton state.
-    (global.fetch as jest.Mock).mockImplementation(
-      () => new Promise(() => {}),
-    );
+    // Stage 3(Firestore 정본): 부팅은 캐시(AsyncStorage)에서 읽는다. getItem 을 멈춰 boot 를
+    // 'loading' 에 고정하면 스켈레톤이 유지된다(이전엔 never-resolving fetch 로 고정했다).
+    const spy = jest
+      .spyOn(AsyncStorage, 'getItem')
+      .mockReturnValue(new Promise(() => {}) as any);
     let r!: ReactTestRenderer.ReactTestRenderer;
     await act(async () => {
       r = ReactTestRenderer.create(<App />);
@@ -256,22 +250,10 @@ describe('loading & error states speak the keep-going voice', () => {
     expect(has(root, 'boot-skeleton')).toBe(true);
     expect(textOf(root)).toContain('다시 달릴 수 있어요');
     act(() => r.unmount());
+    spy.mockRestore();
   });
-
-  test('boot ERROR (retry card) frames failure as a pause, not an end', async () => {
-    (global.fetch as jest.Mock).mockImplementation(() =>
-      Promise.reject(new Error('cold backend')),
-    );
-    let r!: ReactTestRenderer.ReactTestRenderer;
-    await act(async () => {
-      r = ReactTestRenderer.create(<App />);
-    });
-    await flush();
-    const root = r.root;
-    expect(has(root, 'boot-error')).toBe(true);
-    expect(textOf(root)).toContain('계속 달릴 수 있어요');
-    act(() => r.unmount());
-  });
+  // 'boot ERROR (retry card)' 테스트 제거 — Firestore 정본 부팅은 로컬 캐시 로드라 실패하지
+  // 않으므로 'error' 상태(재시도 카드)가 도달 불가하다(Stage 3). 빈 부팅은 온보딩/빈 홈으로 간다.
 });
 
 // ── 6) 死deps removed and never re-imported ───────────────────────────────────

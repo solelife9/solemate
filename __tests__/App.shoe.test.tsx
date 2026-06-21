@@ -27,6 +27,7 @@ import ReactTestRenderer, {act} from 'react-test-renderer';
 import {Alert, StyleSheet} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import App from '../App';
+import {seedBootCache} from './helpers/bootSeed';
 import ShoesScreen from '../ShoesScreen.rn';
 import {DANGER, GOOD, BEST, ACCENT, Shoe} from '../theme';
 
@@ -92,6 +93,7 @@ async function mount(shoes: ApiShoe[], runs: ApiRun[]) {
   // 이 테스트의 서버 데이터를 덮어쓰지 않도록 매 마운트마다 스토리지를 비운다.
   await AsyncStorage.clear();
   const calls = mockBackend(shoes, runs);
+  await seedBootCache(shoes, runs); // Stage 3: 부팅은 REST GET 이 아니라 캐시에서 읽는다
   let renderer!: ReactTestRenderer.ReactTestRenderer;
   await act(async () => {
     renderer = ReactTestRenderer.create(<App />);

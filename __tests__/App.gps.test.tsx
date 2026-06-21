@@ -22,6 +22,7 @@ import React from 'react';
 import ReactTestRenderer, {act} from 'react-test-renderer';
 import * as Location from 'expo-location';
 import App from '../App';
+import {seedBootCache} from './helpers/bootSeed';
 
 // One shoe so Home renders the "러닝 시작" CTA instead of the empty state.
 function mockBackendWithShoe() {
@@ -84,6 +85,8 @@ function readKm(root: ReactTestRenderer.ReactTestInstance): number {
 // success callback the engine registered plus a km() reader.
 async function startRun() {
   mockBackendWithShoe();
+  // Stage 3: 부팅은 캐시에서 읽는다 — Home 의 '러닝 시작' CTA 를 위해 신발 1켤레를 캐시에 시드.
+  await seedBootCache([{id: 's1', name: 'Nike Pegasus', max_km: 600, start_km: 0}]);
   let renderer!: ReactTestRenderer.ReactTestRenderer;
   await act(async () => {
     renderer = ReactTestRenderer.create(<App />);

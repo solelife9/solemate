@@ -21,6 +21,7 @@ import React from 'react';
 import ReactTestRenderer, {act} from 'react-test-renderer';
 import {Pedometer} from 'expo-sensors';
 import App from '../App';
+import {seedBootCache} from './helpers/bootSeed';
 
 function mockBackendWithShoe() {
   (globalThis.fetch as jest.Mock).mockImplementation((url: any) => {
@@ -78,6 +79,7 @@ function readCadence(root: ReactTestRenderer.ReactTestInstance): string {
 
 async function startRun() {
   mockBackendWithShoe();
+  await seedBootCache([{id: 's1', name: 'Nike Pegasus', max_km: 600, start_km: 0}]); // Stage 3: 부팅 캐시 시드
   let renderer!: ReactTestRenderer.ReactTestRenderer;
   await act(async () => {
     renderer = ReactTestRenderer.create(<App />);

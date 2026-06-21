@@ -16,6 +16,7 @@ import ReactTestRenderer, {act} from 'react-test-renderer';
 import {Alert} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import App from '../App';
+import {seedBootCache} from './helpers/bootSeed';
 
 type ApiShoe = {id: string; name: string; max_km: number; start_km: number; retired?: boolean};
 type ApiRun = {id: string; shoe_id: string; km: number; run_date: string; duration: number};
@@ -64,6 +65,7 @@ async function flush() {
 
 async function mount(shoes: ApiShoe[], runs: ApiRun[]) {
   mockBackend(shoes, runs);
+  await seedBootCache(shoes, runs); // Stage 3: 부팅은 캐시에서 읽는다
   let renderer!: ReactTestRenderer.ReactTestRenderer;
   await act(async () => {
     renderer = ReactTestRenderer.create(<App />);

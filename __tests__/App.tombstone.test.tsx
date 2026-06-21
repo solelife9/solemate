@@ -18,6 +18,7 @@ import ReactTestRenderer, {act} from 'react-test-renderer';
 import {Alert} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import App from '../App';
+import {seedBootCache} from './helpers/bootSeed';
 
 const K_TOMBSTONES = 'tombstones_v1';
 
@@ -68,6 +69,11 @@ function mockDeleteRunBackend() {
 
 async function mountApp() {
   jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+  // Stage 3: 부팅은 캐시에서 읽는다 — 신발 s1 + 런 r1 을 부팅 캐시에 시드(서버 GET 대체).
+  await seedBootCache(
+    [{id: 's1', name: 'Nike Pegasus', max_km: 600, start_km: 0}],
+    [{id: 'r1', shoe_id: 's1', km: 50, run_date: '2026-06-01', duration: 1800}],
+  );
   let renderer!: ReactTestRenderer.ReactTestRenderer;
   await act(async () => {
     renderer = ReactTestRenderer.create(<App />);

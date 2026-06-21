@@ -22,6 +22,7 @@ import {Alert, Linking} from 'react-native';
 import ReactTestRenderer, {act} from 'react-test-renderer';
 import * as Location from 'expo-location';
 import App from '../App';
+import {seedBootCache} from './helpers/bootSeed';
 import {GPS_STALL_THRESHOLD_MS} from '../lib/gpsHealth';
 
 function mockBackendWithShoe() {
@@ -80,6 +81,7 @@ function readKm(root: ReactTestRenderer.ReactTestInstance): number {
 // assert that the GPS watch started — permission-gate tests check that itself.
 async function startRun() {
   mockBackendWithShoe();
+  await seedBootCache([{id: 's1', name: 'Nike Pegasus', max_km: 600, start_km: 0}]); // Stage 3: 부팅 캐시 시드
   let renderer!: ReactTestRenderer.ReactTestRenderer;
   await act(async () => {
     renderer = ReactTestRenderer.create(<App />);
@@ -193,6 +195,7 @@ test('a GPS dead-zone (no fix for the stall threshold) surfaces a Korean banner'
   jest.useFakeTimers();
   try {
     mockBackendWithShoe();
+  await seedBootCache([{id: 's1', name: 'Nike Pegasus', max_km: 600, start_km: 0}]); // Stage 3: 부팅 캐시 시드
     let renderer!: ReactTestRenderer.ReactTestRenderer;
     await act(async () => {
       renderer = ReactTestRenderer.create(<App />);
