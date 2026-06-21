@@ -87,6 +87,7 @@ import {LoginScreen} from './LoginScreen.rn';
 import {stampUpdatedAt, markDeleted, partitionTombstones, recordsToBackRegister, mergeCloudData, liveRecords} from './lib/cloudSync';
 import {publishMyRanking} from './lib/progression/firestoreRankingStore';
 import {migrateRestToFirestore, REST_MIGRATION_KEY} from './lib/restToFirestoreMigration';
+import {genRunId} from './lib/genId';
 import {showToast, TOAST_UNDO_LABEL} from './lib/toast';
 import {migrateStorageSchema} from './lib/storageMigration';
 import {resolveGoogleCredential} from './lib/googleAuth';
@@ -915,7 +916,8 @@ function Main(){
   async function addRun(shoeId:string,km:number,date:string,memo:string,source:string,duration?:number,cadence?:number,route?:string,location?:string,heart_rate?:number){
     const timeStr=nowTimeLabel();
     const stampedAt=Date.now();
-    const localId='run_'+stampedAt+'_'+Math.random().toString(36).slice(2,9);
+    // Stage 1: 런 id 생성을 단일 seam(genRunId)으로 — 형식 동일(동작·머지 키 불변).
+    const localId=genRunId(stampedAt);
     // audit a1: updatedAt(epoch ms) 스탬프 — 큐/낙관적/화해 레코드 모두에 실어 클라우드
     // 머지 '최신 우선'이 작동하게 한다(선택필드라 부재 시 기존 동작 유지).
     const pending:PendingRun={
