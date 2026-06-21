@@ -137,7 +137,7 @@ test('a persisted in-progress snapshot surfaces a recover/discard prompt on laun
   expect(btns.map(b => b.text).sort()).toEqual(['버리기', '복구']);
 });
 
-test('복구 restores the run (distance/time/goal/cadence) and saving POSTs the restored distance + route', async () => {
+test('복구 restores the run (distance/time/goal/cadence) and saving persists the restored distance + route to cache (no REST POST)', async () => {
   await AsyncStorage.setItem(SNAPSHOT_KEY, JSON.stringify(SNAP));
   const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
   const calls = mockBackend();
@@ -159,8 +159,8 @@ test('복구 restores the run (distance/time/goal/cadence) and saving POSTs the 
   expect(screen).toContain('목표 5km 완료'); // restored goalKm
   expect(screen).toContain('172'); // restored cadence
 
-  // Save the recovered run → it must POST the restored distance and route
-  // (proving pts were restored, not lost).
+  // Save the recovered run → Stage 2b(Firestore 정본): REST POST 없이 부팅 캐시에 복원된
+  // 거리/route/duration/신발이 그대로 durable 기록된다(pts 가 유실되지 않고 복원됐음을 증명).
   await act(async () => {
     pressByText(root, '저장하기');
   });
@@ -170,12 +170,16 @@ test('복구 restores the run (distance/time/goal/cadence) and saving POSTs the 
     });
   }
 
-  const runPost = calls.find(c => c.method === 'POST' && c.url.includes('/api/runs'));
-  expect(runPost).toBeDefined();
-  expect(runPost!.body.km).toBe(3.2);
-  expect(runPost!.body.route).toContain('37.5'); // route rebuilt from restored pts
-  expect(runPost!.body.duration).toBe(900); // restored elapsed → run duration
-  expect(runPost!.body.shoe_id).toBe('s1'); // restored shoe identity (not a default/wrong shoe)
+  // REST 런 POST 는 일어나지 않는다.
+  expect(calls.find(c => c.method === 'POST' && c.url.includes('/api/runs'))).toBeUndefined();
+  const cacheRaw = await AsyncStorage.getItem('cache_runs_v1');
+  const cache = cacheRaw ? JSON.parse(cacheRaw) : [];
+  const saved = cache[0];
+  expect(saved).toBeDefined();
+  expect(saved.km).toBe(3.2);
+  expect(saved.route).toContain('37.5'); // route rebuilt from restored pts
+  expect(saved.duration).toBe(900); // restored elapsed → run duration
+  expect(saved.shoe_id).toBe('s1'); // restored shoe identity (not a default/wrong shoe)
 
   act(() => renderer.unmount());
 });

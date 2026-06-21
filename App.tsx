@@ -18,7 +18,7 @@ import {Ring, Button} from './primitives';
 import ErrorBoundary from './ErrorBoundary';
 import ToastHost from './ToastHost';
 import {installCrashHandler, setCrashUser} from './lib/crashlytics';
-import {apiAuth, apiGetShoes, apiGetRuns, apiAddShoe, apiAddRun, apiPatchRun, apiDeleteRun, fetchWithTimeout} from './lib/api';
+import {apiAuth, apiGetShoes, apiGetRuns, apiAddShoe, apiAddRun, fetchWithTimeout} from './lib/api';
 import {devSeedShoes, devSeedRuns} from './lib/devSeed';
 // BackendShoe / BackendRun 은 types.d.ts 의 전역 ambient 인터페이스(import 불필요).
 import HomeScreen, {WeekStats} from './HomeScreen.rn';
@@ -62,7 +62,7 @@ import {mostRecentShoeId, lastWornDate} from './lib/shoeRecommend';
 import {recommendRotation} from './lib/rotation';
 import {
   loadSnapshot, clearSnapshot, isResumable,
-  enqueuePendingRun, removePendingRun, updatePendingRun, flushPendingRuns,
+  enqueuePendingRun, removePendingRun, flushPendingRuns,
   reconcilePendingWithServer, loadPendingRuns, overlayPendingRuns,
   RunSnapshot, PendingRun,
 } from './lib/runPersistence';
@@ -895,37 +895,40 @@ function Main(){
   }
 
 
-  // 완주 런 저장(audit#3): 로컬 우선 + 미동기 큐. 저장(AsyncStorage)과 네트워크
-  // (POST)를 분리해 부분성공 desync를 막는다.
-  //   1) enqueuePendingRun + 낙관적 setRuns — 네트워크 try 밖에서 먼저 영속화하므로
-  //      여기서 크래시/네트워크 단절이 나도 route/run이 소실되지 않는다(iron law).
-  //   2) postRun(네트워크)을 별도로 시도 — 성공 시 서버 id로 화해 + 큐 제거,
-  //      실패 시 큐에 남겨 다음 flushPendingRuns가 재전송.
+  // 런 한 건을 부팅 캐시(CACHE_RUNS_KEY)에 즉시 durable 하게 prepend 한다(크래시-세이프티).
+  // 같은 id 가 이미 있으면 교체(멱등). 800ms 디바운스 캐시 효과가 전체 상태로 덮어쓰기 전에
+  // 크래시가 나도 이 동기 기록 덕에 런이 살아남는다(audit#3 미동기 큐의 역할을 대체). 비차단.
+  const persistRunToCache=async(run:BackendRun)=>{
+    try{
+      const raw=await AsyncStorage.getItem(CACHE_RUNS_KEY);
+      const arr=raw?JSON.parse(raw):[];
+      const list=Array.isArray(arr)?arr:[];
+      const next=[run,...list.filter((r:any)=>String(r?.id)!==String(run.id))];
+      await AsyncStorage.setItem(CACHE_RUNS_KEY,JSON.stringify(next));
+    }catch(e){console.log('persistRunToCache error',e);}
+  };
+
+  // 완주 런 저장(Stage 2b · Firestore 정본): 로컬 우선 + cloudSync push. REST POST/큐 제거.
+  //   1) 사이드키(route_/time_) 영속 + 캐시에 즉시 durable 기록(크래시-세이프티) — 네트워크 무관.
+  //   2) 낙관적 setRuns. 영속/동기는 부팅캐시 + cloudSync(Firestore)가 담당한다.
+  // localId(genRunId)가 런의 영구 id다 — 서버 재키잉이 없으므로 머지 키가 안정적이다.
   async function addRun(shoeId:string,km:number,date:string,memo:string,source:string,duration?:number,cadence?:number,route?:string,location?:string,heart_rate?:number){
     const timeStr=nowTimeLabel();
     const stampedAt=Date.now();
-    // Stage 1: 런 id 생성을 단일 seam(genRunId)으로 — 형식 동일(동작·머지 키 불변).
     const localId=genRunId(stampedAt);
-    // audit a1: updatedAt(epoch ms) 스탬프 — 큐/낙관적/화해 레코드 모두에 실어 클라우드
-    // 머지 '최신 우선'이 작동하게 한다(선택필드라 부재 시 기존 동작 유지).
-    const pending:PendingRun={
-      localId, shoe_id:shoeId, km, run_date:date, memo:memo||'', source,
+    // 완주 런 레코드 — 모든 필드(source/location/heart_rate 포함)를 담아 Firestore 정본에
+    // 유실 없이 올린다(이전엔 일부 필드가 REST 왕복으로만 보존됐다). updatedAt 으로 머지 최신 우선.
+    const record:BackendRun={
+      id:localId, shoe_id:shoeId, km, run_date:date, memo:memo||'', source,
       duration:duration||0, cadence:cadence||0, route:route||'', location:location||'',
-      heart_rate:heart_rate||0, run_time:timeStr, queuedAt:stampedAt, updatedAt:stampedAt,
+      heart_rate:heart_rate||0, run_time:timeStr, updatedAt:stampedAt,
     };
-
-    // ── 1) 로컬 우선 영속화(네트워크 try 밖) ──
-    await enqueuePendingRun(pending);
+    // ── 1) 로컬 우선 영속화(크래시-세이프티) — 사이드키 + 캐시 즉시 durable 기록 ──
     if(route) await AsyncStorage.setItem('route_'+localId, route);
     await AsyncStorage.setItem('time_'+localId, timeStr);
-    setRuns(prev=>[{id:localId,shoe_id:shoeId,km,run_date:date,duration:duration||0,
-      cadence:cadence||0,memo:memo||'',route:route||'',run_time:timeStr,updatedAt:stampedAt,_pending:true},...prev]);
-
-    // ── 2) 네트워크 동기화(별도 try). 실패해도 위 로컬 기록·큐는 보존된다. ──
-    try{
-      const server=await postRun(pending);
-      await reconcileSynced(pending,server);
-    }catch{/* 큐에 남아 다음 실행/포그라운드에서 재동기 */}
+    await persistRunToCache(record);
+    // ── 2) 낙관적 상태 반영(영속은 cloudSync 가 Firestore 로 push) ──
+    setRuns(prev=>[record,...prev]);
     // 노면 태그(선택)는 호출부가 localId로 영속하므로 생성된 localId를 돌려준다.
     return localId;
   }
@@ -983,23 +986,14 @@ function Main(){
     if(localId&&surface&&surface!=='road') await setRunSurface(localId,surface);
   }
 
-  // 개별 런 편집(백엔드 PATCH). 낙관적으로 runs 상태를 갱신 → toUiShoe가 runs에서
-  // shoeHealth를 파생하므로 신발 수명은 자동 재계산된다(별도 신발 PATCH 불필요).
-  // fields는 백엔드 컬럼명(shoe_id/km/run_date/duration). 아직 서버에 없는 미동기
-  // (_pending) 런이면 PATCH 대신 큐를 수정해 향후 POST가 편집값을 싣게 한다.
+  // 개별 런 편집(Stage 2b · Firestore 정본). 낙관적으로 runs 상태를 갱신 → toUiShoe가
+  // runs에서 shoeHealth를 파생하므로 신발 수명은 자동 재계산된다(별도 신발 변경 불필요).
+  // fields는 컬럼명(shoe_id/km/run_date/duration). stampUpdatedAt 으로 머지 최신 우선,
+  // 영속은 캐시 + cloudSync(Firestore push)가 담당한다(REST PATCH 제거).
   async function editRun(id:string,fields:{shoe_id?:string;km?:number;run_date?:string;duration?:number}){
     const sid=String(id);
-    const target=runs.find(r=>String(r.id)===sid);
     const editedAt=Date.now();
-    // audit a1: 편집은 레코드를 바꾸므로 updatedAt 을 갱신한다(상태 + 미동기 큐 양쪽).
     setRuns(prev=>prev.map(r=>String(r.id)===sid?stampUpdatedAt({...r,...fields},editedAt):r));
-    if(target&&target._pending){
-      await updatePendingRun(sid,{...fields,updatedAt:editedAt} as Partial<PendingRun>);
-      return;
-    }
-    try{
-      await apiPatchRun(userId,sid,fields);
-    }catch{Alert.alert('오류','런 수정 실패');}
   }
 
   // 개별 런 삭제(백엔드 DELETE). 삭제 확인 Alert는 화면(HistoryScreen)이 띄운다.
@@ -1009,10 +1003,13 @@ function Main(){
   // audit a2: 라이브 배열에서 빼는 동시에 묘비를 남긴다. 미동기(_pending) 런도 자동 동기가
   // backupData(라이브 런 포함)를 이미 Firestore 에 올렸을 수 있으므로 똑같이 묘비를 남겨,
   // 어느 경로로든 클라우드에 올라간 런이 다른 기기 머지로 부활하지 않게 한다.
+  // 개별 런 삭제(Stage 2b · 로컬-퍼스트). runs에서 제거하면 shoeHealth가 줄어 신발 사용거리도
+  // 자동 감소한다(파생값). 라이브에서 빼는 동시에 묘비를 남겨, 어느 경로로든 클라우드(Firestore)에
+  // 올라간 런이 다른 기기 머지로 부활하지 않게 한다. route_/time_/surface_/splits_ 사이드키도 정리.
   async function deleteRun(id:string){
     const sid=String(id);
     const target=runs.find(r=>String(r.id)===sid);
-    // undo 스냅샷: 사이드키/큐 항목을 *지우기 전에* 읽어 담는다 — '실행취소' 시 런만 살고
+    // undo 스냅샷: 사이드키를 *지우기 전에* 읽어 담는다 — '실행취소' 시 런만 살고
     // route_/time_/surface_/splits_ 가 유실되는 부분복원을 막는다(완전복원 보장).
     const [route,time,surface,splits]=await Promise.all([
       AsyncStorage.getItem('route_'+sid),
@@ -1020,24 +1017,15 @@ function Main(){
       AsyncStorage.getItem('surface_'+sid),
       AsyncStorage.getItem('splits_'+sid),
     ]);
-    let pendingEntry:PendingRun|null=null;
-    try{pendingEntry=(await loadPendingRuns()).find(p=>String(p.localId)===sid)??null;}catch{pendingEntry=null;}
-    const undo:RunUndo|null=target?{record:target,sidecars:{route,time,surface,splits},pending:pendingEntry}:null;
-    const finishLocal=async()=>{
-      setRuns(prev=>prev.filter(r=>String(r.id)!==sid));
-      if(target)addRunTombstone(target);
-      await removePendingRun(sid);
-      await AsyncStorage.removeItem('route_'+sid);
-      await AsyncStorage.removeItem('time_'+sid);
-      await AsyncStorage.removeItem('surface_'+sid);
-      await AsyncStorage.removeItem('splits_'+sid);
-    };
-    if(target&&target._pending){await finishLocal();if(undo)offerRunUndo(undo);return;}
-    try{
-      await apiDeleteRun(userId,sid);
-      await finishLocal();
-      if(undo)offerRunUndo(undo);
-    }catch{Alert.alert('오류','삭제 실패');}
+    const undo:RunUndo|null=target?{record:target,sidecars:{route,time,surface,splits},pending:null}:null;
+    // 로컬-퍼스트 삭제: 라이브 제거 + 묘비(cloudSync 전파) + 사이드키 정리. 영속은 cloudSync 담당.
+    setRuns(prev=>prev.filter(r=>String(r.id)!==sid));
+    if(target)addRunTombstone(target);
+    await AsyncStorage.removeItem('route_'+sid);
+    await AsyncStorage.removeItem('time_'+sid);
+    await AsyncStorage.removeItem('surface_'+sid);
+    await AsyncStorage.removeItem('splits_'+sid);
+    if(undo)offerRunUndo(undo);
   }
 
   // 신발 교체 알림: 설정(on/off · 임계값)을 따른다. 비활성이면 아예 묻지 않고,

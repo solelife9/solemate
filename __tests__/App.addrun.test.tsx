@@ -1,20 +1,15 @@
 /**
- * App.tsx addRun local-first + sync reconciliation integration (audit#3).
+ * App.tsx addRun 로컬-퍼스트 영속 (Phase 5b · Stage 2b · Firestore 정본).
  *
- * A finished run must be durable BEFORE the network is touched, and the sync
- * must never duplicate, strand, or leak storage. These tests drive the real App
- * to the run-review screen (via the snapshot-recovery path, which deterministically
- * seeds a known distance + route without needing live GPS) and then press 저장하기
- * to invoke addRun. Assertions are on OBSERVABLE outcomes — the AsyncStorage queue,
- * the route_/time_ keys, and the recorded POSTs:
+ * 완주 런은 낙관적 상태 반영 *전에* durable 해야 하고, REST 에 의존하지 않아야 한다(영속은
+ * 부팅 캐시 + cloudSync→Firestore). 스냅샷 복구 경로로 알려진 거리+route 의 리뷰 화면에 도달한
+ * 뒤 저장하기를 눌러 addRun 을 호출하고, OBSERVABLE 결과(부팅 캐시·route_/time_ 키·REST 호출
+ * 부재)를 단언한다:
  *
- *   1) Local-first ordering: at the instant the run is POSTed it is ALREADY in the
- *      pending queue (enqueue precedes the network). An implementation that POSTed
- *      first would leave the queue empty while the POST is in flight → this fails.
- *   2) Successful sync: the run leaves the queue and storage is re-keyed to the
- *      server id with NO leftover `route_<localId>` / `time_<localId>` dead keys
- *      (the leak the code critic found).
- *   3) Failed sync (iron law): the run + its route stay queued for a later retry.
+ *   1) 크래시-세이프티: 저장 순간 런이 이미 부팅 캐시(cache_runs_v1)에 durable 하게 들어가
+ *      있고, REST 런 POST 는 일어나지 않는다(Firestore 정본).
+ *   2) 누수 없음: route_/time_ 키는 영구 클라 id(run_)로 남고 서버 id 로 재키잉되지 않는다.
+ *   3) 데이터 유실 0: 백엔드 상태와 무관하게 런+route 가 영속된다(네트워크 의존 없음).
  *
  * @format
  */
@@ -24,7 +19,22 @@ import ReactTestRenderer, {act} from 'react-test-renderer';
 import {Alert} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import App from '../App';
-import {SNAPSHOT_KEY, RunSnapshot, loadPendingRuns} from '../lib/runPersistence';
+import {SNAPSHOT_KEY, RunSnapshot} from '../lib/runPersistence';
+
+const CACHE_RUNS_KEY = 'cache_runs_v1';
+
+/** 이번 마운트에서 발생한 /api/runs POST 호출들. */
+function runPosts() {
+  return (globalThis.fetch as jest.Mock).mock.calls.filter(
+    ([u, init]: any) =>
+      String(u).includes('/api/runs') &&
+      (init && init.method ? String(init.method) : 'GET').toUpperCase() === 'POST',
+  );
+}
+async function cacheRuns() {
+  const raw = await AsyncStorage.getItem(CACHE_RUNS_KEY);
+  return raw ? JSON.parse(raw) : [];
+}
 
 const SNAP: RunSnapshot = {
   dist: 3.2,
@@ -43,23 +53,15 @@ const SNAP: RunSnapshot = {
   savedAt: 1_700_000_900_000,
 };
 
-type Mode = {kind: 'ok'} | {kind: 'fail'} | {kind: 'hang'; queueAtPost: Promise<any[]>[]};
+type Mode = {kind: 'ok'} | {kind: 'down'};
 
+// 백엔드 목. Firestore 정본이라 런 저장은 REST 를 타지 않지만, 부팅(apiAuth/GET)은 그대로
+// 동작한다. mode 'down' 은 모든 응답을 실패시켜 "백엔드와 무관하게 런이 영속되는가"를 본다.
 function mockBackend(mode: Mode) {
-  (globalThis.fetch as jest.Mock).mockImplementation((url: any, init: any) => {
+  (globalThis.fetch as jest.Mock).mockImplementation((url: any) => {
     const u = String(url);
-    const method = (init && init.method ? String(init.method) : 'GET').toUpperCase();
-    if (u.includes('/api/runs') && method === 'POST') {
-      if (mode.kind === 'hang') {
-        // Snapshot the queue at the exact moment the POST is issued — proves the
-        // run was enqueued BEFORE the network call.
-        mode.queueAtPost.push(loadPendingRuns());
-        return new Promise(() => {}); // never resolves — reconcile never runs
-      }
-      if (mode.kind === 'fail') {
-        return Promise.resolve({ok: false, status: 503, json: () => Promise.resolve({})});
-      }
-      return Promise.resolve({ok: true, status: 200, json: () => Promise.resolve({id: 'server-99'})});
+    if (mode.kind === 'down') {
+      return Promise.resolve({ok: false, status: 503, json: () => Promise.resolve({}), text: () => Promise.resolve('')});
     }
     let payload: any = {};
     if (u.includes('/api/auth')) payload = {user_id: 'u1'};
@@ -129,9 +131,8 @@ beforeEach(async () => {
   jest.restoreAllMocks();
 });
 
-test('local-first: the finished run is in the pending queue at the instant it is POSTed (enqueue precedes network)', async () => {
-  const queueAtPost: Promise<any[]>[] = [];
-  mockBackend({kind: 'hang', queueAtPost});
+test('크래시-세이프티: 저장 즉시 부팅 캐시에 durable 기록 + REST 런 POST 없음', async () => {
+  mockBackend({kind: 'ok'});
 
   const renderer = await recoverToReview();
   await act(async () => {
@@ -139,16 +140,19 @@ test('local-first: the finished run is in the pending queue at the instant it is
   });
   await tick();
 
-  expect(queueAtPost.length).toBe(1);
-  const queued = await queueAtPost[0];
-  expect(queued).toHaveLength(1); // run was durably queued BEFORE the POST
-  expect(queued[0].km).toBe(3.2);
-  expect(queued[0].route).toContain('37.5'); // route persisted locally first
+  // 낙관적 상태 반영 전에 부팅 캐시에 durable 하게 들어갔다(800ms 디바운스 캐시 효과와 무관).
+  const cache = await cacheRuns();
+  expect(cache).toHaveLength(1);
+  expect(cache[0].km).toBe(3.2);
+  expect(cache[0].route).toContain('37.5');
+  expect(String(cache[0].id).startsWith('run_')).toBe(true); // 영구 클라 id
+  // Firestore 정본 — REST 런 POST 는 일어나지 않는다.
+  expect(runPosts()).toHaveLength(0);
 
   act(() => renderer.unmount());
 });
 
-test('successful sync removes the run from the queue and leaves NO dead route_/time_<localId> keys (leak fix)', async () => {
+test('누수 없음: route_/time_ 키는 영구 클라 id(run_)로 남고 서버 id 로 재키잉되지 않는다', async () => {
   mockBackend({kind: 'ok'});
 
   const renderer = await recoverToReview();
@@ -157,22 +161,20 @@ test('successful sync removes the run from the queue and leaves NO dead route_/t
   });
   await tick(8);
 
-  // Queue drained — the run synced.
-  expect(await loadPendingRuns()).toEqual([]);
-
   const keys = await AsyncStorage.getAllKeys();
-  // The run was re-keyed to the server id...
-  expect(keys).toContain('route_server-99');
-  expect(keys).toContain('time_server-99');
-  // ...and the original localId keys were removed (no permanent dead-blob leak).
-  expect(keys.filter(k => /^route_run_/.test(k))).toEqual([]);
-  expect(keys.filter(k => /^time_run_/.test(k))).toEqual([]);
+  const routeKeys = keys.filter(k => k.startsWith('route_'));
+  const timeKeys = keys.filter(k => k.startsWith('time_'));
+  expect(routeKeys).toHaveLength(1);
+  expect(routeKeys[0].startsWith('route_run_')).toBe(true);
+  expect(timeKeys[0].startsWith('time_run_')).toBe(true);
+  // 서버 id 재키잉 없음(REST 제거).
+  expect(keys.some(k => k.startsWith('route_server'))).toBe(false);
 
   act(() => renderer.unmount());
 });
 
-test('failed sync keeps the run AND its route queued for retry (iron law: no data loss)', async () => {
-  mockBackend({kind: 'fail'});
+test('데이터 유실 0: 백엔드가 죽어 있어도 런과 route 가 영속된다(네트워크 의존 없음)', async () => {
+  mockBackend({kind: 'down'});
 
   const renderer = await recoverToReview();
   await act(async () => {
@@ -180,10 +182,10 @@ test('failed sync keeps the run AND its route queued for retry (iron law: no dat
   });
   await tick(8);
 
-  const queue = await loadPendingRuns();
-  expect(queue).toHaveLength(1);
-  expect(queue[0].km).toBe(3.2);
-  expect(queue[0].route).toContain('37.5'); // route never dropped on POST failure
+  const cache = await cacheRuns();
+  expect(cache).toHaveLength(1);
+  expect(cache[0].km).toBe(3.2);
+  expect(cache[0].route).toContain('37.5'); // route never dropped
 
   act(() => renderer.unmount());
 });

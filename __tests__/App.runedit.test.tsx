@@ -1,11 +1,10 @@
 /**
  * App.tsx 개별 런 편집/삭제 + 수동 런 입력 + 개인 기록(PR) 카드 통합 테스트.
  *
- * 관찰 가능한 효과만 검증한다(내부 상태/에러부재 검사 금지):
- *   1) 런 삭제 → 확인 Alert(파괴 방지) → 신발 사용거리(km) 감소. shoeHealth는 runs
- *      파생이므로 별도 신발 갱신 없이 자동으로 줄어든다(목록·신발 카드 모두).
- *   2) 수동 입력 → 목록에 새 런 추가 + source='manual'로 백엔드 POST(앱 외 주행 보정).
- *   3) 런 편집(거리) → 백엔드 PATCH /api/runs/<id> + 신발 km 재계산.
+ * 관찰 가능한 효과만 검증한다(Stage 2b · Firestore 정본 — REST 쓰기 없음, cloudSync 영속):
+ *   1) 런 삭제 → 확인 Alert(파괴 방지) → 로컬 묘비 삭제(REST DELETE 없음) + 신발 km 감소.
+ *   2) 수동 입력 → 목록에 새 런 추가 + 부팅 캐시에 source='manual' durable 기록(REST POST 없음).
+ *   3) 런 편집(거리) → 로컬 상태 갱신(REST PATCH 없음) + 신발 km 재계산.
  *   4) 개인 기록 카드 → 프로필에 1km 페이스·5km 기록·최장 거리 렌더.
  *
  * @format
@@ -120,15 +119,16 @@ test('런 삭제 → 확인 Alert 후 신발 사용거리(km) 감소', async () 
   const del = (call![2] as any[]).find(b => b.text === '삭제');
   expect(del.style).toBe('destructive');
 
-  // 확인('삭제') → DELETE 전송 + 목록/신발 km 반영.
+  // 확인('삭제') → 로컬 묘비 삭제(REST DELETE 없음) + 목록/신발 km 반영.
   (globalThis.fetch as jest.Mock).mockClear();
   await act(async () => { del.onPress(); });
   await flush();
 
+  // Stage 2b: REST 런 DELETE 는 일어나지 않는다(로컬 묘비 + cloudSync 전파).
   const delCall = (globalThis.fetch as jest.Mock).mock.calls.find(
-    (c: any[]) => /\/api\/runs\/r2$/.test(String(c[0])) && c[1] && c[1].method === 'DELETE',
+    (c: any[]) => String(c[0]).includes('/api/runs') && c[1] && c[1].method === 'DELETE',
   );
-  expect(delCall).toBeTruthy();
+  expect(delCall).toBeFalsy();
 
   // 신발 탭: 사용거리 15 → 10으로 감소(shoeHealth가 runs 파생). 카드 누적 km(큰 숫자) 확인.
   await tap(pressBy(root, '신발'));
@@ -151,15 +151,17 @@ test('수동 입력 → 목록에 런 추가 + source=manual로 POST', async () 
   // 목록에 7.5km 런이 낙관적으로 추가된다.
   expect(textOf(root)).toContain('7.5');
 
-  // 백엔드 POST는 source='manual', km=7.5로 전송된다(앱 외 주행 보정).
+  // Stage 2b: REST POST 없이 부팅 캐시에 source='manual' 런이 durable 기록된다(앱 외 주행 보정).
   const post = (globalThis.fetch as jest.Mock).mock.calls.find(
     (c: any[]) => /\/api\/runs$/.test(String(c[0])) && c[1] && c[1].method === 'POST',
   );
-  expect(post).toBeTruthy();
-  const body = JSON.parse(post![1].body);
-  expect(body.source).toBe('manual');
-  expect(body.km).toBe(7.5);
-  expect(body.shoe_id).toBe('s1');
+  expect(post).toBeFalsy();
+  const cacheRaw = await AsyncStorage.getItem('cache_runs_v1');
+  const cache = cacheRaw ? JSON.parse(cacheRaw) : [];
+  const manual = cache.find((r: any) => String(r.km) === '7.5');
+  expect(manual).toBeTruthy();
+  expect(manual.source).toBe('manual');
+  expect(manual.shoe_id).toBe('s1');
 });
 
 test('런 편집(거리) → 백엔드 PATCH + 신발 km 재계산', async () => {
@@ -181,12 +183,11 @@ test('런 편집(거리) → 백엔드 PATCH + 신발 km 재계산', async () =>
   (globalThis.fetch as jest.Mock).mockClear();
   await tap(pressBy(root, '저장하기'));
 
-  // PATCH /api/runs/r1 에 km=12 전송.
+  // Stage 2b: REST PATCH 없음(로컬 상태 갱신 + cloudSync). 신발 km 재계산만 관찰.
   const patch = (globalThis.fetch as jest.Mock).mock.calls.find(
-    (c: any[]) => /\/api\/runs\/r1$/.test(String(c[0])) && c[1] && c[1].method === 'PATCH',
+    (c: any[]) => String(c[0]).includes('/api/runs') && c[1] && c[1].method === 'PATCH',
   );
-  expect(patch).toBeTruthy();
-  expect(JSON.parse(patch![1].body).km).toBe(12);
+  expect(patch).toBeFalsy();
 
   // 신발 km 재계산: 10 → 12. 카드 누적 km(큰 숫자) 확인.
   await tap(pressBy(root, '신발'));
