@@ -9,14 +9,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Polyline, Circle } from 'react-native-svg';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {
-  BG, CARD, CARD_DIM, CARD_HI, ACCENT, DANGER, T1, T2, T3, T4, SEP, CARD_BORDER, FONT, DISPLAY, Shoe, Run, SHOES, withAlpha, RADIUS, GUTTER, HERO, SCRIM,
+  BG, CARD, CARD_DIM, CARD_HI, ACCENT, DANGER, T1, T2, T3, T4, SEP, CARD_BORDER, FONT, DISPLAY, Shoe, Run, SHOES, withAlpha, RADIUS, GUTTER, HERO,
 } from './theme';
 // 기간 탭 스트립 = SegmentedControl(neutral), 러닝 상세 2×3 메트릭 = StatGrid 프리미티브.
 import { TabBar, Button, SegmentedControl, StatGrid } from './primitives';
 import { Unit, displayNum, displayToKm } from './lib/units';
-import { ymdLocal, fmtPace } from './lib/format';
-import { durationLabel, sumKm, summaryOf, monthBuckets, weekBuckets, yearBuckets } from './lib/stats';
-import { personalRecords } from './lib/records';
+import { ymdLocal } from './lib/format';
+import { sumKm, summaryOf, monthBuckets, weekBuckets, yearBuckets } from './lib/stats';
 import { getRunSurface, setRunSurface, type Surface } from './lib/wearModel';
 import { parseRoute, projectRoute, LatLon } from './lib/route';
 import { DARK_MAP_STYLE } from './lib/mapStyle';
@@ -547,6 +546,8 @@ function DrumColumn({ items, selectedIndex, onChange }: {
       ref.current?.scrollToOffset({ offset: Math.max(0, selectedIndex) * DRUM_ITEM_H, animated: false });
     }, 60);
     return () => clearTimeout(t);
+    // 마운트 시 1회 초기 위치로만 스크롤(selectedIndex 변화는 사용자 스크롤이 주도) — 의도된 mount-only.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const select = (i: number) => {
     setActive(i); onChange(i);
@@ -709,10 +710,6 @@ export default function HistoryScreen({
     ? (selYearBuckets.some(v => v > 0) ? { title: '월별 거리', data: selYearBuckets.map(v => displayNum(v, unit, 1)), labels: MONTH_LABELS } : chart['년'])
     : allYearsChart;
 
-  const pr = personalRecords(runs);
-
-  const isCurrentMonth = selYear === now.getFullYear() && selMonth === now.getMonth();
-  const isCurrentYear = selYearYear === now.getFullYear();
   const weekLabel = weekOffset === 0 ? '이번 주' : weekOffset === 1 ? '지난 주' : `${weekOffset}주 전`;
   const periodTitle = period === '주' ? weekLabel
     : period === '월' ? `${selYear}년 ${selMonth+1}월`
