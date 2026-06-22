@@ -104,8 +104,10 @@ const brandRank = (b: string): number => {
   const i = BRAND_PRIORITY.findIndex((p) => p.toLowerCase() === b.toLowerCase());
   return i === -1 ? BRAND_PRIORITY.length : i;
 };
+// 대소문자만 다른 같은 브랜드('ASICS' vs 'Asics')는 한 번만 노출한다(중복 칩 방지) —
+// 비교는 normalize(소문자·여백 무시)로, 표기는 첫 등장값 유지. 시드가 흔들려도 UI 안 깨짐.
 export const BRANDS: string[] = SHOE_MODELS.reduce<string[]>((acc, m) => {
-  if (!acc.includes(m.brand)) acc.push(m.brand);
+  if (!acc.some((b) => normalize(b) === normalize(m.brand))) acc.push(m.brand);
   return acc;
 }, []).sort((a, b) => brandRank(a) - brandRank(b) || a.localeCompare(b));
 
