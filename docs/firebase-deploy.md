@@ -1,7 +1,9 @@
 # Keego Firebase 배포 가이드 (Firestore 정본 전환)
 
 > 프로젝트: `keego-620b8` (`.firebaserc`). Phase 2(클라우드 동기)·Phase 3(랭킹)·
-> Phase 4(카카오/네이버 커스텀 토큰 Functions)가 Firebase 정본으로 동작한다.
+> Phase 4(카카오/네이버 커스텀 토큰 Functions)·**Phase 5b(신발/런 CRUD + 부팅/새로고침)**가
+> 모두 Firebase 정본으로 동작한다 — 앱의 모든 라이브 데이터 경로가 Firestore 다(Render REST 는
+> Stage 0 일회성 이관용으로만 잔존, `docs/backend-deploy.md` 참고).
 > ⚠️ **사용자 액션**: 배포는 Firebase 로그인이 필요하므로 사람이 직접 수행한다.
 
 ## 0. 사전 준비 (1회)

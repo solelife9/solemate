@@ -1,4 +1,15 @@
-# Keego 백엔드 Render 배포 가이드
+# Keego 백엔드 Render 배포 가이드 (⚠️ DEPRECATED — Firestore 정본으로 이전됨)
+
+> **상태(2026-06-22, Phase 5b 완료)**: 앱의 신발/런·랭킹·클라우드 동기 정본은 모두
+> **Firestore**다(`docs/firebase-deploy.md`). 이 Render 백엔드는 더 이상 라이브 데이터
+> 경로가 아니다 — 유일한 잔존 용도는 **Stage 0 일회성 REST→Firestore 이관**(기존 사용자
+> 데이터가 Firestore 에 없을 때 1회 시드, `lib/restToFirestoreMigration.ts`)뿐이다. 모든
+> 사용자가 이관된 뒤 Render 서비스를 종료할 수 있다(사용자 액션). 아래 내용은 그 이관 기간
+> 동안의 참고용이며, 새 기능은 이 백엔드에 추가하지 않는다.
+>
+> 코드 표면: `lib/api.ts` 에서 부팅 이관이 쓰는 읽기(`apiAuth`/`apiGetShoes`/`apiGetRuns`)와
+> 역지오코딩용 `fetchWithTimeout` 만 라이브로 쓰인다. 쓰기 함수(`apiAddShoe`/`apiPatch*`/
+> `apiDelete*` 등)는 死코드(후속 정리 대상).
 
 > 대상 repo: `solelife9/solelife-backend` (별도 저장소, `C:\Users\user\solelife-backend`).
 > Node/Express + better-sqlite3, `/api/v1` 진척 API + 기존 `/api/auth|shoes|runs`.

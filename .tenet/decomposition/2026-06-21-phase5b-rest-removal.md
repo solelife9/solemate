@@ -1,6 +1,17 @@
 # Phase 5b — 신발/런 CRUD REST 제거 → Firestore 정본 (계획)
 
-작성: 2026-06-21 · 상태: 계획(미착수) · 위험도: **높음(코어 데이터 경로)**
+작성: 2026-06-21 · 상태: **Stage 0–3 + 문서 완료(2026-06-22)**, Stage 4(死코드) 일부 보류 · 위험도: 높음
+
+## 진행 현황(2026-06-22)
+- ✅ Stage 0 — REST→Firestore 일회성 이관(`lib/restToFirestoreMigration.ts`).
+- ✅ Stage 1 — 클라이언트 id seam(`lib/genId.ts`).
+- ✅ Stage 2a/2b — 신발/런 쓰기 Firestore-only(REST add/patch/delete 제거).
+- ✅ Stage 3 — 부팅/새로고침 Firestore-only(REST 읽기 + 큐/역등록 死코드 제거). 테스트 16 스위트 마이그레이션.
+- ✅ Stage 5(문서) — backend-deploy(deprecated)·firebase-deploy·harness/current.md 갱신.
+- ◐ Stage 4(死코드 삭제) **일부 보류**: lib/api 미사용 쓰기 함수(apiAddShoe/apiPatch*/apiDelete*)와
+  그 단위테스트, boot 'error' 死 UI(App.bootcache/coldstart 가 참조), runPersistence 큐 함수,
+  recordsToBackRegister, deviceId/Stage0 이관 코드는 **무해한 死코드**라 Render 은퇴 시 일괄 정리
+  권장(지금 제거하면 pre-existing flaky 스위트로 churn 번짐 — 비용 대비 가치 낮음).
 
 ## 목표 / 비목표
 - **목표**: 신발/런의 1차 데이터 경로에서 Render REST(`solelife-backend`)를 완전히 제거하고,
