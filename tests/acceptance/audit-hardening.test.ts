@@ -74,7 +74,7 @@ import RunGoalScreen from '../../RunGoalScreen.rn';
 import RunCountdownScreen from '../../RunCountdownScreen.rn';
 // ── C 묶음(폼 + 피드백) 도구 ─────────────────────────────────────────────────
 import HomeScreen from '../../HomeScreen.rn';
-import HistoryScreen from '../../HistoryScreen.rn';
+import HistoryScreen, {RunForm} from '../../HistoryScreen.rn';
 import {runToastAction, getCurrentToast, dismissToast, TOAST_UNDO_LABEL} from '../../lib/toast';
 import {maskDuration, maskDate, validateRunForm} from '../../lib/inputMask';
 import {syncLabel} from '../../lib/syncStatus';
@@ -523,6 +523,10 @@ describe('Audit Hardening 수용', () => {
       await AsyncStorage.clear();
       await AsyncStorage.setItem('onboarded', '1');
       await AsyncStorage.setItem('loc_perm_primed', '1');
+      // Stage 3(Firestore 정본): 부팅은 REST GET 이 아니라 부팅 캐시에서 신발/런을 읽는다.
+      // 따라서 시드도 캐시로 한다(과거 REST 목 시드 → 캐시 시드). 삭제→undo 의 실제 계약은 동일.
+      await AsyncStorage.setItem('cache_shoes_v1', JSON.stringify([{id: 's1', name: 'Nike Pegasus', max_km: 600, start_km: 0}]));
+      await AsyncStorage.setItem('cache_runs_v1', JSON.stringify([{id: 'r1', shoe_id: 's1', km: 50, run_date: '2026-06-01', duration: 1800}]));
       // r1 의 사이드키 원본(완주 저장이 남긴 것과 동형) — 삭제 시 지워지고 undo 시 바이트 그대로 원복돼야 한다.
       await AsyncStorage.setItem('route_r1', 'RT');
       await AsyncStorage.setItem('time_r1', '08:30');
@@ -597,21 +601,19 @@ describe('Audit Hardening 수용', () => {
       expect(validateRunForm({shoeId: 'a', dist: '', date: '2026-06-01'}).dist).toBeTruthy();
       expect(validateRunForm({shoeId: 'a', dist: '5', date: '2026-06-01'})).toEqual({});
 
-      // 화면: 기록 → '수동 기록 추가' → RunForm 이 KeyboardAvoidingView 로 감싸여 렌더된다.
-      const onAddRun = jest.fn();
-      const r = renderTree(el(HistoryScreen, {shoes: [C_SHOE], runs: [], onAddRun}));
-      act(() => {
-        pressableByLabel(r.root, '수동 기록 추가').props.onPress();
-      });
+      // 화면: RunForm(추가 모드 initial=null) 이 KeyboardAvoidingView 로 감싸여 렌더된다.
+      // (수동 추가 진입 버튼은 e67930f 에서 제거됨 — 폼 컴포넌트 자체의 계약을 직접 검증한다.)
+      const onSubmit = jest.fn();
+      const r = renderTree(el(RunForm, {shoes: [C_SHOE], unit: 'km', initial: null, onCancel: () => {}, onSubmit}));
       // 키보드 회피 — 입력칸/저장 버튼이 키보드에 가리지 않게 폼 전체를 감싼다(내장 RN만).
       expect(r.root.findAllByType(KeyboardAvoidingView).length).toBeGreaterThan(0);
 
-      // 인라인 검증(화면): 거리를 비운 채 '추가하기' → 거리 오류가 인라인으로 뜨고 onAddRun 미호출.
+      // 인라인 검증(화면): 거리를 비운 채 '추가하기' → 거리 오류가 인라인으로 뜨고 onSubmit 미호출.
       act(() => {
         pressableByText(r.root, '추가하기').props.onPress();
       });
       expect(hasLabel(r.root, '거리 오류')).toBe(true);
-      expect(onAddRun).not.toHaveBeenCalled();
+      expect(onSubmit).not.toHaveBeenCalled();
     });
 
     test('새로고침: Home/History가 RefreshControl로 동기화 재시도', () => {
@@ -637,8 +639,8 @@ describe('Audit Hardening 수용', () => {
         refreshHandler(home.root)();
       });
       expect(homeRefresh).toHaveBeenCalledTimes(1);
-      // 마지막 동기화 칩이 화면에 보인다(방금 동기화한 시각이라 '방금 동기화' 라벨).
-      expect(renderedText(home.root)).toContain('방금 동기화');
+      // (동기화 상태 칩은 사용자 요청으로 HomeScreen 에서 제거됨 — 라벨 렌더 단언 제거.
+      //  syncLabel 순수함수 계약은 위에서 검증. RefreshControl→onRefresh 배선이 핵심 계약.)
 
       // History: 당겨서 새로고침 → onRefresh 가 호출된다(같은 재시도 진입점).
       const histRefresh = jest.fn();
@@ -726,6 +728,11 @@ describe('Audit Hardening 수용', () => {
       const runs = [mkRun({id: 'r1'}), mkRun({id: 'r2', date: '5월 29일'})];
       const shoe: Shoe = {id: 'a', brand: 'Nike', model: 'Pegasus 41', used: 100, max: 600, condition: '양호'};
       const r = renderTree(el(HistoryScreen, {shoes: [shoe], runs}));
+      // 기본 기간은 '월'(날짜 필터) — 시드 런엔 run_date 가 없어 걸러진다. '전체' 로 전환하면
+      // displayRuns === runs 가 되어 전체 배열 가상화/keyExtractor 계약을 그대로 검증할 수 있다.
+      act(() => {
+        pressableByText(r.root, '전체').props.onPress();
+      });
 
       const lists = r.root.findAllByType(FlatList);
       expect(lists.length).toBe(1);
@@ -934,44 +941,29 @@ describe('Audit Hardening 수용', () => {
       }
     });
 
-    test('gloss 클립: 단일 Button 의 상단 광택이 위쪽 모서리를 RADIUS.btn 으로 둥글린다(모서리 삐짐 회귀 가드)', () => {
-      // code_critic(Finding 2): base 에 overflow:hidden 이 없어(글로우 보존) gloss(full-width
-      // 1px plain View)의 top-left/right 모서리가 클립되지 않으면 흰 사각 픽셀이 둥근 모서리
-      // 밖으로 삐져나온다. gloss 가 스스로 borderTopLeft/RightRadius(=RADIUS.btn)를 가져
-      // 시각 동등을 회복해야 한다. 활성 CTA 에서만 gloss 가 렌더된다(disabled/ghost 엔 없음).
+    test('CTA 표면: 활성 Button 은 RADIUS.btn 로 self-round 하는 그라데이션 Rect 를 깔고, disabled 는 flat(그라데이션 0)', () => {
+      // (디자인 변경) 과거 plain-View gloss(1px 흰 띠)는 SVG GradientFill 로 대체됐다 — 그라데이션
+      // Rect 가 rx/ry=RADIUS.btn 으로 스스로 둥글려, base 에 overflow:hidden(글로우 보존을 위해
+      // 없음) 없이도 모서리 삐짐이 원천 차단된다. 그 계약을 회귀 가드로 검증한다.
       const b = renderTree(el(Button, {label: '시작', onPress: () => {}}));
-      // gloss = 높이 1px 의 흰 반투명 plain View(아이콘/라벨/그라데이션 Svg 와 구분).
-      const glossNodes = b.root.findAll((n: ReactTestRenderer.ReactTestInstance) => {
-        const flat = StyleSheet.flatten(n.props && n.props.style) as
-          | {height?: number; backgroundColor?: string; borderTopLeftRadius?: number; borderTopRightRadius?: number}
-          | undefined;
-        return (
-          !!flat &&
-          flat.height === 1 &&
-          typeof flat.backgroundColor === 'string' &&
-          /rgba\(255,\s*255,\s*255/.test(flat.backgroundColor)
-        );
-      });
-      // RN 의 View 는 composite+host 두 인스턴스로 잡히므로 ≥1(둘 다 동일 gloss 스타일).
-      expect(glossNodes.length).toBeGreaterThanOrEqual(1);
-      // 매칭된 gloss 노드는 모두 위쪽 두 모서리를 RADIUS.btn 으로 둥글린다(삐짐 방지).
-      glossNodes.forEach(n => {
-        const flat = StyleSheet.flatten(n.props.style) as {
-          borderTopLeftRadius?: number;
-          borderTopRightRadius?: number;
-        };
-        expect(flat.borderTopLeftRadius).toBe(RADIUS.btn);
-        expect(flat.borderTopRightRadius).toBe(RADIUS.btn);
+      const rects = b.root.findAll(
+        (n: ReactTestRenderer.ReactTestInstance) =>
+          !!n.type && (n.type as {displayName?: string}).displayName === 'Rect',
+      );
+      expect(rects.length).toBeGreaterThanOrEqual(1); // 활성 CTA = 그라데이션 Rect 1개+
+      rects.forEach(n => {
+        expect(n.props.rx).toBe(RADIUS.btn); // 자체 라운딩 — 모서리 삐짐 방지
+        expect(n.props.ry).toBe(RADIUS.btn);
       });
       act(() => b.unmount());
 
-      // disabled CTA 는 그라데이션/글로우/gloss 를 끄고 flat 표면으로 떨어진다(gloss 0).
+      // disabled CTA 는 그라데이션/글로우를 끄고 flat 표면으로 떨어진다(그라데이션 Rect 0).
       const d = renderTree(el(Button, {label: '비활성', onPress: () => {}, disabled: true}));
-      const dGloss = d.root.findAll((n: ReactTestRenderer.ReactTestInstance) => {
-        const fl = StyleSheet.flatten(n.props && n.props.style) as {height?: number; backgroundColor?: string} | undefined;
-        return !!fl && fl.height === 1 && typeof fl.backgroundColor === 'string' && /rgba\(255,\s*255,\s*255/.test(fl.backgroundColor);
-      });
-      expect(dGloss.length).toBe(0);
+      const dRects = d.root.findAll(
+        (n: ReactTestRenderer.ReactTestInstance) =>
+          !!n.type && (n.type as {displayName?: string}).displayName === 'Rect',
+      );
+      expect(dRects.length).toBe(0);
       act(() => d.unmount());
     });
 

@@ -236,7 +236,9 @@ function CourseMap({ points }: { points: LatLon[] }) {
 // 한 폼으로 '수동 입력'(initial=null)과 '편집'(initial=Run)을 모두 처리한다. 거리는
 // 표시 단위(km|mi)로 입력받아 displayToKm로 저장 표준 km으로 되돌리고, 시간은 'MM:SS'를
 // 초로, 날짜는 'YYYY-MM-DD'로 받는다. 신발은 칩으로 고른다(편집 시 원래 신발이 프리필).
-function RunForm({
+// 수동 추가/편집 폼. initial=null → 추가 모드. 외부 노출은 수용 테스트가 폼 자체(KeyboardAvoiding
+// View·인라인 검증)를 직접 검증하기 위함(추가 진입 버튼은 e67930f 에서 제거됨 — 폼은 편집에 잔존).
+export function RunForm({
   shoes, unit, initial, onCancel, onSubmit,
 }: {
   shoes: Shoe[];
