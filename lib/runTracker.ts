@@ -63,6 +63,19 @@ export interface RunTrackerConfig {
   t0?: number;
   /** 누적 GPS stall ms(복구 시드/테스트용; 기본 0). elapsed 에서 빠지는 死구간 시간. */
   stalledMs?: number;
+  /**
+   * 크래시 복구 '이어 달리기' 시드 — 직전 스냅샷의 누적 거리(km). 기본 0.
+   * 새 fix는 여기서부터 누적된다. (t0 는 호출자가 now − elapsed 로 줘 경과시간을 잇는다.)
+   */
+  seedDist?: number;
+  /**
+   * 복구 시드 경로점(지도 폴리라인 연속용). 주의: lastGood 는 일부러 시드하지 않는다 —
+   * 크래시 공백 동안 주자가 이동했을 수 있어, 재개 후 *첫 fix* 가 새 앵커가 되게 한다
+   * (공백 구간을 가로지르는 허위 거리 세그먼트 방지). 거리는 seedDist 로만 잇는다.
+   */
+  seedPts?: {lat: number; lon: number}[];
+  /** 복구 시드 위치 라벨 — 이미 알고 있으면 재역지오코딩을 막는다(firstFix 억제). */
+  seedLocation?: string;
 }
 
 class RunTracker {
@@ -143,6 +156,21 @@ class RunTracker {
     this.frozenElapsed = null;
     this.active = true;
     this.firstFixEmitted = false;
+
+    // ── 크래시 복구 '이어 달리기' 시드 ──────────────────────────────────
+    // seed* 가 없으면(일반 시작) 위 초기화 그대로 — fresh-run 경로는 바이트 동일하다.
+    if (config.seedDist && config.seedDist > 0) this.dist = config.seedDist;
+    if (config.seedPts && config.seedPts.length > 0) {
+      // 경로 폴리라인만 잇는다. lastGood 는 비워 둔 채(=null) 둬, 재개 후 첫 fix 가
+      // 새 앵커가 되도록 한다 — 공백을 가로지르는 허위 거리 누적을 막는다.
+      this.pts = config.seedPts.map(p => ({lat: p.lat, lon: p.lon}));
+      this.fixIndex = this.pts.length;
+    }
+    if (config.seedLocation) {
+      // 위치를 이미 알면 첫 fix 역지오코딩(firstFix 이벤트)을 억제한다.
+      this.location = config.seedLocation;
+      this.firstFixEmitted = true;
+    }
   }
 
   /** Stop accepting fixes (data is retained for save). Idempotent. */

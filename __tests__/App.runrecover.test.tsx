@@ -114,7 +114,7 @@ async function mountAndSettle() {
   return renderer;
 }
 
-// Pull the recover Alert's button list (the [복구]/[버리기] actions).
+// Pull the recover Alert's button list (버리기 / 기록 저장 / 이어 달리기 actions).
 function recoverButtons(alertSpy: jest.SpyInstance): any[] {
   const call = alertSpy.mock.calls.find(c => String(c[0]).includes('미완료 런'));
   if (!call) throw new Error('recover Alert was not shown');
@@ -134,10 +134,11 @@ test('a persisted in-progress snapshot surfaces a recover/discard prompt on laun
   await mountAndSettle();
 
   const btns = recoverButtons(alertSpy);
-  expect(btns.map(b => b.text).sort()).toEqual(['버리기', '복구']);
+  // 3-way 선택: 버리기 / 기록 저장(검토 후 저장) / 이어 달리기(GPS 재가동 후 계속).
+  expect(btns.map(b => b.text).sort()).toEqual(['기록 저장', '버리기', '이어 달리기']);
 });
 
-test('복구 restores the run (distance/time/goal/cadence) and saving persists the restored distance + route to cache (no REST POST)', async () => {
+test('기록 저장 restores the run (distance/time/goal/cadence) and saving persists the restored distance + route to cache (no REST POST)', async () => {
   await AsyncStorage.setItem(SNAPSHOT_KEY, JSON.stringify(SNAP));
   const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
   const calls = mockBackend();
@@ -145,8 +146,8 @@ test('복구 restores the run (distance/time/goal/cadence) and saving persists t
   const renderer = await mountAndSettle();
   const root = renderer.root;
 
-  // Choose 복구 → the run review (done) screen mounts seeded from the snapshot.
-  const recover = recoverButtons(alertSpy).find(b => b.text === '복구');
+  // Choose 기록 저장 → the run review (done) screen mounts seeded from the snapshot.
+  const recover = recoverButtons(alertSpy).find(b => b.text === '기록 저장');
   await act(async () => {
     recover.onPress();
   });
@@ -201,4 +202,33 @@ test('버리기 clears the persisted snapshot so it cannot spuriously resume', a
 
   // The snapshot is gone — a relaunch finds nothing to resume.
   expect(await AsyncStorage.getItem(SNAPSHOT_KEY)).toBeNull();
+});
+
+test('이어 달리기 mounts the live (running) screen — not the done review — and keeps the snapshot for continued recording (P1-6)', async () => {
+  await AsyncStorage.setItem(SNAPSHOT_KEY, JSON.stringify(SNAP));
+  const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+  mockBackend();
+
+  const renderer = await mountAndSettle();
+  const root = renderer.root;
+
+  // Choose 이어 달리기 → GPS/센서 재가동 경로(phase='running'), 누적 거리·경과 시드.
+  const cont = recoverButtons(alertSpy).find(b => b.text === '이어 달리기');
+  expect(cont).toBeDefined();
+  await act(async () => {
+    cont.onPress();
+  });
+  for (let i = 0; i < 6; i++) {
+    await act(async () => {
+      await Promise.resolve();
+    });
+  }
+
+  // 검토(done) 화면이 아니라 라이브 러닝 화면이어야 한다 — done 전용 문구가 없다.
+  const screen = allText(root);
+  expect(screen).not.toContain('목표 5km 완료'); // done 요약 문구(=review 경로) 부재
+  // 스냅샷은 유지된다(이어 달리는 중 — 저장/버리기 전까지 영속). 버리기와 구분되는 계약.
+  expect(await AsyncStorage.getItem(SNAPSHOT_KEY)).not.toBeNull();
+
+  act(() => renderer.unmount());
 });

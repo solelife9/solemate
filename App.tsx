@@ -251,6 +251,8 @@ function Main(){
   // audit#2: 앱 시작 시 감지된 미완료 런 스냅샷. 사용자가 '복구' 선택 시 done
   // 화면으로 시드되어 검토 후 저장/버리기를 결정한다(데이터 유실 금지).
   const [resumeSnap,setResumeSnap]=useState<RunSnapshot|null>(null);
+  // 복구 모드: 'review'=스냅샷을 done 화면에 띄워 저장만, 'continue'=GPS 재가동해 이어 달리기.
+  const [resumeMode,setResumeMode]=useState<'review'|'continue'>('review');
   // ── 사용자 설정(ProfileScreen 설정 4행이 구동) ─────────────────────────────
   // 거리 단위(표시 전용 — 저장 표준은 항상 km), 주간 목표(km), 신발 교체 알림.
   // loadSettings로 AsyncStorage(settings_unit/goal_weekly_km/settings_alerts)에서
@@ -542,11 +544,19 @@ function Main(){
       asked=true;
       Alert.alert(
         '미완료 런 발견',
-        `${snap.dist.toFixed(2)}km · ${fmtTime(snap.elapsed)} 기록이 남아 있습니다.\n복구해서 저장하시겠어요?`,
+        `${snap.dist.toFixed(2)}km · ${fmtTime(snap.elapsed)} 기록이 남아 있습니다.\n이어서 달릴까요, 여기까지 저장할까요?`,
         [
           {text:'버리기',style:'destructive',onPress:()=>{void clearSnapshot();}},
-          {text:'복구',onPress:()=>{
+          {text:'기록 저장',onPress:()=>{
             setActiveRun({id:snap.shoe.id,name:snap.shoe.name,goalKm:snap.goalKm});
+            setResumeMode('review');
+            setResumeSnap(snap);
+            setOverlay('run');
+          }},
+          {text:'이어 달리기',onPress:()=>{
+            // GPS/센서를 다시 켜고 누적 거리·경과시간을 시드해 계속 달린다(엔진 seed*).
+            setActiveRun({id:snap.shoe.id,name:snap.shoe.name,goalKm:snap.goalKm});
+            setResumeMode('continue');
             setResumeSnap(snap);
             setOverlay('run');
           }},
@@ -1501,6 +1511,7 @@ function Main(){
         goalKm={activeRun.goalKm}
         weightKg={weightKg}
         resume={resumeSnap}
+        resumeMode={resumeMode}
         onSave={async(km,dur,cad,memo,route,location,splits)=>{
           const newId=await addRun(activeRun.id,km,today(),memo||'','gps',dur,cad,route,location);
           // per-km 스플릿(레코더가 1km 통과 시각으로 남긴 실측 구간)을 localId로 영속한다.
@@ -1676,12 +1687,15 @@ const boot=StyleSheet.create({
 });
 
 // ─── Live run screen (GPS / sensors / TTS engine + handoff Ring UI) ─────────
-function RunActiveScreen({shoe,insets,goalKm,weightKg,onSave,onDiscard,resume}:{shoe:{id:string;name:string};insets:any;goalKm:number;weightKg:number;onSave:(km:number,dur:number,cad:number,memo:string,route:string,location:string,splits:{km:number;paceSec:number;elevM:number}[])=>Promise<void>;onDiscard:()=>void;resume?:RunSnapshot|null}){
+function RunActiveScreen({shoe,insets,goalKm,weightKg,onSave,onDiscard,resume,resumeMode}:{shoe:{id:string;name:string};insets:any;goalKm:number;weightKg:number;onSave:(km:number,dur:number,cad:number,memo:string,route:string,location:string,splits:{km:number;paceSec:number;elevM:number}[])=>Promise<void>;onDiscard:()=>void;resume?:RunSnapshot|null;resumeMode?:'review'|'continue'}){
+  // 'continue' = 스냅샷에서 GPS 를 재가동해 이어 달린다(엔진 seed*). 'review'(기본) =
+  // done 화면에서 검토·저장만. resume 가 없으면(일반 시작) 두 분기 모두 타지 않는다.
+  const isContinue=!!resume&&resumeMode==='continue';
   const ui=parseShoeName(shoe.name);
-  // 복구 모드: 미완료 런 스냅샷으로 done 화면을 시드해 검토 후 저장/버리기. GPS는
-  // 다시 시작하지 않는다(이미 기록된 거리/경로를 그대로 보존).
+  // 복구 모드: 'review' 는 스냅샷을 done 화면에 띄워 검토 후 저장/버리기(GPS 재시작 안 함).
+  // 'continue' 는 GPS/센서를 다시 켜고 누적 거리·경과를 시드해 running 으로 이어 달린다.
   const resumeRoute=resume?(()=>{const sr=simplifyRoute(resume.pts as any,200);return sr.length>=2?JSON.stringify(sr):'';})():'';
-  const [phase,setPhase]=useState<'running'|'done'>(resume?'done':'running');
+  const [phase,setPhase]=useState<'running'|'done'>(resume&&!isContinue?'done':'running');
   const [km,setKm]=useState(resume?resume.dist:0);
   const [elapsed,setElapsed]=useState(resume?resume.elapsed:0);
   const [,setGpsStatus]=useState('GPS 신호 찾는 중...');
@@ -1728,13 +1742,16 @@ function RunActiveScreen({shoe,insets,goalKm,weightKg,onSave,onDiscard,resume}:{
   // 요청한 위치 권한 결과(포그라운드/백그라운드). '계속 달리기'(거리 짧음 재시작) 시
   // 동일 권한으로 다시 트래킹을 시작하기 위해 보관한다.
   const permRef=useRef<RunPermissions>({foreground:true,background:false});
+  // 이어 달리기 시드를 마운트당 1회만 적용하기 위한 가드(짧은 런 '계속 달리기' 재시작과 분리).
+  const seededRef=useRef(false);
   // per-km 스플릿 누적(런 동안)과 마지막 km 경계의 시각/고도(구간 페이스·고도상승 계산용).
   const splitsRef=useRef<{km:number;paceSec:number;elevM:number}[]>([]);
   const lastSplitRef=useRef({elapsed:0,elevM:0});
 
   useEffect(()=>{
-    // 복구 모드는 이미 끝난 런을 검토만 한다 — GPS/센서/권한/TTS를 켜지 않는다.
-    if(resume) return;
+    // 'review' 복구는 이미 끝난 런을 검토만 한다 — GPS/센서/권한/TTS를 켜지 않는다.
+    // 'continue'(이어 달리기)는 아래로 진행해 엔진을 시드 재가동한다. 일반 시작도 진행.
+    if(resume&&!isContinue) return;
     // 공유 GPS 엔진(runTracker) 구독: 거리/시간/일시정지/死구간/권한 회수 상태가
     // 여기로 흘러와 화면 상태를 갱신한다. 포그라운드(watchPositionAsync)와
     // 백그라운드(task) fix가 모두 같은 엔진에 먹이므로, 화면off에서 누적된 거리도
@@ -1799,7 +1816,7 @@ function RunActiveScreen({shoe,insets,goalKm,weightKg,onSave,onDiscard,resume}:{
         if(femaleVoice) Tts.setDefaultVoice(femaleVoice.id);
       }catch{}
     })();
-    setTimeout(()=>{try{Tts.speak(`달리기를 시작합니다! 목표는 ${goalKm}킬로미터입니다.`);}catch{}},800);
+    setTimeout(()=>{try{Tts.speak(isContinue?`달리기를 이어갑니다. 현재 ${resume?.dist.toFixed(1)}킬로미터입니다.`:`달리기를 시작합니다! 목표는 ${goalKm}킬로미터입니다.`);}catch{}},800);
     (async()=>{
       // expo-location 통합 권한 게이트(android/ios 공통). 포그라운드 권한이 트래킹
       // 시작의 유일한 관문이다 — 거부 시 절대 시작하지 않는다(가비지 거리 금지).
@@ -1862,12 +1879,33 @@ function RunActiveScreen({shoe,insets,goalKm,weightKg,onSave,onDiscard,resume}:{
   // 백그라운드 task)을 시작한다. 거리/시간/일시정지/死구간 판정은 모두 엔진이
   // 소유하고 subscribe로 화면에 반영된다(이 함수는 delivery/타이머만 띄운다).
   async function beginRun(perm:RunPermissions){
+    // 이어 달리기(첫 진입에 한함): 스냅샷의 누적 거리·경로·경과시간을 엔진/화면에 시드한다.
+    // t0=now−elapsed 로 경과를 잇고, 死구간을 가로지르는 허위 거리를 막기 위해 거리는
+    // seedDist 로만 잇는다(엔진이 첫 fix 를 새 앵커로 삼음). '계속 달리기'(짧은 런 재시작)로
+    // 다시 호출될 땐 seed 하지 않는다 — 그 경로는 0 부터 새로 시작이 의도다.
+    const seed=isContinue&&resume&&!seededRef.current?resume:null;
+    seededRef.current=true; // 시드는 마운트당 첫 beginRun 1회만 — '계속 달리기' 재시작은 0부터.
+    if(seed){
+      runTracker.start({goalKm,shoe:{id:shoe.id,name:shoe.name},
+        t0:Date.now()-seed.elapsed*1000,seedDist:seed.dist,
+        seedPts:seed.pts as any,seedLocation:seed.location});
+      // 크래시 전 통과한 km 만큼 스플릿 슬롯을 채워, 재개 후의 km 경계부터 실측이 기록되게
+      // 한다(이전 구간 페이스는 스냅샷에 없어 복원 불가 — 0 으로 둠). 안내 km 도 시드한다.
+      splitsRef.current=Array.from({length:Math.floor(seed.dist)},(_,i)=>({km:i+1,paceSec:0,elevM:0}));
+      lastSplitRef.current={elapsed:seed.elapsed,elevM:0};
+      setKm(seed.dist);setElapsed(seed.elapsed);setCadence(seed.cadence);setAccuracyM(null);
+      setGpsStalled(false);setPermLost(false);setGpsStatus('GPS 신호 찾는 중...');
+      cadenceState.current=initStepCadence();cadRef.current=0;
+      locationRef.current=seed.location;locationFetched.current=!!seed.location;
+      announcedKm.current=Math.floor(seed.dist);
+    }else{
     runTracker.start({goalKm,shoe:{id:shoe.id,name:shoe.name}});
     splitsRef.current=[];lastSplitRef.current={elapsed:0,elevM:0};
     setKm(0);setElapsed(0);setCadence(0);setAccuracyM(null);
     setGpsStalled(false);setPermLost(false);setGpsStatus('GPS 신호 찾는 중...');
     cadenceState.current=initStepCadence();cadRef.current=0;
     locationRef.current='';locationFetched.current=false;announcedKm.current=0;
+    }
     // 케이던스(걸음수): OS 걸음 센서(expo-sensors Pedometer)의 누적 걸음수를 받아 분당
     // 비율로 spm 을 산출한다(가속도 10Hz 피크검출은 ~170을 ~90으로 절반 누락해 교체).
     // ACTIVITY_RECOGNITION 런타임 권한 필요 — 거부/미지원 기기에선 케이던스만 0(러닝은 계속).

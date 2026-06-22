@@ -215,3 +215,65 @@ describe('GPS stall 시간 elapsed 제외', () => {
     expect(t.getElapsed()).toBe(7);
   });
 });
+
+// ── 크래시 복구 '이어 달리기' 시드 (P1-6) ──────────────────────────────
+describe('recovery seed (이어 달리기)', () => {
+  test('seedDist 부터 거리를 잇고, 공백을 가로지르는 허위 세그먼트를 만들지 않는다', () => {
+    const {t, set} = makeEngine();
+    // 호출자는 t0 = now − elapsed*1000 로 줘 경과시간을 잇는다.
+    set(200000);
+    t.start({
+      goalKm: 5,
+      shoe: {id: 's1', name: 'X'},
+      t0: 200000 - 600 * 1000, // 10분 경과 지점에서 재개
+      seedDist: 2.5,
+      seedPts: [{lat: 37.4, lon: LON}, {lat: 37.45, lon: LON}], // 크래시 전 경로(멀리 떨어짐)
+      seedLocation: '서울, 종로구',
+    });
+
+    // 재개 즉시: 거리는 시드값, 경과는 t0 기준으로 이어진다.
+    expect(t.getDistanceKm()).toBe(2.5);
+    expect(t.getElapsed()).toBe(600);
+
+    // 재개 후 첫 fix(시드 경로와 한참 떨어진 지점) — 새 앵커가 될 뿐, 거리는 안 는다.
+    set(203000);
+    t.ingestFix(fix(37.5, LON, 5, 203000));
+    expect(t.getDistanceKm()).toBe(2.5); // 공백을 가로지른 허위 거리 없음
+
+    // 그 다음 실제 이동분만 누적된다.
+    set(206000);
+    t.ingestFix(fix(37.5003, LON, 5, 206000));
+    expect(t.getDistanceKm()).toBeGreaterThan(2.5);
+  });
+
+  test('seedPts 는 경로 폴리라인을 잇고, firstFix 는 위치 시드가 있으면 억제된다', () => {
+    const {t, set} = makeEngine();
+    const events: RunTrackerEvent[] = [];
+    t.subscribe(ev => events.push(ev));
+    set(200000);
+    t.start({
+      goalKm: 5,
+      shoe: {id: 's1', name: 'X'},
+      t0: 200000 - 300 * 1000,
+      seedDist: 1.2,
+      seedPts: [{lat: 37.4, lon: LON}, {lat: 37.45, lon: LON}],
+      seedLocation: '서울, 종로구',
+    });
+    // 경로점이 보존된다(지도 연속).
+    expect(t.getPoints().length).toBe(2);
+
+    // 재개 후 fix 들 — firstFix 이벤트가 발생하지 않아야 한다(위치 이미 앎).
+    set(203000);
+    t.ingestFix(fix(37.5, LON, 5, 203000));
+    set(206000);
+    t.ingestFix(fix(37.5003, LON, 5, 206000));
+    expect(events.some(e => e.type === 'firstFix')).toBe(false);
+  });
+
+  test('시드 없는 일반 시작은 0 에서 출발한다(회귀 가드)', () => {
+    const {t} = makeEngine();
+    t.start({goalKm: 5, shoe: {id: 's1', name: 'X'}, t0: 100000});
+    expect(t.getDistanceKm()).toBe(0);
+    expect(t.getPoints().length).toBe(0);
+  });
+});
