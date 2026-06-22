@@ -102,3 +102,4 @@ firebase-adminsdk*.json
 ios/Secrets.xcconfig
 # Generated JS bundle for release APK (regenerated via npm run bundle:android)
 android/app/src/main/assets/index.android.bundle
+*.jks

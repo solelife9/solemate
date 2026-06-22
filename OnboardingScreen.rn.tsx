@@ -24,10 +24,12 @@ import {
   Animated,
   Easing,
   AccessibilityInfo,
+  Linking,
   StyleProp,
   ViewStyle,
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import {PRIVACY_URL, TERMS_URL} from './lib/legalLinks';
 // 신발 브랜드/모델·권장수명은 data/shoeModels(단일 소스)에서 — 메인 AddShoe 화면과 동일.
 import {BRANDS, modelsForBrand, getRecommendedLifespanKm} from './data/shoeModels';
 import Svg, {
@@ -1187,7 +1189,7 @@ function Ready({registered, onFinish, onSkip, insetTop, insetBottom}: ScreenProp
           <Text style={{fontFamily: FONT, fontSize: 15, color: T3, fontWeight: '500'}}>이메일로 계속하기</Text>
         </Pressable>
         <Text style={{fontFamily: FONT, fontSize: 11, color: T4, textAlign: 'center', lineHeight: 17, marginTop: 8}}>
-          계속 진행하면 Keego의 <Text style={{textDecorationLine: 'underline'}}>이용약관</Text>과 <Text style={{textDecorationLine: 'underline'}}>개인정보 처리방침</Text>에{'\n'}동의하는 것으로 간주됩니다.
+          계속 진행하면 Keego의 <Text style={{textDecorationLine: 'underline'}} accessibilityRole="link" accessibilityLabel="이용약관 열기" onPress={() => { Linking.openURL(TERMS_URL).catch(() => {}); }}>이용약관</Text>과 <Text style={{textDecorationLine: 'underline'}} accessibilityRole="link" accessibilityLabel="개인정보 처리방침 열기" onPress={() => { Linking.openURL(PRIVACY_URL).catch(() => {}); }}>개인정보 처리방침</Text>에{'\n'}동의하는 것으로 간주됩니다.
         </Text>
       </View>
     </View>

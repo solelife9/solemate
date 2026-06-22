@@ -36,3 +36,36 @@
 
 ## 4. 출시 순서(권장)
 1. 백엔드 배포 → 2. 실기기 QA → 3. 개인정보방침 호스팅 + 스토어 자산 → 4. **Android 먼저(내부테스트→프로덕션)** → 5. 맥에서 iOS 설정 → TestFlight → App Store
+
+## 5. 릴리스 서명·버전·개인정보 (P0-3 — 코드는 처리됨, 아래는 사용자 액션)
+
+### 5.1 Android 업로드 서명 (필수 — 현재 release 는 KEEGO_UPLOAD_* 미설정 시 debug 폴백)
+`android/app/build.gradle` 에 `release` signingConfig 를 추가했고, 비밀값은 저장소에 두지
+않는다(`~/.gradle/gradle.properties` 또는 CI 시크릿/`-P` 로 주입; `*.keystore`/`*.jks` gitignore).
+```bash
+# 1) 업로드 keystore 생성(1회 — 안전하게 백업! 분실 시 앱 업데이트 불가)
+keytool -genkeypair -v -keystore keego-upload.jks -alias keego-upload \
+  -keyalg RSA -keysize 2048 -validity 10000
+# 2) ~/.gradle/gradle.properties 에(저장소 밖, 커밋 금지):
+#   KEEGO_UPLOAD_STORE_FILE=/절대경로/keego-upload.jks
+#   KEEGO_UPLOAD_STORE_PASSWORD=****
+#   KEEGO_UPLOAD_KEY_ALIAS=keego-upload
+#   KEEGO_UPLOAD_KEY_PASSWORD=****
+# 3) AAB(Play 업로드 포맷) 빌드:
+cd android && ./gradlew bundleRelease   # app/build/outputs/bundle/release/app-release.aab
+# (Play App Signing 권장 — 업로드 키만 보관)
+```
+
+### 5.2 버전 체계
+`versionCode`/`versionName` 은 `gradle.properties`/`-P` 로 덮어쓴다(기본 1 / `1.0.0`).
+업로드마다 `KEEGO_VERSION_CODE` +1, `KEEGO_VERSION_NAME` SemVer:
+```bash
+./gradlew bundleRelease -PKEEGO_VERSION_CODE=2 -PKEEGO_VERSION_NAME=1.0.1
+```
+
+### 5.3 개인정보 처리방침 공개 URL
+- 정적 페이지: `docs/privacy.html`. 앱 내 링크는 `lib/legalLinks.ts`(온보딩 동의 문구 탭→열림).
+- **활성화(사용자)**: 저장소 → Settings → Pages → Source `main` / `/docs` → 저장.
+  → `https://solelife9.github.io/solemate/privacy.html` 열리는지 확인.
+- 스토어 등록 정보(Play Data safety / App Privacy)에도 **같은 URL** 입력.
+- ⚠️ 방침 본문은 초안 — 법적 자문 후 최종본으로 갱신.

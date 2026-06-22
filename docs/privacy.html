@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Keego 개인정보 처리방침</title>
+<meta name="robots" content="index,follow" />
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: #0A0A0C; color: #EDEDED;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
+    line-height: 1.7; -webkit-text-size-adjust: 100%;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 28px 20px 64px; }
+  header { border-bottom: 1px solid #232327; padding-bottom: 16px; margin-bottom: 8px; }
+  .brand { color: #FF6500; font-weight: 800; letter-spacing: -0.5px; font-size: 22px; }
+  h1 { font-size: 24px; margin: 14px 0 6px; letter-spacing: -0.5px; }
+  h2 { font-size: 17px; margin: 28px 0 8px; color: #FF8a3a; }
+  .meta { color: #9C9CA3; font-size: 13px; }
+  table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 14px; }
+  th, td { text-align: left; padding: 9px 10px; border: 1px solid #232327; vertical-align: top; }
+  th { background: #141417; color: #cfcfd3; font-weight: 600; }
+  ul { padding-left: 20px; }
+  li { margin: 5px 0; }
+  a { color: #FF8a3a; }
+  code { background: #141417; padding: 1px 5px; border-radius: 4px; font-size: 90%; }
+  .note { color: #9C9CA3; font-size: 13px; border-top: 1px solid #232327; margin-top: 32px; padding-top: 16px; }
+  strong { color: #fff; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">Keego</div>
+    <h1>개인정보 처리방침</h1>
+    <div class="meta">최종 수정일: 2026-06-17 · 문의: <a href="mailto:kmw0236@gmail.com">kmw0236@gmail.com</a></div>
+  </header>
+
+  <h2>1. 수집하는 개인정보 항목</h2>
+  <table>
+    <thead><tr><th>항목</th><th>수집 시점</th><th>목적</th></tr></thead>
+    <tbody>
+      <tr><td><strong>위치 정보(GPS 좌표·경로)</strong></td><td>러닝 추적 중(포그라운드/백그라운드)</td><td>거리·페이스·경로 기록</td></tr>
+      <tr><td><strong>동작 및 피트니스(걸음 수)</strong></td><td>러닝 중</td><td>케이던스(분당 걸음 수) 측정</td></tr>
+      <tr><td><strong>사진(선택)</strong></td><td>사용자가 신발 사진 등록 시</td><td>러닝화 카드 이미지</td></tr>
+      <tr><td><strong>러닝 기록</strong>(거리·시간·페이스·신발·메모)</td><td>러닝 저장 시</td><td>기록 보관·통계·신발 수명 추적</td></tr>
+      <tr><td><strong>기기 식별자 / 익명 계정 ID</strong></td><td>앱 최초 실행</td><td>기록 동기화(익명)</td></tr>
+      <tr><td><strong>푸시 토큰(FCM)</strong></td><td>알림 허용 시</td><td>교체 시기·리텐션 알림</td></tr>
+    </tbody>
+  </table>
+  <ul>
+    <li>이름·이메일 등 직접적 신원정보는 <strong>소셜 로그인(카카오·네이버·Google)을 사용할 때만</strong> 해당 제공자를 통해 최소 수집(닉네임 등)합니다. 이메일 회원가입을 쓰지 않으면 익명으로 동작합니다.</li>
+  </ul>
+
+  <h2>2. 이용 목적</h2>
+  <ul><li>러닝 기록·통계 제공, 러닝화 수명/교체 시점 추적, 랭킹·업적, 교체/리텐션 알림.</li></ul>
+
+  <h2>3. 보관 및 파기</h2>
+  <ul>
+    <li>기록은 사용자가 삭제하거나 계정을 삭제할 때까지 보관하며, 요청 시 지체 없이 파기합니다.</li>
+    <li>기기 내 로컬 저장(AsyncStorage)과 서버(동기화 시, Firebase Firestore)에 보관됩니다.</li>
+  </ul>
+
+  <h2>4. 제3자 제공 및 처리위탁</h2>
+  <ul>
+    <li><strong>Google Firebase</strong>(인증·푸시·분석/크래시 리포트): 익명 ID·푸시 토큰·크래시 로그 처리.</li>
+    <li><strong>지도/역지오코딩</strong>: 좌표→지역명 변환(OpenStreetMap Nominatim), 지도 표시(Google Maps).</li>
+    <li>위 사업자 외 제3자에게 개인정보를 판매하지 않습니다.</li>
+  </ul>
+
+  <h2>5. 권한 안내(거부 시 영향)</h2>
+  <ul>
+    <li><strong>위치</strong>: 거부 시 러닝 거리·경로 기록 불가. ‘항상 허용’은 화면을 꺼도 기록하기 위함.</li>
+    <li><strong>동작·피트니스</strong>: 거부 시 케이던스 측정 불가(다른 기능은 정상).</li>
+    <li><strong>사진</strong>: 거부 시 신발 사진만 등록 불가.</li>
+    <li><strong>알림</strong>: 거부 시 교체/리텐션 알림 미수신.</li>
+  </ul>
+
+  <h2>6. 이용자 권리</h2>
+  <ul><li>기록 조회·수정·삭제, 계정 삭제, 동의 철회를 앱 내 또는 아래 연락처로 요청할 수 있습니다.</li></ul>
+
+  <h2>7. 아동</h2>
+  <ul><li>만 14세 미만 아동을 대상으로 하지 않습니다.</li></ul>
+
+  <h2>8. 문의처</h2>
+  <ul><li>이메일: <a href="mailto:kmw0236@gmail.com">kmw0236@gmail.com</a></li></ul>
+
+  <div class="note">
+    이 페이지는 Keego 앱의 공개 개인정보 처리방침입니다(GitHub Pages 호스팅). 스토어 제출 정보 및
+    앱 내 링크가 이 URL 을 가리킵니다. 법적 자문 후 최종본으로 갱신하세요.
+  </div>
+</div>
+</body>
+</html>
