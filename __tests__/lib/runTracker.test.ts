@@ -176,3 +176,42 @@ test('emits firstFix once and pause/resume events with the auto flag', () => {
   expect(paused).toMatchObject({type: 'paused', auto: false});
   expect(resumed).toMatchObject({type: 'resumed', auto: false});
 });
+
+// ── GPS 死구간(stall) 시간 제외 (P1-5: 페이스 왜곡 방지) ──────────────────────────
+import {GPS_STALL_THRESHOLD_MS as TH} from '../../lib/gpsHealth';
+
+describe('GPS stall 시간 elapsed 제외', () => {
+  test('死구간 초과분은 elapsed 에서 빠진다(진행 중 + 종료 누적), 임계 이내는 정상', () => {
+    const t = new RunTracker();
+    let clock = 100000;
+    t.setNow(() => clock);
+    t.start({goalKm: 5, shoe: {id: 's1', name: 'X'}, t0: 100000});
+    t.ingestFix(fix(37.5, LON, 5, 100000)); // lastRecvMs=100000
+
+    // 무신호 (임계 + 12s): 진행 중 stall — 타이머는 임계 초까지만 흐르고 멈춘다(거리 없이 안 늘어남).
+    clock = 100000 + TH + 12000;
+    expect(t.getElapsed()).toBe(Math.floor(TH / 1000));
+
+    // fix 도착(간격 = 임계+12s) → 초과 12s 누적. elapsed 동일(역행 없음).
+    t.ingestFix(fix(37.5, LON, 5, clock));
+    expect(t.getElapsed()).toBe(Math.floor(TH / 1000));
+
+    // 이후 5s 정상 러닝(간격 < 임계) → 5s 그대로 흐른다.
+    clock += 5000;
+    t.ingestFix(fix(37.5003, LON, 5, clock));
+    expect(t.getElapsed()).toBe(Math.floor(TH / 1000) + 5);
+  });
+
+  test('정상 fix 간격(임계 이내)에서는 elapsed = 실시간(제외 0)', () => {
+    const t = new RunTracker();
+    let clock = 100000;
+    t.setNow(() => clock);
+    t.start({goalKm: 5, shoe: {id: 's1', name: 'X'}, t0: 100000});
+    t.ingestFix(fix(37.5, LON, 5, 100000));
+    clock = 100000 + 3000; // 3s 무신호(임계 이내)
+    expect(t.getElapsed()).toBe(3); // 제외 없음
+    t.ingestFix(fix(37.5, LON, 5, clock));
+    clock += 4000; // 또 4s
+    expect(t.getElapsed()).toBe(7);
+  });
+});
