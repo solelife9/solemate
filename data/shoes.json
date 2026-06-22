@@ -201,18 +201,6 @@
     },
     {
       "brand": "Adidas",
-      "model": "Adizero SL 2",
-      "type": "데일리",
-      "recommended": [
-        "데일리",
-        "장거리",
-        "템포"
-      ],
-      "category": "daily_trainer",
-      "recommendedKm": 650
-    },
-    {
-      "brand": "Adidas",
       "model": "Adizero SL2",
       "type": "데일리",
       "recommended": [
@@ -2145,28 +2133,6 @@
     },
     {
       "brand": "New Balance",
-      "model": "Fresh Foam X 1080 v14",
-      "type": "맥스쿠셔닝",
-      "recommended": [
-        "회복",
-        "장거리"
-      ],
-      "category": "max_cushion",
-      "recommendedKm": 700
-    },
-    {
-      "brand": "New Balance",
-      "model": "Fresh Foam X 1080 v15",
-      "type": "맥스쿠셔닝",
-      "recommended": [
-        "회복",
-        "장거리"
-      ],
-      "category": "max_cushion",
-      "recommendedKm": 700
-    },
-    {
-      "brand": "New Balance",
       "model": "Fresh Foam X 1080v14",
       "type": "데일리",
       "recommended": [
@@ -2226,17 +2192,6 @@
     {
       "brand": "New Balance",
       "model": "Fresh Foam X 880 v14",
-      "type": "데일리",
-      "recommended": [
-        "데일리",
-        "장거리"
-      ],
-      "category": "daily_trainer",
-      "recommendedKm": 650
-    },
-    {
-      "brand": "New Balance",
-      "model": "Fresh Foam X 880 v15",
       "type": "데일리",
       "recommended": [
         "데일리",
