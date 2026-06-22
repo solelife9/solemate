@@ -14,6 +14,7 @@
 // ============================================================================
 
 import type { BackupPayload } from './backup';
+import { mergeProgression } from './progression/mergeProgression';
 
 export type AuthState = 'signedOut' | 'signingIn' | 'signedIn' | 'error';
 export type AuthEvent = 'signInStart' | 'signInSuccess' | 'signInError' | 'signOut';
@@ -205,10 +206,13 @@ export function mergeCloudData(local: BackupPayload, remote: BackupPayload | nul
   if (remote == null) {
     return local;
   }
+  // progression(은퇴 신발·진척)은 단일 객체라 union/max 로 무손실 병합한다(mergeProgression).
+  const progression = mergeProgression(local.progression, remote.progression);
   return {
     shoes: mergeRecords(local.shoes, remote.shoes),
     runs: mergeRecords(local.runs, remote.runs),
     settings: { ...remote.settings, ...local.settings },
+    ...(progression ? { progression } : {}),
   };
 }
 

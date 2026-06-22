@@ -69,7 +69,7 @@ function toCloudUser(user: { uid: string; email?: string | null; displayName?: s
  * 원격 데이터가 어긋나도 형태를 깨지 않아 병합(cloudSync)이 안전하게 동작한다.
  */
 function normalizePayload(data: Record<string, unknown>): BackupPayload {
-  return {
+  const base: BackupPayload = {
     shoes: Array.isArray(data.shoes) ? data.shoes : [],
     runs: Array.isArray(data.runs) ? data.runs : [],
     settings:
@@ -77,11 +77,18 @@ function normalizePayload(data: Record<string, unknown>): BackupPayload {
         ? (data.settings as Record<string, unknown>)
         : {},
   };
+  // 진척(은퇴 신발·랭크 등)은 객체일 때만 보존한다(없던 옛 백업은 누락 → 그대로 둠).
+  if (data.progression && typeof data.progression === 'object' && !Array.isArray(data.progression)) {
+    base.progression = data.progression as BackupPayload['progression'];
+  }
+  return base;
 }
 
-/** BackupPayload 를 firestore 문서로 직렬화(여분 필드 없이 세 키만). */
+/** BackupPayload 를 firestore 문서로 직렬화. progression 은 있을 때만 포함(하위호환). */
 function payloadToDoc(data: BackupPayload): Record<string, unknown> {
-  return { shoes: data.shoes, runs: data.runs, settings: data.settings };
+  const doc: Record<string, unknown> = { shoes: data.shoes, runs: data.runs, settings: data.settings };
+  if (data.progression) doc.progression = data.progression;
+  return doc;
 }
 
 /**

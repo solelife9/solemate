@@ -45,6 +45,31 @@ describe('firebaseCloudPort (Firebase 클라우드 포트)', () => {
     expect(pulled).toEqual(payload);
   });
 
+  test('progression(은퇴 신발 등)이 push→pull 라운드트립에서 보존된다', async () => {
+    const port = createFirebaseCloudPort();
+    await port.signIn('anonymous');
+
+    const payload: BackupPayload = {
+      shoes: [],
+      runs: [],
+      settings: {},
+      progression: {
+        earnedTitles: [],
+        equippedTitleKey: null,
+        seenUnlocks: ['rank_silver'],
+        retiredShoes: [{shoeId: 'x', name: '은퇴화', km: 600, retiredAt: '2026-01-01', retireYear: 2026, grade: 'gold'} as any],
+        points: 120,
+      },
+    };
+    await port.push(payload);
+
+    const pulled = await port.pull();
+    expect(pulled?.progression?.retiredShoes).toHaveLength(1);
+    expect(pulled?.progression?.retiredShoes[0].shoeId).toBe('x');
+    expect(pulled?.progression?.points).toBe(120);
+    expect(pulled?.progression?.seenUnlocks).toEqual(['rank_silver']);
+  });
+
   test('한 번도 push 하지 않은 계정의 pull 은 null', async () => {
     const port = createFirebaseCloudPort();
     await port.signIn('anonymous');

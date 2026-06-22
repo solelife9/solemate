@@ -12,10 +12,18 @@
 //     건드리지 않게 하여 데이터 파괴를 막는다(throw 전에는 절대 부분 복원하지 않는다).
 // ============================================================================
 
+import type {ProgressionState} from './progression/types';
+
 export interface BackupPayload {
   shoes: unknown[];
   runs: unknown[];
   settings: Record<string, unknown>;
+  /**
+   * 진척 상태(progression_v1: 랭크 캐시·타이틀·업적 seen·은퇴 신발·포인트). 클라우드 동기에서
+   * 백업/복원·병합해 재설치·기기변경 시 은퇴 신발/진척이 유실되지 않게 한다(선택 — 옛 백업
+   * 하위호환). 로컬 파일 백업(serializeBackup)에는 포함하지 않는다(클라우드 경로 전용).
+   */
+  progression?: ProgressionState;
 }
 
 export interface BackupV1 extends BackupPayload {

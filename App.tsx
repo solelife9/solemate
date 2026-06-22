@@ -38,7 +38,7 @@ import {getProgression, pickRecentAchievement, collectUnlockedKeys} from './lib/
 import {RANK_XP} from './lib/progression/rank';
 import {TIER_LABEL} from './theme';
 import CelebrationScreen, {CelebrationData} from './CelebrationScreen.rn';
-import {loadProgression} from './lib/progression/storage';
+import {loadProgression, saveProgression} from './lib/progression/storage';
 import type {ProgressionState, RetiredShoeRecord} from './lib/progression/types';
 import type {HomeProgression, HomeChallengeView} from './HomeScreen.rn';
 import {challengeProgress} from './lib/challenges';
@@ -863,6 +863,8 @@ function Main(){
     shoes:[...shoes,...tombstones.shoes],
     runs:[...runs,...tombstones.runs],
     settings:{unit,goal_weekly_km:goalWeeklyKm,alerts},
+    // 진척(은퇴 신발·랭크·업적 seen)도 클라우드 백업에 포함 — 재설치/기기변경 복원(유실 0).
+    ...(progState?{progression:progState}:{}),
   };
   // 가져오기: ProfileScreen이 parseBackup으로 *검증에 성공한* BackupV1만 넘겨준다.
   // 검증 실패 시엔 호출 자체가 없으므로 여기 도달하면 기존 데이터를 안전하게 교체한다.
@@ -893,6 +895,12 @@ function Main(){
       const en=typeof st.alerts.enabled==='boolean'?st.alerts.enabled:alerts.enabled;
       const th=Number(st.alerts.thresholdPct);
       changeAlerts({enabled:en,thresholdPct:Number.isFinite(th)?th:alerts.thresholdPct});
+    }
+    // 진척 복원(은퇴 신발·랭크·업적 seen) — 머지 결과를 상태+영속(progression_v1)에 반영한다.
+    // 클라우드 머지(mergeCloudData)가 이미 local 진척과 union 한 값이라, 화면/저장 둘 다 안전.
+    if(data.progression&&typeof data.progression==='object'){
+      setProgState(data.progression as ProgressionState);
+      void saveProgression(data.progression as ProgressionState);
     }
   };
   const importBackup=(data:BackupV1)=>{
