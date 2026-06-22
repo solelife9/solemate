@@ -39,6 +39,7 @@ import {RANK_XP} from './lib/progression/rank';
 import {TIER_LABEL} from './theme';
 import CelebrationScreen, {CelebrationData} from './CelebrationScreen.rn';
 import {loadProgression, saveProgression} from './lib/progression/storage';
+import {mergeCelebBaseline} from './lib/celebrationBaseline';
 import type {ProgressionState, RetiredShoeRecord} from './lib/progression/types';
 import type {HomeProgression, HomeChallengeView} from './HomeScreen.rn';
 import {challengeProgress} from './lib/challenges';
@@ -334,9 +335,15 @@ function Main(){
     const currentAch=collectUnlockedKeys(view);
     const tier=String(view.rank.tier);
     const base=celebBaselineRef.current;
+    // 단조(monotonic) 베이스라인: 부팅 직후 데이터(shoes/runs)가 아직 안 실린 빈 상태로
+    // 이 effect 가 먼저 돌면 currentAch=[]/tier=bronze 다. 그걸 그대로 저장하면 저장된
+    // baseline 을 비워버려, 곧이어 Firestore/캐시에서 데이터가 실릴 때 모든 업적·랭크가
+    // '신규'로 오인돼 매 실행 셀러브레이션이 재폭주한다(사용자 보고 버그). 그래서 baseline 은
+    // union(업적)·max(랭크)로만 키워, 빈 상태가 기존 baseline 을 절대 축소하지 못하게 한다.
     const persist=(next:{ach:string[];tier:string})=>{
-      celebBaselineRef.current=next;
-      try{void AsyncStorage.setItem(CELEB_SEEN_KEY,JSON.stringify(next));}catch{}
+      const merged=mergeCelebBaseline(celebBaselineRef.current,next,RANK_XP as Record<string,number>);
+      celebBaselineRef.current=merged;
+      try{void AsyncStorage.setItem(CELEB_SEEN_KEY,JSON.stringify(merged));}catch{}
     };
     if(base===null){persist({ach:currentAch,tier});return;}
     const seen=new Set(base.ach);
