@@ -66,9 +66,23 @@ export async function resolveAppleCredential(): Promise<AppleAuthCredential> {
       nonce: hashedNonce,
     });
   } catch (e: any) {
+    const code = e?.code;
+    const msg = String(e?.message || '');
     // 사용자가 시트를 닫음(취소) — expo 는 ERR_REQUEST_CANCELED 코드로 던진다.
-    if (e?.code === 'ERR_REQUEST_CANCELED' || e?.code === 'ERR_CANCELED') {
+    if (code === 'ERR_REQUEST_CANCELED' || code === 'ERR_CANCELED') {
       throw new Error('Apple 로그인이 취소되었습니다.');
+    }
+    // unknown/failed — Apple 인증 자체가 실패. 시뮬레이터/기기에 Apple ID 가 로그인돼 있지
+    // 않으면 ASAuthorizationError.unknown("...failed for an unknown reason")으로 떨어지는데,
+    // 원문은 사용자에게 무의미하다 → 가장 흔한 원인을 짚는 안내로 바꾼다(code/메시지 양쪽 매칭).
+    if (
+      code === 'ERR_REQUEST_UNKNOWN' ||
+      code === 'ERR_REQUEST_FAILED' ||
+      /unknown reason|authorization attempt failed/i.test(msg)
+    ) {
+      throw new Error(
+        'Apple 로그인에 실패했어요. 기기 설정에서 Apple ID로 로그인되어 있는지 확인한 뒤 다시 시도해 주세요.',
+      );
     }
     throw e;
   }
