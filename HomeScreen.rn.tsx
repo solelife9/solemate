@@ -17,7 +17,7 @@ import {
   FONT, DISPLAY, SPACE, RADIUS, GUTTER, withAlpha, Shoe, SHOES, TIER_COLORS, TIER_LABEL,
 } from './theme';
 import type { RankTier } from './lib/progression/types';
-import { TabBar, KeegoWordmark, Button, SectionTitle, Pill, InjuryBanner } from './primitives';
+import { TabBar, KeegoWordmark, Button, SectionTitle, InjuryBanner } from './primitives';
 import { wearTier, WearTierTone } from './lib/shoe';
 import { Unit, displayNum } from './lib/units';
 import { assessShoeInjuryRisk } from './lib/injury';
@@ -331,35 +331,83 @@ function InsightCard({ shoe, unit, forecast }: { shoe: Shoe; unit: Unit; forecas
   );
 }
 
-// 신발 로테이션 추천(차별점). recommendRotation(App에서 신발+런으로 계산)이 활성
-// 2켤레+ 일 때만 picks 를 채우므로, 비었으면(1켤레/추천 없음) 통째로 숨긴다. runType
-// 미선택 기본은 '휴식·마모 분산' 추천 — 가장 오래 쉰 신발이 맨 위(rotation[0])에 온다.
-// 토큰만(색/폰트), 새 상태 없음(props 표시 전용).
-function RotationCard({ rotation, onPickShoe }: { rotation: RotationPick[]; onPickShoe?: (shoeId: string) => void }) {
+// 인사이트 배지 색 토큰 — 추천 언어 없이 데이터 기반으로만 표시.
+const INSIGHT_TONE: Record<string, { bg: string; text: string }> = {
+  neutral: { bg: CARD_HI,                         text: T3     },
+  warn:    { bg: withAlpha(WARN,   0.12),          text: WARN   },
+  good:    { bg: withAlpha(GOOD,   0.12),          text: GOOD   },
+  accent:  { bg: withAlpha(ACCENT, 0.12),          text: ACCENT },
+};
+
+// RotationPick 의 reason 문자열(lib/rotation 생성)에서 UI 인사이트를 파생한다.
+// 추천 언어('오늘 추천' 등) 없이 실제 사용 데이터(휴식 일수·빈도)만 표시.
+function insightBadge(
+  pick: RotationPick,
+  index: number,
+  total: number,
+): { badge: string; description: string; toneKey: string } {
+  const r = pick.reason;
+  const daysMatch = r.match(/(\d+)일 휴식/);
+  const days      = daysMatch ? parseInt(daysMatch[1], 10) : null;
+  const neverWorn = r.includes('아직 안 신은');
+  const usedToday = r.includes('오늘 신은');
+  const isCarbon  = r.includes('카본화');
+  const isFirst   = index === 0;
+  const isLast    = total > 1 && index === total - 1;
+
+  if (neverWorn)
+    return { badge: '미착용',       description: '아직 한 번도 신지 않은 신발입니다.',      toneKey: 'neutral' };
+  if (usedToday && isLast)
+    return { badge: '사용 빈도 높음', description: '현재 가장 많이 사용 중인 신발입니다.',    toneKey: 'accent'  };
+  if (usedToday)
+    return { badge: '오늘 사용',     description: '오늘 신은 신발입니다.',                   toneKey: 'good'    };
+  if (isCarbon) {
+    const dText = days != null ? `${days}일 미사용` : '휴식중';
+    return { badge: dText,           description: '레이스용으로 보관 중입니다.',              toneKey: 'neutral' };
+  }
+  if (isLast)
+    return { badge: '사용 빈도 높음', description: '현재 가장 많이 사용 중인 신발입니다.',    toneKey: 'accent'  };
+  if (isFirst && days != null && days > 6)
+    return { badge: `${days}일 미사용`, description: '최근 가장 오래 쉬고 있는 신발입니다.', toneKey: days > 14 ? 'warn' : 'neutral' };
+  if (days != null && days > 14)
+    return { badge: '장기 휴식중',   description: '로테이션에 포함해보세요.',                toneKey: 'warn'    };
+  if (days != null && days > 0)
+    return { badge: `${days}일 미사용`, description: '로테이션에 포함해보세요.',             toneKey: 'neutral' };
+  return   { badge: '로테이션 필요', description: '균형 잡힌 로테이션을 위해 활용해보세요.', toneKey: 'neutral' };
+}
+
+// 로테이션 인사이트 — 신발별 실제 사용 데이터를 기반으로 로테이션 현황을 표시한다.
+// 추천(어떤 신발을 신어라)이 아닌 인사이트(사용 패턴이 어떻다)를 제공한다.
+// 행 탭은 그 신발을 홈 히어로로 포커스한다(추천이 아닌 선택 보조). 표시 전용 배지.
+// 활성 2켤레+ 일 때만 rotation 이 채워지므로, 비었으면 통째로 숨긴다.
+function RotationInsightPanel({ rotation, onPickShoe }: { rotation: RotationPick[]; onPickShoe?: (shoeId: string) => void }) {
   if (!rotation || rotation.length === 0) return null;
   return (
     <View testID="home-rotation" style={s.rotaWrap}>
-      <SectionTitle style={s.sectionLabel}>오늘의 로테이션 추천</SectionTitle>
+      <SectionTitle style={s.sectionLabel}>로테이션 인사이트</SectionTitle>
       <View style={s.rotaCard}>
-        {rotation.map((p, i) => (
-          <Pressable
-            key={p.shoe.id ?? i}
-            testID={`rotation-pick-${i}`}
-            onPress={onPickShoe ? () => onPickShoe(p.shoe.id) : undefined}
-            accessibilityRole="button"
-            accessibilityLabel={`${p.shoe.brand} ${p.shoe.model} · ${p.reason}`}
-            style={({ pressed }) => [s.rotaRow, i > 0 && s.rotaRowSep, pressed && s.pressed]}>
-            <View style={{ flex: 1, minWidth: 0 }}>
-              <View style={s.row}>
+        {rotation.map((p, i) => {
+          const { badge, description, toneKey } = insightBadge(p, i, rotation.length);
+          const tone = INSIGHT_TONE[toneKey] ?? INSIGHT_TONE.neutral;
+          return (
+            <Pressable
+              key={p.shoe.id ?? i}
+              testID={`rotation-pick-${i}`}
+              onPress={onPickShoe ? () => onPickShoe(p.shoe.id) : undefined}
+              accessibilityRole="button"
+              accessibilityLabel={`${p.shoe.brand} ${p.shoe.model}`}
+              style={({ pressed }) => [s.insightRow, i > 0 && s.insightRowSep, pressed && onPickShoe ? s.pressed : null]}>
+              <View style={s.insightRowTop}>
                 <Text style={s.rotaBrand} numberOfLines={1}>{p.shoe.brand}</Text>
-                {i === 0 && <Pill tone="accent" label="오늘 추천" icon="sparkles" />}
+                <View style={[s.insightBadgeChip, { backgroundColor: tone.bg }]}>
+                  <Text style={[s.insightBadgeText, { color: tone.text }]}>{badge}</Text>
+                </View>
               </View>
-              <Text style={[s.rotaModel, { color: i === 0 ? T1 : T2 }]} numberOfLines={1}>{p.shoe.model}</Text>
-              <Text style={s.rotaReason} numberOfLines={1}>{p.reason}</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={16} color={T3} />
-          </Pressable>
-        ))}
+              <Text style={s.rotaModel} numberOfLines={1}>{p.shoe.model}</Text>
+              <Text style={s.insightDesc} numberOfLines={2}>{description}</Text>
+            </Pressable>
+          );
+        })}
       </View>
     </View>
   );
@@ -546,8 +594,8 @@ export default function HomeScreen({
           </View>
           {/* 챌린지는 상단 진척 띠(ProgressionStrip)로 일원화 — 하단 중복 카드 제거.
               챌린지 생성·전체 관리는 챌린지 탭에서. */}
-          {/* 휴식·마모 분산 로테이션 추천(2켤레+에서만 채워짐, 비면 자동 숨김) */}
-          <RotationCard rotation={rotation ?? []} onPickShoe={onPickShoe} />
+          {/* 로테이션 인사이트(2켤레+에서만 채워짐, 비면 자동 숨김) */}
+          <RotationInsightPanel rotation={rotation ?? []} onPickShoe={onPickShoe} />
           {/* 수익화 v1: 다음 러닝화 추천 노출 트리거 — Slice 6 교체 예측 기반(overdue/임박).
               forecast가 주입되면 shouldRecommendNextShoe로 판정하고, 없으면 기존
               condition==='교체' 폴백을 보존한다(회귀 방지). */}
@@ -579,7 +627,7 @@ const s = StyleSheet.create({
 
   greetWrap: { paddingHorizontal: GUTTER, paddingTop: 8 },
   date: { color: T3, fontFamily: FONT, fontSize: 13, letterSpacing: 0.2 },
-  greet: { color: T1, fontFamily: FONT, fontSize: 20, fontWeight: '400', letterSpacing: -0.4, marginTop: 3, lineHeight: 26 },
+  greet: { color: T1, fontFamily: FONT, fontSize: 20, fontWeight: '500', letterSpacing: -0.4, marginTop: 3, lineHeight: 26 },
 
   // 마지막 동기화 칩 — 인사 아래 절제된 회색(아이콘 T3 + 텍스트 T3). 당겨서 새로고침 안내.
   syncChip: { flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start', marginTop: 10, backgroundColor: CARD_DIM, borderRadius: RADIUS.pill, paddingHorizontal: 9, paddingVertical: 4 },
@@ -613,7 +661,7 @@ const s = StyleSheet.create({
   streakChipOn: { backgroundColor: withAlpha(ACCENT, 0.14), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.4) },
   streakChipOff: { backgroundColor: CARD_HI },
   streakText: { fontFamily: FONT, fontSize: 12, fontWeight: '600', letterSpacing: 0.1 },
-  goalRingPct: { color: T1, fontFamily: DISPLAY, fontSize: 19, letterSpacing: 0.2 },
+  goalRingPct: { color: T1, fontFamily: DISPLAY, fontSize: 17, letterSpacing: 0.2 },
   goalRingU: { color: T3, fontFamily: FONT, fontSize: 10 },
 
   // 목업 카드: radius 20(RADIUS.lg) · 테두리 1px. 비활성 라인(흰 7%), 활성 오렌지(0.55).
@@ -624,13 +672,13 @@ const s = StyleSheet.create({
   insightGrid: { flexDirection: 'row', alignItems: 'flex-start' },
   insightDivider: { width: StyleSheet.hairlineWidth, alignSelf: 'stretch', backgroundColor: withAlpha(T1, 0.08), marginHorizontal: SPACE.lg },
   insightLabel: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600', letterSpacing: -0.1 },
-  insightNum: { color: T1, fontFamily: DISPLAY, fontSize: 22, fontWeight: '800', letterSpacing: -0.4 },
-  insightUnit: { color: T2, fontFamily: FONT, fontSize: 13, fontWeight: '600', marginLeft: 2 },
-  insightWeeks: { fontFamily: DISPLAY, fontSize: 19, fontWeight: '800', letterSpacing: -0.3, marginTop: 6 },
+  insightNum: { color: T1, fontFamily: DISPLAY, fontSize: 22, fontWeight: '700', letterSpacing: -0.4 },
+  insightUnit: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '500', marginLeft: 2 },
+  insightWeeks: { fontFamily: DISPLAY, fontSize: 22, fontWeight: '700', letterSpacing: -0.4, marginTop: 6 },
   insightSub: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '500', marginTop: 3 },
   insightPurpose: { marginTop: SPACE.lg, paddingTop: SPACE.lg, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.07) },
   // 추천 용도 자연어 문장(핸드오프 lead 정합: 16px·lineHeight 23).
-  insightPurposeText: { color: T2, fontFamily: FONT, fontSize: 16, fontWeight: '500', letterSpacing: -0.2, lineHeight: 23, marginTop: 6 },
+  insightPurposeText: { color: T2, fontFamily: FONT, fontSize: 15, fontWeight: '500', letterSpacing: -0.2, lineHeight: 22, marginTop: 6 },
   insightTags: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 12 },
   insightTag: { backgroundColor: CARD_HI, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 5 },
   insightTagText: { color: T2, fontFamily: FONT, fontSize: 12, fontWeight: '600' },
@@ -641,13 +689,13 @@ const s = StyleSheet.create({
   // 신발 종류(카테고리) 칩 — 데이터에 적힌 카본/데일리 등을 오렌지 톤으로 표시
   catChip: { backgroundColor: withAlpha(ACCENT, 0.14), borderRadius: 6, paddingHorizontal: SPACE.sm, paddingVertical: 2 },
   catChipText: { color: ACCENT, fontFamily: FONT, fontSize: 10, fontWeight: '700', letterSpacing: 0.1 },
-  heroModel: { color: T1, fontFamily: DISPLAY, fontSize: 27, fontWeight: '800', letterSpacing: -0.6, marginTop: 7, lineHeight: 32, marginBottom: 24 },
+  heroModel: { color: T1, fontFamily: DISPLAY, fontSize: 27, fontWeight: '700', letterSpacing: -0.6, marginTop: 7, lineHeight: 32, marginBottom: 24 },
   // minHeight = 2줄(lineHeight 20×2) — 1줄짜리 reason 도 2줄 공간을 차지해 캐러셀 카드
   // 높이가 신발마다 흔들리지 않게 한다(numberOfLines={2} 와 짝).
-  heroReason: { color: T2, fontFamily: FONT, fontSize: 14, fontWeight: '500', letterSpacing: -0.2, marginTop: 6, lineHeight: 20, minHeight: 20 },
+  heroReason: { color: T2, fontFamily: FONT, fontSize: 15, fontWeight: '500', letterSpacing: -0.2, marginTop: 6, lineHeight: 21, minHeight: 21 },
   // 교체까지 남은 거리 — 문장형(목업 .remain). 숫자만 디스플레이 강조.
   heroRemainLine: { color: T2, fontFamily: FONT, fontSize: 15, fontWeight: '500', letterSpacing: -0.2, marginTop: 10 },
-  heroRemainNum: { color: T1, fontFamily: DISPLAY, fontSize: 26, fontWeight: '800', letterSpacing: -0.6 },
+  heroRemainNum: { color: T1, fontFamily: DISPLAY, fontSize: 26, fontWeight: '700', letterSpacing: -0.6 },
   heroRemainNumU: { color: T2, fontFamily: FONT, fontSize: 13, fontWeight: '500' },
   gauge: { height: 4, borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.08), marginTop: 14, overflow: 'hidden' },
   gaugeFill: { height: '100%', borderRadius: RADIUS.pill },
@@ -693,11 +741,15 @@ const s = StyleSheet.create({
 
   rotaWrap: { marginTop: SPACE.lg },
   rotaCard: { marginHorizontal: SPACE.xl, backgroundColor: CARD_DIM, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.07), paddingHorizontal: SPACE.lg },
-  rotaRow: { flexDirection: 'row', alignItems: 'center', gap: SPACE.md, paddingVertical: 14 },
-  rotaRowSep: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.07) },
   rotaBrand: { color: T3, fontFamily: DISPLAY, fontSize: 11, fontWeight: '500', letterSpacing: 1.2 },
-  rotaModel: { fontFamily: DISPLAY, fontSize: 15, fontWeight: '600', letterSpacing: -0.1, marginTop: 4 },
-  rotaReason: { color: T3, fontFamily: FONT, fontSize: 12, marginTop: 3 },
+  rotaModel: { color: T1, fontFamily: DISPLAY, fontSize: 15, fontWeight: '600', letterSpacing: -0.1, marginTop: 4 },
+  // 로테이션 인사이트 행
+  insightRow: { paddingVertical: 14 },
+  insightRowSep: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.07) },
+  insightRowTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  insightBadgeChip: { borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 4, flexShrink: 0 },
+  insightBadgeText: { fontFamily: FONT, fontSize: 12, fontWeight: '600', letterSpacing: -0.1 },
+  insightDesc: { color: T3, fontFamily: FONT, fontSize: 13, letterSpacing: -0.1, marginTop: 5, lineHeight: 18 },
 
   // 수익화 v1: 교체 시점 '다음 러닝화' 추천 카드(오렌지 절제 — 테두리만 액센트)
   nextWrap: { marginTop: SPACE.lg },

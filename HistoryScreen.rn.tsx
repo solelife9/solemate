@@ -905,12 +905,12 @@ const s = StyleSheet.create({
   offscreen: { position: 'absolute', left: -10000, top: 0, opacity: 0 },
   baselineRow: { flexDirection: 'row', alignItems: 'flex-end' },
   card: { backgroundColor: CARD, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER },
-  cardTitle: { color: T2, fontFamily: FONT, fontSize: 14, fontWeight: '500' },
-  sectionLabel: { color: T2, fontFamily: FONT, fontSize: 14, fontWeight: '500', letterSpacing: 0.2, paddingHorizontal: 4 },
+  cardTitle: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600' },
+  sectionLabel: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600', letterSpacing: 0.4, paddingHorizontal: 4 },
   // 요약 카드(큰 거리) — 목업 기록(10)
   sumTitle: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600', letterSpacing: 0.2 },
-  sumBigKm: { color: T1, fontFamily: DISPLAY, fontSize: 42, fontWeight: '800', letterSpacing: -1, fontVariant: ['tabular-nums'], marginLeft: 0 },
-  sumBigU: { color: T3, fontFamily: FONT, fontSize: 18, fontWeight: '600', marginLeft: 4, paddingBottom: 6 },
+  sumBigKm: { color: T1, fontFamily: DISPLAY, fontSize: 42, fontWeight: '700', letterSpacing: -1, fontVariant: ['tabular-nums'], marginLeft: 0 },
+  sumBigU: { color: T3, fontFamily: FONT, fontSize: 17, fontWeight: '500', marginLeft: 4, paddingBottom: 6 },
   sumSub: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '500', marginTop: 2 },
   sumMetricRow: { flexDirection: 'row', justifyContent: 'flex-start', gap: 28, marginTop: 14, paddingLeft: 2 },
   sumMetric: {},
@@ -920,7 +920,7 @@ const s = StyleSheet.create({
   // 개인 기록(PR, 1-3) — 2x2 그리드(최장거리/최고페이스/최장시간/최장스트릭).
   prGrid: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 16, rowGap: 18 },
   prCell: { width: '50%' },
-  prV: { color: T1, fontFamily: DISPLAY, fontSize: 21, fontWeight: '800', letterSpacing: -0.3 },
+  prV: { color: T1, fontFamily: DISPLAY, fontSize: 22, fontWeight: '700', letterSpacing: -0.4 },
   prU: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '600', marginLeft: 3 },
   prL: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500', marginTop: 5 },
   // 런 카드 — 목업 기록(10): 신발+날짜 + 거리·평균페이스·시간
@@ -964,7 +964,7 @@ const s = StyleSheet.create({
   // 콤팩트: 요약 4칸(거리/횟수/페이스/시간)의 패딩·값 폰트·여백을 줄여 세로 높이를
   // 압축한다(정보는 그대로 유지 — 라벨/값/단위 모두 렌더). 리스트가 위로 올라온다.
   summaryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  summaryCell: { width: '47.5%', flexGrow: 1, backgroundColor: CARD_DIM, borderRadius: RADIUS.md, borderWidth: 1, borderColor: SEP, padding: 13 },
+  summaryCell: { width: '47.5%', flexGrow: 1, backgroundColor: CARD_DIM, borderRadius: RADIUS.md, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP, padding: 13 },
   // 4열 요약 행(Screens Refined) — 카드 없이 헤어라인 구분.
   sumRow: { flexDirection: 'row', marginTop: 6, marginBottom: 2 },
   sumCell: { flex: 1, paddingHorizontal: 2 },
@@ -983,7 +983,7 @@ const s = StyleSheet.create({
   runDateNum: { color: T1, fontFamily: DISPLAY, fontSize: 17 },
   runDivider: { width: StyleSheet.hairlineWidth, alignSelf: 'stretch', backgroundColor: SEP, marginVertical: 2 },
   runBrand: { color: T3, fontFamily: FONT, fontSize: 10, fontWeight: '500', letterSpacing: 1.3 },
-  runModel: { color: T1, fontFamily: FONT, fontSize: 14, fontWeight: '500', marginTop: 1 },
+  runModel: { color: T1, fontFamily: FONT, fontSize: 15, fontWeight: '500', marginTop: 1 },
   runMetrics: { flexDirection: 'row', gap: 18, marginTop: 10 },
   runV: { color: T1, fontFamily: DISPLAY, fontSize: 20, letterSpacing: 0.2, fontVariant: ['tabular-nums'] },
   runU: { color: T3, fontFamily: FONT, fontSize: 12, marginLeft: 3, marginBottom: 1 },
@@ -997,13 +997,13 @@ const s = StyleSheet.create({
 
   // manual-run / edit form
   formTitle: { color: T1, fontFamily: FONT, fontSize: 17, fontWeight: '600' },
-  formLabel: { color: T2, fontFamily: FONT, fontSize: 14, fontWeight: '600', marginBottom: 8, paddingHorizontal: 2 },
+  formLabel: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600', marginBottom: 8, paddingHorizontal: 2 },
   formHint: { color: T3, fontFamily: FONT, fontSize: 13 },
   chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: { maxWidth: '100%', backgroundColor: CARD_HI, borderRadius: RADIUS.pill, paddingHorizontal: 14, paddingVertical: 9, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
   chipOn: { backgroundColor: ACCENT, borderColor: ACCENT },
   chipTxt: { fontFamily: FONT, fontSize: 14, fontWeight: '600' },
-  input: { backgroundColor: CARD, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14, color: T1, fontFamily: FONT, fontSize: 16, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
+  input: { backgroundColor: CARD, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14, color: T1, fontFamily: FONT, fontSize: 15, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
   // 검증 실패 시 입력칸 테두리를 빨강으로 강조하고, 아래에 인라인 헬퍼텍스트를 띄운다.
   inputErr: { borderColor: DANGER, borderWidth: 1 },
   errText: { color: DANGER, fontFamily: FONT, fontSize: 13, fontWeight: '500', marginTop: 7, paddingHorizontal: 2 },
@@ -1012,7 +1012,7 @@ const s = StyleSheet.create({
   saveBtn: { marginTop: 6 },
   detailDate: { color: T3, fontFamily: FONT, fontSize: 13 },
   detailDist: { color: T1, fontFamily: DISPLAY, fontSize: HERO.heroLg, letterSpacing: 0.5 },
-  detailDistU: { color: T2, fontFamily: FONT, fontSize: 20, marginLeft: 6, marginBottom: 8 },
+  detailDistU: { color: T3, fontFamily: FONT, fontSize: 17, fontWeight: '500', marginLeft: 6, marginBottom: 8 },
   detailBrand: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '600', letterSpacing: 1.4 },
   detailModel: { color: T1, fontFamily: FONT, fontSize: 24, fontWeight: '700', letterSpacing: -0.4, marginTop: 4 },
   // 메트릭 한 카드(디자인 11) — 2x3 그리드. 칸 레이아웃·값/단위/라벨은 StatGrid

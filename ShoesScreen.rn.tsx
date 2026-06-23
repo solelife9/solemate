@@ -659,7 +659,7 @@ const s = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   baselineRow: { flexDirection: 'row', alignItems: 'flex-end' },
   card: { backgroundColor: CARD_DIM, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.07) },
-  sectionLabel: { color: T2, fontFamily: FONT, fontSize: 14, fontWeight: '500', letterSpacing: 0.2, paddingHorizontal: 4 },
+  sectionLabel: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600', letterSpacing: 0.4, paddingHorizontal: 4 },
   dot: { width: 7, height: 7, borderRadius: RADIUS.pill },
   condText: { fontFamily: FONT, fontSize: 13, fontWeight: '500' },
   condSub: { color: T3, fontFamily: FONT, fontSize: 13 },
@@ -685,7 +685,7 @@ const s = StyleSheet.create({
   shoeRightCol: { alignItems: 'flex-end', gap: 10, flexShrink: 0 },
   shoeBrand: { color: T3, fontFamily: DISPLAY, fontSize: 11, fontWeight: '500', letterSpacing: 1.3 },
   shoeUsing: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500' },
-  shoeModel: { color: T1, fontFamily: DISPLAY, fontSize: 22, fontWeight: '800', letterSpacing: -0.5, lineHeight: 27, marginTop: 4 },
+  shoeModel: { color: T1, fontFamily: DISPLAY, fontSize: 22, fontWeight: '700', letterSpacing: -0.5, lineHeight: 27, marginTop: 4 },
   shoeCondRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   // 종류 칩(카본 레이싱 등) — 브랜드 옆
   cardTypeChip: { backgroundColor: withAlpha(ACCENT, 0.14), borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2 },
@@ -697,27 +697,27 @@ const s = StyleSheet.create({
   shoeCondText: { color: T2, fontFamily: FONT, fontSize: 13, fontWeight: '500' },
   // 누적 거리(큰 숫자) + 교체까지 남은 거리 — 목업 lifeRow 정합
   shoeLifeRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 14, marginBottom: 10 },
-  shoeUsedNum: { color: T1, fontFamily: DISPLAY, fontSize: 25, fontWeight: '800', letterSpacing: -0.6 },
-  shoeUsedU: { color: T2, fontFamily: FONT, fontSize: 13, fontWeight: '500', marginLeft: 2 },
+  shoeUsedNum: { color: T1, fontFamily: DISPLAY, fontSize: 25, fontWeight: '700', letterSpacing: -0.6 },
+  shoeUsedU: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '500', marginLeft: 2 },
   shoeRemain: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '500' },
   // 라벨바(목업 LifeBar): 사용/총 수명 양끝 라벨 + 가운데 평균 페이스
   shoeBar: { height: 6, borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.1), overflow: 'hidden' },
   shoeBarFill: { height: '100%', borderRadius: RADIUS.pill },
   shoeBarLabels: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 7 },
   shoeBarLabel: { color: T4, fontFamily: FONT, fontSize: 11, fontWeight: '500' },
-  shoePaceVal: { color: ACCENT, fontFamily: DISPLAY, fontSize: 12 },
+  shoePaceVal: { color: T3, fontFamily: DISPLAY, fontSize: 12 },
   cardPlayAbs: { position: 'absolute', top: 14, right: 14, width: 36, height: 36, borderRadius: RADIUS.pill, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.14), alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(BG, 0.3) },
   retireBtn: { height: 54, borderRadius: RADIUS.md, marginTop: 22, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: withAlpha(DANGER, 0.06), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(DANGER, 0.45) },
   restoreBtn: { height: 54, borderRadius: RADIUS.md, marginTop: 22, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: 'transparent', borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.14) },
   retireBtnText: { fontFamily: FONT, fontSize: 15, fontWeight: '600', letterSpacing: -0.2 },
 
-  addCard: { borderRadius: 22, borderWidth: 1.5, borderStyle: 'dashed', borderColor: withAlpha(T1, 0.12), padding: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  addCard: { borderRadius: RADIUS.xl, borderWidth: 1.5, borderStyle: 'dashed', borderColor: withAlpha(T1, 0.12), padding: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   addText: { color: T3, fontFamily: FONT, fontSize: 15, fontWeight: '500' },
 
   // 명예의 전당
   hofHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8, paddingHorizontal: 4 },
   hofTitle: { color: WARN, fontFamily: FONT, fontSize: 13, fontWeight: '700', letterSpacing: 0.4 },
-  hofCard: { backgroundColor: withAlpha(WARN, 0.1), borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(WARN, 0.25), padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  hofCard: { backgroundColor: withAlpha(WARN, 0.06), borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(WARN, 0.25), padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12 },
   hofTrophyBadge: { width: 32, height: 32, borderRadius: 16, backgroundColor: withAlpha(WARN, 0.12), alignItems: 'center', justifyContent: 'center' },
   hofBrand: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500' },
   hofModel: { color: T2, fontFamily: FONT, fontSize: 15, fontWeight: '600', marginTop: 2 },
@@ -733,7 +733,7 @@ const s = StyleSheet.create({
   statusDot: { width: 6, height: 6, borderRadius: RADIUS.pill, backgroundColor: T1 },
   statusPillText: { color: T1, fontFamily: FONT, fontSize: 13, fontWeight: '600' },
   dBrand: { color: T3, fontFamily: DISPLAY, fontSize: 12, fontWeight: '500', letterSpacing: 1.6 },
-  dModel: { color: T1, fontFamily: DISPLAY, fontSize: 32, fontWeight: '800', letterSpacing: -0.5, marginTop: 2, lineHeight: 38 },
+  dModel: { color: T1, fontFamily: DISPLAY, fontSize: 32, fontWeight: '700', letterSpacing: -0.5, marginTop: 2, lineHeight: 38 },
   dPurpose: { color: T2, fontFamily: FONT, fontSize: 15, fontWeight: '500', letterSpacing: -0.2, lineHeight: 22, marginTop: 10 },
   dTags: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 12 },
   dTag: { backgroundColor: CARD_HI, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 5 },
@@ -751,7 +751,7 @@ const s = StyleSheet.create({
   keepGoingText: { flex: 1, color: ACCENT, fontFamily: FONT, fontSize: 13, fontWeight: '600', letterSpacing: -0.1, lineHeight: 18 },
   // 은퇴 키프세이크 트리거 카드(수명 도달) — 자랑스러운 톤. accent 보더로 주목.
   keepsakeCard: { padding: 18, gap: 6, borderColor: withAlpha(ACCENT, 0.3) },
-  keepsakeTitle: { color: T1, fontFamily: DISPLAY, fontSize: 18, fontWeight: '800', letterSpacing: -0.2 },
+  keepsakeTitle: { color: T1, fontFamily: DISPLAY, fontSize: 18, fontWeight: '700', letterSpacing: -0.2 },
   keepsakeSub: { color: T3, fontFamily: FONT, fontSize: 13, lineHeight: 19 },
   keepsakeBtns: { flexDirection: 'row', gap: 10, marginTop: 8 },
   // 계속 사용(CARD_HI flat) — 모서리는 은퇴(단일 Button=RADIUS.btn)와 맞춰 통일.
@@ -763,8 +763,8 @@ const s = StyleSheet.create({
   // 실효 마모 + 교체 예측 카드(차별점) — 본문 카드 톤에 accent 절제(라벨 아이콘/예측 라인만).
   wearCard: { padding: 18, gap: 2 },
   wearLabel: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600', letterSpacing: 0.2 },
-  wearValue: { color: T1, fontFamily: DISPLAY, fontSize: 30, letterSpacing: 0.3 },
-  wearUnit: { color: T2, fontFamily: FONT, fontSize: 14, marginLeft: 4, marginBottom: 4 },
+  wearValue: { color: T1, fontFamily: DISPLAY, fontSize: 30, fontWeight: '700', letterSpacing: 0.3 },
+  wearUnit: { color: T3, fontFamily: FONT, fontSize: 13, marginLeft: 4, marginBottom: 4 },
   wearTarget: { color: T3, fontFamily: FONT, fontSize: 13, marginBottom: 4 },
   wearForecast: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '500', letterSpacing: -0.1, lineHeight: 18, marginTop: 8 },
   // 교체 예상 lead(핸드오프 lead 정합: 16px·lineHeight 23) + 주수 강조(bold·T1).
