@@ -3,7 +3,7 @@
 // (sample data removed — real summary/chart/runs are injected via props)
 // ============================================================================
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, ScrollView, FlatList, Pressable, StyleSheet, LayoutChangeEvent, Share, TextInput, Alert, KeyboardAvoidingView, Platform, RefreshControl, Modal } from 'react-native';
+import { View, Text, ScrollView, FlatList, Pressable, StyleSheet, LayoutChangeEvent, TextInput, Alert, KeyboardAvoidingView, Platform, RefreshControl, Modal } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Polyline, Circle } from 'react-native-svg';
@@ -17,11 +17,11 @@ import { Unit, displayNum, displayToKm } from './lib/units';
 import { ymdLocal } from './lib/format';
 import { sumKm, summaryOf, monthBuckets, weekBuckets, yearBuckets } from './lib/stats';
 import { getRunSurface, setRunSurface, type Surface } from './lib/wearModel';
+import { pickPhotoFrom } from './lib/photo';
 import { parseRoute, projectRoute, LatLon } from './lib/route';
 import { DARK_MAP_STYLE } from './lib/mapStyle';
 import { RunSplits, Split } from './RunSplits';
 import { buildSplits } from './lib/splits';
-import { buildRunShareText } from './lib/share';
 import { buildShareCardModel, shareRunCard, SvgCapturable } from './lib/shareCard';
 import { maskDuration, maskDate, validateRunForm, type RunFormErrors } from './lib/inputMask';
 import ShareCard from './ShareCard';
@@ -391,7 +391,7 @@ export function RunForm({
 }
 
 // ── run detail ────────────────────────────────────────────────────────────────
-function RunDetail({ run, shoe, onBack, unit, onEdit, onDelete }: { run: Run; shoe?: Shoe; onBack: () => void; unit: Unit; onEdit?: () => void; onDelete?: (id: string) => void }) {
+function RunDetail({ run, shoe, onBack, unit, onDelete }: { run: Run; shoe?: Shoe; onBack: () => void; unit: Unit; onDelete?: (id: string) => void }) {
   // Load the recorded route for this run once. Missing/invalid blob → [] → map
   // stays hidden (graceful). route_<id> is written by App.addRun on save.
   const [route, setRoute] = useState<LatLon[]>([]);
@@ -426,22 +426,35 @@ function RunDetail({ run, shoe, onBack, unit, onEdit, onDelete }: { run: Run; sh
     unit,
     pace: run.pace,
     time: run.time,
+    durationS: run.durationS,
     shoeBrand: shoe?.brand,
     shoeModel: shoe?.model,
     date: `${run.date} ${run.day}요일`,
-  };
-  // 거리/페이스/시간/신발명을 keep-going 톤 한국어 요약으로 만들어 RN Share API로
-  // 내보낸다(네이티브 추가 0). 사용자가 공유 시트를 닫거나 실패해도 조용히 무시.
-  const onShare = () => {
-    Share.share({ message: buildRunShareText(shareInput) }).catch(() => {});
   };
   // 이미지 카드 공유: 화면 밖에 마운트된 <ShareCard>의 Svg ref.toDataURL()로 PNG
   // dataURL을 만들어 RN Share로 내보낸다. 새 네이티브 의존 없이 react-native-svg만
   // 사용. 캡처 실패 시 텍스트 공유로 조용히 폴백한다(shareRunCard 내부 처리).
   const cardRef = useRef<SvgCapturable | null>(null);
-  const cardModel = buildShareCardModel(shareInput);
+  // 러닝 직후 '바로 찍어 자랑' — 사용자가 고른 사진을 카드 배경에 깐다(없으면 무드 다크).
+  const [sharePhoto, setSharePhoto] = useState<string | undefined>(undefined);
+  const cardModel = buildShareCardModel({ ...shareInput, photoUri: sharePhoto });
+  const doShare = () => shareRunCard(cardRef, shareInput);
+  const pickThenShare = async (source: 'camera' | 'library') => {
+    try {
+      const p = await pickPhotoFrom(source);
+      if (!p) return; // 취소/권한거부 → 중단(다시 누르면 됨)
+      setSharePhoto(p.uri);
+      // 사진이 off-screen 카드에 반영되고 SVG 이미지가 로드될 시간을 준 뒤 캡처.
+      setTimeout(doShare, 650);
+    } catch { doShare(); }
+  };
   const onShareCard = () => {
-    shareRunCard(cardRef, shareInput);
+    Alert.alert('러닝 카드 공유', '러닝 사진을 배경에 넣으면 더 멋진 카드가 돼요.', [
+      { text: '카메라로 촬영', onPress: () => pickThenShare('camera') },
+      { text: '앨범에서 선택', onPress: () => pickThenShare('library') },
+      { text: '사진 없이', onPress: doShare },
+      { text: '취소', style: 'cancel' },
+    ]);
   };
   // 삭제는 확인 Alert로 보호한다(파괴 방지). 삭제 시 신발 사용거리도 줄어듦을 안내한다.
   const confirmDelete = () => {
@@ -473,16 +486,8 @@ function RunDetail({ run, shoe, onBack, unit, onEdit, onDelete }: { run: Run; sh
       <View style={[s.nav, s.navRow]}>
         <Pressable onPress={onBack} hitSlop={6} accessibilityRole="button" accessibilityLabel="뒤로" style={s.iconBtn}><Ionicons name="chevron-back" size={20} color={T1} /></Pressable>
         <View style={s.navActions}>
-          {!!onEdit && (
-            <Pressable onPress={onEdit} hitSlop={6} style={s.iconBtn} accessibilityRole="button" accessibilityLabel="편집">
-              <Ionicons name="create-outline" size={18} color={T1} />
-            </Pressable>
-          )}
-          <Pressable onPress={onShareCard} hitSlop={6} style={s.iconBtn} accessibilityRole="button" accessibilityLabel="카드 공유">
-            <Ionicons name="image-outline" size={18} color={ACCENT} />
-          </Pressable>
-          <Pressable onPress={onShare} hitSlop={6} style={s.iconBtn} accessibilityRole="button" accessibilityLabel="공유">
-            <Ionicons name="share-outline" size={18} color={T1} />
+          <Pressable onPress={onShareCard} hitSlop={6} style={s.iconBtn} accessibilityRole="button" accessibilityLabel="공유">
+            <Ionicons name="share-outline" size={18} color={ACCENT} />
           </Pressable>
           {!!onDelete && (
             <Pressable onPress={confirmDelete} hitSlop={6} style={s.iconBtn} accessibilityRole="button" accessibilityLabel="삭제">
@@ -499,8 +504,8 @@ function RunDetail({ run, shoe, onBack, unit, onEdit, onDelete }: { run: Run; sh
             <Text style={s.detailModel}>{shoe.model}</Text>
           </View>
         )}
-        <Text style={s.detailDate}>{run.date} {run.day}요일</Text>
-        <View style={[s.baselineRow, { marginTop: 8 }]}>
+        <Text style={[s.detailDate, { marginLeft: 7 }]}>{run.date} {run.day}요일</Text>
+        <View style={[s.baselineRow, { marginTop: 8, marginLeft: 3 }]}>
           <Text style={s.detailDist}>{displayNum(run.dist, unit, 2)}</Text>
           <Text style={s.detailDistU}>{unit}</Text>
         </View>
@@ -765,7 +770,6 @@ export default function HistoryScreen({
         shoe={shoes[detail.shoe]}
         onBack={() => setDetail(null)}
         unit={unit}
-        onEdit={onEditRun ? () => setForm({ mode: 'edit', run: detail }) : undefined}
         onDelete={onDeleteRun}
       />
     );
@@ -1011,7 +1015,7 @@ const s = StyleSheet.create({
   // 고유 여백만 남긴다(과거 RADIUS.md 사각 ACCENT 버튼 제거).
   saveBtn: { marginTop: 6 },
   detailDate: { color: T3, fontFamily: FONT, fontSize: 13 },
-  detailDist: { color: T1, fontFamily: DISPLAY, fontSize: HERO.heroLg, letterSpacing: 0.5 },
+  detailDist: { color: T1, fontFamily: DISPLAY, fontSize: HERO.heroLg, fontWeight: '700', letterSpacing: 0.5 },
   detailDistU: { color: T3, fontFamily: FONT, fontSize: 17, fontWeight: '500', marginLeft: 6, marginBottom: 8 },
   detailBrand: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '600', letterSpacing: 1.4 },
   detailModel: { color: T1, fontFamily: FONT, fontSize: 24, fontWeight: '700', letterSpacing: -0.4, marginTop: 4 },

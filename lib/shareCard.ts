@@ -30,6 +30,19 @@ export interface ShareCardInput {
   shoeModel?: string;
   /** 러닝 날짜 라벨(예: `5월 28일 수요일`). 비면 생략. */
   date?: string;
+  /** 사용자가 러닝 직후 찍은/고른 배경 사진 URI(없으면 무드 다크 배경으로 폴백). */
+  photoUri?: string;
+  /** 러닝 소요 초. 있으면 카드 TIME 을 항상 6자리 HH:MM:SS 로 표기한다(레퍼런스 톤). */
+  durationS?: number;
+}
+
+/** 항상 6자리 HH:MM:SS(시 2자리 0패딩). 카드 TIME 전용 — fmtTime 은 시<1h 면 MM:SS 라 별도. */
+function hms(s: number): string {
+  const t = Number.isFinite(s) && s > 0 ? Math.floor(s) : 0;
+  const h = Math.floor(t / 3600);
+  const m = Math.floor((t % 3600) / 60);
+  const sec = t % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
 }
 
 export interface ShareCardStat {
@@ -48,6 +61,8 @@ export interface ShareCardModel {
   shoe: string;
   /** 날짜 라벨('' 가능). */
   date: string;
+  /** 배경 사진 URI(없으면 undefined → 무드 다크 배경). */
+  photoUri?: string;
   /** Keego 워드마크. */
   brand: string;
   /** keep-going 응원 한 줄. */
@@ -76,12 +91,14 @@ export function buildShareCardModel(input: ShareCardInput): ShareCardModel {
     .filter(Boolean)
     .join(' ');
 
+  // 라벨은 영문(에디토리얼 공유 카드 톤 — DISTANCE/PACE/TIME 통일). 값은 그대로.
   const stats: ShareCardStat[] = [];
   if (input.pace && input.pace !== '--') {
-    stats.push({label: '평균 페이스', value: `${input.pace} /km`});
+    stats.push({label: 'PACE', value: `${input.pace} /km`});
   }
   if (input.time && input.time !== '--') {
-    stats.push({label: '시간', value: input.time});
+    // durationS 가 있으면 항상 6자리 HH:MM:SS(레퍼런스 톤), 없으면 표시 문자열 그대로.
+    stats.push({label: 'TIME', value: input.durationS != null ? hms(input.durationS) : input.time});
   }
 
   return {
@@ -90,6 +107,7 @@ export function buildShareCardModel(input: ShareCardInput): ShareCardModel {
     stats,
     shoe,
     date: (input.date ?? '').trim(),
+    ...(input.photoUri ? {photoUri: input.photoUri} : {}),
     brand: BRAND,
     tagline: TAGLINE,
     hashtag: HASHTAG,

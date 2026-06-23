@@ -83,12 +83,6 @@ async function tap(node: ReactTestRenderer.ReactTestInstance) {
   await flush();
 }
 
-function setInput(root: ReactTestRenderer.ReactTestInstance, label: string, value: string) {
-  const input = root.findAll((n: any) => n && n.props && n.props.accessibilityLabel === label && typeof n.props.onChangeText === 'function');
-  if (!input.length) throw new Error(`no TextInput labeled "${label}"`);
-  act(() => { input[0].props.onChangeText(value); });
-}
-
 let alertSpy: jest.SpyInstance;
 
 beforeEach(async () => {
@@ -152,38 +146,9 @@ test('런 삭제 → 확인 Alert 후 신발 사용거리(km) 감소', async () 
 // 흐름 테스트는 폐지된 기능을 검증하므로 제거한다. (런 추가 자체는 RunActiveScreen 의
 // 실측 러닝 종료 경로로 일원화됨.)
 
-test('런 편집(거리) → 백엔드 PATCH + 신발 km 재계산', async () => {
-  const runs: ApiRun[] = [{id: 'r1', shoe_id: 's1', km: 10, run_date: '2026-05-20', duration: 3000}];
-  const {root} = await mount(SHOE, runs);
-
-  // 편집 전: 신발 10km / 총 600km (라벨바 — 목업 카드 포맷).
-  await tap(pressBy(root, '신발'));
-  expect(textOf(root)).toContain('10km');
-  expect(textOf(root)).toContain('600km');
-
-  // 기록 → '전체' 기간 → r1 상세 → 편집('create-outline') → 폼 프리필.
-  // (기본 '월' 뷰는 과거 달 런을 숨기므로 '전체'로 전환 — HistoryScreen.rn.tsx:633.)
-  // 런 행은 날짜로 식별한다('10'은 차트/요약과 모호 — RunCard 는 '5월 20일' 날짜 포함).
-  await tap(pressBy(root, '기록'));
-  await tap(pressBy(root, '전체'));
-  await tap(pressBy(root, '5월 20일'));
-  await tap(pressBy(root, 'create-outline'));
-
-  // 거리 10 → 12로 수정 후 저장.
-  setInput(root, '거리', '12');
-  (globalThis.fetch as jest.Mock).mockClear();
-  await tap(pressBy(root, '저장하기'));
-
-  // Stage 2b: REST PATCH 없음(로컬 상태 갱신 + cloudSync). 신발 km 재계산만 관찰.
-  const patch = (globalThis.fetch as jest.Mock).mock.calls.find(
-    (c: any[]) => String(c[0]).includes('/api/runs') && c[1] && c[1].method === 'PATCH',
-  );
-  expect(patch).toBeFalsy();
-
-  // 신발 km 재계산: 10 → 12. 카드 누적 km(큰 숫자) 확인.
-  await tap(pressBy(root, '신발'));
-  expect(textOf(root)).toContain('12km');
-});
+// 런 편집(거리 수정) UI 흐름 테스트는 제거됨 — 런 상세의 편집(연필) 버튼이 사용자 요청으로
+// 제거되어(RunDetail), 편집 폼으로의 진입점이 없다. 수동 추가와 마찬가지로, 편집 또한
+// UI 흐름으로 도달 불가하므로 해당 통합 테스트를 폐지한다(폐지된 기능 검증 금지).
 
 test('개인 기록(PR) 카드: 1km 페이스·5km 기록·최장 거리 렌더', async () => {
   // 5km/1500s → 1km 5\'00", 5km 25:00. 21.1km → 최장 거리.

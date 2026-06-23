@@ -25,8 +25,8 @@ describe('buildShareCardModel (필드 매핑)', () => {
     expect(m.hashtag).toBe('#Keego #keepgoing');
     // 페이스·시간이 순서대로 stats 칸에 들어가고 페이스 라벨은 /km 고정
     expect(m.stats).toEqual([
-      {label: '평균 페이스', value: "5'02\" /km"},
-      {label: '시간', value: '40:41'},
+      {label: 'PACE', value: "5'02\" /km"},
+      {label: 'TIME', value: '40:41'},
     ]);
   });
 
@@ -35,7 +35,7 @@ describe('buildShareCardModel (필드 매핑)', () => {
     const m = buildShareCardModel({distKm: 1.60934, unit: 'mi', pace: "8'00\""});
     expect(m.distance).toBe('1.00');
     expect(m.unit).toBe('mi');
-    expect(m.stats[0]).toEqual({label: '평균 페이스', value: "8'00\" /km"});
+    expect(m.stats[0]).toEqual({label: 'PACE', value: "8'00\" /km"});
     // 페이스 값에 /mi 라벨이 절대 붙지 않는다(거짓 per-mile 통계 방지)
     expect(JSON.stringify(m.stats)).not.toContain('/mi');
   });
@@ -50,12 +50,24 @@ describe('buildShareCardModel (필드 매핑)', () => {
     const m = buildShareCardModel({distKm: 10, unit: 'km', time: '55:00'});
     expect(m.shoe).toBe('');
     expect(m.date).toBe('');
-    expect(m.stats).toEqual([{label: '시간', value: '55:00'}]); // 시간만 남음
+    expect(m.stats).toEqual([{label: 'TIME', value: '55:00'}]); // 시간만 남음
   });
 
   test('브랜드만 있고 모델이 없으면 신발명은 브랜드만(앞뒤 공백 없음)', () => {
     const m = buildShareCardModel({distKm: 4, shoeBrand: 'HOKA'});
     expect(m.shoe).toBe('HOKA');
+  });
+
+  test('durationS 가 있으면 TIME 을 항상 6자리 HH:MM:SS 로 표기한다(레퍼런스 톤)', () => {
+    expect(buildShareCardModel({distKm: 5, time: '45:04', durationS: 2704}).stats).toEqual([
+      {label: 'TIME', value: '00:45:04'},
+    ]);
+    expect(buildShareCardModel({distKm: 5, time: '1:05:00', durationS: 3900}).stats[0]).toEqual({
+      label: 'TIME',
+      value: '01:05:00',
+    });
+    // durationS 없으면 표시 문자열 그대로(폴백).
+    expect(buildShareCardModel({distKm: 5, time: '45:04'}).stats[0].value).toBe('45:04');
   });
 
   test('단위 미지정 시 km로 처리한다', () => {

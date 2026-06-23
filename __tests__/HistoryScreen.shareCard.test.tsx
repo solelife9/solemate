@@ -14,9 +14,8 @@
 
 import React from 'react';
 import ReactTestRenderer, {act} from 'react-test-renderer';
-import {Share} from 'react-native';
+import {Share, Alert} from 'react-native';
 import HistoryScreen from '../HistoryScreen.rn';
-import {buildRunShareText} from '../lib/share';
 
 const SHOE = {brand: 'NIKE', model: 'Pegasus 41', used: 0, max: 800, condition: '양호'} as any;
 
@@ -77,12 +76,27 @@ function byLabel(root: ReactTestRenderer.ReactTestInstance, label: string) {
   );
 }
 
+// '공유' 버튼은 이제 액션시트(Alert)를 띄운다 — 카메라/앨범/사진없이. 카드 캡처·공유는
+// '사진 없이'(또는 사진 선택 후)에 일어난다. 테스트는 Alert 의 '사진 없이' 를 눌러 공유를 탄다.
+function chooseNoPhoto(alertSpy: jest.SpyInstance) {
+  const call = alertSpy.mock.calls[alertSpy.mock.calls.length - 1];
+  const buttons = (call[2] as any[]) || [];
+  const btn = buttons.find(b => b.text === '사진 없이');
+  if (!btn) throw new Error('공유 액션시트에 "사진 없이" 가 없음');
+  btn.onPress();
+}
+
 describe('HistoryScreen 카드 공유(이미지) 버튼', () => {
   let shareSpy: jest.SpyInstance;
+  let alertSpy: jest.SpyInstance;
   beforeEach(() => {
     shareSpy = jest.spyOn(Share, 'share').mockResolvedValue({action: 'sharedAction'} as any);
+    alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
   });
-  afterEach(() => shareSpy.mockRestore());
+  afterEach(() => {
+    shareSpy.mockRestore();
+    alertSpy.mockRestore();
+  });
 
   test('카드 공유를 누르면 toDataURL PNG dataURL이 Share.share에 url로 전달된다', async () => {
     let renderer!: ReactTestRenderer.ReactTestRenderer;
@@ -95,7 +109,10 @@ describe('HistoryScreen 카드 공유(이미지) 버튼', () => {
     await openDetail(root, 'Pegasus 41');
 
     await act(async () => {
-      byLabel(root, '카드 공유').props.onPress();
+      byLabel(root, '공유').props.onPress(); // 액션시트 표시
+    });
+    await act(async () => {
+      chooseNoPhoto(alertSpy); // '사진 없이' → 캡처·공유
     });
     await flush();
 
@@ -107,37 +124,6 @@ describe('HistoryScreen 카드 공유(이미지) 버튼', () => {
     expect(arg.url.startsWith('data:image/png;base64,')).toBe(true);
     // jest.setup의 Svg 목이 내보내는 고정 base64가 그대로 dataURL에 담긴다.
     expect(arg.url).toBe('data:image/png;base64,MOCK_SHARE_CARD_PNG_BASE64');
-  });
-
-  test('기존 텍스트 공유 버튼은 그대로 message로 공유한다(회귀 가드)', async () => {
-    let renderer!: ReactTestRenderer.ReactTestRenderer;
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<HistoryScreen shoes={[SHOE]} runs={[RUN]} unit="km" />);
-    });
-    await flush();
-    const root = renderer.root;
-
-    await openDetail(root, 'Pegasus 41');
-
-    await act(async () => {
-      byLabel(root, '공유').props.onPress();
-    });
-    await flush();
-
-    expect(shareSpy).toHaveBeenCalledTimes(1);
-    const arg = shareSpy.mock.calls[0][0];
-    expect(arg.url).toBeUndefined();
-    expect(arg.message).toBe(
-      buildRunShareText({
-        distKm: 5.2,
-        unit: 'km',
-        pace: "5'02\"",
-        time: '40:41',
-        shoeBrand: 'NIKE',
-        shoeModel: 'Pegasus 41',
-        date: '5월 28일 수요일',
-      }),
-    );
   });
 
   test('카드 공유가 reject 돼도 예외가 표면화되지 않는다(조용히 무시)', async () => {
@@ -154,7 +140,10 @@ describe('HistoryScreen 카드 공유(이미지) 버튼', () => {
     await expect(
       (async () => {
         await act(async () => {
-          byLabel(root, '카드 공유').props.onPress();
+          byLabel(root, '공유').props.onPress();
+        });
+        await act(async () => {
+          chooseNoPhoto(alertSpy);
         });
         await flush();
       })(),

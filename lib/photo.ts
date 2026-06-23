@@ -36,3 +36,21 @@ export async function pickShoePhoto(): Promise<PickedPhoto | null> {
   const asset = res.assets && res.assets[0];
   return asset ? {uri: asset.uri} : null;
 }
+
+/**
+ * 공유 카드 배경용 사진을 카메라 촬영 또는 앨범 선택으로 받는다(러닝 직후 '바로 찍어
+ * 자랑' 플로우). 권한 거부·취소 → null(조용히 사진 없이 진행). 9:16~4:5 카드라 편집 허용.
+ *
+ * @throws 네이티브 런처 예외는 전파(호출부가 비차단 처리).
+ */
+export async function pickPhotoFrom(source: 'camera' | 'library'): Promise<PickedPhoto | null> {
+  if (source === 'camera') {
+    const perm = await ImagePicker.requestCameraPermissionsAsync();
+    if (!perm.granted) return null;
+    const res = await ImagePicker.launchCameraAsync({mediaTypes: ['images'], allowsEditing: true, quality: 0.7});
+    if (res.canceled) return null;
+    const a = res.assets && res.assets[0];
+    return a ? {uri: a.uri} : null;
+  }
+  return pickShoePhoto();
+}

@@ -12,7 +12,7 @@
 import React from 'react';
 import ReactTestRenderer, {act} from 'react-test-renderer';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import HistoryScreen, {RunForm} from '../HistoryScreen.rn';
+import {RunForm} from '../HistoryScreen.rn';
 import {Shoe, Run} from '../theme';
 
 function textOf(node: any): string {
@@ -68,13 +68,11 @@ beforeEach(async () => { await AsyncStorage.clear(); });
 
 describe('HistoryScreen — 런 노면 태그', () => {
   test('편집 폼 노면 칩 press → surface_<runId>가 올바른 값으로 영속된다', async () => {
+    // 편집 진입 버튼(연필)은 사용자 요청으로 제거됨 → 공용 RunForm 을 편집 모드(initial=RUN)로
+    // 직접 렌더한다. 편집 런은 id 가 있어 칩 press 시 즉시 setRunSurface 로 영속된다.
     const root = render(
-      <HistoryScreen shoes={SHOES} runs={[RUN]} onEditRun={() => {}} onAddRun={() => {}} onDeleteRun={() => {}} />,
+      <RunForm shoes={SHOES} unit="km" initial={RUN} onCancel={() => {}} onSubmit={() => {}} />,
     ).root;
-
-    // 런 행 → 상세 → 편집 폼.
-    await tap(root, '6월 1일 Nike Pegasus 기록');
-    await tap(root, '편집');
 
     // 트레일 칩 press → 즉시 영속(편집 런은 id가 있으므로).
     await tap(root, '노면 트레일');
