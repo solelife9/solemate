@@ -10,7 +10,7 @@
 // ============================================================================
 import React from 'react';
 import Svg, {Rect, Path, Circle, Text as SvgText, G} from 'react-native-svg';
-import {ACCENT, T1, T3} from './theme';
+import {ACCENT, T1} from './theme';
 
 // [실험] 공유 카드 전용 폰트 — 레퍼런스(STEP STEP)의 깔끔한 네오-그로테스크 느낌.
 // iOS 내장 Helvetica Neue(번들 0). Android 는 미보유 → 시스템 산세(Roboto)로 폴백.
@@ -116,10 +116,10 @@ const ShareCard = React.forwardRef<unknown, ShareCardProps>(({model, route = []}
         const cx = x0 + slot * i + slot / 2;
         return (
           <G key={s.label}>
-            <SvgText x={cx} y={STATS_LABEL_Y} fill={T3} fontFamily={CF} fontSize={27} fontWeight="600" letterSpacing={2.5} textAnchor="middle">
+            <SvgText x={cx} y={STATS_LABEL_Y} fill={T1} fillOpacity={0.85} fontFamily={CF} fontSize={31} fontWeight="600" letterSpacing={2} textAnchor="middle">
               {s.label.toUpperCase()}
             </SvgText>
-            <SvgText x={cx} y={STATS_VALUE_Y} fill={T1} fontFamily={CF} fontSize={56} fontWeight="800" letterSpacing={-0.5} textAnchor="middle">
+            <SvgText x={cx} y={STATS_VALUE_Y} fill={T1} fontFamily={CF} fontSize={64} fontWeight="800" letterSpacing={-0.5} textAnchor="middle">
               {s.value}
             </SvgText>
           </G>

@@ -17,12 +17,11 @@ import { Unit, displayNum, displayToKm } from './lib/units';
 import { ymdLocal } from './lib/format';
 import { sumKm, summaryOf, monthBuckets, weekBuckets, yearBuckets } from './lib/stats';
 import { getRunSurface, setRunSurface, type Surface } from './lib/wearModel';
-import { pickPhotoFrom } from './lib/photo';
 import { parseRoute, projectRoute, LatLon } from './lib/route';
 import { DARK_MAP_STYLE } from './lib/mapStyle';
 import { RunSplits, Split } from './RunSplits';
 import { buildSplits } from './lib/splits';
-import { buildShareCardModel, shareRunCard, SvgCapturable } from './lib/shareCard';
+import { buildShareCardModel, shareRunCard, saveCardToLibrary, SvgCapturable } from './lib/shareCard';
 import { maskDuration, maskDate, validateRunForm, type RunFormErrors } from './lib/inputMask';
 import ShareCard from './ShareCard';
 
@@ -431,28 +430,25 @@ function RunDetail({ run, shoe, onBack, unit, onDelete }: { run: Run; shoe?: Sho
     shoeModel: shoe?.model,
     date: `${run.date} ${run.day}요일`,
   };
-  // 이미지 카드 공유: 화면 밖에 마운트된 <ShareCard>의 Svg ref.toDataURL()로 PNG
-  // dataURL을 만들어 RN Share로 내보낸다. 새 네이티브 의존 없이 react-native-svg만
-  // 사용. 캡처 실패 시 텍스트 공유로 조용히 폴백한다(shareRunCard 내부 처리).
+  // 공유 카드는 배경 없는 투명 PNG(스트라바 방식) — 사진앱에 저장 후, 인스타 스토리에서
+  // 사용자가 자기 사진 위에 스티커로 얹는다. '공유 시트로'는 RN Share 폴백(캡처 실패 시 텍스트).
   const cardRef = useRef<SvgCapturable | null>(null);
-  // 러닝 직후 '바로 찍어 자랑' — 사용자가 고른 사진을 카드 배경에 깐다(없으면 무드 다크).
-  const [sharePhoto, setSharePhoto] = useState<string | undefined>(undefined);
-  const cardModel = buildShareCardModel({ ...shareInput, photoUri: sharePhoto });
+  const cardModel = buildShareCardModel(shareInput);
   const doShare = () => shareRunCard(cardRef, shareInput);
-  const pickThenShare = async (source: 'camera' | 'library') => {
-    try {
-      const p = await pickPhotoFrom(source);
-      if (!p) return; // 취소/권한거부 → 중단(다시 누르면 됨)
-      setSharePhoto(p.uri);
-      // 사진이 off-screen 카드에 반영되고 SVG 이미지가 로드될 시간을 준 뒤 캡처.
-      setTimeout(doShare, 650);
-    } catch { doShare(); }
+  const saveCard = async () => {
+    const r = await saveCardToLibrary(cardRef);
+    if (r === 'saved') {
+      Alert.alert('사진앱에 저장됐어요', '인스타 스토리에서 내 사진을 고른 뒤, 사진/스티커로 이 카드를 올리면 돼요.');
+    } else if (r === 'denied') {
+      Alert.alert('권한 필요', '설정에서 사진 추가 권한을 허용해 주세요.');
+    } else {
+      Alert.alert('저장 실패', '잠시 후 다시 시도해 주세요.');
+    }
   };
   const onShareCard = () => {
-    Alert.alert('러닝 카드 공유', '러닝 사진을 배경에 넣으면 더 멋진 카드가 돼요.', [
-      { text: '카메라로 촬영', onPress: () => pickThenShare('camera') },
-      { text: '앨범에서 선택', onPress: () => pickThenShare('library') },
-      { text: '사진 없이', onPress: doShare },
+    Alert.alert('러닝 카드', '투명 카드를 사진앱에 저장해, 인스타 스토리에서 내 사진 위에 올리세요.', [
+      { text: '사진앱에 저장', onPress: saveCard },
+      { text: '공유 시트로', onPress: doShare },
       { text: '취소', style: 'cancel' },
     ]);
   };

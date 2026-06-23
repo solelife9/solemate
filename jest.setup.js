@@ -76,6 +76,26 @@ jest.mock('expo-image-picker', () => ({
   launchImageLibraryAsync: jest.fn(() =>
     Promise.resolve({canceled: true, assets: null}),
   ),
+  launchCameraAsync: jest.fn(() =>
+    Promise.resolve({canceled: true, assets: null}),
+  ),
+  requestCameraPermissionsAsync: jest.fn(() =>
+    Promise.resolve({granted: true, status: 'granted'}),
+  ),
+}));
+
+// ── expo-file-system/legacy + expo-media-library ─────────────────────────────
+// 공유 카드(투명 PNG)를 사진앱에 저장하는 경로. 기본: 파일 기록 성공 + 권한 허용 + 저장 성공.
+jest.mock('expo-file-system/legacy', () => ({
+  __esModule: true,
+  cacheDirectory: 'file:///cache/',
+  EncodingType: {Base64: 'base64', UTF8: 'utf8'},
+  writeAsStringAsync: jest.fn(() => Promise.resolve()),
+}));
+jest.mock('expo-media-library', () => ({
+  __esModule: true,
+  requestPermissionsAsync: jest.fn(() => Promise.resolve({granted: true, status: 'granted'})),
+  saveToLibraryAsync: jest.fn(() => Promise.resolve()),
 }));
 
 // ── expo-sensors (Pedometer) ─────────────────────────────────────────────────

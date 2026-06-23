@@ -9,6 +9,8 @@
 // 캔버스 자체는 jest.setup의 Svg 목이 toDataURL을 흉내 내므로 경로를 그대로 테스트한다.
 
 import {Share} from 'react-native';
+import * as FileSystem from 'expo-file-system/legacy';
+import * as MediaLibrary from 'expo-media-library';
 import {Unit, displayNum} from './units';
 import {buildRunShareText, RunShareInput} from './share';
 import {fmtPace, fmtTime} from './format';
@@ -155,6 +157,29 @@ export function captureCardDataUrl(ref: SvgRefLike): Promise<string> {
  * 등) 기존 텍스트 공유(buildRunShareText)로 조용히 폴백한다 — 사용자에게는 항상
  * 무언가가 공유되거나, 닫아도 예외가 표면화되지 않는다.
  */
+/**
+ * 공유 카드(투명 PNG)를 사진앱에 저장한다 — 인스타 스토리에서 자기 사진 위에 스티커로
+ * 올리기 위함(스트라바 방식: 배경 없는 오버레이를 갤러리에 저장 → 사용자가 직접 합성).
+ * 캡처(toDataURL base64) → 임시파일 기록 → MediaLibrary 로 사진앱 저장.
+ *   'saved'  — 저장 성공
+ *   'denied' — 사진 추가 권한 거부
+ *   'failed' — 캡처/파일/저장 실패(호출부가 안내)
+ */
+export async function saveCardToLibrary(ref: SvgRefLike): Promise<'saved' | 'denied' | 'failed'> {
+  try {
+    const dataUrl = await captureCardDataUrl(ref);
+    const base64 = dataUrl.replace(/^data:image\/png;base64,/, '');
+    const fileUri = `${FileSystem.cacheDirectory}keego-run-${Date.now()}.png`;
+    await FileSystem.writeAsStringAsync(fileUri, base64, {encoding: FileSystem.EncodingType.Base64});
+    const perm = await MediaLibrary.requestPermissionsAsync(true); // writeOnly: '사진 추가'만
+    if (!perm.granted) return 'denied';
+    await MediaLibrary.saveToLibraryAsync(fileUri);
+    return 'saved';
+  } catch {
+    return 'failed';
+  }
+}
+
 export async function shareRunCard(ref: SvgRefLike, fallback: RunShareInput): Promise<void> {
   try {
     const url = await captureCardDataUrl(ref);
