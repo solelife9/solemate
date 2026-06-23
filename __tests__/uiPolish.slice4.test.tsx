@@ -25,6 +25,7 @@ import ShoesScreen from '../ShoesScreen.rn';
 import {Shoe} from '../theme';
 import {SNAPSHOT_KEY, RunSnapshot} from '../lib/runPersistence';
 import {fmtTime, fmtPace} from '../lib/format';
+import {seedBootCache} from './helpers/bootSeed';
 
 function textOf(node: any): string {
   let out = '';
@@ -83,7 +84,14 @@ function pressByText(root: ReactTestRenderer.ReactTestInstance, label: string) {
 }
 
 async function toLiveRun() {
+  // Phase 5b·Stage 3(Firestore 정본): App 부팅은 REST GET 이 아니라 로컬 부팅 캐시
+  // (cache_shoes_v1)에서 신발을 읽는다(App.tsx:597-608 loadBootCache→setShoes). 따라서
+  // 홈에 '러닝 시작' CTA 가 뜨려면 REST 목이 아니라 부팅 캐시에 활성 신발을 시드해야 한다.
   mockBackendWithShoe();
+  await seedBootCache(
+    [{id: 's1', brand: 'Nike', model: 'Pegasus', used: 50, max: 600, condition: '양호'}],
+    [],
+  );
   let renderer!: ReactTestRenderer.ReactTestRenderer;
   await act(async () => {
     renderer = ReactTestRenderer.create(<App />);
@@ -218,12 +226,27 @@ test('①b 완주/요약 지표 행: time/flash/walk-outline 아이콘이 없고
 
 // ── ② History 요약 카드(목업 기록10): 큰 거리 + 횟수/평균페이스/총시간 ─────────────
 test('② 기간 요약 카드 — 거리는 큰 숫자, 횟수/평균페이스/총시간 라벨·값 모두 렌더', () => {
+  // 기간(주/월/년) 요약은 이제 주입된 runs 에서 파생되고(HistoryScreen.rn.tsx:680-695,704),
+  // summary prop 은 '전체'(전기간) 카드만 채운다(sum = summary['전체'] || EMPTY_SUMMARY).
+  // 따라서 결정적 목 값으로 요약 카드를 단언하려면 '전체' 키로 시드 후 '전체' 세그먼트를
+  // 눌러야 한다(기본 period 는 '월' — runs 파생이라 빈 runs 면 default 값이 뜬다).
   const summary = {
-    '월': {km: '88', runs: 20, pace: "5'30\"", time: '7:40'},
+    '전체': {km: '88', runs: 20, pace: "5'30\"", time: '7:40'},
   };
   const root = render(
     <HistoryScreen summary={summary as any} runs={[]} unit="km" />,
   ).root;
+  // '전체' 세그먼트 탭 → period='전체' → summary['전체'] 카드 렌더.
+  const allSeg = root
+    .findAll(
+      (n: any) =>
+        n.props &&
+        n.props.accessibilityRole === 'button' &&
+        typeof n.props.onPress === 'function',
+    )
+    .find((n: any) => textOf(n).includes('전체'));
+  if (!allSeg) throw new Error("no '전체' segment found");
+  act(() => allSeg.props.onPress());
   const txt = textOf(root);
 
   // 거리는 큰 숫자(km)로, 나머지는 라벨과 함께 유지(목업 요약 카드).

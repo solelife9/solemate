@@ -145,6 +145,7 @@ describe('safeArea — top spacing derives from insets, never a hard-coded 60', 
 describe('empty-state copy speaks in the keep-going voice', () => {
   test('Home empty state encourages continuing the journey', () => {
     const root = render(<HomeScreen shoes={[]} onAddShoe={() => {}} />).root;
-    expect(textOf(root)).toContain('계속 달릴 수 있어요');
+    // 빈 상태 카피가 진화함(HomeScreen.rn.tsx:427) — 부상 예방·더 오래 달리기의 keep-going voice.
+    expect(textOf(root)).toContain('더 오래 달리게');
   });
 });

@@ -717,7 +717,7 @@ const s = StyleSheet.create({
   // 명예의 전당
   hofHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8, paddingHorizontal: 4 },
   hofTitle: { color: WARN, fontFamily: FONT, fontSize: 13, fontWeight: '700', letterSpacing: 0.4 },
-  hofCard: { backgroundColor: '#1A1500', borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(WARN, 0.25), padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  hofCard: { backgroundColor: withAlpha(WARN, 0.1), borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(WARN, 0.25), padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12 },
   hofTrophyBadge: { width: 32, height: 32, borderRadius: 16, backgroundColor: withAlpha(WARN, 0.12), alignItems: 'center', justifyContent: 'center' },
   hofBrand: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500' },
   hofModel: { color: T2, fontFamily: FONT, fontSize: 15, fontWeight: '600', marginTop: 2 },

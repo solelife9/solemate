@@ -557,7 +557,7 @@ function DrumColumn({ items, selectedIndex, onChange }: {
     <View style={{ flex: 1, height: DRUM_H }}>
       <View pointerEvents="none" style={{
         position: 'absolute', top: DRUM_ITEM_H * 2, left: 10, right: 10,
-        height: DRUM_ITEM_H, backgroundColor: '#2A2A2A', borderRadius: 12,
+        height: DRUM_ITEM_H, backgroundColor: CARD_HI, borderRadius: RADIUS.sm,
       }} />
       <FlatList
         ref={ref}
@@ -841,7 +841,7 @@ export default function HistoryScreen({
 
       <Modal visible={showPicker} transparent animationType="slide" onRequestClose={() => setShowPicker(false)}>
         <Pressable style={{ flex: 1, backgroundColor: SCRIM }} onPress={() => setShowPicker(false)} />
-        <View style={{ backgroundColor: '#111111', borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingBottom: insets.bottom + 16 }}>
+        <View style={{ backgroundColor: CARD, borderTopLeftRadius: RADIUS.xl, borderTopRightRadius: RADIUS.xl, paddingBottom: insets.bottom + 16 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 16 }}>
             <Pressable onPress={() => setShowPicker(false)} hitSlop={8}>
               <Text style={{ color: T3, fontFamily: FONT, fontSize: 15 }}>취소</Text>
