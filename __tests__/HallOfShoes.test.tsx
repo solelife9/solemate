@@ -103,7 +103,7 @@ describe('HallOfShoes — 은퇴 신발 전시', () => {
   test('레코드 0개면 빈 상태(격려)를 보여준다', () => {
     const r = render(<HallOfShoes records={[]} />);
     expect(hostsWith(r.root, 'hall-empty').length).toBe(1);
-    expect(textOf(r.root)).toContain('아직 헌액된 신발이 없어요');
+    expect(textOf(r.root)).toContain('첫 헌액을 기다려요');
   });
 
   test('영속 라운드트립: 저장한 레코드를 복원해 그대로 전시한다(리로드 보존)', async () => {

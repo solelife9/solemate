@@ -299,32 +299,42 @@ function Certificate({shoe, unit, userName, width, onClose}: {shoe: RetiredShoeR
 function EmptyHall({onRegister}: {onRegister?: () => void}) {
   return (
     <View style={st.empty} testID="hall-empty">
-      <Svg width={210} height={168}>
-        <Defs>
-          <RadialGradient id="halo" cx="50%" cy="44%" rx="50%" ry="50%">
-            <Stop offset="0" stopColor="#D6B478" stopOpacity={0.2} />
-            <Stop offset="0.45" stopColor="#D6B478" stopOpacity={0.05} />
-            <Stop offset="0.7" stopColor="#D6B478" stopOpacity={0} />
-          </RadialGradient>
-        </Defs>
-        <Circle cx="105" cy="74" r="78" fill="url(#halo)" />
-        <Path d="M44 116 L166 116 L189 168 L21 168 Z" fill="rgba(214,180,120,0.06)" stroke={G.soft} strokeWidth={1} />
-        <Circle cx="105" cy="74" r="48" fill="none" stroke={G.soft} strokeWidth={1.5} strokeDasharray="5 6" />
-        <Rect x="101" y="70" width="8" height="8" rx="1" fill={G.gold} opacity={0.7} transform="rotate(45 105 74)" />
-      </Svg>
+      {/* 스포트라이트가 비치는 빈 받침대 — '당신의 첫 신발이 여기 선다'는 기대감. */}
+      <View style={st.emptyArt}>
+        <Svg width={250} height={190} style={StyleSheet.absoluteFill}>
+          <Defs>
+            <RadialGradient id="halo" cx="50%" cy="40%" rx="56%" ry="56%">
+              <Stop offset="0" stopColor="#D6B478" stopOpacity={0.24} />
+              <Stop offset="0.5" stopColor="#D6B478" stopOpacity={0.05} />
+              <Stop offset="0.76" stopColor="#D6B478" stopOpacity={0} />
+            </RadialGradient>
+            <LinearGradient id="beam" x1="0.5" y1="0" x2="0.5" y2="1">
+              <Stop offset="0" stopColor="#D6B478" stopOpacity={0.13} />
+              <Stop offset="1" stopColor="#D6B478" stopOpacity={0} />
+            </LinearGradient>
+            <LinearGradient id="plinth" x1="0.5" y1="0" x2="0.5" y2="1">
+              <Stop offset="0" stopColor="#D6B478" stopOpacity={0.2} />
+              <Stop offset="1" stopColor="#D6B478" stopOpacity={0.03} />
+            </LinearGradient>
+          </Defs>
+          <Circle cx="125" cy="78" r="96" fill="url(#halo)" />
+          {/* 위에서 내려오는 빛줄기 → 받침대 위로 모인다 */}
+          <Path d="M96 0 L154 0 L178 150 L72 150 Z" fill="url(#beam)" />
+          {/* 2단 받침대(플린스) */}
+          {/* 받침대: 채워진 입체 플린스(상단 슬랩 + 테이퍼 베이스) + 상단 골드 엣지 — 와이어프레임 느낌 제거 */}
+          <Path d="M72 163 L178 163 L196 190 L54 190 Z" fill="url(#plinth)" />
+          <Rect x="80" y="149" width="90" height="14" rx="3" fill="url(#plinth)" />
+          <Rect x="80" y="149" width="90" height="2.5" rx="1.2" fill={G.gold} opacity={0.5} />
+        </Svg>
+        {/* 받침대 위 트로피 엠블럼(골드 링 + 트로피) — 헌액을 기다리는 자리 */}
+        <View style={st.emblem}>
+          <Ionicons name="trophy" size={34} color={G.gold} />
+        </View>
+      </View>
 
       <Text style={st.eLabel}>EMPTY HALL</Text>
-      <Text style={st.eTitle}>아직 헌액된 신발이 없어요</Text>
-      <Text style={st.eDesc}>신발 한 켤레와 끝까지 달린 뒤 은퇴시키면,{'\n'}그 여정이 이곳 명예의 전당에 영구히 새겨져요.</Text>
-
-      <View style={st.ghosts}>
-        {[0, 1, 2].map(i => (
-          <View key={i} style={st.ghost}>
-            <View style={st.ghostRing} />
-            <View style={st.ghostBar} />
-          </View>
-        ))}
-      </View>
+      <Text style={st.eTitle}>첫 헌액을 기다려요</Text>
+      <Text style={st.eDesc}>신발 한 켤레와 끝까지 달린 뒤 은퇴시키면,{'\n'}그 여정이 이곳에 영원히 새겨져요.</Text>
 
       {!!onRegister && (
         <View style={st.cta}>
@@ -426,15 +436,13 @@ const st = StyleSheet.create({
   coFootKg: {fontSize: 10, fontWeight: '800', letterSpacing: 2.8, color: G.gold},
 
   // 빈 상태
-  empty: {alignItems: 'center', paddingTop: 26},
-  eLabel: {fontSize: 11, fontWeight: '800', letterSpacing: 3.3, color: G.gold, marginTop: 30},
+  empty: {alignItems: 'center', paddingTop: 30},
+  emptyArt: {width: 250, height: 190, alignItems: 'center'},
+  emblem: {width: 70, height: 70, borderRadius: 35, borderWidth: 1.5, borderColor: G.soft, backgroundColor: 'rgba(214,180,120,0.09)', alignItems: 'center', justifyContent: 'center', marginTop: 43},
+  eLabel: {fontSize: 11, fontWeight: '800', letterSpacing: 3.3, color: G.gold, marginTop: 34},
   eTitle: {fontFamily: SERIF, fontSize: 24, fontWeight: '800', color: G.txt, marginTop: 14},
   eDesc: {fontSize: 14, fontWeight: '500', color: G.muted, lineHeight: 23, marginTop: 14, textAlign: 'center', maxWidth: 286},
-  ghosts: {flexDirection: 'row', gap: 12, marginTop: 34},
-  ghost: {width: 64, height: 76, borderRadius: 12, borderWidth: 1, borderColor: G.line, borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center', gap: 8},
-  ghostRing: {width: 22, height: 22, borderRadius: 11, borderWidth: 1, borderColor: G.soft, borderStyle: 'dashed'},
-  ghostBar: {width: 26, height: 4, borderRadius: 2, backgroundColor: G.line},
-  cta: {alignSelf: 'stretch', alignItems: 'center', gap: 14, marginTop: 38},
+  cta: {alignSelf: 'stretch', alignItems: 'center', gap: 14, marginTop: 40},
   ctaBtn: {alignSelf: 'stretch', height: 54, borderRadius: 16, borderWidth: 1, borderColor: G.soft, backgroundColor: 'rgba(214,180,120,0.10)', alignItems: 'center', justifyContent: 'center'},
   ctaBtnTxt: {fontSize: 15, fontWeight: '700', color: G.gold},
 });
