@@ -1134,6 +1134,11 @@ function Main(){
   const uiShoes:Shoe[]=shoes.map(toUiShoe);
   const idxById:Record<string,number>={};
   shoes.forEach((s,i)=>{idxById[s.id]=i;});
+  // 신발명 by id — 삭제(tombstone)된 신발까지 포함해, 그 신발로 달린 런의 공유 카드에도
+  // 이름이 뜨게 한다(삭제는 소프트삭제라 이름 정보가 묘비에 남아있다).
+  const nameById:Record<string,string>={};
+  shoes.forEach(s=>{if(s.name)nameById[s.id]=s.name;});
+  tombstones.shoes.forEach(s=>{if(s.id&&s.name&&!nameById[s.id])nameById[s.id]=s.name;});
 
   // 홈/러닝 picker용 목록: 보관된 신발은 숨기고 '가장 최근에 신은 순'으로 정렬한다
   // (미착용은 뒤, 동률은 등록순 유지). 홈 히어로 기준(mostRecentShoeId)과 picker 카드
@@ -1261,6 +1266,7 @@ function Main(){
       pace:dur>0&&km>0.1?fmtPace(km,dur):'--',
       time:dur>0?fmtTime(dur):'--',
       shoe:idxById[run.shoe_id]??-1,
+      shoeName:nameById[run.shoe_id]??'', // 삭제 신발 포함 — 공유 카드 폴백용
       cal:0, cadence:run.cadence||0, bpm:run.heart_rate||0, elev:0,
       // 편집 폼 프리필용 원본값(날짜·시간 초). 거리/신발은 위 dist/shoe로 충분.
       runDate:String(run.run_date??''), durationS:dur,

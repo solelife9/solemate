@@ -186,6 +186,7 @@ export type Run = {
   pace: string;   // "5'02\""
   time: string;   // "40:41"
   shoe: number;   // index into shoes[]
+  shoeName?: string; // 신발명(삭제 신발 포함) — 공유 카드 폴백(인덱스로 못 찾을 때)
   cal: number;
   cadence: number;
   bpm: number;
