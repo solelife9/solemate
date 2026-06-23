@@ -205,6 +205,8 @@ export default function RunGoalScreen({
         <Button
           label="러닝 시작"
           onPress={startRun}
+          // startRun 이 직접 tap() 을 울리므로 공용 버튼 햅틱은 끈다(중복 방지).
+          haptic={false}
           iconNode={<Icon name="play" size={22} color="#fff" fill="#fff" />}
           style={s.cta}
         />

@@ -54,6 +54,7 @@ import {
   TYPE,
   withAlpha,
 } from './theme';
+import {tap as hapticTap} from './lib/haptics';
 import {tierBadge, ShoeCondition} from './lib/shoe';
 import {InjuryLevel} from './lib/injury';
 
@@ -210,6 +211,7 @@ export function Button({
   disabled = false,
   style,
   testID,
+  haptic = true,
 }: {
   label: string;
   onPress?: () => void;
@@ -219,13 +221,23 @@ export function Button({
   disabled?: boolean;
   style?: StyleProp<ViewStyle>;
   testID?: string;
+  /** 누름 시 가벼운 탭 햅틱(기본 on). 자체 햅틱을 따로 울리는 곳에서만 false 로 끈다. */
+  haptic?: boolean;
 }) {
   // filled = 주황 그라데이션 CTA 표면(활성 cta 일 때만). ghost·disabled 는 CARD_HI 표면.
   const filled = variant === 'cta' && !disabled;
+  // 모든 공용 버튼에 누름 촉각을 한 곳에서 배선한다 — 결과 햅틱(success/warning 등)과
+  // 별개의 '눌렀다' 피드백. 설정 off 면 hapticTap 자체가 no-op 이라 분기 불필요.
+  const handlePress = onPress
+    ? () => {
+        if (haptic) hapticTap();
+        onPress();
+      }
+    : undefined;
   return (
     <Pressable
       testID={testID}
-      onPress={disabled ? undefined : onPress}
+      onPress={disabled ? undefined : handlePress}
       disabled={disabled}
       accessibilityRole="button"
       accessibilityLabel={label}

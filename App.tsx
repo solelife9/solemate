@@ -40,6 +40,7 @@ import {TIER_LABEL} from './theme';
 import CelebrationScreen, {CelebrationData} from './CelebrationScreen.rn';
 import {loadProgression, saveProgression} from './lib/progression/storage';
 import {mergeCelebBaseline} from './lib/celebrationBaseline';
+import {success as hapticSuccess} from './lib/haptics';
 import type {ProgressionState, RetiredShoeRecord} from './lib/progression/types';
 import type {HomeProgression, HomeChallengeView} from './HomeScreen.rn';
 import {challengeProgress} from './lib/challenges';
@@ -2000,6 +2001,7 @@ function RunActiveScreen({shoe,insets,goalKm,weightKg,onSave,onDiscard,resume,re
         }catch{}
       }
       await onSave(Math.round(finKm*100)/100,finTime,finCad,memo,finRoute,loc,finSplits);
+      hapticSuccess(); // 저장 성공 — 완주 보상 촉각(설정 off 면 graceful no-op).
     }finally{setSaving(false);}
   }
 

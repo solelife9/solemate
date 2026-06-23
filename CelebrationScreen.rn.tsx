@@ -12,6 +12,7 @@ import {View, Text, Pressable, StyleSheet, Animated, Easing} from 'react-native'
 import Svg, {Defs, RadialGradient, Stop, Circle, Path} from 'react-native-svg';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {BG, T1, T3, ACCENT, FONT, DISPLAY, RADIUS, withAlpha} from './theme';
+import {success, impactHeavy} from './lib/haptics';
 
 export type CelebrationData =
   | {
@@ -123,8 +124,12 @@ export default function CelebrationScreen({data, onClose}: {data: CelebrationDat
   const insets = useSafeAreaInsets();
   const anim = useRef(new Animated.Value(0)).current;
   useEffect(() => {
+    // 보상 순간의 촉각 피드백 — 등급 상승은 묵직한 단발, 그 외 업적은 성공 펄스.
+    // (큐로 다음 축하가 떠도 마운트마다 한 번씩 울린다. 설정 off 면 graceful no-op.)
+    if (data.type === 'rankup') impactHeavy();
+    else success();
     Animated.timing(anim, {toValue: 1, duration: 950, easing: Easing.out(Easing.cubic), useNativeDriver: true}).start();
-  }, [anim]);
+  }, [anim, data.type]);
 
   if (data.type === 'rankup') {
     const c = data.rankColor;
