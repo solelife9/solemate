@@ -65,7 +65,7 @@ describe('ShareCard render', () => {
     expect(txt).toContain('NIKE Pegasus 41'); // 신발명
     expect(txt).toContain("5'02\" /km"); // 페이스(라벨 /km 고정)
     expect(txt).toContain('40:41'); // 시간
-    expect(txt).toContain('5월 28일 수요일'); // 날짜
+    expect(txt).not.toContain('5월 28일 수요일'); // 날짜는 카드에 표시하지 않음
     expect(txt).toContain('KEEGO'); // 브랜드 워드마크(대문자)
     expect(txt).toContain('START'); // 경로 시작 마커
     // 가로 스탯 라벨(영문 대문자).

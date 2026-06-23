@@ -79,14 +79,9 @@ const ShareCard = React.forwardRef<unknown, ShareCardProps>(({model, route = []}
     <Svg ref={ref as never} width={CARD_W} height={CARD_H}>
       {/* 배경 없음(투명) — 인스타 스토리에서 사용자 사진 위에 스티커로 얹는다(스트라바 방식). */}
 
-      {/* 상단: 날짜(우) + 신발(좌) */}
-      {!!model.date && (
-        <SvgText x={CARD_W - 72} y={108} fill={T1} fillOpacity={0.82} fontFamily={CF} fontSize={30} textAnchor="end" letterSpacing={0.5}>
-          {model.date}
-        </SvgText>
-      )}
+      {/* 좌상단: 달린 러닝화 이름(날짜는 표시하지 않음) */}
       {!!model.shoe && (
-        <SvgText x={72} y={108} fill={T1} fillOpacity={0.82} fontFamily={CF} fontSize={30} fontWeight="600">
+        <SvgText x={72} y={112} fill={T1} fillOpacity={0.92} fontFamily={CF} fontSize={36} fontWeight="700">
           {model.shoe}
         </SvgText>
       )}
