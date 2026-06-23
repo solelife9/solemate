@@ -579,7 +579,6 @@ export default function ShoesScreen({
       <View style={s.topbar}>
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={s.title}>신발</Text>
-          <Text style={s.shoesSub}>{activeShoes.length}켤레와 함께 총 {displayNum(activeShoes.reduce((a, { sh }) => a + (sh.used || 0), 0), unit)}{unit}를 달렸어요</Text>
         </View>
         <Pressable onPress={onAddShoe} accessibilityRole="button" accessibilityLabel="신발 추가" hitSlop={8} style={({ pressed }) => [s.addPill, pressed && s.pressed]}>
           <Text style={s.addPillText}>신발 추가</Text>
@@ -623,7 +622,6 @@ const s = StyleSheet.create({
   // 목업 정합: 제목 + '신발 추가' 버튼 한 줄(topbar)
   topbar: { paddingTop: 8, paddingHorizontal: 22, paddingBottom: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   title: { color: T1, fontFamily: FONT, fontSize: 28, fontWeight: '600', letterSpacing: -0.6 },
-  shoesSub: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '500', marginTop: 5, letterSpacing: -0.2 },
   addPill: { height: 34, paddingHorizontal: 14, borderRadius: RADIUS.pill, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.2), backgroundColor: CARD_HI, flexDirection: 'row', alignItems: 'center', gap: 6 },
   addPillText: { color: T1, fontFamily: FONT, fontSize: 13, fontWeight: '600' },
 
