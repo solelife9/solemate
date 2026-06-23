@@ -111,7 +111,7 @@ const ShareCard = React.forwardRef<unknown, ShareCardProps>(({model, route = []}
         const cx = x0 + slot * i + slot / 2;
         return (
           <G key={s.label}>
-            <SvgText x={cx} y={STATS_LABEL_Y} fill={T1} fillOpacity={0.85} fontFamily={CF} fontSize={31} fontWeight="600" letterSpacing={2} textAnchor="middle">
+            <SvgText x={cx} y={STATS_LABEL_Y} fill={T1} fillOpacity={0.85} fontFamily={CF} fontSize={31} fontWeight="700" letterSpacing={2} textAnchor="middle">
               {s.label.toUpperCase()}
             </SvgText>
             <SvgText x={cx} y={STATS_VALUE_Y} fill={T1} fontFamily={CF} fontSize={64} fontWeight="800" letterSpacing={-0.5} textAnchor="middle">
