@@ -284,13 +284,13 @@ const r = StyleSheet.create({
 
   toast: { position: 'absolute', left: 18, right: 18, top: 50, zIndex: 20, flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 13, paddingHorizontal: 15, borderRadius: 16, backgroundColor: ACCENT },
   toastTick: { width: 34, height: 34, borderRadius: 999, backgroundColor: withAlpha(T1, 0.2), alignItems: 'center', justifyContent: 'center' },
-  toastA: { color: '#fff', fontFamily: FONT, fontSize: 15, fontWeight: '700', letterSpacing: -0.2 },
+  toastA: { color: T1, fontFamily: FONT, fontSize: 15, fontWeight: '700', letterSpacing: -0.2 },
   toastB: { color: withAlpha(T1, 0.88), fontFamily: FONT, fontSize: 12, fontWeight: '500', marginTop: 2 },
 
   top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   live: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   liveDot: { width: 8, height: 8, borderRadius: 999, backgroundColor: ACCENT },
-  liveText: { color: ACCENT, fontFamily: FONT, fontSize: 14, fontWeight: '500', letterSpacing: 0.2 },
+  liveText: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '500', letterSpacing: 0.2 },
   shoeChip: { flexDirection: 'row', alignItems: 'center', gap: 7, backgroundColor: CARD, borderRadius: 999, paddingHorizontal: 12, height: 30, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
   shoeText: { color: T3, fontFamily: DISPLAY, fontSize: 13, fontWeight: '600' },
 
@@ -304,8 +304,8 @@ const r = StyleSheet.create({
   goal: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '500', marginBottom: 10 },
   goalMet: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 10 },
   goalMetText: { color: GOOD, fontFamily: FONT, fontSize: 13, fontWeight: '600' },
-  bigDist: { color: T1, fontFamily: DISPLAY, fontSize: HERO.mega, fontWeight: '800', letterSpacing: -2, lineHeight: 80, includeFontPadding: false, fontVariant: ['tabular-nums'] },
-  bigUnit: { color: T3, fontFamily: FONT, fontSize: 14, fontWeight: '600', marginTop: 8 },
+  bigDist: { color: T1, fontFamily: DISPLAY, fontSize: HERO.mega, fontWeight: '700', letterSpacing: -2, lineHeight: 80, includeFontPadding: false, fontVariant: ['tabular-nums'] },
+  bigUnit: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '500', marginTop: 8 },
 
   heroMetrics: { flexDirection: 'row', marginTop: 26, paddingVertical: 16, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: SEP },
   hm: { flex: 1, alignItems: 'center' },
@@ -315,7 +315,7 @@ const r = StyleSheet.create({
 
   subMetrics: { flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 14 },
   sm: { alignItems: 'center' },
-  smV: { color: T2, fontFamily: DISPLAY, fontSize: 16, fontWeight: '500', fontVariant: ['tabular-nums'] },
+  smV: { color: T1, fontFamily: DISPLAY, fontSize: 17, fontWeight: '600', fontVariant: ['tabular-nums'] },
   smU: { color: T4, fontFamily: FONT, fontSize: 10 },
   smL: { color: T4, fontFamily: FONT, fontSize: 11, fontWeight: '500', marginTop: 3 },
 
@@ -336,7 +336,7 @@ const r = StyleSheet.create({
     borderRadius: 8,
     backgroundColor: ACCENT,
     borderWidth: 3,
-    borderColor: '#fff',
+    borderColor: T1,
     shadowColor: ACCENT,
     shadowOpacity: 0.8,
     shadowRadius: 6,
