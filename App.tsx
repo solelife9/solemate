@@ -981,9 +981,17 @@ function Main(){
     if(cloudSyncBusyRef.current||!authUser?.uid) return;
     cloudSyncBusyRef.current=true;
     try{
-      const remote=await cloudPortRef.current.pull();
-      const merged=mergeCloudData(backupData,remote);
-      await cloudPortRef.current.push(merged);
+      const port=cloudPortRef.current;
+      // P1-4: 원자 동기(pull→merge→push 를 한 트랜잭션) 우선 — 동시-기기 클로버 방지.
+      // 미구현 포트(테스트 스텁)면 비원자 pull→merge→push 로 폴백한다(동작 동일, 경합만 노출).
+      let merged:BackupPayload;
+      if(port.syncMerge){
+        merged=await port.syncMerge(backupData,mergeCloudData);
+      }else{
+        const remote=await port.pull();
+        merged=mergeCloudData(backupData,remote);
+        await port.push(merged);
+      }
       applyBackupPayload(merged);
       setLastSyncAt(Date.now());
       // Phase 3: 동기 직후 내 월간 랭킹 엔트리를 Firestore 에 발행(best-effort·논블로킹).

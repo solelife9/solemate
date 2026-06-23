@@ -402,6 +402,30 @@ jest.mock('@react-native-firebase/firestore', () => {
       store.delete(ref.__path);
       return Promise.resolve();
     }),
+    // 트랜잭션 목: 인메모리 단일 스레드라 실 경합은 없다 — updateFn 을 1회 실행해
+    // get(원격 재읽기)→set(원자 기록) 계약만 검증한다(read-modify-write 원자성 경로).
+    runTransaction: jest.fn(async (_db, updateFn) => {
+      const tx = {
+        get: ref =>
+          Promise.resolve({
+            exists: () => store.has(ref.__path),
+            data: () => store.get(ref.__path),
+          }),
+        set: (ref, data) => {
+          store.set(ref.__path, JSON.parse(JSON.stringify(data)));
+          return tx;
+        },
+        update: (ref, data) => {
+          store.set(ref.__path, {...(store.get(ref.__path) || {}), ...JSON.parse(JSON.stringify(data))});
+          return tx;
+        },
+        delete: ref => {
+          store.delete(ref.__path);
+          return tx;
+        },
+      };
+      return updateFn(tx);
+    }),
     // test-only helper
     __reset: () => {
       store.clear();

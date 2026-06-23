@@ -55,4 +55,17 @@ export interface CloudPort {
   pull(): Promise<BackupPayload | null>;
   /** 백업 페이로드를 계정에 기록(전체 덮어쓰기 — 병합은 호출부가 cloudSync 로 끝낸 뒤). */
   push(data: BackupPayload): Promise<void>;
+  /**
+   * pull→merge→push 를 단일 트랜잭션으로 원자 실행한다(동시-기기 클로버 방지).
+   * 비원자 pull/push 의 경합 창(A 가 stale 원격을 읽는 사이 B 가 쓰고, A 가 그 위에
+   * 덮어써 B 를 잃음)을 없앤다 — 트랜잭션 안에서 원격을 *다시 읽어* merge 콜백으로
+   * 로컬과 무손실 병합한 뒤 같은 트랜잭션으로 기록한다(경합 시 백엔드가 재시도).
+   * 기기 재설치가 이 창에 겹치면 데이터가 영구 유실될 수 있어 정본 동기 경로의 보강책이다.
+   * 병합되어 기록된 값을 돌려준다. 옵셔널 — 미구현 포트(테스트 스텁)에선 호출부가
+   * pull→merge→push 로 폴백한다.
+   */
+  syncMerge?(
+    local: BackupPayload,
+    merge: (local: BackupPayload, remote: BackupPayload | null) => BackupPayload,
+  ): Promise<BackupPayload>;
 }

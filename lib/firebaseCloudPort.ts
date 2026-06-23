@@ -22,6 +22,7 @@ import {
   getDoc,
   setDoc,
   deleteDoc,
+  runTransaction,
 } from '@react-native-firebase/firestore';
 
 import type { BackupPayload } from './backup';
@@ -208,6 +209,27 @@ export function createFirebaseCloudPort(
     async push(data: BackupPayload): Promise<void> {
       const uid = requireUid();
       await setDoc(backupRef(uid), payloadToDoc(data));
+    },
+
+    async syncMerge(
+      local: BackupPayload,
+      merge: (local: BackupPayload, remote: BackupPayload | null) => BackupPayload,
+    ): Promise<BackupPayload> {
+      const uid = requireUid();
+      const ref = backupRef(uid);
+      // 트랜잭션 안에서 원격을 *다시 읽어* 병합한다 — pull 과 push 사이의 경합 창을 닫는다.
+      // 다른 기기가 그 사이 쓴 값이 tx.get 으로 보이고, merge(무손실 union)가 합쳐 기록하므로
+      // 어느 쪽 쓰기도 잃지 않는다. Firestore 가 경합을 감지하면 트랜잭션을 자동 재시도한다.
+      return await runTransaction(getFirestore(), async tx => {
+        const snapshot = await tx.get(ref);
+        const remote =
+          snapshot.exists() && snapshot.data()
+            ? normalizePayload(snapshot.data() as Record<string, unknown>)
+            : null;
+        const merged = merge(local, remote);
+        tx.set(ref, payloadToDoc(merged));
+        return merged;
+      });
     },
   };
 }

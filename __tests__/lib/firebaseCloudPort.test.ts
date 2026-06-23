@@ -190,4 +190,55 @@ describe('firebaseCloudPort (Firebase 클라우드 포트)', () => {
     const port = createFirebaseCloudPort();
     await expect(port.deleteAccount()).rejects.toThrow(/계정/);
   });
+
+  // ── 원자 동기(syncMerge) — P1-4 동시-기기 클로버 방지 ───────────────────────
+  const unionMerge = (
+    local: BackupPayload,
+    remote: BackupPayload | null,
+  ): BackupPayload =>
+    remote == null
+      ? local
+      : {
+          shoes: [
+            ...local.shoes,
+            ...remote.shoes.filter(
+              (r: any) => !local.shoes.some((l: any) => l.id === r.id),
+            ),
+          ],
+          runs: [...local.runs, ...remote.runs],
+          settings: {...remote.settings, ...local.settings},
+        };
+
+  test('syncMerge 는 트랜잭션 안에서 원격을 다시 읽어 로컬과 병합해 기록한다', async () => {
+    const port = createFirebaseCloudPort();
+    await port.signIn('anonymous');
+    // 다른 기기가 이미 올려둔 원격 상태(신발 B).
+    await port.push({shoes: [{id: 'B'}], runs: [], settings: {}});
+
+    // 내 로컬은 신발 A. 원자 동기 → 원격(B)을 다시 읽어 A 와 union 으로 합친다.
+    const merged = await port.syncMerge!({shoes: [{id: 'A'}], runs: [], settings: {}}, unionMerge);
+
+    const ids = (merged.shoes as any[]).map(s => s.id).sort();
+    expect(ids).toEqual(['A', 'B']); // 어느 쪽도 잃지 않는다
+    // 기록된 문서도 둘 다 담는다(다음 pull 이 본다).
+    const pulled = await port.pull();
+    expect((pulled!.shoes as any[]).map(s => s.id).sort()).toEqual(['A', 'B']);
+  });
+
+  test('syncMerge 는 경합 창을 닫는다: pull 직후 들어온 원격 쓰기를 덮어쓰지 않는다', async () => {
+    const port = createFirebaseCloudPort();
+    await port.signIn('anonymous');
+
+    // 시나리오: 비원자 pull→push 라면 A 가 stale(빈) 원격을 읽는 사이 B 가 쓴 값을
+    // 잃었을 것이다. syncMerge 는 트랜잭션 안에서 원격을 다시 읽으므로(이 목에선
+    // get 시점의 store) B 의 쓰기가 보존된다.
+    await port.push({shoes: [{id: 'B-fromOtherDevice'}], runs: [], settings: {}});
+    const merged = await port.syncMerge!(
+      {shoes: [{id: 'A-mine'}], runs: [], settings: {}},
+      unionMerge,
+    );
+    const ids = (merged.shoes as any[]).map(s => s.id).sort();
+    expect(ids).toContain('A-mine');
+    expect(ids).toContain('B-fromOtherDevice'); // 동시-기기 쓰기 미유실
+  });
 });
