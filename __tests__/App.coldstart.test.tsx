@@ -32,6 +32,7 @@ import {Alert} from 'react-native';
 import ReactTestRenderer, {act} from 'react-test-renderer';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Location from 'expo-location';
+import {seedBootCache} from './helpers/bootSeed';
 import App from '../App';
 
 type Resp = {ok: boolean; status: number; json: () => Promise<any>; text: () => Promise<string>};
@@ -85,29 +86,53 @@ async function flush(times = 6) {
   }
 }
 
-// ── 1) Loading → skeleton ────────────────────────────────────────────────────
-test('cold backend: while the boot fetch is in flight the app shows a SKELETON, not Home', async () => {
-  // A fetch that never resolves keeps initUser pending → boot stays 'loading'.
-  (globalThis.fetch as jest.Mock).mockImplementation(() => new Promise<Resp>(() => {}));
+// 진짜 스토리지 격리: 글로벌 beforeEach(jest.setup.after.js)의 clearAllMockStorages 는
+// "기록된 mock 호출"만 비우고 인메모리 store(setItem 값)는 비우지 않는다. 그래서 한 테스트가
+// 쓴 키(예: 셀러브레이션 베이스라인 celebration_seen_v1)가 다음 테스트로 샌다(빈 baseline →
+// 첫-런 업적 오버레이가 엉뚱한 테스트에서 떠 화면을 가림). 이 파일은 부팅 분기에 민감하므로
+// 매 테스트 전에 store 를 실제로 비우고, 이 suite 이 가정하는 '복귀 사용자' 픽스처를 다시 깐다.
+beforeEach(async () => {
+  await AsyncStorage.clear();
+  await AsyncStorage.setItem('onboarded', '1');
+  await AsyncStorage.setItem('loc_perm_primed', '1');
+});
+
+// ── 1) Local-first boot never blocks on the network ──────────────────────────
+// [설계 변경] Firestore 정본·로컬-퍼스트 부팅으로 전환되며 initUser 는 더 이상 REST
+// fetch 를 await 하지 않는다 — 부팅 데이터는 로컬 캐시(loadBootCache)에서 즉시 읽고
+// 곧바로 bootState='ready' 가 된다(App.tsx:592-609, "로컬 캐시로 즉시 'ready'").
+// 따라서 'fetch in-flight 동안 스켈레톤에 머문다'는 전제는 폐지됐다: 네트워크가 영원히
+// 멈춰 있어도 부팅은 멈추지 않고 ready 로 진행한다. 새 동작(네트워크 무관 즉시 ready)을
+// 검증한다.
+test('local-first boot: a slow/silent backend does NOT block boot — app reaches ready (no stuck skeleton)', async () => {
+  // 백엔드가 빈 OK 를 주든 말든 부팅은 로컬 캐시에서 진행한다(REST 를 await 하지 않음).
+  // (never-resolving fetch 대신 빈 OK 를 쓴다 — 영원히 펜딩인 promise 가 후속 테스트로
+  // 새는 것을 막고, '네트워크 무관 즉시 ready' 의도는 동일하게 검증한다.)
+  (globalThis.fetch as jest.Mock).mockImplementation(() => Promise.resolve(ok([])));
 
   let renderer!: ReactTestRenderer.ReactTestRenderer;
   await act(async () => {
     renderer = ReactTestRenderer.create(<App />);
   });
+  await flush();
   const root = renderer.root;
 
-  // The skeleton is shown (content-shaped placeholder), and it is NOT a spinner
-  // and NOT the Home content or the error card.
-  expect(has(root, 'boot-skeleton')).toBe(true);
+  // 부팅은 스켈레톤에 갇히지 않고 ready 로 진행한다. 기본 픽스처는 onboarded·빈 캐시라
+  // 홈(러너 인사)로 떨어진다. 에러 카드는 절대 뜨지 않는다(REST 무관).
+  expect(has(root, 'boot-skeleton')).toBe(false);
   expect(has(root, 'boot-error')).toBe(false);
-  expect(textOf(root)).not.toContain('오늘은 어떤 신발로');
+  expect(textOf(root)).toContain('러너님');
 
   act(() => renderer.unmount());
 });
 
-// ── 2) Error → retry card (keep-going), distinct from empty ──────────────────
-test('cold backend: a FAILED boot fetch shows a retry card, and 다시 시도 recovers once the backend is up', async () => {
-  // First attempt: every request rejects (cold/offline backend).
+// ── 2) A failed backend never shows a boot-error card (local-first) ──────────
+// [설계 변경] initUser 가 REST 를 호출하지 않으므로 fetch 실패는 부팅을 막지 못하고
+// bootState 는 'error' 로 가지 않는다(App.tsx:592-609; 'error' 진입점이 코드엔 남아
+// 있으나 더는 도달 불가). 재시도 카드 전제는 폐지됐다 — 백엔드가 다운이어도 캐시(없으면
+// 빈 상태)로 부팅한다. 새 동작(에러 카드 없이 부팅 완료)을 검증한다.
+test('local-first boot: a FAILED backend never shows a retry card — boot completes from local state', async () => {
+  // Every request rejects (cold/offline backend) — must not surface a boot error.
   (globalThis.fetch as jest.Mock).mockImplementation(() => Promise.reject(new Error('cold backend')));
 
   let renderer!: ReactTestRenderer.ReactTestRenderer;
@@ -117,28 +142,10 @@ test('cold backend: a FAILED boot fetch shows a retry card, and 다시 시도 re
   await flush();
   const root = renderer.root;
 
-  // Retry card (NOT skeleton, NOT Home) with a keep-going message + retry button.
-  expect(has(root, 'boot-error')).toBe(true);
-  expect(has(root, 'boot-skeleton')).toBe(false);
-  expect(textOf(root)).toContain('다시 시도');
-
-  // Backend recovers: a healthy account with one shoe + one run.
-  (globalThis.fetch as jest.Mock).mockImplementation((url: any) => {
-    const u = String(url);
-    if (u.includes('/api/auth')) return Promise.resolve(ok({user_id: 'u1'}));
-    if (u.includes('/api/shoes')) return Promise.resolve(ok([{id: 's1', name: 'Nike Pegasus', max_km: 600, start_km: 0}]));
-    if (u.includes('/api/runs')) return Promise.resolve(ok([{id: 'r1', shoe_id: 's1', km: 5, run_date: '2026-05-31', duration: 1800}]));
-    return Promise.resolve(ok({}));
-  });
-
-  // Press the retry button → initUser re-runs and reaches the real UI.
-  pressTestID(root, 'boot-retry');
-  await flush();
-
+  // 재시도 카드/스켈레톤이 아니라 부팅이 완료된다(기본 픽스처 onboarded·빈 캐시 → 홈).
   expect(has(root, 'boot-error')).toBe(false);
   expect(has(root, 'boot-skeleton')).toBe(false);
-  // Home is now rendered (greeting is Home-only content; QuickStats 행은 제거됨).
-  expect(textOf(root)).toContain('오늘은 어떤 신발로');
+  expect(textOf(root)).toContain('러너님');
 
   act(() => renderer.unmount());
 });
@@ -201,6 +208,9 @@ test('empty-new account is DISTINCT from a boot error: an empty successful load 
 // ── 4) Permission priming before the OS dialog ───────────────────────────────
 test('first-time runner is shown a location-permission rationale BEFORE the OS dialog; 계속 then starts the run', async () => {
   await AsyncStorage.removeItem('loc_perm_primed'); // opt into first-run priming
+  // Firestore 정본·로컬-퍼스트 부팅: 홈 히어로(→ '러닝 시작')에 띄울 신발은 REST 가 아니라
+  // 부팅 캐시에서 읽힌다. 신발을 캐시에 시드해 홈이 러닝 시작 버튼을 렌더하게 한다.
+  await seedBootCache([{id: 's1', name: 'Nike Pegasus', max_km: 600, start_km: 0}], []);
   (globalThis.fetch as jest.Mock).mockImplementation((url: any) => {
     const u = String(url);
     if (u.includes('/api/auth')) return Promise.resolve(ok({user_id: 'u1'}));

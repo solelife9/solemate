@@ -14,6 +14,7 @@ import React from 'react';
 import ReactTestRenderer, {act} from 'react-test-renderer';
 import {Alert} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import {seedBootCache} from './helpers/bootSeed';
 import App from '../App';
 
 type ApiShoe = {id: string; name: string; max_km: number; start_km: number; retired?: boolean};
@@ -45,6 +46,9 @@ async function flush() {
 
 async function mount(shoes: ApiShoe[], runs: ApiRun[]) {
   mockBackend(shoes, runs);
+  // Firestore 정본 부팅: 화면 신발/런은 REST 가 아니라 부팅 캐시에서 읽힌다. 시드해야
+  // 화면에 데이터가 뜨고 온보딩 게이트도 건너뛴다(App.tsx:597-608, 1490).
+  await seedBootCache(shoes, runs);
   let renderer!: ReactTestRenderer.ReactTestRenderer;
   await act(async () => {
     renderer = ReactTestRenderer.create(<App />);
@@ -108,8 +112,12 @@ test('런 삭제 → 확인 Alert 후 신발 사용거리(km) 감소', async () 
   expect(textOf(root)).toContain('15km');
   expect(textOf(root)).toContain('600km');
 
-  // 기록 탭 → r2(5.25km) 상세 진입.
+  // 기록 탭 → '전체' 기간 → r2(5.25km) 상세 진입.
+  // [기간 필터] 기록탭 기본 기간은 '월'(이번 달)이라 과거 달(5월) 런은 숨는다
+  // (HistoryScreen.rn.tsx:633 useState('월'), 73 PERIODS=['주','월','년','전체']).
+  // 날짜 비의존으로 전체 런을 보려면 '전체'로 전환한다.
   await tap(pressBy(root, '기록'));
+  await tap(pressBy(root, '전체'));
   await tap(pressBy(root, '5.25'));
 
   // 삭제 버튼 → 확인 Alert가 뜬다(파괴 방지). 확인 전엔 아직 삭제되지 않는다.
@@ -136,33 +144,13 @@ test('런 삭제 → 확인 Alert 후 신발 사용거리(km) 감소', async () 
   expect(textOf(root)).not.toContain('15km');
 });
 
-test('수동 입력 → 목록에 런 추가 + source=manual로 POST', async () => {
-  const {root} = await mount(SHOE, []);
-
-  // 기록 탭 → 수동 추가 버튼('add' 아이콘) → 폼.
-  await tap(pressBy(root, '기록'));
-  await tap(pressBy(root, 'add'));
-
-  // 거리 7.5(기본 신발/오늘 날짜 자동) 입력 후 추가.
-  setInput(root, '거리', '7.5');
-  (globalThis.fetch as jest.Mock).mockClear();
-  await tap(pressBy(root, '추가하기'));
-
-  // 목록에 7.5km 런이 낙관적으로 추가된다.
-  expect(textOf(root)).toContain('7.5');
-
-  // Stage 2b: REST POST 없이 부팅 캐시에 source='manual' 런이 durable 기록된다(앱 외 주행 보정).
-  const post = (globalThis.fetch as jest.Mock).mock.calls.find(
-    (c: any[]) => /\/api\/runs$/.test(String(c[0])) && c[1] && c[1].method === 'POST',
-  );
-  expect(post).toBeFalsy();
-  const cacheRaw = await AsyncStorage.getItem('cache_runs_v1');
-  const cache = cacheRaw ? JSON.parse(cacheRaw) : [];
-  const manual = cache.find((r: any) => String(r.km) === '7.5');
-  expect(manual).toBeTruthy();
-  expect(manual.source).toBe('manual');
-  expect(manual.shoe_id).toBe('s1');
-});
+// [제거됨] '수동 입력 → 목록에 런 추가 + source=manual' 테스트.
+// 기록탭의 '수동 기록 추가' 버튼이 의도적으로 제거되었다(commit e67930f
+// "feat(ui): 수동 기록 추가 버튼 및 수명 조정 UI 제거"). 현재 HistoryScreen.rn.tsx
+// 에는 setForm({mode:'add'}) 를 호출하는 진입점이 없어(RunForm 은 편집 모드로만 열림,
+// HistoryScreen.rn.tsx:768) 사용자 흐름으로 수동 입력 폼을 띄울 수 없다. 따라서 이 UI
+// 흐름 테스트는 폐지된 기능을 검증하므로 제거한다. (런 추가 자체는 RunActiveScreen 의
+// 실측 러닝 종료 경로로 일원화됨.)
 
 test('런 편집(거리) → 백엔드 PATCH + 신발 km 재계산', async () => {
   const runs: ApiRun[] = [{id: 'r1', shoe_id: 's1', km: 10, run_date: '2026-05-20', duration: 3000}];
@@ -173,9 +161,12 @@ test('런 편집(거리) → 백엔드 PATCH + 신발 km 재계산', async () =>
   expect(textOf(root)).toContain('10km');
   expect(textOf(root)).toContain('600km');
 
-  // 기록 → r1 상세 → 편집('create-outline') → 폼 프리필.
+  // 기록 → '전체' 기간 → r1 상세 → 편집('create-outline') → 폼 프리필.
+  // (기본 '월' 뷰는 과거 달 런을 숨기므로 '전체'로 전환 — HistoryScreen.rn.tsx:633.)
+  // 런 행은 날짜로 식별한다('10'은 차트/요약과 모호 — RunCard 는 '5월 20일' 날짜 포함).
   await tap(pressBy(root, '기록'));
-  await tap(pressBy(root, '10'));
+  await tap(pressBy(root, '전체'));
+  await tap(pressBy(root, '5월 20일'));
   await tap(pressBy(root, 'create-outline'));
 
   // 거리 10 → 12로 수정 후 저장.

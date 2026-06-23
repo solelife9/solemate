@@ -20,11 +20,16 @@ import {buildRunShareText} from '../lib/share';
 
 const SHOE = {brand: 'NIKE', model: 'Pegasus 41', used: 0, max: 800, condition: '양호'} as any;
 
+// 기본 기간 '월'(이번 달)이 런을 거르지 않도록 run_date를 이번 달로 둔다(Phase 5b 이후
+// 월 목록은 run_date startsWith(이번 달)로 필터된다). 표시값(date/day)은 그대로.
+const THIS_MONTH = (() => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-10`; })();
+
 const RUN = {
   id: 'r1',
   date: '5월 28일',
   day: '수',
   dateNum: '28',
+  run_date: THIS_MONTH,
   dist: 5.2,
   pace: "5'02\"",
   time: '40:41',

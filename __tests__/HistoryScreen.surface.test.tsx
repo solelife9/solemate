@@ -12,7 +12,7 @@
 import React from 'react';
 import ReactTestRenderer, {act} from 'react-test-renderer';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import HistoryScreen from '../HistoryScreen.rn';
+import HistoryScreen, {RunForm} from '../HistoryScreen.rn';
 import {Shoe, Run} from '../theme';
 
 function textOf(node: any): string {
@@ -85,21 +85,23 @@ describe('HistoryScreen — 런 노면 태그', () => {
     expect(await AsyncStorage.getItem('surface_r1')).toBe('track');
   });
 
-  test('수동 추가 폼: 노면 선택 후 추가 → onAddRun이 surface 인자를 받는다', async () => {
-    const onAddRun = jest.fn();
+  // 수동 추가 UI 진입점({mode:'add'})은 제거되었고, 공용 RunForm(초기값 null=추가)이
+  // 추가 폼의 동작을 그대로 보유한다. RunForm을 직접 렌더해 노면 선택이 onSubmit으로
+  // 전달되는지 검증한다(추가 런은 id가 없어 즉시 영속 대신 제출 시 surface로 올라간다).
+  test('추가 폼(RunForm initial=null): 노면 선택 후 제출 → onSubmit이 surface를 받는다', async () => {
+    const onSubmit = jest.fn();
     const root = render(
-      <HistoryScreen shoes={SHOES} runs={[]} onAddRun={onAddRun} onEditRun={() => {}} onDeleteRun={() => {}} />,
+      <RunForm shoes={SHOES} unit="km" initial={null} onCancel={() => {}} onSubmit={onSubmit} />,
     ).root;
 
-    await tap(root, '수동 기록 추가');
     setInput(root, '거리', '8');
     await tap(root, '노면 트레일');
     await tapText(root, '추가하기');
 
-    expect(onAddRun).toHaveBeenCalledTimes(1);
-    const args = onAddRun.mock.calls[0];
-    expect(args[0]).toBe('s1');   // shoeId
-    expect(args[1]).toBe(8);      // km
-    expect(args[4]).toBe('trail'); // surface (5번째 인자)
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+    const v = onSubmit.mock.calls[0][0];
+    expect(v.shoeId).toBe('s1');    // shoeId
+    expect(v.km).toBe(8);           // km
+    expect(v.surface).toBe('trail'); // surface
   });
 });

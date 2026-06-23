@@ -17,7 +17,7 @@
 import React from 'react';
 import ReactTestRenderer, {act} from 'react-test-renderer';
 import {TextInput} from 'react-native';
-import HistoryScreen from '../HistoryScreen.rn';
+import {RunForm} from '../HistoryScreen.rn';
 import AddShoeScreen from '../AddShoeScreen.rn';
 import {Shoe} from '../theme';
 import {
@@ -126,20 +126,25 @@ async function setInput(root: ReactTestRenderer.ReactTestInstance, label: string
 
 const SHOES: Shoe[] = [{id: 's1', brand: 'Nike', model: 'Pegasus', used: 100, max: 700, condition: '양호'}];
 
+// 수동 추가 UI 진입점({mode:'add'} setForm)은 제거되었고, 공용 RunForm(초기값 null=추가)이
+// 추가 폼의 마스킹·검증·제출 동작을 그대로 보유한다. RunForm을 직접 렌더해 검증한다.
+// onAddRun(가변 인자) 콜백은 onSubmit({shoeId,km,date,durationSec,surface}) 객체로 바뀌었다.
+function addForm(onSubmit: (v: any) => void) {
+  return render(
+    <RunForm shoes={SHOES} unit="km" initial={null} onCancel={() => {}} onSubmit={onSubmit} />,
+  ).root;
+}
+
 // ── RunForm: masking renders ─────────────────────────────────────────────────
 describe('RunForm — 입력 마스킹(화면)', () => {
   test('시간 칸에 "3000"을 넣으면 "30:00"으로 마스킹돼 렌더된다', async () => {
-    const root = render(<HistoryScreen shoes={SHOES} runs={[]} onAddRun={() => {}} />).root;
-    await tap(root, '수동 기록 추가');
-
+    const root = addForm(() => {});
     await setInput(root, '시간', '3000');
     expect(inputByLabel(root, '시간').props.value).toBe('30:00');
   });
 
   test('날짜 칸에 "20260615"를 넣으면 "2026-06-15"로 하이픈이 끼워진다', async () => {
-    const root = render(<HistoryScreen shoes={SHOES} runs={[]} onAddRun={() => {}} />).root;
-    await tap(root, '수동 기록 추가');
-
+    const root = addForm(() => {});
     await setInput(root, '날짜', '20260615');
     expect(inputByLabel(root, '날짜').props.value).toBe('2026-06-15');
   });
@@ -147,35 +152,32 @@ describe('RunForm — 입력 마스킹(화면)', () => {
 
 // ── RunForm: inline validation messages (no Alert) ───────────────────────────
 describe('RunForm — 인라인 검증 메시지(화면)', () => {
-  test('거리 0으로 추가하면 onAddRun 미호출 + 거리 아래 빨강 메시지가 뜬다', async () => {
-    const onAddRun = jest.fn();
-    const root = render(<HistoryScreen shoes={SHOES} runs={[]} onAddRun={onAddRun} />).root;
-    await tap(root, '수동 기록 추가');
+  test('거리 0으로 추가하면 onSubmit 미호출 + 거리 아래 빨강 메시지가 뜬다', async () => {
+    const onSubmit = jest.fn();
+    const root = addForm(onSubmit);
 
     await setInput(root, '거리', '0');
     await tapText(root, '추가하기');
 
-    expect(onAddRun).not.toHaveBeenCalled();
+    expect(onSubmit).not.toHaveBeenCalled();
     expect(textOf(root)).toContain('거리를 0보다 크게 입력하세요');
   });
 
-  test('잘못된 날짜로 추가하면 onAddRun 미호출 + 날짜 아래 빨강 메시지가 뜬다', async () => {
-    const onAddRun = jest.fn();
-    const root = render(<HistoryScreen shoes={SHOES} runs={[]} onAddRun={onAddRun} />).root;
-    await tap(root, '수동 기록 추가');
+  test('잘못된 날짜로 추가하면 onSubmit 미호출 + 날짜 아래 빨강 메시지가 뜬다', async () => {
+    const onSubmit = jest.fn();
+    const root = addForm(onSubmit);
 
     await setInput(root, '거리', '5');
     // 마스킹상 13월 40일은 형식은 맞아도 달력상 무효 → 인라인 차단.
     await setInput(root, '날짜', '20261340');
     await tapText(root, '추가하기');
 
-    expect(onAddRun).not.toHaveBeenCalled();
+    expect(onSubmit).not.toHaveBeenCalled();
     expect(textOf(root)).toContain('날짜를 YYYY-MM-DD 형식으로 정확히 입력하세요');
   });
 
   test('필드를 다시 건드리면 그 필드의 에러가 사라진다', async () => {
-    const root = render(<HistoryScreen shoes={SHOES} runs={[]} onAddRun={() => {}} />).root;
-    await tap(root, '수동 기록 추가');
+    const root = addForm(() => {});
 
     await setInput(root, '거리', '0');
     await tapText(root, '추가하기');
@@ -185,22 +187,21 @@ describe('RunForm — 인라인 검증 메시지(화면)', () => {
     expect(textOf(root)).not.toContain('거리를 0보다 크게 입력하세요');
   });
 
-  test('올바른 값이면 onAddRun이 km과 함께 호출된다', async () => {
-    const onAddRun = jest.fn();
-    const root = render(<HistoryScreen shoes={SHOES} runs={[]} onAddRun={onAddRun} />).root;
-    await tap(root, '수동 기록 추가');
+  test('올바른 값이면 onSubmit이 km과 함께 호출된다', async () => {
+    const onSubmit = jest.fn();
+    const root = addForm(onSubmit);
 
     await setInput(root, '거리', '7');
     await setInput(root, '시간', '3000');
     await setInput(root, '날짜', '20260615');
     await tapText(root, '추가하기');
 
-    expect(onAddRun).toHaveBeenCalledTimes(1);
-    const args = onAddRun.mock.calls[0];
-    expect(args[0]).toBe('s1');           // shoeId
-    expect(args[1]).toBe(7);              // km
-    expect(args[2]).toBe('2026-06-15');   // date
-    expect(args[3]).toBe(30 * 60);        // durationSec (30:00)
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+    const v = onSubmit.mock.calls[0][0];
+    expect(v.shoeId).toBe('s1');          // shoeId
+    expect(v.km).toBe(7);                 // km
+    expect(v.date).toBe('2026-06-15');    // date
+    expect(v.durationSec).toBe(30 * 60);  // durationSec (30:00)
   });
 });
 

@@ -74,6 +74,9 @@ describe('iron law #17 — heart_rate 저장 보존', () => {
 // ── 2) 프레젠테이션 레이어: Run.bpm 이 상세 화면에 '평균 심박'으로 노출되는가 ──
 // 캐스트 없는 Run 리터럴 → bpm 을 타입에서 지우면 tsc 실패(데이터 타입 보존 가드).
 // 동시에 화면에 심박 UI 가 노출돼야 한다(사용자 결정: 디자인 11 정합, spec #15 철회).
+// 기본 기간 '월'(이번 달)이 런을 거르지 않도록 runDate를 이번 달로 둔다(Phase 5b 이후
+// 월 목록은 run_date/runDate startsWith(이번 달)로 필터된다). 표시값(date/day)은 그대로.
+const THIS_MONTH = (() => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-10`; })();
 const RUN: Run = {
   id: 'r-hr-1',
   date: '5월 28일',
@@ -87,6 +90,7 @@ const RUN: Run = {
   cadence: 0,
   bpm: 152,
   elev: 0,
+  runDate: THIS_MONTH,
 };
 
 const SHOE: Shoe = {

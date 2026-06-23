@@ -21,6 +21,7 @@ import ReactTestRenderer, {act} from 'react-test-renderer';
 import {Alert} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import App from '../App';
+import {seedBootCache} from './helpers/bootSeed';
 import {getCurrentToast, runToastAction, dismissToast, TOAST_UNDO_LABEL} from '../lib/toast';
 
 const K_TOMBSTONES = 'tombstones_v1';
@@ -97,6 +98,15 @@ function mockBackend() {
 
 async function mountApp() {
   jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+  // Firestore 정본·로컬-퍼스트 부팅: 신발/런은 REST GET 이 아니라 부팅 캐시에서 읽힌다.
+  // mockBackend 와 동일한 시드(s1·s2 + r1)를 캐시에 깔아 화면에 올린다.
+  await seedBootCache(
+    [
+      {id: 's1', name: 'Nike Pegasus', max_km: 600, start_km: 0},
+      {id: 's2', name: 'Asics Nimbus', max_km: 500, start_km: 0},
+    ],
+    [{id: 'r1', shoe_id: 's1', km: 50, run_date: '2026-06-01', duration: 1800}],
+  );
   let renderer!: ReactTestRenderer.ReactTestRenderer;
   await act(async () => {
     renderer = ReactTestRenderer.create(<App />);

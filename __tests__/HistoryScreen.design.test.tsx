@@ -24,10 +24,37 @@ function textOf(node: any): string {
   return out;
 }
 
-const SUMMARY = {
-  '주': {km: '12', runs: 3, pace: "5'10\"", time: '1:02'},
-  '월': {km: '88', runs: 20, pace: "5'30\"", time: '7:40'},
-};
+// Phase 5b 이후 HistoryScreen은 주/월/년 요약을 props.summary가 아니라 runs에서 직접
+// 계산한다(summary prop은 '전체' 기간에만 쓰임). 그래서 기간별 거리를 검증하려면
+// 해당 기간(이번 달/이번 주)에 떨어지는 run_date로 런을 시드한다.
+const now = new Date();
+const ymd = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+// 이번 주 월요일(주 요약이 잡는 구간) — getDay()=0(일)이면 -6, 아니면 1-day.
+const weekMonday = (() => {
+  const d = new Date(now);
+  const day = d.getDay();
+  d.setDate(d.getDate() + (day === 0 ? -6 : 1 - day));
+  d.setHours(0, 0, 0, 0);
+  return d;
+})();
+// 이번 달이지만 이번 주에는 들지 않는 날(달 요약엔 잡히고 주 요약엔 안 잡힘).
+const weekSunday = (() => { const d = new Date(weekMonday); d.setDate(d.getDate() + 6); return d; })();
+const monthOnlyDate = (() => {
+  // 이번 주 월요일 전날(같은 달이면)을 우선 쓴다.
+  const before = new Date(weekMonday); before.setDate(before.getDate() - 1);
+  if (before.getMonth() === now.getMonth()) return before;
+  // 주 월요일이 그 달 1일이면 이전 날이 지난 달이므로, 주 일요일 다음 날(같은 달)을 쓴다.
+  const after = new Date(weekSunday); after.setDate(after.getDate() + 1);
+  return after; // now.getMonth()와 동일한 달임이 보장된다(월요일이 1일이라면 일요일+1은 같은 달).
+})();
+function mkRun(id: string, dist: number, dateStr: string) {
+  return {id, dist, durationS: 1800, runDate: dateStr, shoe: -1, pace: "5'00\"", time: '30:00'} as any;
+}
+// 이번 주에 12km(주 요약 = 12), 이번 달에 76km 추가 → 달 요약 = 88km.
+const RUNS = [
+  mkRun('w1', 12, ymd(weekMonday)),
+  mkRun('m1', 76, ymd(monthOnlyDate)),
+];
 
 function segment(root: ReactTestRenderer.ReactTestInstance, label: string) {
   const hits = root.findAll(
@@ -40,13 +67,13 @@ describe('HistoryScreen 기간 세그먼트', () => {
   test('세그먼트를 누르면 해당 기간 요약(거리)으로 화면이 갱신된다', () => {
     let renderer!: ReactTestRenderer.ReactTestRenderer;
     act(() => {
-      renderer = ReactTestRenderer.create(<HistoryScreen summary={SUMMARY as any} unit="km" />);
+      renderer = ReactTestRenderer.create(<HistoryScreen runs={RUNS} unit="km" />);
     });
     const root = renderer.root;
-    // 기본 기간은 '월' → 88km 노출
+    // 기본 기간은 '월' → 이번 달 합계 88km 노출
     expect(textOf(root)).toContain('88');
 
-    // '주' 세그먼트 탭 → 12km로 갱신
+    // '주' 세그먼트 탭 → 이번 주 합계 12km로 갱신
     act(() => {
       segment(root, '주').props.onPress();
     });
@@ -55,14 +82,13 @@ describe('HistoryScreen 기간 세그먼트', () => {
 });
 
 describe('HistoryScreen 막대차트', () => {
-  test('차트 데이터가 주입되면 기간 라벨 막대가 렌더된다', () => {
-    const chart = {
-      '월': {title: '주간 거리', data: [3, 5, 0, 8], labels: ['1주', '2주', '3주', '4주']},
-    };
+  // 달 차트는 이제 runs에서 직접 계산된다(주간 거리, 라벨 1주..N주). 이번 달 런이
+  // 있으면 '주간 거리' 제목과 주차 라벨 막대가 렌더된다.
+  test('이번 달 런이 있으면 주간 거리 막대(주차 라벨)가 렌더된다', () => {
     let renderer!: ReactTestRenderer.ReactTestRenderer;
     act(() => {
       renderer = ReactTestRenderer.create(
-        <HistoryScreen summary={SUMMARY as any} chart={chart as any} unit="km" />,
+        <HistoryScreen runs={RUNS} unit="km" />,
       );
     });
     const t = textOf(renderer.root);
@@ -78,6 +104,7 @@ describe('HistoryScreen 빈 상태', () => {
     act(() => {
       renderer = ReactTestRenderer.create(<HistoryScreen runs={[]} unit="km" />);
     });
-    expect(textOf(renderer.root)).toContain('첫 러닝이 여기 쌓여요');
+    // 빈 상태 카피는 ListEmptyComponent의 emptyHint(HistoryScreen.rn.tsx:837).
+    expect(textOf(renderer.root)).toContain('이 기간엔 기록이 없어요');
   });
 });
