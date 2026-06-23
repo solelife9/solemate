@@ -10,7 +10,8 @@
 
 import {Share} from 'react-native';
 import * as FileSystem from 'expo-file-system/legacy';
-import * as MediaLibrary from 'expo-media-library';
+// saveToLibraryAsync 는 메인 export 에서 deprecated(throw) — 레거시 API 를 쓴다(SDK 56).
+import * as MediaLibrary from 'expo-media-library/legacy';
 import {Unit, displayNum} from './units';
 import {buildRunShareText, RunShareInput} from './share';
 import {fmtPace, fmtTime} from './format';
@@ -165,18 +166,26 @@ export function captureCardDataUrl(ref: SvgRefLike): Promise<string> {
  *   'denied' — 사진 추가 권한 거부
  *   'failed' — 캡처/파일/저장 실패(호출부가 안내)
  */
-export async function saveCardToLibrary(ref: SvgRefLike): Promise<'saved' | 'denied' | 'failed'> {
+export async function saveCardToLibrary(ref: SvgRefLike): Promise<{ok: boolean; reason?: string}> {
+  let step = 'init';
   try {
+    step = 'capture';
     const dataUrl = await captureCardDataUrl(ref);
     const base64 = dataUrl.replace(/^data:image\/png;base64,/, '');
-    const fileUri = `${FileSystem.cacheDirectory}keego-run-${Date.now()}.png`;
+    step = 'cacheDir';
+    const dir = FileSystem.cacheDirectory;
+    if (!dir) return {ok: false, reason: 'no cacheDirectory'};
+    step = 'write';
+    const fileUri = `${dir}keego-run-${Date.now()}.png`;
     await FileSystem.writeAsStringAsync(fileUri, base64, {encoding: FileSystem.EncodingType.Base64});
+    step = 'perm';
     const perm = await MediaLibrary.requestPermissionsAsync(true); // writeOnly: '사진 추가'만
-    if (!perm.granted) return 'denied';
+    if (!perm.granted) return {ok: false, reason: 'denied'};
+    step = 'save';
     await MediaLibrary.saveToLibraryAsync(fileUri);
-    return 'saved';
-  } catch {
-    return 'failed';
+    return {ok: true};
+  } catch (e: any) {
+    return {ok: false, reason: `${step}: ${String(e?.message ?? e).slice(0, 140)}`};
   }
 }
 

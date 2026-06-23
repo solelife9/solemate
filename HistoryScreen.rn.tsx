@@ -437,12 +437,12 @@ function RunDetail({ run, shoe, onBack, unit, onDelete }: { run: Run; shoe?: Sho
   const doShare = () => shareRunCard(cardRef, shareInput);
   const saveCard = async () => {
     const r = await saveCardToLibrary(cardRef);
-    if (r === 'saved') {
+    if (r.ok) {
       Alert.alert('사진앱에 저장됐어요', '인스타 스토리에서 내 사진을 고른 뒤, 사진/스티커로 이 카드를 올리면 돼요.');
-    } else if (r === 'denied') {
+    } else if (r.reason === 'denied') {
       Alert.alert('권한 필요', '설정에서 사진 추가 권한을 허용해 주세요.');
     } else {
-      Alert.alert('저장 실패', '잠시 후 다시 시도해 주세요.');
+      Alert.alert('저장 실패', r.reason ?? '잠시 후 다시 시도해 주세요.');
     }
   };
   const onShareCard = () => {

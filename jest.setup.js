@@ -92,7 +92,7 @@ jest.mock('expo-file-system/legacy', () => ({
   EncodingType: {Base64: 'base64', UTF8: 'utf8'},
   writeAsStringAsync: jest.fn(() => Promise.resolve()),
 }));
-jest.mock('expo-media-library', () => ({
+jest.mock('expo-media-library/legacy', () => ({
   __esModule: true,
   requestPermissionsAsync: jest.fn(() => Promise.resolve({granted: true, status: 'granted'})),
   saveToLibraryAsync: jest.fn(() => Promise.resolve()),

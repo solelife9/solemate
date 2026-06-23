@@ -15,7 +15,7 @@
 import React from 'react';
 import ReactTestRenderer, {act} from 'react-test-renderer';
 import {Share, Alert} from 'react-native';
-import * as MediaLibrary from 'expo-media-library';
+import * as MediaLibrary from 'expo-media-library/legacy';
 import HistoryScreen from '../HistoryScreen.rn';
 
 const SHOE = {brand: 'NIKE', model: 'Pegasus 41', used: 0, max: 800, condition: '양호'} as any;
