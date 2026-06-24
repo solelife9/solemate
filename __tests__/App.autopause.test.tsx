@@ -233,13 +233,20 @@ test('displayed elapsed timer freezes while auto-paused — never advances, neve
     expect(elapsedRunning).toBeGreaterThan(0);
 
     // Stand still → auto-pause. These fixes only advance pos.timestamp, not the
-    // wall clock, so the timer reading does not change here.
+    // wall clock. NOTE(#3): when a fix arrives after a >threshold no-fix window and
+    // its segment is counted, the engine no longer subtracts that window as GPS
+    // "stall" (counted distance ⇒ real running time ⇒ time must count). So the
+    // earlier ongoing-stall (the 10s wall advance with no fix) reconciles into
+    // elapsed here — elapsedAtPause may step UP to the true run time, never down.
+    // The timer must not regress, must be a finite integer, and (the real point of
+    // this test) must FREEZE for the paused window asserted below.
     for (let i = 0; i < 12; i++) {
       await emit(37.5003, LON, 5, (t += 3000));
     }
     expect(isAutoPaused(root)).toBe(true);
     const elapsedAtPause = readElapsedSec(root);
-    expect(elapsedAtPause).toBe(elapsedRunning);
+    expect(elapsedAtPause).toBeGreaterThanOrEqual(elapsedRunning);
+    expect(Number.isInteger(elapsedAtPause)).toBe(true);
 
     // Now burn 30s of wall time WHILE PAUSED. The interval keeps firing but the
     // pauseStartRef-guarded branch must not setElapsed → the displayed timer is

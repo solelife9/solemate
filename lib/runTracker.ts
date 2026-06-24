@@ -20,7 +20,7 @@
 
 import {KalmanFilter} from './kalman';
 import {calcDist, acceptSegment, segmentSpeedMps} from './geo';
-import {WARMUP_FIXES} from './engineConstants';
+import {WARMUP_FIXES, MAX_FIX_ACCURACY_M, MAX_SEG_DIST_KM, MAX_SEG_SPEED_MPS} from './engineConstants';
 import {decideAutoPause, initAutoPauseState, AutoPauseState} from './autoPause';
 import {gpsStallStatus, GPS_STALL_THRESHOLD_MS} from './gpsHealth';
 import {saveSnapshot} from './runPersistence';
@@ -270,20 +270,35 @@ class RunTracker {
     if (ts > 0 && ts <= this.lastFixTs) return;
     if (ts > 0) this.lastFixTs = ts;
 
-    // 死구간 종료: 이번 fix 직전까지의 무신호 간격이 stall 임계를 넘었으면, 그 *초과분*을
-    // 누적 stall 로 적립한다(임계까지는 정상 fix 간격). 일시정지 중 간격은 pausedMs 가 따로
-    // 책임지므로 제외. 이렇게 모은 stalledMs 를 getElapsed 가 빼 페이스 왜곡을 막는다.
+    // 무신호 간격(gap)을 측정한다. 도착 시점에 이미 일시정지였다면 그 시간은 pausedMs 가
+    // 책임지므로 stall 로 세지 않는다(recvGap=0). 적립 여부는 아래에서 '채택' 여부로 가른다.
     const recvNow = this.now();
-    if (!this.isPaused && this.lastRecvMs > 0) {
-      const gap = recvNow - this.lastRecvMs;
-      if (gap > GPS_STALL_THRESHOLD_MS) this.stalledMs += gap - GPS_STALL_THRESHOLD_MS;
-    }
+    const recvGap =
+      !this.isPaused && this.lastRecvMs > 0 ? recvNow - this.lastRecvMs : 0;
     this.lastRecvMs = recvNow;
     const {latitude: lat, longitude: lon, accuracy} = fix.coords;
     const acc = accuracy == null ? Infinity : accuracy;
     const f = this.kf.process(lat, lon, acc, ts);
     this.accuracyM = Number.isFinite(acc) ? Math.round(acc) : null;
     const idx = this.fixIndex;
+
+    // 死구간 시간 회계(#3): 이 fix 가 거리로 *채택*될지 미리 판정한다. 채택되면 그 공백 시간은
+    // 실제 러닝 시간이므로 stall 로 빼지 않는다(거리·시간 일관). 채택 안 되는(死구간/노이즈/
+    // 공백 re-anchor/일시정지) 임계 초과 공백만 stalledMs 로 적립해 getElapsed 에서 빼, '거리는
+    // 그대로인데 시간만 흘러' 생기는 페이스 왜곡을 막는다. 적립은 auto-pause/일시정지 early-return
+    // 보다 *앞*에 둬야 한다 — 이 fix 가 정지를 유발해도 직전 공백 시간은 빠져야 하기 때문(옛 동작).
+    const willCount =
+      !this.isPaused &&
+      this.lastGood != null &&
+      acceptSegment({
+        distKm: calcDist(this.lastGood.lat, this.lastGood.lon, f.lat, f.lon),
+        dtSec: this.lastGoodMs ? Math.max((ts - this.lastGoodMs) / 1000, 0) : 0,
+        accuracyM: acc,
+        fixIndex: idx,
+      });
+    if (!willCount && recvGap > GPS_STALL_THRESHOLD_MS) {
+      this.stalledMs += recvGap - GPS_STALL_THRESHOLD_MS;
+    }
 
     // ── auto-pause / resume decision ──
     if (
@@ -332,8 +347,24 @@ class RunTracker {
         // segment isn't a giant settling jump.
         this.lastGood = f;
         this.lastGoodMs = ts;
+      } else if (
+        acc <= MAX_FIX_ACCURACY_M &&
+        d > MAX_SEG_DIST_KM &&
+        segmentSpeedMps(d, dtSec) <= MAX_SEG_SPEED_MPS
+      ) {
+        // GPS 공백 복구 re-anchor(#1): 정확한 fix 인데 직전 앵커와의 점프가 거리 cap(300m)을
+        // 넘었다. 단, 속도가 정상 범위(≤MAX_SEG_SPEED)일 때만 — 긴 dt 에 걸친 큰 이동 = 진짜
+        // 신호 공백이라는 뜻이다(고속 점프=GPS 스파이크는 이 분기 밖, last-good 보존으로 무시).
+        // 그 구간 거리는 신뢰 불가라 계상하지 않되, *앵커를 새 fix 로 전진*시킨다. 전진하지
+        // 않으면(옛 동작) 멀어지는 주자에 대해 이후 모든 fix 가 영구히 cap 을 넘어 거부돼, 단
+        // 한 번의 긴 공백 뒤 거리계가 런 끝까지 동결된다(5km→2km 식 과소계상).
+        this.lastGood = f;
+        this.lastGoodMs = ts;
+        this.pts.push(f);
+        this.elev = feedAltitude(this.elev, fix.coords.altitude);
       }
-      // other rejections preserve last-good for path continuity.
+      // 그 외 거부(정확도/노이즈/속도)는 last-good 보존 — 노이즈 fix 를 건너뛰고 다음 양호
+      // fix 와 직접 잇기 위함(짧은 노이즈는 cap 미만이라 위 re-anchor 분기에 안 들어온다).
     } else {
       this.lastGood = f;
       this.lastGoodMs = ts;

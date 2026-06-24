@@ -177,6 +177,34 @@ test('emits firstFix once and pause/resume events with the auto flag', () => {
   expect(resumed).toMatchObject({type: 'resumed', auto: false});
 });
 
+test('GPS 공백 후 큰 점프(>300m·정상속도)는 거리 미계상하되 앵커를 전진시켜 거리계가 동결되지 않는다(#1)', () => {
+  // 신호 공백(60s) 동안 주자가 ~555m 이동 → 복구 첫 fix 가 직전 앵커와 555m 떨어졌다.
+  // 그 거리는 cap(300m) 초과라 계상하지 않되, 앵커를 그 fix 로 전진시켜야 한다. 전진하지
+  // 않으면(옛 동작) 멀어지는 주자에 대해 이후 모든 fix 가 영구 cap 초과로 거부돼 거리계가
+  // 런 끝까지 동결된다 — 이 테스트의 마지막 단언이 그걸 잡는다.
+  const t = new RunTracker();
+  let clock = 100000;
+  t.setNow(() => clock);
+  t.start({goalKm: 5, shoe: {id: 's1', name: 'X'}, t0: 100000});
+  const F = (lat: number, ts: number) => {
+    clock = ts;
+    t.ingestFix(fix(lat, LON, 5, ts));
+  };
+  F(37.5, 100000);
+  F(37.5, 102000);
+  F(37.5, 104000); // warmup
+  F(37.5003, 107000); // idx3 채택 ~33m
+  const dBefore = t.getDistanceKm();
+  expect(dBefore).toBeGreaterThan(0);
+  // 60s 공백 후 ~555m 점프(속도 ~9m/s 정상, 정확도 양호) → re-anchor: 거리 미계상 + 앵커 전진
+  F(37.5053, 167000);
+  expect(t.getDistanceKm()).toBeCloseTo(dBefore, 5); // 점프 거리는 안 더해짐
+  // 새 앵커(37.5053)에서 정상 이동(~42m/5s) → 다시 누적된다(동결됐다면 그대로였을 것).
+  // (옛 동작이면 lastGood 가 37.5003 에 묶여 이 fix 도 588m 점프로 거부 → dist 동결)
+  F(37.5056, 172000);
+  expect(t.getDistanceKm()).toBeGreaterThan(dBefore);
+});
+
 // ── GPS 死구간(stall) 시간 제외 (P1-5: 페이스 왜곡 방지) ──────────────────────────
 import {GPS_STALL_THRESHOLD_MS as TH} from '../../lib/gpsHealth';
 
@@ -200,6 +228,27 @@ describe('GPS stall 시간 elapsed 제외', () => {
     clock += 5000;
     t.ingestFix(fix(37.5003, LON, 5, clock));
     expect(t.getElapsed()).toBe(Math.floor(TH / 1000) + 5);
+  });
+
+  test('공백 후 채택된 세그먼트의 시간은 elapsed 에서 빠지지 않는다 — 거리·시간 일관(#3)', () => {
+    // 30s GPS 공백 뒤, 직전 앵커에서 ~150m 이동한 정상 fix(속도 5m/s, <300m)가 채택돼 거리가
+    // 더해진다. 그 30s 는 실제 러닝 시간이므로 stall 로 빼면 안 된다(옛 동작은 빼서 페이스가
+    // 비현실적으로 빨라졌다). elapsed 는 실제 경과(37s) 그대로여야 한다.
+    const t = new RunTracker();
+    let clock = 100000;
+    t.setNow(() => clock);
+    t.start({goalKm: 5, shoe: {id: 's1', name: 'X'}, t0: 100000});
+    const F = (lat: number, ts: number) => {
+      clock = ts;
+      t.ingestFix(fix(lat, LON, 5, ts));
+    };
+    F(37.5, 100000);
+    F(37.5, 102000);
+    F(37.5, 104000); // warmup(idx 0~2)
+    F(37.5003, 107000); // idx3 채택 ~33m
+    F(37.50165, 137000); // 30s 공백 후 ~150m(5m/s) 채택
+    expect(t.getDistanceKm()).toBeGreaterThan(0);
+    expect(t.getElapsed()).toBe(37); // 채택 공백은 stall 제외 안 함(옛 동작이면 15s)
   });
 
   test('정상 fix 간격(임계 이내)에서는 elapsed = 실시간(제외 0)', () => {
