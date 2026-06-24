@@ -86,7 +86,7 @@ import {ExtChallenge, challengeExtProgress, type ExtRun, type ExtShoe} from './l
 import {createFirebaseCloudPort} from './lib/firebaseCloudPort';
 import {getAuth, onAuthStateChanged} from '@react-native-firebase/auth';
 import {LoginScreen} from './LoginScreen.rn';
-import {stampUpdatedAt, markDeleted, partitionTombstones, mergeCloudData, liveRecords} from './lib/cloudSync';
+import {stampUpdatedAt, markDeleted, partitionTombstones, mergeCloudData, liveRecords, reconcileLivePreservingLocal} from './lib/cloudSync';
 import {publishMyRanking} from './lib/progression/firestoreRankingStore';
 import {migrateRestToFirestore, REST_MIGRATION_KEY} from './lib/restToFirestoreMigration';
 import {genRunId, genShoeId} from './lib/genId';
@@ -921,11 +921,21 @@ function Main(){
   // 상태로, 묘비는 저장소로 보내 (a) 삭제 레코드가 거리/수명 계산에 안 끼고 (b) 다음 동기에서도
   // 삭제가 계속 전파되게 한다. merged 는 id 당 1개(머지가 dedupe)라 한 id 가 live·묘비에 동시에
   // 남지 않는다 → 자기충돌 부활 없음.
-  const applyBackupPayload=(data:BackupPayload)=>{
+  // preserveExtras(기본 true): 동기 결과를 반영하되, 동기 왕복(await) 도중 로컬에 추가/편집된
+  // 레코드가 '전체 교체'로 유실되지 않게 함수형 updater 로 보존한다(reconcileLivePreservingLocal).
+  // import(사용자가 명시적으로 백업으로 교체)만 false 로 호출해 그대로 교체한다.
+  const applyBackupPayload=(data:BackupPayload,opts?:{preserveExtras?:boolean})=>{
+    const preserve=opts?.preserveExtras!==false;
     const sPart=Array.isArray(data.shoes)?partitionTombstones(data.shoes as BackendShoe[]):null;
     const rPart=Array.isArray(data.runs)?partitionTombstones(data.runs as BackendRun[]):null;
-    if(sPart)setShoes(sPart.live);
-    if(rPart)setRuns(rPart.live);
+    if(sPart){
+      const tomb=new Set(sPart.tombstones.map(s=>String((s as BackendShoe).id)));
+      setShoes(preserve?prev=>reconcileLivePreservingLocal(prev,sPart.live,tomb):sPart.live);
+    }
+    if(rPart){
+      const tomb=new Set(rPart.tombstones.map(r=>String((r as BackendRun).id)));
+      setRuns(preserve?prev=>reconcileLivePreservingLocal(prev,rPart.live,tomb):rPart.live);
+    }
     if(sPart||rPart){
       setTombstones(prev=>{
         const next={shoes:sPart?sPart.tombstones:prev.shoes,runs:rPart?rPart.tombstones:prev.runs};
@@ -950,7 +960,7 @@ function Main(){
   };
   const importBackup=(data:BackupV1)=>{
     try{void AsyncStorage.setItem(K_BACKUP_IMPORT,serializeBackup({shoes:data.shoes,runs:data.runs,settings:data.settings}));}catch(e){console.log('backup persist error',e);}
-    applyBackupPayload({shoes:data.shoes,runs:data.runs,settings:data.settings});
+    applyBackupPayload({shoes:data.shoes,runs:data.runs,settings:data.settings},{preserveExtras:false});
   };
 
   // 클라우드 머지(pull→mergeCloudData) 결과를 받는 콜백. Stage 3(Firestore 정본): 병합 결과를

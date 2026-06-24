@@ -140,6 +140,37 @@ function recordUpdatedAt(rec: unknown): number {
 }
 
 /**
+ * 클라우드 동기 결과(merged 의 live 레코드)를 화면 상태에 반영할 때 쓰는 보존 머지.
+ * 동기 왕복(pull/syncMerge await)은 수백ms~수초 걸리는데, 그 사이 사용자가 런을 저장(추가)·
+ * 편집하면 그 변경은 동기 시작 시점의 스냅샷(backupData)에도 remote 에도 없어 merged 에서 빠진다.
+ * applyBackupPayload 가 `setRuns(merged.live)` 처럼 '전체 교체'하면 그 신규/편집분이 영구 유실된다.
+ * 이 함수는 setRuns/setShoes 의 *함수형 updater* 로 호출돼(prev = 최신 live 상태), merged 에 없는
+ * 로컬 신규(또는 updatedAt 이 더 큰 편집)를 보존한다. 단 원격 삭제(tombIds)는 존중해 부활시키지
+ * 않는다. id 충돌은 최신(updatedAt) 우선 — 동기 결과와 await-중 편집 중 더 최신을 택한다.
+ */
+export function reconcileLivePreservingLocal<T>(
+  prev: readonly T[],
+  mergedLive: readonly T[],
+  tombIds: ReadonlySet<string>,
+): T[] {
+  const byId = new Map<string, T>();
+  const noId: T[] = [];
+  for (const r of mergedLive) {
+    const id = recordId(r);
+    if (id == null) noId.push(r);
+    else byId.set(id, r);
+  }
+  for (const r of prev) {
+    const id = recordId(r);
+    if (id == null) continue; // id 없는 prev 레코드는 dedupe 불가 — mergedLive 것만 신뢰
+    if (tombIds.has(id)) continue; // 원격 삭제(묘비) 존중 — 부활 금지
+    const m = byId.get(id);
+    if (!m || recordUpdatedAt(r) > recordUpdatedAt(m)) byId.set(id, r); // await-중 추가/편집 보존
+  }
+  return [...byId.values(), ...noId];
+}
+
+/**
  * 두 레코드 배열을 id 합집합으로 병합한다. iron law: 어느 쪽 레코드도 버리지 않는다.
  *   · 한쪽에만 있는 id      → 그대로 보존
  *   · 양쪽에 같은 id(충돌)  → updatedAt 큰(최신) 쪽 채택. 동률이면 tombstone(삭제) 우선,

@@ -20,6 +20,7 @@ import {
   liveRecords,
   partitionTombstones,
   recordsToBackRegister,
+  reconcileLivePreservingLocal,
   type AuthState,
 } from '../../lib/cloudSync';
 
@@ -318,5 +319,39 @@ describe('recordsToBackRegister — 클라우드→REST 역등록 대상 선별(
     const reMerged = [{ id: 'L1' }, { id: 'S99' }, markDeleted({ id: 'C1' }, 2000)];
     // knownIds 는 reconcile 후 로컬 상태 = {L1, S99}. → 새로 역등록할 것이 없다(중복 POST 0).
     expect(recordsToBackRegister(reMerged, new Set(['L1', 'S99']))).toEqual([]);
+  });
+});
+
+// 동기 await 중 추가/편집 보존(#2): applyBackupPayload 가 setRuns/setShoes 의 함수형 updater 로
+// 호출하는 머지. 동기 왕복 도중 생긴 로컬 변경이 '전체 교체'로 사라지지 않게 보존한다.
+describe('reconcileLivePreservingLocal — 동기 결과 반영 시 로컬 변경 보존(#2)', () => {
+  test('merged 에 없는 로컬-전용 신규 레코드는 보존된다(await 중 추가 유실 방지)', () => {
+    // prev(현재 상태) = 동기 시작 후 추가된 R-new 포함. merged(동기 결과)엔 R-new 가 없다.
+    const prev = [{ id: 'R-new', updatedAt: 200 }, { id: 'R-old', updatedAt: 100 }];
+    const mergedLive = [{ id: 'R-old', updatedAt: 100 }];
+    const out = reconcileLivePreservingLocal(prev, mergedLive, new Set<string>());
+    expect(out.map(r => r.id).sort()).toEqual(['R-new', 'R-old']); // 둘 다 살아남음
+  });
+
+  test('id 충돌은 최신(updatedAt) 우선 — await 중 편집(더 최신)이 동기 결과를 이긴다', () => {
+    const prev = [{ id: 'R1', updatedAt: 500, km: 9 }]; // await 중 편집(최신)
+    const mergedLive = [{ id: 'R1', updatedAt: 100, km: 5 }]; // 동기 시작 시점의 옛 값
+    const out = reconcileLivePreservingLocal(prev, mergedLive, new Set<string>());
+    expect(out).toHaveLength(1);
+    expect((out[0] as any).km).toBe(9); // 편집본 보존
+  });
+
+  test('동기 결과가 더 최신이면 그쪽 채택(타 기기 변경 우선)', () => {
+    const prev = [{ id: 'R1', updatedAt: 100, km: 5 }];
+    const mergedLive = [{ id: 'R1', updatedAt: 900, km: 12 }];
+    const out = reconcileLivePreservingLocal(prev, mergedLive, new Set<string>());
+    expect((out[0] as any).km).toBe(12);
+  });
+
+  test('원격 삭제(tombId)는 존중 — prev 에 남아 있어도 부활시키지 않는다', () => {
+    const prev = [{ id: 'R-del', updatedAt: 100 }, { id: 'R-keep', updatedAt: 100 }];
+    const mergedLive = [{ id: 'R-keep', updatedAt: 100 }];
+    const out = reconcileLivePreservingLocal(prev, mergedLive, new Set(['R-del']));
+    expect(out.map(r => r.id)).toEqual(['R-keep']); // R-del 부활 안 함
   });
 });
