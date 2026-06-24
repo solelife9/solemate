@@ -12,9 +12,20 @@
  * @format
  */
 import React from 'react';
+import {AppState} from 'react-native';
 import ReactTestRenderer, {act} from 'react-test-renderer';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import App from '../App';
+
+// AppState 'change' 리스너들을 가로채 모아둔다(실제 OS 전환 없이 background/active 모사).
+function captureAppStateHandlers() {
+  const handlers: ((s: string) => void)[] = [];
+  jest.spyOn(AppState, 'addEventListener').mockImplementation((type: any, cb: any) => {
+    if (type === 'change') handlers.push(cb);
+    return {remove: jest.fn()} as any;
+  });
+  return handlers;
+}
 
 type Resp = {ok: boolean; status: number; json: () => Promise<any>; text: () => Promise<string>};
 const ok = (body: any): Resp => ({
@@ -191,6 +202,78 @@ test('부팅 동기는 클라우드에 없는 로컬-전용 런을 보존한다(
     act(() => renderer.unmount());
   } finally {
     jest.useRealTimers();
+    delete (globalThis as any).__KEEGO_CLOUD_PORT__;
+    delete (globalThis as any).__KEEGO_AUTH_USER__;
+    delete (globalThis as any).__KEEGO_ENABLE_CLOUD_SYNC__;
+    delete (globalThis as any).__KEEGO_DEV_SEED__;
+  }
+});
+
+// 빈틈 닫기: 앱 이탈(AppState 'background') 시 동기를 flush 한다. 런 저장 후 곧장 화면을 끄거나
+// 앱을 종료해 1.2s 디바운스 창을 놓쳐도, 이탈 직전 push 가 한 번 더 걸려 유실을 막는다.
+test('앱 백그라운드 전환 시 동기를 flush 한다(저장 직후 이탈 유실 방지)', async () => {
+  await AsyncStorage.clear();
+  await AsyncStorage.setItem(
+    'cache_shoes_v1',
+    JSON.stringify([{id: 's1', name: 'Nike Pegasus', max_km: 600, start_km: 0, updatedAt: 1}]),
+  );
+  await AsyncStorage.setItem(
+    'cache_runs_v1',
+    JSON.stringify([
+      {id: 'local-run-bg', shoe_id: 's1', km: 3.3, run_date: '2026-06-24', source: 'gps', duration: 1200, route: '', updatedAt: 1782300000001},
+    ]),
+  );
+  (globalThis.fetch as jest.Mock).mockImplementation((url: any) => {
+    const u = String(url);
+    if (u.includes('/api/auth')) return Promise.resolve(ok({user_id: 'u1'}));
+    return Promise.resolve(ok([]));
+  });
+  const remote = {shoes: [{id: 's1', name: 'Nike Pegasus', max_km: 600, start_km: 0, updatedAt: 1}], runs: [], settings: {}};
+  const port = {
+    signIn: jest.fn(() => Promise.resolve({uid: 'u-1', email: null, displayName: null})),
+    signOut: jest.fn(() => Promise.resolve()),
+    deleteAccount: jest.fn(() => Promise.resolve()),
+    pull: jest.fn(() => Promise.resolve(remote)),
+    push: jest.fn(() => Promise.resolve()),
+  };
+  (globalThis as any).__KEEGO_CLOUD_PORT__ = port;
+  (globalThis as any).__KEEGO_AUTH_USER__ = {uid: 'test-uid'};
+  (globalThis as any).__KEEGO_ENABLE_CLOUD_SYNC__ = true;
+  (globalThis as any).__KEEGO_DEV_SEED__ = false;
+  const handlers = captureAppStateHandlers();
+
+  try {
+    let renderer!: ReactTestRenderer.ReactTestRenderer;
+    jest.useFakeTimers();
+    await act(async () => {
+      renderer = ReactTestRenderer.create(<App />);
+    });
+    const flush = async () => {
+      await act(async () => {
+        jest.advanceTimersByTime(1500);
+      });
+      for (let i = 0; i < 14; i++) {
+        await act(async () => {
+          await Promise.resolve();
+        });
+      }
+    };
+    await flush();
+
+    const before = port.push.mock.calls.length;
+    // 앱 이탈(background) — 등록된 모든 'change' 리스너에 전달.
+    await act(async () => {
+      handlers.forEach(h => h('background'));
+    });
+    await flush();
+
+    // 이탈 시 동기가 한 번 더 돌아 push 가 추가로 호출된다(flush).
+    expect(port.push.mock.calls.length).toBeGreaterThan(before);
+
+    act(() => renderer.unmount());
+  } finally {
+    jest.useRealTimers();
+    jest.restoreAllMocks();
     delete (globalThis as any).__KEEGO_CLOUD_PORT__;
     delete (globalThis as any).__KEEGO_AUTH_USER__;
     delete (globalThis as any).__KEEGO_ENABLE_CLOUD_SYNC__;

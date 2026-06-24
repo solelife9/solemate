@@ -1088,6 +1088,23 @@ function Main(){
     // eslint-disable-next-line react-hooks/exhaustive-deps
   },[authUser?.uid,cloudDataSig]);
 
+  // 앱 이탈/복귀 시 동기 — 디바운스(1.2s)·부팅만으로는 못 메우는 빈틈을 닫는다.
+  //   · 'background'(앱 이탈 직전): 직전 로컬 변경을 즉시 flush. 런 저장 후 곧장 화면을 끄거나
+  //     앱을 종료해 1.2s 디바운스 창을 놓쳐도, 이탈 직전 push 가 한 번 걸린다(Firestore 오프라인
+  //     영속이 큐잉하므로 그 직후 suspend 돼도 다음 연결에 서버로 올라간다 → 유실 방지).
+  //   · 'active'(복귀): 타 기기 변경 pull + 직전에 오프라인 등으로 실패해 아직 안 올라간 변경의
+  //     재시도. (warm resume 은 부팅 effect 가 재발화하지 않으므로 여기서 동기를 보장한다.)
+  // 'inactive'(제어센터/통화 배너 등 일시 상태)는 제외해 과한 호출을 피한다. runCloudSync 가
+  // ready·authUser·busy 가드를 하므로 호출 자체는 항상 안전(미충족이면 no-op).
+  useEffect(()=>{
+    if(!cloudEnabled) return;
+    const sub=AppState.addEventListener('change',(next)=>{
+      if(next==='active'||next==='background') void runCloudSyncRef.current();
+    });
+    return ()=>sub.remove();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[]);
+
   // ── 회원 탈퇴(계정 영구 삭제) — 앱스토어 5.1.1(v) 인앱 탈퇴 요건 ──────────────
   // 1) 클라우드 계정+백업 삭제(실패 시 throw → 화면이 안내하고 로컬은 보존). 2) 성공 시
   // 로컬 전체 삭제 + 상태를 신규(온보딩)로 초기화. 사용자가 명시적으로 요청한 파기이므로
