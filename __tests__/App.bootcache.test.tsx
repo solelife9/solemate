@@ -67,6 +67,42 @@ function todayYmd(): string {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
 }
 
+// ── 0) 삭제 부활 방지(#4): 부팅캐시에 남은 묘비 레코드는 부팅 라이브에서 걸러진다 ──────────
+test('offline boot: 묘비(tombstones_v1)에 든 런은 캐시에 남아 있어도 부팅에서 걸러져 부활하지 않는다(#4)', async () => {
+  await AsyncStorage.clear();
+  const day = todayYmd();
+  await AsyncStorage.setItem(
+    'cache_shoes_v1',
+    JSON.stringify([{id: 's1', name: 'Nike Pegasus', max_km: 600, start_km: 0}]),
+  );
+  // 캐시엔 r1(5km) + 삭제했지만 800ms 디바운스 전에 종료돼 캐시에 남은 r-del(3km).
+  await AsyncStorage.setItem(
+    'cache_runs_v1',
+    JSON.stringify([
+      {id: 'r1', shoe_id: 's1', km: 5, run_date: day, duration: 1800},
+      {id: 'r-del', shoe_id: 's1', km: 3, run_date: day, duration: 1000},
+    ]),
+  );
+  // 삭제 시 *동기적으로* 영속된 묘비. 부팅 필터가 r-del 을 라이브에서 빼야 한다.
+  await AsyncStorage.setItem(
+    'tombstones_v1',
+    JSON.stringify({shoes: [], runs: [{id: 'r-del', shoe_id: 's1', km: 3, run_date: day, deleted: true, updatedAt: 1_700_000_000_000}]}),
+  );
+  (globalThis.fetch as jest.Mock).mockImplementation(() => Promise.reject(new Error('cold backend')));
+
+  let renderer!: ReactTestRenderer.ReactTestRenderer;
+  await act(async () => {
+    renderer = ReactTestRenderer.create(<App />);
+  });
+  await flush();
+  const home = textOf(renderer.root);
+  // 신발 히어로 사용거리 = r1(5)만. r-del 이 부활했다면 8 이었을 것.
+  expect(home).toContain('5 / 600km 사용');
+  expect(home).not.toContain('8 / 600km 사용');
+
+  act(() => renderer.unmount());
+});
+
 // ── 1) 오프라인 부팅: 캐시 + 미동기 큐 오버레이 가시성 ────────────────────────────
 test('offline boot: 캐시 런 위에 미동기(pending) 런을 오버레이해 이번 주 거리에 합산해 보인다', async () => {
   await AsyncStorage.clear(); // clearAllMockStorages 누수 회피(메모리 키 완전 초기화)

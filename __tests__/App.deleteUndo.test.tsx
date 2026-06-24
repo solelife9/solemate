@@ -218,6 +218,40 @@ test('런 삭제→실행취소: 사이드키 4종 포함 완전복원 + 묘비 
   act(() => renderer.unmount());
 });
 
+test('펜딩(미동기) 런 삭제: 큐(pending_runs)에서도 제거돼 다음 부팅 overlay 로 부활하지 않는다(#5)', async () => {
+  // 캐시엔 없고 큐에만 있는 미동기 런 run_p — overlayPendingRuns 가 id='run_p' 로 라이브에 얹는다.
+  await seedBootCache([{id: 's1', name: 'Nike Pegasus', max_km: 600, start_km: 0}], []);
+  await AsyncStorage.setItem(
+    'pending_runs',
+    JSON.stringify([
+      {localId: 'run_p', shoe_id: 's1', km: 4, run_date: '2026-06-20', memo: '', source: 'gps',
+       duration: 1200, cadence: 0, route: '', location: '', heart_rate: 0, run_time: '08:00', queuedAt: 1_700_000_000_000},
+    ]),
+  );
+  jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+  let renderer!: ReactTestRenderer.ReactTestRenderer;
+  await act(async () => {
+    renderer = ReactTestRenderer.create(<App />);
+  });
+  await tick(6);
+  // (전) 큐에 run_p 가 있다.
+  const before = JSON.parse((await AsyncStorage.getItem('pending_runs')) || '[]');
+  expect(before.some((p: any) => p.localId === 'run_p')).toBe(true);
+
+  // 삭제(onDeleteRun 은 History=tab 2).
+  await act(async () => { findByProp(renderer.root, 'onTab').props.onTab(2); });
+  await tick(3);
+  await act(async () => { findByProp(renderer.root, 'onDeleteRun').props.onDeleteRun('run_p'); });
+  await tick(6);
+
+  // (후) 큐에서도 제거됐다 → 다음 부팅 overlayPendingRuns 부활 없음.
+  const after = JSON.parse((await AsyncStorage.getItem('pending_runs')) || '[]');
+  expect(after.some((p: any) => p.localId === 'run_p')).toBe(false);
+
+  await flushAnim();
+  act(() => renderer.unmount());
+});
+
 test('신발 삭제→실행취소: 신발 라이브 복귀 + 묘비 되돌림(updatedAt 갱신)', async () => {
   mockBackend();
   const renderer = await mountApp();

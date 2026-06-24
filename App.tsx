@@ -65,7 +65,7 @@ import {mostRecentShoeId, lastWornDate} from './lib/shoeRecommend';
 import {recommendRotation} from './lib/rotation';
 import {
   loadSnapshot, clearSnapshot, isResumable,
-  enqueuePendingRun, loadPendingRuns, overlayPendingRuns,
+  enqueuePendingRun, loadPendingRuns, overlayPendingRuns, removePendingRun,
   RunSnapshot, PendingRun,
 } from './lib/runPersistence';
 import {Unit, kmToDisplay, displayNum} from './lib/units';
@@ -632,6 +632,20 @@ function Main(){
       liveShoes=devSeedShoes();liveRuns=devSeedRuns();
       try{await AsyncStorage.setItem(CACHE_SHOES_KEY,JSON.stringify(liveShoes));await AsyncStorage.setItem(CACHE_RUNS_KEY,JSON.stringify(liveRuns));}catch{}
     }
+    // 묘비(삭제) 필터(#4): 부팅캐시는 800ms 디바운스라, 삭제 직후 강제종료/크래시되면 캐시엔
+    // 아직 삭제된 레코드가 남아 있을 수 있다. 삭제 시 *동기적으로* 영속되는 묘비(tombstones_v1)로
+    // 부팅 라이브를 한 번 걸러, 삭제가 부팅에서 부활하지 않게 한다. overlayPendingRuns 로 되살아난
+    // 레거시 펜딩 런도 묘비면 함께 걸러진다(#5 부활 차단). 묘비 자체는 보존돼 cloudSync 가 전파한다.
+    try{
+      const traw=await AsyncStorage.getItem(K_TOMBSTONES);
+      const tp=JSON.parse(traw||'{}');
+      if(tp&&typeof tp==='object'){
+        const tShoes=new Set((Array.isArray(tp.shoes)?tp.shoes:[]).map((s:any)=>String(s?.id)));
+        const tRuns=new Set((Array.isArray(tp.runs)?tp.runs:[]).map((r:any)=>String(r?.id)));
+        if(tShoes.size) liveShoes=liveShoes.filter((s:any)=>!tShoes.has(String(s?.id)));
+        if(tRuns.size) liveRuns=liveRuns.filter((r:any)=>!tRuns.has(String(r?.id)));
+      }
+    }catch{/* 묘비 손상/부재는 무시 — 필터 없이 진행 */}
     setShoes(liveShoes);setRuns(liveRuns);
     setBootState('ready');
     checkShoeAlerts(liveShoes,liveRuns,st.alerts);
@@ -787,6 +801,18 @@ function Main(){
     }catch(e){console.log('persistRunToCache error',e);}
   };
 
+  // 런 한 건을 부팅 캐시에서 즉시 durable 하게 제거한다(삭제 크래시-세이프티). 800ms 디바운스
+  // 캐시가 갱신되기 전 종료/크래시돼도 삭제가 캐시에 반영돼 부팅에서 부활하지 않는다(#4/#5). 비차단.
+  const persistRunCacheRemove=async(id:string)=>{
+    try{
+      const raw=await AsyncStorage.getItem(CACHE_RUNS_KEY);
+      if(!raw) return;
+      const arr=JSON.parse(raw);
+      if(!Array.isArray(arr)) return;
+      await AsyncStorage.setItem(CACHE_RUNS_KEY,JSON.stringify(arr.filter((r:any)=>String(r?.id)!==String(id))));
+    }catch(e){console.log('persistRunCacheRemove error',e);}
+  };
+
   // 완주 런 저장(Stage 2b · Firestore 정본): 로컬 우선 + cloudSync push. REST POST/큐 제거.
   //   1) 사이드키(route_/time_) 영속 + 캐시에 즉시 durable 기록(크래시-세이프티) — 네트워크 무관.
   //   2) 낙관적 setRuns. 영속/동기는 부팅캐시 + cloudSync(Firestore)가 담당한다.
@@ -829,6 +855,11 @@ function Main(){
     const sid=String(id);
     const editedAt=Date.now();
     setRuns(prev=>prev.map(r=>String(r.id)===sid?stampUpdatedAt({...r,...fields},editedAt):r));
+    // 부팅캐시 즉시 갱신(#9): 캐시는 800ms 디바운스라 편집 후 그 안에 종료/크래시되면 편집이
+    // 유실(옛 값으로 부팅)된다. persistRunToCache 는 id 로 upsert(교체)하므로 편집본을 즉시 durable
+    // 하게 박아 둔다(addRun 과 같은 크래시-세이프티 패턴). 영속/동기는 이후 cloudSync 가 담당.
+    const target=runs.find(r=>String(r.id)===sid);
+    if(target) await persistRunToCache(stampUpdatedAt({...target,...fields},editedAt));
   }
 
   // 개별 런 삭제(백엔드 DELETE). 삭제 확인 Alert는 화면(HistoryScreen)이 띄운다.
@@ -852,10 +883,21 @@ function Main(){
       AsyncStorage.getItem('surface_'+sid),
       AsyncStorage.getItem('splits_'+sid),
     ]);
-    const undo:RunUndo|null=target?{record:target,sidecars:{route,time,surface,splits},pending:null}:null;
+    // 레거시 미동기 큐(pending)에 같은 런이 남아 있으면 큐에서도 제거한다(#5). 안 그러면 다음
+    // 부팅 overlayPendingRuns 로 되살아난다(묘비 필터가 표시를 막아도 큐 항목이 영구 누수).
+    // 큐 항목은 undo 에 담아 실행취소 시 restoreRun 이 다시 enqueue 하게 한다(완전복원).
+    let pendingUndo:PendingRun|null=null;
+    try{
+      const q=await loadPendingRuns();
+      pendingUndo=q.find(p=>String(p.localId)===sid)??null;
+      if(pendingUndo) await removePendingRun(sid);
+    }catch{/* 큐 접근 실패는 삭제를 막지 않는다 */}
+    const undo:RunUndo|null=target?{record:target,sidecars:{route,time,surface,splits},pending:pendingUndo}:null;
     // 로컬-퍼스트 삭제: 라이브 제거 + 묘비(cloudSync 전파) + 사이드키 정리. 영속은 cloudSync 담당.
     setRuns(prev=>prev.filter(r=>String(r.id)!==sid));
     if(target)addRunTombstone(target);
+    // 부팅캐시에서도 즉시 제거(묘비 필터와 별개로 캐시 자체를 깔끔히 — 800ms 디바운스 의존 제거).
+    await persistRunCacheRemove(sid);
     await AsyncStorage.removeItem('route_'+sid);
     await AsyncStorage.removeItem('time_'+sid);
     await AsyncStorage.removeItem('surface_'+sid);
