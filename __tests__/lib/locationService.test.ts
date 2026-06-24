@@ -5,9 +5,11 @@
  *  - the foreground watch (watchPositionAsync) feeds fixes into the shared engine
  *    so distance accumulates;
  *  - the background task (registered via expo-task-manager defineTask) feeds a
- *    batched, screen-off update into the SAME engine;
+ *    batched, screen-off update into the SAME engine, and is started on
+ *    FOREGROUND permission alone (background/"Always" is NOT required — that was
+ *    the silent pocket-tracking bug);
  *  - permission requesting is correct and graceful (foreground denial
- *    short-circuits; background denial is non-fatal);
+ *    short-circuits; background/"Always" denial does not disable bg tracking);
  *  - stopTracking tears down both delivery paths.
  *
  * Assertions are on observable outcomes (engine distance, the actual expo calls
@@ -45,7 +47,7 @@ function feed(deliver: (l: any) => void) {
 
 test('startTracking wires foreground fixes into the engine and starts the background service', async () => {
   runTracker.start({goalKm: 5, shoe: {id: 's1', name: 'X'}, t0: 100000});
-  await startTracking(5, {background: true});
+  await startTracking(5);
 
   // Foreground watch registered; replay fixes through its callback (arg 1).
   const wCalls = (Location.watchPositionAsync as jest.Mock).mock.calls;
@@ -62,12 +64,23 @@ test('startTracking wires foreground fixes into the engine and starts the backgr
   await stopTracking();
 });
 
-test('with background permission absent, startTracking still watches but starts no background service', async () => {
+test('startTracking starts the background task on FOREGROUND permission alone (no "Always" required) — screen-off / pocket tracking', async () => {
+  // Regression: the background updates task used to be gated behind background
+  // ("Always") permission, so a "While Using"-only user's run silently froze the
+  // moment the phone went into a pocket (foreground watch dies screen-off). The
+  // expo-location background task only requires FOREGROUND permission (it sets
+  // allowsBackgroundLocationUpdates=YES + the iOS blue indicator), so it must
+  // start for every run the caller already gated on foreground permission.
   runTracker.start({goalKm: 5, shoe: {id: 's1', name: 'X'}, t0: 100000});
-  await startTracking(5, {background: false});
+  await startTracking(5);
 
   expect((Location.watchPositionAsync as jest.Mock).mock.calls.length).toBeGreaterThan(0);
-  expect((Location.startLocationUpdatesAsync as jest.Mock).mock.calls.length).toBe(0);
+  const bgCalls = (Location.startLocationUpdatesAsync as jest.Mock).mock.calls;
+  expect(bgCalls.length).toBeGreaterThan(0);
+  expect(bgCalls[bgCalls.length - 1][0]).toBe(RUN_LOCATION_TASK);
+  // The iOS blue location indicator must be enabled so When-In-Use background
+  // delivery is permitted (and the user sees it's tracking).
+  expect(bgCalls[bgCalls.length - 1][1].showsBackgroundLocationIndicator).toBe(true);
 
   await stopTracking();
 });
@@ -115,7 +128,7 @@ test('stopTracking removes the foreground subscription and stops a started backg
   (Location.watchPositionAsync as jest.Mock).mockResolvedValueOnce({remove});
   (Location.hasStartedLocationUpdatesAsync as jest.Mock).mockResolvedValueOnce(true);
 
-  await startTracking(5, {background: false});
+  await startTracking(5);
   await stopTracking();
 
   expect(remove).toHaveBeenCalled();

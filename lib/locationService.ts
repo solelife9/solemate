@@ -107,17 +107,29 @@ export function isPermissionError(reason: string): boolean {
 let fgSub: Location.LocationSubscription | null = null;
 
 /**
- * Start delivering fixes to the engine. Always starts the foreground watch;
- * additionally starts the background location task (with a location-typed
- * foreground service notification) when background permission was granted.
+ * Start delivering fixes to the engine. Starts BOTH the foreground watch (live
+ * UI) and the background location-updates task (screen-off / pocket tracking).
+ *
+ * 핵심(이전 버그 수정): 백그라운드 task 시작 조건은 "항상 허용"이 *아니라* 포그라운드
+ * 권한이다. expo-location 의 startLocationUpdatesAsync 는 네이티브에서 foreground 권한만
+ * 검사하고(`ensureForegroundLocationPermissions`), task consumer 가
+ * `allowsBackgroundLocationUpdates = YES` 로 돈다. 따라서 `UIBackgroundModes: 'location'`
+ * (Info.plist 설정됨)과 "앱 사용 중에만 허용"만으로도 화면을 꺼/주머니에 넣어도 iOS 가
+ * 파란 위치 인디케이터와 함께 위치를 계속 전달한다 — Nike/Strava 와 동일. "항상 허용"은
+ * (앱이 종료된 뒤 재기동 같은) 극단 상황에만 의미가 있고 일반 러닝엔 불필요하다.
+ *
+ * 포그라운드 watch 는 allowsBackgroundLocationUpdates=false 라 화면이 꺼지면 멈추므로,
+ * 라이브 UI 용으로만 두고 실제 끊김 없는 기록은 background task 가 책임진다(두 경로의 중복
+ * 전달은 runTracker 의 타임스탬프 de-dupe 로 무해).
+ *
+ * 호출자는 *반드시* 포그라운드 권한을 먼저 확인한 뒤 호출한다(거부 시 시작 금지).
  *
  * @param goalKm run goal surfaced in the foreground-service notification body.
- * @param opts.background whether to also start screen-off background updates.
  * @param opts.onError forwarded to watchPositionAsync (e.g. mid-run revocation).
  */
 export async function startTracking(
   goalKm: number,
-  opts?: {background?: boolean; onError?: (reason: string) => void},
+  opts?: {onError?: (reason: string) => void},
 ): Promise<void> {
   fgSub = await Location.watchPositionAsync(
     WATCH_OPTIONS,
@@ -125,22 +137,21 @@ export async function startTracking(
     opts?.onError,
   );
 
-  if (opts?.background) {
-    const cfg = buildForegroundServiceConfig(goalKm);
-    try {
-      await Location.startLocationUpdatesAsync(RUN_LOCATION_TASK, {
-        ...WATCH_OPTIONS,
-        showsBackgroundLocationIndicator: true,
-        pausesUpdatesAutomatically: false,
-        foregroundService: {
-          notificationTitle: cfg.notificationTitle,
-          notificationBody: cfg.notificationBody,
-        },
-      });
-    } catch {
-      // Background updates unavailable (permission/version) — non-fatal: the
-      // foreground watch above still records while the screen is on.
-    }
+  const cfg = buildForegroundServiceConfig(goalKm);
+  try {
+    await Location.startLocationUpdatesAsync(RUN_LOCATION_TASK, {
+      ...WATCH_OPTIONS,
+      showsBackgroundLocationIndicator: true,
+      pausesUpdatesAutomatically: false,
+      foregroundService: {
+        notificationTitle: cfg.notificationTitle,
+        notificationBody: cfg.notificationBody,
+      },
+    });
+  } catch {
+    // Background updates unavailable (location services off / simulator /
+    // version) — non-fatal: the foreground watch above still records while the
+    // screen is on. (Foreground permission itself is gated by the caller.)
   }
 }
 

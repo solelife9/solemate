@@ -1888,7 +1888,7 @@ function RunActiveScreen({shoe,insets,goalKm,weightKg,onSave,onDiscard,resume,re
         setPermLost(true);
         return;
       }
-      await beginRun(perm);
+      await beginRun();
     })();
     return()=>{stop();unsub();try{Tts.stop();}catch{}};
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1937,7 +1937,7 @@ function RunActiveScreen({shoe,insets,goalKm,weightKg,onSave,onDiscard,resume,re
   // 3초 스냅샷 타이머를 띄운 뒤 expo-location 트래킹(포그라운드 watch + 가능 시
   // 백그라운드 task)을 시작한다. 거리/시간/일시정지/死구간 판정은 모두 엔진이
   // 소유하고 subscribe로 화면에 반영된다(이 함수는 delivery/타이머만 띄운다).
-  async function beginRun(perm:RunPermissions){
+  async function beginRun(){
     // 이어 달리기(첫 진입에 한함): 스냅샷의 누적 거리·경로·경과시간을 엔진/화면에 시드한다.
     // t0=now−elapsed 로 경과를 잇고, 死구간을 가로지르는 허위 거리를 막기 위해 거리는
     // seedDist 로만 잇는다(엔진이 첫 fix 를 새 앵커로 삼음). '계속 달리기'(짧은 런 재시작)로
@@ -1988,7 +1988,6 @@ function RunActiveScreen({shoe,insets,goalKm,weightKg,onSave,onDiscard,resume,re
     // 시간만 흐를 때의 복구 정확도를 위해 주기 저장도 둔다. 크래시 시 복구 지점.
     snapTimer.current=setInterval(()=>runTracker.persist(),3000);
     await startTracking(goalKm,{
-      background:perm.background,
       onError:reason=>{
         // 권한 회수성 에러면 엔진을 멈춰 가비지 거리/시간 누적을 막는다(subscribe의
         // permissionRevoked 핸들러가 delivery 정리 + 안내를 맡는다). 그 외는 신호 없음.
@@ -2019,7 +2018,7 @@ function RunActiveScreen({shoe,insets,goalKm,weightKg,onSave,onDiscard,resume,re
     if(fk<0.01){
       stop();
       Alert.alert('거리가 너무 짧아요','계속 달리거나 나가기를 선택하세요',[
-        {text:'계속 달리기',onPress:()=>{setKm(0);setElapsed(0);setCadence(0);setGpsStatus('GPS 신호 찾는 중...');setPaused(false);setAutoPaused(false);void beginRun(permRef.current);}},
+        {text:'계속 달리기',onPress:()=>{setKm(0);setElapsed(0);setCadence(0);setGpsStatus('GPS 신호 찾는 중...');setPaused(false);setAutoPaused(false);void beginRun();}},
         {text:'나가기',style:'destructive',onPress:onDiscard},
       ]);
       return;

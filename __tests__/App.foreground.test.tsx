@@ -129,19 +129,26 @@ test('a denied foreground location permission blocks all tracking (no watch, no 
   act(() => renderer.unmount());
 });
 
-// A denied BACKGROUND permission is graceful: the foreground watch still starts
-// (the run records while the screen is on), but no screen-off service is started.
-test('a denied background permission is graceful — foreground watch starts, no background service', async () => {
+// Regression (silent pocket-tracking bug): a denied BACKGROUND ("Always")
+// permission must NOT disable screen-off tracking. The expo-location background
+// updates task only requires FOREGROUND permission (it runs with
+// allowsBackgroundLocationUpdates=YES + the iOS blue indicator), so a
+// "While Using"-only user must still get the background service — otherwise the
+// run silently freezes the moment the phone goes into a pocket.
+test('a denied background ("Always") permission still starts the screen-off background service (foreground perm is enough)', async () => {
   (Location.requestBackgroundPermissionsAsync as jest.Mock).mockResolvedValueOnce({
     granted: false,
     status: 'denied',
   });
   const {renderer} = await startRun();
 
-  // Foreground tracking still runs...
+  // Foreground watch (live UI)...
   expect(watchMock().mock.calls.length).toBeGreaterThan(0);
-  // ...but the screen-off background service was not started (graceful denial).
-  expect(bgMock().mock.calls.length).toBe(0);
+  // ...AND the screen-off background service — started on foreground perm alone.
+  const calls = bgMock().mock.calls;
+  expect(calls.length).toBeGreaterThan(0);
+  expect(calls[0][0]).toBe(RUN_LOCATION_TASK);
+  expect(calls[0][1].showsBackgroundLocationIndicator).toBe(true);
 
   act(() => renderer.unmount());
 });
