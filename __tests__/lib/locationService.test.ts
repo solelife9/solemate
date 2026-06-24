@@ -85,6 +85,22 @@ test('startTracking starts the background task on FOREGROUND permission alone (n
   await stopTracking();
 });
 
+test('foreground watch 시작이 실패해도 background task 는 시작된다(#7) — 화면-off 기록 보존', async () => {
+  // Regression: watchPositionAsync 가 reject 하면 startTracking 전체가 throw 돼, 화면을 꺼도
+  // 기록을 잇는 유일한 경로(background updates task)가 영영 안 켜졌다(런 통째 유실 위험).
+  // 이제 watch 실패는 격리되고 background task 는 반드시 시작돼야 한다.
+  (Location.watchPositionAsync as jest.Mock).mockRejectedValueOnce(new Error('watch start failed'));
+  runTracker.start({goalKm: 5, shoe: {id: 's1', name: 'X'}, t0: 100000});
+
+  await expect(startTracking(5)).resolves.toBeUndefined(); // throw 하지 않는다
+
+  const bgCalls = (Location.startLocationUpdatesAsync as jest.Mock).mock.calls;
+  expect(bgCalls.length).toBeGreaterThan(0);
+  expect(bgCalls[bgCalls.length - 1][0]).toBe(RUN_LOCATION_TASK);
+
+  await stopTracking();
+});
+
 test('the registered background task feeds a batched screen-off update into the engine', async () => {
   const executor = (TaskManager as any).__getTask(RUN_LOCATION_TASK);
   expect(typeof executor).toBe('function');

@@ -131,11 +131,19 @@ export async function startTracking(
   goalKm: number,
   opts?: {onError?: (reason: string) => void},
 ): Promise<void> {
-  fgSub = await Location.watchPositionAsync(
-    WATCH_OPTIONS,
-    loc => runTracker.ingestFix(toRawFix(loc)),
-    opts?.onError,
-  );
+  // 포그라운드 watch 시작 실패(드묾)가 *백그라운드 task 시작을 막지 않도록* 격리한다(#7).
+  // 안 그러면 watchPositionAsync 가 reject 할 때 startTracking 전체가 throw 돼, 화면을 꺼도
+  // 기록을 잇는 유일한 경로인 background updates task 가 영영 안 켜진다(런 통째 유실 위험).
+  // watch 는 라이브 UI 갱신용일 뿐 — 실패해도 거리 누적은 아래 background task 가 책임진다.
+  try {
+    fgSub = await Location.watchPositionAsync(
+      WATCH_OPTIONS,
+      loc => runTracker.ingestFix(toRawFix(loc)),
+      opts?.onError,
+    );
+  } catch {
+    fgSub = null;
+  }
 
   const cfg = buildForegroundServiceConfig(goalKm);
   try {
