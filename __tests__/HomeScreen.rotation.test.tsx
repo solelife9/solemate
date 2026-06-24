@@ -83,10 +83,10 @@ describe('@slice-4 홈 신발 로테이션 추천 카드', () => {
     // 정렬: pick-0 = 더 오래 쉰 c(Adizero SL2), pick-1 = a(Pegasus 41).
     expect(textOf(byTestID(root, 'rotation-pick-0')[0])).toContain('Adizero SL2');
     expect(textOf(byTestID(root, 'rotation-pick-1')[0])).toContain('Pegasus 41');
-    // pick-0 에는 '오늘 추천' 강조 칩이 붙는다.
-    expect(textOf(byTestID(root, 'rotation-pick-0')[0])).toContain('오늘 추천');
-    // 휴식 일수 reason 이 문구로 보인다(8일 쉰 c).
-    expect(textOf(byTestID(root, 'rotation-pick-0')[0])).toContain('8일 휴식');
+    // pick-0(가장 오래 쉰 신발)에는 휴식 일수 배지 + 설명이 붙는다(추천 언어 '오늘 추천'은
+    // 데이터 기반 UI 로 리팩터되며 제거됨 — insightBadge: '8일 미사용' + 설명).
+    expect(textOf(byTestID(root, 'rotation-pick-0')[0])).toContain('8일 미사용');
+    expect(textOf(byTestID(root, 'rotation-pick-0')[0])).toContain('최근 가장 오래 쉬고 있는 신발입니다');
   });
 
   // ── 보관(retired) 신발 제외 ──────────────────────────────────────────────────

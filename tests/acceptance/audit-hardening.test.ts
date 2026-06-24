@@ -63,7 +63,6 @@ import {KeyboardAvoidingView, Alert, FlatList, StyleSheet, Text} from 'react-nat
 import App from '../../App';
 import {Button, Card, SegmentedControl, StatGrid, Stat} from '../../primitives';
 // E 묶음(디자인 시스템) — CTA '단일 Button 프리미티브 경유'를 화면째 렌더해 단언하기 위한 컴포넌트.
-import ChallengesSection from '../../ChallengesSection';
 import RetirementFlow from '../../RetirementFlow.rn';
 import ShoesScreen from '../../ShoesScreen.rn';
 import ProfileScreen from '../../ProfileScreen.rn';
@@ -707,8 +706,10 @@ describe('Audit Hardening 수용', () => {
       expect(/padStart\(2, '0'\)/.test(durFn![0])).toBe(true);           // MM:SS-total 직접 조립
 
       // (3) YYYY-MM(-DD) — 인라인 Date 빌더(getFullYear()+padStart) 제거, lib/format 재사용.
+      // ProgressionScreen.rn.tsx 는 챌린지 마이탭 이관(스마트 전용) 후 더 이상 날짜를
+      // 직접 빌드하지 않아 목록에서 제외한다(인라인 빌더 0 = 검사 대상 아님).
       const ymBuilder = /getFullYear\(\)[\s\S]{0,80}?padStart\(2, '0'\)/;
-      for (const rel of ['HallOfFameScreen.rn.tsx', 'ProgressionScreen.rn.tsx', 'lib/notifications.ts', 'lib/progression/challengesExt.ts']) {
+      for (const rel of ['HallOfFameScreen.rn.tsx', 'lib/notifications.ts', 'lib/progression/challengesExt.ts']) {
         const src = read(rel);
         expect(ymBuilder.test(src)).toBe(false);                      // 인라인 날짜 빌더 없음
         expect(/from '(?:\.\.?\/)+(?:lib\/)?format'/.test(src)).toBe(true); // lib/format 재사용
@@ -858,13 +859,9 @@ describe('Audit Hardening 수용', () => {
       ];
       const ctx = buildContext(RUNS, [SHOE], [], null, NOW, []);
 
-      // ① ChallengesSection createBtn('챌린지 만들기') — 폼을 열어야 노출된다.
-      const ch = renderTree(
-        el(ChallengesSection, {challenges: [], onCreate: () => {}, today: '2026-06-03'}),
-      );
-      act(() => pressableByLabel(ch.root, '새 챌린지').props.onPress());
-      expectPrimitiveCta(ch.root, '챌린지 만들기');
-      act(() => ch.unmount());
+      // ① (제거) ChallengesSection 개인 챌린지 생성 CTA('챌린지 만들기')는 챌린지 마이탭
+      //   이관(스마트 전용·수락 단계 폐지) 때 함께 사라졌다. 남은 대표 CTA 들로 프리미티브
+      //   경유를 계속 가드한다(아래 ②③④…).
 
       // ② RetirementFlow btnPrimary(step0 '여정 돌아보기').
       const ret = renderTree(
