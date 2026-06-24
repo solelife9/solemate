@@ -97,6 +97,18 @@ export async function requestRunPermissions(): Promise<RunPermissions> {
   return {foreground, background};
 }
 
+/** 현재 *포그라운드* 위치 권한이 허용 상태인지 묻는다(요청하지 않고 조회만). 주행 중 권한
+ *  회수 → 설정에서 재허용 → 앱 복귀(AppState 'active')를 감지해 트래킹을 재개할지 판단하는 데
+ *  쓴다(#6). 실패/미허용은 false. */
+export async function hasForegroundPermission(): Promise<boolean> {
+  try {
+    const r = await Location.getForegroundPermissionsAsync();
+    return !!r.granted;
+  } catch {
+    return false;
+  }
+}
+
 /** Heuristic: does a watch error reason indicate the location permission was
  *  revoked (vs. a transient signal loss)? Used to stop the run on revocation. */
 export function isPermissionError(reason: string): boolean {

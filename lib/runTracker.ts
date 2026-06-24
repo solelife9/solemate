@@ -258,6 +258,32 @@ class RunTracker {
     this.emitState();
   }
 
+  /**
+   * 주행 중 권한 회수 후, 설정에서 다시 허용하고 앱으로 복귀했을 때 트래킹을 재개한다(#6).
+   * 회수 상태가 아니면 no-op(false 반환) — 호출자가 '처음부터 거부(엔진 미시작)' 케이스와
+   * 구분하는 데 쓴다. 동결됐던 시점 이후 흐른 wall-clock(설정 다녀온 공백)을 pausedMs 로
+   * 흡수해 elapsed 가 동결 지점에서 매끄럽게 이어지게 하고(공백만큼 점프 금지), 거리는 보존된
+   * 채 새 fix 부터 다시 누적한다. lastGood 은 비워(공백 가로지르는 허위 세그먼트 방지) 재개
+   * 첫 fix 가 새 앵커가 되게 한다. 호출 후 isActive()===true.
+   */
+  resumeFromPermissionRevoked(): boolean {
+    if (!this.permissionRevoked) return false;
+    const now = this.now();
+    if (this.frozenElapsed != null) {
+      const rawMs = now - this.t0 - this.pausedMs - this.stalledMs;
+      const gapMs = rawMs - this.frozenElapsed * 1000;
+      if (gapMs > 0) this.pausedMs += gapMs; // 공백을 일시정지처럼 elapsed 에서 제외
+    }
+    this.frozenElapsed = null;
+    this.permissionRevoked = false;
+    this.active = true;
+    this.lastGood = null; // 공백 가로지르는 허위 거리 방지(재개 첫 fix = 새 앵커)
+    this.lastRecvMs = now; // 死구간 오판 방지(재개 직후 gap 을 stall 로 세지 않게)
+    this.emit({type: 'resumed', auto: false});
+    this.emitState();
+    return true;
+  }
+
   // ── the core: process one GPS fix ─────────────────────────────────
   // Faithful port of the App.tsx watchPosition success handler, with a leading
   // timestamp de-dupe so foreground + background delivery of the same fix is safe.

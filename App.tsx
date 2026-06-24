@@ -49,7 +49,7 @@ import {challengeProgress} from './lib/challenges';
 import {simplifyRoute} from './lib/geo';
 import {runTracker} from './lib/runTracker';
 import {
-  requestRunPermissions, startTracking, stopTracking, isPermissionError,
+  requestRunPermissions, startTracking, stopTracking, isPermissionError, hasForegroundPermission,
   RunPermissions,
 } from './lib/locationService';
 import {initStepCadence, feedStepCount} from './lib/stepCadence';
@@ -1969,6 +1969,38 @@ function RunActiveScreen({shoe,insets,goalKm,weightKg,onSave,onDiscard,resume,re
     return()=>{stop();unsub();try{Tts.stop();}catch{}};
     // eslint-disable-next-line react-hooks/exhaustive-deps
   },[]);
+
+  // 권한 회수 배너 탈출(#6): 설정에서 위치를 다시 허용하고 앱으로 복귀(AppState 'active')하면
+  // 트래킹을 재개한다. 이게 없으면 회수 배너의 '설정 열기'가 실효 없이, 재허용해도 거리계가
+  // 0/정지로 멈춘 채였다. 회수 후 재개(resumed=true)는 엔진 un-revoke + delivery/타이머 재무장
+  // (거리 보존), '처음부터 거부'(엔진 미시작)는 풀 beginRun. permLost 일 때만 리스너를 단다.
+  useEffect(()=>{
+    if(resume&&!isContinue) return;
+    if(!permLost) return;
+    const sub=AppState.addEventListener('change',(next)=>{
+      if(next!=='active') return;
+      (async()=>{
+        if(!(await hasForegroundPermission())) return; // 아직 미허용 → 배너 유지
+        const resumed=runTracker.resumeFromPermissionRevoked();
+        setPermLost(false);setGpsStatus('GPS 신호 찾는 중...');
+        if(resumed){
+          // 회수 후 재개 — 거리 보존, delivery/타이머만 재무장.
+          clearInterval(timer.current);clearInterval(snapTimer.current);
+          timer.current=setInterval(()=>runTracker.tick(),1000);
+          snapTimer.current=setInterval(()=>runTracker.persist(),3000);
+          await startTracking(goalKm,{onError:reason=>{
+            if(isPermissionError(reason))runTracker.notifyPermissionRevoked();
+            else setGpsStatus('GPS 신호 없음');
+          }});
+        }else{
+          // 처음부터 거부됐던 경우(엔진 미시작) — 풀 시작.
+          await beginRun();
+        }
+      })();
+    });
+    return()=>sub.remove();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[permLost]);
 
   useEffect(()=>{
     const fullKm=Math.floor(km);

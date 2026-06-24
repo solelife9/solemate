@@ -18,7 +18,7 @@
  */
 
 import React from 'react';
-import {Alert, Linking} from 'react-native';
+import {Alert, Linking, AppState} from 'react-native';
 import ReactTestRenderer, {act} from 'react-test-renderer';
 import * as Location from 'expo-location';
 import App from '../App';
@@ -187,6 +187,57 @@ test('mid-run permission revocation stops tracking (no further distance) and gui
     act(() => renderer.unmount());
   } finally {
     alertSpy.mockRestore();
+  }
+});
+
+// ── 권한 회수 후 재허용+복귀 시 재개(#6) ─────────────────────────────────────────
+test('권한 회수 후 설정 재허용 + 앱 복귀(AppState active)하면 트래킹이 재개된다(#6)', async () => {
+  const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+  const handlers: ((s: string) => void)[] = [];
+  jest.spyOn(AppState, 'addEventListener').mockImplementation((type: any, cb: any) => {
+    if (type === 'change') handlers.push(cb);
+    return {remove: jest.fn()} as any;
+  });
+  (Location.getForegroundPermissionsAsync as jest.Mock).mockResolvedValue({granted: true, status: 'granted'});
+  const flushP = async () => {
+    for (let i = 0; i < 10; i++) await act(async () => { await Promise.resolve(); });
+  };
+  try {
+    const {renderer, root} = await startRun();
+    const LON = 127.0;
+    let t = 100000;
+    const onPos = watchMock().mock.calls[0][1] as (p: any) => void;
+    const onError = watchMock().mock.calls[0][2] as (r: string) => void;
+    await act(async () => onPos({coords: {latitude: 37.5, longitude: LON, accuracy: 5}, timestamp: t}));
+    await act(async () => onPos({coords: {latitude: 37.5, longitude: LON, accuracy: 5}, timestamp: (t += 2000)}));
+    await act(async () => onPos({coords: {latitude: 37.5, longitude: LON, accuracy: 5}, timestamp: (t += 2000)}));
+    await act(async () => onPos({coords: {latitude: 37.5003, longitude: LON, accuracy: 5}, timestamp: (t += 3000)}));
+    const kmBefore = readKm(root);
+    expect(kmBefore).toBeGreaterThan(0);
+
+    // 주행 중 권한 회수 → 배너 + 트래킹 정지.
+    await act(async () => { onError('Location permission denied'); });
+    expect(textOf(root)).toContain('위치 권한이 꺼져');
+    const watchCountAtRevoke = watchMock().mock.calls.length;
+
+    // 재허용 + 복귀(AppState 'active') → 재개.
+    await act(async () => { handlers.forEach(h => h('active')); });
+    await flushP();
+
+    // 배너가 사라지고, 트래킹이 재무장된다(새 watch 구독 추가).
+    expect(textOf(root)).not.toContain('위치 권한이 꺼져');
+    expect(watchMock().mock.calls.length).toBeGreaterThan(watchCountAtRevoke);
+
+    // 재개 후 새 fix 로 거리가 다시 누적된다(회수 전 값 보존 + 증가).
+    const onPos2 = watchMock().mock.calls[watchMock().mock.calls.length - 1][1] as (p: any) => void;
+    await act(async () => onPos2({coords: {latitude: 37.5006, longitude: LON, accuracy: 5}, timestamp: (t += 3000)}));
+    await act(async () => onPos2({coords: {latitude: 37.5009, longitude: LON, accuracy: 5}, timestamp: (t += 3000)}));
+    expect(readKm(root)).toBeGreaterThan(kmBefore);
+
+    act(() => renderer.unmount());
+  } finally {
+    alertSpy.mockRestore();
+    jest.restoreAllMocks();
   }
 });
 
