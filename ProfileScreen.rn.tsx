@@ -117,6 +117,7 @@ export default function ProfileScreen({
   cloudPort, onCloudMerged, onDeleteAccount, cloudClock = () => Date.now(),
   onOpenProgression,
   onOpenHallOfShoes, retiredCount = 0,
+  onOpenArchive, archivedCount = 0,
   challengeExtRuns = [], challengeExtShoes = [], todayISO = '',
   smartTargetById = {}, onEditSmartTarget,
 }: {
@@ -188,6 +189,10 @@ export default function ProfileScreen({
   onOpenHallOfShoes?: () => void;
   // 은퇴한 신발 수(전당 진입 행의 부제에 표시). 0이어도 진입은 가능(빈 전당 안내).
   retiredCount?: number;
+  // 신발 보관함(보관 처리한 신발 복원) 진입. 없으면 행 미표시(안전한 no-op).
+  onOpenArchive?: () => void;
+  // 보관한 신발 수(보관함 진입 행 부제). 0이어도 진입 가능(빈 보관함 안내).
+  archivedCount?: number;
   // 회원 탈퇴(계정+클라우드+로컬 영구 삭제). App 이 cloudPort.deleteAccount + 로컬 초기화를
   // 수행한다. 없으면 탈퇴 행 미표시(안전한 no-op).
   onDeleteAccount?: () => Promise<void>;
@@ -567,6 +572,24 @@ export default function ProfileScreen({
             <View style={{ flex: 1, minWidth: 0 }}>
               <Text style={s.progressTitle}>명예의 전당</Text>
               <Text style={s.progressSub}>{retiredCount > 0 ? `은퇴한 신발 ${retiredCount}켤레` : '은퇴한 신발들의 박물관'}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={T3} />
+          </Pressable>
+        )}
+
+        {/* 신발 보관함 진입 — 보관(retired) 처리한 신발을 모아 복원할 수 있는 전체화면.
+            명예의 전당(은퇴) 아래에 둔다. 복원 진입점이 없던 갭을 메운다. */}
+        {onOpenArchive && (
+          <Pressable
+            onPress={onOpenArchive}
+            testID="open-shoe-archive"
+            accessibilityRole="button"
+            accessibilityLabel="신발 보관함 열기"
+            style={({ pressed }) => [s.card, s.progressRow, pressed && { backgroundColor: CARD_HI }]}>
+            <View style={s.progressIcon}><Ionicons name="archive-outline" size={19} color={ACCENT} /></View>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text style={s.progressTitle}>신발 보관함</Text>
+              <Text style={s.progressSub}>{archivedCount > 0 ? `보관한 신발 ${archivedCount}켤레` : '러닝 목록에서 숨긴 신발'}</Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={T3} />
           </Pressable>

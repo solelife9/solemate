@@ -32,6 +32,7 @@ import RunCountdownScreen from './RunCountdownScreen.rn';
 import RunActiveScreenView from './RunActiveScreen.rn';
 import ProgressionScreen from './ProgressionScreen.rn';
 import HallOfShoes from './HallOfShoes.rn';
+import ShoeArchiveScreen from './ShoeArchiveScreen.rn';
 import HallOfFameScreen from './HallOfFameScreen.rn';
 import {buildContext} from './lib/progression/context';
 import {getProgression, pickRecentAchievement, collectUnlockedKeys} from './lib/progression';
@@ -238,6 +239,7 @@ function Main(){
   // 명예의 전당(은퇴 신발 박물관) 전체화면 표시 여부. 프로필 진입 버튼이 열고 화면
   // 뒤로 버튼이 닫는다. 진척과 같은 오버레이형 게이트(부트 흐름과 독립).
   const [showHallOfShoes,setShowHallOfShoes]=useState(false);
+  const [showArchive,setShowArchive]=useState(false);
   // 명예의 전당(라이브 리더보드) 전체화면 표시 여부 — 진척 화면 헤더 버튼이 연다.
   const [showHallOfFame,setShowHallOfFame]=useState(false);
   // 진척 영속 상태(progression_v1) — Hall of Shoes 레코드 + 은퇴 키프세이크 컨텍스트의
@@ -1271,6 +1273,10 @@ function Main(){
   // 영속된 은퇴 레코드(Hall of Shoes 소스) + 진척 컨텍스트(요약/등급 판정용). buildContext
   // 는 순수·읽기 전용(런/신발 불변). progState 미로드 시 빈 레코드로 안전 동작.
   const retiredRecords:RetiredShoeRecord[]=progState?.retiredShoes??[];
+  // 보관함 목록: retired(보관) 처리됐지만 명예의 전당(키프세이크) 기록이 없는 신발 = 단순
+  // 보관 신발. 명예의 전당 신발은 박물관에 있으므로 제외한다. 마이 탭 '신발 보관함'이 소비.
+  const museumShoeIds=new Set(retiredRecords.map(r=>r.shoeId));
+  const archivedUiShoes:Shoe[]=uiShoes.filter(s=>s.retired&&!!s.id&&!museumShoeIds.has(s.id));
   const progressionCtx=useMemo(
     ()=>buildContext(runs,shoes,progState?.earnedTitles??[],null,Date.now(),retiredRecords),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1604,6 +1610,9 @@ function Main(){
   if(showHallOfShoes){
     return <HallOfShoes records={retiredRecords} unit={unit} userName={profileName} onBack={()=>setShowHallOfShoes(false)} onGoShoes={()=>{setShowHallOfShoes(false);setTab(1);}}/>;
   }
+  if(showArchive){
+    return <ShoeArchiveScreen shoes={archivedUiShoes} unit={unit} onRestore={(id)=>retireShoe(id,false)} onBack={()=>setShowArchive(false)}/>;
+  }
 
   return(
     <View style={{flex:1,backgroundColor:BG}}>
@@ -1664,6 +1673,8 @@ function Main(){
             onOpenProgression={()=>setShowProgression(true)}
             onOpenHallOfShoes={()=>setShowHallOfShoes(true)}
             retiredCount={retiredRecords.length}
+            onOpenArchive={()=>setShowArchive(true)}
+            archivedCount={archivedUiShoes.length}
           />
         )}
       </View>
