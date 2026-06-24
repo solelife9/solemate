@@ -45,11 +45,15 @@ describe('InjuryRiskCard', () => {
       <InjuryRiskCard runs={steadyRuns()} shoe={{used: 100, max: 600}} todayISO={TODAY} />,
     );
     expect(hasTestID(root, 'injury-risk-card-safe')).toBe(true);
-    expect(textOf(root)).toContain('부상위험 낮음');
+    expect(textOf(root)).toContain('오늘은 좋은 흐름'); // 비의료성 프레이밍
     expect(textOf(root)).toContain('17% 닳음'); // 100/600 — 평어 노출
     // 'ACWR' 같은 약자는 화면에 절대 노출하지 않는다(사용자가 모르는 용어).
     expect(textOf(root)).not.toContain('ACWR');
     expect(textOf(root)).toContain('이번 주 운동량');
+    // 건강 정보 고지를 항상 노출한다.
+    expect(textOf(root)).toContain('의학적 조언은 아니에요');
+    // '부상위험' 같은 단정적 의료 표현은 쓰지 않는다.
+    expect(textOf(root)).not.toContain('부상위험');
   });
 
   it('신발 닳음 + 부하 급증: high 신호등 + 융합 카피', () => {
@@ -64,6 +68,7 @@ describe('InjuryRiskCard', () => {
     );
     expect(hasTestID(root, 'injury-risk-card-high')).toBe(true);
     expect(textOf(root)).toContain('신발도 닳았고');
+    expect(textOf(root)).toContain('오늘은 쉬어갈 때'); // high 라벨도 비의료성
   });
 
   it('런 없음·신발 없음도 graceful(safe 렌더)', () => {

@@ -34,6 +34,17 @@ export interface CombinedInjuryRisk {
   message: string;
 }
 
+// ── 표시 라벨/고지 (단일 소스) ────────────────────────────────────────────────
+// 프레이밍은 '진단'이 아니라 '오늘 컨디션 가이드'. 의료성 단정('부상위험 높음')을 피하고
+// 행동 지향의 부드러운 표현을 쓴다(베타 노출 안전성). 카드·상세가 공통으로 참조한다.
+export const RISK_LABEL: Record<RiskLevel, string> = {
+  safe: '오늘은 좋은 흐름',
+  caution: '오늘은 살펴볼 때',
+  high: '오늘은 쉬어갈 때',
+};
+// 건강 관련 정보라 반드시 함께 노출하는 고지(의료 자문 아님).
+export const RISK_DISCLAIMER = '참고용 가이드예요 · 의학적 조언은 아니에요';
+
 export interface CombinedRiskInput {
   runs: LoadRun[];
   todayISO: string;

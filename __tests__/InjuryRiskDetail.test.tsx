@@ -47,6 +47,8 @@ describe('InjuryRiskDetail', () => {
     expect(t).toContain('오늘은 회복이 우선');
     expect(t).toContain('이렇게 하면 부상 없이 킵고잉');
     expect(t).not.toContain('ACWR');
+    expect(t).toContain('의학적 조언은 아니에요'); // 고지 노출
+    expect(t).not.toContain('부상위험'); // 비의료성 프레이밍
   });
 
   it('모두 양호: safe 상세 + 격려 코칭', () => {

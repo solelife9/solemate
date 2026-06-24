@@ -9,19 +9,16 @@ import React from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {
-  CARD, CARD_HI, CARD_BORDER, GOOD, WARN, DANGER, T1, T2, T3,
+  CARD, CARD_HI, CARD_BORDER, GOOD, WARN, DANGER, T1, T2, T3, T4,
   SPACE, RADIUS, TYPE, withAlpha,
 } from './theme';
-import { assessCombinedRisk, RiskLevel } from './lib/injuryRisk';
+import {
+  assessCombinedRisk, RiskLevel, RISK_LABEL, RISK_DISCLAIMER,
+} from './lib/injuryRisk';
 import { LoadRun, LOAD_WORD, loadRatioPhraseKo } from './lib/trainingLoad';
 import { buildInjuryGuidance, GuidanceTone } from './lib/injuryGuidance';
 
 const LEVEL_COLOR: Record<RiskLevel, string> = { safe: GOOD, caution: WARN, high: DANGER };
-const LEVEL_LABEL: Record<RiskLevel, string> = {
-  safe: '부상위험 낮음',
-  caution: '부상위험 주의',
-  high: '부상위험 높음',
-};
 const TONE_COLOR: Record<GuidanceTone, string> = { good: GOOD, caution: WARN, high: DANGER };
 
 function todayLocalISO(): string {
@@ -86,7 +83,7 @@ export default function InjuryRiskDetail({ runs, shoe, todayISO }: InjuryRiskDet
     >
       <View style={styles.header}>
         <View style={[styles.dot, { backgroundColor: color }]} />
-        <Text style={[styles.level, { color }]}>{LEVEL_LABEL[risk.level]}</Text>
+        <Text style={[styles.level, { color }]}>{RISK_LABEL[risk.level]}</Text>
       </View>
       <Text style={styles.headline}>{guidance.headline}</Text>
 
@@ -113,9 +110,10 @@ export default function InjuryRiskDetail({ runs, shoe, todayISO }: InjuryRiskDet
       </View>
 
       <Text style={styles.foot}>
-        운동량은 거리에 강도(페이스)를 함께 반영해요. 평소(최근 4주 평균)보다 갑자기 늘거나
-        신발이 닳을수록 부상 위험이 커져요.
+        운동량은 거리에 강도(페이스)를 함께 반영해요. 평소보다 갑자기 늘거나 신발이 닳을수록
+        무리가 쌓일 수 있어요.
       </Text>
+      <Text style={styles.disclaimer}>{RISK_DISCLAIMER}</Text>
     </ScrollView>
   );
 }
@@ -157,4 +155,5 @@ const styles = StyleSheet.create({
   guideTitle: { ...TYPE.body, color: T1 },
   guideBody: { ...TYPE.label, color: T2, lineHeight: 19, marginTop: 3, fontWeight: '400' },
   foot: { ...TYPE.caption, color: T3, lineHeight: 16, marginTop: SPACE.xs },
+  disclaimer: { ...TYPE.caption, color: T4 },
 });

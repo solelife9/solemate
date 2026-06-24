@@ -71,6 +71,35 @@ describe('assessTrainingLoad — ACWR', () => {
     expect(a.message).toBe(LOAD_MSG_NEW);
   });
 
+  it('콜드스타트(이력 2주): ACWR 대신 지난주 대비 거리 증가율로 판정', () => {
+    // 지난주 4km → 이번주 10km(+150%). 4주 이력 없음 → ramp 폴백이 잡아야 한다.
+    const runs = [
+      {run_date: ago(10), km: 4}, // 지난주
+      {run_date: ago(2), km: 10}, // 이번주 급증
+    ];
+    const a = assessTrainingLoad(runs, TODAY);
+    expect(a.confident).toBe(false); // ACWR은 신뢰 안 함
+    expect(a.acwr).toBeNull();
+    expect(a.rampPct).toBeCloseTo(1.5, 5);
+    expect(a.level).toBe('high'); // 그래도 급증을 놓치지 않는다
+    expect(loadRatioPhraseKo(a)).toBe('지난주보다 +150%');
+  });
+
+  it('거짓 high 방지: 만성을 보유 주수로 나눠 가입 직후 과경고를 막는다', () => {
+    // 3주 연속 주 10km(꾸준). 항상 4로 나누면 만성 과소→ACWR 1.33(주의)로 거짓 경고.
+    // 보유 주수(3)로 나누면 ACWR≈1 → 안전.
+    const runs = [
+      {run_date: ago(2), km: 10},
+      {run_date: ago(9), km: 10},
+      {run_date: ago(16), km: 10},
+    ];
+    const a = assessTrainingLoad(runs, TODAY);
+    expect(a.confident).toBe(true);
+    expect(a.acwr!).toBeGreaterThan(0.85);
+    expect(a.acwr!).toBeLessThan(1.15);
+    expect(a.level).toBe('safe');
+  });
+
   it('부하 가벼움(급성 << 만성): low', () => {
     // 과거엔 많이 뛰었는데 이번 주 거의 안 뜀
     const runs = [

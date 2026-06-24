@@ -13,21 +13,18 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import {
-  CARD, CARD_BORDER, GOOD, WARN, DANGER, T1, T2, T3,
+  CARD, CARD_BORDER, GOOD, WARN, DANGER, T1, T2, T3, T4,
   SPACE, RADIUS, TYPE, withAlpha,
 } from './theme';
-import { assessCombinedRisk, RiskLevel, RiskDriver } from './lib/injuryRisk';
+import {
+  assessCombinedRisk, RiskLevel, RiskDriver, RISK_LABEL, RISK_DISCLAIMER,
+} from './lib/injuryRisk';
 import { LoadRun, LOAD_WORD, loadRatioPhraseKo } from './lib/trainingLoad';
 
 const LEVEL_COLOR: Record<RiskLevel, string> = {
   safe: GOOD,
   caution: WARN,
   high: DANGER,
-};
-const LEVEL_LABEL: Record<RiskLevel, string> = {
-  safe: '부상위험 낮음',
-  caution: '부상위험 주의',
-  high: '부상위험 높음',
 };
 
 /** UI 레이어 — 로컬 오늘 'YYYY-MM-DD'(lib는 주입받지만 화면은 Date 허용). */
@@ -85,12 +82,12 @@ export default function InjuryRiskCard({ runs, shoe, todayISO, onPress }: Injury
     <Container
       style={[styles.card, { borderColor: withAlpha(color, 0.35) }]}
       testID={`injury-risk-card-${risk.level}`}
-      accessibilityLabel={`${LEVEL_LABEL[risk.level]}. ${risk.message}`}
+      accessibilityLabel={`${RISK_LABEL[risk.level]}. ${risk.message}`}
       {...pressProps}
     >
       <View style={styles.header}>
         <View style={[styles.dot, { backgroundColor: color }]} />
-        <Text style={[styles.level, { color }]}>{LEVEL_LABEL[risk.level]}</Text>
+        <Text style={[styles.level, { color }]}>{RISK_LABEL[risk.level]}</Text>
         {onPress ? <Text style={styles.more}>자세히 ›</Text> : null}
       </View>
 
@@ -110,9 +107,7 @@ export default function InjuryRiskCard({ runs, shoe, todayISO, onPress }: Injury
         />
       </View>
 
-      <Text style={styles.hint}>
-        평소 = 최근 4주 평균. 갑자기 늘면 부상 위험이 커져요.
-      </Text>
+      <Text style={styles.disclaimer}>{RISK_DISCLAIMER}</Text>
     </Container>
   );
 }
@@ -145,5 +140,5 @@ const styles = StyleSheet.create({
   chipLabel: { ...TYPE.caption, color: T3 },
   chipValue: { ...TYPE.heading, color: T1 },
   chipSub: { ...TYPE.caption, color: T3 },
-  hint: { ...TYPE.caption, color: T3, lineHeight: 16 },
+  disclaimer: { ...TYPE.caption, color: T4 },
 });

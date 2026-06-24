@@ -158,7 +158,6 @@ export function assessTrainingLoad(
   // 2차: 실제 거리 합(km)과 강도가중 부하(load)를 창별로 누적.
   let acuteKm = 0, sum28 = 0, lastWeekKm = 0;       // 실제 거리
   let acuteLoadSum = 0, sumLoad28 = 0;              // 강도가중 부하
-  let hasOlderHistory = false;
   for (const e of entries) {
     const w = e.km * intensity(e.pace);
     sum28 += e.km;
@@ -168,7 +167,6 @@ export function assessTrainingLoad(
       acuteLoadSum += w;
     }
     if (e.ago >= 7 && e.ago <= 13) lastWeekKm += e.km;
-    if (e.ago >= 7 && e.ago <= 27) hasOlderHistory = true;
   }
   const thisWeekKm = acuteKm;
 
@@ -184,35 +182,50 @@ export function assessTrainingLoad(
     }
   }
 
-  const chronicKm = sum28 / 4;          // 만성 = 28일 주간 평균 '거리'(표시/코칭)
+  // 보유 이력 주수(가장 오래된 런 기준, 1..4). 만성을 항상 4로 나누면 가입 직후
+  // (이력 2~3주)엔 만성이 과소평가돼 ACWR이 거짓으로 치솟는다 → 실제 주수로 나눈다.
+  const oldestAgo = entries.reduce((m, e) => (e.ago > m ? e.ago : m), 0);
+  const weeksSpan = entries.length ? Math.min(4, Math.ceil((oldestAgo + 1) / 7)) : 0;
+  const div = Math.max(1, weeksSpan);
+
+  const chronicKm = sum28 / div;        // 만성 = 보유 주수 평균 '거리'(표시/코칭)
   const acuteLoad = acuteLoadSum;       // 급성 가중 부하
-  const chronicLoad = sumLoad28 / 4;    // 만성 가중 부하(주간 평균)
-  const confident = hasOlderHistory;    // 급성 창 밖 이력이 있어야 ACWR 의미
-  const acwr = confident && chronicLoad > 0 ? acuteLoad / chronicLoad : null;
+  const chronicLoad = sumLoad28 / div;  // 만성 가중 부하(보유 주수 평균)
 
   const rampPct =
     lastWeekKm > 0 ? (thisWeekKm - lastWeekKm) / lastWeekKm : null;
+
+  // ACWR은 만성 베이스라인이 안정될 만큼(≥3주) 이력이 있을 때만 신뢰한다. 그 전에는
+  // 더 적은 이력으로 되는 '주간 거리 증가율'(지난주 대비, 10% 룰)을 주 신호로 쓴다.
+  const canACWR = weeksSpan >= 3 && chronicLoad > 0;
+  const acwr = canACWR ? acuteLoad / chronicLoad : null;
+  const confident = canACWR;
 
   // ── 등급 판정 ──────────────────────────────────────────────────────────────
   let level: LoadLevel;
   let message: string;
 
-  if (!confident) {
-    // 갓 시작/복귀: ACWR 신뢰 불가 → 격려 + '천천히' 프레이밍(과경고 금지).
-    level = 'safe';
-    message = LOAD_MSG_NEW;
-  } else {
-    // 1차: ACWR. 2차: 주간 급증(ramp)이 더 위험하면 한 단계 끌어올린다.
+  if (canACWR) {
+    // 1차: ACWR. 2차: 주간 거리 급증(ramp)이 더 위험하면 한 단계 끌어올린다.
     if (acwr == null || acwr < ACWR_LOW_AT) level = 'low';
     else if (acwr < ACWR_CAUTION_AT) level = 'safe';
     else if (acwr < ACWR_HIGH_AT) level = 'caution';
     else level = 'high';
-
     if (rampPct != null) {
       if (rampPct >= RAMP_HIGH_AT) level = 'high';
       else if (rampPct >= RAMP_CAUTION_AT && level !== 'high') level = 'caution';
     }
     message = LOAD_MSG[level];
+  } else if (rampPct != null) {
+    // 콜드스타트(이력 2주): 지난주 대비 거리 증가율만으로 판정(10% 룰).
+    if (rampPct >= RAMP_HIGH_AT) level = 'high';
+    else if (rampPct >= RAMP_CAUTION_AT) level = 'caution';
+    else level = 'safe';
+    message = LOAD_MSG[level];
+  } else {
+    // 진짜 첫 주(비교할 지난주 없음) — 격려만, 과경고 금지.
+    level = 'safe';
+    message = LOAD_MSG_NEW;
   }
 
   return {
@@ -242,14 +255,20 @@ export const LOAD_WORD: Record<LoadLevel, string> = {
 };
 
 /**
- * ACWR을 "평소(최근 4주 평균) 대비 이번 주 운동량" 평어로 옮긴다. ACWR=1.38 → '평소의
- * 1.4배'. 약자/원시 숫자 대신 누구나 이해하는 표현으로 노출하기 위한 단일 소스.
- *   · 신뢰 불가(신참/복귀) → '기록 쌓는 중'
- *   · 0.9~1.1            → '평소와 비슷'
- *   · 그 외              → '평소의 N.N배'
+ * 운동량 변화를 약자/원시 숫자 없이 평어로 옮긴다(가용한 신호 우선순위로). 단일 소스.
+ *   · ACWR 신뢰(≥3주) → '평소와 비슷' / '평소의 N.N배'  (평소=보유주수 평균)
+ *   · 콜드스타트(2주)  → '지난주와 비슷' / '지난주보다 +N%'
+ *   · 첫 주           → '기록 쌓는 중'
  */
 export function loadRatioPhraseKo(a: TrainingLoadAssessment): string {
-  if (!a.confident || a.acwr == null) return '기록 쌓는 중';
-  if (a.acwr >= 0.9 && a.acwr <= 1.1) return '평소와 비슷';
-  return `평소의 ${a.acwr.toFixed(1)}배`;
+  if (a.confident && a.acwr != null) {
+    if (a.acwr >= 0.9 && a.acwr <= 1.1) return '평소와 비슷';
+    return `평소의 ${a.acwr.toFixed(1)}배`;
+  }
+  if (a.rampPct != null) {
+    const pct = Math.round(a.rampPct * 100);
+    if (Math.abs(pct) <= 5) return '지난주와 비슷';
+    return pct > 0 ? `지난주보다 +${pct}%` : `지난주보다 ${pct}%`;
+  }
+  return '기록 쌓는 중';
 }
