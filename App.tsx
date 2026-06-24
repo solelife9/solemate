@@ -1105,7 +1105,8 @@ function Main(){
   // Firestore 시드만. 세션 1회(ref) + 영속 플래그(다음 세션도 멱등).
   const restMigratedRef=useRef(false);
   useEffect(()=>{
-    if(!cloudEnabled||!authUser?.uid||restMigratedRef.current) return;
+    // bootState ready 후에만(로컬 hydrate 완료) 이관한다 — 부팅 동기와 같은 시점 기준에 맞춘다.
+    if(!cloudEnabled||!authUser?.uid||bootState!=='ready'||restMigratedRef.current) return;
     restMigratedRef.current=true;
     void migrateRestToFirestore({
       isDone:async()=>{try{return (await AsyncStorage.getItem(REST_MIGRATION_KEY))==='1';}catch{return false;}},
@@ -1120,10 +1121,16 @@ function Main(){
           return {shoes:Array.isArray(sd)?sd:[],runs:Array.isArray(rd)?rd:[],settings:{}};
         }catch{return null;}
       },
-      pushRemote:(d)=>cloudPortRef.current.push(d),
+      // 시드를 setDoc 전체 덮어쓰기(push) 대신 syncMerge(트랜잭션 union)로 보낸다(#8) — 동시
+      // runCloudSync push 와 경합해도 서로의 데이터(progression/settings)를 덮어쓰지 않는다.
+      // syncMerge 미지원 포트(테스트 스텁)는 push 폴백(동작 동일, 경합만 노출).
+      pushRemote:(d)=>{
+        const p=cloudPortRef.current;
+        return p.syncMerge?p.syncMerge(d,mergeCloudData).then(()=>{}):p.push(d);
+      },
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  },[authUser?.uid]);
+  },[authUser?.uid,bootState]);
   // 부팅 캐시 hydrate(bootState 'ready') + 로그인 직후 1회 동기(원격 복원). bootState 를
   // 의존성에 넣어, auth 가 먼저 와도 캐시 로드가 끝난 뒤에만 동기가 돌게 한다(로컬-전용 런
   // 클로버 방지 — runCloudSync 의 ready 가드와 짝).
