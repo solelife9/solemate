@@ -42,16 +42,7 @@ import {
   TIER_LABEL,
   withAlpha,
 } from './theme';
-import {SegmentedControl, StatGrid} from './primitives';
-import {ymdLocal} from './lib/format';
-import ChallengesSection, {ExtChallengeCard, SmartChallengeCard} from './ChallengesSection';
-import type {Challenge, ChallengeRun} from './lib/challenges';
-import {
-  generateSmartChallenge,
-  type ExtChallenge,
-  type ExtRun,
-  type ExtShoe,
-} from './lib/progression/challengesExt';
+import {StatGrid} from './primitives';
 import {buildContext} from './lib/progression/context';
 import {
   getProgression,
@@ -106,13 +97,6 @@ const RARITY_LABEL: Record<AchievementRarity, string> = {
   legendary: 'Legendary',
 };
 
-// ── 탭 ─────────────────────────────────────────────────────────────────────────
-type TabKey = 'achievements' | 'challenges';
-const TABS: ReadonlyArray<{key: TabKey; label: string}> = [
-  {key: 'achievements', label: '업적'},
-  {key: 'challenges', label: '챌린지'},
-];
-
 export interface ProgressionScreenProps {
   runs?: readonly BackendRun[] | null;
   shoes?: readonly BackendShoe[] | null;
@@ -121,13 +105,6 @@ export interface ProgressionScreenProps {
   initialState?: ProgressionState;
   onBack?: () => void;
   onOpenHallOfFame?: () => void;
-  extChallenges?: readonly ExtChallenge[];
-  onAcceptChallenge?: (c: ExtChallenge) => void;
-  challenges?: Challenge[];
-  challengeRuns?: ChallengeRun[];
-  onCreateChallenge?: (c: Challenge) => void;
-  onDeleteChallenge?: (id: string) => void;
-  today?: string;
 }
 
 export default function ProgressionScreen({
@@ -138,13 +115,6 @@ export default function ProgressionScreen({
   initialState,
   onBack,
   onOpenHallOfFame,
-  extChallenges = [],
-  onAcceptChallenge,
-  challenges = [],
-  challengeRuns = [],
-  onCreateChallenge,
-  onDeleteChallenge,
-  today,
 }: ProgressionScreenProps) {
   const insets = useSafeAreaInsets();
 
@@ -184,35 +154,6 @@ export default function ProgressionScreen({
     [runs, shoes, state.earnedTitles, state.retiredShoes, resolvedNow],
   );
 
-  // 챌린지
-  const nowISO = useMemo(() => ymdLocal(new Date(resolvedNow)), [resolvedNow]);
-  const extRuns = useMemo<ExtRun[]>(
-    () =>
-      (runs ?? []).map(r => ({
-        date: String(r.run_date || '').slice(0, 10),
-        dist: Number(r.km) || 0,
-        shoeId: r.shoe_id,
-        durationS: r.duration,
-      })),
-    [runs],
-  );
-  const extShoes = useMemo<ExtShoe[]>(
-    () =>
-      (shoes ?? []).map(sh => ({
-        id: sh.id,
-        name: sh.name,
-        retired: !!sh.retired,
-        createdAt: sh.purchase_date,
-        targetKm: sh.max_km,
-      })),
-    [shoes],
-  );
-  const smart = useMemo(
-    () => generateSmartChallenge(extRuns, extShoes, nowISO),
-    [extRuns, extShoes, nowISO],
-  );
-  const showSmart = !!smart && !extChallenges.some(c => c.id === smart.id);
-
   // 키 → 표시명(언락 배너용)
   const nameByKey = useMemo(() => {
     const m: Record<string, string> = {};
@@ -243,7 +184,6 @@ export default function ProgressionScreen({
 
   const rankColor = view.rank.color;
   const guide = useMemo(() => rankGuidance(view.rank), [view.rank]);
-  const [tab, setTab] = useState<TabKey>('achievements');
 
   const achievementCount = view.achievements.filter(a => a.unlocked).length;
   const bannerNames = banner
@@ -394,64 +334,35 @@ export default function ProgressionScreen({
           ]}
         />
 
-        {/* 탭 */}
-        <SegmentedControl
-          variant="raised"
-          role="tab"
-          items={TABS.map(t => ({key: t.key, label: t.label}))}
-          value={tab}
-          onChange={k => setTab(k as TabKey)}
-          testIDFor={it => `tab-${it.key}`}
-        />
-
-        {/* 업적 탭 */}
-        {tab === 'achievements' && (
-          <View style={{gap: SPACE.lg}}>
-            {ACH_CATEGORY_ORDER.map(cat => {
-              const items = view.achievements.filter(a => a.category === cat);
-              if (items.length === 0) return null;
-              const done = items.filter(a => a.unlocked).length;
-              const meta = ACH_CATEGORY_META[cat];
-              return (
-                <View key={cat} style={{gap: SPACE.sm}}>
-                  <View style={s.catHeader}>
-                    <Ionicons name={meta.icon as any} size={14} color={T3} />
-                    <Text style={s.groupLabel}>{meta.label}</Text>
-                    <Text style={s.groupCount}>{done}/{items.length}</Text>
-                  </View>
-                  {items.map(a => (
-                    <AchievementCard key={a.key} a={a} />
-                  ))}
+        {/* 업적 — 챌린지 탭은 마이 탭의 스마트 챌린지 카드로 이관됨(진척은 업적 전용). */}
+        <View style={{gap: SPACE.lg}}>
+          {ACH_CATEGORY_ORDER.map(cat => {
+            const items = view.achievements.filter(a => a.category === cat);
+            if (items.length === 0) return null;
+            const done = items.filter(a => a.unlocked).length;
+            const meta = ACH_CATEGORY_META[cat];
+            return (
+              <View key={cat} style={{gap: SPACE.sm}}>
+                <View style={s.catHeader}>
+                  <Ionicons name={meta.icon as any} size={14} color={T3} />
+                  <Text style={s.groupLabel}>{meta.label}</Text>
+                  <Text style={s.groupCount}>{done}/{items.length}</Text>
                 </View>
-              );
-            })}
+                {items.map(a => (
+                  <AchievementCard key={a.key} a={a} />
+                ))}
+              </View>
+            );
+          })}
 
-            {/* 총 XP 합산 */}
-            <View
-              style={[s.xpTotal, {borderColor: withAlpha(ACCENT, 0.35)}]}
-              testID="progression-points">
-              <Text style={s.xpTotalLabel}>총 획득 XP</Text>
-              <Text style={s.xpTotalNum}>{view.totalXp.toLocaleString()} XP</Text>
-            </View>
+          {/* 총 XP 합산 */}
+          <View
+            style={[s.xpTotal, {borderColor: withAlpha(ACCENT, 0.35)}]}
+            testID="progression-points">
+            <Text style={s.xpTotalLabel}>총 획득 XP</Text>
+            <Text style={s.xpTotalNum}>{view.totalXp.toLocaleString()} XP</Text>
           </View>
-        )}
-
-        {/* 챌린지 탭 */}
-        {tab === 'challenges' && (
-          <ChallengesSection
-            challenges={challenges}
-            runs={challengeRuns}
-            onCreate={onCreateChallenge}
-            onDelete={onDeleteChallenge}
-            today={today}
-            extChallenges={extChallenges as ExtChallenge[]}
-            extRuns={extRuns}
-            shoes={extShoes}
-            now={nowISO}
-            smartSuggestion={smart ?? null}
-            onAcceptChallenge={onAcceptChallenge}
-          />
-        )}
+        </View>
       </ScrollView>
     </View>
   );

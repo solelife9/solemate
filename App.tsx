@@ -101,6 +101,8 @@ import {pickShoePhoto} from './lib/photo';
 const K_BACKUP_IMPORT = 'imported_backup_v1';
 // 개인 챌린지 목록을 영속하는 신규 AsyncStorage 키(개인 전용 — 계정/서버 불필요).
 const K_CHALLENGES = 'challenges_v1';
+// 스마트 챌린지 목표 거리(km) 사용자 오버라이드(챌린지 id→km). 로컬 전용 신규 키.
+const K_SMART_TARGET = 'smart_target_km_v1';
 // 프로필 이름/사진(로컬 전용 — 개인 식별, 서버 불필요). 신규 키라 기존 데이터와 격리.
 const K_PROFILE_NAME = 'profile_name';
 const K_PROFILE_PHOTO = 'profile_photo';
@@ -273,6 +275,10 @@ function Main(){
   // 확장 챌린지(monthly/shoe/rotation, 스마트 추천 수락분). 기존 distance/streak 과 같은
   // 키(K_CHALLENGES)에 한 배열로 함께 영속하되, kind 로 분리해 서로를 건드리지 않는다.
   const [extChallenges,setExtChallenges]=useState<ExtChallenge[]>([]);
+  // 스마트 챌린지 목표 거리(km) 사용자 오버라이드 — 챌린지 id별. 마이 탭 카드의 수정 버튼이
+  // 조정하며 K_SMART_TARGET 에 영속한다. 주가 바뀌어 챌린지 id가 달라지면 자동으로 추천
+  // 기본값으로 복귀(맵에 키가 없으면 미적용). 읽기 전용 표시라 런/신발 데이터와 격리된다.
+  const [smartTargetById,setSmartTargetById]=useState<Record<string,number>>({});
   // 프로필 이름/사진(로컬 영속). 이름 기본은 '러너', 사진은 없으면 빈 문자열(아바타
   // 아이콘 폴백). 신규 키라 기존 신발/런 데이터와 격리돼 파괴 위험이 없다.
   const [profileName,setProfileName]=useState(DEFAULT_PROFILE_NAME);
@@ -404,6 +410,25 @@ function Main(){
         setChallenges(valid.filter((c:any)=>c.kind==='distance'||c.kind==='streak'));
         setExtChallenges(valid.filter((c:any)=>c.kind==='weekly'||c.kind==='shoe'||c.kind==='rotation'));
       }catch(e){console.log('challenges load error',e);}
+    })();
+  },[]);
+
+  // 스마트 챌린지 목표 거리(km) 오버라이드 복원(신규 키 — 1회). 손상/부재는 조용히 빈 맵으로
+  // 폴백한다. 값이 유한한 양수인 항목만 받아들인다(데이터 위생). 기존 데이터와 격리.
+  useEffect(()=>{
+    (async()=>{
+      try{
+        const raw=await AsyncStorage.getItem(K_SMART_TARGET);
+        if(!raw)return;
+        const obj=JSON.parse(raw);
+        if(!obj||typeof obj!=='object')return;
+        const clean:Record<string,number>={};
+        for(const[id,km]of Object.entries(obj)){
+          const n=Number(km);
+          if(typeof id==='string'&&Number.isFinite(n)&&n>0)clean[id]=n;
+        }
+        setSmartTargetById(clean);
+      }catch(e){console.log('smart target load error',e);}
     })();
   },[]);
 
@@ -1087,11 +1112,13 @@ function Main(){
   const deleteChallenge=(id:string)=>{
     persistChallenges(challenges.filter(c=>c.id!==id));
   };
-  // 스마트 추천 수락 → 확장 챌린지로 영속(기존 distance/streak 은 그대로). 같은 id 는 덮어쓴다.
-  const acceptChallenge=(c:ExtChallenge)=>{
-    const next=[...extChallenges.filter(x=>x.id!==c.id),c];
-    setExtChallenges(next);
-    persistAllChallenges(challenges,next);
+  // 스마트 챌린지 목표 거리(km) 수정 — 챌린지 id별로 오버라이드를 갱신·영속한다(상태 즉시
+  // 반영 + K_SMART_TARGET 쓰기). 1km 미만은 1로 바닥 처리해 0/음수 목표를 막는다.
+  const editSmartTarget=(id:string,km:number)=>{
+    const v=Math.max(1,Math.round(Number(km)||0));
+    const next={...smartTargetById,[id]:v};
+    setSmartTargetById(next);
+    try{void AsyncStorage.setItem(K_SMART_TARGET,JSON.stringify(next));}catch(e){console.log('smart target save error',e);}
   };
 
   // ── 프로필 이름/사진(영속 + 상태) ───────────────────────────────────────────
@@ -1229,6 +1256,16 @@ function Main(){
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   },[runs,shoes,challenges,extChallenges,challengeRuns,progState]);
+
+  // 마이 탭 스마트 챌린지 카드 입력 — 런/신발을 확장 챌린지 형태(extRuns/extShoes)로
+  // 읽기 전용 파생한다(원본 불변). ProfileScreen 의 ChallengesSection 이 이 입력으로
+  // 스마트 추천을 결정적으로 생성하고 수락 카드 진행률을 그린다. 챌린지 탭이 진척에서
+  // 마이로 이관되며 추가됨.
+  const challengeExt=useMemo(()=>{
+    const extRuns:ExtRun[]=runs.map(r=>({date:String(r.run_date||'').slice(0,10),dist:Number(r.km)||0,shoeId:r.shoe_id,durationS:r.duration}));
+    const extShoes:ExtShoe[]=shoes.map(sh=>({id:sh.id,name:sh.name,retired:!!sh.retired,createdAt:sh.purchase_date,targetKm:sh.max_km}));
+    return {extRuns,extShoes};
+  },[runs,shoes]);
 
   // ── 은퇴 키프세이크 컨텍스트(Slice B) ────────────────────────────────────────
   // 영속된 은퇴 레코드(Hall of Shoes 소스) + 진척 컨텍스트(요약/등급 판정용). buildContext
@@ -1558,10 +1595,6 @@ function Main(){
 
   if(showProgression){
     return <ProgressionScreen runs={runs} shoes={shoes} profileName={profileName}
-      extChallenges={extChallenges} onAcceptChallenge={acceptChallenge}
-      challenges={challenges} challengeRuns={challengeRuns}
-      onCreateChallenge={createChallenge} onDeleteChallenge={deleteChallenge}
-      today={today()}
       onBack={()=>setShowProgression(false)}
       onOpenHallOfFame={()=>setShowHallOfFame(true)}/>;
   }
@@ -1623,8 +1656,8 @@ function Main(){
             recapRuns={runs} recapShoes={shoes}
             deviceId={deviceId}
             backupData={backupData} onImport={importBackup}
-            challenges={challenges} challengeRuns={challengeRuns}
-            onCreateChallenge={createChallenge} onDeleteChallenge={deleteChallenge}
+            challengeExtRuns={challengeExt.extRuns} challengeExtShoes={challengeExt.extShoes}
+            smartTargetById={smartTargetById} onEditSmartTarget={editSmartTarget}
             todayISO={today()}
             cloudPort={cloudPortRef.current} onCloudMerged={onCloudMerged}
             onDeleteAccount={handleDeleteAccount}

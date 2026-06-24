@@ -26,7 +26,8 @@ import {
 import { NotifSettings, DEFAULT_NOTIF_SETTINGS } from './lib/notifications';
 import { requestPushPermission as defaultRequestPushPermission } from './lib/pushMessaging';
 import { BackupPayload, BackupV1 } from './lib/backup';
-import { Challenge, ChallengeRun } from './lib/challenges';
+import ChallengesSection from './ChallengesSection';
+import { ExtRun, ExtShoe } from './lib/progression/challengesExt';
 import { mergeCloudData, nextAuthState, AuthState } from './lib/cloudSync';
 import type { CloudPort, CloudProvider, CloudUser } from './lib/cloudPort';
 import type { RankTier } from './lib/progression/types';
@@ -116,6 +117,8 @@ export default function ProfileScreen({
   cloudPort, onCloudMerged, onDeleteAccount, cloudClock = () => Date.now(),
   onOpenProgression,
   onOpenHallOfShoes, retiredCount = 0,
+  challengeExtRuns = [], challengeExtShoes = [], todayISO = '',
+  smartTargetById = {}, onEditSmartTarget,
 }: {
   profile?: Profile;
   badges?: Badge[];
@@ -158,12 +161,17 @@ export default function ProfileScreen({
   backupData?: BackupPayload;
   // 가져오기: parseBackup 검증 성공 시에만 호출된다(실패 시 미호출 — 기존 데이터 보존).
   onImport?: (data: BackupV1) => void;
-  // 개인 챌린지: App 이 소유(영속)하는 목록 + 런 매핑({date,dist}). 생성/삭제 콜백만 받는다.
-  challenges?: Challenge[];
-  challengeRuns?: ChallengeRun[];
-  onCreateChallenge?: (c: Challenge) => void;
-  onDeleteChallenge?: (id: string) => void;
+  // ── 스마트 챌린지(마이 탭 카드) ───────────────────────────────────────────────
+  // App 이 런/신발에서 파생한 확장 입력(extRuns/extShoes)을 주입하면 ChallengesSection 이
+  // 이번 주 스마트 챌린지를 결정적으로 생성하고 '스마트 챌린지' 라벨 + 진행률로 상시 노출한다
+  // (수락 단계 없는 상시 카드). 진척 탭에서 마이 탭으로 이관됨.
+  challengeExtRuns?: ExtRun[];
+  challengeExtShoes?: ExtShoe[];
   todayISO?: string;
+  /** 스마트 챌린지 id별 사용자 지정 목표 거리(km). App 이 영속·주입한다. */
+  smartTargetById?: Record<string, number>;
+  /** 목표 거리(km) 변경 위임 — (챌린지 id, km). App 이 영속한다. */
+  onEditSmartTarget?: (id: string, km: number) => void;
   // ── 계정·클라우드 동기 ───────────────────────────────────────────────────────
   // 백엔드 포트(주입). App 은 firebaseCloudPort 를, 테스트는 메모리 목 포트를 넣는다.
   // 없으면 계정 섹션의 버튼은 동작하지 않는다(안전한 no-op).
@@ -515,19 +523,18 @@ export default function ProfileScreen({
           </View>
         </View>
 
-        {/* lifetime stats */}
-        <View style={[s.card, { padding: 22 }]}>
-          <Text style={s.cardTitle}>누적 기록</Text>
-          <StatGrid
-            divider
-            valueSize={26}
-            valueWeight="400"
-            valueLS={0.3}
-            items={[
-              { value: profile.totalKm.toLocaleString(), unit: unit, label: '총 거리' },
-              { value: String(profile.totalRuns), unit: '회', label: '총 러닝' },
-              { value: profile.totalTime, unit: 'h', label: '총 시간' },
-            ]}
+        {/* 누적 기록 카드 제거 — 기록(History) 탭에서 주/월/년/전체 기간별로 볼 수 있어
+            마이 탭과 중복(사용자 요청). 정체성·스트릭·스마트 챌린지·진척·기록(PR)·리캡만 남긴다. */}
+
+        {/* 스마트 챌린지 — 진척 탭에서 이관. 런/신발 데이터 기반 결정적 추천 + 수락 카드.
+            추천도 수락 챌린지도 없으면 ChallengesSection 내부에서 빈 안내를 노출한다. */}
+        <View testID="smart-challenge-section">
+          <ChallengesSection
+            extRuns={challengeExtRuns}
+            shoes={challengeExtShoes}
+            now={todayISO}
+            smartTargetById={smartTargetById}
+            onEditSmartTarget={onEditSmartTarget}
           />
         </View>
 

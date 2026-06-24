@@ -21,7 +21,6 @@ import {getProgression, collectUnlockedKeys} from '../lib/progression';
 import {defaultProgressionState} from '../lib/progression/storage';
 import * as storage from '../lib/progression/storage';
 import type {ProgressionState} from '../lib/progression/types';
-import type {ExtChallenge} from '../lib/progression/challengesExt';
 import {TIER_COLORS} from '../theme';
 
 // 결정적 기준 시각(시간 기반 타이틀/스트릭).
@@ -75,17 +74,6 @@ function textOf(node: ReactTestRenderer.ReactTestInstance): string {
 function colorOf(node: ReactTestRenderer.ReactTestInstance): string | undefined {
   return (StyleSheet.flatten(node.props.style) as any)?.color;
 }
-// 세그먼트 탭(업적/챌린지) 전환 — 한 번에 한 섹션만 렌더된다.
-async function selectTab(
-  root: ReactTestRenderer.ReactTestInstance,
-  key: 'achievements' | 'challenges',
-) {
-  const tab = byTestID(root, `tab-${key}`)[0];
-  await act(async () => {
-    tab.props.onPress(key);
-  });
-}
-
 describe('ProgressionScreen — 진척 표면', () => {
   test('히어로가 닉네임 + 티어 칩 + 총 XP·업적 달성 수를 렌더한다', async () => {
     const view = getProgression(RUNS, SHOES, null, NOW);
@@ -157,7 +145,6 @@ describe('ProgressionScreen — 진척 표면', () => {
       <ProgressionScreen runs={RUNS} shoes={SHOES} now={NOW} initialState={seenSuppressedState()} />,
     );
     const root = r.root;
-    await selectTab(root, 'achievements');
 
     // 업적 카드 자체가 트리에 존재한다.
     expect(byTestID(root, `ach-${a.key}`).length).toBeGreaterThanOrEqual(1);
@@ -181,14 +168,13 @@ describe('ProgressionScreen — 진척 표면', () => {
       <ProgressionScreen runs={RUNS} shoes={SHOES} now={NOW} initialState={seenSuppressedState()} />,
     );
     const root = r.root;
-    await selectTab(root, 'achievements');
 
     const total = byTestID(root, 'progression-points')[0];
     expect(total).toBeTruthy();
     expect(textOf(total)).toContain(`${view.totalXp.toLocaleString()} XP`);
   });
 
-  test('업적/챌린지 세그먼트 탭이 한 번에 한 섹션만 렌더한다', async () => {
+  test('진척 화면은 업적만 노출한다(챌린지는 마이 탭으로 이관 — 챌린지 섹션 없음)', async () => {
     const view = getProgression(RUNS, SHOES, null, NOW);
     const a = view.achievements[0];
 
@@ -197,21 +183,11 @@ describe('ProgressionScreen — 진척 표면', () => {
     );
     const root = r.root;
 
-    // 두 탭 컨트롤이 모두 존재한다.
-    expect(byTestID(root, 'tab-achievements').length).toBeGreaterThanOrEqual(1);
-    expect(byTestID(root, 'tab-challenges').length).toBeGreaterThanOrEqual(1);
-
-    // 기본 = 업적 탭: 업적 카드/총 XP 노출, 챌린지 섹션 없음.
-    await selectTab(root, 'achievements');
+    // 업적 카드/총 XP 는 탭 전환 없이 바로 노출되고, 챌린지 섹션·탭은 존재하지 않는다.
     expect(byTestID(root, `ach-${a.key}`).length).toBeGreaterThanOrEqual(1);
     expect(byTestID(root, 'progression-points').length).toBeGreaterThanOrEqual(1);
+    expect(byTestID(root, 'tab-challenges').length).toBe(0);
     expect(byTestID(root, 'challenges-section').length).toBe(0);
-
-    // 챌린지 탭: 챌린지 섹션 노출, 업적 카드/총 XP 사라짐.
-    await selectTab(root, 'challenges');
-    expect(byTestID(root, 'challenges-section').length).toBeGreaterThanOrEqual(1);
-    expect(byTestID(root, `ach-${a.key}`).length).toBe(0);
-    expect(byTestID(root, 'progression-points').length).toBe(0);
   });
 });
 
@@ -296,124 +272,5 @@ describe('ProgressionScreen — 프로덕션 마운트 데이터 보존', () => 
 
     // 이미 본(seen) 언락은 배너로 다시 뜨지 않는다(멱등 · 도배 금지).
     expect(byTestID(root, 'unlock-banner').length).toBe(0);
-  });
-});
-
-// ── 챌린지 섹션(Slice C product_bug 수정) ───────────────────────────────────────
-// 회귀 가드: 확장 챌린지 카드(weekly/shoe/rotation)와 스마트 추천 카드가 실제 마운트되는
-// ProgressionScreen 트리 안에서 렌더되고('진척' 화면 = App 이 실제로 띄우는 화면), 스마트
-// 추천의 '이 챌린지 시작'을 누르면 수락/영속 핸들러(onAcceptChallenge)가 화면을 통해
-// 호출됨을 증명한다. 카드가 어디에도 마운트되지 않던(unreachable) 블로킹 버그의 가드.
-describe('ProgressionScreen — 챌린지 섹션(확장 + 스마트)', () => {
-  // 활성 신발 2켤레 — s1 과사용(스마트 추천이 생성되는 조건). 신발 귀속 런으로 매핑된다.
-  const CH_SHOES: BackendShoe[] = [
-    {id: 's1', name: 'Alphafly 3', max_km: 300, retired: false} as any,
-    {id: 's2', name: 'Novablast 5', max_km: 800, retired: false} as any,
-  ];
-  const CH_RUNS: BackendRun[] = [
-    {id: 'r1', shoe_id: 's1', km: 20, run_date: '2026-06-02', duration: 6000} as any,
-    {id: 'r2', shoe_id: 's1', km: 18, run_date: '2026-06-05', duration: 5400} as any,
-    {id: 'r3', shoe_id: 's1', km: 16, run_date: '2026-06-09', duration: 4800} as any,
-    {id: 'r4', shoe_id: 's2', km: 4, run_date: '2026-06-08', duration: 1500} as any,
-  ];
-  const EXT_CHALLENGES: ExtChallenge[] = [
-    {id: 'm1', kind: 'weekly', metric: 'distance', targetKm: 100},
-    {id: 'sh1', kind: 'shoe', shoeId: 's2', targetKm: 50},
-    {id: 'r1', kind: 'rotation', rotationMode: 'distinct', targetShoes: 2},
-  ];
-
-  test('수락한 weekly/shoe/rotation 카드가 진척 화면 트리에 렌더된다', async () => {
-    const r = await render(
-      <ProgressionScreen
-        runs={CH_RUNS}
-        shoes={CH_SHOES}
-        now={NOW}
-        initialState={seenSuppressedState(CH_RUNS, CH_SHOES)}
-        extChallenges={EXT_CHALLENGES}
-      />,
-    );
-    const root = r.root;
-    await selectTab(root, 'challenges');
-
-    // 챌린지 섹션 컨테이너 + 3종 확장 카드가 모두 실제 트리에 존재한다.
-    expect(byTestID(root, 'challenges-section').length).toBeGreaterThanOrEqual(1);
-    expect(byTestID(root, 'ext-challenge-m1').length).toBeGreaterThanOrEqual(1);
-    expect(byTestID(root, 'ext-challenge-sh1').length).toBeGreaterThanOrEqual(1);
-    expect(byTestID(root, 'ext-challenge-r1').length).toBeGreaterThanOrEqual(1);
-    // shoe 카드는 지정 신발 이름을 제목에 노출한다(공급한 shoes 에서 파생).
-    expect(textOf(byTestID(root, 'ext-challenge-sh1')[0])).toContain('Novablast 5');
-  });
-
-  test('스마트 추천 카드가 공급한 런/신발에서 생성돼 투명한 사유와 함께 렌더된다', async () => {
-    const r = await render(
-      <ProgressionScreen
-        runs={CH_RUNS}
-        shoes={CH_SHOES}
-        now={NOW}
-        initialState={seenSuppressedState(CH_RUNS, CH_SHOES)}
-      />,
-    );
-    const root = r.root;
-    await selectTab(root, 'challenges');
-
-    expect(byTestID(root, 'smart-challenge').length).toBeGreaterThanOrEqual(1);
-    const reason = byTestID(root, 'smart-challenge-reason')[0];
-    // 새 로직: 평균 런 거리 × 3 기반 주간 챌린지 사유
-    expect(textOf(reason)).toContain('기준');
-    expect(textOf(reason)).toContain('km');
-  });
-
-  test("스마트 추천의 '이 챌린지 시작'을 누르면 수락/영속 핸들러가 화면을 통해 호출된다", async () => {
-    const onAcceptChallenge = jest.fn();
-    const r = await render(
-      <ProgressionScreen
-        runs={CH_RUNS}
-        shoes={CH_SHOES}
-        now={NOW}
-        initialState={seenSuppressedState(CH_RUNS, CH_SHOES)}
-        onAcceptChallenge={onAcceptChallenge}
-      />,
-    );
-    const root = r.root;
-    await selectTab(root, 'challenges');
-
-    const accept = byTestID(root, 'smart-challenge-accept')[0];
-    expect(accept).toBeTruthy();
-    await act(async () => {
-      accept.props.onPress();
-    });
-
-    // 화면을 통해 수락 핸들러(App 의 acceptChallenge → K_CHALLENGES 영속)가 호출된다.
-    expect(onAcceptChallenge).toHaveBeenCalledTimes(1);
-    const accepted: ExtChallenge = onAcceptChallenge.mock.calls[0][0];
-    expect(accepted.kind).toBe('weekly'); // 스마트 추천은 주간 거리 챌린지
-    expect(typeof accepted.id).toBe('string');
-    expect(accepted.reason && accepted.reason.length).toBeGreaterThan(0);
-  });
-
-  test('이미 수락(같은 id)한 추천은 카드로 노출되고 중복 추천 카드는 숨긴다', async () => {
-    // 화면이 생성할 추천의 id: NOW=2026-06-12(금) → weekStart=2026-06-08 → smart-weekly-2026-06-08
-    const accepted: ExtChallenge = {
-      id: 'smart-weekly-2026-06-08',
-      kind: 'weekly',
-      metric: 'distance',
-      targetKm: 45,
-      reason: '수락됨',
-    };
-    const r = await render(
-      <ProgressionScreen
-        runs={CH_RUNS}
-        shoes={CH_SHOES}
-        now={NOW}
-        initialState={seenSuppressedState(CH_RUNS, CH_SHOES)}
-        extChallenges={[accepted]}
-      />,
-    );
-    const root = r.root;
-    await selectTab(root, 'challenges');
-
-    // 중복 추천 카드는 숨고, 수락분은 일반 확장 카드로 노출된다.
-    expect(byTestID(root, 'smart-challenge').length).toBe(0);
-    expect(byTestID(root, 'ext-challenge-smart-weekly-2026-06-08').length).toBeGreaterThanOrEqual(1);
   });
 });
