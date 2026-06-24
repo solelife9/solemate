@@ -118,3 +118,82 @@ test('중앙 클라우드 동기: 프로필 탭 방문 없이 부팅 직후 pull
     delete (globalThis as any).__KEEGO_DEV_SEED__;
   }
 });
+
+// 회귀(데이터 유실): 부팅 직후 동기가 *아직 클라우드에 안 올라간 로컬-전용 런*을 지우면 안 된다.
+// auth 복원이 캐시 로드보다 먼저 끝나는 레이스에서, 동기가 빈 로컬(runs=[])을 remote 와 머지해
+// applyBackupPayload + 부팅캐시 영속이 로컬 런을 덮어쓰던 버그를 막는다(runCloudSync 의
+// bootState ready 가드). fix 가 없으면 첫 push 페이로드가 런을 누락 → every(hasRun) 실패.
+test('부팅 동기는 클라우드에 없는 로컬-전용 런을 보존한다(빈 로컬 클로버 금지)', async () => {
+  await AsyncStorage.clear();
+  // 로컬 부팅 캐시: 동기 안 된 GPS 런 1건(+신발). 원격엔 이 런이 없다.
+  await AsyncStorage.setItem(
+    'cache_shoes_v1',
+    JSON.stringify([{id: 's1', name: 'Nike Pegasus', max_km: 600, start_km: 0, updatedAt: 1}]),
+  );
+  await AsyncStorage.setItem(
+    'cache_runs_v1',
+    JSON.stringify([
+      {id: 'local-run-1', shoe_id: 's1', km: 5.1, run_date: '2026-06-24', source: 'gps', duration: 1800, route: '', updatedAt: 1782300000000},
+    ]),
+  );
+  (globalThis.fetch as jest.Mock).mockImplementation((url: any) => {
+    const u = String(url);
+    if (u.includes('/api/auth')) return Promise.resolve(ok({user_id: 'u1'}));
+    return Promise.resolve(ok([]));
+  });
+  // 원격 백업엔 런이 없다(신발만). 머지가 로컬-전용 런을 보존하고 push 로 올려야 한다.
+  const remote = {
+    shoes: [{id: 's1', name: 'Nike Pegasus', max_km: 600, start_km: 0, updatedAt: 1}],
+    runs: [],
+    settings: {},
+  };
+  const pushed: any[] = [];
+  const port = {
+    signIn: jest.fn(() => Promise.resolve({uid: 'u-1', email: null, displayName: null})),
+    signOut: jest.fn(() => Promise.resolve()),
+    deleteAccount: jest.fn(() => Promise.resolve()),
+    pull: jest.fn(() => Promise.resolve(remote)),
+    push: jest.fn((d: any) => {
+      pushed.push(d);
+      return Promise.resolve();
+    }),
+  };
+  (globalThis as any).__KEEGO_CLOUD_PORT__ = port;
+  (globalThis as any).__KEEGO_AUTH_USER__ = {uid: 'test-uid'};
+  (globalThis as any).__KEEGO_ENABLE_CLOUD_SYNC__ = true;
+  (globalThis as any).__KEEGO_DEV_SEED__ = false;
+
+  try {
+    let renderer!: ReactTestRenderer.ReactTestRenderer;
+    jest.useFakeTimers();
+    await act(async () => {
+      renderer = ReactTestRenderer.create(<App />);
+    });
+    const settle = async () => {
+      await act(async () => {
+        jest.advanceTimersByTime(1500);
+      });
+      for (let i = 0; i < 14; i++) {
+        await act(async () => {
+          await Promise.resolve();
+        });
+      }
+    };
+    await settle();
+
+    // 동기가 일어났고, *모든* push 페이로드가 로컬-전용 런을 포함해야 한다(빈 로컬 클로버 0회).
+    expect(port.push).toHaveBeenCalled();
+    const hasRun = (d: any) =>
+      Array.isArray(d.runs) && d.runs.some((r: any) => String(r.id) === 'local-run-1');
+    expect(pushed.length).toBeGreaterThan(0);
+    expect(pushed.every(hasRun)).toBe(true);
+
+    act(() => renderer.unmount());
+  } finally {
+    jest.useRealTimers();
+    delete (globalThis as any).__KEEGO_CLOUD_PORT__;
+    delete (globalThis as any).__KEEGO_AUTH_USER__;
+    delete (globalThis as any).__KEEGO_ENABLE_CLOUD_SYNC__;
+    delete (globalThis as any).__KEEGO_DEV_SEED__;
+  }
+});

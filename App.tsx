@@ -1006,7 +1006,12 @@ function Main(){
     }catch(e){console.log('publish ranking error',e);}
   };
   const runCloudSync=async()=>{
-    if(cloudSyncBusyRef.current||!authUser?.uid) return;
+    // 부팅 캐시(로컬 신발/런)가 hydrate 되기 전에는 절대 동기하지 않는다(데이터 유실 가드).
+    // Firebase auth 복원이 initUser 의 캐시 로드보다 먼저 끝나는 일이 잦은데, 그때 동기가
+    // 빈 로컬(runs=[])을 remote 와 머지하면 *아직 클라우드에 안 올라간 로컬-전용 런*이 머지
+    // 입력에서 빠지고, applyBackupPayload + 부팅캐시 영속이 그 런을 덮어써 영구 삭제한다.
+    // bootState!=='ready' 가드가 이 레이스를 차단한다(ready 시 runs/shoes 가 같은 배치로 hydrate).
+    if(cloudSyncBusyRef.current||!authUser?.uid||bootState!=='ready') return;
     cloudSyncBusyRef.current=true;
     try{
       const port=cloudPortRef.current;
@@ -1067,12 +1072,14 @@ function Main(){
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   },[authUser?.uid]);
-  // 부팅/로그인 직후 즉시 1회 동기(원격 복원).
+  // 부팅 캐시 hydrate(bootState 'ready') + 로그인 직후 1회 동기(원격 복원). bootState 를
+  // 의존성에 넣어, auth 가 먼저 와도 캐시 로드가 끝난 뒤에만 동기가 돌게 한다(로컬-전용 런
+  // 클로버 방지 — runCloudSync 의 ready 가드와 짝).
   useEffect(()=>{
-    if(!cloudEnabled||!authUser?.uid) return;
+    if(!cloudEnabled||!authUser?.uid||bootState!=='ready') return;
     void runCloudSyncRef.current();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  },[authUser?.uid]);
+  },[authUser?.uid,bootState]);
   // 데이터 변경 시 디바운스 백업(1.2s). 폭주 변경을 한 번으로 합친다.
   useEffect(()=>{
     if(!cloudEnabled||!authUser?.uid) return;
