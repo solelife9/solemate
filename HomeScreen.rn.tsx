@@ -25,7 +25,7 @@ import { RotationPick } from './lib/rotation';
 import { recommendNextShoes, buildShopLinks, categoryLabelKo, AFFILIATE_DISCLOSURE } from './lib/affiliate';
 import { forecastLineKo, type ReplacementForecast } from './lib/wearView';
 import { shouldRecommendNextShoe } from './lib/recommendTrigger';
-import { findShoeClass, typeLabel, purposeSentenceKo } from './data/shoeClass';
+import { findShoeClass, typeLabel } from './data/shoeClass';
 import { ShoeGlyph } from './FirstShoeScreen.rn';
 
 export type WeekStats = { km: string; runs: number; pace: string };
@@ -283,50 +283,36 @@ function ShoeCarousel({ shoes, activeIdx, onSelect, unit, forecast, forecasts, o
   );
 }
 
-// 현재 상태 — 선택(스와이프) 신발의 사용거리 / 교체 예상. 활성 신발 기준이라 캐러셀을
-// 좌우로 넘기면 이 카드도 함께 바뀐다(목업 '현재 상태' 정합). 표시 전용.
-function InsightCard({ shoe, unit, forecast }: { shoe: Shoe; unit: Unit; forecast?: ReplacementForecast | null }) {
-  const used = displayNum(shoe.used, unit);
-  const max = displayNum(shoe.max, unit);
-  const remainKm = Math.max(0, shoe.max - shoe.used);
-  const remain = displayNum(remainKm, unit);
-  const usedPct = shoe.max > 0 ? Math.round((shoe.used / shoe.max) * 100) : 0;
-  const wr = forecast?.weeksRemaining;
-  const weeks = forecast && (forecast.reason === 'ok' || forecast.reason === 'overdue') && wr != null ? Math.max(0, Math.round(wr)) : null;
-  const warn = shoe.condition !== '양호';
-  // 추천 용도 = 사용자 DB(shoes.json)의 recommended(템포·인터벌·레이스 등 러닝 종류).
-  // 종류(카본화 등)는 추천 용도가 아니므로 칩으로 따로 표시하고 여기엔 넣지 않는다.
-  const recommended = findShoeClass(shoe.brand, shoe.model)?.recommended ?? [];
-  const purposeSentence = purposeSentenceKo(recommended);
+// 이번 주 러닝 — 내 활동 요약(거리·횟수·평균 페이스). week(WeekStats)는 App 이 이번 주
+// (월~일) 런에서 파생해 주입한다. 신발 마모(히어로)와 분리된 '내 노력' 지표. 표시 전용.
+function WeekCard({ week, unit = 'km' }: { week?: WeekStats; unit?: Unit }) {
+  const km = week?.km ?? '0.0';
+  const runs = week?.runs ?? 0;
+  const pace = week?.pace && week.pace !== '--' ? week.pace : '—';
   return (
-    <View style={s.insightCard}>
+    <View style={s.insightCard} testID="home-week">
       <View style={s.insightGrid}>
         <View style={{ flex: 1 }}>
-          <Text style={s.insightLabel}>사용 거리</Text>
+          <Text style={s.insightLabel}>거리</Text>
           <View style={[s.baselineRow, { marginTop: 6 }]}>
-            <Text style={s.insightNum}>{used}</Text><Text style={s.insightUnit}>{unit}</Text>
+            <Text style={s.insightNum} testID="home-week-km">{km}</Text><Text style={s.insightUnit}>{unit}</Text>
           </View>
-          <Text style={s.insightSub}>총 내구도 {max}{unit} 중 {usedPct}%</Text>
         </View>
         <View style={s.insightDivider} />
         <View style={{ flex: 1 }}>
-          <Text style={s.insightLabel}>교체 예상</Text>
-          <Text style={[s.insightWeeks, { color: warn ? ACCENT : T1 }]}>{weeks != null ? `약 ${weeks}주 후` : '—'}</Text>
-          <Text style={s.insightSub}>약 {remain}{unit} 남았어요</Text>
-        </View>
-      </View>
-      {/* 추천 용도 — 사용자 DB의 추천 러닝 종류(데일리/장거리/템포/인터벌/레이스/회복/트레일). */}
-      {recommended.length > 0 && (
-        <View style={s.insightPurpose}>
-          <Text style={s.insightLabel}>추천 용도</Text>
-          {!!purposeSentence && <Text style={s.insightPurposeText}>{purposeSentence}</Text>}
-          <View style={s.insightTags}>
-            {recommended.map((t) => (
-              <View key={t} style={s.insightTag}><Text style={s.insightTagText}>{t}</Text></View>
-            ))}
+          <Text style={s.insightLabel}>횟수</Text>
+          <View style={[s.baselineRow, { marginTop: 6 }]}>
+            <Text style={s.insightNum} testID="home-week-runs">{runs}</Text><Text style={s.insightUnit}>회</Text>
           </View>
         </View>
-      )}
+        <View style={s.insightDivider} />
+        <View style={{ flex: 1 }}>
+          <Text style={s.insightLabel}>평균 페이스</Text>
+          <View style={[s.baselineRow, { marginTop: 6 }]}>
+            <Text style={s.insightNum} testID="home-week-pace">{pace}</Text>
+          </View>
+        </View>
+      </View>
     </View>
   );
 }
@@ -575,15 +561,16 @@ export default function HomeScreen({
             )}
           </View>
           <ShoeCarousel shoes={shoes} activeIdx={idx} onSelect={select} unit={unit} forecast={forecast} forecasts={forecasts} onOpenShoe={onOpenShoe} onStart={onStart} />
-          {/* 현재 상태 — 선택(스와이프) 신발의 사용거리/교체예상. 캐러셀과 연동돼 함께 바뀐다. */}
+          {/* 이번 주 러닝 — 내 활동 요약(거리·횟수·평균 페이스). 신발 상태(히어로)와 별개로
+              '내가 얼마나 뛰었나'를 보여준다. 자세히 → 기록 탭. 신발 마모는 히어로/상세에. */}
           <View style={[s.sectionRow, { marginTop: SPACE.lg }]}>
-            <SectionTitle style={s.sectionLabelInline}>현재 상태</SectionTitle>
-            <Pressable onPress={() => { if (active.id) onOpenShoe?.(active.id); }} hitSlop={8} accessibilityRole="button" accessibilityLabel="신발 상세 보기">
-              <Text style={s.sectionMore}>자세히 ›</Text>
+            <SectionTitle style={s.sectionLabelInline}>이번 주 러닝</SectionTitle>
+            <Pressable onPress={() => onTab?.(2)} hitSlop={8} accessibilityRole="button" accessibilityLabel="기록 전체 보기">
+              <Text style={s.sectionMore}>전체 보기 ›</Text>
             </Pressable>
           </View>
           <View style={{ paddingHorizontal: SPACE.xl }}>
-            <InsightCard shoe={active} unit={unit} forecast={forecast} />
+            <WeekCard week={week} unit={unit} />
           </View>
           {/* 진척 띠(Slice D) — 로테이션 인사이트 위에 둔다(사용자 요청). 주입 시에만 노출.
               탭 → 진척 화면(랭크·타이틀·업적). 미주입이면 통째로 숨겨 기존 홈과 동일. */}
