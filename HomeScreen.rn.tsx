@@ -565,13 +565,6 @@ export default function HomeScreen({
       </View>
       {active ? (
         <>
-          {/* 진척 띠(Slice D) — 히어로 위 얇은 띠. 주입 시에만 노출(shoe-first 히어로가
-              여전히 주인공). 탭 → 진척 화면. 미주입이면 통째로 숨겨 기존 홈과 동일. */}
-          {progression && (
-            <View style={s.progStripWrap}>
-              <ProgressionStrip prog={progression} onOpen={onOpenProgression} />
-            </View>
-          )}
           {/* shoe-first 주인공: 오늘의 신발 풀폭 캐러셀(좌우 스와이프). 활성 카드가 히어로. */}
           <View style={s.sectionRow}>
             <SectionTitle style={s.sectionLabelInline}>오늘의 신발</SectionTitle>
@@ -592,8 +585,13 @@ export default function HomeScreen({
           <View style={{ paddingHorizontal: SPACE.xl }}>
             <InsightCard shoe={active} unit={unit} forecast={forecast} />
           </View>
-          {/* 챌린지는 상단 진척 띠(ProgressionStrip)로 일원화 — 하단 중복 카드 제거.
-              챌린지 생성·전체 관리는 챌린지 탭에서. */}
+          {/* 진척 띠(Slice D) — 로테이션 인사이트 위에 둔다(사용자 요청). 주입 시에만 노출.
+              탭 → 진척 화면(랭크·타이틀·업적). 미주입이면 통째로 숨겨 기존 홈과 동일. */}
+          {progression && (
+            <View style={s.progStripWrap}>
+              <ProgressionStrip prog={progression} onOpen={onOpenProgression} />
+            </View>
+          )}
           {/* 로테이션 인사이트(2켤레+에서만 채워짐, 비면 자동 숨김) */}
           <RotationInsightPanel rotation={rotation ?? []} onPickShoe={onPickShoe} />
           {/* 수익화 v1: 다음 러닝화 추천 노출 트리거 — Slice 6 교체 예측 기반(overdue/임박).
