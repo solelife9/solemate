@@ -823,7 +823,7 @@ function Main(){
   //   1) 사이드키(route_/time_) 영속 + 캐시에 즉시 durable 기록(크래시-세이프티) — 네트워크 무관.
   //   2) 낙관적 setRuns. 영속/동기는 부팅캐시 + cloudSync(Firestore)가 담당한다.
   // localId(genRunId)가 런의 영구 id다 — 서버 재키잉이 없으므로 머지 키가 안정적이다.
-  async function addRun(shoeId:string,km:number,date:string,memo:string,source:string,duration?:number,cadence?:number,route?:string,location?:string,heart_rate?:number){
+  async function addRun(shoeId:string,km:number,date:string,memo:string,source:string,duration?:number,cadence?:number,route?:string,location?:string,heart_rate?:number,elevationM?:number,calories?:number){
     const timeStr=nowTimeLabel();
     const stampedAt=Date.now();
     const localId=genRunId(stampedAt);
@@ -832,7 +832,8 @@ function Main(){
     const record:BackendRun={
       id:localId, shoe_id:shoeId, km, run_date:date, memo:memo||'', source,
       duration:duration||0, cadence:cadence||0, route:route||'', location:location||'',
-      heart_rate:heart_rate||0, run_time:timeStr, updatedAt:stampedAt,
+      heart_rate:heart_rate||0, elevation_m:elevationM||0, calories:calories||0,
+      run_time:timeStr, updatedAt:stampedAt,
     };
     // ── 1) 로컬 우선 영속화(크래시-세이프티) — 사이드키 + 캐시 즉시 durable 기록 ──
     if(route) await AsyncStorage.setItem('route_'+localId, route);
@@ -1399,7 +1400,7 @@ function Main(){
       time:dur>0?fmtTime(dur):'--',
       shoe:idxById[run.shoe_id]??-1,
       shoeName:nameById[run.shoe_id]??'', // 삭제 신발 포함 — 공유 카드 폴백용
-      cal:0, cadence:run.cadence||0, bpm:run.heart_rate||0, elev:0,
+      cal:run.calories||0, cadence:run.cadence||0, bpm:run.heart_rate||0, elev:run.elevation_m||0,
       // 편집 폼 프리필용 원본값(날짜·시간 초). 거리/신발은 위 dist/shoe로 충분.
       runDate:String(run.run_date??''), durationS:dur,
     };
@@ -1659,8 +1660,8 @@ function Main(){
         weightKg={weightKg}
         resume={resumeSnap}
         resumeMode={resumeMode}
-        onSave={async(km,dur,cad,memo,route,location,splits)=>{
-          const newId=await addRun(activeRun.id,km,today(),memo||'','gps',dur,cad,route,location);
+        onSave={async(km,dur,cad,memo,route,location,splits,elevM,cal)=>{
+          const newId=await addRun(activeRun.id,km,today(),memo||'','gps',dur,cad,route,location,undefined,elevM,cal);
           // per-km 스플릿(레코더가 1km 통과 시각으로 남긴 실측 구간)을 localId로 영속한다.
           // route_/surface_ 와 동일 패턴(로컬 전용·동기 시 serverId로 재키잉). RunDetail이
           // splits_<id> 로 읽어 표시한다. 2구간 미만이면 표시 가치가 없어 저장 생략.
@@ -1835,7 +1836,7 @@ const boot=StyleSheet.create({
 });
 
 // ─── Live run screen (GPS / sensors / TTS engine + handoff Ring UI) ─────────
-function RunActiveScreen({shoe,insets,goalKm,weightKg,onSave,onDiscard,resume,resumeMode}:{shoe:{id:string;name:string};insets:any;goalKm:number;weightKg:number;onSave:(km:number,dur:number,cad:number,memo:string,route:string,location:string,splits:{km:number;paceSec:number;elevM:number}[])=>Promise<void>;onDiscard:()=>void;resume?:RunSnapshot|null;resumeMode?:'review'|'continue'}){
+function RunActiveScreen({shoe,insets,goalKm,weightKg,onSave,onDiscard,resume,resumeMode}:{shoe:{id:string;name:string};insets:any;goalKm:number;weightKg:number;onSave:(km:number,dur:number,cad:number,memo:string,route:string,location:string,splits:{km:number;paceSec:number;elevM:number}[],elevM:number,cal:number)=>Promise<void>;onDiscard:()=>void;resume?:RunSnapshot|null;resumeMode?:'review'|'continue'}){
   // 'continue' = 스냅샷에서 GPS 를 재가동해 이어 달린다(엔진 seed*). 'review'(기본) =
   // done 화면에서 검토·저장만. resume 가 없으면(일반 시작) 두 분기 모두 타지 않는다.
   const isContinue=!!resume&&resumeMode==='continue';
@@ -2155,7 +2156,7 @@ function RunActiveScreen({shoe,insets,goalKm,weightKg,onSave,onDiscard,resume,re
           }
         }catch{}
       }
-      await onSave(Math.round(finKm*100)/100,finTime,finCad,memo,finRoute,loc,finSplits);
+      await onSave(Math.round(finKm*100)/100,finTime,finCad,memo,finRoute,loc,finSplits,finElev,estimateCalories(finKm,weightKg));
       hapticSuccess(); // 저장 성공 — 완주 보상 촉각(설정 off 면 graceful no-op).
     }finally{setSaving(false);}
   }

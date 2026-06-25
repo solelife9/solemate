@@ -52,6 +52,8 @@ interface BackendRun {
   location?: string;
   run_time?: string;      // "HH:MM"
   heart_rate?: number;
+  elevation_m?: number;   // 누적 고도 상승(m) — 엔진 측정값(이전엔 저장 경로에서 버려졌다)
+  calories?: number;      // 소모 칼로리(kcal) — 거리·체중 기반 추정(완주 시 고정)
   _pending?: boolean;     // 미동기(큐) 낙관적 항목
   // 클라우드 머지용 선택필드(audit a1) — BackendShoe 와 동일 의미(updatedAt/deleted).
   updatedAt?: number;
