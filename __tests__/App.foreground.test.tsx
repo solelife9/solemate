@@ -23,6 +23,7 @@ import * as Location from 'expo-location';
 import App from '../App';
 import {seedBootCache} from './helpers/bootSeed';
 import {RUN_LOCATION_TASK} from '../lib/locationService';
+import * as KeepAwake from 'expo-keep-awake';
 
 function mockBackendWithShoe() {
   (globalThis.fetch as jest.Mock).mockImplementation((url: any) => {
@@ -110,6 +111,21 @@ test('live run starts a location foreground service (background task) with the p
   expect(options.foregroundService.notificationBody).toContain('5km');
 
   act(() => renderer.unmount());
+});
+
+// 러닝 중 화면 자동잠금 방지(글랜서빌리티): 시작 시 keep-awake 활성, 종료(언마운트=stop) 시 해제.
+test('live run activates keep-awake on start and releases it on stop(unmount)', async () => {
+  (KeepAwake.activateKeepAwakeAsync as jest.Mock).mockClear();
+  (KeepAwake.deactivateKeepAwake as jest.Mock).mockClear();
+
+  const {renderer} = await startRun();
+  // 러닝 시작 → 화면이 OS 자동잠금으로 꺼지지 않게 활성.
+  expect((KeepAwake.activateKeepAwakeAsync as jest.Mock).mock.calls.length).toBeGreaterThan(0);
+  expect((KeepAwake.deactivateKeepAwake as jest.Mock)).not.toHaveBeenCalled();
+
+  // 종료(언마운트 → effect cleanup → stop()) → 해제(배터리/오작동 방지).
+  act(() => renderer.unmount());
+  expect((KeepAwake.deactivateKeepAwake as jest.Mock).mock.calls.length).toBeGreaterThan(0);
 });
 
 // ── permission gate ──────────────────────────────────────────────────────────

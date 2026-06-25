@@ -52,6 +52,11 @@ import {
   requestRunPermissions, startTracking, stopTracking, isPermissionError, hasForegroundPermission,
   RunPermissions,
 } from './lib/locationService';
+import {activateKeepAwakeAsync, deactivateKeepAwake} from 'expo-keep-awake';
+
+// 러닝 중 화면이 OS 자동잠금으로 꺼지지 않게 하는 태그(손에 들고/암밴드로 지표를 흘끗 보는
+// 시나리오용). 시작 시 활성, 종료/언마운트 시 해제. 주머니(화면 off)는 백그라운드 추적이 책임.
+const KEEP_AWAKE_TAG = 'keego-run';
 import {initStepCadence, feedStepCount} from './lib/stepCadence';
 import {fmtPace, fmtTime, fmtKDate, getMonday, ymdLocal} from './lib/format';
 import {
@@ -2053,6 +2058,8 @@ function RunActiveScreen({shoe,insets,goalKm,weightKg,onSave,onDiscard,resume,re
   // 백그라운드 task)을 시작한다. 거리/시간/일시정지/死구간 판정은 모두 엔진이
   // 소유하고 subscribe로 화면에 반영된다(이 함수는 delivery/타이머만 띄운다).
   async function beginRun(){
+    // 러닝 시작 — 화면 자동잠금 방지(글랜서빌리티). 실패해도 러닝엔 무관(best-effort).
+    void activateKeepAwakeAsync(KEEP_AWAKE_TAG).catch(()=>{});
     // 이어 달리기(첫 진입에 한함): 스냅샷의 누적 거리·경로·경과시간을 엔진/화면에 시드한다.
     // t0=now−elapsed 로 경과를 잇고, 死구간을 가로지르는 허위 거리를 막기 위해 거리는
     // seedDist 로만 잇는다(엔진이 첫 fix 를 새 앵커로 삼음). '계속 달리기'(짧은 런 재시작)로
@@ -2118,6 +2125,8 @@ function RunActiveScreen({shoe,insets,goalKm,weightKg,onSave,onDiscard,resume,re
     clearInterval(snapTimer.current);
     void stopTracking();
     runTracker.stop();
+    // 화면 자동잠금 방지 해제 — 종료/완주/취소/언마운트(effect cleanup)가 모두 stop()을 경유.
+    try{deactivateKeepAwake(KEEP_AWAKE_TAG);}catch{}
   }
 
   function handlePause(){
