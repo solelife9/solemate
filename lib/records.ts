@@ -61,3 +61,38 @@ export function personalRecords(runs: Run[]): PersonalRecords {
 
   return {longestKm, fastestPaceSec, longestDurationS, longestStreakDays, count};
 }
+
+// ─── 신기록(PR) 감지 — 완주 직후 "방금 그 런이 신기록인가?" ──────────────────────
+export type PRKind = 'longestDist' | 'longestTime' | 'fastestPace';
+
+/** PR 종류 → 한국어 라벨(토스트/배지/공유용). */
+export const PR_LABEL: Record<PRKind, string> = {
+  longestDist: '최장 거리',
+  longestTime: '최장 시간',
+  fastestPace: '최고 페이스',
+};
+
+/**
+ * 방금 저장한 런(newRun)이 그 이전 런들(priorRuns, 이 런 제외) 대비 세운 신기록을 반환한다.
+ * 첫 런(이전 기록 없음)은 비교 대상이 없어 PR 로 보지 않는다([] 반환) — 별도 '첫 런' 축하가 담당.
+ * 페이스 PR 은 이전에 측정 가능한 페이스가 있었을 때만(1km↑) 인정한다. 순수 함수(파생만).
+ */
+export function detectPRs(
+  newRun: {dist: number; durationS: number},
+  priorRuns: ReadonlyArray<{dist: number; durationS: number; runDate?: string}>,
+): PRKind[] {
+  const prior = personalRecords(priorRuns as unknown as Run[]);
+  if (prior.count === 0) return []; // 첫 런 — 비교 대상 없음
+  const km = Number(newRun.dist);
+  const dur = Number(newRun.durationS);
+  const out: PRKind[] = [];
+  if (Number.isFinite(km) && km > 0 && km > prior.longestKm) out.push('longestDist');
+  if (Number.isFinite(dur) && dur > 0 && dur > prior.longestDurationS) out.push('longestTime');
+  if (Number.isFinite(km) && km >= MIN_PACE_KM && Number.isFinite(dur) && dur > 0) {
+    const paceSec = dur / km;
+    if (paceSec > 0 && prior.fastestPaceSec != null && paceSec < prior.fastestPaceSec) {
+      out.push('fastestPace');
+    }
+  }
+  return out;
+}

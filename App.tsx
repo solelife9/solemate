@@ -80,6 +80,7 @@ import {
   clampGoal, DEFAULT_SETTINGS,
 } from './lib/settings';
 import {estimateCalories} from './lib/calories';
+import {detectPRs, PR_LABEL} from './lib/records';
 import {
   getNotifSettings, setNotifSettings, dueNotifications,
   DEFAULT_NOTIF_SETTINGS, type NotifSettings, type NotifState, type ShoeForecast,
@@ -1661,6 +1662,8 @@ function Main(){
         resume={resumeSnap}
         resumeMode={resumeMode}
         onSave={async(km,dur,cad,memo,route,location,splits,elevM,cal)=>{
+          // 신기록(PR) 감지 — addRun 의 낙관적 setRuns 전이라 runs 는 '이전 런들'이다.
+          const prKinds=detectPRs({dist:km,durationS:dur},runs.map(r=>({dist:Number(r.km)||0,durationS:r.duration||0,runDate:r.run_date})));
           const newId=await addRun(activeRun.id,km,today(),memo||'','gps',dur,cad,route,location,undefined,elevM,cal);
           // per-km 스플릿(레코더가 1km 통과 시각으로 남긴 실측 구간)을 localId로 영속한다.
           // route_/surface_ 와 동일 패턴(로컬 전용·동기 시 serverId로 재키잉). RunDetail이
@@ -1668,6 +1671,8 @@ function Main(){
           if(splits&&splits.length>=2) await AsyncStorage.setItem('splits_'+newId, JSON.stringify(splits));
           await clearSnapshot();
           setResumeSnap(null);setActiveRun(null);setOverlay('none');setTab(2);
+          // 신기록이면 완주 직후 축하 토스트(러너가 가장 자랑스러운 순간 — 리텐션·공유 트리거).
+          if(prKinds.length) showToast({message:`신기록 달성! ${prKinds.map(k=>PR_LABEL[k]).join(' · ')}`});
         }}
         onDiscard={()=>{void clearSnapshot();setResumeSnap(null);setActiveRun(null);setOverlay('none');}}
       />
