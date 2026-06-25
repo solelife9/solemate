@@ -9,6 +9,7 @@ import {Pedometer} from 'expo-sensors';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import Tts from 'react-native-tts';
+import {runVoice} from './lib/runVoice/voice';
 
 import {
   BG, CARD, CARD_HI as SURFACE, ACCENT, WARN, DANGER, T1, T2, T3,
@@ -1927,9 +1928,9 @@ function RunActiveScreen({shoe,insets,goalKm,weightKg,onSave,onDiscard,resume,re
         if(s.permissionRevoked)setGpsStatus('위치 권한 필요');
         else if(s.accuracyM!=null)setGpsStatus(`정확도 ${s.accuracyM}m`);
       }else if(ev.type==='paused'){
-        try{Tts.stop();Tts.speak(ev.auto?'자동으로 일시정지합니다.':'일시정지합니다.');}catch{}
+        try{Tts.stop();}catch{}runVoice.autoPause();
       }else if(ev.type==='resumed'){
-        try{Tts.speak('달리기를 재개합니다.');}catch{}
+        runVoice.resume();
       }else if(ev.type==='firstFix'){
         // 첫 fix 좌표로 1회 역지오코딩 → 위치 라벨. 엔진 메타에도 실어 스냅샷/저장에 반영.
         if(!locationFetched.current){
@@ -1965,7 +1966,7 @@ function RunActiveScreen({shoe,insets,goalKm,weightKg,onSave,onDiscard,resume,re
         if(femaleVoice) Tts.setDefaultVoice(femaleVoice.id);
       }catch{}
     })();
-    setTimeout(()=>{try{Tts.speak(isContinue?`달리기를 이어갑니다. 현재 ${resume?.dist.toFixed(1)}킬로미터입니다.`:`달리기를 시작합니다! 목표는 ${goalKm}킬로미터입니다.`);}catch{}},800);
+    setTimeout(()=>{runVoice.start();},800);
     (async()=>{
       // expo-location 통합 권한 게이트(android/ios 공통). 포그라운드 권한이 트래킹
       // 시작의 유일한 관문이다 — 거부 시 절대 시작하지 않는다(가비지 거리 금지).
@@ -1980,7 +1981,7 @@ function RunActiveScreen({shoe,insets,goalKm,weightKg,onSave,onDiscard,resume,re
       }
       await beginRun();
     })();
-    return()=>{stop();unsub();try{Tts.stop();}catch{}};
+    return()=>{stop();unsub();try{Tts.stop();}catch{}runVoice.stop();};
     // eslint-disable-next-line react-hooks/exhaustive-deps
   },[]);
 
@@ -2021,39 +2022,14 @@ function RunActiveScreen({shoe,insets,goalKm,weightKg,onSave,onDiscard,resume,re
     if(fullKm>0&&fullKm>announcedKm.current){
       announcedKm.current=fullKm;
       const remaining=Math.max(0,goalKm-fullKm);
-      const el=elapsedRef.current;
-
-      // 페이스를 한국어 음성으로 변환: 330초 → "5분 30초"
-      const toPaceKo=(distKm:number,sec:number)=>{
-        if(distKm<=0||sec<=0) return '';
-        const sPerKm=Math.round(sec/distKm);
-        const m=Math.floor(sPerKm/60), s=sPerKm%60;
-        return s>0?`${m}분 ${s}초`:`${m}분`;
-      };
-      // 직전 1km 구간 페이스로 안내(누적 평균은 후반 처진 러너를 오도). 레코더가 km 경계마다
-      // splitsRef 에 그 1km 소요시간(paceSec=초/km)을 남기므로 그걸 우선 쓰고, 없으면 누적 폴백.
-      const lastSplit=splitsRef.current[fullKm-1];
-      const pace=lastSplit&&lastSplit.paceSec>0?toPaceKo(1,lastSplit.paceSec):toPaceKo(fullKm,el);
-
-      // 특별 구간 메시지
+      // 특별 구간
       const isHalf=goalKm>0&&fullKm===Math.floor(goalKm/2)&&goalKm>=2;
       const isLastKm=remaining===1;
-
-      try{Tts.stop();}catch{}
-      if(remaining>0){
-        const parts=[`${fullKm}킬로미터`];
-        if(pace) parts.push(`페이스 ${pace}`);
-        parts.push(`남은 거리 ${Math.round(remaining)}킬로미터`);
-        if(isHalf) parts.push('절반 왔어요, 잘 하고 있어요');
-        if(isLastKm) parts.push('마지막 1킬로미터, 끝까지 달려요');
-        try{Tts.speak(parts.join('. ')+'.');}catch{}
-      }else{
-        const totalPace=toPaceKo(km,el);
-        const parts=[`목표 달성! ${goalKm}킬로미터 완주`];
-        if(totalPace) parts.push(`평균 페이스 ${totalPace}`);
-        parts.push('수고했어요');
-        try{Tts.speak(parts.join('. ')+'.');}catch{}
-      }
+      // 음성 코칭(Hanabad 클립): km 도달 시 "N킬로미터, 페이스 M분 S초"(직전 1km 구간 페이스)
+      // + 절반/마지막 구간이면 이어서. 목표 도달 시 목표 달성. 평균이 아닌 구간 페이스로 안내.
+      const splitPaceSec=splitsRef.current[fullKm-1]?.paceSec ?? null;
+      if(remaining>0) runVoice.kmCue(fullKm, splitPaceSec, {half:isHalf, lastKm:isLastKm});
+      else runVoice.goal();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   },[km]);
@@ -2153,6 +2129,7 @@ function RunActiveScreen({shoe,insets,goalKm,weightKg,onSave,onDiscard,resume,re
       return;
     }
     stop();
+    runVoice.finish(); // 완주 음성("운동을 종료합니다. 수고하셨습니다") — 리뷰 화면 전환 전 재생
     const sampled=simplifyRoute(runTracker.getPoints() as any,200);
     setFinRoute(sampled.length>=2?JSON.stringify(sampled):'');
     setFinSplits(splitsRef.current.slice());

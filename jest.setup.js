@@ -98,6 +98,23 @@ jest.mock('expo-media-library/legacy', () => ({
   saveToLibraryAsync: jest.fn(() => Promise.resolve()),
 }));
 
+// ── expo-audio ───────────────────────────────────────────────────────────────
+// 러닝 음성 코칭 클립 재생. 테스트는 호출만 관찰하면 되므로, 끝-신호를 즉시 주는 no-op 목.
+jest.mock('expo-audio', () => ({
+  __esModule: true,
+  setAudioModeAsync: jest.fn(() => Promise.resolve()),
+  createAudioPlayer: jest.fn(() => ({
+    play: jest.fn(),
+    pause: jest.fn(),
+    remove: jest.fn(),
+    addListener: jest.fn((_evt, cb) => {
+      // 다음 틱에 '재생 끝' 신호를 줘 시퀀스가 진행되게 한다.
+      setTimeout(() => cb({didJustFinish: true}), 0);
+      return {remove: jest.fn()};
+    }),
+  })),
+}));
+
 // ── expo-keep-awake ──────────────────────────────────────────────────────────
 // 러닝 중 화면 자동잠금 방지. 테스트는 activate/deactivate 호출만 관찰하면 되므로 no-op 목.
 jest.mock('expo-keep-awake', () => ({
