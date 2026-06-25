@@ -34,6 +34,7 @@ import RunActiveScreenView from './RunActiveScreen.rn';
 import ProgressionScreen from './ProgressionScreen.rn';
 import HallOfShoes from './HallOfShoes.rn';
 import ShoeArchiveScreen from './ShoeArchiveScreen.rn';
+import InjuryRiskScreen from './InjuryRiskScreen.rn';
 import HallOfFameScreen from './HallOfFameScreen.rn';
 import {buildContext} from './lib/progression/context';
 import {getProgression, pickRecentAchievement, collectUnlockedKeys} from './lib/progression';
@@ -247,6 +248,8 @@ function Main(){
   // 뒤로 버튼이 닫는다. 진척과 같은 오버레이형 게이트(부트 흐름과 독립).
   const [showHallOfShoes,setShowHallOfShoes]=useState(false);
   const [showArchive,setShowArchive]=useState(false);
+  // 부상위험 상세(시그니처) 전체화면 — 홈 신호등 카드 탭이 열고 뒤로가 닫는다(오버레이형).
+  const [showInjuryRisk,setShowInjuryRisk]=useState(false);
   // 명예의 전당(라이브 리더보드) 전체화면 표시 여부 — 진척 화면 헤더 버튼이 연다.
   const [showHallOfFame,setShowHallOfFame]=useState(false);
   // 진척 영속 상태(progression_v1) — Hall of Shoes 레코드 + 은퇴 키프세이크 컨텍스트의
@@ -1708,6 +1711,14 @@ function Main(){
   if(showArchive){
     return <ShoeArchiveScreen shoes={archivedUiShoes} unit={unit} onRestore={(id)=>retireShoe(id,false)} onBack={()=>setShowArchive(false)}/>;
   }
+  // 부상위험 상세 — 홈 신호등 카드(InjuryRiskCard) 탭으로 진입. 활성(히어로) 신발 마모 ×
+  // 전체 런 부하를 융합해 코칭을 보여준다. runs/활성 신발만 읽는 읽기 전용 오버레이.
+  if(showInjuryRisk){
+    const aShoe=homeUiShoes[homeActiveIdx];
+    return <InjuryRiskScreen runs={runs}
+      shoe={aShoe?{used:aShoe.used,max:aShoe.max}:undefined}
+      todayISO={today()} onBack={()=>setShowInjuryRisk(false)}/>;
+  }
 
   return(
     <View style={{flex:1,backgroundColor:BG}}>
@@ -1724,6 +1735,7 @@ function Main(){
             progression={homeProgression}
             onOpenProgression={()=>setShowProgression(true)}
             onRefresh={refreshData} lastSyncAt={lastSyncAt}
+            runs={runs} onOpenInjuryRisk={()=>setShowInjuryRisk(true)}
           />
         )}
         {tab===2&&(

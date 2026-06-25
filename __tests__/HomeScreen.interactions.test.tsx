@@ -45,6 +45,29 @@ describe('홈 히어로 신발 인터랙션', () => {
   });
 });
 
+describe('홈 부상위험 신호등 카드(시그니처)', () => {
+  const RUNS = [
+    {run_date: '2026-06-20', km: 8, duration: 2400},
+    {run_date: '2026-06-22', km: 6, duration: 1900},
+  ];
+  test('홈에 부상위험 카드가 마운트되어 렌더된다', () => {
+    const root = render(<HomeScreen shoes={SHOES} activeIdx={0} onSelect={jest.fn()} runs={RUNS} />).root;
+    const cards = root.findAll((n: any) => n?.props?.testID && String(n.props.testID).startsWith('injury-risk-card-'));
+    expect(cards.length).toBeGreaterThan(0);
+  });
+  test('카드를 탭하면 onOpenInjuryRisk가 호출된다(상세 진입)', () => {
+    const onOpen = jest.fn();
+    const root = render(
+      <HomeScreen shoes={SHOES} activeIdx={0} onSelect={jest.fn()} runs={RUNS} onOpenInjuryRisk={onOpen} />,
+    ).root;
+    const card = root.findAll(
+      (n: any) => n?.props?.testID && String(n.props.testID).startsWith('injury-risk-card-') && typeof n.props.onPress === 'function',
+    )[0];
+    act(() => { card.props.onPress(); });
+    expect(onOpen).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe('ShoesScreen 외부 진입(detailShoeId)', () => {
   const TOTALS: Record<number, ShoeTotals> = {
     0: {totalRuns: 2, totalTime: '1h', avgPace: "5'30\"", lastWorn: '5월 1일'},

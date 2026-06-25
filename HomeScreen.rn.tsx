@@ -21,6 +21,8 @@ import { TabBar, KeegoWordmark, Button, SectionTitle, InjuryBanner } from './pri
 import { wearTier, WearTierTone } from './lib/shoe';
 import { Unit, displayNum } from './lib/units';
 import { assessShoeInjuryRisk } from './lib/injury';
+import InjuryRiskCard from './InjuryRiskCard';
+import type { LoadRun } from './lib/trainingLoad';
 import { RotationPick } from './lib/rotation';
 import { recommendNextShoes, buildShopLinks, categoryLabelKo, AFFILIATE_DISCLOSURE } from './lib/affiliate';
 import { forecastLineKo, type ReplacementForecast } from './lib/wearView';
@@ -468,7 +470,7 @@ export default function HomeScreen({
   shoes = SHOES, dateLabel = '', onStart, onAddShoe, onTab,
   activeIdx: activeIdxProp, onSelect, unit = 'km', week, rotation, onPickShoe,
   onOpenShoe, forecast, forecasts, progression, onOpenProgression,
-  onRefresh, lastSyncAt, userName,
+  onRefresh, lastSyncAt, userName, runs = [], onOpenInjuryRisk,
 }: {
   shoes?: Shoe[];
   userName?: string;
@@ -507,6 +509,11 @@ export default function HomeScreen({
   // 마지막 동기화 성공 시각(epoch ms). 인사 영역 칩에 '방금 동기화'/'N분 전'으로 표시한다.
   // null/미주입이면 '동기화 안 됨' 칩(또는 미표시) — 표시 전용(lib/syncStatus 가 라벨 생성).
   lastSyncAt?: number | null;
+  // 부상위험 신호등(시그니처) — 전체 런(부하 ACWR 계산용). 활성 신발 마모와 융합.
+  // 미주입이면 빈 배열 → 부하 신호 없이 신발만으로 판정(하위호환).
+  runs?: LoadRun[];
+  // 신호등 카드 탭 → 부상위험 상세(App 의 InjuryRiskScreen 오버레이). 없으면 카드 비탭.
+  onOpenInjuryRisk?: () => void;
 }) {
   const [internalIdx, setInternalIdx] = useState(0);
   // 당겨서 새로고침 스피너 상태. onRefresh(서버 재fetch/pending flush)가 끝나면 내린다.
@@ -561,6 +568,15 @@ export default function HomeScreen({
             )}
           </View>
           <ShoeCarousel shoes={shoes} activeIdx={idx} onSelect={select} unit={unit} forecast={forecast} forecasts={forecasts} onOpenShoe={onOpenShoe} onStart={onStart} />
+          {/* 부상위험 신호등(시그니처 #1+#2) — 신발 마모 × 훈련 부하 융합. 활성(히어로) 신발 기준.
+              탭하면 상세 코칭(InjuryRiskScreen). 히어로 바로 아래에 항상 한 줄(safe 면 초록 안심). */}
+          <View style={{ paddingHorizontal: SPACE.xl, marginTop: SPACE.lg }}>
+            <InjuryRiskCard
+              runs={runs}
+              shoe={active ? { used: active.used, max: active.max } : undefined}
+              onPress={onOpenInjuryRisk}
+            />
+          </View>
           {/* 이번 주 러닝 — 내 활동 요약(거리·횟수·평균 페이스). 신발 상태(히어로)와 별개로
               '내가 얼마나 뛰었나'를 보여준다. 자세히 → 기록 탭. 신발 마모는 히어로/상세에. */}
           <View style={[s.sectionRow, { marginTop: SPACE.lg }]}>
