@@ -2030,7 +2030,10 @@ function RunActiveScreen({shoe,insets,goalKm,weightKg,onSave,onDiscard,resume,re
         const m=Math.floor(sPerKm/60), s=sPerKm%60;
         return s>0?`${m}분 ${s}초`:`${m}분`;
       };
-      const pace=toPaceKo(fullKm,el);
+      // 직전 1km 구간 페이스로 안내(누적 평균은 후반 처진 러너를 오도). 레코더가 km 경계마다
+      // splitsRef 에 그 1km 소요시간(paceSec=초/km)을 남기므로 그걸 우선 쓰고, 없으면 누적 폴백.
+      const lastSplit=splitsRef.current[fullKm-1];
+      const pace=lastSplit&&lastSplit.paceSec>0?toPaceKo(1,lastSplit.paceSec):toPaceKo(fullKm,el);
 
       // 특별 구간 메시지
       const isHalf=goalKm>0&&fullKm===Math.floor(goalKm/2)&&goalKm>=2;
