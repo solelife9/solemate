@@ -20,7 +20,7 @@
 
 import {KalmanFilter} from './kalman';
 import {calcDist, acceptSegment, segmentSpeedMps} from './geo';
-import {WARMUP_FIXES, MAX_FIX_ACCURACY_M, MAX_SEG_DIST_KM, MAX_SEG_SPEED_MPS} from './engineConstants';
+import {WARMUP_FIXES, MAX_FIX_ACCURACY_M, MAX_SEG_DIST_KM, MAX_SEG_SPEED_MPS, CURRENT_PACE_WINDOW_MS, CURRENT_PACE_MIN_DIST_KM} from './engineConstants';
 import {decideAutoPause, initAutoPauseState, AutoPauseState} from './autoPause';
 import {gpsStallStatus, GPS_STALL_THRESHOLD_MS} from './gpsHealth';
 import {saveSnapshot} from './runPersistence';
@@ -39,6 +39,9 @@ export interface RawFix {
 export interface RunTrackerState {
   dist: number; // km accumulated (>= 0)
   elapsed: number; // seconds, pause-adjusted (>= 0)
+  // 현재(롤링) 페이스: 최근 윈도우의 거리/시간으로 낸 '지금 페이스'(초/km). 표본 부족·정지
+  // 시 null(화면 '--'). 평균(dist/elapsed)과 달리 실시간 코칭에 쓰는 1번 신호.
+  currentPaceSecPerKm: number | null;
   paused: boolean;
   autoPaused: boolean;
   accuracyM: number | null; // last fix accuracy (null until first fix)
@@ -86,6 +89,9 @@ class RunTracker {
   private kf = new KalmanFilter();
   private dist = 0; // km
   private pts: {lat: number; lon: number}[] = [];
+  // 현재(롤링) 페이스용 샘플 — 채택된 fix 마다 {t: fix ts(ms), d: 누적거리(km)}. 슬라이딩
+  // 윈도우(CURRENT_PACE_WINDOW_MS)로 최근 구간 페이스를 낸다. 일시정지/재개·권한복구 시 비움.
+  private paceSamples: {t: number; d: number}[] = [];
   private fixIndex = 0;
   private lastGood: {lat: number; lon: number} | null = null;
   private lastGoodMs = 0;
@@ -132,6 +138,7 @@ class RunTracker {
     this.kf.reset();
     this.dist = 0;
     this.pts = [];
+    this.paceSamples = [];
     this.fixIndex = 0;
     this.lastGood = null;
     this.lastGoodMs = 0;
@@ -231,6 +238,9 @@ class RunTracker {
     this.autoPausedFlag = false;
     // reset the machine so leftover slow/fast time can't immediately re-trigger.
     this.autoPauseState = initAutoPauseState();
+    // 현재-페이스 윈도우 비움 — 일시정지 공백을 가로질러 페이스를 계산해 거짓으로 느려지는
+    // 것을 막는다. 재개 후 새 샘플로 윈도우를 다시 채운다(그동안은 '--').
+    this.paceSamples = [];
     this.emit({type: 'resumed', auto});
     this.emitState();
   }
@@ -279,6 +289,7 @@ class RunTracker {
     this.active = true;
     this.lastGood = null; // 공백 가로지르는 허위 거리 방지(재개 첫 fix = 새 앵커)
     this.lastRecvMs = now; // 死구간 오판 방지(재개 직후 gap 을 stall 로 세지 않게)
+    this.paceSamples = []; // 현재-페이스 윈도우 비움(설정 다녀온 공백 가로지르는 계산 방지)
     this.emit({type: 'resumed', auto: false});
     this.emitState();
     return true;
@@ -365,6 +376,13 @@ class RunTracker {
         this.pts.push(f);
         this.lastGood = f;
         this.lastGoodMs = ts;
+        // 현재 페이스 샘플 적립(채택된 거리에서만 — re-anchor/거부는 거리 미반영이라 제외).
+        // 슬라이딩 윈도우: paceSamples[1]이 cutoff 안에 들 때까지 앞을 버려 [0]을 윈도우 앵커로.
+        this.paceSamples.push({t: ts, d: this.dist});
+        const cutoff = ts - CURRENT_PACE_WINDOW_MS;
+        while (this.paceSamples.length > 2 && this.paceSamples[1].t < cutoff) {
+          this.paceSamples.shift();
+        }
         // 고도 누적은 거리 누적과 같은 '채택된 fix'에서만 — 거부된 노이즈 fix가
         // 상승분을 부풀리지 않게 한다(임계 필터는 lib/elevation가 추가로 담당).
         this.elev = feedAltitude(this.elev, fix.coords.altitude);
@@ -432,10 +450,25 @@ class RunTracker {
     this.emitState();
   }
 
+  /** 최근 윈도우(슬라이딩) 거리/시간으로 현재 페이스(초/km)를 낸다. 일시정지 중·표본 부족·
+   *  최소 이동거리 미만이면 null(화면 '--'). 평균과 달리 '지금 얼마나 빠른지'를 즉각 반영한다. */
+  private computeCurrentPace(): number | null {
+    if (this.isPaused) return null;
+    const n = this.paceSamples.length;
+    if (n < 2) return null;
+    const oldest = this.paceSamples[0];
+    const latest = this.paceSamples[n - 1];
+    const dKm = latest.d - oldest.d;
+    const dSec = (latest.t - oldest.t) / 1000;
+    if (dKm < CURRENT_PACE_MIN_DIST_KM || dSec <= 0) return null;
+    return dSec / dKm;
+  }
+
   getState(): RunTrackerState {
     return {
       dist: Math.round(this.dist * 100) / 100,
       elapsed: this.getElapsed(),
+      currentPaceSecPerKm: this.computeCurrentPace(),
       paused: this.isPaused,
       autoPaused: this.autoPausedFlag,
       accuracyM: this.accuracyM,

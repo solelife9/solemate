@@ -1845,6 +1845,8 @@ function RunActiveScreen({shoe,insets,goalKm,weightKg,onSave,onDiscard,resume,re
   const [phase,setPhase]=useState<'running'|'done'>(resume&&!isContinue?'done':'running');
   const [km,setKm]=useState(resume?resume.dist:0);
   const [elapsed,setElapsed]=useState(resume?resume.elapsed:0);
+  // 현재(롤링) 페이스(초/km, null=표본부족/정지). 라이브 화면 히어로 페이스 — 평균은 보조.
+  const [currentPaceSec,setCurrentPaceSec]=useState<number|null>(null);
   const [,setGpsStatus]=useState('GPS 신호 찾는 중...');
   // GPS 死구간(audit#9): 마지막 fix 수신 후 무신호가 지속되면 거리는 멈춘 채 시간만
   // 누적된다. 순수 판정(gpsStallStatus)으로 감지해 한국어 배너를 띄운다.
@@ -1906,7 +1908,7 @@ function RunActiveScreen({shoe,insets,goalKm,weightKg,onSave,onDiscard,resume,re
     const unsub=runTracker.subscribe(ev=>{
       if(ev.type==='state'){
         const s=ev.state;
-        setKm(s.dist);setElapsed(s.elapsed);
+        setKm(s.dist);setElapsed(s.elapsed);setCurrentPaceSec(s.currentPaceSecPerKm);
         elapsedRef.current=s.elapsed;
         setPaused(s.paused);setAutoPaused(s.autoPaused);
         setGpsStalled(s.stalled);setPermLost(s.permissionRevoked);
@@ -2238,7 +2240,8 @@ function RunActiveScreen({shoe,insets,goalKm,weightKg,onSave,onDiscard,resume,re
       distanceKm={km}
       goalKm={goalKm}
       timeLabel={fmtTime(elapsed)}
-      paceLabel={fmtPace(km,elapsed)}
+      paceLabel={currentPaceSec!=null?fmtPace(1,currentPaceSec):'--'}
+      avgPaceLabel={fmtPace(km,elapsed)}
       cadence={cadence}
       calories={liveCal}
       elevationM={elevGain}

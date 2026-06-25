@@ -93,13 +93,13 @@ function GpsBars({ level = 3 }: { level?: number }) {
 
 export default function RunActiveScreen({
   shoeLabel = 'Alphafly 3', distanceKm = 3.2, goalKm = 5,
-  timeLabel = '16:04', paceLabel = "5'02\"",
+  timeLabel = '16:04', paceLabel = "5'02\"", avgPaceLabel = "5'10\"",
   cadence = 174, calories = 205, elevationM = 46, gpsLevel = 3,
   paused: pausedProp, onPause, onStop,
   permLost = false, onOpenSettings, statusLabel,
 }: {
   shoeLabel?: string; distanceKm?: number; goalKm?: number;
-  timeLabel?: string; paceLabel?: string;
+  timeLabel?: string; paceLabel?: string; avgPaceLabel?: string;
   cadence?: number; calories?: number; elevationM?: number; gpsLevel?: number;
   paused?: boolean; onPause?: () => void; onStop?: () => void;
   permLost?: boolean;
@@ -159,10 +159,11 @@ export default function RunActiveScreen({
   const gpsTextStr = gpsLevel >= 3 ? 'GPS 신호 좋음' : gpsLevel === 2 ? 'GPS 신호 보통' : gpsLevel <= 0 ? 'GPS 검색 중…' : 'GPS 신호 약함';
   const gpsColor = gpsLevel >= 3 ? GOOD : gpsLevel === 2 ? WARN : gpsLevel <= 0 ? T3 : DANGER;
   const sub = useMemo(() => ([
+    { v: avgPaceLabel, l: '평균 페이스', u: '' },
     { v: cadence > 0 ? String(cadence) : '--', l: '케이던스', u: '' },
     { v: calories > 0 ? String(calories) : '--', l: '칼로리', u: 'kcal' },
     { v: elevationM != null ? String(elevationM) : '--', l: '고도', u: 'm' },
-  ]), [cadence, calories, elevationM]);
+  ]), [avgPaceLabel, cadence, calories, elevationM]);
 
   return (
     <View style={[r.screen, { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 16 }]}>
@@ -221,7 +222,7 @@ export default function RunActiveScreen({
       {/* hero metrics */}
       <View style={r.heroMetrics}>
         <View style={r.hm} accessibilityRole="text" accessibilityLabel={`시간 ${timeLabel}`}><Text style={r.hmV}>{timeLabel}</Text><Text style={r.hmL}>시간</Text></View>
-        <View style={[r.hm, r.hmDivider]} accessibilityRole="text" accessibilityLabel={`평균 페이스 ${paceLabel}`}><Text style={r.hmV}>{paceLabel}</Text><Text style={r.hmL}>평균 페이스</Text></View>
+        <View style={[r.hm, r.hmDivider]} accessibilityRole="text" accessibilityLabel={`현재 페이스 ${paceLabel}`}><Text style={r.hmV}>{paceLabel}</Text><Text style={r.hmL}>현재 페이스</Text></View>
       </View>
 
       {/* sub metrics */}

@@ -30,6 +30,15 @@ export const AUTO_RESUME_SPEED_MPS = 1.0;
 /** 자동 재개까지 이동 지속 시간(s). 출발/재개 반응을 빠르게 1s(기존 2s). */
 export const AUTO_RESUME_HOLD_S = 1;
 
+/** 현재(롤링) 페이스 산출 윈도우(ms). 최근 이 시간 동안의 거리/시간으로 순간 페이스를 낸다.
+ *  평균 페이스(전체 누적)는 30분 런에서 거의 안 움직여 실시간 코칭 신호로 무용 — 그래서
+ *  나이키/스트라바처럼 '지금 페이스'를 별도로 보여준다. 30s 는 노이즈와 반응성의 절충. */
+export const CURRENT_PACE_WINDOW_MS = 30000;
+
+/** 현재 페이스를 신뢰할 최소 윈도우 이동거리(km). 이보다 짧으면(시작 직후/정지 근처) 표본이
+ *  부족해 페이스가 출렁이므로 null 로 두고 화면은 '--' 를 보인다(거짓 수치 방지). */
+export const CURRENT_PACE_MIN_DIST_KM = 0.02; // 20m
+
 /** GPS 死구간(dead-zone) 판정 임계값(ms). 마지막 fix 수신 후 이 시간 동안 새 fix가
  *  들어오지 않으면 거리는 멈춘 채 시간만 누적되어 페이스가 왜곡된다(audit#9). 이때
  *  사용자에게 배너로 경고한다. watchPosition interval(1s)의 8배 — 일시적 누락이
