@@ -36,6 +36,7 @@ import HallOfShoes from './HallOfShoes.rn';
 import ShoeArchiveScreen from './ShoeArchiveScreen.rn';
 import InjuryRiskScreen from './InjuryRiskScreen.rn';
 import RunRecapScreen from './RunRecapScreen.rn';
+import LocationPrimeScreen from './LocationPrimeScreen.rn';
 import HallOfFameScreen from './HallOfFameScreen.rn';
 import {buildContext} from './lib/progression/context';
 import {getProgression, pickRecentAchievement, collectUnlockedKeys} from './lib/progression';
@@ -253,6 +254,9 @@ function Main(){
   const [showInjuryRisk,setShowInjuryRisk]=useState(false);
   // 완주 리캡(P0-2) — 러닝 저장 직후 축하 풀스크린. '완료'로 닫으면 기록 탭으로 이동.
   const [runRecap,setRunRecap]=useState<{km:number;durationS:number;cadence:number;splits:any[];elevationM:number;calories:number;prKinds:PRKind[];shoeName?:string;goalKm?:number}|null>(null);
+  // 위치 권한 설명(priming) 풀스크린 — 첫 GPS 런 직전 표시할 목표 거리(km)를 들고 있는다.
+  // null=미표시. '계속'에서 권한 안내 완료 영속 + 런 진입, '나중에'면 닫고 시작 취소.
+  const [locPrimeKm,setLocPrimeKm]=useState<number|null>(null);
   // 명예의 전당(라이브 리더보드) 전체화면 표시 여부 — 진척 화면 헤더 버튼이 연다.
   const [showHallOfFame,setShowHallOfFame]=useState(false);
   // 진척 영속 상태(progression_v1) — Hall of Shoes 레코드 + 은퇴 키프세이크 컨텍스트의
@@ -1585,18 +1589,8 @@ function Main(){
   const startActiveRun=(km:number)=>{
     if(!pendingShoe) return;
     if(locPrimed){enterRun(km);return;}
-    Alert.alert(
-      '위치 권한 안내',
-      '러닝 거리와 코스를 GPS로 정확히 측정하기 위해 위치 권한이 필요해요. 다음 화면에서 권한을 허용해 주세요.',
-      [
-        {text:'닫기',style:'cancel'},
-        {text:'계속',onPress:()=>{
-          setLocPrimed(true);
-          void AsyncStorage.setItem(LOC_PRIME_KEY,'1');
-          enterRun(km);
-        }},
-      ],
-    );
+    // 첫 GPS 런 — OS 다이얼로그 전에 브랜디드 권한 설명 화면(LocationPrimeScreen)을 띄운다.
+    setLocPrimeKm(km);
   };
 
   // 온보딩 완료: 1회성 플래그 영속 + 화면에서 치운다. 온보딩의 등록 단계에서 고른
@@ -1635,6 +1629,14 @@ function Main(){
   // 1회 소개한다. 신발을 이미 가진 사용자/완료자에겐 뜨지 않는다.
   if(!onboarded&&shoes.length===0&&overlay==='none'){
     return <OnboardingScreen onDone={completeOnboarding}/>;
+  }
+  // 위치 권한 설명(priming) — 첫 GPS 런 직전. goal 화면보다 우선해 표시한다(이 분기를
+  // goal 분기 앞에 둬야 goal 위에 덮인다). '계속'에서 안내 완료를 영속하고 런으로 진입,
+  // '나중에'면 닫고(goal 로 복귀) 시작을 취소한다(다음 시도 시 재안내).
+  if(locPrimeKm!=null){
+    return <LocationPrimeScreen
+      onContinue={()=>{const k=locPrimeKm;setLocPrimed(true);void AsyncStorage.setItem(LOC_PRIME_KEY,'1');setLocPrimeKm(null);enterRun(k);}}
+      onCancel={()=>setLocPrimeKm(null)}/>;
   }
   if(overlay==='goal'&&pendingShoe){
     return (
@@ -1730,7 +1732,6 @@ function Main(){
     return <RunRecapScreen {...runRecap} unit={unit}
       onClose={()=>{setRunRecap(null);setTab(2);}}/>;
   }
-
   return(
     <View style={{flex:1,backgroundColor:BG}}>
       <View style={{flex:1}}>

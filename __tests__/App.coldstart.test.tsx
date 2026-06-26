@@ -232,17 +232,21 @@ test('first-time runner is shown a location-permission rationale BEFORE the OS d
     pressByText(root, '러닝 시작'); // goal → (priming gate)
     await flush();
 
-    // The OS permission has NOT been requested yet — priming comes first.
+    // The OS permission has NOT been requested yet — the priming screen comes first.
     expect(
       (Location.requestForegroundPermissionsAsync as jest.Mock).mock.calls.length,
     ).toBe(0);
-    // A Korean rationale Alert was shown explaining WHY location is needed.
-    const priming = alertSpy.mock.calls.find(c => String(c[0]).includes('위치 권한 안내'));
-    expect(priming).toBeTruthy();
-    expect(String(priming![1])).toContain('GPS');
+    // A branded rationale screen(LocationPrimeScreen) explains WHY location is needed —
+    // 핵심 가이드('앱 사용 중에 허용'이면 주머니/화면꺼짐에도 거리 측정)를 OS 다이얼로그 전에.
+    const primeScreen = root.findAll(
+      (n: any) => typeof n.type === 'string' && n.props?.testID === 'location-prime-screen',
+    );
+    expect(primeScreen.length).toBeGreaterThan(0);
 
     // Tap 계속 → the run now starts and the OS authorization is requested.
-    const cont = (priming![2] as any[]).find(b => b.text === '계속');
+    const cont = root.findAll(
+      (n: any) => n.props?.testID === 'location-prime-continue' && typeof n.props.onPress === 'function',
+    )[0];
     expect(cont).toBeTruthy();
     // '계속' → enterRun → 카운트다운(준비·3·2·1·GO) → 라이브 런. OS 위치 권한은
     // 카운트다운이 아니라 런 화면에서 요청하므로, 카운트다운이 fake 타이머 하에서
@@ -250,7 +254,7 @@ test('first-time runner is shown a location-permission rationale BEFORE the OS d
     const fakeAlready = typeof (setTimeout as any).clock === 'object';
     if (!fakeAlready) jest.useFakeTimers();
     await act(async () => {
-      cont.onPress(); // enterRun → 카운트다운 mount
+      cont.props.onPress(); // enterRun → 카운트다운 mount
     });
     await act(async () => {
       jest.advanceTimersByTime(6000); // 카운트다운 → 라이브 런(OS 권한 요청)
