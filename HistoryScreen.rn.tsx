@@ -20,6 +20,7 @@ import { getRunSurface, setRunSurface, type Surface } from './lib/wearModel';
 import { parseRoute, projectRoute, LatLon } from './lib/route';
 import { DARK_MAP_STYLE } from './lib/mapStyle';
 import { RunSplits, Split } from './RunSplits';
+import { PaceCurveChart } from './PaceCurveChart';
 import { buildSplits } from './lib/splits';
 import { buildShareCardModel, shareRunCard, saveCardToLibrary, SvgCapturable } from './lib/shareCard';
 import { maskDuration, maskDate, validateRunForm, type RunFormErrors } from './lib/inputMask';
@@ -522,8 +523,17 @@ function RunDetail({ run, shoe, onBack, unit, onDelete }: { run: Run; shoe?: Sho
         />
         {/* 달린 위치(경로) 지도 — route_<id> 가 있으면 SVG 코스맵으로 표시(없으면 자동 숨김). */}
         <CourseMap points={route} />
-        {/* 구간별 페이스 스플릿 — run.splits(구간 데이터)가 있을 때만 표시(없으면 자동 숨김) */}
-        <RunSplits splits={recordedSplits.length >= 2 ? recordedSplits : buildSplits(run, route)} />
+        {/* 거리축 페이스 곡선(추세) + 구간별 페이스 스플릿(정확값). 같은 스플릿을 공유하고
+            2구간 미만이면 둘 다 자동 숨김. 곡선은 한눈 추세, 표는 km별 정확한 페이스/고도. */}
+        {(() => {
+          const detailSplits = recordedSplits.length >= 2 ? recordedSplits : buildSplits(run, route);
+          return (
+            <>
+              <PaceCurveChart splits={detailSplits} unit={unit} />
+              <RunSplits splits={detailSplits} />
+            </>
+          );
+        })()}
       </ScrollView>
       {/* 공유 카드: 화면 밖(off-screen)에 마운트해 toDataURL 캡처 대상으로만 쓴다.
           pointerEvents none + 음수 위치라 사용자에겐 보이지 않지만 레이아웃은 된다. */}
