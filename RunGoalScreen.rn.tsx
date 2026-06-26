@@ -111,7 +111,17 @@ export default function RunGoalScreen({
   };
   const pickMode = (m: Mode) => {
     setMode(m);
-    if (m !== 'free') { const d = CFG[m].def; setVal(d); requestAnimationFrame(() => scrollToVal(d, false)); }
+    // 대상 모드의 cfg(px)로 직접 스크롤한다 — scrollToVal 은 클로저의 '이전' mode/cfg 를
+    // 보므로(setMode 비동기) px 가 어긋나 룰러가 엉뚱한 위치(예: 30분인데 180)로 클램프됐다.
+    if (m !== 'free') {
+      const c = CFG[m]; const d = c.def;
+      setVal(d);
+      programmatic.current = true;
+      requestAnimationFrame(() => {
+        rulerRef.current?.scrollTo({ x: d * c.px, animated: false });
+        setTimeout(() => { programmatic.current = false; }, 60);
+      });
+    }
   };
   const pickPreset = (v: number) => { setVal(v); scrollToVal(v, true); };
   const condColor = shoeCondition === '교체' ? DANGER : shoeCondition === '주의' ? WARN : GOOD;
