@@ -35,6 +35,7 @@ import ProgressionScreen from './ProgressionScreen.rn';
 import HallOfShoes from './HallOfShoes.rn';
 import ShoeArchiveScreen from './ShoeArchiveScreen.rn';
 import InjuryRiskScreen from './InjuryRiskScreen.rn';
+import RunRecapScreen from './RunRecapScreen.rn';
 import HallOfFameScreen from './HallOfFameScreen.rn';
 import {buildContext} from './lib/progression/context';
 import {getProgression, pickRecentAchievement, collectUnlockedKeys} from './lib/progression';
@@ -81,7 +82,7 @@ import {
   clampGoal, DEFAULT_SETTINGS,
 } from './lib/settings';
 import {estimateCalories} from './lib/calories';
-import {detectPRs, PR_LABEL} from './lib/records';
+import {detectPRs, PRKind} from './lib/records';
 import {
   getNotifSettings, setNotifSettings, dueNotifications,
   DEFAULT_NOTIF_SETTINGS, type NotifSettings, type NotifState, type ShoeForecast,
@@ -250,6 +251,8 @@ function Main(){
   const [showArchive,setShowArchive]=useState(false);
   // 부상위험 상세(시그니처) 전체화면 — 홈 신호등 카드 탭이 열고 뒤로가 닫는다(오버레이형).
   const [showInjuryRisk,setShowInjuryRisk]=useState(false);
+  // 완주 리캡(P0-2) — 러닝 저장 직후 축하 풀스크린. '완료'로 닫으면 기록 탭으로 이동.
+  const [runRecap,setRunRecap]=useState<{km:number;durationS:number;cadence:number;splits:any[];elevationM:number;calories:number;prKinds:PRKind[];shoeName?:string;goalKm?:number}|null>(null);
   // 명예의 전당(라이브 리더보드) 전체화면 표시 여부 — 진척 화면 헤더 버튼이 연다.
   const [showHallOfFame,setShowHallOfFame]=useState(false);
   // 진척 영속 상태(progression_v1) — Hall of Shoes 레코드 + 은퇴 키프세이크 컨텍스트의
@@ -1673,9 +1676,12 @@ function Main(){
           // splits_<id> 로 읽어 표시한다. 2구간 미만이면 표시 가치가 없어 저장 생략.
           if(splits&&splits.length>=2) await AsyncStorage.setItem('splits_'+newId, JSON.stringify(splits));
           await clearSnapshot();
-          setResumeSnap(null);setActiveRun(null);setOverlay('none');setTab(2);
-          // 신기록이면 완주 직후 축하 토스트(러너가 가장 자랑스러운 순간 — 리텐션·공유 트리거).
-          if(prKinds.length) showToast({message:`신기록 달성! ${prKinds.map(k=>PR_LABEL[k]).join(' · ')}`});
+          // 완주 리캡(P0-2) — 기록 탭으로 바로 점프하던 대신 축하 풀스크린을 띄운다(러너가
+          // 가장 자랑스러운 순간 — 리텐션·공유 트리거). 신기록(PR)은 토스트 대신 리캡 배지로.
+          const shoeLabel=parseShoeName(activeRun.name).model||activeRun.name;
+          const goalKm=activeRun.goalKm;
+          setResumeSnap(null);setActiveRun(null);setOverlay('none');
+          setRunRecap({km,durationS:dur,cadence:cad||0,splits:splits||[],elevationM:elevM||0,calories:cal||0,prKinds,shoeName:shoeLabel,goalKm});
         }}
         onDiscard={()=>{void clearSnapshot();setResumeSnap(null);setActiveRun(null);setOverlay('none');}}
       />
@@ -1718,6 +1724,11 @@ function Main(){
     return <InjuryRiskScreen runs={runs}
       shoe={aShoe?{used:aShoe.used,max:aShoe.max}:undefined}
       todayISO={today()} onBack={()=>setShowInjuryRisk(false)}/>;
+  }
+  // 완주 리캡 — 러닝 저장 직후 축하 풀스크린. '완료'로 닫으면 기록 탭으로 이동한다.
+  if(runRecap){
+    return <RunRecapScreen {...runRecap} unit={unit}
+      onClose={()=>{setRunRecap(null);setTab(2);}}/>;
   }
 
   return(
