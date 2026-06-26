@@ -5,7 +5,8 @@ import {
 } from 'react-native';
 import {SafeAreaProvider, useSafeAreaInsets} from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {Pedometer} from 'expo-sensors';
+import {Pedometer, Barometer} from 'expo-sensors';
+import {initElevState, feedAltitude, ElevState} from './lib/elevation';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import Tts from 'react-native-tts';
@@ -1919,6 +1920,11 @@ function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],weightKg,onSave,onDisca
   const timer=useRef<any>(null);
   const snapTimer=useRef<any>(null);
   const stepSub=useRef<any>(null);
+  // 기압 고도계(iOS Barometer.relativeAltitude) — GPS 고도(노이즈 큼)보다 정확한 고도 상승.
+  // 사용 가능하면 baroAvail=true 가 되고, 이때부턴 화면/저장 고도를 기압계 누적으로 쓴다.
+  const baroSub=useRef<any>(null);
+  const baroElev=useRef<ElevState>(initElevState());
+  const baroAvail=useRef(false);
   // 케이던스(spm) 순수 상태기계 — 가속도 피크검출+윈도우 정규화는 lib/cadence.ts.
   // 케이던스만 화면이 소유한다(가속도계 기반). 거리/시간/일시정지/死구간/권한 회수는
   // 모두 공유 GPS 엔진(runTracker)이 소유하고 subscribe로 화면에 흘려보낸다.
@@ -1954,7 +1960,7 @@ function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],weightKg,onSave,onDisca
         elapsedRef.current=s.elapsed;
         setPaused(s.paused);setAutoPaused(s.autoPaused);
         setGpsStalled(s.stalled);setPermLost(s.permissionRevoked);
-        setElevGain(s.elevGainM);
+        if(!baroAvail.current)setElevGain(s.elevGainM); // 기압계 가용 시 GPS 고도 양보(baro 권위)
         setAccuracyM(s.accuracyM);
         setLiveCoords(runTracker.getPoints());
         // per-km 스플릿: dist가 정수 km 경계를 새로 넘으면 그 1km의 소요시간(초)·고도상승(m)을
@@ -2096,6 +2102,8 @@ function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],weightKg,onSave,onDisca
   async function beginRun(){
     // 러닝 시작 — 화면 자동잠금 방지(글랜서빌리티). 실패해도 러닝엔 무관(best-effort).
     void activateKeepAwakeAsync(KEEP_AWAKE_TAG).catch(()=>{});
+    // 기압 고도계 누적 상태 리셋(이어 달리기/재시작 대비) — 구독은 아래에서 새로 건다.
+    baroElev.current=initElevState();baroAvail.current=false;
     // 이어 달리기(첫 진입에 한함): 스냅샷의 누적 거리·경로·경과시간을 엔진/화면에 시드한다.
     // t0=now−elapsed 로 경과를 잇고, 死구간을 가로지르는 허위 거리를 막기 위해 거리는
     // seedDist 로만 잇는다(엔진이 첫 fix 를 새 앵커로 삼음). '계속 달리기'(짧은 런 재시작)로
@@ -2140,6 +2148,22 @@ function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],weightKg,onSave,onDisca
         });
       }
     }catch{/* 걸음 센서 미지원/권한 거부 — 케이던스만 비활성, 러닝은 계속 */}
+    // 기압 고도계(iOS): relativeAltitude(구독 시작 이후 누적 고도변화, m)를 feedAltitude 로
+    // 누적해 고도 상승을 잡는다. GPS 고도보다 훨씬 매끄러워(±0.5m) 평지 부풀림이 거의 없다.
+    // 사용 가능 기기에서만 baroAvail=true → 화면/저장 고도를 기압계 값으로 대체(없으면 GPS 폴백).
+    try{
+      if(await Barometer.isAvailableAsync()){
+        Barometer.setUpdateInterval(1000);
+        baroSub.current=Barometer.addListener((ev:any)=>{
+          if(runTracker.pausedFlag())return;
+          const rel=ev?.relativeAltitude;
+          if(typeof rel!=='number'||!Number.isFinite(rel))return; // Android 등 미제공
+          baroElev.current=feedAltitude(baroElev.current,rel);
+          baroAvail.current=true;
+          setElevGain(Math.round(baroElev.current.gain));
+        });
+      }
+    }catch{/* 기압계 미지원/실패 — GPS 고도로 폴백 */}
     // 1초 틱: fix가 없어도 경과/死구간을 다시 계산해 화면을 갱신한다(엔진이 판정).
     timer.current=setInterval(()=>runTracker.tick(),1000);
     // 진행중 스냅샷: 3초마다 영속(audit#2). fix마다도 persist되지만, 무신호 구간에서
@@ -2157,6 +2181,7 @@ function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],weightKg,onSave,onDisca
 
   function stop(){
     if(stepSub.current){const sub=stepSub.current;if(typeof sub.remove==='function')sub.remove();else if(typeof sub.unsubscribe==='function')sub.unsubscribe();stepSub.current=null;}
+    if(baroSub.current){try{baroSub.current.remove();}catch{/* noop */}baroSub.current=null;}
     clearInterval(timer.current);
     clearInterval(snapTimer.current);
     void stopTracking();
@@ -2191,7 +2216,8 @@ function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],weightKg,onSave,onDisca
     setFinPaceTrack(runTracker.getPaceTrack().slice());
     setFinLocation(locationRef.current);
     setFinKm(fk);setFinTime(ft);setFinCad(cadRef.current);
-    setFinElev(runTracker.getElevationGain());
+    // 고도: 기압계가 잡혔으면 그 누적(정확), 아니면 GPS 고도 폴백.
+    setFinElev(baroAvail.current?Math.round(baroElev.current.gain):runTracker.getElevationGain());
     setPhase('done');
   }
 

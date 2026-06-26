@@ -140,6 +140,13 @@ jest.mock('expo-sensors', () => ({
       Promise.resolve({granted: true, status: 'granted'}),
     ),
   },
+  // Barometer(기압 고도계): addListener 는 콜백을 기록만 하고 자동 발화하지 않는다(테스트가
+  // 주입). 기본은 데이터 미발화라 baroAvail=false 유지 → 기존 GPS 고도 경로 그대로.
+  Barometer: {
+    addListener: jest.fn(() => ({remove: jest.fn()})),
+    setUpdateInterval: jest.fn(),
+    isAvailableAsync: jest.fn(() => Promise.resolve(true)),
+  },
 }));
 
 // ── react-native-sensors ─────────────────────────────────────────────────────
