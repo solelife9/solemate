@@ -86,6 +86,7 @@ import {
 import {estimateCalories} from './lib/calories';
 import {detectPRs, PRKind} from './lib/records';
 import {currentTargetPace} from './lib/pacePlan';
+import {liveActivity} from './lib/liveActivity';
 import {
   getNotifSettings, setNotifSettings, dueNotifications,
   DEFAULT_NOTIF_SETTINGS, type NotifSettings, type NotifState, type ShoeForecast,
@@ -1948,6 +1949,8 @@ function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],weightKg,onSave,onDisca
   // 스피드 음성 코칭 throttle: 마지막 코칭 시각(런 경과초)과 직전 상태. 런 시계(elapsed)를
   // 기준으로 해 일시정지 중엔 자동으로 멈춘다. 최소 간격(COACH_MIN_S)마다만 멘트.
   const coachRef=useRef({lastS:0,lastState:''});
+  // Live Activity 갱신 throttle(마지막 갱신 런 경과초) — ActivityKit 업데이트 예산 보호(~2s마다).
+  const liveActRef=useRef(0);
 
   useEffect(()=>{
     // 'review' 복구는 이미 끝난 런을 검토만 한다 — GPS/센서/권한/TTS를 켜지 않는다.
@@ -1967,6 +1970,13 @@ function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],weightKg,onSave,onDisca
         if(!baroAvail.current)setElevGain(s.elevGainM); // 기압계 가용 시 GPS 고도 양보(baro 권위)
         setAccuracyM(s.accuracyM);
         setLiveCoords(runTracker.getPoints());
+        // 잠금화면 위젯 갱신 — ~2s 마다(throttle, ActivityKit 예산 보호). 미정 페이스는 '--'.
+        if(!s.paused&&s.elapsed-liveActRef.current>=2){
+          liveActRef.current=s.elapsed;
+          liveActivity.update(s.dist,Math.round(s.elapsed),
+            s.currentPaceSecPerKm!=null?fmtPace(1,s.currentPaceSecPerKm):'--',
+            fmtPace(s.dist,s.elapsed));
+        }
         // per-km 스플릿: dist가 정수 km 경계를 새로 넘으면 그 1km의 소요시간(초)·고도상승(m)을
         // 기록한다. 경로에 타임스탬프가 없어 못 했던 '실제' 구간 페이스를 레코더가 직접 남긴다.
         if(Math.floor(s.dist)>splitsRef.current.length){
@@ -2108,6 +2118,9 @@ function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],weightKg,onSave,onDisca
     void activateKeepAwakeAsync(KEEP_AWAKE_TAG).catch(()=>{});
     // 기압 고도계 누적 상태 리셋(이어 달리기/재시작 대비) — 구독은 아래에서 새로 건다.
     baroElev.current=initElevState();baroAvail.current=false;
+    // 잠금화면 Live Activity 시작(iOS 위젯 타깃 있을 때만 동작 — 없으면 no-op).
+    liveActivity.start(ui.model||shoe.name,goalKm,0,0,'--','--');
+    liveActRef.current=0;
     // 이어 달리기(첫 진입에 한함): 스냅샷의 누적 거리·경로·경과시간을 엔진/화면에 시드한다.
     // t0=now−elapsed 로 경과를 잇고, 死구간을 가로지르는 허위 거리를 막기 위해 거리는
     // seedDist 로만 잇는다(엔진이 첫 fix 를 새 앵커로 삼음). '계속 달리기'(짧은 런 재시작)로
@@ -2186,6 +2199,7 @@ function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],weightKg,onSave,onDisca
   function stop(){
     if(stepSub.current){const sub=stepSub.current;if(typeof sub.remove==='function')sub.remove();else if(typeof sub.unsubscribe==='function')sub.unsubscribe();stepSub.current=null;}
     if(baroSub.current){try{baroSub.current.remove();}catch{/* noop */}baroSub.current=null;}
+    liveActivity.end(); // 잠금화면 위젯 닫기(종료/완주/취소/언마운트 모두 stop 경유)
     clearInterval(timer.current);
     clearInterval(snapTimer.current);
     void stopTracking();
