@@ -1671,7 +1671,7 @@ function Main(){
         weightKg={weightKg}
         resume={resumeSnap}
         resumeMode={resumeMode}
-        onSave={async(km,dur,cad,memo,route,location,splits,elevM,cal)=>{
+        onSave={async(km,dur,cad,memo,route,location,splits,elevM,cal,paceTrack)=>{
           // 신기록(PR) 감지 — addRun 의 낙관적 setRuns 전이라 runs 는 '이전 런들'이다.
           const prKinds=detectPRs({dist:km,durationS:dur},runs.map(r=>({dist:Number(r.km)||0,durationS:r.duration||0,runDate:r.run_date})));
           const newId=await addRun(activeRun.id,km,today(),memo||'','gps',dur,cad,route,location,undefined,elevM,cal);
@@ -1679,6 +1679,9 @@ function Main(){
           // route_/surface_ 와 동일 패턴(로컬 전용·동기 시 serverId로 재키잉). RunDetail이
           // splits_<id> 로 읽어 표시한다. 2구간 미만이면 표시 가치가 없어 저장 생략.
           if(splits&&splits.length>=2) await AsyncStorage.setItem('splits_'+newId, JSON.stringify(splits));
+          // 곡선 전용 (거리,경과시간) 시계열 영속 — RunDetail 이 paceTrack_<id> 로 읽어 고운
+          // 페이스 곡선을 그린다(없으면 per-km 스플릿으로 폴백). 2점 미만은 저장 가치 없음.
+          if(paceTrack&&paceTrack.length>=2) await AsyncStorage.setItem('paceTrack_'+newId, JSON.stringify(paceTrack));
           await clearSnapshot();
           // 완주 리캡(P0-2) — 기록 탭으로 바로 점프하던 대신 축하 풀스크린을 띄운다(러너가
           // 가장 자랑스러운 순간 — 리텐션·공유 트리거). 신기록(PR)은 토스트 대신 리캡 배지로.
@@ -1868,7 +1871,7 @@ const boot=StyleSheet.create({
 });
 
 // ─── Live run screen (GPS / sensors / TTS engine + handoff Ring UI) ─────────
-function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],weightKg,onSave,onDiscard,resume,resumeMode}:{shoe:{id:string;name:string};insets:any;goalKm:number;pacePlan?:number[];weightKg:number;onSave:(km:number,dur:number,cad:number,memo:string,route:string,location:string,splits:{km:number;paceSec:number;elevM:number}[],elevM:number,cal:number)=>Promise<void>;onDiscard:()=>void;resume?:RunSnapshot|null;resumeMode?:'review'|'continue'}){
+function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],weightKg,onSave,onDiscard,resume,resumeMode}:{shoe:{id:string;name:string};insets:any;goalKm:number;pacePlan?:number[];weightKg:number;onSave:(km:number,dur:number,cad:number,memo:string,route:string,location:string,splits:{km:number;paceSec:number;elevM:number}[],elevM:number,cal:number,paceTrack:{d:number;t:number}[])=>Promise<void>;onDiscard:()=>void;resume?:RunSnapshot|null;resumeMode?:'review'|'continue'}){
   // 'continue' = 스냅샷에서 GPS 를 재가동해 이어 달린다(엔진 seed*). 'review'(기본) =
   // done 화면에서 검토·저장만. resume 가 없으면(일반 시작) 두 분기 모두 타지 않는다.
   const isContinue=!!resume&&resumeMode==='continue';
@@ -1902,6 +1905,8 @@ function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],weightKg,onSave,onDisca
   const [finRoute,setFinRoute]=useState(resumeRoute);
   // 완주 시 저장할 per-km 구간 스플릿(레코딩 결과 스냅샷).
   const [finSplits,setFinSplits]=useState<{km:number;paceSec:number;elevM:number}[]>([]);
+  // 곡선 전용 (거리,경과시간) 시계열 — 완주 시 엔진에서 캡처해 paceTrack_<id>로 영속(고운 곡선).
+  const [finPaceTrack,setFinPaceTrack]=useState<{d:number;t:number}[]>([]);
   // 라이브 지도용 좌표 목록 — GPS fix마다 runTracker.getPoints()로 갱신한다.
   const [liveCoords,setLiveCoords]=useState<{lat:number;lon:number}[]>([]);
   const [finLocation,setFinLocation]=useState(resume?resume.location:'');
@@ -2183,6 +2188,7 @@ function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],weightKg,onSave,onDisca
     const sampled=simplifyRoute(runTracker.getPoints() as any,200);
     setFinRoute(sampled.length>=2?JSON.stringify(sampled):'');
     setFinSplits(splitsRef.current.slice());
+    setFinPaceTrack(runTracker.getPaceTrack().slice());
     setFinLocation(locationRef.current);
     setFinKm(fk);setFinTime(ft);setFinCad(cadRef.current);
     setFinElev(runTracker.getElevationGain());
@@ -2205,7 +2211,7 @@ function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],weightKg,onSave,onDisca
           }
         }catch{}
       }
-      await onSave(Math.round(finKm*100)/100,finTime,finCad,memo,finRoute,loc,finSplits,finElev,estimateCalories(finKm,weightKg));
+      await onSave(Math.round(finKm*100)/100,finTime,finCad,memo,finRoute,loc,finSplits,finElev,estimateCalories(finKm,weightKg),finPaceTrack);
       hapticSuccess(); // 저장 성공 — 완주 보상 촉각(설정 off 면 graceful no-op).
     }finally{setSaving(false);}
   }

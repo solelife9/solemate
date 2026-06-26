@@ -44,6 +44,10 @@ export const CURRENT_PACE_MIN_DIST_KM = 0.02; // 20m
  *  0.5 m/s ≈ 33분/km. 거리 누적과 무관 — 현재-페이스 표시 보강에만 쓰인다(P0-6 안전 서브셋). */
 export const CURRENT_PACE_MIN_SPEED_MPS = 0.5;
 
+/** 곡선 전용 (거리,경과시간) 시계열의 최소 적립 간격(km). ~25m 마다 한 점이면 10km 런에
+ *  ~400점으로 충분히 곱고 가벼운 페이스 곡선이 된다. 경로 단순화와 무관(별도 채널). */
+export const PACE_TRACK_MIN_STEP_KM = 0.025;
+
 /** GPS 死구간(dead-zone) 판정 임계값(ms). 마지막 fix 수신 후 이 시간 동안 새 fix가
  *  들어오지 않으면 거리는 멈춘 채 시간만 누적되어 페이스가 왜곡된다(audit#9). 이때
  *  사용자에게 배너로 경고한다. watchPosition interval(1s)의 8배 — 일시적 누락이

@@ -21,7 +21,7 @@ import { parseRoute, projectRoute, LatLon } from './lib/route';
 import { DARK_MAP_STYLE } from './lib/mapStyle';
 import { RunSplits, Split } from './RunSplits';
 import { PaceCurveChart } from './PaceCurveChart';
-import { buildSplits } from './lib/splits';
+import { buildSplits, buildPaceSeries, PaceTrackPoint } from './lib/splits';
 import { buildShareCardModel, shareRunCard, saveCardToLibrary, SvgCapturable } from './lib/shareCard';
 import { maskDuration, maskDate, validateRunForm, type RunFormErrors } from './lib/inputMask';
 import ShareCard from './ShareCard';
@@ -420,6 +420,23 @@ function RunDetail({ run, shoe, onBack, unit, onDelete }: { run: Run; shoe?: Sho
       .catch(() => { if (alive) setRecordedSplits([]); });
     return () => { alive = false; };
   }, [run.id]);
+  // 곡선 전용 (거리,경과시간) 시계열(paceTrack_<id>, App.onSave가 영속). 있으면 per-km 보다
+  // 훨씬 고운 페이스 곡선을 만든다. 없으면(옛 런/수동 입력) 스플릿 기반 곡선으로 폴백.
+  const [paceTrack, setPaceTrack] = useState<PaceTrackPoint[]>([]);
+  useEffect(() => {
+    let alive = true;
+    if (!run.id) { setPaceTrack([]); return; }
+    AsyncStorage.getItem('paceTrack_' + run.id)
+      .then(raw => {
+        if (!alive) return;
+        try {
+          const arr = raw ? JSON.parse(raw) : [];
+          setPaceTrack(Array.isArray(arr) ? arr : []);
+        } catch { setPaceTrack([]); }
+      })
+      .catch(() => { if (alive) setPaceTrack([]); });
+    return () => { alive = false; };
+  }, [run.id]);
   // 공유 입력(텍스트·카드 폴백이 같은 필드를 쓰도록 단일 출처로 둔다).
   const shareInput = {
     distKm: run.dist,
@@ -527,9 +544,12 @@ function RunDetail({ run, shoe, onBack, unit, onDelete }: { run: Run; shoe?: Sho
             2구간 미만이면 둘 다 자동 숨김. 곡선은 한눈 추세, 표는 km별 정확한 페이스/고도. */}
         {(() => {
           const detailSplits = recordedSplits.length >= 2 ? recordedSplits : buildSplits(run, route);
+          // 곡선은 (거리,경과시간) 시계열이 있으면 고운 페이스 곡선, 없으면 per-km 스플릿으로 폴백.
+          // 표(RunSplits)는 항상 per-km 정확값을 유지한다.
+          const curveSeries = paceTrack.length >= 2 ? buildPaceSeries(paceTrack) : detailSplits;
           return (
             <>
-              <PaceCurveChart splits={detailSplits} unit={unit} />
+              <PaceCurveChart splits={curveSeries.length >= 2 ? curveSeries : detailSplits} unit={unit} />
               <RunSplits splits={detailSplits} />
             </>
           );

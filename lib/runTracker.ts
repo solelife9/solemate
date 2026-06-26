@@ -20,7 +20,7 @@
 
 import {KalmanFilter} from './kalman';
 import {calcDist, acceptSegment, segmentSpeedMps} from './geo';
-import {WARMUP_FIXES, MAX_FIX_ACCURACY_M, MAX_SEG_DIST_KM, MAX_SEG_SPEED_MPS, CURRENT_PACE_WINDOW_MS, CURRENT_PACE_MIN_DIST_KM, CURRENT_PACE_MIN_SPEED_MPS} from './engineConstants';
+import {WARMUP_FIXES, MAX_FIX_ACCURACY_M, MAX_SEG_DIST_KM, MAX_SEG_SPEED_MPS, CURRENT_PACE_WINDOW_MS, CURRENT_PACE_MIN_DIST_KM, CURRENT_PACE_MIN_SPEED_MPS, PACE_TRACK_MIN_STEP_KM} from './engineConstants';
 import {decideAutoPause, initAutoPauseState, AutoPauseState} from './autoPause';
 import {gpsStallStatus, GPS_STALL_THRESHOLD_MS} from './gpsHealth';
 import {saveSnapshot} from './runPersistence';
@@ -96,6 +96,9 @@ class RunTracker {
   // 페이스가 아직 없을 때(초반·재개 직후)만 '현재 페이스'를 보강하는 표시 전용 신호다.
   // 거리/Kalman 누적엔 절대 관여하지 않는다(코어 불변). 일시정지/재개·권한복구 시 비움.
   private lastSpeedMps: number | null = null;
+  // 곡선 전용 (누적거리 km, 경과시간 sec) 시계열 — 약 25m 마다 누적(비가지치기). 경로 단순화와
+  // 무관하게 거리-시간 대응을 보존해 RunDetail 의 고운 페이스 곡선을 만든다. start/config 시 리셋.
+  private paceTrack: {d: number; t: number}[] = [];
   private fixIndex = 0;
   private lastGood: {lat: number; lon: number} | null = null;
   private lastGoodMs = 0;
@@ -142,6 +145,7 @@ class RunTracker {
     this.kf.reset();
     this.dist = 0;
     this.pts = [];
+    this.paceTrack = [];
     this.paceSamples = [];
     this.lastSpeedMps = null;
     this.fixIndex = 0;
@@ -387,6 +391,13 @@ class RunTracker {
         this.pts.push(f);
         this.lastGood = f;
         this.lastGoodMs = ts;
+        // 곡선 전용 (누적거리 km, 경과시간 sec) 시계열 — 약 25m 마다 1점, 비가지치기.
+        // 경로(pts)는 저장 시 단순화되지만 이 시계열은 거리-시간 대응을 보존해 고운 페이스
+        // 곡선을 만든다(RunDetail). 일시정지/공백은 elapsed 가 흡수하므로 페이스가 왜곡 안 됨.
+        const lastTr = this.paceTrack[this.paceTrack.length - 1];
+        if (!lastTr || this.dist - lastTr.d >= PACE_TRACK_MIN_STEP_KM) {
+          this.paceTrack.push({d: this.dist, t: this.getElapsed()});
+        }
         // 현재 페이스 샘플 적립(채택된 거리에서만 — re-anchor/거부는 거리 미반영이라 제외).
         // 슬라이딩 윈도우: paceSamples[1]이 cutoff 안에 들 때까지 앞을 버려 [0]을 윈도우 앵커로.
         this.paceSamples.push({t: ts, d: this.dist});
@@ -508,6 +519,11 @@ class RunTracker {
 
   getPoints(): {lat: number; lon: number}[] {
     return this.pts;
+  }
+
+  /** 곡선 전용 (누적거리 km, 경과시간 sec) 시계열. 완주 시 영속해 고운 페이스 곡선을 만든다. */
+  getPaceTrack(): {d: number; t: number}[] {
+    return this.paceTrack;
   }
 
   getElapsedFinal(): number {
