@@ -20,7 +20,7 @@
 
 import {KalmanFilter} from './kalman';
 import {calcDist, acceptSegment, segmentSpeedMps} from './geo';
-import {WARMUP_FIXES, MAX_FIX_ACCURACY_M, MAX_SEG_DIST_KM, MAX_SEG_SPEED_MPS, CURRENT_PACE_WINDOW_MS, CURRENT_PACE_MIN_DIST_KM} from './engineConstants';
+import {WARMUP_FIXES, MAX_FIX_ACCURACY_M, MAX_SEG_DIST_KM, MAX_SEG_SPEED_MPS, CURRENT_PACE_WINDOW_MS, CURRENT_PACE_MIN_DIST_KM, CURRENT_PACE_MIN_SPEED_MPS} from './engineConstants';
 import {decideAutoPause, initAutoPauseState, AutoPauseState} from './autoPause';
 import {gpsStallStatus, GPS_STALL_THRESHOLD_MS} from './gpsHealth';
 import {saveSnapshot} from './runPersistence';
@@ -31,7 +31,7 @@ import {initElevState, feedAltitude, ElevState} from './elevation';
  *  altitude(m) is optional — used for elevation-gain accumulation; absent/null
  *  fixes simply don't contribute to elevation. */
 export interface RawFix {
-  coords: {latitude: number; longitude: number; accuracy: number | null; altitude?: number | null};
+  coords: {latitude: number; longitude: number; accuracy: number | null; altitude?: number | null; speed?: number | null};
   timestamp: number;
 }
 
@@ -92,6 +92,10 @@ class RunTracker {
   // 현재(롤링) 페이스용 샘플 — 채택된 fix 마다 {t: fix ts(ms), d: 누적거리(km)}. 슬라이딩
   // 윈도우(CURRENT_PACE_WINDOW_MS)로 최근 구간 페이스를 낸다. 일시정지/재개·권한복구 시 비움.
   private paceSamples: {t: number; d: number}[] = [];
+  // OS(doppler) 속도(m/s) — 가장 최근 fix의 유효 속도만 보관(무효면 null). 롤링 거리기반
+  // 페이스가 아직 없을 때(초반·재개 직후)만 '현재 페이스'를 보강하는 표시 전용 신호다.
+  // 거리/Kalman 누적엔 절대 관여하지 않는다(코어 불변). 일시정지/재개·권한복구 시 비움.
+  private lastSpeedMps: number | null = null;
   private fixIndex = 0;
   private lastGood: {lat: number; lon: number} | null = null;
   private lastGoodMs = 0;
@@ -139,6 +143,7 @@ class RunTracker {
     this.dist = 0;
     this.pts = [];
     this.paceSamples = [];
+    this.lastSpeedMps = null;
     this.fixIndex = 0;
     this.lastGood = null;
     this.lastGoodMs = 0;
@@ -241,6 +246,7 @@ class RunTracker {
     // 현재-페이스 윈도우 비움 — 일시정지 공백을 가로질러 페이스를 계산해 거짓으로 느려지는
     // 것을 막는다. 재개 후 새 샘플로 윈도우를 다시 채운다(그동안은 '--').
     this.paceSamples = [];
+    this.lastSpeedMps = null;
     this.emit({type: 'resumed', auto});
     this.emitState();
   }
@@ -290,6 +296,7 @@ class RunTracker {
     this.lastGood = null; // 공백 가로지르는 허위 거리 방지(재개 첫 fix = 새 앵커)
     this.lastRecvMs = now; // 死구간 오판 방지(재개 직후 gap 을 stall 로 세지 않게)
     this.paceSamples = []; // 현재-페이스 윈도우 비움(설정 다녀온 공백 가로지르는 계산 방지)
+    this.lastSpeedMps = null;
     this.emit({type: 'resumed', auto: false});
     this.emitState();
     return true;
@@ -314,6 +321,10 @@ class RunTracker {
       !this.isPaused && this.lastRecvMs > 0 ? recvNow - this.lastRecvMs : 0;
     this.lastRecvMs = recvNow;
     const {latitude: lat, longitude: lon, accuracy} = fix.coords;
+    // OS doppler 속도 갱신(표시 전용) — 유효(>= 임계, 정지/무효 제외)할 때만 보관, 아니면 null.
+    // 매 fix 가 즉시 덮어쓰므로 항상 최신이다. 거리/세그먼트 게이트와 완전히 독립.
+    const sp = fix.coords.speed;
+    this.lastSpeedMps = typeof sp === 'number' && sp >= CURRENT_PACE_MIN_SPEED_MPS ? sp : null;
     const acc = accuracy == null ? Infinity : accuracy;
     const f = this.kf.process(lat, lon, acc, ts);
     this.accuracyM = Number.isFinite(acc) ? Math.round(acc) : null;
@@ -454,14 +465,22 @@ class RunTracker {
    *  최소 이동거리 미만이면 null(화면 '--'). 평균과 달리 '지금 얼마나 빠른지'를 즉각 반영한다. */
   private computeCurrentPace(): number | null {
     if (this.isPaused) return null;
+    // 1순위: 거리기반 롤링 페이스(스무딩됨, 정상 구간의 신뢰 신호). 가능하면 항상 이걸 쓴다.
     const n = this.paceSamples.length;
-    if (n < 2) return null;
-    const oldest = this.paceSamples[0];
-    const latest = this.paceSamples[n - 1];
-    const dKm = latest.d - oldest.d;
-    const dSec = (latest.t - oldest.t) / 1000;
-    if (dKm < CURRENT_PACE_MIN_DIST_KM || dSec <= 0) return null;
-    return dSec / dKm;
+    if (n >= 2) {
+      const oldest = this.paceSamples[0];
+      const latest = this.paceSamples[n - 1];
+      const dKm = latest.d - oldest.d;
+      const dSec = (latest.t - oldest.t) / 1000;
+      if (dKm >= CURRENT_PACE_MIN_DIST_KM && dSec > 0) return dSec / dKm;
+    }
+    // 보강(P0-6 안전 서브셋): 롤링 페이스가 아직 없을 때(런 초반·재개 직후)만 OS doppler
+    // 속도로 '현재 페이스'를 채운다 — 표시 공백을 줄여 더 빨리 페이스를 띄운다. 정상 구간엔
+    // 영향 없음(위에서 이미 반환). 거리/Kalman 누적과 무관(표시 전용).
+    if (this.lastSpeedMps != null && this.lastSpeedMps >= CURRENT_PACE_MIN_SPEED_MPS) {
+      return 1000 / this.lastSpeedMps; // m/s → sec/km
+    }
+    return null;
   }
 
   getState(): RunTrackerState {

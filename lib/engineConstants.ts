@@ -39,6 +39,11 @@ export const CURRENT_PACE_WINDOW_MS = 30000;
  *  부족해 페이스가 출렁이므로 null 로 두고 화면은 '--' 를 보인다(거짓 수치 방지). */
 export const CURRENT_PACE_MIN_DIST_KM = 0.02; // 20m
 
+/** 현재 페이스 보강에 OS doppler 속도를 신뢰할 최소 속도(m/s). 이보다 느리면(정지/걷기 시작
+ *  전·doppler 무효 -1) 표시 전용 보강에서 제외해 비현실적 페이스(수십 분/km)를 막는다.
+ *  0.5 m/s ≈ 33분/km. 거리 누적과 무관 — 현재-페이스 표시 보강에만 쓰인다(P0-6 안전 서브셋). */
+export const CURRENT_PACE_MIN_SPEED_MPS = 0.5;
+
 /** GPS 死구간(dead-zone) 판정 임계값(ms). 마지막 fix 수신 후 이 시간 동안 새 fix가
  *  들어오지 않으면 거리는 멈춘 채 시간만 누적되어 페이스가 왜곡된다(audit#9). 이때
  *  사용자에게 배너로 경고한다. watchPosition interval(1s)의 8배 — 일시적 누락이

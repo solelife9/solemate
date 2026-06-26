@@ -50,6 +50,9 @@ export function toRawFix(loc: Location.LocationObject): RawFix {
       longitude: loc.coords.longitude,
       accuracy: loc.coords.accuracy ?? null,
       altitude: loc.coords.altitude ?? null,
+      // OS doppler 속도(m/s). 무효 시 expo 가 -1/null — 엔진이 표시 전용 현재-페이스 보강에만
+      // 쓰고 임계로 거른다(거리 누적과 무관). 백그라운드 task 경로도 동일 변환을 거친다.
+      speed: loc.coords.speed ?? null,
     },
     timestamp: loc.timestamp,
   };
