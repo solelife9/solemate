@@ -23,11 +23,9 @@ import Svg, { Path, Circle } from 'react-native-svg';
 // 색·폰트는 전역 디자인 토큰(theme.ts)만 참조한다 — 사설 색객체(const C) 폐기.
 // 매핑: bg→BG · surface→CARD · accent→ACCENT · sage→GOOD · text→T1–T4 · hair→SEP.
 // 폰트 별칭 UI/DP → FONT/DISPLAY. (시각 동등: 다크+오렌지 유지)
-import { BG, CARD, ACCENT, GOOD, T1, T2, T3, SEP, FONT, DISPLAY, withAlpha } from './theme';
+import { BG, CARD, ACCENT, T1, T2, T3, SEP, FONT, DISPLAY, withAlpha } from './theme';
 // lib/haptics 배선: 카운트다운 비트(3·2·1) → countdownBeat, 시작(GO) → go.
 import { countdownBeat, go as goHaptic } from './lib/haptics';
-// '지금 시작' CTA 는 앱 전역 단일 Button 프리미티브(그라데이션·글로우·radius 토큰).
-import { Button } from './primitives';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
@@ -56,8 +54,7 @@ export default function RunCountdownScreen({
   goalKm?: number; shoeLabel?: string; outdoor?: boolean;
   onCancel?: () => void; onDone?: () => void;
 }) {
-  const [phase, setPhase] = useState<'gps' | 'count' | 'go'>('gps');
-  const [gps, setGps] = useState(0);          // 0~4
+  const [phase, setPhase] = useState<'count' | 'go'>('count');
   const [num, setNum] = useState(3);
 
   const dialOffset = useRef(new Animated.Value(DASH)).current;     // ring sweep
@@ -96,21 +93,15 @@ export default function RunCountdownScreen({
     at(() => onDone?.(), 3650);
   };
 
-  // GPS 락 시퀀스 → 자동 카운트다운
+  // 러닝 시작을 누르면 곧장 3·2·1 카운트다운(준비 연출/지연 없이). 실제 GPS 워밍업은
+  // 트래킹 시작 시 WARMUP_FIXES 가 따로 처리하므로 여기서 기다릴 필요가 없다.(사용자 요청)
   useEffect(() => {
-    at(() => setGps(1), 350);
-    at(() => setGps(2), 800);
-    at(() => setGps(4), 1300);
-    at(() => startCountdown(), 1750);
+    startCountdown();
     return clearAll;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const skip = () => { clearAll(); startCountdown(); };
   const cancel = () => { clearAll(); onCancel?.(); };
-
-  const gpsText = phase !== 'gps' ? '출발 준비 완료' : gps >= 4 ? 'GPS 신호 양호' : gps >= 2 ? 'GPS 신호 보통' : gps >= 1 ? 'GPS 신호 약함' : 'GPS 신호 잡는 중…';
-  const gpsCol = phase !== 'gps' || gps >= 3 ? GOOD : T3;
 
   return (
     <View style={s.screen}>
@@ -133,9 +124,7 @@ export default function RunCountdownScreen({
               strokeLinecap="round" strokeDasharray={DASH} strokeDashoffset={dialOffset} />
           </Svg>
           <View style={s.dialFace}>
-            {phase === 'gps' ? (
-              <View style={s.pin}><Icon name="target" size={30} color={ACCENT} /></View>
-            ) : phase === 'go' ? (
+            {phase === 'go' ? (
               <Animated.Text style={[s.go, { transform: [{ scale: goScale }] }]} accessibilityLiveRegion="assertive" accessibilityLabel="시작">GO</Animated.Text>
             ) : (
               <>
@@ -146,31 +135,11 @@ export default function RunCountdownScreen({
           </View>
         </View>
 
-        {/* gps bars */}
-        <View style={s.gpsRow} accessibilityRole="text" accessibilityLiveRegion="polite" accessibilityLabel={gpsText}>
-          <View style={s.bars}>
-            {[8, 12, 16, 20].map((h, i) => (
-              <View key={i} style={{ width: 4, height: h, borderRadius: 2, backgroundColor: (phase !== 'gps' || i < gps) ? GOOD : withAlpha(T1, 0.16) }} />
-            ))}
-          </View>
-          <Text style={[s.gpsText, { color: gpsCol }]}>{gpsText}</Text>
-        </View>
-
         {/* goal chips */}
         <View style={s.chips}>
           <View style={s.chip} accessibilityRole="text" accessibilityLabel={`목표 ${goalKm}.0 킬로미터`}><Icon name="target" size={14} color={T3} /><Text style={s.chipText}>목표 <Text style={s.chipB}>{goalKm}.0 km</Text></Text></View>
           <View style={s.chip} accessibilityRole="text" accessibilityLabel={outdoor ? '야외 러닝' : '실내 러닝'}><Icon name="route" size={14} color={T3} /><Text style={s.chipText}>{outdoor ? '야외 러닝' : '실내 러닝'}</Text></View>
         </View>
-      </View>
-
-      {/* foot */}
-      <View style={s.foot}>
-        {phase === 'gps' && (
-          <>
-            <Button label="지금 시작" onPress={skip} iconNode={<Icon name="play" size={22} color="#fff" />} style={s.startNow} />
-            <Pressable onPress={skip} hitSlop={8} accessibilityRole="button" accessibilityLabel="카운트다운 건너뛰기"><Text style={s.skip}>카운트다운 건너뛰기</Text></Pressable>
-          </>
-        )}
       </View>
     </View>
   );
@@ -187,23 +156,12 @@ const s = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   dial: { width: DIAL, height: DIAL, alignItems: 'center', justifyContent: 'center' },
   dialFace: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, alignItems: 'center', justifyContent: 'center' },
-  pin: { width: 62, height: 62, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(ACCENT, 0.12), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.3) },
   count: { color: T1, fontFamily: DISPLAY, fontSize: 150, fontWeight: '600', letterSpacing: -4, lineHeight: 156, includeFontPadding: false },
   countLabel: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '500', marginTop: 2 },
   go: { color: ACCENT, fontFamily: DISPLAY, fontSize: 104, fontWeight: '700', letterSpacing: -1, includeFontPadding: false },
-
-  gpsRow: { flexDirection: 'row', alignItems: 'center', gap: 9, marginTop: 30 },
-  bars: { flexDirection: 'row', alignItems: 'flex-end', gap: 3, height: 20 },
-  gpsText: { fontFamily: FONT, fontSize: 13, fontWeight: '600' },
 
   chips: { flexDirection: 'row', gap: 8, marginTop: 14 },
   chip: { flexDirection: 'row', alignItems: 'center', gap: 7, height: 32, paddingHorizontal: 14, borderRadius: 999, backgroundColor: withAlpha(T1, 0.04), borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
   chipText: { color: T2, fontFamily: FONT, fontSize: 13, fontWeight: '500' },
   chipB: { color: T1, fontFamily: DISPLAY, fontWeight: '600' },
-
-  foot: { paddingHorizontal: 22, alignItems: 'center', gap: 16, minHeight: 104, justifyContent: 'flex-end' },
-  // '지금 시작' CTA 는 단일 Button 프리미티브(그라데이션·글로우·radius 토큰). 화면
-  // 고유 레이아웃(가로 꽉참·높이)만 남긴다(과거 사각 ACCENT 버튼 제거).
-  startNow: { width: '100%', height: 58 },
-  skip: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '500' },
 });
