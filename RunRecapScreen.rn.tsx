@@ -9,7 +9,8 @@ import React from 'react';
 import {View, Text, ScrollView, Pressable, StyleSheet} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import {BG, CARD, CARD_HI, ACCENT, GOOD, T1, T2, T3, FONT, DISPLAY, RADIUS, SEP, withAlpha} from './theme';
+import {BG, CARD, CARD_HI, ACCENT, GOOD, WARN, T1, T2, T3, T4, FONT, DISPLAY, RADIUS, SEP, withAlpha} from './theme';
+import {fmtPaceSec} from './lib/pacePlan';
 import {fmtPace} from './lib/format';
 import {RunSplits, Split} from './RunSplits';
 import {PRKind, PR_LABEL} from './lib/records';
@@ -44,6 +45,7 @@ export default function RunRecapScreen({
   prKinds = [],
   shoeName,
   goalKm,
+  pacePlan = [],
   unit = 'km',
   onClose,
 }: {
@@ -59,6 +61,8 @@ export default function RunRecapScreen({
   shoeName?: string;
   /** 목표 거리(km). km >= goalKm 이면 '목표 달성' 배지. 없으면 숨김. */
   goalKm?: number;
+  /** 스피드 모드의 km별 목표 페이스(초/km). 있으면 '목표 대비' 결과 섹션을 보여준다. */
+  pacePlan?: number[];
   unit?: Unit;
   onClose?: () => void;
 }) {
@@ -108,6 +112,35 @@ export default function RunRecapScreen({
         </View>
 
         {/* km 스플릿 막대(2구간↑일 때만 자체적으로 표시) */}
+        {/* 스피드 모드 — km별 목표 대비 실제(플랜 적중 여부). 빠름=초록(−), 느림=주황(+). */}
+        {pacePlan.length > 0 && splits.length > 0 && (() => {
+          const rows = splits.map((sp, i) => {
+            const tgt = pacePlan[Math.min(i, pacePlan.length - 1)];
+            return {km: sp.km, tgt, actual: sp.paceSec, diff: Math.round(sp.paceSec - tgt)};
+          });
+          const avgDiff = Math.round(rows.reduce((a, r) => a + r.diff, 0) / rows.length);
+          const fmtDelta = (d: number) => (d > 0 ? `+${d}s` : d < 0 ? `−${Math.abs(d)}s` : '±0s');
+          const dColor = (d: number) => (d <= -3 ? GOOD : d >= 3 ? WARN : T3);
+          return (
+            <View style={s.plan} testID="recap-pace-plan">
+              <View style={s.planHead}>
+                <Text style={s.planTitle}>페이스 플랜 결과</Text>
+                <Text style={[s.planSummary, {color: avgDiff <= -3 ? GOOD : avgDiff >= 3 ? WARN : T2}]}>
+                  목표 대비 {avgDiff <= -3 ? '빠름' : avgDiff >= 3 ? '느림' : '근접'} {fmtDelta(avgDiff)}
+                </Text>
+              </View>
+              {rows.map((r, i) => (
+                <View key={i} style={s.planRow}>
+                  <Text style={s.planKm}>{r.km}km</Text>
+                  <Text style={s.planTgt}>목표 {fmtPaceSec(r.tgt)}</Text>
+                  <Text style={s.planAct}>{fmtPaceSec(r.actual)}</Text>
+                  <Text style={[s.planDelta, {color: dColor(r.diff)}]}>{fmtDelta(r.diff)}</Text>
+                </View>
+              ))}
+            </View>
+          );
+        })()}
+
         <RunSplits splits={splits} />
       </ScrollView>
 
@@ -138,6 +171,15 @@ const s = StyleSheet.create({
   statValue: {color: T1, fontFamily: DISPLAY, fontSize: 26, fontWeight: '800', letterSpacing: -0.6},
   statLabel: {color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '600', marginTop: 3},
   statSub: {color: T3, fontFamily: FONT, fontSize: 11, fontWeight: '500'},
+  plan: {backgroundColor: CARD, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP, paddingHorizontal: 16, paddingVertical: 12, marginTop: 12},
+  planHead: {flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 8},
+  planTitle: {color: T1, fontFamily: FONT, fontSize: 15, fontWeight: '700'},
+  planSummary: {fontFamily: FONT, fontSize: 13, fontWeight: '700'},
+  planRow: {flexDirection: 'row', alignItems: 'center', paddingVertical: 7, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP},
+  planKm: {color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '700', width: 42},
+  planTgt: {color: T4, fontFamily: FONT, fontSize: 13, fontWeight: '500', flex: 1},
+  planAct: {color: T1, fontFamily: FONT, fontSize: 14, fontWeight: '700', width: 64, textAlign: 'right'},
+  planDelta: {fontFamily: FONT, fontSize: 13, fontWeight: '700', width: 52, textAlign: 'right'},
   footer: {paddingHorizontal: 18, paddingTop: 10, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP, backgroundColor: CARD_HI},
   doneBtn: {height: 52, borderRadius: RADIUS.lg, backgroundColor: ACCENT, alignItems: 'center', justifyContent: 'center'},
   doneTxt: {color: '#000', fontFamily: FONT, fontSize: 16, fontWeight: '800'},

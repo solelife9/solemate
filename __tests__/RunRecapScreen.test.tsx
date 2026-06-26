@@ -37,6 +37,24 @@ describe('RunRecapScreen — 완주 리캡', () => {
     expect(t).toContain('러닝 완료');
   });
 
+  test('스피드 모드: pacePlan + 스플릿이 있으면 목표 대비 결과 섹션을 보여준다', () => {
+    const splits = [
+      {km: 1, paceSec: 372, elevM: 0}, // 목표 375 → 3초 빠름
+      {km: 2, paceSec: 360, elevM: 0}, // 목표 360 → 근접
+    ];
+    const root = render(<RunRecapScreen km={2} durationS={732} splits={splits} pacePlan={[375, 360]} />).root;
+    expect(byTestID(root, 'recap-pace-plan').length).toBe(1);
+    const t = textOf(root);
+    expect(t).toContain('페이스 플랜 결과');
+    expect(t).toContain('목표');
+  });
+
+  test('pacePlan 이 없으면 플랜 결과 섹션을 숨긴다', () => {
+    const splits = [{km: 1, paceSec: 372, elevM: 0}, {km: 2, paceSec: 360, elevM: 0}];
+    const root = render(<RunRecapScreen km={2} durationS={732} splits={splits} />).root;
+    expect(byTestID(root, 'recap-pace-plan').length).toBe(0);
+  });
+
   test('신기록(PR) 종류마다 축하 배지가 뜬다', () => {
     const root = render(<RunRecapScreen km={10} durationS={3000} prKinds={['longestDist', 'fastestPace']} />).root;
     expect(byTestID(root, 'recap-pr-longestDist').length).toBe(1);
