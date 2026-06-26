@@ -1637,7 +1637,11 @@ function Main(){
   // '나중에'면 닫고(goal 로 복귀) 시작을 취소한다(다음 시도 시 재안내).
   if(locPrimeGoal!=null){
     return <LocationPrimeScreen
-      onContinue={()=>{const g=locPrimeGoal;setLocPrimed(true);void AsyncStorage.setItem(LOC_PRIME_KEY,'1');setLocPrimeGoal(null);enterRun(g);}}
+      onContinue={async()=>{const g=locPrimeGoal;setLocPrimed(true);void AsyncStorage.setItem(LOC_PRIME_KEY,'1');setLocPrimeGoal(null);
+        // 동작·피트니스 권한을 여기서 한 번에 받아둔다 — 케이던스(Pedometer)와 고도(Barometer)가
+        // 같은 모션 권한을 쓰므로, 첫 러닝 순간이 아니라 앞단에서 받아 매끄럽게 동작하게 한다.
+        try{await Pedometer.requestPermissionsAsync();}catch{/* 거부/미지원 — 러닝은 계속 */}
+        enterRun(g);}}
       onCancel={()=>setLocPrimeGoal(null)}/>;
   }
   if(overlay==='goal'&&pendingShoe){

@@ -10,7 +10,7 @@ import React from 'react';
 import {View, Text, Pressable, StyleSheet} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import {BG, CARD, ACCENT, GOOD, T1, T2, T3, FONT, RADIUS, SEP, withAlpha} from './theme';
+import {BG, CARD, ACCENT, GOOD, WARN, T1, T2, T3, FONT, RADIUS, SEP, withAlpha} from './theme';
 
 function Row({icon, color, title, body}: {icon: string; color: string; title: string; body: string}) {
   return (
@@ -41,7 +41,7 @@ export default function LocationPrimeScreen({
           <Ionicons name="navigate-circle" size={44} color={ACCENT} />
         </View>
         <Text style={s.title}>정확한 러닝 측정을 위해</Text>
-        <Text style={s.lead}>다음 화면에서 위치 권한을 물어봐요. 잠깐만 읽어주세요.</Text>
+        <Text style={s.lead}>다음 화면에서 위치와 동작·피트니스 권한을 물어봐요. 잠깐만 읽어주세요.</Text>
 
         <View style={s.card}>
           <Row icon="walk" color={ACCENT} title="‘앱 사용 중에 허용’을 선택하세요"
@@ -50,8 +50,11 @@ export default function LocationPrimeScreen({
           <Row icon="speedometer" color={GOOD} title="거리·페이스·코스를 정확히"
             body="GPS로 실제 달린 경로와 구간 페이스를 측정해요." />
           <View style={s.sep} />
-          <Row icon="lock-closed" color={T2} title="위치는 러닝 기록에만"
-            body="위치 데이터는 내 러닝 기록을 위해서만 쓰이고 기기에 저장돼요." />
+          <Row icon="pulse" color={WARN} title="케이던스·고도도 함께 (동작·피트니스)"
+            body="분당 걸음 수와 고도 변화를 정확히 측정해요. ‘허용’을 한 번 누르면 매번 자동으로 동작해요." />
+          <View style={s.sep} />
+          <Row icon="lock-closed" color={T2} title="데이터는 내 러닝 기록에만"
+            body="위치·동작 데이터는 내 러닝 기록을 위해서만 쓰이고 기기에 저장돼요." />
         </View>
       </View>
 
