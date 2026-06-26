@@ -47,6 +47,10 @@ add('gps_weak', '지피에스 신호가 약합니다.');
 add('sig_injury_high', '오늘은 부하가 높습니다. 가볍게 달려보세요.');
 add('sig_injury_caution', '컨디션을 살피며 달려보세요.');
 add('sig_shoe_due', '신발 교체 시기가 다가왔습니다.');
+// 스피드(페이스 플랜) 실시간 코칭 — 현재 km 목표 대비.
+add('pace_slow', '페이스를 올려보세요.');
+add('pace_fast', '페이스가 빠릅니다.');
+add('pace_on', '적정 페이스입니다.');
 // 연결 라벨.
 add('lbl_pace', '페이스');
 add('lbl_avg_pace', '평균 페이스');

@@ -574,6 +574,7 @@ export default function HomeScreen({
             <InjuryRiskCard
               runs={runs}
               shoe={active ? { used: active.used, max: active.max } : undefined}
+              shoeName={active ? (active.model || active.brand) : undefined}
               onPress={onOpenInjuryRisk}
             />
           </View>

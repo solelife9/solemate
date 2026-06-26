@@ -1727,6 +1727,7 @@ function Main(){
     const aShoe=homeUiShoes[homeActiveIdx];
     return <InjuryRiskScreen runs={runs}
       shoe={aShoe?{used:aShoe.used,max:aShoe.max}:undefined}
+      shoeName={aShoe?(aShoe.model||aShoe.brand):undefined}
       todayISO={today()} onBack={()=>setShowInjuryRisk(false)}/>;
   }
   // 완주 리캡 — 러닝 저장 직후 축하 풀스크린. '완료'로 닫으면 기록 탭으로 이동한다.
@@ -1929,6 +1930,9 @@ function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],weightKg,onSave,onDisca
   // per-km 스플릿 누적(런 동안)과 마지막 km 경계의 시각/고도(구간 페이스·고도상승 계산용).
   const splitsRef=useRef<{km:number;paceSec:number;elevM:number}[]>([]);
   const lastSplitRef=useRef({elapsed:0,elevM:0});
+  // 스피드 음성 코칭 throttle: 마지막 코칭 시각(런 경과초)과 직전 상태. 런 시계(elapsed)를
+  // 기준으로 해 일시정지 중엔 자동으로 멈춘다. 최소 간격(COACH_MIN_S)마다만 멘트.
+  const coachRef=useRef({lastS:0,lastState:''});
 
   useEffect(()=>{
     // 'review' 복구는 이미 끝난 런을 검토만 한다 — GPS/센서/권한/TTS를 켜지 않는다.
@@ -1959,6 +1963,20 @@ function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],weightKg,onSave,onDisca
         }
         if(s.permissionRevoked)setGpsStatus('위치 권한 필요');
         else if(s.accuracyM!=null)setGpsStatus(`정확도 ${s.accuracyM}m`);
+        // 스피드 음성 코칭 — 현재 km 목표 페이스 대비 빠름/적정/느림. 시작 직후·표본부족·
+        // 일시정지는 건너뛰고, off-target(±8초)일 때 최소 COACH_MIN_S 간격으로 멘트한다.
+        // 'on'(적정)은 off에서 막 복귀했을 때만 1회 알린다(잡담 방지).
+        if(pacePlan&&pacePlan.length&&!s.paused){
+          const tgt=currentTargetPace(pacePlan,s.dist);
+          const cur=s.currentPaceSecPerKm;
+          const COACH_MIN_S=25, BUF=8;
+          if(tgt!=null&&cur!=null&&s.elapsed>=20&&s.elapsed-coachRef.current.lastS>=COACH_MIN_S){
+            const st=cur<=tgt-BUF?'fast':cur>=tgt+BUF?'slow':'on';
+            if(st==='slow'){runVoice.paceSlow();coachRef.current={lastS:s.elapsed,lastState:'slow'};}
+            else if(st==='fast'){runVoice.paceFast();coachRef.current={lastS:s.elapsed,lastState:'fast'};}
+            else if(st==='on'&&(coachRef.current.lastState==='slow'||coachRef.current.lastState==='fast')){runVoice.paceOn();coachRef.current={lastS:s.elapsed,lastState:'on'};}
+          }
+        }
       }else if(ev.type==='paused'){
         try{Tts.stop();}catch{}runVoice.autoPause();
       }else if(ev.type==='resumed'){

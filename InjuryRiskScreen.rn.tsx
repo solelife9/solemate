@@ -15,6 +15,7 @@ import type {LoadRun} from './lib/trainingLoad';
 export default function InjuryRiskScreen({
   runs = [],
   shoe,
+  shoeName,
   todayISO,
   onBack,
 }: {
@@ -22,6 +23,8 @@ export default function InjuryRiskScreen({
   runs?: LoadRun[];
   /** 활성(히어로) 신발의 used·max(km). 없으면 부하만으로 판정. */
   shoe?: {used?: number; max?: number};
+  /** 활성(히어로) 신발 이름 — 신발 상태 행에 표기. */
+  shoeName?: string;
   todayISO?: string;
   onBack?: () => void;
 }) {
@@ -36,7 +39,7 @@ export default function InjuryRiskScreen({
         <View style={{width: 36}} />
       </View>
       <View style={s.body}>
-        <InjuryRiskDetail runs={runs} shoe={shoe} todayISO={todayISO} />
+        <InjuryRiskDetail runs={runs} shoe={shoe} shoeName={shoeName} todayISO={todayISO} />
       </View>
     </View>
   );

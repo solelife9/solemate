@@ -126,6 +126,16 @@ export const runVoice = {
   shoeDue() {
     this.play(['sig_shoe_due']);
   },
+  /** 스피드 코칭 — 현재 km 목표 대비. 느림=올려보세요 / 빠름=빠릅니다 / 적정. */
+  paceSlow() {
+    this.play(['pace_slow']);
+  },
+  paceFast() {
+    this.play(['pace_fast']);
+  },
+  paceOn() {
+    this.play(['pace_on']);
+  },
   /** 진행 중 시퀀스 취소(런 종료/중단 시). */
   stop() {
     token++;

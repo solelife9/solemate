@@ -38,6 +38,8 @@ export interface InjuryRiskCardProps {
   runs: LoadRun[];
   /** 오늘 신을/주력 신발의 used·max. 없으면 부하만으로 판정. */
   shoe?: { used?: number; max?: number };
+  /** 어느 신발 기준인지(선택/히어로 신발 이름) — 신발 상태 칩에 표기해 혼동 방지. */
+  shoeName?: string;
   /** 기준일 주입(테스트용). 미지정 시 로컬 오늘. */
   todayISO?: string;
   /** 지정 시 카드 전체가 눌러져 상세(InjuryRiskDetail)를 열 수 있다. */
@@ -57,7 +59,7 @@ function Chip({
   );
 }
 
-export default function InjuryRiskCard({ runs, shoe, todayISO, onPress }: InjuryRiskCardProps) {
+export default function InjuryRiskCard({ runs, shoe, shoeName, todayISO, onPress }: InjuryRiskCardProps) {
   const today = todayISO || todayLocalISO();
   const risk = React.useMemo(
     () => assessCombinedRisk({ runs: runs || [], shoe, todayISO: today }),
@@ -103,6 +105,7 @@ export default function InjuryRiskCard({ runs, shoe, todayISO, onPress }: Injury
         <Chip
           label="신발 상태"
           value={`${wearPct}% 닳음`}
+          sub={shoeName}
           on={isDriven('shoe')}
         />
       </View>

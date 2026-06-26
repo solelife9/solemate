@@ -30,6 +30,8 @@ function todayLocalISO(): string {
 export interface InjuryRiskDetailProps {
   runs: LoadRun[];
   shoe?: { used?: number; max?: number };
+  /** 어느 신발 기준인지(선택/히어로 신발 이름) — 신발 상태 행에 표기. */
+  shoeName?: string;
   todayISO?: string;
 }
 
@@ -65,7 +67,7 @@ function GuidanceCard({ tone, icon, title, body }: {
   );
 }
 
-export default function InjuryRiskDetail({ runs, shoe, todayISO }: InjuryRiskDetailProps) {
+export default function InjuryRiskDetail({ runs, shoe, shoeName, todayISO }: InjuryRiskDetailProps) {
   const today = todayISO || todayLocalISO();
   const { risk, guidance } = React.useMemo(() => {
     const r = assessCombinedRisk({ runs: runs || [], shoe, todayISO: today });
@@ -97,6 +99,7 @@ export default function InjuryRiskDetail({ runs, shoe, todayISO }: InjuryRiskDet
         <View style={styles.signalSep} />
         <SignalRow
           label="신발 상태"
+          sub={shoeName}
           value={`${wearPct}% 닳음`}
           color={risk.drivers.includes('shoe') ? WARN : T3}
         />
