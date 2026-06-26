@@ -296,9 +296,12 @@ test('권한 회수 후 resumeFromPermissionRevoked: 거리 보존 + 재개 후 
   expect(t.getDistanceKm()).toBe(dBefore); // 거리 보존
   expect(t.getElapsed()).toBe(elapsedBefore); // 설정 다녀온 공백은 흡수 — elapsed 점프 없음
 
-  // 재개 후: 첫 fix 는 새 앵커(거리 0), 그다음부터 다시 누적된다.
+  // 재개 후: 첫 fix 는 새 앵커(거리 0 — 검증 불가한 공백 구간 거리는 계상하지 않는다),
+  // 그다음 정상 이동부터 다시 누적된다(동결 방지). 칼만 2D 는 공백을 재측위로 처리해
+  // 가짜 거리를 안 세므로 회복이 한 fix 더 걸린다(옛 1D 는 공백 일부를 계상했음).
   F(37.5009, 173000);
   F(37.5012, 176000);
+  F(37.5015, 179000);
   expect(t.getDistanceKm()).toBeGreaterThan(dBefore);
 
   // 회수 상태가 아니면 no-op(false) — '처음부터 거부' 케이스 구분용.
