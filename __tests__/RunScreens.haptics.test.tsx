@@ -110,19 +110,34 @@ describe('RunGoalScreen — 런 시작 햅틱과 onStart 핸들러', () => {
       pressableByLabel(root, '러닝 시작').props.onPress();
     });
     expect(haptics.tap).toHaveBeenCalledTimes(1);
-    expect(onStart).toHaveBeenCalledWith(5);
+    expect(onStart).toHaveBeenCalledWith({ km: 5, durationMin: 0, pacePlan: [] });
   });
 
-  test('자유 러닝 모드 선택 후 시작하면 onStart(0)', () => {
+  test('시간 모드 선택 후 시작하면 onStart(시간 목표 분)', () => {
     const onStart = jest.fn();
     const root = render(<RunGoalScreen onStart={onStart} />).root;
     act(() => {
-      pressableByLabel(root, '자유 러닝 목표').props.onPress();
+      pressableByLabel(root, '시간 목표').props.onPress();
     });
     act(() => {
       pressableByLabel(root, '러닝 시작').props.onPress();
     });
-    expect(onStart).toHaveBeenCalledWith(0);
+    expect(onStart).toHaveBeenCalledWith({ km: 0, durationMin: 30, pacePlan: [] });
+  });
+
+  test('스피드 모드 선택 후 시작하면 거리 + km별 페이스 플랜이 onStart 로 전달된다', () => {
+    const onStart = jest.fn();
+    const root = render(<RunGoalScreen onStart={onStart} />).root;
+    act(() => {
+      pressableByLabel(root, '스피드 목표').props.onPress();
+    });
+    act(() => {
+      pressableByLabel(root, '러닝 시작').props.onPress();
+    });
+    expect(onStart).toHaveBeenCalledWith(expect.objectContaining({ km: 5, durationMin: 0 }));
+    const arg = onStart.mock.calls[0][0];
+    expect(Array.isArray(arg.pacePlan)).toBe(true);
+    expect(arg.pacePlan.length).toBe(5); // 5km → km별 5칸
   });
 
   test('세그먼트/프리셋 버튼이 role=button + selected 상태를 노출한다', () => {

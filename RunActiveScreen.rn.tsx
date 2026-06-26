@@ -26,6 +26,7 @@ import {
   BG, CARD, ACCENT, GOOD, WARN, DANGER, T1, T2, T3, T4, SEP,
   FONT, DISPLAY, HERO, withAlpha,
 } from './theme';
+import { fmtPaceSec } from './lib/pacePlan';
 // lib/haptics 배선: 일시정지/재개 → tap · 목표 달성 → impactHeavy · 종료 확정 → warning.
 import { tap, impactHeavy, warning } from './lib/haptics';
 
@@ -97,9 +98,13 @@ export default function RunActiveScreen({
   cadence = 174, calories = 205, elevationM = 46, gpsLevel = 3,
   paused: pausedProp, onPause, onStop,
   permLost = false, onOpenSettings, statusLabel,
+  currentPaceSec = null, targetPaceSec = null,
 }: {
   shoeLabel?: string; distanceKm?: number; goalKm?: number;
   timeLabel?: string; paceLabel?: string; avgPaceLabel?: string;
+  // 스피드 모드 코칭: 현재(롤링) 페이스 vs 현재 km 목표 페이스(초/km). targetPaceSec=null 이면
+  // 코칭 배너를 숨긴다(거리/시간 모드). 둘 다 있으면 빠름/적정/느림을 색·라벨로 보여준다.
+  currentPaceSec?: number | null; targetPaceSec?: number | null;
   cadence?: number; calories?: number; elevationM?: number; gpsLevel?: number;
   paused?: boolean; onPause?: () => void; onStop?: () => void;
   permLost?: boolean;
@@ -219,6 +224,26 @@ export default function RunActiveScreen({
         </Ring>
       </View>
 
+      {/* 스피드 코칭 — 현재 km 목표 페이스 대비 빠름/적정/느림(targetPaceSec 있을 때만) */}
+      {targetPaceSec != null && (() => {
+        const BUF = 8; // ±8초/km 허용 오차(GPS 출렁임 흡수)
+        const diff = currentPaceSec != null ? currentPaceSec - targetPaceSec : null;
+        const state = diff == null ? 'wait' : diff <= -BUF ? 'fast' : diff >= BUF ? 'slow' : 'on';
+        const color = state === 'slow' ? WARN : state === 'wait' ? T3 : GOOD;
+        const msg = state === 'fast' ? '목표보다 빠름' : state === 'slow' ? '속도를 올려요' : state === 'on' ? '적정 페이스' : '목표 페이스 유지';
+        const icon = state === 'slow' ? 'arrow-up' : state === 'fast' ? 'flame' : state === 'wait' ? 'navigate' : 'checkmark-circle';
+        return (
+          <View style={[r.coach, { borderColor: withAlpha(color, 0.4), backgroundColor: withAlpha(color, 0.1) }]}
+            accessibilityRole="text" accessibilityLiveRegion="polite"
+            accessibilityLabel={`목표 페이스 ${fmtPaceSec(targetPaceSec)}, ${msg}`}>
+            <Ionicons name={icon} size={15} color={color} />
+            <Text style={r.coachTarget}>목표 <Text style={{ color }}>{fmtPaceSec(targetPaceSec)}</Text></Text>
+            <View style={r.coachDot} />
+            <Text style={[r.coachMsg, { color }]}>{msg}</Text>
+          </View>
+        );
+      })()}
+
       {/* hero metrics */}
       <View style={r.heroMetrics}>
         <View style={r.hm} accessibilityRole="text" accessibilityLabel={`시간 ${timeLabel}`}><Text style={r.hmV}>{timeLabel}</Text><Text style={r.hmL}>시간</Text></View>
@@ -307,6 +332,10 @@ const r = StyleSheet.create({
   goalMetText: { color: GOOD, fontFamily: FONT, fontSize: 13, fontWeight: '600' },
   bigDist: { color: T1, fontFamily: DISPLAY, fontSize: HERO.mega, fontWeight: '700', letterSpacing: -2, lineHeight: 80, includeFontPadding: false, fontVariant: ['tabular-nums'] },
   bigUnit: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '500', marginTop: 8 },
+  coach: { flexDirection: 'row', alignItems: 'center', alignSelf: 'center', gap: 8, marginTop: 18, paddingHorizontal: 14, height: 38, borderRadius: 999, borderWidth: 1 },
+  coachTarget: { color: T2, fontFamily: FONT, fontSize: 14, fontWeight: '600' },
+  coachDot: { width: 3, height: 3, borderRadius: 2, backgroundColor: T4 },
+  coachMsg: { fontFamily: FONT, fontSize: 14, fontWeight: '700' },
 
   heroMetrics: { flexDirection: 'row', marginTop: 26, paddingVertical: 16, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: SEP },
   hm: { flex: 1, alignItems: 'center' },

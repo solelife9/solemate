@@ -30,6 +30,8 @@ import { tap } from './lib/haptics';
 // CTA 는 앱 전역 단일 Button 프리미티브(그라데이션 GRAD_TOP/BOT·글로우·radius 토큰).
 // 모드 탭 스트립은 SegmentedControl 단일 프리미티브(accentTint variant).
 import { Button, SegmentedControl } from './primitives';
+import SpeedPlanPanel from './SpeedPlanPanel';
+import { buildPacePlan } from './lib/pacePlan';
 
 // ── SVG 아이콘(자체 그림 — vector-icons 의존 제거) ───────────────────────────
 function Icon({ name, size = 22, color = T2, fill }: { name: string; size?: number; color?: string; fill?: string }) {
@@ -49,7 +51,9 @@ function ShoeGlyph({ color, size = 24 }: { color: string; size?: number }) {
   return <Svg width={size} height={size} viewBox="0 -960 960 960" style={{ transform: [{ scaleX: -1 }] }}><Path d={SHOE_PATH} fill={color} /></Svg>;
 }
 
-type Mode = 'km' | 'min' | 'free';
+type Mode = 'km' | 'min' | 'speed';
+/** 러닝 목표 — 거리(km)/시간(분)/스피드(km별 페이스 플랜). 0/빈배열은 미설정. */
+export type RunGoal = { km: number; durationMin: number; pacePlan: number[] };
 const CFG: Record<'km' | 'min', { min: number; max: number; step: number; major: number; minor: number; px: number; unit: string; def: number; presets: { label: string; v: number }[] }> = {
   km:  { min: 0, max: 42, step: 0.1, major: 1, minor: 0.2, px: 64, unit: 'km', def: 5,  presets: [{ label: '3km', v: 3 }, { label: '5km', v: 5 }, { label: '10km', v: 10 }, { label: '하프', v: 21.1 }] },
   min: { min: 0, max: 180, step: 1, major: 10, minor: 1, px: 6.2, unit: '분', def: 30, presets: [{ label: '20분', v: 20 }, { label: '30분', v: 30 }, { label: '45분', v: 45 }, { label: '60분', v: 60 }] },
@@ -60,14 +64,16 @@ export default function RunGoalScreen({
   onBack, onStart,
 }: {
   shoeBrand?: string; shoeLabel?: string; shoeCondition?: '양호' | '주의' | '교체'; remainKm?: number;
-  onBack?: () => void; onStart?: (goalKm: number) => void;
+  onBack?: () => void; onStart?: (goal: RunGoal) => void;
 }) {
   const [mode, setMode] = useState<Mode>('km');
   const [val, setVal] = useState<number>(CFG.km.def);
   const [vpW, setVpW] = useState(0);
   const rulerRef = useRef<ScrollView>(null);
   const programmatic = useRef(false);
-  const cfg = mode === 'free' ? null : CFG[mode];
+  const cfg = mode === 'km' || mode === 'min' ? CFG[mode] : null;
+  // 스피드 모드의 현재 목표(거리 km + km별 페이스 플랜) — SpeedPlanPanel 이 onChange 로 올린다.
+  const [speedGoal, setSpeedGoal] = useState<{ km: number; plan: number[] }>(() => ({ km: 5, plan: buildPacePlan(5, 360, 'negative') }));
 
   const ticks = useMemo(() => {
     if (!cfg) return [] as { v: number; major: boolean }[];
@@ -82,7 +88,7 @@ export default function RunGoalScreen({
 
   const fmt = (v: number) => (mode === 'km' ? v.toFixed(1) : String(Math.round(v)));
   const estimate = useMemo(() => {
-    if (mode === 'free' || !cfg) return '';
+    if (!cfg) return ''; // 스피드 모드는 SpeedPlanPanel 이 자체 표시 — estimate 미사용
     if (val <= 0) return '목표를 정해주세요';
     return mode === 'km'
       ? `예상 시간 약 ${Math.round(val * 5)}분 · 약 ${Math.round(val * 64)} kcal`
@@ -111,9 +117,10 @@ export default function RunGoalScreen({
   };
   const pickMode = (m: Mode) => {
     setMode(m);
-    // 대상 모드의 cfg(px)로 직접 스크롤한다 — scrollToVal 은 클로저의 '이전' mode/cfg 를
-    // 보므로(setMode 비동기) px 가 어긋나 룰러가 엉뚱한 위치(예: 30분인데 180)로 클램프됐다.
-    if (m !== 'free') {
+    // 거리/시간 모드만 룰러를 쓴다. 대상 모드의 cfg(px)로 직접 스크롤한다 — scrollToVal 은
+    // 클로저의 '이전' mode/cfg 를 보므로(setMode 비동기) px 가 어긋나 룰러가 엉뚱한 위치
+    // (예: 30분인데 180)로 클램프됐다. 스피드 모드는 룰러 대신 SpeedPlanPanel 을 쓴다.
+    if (m === 'km' || m === 'min') {
       const c = CFG[m]; const d = c.def;
       setVal(d);
       programmatic.current = true;
@@ -126,8 +133,15 @@ export default function RunGoalScreen({
   const pickPreset = (v: number) => { setVal(v); scrollToVal(v, true); };
   const condColor = shoeCondition === '교체' ? DANGER : shoeCondition === '주의' ? WARN : GOOD;
   const half = vpW / 2;
-  // 런 시작: 햅틱(tap) → onStart(goalKm). 자유 러닝이면 0.
-  const startRun = () => { tap(); onStart?.(mode === 'free' ? 0 : val); };
+  // 런 시작: 햅틱(tap) → onStart(RunGoal). 거리/시간/스피드(km별 페이스 플랜)로 분기.
+  const startRun = () => {
+    tap();
+    const goal: RunGoal =
+      mode === 'km' ? { km: val, durationMin: 0, pacePlan: [] }
+        : mode === 'min' ? { km: 0, durationMin: val, pacePlan: [] }
+          : { km: speedGoal.km, durationMin: 0, pacePlan: speedGoal.plan };
+    onStart?.(goal);
+  };
 
   return (
     <View style={s.screen}>
@@ -143,7 +157,7 @@ export default function RunGoalScreen({
       <SegmentedControl
         style={s.seg}
         variant="accentTint"
-        items={[{ key: 'km', label: '거리' }, { key: 'min', label: '시간' }, { key: 'free', label: '자유 러닝' }]}
+        items={[{ key: 'km', label: '거리' }, { key: 'min', label: '시간' }, { key: 'speed', label: '스피드' }]}
         value={mode}
         onChange={(k) => pickMode(k as Mode)}
         labelFor={(it) => `${it.label} 목표`}
@@ -151,12 +165,8 @@ export default function RunGoalScreen({
 
       {/* center */}
       <View style={s.center}>
-        {mode === 'free' ? (
-          <View style={s.free}>
-            <View style={s.freeGlyph}><Icon name="infinite" size={40} color={ACCENT} /></View>
-            <Text style={s.freeTitle}>목표 없이 자유롭게</Text>
-            <Text style={s.freeSub}>거리·시간 제한 없이 달려요. 기록은 그대로 신발에 쌓입니다.</Text>
-          </View>
+        {mode === 'speed' ? (
+          <SpeedPlanPanel onChange={(km, plan) => setSpeedGoal({ km, plan })} />
         ) : (
           <>
             <View style={s.bigRow} accessibilityRole="text" accessibilityLiveRegion="polite" accessibilityLabel={`목표 ${fmt(val)} ${cfg!.unit}`}>

@@ -28,7 +28,7 @@ import ShoesScreen, {ShoeTotals} from './ShoesScreen.rn';
 import ProfileScreen, {Profile, Badge, PersonalRecord} from './ProfileScreen.rn';
 import AddShoeScreen from './AddShoeScreen.rn';
 import OnboardingScreen, {RegisteredShoe} from './OnboardingScreen.rn';
-import RunGoalScreen from './RunGoalScreen.rn';
+import RunGoalScreen, {RunGoal} from './RunGoalScreen.rn';
 import RunCountdownScreen from './RunCountdownScreen.rn';
 import RunActiveScreenView from './RunActiveScreen.rn';
 import ProgressionScreen from './ProgressionScreen.rn';
@@ -84,6 +84,7 @@ import {
 } from './lib/settings';
 import {estimateCalories} from './lib/calories';
 import {detectPRs, PRKind} from './lib/records';
+import {currentTargetPace} from './lib/pacePlan';
 import {
   getNotifSettings, setNotifSettings, dueNotifications,
   DEFAULT_NOTIF_SETTINGS, type NotifSettings, type NotifState, type ShoeForecast,
@@ -254,9 +255,9 @@ function Main(){
   const [showInjuryRisk,setShowInjuryRisk]=useState(false);
   // 완주 리캡(P0-2) — 러닝 저장 직후 축하 풀스크린. '완료'로 닫으면 기록 탭으로 이동.
   const [runRecap,setRunRecap]=useState<{km:number;durationS:number;cadence:number;splits:any[];elevationM:number;calories:number;prKinds:PRKind[];shoeName?:string;goalKm?:number}|null>(null);
-  // 위치 권한 설명(priming) 풀스크린 — 첫 GPS 런 직전 표시할 목표 거리(km)를 들고 있는다.
-  // null=미표시. '계속'에서 권한 안내 완료 영속 + 런 진입, '나중에'면 닫고 시작 취소.
-  const [locPrimeKm,setLocPrimeKm]=useState<number|null>(null);
+  // 위치 권한 설명(priming) 풀스크린 — 첫 GPS 런 직전 들고 있을 목표(RunGoal). null=미표시.
+  // '계속'에서 권한 안내 완료 영속 + 런 진입, '나중에'면 닫고 시작 취소.
+  const [locPrimeGoal,setLocPrimeGoal]=useState<RunGoal|null>(null);
   // 명예의 전당(라이브 리더보드) 전체화면 표시 여부 — 진척 화면 헤더 버튼이 연다.
   const [showHallOfFame,setShowHallOfFame]=useState(false);
   // 진척 영속 상태(progression_v1) — Hall of Shoes 레코드 + 은퇴 키프세이크 컨텍스트의
@@ -269,7 +270,7 @@ function Main(){
   const [celebReady,setCelebReady]=useState(false);
   const [overlay,setOverlay]=useState<'none'|'add'|'goal'|'countdown'|'run'>('none');
   const [pendingShoe,setPendingShoe]=useState<{id:string;name:string;ui:Shoe}|null>(null);
-  const [activeRun,setActiveRun]=useState<{id:string;name:string;goalKm:number}|null>(null);
+  const [activeRun,setActiveRun]=useState<{id:string;name:string;goalKm:number;goalMin:number;pacePlan:number[]}|null>(null);
   // audit#2: 앱 시작 시 감지된 미완료 런 스냅샷. 사용자가 '복구' 선택 시 done
   // 화면으로 시드되어 검토 후 저장/버리기를 결정한다(데이터 유실 금지).
   const [resumeSnap,setResumeSnap]=useState<RunSnapshot|null>(null);
@@ -593,14 +594,14 @@ function Main(){
         [
           {text:'버리기',style:'destructive',onPress:()=>{void clearSnapshot();}},
           {text:'기록 저장',onPress:()=>{
-            setActiveRun({id:snap.shoe.id,name:snap.shoe.name,goalKm:snap.goalKm});
+            setActiveRun({id:snap.shoe.id,name:snap.shoe.name,goalKm:snap.goalKm,goalMin:0,pacePlan:[]});
             setResumeMode('review');
             setResumeSnap(snap);
             setOverlay('run');
           }},
           {text:'이어 달리기',onPress:()=>{
             // GPS/센서를 다시 켜고 누적 거리·경과시간을 시드해 계속 달린다(엔진 seed*).
-            setActiveRun({id:snap.shoe.id,name:snap.shoe.name,goalKm:snap.goalKm});
+            setActiveRun({id:snap.shoe.id,name:snap.shoe.name,goalKm:snap.goalKm,goalMin:0,pacePlan:[]});
             setResumeMode('continue');
             setResumeSnap(snap);
             setOverlay('run');
@@ -1579,18 +1580,18 @@ function Main(){
   // 위치 권한이 필요한지'를 먼저 한국어로 안내한다(priming). '계속'을 누르면 1회성
   // 플래그를 영속하고 런으로 진입 → RunActiveScreen 이 실제 OS 권한을 요청한다.
   // 이미 안내했거나(locPrimed) 닫으면 추가 안내 없이 동작한다.
-  const enterRun=(km:number)=>{
+  const enterRun=(goal:RunGoal)=>{
     // 목표 설정 → 카운트다운(준비·GPS 워밍업·3·2·1·GO) → 라이브 런. 카운트다운의
     // onDone 이 실제 런(GPS 트래킹 시작) 화면으로 넘긴다. 미완료 런 복구 경로는
     // 카운트다운을 거치지 않고 곧장 'run'으로 간다(이미 끝난 런의 검토라서).
-    setActiveRun({id:pendingShoe!.id,name:pendingShoe!.name,goalKm:km});
+    setActiveRun({id:pendingShoe!.id,name:pendingShoe!.name,goalKm:goal.km,goalMin:goal.durationMin,pacePlan:goal.pacePlan});
     setOverlay('countdown');
   };
-  const startActiveRun=(km:number)=>{
+  const startActiveRun=(goal:RunGoal)=>{
     if(!pendingShoe) return;
-    if(locPrimed){enterRun(km);return;}
+    if(locPrimed){enterRun(goal);return;}
     // 첫 GPS 런 — OS 다이얼로그 전에 브랜디드 권한 설명 화면(LocationPrimeScreen)을 띄운다.
-    setLocPrimeKm(km);
+    setLocPrimeGoal(goal);
   };
 
   // 온보딩 완료: 1회성 플래그 영속 + 화면에서 치운다. 온보딩의 등록 단계에서 고른
@@ -1633,10 +1634,10 @@ function Main(){
   // 위치 권한 설명(priming) — 첫 GPS 런 직전. goal 화면보다 우선해 표시한다(이 분기를
   // goal 분기 앞에 둬야 goal 위에 덮인다). '계속'에서 안내 완료를 영속하고 런으로 진입,
   // '나중에'면 닫고(goal 로 복귀) 시작을 취소한다(다음 시도 시 재안내).
-  if(locPrimeKm!=null){
+  if(locPrimeGoal!=null){
     return <LocationPrimeScreen
-      onContinue={()=>{const k=locPrimeKm;setLocPrimed(true);void AsyncStorage.setItem(LOC_PRIME_KEY,'1');setLocPrimeKm(null);enterRun(k);}}
-      onCancel={()=>setLocPrimeKm(null)}/>;
+      onContinue={()=>{const g=locPrimeGoal;setLocPrimed(true);void AsyncStorage.setItem(LOC_PRIME_KEY,'1');setLocPrimeGoal(null);enterRun(g);}}
+      onCancel={()=>setLocPrimeGoal(null)}/>;
   }
   if(overlay==='goal'&&pendingShoe){
     return (
@@ -1666,6 +1667,7 @@ function Main(){
         shoe={activeRun}
         insets={insets}
         goalKm={activeRun.goalKm}
+        pacePlan={activeRun.pacePlan}
         weightKg={weightKg}
         resume={resumeSnap}
         resumeMode={resumeMode}
@@ -1865,7 +1867,7 @@ const boot=StyleSheet.create({
 });
 
 // ─── Live run screen (GPS / sensors / TTS engine + handoff Ring UI) ─────────
-function RunActiveScreen({shoe,insets,goalKm,weightKg,onSave,onDiscard,resume,resumeMode}:{shoe:{id:string;name:string};insets:any;goalKm:number;weightKg:number;onSave:(km:number,dur:number,cad:number,memo:string,route:string,location:string,splits:{km:number;paceSec:number;elevM:number}[],elevM:number,cal:number)=>Promise<void>;onDiscard:()=>void;resume?:RunSnapshot|null;resumeMode?:'review'|'continue'}){
+function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],weightKg,onSave,onDiscard,resume,resumeMode}:{shoe:{id:string;name:string};insets:any;goalKm:number;pacePlan?:number[];weightKg:number;onSave:(km:number,dur:number,cad:number,memo:string,route:string,location:string,splits:{km:number;paceSec:number;elevM:number}[],elevM:number,cal:number)=>Promise<void>;onDiscard:()=>void;resume?:RunSnapshot|null;resumeMode?:'review'|'continue'}){
   // 'continue' = 스냅샷에서 GPS 를 재가동해 이어 달린다(엔진 seed*). 'review'(기본) =
   // done 화면에서 검토·저장만. resume 가 없으면(일반 시작) 두 분기 모두 타지 않는다.
   const isContinue=!!resume&&resumeMode==='continue';
@@ -2252,6 +2254,8 @@ function RunActiveScreen({shoe,insets,goalKm,weightKg,onSave,onDiscard,resume,re
       timeLabel={fmtTime(elapsed)}
       paceLabel={currentPaceSec!=null?fmtPace(1,currentPaceSec):'--'}
       avgPaceLabel={fmtPace(km,elapsed)}
+      currentPaceSec={currentPaceSec}
+      targetPaceSec={pacePlan&&pacePlan.length?currentTargetPace(pacePlan,km):null}
       cadence={cadence}
       calories={liveCal}
       elevationM={elevGain}
