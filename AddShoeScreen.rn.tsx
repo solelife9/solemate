@@ -17,10 +17,15 @@ import { validateMaxKm } from './lib/inputMask';
 // 사진 첨부는 expo-image-picker 래퍼(lib/photo)를 통해 실제로 동작한다.
 import { pickShoePhoto } from './lib/photo';
 
+// 브랜드 목록에 없는 신발을 위한 '기타'(직접 입력) 센티넬.
+const CUSTOM_BRAND = '기타';
+
 export default function AddShoeScreen({
   onClose, onSave,
 }: { onClose?: () => void; onSave?: (shoe: Shoe) => void }) {
   const [brand, setBrand] = useState(BRANDS[0]);
+  // '기타'(커스텀 브랜드) 선택 시 직접 입력한 브랜드명. 목록에 없는 브랜드의 신발도 등록 가능.
+  const [customBrand, setCustomBrand] = useState('');
   const [model, setModel] = useState('');
   // 전용 모델 검색 모달(전체화면): 탭하면 열리고, 검색창(상단)+알파벳 목록(중간)+키보드(하단)
   // 구조라 목록이 키보드에 가리지 않는다. search는 모달 내부의 실시간 검색어(커밋값은 model).
@@ -58,7 +63,9 @@ export default function AddShoeScreen({
   const exact = sortedModels.some((m) => m.toLowerCase() === q);
   const customOption: [string, number] | null =
     trimmed.length > 0 && !exact ? [trimmed, getRecommendedLifespanKm({ brand, model: trimmed })] : null;
-  const valid = model.trim().length > 0;
+  // 저장에 쓸 실제 브랜드 — '기타'면 직접 입력값. 커스텀이면 브랜드명도 채워져야 유효.
+  const effBrand = brand === CUSTOM_BRAND ? customBrand.trim() : brand;
+  const valid = model.trim().length > 0 && effBrand.length > 0;
 
   // 현재 brand+model 기준 권장 수명. max가 이 값과 같으면 '권장'(자동값), 다르면 사용자 수정값.
   const recommendedKm = getRecommendedLifespanKm({ brand, model });
@@ -92,7 +99,7 @@ export default function AddShoeScreen({
     setMaxErr(me);
     if (me) return;
     onSave?.({
-      brand,
+      brand: effBrand,
       model: model.trim(),
       max,
       used: Number(used) || 0,
@@ -138,7 +145,7 @@ export default function AddShoeScreen({
         {/* brand */}
         <Text style={s.label}>브랜드</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingRight: 8 }}>
-          {BRANDS.map((b) => {
+          {[...BRANDS, CUSTOM_BRAND].map((b) => {
             const on = b === brand;
             return (
               <Pressable key={b} onPress={() => pickBrand(b)} accessibilityRole="button" accessibilityLabel={b} accessibilityState={{ selected: on }} hitSlop={{ top: 6, bottom: 6 }} style={({ pressed }) => [s.chip, on ? s.chipOn : s.chipOff, pressed && s.pressed]}>
@@ -147,6 +154,19 @@ export default function AddShoeScreen({
             );
           })}
         </ScrollView>
+        {/* '기타' 선택 시 브랜드명 직접 입력 — 목록에 없는 브랜드도 등록 가능. */}
+        {brand === CUSTOM_BRAND && (
+          <TextInput
+            style={[s.input, { marginTop: 10 }]}
+            value={customBrand}
+            onChangeText={setCustomBrand}
+            placeholder="브랜드명을 입력하세요"
+            placeholderTextColor={T3}
+            accessibilityLabel="브랜드명 직접 입력"
+            testID="add-shoe-custom-brand"
+            returnKeyType="done"
+          />
+        )}
 
         {/* model — 탭하면 전체화면 검색 모달이 열린다(키보드가 목록을 가리지 않음) */}
         <Text style={[s.label, { marginTop: 22 }]}>모델명</Text>
@@ -279,6 +299,7 @@ const s = StyleSheet.create({
 
   // 모델 선택 트리거(탭하면 검색 모달). 입력칸처럼 보이되 누르면 모달이 열린다.
   selector: { backgroundColor: CARD_DIM, borderRadius: 16, borderWidth: 1, borderColor: withAlpha(T1, 0.07), flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingVertical: 16 },
+  input: { backgroundColor: CARD_DIM, borderRadius: 16, borderWidth: 1, borderColor: withAlpha(T1, 0.07), paddingHorizontal: 18, paddingVertical: 14, color: T1, fontFamily: FONT, fontSize: 16 },
   selectorText: { flex: 1, color: T1, fontFamily: FONT, fontSize: 16, fontWeight: '500', letterSpacing: -0.2 },
   // 모달 검색바(상단 고정) + 결과 행
   searchBar: { flexDirection: 'row', alignItems: 'center', gap: 9, marginHorizontal: 18, marginTop: 4, marginBottom: 10, backgroundColor: CARD_DIM, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 12, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.07) },
