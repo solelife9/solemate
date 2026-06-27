@@ -7,7 +7,7 @@ import { View, Text, ScrollView, Pressable, TextInput, Alert, StyleSheet, Linkin
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {
-  BG, CARD, CARD_DIM, CARD_HI, HERO_BG, ACCENT, DANGER, GOOD, BEST, T1, T2, T3, T4, SEP, FONT, DISPLAY, withAlpha, RADIUS, Shoe, Run, SHOES,
+  BG, CARD, CARD_DIM, CARD_HI, HERO_BG, ACCENT, DANGER, WARN, GOOD, BEST, T1, T2, T3, T4, SEP, FONT, DISPLAY, withAlpha, RADIUS, Shoe, Run, SHOES,
 } from './theme';
 import { TabBar, Pill, InjuryBanner, SectionTitle, Button } from './primitives';
 import { FuelGauge } from './FuelGauge';
@@ -15,7 +15,7 @@ import FirstShoeScreen from './FirstShoeScreen.rn';
 import { Unit, displayNum, displayToKm } from './lib/units';
 import { clampMaxKm, KEEP_GOING_REPLACE, SHOE_MAX_STEP_KM, SHOE_REPLACE_PCT, wearTier, WearTierTone } from './lib/shoe';
 import { assessShoeInjuryRisk } from './lib/injury';
-import { buildWearView, forecastBasisKo, forecastConfidenceKo, type Surface } from './lib/wearView';
+import { buildWearView, forecastBasisKo, forecastConfidenceKo, forecastLineKo, type ReplacementForecast, type Surface } from './lib/wearView';
 import { recommendNextShoes, buildShopLinks, categoryLabelKo, AFFILIATE_DISCLOSURE } from './lib/affiliate';
 import { findShoeClass, typeLabel, TYPE_DESCRIPTIONS, purposeSentenceKo } from './data/shoeClass';
 import { shouldRecommendNextShoe } from './lib/recommendTrigger';
@@ -425,8 +425,11 @@ function ShoeDetail({
 }
 
 // ── locker ─────────────────────────────────────────────────────────────────
-function ShoeCard({ shoe, featured, onPress, onPlay, unit, pace }: { shoe: Shoe; featured: boolean; onPress: () => void; onPlay?: () => void; unit: Unit; pace?: string }) {
+function ShoeCard({ shoe, featured, onPress, onPlay, unit, pace, forecast }: { shoe: Shoe; featured: boolean; onPress: () => void; onPlay?: () => void; unit: Unit; pace?: string; forecast?: ReplacementForecast | null }) {
   const remainKm = Math.max(0, shoe.max - shoe.used);
+  // 교체 예측 한 줄(#2) — '약 N주 후 교체 예상' / 임박(overdue). ok·overdue 일 때만.
+  const fcLine = forecast && (forecast.reason === 'ok' || forecast.reason === 'overdue') ? forecastLineKo(forecast) : null;
+  const fcOverdue = forecast?.reason === 'overdue';
   const retired = !!shoe.retired;
   const usedDisp = displayNum(shoe.used, unit);
   const maxDisp = displayNum(shoe.max, unit);
@@ -482,6 +485,13 @@ function ShoeCard({ shoe, featured, onPress, onPlay, unit, pace }: { shoe: Shoe;
         <Text style={s.shoeBarLabel}>{usedDisp}{unit}</Text>
         <Text style={s.shoeBarLabel}>{maxDisp}{unit}</Text>
       </View>
+      {/* 교체 예측 한 줄(#2) — 실효마모 모델 전면화. ok/overdue 일 때만. */}
+      {fcLine && !retired && (
+        <View style={s.fcRow} testID={shoe.id ? `shoe-forecast-${shoe.id}` : undefined}>
+          <Ionicons name={fcOverdue ? 'alert-circle' : 'time-outline'} size={13} color={fcOverdue ? WARN : T3} />
+          <Text style={[s.fcText, fcOverdue && { color: WARN, fontWeight: '600' }]} numberOfLines={1}>{fcLine}</Text>
+        </View>
+      )}
     </Pressable>
   );
 }
@@ -491,9 +501,13 @@ export default function ShoesScreen({
   shoes = SHOES, runs = [], totals = {}, activeIdx = 0, unit = 'km', weightKg, surfaceOf, onAddShoe, onTab, onRename, onDelete, onRetire, onSetMaxKm, onStartRun,
   detailShoeId, onConsumeDetail,
   rawShoes, rawRuns, progressionCtx, equippedTitle, onRetiredKeepsake, now, userName,
+  forecasts,
 }: {
   userName?: string;
   shoes?: Shoe[];
+  // 신발 id별 교체 예측(App 이 실효마모 모델로 계산). 락커 목록에 '약 N주 후 교체' 한 줄 +
+  // 교체 임박 신발 상단 정렬 + '곧 교체할 신발 N켤레' 요약에 쓴다(표시 전용, 미주입 시 폴백).
+  forecasts?: Record<string, ReplacementForecast | null>;
   runs?: Run[];
   totals?: Record<number, ShoeTotals>;
   activeIdx?: number;
@@ -572,7 +586,27 @@ export default function ShoesScreen({
     return <FirstShoeScreen onRegister={onAddShoe} onTab={onTab} userName={userName} />;
   }
 
-  const activeShoes = shoes.map((sh, i) => ({ sh, i })).filter(({ sh }) => !sh.retired);
+  // 교체 예측 기반 정렬·요약(#2). 교체 임박(overdue → ≤3주)일수록 상단. i(원본 인덱스)는
+  // 정렬과 무관하게 보존되어 totals[i]/setDetail(i)/featured 가 그대로 맞다.
+  const fcOf = (sh: Shoe): ReplacementForecast | null => (sh.id ? forecasts?.[sh.id] ?? null : null);
+  const isSoon = (fc: ReplacementForecast | null) =>
+    !!fc && (fc.reason === 'overdue' || (fc.reason === 'ok' && fc.weeksRemaining != null && fc.weeksRemaining <= 3));
+  const urgency = (fc: ReplacementForecast | null) => {
+    if (!fc) return 3;
+    if (fc.reason === 'overdue') return 0;
+    if (fc.reason === 'ok') return fc.weeksRemaining != null && fc.weeksRemaining <= 3 ? 1 : 2;
+    return 3;
+  };
+  const activeShoes = shoes
+    .map((sh, i) => ({ sh, i }))
+    .filter(({ sh }) => !sh.retired)
+    .sort((a, b) => {
+      const ua = urgency(fcOf(a.sh)), ub = urgency(fcOf(b.sh));
+      if (ua !== ub) return ua - ub;
+      const wa = fcOf(a.sh)?.weeksRemaining ?? Infinity, wb = fcOf(b.sh)?.weeksRemaining ?? Infinity;
+      return wa - wb;
+    });
+  const soonCount = activeShoes.filter(({ sh }) => isSoon(fcOf(sh))).length;
 
   return (
     <View style={[s.screen, { paddingTop: insets.top }]}>
@@ -586,6 +620,13 @@ export default function ShoesScreen({
         </Pressable>
       </View>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 18, paddingBottom: 24, gap: 14, paddingTop: 12 }}>
+        {/* 교체 임박 요약(#2) — 곧 교체할 신발 N켤레. 0이면 숨김. */}
+        {soonCount > 0 && (
+          <View style={s.soonHeader} testID="shoes-soon-header">
+            <Ionicons name="alert-circle" size={16} color={WARN} />
+            <Text style={s.soonText}>곧 교체할 신발 <Text style={s.soonStrong}>{soonCount}켤레</Text></Text>
+          </View>
+        )}
         {activeShoes.map(({ sh, i }) => (
           <ShoeCard
             key={sh.id || i}
@@ -593,6 +634,7 @@ export default function ShoesScreen({
             featured={i === activeIdx}
             unit={unit}
             pace={totals[i]?.avgPace}
+            forecast={fcOf(sh)}
             onPress={() => setDetail(i)}
             onPlay={sh.id && onStartRun ? () => onStartRun(sh.id!) : undefined}
           />
@@ -659,6 +701,11 @@ const s = StyleSheet.create({
   shoeBarFill: { height: '100%', borderRadius: RADIUS.pill },
   shoeBarLabels: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 7 },
   shoeBarLabel: { color: T4, fontFamily: FONT, fontSize: 11, fontWeight: '500' },
+  fcRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 9 },
+  fcText: { flex: 1, color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500' },
+  soonHeader: { flexDirection: 'row', alignItems: 'center', gap: 7, backgroundColor: withAlpha(WARN, 0.1), borderRadius: RADIUS.md, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(WARN, 0.35), paddingHorizontal: 13, paddingVertical: 10 },
+  soonText: { color: T2, fontFamily: FONT, fontSize: 13, fontWeight: '500' },
+  soonStrong: { color: WARN, fontWeight: '700' },
   shoePaceVal: { color: T3, fontFamily: DISPLAY, fontSize: 12 },
   cardPlayAbs: { position: 'absolute', top: 14, right: 14, width: 36, height: 36, borderRadius: RADIUS.pill, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.14), alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(BG, 0.3) },
   retireBtn: { height: 54, borderRadius: RADIUS.md, marginTop: 22, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: withAlpha(DANGER, 0.06), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(DANGER, 0.45) },

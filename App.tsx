@@ -1791,7 +1791,7 @@ function Main(){
             onSetMaxKm={updateShoeMaxKm} onStartRun={startFromShoeId}
             detailShoeId={shoesDetailId} onConsumeDetail={()=>setShoesDetailId(null)}
             rawShoes={shoes} rawRuns={runs} progressionCtx={progressionCtx} userName={profileName}
-            onRetiredKeepsake={onRetiredKeepsake}
+            onRetiredKeepsake={onRetiredKeepsake} forecasts={homeForecasts}
           />
         )}
         {tab===3&&(
