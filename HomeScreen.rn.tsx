@@ -287,12 +287,32 @@ function ShoeCarousel({ shoes, activeIdx, onSelect, unit, forecast, forecasts, o
 
 // 이번 주 러닝 — 내 활동 요약(거리·횟수·평균 페이스). week(WeekStats)는 App 이 이번 주
 // (월~일) 런에서 파생해 주입한다. 신발 마모(히어로)와 분리된 '내 노력' 지표. 표시 전용.
-function WeekCard({ week, unit = 'km' }: { week?: WeekStats; unit?: Unit }) {
+function WeekCard({ week, unit = 'km', weeklyGoalKm = 0, streakDays = 0 }: { week?: WeekStats; unit?: Unit; weeklyGoalKm?: number; streakDays?: number }) {
   const km = week?.km ?? '0.0';
   const runs = week?.runs ?? 0;
   const pace = week?.pace && week.pace !== '--' ? week.pace : '—';
+  const goalPct = weeklyGoalKm > 0 ? Math.min(100, Math.round(((parseFloat(km) || 0) / weeklyGoalKm) * 100)) : 0;
   return (
     <View style={s.insightCard} testID="home-week">
+      {/* 주간 목표 진행 + 연속 스트릭(있을 때만) — lib/goals 배선. */}
+      {(streakDays > 0 || weeklyGoalKm > 0) && (
+        <View style={s.weekTop}>
+          {streakDays > 0 ? (
+            <View style={[s.streakChip, s.streakChipOn]} testID="home-week-streak" accessibilityRole="text" accessibilityLabel={`${streakDays}일 연속 러닝`}>
+              <Ionicons name="flame" size={12} color={ACCENT} />
+              <Text style={s.weekStreakTxt}>{streakDays}일 연속</Text>
+            </View>
+          ) : <View />}
+          {weeklyGoalKm > 0 ? (
+            <Text style={s.weekGoalTxt} testID="home-week-goal">주간 목표 {weeklyGoalKm}{unit} · <Text style={s.weekGoalPct}>{goalPct}%</Text></Text>
+          ) : null}
+        </View>
+      )}
+      {weeklyGoalKm > 0 && (
+        <View style={[s.gauge, { marginTop: 8, marginBottom: 4 }]}>
+          <View style={[s.gaugeFill, { width: `${goalPct}%`, backgroundColor: ACCENT }]} />
+        </View>
+      )}
       <View style={s.insightGrid}>
         <View style={{ flex: 1 }}>
           <Text style={s.insightLabel}>거리</Text>
@@ -471,9 +491,13 @@ export default function HomeScreen({
   activeIdx: activeIdxProp, onSelect, unit = 'km', week, rotation, onPickShoe,
   onOpenShoe, forecast, forecasts, progression, onOpenProgression,
   onRefresh, lastSyncAt, userName, runs = [], onOpenInjuryRisk,
+  weeklyGoalKm = 0, streakDays = 0,
 }: {
   shoes?: Shoe[];
   userName?: string;
+  // 이번 주 러닝 카드의 주간 목표(km)·연속 스트릭(일). 0이면 해당 표시 숨김(표시 전용).
+  weeklyGoalKm?: number;
+  streakDays?: number;
   // 선택(히어로) 신발의 교체 예측(App이 실효마모 모델로 계산해 내려준다). ok/overdue일 때
   // 히어로에 ETA 한 줄을 보강한다. 표시 전용(없으면 숨김).
   forecast?: ReplacementForecast | null;
@@ -587,7 +611,7 @@ export default function HomeScreen({
             </Pressable>
           </View>
           <View style={{ paddingHorizontal: SPACE.xl }}>
-            <WeekCard week={week} unit={unit} />
+            <WeekCard week={week} unit={unit} weeklyGoalKm={weeklyGoalKm} streakDays={streakDays} />
           </View>
           {/* 진척 띠(Slice D) — 로테이션 인사이트 위에 둔다(사용자 요청). 주입 시에만 노출.
               탭 → 진척 화면(랭크·타이틀·업적). 미주입이면 통째로 숨겨 기존 홈과 동일. */}
@@ -660,6 +684,10 @@ const s = StyleSheet.create({
   goalInfo: { flex: 1, gap: 6, minWidth: 0 },
   goalSub: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500' },
   streakChip: { flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start', borderRadius: RADIUS.pill, paddingHorizontal: 9, paddingVertical: 4 },
+  weekTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  weekStreakTxt: { color: ACCENT, fontFamily: FONT, fontSize: 12, fontWeight: '700' },
+  weekGoalTxt: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '500' },
+  weekGoalPct: { color: T1, fontFamily: FONT, fontSize: 13, fontWeight: '700' },
   streakChipOn: { backgroundColor: withAlpha(ACCENT, 0.14), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.4) },
   streakChipOff: { backgroundColor: CARD_HI },
   streakText: { fontFamily: FONT, fontSize: 12, fontWeight: '600', letterSpacing: 0.1 },
