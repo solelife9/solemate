@@ -46,6 +46,7 @@ export default function RunRecapScreen({
   shoeName,
   goalKm,
   pacePlan = [],
+  shoeWear,
   unit = 'km',
   onClose,
 }: {
@@ -63,6 +64,8 @@ export default function RunRecapScreen({
   goalKm?: number;
   /** 스피드 모드의 km별 목표 페이스(초/km). 있으면 '목표 대비' 결과 섹션을 보여준다. */
   pacePlan?: number[];
+  /** 신발 마모 델타(시그니처) — 이 런이 신발 수명에 미친 영향. 없으면 신발 카드 숨김. */
+  shoeWear?: {addedKm: number; remainingPct: number; deltaPct: number} | null;
   unit?: Unit;
   onClose?: () => void;
 }) {
@@ -99,6 +102,20 @@ export default function RunRecapScreen({
                 <Text style={[s.badgeTxt, {color: GOOD}]}>신기록 · {PR_LABEL[k]}</Text>
               </View>
             ))}
+          </View>
+        )}
+
+        {/* 신발 마모 델타(시그니처) — 이 런이 신발 수명에 미친 영향 */}
+        {shoeWear && (
+          <View style={s.shoeCard} testID="recap-shoe-wear">
+            <View style={s.shoeIcon}><Ionicons name="footsteps" size={18} color={ACCENT} /></View>
+            <View style={{flex: 1, minWidth: 0}}>
+              <Text style={s.shoeName} numberOfLines={1}>{shoeName || '신발'}</Text>
+              <Text style={s.shoeMeta}>
+                +{shoeWear.addedKm.toFixed(1)}{unit} · 남은 내구도 <Text style={s.shoeStrong}>{shoeWear.remainingPct}%</Text>
+                {shoeWear.deltaPct > 0 ? <Text style={s.shoeDelta}>  −{shoeWear.deltaPct}%p</Text> : null}
+              </Text>
+            </View>
           </View>
         )}
 
@@ -171,6 +188,12 @@ const s = StyleSheet.create({
   statValue: {color: T1, fontFamily: DISPLAY, fontSize: 26, fontWeight: '800', letterSpacing: -0.6},
   statLabel: {color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '600', marginTop: 3},
   statSub: {color: T3, fontFamily: FONT, fontSize: 11, fontWeight: '500'},
+  shoeCard: {flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: CARD, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP, paddingHorizontal: 14, paddingVertical: 12, marginBottom: 12},
+  shoeIcon: {width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(ACCENT, 0.12)},
+  shoeName: {color: T1, fontFamily: FONT, fontSize: 15, fontWeight: '700', letterSpacing: -0.2},
+  shoeMeta: {color: T2, fontFamily: FONT, fontSize: 13, fontWeight: '500', marginTop: 2},
+  shoeStrong: {color: T1, fontWeight: '700'},
+  shoeDelta: {color: T3, fontWeight: '600'},
   plan: {backgroundColor: CARD, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP, paddingHorizontal: 16, paddingVertical: 12, marginTop: 12},
   planHead: {flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 8},
   planTitle: {color: T1, fontFamily: FONT, fontSize: 15, fontWeight: '700'},

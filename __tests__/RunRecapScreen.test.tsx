@@ -49,6 +49,21 @@ describe('RunRecapScreen — 완주 리캡', () => {
     expect(t).toContain('목표');
   });
 
+  test('신발 마모 델타(shoeWear)가 있으면 신발 카드를 보여준다', () => {
+    const root = render(<RunRecapScreen km={5.2} durationS={1800} shoeName="페가수스 41"
+      shoeWear={{addedKm: 5.2, remainingPct: 64, deltaPct: 0.9}} />).root;
+    expect(byTestID(root, 'recap-shoe-wear').length).toBe(1);
+    const t = textOf(root);
+    expect(t).toContain('페가수스 41');
+    expect(t).toContain('64%');     // 남은 내구도
+    expect(t).toContain('0.9%p');   // 델타
+  });
+
+  test('shoeWear 가 없으면 신발 카드를 숨긴다', () => {
+    const root = render(<RunRecapScreen km={5} durationS={1800} shoeName="페가수스 41" />).root;
+    expect(byTestID(root, 'recap-shoe-wear').length).toBe(0);
+  });
+
   test('pacePlan 이 없으면 플랜 결과 섹션을 숨긴다', () => {
     const splits = [{km: 1, paceSec: 372, elevM: 0}, {km: 2, paceSec: 360, elevM: 0}];
     const root = render(<RunRecapScreen km={2} durationS={732} splits={splits} />).root;
