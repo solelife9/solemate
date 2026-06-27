@@ -87,6 +87,7 @@ import {estimateCalories} from './lib/calories';
 import {detectPRs, PRKind} from './lib/records';
 import {currentTargetPace} from './lib/pacePlan';
 import {liveActivity} from './lib/liveActivity';
+import {assessTrainingLoad, loadRatioPhraseKo, LOAD_WORD, LoadLevel} from './lib/trainingLoad';
 import {
   getNotifSettings, setNotifSettings, dueNotifications,
   DEFAULT_NOTIF_SETTINGS, type NotifSettings, type NotifState, type ShoeForecast,
@@ -256,7 +257,7 @@ function Main(){
   // 부상위험 상세(시그니처) 전체화면 — 홈 신호등 카드 탭이 열고 뒤로가 닫는다(오버레이형).
   const [showInjuryRisk,setShowInjuryRisk]=useState(false);
   // 완주 리캡(P0-2) — 러닝 저장 직후 축하 풀스크린. '완료'로 닫으면 기록 탭으로 이동.
-  const [runRecap,setRunRecap]=useState<{km:number;durationS:number;cadence:number;splits:any[];elevationM:number;calories:number;prKinds:PRKind[];shoeName?:string;goalKm?:number;pacePlan?:number[];shoeWear?:{addedKm:number;remainingPct:number;deltaPct:number}|null}|null>(null);
+  const [runRecap,setRunRecap]=useState<{km:number;durationS:number;cadence:number;splits:any[];elevationM:number;calories:number;prKinds:PRKind[];shoeName?:string;goalKm?:number;pacePlan?:number[];shoeWear?:{addedKm:number;remainingPct:number;deltaPct:number}|null;loadInfo?:{phrase:string;word:string;level:LoadLevel}|null}|null>(null);
   // 위치 권한 설명(priming) 풀스크린 — 첫 GPS 런 직전 들고 있을 목표(RunGoal). null=미표시.
   // '계속'에서 권한 안내 완료 영속 + 런 진입, '나중에'면 닫고 시작 취소.
   const [locPrimeGoal,setLocPrimeGoal]=useState<RunGoal|null>(null);
@@ -1701,8 +1702,11 @@ function Main(){
             remainingPct:Math.max(0,Math.round((aShoeUi.max-(aShoeUi.used+km))/aShoeUi.max*100)),
             deltaPct:Math.round(km/aShoeUi.max*1000)/10,
           }:null;
+          // 훈련 부하 영향(#5) — 이 런을 포함한 이번 주 부하(ACWR) 평가. 표본 부족(미확신)이면 생략.
+          const loadAfter=assessTrainingLoad([...(runs as any[]),{run_date:today(),km,duration:dur}],today());
+          const loadInfo=loadAfter.confident?{phrase:loadRatioPhraseKo(loadAfter),word:LOAD_WORD[loadAfter.level],level:loadAfter.level as LoadLevel}:null;
           setResumeSnap(null);setActiveRun(null);setOverlay('none');
-          setRunRecap({km,durationS:dur,cadence:cad||0,splits:splits||[],elevationM:elevM||0,calories:cal||0,prKinds,shoeName:shoeLabel,goalKm,pacePlan:activeRun.pacePlan,shoeWear});
+          setRunRecap({km,durationS:dur,cadence:cad||0,splits:splits||[],elevationM:elevM||0,calories:cal||0,prKinds,shoeName:shoeLabel,goalKm,pacePlan:activeRun.pacePlan,shoeWear,loadInfo});
         }}
         onDiscard={()=>{void clearSnapshot();setResumeSnap(null);setActiveRun(null);setOverlay('none');}}
       />

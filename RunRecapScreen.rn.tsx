@@ -9,7 +9,7 @@ import React from 'react';
 import {View, Text, ScrollView, Pressable, StyleSheet} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import {BG, CARD, CARD_HI, ACCENT, GOOD, WARN, T1, T2, T3, T4, FONT, DISPLAY, RADIUS, SEP, withAlpha} from './theme';
+import {BG, CARD, CARD_HI, ACCENT, GOOD, WARN, DANGER, T1, T2, T3, T4, FONT, DISPLAY, RADIUS, SEP, withAlpha} from './theme';
 import {fmtPaceSec} from './lib/pacePlan';
 import {fmtPace} from './lib/format';
 import {RunSplits, Split} from './RunSplits';
@@ -47,6 +47,7 @@ export default function RunRecapScreen({
   goalKm,
   pacePlan = [],
   shoeWear,
+  loadInfo,
   unit = 'km',
   onClose,
 }: {
@@ -66,6 +67,8 @@ export default function RunRecapScreen({
   pacePlan?: number[];
   /** 신발 마모 델타(시그니처) — 이 런이 신발 수명에 미친 영향. 없으면 신발 카드 숨김. */
   shoeWear?: {addedKm: number; remainingPct: number; deltaPct: number} | null;
+  /** 훈련 부하 영향(#5) — 이 런 포함 이번 주 ACWR 평가. 미확신(표본부족)이면 null → 숨김. */
+  loadInfo?: {phrase: string; word: string; level: 'low' | 'safe' | 'caution' | 'high'} | null;
   unit?: Unit;
   onClose?: () => void;
 }) {
@@ -118,6 +121,17 @@ export default function RunRecapScreen({
             </View>
           </View>
         )}
+
+        {/* 훈련 부하 영향(#5) — 이 런 포함 이번 주 부하. 부상예방 시그니처. */}
+        {loadInfo && (() => {
+          const c = loadInfo.level === 'high' ? DANGER : loadInfo.level === 'caution' ? WARN : GOOD;
+          return (
+            <View style={s.load} testID="recap-load">
+              <View style={[s.loadDot, {backgroundColor: c}]} />
+              <Text style={s.loadTxt}>이번 주 훈련 부하 <Text style={[s.loadStrong, {color: c}]}>{loadInfo.word}</Text> · {loadInfo.phrase}</Text>
+            </View>
+          );
+        })()}
 
         {/* 핵심 지표 그리드 */}
         <View style={s.grid}>
@@ -194,6 +208,10 @@ const s = StyleSheet.create({
   shoeMeta: {color: T2, fontFamily: FONT, fontSize: 13, fontWeight: '500', marginTop: 2},
   shoeStrong: {color: T1, fontWeight: '700'},
   shoeDelta: {color: T3, fontWeight: '600'},
+  load: {flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12, paddingHorizontal: 2},
+  loadDot: {width: 8, height: 8, borderRadius: 4},
+  loadTxt: {flex: 1, color: T2, fontFamily: FONT, fontSize: 13, fontWeight: '500'},
+  loadStrong: {fontWeight: '700'},
   plan: {backgroundColor: CARD, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP, paddingHorizontal: 16, paddingVertical: 12, marginTop: 12},
   planHead: {flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 8},
   planTitle: {color: T1, fontFamily: FONT, fontSize: 15, fontWeight: '700'},

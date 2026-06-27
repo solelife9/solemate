@@ -59,6 +59,21 @@ describe('RunRecapScreen — 완주 리캡', () => {
     expect(t).toContain('0.9%p');   // 델타
   });
 
+  test('훈련 부하 영향(loadInfo)이 있으면 부하 행을 보여준다(#5)', () => {
+    const root = render(<RunRecapScreen km={6} durationS={2100}
+      loadInfo={{phrase: '평소의 1.2배', word: '늘어남', level: 'caution'}} />).root;
+    expect(byTestID(root, 'recap-load').length).toBe(1);
+    const t = textOf(root);
+    expect(t).toContain('이번 주 훈련 부하');
+    expect(t).toContain('늘어남');
+    expect(t).toContain('평소의 1.2배');
+  });
+
+  test('loadInfo 가 없으면 부하 행을 숨긴다', () => {
+    const root = render(<RunRecapScreen km={5} durationS={1800} />).root;
+    expect(byTestID(root, 'recap-load').length).toBe(0);
+  });
+
   test('shoeWear 가 없으면 신발 카드를 숨긴다', () => {
     const root = render(<RunRecapScreen km={5} durationS={1800} shoeName="페가수스 41" />).root;
     expect(byTestID(root, 'recap-shoe-wear').length).toBe(0);
