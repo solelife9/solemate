@@ -8,8 +8,10 @@
 
 /* Begin PBXBuildFile section */
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
+		1415864F5E793EAB9E0C8D4D /* WatchSessionModule.m in Sources */ = {isa = PBXBuildFile; fileRef = 173792C31B98E655CA6BB81E /* WatchSessionModule.m */; };
 		1FD016C018929E07724A8819 /* Pods_SoleMate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 32DD5CD7322D8A8F57770E83 /* Pods_SoleMate.framework */; };
 		2BBCC3659AFF917CE5CD098F /* RunActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96FBF53A281B69B063512CE9 /* RunActivityAttributes.swift */; };
+		37EE60AFAABBAD5FE8A98186 /* SoleMateWatch Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = CE19A1E72FF150740030FFF0 /* SoleMateWatch Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		482D1634C3074355BD2B9DB7 /* Barlow-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 5D21423DEB5B4B84B0F354E6 /* Barlow-Medium.ttf */; };
 		7224CB91285DD0DB98FB80D2 /* NanumMyeongjo-ExtraBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 81280152426B42143285BA3C /* NanumMyeongjo-ExtraBold.ttf */; };
 		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
@@ -22,6 +24,8 @@
 		A0F56BF89B4C46768352C306 /* PretendardVariable.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 0523DFC08B56481FAAB32589 /* PretendardVariable.ttf */; };
 		A99592C060E1B04239C26A0F /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = D241C27486D3F7BF2FBE79D2 /* GoogleService-Info.plist */; };
 		B24A7C1E80CD775F32E9DB1C /* LiveActivityModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 923265D40951BEF46E599242 /* LiveActivityModule.swift */; };
+		C4B62BCD3E4C24EBE468BC17 /* WatchSessionModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB119C642F2D1AD301E42631 /* WatchSessionModule.swift */; };
+		CE19A1E82FF150740030FFF0 /* SoleMateWatch Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = CE19A1E72FF150740030FFF0 /* SoleMateWatch Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		CE4752102FEECEC400FCC92A /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CE47520F2FEECEC400FCC92A /* WidgetKit.framework */; };
 		CE4752122FEECEC400FCC92A /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CE4752112FEECEC400FCC92A /* SwiftUI.framework */; };
 		CE4752232FEECEC500FCC92A /* RunActivityExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = CE47520E2FEECEC400FCC92A /* RunActivityExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -30,6 +34,20 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		02DCFDD6D54605C8B8A20347 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 83CBB9F71A601CBA00E9B192 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = CE19A1E62FF150740030FFF0;
+			remoteInfo = "SoleMateWatch Watch App";
+		};
+		CE19A1E92FF150740030FFF0 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 83CBB9F71A601CBA00E9B192 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = CE19A1E62FF150740030FFF0;
+			remoteInfo = "SoleMateWatch Watch App";
+		};
 		CE4752212FEECEC500FCC92A /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 83CBB9F71A601CBA00E9B192 /* Project object */;
@@ -40,6 +58,28 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		ADF6C06E33835A064354C153 /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolderSpec = 16;
+			files = (
+				37EE60AFAABBAD5FE8A98186 /* SoleMateWatch Watch App.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CE19A1F42FF150740030FFF0 /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolderSpec = 16;
+			files = (
+				CE19A1E82FF150740030FFF0 /* SoleMateWatch Watch App.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		CE4752282FEECEC500FCC92A /* Embed Foundation Extensions */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -59,6 +99,7 @@
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = SoleMate/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = SoleMate/Info.plist; sourceTree = "<group>"; };
 		13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = PrivacyInfo.xcprivacy; path = SoleMate/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		173792C31B98E655CA6BB81E /* WatchSessionModule.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = SoleMate/WatchSessionModule.m; sourceTree = "<group>"; };
 		29AE797F7024459CAA462CE1 /* BebasNeue-Regular.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "BebasNeue-Regular.ttf"; path = "../assets/fonts/BebasNeue-Regular.ttf"; sourceTree = "<group>"; };
 		32DD5CD7322D8A8F57770E83 /* Pods_SoleMate.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_SoleMate.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		37F96DE3D716D45FB1629FAE /* NanumMyeongjo-Regular.ttf */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = file; name = "NanumMyeongjo-Regular.ttf"; path = "../assets/fonts/NanumMyeongjo-Regular.ttf"; sourceTree = "<group>"; };
@@ -72,8 +113,11 @@
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = SoleMate/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		923265D40951BEF46E599242 /* LiveActivityModule.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SoleMate/LiveActivityModule.swift; sourceTree = SOURCE_ROOT; };
 		96FBF53A281B69B063512CE9 /* RunActivityAttributes.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RunActivity/RunActivityAttributes.swift; sourceTree = SOURCE_ROOT; };
+		BB119C642F2D1AD301E42631 /* WatchSessionModule.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SoleMate/WatchSessionModule.swift; sourceTree = "<group>"; };
 		C87CE683AB3104A6AB2E5968 /* LiveActivityModule.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = SoleMate/LiveActivityModule.m; sourceTree = SOURCE_ROOT; };
 		CB87CDEECCE3462588478950 /* Barlow-Regular.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Barlow-Regular.ttf"; path = "../assets/fonts/Barlow-Regular.ttf"; sourceTree = "<group>"; };
+		CE19A1DB2FF150730030FFF0 /* SoleMateWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SoleMateWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		CE19A1E72FF150740030FFF0 /* SoleMateWatch Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "SoleMateWatch Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		CE47520E2FEECEC400FCC92A /* RunActivityExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = RunActivityExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		CE47520F2FEECEC400FCC92A /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		CE4752112FEECEC400FCC92A /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
@@ -93,6 +137,28 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		CE19A1DC2FF150730030FFF0 /* SoleMateWatch */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
+			explicitFileTypes = {
+			};
+			explicitFolders = (
+			);
+			path = SoleMateWatch;
+			sourceTree = "<group>";
+		};
+		CE19A1EB2FF150740030FFF0 /* SoleMateWatch Watch App */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
+			explicitFileTypes = {
+			};
+			explicitFolders = (
+			);
+			path = "SoleMateWatch Watch App";
+			sourceTree = "<group>";
+		};
 		CE4752132FEECEC400FCC92A /* RunActivity */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -113,6 +179,20 @@
 			buildActionMask = 2147483647;
 			files = (
 				1FD016C018929E07724A8819 /* Pods_SoleMate.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CE19A1D82FF150730030FFF0 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CE19A1E42FF150740030FFF0 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -139,6 +219,8 @@
 				D241C27486D3F7BF2FBE79D2 /* GoogleService-Info.plist */,
 				923265D40951BEF46E599242 /* LiveActivityModule.swift */,
 				C87CE683AB3104A6AB2E5968 /* LiveActivityModule.m */,
+				BB119C642F2D1AD301E42631 /* WatchSessionModule.swift */,
+				173792C31B98E655CA6BB81E /* WatchSessionModule.m */,
 			);
 			name = SoleMate;
 			sourceTree = "<group>";
@@ -194,6 +276,8 @@
 				13B07FAE1A68108700A75B9A /* SoleMate */,
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				CE4752132FEECEC400FCC92A /* RunActivity */,
+				CE19A1DC2FF150730030FFF0 /* SoleMateWatch */,
+				CE19A1EB2FF150740030FFF0 /* SoleMateWatch Watch App */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
 				BBD78D7AC51CEA395F1C20DB /* Pods */,
@@ -215,6 +299,8 @@
 			children = (
 				13B07F961A680F5B00A75B9A /* SoleMate.app */,
 				CE47520E2FEECEC400FCC92A /* RunActivityExtension.appex */,
+				CE19A1DB2FF150730030FFF0 /* SoleMateWatch.app */,
+				CE19A1E72FF150740030FFF0 /* SoleMateWatch Watch App.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -241,6 +327,7 @@
 				13B07F8C1A680F5B00A75B9A /* Frameworks */,
 				13B07F8E1A680F5B00A75B9A /* Resources */,
 				CE4752282FEECEC500FCC92A /* Embed Foundation Extensions */,
+				ADF6C06E33835A064354C153 /* Embed Watch Content */,
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
 				00EEFC60759A1932668264C0 /* [CP] Embed Pods Frameworks */,
 				E235C05ADACE081382539298 /* [CP] Copy Pods Resources */,
@@ -251,10 +338,53 @@
 			);
 			dependencies = (
 				CE4752222FEECEC500FCC92A /* PBXTargetDependency */,
+				71061DC337F80FE95AED4917 /* PBXTargetDependency */,
 			);
 			name = SoleMate;
 			productName = SoleMate;
 			productReference = 13B07F961A680F5B00A75B9A /* SoleMate.app */;
+			productType = "com.apple.product-type.application";
+		};
+		CE19A1DA2FF150730030FFF0 /* SoleMateWatch */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CE19A1F82FF150740030FFF0 /* Build configuration list for PBXNativeTarget "SoleMateWatch" */;
+			buildPhases = (
+				CE19A1D72FF150730030FFF0 /* Sources */,
+				CE19A1D82FF150730030FFF0 /* Frameworks */,
+				CE19A1D92FF150730030FFF0 /* Resources */,
+				CE19A1F42FF150740030FFF0 /* Embed Watch Content */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				CE19A1EA2FF150740030FFF0 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				CE19A1DC2FF150730030FFF0 /* SoleMateWatch */,
+			);
+			name = SoleMateWatch;
+			productName = SoleMateWatch;
+			productReference = CE19A1DB2FF150730030FFF0 /* SoleMateWatch.app */;
+			productType = "com.apple.product-type.application";
+		};
+		CE19A1E62FF150740030FFF0 /* SoleMateWatch Watch App */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CE19A1F72FF150740030FFF0 /* Build configuration list for PBXNativeTarget "SoleMateWatch Watch App" */;
+			buildPhases = (
+				CE19A1E32FF150740030FFF0 /* Sources */,
+				CE19A1E42FF150740030FFF0 /* Frameworks */,
+				CE19A1E52FF150740030FFF0 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				CE19A1EB2FF150740030FFF0 /* SoleMateWatch Watch App */,
+			);
+			name = "SoleMateWatch Watch App";
+			productName = "SoleMateWatch Watch App";
+			productReference = CE19A1E72FF150740030FFF0 /* SoleMateWatch Watch App.app */;
 			productType = "com.apple.product-type.application";
 		};
 		CE47520D2FEECEC400FCC92A /* RunActivityExtension */ = {
@@ -283,11 +413,17 @@
 		83CBB9F71A601CBA00E9B192 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastSwiftUpdateCheck = 2650;
+				LastSwiftUpdateCheck = 2660;
 				LastUpgradeCheck = 1210;
 				TargetAttributes = {
 					13B07F861A680F5B00A75B9A = {
 						LastSwiftMigration = 1120;
+					};
+					CE19A1DA2FF150730030FFF0 = {
+						CreatedOnToolsVersion = 26.6;
+					};
+					CE19A1E62FF150740030FFF0 = {
+						CreatedOnToolsVersion = 26.6;
 					};
 					CE47520D2FEECEC400FCC92A = {
 						CreatedOnToolsVersion = 26.5;
@@ -309,6 +445,8 @@
 			targets = (
 				13B07F861A680F5B00A75B9A /* SoleMate */,
 				CE47520D2FEECEC400FCC92A /* RunActivityExtension */,
+				CE19A1DA2FF150730030FFF0 /* SoleMateWatch */,
+				CE19A1E62FF150740030FFF0 /* SoleMateWatch Watch App */,
 			);
 		};
 /* End PBXProject section */
@@ -328,6 +466,20 @@
 				A99592C060E1B04239C26A0F /* GoogleService-Info.plist in Resources */,
 				87EAF9B449BA234FF90117DB /* NanumMyeongjo-Regular.ttf in Resources */,
 				7224CB91285DD0DB98FB80D2 /* NanumMyeongjo-ExtraBold.ttf in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CE19A1D92FF150730030FFF0 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CE19A1E52FF150740030FFF0 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -488,6 +640,22 @@
 				2BBCC3659AFF917CE5CD098F /* RunActivityAttributes.swift in Sources */,
 				B24A7C1E80CD775F32E9DB1C /* LiveActivityModule.swift in Sources */,
 				FE30A99D1AD1D3D691B196A3 /* LiveActivityModule.m in Sources */,
+				C4B62BCD3E4C24EBE468BC17 /* WatchSessionModule.swift in Sources */,
+				1415864F5E793EAB9E0C8D4D /* WatchSessionModule.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CE19A1D72FF150730030FFF0 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CE19A1E32FF150740030FFF0 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -502,6 +670,17 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		71061DC337F80FE95AED4917 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = "SoleMateWatch Watch App";
+			target = CE19A1E62FF150740030FFF0 /* SoleMateWatch Watch App */;
+			targetProxy = 02DCFDD6D54605C8B8A20347 /* PBXContainerItemProxy */;
+		};
+		CE19A1EA2FF150740030FFF0 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = CE19A1E62FF150740030FFF0 /* SoleMateWatch Watch App */;
+			targetProxy = CE19A1E92FF150740030FFF0 /* PBXContainerItemProxy */;
+		};
 		CE4752222FEECEC500FCC92A /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = CE47520D2FEECEC400FCC92A /* RunActivityExtension */;
@@ -786,6 +965,204 @@
 			};
 			name = Release;
 		};
+		CE19A1F22FF150740030FFF0 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = LTWYG63SY7;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = SoleMateWatch;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.solemate.SoleMateWatch;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		CE19A1F32FF150740030FFF0 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = LTWYG63SY7;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = SoleMateWatch;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.0;
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.solemate.SoleMateWatch;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		CE19A1F52FF150740030FFF0 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_ENTITLEMENTS = "SoleMateWatch Watch App/SoleMateWatch.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = LTWYG63SY7;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = SoleMateWatch;
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "러닝 중 실시간 심박을 표시하기 위해 사용합니다.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "러닝 운동을 건강 앱에 기록하기 위해 사용합니다.";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.solemate;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.solemate.SoleMateWatch.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 26.5;
+			};
+			name = Debug;
+		};
+		CE19A1F62FF150740030FFF0 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_ENTITLEMENTS = "SoleMateWatch Watch App/SoleMateWatch.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = LTWYG63SY7;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = SoleMateWatch;
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "러닝 중 실시간 심박을 표시하기 위해 사용합니다.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "러닝 운동을 건강 앱에 기록하기 위해 사용합니다.";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.solemate;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.0;
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.solemate.SoleMateWatch.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 26.5;
+			};
+			name = Release;
+		};
 		CE4752262FEECEC500FCC92A /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -894,6 +1271,24 @@
 			buildConfigurations = (
 				83CBBA201A601CBA00E9B192 /* Debug */,
 				83CBBA211A601CBA00E9B192 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		CE19A1F72FF150740030FFF0 /* Build configuration list for PBXNativeTarget "SoleMateWatch Watch App" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CE19A1F52FF150740030FFF0 /* Debug */,
+				CE19A1F62FF150740030FFF0 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		CE19A1F82FF150740030FFF0 /* Build configuration list for PBXNativeTarget "SoleMateWatch" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CE19A1F22FF150740030FFF0 /* Debug */,
+				CE19A1F32FF150740030FFF0 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
