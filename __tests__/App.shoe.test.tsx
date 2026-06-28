@@ -162,7 +162,7 @@ test('a healthy shoe shows 양호 (no false replacement warning)', async () => {
     [{id: 'r1', shoe_id: 's1', km: 100, run_date: '2026-05-01', duration: 3600}], // ~17%
   );
   const txt = textOf(root);
-  expect(txt).toContain('최상의 컨디션'); // 양호 → 히어로 condLabel(리스킨)
+  expect(txt).toContain('최상'); // 양호 → 히어로 condLabel(리스킨)
   expect(txt).not.toContain('교체 권장'); // 교체 경고 라벨 미노출('교체까지 약 N' 게이지 문구와 구분)
 });
 

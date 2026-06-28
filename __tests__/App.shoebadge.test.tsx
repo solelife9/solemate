@@ -2,9 +2,9 @@
  * 신발 교체 배지 + 신발별 알림 추적 통합 테스트.
  *
  * 관찰 가능한 효과를 검증한다(컨디션 표시는 모든 화면이 wearTier 4단계 칩으로 통일 —
- * 최상의 컨디션/좋은 상태/교체 고려/교체 권장. TierBadge 3단계는 폐지):
+ * 최상/양호/교체 고려/교체 권장. TierBadge 3단계는 폐지):
  *   1) 95%(used/max) → wearTier consider(교체 고려) 칩.
- *   2) tier별 칩: 80%=교체 고려, 50%=좋은 상태.
+ *   2) tier별 칩: 80%=교체 고려, 50%=양호.
  *   3) keep-going 카피('지금 교체하면 부상 없이 계속')가 교체 알림에 담긴다.
  *   4) 신발별 추적: 이미 알린 신발은 재마운트해도 중복 알림이 없고, 같은 날 새로
  *      임계에 도달한 *다른* 신발만 알린다(기존 '하루 1회' 전역 게이트 교체).
@@ -139,7 +139,7 @@ test('임계 도달 신발(95%) → 홈 히어로에 wearTier 칩(교체 고려)
   expect(textOf(root)).toContain('교체 고려');
 });
 
-test('마모 tier별 wearTier 칩: 80%=교체 고려, 50%=좋은 상태', async () => {
+test('마모 tier별 wearTier 칩: 80%=교체 고려, 50%=양호', async () => {
   await AsyncStorage.setItem('settings_alerts', JSON.stringify({enabled: false, thresholdPct: 90}));
   const consider = await mount(SHOE80, RUNS80); // 480/600 = 80% → consider
   expect(condChip(consider.root, 'consider')).toBeGreaterThanOrEqual(1);
@@ -148,7 +148,7 @@ test('마모 tier별 wearTier 칩: 80%=교체 고려, 50%=좋은 상태', async 
   const good = await mount(SHOE50, RUNS50); // 300/600 = 50% → good
   expect(condChip(good.root, 'good')).toBeGreaterThanOrEqual(1);
   expect(condChip(good.root, 'consider')).toBe(0);
-  expect(textOf(good.root)).toContain('좋은 상태');
+  expect(textOf(good.root)).toContain('양호');
 });
 
 test('교체 알림에 keep-going 카피가 담긴다', async () => {

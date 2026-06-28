@@ -71,8 +71,8 @@ export function wearTier(percentUsed: number): WearTier {
   const p = Number.isFinite(percentUsed) && percentUsed > 0 ? percentUsed : 0;
   if (p >= WEAR_CONSIDER_PCT) return {key: 'replace', label: '교체 권장', emoji: '🔴', tone: 'danger'};
   if (p >= WEAR_FAIR_PCT) return {key: 'consider', label: '교체 고려', emoji: '🟠', tone: 'warn'};
-  if (p >= WEAR_GOOD_PCT) return {key: 'good', label: '좋은 상태', emoji: '🟡', tone: 'mid'};
-  return {key: 'best', label: '최상의 컨디션', emoji: '🟢', tone: 'good'};
+  if (p >= WEAR_GOOD_PCT) return {key: 'good', label: '양호', emoji: '🟡', tone: 'mid'};
+  return {key: 'best', label: '최상', emoji: '🟢', tone: 'good'};
 }
 
 // Fallback category lifespan when a shoe carries no max_km (mirrors App default).
