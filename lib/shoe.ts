@@ -46,13 +46,14 @@ export type ShoeHealth = {
   condition: ShoeCondition;
 };
 
-// Proportional tier thresholds — percent of category lifespan consumed.
-export const SHOE_CAUTION_PCT = 75; // ≥75% → 주의
-export const SHOE_REPLACE_PCT = 90; // ≥90% → 교체
+// Proportional tier thresholds — 4단계 wearTier 경계(80/90)에 정렬(P1 #3 단일 임계).
+// 양호 <80 · 주의 80~90(교체 고려) · 교체 ≥90(교체 권장). 부상 경고도 90%(안전 유지).
+export const SHOE_CAUTION_PCT = 80; // ≥80% → 주의 (= wearTier 교체 고려)
+export const SHOE_REPLACE_PCT = 90; // ≥90% → 교체 (= wearTier 교체 권장)
 
 // ─── 마모 상태 4단계(표시용 단일 출처) ──────────────────────────────────────────
 // 사용률(%)을 4단계 컨디션으로 매핑한다(화면 표시 전용 — 알림/교체 로직의 3단계
-// conditionForPercent 와 별개). 0~50 최상 / 50~80 좋음 / 80~100 교체 고려 / 100%+ 교체 권장.
+// conditionForPercent 와 정렬). 0~50 최상 / 50~80 양호 / 80~90 교체 고려 / 90%+ 교체 권장.
 export type WearTierKey = 'best' | 'good' | 'consider' | 'replace';
 export type WearTierTone = 'good' | 'mid' | 'warn' | 'danger';
 export type WearTier = {
@@ -63,8 +64,8 @@ export type WearTier = {
 };
 
 export const WEAR_GOOD_PCT = 50; // <50% → 최상
-export const WEAR_FAIR_PCT = 80; // 50~80% → 좋음
-export const WEAR_CONSIDER_PCT = 100; // 80~100% → 교체 고려, 100%+ → 교체 권장
+export const WEAR_FAIR_PCT = 80; // 50~80% → 양호
+export const WEAR_CONSIDER_PCT = 90; // 80~90% → 교체 고려, 90%+ → 교체 권장(condition 교체·부상 high 와 정렬)
 
 /** 사용률(%) → 4단계 마모 컨디션(라벨·이모지·톤). 입력 비정상 → 최상(0%). */
 export function wearTier(percentUsed: number): WearTier {

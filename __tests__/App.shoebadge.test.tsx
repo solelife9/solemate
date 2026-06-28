@@ -129,14 +129,14 @@ const RUNS80: ApiRun[] = [{id: 'r1', shoe_id: 's1', km: 480, run_date: '2026-05-
 const SHOE50: ApiShoe[] = [{id: 's1', name: 'Asics Nimbus', max_km: 600, start_km: 0}];
 const RUNS50: ApiRun[] = [{id: 'r1', shoe_id: 's1', km: 300, run_date: '2026-05-20', duration: 7200}];
 
-test('임계 도달 신발(95%) → 홈 히어로에 wearTier 칩(교체 고려)', async () => {
+test('임계 도달 신발(95%) → 홈 히어로에 wearTier 칩(교체 권장)', async () => {
   // 칩은 설정과 무관하게 사용률(used/max%) tier만 따른다. enabled=false로 알림 잡음 제거.
   await AsyncStorage.setItem('settings_alerts', JSON.stringify({enabled: false, thresholdPct: 90}));
   const {root} = await mount(SHOE95, RUNS95);
-  // 95% → consider(교체 고려). (3단계 '교체' 배지 폐지 — 4단계 wearTier 칩으로 통일.)
-  expect(condChip(root, 'consider')).toBeGreaterThanOrEqual(1);
+  // 95% → replace(교체 권장). (3단계 '교체' 배지 폐지 — 4단계 wearTier 칩으로 통일.)
+  expect(condChip(root, 'replace')).toBeGreaterThanOrEqual(1);
   expect(condChip(root, 'best')).toBe(0);
-  expect(textOf(root)).toContain('교체 고려');
+  expect(textOf(root)).toContain('교체 권장');
 });
 
 test('마모 tier별 wearTier 칩: 80%=교체 고려, 50%=양호', async () => {

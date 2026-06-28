@@ -117,7 +117,7 @@ describe('shoeHealth — 서버 truth(total_km) 우선(audit#9/#10)', () => {
     expect(h.usedKm).toBe(540);
     expect(h.remainingKm).toBeCloseTo(160, 5);
     expect(h.percentUsed).toBeCloseTo(77.14, 1);
-    expect(h.condition).toBe('주의');
+    expect(h.condition).toBe('양호'); // 77.1% < 80%(주의 임계) → 양호(P1 #3 정렬)
   });
 
   test('서버 total_km은 로컬 런 합산을 덮어쓴다(이중 계산 방지)', () => {
@@ -155,12 +155,12 @@ describe('shoeHealth — 카테고리 수명 비례 condition 티어', () => {
   const shoe = {id: 1, max_km: 700, start_km: 0};
   const tierAt = (km: number) => shoeHealth(shoe, [{shoe_id: 1, km}]).condition;
 
-  test('75% 미만은 양호', () => {
+  test('80% 미만은 양호', () => {
     expect(tierAt(0)).toBe('양호');
-    expect(tierAt(520)).toBe('양호'); // ~74.3%
+    expect(tierAt(540)).toBe('양호'); // ~77.1% (이전 주의 → 새 임계 80%로 양호)
   });
-  test('75% 이상 90% 미만은 주의', () => {
-    expect(tierAt(540)).toBe('주의'); // ~77.1%
+  test('80% 이상 90% 미만은 주의', () => {
+    expect(tierAt(560)).toBe('주의'); // 80.0%
     expect(tierAt(626)).toBe('주의'); // ~89.4%
   });
   test('90% 이상은 교체', () => {
@@ -291,12 +291,12 @@ describe('wearTier — 마모 4단계(사용률%)', () => {
     expect(wearTier(50)).toMatchObject({key: 'good', label: '양호', tone: 'mid'});
     expect(wearTier(79.9).key).toBe('good');
   });
-  test('80~100% → 교체 고려(🟠/warn)', () => {
+  test('80~90% → 교체 고려(🟠/warn)', () => {
     expect(wearTier(80)).toMatchObject({key: 'consider', label: '교체 고려', tone: 'warn'});
-    expect(wearTier(99.9).key).toBe('consider');
+    expect(wearTier(89.9).key).toBe('consider');
   });
-  test('100%+ → 교체 권장(🔴/danger)', () => {
-    expect(wearTier(100)).toMatchObject({key: 'replace', label: '교체 권장', emoji: '🔴', tone: 'danger'});
+  test('90%+ → 교체 권장(🔴/danger)', () => {
+    expect(wearTier(90)).toMatchObject({key: 'replace', label: '교체 권장', emoji: '🔴', tone: 'danger'});
     expect(wearTier(150).key).toBe('replace');
   });
   test('비정상 입력 → 최상(0%)', () => {

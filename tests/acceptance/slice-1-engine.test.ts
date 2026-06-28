@@ -112,8 +112,9 @@ describe('Scenario 1 & 차별점: 신발 수명(shoeHealth) — 검증 카테고
     const h = shoeHealth(dailyShoe, runs);
     expect(h.usedKm).toBeCloseTo(10, 5); // 다른 신발(99km)은 제외
   });
-  test('수명 비례 티어: 75% 이상 주의, 90% 이상 교체', () => {
-    expect(shoeHealth(dailyShoe, [{ shoe_id: 1, km: 540 }]).condition).toBe('주의'); // ~77%
+  test('수명 비례 티어(4단계 wearTier 정렬): 80% 이상 주의, 90% 이상 교체', () => {
+    expect(shoeHealth(dailyShoe, [{ shoe_id: 1, km: 540 }]).condition).toBe('양호'); // ~77% (<80)
+    expect(shoeHealth(dailyShoe, [{ shoe_id: 1, km: 560 }]).condition).toBe('주의'); // 80%
     expect(shoeHealth(dailyShoe, [{ shoe_id: 1, km: 640 }]).condition).toBe('교체'); // ~91%
   });
 });

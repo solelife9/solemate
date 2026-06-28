@@ -15,8 +15,9 @@ export interface InjuryAssessment {
   message: string;
 }
 
-// 임계(마모 비율). shoeHealth 의 SHOE_CAUTION_PCT(75)/SHOE_REPLACE_PCT(90) 와 정렬.
-export const INJURY_CAUTION_AT = 0.75;
+// 임계(마모 비율). 4단계 wearTier 경계·shoeHealth(SHOE_CAUTION_PCT 80/SHOE_REPLACE_PCT 90)와
+// 정렬 — 카드 '교체 고려/교체 권장'과 부상 caution/high 가 같은 80/90% 에서 바뀐다(P1 #3).
+export const INJURY_CAUTION_AT = 0.80;
 export const INJURY_HIGH_AT = 0.9;
 
 // keep-going 보이스: 교체를 '손실'이 아니라 '부상 없이 계속 달리기'의 조건으로 프레이밍.

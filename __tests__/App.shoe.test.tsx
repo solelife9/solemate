@@ -266,7 +266,7 @@ test('ShoesScreen renders 4단계 마모 컨디션을 사용률별 색으로', a
   const shoes: Shoe[] = [
     {id: 'a', brand: 'NIKE', model: 'Pegasus', used: 60, max: 600, condition: '양호'},   // 10% best→BEST(파랑)
     {id: 'b', brand: 'HOKA', model: 'Clifton', used: 390, max: 600, condition: '양호'},  // 65% good→GOOD(초록)
-    {id: 'c', brand: 'ASICS', model: 'Nimbus', used: 540, max: 600, condition: '교체'},  // 90% consider→ACCENT(주황)
+    {id: 'c', brand: 'ASICS', model: 'Nimbus', used: 510, max: 600, condition: '주의'},  // 85% consider→ACCENT(주황, 80~90)
     {id: 'd', brand: 'BROOKS', model: 'Ghost', used: 660, max: 600, condition: '교체'},  // 110% replace→DANGER(빨강)
   ];
   const root = await mountComponent(
