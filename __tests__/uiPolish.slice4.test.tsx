@@ -122,11 +122,15 @@ test('① 라이브 런 지표 행: time/flash/walk-outline 아이콘이 없고 
   expect(txt).not.toContain('flash-outline');
   expect(txt).not.toContain('walk-outline');
 
-  // 라벨(숫자+라벨 구성)은 그대로 — 정보 손실 없음.
+  // 달릴 땐 핵심 3개만 크게 노출(나이키런 방식): 현재 페이스·심박·시간.
   expect(txt).toContain('시간');
-  expect(txt).toContain('평균 페이스');
-  expect(txt).toContain('케이던스');
-  // 케이던스 값은 아직 보폭 입력이 없어 '--' 자리표시자로 렌더된다(값 칸 보존).
+  expect(txt).toContain('현재 페이스');
+  expect(txt).toContain('심박');
+  // 보조 지표(평균 페이스·케이던스·칼로리·고도)는 일시정지 시에만 펼쳐진다 — 달리는
+  // 동안은 숨겨 핵심만 흘끗 봐도 읽히게 한다.
+  expect(txt).not.toContain('평균 페이스');
+  expect(txt).not.toContain('케이던스');
+  // 심박 값은 미측정(아이폰 단독) 시 '--' 자리표시자로 렌더된다(값 칸 보존).
   expect(txt).toContain('--');
 
   act(() => renderer.unmount());

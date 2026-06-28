@@ -95,7 +95,7 @@ function GpsBars({ level = 3 }: { level?: number }) {
 export default function RunActiveScreen({
   shoeLabel = 'Alphafly 3', distanceKm = 3.2, goalKm = 5,
   timeLabel = '16:04', paceLabel = "5'02\"", avgPaceLabel = "5'10\"",
-  cadence = 174, calories = 205, elevationM = 46, gpsLevel = 3,
+  cadence = 174, calories = 205, elevationM = 46, gpsLevel = 3, bpm = 0,
   paused: pausedProp, onPause, onStop,
   permLost = false, onOpenSettings, statusLabel,
   currentPaceSec = null, targetPaceSec = null,
@@ -105,7 +105,8 @@ export default function RunActiveScreen({
   // 스피드 모드 코칭: 현재(롤링) 페이스 vs 현재 km 목표 페이스(초/km). targetPaceSec=null 이면
   // 코칭 배너를 숨긴다(거리/시간 모드). 둘 다 있으면 빠름/적정/느림을 색·라벨로 보여준다.
   currentPaceSec?: number | null; targetPaceSec?: number | null;
-  cadence?: number; calories?: number; elevationM?: number; gpsLevel?: number;
+  // bpm: 심박(분당). 0이면 미측정('--' 표시). HealthKit/Apple Watch 연동 시 채워진다.
+  cadence?: number; calories?: number; elevationM?: number; gpsLevel?: number; bpm?: number;
   paused?: boolean; onPause?: () => void; onStop?: () => void;
   permLost?: boolean;
   onOpenSettings?: () => void;
@@ -244,21 +245,25 @@ export default function RunActiveScreen({
         );
       })()}
 
-      {/* hero metrics */}
+      {/* hero metrics — 달릴 땐 큰 핵심 3개(페이스·심박·시간)만. 작은 서브는 멈췄을 때만. */}
       <View style={r.heroMetrics}>
-        <View style={r.hm} accessibilityRole="text" accessibilityLabel={`시간 ${timeLabel}`}><Text style={r.hmV}>{timeLabel}</Text><Text style={r.hmL}>시간</Text></View>
-        <View style={[r.hm, r.hmDivider]} accessibilityRole="text" accessibilityLabel={`현재 페이스 ${paceLabel}`}><Text style={r.hmV}>{paceLabel}</Text><Text style={r.hmL}>현재 페이스</Text></View>
+        <View style={r.hm} accessibilityRole="text" accessibilityLabel={`현재 페이스 ${paceLabel}`}><Text style={r.hmV}>{paceLabel}</Text><Text style={r.hmL}>현재 페이스</Text></View>
+        <View style={[r.hm, r.hmDivider]} accessibilityRole="text" accessibilityLabel={bpm > 0 ? `심박 ${bpm}` : '심박 측정 안 됨'}><Text style={r.hmV}>{bpm > 0 ? String(bpm) : '--'}</Text><Text style={r.hmL}>심박</Text></View>
+        <View style={[r.hm, r.hmDivider]} accessibilityRole="text" accessibilityLabel={`시간 ${timeLabel}`}><Text style={r.hmV}>{timeLabel}</Text><Text style={r.hmL}>시간</Text></View>
       </View>
 
-      {/* sub metrics */}
-      <View style={r.subMetrics}>
-        {sub.map((m, i) => (
-          <View key={i} style={r.sm}>
-            <Text style={r.smV}>{m.v}{m.u ? <Text style={r.smU}> {m.u}</Text> : null}</Text>
-            <Text style={r.smL}>{m.l}</Text>
-          </View>
-        ))}
-      </View>
+      {/* sub metrics — 일시정지 시에만 전체 펼침(평균페이스·케이던스·칼로리·고도). 달리는
+          동안은 숨겨 핵심 지표만 크게 보이게 한다(나이키런 방식: 흘끗 봐도 읽힘). */}
+      {paused && (
+        <View style={r.subMetrics}>
+          {sub.map((m, i) => (
+            <View key={i} style={r.sm}>
+              <Text style={r.smV}>{m.v}{m.u ? <Text style={r.smU}> {m.u}</Text> : null}</Text>
+              <Text style={r.smL}>{m.l}</Text>
+            </View>
+          ))}
+        </View>
+      )}
 
       {/* 러닝 중엔 지도를 두지 않는다(야외·데이터 없음에서 타일 실패로 컨트롤이 가려지는
           사고 방지). 경로 지도는 종료 후 상세보기에서 표시. 여기선 컨트롤을 하단에
@@ -340,7 +345,7 @@ const r = StyleSheet.create({
   heroMetrics: { flexDirection: 'row', marginTop: 26, paddingVertical: 16, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: SEP },
   hm: { flex: 1, alignItems: 'center' },
   hmDivider: { borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: withAlpha(T1, 0.045) },
-  hmV: { color: T1, fontFamily: DISPLAY, fontSize: 34, fontWeight: '700', letterSpacing: -1, fontVariant: ['tabular-nums'] },
+  hmV: { color: T1, fontFamily: DISPLAY, fontSize: 30, fontWeight: '700', letterSpacing: -1, fontVariant: ['tabular-nums'] },
   hmL: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500', marginTop: 5 },
 
   subMetrics: { flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 14 },

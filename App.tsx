@@ -1916,6 +1916,8 @@ function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],weightKg,onSave,onDisca
   // 없어 0에서 시작(엔진 미작동). finElev는 정지 시 최종값을 고정한다.
   const [elevGain,setElevGain]=useState(0);
   const [finElev,setFinElev]=useState(0);
+  // 심박(bpm). 아이폰 단독은 미측정 → 0('--'). HealthKit/Apple Watch 연동 시 setHeartRate로 채운다.
+  const [heartRate]=useState(0);
   const [paused,setPaused]=useState(false);
   const [autoPaused,setAutoPaused]=useState(false);
   const [finKm,setFinKm]=useState(resume?resume.dist:0);
@@ -2340,6 +2342,7 @@ function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],weightKg,onSave,onDisca
       cadence={cadence}
       calories={liveCal}
       elevationM={elevGain}
+      bpm={heartRate}
       gpsLevel={gpsLevel}
       paused={paused}
       statusLabel={pauseLabel}
