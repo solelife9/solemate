@@ -87,6 +87,7 @@ import {estimateCalories} from './lib/calories';
 import {detectPRs, PRKind} from './lib/records';
 import {currentTargetPace} from './lib/pacePlan';
 import {liveActivity} from './lib/liveActivity';
+import {watchSession} from './lib/watchSession';
 import {assessTrainingLoad, loadRatioPhraseKo, LOAD_WORD, LoadLevel} from './lib/trainingLoad';
 import {
   getNotifSettings, setNotifSettings, dueNotifications,
@@ -1916,8 +1917,9 @@ function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],weightKg,onSave,onDisca
   // 없어 0에서 시작(엔진 미작동). finElev는 정지 시 최종값을 고정한다.
   const [elevGain,setElevGain]=useState(0);
   const [finElev,setFinElev]=useState(0);
-  // 심박(bpm). 아이폰 단독은 미측정 → 0('--'). HealthKit/Apple Watch 연동 시 setHeartRate로 채운다.
-  const [heartRate]=useState(0);
+  // 심박(bpm). 아이폰 단독은 미측정 → 0('--'). Apple Watch 컴패니언(watchSession)이
+  // WatchConnectivity로 보내는 실시간 심박을 구독해 채운다(워치 없으면 0 유지).
+  const [heartRate,setHeartRate]=useState(0);
   const [paused,setPaused]=useState(false);
   const [autoPaused,setAutoPaused]=useState(false);
   const [finKm,setFinKm]=useState(resume?resume.dist:0);
@@ -1966,6 +1968,9 @@ function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],weightKg,onSave,onDisca
   const coachRef=useRef({lastS:0,lastState:''});
   // Live Activity 갱신 throttle(마지막 갱신 런 경과초) — ActivityKit 업데이트 예산 보호(~2s마다).
   const liveActRef=useRef(0);
+
+  // Apple Watch 컴패니언이 보내는 실시간 심박(bpm) 구독. 워치 없으면 콜백이 안 와 0 유지.
+  useEffect(()=>watchSession.onHeartRate(setHeartRate),[]);
 
   useEffect(()=>{
     // 'review' 복구는 이미 끝난 런을 검토만 한다 — GPS/센서/권한/TTS를 켜지 않는다.
