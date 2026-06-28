@@ -12,14 +12,14 @@ const available = Platform.OS === 'ios' && !!M && typeof M.start === 'function';
 export const liveActivity = {
   available,
   /** 러닝 시작 — 잠금화면 위젯을 띄운다. shoeName/goalKm 은 정적, 나머지는 초기 상태. */
-  start(shoeName: string, goalKm: number, distanceKm: number, elapsedSec: number, paceLabel: string, avgPaceLabel: string) {
+  start(shoeName: string, goalKm: number, distanceKm: number, elapsedSec: number, paceLabel: string, avgPaceLabel: string, cadenceSpm: number = 0) {
     if (!available) return;
-    try { M.start(shoeName || '', goalKm || 0, distanceKm || 0, elapsedSec || 0, paceLabel || '--', avgPaceLabel || '--'); } catch { /* noop */ }
+    try { M.start(shoeName || '', goalKm || 0, distanceKm || 0, elapsedSec || 0, paceLabel || '--', avgPaceLabel || '--', cadenceSpm || 0); } catch { /* noop */ }
   },
-  /** 진행 상태 갱신(거리/시간/페이스). 호출자가 throttle 한다(ActivityKit 업데이트 예산). */
-  update(distanceKm: number, elapsedSec: number, paceLabel: string, avgPaceLabel: string) {
+  /** 진행 상태 갱신(거리/시간/페이스/케이던스). 호출자가 throttle 한다(ActivityKit 업데이트 예산). */
+  update(distanceKm: number, elapsedSec: number, paceLabel: string, avgPaceLabel: string, cadenceSpm: number = 0) {
     if (!available) return;
-    try { M.update(distanceKm || 0, elapsedSec || 0, paceLabel || '--', avgPaceLabel || '--'); } catch { /* noop */ }
+    try { M.update(distanceKm || 0, elapsedSec || 0, paceLabel || '--', avgPaceLabel || '--', cadenceSpm || 0); } catch { /* noop */ }
   },
   /** 러닝 종료/완주/취소 — 위젯을 닫는다. */
   end() {

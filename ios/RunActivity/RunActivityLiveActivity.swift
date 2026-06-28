@@ -20,7 +20,7 @@ struct RunLockScreenView: View {
   var body: some View {
     let st = context.state
     let goal = context.attributes.goalKm
-    VStack(alignment: .leading, spacing: 10) {
+    VStack(alignment: .leading, spacing: 8) {
       HStack(spacing: 6) {
         Image(systemName: "figure.run").font(.caption).foregroundColor(kAccent)
         Text("러닝 중").font(.caption).fontWeight(.bold).foregroundColor(kAccent)
@@ -29,39 +29,38 @@ struct RunLockScreenView: View {
           Text(context.attributes.shoeName).font(.caption2).foregroundColor(.secondary).lineLimit(1)
         }
       }
-      HStack(alignment: .firstTextBaseline) {
-        VStack(alignment: .leading, spacing: 2) {
-          HStack(alignment: .firstTextBaseline, spacing: 3) {
-            Text(fmtDist(st.distanceKm)).font(.system(size: 38, weight: .heavy, design: .rounded))
-              .foregroundColor(.white).monospacedDigit()
-            Text("km").font(.headline).foregroundColor(.secondary)
-          }
-        }
-        Spacer()
-        VStack(alignment: .trailing, spacing: 8) {
-          metric(value: fmtTime(st.elapsedSec), label: "시간")
-          metric(value: st.paceLabel, label: "현재 페이스")
-        }
+      // 거리(히어로) — 자체 행
+      HStack(alignment: .firstTextBaseline, spacing: 3) {
+        Text(fmtDist(st.distanceKm)).font(.system(size: 32, weight: .heavy, design: .rounded))
+          .foregroundColor(.white).monospacedDigit()
+        Text("km").font(.headline).foregroundColor(.secondary)
+      }
+      // 시간 · 페이스 · 케이던스 — 거리 아래 한 줄, 균등 분배
+      HStack(alignment: .top, spacing: 0) {
+        metric(value: fmtTime(st.elapsedSec), label: "시간")
+        metric(value: st.paceLabel, label: "페이스")
+        metric(value: st.cadenceSpm > 0 ? "\(st.cadenceSpm)" : "--", label: "케이던스")
       }
       if goal > 0 {
         let pct = min(1.0, max(0.0, st.distanceKm / goal))
-        VStack(alignment: .leading, spacing: 3) {
-          GeometryReader { geo in
-            ZStack(alignment: .leading) {
-              Capsule().fill(Color.white.opacity(0.15)).frame(height: 5)
-              Capsule().fill(kAccent).frame(width: geo.size.width * pct, height: 5)
+        // overlay 로 고정 높이(5pt) Capsule 위에 채움 — GeometryReader 가 VStack 세로
+        // 공간을 잡아먹지 않도록 바운드(독립 GeometryReader 의 세로 확장 회피).
+        Capsule().fill(Color.white.opacity(0.15)).frame(height: 5)
+          .overlay(alignment: .leading) {
+            GeometryReader { geo in
+              Capsule().fill(kAccent).frame(width: geo.size.width * pct)
             }
-          }.frame(height: 5)
-          Text("목표 \(fmtDist(goal))km · \(Int(pct * 100))%").font(.caption2).foregroundColor(.secondary)
-        }
+          }
+        Text("목표 \(fmtDist(goal))km · \(Int(pct * 100))%").font(.caption2).foregroundColor(.secondary)
       }
     }
   }
   private func metric(value: String, label: String) -> some View {
-    VStack(alignment: .trailing, spacing: 1) {
-      Text(value).font(.system(size: 17, weight: .bold, design: .rounded)).foregroundColor(.white).monospacedDigit()
+    VStack(alignment: .leading, spacing: 1) {
+      Text(value).font(.system(size: 16, weight: .bold, design: .rounded)).foregroundColor(.white).monospacedDigit()
       Text(label).font(.caption2).foregroundColor(.secondary)
     }
+    .frame(maxWidth: .infinity, alignment: .leading)
   }
 }
 
@@ -69,7 +68,7 @@ struct RunActivityLiveActivity: Widget {
   var body: some WidgetConfiguration {
     ActivityConfiguration(for: RunActivityAttributes.self) { context in
       RunLockScreenView(context: context)
-        .padding(16)
+        .padding(.horizontal, 20).padding(.vertical, 16)
         .activityBackgroundTint(Color.black.opacity(0.9))
         .activitySystemActionForegroundColor(.white)
     } dynamicIsland: { context in

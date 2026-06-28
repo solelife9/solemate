@@ -11,16 +11,16 @@ class LiveActivityModule: NSObject {
 
   @objc static func requiresMainQueueSetup() -> Bool { return true }
 
-  @objc(start:goalKm:distanceKm:elapsedSec:paceLabel:avgPaceLabel:)
+  @objc(start:goalKm:distanceKm:elapsedSec:paceLabel:avgPaceLabel:cadenceSpm:)
   func start(_ shoeName: String, goalKm: Double, distanceKm: Double,
-             elapsedSec: Double, paceLabel: String, avgPaceLabel: String) {
+             elapsedSec: Double, paceLabel: String, avgPaceLabel: String, cadenceSpm: Double) {
     if #available(iOS 16.1, *) {
       guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
       endInternal() // 혹시 남아있는 이전 활동 정리
       let attrs = RunActivityAttributes(shoeName: shoeName, goalKm: goalKm)
       let state = RunActivityAttributes.ContentState(
         distanceKm: distanceKm, elapsedSec: Int(elapsedSec),
-        paceLabel: paceLabel, avgPaceLabel: avgPaceLabel)
+        paceLabel: paceLabel, avgPaceLabel: avgPaceLabel, cadenceSpm: Int(cadenceSpm))
       do {
         let act = try Activity<RunActivityAttributes>.request(
           attributes: attrs, contentState: state, pushType: nil)
@@ -31,13 +31,13 @@ class LiveActivityModule: NSObject {
     }
   }
 
-  @objc(update:elapsedSec:paceLabel:avgPaceLabel:)
-  func update(_ distanceKm: Double, elapsedSec: Double, paceLabel: String, avgPaceLabel: String) {
+  @objc(update:elapsedSec:paceLabel:avgPaceLabel:cadenceSpm:)
+  func update(_ distanceKm: Double, elapsedSec: Double, paceLabel: String, avgPaceLabel: String, cadenceSpm: Double) {
     if #available(iOS 16.1, *) {
       guard let act = activityAny as? Activity<RunActivityAttributes> else { return }
       let state = RunActivityAttributes.ContentState(
         distanceKm: distanceKm, elapsedSec: Int(elapsedSec),
-        paceLabel: paceLabel, avgPaceLabel: avgPaceLabel)
+        paceLabel: paceLabel, avgPaceLabel: avgPaceLabel, cadenceSpm: Int(cadenceSpm))
       Task { await act.update(using: state) }
     }
   }

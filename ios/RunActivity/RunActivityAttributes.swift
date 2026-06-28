@@ -11,6 +11,7 @@ struct RunActivityAttributes: ActivityAttributes {
     var elapsedSec: Int
     var paceLabel: String     // 현재 페이스 e.g. "6'12\""
     var avgPaceLabel: String  // 평균 페이스
+    var cadenceSpm: Int       // 케이던스(분당 스텝, spm). 0이면 미측정('--' 표시)
   }
 
   // 정적(러닝 동안 불변) 속성

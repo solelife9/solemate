@@ -1988,7 +1988,7 @@ function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],weightKg,onSave,onDisca
           liveActRef.current=s.elapsed;
           liveActivity.update(s.dist,Math.round(s.elapsed),
             s.currentPaceSecPerKm!=null?fmtPace(1,s.currentPaceSecPerKm):'--',
-            fmtPace(s.dist,s.elapsed));
+            fmtPace(s.dist,s.elapsed),cadRef.current);
         }
         // per-km 스플릿: dist가 정수 km 경계를 새로 넘으면 그 1km의 소요시간(초)·고도상승(m)을
         // 기록한다. 경로에 타임스탬프가 없어 못 했던 '실제' 구간 페이스를 레코더가 직접 남긴다.
