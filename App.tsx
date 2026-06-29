@@ -52,6 +52,7 @@ import type {HomeProgression, HomeChallengeView} from './HomeScreen.rn';
 import {challengeProgress} from './lib/challenges';
 
 import {simplifyRoute} from './lib/geo';
+import {appendFinalSplit} from './lib/splits';
 import {runTracker} from './lib/runTracker';
 import {
   requestRunPermissions, startTracking, stopTracking, isPermissionError, hasForegroundPermission,
@@ -2250,12 +2251,16 @@ function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],weightKg,onSave,onDisca
     runVoice.finish(); // 완주 음성("운동을 종료합니다. 수고하셨습니다") — 리뷰 화면 전환 전 재생
     const sampled=simplifyRoute(runTracker.getPoints() as any,200);
     setFinRoute(sampled.length>=2?JSON.stringify(sampled):'');
-    setFinSplits(splitsRef.current.slice());
+    // 고도: 기압계가 잡혔으면 그 누적(정확), 아니면 GPS 고도 폴백.
+    const finElevTotal=baroAvail.current?Math.round(baroElev.current.gain):runTracker.getElevationGain();
+    // 마지막 정수 km 이후 남은 부분 구간(예: 5.6km 의 0.6km)을 스플릿에 한 줄 추가한다 —
+    // 레코더는 정수 km 경계만 남겨 꼬리 구간이 통째 누락됐다. lastSplitRef 가 마지막 경계의
+    // 경과초·누적고도를 들고 있어 그 차이로 구간 시간·고도를 per-km 페이스로 환산한다.
+    setFinSplits(appendFinalSplit(splitsRef.current,fk,ft,lastSplitRef.current.elapsed,finElevTotal,lastSplitRef.current.elevM));
     setFinPaceTrack(runTracker.getPaceTrack().slice());
     setFinLocation(locationRef.current);
     setFinKm(fk);setFinTime(ft);setFinCad(cadRef.current);
-    // 고도: 기압계가 잡혔으면 그 누적(정확), 아니면 GPS 고도 폴백.
-    setFinElev(baroAvail.current?Math.round(baroElev.current.gain):runTracker.getElevationGain());
+    setFinElev(finElevTotal);
     setPhase('done');
   }
 
