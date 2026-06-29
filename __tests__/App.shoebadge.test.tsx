@@ -84,22 +84,6 @@ function textOf(node: ReactTestRenderer.ReactTestInstance): string {
   return out;
 }
 
-function pressBy(root: ReactTestRenderer.ReactTestInstance, needle: string): ReactTestRenderer.ReactTestInstance {
-  const hits = root.findAll(
-    (n: any) => n && n.props && typeof n.props.onPress === 'function' && textOf(n).includes(needle),
-  );
-  hits.sort((a, b) => textOf(a).length - textOf(b).length);
-  if (!hits.length) throw new Error(`no pressable contains "${needle}"`);
-  return hits[0];
-}
-
-async function tap(node: ReactTestRenderer.ReactTestInstance) {
-  await act(async () => {
-    node.props.onPress();
-  });
-  await flush();
-}
-
 function replaceAlertCalls(spy: jest.SpyInstance): Array<{message: string}> {
   return spy.mock.calls
     .filter((c: any[]) => c[0] === '신발 교체 알림')

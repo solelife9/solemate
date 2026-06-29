@@ -10,7 +10,7 @@ import {View, Text, Pressable, ScrollView, StyleSheet} from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {ACCENT, CARD, CARD_HI, T1, T2, T3, T4, SEP, FONT, RADIUS, withAlpha} from './theme';
 import {SegmentedControl} from './primitives';
-import {buildPacePlan, clampPace, fmtPaceSec, planSegments, PaceStrategy, PACE_MIN_SEC, PACE_MAX_SEC} from './lib/pacePlan';
+import {buildPacePlan, clampPace, fmtPaceSec, PaceStrategy} from './lib/pacePlan';
 
 const KM_MIN = 1, KM_MAX = 42;
 const clampKm = (k: number) => Math.max(KM_MIN, Math.min(KM_MAX, Math.round(k)));

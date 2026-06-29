@@ -99,11 +99,6 @@ beforeEach(async () => {
   await AsyncStorage.clear();
 });
 
-// 오늘 날짜(로컬)를 'YYYY-MM-DD'로. 주간 목표/달성률은 이번 주 런만 센다.
-function todayIso(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
 
 const SHOES: ApiShoe[] = [
   {id: 's1', name: 'Nike Pegasus', max_km: 600, start_km: 0},

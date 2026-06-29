@@ -7,13 +7,13 @@ import { View, Text, ScrollView, Pressable, TextInput, Alert, StyleSheet, Linkin
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {
-  BG, CARD, CARD_DIM, CARD_HI, HERO_BG, ACCENT, DANGER, WARN, GOOD, BEST, T1, T2, T3, T4, SEP, FONT, DISPLAY, withAlpha, RADIUS, Shoe, Run, SHOES,
+  BG, CARD_DIM, CARD_HI, HERO_BG, ACCENT, DANGER, WARN, GOOD, BEST, T1, T2, T3, T4, SEP, FONT, DISPLAY, withAlpha, RADIUS, Shoe, Run, SHOES,
 } from './theme';
 import { TabBar, Pill, InjuryBanner, SectionTitle, Button } from './primitives';
 import { FuelGauge } from './FuelGauge';
 import FirstShoeScreen from './FirstShoeScreen.rn';
-import { Unit, displayNum, displayToKm } from './lib/units';
-import { clampMaxKm, KEEP_GOING_REPLACE, SHOE_MAX_STEP_KM, SHOE_REPLACE_PCT, wearTier, WearTierTone } from './lib/shoe';
+import { Unit, displayNum } from './lib/units';
+import { KEEP_GOING_REPLACE, wearTier, WearTierTone } from './lib/shoe';
 import { assessShoeInjuryRisk } from './lib/injury';
 import { buildWearView, forecastBasisKo, forecastConfidenceKo, forecastLineKo, type ReplacementForecast, type Surface } from './lib/wearView';
 import { recommendNextShoes, buildShopLinks, categoryLabelKo, AFFILIATE_DISCLOSURE } from './lib/affiliate';
@@ -77,7 +77,7 @@ const condLabel = (pct: number) => wearTier(pct).label;
 
 // ── shoe detail ───────────────────────────────────────────────────────────────
 function ShoeDetail({
-  shoe, idx, runs, totals, unit, weightKg, surfaceOf, onBack, onRename, onDelete, onRetire, onSetMaxKm,
+  shoe, idx, runs, totals, unit, weightKg, surfaceOf, onBack, onRename, onDelete, onRetire, onSetMaxKm: _onSetMaxKm,
   rawShoe, rawRuns, progressionCtx, equippedTitle, onRetiredKeepsake, now,
 }: {
   shoe: Shoe;
@@ -142,12 +142,6 @@ function ShoeDetail({
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(`${shoe.brand} ${shoe.model}`.trim());
 
-  // 신발 수명(max_km)을 '남은 수명' 옆 연필로 펼쳐 바로 보정한다(기본 접힘).
-  const [editingMax, setEditingMax] = useState(false);
-  // 직접 입력 임시값(표시 단위 문자열). null이면 '입력 중 아님' → shoe.max를 그대로 보여준다.
-  // 매 타건마다 커밋하지 않고 blur/제출 시 한 번만 onSetMaxKm으로 영속화한다.
-  const [maxDraft, setMaxDraft] = useState<string | null>(null);
-
   // 키프세이크 은퇴 플로우: 수명 도달 신발만 [계속 사용]/[은퇴]를 노출한다(자동 은퇴 절대
   // 금지 — 사용자가 [은퇴]를 눌러야만 flowOpen). [계속 사용]을 누르면 이번 세션 동안
   // 트리거를 접는다(kept). 영속 데이터·런/신발은 건드리지 않는다.
@@ -155,34 +149,6 @@ function ShoeDetail({
   const [kept, setKept] = useState(false);
   const atLifespan = shoe.condition === '교체';
   const keepsakeReady = !retired && !!rawShoe && !!progressionCtx;
-
-  // 신발 수명(max_km) 조정: ＋/− 10km씩 보정 + 직접 입력. 비율(percentUsed)은 km 절대값
-  // 으로 계산하지만 표시·스텝·입력은 단위를 따른다. 임계 tier는 새 max로 즉시 재판정해,
-  // 수명을 올리면 교체→주의→양호로 완화되는 걸 바로 보여준다.
-  const usedKm = shoe.used;
-  const percentUsed = shoe.max > 0 ? (usedKm / shoe.max) * 100 : 0;
-  const maxStepDisplay = displayNum(SHOE_MAX_STEP_KM, unit, 0) || 1;
-  const commitMaxKm = (km: number) => {
-    if (!shoe.id) return;
-    onSetMaxKm?.(shoe.id, clampMaxKm(km));
-  };
-  const stepMaxKm = (dir: 1 | -1) => {
-    if (!shoe.id) return;
-    setMaxDraft(null); // ± 사용 시 입력 임시값을 버리고 확정값 기준으로 보정
-    const nextDisplay = displayNum(shoe.max, unit, 0) + dir * maxStepDisplay;
-    commitMaxKm(displayToKm(nextDisplay, unit));
-  };
-  // 직접 입력 커밋: 표시 단위 → km 변환 후 클램프 영속. 빈/0 값은 무시하고 원복.
-  const commitMaxDraft = () => {
-    if (maxDraft != null) {
-      const n = Number(maxDraft);
-      if (Number.isFinite(n) && n > 0) commitMaxKm(displayToKm(n, unit));
-    }
-    setMaxDraft(null);
-  };
-  // 교체 임계 도달까지 남은 거리(표시 단위). 임계 = max_km * SHOE_REPLACE_PCT/100.
-  const replaceAtKm = (shoe.max * SHOE_REPLACE_PCT) / 100;
-  const toReplaceKm = Math.max(0, replaceAtKm - usedKm);
 
   const saveName = () => {
     const v = name.trim();
@@ -425,7 +391,7 @@ function ShoeDetail({
 }
 
 // ── locker ─────────────────────────────────────────────────────────────────
-function ShoeCard({ shoe, featured, onPress, onPlay, unit, pace, forecast }: { shoe: Shoe; featured: boolean; onPress: () => void; onPlay?: () => void; unit: Unit; pace?: string; forecast?: ReplacementForecast | null }) {
+function ShoeCard({ shoe, featured, onPress, onPlay, unit, pace: _pace, forecast }: { shoe: Shoe; featured: boolean; onPress: () => void; onPlay?: () => void; unit: Unit; pace?: string; forecast?: ReplacementForecast | null }) {
   const remainKm = Math.max(0, shoe.max - shoe.used);
   // 교체 예측 한 줄(#2) — '약 N주 후 교체 예상' / 임박(overdue). ok·overdue 일 때만.
   const fcLine = forecast && (forecast.reason === 'ok' || forecast.reason === 'overdue') ? forecastLineKo(forecast) : null;

@@ -19,9 +19,8 @@
 
 import React from 'react';
 import ReactTestRenderer, {act} from 'react-test-renderer';
-import {StyleSheet} from 'react-native';
 import HomeScreen from '../HomeScreen.rn';
-import {Shoe, T3} from '../theme';
+import {Shoe} from '../theme';
 
 // Flatten all string leaves under a node into one string (render-tree text).
 function textOf(node: ReactTestRenderer.ReactTestInstance): string {

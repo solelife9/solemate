@@ -86,8 +86,6 @@ export interface ExtChallenge {
 // ── 결정적 상수 ───────────────────────────────────────────────────────────────
 const DEFAULT_ROTATION_SHOES = 2;
 const DEFAULT_MAX_SHARE_PCT = 60;
-/** smart: '최근' 사용량을 보는 창(일). now 포함 직전 28일. */
-const SMART_RECENT_DAYS = 28;
 const SMART_TARGET_MIN = 5;
 const SMART_TARGET_MAX = 50;
 
@@ -110,14 +108,6 @@ function shiftDate(d: string, delta: number): string {
   if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(dd)) return ymd(d);
   const t = new Date(y, m - 1, dd + delta);
   return ymdLocal(t); // 'YYYY-MM-DD' 로컬 빌더 단일화(lib/format)
-}
-
-/** now 가 속한 달의 [첫날, 끝날] 윈도우('YYYY-MM-DD'). month 오버라이드 가능('YYYY-MM'). */
-function monthWindow(now: string, month?: string): {start: string; end: string} {
-  const ym = (month && /^\d{4}-\d{2}/.test(month) ? month : ymd(now)).slice(0, 7);
-  const [y, m] = ym.split('-').map(Number);
-  const lastDay = new Date(y, m, 0).getDate(); // 다음 달 0일 = 이번 달 말일
-  return {start: `${ym}-01`, end: `${ym}-${String(lastDay).padStart(2, '0')}`};
 }
 
 /** now 가 속한 주(월~일)의 [시작, 끝] 윈도우('YYYY-MM-DD'). */

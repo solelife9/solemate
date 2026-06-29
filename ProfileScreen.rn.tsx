@@ -102,7 +102,7 @@ function Stepper({ value, suffix, onMinus, onPlus }: { value: number | string; s
 }
 
 export default function ProfileScreen({
-  profile = DEFAULT_PROFILE, badges = [], records = [], onTab,
+  profile = DEFAULT_PROFILE, badges: _badges = [], records = [], onTab,
   profilePhotoUri = '', onChangeName, onPickPhoto,
   weightKg = DEFAULT_SETTINGS.weightKg, onChangeWeight,
   initialOpen = null, onConsumeInitialOpen,

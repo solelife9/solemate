@@ -20,17 +20,6 @@ import App from '../App';
 type ApiShoe = {id: string; name: string; max_km: number; start_km: number; retired?: boolean};
 type ApiRun = {id: string; shoe_id: string; km: number; run_date: string; duration: number};
 
-function textOf(node: ReactTestRenderer.ReactTestInstance): string {
-  let out = '';
-  const walk = (n: any) => {
-    if (typeof n === 'string') { out += n; return; }
-    if (!n || !n.children) return;
-    n.children.forEach(walk);
-  };
-  walk(node);
-  return out;
-}
-
 function mockBackend(shoes: ApiShoe[], runs: ApiRun[]) {
   (globalThis.fetch as jest.Mock).mockImplementation((url: any) => {
     const u = String(url);

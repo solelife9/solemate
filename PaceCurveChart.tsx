@@ -8,7 +8,7 @@
 import React, {useState} from 'react';
 import {View, Text, StyleSheet, Dimensions} from 'react-native';
 import Svg, {Path, Circle, Defs, LinearGradient, Stop} from 'react-native-svg';
-import {ACCENT, CARD, T1, T3, FONT, RADIUS, SEP, withAlpha} from './theme';
+import {ACCENT, CARD, T1, T3, FONT, RADIUS, SEP} from './theme';
 import {Split} from './RunSplits';
 import {Unit} from './lib/units';
 

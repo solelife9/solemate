@@ -13,7 +13,7 @@ import {
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {
-  BG, CARD, CARD_DIM, CARD_HI, HERO_BG, ACCENT, DANGER, WARN, GOOD, BEST, T1, T2, T3, T4,
+  BG, CARD_DIM, CARD_HI, HERO_BG, ACCENT, DANGER, WARN, GOOD, BEST, T1, T2, T3, T4,
   FONT, DISPLAY, SPACE, RADIUS, GUTTER, withAlpha, Shoe, SHOES, TIER_COLORS, TIER_LABEL,
 } from './theme';
 import type { RankTier } from './lib/progression/types';
@@ -124,12 +124,6 @@ function ProgressionStrip({ prog, onOpen }: { prog: HomeProgression; onOpen?: ()
 const WEAR_TONE_COLOR: Record<WearTierTone, string> = { good: BEST, mid: GOOD, warn: ACCENT, danger: DANGER };
 const wearColorOf = (pct: number) => WEAR_TONE_COLOR[wearTier(pct).tone];
 const wearLabelOf = (pct: number) => wearTier(pct).label;
-// 카드 한 줄 요약(목업 reason 정합 — keep-going 보이스). 컨디션별 오늘의 추천/안내.
-const condReason = (c: string) =>
-  c === '교체' ? '교체 시기예요 — 부상 전에 바꿔주세요'
-  : c === '주의' ? '아직 괜찮지만 슬슬 교체를 준비할 때예요'
-  : '오늘 데일리 러닝에 가장 좋은 컨디션이에요';
-
 function TopBar({ onAddShoe }: { onAddShoe?: () => void }) {
   return (
     <View style={s.topbar}>
@@ -150,7 +144,6 @@ function TopBar({ onAddShoe }: { onAddShoe?: () => void }) {
 function HeroShoe({ shoe, unit, tappable, forecast, active, onOpenShoe, onStart }: { shoe: Shoe; unit: Unit; tappable?: boolean; forecast?: ReplacementForecast | null; active?: boolean; onOpenShoe?: () => void; onStart?: () => void }) {
   // 비율(pct)은 km 절대값으로 계산(단위 불변), 표시 숫자만 표시 단위로 환산한다.
   const remainKm = Math.max(0, shoe.max - shoe.used);
-  const pct = shoe.max > 0 ? remainKm / shoe.max : 0;
   const remain = displayNum(remainKm, unit);
   const used = displayNum(shoe.used, unit);
   const max = displayNum(shoe.max, unit);
@@ -490,7 +483,7 @@ export default function HomeScreen({
   shoes = SHOES, dateLabel = '', onStart, onAddShoe, onTab,
   activeIdx: activeIdxProp, onSelect, unit = 'km', week, rotation, onPickShoe,
   onOpenShoe, forecast, forecasts, progression, onOpenProgression,
-  onRefresh, lastSyncAt, userName, runs = [], onOpenInjuryRisk,
+  onRefresh, lastSyncAt: _lastSyncAt, userName, runs = [], onOpenInjuryRisk,
   weeklyGoalKm = 0, streakDays = 0,
 }: {
   shoes?: Shoe[];

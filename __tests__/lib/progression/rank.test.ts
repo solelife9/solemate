@@ -22,7 +22,6 @@ import {
   RANK_XP,
 } from '../../../lib/progression/rank';
 import {
-  PerShoeStats,
   ProgressionContext,
   RankTier,
 } from '../../../lib/progression/types';
@@ -50,19 +49,6 @@ function emptyCtx(over: Partial<ProgressionContext> = {}): ProgressionContext {
     completedChallengeCount: 0,
     achievementPoints: 0,
     ...over,
-  };
-}
-
-function shoe(over: Partial<PerShoeStats> & {id: string}): PerShoeStats {
-  return {
-    id: over.id,
-    name: over.name ?? over.id,
-    km: over.km ?? 0,
-    runs: over.runs ?? 0,
-    firstWorn: over.firstWorn ?? null,
-    lastWorn: over.lastWorn ?? null,
-    retired: over.retired ?? false,
-    maxKm: over.maxKm ?? 0,
   };
 }
 

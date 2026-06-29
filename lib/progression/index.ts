@@ -103,7 +103,7 @@ function uniq(keys: readonly string[]): string[] {
 
 function viewFromContext(
   ctx: ProgressionContext,
-  state: ProgressionState,
+  _state: ProgressionState,
 ): ProgressionView {
   const rank = computeRank(ctx);
   const totalXp = rank.xp;

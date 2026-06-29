@@ -19,7 +19,7 @@
 import React from 'react';
 import {View, Text, Pressable, ScrollView, StyleSheet} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import Svg, {Circle, Defs, LinearGradient, Stop, Rect, Path} from 'react-native-svg';
+import Svg, {Defs, LinearGradient, Stop, Rect, Path} from 'react-native-svg';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import {
