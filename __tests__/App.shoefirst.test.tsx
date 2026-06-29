@@ -140,16 +140,15 @@ test('락커 카드 play 어포던스 → 상세 없이 해당 신발로 목표 
   expect(txt).toContain('러닝 목표');
 });
 
-test('보관된 신발 상세에는 시작 CTA가 없다(시작 동선 제외)', async () => {
+test('보관된 신발은 신발 탭 락커에서 제외된다 → 시작 동선 없음(보관함으로 이관)', async () => {
+  // 보관(retired) 신발은 신발 탭 락커에서 빠지고 마이탭 '신발 보관함'으로 이관된다(fd67d4b).
+  // 락커에 안 떠 상세 진입·'이 신발로 달리기' CTA 자체가 없다(시작 동선 분리, 기록은 보존).
   const retiredShoes: ApiShoe[] = [
     {id: 's1', name: 'Nike Pegasus', max_km: 600, start_km: 0, retired: true},
   ];
   const {root} = await mount(retiredShoes, []);
   await tap(pressBy(root, '신발')); // 신발 탭
-  await tap(pressBy(root, 'Pegasus')); // 보관된 Pegasus 상세
 
-  // 보관 신발이므로 '이 신발로 달리기' CTA 미노출(상세는 열려 '보관됨'이 보인다).
-  const txt = textOf(root);
-  expect(txt).toContain('보관됨');
-  expect(txt).not.toContain('이 신발로 달리기');
+  expect(() => pressBy(root, 'Pegasus')).toThrow(); // 락커 목록에 없음 → 상세 진입 불가
+  expect(textOf(root)).not.toContain('이 신발로 달리기'); // 러닝 시작 CTA 미노출
 });

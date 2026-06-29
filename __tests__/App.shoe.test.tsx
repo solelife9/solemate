@@ -29,6 +29,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import App from '../App';
 import {seedBootCache} from './helpers/bootSeed';
 import ShoesScreen from '../ShoesScreen.rn';
+import ShoeArchiveScreen from '../ShoeArchiveScreen.rn';
 import {DANGER, GOOD, BEST, ACCENT, Shoe} from '../theme';
 
 type ApiShoe = {id: string; name: string; max_km: number; start_km: number; retired?: boolean};
@@ -246,15 +247,16 @@ test('restore(복원) PATCHes retired=false and the shoe reappears in the home p
   // before restore: archived shoe is not on the home picker.
   expect(textOf(root)).not.toContain('Clifton');
 
-  await tap(pressBy(root, '신발')); // → Shoes tab (locker shows all incl. retired)
-  await tap(pressBy(root, 'Clifton')); // open archived shoe detail
-  await tap(pressBy(root, 'arrow-undo-outline')); // 복원 (no Alert on restore)
+  // 복원 진입점은 마이탭 '신발 보관함'(ShoeArchiveScreen)이다(fd67d4b — 락커엔 retired 미노출).
+  await tap(pressBy(root, '마이')); // → 마이(프로필) 탭
+  await tap(pressBy(root, '신발 보관함')); // → 보관함 진입
+  await tap(pressBy(root, '복원')); // 복원 (no Alert on restore)
 
   // Stage 2: 복원도 로컬 상태(retired=false) 토글 — REST 신발 쓰기 없음.
   expect(calls.filter(c => c.url.includes('/api/shoes') && c.method !== 'GET')).toHaveLength(0);
 
   // observable: back on home, the restored shoe is offered as a startable option.
-  await tap(pressBy(root, 'chevron-back')); // detail → locker (TabBar)
+  await tap(pressBy(root, 'chevron-back')); // 보관함 → 마이(TabBar)
   await tap(pressBy(root, '홈')); // → Home tab
   const home = textOf(root);
   expect(home).toContain('Clifton');
@@ -281,25 +283,28 @@ test('ShoesScreen renders 4단계 마모 컨디션을 사용률별 색으로', a
   expect(dotColorsOf(root, 'replace')).toContain(DANGER);
 });
 
-test('ShoesScreen locker drives retire (archive) and restore (undo) through props', async () => {
+test('ShoesScreen 락커는 보관(retire)을, ShoeArchiveScreen 보관함은 복원(restore)을 prop으로 구동', async () => {
   autoConfirmAlerts();
+  // 보관은 ShoesScreen 상세의 '보관 처리'(archive)에서, 복원은 마이탭 보관함(ShoeArchiveScreen)
+  // 의 '복원'에서 일어난다(fd67d4b — retired 신발은 락커에서 빠져 보관함으로 이관).
   const onRetire = jest.fn();
-  const shoes: Shoe[] = [
-    {id: 'w', brand: 'NIKE', model: 'Pegasus', used: 560, max: 600, condition: '교체'},
-    {id: 'g', brand: 'BROOKS', model: 'Ghost', used: 50, max: 600, condition: '양호', retired: true},
-  ];
-  const root = await mountComponent(
-    <ShoesScreen shoes={shoes} runs={[]} totals={{}} onTab={() => {}} onAddShoe={() => {}} onRetire={onRetire} />,
-  );
+  const onRestore = jest.fn();
 
-  // active shoe → 보관: archive button confirms and retires (id, true).
-  await tap(pressBy(root, 'Pegasus'));
-  await tap(pressBy(root, 'archive-outline'));
+  // active shoe (락커) → 보관: archive button confirms and retires (id, true).
+  const locker = await mountComponent(
+    <ShoesScreen shoes={[{id: 'w', brand: 'NIKE', model: 'Pegasus', used: 560, max: 600, condition: '교체'}]}
+      runs={[]} totals={{}} onTab={() => {}} onAddShoe={() => {}} onRetire={onRetire} />,
+  );
+  await tap(pressBy(locker, 'Pegasus'));
+  await tap(pressBy(locker, 'archive-outline'));
   expect(onRetire).toHaveBeenCalledWith('w', true);
 
-  // back to locker, open the archived shoe → 복원: undo button restores (id, false).
-  await tap(pressBy(root, 'chevron-back'));
-  await tap(pressBy(root, 'Ghost'));
-  await tap(pressBy(root, 'arrow-undo-outline'));
-  expect(onRetire).toHaveBeenCalledWith('g', false);
+  // retired shoe (보관함) → 복원: undo button restores (id) via onRestore.
+  const archive = await mountComponent(
+    <ShoeArchiveScreen
+      shoes={[{id: 'g', brand: 'BROOKS', model: 'Ghost', used: 50, max: 600, condition: '양호', retired: true}]}
+      onRestore={onRestore} />,
+  );
+  await tap(pressBy(archive, '복원'));
+  expect(onRestore).toHaveBeenCalledWith('g');
 });

@@ -64,6 +64,17 @@ function pressByText(root: ReactTestRenderer.ReactTestInstance, label: string) {
   });
 }
 
+// 아이콘 버튼은 텍스트가 없어 접근성 라벨로 누른다(예: '일시정지').
+function pressByA11y(root: ReactTestRenderer.ReactTestInstance, label: string) {
+  const target = root.findAll(
+    n => typeof n.props.onPress === 'function' && n.props.accessibilityLabel === label,
+  )[0];
+  if (!target) throw new Error(`no pressable with a11y label: ${label}`);
+  act(() => {
+    target.props.onPress();
+  });
+}
+
 // Read the cadence metric value ('--' when no cadence, else the spm number).
 function readCadence(root: ReactTestRenderer.ReactTestInstance): string {
   const metric = root
@@ -110,25 +121,25 @@ async function startRun() {
 const BASE = 100000;
 const intervalMs = Math.round(60000 / 170); // 353ms → 170 spm
 
-test('Pedometer ~170spm 스트림이 160-180 밴드로 렌더되고, 3s 전엔 "--"', async () => {
+// 케이던스 피드는 '러닝 중'(active)에만 동작한다(App: pausedFlag() 게이트). 케이던스는
+// 나이키식 재구성으로 active 화면엔 안 뜨고 '일시정지' 시 펼쳐지는 보조지표다. 따라서
+// active 상태로 스트림을 주입해 cadence 상태를 채운 뒤, 일시정지해 펼침 지표의 값을 읽는다.
+// (3s 최소창 '--' 보류는 순수 lib __tests__/lib/stepCadence.test.ts 가 검증.)
+test('Pedometer ~170spm 스트림이 일시정지 펼침 케이던스에 160-180 밴드로 렌더된다', async () => {
   jest.useFakeTimers();
   jest.setSystemTime(BASE);
   try {
     const {renderer, root, onStep} = await startRun();
-    expect(readCadence(root)).toBe('--'); // 걸음 없음
 
-    // 누적 걸음수 k 를 시각 BASE + k*interval 에 공급.
+    // 누적 걸음수 k 를 시각 BASE + k*interval 에 공급(active 상태 — 피드 동작).
     const step = (k: number) => {
       jest.setSystemTime(BASE + k * intervalMs);
       act(() => onStep({steps: k}));
     };
+    for (let k = 0; k <= 34; k++) step(k); // ~12s span 의 170spm
 
-    // 첫 표본들은 3s 최소창 안 → 케이던스 보류('--').
-    for (let k = 0; k <= 6; k++) step(k); // ~2.1s span
-    expect(readCadence(root)).toBe('--');
-
-    // ~12s span 까지 스트리밍 → 안정된 분당비율, 인밴드 값 렌더.
-    for (let k = 7; k <= 34; k++) step(k);
+    // 일시정지 → 보조지표 펼침(케이던스 노출). 피드는 멈추지만 계산된 상태는 유지된다.
+    pressByA11y(root, '일시정지');
     const shown = readCadence(root);
     expect(shown).not.toBe('--');
     const spm = Number(shown);
@@ -154,7 +165,8 @@ test('첫 걸음 전 idle 은 표시 케이던스를 낮추지 않는다', async
       jest.setSystemTime(firstAt + k * intervalMs);
       act(() => onStep({steps: k}));
     };
-    for (let k = 0; k <= 34; k++) step(k); // ~12s 의 진짜 170spm
+    for (let k = 0; k <= 34; k++) step(k); // ~12s 의 진짜 170spm (active)
+    pressByA11y(root, '일시정지'); // 펼침 지표로 케이던스 확인
     const spm = Number(readCadence(root));
     expect(spm).toBeGreaterThanOrEqual(160); // ~26 으로 끌려가지 않음
     expect(spm).toBeLessThanOrEqual(180);

@@ -103,16 +103,16 @@ test('ShoesScreen 상세: 낮은 마모 신발 상세에는 경고 배너가 없
   expect(byTestIDPrefix(root, 'injury-banner').length).toBe(0);
 });
 
-// ── 4) 보관 신발: 마모가 높아도 경고 미노출(보관됨 상태와 모순 방지) ─────────────
-test('보관된 고마모 신발은 경고 배너를 노출하지 않는다', () => {
+// ── 4) 보관 신발: 락커에서 제외 → 마모가 높아도 경고가 뜰 자리가 없다(모순 방지) ────
+test('보관된 고마모 신발은 락커에서 제외되어 경고 배너를 노출하지 않는다', () => {
+  // 보관(retired) 신발은 ShoesScreen 락커에서 빠지고 마이탭 '신발 보관함'으로 이관된다(fd67d4b).
+  // 따라서 마모가 높아도 상세 진입·경고 배너가 뜰 카드 자체가 없다(보관됨 상태와 모순 방지).
   const wornRetired: Shoe[] = [
     {id: 'r1', brand: 'Hoka', model: 'Bondi 8', used: 595, max: 600, condition: '교체', retired: true},
   ];
   const root = render(<ShoesScreen shoes={wornRetired} runs={RUNS} />).root;
-  tap(pressBy(root, 'Bondi 8'));
 
-  const txt = textOf(root);
-  expect(txt).toContain('보관됨');
+  expect(() => pressBy(root, 'Bondi 8')).toThrow(); // 락커 목록에 없음
   expect(byTestIDPrefix(root, 'injury-banner').length).toBe(0);
-  expect(txt).not.toContain(INJURY_HIGH_MSG);
+  expect(textOf(root)).not.toContain(INJURY_HIGH_MSG);
 });
