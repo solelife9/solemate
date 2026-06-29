@@ -1202,25 +1202,6 @@ function Main(){
     setOnboarded(false);
   };
 
-  // ── 개인 챌린지 생성/삭제(영속 + 상태 갱신) ─────────────────────────────────
-  // 신규 키(K_CHALLENGES)에만 쓰므로 기존 데이터(신발/런/설정)와 격리된다. 진행률은
-  // 저장하지 않고 런 기록에서 매번 파생(challengeProgress)해 단일 진실원을 유지한다.
-  // base(distance/streak) + ext(monthly/shoe/rotation)를 한 배열로 합쳐 K_CHALLENGES 에 쓴다.
-  // 두 부분집합을 항상 함께 직렬화하므로, 한쪽을 갱신해도 다른 쪽이 사라지지 않는다(상호 비파괴).
-  const persistAllChallenges=(base:Challenge[],ext:ExtChallenge[])=>{
-    try{void AsyncStorage.setItem(K_CHALLENGES,JSON.stringify([...base,...ext]));}catch(e){console.log('challenges save error',e);}
-  };
-  const persistChallenges=(next:Challenge[])=>{
-    setChallenges(next);
-    persistAllChallenges(next,extChallenges);
-  };
-  const createChallenge=(c:Challenge)=>{
-    // 같은 id(같은 종류·기간·목표) 중복 생성은 덮어쓴다(목록 비대화 방지).
-    persistChallenges([...challenges.filter(x=>x.id!==c.id),c]);
-  };
-  const deleteChallenge=(id:string)=>{
-    persistChallenges(challenges.filter(c=>c.id!==id));
-  };
   // 스마트 챌린지 목표 거리(km) 수정 — 챌린지 id별로 오버라이드를 갱신·영속한다(상태 즉시
   // 반영 + K_SMART_TARGET 쓰기). 1km 미만은 1로 바닥 처리해 0/음수 목표를 막는다.
   const editSmartTarget=(id:string,km:number)=>{
