@@ -20,7 +20,6 @@ import {
   ScrollView,
   ImageBackground,
   PanResponder,
-  ActivityIndicator,
   Animated,
   Easing,
   AccessibilityInfo,
@@ -592,31 +591,7 @@ function CheckIcon({size = 44, color = '#fff'}: {size?: number; color?: string})
   );
 }
 
-// ── 소셜 로그인 마크 ──────────────────────────────────────────────────────────
-function KakaoMark() {
-  return (
-    <Svg width={20} height={20} viewBox="0 0 24 24">
-      <Path d="M12 3C6.5 3 2 6.5 2 10.8c0 2.8 1.9 5.2 4.7 6.6-.2.7-.7 2.6-.8 3-.1.5.2.5.4.4.2-.1 2.7-1.8 3.8-2.6.6.1 1.3.1 1.9.1 5.5 0 10-3.5 10-7.8S17.5 3 12 3z" fill="#191600" />
-    </Svg>
-  );
-}
-function NaverMark() {
-  return (
-    <Svg width={17} height={17} viewBox="0 0 24 24">
-      <Path d="M14.5 3v8.3L9.4 3H3v18h6.5v-8.3L14.6 21H21V3z" fill="#fff" />
-    </Svg>
-  );
-}
-function GoogleMark() {
-  return (
-    <Svg width={19} height={19} viewBox="0 0 24 24">
-      <Path d="M21.6 12.2c0-.7-.06-1.4-.18-2H12v3.8h5.4a4.6 4.6 0 01-2 3v2.5h3.2c1.9-1.7 3-4.3 3-7.3z" fill="#4285F4" />
-      <Path d="M12 22c2.7 0 5-.9 6.6-2.4l-3.2-2.5c-.9.6-2 1-3.4 1-2.6 0-4.8-1.8-5.6-4.1H3.1v2.6A10 10 0 0012 22z" fill="#34A853" />
-      <Path d="M6.4 14c-.2-.6-.3-1.3-.3-2s.1-1.4.3-2V7.4H3.1A10 10 0 002 12c0 1.6.4 3.2 1.1 4.6L6.4 14z" fill="#FBBC05" />
-      <Path d="M12 5.9c1.5 0 2.8.5 3.8 1.5l2.8-2.8A10 10 0 0012 2 10 10 0 003.1 7.4l3.3 2.6C7.2 7.7 9.4 5.9 12 5.9z" fill="#EA4335" />
-    </Svg>
-  );
-}
+// (소셜 로그인 마크/버튼 제거 — 인증은 LoginScreen 단일화. 온보딩 마지막은 '시작하기' CTA만.)
 
 // 화면 1~5 공통 상단(진행 바 + 건너뛰기).
 function FlowHeader({step, total, onSkip, insetTop}: {step: number; total: number; onSkip: () => void; insetTop: number}) {
@@ -1070,48 +1045,7 @@ function Register({goNext, onSkip, onRegister, insetTop, insetBottom}: ScreenPro
 // ════════════════════════════════════════════════════════════════════════════
 // 5 · Ready
 // ════════════════════════════════════════════════════════════════════════════
-function LoginBtn({
-  label,
-  bg,
-  color,
-  border,
-  icon,
-  busy,
-  onPress,
-}: {
-  label: string;
-  bg: string;
-  color: string;
-  border?: boolean;
-  icon: React.ReactNode;
-  busy: boolean;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable
-      onPress={busy ? undefined : onPress}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      style={({pressed}) => [
-        s.loginBtn,
-        {backgroundColor: bg},
-        border && {borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(0,0,0,0.12)'},
-        pressed && !busy && {transform: [{scale: 0.98}]},
-      ]}>
-      {busy ? (
-        <ActivityIndicator color={color} />
-      ) : (
-        <>
-          <View style={{position: 'absolute', left: 18}}>{icon}</View>
-          <Text style={{fontFamily: FONT, fontSize: 16, fontWeight: '600', color}}>{label}</Text>
-        </>
-      )}
-    </Pressable>
-  );
-}
-
 function Ready({registered, onFinish, onSkip, insetTop, insetBottom}: ScreenProps & {registered: RegisteredShoe | null; onFinish: () => void}) {
-  const [busy, setBusy] = useState<string | null>(null);
   // 신발 요약 카드는 *실제로 등록한 신발이 있을 때만* 보여준다. 과거엔 폴백
   // {Nike Alphafly 3, 60/600}을 깔아 두었는데, '이미 계정이 있나요? 로그인'으로 진입한
   // 복귀 유저(registered=null)에게 그 날조 신발 + '추적 시작됨' + '이제 달릴 준비가
@@ -1121,13 +1055,6 @@ function Ready({registered, onFinish, onSkip, insetTop, insetBottom}: ScreenProp
   const st = shoe ? statusFor(shoe.km, shoe.max || 600) : 'good';
   const col = STATUS[st].c;
   const remain = shoe ? Math.round((1 - shoe.km / (shoe.max || 600)) * 100) : 0;
-  const press = (k: string) => {
-    setBusy(k);
-    setTimeout(() => {
-      setBusy(null);
-      onFinish();
-    }, 1200);
-  };
   return (
     <View style={s.screen}>
       {/* 상단 글로우 */}
@@ -1174,20 +1101,10 @@ function Ready({registered, onFinish, onSkip, insetTop, insetBottom}: ScreenProp
         )}
       </ScrollView>
 
-      {/* 로그인 */}
+      {/* 시작 — 인증은 앱 진입 전 LoginScreen 에서 이미 끝났으므로 온보딩 마지막은 단일
+          완료 CTA 하나다(여기에 또 로그인 버튼을 두면 인증 끝난 유저에게 중복·혼동). */}
       <View style={[s.footer, {paddingBottom: Math.max(insetBottom, 18), gap: 10}]}>
-        <LoginBtn label="카카오로 시작하기" bg="#FEE500" color="#191600" icon={<KakaoMark />} busy={busy === 'kakao'} onPress={() => press('kakao')} />
-        <LoginBtn label="네이버로 시작하기" bg="#03C75A" color="#fff" icon={<NaverMark />} busy={busy === 'naver'} onPress={() => press('naver')} />
-        <LoginBtn label="Google로 시작하기" bg="#fff" color="#1A1A1A" border icon={<GoogleMark />} busy={busy === 'google'} onPress={() => press('google')} />
-        <Pressable
-          testID="onboarding-email-login"
-          onPress={() => press('email')}
-          hitSlop={8}
-          style={{alignItems: 'center', marginTop: 6}}
-          accessibilityRole="button"
-          accessibilityLabel="이메일로 계속하기">
-          <Text style={{fontFamily: FONT, fontSize: 15, color: T3, fontWeight: '500'}}>이메일로 계속하기</Text>
-        </Pressable>
+        <PrimaryButton testID="onboarding-finish" label="시작하기" onPress={onFinish} />
         <Text style={{fontFamily: FONT, fontSize: 11, color: T4, textAlign: 'center', lineHeight: 17, marginTop: 8}}>
           계속 진행하면 Keego의 <Text style={{textDecorationLine: 'underline'}} accessibilityRole="link" accessibilityLabel="이용약관 열기" onPress={() => { Linking.openURL(TERMS_URL).catch(() => {}); }}>이용약관</Text>과 <Text style={{textDecorationLine: 'underline'}} accessibilityRole="link" accessibilityLabel="개인정보 처리방침 열기" onPress={() => { Linking.openURL(PRIVACY_URL).catch(() => {}); }}>개인정보 처리방침</Text>에{'\n'}동의하는 것으로 간주됩니다.
         </Text>
