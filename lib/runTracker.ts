@@ -99,6 +99,10 @@ class RunTracker {
   // 곡선 전용 (누적거리 km, 경과시간 sec) 시계열 — 약 25m 마다 누적(비가지치기). 경로 단순화와
   // 무관하게 거리-시간 대응을 보존해 RunDetail 의 고운 페이스 곡선을 만든다. start/config 시 리셋.
   private paceTrack: {d: number; t: number}[] = [];
+  // 심박 시계열({t: 경과초, bpm}) — 외부(워치/HealthKit)가 feedHeartRate 로 먹인다. 완주 시
+  // 영속해 HR존 구간시간·트레이닝효과(TRIMP)에 쓴다. ~3s throttle(과밀 저장 방지).
+  private hrTrack: {t: number; bpm: number}[] = [];
+  private lastHrPushSec = -999;
   private fixIndex = 0;
   private lastGood: {lat: number; lon: number} | null = null;
   private lastGoodMs = 0;
@@ -146,6 +150,8 @@ class RunTracker {
     this.dist = 0;
     this.pts = [];
     this.paceTrack = [];
+    this.hrTrack = [];
+    this.lastHrPushSec = -999;
     this.paceSamples = [];
     this.lastSpeedMps = null;
     this.fixIndex = 0;
@@ -524,6 +530,22 @@ class RunTracker {
   /** 곡선 전용 (누적거리 km, 경과시간 sec) 시계열. 완주 시 영속해 고운 페이스 곡선을 만든다. */
   getPaceTrack(): {d: number; t: number}[] {
     return this.paceTrack;
+  }
+
+  /** 외부(워치/HealthKit)가 실시간 심박을 먹인다. 달리는 중(active·미정지)에만 ~3s 간격으로
+   *  hrTrack 에 적립한다. bpm<=0(미측정)·정지·비활성은 무시 — 휴식/공백 심박을 안 섞는다. */
+  feedHeartRate(bpm: number) {
+    if (!this.active || this.pausedFlag()) return;
+    if (!(bpm > 0)) return;
+    const t = this.getElapsed();
+    if (t - this.lastHrPushSec < 3) return;
+    this.lastHrPushSec = t;
+    this.hrTrack.push({t: Math.round(t), bpm: Math.round(bpm)});
+  }
+
+  /** 심박 시계열({t: 경과초, bpm}). 완주 시 영속해 HR존 구간시간·TRIMP 분석에 쓴다. */
+  getHrTrack(): {t: number; bpm: number}[] {
+    return this.hrTrack;
   }
 
   getElapsedFinal(): number {

@@ -463,20 +463,19 @@ describe('Audit Hardening 수용', () => {
       const onDone = jest.fn();
       const root = renderTree(el(OnboardingScreen, {onDone})).root;
 
-      // Welcome 단계: 로그인 화면(Ready)의 소셜 로그인 버튼은 아직 없다.
-      expect(hasLabel(root, '카카오로 시작하기')).toBe(false);
+      // Welcome 단계: 아직 로그인(Ready) 화면이 아니다(복귀 환영 문구 미노출).
+      expect(renderedText(root)).not.toContain('다시 오신 걸');
 
       // '이미 계정이 있나요? 로그인' 을 누른다.
       act(() => {
         pressableByLabel(root, '이미 계정이 있나요? 로그인').props.onPress();
       });
 
-      // 이제 로그인(Ready, index 5) 화면이 보인다 — 소셜/이메일 로그인 진입점이 렌더된다.
-      // (과거 버그였다면 goNext 로 1단계 'Shoes Matter'(다음 CTA)가 떴을 것.)
-      expect(hasLabel(root, '카카오로 시작하기')).toBe(true);
-      expect(hasLabel(root, '이메일로 계속하기')).toBe(true);
-      // 온보딩 소개 단계의 '다음' CTA 는 뜨지 않았다(=순차 진행이 아니라 로그인 점프).
+      // 이제 로그인(Ready, index 5) 화면으로 점프했다. 인증은 LoginScreen 으로 단일화됐으므로
+      // Ready 엔 가짜 소셜 버튼 대신 '시작하기' CTA + 복귀 환영만 있다(아래 환영 문구로 검증).
+      // 과거 버그였다면 goNext 로 1단계 'Shoes Matter'(다음 CTA)가 떴을 것 — '다음'이 없어야 한다.
       expect(hasLabel(root, '다음')).toBe(false);
+      expect(renderedText(root)).toContain('시작하기');
 
       // 날조 금지: 등록한 신발이 없는 로그인 진입(registered=null)이므로, 폴백 신발
       // 카드(Nike Alphafly 3 / 60·600km / '추적 시작됨')도 '준비됐다' 축하문구도 뜨면 안 된다.
