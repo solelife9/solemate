@@ -2,7 +2,7 @@
 // HistoryScreen.rn.tsx — 기록: period segment, period chart, recent runs + RunDetail
 // (sample data removed — real summary/chart/runs are injected via props)
 // ============================================================================
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, ScrollView, FlatList, Pressable, StyleSheet, LayoutChangeEvent, TextInput, Alert, KeyboardAvoidingView, Platform, RefreshControl, Modal } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -16,6 +16,7 @@ import { TabBar, Button, SegmentedControl, StatGrid } from './primitives';
 import { Unit, displayNum, displayToKm } from './lib/units';
 import { ymdLocal } from './lib/format';
 import { sumKm, summaryOf, monthBuckets, weekBuckets, yearBuckets } from './lib/stats';
+import { fitnessSummary } from './lib/analytics/fitness';
 import { getRunSurface, setRunSurface, type Surface } from './lib/wearModel';
 import { parseRoute, projectRoute, LatLon } from './lib/route';
 import { DARK_MAP_STYLE } from './lib/mapStyle';
@@ -733,6 +734,19 @@ export default function HistoryScreen({
   const allYearsKm = allYearKeys.map(y => sumKm(runs.filter(r => rd(r).startsWith(y)).map(toRow)));
   const allYearsChart = allYearKeys.length > 0 ? { title: '연도별 거리', data: allYearsKm.map(v => displayNum(v, unit, 0)), labels: allYearKeys.map(y => `'${y.slice(2)}`) } : undefined;
 
+  // 체력 트렌드(VO2max + 트레이닝 상태 CTL/ATL/TSB) — '현재 체력'은 기간 토글과 무관하므로
+  // 전체 런으로 산출한다. PMC 는 첫 런~오늘 하루씩 도는 루프라 runs 가 바뀔 때만 재계산(useMemo).
+  const todayIso = ymdLocal(now);
+  const fitness = useMemo(
+    () => fitnessSummary(
+      runs.map(r => ({ km: (r as any).km ?? r.dist, durationS: (r as any).duration ?? r.durationS, runDate: rd(r) })),
+      todayIso,
+    ),
+    // runs 식별(길이+마지막 런 키)로 캐시 무효화 — 매 렌더 깊은 비교 회피.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [runs.length, runs[runs.length - 1]?.id, todayIso],
+  );
+
   const sum = period === '주' ? selWeekSummary : period === '월' ? selMonthSummary : period === '년' ? selYearSummary : (summary['전체'] || EMPTY_SUMMARY);
   const ch = period === '주'
     ? (selWeekBuckets.some(v => v > 0) ? { title: '일별 거리', data: selWeekBuckets.map(v => displayNum(v, unit, 1)), labels: WEEKDAY_LABELS } : chart['주'])
@@ -860,6 +874,42 @@ export default function HistoryScreen({
                 </View>
               )}
             </View>
+            {/* 체력 트렌드(VO2max + 트레이닝 상태) — 타임이 있는 노력 런이 하나라도 있어야
+                VDOT/부하가 산다(없으면 숨김). 기간 토글과 무관한 '현재 체력' 단일 카드. */}
+            {fitness.vo2max > 0 && (
+              <View
+                style={[s.card, { paddingHorizontal: 20, paddingTop: 14, paddingBottom: 18 }]}
+                accessible
+                accessibilityLabel={`체력 트렌드. VO2max ${fitness.vo2max.toFixed(1)}, ${fitness.vo2maxLabel}. 폼 ${Math.round(fitness.tsb)}, ${fitness.tsbLabel}`}
+              >
+                <Text style={s.cardTitle}>체력 트렌드</Text>
+                {/* VO2max — 최근 6주 최고 노력 기준(이지런 과소추정 보정). 가민 'VO2max'와 동일 개념. */}
+                <View style={{ flexDirection: 'row', alignItems: 'flex-end', marginTop: 10 }}>
+                  <Text style={{ color: T1, fontFamily: DISPLAY, fontSize: 38, fontWeight: '800', letterSpacing: -0.5, lineHeight: 40 }}>{fitness.vo2max.toFixed(1)}</Text>
+                  <View style={{ marginLeft: 10, paddingBottom: 4 }}>
+                    <Text style={{ color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500' }}>VO₂max</Text>
+                    <Text style={{ color: ACCENT, fontFamily: FONT, fontSize: 13, fontWeight: '700', marginTop: 2 }}>{fitness.vo2maxLabel}</Text>
+                  </View>
+                </View>
+                {/* 트레이닝 상태 — 체력(CTL)/피로(ATL)/폼(TSB). 폼 양수=신선(테이퍼), 음수=피로 누적. */}
+                <View style={{ flexDirection: 'row', marginTop: 16, paddingTop: 14, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.12)' }}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={s.sumMetricV}>{Math.round(fitness.ctl)}</Text>
+                    <Text style={s.sumMetricL}>체력</Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={s.sumMetricV}>{Math.round(fitness.atl)}</Text>
+                    <Text style={s.sumMetricL}>피로</Text>
+                  </View>
+                  <View style={{ flex: 1.4 }}>
+                    <Text style={[s.sumMetricV, { color: fitness.tsb >= 5 ? ACCENT : fitness.tsb <= -25 ? DANGER : T1 }]}>
+                      {fitness.tsb > 0 ? '+' : ''}{Math.round(fitness.tsb)}
+                    </Text>
+                    <Text style={s.sumMetricL} numberOfLines={1}>폼 · {fitness.tsbLabel.split(' ')[0]}</Text>
+                  </View>
+                </View>
+              </View>
+            )}
             <Text style={s.sectionLabel}>러닝 기록</Text>
           </View>
         }
