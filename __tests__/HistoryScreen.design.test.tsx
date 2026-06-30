@@ -51,8 +51,11 @@ function mkRun(id: string, dist: number, dateStr: string) {
   return {id, dist, durationS: 1800, runDate: dateStr, shoe: -1, pace: "5'00\"", time: '30:00'} as any;
 }
 // 이번 주에 12km(주 요약 = 12), 이번 달에 76km 추가 → 달 요약 = 88km.
+// w1 은 '오늘'에 시드한다 — 오늘은 항상 이번 주∧이번 달에 동시에 속하므로, 주가 두 달에
+// 걸치는 월 경계(예: 6/29~7/5 주의 7/1)에서도 주·달 양쪽에 안전히 잡힌다. (weekMonday 에
+// 두면 그 월요일이 지난달일 때 월 합계에서 누락돼 88 이 깨졌다.)
 const RUNS = [
-  mkRun('w1', 12, ymd(weekMonday)),
+  mkRun('w1', 12, ymd(now)),
   mkRun('m1', 76, ymd(monthOnlyDate)),
 ];
 

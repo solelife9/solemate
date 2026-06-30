@@ -35,6 +35,14 @@ import {DANGER, GOOD, BEST, ACCENT, Shoe} from '../theme';
 type ApiShoe = {id: string; name: string; max_km: number; start_km: number; retired?: boolean};
 type ApiRun = {id: string; shoe_id: string; km: number; run_date: string; duration: number};
 
+// 현재 달(=History 기본 '월' 뷰가 잡는 구간)에 떨어지는 오늘 날짜 'YYYY-MM-DD'. 고정 날짜로
+// 시드하면 달이 바뀌는 순간(예: 6/30→7/1) 월 뷰에서 사라져 'no-cascade 삭제' 테스트가
+// 깨졌다 — 오늘은 항상 이번 달이므로 안전하다.
+const TODAY_ISO = (() => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+})();
+
 type RecordedCall = {method: string; url: string; body: any};
 
 function textOf(node: ReactTestRenderer.ReactTestInstance): string {
@@ -216,7 +224,7 @@ test('delete(삭제) DELETEs only the shoe; the run is preserved (no cascade)', 
       {id: 's1', name: 'Nike Pegasus', max_km: 600, start_km: 0},
       {id: 's2', name: 'Hoka Clifton', max_km: 600, start_km: 0},
     ],
-    [{id: 'r1', shoe_id: 's1', km: 5, run_date: '2026-06-01', duration: 1800}],
+    [{id: 'r1', shoe_id: 's1', km: 5, run_date: TODAY_ISO, duration: 1800}],
   );
 
   await tap(pressBy(root, '신발')); // → Shoes tab
