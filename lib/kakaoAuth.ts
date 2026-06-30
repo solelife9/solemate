@@ -17,7 +17,17 @@ export async function resolveKakaoFirebaseToken(): Promise<string> {
   if (!KAKAO_NATIVE_APP_KEY) {
     throw new Error('카카오 로그인이 아직 설정되지 않았습니다.');
   }
-  const token = await kakaoLogin();
+  let token;
+  try {
+    token = await kakaoLogin();
+  } catch (e: any) {
+    // 사용자 취소는 친절한 한국어로(구글·네이버와 톤 통일). 그 외 에러는 원본 보존.
+    const msg = String((e && (e.message || e.code)) || '');
+    if (/cancel|취소|E_CANCELLED/i.test(msg)) {
+      throw new Error('카카오 로그인이 취소되었습니다.');
+    }
+    throw e instanceof Error ? e : new Error(`카카오 로그인 실패: ${msg.slice(0, 80)}`);
+  }
   const accessToken = token && token.accessToken;
   if (!accessToken) throw new Error('카카오 액세스 토큰을 받지 못했습니다.');
 

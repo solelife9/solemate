@@ -1296,5 +1296,4 @@ const s = StyleSheet.create({
     borderColor: SEP,
     alignSelf: 'stretch',
   },
-  loginBtn: {height: 54, borderRadius: 15, alignItems: 'center', justifyContent: 'center', flexDirection: 'row'},
 });
