@@ -5,6 +5,7 @@ import React_RCTAppDelegate
 import ReactAppDependencyProvider
 import FirebaseCore
 import kakao_login
+import NaverThirdPartyLogin
 
 @main
 class AppDelegate: ExpoAppDelegate {
@@ -49,6 +50,10 @@ class AppDelegate: ExpoAppDelegate {
   ) -> Bool {
     if RNKakaoLogins.isKakaoTalkLoginUrl(url: url) {
       return RNKakaoLogins.handleOpenUrl(url: url)
+    }
+    // 네이버 로그인 콜백(keego://) — 네이버 앱/웹 로그인 후 복귀를 SDK 로 처리.
+    if url.scheme == "keego" {
+      return NaverThirdPartyLoginConnection.getSharedInstance().application(app, open: url, options: options)
     }
     return super.application(app, open: url, options: options)
   }
