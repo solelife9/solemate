@@ -17,6 +17,7 @@ import { Unit, displayNum, displayToKm } from './lib/units';
 import { ymdLocal } from './lib/format';
 import { sumKm, summaryOf, monthBuckets, weekBuckets, yearBuckets } from './lib/stats';
 import { fitnessSummary } from './lib/analytics/fitness';
+import { gradeAdjustedPaceSec, smoothElevation, resampleByDistance } from './lib/analytics/gap';
 import { getRunSurface, setRunSurface, type Surface } from './lib/wearModel';
 import { parseRoute, projectRoute, LatLon } from './lib/route';
 import { DARK_MAP_STYLE } from './lib/mapStyle';
@@ -438,6 +439,34 @@ function RunDetail({ run, shoe, onBack, unit, onDelete }: { run: Run; shoe?: Sho
       .catch(() => { if (alive) setPaceTrack([]); });
     return () => { alive = false; };
   }, [run.id]);
+  // GAP(경사보정페이스)용 (거리,경과초,고도) 시계열(gapTrack_<id>, App.onSave가 영속). 있으면
+  // 스무딩→지형스케일 빈평균→Minetti 로 평지 등가 페이스를 낸다. 없으면(옛 런/평지/고도無) null.
+  const [gapTrack, setGapTrack] = useState<{ d: number; t: number; e: number }[]>([]);
+  useEffect(() => {
+    let alive = true;
+    if (!run.id) { setGapTrack([]); return; }
+    AsyncStorage.getItem('gapTrack_' + run.id)
+      .then(raw => {
+        if (!alive) return;
+        try {
+          const arr = raw ? JSON.parse(raw) : [];
+          setGapTrack(Array.isArray(arr) ? arr : []);
+        } catch { setGapTrack([]); }
+      })
+      .catch(() => { if (alive) setGapTrack([]); });
+    return () => { alive = false; };
+  }, [run.id]);
+  // 정밀 GAP: 표본주파수 노이즈를 스무딩+빈평균으로 누른 뒤 경사보정. 고도변화 없으면 실제
+  // 평균페이스와 같아(항등) 굳이 노출 안 함 — 실제 페이스(초/km)와 1초 이상 다를 때만 보여준다.
+  const gapSec = useMemo(() => {
+    if (gapTrack.length < 2) return null;
+    const g = gradeAdjustedPaceSec(resampleByDistance(smoothElevation(gapTrack, 60), 0.1));
+    if (g == null) return null;
+    const actual = (run.durationS || 0) > 0 && run.dist > 0 ? (run.durationS || 0) / run.dist : 0;
+    if (actual > 0 && Math.abs(g - actual) < 1) return null; // 평지(차이 미미)면 숨김
+    return Math.round(g);
+  }, [gapTrack, run.durationS, run.dist]);
+
   // 공유 입력(텍스트·카드 폴백이 같은 필드를 쓰도록 단일 출처로 둔다).
   const shareInput = {
     distKm: run.dist,
@@ -539,6 +568,28 @@ function RunDetail({ run, shoe, onBack, unit, onDelete }: { run: Run; shoe?: Sho
           verticalPadding={6}
           items={stats.map((x) => ({ value: x.v, unit: x.u ? ` ${x.u}` : undefined, label: x.l }))}
         />
+        {/* 경사 보정 페이스(GAP, Strava식) — 오르내림을 평지 등가로 환산. 고도 시계열이 있고
+            평지와 유의미하게 다를 때만 노출(평지면 실제 페이스와 같아 중복이라 숨김). */}
+        {gapSec != null && (() => {
+          const actual = (run.durationS || 0) > 0 && run.dist > 0 ? (run.durationS || 0) / run.dist : 0;
+          const harder = actual > 0 && gapSec < actual; // GAP 가 더 빠름 = 평지보다 힘든(오르막) 코스
+          const fmtPace = (sec: number) => `${Math.floor(sec / 60)}'${String(Math.round(sec % 60)).padStart(2, '0')}"`;
+          return (
+            <View
+              style={[s.card, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingVertical: 14, marginTop: 12 }]}
+              accessible accessibilityLabel={`경사 보정 페이스 GAP, 킬로미터당 ${fmtPace(gapSec)}`}>
+              <View style={{ flex: 1, paddingRight: 12 }}>
+                <Text style={s.cardTitle}>경사 보정 페이스 (GAP)</Text>
+                <Text style={{ color: T3, fontFamily: FONT, fontSize: 11, marginTop: 3 }}>
+                  {harder ? '오르막 코스 — 평지였다면 이 페이스' : '내리막 이득을 평지 기준으로 환산'}
+                </Text>
+              </View>
+              <Text style={{ color: T1, fontFamily: DISPLAY, fontSize: 22, fontWeight: '800' }}>
+                {fmtPace(gapSec)}<Text style={{ fontSize: 12, color: T3, fontWeight: '500' }}> /km</Text>
+              </Text>
+            </View>
+          );
+        })()}
         {/* 달린 위치(경로) 지도 — route_<id> 가 있으면 SVG 코스맵으로 표시(없으면 자동 숨김). */}
         <CourseMap points={route} />
         {/* 거리축 페이스 곡선(추세) + 구간별 페이스 스플릿(정확값). 같은 스플릿을 공유하고

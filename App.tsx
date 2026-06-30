@@ -1661,7 +1661,7 @@ function Main(){
         weightKg={weightKg}
         resume={resumeSnap}
         resumeMode={resumeMode}
-        onSave={async(km,dur,cad,memo,route,location,splits,elevM,cal,paceTrack,hrTrack)=>{
+        onSave={async(km,dur,cad,memo,route,location,splits,elevM,cal,paceTrack,hrTrack,gapTrack)=>{
           // 신기록(PR) 감지 — addRun 의 낙관적 setRuns 전이라 runs 는 '이전 런들'이다.
           const prKinds=detectPRs({dist:km,durationS:dur},runs.map(r=>({dist:Number(r.km)||0,durationS:r.duration||0,runDate:r.run_date})));
           const newId=await addRun(activeRun.id,km,today(),memo||'','gps',dur,cad,route,location,undefined,elevM,cal);
@@ -1675,6 +1675,9 @@ function Main(){
           // 심박 시계열 영속 — RunDetail/리캡이 hrTrack_<id>로 읽어 HR존 구간시간·평균/최대·
           // 트레이닝효과(TRIMP)를 산출한다. 워치 미연동(빈/0)이면 저장 생략(표시 가치 없음).
           if(hrTrack&&hrTrack.length>=2) await AsyncStorage.setItem('hrTrack_'+newId, JSON.stringify(hrTrack));
+          // GAP 시계열 영속 — RunDetail이 gapTrack_<id>로 읽어 경사보정페이스(Strava식)를 낸다.
+          // 고도 있는 점이 2개 미만이면 경사 계산 불가라 저장 생략.
+          if(gapTrack&&gapTrack.length>=2) await AsyncStorage.setItem('gapTrack_'+newId, JSON.stringify(gapTrack));
           await clearSnapshot();
           // 완주 리캡(P0-2) — 기록 탭으로 바로 점프하던 대신 축하 풀스크린을 띄운다(러너가
           // 가장 자랑스러운 순간 — 리텐션·공유 트리거). 신기록(PR)은 토스트 대신 리캡 배지로.
@@ -1876,7 +1879,7 @@ const boot=StyleSheet.create({
 });
 
 // ─── Live run screen (GPS / sensors / TTS engine + handoff Ring UI) ─────────
-function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],weightKg,onSave,onDiscard,resume,resumeMode}:{shoe:{id:string;name:string};insets:any;goalKm:number;pacePlan?:number[];weightKg:number;onSave:(km:number,dur:number,cad:number,memo:string,route:string,location:string,splits:{km:number;paceSec:number;elevM:number}[],elevM:number,cal:number,paceTrack:{d:number;t:number}[],hrTrack:{t:number;bpm:number}[])=>Promise<void>;onDiscard:()=>void;resume?:RunSnapshot|null;resumeMode?:'review'|'continue'}){
+function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],weightKg,onSave,onDiscard,resume,resumeMode}:{shoe:{id:string;name:string};insets:any;goalKm:number;pacePlan?:number[];weightKg:number;onSave:(km:number,dur:number,cad:number,memo:string,route:string,location:string,splits:{km:number;paceSec:number;elevM:number}[],elevM:number,cal:number,paceTrack:{d:number;t:number}[],hrTrack:{t:number;bpm:number}[],gapTrack:{d:number;t:number;e:number}[])=>Promise<void>;onDiscard:()=>void;resume?:RunSnapshot|null;resumeMode?:'review'|'continue'}){
   // 'continue' = 스냅샷에서 GPS 를 재가동해 이어 달린다(엔진 seed*). 'review'(기본) =
   // done 화면에서 검토·저장만. resume 가 없으면(일반 시작) 두 분기 모두 타지 않는다.
   const isContinue=!!resume&&resumeMode==='continue';
@@ -1917,6 +1920,8 @@ function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],weightKg,onSave,onDisca
   const [finPaceTrack,setFinPaceTrack]=useState<{d:number;t:number}[]>([]);
   // 심박 시계열 — 완주 시 엔진에서 캡처해 hrTrack_<id>로 영속(HR존·트레이닝효과 분석).
   const [finHrTrack,setFinHrTrack]=useState<{t:number;bpm:number}[]>([]);
+  // GAP(경사보정페이스)용 (거리,경과초,고도) 시계열 — 완주 시 캡처해 gapTrack_<id>로 영속.
+  const [finGapTrack,setFinGapTrack]=useState<{d:number;t:number;e:number}[]>([]);
   // 라이브 지도용 좌표 목록 — GPS fix마다 runTracker.getPoints()로 갱신한다.
   const [liveCoords,setLiveCoords]=useState<{lat:number;lon:number}[]>([]);
   const [finLocation,setFinLocation]=useState(resume?resume.location:'');
@@ -2247,6 +2252,7 @@ function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],weightKg,onSave,onDisca
     setFinSplits(appendFinalSplit(splitsRef.current,fk,ft,lastSplitRef.current.elapsed,finElevTotal,lastSplitRef.current.elevM));
     setFinPaceTrack(runTracker.getPaceTrack().slice());
     setFinHrTrack(runTracker.getHrTrack().slice());
+    setFinGapTrack(runTracker.getGapTrack().slice());
     setFinLocation(locationRef.current);
     setFinKm(fk);setFinTime(ft);setFinCad(cadRef.current);
     setFinElev(finElevTotal);
@@ -2269,7 +2275,7 @@ function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],weightKg,onSave,onDisca
           }
         }catch{}
       }
-      await onSave(Math.round(finKm*100)/100,finTime,finCad,memo,finRoute,loc,finSplits,finElev,estimateCalories(finKm,weightKg),finPaceTrack,finHrTrack);
+      await onSave(Math.round(finKm*100)/100,finTime,finCad,memo,finRoute,loc,finSplits,finElev,estimateCalories(finKm,weightKg),finPaceTrack,finHrTrack,finGapTrack);
       hapticSuccess(); // 저장 성공 — 완주 보상 촉각(설정 off 면 graceful no-op).
     }finally{setSaving(false);}
   }

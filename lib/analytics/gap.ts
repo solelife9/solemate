@@ -37,6 +37,56 @@ export function gradeFactor(grade: number): number {
 export type GapPoint = { d: number; t: number; e: number };
 
 /**
+ * GAP 입력 전처리 — raw GPS 고도의 노이즈(보통 ±5~10m)를 '거리창 이동평균'으로 누른다.
+ * 각 점의 e 를 ±windowM/2 m 안의 점들 평균으로 대체(d·t 불변). Minetti 비용은 경사에 민감하고
+ * 오르막 비용 증가가 내리막 절감보다 커(비대칭) 스무딩 없이는 노이즈가 GAP 를 한쪽으로
+ * 부풀린다. 정렬된 d 를 가정한 O(n) 양방향 포인터. 표본<3 이면 원본 복사 반환. windowM 기본 60m.
+ */
+export function smoothElevation(track: GapPoint[], windowM = 60): GapPoint[] {
+  const pts = (Array.isArray(track) ? track : []).filter(
+    p => p && Number.isFinite(p.d) && Number.isFinite(p.t) && Number.isFinite(p.e),
+  );
+  if (pts.length < 3) return pts.slice();
+  const half = Math.max(0, windowM) / 2 / 1000; // km
+  const out: GapPoint[] = [];
+  let lo = 0, hi = 0;
+  for (let i = 0; i < pts.length; i++) {
+    if (hi < i) hi = i;
+    while (lo < i && pts[i].d - pts[lo].d > half) lo++;
+    while (hi + 1 < pts.length && pts[hi + 1].d - pts[i].d <= half) hi++;
+    let sum = 0, n = 0;
+    for (let k = lo; k <= hi; k++) { sum += pts[k].e; n++; }
+    out.push({ d: pts[i].d, t: pts[i].t, e: n > 0 ? sum / n : pts[i].e });
+  }
+  return out;
+}
+
+/**
+ * 거리 빈 평균 리샘플 — track 을 binKm 간격 빈으로 나눠 각 빈을 (d,t,e) 평균점 하나로 줄인다.
+ * 경사를 'GPS 표본 간격(수십 m)'이 아니라 '지형 스케일(binKm)'에서 계산하게 만들어, 위상에
+ * 무관하게 고주파 고도 노이즈를 빈 평균으로 상쇄한다(이동평균 스무딩만으론 못 죽이는 표본주파수
+ * 근처 노이즈까지 대응). 정렬된 d 가정. 결과<2점이면 [].
+ */
+export function resampleByDistance(track: GapPoint[], binKm = 0.1): GapPoint[] {
+  const pts = (Array.isArray(track) ? track : []).filter(
+    p => p && Number.isFinite(p.d) && Number.isFinite(p.t) && Number.isFinite(p.e),
+  );
+  if (pts.length < 2 || !(binKm > 0)) return [];
+  const bins = new Map<number, { d: number; t: number; e: number; n: number }>();
+  for (const p of pts) {
+    const key = Math.floor(p.d / binKm);
+    const b = bins.get(key) || { d: 0, t: 0, e: 0, n: 0 };
+    b.d += p.d; b.t += p.t; b.e += p.e; b.n++;
+    bins.set(key, b);
+  }
+  const out = [...bins.keys()].sort((a, b) => a - b).map(k => {
+    const b = bins.get(k)!;
+    return { d: b.d / b.n, t: b.t / b.n, e: b.e / b.n };
+  });
+  return out.length >= 2 ? out : [];
+}
+
+/**
  * 고도 포함 시계열 → GAP(초/km). 각 인접 구간의 경사로 Minetti 보정계수를 구해, 그 구간의
  * 실제 수평거리에 곱한 '평지 등가 거리'를 누적한다. GAP = 총시간 / 총등가거리.
  *   등가거리(km) = Σ Δd · C(grade)/C(0)

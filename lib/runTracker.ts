@@ -103,6 +103,9 @@ class RunTracker {
   // 영속해 HR존 구간시간·트레이닝효과(TRIMP)에 쓴다. ~3s throttle(과밀 저장 방지).
   private hrTrack: {t: number; bpm: number}[] = [];
   private lastHrPushSec = -999;
+  // GAP(경사보정페이스)용 (누적거리 km, 경과초, raw GPS 고도 m) 시계열 — paceTrack 과 같은
+  // 점에서 고도가 있는 fix 일 때만 적립한다. 노이즈 스무딩·Minetti 보정은 표시단(RunDetail)에서.
+  private gapTrack: {d: number; t: number; e: number}[] = [];
   private fixIndex = 0;
   private lastGood: {lat: number; lon: number} | null = null;
   private lastGoodMs = 0;
@@ -152,6 +155,7 @@ class RunTracker {
     this.paceTrack = [];
     this.hrTrack = [];
     this.lastHrPushSec = -999;
+    this.gapTrack = [];
     this.paceSamples = [];
     this.lastSpeedMps = null;
     this.fixIndex = 0;
@@ -402,7 +406,14 @@ class RunTracker {
         // 곡선을 만든다(RunDetail). 일시정지/공백은 elapsed 가 흡수하므로 페이스가 왜곡 안 됨.
         const lastTr = this.paceTrack[this.paceTrack.length - 1];
         if (!lastTr || this.dist - lastTr.d >= PACE_TRACK_MIN_STEP_KM) {
-          this.paceTrack.push({d: this.dist, t: this.getElapsed()});
+          const tNow = this.getElapsed();
+          this.paceTrack.push({d: this.dist, t: tNow});
+          // 같은 점의 raw GPS 고도를 GAP 시계열에 적립(고도 없는 fix 는 건너뜀 — 거리 기준
+          // 매칭이라 빠져도 인접 구간 경사는 옳게 계산된다).
+          const alt = fix.coords.altitude;
+          if (alt != null && Number.isFinite(alt)) {
+            this.gapTrack.push({d: this.dist, t: tNow, e: alt});
+          }
         }
         // 현재 페이스 샘플 적립(채택된 거리에서만 — re-anchor/거부는 거리 미반영이라 제외).
         // 슬라이딩 윈도우: paceSamples[1]이 cutoff 안에 들 때까지 앞을 버려 [0]을 윈도우 앵커로.
@@ -546,6 +557,11 @@ class RunTracker {
   /** 심박 시계열({t: 경과초, bpm}). 완주 시 영속해 HR존 구간시간·TRIMP 분석에 쓴다. */
   getHrTrack(): {t: number; bpm: number}[] {
     return this.hrTrack;
+  }
+
+  /** GAP 시계열({d: 누적 km, t: 경과초, e: raw 고도 m}). 완주 시 영속해 경사보정페이스에 쓴다. */
+  getGapTrack(): {d: number; t: number; e: number}[] {
+    return this.gapTrack;
   }
 
   getElapsedFinal(): number {

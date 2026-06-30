@@ -1,4 +1,8 @@
-import {minettiCost, gradeFactor, gradeAdjustedPaceSec, buildGapSeries} from '../../../lib/analytics/gap';
+import {minettiCost, gradeFactor, gradeAdjustedPaceSec, buildGapSeries, smoothElevation, resampleByDistance} from '../../../lib/analytics/gap';
+
+// 표시단이 쓰는 정밀 파이프라인: 이동평균 스무딩 → 지형스케일 빈평균 → Minetti GAP.
+const robustGap = (track: {d: number; t: number; e: number}[]) =>
+  gradeAdjustedPaceSec(resampleByDistance(smoothElevation(track, 60), 0.1));
 
 // Minetti(2002) 5차 다항식 정밀 검증 — 손계산 기준값과 일치해야 한다.
 describe('minettiCost / gradeFactor (Minetti 2002)', () => {
@@ -63,6 +67,51 @@ describe('gradeAdjustedPaceSec', () => {
     expect(gradeAdjustedPaceSec([])).toBeNull();
     // 역행(d 감소) 구간만 있으면 등가거리 0 → null
     expect(gradeAdjustedPaceSec([{d: 1, t: 0, e: 0}, {d: 0.5, t: 100, e: 0}])).toBeNull();
+  });
+});
+
+describe('smoothElevation (GPS 고도 노이즈 억제)', () => {
+  const variance = (xs: number[]) => {
+    const m = xs.reduce((a, b) => a + b, 0) / xs.length;
+    return xs.reduce((a, b) => a + (b - m) ** 2, 0) / xs.length;
+  };
+
+  test('표본<3은 원본 복사(스무딩 불가)', () => {
+    expect(smoothElevation([{d: 0, t: 0, e: 5}])).toEqual([{d: 0, t: 0, e: 5}]);
+  });
+
+  test('d·t 는 보존하고 e 만 평활한다', () => {
+    const track = Array.from({length: 9}, (_, i) => ({d: i * 0.025, t: i * 8, e: i % 2 ? 110 : 90}));
+    const sm = smoothElevation(track, 60);
+    expect(sm.map(p => p.d)).toEqual(track.map(p => p.d));
+    expect(sm.map(p => p.t)).toEqual(track.map(p => p.t));
+  });
+
+  test('평지 위 ±8m 톱니 노이즈 → 분산 급감(노이즈 억제)', () => {
+    // 25m 간격, 실제 고도는 100m 평탄, 측정에 ±8 톱니가 섞임.
+    const track = Array.from({length: 21}, (_, i) => ({d: i * 0.025, t: i * 8, e: 100 + (i % 2 ? 8 : -8)}));
+    const sm = smoothElevation(track, 60);
+    expect(variance(sm.map(p => p.e))).toBeLessThan(variance(track.map(p => p.e)) * 0.25);
+  });
+
+  test('노이즈 낀 평지: 스무딩+리샘플이 GAP 를 실제 평균페이스로 되돌린다', () => {
+    // 1km/300s 평지인데 고도에 ±8m 표본주파수 톱니(최악 GPS 수직 노이즈). raw GAP 는 가짜
+    // 경사로 크게 부풀지만(등가페이스↓), 지형스케일 빈평균까지 거치면 진실(300)로 복원된다.
+    const track = Array.from({length: 41}, (_, i) => ({d: i * 0.025, t: i * 7.5, e: 50 + (i % 2 ? 8 : -8)}));
+    const rawGap = gradeAdjustedPaceSec(track)!;
+    expect(rawGap).toBeLessThan(290); // 노이즈가 '오르내림 노력'으로 위조돼 등가페이스 빨라짐
+    expect(Math.abs(robustGap(track)! - 300)).toBeLessThan(5); // 진실에 근접 복원
+  });
+
+  test('진짜 언덕(선형 상승)은 리샘플해도 경사 신호 보존', () => {
+    // 1km 동안 60m 선형 상승(6%). 빈평균은 단조 추세를 유지하므로 GAP 는 여전히 빠르다.
+    const track = Array.from({length: 41}, (_, i) => ({d: i * 0.025, t: i * 7.5, e: i * 1.5}));
+    expect(robustGap(track)!).toBeLessThan(290); // 6% 오르막 보정으로 등가페이스 빠름
+  });
+
+  test('리샘플 비유효 입력은 [] (표본<2 / 잘못된 bin)', () => {
+    expect(resampleByDistance([{d: 0, t: 0, e: 5}])).toEqual([]);
+    expect(resampleByDistance([{d: 0, t: 0, e: 5}, {d: 1, t: 9, e: 9}], 0)).toEqual([]);
   });
 });
 
