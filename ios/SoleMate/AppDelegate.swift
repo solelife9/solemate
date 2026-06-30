@@ -4,6 +4,7 @@ import React
 import React_RCTAppDelegate
 import ReactAppDependencyProvider
 import FirebaseCore
+import kakao_login
 
 @main
 class AppDelegate: ExpoAppDelegate {
@@ -36,6 +37,20 @@ class AppDelegate: ExpoAppDelegate {
     )
 
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+  }
+
+  // 카카오 로그인 콜백(카카오톡 → 앱 복귀 kakao<앱키>://) 처리. 이게 없으면 실기기에서
+  // 카카오톡으로 로그인 후 앱으로 못 돌아온다(SdkError). 그 외 URL(google 등)은 super 로
+  // 위임해 기존 딥링크 동작을 보존한다. (kakao-login Expo 플러그인이 넣어야 할 핸들러를 수동 추가)
+  override func application(
+    _ app: UIApplication,
+    open url: URL,
+    options: [UIApplication.OpenURLOptionsKey: Any] = [:]
+  ) -> Bool {
+    if RNKakaoLogins.isKakaoTalkLoginUrl(url: url) {
+      return RNKakaoLogins.handleOpenUrl(url: url)
+    }
+    return super.application(app, open: url, options: options)
   }
 }
 
