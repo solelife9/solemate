@@ -27,6 +27,7 @@ import {
 import {shoeHealth, wearTier, conditionForPercent, type RunLike, KEEP_GOING_REPLACE} from '../lib/shoe';
 import {ringColor} from '../lib/ringColor';
 import {displayNum, type Unit} from '../lib/units';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 type Props = {
   shoes: Shoe[];
@@ -72,7 +73,7 @@ export default function KeegoHome({shoes, runs = [], onStartRun, onOpenShoe, onO
           <Text style={styles.wordmark}>Keego</Text>
         </View>
         <Pressable style={styles.avatar} onPress={onOpenProfile} hitSlop={8}>
-          <Text style={styles.avatarGlyph}>􀉪</Text>
+          <Ionicons name="person" size={16} color={withAlpha(T1, 0.9)} />
         </Pressable>
       </View>
 
@@ -217,7 +218,7 @@ export function ShoeCard({
             accessibilityRole="button" accessibilityLabel="러닝 시작"
           >
             <GlassEdge id={`edge-run-${i}`} radius={RADIUS.btn} />
-            <Text style={styles.runGlyph}>􀊄</Text>
+            <Ionicons name="play" size={15} color={T1} style={{marginRight: 6}} />
             <Text style={styles.runLabel}>러닝 시작</Text>
           </Pressable>
         </View>
