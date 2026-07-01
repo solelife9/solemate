@@ -48,8 +48,10 @@ class AppDelegate: ExpoAppDelegate {
     open url: URL,
     options: [UIApplication.OpenURLOptionsKey: Any] = [:]
   ) -> Bool {
-    if RNKakaoLogins.isKakaoTalkLoginUrl(url: url) {
-      return RNKakaoLogins.handleOpenUrl(url: url)
+    if RNKakaoLogins.isKakaoTalkLoginUrl(url) {
+      // handleOpenUrl 은 Swift ObjC 임포터가 handleOpen(_:) 으로 개명함(URL 인자와 겹치는
+      // 'Url' 접미사 제거 규칙) — 같은 셀렉터(handleOpenUrl:)라 동작 동일.
+      return RNKakaoLogins.handleOpen(url)
     }
     // 네이버 로그인 콜백(keego://) — 네이버 앱/웹 로그인 후 복귀를 SDK 로 처리.
     if url.scheme == "keego" {
