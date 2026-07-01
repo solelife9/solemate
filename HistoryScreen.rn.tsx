@@ -24,6 +24,7 @@ import { getRunSurface, setRunSurface, type Surface } from './lib/wearModel';
 import { parseRoute, projectRoute, LatLon } from './lib/route';
 import { DARK_MAP_STYLE } from './lib/mapStyle';
 import { RunSplits, Split } from './RunSplits';
+import { GlassCard } from './GlassCard';
 import { PaceCurveChart } from './PaceCurveChart';
 import { buildSplits, buildPaceSeries, PaceTrackPoint } from './lib/splits';
 import { buildShareCardModel, shareRunCard, saveCardToLibrary, SvgCapturable } from './lib/shareCard';
@@ -624,8 +625,8 @@ function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'male', r
         {/* 트레이닝 부하(스트라바 Relative Effort) — 이 러닝이 얼마나 힘들었나. 심박 있으면
             TRIMP, 없으면 페이스 기반 rTSS. 타임·체력 정보가 없어 산출 불가면 숨김. */}
         {effort && (
-          <View
-            style={[s.card, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingVertical: 14, marginTop: 12 }]}
+          <GlassCard radius={RADIUS.lg}
+            style={[s.cardGlass, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingVertical: 14, marginTop: 12 }]}
             accessible accessibilityLabel={`트레이닝 부하 ${effort.score}, ${effort.band}`}>
             <View style={{ flex: 1, paddingRight: 12 }}>
               <Text style={s.cardTitle}>트레이닝 부하</Text>
@@ -637,7 +638,7 @@ function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'male', r
               <Text style={{ color: T1, fontFamily: DISPLAY, fontSize: 24, fontWeight: '800' }}>{effort.score}</Text>
               <Text style={{ color: ACCENT, fontFamily: FONT, fontSize: 12, fontWeight: '700' }}>{effort.band}</Text>
             </View>
-          </View>
+          </GlassCard>
         )}
         {/* 경사 보정 페이스(GAP, Strava식) — 오르내림을 평지 등가로 환산. 고도 시계열이 있고
             평지와 유의미하게 다를 때만 노출(평지면 실제 페이스와 같아 중복이라 숨김). */}
@@ -646,8 +647,8 @@ function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'male', r
           const harder = actual > 0 && gapSec < actual; // GAP 가 더 빠름 = 평지보다 힘든(오르막) 코스
           const fmtPace = (sec: number) => `${Math.floor(sec / 60)}'${String(Math.round(sec % 60)).padStart(2, '0')}"`;
           return (
-            <View
-              style={[s.card, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingVertical: 14, marginTop: 12 }]}
+            <GlassCard radius={RADIUS.lg}
+              style={[s.cardGlass, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingVertical: 14, marginTop: 12 }]}
               accessible accessibilityLabel={`경사 보정 페이스 GAP, 킬로미터당 ${fmtPace(gapSec)}`}>
               <View style={{ flex: 1, paddingRight: 12 }}>
                 <Text style={s.cardTitle}>경사 보정 페이스 (GAP)</Text>
@@ -658,7 +659,7 @@ function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'male', r
               <Text style={{ color: T1, fontFamily: DISPLAY, fontSize: 22, fontWeight: '800' }}>
                 {fmtPace(gapSec)}<Text style={{ fontSize: 12, color: T3, fontWeight: '500' }}> /km</Text>
               </Text>
-            </View>
+            </GlassCard>
           );
         })()}
         {/* 심박 존 — 워치 심박(hrTrack)이 있을 때만. 존별 구간시간 + 평균/최대 + 트레이닝효과(TRIMP).
@@ -666,8 +667,8 @@ function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'male', r
         {hr && (() => {
           const fmtT = (sec: number) => { const m = Math.floor(sec / 60); const ss = Math.round(sec % 60); return `${m}:${String(ss).padStart(2, '0')}`; };
           return (
-            <View
-              style={[s.card, { paddingHorizontal: 18, paddingVertical: 16, marginTop: 12 }]}
+            <GlassCard radius={RADIUS.lg}
+              style={[s.cardGlass, { paddingHorizontal: 18, paddingVertical: 16, marginTop: 12 }]}
               accessible accessibilityLabel={`심박 존. 평균 ${hr.avg}, 최대 ${hr.max} bpm`}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
                 <Text style={s.cardTitle}>심박 존</Text>
@@ -695,7 +696,7 @@ function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'male', r
               {!hr.rest && (
                 <Text style={{ color: T4, fontFamily: FONT, fontSize: 11, marginTop: 8 }}>마이 탭에서 안정시심박을 설정하면 심박 존이 더 정확해져요</Text>
               )}
-            </View>
+            </GlassCard>
           );
         })()}
         {/* 달린 위치(경로) 지도 — route_<id> 가 있으면 SVG 코스맵으로 표시(없으면 자동 숨김). */}
@@ -1147,6 +1148,8 @@ const s = StyleSheet.create({
   offscreen: { position: 'absolute', left: -10000, top: 0, opacity: 0 },
   baselineRow: { flexDirection: 'row', alignItems: 'flex-end' },
   card: { backgroundColor: CARD, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER },
+  // GlassCard 용 — 균일 테두리 없이 배경만(모서리 유리 엣지는 GlassCard 가 SVG 로 그린다).
+  cardGlass: { backgroundColor: CARD },
   cardTitle: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600' },
   sectionLabel: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600', letterSpacing: 0.4, paddingHorizontal: 4 },
   // 요약 카드(큰 거리) — 목업 기록(10)

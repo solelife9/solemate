@@ -241,7 +241,8 @@ function Guardian({danger, pct}: {danger: boolean; pct: number}) {
 
 // ─── 상승감 표면 + 컨디션 상단 글로우 (SVG, blur 불필요) ─────────────
 // 부모 카드에 borderRadius + overflow:'hidden' 이 있어 모서리로 클립된다.
-function SurfaceBackground({id, glow}: {id: string; glow: string}) {
+// export: 앱 전역 카드가 같은 유리 표면을 재사용한다(GlassCard).
+export function SurfaceBackground({id, glow}: {id: string; glow: string}) {
   return (
     <Svg style={StyleSheet.absoluteFill} width="100%" height="100%">
       <Defs>
@@ -268,7 +269,7 @@ function SurfaceBackground({id, glow}: {id: string; glow: string}) {
 // ── 진짜 유리(BlurView)를 원하면: 이 컴포넌트 대신 부모를
 //    <BlurView blurType="dark" blurAmount={24} style={StyleSheet.absoluteFill}/> 로 감싸고
 //    카드 뒤(부모)에 컨디션 색 글로우 뷰를 깔면 됨(단, 검은 배경 단독이면 효과 약함).
-function GlassEdge({id, radius}: {id: string; radius: number}) {
+export function GlassEdge({id, radius}: {id: string; radius: number}) {
   const [s, setS] = useState({w: 0, h: 0});
   const sw = 1.4;
   const onLayout = (e: LayoutChangeEvent) => {
