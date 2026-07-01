@@ -1,9 +1,9 @@
 /**
- * HomeScreen.rn.tsx — 홈 히어로 교체 예측 ETA 한 줄 행동 테스트.
+ * HomeScreen.rn.tsx — 홈 신발 카드(링 게이지 디자인) + 교체 예측 연동 행동 테스트.
  *
- * props-driven. 선택(히어로) 신발의 forecast가 ok/overdue일 때 히어로에 keep-going
- * ETA 한 줄이 렌더되고, no_recent면 숨는지(잡음 0)를 관찰 텍스트로 단언한다. 카피는
- * lib/wearView.forecastLineKo 단일 출처와 동일해야 한다.
+ * 새 디자인(핸드오프): '오늘의 신발' 카드는 수명 링(소진율·남은거리)로 마모 상태를 보이고,
+ * 예전의 ETA 한 줄("약 N주 후 교체 권장 · 예상 …")은 카드에서 뺐다(사진 정합, 상세로 이관).
+ * 대신 forecast 가 overdue 면 '다음 러닝화' 추천이 뜨는 흐름은 유지된다.
  *
  * @format
  */
@@ -11,7 +11,7 @@ import React from 'react';
 import ReactTestRenderer, {act} from 'react-test-renderer';
 import HomeScreen from '../HomeScreen.rn';
 import {Shoe} from '../theme';
-import {forecastLineKo, formatEtaKo, type ReplacementForecast} from '../lib/wearView';
+import {type ReplacementForecast} from '../lib/wearView';
 
 function textOf(node: ReactTestRenderer.ReactTestInstance): string {
   let out = '';
@@ -31,39 +31,29 @@ function render(el: React.ReactElement) {
 
 const SHOE: Shoe = {id: 'a', brand: 'Nike', model: 'Pegasus 41', used: 300, max: 700, condition: '양호'};
 
-const okForecast: ReplacementForecast = {
-  kmRemaining: 250,
-  weeksRemaining: 3.4,
-  etaISO: '2026-07-15T00:00:00.000Z',
-  confidence: 'high',
-  reason: 'ok',
-};
-
-describe('HomeScreen 히어로 — 교체 예측 ETA', () => {
-  test('ok 예측: "약 N주 후 교체 권장 · 예상 M월 D일" ETA 한 줄을 렌더', () => {
-    const root = render(<HomeScreen shoes={[SHOE]} forecast={okForecast} />).root;
-    const txt = textOf(root);
-    expect(txt).toContain('예상');
-    expect(txt).toContain(formatEtaKo(okForecast.etaISO)); // '7월 15일'
-    expect(txt).toContain(forecastLineKo(okForecast));
-    expect(txt).toContain('약');
+describe('HomeScreen 신발 카드(링 게이지)', () => {
+  test('수명 링: 소진율(%)과 남은 거리를 보여준다', () => {
+    const txt = textOf(render(<HomeScreen shoes={[SHOE]} />).root);
+    expect(txt).toContain('수명 소진율');
+    expect(txt).toContain('43');        // 300/700 ≈ 43%
+    expect(txt).toContain('400km 남음'); // remaining
+    expect(txt).toContain('러닝 시작');
   });
 
-  test('overdue 예측: "지금 교체하면 부상 없이 계속" 한 줄을 렌더', () => {
+  test('새 디자인: 카드에 옛 ETA 예측 줄("교체 권장 · 예상 …")은 노출하지 않는다', () => {
+    const okForecast: ReplacementForecast = {
+      kmRemaining: 250, weeksRemaining: 3.4, etaISO: '2026-07-15T00:00:00.000Z', confidence: 'high', reason: 'ok',
+    };
+    const txt = textOf(render(<HomeScreen shoes={[SHOE]} forecast={okForecast} />).root);
+    expect(txt).not.toContain('교체 권장');
+    expect(txt).not.toContain('예상 7월');
+  });
+
+  test('overdue 예측이면 다음 러닝화 추천 흐름이 뜬다', () => {
     const overdue: ReplacementForecast = {
       kmRemaining: -20, weeksRemaining: 0, etaISO: '2026-06-04T00:00:00.000Z', confidence: 'low', reason: 'overdue',
     };
-    const root = render(<HomeScreen shoes={[SHOE]} forecast={overdue} />).root;
-    expect(textOf(root)).toContain('지금 교체하면 부상 없이 계속 달릴 수 있어요');
-  });
-
-  test('no_recent 예측: 히어로에 예측 줄을 노출하지 않는다(ok/overdue만)', () => {
-    const noRecent: ReplacementForecast = {
-      kmRemaining: 400, weeksRemaining: null, etaISO: null, confidence: 'low', reason: 'no_recent',
-    };
-    const root = render(<HomeScreen shoes={[SHOE]} forecast={noRecent} />).root;
-    const txt = textOf(root);
-    expect(txt).not.toContain('교체 권장');
-    expect(txt).not.toContain('최근 기록이 없어'); // no_recent는 홈에선 숨김
+    const txt = textOf(render(<HomeScreen shoes={[SHOE]} forecast={overdue} />).root);
+    expect(txt).toContain('다음 러닝화');
   });
 });

@@ -68,23 +68,23 @@ const HIGH: Shoe = {id: 's-high', brand: 'Hoka', model: 'Clifton 9', used: 580, 
 const LOW: Shoe = {id: 's-low', brand: 'Nike', model: 'Pegasus 41', used: 100, max: 500, condition: '양호'}; // 20% used → safe
 const RUNS: Run[] = [];
 
-// ── 1) Home 히어로: 높은 마모 → 위험 경고 배너 + keep-going 문구 ────────────────
-test('HomeScreen 히어로: 높은 마모 신발은 위험 경고 배너를 렌더한다', () => {
+// ── 1) Home 신발 카드: 높은 마모 → 마모 링(빨강) + '교체 권장' 칩 ─────────────────
+// (링 게이지 재디자인 후 히어로 인라인 배너는 폐지 — 마모 경고는 링 색 + 컨디션 칩이 전담하고,
+//  훈련부하×마모 융합 경고는 하단 InjuryRiskCard 가 담당한다. 상세 화면 배너는 그대로.)
+test('HomeScreen 신발 카드: 높은 마모 신발은 교체 권장 표시를 낸다', () => {
   const root = render(<HomeScreen shoes={[HIGH]} activeIdx={0} onSelect={jest.fn()} />).root;
 
-  const banners = byTestIDPrefix(root, 'injury-banner');
-  expect(banners.length).toBeGreaterThanOrEqual(1);
-  expect(byTestIDPrefix(root, 'injury-banner-high').length).toBeGreaterThanOrEqual(1);
-  // keep-going 보이스 한국어 안내 문구가 실제로 화면에 보인다.
-  expect(textOf(root)).toContain(INJURY_HIGH_MSG);
+  // 96.7% → replace(교체 권장). 카드 컨디션 칩 testID(home-cond-replace) + 라벨로 경고를 낸다.
+  expect(byTestIDPrefix(root, 'home-cond-replace').length).toBeGreaterThanOrEqual(1);
+  expect(textOf(root)).toContain('교체 권장');
 });
 
-// ── 2) Home 히어로: 낮은 마모 → 경고 배너 없음(안전 등급 미노출) ────────────────
-test('HomeScreen 히어로: 낮은 마모 신발은 경고 배너를 노출하지 않는다', () => {
+// ── 2) Home 신발 카드: 낮은 마모 → 교체 권장 미노출(안전) ────────────────────────
+test('HomeScreen 신발 카드: 낮은 마모 신발은 교체 권장을 노출하지 않는다', () => {
   const root = render(<HomeScreen shoes={[LOW]} activeIdx={0} onSelect={jest.fn()} />).root;
 
-  expect(byTestIDPrefix(root, 'injury-banner').length).toBe(0);
-  expect(textOf(root)).not.toContain(INJURY_HIGH_MSG);
+  expect(byTestIDPrefix(root, 'home-cond-replace').length).toBe(0);
+  expect(textOf(root)).not.toContain('교체 권장');
 });
 
 // ── 3) Shoes 상세: 높은 마모 → 경고 배너, 낮은 마모 → 없음 ─────────────────────

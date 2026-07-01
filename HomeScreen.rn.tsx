@@ -13,22 +13,20 @@ import {
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {
-  BG, CARD_DIM, CARD_HI, HERO_BG, ACCENT, DANGER, WARN, GOOD, BEST, T1, T2, T3, T4,
+  BG, CARD_DIM, CARD_HI, HERO_BG, ACCENT, WARN, GOOD, T1, T2, T3, T4,
   FONT, DISPLAY, SPACE, RADIUS, GUTTER, withAlpha, Shoe, SHOES, TIER_COLORS, TIER_LABEL,
 } from './theme';
 import type { RankTier } from './lib/progression/types';
-import { TabBar, KeegoWordmark, Button, SectionTitle, InjuryBanner } from './primitives';
-import { wearTier, WearTierTone } from './lib/shoe';
-import { Unit, displayNum } from './lib/units';
-import { assessShoeInjuryRisk } from './lib/injury';
+import { TabBar, KeegoWordmark, SectionTitle } from './primitives';
+import { Unit } from './lib/units';
 import InjuryRiskCard from './InjuryRiskCard';
 import { FitnessCard } from './FitnessCard';
+import { HomeShoeCard } from './HomeShoeCard';
 import type { LoadRun } from './lib/trainingLoad';
 import { RotationPick } from './lib/rotation';
 import { recommendNextShoes, buildShopLinks, categoryLabelKo, AFFILIATE_DISCLOSURE } from './lib/affiliate';
-import { forecastLineKo, type ReplacementForecast } from './lib/wearView';
+import { type ReplacementForecast } from './lib/wearView';
 import { shouldRecommendNextShoe } from './lib/recommendTrigger';
-import { findShoeClass, typeLabel } from './data/shoeClass';
 import { ShoeGlyph } from './FirstShoeScreen.rn';
 
 export type WeekStats = { km: string; runs: number; pace: string };
@@ -118,13 +116,6 @@ function ProgressionStrip({ prog, onOpen }: { prog: HomeProgression; onOpen?: ()
 }
 
 
-// 컨디션 표시는 신발 목록/상세 카드와 동일하게 사용률(used/max%) 기반 wearTier(4단계)로 통일한다.
-// (이전엔 홈 히어로만 3단계 shoe.condition 이라, 같은 신발이 목록='좋은 상태'인데 홈='최상의
-//  컨디션'으로 어긋났다.) '양호' 신발은 wearTier 칩(점+라벨)으로, 주의/교체는 TierBadge 를
-//  유지한다(상세 ShoesScreen 과 동일 하이브리드). TONE→theme 토큰 매핑도 목록 카드와 동일.
-const WEAR_TONE_COLOR: Record<WearTierTone, string> = { good: BEST, mid: GOOD, warn: ACCENT, danger: DANGER };
-const wearColorOf = (pct: number) => WEAR_TONE_COLOR[wearTier(pct).tone];
-const wearLabelOf = (pct: number) => wearTier(pct).label;
 function TopBar({ onAddShoe }: { onAddShoe?: () => void }) {
   return (
     <View style={s.topbar}>
@@ -142,79 +133,6 @@ function TopBar({ onAddShoe }: { onAddShoe?: () => void }) {
   );
 }
 
-function HeroShoe({ shoe, unit, tappable, forecast, active, onOpenShoe, onStart }: { shoe: Shoe; unit: Unit; tappable?: boolean; forecast?: ReplacementForecast | null; active?: boolean; onOpenShoe?: () => void; onStart?: () => void }) {
-  // 비율(pct)은 km 절대값으로 계산(단위 불변), 표시 숫자만 표시 단위로 환산한다.
-  const remainKm = Math.max(0, shoe.max - shoe.used);
-  const remain = displayNum(remainKm, unit);
-  const used = displayNum(shoe.used, unit);
-  const max = displayNum(shoe.max, unit);
-  // 사용률(%) — used/max. 사용량 줄 오른쪽에 표시(InsightCard '내구도 중 N%' 와 동일 규약).
-  const usedPct = shoe.max > 0 ? Math.round((shoe.used / shoe.max) * 100) : 0;
-  // 컨디션 점·게이지 색은 목록 카드와 동일한 wearTier(used/max%) 기반.
-  const wearPct = shoe.max > 0 ? (shoe.used / shoe.max) * 100 : 0;
-  const ring = wearColorOf(wearPct);
-  // 신발 종류 — 사용자 DB(shoes.json)의 type 을 예쁜 라벨(카본 레이싱 등)로 칩 표시.
-  const heroType = typeLabel(findShoeClass(shoe.brand, shoe.model)?.type);
-  // 부상예방 경고(주의/위험)는 같은 마모 분모(used/max)로 판정해 히어로 하단에 띄운다.
-  // 안전 등급은 InjuryBanner가 null을 돌려줘 경고를 노출하지 않는다(보관 신발도 제외).
-  const injury = assessShoeInjuryRisk(shoe);
-  // 교체 예측 ETA 한 줄(ok/overdue일 때만 — keep-going 보이스). no_recent/결측이면 숨긴다.
-  const forecastLine =
-    forecast && (forecast.reason === 'ok' || forecast.reason === 'overdue')
-      ? forecastLineKo(forecast)
-      : '';
-  return (
-    <View style={[s.hero, active && s.heroActive]}>
-      {/* 정보 영역(탭 → 상세). 러닝시작 버튼은 이 Pressable 밖(형제)이라 중첩 매칭이 없다. */}
-      <Pressable
-        onPress={onOpenShoe}
-        disabled={!onOpenShoe}
-        accessibilityRole="button"
-        accessibilityLabel={`${shoe.brand} ${shoe.model} 상세 보기`}
-        style={({ pressed }) => [onOpenShoe && pressed ? s.pressed : null]}>
-        {/* 상단: 브랜드+사용중(왼쪽) · 컨디션 도트+문구(오른쪽) — 목업 herotop 정합 */}
-        <View style={s.heroTop}>
-          <View style={[s.row, { flex: 1, minWidth: 0 }]}>
-            <Text style={s.heroBrand}>{shoe.brand}</Text>
-            {!!heroType && <View style={s.catChip}><Text style={s.catChipText}>{heroType}</Text></View>}
-          </View>
-          {/* 컨디션 칩: 목록/상세와 100% 동일한 wearTier 4단계(점+라벨) —
-              최상의 컨디션 / 좋은 상태 / 교체 고려 / 교체 권장. (TierBadge 3단계 폐지) */}
-          <View style={s.condpill} testID={`home-cond-${wearTier(wearPct).key}`}>
-            <View style={[s.dot, { backgroundColor: ring }]} />
-            <Text style={[s.condText, { color: T2 }]} numberOfLines={1}>{wearLabelOf(wearPct)}</Text>
-          </View>
-        </View>
-        <Text style={s.heroModel} numberOfLines={1}>{shoe.model}</Text>
-        <Text style={s.heroRemainLine}>
-          교체까지 약 <Text style={s.heroRemainNum}>{remain}<Text style={s.heroRemainNumU}>{unit}</Text></Text> 남았어요
-        </Text>
-        <View style={s.gauge}><View style={[s.gaugeFill, { width: `${usedPct}%`, backgroundColor: ring }]} /></View>
-        <View style={s.usageRow}>
-          <Text style={s.usage}>{used} / {max}{unit} 사용</Text>
-          <Text style={s.usagePct}>{usedPct}%</Text>
-        </View>
-        {/* 교체 예상 행 — 캐러셀 카드 높이를 통일하려고 항상 공간을 예약한다(forecast 가
-            없는 신발은 같은 높이의 투명 플레이스홀더). 텍스트는 1줄 고정(긴 ETA 가 2줄로
-            줄바꿈해 높이가 흔들리지 않게). */}
-        {!shoe.retired && (
-          <View style={[s.heroForecast, !forecastLine && s.heroForecastHidden]}>
-            <Ionicons name="time-outline" size={13} color={T3} />
-            <Text style={s.heroForecastText} numberOfLines={1}>{forecastLine || '교체 예상 계산 중'}</Text>
-            {tappable && <Ionicons name="chevron-forward" size={14} color={T4} style={{ marginLeft: 'auto' }} />}
-          </View>
-        )}
-        {!shoe.retired && injury.level !== 'safe' && (
-          <View style={s.injuryWrap}>
-            <InjuryBanner level={injury.level} message={injury.message} />
-          </View>
-        )}
-      </Pressable>
-      {/* 러닝 시작 — 카드 배경 안(목업 정합). 이 카드 신발로 바로 시작. */}
-      {onStart && <Button label="러닝 시작" icon="play" onPress={onStart} style={{ marginTop: SPACE.sm }} />}
-    </View>
-  );
-}
 
 // 오늘의 신발 — 풀폭 스와이프 캐러셀(목업 정합). 각 신발이 한 장의 카드(HeroShoe)로
 // 좌우로 넘겨지고, 스냅 위치로 활성 신발(onSelect)을 정한다. 활성 카드만 home-hero
@@ -224,10 +142,8 @@ const SCREEN_W = Dimensions.get('window').width;
 const HERO_W = SCREEN_W - SPACE.xl * 2;
 const HERO_SNAP = HERO_W + SPACE.md;
 
-function ShoeCarousel({ shoes, activeIdx, onSelect, unit, forecast, forecasts, onOpenShoe, onStart }: {
+function ShoeCarousel({ shoes, activeIdx, onSelect, unit, onOpenShoe, onStart }: {
   shoes: Shoe[]; activeIdx: number; onSelect: (i: number) => void; unit: Unit;
-  forecast?: ReplacementForecast | null;
-  forecasts?: Record<string, ReplacementForecast | null>;
   onOpenShoe?: (shoeId: string) => void; onStart?: (idx: number) => void;
 }) {
   const ref = useRef<ScrollView>(null);
@@ -253,14 +169,11 @@ function ShoeCarousel({ shoes, activeIdx, onSelect, unit, forecast, forecasts, o
           // 카드 = HeroShoe(배경/테두리/러닝시작 버튼 포함). 상세 열기·러닝시작은 HeroShoe 안에서
           // 형제 Pressable 로 분리돼 텍스트 기반 테스트 혼동이 없다(중첩 매칭 방지).
           <View key={shoe.id ?? i} testID={i === activeIdx ? 'home-hero' : undefined} style={{ width: HERO_W }}>
-            <HeroShoe
-              shoe={shoe}
+            <HomeShoeCard
+              shoe={shoe as any}
               unit={unit}
+              idx={i}
               tappable={!!onOpenShoe}
-              active={i === activeIdx}
-              // 카드마다 자기 신발 예측을 바로 표시(맵에서 조회). 맵 미주입(테스트 등)이면
-              // 기존처럼 active 카드만 forecast 로 폴백 — 스와이프 시 한 박자 지연이 사라진다.
-              forecast={forecasts ? (shoe.id ? forecasts[shoe.id] ?? null : null) : (i === activeIdx ? forecast : null)}
               onOpenShoe={shoe.id && onOpenShoe ? () => onOpenShoe(shoe.id!) : undefined}
               onStart={onStart ? () => onStart(i) : undefined}
             />
@@ -483,7 +396,7 @@ function EmptyHome({ onAddShoe }: { onAddShoe?: () => void }) {
 export default function HomeScreen({
   shoes = SHOES, dateLabel = '', onStart, onAddShoe, onTab,
   activeIdx: activeIdxProp, onSelect, unit = 'km', week, rotation, onPickShoe,
-  onOpenShoe, forecast, forecasts, progression, onOpenProgression,
+  onOpenShoe, forecast, progression, onOpenProgression,
   onRefresh, lastSyncAt: _lastSyncAt, userName, runs = [], onOpenInjuryRisk,
   weeklyGoalKm = 0, streakDays = 0, todayISO = '',
 }: {
@@ -587,7 +500,7 @@ export default function HomeScreen({
               </Pressable>
             )}
           </View>
-          <ShoeCarousel shoes={shoes} activeIdx={idx} onSelect={select} unit={unit} forecast={forecast} forecasts={forecasts} onOpenShoe={onOpenShoe} onStart={onStart} />
+          <ShoeCarousel shoes={shoes} activeIdx={idx} onSelect={select} unit={unit} onOpenShoe={onOpenShoe} onStart={onStart} />
           {/* 부상위험 신호등(시그니처 #1+#2) — 신발 마모 × 훈련 부하 융합. 활성(히어로) 신발 기준.
               탭하면 상세 코칭(InjuryRiskScreen). 히어로 바로 아래에 항상 한 줄(safe 면 초록 안심). */}
           <View style={{ paddingHorizontal: SPACE.xl, marginTop: SPACE.lg }}>
