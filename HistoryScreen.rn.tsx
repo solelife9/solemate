@@ -590,12 +590,18 @@ function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'male', r
       </View>
       <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: 28 }}>
         {/* 신발(브랜드+모델)을 카드 없이 맨 위에 — 이 런의 '제목'처럼(사용자 요청). */}
-        {!!shoe && (
+        {shoe ? (
           <View style={{ marginBottom: 14 }}>
             <Text style={s.detailBrand}>{shoe.brand}</Text>
             <Text style={s.detailModel}>{shoe.model}</Text>
           </View>
-        )}
+        ) : (run.shoeName ? (
+          // 삭제된 신발 — 목록 카드(RunCard)처럼 묘비 신발명을 제목으로 살려 런의 정체성을 보존한다.
+          <View style={{ marginBottom: 14 }}>
+            <Text style={s.detailBrand}>삭제된 신발</Text>
+            <Text style={s.detailModel} numberOfLines={1}>{run.shoeName}</Text>
+          </View>
+        ) : null)}
         <Text style={[s.detailDate, { marginLeft: 7 }]}>{run.date} {run.day}요일</Text>
         <View style={[s.baselineRow, { marginTop: 8, marginLeft: 3 }]}>
           <Text style={s.detailDist}>{displayNum(run.dist, unit, 2)}</Text>
@@ -984,8 +990,14 @@ export default function HistoryScreen({
 
   return (
     <View style={[s.screen, { paddingTop: insets.top }]}>
-      <View style={[s.header, s.headerRow]}>
+      <View style={[s.header, s.headerRow, { justifyContent: 'space-between' }]}>
         <Text style={s.title}>기록</Text>
+        {/* 수동 기록 추가 — 앱 없이/기록 못한 러닝을 직접 넣는 진입점(라이브 GPS 외 보조 경로). */}
+        {!!onAddRun && (
+          <Pressable onPress={() => setForm({ mode: 'add' })} hitSlop={8} accessibilityRole="button" accessibilityLabel="기록 직접 추가" style={s.iconBtn}>
+            <Ionicons name="add" size={24} color={ACCENT} />
+          </Pressable>
+        )}
       </View>
       {/* recent runs 리스트는 FlatList 로 가상화한다(런이 수백 건이어도 보이는 행만 마운트).
           세그먼트·요약·차트·PR·섹션 라벨은 스크롤과 함께 움직이도록 ListHeaderComponent 로
@@ -1047,9 +1059,25 @@ export default function HistoryScreen({
           </View>
         }
         ListEmptyComponent={
-          <View style={[s.card, { padding: 28, alignItems: 'center' }]}>
-            <Text style={s.emptyHint}>이 기간엔 기록이 없어요</Text>
-          </View>
+          runs.length === 0 ? (
+            // 첫 러닝 전(전체 런 0) — 기간이 비어서가 아니라 아직 시작 안 한 것. 격려 + 추가 진입점.
+            <View style={[s.card, { padding: 28, alignItems: 'center', gap: 10 }]}>
+              <Ionicons name="footsteps-outline" size={28} color={T3} />
+              <Text style={[s.emptyHint, { color: T1, fontWeight: '700', fontSize: 15 }]}>아직 기록이 없어요</Text>
+              <Text style={s.emptyHint}>가볍게 한 걸음부터 — 첫 러닝을 시작해보세요.{'\n'}직접 기록을 추가할 수도 있어요.</Text>
+              {!!onAddRun && (
+                <Pressable onPress={() => setForm({ mode: 'add' })} accessibilityRole="button" accessibilityLabel="기록 직접 추가"
+                  style={({ pressed }) => [{ marginTop: 4, flexDirection: 'row', alignItems: 'center', gap: 5, paddingVertical: 8, paddingHorizontal: 16, borderRadius: RADIUS.pill, backgroundColor: CARD_HI }, pressed && { opacity: 0.7 }]}>
+                  <Ionicons name="add" size={16} color={ACCENT} />
+                  <Text style={{ color: T1, fontFamily: FONT, fontSize: 13, fontWeight: '600' }}>기록 추가</Text>
+                </Pressable>
+              )}
+            </View>
+          ) : (
+            <View style={[s.card, { padding: 28, alignItems: 'center' }]}>
+              <Text style={s.emptyHint}>이 기간엔 기록이 없어요</Text>
+            </View>
+          )
         }
       />
 

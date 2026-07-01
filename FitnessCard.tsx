@@ -42,7 +42,7 @@ export function FitnessCard({ runs = [], todayISO, style }: { runs?: any[]; toda
     <View
       style={[st.card, style]}
       accessible
-      accessibilityLabel={`체력 트렌드. VO2max ${fitness.vo2max.toFixed(1)}, ${fitness.vo2maxLabel}. 오늘 컨디션 ${fs.label}`}
+      accessibilityLabel={`체력 트렌드. VO2max ${fitness.vo2max.toFixed(1)}, ${fitness.vo2maxLabel}. 오늘 컨디션 ${fs.label}. ${fs.advice}${trend ? `. 체력 ${trend.w.replace(/[↗↘→]/g, '').trim()}` : ''}`}
     >
       <Text style={st.title}>체력 트렌드</Text>
       {/* VO2max — 최근 6주 최고 노력 기준(이지런 과소추정 보정). 가민 'VO2max'와 동일 개념. */}

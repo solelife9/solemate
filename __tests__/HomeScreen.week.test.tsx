@@ -78,7 +78,7 @@ describe('HomeScreen 이번 주 러닝 카드', () => {
     );
     expect(textOf(byTestID(root, 'home-week-km')[0])).toBe('0.0');
     expect(textOf(byTestID(root, 'home-week-runs')[0])).toBe('0');
-    // 페이스 '--' 는 표시용 '—' 로 정규화된다.
-    expect(textOf(byTestID(root, 'home-week-pace')[0])).toBe('—');
+    // 페이스 빈값은 앱 전역 '데이터 없음' 표기(--)로 통일한다(RunDetail/History 와 동일).
+    expect(textOf(byTestID(root, 'home-week-pace')[0])).toBe('--');
   });
 });

@@ -197,7 +197,7 @@ function ShoeCarousel({ shoes, activeIdx, onSelect, unit, onOpenShoe, onStart }:
 function WeekCard({ week, unit = 'km', weeklyGoalKm = 0, streakDays = 0 }: { week?: WeekStats; unit?: Unit; weeklyGoalKm?: number; streakDays?: number }) {
   const km = week?.km ?? '0.0';
   const runs = week?.runs ?? 0;
-  const pace = week?.pace && week.pace !== '--' ? week.pace : '—';
+  const pace = week?.pace && week.pace !== '--' ? week.pace : '--'; // 앱 전역 '데이터 없음' 표기 통일(--)
   const goalPct = weeklyGoalKm > 0 ? Math.min(100, Math.round(((parseFloat(km) || 0) / weeklyGoalKm) * 100)) : 0;
   return (
     <View style={s.insightCard} testID="home-week">

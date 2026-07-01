@@ -102,12 +102,14 @@ describe('HistoryScreen 막대차트', () => {
 });
 
 describe('HistoryScreen 빈 상태', () => {
-  test('기록이 없으면 keep-going 톤 빈 상태 카피를 보여준다', () => {
+  test('전체 런이 0이면 첫-런 keep-going 빈 상태를 보여준다', () => {
     let renderer!: ReactTestRenderer.ReactTestRenderer;
     act(() => {
       renderer = ReactTestRenderer.create(<HistoryScreen runs={[]} unit="km" />);
     });
-    // 빈 상태 카피는 ListEmptyComponent의 emptyHint(HistoryScreen.rn.tsx:837).
-    expect(textOf(renderer.root)).toContain('이 기간엔 기록이 없어요');
+    // runs.length===0 은 '기간이 비어서'가 아니라 '아직 시작 안 함' — 격려 톤 첫-런 상태.
+    const txt = textOf(renderer.root);
+    expect(txt).toContain('아직 기록이 없어요');
+    expect(txt).toContain('가볍게 한 걸음부터');
   });
 });

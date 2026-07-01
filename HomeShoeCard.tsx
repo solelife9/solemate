@@ -34,7 +34,7 @@ export function HomeShoeCard({
   const cat = typeLabel(findShoeClass(shoe.brand, shoe.model)?.type) || '러닝화';
   const gradId = `ringGrad-${shoe.id ?? idx}`;
   const edgeId = `cardEdge-${shoe.id ?? idx}`;
-  const dash = RING_C * (1 - Math.min(pct, 100) / 100);
+  const dash = RING_C * (1 - Math.min(pctExact, 100) / 100); // 색과 동일하게 정밀값 기준(반올림 X)
   const [size, setSize] = useState({ width: 0, height: 0 });
 
   return (
