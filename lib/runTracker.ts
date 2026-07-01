@@ -257,6 +257,10 @@ class RunTracker {
     this.autoPausedFlag = false;
     // reset the machine so leftover slow/fast time can't immediately re-trigger.
     this.autoPauseState = initAutoPauseState();
+    // C1: 재개 시 앵커를 비운다 — 일시정지 중 주자가 이동(오토포즈 후 걸어감/신호대기 이탈)했다면
+    // pre-pause 위치에서 재개 위치까지 거리가 첫 fix 에서 유령으로 합산되기 때문. 비우면 재개 첫
+    // fix 가 새 앵커가 되어 그 공백 구간 거리를 계상하지 않는다(start/권한재개와 동일 규약).
+    this.lastGood = null;
     // 현재-페이스 윈도우 비움 — 일시정지 공백을 가로질러 페이스를 계산해 거짓으로 느려지는
     // 것을 막는다. 재개 후 새 샘플로 윈도우를 다시 채운다(그동안은 '--').
     this.paceSamples = [];

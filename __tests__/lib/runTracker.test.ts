@@ -81,8 +81,37 @@ test('manual pause freezes distance; resume lets it accumulate again', () => {
 
   t.togglePause();
   expect(t.getState().paused).toBe(false);
+  // C1: 재개 첫 fix 는 새 앵커 — pre-pause 위치(37.5003)에서 재개 위치(37.5009)까지의 유령
+  // 거리를 계상하지 않는다(일시정지 구간 이동은 거리 아님). 동결값 그대로.
   t.ingestFix(fix(37.5009, LON, 5, 113000));
+  expect(t.getDistanceKm()).toBe(dRunning);
+  // 그다음 실제 이동분부터 다시 누적된다.
+  t.ingestFix(fix(37.5012, LON, 5, 116000));
   expect(t.getDistanceKm()).toBeGreaterThan(dRunning); // engine restarts
+});
+
+test('C1: 일시정지 중 멀리 이동해도 재개 시 유령 거리를 합산하지 않는다', () => {
+  const {t} = makeEngine();
+  t.start({goalKm: 5, shoe: {id: 's1', name: 'X'}, t0: 100000});
+  clearWarmup(t);
+  t.ingestFix(fix(37.5003, LON, 5, 107000)); // 러닝 중 ~33m
+  const dRunning = t.getDistanceKm();
+  expect(dRunning).toBeGreaterThan(0);
+
+  // 일시정지 후 주자가 ~330m 떨어진 곳으로 이동(예: 화장실). 정지 중 fix 는 거리 미반영.
+  t.togglePause();
+  t.ingestFix(fix(37.5033, LON, 5, 140000));
+  expect(t.getDistanceKm()).toBe(dRunning);
+
+  // 재개: 첫 fix 가 330m 떨어진 지점이어도 유령 330m 를 더하면 안 된다(새 앵커).
+  t.togglePause();
+  t.ingestFix(fix(37.5033, LON, 5, 143000));
+  expect(t.getDistanceKm()).toBe(dRunning); // 유령 거리 없음 — 재개 첫 fix 는 앵커일 뿐
+  // 재개 지점에서 실제 이동분만 누적된다(칼만이 330m 공백을 재측위로 흡수 → 정착에 몇 fix).
+  t.ingestFix(fix(37.5036, LON, 5, 146000));
+  t.ingestFix(fix(37.5039, LON, 5, 149000));
+  t.ingestFix(fix(37.5042, LON, 5, 152000));
+  expect(t.getDistanceKm()).toBeGreaterThan(dRunning);
 });
 
 test('elapsed is pause-adjusted, frozen while paused, and never negative', () => {
