@@ -1771,7 +1771,7 @@ function Main(){
             onOpenProgression={()=>setShowProgression(true)}
             onRefresh={refreshData} lastSyncAt={lastSyncAt}
             runs={runs} onOpenInjuryRisk={()=>setShowInjuryRisk(true)}
-            weeklyGoalKm={goalWeeklyKm} streakDays={goalStreak}
+            weeklyGoalKm={goalWeeklyKm} streakDays={goalStreak} todayISO={today()}
           />
         )}
         {tab===2&&(

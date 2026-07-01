@@ -9,7 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Polyline, Circle } from 'react-native-svg';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {
-  BG, CARD, CARD_DIM, CARD_HI, ACCENT, DANGER, GOOD, WARN, BEST, T1, T2, T3, T4, SEP, CARD_BORDER, FONT, DISPLAY, Shoe, Run, SHOES, withAlpha, RADIUS, GUTTER, HERO, SCRIM, HR_ZONE_COLORS,
+  BG, CARD, CARD_DIM, CARD_HI, ACCENT, DANGER, T1, T2, T3, T4, SEP, CARD_BORDER, FONT, DISPLAY, Shoe, Run, SHOES, withAlpha, RADIUS, GUTTER, HERO, SCRIM, HR_ZONE_COLORS,
 } from './theme';
 // 기간 탭 스트립 = SegmentedControl(neutral), 러닝 상세 2×3 메트릭 = StatGrid 프리미티브.
 import { TabBar, Button, SegmentedControl, StatGrid } from './primitives';
@@ -18,9 +18,8 @@ import { ymdLocal } from './lib/format';
 import { sumKm, summaryOf, monthBuckets, weekBuckets, yearBuckets } from './lib/stats';
 import { fitnessSummary, thresholdPaceSec } from './lib/analytics/fitness';
 import { gradeAdjustedPaceSec, smoothElevation, resampleByDistance, buildGapSeries } from './lib/analytics/gap';
-import { Sparkline } from './Sparkline';
 import { estimateMaxHR, timeInZones, hrSummary, zoneBoundaries, HR_ZONE_LABEL, type HRZone } from './lib/analytics/hrZones';
-import { trimp, paceLoad, effortBand, formStatus } from './lib/analytics/load';
+import { trimp, paceLoad, effortBand } from './lib/analytics/load';
 import { getRunSurface, setRunSurface, type Surface } from './lib/wearModel';
 import { parseRoute, projectRoute, LatLon } from './lib/route';
 import { DARK_MAP_STYLE } from './lib/mapStyle';
@@ -1041,60 +1040,9 @@ export default function HistoryScreen({
                 </View>
               )}
             </View>
-            {/* 체력 트렌드(VO2max + 트레이닝 상태) — 타임이 있는 노력 런이 하나라도 있어야
-                VDOT/부하가 산다(없으면 숨김). 기간 토글과 무관한 '현재 체력' 단일 카드. */}
-            {fitness.vo2max > 0 && (
-              <View
-                style={[s.card, { paddingHorizontal: 20, paddingTop: 14, paddingBottom: 18 }]}
-                accessible
-                accessibilityLabel={`체력 트렌드. VO2max ${fitness.vo2max.toFixed(1)}, ${fitness.vo2maxLabel}. 오늘 컨디션 ${formStatus(fitness.tsb).label}`}
-              >
-                <Text style={s.cardTitle}>체력 트렌드</Text>
-                {/* VO2max — 최근 6주 최고 노력 기준(이지런 과소추정 보정). 가민 'VO2max'와 동일 개념. */}
-                <View style={{ flexDirection: 'row', alignItems: 'flex-end', marginTop: 10 }}>
-                  <Text style={{ color: T1, fontFamily: DISPLAY, fontSize: 38, fontWeight: '800', letterSpacing: -0.5, lineHeight: 40 }}>{fitness.vo2max.toFixed(1)}</Text>
-                  <View style={{ marginLeft: 10, paddingBottom: 4 }}>
-                    <Text style={{ color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500' }}>VO₂max</Text>
-                    <Text style={{ color: ACCENT, fontFamily: FONT, fontSize: 13, fontWeight: '700', marginTop: 2 }}>{fitness.vo2maxLabel}</Text>
-                  </View>
-                </View>
-                {/* 오늘 컨디션(폼/TSB) — raw CTL/ATL/TSB 숫자는 러너가 아닌 이상 이해하기 어려우므로
-                    '몸이 얼마나 신선한가 + 그래서 뭘 하면 되나'로 번역한다(가민/후프 방식). */}
-                {(() => {
-                  const fs = formStatus(fitness.tsb);
-                  const dot = fitness.tsb >= 5 ? GOOD : fitness.tsb > -10 ? BEST : fitness.tsb > -25 ? WARN : DANGER;
-                  return (
-                    <View style={{ marginTop: 16, paddingTop: 14, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.12)' }}>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <Text style={s.sumMetricL}>오늘 컨디션</Text>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                          <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: dot }} />
-                          <Text style={{ color: T1, fontFamily: FONT, fontSize: 15, fontWeight: '800' }}>{fs.label}</Text>
-                        </View>
-                      </View>
-                      <Text style={{ color: T3, fontFamily: FONT, fontSize: 12, marginTop: 5 }}>{fs.advice}</Text>
-                    </View>
-                  );
-                })()}
-                {/* 체력 추이 스파크라인 + 방향(상승/유지/하락) — 최근 90일 CTL, 14일 전 대비. 3점 이상일 때만. */}
-                {fitness.pmc.length >= 3 && (() => {
-                  const ctl = fitness.pmc.map((p) => p.ctl);
-                  const cur = ctl[ctl.length - 1];
-                  const prev = ctl[Math.max(0, ctl.length - 1 - 14)];
-                  const d = cur - prev;
-                  const trend = d > 1 ? { w: '상승중 ↗', c: GOOD } : d < -1 ? { w: '하락 ↘', c: WARN } : { w: '유지 →', c: T3 };
-                  return (
-                    <View style={{ marginTop: 14 }}>
-                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
-                        <Text style={s.sumMetricL}>체력 추이</Text>
-                        <Text style={{ color: trend.c, fontFamily: FONT, fontSize: 11, fontWeight: '700' }}>{trend.w}</Text>
-                      </View>
-                      <Sparkline data={ctl.slice(-90)} color={ACCENT} height={40} testID="fitness-sparkline" />
-                    </View>
-                  );
-                })()}
-              </View>
-            )}
+            {/* 체력 트렌드 카드는 홈 화면으로 이관(FitnessCard) — '지금 내 몸 상태'는 뛰기 전에
+                보는 개인 대시보드라 기록 탭보다 홈이 맞다. 여기선 fitness 를 RunDetail 트레이닝
+                부하의 임계페이스(thresholdPace) 산출에만 쓴다. */}
             <Text style={s.sectionLabel}>러닝 기록</Text>
           </View>
         }

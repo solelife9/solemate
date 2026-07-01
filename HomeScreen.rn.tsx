@@ -22,6 +22,7 @@ import { wearTier, WearTierTone } from './lib/shoe';
 import { Unit, displayNum } from './lib/units';
 import { assessShoeInjuryRisk } from './lib/injury';
 import InjuryRiskCard from './InjuryRiskCard';
+import { FitnessCard } from './FitnessCard';
 import type { LoadRun } from './lib/trainingLoad';
 import { RotationPick } from './lib/rotation';
 import { recommendNextShoes, buildShopLinks, categoryLabelKo, AFFILIATE_DISCLOSURE } from './lib/affiliate';
@@ -484,13 +485,15 @@ export default function HomeScreen({
   activeIdx: activeIdxProp, onSelect, unit = 'km', week, rotation, onPickShoe,
   onOpenShoe, forecast, forecasts, progression, onOpenProgression,
   onRefresh, lastSyncAt: _lastSyncAt, userName, runs = [], onOpenInjuryRisk,
-  weeklyGoalKm = 0, streakDays = 0,
+  weeklyGoalKm = 0, streakDays = 0, todayISO = '',
 }: {
   shoes?: Shoe[];
   userName?: string;
   // 이번 주 러닝 카드의 주간 목표(km)·연속 스트릭(일). 0이면 해당 표시 숨김(표시 전용).
   weeklyGoalKm?: number;
   streakDays?: number;
+  // 오늘 날짜(YYYY-MM-DD) — 체력 트렌드(FitnessCard) VO2max/컨디션 계산 기준. App 이 today() 주입.
+  todayISO?: string;
   // 선택(히어로) 신발의 교체 예측(App이 실효마모 모델로 계산해 내려준다). ok/overdue일 때
   // 히어로에 ETA 한 줄을 보강한다. 표시 전용(없으면 숨김).
   forecast?: ReplacementForecast | null;
@@ -606,6 +609,9 @@ export default function HomeScreen({
           <View style={{ paddingHorizontal: SPACE.xl }}>
             <WeekCard week={week} unit={unit} weeklyGoalKm={weeklyGoalKm} streakDays={streakDays} />
           </View>
+          {/* 체력 트렌드 — VO2max·오늘 컨디션·체력 추이(개인 대시보드). 뛰기 전 컨디션 확인용이라
+              홈에 둔다. 타임 있는 노력 런이 없으면 FitnessCard 가 null(여백도 안 생김). */}
+          <FitnessCard runs={runs} todayISO={todayISO} style={{ marginHorizontal: SPACE.xl, marginTop: SPACE.lg }} />
           {/* 진척 띠(Slice D) — 로테이션 인사이트 위에 둔다(사용자 요청). 주입 시에만 노출.
               탭 → 진척 화면(랭크·타이틀·업적). 미주입이면 통째로 숨겨 기존 홈과 동일. */}
           {progression && (
