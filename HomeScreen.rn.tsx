@@ -8,7 +8,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import {
   View, Text, ScrollView, Pressable, StyleSheet, Linking, Dimensions,
-  RefreshControl, NativeSyntheticEvent, NativeScrollEvent,
+  RefreshControl, NativeSyntheticEvent, NativeScrollEvent, Animated,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
@@ -21,7 +21,7 @@ import { TabBar, KeegoWordmark, SectionTitle } from './primitives';
 import { Unit } from './lib/units';
 import InjuryRiskCard from './InjuryRiskCard';
 import { FitnessCard } from './FitnessCard';
-import { HomeShoeCard } from './HomeShoeCard';
+import { ShoeCard as KeegoShoeCard } from './screens/KeegoHome';
 import type { LoadRun } from './lib/trainingLoad';
 import { RotationPick } from './lib/rotation';
 import { recommendNextShoes, buildShopLinks, categoryLabelKo, AFFILIATE_DISCLOSURE } from './lib/affiliate';
@@ -146,7 +146,10 @@ function ShoeCarousel({ shoes, activeIdx, onSelect, unit, onOpenShoe, onStart }:
   shoes: Shoe[]; activeIdx: number; onSelect: (i: number) => void; unit: Unit;
   onOpenShoe?: (shoeId: string) => void; onStart?: (idx: number) => void;
 }) {
-  const ref = useRef<ScrollView>(null);
+  const ref = useRef<any>(null);
+  // KeegoHome ShoeCard 의 중앙강조(scale/opacity)는 scrollX 를 요구한다 → Animated.ScrollView.
+  const scrollX = useRef(new Animated.Value(0)).current;
+  const onScroll = Animated.event([{ nativeEvent: { contentOffset: { x: scrollX } } }], { useNativeDriver: true });
   const onEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const i = Math.round(e.nativeEvent.contentOffset.x / HERO_SNAP);
     const clamped = Math.max(0, Math.min(shoes.length - 1, i));
@@ -156,30 +159,36 @@ function ShoeCarousel({ shoes, activeIdx, onSelect, unit, onOpenShoe, onStart }:
   useEffect(() => { ref.current?.scrollTo({ x: activeIdx * HERO_SNAP, animated: true }); }, [activeIdx]);
   return (
     <View>
-      <ScrollView
+      <Animated.ScrollView
         ref={ref}
         horizontal
         showsHorizontalScrollIndicator={false}
         snapToInterval={HERO_SNAP}
         decelerationRate="fast"
+        onScroll={onScroll}
+        scrollEventThrottle={16}
         onMomentumScrollEnd={onEnd}
         contentContainerStyle={{ paddingHorizontal: SPACE.xl, gap: SPACE.md }}
       >
         {shoes.map((shoe, i) => (
-          // 카드 = HeroShoe(배경/테두리/러닝시작 버튼 포함). 상세 열기·러닝시작은 HeroShoe 안에서
-          // 형제 Pressable 로 분리돼 텍스트 기반 테스트 혼동이 없다(중첩 매칭 방지).
+          // 카드 = KeegoHome 의 ShoeCard(핸드오프 디자인 그대로 — 링·유리엣지·상승감 표면).
+          // 상세 열기(정보영역)·러닝시작(형제 버튼)은 카드 안에서 분리돼 텍스트 테스트 혼동 없음.
+          // shoeHealth 가 정확한 소진율을 내도록 total_km(=이미 계산된 used)을 주입한다.
           <View key={shoe.id ?? i} testID={i === activeIdx ? 'home-hero' : undefined} style={{ width: HERO_W }}>
-            <HomeShoeCard
-              shoe={shoe as any}
+            <KeegoShoeCard
+              shoe={{ ...(shoe as any), total_km: (shoe as any).used } as any}
+              runs={[]}
+              width={HERO_W}
+              scrollX={scrollX}
+              stride={HERO_SNAP}
+              i={i}
               unit={unit}
-              idx={i}
-              tappable={!!onOpenShoe}
-              onOpenShoe={shoe.id && onOpenShoe ? () => onOpenShoe(shoe.id!) : undefined}
-              onStart={onStart ? () => onStart(i) : undefined}
+              onStartRun={onStart ? () => onStart(i) : undefined}
+              onOpenShoe={onOpenShoe ? (sh: any) => { if (sh?.id) onOpenShoe(String(sh.id)); } : undefined}
             />
           </View>
         ))}
-      </ScrollView>
+      </Animated.ScrollView>
       {shoes.length > 1 && (
         <>
           <View style={s.pageDots}>
