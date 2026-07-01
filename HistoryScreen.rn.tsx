@@ -18,6 +18,7 @@ import { ymdLocal } from './lib/format';
 import { sumKm, summaryOf, monthBuckets, weekBuckets, yearBuckets } from './lib/stats';
 import { fitnessSummary } from './lib/analytics/fitness';
 import { gradeAdjustedPaceSec, smoothElevation, resampleByDistance, buildGapSeries } from './lib/analytics/gap';
+import { Sparkline } from './Sparkline';
 import { getRunSurface, setRunSurface, type Surface } from './lib/wearModel';
 import { parseRoute, projectRoute, LatLon } from './lib/route';
 import { DARK_MAP_STYLE } from './lib/mapStyle';
@@ -964,6 +965,13 @@ export default function HistoryScreen({
                     <Text style={s.sumMetricL} numberOfLines={1}>폼 · {fitness.tsbLabel.split(' ')[0]}</Text>
                   </View>
                 </View>
+                {/* 체력(CTL) 추이 스파크라인 — 최근 90일. 데이터 3점 이상일 때만(추세로 볼 가치). */}
+                {fitness.pmc.length >= 3 && (
+                  <View style={{ marginTop: 16 }}>
+                    <Text style={[s.sumMetricL, { marginBottom: 4 }]}>최근 체력 추이</Text>
+                    <Sparkline data={fitness.pmc.slice(-90).map((p) => p.ctl)} color={ACCENT} height={40} testID="fitness-sparkline" />
+                  </View>
+                )}
               </View>
             )}
             <Text style={s.sectionLabel}>러닝 기록</Text>
