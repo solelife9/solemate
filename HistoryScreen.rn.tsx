@@ -9,7 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Polyline, Circle } from 'react-native-svg';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {
-  BG, CARD, CARD_DIM, CARD_HI, ACCENT, DANGER, T1, T2, T3, T4, SEP, CARD_BORDER, FONT, DISPLAY, Shoe, Run, SHOES, withAlpha, RADIUS, GUTTER, HERO, SCRIM,
+  BG, CARD, CARD_DIM, CARD_HI, ACCENT, DANGER, T1, T2, T3, T4, SEP, CARD_BORDER, FONT, DISPLAY, Shoe, Run, SHOES, withAlpha, RADIUS, GUTTER, HERO, SCRIM, HR_ZONE_COLORS,
 } from './theme';
 // 기간 탭 스트립 = SegmentedControl(neutral), 러닝 상세 2×3 메트릭 = StatGrid 프리미티브.
 import { TabBar, Button, SegmentedControl, StatGrid } from './primitives';
@@ -19,6 +19,8 @@ import { sumKm, summaryOf, monthBuckets, weekBuckets, yearBuckets } from './lib/
 import { fitnessSummary } from './lib/analytics/fitness';
 import { gradeAdjustedPaceSec, smoothElevation, resampleByDistance, buildGapSeries } from './lib/analytics/gap';
 import { Sparkline } from './Sparkline';
+import { estimateMaxHR, timeInZones, hrSummary, zoneBoundaries, HR_ZONE_LABEL, type HRZone } from './lib/analytics/hrZones';
+import { trimp } from './lib/analytics/load';
 import { getRunSurface, setRunSurface, type Surface } from './lib/wearModel';
 import { parseRoute, projectRoute, LatLon } from './lib/route';
 import { DARK_MAP_STYLE } from './lib/mapStyle';
@@ -394,7 +396,7 @@ export function RunForm({
 }
 
 // ── run detail ────────────────────────────────────────────────────────────────
-function RunDetail({ run, shoe, onBack, unit, onDelete }: { run: Run; shoe?: Shoe; onBack: () => void; unit: Unit; onDelete?: (id: string) => void }) {
+function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'male', restHR = 0 }: { run: Run; shoe?: Shoe; onBack: () => void; unit: Unit; onDelete?: (id: string) => void; age?: number; sex?: 'male' | 'female'; restHR?: number }) {
   // Load the recorded route for this run once. Missing/invalid blob → [] → map
   // stays hidden (graceful). route_<id> is written by App.addRun on save.
   const [route, setRoute] = useState<LatLon[]>([]);
@@ -472,6 +474,38 @@ function RunDetail({ run, shoe, onBack, unit, onDelete }: { run: Run; shoe?: Sho
     () => (gapSec != null && gapTrack.length >= 2 ? buildGapSeries(smoothElevation(gapTrack, 60), 0.1) : undefined),
     [gapSec, gapTrack],
   );
+
+  // 심박 시계열(hrTrack_<id>, App.onSave 가 워치 HR 을 영속). 있으면 HR존 분포·평균/최대·
+  // 트레이닝효과(TRIMP)를 산출한다. 워치 미연동이면 빈값 → 카드 자동 숨김.
+  const [hrTrack, setHrTrack] = useState<{ t: number; bpm: number }[]>([]);
+  useEffect(() => {
+    let alive = true;
+    if (!run.id) { setHrTrack([]); return; }
+    AsyncStorage.getItem('hrTrack_' + run.id)
+      .then(raw => {
+        if (!alive) return;
+        try {
+          const arr = raw ? JSON.parse(raw) : [];
+          setHrTrack(Array.isArray(arr) ? arr : []);
+        } catch { setHrTrack([]); }
+      })
+      .catch(() => { if (alive) setHrTrack([]); });
+    return () => { alive = false; };
+  }, [run.id]);
+  // 심박 분석 — 최대심박은 나이(Tanaka)로 추정(미설정이면 190 폴백), 안정심박 있으면 Karvonen.
+  // 표본 2개 미만이면 null → 카드 숨김.
+  const hr = useMemo(() => {
+    if (hrTrack.length < 2) return null;
+    const maxHR = estimateMaxHR(age);
+    const rest = restHR > 0 ? restHR : undefined;
+    const secs = timeInZones(hrTrack, maxHR, rest);
+    const total = (Object.values(secs) as number[]).reduce((a, b) => a + b, 0);
+    if (!(total > 0)) return null;
+    const { avg, max } = hrSummary(hrTrack);
+    // 트레이닝효과(TRIMP) — 안정심박이 있어야 여유심박 비율이 정확(없으면 미표시).
+    const load = rest ? trimp(total, avg, maxHR, rest, sex) : 0;
+    return { secs, total, avg, max, maxHR, rest, load, bounds: zoneBoundaries(maxHR, rest) };
+  }, [hrTrack, age, restHR, sex]);
 
   // 공유 입력(텍스트·카드 폴백이 같은 필드를 쓰도록 단일 출처로 둔다).
   const shareInput = {
@@ -596,6 +630,47 @@ function RunDetail({ run, shoe, onBack, unit, onDelete }: { run: Run; shoe?: Sho
             </View>
           );
         })()}
+        {/* 심박 존 — 워치 심박(hrTrack)이 있을 때만. 존별 구간시간 + 평균/최대 + 트레이닝효과(TRIMP).
+            나이(최대심박 추정)·안정심박(Karvonen)이 있으면 더 정확. 없어도 190 폴백으로 동작. */}
+        {hr && (() => {
+          const fmtT = (sec: number) => { const m = Math.floor(sec / 60); const ss = Math.round(sec % 60); return `${m}:${String(ss).padStart(2, '0')}`; };
+          return (
+            <View
+              style={[s.card, { paddingHorizontal: 18, paddingVertical: 16, marginTop: 12 }]}
+              accessible accessibilityLabel={`심박 존. 평균 ${hr.avg}, 최대 ${hr.max} bpm`}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                <Text style={s.cardTitle}>심박 존</Text>
+                <Text style={{ color: T2, fontFamily: FONT, fontSize: 13 }}>
+                  평균 <Text style={{ color: T1, fontWeight: '700' }}>{hr.avg}</Text> · 최대 <Text style={{ color: T1, fontWeight: '700' }}>{hr.max}</Text> bpm
+                </Text>
+              </View>
+              <View style={{ marginTop: 12, gap: 7 }}>
+                {([5, 4, 3, 2, 1] as HRZone[]).map((z) => {
+                  const sec = hr.secs[z];
+                  const pct = hr.total > 0 ? sec / hr.total : 0;
+                  return (
+                    <View key={z} style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <Text style={{ width: 60, color: T3, fontFamily: FONT, fontSize: 11, fontWeight: '600' }}>Z{z} {HR_ZONE_LABEL[z]}</Text>
+                      <View style={{ flex: 1, height: 8, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 4, overflow: 'hidden', marginHorizontal: 8 }}>
+                        <View style={{ width: `${Math.round(pct * 100)}%`, height: 8, backgroundColor: HR_ZONE_COLORS[z], borderRadius: 4 }} />
+                      </View>
+                      <Text style={{ width: 44, textAlign: 'right', color: T2, fontFamily: DISPLAY, fontSize: 12, fontWeight: '600' }}>{fmtT(sec)}</Text>
+                    </View>
+                  );
+                })}
+              </View>
+              {hr.load > 0 && (
+                <View style={{ marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.1)', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Text style={{ color: T3, fontFamily: FONT, fontSize: 12 }}>트레이닝 효과 (TRIMP)</Text>
+                  <Text style={{ color: T1, fontFamily: DISPLAY, fontSize: 16, fontWeight: '800' }}>{hr.load}</Text>
+                </View>
+              )}
+              {!hr.rest && (
+                <Text style={{ color: T4, fontFamily: FONT, fontSize: 11, marginTop: 8 }}>마이 탭에서 안정시심박을 설정하면 존·트레이닝 효과가 더 정확해져요</Text>
+              )}
+            </View>
+          );
+        })()}
         {/* 달린 위치(경로) 지도 — route_<id> 가 있으면 SVG 코스맵으로 표시(없으면 자동 숨김). */}
         <CourseMap points={route} />
         {/* 거리축 페이스 곡선(추세) + 구간별 페이스 스플릿(정확값). 같은 스플릿을 공유하고
@@ -704,6 +779,7 @@ function RunCard({ run, shoes, onPress, unit }: { run: Run; shoes: Shoe[]; onPre
 export default function HistoryScreen({
   shoes = SHOES, runs = [], summary = {}, chart = {}, onTab, unit = 'km',
   onAddRun, onEditRun, onDeleteRun, onRefresh,
+  age = 0, sex = 'male', restHR = 0,
 }: {
   shoes?: Shoe[];
   runs?: Run[];
@@ -719,6 +795,11 @@ export default function HistoryScreen({
   // 당겨서 새로고침 — 서버 재fetch + pending flush 재시도(App 의 initUser/sync 재진입).
   // RN 내장 RefreshControl 만 사용한다(새 네이티브 0). 미주입이면 RefreshControl 미장착.
   onRefresh?: () => void | Promise<void>;
+  // 신체지표(심박존용) — RunDetail 이 hrTrack 과 함께 HR존/평균·최대/트레이닝효과 산출.
+  // 0/기본은 미설정(최대심박 190 폴백·%HRmax 모델). App 설정에서 주입.
+  age?: number;
+  sex?: 'male' | 'female';
+  restHR?: number;
 }) {
   const [period, setPeriod] = useState('월');
   const now = new Date();
@@ -869,6 +950,9 @@ export default function HistoryScreen({
         onBack={() => setDetail(null)}
         unit={unit}
         onDelete={onDeleteRun}
+        age={age}
+        sex={sex}
+        restHR={restHR}
       />
     );
   }

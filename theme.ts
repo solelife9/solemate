@@ -69,6 +69,16 @@ export const TIER_COLORS: Record<RankTier, string> = {
   legend: '#FF6500',
 };
 
+// 심박 존(Z1–Z5) 색 — 회복(파랑)→유산소(초록)→템포(노랑)→역치(주황)→무산소(빨강).
+// 기존 컨디션 토큰 재사용(BEST/GOOD/DANGER) + 중간 2색만 신규. 화면은 이 토큰만 참조한다.
+export const HR_ZONE_COLORS: Record<1 | 2 | 3 | 4 | 5, string> = {
+  1: BEST,
+  2: GOOD,
+  3: '#E6C34C',
+  4: '#F0872E',
+  5: DANGER,
+};
+
 // 티어 표시명(영문 — 본문/라벨은 한국어, 티어명만 영문. PS Trophies/WHOOP 관용).
 // AUTHORITATIVE 단일 정의: 홈·프로필·진척 화면이 각자 복붙하던 것을 여기로 통합한다
 // (TIER_COLORS 와 동일 위계 — 색·라벨 모두 theme 권위, 화면 하드코딩 0). 키 타입은

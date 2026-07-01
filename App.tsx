@@ -82,6 +82,7 @@ import {
 import {Unit, kmToDisplay, displayNum} from './lib/units';
 import {
   AlertSettings, loadSettings, saveUnit, saveGoal, saveAlerts, saveWeight,
+  saveAge, saveSex, saveRestHR, Sex,
   clampGoal, DEFAULT_SETTINGS,
 } from './lib/settings';
 import {estimateCalories} from './lib/calories';
@@ -293,6 +294,11 @@ function Main(){
   const [notifSettings,setNotifSettingsState]=useState<NotifSettings>(DEFAULT_NOTIF_SETTINGS);
   // 체중(kg) — 러닝 칼로리 추정에 쓴다(설정에서 조정, 기본 65). 표시 단위와 무관.
   const [weightKg,setWeightKg]=useState(DEFAULT_SETTINGS.weightKg);
+  // 신체지표(심박존용) — 나이→최대심박(Tanaka), 안정심박→Karvonen 존, 성별→TRIMP 계수.
+  // 0/기본은 '미설정'(폴백으로 동작). 설정에서 조정.
+  const [age,setAge]=useState(DEFAULT_SETTINGS.age);
+  const [sex,setSex]=useState<Sex>(DEFAULT_SETTINGS.sex);
+  const [restHR,setRestHR]=useState(DEFAULT_SETTINGS.restHR);
   const [deviceId,setDeviceId]=useState<string>('');
   // 개인 챌린지 목록(거리·연속일). 신규 키(K_CHALLENGES)로 영속하며 런 기록에서
   // 진행률을 파생한다(lib/challenges). 기존 키와 분리돼 데이터 파괴 위험이 없다.
@@ -639,6 +645,7 @@ function Main(){
     // alerts 설정을 직접 넘긴다(setAlerts state 갱신 전이라 클로저가 옛값일 수 있음).
     const st=await loadSettings();
     setUnit(st.unit);setGoalWeeklyKm(st.goalWeeklyKm);setAlerts(st.alerts);setWeightKg(st.weightKg);
+    setAge(st.age);setSex(st.sex);setRestHR(st.restHR);
     // Stage 3(Firestore 정본 부팅): 로컬 캐시로 즉시 'ready'. 원격 복원은 runCloudSync
     // effect(authUser.uid)가 pull→merge→push 로 수행한다 — 재설치/기기변경 데이터 복구 포함.
     // REST 콜드대기/에러 카드가 사라진다(부팅은 로컬 캐시 로드라 실패하지 않는다). 첫 실행/
@@ -962,6 +969,9 @@ function Main(){
   const changeGoal=(km:number)=>{const v=clampGoal(km);setGoalWeeklyKm(v);void saveGoal(v);};
   const changeAlerts=(a:AlertSettings)=>{setAlerts(a);void saveAlerts(a);};
   const changeWeight=(kg:number)=>{setWeightKg(kg);void saveWeight(kg);};
+  const changeAge=(v:number)=>{setAge(v);void saveAge(v);};
+  const changeSex=(v:Sex)=>{setSex(v);void saveSex(v);};
+  const changeRestHR=(v:number)=>{setRestHR(v);void saveRestHR(v);};
   // 푸시 알림 설정 변경: 즉시 상태 반영 + 신규 notif_settings 키에만 영속(기존 키 불변).
   const changeNotifSettings=(s:NotifSettings)=>{setNotifSettingsState(s);void setNotifSettings(s);};
 
@@ -1769,6 +1779,7 @@ function Main(){
             shoes={uiShoes} runs={uiRuns} summary={summary} chart={chart} unit={unit} onTab={setTab}
             onAddRun={addManualRun} onEditRun={editRun} onDeleteRun={deleteRun}
             onRefresh={refreshData}
+            age={age} sex={sex} restHR={restHR}
           />
         )}
         {tab===1&&(
@@ -1788,6 +1799,8 @@ function Main(){
             profile={profile} badges={badges} records={records} onTab={setTab}
             profilePhotoUri={profilePhoto} onChangeName={changeProfileName} onPickPhoto={pickProfilePhoto}
             weightKg={weightKg} onChangeWeight={changeWeight}
+            age={age} onChangeAge={changeAge} sex={sex} onChangeSex={changeSex}
+            restHR={restHR} onChangeRestHR={changeRestHR}
             initialOpen={profileInitialOpen} onConsumeInitialOpen={()=>setProfileInitialOpen(null)}
             unit={unit} onChangeUnit={changeUnit}
             streakDays={goalStreak}

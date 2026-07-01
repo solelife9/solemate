@@ -22,6 +22,7 @@ import {
   AlertSettings, THRESHOLD_STEP,
   MIN_THRESHOLD_PCT, MAX_THRESHOLD_PCT, DEFAULT_SETTINGS, DEFAULT_ALERTS,
   WEIGHT_STEP, MIN_WEIGHT_KG, MAX_WEIGHT_KG,
+  AGE_STEP, MIN_AGE, MAX_AGE, REST_HR_STEP, MIN_REST_HR, MAX_REST_HR,
 } from './lib/settings';
 import { NotifSettings, DEFAULT_NOTIF_SETTINGS } from './lib/notifications';
 import { requestPushPermission as defaultRequestPushPermission } from './lib/pushMessaging';
@@ -105,6 +106,9 @@ export default function ProfileScreen({
   profile = DEFAULT_PROFILE, badges: _badges = [], records = [], onTab,
   profilePhotoUri = '', onChangeName, onPickPhoto,
   weightKg = DEFAULT_SETTINGS.weightKg, onChangeWeight,
+  age = DEFAULT_SETTINGS.age, onChangeAge,
+  sex = DEFAULT_SETTINGS.sex, onChangeSex,
+  restHR = DEFAULT_SETTINGS.restHR, onChangeRestHR,
   initialOpen = null, onConsumeInitialOpen,
   unit = 'km', onChangeUnit,
   streakDays = 0, weekDays = [], weekTodayIdx = -1,
@@ -132,6 +136,13 @@ export default function ProfileScreen({
   // 체중(kg) — 칼로리 추정용. 설정 스테퍼가 조정한다.
   weightKg?: number;
   onChangeWeight?: (kg: number) => void;
+  // 신체지표(심박존용) — 나이→최대심박, 안정심박→Karvonen, 성별→TRIMP. 0=미설정.
+  age?: number;
+  onChangeAge?: (v: number) => void;
+  sex?: 'male' | 'female';
+  onChangeSex?: (v: 'male' | 'female') => void;
+  restHR?: number;
+  onChangeRestHR?: (v: number) => void;
   initialOpen?: 'weight' | 'alerts' | 'notif' | 'account' | 'import' | null;
   onConsumeInitialOpen?: () => void;
   unit?: Unit;
@@ -198,8 +209,8 @@ export default function ProfileScreen({
   onDeleteAccount?: () => Promise<void>;
 }) {
   // 어떤 설정 행이 펼쳐졌는지(단위는 패널 없이 즉시 토글). 한 번에 하나만 펼친다.
-  const [open, setOpen] = useState<null | 'goal' | 'weight' | 'alerts' | 'notif' | 'account' | 'import'>(null);
-  const toggleOpen = (k: 'goal' | 'weight' | 'alerts' | 'notif' | 'account' | 'import') => setOpen((o) => (o === k ? null : k));
+  const [open, setOpen] = useState<null | 'goal' | 'weight' | 'body' | 'alerts' | 'notif' | 'account' | 'import'>(null);
+  const toggleOpen = (k: 'goal' | 'weight' | 'body' | 'alerts' | 'notif' | 'account' | 'import') => setOpen((o) => (o === k ? null : k));
 
   // 마이탭 정리(설정 분리): 기본은 프로필+기록만 보이고, 헤더 ⚙️ 를 누르면 같은 화면이
   // 전체화면 '설정' 뷰로 전환된다(목표·알림·푸시·단위·체중·계정·클라우드를 한곳에 모음).
@@ -347,6 +358,15 @@ export default function ProfileScreen({
 
   const stepWeight = (dir: 1 | -1) => {
     onChangeWeight?.(Math.max(MIN_WEIGHT_KG, Math.min(MAX_WEIGHT_KG, weightKg + dir * WEIGHT_STEP)));
+  };
+  // 나이·안정심박 스테퍼 — 미설정(0)에서 처음 +를 누르면 각자 하한값에서 시작한다.
+  const stepAge = (dir: 1 | -1) => {
+    const base = age > 0 ? age : (dir > 0 ? MIN_AGE - AGE_STEP : MIN_AGE);
+    onChangeAge?.(Math.max(MIN_AGE, Math.min(MAX_AGE, base + dir * AGE_STEP)));
+  };
+  const stepRestHR = (dir: 1 | -1) => {
+    const base = restHR > 0 ? restHR : (dir > 0 ? MIN_REST_HR - REST_HR_STEP : MIN_REST_HR);
+    onChangeRestHR?.(Math.max(MIN_REST_HR, Math.min(MAX_REST_HR, base + dir * REST_HR_STEP)));
   };
 
   const toggleAlerts = () => onChangeAlerts?.({ ...alerts, enabled: !alerts.enabled });
@@ -765,6 +785,33 @@ export default function ProfileScreen({
               <View style={[s.panel, s.settingBorder]}>
                 <Stepper value={weightKg} suffix="kg" onMinus={() => stepWeight(-1)} onPlus={() => stepWeight(1)} />
                 <Text style={s.panelHint}>러닝 칼로리 추정에 사용돼요(가이드 값 — 정밀 측정 아님).</Text>
+              </View>
+            )}
+            {/* 심박·신체 — 심박존/트레이닝효과 정확도용(나이·성별·안정심박). 선택 입력. */}
+            <Pressable onPress={() => toggleOpen('body')} accessibilityRole="button" accessibilityLabel="심박 · 신체 설정" accessibilityState={{ expanded: open === 'body' }} style={({ pressed }) => [s.settingRow, pressed && { backgroundColor: CARD_HI }]}>
+              <View style={s.settingIcon}><Ionicons name="heart-outline" size={17} color={ACCENT} /></View>
+              <Text style={s.settingLabel}>심박 · 신체</Text>
+              <Text style={s.settingDetail}>{age > 0 ? `${age}세` : '미설정'}</Text>
+              <Ionicons name={open === 'body' ? 'chevron-up' : 'chevron-forward'} size={16} color={T3} />
+            </Pressable>
+            {open === 'body' && (
+              <View style={[s.panel, s.settingBorder]}>
+                <Stepper value={age > 0 ? age : '미설정'} suffix="나이(세)" onMinus={() => stepAge(-1)} onPlus={() => stepAge(1)} />
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 14 }}>
+                  <Text style={s.settingLabel}>성별</Text>
+                  <View style={{ flexDirection: 'row', gap: 8 }}>
+                    {(['male', 'female'] as const).map((sx) => (
+                      <Pressable key={sx} onPress={() => onChangeSex?.(sx)} accessibilityRole="button" accessibilityLabel={sx === 'male' ? '남성' : '여성'} accessibilityState={{ selected: sex === sx }}
+                        style={{ paddingVertical: 6, paddingHorizontal: 16, borderRadius: RADIUS.sm, backgroundColor: sex === sx ? ACCENT : CARD_HI }}>
+                        <Text style={{ color: sex === sx ? BG : T2, fontFamily: FONT, fontWeight: '700', fontSize: 13 }}>{sx === 'male' ? '남성' : '여성'}</Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                </View>
+                <View style={{ marginTop: 14 }}>
+                  <Stepper value={restHR > 0 ? restHR : '미설정'} suffix="안정시심박(bpm)" onMinus={() => stepRestHR(-1)} onPlus={() => stepRestHR(1)} />
+                </View>
+                <Text style={s.panelHint}>러닝 상세의 심박 존·트레이닝 효과 정확도에 쓰여요. 나이로 최대심박(Tanaka)을, 안정시심박으로 여유심박(Karvonen)을 계산합니다.</Text>
               </View>
             )}
           </View>
