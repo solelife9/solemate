@@ -16,11 +16,11 @@ import { TabBar, Button, SegmentedControl, StatGrid } from './primitives';
 import { Unit, displayNum, displayToKm } from './lib/units';
 import { ymdLocal } from './lib/format';
 import { sumKm, summaryOf, monthBuckets, weekBuckets, yearBuckets } from './lib/stats';
-import { fitnessSummary } from './lib/analytics/fitness';
+import { fitnessSummary, thresholdPaceSec } from './lib/analytics/fitness';
 import { gradeAdjustedPaceSec, smoothElevation, resampleByDistance, buildGapSeries } from './lib/analytics/gap';
 import { Sparkline } from './Sparkline';
 import { estimateMaxHR, timeInZones, hrSummary, zoneBoundaries, HR_ZONE_LABEL, type HRZone } from './lib/analytics/hrZones';
-import { trimp } from './lib/analytics/load';
+import { trimp, paceLoad, effortBand } from './lib/analytics/load';
 import { getRunSurface, setRunSurface, type Surface } from './lib/wearModel';
 import { parseRoute, projectRoute, LatLon } from './lib/route';
 import { DARK_MAP_STYLE } from './lib/mapStyle';
@@ -396,7 +396,7 @@ export function RunForm({
 }
 
 // ── run detail ────────────────────────────────────────────────────────────────
-function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'male', restHR = 0 }: { run: Run; shoe?: Shoe; onBack: () => void; unit: Unit; onDelete?: (id: string) => void; age?: number; sex?: 'male' | 'female'; restHR?: number }) {
+function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'male', restHR = 0, thresholdPaceSec = 0 }: { run: Run; shoe?: Shoe; onBack: () => void; unit: Unit; onDelete?: (id: string) => void; age?: number; sex?: 'male' | 'female'; restHR?: number; thresholdPaceSec?: number }) {
   // Load the recorded route for this run once. Missing/invalid blob → [] → map
   // stays hidden (graceful). route_<id> is written by App.addRun on save.
   const [route, setRoute] = useState<LatLon[]>([]);
@@ -506,6 +506,14 @@ function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'male', r
     const load = rest ? trimp(total, avg, maxHR, rest, sex) : 0;
     return { secs, total, avg, max, maxHR, rest, load, bounds: zoneBoundaries(maxHR, rest) };
   }, [hrTrack, age, restHR, sex]);
+  // 이 러닝의 트레이닝 부하(스트라바 'Relative Effort') — 심박(안정심박 有)이면 TRIMP,
+  // 아니면 페이스 기반 rTSS(임계페이스 기준). 둘 다 불가(타임·체력 없음)면 null → 카드 숨김.
+  const effort = useMemo(() => {
+    const hrLoad = hr && hr.load > 0 ? hr.load : 0;
+    const score = hrLoad > 0 ? hrLoad : paceLoad(run.dist, run.durationS || 0, thresholdPaceSec);
+    if (!(score > 0)) return null;
+    return { score, band: effortBand(score), method: hrLoad > 0 ? 'HR' : 'pace' as const };
+  }, [hr, run.dist, run.durationS, thresholdPaceSec]);
 
   // 공유 입력(텍스트·카드 폴백이 같은 필드를 쓰도록 단일 출처로 둔다).
   const shareInput = {
@@ -608,6 +616,24 @@ function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'male', r
           verticalPadding={6}
           items={stats.map((x) => ({ value: x.v, unit: x.u ? ` ${x.u}` : undefined, label: x.l }))}
         />
+        {/* 트레이닝 부하(스트라바 Relative Effort) — 이 러닝이 얼마나 힘들었나. 심박 있으면
+            TRIMP, 없으면 페이스 기반 rTSS. 타임·체력 정보가 없어 산출 불가면 숨김. */}
+        {effort && (
+          <View
+            style={[s.card, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingVertical: 14, marginTop: 12 }]}
+            accessible accessibilityLabel={`트레이닝 부하 ${effort.score}, ${effort.band}`}>
+            <View style={{ flex: 1, paddingRight: 12 }}>
+              <Text style={s.cardTitle}>트레이닝 부하</Text>
+              <Text style={{ color: T3, fontFamily: FONT, fontSize: 11, marginTop: 3 }}>
+                {effort.method === 'HR' ? '심박 기반(TRIMP) — 이 러닝의 체감 강도' : '페이스 기반 — 체력 대비 이 러닝의 강도'}
+              </Text>
+            </View>
+            <View style={{ alignItems: 'flex-end' }}>
+              <Text style={{ color: T1, fontFamily: DISPLAY, fontSize: 24, fontWeight: '800' }}>{effort.score}</Text>
+              <Text style={{ color: ACCENT, fontFamily: FONT, fontSize: 12, fontWeight: '700' }}>{effort.band}</Text>
+            </View>
+          </View>
+        )}
         {/* 경사 보정 페이스(GAP, Strava식) — 오르내림을 평지 등가로 환산. 고도 시계열이 있고
             평지와 유의미하게 다를 때만 노출(평지면 실제 페이스와 같아 중복이라 숨김). */}
         {gapSec != null && (() => {
@@ -884,6 +910,9 @@ export default function HistoryScreen({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [runs.length, runs[runs.length - 1]?.id, todayIso],
   );
+  // 개인 임계페이스(초/km) — 체력(VDOT)에서 역산. per-run 트레이닝 부하(rTSS)의 강도 기준.
+  // 타임 있는 노력 런이 없어 vo2max=0 이면 0(그땐 페이스 기반 부하 대신 HR 부하만 가능).
+  const thresholdPace = thresholdPaceSec(fitness.vo2max);
 
   const sum = period === '주' ? selWeekSummary : period === '월' ? selMonthSummary : period === '년' ? selYearSummary : (summary['전체'] || EMPTY_SUMMARY);
   const ch = period === '주'
@@ -953,6 +982,7 @@ export default function HistoryScreen({
         age={age}
         sex={sex}
         restHR={restHR}
+        thresholdPaceSec={thresholdPace}
       />
     );
   }

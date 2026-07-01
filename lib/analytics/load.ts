@@ -84,6 +84,19 @@ export function currentPmc(pmc: PmcPoint[]): { ctl: number; atl: number; tsb: nu
   return { ctl: last.ctl, atl: last.atl, tsb: last.tsb };
 }
 
+/**
+ * 세션 부하 점수(TRIMP 또는 rTSS) → 정성 라벨(스트라바 'Relative Effort' 톤). 두 방법은
+ * 스케일이 완전히 같진 않지만 강도×시간에 함께 비례하며, 1시간 적당런이 대략 '적당' 경계에
+ * 오도록 보정한 공통 밴드다(정밀 수치가 아니라 체감 안내). 0 이하는 빈 문자열.
+ */
+export function effortBand(score: number): string {
+  if (!(score > 0)) return '';
+  if (score < 35) return '가벼움';
+  if (score < 75) return '적당';
+  if (score < 120) return '높음';
+  return '매우 높음';
+}
+
 /** 폼(TSB) 해석 라벨 — 가민/TP 톤. */
 export function tsbLabel(tsb: number): string {
   if (tsb >= 15) return '아주 신선 (테이퍼/레이스 준비)';

@@ -1,4 +1,4 @@
-import {trimp, paceLoad, performanceChart, currentPmc, tsbLabel} from '../../../lib/analytics/load';
+import {trimp, paceLoad, performanceChart, currentPmc, tsbLabel, effortBand} from '../../../lib/analytics/load';
 
 describe('trimp (Banister 1991)', () => {
   test('남 60min HRr0.6 → 73', () => {
@@ -70,6 +70,19 @@ describe('performanceChart (PMC CTL/ATL/TSB)', () => {
     expect(performanceChart([], '2026-06-30')).toEqual([]);
     expect(performanceChart([{date: 'bad', load: 50}], '2026-06-30')).toEqual([]);
   });
+});
+
+test('effortBand 부하 정성 라벨(경계 + 단조)', () => {
+  expect(effortBand(0)).toBe('');
+  expect(effortBand(-5)).toBe('');
+  expect(effortBand(20)).toBe('가벼움');
+  expect(effortBand(34)).toBe('가벼움');
+  expect(effortBand(35)).toBe('적당');
+  expect(effortBand(74)).toBe('적당');
+  expect(effortBand(75)).toBe('높음');
+  expect(effortBand(119)).toBe('높음');
+  expect(effortBand(120)).toBe('매우 높음');
+  expect(effortBand(200)).toBe('매우 높음');
 });
 
 test('tsbLabel 폼 해석', () => {
