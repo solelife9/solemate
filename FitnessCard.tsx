@@ -10,6 +10,7 @@ import { CARD, CARD_BORDER, ACCENT, GOOD, WARN, BEST, DANGER, T1, T3, FONT, DISP
 import { fitnessSummary } from './lib/analytics/fitness';
 import { formStatus } from './lib/analytics/load';
 import { Sparkline } from './Sparkline';
+import { GlassCard } from './GlassCard';
 
 export function FitnessCard({ runs = [], todayISO, style }: { runs?: any[]; todayISO: string; style?: any }) {
   const fitness = useMemo(
@@ -39,8 +40,9 @@ export function FitnessCard({ runs = [], todayISO, style }: { runs?: any[]; toda
   })();
 
   return (
-    <View
-      style={[st.card, style]}
+    <GlassCard
+      radius={RADIUS.lg}
+      style={[st.cardGlass, style]}
       accessible
       accessibilityLabel={`체력 트렌드. VO2max ${fitness.vo2max.toFixed(1)}, ${fitness.vo2maxLabel}. 오늘 컨디션 ${fs.label}. ${fs.advice}${trend ? `. 체력 ${trend.w.replace(/[↗↘→]/g, '').trim()}` : ''}`}
     >
@@ -74,12 +76,14 @@ export function FitnessCard({ runs = [], todayISO, style }: { runs?: any[]; toda
           <Sparkline data={ctl.slice(-90)} color={ACCENT} height={40} testID="fitness-sparkline" />
         </View>
       )}
-    </View>
+    </GlassCard>
   );
 }
 
 const st = StyleSheet.create({
   card: { backgroundColor: CARD, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER, paddingHorizontal: 20, paddingTop: 14, paddingBottom: 18 },
+  // GlassCard 용 — 균일 테두리 없이(모서리 유리 엣지는 GlassCard 가 SVG 로).
+  cardGlass: { backgroundColor: CARD, paddingHorizontal: 20, paddingTop: 14, paddingBottom: 18 },
   title: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600' },
   metricL: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500' },
 });

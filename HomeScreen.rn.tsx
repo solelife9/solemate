@@ -22,6 +22,7 @@ import { Unit } from './lib/units';
 import InjuryRiskCard from './InjuryRiskCard';
 import { FitnessCard } from './FitnessCard';
 import { ShoeCard as KeegoShoeCard } from './screens/KeegoHome';
+import { GlassCard } from './GlassCard';
 import type { LoadRun } from './lib/trainingLoad';
 import { RotationPick } from './lib/rotation';
 import { recommendNextShoes, buildShopLinks, categoryLabelKo, AFFILIATE_DISCLOSURE } from './lib/affiliate';
@@ -209,7 +210,7 @@ function WeekCard({ week, unit = 'km', weeklyGoalKm = 0, streakDays = 0 }: { wee
   const pace = week?.pace && week.pace !== '--' ? week.pace : '--'; // 앱 전역 '데이터 없음' 표기 통일(--)
   const goalPct = weeklyGoalKm > 0 ? Math.min(100, Math.round(((parseFloat(km) || 0) / weeklyGoalKm) * 100)) : 0;
   return (
-    <View style={s.insightCard} testID="home-week">
+    <GlassCard radius={RADIUS.lg} style={s.insightCardGlass} testID="home-week">
       {/* 주간 목표 진행 + 연속 스트릭(있을 때만) — lib/goals 배선. */}
       {(streakDays > 0 || weeklyGoalKm > 0) && (
         <View style={s.weekTop}>
@@ -251,7 +252,7 @@ function WeekCard({ week, unit = 'km', weeklyGoalKm = 0, streakDays = 0 }: { wee
           </View>
         </View>
       </View>
-    </View>
+    </GlassCard>
   );
 }
 
@@ -620,6 +621,8 @@ const s = StyleSheet.create({
   heroActive: { borderColor: withAlpha(ACCENT, 0.55) },
   // 현재 상태 인사이트 카드(사용거리 | 교체예상) — 활성 신발 반영
   insightCard: { backgroundColor: CARD_DIM, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.07), padding: SPACE.lg },
+  // GlassCard 용 — 균일 테두리 없이(모서리 유리 엣지는 GlassCard 가 SVG 로).
+  insightCardGlass: { backgroundColor: CARD_DIM, padding: SPACE.lg },
   insightGrid: { flexDirection: 'row', alignItems: 'flex-start' },
   insightDivider: { width: StyleSheet.hairlineWidth, alignSelf: 'stretch', backgroundColor: withAlpha(T1, 0.08), marginHorizontal: SPACE.lg },
   insightLabel: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600', letterSpacing: -0.1 },
