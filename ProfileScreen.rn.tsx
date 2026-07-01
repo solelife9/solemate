@@ -14,6 +14,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import { BG, CARD, CARD_DIM, CARD_HI, ACCENT, GOOD, DANGER, WARN, T1, T2, T3, SEP, CARD_BORDER, FONT, DISPLAY, withAlpha, TIER_COLORS, TIER_LABEL, KAKAO_YELLOW, KAKAO_LABEL, NAVER_GREEN, NAVER_LABEL, RADIUS } from './theme';
 // recap 토글 = SegmentedControl(accentSolid), 스탯 그리드들 = StatGrid 단일 프리미티브.
 import { TabBar, Pill, SectionTitle, Button, SegmentedControl, StatGrid } from './primitives';
+import { GlassCard } from './GlassCard';
 import { Unit, unitKorean, displayNum } from './lib/units';
 import { weeklyRecap, monthlyRecap, type RecapRun, type RecapShoe } from './lib/recap';
 import { buildRecapShareCardModel, shareRecapCard, formatRecapPRs, type RecapKind, type SvgCapturable } from './lib/shareCard';
@@ -527,7 +528,7 @@ export default function ProfileScreen({
         </View>
 
         {/* 이번 주 스트릭 — 월~일 달림 점 */}
-        <View style={[s.card, s.streakCard]} testID="streak-card">
+        <GlassCard radius={RADIUS.lg} style={[s.cardGlass, s.streakCard]} testID="streak-card">
           <View style={s.streakHead}>
             <SectionTitle>이번 주 스트릭</SectionTitle>
             {streakDays > 0 && <Text style={s.streakCount}>🔥 {streakDays}일</Text>}
@@ -546,7 +547,7 @@ export default function ProfileScreen({
               );
             })}
           </View>
-        </View>
+        </GlassCard>
 
         {/* 누적 기록 카드 제거 — 기록(History) 탭에서 주/월/년/전체 기간별로 볼 수 있어
             마이 탭과 중복(사용자 요청). 정체성·스트릭·스마트 챌린지·진척·기록(PR)·리캡만 남긴다. */}
@@ -904,6 +905,8 @@ const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: BG },
   row: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   card: { backgroundColor: CARD_DIM, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER },
+  // GlassCard 용 — 균일 테두리 없이(모서리 유리 엣지는 GlassCard 가 SVG 로).
+  cardGlass: { backgroundColor: CARD_DIM },
   cardTitle: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600', marginBottom: 16 },
   sectionLabel: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600', letterSpacing: 0.4, paddingHorizontal: 4 },
   progressRow: { flexDirection: 'row', alignItems: 'center', gap: 13, padding: 16 },

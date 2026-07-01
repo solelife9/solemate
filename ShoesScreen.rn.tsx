@@ -10,6 +10,7 @@ import {
   BG, CARD_DIM, CARD_HI, HERO_BG, ACCENT, DANGER, WARN, GOOD, BEST, T1, T2, T3, T4, SEP, FONT, DISPLAY, withAlpha, RADIUS, Shoe, Run, SHOES,
 } from './theme';
 import { TabBar, Pill, InjuryBanner, SectionTitle, Button } from './primitives';
+import { GlassCard } from './GlassCard';
 import { FuelGauge } from './FuelGauge';
 import FirstShoeScreen from './FirstShoeScreen.rn';
 import { Unit, displayNum } from './lib/units';
@@ -315,7 +316,7 @@ function ShoeDetail({
         )}
 
         {/* totals — 2x2 그리드(평균 페이스 포함): 신발별 누적·페이스를 비교할 수 있게 한다 */}
-        <View style={[s.card, s.statGrid]}>
+        <GlassCard radius={RADIUS.lg} style={[s.cardGlass, s.statGrid]}>
           {[
             { v: String(usedDisp), u: unit, l: '누적 거리' },
             { v: String(totals.totalRuns), u: '회', l: '러닝 횟수' },
@@ -327,12 +328,12 @@ function ShoeDetail({
               <Text style={s.statLabel}>{x.l}</Text>
             </View>
           ))}
-        </View>
+        </GlassCard>
 
         {/* 교체 예상 카드(목업 09: 통계 아래) — 핸드오프 문구 '현재 패턴 기준 약 N주 후
             교체 예상이에요'. ok 예측에서만 노출(보관/예측없음/overdue 면 숨김). */}
         {!retired && detailReplaceWeeks != null && (
-          <View style={[s.card, s.wearCard]}>
+          <GlassCard radius={RADIUS.lg} style={[s.cardGlass, s.wearCard]}>
             <View style={s.wearLabelRow}>
               <Text style={s.wearLabel}>교체 예상</Text>
               <View style={[s.confChip, detailConfHigh ? s.confChipHi : s.confChipLo]}>
@@ -342,7 +343,7 @@ function ShoeDetail({
             </View>
             <Text style={s.replaceForecastText}>현재 패턴 기준 약 <Text style={s.dForecastBold}>{detailReplaceWeeks}주 후</Text> 교체 예상이에요</Text>
             {!!detailBasis && <Text style={s.wearBasisText}>{detailBasis}</Text>}
-          </View>
+          </GlassCard>
         )}
 
         {/* runs */}
@@ -622,6 +623,8 @@ const s = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   baselineRow: { flexDirection: 'row', alignItems: 'flex-end' },
   card: { backgroundColor: CARD_DIM, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.07) },
+  // GlassCard 용 — 균일 테두리 없이(모서리 유리 엣지는 GlassCard 가 SVG 로).
+  cardGlass: { backgroundColor: CARD_DIM },
   sectionLabel: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600', letterSpacing: 0.4, paddingHorizontal: 4 },
   dot: { width: 7, height: 7, borderRadius: RADIUS.pill },
   condText: { fontFamily: FONT, fontSize: 13, fontWeight: '500' },
