@@ -51,4 +51,21 @@ describe('PaceCurveChart — 거리축 페이스 곡선', () => {
     const root = render(<PaceCurveChart splits={splits([330, 330, 330])} />).root;
     expect(has(root, 'pace-curve')).toBe(true);
   });
+
+  // GAP 오버레이는 svg Path(목킹됨) — type 무관하게 props.testID 로 조회한다.
+  const hasByTestId = (root: ReactTestRenderer.ReactTestInstance, id: string) =>
+    root.findAll((n: any) => n?.props?.testID === id).length > 0;
+
+  test('gap 시계열을 주면 GAP 오버레이(점선)와 범례를 그린다', () => {
+    const gap = [{km: 1, paceSec: 280}, {km: 2, paceSec: 275}, {km: 3, paceSec: 270}];
+    const root = render(<PaceCurveChart splits={splits([360, 330, 300])} gap={gap} />).root;
+    expect(hasByTestId(root, 'gap-overlay')).toBe(true);
+    expect(textOf(root)).toContain('GAP');
+  });
+
+  test('gap 이 없으면 오버레이/범례를 그리지 않는다', () => {
+    const root = render(<PaceCurveChart splits={splits([360, 330, 300])} />).root;
+    expect(hasByTestId(root, 'gap-overlay')).toBe(false);
+    expect(textOf(root)).not.toContain('GAP');
+  });
 });

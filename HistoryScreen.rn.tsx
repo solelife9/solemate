@@ -17,7 +17,7 @@ import { Unit, displayNum, displayToKm } from './lib/units';
 import { ymdLocal } from './lib/format';
 import { sumKm, summaryOf, monthBuckets, weekBuckets, yearBuckets } from './lib/stats';
 import { fitnessSummary } from './lib/analytics/fitness';
-import { gradeAdjustedPaceSec, smoothElevation, resampleByDistance } from './lib/analytics/gap';
+import { gradeAdjustedPaceSec, smoothElevation, resampleByDistance, buildGapSeries } from './lib/analytics/gap';
 import { getRunSurface, setRunSurface, type Surface } from './lib/wearModel';
 import { parseRoute, projectRoute, LatLon } from './lib/route';
 import { DARK_MAP_STYLE } from './lib/mapStyle';
@@ -466,6 +466,11 @@ function RunDetail({ run, shoe, onBack, unit, onDelete }: { run: Run; shoe?: Sho
     if (actual > 0 && Math.abs(g - actual) < 1) return null; // 평지(차이 미미)면 숨김
     return Math.round(g);
   }, [gapTrack, run.durationS, run.dist]);
+  // GAP 곡선(페이스곡선 오버레이용) — 집계 GAP 가 유의미할 때만(gapSec!=null) 스무딩 후 0.1km bin.
+  const gapCurve = useMemo(
+    () => (gapSec != null && gapTrack.length >= 2 ? buildGapSeries(smoothElevation(gapTrack, 60), 0.1) : undefined),
+    [gapSec, gapTrack],
+  );
 
   // 공유 입력(텍스트·카드 폴백이 같은 필드를 쓰도록 단일 출처로 둔다).
   const shareInput = {
@@ -601,7 +606,7 @@ function RunDetail({ run, shoe, onBack, unit, onDelete }: { run: Run; shoe?: Sho
           const curveSeries = paceTrack.length >= 2 ? buildPaceSeries(paceTrack) : detailSplits;
           return (
             <>
-              <PaceCurveChart splits={curveSeries.length >= 2 ? curveSeries : detailSplits} unit={unit} />
+              <PaceCurveChart splits={curveSeries.length >= 2 ? curveSeries : detailSplits} unit={unit} gap={gapCurve} />
               <RunSplits splits={detailSplits} />
             </>
           );
