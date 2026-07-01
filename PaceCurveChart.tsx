@@ -82,7 +82,7 @@ export function PaceCurveChart({splits, unit = 'km', gap}: {splits: Split[]; uni
         <Text style={st.axisTxt}>{kmMin}{unit}</Text>
         {gapPts && (
           <Text style={st.legend} accessibilityLabel="회색 점선은 경사 보정 페이스">
-            <Text style={{color: ACCENT}}>—</Text> 실제  <Text style={{color: T3}}>┄</Text> GAP
+            <Text style={{color: ACCENT}}>—</Text> 실제  <Text style={{color: T3}}>┄</Text> 경사보정
           </Text>
         )}
         <Text style={st.axisTxt}>{kmMax}{unit}</Text>

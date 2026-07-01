@@ -625,7 +625,7 @@ function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'male', r
             <View style={{ flex: 1, paddingRight: 12 }}>
               <Text style={s.cardTitle}>트레이닝 부하</Text>
               <Text style={{ color: T3, fontFamily: FONT, fontSize: 11, marginTop: 3 }}>
-                {effort.method === 'HR' ? '심박 기반(TRIMP) — 이 러닝의 체감 강도' : '페이스 기반 — 체력 대비 이 러닝의 강도'}
+                {effort.method === 'HR' ? '심박 기반 — 이 러닝의 체감 강도' : '페이스 기반 — 체력 대비 이 러닝의 강도'}
               </Text>
             </View>
             <View style={{ alignItems: 'flex-end' }}>
@@ -685,14 +685,10 @@ function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'male', r
                   );
                 })}
               </View>
-              {hr.load > 0 && (
-                <View style={{ marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.1)', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Text style={{ color: T3, fontFamily: FONT, fontSize: 12 }}>트레이닝 효과 (TRIMP)</Text>
-                  <Text style={{ color: T1, fontFamily: DISPLAY, fontSize: 16, fontWeight: '800' }}>{hr.load}</Text>
-                </View>
-              )}
+              {/* TRIMP(트레이닝 부하)는 위 '트레이닝 부하' 카드가 밴드까지 붙여 보여주므로 여기선
+                  중복 노출하지 않는다. 심박 존 카드는 '분포 + 평균/최대'에 집중. */}
               {!hr.rest && (
-                <Text style={{ color: T4, fontFamily: FONT, fontSize: 11, marginTop: 8 }}>마이 탭에서 안정시심박을 설정하면 존·트레이닝 효과가 더 정확해져요</Text>
+                <Text style={{ color: T4, fontFamily: FONT, fontSize: 11, marginTop: 8 }}>마이 탭에서 안정시심박을 설정하면 심박 존이 더 정확해져요</Text>
               )}
             </View>
           );

@@ -811,7 +811,7 @@ export default function ProfileScreen({
                 <View style={{ marginTop: 14 }}>
                   <Stepper value={restHR > 0 ? restHR : '미설정'} suffix="안정시심박(bpm)" onMinus={() => stepRestHR(-1)} onPlus={() => stepRestHR(1)} />
                 </View>
-                <Text style={s.panelHint}>러닝 상세의 심박 존·트레이닝 효과 정확도에 쓰여요. 나이로 최대심박(Tanaka)을, 안정시심박으로 여유심박(Karvonen)을 계산합니다.</Text>
+                <Text style={s.panelHint}>러닝 상세의 심박 존·트레이닝 부하 정확도에 쓰여요. 나이로 내 최대 심박을, 안정시심박으로 심박 구간을 더 정확히 계산합니다.</Text>
               </View>
             )}
           </View>

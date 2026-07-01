@@ -60,12 +60,12 @@ describe('PaceCurveChart — 거리축 페이스 곡선', () => {
     const gap = [{km: 1, paceSec: 280}, {km: 2, paceSec: 275}, {km: 3, paceSec: 270}];
     const root = render(<PaceCurveChart splits={splits([360, 330, 300])} gap={gap} />).root;
     expect(hasByTestId(root, 'gap-overlay')).toBe(true);
-    expect(textOf(root)).toContain('GAP');
+    expect(textOf(root)).toContain('경사보정'); // 범례(일반인용 — 'GAP' 약어 대신)
   });
 
   test('gap 이 없으면 오버레이/범례를 그리지 않는다', () => {
     const root = render(<PaceCurveChart splits={splits([360, 330, 300])} />).root;
     expect(hasByTestId(root, 'gap-overlay')).toBe(false);
-    expect(textOf(root)).not.toContain('GAP');
+    expect(textOf(root)).not.toContain('경사보정');
   });
 });

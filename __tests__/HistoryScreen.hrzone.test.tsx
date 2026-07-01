@@ -62,14 +62,15 @@ describe('HistoryScreen RunDetail — 심박 존', () => {
     expect(txt).toContain('148');            // 평균 (120+140+150+165+165)/5
     expect(txt).toContain('회복');           // Z1 라벨
     expect(txt).toContain('무산소');         // Z5 라벨(항상 렌더)
-    expect(txt).toContain('(TRIMP)');        // restHR 있어 트레이닝효과 행 노출
+    // 부하(TRIMP)는 중복 방지로 별도 '트레이닝 부하' 카드가 담당 — 심박 있으면 심박 기반으로.
+    expect(txt).toContain('트레이닝 부하');
+    expect(txt).toContain('심박 기반');
   });
 
-  test('안정심박 미설정이면 트레이닝 효과 대신 설정 안내 노출', async () => {
+  test('안정심박 미설정이면 심박 존 정확도 안내 노출', async () => {
     const root = await renderDetail({age: 30, sex: 'male', restHR: 0}, 'hrTrack_r1', HR);
     const txt = textOf(root);
     expect(txt).toContain('심박 존');
-    expect(txt).not.toContain('(TRIMP)');       // restHR 없으면 TRIMP 행 미표시
     expect(txt).toContain('안정시심박을 설정');
   });
 
