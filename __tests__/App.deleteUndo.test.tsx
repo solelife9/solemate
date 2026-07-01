@@ -32,6 +32,9 @@ const ORIG = {
   time: '08:30',
   surface: 'trail',
   splits: JSON.stringify([300, 305, 298]),
+  paceTrack: JSON.stringify([{d: 0, t: 0}, {d: 0.5, t: 150}, {d: 1, t: 300}]),
+  hrTrack: JSON.stringify([{t: 0, bpm: 120}, {t: 60, bpm: 150}]),
+  gapTrack: JSON.stringify([{d: 0, t: 0, e: 10}, {d: 1, t: 300, e: 60}]),
 };
 
 function findByProp(root: ReactTestRenderer.ReactTestInstance, prop: string) {
@@ -139,6 +142,9 @@ test('런 삭제→실행취소: 사이드키 4종 포함 완전복원 + 묘비 
   await AsyncStorage.setItem('time_r1', ORIG.time);
   await AsyncStorage.setItem('surface_r1', ORIG.surface);
   await AsyncStorage.setItem('splits_r1', ORIG.splits);
+  await AsyncStorage.setItem('paceTrack_r1', ORIG.paceTrack);
+  await AsyncStorage.setItem('hrTrack_r1', ORIG.hrTrack);
+  await AsyncStorage.setItem('gapTrack_r1', ORIG.gapTrack);
 
   const renderer = await mountApp();
 
@@ -184,6 +190,9 @@ test('런 삭제→실행취소: 사이드키 4종 포함 완전복원 + 묘비 
   expect(await AsyncStorage.getItem('time_r1')).toBeNull();
   expect(await AsyncStorage.getItem('surface_r1')).toBeNull();
   expect(await AsyncStorage.getItem('splits_r1')).toBeNull();
+  expect(await AsyncStorage.getItem('paceTrack_r1')).toBeNull();
+  expect(await AsyncStorage.getItem('hrTrack_r1')).toBeNull();
+  expect(await AsyncStorage.getItem('gapTrack_r1')).toBeNull();
 
   // ── 실행취소 ──
   await act(async () => {
@@ -196,6 +205,9 @@ test('런 삭제→실행취소: 사이드키 4종 포함 완전복원 + 묘비 
   expect(await AsyncStorage.getItem('time_r1')).toBe(ORIG.time);
   expect(await AsyncStorage.getItem('surface_r1')).toBe(ORIG.surface);
   expect(await AsyncStorage.getItem('splits_r1')).toBe(ORIG.splits);
+  expect(await AsyncStorage.getItem('paceTrack_r1')).toBe(ORIG.paceTrack);
+  expect(await AsyncStorage.getItem('hrTrack_r1')).toBe(ORIG.hrTrack);
+  expect(await AsyncStorage.getItem('gapTrack_r1')).toBe(ORIG.gapTrack);
 
   // 3b) live 복귀: s1 used 가 50 으로 회복.
   await act(async () => {

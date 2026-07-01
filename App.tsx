@@ -753,7 +753,7 @@ function Main(){
   // 읽어 담아야 유실 없이 되살릴 수 있다(부분복원=런만 살고 사이드키 유실 방지).
   type RunUndo={
     record:BackendRun;
-    sidecars:{route:string|null;time:string|null;surface:string|null;splits:string|null};
+    sidecars:{route:string|null;time:string|null;surface:string|null;splits:string|null;paceTrack:string|null;hrTrack:string|null;gapTrack:string|null};
     pending:PendingRun|null;
   };
   const restoreRun=async(undo:RunUndo)=>{
@@ -764,6 +764,9 @@ function Main(){
     if(sc.time!=null)await AsyncStorage.setItem('time_'+sid,sc.time);
     if(sc.surface!=null)await AsyncStorage.setItem('surface_'+sid,sc.surface);
     if(sc.splits!=null)await AsyncStorage.setItem('splits_'+sid,sc.splits);
+    if(sc.paceTrack!=null)await AsyncStorage.setItem('paceTrack_'+sid,sc.paceTrack);
+    if(sc.hrTrack!=null)await AsyncStorage.setItem('hrTrack_'+sid,sc.hrTrack);
+    if(sc.gapTrack!=null)await AsyncStorage.setItem('gapTrack_'+sid,sc.gapTrack);
     // 2) 묘비 되돌림 — store 에서 해당 id 제거(삭제 전파 취소).
     setTombstones(prev=>{
       const next={...prev,runs:prev.runs.filter(r=>String(r.id)!==sid)};
@@ -902,17 +905,21 @@ function Main(){
   // 어느 경로로든 클라우드에 올라간 런이 다른 기기 머지로 부활하지 않게 한다.
   // 개별 런 삭제(Stage 2b · 로컬-퍼스트). runs에서 제거하면 shoeHealth가 줄어 신발 사용거리도
   // 자동 감소한다(파생값). 라이브에서 빼는 동시에 묘비를 남겨, 어느 경로로든 클라우드(Firestore)에
-  // 올라간 런이 다른 기기 머지로 부활하지 않게 한다. route_/time_/surface_/splits_ 사이드키도 정리.
+  // 올라간 런이 다른 기기 머지로 부활하지 않게 한다. 모든 사이드키(route_/time_/surface_/splits_/
+  // paceTrack_/hrTrack_/gapTrack_)를 정리하고, 실행취소 스냅샷에도 담아 완전복원한다.
   async function deleteRun(id:string){
     const sid=String(id);
     const target=runs.find(r=>String(r.id)===sid);
     // undo 스냅샷: 사이드키를 *지우기 전에* 읽어 담는다 — '실행취소' 시 런만 살고
     // route_/time_/surface_/splits_ 가 유실되는 부분복원을 막는다(완전복원 보장).
-    const [route,time,surface,splits]=await Promise.all([
+    const [route,time,surface,splits,paceTrack,hrTrack,gapTrack]=await Promise.all([
       AsyncStorage.getItem('route_'+sid),
       AsyncStorage.getItem('time_'+sid),
       AsyncStorage.getItem('surface_'+sid),
       AsyncStorage.getItem('splits_'+sid),
+      AsyncStorage.getItem('paceTrack_'+sid),
+      AsyncStorage.getItem('hrTrack_'+sid),
+      AsyncStorage.getItem('gapTrack_'+sid),
     ]);
     // 레거시 미동기 큐(pending)에 같은 런이 남아 있으면 큐에서도 제거한다(#5). 안 그러면 다음
     // 부팅 overlayPendingRuns 로 되살아난다(묘비 필터가 표시를 막아도 큐 항목이 영구 누수).
@@ -923,7 +930,7 @@ function Main(){
       pendingUndo=q.find(p=>String(p.localId)===sid)??null;
       if(pendingUndo) await removePendingRun(sid);
     }catch{/* 큐 접근 실패는 삭제를 막지 않는다 */}
-    const undo:RunUndo|null=target?{record:target,sidecars:{route,time,surface,splits},pending:pendingUndo}:null;
+    const undo:RunUndo|null=target?{record:target,sidecars:{route,time,surface,splits,paceTrack,hrTrack,gapTrack},pending:pendingUndo}:null;
     // 로컬-퍼스트 삭제: 라이브 제거 + 묘비(cloudSync 전파) + 사이드키 정리. 영속은 cloudSync 담당.
     setRuns(prev=>prev.filter(r=>String(r.id)!==sid));
     if(target)addRunTombstone(target);
@@ -933,6 +940,10 @@ function Main(){
     await AsyncStorage.removeItem('time_'+sid);
     await AsyncStorage.removeItem('surface_'+sid);
     await AsyncStorage.removeItem('splits_'+sid);
+    // 곡선 시계열 사이드키(페이스/심박/GAP)도 정리 — 없으면 삭제된 런의 시계열이 영구 누수된다.
+    await AsyncStorage.removeItem('paceTrack_'+sid);
+    await AsyncStorage.removeItem('hrTrack_'+sid);
+    await AsyncStorage.removeItem('gapTrack_'+sid);
     if(undo)offerRunUndo(undo);
   }
 
