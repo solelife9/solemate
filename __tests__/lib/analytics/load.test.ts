@@ -1,4 +1,4 @@
-import {trimp, paceLoad, performanceChart, currentPmc, tsbLabel, effortBand} from '../../../lib/analytics/load';
+import {trimp, paceLoad, performanceChart, currentPmc, tsbLabel, effortBand, formStatus} from '../../../lib/analytics/load';
 
 describe('trimp (Banister 1991)', () => {
   test('남 60min HRr0.6 → 73', () => {
@@ -83,6 +83,17 @@ test('effortBand 부하 정성 라벨(경계 + 단조)', () => {
   expect(effortBand(119)).toBe('높음');
   expect(effortBand(120)).toBe('매우 높음');
   expect(effortBand(200)).toBe('매우 높음');
+});
+
+test('formStatus 컨디션 + 조언(경계별)', () => {
+  expect(formStatus(20).label).toBe('아주 신선');
+  expect(formStatus(8).label).toBe('신선');
+  expect(formStatus(0).label).toBe('균형');
+  expect(formStatus(-15).label).toBe('피로 쌓임');
+  expect(formStatus(-30).label).toBe('과부하');
+  // 각 상태에 실행 가능한 한 줄 조언이 붙는다.
+  expect(formStatus(8).advice.length).toBeGreaterThan(0);
+  expect(formStatus(-30).advice).toContain('회복');
 });
 
 test('tsbLabel 폼 해석', () => {

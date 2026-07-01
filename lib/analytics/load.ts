@@ -97,6 +97,18 @@ export function effortBand(score: number): string {
   return '매우 높음';
 }
 
+/**
+ * 폼(TSB) → 일반 사용자용 컨디션 상태 + 한 줄 조언. raw 숫자(CTL/ATL/TSB)는 러너가 아닌
+ * 이상 이해하기 어려우므로, '오늘 몸이 얼마나 신선한가 + 그래서 뭘 하면 되나'로 번역한다.
+ */
+export function formStatus(tsb: number): { label: string; advice: string } {
+  if (tsb >= 15) return { label: '아주 신선', advice: '레이스·고강도에 최적인 상태예요' };
+  if (tsb >= 5) return { label: '신선', advice: '고강도 훈련하기 좋은 날이에요' };
+  if (tsb > -10) return { label: '균형', advice: '평소대로 훈련하기 좋아요' };
+  if (tsb > -25) return { label: '피로 쌓임', advice: '몸이 만들어지는 중 — 무리하지 마세요' };
+  return { label: '과부하', advice: '회복이 필요해요 — 쉬어가세요' };
+}
+
 /** 폼(TSB) 해석 라벨 — 가민/TP 톤. */
 export function tsbLabel(tsb: number): string {
   if (tsb >= 15) return '아주 신선 (테이퍼/레이스 준비)';

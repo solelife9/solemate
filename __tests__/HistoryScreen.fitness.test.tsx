@@ -39,7 +39,7 @@ describe('HistoryScreen 체력 트렌드 카드', () => {
     expect(txt).toContain('체력 트렌드');
     expect(txt).toContain('VO');     // VO₂max 라벨
     expect(txt).toContain('우수');   // vdotLabel(49.8)
-    expect(txt).toContain('폼');     // 트레이닝 상태(TSB) 행
+    expect(txt).toContain('오늘 컨디션'); // 폼(TSB)을 일반인용 컨디션 해석으로 노출
   });
 
   test('타임 없는 런만 있으면 카드 숨김(VDOT 산출 불가 → 날조 안 함)', () => {
