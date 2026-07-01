@@ -32,7 +32,7 @@ class AppDelegate: ExpoAppDelegate {
     window = UIWindow(frame: UIScreen.main.bounds)
 
     factory.startReactNative(
-      withModuleName: "SoleMate",
+      withModuleName: "Keego",
       in: window,
       launchOptions: launchOptions
     )
