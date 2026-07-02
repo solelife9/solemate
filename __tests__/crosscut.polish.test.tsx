@@ -7,7 +7,7 @@
  * or computed colour math — not source strings — so a regression in the actual
  * rendered controls / tokens fails the suite:
  *   1) 44pt: icon buttons, TabBar tabs, the CTA Button and the three previously
- *      sub-44 selection controls (RunStart preset · AddShoe brand chip ·
+ *      sub-44 selection controls (AddShoe brand chip ·
  *      History period segment) reach a ≥44pt vertical touch target (explicit
  *      height/minHeight + hitSlop). Catches a height/hitSlop regression.
  *   2) press feedback: a Pressable's style({pressed:true}) differs visually from
@@ -29,7 +29,6 @@ import ReactTestRenderer, {act} from 'react-test-renderer';
 import {StyleSheet} from 'react-native';
 import HistoryScreen from '../HistoryScreen.rn';
 import AddShoeScreen from '../AddShoeScreen.rn';
-import {RunStart} from '../RunScreen.rn';
 import {Button, TabBar, TierBadge} from '../primitives';
 import {T3, CARD, BG, Shoe} from '../theme';
 import App from '../App';
@@ -102,7 +101,6 @@ describe('44pt touch targets — no control regresses below 44pt', () => {
   // are exactly the role=button + accessibilityState.selected selection controls
   // on these screens. Each must now reach ≥44pt vertically.
   test.each([
-    ['RunStart preset', <RunStart shoe={SHOES[0]} />],
     ['AddShoe brand chip', <AddShoeScreen />],
     ['History period segment', <HistoryScreen shoes={SHOES} runs={[]} />],
   ])('%s selection controls reach a ≥44pt vertical target', (_name, el) => {
@@ -134,7 +132,6 @@ describe('44pt touch targets — no control regresses below 44pt', () => {
 
   test.each([
     ['AddShoe close', <AddShoeScreen onClose={() => {}} />, '닫기'],
-    ['RunStart close', <RunStart shoe={SHOES[0]} onClose={() => {}} />, '닫기'],
   ])('%s icon button reaches a ≥44pt target (height + hitSlop)', (_n, el, label) => {
     const root = render(el as React.ReactElement).root;
     const btns = root.findAll(

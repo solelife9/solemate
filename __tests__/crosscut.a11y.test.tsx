@@ -22,7 +22,6 @@ import ShoesScreen from '../ShoesScreen.rn';
 import HistoryScreen from '../HistoryScreen.rn';
 import ProfileScreen from '../ProfileScreen.rn';
 import AddShoeScreen from '../AddShoeScreen.rn';
-import {RunStart} from '../RunScreen.rn';
 import {Button, Pill, TabBar} from '../primitives';
 import {Shoe} from '../theme';
 
@@ -134,7 +133,6 @@ describe('safeArea — top spacing derives from insets, never a hard-coded 60', 
     ['History', <HistoryScreen shoes={SHOES} runs={[]} />],
     ['Profile', <ProfileScreen />],
     ['AddShoe', <AddShoeScreen />],
-    ['RunStart', <RunStart shoe={SHOES[0]} />],
   ])('%s screen has no paddingTop:60', (_name, el) => {
     const root = render(el as React.ReactElement).root;
     expect(paddingTops(root)).not.toContain(60);

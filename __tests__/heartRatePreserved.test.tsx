@@ -26,7 +26,6 @@ import React from 'react';
 import ReactTestRenderer, {act} from 'react-test-renderer';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import HistoryScreen from '../HistoryScreen.rn';
-import {RunStart} from '../RunScreen.rn';
 import type {Run, Shoe} from '../theme';
 import {
   PendingRun,
@@ -151,14 +150,6 @@ describe('Run.bpm 심박 UI 노출(데이터 보존 + 디자인 11 표시)', () 
     expect(screenText).toContain('152');
   });
 
-  test('RunScreen(RunStart) 목표 화면에도 심박 UI("심박"/"bpm")가 없다', () => {
-    let renderer!: ReactTestRenderer.ReactTestRenderer;
-    act(() => {
-      renderer = ReactTestRenderer.create(<RunStart shoe={SHOE} />);
-    });
-    const screenText = textOf(renderer.root);
-    expect(screenText).toContain('러닝 시작'); // 화면이 정상 렌더됨을 증명
-    expect(screenText).not.toContain('심박');
-    expect(screenText).not.toContain('bpm');
-  });
+  // (RunScreen.rn/RunStart 목표 화면 케이스는 화면 자체가 삭제되어 제거 —
+  //  현행 목표 화면은 RunGoalScreen이며 심박 UI 부재는 위 케이스들이 커버한다.)
 });

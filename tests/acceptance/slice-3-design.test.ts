@@ -17,7 +17,7 @@ const ROOT = path.resolve(__dirname, '..', '..');
 const SCREENS = [
   'HomeScreen.rn.tsx',
   'ShoesScreen.rn.tsx',
-  'RunScreen.rn.tsx',
+  'RunGoalScreen.rn.tsx',
   'ProfileScreen.rn.tsx',
   'HistoryScreen.rn.tsx',
   'AddShoeScreen.rn.tsx',
