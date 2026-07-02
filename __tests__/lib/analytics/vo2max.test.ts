@@ -13,10 +13,17 @@ describe('vdot (Daniels & Gilbert)', () => {
   test('더 빠른 같은 거리 = 더 높은 VDOT', () => {
     expect(vdot(5, 18 * 60)).toBeGreaterThan(vdot(5, 22 * 60));
   });
-  test('단거리/단시간(공식 범위 밖)은 0', () => {
-    expect(vdot(0.3, 90)).toBe(0); // <400m
-    expect(vdot(2, 90)).toBe(0); // <2min
+  test('단거리/단시간(공식 범위 밖)은 0 — 신뢰 가드 강화(1km/4min)', () => {
+    expect(vdot(0.3, 90)).toBe(0); // <1km
+    expect(vdot(0.9, 300)).toBe(0); // <1km (구 400m 가드는 통과했을 조각)
+    expect(vdot(2, 90)).toBe(0); // <4min
+    expect(vdot(1.2, 3 * 60)).toBe(0); // <4min
     expect(vdot(0, 600)).toBe(0);
+  });
+  test('비현실 페이스(<2\'40"/km — 차량 GPS·오입력)는 0 — 왜곡값이 6주 max 지배 방지', () => {
+    expect(vdot(5, 12 * 60)).toBe(0); // 2'24"/km — 인간 상위 한계 밖
+    expect(vdot(10, 24 * 60)).toBe(0); // 2'24"/km
+    expect(vdot(5, 14 * 60)).toBeGreaterThan(0); // 2'48"/km — 엘리트지만 유효
   });
 });
 

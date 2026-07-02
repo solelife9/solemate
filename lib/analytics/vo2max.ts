@@ -18,12 +18,15 @@
 
 /**
  * Daniels VDOT — (거리 km, 시간 sec) 한 번의 노력에서 VDOT(≈VO2max ml·kg⁻¹·min⁻¹) 역산.
- * 거리/시간 비유효거나 너무 짧으면(<400m 또는 <2min: 공식 신뢰구간 밖) 0.
+ * 신뢰 가드(왜곡 데이터가 6주 max 를 지배하는 사고 방지 — 2026-07-03 강화):
+ *  · <1km 또는 <4min — 공식 신뢰구간 밖(단거리 스퍼트·GPS 조각).
+ *  · 페이스 <2'40"/km — 인간 상위 한계 밖(차량 GPS·수동 오입력). 계산에서 제외.
  */
 export function vdot(distanceKm: number, durationSec: number): number {
   const m = (Number.isFinite(distanceKm) ? distanceKm : 0) * 1000;
   const tMin = (Number.isFinite(durationSec) ? durationSec : 0) / 60;
-  if (m < 400 || tMin < 2) return 0; // 단거리/단시간은 공식 범위 밖
+  if (m < 1000 || tMin < 4) return 0; // 단거리/단시간은 공식 범위 밖
+  if ((tMin * 60) / (m / 1000) < 160) return 0; // 2'40"/km 미만 — 비현실 데이터
   const v = m / tMin; // m/min
   const vo2 = -4.60 + 0.182258 * v + 0.000104 * v * v;
   const pctMax = 0.8 + 0.1894393 * Math.exp(-0.012778 * tMin) + 0.2989558 * Math.exp(-0.1932605 * tMin);
