@@ -29,7 +29,7 @@ import {
 import { tap } from './lib/haptics';
 // CTA 는 앱 전역 단일 Button 프리미티브(그라데이션 GRAD_TOP/BOT·글로우·radius 토큰).
 // 모드 탭 스트립은 SegmentedControl 단일 프리미티브(accentTint variant).
-import { Button, SegmentedControl, conditionColor } from './primitives';
+import { Button, SegmentedControl, conditionColor, SwipeBack } from './primitives';
 import SpeedPlanPanel from './SpeedPlanPanel';
 import { buildPacePlan } from './lib/pacePlan';
 
@@ -153,6 +153,9 @@ export default function RunGoalScreen({
   };
 
   return (
+    // 엣지 스와이프 백 — 러닝 '전' 화면이라 잃을 입력이 없고 뒤로 버튼과 동일 동작.
+    // 가장자리 24pt 에서만 캡처하므로 중앙의 눈금 룰러 가로 드래그와 충돌하지 않는다.
+    <SwipeBack onBack={onBack}>
     <View style={s.screen}>
       <StatusBar barStyle="light-content" />
       {/* nav */}
@@ -278,6 +281,7 @@ export default function RunGoalScreen({
         />
       </View>
     </View>
+    </SwipeBack>
   );
 }
 
