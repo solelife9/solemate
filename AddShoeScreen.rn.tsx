@@ -284,7 +284,7 @@ const s = StyleSheet.create({
   iconBtn: { width: 38, height: 38, borderRadius: 999, backgroundColor: CARD_HI, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.12), alignItems: 'center', justifyContent: 'center' },
   navTitle: { color: T1, fontFamily: FONT, fontSize: 16, fontWeight: '500', letterSpacing: -0.2 },
 
-  photo: { alignSelf: 'center', width: 120, height: 120, borderRadius: 26, borderWidth: 1, borderStyle: 'dashed', borderColor: withAlpha(T1, 0.14), backgroundColor: withAlpha(T1, 0.02), alignItems: 'center', justifyContent: 'center', gap: 7, marginBottom: 10, overflow: 'hidden' },
+  photo: { alignSelf: 'center', width: 120, height: 120, borderRadius: 26, borderCurve: 'continuous', borderWidth: 1, borderStyle: 'dashed', borderColor: withAlpha(T1, 0.14), backgroundColor: withAlpha(T1, 0.02), alignItems: 'center', justifyContent: 'center', gap: 7, marginBottom: 10, overflow: 'hidden' },
   photoImg: { width: '100%', height: '100%' },
   photoText: { color: T3, fontFamily: FONT, fontSize: 12 },
   photoErr: { color: T3, fontFamily: FONT, fontSize: 12, textAlign: 'center', marginBottom: 16, paddingHorizontal: 12 },
@@ -298,11 +298,11 @@ const s = StyleSheet.create({
   chipText: { fontFamily: FONT, fontSize: 13, fontWeight: '600', letterSpacing: 0.6 },
 
   // 모델 선택 트리거(탭하면 검색 모달). 입력칸처럼 보이되 누르면 모달이 열린다.
-  selector: { backgroundColor: CARD_DIM, borderRadius: 16, borderWidth: 1, borderColor: withAlpha(T1, 0.07), flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingVertical: 16 },
-  input: { backgroundColor: CARD_DIM, borderRadius: 16, borderWidth: 1, borderColor: withAlpha(T1, 0.07), paddingHorizontal: 18, paddingVertical: 14, color: T1, fontFamily: FONT, fontSize: 16 },
+  selector: { backgroundColor: CARD_DIM, borderRadius: 16, borderCurve: 'continuous', borderWidth: 1, borderColor: withAlpha(T1, 0.07), flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingVertical: 16 },
+  input: { backgroundColor: CARD_DIM, borderRadius: 16, borderCurve: 'continuous', borderWidth: 1, borderColor: withAlpha(T1, 0.07), paddingHorizontal: 18, paddingVertical: 14, color: T1, fontFamily: FONT, fontSize: 16 },
   selectorText: { flex: 1, color: T1, fontFamily: FONT, fontSize: 16, fontWeight: '500', letterSpacing: -0.2 },
   // 모달 검색바(상단 고정) + 결과 행
-  searchBar: { flexDirection: 'row', alignItems: 'center', gap: 9, marginHorizontal: 18, marginTop: 4, marginBottom: 10, backgroundColor: CARD_DIM, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 12, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.07) },
+  searchBar: { flexDirection: 'row', alignItems: 'center', gap: 9, marginHorizontal: 18, marginTop: 4, marginBottom: 10, backgroundColor: CARD_DIM, borderRadius: 14, borderCurve: 'continuous', paddingHorizontal: 16, paddingVertical: 12, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.07) },
   searchInput: { flex: 1, color: T1, fontFamily: FONT, fontSize: 16, fontWeight: '500', letterSpacing: -0.2, paddingVertical: 0 },
   customRow: { borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.4), backgroundColor: withAlpha(ACCENT, 0.08), marginTop: 6 },
   customText: { flex: 1, color: ACCENT, fontFamily: FONT, fontSize: 15, fontWeight: '600', letterSpacing: -0.2 },
@@ -316,7 +316,7 @@ const s = StyleSheet.create({
 
   hint: { color: T3, fontFamily: FONT, fontSize: 12, paddingHorizontal: 4, paddingTop: 9 },
 
-  usedRow: { backgroundColor: CARD_DIM, borderRadius: 16, borderWidth: 1, borderColor: withAlpha(T1, 0.07), flexDirection: 'row', alignItems: 'center', paddingHorizontal: 18 },
+  usedRow: { backgroundColor: CARD_DIM, borderRadius: 16, borderCurve: 'continuous', borderWidth: 1, borderColor: withAlpha(T1, 0.07), flexDirection: 'row', alignItems: 'center', paddingHorizontal: 18 },
   // 검증 실패 시 입력칸 테두리를 빨강으로 강조하고 아래 인라인 헬퍼텍스트를 띄운다.
   usedRowErr: { borderColor: DANGER },
   errText: { color: DANGER, fontFamily: FONT, fontSize: 12, fontWeight: '500', paddingHorizontal: 4, paddingTop: 8 },

@@ -275,7 +275,7 @@ export default function RunActiveScreen({
       <View style={r.controls}>
         {!paused ? (
           <View style={{ alignItems: 'center', gap: 9 }}>
-            <Pressable onPress={pauseRun} accessibilityRole="button" accessibilityLabel="일시정지" style={({ pressed }) => [r.cPrimary, pressed && { opacity: 0.85 }]}><GlassEdge radius={44} /><Ionicons name="pause" size={36} color="#fff" /></Pressable>
+            <Pressable onPress={pauseRun} accessibilityRole="button" accessibilityLabel="일시정지" style={({ pressed }) => [r.cPrimary, pressed && { opacity: 0.85 }]}><GlassEdge radius={44} /><Ionicons name="pause" size={36} color={T1} /></Pressable>
             <Text style={r.ctrlHint}>일시정지</Text>
           </View>
         ) : (
@@ -301,7 +301,7 @@ export default function RunActiveScreen({
               <Text style={r.ctrlHint}>길게 눌러 종료</Text>
             </View>
             <View style={{ alignItems: 'center', gap: 9 }}>
-              <Pressable onPress={resumeRun} accessibilityRole="button" accessibilityLabel="재개" style={({ pressed }) => [r.cResume, pressed && { opacity: 0.85 }]}><GlassEdge radius={38} /><Ionicons name="play" size={32} color="#fff" /></Pressable>
+              <Pressable onPress={resumeRun} accessibilityRole="button" accessibilityLabel="재개" style={({ pressed }) => [r.cResume, pressed && { opacity: 0.85 }]}><GlassEdge radius={38} /><Ionicons name="play" size={32} color={T1} /></Pressable>
               <Text style={r.ctrlHint}>재개</Text>
             </View>
           </>
