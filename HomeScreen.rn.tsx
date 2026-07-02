@@ -22,13 +22,12 @@ import type { RankTier } from './lib/progression/types';
 import { TabBar, TABBAR_CLEARANCE, KeegoWordmark, SectionTitle } from './primitives';
 import { Unit } from './lib/units';
 import InjuryRiskCard from './InjuryRiskCard';
-import { ShoeCard as KeegoShoeCard } from './screens/KeegoHome';
+import { ShoeCard as KeegoShoeCard, GhostShoeCard } from './screens/KeegoHome';
 import type { LoadRun } from './lib/trainingLoad';
 import { RotationPick } from './lib/rotation';
 import { recommendNextShoes, buildShopLinks, categoryLabelKo, AFFILIATE_DISCLOSURE } from './lib/affiliate';
 import { type ReplacementForecast } from './lib/wearView';
 import { shouldRecommendNextShoe } from './lib/recommendTrigger';
-import { ShoeGlyph } from './FirstShoeScreen.rn';
 
 export type WeekStats = { km: string; runs: number; pace: string };
 
@@ -376,24 +375,19 @@ function NextShoeCard({ shoe }: { shoe: Shoe }) {
 }
 
 // 빈 상태 — design-reference/first-shoe 의 대시 슬롯 카드(신발탭 FirstShoeScreen 과 동일).
+// 빈 홈 = 채워진 홈의 유령 — 히어로 카드 자리에 GhostShoeCard(유리 표면·빈 링·유리 CTA).
+// 점선 슬롯 + 발광 플러스 배지(구 문법)는 폐기(폴리싱 2026-07-03, 유리 시스템 정합).
 function EmptyHome({ onAddShoe }: { onAddShoe?: () => void }) {
   return (
     <View style={s.empty}>
-      <Pressable
-        onPress={onAddShoe}
-        accessibilityRole="button"
-        accessibilityLabel="첫 러닝화 등록"
-        style={({ pressed }) => [s.fsSlot, pressed && s.fsSlotPressed]}>
-        <View style={s.fsGlyphWrap}>
-          <ShoeGlyph size={46} />
-          <View style={s.fsPlus}><Ionicons name="add" size={18} color={BG} /></View>
-        </View>
-        <Text style={s.fsSlotTitle}>첫 러닝화 등록</Text>
-        <Text style={s.fsSlotSub}>탭해서 시작하기</Text>
-      </Pressable>
-      <Text style={s.fsPhilosophy}>
-        신발이 얼마나 닳았는지 관리해서,{'\n'}부상 없이 더 오래 달리게 해드려요.
-      </Text>
+      <Rise>
+        <GhostShoeCard width={HERO_W} onPress={onAddShoe} />
+      </Rise>
+      <Rise delay={80}>
+        <Text style={s.emptyPhilosophy}>
+          신발이 얼마나 닳았는지 기록해서,{'\n'}부상 없이 더 오래 달리게 해드려요.
+        </Text>
+      </Rise>
     </View>
   );
 }
@@ -699,13 +693,7 @@ const s = StyleSheet.create({
 
 
 
-  empty: { paddingHorizontal: SPACE.xl, paddingTop: 36, alignItems: 'center', gap: 28 },
-  // 첫 러닝화 대시 슬롯(design-reference/first-shoe — 신발탭 FirstShoeScreen 과 동일 값)
-  fsSlot: { width: '100%', maxWidth: 300, aspectRatio: 5 / 4, borderRadius: 26, borderWidth: 1.5, borderColor: withAlpha(T1, 0.16), borderStyle: 'dashed', backgroundColor: withAlpha(ACCENT, 0.035), alignItems: 'center', justifyContent: 'center', gap: 4 },
-  fsSlotPressed: { transform: [{ scale: 0.975 }], borderColor: withAlpha(ACCENT, 0.55) },
-  fsGlyphWrap: { position: 'relative', marginBottom: 14 },
-  fsPlus: { position: 'absolute', top: -6, right: -12, width: 30, height: 30, borderRadius: 15, backgroundColor: ACCENT, alignItems: 'center', justifyContent: 'center', shadowColor: ACCENT, shadowOpacity: 0.4, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 4 },
-  fsSlotTitle: { color: T1, fontFamily: FONT, fontSize: 18, fontWeight: '700', letterSpacing: -0.2 },
-  fsSlotSub: { color: T3, fontFamily: FONT, fontSize: 13 },
-  fsPhilosophy: { textAlign: 'center', color: T3, fontFamily: FONT, fontSize: 15, lineHeight: 24 },
+  // 빈 홈 — 고스트 카드(KeegoHome GhostShoeCard) + 철학 한 줄. 구 대시 슬롯 스타일 폐기.
+  empty: { paddingTop: 4, alignItems: 'center', gap: 26 },
+  emptyPhilosophy: { textAlign: 'center', color: T3, fontFamily: FONT, fontSize: 15, lineHeight: 24 },
 });

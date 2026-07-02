@@ -17,16 +17,20 @@
 //      onTab={(i) => setTab(i)} />
 // ============================================================================
 import React from 'react';
-import {View, Text, Pressable, ScrollView, StyleSheet} from 'react-native';
+import {View, Text, Pressable, ScrollView, StyleSheet, useWindowDimensions} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import Svg, {Defs, LinearGradient, Stop, Rect, Path} from 'react-native-svg';
+import Svg, {Defs, LinearGradient, Stop, Rect} from 'react-native-svg';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import {
   BG, CARD, ACCENT, GOOD, WARN, DANGER, T1, T2, T3, SEP,
   FONT, withAlpha, Shoe,
 } from './theme';
-import {Pill, TabBar, Button} from './primitives';
+import {Pill, TabBar, Button, ShoeGlyph} from './primitives';
+import {GhostShoeCard} from './screens/KeegoHome';
+
+// ShoeGlyph 는 primitives 로 승격(고스트 카드가 화면 간 공유) — 기존 import 경로 호환 re-export.
+export {ShoeGlyph};
 
 // ── 공용 헤더 ("내 신발" + 검색) ───────────────────────────────────────────────
 function Header({onSearch}: {onSearch?: () => void}) {
@@ -45,17 +49,6 @@ function Header({onSearch}: {onSearch?: () => void}) {
   );
 }
 
-// ── 운동화 글리프(SVG, design-reference 정합) ─────────────────────────────────
-export function ShoeGlyph({size = 46, color = withAlpha(T1, 0.32)}: {size?: number; color?: string}) {
-  const sw = 2;
-  return (
-    <Svg width={size} height={size} viewBox="0 0 64 64" fill="none">
-      <Path d="M6 40c0-2.4 1.5-4.3 3.9-4.8l11.4-2.4c2.3-.5 4.4-1.8 5.8-3.8l3.1-4.4c.8-1.1 2.4-1.3 3.4-.4l2.6 2.3c2.5 2.2 5.6 3.7 8.9 4.3l5.2 1c2.3.4 3.7 2.4 3.7 4.6V44c0 1.5-1.2 2.7-2.7 2.7H8.7C7.2 46.7 6 45.5 6 44v-4Z" stroke={color} strokeWidth={sw} strokeLinejoin="round" />
-      <Path d="M34 30l3 2.6M38 27.6l3 2.6" stroke={color} strokeWidth={sw * 0.82} strokeLinecap="round" />
-    </Svg>
-  );
-}
-
 // 오늘 날짜 — "6월 10일 수요일"
 const WEEKDAYS_KO = ['일', '월', '화', '수', '목', '금', '토'];
 function todayKo(): string {
@@ -63,10 +56,12 @@ function todayKo(): string {
   return `${d.getMonth() + 1}월 ${d.getDate()}일 ${WEEKDAYS_KO[d.getDay()]}요일`;
 }
 
-// ── 빈 상태(첫 러닝화 등록) — design-reference/first-shoe ───────────────────────
-// 빈 화면이 "첫 러닝화를 놓는 자리". 인사말 + 큰 대시 슬롯 카드(탭=등록) + 철학 한 줄.
+// ── 빈 상태(첫 러닝화 등록) ──────────────────────────────────────────────────
+// 빈 화면 = 채워진 락커의 유령. 인사말 + 고스트 카드(홈 히어로와 동일 유리 문법) +
+// 철학 한 줄. 구 대시 슬롯·발광 플러스 배지는 폐기(유리 시스템 정합, 2026-07-03).
 function EmptyState({onRegister, onTab, userName}: FirstShoeProps) {
   const insets = useSafeAreaInsets();
+  const {width: winW} = useWindowDimensions();
   const greetName = (userName ?? '').trim();
   return (
     <View style={[s.screen, {paddingTop: insets.top}]}>
@@ -78,31 +73,10 @@ function EmptyState({onRegister, onTab, userName}: FirstShoeProps) {
       </View>
 
       <View style={s.stage}>
-        <Pressable
-          onPress={onRegister}
-          accessibilityRole="button"
-          accessibilityLabel="첫 러닝화 등록"
-          style={({pressed}) => [s.slot, pressed && s.slotPressed]}>
-          <View style={s.glyphWrap}>
-            <ShoeGlyph size={46} />
-            <View style={s.plus}>
-              <Ionicons name="add" size={18} color={BG} />
-            </View>
-          </View>
-          <Text style={s.slotTitle}>첫 러닝화 등록</Text>
-          <Text style={s.slotSub}>탭해서 시작하기</Text>
-        </Pressable>
+        <GhostShoeCard width={Math.min(Math.round(winW * 0.82), 380)} onPress={onRegister} />
         <Text style={s.philosophy}>
-          신발이 얼마나 닳았는지 관리해서,{'\n'}부상 없이 더 오래 달리게 해드려요.
+          신발이 얼마나 닳았는지 기록해서,{'\n'}부상 없이 더 오래 달리게 해드려요.
         </Text>
-      </View>
-
-      <View style={s.valueline}>
-        <Text style={s.valTxt}>누적 거리</Text>
-        <View style={s.valDot} />
-        <Text style={s.valTxt}>교체 시기</Text>
-        <View style={s.valDot} />
-        <Text style={s.valTxt}>오늘의 추천</Text>
       </View>
       <TabBar active={1} onTab={(i) => onTab?.(i)} />
     </View>
@@ -217,17 +191,9 @@ const s = StyleSheet.create({
   greetWrap: {paddingHorizontal: 20, paddingTop: 18, paddingBottom: 20},
   date: {color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '500'},
   greeting: {marginTop: 6, color: T1, fontFamily: FONT, fontSize: 23, fontWeight: '800', letterSpacing: -0.4, lineHeight: 31},
-  stage: {flex: 1, alignItems: 'center', justifyContent: 'center', gap: 30, paddingHorizontal: 20},
-  slot: {width: '100%', maxWidth: 300, aspectRatio: 5 / 4, borderRadius: 26, borderWidth: 1.5, borderColor: withAlpha(T1, 0.16), borderStyle: 'dashed', backgroundColor: withAlpha(ACCENT, 0.035), alignItems: 'center', justifyContent: 'center', gap: 4},
-  slotPressed: {transform: [{scale: 0.975}], borderColor: withAlpha(ACCENT, 0.55)},
-  glyphWrap: {position: 'relative', marginBottom: 14},
-  plus: {position: 'absolute', top: -6, right: -12, width: 30, height: 30, borderRadius: 15, backgroundColor: ACCENT, alignItems: 'center', justifyContent: 'center', shadowColor: ACCENT, shadowOpacity: 0.4, shadowRadius: 8, shadowOffset: {width: 0, height: 4}, elevation: 4},
-  slotTitle: {color: T1, fontFamily: FONT, fontSize: 18, fontWeight: '700', letterSpacing: -0.2},
-  slotSub: {color: T3, fontFamily: FONT, fontSize: 13},
+  // 스테이지 — 고스트 카드 + 철학 한 줄. 절대 탭 독에 가리지 않게 하단 여백 확보.
+  stage: {flex: 1, justifyContent: 'center', gap: 26, paddingHorizontal: 20, paddingBottom: 96},
   philosophy: {textAlign: 'center', color: T3, fontFamily: FONT, fontSize: 15, lineHeight: 24},
-  valueline: {flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, paddingVertical: 10},
-  valTxt: {color: withAlpha(T1, 0.36), fontFamily: FONT, fontSize: 12, fontWeight: '500'},
-  valDot: {width: 3, height: 3, borderRadius: 2, backgroundColor: withAlpha(T1, 0.22)},
 
   // header
   header: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 22, paddingTop: 8, paddingBottom: 4},

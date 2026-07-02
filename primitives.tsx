@@ -918,6 +918,19 @@ function ShoeIcon({color}: {color: string}) {
   );
 }
 
+// ── ShoeGlyph — 러닝화 글리프(빈 상태·플레이스홀더용) ─────────────────────────
+// 하단 탭바의 신발 아이콘(SHOE_PATH)과 같은 실루엣·같은 방향(좌우 반전)을 쓴다 —
+// 앱 전체에서 '신발'이 한 가지 형태로 보이게(사용자 결정 2026-07-03).
+export function ShoeGlyph({size = 46, color = withAlpha(T1, 0.32)}: {size?: number; color?: string}) {
+  return (
+    <View style={{transform: [{scaleX: -1}]}}>
+      <Svg width={size} height={size} viewBox="0 -960 960 960">
+        <Path d={SHOE_PATH} fill={color} />
+      </Svg>
+    </View>
+  );
+}
+
 const TABS: {icon: string; label: string; shoe?: boolean; flip?: boolean}[] = [
   {icon: 'home', label: '홈'},
   {icon: 'shoe', label: '신발', shoe: true, flip: true},

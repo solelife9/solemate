@@ -24,7 +24,7 @@ import {
   BG, CARD, HERO_BG, T1, T2, T3, WARN, DANGER, FONT, DISPLAY, TYPE, RADIUS, GUTTER, withAlpha,
   type Shoe,
 } from '../theme';
-import {GlassEdge} from '../primitives';
+import {GlassEdge, ShoeGlyph} from '../primitives';
 import {shoeHealth, wearTier, conditionForPercent, type RunLike, KEEP_GOING_REPLACE} from '../lib/shoe';
 import {ringColor} from '../lib/ringColor';
 import {displayNum, type Unit} from '../lib/units';
@@ -271,6 +271,58 @@ export function ShoeCard({
   );
 }
 
+// ─── 고스트 카드(빈 상태) ──────────────────────────────────────────
+// 빈 상태 = 채워진 카드의 유령. 실카드와 같은 실루엣(유리 표면·엣지·링 자리·유리 CTA)으로
+// "등록하면 이 자리가 이렇게 채워진다"를 형태로 말한다. 홈·신발탭 빈 상태가 공유하는
+// 단일 소스 — 실카드 디자인이 진화하면 고스트도 같이 따라온다.
+export function GhostShoeCard({width, onPress}: {width: number; onPress?: () => void}) {
+  const {height: winH} = useWindowDimensions();
+  const ring = Math.max(144, Math.min(180, Math.round(winH * (172 / 874))));
+  const ringR = ring * (RING_R / RING);
+  return (
+    <View style={{width, alignSelf: 'center'}}>
+      <View style={styles.card}>
+        {/* 무채 문라이트 글로우 — 컨디션 색은 아직 없다(신발이 없으므로). */}
+        <SurfaceBackground id="surf-ghost" glow={withAlpha(T1, 0.5)} />
+        <GlassEdge id="edge-card-ghost" radius={CARD_RADIUS} />
+        <View style={styles.cardInner}>
+          <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel="첫 러닝화 등록">
+            {/* 빈 수명 링 — 트랙만 남긴 링 중앙에 신발 글리프(여기가 네 신발의 자리) */}
+            <View style={[styles.ringWrap, {width: ring, height: ring}]}>
+              <Svg width={ring} height={ring}>
+                <Circle
+                  cx={ring / 2} cy={ring / 2} r={ringR}
+                  stroke={withAlpha(T1, 0.08)} strokeWidth={14} fill="none"
+                />
+              </Svg>
+              <View style={styles.ringCenter}>
+                <ShoeGlyph size={46} />
+              </View>
+            </View>
+            <Text style={styles.ghostHint}>등록하면 이 링이 신발 수명을 지켜봐요</Text>
+            <View style={styles.ghostValues}>
+              <Text style={styles.ghostValTxt}>누적 거리</Text>
+              <View style={styles.kmSep} />
+              <Text style={styles.ghostValTxt}>교체 시기</Text>
+              <View style={styles.kmSep} />
+              <Text style={styles.ghostValTxt}>부상 예방</Text>
+            </View>
+          </Pressable>
+          <Pressable
+            style={({pressed}) => [styles.runBtn, pressed && {transform: [{scale: 0.98}]}]}
+            onPress={onPress}
+            accessibilityRole="button" accessibilityLabel="러닝화 등록"
+          >
+            <GlassEdge id="edge-run-ghost" radius={RADIUS.btn} />
+            <Ionicons name="add" size={16} color={T1} style={{marginRight: 6}} />
+            <Text style={styles.runLabel}>러닝화 등록</Text>
+          </Pressable>
+        </View>
+      </View>
+    </View>
+  );
+}
+
 // ─── 가디언 ────────────────────────────────────────────────────────
 function Guardian({danger, pct}: {danger: boolean; pct: number}) {
   const color = danger ? DANGER : WARN;
@@ -370,6 +422,11 @@ const styles = StyleSheet.create({
   },
   runGlyph: {fontFamily: FONT, color: T1, fontSize: 15},
   runLabel: {fontFamily: FONT, fontSize: 16, fontWeight: '700', letterSpacing: -0.2, color: T1},
+
+  // 고스트 카드(빈 상태) 전용 — 힌트/가치 라인은 실카드 kmRow 자리의 유령.
+  ghostHint: {textAlign: 'center', color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '500', letterSpacing: -0.2, marginTop: 20},
+  ghostValues: {flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 11, marginTop: 12},
+  ghostValTxt: {color: withAlpha(T1, 0.35), fontFamily: FONT, fontSize: 12, fontWeight: '500'},
 
   dots: {flexDirection: 'row', justifyContent: 'center', gap: 7, marginTop: 16},
   dot: {height: 6, borderRadius: 999},
