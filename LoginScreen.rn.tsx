@@ -13,9 +13,9 @@ import {View, Text, Pressable, StyleSheet, Platform, ActivityIndicator} from 're
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
-import {Button} from './primitives';
+import {Button, GlassEdge} from './primitives';
 import {
-  BG, CARD_HI, ACCENT, T1, T2, T3, FONT, DISPLAY, RADIUS, withAlpha,
+  BG, CARD_HI, ACCENT, DANGER, T1, T2, T3, FONT, DISPLAY, RADIUS, withAlpha,
   KAKAO_YELLOW, KAKAO_LABEL, NAVER_GREEN, NAVER_LABEL,
 } from './theme';
 import type {CloudPort, CloudProvider, CloudUser} from './lib/cloudPort';
@@ -48,9 +48,10 @@ export function LoginScreen({cloudPort, onSignedIn}: LoginScreenProps) {
 
   return (
     <View style={[st.screen, {paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24}]}>
-      {/* 브랜드 히어로 */}
+      {/* 브랜드 히어로 — 로고 배지는 홈과 같은 유리 문법(반투명 표면 + 빛 받은 엣지) */}
       <View style={st.hero}>
         <View style={st.logoBadge}>
+          <GlassEdge radius={22} />
           <Text style={st.logoK}>K</Text>
         </View>
         <Text style={st.wordmark}>Keego</Text>
@@ -136,7 +137,8 @@ const st = StyleSheet.create({
   screen: {flex: 1, backgroundColor: BG, paddingHorizontal: 28, justifyContent: 'space-between'},
   hero: {flex: 1, alignItems: 'center', justifyContent: 'center', gap: 14},
   logoBadge: {
-    width: 84, height: 84, borderRadius: 22, backgroundColor: withAlpha(ACCENT, 0.14),
+    width: 84, height: 84, borderRadius: 22, borderCurve: 'continuous', overflow: 'hidden',
+    backgroundColor: withAlpha(T1, 0.06),
     alignItems: 'center', justifyContent: 'center',
   },
   logoK: {fontFamily: DISPLAY, fontSize: 48, fontWeight: '800', color: ACCENT, marginTop: -2},
@@ -144,13 +146,13 @@ const st = StyleSheet.create({
   tagline: {fontFamily: FONT, fontSize: 15, color: T3},
   actions: {gap: 12},
   lead: {fontFamily: FONT, fontSize: 14, fontWeight: '600', color: T2, textAlign: 'center', marginBottom: 4},
-  btn: {flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 50, borderRadius: RADIUS.btn},
+  btn: {flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 50, borderRadius: RADIUS.btn, borderCurve: 'continuous'},
   btnGoogle: {height: 50},
   btnApple: {backgroundColor: CARD_HI},
   btnKakao: {backgroundColor: KAKAO_YELLOW},
   btnNaver: {backgroundColor: NAVER_GREEN},
   brandMark: {fontFamily: DISPLAY, fontSize: 17, fontWeight: '800'},
   btnTxt: {color: T1, fontFamily: FONT, fontSize: 15, fontWeight: '600'},
-  error: {fontFamily: FONT, fontSize: 13, color: '#FF5A45', textAlign: 'center', marginTop: 4},
+  error: {fontFamily: FONT, fontSize: 13, color: DANGER, textAlign: 'center', marginTop: 4},
   footnote: {fontFamily: FONT, fontSize: 12, lineHeight: 17, color: T3, textAlign: 'center', marginTop: 8},
 });

@@ -166,7 +166,7 @@ function useCountUp(target: number, animate = true, duration = 1200): number {
 }
 
 // 등록 성공 컨페티(가벼운 낙하). reduce-motion이면 렌더 안 함.
-const CONFETTI_COLORS = [ACCENT, ACCENT_2, GOOD, WARN, '#fff'];
+const CONFETTI_COLORS = [ACCENT, ACCENT_2, GOOD, WARN, T1];
 function Confetti() {
   const rm = useContext(ReduceMotionCtx);
   const pieces = useMemo(
@@ -352,7 +352,7 @@ function PctRing({pct, color, size = 72, stroke = 7, animate = true}: {pct: numb
   return (
     <ProgressRing size={size} stroke={stroke} progress={pct / 100} color={color} animate={animate}>
       <View style={{flexDirection: 'row', alignItems: 'baseline'}}>
-        <Text style={{fontFamily: DISPLAY, fontSize: Math.round(size * 0.3), color: '#fff'}}>{shown}</Text>
+        <Text style={{fontFamily: DISPLAY, fontSize: Math.round(size * 0.3), color: T1}}>{shown}</Text>
         <Text style={{fontFamily: FONT, fontSize: Math.round(size * 0.16), color: T3}}>%</Text>
       </View>
     </ProgressRing>
@@ -363,7 +363,7 @@ function Metric({
   value,
   unit,
   size = 40,
-  color = '#fff',
+  color = T1,
   unitColor = T4,
   countUp = false,
 }: {
@@ -400,7 +400,7 @@ function TopProgress({step, total}: {step: number; total: number}) {
         return (
           <View
             key={i}
-            style={{width: cur ? 24 : 7, height: 3.5, borderRadius: 3, backgroundColor: cur ? '#fff' : 'rgba(255,255,255,0.2)'}}
+            style={{width: cur ? 24 : 7, height: 3.5, borderRadius: 3, backgroundColor: cur ? T1 : withAlpha(T1, 0.2)}}
           />
         );
       })}
@@ -452,7 +452,7 @@ function Chip({label, active, onPress, small}: {label: string; active: boolean; 
         active ? s.chipActive : s.chipIdle,
         pressed && {opacity: 0.8},
       ]}>
-      <Text style={[s.chipLabel, {color: active ? '#fff' : T1, fontSize: small ? 13 : 13.5}]}>{label}</Text>
+      <Text style={[s.chipLabel, {color: active ? T1 : T1, fontSize: small ? 13 : 13.5}]}>{label}</Text>
     </Pressable>
   );
 }
@@ -514,7 +514,7 @@ function KmSlider({value, min, max, step, onChange}: {value: number; min: number
           width: 26,
           height: 26,
           borderRadius: 13,
-          backgroundColor: '#fff',
+          backgroundColor: T1,
           borderWidth: 5,
           borderColor: ACCENT,
         }}
@@ -545,13 +545,13 @@ function KeegoMark({size = 34, fill = 0.62}: {size?: number; fill?: number}) {
     <Svg width={size} height={size} viewBox="0 0 40 40">
       <Defs>
         <SvgGradient id={gid} x1="6" y1="34" x2="34" y2="6" gradientUnits="userSpaceOnUse">
-          <Stop offset="0" stopColor="#FF5A00" />
-          <Stop offset="1" stopColor="#FFA63A" />
+          <Stop offset="0" stopColor={ACCENT} />
+          <Stop offset="1" stopColor={ACCENT_2} />
         </SvgGradient>
       </Defs>
       <Path d={`M${sx.toFixed(2)} ${sy.toFixed(2)} A${R} ${R} 0 ${big} 1 ${ex.toFixed(2)} ${ey.toFixed(2)}`} stroke="rgba(255,255,255,0.18)" strokeWidth={3.4} strokeLinecap="round" fill="none" />
       <Path d={`M${sx.toFixed(2)} ${sy.toFixed(2)} A${R} ${R} 0 ${bigF} 1 ${fx.toFixed(2)} ${fy.toFixed(2)}`} stroke={`url(#${gid})`} strokeWidth={3.4} strokeLinecap="round" fill="none" />
-      <G stroke="#fff" strokeWidth={3.2} strokeLinecap="round" strokeLinejoin="round" fill="none">
+      <G stroke={T1} strokeWidth={3.2} strokeLinecap="round" strokeLinejoin="round" fill="none">
         <Path d="M15.5 11.5 V28.5" />
         <Path d="M15.5 20.2 L24 12" />
         <Path d="M15.5 19.8 L24.5 28.5" />
@@ -561,7 +561,7 @@ function KeegoMark({size = 34, fill = 0.62}: {size?: number; fill?: number}) {
 }
 
 // ── 인라인 라인 아이콘 ────────────────────────────────────────────────────────
-function SparkIcon({size = 18, color = '#fff'}: {size?: number; color?: string}) {
+function SparkIcon({size = 18, color = T1}: {size?: number; color?: string}) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24">
       <Path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6L12 3z" fill={color} />
@@ -583,7 +583,7 @@ function RulerIcon({size = 17, color = T3}: {size?: number; color?: string}) {
     </Svg>
   );
 }
-function CheckIcon({size = 44, color = '#fff'}: {size?: number; color?: string}) {
+function CheckIcon({size = 44, color = T1}: {size?: number; color?: string}) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <Path d="M5 13l4 4L19 7" stroke={color} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" />
@@ -662,7 +662,7 @@ function Welcome({goNext, goLogin, insetTop, insetBottom}: {goNext: () => void; 
             accessibilityRole="button"
             accessibilityLabel="이미 계정이 있나요? 로그인">
             <Text style={{fontFamily: FONT, fontSize: 14, color: T3, fontWeight: '500'}}>
-              이미 계정이 있나요? <Text style={{color: '#fff'}}>로그인</Text>
+              이미 계정이 있나요? <Text style={{color: T1}}>로그인</Text>
             </Text>
           </Pressable>
         </Rise>
@@ -685,16 +685,16 @@ function DegradeCurve() {
           <Stop offset="1" stopColor="rgba(255,77,77,0.02)" />
         </SvgGradient>
         <SvgGradient id="kg-dl" x1="0" y1="0" x2="1" y2="0">
-          <Stop offset="0" stopColor="#37D67A" />
-          <Stop offset="0.6" stopColor="#FFB23E" />
-          <Stop offset="1" stopColor="#FF4D4D" />
+          <Stop offset="0" stopColor={GOOD} />
+          <Stop offset="0.6" stopColor={WARN} />
+          <Stop offset="1" stopColor={DANGER} />
         </SvgGradient>
       </Defs>
       <Rect x="270" y="0" width="90" height="150" fill="rgba(255,77,77,0.08)" />
       <Path d="M270 0 L270 150" stroke="rgba(255,77,77,0.3)" strokeWidth={1} strokeDasharray="3 4" />
       <Path d={area} fill="url(#kg-dg)" />
       <Path d={line} fill="none" stroke="url(#kg-dl)" strokeWidth={3} strokeLinecap="round" />
-      <Circle cx="354" cy="132" r="5.5" fill="#FF4D4D" />
+      <Circle cx="354" cy="132" r="5.5" fill={DANGER} />
     </Svg>
   );
 }
@@ -718,7 +718,7 @@ function ShoesMatter({goNext, onSkip, insetTop, insetBottom}: ScreenProps) {
           <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', padding: 14, paddingBottom: 0}}>
             <View>
               <Text style={{fontFamily: FONT, fontSize: 13, color: T3}}>당신의 데일리 러닝화</Text>
-              <Text style={{fontFamily: FONT, fontSize: 16, fontWeight: '700', color: '#fff', marginTop: 2}}>
+              <Text style={{fontFamily: FONT, fontSize: 16, fontWeight: '700', color: T1, marginTop: 2}}>
                 누적 <Text style={{color: DANGER}}>742 km</Text>
               </Text>
             </View>
@@ -773,7 +773,7 @@ function Injury({goNext, onSkip, insetTop, insetBottom}: ScreenProps) {
           <LifespanRing km={540} max={800} size={104} stroke={9} />
           <View style={{flex: 1}}>
             <StatusPill status="caution" />
-            <Text style={{fontFamily: FONT, fontSize: 17, fontWeight: '700', color: '#fff', marginTop: 10}}>ASICS Novablast 5</Text>
+            <Text style={{fontFamily: FONT, fontSize: 17, fontWeight: '700', color: T1, marginTop: 10}}>ASICS Novablast 5</Text>
             <Text style={{fontFamily: FONT, fontSize: 13, color: T3, marginTop: 3, lineHeight: 19}}>
               수명의 <Text style={{color: WARN, fontWeight: '600'}}>68%</Text>를 사용했어요.
             </Text>
@@ -832,7 +832,7 @@ function ShoeCard({shoe}: {shoe: (typeof SHOES)[number]}) {
       <PctRing pct={remain} color={col} size={56} stroke={6} />
       <View style={{flex: 1, minWidth: 0}}>
         <Text style={s.brandEyebrow}>{shoe.brand.toUpperCase()}</Text>
-        <Text numberOfLines={1} style={{fontFamily: FONT, fontSize: 18, fontWeight: '700', color: '#fff', marginTop: 2}}>
+        <Text numberOfLines={1} style={{fontFamily: FONT, fontSize: 18, fontWeight: '700', color: T1, marginTop: 2}}>
           {shoe.model}
         </Text>
         <Text style={{fontFamily: FONT, fontSize: 14, color: T3, marginTop: 7}}>
@@ -862,7 +862,7 @@ function Management({goNext, onSkip, insetTop, insetBottom}: ScreenProps) {
             <Metric value="1,410" unit="KM" size={40} unitColor={T3} />
           </View>
           <View style={{alignItems: 'flex-end'}}>
-            <Text style={{fontFamily: DISPLAY, fontSize: 34, color: '#fff'}}>3</Text>
+            <Text style={{fontFamily: DISPLAY, fontSize: 34, color: T1}}>3</Text>
             <Text style={{fontFamily: FONT, fontSize: 12, color: T3}}>켤레 관리 중</Text>
           </View>
         </Rise>
@@ -945,7 +945,7 @@ function Register({goNext, onSkip, onRegister, insetTop, insetBottom}: ScreenPro
           <PctRing pct={remain} color={col} size={52} stroke={6} animate={false} />
           <View style={{flex: 1, minWidth: 0, marginLeft: 14}}>
             <Text style={s.brandEyebrow}>{brand || '브랜드'}</Text>
-            <Text numberOfLines={1} style={{fontFamily: FONT, fontSize: 16, fontWeight: '700', color: model ? '#fff' : T4, marginTop: 2}}>
+            <Text numberOfLines={1} style={{fontFamily: FONT, fontSize: 16, fontWeight: '700', color: model ? T1 : T4, marginTop: 2}}>
               {model || '모델을 선택하세요'}
             </Text>
             <Text style={{fontFamily: FONT, fontSize: 13, color: T3, marginTop: 5}}>
@@ -1026,9 +1026,9 @@ function Register({goNext, onSkip, onRegister, insetTop, insetBottom}: ScreenPro
           <View style={s.successBadge}>
             <CheckIcon size={44} />
           </View>
-          <Text style={{fontFamily: DISPLAY, fontSize: 46, color: '#fff', marginTop: 24}}>등록 완료!</Text>
+          <Text style={{fontFamily: DISPLAY, fontSize: 46, color: T1, marginTop: 24}}>등록 완료!</Text>
           <Text style={{fontFamily: FONT, fontSize: 15, color: T3, marginTop: 12, lineHeight: 22, textAlign: 'center'}}>
-            <Text style={{color: '#fff', fontWeight: '600'}}>
+            <Text style={{color: T1, fontWeight: '600'}}>
               {brand} {model}
             </Text>
             {'\n'}이제 Keego가 {km}km부터 수명을 추적해드려요.
@@ -1088,7 +1088,7 @@ function Ready({registered, onFinish, onSkip, insetTop, insetBottom}: ScreenProp
             <PctRing pct={remain} color={col} size={52} stroke={6} />
             <View style={{flex: 1, minWidth: 0, marginLeft: 15}}>
               <Text style={[s.brandEyebrow, {fontSize: 11}]}>추적 시작됨</Text>
-              <Text numberOfLines={1} style={{fontFamily: FONT, fontSize: 16, fontWeight: '700', color: '#fff', marginTop: 1}}>
+              <Text numberOfLines={1} style={{fontFamily: FONT, fontSize: 16, fontWeight: '700', color: T1, marginTop: 1}}>
                 {shoe.brand} {shoe.model}
               </Text>
               <Text style={{fontFamily: FONT, fontSize: 13, color: T3, marginTop: 5}}>
@@ -1166,13 +1166,13 @@ const s = StyleSheet.create({
   eyebrow: {fontFamily: FONT, fontSize: 12, fontWeight: '700', letterSpacing: 1.4, color: ACCENT, textTransform: 'uppercase', marginBottom: 6},
   title: {fontFamily: FONT, fontSize: 23, lineHeight: 29, fontWeight: '700', letterSpacing: -0.5, color: T1},
   body: {fontFamily: FONT, fontSize: 14, lineHeight: 19, color: T3, marginTop: 8, maxWidth: 360},
-  bodyStrong: {color: '#fff', fontWeight: '600'},
+  bodyStrong: {color: T1, fontWeight: '600'},
 
   // Welcome
-  wordmark: {position: 'absolute', left: 24, fontFamily: DISPLAY, fontSize: 26, letterSpacing: 1.2, color: '#fff'},
+  wordmark: {position: 'absolute', left: 24, fontFamily: DISPLAY, fontSize: 26, letterSpacing: 1.2, color: T1},
   // lineHeight 90: 맥의 'KEEP GOING' 헤드라인 글자 잘림 수정 보존(76→90).
-  heroHeadline: {fontFamily: DISPLAY, fontSize: 88, lineHeight: 90, color: '#fff'},
-  heroSub: {fontFamily: FONT, fontSize: 17, fontWeight: '600', color: '#fff', marginTop: 18},
+  heroHeadline: {fontFamily: DISPLAY, fontSize: 88, lineHeight: 90, color: T1},
+  heroSub: {fontFamily: FONT, fontSize: 17, fontWeight: '600', color: T1, marginTop: 18},
   heroBody: {fontFamily: FONT, fontSize: 15, lineHeight: 22, color: 'rgba(246,246,248,0.66)', marginTop: 7},
 
   // CTA
