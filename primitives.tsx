@@ -942,16 +942,22 @@ export function SwipeBack({onBack, enabled = true, children}: {
     Animated.spring(x, {toValue: 0, useNativeDriver: false, speed: 20, bounciness: 4}).start();
   const pan = useRef(
     PanResponder.create({
+      // 수평 '전용' 캡처 — 세로 성분이 조금이라도 크면(대각선 포함) 스크롤에 양보한다.
+      // 구 조건(|dy| < dx·0.7)은 대각선 드래그를 잡아 세로 스크롤과 겹치며 화면이
+      // 위아래로도 흔들리는 느낌을 만들었다(사용자 피드백).
       onMoveShouldSetPanResponder: (_e, g) =>
         !!cbRef.current && enabledRef.current &&
-        g.x0 <= 28 && g.dx > 12 && Math.abs(g.dy) < Math.abs(g.dx) * 0.7,
+        g.x0 <= 24 && g.dx > 14 && Math.abs(g.dy) < 12 && g.dx > Math.abs(g.dy) * 2.5,
       onPanResponderMove: (_e, g) => x.setValue(Math.max(0, g.dx)),
       onPanResponderRelease: (_e, g) => {
         if (g.dx > widthRef.current / 3 || g.vx > 0.5) {
           Animated.timing(x, {
-            toValue: widthRef.current, duration: 160,
+            toValue: widthRef.current, duration: 150,
             easing: Easing.out(Easing.quad), useNativeDriver: false,
-          }).start(() => { cbRef.current?.(); x.setValue(0); });
+          }).start(() => cbRef.current?.());
+          // x 는 리셋하지 않는다 — onBack 이 이 화면을 언마운트하므로 값은 함께 버려진다.
+          // (완료 직후 0으로 되돌리면 언마운트 전 한 프레임 동안 화면이 제자리로 '번쩍'
+          //  나타났다 사라지는 플래시가 생긴다 — 사용자 피드백으로 제거.)
         } else springHome();
       },
       onPanResponderTerminate: springHome,
