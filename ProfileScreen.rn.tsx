@@ -942,7 +942,7 @@ export default function ProfileScreen({
 const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: BG },
   row: { flexDirection: 'row', alignItems: 'center', gap: 7 },
-  card: { backgroundColor: CARD_DIM, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER },
+  card: { backgroundColor: CARD_DIM, borderRadius: RADIUS.lg, borderCurve: 'continuous', borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER },
   cardTitle: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600', marginBottom: 16 },
   sectionLabel: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600', letterSpacing: 0.4, paddingHorizontal: 4 },
   progressRow: { flexDirection: 'row', alignItems: 'center', gap: 13, padding: 16 },
@@ -988,7 +988,7 @@ const s = StyleSheet.create({
   // 누적/개인 기록·리캡 요약 스탯 줄은 StatGrid 프리미티브로 이전(셀·값·라벨 토큰을
   // 그쪽이 단일 소스로 책임 — 과거 statRow/statCell/statDivider/statValue/Unit/Label 제거).
 
-  badge: { flex: 1, backgroundColor: CARD, borderRadius: RADIUS.lg, paddingVertical: 16, paddingHorizontal: 8, alignItems: 'center', gap: 8, borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER },
+  badge: { flex: 1, backgroundColor: CARD, borderRadius: RADIUS.lg, borderCurve: 'continuous', paddingVertical: 16, paddingHorizontal: 8, alignItems: 'center', gap: 8, borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER },
   badgeIcon: { width: 44, height: 44, borderRadius: RADIUS.pill, alignItems: 'center', justifyContent: 'center' },
   badgeLabel: { fontFamily: FONT, fontSize: 11, fontWeight: '500', textAlign: 'center' },
 
@@ -1002,7 +1002,7 @@ const s = StyleSheet.create({
   panel: { paddingHorizontal: 18, paddingVertical: 16, gap: 14, backgroundColor: withAlpha(T1, 0.02) },
   panelHint: { color: T3, fontFamily: FONT, fontSize: 13, lineHeight: 18 },
   stepper: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 14 },
-  stepBtn: { width: 46, height: 46, borderRadius: 14, backgroundColor: CARD_HI, alignItems: 'center', justifyContent: 'center' },
+  stepBtn: { width: 46, height: 46, borderRadius: 14, borderCurve: 'continuous', backgroundColor: CARD_HI, alignItems: 'center', justifyContent: 'center' },
   stepVal: { flex: 1, alignItems: 'center' },
   stepNum: { color: T1, fontFamily: DISPLAY, fontSize: 30, letterSpacing: 0.3 },
   stepUnit: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '600', marginTop: 2 },
@@ -1027,7 +1027,7 @@ const s = StyleSheet.create({
   recapPrValue: { color: T1, fontFamily: DISPLAY, fontSize: 17, fontWeight: '600', letterSpacing: -0.2 },
   offscreen: { position: 'absolute', left: -10000, top: 0, opacity: 0 },
 
-  toggle: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 44, borderRadius: 14 },
+  toggle: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 44, borderRadius: 14, borderCurve: 'continuous' },
   toggleOn: { backgroundColor: ACCENT },
   toggleOff: { backgroundColor: CARD_HI },
   toggleTxt: { fontFamily: FONT, fontSize: 15, fontWeight: '600' },

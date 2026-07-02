@@ -541,6 +541,7 @@ const s = StyleSheet.create({
   card: {
     backgroundColor: CARD_DIM,
     borderRadius: RADIUS.lg,
+    borderCurve: 'continuous',
     borderWidth: 1,
     borderColor: withAlpha(T1, 0.07),
   },
@@ -637,6 +638,7 @@ const s = StyleSheet.create({
   preview: {
     aspectRatio: 1,
     borderRadius: RADIUS.lg,
+    borderCurve: 'continuous',
     overflow: 'hidden',
     backgroundColor: CARD,
   },
