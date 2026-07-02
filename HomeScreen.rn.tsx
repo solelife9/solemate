@@ -139,8 +139,12 @@ function TopBar({ onAddShoe }: { onAddShoe?: () => void }) {
 // testID + 교체 예측(forecast) 노출(App이 활성 신발 기준 forecast 하나만 내려주므로).
 // 카드 탭 → 그 신발 상세(onOpenShoe). 러닝 시작 CTA 는 캐러셀 아래 단일 버튼(활성 기준).
 const SCREEN_W = Dimensions.get('window').width;
-const HERO_W = SCREEN_W - SPACE.xl * 2;
-const HERO_SNAP = HERO_W + SPACE.md;
+// 핸드오프 KeegoHome 캐러셀 — 카드를 화면보다 좁게(min(폭-72,340)) 잡고 좌우 여백을 둬서
+// 양옆 카드가 살짝 보이는(peek) 스와이프 캐러셀. 여백/갭도 핸드오프 값 그대로.
+const HERO_GAP = 14;
+const HERO_W = Math.min(SCREEN_W - 72, 340);
+const HERO_SNAP = HERO_W + HERO_GAP;
+const HERO_SIDE = (SCREEN_W - HERO_W) / 2; // 중앙 정렬 여백 → 옆 카드 peek
 
 function ShoeCarousel({ shoes, activeIdx, onSelect, unit, onOpenShoe, onStart }: {
   shoes: Shoe[]; activeIdx: number; onSelect: (i: number) => void; unit: Unit;
@@ -168,7 +172,7 @@ function ShoeCarousel({ shoes, activeIdx, onSelect, unit, onOpenShoe, onStart }:
         onScroll={onScroll}
         scrollEventThrottle={16}
         onMomentumScrollEnd={onEnd}
-        contentContainerStyle={{ paddingHorizontal: SPACE.xl, gap: SPACE.md }}
+        contentContainerStyle={{ paddingHorizontal: HERO_SIDE - HERO_GAP / 2, gap: HERO_GAP }}
       >
         {shoes.map((shoe, i) => (
           // 카드 = KeegoHome 의 ShoeCard(핸드오프 디자인 그대로 — 링·유리엣지·상승감 표면).
