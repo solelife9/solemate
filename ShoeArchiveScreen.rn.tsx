@@ -10,6 +10,7 @@ import {View, Text, ScrollView, Pressable, StyleSheet} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {BG, CARD, CARD_HI, ACCENT, T1, T2, T3, SEP, FONT, RADIUS, withAlpha, Shoe} from './theme';
+import {SwipeBack} from './primitives';
 import {Unit} from './lib/units';
 
 export default function ShoeArchiveScreen({
@@ -27,6 +28,8 @@ export default function ShoeArchiveScreen({
 }) {
   const insets = useSafeAreaInsets();
   return (
+    // 엣지 스와이프 백 — 왼쪽 가장자리 우측 드래그로 복귀(iOS pop 제스처 대응).
+    <SwipeBack onBack={onBack}>
     <View style={[s.screen, {paddingTop: insets.top}]} testID="shoe-archive-screen">
       <View style={s.nav}>
         <Pressable onPress={onBack} hitSlop={8} accessibilityRole="button" accessibilityLabel="뒤로" style={s.iconBtn}>
@@ -67,6 +70,7 @@ export default function ShoeArchiveScreen({
         )}
       </ScrollView>
     </View>
+    </SwipeBack>
   );
 }
 

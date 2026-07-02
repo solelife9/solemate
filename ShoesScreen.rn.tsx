@@ -9,7 +9,7 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {
   BG, CARD_DIM, CARD_HI, HERO_BG, ACCENT, DANGER, WARN, GOOD, BEST, T1, T2, T3, T4, SEP, FONT, DISPLAY, withAlpha, RADIUS, Shoe, Run, SHOES,
 } from './theme';
-import { TabBar, TABBAR_CLEARANCE, Pill, InjuryBanner, SectionTitle, Button } from './primitives';
+import { TabBar, TABBAR_CLEARANCE, Pill, InjuryBanner, SectionTitle, Button, SwipeBack } from './primitives';
 import { FuelGauge } from './FuelGauge';
 import FirstShoeScreen from './FirstShoeScreen.rn';
 import { Unit, displayNum } from './lib/units';
@@ -193,6 +193,8 @@ function ShoeDetail({
   }
 
   return (
+    // 엣지 스와이프 백 — 왼쪽 가장자리 우측 드래그로 락커 목록 복귀(iOS pop 제스처 대응).
+    <SwipeBack onBack={onBack}>
     <View style={[s.screen, { paddingTop: insets.top }]}>
       <View style={s.detailNav}>
         <Pressable onPress={onBack} hitSlop={6} accessibilityRole="button" accessibilityLabel="뒤로" style={s.iconBtn}><Ionicons name="chevron-back" size={20} color={T1} /></Pressable>
@@ -387,6 +389,7 @@ function ShoeDetail({
         )}
       </ScrollView>
     </View>
+    </SwipeBack>
   );
 }
 

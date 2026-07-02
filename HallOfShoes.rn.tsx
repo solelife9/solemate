@@ -15,6 +15,7 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Svg, {Defs, LinearGradient, RadialGradient, Stop, Rect, Path, Circle, Text as SvgText} from 'react-native-svg';
 import {Unit, displayNum} from './lib/units';
+import {SwipeBack} from './primitives';
 import type {RetiredShoeRecord} from './lib/progression/types';
 
 // ── 골드 토큰(전당 전용 — 앱 일반 팔레트와 별개) ─────────────────────────────────
@@ -133,6 +134,8 @@ function HallOfShoes({records = [], unit = 'km', onBack, userName, onGoShoes}: H
   const latest = list[0];
 
   return (
+    // 엣지 스와이프 백 — 왼쪽 가장자리 우측 드래그로 복귀(iOS pop 제스처 대응).
+    <SwipeBack onBack={onBack}>
     <View style={[st.screen, {paddingTop: insets.top + 8}]}>
       <View style={st.topbar}>
         <Pressable style={st.iconbtn} onPress={onBack} hitSlop={10} accessibilityRole="button" accessibilityLabel="뒤로" testID="hall-back">
@@ -235,6 +238,7 @@ function HallOfShoes({records = [], unit = 'km', onBack, userName, onGoShoes}: H
         {sel && <Certificate shoe={sel} unit={unit} userName={userName} width={width} onClose={() => setSel(null)} />}
       </Modal>
     </View>
+    </SwipeBack>
   );
 }
 

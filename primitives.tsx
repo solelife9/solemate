@@ -11,12 +11,15 @@ import {
   Text,
   Pressable,
   Animated,
+  Easing,
+  PanResponder,
   Platform,
   StyleSheet,
   StyleProp,
   ViewStyle,
   TextStyle,
   LayoutChangeEvent,
+  useWindowDimensions,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {BlurView} from '@react-native-community/blur';
@@ -915,6 +918,50 @@ function ShoeIcon({color}: {color: string}) {
     <Svg width={25} height={25} viewBox="0 -960 960 960">
       <Path d={SHOE_PATH} fill={color} />
     </Svg>
+  );
+}
+
+// ── SwipeBack — 엣지 스와이프 뒤로가기(iOS 인터랙티브 pop 대응) ─────────────────
+// 커스텀 내비게이션(상태 머신)이라 네이티브 pop 제스처가 없다 → RN 내장 PanResponder 로
+// 재현한다: 화면 왼쪽 가장자리(28pt)에서 시작한 가로 드래그에만 반응해 화면이 손가락을
+// 따라 밀리고, 1/3 이상 밀거나 빠르게 튕기면 onBack, 아니면 스프링 복귀. 세로 스크롤과
+// 충돌하지 않도록 가로 성분이 우세할 때만 캡처한다. 신규 의존성 0(gesture-handler 불요).
+// 러닝 중 화면·입력 폼에는 감싸지 않는다(실수 이탈 방지 — 명시적 버튼만).
+export function SwipeBack({onBack, enabled = true, children}: {
+  onBack?: () => void;
+  enabled?: boolean;
+  children: React.ReactNode;
+}) {
+  const {width} = useWindowDimensions();
+  const x = useRef(new Animated.Value(0)).current;
+  // PanResponder 는 한 번만 생성되므로 최신 props 는 ref 로 전달(stale closure 방지).
+  const cbRef = useRef(onBack); cbRef.current = onBack;
+  const enabledRef = useRef(enabled); enabledRef.current = enabled;
+  const widthRef = useRef(width); widthRef.current = width;
+  const springHome = () =>
+    Animated.spring(x, {toValue: 0, useNativeDriver: false, speed: 20, bounciness: 4}).start();
+  const pan = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_e, g) =>
+        !!cbRef.current && enabledRef.current &&
+        g.x0 <= 28 && g.dx > 12 && Math.abs(g.dy) < Math.abs(g.dx) * 0.7,
+      onPanResponderMove: (_e, g) => x.setValue(Math.max(0, g.dx)),
+      onPanResponderRelease: (_e, g) => {
+        if (g.dx > widthRef.current / 3 || g.vx > 0.5) {
+          Animated.timing(x, {
+            toValue: widthRef.current, duration: 160,
+            easing: Easing.out(Easing.quad), useNativeDriver: false,
+          }).start(() => { cbRef.current?.(); x.setValue(0); });
+        } else springHome();
+      },
+      onPanResponderTerminate: springHome,
+      onPanResponderTerminationRequest: () => false,
+    }),
+  ).current;
+  return (
+    <Animated.View style={{flex: 1, transform: [{translateX: x}]}} {...pan.panHandlers}>
+      {children}
+    </Animated.View>
   );
 }
 

@@ -12,7 +12,7 @@ import {
   BG, CARD, CARD_DIM, CARD_HI, ACCENT, DANGER, T1, T2, T3, T4, SEP, CARD_BORDER, FONT, DISPLAY, Shoe, Run, SHOES, withAlpha, RADIUS, GUTTER, HERO, SCRIM, HR_ZONE_COLORS,
 } from './theme';
 // 기간 탭 스트립 = SegmentedControl(neutral), 러닝 상세 2×3 메트릭 = StatGrid 프리미티브.
-import { TabBar, TABBAR_CLEARANCE, Button, SegmentedControl, StatGrid } from './primitives';
+import { TabBar, TABBAR_CLEARANCE, Button, SegmentedControl, StatGrid, SwipeBack } from './primitives';
 import { Unit, displayNum, displayToKm } from './lib/units';
 import { ymdLocal } from './lib/format';
 import { sumKm, summaryOf, monthBuckets, weekBuckets, yearBuckets } from './lib/stats';
@@ -575,6 +575,8 @@ function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'male', r
   ];
   const insets = useSafeAreaInsets();
   return (
+    // 엣지 스와이프 백 — 왼쪽 가장자리 우측 드래그로 기록 목록 복귀(iOS pop 제스처 대응).
+    <SwipeBack onBack={onBack}>
     <View style={[s.screen, { paddingTop: insets.top }]}>
       <View style={[s.nav, s.navRow]}>
         <Pressable onPress={onBack} hitSlop={6} accessibilityRole="button" accessibilityLabel="뒤로" style={s.iconBtn}><Ionicons name="chevron-back" size={20} color={T1} /></Pressable>
@@ -722,6 +724,7 @@ function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'male', r
         <ShareCard ref={cardRef} model={cardModel} route={route} />
       </View>
     </View>
+    </SwipeBack>
   );
 }
 

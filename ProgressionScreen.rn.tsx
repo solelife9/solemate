@@ -42,7 +42,7 @@ import {
   TIER_LABEL,
   withAlpha,
 } from './theme';
-import {StatGrid} from './primitives';
+import {StatGrid, SwipeBack} from './primitives';
 import {buildContext} from './lib/progression/context';
 import {
   getProgression,
@@ -191,6 +191,8 @@ export default function ProgressionScreen({
     : '';
 
   return (
+    // 엣지 스와이프 백 — 왼쪽 가장자리 우측 드래그로 복귀(iOS pop 제스처 대응).
+    <SwipeBack onBack={onBack}>
     <View style={s.screen}>
       <ScrollView
         contentContainerStyle={{
@@ -365,6 +367,7 @@ export default function ProgressionScreen({
         </View>
       </ScrollView>
     </View>
+    </SwipeBack>
   );
 }
 

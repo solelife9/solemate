@@ -9,6 +9,7 @@ import {View, Text, Pressable, StyleSheet} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {BG, T1, FONT} from './theme';
+import {SwipeBack} from './primitives';
 import InjuryRiskDetail from './InjuryRiskDetail';
 import type {LoadRun} from './lib/trainingLoad';
 
@@ -30,6 +31,8 @@ export default function InjuryRiskScreen({
 }) {
   const insets = useSafeAreaInsets();
   return (
+    // 엣지 스와이프 백 — 왼쪽 가장자리 우측 드래그로 복귀(iOS pop 제스처 대응).
+    <SwipeBack onBack={onBack}>
     <View style={[s.screen, {paddingTop: insets.top}]} testID="injury-risk-screen">
       <View style={s.nav}>
         <Pressable onPress={onBack} hitSlop={8} accessibilityRole="button" accessibilityLabel="뒤로" style={s.iconBtn}>
@@ -42,6 +45,7 @@ export default function InjuryRiskScreen({
         <InjuryRiskDetail runs={runs} shoe={shoe} shoeName={shoeName} todayISO={todayISO} />
       </View>
     </View>
+    </SwipeBack>
   );
 }
 
