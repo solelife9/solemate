@@ -84,10 +84,10 @@ const ACH_CATEGORY_ORDER: AchievementCategory[] = [
 
 // ── 희귀도 색/라벨(AchievementRarity) ──────────────────────────────────────────
 const RARITY_COLOR: Record<AchievementRarity, string> = {
-  common: '#9C9CA3',   // muted gray
-  rare: '#3B82F6',     // blue
-  epic: '#9333EA',     // purple
-  legendary: '#FF6500', // Keego orange (ACCENT)
+  common: T3,                    // muted gray(토큰과 동일값)
+  rare: TIER_COLORS.diamond,     // blue — 티어 팔레트 재사용(단일 진실원)
+  epic: TIER_COLORS.master,      // purple
+  legendary: ACCENT,             // Keego orange
 };
 
 const RARITY_LABEL: Record<AchievementRarity, string> = {
@@ -500,6 +500,7 @@ const s = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: CARD_BORDER,
     borderRadius: RADIUS.lg,
+    borderCurve: 'continuous',
     padding: SPACE.lg,
     gap: SPACE.sm,
   },
@@ -525,6 +526,7 @@ const s = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: CARD_BORDER,
     borderRadius: RADIUS.lg,
+    borderCurve: 'continuous',
     paddingVertical: 16,
   },
   // 카테고리 헤더

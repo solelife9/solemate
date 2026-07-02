@@ -122,7 +122,7 @@ export default function InjuryRiskDetail({ runs, shoe, shoeName, todayISO }: Inj
 }
 
 const styles = StyleSheet.create({
-  root: { backgroundColor: CARD, borderRadius: RADIUS.xl },
+  root: { backgroundColor: CARD, borderRadius: RADIUS.xl, borderCurve: 'continuous' },
   content: { padding: SPACE.lg, gap: SPACE.md },
   header: { flexDirection: 'row', alignItems: 'center', gap: SPACE.sm },
   dot: { width: 12, height: 12, borderRadius: 6 },
