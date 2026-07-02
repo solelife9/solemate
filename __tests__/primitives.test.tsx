@@ -27,10 +27,10 @@ import {
   ACCENT,
   ACCENT_2,
   CARD_HI,
-  GRAD_TOP,
-  GRAD_BOT,
   RADIUS,
+  T1,
   T3,
+  withAlpha,
 } from '../theme';
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -136,21 +136,36 @@ describe('Metric', () => {
 });
 
 // ── Button variants emit different surfaces ──────────────────────────────────
+// GlassEdge 는 onLayout 측정 후에만 Svg 를 그린다 — 테스트에서 레이아웃을 수동 발화한다.
+const layoutGlassEdges = (root: ReactTestRenderer.ReactTestInstance, w = 240, h = 54) => {
+  ReactTestRenderer.act(() => {
+    root
+      .findAll((n: any) => n.props && n.props.testID === 'glass-edge')
+      .forEach((n: any) =>
+        n.props.onLayout({nativeEvent: {layout: {x: 0, y: 0, width: w, height: h}}}),
+      );
+  });
+};
+
 describe('Button variant branch produces different output', () => {
-  test('cta renders an SVG gradient fill layer', () => {
+  test('cta renders a GlassEdge highlight layer', () => {
     const {root} = render(<Button label="시작" variant="cta" />);
+    expect(
+      root.findAll((n: any) => n.props && n.props.testID === 'glass-edge').length,
+    ).toBeGreaterThanOrEqual(1);
+    layoutGlassEdges(root);
     expect(byName(root, 'Svg').length).toBeGreaterThanOrEqual(1);
   });
 
-  test('ghost renders a CARD_HI surface with no gradient layer', () => {
+  test('ghost renders a CARD_HI surface with no glass layer', () => {
     const {root} = render(<Button label="설정" variant="ghost" />);
     expect(byName(root, 'Svg')).toHaveLength(0);
     expect(pressableStyle(root).backgroundColor).toBe(CARD_HI);
   });
 
-  test('cta surface is not the ghost CARD_HI surface', () => {
+  test('cta surface is the translucent glass, not the ghost CARD_HI surface', () => {
     const {root} = render(<Button label="시작" variant="cta" />);
-    expect(pressableStyle(root).backgroundColor).not.toBe(CARD_HI);
+    expect(pressableStyle(root).backgroundColor).toBe(withAlpha(T1, 0.1));
   });
 });
 
@@ -170,29 +185,38 @@ const pressableStyleAt = (
   return StyleSheet.flatten(node.props.style({pressed}));
 };
 
-describe('Button — unified CTA surface (gradient · glow · radius token)', () => {
-  test('cta gradient stops are the GRAD_TOP → GRAD_BOT theme token pair', () => {
-    // Single source of truth: the orange fill comes from theme tokens, never a
-    // hand-copied hex. A desync (or a screen re-introducing its own gradient)
-    // would no longer match these tokens.
+describe('Button — unified CTA surface (glass · matte · radius token)', () => {
+  test('cta glass highlight is lit from above: bright top core, faint floor bounce', () => {
+    // 자연광 계약: GlassEdge 의 세로 그라데이션에서 상단 하이라이트(0.55)가 하단
+    // 바닥 반사광(0.13)보다 뚜렷이 밝아야 한다 — 위아래 동일 밝기의 인공 대칭 금지.
     const {root} = render(<Button label="시작" variant="cta" />);
-    const stops = byName(root, 'Stop').map(s => s.props.stopColor);
-    expect(stops).toContain(GRAD_TOP);
-    expect(stops).toContain(GRAD_BOT);
+    layoutGlassEdges(root);
+    const stops = byName(root, 'Stop').filter((s: any) => s.props.stopColor === T1);
+    expect(stops.length).toBeGreaterThanOrEqual(2);
+    const opacities = stops.map((s: any) => s.props.stopOpacity);
+    const topCore = Math.max(...opacities);
+    expect(topCore).toBeGreaterThanOrEqual(0.5); // 주광원(상단 코어)
+    expect(opacities).toContain(0.13); // 바닥 반사광 — 주광의 1/4 수준
+    expect(topCore).toBeGreaterThan(0.13 * 3); // 비대칭이 자연스러움의 계약
   });
 
-  test('cta carries an orange (ACCENT) glow shadow', () => {
+  test('cta is matte — no glow shadow of any colour', () => {
     const {root} = render(<Button label="시작" variant="cta" />);
-    expect(pressableStyle(root).shadowColor).toBe(ACCENT);
+    expect(pressableStyle(root).shadowColor).toBeUndefined();
   });
 
-  test('cta corners use the single RADIUS.btn token (surface + gradient rect)', () => {
+  test('cta corners use the single RADIUS.btn token (surface + inset glass rects)', () => {
     const {root} = render(<Button label="시작" variant="cta" />);
     expect(pressableStyle(root).borderRadius).toBe(RADIUS.btn);
-    // The gradient Rect rounds itself to the same token (no overflow clip needed).
+    // GlassEdge 스트로크들은 자기 굵기의 절반만큼 안쪽으로 들어가 스스로 둥글린다 —
+    // rx 는 RADIUS.btn 이하(부모 모서리 밖으로 삐지지 않음), 0 초과여야 한다.
+    layoutGlassEdges(root);
     const rects = byName(root, 'Rect');
-    expect(rects.length).toBeGreaterThanOrEqual(1);
-    expect(rects.some((r: any) => r.props.rx === RADIUS.btn)).toBe(true);
+    expect(rects.length).toBeGreaterThanOrEqual(3); // 형태 림 + 블룸 + 코어 (+ 바닥광)
+    rects.forEach((r: any) => {
+      expect(r.props.rx).toBeGreaterThan(0);
+      expect(r.props.rx).toBeLessThanOrEqual(RADIUS.btn);
+    });
   });
 
   test('pressing a cta shrinks it (scale 0.97) — visible press feedback', () => {
@@ -203,9 +227,9 @@ describe('Button — unified CTA surface (gradient · glow · radius token)', ()
     expect(on.transform).toEqual([{scale: 0.97}]);
   });
 
-  test('disabled cta drops the gradient and falls to the CARD_HI flat surface with a dimmed label', () => {
+  test('disabled cta drops the glass and falls to the CARD_HI flat surface with a dimmed label', () => {
     const {root} = render(<Button label="브랜드를 선택하세요" disabled />);
-    // No gradient layer when disabled.
+    // No glass layer when disabled.
     expect(byName(root, 'Svg')).toHaveLength(0);
     expect(pressableStyle(root).backgroundColor).toBe(CARD_HI);
     // Label is dimmed to the muted token (T3), not the bright T1.

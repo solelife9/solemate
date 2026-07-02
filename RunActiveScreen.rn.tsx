@@ -18,6 +18,7 @@ import { View, Text, Pressable, StyleSheet, Animated, Easing, StatusBar } from '
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Svg, { Path, Circle } from 'react-native-svg';
+import { GlassEdge } from './primitives';
 // 색·폰트는 전역 디자인 토큰(theme.ts)만 참조한다 — 사설 색객체(const C) 폐기.
 // 매핑: bg→BG · surface→CARD · accent→ACCENT · sage→GOOD · amber→WARN ·
 // red→DANGER · text→T1–T4 · sep→SEP. 폰트 UI/DP → FONT/DISPLAY.
@@ -178,7 +179,7 @@ export default function RunActiveScreen({
       {/* 목표 달성 축하 토스트 */}
       {met && (
         <Animated.View pointerEvents="none" style={[r.toast, { opacity: toastO, transform: [{ translateY: toastY }] }]} accessibilityLiveRegion="polite" accessibilityRole="text" accessibilityLabel={`목표 ${goalKm}킬로미터 달성! 계속 달려요`}>
-          <View style={r.toastTick}><Ionicons name="checkmark" size={18} color="#fff" /></View>
+          <View style={r.toastTick}><Ionicons name="checkmark" size={18} color={ACCENT} /></View>
           <View style={{ flex: 1 }}>
             <Text style={r.toastA}>목표 {goalKm}km 달성!</Text>
             <Text style={r.toastB}>계속 달려요 — 기록은 신발에 쌓이는 중</Text>
@@ -274,7 +275,7 @@ export default function RunActiveScreen({
       <View style={r.controls}>
         {!paused ? (
           <View style={{ alignItems: 'center', gap: 9 }}>
-            <Pressable onPress={pauseRun} accessibilityRole="button" accessibilityLabel="일시정지" style={({ pressed }) => [r.cPrimary, pressed && { opacity: 0.85 }]}><Ionicons name="pause" size={36} color="#fff" /></Pressable>
+            <Pressable onPress={pauseRun} accessibilityRole="button" accessibilityLabel="일시정지" style={({ pressed }) => [r.cPrimary, pressed && { opacity: 0.85 }]}><GlassEdge radius={44} /><Ionicons name="pause" size={36} color="#fff" /></Pressable>
             <Text style={r.ctrlHint}>일시정지</Text>
           </View>
         ) : (
@@ -300,7 +301,7 @@ export default function RunActiveScreen({
               <Text style={r.ctrlHint}>길게 눌러 종료</Text>
             </View>
             <View style={{ alignItems: 'center', gap: 9 }}>
-              <Pressable onPress={resumeRun} accessibilityRole="button" accessibilityLabel="재개" style={({ pressed }) => [r.cResume, pressed && { opacity: 0.85 }]}><Ionicons name="play" size={32} color="#fff" /></Pressable>
+              <Pressable onPress={resumeRun} accessibilityRole="button" accessibilityLabel="재개" style={({ pressed }) => [r.cResume, pressed && { opacity: 0.85 }]}><GlassEdge radius={38} /><Ionicons name="play" size={32} color="#fff" /></Pressable>
               <Text style={r.ctrlHint}>재개</Text>
             </View>
           </>
@@ -313,8 +314,10 @@ export default function RunActiveScreen({
 const r = StyleSheet.create({
   screen: { flex: 1, backgroundColor: BG, paddingHorizontal: 24 },
 
-  toast: { position: 'absolute', left: 18, right: 18, top: 50, zIndex: 20, flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 13, paddingHorizontal: 15, borderRadius: 16, backgroundColor: ACCENT },
-  toastTick: { width: 34, height: 34, borderRadius: 999, backgroundColor: withAlpha(T1, 0.2), alignItems: 'center', justifyContent: 'center' },
+  // 목표 달성 토스트 — 오렌지 판 대신 어두운 유리 막(투명 통일). 축하의 오렌지는 체크
+  // 아이콘(포인트 컬러=강조 요소에만)이 담당한다.
+  toast: { position: 'absolute', left: 18, right: 18, top: 50, zIndex: 20, flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 13, paddingHorizontal: 15, borderRadius: 16, backgroundColor: 'rgba(28,28,30,0.94)', borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.16) },
+  toastTick: { width: 34, height: 34, borderRadius: 999, backgroundColor: withAlpha(ACCENT, 0.2), alignItems: 'center', justifyContent: 'center' },
   toastA: { color: T1, fontFamily: FONT, fontSize: 15, fontWeight: '700', letterSpacing: -0.2 },
   toastB: { color: withAlpha(T1, 0.88), fontFamily: FONT, fontSize: 12, fontWeight: '500', marginTop: 2 },
 
@@ -378,8 +381,10 @@ const r = StyleSheet.create({
     elevation: 4,
   },
   controls: { flexDirection: 'row', justifyContent: 'center', gap: 48, paddingBottom: 8 },
-  cPrimary: { width: 88, height: 88, borderRadius: 999, backgroundColor: ACCENT, alignItems: 'center', justifyContent: 'center' },
-  cResume: { width: 76, height: 76, borderRadius: 999, backgroundColor: ACCENT, alignItems: 'center', justifyContent: 'center' },
+  // 러닝 컨트롤 — 오렌지 필 대신 투명 유리(홈 CTA 와 같은 문법). 종료(cStop)만 DANGER
+  // 색을 유지해 '위험한 동작'의 색 언어를 지킨다.
+  cPrimary: { width: 88, height: 88, borderRadius: 999, overflow: 'hidden', backgroundColor: withAlpha(T1, 0.1), alignItems: 'center', justifyContent: 'center' },
+  cResume: { width: 76, height: 76, borderRadius: 999, overflow: 'hidden', backgroundColor: withAlpha(T1, 0.1), alignItems: 'center', justifyContent: 'center' },
   cStopWrap: { width: 76, height: 76, alignItems: 'center', justifyContent: 'center' },
   cStop: { width: 76, height: 76, borderRadius: 999, backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(DANGER, 0.5), alignItems: 'center', justifyContent: 'center' },
   ctrlHint: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500' },

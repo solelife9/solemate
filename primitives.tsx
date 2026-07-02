@@ -37,8 +37,6 @@ import {
   CARD_HI,
   ACCENT,
   ACCENT_2,
-  GRAD_TOP,
-  GRAD_BOT,
   WARN,
   DANGER,
   GOOD,
@@ -93,38 +91,84 @@ export const TONE_BG: Record<Tone, string> = {
   dim: CARD_HI,
 };
 
-// ── Gradient fill (orange CTA surface, accent → accent2) ──────────────────────
-// CTA 버튼 배경의 오렌지 그라데이션을 absolute SVG 레이어로 깐다(expo-linear-gradient
-// 의존 없이 react-native-svg 만으로). 부모 Pressable 엔 overflow:hidden 이 없지만(글로우
-// 보존), 그라데이션 Rect 가 rx 로 자체 라운딩하므로 모서리 클립이 필요 없다(이건 SVG
-// gradient 에만 참 — plain View 인 gloss 는 자기 모서리를 직접 둥글린다, btn.gloss 참고).
-// useId 로 그라데이션 id 충돌을 막는다(같은 화면 다중 CTA 안전).
-function GradientFill({
+// ── GlassEdge — 유리 엣지(빛을 받은 테두리) ───────────────────────────────────
+// '좌상단에서 비스듬히 내려오는 단일 광원' 모델(사용자 피드백: 수직 낙하광 → 약간 대각선).
+// 구버전(KeegoHome 로컬)의 좌상↔우하 대각 그라데이션은 위아래가 비슷한 밝기로 빛나
+// 인공적인 대칭으로 읽혔다 — 실제 유리는 그렇게 빛나지 않는다.
+//   · 주광 림 = 밝은 코어(1.3px) 위에 옅고 넓은 블룸(×2.6)을 겹쳐 빛이 유리 단면에 맺혀
+//     살짝 번지는 느낌. 그라데이션 축을 (0,0)→(0.7,1)로 살짝 기울여 좌상단 코너가 가장
+//     밝고, 하이라이트가 상단·왼쪽 엣지를 감으며 어두운 구간으로 내려가 자연 소멸한다.
+//   · 형태 림 = 아주 옅은 균일 보더(9%) — 옆면·아랫면에서 유리 판의 존재만 알린다.
+//   · 반사광 = 광원 반대편(우하단 코너)에 13% — 주광의 1/4 수준. 같은 축을 공유해 물리적으로
+//     일관되고, 주광·반사광의 비대칭이 자연스러움의 핵심.
+// id 는 생략 가능(useId 자동 — 같은 화면 다중 인스턴스 안전). radius 는 부모 모서리와 동일값.
+// 광선 방향 — 수직에서 18° 기울인 단위벡터(sin18°, cos18°). 모든 GlassEdge 가 같은
+// 하늘의 같은 광원을 공유한다(픽셀 공간 고정 — 요소 비율과 무관하게 물리각 일정).
+const LIGHT_DX = 0.309;
+const LIGHT_DY = 0.951;
+
+export function GlassEdge({
+  id,
   radius,
-  colors = [GRAD_TOP, GRAD_BOT],
+  // 코어 1px — 하이라이트는 '가는 선이 살짝 번지는' 수준이어야 한다. 1.3px 코어+굵은
+  // 블룸은 코너에서 띠처럼 두껍게 읽혔다(사용자 피드백).
+  strokeWidth = 1,
 }: {
+  id?: string;
   radius: number;
-  colors?: [string, string];
+  strokeWidth?: number;
 }) {
-  const id = `keego-grad-${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
+  const autoId = useId().replace(/[^a-zA-Z0-9]/g, '');
+  const gid = id ?? `glass-${autoId}`;
+  const [s, setS] = useState({w: 0, h: 0});
+  const onLayout = (e: LayoutChangeEvent) => {
+    const {width, height} = e.nativeEvent.layout;
+    setS({w: width, h: height});
+  };
+  // 각 스트로크는 자기 굵기의 절반만큼 안쪽으로 들여 부모 경계 안에만 그린다(클립 불필요).
+  const edge = (sw: number) => ({
+    x: sw / 2,
+    y: sw / 2,
+    width: s.w - sw,
+    height: s.h - sw,
+    rx: Math.max(0, Math.min(radius - sw / 2, (s.w - sw) / 2)),
+  });
+  // 블룸도 절제(×2.6/0.4 → ×2/0.22) — 번짐은 코어 바로 곁에서만 아주 옅게.
+  const bloomW = strokeWidth * 2;
   return (
-    <Svg style={StyleSheet.absoluteFill}>
-      <Defs>
-        <SvgGradient id={id} x1="0" y1="0" x2="0" y2="1">
-          <Stop offset="0" stopColor={colors[0]} />
-          <Stop offset="1" stopColor={colors[1]} />
-        </SvgGradient>
-      </Defs>
-      <Rect
-        x="0"
-        y="0"
-        width="100%"
-        height="100%"
-        rx={radius}
-        ry={radius}
-        fill={`url(#${id})`}
-      />
-    </Svg>
+    <View testID="glass-edge" pointerEvents="none" style={StyleSheet.absoluteFill} onLayout={onLayout}>
+      {s.w > 1 ? (
+        <Svg width={s.w} height={s.h}>
+          <Defs>
+            {/* 주광·반사광이 같은 광선 축을 공유 — 좌상단 광원, 우하단 반사.
+                축은 정규화(0~1)가 아니라 '실제 픽셀 공간'(userSpaceOnUse)에 수직 18° 기울임으로
+                고정한다. 정규화 축은 가로로 긴 요소(러닝 시작 버튼)에서 실질 수평광이 되어
+                왼쪽 옆면만 통째로 빛나는 왜곡을 만들었다(사용자 피드백). 픽셀 고정 각이면
+                같은 광원 아래에서 카드는 대각선 느낌, 납작한 버튼은 윗변 전체가 은은히
+                빛나며 오른쪽으로 자연 감쇠한다. */}
+            <SvgGradient
+              id={`${gid}-top`} gradientUnits="userSpaceOnUse"
+              x1="0" y1="0" x2={LIGHT_DX * (LIGHT_DX * s.w + LIGHT_DY * s.h)} y2={LIGHT_DY * (LIGHT_DX * s.w + LIGHT_DY * s.h)}>
+              <Stop offset="0" stopColor={T1} stopOpacity={0.55} />
+              <Stop offset="0.16" stopColor={T1} stopOpacity={0.14} />
+              <Stop offset="0.4" stopColor={T1} stopOpacity={0} />
+              <Stop offset="1" stopColor={T1} stopOpacity={0} />
+            </SvgGradient>
+            <SvgGradient
+              id={`${gid}-bot`} gradientUnits="userSpaceOnUse"
+              x1="0" y1="0" x2={LIGHT_DX * (LIGHT_DX * s.w + LIGHT_DY * s.h)} y2={LIGHT_DY * (LIGHT_DX * s.w + LIGHT_DY * s.h)}>
+              <Stop offset="0" stopColor={T1} stopOpacity={0} />
+              <Stop offset="0.75" stopColor={T1} stopOpacity={0} />
+              <Stop offset="1" stopColor={T1} stopOpacity={0.13} />
+            </SvgGradient>
+          </Defs>
+          <Rect {...edge(1)} fill="none" stroke={withAlpha(T1, 0.09)} strokeWidth={1} />
+          <Rect {...edge(bloomW)} fill="none" stroke={`url(#${gid}-top)`} strokeWidth={bloomW} opacity={0.22} />
+          <Rect {...edge(strokeWidth)} fill="none" stroke={`url(#${gid}-top)`} strokeWidth={strokeWidth} />
+          <Rect {...edge(1)} fill="none" stroke={`url(#${gid}-bot)`} strokeWidth={1} />
+        </Svg>
+      ) : null}
+    </View>
   );
 }
 
@@ -189,13 +233,13 @@ const ring = StyleSheet.create({
   svg: {position: 'absolute', transform: [{rotate: '-90deg'}]},
 });
 
-// ── Button — 단일 CTA 프리미티브 (앱 전역 주황 버튼의 유일한 출처) ──────────────
-// 목업 주황 버튼을 1:1 재현한다:
-//   • 세로 그라데이션 GRAD_TOP→GRAD_BOT (theme 토큰, GradientFill 단일 정의)
-//   • 주황 글로우 그림자(ACCENT) — overflow 를 걸지 않아 iOS 에서도 잘리지 않는다
+// ── Button — 단일 CTA 프리미티브 (앱 전역 CTA 버튼의 유일한 출처) ──────────────
+// 투명 유리 CTA(홈 '러닝 시작' 버튼과 동일 문법):
+//   • 반투명 화이트 표면 withAlpha(T1, 0.1) + GlassEdge(상단 빛 하이라이트)
+//   • 오렌지 필/그라데이션/글로우 폐지 — 포인트 컬러는 데이터·텍스트 강조에만 쓴다
 //   • 누르면 살짝 작아짐(scale .97)
 // 모서리는 RADIUS.btn 단일 토큰(과거 14/16/18 사각 CTA 혼재 제거). disabled 거나
-// ghost 면 그라데이션/글로우를 끄고 CARD_HI 표면으로 떨어진다(disabled 라벨 dim).
+// ghost 면 유리 표면을 끄고 CARD_HI 표면으로 떨어진다(disabled 라벨 dim).
 // icon: Ionicons 이름(문자열). iconNode: 커스텀 아이콘 노드(SVG·MaterialCommunityIcons
 // 등) — 둘 중 하나만. 과거 MockupButton/Onboarding PrimaryButton/인라인 SVG CTA 와
 // 화면별 backgroundColor:ACCENT '사각형' 버튼들이 이 컴포넌트로 통합된다(App 재시도·
@@ -224,7 +268,7 @@ export function Button({
   /** 누름 시 가벼운 탭 햅틱(기본 on). 자체 햅틱을 따로 울리는 곳에서만 false 로 끈다. */
   haptic?: boolean;
 }) {
-  // filled = 주황 그라데이션 CTA 표면(활성 cta 일 때만). ghost·disabled 는 CARD_HI 표면.
+  // filled = 투명 유리 CTA 표면(활성 cta 일 때만). ghost·disabled 는 CARD_HI 표면.
   const filled = variant === 'cta' && !disabled;
   // 모든 공용 버튼에 누름 촉각을 한 곳에서 배선한다 — 결과 햅틱(success/warning 등)과
   // 별개의 '눌렀다' 피드백. 설정 off 면 hapticTap 자체가 no-op 이라 분기 불필요.
@@ -244,11 +288,11 @@ export function Button({
       accessibilityState={{disabled}}
       style={({pressed}) => [
         btn.base,
-        filled ? btn.glow : btn.flat,
+        filled ? btn.glass : btn.flat,
         pressed && !disabled && btn.pressed,
         style,
       ]}>
-      {filled ? <GradientFill radius={RADIUS.btn} /> : null}
+      {filled ? <GlassEdge radius={RADIUS.btn} /> : null}
       {iconNode ?? (icon ? <Ionicons name={icon} size={20} color={disabled ? T3 : T1} /> : null)}
       <Text style={[btn.label, disabled && btn.labelDim]}>{label}</Text>
     </Pressable>
@@ -264,17 +308,11 @@ const btn = StyleSheet.create({
     paddingVertical: SPACE.lg,
     paddingHorizontal: SPACE.xl,
     borderRadius: RADIUS.btn,
+    borderCurve: 'continuous', // 애플 스쿼클(iOS) — 원호 모서리보다 부드러운 연속 곡률
   },
-  // 주황 글로우 그림자(목업 0 14px 30px -12px rgba(255,101,0,.6) 대응). base 에
-  // overflow 가 없어 iOS 에서도 그림자가 살아있다.
-  glow: {
-    // 주황 글로우를 은은하게 — 기존 0.5/16 은 너무 강해 "빛이 난다"는 피드백.
-    shadowColor: ACCENT,
-    shadowOpacity: 0.22,
-    shadowRadius: 9,
-    shadowOffset: {width: 0, height: 6},
-    elevation: 5,
-  },
+  // 투명 유리 CTA 표면 — 홈 카드 '러닝 시작' 버튼과 동일 문법(반투명 화이트 + GlassEdge).
+  // 글로우/그림자 없음: 대비는 표면 밝기와 상단 하이라이트가 만든다(매트 미니멀).
+  glass: {backgroundColor: withAlpha(T1, 0.1)},
   // ghost / disabled 표면(올린 카드 톤). 그라데이션·글로우 없음.
   flat: {backgroundColor: CARD_HI},
   pressed: {opacity: 0.92, transform: [{scale: 0.97}]},
@@ -305,6 +343,7 @@ const card = StyleSheet.create({
   base: {
     backgroundColor: CARD,
     borderRadius: RADIUS.lg,
+    borderCurve: 'continuous', // 애플 스쿼클(iOS)
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: CARD_BORDER,
   },
@@ -900,6 +939,12 @@ const hlGeom = (s: {x: number; w: number}) => {
   return {x: s.x + (s.w - w) / 2, w};
 };
 
+// 탭 화면 스크롤 콘텐츠의 하단 여백. 독이 콘텐츠 '위에 떠서'(absolute) 화면이 비치므로,
+// 마지막 항목이 독에 가리지 않도록 각 탭 화면의 contentContainerStyle paddingBottom 에 쓴다.
+// = paddingTop 6 + 독 62 + 홈인디케이터 inset 최대 34 + 숨쉴 틈. inset 이 작은 기기에선
+// 여백이 조금 더 생길 뿐이라 상수 하나로 충분하다.
+export const TABBAR_CLEARANCE = 118;
+
 export function TabBar({active, onTab}: {active: number; onTab: (i: number) => void}) {
   const insets = useSafeAreaInsets();
   // 각 탭의 x중심/폭을 onLayout 으로 측정해 하이라이트를 정확히 정렬한다. 초기값은 모듈 캐시
@@ -953,11 +998,13 @@ export function TabBar({active, onTab}: {active: number; onTab: (i: number) => v
   }, [active, slots, hlX, hlW]);
 
   return (
-    <View style={[t.wrap, {paddingBottom: insets.bottom > 0 ? insets.bottom : 14}]}>
+    // box-none: 독 캡슐만 터치를 받고, 좌우 여백은 아래로 흐르는 콘텐츠에 그대로 통과시킨다
+    // (wrap 이 absolute 로 하단 전폭을 덮으므로 필수).
+    <View pointerEvents="box-none" style={[t.wrap, {paddingBottom: insets.bottom > 0 ? insets.bottom : 14}]}>
       {/* 떠있는 유리 블러 캡슐 독. BlurView 는 absolute 배경으로만 깔고(신아키텍처 flex
           붕괴 회피) 레이아웃은 일반 flex View 가 담당. overflow:hidden 으로 라운드 클립. */}
       <View style={t.dock}>
-        <BlurView pointerEvents="none" style={StyleSheet.absoluteFill} blurType="dark" blurAmount={18} reducedTransparencyFallbackColor="rgba(46,46,52,0.9)" />
+        <BlurView pointerEvents="none" style={StyleSheet.absoluteFill} blurType="dark" blurAmount={25} reducedTransparencyFallbackColor="rgba(46,46,52,0.9)" />
         {/* 미끄러지는 오벌 하이라이트 */}
         <Animated.View pointerEvents="none" style={[t.hl, {left: hlX, width: hlW}]} />
         {TABS.map((tab, i) => {
@@ -992,7 +1039,9 @@ export function TabBar({active, onTab}: {active: number; onTab: (i: number) => v
 
 const t = StyleSheet.create({
   // 독을 화면 좌우에서 띄워(40dp) 폭을 줄인다 — 프로토타입과 동일.
-  wrap: {paddingHorizontal: 40, paddingTop: 6},
+  // absolute 하단 고정: 콘텐츠가 독 '밑으로' 스크롤되어 유리 너머로 비친다(진짜 글래스).
+  // 각 탭 화면은 TABBAR_CLEARANCE 만큼 스크롤 하단 여백을 확보한다.
+  wrap: {position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 40, paddingTop: 6},
   dock: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1005,9 +1054,10 @@ const t = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     // 테두리를 또렷이(0.10→0.20) — 캡슐이 검정 배경과 분리돼 보이도록.
     borderColor: 'rgba(255,255,255,0.20)',
-    // iOS는 BlurView(프로스트 글래스) 위에 막을 얹는다. 검정 배경과 구분되게 더 밝은 회색
-    // 막으로 올린다(기존 0.4 막은 검정에 묻혔다). 안드로이드는 블러 미지원이 흔해 불투명 회색.
-    backgroundColor: Platform.OS === 'android' ? 'rgba(46,46,52,0.86)' : 'rgba(48,48,56,0.62)',
+    // iOS: 콘텐츠가 독 밑으로 스크롤되므로 막을 얇게(0.62→0.30→0.14, 사용자 피드백) —
+    // 블러 너머로 화면이 또렷이 비쳐야 유리다. 다크 블러 자체가 어둡게 깔아줘 가독성은 유지된다.
+    // 안드로이드는 블러 미지원이 흔해 불투명 회색 유지(투명하면 글자와 아이콘이 충돌).
+    backgroundColor: Platform.OS === 'android' ? 'rgba(46,46,52,0.86)' : 'rgba(24,24,28,0.14)',
     shadowColor: BG,
     shadowOpacity: 0.7,
     shadowRadius: 20,

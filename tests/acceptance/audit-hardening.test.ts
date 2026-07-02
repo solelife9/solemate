@@ -79,7 +79,7 @@ import {maskDuration, maskDate, validateRunForm} from '../../lib/inputMask';
 import {syncLabel} from '../../lib/syncStatus';
 import type {Shoe, Run} from '../../theme';
 import {
-  TIER_LABEL, GRAD_TOP, GRAD_BOT, ACCENT, RADIUS,
+  TIER_LABEL, RADIUS, T1, withAlpha,
   TYPE, HERO, GUTTER, SCRIM, CARD, CARD_BORDER, DISPLAY,
 } from '../../theme';
 import {ymLocal, ymdLocal} from '../../lib/format';
@@ -684,9 +684,12 @@ describe('Audit Hardening 수용', () => {
     test('중복제거: TIER_LABEL 정의가 theme.ts 1곳, MM:SS/YYYY-MM 빌더 단일화', () => {
       const read = (rel: string) => fs.readFileSync(path.join(__dirname, '../../', rel), 'utf8');
 
-      // (1) TIER_LABEL — theme.ts 1곳 정의, 홈·프로필·진척은 import 만(로컬 재정의 0).
+      // (1) TIER_LABEL — theme.ts 1곳 정의, 사용처는 import 만(로컬 재정의 0).
+      //     (홈은 MVP 다이어트로 진척 띠가 빠져 더 이상 TIER_LABEL 을 쓰지 않는다 —
+      //      재정의 금지 가드만 유지하고, 사용 강제는 프로필·진척에만 건다.)
       expect(/export const TIER_LABEL\s*:/.test(read('theme.ts'))).toBe(true);
-      for (const screen of ['HomeScreen.rn.tsx', 'ProfileScreen.rn.tsx', 'ProgressionScreen.rn.tsx']) {
+      expect(/(?:const|let|var)\s+TIER_LABEL\b/.test(read('HomeScreen.rn.tsx'))).toBe(false);
+      for (const screen of ['ProfileScreen.rn.tsx', 'ProgressionScreen.rn.tsx']) {
         const src = read(screen);
         expect(/(?:const|let|var)\s+TIER_LABEL\b/.test(src)).toBe(false); // 복붙 정의 없음
         expect(/\bTIER_LABEL\b/.test(src)).toBe(true);                    // theme 에서 가져와 사용
@@ -773,27 +776,27 @@ describe('Audit Hardening 수용', () => {
       })(repoRoot);
       return out;
     }
-    const stopColors = (root: ReactTestRenderer.ReactTestInstance) =>
-      root
-        .findAll(n => !!n.type && (n.type as {displayName?: string}).displayName === 'Stop')
-        .map(n => n.props.stopColor as string);
     const flatBtnStyle = (root: ReactTestRenderer.ReactTestInstance, label: string) => {
       const node = pressableByLabel(root, label);
       const st = node.props.style;
       return StyleSheet.flatten(typeof st === 'function' ? st({pressed: false}) : st) || {};
     };
     // 라벨로 찾은 CTA 가 '단일 Button 프리미티브'임을 관찰 가능한 렌더 산출물로 단언한다(부분 롤백 가드).
-    //   ① 그 버튼 **서브트리**에 GRAD_TOP→GRAD_BOT Stop(=GradientFill) — 트리 전체가 아니라 이 버튼으로
-    //      스코프해 타 CTA 의 그라데이션 누출을 차단한다. ② 자기 style 에 ACCENT 글로우. ③ RADIUS.btn 모서리.
-    //   raw <View backgroundColor:ACCENT> + 상수 radius 로 손수 만든 오렌지 버튼은 GradientFill/glow 가
-    //   없어 통과 못 한다 — '프리미티브 사용'과 'radius 상수만 통일'을 구분한다(Finding3 false-completeness 해소).
+    // (디자인 전환) CTA 는 오렌지 그라데이션+글로우 → 투명 유리(반투명 화이트 + GlassEdge)로 바뀌었다.
+    //   ① 그 버튼 **서브트리**에 GlassEdge 호스트(testID='glass-edge') — 트리 전체가 아니라 이 버튼으로
+    //      스코프해 타 카드의 유리 엣지 누출을 차단한다. ② 자기 style 에 유리 표면 토큰(withAlpha(T1,0.1))
+    //      + 글로우 없음(매트). ③ RADIUS.btn 모서리.
+    //   raw <View> 로 손수 만든 버튼은 GlassEdge/유리 토큰이 없어 통과 못 한다 — '프리미티브 사용'과
+    //   'radius 상수만 통일'을 구분한다(Finding3 false-completeness 해소).
     const expectPrimitiveCta = (root: ReactTestRenderer.ReactTestInstance, label: string) => {
       const node = pressableByLabel(root, label);
-      const stops = stopColors(node);
-      expect(stops).toContain(GRAD_TOP);
-      expect(stops).toContain(GRAD_BOT);
+      const glassHosts = node.findAll(
+        (n: ReactTestRenderer.ReactTestInstance) => n.props?.testID === 'glass-edge',
+      );
+      expect(glassHosts.length).toBeGreaterThanOrEqual(1);
       const st = flatBtnStyle(root, label);
-      expect(st.shadowColor).toBe(ACCENT);
+      expect(st.backgroundColor).toBe(withAlpha(T1, 0.1));
+      expect(st.shadowColor).toBeUndefined();
       expect(st.borderRadius).toBe(RADIUS.btn);
       return node;
     };
@@ -817,26 +820,16 @@ describe('Audit Hardening 수용', () => {
       );
       expect(dupeGradients).toEqual([]);
 
-      // 3) 단일 Button 프리미티브 CTA = GRAD_TOP→GRAD_BOT 그라데이션 + ACCENT 글로우 그림자
-      //    + RADIUS.btn 단일 모서리 토큰(관찰 가능한 렌더 트리/스타일).
+      // 3) 단일 Button 프리미티브 CTA = 투명 유리 표면(withAlpha(T1,0.1)) + GlassEdge
+      //    + 글로우 없음(매트) + RADIUS.btn 단일 모서리 토큰(관찰 가능한 렌더 트리/스타일).
       const b = renderTree(el(Button, {label: '시작', onPress: () => {}}));
-      const stops = stopColors(b.root);
-      expect(stops).toContain(GRAD_TOP);
-      expect(stops).toContain(GRAD_BOT);
-      const st = flatBtnStyle(b.root, '시작');
-      expect(st.shadowColor).toBe(ACCENT);
-      expect(st.borderRadius).toBe(RADIUS.btn);
+      expectPrimitiveCta(b.root, '시작');
       act(() => b.unmount());
 
-      // 4) 화면들이 그 단일 CTA 로 라우팅된다 — RunGoal '러닝 시작' 인라인 SVG CTA 가
-      //    사라지고 동일 토큰 그라데이션 + ACCENT 글로우 + RADIUS.btn 의 Button 으로 뜬다.
+      // 4) 화면들이 그 단일 CTA 로 라우팅된다 — RunGoal '러닝 시작'이 동일 유리 토큰
+      //    + GlassEdge + RADIUS.btn 의 Button 으로 뜬다.
       const goal = renderTree(el(RunGoalScreen, {onStart: () => {}}));
-      const goalStops = stopColors(goal.root);
-      expect(goalStops).toContain(GRAD_TOP);
-      expect(goalStops).toContain(GRAD_BOT);
-      const goalSt = flatBtnStyle(goal.root, '러닝 시작');
-      expect(goalSt.shadowColor).toBe(ACCENT);
-      expect(goalSt.borderRadius).toBe(RADIUS.btn);
+      expectPrimitiveCta(goal.root, '러닝 시작');
       act(() => goal.unmount());
     });
 
@@ -937,23 +930,32 @@ describe('Audit Hardening 수용', () => {
       }
     });
 
-    test('CTA 표면: 활성 Button 은 RADIUS.btn 로 self-round 하는 그라데이션 Rect 를 깔고, disabled 는 flat(그라데이션 0)', () => {
-      // (디자인 변경) 과거 plain-View gloss(1px 흰 띠)는 SVG GradientFill 로 대체됐다 — 그라데이션
-      // Rect 가 rx/ry=RADIUS.btn 으로 스스로 둥글려, base 에 overflow:hidden(글로우 보존을 위해
-      // 없음) 없이도 모서리 삐짐이 원천 차단된다. 그 계약을 회귀 가드로 검증한다.
+    test('CTA 표면: 활성 Button 은 안쪽으로 들인 GlassEdge 스트로크를 깔고, disabled 는 flat(유리 0)', () => {
+      // (디자인 전환) 오렌지 GradientFill → GlassEdge(자연광 유리 엣지). 스트로크 Rect 들은
+      // 자기 굵기의 절반만큼 안쪽으로 들어가 스스로 둥글린다(rx ≤ RADIUS.btn, 삐짐 원천 차단).
+      // GlassEdge 는 onLayout 측정 후에만 그리므로 테스트에서 레이아웃을 수동 발화한다.
       const b = renderTree(el(Button, {label: '시작', onPress: () => {}}));
+      act(() => {
+        b.root
+          .findAll((n: ReactTestRenderer.ReactTestInstance) => n.props?.testID === 'glass-edge')
+          .forEach(n =>
+            (n.props.onLayout as (e: unknown) => void)({
+              nativeEvent: {layout: {x: 0, y: 0, width: 240, height: 54}},
+            }),
+          );
+      });
       const rects = b.root.findAll(
         (n: ReactTestRenderer.ReactTestInstance) =>
           !!n.type && (n.type as {displayName?: string}).displayName === 'Rect',
       );
-      expect(rects.length).toBeGreaterThanOrEqual(1); // 활성 CTA = 그라데이션 Rect 1개+
+      expect(rects.length).toBeGreaterThanOrEqual(3); // 형태 림 + 블룸 + 코어 (+ 바닥광)
       rects.forEach(n => {
-        expect(n.props.rx).toBe(RADIUS.btn); // 자체 라운딩 — 모서리 삐짐 방지
-        expect(n.props.ry).toBe(RADIUS.btn);
+        expect(n.props.rx).toBeGreaterThan(0); // 자체 라운딩 — 모서리 삐짐 방지
+        expect(n.props.rx).toBeLessThanOrEqual(RADIUS.btn);
       });
       act(() => b.unmount());
 
-      // disabled CTA 는 그라데이션/글로우를 끄고 flat 표면으로 떨어진다(그라데이션 Rect 0).
+      // disabled CTA 는 유리 표면/엣지를 끄고 flat 표면으로 떨어진다(GlassEdge·Rect 0).
       const d = renderTree(el(Button, {label: '비활성', onPress: () => {}, disabled: true}));
       const dRects = d.root.findAll(
         (n: ReactTestRenderer.ReactTestInstance) =>

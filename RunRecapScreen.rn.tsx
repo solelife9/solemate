@@ -12,6 +12,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import {BG, CARD, CARD_HI, ACCENT, GOOD, WARN, DANGER, T1, T2, T3, T4, FONT, DISPLAY, RADIUS, SEP, withAlpha} from './theme';
 import {fmtPaceSec} from './lib/pacePlan';
 import {fmtPace} from './lib/format';
+import {GlassEdge} from './primitives';
 import {RunSplits, Split} from './RunSplits';
 import {PRKind, PR_LABEL} from './lib/records';
 import {Unit} from './lib/units';
@@ -178,6 +179,7 @@ export default function RunRecapScreen({
       <View style={[s.footer, {paddingBottom: insets.bottom + 10}]}>
         <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="완료" testID="recap-done"
           style={({pressed}) => [s.doneBtn, pressed && {opacity: 0.85}]}>
+          <GlassEdge radius={RADIUS.lg} />
           <Text style={s.doneTxt}>완료</Text>
         </Pressable>
       </View>
@@ -222,6 +224,7 @@ const s = StyleSheet.create({
   planAct: {color: T1, fontFamily: FONT, fontSize: 14, fontWeight: '700', width: 64, textAlign: 'right'},
   planDelta: {fontFamily: FONT, fontSize: 13, fontWeight: '700', width: 52, textAlign: 'right'},
   footer: {paddingHorizontal: 18, paddingTop: 10, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP, backgroundColor: CARD_HI},
-  doneBtn: {height: 52, borderRadius: RADIUS.lg, backgroundColor: ACCENT, alignItems: 'center', justifyContent: 'center'},
-  doneTxt: {color: '#000', fontFamily: FONT, fontSize: 16, fontWeight: '800'},
+  // 투명 유리 CTA(홈 '러닝 시작'과 동일 문법) — 오렌지 필 폐지, 포인트 컬러는 지표에만.
+  doneBtn: {height: 52, borderRadius: RADIUS.lg, overflow: 'hidden', backgroundColor: withAlpha(T1, 0.1), alignItems: 'center', justifyContent: 'center'},
+  doneTxt: {color: T1, fontFamily: FONT, fontSize: 16, fontWeight: '800'},
 });
