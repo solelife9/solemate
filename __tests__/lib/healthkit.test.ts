@@ -21,11 +21,12 @@ const hk = jest.requireMock('@kingstinct/react-native-healthkit');
 // 단락(기존 hrTrack)으로 소비되지 않은 mockOnce 큐가 다음 테스트로 넘어갈 수 있다.
 beforeEach(async () => {
   await AsyncStorage.clear();
-  for (const f of [hk.requestAuthorization, hk.queryQuantitySamples, hk.getMostRecentQuantitySample, hk.saveWorkoutSample]) {
+  for (const f of [hk.requestAuthorization, hk.queryQuantitySamples, hk.queryWorkoutSamples, hk.getMostRecentQuantitySample, hk.saveWorkoutSample]) {
     f.mockReset();
   }
   hk.requestAuthorization.mockResolvedValue(true);
   hk.queryQuantitySamples.mockResolvedValue([]);
+  hk.queryWorkoutSamples.mockResolvedValue([]);
   hk.getMostRecentQuantitySample.mockResolvedValue(undefined);
   hk.saveWorkoutSample.mockResolvedValue({});
 });
@@ -112,5 +113,19 @@ describe('hkRestingHR', () => {
     expect(await hkRestingHR()).toBe(0);
     hk.getMostRecentQuantitySample.mockResolvedValueOnce(undefined);
     expect(await hkRestingHR()).toBe(0);
+  });
+});
+
+describe('hkSaveRunWorkout — 중복 방지(워치 기본 운동 앱 병행)', () => {
+  test('같은 시간창에 HK 워크아웃이 이미 있으면 저장을 건너뛴다(이중 집계 방지)', async () => {
+    await hkLink();
+    hk.queryWorkoutSamples.mockResolvedValueOnce([{uuid: 'w1'}]);
+    expect(await hkSaveRunWorkout(5, START, START + 1_800_000)).toBe(false);
+    expect(hk.saveWorkoutSample).not.toHaveBeenCalled();
+  });
+  test('겹치는 워크아웃 조회가 실패해도 저장은 진행(graceful)', async () => {
+    await hkLink();
+    hk.queryWorkoutSamples.mockRejectedValueOnce(new Error('unavailable'));
+    expect(await hkSaveRunWorkout(5, START, START + 1_800_000)).toBe(true);
   });
 });

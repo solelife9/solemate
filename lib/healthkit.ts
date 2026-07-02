@@ -119,6 +119,8 @@ export async function hkBackfillHeartRate(
 /**
  * Keego 러닝을 Apple 건강에 러닝 워크아웃으로 기록한다(활동 링 크레딧).
  * totals.distance 는 미터, energyBurned 는 kcal(HK 기본 단위).
+ * 같은 시간창에 이미 워크아웃이 있으면(워치 기본 '운동' 앱 병행 실행) 저장을 건너뛴다 —
+ * 건강 앱에 중복 워크아웃 2개가 쌓여 운동 시간이 이중 집계되는 사고 방지.
  */
 export async function hkSaveRunWorkout(
   km: number,
@@ -129,6 +131,15 @@ export async function hkSaveRunWorkout(
   const m = mod();
   if (!m || !(km > 0) || !(startMs < endMs)) return false;
   if (!(await hkLinked())) return false;
+  try {
+    const overlapping = await m.queryWorkoutSamples({
+      limit: 1,
+      filter: {date: {startDate: new Date(startMs), endDate: new Date(endMs)}},
+    });
+    if (overlapping && overlapping.length > 0) return false; // 워치가 이미 기록 — 중복 금지
+  } catch {
+    // 조회 실패는 저장을 막지 않는다(권한/버전 차이 graceful).
+  }
   try {
     await m.saveWorkoutSample(
       m.WorkoutActivityType.running,

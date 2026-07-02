@@ -634,6 +634,7 @@ jest.mock('@kingstinct/react-native-healthkit', () => ({
   isHealthDataAvailable: jest.fn(() => false),
   requestAuthorization: jest.fn(() => Promise.resolve(true)),
   queryQuantitySamples: jest.fn(() => Promise.resolve([])),
+  queryWorkoutSamples: jest.fn(() => Promise.resolve([])),
   getMostRecentQuantitySample: jest.fn(() => Promise.resolve(undefined)),
   saveWorkoutSample: jest.fn(() => Promise.resolve({})),
   WorkoutActivityType: {running: 37},
