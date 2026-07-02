@@ -87,6 +87,7 @@ import {
 } from './lib/settings';
 import {estimateCalories} from './lib/calories';
 import {detectPRs, PRKind} from './lib/records';
+import {hkSaveRunWorkout, hkBackfillHeartRate} from './lib/healthkit';
 import {currentTargetPace} from './lib/pacePlan';
 import {liveActivity} from './lib/liveActivity';
 import {watchSession} from './lib/watchSession';
@@ -1699,6 +1700,14 @@ function Main(){
           // GAP 시계열 영속 — RunDetail이 gapTrack_<id>로 읽어 경사보정페이스(Strava식)를 낸다.
           // 고도 있는 점이 2개 미만이면 경사 계산 불가라 저장 생략.
           if(gapTrack&&gapTrack.length>=2) await AsyncStorage.setItem('gapTrack_'+newId, JSON.stringify(gapTrack));
+          // Apple 건강(연동 시, 비차단) — ① 이 러닝을 HK 워크아웃으로 기록(활동 링 크레딧)
+          // ② 러닝 시간창의 HK 심박을 hrTrack_<id> 로 백필(워치 컴패니언이 이미 채웠으면
+          // 건너뜀 — 실측 우선). 실패는 조용히 무시(러닝 저장에 영향 0).
+          {
+            const hkEndMs=Date.now();const hkStartMs=hkEndMs-Math.max(1,dur)*1000;
+            void hkSaveRunWorkout(km,hkStartMs,hkEndMs,cal).catch(()=>{});
+            void hkBackfillHeartRate(newId,hkStartMs,hkEndMs).catch(()=>{});
+          }
           await clearSnapshot();
           // 완주 리캡(P0-2) — 기록 탭으로 바로 점프하던 대신 축하 풀스크린을 띄운다(러너가
           // 가장 자랑스러운 순간 — 리텐션·공유 트리거). 신기록(PR)은 토스트 대신 리캡 배지로.

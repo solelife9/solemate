@@ -16,6 +16,7 @@ import { BG, CARD, CARD_DIM, CARD_HI, ACCENT, GOOD, DANGER, WARN, T1, T2, T3, SE
 import { TabBar, TABBAR_CLEARANCE, Pill, SectionTitle, Button, SegmentedControl, StatGrid } from './primitives';
 import { Unit, unitKorean, displayNum } from './lib/units';
 import { weeklyRecap, monthlyRecap, type RecapRun, type RecapShoe } from './lib/recap';
+import { hkAvailable, hkLinked, hkLink, hkRestingHR } from './lib/healthkit';
 import { buildRecapShareCardModel, shareRecapCard, formatRecapPRs, type RecapKind, type SvgCapturable } from './lib/shareCard';
 import RecapShareCard from './RecapShareCard';
 import {
@@ -217,6 +218,21 @@ export default function ProfileScreen({
   // 전체화면 '설정' 뷰로 전환된다(목표·알림·푸시·단위·체중·계정·클라우드를 한곳에 모음).
   // 상태/핸들러는 그대로 공유하므로 데이터 흐름은 바뀌지 않는다(뷰 전환일 뿐).
   const [showSettings, setShowSettings] = useState(false);
+
+  // Apple 건강(HealthKit) 연동 상태 — 기기가 지원할 때만 행 노출. 연동 성공 시
+  // 안정시심박이 비어 있으면 HK 최신값으로 자동 채움(Karvonen HR존 정확도 ↑).
+  const [hkOn, setHkOn] = useState(false);
+  useEffect(() => { void hkLinked().then(setHkOn); }, []);
+  const linkHealth = async () => {
+    if (hkOn) return;
+    const ok = await hkLink();
+    if (!ok) return;
+    setHkOn(true);
+    if (!(restHR > 0)) {
+      const v = await hkRestingHR();
+      if (v > 0) onChangeRestHR?.(v);
+    }
+  };
 
   const scrollRef = useRef<ScrollView>(null);
 
@@ -596,6 +612,27 @@ export default function ProfileScreen({
               <Text style={s.progressSub}>{retiredCount > 0 ? `은퇴한 신발 ${retiredCount}켤레` : '은퇴한 신발들의 박물관'}</Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={T3} />
+          </Pressable>
+        )}
+
+        {/* Apple 건강(HealthKit) 연동 — 심박 백필·워크아웃 기록·안정시심박 자동 채움.
+            기기가 HealthKit 을 지원할 때만 노출(안드로이드/시뮬 일부 숨김). */}
+        {hkAvailable() && (
+          <Pressable
+            onPress={linkHealth}
+            testID="link-health"
+            accessibilityRole="button"
+            accessibilityLabel="Apple 건강 연동"
+            accessibilityState={{disabled: hkOn}}
+            style={({ pressed }) => [s.card, s.progressRow, pressed && !hkOn && { backgroundColor: CARD_HI }]}>
+            <View style={s.progressIcon}><Ionicons name="heart-outline" size={19} color={ACCENT} /></View>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text style={s.progressTitle}>Apple 건강</Text>
+              <Text style={s.progressSub}>{hkOn ? '연동됨 — 심박·워크아웃 동기화 중' : '연동하면 워치 심박과 워크아웃이 이어져요'}</Text>
+            </View>
+            {hkOn
+              ? <Ionicons name="checkmark-circle" size={18} color={GOOD} />
+              : <Ionicons name="chevron-forward" size={18} color={T3} />}
           </Pressable>
         )}
 

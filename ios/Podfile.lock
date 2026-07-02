@@ -1560,6 +1560,28 @@ PODS:
   - nanopb/decode (3.30910.0)
   - nanopb/encode (3.30910.0)
   - naveridlogin-sdk-ios (4.2.3)
+  - NitroModules (0.36.1):
+    - hermes-engine
+    - RCTRequired
+    - RCTTypeSafety
+    - React-callinvoker
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - ReactNativeDependencies
+    - Yoga
   - PromisesObjC (2.4.1)
   - PromisesSwift (2.4.1):
     - PromisesObjC (= 2.4.1)
@@ -3369,6 +3391,29 @@ PODS:
     - React-utils (= 0.85.3)
     - ReactNativeDependencies
   - ReactNativeDependencies (0.85.3)
+  - ReactNativeHealthkit (14.0.2):
+    - hermes-engine
+    - NitroModules
+    - RCTRequired
+    - RCTTypeSafety
+    - React-callinvoker
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - ReactNativeDependencies
+    - Yoga
   - RecaptchaInterop (101.0.0)
   - RNFBApp (24.0.0):
     - Firebase/CoreOnly (= 12.10.0)
@@ -3626,6 +3671,7 @@ DEPENDENCIES:
   - FBLazyVector (from `../node_modules/react-native/Libraries/FBLazyVector`)
   - hermes-engine (from `../node_modules/react-native/sdks/hermes-engine/hermes-engine.podspec`)
   - "kakao-login (from `../node_modules/@react-native-seoul/kakao-login`)"
+  - NitroModules (from `../node_modules/react-native-nitro-modules`)
   - RCTDeprecation (from `../node_modules/react-native/ReactApple/Libraries/RCTFoundation/RCTDeprecation`)
   - RCTRequired (from `../node_modules/react-native/Libraries/Required`)
   - RCTSwiftUI (from `../node_modules/react-native/ReactApple/RCTSwiftUI`)
@@ -3700,6 +3746,7 @@ DEPENDENCIES:
   - ReactCodegen (from `build/generated/ios/ReactCodegen`)
   - ReactCommon/turbomodule/core (from `../node_modules/react-native/ReactCommon`)
   - ReactNativeDependencies (from `../node_modules/react-native/third-party-podspecs/ReactNativeDependencies.podspec`)
+  - "ReactNativeHealthkit (from `../node_modules/@kingstinct/react-native-healthkit`)"
   - "RNFBApp (from `../node_modules/@react-native-firebase/app`)"
   - "RNFBAuth (from `../node_modules/@react-native-firebase/auth`)"
   - "RNFBCrashlytics (from `../node_modules/@react-native-firebase/crashlytics`)"
@@ -3803,6 +3850,8 @@ EXTERNAL SOURCES:
     :tag: hermes-v250829098.0.10
   kakao-login:
     :path: "../node_modules/@react-native-seoul/kakao-login"
+  NitroModules:
+    :path: "../node_modules/react-native-nitro-modules"
   RCTDeprecation:
     :path: "../node_modules/react-native/ReactApple/Libraries/RCTFoundation/RCTDeprecation"
   RCTRequired:
@@ -3949,6 +3998,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon"
   ReactNativeDependencies:
     :podspec: "../node_modules/react-native/third-party-podspecs/ReactNativeDependencies.podspec"
+  ReactNativeHealthkit:
+    :path: "../node_modules/@kingstinct/react-native-healthkit"
   RNFBApp:
     :path: "../node_modules/@react-native-firebase/app"
   RNFBAuth:
@@ -4034,6 +4085,7 @@ SPEC CHECKSUMS:
   leveldb-library: cc8b8f8e013647a295ad3f8cd2ddf49a6f19be19
   nanopb: fad817b59e0457d11a5dfbde799381cd727c1275
   naveridlogin-sdk-ios: d9d46d02119d303023d7000cd5963864d5bb89e5
+  NitroModules: 6322113692f34c918f48c3e1ada1bc536796bb29
   PromisesObjC: 752c3227f599e3467650e47ea36f433eeb10c273
   PromisesSwift: 217dea0fd5d2ad65222a109c48698add13cc1c5b
   RCTDeprecation: 225e022b85a206cf0883a909c4a114159783363c
@@ -4109,6 +4161,7 @@ SPEC CHECKSUMS:
   ReactCodegen: 01edc8d202005315c06ca3826d1eaad2c619cae7
   ReactCommon: ced9cfa50957cb9e6b7a1a7cd4ee20f5da6fa3a4
   ReactNativeDependencies: e3ae03d9ee863dc38c19e57822d1899f1bba8493
+  ReactNativeHealthkit: c5d6f6f15deb9d2bec0208363dc035cad15070cd
   RecaptchaInterop: 11e0b637842dfb48308d242afc3f448062325aba
   RNFBApp: d5dad997ae205ea4344efd3e746916fa3e1710af
   RNFBAuth: 4db9ae1e113f88a0c4e1189017c66f6fbab6c9c8

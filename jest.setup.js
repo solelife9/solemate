@@ -626,3 +626,15 @@ jest.mock('@react-native-seoul/naver-login', () => ({
     logout: jest.fn(() => Promise.resolve()),
   },
 }));
+
+// ── @kingstinct/react-native-healthkit (Nitro 네이티브 목) ────────────────────
+// Nitro 바인딩은 jest 에 없다 — lib/healthkit 이 lazy-require 하므로 모듈 자체를 목.
+jest.mock('@kingstinct/react-native-healthkit', () => ({
+  __esModule: true,
+  isHealthDataAvailable: jest.fn(() => false),
+  requestAuthorization: jest.fn(() => Promise.resolve(true)),
+  queryQuantitySamples: jest.fn(() => Promise.resolve([])),
+  getMostRecentQuantitySample: jest.fn(() => Promise.resolve(undefined)),
+  saveWorkoutSample: jest.fn(() => Promise.resolve({})),
+  WorkoutActivityType: {running: 37},
+}));
