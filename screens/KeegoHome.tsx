@@ -40,16 +40,17 @@ type Props = {
 
 const CARD_GAP = 14;
 const CARD_RADIUS = 34;
+// 링 '기준' 치수(874pt 화면 기준) — 실제 크기는 ShoeCard 가 화면 높이에 비례해 계산한다.
 const RING = 172;
 const RING_R = 76;
-const RING_C = 2 * Math.PI * RING_R;
 
 // 링 아크 스윕용 — SVG Circle 의 strokeDashoffset 을 Animated 로 구동한다.
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 export default function KeegoHome({shoes, runs = [], onStartRun, onOpenShoe, onOpenProfile}: Props) {
   const {width} = useWindowDimensions();
-  const CARD_W = Math.min(width - 72, 340);
+  // HomeScreen 캐러셀과 동일한 비율 규칙(화면 폭 82%, 380 상한) — 기기 간 동일 구도.
+  const CARD_W = Math.min(Math.round(width * 0.82), 380);
   const SIDE = (width - CARD_W) / 2;
   const STRIDE = CARD_W + CARD_GAP;
 
@@ -133,6 +134,12 @@ export function ShoeCard({
   unit?: Unit;
   onStartRun?: (s: Shoe) => void; onOpenShoe?: (s: Shoe) => void;
 }) {
+  // 링 크기 = 화면 높이 비례(기준 874pt 에서 172px — 현행과 동일). 고정 172px 은 SE/mini
+  // 같은 짧은 화면에서 러닝 시작 버튼을 폴드 밖으로 밀었다. 클램프로 극단만 방지.
+  const {height: winH} = useWindowDimensions();
+  const ring = Math.max(144, Math.min(180, Math.round(winH * (172 / 874))));
+  const ringR = ring * (RING_R / RING);
+  const ringC = 2 * Math.PI * ringR;
   const h = shoeHealth(shoe as any, runs);
   const pct = Math.round(h.percentUsed);
   // 사용자 노출 % = '남은 수명'(배터리 방향, 100→0). 소진율(↑)과 "남음" 카피가 뒤섞여
@@ -163,7 +170,7 @@ export function ShoeCard({
     anim.start();
     return () => anim.stop(); // 언마운트 시 타이머 정리(테스트/화면전환 누수 방지)
   }, [sweep, remainPct]);
-  const dash = sweep.interpolate({inputRange: [0, 100], outputRange: [RING_C, 0]});
+  const dash = sweep.interpolate({inputRange: [0, 100], outputRange: [ringC, 0]});
   // 링 중앙 숫자 — 스윕에 맞춰 살짝 떠오르며 페이드인.
   const centerIn = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -202,9 +209,9 @@ export function ShoeCard({
             </View>
           </View>
 
-          {/* 링 게이지 */}
-          <View style={styles.ringWrap}>
-            <Svg width={RING} height={RING}>
+          {/* 링 게이지 — 크기는 화면 높이 비례(ring, 기기 간 동일 구도) */}
+          <View style={[styles.ringWrap, {width: ring, height: ring}]}>
+            <Svg width={ring} height={ring}>
               <Defs>
                 <SvgLinear id={`ring-${i}`} x1="0" y1="0" x2="1" y2="1">
                   <Stop offset="0" stopColor={rc.from} />
@@ -213,17 +220,17 @@ export function ShoeCard({
               </Defs>
               {/* 트랙: 컨디션 색 옅은 tint → 0% 도 죽은 회색이 아님 */}
               <Circle
-                cx={RING / 2} cy={RING / 2} r={RING_R}
+                cx={ring / 2} cy={ring / 2} r={ringR}
                 stroke={withAlpha(rc.solid, 0.16)} strokeWidth={14} fill="none"
               />
               {/* 진행 아크: 비비드 그라데이션 — 마운트 시 0→현재%로 차오른다 */}
               <AnimatedCircle
-                cx={RING / 2} cy={RING / 2} r={RING_R}
+                cx={ring / 2} cy={ring / 2} r={ringR}
                 stroke={`url(#ring-${i})`} strokeWidth={14} fill="none"
                 strokeLinecap="round"
-                strokeDasharray={RING_C}
+                strokeDasharray={ringC}
                 strokeDashoffset={dash}
-                transform={`rotate(-90 ${RING / 2} ${RING / 2})`}
+                transform={`rotate(-90 ${ring / 2} ${ring / 2})`}
               />
             </Svg>
             <Animated.View style={[styles.ringCenter, {
@@ -343,7 +350,8 @@ const styles = StyleSheet.create({
   condDot: {width: 7, height: 7, borderRadius: 999},
   condLabel: {fontFamily: FONT, fontSize: 13, fontWeight: '600', color: T2},
 
-  ringWrap: {width: RING, height: RING, alignSelf: 'center', marginTop: 20, alignItems: 'center', justifyContent: 'center'},
+  // width/height 는 렌더에서 화면 비례값(ring)으로 덮어쓴다.
+  ringWrap: {alignSelf: 'center', marginTop: 20, alignItems: 'center', justifyContent: 'center'},
   ringCenter: {position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center'},
   ringPctSub: {fontFamily: FONT, fontSize: 12, fontWeight: '600', color: withAlpha(T1, 0.55)},
   ringPctRow: {flexDirection: 'row', alignItems: 'flex-start', marginTop: 2},

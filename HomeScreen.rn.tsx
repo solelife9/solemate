@@ -126,10 +126,11 @@ function TopBar({ onAddShoe }: { onAddShoe?: () => void }) {
 // testID + 교체 예측(forecast) 노출(App이 활성 신발 기준 forecast 하나만 내려주므로).
 // 카드 탭 → 그 신발 상세(onOpenShoe). 러닝 시작 CTA 는 캐러셀 아래 단일 버튼(활성 기준).
 const SCREEN_W = Dimensions.get('window').width;
-// 핸드오프 KeegoHome 캐러셀 — 카드를 화면보다 좁게(min(폭-72,340)) 잡고 좌우 여백을 둬서
-// 양옆 카드가 살짝 보이는(peek) 스와이프 캐러셀. 여백/갭도 핸드오프 값 그대로.
+// 카드 폭 = 화면 폭의 82% (기준 402pt 화면에서 핸드오프 값 330 과 동일 비율).
+// 고정 px(min(폭-72,340))은 기기마다 카드/peek 비율이 달라 보이던 원인 — 비율 고정으로
+// 어떤 폰에서든 같은 구도가 나온다. 380 상한은 태블릿급 초광폭 안전장치.
 const HERO_GAP = 14;
-const HERO_W = Math.min(SCREEN_W - 72, 340);
+const HERO_W = Math.min(Math.round(SCREEN_W * 0.82), 380);
 const HERO_SNAP = HERO_W + HERO_GAP;
 const HERO_SIDE = (SCREEN_W - HERO_W) / 2; // 중앙 정렬 여백 → 옆 카드 peek
 
@@ -160,7 +161,10 @@ function ShoeCarousel({ shoes, activeIdx, onSelect, unit, onOpenShoe, onStart }:
         onScroll={onScroll}
         scrollEventThrottle={16}
         onMomentumScrollEnd={onEnd}
-        contentContainerStyle={{ paddingHorizontal: HERO_SIDE - HERO_GAP / 2, gap: HERO_GAP }}
+        // 패딩 = HERO_SIDE 그대로 — 카드 간격은 gap 이 만들므로 스냅 위치(i×SNAP)에서 카드가
+        // 정확히 정중앙, 좌우 peek 이 동일해진다. (기존 -GAP/2 보정은 gap 대신 카드별
+        // margin(GAP/2)을 쓸 때의 값 — gap 방식에선 모든 카드를 7px 왼쪽으로 밀던 버그.)
+        contentContainerStyle={{ paddingHorizontal: HERO_SIDE, gap: HERO_GAP }}
       >
         {shoes.map((shoe, i) => (
           // 카드 = KeegoHome 의 ShoeCard(핸드오프 디자인 그대로 — 링·유리엣지·상승감 표면).
