@@ -12,11 +12,12 @@ import {
   BG, CARD, CARD_DIM, CARD_HI, ACCENT, DANGER, T1, T2, T3, T4, SEP, CARD_BORDER, FONT, DISPLAY, Shoe, Run, SHOES, withAlpha, RADIUS, GUTTER, HERO, SCRIM, HR_ZONE_COLORS,
 } from './theme';
 // 기간 탭 스트립 = SegmentedControl(neutral), 러닝 상세 2×3 메트릭 = StatGrid 프리미티브.
-import { TabBar, Button, SegmentedControl, StatGrid } from './primitives';
+import { TabBar, TABBAR_CLEARANCE, Button, SegmentedControl, StatGrid } from './primitives';
 import { Unit, displayNum, displayToKm } from './lib/units';
 import { ymdLocal } from './lib/format';
 import { sumKm, summaryOf, monthBuckets, weekBuckets, yearBuckets } from './lib/stats';
 import { fitnessSummary, thresholdPaceSec } from './lib/analytics/fitness';
+import { FitnessCard } from './FitnessCard';
 import { gradeAdjustedPaceSec, smoothElevation, resampleByDistance, buildGapSeries } from './lib/analytics/gap';
 import { estimateMaxHR, timeInZones, hrSummary, zoneBoundaries, HR_ZONE_LABEL, type HRZone } from './lib/analytics/hrZones';
 import { trimp, paceLoad, effortBand } from './lib/analytics/load';
@@ -806,7 +807,7 @@ function RunCard({ run, shoes, onPress, unit }: { run: Run; shoes: Shoe[]; onPre
 export default function HistoryScreen({
   shoes = SHOES, runs = [], summary = {}, chart = {}, onTab, unit = 'km',
   onAddRun, onEditRun, onDeleteRun, onRefresh,
-  age = 0, sex = 'male', restHR = 0,
+  age = 0, sex = 'male', restHR = 0, todayISO = '',
 }: {
   shoes?: Shoe[];
   runs?: Run[];
@@ -827,6 +828,9 @@ export default function HistoryScreen({
   age?: number;
   sex?: 'male' | 'female';
   restHR?: number;
+  // 오늘 날짜(YYYY-MM-DD) — 체력 트렌드(FitnessCard) VO2max/컨디션 계산 기준. App 이
+  // today() 주입. 미주입이면 카드 숨김(표시 전용, 테스트 호환).
+  todayISO?: string;
 }) {
   const [period, setPeriod] = useState('월');
   const now = new Date();
@@ -1010,7 +1014,7 @@ export default function HistoryScreen({
         renderItem={({ item }) => (
           <RunCard run={item} shoes={shoes} onPress={() => setDetail(item)} unit={unit} />
         )}
-        contentContainerStyle={{ padding: 14, paddingBottom: 8, gap: 10 }}
+        contentContainerStyle={{ padding: 14, paddingBottom: TABBAR_CLEARANCE, gap: 10 }}
         refreshControl={onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={ACCENT} colors={[ACCENT]} /> : undefined}
         ListHeaderComponent={
           <View style={{ gap: 10 }}>
@@ -1052,9 +1056,10 @@ export default function HistoryScreen({
                 </View>
               )}
             </View>
-            {/* 체력 트렌드 카드는 홈 화면으로 이관(FitnessCard) — '지금 내 몸 상태'는 뛰기 전에
-                보는 개인 대시보드라 기록 탭보다 홈이 맞다. 여기선 fitness 를 RunDetail 트레이닝
-                부하의 임계페이스(thresholdPace) 산출에만 쓴다. */}
+            {/* 체력 트렌드(FitnessCard) — MVP 홈 다이어트로 홈에서 기록 탭 인사이트로 이관.
+                분석은 원하는 사람이 찾아오는 곳(기록)에 두고 홈은 러닝 시작 저니에 집중한다.
+                타임 있는 노력 런이 없으면 카드가 스스로 숨는다(null). */}
+            {!!todayISO && <FitnessCard runs={runs} todayISO={todayISO} />}
             <Text style={s.sectionLabel}>러닝 기록</Text>
           </View>
         }

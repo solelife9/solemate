@@ -13,7 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { BG, CARD, CARD_DIM, CARD_HI, ACCENT, GOOD, DANGER, WARN, T1, T2, T3, SEP, CARD_BORDER, FONT, DISPLAY, withAlpha, TIER_COLORS, TIER_LABEL, KAKAO_YELLOW, KAKAO_LABEL, NAVER_GREEN, NAVER_LABEL, RADIUS } from './theme';
 // recap 토글 = SegmentedControl(accentSolid), 스탯 그리드들 = StatGrid 단일 프리미티브.
-import { TabBar, Pill, SectionTitle, Button, SegmentedControl, StatGrid } from './primitives';
+import { TabBar, TABBAR_CLEARANCE, Pill, SectionTitle, Button, SegmentedControl, StatGrid } from './primitives';
 import { Unit, unitKorean, displayNum } from './lib/units';
 import { weeklyRecap, monthlyRecap, type RecapRun, type RecapShoe } from './lib/recap';
 import { buildRecapShareCardModel, shareRecapCard, formatRecapPRs, type RecapKind, type SvgCapturable } from './lib/shareCard';
@@ -197,6 +197,7 @@ export default function ProfileScreen({
   // 없으면 진척 진입 버튼은 표시되지 않는다(안전한 no-op).
   onOpenProgression?: () => void;
   // 명예의 전당(은퇴 신발 박물관) 진입. 없으면 진입 버튼 미표시(안전한 no-op).
+  // (신발탭 이동을 검토했으나 사용자 결정으로 마이탭 유지 — 2026-07-02.)
   onOpenHallOfShoes?: () => void;
   // 은퇴한 신발 수(전당 진입 행의 부제에 표시). 0이어도 진입은 가능(빈 전당 안내).
   retiredCount?: number;
@@ -437,7 +438,7 @@ export default function ProfileScreen({
   const insets = useSafeAreaInsets();
   return (
     <View style={s.screen}>
-      <ScrollView ref={scrollRef} contentContainerStyle={{ paddingTop: insets.top + 12, paddingHorizontal: 18, paddingBottom: 8, gap: 16 }}>
+      <ScrollView ref={scrollRef} contentContainerStyle={{ paddingTop: insets.top + 12, paddingHorizontal: 18, paddingBottom: TABBAR_CLEARANCE, gap: 16 }}>
         {/* header — 마이(프로필+기록) ↔ 설정 뷰 전환 */}
         {showSettings ? (
           <View style={s.headerRow}>
@@ -580,7 +581,8 @@ export default function ProfileScreen({
           </Pressable>
         )}
 
-        {/* 명예의 전당(은퇴 신발 박물관) 진입 — 전체화면 HallOfShoes 로 전환 */}
+        {/* 명예의 전당(은퇴 신발 박물관) 진입 — 전체화면 HallOfShoes 로 전환.
+            (신발탭 이동을 검토했으나 사용자 결정으로 마이탭 유지 — 2026-07-02.) */}
         {onOpenHallOfShoes && (
           <Pressable
             onPress={onOpenHallOfShoes}

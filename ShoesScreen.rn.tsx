@@ -9,7 +9,7 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {
   BG, CARD_DIM, CARD_HI, HERO_BG, ACCENT, DANGER, WARN, GOOD, BEST, T1, T2, T3, T4, SEP, FONT, DISPLAY, withAlpha, RADIUS, Shoe, Run, SHOES,
 } from './theme';
-import { TabBar, Pill, InjuryBanner, SectionTitle, Button } from './primitives';
+import { TabBar, TABBAR_CLEARANCE, Pill, InjuryBanner, SectionTitle, Button } from './primitives';
 import { FuelGauge } from './FuelGauge';
 import FirstShoeScreen from './FirstShoeScreen.rn';
 import { Unit, displayNum } from './lib/units';
@@ -445,11 +445,12 @@ function ShoeCard({ shoe, featured, onPress, onPlay, unit, pace: _pace, forecast
         </View>
         <Text style={s.shoeRemain}>교체까지 약 {displayNum(remainKm, unit)}{unit} 남았어요</Text>
       </View>
-      {/* 라벨바: 사용/총 수명을 양끝 라벨로(목업 LifeBar). 가운데 평균 페이스는 제거(목록 간결화). */}
-      <View style={s.shoeBar}><View style={[s.shoeBarFill, { width: `${usedPct}%`, backgroundColor: retired ? T3 : ring }]} /></View>
+      {/* 라벨바 = 남은 수명 게이지(배터리 방향, 홈 히어로 링과 통일 — 사용자 결정).
+          새 신발 = 가득 찬 바, 닳을수록 비워진다. 색은 컨디션(마모) 기준 그대로. */}
+      <View style={s.shoeBar}><View style={[s.shoeBarFill, { width: `${Math.max(0, 100 - usedPct)}%`, backgroundColor: retired ? T3 : ring }]} /></View>
       <View style={s.shoeBarLabels}>
-        <Text style={s.shoeBarLabel}>{usedDisp}{unit}</Text>
-        <Text style={s.shoeBarLabel}>{maxDisp}{unit}</Text>
+        <Text style={s.shoeBarLabel}>남은 수명 {Math.max(0, 100 - usedPct)}%</Text>
+        <Text style={s.shoeBarLabel}>총 {maxDisp}{unit}</Text>
       </View>
       {/* 교체 예측 한 줄(#2) — 실효마모 모델 전면화. ok/overdue 일 때만. */}
       {fcLine && !retired && (
@@ -585,7 +586,7 @@ export default function ShoesScreen({
           <Ionicons name="add" size={15} color={T1} />
         </Pressable>
       </View>
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 18, paddingBottom: 24, gap: 14, paddingTop: 12 }}>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 18, paddingBottom: TABBAR_CLEARANCE, gap: 14, paddingTop: 12 }}>
         {/* 교체 임박 요약(#2) — 곧 교체할 신발 N켤레. 0이면 숨김. */}
         {soonCount > 0 && (
           <View style={s.soonHeader} testID="shoes-soon-header">
@@ -605,11 +606,9 @@ export default function ShoesScreen({
             onPlay={sh.id && onStartRun ? () => onStartRun(sh.id!) : undefined}
           />
         ))}
-        <Pressable onPress={onAddShoe} accessibilityRole="button" accessibilityLabel="러닝화 등록하기" style={({ pressed }) => [s.addCard, pressed && s.pressed]}>
-          <Ionicons name="add" size={18} color={T3} />
-          <Text style={s.addText}>러닝화 등록하기</Text>
-        </Pressable>
-        {/* 명예의 전당은 마이탭 풀스크린 박물관(HallOfShoes)으로 일원화 — 신발탭 중복 섹션 제거. */}
+        {/* 하단 '러닝화 등록하기' 점선 카드는 제거(사용자 결정 2026-07-02) — 상단 헤더
+            '신발 추가'와 중복 진입점. 신발 0켤레는 FirstShoeScreen 빈 상태가 담당한다.
+            명예의 전당 진입은 마이탭 소속(신발탭 이동안 철회). */}
       </ScrollView>
       <TabBar active={1} onTab={(i) => onTab?.(i)} />
     </View>
@@ -638,7 +637,7 @@ const s = StyleSheet.create({
   // 재조정했다 — 같은 pct 를 두 번 그리던 중복을 없애 시선이 링에 모인다.
   // 목업 정합: 카드 배경을 near-black(CARD_DIM)에서 살짝 떠 보이는 회색(HERO_BG — 홈
   // 히어로 카드와 동일 톤)으로 올려 black-on-black 을 피한다.
-  shoeCard: { backgroundColor: HERO_BG, borderRadius: RADIUS.lg, padding: 16 },
+  shoeCard: { backgroundColor: HERO_BG, borderRadius: RADIUS.lg, borderCurve: 'continuous', padding: 16 },
   shoeCardFeatured: { borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.2) },
   shoeCardIdle: { borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.08) },
   shoeCardRetired: { opacity: 0.55, borderColor: withAlpha(T1, 0.05) },
@@ -678,8 +677,6 @@ const s = StyleSheet.create({
   restoreBtn: { height: 54, borderRadius: RADIUS.md, marginTop: 22, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: 'transparent', borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.14) },
   retireBtnText: { fontFamily: FONT, fontSize: 15, fontWeight: '600', letterSpacing: -0.2 },
 
-  addCard: { borderRadius: RADIUS.xl, borderWidth: 1.5, borderStyle: 'dashed', borderColor: withAlpha(T1, 0.12), padding: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
-  addText: { color: T3, fontFamily: FONT, fontSize: 15, fontWeight: '500' },
 
 
   // detail

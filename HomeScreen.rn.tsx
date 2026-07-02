@@ -8,19 +8,20 @@
 import React, { useRef, useState, useEffect } from 'react';
 import {
   View, Text, ScrollView, Pressable, StyleSheet, Linking, Dimensions,
-  RefreshControl, NativeSyntheticEvent, NativeScrollEvent, Animated,
+  RefreshControl, NativeSyntheticEvent, NativeScrollEvent, Animated, Easing,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import Svg, { Defs, RadialGradient as SvgRadial, Stop, Rect } from 'react-native-svg';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import { ringColor } from './lib/ringColor';
 import {
   BG, CARD_DIM, CARD_HI, HERO_BG, ACCENT, WARN, GOOD, T1, T2, T3, T4,
-  FONT, DISPLAY, SPACE, RADIUS, GUTTER, withAlpha, Shoe, SHOES, TIER_COLORS, TIER_LABEL,
+  FONT, DISPLAY, SPACE, RADIUS, GUTTER, withAlpha, Shoe, SHOES,
 } from './theme';
 import type { RankTier } from './lib/progression/types';
-import { TabBar, KeegoWordmark, SectionTitle } from './primitives';
+import { TabBar, TABBAR_CLEARANCE, KeegoWordmark, SectionTitle } from './primitives';
 import { Unit } from './lib/units';
 import InjuryRiskCard from './InjuryRiskCard';
-import { FitnessCard } from './FitnessCard';
 import { ShoeCard as KeegoShoeCard } from './screens/KeegoHome';
 import type { LoadRun } from './lib/trainingLoad';
 import { RotationPick } from './lib/rotation';
@@ -61,60 +62,46 @@ export type HomeProgression = {
   achievement?: { name: string } | null;
 };
 
-// 진척 띠 — 랭크 칩 + 활성 챌린지 진행 + 최근 업적. 통째로 탭하면 진척 화면으로 이동
-// (rank 칩/띠 어디를 눌러도 동일 — 단일 Pressable 로 중첩 매칭 혼동을 피한다). 히어로
-// 위에 얇게 얹혀 주인공(신발 히어로)을 밀어내지 않는다. 토큰만 — 색은 TIER_COLORS 권위.
-function ProgressionStrip({ prog, onOpen }: { prog: HomeProgression; onOpen?: () => void }) {
-  const color = TIER_COLORS[prog.tier] ?? ACCENT;
-  const ch = prog.challenge;
-  const ach = prog.achievement;
-  const pct = ch ? Math.max(0, Math.min(1, ch.pct)) : 0;
-  const fmt = (n: number) => {
-    const v = Math.round((Number(n) || 0) * 10) / 10;
-    return Number.isInteger(v) ? String(v) : v.toFixed(1);
-  };
+// (진척 띠 ProgressionStrip 은 MVP 홈 다이어트로 제거 — 진척의 집은 마이탭/진척 화면.
+//  홈에 남는 진척 노출은 인사 옆 장착 타이틀 pill 하나뿐. HomeProgression 타입은 그
+//  pill 과 App 파생 로직이 계속 쓰므로 유지.)
+
+
+// 앰비언트 배경 — 활성 신발의 컨디션 색을 화면 상단에 최대 5.5% 라디얼로 깐다.
+// '광원 효과'가 아니라 유리(엣지·탭바 블러)가 비칠 대상을 만드는 조명이다. 맨눈엔
+// 거의 안 보이지만 유리 표면이 그 위를 지날 때 은은히 살아난다(글로우 금지 원칙과 양립).
+function AmbientBackdrop({ tint }: { tint: string }) {
   return (
-    <Pressable
-      testID="home-progression"
-      onPress={onOpen}
-      disabled={!onOpen}
-      accessibilityRole="button"
-      accessibilityLabel="진척 보기"
-      style={({ pressed }) => [s.progStrip, pressed && onOpen ? s.pressed : null]}>
-      <View style={s.progTopRow}>
-        <View
-          testID="home-rank-chip"
-          style={[s.rankChip, { backgroundColor: withAlpha(color, 0.16), borderColor: withAlpha(color, 0.5) }]}>
-          <Ionicons name="trophy" size={11} color={color} />
-          <Text testID="home-rank-chip-text" style={[s.rankChipTxt, { color }]} numberOfLines={1}>
-            {TIER_LABEL[prog.tier]}
-          </Text>
-        </View>
-        {ach && (
-          <View testID="home-recent-achievement" style={s.achChip}>
-            <Ionicons name="ribbon" size={11} color={T3} />
-            <Text style={s.achChipTxt} numberOfLines={1}>최근 달성 · {ach.name}</Text>
-          </View>
-        )}
-        <Ionicons name="chevron-forward" size={15} color={T4} style={{ marginLeft: 'auto' }} />
-      </View>
-      {ch && (
-        <View testID="home-challenge" style={s.progChallenge}>
-          <View style={s.progChallengeHead}>
-            <Text style={s.progChallengeLabel} numberOfLines={1}>{ch.label}</Text>
-            <Text style={s.progChallengeVal}>
-              {fmt(ch.current)}<Text style={s.progChallengeValT}> / {fmt(ch.target)}{ch.unit ?? ''}</Text>
-            </Text>
-          </View>
-          <View style={s.progBar}>
-            <View testID="home-challenge-bar" style={[s.progBarFill, { width: `${Math.round(pct * 100)}%`, backgroundColor: color }]} />
-          </View>
-        </View>
-      )}
-    </Pressable>
+    <Svg pointerEvents="none" style={StyleSheet.absoluteFill}>
+      <Defs>
+        <SvgRadial id="home-ambient" cx="50%" cy="12%" r="80%">
+          <Stop offset="0" stopColor={tint} stopOpacity={0.055} />
+          <Stop offset="0.55" stopColor={tint} stopOpacity={0.02} />
+          <Stop offset="1" stopColor={tint} stopOpacity={0} />
+        </SvgRadial>
+      </Defs>
+      <Rect width="100%" height="100%" fill="url(#home-ambient)" />
+    </Svg>
   );
 }
 
+// 섹션 등장 스태거 — 마운트 시 살짝 떠오르며 페이드인(60ms 간격). 홈이 '켜지는' 느낌을
+// 주는 유일한 전환 모션. JS 드라이버(false) — 코드베이스 관례(TabBar 등)이자
+// react-test-renderer 호환(네이티브 드라이버는 테스트 렌더러에서 nativeTag 연결이 깨짐).
+// 420ms 단발이라 JS 드라이버로도 체감 차이 없음.
+function Rise({ delay = 0, children }: { delay?: number; children: React.ReactNode }) {
+  const v = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const anim = Animated.timing(v, { toValue: 1, duration: 420, delay, easing: Easing.out(Easing.cubic), useNativeDriver: false });
+    anim.start();
+    return () => anim.stop(); // 언마운트 시 타이머 정리(테스트/화면전환 누수 방지)
+  }, [v, delay]);
+  return (
+    <Animated.View style={{ opacity: v, transform: [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [14, 0] }) }] }}>
+      {children}
+    </Animated.View>
+  );
+}
 
 function TopBar({ onAddShoe }: { onAddShoe?: () => void }) {
   return (
@@ -157,6 +144,7 @@ function ShoeCarousel({ shoes, activeIdx, onSelect, unit, onOpenShoe, onStart }:
   const onEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const i = Math.round(e.nativeEvent.contentOffset.x / HERO_SNAP);
     const clamped = Math.max(0, Math.min(shoes.length - 1, i));
+    // (스냅 햅틱은 넣었다가 사용자 피드백으로 제거 — 스와이프마다 울리면 과함.)
     if (clamped !== activeIdx) onSelect(clamped);
   };
   // 외부에서 활성 신발이 바뀌면(로테이션 추천 탭 등) 캐러셀도 그 카드로 스냅 이동.
@@ -193,13 +181,12 @@ function ShoeCarousel({ shoes, activeIdx, onSelect, unit, onOpenShoe, onStart }:
           </View>
         ))}
       </Animated.ScrollView>
+      {/* 페이지 도트만 — 스와이프 안내문은 제거(도트가 이미 넘김을 말한다. 프리미엄
+          제품은 사용법 문구를 상주시키지 않는다 — 폴리싱 2026-07-02). */}
       {shoes.length > 1 && (
-        <>
-          <View style={s.pageDots}>
-            {shoes.map((_, i) => <View key={i} style={[s.pageDot, i === activeIdx && s.pageDotOn]} />)}
-          </View>
-          <Text style={s.swipeHint}>내 러닝화 {shoes.length}켤레 · 좌우로 넘겨보세요</Text>
-        </>
+        <View style={s.pageDots}>
+          {shoes.map((_, i) => <View key={i} style={[s.pageDot, i === activeIdx && s.pageDotOn]} />)}
+        </View>
       )}
     </View>
   );
@@ -224,13 +211,14 @@ function WeekCard({ week, unit = 'km', weeklyGoalKm = 0, streakDays = 0 }: { wee
             </View>
           ) : <View />}
           {weeklyGoalKm > 0 ? (
-            <Text style={s.weekGoalTxt} testID="home-week-goal">주간 목표 {weeklyGoalKm}{unit} · <Text style={s.weekGoalPct}>{goalPct}%</Text></Text>
+            // % 텍스트는 제거 — 아래 진행 바가 %를 시각으로 말한다(숫자 중복 제거, 폴리싱).
+            <Text style={s.weekGoalTxt} testID="home-week-goal">주간 목표 {weeklyGoalKm}{unit}</Text>
           ) : null}
         </View>
       )}
       {weeklyGoalKm > 0 && (
         <View style={[s.gauge, { marginTop: 8, marginBottom: 4 }]}>
-          <View style={[s.gaugeFill, { width: `${goalPct}%`, backgroundColor: ACCENT }]} />
+          <View testID="home-week-goal-bar" style={[s.gaugeFill, { width: `${goalPct}%`, backgroundColor: ACCENT }]} />
         </View>
       )}
       <View style={s.insightGrid}>
@@ -409,7 +397,7 @@ function EmptyHome({ onAddShoe }: { onAddShoe?: () => void }) {
 export default function HomeScreen({
   shoes = SHOES, dateLabel = '', onStart, onAddShoe, onTab,
   activeIdx: activeIdxProp, onSelect, unit = 'km', week, rotation, onPickShoe,
-  onOpenShoe, forecast, progression, onOpenProgression,
+  onOpenShoe, forecast, progression,
   onRefresh, lastSyncAt: _lastSyncAt, userName, runs = [], onOpenInjuryRisk,
   weeklyGoalKm = 0, streakDays = 0, todayISO = '',
 }: {
@@ -418,7 +406,7 @@ export default function HomeScreen({
   // 이번 주 러닝 카드의 주간 목표(km)·연속 스트릭(일). 0이면 해당 표시 숨김(표시 전용).
   weeklyGoalKm?: number;
   streakDays?: number;
-  // 오늘 날짜(YYYY-MM-DD) — 체력 트렌드(FitnessCard) VO2max/컨디션 계산 기준. App 이 today() 주입.
+  // 오늘 날짜(YYYY-MM-DD) — 부상위험 시그널의 부하(ACWR) 계산 기준. App 이 today() 주입.
   todayISO?: string;
   // 선택(히어로) 신발의 교체 예측(App이 실효마모 모델로 계산해 내려준다). ok/overdue일 때
   // 히어로에 ETA 한 줄을 보강한다. 표시 전용(없으면 숨김).
@@ -443,11 +431,9 @@ export default function HomeScreen({
   onSelect?: (i: number) => void;
   unit?: Unit;
   onOpenShoe?: (shoeId: string) => void;
-  // 진척 홈 노출(Slice D) — App 이 getProgression + 챌린지 진행을 읽기 전용 파생해
-  // 내려준다. 미주입이면 띠/타이틀을 통째로 숨겨 기존 홈과 100% 하위호환(표시 전용).
+  // 진척 홈 노출 — 홈 다이어트 후 남은 표면은 인사 옆 장착 타이틀 pill 하나.
+  // App 이 getProgression 파생값을 내려준다. 미주입이면 pill 숨김(표시 전용).
   progression?: HomeProgression | null;
-  // 랭크 칩/진척 띠 탭 → 진척 화면(App 의 기존 onOpenProgression 배선 재사용).
-  onOpenProgression?: () => void;
   // 당겨서 새로고침 — 서버 재fetch + pending flush 재시도(App 의 initUser/sync 재진입).
   // RN 내장 RefreshControl 만 사용한다(새 네이티브 0). 미주입이면 RefreshControl 을 달지
   // 않아 기존 홈과 100% 하위호환(표시 전용). 동기/비동기 모두 허용(완료 시 스피너 정지).
@@ -477,9 +463,14 @@ export default function HomeScreen({
   const select = (i: number) => { if (controlled) onSelect?.(i); else setInternalIdx(i); };
   const active = shoes[idx];
   const insets = useSafeAreaInsets();
+  // 앰비언트 조명 색 = 활성 신발의 컨디션 링 색(마모 기준). 신발이 없으면 액센트.
+  const ambientTint = active && active.max > 0
+    ? ringColor((active.used / active.max) * 100).solid
+    : ACCENT;
 
   return (
     <View style={[s.screen, { paddingTop: insets.top }]}>
+      <AmbientBackdrop tint={ambientTint} />
       <TopBar onAddShoe={onAddShoe} />
       {/* 콘텐츠는 스크롤되고 TabBar는 화면 바닥에 고정된다(신발 많을 때 탭바가 밀려 사라지던 문제 해결) */}
       {/* 당겨서 새로고침 — RN 내장 RefreshControl 만(새 네이티브 0). onRefresh 가 있을 때만 단다. */}
@@ -504,47 +495,43 @@ export default function HomeScreen({
       </View>
       {active ? (
         <>
-          {/* shoe-first 주인공: 오늘의 신발 풀폭 캐러셀(좌우 스와이프). 활성 카드가 히어로. */}
-          <View style={s.sectionRow}>
-            <SectionTitle style={s.sectionLabelInline}>오늘의 신발</SectionTitle>
-            {shoes.length > 1 && (
-              <Pressable onPress={() => onTab?.(1)} hitSlop={8} accessibilityRole="button" accessibilityLabel="신발 전체 보기">
-                <Text style={s.sectionMore}>전체 보기 ›</Text>
-              </Pressable>
-            )}
-          </View>
-          <ShoeCarousel shoes={shoes} activeIdx={idx} onSelect={select} unit={unit} onOpenShoe={onOpenShoe} onStart={onStart} />
-          {/* 부상위험 신호등(시그니처 #1+#2) — 신발 마모 × 훈련 부하 융합. 활성(히어로) 신발 기준.
-              탭하면 상세 코칭(InjuryRiskScreen). 히어로 바로 아래에 항상 한 줄(safe 면 초록 안심). */}
-          <View style={{ paddingHorizontal: SPACE.xl, marginTop: SPACE.lg }}>
-            <InjuryRiskCard
-              runs={runs}
-              shoe={active ? { used: active.used, max: active.max } : undefined}
-              shoeName={active ? (active.model || active.brand) : undefined}
-              onPress={onOpenInjuryRisk}
-            />
-          </View>
+          {/* shoe-first 주인공: 풀폭 캐러셀(좌우 스와이프). 활성 카드가 히어로.
+              '오늘의 신발' 섹션 라벨 행은 제거(헤더 다이어트, 폴리싱 2026-07-02) — 인사말이
+              묻고 카드가 바로 답하므로 라벨은 중복이었다. '전체 보기'도 신발 탭과 중복.
+              섹션들은 Rise 로 60ms 스태거 등장(폴리싱 — 홈이 '켜지는' 물리감). */}
+          <Rise>
+            <ShoeCarousel shoes={shoes} activeIdx={idx} onSelect={select} unit={unit} onOpenShoe={onOpenShoe} onStart={onStart} />
+          </Rise>
+          {/* 부상위험 시그널(시그니처 #1+#2) — 신발 마모 × 훈련 부하 융합. 활성(히어로) 신발 기준.
+              한 줄 시그널로 강등(MVP 홈 다이어트): 경고할 게 없으면(safe) 침묵 — 아무것도
+              렌더하지 않는다. caution/high 에서만 나타나고, 탭하면 상세 코칭(InjuryRiskScreen). */}
+          <Rise delay={60}>
+            <View style={{ paddingHorizontal: SPACE.xl, marginTop: SPACE.lg }}>
+              <InjuryRiskCard
+                variant="signal"
+                runs={runs}
+                todayISO={todayISO}
+                shoe={active ? { used: active.used, max: active.max } : undefined}
+                shoeName={active ? (active.model || active.brand) : undefined}
+                onPress={onOpenInjuryRisk}
+              />
+            </View>
+          </Rise>
           {/* 이번 주 러닝 — 내 활동 요약(거리·횟수·평균 페이스). 신발 상태(히어로)와 별개로
               '내가 얼마나 뛰었나'를 보여준다. 자세히 → 기록 탭. 신발 마모는 히어로/상세에. */}
-          <View style={[s.sectionRow, { marginTop: SPACE.lg }]}>
-            <SectionTitle style={s.sectionLabelInline}>이번 주 러닝</SectionTitle>
-            <Pressable onPress={() => onTab?.(2)} hitSlop={8} accessibilityRole="button" accessibilityLabel="기록 전체 보기">
-              <Text style={s.sectionMore}>전체 보기 ›</Text>
-            </Pressable>
-          </View>
-          <View style={{ paddingHorizontal: SPACE.xl }}>
-            <WeekCard week={week} unit={unit} weeklyGoalKm={weeklyGoalKm} streakDays={streakDays} />
-          </View>
-          {/* 체력 트렌드 — VO2max·오늘 컨디션·체력 추이(개인 대시보드). 뛰기 전 컨디션 확인용이라
-              홈에 둔다. 타임 있는 노력 런이 없으면 FitnessCard 가 null(여백도 안 생김). */}
-          <FitnessCard runs={runs} todayISO={todayISO} style={{ marginHorizontal: SPACE.xl, marginTop: SPACE.lg }} />
-          {/* 진척 띠(Slice D) — 로테이션 인사이트 위에 둔다(사용자 요청). 주입 시에만 노출.
-              탭 → 진척 화면(랭크·타이틀·업적). 미주입이면 통째로 숨겨 기존 홈과 동일. */}
-          {progression && (
-            <View style={s.progStripWrap}>
-              <ProgressionStrip prog={progression} onOpen={onOpenProgression} />
+          <Rise delay={120}>
+            <View style={[s.sectionRow, { marginTop: SPACE.lg }]}>
+              <SectionTitle style={s.sectionLabelInline}>이번 주 러닝</SectionTitle>
+              <Pressable onPress={() => onTab?.(2)} hitSlop={8} accessibilityRole="button" accessibilityLabel="기록 전체 보기">
+                <Text style={s.sectionMore}>전체 보기 ›</Text>
+              </Pressable>
             </View>
-          )}
+            <View style={{ paddingHorizontal: SPACE.xl }}>
+              <WeekCard week={week} unit={unit} weeklyGoalKm={weeklyGoalKm} streakDays={streakDays} />
+            </View>
+          </Rise>
+          {/* (체력 트렌드 FitnessCard → 기록 탭 인사이트로 이동, 진척 띠 → 마이탭으로
+              일원화 — MVP 홈 다이어트. 홈은 '오늘 신발 고르고 뛴다' 저니에 집중한다.) */}
           {/* 로테이션 인사이트(2켤레+에서만 채워짐, 비면 자동 숨김) */}
           <RotationInsightPanel rotation={rotation ?? []} onPickShoe={onPickShoe} />
           {/* 수익화 v1: 다음 러닝화 추천 노출 트리거 — Slice 6 교체 예측 기반(overdue/임박).
@@ -567,7 +554,8 @@ export default function HomeScreen({
 const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: BG },
   scroll: { flex: 1 },
-  scrollContent: { paddingBottom: SPACE.lg },
+  // 탭 독이 콘텐츠 위에 떠 있으므로(absolute 유리 독) 마지막 카드가 가리지 않게 여백 확보.
+  scrollContent: { paddingBottom: TABBAR_CLEARANCE },
   pressed: { opacity: 0.85, transform: [{ scale: 0.98 }] },
   row: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   baselineRow: { flexDirection: 'row', alignItems: 'flex-end' },
@@ -576,7 +564,9 @@ const s = StyleSheet.create({
   addBtn: { height: 34, paddingHorizontal: 14, borderRadius: RADIUS.pill, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.2), backgroundColor: CARD_HI, flexDirection: 'row', alignItems: 'center', gap: 6 },
   addBtnText: { color: T1, fontFamily: FONT, fontSize: 13, fontWeight: '600' },
 
-  greetWrap: { paddingHorizontal: GUTTER, paddingTop: 8 },
+  // paddingBottom 20: '오늘의 신발' 라벨 행을 걷어낸 뒤 인사말과 히어로 카드가 붙어
+  // 보인다는 피드백 — 라벨이 차지하던 만큼 숨 쉴 여백을 직접 준다.
+  greetWrap: { paddingHorizontal: GUTTER, paddingTop: 8, paddingBottom: SPACE.xl },
   date: { color: T3, fontFamily: FONT, fontSize: 13, letterSpacing: 0.2 },
   greet: { color: T1, fontFamily: FONT, fontSize: 20, fontWeight: '500', letterSpacing: -0.4, marginTop: 3, lineHeight: 26 },
 
@@ -588,21 +578,6 @@ const s = StyleSheet.create({
   equipPill: { flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start', marginTop: 10, backgroundColor: CARD_HI, borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 4 },
   equipPillTxt: { color: T2, fontFamily: FONT, fontSize: 12, fontWeight: '600', letterSpacing: 0.1 },
 
-  // 진척 띠 — 히어로 위 얇은 카드(주인공 신발을 밀어내지 않게 컴팩트). 칩 색만 티어색.
-  progStripWrap: { paddingHorizontal: GUTTER, paddingTop: SPACE.md, paddingBottom: SPACE.xs },
-  progStrip: { backgroundColor: CARD_DIM, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.07), paddingVertical: 12, paddingHorizontal: 14 },
-  progTopRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  rankChip: { flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: RADIUS.pill, borderWidth: StyleSheet.hairlineWidth, paddingHorizontal: 10, paddingVertical: 4 },
-  rankChipTxt: { fontFamily: DISPLAY, fontSize: 12, fontWeight: '700', letterSpacing: 0.3 },
-  achChip: { flexDirection: 'row', alignItems: 'center', gap: 5, minWidth: 0, flexShrink: 1 },
-  achChipTxt: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500', letterSpacing: -0.1 },
-  progChallenge: { marginTop: 12 },
-  progChallengeHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 },
-  progChallengeLabel: { flex: 1, color: T2, fontFamily: FONT, fontSize: 13, fontWeight: '600', letterSpacing: -0.1 },
-  progChallengeVal: { color: T1, fontFamily: DISPLAY, fontSize: 13, fontWeight: '700', letterSpacing: 0.1 },
-  progChallengeValT: { color: T3, fontFamily: FONT, fontSize: 11, fontWeight: '500' },
-  progBar: { height: 4, borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.08), marginTop: 7, overflow: 'hidden' },
-  progBarFill: { height: '100%', borderRadius: RADIUS.pill },
 
 
   goalCard: { backgroundColor: CARD_DIM, borderRadius: 18, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.06), padding: SPACE.md, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
@@ -612,7 +587,6 @@ const s = StyleSheet.create({
   weekTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   weekStreakTxt: { color: ACCENT, fontFamily: FONT, fontSize: 12, fontWeight: '700' },
   weekGoalTxt: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '500' },
-  weekGoalPct: { color: T1, fontFamily: FONT, fontSize: 13, fontWeight: '700' },
   streakChipOn: { backgroundColor: withAlpha(ACCENT, 0.14), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.4) },
   streakChipOff: { backgroundColor: CARD_HI },
   streakText: { fontFamily: FONT, fontSize: 12, fontWeight: '600', letterSpacing: 0.1 },
@@ -623,7 +597,7 @@ const s = StyleSheet.create({
   hero: { backgroundColor: HERO_BG, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.07), padding: 16 },
   heroActive: { borderColor: withAlpha(ACCENT, 0.55) },
   // 현재 상태 인사이트 카드(사용거리 | 교체예상) — 활성 신발 반영
-  insightCard: { backgroundColor: CARD_DIM, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.07), padding: SPACE.lg },
+  insightCard: { backgroundColor: CARD_DIM, borderRadius: RADIUS.lg, borderCurve: 'continuous', borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.07), padding: SPACE.lg },
   insightGrid: { flexDirection: 'row', alignItems: 'flex-start' },
   insightDivider: { width: StyleSheet.hairlineWidth, alignSelf: 'stretch', backgroundColor: withAlpha(T1, 0.08), marginHorizontal: SPACE.lg },
   insightLabel: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600', letterSpacing: -0.1 },
@@ -677,7 +651,6 @@ const s = StyleSheet.create({
   pageDots: { flexDirection: 'row', justifyContent: 'center', gap: 6, marginTop: SPACE.md },
   pageDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: withAlpha(T1, 0.22) },
   pageDotOn: { width: 16, backgroundColor: ACCENT },
-  swipeHint: { textAlign: 'center', color: T3, fontFamily: FONT, fontSize: 12, marginTop: 10 },
 
   // 홈 챌린지 카드
   chalWrap: { marginHorizontal: SPACE.xl, marginTop: SPACE.lg, backgroundColor: CARD_DIM, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.07), padding: SPACE.lg },

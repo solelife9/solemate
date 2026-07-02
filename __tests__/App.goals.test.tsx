@@ -1,12 +1,11 @@
 /**
- * App.tsx 홈 화면 진척 띠(ProgressionStrip) 통합 테스트.
+ * App.tsx 홈 화면 진척 노출 통합 테스트.
  *
- * [설계 변경] 홈 하단 챌린지 카드(home-challenges-card)는 제거되고, 챌린지는 히어로
- * 위 진척 띠(ProgressionStrip, testID=home-progression)로 일원화되었다
- * (HomeScreen.rn.tsx:547-548 "챌린지는 상단 진척 띠로 일원화 — 하단 중복 카드 제거").
- * 진척 띠는 progression 주입 시 항상 렌더되고, 활성 챌린지가 없으면 챌린지 줄
- * (home-challenge)만 숨긴다(HomeScreen.rn.tsx:100-112). 더 이상 "진행 중인 챌린지가
- * 없어요" 빈 상태 문구는 존재하지 않는다. 따라서 새 설계대로 검증을 갱신한다.
+ * [설계 변경 — MVP 홈 다이어트] 진척 띠(ProgressionStrip)는 홈에서 제거되었다.
+ * 진척(랭크·챌린지·업적)의 집은 마이탭/진척 화면이고, 홈에 남는 진척 표면은 인사 옆
+ * 장착 타이틀 pill(home-equipped-title) 하나뿐이다. 홈은 '오늘 신발 고르고 뛴다'
+ * 저니에 집중한다(HomeScreen.rn.tsx 홈 다이어트 주석 참조). 이 계약을 회귀 가드한다:
+ * 진척 띠/챌린지 줄이 홈에 다시 스며들면 즉시 깨진다.
  *
  * @format
  */
@@ -65,17 +64,13 @@ beforeEach(async () => {
   await AsyncStorage.clear();
 });
 
-test('홈 화면에 진척 띠(ProgressionStrip)가 렌더링된다', async () => {
-  // 챌린지는 하단 카드 대신 히어로 위 진척 띠로 일원화됨(HomeScreen.rn.tsx:547-548).
-  // progression 은 App 이 항상 주입하므로(App.tsx:1194,524) 띠가 렌더된다.
+test('홈 화면에 진척 띠(ProgressionStrip)가 없다 — 진척의 집은 마이탭', async () => {
   const {root} = await mount(SHOE, []);
   const strip = root.findAll((n: any) => n?.props?.testID === 'home-progression');
-  expect(strip.length).toBeGreaterThan(0);
+  expect(strip.length).toBe(0);
 });
 
-test('수락한 챌린지가 없으면 진척 띠의 챌린지 줄(home-challenge)은 숨겨진다', async () => {
-  // 빈 상태 문구는 폐지됨. 활성 챌린지가 없으면 진척 띠는 챌린지 줄만 숨긴다
-  // (HomeScreen.rn.tsx:100 — {ch && (...)}). 띠 자체는 랭크 칩으로 계속 보인다.
+test('홈 화면에 챌린지 줄(home-challenge)도 없다 — 주간 목표는 이번 주 카드가 담당', async () => {
   const {root} = await mount(SHOE, []);
   const challengeRow = root.findAll((n: any) => n?.props?.testID === 'home-challenge');
   expect(challengeRow.length).toBe(0);

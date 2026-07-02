@@ -27,7 +27,8 @@ type Props = {
 // 마모 4단계 톤 → theme 토큰(raw hex 0). 최상🟢/좋음🟡/교체고려🟠/교체권장🔴.
 const TONE_COLOR: Record<WearTierTone, string> = {good: GOOD, mid: WARN, warn: ACCENT, danger: DANGER};
 
-export function FuelGauge({remainLabel, unit, fillPct, usedLabel, maxLabel, replaceLabel, editSlot}: Props) {
+// usedLabel 은 배터리 방향 통일로 미사용(Props 호환 위해 타입엔 유지 — 호출부 무수정).
+export function FuelGauge({remainLabel, unit, fillPct, maxLabel, replaceLabel, editSlot}: Props) {
   const p = Math.max(0, Math.min(1, fillPct));
   // 색은 사용률(%) 기반 4단계 — condition(3단계)은 호환 위해 prop 으로 받되 색엔 안 씀.
   const tier = wearTier(p * 100);
@@ -40,13 +41,14 @@ export function FuelGauge({remainLabel, unit, fillPct, usedLabel, maxLabel, repl
       </View>
       {/* 교체까지 남은 거리(문장) — 목업 09 lead. 숫자만 굵게. */}
       <Text style={g.lead}>교체까지 약 <Text style={g.leadBold}>{remainLabel}{unit}</Text> 남았어요</Text>
-      {/* 수명 바 — 단색 중립 트랙 + 채움(양호=흰색·주의=주황·교체=빨강). 색 구간/마커 없음. */}
+      {/* 수명 바 = 남은 수명 게이지(배터리 방향 — 홈 링·락커 바와 통일, 사용자 결정).
+          새 신발 = 가득 참, 닳을수록 비워진다. 색은 마모 tier 그대로(양호=흰색·주의=주황·교체=빨강). */}
       <View style={[g.track, {marginTop: 14}]}>
-        <View style={[g.fill, {width: `${p * 100}%`, backgroundColor: tier.key === 'best' ? withAlpha(T1, 0.85) : cc}]} />
+        <View style={[g.fill, {width: `${(1 - p) * 100}%`, backgroundColor: tier.key === 'best' ? withAlpha(T1, 0.85) : cc}]} />
       </View>
       <View style={g.scale}>
-        <Text style={g.scaleTxt}>{usedLabel ?? '0'}{unit}</Text>
-        <Text style={g.scaleTxt}>{maxLabel ?? replaceLabel ?? ''}{maxLabel ? unit : ''}</Text>
+        <Text style={g.scaleTxt}>남은 수명 {Math.round((1 - p) * 100)}%</Text>
+        <Text style={g.scaleTxt}>총 {maxLabel ?? replaceLabel ?? ''}{maxLabel ? unit : ''}</Text>
       </View>
     </View>
   );

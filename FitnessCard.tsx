@@ -1,7 +1,7 @@
 // ============================================================================
 // FitnessCard.tsx — 체력 트렌드(VO2max + 오늘 컨디션 + 체력 추이) 카드.
-// '지금 내 몸 상태' 개인 대시보드라 홈 화면에 둔다(뛰기 전에 보는 정보). runs 에서
-// fitnessSummary 를 자체 계산하고, 타임 있는 노력 런이 없으면(vo2max 0) 숨긴다.
+// 기록 탭 인사이트 소속(MVP 홈 다이어트 — 분석은 찾아오는 곳에, 홈은 러닝 시작 저니에).
+// runs 에서 fitnessSummary 를 자체 계산하고, 타임 있는 노력 런이 없으면(vo2max 0) 숨긴다.
 // raw CTL/ATL/TSB 숫자는 일반 사용자가 이해하기 어려워 '오늘 컨디션 + 조언'으로 번역한다.
 // ============================================================================
 import React, { useMemo } from 'react';
@@ -79,7 +79,7 @@ export function FitnessCard({ runs = [], todayISO, style }: { runs?: any[]; toda
 }
 
 const st = StyleSheet.create({
-  card: { backgroundColor: CARD, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER, paddingHorizontal: 20, paddingTop: 14, paddingBottom: 18 },
+  card: { backgroundColor: CARD, borderRadius: RADIUS.lg, borderCurve: 'continuous', borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER, paddingHorizontal: 20, paddingTop: 14, paddingBottom: 18 },
   title: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600' },
   metricL: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500' },
 });

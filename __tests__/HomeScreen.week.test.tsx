@@ -51,7 +51,7 @@ describe('HomeScreen 이번 주 러닝 카드', () => {
     expect(textOf(byTestID(root, 'home-week-pace')[0])).toBe("5'42\"");
   });
 
-  test('주간 목표 + 스트릭이 주어지면 목표 진행(%)·연속 칩을 보여준다(P1 #7)', () => {
+  test('주간 목표 + 스트릭이 주어지면 목표 진행(바)·연속 칩을 보여준다(P1 #7)', () => {
     const root = render(
       <HomeScreen shoes={[SHOE]} activeIdx={0} onSelect={jest.fn()}
         week={{km: '15.0', runs: 3, pace: "5'40\""}} weeklyGoalKm={30} streakDays={5} />,
@@ -61,7 +61,15 @@ describe('HomeScreen 이번 주 러닝 카드', () => {
     const t = textOf(root);
     expect(t).toContain('5일 연속');
     expect(t).toContain('주간 목표 30km');
-    expect(t).toContain('50%'); // 15/30
+    // % 텍스트는 폐지(폴리싱 — 숫자 중복 제거). 진행률은 바의 width 가 시각으로 말한다.
+    expect(t).not.toContain('50%');
+    const bar = byTestID(root, 'home-week-goal-bar')[0];
+    expect(bar).toBeTruthy();
+    const w = (Array.isArray(bar.props.style)
+      ? Object.assign({}, ...bar.props.style.filter(Boolean))
+      : bar.props.style
+    ).width;
+    expect(w).toBe('50%'); // 15/30
   });
 
   test('주간 목표·스트릭이 0이면 숨긴다(하위호환)', () => {

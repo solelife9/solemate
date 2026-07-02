@@ -1739,9 +1739,11 @@ function Main(){
   }
 
   if(showProgression){
+    // 라이브 리더보드(HallOfFame) 진입은 MVP 에서 플래그 오프 — 유저 임계량 전의 빈
+    // 리더보드는 죽은 공간이다. onOpenHallOfFame 미주입이면 진척 화면이 버튼을 숨긴다.
+    // 재개봉 시 아래 한 줄만 복원: onOpenHallOfFame={()=>setShowHallOfFame(true)}
     return <ProgressionScreen runs={runs} shoes={shoes} profileName={profileName}
-      onBack={()=>setShowProgression(false)}
-      onOpenHallOfFame={()=>setShowHallOfFame(true)}/>;
+      onBack={()=>setShowProgression(false)}/>;
   }
 
   // 명예의 전당(은퇴 신발 박물관) 전체화면 — 영속된 은퇴 레코드를 그대로 전시한다
@@ -1779,7 +1781,6 @@ function Main(){
             forecasts={homeForecasts}
             onOpenShoe={(id)=>{setSelectedShoeId(id);setShoesDetailId(id);setTab(1);}}
             progression={homeProgression}
-            onOpenProgression={()=>setShowProgression(true)}
             onRefresh={refreshData} lastSyncAt={lastSyncAt}
             runs={runs} onOpenInjuryRisk={()=>setShowInjuryRisk(true)}
             weeklyGoalKm={goalWeeklyKm} streakDays={goalStreak} todayISO={today()}
@@ -1791,6 +1792,7 @@ function Main(){
             onAddRun={addManualRun} onEditRun={editRun} onDeleteRun={deleteRun}
             onRefresh={refreshData}
             age={age} sex={sex} restHR={restHR}
+            todayISO={today()}
           />
         )}
         {tab===1&&(
@@ -1828,8 +1830,7 @@ function Main(){
             cloudPort={cloudPortRef.current} onCloudMerged={onCloudMerged}
             onDeleteAccount={handleDeleteAccount}
             onOpenProgression={()=>setShowProgression(true)}
-            onOpenHallOfShoes={()=>setShowHallOfShoes(true)}
-            retiredCount={retiredRecords.length}
+            onOpenHallOfShoes={()=>setShowHallOfShoes(true)} retiredCount={retiredRecords.length}
             onOpenArchive={()=>setShowArchive(true)}
             archivedCount={archivedUiShoes.length}
           />

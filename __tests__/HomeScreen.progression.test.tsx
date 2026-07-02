@@ -1,23 +1,23 @@
 /**
- * HomeScreen — 진척 홈 노출(Slice D) 행동 테스트.
+ * HomeScreen — 진척 홈 노출 행동 테스트.
  *
- * 관찰 가능한 동작만 검증한다(내부 상태/에러 부재 아님):
- *  1) 랭크 칩이 주입한 tier 의 TIER_COLORS 값으로 칠해진다(하드코딩 금지).
- *  2) 장착 타이틀이 인사(닉네임) 옆에 렌더된다.
- *  3) 활성 챌린지 진행이 주입한 current/target 을 그대로 보여주고 막대 폭이 pct 를 반영한다.
- *  4) 가장 최근 달성 업적이 렌더된다.
- *  5) 진척 칩/띠를 탭하면 onOpenProgression 이 호출된다.
- *  6) shoe-first 히어로(home-hero)가 여전히 렌더된다(제거/퇴행 없음).
+ * [설계 변경 — MVP 홈 다이어트] 진척 띠(ProgressionStrip: 랭크 칩·챌린지 진행·최근
+ * 업적)는 홈에서 제거되었다. 진척의 집은 마이탭/진척 화면이고, 홈에 남는 진척 표면은
+ * 인사 옆 '장착 타이틀 pill'(home-equipped-title) 하나뿐이다. 홈은 '오늘 신발 고르고
+ * 뛴다' 저니에 집중한다. 이 계약을 회귀 가드한다:
+ *  1) progression 을 주입해도 진척 띠/랭크 칩/챌린지 줄/업적 칩은 렌더되지 않는다.
+ *  2) 장착 타이틀 pill 은 계속 인사 옆에 렌더된다.
+ *  3) shoe-first 히어로(home-hero)는 그대로다(퇴행 없음).
+ *  4) progression 미주입 시 pill 도 숨겨 하위호환된다.
  *
  * props-driven · 네트워크 없음 · jest.setup 목 · AsyncStorage.clear() per test.
  * @format
  */
 import React from 'react';
-import {StyleSheet} from 'react-native';
 import ReactTestRenderer, {act} from 'react-test-renderer';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import HomeScreen, {HomeProgression} from '../HomeScreen.rn';
-import {Shoe, TIER_COLORS, withAlpha} from '../theme';
+import {Shoe} from '../theme';
 
 beforeEach(async () => {
   await AsyncStorage.clear();
@@ -42,13 +42,6 @@ function textOf(node: ReactTestRenderer.ReactTestInstance): string {
     )
     .join(' ');
 }
-function pressByLabel(root: ReactTestRenderer.ReactTestInstance, label: string) {
-  const hits = root.findAll(
-    (n: any) => n && n.props && typeof n.props.onPress === 'function' && n.props.accessibilityLabel === label,
-  );
-  if (!hits.length) throw new Error(`no pressable labelled "${label}"`);
-  return hits[0];
-}
 
 const SHOES: Shoe[] = [
   {id: 'a', brand: 'Nike', model: 'Pegasus 41', used: 100, max: 700, condition: '양호'},
@@ -63,21 +56,18 @@ const PROG: HomeProgression = {
   achievement: {name: '첫 은퇴'},
 };
 
-describe('홈 진척 띠 — 표면', () => {
-  test('랭크 칩이 주입한 tier 의 TIER_COLORS 값으로 칠해진다', () => {
+describe('홈 진척 노출 — 다이어트 후 계약', () => {
+  test('progression 을 주입해도 진척 띠/랭크 칩/챌린지 줄/업적 칩은 홈에 없다', () => {
     const root = render(
       <HomeScreen shoes={SHOES} activeIdx={0} onSelect={jest.fn()} progression={PROG} />,
     ).root;
-    const chipText = byTestID(root, 'home-rank-chip-text')[0];
-    expect(chipText).toBeTruthy();
-    const color = (StyleSheet.flatten(chipText.props.style) as any).color;
-    expect(color).toBe(TIER_COLORS.gold);
-    // 칩에 티어명만 표시된다(점수 제거 — 색+등급명으로 직관화).
-    expect(textOf(byTestID(root, 'home-rank-chip')[0])).toContain('Gold');
-    expect(textOf(byTestID(root, 'home-rank-chip')[0])).not.toContain('62');
+    expect(byTestID(root, 'home-progression').length).toBe(0);
+    expect(byTestID(root, 'home-rank-chip').length).toBe(0);
+    expect(byTestID(root, 'home-challenge').length).toBe(0);
+    expect(byTestID(root, 'home-recent-achievement').length).toBe(0);
   });
 
-  test('장착 타이틀이 인사(닉네임) 옆에 렌더된다', () => {
+  test('장착 타이틀 pill 은 인사 옆에 계속 렌더된다', () => {
     const root = render(
       <HomeScreen shoes={SHOES} activeIdx={0} onSelect={jest.fn()} progression={PROG} />,
     ).root;
@@ -86,74 +76,17 @@ describe('홈 진척 띠 — 표면', () => {
     expect(textOf(pill[0])).toContain('꾸준함의 달인');
   });
 
-  test('활성 챌린지 진행이 주입한 current/target 을 보여주고 막대 폭이 pct 를 반영한다', () => {
-    const root = render(
-      <HomeScreen shoes={SHOES} activeIdx={0} onSelect={jest.fn()} progression={PROG} />,
-    ).root;
-    const ch = byTestID(root, 'home-challenge')[0];
-    expect(ch).toBeTruthy();
-    expect(textOf(ch)).toContain('이번 달 100km');
-    expect(textOf(ch)).toContain('42');
-    expect(textOf(ch)).toContain('100km');
-    // 막대 폭 = round(pct*100)% = 42%
-    const fill = byTestID(root, 'home-challenge-bar')[0];
-    const w = (StyleSheet.flatten(fill.props.style) as any).width;
-    expect(w).toBe('42%');
-  });
-
-  test('가장 최근 달성 업적이 렌더된다', () => {
-    const root = render(
-      <HomeScreen shoes={SHOES} activeIdx={0} onSelect={jest.fn()} progression={PROG} />,
-    ).root;
-    const ach = byTestID(root, 'home-recent-achievement');
-    expect(ach.length).toBeGreaterThanOrEqual(1);
-    expect(textOf(ach[0])).toContain('첫 은퇴');
-  });
-
-  test('진척 띠를 탭하면 onOpenProgression 이 호출된다', () => {
-    const onOpenProgression = jest.fn();
-    const root = render(
-      <HomeScreen
-        shoes={SHOES}
-        activeIdx={0}
-        onSelect={jest.fn()}
-        progression={PROG}
-        onOpenProgression={onOpenProgression}
-      />,
-    ).root;
-    act(() => {
-      pressByLabel(root, '진척 보기').props.onPress();
-    });
-    expect(onOpenProgression).toHaveBeenCalledTimes(1);
-  });
-
   test('shoe-first 히어로(home-hero)가 여전히 렌더된다(퇴행 없음)', () => {
     const root = render(
       <HomeScreen shoes={SHOES} activeIdx={0} onSelect={jest.fn()} progression={PROG} />,
     ).root;
-    // 활성 카드 히어로 + 선택 신발 모델명이 그대로 노출된다.
     expect(byTestID(root, 'home-hero').length).toBeGreaterThanOrEqual(1);
     expect(textOf(root)).toContain('Pegasus 41');
   });
 
-  test('progression 미주입 시 진척 띠/타이틀을 숨겨 기존 홈과 하위호환된다', () => {
+  test('progression 미주입 시 장착 타이틀 pill 도 숨겨 하위호환된다', () => {
     const root = render(<HomeScreen shoes={SHOES} activeIdx={0} onSelect={jest.fn()} />).root;
-    expect(byTestID(root, 'home-progression').length).toBe(0);
     expect(byTestID(root, 'home-equipped-title').length).toBe(0);
-    // 히어로는 그대로.
     expect(byTestID(root, 'home-hero').length).toBeGreaterThanOrEqual(1);
-  });
-});
-
-// withAlpha 가 칩 배경/테두리에도 같은 티어색을 파생하는지(토큰 단일출처) 가벼운 확인.
-describe('홈 랭크 칩 — 티어색 파생', () => {
-  test('칩 배경/테두리가 TIER_COLORS[tier] 파생색이다', () => {
-    const root = render(
-      <HomeScreen shoes={SHOES} activeIdx={0} onSelect={jest.fn()} progression={PROG} />,
-    ).root;
-    const chip = byTestID(root, 'home-rank-chip')[0];
-    const st = StyleSheet.flatten(chip.props.style) as any;
-    expect(st.backgroundColor).toBe(withAlpha(TIER_COLORS.gold, 0.16));
-    expect(st.borderColor).toBe(withAlpha(TIER_COLORS.gold, 0.5));
   });
 });

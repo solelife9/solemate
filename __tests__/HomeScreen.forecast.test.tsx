@@ -1,7 +1,7 @@
 /**
  * HomeScreen.rn.tsx — 홈 신발 카드(링 게이지 디자인) + 교체 예측 연동 행동 테스트.
  *
- * 새 디자인(핸드오프): '오늘의 신발' 카드는 수명 링(소진율·남은거리)로 마모 상태를 보이고,
+ * 새 디자인(핸드오프): '오늘의 신발' 카드는 수명 링(남은 수명 %·남은거리)로 상태를 보이고,
  * 예전의 ETA 한 줄("약 N주 후 교체 권장 · 예상 …")은 카드에서 뺐다(사진 정합, 상세로 이관).
  * 대신 forecast 가 overdue 면 '다음 러닝화' 추천이 뜨는 흐름은 유지된다.
  *
@@ -32,10 +32,11 @@ function render(el: React.ReactElement) {
 const SHOE: Shoe = {id: 'a', brand: 'Nike', model: 'Pegasus 41', used: 300, max: 700, condition: '양호'};
 
 describe('HomeScreen 신발 카드(링 게이지)', () => {
-  test('수명 링: 소진율(%)과 남은 거리를 보여준다', () => {
+  test('수명 링: 남은 수명(%)과 남은 거리를 보여준다 — 배터리 방향 통일', () => {
     const txt = textOf(render(<HomeScreen shoes={[SHOE]} />).root);
-    expect(txt).toContain('수명 소진율');
-    expect(txt).toContain('43');        // 300/700 ≈ 43%
+    expect(txt).toContain('남은 수명');
+    expect(txt).not.toContain('소진율'); // 소진(↑) 표기는 사용자 노출에서 폐지
+    expect(txt).toContain('57');        // 300/700 사용 → 남은 수명 57%
     expect(txt).toContain('400km 남음'); // remaining
     expect(txt).toContain('러닝 시작');
   });

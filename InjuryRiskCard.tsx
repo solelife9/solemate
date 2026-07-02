@@ -44,6 +44,11 @@ export interface InjuryRiskCardProps {
   todayISO?: string;
   /** 지정 시 카드 전체가 눌러져 상세(InjuryRiskDetail)를 열 수 있다. */
   onPress?: () => void;
+  /**
+   * 'card'(기본) = 분해 칩까지 있는 풀 카드. 'signal' = 홈용 한 줄 시그널 —
+   * 경고할 게 없으면(safe) 아무것도 렌더하지 않는다(침묵이 기본인 미니멀 홈 계약).
+   */
+  variant?: 'card' | 'signal';
 }
 
 function Chip({
@@ -59,7 +64,7 @@ function Chip({
   );
 }
 
-export default function InjuryRiskCard({ runs, shoe, shoeName, todayISO, onPress }: InjuryRiskCardProps) {
+export default function InjuryRiskCard({ runs, shoe, shoeName, todayISO, onPress, variant = 'card' }: InjuryRiskCardProps) {
   const today = todayISO || todayLocalISO();
   const risk = React.useMemo(
     () => assessCombinedRisk({ runs: runs || [], shoe, todayISO: today }),
@@ -68,6 +73,27 @@ export default function InjuryRiskCard({ runs, shoe, shoeName, todayISO, onPress
 
   const color = LEVEL_COLOR[risk.level];
   const isDriven = (d: RiskDriver) => risk.drivers.includes(d);
+
+  // 한 줄 시그널(홈) — 경고할 게 없으면 침묵. caution/high 에서만 점+메시지 한 줄.
+  if (variant === 'signal') {
+    if (risk.level === 'safe') return null;
+    const SignalHost: any = onPress ? Pressable : View;
+    const signalPress = onPress
+      ? { onPress, accessibilityRole: 'button' as const, accessibilityHint: '부상위험 상세와 코칭 보기' }
+      : { accessibilityRole: 'summary' as const };
+    return (
+      <SignalHost
+        style={[styles.signal, { backgroundColor: withAlpha(color, 0.1), borderColor: withAlpha(color, 0.35) }]}
+        testID={`injury-risk-card-${risk.level}`}
+        accessibilityLabel={`${RISK_LABEL[risk.level]}. ${risk.message}`}
+        {...signalPress}
+      >
+        <View style={[styles.dot, { backgroundColor: color }]} />
+        <Text style={styles.signalMsg} numberOfLines={1}>{risk.message}</Text>
+        {onPress ? <Text style={styles.more}>자세히 ›</Text> : null}
+      </SignalHost>
+    );
+  }
 
   // 분해 칩 값 — 'ACWR'/원시 비율 대신 평어로 노출(사용자는 약자를 모른다).
   const loadWord = LOAD_WORD[risk.load.level];        // 가벼움/안정적/늘어남/급증
@@ -119,6 +145,7 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: CARD,
     borderRadius: RADIUS.lg,
+    borderCurve: 'continuous',
     borderWidth: 1,
     padding: SPACE.lg,
     gap: SPACE.md,
@@ -144,4 +171,16 @@ const styles = StyleSheet.create({
   chipValue: { ...TYPE.heading, color: T1 },
   chipSub: { ...TYPE.caption, color: T3 },
   disclaimer: { ...TYPE.caption, color: T4 },
+  // 한 줄 시그널(홈) — 카드가 아니라 옅은 틴트 띠. 색은 레벨 색에서 파생.
+  signal: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACE.md,
+    paddingVertical: SPACE.md,
+    paddingHorizontal: SPACE.lg,
+    borderRadius: RADIUS.md,
+    borderCurve: 'continuous',
+    borderWidth: 1,
+  },
+  signalMsg: { ...TYPE.body, color: T1, flex: 1 },
 });

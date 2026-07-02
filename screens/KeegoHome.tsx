@@ -4,26 +4,27 @@
 //
 // 프리미엄 표면은 '블러'가 아니라 '구조'로 낸다(중요):
 //   · 카드 = SVG 세로 그라데이션 표면(위가 밝은 상승감) + 컨디션 색 상단 글로우
-//   · 테두리 = 전체 라인이 아니라 좌상·우하 '모서리만' 빛나는 하이라이트(애플 유리 엣지)
+//   · 테두리 = 위에서 빛을 받은 유리 엣지(primitives GlassEdge — 상단 하이라이트가
+//     코너를 감고 자연 소멸, 하단은 옅은 바닥 반사광)
 //   · 링 트랙 = 컨디션 색 옅은 tint → 0%(새 신발)도 죽은 회색이 아니라 컨디션 halo
 // backdrop-blur 는 검은 배경 위에선 번질 색이 없어 밋밋해지므로 쓰지 않는다.
-// (진짜 유리를 원하면 하단 GlassEdge 아래 주석의 BlurView 옵션 참고.)
 //
 // 의존성: react-native-svg 만 필요. 색·타이포·간격은 theme 토큰, 링 연속색은 lib/ringColor.
 
-import React, {useRef, useState, useCallback} from 'react';
+import React, {useRef, useState, useCallback, useEffect} from 'react';
 import {
-  View, Text, Pressable, StyleSheet, Animated, useWindowDimensions,
-  type NativeSyntheticEvent, type NativeScrollEvent, type LayoutChangeEvent,
+  View, Text, Pressable, StyleSheet, Animated, Easing, useWindowDimensions,
+  type NativeSyntheticEvent, type NativeScrollEvent,
 } from 'react-native';
 import Svg, {
   Circle, Rect, Defs, Stop,
   LinearGradient as SvgLinear, RadialGradient as SvgRadial,
 } from 'react-native-svg';
 import {
-  BG, CARD, HERO_BG, T1, T3, WARN, DANGER, FONT, DISPLAY, TYPE, RADIUS, GUTTER, withAlpha,
+  BG, CARD, HERO_BG, T1, T2, T3, WARN, DANGER, FONT, DISPLAY, TYPE, RADIUS, GUTTER, withAlpha,
   type Shoe,
 } from '../theme';
+import {GlassEdge} from '../primitives';
 import {shoeHealth, wearTier, conditionForPercent, type RunLike, KEEP_GOING_REPLACE} from '../lib/shoe';
 import {ringColor} from '../lib/ringColor';
 import {displayNum, type Unit} from '../lib/units';
@@ -42,6 +43,9 @@ const CARD_RADIUS = 34;
 const RING = 172;
 const RING_R = 76;
 const RING_C = 2 * Math.PI * RING_R;
+
+// 링 아크 스윕용 — SVG Circle 의 strokeDashoffset 을 Animated 로 구동한다.
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 export default function KeegoHome({shoes, runs = [], onStartRun, onOpenShoe, onOpenProfile}: Props) {
   const {width} = useWindowDimensions();
@@ -131,6 +135,10 @@ export function ShoeCard({
 }) {
   const h = shoeHealth(shoe as any, runs);
   const pct = Math.round(h.percentUsed);
+  // 사용자 노출 % = '남은 수명'(배터리 방향, 100→0). 소진율(↑)과 "남음" 카피가 뒤섞여
+  // 읽기 마찰이 있었다 — 링·%·카피를 전부 '남음' 한 방향으로 통일(사용자 결정).
+  // 색/컨디션 판정은 계속 마모(percentUsed) 기준(경고 임계값의 단일 진실원).
+  const remainPct = Math.max(0, 100 - pct);
   const rc = ringColor(h.percentUsed);
   const tier = wearTier(h.percentUsed);
   // 거리는 사용자 단위(km/mi)로 표시한다 — 저장은 km, 표기만 환산(displayNum).
@@ -142,7 +150,31 @@ export function ShoeCard({
   const scale = scrollX.interpolate({inputRange, outputRange: [0.93, 1, 0.93], extrapolate: 'clamp'});
   const opacity = scrollX.interpolate({inputRange, outputRange: [0.5, 1, 0.5], extrapolate: 'clamp'});
 
-  const dash = RING_C * (1 - Math.min(pct, 100) / 100);
+  // 링 아크 = 남은 수명(배터리): 새 신발 = 가득 찬 링, 닳을수록 비워진다.
+  // 마운트 시 0→현재%로 차오르는 스윕 — 정적 게이지에 물리감을 준다. 1400ms 로 느긋하게
+  // (800ms 는 급하다는 사용자 피드백 — 차오르는 과정 자체가 보여야 멋이 산다).
+  // strokeDashoffset 은 네이티브 드라이버 미지원 prop 이라 JS 드라이버(false)로 구동.
+  const sweep = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const anim = Animated.timing(sweep, {
+      toValue: Math.min(remainPct, 100), duration: 1400,
+      easing: Easing.out(Easing.cubic), useNativeDriver: false,
+    });
+    anim.start();
+    return () => anim.stop(); // 언마운트 시 타이머 정리(테스트/화면전환 누수 방지)
+  }, [sweep, remainPct]);
+  const dash = sweep.interpolate({inputRange: [0, 100], outputRange: [RING_C, 0]});
+  // 링 중앙 숫자 — 스윕에 맞춰 살짝 떠오르며 페이드인.
+  const centerIn = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const anim = Animated.timing(centerIn, {
+      toValue: 1, duration: 500, delay: 150,
+      // JS 드라이버 — 링 스윕과 동일(테스트 렌더러 호환 + 코드베이스 관례).
+      easing: Easing.out(Easing.cubic), useNativeDriver: false,
+    });
+    anim.start();
+    return () => anim.stop();
+  }, [centerIn]);
 
   return (
     <Animated.View style={{width, transform: [{scale}], opacity}}>
@@ -162,7 +194,9 @@ export function ShoeCard({
               <Text style={styles.cardBrand}>{shoe.brand} · {catOf(shoe)}</Text>
               <Text style={styles.cardModel} numberOfLines={1}>{shoe.model}</Text>
             </View>
-            <View style={[styles.condChip, {borderColor: withAlpha(rc.solid, 0.45)}]} testID={`home-cond-${tier.key}`}>
+            {/* 컨디션 = 점 + 텍스트만(칩 박스 제거 — 배지보다 조용한 표기, 폴리싱 2026-07-02).
+                색은 점에만, 텍스트는 무채색. testID 는 기존 계약 유지. */}
+            <View style={styles.condChip} testID={`home-cond-${tier.key}`}>
               <View style={[styles.condDot, {backgroundColor: rc.to}]} />
               <Text style={styles.condLabel}>{tier.label}</Text>
             </View>
@@ -182,8 +216,8 @@ export function ShoeCard({
                 cx={RING / 2} cy={RING / 2} r={RING_R}
                 stroke={withAlpha(rc.solid, 0.16)} strokeWidth={14} fill="none"
               />
-              {/* 진행 아크: 비비드 그라데이션 */}
-              <Circle
+              {/* 진행 아크: 비비드 그라데이션 — 마운트 시 0→현재%로 차오른다 */}
+              <AnimatedCircle
                 cx={RING / 2} cy={RING / 2} r={RING_R}
                 stroke={`url(#ring-${i})`} strokeWidth={14} fill="none"
                 strokeLinecap="round"
@@ -192,13 +226,16 @@ export function ShoeCard({
                 transform={`rotate(-90 ${RING / 2} ${RING / 2})`}
               />
             </Svg>
-            <View style={styles.ringCenter}>
-              <Text style={styles.ringPctSub}>수명 소진율</Text>
+            <Animated.View style={[styles.ringCenter, {
+              opacity: centerIn,
+              transform: [{translateY: centerIn.interpolate({inputRange: [0, 1], outputRange: [8, 0]})}],
+            }]}>
+              <Text style={styles.ringPctSub}>남은 수명</Text>
               <View style={styles.ringPctRow}>
-                <Text style={styles.ringPct}>{pct}</Text>
+                <Text style={styles.ringPct}>{remainPct}</Text>
                 <Text style={styles.ringPctUnit}>%</Text>
               </View>
-            </View>
+            </Animated.View>
           </View>
 
           {/* 사용 / 남은 거리 */}
@@ -230,7 +267,8 @@ export function ShoeCard({
 // ─── 가디언 ────────────────────────────────────────────────────────
 function Guardian({danger, pct}: {danger: boolean; pct: number}) {
   const color = danger ? DANGER : WARN;
-  const label = danger ? KEEP_GOING_REPLACE : `수명 ${Math.round(pct)}% · 슬슬 교체를 준비할 때`;
+  // pct 는 마모(percentUsed) — 사용자 노출은 '남은 수명' 방향으로 환산(표기 통일).
+  const label = danger ? KEEP_GOING_REPLACE : `남은 수명 ${Math.max(0, 100 - Math.round(pct))}% · 슬슬 교체를 준비할 때`;
   return (
     <View style={[styles.guardian, {backgroundColor: withAlpha(color, 0.12), borderColor: withAlpha(color, 0.4)}]}>
       <View style={[styles.guardDot, {backgroundColor: color}]} />
@@ -264,41 +302,8 @@ function SurfaceBackground({id, glow}: {id: string; glow: string}) {
 }
 
 // ─── 모서리 하이라이트 보더(애플 유리 엣지) ─────────────────────────
-// 전체 라인이 아니라 좌상·우하 모서리만 밝고 옆면은 사라지는 대각 그라데이션 스트로크.
-// react-native-svg 의 stroke gradient 로 구현(전체 border 처럼 밋밋하지 않게).
-// ── 진짜 유리(BlurView)를 원하면: 이 컴포넌트 대신 부모를
-//    <BlurView blurType="dark" blurAmount={24} style={StyleSheet.absoluteFill}/> 로 감싸고
-//    카드 뒤(부모)에 컨디션 색 글로우 뷰를 깔면 됨(단, 검은 배경 단독이면 효과 약함).
-function GlassEdge({id, radius}: {id: string; radius: number}) {
-  const [s, setS] = useState({w: 0, h: 0});
-  const sw = 1.4;
-  const onLayout = (e: LayoutChangeEvent) => {
-    const {width, height} = e.nativeEvent.layout;
-    setS({w: width, h: height});
-  };
-  return (
-    <View pointerEvents="none" style={StyleSheet.absoluteFill} onLayout={onLayout}>
-      {s.w > 1 ? (
-        <Svg width={s.w} height={s.h}>
-          <Defs>
-            <SvgLinear id={id} x1="0" y1="0" x2="1" y2="1">
-              <Stop offset="0" stopColor={T1} stopOpacity={0.72} />
-              <Stop offset="0.32" stopColor={T1} stopOpacity={0.06} />
-              <Stop offset="0.55" stopColor={T1} stopOpacity={0} />
-              <Stop offset="0.72" stopColor={T1} stopOpacity={0.07} />
-              <Stop offset="1" stopColor={T1} stopOpacity={0.55} />
-            </SvgLinear>
-          </Defs>
-          <Rect
-            x={sw / 2} y={sw / 2} width={s.w - sw} height={s.h - sw}
-            rx={radius} ry={radius} fill="none"
-            stroke={`url(#${id})`} strokeWidth={sw}
-          />
-        </Svg>
-      ) : null}
-    </View>
-  );
-}
+// GlassEdge 는 primitives 로 승격했다(단일 광원 모델: 상단 코어+블룸, 옅은 형태 림,
+// 하단 바닥 반사광). 홈 카드·러닝 시작 버튼·전역 CTA(Button)가 같은 빛을 공유한다.
 
 // 카테고리 라벨(카본/데일리 등)이 Shoe 에 없을 수 있어 안전 폴백.
 function catOf(shoe: any): string {
@@ -325,7 +330,7 @@ const styles = StyleSheet.create({
   title: {fontFamily: FONT, fontSize: 26, fontWeight: '700', letterSpacing: -0.7, color: T1, marginTop: 3},
 
   card: {
-    borderRadius: CARD_RADIUS, overflow: 'hidden', backgroundColor: CARD,
+    borderRadius: CARD_RADIUS, borderCurve: 'continuous', overflow: 'hidden', backgroundColor: CARD,
     // 카드가 배경에서 떠 보이도록 그림자(iOS/안드 공통 근사).
     shadowColor: '#000', shadowOpacity: 0.5, shadowRadius: 24, shadowOffset: {width: 0, height: 18}, elevation: 12,
   },
@@ -333,13 +338,10 @@ const styles = StyleSheet.create({
   cardTop: {flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10},
   cardBrand: {fontFamily: FONT, fontSize: 12, fontWeight: '600', letterSpacing: 1.2, color: withAlpha(T1, 0.55)},
   cardModel: {fontFamily: FONT, fontSize: 24, fontWeight: '700', letterSpacing: -0.6, color: T1, marginTop: 4},
-  condChip: {
-    flexDirection: 'row', alignItems: 'center', gap: 7, flexShrink: 0,
-    paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999,
-    backgroundColor: withAlpha(T1, 0.06), borderWidth: 1,
-  },
+  // 컨디션 표기 — 칩 박스 없이 점+텍스트(점만 컨디션색, 텍스트는 밝은 무채색).
+  condChip: {flexDirection: 'row', alignItems: 'center', gap: 7, flexShrink: 0, paddingVertical: 6},
   condDot: {width: 7, height: 7, borderRadius: 999},
-  condLabel: {fontFamily: FONT, fontSize: 13, fontWeight: '600', color: T1},
+  condLabel: {fontFamily: FONT, fontSize: 13, fontWeight: '600', color: T2},
 
   ringWrap: {width: RING, height: RING, alignSelf: 'center', marginTop: 20, alignItems: 'center', justifyContent: 'center'},
   ringCenter: {position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center'},
@@ -354,7 +356,7 @@ const styles = StyleSheet.create({
   kmSep: {width: 3, height: 3, borderRadius: 999, backgroundColor: withAlpha(T1, 0.28)},
 
   runBtn: {
-    height: 54, borderRadius: RADIUS.btn, marginTop: 20, overflow: 'hidden',
+    height: 54, borderRadius: RADIUS.btn, borderCurve: 'continuous', marginTop: 20, overflow: 'hidden',
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9,
     backgroundColor: withAlpha(T1, 0.1),
   },
