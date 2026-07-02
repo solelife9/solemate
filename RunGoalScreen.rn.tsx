@@ -13,7 +13,7 @@
 
 import React, { useMemo, useRef, useState, useCallback } from 'react';
 import {
-  View, Text, Pressable, ScrollView, StyleSheet,
+  View, Text, Pressable, ScrollView, StyleSheet, Modal,
   LayoutChangeEvent, NativeSyntheticEvent, NativeScrollEvent, StatusBar,
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
@@ -23,13 +23,13 @@ import Svg, { Path } from 'react-native-svg';
 // (시각 동등: 다크+오렌지 유지)
 import {
   BG, CARD, HERO_BG, ACCENT, GOOD, WARN, DANGER, T1, T2, T3, T4, SEP, CARD_BORDER,
-  FONT, DISPLAY, RADIUS, withAlpha,
+  FONT, DISPLAY, RADIUS, SCRIM, withAlpha, type Shoe,
 } from './theme';
 // lib/haptics 배선: '러닝 시작' CTA(런 시작) → tap.
 import { tap } from './lib/haptics';
 // CTA 는 앱 전역 단일 Button 프리미티브(그라데이션 GRAD_TOP/BOT·글로우·radius 토큰).
 // 모드 탭 스트립은 SegmentedControl 단일 프리미티브(accentTint variant).
-import { Button, SegmentedControl } from './primitives';
+import { Button, SegmentedControl, conditionColor } from './primitives';
 import SpeedPlanPanel from './SpeedPlanPanel';
 import { buildPacePlan } from './lib/pacePlan';
 
@@ -61,12 +61,21 @@ const CFG: Record<'km' | 'min', { min: number; max: number; step: number; major:
 
 export default function RunGoalScreen({
   shoeBrand = 'NIKE', shoeLabel = 'Alphafly 3', shoeCondition = '양호', remainKm = 382,
+  shoes, selectedShoeId, onChangeShoe,
   onBack, onStart,
 }: {
   shoeBrand?: string; shoeLabel?: string; shoeCondition?: '양호' | '주의' | '교체'; remainKm?: number;
+  /** 활성 신발 목록 — 주어지고 2켤레 이상이면 신발 행 탭으로 여기서 바로 바꿀 수 있다
+      (런 시작 = 선택 확정 지점이므로 이 화면이 마지막 교정 기회). 미주입이면 표시 전용. */
+  shoes?: Shoe[];
+  selectedShoeId?: string | null;
+  onChangeShoe?: (id: string) => void;
   onBack?: () => void; onStart?: (goal: RunGoal) => void;
 }) {
   const [mode, setMode] = useState<Mode>('km');
+  // 신발 전환 시트 — 신발 행(하단) 탭으로 연다.
+  const [shoePickerOpen, setShoePickerOpen] = useState(false);
+  const switchable = !!onChangeShoe && !!shoes && shoes.filter(sh => sh.id).length > 1;
   const [val, setVal] = useState<number>(CFG.km.def);
   const [vpW, setVpW] = useState(0);
   const rulerRef = useRef<ScrollView>(null);
@@ -207,9 +216,14 @@ export default function RunGoalScreen({
         )}
       </View>
 
-      {/* footer */}
+      {/* footer — 신발 행: 2켤레 이상이면 탭해서 여기서 바로 신발을 바꾼다(마지막 교정 기회).
+          1켤레거나 미배선이면 표시 전용(화살표도 숨김 — 죽은 어포던스 금지). */}
       <View style={s.foot}>
-        <Pressable style={s.shoeSel} accessibilityRole="button" accessibilityLabel={`신발 선택: ${shoeBrand} ${shoeLabel}, 상태 ${shoeCondition}${remainKm != null ? `, 남은 수명 ${Math.round(remainKm)}킬로미터` : ''}`}>
+        <Pressable
+          style={s.shoeSel}
+          onPress={switchable ? () => setShoePickerOpen(true) : undefined}
+          accessibilityRole="button"
+          accessibilityLabel={`신발 선택: ${shoeBrand} ${shoeLabel}, 상태 ${shoeCondition}${remainKm != null ? `, 남은 수명 ${Math.round(remainKm)}킬로미터` : ''}${switchable ? ', 탭하면 다른 신발로 변경' : ''}`}>
           <View style={s.shoeThumb}><ShoeGlyph color={T2} size={24} /></View>
           <View style={{ flex: 1, minWidth: 0 }}>
             <Text style={s.shoeBrand}>{shoeBrand}</Text>
@@ -219,8 +233,40 @@ export default function RunGoalScreen({
               <Text style={s.shoeCondText}>{shoeCondition}{remainKm != null ? ` · 남은 수명 ${Math.round(remainKm)}km` : ''}</Text>
             </View>
           </View>
-          <Icon name="forward" size={20} color={T4} />
+          {switchable && <Icon name="forward" size={20} color={T4} />}
         </Pressable>
+
+        {/* 신발 전환 시트 */}
+        <Modal visible={shoePickerOpen} transparent animationType="slide" onRequestClose={() => setShoePickerOpen(false)}>
+          <Pressable style={{ flex: 1, backgroundColor: SCRIM }} onPress={() => setShoePickerOpen(false)} accessibilityRole="button" accessibilityLabel="신발 선택 닫기" />
+          <View style={s.pickerSheet}>
+            <Text style={s.pickerTitle}>오늘 신을 신발</Text>
+            {(shoes ?? []).filter(sh => sh.id).map(sh => {
+              const on = sh.id === selectedShoeId;
+              const remain = Math.max(0, sh.max - sh.used);
+              return (
+                <Pressable
+                  key={sh.id}
+                  onPress={() => { onChangeShoe?.(sh.id as string); setShoePickerOpen(false); }}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: on }}
+                  accessibilityLabel={`${sh.brand} ${sh.model}로 변경`}
+                  testID={`goal-shoe-${sh.id}`}
+                  style={({ pressed }) => [s.pickerRow, on && s.pickerRowOn, pressed && { opacity: 0.8 }]}>
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <Text style={s.pickerBrand}>{sh.brand}</Text>
+                    <Text style={s.pickerModel} numberOfLines={1}>{sh.model}</Text>
+                  </View>
+                  <View style={s.pickerMeta}>
+                    <View style={[s.shoeDot, { backgroundColor: conditionColor(sh.condition) }]} />
+                    <Text style={s.pickerRemain}>{Math.round(remain)}km 남음</Text>
+                  </View>
+                  {on ? <Text style={s.pickerCheck}>✓</Text> : null}
+                </Pressable>
+              );
+            })}
+          </View>
+        </Modal>
 
         <Button
           label="러닝 시작"
@@ -271,6 +317,16 @@ const s = StyleSheet.create({
 
   foot: { paddingHorizontal: 22, paddingTop: 4, paddingBottom: 30 },
   shoeSel: { flexDirection: 'row', alignItems: 'center', gap: 13, padding: 13, borderRadius: RADIUS.lg, borderCurve: 'continuous', backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER },
+  // 신발 전환 시트(하단) — History 기간 피커와 같은 문법(SCRIM + 하단 카드).
+  pickerSheet: { backgroundColor: CARD, borderTopLeftRadius: RADIUS.xl, borderTopRightRadius: RADIUS.xl, borderCurve: 'continuous', paddingHorizontal: 18, paddingTop: 18, paddingBottom: 34, gap: 10 },
+  pickerTitle: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600', letterSpacing: 0.2, marginBottom: 4 },
+  pickerRow: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: RADIUS.lg, borderCurve: 'continuous', backgroundColor: withAlpha(T1, 0.04), borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER },
+  pickerRowOn: { backgroundColor: withAlpha(T1, 0.09), borderColor: withAlpha(T1, 0.2) },
+  pickerBrand: { color: T3, fontFamily: FONT, fontSize: 11, fontWeight: '600', letterSpacing: 0.6 },
+  pickerModel: { color: T1, fontFamily: FONT, fontSize: 16, fontWeight: '700', letterSpacing: -0.2, marginTop: 1 },
+  pickerMeta: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  pickerRemain: { color: T2, fontFamily: FONT, fontSize: 13, fontWeight: '500' },
+  pickerCheck: { color: T1, fontFamily: FONT, fontSize: 16, fontWeight: '800', marginLeft: 2 },
   shoeThumb: { width: 46, height: 46, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: HERO_BG, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
   shoeBrand: { color: T3, fontFamily: DISPLAY, fontSize: 10, fontWeight: '600', letterSpacing: 1.4 },
   shoeModel: { color: T1, fontFamily: FONT, fontSize: 15, fontWeight: '600', letterSpacing: -0.2, marginTop: 2 },
