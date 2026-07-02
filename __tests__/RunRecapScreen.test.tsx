@@ -116,3 +116,29 @@ describe('RunRecapScreen — 완주 리캡', () => {
     expect(textOf(root)).not.toContain('구간');
   });
 });
+
+// ── 코스 지도 + 공유(2026-07-03) — 완주 직후 경로·SNS 공유 계약 ────────────────
+describe('리캡 코스 지도 + 공유', () => {
+  const ROUTE = JSON.stringify([
+    {lat: 37.5665, lon: 126.978}, {lat: 37.5675, lon: 126.979}, {lat: 37.5685, lon: 126.98},
+  ]);
+
+  test('route 가 있으면 오늘의 코스 지도가 렌더된다', () => {
+    const root = render(<RunRecapScreen km={5} durationS={1800} route={ROUTE} />).root;
+    // RTR 은 컴포지트+호스트를 중복 매칭 — 존재 여부만 단언.
+    expect(root.findAll((n: any) => n?.props?.testID === 'course-map').length).toBeGreaterThanOrEqual(1);
+    expect(textOf(root)).toContain('오늘의 코스');
+  });
+
+  test('route 없음(수동/GPS 실패)이면 지도 스스로 숨김', () => {
+    const root = render(<RunRecapScreen km={5} durationS={1800} />).root;
+    expect(root.findAll((n: any) => n?.props?.testID === 'course-map').length).toBe(0);
+  });
+
+  test('공유 버튼이 완료 옆에 뜬다(recap-share)', () => {
+    const root = render(<RunRecapScreen km={5} durationS={1800} route={ROUTE} />).root;
+    expect(root.findAll((n: any) => n?.props?.testID === 'recap-share' && typeof n.props.onPress === 'function').length).toBeGreaterThanOrEqual(1);
+    // 완료 버튼도 그대로(회귀 가드).
+    expect(root.findAll((n: any) => n?.props?.testID === 'recap-done').length).toBeGreaterThanOrEqual(1);
+  });
+});

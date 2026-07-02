@@ -5,8 +5,8 @@
 // 순수 프레젠테이션 — App 이 방금 저장한 런 데이터만 주입한다(데이터 생성 0).
 // 닫기(onClose)에서 App 이 기록 탭으로 이동한다.
 // ============================================================================
-import React from 'react';
-import {View, Text, ScrollView, Pressable, StyleSheet} from 'react-native';
+import React, {useMemo, useRef} from 'react';
+import {View, Text, ScrollView, Pressable, StyleSheet, Alert} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {BG, CARD, CARD_HI, ACCENT, GOOD, WARN, DANGER, T1, T2, T3, T4, FONT, DISPLAY, RADIUS, SEP, withAlpha} from './theme';
@@ -16,6 +16,17 @@ import {GlassEdge} from './primitives';
 import {RunSplits, Split} from './RunSplits';
 import {PRKind, PR_LABEL} from './lib/records';
 import {Unit} from './lib/units';
+import {parseRoute} from './lib/route';
+import {CourseMap} from './CourseMap';
+import ShareCard from './ShareCard';
+import {buildShareCardModel, shareRunCard, saveCardToLibrary, type SvgCapturable} from './lib/shareCard';
+
+// 공유 카드 날짜 라벨 — "7월 3일 목요일"(표시 전용).
+const WEEKDAYS_KO = ['일', '월', '화', '수', '목', '금', '토'];
+function todayLabelKo(): string {
+  const d = new Date();
+  return `${d.getMonth() + 1}월 ${d.getDate()}일 ${WEEKDAYS_KO[d.getDay()]}요일`;
+}
 
 /** 초 → "h:mm:ss"(1시간↑) 또는 "m:ss". 음수/비유한은 0 처리. */
 function fmtDur(s: number): string {
@@ -49,6 +60,7 @@ export default function RunRecapScreen({
   pacePlan = [],
   shoeWear,
   loadInfo,
+  route = null,
   unit = 'km',
   onClose,
 }: {
@@ -70,11 +82,39 @@ export default function RunRecapScreen({
   shoeWear?: {addedKm: number; remainingPct: number; deltaPct: number} | null;
   /** 훈련 부하 영향(#5) — 이 런 포함 이번 주 ACWR 평가. 미확신(표본부족)이면 null → 숨김. */
   loadInfo?: {phrase: string; word: string; level: 'low' | 'safe' | 'caution' | 'high'} | null;
+  /** GPS 경로 원문(route_ 사이드카와 동일 blob). 있으면 코스 지도 + 경로 공유 카드. */
+  route?: string | null;
   unit?: Unit;
   onClose?: () => void;
 }) {
   const insets = useSafeAreaInsets();
   const goalHit = !!goalKm && goalKm > 0 && km >= goalKm;
+  // 코스 지도 — 경로 blob 파싱(수동 기록/GPS 실패면 [] → 지도 스스로 숨김).
+  const routePoints = useMemo(() => parseRoute(route), [route]);
+  // SNS 공유 — 상세(RunDetail)와 동일한 투명 러닝 카드(스트라바 방식) 파이프라인 재사용.
+  const cardRef = useRef<SvgCapturable | null>(null);
+  const shareInput = {
+    distKm: km,
+    unit,
+    pace: fmtPace(km, durationS),
+    time: fmtDur(durationS),
+    durationS,
+    shoeModel: shoeName || '',
+    date: todayLabelKo(),
+  };
+  const cardModel = buildShareCardModel(shareInput);
+  const onShare = () => {
+    Alert.alert('러닝 카드 공유', '투명 카드를 사진앱에 저장해, 인스타 스토리에서 내 사진 위에 올리세요.', [
+      {text: '사진앱에 저장', onPress: async () => {
+        const r = await saveCardToLibrary(cardRef);
+        if (r.ok) Alert.alert('사진앱에 저장됐어요', '인스타 스토리에서 내 사진을 고른 뒤, 스티커로 이 카드를 올리면 돼요.');
+        else if (r.reason === 'denied') Alert.alert('권한 필요', '설정에서 사진 추가 권한을 허용해 주세요.');
+        else Alert.alert('저장 실패', r.reason ?? '잠시 후 다시 시도해 주세요.');
+      }},
+      {text: '공유 시트로', onPress: () => void shareRunCard(cardRef, shareInput)},
+      {text: '취소', style: 'cancel'},
+    ]);
+  };
   return (
     <View style={[s.screen, {paddingTop: insets.top}]} testID="run-recap-screen">
       <ScrollView contentContainerStyle={{paddingHorizontal: 18, paddingBottom: insets.bottom + 24, paddingTop: 8}} showsVerticalScrollIndicator={false}>
@@ -108,6 +148,10 @@ export default function RunRecapScreen({
             ))}
           </View>
         )}
+
+        {/* 오늘의 코스 — GPS 경로가 있으면 진짜 지도 위 경로(없으면 스스로 숨김).
+            완주 직후가 러너가 코스를 가장 자랑하고 싶은 순간(공유 트리거). */}
+        <CourseMap points={routePoints} title="오늘의 코스" style={{marginTop: 14}} />
 
         {/* 신발 마모 델타(시그니처) — 이 런이 신발 수명에 미친 영향 */}
         {shoeWear && (
@@ -176,7 +220,18 @@ export default function RunRecapScreen({
         <RunSplits splits={splits} />
       </ScrollView>
 
-      <View style={[s.footer, {paddingBottom: insets.bottom + 10}]}>
+      {/* 공유 캡처용 오프스크린 러닝 카드(투명 PNG — 인스타 스토리 스티커 방식) */}
+      <View style={s.offscreen} pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+        <ShareCard ref={cardRef as never} model={cardModel} route={routePoints} />
+      </View>
+
+      <View style={[s.footer, s.footerRow, {paddingBottom: insets.bottom + 10}]}>
+        <Pressable onPress={onShare} accessibilityRole="button" accessibilityLabel="러닝 공유" testID="recap-share"
+          style={({pressed}) => [s.shareBtn, pressed && {opacity: 0.85}]}>
+          <GlassEdge radius={RADIUS.lg} />
+          <Ionicons name="share-outline" size={17} color={T1} style={{marginRight: 7}} />
+          <Text style={s.doneTxt}>공유</Text>
+        </Pressable>
         <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="완료" testID="recap-done"
           style={({pressed}) => [s.doneBtn, pressed && {opacity: 0.85}]}>
           <GlassEdge radius={RADIUS.lg} />
@@ -225,6 +280,10 @@ const s = StyleSheet.create({
   planDelta: {fontFamily: FONT, fontSize: 13, fontWeight: '700', width: 52, textAlign: 'right'},
   footer: {paddingHorizontal: 18, paddingTop: 10, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP, backgroundColor: CARD_HI},
   // 투명 유리 CTA(홈 '러닝 시작'과 동일 문법) — 오렌지 필 폐지, 포인트 컬러는 지표에만.
-  doneBtn: {height: 52, borderRadius: RADIUS.lg, overflow: 'hidden', backgroundColor: withAlpha(T1, 0.1), alignItems: 'center', justifyContent: 'center'},
+  // 공유(보조)와 완료(주) — 같은 유리, 폭 비율로만 위계(공유 1 : 완료 1.6).
+  footerRow: {flexDirection: 'row', gap: 10},
+  shareBtn: {flex: 1, height: 52, borderRadius: RADIUS.lg, borderCurve: 'continuous', overflow: 'hidden', backgroundColor: withAlpha(T1, 0.06), flexDirection: 'row', alignItems: 'center', justifyContent: 'center'},
+  doneBtn: {flex: 1.6, height: 52, borderRadius: RADIUS.lg, borderCurve: 'continuous', overflow: 'hidden', backgroundColor: withAlpha(T1, 0.1), alignItems: 'center', justifyContent: 'center'},
   doneTxt: {color: T1, fontFamily: FONT, fontSize: 16, fontWeight: '800'},
+  offscreen: {position: 'absolute', left: -10000, top: 0, opacity: 0},
 });

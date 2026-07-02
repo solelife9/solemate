@@ -22,8 +22,8 @@ import { gradeAdjustedPaceSec, smoothElevation, resampleByDistance, buildGapSeri
 import { estimateMaxHR, timeInZones, hrSummary, zoneBoundaries, HR_ZONE_LABEL, type HRZone } from './lib/analytics/hrZones';
 import { trimp, paceLoad, effortBand } from './lib/analytics/load';
 import { getRunSurface, setRunSurface, type Surface } from './lib/wearModel';
-import { parseRoute, projectRoute, LatLon } from './lib/route';
-import { DARK_MAP_STYLE } from './lib/mapStyle';
+import { parseRoute, LatLon } from './lib/route';
+import { CourseMap } from './CourseMap';
 import { RunSplits, Split } from './RunSplits';
 import { PaceCurveChart } from './PaceCurveChart';
 import { buildSplits, buildPaceSeries, PaceTrackPoint } from './lib/splits';
@@ -133,108 +133,7 @@ function PeriodChartView({ data, labels, unit }: { data: number[]; labels: strin
 }
 
 // ── course map ────────────────────────────────────────────────────────────────
-// 상세보기(러닝 종료 후, 보통 WiFi 환경)에서 기록된 GPS 경로(route_<id>, [{lat,lon}])를
-// **진짜 지도(Google) 위 경로**로 보여준다. react-native-maps 가 네이티브에 링크 안 됐거나
-// 옛 빌드면 SVG 폴리라인으로 자동 폴백(앱 안 죽음). 지도 타일은 네트워크가 필요하나,
-// 상세보기는 보통 집(WiFi)에서 보므로 적합하다. (러닝 중 화면엔 지도를 두지 않는다.)
-const MAP_H = 180;
-const MAP_PAD = 16;
-
-// 옵셔널 require — 미링크 빌드에서 top-level import 가 앱을 죽이지 않게 감싼다.
-let MapView: any = null;
-let MapPolyline: any = null;
-let MapMarker: any = null;
-let MAP_PROVIDER_GOOGLE: any = undefined;
-try {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const maps = require('react-native-maps');
-  MapView = maps.default ?? maps.MapView;
-  MapPolyline = maps.Polyline;
-  MapMarker = maps.Marker;
-  MAP_PROVIDER_GOOGLE = maps.PROVIDER_GOOGLE;
-} catch {
-  // 네이티브 미링크 — SVG 폴백.
-}
-const MAPS_AVAILABLE = !!MapView;
-
-/** 경로 bbox → MapView region(중심 + 델타, 패딩 1.5배·최소 델타). */
-function routeRegion(points: LatLon[]) {
-  const lats = points.map(p => p.lat);
-  const lons = points.map(p => p.lon);
-  const minLat = Math.min(...lats), maxLat = Math.max(...lats);
-  const minLon = Math.min(...lons), maxLon = Math.max(...lons);
-  return {
-    latitude: (minLat + maxLat) / 2,
-    longitude: (minLon + maxLon) / 2,
-    latitudeDelta: Math.max((maxLat - minLat) * 1.5, 0.003),
-    longitudeDelta: Math.max((maxLon - minLon) * 1.5, 0.003),
-  };
-}
-
-/** SVG 폴백(지도 네이티브 미링크 시) — 기존 순수 projectRoute 폴리라인. */
-function SvgCourse({ points }: { points: LatLon[] }) {
-  const [w, setW] = useState(0);
-  const onLayout = (e: LayoutChangeEvent) => setW(e.nativeEvent.layout.width);
-  const proj = w > 0 ? projectRoute(points, { width: w, height: MAP_H, padding: MAP_PAD }) : null;
-  const start = proj?.points[0];
-  const end = proj?.points[proj.points.length - 1];
-  return (
-    <View style={s.mapWell} onLayout={onLayout}>
-      {proj && proj.svgPoints !== '' && (
-        <Svg width={w} height={MAP_H}>
-          <Polyline
-            points={proj.svgPoints}
-            fill="none"
-            stroke={ACCENT}
-            strokeWidth={3}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-          {!!start && <Circle cx={start.x} cy={start.y} r={5} fill={ACCENT} />}
-          {!!end && <Circle cx={end.x} cy={end.y} r={5} fill={T1} stroke={ACCENT} strokeWidth={2} />}
-        </Svg>
-      )}
-    </View>
-  );
-}
-
-function CourseMap({ points }: { points: LatLon[] }) {
-  if (points.length < 2) return null;
-  const coords = points.map(p => ({ latitude: p.lat, longitude: p.lon }));
-  const start = coords[0];
-  const end = coords[coords.length - 1];
-  return (
-    <View style={[s.card, { padding: 16, marginTop: 16 }]}>
-      <Text style={s.detailBrand}>코스</Text>
-      {MAPS_AVAILABLE ? (
-        <View style={[s.mapWell, { overflow: 'hidden' }]}>
-          <MapView
-            provider={MAP_PROVIDER_GOOGLE}
-            style={StyleSheet.absoluteFill}
-            customMapStyle={DARK_MAP_STYLE}
-            initialRegion={routeRegion(points)}
-            scrollEnabled={false}
-            zoomEnabled={false}
-            rotateEnabled={false}
-            pitchEnabled={false}
-            toolbarEnabled={false}
-            liteMode
-          >
-            <MapPolyline coordinates={coords} strokeColor={ACCENT} strokeWidth={4} lineCap="round" lineJoin="round" />
-            <MapMarker coordinate={start} anchor={{ x: 0.5, y: 0.5 }} tracksViewChanges={false}>
-              <View style={s.mapStartDot} />
-            </MapMarker>
-            <MapMarker coordinate={end} anchor={{ x: 0.5, y: 0.5 }} tracksViewChanges={false}>
-              <View style={s.mapEndDot} />
-            </MapMarker>
-          </MapView>
-        </View>
-      ) : (
-        <SvgCourse points={points} />
-      )}
-    </View>
-  );
-}
+// 코스 지도는 공용 CourseMap 컴포넌트로 추출됨(러닝 완료 리캡과 공유) — CourseMap.tsx.
 
 // ── manual-run input / run edit form ────────────────────────────────────────
 // 한 폼으로 '수동 입력'(initial=null)과 '편집'(initial=Run)을 모두 처리한다. 거리는
@@ -702,7 +601,7 @@ function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'male', r
           );
         })()}
         {/* 달린 위치(경로) 지도 — route_<id> 가 있으면 SVG 코스맵으로 표시(없으면 자동 숨김). */}
-        <CourseMap points={route} />
+        <CourseMap points={route} style={{ marginTop: 16 }} />
         {/* 거리축 페이스 곡선(추세) + 구간별 페이스 스플릿(정확값). 같은 스플릿을 공유하고
             2구간 미만이면 둘 다 자동 숨김. 곡선은 한눈 추세, 표는 km별 정확한 페이스/고도. */}
         {(() => {
@@ -1206,9 +1105,6 @@ const s = StyleSheet.create({
   chartTipU: { color: T3, fontFamily: FONT, fontSize: 10, fontWeight: '500' },
 
   // course map (recessed well, svg polyline)
-  mapWell: { height: MAP_H, marginTop: 10, borderRadius: 14, overflow: 'hidden', backgroundColor: CARD_DIM, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
-  mapStartDot: { width: 12, height: 12, borderRadius: 6, backgroundColor: ACCENT, borderWidth: 2, borderColor: T1 },
-  mapEndDot: { width: 14, height: 14, borderRadius: 7, backgroundColor: T1, borderWidth: 3, borderColor: ACCENT },
   emptyHint: { color: T3, fontFamily: FONT, fontSize: 14, textAlign: 'center' },
 
   // 콤팩트: 요약 4칸(거리/횟수/페이스/시간)의 패딩·값 폰트·여백을 줄여 세로 높이를
