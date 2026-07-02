@@ -26,6 +26,9 @@ jest.mock('expo-location', () => ({
   Accuracy: {
     Lowest: 1, Low: 2, Balanced: 3, High: 4, Highest: 5, BestForNavigation: 6,
   },
+  LocationActivityType: {
+    Other: 1, AutomotiveNavigation: 2, Fitness: 3, OtherNavigation: 4, Airborne: 5,
+  },
   watchPositionAsync: jest.fn(() => Promise.resolve({remove: jest.fn()})),
   requestForegroundPermissionsAsync: jest.fn(() =>
     Promise.resolve({granted: true, status: 'granted'}),

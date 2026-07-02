@@ -164,6 +164,9 @@ export async function startTracking(
   try {
     await Location.startLocationUpdatesAsync(RUN_LOCATION_TASK, {
       ...WATCH_OPTIONS,
+      // Fitness 활동 타입: iOS 가 러닝 워크로드에 맞게 필터·전력 정책을 최적화한다
+      // (나이키/스트라바 동일 — default 'Other' 는 정차 시 업데이트를 멈출 수 있음).
+      activityType: Location.LocationActivityType.Fitness,
       showsBackgroundLocationIndicator: true,
       pausesUpdatesAutomatically: false,
       foregroundService: {

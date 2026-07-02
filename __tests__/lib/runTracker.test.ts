@@ -458,3 +458,35 @@ describe('recovery seed (이어 달리기)', () => {
     expect(t.getPoints().length).toBe(0);
   });
 });
+
+// ── C1 팬텀 드리프트 억제(2026-07-03) — 정지 표류는 0, 저속 이동은 무손실 ──────────
+test('정지 중 GPS 표류(±2m 원형 wandering, acc 8m)는 거리를 쌓지 않는다 — C1', () => {
+  const {t} = makeEngine();
+  t.start({goalKm: 5, shoe: {id: 's1', name: 'X'}, t0: 100000});
+  clearWarmup(t);
+
+  // 한 점 주위 ±2m(위도 ~0.000018°) 표류를 30초간 1Hz 로 — 겉보기 속도 최대 ~2m/s 라
+  // 자동일시정지(0.6m/s)를 피할 수 있는 전형적 도심 멀티패스 패턴.
+  const drift = [0.000018, -0.000015, 0.00001, -0.000018, 0.000012, -0.00001];
+  for (let i = 0; i < 30; i++) {
+    const dy = drift[i % drift.length];
+    t.ingestFix(fix(37.5 + dy, LON, 8, 106000 + i * 1000));
+  }
+  // 정확도 비례 하한(8m×0.35=2.8m)이 ±2m 변위를 전부 노이즈로 거른다.
+  expect(t.getDistanceKm()).toBe(0);
+});
+
+test('저속 이동(≈1.4m/s 걷기, acc 8m)은 앵커 합산으로 무손실 계상된다', () => {
+  const {t} = makeEngine();
+  t.start({goalKm: 5, shoe: {id: 's1', name: 'X'}, t0: 100000});
+  clearWarmup(t);
+
+  // 1Hz 로 위도 +0.0000126°(≈1.4m)씩 60초 = 실이동 ≈84m. 각 세그먼트(1.4m)는 하한
+  // (2.8m) 미만이라 개별 거부되지만, 앵커가 보존돼 2fix 마다 2.8m 로 합산 채택된다.
+  for (let i = 1; i <= 60; i++) {
+    t.ingestFix(fix(37.5 + i * 0.0000126, LON, 8, 106000 + i * 1000));
+  }
+  const d = t.getDistanceKm() * 1000; // m
+  expect(d).toBeGreaterThan(75); // 무손실(±기하 오차 허용)
+  expect(d).toBeLessThan(95);
+});

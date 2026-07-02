@@ -63,9 +63,14 @@ describe('acceptSegment', () => {
     expect(acceptSegment({...good, distKm: 0.024, dtSec: 2})).toBe(true);
   });
 
-  test('rejects below the 1m noise floor but accepts 1.5m slow segments (audit#5)', () => {
-    expect(acceptSegment({...good, distKm: 0.0005})).toBe(false); // 0.5m → noise
-    expect(acceptSegment({...good, distKm: 0.0015})).toBe(true);  // 1.5m → counted
+  test('노이즈 하한 = max(1m, 정확도×0.35) — C1 팬텀 드리프트 억제', () => {
+    // acc 8m → 하한 2.8m: 그 아래 변위는 통계적 노이즈로 거부(정지 표류 차단).
+    expect(acceptSegment({...good, distKm: 0.0015})).toBe(false); // 1.5m < 2.8m
+    expect(acceptSegment({...good, distKm: 0.0029})).toBe(true);  // 2.9m ≥ 2.8m
+    // 정확도가 좋으면(acc 4m → 하한 1.4m) 저속 세그먼트도 그대로 계상(audit#5 정신 유지).
+    expect(acceptSegment({...good, accuracyM: 4, distKm: 0.0015})).toBe(true);
+    expect(acceptSegment({...good, accuracyM: 4, distKm: 0.0005})).toBe(false); // 절대 1m 하한 아래... (0.5m < 1.4m)
+    // 앵커 보존(runTracker) 덕에 거부된 저속 변위는 다음 fix 에 합산돼 무손실이다.
   });
 
   test('rejects single-fix jumps over 300m', () => {
@@ -74,12 +79,11 @@ describe('acceptSegment', () => {
     expect(acceptSegment({...good, distKm: 0.3, dtSec: 120})).toBe(true);
   });
 
-  test('MIN_SEG_DIST_KM (1m) is an exact >= boundary, not >', () => {
-    // The gate rejects `distKm < MIN_SEG_DIST_KM`, so exactly 1m must pass and
-    // anything below the floor (even a hair under) must be dropped as noise.
+  test('적응 하한은 정확한 >= 경계다(하한 정확히 = 통과, 그 아래 = 거부)', () => {
     expect(MIN_SEG_DIST_KM).toBe(0.001);
-    expect(acceptSegment({...good, distKm: MIN_SEG_DIST_KM})).toBe(true);
-    expect(acceptSegment({...good, distKm: MIN_SEG_DIST_KM - 1e-7})).toBe(false);
+    const floorKm = (good.accuracyM * 0.35) / 1000; // acc 8m → 0.0028km
+    expect(acceptSegment({...good, distKm: floorKm})).toBe(true);
+    expect(acceptSegment({...good, distKm: floorKm - 1e-7})).toBe(false);
   });
 });
 

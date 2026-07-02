@@ -58,9 +58,13 @@ describe('Anti-Scenario 1: GPS 점프(속도 이상치)는 거리에 가산되�
   });
 });
 
-describe('audit#5: 일반 페이스의 느린 구간이 과소집계되지 않는다', () => {
-  test('1.5m(0.0015km) 정상 이동 구간은 인정된다 (기존 3m 하한 완화)', () => {
-    expect(acceptSegment({ distKm: 0.0015, dtSec: 1, accuracyM: 8, fixIndex: 10 })).toBe(true);
+describe('audit#5+C1: 느린 구간 무손실 + 팬텀 드리프트 억제(정확도 비례 하한)', () => {
+  test('정확도가 좋으면(4m) 1.5m 저속 구간도 인정된다(audit#5 정신 유지)', () => {
+    expect(acceptSegment({ distKm: 0.0015, dtSec: 1, accuracyM: 4, fixIndex: 10 })).toBe(true);
+  });
+  test('정확도 8m 에선 하한이 2.8m — 그 미만 변위는 노이즈(C1 팬텀 억제, 앵커 보존으로 무손실)', () => {
+    expect(acceptSegment({ distKm: 0.0015, dtSec: 1, accuracyM: 8, fixIndex: 10 })).toBe(false);
+    expect(acceptSegment({ distKm: 0.0029, dtSec: 1, accuracyM: 8, fixIndex: 10 })).toBe(true);
   });
   test('calcDist는 합리적 거리를 반환한다', () => {
     // 서울 인근 두 점, 대략 수십~수백 m

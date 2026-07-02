@@ -12,8 +12,16 @@ export const WARMUP_FIXES = 3;
 /** 구간 순간속도 상한(m/s). 초과 시 GPS 점프로 보고 거부. */
 export const MAX_SEG_SPEED_MPS = 12;
 
-/** 구간 최소 이동거리(km). 노이즈 하한(~1m). */
+/** 구간 최소 이동거리(km). 절대 하한(~1m) — 실제 하한은 정확도 비례(아래 factor)와 max. */
 export const MIN_SEG_DIST_KM = 0.001;
+
+/** 팬텀 드리프트 억제(C1): 구간 최소 이동거리를 GPS 정확도에 비례시키는 계수.
+ *  노이즈 하한 = max(MIN_SEG_DIST_KM, 정확도(m) × 0.35). 정지 중 도심 멀티패스 표류는
+ *  겉보기 속도 0.6~2 m/s 로 와 자동일시정지(0.6 임계)를 피해 거리를 슬금슬금 쌓는데,
+ *  '정확도 반경 대비 유의미하지 않은 변위 = 통계적 노이즈'로 걸러낸다(가민/스트라바 동급).
+ *  앵커(last-good)는 거부 시 보존되므로 저속 러닝/걷기 거리는 유실되지 않고 다음 fix 에
+ *  합산돼 채택된다(무손실 — 증분만 굵어짐). 정확도 상한 20m × 0.35 = 최대 7m 하한. */
+export const PHANTOM_ACC_FLOOR_FACTOR = 0.35;
 
 /** 구간 최대 이동거리(km). 단일 fix 점프 상한(300m). */
 export const MAX_SEG_DIST_KM = 0.3;

@@ -15,8 +15,10 @@ async function ensureMode(): Promise<void> {
   if (modeReady) return;
   modeReady = true;
   // 무음 모드에서도 들리게 + 음악은 잠시 줄였다(덕킹) 코칭 후 복귀.
+  // shouldPlayInBackground: 화면 잠금/주머니 러닝 중에도 km 안내가 나오게 한다
+  // (Info.plist UIBackgroundModes 'audio' 와 쌍 — 나이키/스트라바 동일 구성).
   try {
-    await setAudioModeAsync({playsInSilentMode: true, interruptionMode: 'duckOthers'});
+    await setAudioModeAsync({playsInSilentMode: true, interruptionMode: 'duckOthers', shouldPlayInBackground: true});
   } catch {
     /* 오디오 모드 설정 실패는 비치명적 */
   }

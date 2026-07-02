@@ -10,6 +10,7 @@ import {
   MAX_SEG_SPEED_MPS,
   MIN_SEG_DIST_KM,
   MAX_SEG_DIST_KM,
+  PHANTOM_ACC_FLOOR_FACTOR,
 } from './engineConstants';
 
 export interface LatLon {
@@ -36,8 +37,9 @@ export interface SegmentInput {
  *  - the fix is too inaccurate: `accuracyM > MAX_FIX_ACCURACY_M` (20m)
  *  - it is still in GPS warmup: `fixIndex < WARMUP_FIXES` (first 3 fixes)
  *  - it implies an impossible speed: `segmentSpeed > MAX_SEG_SPEED_MPS` (12 m/s)
- *  - it is below the noise floor: `distKm < MIN_SEG_DIST_KM` (~1m — relaxed from
- *    the old 3m floor per audit#5, which under-counted slow/normal-pace segments)
+ *  - it is below the noise floor: `distKm < max(1m, accuracy × 0.35)` — 정확도
+ *    비례 하한(C1 팬텀 드리프트 억제). 앵커는 거부 시 보존되므로(runTracker)
+ *    저속 이동 거리는 다음 fix 에 합산돼 무손실이다(audit#5 의 과소계상 재발 없음).
  *  - it exceeds the single-fix jump cap: `distKm > MAX_SEG_DIST_KM` (300m)
  *
  * Otherwise the segment is accepted.
@@ -46,7 +48,8 @@ export function acceptSegment({distKm, dtSec, accuracyM, fixIndex}: SegmentInput
   if (accuracyM > MAX_FIX_ACCURACY_M) return false;
   if (fixIndex < WARMUP_FIXES) return false;
   if (segmentSpeedMps(distKm, dtSec) > MAX_SEG_SPEED_MPS) return false;
-  if (distKm < MIN_SEG_DIST_KM) return false;
+  const noiseFloorKm = Math.max(MIN_SEG_DIST_KM, (accuracyM * PHANTOM_ACC_FLOOR_FACTOR) / 1000);
+  if (distKm < noiseFloorKm) return false;
   if (distKm > MAX_SEG_DIST_KM) return false;
   return true;
 }
