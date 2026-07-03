@@ -105,7 +105,8 @@ function Rise({ delay = 0, children }: { delay?: number; children: React.ReactNo
 function TopBar({ onAddShoe }: { onAddShoe?: () => void }) {
   return (
     <View style={s.topbar}>
-      <KeegoWordmark size={24} />
+      {/* 홈 헤더만 브랜드 오렌지(사용자 확정 2026-07-04) — 공유카드·로그인은 흰색 유지. */}
+      <KeegoWordmark size={24} style={{color: ACCENT}} />
       <Pressable
         onPress={onAddShoe}
         accessibilityRole="button"
