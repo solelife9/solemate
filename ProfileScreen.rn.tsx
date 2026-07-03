@@ -794,13 +794,13 @@ export default function ProfileScreen({
             </Pressable>
             {open === 'notif' && (
               <View style={[s.panel, s.settingBorder]} testID="notif-panel">
-                <Text style={s.panelHint}>러닝화 교체·주간 목표·러닝 리마인더를 푸시로 받아요. (앱 내 신발 교체 배지와는 별개예요)</Text>
+                <Text style={s.panelHint}>러닝화 교체·주간 목표·러닝 리마인더를 푸시로 받아요</Text>
                 <NotifToggle label="교체 임박 알림" value={notifSettings.shoeReplacement} onToggle={() => toggleNotif('shoeReplacement')} testID="notif-toggle-shoeReplacement" />
                 <NotifToggle label="주간 목표 알림" value={notifSettings.weeklyGoal} onToggle={() => toggleNotif('weeklyGoal')} testID="notif-toggle-weeklyGoal" />
                 <NotifToggle label="러닝 리마인더" value={notifSettings.runReminder} onToggle={() => toggleNotif('runReminder')} testID="notif-toggle-runReminder" />
                 <Stepper value={notifSettings.reminderTime} suffix="리마인더 시각" onMinus={() => stepReminder(-1)} onPlus={() => stepReminder(1)} />
                 {pushDenied && (
-                  <Text style={s.notifDenied} testID="notif-perm-denied">기기 알림 권한이 꺼져 있어요. 설정에서 허용하면 푸시를 받을 수 있어요. (설정은 저장됐어요)</Text>
+                  <Text style={s.notifDenied} testID="notif-perm-denied">알림 권한이 꺼져 있어요 — 설정에서 허용해주세요</Text>
                 )}
               </View>
             )}
@@ -823,7 +823,7 @@ export default function ProfileScreen({
             {open === 'weight' && (
               <View style={[s.panel, s.settingBorder]}>
                 <Stepper value={weightKg} suffix="kg" onMinus={() => stepWeight(-1)} onPlus={() => stepWeight(1)} />
-                <Text style={s.panelHint}>러닝 칼로리 추정에 사용돼요(가이드 값 — 정밀 측정 아님).</Text>
+                <Text style={s.panelHint}>러닝 칼로리 추정에 사용돼요</Text>
               </View>
             )}
             {/* 심박·신체 — 심박존/트레이닝효과 정확도용(나이·성별·안정심박). 선택 입력. */}
@@ -850,7 +850,7 @@ export default function ProfileScreen({
                 <View style={{ marginTop: 14 }}>
                   <Stepper value={restHR > 0 ? restHR : '미설정'} suffix="안정시심박(bpm)" onMinus={() => stepRestHR(-1)} onPlus={() => stepRestHR(1)} />
                 </View>
-                <Text style={s.panelHint}>러닝 상세의 심박 존·트레이닝 부하 정확도에 쓰여요. 나이로 내 최대 심박을, 안정시심박으로 심박 구간을 더 정확히 계산합니다.</Text>
+                <Text style={s.panelHint}>심박 존·트레이닝 부하 계산에 쓰여요</Text>
               </View>
             )}
           </View>
