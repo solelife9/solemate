@@ -851,22 +851,22 @@ const metric = StyleSheet.create({
   },
 });
 
-// ── Keego wordmark (나눔명조 세리프, 2026-07-03 브랜드 확정) ──────────────────
-// 소문자 'keego' · 나눔명조 ExtraBold(전당 제목체와 동일) · 흰색(T1) · 점 없음.
-// 세리프 로고 + 그로테스크 본문(Pretendard/Barlow)의 이중 시스템 — Satisfy 문법.
-// 옛 오렌지 그라데이션 SVG 텍스트는 폐기(오렌지는 데이터 강조 전용 원칙과 충돌했다).
-export const WORDMARK_SERIF = 'NanumMyeongjoExtraBold';
+// ── Keego wordmark (2026-07-04 최종 확정: B안 — Helvetica Neue Medium) ────────
+// 소문자 'keego' · Helvetica Neue Medium(iOS 내장, Walter Neue 결) · 흰색(T1) · 점 없음.
+// 명조(A안)는 목업에선 우아했으나 기기 실물 20px대에서 헤어라인이 말라 약하다는
+// 사용자 판정으로 교체. 옛 오렌지 그라데이션은 폐기(오렌지=데이터 강조 전용 원칙).
+export const WORDMARK_FONT = 'Helvetica Neue';
 
 export function KeegoWordmark({
   size = 24,
   style,
 }: {
   size?: number;
-  style?: StyleProp<ViewStyle>;
+  style?: StyleProp<TextStyle>;
 }) {
   return (
     <Text
-      style={[{fontFamily: WORDMARK_SERIF, fontSize: size, color: T1, includeFontPadding: false} as TextStyle, style as StyleProp<TextStyle>]}
+      style={[{fontFamily: WORDMARK_FONT, fontWeight: '500', fontSize: size, color: T1, letterSpacing: -0.3, includeFontPadding: false} as TextStyle, style]}
       accessibilityLabel="keego">
       keego
     </Text>

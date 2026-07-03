@@ -121,9 +121,9 @@ const ShareCard = React.forwardRef<unknown, ShareCardProps>(({model, route = []}
         );
       })}
 
-      {/* 하단: keego 워드마크 — 나눔명조 소문자 흰색(2026-07-03 브랜드 확정). 사진 위에
-          얹히는 카드라 스탯과 같은 흰색으로 통일, 세리프가 서명(signature) 역할을 한다. */}
-      <SvgText x={CARD_W / 2} y={CARD_H - 96} fill={T1} fontFamily="NanumMyeongjoExtraBold" fontSize={62} textAnchor="middle">
+      {/* 하단: keego 워드마크 — Helvetica Neue Medium 소문자 흰색(2026-07-04 B안 확정).
+          사진 위에 얹히는 카드라 스탯과 같은 흰색으로 통일해 서명처럼 찍힌다. */}
+      <SvgText x={CARD_W / 2} y={CARD_H - 96} fill={T1} fontFamily={CF} fontWeight="500" fontSize={62} letterSpacing={-0.5} textAnchor="middle">
         {model.brand.toLowerCase()}
       </SvgText>
     </Svg>

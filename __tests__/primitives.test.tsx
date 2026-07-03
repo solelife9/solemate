@@ -90,7 +90,7 @@ describe('conditionColor / conditionTone map shoe condition → theme token', ()
   });
 });
 
-// ── KeegoWordmark — 2026-07-03 브랜드 확정: 소문자 'keego'·나눔명조·흰색(T1) ──
+// ── KeegoWordmark — 2026-07-04 B안 확정: 소문자 'keego'·Helvetica Neue Medium·흰색(T1) ──
 describe('KeegoWordmark', () => {
   test("renders the literal lowercase 'keego'", () => {
     const {root} = render(<KeegoWordmark />);
@@ -99,11 +99,12 @@ describe('KeegoWordmark', () => {
     expect(texts.map(t => t.props.children)).toContain('keego');
   });
 
-  test('세리프(나눔명조 ExtraBold) + 흰색(T1) — 그라데이션/오렌지 없음', () => {
+  test('Helvetica Neue Medium + 흰색(T1) — 그라데이션/오렌지 없음', () => {
     const {root} = render(<KeegoWordmark />);
     const t = byName(root, 'Text').find(n => n.props.children === 'keego')!;
     const st = Array.isArray(t.props.style) ? Object.assign({}, ...t.props.style.flat().filter(Boolean)) : t.props.style;
-    expect(st.fontFamily).toBe('NanumMyeongjoExtraBold');
+    expect(st.fontFamily).toBe('Helvetica Neue');
+    expect(st.fontWeight).toBe('500');
     expect(st.color).toBe(T1);
     expect(byName(root, 'Stop').length).toBe(0); // 옛 그라데이션 폐기
   });
