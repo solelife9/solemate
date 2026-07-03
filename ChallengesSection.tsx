@@ -171,7 +171,7 @@ export default function ChallengesSection({
   shoes = [],
   now,
   smartSuggestion,
-  smartTargetById = {},
+  weeklyGoalKm = 0,
   onEditSmartTarget,
 }: {
   /** base 런(거리 집계 폴백). extRuns 미주입 시 스마트 집계에 사용한다. */
@@ -186,9 +186,11 @@ export default function ChallengesSection({
   now?: string;
   /** 스마트 챌린지를 명시 주입(테스트 결정성). undefined 면 데이터에서 자동 생성, null 이면 미노출. */
   smartSuggestion?: ExtChallenge | null;
-  /** 챌린지 id별 사용자 지정 목표 거리(km) 오버라이드. App 이 영속·주입한다. */
-  smartTargetById?: Record<string, number>;
-  /** 목표 거리(km) 변경 위임 — (챌린지 id, km). 없으면 수정 버튼을 숨긴다. */
+  /** 사용자 설정 주간 목표(km) — 홈 '주간 목표'와 동일한 단일 진실원(settings.goalWeeklyKm).
+      0 보다 크면 스마트 추천 대신 이 값이 챌린지 목표가 된다(홈·마이 숫자 통일, 2026-07-04). */
+  weeklyGoalKm?: number;
+  /** 목표 거리(km) 변경 위임 — (챌린지 id, km). App 이 설정(changeGoal)으로 위임해
+      홈 주간 목표까지 함께 갱신한다. 없으면 수정 버튼을 숨긴다. */
   onEditSmartTarget?: (id: string, km: number) => void;
 }) {
   const nowISO = ((now || today) ? (now || today).slice(0, 10) : isoToday());
@@ -198,10 +200,11 @@ export default function ChallengesSection({
     smartSuggestion !== undefined
       ? smartSuggestion
       : generateSmartChallenge(safeExtRuns, shoes, nowISO);
-  // 사용자가 이 챌린지(id)의 목표 거리를 직접 조정했으면 그 값으로 덮어쓴다(주가 바뀌어
-  // id가 달라지면 자동으로 추천 기본값으로 복귀).
-  const override = base ? smartTargetById[base.id] : undefined;
-  const smart = base && override != null ? {...base, targetKm: override} : base;
+  // 단일 진실원(2026-07-04): 사용자가 주간 목표를 설정했으면(goalWeeklyKm>0) 그 값이 곧
+  // 챌린지 목표 — 홈 '주간 목표' 바와 항상 같은 숫자를 말한다. 미설정이면 스마트 추천 유지.
+  const smart = base && weeklyGoalKm > 0
+    ? {...base, targetKm: weeklyGoalKm, reason: '내 주간 목표와 연동 — 홈과 동일'}
+    : base;
 
   return (
     <View testID="challenges-section">

@@ -152,21 +152,30 @@ describe('ChallengesSection 목표 거리(km) 수정', () => {
     expect(onEditSmartTarget).toHaveBeenCalledWith(smart.id, (smart.targetKm ?? 0) - 1);
   });
 
-  test('smartTargetById 오버라이드가 표시 목표·진행 분모에 반영된다', () => {
+  test('weeklyGoalKm(홈 주간 목표)가 챌린지 목표의 단일 진실원 — 표시·분모·스테퍼에 반영(2026-07-04 통일)', () => {
     const smart = generateSmartChallenge(PAST_RUNS, EXT_SHOES, NOW)!;
-    const OVERRIDE = (smart.targetKm ?? 0) + 13;
+    const GOAL = (smart.targetKm ?? 0) + 13; // 설정된 주간 목표가 추천값을 덮는다
     const root = render({
       extRuns: PAST_RUNS,
       shoes: EXT_SHOES,
       now: NOW,
       smartSuggestion: smart,
-      smartTargetById: {[smart.id]: OVERRIDE},
+      weeklyGoalKm: GOAL,
       onEditSmartTarget: jest.fn(),
     });
-    // 진행 본문이 오버라이드된 목표(km)를 분모로 쓴다.
-    expect(textOf(byId(root, 'smart-challenge-progress')[0])).toContain(`${OVERRIDE}km`);
-    // 편집 스테퍼도 오버라이드 값에서 출발한다.
+    // 진행 본문이 주간 목표(km)를 분모로 쓴다 — 홈 '주간 목표' 바와 같은 숫자.
+    expect(textOf(byId(root, 'smart-challenge-progress')[0])).toContain(`${GOAL}km`);
+    // 편집 스테퍼도 주간 목표 값에서 출발한다.
     act(() => pressByLabel(root, '목표 거리 수정').props.onPress());
-    expect(textOf(byId(root, 'smart-challenge-target')[0])).toContain(`${OVERRIDE}`);
+    expect(textOf(byId(root, 'smart-challenge-target')[0])).toContain(`${GOAL}`);
+  });
+
+  test('주간 목표 미설정(0)이면 스마트 추천 목표가 그대로 쓰인다', () => {
+    const smart = generateSmartChallenge(PAST_RUNS, EXT_SHOES, NOW)!;
+    const root = render({
+      extRuns: PAST_RUNS, shoes: EXT_SHOES, now: NOW,
+      smartSuggestion: smart, weeklyGoalKm: 0,
+    });
+    expect(textOf(byId(root, 'smart-challenge-progress')[0])).toContain(`${smart.targetKm}km`);
   });
 });

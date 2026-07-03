@@ -121,7 +121,6 @@ const K_BACKUP_IMPORT = 'imported_backup_v1';
 // 개인 챌린지 목록을 영속하는 신규 AsyncStorage 키(개인 전용 — 계정/서버 불필요).
 const K_CHALLENGES = 'challenges_v1';
 // 스마트 챌린지 목표 거리(km) 사용자 오버라이드(챌린지 id→km). 로컬 전용 신규 키.
-const K_SMART_TARGET = 'smart_target_km_v1';
 // 프로필 이름/사진(로컬 전용 — 개인 식별, 서버 불필요). 신규 키라 기존 데이터와 격리.
 const K_PROFILE_NAME = 'profile_name';
 const K_PROFILE_PHOTO = 'profile_photo';
@@ -307,10 +306,6 @@ function Main(){
   // 확장 챌린지(monthly/shoe/rotation, 스마트 추천 수락분). 기존 distance/streak 과 같은
   // 키(K_CHALLENGES)에 한 배열로 함께 영속하되, kind 로 분리해 서로를 건드리지 않는다.
   const [extChallenges,setExtChallenges]=useState<ExtChallenge[]>([]);
-  // 스마트 챌린지 목표 거리(km) 사용자 오버라이드 — 챌린지 id별. 마이 탭 카드의 수정 버튼이
-  // 조정하며 K_SMART_TARGET 에 영속한다. 주가 바뀌어 챌린지 id가 달라지면 자동으로 추천
-  // 기본값으로 복귀(맵에 키가 없으면 미적용). 읽기 전용 표시라 런/신발 데이터와 격리된다.
-  const [smartTargetById,setSmartTargetById]=useState<Record<string,number>>({});
   // 프로필 이름/사진(로컬 영속). 이름 기본은 '러너', 사진은 없으면 빈 문자열(아바타
   // 아이콘 폴백). 신규 키라 기존 신발/런 데이터와 격리돼 파괴 위험이 없다.
   const [profileName,setProfileName]=useState(DEFAULT_PROFILE_NAME);
@@ -447,22 +442,6 @@ function Main(){
 
   // 스마트 챌린지 목표 거리(km) 오버라이드 복원(신규 키 — 1회). 손상/부재는 조용히 빈 맵으로
   // 폴백한다. 값이 유한한 양수인 항목만 받아들인다(데이터 위생). 기존 데이터와 격리.
-  useEffect(()=>{
-    (async()=>{
-      try{
-        const raw=await AsyncStorage.getItem(K_SMART_TARGET);
-        if(!raw)return;
-        const obj=JSON.parse(raw);
-        if(!obj||typeof obj!=='object')return;
-        const clean:Record<string,number>={};
-        for(const[id,km]of Object.entries(obj)){
-          const n=Number(km);
-          if(typeof id==='string'&&Number.isFinite(n)&&n>0)clean[id]=n;
-        }
-        setSmartTargetById(clean);
-      }catch(e){console.log('smart target load error',e);}
-    })();
-  },[]);
 
   // 프로필 이름/사진 복원(신규 키 — 네트워크 무관, 1회). 손상/부재는 조용히 기본값으로
   // 폴백한다(이름='러너', 사진 없음). 기존 데이터와 격리돼 파괴 위험 0.
@@ -1224,14 +1203,9 @@ function Main(){
     setOnboarded(false);
   };
 
-  // 스마트 챌린지 목표 거리(km) 수정 — 챌린지 id별로 오버라이드를 갱신·영속한다(상태 즉시
-  // 반영 + K_SMART_TARGET 쓰기). 1km 미만은 1로 바닥 처리해 0/음수 목표를 막는다.
-  const editSmartTarget=(id:string,km:number)=>{
-    const v=Math.max(1,Math.round(Number(km)||0));
-    const next={...smartTargetById,[id]:v};
-    setSmartTargetById(next);
-    try{void AsyncStorage.setItem(K_SMART_TARGET,JSON.stringify(next));}catch(e){console.log('smart target save error',e);}
-  };
+  // 스마트 챌린지 목표 수정 = 주간 목표 설정 수정(단일 진실원, 2026-07-04) — 마이 탭
+  // 카드에서 목표를 고치면 홈 '주간 목표' 바도 같은 값으로 즉시 갱신된다(clampGoal 적용).
+  const editSmartTarget=(_id:string,km:number)=>{changeGoal(km);};
 
   // ── 프로필 이름/사진(영속 + 상태) ───────────────────────────────────────────
   // 이름은 공백이면 기본값('러너')으로 보정해 빈 이름을 막고, 사진은 expo-image-picker로
@@ -1840,7 +1814,7 @@ function Main(){
             deviceId={deviceId}
             backupData={backupData} onImport={importBackup}
             challengeExtRuns={challengeExt.extRuns} challengeExtShoes={challengeExt.extShoes}
-            smartTargetById={smartTargetById} onEditSmartTarget={editSmartTarget}
+            weeklyGoalKm={goalWeeklyKm} onEditSmartTarget={editSmartTarget}
             todayISO={today()}
             cloudPort={cloudPortRef.current} onCloudMerged={onCloudMerged}
             onDeleteAccount={handleDeleteAccount}

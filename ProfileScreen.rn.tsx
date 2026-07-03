@@ -124,7 +124,7 @@ export default function ProfileScreen({
   onOpenHallOfShoes, retiredCount = 0,
   onOpenArchive, archivedCount = 0,
   challengeExtRuns = [], challengeExtShoes = [], todayISO = '',
-  smartTargetById = {}, onEditSmartTarget,
+  weeklyGoalKm = 0, onEditSmartTarget,
 }: {
   profile?: Profile;
   badges?: Badge[];
@@ -182,7 +182,8 @@ export default function ProfileScreen({
   challengeExtShoes?: ExtShoe[];
   todayISO?: string;
   /** 스마트 챌린지 id별 사용자 지정 목표 거리(km). App 이 영속·주입한다. */
-  smartTargetById?: Record<string, number>;
+  /** 홈과 공유하는 주간 목표(km) — 챌린지 목표의 단일 진실원. */
+  weeklyGoalKm?: number;
   /** 목표 거리(km) 변경 위임 — (챌린지 id, km). App 이 영속한다. */
   onEditSmartTarget?: (id: string, km: number) => void;
   // ── 계정·클라우드 동기 ───────────────────────────────────────────────────────
@@ -575,7 +576,7 @@ export default function ProfileScreen({
             extRuns={challengeExtRuns}
             shoes={challengeExtShoes}
             now={todayISO}
-            smartTargetById={smartTargetById}
+            weeklyGoalKm={weeklyGoalKm}
             onEditSmartTarget={onEditSmartTarget}
           />
         </View>
