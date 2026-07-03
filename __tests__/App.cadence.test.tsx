@@ -1,10 +1,10 @@
 /**
  * App.tsx cadence wiring integration test.
  *
- * Drives the real App to the live-run screen, then injects a synthetic step
- * stream through the registered expo-sensors Pedometer.watchStepCount()
- * callback — the same end-to-end path the device uses: OS step count →
- * feedStepCount (rolling Δsteps/Δt rate) → setCadence → run-screen render.
+ * Drives the real App to the live-run screen, then feeds cumulative step counts
+ * through the polled Pedometer.getStepCountAsync mock — the same end-to-end path
+ * the device uses (2026-07-03: watchStepCount 스트림은 화면 잠금 시 네이티브가 끊어
+ * 5초 폴링으로 교체): OS 걸음 이력 조회 → feedStepCount → setCadence → render.
  * Assertions are on the observable cadence metric ('--' placeholder vs a
  * rendered spm number), so this verifies the steps→setCadence→UI wiring, not
  * the pure lib in isolation (that lives in __tests__/lib/stepCadence.test.ts).
@@ -110,12 +110,24 @@ async function startRun() {
     await Promise.resolve();
   });
 
-  // beginRun 이 Pedometer.watchStepCount(cb) 를 호출했다 — cb 를 잡아 누적 걸음수를 주입.
-  const calls = (Pedometer.watchStepCount as jest.Mock).mock.calls;
-  expect(calls.length).toBeGreaterThan(0);
-  const onStep = calls[calls.length - 1][0] as (e: {steps: number}) => void;
+  // beginRun 이 5초 폴링을 시작했다 — getStepCountAsync 목이 '지금 시각'의 누적 걸음수를
+  // 돌려주게 하고, 타이머를 5초씩 전진시켜 폴을 발화시킨다.
+  const setStepsAt = (fn: (nowMs: number) => number) => {
+    (Pedometer.getStepCountAsync as jest.Mock).mockImplementation(() =>
+      Promise.resolve({steps: fn(Date.now())}),
+    );
+  };
+  const poll = async (times: number) => {
+    for (let i = 0; i < times; i++) {
+      await act(async () => {
+        jest.advanceTimersByTime(5000);
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+    }
+  };
 
-  return {renderer, root, onStep};
+  return {renderer, root, setStepsAt, poll};
 }
 
 const BASE = 100000;
@@ -129,14 +141,12 @@ test('Pedometer ~170spm 스트림이 일시정지 펼침 케이던스에 160-180
   jest.useFakeTimers();
   jest.setSystemTime(BASE);
   try {
-    const {renderer, root, onStep} = await startRun();
+    const {renderer, root, setStepsAt, poll} = await startRun();
 
-    // 누적 걸음수 k 를 시각 BASE + k*interval 에 공급(active 상태 — 피드 동작).
-    const step = (k: number) => {
-      jest.setSystemTime(BASE + k * intervalMs);
-      act(() => onStep({steps: k}));
-    };
-    for (let k = 0; k <= 34; k++) step(k); // ~12s span 의 170spm
+    // 러닝 시작 시점부터 170spm 로 걸음이 쌓인다(하드웨어 누적 이력 시뮬레이션).
+    const t0 = Date.now();
+    setStepsAt(now => Math.floor(Math.max(0, now - t0) / intervalMs));
+    await poll(3); // 15s — 폴 표본 3개(5s 간격)로 롤링 윈도우 충족
 
     // 일시정지 → 보조지표 펼침(케이던스 노출). 피드는 멈추지만 계산된 상태는 유지된다.
     pressByA11y(root, '일시정지');
@@ -158,14 +168,12 @@ test('첫 걸음 전 idle 은 표시 케이던스를 낮추지 않는다', async
   jest.useFakeTimers();
   jest.setSystemTime(BASE);
   try {
-    const {renderer, root, onStep} = await startRun();
+    const {renderer, root, setStepsAt, poll} = await startRun();
 
-    const firstAt = BASE + 30000; // 30s 무음
-    const step = (k: number) => {
-      jest.setSystemTime(firstAt + k * intervalMs);
-      act(() => onStep({steps: k}));
-    };
-    for (let k = 0; k <= 34; k++) step(k); // ~12s 의 진짜 170spm (active)
+    const firstAt = Date.now() + 30000; // 30s 공회전(출발선 대기) 후 진짜 170spm
+    setStepsAt(now => (now < firstAt ? 0 : Math.floor((now - firstAt) / intervalMs)));
+    await poll(6); // 30s 공회전 — '변화 0' 폴 표본은 앵커 슬라이드로 흡수돼야 한다
+    await poll(3); // 15s 의 진짜 170spm
     pressByA11y(root, '일시정지'); // 펼침 지표로 케이던스 확인
     const spm = Number(readCadence(root));
     expect(spm).toBeGreaterThanOrEqual(160); // ~26 으로 끌려가지 않음

@@ -2206,21 +2206,30 @@ function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],weightKg,onSave,onDisca
     cadenceState.current=initStepCadence();cadRef.current=0;
     locationRef.current='';locationFetched.current=false;announcedKm.current=0;
     }
-    // 케이던스(걸음수): OS 걸음 센서(expo-sensors Pedometer)의 누적 걸음수를 받아 분당
-    // 비율로 spm 을 산출한다(가속도 10Hz 피크검출은 ~170을 ~90으로 절반 누락해 교체).
-    // ACTIVITY_RECOGNITION 런타임 권한 필요 — 거부/미지원 기기에선 케이던스만 0(러닝은 계속).
-    // 자동 일시정지/재개는 여전히 GPS 속도 상태기계(decideAutoPause)가 fix마다 판정한다.
+    // 케이던스(걸음수): OS 걸음 센서(CMPedometer)의 누적 걸음수를 **주기 조회(폴링)**로
+    // 받아 분당 비율 spm 을 산출한다. watchStepCount 스트림은 expo-sensors 네이티브가
+    // OnAppEntersBackground 에서 stopUpdates() 해 화면을 잠그면(주머니 러닝) 끊긴다 —
+    // 2026-07-03 실전 검증에서 케이던스 0 의 원인. 모션 보조칩은 앱과 무관하게 걸음을
+    // 하드웨어에 기록하므로 getStepCountAsync(러닝시작, 지금) 조회는 잠금 구간까지 소급해
+    // 정확하다(나이키 방식). 폴링은 위치 백그라운드 모드로 JS 가 살아 있어 잠금 중에도 돈다.
+    // 거부/미지원 기기에선 케이던스만 0(러닝은 계속).
     try{
       const perm=await Pedometer.requestPermissionsAsync();
       const available=perm.granted?await Pedometer.isAvailableAsync():false;
       if(available){
-        stepSub.current=Pedometer.watchStepCount(({steps})=>{
-          if(runTracker.pausedFlag())return;
-          // 누적 걸음수 표본 공급 → 롤링 윈도우 분당비율 spm(순수 stepCadence).
-          const c=feedStepCount(cadenceState.current,steps,Date.now());
-          cadenceState.current=c.state;
-          if(c.spm!==cadRef.current){cadRef.current=c.spm;setCadence(c.spm);runTracker.setMeta({cadence:c.spm});}
-        });
+        const stepT0=new Date();
+        let polling=false;
+        stepSub.current=setInterval(async()=>{
+          if(polling||runTracker.pausedFlag())return;
+          polling=true;
+          try{
+            const r=await Pedometer.getStepCountAsync(stepT0,new Date());
+            const c=feedStepCount(cadenceState.current,r?.steps??0,Date.now());
+            cadenceState.current=c.state;
+            if(c.spm!==cadRef.current){cadRef.current=c.spm;setCadence(c.spm);runTracker.setMeta({cadence:c.spm});}
+          }catch{/* 일시 조회 실패 — 다음 폴에서 재시도 */}
+          finally{polling=false;}
+        },5000);
       }
     }catch{/* 걸음 센서 미지원/권한 거부 — 케이던스만 비활성, 러닝은 계속 */}
     // 기압 고도계(iOS): relativeAltitude(구독 시작 이후 누적 고도변화, m)를 feedAltitude 로
@@ -2255,7 +2264,7 @@ function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],weightKg,onSave,onDisca
   }
 
   function stop(){
-    if(stepSub.current){const sub=stepSub.current;if(typeof sub.remove==='function')sub.remove();else if(typeof sub.unsubscribe==='function')sub.unsubscribe();stepSub.current=null;}
+    if(stepSub.current){clearInterval(stepSub.current);stepSub.current=null;}
     if(baroSub.current){try{baroSub.current.remove();}catch{/* noop */}baroSub.current=null;}
     liveActivity.end(); // 잠금화면 위젯 닫기(종료/완주/취소/언마운트 모두 stop 경유)
     clearInterval(timer.current);

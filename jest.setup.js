@@ -135,6 +135,9 @@ jest.mock('expo-sensors', () => ({
   __esModule: true,
   Pedometer: {
     watchStepCount: jest.fn(() => ({remove: jest.fn()})),
+    // 폴링 케이던스(2026-07-03 잠금 중 스트림 정지 수정): 테스트가 mockResolvedValue 로
+    // 누적 걸음수를 주입한다. 기본 0걸음.
+    getStepCountAsync: jest.fn(() => Promise.resolve({steps: 0})),
     isAvailableAsync: jest.fn(() => Promise.resolve(true)),
     requestPermissionsAsync: jest.fn(() =>
       Promise.resolve({granted: true, status: 'granted'}),

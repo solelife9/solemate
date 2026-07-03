@@ -61,6 +61,13 @@ export function feedStepCount(
   let samples: StepSample[];
   if (last && steps < last.steps) {
     samples = [{t: nowMs, steps}];
+  } else if (last && steps === last.steps) {
+    // 공회전 앵커 슬라이드(폴링 소스, 2026-07-03): 걸음수가 그대로면 표본을 append 하지
+    // 않고 마지막 표본의 시각만 지금으로 민다. 스트림(CMPedometer 이벤트)은 걸음이 없으면
+    // 이벤트 자체가 없지만, 폴링은 정지 중에도 5초마다 '변화 0' 표본을 만든다 — 그대로
+    // 쌓으면 출발선 대기/신호 정지 뒤 재출발 케이던스가 공회전 시간에 희석된다. 앵커를
+    // 밀면 재출발 첫 Δ가 곧바로 신선한 윈도우에서 계산된다(스트림 의미론과 동치).
+    samples = [...prev.slice(0, -1), {t: nowMs, steps}];
   } else {
     samples = [...prev, {t: nowMs, steps}];
   }
