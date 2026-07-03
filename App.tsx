@@ -2033,12 +2033,16 @@ function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],weightKg,onSave,onDisca
         }
         // per-km 스플릿: dist가 정수 km 경계를 새로 넘으면 그 1km의 소요시간(초)·고도상승(m)을
         // 기록한다. 경로에 타임스탬프가 없어 못 했던 '실제' 구간 페이스를 레코더가 직접 남긴다.
+        // 고도 소스는 총 상승(finElevTotal)과 동일하게 기압계 우선 — GPS 고도만 쓰면 평지
+        // 러닝에서 노이즈 누적으로 스플릿 고도가 부풀어(실측 3km 평지에서 64/53m) 총합과
+        // 모순된다(2026-07-03 검증 러닝 데이터).
         if(Math.floor(s.dist)>splitsRef.current.length){
           const splitKm=splitsRef.current.length+1;
+          const gainNow=baroAvail.current?baroElev.current.gain:s.elevGainM;
           splitsRef.current.push({km:splitKm,
             paceSec:Math.max(0,Math.round(s.elapsed-lastSplitRef.current.elapsed)),
-            elevM:Math.max(0,Math.round(s.elevGainM-lastSplitRef.current.elevM))});
-          lastSplitRef.current={elapsed:s.elapsed,elevM:s.elevGainM};
+            elevM:Math.max(0,Math.round(gainNow-lastSplitRef.current.elevM))});
+          lastSplitRef.current={elapsed:s.elapsed,elevM:gainNow};
         }
         if(s.permissionRevoked)setGpsStatus('위치 권한 필요');
         else if(s.accuracyM!=null)setGpsStatus(`정확도 ${s.accuracyM}m`);
