@@ -85,6 +85,10 @@ export function PaceCurveChart({splits, unit = 'km', gap}: {splits: Split[]; uni
   const area = `${line} L${pts[pts.length - 1].x.toFixed(1)} ${baseY} L${pts[0].x.toFixed(1)} ${baseY} Z`;
   const fastestIdx = rawPaces.indexOf(minActual);
   const avgY = Y(avg);
+  // 정수 km 눈금(구간 경계) — 7개 이하면 전부, 많으면 2km 간격.
+  const tickStep = Math.floor(kmMax) - Math.ceil(kmMin) >= 7 ? 2 : 1;
+  const kmTicks: number[] = [];
+  for (let k = Math.ceil(kmMin); k <= Math.floor(kmMax); k += tickStep) kmTicks.push(k);
   // GAP 라인(점선) — km 범위를 실제 곡선과 공유(같은 런).
   const gapLine = gapPts
     ? smoothPath(gapPts.map((g) => ({x: X(g.km), y: Y(g.paceSec)})))
@@ -110,6 +114,10 @@ export function PaceCurveChart({splits, unit = 'km', gap}: {splits: Split[]; uni
             </LinearGradient>
           </Defs>
           <Path d={area} fill="url(#paceFill)" />
+          {/* km 세로 격자 — '지금 보는 지점이 몇 km 인지'가 읽히게(구간 눈금). */}
+          {kmTicks.map((k) => (
+            <Line key={k} x1={X(k)} y1={padT} x2={X(k)} y2={H - padB} stroke={withAlpha(T1, 0.07)} strokeWidth={1} />
+          ))}
           {/* 평균 페이스 기준선 — 곡선이 이 선 위면 평균보다 빠른 구간. */}
           <Line
             x1={padX} y1={avgY} x2={padX + plotW} y2={avgY}
@@ -128,15 +136,19 @@ export function PaceCurveChart({splits, unit = 'km', gap}: {splits: Split[]; uni
           평균 {fmtPace(avg)}
         </Text>
       </View>
-      <View style={st.axis}>
-        <Text style={st.axisTxt}>{kmMin}{unit}</Text>
-        {gapPts && (
+      {/* x축 km 눈금 라벨 — 격자와 같은 위치에 절대배치. */}
+      <View style={{height: 14}}>
+        {kmTicks.map((k) => (
+          <Text key={k} style={[st.tickTxt, {left: X(k) - 10}]}>{k}{unit}</Text>
+        ))}
+      </View>
+      {gapPts && (
+        <View style={st.axis}>
           <Text style={st.legend} accessibilityLabel="회색 점선은 경사 보정 페이스">
             <Text style={{color: ACCENT}}>—</Text> 실제  <Text style={{color: T3}}>┄</Text> 경사보정
           </Text>
-        )}
-        <Text style={st.axisTxt}>{kmMax}{unit}</Text>
-      </View>
+        </View>
+      )}
     </View>
   );
 }
@@ -150,7 +162,8 @@ const st = StyleSheet.create({
   yLabels: {flexDirection: 'row', justifyContent: 'space-between', marginBottom: 2},
   yTxt: {color: withAlpha(T1, 0.45), fontFamily: FONT, fontSize: 10, fontWeight: '600'},
   avgTxt: {position: 'absolute', right: 2, color: withAlpha(T1, 0.55), fontFamily: FONT, fontSize: 10, fontWeight: '600'},
-  axis: {flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 2},
+  axis: {flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 2},
   axisTxt: {color: T3, fontFamily: FONT, fontSize: 11, fontWeight: '600'},
+  tickTxt: {position: 'absolute', width: 24, textAlign: 'center', color: T3, fontFamily: FONT, fontSize: 10, fontWeight: '600'},
   legend: {color: T3, fontFamily: FONT, fontSize: 10, fontWeight: '600'},
 });

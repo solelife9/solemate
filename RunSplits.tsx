@@ -24,8 +24,9 @@ export function RunSplits({splits}: {splits: Split[]}) {
   const fast = Math.min(...paces);
   const slow = Math.max(...paces);
   const span = Math.max(1, slow - fast);
-  // 빠를수록 길게(72%~100%) — 차이를 은은하게.
-  const widthOf = (s: number) => 72 + ((slow - s) / span) * 28;
+  // 빠를수록 길게(40%~100%) — 구간 차이가 한눈에 보이게 대비를 키웠다
+  // (기존 72~100% 는 어떤 런이든 다 비슷한 길이로 보인다는 피드백, 2026-07-04).
+  const widthOf = (s: number) => 40 + ((slow - s) / span) * 60;
 
   return (
     <View style={r.wrap}>
