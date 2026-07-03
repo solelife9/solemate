@@ -11,7 +11,7 @@
  *   2) The shoe-first hero reflects the REAL activeIdx (not a hard-coded 0):
  *      changing activeIdx swaps the hero's shoe name + lifespan ring; an
  *      out-of-range activeIdx clamps to the last shoe.
- *   3) The KeegoWordmark renders 'Keego' INSIDE a directly-rendered HomeScreen.
+ *   3) The KeegoWordmark renders lowercase 'keego' INSIDE a directly-rendered HomeScreen.
  *   4) (구조) A secondary/label text is bound to the T3 token (orange restraint).
  *
  * @format
@@ -135,12 +135,12 @@ describe('hero card reflects the real activeIdx, not index 0', () => {
   });
 });
 
-// ── 3) KeegoWordmark renders 'Keego' inside a directly-rendered HomeScreen ────
-test("KeegoWordmark renders 'Keego' within HomeScreen itself", () => {
+// ── 3) KeegoWordmark renders 'keego' inside a directly-rendered HomeScreen ────
+test("KeegoWordmark renders lowercase 'keego' within HomeScreen itself", () => {
   const root = render(<HomeScreen shoes={SHOES} activeIdx={0} onSelect={jest.fn()} />).root;
   // Direct assertion on the HomeScreen tree (not a sibling-screen substring).
-  const wordmarkTexts = byName(root, 'Text').filter(t => t.props.children === 'Keego');
+  const wordmarkTexts = byName(root, 'Text').filter(t => t.props.children === 'keego');
   expect(wordmarkTexts.length).toBeGreaterThanOrEqual(1);
-  expect(textOf(root)).toContain('Keego');
+  expect(textOf(root)).toContain('keego');
 });
 

@@ -48,9 +48,9 @@ const RecapShareCard = React.forwardRef<unknown, RecapShareCardProps>(({model}, 
         strokeWidth={2}
       />
 
-      {/* 헤더: Keego 워드마크 + 응원 한 줄 */}
-      <SvgText x={PAD} y={170} fill={ACCENT} fontFamily={DISPLAY} fontSize={64} fontWeight="700">
-        {model.brand}
+      {/* 헤더: keego 워드마크(나눔명조 소문자 흰색 — 2026-07-03 브랜드 확정) + 응원 한 줄 */}
+      <SvgText x={PAD} y={170} fill={T1} fontFamily="NanumMyeongjoExtraBold" fontSize={64}>
+        {model.brand.toLowerCase()}
       </SvgText>
       <SvgText x={PAD} y={228} fill={T3} fontFamily={FONT} fontSize={30}>
         {model.tagline}

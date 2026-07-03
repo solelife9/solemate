@@ -90,20 +90,22 @@ describe('conditionColor / conditionTone map shoe condition → theme token', ()
   });
 });
 
-// ── KeegoWordmark renders the literal 'Keego' filled by the accent gradient ───
+// ── KeegoWordmark — 2026-07-03 브랜드 확정: 소문자 'keego'·나눔명조·흰색(T1) ──
 describe('KeegoWordmark', () => {
-  test("renders an SVG <Text> whose content is exactly 'Keego'", () => {
+  test("renders the literal lowercase 'keego'", () => {
     const {root} = render(<KeegoWordmark />);
     const texts = byName(root, 'Text');
     expect(texts.length).toBeGreaterThanOrEqual(1);
-    expect(texts.map(t => t.props.children)).toContain('Keego');
+    expect(texts.map(t => t.props.children)).toContain('keego');
   });
 
-  test('its gradient stops use the ACCENT → ACCENT_2 token pair', () => {
+  test('세리프(나눔명조 ExtraBold) + 흰색(T1) — 그라데이션/오렌지 없음', () => {
     const {root} = render(<KeegoWordmark />);
-    const stopColors = byName(root, 'Stop').map(s => s.props.stopColor);
-    expect(stopColors).toContain(ACCENT);
-    expect(stopColors).toContain(ACCENT_2);
+    const t = byName(root, 'Text').find(n => n.props.children === 'keego')!;
+    const st = Array.isArray(t.props.style) ? Object.assign({}, ...t.props.style.flat().filter(Boolean)) : t.props.style;
+    expect(st.fontFamily).toBe('NanumMyeongjoExtraBold');
+    expect(st.color).toBe(T1);
+    expect(byName(root, 'Stop').length).toBe(0); // 옛 그라데이션 폐기
   });
 });
 

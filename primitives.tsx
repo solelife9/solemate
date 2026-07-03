@@ -851,9 +851,12 @@ const metric = StyleSheet.create({
   },
 });
 
-// ── Keego wordmark (오렌지 그라데이션 텍스트) ─────────────────────────────────
-// 'Keego' 를 accent → accent2 가로 그라데이션으로 칠한 워드마크. RN 에서 그라데이션
-// 텍스트는 SVG <Text> + LinearGradient 로 구현한다(masked-view/expo 의존 없음).
+// ── Keego wordmark (나눔명조 세리프, 2026-07-03 브랜드 확정) ──────────────────
+// 소문자 'keego' · 나눔명조 ExtraBold(전당 제목체와 동일) · 흰색(T1) · 점 없음.
+// 세리프 로고 + 그로테스크 본문(Pretendard/Barlow)의 이중 시스템 — Satisfy 문법.
+// 옛 오렌지 그라데이션 SVG 텍스트는 폐기(오렌지는 데이터 강조 전용 원칙과 충돌했다).
+export const WORDMARK_SERIF = 'NanumMyeongjoExtraBold';
+
 export function KeegoWordmark({
   size = 24,
   style,
@@ -861,29 +864,12 @@ export function KeegoWordmark({
   size?: number;
   style?: StyleProp<ViewStyle>;
 }) {
-  const id = `keego-wm-${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
-  const text = 'Keego';
-  const width = Math.ceil(size * (text.length * 0.66 + 0.4));
-  const height = Math.ceil(size * 1.3);
   return (
-    <Svg width={width} height={height} style={style}>
-      <Defs>
-        <SvgGradient id={id} x1="0" y1="0" x2="1" y2="0">
-          <Stop offset="0" stopColor={ACCENT} />
-          <Stop offset="1" stopColor={ACCENT_2} />
-        </SvgGradient>
-      </Defs>
-      <SvgText
-        x="0"
-        y={Math.round(size * 0.95)}
-        fontFamily={DISPLAY}
-        fontSize={size}
-        fontWeight="800"
-        letterSpacing={-0.6}
-        fill={`url(#${id})`}>
-        {text}
-      </SvgText>
-    </Svg>
+    <Text
+      style={[{fontFamily: WORDMARK_SERIF, fontSize: size, color: T1, includeFontPadding: false} as TextStyle, style as StyleProp<TextStyle>]}
+      accessibilityLabel="keego">
+      keego
+    </Text>
   );
 }
 
