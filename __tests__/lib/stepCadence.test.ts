@@ -99,3 +99,21 @@ describe('feedStepCount', () => {
     expect(s).toEqual({samples: []});
   });
 });
+
+describe('averageSpm — 저장용 러닝 전체 평균 케이던스', () => {
+  const {averageSpm} = require('../../lib/stepCadence');
+  test('총 걸음수 ÷ 이동분: 3,150걸음/18.75분 ≈ 168spm', () => {
+    expect(averageSpm(3150, 1125)).toBe(168);
+  });
+  test('경계·비정상 입력은 0 (걸음 0, 시간 0/음수, NaN)', () => {
+    expect(averageSpm(0, 600)).toBe(0);
+    expect(averageSpm(100, 0)).toBe(0);
+    expect(averageSpm(100, -5)).toBe(0);
+    expect(averageSpm(NaN, 600)).toBe(0);
+    expect(averageSpm(100, NaN)).toBe(0);
+  });
+  test('반올림: 170.4→170, 170.5→171', () => {
+    expect(averageSpm(1704, 600)).toBe(170); // 170.4
+    expect(averageSpm(1705, 600)).toBe(171); // 170.5
+  });
+});

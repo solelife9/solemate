@@ -95,3 +95,14 @@ export function computeStepSpm(samples: StepSample[], nowMs: number): number {
   if (dSteps <= 0) return 0;
   return Math.round((dSteps * 60000) / spanMs);
 }
+
+/**
+ * 러닝 전체 평균 케이던스(spm) = 총 걸음수 ÷ 이동 시간(분). 기록 저장용 표준 지표 —
+ * 롤링 spm(라이브 표시용)과 달리 마지막 순간의 속도에 좌우되지 않는다. 걸음은 이동 중에만
+ * 쌓이므로 분모는 일시정지를 제외한 이동 시간이 맞다. 비정상 입력(0/음수/NaN)은 0.
+ */
+export function averageSpm(totalSteps: number, movingSec: number): number {
+  if (!Number.isFinite(totalSteps) || !Number.isFinite(movingSec)) return 0;
+  if (totalSteps <= 0 || movingSec <= 0) return 0;
+  return Math.round((totalSteps * 60) / movingSec);
+}

@@ -63,7 +63,7 @@ import {activateKeepAwakeAsync, deactivateKeepAwake} from 'expo-keep-awake';
 // 러닝 중 화면이 OS 자동잠금으로 꺼지지 않게 하는 태그(손에 들고/암밴드로 지표를 흘끗 보는
 // 시나리오용). 시작 시 활성, 종료/언마운트 시 해제. 주머니(화면 off)는 백그라운드 추적이 책임.
 const KEEP_AWAKE_TAG = 'keego-run';
-import {initStepCadence, feedStepCount} from './lib/stepCadence';
+import {initStepCadence, feedStepCount, averageSpm} from './lib/stepCadence';
 import {fmtPace, fmtTime, fmtKDate, getMonday, ymdLocal} from './lib/format';
 import {
   sumKm, avgPaceLabel, totalTimeLabel, durationLabel, summaryOf, maxDayStreak,
@@ -1974,6 +1974,8 @@ function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],weightKg,onSave,onDisca
   const timer=useRef<any>(null);
   const snapTimer=useRef<any>(null);
   const stepSub=useRef<any>(null);
+  // 폴링 시작 시각 — 종료 시 총 걸음수(러닝 전체)를 조회해 평균 케이던스를 산출하는 기준점.
+  const stepT0Ref=useRef<Date|null>(null);
   // 기압 고도계(iOS Barometer.relativeAltitude) — GPS 고도(노이즈 큼)보다 정확한 고도 상승.
   // 사용 가능하면 baroAvail=true 가 되고, 이때부턴 화면/저장 고도를 기압계 누적으로 쓴다.
   const baroSub=useRef<any>(null);
@@ -2218,6 +2220,7 @@ function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],weightKg,onSave,onDisca
       const available=perm.granted?await Pedometer.isAvailableAsync():false;
       if(available){
         const stepT0=new Date();
+        stepT0Ref.current=stepT0;
         let polling=false;
         stepSub.current=setInterval(async()=>{
           if(polling||runTracker.pausedFlag())return;
@@ -2307,7 +2310,21 @@ function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],weightKg,onSave,onDisca
     setFinHrTrack(runTracker.getHrTrack().slice());
     setFinGapTrack(runTracker.getGapTrack().slice());
     setFinLocation(locationRef.current);
+    // 케이던스 기록은 업계 표준인 '러닝 전체 평균'(총 걸음수 ÷ 이동 시간) — 정지 직전
+    // 롤링 값은 마지막 30~60초만 반영해 걷기 마무리 시 기록 전체가 왜곡된다. 보조칩
+    // 이력에서 총 걸음수를 조회하고, 조회 실패 시에만 롤링 값으로 폴백. 걸음은 이동 중에만
+    // 쌓이므로 분모는 일시정지 제외 이동 시간(ft)이 맞다.
     setFinKm(fk);setFinTime(ft);setFinCad(cadRef.current);
+    if(stepT0Ref.current&&ft>0){
+      const t0=stepT0Ref.current;
+      void (async()=>{
+        try{
+          const r=await Pedometer.getStepCountAsync(t0,new Date());
+          const avg=averageSpm(r?.steps??0,ft);
+          if(avg>0)setFinCad(avg);
+        }catch{/* 조회 실패 — 롤링 폴백 유지 */}
+      })();
+    }
     setFinElev(finElevTotal);
     setPhase('done');
   }
