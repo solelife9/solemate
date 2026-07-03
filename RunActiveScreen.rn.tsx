@@ -18,7 +18,7 @@ import { View, Text, Pressable, StyleSheet, Animated, Easing, StatusBar } from '
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Svg, { Path, Circle, Defs, LinearGradient as SvgLinear, Stop } from 'react-native-svg';
-import { GlassEdge } from './primitives';
+import { GlassEdge, ShoeGlyph } from './primitives';
 // 색·폰트는 전역 디자인 토큰(theme.ts)만 참조한다 — 사설 색객체(const C) 폐기.
 // 매핑: bg→BG · surface→CARD · accent→ACCENT · sage→GOOD · amber→WARN ·
 // red→DANGER · text→T1–T4 · sep→SEP. 폰트 UI/DP → FONT/DISPLAY.
@@ -83,11 +83,6 @@ function Ring({ size, stroke, progress, children }: { size: number; stroke: numb
   );
 }
 
-const SHOE_PATH =
-  'M222-79q-32 0-61.5-12T108-127l-7-7q-9-8-11.5-20t2.5-23l194-495q8-20 27.5-30.5T354-708l58 11q17 4 32.5-2.5T471-717q14-15 18.5-31.5T489-782l-5-15q-5-16-1.5-32.5T498-858l43-43q17-18 42.5-18t42.5 17l181 184q22 23 22.5 54.5T809-609l19 19q11 11 11 28t-11 28q-12 11-28.5 11.5T772-531l-18-19-28 29 18 18q11 11 11 28t-11 28q-12 11-28.5 11.5T687-447l-18-17-112 114 17 16q12 12 12 28.5T574-277q-12 11-28.5 11.5T517-277l-16-17-28 29 16 16q11 11 11 28t-11 28q-12 11-28.5 11.5T432-193l-16-15-28 28 16 15q11 12 11 28.5T404-108q-12 11-28.5 11.5T347-108l-16-16q-23 23-50.5 34T222-79Z';
-function ShoeGlyph({ color, size = 15 }: { color: string; size?: number }) {
-  return <Svg width={size} height={size} viewBox="0 -960 960 960" style={{ transform: [{ scaleX: -1 }] }}><Path d={SHOE_PATH} fill={color} /></Svg>;
-}
 
 function GpsBars({ level = 3 }: { level?: number }) {
   const col = level >= 3 ? GOOD : level === 2 ? WARN : level <= 0 ? T4 : DANGER;
@@ -200,7 +195,7 @@ export default function RunActiveScreen({
           <View style={[r.liveDot, met && { backgroundColor: GOOD }]} />
           <Text style={[r.liveText, met && { color: GOOD }]}>{statusLabel ?? (paused ? '일시정지' : '러닝 중')}</Text>
         </View>
-        <View style={r.shoeChip} accessibilityRole="text" accessibilityLabel={`신고 있는 신발 ${shoeLabel}`}><ShoeGlyph color={T3} /><Text style={r.shoeText}>{shoeLabel}</Text></View>
+        <View style={r.shoeChip} accessibilityRole="text" accessibilityLabel={`신고 있는 신발 ${shoeLabel}`}><ShoeGlyph color={T3} size={15} /><Text style={r.shoeText}>{shoeLabel}</Text></View>
       </View>
 
       {/* gps */}

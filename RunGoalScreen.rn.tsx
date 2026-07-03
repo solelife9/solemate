@@ -29,7 +29,7 @@ import {
 import { tap } from './lib/haptics';
 // CTA 는 앱 전역 단일 Button 프리미티브(그라데이션 GRAD_TOP/BOT·글로우·radius 토큰).
 // 모드 탭 스트립은 SegmentedControl 단일 프리미티브(accentTint variant).
-import { Button, SegmentedControl, conditionColor, SwipeBack } from './primitives';
+import { Button, SegmentedControl, conditionColor, SwipeBack, ShoeGlyph } from './primitives';
 import SpeedPlanPanel from './SpeedPlanPanel';
 import { buildPacePlan } from './lib/pacePlan';
 
@@ -45,11 +45,6 @@ function Icon({ name, size = 22, color = T2, fill }: { name: string; size?: numb
   return <Svg width={size} height={size} viewBox="0 0 24 24">{p[name]}</Svg>;
 }
 
-const SHOE_PATH =
-  'M222-79q-32 0-61.5-12T108-127l-7-7q-9-8-11.5-20t2.5-23l194-495q8-20 27.5-30.5T354-708l58 11q17 4 32.5-2.5T471-717q14-15 18.5-31.5T489-782l-5-15q-5-16-1.5-32.5T498-858l43-43q17-18 42.5-18t42.5 17l181 184q22 23 22.5 54.5T809-609l19 19q11 11 11 28t-11 28q-12 11-28.5 11.5T772-531l-18-19-28 29 18 18q11 11 11 28t-11 28q-12 11-28.5 11.5T687-447l-18-17-112 114 17 16q12 12 12 28.5T574-277q-12 11-28.5 11.5T517-277l-16-17-28 29 16 16q11 11 11 28t-11 28q-12 11-28.5 11.5T432-193l-16-15-28 28 16 15q11 12 11 28.5T404-108q-12 11-28.5 11.5T347-108l-16-16q-23 23-50.5 34T222-79Z';
-function ShoeGlyph({ color, size = 24 }: { color: string; size?: number }) {
-  return <Svg width={size} height={size} viewBox="0 -960 960 960" style={{ transform: [{ scaleX: -1 }] }}><Path d={SHOE_PATH} fill={color} /></Svg>;
-}
 
 type Mode = 'km' | 'min' | 'speed';
 /** 러닝 목표 — 거리(km)/시간(분)/스피드(km별 페이스 플랜). 0/빈배열은 미설정. */

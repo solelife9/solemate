@@ -19,6 +19,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, Pressable, StyleSheet, Animated, Easing, StatusBar } from 'react-native';
+import { ShoeGlyph } from './primitives';
 import Svg, { Path, Circle } from 'react-native-svg';
 // 색·폰트는 전역 디자인 토큰(theme.ts)만 참조한다 — 사설 색객체(const C) 폐기.
 // 매핑: bg→BG · surface→CARD · accent→ACCENT · sage→GOOD · text→T1–T4 · hair→SEP.
@@ -39,11 +40,6 @@ function Icon({ name, size = 22, color = T2 }: { name: string; size?: number; co
   return <Svg width={size} height={size} viewBox="0 0 24 24">{g[name]}</Svg>;
 }
 
-const SHOE_PATH =
-  'M222-79q-32 0-61.5-12T108-127l-7-7q-9-8-11.5-20t2.5-23l194-495q8-20 27.5-30.5T354-708l58 11q17 4 32.5-2.5T471-717q14-15 18.5-31.5T489-782l-5-15q-5-16-1.5-32.5T498-858l43-43q17-18 42.5-18t42.5 17l181 184q22 23 22.5 54.5T809-609l19 19q11 11 11 28t-11 28q-12 11-28.5 11.5T772-531l-18-19-28 29 18 18q11 11 11 28t-11 28q-12 11-28.5 11.5T687-447l-18-17-112 114 17 16q12 12 12 28.5T574-277q-12 11-28.5 11.5T517-277l-16-17-28 29 16 16q11 11 11 28t-11 28q-12 11-28.5 11.5T432-193l-16-15-28 28 16 15q11 12 11 28.5T404-108q-12 11-28.5 11.5T347-108l-16-16q-23 23-50.5 34T222-79Z';
-function ShoeGlyph({ color, size = 15 }: { color: string; size?: number }) {
-  return <Svg width={size} height={size} viewBox="0 -960 960 960" style={{ transform: [{ scaleX: -1 }] }}><Path d={SHOE_PATH} fill={color} /></Svg>;
-}
 
 const R = 138, STROKE = 10, DASH = 2 * Math.PI * R, DIAL = 300;
 
@@ -112,7 +108,7 @@ export default function RunCountdownScreen({
         <Pressable onPress={cancel} hitSlop={8} style={s.cancel} accessibilityRole="button" accessibilityLabel="카운트다운 취소">
           <Icon name="back" size={18} color={T2} /><Text style={s.cancelText}>취소</Text>
         </Pressable>
-        <View style={s.shoeChip} accessibilityRole="text" accessibilityLabel={`선택한 신발 ${shoeLabel}`}><ShoeGlyph color={T2} /><Text style={s.shoeText}>{shoeLabel}</Text></View>
+        <View style={s.shoeChip} accessibilityRole="text" accessibilityLabel={`선택한 신발 ${shoeLabel}`}><ShoeGlyph color={T2} size={15} /><Text style={s.shoeText}>{shoeLabel}</Text></View>
       </View>
 
       {/* dial */}
