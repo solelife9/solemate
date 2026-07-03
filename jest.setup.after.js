@@ -50,3 +50,43 @@ beforeEach(async () => {
   await AsyncStorage.setItem('onboarded', '1');
   await AsyncStorage.setItem('loc_perm_primed', '1');
 });
+
+// ── 실타이머 누수 차단(전 스위트) ────────────────────────────────────────────
+// 남은 간헐 실패(~1/7 실행)의 원인: 테스트/스위트가 끝난 뒤 발화하는 진짜
+// setTimeout/Interval(토스트 자동닫힘, 800ms 캐시 디바운스, VirtualizedList 배치 등)이
+// 같은 워커의 다음 스위트에서 'environment torn down'/'Cannot log after tests are done'
+// 으로 터진다. 각 테스트 동안 만들어진 타이머를 추적해 afterEach 에서 전부 해제한다 —
+// 테스트가 끝난 시점에 아직 남아 있는 타이머는 정의상 누수다(정상 대기는 테스트가 await).
+const __realSetTimeout = global.setTimeout;
+const __realClearTimeout = global.clearTimeout;
+const __realSetInterval = global.setInterval;
+const __realClearInterval = global.clearInterval;
+const __liveTimeouts = new Set();
+const __liveIntervals = new Set();
+global.setTimeout = Object.assign((fn, ms, ...args) => {
+  const id = __realSetTimeout(() => {
+    __liveTimeouts.delete(id);
+    fn(...args);
+  }, ms);
+  __liveTimeouts.add(id);
+  return id;
+}, __realSetTimeout);
+global.clearTimeout = Object.assign((id) => {
+  __liveTimeouts.delete(id);
+  return __realClearTimeout(id);
+}, __realClearTimeout);
+global.setInterval = Object.assign((fn, ms, ...args) => {
+  const id = __realSetInterval(fn, ms, ...args);
+  __liveIntervals.add(id);
+  return id;
+}, __realSetInterval);
+global.clearInterval = Object.assign((id) => {
+  __liveIntervals.delete(id);
+  return __realClearInterval(id);
+}, __realClearInterval);
+afterEach(() => {
+  for (const id of __liveTimeouts) __realClearTimeout(id);
+  for (const id of __liveIntervals) __realClearInterval(id);
+  __liveTimeouts.clear();
+  __liveIntervals.clear();
+});

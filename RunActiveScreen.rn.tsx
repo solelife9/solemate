@@ -17,14 +17,14 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, Pressable, StyleSheet, Animated, Easing, StatusBar } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import Svg, { Path, Circle } from 'react-native-svg';
+import Svg, { Path, Circle, Defs, LinearGradient as SvgLinear, Stop } from 'react-native-svg';
 import { GlassEdge } from './primitives';
 // 색·폰트는 전역 디자인 토큰(theme.ts)만 참조한다 — 사설 색객체(const C) 폐기.
 // 매핑: bg→BG · surface→CARD · accent→ACCENT · sage→GOOD · amber→WARN ·
 // red→DANGER · text→T1–T4 · sep→SEP. 폰트 UI/DP → FONT/DISPLAY.
 // (시각 동등: 다크+오렌지 유지)
 import {
-  BG, CARD, ACCENT, GOOD, WARN, DANGER, T1, T2, T3, T4, SEP,
+  BG, CARD, ACCENT, ACCENT_2, GRAD_BOT, GOOD, WARN, DANGER, T1, T2, T3, T4, SEP,
   FONT, DISPLAY, HERO, withAlpha,
 } from './theme';
 import { fmtPaceSec } from './lib/pacePlan';
@@ -38,38 +38,45 @@ import { tap, impactHeavy, warning } from './lib/haptics';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
-// ── Ring (진행할수록 짙어지는 호) ─────────────────────────────────────────────────
-// 캔버스 목업과 동일 원리: 호를 여러 세그먼트로 쪼개어 앵버(시작)→진한 엠버(선두)로
-// 색을 보간한다. 진행률만큼만 그려 "얼마나 왔는지"가 색으로 읽힌다.
-const RING_LIGHT = [0xFF, 0xC0, 0x7A];
-const RING_MID = [0xFF, 0x7A, 0x1E];
-const RING_DEEP = [0xE8, 0x43, 0x0A];
-const mix = (a: number[], b: number[], t: number) => `rgb(${a.map((v, i) => Math.round(v + (b[i] - v) * t)).join(',')})`;
-const ringColor = (f: number) => (f < 0.5 ? mix(RING_LIGHT, RING_MID, f / 0.5) : mix(RING_MID, RING_DEEP, (f - 0.5) / 0.5));
-function arcD(cx: number, cy: number, r: number, a0: number, a1: number) {
-  const x0 = cx + r * Math.cos(a0), y0 = cy + r * Math.sin(a0);
-  const x1 = cx + r * Math.cos(a1), y1 = cy + r * Math.sin(a1);
-  return `M ${x0} ${y0} A ${r} ${r} 0 0 1 ${x1} ${y1}`;
-}
-
+// ── Ring (부드럽게 미끄러지는 진행 호) ────────────────────────────────────────────
+// 구버전은 호를 64조각(Path)으로 쪼개 조각 단위(5.6°)로 '뚝뚝' 끊겨 보였고, GPS fix 마다
+// 값이 점프해 애니메이션도 없었다(사용자 피드백). 홈 히어로 링과 동일 문법으로 교체:
+// 단일 원 스트로크 + SVG 그라데이션(앰버→딥 엠버) + Animated strokeDashoffset —
+// 새 진행률이 올 때마다 900ms 로 미끄러져 fix 간격(~1s)과 맞물려 항상 흐르는 느낌.
 function Ring({ size, stroke, progress, children }: { size: number; stroke: number; progress: number; children?: React.ReactNode }) {
   const r = (size - stroke) / 2;
   const cx = size / 2, cy = size / 2;
-  const START = -Math.PI / 2, TWO = Math.PI * 2;
+  const CIRC = 2 * Math.PI * r;
   const pct = Math.max(0, Math.min(1, progress));
-  const SEG = 64;
-  const segs: React.ReactNode[] = [];
-  for (let i = 0; i < SEG; i++) {
-    const f0 = i / SEG, f1 = (i + 1) / SEG;
-    if (f0 >= pct) break;
-    const a0 = START + f0 * TWO, a1 = START + Math.min(f1, pct) * TWO;
-    segs.push(<Path key={i} d={arcD(cx, cy, r, a0, a1)} stroke={ringColor(pct > 0 ? f0 / pct : 0)} strokeWidth={stroke} strokeLinecap="round" fill="none" />);
-  }
+  const anim = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const a = Animated.timing(anim, {
+      toValue: pct, duration: 900,
+      easing: Easing.out(Easing.quad), useNativeDriver: false, // strokeDashoffset = JS 드라이버
+    });
+    a.start();
+    return () => a.stop(); // 언마운트/값 교체 시 타이머 정리
+  }, [anim, pct]);
+  const dash = anim.interpolate({ inputRange: [0, 1], outputRange: [CIRC, 0] });
   return (
     <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
       <Svg width={size} height={size} style={{ position: 'absolute' }}>
+        <Defs>
+          <SvgLinear id="run-ring" x1="0" y1="0" x2="1" y2="1">
+            <Stop offset="0" stopColor={ACCENT_2} />
+            <Stop offset="0.55" stopColor={ACCENT} />
+            <Stop offset="1" stopColor={GRAD_BOT} />
+          </SvgLinear>
+        </Defs>
         <Circle cx={cx} cy={cy} r={r} stroke={SEP} strokeWidth={stroke} fill="none" />
-        {segs}
+        <AnimatedCircle
+          cx={cx} cy={cy} r={r}
+          stroke="url(#run-ring)" strokeWidth={stroke} fill="none"
+          strokeLinecap="round"
+          strokeDasharray={CIRC}
+          strokeDashoffset={dash}
+          transform={`rotate(-90 ${cx} ${cy})`}
+        />
       </Svg>
       {children}
     </View>
