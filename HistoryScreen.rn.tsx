@@ -18,15 +18,14 @@ import { ymdLocal } from './lib/format';
 import { sumKm, summaryOf, monthBuckets, weekBuckets, yearBuckets } from './lib/stats';
 import { fitnessSummary, thresholdPaceSec } from './lib/analytics/fitness';
 import { FitnessCard } from './FitnessCard';
-import { gradeAdjustedPaceSec, smoothElevation, resampleByDistance, buildGapSeries } from './lib/analytics/gap';
+import { gradeAdjustedPaceSec, smoothElevation, resampleByDistance } from './lib/analytics/gap';
 import { estimateMaxHR, timeInZones, hrSummary, zoneBoundaries, HR_ZONE_LABEL, type HRZone } from './lib/analytics/hrZones';
 import { trimp, paceLoad, effortBand } from './lib/analytics/load';
 import { getRunSurface, setRunSurface, type Surface } from './lib/wearModel';
 import { parseRoute, LatLon } from './lib/route';
 import { CourseMap } from './CourseMap';
 import { RunSplits, Split } from './RunSplits';
-import { PaceCurveChart } from './PaceCurveChart';
-import { buildSplits, buildPaceSeries, PaceTrackPoint } from './lib/splits';
+import { buildSplits } from './lib/splits';
 import { buildShareCardModel, shareRunCard, saveCardToLibrary, SvgCapturable } from './lib/shareCard';
 import { maskDuration, maskDate, validateRunForm, type RunFormErrors } from './lib/inputMask';
 import ShareCard from './ShareCard';
@@ -331,23 +330,6 @@ function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'male', r
       .catch(() => { if (alive) setRecordedSplits([]); });
     return () => { alive = false; };
   }, [run.id]);
-  // 곡선 전용 (거리,경과시간) 시계열(paceTrack_<id>, App.onSave가 영속). 있으면 per-km 보다
-  // 훨씬 고운 페이스 곡선을 만든다. 없으면(옛 런/수동 입력) 스플릿 기반 곡선으로 폴백.
-  const [paceTrack, setPaceTrack] = useState<PaceTrackPoint[]>([]);
-  useEffect(() => {
-    let alive = true;
-    if (!run.id) { setPaceTrack([]); return; }
-    AsyncStorage.getItem('paceTrack_' + run.id)
-      .then(raw => {
-        if (!alive) return;
-        try {
-          const arr = raw ? JSON.parse(raw) : [];
-          setPaceTrack(Array.isArray(arr) ? arr : []);
-        } catch { setPaceTrack([]); }
-      })
-      .catch(() => { if (alive) setPaceTrack([]); });
-    return () => { alive = false; };
-  }, [run.id]);
   // GAP(경사보정페이스)용 (거리,경과초,고도) 시계열(gapTrack_<id>, App.onSave가 영속). 있으면
   // 스무딩→지형스케일 빈평균→Minetti 로 평지 등가 페이스를 낸다. 없으면(옛 런/평지/고도無) null.
   const [gapTrack, setGapTrack] = useState<{ d: number; t: number; e: number }[]>([]);
@@ -375,12 +357,6 @@ function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'male', r
     if (actual > 0 && Math.abs(g - actual) < 1) return null; // 평지(차이 미미)면 숨김
     return Math.round(g);
   }, [gapTrack, run.durationS, run.dist]);
-  // GAP 곡선(페이스곡선 오버레이용) — 집계 GAP 가 유의미할 때만(gapSec!=null) 스무딩 후 0.1km bin.
-  const gapCurve = useMemo(
-    () => (gapSec != null && gapTrack.length >= 2 ? buildGapSeries(smoothElevation(gapTrack, 60), 0.1) : undefined),
-    [gapSec, gapTrack],
-  );
-
   // 심박 시계열(hrTrack_<id>, App.onSave 가 워치 HR 을 영속). 있으면 HR존 분포·평균/최대·
   // 트레이닝효과(TRIMP)를 산출한다. 워치 미연동이면 빈값 → 카드 자동 숨김.
   const [hrTrack, setHrTrack] = useState<{ t: number; bpm: number }[]>([]);
@@ -609,20 +585,10 @@ function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'male', r
         })()}
         {/* 달린 위치(경로) 지도 — route_<id> 가 있으면 SVG 코스맵으로 표시(없으면 자동 숨김). */}
         <CourseMap points={route} style={{ marginTop: 16 }} />
-        {/* 거리축 페이스 곡선(추세) + 구간별 페이스 스플릿(정확값). 같은 스플릿을 공유하고
-            2구간 미만이면 둘 다 자동 숨김. 곡선은 한눈 추세, 표는 km별 정확한 페이스/고도. */}
-        {(() => {
-          const detailSplits = recordedSplits.length >= 2 ? recordedSplits : buildSplits(run, route);
-          // 곡선은 (거리,경과시간) 시계열이 있으면 고운 페이스 곡선, 없으면 per-km 스플릿으로 폴백.
-          // 표(RunSplits)는 항상 per-km 정확값을 유지한다.
-          const curveSeries = paceTrack.length >= 2 ? buildPaceSeries(paceTrack) : detailSplits;
-          return (
-            <>
-              <PaceCurveChart splits={curveSeries.length >= 2 ? curveSeries : detailSplits} unit={unit} gap={gapCurve} />
-              <RunSplits splits={detailSplits} />
-            </>
-          );
-        })()}
+        {/* 구간별 페이스 스플릿(km · 페이스 바 · 고도). 페이스 곡선(추세)은 개선 시도
+            (평균선·눈금·스무딩) 후에도 '봐도 모르겠다'는 실사용 판정으로 제거 확정
+            (2026-07-04) — 구간 정보는 이 표의 대비 강화된 막대가 담당한다. */}
+        <RunSplits splits={recordedSplits.length >= 2 ? recordedSplits : buildSplits(run, route)} />
       </ScrollView>
       {/* 공유 카드: 화면 밖(off-screen)에 마운트해 toDataURL 캡처 대상으로만 쓴다.
           pointerEvents none + 음수 위치라 사용자에겐 보이지 않지만 레이아웃은 된다. */}
