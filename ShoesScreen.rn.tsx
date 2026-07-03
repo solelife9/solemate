@@ -233,8 +233,8 @@ function ShoeDetail({
               </View>
             </View>
             <Text style={s.dModel} numberOfLines={2}>{shoe.model}</Text>
-            {/* 용도 문장(핸드오프처럼 자연어) + 추천 용도 칩(디자인 09 정합). */}
-            {!!purposeSentence && <Text style={s.dPurpose}>{purposeSentence}</Text>}
+            {/* 추천 용도 칩(디자인 09 정합). 용도 '문장'은 칩과 같은 정보의 중복이라
+                삭제(상세 텍스트 다이어트, 2026-07-04 — 침묵 원칙). */}
             {!!detailClass && detailClass.recommended.length > 0 && (
               <View style={s.dTags}>
                 {detailClass.recommended.map((t) => (
@@ -255,10 +255,6 @@ function ShoeDetail({
             usedLabel={String(usedDisp)}
             maxLabel={String(maxDisp)}
           />
-          {/* 교체권장의 의미: 쿠셔닝(성능) 기준 가이드이지 '실착 한계'가 아님을 명확히. */}
-          <Text style={s.gaugeNote}>
-            쿠셔닝(성능)이 유지되는 교체 권장 거리예요. 넘어도 신을 수 있지만 충격 흡수는 줄어요.
-          </Text>
         </View>
 
         {/* 부상예방 경고 배너(주의/위험) — 마모도가 임계를 넘으면 keep-going 보이스로
@@ -342,8 +338,7 @@ function ShoeDetail({
                 <Text style={[s.confChipText, { color: detailConfHigh ? GOOD : T3 }]}>{detailConfLabel}</Text>
               </View>
             </View>
-            <Text style={s.replaceForecastText}>현재 패턴 기준 약 <Text style={s.dForecastBold}>{detailReplaceWeeks}주 후</Text> 교체 예상이에요</Text>
-            {!!detailBasis && <Text style={s.wearBasisText}>{detailBasis}</Text>}
+            <Text style={s.replaceForecastText}>약 <Text style={s.dForecastBold}>{detailReplaceWeeks}주 후</Text> 교체 예상</Text>
           </View>
         )}
 
@@ -354,7 +349,7 @@ function ShoeDetail({
         </View>
         {shoeRuns.length === 0 ? (
           <View style={[s.card, { padding: 24, alignItems: 'center' }]}>
-            <Text style={{ color: T3, fontFamily: FONT, fontSize: 13 }}>아직 기록이 없어요 — 이 신발로 첫 걸음을 떼어볼까요?</Text>
+            <Text style={{ color: T3, fontFamily: FONT, fontSize: 13 }}>아직 기록이 없어요</Text>
           </View>
         ) : (
           <View style={[s.card, { overflow: 'hidden' }]}>

@@ -125,7 +125,7 @@ const styles = StyleSheet.create({
     maxWidth: 560,
     width: '100%',
     backgroundColor: CARD_HI,
-    borderRadius: RADIUS.md,
+    borderRadius: RADIUS.md, borderCurve: 'continuous',
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: SEP,
     paddingVertical: SPACE.md,
@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
     marginLeft: SPACE.md,
     paddingVertical: SPACE.xs,
     paddingHorizontal: SPACE.sm,
-    borderRadius: RADIUS.sm,
+    borderRadius: RADIUS.sm, borderCurve: 'continuous',
   },
   actionPressed: {opacity: 0.6},
   // 오렌지(ACCENT) 액션 라벨 — 다크 표면에서 또렷한 행동 유도.

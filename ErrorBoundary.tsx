@@ -78,9 +78,9 @@ const styles = StyleSheet.create({
   },
   btn: {
     backgroundColor: ACCENT,
-    borderRadius: 16,
+    borderRadius: 16, borderCurve: 'continuous',
     paddingVertical: 14,
     paddingHorizontal: 36,
   },
-  btnText: {color: '#fff', fontFamily: FP, fontSize: 16, fontWeight: '600'},
+  btnText: {color: T1, fontFamily: FP, fontSize: 16, fontWeight: '600'},
 });

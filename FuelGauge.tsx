@@ -71,7 +71,7 @@ const g = StyleSheet.create({
   seg: {height: '100%'},
   fill: {position: 'absolute', left: 0, top: 0, bottom: 0, borderRadius: 999, backgroundColor: ACCENT},
   zone: {position: 'absolute', top: 0, bottom: 0, width: 1, backgroundColor: 'rgba(255,255,255,0.18)'},
-  marker: {position: 'absolute', top: '50%', width: 18, height: 18, borderRadius: 999, backgroundColor: '#fff',
+  marker: {position: 'absolute', top: '50%', width: 18, height: 18, borderRadius: 999, backgroundColor: T1,
     borderWidth: 3, borderColor: ACCENT, marginTop: -9, marginLeft: -9},
   scale: {flexDirection: 'row', justifyContent: 'space-between', marginTop: 10},
   scaleTxt: {color: T3, fontFamily: DISPLAY, fontSize: 11, opacity: 0.8},

@@ -236,19 +236,19 @@ const st = StyleSheet.create({
 
   eyebrow: {fontSize: 12, fontWeight: '700', letterSpacing: 2.6, marginBottom: 32, textTransform: 'uppercase', fontFamily: FONT},
   medalwrap: {width: 124, height: 124, marginBottom: 30, alignItems: 'center', justifyContent: 'center'},
-  ring: {position: 'absolute', width: 124, height: 124, borderRadius: 62, borderWidth: 1},
-  medal: {width: 112, height: 112, borderRadius: 56, borderWidth: 1, alignItems: 'center', justifyContent: 'center'},
+  ring: {position: 'absolute', width: 124, height: 124, borderRadius: 62, borderCurve: 'continuous', borderWidth: 1},
+  medal: {width: 112, height: 112, borderRadius: 56, borderCurve: 'continuous', borderWidth: 1, alignItems: 'center', justifyContent: 'center'},
 
   rankfrom: {fontSize: 14, fontWeight: '500', color: T3, marginBottom: 2, fontFamily: FONT, textAlign: 'center'},
   name: {fontSize: 32, fontWeight: '800', color: T1, letterSpacing: -0.6, lineHeight: 38, textAlign: 'center', fontFamily: DISPLAY},
   metaRow: {flexDirection: 'row', alignItems: 'center', gap: 9, marginTop: 13},
   meta: {fontSize: 13, fontWeight: '500', color: T3, fontFamily: FONT},
-  metaSep: {width: 3, height: 3, borderRadius: 2, backgroundColor: withAlpha(T1, 0.27)},
+  metaSep: {width: 3, height: 3, borderRadius: 2, borderCurve: 'continuous', backgroundColor: withAlpha(T1, 0.27)},
   desc: {fontSize: 15, color: withAlpha(T1, 0.72), lineHeight: 24, marginTop: 18, maxWidth: 300, textAlign: 'center', fontFamily: FONT},
   b: {color: T1, fontWeight: '700'},
-  xp: {marginTop: 26, fontSize: 17, fontWeight: '700', paddingVertical: 10, paddingHorizontal: 22, borderRadius: RADIUS.pill, borderWidth: 1, overflow: 'hidden', fontFamily: FONT},
+  xp: {marginTop: 26, fontSize: 17, fontWeight: '700', paddingVertical: 10, paddingHorizontal: 22, borderRadius: RADIUS.pill, borderCurve: 'continuous', borderWidth: 1, overflow: 'hidden', fontFamily: FONT},
 
   actions: {alignSelf: 'stretch'},
-  primary: {height: 56, borderRadius: RADIUS.md, backgroundColor: ACCENT, alignItems: 'center', justifyContent: 'center'},
+  primary: {height: 56, borderRadius: RADIUS.md, borderCurve: 'continuous', backgroundColor: ACCENT, alignItems: 'center', justifyContent: 'center'},
   primaryTxt: {fontSize: 17, fontWeight: '700', color: T1, fontFamily: FONT},
 });

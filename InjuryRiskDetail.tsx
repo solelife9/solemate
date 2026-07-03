@@ -131,7 +131,7 @@ const styles = StyleSheet.create({
   // 신호 분해
   signals: {
     backgroundColor: CARD_HI,
-    borderRadius: RADIUS.md,
+    borderRadius: RADIUS.md, borderCurve: 'continuous',
     paddingHorizontal: SPACE.md,
     paddingVertical: SPACE.xs,
   },
@@ -147,12 +147,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: SPACE.md,
     backgroundColor: CARD_HI,
-    borderRadius: RADIUS.md,
+    borderRadius: RADIUS.md, borderCurve: 'continuous',
     borderWidth: 1,
     padding: SPACE.md,
   },
   guideIcon: {
-    width: 34, height: 34, borderRadius: 17,
+    width: 34, height: 34, borderRadius: 17, borderCurve: 'continuous',
     alignItems: 'center', justifyContent: 'center',
   },
   guideTitle: { ...TYPE.body, color: T1 },

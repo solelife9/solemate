@@ -55,7 +55,7 @@ const mkRun = (over: Partial<Run>): Run => ({
 });
 
 describe('ShoesScreen 상세 — 실효 마모 + 교체 예측', () => {
-  test('ok 분기: "현재 패턴 기준 약 N주 후 교체 예상이에요" 추정 카피를 실데이터로 렌더', () => {
+  test('ok 분기: "약 N주 후 교체 예상" 추정 카피를 실데이터로 렌더(다이어트 후 축약형)', () => {
     const shoe: Shoe = {id: 'a', brand: 'Nike', model: 'Pegasus 41', used: 100, max: 700, condition: '양호'};
     const runs: Run[] = [
       mkRun({id: 'r1', dist: 10, durationS: 3000, runDate: daysAgo(2)}),
@@ -70,9 +70,10 @@ describe('ShoesScreen 상세 — 실효 마모 + 교체 예측', () => {
     expect(txt).not.toContain('실효 마모');
     expect(txt).toContain('교체 예상');
     // 추정 톤(A6-3): 단정 회피 — '약'·'예상' 포함, "정확히" 류 단정 표현 없음.
-    // 핸드오프 문구 정합: '현재 패턴 기준 약 N주 후 교체 예상이에요'.
-    expect(txt).toContain('현재 패턴 기준 약');
-    expect(txt).toContain('주 후 교체 예상이에요');
+    // 상세 다이어트(2026-07-04) 축약형: '약 N주 후 교체 예상'.
+    expect(txt).toContain('주 후');
+    expect(txt).toContain('교체 예상');
+    expect(txt).toContain('주 후 교체 예상');
     expect(txt).not.toContain('정확히');
   });
 

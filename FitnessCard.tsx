@@ -58,7 +58,7 @@ export function FitnessCard({ runs = [], todayISO, style }: { runs?: any[]; toda
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <Text style={st.metricL}>오늘 컨디션</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: dot }} />
+            <View style={{ width: 8, height: 8, borderRadius: 4, borderCurve: 'continuous', backgroundColor: dot }} />
             <Text style={{ color: T1, fontFamily: FONT, fontSize: 15, fontWeight: '800' }}>{fs.label}</Text>
           </View>
         </View>
