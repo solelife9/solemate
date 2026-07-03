@@ -1,9 +1,9 @@
 /**
- * 런 상세 GAP(경사 보정 페이스) — 제거 계약 테스트(2026-07-04).
+ * 런 상세 GAP(경사 보정 페이스) — UI 노출 통합 테스트.
  *
- * GAP 카드는 초보에게 노이즈라는 제품 결정으로 상세 화면에서 제거됐다(곡선과 함께 —
- * 스플릿 표가 정보를 담당). 이 테스트는 오르막 gapTrack 이 있어도 GAP 행이 다시
- * 노출되지 않음을 고정한다. 산식(lib/analytics/gap)은 Pro 후보로 보존.
+ * gapTrack_<id>((거리,경과초,고도) 시계열)가 있고 코스가 평지와 유의미하게 다르면
+ * RunDetail 이 '경사 보정 페이스 (GAP)' 행을 보여주고, 평지(또는 시계열 없음)면 숨긴다.
+ * GAP 산식 정밀성은 lib/analytics/gap 단위테스트가 담당 — 여기선 '화면에 뜨는가'만 본다.
  *
  * @format
  */
@@ -57,16 +57,23 @@ async function renderDetail(gapKey?: string, gapVal?: unknown) {
   return renderer.root;
 }
 
-describe('HistoryScreen RunDetail — GAP 제거 계약', () => {
+describe('HistoryScreen RunDetail — GAP', () => {
   afterEach(async () => { await AsyncStorage.clear(); });
 
-  test('오르막 gapTrack 이 있어도 GAP 행은 더 이상 노출되지 않는다(제거 확정)', async () => {
+  test('오르막 gapTrack 이 있으면 경사 보정 페이스 행이 뜬다', async () => {
     const root = await renderDetail('gapTrack_r1', UPHILL);
+    const txt = textOf(root);
+    expect(txt).toContain('경사 보정 페이스');
+    expect(txt).toContain('오르막 코스'); // 실제보다 빠른 GAP → 오르막 힌트
+  });
+
+  test('평지 gapTrack 은 실제 페이스와 같아 숨긴다', async () => {
+    const root = await renderDetail('gapTrack_r1', FLAT);
     expect(textOf(root)).not.toContain('경사 보정 페이스');
   });
 
-  test('평지·시계열 없음도 동일 — 상세 어디에도 GAP 표기가 없다', async () => {
+  test('gapTrack 이 없으면 숨긴다(옛 런/고도 미측정)', async () => {
     const root = await renderDetail();
-    expect(textOf(root)).not.toContain('GAP');
+    expect(textOf(root)).not.toContain('경사 보정 페이스');
   });
 });
