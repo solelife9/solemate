@@ -63,6 +63,13 @@ import type {
   ProgressionState,
 } from './lib/progression/types';
 
+// 진행 숫자 표기 — 소수 꼬리(21.0975 등)는 한 자리로 다듬고, 정수는 천단위 콤마.
+function fmtProgressNum(n: number): string {
+  if (!Number.isFinite(n)) return '0';
+  if (Number.isInteger(n)) return n.toLocaleString();
+  return (Math.round(n * 10) / 10).toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1});
+}
+
 // ── 업적 카테고리 메타(프레젠테이션 전용) ────────────────────────────────────────
 const ACH_CATEGORY_META: Record<AchievementCategory, {label: string; icon: string}> = {
   runningMilestone: {label: '러닝 이정표', icon: 'walk'},
@@ -417,7 +424,7 @@ function AchievementCard({a}: {a: AchievementView}) {
 
       <View style={s.achFooter}>
         <Text style={s.achProgTxt} testID={`ach-progress-${a.key}`}>
-          {a.progress.current.toLocaleString()} / {a.progress.target.toLocaleString()}
+          {fmtProgressNum(a.progress.current)} / {fmtProgressNum(a.progress.target)}
         </Text>
         <Text style={[s.xpChip, {color: a.unlocked ? aColor : T3}]}>
           {xpLabel}

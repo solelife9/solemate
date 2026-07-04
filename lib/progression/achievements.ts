@@ -136,19 +136,19 @@ const RUNNING_MILESTONE: AchievementDef[] = [
   }),
   metricAch({
     key: 'first_20k', name: '첫 20km', rarity: 'rare', xp: 60,
-    description: '20km 이상 달린 날. 하프가 보인다.',
+    description: '한 번에 20km를 달린 날. 하프가 보인다.',
     category: 'runningMilestone', target: 20,
     value: ctx => nonNeg(ctx.longestRunKm),
   }),
   metricAch({
     key: 'first_half', name: '하프마라톤', rarity: 'epic', xp: 200,
-    description: '21.0975km 완주. 당신은 진짜 러너.',
+    description: '한 번에 21.0975km. 당신은 진짜 러너.',
     category: 'runningMilestone', target: HALF_MARATHON_KM,
     value: ctx => nonNeg(ctx.longestRunKm),
   }),
   metricAch({
     key: 'first_marathon', name: '마라톤 완주', rarity: 'legendary', xp: 400,
-    description: '42.195km. 달릴 수 있다는 걸 증명한 날.',
+    description: '한 번에 42.195km. 달릴 수 있다는 걸 증명한 날.',
     category: 'runningMilestone', target: MARATHON_KM,
     value: ctx => nonNeg(ctx.longestRunKm),
     signature: true,
