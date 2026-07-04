@@ -130,7 +130,7 @@ export function LoginScreen({cloudPort, onSignedIn}: LoginScreenProps) {
         )}
 
         <Text style={st.footnote}>
-          로그인하면 신발·러닝 기록·설정이 계정에 안전하게 보관되고 기기를 바꿔도 그대로 이어집니다.
+          로그인하면 신발·러닝 기록·설정이 안전하게 보관되고, 기기를 바꿔도 그대로 이어져요.
         </Text>
       </View>
     </View>

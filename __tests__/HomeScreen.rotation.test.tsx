@@ -86,7 +86,7 @@ describe('@slice-4 홈 신발 로테이션 추천 카드', () => {
     // pick-0(가장 오래 쉰 신발)에는 휴식 일수 배지 + 설명이 붙는다(추천 언어 '오늘 추천'은
     // 데이터 기반 UI 로 리팩터되며 제거됨 — insightBadge: '8일 미사용' + 설명).
     expect(textOf(byTestID(root, 'rotation-pick-0')[0])).toContain('8일 미사용');
-    expect(textOf(byTestID(root, 'rotation-pick-0')[0])).toContain('최근 가장 오래 쉬고 있는 신발입니다');
+    expect(textOf(byTestID(root, 'rotation-pick-0')[0])).toContain('최근 가장 오래 쉬고 있는 신발이에요');
   });
 
   // ── 보관(retired) 신발 제외 ──────────────────────────────────────────────────

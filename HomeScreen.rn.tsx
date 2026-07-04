@@ -276,19 +276,19 @@ function insightBadge(
   const isLast    = total > 1 && index === total - 1;
 
   if (neverWorn)
-    return { badge: '미착용',       description: '아직 한 번도 신지 않은 신발입니다.',      toneKey: 'neutral' };
+    return { badge: '미착용',       description: '아직 한 번도 신지 않은 신발이에요.',      toneKey: 'neutral' };
   if (usedToday && isLast)
-    return { badge: '사용 빈도 높음', description: '현재 가장 많이 사용 중인 신발입니다.',    toneKey: 'accent'  };
+    return { badge: '사용 빈도 높음', description: '요즘 가장 많이 신는 신발이에요.',    toneKey: 'accent'  };
   if (usedToday)
-    return { badge: '오늘 사용',     description: '오늘 신은 신발입니다.',                   toneKey: 'good'    };
+    return { badge: '오늘 사용',     description: '오늘 신은 신발이에요.',                   toneKey: 'good'    };
   if (isCarbon) {
     const dText = days != null ? `${days}일 미사용` : '휴식중';
-    return { badge: dText,           description: '레이스용으로 보관 중입니다.',              toneKey: 'neutral' };
+    return { badge: dText,           description: '레이스를 위해 아껴두는 신발이에요.',              toneKey: 'neutral' };
   }
   if (isLast)
-    return { badge: '사용 빈도 높음', description: '현재 가장 많이 사용 중인 신발입니다.',    toneKey: 'accent'  };
+    return { badge: '사용 빈도 높음', description: '요즘 가장 많이 신는 신발이에요.',    toneKey: 'accent'  };
   if (isFirst && days != null && days > 6)
-    return { badge: `${days}일 미사용`, description: '최근 가장 오래 쉬고 있는 신발입니다.', toneKey: days > 14 ? 'warn' : 'neutral' };
+    return { badge: `${days}일 미사용`, description: '최근 가장 오래 쉬고 있는 신발이에요.', toneKey: days > 14 ? 'warn' : 'neutral' };
   if (days != null && days > 14)
     return { badge: '장기 휴식중',   description: '로테이션에 포함해보세요.',                toneKey: 'warn'    };
   if (days != null && days > 0)

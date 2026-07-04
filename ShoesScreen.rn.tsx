@@ -159,13 +159,13 @@ function ShoeDetail({
   const toggleRetire = () => {
     if (!shoe.id) return;
     if (retired) { onRetire?.(shoe.id, false); return; }
-    Alert.alert('신발 보관', `${shoe.brand} ${shoe.model}을(를) 보관할까요?\n러닝 기록은 그대로 보존되며, 러닝 시작 목록에서만 숨겨집니다.`, [
+    Alert.alert('신발 보관', `${shoe.brand} ${shoe.model}을(를) 보관할까요?\n러닝 기록은 그대로 남고, 러닝 시작 목록에서만 숨겨져요.`, [
       { text: '취소', style: 'cancel' },
       { text: '보관', onPress: () => onRetire?.(shoe.id!, true) },
     ]);
   };
   const confirmDelete = () => {
-    Alert.alert('신발 삭제', `${shoe.brand} ${shoe.model}을(를) 삭제할까요?\n러닝 기록은 보존됩니다. 신발만 잠금장에서 제거됩니다.`, [
+    Alert.alert('신발 삭제', `${shoe.brand} ${shoe.model}을(를) 삭제할까요?\n러닝 기록은 그대로 남아요. 신발만 락커에서 사라져요.`, [
       { text: '취소', style: 'cancel' },
       { text: '삭제', style: 'destructive', onPress: () => { if (shoe.id) onDelete?.(shoe.id); onBack(); } },
     ]);

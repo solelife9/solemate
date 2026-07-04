@@ -320,9 +320,9 @@ export default function ProfileScreen({
               setCloudUser(null);
               setLastSyncAt(null);
               setAuthState((s) => nextAuthState(s, 'signOut'));
-              setCloudMsg({ ok: true, text: '계정이 삭제되었습니다.' });
+              setCloudMsg({ ok: true, text: '계정이 삭제됐어요.' });
             } catch (e: any) {
-              setCloudMsg({ ok: false, text: e?.message || '계정 삭제에 실패했습니다.' });
+              setCloudMsg({ ok: false, text: e?.message || '계정 삭제에 실패했어요. 잠시 후 다시 시도해 주세요.' });
             }
           },
         },
@@ -346,9 +346,11 @@ export default function ProfileScreen({
       onCloudMerged?.(merged);
       setLastSyncAt(cloudClock());
       // 자동(silent) 동기는 성공 팝업을 띄우지 않는다(계정 행 상태로만 표시). 에러는 항상 안내.
-      if (!silent) setCloudMsg({ ok: true, text: '클라우드 동기 완료 — 데이터가 안전하게 백업됐습니다.' });
+      if (!silent) setCloudMsg({ ok: true, text: '모든 기록이 안전하게 보관됐어요.' });
     } catch (e: any) {
-      setCloudMsg({ ok: false, text: e?.message || '동기에 실패했습니다. 로컬 데이터는 그대로입니다.' });
+      // 원문(Firestore 에러 등)은 로그로만 — 화면엔 사용자 언어(출시 감사).
+      console.log('sync error', e?.message || e);
+      setCloudMsg({ ok: false, text: '지금은 연결이 원활하지 않아요. 기록은 이 기기에 그대로 있어요.' });
     } finally {
       setSyncing(false);
     }
@@ -713,8 +715,8 @@ export default function ProfileScreen({
                 <Ionicons name="footsteps-outline" size={26} color={ACCENT} style={{ marginBottom: 8 }} />
                 <Text style={s.recapEmptyTxt}>
                   {recapMode === 'monthly'
-                    ? '이번 달은 아직 기록이 없어요.\n가볍게 한 걸음부터 — keep going!'
-                    : '이번 주는 아직 기록이 없어요.\n가볍게 한 걸음부터 — keep going!'}
+                    ? '이번 달은 아직 기록이 없어요.\n가볍게 한 걸음부터 — Keep Going'
+                    : '이번 주는 아직 기록이 없어요.\n가볍게 한 걸음부터 — Keep Going'}
                 </Text>
               </View>
             ) : (
@@ -899,7 +901,7 @@ export default function ProfileScreen({
               </>
             ) : (
               <View style={s.cloudPad}>
-                <Text style={s.cloudIntro}>로그인하면 신발·런·설정이 클라우드에 안전하게 백업되고 기기 간 동기됩니다.</Text>
+                <Text style={s.cloudIntro}>로그인하면 신발·러닝 기록·설정이 안전하게 보관되고, 기기를 바꿔도 그대로 이어져요.</Text>
                 <Pressable testID="cloud-signin-kakao" onPress={() => handleSignIn('kakao')} disabled={signingIn} accessibilityRole="button" accessibilityLabel="카카오로 로그인" accessibilityState={{ disabled: signingIn }} style={({ pressed }) => [s.cloudBtn, s.cloudBtnKakao, pressed && { opacity: 0.85 }]}>
                   <Text style={[s.brandMark, { color: KAKAO_LABEL }]}>K</Text>
                   <Text style={[s.cloudBtnTxt, { color: KAKAO_LABEL }]}>{signingIn ? '로그인 중…' : '카카오로 계속'}</Text>

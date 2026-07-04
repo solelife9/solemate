@@ -21,7 +21,7 @@ describe('buildRunShareText', () => {
   test('keep-going 응원 헤더와 Keego 해시태그 푸터가 항상 포함된다', () => {
     const text = buildRunShareText({distKm: 3});
     const lines = text.split('\n');
-    expect(lines[0]).toBe('오늘도 한 걸음 더 — keep going! 🏃');
+    expect(lines[0]).toBe('오늘도 한 걸음 더 — Keep Going 🏃');
     expect(lines[lines.length - 1]).toBe('#Keego #keepgoing');
   });
 

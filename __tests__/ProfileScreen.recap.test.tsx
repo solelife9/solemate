@@ -147,7 +147,7 @@ describe('ProfileScreen 리캡 빈 데이터 graceful(A8-5)', () => {
   test('런 0개 → keep-going 카피가 뜨고 수치 칸은 없다(크래시 없음)', () => {
     const root = render({recapRuns: [], recapShoes: SHOES, recapNow: NOW, unit: 'km'});
     expect(hasId(root, 'recap-empty')).toBe(true);
-    expect(textOf(byTestId(root, 'recap-empty'))).toContain('keep going');
+    expect(textOf(byTestId(root, 'recap-empty'))).toContain('Keep Going');
     // 빈 리캡이면 수치/최다착용/PR 칸은 렌더하지 않는다.
     expect(hasId(root, 'recap-total')).toBe(false);
     expect(hasId(root, 'recap-most-worn')).toBe(false);

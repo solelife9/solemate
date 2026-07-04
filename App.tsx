@@ -945,7 +945,7 @@ function Main(){
       await AsyncStorage.setItem('shoe_alert_notified',JSON.stringify(notified));
       if(toNotify.length>0){
         const names=critical.filter((s:any)=>toNotify.some((id:any)=>String(id)===String(s.id))).map((s:any)=>s.name);
-        Alert.alert('신발 교체 알림',names.join(', ')+`\n\n수명의 ${alertCfg.thresholdPct}% 이상을 사용했습니다.\n${KEEP_GOING_REPLACE} — 새 신발을 준비하세요!`,[{text:'확인'}]);
+        Alert.alert('신발 교체 알림',names.join(', ')+`\n\n수명의 ${alertCfg.thresholdPct}% 이상을 사용했어요.\n${KEEP_GOING_REPLACE} — 새 신발을 준비하세요!`,[{text:'확인'}]);
       }
     }catch(e){console.log('checkShoeAlerts error',e);}
   }
@@ -2055,7 +2055,7 @@ function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],weightKg,onSave,onDisca
         clearInterval(timer.current);clearInterval(snapTimer.current);
         void stopTracking();
         setGpsStatus('위치 권한 필요');setGpsStalled(false);
-        openLocationSettingsAlert('주행 중 위치 권한이 회수되어 거리 기록을 멈췄습니다. 설정에서 위치 권한을 다시 허용해 주세요.');
+        openLocationSettingsAlert('달리는 중에 위치 권한이 꺼져서 거리 기록을 멈췄어요. 설정에서 위치 권한을 다시 허용해 주세요.');
       }
     });
 

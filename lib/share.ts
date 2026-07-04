@@ -26,7 +26,7 @@ export interface RunShareInput {
   date?: string;
 }
 
-const HEADER = '오늘도 한 걸음 더 — keep going! 🏃';
+const HEADER = '오늘도 한 걸음 더 — Keep Going 🏃';
 const FOOTER = '#Keego #keepgoing';
 
 /**
