@@ -27,6 +27,7 @@ import { CourseMap } from './CourseMap';
 import { RunSplits, Split } from './RunSplits';
 import { buildSplits } from './lib/splits';
 import { buildShareCardModel, shareRunCard, saveCardToLibrary, SvgCapturable } from './lib/shareCard';
+import { exportGpx } from './lib/gpx';
 import { maskDuration, maskDate, validateRunForm, type RunFormErrors } from './lib/inputMask';
 import ShareCard from './ShareCard';
 
@@ -434,12 +435,24 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'm
       Alert.alert('저장 실패', r.reason ?? '잠시 후 다시 시도해 주세요.');
     }
   };
+  // GPX 내보내기(2026-07-05) — 경로가 있을 때만 옵션 노출. '내 데이터는 내 것'
+  // (가민/스트라바 이관·아카이빙). exportGpx 는 no-throw — 사유만 안내한다.
+  const exportRouteGpx = async () => {
+    if (!run.id) return;
+    const label = shoe ? `${shoe.brand} ${shoe.model}` : run.shoeName || 'Keego Run';
+    const r = await exportGpx(run.id, route, { name: `${run.date} · ${label}`, timeISO: run.runDate || undefined });
+    if (!r.ok && r.reason === 'no_route') Alert.alert('내보낼 코스가 없어요', 'GPS로 기록된 러닝만 GPX로 내보낼 수 있어요.');
+    else if (!r.ok) Alert.alert('내보내기 실패', '잠시 후 다시 시도해 주세요.');
+  };
   const onShareCard = () => {
-    Alert.alert('러닝 카드', '투명 카드를 사진앱에 저장해, 인스타 스토리에서 내 사진 위에 올리세요.', [
+    const opts: any[] = [
       { text: '사진앱에 저장', onPress: saveCard },
       { text: '공유 시트로', onPress: doShare },
-      { text: '취소', style: 'cancel' },
-    ]);
+    ];
+    // 경로가 2점 이상일 때만 GPX 옵션(수동 기록·GPS 실패 런엔 코스가 없다).
+    if (route.length >= 2) opts.push({ text: 'GPX 파일로 내보내기', onPress: exportRouteGpx });
+    opts.push({ text: '취소', style: 'cancel' });
+    Alert.alert('러닝 공유', '투명 카드는 인스타 스토리용, GPX는 다른 앱으로 코스를 옮길 때 써요.', opts);
   };
   // 삭제는 확인 Alert로 보호한다(파괴 방지). 삭제 시 신발 사용거리도 줄어듦을 안내한다.
   const confirmDelete = () => {

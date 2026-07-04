@@ -37,7 +37,7 @@ test('bpm>0 + age → 존 라벨 노출 + 숫자 존 색', () => {
   const numNode = texts(root).find((t: any) => String(t.props.children) === String(bpm));
   expect(numNode).toBeTruthy();
   const flat = Object.assign({}, ...[].concat(numNode.props.style).filter(Boolean));
-  expect(flat.color).toBe(HR_ZONE_COLORS[z]);
+  expect(flat.color).toBe(z !== 0 ? HR_ZONE_COLORS[z] : undefined);
 });
 
 test('bpm=0 → 존 미표시, 기본 심박 라벨 유지', () => {
