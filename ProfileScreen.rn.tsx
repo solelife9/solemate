@@ -499,36 +499,23 @@ export default function ProfileScreen({
                 </Pressable>
               </View>
             ) : (
-              <Pressable onPress={startEditName} accessibilityRole="button" accessibilityLabel="이름 편집" style={s.nameRow} testID="profile-name">
-                <Text style={s.name} numberOfLines={1}>{profile.name}</Text>
-                <Ionicons name="pencil" size={13} color={T3} />
-              </Pressable>
-            )}
-            <View style={[s.row, { marginTop: 6 }]}>
-              <View
-                testID="profile-rank-chip"
-                style={[
-                  s.rankChip,
-                  {
-                    backgroundColor: withAlpha(TIER_COLORS[profile.rankTier], 0.16),
-                    borderColor: withAlpha(TIER_COLORS[profile.rankTier], 0.5),
-                  },
-                ]}>
-                <Text style={[s.rankChipText, { color: TIER_COLORS[profile.rankTier] }]}>
+              <>
+                <Text style={[s.tierEyebrow, {color: TIER_COLORS[profile.rankTier]}]} testID="profile-rank-chip">
                   {TIER_LABEL[profile.rankTier]}
                 </Text>
-              </View>
-              {!!profile.equippedTitle && (
-                <View style={s.titlePill} testID="profile-title-pill">
-                  <Ionicons name="ribbon" size={11} color={ACCENT} />
-                  <Text style={s.titlePillText} numberOfLines={1}>{profile.equippedTitle}</Text>
-                </View>
-              )}
+                <Pressable onPress={startEditName} accessibilityRole="button" accessibilityLabel="이름 편집" style={s.nameRow} testID="profile-name">
+                  <Text style={s.name} numberOfLines={1}>{profile.name}</Text>
+                  <Ionicons name="pencil" size={13} color={T3} />
+                </Pressable>
+              </>
+            )}
+            {/* 티어·메타(2026-07-04 재구성): 칩 상자·유령 타이틀필(타이틀 시스템 폐지
+                잔재) 제거 — 진척탭과 같은 타이포 락업(아이브로우가 이름 위, 메타 한 줄). */}
+            <View style={[s.row, { marginTop: 6, gap: 8 }]} testID="profile-progression-stats">
               {!!profile.since && <Text style={s.since}>{profile.since}</Text>}
-            </View>
-            <View style={[s.row, { marginTop: 7, gap: 14 }]} testID="profile-progression-stats">
+              {!!profile.since && <Text style={s.since}>·</Text>}
               <Text style={s.idStat}>업적 <Text style={s.idStatNum}>{profile.achievementCount ?? 0}</Text></Text>
-              <Text style={s.idStat}>은퇴 신발 <Text style={s.idStatNum}>{profile.retiredShoes ?? 0}</Text></Text>
+              <Text style={s.idStat}>은퇴 <Text style={s.idStatNum}>{profile.retiredShoes ?? 0}</Text></Text>
             </View>
           </View>
           {streakDays > 0 && (
@@ -974,15 +961,12 @@ const s = StyleSheet.create({
   avatarInner: { padding: 2.5, borderRadius: RADIUS.pill, backgroundColor: BG, alignItems: 'center', justifyContent: 'center' },
   avatarImg: { width: 50, height: 50, borderRadius: RADIUS.pill },
   avatarEdit: { position: 'absolute', right: -1, bottom: -1, width: 18, height: 18, borderRadius: RADIUS.pill, backgroundColor: T3, borderWidth: 2, borderColor: BG, alignItems: 'center', justifyContent: 'center' },
+  tierEyebrow: { fontFamily: DISPLAY, fontSize: 11, fontWeight: '600', letterSpacing: 3.5, textTransform: 'uppercase', marginBottom: 3 },
   name: { color: T1, fontFamily: FONT, fontSize: 24, fontWeight: '600', letterSpacing: -0.5 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   nameEditRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   nameInput: { flex: 1, color: T1, fontFamily: FONT, fontSize: 22, fontWeight: '500', letterSpacing: -0.5, borderBottomWidth: 1, borderBottomColor: ACCENT, paddingVertical: 2, paddingHorizontal: 0 },
   nameSaveBtn: { width: 34, height: 34, borderRadius: RADIUS.pill, backgroundColor: ACCENT, alignItems: 'center', justifyContent: 'center' },
-  rankChip: { borderWidth: StyleSheet.hairlineWidth, borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 3 },
-  rankChipText: { fontFamily: FONT, fontSize: 12, fontWeight: '700', letterSpacing: 0.2 },
-  titlePill: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: withAlpha(ACCENT, 0.12), borderRadius: RADIUS.pill, paddingHorizontal: 9, paddingVertical: 3, maxWidth: '60%' },
-  titlePillText: { color: ACCENT, fontFamily: FONT, fontSize: 12, fontWeight: '700', flexShrink: 1 },
   idStat: { fontFamily: FONT, color: T3, fontSize: 12, fontWeight: '600' },
   idStatNum: { fontFamily: DISPLAY, color: T1, fontSize: 13, fontWeight: '700' },
   since: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600' },
