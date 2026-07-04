@@ -148,7 +148,15 @@ const K_TOMBSTONES = 'tombstones_v1';
 // ── 셀러브레이션(등급상승/업적) 트리거 — 한글 매핑 + '이미 본 것' 베이스라인 키 ──────────
 const CELEB_SEEN_KEY = 'celebration_seen_v1';
 const CELEB_RANK_KO: Record<string, string> = {bronze: '브론즈', silver: '실버', gold: '골드', platinum: '플래티넘', diamond: '다이아몬드', master: '마스터', legend: '레전드'};
-const CELEB_CAT_KO: Record<string, string> = {runningMilestone: '러닝 마일스톤', distanceMilestone: '거리 마일스톤', shoeJourney: '신발 여정', shoeMemory: '신발 추억', experience: '경험', keego: 'Keego'};
+const CELEB_CAT_KO: Record<string, string> = {runningMilestone: '러닝 이정표', distanceMilestone: '누적 거리', consistency: '꾸준함', shoeJourney: '신발 여정', shoeMemory: '신발과 동행', experience: '특별 경험', keego: 'Keep Going'};
+// 카테고리별 메달 글리프(모두 리본으로 뜨던 구멍 수정 — 사용자 발견 2026-07-04).
+// star 는 등급 상승 전용이라 업적엔 쓰지 않는다(중복 방지): 이정표=결승 깃발 ·
+// 누적=발자국 · 꾸준함=걷는 사람 · 신발 여정=리본 훈장(은퇴) · 동행=트로피 ·
+// 특별 경험=반짝임 · Keep Going=∞(브랜드 심볼).
+const CELEB_ICON: Record<string, 'medal'|'trophy'|'flag'|'route'|'run'|'star'|'sparkles'|'infinite'> = {
+  runningMilestone: 'flag', distanceMilestone: 'route', consistency: 'run',
+  shoeJourney: 'medal', shoeMemory: 'trophy', experience: 'sparkles', keego: 'infinite',
+};
 const CELEB_RARITY: Record<string, {ko: string; color: string}> = {common: {ko: '커먼', color: '#9A9A9A'}, rare: {ko: '레어', color: '#4B93F7'}, epic: {ko: '에픽', color: '#A468F0'}, legendary: {ko: '레전더리', color: '#E7B84B'}};
 /** 부팅 폴백 캐시 로드 — 신발 배열이 있으면 {shoes,runs}, 없으면(미존재/손상) null. */
 async function loadBootCache(): Promise<{shoes: any[]; runs: any[]} | null> {
@@ -405,6 +413,7 @@ function Main(){
           type:'achievement',
           nameKo:a.name,
           catKo:CELEB_CAT_KO[a.category]??'러닝 기록',
+          icon:CELEB_ICON[a.category]??'medal',
           rarityKo:rar.ko,
           rarityColor:rar.color,
           xp:a.xp,
