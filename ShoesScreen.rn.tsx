@@ -10,7 +10,7 @@ import {
   BG, CARD_DIM, CARD_HI, HERO_BG, ACCENT, DANGER, WARN, GOOD, BEST, T1, T2, T3, T4, SEP, FONT, DISPLAY, withAlpha, RADIUS, Shoe, Run, SHOES,
 } from './theme';
 import { TabBar, TABBAR_CLEARANCE, Pill, InjuryBanner, SectionTitle, Button, SwipeBack } from './primitives';
-import { RunCard } from './HistoryScreen.rn';
+import { RunCard, RunDetail } from './HistoryScreen.rn';
 import { FuelGauge } from './FuelGauge';
 import FirstShoeScreen from './FirstShoeScreen.rn';
 import { Unit, displayNum } from './lib/units';
@@ -144,6 +144,8 @@ function ShoeDetail({
 
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(`${shoe.brand} ${shoe.model}`.trim());
+  // 런 상세 — 기록탭과 같은 RunDetail 재사용(읽기 전용: 삭제/편집은 기록탭 담당).
+  const [selRun, setSelRun] = useState<Run | null>(null);
 
 
   // 키프세이크 은퇴 플로우: 수명 도달 신발만 [계속 사용]/[은퇴]를 노출한다(자동 은퇴 절대
@@ -193,6 +195,13 @@ function ShoeDetail({
         onRetired={onRetiredKeepsake}
         onClose={() => { setFlowOpen(false); onBack(); }}
       />
+    );
+  }
+
+  // 런 상세(기록탭 RunDetail 재사용) — 카드 탭으로 진입, 뒤로가면 신발 상세 복귀.
+  if (selRun) {
+    return (
+      <RunDetail run={selRun} shoe={allShoes[selRun.shoe]} unit={unit} onBack={() => setSelRun(null)} />
     );
   }
 
@@ -360,7 +369,7 @@ function ShoeDetail({
           // 얼마나 어떻게 달렸는지'를 기록탭의 언어 그대로 신발별로 모아 보여준다.
           <View style={{ gap: 10 }}>
             {shoeRuns.map((r, i) => (
-              <RunCard key={r.id || i} run={r} shoes={allShoes} unit={unit} />
+              <RunCard key={r.id || i} run={r} shoes={allShoes} unit={unit} hideShoe onPress={() => setSelRun(r)} />
             ))}
           </View>
         )}

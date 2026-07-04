@@ -294,7 +294,7 @@ export function RunForm({
 }
 
 // ── run detail ────────────────────────────────────────────────────────────────
-function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'male', restHR = 0, thresholdPaceSec = 0 }: { run: Run; shoe?: Shoe; onBack: () => void; unit: Unit; onDelete?: (id: string) => void; age?: number; sex?: 'male' | 'female'; restHR?: number; thresholdPaceSec?: number }) {
+export function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'male', restHR = 0, thresholdPaceSec = 0 }: { run: Run; shoe?: Shoe; onBack: () => void; unit: Unit; onDelete?: (id: string) => void; age?: number; sex?: 'male' | 'female'; restHR?: number; thresholdPaceSec?: number }) {
   // Load the recorded route for this run once. Missing/invalid blob → [] → map
   // stays hidden (graceful). route_<id> is written by App.addRun on save.
   const [route, setRoute] = useState<LatLon[]>([]);
@@ -659,16 +659,16 @@ function DrumColumn({ items, selectedIndex, onChange }: {
 // ── history main ────────────────────────────────────────────────────────────
 // 런 카드 — 목업 기록(10) 정합: 신발(브랜드/모델) + 날짜(우상단) + 거리·평균페이스·시간.
 // 런마다 별도 카드 박스로 띄운다(한 카드 안 행 → 카드별).
-export function RunCard({ run, shoes, onPress, unit }: { run: Run; shoes: Shoe[]; onPress?: () => void; unit: Unit }) {
+export function RunCard({ run, shoes, onPress, unit, hideShoe }: { run: Run; shoes: Shoe[]; onPress?: () => void; unit: Unit; /** 신발 상세용 — 신발명 대신 날짜를 제목 자리에(반복 노이즈 제거). */ hideShoe?: boolean }) {
   const shoe = shoes[run.shoe];
   return (
     <Pressable onPress={onPress} disabled={!onPress} accessibilityRole="button" accessibilityLabel={`${run.date} ${shoe ? shoe.brand + ' ' + shoe.model : '삭제된 신발'} 기록`} style={({ pressed }) => [s.runCard, pressed && !!onPress && { opacity: 0.85 }]}>
       <View style={s.runCardTop}>
         <View style={{ flex: 1, minWidth: 0 }}>
-          <Text style={s.runCardBrand} numberOfLines={1}>{shoe ? shoe.brand : '삭제된 신발'}</Text>
-          <Text style={s.runCardModel} numberOfLines={1}>{shoe ? shoe.model : ''}</Text>
+          <Text style={s.runCardBrand} numberOfLines={1}>{hideShoe ? `${run.day}요일` : (shoe ? shoe.brand : '삭제된 신발')}</Text>
+          <Text style={s.runCardModel} numberOfLines={1}>{hideShoe ? run.date : (shoe ? shoe.model : '')}</Text>
         </View>
-        <Text style={s.runCardDate}>{run.date} {run.day}요일</Text>
+        {!hideShoe && <Text style={s.runCardDate}>{run.date} {run.day}요일</Text>}
       </View>
       <View style={s.runCardMetrics}>
         <View style={s.runCardMetric}><View style={s.baselineRow}><Text style={s.runV}>{displayNum(run.dist, unit, 2)}</Text><Text style={s.runU}>{unit}</Text></View><Text style={s.runML}>거리</Text></View>
