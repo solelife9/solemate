@@ -2,11 +2,11 @@
  * ProgressionScreen.rn.tsx — 진척 화면 행동 테스트 (재설계 · UI).
  *
  * 타이틀 시스템 폐지 → XP 기반 랭크 + 6카테고리 업적. 관찰 가능한 동작만 검증한다:
- *  1) 히어로가 닉네임 + 티어 칩(TIER_LABEL) + 총 XP·업적 달성 수를 렌더한다.
+ *  1) 히어로가 닉네임 + 티어 칩(TIER_LABEL) + 업적 달성 수를 렌더한다('러닝의 옷': XP 비노출).
  *  2) 랭크 칩 라벨이 그 티어의 TIER_COLORS 값으로 칠해진다.
  *  3) 랭크 진행 카드가 다음 티어 진행바와 함께 렌더된다(낮은 시드 → 최고등급 아님).
  *  4) 업적 진행 바가 주입한 런/신발에서 파생된 current/target 을 그대로 보여준다.
- *  5) 총 획득 XP 합산이 view.totalXp 를 그대로 보여준다.
+ *  5) 메타 화폐(XP)는 화면에 상주 노출하지 않는다(레어리티 칩 포함 — 색으로만).
  *  6) 업적/챌린지 세그먼트 탭이 한 번에 한 섹션만 렌더한다.
  *
  * props-driven · 네트워크 없음 · jest.setup 목 · AsyncStorage.clear() per test.
@@ -75,7 +75,7 @@ function colorOf(node: ReactTestRenderer.ReactTestInstance): string | undefined 
   return (StyleSheet.flatten(node.props.style) as any)?.color;
 }
 describe('ProgressionScreen — 진척 표면', () => {
-  test('히어로가 닉네임 + 티어 칩 + 총 XP·업적 달성 수를 렌더한다', async () => {
+  test('히어로가 닉네임 + 티어 칩 + 업적 달성 수를 렌더한다(XP 비노출)', async () => {
     const view = getProgression(RUNS, SHOES, null, NOW);
     const achievementCount = view.achievements.filter(a => a.unlocked).length;
 
@@ -96,9 +96,10 @@ describe('ProgressionScreen — 진척 표면', () => {
     // 닉네임이 그대로 렌더된다(타이틀 장착 폐지 — 닉네임 단독).
     expect(textOf(byTestID(root, 'progression-nick')[0])).toContain('김민준');
 
-    // 히어로 부제: 총 XP(천단위) + 업적 달성 수.
+    // 히어로 부제: 업적 달성 수만 — XP 는 표면에 없다('러닝의 옷' 2026-07-04).
     const sub = byTestID(root, 'progression-xp')[0];
-    expect(textOf(sub)).toContain(`${view.rank.xp.toLocaleString()} XP`);
+    expect(textOf(sub)).not.toContain('XP');
+    expect(textOf(sub)).toContain('업적');
     expect(textOf(sub)).toContain(`업적 ${achievementCount}개 달성`);
 
     // 타이틀 시스템 폐지 회귀 가드: 더 이상 장착 타이틀 표시가 없다.
@@ -161,17 +162,19 @@ describe('ProgressionScreen — 진척 표면', () => {
     expect(w.endsWith('%')).toBe(true);
   });
 
-  test('총 획득 XP 합산이 view.totalXp 를 그대로 보여준다', async () => {
-    const view = getProgression(RUNS, SHOES, null, NOW);
-
+  test('메타 화폐(XP)·레어리티 라벨이 화면에 노출되지 않는다', async () => {
     const r = await render(
       <ProgressionScreen runs={RUNS} shoes={SHOES} now={NOW} initialState={seenSuppressedState()} />,
     );
     const root = r.root;
 
-    const total = byTestID(root, 'progression-points')[0];
-    expect(total).toBeTruthy();
-    expect(textOf(total)).toContain(`${view.totalXp.toLocaleString()} XP`);
+    // 총 XP 카드 제거 + 화면 어디에도 'XP'/영문 레어리티 라벨이 없다('러닝의 옷').
+    expect(byTestID(root, 'progression-points').length).toBe(0);
+    const all = textOf(root);
+    expect(all).not.toContain('XP');
+    for (const label of ['Common', 'Rare', 'Epic', 'Legendary']) {
+      expect(all).not.toContain(label);
+    }
   });
 
   test('진척 화면은 업적만 노출한다(챌린지는 마이 탭으로 이관 — 챌린지 섹션 없음)', async () => {
@@ -185,7 +188,6 @@ describe('ProgressionScreen — 진척 표면', () => {
 
     // 업적 카드/총 XP 는 탭 전환 없이 바로 노출되고, 챌린지 섹션·탭은 존재하지 않는다.
     expect(byTestID(root, `ach-${a.key}`).length).toBeGreaterThanOrEqual(1);
-    expect(byTestID(root, 'progression-points').length).toBeGreaterThanOrEqual(1);
     expect(byTestID(root, 'tab-challenges').length).toBe(0);
     expect(byTestID(root, 'challenges-section').length).toBe(0);
   });

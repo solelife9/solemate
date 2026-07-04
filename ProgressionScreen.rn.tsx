@@ -4,11 +4,11 @@
 // XP 기반 랭크 + 6카테고리 업적 시스템. 타이틀 시스템 폐지.
 //
 // 레이아웃:
-//   · 히어로 — 티어 칩 + 닉네임 + 총 XP + 업적 달성 수
-//   · XP 진행 카드 — 현재 XP바 + 다음 티어까지 필요 XP
+//   · 히어로 — 티어 칩 + 닉네임 + 업적 달성 수('러닝의 옷': XP 표면 비노출)
+//   · 나의 여정 카드 — 티어명↔다음 티어명 + 진행 바(숫자 없음, 바가 말한다)
 //   · 스탯 줄 — 총 거리 / 등록 신발 / 은퇴 신발 / 현재 스트릭
 //   · 탭: 업적 | 챌린지
-//   · 업적 탭 — 6카테고리, 달성/미달성, rarity 칩, XP 표시
+//   · 업적 탭 — 7카테고리, 달성/미달성(레어리티는 색으로만 — 칩·XP 뱃지 없음)
 //   · 챌린지 탭 — Slice C 카드 재사용
 //
 // 토큰만(theme.ts) — 색/폰트/간격/반경 하드코딩 0.
@@ -273,53 +273,40 @@ export default function ProgressionScreen({
             {profileName}
           </Text>
           <Text style={s.heroSub} testID="progression-xp">
-            {view.rank.xp.toLocaleString()} XP · 업적 {achievementCount}개 달성
+            업적 {achievementCount}개 달성
           </Text>
         </View>
 
-        {/* XP 진행 카드 */}
+        {/* 나의 여정 — 티어명 ↔ 다음 티어명 + 진행 바. 숫자(XP)는 표면에 세우지
+            않는다(바가 진행을 말한다 — 홈 주간 목표 바와 같은 문법, '러닝의 옷'
+            리스킨 2026-07-04). 엔진(XP)은 그대로, 표현만 여정의 언어로. */}
         <View style={s.guide} testID="rank-guide">
-          <Text style={s.guideTitle}>랭크 진행</Text>
-          <View style={s.xpRow}>
-            <Text style={[s.xpNum, {color: rankColor}]}>
-              {guide.xp.toLocaleString()}
-            </Text>
-            <Text style={s.xpUnit}> XP</Text>
-          </View>
+          <Text style={s.guideTitle}>나의 여정</Text>
 
           {guide.nextTier ? (
-            <>
-              <View style={s.nextRow} testID="rank-next">
-                <Text style={[s.nextTierTxt, {color: rankColor}]}>
-                  {TIER_LABEL[guide.tier]}
-                </Text>
-                <View style={s.nextTrack}>
-                  <View
-                    style={[
-                      s.nextFill,
-                      {
-                        width: `${Math.round(guide.progressToNext * 100)}%`,
-                        backgroundColor: rankColor,
-                      },
-                    ]}
-                  />
-                </View>
-                <Text
-                  style={[s.nextTierTxt, {color: TIER_COLORS[guide.nextTier]}]}>
-                  {TIER_LABEL[guide.nextTier]}
-                </Text>
-              </View>
-              <Text style={s.xpForNext}>
-                다음 티어까지{' '}
-                <Text style={{color: T1, fontWeight: '700'}}>
-                  {guide.xpForNext.toLocaleString()} XP
-                </Text>{' '}
-                더 필요해요
+            <View style={[s.nextRow, {marginTop: 14}]} testID="rank-next">
+              <Text style={[s.nextTierTxt, {color: rankColor}]}>
+                {TIER_LABEL[guide.tier]}
               </Text>
-            </>
+              <View style={s.nextTrack}>
+                <View
+                  style={[
+                    s.nextFill,
+                    {
+                      width: `${Math.round(guide.progressToNext * 100)}%`,
+                      backgroundColor: rankColor,
+                    },
+                  ]}
+                />
+              </View>
+              <Text
+                style={[s.nextTierTxt, {color: TIER_COLORS[guide.nextTier]}]}>
+                {TIER_LABEL[guide.nextTier]}
+              </Text>
+            </View>
           ) : (
             <Text style={[s.maxTier, {color: rankColor}]} testID="rank-max">
-              최고 등급 달성 🌟
+              가장 높은 곳 — 최고 등급
             </Text>
           )}
         </View>
@@ -366,13 +353,8 @@ export default function ProgressionScreen({
             );
           })}
 
-          {/* 총 XP 합산 */}
-          <View
-            style={[s.xpTotal, {borderColor: withAlpha(ACCENT, 0.35)}]}
-            testID="progression-points">
-            <Text style={s.xpTotalLabel}>총 획득 XP</Text>
-            <Text style={s.xpTotalNum}>{view.totalXp.toLocaleString()} XP</Text>
-          </View>
+          {/* 총 XP 카드 제거('러닝의 옷' 2026-07-04) — 메타 화폐를 상주 노출하지
+              않는다. 엔진은 그대로(티어 산정에 사용). */}
         </View>
       </ScrollView>
     </View>
@@ -390,12 +372,6 @@ function AchievementCard({a}: {a: AchievementView}) {
       ? 1
       : 0;
 
-  const xpLabel = a.repeatablePerShoe
-    ? a.unlocked
-      ? `${a.xp} × ${a.earnedCount}켤레 = ${a.earnedXp} XP`
-      : `켤레당 +${a.xp} XP`
-    : `+${a.xp} XP`;
-
   return (
     <View
       style={[s.ach, a.unlocked && {borderColor: withAlpha(aColor, 0.3)}]}
@@ -411,11 +387,11 @@ function AchievementCard({a}: {a: AchievementView}) {
             {a.name}
           </Text>
         </View>
-        <View style={[s.rar, {backgroundColor: withAlpha(aColor, 0.14)}]}>
-          <Text style={[s.rarTxt, {color: aColor}]}>
-            {RARITY_LABEL[a.rarity]}
-          </Text>
-        </View>
+        {/* 레어리티 칩·+XP 뱃지 제거('러닝의 옷' 2026-07-04) — 게임 어휘 대신
+            색(진행 바·체크)이 희귀도를 조용히 말한다. 반복 업적만 ×N켤레 표기. */}
+        {a.repeatablePerShoe && a.earnedCount > 1 && (
+          <Text style={[s.rarTxt, {color: aColor}]}>×{a.earnedCount}켤레</Text>
+        )}
       </View>
 
       {a.description ? (
@@ -425,9 +401,6 @@ function AchievementCard({a}: {a: AchievementView}) {
       <View style={s.achFooter}>
         <Text style={s.achProgTxt} testID={`ach-progress-${a.key}`}>
           {a.progressPrefix ? `${a.progressPrefix} ` : ''}{fmtProgressNum(a.progress.current)} / {fmtProgressNum(a.progress.target)}
-        </Text>
-        <Text style={[s.xpChip, {color: a.unlocked ? aColor : T3}]}>
-          {xpLabel}
         </Text>
       </View>
 
