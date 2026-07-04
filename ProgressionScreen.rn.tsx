@@ -445,21 +445,13 @@ const s = StyleSheet.create({
     padding: SPACE.xl,
     gap: SPACE.xs,
   },
-  rankChip: {
-    alignSelf: 'flex-start',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: RADIUS.pill,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-  },
-  tierEyebrow: {fontFamily: DISPLAY, fontSize: 13, fontWeight: '600', letterSpacing: 4, textTransform: 'uppercase', marginBottom: 4},
+  tierEyebrow: {fontFamily: DISPLAY, fontSize: 13, fontWeight: '600', letterSpacing: 4, textTransform: 'uppercase'},
   nick: {
     fontFamily: DISPLAY,
     color: T1,
     fontSize: 22,
     fontWeight: '800',
     letterSpacing: -0.5,
-    marginTop: 8,
   },
   heroSub: {fontFamily: FONT, color: T3, fontSize: 13, fontWeight: '600'},
   // XP 진행 카드
