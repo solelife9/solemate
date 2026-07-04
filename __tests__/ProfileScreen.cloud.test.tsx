@@ -114,8 +114,9 @@ describe('ProfileScreen 계정·클라우드 로그인', () => {
     const root = render({cloudPort: port, backupData: LOCAL});
     await press(byTestId(root, 'cloud-signin-google'));
     // 여전히 로그인 버튼이 보이고(signedIn 아님), 에러 안내가 노출된다.
+    // 원문이 아니라 사용자 언어 매핑(authErrorMessage) — 원문은 로그로만(출시 감사).
     expect(hasId(root, 'cloud-signin-google')).toBe(true);
-    expect(textOf(byTestId(root, 'cloud-msg'))).toContain('자격증명');
+    expect(textOf(byTestId(root, 'cloud-msg'))).toContain('로그인에 실패했어요');
   });
 });
 

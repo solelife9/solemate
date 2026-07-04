@@ -74,6 +74,23 @@ test('로그인 실패 시 onSignedIn 을 부르지 않고 에러를 표시한�
     press(r, 'login-google');
   });
   expect(onSignedIn).not.toHaveBeenCalled();
+  // 에러 원문이 아니라 사용자 언어로 매핑된 문구가 보인다(authErrorMessage, 출시 감사).
   const err = r.root.findByProps({testID: 'login-error'});
-  expect(err.props.children).toContain('네트워크 오류');
+  expect(err.props.children).toContain('인터넷 연결을 확인');
+});
+
+test('사용자 취소는 에러로 표시하지 않는다(조용히 복귀)', async () => {
+  const port = makePort({
+    signIn: jest.fn(async () => {
+      throw new Error('Google 로그인이 취소되었습니다.');
+    }),
+  });
+  let r!: ReactTestRenderer.ReactTestRenderer;
+  act(() => {
+    r = ReactTestRenderer.create(<LoginScreen cloudPort={port} onSignedIn={jest.fn()} />);
+  });
+  await act(async () => {
+    press(r, 'login-google');
+  });
+  expect(r.root.findAllByProps({testID: 'login-error'}).length).toBe(0);
 });

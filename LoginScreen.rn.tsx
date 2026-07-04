@@ -19,6 +19,7 @@ import {
   KAKAO_YELLOW, KAKAO_LABEL, NAVER_GREEN, NAVER_LABEL,
 } from './theme';
 import type {CloudPort, CloudProvider, CloudUser} from './lib/cloudPort';
+import {authErrorMessage} from './lib/authErrorMessage';
 
 interface LoginScreenProps {
   cloudPort: CloudPort;
@@ -39,7 +40,10 @@ export function LoginScreen({cloudPort, onSignedIn}: LoginScreenProps) {
       const user = await cloudPort.signIn(provider);
       onSignedIn(user);
     } catch (e: any) {
-      setError(e?.message || '로그인에 실패했어요. 잠시 후 다시 시도해주세요.');
+      // 원문(서버 응답·SDK 코드)은 진단용 로그로만 — 화면엔 사용자 언어만(출시 감사).
+      console.log('login error', provider, e?.message || e);
+      const msg = authErrorMessage(e);
+      if (msg) setError(msg); // null = 사용자 취소 — 조용히 복귀
       setBusy(null);
     }
   };

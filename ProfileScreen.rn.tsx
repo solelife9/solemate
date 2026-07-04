@@ -32,6 +32,7 @@ import ChallengesSection from './ChallengesSection';
 import { ExtRun, ExtShoe } from './lib/progression/challengesExt';
 import { mergeCloudData, nextAuthState, AuthState } from './lib/cloudSync';
 import type { CloudPort, CloudProvider, CloudUser } from './lib/cloudPort';
+import { authErrorMessage } from './lib/authErrorMessage';
 import type { RankTier } from './lib/progression/types';
 
 // 신원 칩은 진척 시스템의 단일 Rank(티어)로 통일한다 — 옛 '러닝 레벨 N'(km/100) 개념 폐기.
@@ -278,7 +279,10 @@ export default function ProfileScreen({
       // 동기는 아래 자동 동기 effect 가 (signedIn 전환 + 데이터 변경 시) 처리한다.
     } catch (e: any) {
       setAuthState((s) => nextAuthState(s, 'signInError'));
-      setCloudMsg({ ok: false, text: e?.message || '로그인에 실패했습니다.' });
+      // 원문은 로그로만 — 화면엔 사용자 언어(LoginScreen 과 동일 매퍼, 출시 감사).
+      console.log('profile signin error', e?.message || e);
+      const msg = authErrorMessage(e);
+      if (msg) setCloudMsg({ ok: false, text: msg });
     }
   };
 
