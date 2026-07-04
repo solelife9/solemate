@@ -615,6 +615,7 @@ function Main(){
   async function initUser(){
     // 재시도(재진입) 시 스켈레톤으로 되돌려 직전 에러 카드를 치운다.
     setBootState('loading');
+    try{
     let did=await AsyncStorage.getItem('device_id');
     if(!did){did='sl_'+Date.now()+'_'+Math.random().toString(36).substr(2,9);await AsyncStorage.setItem('device_id',did);}
     setDeviceId(did);
@@ -669,6 +670,13 @@ function Main(){
     setShoes(liveShoes);setRuns(liveRuns);
     setBootState('ready');
     checkShoeAlerts(liveShoes,liveRuns,st.alerts);
+    }catch(e){
+      // 부팅 초기화 실패(스토리지 손상/네이티브 결측 등) — 무한 스켈레톤 대신 재시도
+      // 카드로 보낸다(2026-07-05: setBootState('error')가 한 번도 안 불려 BootError 가
+      // 죽은 코드였고, throw 시 'loading'에 영구 고착됐다). 재시도는 initUser 재진입.
+      console.log('initUser boot error',e);
+      setBootState('error');
+    }
   }
 
   // 당겨서 새로고침(RefreshControl) 진입점 — Home/History 가 호출한다. Stage 3(Firestore 정본):

@@ -560,3 +560,21 @@ test('cloud merge: 캐시에서 부팅된 cloud-only 신발/런이 마스킹되�
     delete (globalThis as any).__KEEGO_CLOUD_PORT__;
   }
 });
+
+// ── 부팅 초기화 실패 → 무한 스켈레톤 대신 재시도 카드(2026-07-05 견고성) ────────────
+test('initUser 가 스토리지 예외로 실패하면 boot-error 재시도 카드를 띄운다(무한 스켈레톤 방지)', async () => {
+  await AsyncStorage.clear();
+  const spy = jest.spyOn(AsyncStorage, 'getItem').mockRejectedValue(new Error('storage corrupt'));
+  (globalThis.fetch as jest.Mock).mockImplementation(() => Promise.reject(new Error('cold')));
+  let renderer!: ReactTestRenderer.ReactTestRenderer;
+  try {
+    await act(async () => { renderer = ReactTestRenderer.create(<App />); });
+    await flush();
+    // 스켈레톤에 영구 고착되지 않고 재시도 카드로 떨어진다.
+    expect(has(renderer.root, 'boot-error')).toBe(true);
+    expect(has(renderer.root, 'boot-retry')).toBe(true);
+  } finally {
+    spy.mockRestore();
+    act(() => renderer?.unmount());
+  }
+});
