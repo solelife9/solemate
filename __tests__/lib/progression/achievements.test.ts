@@ -403,4 +403,13 @@ describe('keego: 킵고잉, 1년', () => {
   test('옛 키(longtime_partner)는 카탈로그에 없다', () => {
     expect(achievementDef('longtime_partner')).toBeUndefined();
   });
+
+  test('잘 보내주었다: smart 이상 등급 은퇴가 있어야 언락(standard 은 불충분)', () => {
+    const def = achievementDef('well_sent')!;
+    expect(def.unlocked(emptyCtx({retirementGrades: ['smart']}))).toBe(true);
+    expect(def.unlocked(emptyCtx({retirementGrades: ['perfect']}))).toBe(true);
+    expect(def.unlocked(emptyCtx({retirementGrades: ['hallOfFame']}))).toBe(true);
+    expect(def.unlocked(emptyCtx({retirementGrades: ['standard', 'good']}))).toBe(false);
+    expect(def.unlocked(emptyCtx({}))).toBe(false);
+  });
 });

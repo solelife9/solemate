@@ -9,7 +9,7 @@
 //   3. shoeJourney       — 신발 소유 · 은퇴(첫 신발 ~ 명예의 전당)          1,690 XP max
 //   4. shoeMemory        — 신발과의 동행(켤레마다 반복 적립, 10켤레 기준)   1,700 XP max
 //   5. experience        — 특별 경험(야간·새벽·계절) + 챌린지                 310 XP max
-//   6. keego             — Keep Going 철학(킵고잉, 1년)                      100 XP max
+//   6. keego             — Keep Going 철학(잘 보내주었다·킵고잉 1년)          200 XP max
 //
 // 설계 원칙:
 //   · RPG 아님 — 보상이 아닌 기억. "memories, not rewards."
@@ -25,6 +25,7 @@ import {
   PerShoeStats,
   ProgressionContext,
 } from './types';
+import {isSmartOrBetter} from './retirementGrade';
 // 수명 기반 동행 업적(journey_half/full)의 maxKm 미상 폴백 — 카테고리 기본 수명의
 // 단일 소스(data/shoeModels)와 정렬(데일리 650).
 import {DEFAULT_LIFESPAN_KM} from '../../data/shoeModels';
@@ -457,6 +458,19 @@ const CHALLENGES: AchievementDef[] = [
 // 4~5개월). Keep Going 은 신발이 아니라 **러너의 여정** — 첫 런에서 1년이 지나도
 // 여전히 달리고 있는 것(runSpanDays: 첫 런 → 마지막 런, 기다림만으론 안 늘어남)이다.
 const KEEGO: AchievementDef[] = [
+  // Keep Going(계속 달리는 것)과 짝을 이루는 Let Go(잘 떠나보내는 것) — 교체 권장
+  // 시점 안의 은퇴(smart 이상 등급). 사다리 없이 단 한 장: 앱 존재 이유의 업적화.
+  {
+    key: 'well_sent', name: '잘 보내주었다', rarity: 'epic', xp: 100,
+    description: '수명이 다한 신발을 제때 은퇴시켰다. 잘 떠나보내는 것도 러닝이다.',
+    category: 'keego',
+    signature: true,
+    progress: ctx => ({
+      current: Math.min((ctx.retirementGrades ?? []).filter(isSmartOrBetter).length, 1),
+      target: 1,
+    }),
+    unlocked: ctx => (ctx.retirementGrades ?? []).some(isSmartOrBetter),
+  },
   {
     key: 'keep_going_year', name: '킵고잉, 1년', rarity: 'epic', xp: 100,
     description: '첫 런으로부터 1년이 지나도, 여전히 달리고 있다. 그것이 Keep Going.',
