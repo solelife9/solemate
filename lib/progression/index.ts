@@ -60,6 +60,8 @@ export interface AchievementView {
   repeatablePerShoe: boolean;
   signature: boolean;
   hidden: boolean;
+  /** 진행 숫자 앞 라벨(예: '최장 런', '누적') — 무엇을 재는 숫자인지 명시. */
+  progressPrefix?: string;
   progress: AchievementProgress;
   unlocked: boolean;
 }
@@ -130,6 +132,7 @@ function viewFromContext(
       repeatablePerShoe: def.repeatablePerShoe === true,
       signature: def.signature === true,
       hidden: def.hidden === true,
+      progressPrefix: def.progressPrefix,
       progress: achievementProgress(def, ctx),
       unlocked: isUnlocked,
     };

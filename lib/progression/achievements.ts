@@ -4,7 +4,7 @@
 // 업적 = 러너의 정체성. 7개 카테고리 × 총 ~5,920 XP(레전드 5,000 XP, 10켤레 기준).
 //
 //   1. runningMilestone  — 단일 런 이정표(첫 5km ~ 마라톤)                 730 XP max
-//   2. distanceMilestone — 누적 거리(100 → 10,000km)                     1,070 XP max
+//   2. distanceMilestone — 누적 거리(100 → 10,000km, 7단계)             1,370 XP max
 //   2b. consistency      — 꾸준함(일·주 리듬, 스트릭≤7일·누적 시간)          320 XP max
 //   3. shoeJourney       — 신발 소유 · 은퇴(첫 신발 ~ 명예의 전당)          1,690 XP max
 //   4. shoeMemory        — 신발과의 동행(켤레마다 반복 적립, 10켤레 기준)   1,700 XP max
@@ -67,13 +67,14 @@ type MetricOpts = {
   target: number;
   hidden?: boolean;
   signature?: boolean;
+  progressPrefix?: string;
   value: (ctx: ProgressionContext) => number;
 };
 
 function metricAch(opts: MetricOpts): AchievementDef {
-  const {key, name, description, category, rarity, xp, target, hidden, signature} = opts;
+  const {key, name, description, category, rarity, xp, target, hidden, signature, progressPrefix} = opts;
   return {
-    key, name, description, category, rarity, xp, hidden, signature,
+    key, name, description, category, rarity, xp, hidden, signature, progressPrefix,
     progress: ctx => {
       const cur = nonNeg(opts.value(ctx));
       return {current: Math.min(cur, target), target};
@@ -124,30 +125,35 @@ const RUNNING_MILESTONE: AchievementDef[] = [
   }),
   metricAch({
     key: 'first_5k', name: '첫 5km', rarity: 'common', xp: 20,
+    progressPrefix: '최장 런',
     description: '5km를 한 번에 완주한 날.',
     category: 'runningMilestone', target: 5,
     value: ctx => nonNeg(ctx.longestRunKm),
   }),
   metricAch({
     key: 'first_10k', name: '첫 10km', rarity: 'rare', xp: 40,
+    progressPrefix: '최장 런',
     description: '10km를 쉬지 않고 달린 날.',
     category: 'runningMilestone', target: 10,
     value: ctx => nonNeg(ctx.longestRunKm),
   }),
   metricAch({
     key: 'first_20k', name: '첫 20km', rarity: 'rare', xp: 60,
+    progressPrefix: '최장 런',
     description: '한 번에 20km를 달린 날. 하프가 보인다.',
     category: 'runningMilestone', target: 20,
     value: ctx => nonNeg(ctx.longestRunKm),
   }),
   metricAch({
     key: 'first_half', name: '하프마라톤', rarity: 'epic', xp: 200,
+    progressPrefix: '최장 런',
     description: '한 번에 21.0975km. 당신은 진짜 러너.',
     category: 'runningMilestone', target: HALF_MARATHON_KM,
     value: ctx => nonNeg(ctx.longestRunKm),
   }),
   metricAch({
     key: 'first_marathon', name: '마라톤 완주', rarity: 'legendary', xp: 400,
+    progressPrefix: '최장 런',
     description: '한 번에 42.195km. 달릴 수 있다는 걸 증명한 날.',
     category: 'runningMilestone', target: MARATHON_KM,
     value: ctx => nonNeg(ctx.longestRunKm),
@@ -161,36 +167,49 @@ const RUNNING_MILESTONE: AchievementDef[] = [
 const DISTANCE_MILESTONE: AchievementDef[] = [
   metricAch({
     key: 'dist_100', name: '100km', rarity: 'common', xp: 20,
+    progressPrefix: '누적',
     description: '첫 100km. 이제 시작이다.',
     category: 'distanceMilestone', target: 100,
     value: ctx => nonNeg(ctx.cumulativeKm),
   }),
   metricAch({
     key: 'dist_500', name: '500km', rarity: 'rare', xp: 50,
+    progressPrefix: '누적',
     description: '서울에서 부산까지의 거리.',
     category: 'distanceMilestone', target: 500,
     value: ctx => nonNeg(ctx.cumulativeKm),
   }),
   metricAch({
     key: 'dist_1000', name: '1,000km', rarity: 'rare', xp: 100,
+    progressPrefix: '누적',
     description: '1,000km. 꾸준함이 쌓인 증거.',
     category: 'distanceMilestone', target: 1000,
     value: ctx => nonNeg(ctx.cumulativeKm),
   }),
   metricAch({
     key: 'dist_3000', name: '3,000km', rarity: 'epic', xp: 150,
+    progressPrefix: '누적',
     description: '한국을 두 바퀴 돌았다.',
     category: 'distanceMilestone', target: 3000,
     value: ctx => nonNeg(ctx.cumulativeKm),
   }),
   metricAch({
     key: 'dist_5000', name: '5,000km', rarity: 'epic', xp: 250,
+    progressPrefix: '누적',
     description: '서울에서 뉴욕. 달리기 하나로.',
     category: 'distanceMilestone', target: 5000,
     value: ctx => nonNeg(ctx.cumulativeKm),
   }),
   metricAch({
+    key: 'dist_7500', name: '7,500km', rarity: 'epic', xp: 300,
+    progressPrefix: '누적',
+    description: '서울에서 파리. 대륙을 건넜다.',
+    category: 'distanceMilestone', target: 7500,
+    value: ctx => nonNeg(ctx.cumulativeKm),
+  }),
+  metricAch({
     key: 'dist_10000', name: '10,000km', rarity: 'legendary', xp: 500,
+    progressPrefix: '누적',
     description: '지구 4분의 1 바퀴. 전설이다.',
     category: 'distanceMilestone', target: 10000,
     value: ctx => nonNeg(ctx.cumulativeKm),
@@ -236,6 +255,7 @@ const CONSISTENCY: AchievementDef[] = [
   }),
   metricAch({
     key: 'time_24h', name: '온전한 하루', rarity: 'epic', xp: 100,
+    progressPrefix: '누적',
     description: '누적 24시간 — 지구가 한 바퀴 도는 시간을 달렸다.',
     category: 'consistency', target: 86400,
     value: ctx => nonNeg(ctx.totalDurationS),

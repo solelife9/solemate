@@ -85,6 +85,9 @@ export interface AchievementDef {
   signature?: boolean;
   /** true 면 달성 전까지 갤러리에서 숨긴다. */
   hidden?: boolean;
+  /** 진행 숫자 앞 라벨(예: '최장 런', '누적') — 무엇을 재는 숫자인지 화면에서 즉시
+      읽히게 한다(최장 단일 런이 누적처럼 보이던 혼동 방지, 2026-07-04). */
+  progressPrefix?: string;
   /** true 면 신발 켤레마다 xp 반복 적립. earnedCount 가 필수 제공되어야 한다. */
   repeatablePerShoe?: boolean;
   progress: (ctx: ProgressionContext) => AchievementProgress;

@@ -424,7 +424,7 @@ function AchievementCard({a}: {a: AchievementView}) {
 
       <View style={s.achFooter}>
         <Text style={s.achProgTxt} testID={`ach-progress-${a.key}`}>
-          {fmtProgressNum(a.progress.current)} / {fmtProgressNum(a.progress.target)}
+          {a.progressPrefix ? `${a.progressPrefix} ` : ''}{fmtProgressNum(a.progress.current)} / {fmtProgressNum(a.progress.target)}
         </Text>
         <Text style={[s.xpChip, {color: a.unlocked ? aColor : T3}]}>
           {xpLabel}

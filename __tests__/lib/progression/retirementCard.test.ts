@@ -130,8 +130,8 @@ describe('buildRetirementCardModel (필드 매핑)', () => {
     expect(m.grade.grade).toBe('standard');
   });
 
-  test('포맷 상수: 5개 포맷 + 기본 E(Midnight)', () => {
-    expect(RETIREMENT_CARD_FORMATS).toEqual(['E', 'A', 'B', 'C', 'D']);
+  test('포맷 상수: 6개 포맷(S=9:16 스토리 추가) + 기본 E(Midnight)', () => {
+    expect(RETIREMENT_CARD_FORMATS).toEqual(['E', 'S', 'A', 'B', 'C', 'D']);
     expect(DEFAULT_RETIREMENT_CARD_FORMAT).toBe('E');
   });
 
