@@ -69,6 +69,10 @@ export const TIER_COLORS: Record<RankTier, string> = {
   legend: '#FF6500',
 };
 
+// 명예의 전당 전용 골드 — 채도 낮춘 샴페인 골드(애플 톤). HallOfShoes·은퇴 인증서에서만
+// 쓴다(일반 화면 액센트는 ACCENT 단일 — 전당의 '식장' 무드를 위한 유일한 예외 토큰).
+export const HALL_GOLD = '#D8B872';
+
 // 심박 존(Z1–Z5) 색 — 회복(파랑)→유산소(초록)→템포(노랑)→역치(주황)→무산소(빨강).
 // 기존 컨디션 토큰 재사용(BEST/GOOD/DANGER) + 중간 2색만 신규. 화면은 이 토큰만 참조한다.
 export const HR_ZONE_COLORS: Record<1 | 2 | 3 | 4 | 5, string> = {
@@ -130,7 +134,9 @@ export type SpaceKey = keyof typeof SPACE;
 // ── corner radius scale (dp) ─────────────────────────────────────────────────
 // btn 은 단일 CTA(Button 프리미티브) 모서리 — 과거 화면마다 14/16/18/999 로 흩어져
 // 있던 버튼 radius 를 이 한 토큰(18)으로 통일한다(시각: 다크+오렌지 동등 유지).
-export const RADIUS = { sm: 12, md: 16, btn: 18, lg: 20, xl: 24, pill: 999 } as const;
+// input(14): 입력/소형 컨트롤(스텝퍼 버튼·필드) — 전 화면에서 raw 14 로 반복되던
+// 사실상의 표준을 토큰으로 승격(2026-07-04 디자인 시스템 감사).
+export const RADIUS = { sm: 12, input: 14, md: 16, btn: 18, lg: 20, xl: 24, pill: 999 } as const;
 export type RadiusKey = keyof typeof RADIUS;
 
 // ── type scale ───────────────────────────────────────────────────────────────

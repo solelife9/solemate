@@ -9,7 +9,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import {
   BG, CARD_DIM, CARD_HI, ACCENT, DANGER, T1, T2, T3, T4, FONT, DISPLAY, withAlpha, Shoe,
 } from './theme';
-import { Pill, Button } from './primitives';
+import { Pill, Button, Chip } from './primitives';
 // 신발 모델 카탈로그·권장수명은 data/shoeModels(단일 소스)에서 가져온다.
 import { BRANDS, modelsForBrand, getRecommendedLifespanKm } from './data/shoeModels';
 // maxKm 0 같은 비정상값을 제출 시 인라인으로 차단(빨강 헬퍼텍스트).
@@ -148,9 +148,7 @@ export default function AddShoeScreen({
           {[...BRANDS, CUSTOM_BRAND].map((b) => {
             const on = b === brand;
             return (
-              <Pressable key={b} onPress={() => pickBrand(b)} accessibilityRole="button" accessibilityLabel={b} accessibilityState={{ selected: on }} hitSlop={{ top: 6, bottom: 6 }} style={({ pressed }) => [s.chip, on ? s.chipOn : s.chipOff, pressed && s.pressed]}>
-                <Text style={[s.chipText, { color: on ? T1 : T2 }]}>{b}</Text>
-              </Pressable>
+              <Chip key={b} label={b} selected={on} onPress={() => pickBrand(b)} />
             );
           })}
         </ScrollView>
@@ -292,10 +290,6 @@ const s = StyleSheet.create({
 
   label: { color: T2, fontFamily: FONT, fontSize: 13, fontWeight: '500', letterSpacing: 0.2, paddingHorizontal: 4, paddingBottom: 10 },
 
-  chip: { height: 40, paddingHorizontal: 18, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
-  chipOn: { borderWidth: 1, borderColor: withAlpha(T1, 0.22), backgroundColor: withAlpha(T1, 0.10) },
-  chipOff: { borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.12), backgroundColor: CARD_HI },
-  chipText: { fontFamily: FONT, fontSize: 13, fontWeight: '600', letterSpacing: 0.6 },
 
   // 모델 선택 트리거(탭하면 검색 모달). 입력칸처럼 보이되 누르면 모달이 열린다.
   selector: { backgroundColor: CARD_DIM, borderRadius: 16, borderCurve: 'continuous', borderWidth: 1, borderColor: withAlpha(T1, 0.07), flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingVertical: 16 },

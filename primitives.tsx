@@ -77,6 +77,119 @@ export const WEAR_TONE_COLOR: Record<WearTierTone, string> = {
   good: GOOD, mid: WARN, warn: ACCENT, danger: DANGER,
 };
 
+// ── Stepper — ± 조정 컨트롤 단일 프리미티브(2026-07-04 DS 감사) ─────────────────
+// 화면마다 손구현되던 스텝퍼(마이 탭 46/r14 · 챌린지 44/r14·40/r12 · 스피드 38/r19)를
+// 하나로: [−] 중앙값 [+]. 중앙은 value+suffix 기본 렌더 또는 children 으로 교체
+// (스피드 패널처럼 자체 표시가 필요한 곳). 버튼 = size² · RADIUS.input · CARD_HI.
+export function Stepper({
+  value,
+  suffix = '',
+  onMinus,
+  onPlus,
+  size = 46,
+  minusLabel,
+  plusLabel,
+  children,
+  style,
+}: {
+  value?: number | string;
+  /** 단위/이름 — 중앙 보조 라벨 + 기본 a11y 라벨('{suffix} 줄이기/늘리기')에 쓴다. */
+  suffix?: string;
+  onMinus: () => void;
+  onPlus: () => void;
+  /** 버튼 한 변(pt). 기본 46 — 좁은 곳은 38~44. */
+  size?: number;
+  minusLabel?: string;
+  plusLabel?: string;
+  /** 중앙 커스텀 렌더(기본 value/suffix 대체). */
+  children?: React.ReactNode;
+  style?: StyleProp<ViewStyle>;
+}) {
+  const btn = (pressed: boolean): StyleProp<ViewStyle> => [
+    {
+      width: size, height: size, borderRadius: RADIUS.input, borderCurve: 'continuous',
+      backgroundColor: pressed ? CARD : CARD_HI, alignItems: 'center', justifyContent: 'center',
+    },
+  ];
+  return (
+    <View style={[{flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 14}, style]}>
+      <Pressable onPress={onMinus} hitSlop={8} accessibilityRole="button"
+        accessibilityLabel={minusLabel ?? `${suffix} 줄이기`} style={({pressed}) => btn(pressed)}>
+        <Ionicons name="remove" size={20} color={T1} />
+      </Pressable>
+      {children ?? (
+        <View style={{flex: 1, alignItems: 'center'}} accessible accessibilityLabel={`${value} ${suffix}`}>
+          <Text style={{color: T1, fontFamily: DISPLAY, fontSize: 30, letterSpacing: 0.3}}>{value}</Text>
+          {!!suffix && <Text style={{color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '600', marginTop: 2}}>{suffix}</Text>}
+        </View>
+      )}
+      <Pressable onPress={onPlus} hitSlop={8} accessibilityRole="button"
+        accessibilityLabel={plusLabel ?? `${suffix} 늘리기`} style={({pressed}) => btn(pressed)}>
+        <Ionicons name="add" size={20} color={T1} />
+      </Pressable>
+    </View>
+  );
+}
+
+// ── Chip — 선택형 필터 칩 단일 프리미티브(2026-07-04 DS 감사) ────────────────────
+// 화면마다 높이·모서리·선택색이 다르던 필터 칩(카운트다운 h32 · 히스토리 · 신발추가
+// h40 · 온보딩 r11)을 하나로: pill 라디우스, 기본 CARD_HI 표면, 선택 시 오렌지 틴트
+// (Pill accent 톤과 동일 문법). 콘텐츠가 복잡하면 children 으로.
+export function Chip({
+  label,
+  selected = false,
+  onPress,
+  size = 'md',
+  disabled = false,
+  accessibilityLabel,
+  testID,
+  style,
+  children,
+}: {
+  label?: string;
+  selected?: boolean;
+  onPress?: () => void;
+  /** sm=h32(밀집 필터 행) · md=h40(기본). */
+  size?: 'sm' | 'md';
+  disabled?: boolean;
+  accessibilityLabel?: string;
+  testID?: string;
+  style?: StyleProp<ViewStyle>;
+  children?: React.ReactNode;
+}) {
+  const h = size === 'sm' ? 32 : 40;
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled || !onPress}
+      accessibilityRole="button"
+      accessibilityState={{selected, disabled}}
+      accessibilityLabel={accessibilityLabel ?? label}
+      testID={testID}
+      style={({pressed}) => [
+        {
+          height: h, paddingHorizontal: size === 'sm' ? 12 : 15,
+          borderRadius: RADIUS.pill, borderCurve: 'continuous',
+          alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6,
+          backgroundColor: selected ? withAlpha(ACCENT, 0.16) : CARD_HI,
+          borderWidth: StyleSheet.hairlineWidth,
+          borderColor: selected ? withAlpha(ACCENT, 0.55) : 'transparent',
+        },
+        pressed && {opacity: 0.8},
+        disabled && {opacity: 0.4},
+        style,
+      ]}>
+      {children ?? (
+        <Text style={{
+          fontFamily: FONT, fontSize: size === 'sm' ? 13 : 14,
+          fontWeight: selected ? '700' : '600',
+          color: selected ? ACCENT : T2,
+        }}>{label}</Text>
+      )}
+    </Pressable>
+  );
+}
+
 export function conditionTone(condition: ShoeCondition): Tone {
   if (condition === '교체') return 'danger';
   if (condition === '주의') return 'warn';

@@ -9,25 +9,20 @@ import React, {useEffect, useRef, useState} from 'react';
 import {View, Text, Pressable, ScrollView, StyleSheet} from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {ACCENT, CARD, CARD_HI, T1, T2, T3, T4, SEP, FONT, RADIUS, withAlpha} from './theme';
-import {SegmentedControl, SwipeBackExclude} from './primitives';
+import {SegmentedControl, SwipeBackExclude, Stepper} from './primitives';
 import {buildPacePlan, clampPace, fmtPaceSec, PaceStrategy} from './lib/pacePlan';
 
 const KM_MIN = 1, KM_MAX = 42;
 const clampKm = (k: number) => Math.max(KM_MIN, Math.min(KM_MAX, Math.round(k)));
 
-function Stepper({value, onDec, onInc, decLabel, incLabel}: {
+// 스텝퍼는 앱 공용 프리미티브(primitives.Stepper) — 중앙 표시만 children 으로 주입.
+function PaceStepper({value, onDec, onInc, decLabel, incLabel}: {
   value: string; onDec: () => void; onInc: () => void; decLabel: string; incLabel: string;
 }) {
   return (
-    <View style={s.stepper}>
-      <Pressable onPress={onDec} hitSlop={8} accessibilityRole="button" accessibilityLabel={decLabel} style={({pressed}) => [s.stepBtn, pressed && s.stepBtnOn]}>
-        <Ionicons name="remove" size={20} color={T1} />
-      </Pressable>
+    <Stepper size={38} onMinus={onDec} onPlus={onInc} minusLabel={decLabel} plusLabel={incLabel} style={{gap: 0}}>
       <Text style={s.stepVal}>{value}</Text>
-      <Pressable onPress={onInc} hitSlop={8} accessibilityRole="button" accessibilityLabel={incLabel} style={({pressed}) => [s.stepBtn, pressed && s.stepBtnOn]}>
-        <Ionicons name="add" size={20} color={T1} />
-      </Pressable>
-    </View>
+    </Stepper>
   );
 }
 
@@ -74,7 +69,7 @@ export default function SpeedPlanPanel({
       {/* 거리 */}
       <View style={s.row}>
         <Text style={s.rowLabel}>거리</Text>
-        <Stepper
+        <PaceStepper
           value={`${km} km`}
           onDec={() => setKm(k => clampKm(k - 1))} onInc={() => setKm(k => clampKm(k + 1))}
           decLabel="거리 1킬로미터 줄이기" incLabel="거리 1킬로미터 늘리기"
@@ -83,7 +78,7 @@ export default function SpeedPlanPanel({
       {/* 평균 페이스 */}
       <View style={s.row}>
         <Text style={s.rowLabel}>평균 페이스</Text>
-        <Stepper
+        <PaceStepper
           value={`${fmtPaceSec(avgSec)} /km`}
           onDec={() => setAvgSec(v => clampPace(v - 5))} onInc={() => setAvgSec(v => clampPace(v + 5))}
           decLabel="평균 페이스 5초 빠르게" incLabel="평균 페이스 5초 느리게"
@@ -122,7 +117,7 @@ export default function SpeedPlanPanel({
       {/* 선택 구간 미세조정 */}
       <View style={[s.row, s.tuneRow]}>
         <Text style={s.rowLabel}>{selIdx + 1}km 목표</Text>
-        <Stepper
+        <PaceStepper
           value={`${fmtPaceSec(plan[selIdx])} /km`}
           onDec={() => editSeg(selIdx, -5)} onInc={() => editSeg(selIdx, +5)}
           decLabel={`${selIdx + 1}킬로미터 목표 5초 빠르게`} incLabel={`${selIdx + 1}킬로미터 목표 5초 느리게`}
@@ -137,9 +132,6 @@ const s = StyleSheet.create({
   row: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'},
   tuneRow: {backgroundColor: CARD, borderRadius: RADIUS.lg, borderCurve: 'continuous', borderWidth: StyleSheet.hairlineWidth, borderColor: SEP, paddingHorizontal: 16, paddingVertical: 12},
   rowLabel: {color: T2, fontFamily: FONT, fontSize: 14, fontWeight: '600'},
-  stepper: {flexDirection: 'row', alignItems: 'center', gap: 14},
-  stepBtn: {width: 38, height: 38, borderRadius: 19, borderCurve: 'continuous', alignItems: 'center', justifyContent: 'center', backgroundColor: CARD_HI, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP},
-  stepBtnOn: {backgroundColor: withAlpha(ACCENT, 0.16)},
   stepVal: {color: T1, fontFamily: FONT, fontSize: 17, fontWeight: '700', minWidth: 92, textAlign: 'center'},
   seg: {marginTop: 2},
   hint: {color: T3, fontFamily: FONT, fontSize: 12, lineHeight: 17, marginTop: -4},

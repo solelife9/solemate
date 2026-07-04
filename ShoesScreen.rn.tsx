@@ -774,9 +774,6 @@ const s = StyleSheet.create({
   lastWorn: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500' },
 
   // 신발 수명(max_km) 조정 스테퍼 + 직접 입력
-  maxStepper: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 14 },
-  maxStepBtn: { width: 46, height: 46, borderRadius: 14, backgroundColor: CARD_HI, alignItems: 'center', justifyContent: 'center' },
-  maxStepVal: { flex: 1, alignItems: 'center' },
   maxInputRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'center' },
   maxInput: { color: T1, fontFamily: DISPLAY, fontSize: 28, letterSpacing: 0.3, textAlign: 'center', minWidth: 70, paddingVertical: 0, paddingBottom: 2, borderBottomWidth: 1, borderBottomColor: withAlpha(ACCENT, 0.4) },
   maxStepUnit: { color: T3, fontFamily: FONT, fontSize: 13, marginBottom: 3 },

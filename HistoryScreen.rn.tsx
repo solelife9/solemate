@@ -12,7 +12,7 @@ import {
   BG, CARD, CARD_DIM, CARD_HI, ACCENT, DANGER, T1, T2, T3, T4, SEP, CARD_BORDER, FONT, DISPLAY, Shoe, Run, SHOES, withAlpha, RADIUS, GUTTER, HERO, SCRIM, HR_ZONE_COLORS,
 } from './theme';
 // 기간 탭 스트립 = SegmentedControl(neutral), 러닝 상세 2×3 메트릭 = StatGrid 프리미티브.
-import { TabBar, TABBAR_CLEARANCE, Button, SegmentedControl, StatGrid, SwipeBack } from './primitives';
+import { TabBar, TABBAR_CLEARANCE, Button, SegmentedControl, StatGrid, SwipeBack, Chip } from './primitives';
 import { Unit, displayNum, displayToKm } from './lib/units';
 import { ymdLocal } from './lib/format';
 import { sumKm, summaryOf, monthBuckets, weekBuckets, yearBuckets } from './lib/stats';
@@ -207,17 +207,12 @@ export function RunForm({
               {shoes.map((sh, i) => {
                 const on = sh.id === shoeId;
                 return (
-                  <Pressable
+                  <Chip
                     key={sh.id || i}
+                    label={`${sh.brand} ${sh.model}`}
+                    selected={on}
                     onPress={() => { if (sh.id) { setShoeId(sh.id); clearError('shoe'); } }}
-                    style={[s.chip, on && s.chipOn]}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected: on }}
-                  >
-                    <Text style={[s.chipTxt, { color: on ? BG : T2 }]} numberOfLines={1}>
-                      {sh.brand} {sh.model}
-                    </Text>
-                  </Pressable>
+                  />
                 );
               })}
             </View>
@@ -272,16 +267,13 @@ export function RunForm({
             {SURFACE_OPTIONS.map((opt) => {
               const on = opt.value === surface;
               return (
-                <Pressable
+                <Chip
                   key={opt.value}
+                  label={opt.label}
+                  selected={on}
                   onPress={() => pickSurface(opt.value)}
-                  style={[s.chip, on && s.chipOn]}
-                  accessibilityRole="button"
                   accessibilityLabel={`노면 ${opt.label}`}
-                  accessibilityState={{ selected: on }}
-                >
-                  <Text style={[s.chipTxt, { color: on ? BG : T2 }]}>{opt.label}</Text>
-                </Pressable>
+                />
               );
             })}
           </View>
@@ -1119,9 +1111,6 @@ const s = StyleSheet.create({
   formLabel: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600', marginBottom: 8, paddingHorizontal: 2 },
   formHint: { color: T3, fontFamily: FONT, fontSize: 13 },
   chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { maxWidth: '100%', backgroundColor: CARD_HI, borderRadius: RADIUS.pill, paddingHorizontal: 14, paddingVertical: 9, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
-  chipOn: { backgroundColor: ACCENT, borderColor: ACCENT },
-  chipTxt: { fontFamily: FONT, fontSize: 14, fontWeight: '600' },
   input: { backgroundColor: CARD, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14, color: T1, fontFamily: FONT, fontSize: 15, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
   // 검증 실패 시 입력칸 테두리를 빨강으로 강조하고, 아래에 인라인 헬퍼텍스트를 띄운다.
   inputErr: { borderColor: DANGER, borderWidth: 1 },

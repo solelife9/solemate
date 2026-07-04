@@ -13,7 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { BG, CARD, CARD_DIM, CARD_HI, ACCENT, GOOD, DANGER, WARN, T1, T2, T3, SEP, CARD_BORDER, FONT, DISPLAY, withAlpha, TIER_COLORS, TIER_LABEL, KAKAO_YELLOW, KAKAO_LABEL, NAVER_GREEN, NAVER_LABEL, RADIUS } from './theme';
 // recap 토글 = SegmentedControl(accentSolid), 스탯 그리드들 = StatGrid 단일 프리미티브.
-import { TabBar, TABBAR_CLEARANCE, Pill, SectionTitle, Button, SegmentedControl, StatGrid } from './primitives';
+import { TabBar, TABBAR_CLEARANCE, Pill, SectionTitle, Button, SegmentedControl, StatGrid, Stepper } from './primitives';
 import { Unit, unitKorean, displayNum } from './lib/units';
 import { weeklyRecap, monthlyRecap, type RecapRun, type RecapShoe } from './lib/recap';
 import { hkAvailable, hkLinked, hkLink, hkRestingHR } from './lib/healthkit';
@@ -88,22 +88,7 @@ function NotifToggle({ label, value, onToggle, testID }: { label: string; value:
 }
 
 // −/＋ 스테퍼(목표 거리·알림 임계값 공용). 모듈 스코프에 둬 매 렌더 재생성을 피한다.
-function Stepper({ value, suffix, onMinus, onPlus }: { value: number | string; suffix: string; onMinus: () => void; onPlus: () => void }) {
-  return (
-    <View style={s.stepper}>
-      <Pressable onPress={onMinus} accessibilityRole="button" accessibilityLabel={`${suffix} 줄이기`} style={({ pressed }) => [s.stepBtn, pressed && { backgroundColor: CARD }]}>
-        <Ionicons name="remove" size={20} color={T1} />
-      </Pressable>
-      <View style={s.stepVal} accessible accessibilityLabel={`${value} ${suffix}`}>
-        <Text style={s.stepNum}>{value}</Text>
-        <Text style={s.stepUnit}>{suffix}</Text>
-      </View>
-      <Pressable onPress={onPlus} accessibilityRole="button" accessibilityLabel={`${suffix} 늘리기`} style={({ pressed }) => [s.stepBtn, pressed && { backgroundColor: CARD }]}>
-        <Ionicons name="add" size={20} color={T1} />
-      </Pressable>
-    </View>
-  );
-}
+// 스텝퍼는 앱 공용 프리미티브(primitives.Stepper) — 로컬 구현 제거(2026-07-04 DS 통일).
 
 export default function ProfileScreen({
   profile = DEFAULT_PROFILE, badges: _badges = [], records = [], onTab,
@@ -1031,11 +1016,6 @@ const s = StyleSheet.create({
   // expandable panels
   panel: { paddingHorizontal: 18, paddingVertical: 16, gap: 14, backgroundColor: withAlpha(T1, 0.02) },
   panelHint: { color: T3, fontFamily: FONT, fontSize: 13, lineHeight: 18 },
-  stepper: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 14 },
-  stepBtn: { width: 46, height: 46, borderRadius: 14, borderCurve: 'continuous', backgroundColor: CARD_HI, alignItems: 'center', justifyContent: 'center' },
-  stepVal: { flex: 1, alignItems: 'center' },
-  stepNum: { color: T1, fontFamily: DISPLAY, fontSize: 30, letterSpacing: 0.3 },
-  stepUnit: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '600', marginTop: 2 },
 
   notifDenied: { color: WARN, fontFamily: FONT, fontSize: 13, lineHeight: 18 },
 

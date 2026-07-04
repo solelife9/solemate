@@ -10,7 +10,7 @@ import React, {useState} from 'react';
 import {View, Text, Pressable, StyleSheet} from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {CARD, CARD_HI, ACCENT, GOOD, T1, T2, T3, SEP, FONT, DISPLAY, RADIUS, withAlpha} from './theme';
-import {Ring, Pill} from './primitives';
+import {Ring, Pill, Stepper} from './primitives';
 import {ChallengeRun, ChallengeProgressResult} from './lib/challenges';
 import {
   ExtChallenge,
@@ -115,28 +115,18 @@ export function SmartChallengeCard({
       {editing ? (
         <View style={s.smartEditWrap}>
           <Text style={s.smartEditLabel}>주간 목표 거리</Text>
-          <View style={s.smartStepper}>
-            <Pressable
-              onPress={() => step(-SMART_KM_STEP)}
-              accessibilityRole="button"
-              accessibilityLabel="목표 거리 줄이기"
-              hitSlop={6}
-              style={({pressed}) => [s.smartStepBtn, pressed && {opacity: 0.6}]}>
-              <Ionicons name="remove" size={18} color={T1} />
-            </Pressable>
+          {/* 앱 공용 Stepper 프리미티브 — a11y 라벨·testID 계약 유지(2026-07-04 DS 통일). */}
+          <Stepper
+            size={44}
+            minusLabel="목표 거리 줄이기"
+            plusLabel="목표 거리 늘리기"
+            onMinus={() => step(-SMART_KM_STEP)}
+            onPlus={() => step(SMART_KM_STEP)}>
             <Text style={s.smartStepVal} testID="smart-challenge-target">
               {target}
               <Text style={s.smartStepUnit}> km</Text>
             </Text>
-            <Pressable
-              onPress={() => step(SMART_KM_STEP)}
-              accessibilityRole="button"
-              accessibilityLabel="목표 거리 늘리기"
-              hitSlop={6}
-              style={({pressed}) => [s.smartStepBtn, pressed && {opacity: 0.6}]}>
-              <Ionicons name="add" size={18} color={T1} />
-            </Pressable>
-          </View>
+          </Stepper>
         </View>
       ) : (
         <View style={s.smartBody}>
@@ -285,8 +275,6 @@ const s = StyleSheet.create({
   // 편집 모드: 목표 거리 ± 스테퍼.
   smartEditWrap: {gap: 10},
   smartEditLabel: {color: T2, fontFamily: FONT, fontSize: 13, fontWeight: '600', letterSpacing: 0.2},
-  smartStepper: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: CARD_HI, borderRadius: RADIUS.md, borderCurve: 'continuous', padding: 8},
-  smartStepBtn: {width: 40, height: 40, borderRadius: 12, borderCurve: 'continuous', backgroundColor: CARD, alignItems: 'center', justifyContent: 'center'},
   smartStepVal: {color: T1, fontFamily: DISPLAY, fontSize: 24, letterSpacing: 0.2},
   smartStepUnit: {color: T3, fontFamily: FONT, fontSize: 14, fontWeight: '600'},
 });

@@ -56,7 +56,7 @@ import {
   DISPLAY,
   withAlpha,
 } from './theme';
-import {Button} from './primitives';
+import {Button, Chip as ChipPrim} from './primitives';
 
 // ── 디자인 토큰 흡수 ──────────────────────────────────────────────────────────
 // 과거 이 화면은 자체 다크 팔레트(const KG)와 BebasNeue 디스플레이 별칭(DISP)을 들고
@@ -439,22 +439,9 @@ function PrimaryButton({
   return <Button label={label} onPress={onPress} disabled={disabled} testID={testID} />;
 }
 
+// 앱 공용 Chip 프리미티브에 위임(2026-07-04 DS 통일) — 호출부 시그니처 유지.
 function Chip({label, active, onPress, small}: {label: string; active: boolean; onPress: () => void; small?: boolean}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      accessibilityState={{selected: active}}
-      style={({pressed}) => [
-        s.chip,
-        small && s.chipSmall,
-        active ? s.chipActive : s.chipIdle,
-        pressed && {opacity: 0.8},
-      ]}>
-      <Text style={[s.chipLabel, {color: active ? T1 : T1, fontSize: small ? 13 : 13.5}]}>{label}</Text>
-    </Pressable>
-  );
+  return <ChipPrim label={label} selected={active} onPress={onPress} size={small ? 'sm' : 'md'} />;
 }
 
 function WearBar({pct, color}: {pct: number; color: string}) {
@@ -1245,11 +1232,6 @@ const s = StyleSheet.create({
   // Register
   previewCard: {marginTop: 12, padding: 12, borderRadius: 18, borderCurve: 'continuous', flexDirection: 'row', alignItems: 'center', backgroundColor: CARD, borderWidth: 1},
   chipWrap: {flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginTop: 8},
-  chip: {paddingVertical: 7, paddingHorizontal: 13, borderRadius: 11, borderWidth: StyleSheet.hairlineWidth},
-  chipSmall: {paddingVertical: 6, paddingHorizontal: 11},
-  chipIdle: {backgroundColor: 'rgba(255,255,255,0.05)', borderColor: withAlpha(T1, 0.14)},
-  chipActive: {backgroundColor: ACCENT, borderColor: ACCENT},
-  chipLabel: {fontFamily: FONT, fontWeight: '600', letterSpacing: -0.1},
   fieldBadge: {width: 20, height: 20, borderRadius: 6, backgroundColor: 'rgba(255,255,255,0.08)', alignItems: 'center', justifyContent: 'center'},
   tick: {fontFamily: FONT, fontSize: 11, color: T4},
   pill: {flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 5, paddingHorizontal: 11, borderRadius: 100, alignSelf: 'flex-start'},
