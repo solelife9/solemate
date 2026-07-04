@@ -204,31 +204,32 @@ const DISTANCE_MILESTONE: AchievementDef[] = [
 // 거리·이정표만 재고 '몇 번, 얼마나 자주'를 축하하지 않던 공백을 메운다 — 초반
 // 유저가 5km→10km 사이 몇 주간 딸 게 없던 간극도 이 축이 채운다. 스트릭은 7일이
 // 상한(그 이상은 과훈련 조장 — 부상 없는 러닝이라는 앱 기조와 충돌하므로 의도적
-// 부재). 컨텍스트에 이미 있던 runCount/longestStreak/totalDurationS 만 쓴다.
+// 부재). 횟수·스트릭은 '인정 런'(≥1km, ctx.qualifiedRunCount/longestQualifiedStreak)
+// 기준 — 실수 저장된 0.2km 런으로 채워지지 않는다(사용자 지적 2026-07-04).
 const CONSISTENCY: AchievementDef[] = [
   metricAch({
     key: 'runs_10', name: '열 번의 런', rarity: 'common', xp: 20,
-    description: '열 번 나갔다. 습관의 시작.',
+    description: '열 번 나갔다(1km 이상만 인정). 습관의 시작.',
     category: 'consistency', target: 10,
-    value: ctx => nonNeg(ctx.runCount),
+    value: ctx => nonNeg(ctx.qualifiedRunCount ?? 0),
   }),
   metricAch({
     key: 'runs_100', name: '백 번의 런', rarity: 'epic', xp: 100,
     description: '백 번의 러닝. 이제 달리기가 일상이다.',
     category: 'consistency', target: 100,
-    value: ctx => nonNeg(ctx.runCount),
+    value: ctx => nonNeg(ctx.qualifiedRunCount ?? 0),
   }),
   metricAch({
     key: 'streak_3', name: '3일의 리듬', rarity: 'common', xp: 20,
     description: '사흘 연속으로 달렸다.',
     category: 'consistency', target: 3,
-    value: ctx => nonNeg(ctx.longestStreak),
+    value: ctx => nonNeg(ctx.longestQualifiedStreak ?? 0),
   }),
   metricAch({
     key: 'streak_7', name: '7일의 리듬', rarity: 'rare', xp: 50,
     description: '일주일을 매일 달렸다. 여기까지가 딱 좋다 — 쉬는 날도 훈련이다.',
     category: 'consistency', target: 7,
-    value: ctx => nonNeg(ctx.longestStreak),
+    value: ctx => nonNeg(ctx.longestQualifiedStreak ?? 0),
   }),
   metricAch({
     key: 'time_24h', name: '온전한 하루', rarity: 'epic', xp: 100,

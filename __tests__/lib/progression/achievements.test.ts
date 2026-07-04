@@ -357,15 +357,19 @@ describe('카탈로그 무결성', () => {
 // 5b) consistency — 꾸준함(런 횟수·스트릭·누적 시간)
 // ============================================================================
 describe('consistency: 꾸준함', () => {
-  test('열/백 번의 런: runCount 기준', () => {
-    expect(achievementDef('runs_10')!.unlocked(emptyCtx({runCount: 10}))).toBe(true);
-    expect(achievementDef('runs_10')!.unlocked(emptyCtx({runCount: 9}))).toBe(false);
-    expect(achievementDef('runs_100')!.unlocked(emptyCtx({runCount: 100}))).toBe(true);
+  test('열/백 번의 런: 인정 런(≥1km) 수 기준 — 전체 runCount 가 아니라', () => {
+    expect(achievementDef('runs_10')!.unlocked(emptyCtx({qualifiedRunCount: 10}))).toBe(true);
+    expect(achievementDef('runs_10')!.unlocked(emptyCtx({qualifiedRunCount: 9}))).toBe(false);
+    // 0.2km 런 100개(runCount)로는 안 열린다 — 인정 런만 센다.
+    expect(achievementDef('runs_10')!.unlocked(emptyCtx({runCount: 100, qualifiedRunCount: 0}))).toBe(false);
+    expect(achievementDef('runs_100')!.unlocked(emptyCtx({qualifiedRunCount: 100}))).toBe(true);
   });
-  test('리듬: longestStreak 3/7 — 7일이 상한(과훈련 방지 의도)', () => {
-    expect(achievementDef('streak_3')!.unlocked(emptyCtx({longestStreak: 3}))).toBe(true);
-    expect(achievementDef('streak_7')!.unlocked(emptyCtx({longestStreak: 7}))).toBe(true);
-    expect(achievementDef('streak_7')!.unlocked(emptyCtx({longestStreak: 6}))).toBe(false);
+  test('리듬: 인정 런 스트릭 3/7 — 7일이 상한(과훈련 방지 의도)', () => {
+    expect(achievementDef('streak_3')!.unlocked(emptyCtx({longestQualifiedStreak: 3}))).toBe(true);
+    expect(achievementDef('streak_7')!.unlocked(emptyCtx({longestQualifiedStreak: 7}))).toBe(true);
+    expect(achievementDef('streak_7')!.unlocked(emptyCtx({longestQualifiedStreak: 6}))).toBe(false);
+    // 미니 런으로 이어진 스트릭(longestStreak)만으로는 안 열린다.
+    expect(achievementDef('streak_3')!.unlocked(emptyCtx({longestStreak: 5, longestQualifiedStreak: 2}))).toBe(false);
     // 7일 초과 스트릭 업적은 존재하지 않는다(카탈로그 계약).
     expect(ACHIEVEMENTS.some(a => a.key.startsWith('streak_') && !['streak_3', 'streak_7'].includes(a.key))).toBe(false);
   });

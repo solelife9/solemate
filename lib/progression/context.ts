@@ -26,6 +26,8 @@ import {
 } from './types';
 
 const DAY_MS = 86400000;
+/** '러닝으로 인정'하는 최소 거리(km) — 횟수·스트릭·경험 업적의 게이트. */
+export const QUALIFIED_RUN_KM = 1;
 const EARLY_BEFORE_HOUR = 5;
 const NIGHT_AT_OR_AFTER_HOUR = 22;
 const SPEEDSTER_MIN_KM = 5;
@@ -169,6 +171,8 @@ export function buildContext(
   let totalDurationS = 0;
   let earlyRunCount = 0;
   let nightRunCount = 0;
+  let qualifiedRunCount = 0;
+  const qualifiedDates: string[] = [];
   let hasWinterRun = false;
   let hasSummerRun = false;
   let bestPace5kSec: number | null = null;
@@ -181,6 +185,11 @@ export function buildContext(
     const dur = parseSeconds(r.duration);
     cumulativeKm += km;
     totalDurationS += dur;
+    // '러닝으로 인정' 기준(≥1km) — 실수로 저장된 초미니 런(0.2km 등)이 횟수·스트릭·
+    // 경험 업적을 채우지 않게 한다(런스트릭 국제 규칙 최소 1마일과 같은 취지, 2026-07-04).
+    // 누적 거리·시간은 그대로 전부 합산(총량은 총량).
+    const qualified = km >= QUALIFIED_RUN_KM;
+    if (qualified) qualifiedRunCount += 1;
 
     if (km >= SPEEDSTER_MIN_KM && dur > 0) {
       const pace = dur / km;
@@ -194,7 +203,7 @@ export function buildContext(
     }
 
     const hour = startHour(r.run_time);
-    if (hour !== null) {
+    if (hour !== null && qualified) {
       if (hour < EARLY_BEFORE_HOUR) earlyRunCount += 1;
       if (hour >= NIGHT_AT_OR_AFTER_HOUR) nightRunCount += 1;
     }
@@ -202,10 +211,11 @@ export function buildContext(
     const rd = ymd(r.run_date);
     if (rd) {
       dates.push(rd);
-      // 계절 감지: 'YYYY-MM-DD'에서 월 추출
+      if (qualified) qualifiedDates.push(rd);
+      // 계절 감지: 'YYYY-MM-DD'에서 월 추출 — 경험 업적도 인정 런만.
       const month = Number(rd.slice(5, 7));
-      if (WINTER_MONTHS.has(month)) hasWinterRun = true;
-      if (SUMMER_MONTHS.has(month)) hasSummerRun = true;
+      if (qualified && WINTER_MONTHS.has(month)) hasWinterRun = true;
+      if (qualified && SUMMER_MONTHS.has(month)) hasSummerRun = true;
     }
 
     const sid = typeof r.shoe_id === 'string' ? r.shoe_id : '';
@@ -247,6 +257,9 @@ export function buildContext(
   const runSpanDays = sortedUniq.length >= 2
     ? Math.max(0, daysBetween(sortedUniq[0], sortedUniq[sortedUniq.length - 1]))
     : 0;
+  // 꾸준함 업적용 스트릭 — 인정 런(≥1km) 날짜만으로 계산.
+  const qSorted = [...new Set(qualifiedDates)].sort();
+  const longestQualifiedStreak = qSorted.length ? maxDayStreak(qSorted) : 0;
 
   // ── 페이스/최장 런 ───────────────────────────────────────────────────────────
   const pr = personalRecords(runList.map(toUiRun));
@@ -286,6 +299,8 @@ export function buildContext(
     hasWinterRun,
     hasSummerRun,
     runSpanDays,
+    qualifiedRunCount,
+    longestQualifiedStreak,
   };
 
   const achievementPoints = computeTotalXp(baseCtx);

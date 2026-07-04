@@ -224,6 +224,10 @@ export interface ProgressionContext {
   /** 첫 런 → 마지막 런 사이 일수(같은 날이면 0). '킵고잉, 1년' 업적의 단일 소스 —
       기다리기만 해서는 늘지 않고, 1년 뒤에도 '달린 기록'이 있어야 365를 넘는다. */
   runSpanDays?: number;
+  /** '러닝으로 인정'(≥1km)된 런 수 — 꾸준함(횟수) 업적의 단일 소스. */
+  qualifiedRunCount?: number;
+  /** 인정 런(≥1km) 날짜 기준 최장 연속 일수 — 리듬(스트릭) 업적의 단일 소스. */
+  longestQualifiedStreak?: number;
 }
 
 // ── Leaderboard (미래 백엔드 계약 stub) ──────────────────────────────────────
