@@ -147,6 +147,39 @@ function ShoeDetail({
   // 런 상세 — 기록탭과 같은 RunDetail 재사용(읽기 전용: 삭제/편집은 기록탭 담당).
   const [selRun, setSelRun] = useState<Run | null>(null);
 
+  // ── 추가 스탯(2026-07-04, CD 추천 확정): 최장 런(이 신발의 베스트) · 주 평균
+  //    (최근 4주 — '약 N주 후 교체 예상'의 근거를 눈에 보이게) · 첫 착용부터 함께한
+  //    기간 · 로테이션 점유율(최근 4주 러닝 중 이 신발 비중 — 우리만의 문장).
+  const extra = useMemo(() => {
+    const longest = shoeRuns.reduce((m, r) => Math.max(m, r.dist), 0);
+    const parse = (iso?: string) => {
+      if (!iso) return null;
+      const [y, m, d] = iso.slice(0, 10).split('-').map(Number);
+      const t = new Date(y, m - 1, d).getTime();
+      return Number.isFinite(t) ? t : null;
+    };
+    const now = Date.now();
+    const cut = now - 28 * 86400000;
+    let shoe4w = 0;
+    let all4w = 0;
+    for (const r of runs) {
+      const t = parse(r.runDate);
+      if (t == null || t < cut || t > now) continue;
+      all4w += r.dist;
+      if (r.shoe === idx) shoe4w += r.dist;
+    }
+    const weeklyAvg = shoe4w / 4;
+    const sharePct = all4w > 0 ? Math.round((shoe4w / all4w) * 100) : null;
+    let firstWornLabel = '';
+    let firstMs = Infinity;
+    for (const r of shoeRuns) { const t = parse(r.runDate); if (t != null && t < firstMs) firstMs = t; }
+    if (Number.isFinite(firstMs) && firstMs !== Infinity) {
+      const d = new Date(firstMs);
+      firstWornLabel = `${d.getMonth() + 1}월 ${d.getDate()}일부터`;
+    }
+    return { longest, weeklyAvg, sharePct, firstWornLabel };
+  }, [shoeRuns, runs, idx]);
+
 
   // 키프세이크 은퇴 플로우: 수명 도달 신발만 [계속 사용]/[은퇴]를 노출한다(자동 은퇴 절대
   // 금지 — 사용자가 [은퇴]를 눌러야만 flowOpen). [계속 사용]을 누르면 이번 세션 동안
@@ -325,19 +358,29 @@ function ShoeDetail({
           <NextShoeCard shoe={shoe} />
         )}
 
-        {/* totals — 2x2 그리드(평균 페이스 포함): 신발별 누적·페이스를 비교할 수 있게 한다 */}
-        <View style={[s.card, s.statGrid]}>
-          {[
-            { v: String(usedDisp), u: unit, l: '누적 거리' },
-            { v: String(totals.totalRuns), u: '회', l: '러닝 횟수' },
-            { v: totals.totalTime, u: '', l: '러닝 시간' },
-            { v: totals.avgPace, u: totals.avgPace !== '--' ? '/km' : '', l: '평균 페이스' },
-          ].map((x, i) => (
-            <View key={i} style={s.statGridCell}>
-              <Text style={s.statValue}>{x.v}<Text style={s.statUnit}>{x.u}</Text></Text>
-              <Text style={s.statLabel}>{x.l}</Text>
-            </View>
-          ))}
+        {/* totals — 3×2 그리드(2026-07-04 확장): 기존 4개 + 최장 런(이 신발의 베스트)
+            + 주 평균(최근 4주 — 교체 예상의 근거). 아래에 점유율 한 줄(로테이션 인사이트). */}
+        <View style={[s.card, { overflow: 'hidden' }]}>
+          <View style={s.statGrid}>
+            {[
+              { v: String(usedDisp), u: unit, l: '누적 거리' },
+              { v: String(totals.totalRuns), u: '회', l: '러닝 횟수' },
+              { v: totals.totalTime, u: '', l: '러닝 시간' },
+              { v: totals.avgPace, u: totals.avgPace !== '--' ? '/km' : '', l: '평균 페이스' },
+              { v: extra.longest > 0 ? String(displayNum(extra.longest, unit, 1)) : '--', u: extra.longest > 0 ? unit : '', l: '최장 런' },
+              { v: extra.weeklyAvg > 0 ? String(displayNum(extra.weeklyAvg, unit, 1)) : '--', u: extra.weeklyAvg > 0 ? unit : '', l: '주 평균 · 4주' },
+            ].map((x, i) => (
+              <View key={i} style={s.statGridCell3}>
+                <Text style={s.statValue}>{x.v}<Text style={s.statUnit}>{x.u}</Text></Text>
+                <Text style={s.statLabel}>{x.l}</Text>
+              </View>
+            ))}
+          </View>
+          {extra.sharePct != null && extra.sharePct > 0 && (
+            <Text style={s.shareLine} testID="shoe-share-line">
+              최근 4주 러닝의 <Text style={{ color: T1, fontWeight: '700' }}>{extra.sharePct}%</Text>를 이 신발과 달렸어요
+            </Text>
+          )}
         </View>
 
         {/* 교체 예상 카드(목업 09: 통계 아래) — 핸드오프 문구 '현재 패턴 기준 약 N주 후
@@ -358,7 +401,11 @@ function ShoeDetail({
         {/* runs */}
         <View style={[s.row, { paddingHorizontal: 4, justifyContent: 'space-between' }]}>
           <Text style={s.sectionLabel}>이 신발로 달린 기록</Text>
-          {!!totals.lastWorn && <Text style={s.lastWorn}>마지막 착용 {totals.lastWorn}</Text>}
+          {!!totals.lastWorn && (
+            <Text style={s.lastWorn}>
+              {extra.firstWornLabel ? `${extra.firstWornLabel} · ` : ''}마지막 착용 {totals.lastWorn}
+            </Text>
+          )}
         </View>
         {shoeRuns.length === 0 ? (
           <View style={[s.card, { padding: 24, alignItems: 'center' }]}>
@@ -773,6 +820,8 @@ const s = StyleSheet.create({
   // 과하게 커지지 않게 한다(사용자 요청).
   statGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingVertical: 6, paddingHorizontal: 18 },
   statGridCell: { width: '50%', paddingVertical: 10 },
+  statGridCell3: { width: '33.3%', paddingVertical: 10 },
+  shareLine: { color: T3, fontFamily: FONT, fontSize: 12, paddingHorizontal: 18, paddingBottom: 14, marginTop: -2 },
   statValue: { color: T1, fontFamily: DISPLAY, fontSize: 22, letterSpacing: 0.3 },
   statUnit: { color: T3, fontFamily: FONT, fontSize: 12 },
   statLabel: { color: T3, fontFamily: FONT, fontSize: 11, marginTop: 4 },
