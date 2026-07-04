@@ -121,6 +121,7 @@ export default function RunRecapScreen({
   const routePoints = useMemo(() => parseRoute(route), [route]);
   // SNS 공유 — 상세(RunDetail)와 동일한 투명 러닝 카드(스트라바 방식) 파이프라인 재사용.
   const cardRef = useRef<SvgCapturable | null>(null);
+  const photoCardRef = useRef<SvgCapturable | null>(null);
   const shareInput = {
     distKm: km,
     unit,
@@ -132,6 +133,20 @@ export default function RunRecapScreen({
   };
   const cardModel = buildShareCardModel(shareInput);
   const onShare = () => {
+    if (photoUri) {
+      // 한 컷이 있으면 완성본(사진+카드)이 기본 — 수동으로 얹을 필요가 없다(2026-07-05).
+      Alert.alert('러닝 카드 공유', '오늘의 한 컷 위에 기록이 얹힌 완성본으로 공유해요.', [
+        {text: '완성본 공유', onPress: () => void shareRunCard(photoCardRef, shareInput)},
+        {text: '투명 카드만 저장', onPress: async () => {
+          const r = await saveCardToLibrary(cardRef);
+          if (r.ok) Alert.alert('사진앱에 저장됐어요', '인스타 스토리에서 내 사진을 고른 뒤, 스티커로 이 카드를 올리면 돼요.');
+          else if (r.reason === 'denied') Alert.alert('권한 필요', '설정에서 사진 추가 권한을 허용해 주세요.');
+          else Alert.alert('저장 실패', r.reason ?? '잠시 후 다시 시도해 주세요.');
+        }},
+        {text: '취소', style: 'cancel'},
+      ]);
+      return;
+    }
     Alert.alert('러닝 카드 공유', '투명 카드를 사진앱에 저장해, 인스타 스토리에서 내 사진 위에 올리세요.', [
       {text: '사진앱에 저장', onPress: async () => {
         const r = await saveCardToLibrary(cardRef);
@@ -288,6 +303,7 @@ export default function RunRecapScreen({
       {/* (오늘의 한 컷/메모 섹션은 ScrollView 안에 렌더 — 아래 s.metaCard 참조) */}
       <View style={s.offscreen} pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
         <ShareCard ref={cardRef as never} model={cardModel} route={routePoints} />
+        {!!photoUri && <ShareCard ref={photoCardRef as never} model={cardModel} route={routePoints} photoUri={photoUri} />}
       </View>
 
       <View style={[s.footer, s.footerRow, {paddingBottom: insets.bottom + 10}]}>

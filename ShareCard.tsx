@@ -9,7 +9,7 @@
 // 색은 theme 토큰만 사용(raw hex 0) — 투명도는 *Opacity prop 으로 표현한다.
 // ============================================================================
 import React from 'react';
-import Svg, {Rect, Path, Circle, Text as SvgText, G} from 'react-native-svg';
+import Svg, {Rect, Path, Circle, Text as SvgText, G, Image as SvgImage} from 'react-native-svg';
 import {ACCENT, T1} from './theme';
 
 // [실험] 공유 카드 전용 폰트 — 레퍼런스(STEP STEP)의 깔끔한 네오-그로테스크 느낌.
@@ -42,9 +42,12 @@ export interface ShareCardProps {
   model: ShareCardModel;
   /** 기록된 GPS 경로(없거나 2점 미만이면 경로 생략). */
   route?: LatLon[];
+  /** 오늘의 한 컷(2026-07-05) — 있으면 사진을 배경으로 깔고 스탯을 얹은 '완성본'
+      카드가 된다(스트라바 방식). 없으면 기존 투명 스티커 그대로. */
+  photoUri?: string | null;
 }
 
-const ShareCard = React.forwardRef<unknown, ShareCardProps>(({model, route = []}, ref) => {
+const ShareCard = React.forwardRef<unknown, ShareCardProps>(({model, route = [], photoUri = null}, ref) => {
   const proj = projectRoute(route, {width: ROUTE_BOX, height: ROUTE_BOX, padding: 76});
   const pathD = pointsToPath(proj.points);
   const start = proj.points[0];
@@ -78,7 +81,15 @@ const ShareCard = React.forwardRef<unknown, ShareCardProps>(({model, route = []}
 
   return (
     <Svg ref={ref as never} width={CARD_W} height={CARD_H}>
-      {/* 배경 없음(투명) — 인스타 스토리에서 사용자 사진 위에 스티커로 얹는다(스트라바 방식). */}
+      {/* 기본은 배경 없음(투명 스티커 — 인스타에서 내 사진 위에). photoUri 가 있으면
+          한 컷을 cover 로 깔고 아래쪽 스크림으로 스탯 가독성을 지킨다(완성본 모드). */}
+      {!!photoUri && (
+        <G>
+          <SvgImage href={{uri: photoUri}} x={0} y={0} width={CARD_W} height={CARD_H} preserveAspectRatio="xMidYMid slice" />
+          <Rect x={0} y={0} width={CARD_W} height={220} fill="#000" fillOpacity={0.25} />
+          <Rect x={0} y={CARD_H - 560} width={CARD_W} height={560} fill="#000" fillOpacity={0.38} />
+        </G>
+      )}
 
       {/* 좌상단: 달린 러닝화 이름(날짜는 표시하지 않음) */}
       {!!model.shoe && (
