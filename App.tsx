@@ -268,7 +268,7 @@ function Main(){
   // 부상위험 상세(시그니처) 전체화면 — 홈 신호등 카드 탭이 열고 뒤로가 닫는다(오버레이형).
   const [showInjuryRisk,setShowInjuryRisk]=useState(false);
   // 완주 리캡(P0-2) — 러닝 저장 직후 축하 풀스크린. '완료'로 닫으면 기록 탭으로 이동.
-  const [runRecap,setRunRecap]=useState<{km:number;durationS:number;cadence:number;splits:any[];elevationM:number;calories:number;prKinds:PRKind[];shoeName?:string;goalKm?:number;pacePlan?:number[];shoeWear?:{addedKm:number;remainingPct:number;deltaPct:number}|null;loadInfo?:{phrase:string;word:string;level:LoadLevel}|null;route?:string|null}|null>(null);
+  const [runRecap,setRunRecap]=useState<{km:number;durationS:number;cadence:number;splits:any[];elevationM:number;calories:number;prKinds:PRKind[];shoeName?:string;goalKm?:number;pacePlan?:number[];shoeWear?:{addedKm:number;remainingPct:number;deltaPct:number}|null;loadInfo?:{phrase:string;word:string;level:LoadLevel}|null;route?:string|null;runId?:string}|null>(null);
   // 위치 권한 설명(priming) 풀스크린 — 첫 GPS 런 직전 들고 있을 목표(RunGoal). null=미표시.
   // '계속'에서 권한 안내 완료 영속 + 런 진입, '나중에'면 닫고 시작 취소.
   const [locPrimeGoal,setLocPrimeGoal]=useState<RunGoal|null>(null);
@@ -882,6 +882,25 @@ function Main(){
     if(target) await persistRunToCache(stampUpdatedAt({...target,...fields},editedAt));
   }
 
+  // 러닝 메모/사진 저장(리캡 — 2026-07-05). 메모는 런 레코드 필드로(동기됨),
+  // 사진은 로컬 사이드카 runphoto_<id>(URI 문자열 — 기기 로컬 전용, 결측 graceful).
+  async function saveRunMeta(id:string,meta:{memo?:string;photoUri?:string|null}){
+    const sid=String(id);
+    if(meta.photoUri!==undefined){
+      try{
+        if(meta.photoUri)await AsyncStorage.setItem('runphoto_'+sid,meta.photoUri);
+        else await AsyncStorage.removeItem('runphoto_'+sid);
+      }catch(e){console.log('run photo persist error',e);}
+    }
+    if(meta.memo!==undefined){
+      const memo=meta.memo.trim();
+      const editedAt=Date.now();
+      setRuns(prev=>prev.map(r=>String(r.id)===sid?stampUpdatedAt({...r,memo},editedAt):r));
+      const target=runs.find(r=>String(r.id)===sid);
+      if(target)await persistRunToCache(stampUpdatedAt({...target,memo},editedAt));
+    }
+  }
+
   // 개별 런 삭제(백엔드 DELETE). 삭제 확인 Alert는 화면(HistoryScreen)이 띄운다.
   // runs에서 제거하면 shoeHealth가 줄어 신발 사용거리도 자동 감소한다(파생값). 미동기
   // 런은 서버에 없으므로 네트워크 없이 로컬에서만 제거하고, 동기된 런은 서버 삭제 성공
@@ -1413,6 +1432,7 @@ function Main(){
       cal:run.calories||0, cadence:run.cadence||0, bpm:run.heart_rate||0, elev:run.elevation_m||0,
       // 편집 폼 프리필용 원본값(날짜·시간 초). 거리/신발은 위 dist/shoe로 충분.
       runDate:String(run.run_date??''), durationS:dur,
+      memo:typeof run.memo==='string'&&run.memo.trim()?run.memo:undefined,
     };
   }
   const uiRuns:Run[]=sortedRaw.map(toUiRun);
@@ -1721,7 +1741,7 @@ function Main(){
           const loadInfo=loadAfter.confident?{phrase:loadRatioPhraseKo(loadAfter),word:LOAD_WORD[loadAfter.level],level:loadAfter.level as LoadLevel}:null;
           setResumeSnap(null);setActiveRun(null);setOverlay('none');
           // route 원문도 리캡에 전달 — 완주 직후 '오늘의 코스' 지도 + 경로 포함 공유 카드.
-          setRunRecap({km,durationS:dur,cadence:cad||0,splits:splits||[],elevationM:elevM||0,calories:cal||0,prKinds,shoeName:shoeLabel,goalKm,pacePlan:activeRun.pacePlan,shoeWear,loadInfo,route:route||null});
+          setRunRecap({km,durationS:dur,cadence:cad||0,splits:splits||[],elevationM:elevM||0,calories:cal||0,prKinds,shoeName:shoeLabel,goalKm,pacePlan:activeRun.pacePlan,shoeWear,loadInfo,route:route||null,runId:newId});
         }}
         onDiscard={()=>{void clearSnapshot();setResumeSnap(null);setActiveRun(null);setOverlay('none');}}
       />
@@ -1771,6 +1791,7 @@ function Main(){
   // 완주 리캡 — 러닝 저장 직후 축하 풀스크린. '완료'로 닫으면 기록 탭으로 이동한다.
   if(runRecap){
     return <RunRecapScreen {...runRecap} unit={unit}
+      onSaveMeta={saveRunMeta}
       onClose={()=>{setRunRecap(null);setTab(2);}}/>;
   }
   return(

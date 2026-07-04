@@ -3,7 +3,7 @@
 // (sample data removed — real summary/chart/runs are injected via props)
 // ============================================================================
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, ScrollView, FlatList, Pressable, StyleSheet, LayoutChangeEvent, TextInput, Alert, KeyboardAvoidingView, Platform, RefreshControl, Modal } from 'react-native';
+import { View, Text, ScrollView, FlatList, Pressable, StyleSheet, LayoutChangeEvent, TextInput, Alert, KeyboardAvoidingView, Platform, RefreshControl, Modal , Image} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Polyline, Circle } from 'react-native-svg';
@@ -298,6 +298,16 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'm
   // Load the recorded route for this run once. Missing/invalid blob → [] → map
   // stays hidden (graceful). route_<id> is written by App.addRun on save.
   const [route, setRoute] = useState<LatLon[]>([]);
+  // 오늘의 한 컷(runphoto_<id> 사이드카 — 기기 로컬 전용, 결측 graceful).
+  const [photoUri, setPhotoUri] = useState<string | null>(null);
+  useEffect(() => {
+    let alive = true;
+    if (!run.id) { setPhotoUri(null); return; }
+    AsyncStorage.getItem('runphoto_' + run.id)
+      .then(u => { if (alive) setPhotoUri(u || null); })
+      .catch(() => { if (alive) setPhotoUri(null); });
+    return () => { alive = false; };
+  }, [run.id]);
   useEffect(() => {
     let alive = true;
     if (!run.id) { setRoute([]); return; }
@@ -583,6 +593,13 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'm
             </View>
           );
         })()}
+        {/* 오늘의 한 컷 + 한 줄 메모(리캡에서 입력 — 2026-07-05). 없으면 자동 숨김. */}
+        {!!photoUri && (
+          <Image source={{ uri: photoUri }} style={s.runPhoto} resizeMode="cover" testID="run-photo" />
+        )}
+        {!!run.memo && (
+          <Text style={s.runMemo} testID="run-memo">“{run.memo}”</Text>
+        )}
         {/* 달린 위치(경로) 지도 — route_<id> 가 있으면 SVG 코스맵으로 표시(없으면 자동 숨김). */}
         <CourseMap points={route} style={{ marginTop: 16 }} />
         {/* 구간별 페이스 스플릿(km · 페이스 바 · 고도). 페이스 곡선(추세)은 개선 시도
@@ -1024,6 +1041,8 @@ export default function HistoryScreen({
 const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: BG },
   // 공유 카드 캡처용: 화면 밖(좌측 far-off)으로 밀어 보이지 않게 하되 마운트는 유지.
+  runPhoto: { width: '100%', height: 200, borderRadius: 16, borderCurve: 'continuous', marginTop: 16 },
+  runMemo: { color: T2, fontFamily: FONT, fontSize: 14, lineHeight: 21, marginTop: 12, fontStyle: 'italic' },
   offscreen: { position: 'absolute', left: -10000, top: 0, opacity: 0 },
   baselineRow: { flexDirection: 'row', alignItems: 'flex-end' },
   card: { backgroundColor: CARD, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER },

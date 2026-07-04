@@ -5,8 +5,8 @@
 // 순수 프레젠테이션 — App 이 방금 저장한 런 데이터만 주입한다(데이터 생성 0).
 // 닫기(onClose)에서 App 이 기록 탭으로 이동한다.
 // ============================================================================
-import React, {useMemo, useRef} from 'react';
-import {View, Text, ScrollView, Pressable, StyleSheet, Alert} from 'react-native';
+import React, {useMemo, useRef, useState} from 'react';
+import {View, Text, ScrollView, Pressable, StyleSheet, Alert, TextInput, Image} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {BG, CARD, CARD_HI, ACCENT, GOOD, WARN, DANGER, T1, T2, T3, T4, FONT, DISPLAY, RADIUS, SEP, withAlpha} from './theme';
@@ -15,6 +15,7 @@ import {fmtPace} from './lib/format';
 import {GlassEdge} from './primitives';
 import {RunSplits, Split} from './RunSplits';
 import {PRKind, PR_LABEL} from './lib/records';
+import {pickShoePhoto} from './lib/photo';
 import {Unit} from './lib/units';
 import {parseRoute} from './lib/route';
 import {CourseMap} from './CourseMap';
@@ -62,6 +63,8 @@ export default function RunRecapScreen({
   loadInfo,
   route = null,
   unit = 'km',
+  runId,
+  onSaveMeta,
   onClose,
 }: {
   km: number;
@@ -85,10 +88,35 @@ export default function RunRecapScreen({
   /** GPS 경로 원문(route_ 사이드카와 동일 blob). 있으면 코스 지도 + 경로 공유 카드. */
   route?: string | null;
   unit?: Unit;
+  /** 방금 저장된 런 id — 사진/메모 저장 대상(없으면 섹션 숨김). */
+  runId?: string;
+  /** 사진/메모 영속(App.saveRunMeta). memo 는 레코드 동기, photoUri 는 로컬 사이드카. */
+  onSaveMeta?: (id: string, meta: {memo?: string; photoUri?: string | null}) => void;
   onClose?: () => void;
 }) {
   const insets = useSafeAreaInsets();
   const goalHit = !!goalKm && goalKm > 0 && km >= goalKm;
+  // ── 오늘의 한 컷 + 한 줄 메모(2026-07-05) — 스트라바가 사랑받는 그 순간을 담는다.
+  //    저장은 비차단: 사진은 고르는 즉시, 메모는 blur/닫기 시점에 onSaveMeta 로.
+  const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const [memo, setMemo] = useState('');
+  const memoSavedRef = useRef('');
+  const canMeta = !!runId && !!onSaveMeta;
+  const attachPhoto = async () => {
+    if (!canMeta) return;
+    try {
+      const p = await pickShoePhoto();
+      if (p) { setPhotoUri(p.uri); onSaveMeta!(runId!, {photoUri: p.uri}); }
+    } catch { Alert.alert('사진을 불러오지 못했어요', '잠시 후 다시 시도해 주세요.'); }
+  };
+  const removePhoto = () => { setPhotoUri(null); if (canMeta) onSaveMeta!(runId!, {photoUri: null}); };
+  const commitMemo = () => {
+    if (!canMeta) return;
+    const m = memo.trim();
+    if (m === memoSavedRef.current) return;
+    memoSavedRef.current = m;
+    onSaveMeta!(runId!, {memo: m});
+  };
   // 코스 지도 — 경로 blob 파싱(수동 기록/GPS 실패면 [] → 지도 스스로 숨김).
   const routePoints = useMemo(() => parseRoute(route), [route]);
   // SNS 공유 — 상세(RunDetail)와 동일한 투명 러닝 카드(스트라바 방식) 파이프라인 재사용.
@@ -115,6 +143,7 @@ export default function RunRecapScreen({
       {text: '취소', style: 'cancel'},
     ]);
   };
+  const closeWithMeta = () => { commitMemo(); onClose?.(); };
   return (
     <View style={[s.screen, {paddingTop: insets.top}]} testID="run-recap-screen">
       <ScrollView contentContainerStyle={{paddingHorizontal: 18, paddingBottom: insets.bottom + 24, paddingTop: 8}} showsVerticalScrollIndicator={false}>
@@ -218,9 +247,45 @@ export default function RunRecapScreen({
         })()}
 
         <RunSplits splits={splits} />
+
+        {/* 오늘의 한 컷 + 한 줄 메모(2026-07-05) — 기록이 이야기가 되는 자리.
+            runId 없으면(비정상 경로) 섹션 자체를 숨긴다. 저장은 전부 비차단. */}
+        {canMeta && (
+          <View style={s.metaCard} testID="recap-meta">
+            {photoUri ? (
+              <View>
+                <Image source={{uri: photoUri}} style={s.metaPhoto} resizeMode="cover" />
+                <Pressable onPress={removePhoto} accessibilityRole="button" accessibilityLabel="사진 제거"
+                  style={({pressed}) => [s.metaPhotoRemove, pressed && {opacity: 0.8}]}>
+                  <Ionicons name="close" size={14} color={T1} />
+                </Pressable>
+              </View>
+            ) : (
+              <Pressable onPress={attachPhoto} accessibilityRole="button" accessibilityLabel="사진 추가" testID="recap-add-photo"
+                style={({pressed}) => [s.metaPhotoAdd, pressed && {backgroundColor: CARD_HI}]}>
+                <Ionicons name="camera-outline" size={18} color={T2} />
+                <Text style={s.metaPhotoAddTxt}>오늘의 한 컷 남기기</Text>
+              </Pressable>
+            )}
+            <TextInput
+              value={memo}
+              onChangeText={setMemo}
+              onBlur={commitMemo}
+              onSubmitEditing={commitMemo}
+              placeholder="오늘의 러닝, 한 줄로"
+              placeholderTextColor={T4}
+              returnKeyType="done"
+              maxLength={80}
+              style={s.metaInput}
+              accessibilityLabel="러닝 메모"
+              testID="recap-memo-input"
+            />
+          </View>
+        )}
       </ScrollView>
 
       {/* 공유 캡처용 오프스크린 러닝 카드(투명 PNG — 인스타 스토리 스티커 방식) */}
+      {/* (오늘의 한 컷/메모 섹션은 ScrollView 안에 렌더 — 아래 s.metaCard 참조) */}
       <View style={s.offscreen} pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
         <ShareCard ref={cardRef as never} model={cardModel} route={routePoints} />
       </View>
@@ -232,7 +297,7 @@ export default function RunRecapScreen({
           <Ionicons name="share-outline" size={17} color={T1} style={{marginRight: 7}} />
           <Text style={s.doneTxt}>공유</Text>
         </Pressable>
-        <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="완료" testID="recap-done"
+        <Pressable onPress={closeWithMeta} accessibilityRole="button" accessibilityLabel="완료" testID="recap-done"
           style={({pressed}) => [s.doneBtn, pressed && {opacity: 0.85}]}>
           <GlassEdge radius={RADIUS.lg} />
           <Text style={s.doneTxt}>완료</Text>
@@ -285,5 +350,11 @@ const s = StyleSheet.create({
   shareBtn: {flex: 1, height: 52, borderRadius: RADIUS.lg, borderCurve: 'continuous', overflow: 'hidden', backgroundColor: withAlpha(T1, 0.06), flexDirection: 'row', alignItems: 'center', justifyContent: 'center'},
   doneBtn: {flex: 1.6, height: 52, borderRadius: RADIUS.lg, borderCurve: 'continuous', overflow: 'hidden', backgroundColor: withAlpha(T1, 0.1), alignItems: 'center', justifyContent: 'center'},
   doneTxt: {color: T1, fontFamily: FONT, fontSize: 16, fontWeight: '800'},
+  metaCard: {backgroundColor: CARD, borderRadius: RADIUS.lg, borderCurve: 'continuous', padding: 14, marginTop: 12, gap: 12},
+  metaPhoto: {width: '100%', height: 180, borderRadius: RADIUS.md, borderCurve: 'continuous'},
+  metaPhotoRemove: {position: 'absolute', top: 8, right: 8, width: 26, height: 26, borderRadius: 13, backgroundColor: 'rgba(0,0,0,0.55)', alignItems: 'center', justifyContent: 'center'},
+  metaPhotoAdd: {flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: RADIUS.md, borderCurve: 'continuous', borderWidth: StyleSheet.hairlineWidth, borderColor: SEP, paddingVertical: 14},
+  metaPhotoAddTxt: {color: T2, fontFamily: FONT, fontSize: 13, fontWeight: '600'},
+  metaInput: {color: T1, fontFamily: FONT, fontSize: 14, paddingVertical: 8, paddingHorizontal: 2, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: SEP},
   offscreen: {position: 'absolute', left: -10000, top: 0, opacity: 0},
 });

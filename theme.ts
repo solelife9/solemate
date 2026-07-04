@@ -211,6 +211,7 @@ export type Run = {
   // 날짜는 'YYYY-MM-DD' 저장 표준, 시간은 초(duration)로 보존한다.
   runDate?: string;  // 'YYYY-MM-DD' (run_date 원본)
   durationS?: number; // 소요 시간(초, duration 원본)
+  memo?: string;      // 러닝 한 줄 메모(리캡에서 입력, 레코드 동기 — 2026-07-05)
   // per-km 구간 스플릿(레코더가 1km 통과 시각으로 기록). 없으면 RunSplits 자동 숨김.
   splits?: { km: number; paceSec: number; elevM: number }[];
 };
