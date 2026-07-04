@@ -5,11 +5,11 @@
 //
 //   1. runningMilestone  — 단일 런 이정표(첫 5km ~ 마라톤)                 730 XP max
 //   2. distanceMilestone — 누적 거리(100 → 10,000km, 7단계)             1,370 XP max
-//   2b. consistency      — 꾸준함(일·주 리듬, 스트릭≤7일·누적 시간)          320 XP max
+//   2b. consistency      — 꾸준함(주간 리듬 단일 사다리 2→52주)             470 XP max
 //   3. shoeJourney       — 신발 소유 · 은퇴(첫 신발 ~ 명예의 전당)          1,690 XP max
 //   4. shoeMemory        — 신발과의 동행(켤레마다 반복 적립, 10켤레 기준)   1,700 XP max
 //   5. experience        — 특별 경험(야간·새벽·계절) + 챌린지                 310 XP max
-//   6. keego             — Keep Going 철학(잘 보내주었다·킵고잉 1년)          200 XP max
+//   6. keego             — Keep Going 철학(잘 보내주었다·킵고잉 1년·온전한 하루) 300 XP max
 //
 // 설계 원칙:
 //   · RPG 아님 — 보상이 아닌 기억. "memories, not rewards."
@@ -219,17 +219,20 @@ const DISTANCE_MILESTONE: AchievementDef[] = [
 ];
 
 // ============================================================================
-// 카테고리 2b: consistency — 꾸준함(2026-07-04 PM 리뷰로 신설)
+// 카테고리 2b: consistency — 꾸준함 = 주간 리듬 단일 사다리(2026-07-04 재설계 v2)
 // ============================================================================
-// 거리·이정표만 재고 '몇 번, 얼마나 자주'를 축하하지 않던 공백을 메운다 — 초반
-// 유저가 5km→10km 사이 몇 주간 딸 게 없던 간극도 이 축이 채운다. 스트릭은 7일이
-// 상한(그 이상은 과훈련 조장 — 부상 없는 러닝이라는 앱 기조와 충돌하므로 의도적
-// 부재). 횟수·스트릭은 '인정 런'(≥1km, ctx.qualifiedRunCount/longestQualifiedStreak)
-// 기준 — 실수 저장된 0.2km 런으로 채워지지 않는다(사용자 지적 2026-07-04).
-// 횟수(열 번/백 번)는 누적 거리와 상관이 높아 이중 축하였다(사용자 지적 2026-07-04,
-// 주 30km 기준 10회≈100km·100회≈1,000km 와 거의 동시 언락) → 거리와 독립인
-// '주 단위 연속'으로 교체: 주 5km든 50km든 '매주 나왔는가'만 잰다.
+// 하나의 지표(longestWeeklyStreak — 인정 런 ≥1km 가 있는 주의 최장 연속)로 2주→52주
+// 까지 오르는 monotone 사다리. 일일 스트릭(3일/7일)은 폐기 — 매일 달리기를 부추기는
+// 유일한 장치였고 '쉬는 날도 훈련'이라는 기조와 충돌했다(사용자 결정). 주 1회 리듬은
+// 과훈련 위험이 0이며, 주 5km든 50km든 '매주 나왔는가'만 재서 거리 축과 독립.
+// 52주(1년의 리듬)는 킵고잉 1년과 같은 1주년에 터진다 — 1주년 = 축제.
 const CONSISTENCY: AchievementDef[] = [
+  metricAch({
+    key: 'weeks_2', name: '2주의 리듬', rarity: 'common', xp: 20,
+    description: '2주 연속으로 달렸다. 리듬이 시작됐다.',
+    category: 'consistency', target: 2,
+    value: ctx => nonNeg(ctx.longestWeeklyStreak ?? 0),
+  }),
   metricAch({
     key: 'weeks_4', name: '4주의 리듬', rarity: 'rare', xp: 50,
     description: '4주 연속, 한 주도 거르지 않았다. 습관이 됐다.',
@@ -243,23 +246,11 @@ const CONSISTENCY: AchievementDef[] = [
     value: ctx => nonNeg(ctx.longestWeeklyStreak ?? 0),
   }),
   metricAch({
-    key: 'streak_3', name: '3일의 리듬', rarity: 'common', xp: 20,
-    description: '사흘 연속으로 달렸다.',
-    category: 'consistency', target: 3,
-    value: ctx => nonNeg(ctx.longestQualifiedStreak ?? 0),
-  }),
-  metricAch({
-    key: 'streak_7', name: '7일의 리듬', rarity: 'rare', xp: 50,
-    description: '일주일을 매일 달렸다. 여기까지가 딱 좋다 — 쉬는 날도 훈련이다.',
-    category: 'consistency', target: 7,
-    value: ctx => nonNeg(ctx.longestQualifiedStreak ?? 0),
-  }),
-  metricAch({
-    key: 'time_24h', name: '온전한 하루', rarity: 'epic', xp: 100,
-    progressPrefix: '누적',
-    description: '누적 24시간 — 지구가 한 바퀴 도는 시간을 달렸다.',
-    category: 'consistency', target: 86400,
-    value: ctx => nonNeg(ctx.totalDurationS),
+    key: 'weeks_52', name: '1년의 리듬', rarity: 'legendary', xp: 300,
+    description: '52주. 일 년의 모든 주에 러닝이 있었다.',
+    category: 'consistency', target: 52,
+    value: ctx => nonNeg(ctx.longestWeeklyStreak ?? 0),
+    signature: true,
   }),
 ];
 
@@ -458,6 +449,7 @@ const CHALLENGES: AchievementDef[] = [
 // 4~5개월). Keep Going 은 신발이 아니라 **러너의 여정** — 첫 런에서 1년이 지나도
 // 여전히 달리고 있는 것(runSpanDays: 첫 런 → 마지막 런, 기다림만으론 안 늘어남)이다.
 const KEEGO: AchievementDef[] = [
+  // 철학 3부작: 잘 보내주었다(Let Go) · 킵고잉 1년(Keep Going) · 온전한 하루(시간의 시).
   // Keep Going(계속 달리는 것)과 짝을 이루는 Let Go(잘 떠나보내는 것) — 교체 권장
   // 시점 안의 은퇴(smart 이상 등급). 사다리 없이 단 한 장: 앱 존재 이유의 업적화.
   {
@@ -482,6 +474,13 @@ const KEEGO: AchievementDef[] = [
     }),
     unlocked: ctx => nonNeg(ctx.runSpanDays ?? 0) >= 365,
   },
+  metricAch({
+    key: 'time_24h', name: '온전한 하루', rarity: 'epic', xp: 100,
+    progressPrefix: '누적',
+    description: '누적 24시간 — 지구가 한 바퀴 도는 시간을 달렸다.',
+    category: 'keego', target: 86400,
+    value: ctx => nonNeg(ctx.totalDurationS),
+  }),
 ];
 
 // ── 전체 카탈로그 ──────────────────────────────────────────────────────────────

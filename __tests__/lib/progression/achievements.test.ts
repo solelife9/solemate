@@ -365,16 +365,19 @@ describe('consistency: 꾸준함', () => {
     expect(achievementDef('runs_10')).toBeUndefined();
     expect(achievementDef('runs_100')).toBeUndefined();
   });
-  test('리듬: 인정 런 스트릭 3/7 — 7일이 상한(과훈련 방지 의도)', () => {
-    expect(achievementDef('streak_3')!.unlocked(emptyCtx({longestQualifiedStreak: 3}))).toBe(true);
-    expect(achievementDef('streak_7')!.unlocked(emptyCtx({longestQualifiedStreak: 7}))).toBe(true);
-    expect(achievementDef('streak_7')!.unlocked(emptyCtx({longestQualifiedStreak: 6}))).toBe(false);
-    // 미니 런으로 이어진 스트릭(longestStreak)만으로는 안 열린다.
-    expect(achievementDef('streak_3')!.unlocked(emptyCtx({longestStreak: 5, longestQualifiedStreak: 2}))).toBe(false);
-    // 7일 초과 스트릭 업적은 존재하지 않는다(카탈로그 계약).
-    expect(ACHIEVEMENTS.some(a => a.key.startsWith('streak_') && !['streak_3', 'streak_7'].includes(a.key))).toBe(false);
+  test('주간 리듬 사다리: 2→4→12→52 단일 지표(monotone) — 일일 스트릭은 폐기', () => {
+    expect(achievementDef('weeks_2')!.unlocked(emptyCtx({longestWeeklyStreak: 2}))).toBe(true);
+    expect(achievementDef('weeks_52')!.unlocked(emptyCtx({longestWeeklyStreak: 52}))).toBe(true);
+    expect(achievementDef('weeks_52')!.unlocked(emptyCtx({longestWeeklyStreak: 51}))).toBe(false);
+    // 일일 스트릭(매일 달리기 부추김)은 기조와 충돌해 폐기됐다(카탈로그 계약).
+    expect(achievementDef('streak_3')).toBeUndefined();
+    expect(achievementDef('streak_7')).toBeUndefined();
+    // 꾸준함 카테고리는 주간 리듬 단일 지표만 담는다.
+    const consistency = ACHIEVEMENTS.filter(a => a.category === 'consistency');
+    expect(consistency.map(a => a.key)).toEqual(['weeks_2', 'weeks_4', 'weeks_12', 'weeks_52']);
   });
-  test('온전한 하루: 누적 24시간(86400초)', () => {
+  test('온전한 하루: keego 로 이관 — 누적 24시간(86400초)', () => {
+    expect(achievementDef('time_24h')!.category).toBe('keego');
     expect(achievementDef('time_24h')!.unlocked(emptyCtx({totalDurationS: 86400}))).toBe(true);
     expect(achievementDef('time_24h')!.unlocked(emptyCtx({totalDurationS: 86399}))).toBe(false);
   });
