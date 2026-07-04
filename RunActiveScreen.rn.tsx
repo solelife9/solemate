@@ -25,8 +25,9 @@ import { GlassEdge, ShoeGlyph } from './primitives';
 // (시각 동등: 다크+오렌지 유지)
 import {
   BG, CARD, ACCENT, ACCENT_2, GRAD_BOT, GOOD, WARN, DANGER, T1, T2, T3, T4, SEP,
-  FONT, DISPLAY, HERO, withAlpha,
+  FONT, DISPLAY, HERO, withAlpha, HR_ZONE_COLORS,
 } from './theme';
+import { estimateMaxHR, zoneOf, HR_ZONE_LABEL } from './lib/analytics/hrZones';
 import { fmtPaceSec } from './lib/pacePlan';
 // lib/haptics 배선: 일시정지/재개 → tap · 목표 달성 → impactHeavy · 종료 확정 → warning.
 import { tap, impactHeavy, warning } from './lib/haptics';
@@ -99,6 +100,7 @@ export default function RunActiveScreen({
   shoeLabel = 'Alphafly 3', distanceKm = 3.2, goalKm = 5,
   timeLabel = '16:04', paceLabel = "5'02\"", avgPaceLabel = "5'10\"",
   cadence = 174, calories = 205, elevationM = 46, gpsLevel = 3, bpm = 0,
+  age = 0, restHR = 0,
   paused: pausedProp, onPause, onStop,
   permLost = false, onOpenSettings, statusLabel,
   currentPaceSec = null, targetPaceSec = null,
@@ -110,6 +112,9 @@ export default function RunActiveScreen({
   currentPaceSec?: number | null; targetPaceSec?: number | null;
   // bpm: 심박(분당). 0이면 미측정('--' 표시). HealthKit/Apple Watch 연동 시 채워진다.
   cadence?: number; calories?: number; elevationM?: number; gpsLevel?: number; bpm?: number;
+  // 라이브 심박 존 산출용(2026-07-05). age→estimateMaxHR, restHR→Karvonen 보정.
+  // 심박이 흐를 때만(bpm>0) 존 색·라벨을 노출한다 — 없으면 기존 '--·심박' 그대로(조건부).
+  age?: number; restHR?: number;
   paused?: boolean; onPause?: () => void; onStop?: () => void;
   permLost?: boolean;
   onOpenSettings?: () => void;
@@ -119,6 +124,9 @@ export default function RunActiveScreen({
   const insets = useSafeAreaInsets();
   const [pausedState, setPausedState] = useState(false);
   const paused = pausedProp ?? pausedState;
+  // 라이브 심박 존 — 심박이 흐를 때만 산출(bpm>0). 워치 미연동이면 0 → 존 미표시.
+  const hrZone = bpm > 0 ? zoneOf(bpm, estimateMaxHR(age), restHR || undefined) : 0;
+  const hrColor = hrZone !== 0 ? HR_ZONE_COLORS[hrZone] : T1;
   const togglePause = () => (onPause ? onPause() : setPausedState(p => !p));
   // 일시정지·재개는 가벼운 tap 햅틱으로 동작을 확인시킨다.
   const pauseRun = () => { tap(); togglePause(); };
@@ -251,7 +259,7 @@ export default function RunActiveScreen({
       {/* hero metrics — 달릴 땐 큰 핵심 3개(페이스·심박·시간)만. 작은 서브는 멈췄을 때만. */}
       <View style={r.heroMetrics}>
         <View style={r.hm} accessibilityRole="text" accessibilityLabel={`현재 페이스 ${paceLabel}`}><Text style={r.hmV}>{paceLabel}</Text><Text style={r.hmL}>현재 페이스</Text></View>
-        <View style={[r.hm, r.hmDivider]} accessibilityRole="text" accessibilityLabel={bpm > 0 ? `심박 ${bpm}` : '심박 측정 안 됨'}><Text style={r.hmV}>{bpm > 0 ? String(bpm) : '--'}</Text><Text style={r.hmL}>심박</Text></View>
+        <View style={[r.hm, r.hmDivider]} accessibilityRole="text" accessibilityLabel={hrZone !== 0 ? `심박 ${bpm}, 존 ${hrZone} ${HR_ZONE_LABEL[hrZone]}` : bpm > 0 ? `심박 ${bpm}` : '심박 측정 안 됨'}><Text style={[r.hmV, hrZone !== 0 && { color: hrColor }]}>{bpm > 0 ? String(bpm) : '--'}</Text><Text style={[r.hmL, hrZone !== 0 && { color: hrColor, fontWeight: '600' }]}>{hrZone !== 0 ? `Z${hrZone} ${HR_ZONE_LABEL[hrZone]}` : '심박'}</Text></View>
         <View style={[r.hm, r.hmDivider]} accessibilityRole="text" accessibilityLabel={`시간 ${timeLabel}`}><Text style={r.hmV}>{timeLabel}</Text><Text style={r.hmL}>시간</Text></View>
       </View>
 
