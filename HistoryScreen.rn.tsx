@@ -109,7 +109,15 @@ function PeriodChartView({ data, labels, unit }: { data: number[]; labels: strin
             const dim = sel != null && !on;
             return (
               <Pressable key={i} style={s.chartBarSlot} onPress={() => setSel(on ? null : i)} hitSlop={4} accessibilityRole="button" accessibilityLabel={`${labels[i]} ${fmtTick(v)}${unit}`}>
-                {on && (
+                {/* 막대 ≤7개(주간 등)면 값을 상시 표기 — 0.6km 같은 작은 막대도 한눈에
+                    읽힌다(사용자 지적: 둥근 막대라 몇 km 인지 헷갈림). 촘촘한 기간은
+                    라벨이 겹치므로 기존 탭 툴팁 유지. */}
+                {!dense && v > 0 && (
+                  <View style={[s.chartTipWrap, { bottom: bh + 3 }]} pointerEvents="none">
+                    <Text style={[s.chartBarVal, on && { color: T1 }]}>{fmtTick(v)}</Text>
+                  </View>
+                )}
+                {dense && on && (
                   <View style={[s.chartTipWrap, { bottom: bh + 8 }]} pointerEvents="none">
                     <View style={s.chartTip}>
                       <Text style={s.chartTipVal}>{fmtTick(v)}<Text style={s.chartTipU}>{unit}</Text></Text>
@@ -1066,6 +1074,7 @@ const s = StyleSheet.create({
   chartLabel: { flex: 1, textAlign: 'center', color: T3, fontFamily: FONT, fontWeight: '600' },
   chartTipWrap: { position: 'absolute', left: -26, right: -26, alignItems: 'center', zIndex: 5 },
   chartTip: { backgroundColor: CARD_HI, borderRadius: 8, paddingHorizontal: 9, paddingVertical: 5, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.14) },
+  chartBarVal: { fontFamily: DISPLAY, fontSize: 10, fontWeight: '600', color: T3, fontVariant: ['tabular-nums'] },
   chartTipVal: { color: T1, fontFamily: DISPLAY, fontSize: 13, fontWeight: '600', letterSpacing: 0.2 },
   chartTipU: { color: T3, fontFamily: FONT, fontSize: 10, fontWeight: '500' },
 
