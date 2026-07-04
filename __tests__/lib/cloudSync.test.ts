@@ -21,6 +21,7 @@ import {
   partitionTombstones,
   recordsToBackRegister,
   reconcileLivePreservingLocal,
+  unionTombstones,
   type AuthState,
 } from '../../lib/cloudSync';
 
@@ -353,5 +354,41 @@ describe('reconcileLivePreservingLocal — 동기 결과 반영 시 로컬 변�
     const mergedLive = [{ id: 'R-keep', updatedAt: 100 }];
     const out = reconcileLivePreservingLocal(prev, mergedLive, new Set(['R-del']));
     expect(out.map(r => r.id)).toEqual(['R-keep']); // R-del 부활 안 함
+  });
+
+  test('동기 await 중 로컬 삭제(현재 묘비 tombId) — merged 가 live 로 담고 있어도 부활 금지', () => {
+    // 버그(2026-07-05): merged 는 삭제 전 스냅샷이라 R-x 를 live 로 포함. prev 엔 이미
+    // 삭제돼 없다. tombId 에 현재 로컬 묘비(R-x)를 넣으면 부활하지 않아야 한다.
+    const prev = [{ id: 'R-keep', updatedAt: 100 }];
+    const mergedLive = [{ id: 'R-keep', updatedAt: 100 }, { id: 'R-x', updatedAt: 100 }];
+    const out = reconcileLivePreservingLocal(prev, mergedLive, new Set(['R-x']));
+    expect(out.map(r => r.id)).toEqual(['R-keep']); // R-x 부활 안 함
+  });
+});
+
+describe('unionTombstones — 동기 중 로컬 묘비 파괴 방지(2026-07-05)', () => {
+  test('현재 묘비(로컬 신규)가 stale merged 묘비 목록에 합쳐진다(교체 아님)', () => {
+    // await 중 로컬에서 만든 T-new 묘비 + 동기 시작 스냅샷의 T-old 묘비 → 둘 다 남아야.
+    const current = [{ id: 'T-new', deleted: true, updatedAt: 500 }];
+    const incoming = [{ id: 'T-old', deleted: true, updatedAt: 100 }];
+    const out = unionTombstones(current, incoming);
+    expect(out.map(r => r.id).sort()).toEqual(['T-new', 'T-old']);
+  });
+
+  test('같은 id 는 최신(updatedAt) 유지, 동률이면 현재(로컬) 유지', () => {
+    const current = [{ id: 'T1', deleted: true, updatedAt: 300, tag: 'local' }];
+    const incoming = [{ id: 'T1', deleted: true, updatedAt: 100, tag: 'remote' }];
+    expect((unionTombstones(current, incoming)[0] as any).tag).toBe('local'); // 로컬이 더 최신
+    const tie = unionTombstones(
+      [{ id: 'T1', updatedAt: 100, tag: 'local' }],
+      [{ id: 'T1', updatedAt: 100, tag: 'remote' }],
+    );
+    expect((tie[0] as any).tag).toBe('local'); // 동률 → 로컬 유지(삭제가 이긴다)
+  });
+
+  test('빈 입력 graceful', () => {
+    expect(unionTombstones([], [])).toEqual([]);
+    expect(unionTombstones([{ id: 'A', updatedAt: 1 }], []).map(r => r.id)).toEqual(['A']);
+    expect(unionTombstones([], [{ id: 'B', updatedAt: 1 }]).map(r => r.id)).toEqual(['B']);
   });
 });

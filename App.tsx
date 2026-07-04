@@ -105,7 +105,7 @@ import {ExtChallenge, challengeExtProgress, type ExtRun, type ExtShoe} from './l
 import {createFirebaseCloudPort} from './lib/firebaseCloudPort';
 import {getAuth, onAuthStateChanged} from '@react-native-firebase/auth';
 import {LoginScreen} from './LoginScreen.rn';
-import {stampUpdatedAt, markDeleted, partitionTombstones, mergeCloudData, liveRecords, reconcileLivePreservingLocal} from './lib/cloudSync';
+import {stampUpdatedAt, markDeleted, partitionTombstones, mergeCloudData, liveRecords, reconcileLivePreservingLocal, unionTombstones} from './lib/cloudSync';
 import {publishMyRanking} from './lib/progression/firestoreRankingStore';
 import {migrateRestToFirestore, REST_MIGRATION_KEY} from './lib/restToFirestoreMigration';
 import {genRunId, genShoeId} from './lib/genId';
@@ -248,6 +248,10 @@ function Main(){
   // 삭제를 전파하고, 머지 결과는 applyBackupPayload 가 다시 live/묘비로 분리해 이 불변식을
   // 유지한다(한 id 가 live 와 묘비에 동시에 있지 않는다 → 자기충돌 부활 없음).
   const [tombstones,setTombstones]=useState<{shoes:BackendShoe[];runs:BackendRun[]}>({shoes:[],runs:[]});
+  // 최신 묘비 미러(ref) — applyBackupPayload 가 동기 await 뒤 실행될 때, 그 await 도중
+  // 로컬에서 새로 만든 묘비를 stale 클로저 대신 이 ref 로 읽어 부활을 막는다(2026-07-05).
+  const tombstonesRef=useRef(tombstones);
+  useEffect(()=>{tombstonesRef.current=tombstones;},[tombstones]);
   // 런별 노면 태그 캐시(surface_<runId> → Surface). 실효 마모/교체 예측 보정용. 미태그는
   // road로 동작(차단 아님). runs 변경 시 한 번에 읽어들이고, 손상/실패는 무시한다.
   const [runSurfaces,setRunSurfaces]=useState<Record<string,Surface>>({});
@@ -739,7 +743,7 @@ function Main(){
   // 읽어 담아야 유실 없이 되살릴 수 있다(부분복원=런만 살고 사이드키 유실 방지).
   type RunUndo={
     record:BackendRun;
-    sidecars:{route:string|null;time:string|null;surface:string|null;splits:string|null;paceTrack:string|null;hrTrack:string|null;gapTrack:string|null};
+    sidecars:{route:string|null;time:string|null;surface:string|null;splits:string|null;paceTrack:string|null;hrTrack:string|null;gapTrack:string|null;photo:string|null};
     pending:PendingRun|null;
   };
   const restoreRun=async(undo:RunUndo)=>{
@@ -753,6 +757,7 @@ function Main(){
     if(sc.paceTrack!=null)await AsyncStorage.setItem('paceTrack_'+sid,sc.paceTrack);
     if(sc.hrTrack!=null)await AsyncStorage.setItem('hrTrack_'+sid,sc.hrTrack);
     if(sc.gapTrack!=null)await AsyncStorage.setItem('gapTrack_'+sid,sc.gapTrack);
+    if(sc.photo!=null)await AsyncStorage.setItem('runphoto_'+sid,sc.photo);
     // 2) 묘비 되돌림 — store 에서 해당 id 제거(삭제 전파 취소).
     setTombstones(prev=>{
       const next={...prev,runs:prev.runs.filter(r=>String(r.id)!==sid)};
@@ -917,7 +922,7 @@ function Main(){
     const target=runs.find(r=>String(r.id)===sid);
     // undo 스냅샷: 사이드키를 *지우기 전에* 읽어 담는다 — '실행취소' 시 런만 살고
     // route_/time_/surface_/splits_ 가 유실되는 부분복원을 막는다(완전복원 보장).
-    const [route,time,surface,splits,paceTrack,hrTrack,gapTrack]=await Promise.all([
+    const [route,time,surface,splits,paceTrack,hrTrack,gapTrack,photo]=await Promise.all([
       AsyncStorage.getItem('route_'+sid),
       AsyncStorage.getItem('time_'+sid),
       AsyncStorage.getItem('surface_'+sid),
@@ -925,6 +930,7 @@ function Main(){
       AsyncStorage.getItem('paceTrack_'+sid),
       AsyncStorage.getItem('hrTrack_'+sid),
       AsyncStorage.getItem('gapTrack_'+sid),
+      AsyncStorage.getItem('runphoto_'+sid),
     ]);
     // 레거시 미동기 큐(pending)에 같은 런이 남아 있으면 큐에서도 제거한다(#5). 안 그러면 다음
     // 부팅 overlayPendingRuns 로 되살아난다(묘비 필터가 표시를 막아도 큐 항목이 영구 누수).
@@ -935,7 +941,7 @@ function Main(){
       pendingUndo=q.find(p=>String(p.localId)===sid)??null;
       if(pendingUndo) await removePendingRun(sid);
     }catch{/* 큐 접근 실패는 삭제를 막지 않는다 */}
-    const undo:RunUndo|null=target?{record:target,sidecars:{route,time,surface,splits,paceTrack,hrTrack,gapTrack},pending:pendingUndo}:null;
+    const undo:RunUndo|null=target?{record:target,sidecars:{route,time,surface,splits,paceTrack,hrTrack,gapTrack,photo},pending:pendingUndo}:null;
     // 로컬-퍼스트 삭제: 라이브 제거 + 묘비(cloudSync 전파) + 사이드키 정리. 영속은 cloudSync 담당.
     setRuns(prev=>prev.filter(r=>String(r.id)!==sid));
     if(target)addRunTombstone(target);
@@ -949,6 +955,8 @@ function Main(){
     await AsyncStorage.removeItem('paceTrack_'+sid);
     await AsyncStorage.removeItem('hrTrack_'+sid);
     await AsyncStorage.removeItem('gapTrack_'+sid);
+    // 오늘의 한 컷 사이드카(2026-07-05 추가)도 정리 — 없으면 삭제된 런의 사진 URI 가 영구 고아.
+    await AsyncStorage.removeItem('runphoto_'+sid);
     if(undo)offerRunUndo(undo);
   }
 
@@ -1030,17 +1038,28 @@ function Main(){
     const preserve=opts?.preserveExtras!==false;
     const sPart=Array.isArray(data.shoes)?partitionTombstones(data.shoes as BackendShoe[]):null;
     const rPart=Array.isArray(data.runs)?partitionTombstones(data.runs as BackendRun[]):null;
+    // 부활 방지(2026-07-05): tomb 집합에 stale merged 묘비뿐 아니라 *현재* 로컬 묘비
+    // (tombstonesRef — await 중 삭제분 포함)를 합쳐 넘긴다. preserve=false(명시적 import
+    // 교체)면 로컬 묘비를 무시하고 백업 그대로 반영한다.
+    const liveTomb=tombstonesRef.current;
     if(sPart){
       const tomb=new Set(sPart.tombstones.map(s=>String((s as BackendShoe).id)));
+      if(preserve)for(const s of liveTomb.shoes)tomb.add(String(s.id));
       setShoes(preserve?prev=>reconcileLivePreservingLocal(prev,sPart.live,tomb):sPart.live);
     }
     if(rPart){
       const tomb=new Set(rPart.tombstones.map(r=>String((r as BackendRun).id)));
+      if(preserve)for(const r of liveTomb.runs)tomb.add(String(r.id));
       setRuns(preserve?prev=>reconcileLivePreservingLocal(prev,rPart.live,tomb):rPart.live);
     }
     if(sPart||rPart){
       setTombstones(prev=>{
-        const next={shoes:sPart?sPart.tombstones:prev.shoes,runs:rPart?rPart.tombstones:prev.runs};
+        // 교체가 아니라 합집합(preserve): await 중 새로 만든 로컬 묘비가 stale merged
+        // 묘비 목록으로 파괴되지 않게. import(preserve=false)만 그대로 교체한다.
+        const next=preserve
+          ?{shoes:sPart?unionTombstones(prev.shoes,sPart.tombstones):prev.shoes,
+            runs:rPart?unionTombstones(prev.runs,rPart.tombstones):prev.runs}
+          :{shoes:sPart?sPart.tombstones:prev.shoes,runs:rPart?rPart.tombstones:prev.runs};
         persistTombstones(next);
         return next;
       });
@@ -2025,6 +2044,11 @@ function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],weightKg,age=0,restHR=0
     // 'review' 복구는 이미 끝난 런을 검토만 한다 — GPS/센서/권한/TTS를 켜지 않는다.
     // 'continue'(이어 달리기)는 아래로 진행해 엔진을 시드 재가동한다. 일반 시작도 진행.
     if(resume&&!isContinue) return;
+    // 언마운트 가드(2026-07-05): 권한 다이얼로그가 떠 있는 동안(await requestRunPermissions)
+    // 화면을 벗어나면 cleanup 이 먼저 돌고, 그 뒤 늦게 resolve 된 beginRun 이 좀비 타이머·
+    // GPS watch·keep-awake 를 다시 켜고 3초마다 스냅샷을 덮어써 가짜 '미완료 런'을 남겼다.
+    // cancelled 로 그 뒤늦은 beginRun 을 막는다.
+    let cancelled=false;
     // 공유 GPS 엔진(runTracker) 구독: 거리/시간/일시정지/死구간/권한 회수 상태가
     // 여기로 흘러와 화면 상태를 갱신한다. 포그라운드(watchPositionAsync)와
     // 백그라운드(task) fix가 모두 같은 엔진에 먹이므로, 화면off에서 누적된 거리도
@@ -2114,22 +2138,24 @@ function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],weightKg,age=0,restHR=0
         if(femaleVoice) Tts.setDefaultVoice(femaleVoice.id);
       }catch{}
     })();
-    setTimeout(()=>{runVoice.start();},800);
+    const voiceTimer=setTimeout(()=>{if(!cancelled)runVoice.start();},800);
     (async()=>{
       // expo-location 통합 권한 게이트(android/ios 공통). 포그라운드 권한이 트래킹
       // 시작의 유일한 관문이다 — 거부 시 절대 시작하지 않는다(가비지 거리 금지).
       // 백그라운드(화면off) 권한은 추가 요청하되 거부돼도 비치명적: 포그라운드
       // 트래킹은 그대로 동작한다(graceful). 회귀 금지.
       const perm=await requestRunPermissions();
+      if(cancelled) return; // 권한 대기 중 언마운트 — 좀비 beginRun 방지.
       permRef.current=perm;
       if(!perm.foreground){
         openLocationSettingsAlert('위치 권한을 허용해야 GPS 러닝이 가능합니다. 설정에서 위치 권한을 허용해 주세요.');
         setPermLost(true);
         return;
       }
+      if(cancelled) return;
       await beginRun();
     })();
-    return()=>{stop();unsub();try{Tts.stop();}catch{}runVoice.stop();};
+    return()=>{cancelled=true;clearTimeout(voiceTimer);stop();unsub();try{Tts.stop();}catch{}runVoice.stop();};
     // eslint-disable-next-line react-hooks/exhaustive-deps
   },[]);
 
@@ -2343,6 +2369,15 @@ function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],weightKg,age=0,restHR=0
   }
 
   async function handleSave(){
+    // 거리 가드(2026-07-05): resume 'review' 경로는 finishRun 의 fk<0.01 가드를 우회해
+    // 0.00km 좀비 스냅샷(거리 fix 0 + 경과시간만)이 그대로 저장되던 버그가 있었다.
+    // 거리 없는 런은 저장 가치가 없다 — 스냅샷만 정리하고 닫는다.
+    if(finKm<0.01){
+      Alert.alert('거리가 기록되지 않았어요','저장할 거리가 없어 이 기록은 닫을게요.',[
+        {text:'확인',onPress:()=>{void clearSnapshot();onDiscard();}},
+      ]);
+      return;
+    }
     setSaving(true);
     try{
       let loc=finLocation||locationRef.current;

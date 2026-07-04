@@ -148,6 +148,28 @@ function recordUpdatedAt(rec: unknown): number {
  * 로컬 신규(또는 updatedAt 이 더 큰 편집)를 보존한다. 단 원격 삭제(tombIds)는 존중해 부활시키지
  * 않는다. id 충돌은 최신(updatedAt) 우선 — 동기 결과와 await-중 편집 중 더 최신을 택한다.
  */
+/**
+ * 두 묘비(tombstone) 배열을 id 합집합으로 병합한다. current(로컬 현재 묘비)를 기준으로
+ * incoming(동기 결과의 묘비)을 더하되, 같은 id 는 updatedAt 이 더 큰(최신) 쪽을 남긴다.
+ * 동률이면 current(로컬) 유지 — 동기 왕복(await) 중 로컬에서 새로 만든 묘비가 동기 시작
+ * 시점의 stale merged 묘비 목록으로 '교체'되어 파괴되던 버그(2026-07-05)를 막는다.
+ * applyBackupPayload 가 setTombstones 의 함수형 updater(prev=최신 묘비)로 호출한다.
+ */
+export function unionTombstones<T>(current: readonly T[], incoming: readonly T[]): T[] {
+  const byId = new Map<string, T>();
+  for (const t of incoming) {
+    const id = recordId(t);
+    if (id != null) byId.set(id, t);
+  }
+  for (const t of current) {
+    const id = recordId(t);
+    if (id == null) continue;
+    const ex = byId.get(id);
+    if (!ex || recordUpdatedAt(t) >= recordUpdatedAt(ex)) byId.set(id, t);
+  }
+  return [...byId.values()];
+}
+
 export function reconcileLivePreservingLocal<T>(
   prev: readonly T[],
   mergedLive: readonly T[],
@@ -158,7 +180,9 @@ export function reconcileLivePreservingLocal<T>(
   for (const r of mergedLive) {
     const id = recordId(r);
     if (id == null) noId.push(r);
-    else byId.set(id, r);
+    else if (!tombIds.has(id)) byId.set(id, r); // 묘비면 mergedLive 것도 담지 않는다
+    // ↑ 정상 동기에선 merged 의 live·묘비가 서로소라 무해하지만, await 중 로컬 삭제로
+    //   현재 묘비가 tombIds 에 더해지면 stale merged 가 live 로 든 그 id 를 걸러야 부활을 막는다.
   }
   for (const r of prev) {
     const id = recordId(r);
