@@ -210,9 +210,9 @@ export function ShoeCard({
           </View>
 
           {/* 링 게이지 — 크기는 화면 높이 비례(ring, 기기 간 동일 구도).
-              유리 튜브 처리(2026-07-04): 트랙은 유리 관(바깥/안 헤어라인이 GlassEdge 와 같은
-              좌상단 광축을 따라 감쇠), 진행 아크 위엔 바깥 표면을 스치는 광택 코어 — 카드
-              유리 문법과 한 광원을 공유해 링이 '색칠된 선'이 아니라 '빛 받은 관'으로 읽힌다. */}
+              평면 링(2026-07-05, 사용자 결정): 유리 튜브 질감(안팎 헤어라인·광택 코어)을
+              걷어내 깨끗한 평면 링으로. 트랙 tint + 컨디션 색 아크만 — 색은 의미이지 질감이
+              아니다. 미니멀 럭셔리 방향과 정렬. */}
           <View style={[styles.ringWrap, {width: ring, height: ring}]}>
             <Svg width={ring} height={ring}>
               <Defs>
@@ -220,28 +220,13 @@ export function ShoeCard({
                   <Stop offset="0" stopColor={rc.from} />
                   <Stop offset="1" stopColor={rc.to} />
                 </SvgLinear>
-                {/* 광택/림 — 좌상단 광원(18° 축과 동일 방향성), 아래로 자연 소멸 */}
-                <SvgLinear id={`ring-gloss-${i}`} x1="0" y1="0" x2="0.7" y2="1">
-                  <Stop offset="0" stopColor={T1} stopOpacity={0.5} />
-                  <Stop offset="0.45" stopColor={T1} stopOpacity={0.08} />
-                  <Stop offset="1" stopColor={T1} stopOpacity={0} />
-                </SvgLinear>
               </Defs>
               {/* 트랙: 컨디션 색 옅은 tint → 0% 도 죽은 회색이 아님 */}
               <Circle
                 cx={ring / 2} cy={ring / 2} r={ringR}
                 stroke={withAlpha(rc.solid, 0.16)} strokeWidth={14} fill="none"
               />
-              {/* 유리 관 헤어라인 — 트랙의 바깥/안 가장자리 */}
-              <Circle
-                cx={ring / 2} cy={ring / 2} r={ringR + 7}
-                stroke={`url(#ring-gloss-${i})`} strokeWidth={1.2} fill="none" opacity={0.5}
-              />
-              <Circle
-                cx={ring / 2} cy={ring / 2} r={ringR - 7}
-                stroke={`url(#ring-gloss-${i})`} strokeWidth={1} fill="none" opacity={0.3}
-              />
-              {/* 진행 아크: 비비드 그라데이션 — 마운트 시 0→현재%로 차오른다 */}
+              {/* 진행 아크: 컨디션 색 그라데이션 — 마운트 시 0→현재%로 차오른다 */}
               <AnimatedCircle
                 cx={ring / 2} cy={ring / 2} r={ringR}
                 stroke={`url(#ring-${i})`} strokeWidth={14} fill="none"
@@ -249,16 +234,6 @@ export function ShoeCard({
                 strokeDasharray={ringC}
                 strokeDashoffset={dash}
                 transform={`rotate(-90 ${ring / 2} ${ring / 2})`}
-              />
-              {/* 광택 코어 — 아크 바깥 표면을 스치는 얇은 빛(같은 진행률로 함께 차오름) */}
-              <AnimatedCircle
-                cx={ring / 2} cy={ring / 2} r={ringR + 3.5}
-                stroke={`url(#ring-gloss-${i})`} strokeWidth={3} fill="none"
-                strokeLinecap="round"
-                strokeDasharray={2 * Math.PI * (ringR + 3.5)}
-                strokeDashoffset={sweep.interpolate({inputRange: [0, 100], outputRange: [2 * Math.PI * (ringR + 3.5), 0]})}
-                transform={`rotate(-90 ${ring / 2} ${ring / 2})`}
-                opacity={0.55}
               />
             </Svg>
             <Animated.View style={[styles.ringCenter, {
