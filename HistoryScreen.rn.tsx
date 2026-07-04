@@ -659,10 +659,10 @@ function DrumColumn({ items, selectedIndex, onChange }: {
 // ── history main ────────────────────────────────────────────────────────────
 // 런 카드 — 목업 기록(10) 정합: 신발(브랜드/모델) + 날짜(우상단) + 거리·평균페이스·시간.
 // 런마다 별도 카드 박스로 띄운다(한 카드 안 행 → 카드별).
-function RunCard({ run, shoes, onPress, unit }: { run: Run; shoes: Shoe[]; onPress: () => void; unit: Unit }) {
+export function RunCard({ run, shoes, onPress, unit }: { run: Run; shoes: Shoe[]; onPress?: () => void; unit: Unit }) {
   const shoe = shoes[run.shoe];
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${run.date} ${shoe ? shoe.brand + ' ' + shoe.model : '삭제된 신발'} 기록`} style={({ pressed }) => [s.runCard, pressed && { opacity: 0.85 }]}>
+    <Pressable onPress={onPress} disabled={!onPress} accessibilityRole="button" accessibilityLabel={`${run.date} ${shoe ? shoe.brand + ' ' + shoe.model : '삭제된 신발'} 기록`} style={({ pressed }) => [s.runCard, pressed && !!onPress && { opacity: 0.85 }]}>
       <View style={s.runCardTop}>
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={s.runCardBrand} numberOfLines={1}>{shoe ? shoe.brand : '삭제된 신발'}</Text>

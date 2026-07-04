@@ -9,9 +9,8 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {
   BG, CARD_DIM, CARD_HI, HERO_BG, ACCENT, DANGER, WARN, GOOD, BEST, T1, T2, T3, T4, SEP, FONT, DISPLAY, withAlpha, RADIUS, Shoe, Run, SHOES,
 } from './theme';
-import { TabBar, TABBAR_CLEARANCE, Pill, InjuryBanner, SectionTitle, Button, SwipeBack, StatGrid } from './primitives';
-import { PeriodChartView } from './HistoryScreen.rn';
-import { fmtPace } from './lib/format';
+import { TabBar, TABBAR_CLEARANCE, Pill, InjuryBanner, SectionTitle, Button, SwipeBack } from './primitives';
+import { RunCard } from './HistoryScreen.rn';
 import { FuelGauge } from './FuelGauge';
 import FirstShoeScreen from './FirstShoeScreen.rn';
 import { Unit, displayNum } from './lib/units';
@@ -80,11 +79,13 @@ const condLabel = (pct: number) => wearTier(pct).label;
 // ── shoe detail ───────────────────────────────────────────────────────────────
 function ShoeDetail({
   shoe, idx, runs, totals, unit, weightKg, surfaceOf, onBack, onRename, onDelete, onRetire, onSetMaxKm: _onSetMaxKm,
-  rawShoe, rawRuns, progressionCtx, equippedTitle, onRetiredKeepsake, now,
+  rawShoe, rawRuns, progressionCtx, equippedTitle, onRetiredKeepsake, now, allShoes,
 }: {
   shoe: Shoe;
   idx: number;
   runs: Run[];
+  /** 전체 신발 목록(RunCard 의 run.shoe 인덱스 해석용 — 기록탭과 동일 배열). */
+  allShoes: Shoe[];
   totals: ShoeTotals;
   unit: Unit;
   // 실효 마모/교체 예측 보정값. 체중(kg)은 settings.weightKg 재사용(미설정 시 기준 1.0),
@@ -144,42 +145,6 @@ function ShoeDetail({
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(`${shoe.brand} ${shoe.model}`.trim());
 
-  // ── 이 신발의 러닝 이야기(2026-07-04, 제품 핵심 질문: '이 신발로 얼마나, 어떻게
-  //    달렸나') — 요약 스탯(횟수·평균 페이스·최장 런·최고 페이스) + 최근 8주 흐름.
-  //    총 거리는 위 게이지(사용 N/Mkm)가 이미 말하므로 중복하지 않는다.
-  const story = useMemo(() => {
-    const withDur = shoeRuns.filter((r) => (r.durationS ?? 0) > 0 && r.dist > 0);
-    const durKm = withDur.reduce((a, r) => a + r.dist, 0);
-    const durS = withDur.reduce((a, r) => a + (r.durationS ?? 0), 0);
-    const avgPace = durS > 0 && durKm > 0 ? fmtPace(durKm, durS) : '--';
-    const longest = shoeRuns.reduce((m, r) => Math.max(m, r.dist), 0);
-    let bestPace = '--';
-    let bestSec = Infinity;
-    for (const r of withDur) {
-      if (r.dist < 1) continue; // 1km 미만은 페이스 표본에서 제외(인정 런 기준과 정렬)
-      const p = (r.durationS ?? 0) / r.dist;
-      if (p < bestSec) { bestSec = p; bestPace = fmtPace(r.dist, r.durationS ?? 0); }
-    }
-    // 최근 8주 주간 합(월요일 시작) — runDate 없는 런은 버킷에서 제외.
-    const now = new Date();
-    const mon = new Date(now.getFullYear(), now.getMonth(), now.getDate() - ((now.getDay() + 6) % 7));
-    const weekly: number[] = Array(8).fill(0);
-    const weekLabels: string[] = [];
-    for (let w = 7; w >= 0; w--) {
-      const start = new Date(mon.getFullYear(), mon.getMonth(), mon.getDate() - w * 7);
-      weekLabels.push(`${start.getMonth() + 1}/${start.getDate()}`);
-    }
-    for (const r of shoeRuns) {
-      if (!r.runDate) continue;
-      const [y, m, d] = r.runDate.slice(0, 10).split('-').map(Number);
-      const dt = new Date(y, m - 1, d);
-      const diffW = Math.floor((mon.getTime() - dt.getTime()) / (7 * 86400000));
-      const idx = 7 - (dt >= mon ? 0 : diffW + 1);
-      if (idx >= 0 && idx < 8) weekly[idx] += r.dist;
-    }
-    const hasWeekly = weekly.some((v) => v > 0);
-    return { avgPace, longest, bestPace, weekly, weekLabels, hasWeekly };
-  }, [shoeRuns]);
 
   // 키프세이크 은퇴 플로우: 수명 도달 신발만 [계속 사용]/[은퇴]를 노출한다(자동 은퇴 절대
   // 금지 — 사용자가 [은퇴]를 눌러야만 flowOpen). [계속 사용]을 누르면 이번 세션 동안
@@ -381,30 +346,6 @@ function ShoeDetail({
           </View>
         )}
 
-        {/* 이 신발의 러닝 이야기 — 요약 + 최근 8주 흐름(기록탭 차트 재사용) */}
-        {shoeRuns.length > 0 && (
-          <>
-            <View style={[s.row, { paddingHorizontal: 4 }]}>
-              <Text style={s.sectionLabel}>함께한 기록</Text>
-            </View>
-            <View style={[s.card, { padding: 16, gap: 14 }]} testID="shoe-story">
-              <StatGrid
-                columns={4}
-                valueSize={17}
-                items={[
-                  { value: String(shoeRuns.length), unit: '회', label: '러닝' },
-                  { value: story.avgPace, label: '평균 페이스' },
-                  { value: String(displayNum(story.longest, unit, 1)), unit, label: '최장 런' },
-                  { value: story.bestPace, label: '최고 페이스' },
-                ]}
-              />
-              {story.hasWeekly && (
-                <PeriodChartView data={story.weekly} labels={story.weekLabels} unit={unit} />
-              )}
-            </View>
-          </>
-        )}
-
         {/* runs */}
         <View style={[s.row, { paddingHorizontal: 4, justifyContent: 'space-between' }]}>
           <Text style={s.sectionLabel}>이 신발로 달린 기록</Text>
@@ -415,19 +356,11 @@ function ShoeDetail({
             <Text style={{ color: T3, fontFamily: FONT, fontSize: 13 }}>아직 기록이 없어요</Text>
           </View>
         ) : (
-          <View style={[s.card, { overflow: 'hidden' }]}>
+          // 기록탭과 완전히 같은 행(RunCard 재사용, 2026-07-04 사용자 결정) — '이 신발로
+          // 얼마나 어떻게 달렸는지'를 기록탭의 언어 그대로 신발별로 모아 보여준다.
+          <View style={{ gap: 10 }}>
             {shoeRuns.map((r, i) => (
-              <View key={r.id || i} style={[s.runRow, i < shoeRuns.length - 1 && s.runRowBorder]}>
-                <View style={s.runDate}>
-                  <Text style={s.runDay}>{r.day}</Text>
-                  <Text style={s.runDateNum}>{r.dateNum}</Text>
-                </View>
-                <View style={s.runDivider} />
-                <View style={{ flex: 1 }}>
-                  <View style={s.baselineRow}><Text style={s.runDist}>{displayNum(r.dist, unit, 2)}</Text><Text style={s.runDistU}>{unit}</Text></View>
-                  <Text style={s.runSub}>{r.pace} /km   {r.time}</Text>
-                </View>
-              </View>
+              <RunCard key={r.id || i} run={r} shoes={allShoes} unit={unit} />
             ))}
           </View>
         )}
@@ -589,6 +522,7 @@ export default function ShoesScreen({
         shoe={dShoe}
         idx={detail}
         runs={runs}
+        allShoes={shoes}
         totals={totals[detail] || { totalRuns: 0, totalTime: '--', avgPace: '--' }}
         unit={unit}
         weightKg={weightKg}
