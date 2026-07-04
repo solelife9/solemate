@@ -452,7 +452,7 @@ const s = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 5,
   },
-  tierEyebrow: {fontFamily: DISPLAY, fontSize: 13, fontWeight: '600', letterSpacing: 4, textTransform: 'uppercase', marginBottom: 8},
+  tierEyebrow: {fontFamily: DISPLAY, fontSize: 13, fontWeight: '600', letterSpacing: 4, textTransform: 'uppercase', marginBottom: 4},
   nick: {
     fontFamily: DISPLAY,
     color: T1,
