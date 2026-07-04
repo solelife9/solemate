@@ -42,13 +42,13 @@ function rank(tier: RankTier, xp: number): RankResult {
 }
 
 describe('rankGuidance', () => {
-  test('다음 티어와 티어 내 진행도(Silver 100~300 의 중간 200 → 0.5)', () => {
-    const g = rankGuidance(rank('silver', 200));
+  test('다음 티어와 티어 내 진행도(Silver 100~400 의 중간 250 → 0.5)', () => {
+    const g = rankGuidance(rank('silver', 250));
     expect(g.tier).toBe('silver');
     expect(g.nextTier).toBe('gold');
     expect(g.progressToNext).toBeCloseTo(0.5, 5);
     expect(g.nextXp).toBe(RANK_XP.gold);
-    expect(g.xpForNext).toBe(100); // 300 - 200
+    expect(g.xpForNext).toBe(150); // 400 - 250
   });
 
   test('Bronze 하한 0 XP → 다음 Silver, 진행 0', () => {

@@ -8,8 +8,8 @@
 //   2b. consistency      — 꾸준함(주간 리듬 단일 사다리 2→52주)             470 XP max
 //   3. shoeJourney       — 신발 소유 · 은퇴(첫 신발 ~ 명예의 전당)          1,690 XP max
 //   4. shoeMemory        — 신발과의 동행(켤레마다 반복 적립, 10켤레 기준)   1,700 XP max
-//   5. experience        — 특별 경험(야간·새벽·계절) + 챌린지                 310 XP max
-//   6. keego             — Keep Going 철학(잘 보내주었다·킵고잉 1년·온전한 하루) 300 XP max
+//   5. experience        — 특별 경험(야간·새벽·계절) + 챌린지                 250 XP max
+//   6. keego             — Keep Going 철학(잘 보내주었다·킵고잉 1년·온전한 하루) 240 XP max
 //
 // 설계 원칙:
 //   · RPG 아님 — 보상이 아닌 기억. "memories, not rewards."
@@ -432,13 +432,13 @@ const CHALLENGES: AchievementDef[] = [
     value: ctx => nonNeg(ctx.completedChallengeCount),
   }),
   metricAch({
-    key: 'challenge_dedicated', name: '꾸준한 도전', rarity: 'rare', xp: 60,
+    key: 'challenge_dedicated', name: '꾸준한 도전', rarity: 'rare', xp: 40,
     description: '챌린지 3개를 완수했다. 목표 달성의 맛을 알았다.',
     category: 'experience', target: 3,
     value: ctx => nonNeg(ctx.completedChallengeCount),
   }),
   metricAch({
-    key: 'challenge_master', name: '챌린지 마스터', rarity: 'epic', xp: 100,
+    key: 'challenge_master', name: '챌린지 마스터', rarity: 'rare', xp: 60,
     description: '챌린지 10개 완수. 설정하고, 달리고, 달성한다.',
     category: 'experience', target: 10,
     value: ctx => nonNeg(ctx.completedChallengeCount),
@@ -478,8 +478,10 @@ const KEEGO: AchievementDef[] = [
     }),
     unlocked: ctx => nonNeg(ctx.runSpanDays ?? 0) >= 365,
   },
+  // 주 3시간 러너면 8주 만에 도달 — 시(詩)는 지키되 등급·XP 는 난이도에 정직하게
+  // (에픽 신뢰 보호, 2026-07-04 XP 감사).
   metricAch({
-    key: 'time_24h', name: '온전한 하루', rarity: 'epic', xp: 100,
+    key: 'time_24h', name: '온전한 하루', rarity: 'rare', xp: 40,
     progressPrefix: '누적',
     description: '누적 24시간 — 지구가 한 바퀴 도는 시간을 달렸다.',
     category: 'keego', target: 86400,

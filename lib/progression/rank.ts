@@ -3,10 +3,14 @@
 // ============================================================================
 // 랭크 = 총 획득 XP(업적 합산). 계단식 7단계 티어.
 //
-//   bronze   0 XP ~ silver  100 XP ~ gold    300 XP ~ platinum  700 XP
-//   diamond  1,500 XP ~ master  3,000 XP ~ legend  5,000 XP
+//   bronze   0 XP ~ silver  100 XP ~ gold    400 XP ~ platinum  700 XP
+//   diamond  2,000 XP ~ master  3,000 XP ~ legend  5,000 XP
 //
-// 총 최대 XP ≈ 6,570(마라톤 + 10켤레 은퇴·동행 + 모든 experience 포함, 10켤레 기준).
+// 임계는 주 30km 페르소나의 서사적 순간에 정렬(2026-07-04 XP 감사): 실버=첫 주,
+// 골드=첫 신발 반환점(~2.5개월), 플래티넘=하프마라톤(~4개월), 다이아=1주년(1년의
+// 리듬+킵고잉 1년, w52), 마스터=5켤레 은퇴(~2년), 레전드=명예의 전당(10켤레, ~3.75년).
+//
+// 총 최대 XP ≈ 6,450(마라톤 + 10켤레 은퇴·동행 + 모든 experience 포함, 10켤레 기준).
 // PURE: 입력 불변, NaN/음수/누락 → 0, throw 금지.
 // ============================================================================
 import {TIER_COLORS} from '../../theme';
@@ -16,9 +20,9 @@ import {ProgressionContext, RankResult, RankTier} from './types';
 export const RANK_XP: Readonly<Record<RankTier, number>> = {
   bronze: 0,
   silver: 100,
-  gold: 300,
+  gold: 400,
   platinum: 700,
-  diamond: 1500,
+  diamond: 2000,
   master: 3000,
   legend: 5000,
 };

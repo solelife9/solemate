@@ -2,7 +2,7 @@
 //
 // 관찰 가능한 동작:
 //   · 랭크 = 총 획득 XP(ctx.achievementPoints, 업적 합산). 계단식 7단계 티어.
-//   · 티어 XP 하한: bronze 0 / silver 100 / gold 300 / platinum 700 /
+//   · 티어 XP 하한: bronze 0 / silver 100 / gold 400 / platinum 700 /
 //     diamond 1,500 / master 3,000 / legend 5,000.
 //   · 경계 XP → 정확한 티어 + 색(theme.TIER_COLORS).
 //   · 빈 컨텍스트 → Bronze, xp 0.
@@ -54,13 +54,13 @@ function emptyCtx(over: Partial<ProgressionContext> = {}): ProgressionContext {
 
 // ── 1) 티어 XP 하한 노출 ────────────────────────────────────────────────────────
 describe('RANK_XP: 7단계 티어 XP 하한', () => {
-  test('계단식 하한 = 0/100/300/700/1500/3000/5000', () => {
+  test('계단식 하한 = 0/100/400/700/2000/3000/5000 — 승급을 서사적 순간에 정렬(2026-07-04)', () => {
     expect(RANK_XP).toEqual({
       bronze: 0,
       silver: 100,
-      gold: 300,
+      gold: 400,
       platinum: 700,
-      diamond: 1500,
+      diamond: 2000,
       master: 3000,
       legend: 5000,
     });
@@ -89,12 +89,12 @@ describe('tierForXp: 경계 XP → 티어 + 색', () => {
     [0, 'bronze'],
     [99, 'bronze'],
     [100, 'silver'],
-    [299, 'silver'],
-    [300, 'gold'],
+    [399, 'silver'],
+    [400, 'gold'],
     [699, 'gold'],
     [700, 'platinum'],
-    [1499, 'platinum'],
-    [1500, 'diamond'],
+    [1999, 'platinum'],
+    [2000, 'diamond'],
     [2999, 'diamond'],
     [3000, 'master'],
     [4999, 'master'],
@@ -121,17 +121,17 @@ describe('computeRank: XP → 랭크 결과', () => {
     expect(r.tier).toBe('silver');
     expect(r.color).toBe(TIER_COLORS.silver);
     expect(r.nextTier).toBe('gold');
-    expect(r.xpForNext).toBe(200); // 300 - 100
+    expect(r.xpForNext).toBe(300); // 400 - 100
     expect(r.progressPercent).toBe(0);
     expect(r.score).toBe(r.xp); // backward-compat alias
   });
 
   test('티어 중간 → progressPercent 비례', () => {
-    // silver(100)~gold(300) 구간 절반 = 200
-    const r = computeRank(emptyCtx({achievementPoints: 200}));
+    // silver(100)~gold(400) 구간 절반 = 250
+    const r = computeRank(emptyCtx({achievementPoints: 250}));
     expect(r.tier).toBe('silver');
     expect(r.progressPercent).toBe(50);
-    expect(r.xpForNext).toBe(100);
+    expect(r.xpForNext).toBe(150);
   });
 
   test('legend(최고 티어) → nextTier null, xpForNext 0, progress 100', () => {
@@ -190,7 +190,7 @@ describe('신규 사용자는 공짜 점수를 받지 않는다', () => {
 describe('XP 단조 증가', () => {
   test('achievementPoints 가 늘면 score(=xp)가 오른다', () => {
     const low = computeRank(emptyCtx({achievementPoints: 100}));
-    const mid = computeRank(emptyCtx({achievementPoints: 1500}));
+    const mid = computeRank(emptyCtx({achievementPoints: 2000}));
     const high = computeRank(emptyCtx({achievementPoints: 5000}));
     expect(mid.score).toBeGreaterThan(low.score);
     expect(high.score).toBeGreaterThan(mid.score);
