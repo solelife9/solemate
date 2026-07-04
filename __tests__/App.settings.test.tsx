@@ -151,35 +151,32 @@ test('홈은 토글 전 km 원숫자(595)를 보여준다(환산 기준점)', as
 test('신발 화면(전 화면 환산)도 토글 시 환산된 수치를 보여준다', async () => {
   const {root} = await mount(SHOES, RUNS);
 
-  // 신발 탭(락커): 카드가 km로 '600' 표기(used 5 / max 600 km)
-  // 탭 전환은 아이콘(shoe-sneaker)으로 — '신발' 라벨은 다른 화면 텍스트와 모호.
+  // 신발 탭(락커): 카드가 km로 누적 '5km' 표기(used 5). '총 600km' 라벨은 노이즈
+  // 감사(2026-07-05)로 락커에서 제거됨 — 환산 검증은 누적 거리로 한다.
   await tap(pressBy(root, '신발'));
-  expect(textOf(root)).toContain('600');
-  expect(textOf(root)).toContain('km');
+  expect(textOf(root)).toContain('5km');
 
   // 프로필에서 mi로 토글
   await toSettings(root);
   await tap(pressBy(root, '단위'));
   expect(await AsyncStorage.getItem('settings_unit')).toBe('mi');
 
-  // 신발 탭 복귀: max 600km → 373mi로 환산된 수치가 떠야 한다(라벨 mi)
+  // 신발 탭 복귀: used 5km → 3.1mi 환산 수치가 떠야 한다(라벨 mi)
   await tap(pressBy(root, '신발'));
   const shoes = textOf(root);
-  expect(shoes).toContain('373'); // displayNum(600,'mi')=373
-  expect(shoes).toContain('mi');
-  expect(shoes).not.toContain('600'); // km 원숫자는 사라진다
+  expect(shoes).toContain('3mi'); // displayNum(5,'mi') → '3'(정수 반올림) + 단위
+  expect(shoes).not.toContain('5km');
 });
 
 // (제거됨) 신발 상세 cost-per-km(구매가) 힌트 테스트 — 구매가 기능이 UI에서 제거되어
 // 더 이상 해당 힌트가 없다. 거리 단위 환산은 위의 'mi 단위 락커' 테스트가 계속 커버한다.
 
-test('앱·기기 정보 — 계정·클라우드 섹션에 기기/가입/버전 필드를 렌더한다', async () => {
+test('앱·기기 정보 — 가입/버전은 보이고 기기 ID는 상시 노출하지 않는다(2026-07-05)', async () => {
   const {root} = await mount(SHOES, RUNS);
   await toSettings(root);
 
-  // 기존 '계정 설정' 행을 계정·클라우드 섹션으로 통합 — 펼침 없이 항상 보인다.
   const txt = textOf(root);
-  expect(txt).toContain('기기 ID');
+  expect(txt).not.toContain('기기 ID'); // 노이즈 감사 — 유저가 행동할 일 없는 불투명 값
   expect(txt).toContain('버전');
   expect(txt).toContain('0.0.1'); // APP_VERSION 값
 });
@@ -202,12 +199,12 @@ test('알림 행 토글 → settings_alerts(enabled=false) 영속 + 표기 갱�
   const {root} = await mount(SHOES, RUNS);
   await toSettings(root);
 
-  // 알림 행을 펼친다(초기 '켜짐')
+  // 병합된 알림 행을 펼친다(2026-07-05 — 교체 임박 토글이 인앱 배지와 동기)
   expect(textOf(root)).toContain('켜짐');
   await tap(pressBy(root, '알림'));
 
-  // 패널의 토글을 눌러 끈다
-  await tap(pressBy(root, '신발 교체 알림'));
+  // 패널의 '교체 임박 알림' 토글을 눌러 끈다 → settings_alerts.enabled 도 함께 꺼진다
+  await tap(pressBy(root, '교체 임박 알림'));
 
   // 영속: settings_alerts.enabled = false
   const raw = await AsyncStorage.getItem('settings_alerts');

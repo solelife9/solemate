@@ -22,6 +22,10 @@ export function authErrorMessage(e: unknown): string | null {
   if (/network|네트워크|인터넷|internet|offline|timeout|ECONN|Failed to fetch/i.test(raw)) {
     return '인터넷 연결을 확인하고 다시 시도해 주세요.';
   }
+  // Google Play 서비스 없음(안드로이드) — 사용자가 조치 가능한 구체 안내 유지.
+  if (/PLAY_SERVICES|Play 서비스/i.test(raw)) {
+    return 'Google Play 서비스를 사용할 수 없어요. 업데이트 후 다시 시도해 주세요.';
+  }
   // 제공자 미구성(예: 네이버 키 미설정) — 재시도해도 안 되니 다른 길을 안내.
   if (/설정되지 않았/.test(raw)) {
     return '지금은 이 로그인 방법을 사용할 수 없어요. 다른 방법으로 로그인해 주세요.';

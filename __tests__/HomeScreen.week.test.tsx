@@ -80,13 +80,13 @@ describe('HomeScreen 이번 주 러닝 카드', () => {
     expect(byTestID(root, 'home-week-streak').length).toBe(0);
   });
 
-  test('런이 없으면 0/0/— 로 폴백한다(빈 주 graceful)', () => {
+  test('런이 없으면 0의 그리드 대신 초대 한 줄(노이즈 감사 2026-07-05)', () => {
     const root = render(
       <HomeScreen shoes={[SHOE]} activeIdx={0} onSelect={jest.fn()} week={{km: '0.0', runs: 0, pace: '--'}} />,
     );
-    expect(textOf(byTestID(root, 'home-week-km')[0])).toBe('0.0');
-    expect(textOf(byTestID(root, 'home-week-runs')[0])).toBe('0');
-    // 페이스 빈값은 앱 전역 '데이터 없음' 표기(--)로 통일한다(RunDetail/History 와 동일).
-    expect(textOf(byTestID(root, 'home-week-pace')[0])).toBe('--');
+    // 0.0km·0회·-- 그리드는 렌더하지 않는다 — 행동을 못 이끄는 0의 카드 금지.
+    expect(byTestID(root, 'home-week-km').length).toBe(0);
+    expect(byTestID(root, 'home-week-empty').length).toBeGreaterThanOrEqual(1);
+    expect(textOf(byTestID(root, 'home-week-empty')[0])).toContain('첫 러닝');
   });
 });

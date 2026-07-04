@@ -55,10 +55,11 @@ export function durationLabel(seconds: number): string {
   if (!Number.isFinite(s) || s <= 0) return '--';
   const h = Math.floor(s / 3600),
     m = Math.floor((s % 3600) / 60);
-  return h > 0 ? `${h}h ${m}m` : `${m}m`;
+  // 한국어 화면에 영문 h/m 이 노출되던 것 교정('9m' → '9분', 2026-07-05 캡처 감사).
+  return h > 0 ? `${h}시간 ${m}분` : `${m}분`;
 }
 
-/** Total moving time as "Hh Mm" / "Mm", or '--' when zero. */
+/** 총 이동 시간 'H시간 M분' / 'M분', 0이면 '--'. */
 export function totalTimeLabel(list: RunRow[]): string {
   return durationLabel(asList(list).reduce((a, r) => a + (r.duration || 0), 0));
 }

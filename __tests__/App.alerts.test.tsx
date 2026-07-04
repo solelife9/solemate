@@ -6,7 +6,7 @@
  *   2) enabled=true + 임계 초과 → 교체 알림이 뜨고, 메시지에 신발 이름이 담긴다.
  *   3) 사용자가 정한 *새 임계값*에서 발화한다(기본 90%가 아니라 75%에서):
  *      80% 사용 신발은 기본값에선 조용하지만 임계 75%에선 알림이 뜬다.
- *   4) 임계값을 알림 패널에서 올리면 settings_alerts.thresholdPct가 영속된다.
+ *   4) 병합된 알림 패널(교체 임박 아래 스텝퍼)에서 임계값을 올리면 영속된다.
  *
  * @format
  */
@@ -153,10 +153,10 @@ test('알림 패널에서 임계값 +스텝 → settings_alerts.thresholdPct 영
   await tap(pressBy(root, '마이'));
   // 설정 행은 마이탭 헤더 ⚙️ 뒤의 '설정' 뷰로 분리됐다 — 먼저 연다.
   await tap(root.findAll((n: any) => n.props?.accessibilityLabel === '설정 열기')[0]);
-  await tap(pressBy(root, '알림')); // 패널 펼치기(기본 enabled=true, 임계 90%)
+  await tap(pressBy(root, '알림')); // 병합된 알림 행 펼치기(2026-07-05 — 교체 임박 아래 임계 스텝퍼)
 
-  // 패널의 임계값 스테퍼 '+'(add)로 90 → 95
-  await tap(pressBy(root, 'add'));
+  // 교체 임박 알림 아래 임계값 스테퍼 '+'로 90 → 95
+  await tap(pressBy(root, '% 사용 시 늘리기'));
 
   const raw = await AsyncStorage.getItem('settings_alerts');
   expect(raw).toBeTruthy();

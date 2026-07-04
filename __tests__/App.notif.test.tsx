@@ -207,7 +207,7 @@ describe('App 포그라운드 진입 시 dueNotifications → presentDue 표시'
 });
 
 describe('App 데이터 파괴 0 — notif 설정 변경이 기존 인앱 배지 설정을 건드리지 않는다', () => {
-  test('notif 토글 변경 → notif_settings 만 갱신, settings_alerts(AlertSettings)는 불변(iron law)', async () => {
+  test('리마인더 토글 → notif_settings 만 갱신, settings_alerts 불변(교체 임박만 동기, 2026-07-05 병합)', async () => {
     mockBackend([{id: 's1', name: 'Nike Pegasus', max_km: 600, start_km: 0}], []);
     // 기존 인앱 배지 설정을 디스크에 시드(구별되는 비기본값) — 변경되면 즉시 드러나게.
     const SEEDED_ALERTS = JSON.stringify({enabled: false, thresholdPct: 73});
@@ -224,7 +224,7 @@ describe('App 데이터 파괴 0 — notif 설정 변경이 기존 인앱 배지
     await tap(pressBy(root, '마이'));
     // 설정 행은 마이탭 헤더 ⚙️ 뒤의 '설정' 뷰로 분리됐다 — 먼저 연다.
     await tap(root.findAll((n: any) => n.props?.accessibilityLabel === '설정 열기')[0]);
-    await tap(pressBy(root, '푸시 알림'));
+    await tap(pressBy(root, '알림'));
     await tap(pressBy(root, '러닝 리마인더'));
 
     // 1) notif_settings 는 갱신됐다(러닝 리마인더 off).

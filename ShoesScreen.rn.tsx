@@ -272,7 +272,6 @@ function ShoeDetail({
             <View style={s.dHeaderRow}>
               <View style={[s.row, { flexShrink: 1, minWidth: 0 }]}>
                 <Text style={s.dBrand}>{shoe.brand}</Text>
-                {!!detailType && <View style={s.dTypeChip}><Text style={s.dTypeChipText}>{detailType}</Text></View>}
               </View>
               <View style={s.row}>
                 {/* 컨디션 칩: 목록 카드와 100% 동일한 wearTier 4단계 —
@@ -450,7 +449,9 @@ function ShoeDetail({
 function ShoeCard({ shoe, featured, onPress, onPlay, unit, pace: _pace, forecast }: { shoe: Shoe; featured: boolean; onPress: () => void; onPlay?: () => void; unit: Unit; pace?: string; forecast?: ReplacementForecast | null }) {
   const remainKm = Math.max(0, shoe.max - shoe.used);
   // 교체 예측 한 줄(#2) — '약 N주 후 교체 예상' / 임박(overdue). ok·overdue 일 때만.
-  const fcLine = forecast && (forecast.reason === 'ok' || forecast.reason === 'overdue') ? forecastLineKo(forecast) : null;
+  // ok 예측은 8주 이내로 임박했을 때만(상세와 동일 — 등장이 곧 신호). overdue 는 항상.
+  const fcNear = forecast?.reason === 'ok' && forecast.weeksRemaining != null && forecast.weeksRemaining <= 8;
+  const fcLine = forecast && (fcNear || forecast.reason === 'overdue') ? forecastLineKo(forecast) : null;
   const fcOverdue = forecast?.reason === 'overdue';
   const retired = !!shoe.retired;
   const usedDisp = displayNum(shoe.used, unit);
@@ -494,19 +495,19 @@ function ShoeCard({ shoe, featured, onPress, onPlay, unit, pace: _pace, forecast
       {/* 추천 용도(러닝 종류) — 중간(사진 정합). 모델 매칭 시만. */}
       {!!cardPurpose && <Text style={s.shoePurpose} numberOfLines={2}>{cardPurpose}</Text>}
       {/* 누적 거리(큰 숫자) + 교체까지 남은 거리(문장형) — 목업 lifeRow 정합 */}
+      {/* 마모 4중 노출 병합(노이즈 감사 2026-07-05): '교체까지 Nkm' 문장·'총 Nkm' 정적값
+          제거 — 큰 숫자(누적) + 바 + '남은 수명 %' 하나면 충분하다. */}
       <View style={s.shoeLifeRow}>
         <View style={s.baselineRow}>
           <Text style={s.shoeUsedNum}>{usedDisp}</Text>
           <Text style={s.shoeUsedU}>{unit}</Text>
         </View>
-        <Text style={s.shoeRemain}>교체까지 약 {displayNum(remainKm, unit)}{unit} 남았어요</Text>
       </View>
       {/* 라벨바 = 남은 수명 게이지(배터리 방향, 홈 히어로 링과 통일 — 사용자 결정).
           새 신발 = 가득 찬 바, 닳을수록 비워진다. 색은 컨디션(마모) 기준 그대로. */}
       <View style={s.shoeBar}><View style={[s.shoeBarFill, { width: `${Math.max(0, 100 - usedPct)}%`, backgroundColor: retired ? T3 : ring }]} /></View>
       <View style={s.shoeBarLabels}>
         <Text style={s.shoeBarLabel}>남은 수명 {Math.max(0, 100 - usedPct)}%</Text>
-        <Text style={s.shoeBarLabel}>총 {maxDisp}{unit}</Text>
       </View>
       {/* 교체 예측 한 줄(#2) — 실효마모 모델 전면화. ok/overdue 일 때만. */}
       {fcLine && !retired && (

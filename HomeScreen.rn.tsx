@@ -203,6 +203,26 @@ function WeekCard({ week, unit = 'km', weeklyGoalKm = 0, streakDays = 0 }: { wee
   const runs = week?.runs ?? 0;
   const pace = week?.pace && week.pace !== '--' ? week.pace : '--'; // 앱 전역 '데이터 없음' 표기 통일(--)
   const goalPct = weeklyGoalKm > 0 ? Math.min(100, Math.round(((parseFloat(km) || 0) / weeklyGoalKm) * 100)) : 0;
+  // 이번 주 런 0 이면 0의 그리드 대신 초대 한 줄(노이즈 감사 2026-07-05 — '0.0km ·
+  // 0회 · --'는 행동을 못 이끈다). 주간 목표 바는 설정돼 있으면 유지(목표가 곧 초대).
+  if (runs === 0) {
+    return (
+      <View style={s.insightCard} testID="home-week">
+        {weeklyGoalKm > 0 && (
+          <View style={s.weekTop}>
+            <View />
+            <Text style={s.weekGoalTxt} testID="home-week-goal">주간 목표 {weeklyGoalKm}{unit}</Text>
+          </View>
+        )}
+        {weeklyGoalKm > 0 && (
+          <View style={[s.gauge, { marginTop: 8, marginBottom: 10 }]}>
+            <View testID="home-week-goal-bar" style={[s.gaugeFill, { width: '0%', backgroundColor: ACCENT }]} />
+          </View>
+        )}
+        <Text style={s.weekEmptyTxt} testID="home-week-empty">이번 주 첫 러닝을 시작해보세요</Text>
+      </View>
+    );
+  }
   return (
     <View style={s.insightCard} testID="home-week">
       {/* 주간 목표 진행 + 연속 스트릭(있을 때만) — lib/goals 배선. */}
@@ -239,13 +259,17 @@ function WeekCard({ week, unit = 'km', weeklyGoalKm = 0, streakDays = 0 }: { wee
             <Text style={s.insightNum} testID="home-week-runs">{runs}</Text><Text style={s.insightUnit}>회</Text>
           </View>
         </View>
-        <View style={s.insightDivider} />
-        <View style={{ flex: 1 }}>
-          <Text style={s.insightLabel}>평균 페이스</Text>
-          <View style={[s.baselineRow, { marginTop: 6 }]}>
-            <Text style={s.insightNum} testID="home-week-pace">{pace}</Text>
-          </View>
-        </View>
+        {pace !== '--' && (
+          <>
+            <View style={s.insightDivider} />
+            <View style={{ flex: 1 }}>
+              <Text style={s.insightLabel}>평균 페이스</Text>
+              <View style={[s.baselineRow, { marginTop: 6 }]}>
+                <Text style={s.insightNum} testID="home-week-pace">{pace}</Text>
+              </View>
+            </View>
+          </>
+        )}
       </View>
     </View>
   );
@@ -596,6 +620,7 @@ const s = StyleSheet.create({
   hero: { backgroundColor: HERO_BG, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.07), padding: 16 },
   heroActive: { borderColor: withAlpha(ACCENT, 0.55) },
   // 현재 상태 인사이트 카드(사용거리 | 교체예상) — 활성 신발 반영
+  weekEmptyTxt: { color: T3, fontFamily: FONT, fontSize: 13, lineHeight: 19 },
   insightCard: { backgroundColor: CARD_DIM, borderRadius: RADIUS.lg, borderCurve: 'continuous', borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.07), padding: SPACE.lg },
   insightGrid: { flexDirection: 'row', alignItems: 'flex-start' },
   insightDivider: { width: StyleSheet.hairlineWidth, alignSelf: 'stretch', backgroundColor: withAlpha(T1, 0.08), marginHorizontal: SPACE.lg },

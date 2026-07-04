@@ -48,11 +48,14 @@ describe('ShoesScreen 교체 예측 전면화(#2)', () => {
     expect(order.findIndex((l: string) => l.includes('Hoka'))).toBeLessThan(order.findIndex((l: string) => l.includes('Nike')));
   });
 
-  test('각 신발 카드에 교체 예상 줄(forecast)이 뜬다', () => {
-    const forecasts = {a: fc('ok', 12), b: fc('overdue', 0)};
+  test('교체 예상 줄은 임박(≤8주)·overdue 만 — 먼 예측은 숨긴다(노이즈 감사 2026-07-05)', () => {
+    const forecasts = {a: fc('ok', 6), b: fc('overdue', 0)};
     const root = render(<ShoesScreen shoes={SHOES} forecasts={forecasts} />);
-    expect(has(root, 'shoe-forecast-a')).toBe(true);
-    expect(has(root, 'shoe-forecast-b')).toBe(true);
+    expect(has(root, 'shoe-forecast-a')).toBe(true);  // 6주 — 임박, 노출
+    expect(has(root, 'shoe-forecast-b')).toBe(true);  // overdue — 항상
+    const far = render(<ShoesScreen shoes={SHOES} forecasts={{a: fc('ok', 12), b: fc('ok', 20)}} />);
+    expect(has(far, 'shoe-forecast-a')).toBe(false);  // 12주 — 행동 못 이끄는 노이즈
+    expect(has(far, 'shoe-forecast-b')).toBe(false);
   });
 
   test('임박 신발이 없으면 요약 헤더를 숨긴다', () => {

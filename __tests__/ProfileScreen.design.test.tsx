@@ -53,10 +53,11 @@ describe('ProfileScreen 이번 주 스트릭', () => {
     expect(iconNames(today)).not.toContain('checkmark');
   });
 
-  test('streakDays>0이면 스트릭 칩과 카운트를 노출한다', () => {
-    const root = render({streakDays: 12, weekDays: [true]});
-    expect(textOf(root.find((n: any) => n.props?.testID === 'streak-pill'))).toContain('12일 연속');
-    expect(textOf(root.find((n: any) => n.props?.testID === 'streak-card'))).toContain('🔥 12일');
+  test('스트릭 칩은 더 이상 없다 — 같은 숫자는 스트릭 카드 헤더가 담당(2026-07-05)', () => {
+    const root = render({streakDays: 12});
+    expect(root.findAll((n: any) => n.props?.testID === 'streak-pill').length).toBe(0);
+    // 카운트는 카드 헤더 🔥 표기로 노출된다.
+    expect(textOf(root.find((n: any) => n.props?.testID === 'streak-card'))).toContain('12일');
   });
 
   test('streakDays=0이면 스트릭 칩을 숨긴다', () => {

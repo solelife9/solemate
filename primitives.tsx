@@ -158,10 +158,13 @@ export function Chip({
   children?: React.ReactNode;
 }) {
   const h = size === 'sm' ? 32 : 40;
+  // 시각 높이는 유지하되 hitSlop 으로 44pt 터치 타깃 확보(HIG) — sm +6/+6, md +2/+2.
+  const slop = Math.max(0, Math.ceil((44 - h) / 2));
   return (
     <Pressable
       onPress={onPress}
       disabled={disabled || !onPress}
+      hitSlop={{top: slop, bottom: slop, left: 0, right: 0}}
       accessibilityRole="button"
       accessibilityState={{selected, disabled}}
       accessibilityLabel={accessibilityLabel ?? label}

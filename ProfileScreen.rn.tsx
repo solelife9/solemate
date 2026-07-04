@@ -514,13 +514,16 @@ export default function ProfileScreen({
             <View style={[s.row, { marginTop: 6, gap: 8 }]} testID="profile-progression-stats">
               {!!profile.since && <Text style={s.since}>{profile.since}</Text>}
               {!!profile.since && <Text style={s.since}>·</Text>}
-              <Text style={s.idStat}>업적 <Text style={s.idStatNum}>{profile.achievementCount ?? 0}</Text></Text>
-              <Text style={s.idStat}>은퇴 <Text style={s.idStatNum}>{profile.retiredShoes ?? 0}</Text></Text>
+              {(profile.achievementCount ?? 0) > 0 && (
+                <Text style={s.idStat}>업적 <Text style={s.idStatNum}>{profile.achievementCount}</Text></Text>
+              )}
+              {(profile.retiredShoes ?? 0) > 0 && (
+                <Text style={s.idStat}>은퇴 <Text style={s.idStatNum}>{profile.retiredShoes}</Text></Text>
+              )}
             </View>
           </View>
-          {streakDays > 0 && (
-            <Pill tone="warn" icon="flame" label={`${streakDays}일 연속`} testID="streak-pill" />
-          )}
+          {/* 스트릭 Pill 제거(노이즈 감사 2026-07-05) — 같은 숫자가 바로 아래 '이번 주
+              스트릭' 카드 헤더에 또 있었다(같은 정보는 한 번만). */}
         </View>
 
         {/* 이번 주 스트릭 — 월~일 달림 점 */}
@@ -743,39 +746,36 @@ export default function ProfileScreen({
         <View>
           <Text style={[s.sectionLabel, { paddingBottom: 12 }]}>설정</Text>
           <View style={[s.card, { overflow: 'hidden' }]}>
-            {/* 1) 알림 */}
-            <Pressable onPress={() => toggleOpen('alerts')} accessibilityRole="button" accessibilityLabel={`알림, ${alerts.enabled ? '켜짐' : '꺼짐'}`} accessibilityState={{ expanded: open === 'alerts' }} style={({ pressed }) => [s.settingRow, s.settingBorder, pressed && { backgroundColor: CARD_HI }]}>
+            {/* 알림(단일화 2026-07-05, 노이즈 감사): 예전엔 인앱 '알림'(임계 %)과 '푸시
+                알림'이 별개 행이라 신발 교체 알림을 두 군데서 만났다 — 한 행으로 병합.
+                교체 임박 토글이 인앱 배지(alerts.enabled)와 푸시를 함께 다루고, 임계
+                스텝퍼는 그 아래에 산다. */}
+            <Pressable onPress={() => toggleOpen('notif')} accessibilityRole="button" accessibilityLabel={`알림, ${notifOnCount}개 켜짐`} accessibilityState={{ expanded: open === 'notif' }} style={({ pressed }) => [s.settingRow, s.settingBorder, pressed && { backgroundColor: CARD_HI }]} testID="notif-row">
               <View style={s.settingIcon}><Ionicons name="notifications-outline" size={17} color={ACCENT} /></View>
               <Text style={s.settingLabel}>알림</Text>
-              <Text style={s.settingDetail}>{alerts.enabled ? '켜짐' : '꺼짐'}</Text>
-              <Ionicons name={open === 'alerts' ? 'chevron-up' : 'chevron-forward'} size={16} color={T3} />
-            </Pressable>
-            {open === 'alerts' && (
-              <View style={[s.panel, s.settingBorder]}>
-                <Pressable onPress={toggleAlerts} accessibilityRole="switch" accessibilityLabel="신발 교체 알림" accessibilityState={{ checked: alerts.enabled }} style={[s.toggle, alerts.enabled ? s.toggleOn : s.toggleOff]}>
-                  <Ionicons name={alerts.enabled ? 'notifications' : 'notifications-off'} size={16} color={alerts.enabled ? T1 : T2} />
-                  <Text style={[s.toggleTxt, { color: alerts.enabled ? T1 : T2 }]}>{alerts.enabled ? '신발 교체 알림 켜짐' : '신발 교체 알림 꺼짐'}</Text>
-                </Pressable>
-                {alerts.enabled && (
-                  <>
-                    <Stepper value={alerts.thresholdPct} suffix="% 사용 시" onMinus={() => stepThreshold(-1)} onPlus={() => stepThreshold(1)} />
-                    <Text style={s.panelHint}>신발 수명의 <Text style={{ color: ACCENT }}>{alerts.thresholdPct}%</Text>를 쓰면 교체 알림을 보냅니다.</Text>
-                  </>
-                )}
-              </View>
-            )}
-
-            {/* 2.5) 푸시 알림 — 종류별 토글 + 리마인더 시각(기존 in-app '알림'[배지 임계값]과 별개·공존) */}
-            <Pressable onPress={() => toggleOpen('notif')} accessibilityRole="button" accessibilityLabel={`푸시 알림, ${notifOnCount}개 켜짐`} accessibilityState={{ expanded: open === 'notif' }} style={({ pressed }) => [s.settingRow, s.settingBorder, pressed && { backgroundColor: CARD_HI }]} testID="notif-row">
-              <View style={s.settingIcon}><Ionicons name="notifications-circle-outline" size={17} color={ACCENT} /></View>
-              <Text style={s.settingLabel}>푸시 알림</Text>
               <Text style={s.settingDetail} testID="notif-detail">{notifOnCount > 0 ? `${notifOnCount}개 켜짐` : '꺼짐'}</Text>
               <Ionicons name={open === 'notif' ? 'chevron-up' : 'chevron-forward'} size={16} color={T3} />
             </Pressable>
             {open === 'notif' && (
               <View style={[s.panel, s.settingBorder]} testID="notif-panel">
-                <Text style={s.panelHint}>러닝화 교체·주간 목표·러닝 리마인더를 푸시로 받아요</Text>
-                <NotifToggle label="교체 임박 알림" value={notifSettings.shoeReplacement} onToggle={() => toggleNotif('shoeReplacement')} testID="notif-toggle-shoeReplacement" />
+                <Text style={s.panelHint}>러닝화 교체·주간 목표·러닝 리마인더를 알려드려요</Text>
+                <NotifToggle
+                  label="교체 임박 알림"
+                  value={notifSettings.shoeReplacement}
+                  onToggle={() => {
+                    const next = !notifSettings.shoeReplacement;
+                    toggleNotif('shoeReplacement');
+                    // 인앱 배지/경고(alerts)도 같은 스위치를 따른다 — 채널별 이중 설정 제거.
+                    if (alerts.enabled !== next) toggleAlerts();
+                  }}
+                  testID="notif-toggle-shoeReplacement"
+                />
+                {notifSettings.shoeReplacement && (
+                  <>
+                    <Stepper value={alerts.thresholdPct} suffix="% 사용 시" onMinus={() => stepThreshold(-1)} onPlus={() => stepThreshold(1)} />
+                    <Text style={s.panelHint}>신발 수명의 <Text style={{ color: ACCENT }}>{alerts.thresholdPct}%</Text>를 쓰면 알려드려요</Text>
+                  </>
+                )}
                 <NotifToggle label="주간 목표 알림" value={notifSettings.weeklyGoal} onToggle={() => toggleNotif('weeklyGoal')} testID="notif-toggle-weeklyGoal" />
                 <NotifToggle label="러닝 리마인더" value={notifSettings.runReminder} onToggle={() => toggleNotif('runReminder')} testID="notif-toggle-runReminder" />
                 <Stepper value={notifSettings.reminderTime} suffix="리마인더 시각" onMinus={() => stepReminder(-1)} onPlus={() => stepReminder(1)} />
@@ -920,7 +920,6 @@ export default function ProfileScreen({
             </Pressable>
             {/* 앱·기기 정보(읽기 전용) — 기존 '계정 설정' 행을 계정 섹션으로 통합(이름 중복 제거). */}
             <View style={[s.panel, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.07) }]} testID="app-info">
-              <View style={s.acctRow}><Text style={s.acctK}>기기 ID</Text><Text style={s.acctV} numberOfLines={1}>{deviceId || '—'}</Text></View>
               <View style={s.acctRow}><Text style={s.acctK}>가입</Text><Text style={s.acctV}>{profile.since || '기록 없음'}</Text></View>
               <View style={s.acctRow}><Text style={s.acctK}>버전</Text><Text style={s.acctV}>{APP_VERSION}</Text></View>
             </View>

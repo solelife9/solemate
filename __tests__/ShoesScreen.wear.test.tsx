@@ -55,12 +55,17 @@ const mkRun = (over: Partial<Run>): Run => ({
 });
 
 describe('ShoesScreen 상세 — 실효 마모 + 교체 예측', () => {
-  test('ok 분기: "약 N주 후 교체 예상" 추정 카피를 실데이터로 렌더(다이어트 후 축약형)', () => {
-    const shoe: Shoe = {id: 'a', brand: 'Nike', model: 'Pegasus 41', used: 100, max: 700, condition: '양호'};
+  test('ok 분기: "약 N주 후 교체 예상" 추정 카피를 실데이터로 렌더(임박 ≤8주만 노출)', () => {
+    // 교체 예상 카드는 임박(≤8주)일 때만 노출(2026-07-05) — 잔여 150km/주 23km ≈ 7주.
+    const shoe: Shoe = {id: 'a', brand: 'Nike', model: 'Pegasus 41', used: 550, max: 700, condition: '양호'};
     const runs: Run[] = [
-      mkRun({id: 'r1', dist: 10, durationS: 3000, runDate: daysAgo(2)}),
-      mkRun({id: 'r2', dist: 12, durationS: 3600, runDate: daysAgo(5)}),
-      mkRun({id: 'r3', dist: 8, durationS: 2400, runDate: daysAgo(9)}),
+      // 실효 마모는 런 이력 합으로 계산되므로 과거 베이스 런으로 수명 근처까지 채우고
+      // (28일 밖 — 최근 소모율에는 미반영), 최근 75km/4주 소모율로 잔여 ≈125km ≈ 7주
+      // → 임박(≤8주) 게이트 통과.
+      mkRun({id: 'r0', dist: 500, durationS: 150000, runDate: daysAgo(60)}),
+      mkRun({id: 'r1', dist: 25, durationS: 7500, runDate: daysAgo(2)}),
+      mkRun({id: 'r2', dist: 25, durationS: 7500, runDate: daysAgo(5)}),
+      mkRun({id: 'r3', dist: 25, durationS: 7500, runDate: daysAgo(9)}),
     ];
     const view = buildWearView(shoe, runs, {});
     expect(view.forecast.reason).toBe('ok');
@@ -108,10 +113,13 @@ describe('ShoesScreen 상세 — 실효 마모 + 교체 예측', () => {
   });
 
   test('체중이 교체 예측 보정에 반영된다(weightFactor — 무거울수록 실효 마모 큼)', () => {
-    const shoe: Shoe = {id: 'a', brand: 'Nike', model: 'Pegasus 41', used: 100, max: 700, condition: '양호'};
+    // 임박(≤8주) 게이트 통과 픽스처: 잔여 150km / 주 30km ≈ 5주.
+    const shoe: Shoe = {id: 'a', brand: 'Nike', model: 'Pegasus 41', used: 550, max: 700, condition: '양호'};
     const runs: Run[] = [
-      mkRun({id: 'r1', dist: 30, durationS: 9000, runDate: daysAgo(3)}),
-      mkRun({id: 'r2', dist: 30, durationS: 9000, runDate: daysAgo(7)}),
+      // 과거 베이스 런(28일 밖)으로 수명 근처 + 최근 80km/4주 → 두 체중 모두 ≤8주 노출.
+      mkRun({id: 'r0', dist: 480, durationS: 144000, runDate: daysAgo(60)}),
+      mkRun({id: 'r1', dist: 40, durationS: 12000, runDate: daysAgo(3)}),
+      mkRun({id: 'r2', dist: 40, durationS: 12000, runDate: daysAgo(7)}),
     ];
     // 모델(wearModel/forecast)이 체중을 반영한다 — 무거운 러너의 실효 마모가 더 크고
     // 교체까지 남은 주가 더 짧다(예측 보정). 표시 숫자가 아니라 모델 결과로 검증.
@@ -121,6 +129,7 @@ describe('ShoesScreen 상세 — 실효 마모 + 교체 예측', () => {
     expect(v90.forecast.weeksRemaining ?? 0).toBeLessThanOrEqual(v60.forecast.weeksRemaining ?? Infinity);
 
     // 두 체중 모두 상세에 '교체 예상' 예측이 렌더된다('실효 마모' 용어는 미노출).
+    // (임박 게이트 통과를 위해 잔여를 수명 근처로 두는 픽스처 — 아래 shoe 정의 참조.)
     const txt60 = openDetail(shoe, runs, 60);
     expect(txt60).toContain('교체 예상');
     expect(txt60).not.toContain('실효 마모');

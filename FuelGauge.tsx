@@ -46,8 +46,10 @@ export function FuelGauge({remainLabel, unit, fillPct, maxLabel, replaceLabel, e
       <View style={[g.track, {marginTop: 14}]}>
         <View style={[g.fill, {width: `${(1 - p) * 100}%`, backgroundColor: tier.key === 'best' ? withAlpha(T1, 0.85) : cc}]} />
       </View>
+      {/* '남은 수명 %' 라벨 제거(노이즈 감사 2026-07-05) — 위 문장(교체까지 Nkm)과
+          바가 이미 같은 정보를 말한다. 총 수명만 우측에 유지(편집 어포던스 맥락). */}
       <View style={g.scale}>
-        <Text style={g.scaleTxt}>남은 수명 {Math.round((1 - p) * 100)}%</Text>
+        <View />
         <Text style={g.scaleTxt}>총 {maxLabel ?? replaceLabel ?? ''}{maxLabel ? unit : ''}</Text>
       </View>
     </View>

@@ -300,9 +300,11 @@ test('③ 신발 카드는 라벨바(사용/총 수명 km)를 렌더한다 — �
   // 채움 바(%-width)가 정확히 1개 존재한다(중복 바 없음 = 단일 진행 표시).
   const root = render(<ShoesScreen shoes={SHOES} runs={[]} />).root;
 
-  // 사용/총 수명 km 라벨(used 100 / max 500)이 노출된다.
+  // 사용 km + 남은 수명 %가 노출된다. '총 500km' 정적 라벨은 노이즈 감사(2026-07-05)로
+  // 락커 카드에서 제거 — 총 수명은 상세 게이지가 담당.
   expect(textOf(root)).toContain('100km');
-  expect(textOf(root)).toContain('500km');
+  expect(textOf(root)).toContain('남은 수명 80%');
+  expect(textOf(root)).not.toContain('500km');
 
   // 라벨바 채움(%-width)이 렌더된다(목업 LifeBar — 신발당 1개).
   const pctWidthNodes = root.findAll((n: any) => {

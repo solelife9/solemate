@@ -51,10 +51,10 @@ describe('totalTimeLabel', () => {
     expect(totalTimeLabel([{duration: 0}])).toBe('--');
   });
   test('minutes only when under an hour', () => {
-    expect(totalTimeLabel([{duration: 600}, {duration: 300}])).toBe('15m');
+    expect(totalTimeLabel([{duration: 600}, {duration: 300}])).toBe('15분');
   });
   test('hours and minutes when over an hour', () => {
-    expect(totalTimeLabel([{duration: 3700}])).toBe('1h 1m');
+    expect(totalTimeLabel([{duration: 3700}])).toBe('1시간 1분');
   });
 });
 
@@ -65,10 +65,10 @@ describe('durationLabel — 서버 truth run_time(초) 포맷(audit#9/#10)', () 
     expect(durationLabel(NaN)).toBe('--');
   });
   test('한 시간 미만은 분만', () => {
-    expect(durationLabel(900)).toBe('15m');
+    expect(durationLabel(900)).toBe('15분');
   });
   test('한 시간 이상은 시간+분', () => {
-    expect(durationLabel(3700)).toBe('1h 1m');
+    expect(durationLabel(3700)).toBe('1시간 1분');
   });
   test('totalTimeLabel과 동일한 포맷을 낸다(공용 헬퍼)', () => {
     expect(durationLabel(3700)).toBe(totalTimeLabel([{duration: 3700}]));
@@ -78,7 +78,7 @@ describe('durationLabel — 서버 truth run_time(초) 포맷(audit#9/#10)', () 
 describe('summaryOf', () => {
   test('produces km(1dp)/runs/pace/time summary', () => {
     const s = summaryOf([{km: 5, duration: 1500}, {km: 5, duration: 1500}]);
-    expect(s).toEqual({km: '10.0', runs: 2, pace: "5'00\"", time: '50m'});
+    expect(s).toEqual({km: '10.0', runs: 2, pace: "5'00\"", time: '50분'});
   });
   test('empty list → zeros & guards', () => {
     expect(summaryOf([])).toEqual({km: '0.0', runs: 0, pace: '--', time: '--'});
