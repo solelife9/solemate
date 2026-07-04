@@ -9,7 +9,7 @@ import React, {useEffect, useRef, useState} from 'react';
 import {View, Text, Pressable, ScrollView, StyleSheet} from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {ACCENT, CARD, CARD_HI, T1, T2, T3, T4, SEP, FONT, RADIUS, withAlpha} from './theme';
-import {SegmentedControl} from './primitives';
+import {SegmentedControl, SwipeBackExclude} from './primitives';
 import {buildPacePlan, clampPace, fmtPaceSec, PaceStrategy} from './lib/pacePlan';
 
 const KM_MIN = 1, KM_MAX = 42;
@@ -101,7 +101,9 @@ export default function SpeedPlanPanel({
         {strategy === 'custom' ? 'km을 직접 조정했어요 · 전략을 누르면 다시 자동 생성' : strategy === 'negative' ? '초반은 여유 있게, 후반에 속도를 올려요' : '전 구간 같은 페이스로 일정하게'}
       </Text>
 
-      {/* km별 목표 칩 — 탭해서 선택 후 ±5초 미세조정 */}
+      {/* km별 목표 칩 — 탭해서 선택 후 ±5초 미세조정. SwipeBackExclude: 가로 칩
+          스크롤이 왼쪽 엣지와 겹쳐 엣지 스와이프 백에 오인되는 것 방지(룰러와 동일). */}
+      <SwipeBackExclude>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chips}>
         {plan.map((p, i) => {
           const on = i === selIdx;
@@ -115,6 +117,7 @@ export default function SpeedPlanPanel({
           );
         })}
       </ScrollView>
+      </SwipeBackExclude>
 
       {/* 선택 구간 미세조정 */}
       <View style={[s.row, s.tuneRow]}>

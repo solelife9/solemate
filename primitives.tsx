@@ -5,7 +5,7 @@
 // All colour/spacing/radius/type values come from theme tokens (no raw hex).
 // Deps: react-native-svg, react-native-vector-icons
 // ============================================================================
-import React, {useId, useMemo, useRef, useState, useEffect} from 'react';
+import React, {useId, useMemo, useRef, useState, useEffect, useContext} from 'react';
 import {
   View,
   Text,
@@ -917,6 +917,28 @@ function ShoeIcon({color}: {color: string}) {
 // 따라 밀리고, 1/3 이상 밀거나 빠르게 튕기면 onBack, 아니면 스프링 복귀. 세로 스크롤과
 // 충돌하지 않도록 가로 성분이 우세할 때만 캡처한다. 신규 의존성 0(gesture-handler 불요).
 // 러닝 중 화면·입력 폼에는 감싸지 않는다(실수 이탈 방지 — 명시적 버튼만).
+// 가로 컨트롤(눈금 룰러·가로 칩 스크롤 등)이 화면 왼쪽 엣지까지 깔린 화면에서,
+// 엣지 존(24pt)에서 시작한 오른쪽 드래그를 SwipeBack 이 가로채 화면이 뒤로 튕기는
+// 충돌 방지 — 컨트롤을 <SwipeBackExclude> 로 감싸면 그 위에서 시작한 터치 동안
+// SwipeBack 이 캡처를 양보한다. ref 공유라 리렌더 0(제스처 중 상태 갱신 없음).
+const SwipeBackBlock = React.createContext<React.MutableRefObject<boolean> | null>(null);
+
+export function SwipeBackExclude({children, style}: {
+  children: React.ReactNode;
+  style?: StyleProp<ViewStyle>;
+}) {
+  const blocked = useContext(SwipeBackBlock);
+  return (
+    <View
+      style={style}
+      onTouchStart={() => { if (blocked) blocked.current = true; }}
+      onTouchEnd={() => { if (blocked) blocked.current = false; }}
+      onTouchCancel={() => { if (blocked) blocked.current = false; }}>
+      {children}
+    </View>
+  );
+}
+
 export function SwipeBack({onBack, enabled = true, children}: {
   onBack?: () => void;
   enabled?: boolean;
@@ -928,6 +950,7 @@ export function SwipeBack({onBack, enabled = true, children}: {
   const cbRef = useRef(onBack); cbRef.current = onBack;
   const enabledRef = useRef(enabled); enabledRef.current = enabled;
   const widthRef = useRef(width); widthRef.current = width;
+  const blockRef = useRef(false); // SwipeBackExclude 영역 터치 중이면 true
   const springHome = () =>
     Animated.spring(x, {toValue: 0, useNativeDriver: false, speed: 20, bounciness: 4}).start();
   const pan = useRef(
@@ -936,7 +959,7 @@ export function SwipeBack({onBack, enabled = true, children}: {
       // 구 조건(|dy| < dx·0.7)은 대각선 드래그를 잡아 세로 스크롤과 겹치며 화면이
       // 위아래로도 흔들리는 느낌을 만들었다(사용자 피드백).
       onMoveShouldSetPanResponder: (_e, g) =>
-        !!cbRef.current && enabledRef.current &&
+        !!cbRef.current && enabledRef.current && !blockRef.current &&
         g.x0 <= 24 && g.dx > 14 && Math.abs(g.dy) < 12 && g.dx > Math.abs(g.dy) * 2.5,
       onPanResponderMove: (_e, g) => x.setValue(Math.max(0, g.dx)),
       onPanResponderRelease: (_e, g) => {
@@ -956,7 +979,7 @@ export function SwipeBack({onBack, enabled = true, children}: {
   ).current;
   return (
     <Animated.View style={{flex: 1, transform: [{translateX: x}]}} {...pan.panHandlers}>
-      {children}
+      <SwipeBackBlock.Provider value={blockRef}>{children}</SwipeBackBlock.Provider>
     </Animated.View>
   );
 }

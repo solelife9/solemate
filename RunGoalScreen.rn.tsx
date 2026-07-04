@@ -29,7 +29,7 @@ import {
 import { tap } from './lib/haptics';
 // CTA 는 앱 전역 단일 Button 프리미티브(그라데이션 GRAD_TOP/BOT·글로우·radius 토큰).
 // 모드 탭 스트립은 SegmentedControl 단일 프리미티브(accentTint variant).
-import { Button, SegmentedControl, conditionColor, SwipeBack, ShoeGlyph } from './primitives';
+import { Button, SegmentedControl, conditionColor, SwipeBack, SwipeBackExclude, ShoeGlyph } from './primitives';
 import SpeedPlanPanel from './SpeedPlanPanel';
 import { buildPacePlan } from './lib/pacePlan';
 
@@ -182,6 +182,10 @@ export default function RunGoalScreen({
             </View>
             <Text style={s.estimate}>{estimate}</Text>
 
+            {/* SwipeBackExclude: 룰러가 전폭이라 왼쪽 엣지 존(24pt)과 겹친다 — km 를
+                줄이려고 룰러 왼쪽을 잡고 오른쪽으로 밀면 엣지 스와이프 백으로 오인돼
+                화면이 뒤로 튕기던 버그 방지(룰러 위 터치 동안 SwipeBack 양보). */}
+            <SwipeBackExclude>
             <View style={s.rulerWrap} onLayout={onRulerLayout}>
               <ScrollView
                 ref={rulerRef} horizontal showsHorizontalScrollIndicator={false}
@@ -199,6 +203,7 @@ export default function RunGoalScreen({
               </ScrollView>
               <View pointerEvents="none" style={s.pointer} />
             </View>
+            </SwipeBackExclude>
 
             <View style={s.presets}>
               {cfg!.presets.map(p => {
