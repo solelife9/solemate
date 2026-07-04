@@ -13,7 +13,7 @@ import {View, Text, Pressable, StyleSheet, Platform, ActivityIndicator} from 're
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
-import {Button, GlassEdge} from './primitives';
+import {Button, GlassEdge, WORDMARK_FONT} from './primitives';
 import {
   BG, CARD_HI, ACCENT, DANGER, T1, T2, T3, FONT, DISPLAY, RADIUS, withAlpha,
   KAKAO_YELLOW, KAKAO_LABEL, NAVER_GREEN, NAVER_LABEL,
@@ -147,7 +147,7 @@ const st = StyleSheet.create({
   },
   logoK: {fontFamily: DISPLAY, fontSize: 48, fontWeight: '800', color: ACCENT, marginTop: -2},
   // 워드마크 = Helvetica Neue Medium 소문자 흰색(2026-07-04 B안 확정).
-  wordmark: {fontFamily: 'Helvetica Neue', fontWeight: '500', fontSize: 34, color: T1, letterSpacing: -0.3},
+  wordmark: {fontFamily: WORDMARK_FONT, fontWeight: '500', fontSize: 34, color: T1, letterSpacing: -0.3},
   tagline: {fontFamily: FONT, fontSize: 15, color: T3},
   actions: {gap: 12},
   lead: {fontFamily: FONT, fontSize: 14, fontWeight: '600', color: T2, textAlign: 'center', marginBottom: 4},

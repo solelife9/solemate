@@ -318,7 +318,7 @@ const r = StyleSheet.create({
 
   // 목표 달성 토스트 — 오렌지 판 대신 어두운 유리 막(투명 통일). 축하의 오렌지는 체크
   // 아이콘(포인트 컬러=강조 요소에만)이 담당한다.
-  toast: { position: 'absolute', left: 18, right: 18, top: 50, zIndex: 20, flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 13, paddingHorizontal: 15, borderRadius: 16, backgroundColor: 'rgba(28,28,30,0.94)', borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.16) },
+  toast: { position: 'absolute', left: 18, right: 18, top: 50, zIndex: 20, flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 13, paddingHorizontal: 15, borderRadius: 16, borderCurve: 'continuous', backgroundColor: 'rgba(28,28,30,0.94)', borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.16) },
   toastTick: { width: 34, height: 34, borderRadius: 999, backgroundColor: withAlpha(ACCENT, 0.2), alignItems: 'center', justifyContent: 'center' },
   toastA: { color: T1, fontFamily: FONT, fontSize: 15, fontWeight: '700', letterSpacing: -0.2 },
   toastB: { color: withAlpha(T1, 0.88), fontFamily: FONT, fontSize: 12, fontWeight: '500', marginTop: 2 },
@@ -365,7 +365,7 @@ const r = StyleSheet.create({
     maxHeight: 180,
     marginTop: 10,
     marginBottom: 4,
-    borderRadius: 16,
+    borderRadius: 16, borderCurve: 'continuous',
     overflow: 'hidden',
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: SEP,

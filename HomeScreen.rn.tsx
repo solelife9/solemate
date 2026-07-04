@@ -579,7 +579,7 @@ const s = StyleSheet.create({
 
 
 
-  goalCard: { backgroundColor: CARD_DIM, borderRadius: 18, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.06), padding: SPACE.md, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  goalCard: { backgroundColor: CARD_DIM, borderRadius: 18, borderCurve: 'continuous', borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.06), padding: SPACE.md, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   goalInfo: { flex: 1, gap: 6, minWidth: 0 },
   goalSub: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500' },
   streakChip: { flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start', borderRadius: RADIUS.pill, paddingHorizontal: 9, paddingVertical: 4 },

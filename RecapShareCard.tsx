@@ -11,6 +11,7 @@
 import React from 'react';
 import Svg, {Rect, Text as SvgText, G} from 'react-native-svg';
 import {BG, CARD, CARD_DIM, ACCENT, T1, T2, T3, SEP, FONT, DISPLAY} from './theme';
+import {WORDMARK_FONT} from './primitives';
 import {RecapShareCardModel} from './lib/shareCard';
 
 // 1080×1080 정사각 — 런 카드와 동일 출력 해상도(SNS 공유 호환).
@@ -49,7 +50,7 @@ const RecapShareCard = React.forwardRef<unknown, RecapShareCardProps>(({model}, 
       />
 
       {/* 헤더: keego 워드마크(Helvetica Neue Medium 소문자 흰색 — 2026-07-04 B안 확정) + 응원 한 줄 */}
-      <SvgText x={PAD} y={170} fill={T1} fontFamily="Helvetica Neue" fontWeight="500" fontSize={64}>
+      <SvgText x={PAD} y={170} fill={T1} fontFamily={WORDMARK_FONT} fontWeight="500" fontSize={64}>
         {model.brand.toLowerCase()}
       </SvgText>
       <SvgText x={PAD} y={228} fill={T3} fontFamily={FONT} fontSize={30}>

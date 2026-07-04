@@ -220,7 +220,7 @@ const s = StyleSheet.create({
   successTitle: {color: T1, fontFamily: FONT, fontSize: 26, fontWeight: '700', letterSpacing: -0.6, textAlign: 'center'},
   successSub: {marginTop: 11, color: T3, fontFamily: FONT, fontSize: 14, lineHeight: 21, textAlign: 'center', alignSelf: 'center', maxWidth: 264},
 
-  shoeCard: {marginTop: 26, backgroundColor: CARD, borderRadius: 22, borderWidth: 1, borderColor: SEP, padding: 20},
+  shoeCard: {marginTop: 26, backgroundColor: CARD, borderRadius: 22, borderCurve: 'continuous', borderWidth: 1, borderColor: SEP, padding: 20},
   shoeRow: {flexDirection: 'row', alignItems: 'center', gap: 18},
   shoeBrand: {color: T3, fontFamily: FONT, fontSize: 11, fontWeight: '600', letterSpacing: 1.4},
   shoeModel: {marginTop: 4, color: T1, fontFamily: FONT, fontSize: 22, fontWeight: '700', letterSpacing: -0.6},
@@ -230,7 +230,7 @@ const s = StyleSheet.create({
   scaleRow: {flexDirection: 'row', justifyContent: 'space-between', marginTop: 9},
   scaleText: {color: T3, fontFamily: FONT, fontSize: 11, fontWeight: '500'},
 
-  nextCard: {flexDirection: 'row', alignItems: 'center', gap: 13, marginTop: 14, borderRadius: 18, paddingHorizontal: 16, paddingVertical: 15, backgroundColor: withAlpha(ACCENT, 0.07), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.22)},
+  nextCard: {flexDirection: 'row', alignItems: 'center', gap: 13, marginTop: 14, borderRadius: 18, borderCurve: 'continuous', paddingHorizontal: 16, paddingVertical: 15, backgroundColor: withAlpha(ACCENT, 0.07), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.22)},
   nextIcon: {width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(ACCENT, 0.14)},
   nextTitle: {color: T1, fontFamily: FONT, fontSize: 14, fontWeight: '600', letterSpacing: -0.2},
   nextSub: {marginTop: 2, color: T3, fontFamily: FONT, fontSize: 12},

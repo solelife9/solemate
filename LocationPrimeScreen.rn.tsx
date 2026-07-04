@@ -86,7 +86,7 @@ const s = StyleSheet.create({
   sep: {height: StyleSheet.hairlineWidth, backgroundColor: SEP, marginLeft: 49},
   footer: {gap: 6},
   primary: {height: 54, borderRadius: RADIUS.lg, borderCurve: 'continuous', backgroundColor: ACCENT, alignItems: 'center', justifyContent: 'center'},
-  primaryTxt: {color: '#000', fontFamily: FONT, fontSize: 16, fontWeight: '800'},
+  primaryTxt: {color: BG, fontFamily: FONT, fontSize: 16, fontWeight: '700'},
   ghost: {height: 46, alignItems: 'center', justifyContent: 'center'},
   ghostTxt: {color: T3, fontFamily: FONT, fontSize: 14, fontWeight: '600'},
 });

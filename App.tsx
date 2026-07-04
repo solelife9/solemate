@@ -1842,7 +1842,7 @@ function BootSkeleton(){
       <SkelBlock h={14} w={120}/>
       <View style={{height:18}}/>
       {/* 히어로 카드 자리 */}
-      <SkelBlock h={150} style={{borderRadius:20}}/>
+      <SkelBlock h={150} style={{borderRadius:20, borderCurve: 'continuous'}}/>
       <View style={{height:16}}/>
       {/* 주간 통계 3칸 */}
       <View style={{flexDirection:'row',gap:10}}>
@@ -1852,9 +1852,9 @@ function BootSkeleton(){
       </View>
       <View style={{height:16}}/>
       {/* 신발 줄 자리 */}
-      <SkelBlock h={84} style={{borderRadius:16}}/>
+      <SkelBlock h={84} style={{borderRadius:16, borderCurve: 'continuous'}}/>
       <View style={{height:10}}/>
-      <SkelBlock h={84} style={{borderRadius:16}}/>
+      <SkelBlock h={84} style={{borderRadius:16, borderCurve: 'continuous'}}/>
     </View>
   );
 }
@@ -1878,7 +1878,7 @@ function BootError({onRetry}:{onRetry:()=>void}){
 
 const boot=StyleSheet.create({
   screen:{flex:1,backgroundColor:BG,paddingHorizontal:18,paddingTop:12},
-  card:{backgroundColor:CARD,borderRadius:20,padding:24,alignItems:'center',gap:12,
+  card:{backgroundColor:CARD,borderRadius:20, borderCurve: 'continuous',padding:24,alignItems:'center',gap:12,
     borderWidth:StyleSheet.hairlineWidth,borderColor:SEP},
   cardTitle:{color:T1,fontFamily:FP,fontSize:18,fontWeight:'700',marginTop:4},
   cardBody:{color:T3,fontFamily:FP,fontSize:14,lineHeight:20,textAlign:'center'},

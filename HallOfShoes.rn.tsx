@@ -354,7 +354,7 @@ function EmptyHall({onRegister}: {onRegister?: () => void}) {
 const st = StyleSheet.create({
   screen: {flex: 1, backgroundColor: G.bg},
   topbar: {height: 40, justifyContent: 'center', paddingHorizontal: 22},
-  iconbtn: {width: 36, height: 36, borderRadius: 18, borderWidth: 1, borderColor: G.line, alignItems: 'center', justifyContent: 'center'},
+  iconbtn: {width: 36, height: 36, borderRadius: 18, borderCurve: 'continuous', borderWidth: 1, borderColor: G.line, alignItems: 'center', justifyContent: 'center'},
 
   head: {alignItems: 'center', gap: 14, paddingTop: 14, paddingBottom: 22},
   title: {fontFamily: SERIF, fontSize: 25, fontWeight: '800', color: G.txt, letterSpacing: -0.3},
@@ -362,7 +362,7 @@ const st = StyleSheet.create({
   ornLine: {flex: 1, height: 1, backgroundColor: G.soft, opacity: 0.55},
   ornDot: {width: 5, height: 5, backgroundColor: G.gold, transform: [{rotate: '45deg'}]},
 
-  legacy: {flexDirection: 'row', borderWidth: 1, borderColor: G.line, borderRadius: 18, backgroundColor: 'rgba(214,180,120,0.04)', paddingVertical: 18, marginBottom: 28},
+  legacy: {flexDirection: 'row', borderWidth: 1, borderColor: G.line, borderRadius: 18, borderCurve: 'continuous', backgroundColor: 'rgba(214,180,120,0.04)', paddingVertical: 18, marginBottom: 28},
   lcell: {flex: 1, alignItems: 'center', gap: 5},
   lcellDiv: {borderLeftWidth: 1, borderLeftColor: G.line},
   lval: {fontSize: 24, fontWeight: '800', color: G.txt, letterSpacing: -0.5, fontVariant: ['tabular-nums']},
@@ -372,7 +372,7 @@ const st = StyleSheet.create({
   secT: {fontSize: 13, fontWeight: '800', color: G.txt},
   secC: {fontSize: 11, fontWeight: '700', color: G.gold, letterSpacing: 0.4},
 
-  featured: {borderRadius: 20, borderWidth: 1, borderColor: G.soft, backgroundColor: G.surface, padding: 22, paddingBottom: 20, marginBottom: 30, overflow: 'hidden'},
+  featured: {borderRadius: 20, borderCurve: 'continuous', borderWidth: 1, borderColor: G.soft, backgroundColor: G.surface, padding: 22, paddingBottom: 20, marginBottom: 30, overflow: 'hidden'},
   featFrame: {position: 'absolute', top: 7, left: 7, right: 7, bottom: 7, borderRadius: 14, borderWidth: 1, borderColor: 'rgba(214,180,120,0.16)'},
   featTop: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'},
   badge: {flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1, borderColor: G.line, borderRadius: 999, paddingVertical: 5, paddingHorizontal: 10},
@@ -388,7 +388,7 @@ const st = StyleSheet.create({
   featKm: {fontSize: 11, fontWeight: '800', letterSpacing: 1.5, color: G.txt, marginLeft: 6, marginBottom: 5},
 
   grid: {flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 14},
-  plaque: {width: '48%', borderRadius: 16, borderWidth: 1, borderColor: G.line, backgroundColor: G.surface2, padding: 16, paddingBottom: 15, minHeight: 168, overflow: 'hidden'},
+  plaque: {width: '48%', borderRadius: 16, borderCurve: 'continuous', borderWidth: 1, borderColor: G.line, backgroundColor: G.surface2, padding: 16, paddingBottom: 15, minHeight: 168, overflow: 'hidden'},
   plaqueFrame: {position: 'absolute', top: 6, left: 6, right: 6, bottom: 6, borderRadius: 11, borderWidth: 1, borderColor: 'rgba(214,180,120,0.12)'},
   seal: {width: 30, height: 30, borderRadius: 15, borderWidth: 1, borderColor: G.soft, alignItems: 'center', justifyContent: 'center'},
   sealTxt: {fontFamily: SERIF, fontSize: 9, fontWeight: '800', color: G.gold},
@@ -406,9 +406,9 @@ const st = StyleSheet.create({
   // 인증서
   certScreen: {flex: 1, backgroundColor: '#08070A'},
   certContent: {alignItems: 'center', paddingHorizontal: 28},
-  certFrame: {position: 'absolute', left: 16, right: 16, bottom: 16, borderRadius: 18, borderWidth: 1, borderColor: G.soft},
-  certX: {position: 'absolute', right: 24, width: 34, height: 34, borderRadius: 17, borderWidth: 1, borderColor: G.line, backgroundColor: 'rgba(0,0,0,0.3)', alignItems: 'center', justifyContent: 'center', zIndex: 2},
-  certShareTop: {position: 'absolute', right: 66, width: 34, height: 34, borderRadius: 17, borderWidth: 1, borderColor: G.line, backgroundColor: 'rgba(0,0,0,0.3)', alignItems: 'center', justifyContent: 'center', zIndex: 2},
+  certFrame: {position: 'absolute', left: 16, right: 16, bottom: 16, borderRadius: 18, borderCurve: 'continuous', borderWidth: 1, borderColor: G.soft},
+  certX: {position: 'absolute', right: 24, width: 34, height: 34, borderRadius: 17, borderCurve: 'continuous', borderWidth: 1, borderColor: G.line, backgroundColor: 'rgba(0,0,0,0.3)', alignItems: 'center', justifyContent: 'center', zIndex: 2},
+  certShareTop: {position: 'absolute', right: 66, width: 34, height: 34, borderRadius: 17, borderCurve: 'continuous', borderWidth: 1, borderColor: G.line, backgroundColor: 'rgba(0,0,0,0.3)', alignItems: 'center', justifyContent: 'center', zIndex: 2},
   coTitle: {fontFamily: SERIF, fontSize: 28, fontWeight: '800', color: G.gold, marginTop: 10, letterSpacing: 1},
   coOwner: {fontFamily: SERIF, fontSize: 16, fontWeight: '700', color: G.txt, marginTop: 8},
   coOver: {fontSize: 9, fontWeight: '800', letterSpacing: 2.2, color: G.faint, marginTop: 30},
@@ -424,9 +424,9 @@ const st = StyleSheet.create({
   coS: {fontSize: 11, fontWeight: '600', color: G.muted},
   coRule: {alignSelf: 'stretch', height: 1, backgroundColor: G.line, marginTop: 26},
   coAttest: {alignSelf: 'stretch', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 22},
-  coSeal: {width: 72, height: 72, borderRadius: 36, borderWidth: 1.5, borderColor: G.soft, alignItems: 'center', justifyContent: 'center'},
-  coSealCorner: {position: 'absolute', left: 24, width: 54, height: 54, borderRadius: 27, backgroundColor: 'rgba(0,0,0,0.25)', zIndex: 2},
-  coSealInner: {position: 'absolute', top: 5, left: 5, right: 5, bottom: 5, borderRadius: 31, borderWidth: 1, borderColor: 'rgba(214,180,120,0.26)'},
+  coSeal: {width: 72, height: 72, borderRadius: 36, borderCurve: 'continuous', borderWidth: 1.5, borderColor: G.soft, alignItems: 'center', justifyContent: 'center'},
+  coSealCorner: {position: 'absolute', left: 24, width: 54, height: 54, borderRadius: 27, borderCurve: 'continuous', backgroundColor: 'rgba(0,0,0,0.25)', zIndex: 2},
+  coSealInner: {position: 'absolute', top: 5, left: 5, right: 5, bottom: 5, borderRadius: 31, borderCurve: 'continuous', borderWidth: 1, borderColor: 'rgba(214,180,120,0.26)'},
   coSealT: {fontSize: 7, fontWeight: '800', letterSpacing: 1.3, color: G.gold},
   coSealN: {fontFamily: SERIF, fontSize: 16, fontWeight: '800', color: G.gold, lineHeight: 18},
   coSealB: {fontSize: 7, fontWeight: '800', letterSpacing: 1, color: G.faint},
@@ -442,12 +442,12 @@ const st = StyleSheet.create({
   // 빈 상태
   empty: {alignItems: 'center', paddingTop: 30},
   emptyArt: {width: 250, height: 190, alignItems: 'center'},
-  emblem: {width: 70, height: 70, borderRadius: 35, borderWidth: 1.5, borderColor: G.soft, backgroundColor: 'rgba(214,180,120,0.09)', alignItems: 'center', justifyContent: 'center', marginTop: 43},
+  emblem: {width: 70, height: 70, borderRadius: 35, borderCurve: 'continuous', borderWidth: 1.5, borderColor: G.soft, backgroundColor: 'rgba(214,180,120,0.09)', alignItems: 'center', justifyContent: 'center', marginTop: 43},
   eLabel: {fontSize: 11, fontWeight: '800', letterSpacing: 3.3, color: G.gold, marginTop: 34},
   eTitle: {fontFamily: SERIF, fontSize: 24, fontWeight: '800', color: G.txt, marginTop: 14},
   eDesc: {fontSize: 14, fontWeight: '500', color: G.muted, lineHeight: 23, marginTop: 14, textAlign: 'center', maxWidth: 286},
   cta: {alignSelf: 'stretch', alignItems: 'center', gap: 14, marginTop: 40},
-  ctaBtn: {alignSelf: 'stretch', height: 54, borderRadius: 16, borderWidth: 1, borderColor: G.soft, backgroundColor: 'rgba(214,180,120,0.10)', alignItems: 'center', justifyContent: 'center'},
+  ctaBtn: {alignSelf: 'stretch', height: 54, borderRadius: 16, borderCurve: 'continuous', borderWidth: 1, borderColor: G.soft, backgroundColor: 'rgba(214,180,120,0.10)', alignItems: 'center', justifyContent: 'center'},
   ctaBtnTxt: {fontSize: 15, fontWeight: '700', color: G.gold},
 });
 

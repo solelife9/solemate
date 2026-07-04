@@ -14,7 +14,8 @@ import {ACCENT, T1} from './theme';
 
 // [실험] 공유 카드 전용 폰트 — 레퍼런스(STEP STEP)의 깔끔한 네오-그로테스크 느낌.
 // iOS 내장 Helvetica Neue(번들 0). Android 는 미보유 → 시스템 산세(Roboto)로 폴백.
-const CF = 'Helvetica Neue';
+import {WORDMARK_FONT} from './primitives';
+const CF = WORDMARK_FONT;
 import {projectRoute, LatLon, ScreenPoint} from './lib/route';
 import {ShareCardModel} from './lib/shareCard';
 
