@@ -99,13 +99,6 @@ const RARITY_COLOR: Record<AchievementRarity, string> = {
   legendary: ACCENT,             // Keego orange
 };
 
-const RARITY_LABEL: Record<AchievementRarity, string> = {
-  common: 'Common',
-  rare: 'Rare',
-  epic: 'Epic',
-  legendary: 'Legendary',
-};
-
 export interface ProgressionScreenProps {
   runs?: readonly BackendRun[] | null;
   shoes?: readonly BackendShoe[] | null;

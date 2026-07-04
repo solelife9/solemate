@@ -9,9 +9,9 @@
 // ============================================================================
 import React, {useEffect, useRef} from 'react';
 import {View, Text, Pressable, StyleSheet, Animated, Easing} from 'react-native';
-import Svg, {Defs, RadialGradient, Stop, Circle, Path} from 'react-native-svg';
+import Svg, {Defs, RadialGradient, LinearGradient, Stop, Circle, Ellipse, Path} from 'react-native-svg';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {BG, T1, T3, ACCENT, FONT, DISPLAY, RADIUS, withAlpha} from './theme';
+import {BG, T1, T3, ACCENT, FONT, DISPLAY, RADIUS, HALL_GOLD, withAlpha} from './theme';
 import {success, impactHeavy} from './lib/haptics';
 
 export type CelebrationData =
@@ -70,6 +70,49 @@ function AchIcon({id, size = 64, color = T1}: {id: AchIconId; size?: number; col
     <Svg width={size} height={size} viewBox="0 0 24 24">
       {glyphs[id] ?? glyphs.flag}
     </Svg>
+  );
+}
+
+// ── 메달('러닝의 옷' 리디자인 2026-07-04) — 애플 워치 어워드 문법 ────────────────
+// 이전의 '틴트 원 + 라인 아이콘'은 납작했다(사용자: 대충 만든 것 같다). 층위로 입체를
+// 만든다: ①금속 림(수직 그라데이션 — 위는 빛, 아래는 그늘) ②다크 페이스(등급색
+// 라디얼 틴트) ③새김 홈(밝은 선 위·어두운 선 아래 = 파인 느낌) ④좌상단 스펙큘러
+// ⑤글리프는 웜 화이트(금속에 새긴 인상 — 색은 림과 글로우가 말한다).
+// 레전더리는 샴페인 골드(HALL_GOLD 계열 — 전당과 같은 언어).
+function Medal({color, legendary, icon}: {color: string; legendary?: boolean; icon: AchIconId}) {
+  const c = legendary ? HALL_GOLD : color;
+  const uid = icon; // 화면당 1개 마운트 — id 충돌 없음
+  return (
+    <View style={{width: 148, height: 148, alignItems: 'center', justifyContent: 'center'}}>
+      <Svg width={148} height={148}>
+        <Defs>
+          <LinearGradient id={`rim-${uid}`} x1="0" y1="0" x2="0" y2="1">
+            <Stop offset="0" stopColor="#FFFFFF" stopOpacity={0.55} />
+            <Stop offset="0.45" stopColor="#FFFFFF" stopOpacity={0.06} />
+            <Stop offset="1" stopColor="#000000" stopOpacity={0.5} />
+          </LinearGradient>
+          <RadialGradient id={`face-${uid}`} cx="50%" cy="36%" rx="72%" ry="72%">
+            <Stop offset="0" stopColor={c} stopOpacity={0.3} />
+            <Stop offset="0.6" stopColor={c} stopOpacity={0.1} />
+            <Stop offset="1" stopColor={c} stopOpacity={0.02} />
+          </RadialGradient>
+        </Defs>
+        {/* 림 — 등급색 금속 */}
+        <Circle cx={74} cy={74} r={70} fill={c} opacity={0.92} />
+        <Circle cx={74} cy={74} r={70} fill={`url(#rim-${uid})`} />
+        {/* 페이스 — 깊은 차콜 + 등급색 틴트 */}
+        <Circle cx={74} cy={74} r={59} fill="#141417" />
+        <Circle cx={74} cy={74} r={59} fill={`url(#face-${uid})`} />
+        {/* 새김 홈 — 위 밝음/아래 어두움의 1px 쌍 */}
+        <Circle cx={74} cy={74} r={52.5} stroke={withAlpha('#FFFFFF', 0.12)} strokeWidth={1} fill="none" />
+        <Circle cx={74} cy={74} r={51.5} stroke={withAlpha('#000000', 0.4)} strokeWidth={1} fill="none" />
+        {/* 좌상단 스펙큘러 */}
+        <Ellipse cx={54} cy={44} rx={30} ry={15} fill="#FFFFFF" opacity={0.09} />
+      </Svg>
+      <View style={{position: 'absolute'}} pointerEvents="none">
+        <AchIcon id={icon} size={58} color={legendary ? '#F4E8C8' : '#F1EFE9'} />
+      </View>
+    </View>
   );
 }
 
@@ -143,9 +186,7 @@ export default function CelebrationScreen({data, onClose}: {data: CelebrationDat
           <Rise anim={anim} from={0.12} to={0.5} pop style={st.medalwrap}>
             <PingRing color={c} />
             <PingRing color={c} delay={1400} />
-            <View style={[st.medal, {backgroundColor: withAlpha(c, 0.14), borderColor: withAlpha(c, 0.4)}]}>
-              <AchIcon id="star" size={66} color={c} />
-            </View>
+            <Medal color={c} icon="star" />
           </Rise>
           {!!data.prevKo && (
             <Rise anim={anim} from={0.16} to={0.6}>
@@ -162,8 +203,7 @@ export default function CelebrationScreen({data, onClose}: {data: CelebrationDat
             <Text style={st.desc}>
               {data.nextKo ? (
                 <>
-                  이제 <Text style={st.b}>{data.rankKo}</Text>예요. 다음 <Text style={st.b}>{data.nextKo}</Text>까지{' '}
-                  {(data.xpToNext ?? 0).toLocaleString()} XP 남았어요.
+                  이제 <Text style={st.b}>{data.rankKo}</Text>예요. 다음 여정은 <Text style={st.b}>{data.nextKo}</Text>.
                 </>
               ) : (
                 <>
@@ -197,25 +237,17 @@ export default function CelebrationScreen({data, onClose}: {data: CelebrationDat
         <Rise anim={anim} from={0.12} to={0.5} pop style={st.medalwrap}>
           <PingRing color={c} />
           <PingRing color={c} delay={1400} />
-          <View style={[st.medal, {backgroundColor: withAlpha(c, 0.14), borderColor: withAlpha(c, 0.4)}]}>
-            <AchIcon id={data.icon ?? 'medal'} size={64} color={data.legendary ? '#F4E6BC' : c} />
-          </View>
+          <Medal color={c} legendary={data.legendary} icon={data.icon ?? 'medal'} />
         </Rise>
         <Rise anim={anim} from={0.2} to={0.6}>
           <Text style={st.name}>{data.nameKo}</Text>
         </Rise>
         <Rise anim={anim} from={0.26} to={0.66}>
-          <View style={st.metaRow}>
-            <Text style={[st.meta, {color: c}]}>{data.rarityKo}</Text>
-            <View style={st.metaSep} />
-            <Text style={st.meta}>{data.catKo}</Text>
-          </View>
+          {/* 레어리티 단어·+XP 는 표면에 세우지 않는다('러닝의 옷') — 색과 메달이 말한다. */}
+          <Text style={st.meta}>{data.catKo}</Text>
         </Rise>
         <Rise anim={anim} from={0.32} to={0.72}>
           <Text style={st.desc}>{data.detail}</Text>
-        </Rise>
-        <Rise anim={anim} from={0.4} to={0.8} pop>
-          <Text style={[st.xp, {color: c, backgroundColor: withAlpha(c, 0.12), borderColor: withAlpha(c, 0.3)}]}>+{data.xp} XP</Text>
         </Rise>
       </View>
       <Rise anim={anim} from={0.48} to={0.9} style={st.actions}>
@@ -237,16 +269,12 @@ const st = StyleSheet.create({
   eyebrow: {fontSize: 12, fontWeight: '700', letterSpacing: 2.6, marginBottom: 32, textTransform: 'uppercase', fontFamily: FONT},
   medalwrap: {width: 124, height: 124, marginBottom: 30, alignItems: 'center', justifyContent: 'center'},
   ring: {position: 'absolute', width: 124, height: 124, borderRadius: 62, borderCurve: 'continuous', borderWidth: 1},
-  medal: {width: 112, height: 112, borderRadius: 56, borderCurve: 'continuous', borderWidth: 1, alignItems: 'center', justifyContent: 'center'},
 
   rankfrom: {fontSize: 14, fontWeight: '500', color: T3, marginBottom: 2, fontFamily: FONT, textAlign: 'center'},
   name: {fontSize: 32, fontWeight: '800', color: T1, letterSpacing: -0.6, lineHeight: 38, textAlign: 'center', fontFamily: DISPLAY},
-  metaRow: {flexDirection: 'row', alignItems: 'center', gap: 9, marginTop: 13},
   meta: {fontSize: 13, fontWeight: '500', color: T3, fontFamily: FONT},
-  metaSep: {width: 3, height: 3, borderRadius: 2, borderCurve: 'continuous', backgroundColor: withAlpha(T1, 0.27)},
   desc: {fontSize: 15, color: withAlpha(T1, 0.72), lineHeight: 24, marginTop: 18, maxWidth: 300, textAlign: 'center', fontFamily: FONT},
   b: {color: T1, fontWeight: '700'},
-  xp: {marginTop: 26, fontSize: 17, fontWeight: '700', paddingVertical: 10, paddingHorizontal: 22, borderRadius: RADIUS.pill, borderCurve: 'continuous', borderWidth: 1, overflow: 'hidden', fontFamily: FONT},
 
   actions: {alignSelf: 'stretch'},
   primary: {height: 56, borderRadius: RADIUS.md, borderCurve: 'continuous', backgroundColor: ACCENT, alignItems: 'center', justifyContent: 'center'},
