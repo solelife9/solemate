@@ -1,11 +1,11 @@
 // ============================================================================
 // lib/progression/achievements.ts — KEEGO 업적 카탈로그 (재설계)
 // ============================================================================
-// 업적 = 러너의 정체성. 7개 카테고리 × 총 ~5,890 XP(레전드 5,000 XP, 10켤레 기준).
+// 업적 = 러너의 정체성. 7개 카테고리 × 총 ~5,920 XP(레전드 5,000 XP, 10켤레 기준).
 //
 //   1. runningMilestone  — 단일 런 이정표(첫 5km ~ 마라톤)                 730 XP max
 //   2. distanceMilestone — 누적 거리(100 → 10,000km)                     1,070 XP max
-//   2b. consistency      — 꾸준함(런 횟수·스트릭≤7일·누적 시간)              290 XP max
+//   2b. consistency      — 꾸준함(일·주 리듬, 스트릭≤7일·누적 시간)          320 XP max
 //   3. shoeJourney       — 신발 소유 · 은퇴(첫 신발 ~ 명예의 전당)          1,690 XP max
 //   4. shoeMemory        — 신발과의 동행(켤레마다 반복 적립, 10켤레 기준)   1,700 XP max
 //   5. experience        — 특별 경험(야간·새벽·계절) + 챌린지                 310 XP max
@@ -206,18 +206,21 @@ const DISTANCE_MILESTONE: AchievementDef[] = [
 // 상한(그 이상은 과훈련 조장 — 부상 없는 러닝이라는 앱 기조와 충돌하므로 의도적
 // 부재). 횟수·스트릭은 '인정 런'(≥1km, ctx.qualifiedRunCount/longestQualifiedStreak)
 // 기준 — 실수 저장된 0.2km 런으로 채워지지 않는다(사용자 지적 2026-07-04).
+// 횟수(열 번/백 번)는 누적 거리와 상관이 높아 이중 축하였다(사용자 지적 2026-07-04,
+// 주 30km 기준 10회≈100km·100회≈1,000km 와 거의 동시 언락) → 거리와 독립인
+// '주 단위 연속'으로 교체: 주 5km든 50km든 '매주 나왔는가'만 잰다.
 const CONSISTENCY: AchievementDef[] = [
   metricAch({
-    key: 'runs_10', name: '열 번의 런', rarity: 'common', xp: 20,
-    description: '열 번 나갔다(1km 이상만 인정). 습관의 시작.',
-    category: 'consistency', target: 10,
-    value: ctx => nonNeg(ctx.qualifiedRunCount ?? 0),
+    key: 'weeks_4', name: '4주의 리듬', rarity: 'rare', xp: 50,
+    description: '4주 연속, 한 주도 거르지 않았다. 습관이 됐다.',
+    category: 'consistency', target: 4,
+    value: ctx => nonNeg(ctx.longestWeeklyStreak ?? 0),
   }),
   metricAch({
-    key: 'runs_100', name: '백 번의 런', rarity: 'epic', xp: 100,
-    description: '백 번의 러닝. 이제 달리기가 일상이다.',
-    category: 'consistency', target: 100,
-    value: ctx => nonNeg(ctx.qualifiedRunCount ?? 0),
+    key: 'weeks_12', name: '한 계절의 리듬', rarity: 'epic', xp: 100,
+    description: '12주 — 계절이 바뀌는 동안 매주 달렸다.',
+    category: 'consistency', target: 12,
+    value: ctx => nonNeg(ctx.longestWeeklyStreak ?? 0),
   }),
   metricAch({
     key: 'streak_3', name: '3일의 리듬', rarity: 'common', xp: 20,

@@ -357,12 +357,13 @@ describe('카탈로그 무결성', () => {
 // 5b) consistency — 꾸준함(런 횟수·스트릭·누적 시간)
 // ============================================================================
 describe('consistency: 꾸준함', () => {
-  test('열/백 번의 런: 인정 런(≥1km) 수 기준 — 전체 runCount 가 아니라', () => {
-    expect(achievementDef('runs_10')!.unlocked(emptyCtx({qualifiedRunCount: 10}))).toBe(true);
-    expect(achievementDef('runs_10')!.unlocked(emptyCtx({qualifiedRunCount: 9}))).toBe(false);
-    // 0.2km 런 100개(runCount)로는 안 열린다 — 인정 런만 센다.
-    expect(achievementDef('runs_10')!.unlocked(emptyCtx({runCount: 100, qualifiedRunCount: 0}))).toBe(false);
-    expect(achievementDef('runs_100')!.unlocked(emptyCtx({qualifiedRunCount: 100}))).toBe(true);
+  test('주간 리듬: 4주/12주 연속 — 거리·횟수와 독립(longestWeeklyStreak)', () => {
+    expect(achievementDef('weeks_4')!.unlocked(emptyCtx({longestWeeklyStreak: 4}))).toBe(true);
+    expect(achievementDef('weeks_4')!.unlocked(emptyCtx({longestWeeklyStreak: 3}))).toBe(false);
+    expect(achievementDef('weeks_12')!.unlocked(emptyCtx({longestWeeklyStreak: 12}))).toBe(true);
+    // 횟수 업적은 누적 거리와 이중 축하라 폐기됐다(카탈로그 계약).
+    expect(achievementDef('runs_10')).toBeUndefined();
+    expect(achievementDef('runs_100')).toBeUndefined();
   });
   test('리듬: 인정 런 스트릭 3/7 — 7일이 상한(과훈련 방지 의도)', () => {
     expect(achievementDef('streak_3')!.unlocked(emptyCtx({longestQualifiedStreak: 3}))).toBe(true);

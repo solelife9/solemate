@@ -260,6 +260,18 @@ export function buildContext(
   // 꾸준함 업적용 스트릭 — 인정 런(≥1km) 날짜만으로 계산.
   const qSorted = [...new Set(qualifiedDates)].sort();
   const longestQualifiedStreak = qSorted.length ? maxDayStreak(qSorted) : 0;
+  // 주 단위 연속(월요일 시작) — '매주 빠짐없이 나왔는가'. 거리·횟수와 독립인 꾸준함
+  // 지표(주 5km든 50km든 동일 진행). 인정 런이 있는 주의 인덱스가 연속인 최장 길이.
+  const weekIdx = [...new Set(qSorted.map(d => {
+    const ms = ymdToMs(d);
+    const day = new Date(ms).getDay(); // 0 일 .. 6 토
+    return Math.floor((ms - ((day + 6) % 7) * DAY_MS) / (7 * DAY_MS));
+  }))].sort((a, b) => a - b);
+  let longestWeeklyStreak = weekIdx.length ? 1 : 0;
+  for (let i = 1, run = 1; i < weekIdx.length; i++) {
+    run = weekIdx[i] === weekIdx[i - 1] + 1 ? run + 1 : 1;
+    if (run > longestWeeklyStreak) longestWeeklyStreak = run;
+  }
 
   // ── 페이스/최장 런 ───────────────────────────────────────────────────────────
   const pr = personalRecords(runList.map(toUiRun));
@@ -301,6 +313,7 @@ export function buildContext(
     runSpanDays,
     qualifiedRunCount,
     longestQualifiedStreak,
+    longestWeeklyStreak,
   };
 
   const achievementPoints = computeTotalXp(baseCtx);

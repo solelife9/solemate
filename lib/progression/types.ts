@@ -228,6 +228,8 @@ export interface ProgressionContext {
   qualifiedRunCount?: number;
   /** 인정 런(≥1km) 날짜 기준 최장 연속 일수 — 리듬(스트릭) 업적의 단일 소스. */
   longestQualifiedStreak?: number;
+  /** 인정 런이 있는 주(월요일 시작)의 최장 연속 수 — 주간 리듬 업적의 단일 소스. */
+  longestWeeklyStreak?: number;
 }
 
 // ── Leaderboard (미래 백엔드 계약 stub) ──────────────────────────────────────

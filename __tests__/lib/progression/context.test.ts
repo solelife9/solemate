@@ -74,6 +74,22 @@ describe('buildContext aggregation', () => {
     expect(ctx.currentStreak).toBe(1);
   });
 
+  test('인정 런(≥1km) 집계: qualifiedRunCount·주간 스트릭', () => {
+    // 기본 픽스처는 전부 ≥1km — 4런 모두 인정.
+    expect(ctx.qualifiedRunCount).toBe(4);
+    // 6/1(월)~6/3 주 + 6/9(화) 주 = 연속 2주(6/1 주 → 6/8 주).
+    expect(ctx.longestWeeklyStreak).toBe(2);
+    // 0.2km 미니 런은 인정에서 제외되지만 누적 거리에는 포함된다.
+    const withMini = buildContext(
+      [...runs, {id: 'r5', shoe_id: 's1', km: 0.2, run_date: '2026-06-04', duration: 90, run_time: '23:00'}],
+      shoes, earned, challenges, NOW,
+    );
+    expect(withMini.qualifiedRunCount).toBe(4);
+    expect(withMini.cumulativeKm).toBeCloseTo(35.2, 5);
+    // 미니 런은 야간 카운트에도 안 들어간다(경험 업적 게이트).
+    expect(withMini.nightRunCount).toBe(2);
+  });
+
   test('최장 공백(Comeback 판정용): 6/3→6/9 = 6일', () => {
     expect(ctx.longestGapDays).toBe(6);
   });
