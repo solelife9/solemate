@@ -13,7 +13,7 @@
 
 import React, { useMemo, useRef, useState, useCallback } from 'react';
 import {
-  View, Text, Pressable, ScrollView, StyleSheet, Modal,
+  View, Text, Pressable, ScrollView, StyleSheet, Modal, PanResponder,
   LayoutChangeEvent, NativeSyntheticEvent, NativeScrollEvent, StatusBar,
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
@@ -135,6 +135,67 @@ export default function RunGoalScreen({
     }
   };
   const pickPreset = (v: number) => { setVal(v); scrollToVal(v, true); };
+
+  // ── 큰 숫자 직접 입력(2026-07-04, 사용자 선택 A안) ─────────────────────────
+  // ① 세로 스와이프: 숫자를 위로 쓸면 증가·아래로 감소(슬롯머신 릴). 세로 축이라
+  //    엣지 스와이프 백·가로 룰러와 제스처 축이 겹치지 않는다(충돌 클래스 0).
+  // ② 탭 → 키패드: 하프(21.1) 같은 정확한 값을 두세 탭에 입력.
+  // 둘 다 룰러와 같은 값(val)에 물린다 — 어느 입력이든 룰러가 즉시 따라온다.
+  const [kpOpen, setKpOpen] = useState(false);
+  const [kpBuf, setKpBuf] = useState('');
+  // PanResponder 는 1회 생성 — 최신 상태는 ref 로 전달(SwipeBack 과 동일 규약).
+  const valRef = useRef(val); valRef.current = val;
+  const modeRef = useRef(mode); modeRef.current = mode;
+  const dragBase = useRef(0);
+  const dragMajor = useRef(0); // 마지막 major(1km/10분) 경계 — 넘을 때마다 햅틱 틱
+  const clampToCfg = (m: 'km' | 'min', v: number) => {
+    const c = CFG[m];
+    const clamped = Math.max(c.min, Math.min(c.max, v));
+    const stepped = Math.round(clamped / c.step) * c.step;
+    return +stepped.toFixed(c.step < 1 ? 1 : 0);
+  };
+  const numPan = useRef(
+    PanResponder.create({
+      // 세로 성분이 우세할 때만 캡처 — 탭(키패드)과 스크롤에 양보한다.
+      onMoveShouldSetPanResponder: (_e, g) =>
+        Math.abs(g.dy) > 6 && Math.abs(g.dy) > Math.abs(g.dx) * 1.5,
+      onPanResponderGrant: () => {
+        dragBase.current = valRef.current;
+        const m = modeRef.current === 'min' ? 'min' : 'km';
+        dragMajor.current = Math.floor(dragBase.current / CFG[m].major);
+        programmatic.current = true; // 룰러 onScroll 되울림 차단(제스처 동안)
+      },
+      onPanResponderMove: (_e, g) => {
+        const m = modeRef.current === 'min' ? 'min' : 'km';
+        const c = CFG[m];
+        // 감도: km 0.03/pt(≈33pt에 1km) · min 0.15/pt — 위로 쓸면 증가.
+        const perPt = m === 'km' ? 0.03 : 0.15;
+        const nv = clampToCfg(m, dragBase.current - g.dy * perPt);
+        const major = Math.floor(nv / c.major);
+        if (major !== dragMajor.current) { dragMajor.current = major; tap(); }
+        setVal(nv);
+        rulerRef.current?.scrollTo({ x: nv * c.px, animated: false });
+      },
+      onPanResponderRelease: () => { setTimeout(() => { programmatic.current = false; }, 60); },
+      onPanResponderTerminate: () => { setTimeout(() => { programmatic.current = false; }, 60); },
+    }),
+  ).current;
+  const kpPress = (k: string) => {
+    if (k === '⌫') { setKpBuf(b => b.slice(0, -1)); return; }
+    setKpBuf(b => {
+      if (k === '.' && (mode === 'min' || b.includes('.'))) return b;
+      if (b.replace('.', '').length >= 4) return b; // '42.0'·'180' 상한
+      return b + k;
+    });
+  };
+  const kpConfirm = () => {
+    if (kpBuf) {
+      const m = mode === 'min' ? 'min' : 'km';
+      const v = clampToCfg(m, parseFloat(kpBuf) || 0);
+      setVal(v); scrollToVal(v, true); tap();
+    }
+    setKpOpen(false);
+  };
   const condColor = shoeCondition === '교체' ? DANGER : shoeCondition === '주의' ? WARN : GOOD;
   const half = vpW / 2;
   // 런 시작: 햅틱(tap) → onStart(RunGoal). 거리/시간/스피드(km별 페이스 플랜)로 분기.
@@ -176,9 +237,25 @@ export default function RunGoalScreen({
           <SpeedPlanPanel onChange={(km, plan) => setSpeedGoal({ km, plan })} />
         ) : (
           <>
-            <View style={s.bigRow} accessibilityRole="text" accessibilityLiveRegion="polite" accessibilityLabel={`목표 ${fmt(val)} ${cfg!.unit}`}>
-              <Text style={s.bigVal}>{fmt(val)}</Text>
-              <Text style={s.bigUnit}>{cfg!.unit}</Text>
+            <View {...numPan.panHandlers}>
+              <Pressable
+                onPress={() => { setKpBuf(''); setKpOpen(true); }}
+                style={s.bigRow}
+                testID="goal-bignum"
+                accessibilityRole="adjustable"
+                accessibilityLiveRegion="polite"
+                accessibilityLabel={`목표 ${fmt(val)} ${cfg!.unit}`}
+                accessibilityHint="위아래로 쓸어 조절하거나, 눌러서 직접 입력"
+                accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
+                onAccessibilityAction={(e) => {
+                  const m = mode === 'min' ? 'min' : 'km';
+                  const d = e.nativeEvent.actionName === 'increment' ? CFG[m].step : -CFG[m].step;
+                  const v = clampToCfg(m, val + d);
+                  setVal(v); scrollToVal(v, false);
+                }}>
+                <Text style={s.bigVal}>{fmt(val)}</Text>
+                <Text style={s.bigUnit}>{cfg!.unit}</Text>
+              </Pressable>
             </View>
             <Text style={s.estimate}>{estimate}</Text>
 
@@ -238,6 +315,35 @@ export default function RunGoalScreen({
           </View>
           {switchable && <Icon name="forward" size={20} color={T4} />}
         </Pressable>
+
+        {/* 목표 직접 입력 키패드(2026-07-04) — 큰 숫자 탭으로 연다. 신발 시트와 동일한
+            하단 시트 규약(SCRIM 탭 = 닫기). 확인 시 cfg 범위로 클램프 + 룰러 동기. */}
+        <Modal visible={kpOpen} transparent animationType="slide" onRequestClose={() => setKpOpen(false)}>
+          <Pressable style={{ flex: 1, backgroundColor: SCRIM }} onPress={() => setKpOpen(false)} accessibilityRole="button" accessibilityLabel="입력 닫기" />
+          <View style={s.pickerSheet}>
+            <View style={s.kpValRow} accessibilityRole="text" accessibilityLiveRegion="polite"
+              accessibilityLabel={`입력 ${kpBuf || fmt(val)} ${cfg?.unit ?? 'km'}`}>
+              <Text style={[s.kpVal, !kpBuf && s.kpValGhost]} testID="kp-value">{kpBuf || fmt(val)}</Text>
+              <Text style={s.kpUnit}>{cfg?.unit ?? 'km'}</Text>
+            </View>
+            <View style={s.kpGrid}>
+              {['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', '⌫'].map(k => {
+                const dot = k === '.';
+                const off = dot && mode === 'min'; // 시간 모드는 정수만
+                return (
+                  <Pressable key={k} disabled={off} onPress={() => kpPress(k)}
+                    accessibilityRole="button"
+                    accessibilityLabel={k === '⌫' ? '지우기' : k === '.' ? '소수점' : k}
+                    testID={`kp-${k === '⌫' ? 'del' : k === '.' ? 'dot' : k}`}
+                    style={({ pressed }) => [s.kpKey, off && { opacity: 0.25 }, pressed && { opacity: 0.7 }]}>
+                    <Text style={s.kpKeyTxt}>{k}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+            <Button label="확인" onPress={kpConfirm} haptic={false} style={s.kpOk} testID="kp-ok" />
+          </View>
+        </Modal>
 
         {/* 신발 전환 시트 */}
         <Modal visible={shoePickerOpen} transparent animationType="slide" onRequestClose={() => setShoePickerOpen(false)}>
@@ -323,6 +429,15 @@ const s = StyleSheet.create({
   shoeSel: { flexDirection: 'row', alignItems: 'center', gap: 13, padding: 13, borderRadius: RADIUS.lg, borderCurve: 'continuous', backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER },
   // 신발 전환 시트(하단) — History 기간 피커와 같은 문법(SCRIM + 하단 카드).
   pickerSheet: { backgroundColor: CARD, borderTopLeftRadius: RADIUS.xl, borderTopRightRadius: RADIUS.xl, borderCurve: 'continuous', paddingHorizontal: 18, paddingTop: 18, paddingBottom: 34, gap: 10 },
+  // 목표 직접 입력 키패드 — 시트 규약은 pickerSheet 재사용, 키만 추가.
+  kpValRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', gap: 6, marginBottom: 6, minHeight: 44 },
+  kpVal: { color: T1, fontFamily: DISPLAY, fontSize: 40, fontWeight: '600', letterSpacing: -1 },
+  kpValGhost: { color: T4 },
+  kpUnit: { color: T3, fontFamily: FONT, fontSize: 16, fontWeight: '600' },
+  kpGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  kpKey: { width: '31.5%', flexGrow: 1, alignItems: 'center', paddingVertical: 13, borderRadius: RADIUS.md, borderCurve: 'continuous', backgroundColor: CARD_BORDER },
+  kpKeyTxt: { color: T1, fontFamily: DISPLAY, fontSize: 21, fontWeight: '600' },
+  kpOk: { marginTop: 6 },
   pickerTitle: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600', letterSpacing: 0.2, marginBottom: 4 },
   pickerRow: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: RADIUS.lg, borderCurve: 'continuous', backgroundColor: withAlpha(T1, 0.04), borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER },
   pickerRowOn: { backgroundColor: withAlpha(T1, 0.09), borderColor: withAlpha(T1, 0.2) },
