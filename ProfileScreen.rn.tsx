@@ -758,7 +758,7 @@ export default function ProfileScreen({
             </Pressable>
             {open === 'notif' && (
               <View style={[s.panel, s.settingBorder]} testID="notif-panel">
-                <Text style={s.panelHint}>러닝화 교체·주간 목표·러닝 리마인더를 알려드려요</Text>
+                <Text style={s.panelHint}>러닝 리마인더는 매일 정시에 울려요. 교체·주간 목표는 앱을 열 때 알려드려요</Text>
                 <NotifToggle
                   label="교체 임박 알림"
                   value={notifSettings.shoeReplacement}

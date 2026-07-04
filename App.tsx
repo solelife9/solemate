@@ -97,6 +97,7 @@ import {
   DEFAULT_NOTIF_SETTINGS, type NotifSettings, type NotifState, type ShoeForecast,
 } from './lib/notifications';
 import {presentDue, setupPushMessaging, type PushWiring} from './lib/pushMessaging';
+import {syncRunReminder, ensureForegroundHandler} from './lib/localReminder';
 import {weeklyProgress, currentStreak, personalRecords} from './lib/goals';
 import {serializeBackup, BackupV1, BackupPayload} from './lib/backup';
 import {Challenge, ChallengeRun} from './lib/challenges';
@@ -970,6 +971,16 @@ function Main(){
   const changeRestHR=(v:number)=>{setRestHR(v);void saveRestHR(v);};
   // 푸시 알림 설정 변경: 즉시 상태 반영 + 신규 notif_settings 키에만 영속(기존 키 불변).
   const changeNotifSettings=(s:NotifSettings)=>{setNotifSettingsState(s);void setNotifSettings(s);};
+  // 러닝 리마인더 OS 체인(7일 원샷) 동기 — 설정·오늘 런 여부가 바뀔 때마다 갱신한다
+  // (2026-07-05 신뢰 버그 수정: 설정만 있고 앱 닫힘 상태에서 안 울리던 반쪽 제거).
+  const ranTodayForReminder=useMemo(()=>{
+    const today=ymdLocal(new Date());
+    return runs.some((r:any)=>String(r.run_date||'').slice(0,10)===today);
+  },[runs]);
+  useEffect(()=>{
+    ensureForegroundHandler();
+    void syncRunReminder({enabled:notifSettings.runReminder,reminderTime:notifSettings.reminderTime,ranToday:ranTodayForReminder});
+  },[notifSettings.runReminder,notifSettings.reminderTime,ranTodayForReminder]);
 
   // ── 로컬 백업/복원(Slice 4) ─────────────────────────────────────────────────
   // 내보내기 대상: 현재 신발+런+설정을 그대로 모은다(km 표준 settings). ProfileScreen이

@@ -1228,6 +1228,8 @@ PODS:
   - BoringSSL-GRPC/Implementation (0.0.37):
     - BoringSSL-GRPC/Interface (= 0.0.37)
   - BoringSSL-GRPC/Interface (0.0.37)
+  - EXApplication (56.0.3):
+    - ExpoModulesCore
   - EXConstants (56.0.19):
     - ExpoModulesCore
   - Expo (56.0.8):
@@ -1313,6 +1315,8 @@ PODS:
   - ExpoModulesWorklets (56.0.14):
     - ExpoModulesCore
     - ExpoModulesJSI
+  - ExpoNotifications (56.0.19):
+    - ExpoModulesCore
   - ExpoSensors (56.0.6):
     - ExpoModulesCore
   - ExpoTaskManager (56.0.16):
@@ -3648,6 +3652,7 @@ PODS:
 
 DEPENDENCIES:
   - "AsyncStorage (from `../node_modules/@react-native-async-storage/async-storage`)"
+  - EXApplication (from `../node_modules/expo-application/ios`)
   - EXConstants (from `../node_modules/expo-constants/ios`)
   - Expo (from `../node_modules/expo`)
   - "ExpoAdapterGoogleSignIn (from `../node_modules/@react-native-google-signin/google-signin/expo/ios`)"
@@ -3666,6 +3671,7 @@ DEPENDENCIES:
   - ExpoModulesCore (from `../node_modules/expo-modules-core`)
   - ExpoModulesJSI (from `../node_modules/expo-modules-jsi/apple`)
   - ExpoModulesWorklets (from `../node_modules/expo-modules-core`)
+  - ExpoNotifications (from `../node_modules/expo-notifications/ios`)
   - ExpoSensors (from `../node_modules/expo-sensors/ios`)
   - ExpoTaskManager (from `../node_modules/expo-task-manager/ios`)
   - FBLazyVector (from `../node_modules/react-native/Libraries/FBLazyVector`)
@@ -3803,6 +3809,8 @@ SPEC REPOS:
 EXTERNAL SOURCES:
   AsyncStorage:
     :path: "../node_modules/@react-native-async-storage/async-storage"
+  EXApplication:
+    :path: "../node_modules/expo-application/ios"
   EXConstants:
     :path: "../node_modules/expo-constants/ios"
   Expo:
@@ -3839,6 +3847,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/expo-modules-jsi/apple"
   ExpoModulesWorklets:
     :path: "../node_modules/expo-modules-core"
+  ExpoNotifications:
+    :path: "../node_modules/expo-notifications/ios"
   ExpoSensors:
     :path: "../node_modules/expo-sensors/ios"
   ExpoTaskManager:
@@ -4034,6 +4044,7 @@ SPEC CHECKSUMS:
   AppCheckCore: 214137f5c378d1dec88a68425c467fe65aaff637
   AsyncStorage: 2a64353f54227b53077f0736e430f8ca45eec946
   BoringSSL-GRPC: dded2a44897e45f28f08ae87a55ee4bcd19bc508
+  EXApplication: e6040c92edc5522accd62852342e6b14742d42c0
   EXConstants: f4ab3bf7484c483fc65f15d1d92c5ae4f6d56874
   Expo: c4746f2a519c92a8af37f06e43194e303703a40d
   ExpoAdapterGoogleSignIn: ab4d9fc38cb91077a4138d178395525ec65d0c2e
@@ -4052,6 +4063,7 @@ SPEC CHECKSUMS:
   ExpoModulesCore: 57fdaecbef24e245cb1fb066b3549f244766b34c
   ExpoModulesJSI: 31051e6e3d88a96cc48747eabad1d4a6a29c554e
   ExpoModulesWorklets: 3f847eb6ba544bd4b55d585f89b3b18f8cd73a72
+  ExpoNotifications: d95d9a54ac370743260a4ccbf6038a12cfabbb06
   ExpoSensors: d34558ddf1f1d61c7a22180d1d40d8bd89d67d7b
   ExpoTaskManager: f9511a17a4528adb8da94efb639ad592eef8bc53
   FBLazyVector: 473b935415b82ae4f7f9aa9d5b3378491143ccbf

@@ -94,11 +94,17 @@ function isoDayOfWeek(d: Date): number {
   return g === 0 ? 7 : g;
 }
 
-/** 'HH:MM' → 자정 이후 분(分). 형식 불량이면 null. */
-function timeToMinutes(s: string): number | null {
+/** 'HH:MM' → {h, m}. 형식 불량이면 null. (localReminder 의 OS 스케줄도 재사용.) */
+export function parseTime(s: string): {h: number; m: number} | null {
   const m = TIME_RE.exec(s);
   if (!m) return null;
-  return Number(m[1]) * 60 + Number(m[2]);
+  return {h: Number(m[1]), m: Number(m[2])};
+}
+
+/** 'HH:MM' → 자정 이후 분(分). 형식 불량이면 null. */
+function timeToMinutes(s: string): number | null {
+  const t = parseTime(s);
+  return t ? t.h * 60 + t.m : null;
 }
 
 /** 신발 표시명 — 비어있으면 keep-going 보이스의 일반명으로 폴백. */
