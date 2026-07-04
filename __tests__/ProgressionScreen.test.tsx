@@ -2,7 +2,7 @@
  * ProgressionScreen.rn.tsx — 진척 화면 행동 테스트 (재설계 · UI).
  *
  * 타이틀 시스템 폐지 → XP 기반 랭크 + 6카테고리 업적. 관찰 가능한 동작만 검증한다:
- *  1) 히어로가 닉네임 + 티어 칩(TIER_LABEL) + 업적 달성 수를 렌더한다('러닝의 옷': XP 비노출).
+ *  1) 히어로 = 닉네임 + 업적 수만. 티어는 '나의 여정' 카드가 단독 표기(중복 제거 2026-07-04).
  *  2) 랭크 칩 라벨이 그 티어의 TIER_COLORS 값으로 칠해진다.
  *  3) 랭크 진행 카드가 다음 티어 진행바와 함께 렌더된다(낮은 시드 → 최고등급 아님).
  *  4) 업적 진행 바가 주입한 런/신발에서 파생된 current/target 을 그대로 보여준다.
@@ -116,13 +116,15 @@ describe('ProgressionScreen — 진척 표면', () => {
     );
     const root = r.root;
 
-    // 랭크 칩 라벨이 티어 색이다(칩이 단일 랭크 신호).
-    const chip = byTestID(root, 'rank-chip')[0];
-    const chipText = chip.findAll((n: any) => n.type === 'Text')[0];
-    expect(colorOf(chipText)).toBe(expected.color);
-    // 칩에 TIER_LABEL 티어명이 표시된다(Bronze … Legend).
+    // 히어로에 티어 칩이 없다(중복 제거) — 티어는 '나의 여정' 카드가 단독 표기.
+    expect(byTestID(root, 'rank-chip').length).toBe(0);
+    const guideCard = byTestID(root, 'rank-guide')[0];
     const tierLabel = expected.tier[0].toUpperCase() + expected.tier.slice(1);
-    expect(textOf(chip)).toContain(tierLabel);
+    expect(textOf(guideCard)).toContain(tierLabel);
+    // 여정 카드의 현재 티어명이 티어 색이다(단일 랭크 신호).
+    const tierTexts = guideCard.findAll((n: any) => n.type === 'Text' && textOf(n) === tierLabel);
+    expect(tierTexts.length).toBeGreaterThan(0);
+    expect(colorOf(tierTexts[0])).toBe(expected.color);
   });
 
   test('랭크 진행 카드가 다음 티어 진행바와 함께 렌더된다', async () => {

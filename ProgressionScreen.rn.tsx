@@ -247,21 +247,10 @@ export default function ProgressionScreen({
           </View>
         ) : null}
 
-        {/* 히어로 */}
+        {/* 히어로 — 이름 + 업적 수만(애플 라지 타이틀 문법). 티어 칩은 제거(2026-07-04,
+            사용자 지적): 바로 아래 '나의 여정' 카드가 티어를 단독으로 말한다 — 한
+            화면에 같은 정보 두 번 금지(중복 축하 금지 원칙의 표시 버전). */}
         <View style={s.hero} testID="rank-hero">
-          <View
-            testID="rank-chip"
-            style={[
-              s.rankChip,
-              {
-                backgroundColor: withAlpha(rankColor, 0.16),
-                borderColor: withAlpha(rankColor, 0.5),
-              },
-            ]}>
-            <Text style={[s.rankChipTxt, {color: rankColor}]}>
-              {TIER_LABEL[view.rank.tier]}
-            </Text>
-          </View>
           <Text style={s.nick} numberOfLines={1} testID="progression-nick">
             {profileName}
           </Text>
@@ -459,7 +448,6 @@ const s = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 5,
   },
-  rankChipTxt: {fontFamily: FONT, fontSize: 13, fontWeight: '800', letterSpacing: 0.2},
   nick: {
     fontFamily: DISPLAY,
     color: T1,
