@@ -54,13 +54,13 @@ function emptyCtx(over: Partial<ProgressionContext> = {}): ProgressionContext {
 
 // ── 1) 티어 XP 하한 노출 ────────────────────────────────────────────────────────
 describe('RANK_XP: 7단계 티어 XP 하한', () => {
-  test('계단식 하한 = 0/100/400/700/2000/3000/5000 — 승급을 서사적 순간에 정렬(2026-07-04)', () => {
+  test('계단식 하한 = 0/100/400/700/1800/3000/5000 — 승급을 서사적 순간에 정렬(2026-07-04)', () => {
     expect(RANK_XP).toEqual({
       bronze: 0,
       silver: 100,
       gold: 400,
       platinum: 700,
-      diamond: 2000,
+      diamond: 1800,
       master: 3000,
       legend: 5000,
     });
@@ -93,8 +93,8 @@ describe('tierForXp: 경계 XP → 티어 + 색', () => {
     [400, 'gold'],
     [699, 'gold'],
     [700, 'platinum'],
-    [1999, 'platinum'],
-    [2000, 'diamond'],
+    [1799, 'platinum'],
+    [1800, 'diamond'],
     [2999, 'diamond'],
     [3000, 'master'],
     [4999, 'master'],

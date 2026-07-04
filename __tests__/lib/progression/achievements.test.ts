@@ -371,10 +371,11 @@ describe('consistency: 꾸준함', () => {
     const consistency = ACHIEVEMENTS.filter(a => a.category === 'consistency');
     expect(consistency.map(a => a.key)).toEqual(['weeks_4', 'weeks_12', 'weeks_26', 'weeks_52']);
   });
-  test('keego = 철학 2부작 — 온전한 하루는 제거됐다(사용자 결정 2026-07-04)', () => {
+  test('keego = 시그니처 한 장(킵고잉, 1년) — 온전한 하루·잘 보내주었다 제거', () => {
     expect(achievementDef('time_24h')).toBeUndefined();
+    expect(achievementDef('well_sent')).toBeUndefined();
     const keego = ACHIEVEMENTS.filter(a => a.category === 'keego');
-    expect(keego.map(a => a.key)).toEqual(['well_sent', 'keep_going_year']);
+    expect(keego.map(a => a.key)).toEqual(['keep_going_year']);
   });
 });
 
@@ -402,12 +403,4 @@ describe('keego: 킵고잉, 1년', () => {
     expect(achievementDef('longtime_partner')).toBeUndefined();
   });
 
-  test('잘 보내주었다: smart 이상 등급 은퇴가 있어야 언락(standard 은 불충분)', () => {
-    const def = achievementDef('well_sent')!;
-    expect(def.unlocked(emptyCtx({retirementGrades: ['smart']}))).toBe(true);
-    expect(def.unlocked(emptyCtx({retirementGrades: ['perfect']}))).toBe(true);
-    expect(def.unlocked(emptyCtx({retirementGrades: ['hallOfFame']}))).toBe(true);
-    expect(def.unlocked(emptyCtx({retirementGrades: ['standard', 'good']}))).toBe(false);
-    expect(def.unlocked(emptyCtx({}))).toBe(false);
-  });
 });
