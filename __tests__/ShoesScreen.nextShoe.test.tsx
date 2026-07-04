@@ -37,7 +37,7 @@ const byTestID = (root: ReactTestRenderer.ReactTestInstance, id: string) =>
   root.findAll((n: any) => n && n.props && n.props.testID === id);
 function pressByLabel(root: ReactTestRenderer.ReactTestInstance, label: string) {
   const hits = root.findAll(
-    (n: any) => n && n.props && typeof n.props.onPress === 'function' && n.props.accessibilityLabel === label,
+    (n: any) => n && n.props && typeof n.props.onPress === 'function' && (n.props.accessibilityLabel ?? '').startsWith(String(label).replace(/ 상세.*$/, '')),
   );
   if (!hits.length) throw new Error(`no pressable with label "${label}"`);
   return hits[0];

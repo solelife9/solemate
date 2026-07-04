@@ -208,3 +208,23 @@ test('비보관 교체 신발 상세에서 keep-going 카피는 정확히 한 �
 
 // (수명 직접 입력 테스트 2건 제거 — 회사 변경으로 신발 상세의 수명(max_km) 조정 UI(연필
 //  create-outline + 직접 입력칸)가 제거됨. 더는 해당 UI 가 없어 테스트 불가.)
+
+// ── a11y: 락커 카드 접근성(2026-07-05 감사 A1) ─────────────────────────────────
+test('락커 카드 label 에 컨디션·남은 수명이 합성되고, 달리기가 커스텀 동작으로 노출된다', () => {
+  const onStartRun = jest.fn();
+  const root = render(<ShoesScreen shoes={SHOES} runs={RUNS} onStartRun={onStartRun} />).root;
+  // 카드 Pressable(상세) — label 에 컨디션·남은 수명% 가 합쳐져 낭독된다(붕괴 방지).
+  const cards = root.findAll(
+    (n: any) => n?.props?.accessibilityLabel && / 상세 보기$/.test(n.props.accessibilityLabel),
+  );
+  expect(cards.length).toBeGreaterThanOrEqual(1);
+  const pegasus = cards.find((c: any) => c.props.accessibilityLabel.includes('Pegasus 41'));
+  expect(pegasus).toBeTruthy();
+  expect(pegasus!.props.accessibilityLabel).toContain('컨디션');
+  expect(pegasus!.props.accessibilityLabel).toContain('남은 수명');
+  // 달리기 = 커스텀 접근성 동작(부모에 삼켜져도 VoiceOver 로 도달 가능).
+  const runAction = (pegasus!.props.accessibilityActions || []).find((a: any) => a.name === 'run');
+  expect(runAction).toBeTruthy();
+  act(() => { pegasus!.props.onAccessibilityAction({nativeEvent: {actionName: 'run'}}); });
+  expect(onStartRun).toHaveBeenCalled();
+});

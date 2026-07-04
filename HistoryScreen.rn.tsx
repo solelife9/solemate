@@ -575,8 +575,10 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'm
           const fmtT = (sec: number) => { const m = Math.floor(sec / 60); const ss = Math.round(sec % 60); return `${m}:${String(ss).padStart(2, '0')}`; };
           return (
             <View
-              style={[s.card, { paddingHorizontal: 18, paddingVertical: 16, marginTop: 12 }]}
-              accessible accessibilityLabel={`심박 존. 평균 ${hr.avg}, 최대 ${hr.max} bpm`}>
+              style={[s.card, { paddingHorizontal: 18, paddingVertical: 16, marginTop: 12 }]}>
+              {/* accessible 붕괴 제거(2026-07-05 a11y): 카드를 한 요소로 묶으면 Z1~Z5
+                  존별 체류 시간이 낭독 안 됐다. 제목·평균/최대·각 존 행이 텍스트라
+                  개별 낭독되게 둔다(존 색은 Z{n} 라벨·시간 텍스트로 병기됨). */}
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
                 <Text style={s.cardTitle}>심박 존</Text>
                 <Text style={{ color: T2, fontFamily: FONT, fontSize: 13 }}>
@@ -608,7 +610,7 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'm
         })()}
         {/* 오늘의 한 컷 + 한 줄 메모(리캡에서 입력 — 2026-07-05). 없으면 자동 숨김. */}
         {!!photoUri && (
-          <Image source={{ uri: photoUri }} style={s.runPhoto} resizeMode="cover" testID="run-photo" />
+          <Image source={{ uri: photoUri }} style={s.runPhoto} resizeMode="cover" testID="run-photo" accessible accessibilityLabel="러닝 사진" />
         )}
         {!!run.memo && (
           <Text style={s.runMemo} testID="run-memo">“{run.memo}”</Text>

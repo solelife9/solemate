@@ -42,7 +42,7 @@ describe('ShoesScreen 교체 예측 전면화(#2)', () => {
     const forecasts = {a: fc('ok', 12), b: fc('overdue', 0)};
     const root = render(<ShoesScreen shoes={SHOES} forecasts={forecasts} />);
     // 신발 카드(상세 Pressable) 순서 — 'Hoka Clifton 10'(overdue)가 'Nike Pegasus 41'보다 앞.
-    const cards = root.findAll((n: any) => typeof n.props?.accessibilityLabel === 'string' && / 상세$/.test(n.props.accessibilityLabel));
+    const cards = root.findAll((n: any) => typeof n.props?.accessibilityLabel === 'string' && /상세 보기$/.test(n.props.accessibilityLabel));
     const order = cards.map((c: any) => c.props.accessibilityLabel);
     expect(order[0]).toContain('Hoka');
     expect(order.findIndex((l: string) => l.includes('Hoka'))).toBeLessThan(order.findIndex((l: string) => l.includes('Nike')));

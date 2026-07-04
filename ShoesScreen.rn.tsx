@@ -466,7 +466,17 @@ function ShoeCard({ shoe, featured, onPress, onPlay, unit, pace: _pace, forecast
   const cardType = typeLabel(cardClass?.type);
   const cardPurpose = purposeSentenceKo(cardClass?.recommended);
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${shoe.brand} ${shoe.model} 상세`} style={({ pressed }) => [s.shoeCard, featured ? s.shoeCardFeatured : s.shoeCardIdle, retired && s.shoeCardRetired, pressed && s.pressed]}>
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      // 카드 정보(컨디션·남은 수명·교체 예측)를 label 에 합성한다 — 카드가 하나의
+      // 접근성 요소로 붕괴되며 내부 텍스트가 낭독 안 되던 문제(2026-07-05 a11y 감사).
+      accessibilityLabel={`${shoe.brand} ${shoe.model}, 컨디션 ${condLabel(wearPct)}, 남은 수명 ${Math.max(0, 100 - usedPct)}%${fcLine ? `, ${fcLine}` : ''}, 상세 보기`}
+      // 달리기 버튼이 카드에 삼켜져(부모 accessible) VoiceOver 로 도달 불가하던 것을
+      // iOS 표준 커스텀 동작으로 노출 — 로터/위아래 스와이프로 '달리기' 실행(레이아웃 무변경).
+      accessibilityActions={!retired && onPlay ? [{ name: 'run', label: `${shoe.brand} ${shoe.model}로 달리기` }] : undefined}
+      onAccessibilityAction={e => { if (e.nativeEvent.actionName === 'run') onPlay?.(); }}
+      style={({ pressed }) => [s.shoeCard, featured ? s.shoeCardFeatured : s.shoeCardIdle, retired && s.shoeCardRetired, pressed && s.pressed]}>
       {/* 상단: 좌(브랜드·사용중·모델) ↔ 우(컨디션 위 · 화살표/▶ 아래) — 사진 정합 */}
       <View style={s.shoeTopSection}>
         <View style={{ flex: 1, minWidth: 0 }}>

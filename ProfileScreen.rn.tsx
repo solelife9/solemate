@@ -537,7 +537,9 @@ export default function ProfileScreen({
               const done = week7[i];
               const today = i === weekTodayIdx;
               return (
-                <View key={i} style={s.streakDay} testID={`streak-day-${i}`}>
+                <View key={i} style={s.streakDay} testID={`streak-day-${i}`}
+                  accessible accessibilityLabel={`${d}요일 ${done ? '달림' : today ? '오늘' : '쉼'}`}>
+                  {/* 달림 여부가 색·체크로만 전달되던 것을 라벨로 병기(2026-07-05 a11y — 색맹·스크린리더). */}
                   <View style={[s.streakDot, done ? s.streakDotDone : today ? s.streakDotToday : s.streakDotIdle]}>
                     {done && <Ionicons name="checkmark" size={14} color={T1} />}
                   </View>

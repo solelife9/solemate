@@ -194,7 +194,7 @@ export function ShoeCard({
         <View style={styles.cardInner}>
           {/* 정보영역(탭 → 상세). 러닝 시작 버튼은 이 Pressable '밖'의 형제라, 텍스트 기반
               테스트가 '러닝 시작'을 눌러도 상세로 새지 않는다(시각은 동일 — 이벤트 중첩만 분리). */}
-          <Pressable onPress={() => onOpenShoe?.(shoe)} accessibilityRole="button" accessibilityLabel={`${shoe.brand} ${shoe.model} 상세 보기`}>
+          <Pressable onPress={() => onOpenShoe?.(shoe)} accessibilityRole="button" accessibilityLabel={`${shoe.brand} ${shoe.model}, 컨디션 ${tier.label}, 남은 수명 ${remainPct}%, 상세 보기`}>
           {/* 상단: 브랜드/모델(좌) · 컨디션(우) */}
           <View style={styles.cardTop}>
             <View style={{flexShrink: 1}}>

@@ -269,7 +269,7 @@ export default function RunRecapScreen({
           <View style={s.metaCard} testID="recap-meta">
             {photoUri ? (
               <View>
-                <Image source={{uri: photoUri}} style={s.metaPhoto} resizeMode="cover" />
+                <Image source={{uri: photoUri}} style={s.metaPhoto} resizeMode="cover" accessible accessibilityLabel="러닝 사진" />
                 <Pressable onPress={removePhoto} accessibilityRole="button" accessibilityLabel="사진 제거"
                   style={({pressed}) => [s.metaPhotoRemove, pressed && {opacity: 0.8}]}>
                   <Ionicons name="close" size={14} color={T1} />
