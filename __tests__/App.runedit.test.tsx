@@ -104,8 +104,7 @@ test('런 삭제 → 확인 Alert 후 신발 사용거리(km) 감소', async () 
   // 삭제 전: 신발 카드에 누적 15km / 총 600km (라벨바 — 목업 카드 포맷).
   await tap(pressBy(root, '신발'));
   expect(textOf(root)).toContain('15km');
-  // '총 600km' 라벨은 노이즈 감사(2026-07-05)로 락커 카드에서 제거 — 남은 수명 %로 검증.
-  expect(textOf(root)).toContain('남은 수명 97%');
+  expect(textOf(root)).toContain('600km'); // 총 내구도(분모) — 2026-07-05 복원
 
   // 기록 탭 → '전체' 기간 → r2(5.25km) 상세 진입.
   // [기간 필터] 기록탭 기본 기간은 '월'(이번 달)이라 과거 달(5월) 런은 숨는다

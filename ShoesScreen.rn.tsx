@@ -506,8 +506,11 @@ function ShoeCard({ shoe, featured, onPress, onPlay, unit, pace: _pace, forecast
       {/* 라벨바 = 남은 수명 게이지(배터리 방향, 홈 히어로 링과 통일 — 사용자 결정).
           새 신발 = 가득 찬 바, 닳을수록 비워진다. 색은 컨디션(마모) 기준 그대로. */}
       <View style={s.shoeBar}><View style={[s.shoeBarFill, { width: `${Math.max(0, 100 - usedPct)}%`, backgroundColor: retired ? T3 : ring }]} /></View>
+      {/* 총 내구도(분모) 복원(2026-07-05 사용자): %는 상대값이라 총 km 가 있어야 신발끼리
+          비교가 선다(마라톤화 500 vs 데일리 800). 문장(교체까지 Nkm)만 중복이라 제거 유지. */}
       <View style={s.shoeBarLabels}>
         <Text style={s.shoeBarLabel}>남은 수명 {Math.max(0, 100 - usedPct)}%</Text>
+        <Text style={s.shoeBarLabel}>총 {maxDisp}{unit}</Text>
       </View>
       {/* 교체 예측 한 줄(#2) — 실효마모 모델 전면화. ok/overdue 일 때만. */}
       {fcLine && !retired && (

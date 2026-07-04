@@ -151,10 +151,10 @@ test('홈은 토글 전 km 원숫자(595)를 보여준다(환산 기준점)', as
 test('신발 화면(전 화면 환산)도 토글 시 환산된 수치를 보여준다', async () => {
   const {root} = await mount(SHOES, RUNS);
 
-  // 신발 탭(락커): 카드가 km로 누적 '5km' 표기(used 5). '총 600km' 라벨은 노이즈
-  // 감사(2026-07-05)로 락커에서 제거됨 — 환산 검증은 누적 거리로 한다.
+  // 신발 탭(락커): 누적 5km + 총 600km(복원된 분모)가 km 로 표기된다.
   await tap(pressBy(root, '신발'));
   expect(textOf(root)).toContain('5km');
+  expect(textOf(root)).toContain('600km');
 
   // 프로필에서 mi로 토글
   await toSettings(root);
@@ -165,7 +165,8 @@ test('신발 화면(전 화면 환산)도 토글 시 환산된 수치를 보여�
   await tap(pressBy(root, '신발'));
   const shoes = textOf(root);
   expect(shoes).toContain('3mi'); // displayNum(5,'mi') → '3'(정수 반올림) + 단위
-  expect(shoes).not.toContain('5km');
+  expect(shoes).toContain('373'); // 총 600km → 373mi 환산(분모도 단위를 따른다)
+  expect(shoes).not.toContain('600'); // km 원숫자는 사라진다
 });
 
 // (제거됨) 신발 상세 cost-per-km(구매가) 힌트 테스트 — 구매가 기능이 UI에서 제거되어
