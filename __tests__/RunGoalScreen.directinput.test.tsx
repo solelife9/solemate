@@ -1,10 +1,10 @@
 /**
- * RunGoalScreen 목표 직접 입력(2026-07-04, A안) — 행동 계약.
+ * RunGoalScreen 목표 직접 입력(2026-07-04, 탭 키패드만 — 세로 스와이프·햅틱은
+ * 사용자 결정으로 제거) — 행동 계약.
  *   1) 큰 숫자 탭 → 키패드 시트가 열린다.
  *   2) 키패드 입력 → 확인 → 목표(큰 숫자)가 그 값으로 갱신된다.
  *   3) 범위 밖 입력은 cfg 로 클램프된다(km 최대 42).
  *   4) 시간 모드에선 소수점 키가 비활성이다(정수만).
- *   5) 큰 숫자에 세로 스와이프 PanResponder 가 물려 있다(구조 가드).
  * @format
  */
 import React from 'react';
@@ -61,16 +61,4 @@ test('시간 모드에선 소수점 키가 비활성(정수만)', () => {
   act(() => pressable(root, 'goal-bignum').props.onPress());
   const dot = root.find((n: any) => n?.props?.testID === 'kp-dot' && 'disabled' in (n.props || {}));
   expect(dot.props.disabled).toBe(true);
-});
-
-test('큰 숫자에 세로 스와이프 핸들러(PanResponder)가 물려 있다', () => {
-  const root = render(<RunGoalScreen />);
-  const num = pressable(root, 'goal-bignum');
-  // 부모 View 에 onMoveShouldSetResponder(panHandlers)가 존재해야 한다.
-  let p: any = num.parent;
-  let found = false;
-  for (let i = 0; i < 4 && p; i++, p = p.parent) {
-    if (typeof p.props?.onMoveShouldSetResponder === 'function') { found = true; break; }
-  }
-  expect(found).toBe(true);
 });

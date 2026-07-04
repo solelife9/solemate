@@ -57,7 +57,7 @@ import {
   withAlpha,
 } from './theme';
 import {tap as hapticTap} from './lib/haptics';
-import {tierBadge, ShoeCondition} from './lib/shoe';
+import {tierBadge, ShoeCondition, type WearTierTone} from './lib/shoe';
 import {InjuryLevel} from './lib/injury';
 
 // ── Status colour helpers (single mapping shoeHealth.condition → colour/tone) ──
@@ -70,6 +70,12 @@ export function conditionColor(condition: ShoeCondition): string {
   if (condition === '주의') return WARN;
   return GOOD;
 }
+
+// 마모 4단계(wearTier) 톤 → theme 토큰. 최상🟢/양호🟡/교체고려🟠/교체권장🔴 —
+// 홈 히어로·신발 탭·러닝 목표가 같은 매핑을 쓴다(FuelGauge 와 동일 값, 공용 소스).
+export const WEAR_TONE_COLOR: Record<WearTierTone, string> = {
+  good: GOOD, mid: WARN, warn: ACCENT, danger: DANGER,
+};
 
 export function conditionTone(condition: ShoeCondition): Tone {
   if (condition === '교체') return 'danger';

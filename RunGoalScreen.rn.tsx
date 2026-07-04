@@ -13,7 +13,7 @@
 
 import React, { useMemo, useRef, useState, useCallback } from 'react';
 import {
-  View, Text, Pressable, ScrollView, StyleSheet, Modal, PanResponder,
+  View, Text, Pressable, ScrollView, StyleSheet, Modal,
   LayoutChangeEvent, NativeSyntheticEvent, NativeScrollEvent, StatusBar,
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
@@ -29,7 +29,8 @@ import {
 import { tap } from './lib/haptics';
 // CTA 는 앱 전역 단일 Button 프리미티브(그라데이션 GRAD_TOP/BOT·글로우·radius 토큰).
 // 모드 탭 스트립은 SegmentedControl 단일 프리미티브(accentTint variant).
-import { Button, SegmentedControl, conditionColor, SwipeBack, SwipeBackExclude, ShoeGlyph } from './primitives';
+import { Button, SegmentedControl, SwipeBack, SwipeBackExclude, ShoeGlyph, WEAR_TONE_COLOR } from './primitives';
+import { wearTier } from './lib/shoe';
 import SpeedPlanPanel from './SpeedPlanPanel';
 import { buildPacePlan } from './lib/pacePlan';
 
@@ -136,50 +137,18 @@ export default function RunGoalScreen({
   };
   const pickPreset = (v: number) => { setVal(v); scrollToVal(v, true); };
 
-  // ── 큰 숫자 직접 입력(2026-07-04, 사용자 선택 A안) ─────────────────────────
-  // ① 세로 스와이프: 숫자를 위로 쓸면 증가·아래로 감소(슬롯머신 릴). 세로 축이라
-  //    엣지 스와이프 백·가로 룰러와 제스처 축이 겹치지 않는다(충돌 클래스 0).
-  // ② 탭 → 키패드: 하프(21.1) 같은 정확한 값을 두세 탭에 입력.
-  // 둘 다 룰러와 같은 값(val)에 물린다 — 어느 입력이든 룰러가 즉시 따라온다.
+  // ── 큰 숫자 직접 입력(2026-07-04) — 탭 → 키패드만(사용자 확정) ──────────────
+  // 큰 숫자를 탭하면 하단 키패드 시트로 하프(21.1) 같은 정확한 값을 입력한다.
+  // 룰러와 같은 값(val)에 물려 확인 즉시 룰러가 따라온다. 세로 스와이프·햅틱 틱은
+  // 사용자 결정으로 제거(좌우 룰러 + 탭 입력이면 충분).
   const [kpOpen, setKpOpen] = useState(false);
   const [kpBuf, setKpBuf] = useState('');
-  // PanResponder 는 1회 생성 — 최신 상태는 ref 로 전달(SwipeBack 과 동일 규약).
-  const valRef = useRef(val); valRef.current = val;
-  const modeRef = useRef(mode); modeRef.current = mode;
-  const dragBase = useRef(0);
-  const dragMajor = useRef(0); // 마지막 major(1km/10분) 경계 — 넘을 때마다 햅틱 틱
   const clampToCfg = (m: 'km' | 'min', v: number) => {
     const c = CFG[m];
     const clamped = Math.max(c.min, Math.min(c.max, v));
     const stepped = Math.round(clamped / c.step) * c.step;
     return +stepped.toFixed(c.step < 1 ? 1 : 0);
   };
-  const numPan = useRef(
-    PanResponder.create({
-      // 세로 성분이 우세할 때만 캡처 — 탭(키패드)과 스크롤에 양보한다.
-      onMoveShouldSetPanResponder: (_e, g) =>
-        Math.abs(g.dy) > 6 && Math.abs(g.dy) > Math.abs(g.dx) * 1.5,
-      onPanResponderGrant: () => {
-        dragBase.current = valRef.current;
-        const m = modeRef.current === 'min' ? 'min' : 'km';
-        dragMajor.current = Math.floor(dragBase.current / CFG[m].major);
-        programmatic.current = true; // 룰러 onScroll 되울림 차단(제스처 동안)
-      },
-      onPanResponderMove: (_e, g) => {
-        const m = modeRef.current === 'min' ? 'min' : 'km';
-        const c = CFG[m];
-        // 감도: km 0.03/pt(≈33pt에 1km) · min 0.15/pt — 위로 쓸면 증가.
-        const perPt = m === 'km' ? 0.03 : 0.15;
-        const nv = clampToCfg(m, dragBase.current - g.dy * perPt);
-        const major = Math.floor(nv / c.major);
-        if (major !== dragMajor.current) { dragMajor.current = major; tap(); }
-        setVal(nv);
-        rulerRef.current?.scrollTo({ x: nv * c.px, animated: false });
-      },
-      onPanResponderRelease: () => { setTimeout(() => { programmatic.current = false; }, 60); },
-      onPanResponderTerminate: () => { setTimeout(() => { programmatic.current = false; }, 60); },
-    }),
-  ).current;
   const kpPress = (k: string) => {
     if (k === '⌫') { setKpBuf(b => b.slice(0, -1)); return; }
     setKpBuf(b => {
@@ -192,11 +161,20 @@ export default function RunGoalScreen({
     if (kpBuf) {
       const m = mode === 'min' ? 'min' : 'km';
       const v = clampToCfg(m, parseFloat(kpBuf) || 0);
-      setVal(v); scrollToVal(v, true); tap();
+      setVal(v); scrollToVal(v, true);
     }
     setKpOpen(false);
   };
-  const condColor = shoeCondition === '교체' ? DANGER : shoeCondition === '주의' ? WARN : GOOD;
+  // 신발 상태 — 홈 히어로와 동일한 4단계 wearTier(사용률%)가 단일 진실원(2026-07-04).
+  // 이전엔 3단계 condition('양호'…)을 그대로 보여 홈은 '최상'인데 여기선 '양호'로
+  // 어긋났다. 선택 신발의 used/max 로 홈과 같은 라벨·색을 파생하고, 신발 목록이 없는
+  // standalone 렌더에서만 legacy condition 으로 폴백한다.
+  const selShoe = (shoes ?? []).find(sh => sh.id === selectedShoeId);
+  const selTier = selShoe && selShoe.max > 0 ? wearTier((selShoe.used / selShoe.max) * 100) : null;
+  const condLabel = selTier ? selTier.label : shoeCondition;
+  const condColor = selTier
+    ? WEAR_TONE_COLOR[selTier.tone]
+    : shoeCondition === '교체' ? DANGER : shoeCondition === '주의' ? WARN : GOOD;
   const half = vpW / 2;
   // 런 시작: 햅틱(tap) → onStart(RunGoal). 거리/시간/스피드(km별 페이스 플랜)로 분기.
   const startRun = () => {
@@ -237,26 +215,24 @@ export default function RunGoalScreen({
           <SpeedPlanPanel onChange={(km, plan) => setSpeedGoal({ km, plan })} />
         ) : (
           <>
-            <View {...numPan.panHandlers}>
-              <Pressable
-                onPress={() => { setKpBuf(''); setKpOpen(true); }}
-                style={s.bigRow}
-                testID="goal-bignum"
-                accessibilityRole="adjustable"
-                accessibilityLiveRegion="polite"
-                accessibilityLabel={`목표 ${fmt(val)} ${cfg!.unit}`}
-                accessibilityHint="위아래로 쓸어 조절하거나, 눌러서 직접 입력"
-                accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
-                onAccessibilityAction={(e) => {
-                  const m = mode === 'min' ? 'min' : 'km';
-                  const d = e.nativeEvent.actionName === 'increment' ? CFG[m].step : -CFG[m].step;
-                  const v = clampToCfg(m, val + d);
-                  setVal(v); scrollToVal(v, false);
-                }}>
-                <Text style={s.bigVal}>{fmt(val)}</Text>
-                <Text style={s.bigUnit}>{cfg!.unit}</Text>
-              </Pressable>
-            </View>
+            <Pressable
+              onPress={() => { setKpBuf(''); setKpOpen(true); }}
+              style={s.bigRow}
+              testID="goal-bignum"
+              accessibilityRole="adjustable"
+              accessibilityLiveRegion="polite"
+              accessibilityLabel={`목표 ${fmt(val)} ${cfg!.unit}`}
+              accessibilityHint="눌러서 직접 입력"
+              accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
+              onAccessibilityAction={(e) => {
+                const m = mode === 'min' ? 'min' : 'km';
+                const d = e.nativeEvent.actionName === 'increment' ? CFG[m].step : -CFG[m].step;
+                const v = clampToCfg(m, val + d);
+                setVal(v); scrollToVal(v, false);
+              }}>
+              <Text style={s.bigVal}>{fmt(val)}</Text>
+              <Text style={s.bigUnit}>{cfg!.unit}</Text>
+            </Pressable>
             <Text style={s.estimate}>{estimate}</Text>
 
             {/* SwipeBackExclude: 룰러가 전폭이라 왼쪽 엣지 존(24pt)과 겹친다 — km 를
@@ -303,14 +279,14 @@ export default function RunGoalScreen({
           style={s.shoeSel}
           onPress={switchable ? () => setShoePickerOpen(true) : undefined}
           accessibilityRole="button"
-          accessibilityLabel={`신발 선택: ${shoeBrand} ${shoeLabel}, 상태 ${shoeCondition}${remainKm != null ? `, 남은 수명 ${Math.round(remainKm)}킬로미터` : ''}${switchable ? ', 탭하면 다른 신발로 변경' : ''}`}>
+          accessibilityLabel={`신발 선택: ${shoeBrand} ${shoeLabel}, 상태 ${condLabel}${remainKm != null ? `, 남은 수명 ${Math.round(remainKm)}킬로미터` : ''}${switchable ? ', 탭하면 다른 신발로 변경' : ''}`}>
           <View style={s.shoeThumb}><ShoeGlyph color={T2} size={24} /></View>
           <View style={{ flex: 1, minWidth: 0 }}>
             <Text style={s.shoeBrand}>{shoeBrand}</Text>
             <Text style={s.shoeModel} numberOfLines={1}>{shoeLabel}</Text>
             <View style={s.shoeCond}>
               <View style={[s.shoeDot, { backgroundColor: condColor }]} />
-              <Text style={s.shoeCondText}>{shoeCondition}{remainKm != null ? ` · 남은 수명 ${Math.round(remainKm)}km` : ''}</Text>
+              <Text style={s.shoeCondText}>{condLabel}{remainKm != null ? ` · 남은 수명 ${Math.round(remainKm)}km` : ''}</Text>
             </View>
           </View>
           {switchable && <Icon name="forward" size={20} color={T4} />}
@@ -367,7 +343,7 @@ export default function RunGoalScreen({
                     <Text style={s.pickerModel} numberOfLines={1}>{sh.model}</Text>
                   </View>
                   <View style={s.pickerMeta}>
-                    <View style={[s.shoeDot, { backgroundColor: conditionColor(sh.condition) }]} />
+                    <View style={[s.shoeDot, { backgroundColor: WEAR_TONE_COLOR[wearTier(sh.max > 0 ? (sh.used / sh.max) * 100 : 0).tone] }]} />
                     <Text style={s.pickerRemain}>{Math.round(remain)}km 남음</Text>
                   </View>
                   {on ? <Text style={s.pickerCheck}>✓</Text> : null}
