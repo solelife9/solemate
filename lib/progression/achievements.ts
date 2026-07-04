@@ -9,7 +9,7 @@
 //   3. shoeJourney       — 신발 소유 · 은퇴(첫 신발 ~ 명예의 전당)          1,690 XP max
 //   4. shoeMemory        — 신발과의 동행(켤레마다 반복 적립, 10켤레 기준)   1,700 XP max
 //   5. experience        — 특별 경험(야간·새벽·계절) + 챌린지                 250 XP max
-//   6. keego             — Keep Going 철학(잘 보내주었다·킵고잉 1년·온전한 하루) 240 XP max
+//   6. keego             — Keep Going 철학 2부작(잘 보내주었다·킵고잉 1년)       200 XP max
 //
 // 설계 원칙:
 //   · RPG 아님 — 보상이 아닌 기억. "memories, not rewards."
@@ -453,7 +453,8 @@ const CHALLENGES: AchievementDef[] = [
 // 4~5개월). Keep Going 은 신발이 아니라 **러너의 여정** — 첫 런에서 1년이 지나도
 // 여전히 달리고 있는 것(runSpanDays: 첫 런 → 마지막 런, 기다림만으론 안 늘어남)이다.
 const KEEGO: AchievementDef[] = [
-  // 철학 3부작: 잘 보내주었다(Let Go) · 킵고잉 1년(Keep Going) · 온전한 하루(시간의 시).
+  // 철학 2부작(2026-07-04 확정): 잘 보내주었다(Let Go) · 킵고잉 1년(Keep Going) —
+  // 떠나보내는 것과 계속하는 것. '온전한 하루'는 8주면 도달해 무게를 깎아 제거(사용자 결정).
   // Keep Going(계속 달리는 것)과 짝을 이루는 Let Go(잘 떠나보내는 것) — 교체 권장
   // 시점 안의 은퇴(smart 이상 등급). 사다리 없이 단 한 장: 앱 존재 이유의 업적화.
   {
@@ -478,15 +479,6 @@ const KEEGO: AchievementDef[] = [
     }),
     unlocked: ctx => nonNeg(ctx.runSpanDays ?? 0) >= 365,
   },
-  // 주 3시간 러너면 8주 만에 도달 — 시(詩)는 지키되 등급·XP 는 난이도에 정직하게
-  // (에픽 신뢰 보호, 2026-07-04 XP 감사).
-  metricAch({
-    key: 'time_24h', name: '온전한 하루', rarity: 'rare', xp: 40,
-    progressPrefix: '누적',
-    description: '누적 24시간 — 지구가 한 바퀴 도는 시간을 달렸다.',
-    category: 'keego', target: 86400,
-    value: ctx => nonNeg(ctx.totalDurationS),
-  }),
 ];
 
 // ── 전체 카탈로그 ──────────────────────────────────────────────────────────────

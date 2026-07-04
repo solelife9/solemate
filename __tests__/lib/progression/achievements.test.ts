@@ -371,10 +371,10 @@ describe('consistency: 꾸준함', () => {
     const consistency = ACHIEVEMENTS.filter(a => a.category === 'consistency');
     expect(consistency.map(a => a.key)).toEqual(['weeks_4', 'weeks_12', 'weeks_26', 'weeks_52']);
   });
-  test('온전한 하루: keego 로 이관 — 누적 24시간(86400초)', () => {
-    expect(achievementDef('time_24h')!.category).toBe('keego');
-    expect(achievementDef('time_24h')!.unlocked(emptyCtx({totalDurationS: 86400}))).toBe(true);
-    expect(achievementDef('time_24h')!.unlocked(emptyCtx({totalDurationS: 86399}))).toBe(false);
+  test('keego = 철학 2부작 — 온전한 하루는 제거됐다(사용자 결정 2026-07-04)', () => {
+    expect(achievementDef('time_24h')).toBeUndefined();
+    const keego = ACHIEVEMENTS.filter(a => a.category === 'keego');
+    expect(keego.map(a => a.key)).toEqual(['well_sent', 'keep_going_year']);
   });
 });
 
