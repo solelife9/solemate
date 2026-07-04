@@ -78,7 +78,7 @@ const PERIODS = ['주', '월', '년', '전체'];
 const EMPTY_SUMMARY: PeriodSummary = { km: '0', runs: 0, pace: '--', time: '--' };
 
 // ── bar chart with right-side km gridlines ────────────────────────────────────
-function PeriodChartView({ data, labels, unit }: { data: number[]; labels: string[]; unit: Unit }) {
+export function PeriodChartView({ data, labels, unit }: { data: number[]; labels: string[]; unit: Unit }) {
   const H = 124;
   const max = Math.max(...data, 1);
   const niceStep = (mx: number) => {

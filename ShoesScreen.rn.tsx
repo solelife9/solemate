@@ -2,14 +2,16 @@
 // ShoesScreen.rn.tsx — 신발 locker + 신발 상세 (ShoeDetail)
 // (sample data removed — real shoes/runs/totals injected via props)
 // ============================================================================
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, ScrollView, Pressable, TextInput, Alert, StyleSheet, Linking } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {
   BG, CARD_DIM, CARD_HI, HERO_BG, ACCENT, DANGER, WARN, GOOD, BEST, T1, T2, T3, T4, SEP, FONT, DISPLAY, withAlpha, RADIUS, Shoe, Run, SHOES,
 } from './theme';
-import { TabBar, TABBAR_CLEARANCE, Pill, InjuryBanner, SectionTitle, Button, SwipeBack } from './primitives';
+import { TabBar, TABBAR_CLEARANCE, Pill, InjuryBanner, SectionTitle, Button, SwipeBack, StatGrid } from './primitives';
+import { PeriodChartView } from './HistoryScreen.rn';
+import { fmtPace } from './lib/format';
 import { FuelGauge } from './FuelGauge';
 import FirstShoeScreen from './FirstShoeScreen.rn';
 import { Unit, displayNum } from './lib/units';
@@ -141,6 +143,43 @@ function ShoeDetail({
 
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(`${shoe.brand} ${shoe.model}`.trim());
+
+  // ── 이 신발의 러닝 이야기(2026-07-04, 제품 핵심 질문: '이 신발로 얼마나, 어떻게
+  //    달렸나') — 요약 스탯(횟수·평균 페이스·최장 런·최고 페이스) + 최근 8주 흐름.
+  //    총 거리는 위 게이지(사용 N/Mkm)가 이미 말하므로 중복하지 않는다.
+  const story = useMemo(() => {
+    const withDur = shoeRuns.filter((r) => (r.durationS ?? 0) > 0 && r.dist > 0);
+    const durKm = withDur.reduce((a, r) => a + r.dist, 0);
+    const durS = withDur.reduce((a, r) => a + (r.durationS ?? 0), 0);
+    const avgPace = durS > 0 && durKm > 0 ? fmtPace(durKm, durS) : '--';
+    const longest = shoeRuns.reduce((m, r) => Math.max(m, r.dist), 0);
+    let bestPace = '--';
+    let bestSec = Infinity;
+    for (const r of withDur) {
+      if (r.dist < 1) continue; // 1km 미만은 페이스 표본에서 제외(인정 런 기준과 정렬)
+      const p = (r.durationS ?? 0) / r.dist;
+      if (p < bestSec) { bestSec = p; bestPace = fmtPace(r.dist, r.durationS ?? 0); }
+    }
+    // 최근 8주 주간 합(월요일 시작) — runDate 없는 런은 버킷에서 제외.
+    const now = new Date();
+    const mon = new Date(now.getFullYear(), now.getMonth(), now.getDate() - ((now.getDay() + 6) % 7));
+    const weekly: number[] = Array(8).fill(0);
+    const weekLabels: string[] = [];
+    for (let w = 7; w >= 0; w--) {
+      const start = new Date(mon.getFullYear(), mon.getMonth(), mon.getDate() - w * 7);
+      weekLabels.push(`${start.getMonth() + 1}/${start.getDate()}`);
+    }
+    for (const r of shoeRuns) {
+      if (!r.runDate) continue;
+      const [y, m, d] = r.runDate.slice(0, 10).split('-').map(Number);
+      const dt = new Date(y, m - 1, d);
+      const diffW = Math.floor((mon.getTime() - dt.getTime()) / (7 * 86400000));
+      const idx = 7 - (dt >= mon ? 0 : diffW + 1);
+      if (idx >= 0 && idx < 8) weekly[idx] += r.dist;
+    }
+    const hasWeekly = weekly.some((v) => v > 0);
+    return { avgPace, longest, bestPace, weekly, weekLabels, hasWeekly };
+  }, [shoeRuns]);
 
   // 키프세이크 은퇴 플로우: 수명 도달 신발만 [계속 사용]/[은퇴]를 노출한다(자동 은퇴 절대
   // 금지 — 사용자가 [은퇴]를 눌러야만 flowOpen). [계속 사용]을 누르면 이번 세션 동안
@@ -340,6 +379,30 @@ function ShoeDetail({
             </View>
             <Text style={s.replaceForecastText}>약 <Text style={s.dForecastBold}>{detailReplaceWeeks}주 후</Text> 교체 예상</Text>
           </View>
+        )}
+
+        {/* 이 신발의 러닝 이야기 — 요약 + 최근 8주 흐름(기록탭 차트 재사용) */}
+        {shoeRuns.length > 0 && (
+          <>
+            <View style={[s.row, { paddingHorizontal: 4 }]}>
+              <Text style={s.sectionLabel}>함께한 기록</Text>
+            </View>
+            <View style={[s.card, { padding: 16, gap: 14 }]} testID="shoe-story">
+              <StatGrid
+                columns={4}
+                valueSize={17}
+                items={[
+                  { value: String(shoeRuns.length), unit: '회', label: '러닝' },
+                  { value: story.avgPace, label: '평균 페이스' },
+                  { value: String(displayNum(story.longest, unit, 1)), unit, label: '최장 런' },
+                  { value: story.bestPace, label: '최고 페이스' },
+                ]}
+              />
+              {story.hasWeekly && (
+                <PeriodChartView data={story.weekly} labels={story.weekLabels} unit={unit} />
+              )}
+            </View>
+          </>
         )}
 
         {/* runs */}
