@@ -8,7 +8,7 @@
 // 값은 App이 소유(영속은 lib/settings)하고, 이 화면은 표시 + 변경 콜백만 담당한다.
 // ============================================================================
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet, TextInput, Image, Share, Alert } from 'react-native';
+import { View, Text, ScrollView, Pressable, StyleSheet, TextInput, Image, Share, Alert, Linking } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { BG, CARD, CARD_DIM, CARD_HI, ACCENT, GOOD, DANGER, WARN, T1, T2, T3, SEP, CARD_BORDER, FONT, DISPLAY, withAlpha, TIER_COLORS, TIER_LABEL, KAKAO_YELLOW, KAKAO_LABEL, NAVER_GREEN, NAVER_LABEL, RADIUS } from './theme';
@@ -33,6 +33,7 @@ import { ExtRun, ExtShoe } from './lib/progression/challengesExt';
 import { mergeCloudData, nextAuthState, AuthState } from './lib/cloudSync';
 import type { CloudPort, CloudProvider, CloudUser } from './lib/cloudPort';
 import { authErrorMessage } from './lib/authErrorMessage';
+import { PRIVACY_URL, TERMS_URL } from './lib/legalLinks';
 import type { RankTier } from './lib/progression/types';
 
 // 신원 칩은 진척 시스템의 단일 Rank(티어)로 통일한다 — 옛 '러닝 레벨 N'(km/100) 개념 폐기.
@@ -921,6 +922,28 @@ export default function ProfileScreen({
                 </Pressable>
               </View>
             )}
+            {/* 법적 문서 — 온보딩에서만 보이던 링크를 상시 접근 가능하게(스토어 심사·신뢰,
+                출시 감사 2026-07-04). 로그인 여부와 무관하게 노출한다. */}
+            <Pressable
+              testID="legal-privacy"
+              onPress={() => { Linking.openURL(PRIVACY_URL).catch(() => {}); }}
+              accessibilityRole="link"
+              accessibilityLabel="개인정보 처리방침 열기"
+              style={({ pressed }) => [s.settingRow, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.07) }, pressed && { backgroundColor: CARD_HI }]}>
+              <View style={s.settingIcon}><Ionicons name="shield-checkmark-outline" size={16} color={T2} /></View>
+              <Text style={s.settingLabel}>개인정보 처리방침</Text>
+              <Ionicons name="open-outline" size={15} color={T3} />
+            </Pressable>
+            <Pressable
+              testID="legal-terms"
+              onPress={() => { Linking.openURL(TERMS_URL).catch(() => {}); }}
+              accessibilityRole="link"
+              accessibilityLabel="이용약관 열기"
+              style={({ pressed }) => [s.settingRow, pressed && { backgroundColor: CARD_HI }]}>
+              <View style={s.settingIcon}><Ionicons name="document-text-outline" size={16} color={T2} /></View>
+              <Text style={s.settingLabel}>이용약관</Text>
+              <Ionicons name="open-outline" size={15} color={T3} />
+            </Pressable>
             {/* 앱·기기 정보(읽기 전용) — 기존 '계정 설정' 행을 계정 섹션으로 통합(이름 중복 제거). */}
             <View style={[s.panel, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.07) }]} testID="app-info">
               <View style={s.acctRow}><Text style={s.acctK}>기기 ID</Text><Text style={s.acctV} numberOfLines={1}>{deviceId || '—'}</Text></View>
