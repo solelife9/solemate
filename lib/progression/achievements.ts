@@ -1,10 +1,11 @@
 // ============================================================================
 // lib/progression/achievements.ts — KEEGO 업적 카탈로그 (재설계)
 // ============================================================================
-// 업적 = 러너의 정체성. 6개 카테고리 × 총 ~5,600 XP(레전드 5,000 XP, 10켤레 기준).
+// 업적 = 러너의 정체성. 7개 카테고리 × 총 ~5,890 XP(레전드 5,000 XP, 10켤레 기준).
 //
 //   1. runningMilestone  — 단일 런 이정표(첫 5km ~ 마라톤)                 730 XP max
 //   2. distanceMilestone — 누적 거리(100 → 10,000km)                     1,070 XP max
+//   2b. consistency      — 꾸준함(런 횟수·스트릭≤7일·누적 시간)              290 XP max
 //   3. shoeJourney       — 신발 소유 · 은퇴(첫 신발 ~ 명예의 전당)          1,690 XP max
 //   4. shoeMemory        — 신발과의 동행(켤레마다 반복 적립, 10켤레 기준)   1,700 XP max
 //   5. experience        — 특별 경험(야간·새벽·계절) + 챌린지                 310 XP max
@@ -194,6 +195,46 @@ const DISTANCE_MILESTONE: AchievementDef[] = [
     category: 'distanceMilestone', target: 10000,
     value: ctx => nonNeg(ctx.cumulativeKm),
     signature: true,
+  }),
+];
+
+// ============================================================================
+// 카테고리 2b: consistency — 꾸준함(2026-07-04 PM 리뷰로 신설)
+// ============================================================================
+// 거리·이정표만 재고 '몇 번, 얼마나 자주'를 축하하지 않던 공백을 메운다 — 초반
+// 유저가 5km→10km 사이 몇 주간 딸 게 없던 간극도 이 축이 채운다. 스트릭은 7일이
+// 상한(그 이상은 과훈련 조장 — 부상 없는 러닝이라는 앱 기조와 충돌하므로 의도적
+// 부재). 컨텍스트에 이미 있던 runCount/longestStreak/totalDurationS 만 쓴다.
+const CONSISTENCY: AchievementDef[] = [
+  metricAch({
+    key: 'runs_10', name: '열 번의 런', rarity: 'common', xp: 20,
+    description: '열 번 나갔다. 습관의 시작.',
+    category: 'consistency', target: 10,
+    value: ctx => nonNeg(ctx.runCount),
+  }),
+  metricAch({
+    key: 'runs_100', name: '백 번의 런', rarity: 'epic', xp: 100,
+    description: '백 번의 러닝. 이제 달리기가 일상이다.',
+    category: 'consistency', target: 100,
+    value: ctx => nonNeg(ctx.runCount),
+  }),
+  metricAch({
+    key: 'streak_3', name: '3일의 리듬', rarity: 'common', xp: 20,
+    description: '사흘 연속으로 달렸다.',
+    category: 'consistency', target: 3,
+    value: ctx => nonNeg(ctx.longestStreak),
+  }),
+  metricAch({
+    key: 'streak_7', name: '7일의 리듬', rarity: 'rare', xp: 50,
+    description: '일주일을 매일 달렸다. 여기까지가 딱 좋다 — 쉬는 날도 훈련이다.',
+    category: 'consistency', target: 7,
+    value: ctx => nonNeg(ctx.longestStreak),
+  }),
+  metricAch({
+    key: 'time_24h', name: '온전한 하루', rarity: 'epic', xp: 100,
+    description: '누적 24시간 — 지구가 한 바퀴 도는 시간을 달렸다.',
+    category: 'consistency', target: 86400,
+    value: ctx => nonNeg(ctx.totalDurationS),
   }),
 ];
 
@@ -411,6 +452,7 @@ const KEEGO: AchievementDef[] = [
 export const ACHIEVEMENTS: readonly AchievementDef[] = [
   ...RUNNING_MILESTONE,
   ...DISTANCE_MILESTONE,
+  ...CONSISTENCY,
   ...SHOE_JOURNEY,
   ...SHOE_MEMORY,
   ...EXPERIENCE,

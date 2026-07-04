@@ -29,8 +29,9 @@ import {
 import { tap } from './lib/haptics';
 // CTA 는 앱 전역 단일 Button 프리미티브(그라데이션 GRAD_TOP/BOT·글로우·radius 토큰).
 // 모드 탭 스트립은 SegmentedControl 단일 프리미티브(accentTint variant).
-import { Button, SegmentedControl, SwipeBack, SwipeBackExclude, ShoeGlyph, WEAR_TONE_COLOR } from './primitives';
+import { Button, SegmentedControl, SwipeBack, SwipeBackExclude, ShoeGlyph } from './primitives';
 import { wearTier } from './lib/shoe';
+import { ringColor } from './lib/ringColor';
 import SpeedPlanPanel from './SpeedPlanPanel';
 import { buildPacePlan } from './lib/pacePlan';
 
@@ -170,10 +171,13 @@ export default function RunGoalScreen({
   // 어긋났다. 선택 신발의 used/max 로 홈과 같은 라벨·색을 파생하고, 신발 목록이 없는
   // standalone 렌더에서만 legacy condition 으로 폴백한다.
   const selShoe = (shoes ?? []).find(sh => sh.id === selectedShoeId);
-  const selTier = selShoe && selShoe.max > 0 ? wearTier((selShoe.used / selShoe.max) * 100) : null;
+  const selPct = selShoe && selShoe.max > 0 ? (selShoe.used / selShoe.max) * 100 : null;
+  const selTier = selPct != null ? wearTier(selPct) : null;
   const condLabel = selTier ? selTier.label : shoeCondition;
-  const condColor = selTier
-    ? WEAR_TONE_COLOR[selTier.tone]
+  // 점 색 = 홈 히어로와 동일한 연속 색(ringColor.to — 새 신발일수록 파랑). 이산 톤
+  // (GOOD 초록)을 쓰면 홈 '최상' 파란 점과 어긋난다(사용자 지적 2026-07-04).
+  const condColor = selPct != null
+    ? ringColor(selPct).to
     : shoeCondition === '교체' ? DANGER : shoeCondition === '주의' ? WARN : GOOD;
   const half = vpW / 2;
   // 런 시작: 햅틱(tap) → onStart(RunGoal). 거리/시간/스피드(km별 페이스 플랜)로 분기.
@@ -343,7 +347,7 @@ export default function RunGoalScreen({
                     <Text style={s.pickerModel} numberOfLines={1}>{sh.model}</Text>
                   </View>
                   <View style={s.pickerMeta}>
-                    <View style={[s.shoeDot, { backgroundColor: WEAR_TONE_COLOR[wearTier(sh.max > 0 ? (sh.used / sh.max) * 100 : 0).tone] }]} />
+                    <View style={[s.shoeDot, { backgroundColor: ringColor(sh.max > 0 ? (sh.used / sh.max) * 100 : 0).to }]} />
                     <Text style={s.pickerRemain}>{Math.round(remain)}km 남음</Text>
                   </View>
                   {on ? <Text style={s.pickerCheck}>✓</Text> : null}

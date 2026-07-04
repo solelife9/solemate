@@ -315,12 +315,13 @@ describe('카탈로그 무결성', () => {
     expect(Object.keys(ACHIEVEMENTS_BY_KEY).length).toBe(ACHIEVEMENTS.length);
   });
 
-  test('6개 카테고리를 모두 커버한다', () => {
+  test('7개 카테고리를 모두 커버한다', () => {
     const cats = new Set(ACHIEVEMENTS.map(a => a.category));
     (
       [
         'runningMilestone',
         'distanceMilestone',
+        'consistency',
         'shoeJourney',
         'shoeMemory',
         'experience',
@@ -349,6 +350,28 @@ describe('카탈로그 무결성', () => {
     expect(def?.name).toBe('마라톤 완주');
     expect(def?.category).toBe('runningMilestone');
     expect(def?.rarity).toBe('legendary');
+  });
+});
+
+// ============================================================================
+// 5b) consistency — 꾸준함(런 횟수·스트릭·누적 시간)
+// ============================================================================
+describe('consistency: 꾸준함', () => {
+  test('열/백 번의 런: runCount 기준', () => {
+    expect(achievementDef('runs_10')!.unlocked(emptyCtx({runCount: 10}))).toBe(true);
+    expect(achievementDef('runs_10')!.unlocked(emptyCtx({runCount: 9}))).toBe(false);
+    expect(achievementDef('runs_100')!.unlocked(emptyCtx({runCount: 100}))).toBe(true);
+  });
+  test('리듬: longestStreak 3/7 — 7일이 상한(과훈련 방지 의도)', () => {
+    expect(achievementDef('streak_3')!.unlocked(emptyCtx({longestStreak: 3}))).toBe(true);
+    expect(achievementDef('streak_7')!.unlocked(emptyCtx({longestStreak: 7}))).toBe(true);
+    expect(achievementDef('streak_7')!.unlocked(emptyCtx({longestStreak: 6}))).toBe(false);
+    // 7일 초과 스트릭 업적은 존재하지 않는다(카탈로그 계약).
+    expect(ACHIEVEMENTS.some(a => a.key.startsWith('streak_') && !['streak_3', 'streak_7'].includes(a.key))).toBe(false);
+  });
+  test('온전한 하루: 누적 24시간(86400초)', () => {
+    expect(achievementDef('time_24h')!.unlocked(emptyCtx({totalDurationS: 86400}))).toBe(true);
+    expect(achievementDef('time_24h')!.unlocked(emptyCtx({totalDurationS: 86399}))).toBe(false);
   });
 });
 

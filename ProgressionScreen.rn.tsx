@@ -67,6 +67,7 @@ import type {
 const ACH_CATEGORY_META: Record<AchievementCategory, {label: string; icon: string}> = {
   runningMilestone: {label: '러닝 이정표', icon: 'walk'},
   distanceMilestone: {label: '누적 거리', icon: 'trending-up'},
+  consistency: {label: '꾸준함', icon: 'repeat'},
   shoeJourney: {label: '신발 여정', icon: 'ribbon'},
   shoeMemory: {label: '신발과 동행', icon: 'heart'},
   experience: {label: '특별 경험', icon: 'sparkles'},
@@ -76,6 +77,7 @@ const ACH_CATEGORY_META: Record<AchievementCategory, {label: string; icon: strin
 const ACH_CATEGORY_ORDER: AchievementCategory[] = [
   'runningMilestone',
   'distanceMilestone',
+  'consistency',
   'shoeJourney',
   'shoeMemory',
   'experience',

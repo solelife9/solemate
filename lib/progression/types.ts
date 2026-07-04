@@ -55,6 +55,7 @@ export type AchievementRarity = 'common' | 'rare' | 'epic' | 'legendary';
 export type AchievementCategory =
   | 'runningMilestone'
   | 'distanceMilestone'
+  | 'consistency'
   | 'shoeJourney'
   | 'shoeMemory'
   | 'experience'
