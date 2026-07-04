@@ -22,6 +22,7 @@ import Svg, {
   Text as SvgText,
   G,
   Line,
+  Circle,
   Defs,
   LinearGradient,
   RadialGradient,
@@ -43,6 +44,7 @@ import {
   RETIRE_MIDNIGHT_BG,
   RETIRE_MIDNIGHT_GLOW,
   RETIRE_GRAD_STOPS,
+  HALL_GOLD,
   withAlpha,
 } from './theme';
 import {
@@ -54,6 +56,8 @@ import {
 // 1080×1080 정사각 — 런/리캡 카드와 동일 출력 해상도(SNS 공유 호환).
 export const CARD_W = 1080;
 export const CARD_H = 1080;
+/** 'S' 스토리 포맷(인스타 9:16). */
+export const STORY_H = 1920;
 const PAD = 88;
 const CX = CARD_W / 2;
 
@@ -451,8 +455,65 @@ function FormatE({model}: {model: RetirementCardModel}) {
   );
 }
 
+// ── S · 스토리(1080×1920) — 명예의 전당 언어(샴페인 골드 + 절제) ─────────────────
+// 인스타 스토리 규격. 새 전당 인증서와 같은 문법: RETIRED 씰(얇은 골드 링) → 신발명 →
+// 거대 거리(HALL_GOLD) → KM TOGETHER 캡스 → 기간 → keego / KEEP GOING 푸터.
+function FormatS({model}: {model: RetirementCardModel}) {
+  const meta: string[] = [`${model.runCountLabel}번의 러닝`];
+  if (model.dateRange) meta.push(model.dateRange);
+  return (
+    <G>
+      {/* RETIRED 씰 — 한 겹의 얇은 링 */}
+      <Circle cx={CX} cy={330} r={96} fill="none" stroke={withAlpha(HALL_GOLD, 0.5)} strokeWidth={3} />
+      <SvgText x={CX} y={316} fill={HALL_GOLD} fontFamily={DISPLAY} fontSize={22} fontWeight="600" letterSpacing={5} textAnchor="middle">
+        RETIRED
+      </SvgText>
+      {model.retireYear > 0 && (
+        <SvgText x={CX} y={368} fill={HALL_GOLD} fontFamily={DISPLAY} fontSize={40} fontWeight="700" textAnchor="middle">
+          {String(model.retireYear)}
+        </SvgText>
+      )}
+
+      {/* 신발명 */}
+      <SvgText x={CX} y={600} fill={T1} fontFamily={FONT} fontSize={72} fontWeight="700" textAnchor="middle">
+        {model.shoeName}
+      </SvgText>
+
+      {/* 거대 거리 — 스토리의 주인공 */}
+      <SvgText x={CX} y={1010} fill={HALL_GOLD} fontFamily={DISPLAY} fontSize={300} fontWeight="700" letterSpacing={-10} textAnchor="middle">
+        {model.distance}
+      </SvgText>
+      <SvgText x={CX} y={1090} fill={T2} fontFamily={DISPLAY} fontSize={30} fontWeight="600" letterSpacing={10} textAnchor="middle">
+        {`${model.unit.toUpperCase()} TOGETHER`}
+      </SvgText>
+
+      {/* 여정 메타 */}
+      {meta.map((line, i) => (
+        <SvgText key={line + i} x={CX} y={1240 + i * 58} fill={T3} fontFamily={FONT} fontSize={34} textAnchor="middle">
+          {line}
+        </SvgText>
+      ))}
+      <SvgText x={CX} y={1430} fill={T2} fontFamily={FONT} fontSize={38} fontWeight="500" textAnchor="middle">
+        {`${model.distanceLabel}의 여정, 고마웠어.`}
+      </SvgText>
+
+      {/* 푸터 — keego 워드마크 + KEEP GOING */}
+      <Line x1={CX - 130} y1={1660} x2={CX - 46} y2={1660} stroke={withAlpha(HALL_GOLD, 0.4)} strokeWidth={2} />
+      <Line x1={CX + 46} y1={1660} x2={CX + 130} y2={1660} stroke={withAlpha(HALL_GOLD, 0.4)} strokeWidth={2} />
+      <Circle cx={CX} cy={1660} r={5} fill={withAlpha(HALL_GOLD, 0.6)} />
+      <SvgText x={CX} y={1740} fill={T1} fontFamily="Helvetica Neue" fontSize={54} fontWeight="500" letterSpacing={-1} textAnchor="middle">
+        keego
+      </SvgText>
+      <SvgText x={CX} y={1790} fill={HALL_GOLD} fontFamily={DISPLAY} fontSize={22} fontWeight="600" letterSpacing={8} textAnchor="middle">
+        KEEP GOING
+      </SvgText>
+    </G>
+  );
+}
+
 const LAYOUTS: Record<RetirementCardFormat, (p: {model: RetirementCardModel}) => React.JSX.Element> = {
   E: FormatE,
+  S: FormatS,
   A: FormatA,
   B: FormatB,
   C: FormatC,
@@ -466,19 +527,26 @@ const RetirementCard = React.forwardRef<unknown, RetirementCardProps>(
     // 포맷별 배경 — E 미드나잇, D 골드 음영, A 순흑, 그 외 카드 토큰.
     const bgFill =
       fmt === 'E' ? RETIRE_MIDNIGHT_BG : fmt === 'D' ? CARD_DIM : fmt === 'A' ? BG : CARD;
+    const cardH = fmt === 'S' ? STORY_H : CARD_H;
     return (
-      <Svg ref={ref as never} width={CARD_W} height={CARD_H}>
-        <Rect x={0} y={0} width={CARD_W} height={CARD_H} fill={BG} />
-        <Rect
-          x={PAD / 2}
-          y={PAD / 2}
-          width={CARD_W - PAD}
-          height={CARD_H - PAD}
-          rx={56}
-          fill={bgFill}
-          stroke={SEP}
-          strokeWidth={2}
-        />
+      <Svg ref={ref as never} width={CARD_W} height={cardH}>
+        <Rect x={0} y={0} width={CARD_W} height={cardH} fill={BG} />
+        {fmt === 'S' ? (
+          // 스토리 — 풀블리드 다크 + 얇은 골드 키라인 하나(전당 인증서 문법).
+          <Rect x={40} y={40} width={CARD_W - 80} height={cardH - 80} rx={48}
+            fill={BG} stroke={withAlpha(HALL_GOLD, 0.4)} strokeWidth={2} />
+        ) : (
+          <Rect
+            x={PAD / 2}
+            y={PAD / 2}
+            width={CARD_W - PAD}
+            height={CARD_H - PAD}
+            rx={56}
+            fill={bgFill}
+            stroke={SEP}
+            strokeWidth={2}
+          />
+        )}
         <Layout model={model} />
       </Svg>
     );

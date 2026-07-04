@@ -24,10 +24,11 @@ import type {RankTier, RetirementGrade, RetirementSummary} from './types';
 
 // ── 레이아웃 포맷 ──────────────────────────────────────────────────────────────
 /** 카드 레이아웃: E Midnight(기본) / A Nike / B Modern / C Apple / D Hall of Fame. */
-export type RetirementCardFormat = 'E' | 'A' | 'B' | 'C' | 'D';
+export type RetirementCardFormat = 'E' | 'S' | 'A' | 'B' | 'C' | 'D';
 
-/** 선택 가능한 5개 포맷(렌더러/포맷 스위처가 소비). E(Midnight)를 먼저 노출. */
-export const RETIREMENT_CARD_FORMATS: readonly RetirementCardFormat[] = ['E', 'A', 'B', 'C', 'D'];
+/** 선택 가능한 6개 포맷(렌더러/포맷 스위처가 소비). E(Midnight)를 먼저, S(9:16 스토리)를
+    다음에 노출 — 인스타 스토리 규격(1080×1920, 전당 골드 언어). */
+export const RETIREMENT_CARD_FORMATS: readonly RetirementCardFormat[] = ['E', 'S', 'A', 'B', 'C', 'D'];
 
 /** 기본 포맷 — E(Midnight + 배웅, 디자인 마무리 핸드오프 키프세이크). */
 export const DEFAULT_RETIREMENT_CARD_FORMAT: RetirementCardFormat = 'E';

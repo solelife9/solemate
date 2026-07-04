@@ -12,13 +12,16 @@
 //   · 빈 상태(스포트라이트 받침대 — '첫 헌액을 기다려요')
 // 데이터 날조 0. 테스트 계약(hall-back/hall-empty/hall-plaque-*/모달) 유지.
 // ============================================================================
-import React, {useMemo, useState} from 'react';
+import React, {useMemo, useRef, useState} from 'react';
 import {View, Text, ScrollView, Pressable, Modal, StyleSheet} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Svg, {Defs, LinearGradient, RadialGradient, Stop, Rect, Path, Circle} from 'react-native-svg';
 import {Unit, displayNum} from './lib/units';
 import {SwipeBack, Button} from './primitives';
+import RetirementCard from './RetirementCard';
+import {buildRetirementCardModel} from './lib/progression/retirementCard';
+import {shareRetirementCard} from './lib/progression/retirementShare';
 import {BG, CARD, CARD_HI, T1, T2, T3, T4, SEP, FONT, DISPLAY, RADIUS, HALL_GOLD, withAlpha} from './theme';
 import type {RetiredShoeRecord} from './lib/progression/types';
 
@@ -176,7 +179,7 @@ function HallOfShoes({records = [], unit = 'km', onBack, userName, onGoShoes}: H
                     <View style={st.pfoot}>
                       <Text style={st.pkm}>
                         {displayNum(r.km, unit, 0)}
-                        <Text style={st.pkmU}> {unit}</Text>
+                        <Text style={st.pkmU}>{unit}</Text>
                       </Text>
                       <Text style={st.pyear}>{yy}</Text>
                     </View>
@@ -211,6 +214,19 @@ function Certificate({shoe, unit, userName, onClose}: {shoe: RetiredShoeRecord; 
   const months = monthsOf(shoe);
   const memorable = shoe.summary?.mostMemorable;
   const runner = (typeof userName === 'string' && userName.trim()) || '러너';
+  // 스토리 공유(2026-07-04 무기 #1) — 오프스크린 9:16 카드(RetirementCard 'S')를
+  // 캡처해 OS 공유 시트로. 요약이 없는 옛 레코드도 명패 데이터(name/km/연도)로 그린다.
+  const storyRef = useRef(null);
+  const storyModel = useMemo(
+    () =>
+      buildRetirementCardModel(
+        {...(shoe.summary ?? {}), name: shoe.name} as never,
+        shoe.grade,
+        {unit, distanceKm: shoe.km, retiredAtMs: ymdToMsSafe(shoe.retiredAt)},
+      ),
+    [shoe, unit],
+  );
+  const onShare = () => { void shareRetirementCard(storyRef, storyModel); };
   return (
     <View style={st.certScreen}>
       <ScrollView contentContainerStyle={[st.certContent, {paddingTop: insets.top + 76, paddingBottom: insets.bottom + 40}]} showsVerticalScrollIndicator={false}>
@@ -254,8 +270,24 @@ function Certificate({shoe, unit, userName, onClose}: {shoe: RetiredShoeRecord; 
       <Pressable style={[st.certX, {top: insets.top + 8}]} onPress={onClose} hitSlop={10} accessibilityRole="button" accessibilityLabel="닫기">
         <Ionicons name="close" size={17} color={T2} />
       </Pressable>
+      <Pressable style={[st.certShare, {top: insets.top + 8}]} onPress={onShare} hitSlop={10} accessibilityRole="button" accessibilityLabel="인증서 공유" testID="cert-share">
+        <Ionicons name="share-outline" size={16} color={HALL_GOLD} />
+      </Pressable>
+      {/* 화면 밖 스토리 카드 — 캡처 전용(보이지 않음). RecapShareCard 와 동일 패턴. */}
+      <View style={st.offscreen} pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+        <RetirementCard ref={storyRef} model={storyModel} format="S" />
+      </View>
     </View>
   );
+}
+
+/** 'YYYY-MM-DD' → epoch ms(로컬 자정). 비정상이면 undefined. */
+function ymdToMsSafe(iso?: string): number | undefined {
+  if (typeof iso !== 'string') return undefined;
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
+  if (!m) return undefined;
+  const ms = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])).getTime();
+  return Number.isFinite(ms) ? ms : undefined;
 }
 
 // ── 빈 상태(스포트라이트 받침대) ──────────────────────────────────────────────────
@@ -352,6 +384,8 @@ const st = StyleSheet.create({
   certScreen: {flex: 1, backgroundColor: BG},
   certContent: {alignItems: 'center', paddingHorizontal: 28},
   certX: {position: 'absolute', right: 20, width: 34, height: 34, borderRadius: 17, borderCurve: 'continuous', backgroundColor: CARD_HI, alignItems: 'center', justifyContent: 'center'},
+  certShare: {position: 'absolute', right: 62, width: 34, height: 34, borderRadius: 17, borderCurve: 'continuous', backgroundColor: CARD_HI, alignItems: 'center', justifyContent: 'center'},
+  offscreen: {position: 'absolute', left: -4000, top: 0, opacity: 0},
   coSeal: {width: 64, height: 64, borderRadius: 32, borderCurve: 'continuous', borderWidth: 1, borderColor: withAlpha(HALL_GOLD, 0.45), alignItems: 'center', justifyContent: 'center', gap: 1},
   coSealT: {fontFamily: DISPLAY, fontSize: 7, fontWeight: '600', letterSpacing: 1.4, color: HALL_GOLD},
   coSealN: {fontFamily: DISPLAY, fontSize: 15, fontWeight: '700', color: HALL_GOLD, fontVariant: ['tabular-nums']},

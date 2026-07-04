@@ -16,6 +16,11 @@
 import React from 'react';
 import ReactTestRenderer, {act} from 'react-test-renderer';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+jest.mock('../lib/progression/retirementShare', () => ({
+  ...jest.requireActual('../lib/progression/retirementShare'),
+  shareRetirementCard: jest.fn(async () => {}),
+}));
+import {shareRetirementCard} from '../lib/progression/retirementShare';
 import HallOfShoes from '../HallOfShoes.rn';
 import {persistRetiredShoe} from '../lib/progression/retirementStore';
 import {loadProgression} from '../lib/progression/storage';
@@ -129,4 +134,20 @@ describe('HallOfShoes — 은퇴 신발 전시', () => {
     const modalsAfter = root.findAll((n: any) => n.props && typeof n.props.visible === 'boolean' && typeof n.props.onRequestClose === 'function');
     expect(modalsAfter.some((m: any) => m.props.visible)).toBe(true);
   });
+});
+
+
+test('인증서의 공유 버튼이 스토리 카드 공유(shareRetirementCard)로 배선된다', () => {
+  const root = render(<HallOfShoes records={RECORDS} />).root;
+  const node = root.find((n: any) => n.props?.testID === 'hall-plaque-s1' && typeof n.props?.onPress === 'function');
+  act(() => { node.props.onPress(); });
+  const share = root.findAll(
+    (n: any) => n.props?.testID === 'cert-share' && typeof n.props?.onPress === 'function',
+  )[0];
+  expect(share).toBeTruthy();
+  act(() => { share.props.onPress(); });
+  expect(shareRetirementCard).toHaveBeenCalled();
+  // 오프스크린 9:16 카드가 마운트돼 있다(캡처 대상).
+  const story = root.findAll((n: any) => n.props?.format === 'S');
+  expect(story.length).toBeGreaterThan(0);
 });

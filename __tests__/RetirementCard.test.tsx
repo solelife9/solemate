@@ -83,6 +83,20 @@ describe('RetirementCard 5개 포맷 렌더', () => {
     expect(txt).toContain('KEEGO');
   });
 
+  test("S(스토리 9:16): 전당 골드 언어 — RETIRED 씰·KM TOGETHER·keego 푸터, 1080×1920", () => {
+    const r = render(<RetirementCard model={MODEL} format="S" />);
+    const txt = textOf(r.root);
+    expect(txt).toContain('RETIRED');
+    expect(txt).toContain('KM TOGETHER');
+    expect(txt).toContain('KEEP GOING');
+    expect(txt).toContain('keego');
+    expect(txt).toContain('512');
+    expect(txt.toLowerCase()).toContain('alphafly 3'.toLowerCase());
+    // 루트 Svg 가 스토리 세로 규격이다.
+    const svg = r.root.findAll(n => n.props?.width === 1080 && n.props?.height === 1920);
+    expect(svg.length).toBeGreaterThan(0);
+  });
+
   test('포맷별 시그니처 카피가 각 레이아웃에 나타난다', () => {
     expect(textOf(render(<RetirementCard model={MODEL} format="A" />).root)).toContain('MISSION COMPLETE');
     expect(textOf(render(<RetirementCard model={MODEL} format="B" />).root)).toContain('Together');
