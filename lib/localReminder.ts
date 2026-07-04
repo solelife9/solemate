@@ -106,8 +106,8 @@ export async function syncRunReminder(
       await mod.scheduleNotificationAsync({
         identifier: `${REMINDER_ID_PREFIX}${i}`,
         content: {
-          title: '오늘의 러닝',
-          body: '가볍게 한 걸음이면 충분해요 — Keep Going',
+          title: '오늘 달릴 시간이에요',
+          body: '오늘은 아직 안 달렸어요. 가볍게 한 바퀴 어때요?',
         },
         trigger: {type: 'date', date: dates[i]},
       });

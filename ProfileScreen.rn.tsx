@@ -48,7 +48,7 @@ const DEFAULT_PROFILE: Profile = { name: '러너', since: '', totalKm: 0, totalR
 const APP_VERSION = '0.0.1';
 
 // 마지막 동기 시각을 HH:MM 로 짧게 포맷한다(상세 행 detail 용). null 이면 호출부가
-// '아직 동기 안 함' 카피로 분기한다.
+// '아직 동기화 안 됨' 카피로 분기한다.
 function fmtSyncTime(ms: number): string {
   const d = new Date(ms);
   const hh = String(d.getHours()).padStart(2, '0');
@@ -307,7 +307,10 @@ export default function ProfileScreen({
               setAuthState((s) => nextAuthState(s, 'signOut'));
               setCloudMsg({ ok: true, text: '계정이 삭제됐어요.' });
             } catch (e: any) {
-              setCloudMsg({ ok: false, text: e?.message || '계정 삭제에 실패했어요. 잠시 후 다시 시도해 주세요.' });
+              // raw 에러(영문 Firebase 코드)를 화면에 노출하지 않는다 — 콘솔에만.
+              console.log('account delete error', e);
+              const reauth = /requires-recent-login|recent login|re-authenticate/i.test(String(e?.code ?? e?.message ?? ''));
+              setCloudMsg({ ok: false, text: reauth ? '보안을 위해 다시 로그인한 뒤 탈퇴해 주세요.' : '계정을 삭제하지 못했어요. 잠시 후 다시 시도해 주세요.' });
             }
           },
         },
@@ -364,7 +367,7 @@ export default function ProfileScreen({
   }, [signedIn, dataSig]);
 
   const accountLabel = cloudUser?.email || cloudUser?.displayName || '계정 연결됨';
-  const lastSyncLabel = lastSyncAt == null ? '아직 동기 안 함' : `${fmtSyncTime(lastSyncAt)} 동기됨`;
+  const lastSyncLabel = lastSyncAt == null ? '아직 동기화 안 됨' : `${fmtSyncTime(lastSyncAt)} 동기화됨`;
 
   const stepWeight = (dir: 1 | -1) => {
     onChangeWeight?.(Math.max(MIN_WEIGHT_KG, Math.min(MAX_WEIGHT_KG, weightKg + dir * WEIGHT_STEP)));
@@ -707,7 +710,7 @@ export default function ProfileScreen({
                   valueLS={0.3}
                   items={[
                     { value: recapTotalDisplay, unit: unit, label: '총 거리', testID: 'recap-total' },
-                    { value: recap.runCount, unit: '회', label: '런 수', testID: 'recap-runcount' },
+                    { value: recap.runCount, unit: '회', label: '러닝 수', testID: 'recap-runcount' },
                     { value: recap.avgPaceLabel, unit: recap.avgPaceLabel === '--' ? undefined : '/km', label: '평균 페이스', testID: 'recap-pace' },
                   ]}
                 />
@@ -782,7 +785,12 @@ export default function ProfileScreen({
                 <NotifToggle label="러닝 리마인더" value={notifSettings.runReminder} onToggle={() => toggleNotif('runReminder')} testID="notif-toggle-runReminder" />
                 <Stepper value={notifSettings.reminderTime} suffix="리마인더 시각" onMinus={() => stepReminder(-1)} onPlus={() => stepReminder(1)} />
                 {pushDenied && (
-                  <Text style={s.notifDenied} testID="notif-perm-denied">알림 권한이 꺼져 있어요 — 설정에서 허용해주세요</Text>
+                  <Text
+                    style={s.notifDenied}
+                    testID="notif-perm-denied"
+                    accessibilityRole="button"
+                    accessibilityLabel="알림 권한이 꺼져 있어요. 눌러서 설정 열기"
+                    onPress={() => { Promise.resolve(Linking.openSettings()).catch(() => {}); }}>알림 권한이 꺼져 있어요 — 설정에서 허용하기 ›</Text>
                 )}
               </View>
             )}

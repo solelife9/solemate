@@ -430,9 +430,10 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'm
     if (r.ok) {
       Alert.alert('사진앱에 저장됐어요', '인스타 스토리에서 내 사진을 고른 뒤, 사진/스티커로 이 카드를 올리면 돼요.');
     } else if (r.reason === 'denied') {
-      Alert.alert('권한 필요', '설정에서 사진 추가 권한을 허용해 주세요.');
+      Alert.alert('사진 접근 권한이 필요해요', '설정에서 사진 추가 권한을 허용해 주세요.');
     } else {
-      Alert.alert('저장 실패', r.reason ?? '잠시 후 다시 시도해 주세요.');
+      console.log('card save error', r.reason);
+      Alert.alert('저장하지 못했어요', '잠시 후 다시 시도해 주세요.');
     }
   };
   // GPX 내보내기(2026-07-05) — 경로가 있을 때만 옵션 노출. '내 데이터는 내 것'

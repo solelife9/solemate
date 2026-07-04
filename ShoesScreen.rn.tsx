@@ -372,7 +372,7 @@ function ShoeDetail({
               { v: String(totals.totalRuns), u: '회', l: '러닝 횟수' },
               { v: totals.totalTime, u: '', l: '러닝 시간' },
               { v: totals.avgPace, u: totals.avgPace !== '--' ? '/km' : '', l: '평균 페이스' },
-              { v: extra.longest > 0 ? String(displayNum(extra.longest, unit, 1)) : '--', u: extra.longest > 0 ? unit : '', l: '최장 런' },
+              { v: extra.longest > 0 ? String(displayNum(extra.longest, unit, 1)) : '--', u: extra.longest > 0 ? unit : '', l: '최장 러닝' },
               { v: extra.weeklyAvg > 0 ? String(displayNum(extra.weeklyAvg, unit, 1)) : '--', u: extra.weeklyAvg > 0 ? unit : '', l: '주 평균 · 4주' },
             ].map((x, i) => (
               <View key={i} style={s.statGridCell3}>

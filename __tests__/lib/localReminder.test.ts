@@ -51,7 +51,7 @@ describe('syncRunReminder', () => {
     expect(n).toBe(REMINDER_CHAIN_DAYS);
     expect(mod.cancelled).toHaveLength(REMINDER_CHAIN_DAYS);
     expect(mod.scheduled[0].identifier).toBe(`${REMINDER_ID_PREFIX}0`);
-    expect(mod.scheduled[0].content.title).toContain('러닝');
+    expect(mod.scheduled[0].content.title).toContain('달릴');
     expect(mod.scheduled[0].trigger.date.getHours()).toBe(19);
   });
   test('off → 취소만, 스케줄 0', async () => {

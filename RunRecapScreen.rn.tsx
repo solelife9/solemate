@@ -140,8 +140,8 @@ export default function RunRecapScreen({
         {text: '투명 카드만 저장', onPress: async () => {
           const r = await saveCardToLibrary(cardRef);
           if (r.ok) Alert.alert('사진앱에 저장됐어요', '인스타 스토리에서 내 사진을 고른 뒤, 스티커로 이 카드를 올리면 돼요.');
-          else if (r.reason === 'denied') Alert.alert('권한 필요', '설정에서 사진 추가 권한을 허용해 주세요.');
-          else Alert.alert('저장 실패', r.reason ?? '잠시 후 다시 시도해 주세요.');
+          else if (r.reason === 'denied') Alert.alert('사진 접근 권한이 필요해요', '설정에서 사진 추가 권한을 허용해 주세요.');
+          else { console.log('card save error', r.reason); Alert.alert('저장하지 못했어요', '잠시 후 다시 시도해 주세요.'); }
         }},
         {text: '취소', style: 'cancel'},
       ]);
@@ -151,8 +151,8 @@ export default function RunRecapScreen({
       {text: '사진앱에 저장', onPress: async () => {
         const r = await saveCardToLibrary(cardRef);
         if (r.ok) Alert.alert('사진앱에 저장됐어요', '인스타 스토리에서 내 사진을 고른 뒤, 스티커로 이 카드를 올리면 돼요.');
-        else if (r.reason === 'denied') Alert.alert('권한 필요', '설정에서 사진 추가 권한을 허용해 주세요.');
-        else Alert.alert('저장 실패', r.reason ?? '잠시 후 다시 시도해 주세요.');
+        else if (r.reason === 'denied') Alert.alert('사진 접근 권한이 필요해요', '설정에서 사진 추가 권한을 허용해 주세요.');
+        else { console.log('card save error', r.reason); Alert.alert('저장하지 못했어요', '잠시 후 다시 시도해 주세요.'); }
       }},
       {text: '공유 시트로', onPress: () => void shareRunCard(cardRef, shareInput)},
       {text: '취소', style: 'cancel'},
@@ -239,7 +239,7 @@ export default function RunRecapScreen({
             return {km: sp.km, tgt, actual: sp.paceSec, diff: Math.round(sp.paceSec - tgt)};
           });
           const avgDiff = Math.round(rows.reduce((a, r) => a + r.diff, 0) / rows.length);
-          const fmtDelta = (d: number) => (d > 0 ? `+${d}s` : d < 0 ? `−${Math.abs(d)}s` : '±0s');
+          const fmtDelta = (d: number) => (d > 0 ? `+${d}초` : d < 0 ? `−${Math.abs(d)}초` : '±0초');
           const dColor = (d: number) => (d <= -3 ? GOOD : d >= 3 ? WARN : T3);
           return (
             <View style={s.plan} testID="recap-pace-plan">

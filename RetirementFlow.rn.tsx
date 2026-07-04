@@ -335,7 +335,7 @@ function JourneyStep({
   if (model.avgPace) cells.push({l: '평균 페이스', v: `${model.avgPace}/km`});
   if (model.bestPace) cells.push({l: '최고 페이스', v: `${model.bestPace}/km`});
   if (model.longestRun)
-    cells.push({l: '최장 런', v: `${model.longestRun}${model.unit}`});
+    cells.push({l: '최장 러닝', v: `${model.longestRun}${model.unit}`});
   if (model.usageDays > 0)
     cells.push({l: '사용 기간', v: usagePeriodKo(model.usageDays)});
 

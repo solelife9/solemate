@@ -117,7 +117,7 @@ async function recoverToReview() {
     renderer = ReactTestRenderer.create(<App />);
   });
   await tick(5);
-  const call = alertSpy.mock.calls.find(c => String(c[0]).includes('미완료 런'));
+  const call = alertSpy.mock.calls.find(c => String(c[0]).includes('완료하지 않은 러닝'));
   if (!call) throw new Error('recover Alert was not shown');
   const recover = (call[2] as any[]).find(b => b.text === '기록 저장');
   await act(async () => {

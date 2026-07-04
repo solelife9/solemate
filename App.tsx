@@ -590,8 +590,8 @@ function Main(){
       if(asked||!isResumable(snap)||!snap) return;
       asked=true;
       Alert.alert(
-        '미완료 런 발견',
-        `${snap.dist.toFixed(2)}km · ${fmtTime(snap.elapsed)} 기록이 남아 있습니다.\n이어서 달릴까요, 여기까지 저장할까요?`,
+        '완료하지 않은 러닝이 있어요',
+        `${snap.dist.toFixed(2)}km · ${fmtTime(snap.elapsed)} 기록이 남아 있어요.\n이어서 달릴까요, 여기까지 저장할까요?`,
         [
           {text:'버리기',style:'destructive',onPress:()=>{void clearSnapshot();}},
           {text:'기록 저장',onPress:()=>{
@@ -990,7 +990,7 @@ function Main(){
       await AsyncStorage.setItem('shoe_alert_notified',JSON.stringify(notified));
       if(toNotify.length>0){
         const names=critical.filter((s:any)=>toNotify.some((id:any)=>String(id)===String(s.id))).map((s:any)=>s.name);
-        Alert.alert('신발 교체 알림',names.join(', ')+`\n\n수명의 ${alertCfg.thresholdPct}% 이상을 사용했어요.\n${KEEP_GOING_REPLACE} — 새 신발을 준비하세요!`,[{text:'확인'}]);
+        Alert.alert('신발 교체 알림',names.join(', ')+`\n\n수명의 ${alertCfg.thresholdPct}% 이상을 신었어요.\n이제 다음 러닝화를 준비해볼까요?`,[{text:'확인'}]);
       }
     }catch(e){console.log('checkShoeAlerts error',e);}
   }
@@ -2129,7 +2129,7 @@ function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],weightKg,age=0,restHR=0
         // 엔진이 freeze하므로 더 증가하지 않는다(거리와 동일하게 정지).
         clearInterval(timer.current);clearInterval(snapTimer.current);
         void stopTracking();
-        setGpsStatus('위치 권한 필요');setGpsStalled(false);
+        setGpsStatus('위치 권한이 필요해요');setGpsStalled(false);
         openLocationSettingsAlert('달리는 중에 위치 권한이 꺼져서 거리 기록을 멈췄어요. 설정에서 위치 권한을 다시 허용해 주세요.');
       }
     });
@@ -2337,7 +2337,7 @@ function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],weightKg,age=0,restHR=0
     const fk=runTracker.getDistanceKm(),ft=runTracker.getElapsedFinal();
     if(fk<0.01){
       stop();
-      Alert.alert('거리가 너무 짧아요','계속 달리거나 나가기를 선택하세요',[
+      Alert.alert('거리가 너무 짧아요','조금 더 달릴까요, 아니면 여기서 마칠까요?',[
         {text:'계속 달리기',onPress:()=>{setKm(0);setElapsed(0);setCadence(0);setGpsStatus('GPS 신호 찾는 중...');setPaused(false);setAutoPaused(false);void beginRun();}},
         {text:'나가기',style:'destructive',onPress:onDiscard},
       ]);

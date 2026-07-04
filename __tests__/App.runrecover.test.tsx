@@ -116,7 +116,7 @@ async function mountAndSettle() {
 
 // Pull the recover Alert's button list (버리기 / 기록 저장 / 이어 달리기 actions).
 function recoverButtons(alertSpy: jest.SpyInstance): any[] {
-  const call = alertSpy.mock.calls.find(c => String(c[0]).includes('미완료 런'));
+  const call = alertSpy.mock.calls.find(c => String(c[0]).includes('완료하지 않은 러닝'));
   if (!call) throw new Error('recover Alert was not shown');
   return (call[2] as any[]) || [];
 }

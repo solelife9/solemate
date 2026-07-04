@@ -5,7 +5,7 @@
  * 최상/양호/교체 고려/교체 권장. TierBadge 3단계는 폐지):
  *   1) 95%(used/max) → wearTier consider(교체 고려) 칩.
  *   2) tier별 칩: 80%=교체 고려, 50%=양호.
- *   3) keep-going 카피('지금 교체하면 부상 없이 계속')가 교체 알림에 담긴다.
+ *   3) keep-going 카피('다음 러닝화를 준비')가 교체 알림에 담긴다.
  *   4) 신발별 추적: 이미 알린 신발은 재마운트해도 중복 알림이 없고, 같은 날 새로
  *      임계에 도달한 *다른* 신발만 알린다(기존 '하루 1회' 전역 게이트 교체).
  *
@@ -141,7 +141,7 @@ test('교체 알림에 keep-going 카피가 담긴다', async () => {
   const calls = replaceAlertCalls(alertSpy);
   expect(calls).toHaveLength(1);
   expect(calls[0].message).toContain('Hoka Clifton');
-  expect(calls[0].message).toContain('지금 교체하면 부상 없이 계속');
+  expect(calls[0].message).toContain('다음 러닝화를 준비');
 });
 
 test('신발별 추적: 같은 신발 재알림 없음 + 같은 날 새 신발만 알림', async () => {
