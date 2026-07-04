@@ -242,6 +242,11 @@ export function buildContext(
   const currentStreak = currentStreakFromDates(sortedUniq);
   const longestGapDays = longestGapFromDates(sortedUniq);
   const wActive = weeklyActiveRatio(sortedUniq, safeNow);
+  // 첫 런 → 마지막 런 사이 일수('킵고잉, 1년'). 마지막 '런' 기준이라 안 달리고
+  // 기다리기만 하면 늘지 않는다(now 기준이 아님 — 의도).
+  const runSpanDays = sortedUniq.length >= 2
+    ? Math.max(0, daysBetween(sortedUniq[0], sortedUniq[sortedUniq.length - 1]))
+    : 0;
 
   // ── 페이스/최장 런 ───────────────────────────────────────────────────────────
   const pr = personalRecords(runList.map(toUiRun));
@@ -280,6 +285,7 @@ export function buildContext(
     achievementPoints: 0,
     hasWinterRun,
     hasSummerRun,
+    runSpanDays,
   };
 
   const achievementPoints = computeTotalXp(baseCtx);

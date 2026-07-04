@@ -6,7 +6,7 @@
 //   bronze   0 XP ~ silver  100 XP ~ gold    300 XP ~ platinum  700 XP
 //   diamond  1,500 XP ~ master  3,000 XP ~ legend  5,000 XP
 //
-// 총 최대 XP ≈ 5,460(마라톤 + 10켤레 은퇴 + 모든 experience 포함).
+// 총 최대 XP ≈ 5,600(마라톤 + 10켤레 은퇴·동행 + 모든 experience 포함, 10켤레 기준).
 // PURE: 입력 불변, NaN/음수/누락 → 0, throw 금지.
 // ============================================================================
 import {TIER_COLORS} from '../../theme';

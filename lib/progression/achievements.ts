@@ -1,18 +1,20 @@
 // ============================================================================
 // lib/progression/achievements.ts — KEEGO 업적 카탈로그 (재설계)
 // ============================================================================
-// 업적 = 러너의 정체성. 6개 카테고리 × 총 ~5,460 XP(레전드 5,000 XP).
+// 업적 = 러너의 정체성. 6개 카테고리 × 총 ~5,600 XP(레전드 5,000 XP, 10켤레 기준).
 //
 //   1. runningMilestone  — 단일 런 이정표(첫 5km ~ 마라톤)                 730 XP max
 //   2. distanceMilestone — 누적 거리(100 → 10,000km)                     1,070 XP max
 //   3. shoeJourney       — 신발 소유 · 은퇴(첫 신발 ~ 명예의 전당)          1,690 XP max
 //   4. shoeMemory        — 신발과의 동행(켤레마다 반복 적립, 10켤레 기준)   1,700 XP max
-//   5. experience        — 특별 경험(트레일·새벽·야간·계절)                   200 XP max
-//   6. keego             — Keep Going 철학(오랜 동반자)                      100 XP max
+//   5. experience        — 특별 경험(야간·새벽·계절) + 챌린지                 310 XP max
+//   6. keego             — Keep Going 철학(킵고잉, 1년)                      100 XP max
 //
 // 설계 원칙:
 //   · RPG 아님 — 보상이 아닌 기억. "memories, not rewards."
-//   · rain_run / trail_run: 카탈로그에 있되 지금은 항상 unlocked=false(데이터 없음).
+//   · 영원히 잠긴 업적은 노출하지 않는다(trail/rain 은 데이터 생기면 재도입).
+//   · 인센티브는 안전 권고와 정렬 — 동행 상위 단계는 절대 km 아닌 수명 비율(90%=교체
+//     권장 시점)이라, 죽은 신발로 달려야 따지는 업적이 없다.
 //   · shoeMemory는 켤레마다 반복 적립(repeatablePerShoe=true) — earnedCount × xp.
 //   · PURE: ctx 불변, throw 금지, NaN/음수/누락 → 0.
 // ============================================================================
@@ -22,6 +24,9 @@ import {
   PerShoeStats,
   ProgressionContext,
 } from './types';
+// 수명 기반 동행 업적(journey_half/full)의 maxKm 미상 폴백 — 카테고리 기본 수명의
+// 단일 소스(data/shoeModels)와 정렬(데일리 650).
+import {DEFAULT_LIFESPAN_KM} from '../../data/shoeModels';
 
 // ── 수치 방어 헬퍼 ──────────────────────────────────────────────────────────────
 function nonNeg(n: number): number {
@@ -34,14 +39,6 @@ function shoeList(ctx: ProgressionContext): PerShoeStats[] {
   return Object.values(map).filter(Boolean);
 }
 
-// ── 날짜 파싱 ──────────────────────────────────────────────────────────────────
-const DAY_MS = 86400000;
-function ymdToMs(d: string): number {
-  const [y, m, dd] = d.split('-').map(Number);
-  const ms = new Date(y, m - 1, dd).getTime();
-  return Number.isFinite(ms) ? ms : NaN;
-}
-
 // ── 신발별 km 집계 ─────────────────────────────────────────────────────────────
 /** 모든 신발(은퇴 포함) 중 누적 km ≥ minKm 인 신발 수. */
 function shoesOverKm(ctx: ProgressionContext, minKm: number): number {
@@ -51,22 +48,6 @@ function shoesOverKm(ctx: ProgressionContext, minKm: number): number {
 /** 모든 신발의 km 중 최댓값(진행 바용). */
 function maxShoeKm(ctx: ProgressionContext): number {
   return shoeList(ctx).reduce((m, s) => Math.max(m, nonNeg(s.km)), 0);
-}
-
-// ── 신발 여정 일수 ─────────────────────────────────────────────────────────────
-/** 어떤 신발이든(은퇴 포함) firstWorn→lastWorn(또는 now) 중 가장 긴 일수. */
-function longestShoeJourneyDays(ctx: ProgressionContext): number {
-  const now = Number.isFinite(ctx.now) ? ctx.now : 0;
-  let max = 0;
-  for (const s of shoeList(ctx)) {
-    if (!s.firstWorn) continue;
-    const start = ymdToMs(s.firstWorn);
-    if (!Number.isFinite(start)) continue;
-    const end = s.lastWorn ? ymdToMs(s.lastWorn) : now;
-    const days = Math.max(0, Math.floor(((!Number.isFinite(end) ? now : end) - start) / DAY_MS));
-    if (days > max) max = days;
-  }
-  return max;
 }
 
 // ── 은퇴 집계 ──────────────────────────────────────────────────────────────────
@@ -136,7 +117,7 @@ const MARATHON_KM = 42.195;
 const RUNNING_MILESTONE: AchievementDef[] = [
   metricAch({
     key: 'first_run', name: '첫 걸음', rarity: 'common', xp: 10,
-    description: '러닝 앱을 깔고 첫 런을 기록한 날.',
+    description: 'Keego와 함께한 첫 런.',
     category: 'runningMilestone', target: 1,
     value: ctx => nonNeg(ctx.runCount),
   }),
@@ -275,21 +256,69 @@ const SHOE_JOURNEY: AchievementDef[] = [
 // ============================================================================
 // 카테고리 4: shoeMemory — 신발과의 동행(켤레마다 반복 적립)
 // ============================================================================
+// 2026-07-04 재설계(사용자 발견 모순): 옛 '함께 500km'는 카본화 기본 수명(450km)보다
+// 길어서, 앱이 '교체 권장'(수명 90%)한 신발로 계속 달려야만 따지는 업적이었다 —
+// 인센티브가 안전 권고와 정면 충돌. 이제 상위 두 단계는 절대 km 대신 **그 신발의
+// 수명(maxKm) 대비 비율**로 판정한다: 반환점(50%) · 여정 완주(90% = 교체 권장 시점).
+// '여정 완주'는 정확히 은퇴할 때가 된 순간 열려, 업적이 건강한 은퇴를 축하한다.
+const JOURNEY_HALF_PCT = 0.5;
+const JOURNEY_FULL_PCT = 0.9; // lib/shoe SHOE_REPLACE_PCT(90%) — 교체 권장 시점과 정렬
+
+/** 신발의 판정 수명(km). maxKm 미상(0)이면 데일리 기본 650. */
+function lifespanOf(s: PerShoeStats): number {
+  return nonNeg(s.maxKm) > 0 ? s.maxKm : DEFAULT_LIFESPAN_KM;
+}
+
+/** 수명 대비 비율 ≥ pct 인 신발 수(은퇴 포함). */
+function shoesOverLifePct(ctx: ProgressionContext, pct: number): number {
+  return shoeList(ctx).filter(s => nonNeg(s.km) >= lifespanOf(s) * pct).length;
+}
+
+/** 수명 기반 반복 업적 — 진행 바는 비율이 가장 앞선 신발의 km/목표km 로 보여준다. */
+function repeatableLifePctAch(
+  opts: Omit<RepeatableOpts, 'kmThreshold'> & {lifePct: number},
+): AchievementDef {
+  const {key, name, description, category, rarity, xp, lifePct, signature} = opts;
+  return {
+    key, name, description, category, rarity, xp, signature,
+    repeatablePerShoe: true,
+    progress: ctx => {
+      const count = shoesOverLifePct(ctx, lifePct);
+      if (count > 0) return {current: count, target: count};
+      let bestCur = 0;
+      let bestTarget = Math.round(DEFAULT_LIFESPAN_KM * lifePct);
+      let bestRatio = -1;
+      for (const s of shoeList(ctx)) {
+        const target = lifespanOf(s) * lifePct;
+        const ratio = target > 0 ? nonNeg(s.km) / target : 0;
+        if (ratio > bestRatio) {
+          bestRatio = ratio;
+          bestCur = Math.min(nonNeg(s.km), target);
+          bestTarget = Math.round(target);
+        }
+      }
+      return {current: Math.round(bestCur), target: bestTarget};
+    },
+    unlocked: ctx => shoesOverLifePct(ctx, lifePct) >= 1,
+    earnedCount: ctx => shoesOverLifePct(ctx, lifePct),
+  };
+}
+
 const SHOE_MEMORY: AchievementDef[] = [
   repeatableShoeAch({
     key: 'together_100', name: '함께 100km', rarity: 'common', xp: 20,
     description: '이 신발과 100km를 달렸다. 첫 번째 이정표.',
     category: 'shoeMemory', kmThreshold: 100,
   }),
-  repeatableShoeAch({
-    key: 'together_300', name: '함께 300km', rarity: 'rare', xp: 50,
-    description: '300km. 이 신발이 얼마나 고마운지 안다.',
-    category: 'shoeMemory', kmThreshold: 300,
+  repeatableLifePctAch({
+    key: 'journey_half', name: '반환점', rarity: 'rare', xp: 50,
+    description: '한 켤레와 수명의 절반을 함께 달렸다.',
+    category: 'shoeMemory', lifePct: JOURNEY_HALF_PCT,
   }),
-  repeatableShoeAch({
-    key: 'together_500', name: '함께 500km', rarity: 'epic', xp: 100,
-    description: '500km를 함께 달렸다. 이 신발과의 기억.',
-    category: 'shoeMemory', kmThreshold: 500,
+  repeatableLifePctAch({
+    key: 'journey_full', name: '여정 완주', rarity: 'epic', xp: 100,
+    description: '수명의 90%를 함께 달렸다. 이제 잘 보내줄 시간 — 은퇴도 훈장이다.',
+    category: 'shoeMemory', lifePct: JOURNEY_FULL_PCT,
     signature: true,
   }),
 ];
@@ -298,30 +327,15 @@ const SHOE_MEMORY: AchievementDef[] = [
 // 카테고리 5: experience — 특별 경험
 // ============================================================================
 const EXPERIENCE: AchievementDef[] = [
-  // trail_run: 데이터 없음 → 항상 잠금. 추후 surface 연동 시 활성화.
-  {
-    key: 'trail_run', name: '트레일 런', rarity: 'rare', xp: 50,
-    description: '오프로드를 달렸다. 자연과 함께한 런.',
-    category: 'experience',
-    hidden: false,
-    progress: () => ({current: 0, target: 1}),
-    unlocked: () => false,
-  },
+  // trail_run·rain_run 제거(2026-07-04): 지면/날씨 데이터가 없어 영원히 잠금 상태인
+  // 업적을 노출하는 건 사용자 신뢰를 깎는다("이건 왜 안 따져?"). 데이터가 생기면
+  // (지면 연동·날씨 API) 그때 카탈로그에 다시 넣는다 — 새 업적 추가는 안전(합산제).
   {
     key: 'night_run', name: '나이트 런', rarity: 'rare', xp: 30,
     description: '밤 10시 이후, 도시의 고요함 속에서 달렸다.',
     category: 'experience',
     progress: ctx => ({current: Math.min(nonNeg(ctx.nightRunCount), 1), target: 1}),
     unlocked: ctx => nonNeg(ctx.nightRunCount) >= 1,
-  },
-  // rain_run: 날씨 API 없음 → 항상 잠금.
-  {
-    key: 'rain_run', name: '빗속 런', rarity: 'rare', xp: 30,
-    description: '비 오는 날도 포기하지 않았다.',
-    category: 'experience',
-    hidden: false,
-    progress: () => ({current: 0, target: 1}),
-    unlocked: () => false,
   },
   {
     key: 'sunrise_run', name: '일출 런', rarity: 'rare', xp: 30,
@@ -357,7 +371,7 @@ const CHALLENGES: AchievementDef[] = [
     value: ctx => nonNeg(ctx.completedChallengeCount),
   }),
   metricAch({
-    key: 'challenge_dedicated', name: '챌린지 집착', rarity: 'rare', xp: 60,
+    key: 'challenge_dedicated', name: '꾸준한 도전', rarity: 'rare', xp: 60,
     description: '챌린지 3개를 완수했다. 목표 달성의 맛을 알았다.',
     category: 'experience', target: 3,
     value: ctx => nonNeg(ctx.completedChallengeCount),
@@ -373,17 +387,21 @@ const CHALLENGES: AchievementDef[] = [
 // ============================================================================
 // 카테고리 6: keego — Keep Going 철학
 // ============================================================================
+// 2026-07-04 재설계(사용자 발견 모순): 옛 '오랜 동반자'(한 켤레와 1년)는 적게 달리거나
+// 수명 지난 신발로 계속 달려야 유리한 역인센티브였다(주 30km 러너의 데일리화 수명은
+// 4~5개월). Keep Going 은 신발이 아니라 **러너의 여정** — 첫 런에서 1년이 지나도
+// 여전히 달리고 있는 것(runSpanDays: 첫 런 → 마지막 런, 기다림만으론 안 늘어남)이다.
 const KEEGO: AchievementDef[] = [
   {
-    key: 'longtime_partner', name: '오랜 동반자', rarity: 'epic', xp: 100,
-    description: '한 켤레와 1년 이상 함께 달렸다. 그것이 Keep Going.',
+    key: 'keep_going_year', name: '킵고잉, 1년', rarity: 'epic', xp: 100,
+    description: '첫 런으로부터 1년이 지나도, 여전히 달리고 있다. 그것이 Keep Going.',
     category: 'keego',
     signature: true,
     progress: ctx => ({
-      current: Math.min(longestShoeJourneyDays(ctx), 365),
+      current: Math.min(nonNeg(ctx.runSpanDays ?? 0), 365),
       target: 365,
     }),
-    unlocked: ctx => longestShoeJourneyDays(ctx) >= 365,
+    unlocked: ctx => nonNeg(ctx.runSpanDays ?? 0) >= 365,
   },
 ];
 

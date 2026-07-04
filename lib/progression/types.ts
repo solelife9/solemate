@@ -220,6 +220,9 @@ export interface ProgressionContext {
   hasWinterRun?: boolean;
   /** 여름(6·7·8월) 런 기록 여부. */
   hasSummerRun?: boolean;
+  /** 첫 런 → 마지막 런 사이 일수(같은 날이면 0). '킵고잉, 1년' 업적의 단일 소스 —
+      기다리기만 해서는 늘지 않고, 1년 뒤에도 '달린 기록'이 있어야 365를 넘는다. */
+  runSpanDays?: number;
 }
 
 // ── Leaderboard (미래 백엔드 계약 stub) ──────────────────────────────────────

@@ -174,26 +174,38 @@ describe('anti-scenario 1: 미충족 무언락', () => {
     expect(evaluateAchievements(ctx)).not.toContain('dist_500');
   });
 
-  test('shoeMemory(함께 500km): 모든 신발 미달이면 미언락, 도달 신발 있으면 언락', () => {
-    const def = achievementDef('together_500')!;
-    // 가장 먼 신발도 499km → 미언락, 진행은 best/threshold.
+  test('shoeMemory(여정 완주): 수명의 90% 기준 — 카본화(450)도 405km면 언락(2026-07-04 재설계)', () => {
+    const def = achievementDef('journey_full')!;
+    // 옛 '함께 500km'는 카본 수명(450)보다 길어 교체 권고를 어겨야 따지는 모순.
+    // 이제 수명 비율 90%: 카본 405km 도달이면 언락 — 교체 권장 시점과 정확히 정렬.
+    const carbonReached = emptyCtx({
+      perShoe: perShoeMap(shoe({id: 'carbon', km: 405, maxKm: 450})),
+    });
+    expect(def.unlocked(carbonReached)).toBe(true);
+
+    // 데일리(650)는 90% = 585km 미만이면 미언락, 진행은 best km/목표 km.
     const below = emptyCtx({
       perShoe: perShoeMap(
-        shoe({id: 'a', km: 100, maxKm: 600}),
-        shoe({id: 'b', km: 499, maxKm: 600}),
+        shoe({id: 'a', km: 100, maxKm: 650}),
+        shoe({id: 'b', km: 500, maxKm: 650}),
       ),
     });
     expect(def.unlocked(below)).toBe(false);
-    expect(progressOf('together_500', below)).toEqual({current: 499, target: 500});
+    expect(progressOf('journey_full', below)).toEqual({current: 500, target: 585});
+  });
 
-    // 한 켤레라도 500km 이상이면 언락.
-    const reached = emptyCtx({
-      perShoe: perShoeMap(
-        shoe({id: 'a', km: 100, maxKm: 600}),
-        shoe({id: 'b', km: 500, maxKm: 600}),
-      ),
-    });
-    expect(def.unlocked(reached)).toBe(true);
+  test('shoeMemory(반환점): 수명의 50% — maxKm 미상이면 기본 650 폴백', () => {
+    const def = achievementDef('journey_half')!;
+    expect(def.unlocked(emptyCtx({
+      perShoe: perShoeMap(shoe({id: 'a', km: 225, maxKm: 450})),
+    }))).toBe(true);
+    // maxKm 0(미상) → 650 기준: 절반 325km.
+    expect(def.unlocked(emptyCtx({
+      perShoe: perShoeMap(shoe({id: 'a', km: 324, maxKm: 0})),
+    }))).toBe(false);
+    expect(def.unlocked(emptyCtx({
+      perShoe: perShoeMap(shoe({id: 'a', km: 325, maxKm: 0})),
+    }))).toBe(true);
   });
 
   test('shoeMemory 반복 적립: earnedCount = 임계 충족 신발 수', () => {
@@ -232,17 +244,10 @@ describe('anti-scenario 1: 미충족 무언락', () => {
     expect(achievementDef('summer_run')!.unlocked(emptyCtx({hasSummerRun: false}))).toBe(false);
   });
 
-  test('데이터 없는 경험 업적(트레일·빗속)은 항상 잠금', () => {
-    const rich = emptyCtx({
-      cumulativeKm: 99999,
-      longestRunKm: 99,
-      earlyRunCount: 99,
-      nightRunCount: 99,
-      hasWinterRun: true,
-      hasSummerRun: true,
-    });
-    expect(achievementDef('trail_run')!.unlocked(rich)).toBe(false);
-    expect(achievementDef('rain_run')!.unlocked(rich)).toBe(false);
+  test('영원히 잠긴 업적(트레일·빗속)은 카탈로그에서 제거됐다(2026-07-04)', () => {
+    // 데이터가 없어 절대 못 따는 업적을 노출하면 신뢰를 깎는다 — 데이터 생기면 재도입.
+    expect(achievementDef('trail_run')).toBeUndefined();
+    expect(achievementDef('rain_run')).toBeUndefined();
   });
 
   test('비정상 입력에서 throw 없이 [] 반환', () => {
@@ -348,43 +353,26 @@ describe('카탈로그 무결성', () => {
 });
 
 // ============================================================================
-// 6) keego — 오랜 동반자(여정 일수 기반)
+// 6) keego — 킵고잉, 1년(러너의 여정: 첫 런 → 마지막 런)
 // ============================================================================
-describe('keego: 오랜 동반자', () => {
-  test('한 켤레와 ≥365일 동행하면 언락, 미만이면 미언락', () => {
-    const def = achievementDef('longtime_partner')!;
-    const old = emptyCtx({
-      perShoe: perShoeMap(
-        shoe({id: 'a', km: 200, maxKm: 600, firstWorn: daysAgoISO(366)}),
-      ),
-    });
-    expect(def.unlocked(old)).toBe(true);
-
-    const young = emptyCtx({
-      perShoe: perShoeMap(
-        shoe({id: 'a', km: 200, maxKm: 600, firstWorn: daysAgoISO(300)}),
-      ),
-    });
-    expect(def.unlocked(young)).toBe(false);
+// 2026-07-04 재설계: 옛 '오랜 동반자'(한 켤레 1년)는 적게 달리거나 수명 지난 신발로
+// 달려야 유리한 역인센티브 → 러너 자신의 여정(runSpanDays)으로 교체.
+describe('keego: 킵고잉, 1년', () => {
+  test('첫 런과 마지막 런이 365일 이상 떨어져 있으면 언락', () => {
+    const def = achievementDef('keep_going_year')!;
+    expect(def.unlocked(emptyCtx({runSpanDays: 365}))).toBe(true);
+    expect(def.unlocked(emptyCtx({runSpanDays: 364}))).toBe(false);
+    expect(def.unlocked(emptyCtx({}))).toBe(false); // 필드 부재도 안전
   });
 
-  test('진행 바는 일수/365 로 캡된다', () => {
-    const def = achievementDef('longtime_partner')!;
-    const ctx = emptyCtx({
-      perShoe: perShoeMap(
-        shoe({id: 'a', km: 200, firstWorn: daysAgoISO(100)}),
-      ),
-    });
-    const p = achievementProgress(def, ctx);
-    expect(p.target).toBe(365);
-    expect(p.current).toBeCloseTo(100, 0);
-    expect(p.current).toBeLessThan(p.target);
+  test('진행 바는 runSpanDays/365 로 캡된다', () => {
+    const def = achievementDef('keep_going_year')!;
+    const p = achievementProgress(def, emptyCtx({runSpanDays: 100}));
+    expect(p).toEqual({current: 100, target: 365});
+    expect(achievementProgress(def, emptyCtx({runSpanDays: 9999})).current).toBe(365);
+  });
+
+  test('옛 키(longtime_partner)는 카탈로그에 없다', () => {
+    expect(achievementDef('longtime_partner')).toBeUndefined();
   });
 });
-
-/** NOW 기준 n일 전 'YYYY-MM-DD'. */
-function daysAgoISO(n: number): string {
-  const d = new Date(NOW - n * 86400000);
-  const p = (x: number) => String(x).padStart(2, '0');
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
-}
