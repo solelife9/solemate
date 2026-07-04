@@ -219,35 +219,39 @@ const DISTANCE_MILESTONE: AchievementDef[] = [
 ];
 
 // ============================================================================
-// 카테고리 2b: consistency — 꾸준함 = 주간 리듬 단일 사다리(2026-07-04 재설계 v2)
+// 카테고리 2b: consistency — 꾸준함 = '쉼표 있는 리듬'(2026-07-04 재설계 v4, 확정)
 // ============================================================================
-// 하나의 지표(longestWeeklyStreak — 인정 런 ≥1km 가 있는 주의 최장 연속)로 2주→52주
-// 까지 오르는 monotone 사다리. 일일 스트릭(3일/7일)은 폐기 — 매일 달리기를 부추기는
-// 유일한 장치였고 '쉬는 날도 훈련'이라는 기조와 충돌했다(사용자 결정). 주 1회 리듬은
-// 과훈련 위험이 0이며, 주 5km든 50km든 '매주 나왔는가'만 재서 거리 축과 독립.
-// 52주(1년의 리듬)는 킵고잉 1년과 같은 1주년에 터진다 — 1주년 = 축제.
+// 규칙 한 문장: **한 주는 쉬어도 리듬이 이어진다. 두 주 연속 비면 새 리듬.**
+// (ctx.longestWeeklyStreak — 공백 1주 유예. 51주째 몸이 아파 한 주 쉰 러너를
+// 처벌하지 않고(부상 휴식 권고와 정렬), 띄엄띄엄 몇 년 모으기는 안 돼 단순 누적·
+// 누적 거리와 구분된다 — v2 연속은 가혹, v3 총량은 밋밋(사용자 판정)의 절충.)
+// 표시는 역대 최장 기준이라 후퇴 없음. 일일 스트릭은 부재(매일 달리기 부추김 금지).
 const CONSISTENCY: AchievementDef[] = [
   metricAch({
-    key: 'weeks_2', name: '2주의 리듬', rarity: 'common', xp: 20,
-    description: '2주 연속으로 달렸다. 리듬이 시작됐다.',
-    category: 'consistency', target: 2,
-    value: ctx => nonNeg(ctx.longestWeeklyStreak ?? 0),
-  }),
-  metricAch({
-    key: 'weeks_4', name: '4주의 리듬', rarity: 'rare', xp: 50,
-    description: '4주 연속, 한 주도 거르지 않았다. 습관이 됐다.',
+    key: 'weeks_4', name: '4주의 리듬', rarity: 'common', xp: 20,
+    progressPrefix: '최장 리듬',
+    description: '4주의 리듬. 한 주쯤 쉬어도 리듬은 이어진다.',
     category: 'consistency', target: 4,
     value: ctx => nonNeg(ctx.longestWeeklyStreak ?? 0),
   }),
   metricAch({
-    key: 'weeks_12', name: '한 계절의 리듬', rarity: 'epic', xp: 100,
-    description: '12주 — 계절이 바뀌는 동안 매주 달렸다.',
+    key: 'weeks_12', name: '한 계절의 리듬', rarity: 'rare', xp: 50,
+    progressPrefix: '최장 리듬',
+    description: '12주 — 계절이 바뀌는 동안 리듬을 지켰다.',
     category: 'consistency', target: 12,
     value: ctx => nonNeg(ctx.longestWeeklyStreak ?? 0),
   }),
   metricAch({
+    key: 'weeks_26', name: '반년의 리듬', rarity: 'epic', xp: 100,
+    progressPrefix: '최장 리듬',
+    description: '반년의 리듬. 쉬어간 주가 있어도, 당신은 돌아왔다.',
+    category: 'consistency', target: 26,
+    value: ctx => nonNeg(ctx.longestWeeklyStreak ?? 0),
+  }),
+  metricAch({
     key: 'weeks_52', name: '1년의 리듬', rarity: 'legendary', xp: 300,
-    description: '52주. 일 년의 모든 주에 러닝이 있었다.',
+    progressPrefix: '최장 리듬',
+    description: '1년의 리듬을 지켰다. 잠깐의 쉼표까지, 전부 러닝이었다.',
     category: 'consistency', target: 52,
     value: ctx => nonNeg(ctx.longestWeeklyStreak ?? 0),
     signature: true,

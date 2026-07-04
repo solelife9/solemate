@@ -79,6 +79,20 @@ describe('buildContext aggregation', () => {
     expect(ctx.qualifiedRunCount).toBe(4);
     // 6/1(월)~6/3 주 + 6/9(화) 주 = 연속 2주(6/1 주 → 6/8 주).
     expect(ctx.longestWeeklyStreak).toBe(2);
+    // 러닝이 있는 주의 총수 — 통계용.
+    expect(ctx.qualifiedWeekCount).toBe(2);
+    // '쉼표 있는 리듬': 공백 1주(6/16 주 비움)는 리듬을 잇는다 → 3.
+    const withGap1 = buildContext(
+      [...runs, {id: 'g1', shoe_id: 's1', km: 5, run_date: '2026-06-23', duration: 1500, run_time: '07:00'}],
+      shoes, earned, challenges, new Date(2026, 5, 26).getTime(),
+    );
+    expect(withGap1.longestWeeklyStreak).toBe(3);
+    // 공백 2주(6/16·6/23 주 비움)는 끊는다 → 새 리듬 1, 최장은 2 유지.
+    const withGap2 = buildContext(
+      [...runs, {id: 'g2', shoe_id: 's1', km: 5, run_date: '2026-06-30', duration: 1500, run_time: '07:00'}],
+      shoes, earned, challenges, new Date(2026, 6, 3).getTime(),
+    );
+    expect(withGap2.longestWeeklyStreak).toBe(2);
     // 0.2km 미니 런은 인정에서 제외되지만 누적 거리에는 포함된다.
     const withMini = buildContext(
       [...runs, {id: 'r5', shoe_id: 's1', km: 0.2, run_date: '2026-06-04', duration: 90, run_time: '23:00'}],

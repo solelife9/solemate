@@ -357,24 +357,19 @@ describe('카탈로그 무결성', () => {
 // 5b) consistency — 꾸준함(런 횟수·스트릭·누적 시간)
 // ============================================================================
 describe('consistency: 꾸준함', () => {
-  test('주간 리듬: 4주/12주 연속 — 거리·횟수와 독립(longestWeeklyStreak)', () => {
+
+  test("꾸준함 v4('쉼표 있는 리듬'): 유예 1주 스트릭이 단일 지표", () => {
     expect(achievementDef('weeks_4')!.unlocked(emptyCtx({longestWeeklyStreak: 4}))).toBe(true);
-    expect(achievementDef('weeks_4')!.unlocked(emptyCtx({longestWeeklyStreak: 3}))).toBe(false);
-    expect(achievementDef('weeks_12')!.unlocked(emptyCtx({longestWeeklyStreak: 12}))).toBe(true);
-    // 횟수 업적은 누적 거리와 이중 축하라 폐기됐다(카탈로그 계약).
-    expect(achievementDef('runs_10')).toBeUndefined();
-    expect(achievementDef('runs_100')).toBeUndefined();
-  });
-  test('주간 리듬 사다리: 2→4→12→52 단일 지표(monotone) — 일일 스트릭은 폐기', () => {
-    expect(achievementDef('weeks_2')!.unlocked(emptyCtx({longestWeeklyStreak: 2}))).toBe(true);
     expect(achievementDef('weeks_52')!.unlocked(emptyCtx({longestWeeklyStreak: 52}))).toBe(true);
     expect(achievementDef('weeks_52')!.unlocked(emptyCtx({longestWeeklyStreak: 51}))).toBe(false);
-    // 일일 스트릭(매일 달리기 부추김)은 기조와 충돌해 폐기됐다(카탈로그 계약).
+    // 단순 누적 주 수로는 열리지 않는다(리듬 유지가 조건 — 누적 거리와 구분).
+    expect(achievementDef('weeks_52')!.unlocked(emptyCtx({qualifiedWeekCount: 60, longestWeeklyStreak: 30}))).toBe(false);
+    // 일일 스트릭·횟수 업적은 폐기 상태 유지(카탈로그 계약).
     expect(achievementDef('streak_3')).toBeUndefined();
     expect(achievementDef('streak_7')).toBeUndefined();
-    // 꾸준함 카테고리는 주간 리듬 단일 지표만 담는다.
+    expect(achievementDef('runs_10')).toBeUndefined();
     const consistency = ACHIEVEMENTS.filter(a => a.category === 'consistency');
-    expect(consistency.map(a => a.key)).toEqual(['weeks_2', 'weeks_4', 'weeks_12', 'weeks_52']);
+    expect(consistency.map(a => a.key)).toEqual(['weeks_4', 'weeks_12', 'weeks_26', 'weeks_52']);
   });
   test('온전한 하루: keego 로 이관 — 누적 24시간(86400초)', () => {
     expect(achievementDef('time_24h')!.category).toBe('keego');

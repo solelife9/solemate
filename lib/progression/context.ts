@@ -260,8 +260,11 @@ export function buildContext(
   // 꾸준함 업적용 스트릭 — 인정 런(≥1km) 날짜만으로 계산.
   const qSorted = [...new Set(qualifiedDates)].sort();
   const longestQualifiedStreak = qSorted.length ? maxDayStreak(qSorted) : 0;
-  // 주 단위 연속(월요일 시작) — '매주 빠짐없이 나왔는가'. 거리·횟수와 독립인 꾸준함
-  // 지표(주 5km든 50km든 동일 진행). 인정 런이 있는 주의 인덱스가 연속인 최장 길이.
+  // 주 단위 리듬(월요일 시작) — '쉼표 있는 리듬'(2026-07-04 v4, 사용자 결정):
+  // 인정 런이 있는 주를 세되, **공백 1주는 리듬을 끊지 않는다**(diff ≤ 2 는 연결).
+  // 2주 연속 비어야 새 리듬. 51주째 몸이 아파 한 주 쉰 러너를 처벌하지 않으면서(부상
+  // 휴식 권고와 정렬), 띄엄띄엄 몇 년 모으기는 안 된다(격주 이상의 규칙성 유지 —
+  // 단순 누적·누적 거리와 구분). 값은 이어진 리듬 안의 '러닝한 주' 수(공백 주 미포함).
   const weekIdx = [...new Set(qSorted.map(d => {
     const ms = ymdToMs(d);
     const day = new Date(ms).getDay(); // 0 일 .. 6 토
@@ -269,9 +272,13 @@ export function buildContext(
   }))].sort((a, b) => a - b);
   let longestWeeklyStreak = weekIdx.length ? 1 : 0;
   for (let i = 1, run = 1; i < weekIdx.length; i++) {
-    run = weekIdx[i] === weekIdx[i - 1] + 1 ? run + 1 : 1;
+    run = weekIdx[i] - weekIdx[i - 1] <= 2 ? run + 1 : 1;
     if (run > longestWeeklyStreak) longestWeeklyStreak = run;
   }
+  // 러닝이 있는 주의 총수(연속 무관) — 꾸준함 업적의 단일 소스(2026-07-04 v3).
+  // '한 주 쉬면 초기화'는 부상 시 휴식 권고와 충돌하는 가혹함(사용자 지적) —
+  // 꾸준함은 끊기지 않는 것이 아니라 다시 돌아오는 것. 쌓이기만 하고 리셋 없음.
+  const qualifiedWeekCount = weekIdx.length;
 
   // ── 페이스/최장 런 ───────────────────────────────────────────────────────────
   const pr = personalRecords(runList.map(toUiRun));
@@ -314,6 +321,7 @@ export function buildContext(
     qualifiedRunCount,
     longestQualifiedStreak,
     longestWeeklyStreak,
+    qualifiedWeekCount,
   };
 
   const achievementPoints = computeTotalXp(baseCtx);
