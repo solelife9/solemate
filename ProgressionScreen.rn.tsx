@@ -247,10 +247,14 @@ export default function ProgressionScreen({
           </View>
         ) : null}
 
-        {/* 히어로 — 이름 + 업적 수만(애플 라지 타이틀 문법). 티어 칩은 제거(2026-07-04,
-            사용자 지적): 바로 아래 '나의 여정' 카드가 티어를 단독으로 말한다 — 한
-            화면에 같은 정보 두 번 금지(중복 축하 금지 원칙의 표시 버전). */}
+        {/* 히어로 — 티어는 정체성이라 이름 곁에(사용자 결정 2026-07-04 v2). 단, 칩
+            (알약 상자) 대신 Satisfy식 타이포그래피: 트래킹 잡은 캡스가 티어 색으로
+            이름 위에 선다 — 상자 없이 글자가 곧 훈장. 여정 카드는 '가는 길'(방향),
+            아이브로우는 '지금의 나'(정체성)로 역할이 다르다. */}
         <View style={s.hero} testID="rank-hero">
+          <Text style={[s.tierEyebrow, {color: rankColor}]} testID="rank-eyebrow">
+            {TIER_LABEL[view.rank.tier]}
+          </Text>
           <Text style={s.nick} numberOfLines={1} testID="progression-nick">
             {profileName}
           </Text>
@@ -448,6 +452,7 @@ const s = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 5,
   },
+  tierEyebrow: {fontFamily: DISPLAY, fontSize: 13, fontWeight: '600', letterSpacing: 4, textTransform: 'uppercase', marginBottom: 8},
   nick: {
     fontFamily: DISPLAY,
     color: T1,

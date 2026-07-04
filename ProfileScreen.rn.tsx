@@ -182,7 +182,7 @@ export default function ProfileScreen({
   onCloudMerged?: (data: BackupPayload) => void;
   // 마지막 동기 시각용 시계(테스트 주입). 기본은 Date.now.
   cloudClock?: () => number;
-  // 진척(랭크·타이틀·업적) 화면 진입. App 이 전체화면 ProgressionScreen 으로 전환한다.
+  // 진척(나의 여정·업적) 화면 진입. App 이 전체화면 ProgressionScreen 으로 전환한다.
   // 없으면 진척 진입 버튼은 표시되지 않는다(안전한 no-op).
   onOpenProgression?: () => void;
   // 명예의 전당(은퇴 신발 박물관) 진입. 없으면 진입 버튼 미표시(안전한 no-op).
@@ -573,7 +573,7 @@ export default function ProfileScreen({
           />
         </View>
 
-        {/* 진척(랭크·타이틀·업적) 진입 — 전체화면 ProgressionScreen 으로 전환 */}
+        {/* 진척(나의 여정·업적) 진입 — 전체화면 ProgressionScreen 으로 전환 */}
         {onOpenProgression && (
           <Pressable
             onPress={onOpenProgression}
@@ -584,7 +584,7 @@ export default function ProfileScreen({
             <View style={s.progressIcon}><Ionicons name="trophy-outline" size={19} color={ACCENT} /></View>
             <View style={{ flex: 1, minWidth: 0 }}>
               <Text style={s.progressTitle}>진척</Text>
-              <Text style={s.progressSub}>랭크 · 타이틀 · 업적</Text>
+              <Text style={s.progressSub}>나의 여정 · 업적</Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={T3} />
           </Pressable>
