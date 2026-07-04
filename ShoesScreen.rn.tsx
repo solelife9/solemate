@@ -130,10 +130,16 @@ function ShoeDetail({
   const wearView = buildWearView(shoe, shoeRuns, { weightKg, surfaceOf });
   // 교체 예상(상세 카드, 핸드오프 정합): '현재 패턴 기준 약 N주 후 교체 예상이에요'.
   // ok 예측에서만 주수를 노출한다(overdue/예측불가는 카드 숨김 — 교체는 keep-going 배너가 담당).
-  const detailReplaceWeeks =
+  // 조건부 노출(2026-07-04 사용자 질문 → CD 결정): 예측이 8주 이내로 가까울 때만
+  // 카드를 보인다 — 새 신발의 '40주 후'는 행동을 못 이끄는 노이즈, 카드의 등장
+  // 자체가 '슬슬 준비하라'는 신호가 되게. 엔진은 그대로(교체 예보 푸시의 기반).
+  const REPLACE_CARD_WEEKS = 8;
+  const rawReplaceWeeks =
     wearView.forecast?.reason === 'ok' && wearView.forecast.weeksRemaining != null
       ? Math.max(1, Math.round(wearView.forecast.weeksRemaining))
       : null;
+  const detailReplaceWeeks =
+    rawReplaceWeeks != null && rawReplaceWeeks <= REPLACE_CARD_WEEKS ? rawReplaceWeeks : null;
   // 예측 투명성(탑티어 1-1): '왜 N주인지' 근거 + 정확도(confidence)를 사용자에게 노출.
   const detailBasis = forecastBasisKo(wearView.forecast);
   const detailConfHigh = wearView.forecast?.confidence === 'high';
