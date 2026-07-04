@@ -342,8 +342,9 @@ export function generateSmartChallenge(
     Math.min(SMART_TARGET_MAX, roundTo5(avgRunKm * 3)),
   );
 
+  // 카드 제목('이번 주 Nkm')이 목표를 이미 말하므로 사유는 근거만 담는다(중복 제거).
   const avgDisplay = Math.round(avgRunKm * 10) / 10;
-  const reason = `평균 ${avgDisplay}km × 3회 기준 — 이번 주 ${targetKm}km`;
+  const reason = `평균 ${avgDisplay}km × 3회 기준 추천`;
 
   const {start: weekStart, end: weekEnd} = weekWindow(safeNow);
 

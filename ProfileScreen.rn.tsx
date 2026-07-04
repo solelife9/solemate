@@ -1,7 +1,7 @@
 // ============================================================================
 // ProfileScreen.rn.tsx — 프로필: identity, lifetime stats, achievements, settings
-// 설정 4행은 실제로 구동된다(하드코딩 '주5회'/'켜짐'/'킬로미터' 제거):
-//   · 목표 설정 — 주간 목표 거리(km 표준) 스테퍼 + 달성률
+// 설정 행은 실제로 구동된다(하드코딩 '주5회'/'켜짐'/'킬로미터' 제거):
+//   · 주간 목표 — 설정 행이 아니라 위의 주간 목표 카드 스테퍼가 유일한 수정 경로
 //   · 알림     — 신발 교체 알림 on/off + 임계값(수명 사용률 %)
 //   · 단위     — km ↔ mi 토글(전 화면 즉시 환산 반영)
 //   · 계정 설정 — 기기/가입/버전 정보
@@ -174,10 +174,10 @@ export default function ProfileScreen({
   backupData?: BackupPayload;
   // 가져오기: parseBackup 검증 성공 시에만 호출된다(실패 시 미호출 — 기존 데이터 보존).
   onImport?: (data: BackupV1) => void;
-  // ── 스마트 챌린지(마이 탭 카드) ───────────────────────────────────────────────
+  // ── 주간 목표 카드(마이 탭) ───────────────────────────────────────────────────
   // App 이 런/신발에서 파생한 확장 입력(extRuns/extShoes)을 주입하면 ChallengesSection 이
-  // 이번 주 스마트 챌린지를 결정적으로 생성하고 '스마트 챌린지' 라벨 + 진행률로 상시 노출한다
-  // (수락 단계 없는 상시 카드). 진척 탭에서 마이 탭으로 이관됨.
+  // 주간 목표 카드를 상시 노출한다 — 목표 미설정이면 추천(평균×3)이 기본값.
+  // 진척 탭에서 마이 탭으로 이관됨. 옛 이름 '스마트 챌린지'는 폐지(주간 목표와 개념 통일).
   challengeExtRuns?: ExtRun[];
   challengeExtShoes?: ExtShoe[];
   todayISO?: string;
@@ -212,8 +212,8 @@ export default function ProfileScreen({
   onDeleteAccount?: () => Promise<void>;
 }) {
   // 어떤 설정 행이 펼쳐졌는지(단위는 패널 없이 즉시 토글). 한 번에 하나만 펼친다.
-  const [open, setOpen] = useState<null | 'goal' | 'weight' | 'body' | 'alerts' | 'notif' | 'account' | 'import'>(null);
-  const toggleOpen = (k: 'goal' | 'weight' | 'body' | 'alerts' | 'notif' | 'account' | 'import') => setOpen((o) => (o === k ? null : k));
+  const [open, setOpen] = useState<null | 'weight' | 'body' | 'alerts' | 'notif' | 'account' | 'import'>(null);
+  const toggleOpen = (k: 'weight' | 'body' | 'alerts' | 'notif' | 'account' | 'import') => setOpen((o) => (o === k ? null : k));
 
   // 마이탭 정리(설정 분리): 기본은 프로필+기록만 보이고, 헤더 ⚙️ 를 누르면 같은 화면이
   // 전체화면 '설정' 뷰로 전환된다(목표·알림·푸시·단위·체중·계정·클라우드를 한곳에 모음).
@@ -567,10 +567,10 @@ export default function ProfileScreen({
         </View>
 
         {/* 누적 기록 카드 제거 — 기록(History) 탭에서 주/월/년/전체 기간별로 볼 수 있어
-            마이 탭과 중복(사용자 요청). 정체성·스트릭·스마트 챌린지·진척·기록(PR)·리캡만 남긴다. */}
+            마이 탭과 중복(사용자 요청). 정체성·스트릭·주간 목표·진척·기록(PR)·리캡만 남긴다. */}
 
-        {/* 스마트 챌린지 — 진척 탭에서 이관. 런/신발 데이터 기반 결정적 추천 + 수락 카드.
-            추천도 수락 챌린지도 없으면 ChallengesSection 내부에서 빈 안내를 노출한다. */}
+        {/* 주간 목표 카드 — 홈 '주간 목표' 바와 단일 진실원(settings.goalWeeklyKm).
+            목표 미설정이면 추천이 기본값, 런이 없으면 빈 안내를 노출한다. */}
         <View testID="smart-challenge-section">
           <ChallengesSection
             extRuns={challengeExtRuns}

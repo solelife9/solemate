@@ -1,7 +1,7 @@
 /**
- * ProfileScreen 스마트 챌린지 카드 통합 테스트 — 챌린지 탭(진척)에서 마이 탭으로 이관.
+ * ProfileScreen 주간 목표 카드 통합 테스트 — 챌린지 탭(진척)에서 마이 탭으로 이관.
  *
- * 회귀 가드: 스마트 챌린지 카드가 실제 마운트되는 ProfileScreen 트리 안에서 '스마트 챌린지'
+ * 회귀 가드: 주간 목표 카드가 실제 마운트되는 ProfileScreen 트리 안에서 '주간 목표'
  * 라벨 + 진행률과 함께 상시 렌더되고('마이' 탭 = App 이 tab===3 으로 띄우는 화면), 수락
  * 단계(누르면 사라지던 동작) 없이 노출됨을 증명한다. 진척에서 마이로 옮겨졌어도 도달
  * 가능(reachable)함을 보장한다.
@@ -55,8 +55,8 @@ function byTestId(root: ReactTestRenderer.ReactTestInstance, id: string) {
   return root.findAll((n: any) => n.props?.testID === id);
 }
 
-describe('ProfileScreen 스마트 챌린지 카드(마이 탭 이관)', () => {
-  test("마이 탭 트리에 '스마트 챌린지' 라벨 + 진행 카드가 상시 렌더된다", () => {
+describe('ProfileScreen 주간 목표 카드(마이 탭 이관)', () => {
+  test("마이 탭 트리에 '주간 목표' 라벨 + 진행 카드가 상시 렌더된다", () => {
     const smart = generateSmartChallenge(EXT_RUNS, EXT_SHOES, NOW)!;
     expect(smart).not.toBeNull();
     const root = render({
@@ -64,11 +64,11 @@ describe('ProfileScreen 스마트 챌린지 카드(마이 탭 이관)', () => {
       challengeExtShoes: EXT_SHOES,
       todayISO: NOW,
     });
-    // 섹션 컨테이너 + 스마트 챌린지 카드가 실제 트리에 존재한다.
+    // 섹션 컨테이너 + 주간 목표 카드가 실제 트리에 존재한다.
     expect(byTestId(root, 'smart-challenge-section').length).toBeGreaterThanOrEqual(1);
     expect(byTestId(root, 'smart-challenge').length).toBeGreaterThanOrEqual(1);
-    // 주황 라벨 자리에 '스마트 챌린지' 가 적힌다.
-    expect(textOf(byTestId(root, 'smart-challenge-tag')[0])).toContain('스마트 챌린지');
+    // 주황 라벨 자리에 '주간 목표' 가 적힌다(개념 통일 — 옛 '스마트 챌린지' 폐지).
+    expect(textOf(byTestId(root, 'smart-challenge-tag')[0])).toContain('주간 목표');
     // 진행률·사유가 함께 노출된다.
     expect(textOf(byTestId(root, 'smart-challenge-progress')[0])).toContain('km');
     expect(textOf(byTestId(root, 'smart-challenge-reason')[0])).toContain('km');

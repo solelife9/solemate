@@ -186,14 +186,15 @@ describe('generateSmartChallenge', () => {
     expect(ch!.endDate).toBe('2026-06-14');   // 이번 주 일요일
   });
 
-  test('사유(reason)에 평균 거리와 목표가 포함된다', () => {
+  test('사유(reason)는 근거(평균×3)만 담는다 — 목표는 제목이 말하므로 중복 제거', () => {
     const runs: ExtRun[] = [
       {date: '2026-06-01', dist: 10},
       {date: '2026-06-05', dist: 10},
     ];
     const ch = generateSmartChallenge(runs, SHOES, NOW);
     expect(ch!.reason).toContain('10');
-    expect(ch!.reason).toContain('30km');
+    expect(ch!.reason).toContain('추천');
+    expect(ch!.reason).not.toContain('30km');
   });
 
   test('신발 수와 무관하게 생성된다(1켤레도 ok)', () => {

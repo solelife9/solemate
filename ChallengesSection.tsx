@@ -1,9 +1,9 @@
 // ============================================================================
-// ChallengesSection.tsx — 스마트 챌린지 카드(마이 탭) (Slice 4 → 스마트 전용·상시)
-// 개인(직접 만드는) 챌린지는 제거하고, generateSmartChallenge 가 런/신발 데이터에서
-// 결정적으로 추천하는 '스마트 챌린지' 한 장을 라벨 + 진행률과 함께 항상 보여준다(수락 단계
-// 없음). 사용자는 우상단 수정 버튼으로 '주간 목표 거리(km)'만 조정할 수 있고, 그 값은 App 이
-// 챌린지 id 별로 영속한다(주가 바뀌면 새 추천으로 복귀). 진행률은 lib 순수 함수로 파생(영속
+// ChallengesSection.tsx — 주간 목표 카드(마이 탭) (Slice 4 → 스마트 전용·상시 → 주간 목표로 개념 통일)
+// 개인(직접 만드는) 챌린지는 제거. 홈 '주간 목표' 바와 같은 숫자(settings.goalWeeklyKm)를
+// 라벨 + 진행률과 함께 항상 보여준다. 목표 미설정이면 generateSmartChallenge 의 추천
+// (평균×3)이 기본값으로 보이고, 우상단 수정 버튼(±km)으로 조정하는 순간 주간 목표로
+// 저장된다(changeGoal 위임 — 홈도 즉시 동일 갱신). 진행률은 lib 순수 함수로 파생(영속
 // 금지). 진행률 링은 Ring primitive 재사용. 토큰만.
 // ============================================================================
 import React, {useState} from 'react';
@@ -68,9 +68,10 @@ function extProgressText(ch: ExtChallenge, p: ChallengeProgressResult): string {
 const SMART_KM_STEP = 1;
 const SMART_KM_MIN = 1;
 
-// 스마트 챌린지 카드. generateSmartChallenge 가 만든 개인화·결정적 주간 챌린지를 '스마트
-// 챌린지' 라벨 + 진행률 링과 함께 항상 보여준다(수락 단계 없는 상시 카드 — 누르면 사라지던
-// 옛 동작 폐지). 우상단 수정 버튼으로 '주간 목표 거리(km)'만 ± 조정할 수 있고, 변경은
+// 주간 목표 카드(개념 통일 2026-07-04 — 옛 '스마트 챌린지' 라벨 폐지: 이 카드가 곧
+// 주간 목표다). 목표 미설정이면 generateSmartChallenge 의 추천이 기본값으로 보이고,
+// 수정하는 순간 그 값이 주간 목표(settings.goalWeeklyKm)로 저장된다.
+// 우상단 수정 버튼으로 '주간 목표 거리(km)'만 ± 조정할 수 있고, 변경은
 // onEditTargetKm 으로 위임한다(영속은 App 이 챌린지 id 별로 소유). 진행률은
 // challengeExtProgress 로 런/신발에서 매번 파생한다(영속 금지 — 데이터 변형 0).
 export function SmartChallengeCard({
@@ -95,7 +96,7 @@ export function SmartChallengeCard({
   return (
     <View style={s.smartCard} testID="smart-challenge">
       <View style={s.smartHead}>
-        <Pill tone="accent" icon="sparkles" label="스마트 챌린지" testID="smart-challenge-tag" />
+        <Pill tone="accent" icon="sparkles" label="주간 목표" testID="smart-challenge-tag" />
         {p.completed && !editing && (
           <Pill tone="good" icon="trophy" label="달성!" testID="smart-challenge-badge" />
         )}
@@ -201,9 +202,11 @@ export default function ChallengesSection({
       ? smartSuggestion
       : generateSmartChallenge(safeExtRuns, shoes, nowISO);
   // 단일 진실원(2026-07-04): 사용자가 주간 목표를 설정했으면(goalWeeklyKm>0) 그 값이 곧
-  // 챌린지 목표 — 홈 '주간 목표' 바와 항상 같은 숫자를 말한다. 미설정이면 스마트 추천 유지.
+  // 카드의 목표 — 홈 '주간 목표' 바와 항상 같은 숫자를 말한다. 설정된 목표엔 부연이
+  // 필요 없어 사유를 비운다(개념 통일 — '스마트 챌린지'라는 별도 이름 폐지, 이 카드가
+  // 곧 주간 목표). 미설정이면 스마트 추천이 기본값이 되고 사유(평균×3 근거)를 보인다.
   const smart = base && weeklyGoalKm > 0
-    ? {...base, targetKm: weeklyGoalKm, reason: '내 주간 목표와 연동 — 홈과 동일'}
+    ? {...base, targetKm: weeklyGoalKm, reason: ''}
     : base;
 
   return (
@@ -218,7 +221,7 @@ export default function ChallengesSection({
         />
       ) : (
         <Text style={s.empty} testID="challenges-empty">
-          아직 추천할 챌린지가 없어요. 러닝을 기록하면 신발·페이스에 맞춘 챌린지를 추천해드려요.
+          아직 주간 목표가 없어요. 러닝을 기록하면 내 페이스에 맞는 주간 목표를 추천해드려요.
         </Text>
       )}
     </View>

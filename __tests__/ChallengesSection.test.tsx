@@ -1,8 +1,8 @@
 /**
- * ChallengesSection 스마트 챌린지 카드 행동 테스트(상시 진행 카드 — 수락 단계 폐지).
+ * ChallengesSection 주간 목표 카드 행동 테스트(상시 진행 카드 — 수락 단계 폐지).
  *
  * 관찰 가능한 결과(test_critic 요건)를 검증한다:
- *   1) 라벨 + 추천 + 진행률 — '스마트 챌린지' 칩과 generateSmartChallenge 가 만든 주간
+ *   1) 라벨 + 추천 + 진행률 — '주간 목표' 칩과 generateSmartChallenge 가 만든 주간
  *      챌린지, 그리고 challengeExtProgress 로 파생한 진행률(%)·현재/목표를 함께 노출한다.
  *   2) 상시 카드 — '이 챌린지 시작'(수락) 버튼이 없다(누르면 사라지던 옛 동작 폐지).
  *   3) 달성 뱃지 — 이번 주 거리가 목표를 채우면 '달성!' 뱃지를 노출한다.
@@ -64,8 +64,8 @@ const PAST_RUNS: ExtRun[] = [
   {date: '2026-05-22', dist: 3, shoeId: 's2', durationS: 900},
 ];
 
-describe('ChallengesSection 스마트 챌린지 카드(상시 진행)', () => {
-  test("'스마트 챌린지' 라벨 + 추천 주간 챌린지 + 진행률을 함께 노출한다", () => {
+describe('ChallengesSection 주간 목표 카드(상시 진행)', () => {
+  test("'주간 목표' 라벨 + 추천 목표 + 진행률을 함께 노출한다", () => {
     const smart = generateSmartChallenge(PAST_RUNS, EXT_SHOES, NOW)!;
     expect(smart).not.toBeNull();
     expect(smart.kind).toBe('weekly');
@@ -73,8 +73,8 @@ describe('ChallengesSection 스마트 챌린지 카드(상시 진행)', () => {
     const root = render({extRuns: PAST_RUNS, shoes: EXT_SHOES, now: NOW, smartSuggestion: smart});
 
     expect(byId(root, 'smart-challenge').length).toBeGreaterThanOrEqual(1);
-    // 라벨 칩이 '스마트 챌린지' 를 노출한다(주황 자리).
-    expect(textOf(byId(root, 'smart-challenge-tag')[0])).toContain('스마트 챌린지');
+    // 라벨 칩이 '주간 목표' 를 노출한다(주황 자리 — 개념 통일).
+    expect(textOf(byId(root, 'smart-challenge-tag')[0])).toContain('주간 목표');
 
     // 진행률(%)·현재/목표가 challengeExtProgress 와 일치한다(이번 주 0km → 0%).
     const p = challengeExtProgress(smart, PAST_RUNS, EXT_SHOES, NOW);

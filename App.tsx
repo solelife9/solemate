@@ -120,7 +120,6 @@ import {pickShoePhoto} from './lib/photo';
 const K_BACKUP_IMPORT = 'imported_backup_v1';
 // 개인 챌린지 목록을 영속하는 신규 AsyncStorage 키(개인 전용 — 계정/서버 불필요).
 const K_CHALLENGES = 'challenges_v1';
-// 스마트 챌린지 목표 거리(km) 사용자 오버라이드(챌린지 id→km). 로컬 전용 신규 키.
 // 프로필 이름/사진(로컬 전용 — 개인 식별, 서버 불필요). 신규 키라 기존 데이터와 격리.
 const K_PROFILE_NAME = 'profile_name';
 const K_PROFILE_PHOTO = 'profile_photo';
@@ -439,9 +438,6 @@ function Main(){
       }catch(e){console.log('challenges load error',e);}
     })();
   },[]);
-
-  // 스마트 챌린지 목표 거리(km) 오버라이드 복원(신규 키 — 1회). 손상/부재는 조용히 빈 맵으로
-  // 폴백한다. 값이 유한한 양수인 항목만 받아들인다(데이터 위생). 기존 데이터와 격리.
 
   // 프로필 이름/사진 복원(신규 키 — 네트워크 무관, 1회). 손상/부재는 조용히 기본값으로
   // 폴백한다(이름='러너', 사진 없음). 기존 데이터와 격리돼 파괴 위험 0.
