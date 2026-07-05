@@ -17,8 +17,9 @@ import { TabBar, TABBAR_CLEARANCE, Pill, SectionTitle, Button, SegmentedControl,
 import { Unit, unitKorean, displayNum } from './lib/units';
 import { weeklyRecap, monthlyRecap, type RecapRun, type RecapShoe } from './lib/recap';
 import { hkAvailable, hkLinked, hkLink, hkRestingHR } from './lib/healthkit';
-import { buildRecapShareCardModel, shareRecapCard, formatRecapPRs, type RecapKind, type SvgCapturable } from './lib/shareCard';
+import { buildRecapShareCardModel, shareRecapCard, shareRunnerSpecCard, formatRecapPRs, type RecapKind, type SvgCapturable } from './lib/shareCard';
 import RecapShareCard from './RecapShareCard';
+import RunnerSpecShareCard, { type RunnerSpecShareModel } from './RunnerSpecShareCard';
 import {
   AlertSettings, THRESHOLD_STEP,
   MIN_THRESHOLD_PCT, MAX_THRESHOLD_PCT, DEFAULT_SETTINGS, DEFAULT_ALERTS,
@@ -478,6 +479,22 @@ export default function ProfileScreen({
   // 공유 카드(화면 밖 마운트) 모델 — press 시 Svg.toDataURL 로 캡처해 공유.
   const recapCardRef = useRef<SvgCapturable | null>(null);
   const recapCardModel = buildRecapShareCardModel(recap, { unit, kind: recapMode });
+  // 러너 스펙 공유 카드(화면 밖 마운트) — 캡처해 공유.
+  const specCardRef = useRef<SvgCapturable | null>(null);
+  const specShareModel: RunnerSpecShareModel = {
+    runner: profile?.name || '러너',
+    brand: 'Keego',
+    vo2max: vo2.vo2max,
+    vo2maxLabel: vo2.vo2maxLabel,
+    medals: STANDARD_DISTANCES.map((d) => {
+      const sec = distancePBs[d.key];
+      const earned = typeof sec === 'number' && sec > 0;
+      return { label: d.label, value: earned ? fmtTime(Math.round(sec)) : '아직', earned };
+    }),
+    pace: paceRec && paceRec.value !== '--' ? `${paceRec.value}${paceRec.unit ?? ''}` : '--',
+    longest: longRec && longRec.value !== '--' ? `${longRec.value}${longRec.unit ?? ''}` : '--',
+  };
+  const onShareSpec = () => { shareRunnerSpecCard(specCardRef, `${profile?.name || '러너'}의 러너 스펙 — Keego`); };
   const onShareRecap = () => {
     shareRecapCard(recapCardRef, recap, { unit, kind: recapMode });
   };
@@ -710,7 +727,13 @@ export default function ProfileScreen({
             러너의 정체성 '스펙 시트'(사용자 방향 2026-07-05). 거리 PB 는 paceTrack 베스트에포트. */}
         {(records.length > 0 || vo2.vo2max > 0) && (
           <View style={[s.card, { padding: 22 }]} testID="runner-spec">
-            <Text style={s.cardTitle}>러너 스펙</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+              <Text style={[s.cardTitle, { marginBottom: 0 }]}>러너 스펙</Text>
+              <Pressable onPress={onShareSpec} testID="spec-share" accessibilityRole="button" accessibilityLabel="러너 스펙 공유" hitSlop={8} style={({ pressed }) => [{ flexDirection: 'row', alignItems: 'center', gap: 5 }, pressed && { opacity: 0.6 }]}>
+                <Ionicons name="share-outline" size={16} color={ACCENT} />
+                <Text style={{ color: ACCENT, fontFamily: FONT, fontSize: 13, fontWeight: '700' }}>공유</Text>
+              </Pressable>
+            </View>
 
             {vo2.vo2max > 0 && (
               <View style={s.specVo2}>
@@ -1063,6 +1086,7 @@ export default function ProfileScreen({
       {/* 화면 밖에 마운트된 리캡 공유 카드 — ref.toDataURL()로 PNG 캡처(보이지 않음). */}
       <View style={s.offscreen} pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
         <RecapShareCard ref={recapCardRef} model={recapCardModel} />
+        <RunnerSpecShareCard ref={specCardRef} model={specShareModel} />
       </View>
       <TabBar active={3} onTab={(i) => onTab?.(i)} />
     </View>

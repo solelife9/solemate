@@ -325,3 +325,15 @@ export async function shareRecapCard(
     await Share.share({message: buildRecapShareText(fallback, opts)}).catch(() => {});
   }
 }
+
+/**
+ * 러너 스펙 카드(RunnerSpecShareCard)를 캡처해 OS 공유 시트로. 캡처 실패 시 텍스트 폴백.
+ */
+export async function shareRunnerSpecCard(ref: SvgRefLike, fallbackText: string): Promise<void> {
+  try {
+    const url = await captureCardDataUrl(ref);
+    await Share.share({url});
+  } catch {
+    await Share.share({message: fallbackText}).catch(() => {});
+  }
+}
