@@ -312,11 +312,11 @@ export default function ProgressionScreen({
           testID="stat-row"
           style={s.statCard}
           divider
-          valueSize={19}
-          valueWeight="800"
+          valueSize={20}
+          valueWeight="600"
           valueLS={-0.4}
           unitSize={11}
-          unitWeight="700"
+          unitWeight="600"
           labelSize={11}
           labelWeight="600"
           labelMarginTop={5}
