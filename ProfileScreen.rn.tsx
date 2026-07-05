@@ -543,7 +543,7 @@ export default function ProfileScreen({
           <View style={s.headerRow}>
             <Text style={s.title}>마이</Text>
             <View style={{ flexDirection: 'row', gap: 8 }}>
-              <Pressable onPress={() => Share.share({ message: 'Keego에서 내 러닝화 수명을 관리하고 있어요 🏃' })} accessibilityRole="button" accessibilityLabel="기록 공유" style={({ pressed }) => [s.iconBtn, pressed && { backgroundColor: CARD }]}><Ionicons name="share-outline" size={18} color={T2} /></Pressable>
+              <Pressable onPress={() => { Share.share({ message: 'Keego에서 내 러닝화 수명을 관리하고 있어요 🏃' }).catch(() => {}); }} accessibilityRole="button" accessibilityLabel="기록 공유" style={({ pressed }) => [s.iconBtn, pressed && { backgroundColor: CARD }]}><Ionicons name="share-outline" size={18} color={T2} /></Pressable>
             <Pressable onPress={() => setShowSettings(true)} accessibilityRole="button" accessibilityLabel="설정 열기" style={({ pressed }) => [s.iconBtn, pressed && { backgroundColor: CARD }]}><Ionicons name="settings-outline" size={19} color={T2} /></Pressable>
             </View>
           </View>

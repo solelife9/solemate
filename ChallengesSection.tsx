@@ -92,7 +92,6 @@ export function SmartChallengeCard({
 }) {
   const [editing, setEditing] = useState(false);
   const target = ch.targetKm ?? 0;
-  const tier = weeklyGoalTier(target); // 난이도 → 링 색 + 라벨(사용자 2026-07-05)
   const p = challengeExtProgress(ch, runs, shoes, now);
   const pctLabel = `${Math.round(p.pct * 100)}%`;
   const step = (delta: number) => onEditTargetKm?.(Math.max(SMART_KM_MIN, target + delta));
@@ -100,7 +99,6 @@ export function SmartChallengeCard({
     <View style={s.smartCard} testID="smart-challenge">
       <View style={s.smartHead}>
         <Pill tone="accent" icon="sparkles" label="주간 목표" testID="smart-challenge-tag" />
-        <Text style={{color: SPORT_VIOLET, fontFamily: FONT, fontSize: 12, fontWeight: '800', letterSpacing: 0.3}} testID="goal-difficulty">{tier.label}</Text>
         {p.completed && !editing && (
           <Pill tone="good" icon="trophy" label="달성!" testID="smart-challenge-badge" />
         )}

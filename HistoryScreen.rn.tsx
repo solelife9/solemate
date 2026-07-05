@@ -476,7 +476,7 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'm
     const label = shoe ? `${shoe.brand} ${shoe.model}` : run.shoeName || 'Keego Run';
     const r = await exportGpx(run.id, route, { name: `${run.date} · ${label}`, timeISO: run.runDate || undefined });
     if (!r.ok && r.reason === 'no_route') Alert.alert('내보낼 코스가 없어요', 'GPS로 기록된 러닝만 GPX로 내보낼 수 있어요.');
-    else if (!r.ok) Alert.alert('내보내기 실패', '잠시 후 다시 시도해 주세요.');
+    else if (!r.ok) Alert.alert('내보내지 못했어요', '잠시 후 다시 시도해 주세요.');
   };
   const onShareCard = () => {
     const opts: any[] = [
@@ -490,7 +490,7 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'm
   const confirmDelete = () => {
     Alert.alert(
       '러닝 기록 삭제',
-      `${run.date} ${displayNum(run.dist, unit, 2)}${unit} 기록을 삭제할까요?\n삭제하면 신발 사용 거리도 함께 줄어듭니다.`,
+      `${run.date} ${displayNum(run.dist, unit, 2)}${unit} 기록을 삭제할까요?\n삭제하면 신발 사용 거리도 함께 줄어들어요.`,
       [
         { text: '취소', style: 'cancel' },
         { text: '삭제', style: 'destructive', onPress: () => { if (run.id) onDelete?.(run.id); onBack(); } },
