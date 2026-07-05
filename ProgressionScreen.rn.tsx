@@ -52,6 +52,7 @@ import {
   type AchievementView,
 } from './lib/progression';
 import {rankGuidance} from './lib/progression/guidance';
+import {RANK_XP} from './lib/progression/rank';
 import {
   defaultProgressionState,
   loadProgression,
@@ -186,6 +187,10 @@ export default function ProgressionScreen({
 
   const rankColor = view.rank.color;
   const guide = useMemo(() => rankGuidance(view.rank), [view.rank]);
+  // 티어 구간(band) XP — 진행바와 동일 기준(절대 총 XP는 바와 어긋나 오해). 여태/필요.
+  const bandStart = RANK_XP[guide.tier];
+  const xpInBand = Math.max(0, guide.xp - bandStart);
+  const bandTotal = Math.max(0, guide.nextXp - bandStart);
 
   const achievementCount = view.achievements.filter(a => a.unlocked).length;
   const bannerNames = banner
@@ -290,7 +295,7 @@ export default function ProgressionScreen({
               </View>
               {guide.xpForNext > 0 && (
                 <Text style={s.toNext} testID="rank-to-next">
-                  다음 티어까지 {guide.xpForNext.toLocaleString()} XP
+                  {xpInBand.toLocaleString()} / {bandTotal.toLocaleString()} XP
                 </Text>
               )}
               </>
