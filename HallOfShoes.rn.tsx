@@ -14,12 +14,12 @@ import React, {useMemo, useRef, useState} from 'react';
 import {View, Text, ScrollView, Pressable, Modal, StyleSheet, Platform} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import Svg, {Defs, LinearGradient, RadialGradient, Stop, Rect, Path, Circle} from 'react-native-svg';
+import Svg, {Defs, LinearGradient, RadialGradient, Stop, Rect, Path, Circle, Ellipse} from 'react-native-svg';
 import {Unit, displayNum} from './lib/units';
 import {fmtPaceSec} from './lib/pacePlan';
 import {SwipeBack} from './primitives';
 import RetirementCard from './RetirementCard';
-import {buildRetirementCardModel} from './lib/progression/retirementCard';
+import {buildRetirementCardModel, highlightLabel} from './lib/progression/retirementCard';
 import {shareRetirementCard} from './lib/progression/retirementShare';
 import type {RetiredShoeRecord} from './lib/progression/types';
 
@@ -205,6 +205,35 @@ function HallOfShoes({records = [], unit = 'km', onBack, userName, onGoShoes}: H
 }
 
 // ── 은퇴 인증서(전체화면 모달) — 블랙&골드 세리프 인증서(사용자 확정) ─────────────
+// 골드 로렐 메달 — 명예의 전당의 '어워드' 의식감(사용자 방향 2026-07-05: 공유하고 싶게).
+function Seal({year}: {year: string}) {
+  const cx = 66, cy = 68, R = 47;
+  const leaves: React.ReactNode[] = [];
+  for (let i = 0; i < 6; i++) {
+    const t = i / 5;
+    const aL = 110 + t * 135; // 왼쪽 가지: 아래→위 (110°→245°)
+    const aR = 70 - t * 135;  // 오른쪽 가지: 아래→위 (70°→-65°)
+    for (const a of [aL, aR]) {
+      const rad = (a * Math.PI) / 180;
+      const x = cx + R * Math.cos(rad);
+      const y = cy + R * Math.sin(rad);
+      leaves.push(
+        <Ellipse key={`${i}-${a}`} cx={x} cy={y} rx={7} ry={2.7} fill={G.gold} opacity={0.6} transform={`rotate(${a + 96} ${x} ${y})`} />,
+      );
+    }
+  }
+  return (
+    <View style={st.medal}>
+      <Svg width={132} height={136} style={StyleSheet.absoluteFill}>
+        <Circle cx={cx} cy={cy} r={55} stroke={G.soft} strokeWidth={1} fill="none" />
+        {leaves}
+      </Svg>
+      <Text style={st.sealK}>RETIRED</Text>
+      {!!year && <Text style={st.sealY}>{year}</Text>}
+    </View>
+  );
+}
+
 function Certificate({shoe, unit, userName, onClose}: {shoe: RetiredShoeRecord; unit: Unit; userName?: string; onClose: () => void}) {
   const insets = useSafeAreaInsets();
   const nm = splitName(shoe.name);
@@ -214,7 +243,8 @@ function Certificate({shoe, unit, userName, onClose}: {shoe: RetiredShoeRecord; 
   const longest = shoe.summary?.longestRunKm ?? 0;
   const bestPace = fmtPaceSec(shoe.summary?.bestPaceSec ?? null);
   const period = periodOf(shoe);
-  const memorable = shoe.summary?.mostMemorable;
+  // mostMemorable 은 raw 하이라이트 키 → 라벨링 + 앞 이모지 제거(‘hl 마라톤’ 버그 수정).
+  const memorable = highlightLabel(shoe.summary?.mostMemorable).replace(/^[^\uAC00-\uD7A3A-Za-z]+/, '').trim();
   const runner = (typeof userName === 'string' && userName.trim()) || '러너';
   const heroLine = months > 0 ? `${months}개월을 함께 달렸어요` : `${runCount}번의 러닝을 함께했어요`;
   // 스토리 공유(무기 #1) — 오프스크린 카드(RetirementCard 'S')를 캡처해 OS 공유 시트로.
@@ -232,28 +262,33 @@ function Certificate({shoe, unit, userName, onClose}: {shoe: RetiredShoeRecord; 
 
   return (
     <View style={st.certScreen}>
-      {/* 상단 액션 아이콘만(공유 알약이 화면을 잡아먹던 것 → 코너 아이콘으로). 내용 영역은 순수 키프세이크. */}
-      <Pressable style={[st.certX, {left: 20, top: insets.top + 6}]} onPress={onClose} hitSlop={12} accessibilityRole="button" accessibilityLabel="닫기">
+      {/* 골드 프레임 — 인증서 '문서'의 격(단일 헤어라인, 이중 액자 아님). */}
+      <View style={[st.certFrame, {top: insets.top + 14}]} pointerEvents="none" />
+      <Pressable style={[st.certX, {left: 22, top: insets.top + 8}]} onPress={onClose} hitSlop={12} accessibilityRole="button" accessibilityLabel="닫기">
         <Ionicons name="close" size={16} color={G.muted} />
       </Pressable>
-      <Pressable style={[st.certX, {right: 20, top: insets.top + 6}]} onPress={onShare} hitSlop={12} accessibilityRole="button" accessibilityLabel="인증서 공유" testID="cert-share">
+      <Pressable style={[st.certX, {right: 22, top: insets.top + 8}]} onPress={onShare} hitSlop={12} accessibilityRole="button" accessibilityLabel="인증서 공유" testID="cert-share">
         <Ionicons name="share-outline" size={15} color={G.gold} />
       </Pressable>
 
-      <ScrollView contentContainerStyle={[st.certContent, {paddingTop: insets.top + 78, paddingBottom: insets.bottom + 44}]} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[st.certContent, {paddingTop: insets.top + 58, paddingBottom: insets.bottom + 48}]} showsVerticalScrollIndicator={false}>
         <View style={st.certBody}>
-          {/* 라벨 */}
+          {/* 로렐 메달 — 의식의 중심 */}
+          <Seal year={yearOf(shoe)} />
+
+          {/* 타이틀 + 오너먼트 */}
           <Text style={st.coLabel}>은퇴 인증서</Text>
+          <View style={st.orn}><View style={st.ornLine} /><View style={st.ornDot} /><View style={st.ornLine} /></View>
 
           {/* 신발 정체성 — 기리는 이름 */}
           {!!nm.brand && <Text style={st.coBrand}>{nm.brand}</Text>}
           <Text style={st.coModel}>{nm.model}</Text>
 
-          {/* 감정의 히어로 — 함께한 시간(한 문장) */}
+          {/* 감정의 히어로 — 함께한 시간 */}
           <Text style={st.hero}>{heroLine}</Text>
           {!!period && <Text style={st.heroSpan}>{period}</Text>}
 
-          {/* 기록 — 조용한 스탯 3종(거리는 하나일 뿐) */}
+          {/* 기록 — 조용한 스탯 3종 */}
           <View style={st.statRow}>
             <View style={st.statCell}>
               <Text style={st.statV}>{d}</Text>
@@ -269,17 +304,20 @@ function Certificate({shoe, unit, userName, onClose}: {shoe: RetiredShoeRecord; 
             </View>
           </View>
 
-          {/* 기억에 남는 순간 — 조용한 이탤릭 한 줄 */}
+          {/* 기억에 남는 순간 */}
           {!!memorable && <Text style={st.memory}>「{memorable}」과 함께</Text>}
 
-          {/* 서명 블록 — 인증서를 서명하듯 하단에 */}
+          {/* 서명 블록 */}
           <View style={st.sig}>
             <View style={st.sigRule} />
+            <Text style={st.sigK}>RUNNER</Text>
             <Text style={st.sigNm}>{runner}</Text>
-            <Text style={st.sigMeta}>RETIRED · {yearOf(shoe)}</Text>
           </View>
 
-          <Text style={st.coWordmark}>keego</Text>
+          <View style={st.foot}>
+            <Text style={st.coWordmark}>keego</Text>
+            <Text style={st.footKg}>KEEP GOING</Text>
+          </View>
         </View>
       </ScrollView>
 
@@ -391,32 +429,44 @@ const st = StyleSheet.create({
   pyear: {fontSize: 11, fontWeight: '600', color: G.faint, fontVariant: ['tabular-nums']},
 
 
-  // ── 은퇴 인증서(키프세이크 — 애플/인스타 감성) ──
+  // ── 은퇴 인증서(어워드 키프세이크 — 공유하고 싶은 격) ──
   certScreen: {flex: 1, backgroundColor: '#0A0908'},
+  certFrame: {position: 'absolute', left: 14, right: 14, bottom: 14, borderWidth: 1, borderColor: G.soft, borderRadius: 22, opacity: 0.7},
   certContent: {paddingHorizontal: 34},
   certX: {position: 'absolute', width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', zIndex: 2},
   certBody: {alignItems: 'center'},
-  // 라벨 + 정체성
-  coLabel: {fontFamily: SERIF, fontSize: 14, color: G.faint, letterSpacing: 2},
-  coBrand: {fontSize: 11, fontWeight: '800', letterSpacing: 2.4, color: G.gold, marginTop: 40},
+  // 로렐 메달
+  medal: {width: 132, height: 136, alignItems: 'center', justifyContent: 'center', marginBottom: 20},
+  sealK: {fontSize: 8, fontWeight: '800', letterSpacing: 2, color: G.gold, marginBottom: 2},
+  sealY: {fontFamily: SERIF, fontSize: 30, color: G.gold, letterSpacing: 1, fontVariant: ['tabular-nums']},
+  // 타이틀 + 오너먼트
+  coLabel: {fontFamily: SERIF, fontSize: 15, color: G.muted, letterSpacing: 2},
+  orn: {flexDirection: 'row', alignItems: 'center', gap: 9, marginTop: 14},
+  ornLine: {width: 34, height: 1, backgroundColor: G.soft, opacity: 0.6},
+  ornDot: {width: 5, height: 5, backgroundColor: G.gold, transform: [{rotate: '45deg'}]},
+  // 정체성
+  coBrand: {fontSize: 11, fontWeight: '800', letterSpacing: 2.4, color: G.gold, marginTop: 34},
   coModel: {fontFamily: SERIF, fontSize: 32, color: G.txt, marginTop: 10, textAlign: 'center', lineHeight: 40},
-  // 감정의 히어로 — 함께한 시간 한 문장
-  hero: {fontFamily: SERIF, fontSize: 25, color: G.txt, marginTop: 40, textAlign: 'center', lineHeight: 36, letterSpacing: -0.3},
+  // 감정의 히어로
+  hero: {fontFamily: SERIF, fontSize: 25, color: G.txt, marginTop: 36, textAlign: 'center', lineHeight: 36, letterSpacing: -0.3},
   heroSpan: {fontSize: 13, fontWeight: '600', color: G.muted, marginTop: 12, letterSpacing: 0.4, fontVariant: ['tabular-nums']},
-  // 조용한 스탯 3종
-  statRow: {flexDirection: 'row', alignSelf: 'stretch', marginTop: 44},
+  // 스탯 3종
+  statRow: {flexDirection: 'row', alignSelf: 'stretch', marginTop: 40},
   statCell: {flex: 1, alignItems: 'center', gap: 6},
   statDiv: {borderLeftWidth: 1, borderLeftColor: G.line},
   statV: {fontSize: 26, fontWeight: '700', color: G.txt, letterSpacing: -0.6, fontVariant: ['tabular-nums']},
   statL: {fontSize: 9, fontWeight: '800', letterSpacing: 1.4, color: G.faint},
-  // 기억에 남는 순간
-  memory: {fontFamily: SERIF, fontSize: 16, fontStyle: 'italic', color: G.muted, marginTop: 40, textAlign: 'center'},
-  // 서명 블록
-  sig: {alignItems: 'center', marginTop: 52, alignSelf: 'stretch'},
-  sigRule: {width: 46, height: 1, backgroundColor: G.soft, marginBottom: 22},
+  // 기억
+  memory: {fontFamily: SERIF, fontSize: 16, fontStyle: 'italic', color: G.muted, marginTop: 38, textAlign: 'center'},
+  // 서명
+  sig: {alignItems: 'center', marginTop: 48, alignSelf: 'stretch'},
+  sigRule: {width: 46, height: 1, backgroundColor: G.soft, marginBottom: 20},
+  sigK: {fontSize: 9, fontWeight: '800', letterSpacing: 2, color: G.faint, marginBottom: 6},
   sigNm: {fontFamily: SERIF, fontSize: 22, color: G.txt, letterSpacing: -0.3},
-  sigMeta: {fontSize: 10, fontWeight: '800', letterSpacing: 2.2, color: G.gold, marginTop: 8},
-  coWordmark: {fontFamily: 'Helvetica Neue', fontSize: 20, fontWeight: '500', color: G.faint, letterSpacing: -0.3, marginTop: 40},
+  // 푸터
+  foot: {alignItems: 'center', marginTop: 40, gap: 8},
+  coWordmark: {fontFamily: 'Helvetica Neue', fontSize: 20, fontWeight: '500', color: G.muted, letterSpacing: -0.3},
+  footKg: {fontSize: 9, fontWeight: '800', letterSpacing: 3, color: G.gold},
     offscreen: {position: 'absolute', left: -4000, top: 0, opacity: 0},
 
   // ── 빈 상태 ──
