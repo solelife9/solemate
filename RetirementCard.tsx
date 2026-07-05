@@ -523,9 +523,12 @@ function FormatS({model}: {model: RetirementCardModel}) {
       )}
       {!!moment && (
         <>
-          <Rect x={CX - 240} y={1310} width={480} height={82} rx={41} fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.09)" strokeWidth={2} />
-          <SvgText x={CX} y={1364} fill={T1} fontFamily={FONT} fontSize={38} fontWeight="700" textAnchor="middle">
-            {`\u{1F3C6}  ${moment}`}
+          {/* 애플 절제: 🏆 이모지 제거 — 라벨 캡스 + 값으로 격을 올린다. */}
+          <SvgText x={CX} y={1330} fill="rgba(255,255,255,0.4)" fontFamily={FONT} fontSize={24} fontWeight="800" letterSpacing={4} textAnchor="middle">
+            MOST MEMORABLE
+          </SvgText>
+          <SvgText x={CX} y={1384} fill={T1} fontFamily={FONT} fontSize={40} fontWeight="700" textAnchor="middle">
+            {moment}
           </SvgText>
         </>
       )}
