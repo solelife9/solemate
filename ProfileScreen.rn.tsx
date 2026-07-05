@@ -263,6 +263,9 @@ export default function ProfileScreen({
   }, []);
   const [lastSyncAt, setLastSyncAt] = useState<number | null>(null);
   const [syncing, setSyncing] = useState(false);
+  // 동기화 실패 표시(2026-07-05): 지금까진 실패해도 조용해 데이터가 안 올라가도 몰랐다.
+  // 자동 동기가 실패하면 계정 카드에 '동기화 실패 · 다시 시도'로 알리고 재시도 가능하게.
+  const [syncFailed, setSyncFailed] = useState(false);
   const [cloudMsg, setCloudMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const signedIn = authState === 'signedIn';
   const signingIn = authState === 'signingIn';
@@ -345,6 +348,7 @@ export default function ProfileScreen({
   const runSync = async (silent = false) => {
     if (!cloudPort || syncing) return;
     setSyncing(true);
+    setSyncFailed(false);
     if (!silent) setCloudMsg(null);
     try {
       const remote = await cloudPort.pull();
@@ -352,12 +356,14 @@ export default function ProfileScreen({
       await cloudPort.push(merged);
       onCloudMerged?.(merged);
       setLastSyncAt(cloudClock());
+      setSyncFailed(false);
       // 자동(silent) 동기는 성공 팝업을 띄우지 않는다(계정 행 상태로만 표시). 에러는 항상 안내.
       if (!silent) setCloudMsg({ ok: true, text: '모든 기록이 안전하게 보관됐어요.' });
     } catch (e: any) {
       // 원문(Firestore 에러 등)은 로그로만 — 화면엔 사용자 언어(출시 감사).
       console.log('sync error', e?.message || e);
-      setCloudMsg({ ok: false, text: '지금은 연결이 원활하지 않아요. 기록은 이 기기에 그대로 있어요.' });
+      setSyncFailed(true); // 계정 카드에 '동기화 실패 · 다시 시도' 표시(조용한 실패 방지).
+      if (!silent) setCloudMsg({ ok: false, text: '지금은 연결이 원활하지 않아요. 기록은 이 기기에 그대로 있어요.' });
     } finally {
       setSyncing(false);
     }
@@ -885,14 +891,31 @@ export default function ProfileScreen({
                     <Text style={s.settingLabel} numberOfLines={1} testID="cloud-provider">
                       {cloudProvider ? `${CLOUD_PROVIDER_LABEL[cloudProvider]} 계정` : accountLabel}
                     </Text>
-                    <Text style={s.cloudSub} numberOfLines={1}>
-                      {cloudProvider && (cloudUser?.email || cloudUser?.displayName)
-                        ? (cloudUser.email || cloudUser.displayName)
-                        : (syncing ? '자동 동기 중…' : (lastSyncAt == null ? '클라우드 연결됨 · 자동 동기' : `${lastSyncLabel} · 자동`))}
-                    </Text>
+                    {!!(cloudUser?.email || cloudUser?.displayName) && (
+                      <Text style={s.cloudSub} numberOfLines={1}>{cloudUser.email || cloudUser.displayName}</Text>
+                    )}
                   </View>
-                  <Ionicons name={syncing ? 'sync-outline' : 'cloud-done-outline'} size={18} color={GOOD} />
+                  <Ionicons
+                    name={syncing ? 'sync-outline' : syncFailed ? 'cloud-offline-outline' : 'cloud-done-outline'}
+                    size={18}
+                    color={syncFailed ? DANGER : GOOD}
+                  />
                 </View>
+
+                {/* 동기화 상태 줄 — 실패 시 눌러서 다시 시도(조용한 실패 방지 2026-07-05). */}
+                <Pressable
+                  onPress={syncFailed && !syncing ? () => { void runSync(false); } : undefined}
+                  disabled={!syncFailed || syncing}
+                  accessibilityRole={syncFailed ? 'button' : 'text'}
+                  accessibilityLabel={syncing ? '동기화 중' : syncFailed ? '동기화 실패, 눌러서 다시 시도' : lastSyncAt == null ? '클라우드 연결됨' : `${lastSyncLabel}`}
+                  style={({ pressed }) => [s.settingRow, s.settingBorder, pressed && syncFailed && { backgroundColor: CARD_HI }]}
+                  testID="cloud-sync-status">
+                  <View style={s.settingIcon}><Ionicons name={syncing ? 'sync-outline' : syncFailed ? 'alert-circle-outline' : 'checkmark-circle-outline'} size={16} color={syncFailed ? DANGER : T3} /></View>
+                  <Text style={[s.settingLabel, { fontWeight: '500', color: syncFailed ? DANGER : T2 }]}>
+                    {syncing ? '동기화 중…' : syncFailed ? '동기화 실패 · 다시 시도' : (lastSyncAt == null ? '클라우드 연결됨 · 자동 동기' : lastSyncLabel)}
+                  </Text>
+                  {syncFailed && !syncing && <Ionicons name="refresh" size={15} color={DANGER} />}
+                </Pressable>
 
                 {/* 로그아웃 */}
                 <Pressable onPress={handleSignOut} accessibilityRole="button" accessibilityLabel="로그아웃" style={({ pressed }) => [s.settingRow, pressed && { backgroundColor: CARD_HI }]}>

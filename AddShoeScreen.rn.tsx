@@ -3,7 +3,7 @@
 // auto-filled recommended life with a '권장' badge, real photo attach)
 // ============================================================================
 import React, { useState } from 'react';
-import { View, Text, TextInput, ScrollView, Pressable, Image, StyleSheet, Modal, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TextInput, ScrollView, Pressable, Image, StyleSheet, Modal, KeyboardAvoidingView, Platform, Alert, Linking } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {
@@ -15,7 +15,7 @@ import { BRANDS, modelsForBrand, getRecommendedLifespanKm } from './data/shoeMod
 // maxKm 0 같은 비정상값을 제출 시 인라인으로 차단(빨강 헬퍼텍스트).
 import { validateMaxKm } from './lib/inputMask';
 // 사진 첨부는 expo-image-picker 래퍼(lib/photo)를 통해 실제로 동작한다.
-import { pickShoePhoto } from './lib/photo';
+import { pickPhotoWithPermission } from './lib/photo';
 
 // 브랜드 목록에 없는 신발을 위한 '기타'(직접 입력) 센티넬.
 const CUSTOM_BRAND = '기타';
@@ -82,8 +82,15 @@ export default function AddShoeScreen({
     setPicking(true);
     setPhotoError(false);
     try {
-      const picked = await pickShoePhoto();
-      if (picked) setPhotoUri(picked.uri);
+      const picked = await pickPhotoWithPermission();
+      if (picked.ok) setPhotoUri(picked.uri);
+      else if (picked.reason === 'denied') {
+        // 권한 거부 시 무반응이던 것 개선(2026-07-05) — 설정 안내(비차단).
+        Alert.alert('사진 접근 권한이 필요해요', '설정에서 사진 권한을 허용하면 신발 사진을 등록할 수 있어요.', [
+          {text: '설정 열기', onPress: () => { Promise.resolve(Linking.openSettings()).catch(() => {}); }},
+          {text: '나중에', style: 'cancel'},
+        ]);
+      }
     } catch {
       // 실패해도 저장을 막지 않는다 — 에러를 표시하고 재시도를 제안.
       setPhotoError(true);

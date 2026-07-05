@@ -11,7 +11,7 @@ import React from 'react';
 import ReactTestRenderer, {act} from 'react-test-renderer';
 import RunRecapScreen from '../RunRecapScreen.rn';
 
-jest.mock('../lib/photo', () => ({pickShoePhoto: jest.fn(async () => ({uri: 'file:///p.jpg'}))}));
+jest.mock('../lib/photo', () => ({pickPhotoWithPermission: jest.fn(async () => ({ok: true, uri: 'file:///p.jpg'})), pickShoePhoto: jest.fn(async () => ({uri: 'file:///p.jpg'}))}));
 
 const base = {km: 5, durationS: 1500};
 async function render(props: any) {

@@ -331,6 +331,27 @@ describe('ProfileScreen 자동 동기 (로그인/변경 시 pull→merge→push,
       jest.useRealTimers();
     }
   });
+
+  test('자동 동기 실패 → 계정 카드에 동기화 실패 표시 + 눌러서 다시 시도(2026-07-05)', async () => {
+    jest.useFakeTimers();
+    try {
+      const port = mockPort(null);
+      port.pull = jest.fn(() => Promise.reject(new Error('network'))); // 첫 동기 실패
+      const root = render({cloudPort: port, backupData: LOCAL});
+      await press(byTestId(root, 'cloud-signin-google'));
+      await flushAutoSync();
+      // 조용한 실패가 아니라 상태 줄에 실패가 드러난다.
+      expect(textOf(byTestId(root, 'cloud-sync-status'))).toContain('동기화 실패');
+      // 다시 시도: 이번엔 성공하도록 pull 을 복구하고 상태 줄을 탭.
+      port.pull = jest.fn(() => Promise.resolve(null));
+      await press(byTestId(root, 'cloud-sync-status'));
+      await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+      expect(port.pull).toHaveBeenCalled();
+      expect(textOf(byTestId(root, 'cloud-sync-status'))).not.toContain('동기화 실패');
+    } finally {
+      jest.useRealTimers();
+    }
+  });
 });
 
 describe('ProfileScreen 로그아웃', () => {
@@ -358,7 +379,7 @@ test('저장된 계정이 있으면 재마운트 시 로그인 상태·제공자
   await AsyncStorage.setItem('cloud_account', JSON.stringify({provider: 'kakao', uid: 'u-1', email: 'runner@keego.app', displayName: null}));
   const port = mockPort();
   let renderer!: ReactTestRenderer.ReactTestRenderer;
-  await act(async () => { renderer = ReactTestRenderer.create(<ProfileScreen cloudPort={port} />); });
+  await act(async () => { renderer = ReactTestRenderer.create(<ProfileScreen cloudPort={port as any} />); });
   await act(async () => { renderer.root.findAll((n: any) => n.props?.accessibilityLabel === '설정 열기')[0]?.props?.onPress?.(); });
   await act(async () => { await Promise.resolve(); });
   const root = renderer.root;

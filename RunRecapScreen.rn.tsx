@@ -6,7 +6,7 @@
 // 닫기(onClose)에서 App 이 기록 탭으로 이동한다.
 // ============================================================================
 import React, {useMemo, useRef, useState} from 'react';
-import {View, Text, ScrollView, Pressable, StyleSheet, Alert, TextInput, Image} from 'react-native';
+import {View, Text, ScrollView, Pressable, StyleSheet, Alert, TextInput, Image, Linking} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {BG, CARD, CARD_HI, ACCENT, GOOD, WARN, DANGER, T1, T2, T3, T4, FONT, DISPLAY, RADIUS, SEP, withAlpha} from './theme';
@@ -15,7 +15,7 @@ import {fmtPace} from './lib/format';
 import {GlassEdge} from './primitives';
 import {RunSplits, Split} from './RunSplits';
 import {PRKind, PR_LABEL} from './lib/records';
-import {pickShoePhoto} from './lib/photo';
+import {pickPhotoWithPermission} from './lib/photo';
 import {Unit} from './lib/units';
 import {parseRoute} from './lib/route';
 import {CourseMap} from './CourseMap';
@@ -105,8 +105,16 @@ export default function RunRecapScreen({
   const attachPhoto = async () => {
     if (!canMeta) return;
     try {
-      const p = await pickShoePhoto();
-      if (p) { setPhotoUri(p.uri); onSaveMeta!(runId!, {photoUri: p.uri}); }
+      const p = await pickPhotoWithPermission();
+      if (p.ok) { setPhotoUri(p.uri); onSaveMeta!(runId!, {photoUri: p.uri}); }
+      else if (p.reason === 'denied') {
+        // 권한 영구 거부 시 버튼이 고장 난 듯 무반응이던 것 개선(2026-07-05) — 설정 안내.
+        Alert.alert('사진 접근 권한이 필요해요', '설정에서 사진 권한을 허용하면 오늘의 한 컷을 남길 수 있어요.', [
+          {text: '설정 열기', onPress: () => { Promise.resolve(Linking.openSettings()).catch(() => {}); }},
+          {text: '나중에', style: 'cancel'},
+        ]);
+      }
+      // cancelled 는 조용히 넘어간다(사용자가 스스로 닫음).
     } catch { Alert.alert('사진을 불러오지 못했어요', '잠시 후 다시 시도해 주세요.'); }
   };
   const removePhoto = () => { setPhotoUri(null); if (canMeta) onSaveMeta!(runId!, {photoUri: null}); };

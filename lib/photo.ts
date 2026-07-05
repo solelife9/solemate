@@ -15,15 +15,19 @@ export interface PickedPhoto {
   uri: string;
 }
 
+/** 사진 선택 결과 — 권한 거부(denied)와 사용자 취소(cancelled)를 구분한다(2026-07-05).
+ *  거부는 "설정에서 허용" 안내가 필요하고, 취소는 조용히 넘어가야 하기 때문. */
+export type PhotoPick =
+  | {ok: true; uri: string}
+  | {ok: false; reason: 'cancelled' | 'denied'};
+
 /**
- * 사진 라이브러리에서 신발 사진 한 장을 고른다.
- *
- * @returns 선택된 사진({uri}) / 권한 거부·취소 시 null.
- * @throws  권한·런처 호출이 예외를 던지면 그대로 전파(호출부가 비차단 처리).
+ * 사진 라이브러리에서 한 장을 고른다. 권한 거부/취소를 구분해 돌려준다.
+ * @throws 네이티브 런처 예외는 전파(호출부가 비차단 처리).
  */
-export async function pickShoePhoto(): Promise<PickedPhoto | null> {
+export async function pickPhotoWithPermission(): Promise<PhotoPick> {
   const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-  if (!perm.granted) return null;
+  if (!perm.granted) return {ok: false, reason: 'denied'};
 
   const res = await ImagePicker.launchImageLibraryAsync({
     // MediaTypeOptions는 deprecated — 신형 배열 형태로 이미지만 허용.
@@ -32,9 +36,20 @@ export async function pickShoePhoto(): Promise<PickedPhoto | null> {
     quality: 0.7,
   });
 
-  if (res.canceled) return null;
+  if (res.canceled) return {ok: false, reason: 'cancelled'};
   const asset = res.assets && res.assets[0];
-  return asset ? {uri: asset.uri} : null;
+  return asset ? {ok: true, uri: asset.uri} : {ok: false, reason: 'cancelled'};
+}
+
+/**
+ * 사진 라이브러리에서 신발 사진 한 장을 고른다(하위호환 래퍼 — 거부·취소를 null 로).
+ *
+ * @returns 선택된 사진({uri}) / 권한 거부·취소 시 null.
+ * @throws  권한·런처 호출이 예외를 던지면 그대로 전파(호출부가 비차단 처리).
+ */
+export async function pickShoePhoto(): Promise<PickedPhoto | null> {
+  const r = await pickPhotoWithPermission();
+  return r.ok ? {uri: r.uri} : null;
 }
 
 /**

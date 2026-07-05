@@ -114,7 +114,7 @@ import {resolveGoogleCredential} from './lib/googleAuth';
 import {resolveAppleCredential} from './lib/appleAuth';
 import {resolveKakaoFirebaseToken} from './lib/kakaoAuth';
 import {resolveNaverFirebaseToken} from './lib/naverAuth';
-import {pickShoePhoto} from './lib/photo';
+import {pickPhotoWithPermission} from './lib/photo';
 
 // 로컬 백업 가져오기 시 원본을 보관하는 신규 AsyncStorage 키(기존 키 파괴 금지).
 const K_BACKUP_IMPORT = 'imported_backup_v1';
@@ -1277,8 +1277,15 @@ function Main(){
   };
   const pickProfilePhoto=async()=>{
     try{
-      const picked=await pickShoePhoto();
-      if(!picked)return;
+      const picked=await pickPhotoWithPermission();
+      if(!picked.ok){
+        // 권한 거부 시 무반응이던 것 개선(2026-07-05) — 설정 안내(취소는 조용히).
+        if(picked.reason==='denied')Alert.alert('사진 접근 권한이 필요해요','설정에서 사진 권한을 허용하면 프로필 사진을 바꿀 수 있어요.',[
+          {text:'설정 열기',onPress:()=>{Promise.resolve(Linking.openSettings()).catch(()=>{});}},
+          {text:'나중에',style:'cancel'},
+        ]);
+        return;
+      }
       setProfilePhoto(picked.uri);
       try{await AsyncStorage.setItem(K_PROFILE_PHOTO,picked.uri);}catch(e){console.log('profile photo save error',e);}
     }catch(e){console.log('profile photo pick error',e);}
