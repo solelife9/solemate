@@ -10,6 +10,7 @@ import React, {useState} from 'react';
 import {View, Text, Pressable, StyleSheet} from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {CARD, CARD_HI, ACCENT, GOOD, T1, T2, T3, SEP, FONT, DISPLAY, RADIUS, withAlpha} from './theme';
+import {weeklyGoalTier} from './lib/goalTier';
 import {Ring, Pill, Stepper} from './primitives';
 import {ChallengeRun, ChallengeProgressResult} from './lib/challenges';
 import {
@@ -90,6 +91,7 @@ export function SmartChallengeCard({
 }) {
   const [editing, setEditing] = useState(false);
   const target = ch.targetKm ?? 0;
+  const tier = weeklyGoalTier(target); // 난이도 → 링 색 + 라벨(사용자 2026-07-05)
   const p = challengeExtProgress(ch, runs, shoes, now);
   const pctLabel = `${Math.round(p.pct * 100)}%`;
   const step = (delta: number) => onEditTargetKm?.(Math.max(SMART_KM_MIN, target + delta));
@@ -97,6 +99,7 @@ export function SmartChallengeCard({
     <View style={s.smartCard} testID="smart-challenge">
       <View style={s.smartHead}>
         <Pill tone="accent" icon="sparkles" label="주간 목표" testID="smart-challenge-tag" />
+        <Text style={{color: tier.color, fontFamily: FONT, fontSize: 12, fontWeight: '800', letterSpacing: 0.3}} testID="goal-difficulty">{tier.label}</Text>
         {p.completed && !editing && (
           <Pill tone="good" icon="trophy" label="달성!" testID="smart-challenge-badge" />
         )}
@@ -130,7 +133,7 @@ export function SmartChallengeCard({
         </View>
       ) : (
         <View style={s.smartBody}>
-          <Ring size={64} stroke={7} progress={p.pct} color={p.completed ? GOOD : ACCENT}>
+          <Ring size={64} stroke={7} progress={p.pct} color={tier.color}>
             <Text style={s.ringPct} testID="smart-challenge-pct">
               {pctLabel}
             </Text>

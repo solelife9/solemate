@@ -21,6 +21,7 @@ export const WARN = '#E6A23C';
 export const DANGER = '#FF5A45';
 export const GOOD = '#46C98B';           // healthy condition dot (핸드오프 good)
 export const BEST = '#4A9FF0';           // 최상 컨디션 파란색
+export const SPORT_VIOLET = '#7C3AED';   // 스포티 일렉트릭 바이올렛(주간목표 '도전' 난이도)
 export const T1 = '#FFFFFF';
 export const T2 = '#EBEBF5';
 // Tertiary/secondary text. Lifted from iOS systemGray(#8E8E93) to #9C9CA3 so the
