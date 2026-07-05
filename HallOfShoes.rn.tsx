@@ -393,7 +393,7 @@ const st = StyleSheet.create({
   legacy: {flexDirection: 'row', borderWidth: 1, borderColor: G.line, borderRadius: 18, backgroundColor: 'rgba(214,180,120,0.04)', paddingVertical: 18, marginBottom: 28},
   lcell: {flex: 1, alignItems: 'center', gap: 5},
   lcellDiv: {borderLeftWidth: 1, borderLeftColor: G.line},
-  lval: {fontFamily: DISPLAY, fontSize: 24, fontWeight: '800', color: G.txt, letterSpacing: -0.5, fontVariant: ['tabular-nums']},
+  lval: {fontFamily: DISPLAY, fontSize: 25, fontWeight: '600', color: G.txt, letterSpacing: -0.5, fontVariant: ['tabular-nums']},
   llabel: {fontFamily: FONT, fontSize: 10, fontWeight: '800', letterSpacing: 1.2, color: G.faint},
 
   sec: {flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 13},
@@ -412,7 +412,7 @@ const st = StyleSheet.create({
   featModel: {fontFamily: SERIF, fontSize: 24, fontWeight: '800', color: G.txt, marginTop: 7},
   featQuote: {fontFamily: FONT, fontSize: 12, fontWeight: '600', color: G.muted, marginTop: 9},
   featDist: {flexDirection: 'row', alignItems: 'baseline', gap: 4, marginBottom: 8},
-  featNum: {fontFamily: DISPLAY, fontSize: 44, fontWeight: '800', color: G.gold, letterSpacing: -1.5, fontVariant: ['tabular-nums']},
+  featNum: {fontFamily: DISPLAY, fontSize: 44, fontWeight: '700', color: G.gold, letterSpacing: -1.5, fontVariant: ['tabular-nums']},
   featKm: {fontFamily: DISPLAY, fontSize: 15, fontWeight: '700', color: G.gold, opacity: 0.7},
 
   grid: {flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 14},
@@ -422,7 +422,7 @@ const st = StyleSheet.create({
   pbrand: {fontFamily: FONT, fontSize: 9, fontWeight: '800', letterSpacing: 1.4, color: G.gold, marginTop: 16},
   pmodel: {fontFamily: SERIF, fontSize: 16, fontWeight: '800', color: G.txt, marginTop: 5, lineHeight: 19},
   pfoot: {marginTop: 'auto', paddingTop: 12, flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: G.line},
-  pkm: {fontFamily: DISPLAY, fontSize: 17, fontWeight: '800', color: G.txt, letterSpacing: -0.3, fontVariant: ['tabular-nums']},
+  pkm: {fontFamily: DISPLAY, fontSize: 17, fontWeight: '600', color: G.txt, letterSpacing: -0.3, fontVariant: ['tabular-nums']},
   pkmU: {fontFamily: DISPLAY, fontSize: 10, fontWeight: '700', color: G.muted},
   pyear: {fontFamily: DISPLAY, fontSize: 11, fontWeight: '600', color: G.faint, fontVariant: ['tabular-nums']},
 
