@@ -510,7 +510,7 @@ const s = StyleSheet.create({
     color: T1,
     fontFamily: DISPLAY,
     fontSize: 34,
-    fontWeight: '800',
+    fontWeight: '700',
     letterSpacing: -0.6,
     lineHeight: 40,
   },
@@ -518,7 +518,7 @@ const s = StyleSheet.create({
     color: T1,
     fontFamily: DISPLAY,
     fontSize: 26,
-    fontWeight: '800',
+    fontWeight: '700',
     letterSpacing: -0.4,
   },
   lede: {
@@ -570,7 +570,7 @@ const s = StyleSheet.create({
     color: T1,
     fontFamily: DISPLAY,
     fontSize: 22,
-    fontWeight: '800',
+    fontWeight: '700',
     letterSpacing: 0.2,
   },
   gridLabel: {color: T3, fontFamily: FONT, fontSize: 12, marginTop: 4},
@@ -600,7 +600,7 @@ const s = StyleSheet.create({
     color: T1,
     fontFamily: DISPLAY,
     fontSize: 20,
-    fontWeight: '800',
+    fontWeight: '700',
     letterSpacing: -0.2,
   },
 
@@ -632,7 +632,7 @@ const s = StyleSheet.create({
     borderColor: withAlpha(ACCENT, 0.6),
     backgroundColor: withAlpha(ACCENT, 0.14),
   },
-  formatTxt: {color: T3, fontFamily: DISPLAY, fontSize: 16, fontWeight: '800'},
+  formatTxt: {color: T3, fontFamily: DISPLAY, fontSize: 16, fontWeight: '700'},
   formatTxtOn: {color: ACCENT},
 
   preview: {

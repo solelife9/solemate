@@ -149,7 +149,7 @@ const st = StyleSheet.create({
     backgroundColor: withAlpha(T1, 0.06),
     alignItems: 'center', justifyContent: 'center',
   },
-  logoK: {fontFamily: DISPLAY, fontSize: 48, fontWeight: '800', color: ACCENT, marginTop: -2},
+  logoK: {fontFamily: DISPLAY, fontSize: 48, fontWeight: '700', color: ACCENT, marginTop: -2},
   // 워드마크 = Helvetica Neue Medium 소문자 흰색(2026-07-04 B안 확정).
   wordmark: {fontFamily: WORDMARK_FONT, fontWeight: '500', fontSize: 34, color: T1, letterSpacing: -0.3},
   tagline: {fontFamily: FONT, fontSize: 15, color: T3},
@@ -160,7 +160,7 @@ const st = StyleSheet.create({
   btnApple: {backgroundColor: CARD_HI},
   btnKakao: {backgroundColor: KAKAO_YELLOW},
   btnNaver: {backgroundColor: NAVER_GREEN},
-  brandMark: {fontFamily: DISPLAY, fontSize: 17, fontWeight: '800'},
+  brandMark: {fontFamily: DISPLAY, fontSize: 17, fontWeight: '700'},
   btnTxt: {color: T1, fontFamily: FONT, fontSize: 15, fontWeight: '600'},
   error: {fontFamily: FONT, fontSize: 13, color: DANGER, textAlign: 'center', marginTop: 4},
   footnote: {fontFamily: FONT, fontSize: 12, lineHeight: 17, color: T3, textAlign: 'center', marginTop: 8},

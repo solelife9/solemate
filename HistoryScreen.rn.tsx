@@ -544,7 +544,7 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'm
               </Text>
             </View>
             <View style={{ alignItems: 'flex-end' }}>
-              <Text style={{ color: T1, fontFamily: DISPLAY, fontSize: 24, fontWeight: '800' }}>{effort.score}</Text>
+              <Text style={{ color: T1, fontFamily: DISPLAY, fontSize: 24, fontWeight: '700' }}>{effort.score}</Text>
               <Text style={{ color: ACCENT, fontFamily: FONT, fontSize: 12, fontWeight: '700' }}>{effort.band}</Text>
             </View>
           </View>
@@ -565,7 +565,7 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'm
                   {harder ? '오르막 코스 — 평지였다면 이 페이스' : '내리막 이득을 평지 기준으로 환산'}
                 </Text>
               </View>
-              <Text style={{ color: T1, fontFamily: DISPLAY, fontSize: 22, fontWeight: '800' }}>
+              <Text style={{ color: T1, fontFamily: DISPLAY, fontSize: 22, fontWeight: '700' }}>
                 {fmtPace(gapSec)}<Text style={{ fontSize: 12, color: T3, fontWeight: '500' }}> /km</Text>
               </Text>
             </View>

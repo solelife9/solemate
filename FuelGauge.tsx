@@ -62,7 +62,7 @@ const g = StyleSheet.create({
   labelRow: {flexDirection: 'row', alignItems: 'center', gap: 8},
   label: {color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600', letterSpacing: 0.2},
   lead: {color: T2, fontFamily: FONT, fontSize: 16, fontWeight: '500', letterSpacing: -0.2, marginTop: 8, lineHeight: 23},
-  leadBold: {color: T1, fontFamily: DISPLAY, fontWeight: '800'},
+  leadBold: {color: T1, fontFamily: DISPLAY, fontWeight: '700'},
   remRow: {flexDirection: 'row', alignItems: 'flex-end', marginTop: 4},
   rem: {color: T1, fontFamily: DISPLAY, fontSize: 40, fontWeight: '600', letterSpacing: -1.4, lineHeight: 38},
   remU: {color: T2, fontFamily: FONT, fontSize: 16, fontWeight: '500', marginLeft: 3, marginBottom: 4},

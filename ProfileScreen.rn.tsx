@@ -1112,7 +1112,7 @@ const s = StyleSheet.create({
   cloudBtnApple: { backgroundColor: CARD_HI },
   cloudBtnKakao: { backgroundColor: KAKAO_YELLOW },
   cloudBtnNaver: { backgroundColor: NAVER_GREEN },
-  brandMark: { fontFamily: DISPLAY, fontSize: 17, fontWeight: '800' },
+  brandMark: { fontFamily: DISPLAY, fontSize: 17, fontWeight: '700' },
   cloudBtnTxt: { color: T1, fontFamily: FONT, fontSize: 15, fontWeight: '600' },
   cloudMsg: { fontFamily: FONT, fontSize: 13, fontWeight: '600', lineHeight: 18, paddingHorizontal: 16, paddingBottom: 14 },
 });

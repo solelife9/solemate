@@ -425,7 +425,7 @@ const s = StyleSheet.create({
   pickerModel: { color: T1, fontFamily: FONT, fontSize: 16, fontWeight: '700', letterSpacing: -0.2, marginTop: 1 },
   pickerMeta: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   pickerRemain: { color: T2, fontFamily: FONT, fontSize: 13, fontWeight: '500' },
-  pickerCheck: { color: T1, fontFamily: FONT, fontSize: 16, fontWeight: '800', marginLeft: 2 },
+  pickerCheck: { color: T1, fontFamily: FONT, fontSize: 16, fontWeight: '700', marginLeft: 2 },
   shoeThumb: { width: 46, height: 46, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: HERO_BG, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
   shoeBrand: { color: T3, fontFamily: DISPLAY, fontSize: 10, fontWeight: '600', letterSpacing: 1.4 },
   shoeModel: { color: T1, fontFamily: FONT, fontSize: 15, fontWeight: '600', letterSpacing: -0.2, marginTop: 2 },

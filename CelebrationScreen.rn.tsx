@@ -265,7 +265,7 @@ const st = StyleSheet.create({
   ring: {position: 'absolute', width: 124, height: 124, borderRadius: 62, borderCurve: 'continuous', borderWidth: 1},
 
   rankfrom: {fontSize: 14, fontWeight: '500', color: T3, marginBottom: 2, fontFamily: FONT, textAlign: 'center'},
-  name: {fontSize: 32, fontWeight: '800', color: T1, letterSpacing: -0.6, lineHeight: 38, textAlign: 'center', fontFamily: DISPLAY},
+  name: {fontSize: 32, fontWeight: '700', color: T1, letterSpacing: -0.6, lineHeight: 38, textAlign: 'center', fontFamily: DISPLAY},
   meta: {fontSize: 13, fontWeight: '500', color: T3, fontFamily: FONT},
   desc: {fontSize: 15, color: withAlpha(T1, 0.72), lineHeight: 24, marginTop: 18, maxWidth: 300, textAlign: 'center', fontFamily: FONT},
   b: {color: T1, fontWeight: '700'},

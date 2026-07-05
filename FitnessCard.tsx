@@ -37,7 +37,7 @@ export function FitnessCard({ runs = [], todayISO, style }: { runs?: any[]; toda
       <Text style={st.title}>심폐 체력</Text>
       {/* VO2max — 최근 6주 최고 노력 기준(이지런 과소추정 보정). */}
       <View style={{ flexDirection: 'row', alignItems: 'flex-end', marginTop: 10 }}>
-        <Text style={{ color: T1, fontFamily: DISPLAY, fontSize: 40, fontWeight: '800', letterSpacing: -0.5, lineHeight: 42 }}>{fitness.vo2max.toFixed(1)}</Text>
+        <Text style={{ color: T1, fontFamily: DISPLAY, fontSize: 40, fontWeight: '700', letterSpacing: -0.5, lineHeight: 42 }}>{fitness.vo2max.toFixed(1)}</Text>
         <View style={{ marginLeft: 10, paddingBottom: 5 }}>
           <Text style={{ color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500' }}>VO₂max</Text>
           <Text style={{ color: ACCENT, fontFamily: FONT, fontSize: 13, fontWeight: '700', marginTop: 2 }}>{fitness.vo2maxLabel}</Text>

@@ -190,7 +190,7 @@ const s = StyleSheet.create({
   // ── 빈 상태(첫 러닝화 — design-reference/first-shoe) ──
   greetWrap: {paddingHorizontal: 20, paddingTop: 18, paddingBottom: 20},
   date: {color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '500'},
-  greeting: {marginTop: 6, color: T1, fontFamily: FONT, fontSize: 23, fontWeight: '800', letterSpacing: -0.4, lineHeight: 31},
+  greeting: {marginTop: 6, color: T1, fontFamily: FONT, fontSize: 23, fontWeight: '700', letterSpacing: -0.4, lineHeight: 31},
   // 스테이지 — 고스트 카드 + 철학 한 줄. 절대 탭 독에 가리지 않게 하단 여백 확보.
   stage: {flex: 1, justifyContent: 'center', gap: 26, paddingHorizontal: 20, paddingBottom: 96},
   philosophy: {textAlign: 'center', color: T3, fontFamily: FONT, fontSize: 15, lineHeight: 24},

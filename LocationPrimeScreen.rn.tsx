@@ -76,7 +76,7 @@ const s = StyleSheet.create({
   screen: {flex: 1, backgroundColor: BG, paddingHorizontal: 22},
   body: {flex: 1, justifyContent: 'center'},
   hero: {alignSelf: 'center', width: 80, height: 80, borderRadius: 40, borderCurve: 'continuous', alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(ACCENT, 0.12), marginBottom: 18},
-  title: {color: T1, fontFamily: FONT, fontSize: 24, fontWeight: '800', letterSpacing: -0.5, textAlign: 'center'},
+  title: {color: T1, fontFamily: FONT, fontSize: 24, fontWeight: '700', letterSpacing: -0.5, textAlign: 'center'},
   lead: {color: T3, fontFamily: FONT, fontSize: 14, lineHeight: 20, textAlign: 'center', marginTop: 8, marginBottom: 22},
   card: {backgroundColor: CARD, borderRadius: RADIUS.lg, borderCurve: 'continuous', borderWidth: StyleSheet.hairlineWidth, borderColor: SEP, paddingHorizontal: 16, paddingVertical: 4},
   row: {flexDirection: 'row', alignItems: 'flex-start', gap: 13, paddingVertical: 15},

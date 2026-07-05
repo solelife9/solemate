@@ -469,7 +469,7 @@ const s = StyleSheet.create({
     fontFamily: DISPLAY,
     color: T1,
     fontSize: 22,
-    fontWeight: '800',
+    fontWeight: '700',
     letterSpacing: -0.5,
   },
   heroSub: {fontFamily: FONT, color: T3, fontSize: 13, fontWeight: '600'},
@@ -478,10 +478,10 @@ const s = StyleSheet.create({
   // 승급까지 남은 XP — 게임 히어로가 아니라 속삭임(작고 뮤트, 우측 정렬)
   toNext: {fontFamily: FONT, color: T3, fontSize: 12, fontWeight: '600', letterSpacing: 0.1, textAlign: 'right', marginTop: 10, fontVariant: ['tabular-nums']},
   xpRow: {flexDirection: 'row', alignItems: 'baseline', gap: 0},
-  xpNum: {fontFamily: DISPLAY, fontSize: 30, fontWeight: '800', letterSpacing: -0.8, fontVariant: ['tabular-nums']},
+  xpNum: {fontFamily: DISPLAY, fontSize: 30, fontWeight: '700', letterSpacing: -0.8, fontVariant: ['tabular-nums']},
   xpUnit: {fontFamily: FONT, color: T3, fontSize: 14, fontWeight: '600'},
   nextRow: {flexDirection: 'row', alignItems: 'center', gap: 10},
-  nextTierTxt: {fontFamily: FONT, fontSize: 12, fontWeight: '800', letterSpacing: 0.2},
+  nextTierTxt: {fontFamily: FONT, fontSize: 12, fontWeight: '700', letterSpacing: 0.2},
   nextTrack: {
     flex: 1,
     height: 6,
@@ -490,7 +490,7 @@ const s = StyleSheet.create({
     overflow: 'hidden',
   },
   nextFill: {height: '100%', borderRadius: RADIUS.pill},
-  maxTier: {fontFamily: FONT, fontSize: 13, fontWeight: '800'},
+  maxTier: {fontFamily: FONT, fontSize: 13, fontWeight: '700'},
   xpForNext: {fontFamily: FONT, color: T3, fontSize: 12, fontWeight: '600'},
   // 스탯 카드
   statCard: {
@@ -519,7 +519,7 @@ const s = StyleSheet.create({
   achName: {flex: 1, fontFamily: FONT, color: T2, fontSize: 14, fontWeight: '700'},
   achDesc: {fontFamily: FONT, color: T3, fontSize: 12, lineHeight: 17},
   rar: {borderRadius: 6, paddingHorizontal: 7, paddingVertical: 3},
-  rarTxt: {fontFamily: FONT, fontSize: 9, fontWeight: '800', letterSpacing: 0.4},
+  rarTxt: {fontFamily: FONT, fontSize: 9, fontWeight: '700', letterSpacing: 0.4},
   achMeta: {flexDirection: 'row', alignItems: 'center', gap: 8},
   achXp: {fontFamily: DISPLAY, fontSize: 11, fontWeight: '700', letterSpacing: 0.2, fontVariant: ['tabular-nums']},
   achFooter: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'},
@@ -550,7 +550,7 @@ const s = StyleSheet.create({
     fontFamily: DISPLAY,
     color: ACCENT,
     fontSize: 22,
-    fontWeight: '800',
+    fontWeight: '700',
     letterSpacing: -0.4,
     fontVariant: ['tabular-nums'],
   },
