@@ -438,6 +438,9 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'm
   };
   // GPX 내보내기(2026-07-05) — 경로가 있을 때만 옵션 노출. '내 데이터는 내 것'
   // (가민/스트라바 이관·아카이빙). exportGpx 는 no-throw — 사유만 안내한다.
+  // GPX 내보내기(2026-07-05) — 감정적 공유(사진·완성본)와 데이터 이관은 서로 다른 의도라
+  // 공유 시트에서 빼고 상세 하단의 조용한 진입점으로 옮겼다(2026-07-05 결정, 가민/스트라바
+  // 문법: 공유는 SNS, GPX 내보내기는 설정/더보기). 경로 2점↑일 때만 노출.
   const exportRouteGpx = async () => {
     if (!run.id) return;
     const label = shoe ? `${shoe.brand} ${shoe.model}` : run.shoeName || 'Keego Run';
@@ -450,8 +453,6 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'm
       { text: '사진앱에 저장', onPress: saveCard },
       { text: '공유 시트로', onPress: doShare },
     ];
-    // 경로가 2점 이상일 때만 GPX 옵션(수동 기록·GPS 실패 런엔 코스가 없다).
-    if (route.length >= 2) opts.push({ text: 'GPX 파일로 내보내기', onPress: exportRouteGpx });
     opts.push({ text: '취소', style: 'cancel' });
     Alert.alert('러닝 공유', '투명 카드는 인스타 스토리용, GPX는 다른 앱으로 코스를 옮길 때 써요.', opts);
   };
@@ -622,6 +623,19 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'm
             (평균선·눈금·스무딩) 후에도 '봐도 모르겠다'는 실사용 판정으로 제거 확정
             (2026-07-04) — 구간 정보는 이 표의 대비 강화된 막대가 담당한다. */}
         <RunSplits splits={recordedSplits.length >= 2 ? recordedSplits : buildSplits(run, route)} />
+        {/* 데이터 내보내기 — 조용한 하단 진입점. 경로가 있는(GPS) 런에서만. 감정적 공유(위
+            공유 버튼)와 분리해, 가민/스트라바로 코스를 옮기려는 사람만 찾아 쓴다. */}
+        {route.length >= 2 && (
+          <Pressable
+            onPress={exportRouteGpx}
+            accessibilityRole="button"
+            accessibilityLabel="GPX 파일로 내보내기, 다른 앱으로 코스 옮기기"
+            style={({ pressed }) => [s.gpxRow, pressed && { opacity: 0.6 }]}>
+            <Ionicons name="download-outline" size={15} color={T3} />
+            <Text style={s.gpxTxt}>GPX 파일로 내보내기</Text>
+            <Text style={s.gpxHint}>다른 앱으로 코스 옮기기</Text>
+          </Pressable>
+        )}
       </ScrollView>
       {/* 공유 카드: 화면 밖(off-screen)에 마운트해 toDataURL 캡처 대상으로만 쓴다.
           pointerEvents none + 음수 위치라 사용자에겐 보이지 않지만 레이아웃은 된다. */}
@@ -1059,6 +1073,9 @@ const s = StyleSheet.create({
   // 공유 카드 캡처용: 화면 밖(좌측 far-off)으로 밀어 보이지 않게 하되 마운트는 유지.
   runPhoto: { width: '100%', height: 200, borderRadius: 16, borderCurve: 'continuous', marginTop: 16 },
   runMemo: { color: T2, fontFamily: FONT, fontSize: 14, lineHeight: 21, marginTop: 12, fontStyle: 'italic' },
+  gpxRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 24, paddingVertical: 12, paddingHorizontal: 2, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP },
+  gpxTxt: { color: T2, fontFamily: FONT, fontSize: 13, fontWeight: '600' },
+  gpxHint: { color: T4, fontFamily: FONT, fontSize: 11, marginLeft: 'auto' },
   offscreen: { position: 'absolute', left: -10000, top: 0, opacity: 0 },
   baselineRow: { flexDirection: 'row', alignItems: 'flex-end' },
   card: { backgroundColor: CARD, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER },
