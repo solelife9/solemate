@@ -48,6 +48,29 @@ export function snapLapDistance(measuredM: number, tolFrac = 0.06): LapSnap {
   return {meters: Math.round(measuredM), label: '측정값', snapped: false};
 }
 
+/**
+ * 첫 자동랩 GPS 보정 — 여기까지의 GPS 누적거리(km)와 지금까지의 랩수로 '실측 한 바퀴(m)'를
+ * 내고, 표준(200/300/400)에 깔끔히 스냅될 때만 확정 랩거리를 교체한다. 애매한 값(비표준)은
+ * 사용자 선택(currentLapM)을 유지 — 노이즈 GPS 보다 사람 판단을 신뢰. 실내(GPS✗)는 애초에
+ * 자동랩이 안 울려 호출 자체가 없다. 사용자가 400 골랐어도 GPS 가 300 트랙을 잡아내 교정한다.
+ */
+export function calibrateLapM(
+  cumDistKm: number, lapsSoFar: number, currentLapM: number,
+): {lapM: number; changed: boolean; measuredM: number; snapped: boolean} {
+  const measuredM = (cumDistKm * 1000) / Math.max(1, lapsSoFar);
+  // 측정값이 없으면(실내·GPS 死구간: 누적 0) 보정하지 않는다 — snapLapDistance 는 0 을
+  // 400 안전폴백으로 스냅하므로, 여기서 걸러 200 선택이 400 으로 뒤집히는 걸 막는다.
+  if (!(measuredM > 0)) return {lapM: currentLapM, changed: false, measuredM: 0, snapped: false};
+  const snap = snapLapDistance(measuredM);
+  // 표준에 깔끔히 스냅될 때만 확정 랩거리를 교체(고신뢰). 비표준(예 350m)은 사용자 선택을
+  // 유지하되 measuredM 을 함께 돌려줘, 호출부가 '측정≠선택'을 사용자에게 알릴 수 있게 한다
+  // (조용히 추측하지 않고 사람을 루프에 — 진짜 350 트랙 vs 잘못 잰 400 은 측정만으론 못 가름).
+  if (snap.snapped && Math.round(snap.meters) !== Math.round(currentLapM)) {
+    return {lapM: snap.meters, changed: true, measuredM, snapped: true};
+  }
+  return {lapM: currentLapM, changed: false, measuredM, snapped: snap.snapped};
+}
+
 export interface GeoPoint {
   lat: number;
   lon: number;

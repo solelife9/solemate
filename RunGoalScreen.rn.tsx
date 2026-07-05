@@ -43,14 +43,20 @@ function Icon({ name, size = 22, color = T2, fill }: { name: string; size?: numb
     forward: <Path d="M9 6l6 6-6 6" stroke={color} strokeWidth={sw} fill="none" strokeLinecap="round" strokeLinejoin="round" />,
     play: <Path d="M7 5v14l11-7z" fill={fill || color} />,
     infinite: <Path d="M6 12c0-2.2 1.6-4 3.7-4 1.6 0 2.6 1 3.3 2 .7 1 1.7 2 3.3 2 2.1 0 3.7-1.8 3.7-4s-1.6-4-3.7-4c-1.6 0-2.6 1-3.3 2-.7 1-1.7 2-3.3 2-2.1 0-3.7-1.8-3.7-4" stroke={color} strokeWidth={sw} fill="none" strokeLinecap="round" strokeLinejoin="round" />,
+    // 트랙(운동장) — 스타디움 형태의 이중 타원(바깥 트랙 + 안쪽 레인).
+    track: <><Path d="M8 6h8a6 6 0 0 1 0 12H8a6 6 0 0 1 0-12z" stroke={color} strokeWidth={sw} fill="none" /><Path d="M9 9h7a3 3 0 0 1 0 6H9a3 3 0 0 1 0-6z" stroke={color} strokeWidth={sw - 0.4} fill="none" opacity={0.5} /></>,
   };
   return <Svg width={size} height={size} viewBox="0 0 24 24">{p[name]}</Svg>;
 }
 
 
-type Mode = 'km' | 'min' | 'speed';
-/** 러닝 목표 — 거리(km)/시간(분)/스피드(km별 페이스 플랜). 0/빈배열은 미설정. */
-export type RunGoal = { km: number; durationMin: number; pacePlan: number[] };
+type Mode = 'km' | 'min' | 'speed' | 'track';
+/** 러닝 목표 — 거리(km)/시간(분)/스피드(km별 페이스 플랜)/트랙(운동장 랩). 0/빈배열/null은 미설정.
+ *  track: 트랙 모드 = 한 바퀴 예상 거리(m)만 정한다. 실제 랩거리는 런 중 첫 랩 GPS로 자동 보정
+ *  (snapLapDistance) — 이 값은 기본값·실내(GPS✗) 폴백. km/durationMin 은 트랙에선 0(자유). */
+export type RunGoal = { km: number; durationMin: number; pacePlan: number[]; track?: { lapM: number } | null };
+/** 트랙 한 바퀴 예상 거리 선택지(m) — 야외 400(공인)·트랙 300·실내 200 + 커스텀. */
+const LAP_PRESETS = [200, 300, 400] as const;
 const CFG: Record<'km' | 'min', { min: number; max: number; step: number; major: number; minor: number; px: number; unit: string; def: number; presets: { label: string; v: number }[] }> = {
   km:  { min: 0, max: 42, step: 0.1, major: 1, minor: 0.2, px: 64, unit: 'km', def: 5,  presets: [{ label: '3km', v: 3 }, { label: '5km', v: 5 }, { label: '10km', v: 10 }, { label: '하프', v: 21.1 }] },
   min: { min: 0, max: 180, step: 1, major: 10, minor: 1, px: 6.2, unit: '분', def: 30, presets: [{ label: '20분', v: 20 }, { label: '30분', v: 30 }, { label: '45분', v: 45 }, { label: '60분', v: 60 }] },
@@ -80,6 +86,10 @@ export default function RunGoalScreen({
   const cfg = mode === 'km' || mode === 'min' ? CFG[mode] : null;
   // 스피드 모드의 현재 목표(거리 km + km별 페이스 플랜) — SpeedPlanPanel 이 onChange 로 올린다.
   const [speedGoal, setSpeedGoal] = useState<{ km: number; plan: number[] }>(() => ({ km: 5, plan: buildPacePlan(5, 360, 'negative') }));
+  // 트랙 모드: 한 바퀴 예상 거리(m). 기본 400(야외 공인). 커스텀은 하단 키패드로 입력.
+  // 이 값은 '가정'일 뿐 — 야외선 첫 랩 GPS 가 실제 랩거리로 자동 보정한다(실내 폴백값).
+  const [lapM, setLapM] = useState<number>(400);
+  const [lapCustom, setLapCustom] = useState(false); // 커스텀 칩 선택 여부(표준 3개 밖의 값)
 
   const ticks = useMemo(() => {
     if (!cfg) return [] as { v: number; major: boolean }[];
@@ -153,12 +163,22 @@ export default function RunGoalScreen({
   const kpPress = (k: string) => {
     if (k === '⌫') { setKpBuf(b => b.slice(0, -1)); return; }
     setKpBuf(b => {
-      if (k === '.' && (mode === 'min' || b.includes('.'))) return b;
-      if (b.replace('.', '').length >= 4) return b; // '42.0'·'180' 상한
+      if (k === '.' && (mode === 'min' || mode === 'track' || b.includes('.'))) return b;
+      if (b.replace('.', '').length >= 4) return b; // '42.0'·'180'·'1000' 상한
       return b + k;
     });
   };
   const kpConfirm = () => {
+    // 트랙 커스텀 랩거리(m, 정수). 50~1000m 클램프. 표준값 입력 시 프리셋 칩으로 되돌린다.
+    if (mode === 'track') {
+      if (kpBuf) {
+        const clamped = Math.max(50, Math.min(1000, Math.round(parseFloat(kpBuf) || 0)));
+        setLapM(clamped);
+        setLapCustom(!LAP_PRESETS.includes(clamped as (typeof LAP_PRESETS)[number]));
+      }
+      setKpOpen(false);
+      return;
+    }
     if (kpBuf) {
       const m = mode === 'min' ? 'min' : 'km';
       const v = clampToCfg(m, parseFloat(kpBuf) || 0);
@@ -186,7 +206,8 @@ export default function RunGoalScreen({
     const goal: RunGoal =
       mode === 'km' ? { km: val, durationMin: 0, pacePlan: [] }
         : mode === 'min' ? { km: 0, durationMin: val, pacePlan: [] }
-          : { km: speedGoal.km, durationMin: 0, pacePlan: speedGoal.plan };
+          : mode === 'track' ? { km: 0, durationMin: 0, pacePlan: [], track: { lapM } }
+            : { km: speedGoal.km, durationMin: 0, pacePlan: speedGoal.plan };
     onStart?.(goal);
   };
 
@@ -207,7 +228,7 @@ export default function RunGoalScreen({
       <SegmentedControl
         style={s.seg}
         variant="accentTint"
-        items={[{ key: 'km', label: '거리' }, { key: 'min', label: '시간' }, { key: 'speed', label: '스피드' }]}
+        items={[{ key: 'km', label: '거리' }, { key: 'min', label: '시간' }, { key: 'speed', label: '스피드' }, { key: 'track', label: '트랙' }]}
         value={mode}
         onChange={(k) => pickMode(k as Mode)}
         labelFor={(it) => `${it.label} 목표`}
@@ -215,7 +236,36 @@ export default function RunGoalScreen({
 
       {/* center */}
       <View style={s.center}>
-        {mode === 'speed' ? (
+        {mode === 'track' ? (
+          // 트랙 모드 — 한 바퀴 예상 거리(m)를 칩으로 고른다. 야외선 첫 랩 GPS 가 이 값을
+          // 실제 랩거리로 자동 보정하므로 '예상치'로 충분하고, 실내(GPS✗)에선 이 값이 확정.
+          <View style={s.trackWrap}>
+            <View style={s.trackGlyph}><Icon name="track" size={40} color={ACCENT} /></View>
+            <Text style={s.trackTitle}>트랙에서 달리기</Text>
+            <Text style={s.trackSub}>한 바퀴 거리를 정해요{'\n'}야외에선 첫 바퀴를 GPS로 자동 보정해요</Text>
+            <View style={s.lapChips}>
+              {LAP_PRESETS.map(m => {
+                const on = !lapCustom && lapM === m;
+                return (
+                  <Pressable key={m} onPress={() => { tap(); setLapM(m); setLapCustom(false); }}
+                    style={[s.lapChip, on && s.lapChipOn]}
+                    accessibilityRole="button" accessibilityState={{ selected: on }}
+                    accessibilityLabel={`한 바퀴 ${m}미터${m === 400 ? ', 야외 공인 트랙' : m === 200 ? ', 실내 트랙' : ''}`}>
+                    <Text style={[s.lapChipVal, on && s.lapChipValOn]}>{m}</Text>
+                    <Text style={[s.lapChipUnit, on && s.lapChipValOn]}>m</Text>
+                  </Pressable>
+                );
+              })}
+              <Pressable onPress={() => { tap(); setKpBuf(''); setKpOpen(true); }}
+                style={[s.lapChip, lapCustom && s.lapChipOn]}
+                accessibilityRole="button" accessibilityState={{ selected: lapCustom }}
+                accessibilityLabel={lapCustom ? `커스텀 한 바퀴 ${lapM}미터, 눌러서 변경` : '커스텀 한 바퀴 거리 직접 입력'}>
+                <Text style={[s.lapChipVal, lapCustom && s.lapChipValOn]}>{lapCustom ? String(lapM) : '커스텀'}</Text>
+                {lapCustom ? <Text style={[s.lapChipUnit, s.lapChipValOn]}>m</Text> : null}
+              </Pressable>
+            </View>
+          </View>
+        ) : mode === 'speed' ? (
           <SpeedPlanPanel onChange={(km, plan) => setSpeedGoal({ km, plan })} />
         ) : (
           <>
@@ -302,14 +352,14 @@ export default function RunGoalScreen({
           <Pressable style={{ flex: 1, backgroundColor: SCRIM }} onPress={() => setKpOpen(false)} accessibilityRole="button" accessibilityLabel="입력 닫기" />
           <View style={s.pickerSheet}>
             <View style={s.kpValRow} accessibilityRole="text" accessibilityLiveRegion="polite"
-              accessibilityLabel={`입력 ${kpBuf || fmt(val)} ${cfg?.unit ?? 'km'}`}>
-              <Text style={[s.kpVal, !kpBuf && s.kpValGhost]} testID="kp-value">{kpBuf || fmt(val)}</Text>
-              <Text style={s.kpUnit}>{cfg?.unit ?? 'km'}</Text>
+              accessibilityLabel={`입력 ${kpBuf || (mode === 'track' ? String(lapM) : fmt(val))} ${mode === 'track' ? '미터' : (cfg?.unit ?? 'km')}`}>
+              <Text style={[s.kpVal, !kpBuf && s.kpValGhost]} testID="kp-value">{kpBuf || (mode === 'track' ? String(lapM) : fmt(val))}</Text>
+              <Text style={s.kpUnit}>{mode === 'track' ? 'm' : (cfg?.unit ?? 'km')}</Text>
             </View>
             <View style={s.kpGrid}>
               {['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', '⌫'].map(k => {
                 const dot = k === '.';
-                const off = dot && mode === 'min'; // 시간 모드는 정수만
+                const off = dot && (mode === 'min' || mode === 'track'); // 시간·트랙 모드는 정수만
                 return (
                   <Pressable key={k} disabled={off} onPress={() => kpPress(k)}
                     accessibilityRole="button"
@@ -399,6 +449,18 @@ const s = StyleSheet.create({
   presetOn: { backgroundColor: withAlpha(ACCENT, 0.14), borderColor: withAlpha(ACCENT, 0.4) },
   presetText: { color: T2, fontFamily: DISPLAY, fontSize: 13, fontWeight: '600' },
   presetTextOn: { color: ACCENT },
+
+  // 트랙 모드 — 자유 모드와 같은 중앙 정렬 문법 + 랩거리 칩.
+  trackWrap: { alignItems: 'center', paddingHorizontal: 14 },
+  trackGlyph: { width: 88, height: 88, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(ACCENT, 0.1), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.26), marginBottom: 22 },
+  trackTitle: { color: T1, fontFamily: DISPLAY, fontSize: 24, fontWeight: '600', letterSpacing: -0.4, marginBottom: 10 },
+  trackSub: { color: T3, fontFamily: FONT, fontSize: 14, fontWeight: '500', lineHeight: 21, textAlign: 'center', maxWidth: 280, marginBottom: 26 },
+  lapChips: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 10 },
+  lapChip: { minWidth: 74, height: 60, paddingHorizontal: 16, borderRadius: RADIUS.lg, borderCurve: 'continuous', flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', gap: 2, backgroundColor: withAlpha(T1, 0.04), borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
+  lapChipOn: { backgroundColor: withAlpha(ACCENT, 0.14), borderColor: withAlpha(ACCENT, 0.45) },
+  lapChipVal: { color: T2, fontFamily: DISPLAY, fontSize: 22, fontWeight: '700', letterSpacing: -0.5 },
+  lapChipValOn: { color: ACCENT },
+  lapChipUnit: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600' },
 
   free: { alignItems: 'center', paddingHorizontal: 14 },
   freeGlyph: { width: 88, height: 88, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(ACCENT, 0.1), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.26), marginBottom: 22 },

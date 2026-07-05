@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useRef, useMemo} from 'react';
+import React, {useState, useEffect, useRef, useMemo, useCallback} from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, TextInput, Alert, StatusBar,
   Linking, AppState,
@@ -53,6 +53,8 @@ import {challengeProgress} from './lib/challenges';
 import {simplifyRoute} from './lib/geo';
 import {appendFinalSplit} from './lib/splits';
 import {runTracker} from './lib/runTracker';
+// 트랙 모드 순수 엔진 — 복귀감지(haversineM)·첫 랩 GPS 보정(calibrateLapM)·랩→시계열(lapsToTrack).
+import {haversineM, calibrateLapM, lapsToTrack} from './lib/laps';
 import {
   requestRunPermissions, startTracking, stopTracking, isPermissionError, hasForegroundPermission,
   RunPermissions,
@@ -302,7 +304,7 @@ function Main(){
   const [celebReady,setCelebReady]=useState(false);
   const [overlay,setOverlay]=useState<'none'|'add'|'goal'|'countdown'|'run'>('none');
   const [pendingShoe,setPendingShoe]=useState<{id:string;name:string;ui:Shoe}|null>(null);
-  const [activeRun,setActiveRun]=useState<{id:string;name:string;goalKm:number;goalMin:number;pacePlan:number[]}|null>(null);
+  const [activeRun,setActiveRun]=useState<{id:string;name:string;goalKm:number;goalMin:number;pacePlan:number[];trackLapM?:number}|null>(null);
   // audit#2: 앱 시작 시 감지된 미완료 런 스냅샷. 사용자가 '복구' 선택 시 done
   // 화면으로 시드되어 검토 후 저장/버리기를 결정한다(데이터 유실 금지).
   const [resumeSnap,setResumeSnap]=useState<RunSnapshot|null>(null);
@@ -1650,7 +1652,7 @@ function Main(){
     // 목표 설정 → 카운트다운(준비·GPS 워밍업·3·2·1·GO) → 라이브 런. 카운트다운의
     // onDone 이 실제 런(GPS 트래킹 시작) 화면으로 넘긴다. 미완료 런 복구 경로는
     // 카운트다운을 거치지 않고 곧장 'run'으로 간다(이미 끝난 런의 검토라서).
-    setActiveRun({id:pendingShoe!.id,name:pendingShoe!.name,goalKm:goal.km,goalMin:goal.durationMin,pacePlan:goal.pacePlan});
+    setActiveRun({id:pendingShoe!.id,name:pendingShoe!.name,goalKm:goal.km,goalMin:goal.durationMin,pacePlan:goal.pacePlan,trackLapM:goal.track?.lapM});
     setOverlay('countdown');
   };
   const startActiveRun=(goal:RunGoal)=>{
@@ -1743,15 +1745,19 @@ function Main(){
         insets={insets}
         goalKm={activeRun.goalKm}
         pacePlan={activeRun.pacePlan}
+        track={activeRun.trackLapM?{lapM:activeRun.trackLapM}:null}
         weightKg={weightKg}
         age={age}
         restHR={restHR}
         resume={resumeSnap}
         resumeMode={resumeMode}
-        onSave={async(km,dur,cad,memo,route,location,splits,elevM,cal,paceTrack,hrTrack,gapTrack)=>{
+        onSave={async(km,dur,cad,memo,route,location,splits,elevM,cal,paceTrack,hrTrack,gapTrack,trackMeta)=>{
           // 신기록(PR) 감지 — addRun 의 낙관적 setRuns 전이라 runs 는 '이전 런들'이다.
           const prKinds=detectPRs({dist:km,durationS:dur},runs.map(r=>({dist:Number(r.km)||0,durationS:r.duration||0,runDate:r.run_date})));
           const newId=await addRun(activeRun.id,km,today(),memo||'','gps',dur,cad,route,location,undefined,elevM,cal);
+          // 트랙 세션 마커 — RunDetail 이 track_<id> 로 읽어 '트랙 · 400m×12랩'을 표시한다.
+          // 거리·페이스·PB 는 이미 랩 시계열(paceTrack=lapsToTrack)로 정본이라 별도 계산 불필요.
+          if(trackMeta&&trackMeta.laps>0) await AsyncStorage.setItem('track_'+newId, JSON.stringify(trackMeta));
           // per-km 스플릿(레코더가 1km 통과 시각으로 남긴 실측 구간)을 localId로 영속한다.
           // route_/surface_ 와 동일 패턴(로컬 전용·동기 시 serverId로 재키잉). RunDetail이
           // splits_<id> 로 읽어 표시한다. 2구간 미만이면 표시 가치가 없어 저장 생략.
@@ -1974,7 +1980,7 @@ const boot=StyleSheet.create({
 });
 
 // ─── Live run screen (GPS / sensors / TTS engine + handoff Ring UI) ─────────
-function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],weightKg,age=0,restHR=0,onSave,onDiscard,resume,resumeMode}:{shoe:{id:string;name:string};insets:any;goalKm:number;pacePlan?:number[];weightKg:number;age?:number;restHR?:number;onSave:(km:number,dur:number,cad:number,memo:string,route:string,location:string,splits:{km:number;paceSec:number;elevM:number}[],elevM:number,cal:number,paceTrack:{d:number;t:number}[],hrTrack:{t:number;bpm:number}[],gapTrack:{d:number;t:number;e:number}[])=>Promise<void>;onDiscard:()=>void;resume?:RunSnapshot|null;resumeMode?:'review'|'continue'}){
+function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],track=null,weightKg,age=0,restHR=0,onSave,onDiscard,resume,resumeMode}:{shoe:{id:string;name:string};insets:any;goalKm:number;pacePlan?:number[];track?:{lapM:number}|null;weightKg:number;age?:number;restHR?:number;onSave:(km:number,dur:number,cad:number,memo:string,route:string,location:string,splits:{km:number;paceSec:number;elevM:number}[],elevM:number,cal:number,paceTrack:{d:number;t:number}[],hrTrack:{t:number;bpm:number}[],gapTrack:{d:number;t:number;e:number}[],trackMeta?:{lapM:number;laps:number}|null)=>Promise<void>;onDiscard:()=>void;resume?:RunSnapshot|null;resumeMode?:'review'|'continue'}){
   // 'continue' = 스냅샷에서 GPS 를 재가동해 이어 달린다(엔진 seed*). 'review'(기본) =
   // done 화면에서 검토·저장만. resume 가 없으면(일반 시작) 두 분기 모두 타지 않는다.
   const isContinue=!!resume&&resumeMode==='continue';
@@ -2022,6 +2028,52 @@ function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],weightKg,age=0,restHR=0
   const [finLocation,setFinLocation]=useState(resume?resume.location:'');
   const [memo,setMemo]=useState('');
   const [saving,setSaving]=useState(false);
+
+  // ── 트랙 모드(운동장 랩) ────────────────────────────────────────────────────
+  // GPS 누적거리는 트랙에서 못 믿는다(뱅뱅 돌며 드리프트) → 거리 = 랩수 × 확정 랩거리.
+  // 랩 경계는 자동(출발점 복귀 감지, laps.ts) + 수동 보정. 첫 자동랩은 GPS 누적을 표준에
+  // 스냅(snapLapDistance)해 실제 랩거리를 확정한다(사용자 선택 400 → 실측 300 자동 교정).
+  const trackMode=!!track;
+  const [lapCount,setLapCount]=useState(0);
+  const [lapM,setLapM]=useState(track?.lapM??0); // 확정 랩거리(m) — 첫 자동랩 GPS 보정 후 갱신
+  const lapMRef=useRef(track?.lapM??0);           // 클로저 지연 없는 최신 랩거리(m)
+  const lapTimesRef=useRef<number[]>([]);          // 각 랩 완료 경과초(누적)
+  const lapLeftRef=useRef(false);                  // 이번 랩에서 출발반경을 벗어난 적 있는가
+  const lapStartRef=useRef<{lat:number;lon:number}|null>(null); // 출발점(첫 채택 fix)
+  const lapPtCountRef=useRef(0);                   // 마지막으로 본 경로점 수(신규 점만 판정)
+  const lapCalibratedRef=useRef(false);            // 첫 자동랩 GPS 보정 완료 여부
+  const LAP_RADIUS_M=12;                           // 출발점 복귀 판정 반경(자동랩)
+
+  // 랩 확정(자동=viaAuto, 수동=false). 첫 '자동'랩에서만 GPS 누적을 표준에 스냅해 실제
+  // 랩거리를 확정한다(수동은 GPS 미검증이라 보정 트리거 안 함 — 실내/GPS✗ 폴백은 선택값 유지).
+  // refs 만 읽고 stable setter 만 써 mount effect 클로저에서 안전하게 호출된다.
+  const registerLap=useCallback((atElapsed:number,viaAuto:boolean)=>{
+    lapTimesRef.current.push(Math.max(0,Math.round(atElapsed)));
+    const n=lapTimesRef.current.length;
+    if(viaAuto&&!lapCalibratedRef.current){
+      lapCalibratedRef.current=true;
+      // 여기까지의 GPS 누적거리·랩수로 실측 한 바퀴를 내고 표준에 스냅(순수 로직=calibrateLapM,
+      // 테스트로 못박음). 값이 바뀌면 확정 랩거리를 교체하고 조용히 알린다.
+      const cal=calibrateLapM(runTracker.getDistanceKm(),n,lapMRef.current);
+      if(cal.changed){
+        lapMRef.current=cal.lapM;setLapM(cal.lapM);
+        showToast({message:`이 트랙, 약 ${cal.lapM}m로 감지 — 반영했어요`});
+      }else if(!cal.snapped&&cal.measuredM>0&&Math.abs(cal.measuredM-lapMRef.current)>lapMRef.current*0.06){
+        // 비표준 측정(예 350m)이 선택과 6% 넘게 어긋남 — 조용히 추측하지 않고 알린다(덮어쓰기 X).
+        // 트랙이 정말 다르면 다음 런에서 '커스텀'으로 정확한 값을 고르라는 힌트.
+        const approx=Math.round(cal.measuredM/5)*5;
+        showToast({message:`첫 바퀴 GPS ~${approx}m · 선택 ${Math.round(lapMRef.current)}m 유지 — 트랙이 다르면 커스텀으로`});
+      }
+    }
+    lapLeftRef.current=false;
+    setLapCount(n);
+  },[]);
+  // 수동 랩 -1(오검지·중복 되돌리기). 마지막 랩 시각을 버리고 복귀상태를 리셋한다.
+  const undoLap=useCallback(()=>{
+    if(lapTimesRef.current.length===0)return;
+    lapTimesRef.current.pop();lapLeftRef.current=false;
+    setLapCount(lapTimesRef.current.length);
+  },[]);
 
   // elapsed 최신값을 km 안내 effect에서 정확히 읽기 위한 ref (state는 클로저 지연 있음).
   const elapsedRef=useRef(resume?resume.elapsed:0);
@@ -2086,19 +2138,40 @@ function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],weightKg,age=0,restHR=0
         if(!baroAvail.current)setElevGain(s.elevGainM); // 기압계 가용 시 GPS 고도 양보(baro 권위)
         setAccuracyM(s.accuracyM);
         setLiveCoords(runTracker.getPoints());
+        // 트랙 모드 자동랩(출발점 복귀 감지) — 신규 경로점이 생겼을 때만 판정한다. 출발반경을
+        // 벗어났다가(left) 다시 반경 안으로 들어오는 순간을 1랩으로. GPS 는 '복귀 판정'에만 쓰고
+        // 거리는 registerLap 이 확정 랩거리로 낸다(누적 GPS 미사용). 실내(GPS✗)선 점이 안 생겨
+        // 자동랩이 안 울리고 수동 랩 버튼이 주력이 된다.
+        if(trackMode&&!s.paused){
+          const pts=runTracker.getPoints();
+          if(pts.length>lapPtCountRef.current){
+            lapPtCountRef.current=pts.length;
+            if(!lapStartRef.current&&pts.length>0)lapStartRef.current=pts[0];
+            const st=lapStartRef.current;
+            if(st){
+              const latest=pts[pts.length-1];
+              const dFromStart=haversineM(st.lat,st.lon,latest.lat,latest.lon);
+              if(!lapLeftRef.current){if(dFromStart>LAP_RADIUS_M)lapLeftRef.current=true;}
+              else if(dFromStart<=LAP_RADIUS_M)registerLap(s.elapsed,true);
+            }
+          }
+        }
         // 잠금화면 위젯 갱신 — ~2s 마다(throttle, ActivityKit 예산 보호). 미정 페이스는 '--'.
+        // 트랙 모드는 위젯에도 랩거리(랩수×확정랩거리)를 보낸다(GPS 누적 아님).
         if(!s.paused&&s.elapsed-liveActRef.current>=2){
           liveActRef.current=s.elapsed;
-          liveActivity.update(s.dist,Math.round(s.elapsed),
+          const showDist=trackMode?(lapTimesRef.current.length*lapMRef.current)/1000:s.dist;
+          liveActivity.update(showDist,Math.round(s.elapsed),
             s.currentPaceSecPerKm!=null?fmtPace(1,s.currentPaceSecPerKm):'--',
-            fmtPace(s.dist,s.elapsed),cadRef.current);
+            fmtPace(showDist,s.elapsed),cadRef.current);
         }
         // per-km 스플릿: dist가 정수 km 경계를 새로 넘으면 그 1km의 소요시간(초)·고도상승(m)을
         // 기록한다. 경로에 타임스탬프가 없어 못 했던 '실제' 구간 페이스를 레코더가 직접 남긴다.
         // 고도 소스는 총 상승(finElevTotal)과 동일하게 기압계 우선 — GPS 고도만 쓰면 평지
         // 러닝에서 노이즈 누적으로 스플릿 고도가 부풀어(실측 3km 평지에서 64/53m) 총합과
-        // 모순된다(2026-07-03 검증 러닝 데이터).
-        if(Math.floor(s.dist)>splitsRef.current.length){
+        // 모순된다(2026-07-03 검증 러닝 데이터). 트랙 모드는 GPS 거리를 안 쓰므로 스킵 —
+        // 구간(랩) 페이스는 완주 시 랩 시계열(lapsToTrack)로 낸다.
+        if(!trackMode&&Math.floor(s.dist)>splitsRef.current.length){
           const splitKm=splitsRef.current.length+1;
           const gainNow=baroAvail.current?baroElev.current.gain:s.elevGainM;
           splitsRef.current.push({km:splitKm,
@@ -2215,6 +2288,7 @@ function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],weightKg,age=0,restHR=0
   },[permLost]);
 
   useEffect(()=>{
+    if(trackMode)return; // 트랙: km 는 GPS 누적(트랙에선 무의미) — km 음성 코칭 억제(랩은 별도)
     const fullKm=Math.floor(km);
     if(fullKm>0&&fullKm>announcedKm.current){
       announcedKm.current=fullKm;
@@ -2348,8 +2422,9 @@ function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],weightKg,age=0,restHR=0
   // 런 종료(실제 stop) — RunActiveScreen 종료 버튼의 롱프레스로만 호출된다(롱프레스 자체가
   // 오작동 종료 가드라 별도 2단계 확인은 두지 않는다). 거리가 너무 짧으면 계속/나가기 선택.
   function finishRun(){
-    // 최종 거리/시간은 엔진(단일 소스)에서 읽는다 — 화면off 동안 누적분도 포함된다.
-    const fk=runTracker.getDistanceKm(),ft=runTracker.getElapsedFinal();
+    // 최종 거리/시간. 트랙 모드는 랩수×확정랩거리(GPS 누적 아님), 그 외는 엔진 누적거리.
+    const ft=runTracker.getElapsedFinal();
+    const fk=trackMode?(lapTimesRef.current.length*lapMRef.current)/1000:runTracker.getDistanceKm();
     if(fk<0.01){
       stop();
       Alert.alert('거리가 너무 짧아요','조금 더 달릴까요, 아니면 여기서 마칠까요?',[
@@ -2367,8 +2442,11 @@ function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],weightKg,age=0,restHR=0
     // 마지막 정수 km 이후 남은 부분 구간(예: 5.6km 의 0.6km)을 스플릿에 한 줄 추가한다 —
     // 레코더는 정수 km 경계만 남겨 꼬리 구간이 통째 누락됐다. lastSplitRef 가 마지막 경계의
     // 경과초·누적고도를 들고 있어 그 차이로 구간 시간·고도를 per-km 페이스로 환산한다.
-    setFinSplits(appendFinalSplit(splitsRef.current,fk,ft,lastSplitRef.current.elapsed,finElevTotal,lastSplitRef.current.elevM));
-    setFinPaceTrack(runTracker.getPaceTrack().slice());
+    // 트랙: per-km GPS 스플릿은 안 만든다(GPS 거리 미사용) — 페이스 곡선/PB 는 랩 시계열이 정본.
+    // paceTrack = lapsToTrack(랩시각들, 확정랩거리 km) → 저장 시 paceTrack_<id>로 영속돼
+    // 거리 PB(bestEfforts) 파이프라인이 그대로 먹는다(엔진 통합 테스트로 못박음).
+    setFinSplits(trackMode?[]:appendFinalSplit(splitsRef.current,fk,ft,lastSplitRef.current.elapsed,finElevTotal,lastSplitRef.current.elevM));
+    setFinPaceTrack(trackMode?lapsToTrack(lapTimesRef.current,lapMRef.current/1000):runTracker.getPaceTrack().slice());
     setFinHrTrack(runTracker.getHrTrack().slice());
     setFinGapTrack(runTracker.getGapTrack().slice());
     setFinLocation(locationRef.current);
@@ -2416,14 +2494,16 @@ function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],weightKg,age=0,restHR=0
           }
         }catch{}
       }
-      await onSave(Math.round(finKm*100)/100,finTime,finCad,memo,finRoute,loc,finSplits,finElev,estimateCalories(finKm,weightKg),finPaceTrack,finHrTrack,finGapTrack);
+      await onSave(Math.round(finKm*100)/100,finTime,finCad,memo,finRoute,loc,finSplits,finElev,estimateCalories(finKm,weightKg),finPaceTrack,finHrTrack,finGapTrack,
+        trackMode?{lapM:Math.round(lapMRef.current),laps:lapTimesRef.current.length}:null);
       hapticSuccess(); // 저장 성공 — 완주 보상 촉각(설정 off 면 graceful no-op).
     }finally{setSaving(false);}
   }
 
   const pauseLabel=autoPaused?'자동 일시정지':paused?'일시정지':'러닝 중';
-  // 칼로리 추정(체중×거리×1.036) — 라이브(현재 km)와 완주(finKm) 각각. 거리 0이면 0.
-  const liveCal=estimateCalories(km,weightKg);
+  // 칼로리 추정(체중×거리×1.036) — 라이브(현재 거리)와 완주(finKm) 각각. 거리 0이면 0.
+  // 트랙 모드 라이브 거리는 랩수×확정랩거리(GPS 누적 아님).
+  const liveCal=estimateCalories(trackMode?(lapCount*lapM)/1000:km,weightKg);
   const finCal=estimateCalories(finKm,weightKg);
 
   if(phase==='done') return(
@@ -2435,7 +2515,7 @@ function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],weightKg,age=0,restHR=0
       <View style={run.body}>
         <Ring size={272} stroke={16} progress={1} color={ACCENT}>
           <View style={{alignItems:'center'}}>
-            <Text style={run.goalText}>목표 {goalKm}km 완료</Text>
+            <Text style={run.goalText}>{trackMode?`트랙 · ${Math.round(lapMRef.current)}m × ${lapTimesRef.current.length}랩`:`목표 ${goalKm}km 완료`}</Text>
             <Text style={run.bigDist}>{finKm.toFixed(2)}</Text>
             <Text style={run.bigUnit}>킬로미터</Text>
           </View>
@@ -2475,15 +2555,23 @@ function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],weightKg,age=0,restHR=0
     : accuracyM<=12 ? 3
     : accuracyM<=30 ? 2
     : 1;
+  // 트랙 표시값: 거리=랩수×확정랩거리, '현재 페이스'=직전 랩 페이스(GPS 롤링 대신 — 트랙 드리프트
+  // 회피), 평균=트랙거리/경과. 자유/거리 모드는 기존 GPS 신호 그대로.
+  const trackDistKm=(lapCount*lapM)/1000;
+  const lastLapPaceSec=trackMode&&lapCount>0&&lapM>0?(()=>{
+    const lt=lapTimesRef.current;const prev=lt.length>=2?lt[lt.length-2]:0;
+    const dt=lt[lt.length-1]-prev;return dt>0?dt/(lapM/1000):null;
+  })():null;
+  const dispDist=trackMode?trackDistKm:km;
   return (
     <RunActiveScreenView
       shoeLabel={ui.model||shoe.name}
-      distanceKm={km}
+      distanceKm={dispDist}
       goalKm={goalKm}
       timeLabel={fmtTime(elapsed)}
-      paceLabel={currentPaceSec!=null?fmtPace(1,currentPaceSec):'--'}
-      avgPaceLabel={fmtPace(km,elapsed)}
-      currentPaceSec={currentPaceSec}
+      paceLabel={trackMode?(lastLapPaceSec!=null?fmtPace(1,lastLapPaceSec):'--'):(currentPaceSec!=null?fmtPace(1,currentPaceSec):'--')}
+      avgPaceLabel={fmtPace(dispDist,elapsed)}
+      currentPaceSec={trackMode?lastLapPaceSec:currentPaceSec}
       targetPaceSec={pacePlan&&pacePlan.length?currentTargetPace(pacePlan,km):null}
       cadence={cadence}
       calories={liveCal}
@@ -2499,6 +2587,9 @@ function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],weightKg,age=0,restHR=0
       permLost={permLost}
       onOpenSettings={()=>{Promise.resolve(Linking.openSettings()).catch(()=>{});}}
       liveCoords={liveCoords}
+      track={trackMode?{lapCount,lapM,lapDistKm:trackDistKm,calibrated:lapCalibratedRef.current}:null}
+      onLap={()=>registerLap(elapsedRef.current,false)}
+      onUndoLap={undoLap}
     />
   );
 }

@@ -4,6 +4,7 @@ import {
   detectAutoLaps,
   lapsToTrack,
   lapDistanceKm,
+  calibrateLapM,
   haversineM,
   type GeoPoint,
 } from '../../lib/laps';
@@ -94,6 +95,45 @@ describe('lapsToTrack + lapDistanceKm — 시계열/거리', () => {
   test('총 거리 = 랩수 × 랩거리', () => {
     expect(lapDistanceKm(10, 0.4)).toBeCloseTo(4, 6); // 400m×10 = 4km
     expect(lapDistanceKm(0, 0.4)).toBe(0);
+  });
+});
+
+describe('calibrateLapM — 첫 자동랩 GPS 보정', () => {
+  test('사용자 400 선택인데 GPS 가 300 트랙을 잡으면 교정한다', () => {
+    // 첫 랩(1바퀴) GPS 누적 0.301km → 실측 301m → 300 표준 스냅.
+    const c = calibrateLapM(0.301, 1, 400);
+    expect(c.lapM).toBe(300);
+    expect(c.changed).toBe(true);
+  });
+  test('GPS 가 선택과 같은 표준을 잡으면 그대로(변경 없음)', () => {
+    const c = calibrateLapM(0.401, 1, 400); // 401m → 400 스냅 = 선택과 동일
+    expect(c.lapM).toBe(400);
+    expect(c.changed).toBe(false);
+  });
+  test('여러 랩 누적 ÷ 랩수로 평균 한 바퀴를 낸다(수동랩 섞여도)', () => {
+    // 3바퀴 후 GPS 누적 1.203km → ÷3 = 401m → 400 스냅.
+    const c = calibrateLapM(1.203, 3, 200);
+    expect(c.lapM).toBe(400);
+    expect(c.changed).toBe(true);
+  });
+  test('애매한 값(비표준)이면 사용자 선택 유지 — 노이즈보다 사람 신뢰', () => {
+    // 실측 340m 는 어느 표준에도 6% 내로 안 붙음 → 선택(400) 유지.
+    const c = calibrateLapM(0.34, 1, 400);
+    expect(c.lapM).toBe(400);
+    expect(c.changed).toBe(false);
+  });
+  test('비표준 350m 트랙: 선택 유지하되 측정값을 함께 돌려 알릴 수 있게', () => {
+    // 진짜 350m 트랙인데 400 선택 → 안 덮어쓰지만 measuredM=350 을 노출(호출부가 토스트).
+    const c = calibrateLapM(0.35, 1, 400);
+    expect(c.changed).toBe(false);
+    expect(c.snapped).toBe(false);
+    expect(c.measuredM).toBeCloseTo(350, 0);
+    expect(c.lapM).toBe(400);
+  });
+  test('GPS 거리 0(실내/신호없음)이면 선택 유지', () => {
+    const c = calibrateLapM(0, 1, 200);
+    expect(c.lapM).toBe(200);
+    expect(c.changed).toBe(false);
   });
 });
 

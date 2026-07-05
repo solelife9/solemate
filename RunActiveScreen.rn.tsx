@@ -104,6 +104,7 @@ export default function RunActiveScreen({
   paused: pausedProp, onPause, onStop,
   permLost = false, onOpenSettings, statusLabel,
   currentPaceSec = null, targetPaceSec = null,
+  track = null, onLap, onUndoLap,
 }: {
   shoeLabel?: string; distanceKm?: number; goalKm?: number;
   timeLabel?: string; paceLabel?: string; avgPaceLabel?: string;
@@ -120,6 +121,11 @@ export default function RunActiveScreen({
   onOpenSettings?: () => void;
   statusLabel?: string;
   liveCoords?: { lat: number; lon: number }[];
+  // 트랙 모드 — 있으면 링 센터를 '바퀴 수' 중심으로 바꾸고 랩 기록 버튼을 띄운다.
+  // lapM=확정 한 바퀴(m), lapDistKm=랩수×lapM, calibrated=첫 랩 GPS 보정 완료.
+  track?: { lapCount: number; lapM: number; lapDistKm: number; calibrated: boolean } | null;
+  onLap?: () => void;      // 수동 랩 기록(+1)
+  onUndoLap?: () => void;  // 마지막 랩 되돌리기(-1)
 }) {
   const insets = useSafeAreaInsets();
   const [pausedState, setPausedState] = useState(false);
@@ -218,21 +224,30 @@ export default function RunActiveScreen({
         </Pressable>
       )}
 
-      {/* ring */}
+      {/* ring — 거리/자유 모드는 거리 히어로, 트랙 모드는 '바퀴 수' 히어로 */}
       <View style={r.ringWrap}>
-        <Ring size={232} stroke={14} progress={pct}>
-          <View style={{ alignItems: 'center' }} accessibilityRole="text" accessibilityLiveRegion="polite"
-            accessibilityLabel={`달린 거리 ${distanceKm.toFixed(2)}킬로미터${goalKm ? (met ? `, 목표 ${goalKm}킬로미터 달성, ${over.toFixed(2)}킬로미터 초과` : `, 목표 ${goalKm}킬로미터까지 ${remain.toFixed(2)}킬로미터 남음`) : ''}`}>
-            {met ? (
-              <View style={r.goalMet}><Ionicons name="checkmark-circle" size={14} color={GOOD} /><Text style={r.goalMetText}>목표 {goalKm}km 달성</Text></View>
-            ) : (
-              <Text style={r.goal}>목표 {goalKm}km · {Math.round(pct * 100)}%</Text>
-            )}
-            <Text style={r.bigDist}>{distanceKm.toFixed(2)}</Text>
-            <Text style={[r.bigUnit, met && { color: GOOD, fontWeight: '600' }]}>
-              {goalKm ? (met ? `+${over.toFixed(2)}km 초과` : `${remain.toFixed(2)}km 남음`) : 'km'}
-            </Text>
-          </View>
+        <Ring size={232} stroke={14} progress={track ? 0 : pct}>
+          {track ? (
+            <View style={{ alignItems: 'center' }} accessibilityRole="text" accessibilityLiveRegion="polite"
+              accessibilityLabel={`${track.lapCount}바퀴, ${track.lapDistKm.toFixed(2)}킬로미터, 한 바퀴 ${track.lapM}미터 ${track.calibrated ? 'GPS 보정됨' : '예상'}`}>
+              <Text style={r.goal}>{track.lapM}m/랩 · {track.calibrated ? 'GPS 보정됨' : '예상'}</Text>
+              <Text style={r.bigDist}>{track.lapCount}</Text>
+              <Text style={r.bigUnit}>바퀴 · {track.lapDistKm.toFixed(2)}km</Text>
+            </View>
+          ) : (
+            <View style={{ alignItems: 'center' }} accessibilityRole="text" accessibilityLiveRegion="polite"
+              accessibilityLabel={`달린 거리 ${distanceKm.toFixed(2)}킬로미터${goalKm ? (met ? `, 목표 ${goalKm}킬로미터 달성, ${over.toFixed(2)}킬로미터 초과` : `, 목표 ${goalKm}킬로미터까지 ${remain.toFixed(2)}킬로미터 남음`) : ''}`}>
+              {met ? (
+                <View style={r.goalMet}><Ionicons name="checkmark-circle" size={14} color={GOOD} /><Text style={r.goalMetText}>목표 {goalKm}km 달성</Text></View>
+              ) : (
+                <Text style={r.goal}>목표 {goalKm}km · {Math.round(pct * 100)}%</Text>
+              )}
+              <Text style={r.bigDist}>{distanceKm.toFixed(2)}</Text>
+              <Text style={[r.bigUnit, met && { color: GOOD, fontWeight: '600' }]}>
+                {goalKm ? (met ? `+${over.toFixed(2)}km 초과` : `${remain.toFixed(2)}km 남음`) : 'km'}
+              </Text>
+            </View>
+          )}
         </Ring>
       </View>
 
@@ -273,6 +288,25 @@ export default function RunActiveScreen({
               <Text style={r.smL}>{m.l}</Text>
             </View>
           ))}
+        </View>
+      )}
+
+      {/* 트랙 모드 랩 기록 — 달리는 중에만. 자동랩(GPS 복귀)이 기본이고 이 버튼은 실내(GPS✗)
+          주력 + 야외 보정용. 마지막 랩 되돌리기(-1)로 오검지/중복을 정리한다. */}
+      {track && !paused && (
+        <View style={r.lapBar}>
+          <Pressable onPress={() => { tap(); onLap?.(); }} accessibilityRole="button"
+            accessibilityLabel={`랩 기록, 현재 ${track.lapCount}바퀴`}
+            style={({ pressed }) => [r.lapBtn, pressed && { opacity: 0.85 }]}>
+            <Ionicons name="flag" size={20} color={T1} />
+            <Text style={r.lapBtnText}>랩 기록</Text>
+          </Pressable>
+          {track.lapCount > 0 && (
+            <Pressable onPress={onUndoLap} accessibilityRole="button" accessibilityLabel="마지막 랩 되돌리기"
+              hitSlop={8} style={({ pressed }) => [r.lapUndo, pressed && { opacity: 0.7 }]}>
+              <Ionicons name="arrow-undo" size={18} color={T3} />
+            </Pressable>
+          )}
         </View>
       )}
 
@@ -390,6 +424,12 @@ const r = StyleSheet.create({
     shadowRadius: 6,
     elevation: 4,
   },
+  // 트랙 랩 기록 바 — 큰 '랩 기록' 필 + 작은 되돌리기. 유리 문법(홈 CTA 계열).
+  lapBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: 20 },
+  lapBtn: { flexDirection: 'row', alignItems: 'center', gap: 9, height: 52, paddingHorizontal: 30, borderRadius: 999, backgroundColor: withAlpha(T1, 0.1), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.16) },
+  lapBtnText: { color: T1, fontFamily: DISPLAY, fontSize: 16, fontWeight: '700', letterSpacing: -0.2 },
+  lapUndo: { width: 44, height: 44, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
+
   controls: { flexDirection: 'row', justifyContent: 'center', gap: 48, paddingBottom: 8 },
   // 러닝 컨트롤 — 오렌지 필 대신 투명 유리(홈 CTA 와 같은 문법). 종료(cStop)만 DANGER
   // 색을 유지해 '위험한 동작'의 색 언어를 지킨다.
