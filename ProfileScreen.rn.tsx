@@ -610,6 +610,55 @@ export default function ProfileScreen({
               스트릭' 카드 헤더에 또 있었다(같은 정보는 한 번만). */}
         </View>
 
+        {/* 러너 스펙 — VO2max + 거리 PB 훈장(5K·10K·하프·풀, 미달성 잠금) + 최고페이스/최장.
+            러너의 정체성 '스펙 시트'(사용자 방향 2026-07-05). 거리 PB 는 paceTrack 베스트에포트. */}
+        {(records.length > 0 || vo2.vo2max > 0) && (
+          <View style={[s.card, { padding: 22 }]} testID="runner-spec">
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+              <Text style={[s.cardTitle, { marginBottom: 0 }]}>러너 스펙</Text>
+              <Pressable onPress={onShareSpec} testID="spec-share" accessibilityRole="button" accessibilityLabel="러너 스펙 공유" hitSlop={8} style={({ pressed }) => [{ flexDirection: 'row', alignItems: 'center', gap: 5 }, pressed && { opacity: 0.6 }]}>
+                <Ionicons name="share-outline" size={16} color={ACCENT} />
+                <Text style={{ color: ACCENT, fontFamily: FONT, fontSize: 13, fontWeight: '700' }}>공유</Text>
+              </Pressable>
+            </View>
+
+            {vo2.vo2max > 0 && (
+              <View style={s.specVo2}>
+                <Text style={s.specVo2Label}>심폐 체력</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6 }}>
+                  <Text style={s.specVo2Num}>{vo2.vo2max.toFixed(1)}</Text>
+                  <Text style={s.specVo2Unit}>VO₂max</Text>
+                  <Text style={s.specVo2Grade}>{vo2.vo2maxLabel}</Text>
+                </View>
+              </View>
+            )}
+
+            <View style={s.medalGrid}>
+              {STANDARD_DISTANCES.map((d) => {
+                const sec = distancePBs[d.key];
+                const earned = typeof sec === 'number' && sec > 0;
+                return (
+                  <View key={d.key} style={s.medalCell} testID={`pb-${d.key}`}>
+                    <View style={s.medalHead}>
+                      <Ionicons name={earned ? 'medal' : 'lock-closed'} size={13} color={earned ? ACCENT : T3} />
+                      <Text style={[s.medalLabel, { color: earned ? T1 : T3 }]}>{d.label}</Text>
+                    </View>
+                    <Text style={[s.medalVal, { color: earned ? T1 : T3 }]}>
+                      {earned ? fmtTime(Math.round(sec)) : '아직'}
+                    </Text>
+                  </View>
+                );
+              })}
+            </View>
+
+            {(!!paceRec || !!longRec) && (
+              <Text style={s.specFoot}>
+                1km 최고 {paceRec?.value ?? '--'}{paceRec && paceRec.value !== '--' ? (paceRec.unit ?? '') : ''} · 최장 {longRec?.value ?? '--'}{longRec && longRec.value !== '--' ? (longRec.unit ?? '') : ''}
+              </Text>
+            )}
+          </View>
+        )}
+
         {/* 이번 주 스트릭 — 월~일 달림 점 */}
         <View style={[s.card, s.streakCard]} testID="streak-card">
           <View style={s.streakHead}>
@@ -723,54 +772,6 @@ export default function ProfileScreen({
           </Pressable>
         )}
 
-        {/* 러너 스펙 — VO2max + 거리 PB 훈장(5K·10K·하프·풀, 미달성 잠금) + 최고페이스/최장.
-            러너의 정체성 '스펙 시트'(사용자 방향 2026-07-05). 거리 PB 는 paceTrack 베스트에포트. */}
-        {(records.length > 0 || vo2.vo2max > 0) && (
-          <View style={[s.card, { padding: 22 }]} testID="runner-spec">
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-              <Text style={[s.cardTitle, { marginBottom: 0 }]}>러너 스펙</Text>
-              <Pressable onPress={onShareSpec} testID="spec-share" accessibilityRole="button" accessibilityLabel="러너 스펙 공유" hitSlop={8} style={({ pressed }) => [{ flexDirection: 'row', alignItems: 'center', gap: 5 }, pressed && { opacity: 0.6 }]}>
-                <Ionicons name="share-outline" size={16} color={ACCENT} />
-                <Text style={{ color: ACCENT, fontFamily: FONT, fontSize: 13, fontWeight: '700' }}>공유</Text>
-              </Pressable>
-            </View>
-
-            {vo2.vo2max > 0 && (
-              <View style={s.specVo2}>
-                <Text style={s.specVo2Label}>심폐 체력</Text>
-                <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6 }}>
-                  <Text style={s.specVo2Num}>{vo2.vo2max.toFixed(1)}</Text>
-                  <Text style={s.specVo2Unit}>VO₂max</Text>
-                  <Text style={s.specVo2Grade}>{vo2.vo2maxLabel}</Text>
-                </View>
-              </View>
-            )}
-
-            <View style={s.medalGrid}>
-              {STANDARD_DISTANCES.map((d) => {
-                const sec = distancePBs[d.key];
-                const earned = typeof sec === 'number' && sec > 0;
-                return (
-                  <View key={d.key} style={s.medalCell} testID={`pb-${d.key}`}>
-                    <View style={s.medalHead}>
-                      <Ionicons name={earned ? 'medal' : 'lock-closed'} size={13} color={earned ? ACCENT : T3} />
-                      <Text style={[s.medalLabel, { color: earned ? T1 : T3 }]}>{d.label}</Text>
-                    </View>
-                    <Text style={[s.medalVal, { color: earned ? T1 : T3 }]}>
-                      {earned ? fmtTime(Math.round(sec)) : '아직'}
-                    </Text>
-                  </View>
-                );
-              })}
-            </View>
-
-            {(!!paceRec || !!longRec) && (
-              <Text style={s.specFoot}>
-                1km 최고 {paceRec?.value ?? '--'}{paceRec && paceRec.value !== '--' ? (paceRec.unit ?? '') : ''} · 최장 {longRec?.value ?? '--'}{longRec && longRec.value !== '--' ? (longRec.unit ?? '') : ''}
-              </Text>
-            )}
-          </View>
-        )}
 
         {/* 돌아보기(리캡) — 주간/월간 토글 + 요약 + 카드 공유(slice-8-recap-ui) */}
         <View testID="recap-section">
