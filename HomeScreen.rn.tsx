@@ -21,7 +21,6 @@ import {
 import type { RankTier } from './lib/progression/types';
 import { TabBar, TABBAR_CLEARANCE, KeegoWordmark, SectionTitle } from './primitives';
 import { Unit } from './lib/units';
-import InjuryRiskCard from './InjuryRiskCard';
 import { ShoeCard as KeegoShoeCard, GhostShoeCard } from './screens/KeegoHome';
 import type { LoadRun } from './lib/trainingLoad';
 import { RotationPick } from './lib/rotation';
@@ -525,21 +524,10 @@ export default function HomeScreen({
           <Rise>
             <ShoeCarousel shoes={shoes} activeIdx={idx} onSelect={select} unit={unit} onOpenShoe={onOpenShoe} onStart={onStart} />
           </Rise>
-          {/* 부상위험 시그널(시그니처 #1+#2) — 신발 마모 × 훈련 부하 융합. 활성(히어로) 신발 기준.
-              한 줄 시그널로 강등(MVP 홈 다이어트): 경고할 게 없으면(safe) 침묵 — 아무것도
-              렌더하지 않는다. caution/high 에서만 나타나고, 탭하면 상세 코칭(InjuryRiskScreen). */}
-          <Rise delay={60}>
-            <View style={{ paddingHorizontal: SPACE.xl, marginTop: SPACE.lg }}>
-              <InjuryRiskCard
-                variant="signal"
-                runs={runs}
-                todayISO={todayISO}
-                shoe={active ? { used: active.used, max: active.max } : undefined}
-                shoeName={active ? (active.model || active.brand) : undefined}
-                onPress={onOpenInjuryRisk}
-              />
-            </View>
-          </Rise>
+          {/* 부상위험 시그널 제거(2026-07-05 애널리틱스 다이어트): 아이폰 단독의 얇은
+              데이터로 '오늘 쉬어라'를 처방하는 건 러너의 자율을 침범하고(선 넘음), TSB
+              '오늘 컨디션'과도 중복이었다. 신발 마모 경고(구체·측정가능)는 신발 카드/상세의
+              InjuryBanner 가 계속 담당한다 — 코칭 계층만 걷어내고 성취/사실 지표는 유지. */}
           {/* 이번 주 러닝 — 내 활동 요약(거리·횟수·평균 페이스). 신발 상태(히어로)와 별개로
               '내가 얼마나 뛰었나'를 보여준다. 자세히 → 기록 탭. 신발 마모는 히어로/상세에. */}
           <Rise delay={120}>

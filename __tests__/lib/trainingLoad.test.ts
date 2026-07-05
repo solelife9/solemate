@@ -6,6 +6,7 @@ import {
   nextWeekSafeKm,
   LOAD_MSG_NEW,
   ACWR_HIGH_AT,
+  RAMP_HIGH_AT,
 } from '../../lib/trainingLoad';
 
 const TODAY = '2026-06-23';
@@ -214,5 +215,27 @@ describe('assessTrainingLoad — ACWR', () => {
     const a = assessTrainingLoad(runs as any, TODAY);
     expect(Number.isFinite(a.acuteKm)).toBe(true);
     expect(a.acuteKm).toBe(5); // 문자열 5만 급성에 반영(미래·0 제외)
+  });
+});
+
+describe('ramp 가드 — ACWR 이 평소 미만이면 급증으로 끌어올리지 않는다(2026-07-05 모순 버그)', () => {
+  it('휴식 후 복귀: 지난주 대비 폭증이라도 4주 평균의 0.3배면 high/caution 아님(가벼움)', () => {
+    // 3주 큰 주(각 40km) + 지난주 휴식(1km) + 이번주 복귀(10km). 5'00"/km 로 load∝km.
+    const P = 300; // 초/km
+    const runs = [
+      {run_date: ago(25), km: 40, durationS: 40 * P},
+      {run_date: ago(20), km: 40, durationS: 40 * P},
+      {run_date: ago(15), km: 40, durationS: 40 * P},
+      {run_date: ago(9), km: 1, durationS: 1 * P},   // 지난주 휴식
+      {run_date: ago(2), km: 10, durationS: 10 * P}, // 이번주 복귀
+    ];
+    const a = assessTrainingLoad(runs, TODAY);
+    expect(a.confident).toBe(true);
+    expect(a.acwr!).toBeLessThan(0.8);            // 4주 평균 대비 명백히 낮음
+    expect(a.rampPct!).toBeGreaterThan(RAMP_HIGH_AT); // 지난주 대비론 폭증
+    // 가드: ACWR 이 평소 미만이라 ramp 가 등급을 못 올린다 → 단어(가벼움)와 문구(0.N배)가 일치.
+    expect(a.level).not.toBe('high');
+    expect(a.level).not.toBe('caution');
+    expect(a.level).toBe('low');
   });
 });

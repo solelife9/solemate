@@ -211,7 +211,11 @@ export function assessTrainingLoad(
     else if (acwr < ACWR_CAUTION_AT) level = 'safe';
     else if (acwr < ACWR_HIGH_AT) level = 'caution';
     else level = 'high';
-    if (rampPct != null) {
+    // ramp(주간 급증)는 ACWR 이 이미 평소 이상(>1.1)일 때만 등급을 끌어올린다. ACWR 이
+    // 평소 미만(휴식 후 복귀 등)이면 지난주 대비 폭증이라도 '급증'이 아니다 — 4주 평균
+    // 대비 여전히 낮기 때문. 이 가드가 없으면 '급증 · 평소의 0.4배'처럼 단어(등급)와
+    // 문구(비율)가 정반대로 뜨는 모순이 생긴다(2026-07-05 사용자 리포트).
+    if (rampPct != null && acwr != null && acwr > 1.1) {
       if (rampPct >= RAMP_HIGH_AT) level = 'high';
       else if (rampPct >= RAMP_CAUTION_AT && level !== 'high') level = 'caution';
     }

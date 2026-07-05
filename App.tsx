@@ -35,7 +35,6 @@ import RunActiveScreenView from './RunActiveScreen.rn';
 import ProgressionScreen from './ProgressionScreen.rn';
 import HallOfShoes from './HallOfShoes.rn';
 import ShoeArchiveScreen from './ShoeArchiveScreen.rn';
-import InjuryRiskScreen from './InjuryRiskScreen.rn';
 import RunRecapScreen from './RunRecapScreen.rn';
 import LocationPrimeScreen from './LocationPrimeScreen.rn';
 import HallOfFameScreen from './HallOfFameScreen.rn';
@@ -270,7 +269,6 @@ function Main(){
   const [showHallOfShoes,setShowHallOfShoes]=useState(false);
   const [showArchive,setShowArchive]=useState(false);
   // 부상위험 상세(시그니처) 전체화면 — 홈 신호등 카드 탭이 열고 뒤로가 닫는다(오버레이형).
-  const [showInjuryRisk,setShowInjuryRisk]=useState(false);
   // 완주 리캡(P0-2) — 러닝 저장 직후 축하 풀스크린. '완료'로 닫으면 기록 탭으로 이동.
   const [runRecap,setRunRecap]=useState<{km:number;durationS:number;cadence:number;splits:any[];elevationM:number;calories:number;prKinds:PRKind[];shoeName?:string;goalKm?:number;pacePlan?:number[];shoeWear?:{addedKm:number;remainingPct:number;deltaPct:number}|null;loadInfo?:{phrase:string;word:string;level:LoadLevel}|null;route?:string|null;runId?:string}|null>(null);
   // 위치 권한 설명(priming) 풀스크린 — 첫 GPS 런 직전 들고 있을 목표(RunGoal). null=미표시.
@@ -1810,13 +1808,7 @@ function Main(){
   }
   // 부상위험 상세 — 홈 신호등 카드(InjuryRiskCard) 탭으로 진입. 활성(히어로) 신발 마모 ×
   // 전체 런 부하를 융합해 코칭을 보여준다. runs/활성 신발만 읽는 읽기 전용 오버레이.
-  if(showInjuryRisk){
-    const aShoe=homeUiShoes[homeActiveIdx];
-    return <InjuryRiskScreen runs={runs}
-      shoe={aShoe?{used:aShoe.used,max:aShoe.max}:undefined}
-      shoeName={aShoe?(aShoe.model||aShoe.brand):undefined}
-      todayISO={today()} onBack={()=>setShowInjuryRisk(false)}/>;
-  }
+  // (부상위험 상세 화면 제거 2026-07-05 애널리틱스 다이어트 — 홈 진입점이 사라져 도달 불가.)
   // 완주 리캡 — 러닝 저장 직후 축하 풀스크린. '완료'로 닫으면 기록 탭으로 이동한다.
   if(runRecap){
     return <RunRecapScreen {...runRecap} unit={unit}
@@ -1837,7 +1829,7 @@ function Main(){
             onOpenShoe={(id)=>{setSelectedShoeId(id);setShoesDetailId(id);setTab(1);}}
             progression={homeProgression}
             onRefresh={refreshData} lastSyncAt={lastSyncAt}
-            runs={runs} onOpenInjuryRisk={()=>setShowInjuryRisk(true)}
+            runs={runs}
             weeklyGoalKm={goalWeeklyKm} streakDays={goalStreak} todayISO={today()}
           />
         )}

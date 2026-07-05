@@ -1,15 +1,14 @@
 // ============================================================================
-// FitnessCard.tsx — 체력 트렌드(VO2max + 오늘 컨디션 + 체력 추이) 카드.
-// 기록 탭 인사이트 소속(MVP 홈 다이어트 — 분석은 찾아오는 곳에, 홈은 러닝 시작 저니에).
-// runs 에서 fitnessSummary 를 자체 계산하고, 타임 있는 노력 런이 없으면(vo2max 0) 숨긴다.
-// raw CTL/ATL/TSB 숫자는 일반 사용자가 이해하기 어려워 '오늘 컨디션 + 조언'으로 번역한다.
+// FitnessCard.tsx — 심폐 체력(VO2max) 카드.
+// 애널리틱스 다이어트(2026-07-05): '오늘 컨디션(TSB)'·'체력 추이(CTL 그래프)'는 홈
+// 부상위험과 중복되거나 일반 러너가 못 읽어(만든 사람도 이해 못 함) 제거했다. 러너가
+// '알아보고 원하는' 성취 지표 — VO2max 하나만, 큰 숫자 + 등급 + 이해되는 한 줄로.
+// (가민 'VO2max'·애플 '심폐 체력'과 같은 개념. 타임 있는 노력 런 없으면 숨긴다.)
 // ============================================================================
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { CARD, CARD_BORDER, ACCENT, GOOD, WARN, BEST, DANGER, T1, T3, FONT, DISPLAY, RADIUS } from './theme';
+import { CARD, CARD_BORDER, ACCENT, T1, T3, T4, FONT, DISPLAY, RADIUS } from './theme';
 import { fitnessSummary } from './lib/analytics/fitness';
-import { formStatus } from './lib/analytics/load';
-import { Sparkline } from './Sparkline';
 
 export function FitnessCard({ runs = [], todayISO, style }: { runs?: any[]; todayISO: string; style?: any }) {
   const fitness = useMemo(
@@ -26,54 +25,26 @@ export function FitnessCard({ runs = [], todayISO, style }: { runs?: any[]; toda
     [runs.length, runs[runs.length - 1]?.id, todayISO],
   );
 
-  // 타임 있는 노력 런이 하나도 없으면 VDOT/부하가 안 서므로 숨긴다.
+  // 타임 있는 노력 런이 하나도 없으면 VDOT 가 안 서므로 숨긴다.
   if (fitness.vo2max <= 0) return null;
-
-  const fs = formStatus(fitness.tsb);
-  const dot = fitness.tsb >= 5 ? GOOD : fitness.tsb > -10 ? BEST : fitness.tsb > -25 ? WARN : DANGER;
-  const ctl = fitness.pmc.map((p) => p.ctl);
-  const trend = (() => {
-    if (ctl.length < 3) return null;
-    const d = ctl[ctl.length - 1] - ctl[Math.max(0, ctl.length - 1 - 14)];
-    return d > 1 ? { w: '상승중 ↗', c: GOOD } : d < -1 ? { w: '하락 ↘', c: WARN } : { w: '유지 →', c: T3 };
-  })();
 
   return (
     <View
       style={[st.card, style]}
       accessible
-      accessibilityLabel={`체력 트렌드. VO2max ${fitness.vo2max.toFixed(1)}, ${fitness.vo2maxLabel}. 오늘 컨디션 ${fs.label}. ${fs.advice}${trend ? `. 체력 ${trend.w.replace(/[↗↘→]/g, '').trim()}` : ''}`}
+      accessibilityLabel={`심폐 체력. VO2max ${fitness.vo2max.toFixed(1)}, ${fitness.vo2maxLabel}`}
     >
-      <Text style={st.title}>체력 트렌드</Text>
-      {/* VO2max — 최근 6주 최고 노력 기준(이지런 과소추정 보정). 가민 'VO2max'와 동일 개념. */}
+      <Text style={st.title}>심폐 체력</Text>
+      {/* VO2max — 최근 6주 최고 노력 기준(이지런 과소추정 보정). */}
       <View style={{ flexDirection: 'row', alignItems: 'flex-end', marginTop: 10 }}>
-        <Text style={{ color: T1, fontFamily: DISPLAY, fontSize: 38, fontWeight: '800', letterSpacing: -0.5, lineHeight: 40 }}>{fitness.vo2max.toFixed(1)}</Text>
-        <View style={{ marginLeft: 10, paddingBottom: 4 }}>
+        <Text style={{ color: T1, fontFamily: DISPLAY, fontSize: 40, fontWeight: '800', letterSpacing: -0.5, lineHeight: 42 }}>{fitness.vo2max.toFixed(1)}</Text>
+        <View style={{ marginLeft: 10, paddingBottom: 5 }}>
           <Text style={{ color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500' }}>VO₂max</Text>
           <Text style={{ color: ACCENT, fontFamily: FONT, fontSize: 13, fontWeight: '700', marginTop: 2 }}>{fitness.vo2maxLabel}</Text>
         </View>
       </View>
-      {/* 오늘 컨디션(폼/TSB) → 몸 상태 + 조언. */}
-      <View style={{ marginTop: 16, paddingTop: 14, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.12)' }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Text style={st.metricL}>오늘 컨디션</Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <View style={{ width: 8, height: 8, borderRadius: 4, borderCurve: 'continuous', backgroundColor: dot }} />
-            <Text style={{ color: T1, fontFamily: FONT, fontSize: 15, fontWeight: '800' }}>{fs.label}</Text>
-          </View>
-        </View>
-        <Text style={{ color: T3, fontFamily: FONT, fontSize: 12, marginTop: 5 }}>{fs.advice}</Text>
-      </View>
-      {/* 체력 추이 스파크라인 + 방향(14일 전 대비). 3점 이상일 때만. */}
-      {trend && (
-        <View style={{ marginTop: 14 }}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
-            <Text style={st.metricL}>체력 추이</Text>
-            <Text style={{ color: trend.c, fontFamily: FONT, fontSize: 11, fontWeight: '700' }}>{trend.w}</Text>
-          </View>
-          <Sparkline data={ctl.slice(-90)} color={ACCENT} height={40} testID="fitness-sparkline" />
-        </View>
-      )}
+      {/* 이해되는 한 줄 — 이 숫자가 뭔지·어떻게 오르는지(만든 사람도 헷갈리지 않게). */}
+      <Text style={st.caption}>심장이 산소를 나르는 힘. 꾸준히 뛸수록 올라가요.</Text>
     </View>
   );
 }
@@ -81,5 +52,5 @@ export function FitnessCard({ runs = [], todayISO, style }: { runs?: any[]; toda
 const st = StyleSheet.create({
   card: { backgroundColor: CARD, borderRadius: RADIUS.lg, borderCurve: 'continuous', borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER, paddingHorizontal: 20, paddingTop: 14, paddingBottom: 18 },
   title: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600' },
-  metricL: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500' },
+  caption: { color: T4, fontFamily: FONT, fontSize: 12, lineHeight: 18, marginTop: 12 },
 });
