@@ -1,22 +1,24 @@
 // ============================================================================
 // HallOfShoes.rn.tsx — 명예의 전당(은퇴한 러닝화의 기록)
 // ----------------------------------------------------------------------------
-// 사용자 확정 디자인(2026-07-05) + 애플 리디자인: 블랙&골드 명조 전당. 명조는 앱에
-// 번들된 NanumMyeongjo(ExtraBold 페이스 — iOS AppleMyungjo 미탑재 폴백 버그 수정).
-//   · 애플 라지 타이틀(좌측 명조 + 뮤트 서브타이틀)
-//   · 레거시 요약 · 최근 헌액 히어로(LATEST INDUCTEE) · 컬렉션 2열(헌액 순번 씰)
-//   · 탭 → 은퇴 인증서(레터헤드: 러너 좌상 · RETIRED 인장 우상 · 빅넘버 · 공유)
-//   · 빈 상태(스포트라이트 받침대). 장식(이중 액자·오너먼트·포일)은 애플 절제로 제거.
+// 사용자 확정 디자인(2026-07-05): 블랙&골드 세리프 전당. 명조 세리프는 iOS 내장
+// 'AppleMyungjo'(한글 명조)로 — Nanum Myeongjo 의도를 번들 없이 살린다.
+//   · 세리프 라지 타이틀 + 장식 오너먼트
+//   · 레거시 요약(총 KM·은퇴 켤레·함께한 러닝)
+//   · 최근 헌액 히어로(LATEST INDUCTEE 배지 + 포일 그라데이션 빅넘버)
+//   · 전당 컬렉션 2열 그리드(연도 씰 + 세리프 모델)
+//   · 탭 → 은퇴 인증서(전체화면 · 포일 빅넘버 · RETIRED 씰 · RUNNER · 공유)
+//   · 빈 상태(스포트라이트 받침대)
 // 데이터는 App 이 progression.retiredShoes(RetiredShoeRecord)로 주입한다. 표시 전용.
 // ============================================================================
 
 import React, {useMemo, useRef, useState} from 'react';
-import {View, Text, ScrollView, Pressable, Modal, StyleSheet, Platform} from 'react-native';
+import {View, Text, ScrollView, Pressable, Modal, StyleSheet, Platform, useWindowDimensions} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import Svg, {Defs, LinearGradient, RadialGradient, Stop, Rect, Path, Circle} from 'react-native-svg';
+import Svg, {Defs, LinearGradient, RadialGradient, Stop, Rect, Path, Circle, Text as SvgText} from 'react-native-svg';
 import {Unit, displayNum} from './lib/units';
-import {fmtPaceSec} from './lib/pacePlan';
+import {FONT, DISPLAY} from './theme';
 import {SwipeBack} from './primitives';
 import RetirementCard from './RetirementCard';
 import {buildRetirementCardModel, highlightLabel} from './lib/progression/retirementCard';
@@ -29,7 +31,12 @@ const G = {
   muted: 'rgba(243,238,227,0.52)', faint: 'rgba(243,238,227,0.34)',
   gold: '#D6B478', soft: 'rgba(214,180,120,0.46)', line: 'rgba(214,180,120,0.20)',
 };
-const SERIF = Platform.OS === 'ios' ? 'NanumMyeongjoExtraBold' : 'NanumMyeongjo';
+const SERIF = Platform.OS === 'ios' ? 'AppleMyungjo' : 'serif';
+// 포일 그라데이션(큰 숫자) — 밝은 금 → 딥 골드 → 밝은 금(금박 반사).
+const FOIL: {o: number; c: string}[] = [
+  {o: 0, c: '#F6E2A6'}, {o: 0.38, c: '#D0A557'}, {o: 0.64, c: '#9C7330'}, {o: 1, c: '#EFD590'},
+];
+
 export interface HallOfShoesProps {
   records?: readonly RetiredShoeRecord[];
   unit?: Unit;
@@ -69,6 +76,35 @@ function monthsOf(r: RetiredShoeRecord): number {
 const kmInt = (n: number) => (Number.isFinite(n) && n > 0 ? Math.round(n) : 0);
 const kmComma = (n: number) => kmInt(n).toLocaleString();
 
+// ── 포일 그라데이션 텍스트(큰 숫자) ────────────────────────────────────────────
+function FoilText({text, size, width, ls = 0}: {text: string; size: number; width: number; ls?: number}) {
+  const uid = React.useId();
+  const h = size * 1.18;
+  return (
+    <Svg width={width} height={h}>
+      <Defs>
+        <LinearGradient id={uid} x1="0" y1="0" x2="1" y2="0.4">
+          {FOIL.map((s, i) => <Stop key={i} offset={s.o} stopColor={s.c} />)}
+        </LinearGradient>
+      </Defs>
+      <SvgText x={width / 2} y={size} fontSize={size} fontWeight="800" textAnchor="middle" fill={`url(#${uid})`} letterSpacing={ls}>
+        {text}
+      </SvgText>
+    </Svg>
+  );
+}
+
+// 장식 라인(가운데 골드 마름모)
+function Ornament({width = 150}: {width?: number}) {
+  return (
+    <View style={[st.orn, {width}]}>
+      <View style={st.ornLine} />
+      <View style={st.ornDot} />
+      <View style={st.ornLine} />
+    </View>
+  );
+}
+
 function HallOfShoes({records = [], unit = 'km', onBack, userName, onGoShoes}: HallOfShoesProps) {
   const insets = useSafeAreaInsets();
   const [sel, setSel] = useState<RetiredShoeRecord | null>(null);
@@ -98,10 +134,10 @@ function HallOfShoes({records = [], unit = 'km', onBack, userName, onGoShoes}: H
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{paddingHorizontal: 22, paddingBottom: insets.bottom + 30}}>
-        {/* 헤더 — 애플 라지 타이틀 문법(좌측 세리프 + 뮤트 서브타이틀). 장식 오너먼트 제거. */}
+        {/* 헤더 — 세리프 라지 타이틀 + 오너먼트(중앙) */}
         <View style={st.head}>
           <Text style={st.title}>명예의 전당</Text>
-          <Text style={st.subtitle}>은퇴한 러닝화의 기록</Text>
+          <Ornament />
         </View>
 
         {count === 0 ? (
@@ -134,10 +170,11 @@ function HallOfShoes({records = [], unit = 'km', onBack, userName, onGoShoes}: H
               onPress={() => setSel(latest)}
               accessibilityRole="button"
               accessibilityLabel={`${latest.name} 인증서`}>
+              <View style={st.featFrame} pointerEvents="none" />
               <View style={st.featTop}>
                 <View style={st.badge}>
                   <View style={st.badgeDot} />
-                  <Text style={st.badgeTxt}>LATEST INDUCTEE</Text>
+                  <Text style={st.badgeTxt}>최근 은퇴</Text>
                 </View>
                 <Text style={st.featYear}>{periodOf(latest)}</Text>
               </View>
@@ -150,8 +187,8 @@ function HallOfShoes({records = [], unit = 'km', onBack, userName, onGoShoes}: H
                   <Text style={st.featQuote}>{kmInt(latest.km)}{unit}의 여정, 고마웠어.</Text>
                 </View>
                 <View style={st.featDist}>
-                  <Text style={st.featNum}>{displayNum(latest.km, unit, 0)}</Text>
-                  <Text style={st.featKm}>{unit}</Text>
+                  <FoilText text={String(displayNum(latest.km, unit, 0))} size={44} width={130} ls={-2} />
+                  <Text style={st.featKm}>{unit.toUpperCase()}</Text>
                 </View>
               </View>
             </Pressable>
@@ -162,11 +199,9 @@ function HallOfShoes({records = [], unit = 'km', onBack, userName, onGoShoes}: H
               <Text style={st.secC}>전체 {count}</Text>
             </View>
             <View style={st.grid}>
-              {list.map((r, i) => {
+              {list.map(r => {
                 const nm = splitName(r.name);
                 const yy = yearOf(r);
-                // 헌액 순번(#1 = 가장 먼저 은퇴 = 첫 헌액자). list 는 최신순이라 count-i.
-                const order = count - i;
                 return (
                   <Pressable
                     key={r.shoeId}
@@ -175,8 +210,9 @@ function HallOfShoes({records = [], unit = 'km', onBack, userName, onGoShoes}: H
                     accessibilityRole="button"
                     accessibilityLabel={`${r.name} 인증서`}
                     testID={`hall-plaque-${r.shoeId}`}>
+                    <View style={st.plaqueFrame} pointerEvents="none" />
                     <View style={st.seal}>
-                      <Text style={st.sealNo}>{order}</Text>
+                      <Text style={st.sealTxt}>{yy ? `’${yy.slice(2)}` : '··'}</Text>
                     </View>
                     {!!nm.brand && <Text style={st.pbrand}>{nm.brand}</Text>}
                     <Text style={st.pmodel} numberOfLines={2}>{nm.model}</Text>
@@ -192,6 +228,11 @@ function HallOfShoes({records = [], unit = 'km', onBack, userName, onGoShoes}: H
               })}
             </View>
 
+            <View style={st.endmark}>
+              <View style={st.endLine} />
+              <Text style={st.endTxt}>KEEP GOING</Text>
+              <View style={st.endLine} />
+            </View>
           </>
         )}
       </ScrollView>
@@ -207,19 +248,12 @@ function HallOfShoes({records = [], unit = 'km', onBack, userName, onGoShoes}: H
 // ── 은퇴 인증서(전체화면 모달) — 블랙&골드 세리프 인증서(사용자 확정) ─────────────
 function Certificate({shoe, unit, userName, onClose}: {shoe: RetiredShoeRecord; unit: Unit; userName?: string; onClose: () => void}) {
   const insets = useSafeAreaInsets();
+  const {width} = useWindowDimensions();
   const nm = splitName(shoe.name);
   const d = displayNum(shoe.km, unit, 0);
   const months = monthsOf(shoe);
-  const runCount = shoe.summary?.runCount ?? 0;
-  const longest = shoe.summary?.longestRunKm ?? 0;
-  const bestPace = fmtPaceSec(shoe.summary?.bestPaceSec ?? null);
-  const period = periodOf(shoe);
-  // mostMemorable 은 raw 하이라이트 키 → 라벨링 + 앞 이모지 제거(‘hl 마라톤’ 버그 수정).
-  const memorable = highlightLabel(shoe.summary?.mostMemorable).replace(/^[^\uAC00-\uD7A3A-Za-z]+/, '').trim();
+  const memorable = highlightLabel(shoe.summary?.mostMemorable).replace(/^[^\uAC00-\uD7A3A-Za-z0-9]+/, '').trim();
   const runner = (typeof userName === 'string' && userName.trim()) || '러너';
-  const heroLine = months > 0 ? `${months}개월을 함께 달렸어요` : `${runCount}번의 러닝을 함께했어요`;
-  // 기억나는 특징(풀코스 완주 등)이 없어도 뭉클하게 — 묵묵한 동반자도 특별하다.
-  const memoryLine = memorable ? `「${memorable}」의 순간과 함께` : '기록보다 오래 남을, 함께한 시간';
   // 스토리 공유(무기 #1) — 오프스크린 카드(RetirementCard 'S')를 캡처해 OS 공유 시트로.
   const storyRef = useRef(null);
   const storyModel = useMemo(
@@ -235,63 +269,57 @@ function Certificate({shoe, unit, userName, onClose}: {shoe: RetiredShoeRecord; 
 
   return (
     <View style={st.certScreen}>
-      {/* 골드 프레임 — 인증서 '문서'의 격(단일 헤어라인, 이중 액자 아님). */}
-      <View style={[st.certFrame, {top: insets.top + 14}]} pointerEvents="none" />
-      <Pressable style={[st.certX, {left: 22, top: insets.top + 8}]} onPress={onClose} hitSlop={12} accessibilityRole="button" accessibilityLabel="닫기">
-        <Ionicons name="close" size={16} color={G.muted} />
-      </Pressable>
-      <Pressable style={[st.certX, {right: 22, top: insets.top + 8}]} onPress={onShare} hitSlop={12} accessibilityRole="button" accessibilityLabel="인증서 공유" testID="cert-share">
-        <Ionicons name="share-outline" size={15} color={G.gold} />
+      <View style={[st.certFrame, {top: insets.top + 6}]} pointerEvents="none" />
+      <Pressable style={[st.certX, {top: insets.top + 6}]} onPress={onClose} hitSlop={10} accessibilityRole="button" accessibilityLabel="닫기">
+        <Ionicons name="close" size={15} color={G.gold} />
       </Pressable>
 
-      <ScrollView contentContainerStyle={[st.certContent, {paddingTop: insets.top + 40, paddingBottom: insets.bottom + 36}]} showsVerticalScrollIndicator={false}>
-        <View style={st.certBody}>
-          {/* 마스트헤드(사용자 확정 2026-07-05): 러너 좌 · 작은 원형 씰(RETIRED/연도) 우.
-              세로 로렐 메달은 어색+길어 폐기, 대신 컴팩트 스탬프. */}
-          <View style={st.mast}>
-            <View style={st.mastL}>
-              <Text style={st.mastK}>RUNNER</Text>
-              <Text style={st.mastNm}>{runner}</Text>
-            </View>
-            <View style={st.stamp}>
-              <Text style={st.stampT}>RETIRED</Text>
-              <Text style={st.stampN}>{yearOf(shoe)}</Text>
-            </View>
+      <ScrollView contentContainerStyle={[st.certContent, {paddingTop: insets.top + 30, paddingBottom: insets.bottom + 36}]} showsVerticalScrollIndicator={false}>
+        <Ornament width={150} />
+        <Text style={st.coDoctype}>은퇴 인증서</Text>
+        <Text style={st.coDoctypeKr}>이 신발과의 여정을 기립니다</Text>
+        {!!nm.brand && <Text style={st.coBrand}>{nm.brand}</Text>}
+        <Text style={st.coModel}>{nm.model}</Text>
+        <View style={{marginTop: 18}}><FoilText text={String(d)} size={92} width={width - 56} ls={-4} /></View>
+        <Text style={st.coUnit}>함께 달린 거리</Text>
+        <Text style={st.coQuote}>{d}{unit}의 여정, 고마웠어.</Text>
+
+        <View style={st.coMeta}>
+          <View style={st.coCell}>
+            <Text style={st.coK}>가장 기억에 남는</Text>
+            <Text style={st.coV}>{memorable || '함께한 모든 순간'}</Text>
+            <Text style={st.coS}>{ym(shoe.summary?.firstRunDate)}</Text>
           </View>
-
-          <Text style={st.coLabel}>은퇴 인증서</Text>
-
-          {/* 신발 정체성 — 기리는 이름 */}
-          {!!nm.brand && <Text style={st.coBrand}>{nm.brand}</Text>}
-          <Text style={st.coModel}>{nm.model}</Text>
-
-          {/* 감정의 히어로 — 함께한 시간 */}
-          <Text style={st.hero}>{heroLine}</Text>
-          {!!period && <Text style={st.heroSpan}>{period}</Text>}
-
-          {/* 기록 — 조용한 스탯 3종 */}
-          <View style={st.statRow}>
-            <View style={st.statCell}>
-              <Text style={st.statV}>{d}</Text>
-              <Text style={st.statL}>{unit.toUpperCase()}</Text>
-            </View>
-            <View style={[st.statCell, st.statDiv]}>
-              <Text style={st.statV}>{runCount}</Text>
-              <Text style={st.statL}>RUNS</Text>
-            </View>
-            <View style={[st.statCell, st.statDiv]}>
-              <Text style={st.statV}>{longest > 0 ? displayNum(longest, unit, 0) : bestPace}</Text>
-              <Text style={st.statL}>{longest > 0 ? `최장 ${unit.toUpperCase()}` : '최고 페이스'}</Text>
-            </View>
+          <View style={[st.coCell, st.coCellDiv]}>
+            <Text style={st.coK}>함께한 기간</Text>
+            <Text style={st.coV}>{months > 0 ? `${months}개월` : `${shoe.summary?.runCount ?? 0}회`}</Text>
+            <Text style={st.coS}>{periodOf(shoe)}</Text>
           </View>
+        </View>
 
-          {/* 기억에 남는 순간(없으면 묵묵한 동반자 폴백) */}
-          <Text style={st.memory}>{memoryLine}</Text>
-
-          <View style={st.foot}>
-            <Text style={st.coWordmark}>keego</Text>
-            <Text style={st.footKg}>KEEP GOING</Text>
+        <View style={st.coRule} />
+        <View style={st.coAttest}>
+          <View style={st.coSeal}>
+            <View style={st.coSealInner} pointerEvents="none" />
+            <Text style={st.coSealT}>RETIRED</Text>
+            <Text style={st.coSealN}>{yearOf(shoe)}</Text>
+            <Text style={st.coSealB}>KEEGO</Text>
           </View>
+          <View style={st.coSign}>
+            <Text style={st.coSignK}>러너</Text>
+            <Text style={st.coSignNm}>{runner}</Text>
+          </View>
+        </View>
+
+        <Pressable style={({pressed}) => [st.coShare, pressed && {opacity: 0.85}]} onPress={onShare} accessibilityRole="button" accessibilityLabel="인증서 공유" testID="cert-share">
+          <Ionicons name="share-outline" size={14} color={G.gold} />
+          <Text style={st.coShareTxt}>인증서 공유</Text>
+        </Pressable>
+
+        <View style={st.coFoot}>
+          <View style={st.coFootLine} />
+          <Text style={st.coFootKg}>KEEGO · KEEP GOING</Text>
+          <View style={st.coFootLine} />
         </View>
       </ScrollView>
 
@@ -344,7 +372,7 @@ function EmptyHall({onRegister}: {onRegister?: () => void}) {
         </View>
       </View>
 
-      <Text style={st.eLabel}>EMPTY HALL</Text>
+      <Text style={st.eLabel}>빈 전당</Text>
       <Text style={st.eTitle}>첫 헌액을 기다려요</Text>
       <Text style={st.eDesc}>신발 한 켤레와 끝까지 달린 뒤 은퇴시키면,{'\n'}그 여정이 이곳 명예의 전당에 영원히 새겨져요.</Text>
 
@@ -362,87 +390,93 @@ const st = StyleSheet.create({
   topbar: {height: 40, justifyContent: 'center', paddingHorizontal: 22},
   iconbtn: {width: 36, height: 36, borderRadius: 18, borderWidth: 1, borderColor: G.line, alignItems: 'center', justifyContent: 'center'},
 
-  head: {alignItems: 'flex-start', gap: 6, paddingTop: 18, paddingBottom: 30},
-  title: {fontFamily: SERIF, fontSize: 30, color: G.txt, letterSpacing: -0.3},
-  subtitle: {fontSize: 13, fontWeight: '500', color: G.muted},
+  head: {alignItems: 'center', gap: 14, paddingTop: 14, paddingBottom: 24},
+  title: {fontFamily: SERIF, fontSize: 26, fontWeight: '800', color: G.txt, letterSpacing: -0.3},
+  orn: {flexDirection: 'row', alignItems: 'center', gap: 10},
+  ornLine: {flex: 1, height: 1, backgroundColor: G.soft, opacity: 0.55},
+  ornDot: {width: 5, height: 5, backgroundColor: G.gold, transform: [{rotate: '45deg'}]},
 
   legacy: {flexDirection: 'row', borderWidth: 1, borderColor: G.line, borderRadius: 18, backgroundColor: 'rgba(214,180,120,0.04)', paddingVertical: 18, marginBottom: 28},
   lcell: {flex: 1, alignItems: 'center', gap: 5},
   lcellDiv: {borderLeftWidth: 1, borderLeftColor: G.line},
-  lval: {fontSize: 24, fontWeight: '800', color: G.txt, letterSpacing: -0.5, fontVariant: ['tabular-nums']},
-  llabel: {fontSize: 10, fontWeight: '800', letterSpacing: 1.2, color: G.faint},
+  lval: {fontFamily: DISPLAY, fontSize: 24, fontWeight: '800', color: G.txt, letterSpacing: -0.5, fontVariant: ['tabular-nums']},
+  llabel: {fontFamily: FONT, fontSize: 10, fontWeight: '800', letterSpacing: 1.2, color: G.faint},
 
   sec: {flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 13},
-  secT: {fontSize: 13, fontWeight: '800', color: G.txt},
-  secC: {fontSize: 11, fontWeight: '700', color: G.gold, letterSpacing: 0.4, fontVariant: ['tabular-nums']},
+  secT: {fontFamily: FONT, fontSize: 13, fontWeight: '800', color: G.txt},
+  secC: {fontFamily: DISPLAY, fontSize: 11, fontWeight: '700', color: G.gold, letterSpacing: 0.4, fontVariant: ['tabular-nums']},
 
   featured: {borderRadius: 20, borderWidth: 1, borderColor: G.soft, backgroundColor: G.surface, padding: 22, paddingBottom: 20, marginBottom: 30, overflow: 'hidden'},
+  featFrame: {position: 'absolute', top: 7, left: 7, right: 7, bottom: 7, borderRadius: 14, borderWidth: 1, borderColor: 'rgba(214,180,120,0.16)'},
   featTop: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'},
   badge: {flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1, borderColor: G.line, borderRadius: 999, paddingVertical: 5, paddingHorizontal: 10},
   badgeDot: {width: 5, height: 5, borderRadius: 3, backgroundColor: G.gold},
-  badgeTxt: {fontSize: 9, fontWeight: '800', letterSpacing: 1.4, color: G.gold},
+  badgeTxt: {fontFamily: FONT, fontSize: 9, fontWeight: '800', letterSpacing: 1.4, color: G.gold},
   featYear: {fontFamily: SERIF, fontSize: 13, color: G.muted, fontVariant: ['tabular-nums']},
   featBody: {flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: 14, marginTop: 26},
   featName: {flex: 1},
-  featBrand: {fontSize: 10, fontWeight: '800', letterSpacing: 1.8, color: G.gold},
+  featBrand: {fontFamily: FONT, fontSize: 10, fontWeight: '800', letterSpacing: 1.8, color: G.gold},
   featModel: {fontFamily: SERIF, fontSize: 24, fontWeight: '800', color: G.txt, marginTop: 7},
-  featQuote: {fontSize: 12, fontWeight: '600', color: G.muted, marginTop: 9},
-  featDist: {flexDirection: 'row', alignItems: 'baseline', gap: 4},
-  featNum: {fontSize: 46, fontWeight: '800', color: G.gold, letterSpacing: -1.5, fontVariant: ['tabular-nums']},
-  featKm: {fontSize: 16, fontWeight: '700', color: G.gold, opacity: 0.72},
+  featQuote: {fontFamily: FONT, fontSize: 12, fontWeight: '600', color: G.muted, marginTop: 9},
+  featDist: {alignItems: 'flex-end'},
+  featKm: {fontFamily: DISPLAY, fontSize: 10, fontWeight: '800', letterSpacing: 2.4, color: G.txt, marginTop: 2},
 
   grid: {flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 14},
   plaque: {width: '48%', borderRadius: 16, borderWidth: 1, borderColor: G.line, backgroundColor: '#120f0b', padding: 16, paddingBottom: 15, minHeight: 168, overflow: 'hidden'},
+  plaqueFrame: {position: 'absolute', top: 6, left: 6, right: 6, bottom: 6, borderRadius: 11, borderWidth: 1, borderColor: 'rgba(214,180,120,0.12)'},
   seal: {width: 30, height: 30, borderRadius: 15, borderWidth: 1, borderColor: G.soft, alignItems: 'center', justifyContent: 'center'},
-  sealNo: {fontFamily: SERIF, fontSize: 14, color: G.gold, fontVariant: ['tabular-nums']},
-  pbrand: {fontSize: 9, fontWeight: '800', letterSpacing: 1.4, color: G.gold, marginTop: 16},
+  sealTxt: {fontFamily: SERIF, fontSize: 9, fontWeight: '800', color: G.gold},
+  pbrand: {fontFamily: FONT, fontSize: 9, fontWeight: '800', letterSpacing: 1.4, color: G.gold, marginTop: 16},
   pmodel: {fontFamily: SERIF, fontSize: 16, fontWeight: '800', color: G.txt, marginTop: 5, lineHeight: 19},
   pfoot: {marginTop: 'auto', paddingTop: 12, flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: G.line},
-  pkm: {fontSize: 17, fontWeight: '800', color: G.txt, letterSpacing: -0.3, fontVariant: ['tabular-nums']},
-  pkmU: {fontSize: 10, fontWeight: '700', color: G.muted},
-  pyear: {fontSize: 11, fontWeight: '600', color: G.faint, fontVariant: ['tabular-nums']},
+  pkm: {fontFamily: DISPLAY, fontSize: 17, fontWeight: '800', color: G.txt, letterSpacing: -0.3, fontVariant: ['tabular-nums']},
+  pkmU: {fontFamily: DISPLAY, fontSize: 10, fontWeight: '700', color: G.muted},
+  pyear: {fontFamily: DISPLAY, fontSize: 11, fontWeight: '600', color: G.faint, fontVariant: ['tabular-nums']},
 
+  endmark: {flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, marginTop: 26},
+  endLine: {width: 24, height: 1, backgroundColor: G.line},
+  endTxt: {fontFamily: FONT, fontSize: 10, fontWeight: '800', letterSpacing: 3, color: G.gold},
 
-  // ── 은퇴 인증서(어워드 키프세이크 — 공유하고 싶은 격) ──
-  certScreen: {flex: 1, backgroundColor: '#0A0908'},
-  certFrame: {position: 'absolute', left: 14, right: 14, bottom: 14, borderWidth: 1, borderColor: G.soft, borderRadius: 22, opacity: 0.7},
-  certContent: {paddingHorizontal: 34},
-  certX: {position: 'absolute', width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', zIndex: 2},
-  certBody: {alignItems: 'center'},
-  // 타이틀 + 오너먼트
-  mast: {flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', alignSelf: 'stretch'},
-  mastL: {gap: 5, paddingTop: 8},
-  mastK: {fontSize: 9, fontWeight: '800', letterSpacing: 2, color: G.faint},
-  mastNm: {fontFamily: SERIF, fontSize: 22, color: G.txt, letterSpacing: -0.3},
-  stamp: {width: 66, height: 66, borderRadius: 33, borderWidth: 1.5, borderColor: G.soft, alignItems: 'center', justifyContent: 'center', transform: [{rotate: '-7deg'}]},
-  stampT: {fontSize: 7, fontWeight: '800', letterSpacing: 1.4, color: G.gold, marginBottom: 1},
-  stampN: {fontFamily: SERIF, fontSize: 19, color: G.gold, fontVariant: ['tabular-nums']},
-  coLabel: {fontFamily: SERIF, fontSize: 15, color: G.muted, letterSpacing: 2, marginTop: 40},
-  // 정체성
-  coBrand: {fontSize: 11, fontWeight: '800', letterSpacing: 2.4, color: G.gold, marginTop: 28},
-  coModel: {fontFamily: SERIF, fontSize: 30, color: G.txt, marginTop: 8, textAlign: 'center', lineHeight: 38},
-  // 감정의 히어로
-  hero: {fontFamily: SERIF, fontSize: 24, color: G.txt, marginTop: 28, textAlign: 'center', lineHeight: 34, letterSpacing: -0.3},
-  heroSpan: {fontSize: 13, fontWeight: '600', color: G.muted, marginTop: 10, letterSpacing: 0.4, fontVariant: ['tabular-nums']},
-  // 스탯 3종
-  statRow: {flexDirection: 'row', alignSelf: 'stretch', marginTop: 28},
-  statCell: {flex: 1, alignItems: 'center', gap: 6},
-  statDiv: {borderLeftWidth: 1, borderLeftColor: G.line},
-  statV: {fontSize: 26, fontWeight: '700', color: G.txt, letterSpacing: -0.6, fontVariant: ['tabular-nums']},
-  statL: {fontSize: 9, fontWeight: '800', letterSpacing: 1.4, color: G.faint},
-  // 기억
-  memory: {fontFamily: SERIF, fontSize: 16, fontStyle: 'italic', color: G.muted, marginTop: 26, textAlign: 'center'},
-  // 푸터
-  foot: {alignItems: 'center', marginTop: 28, gap: 7},
-  coWordmark: {fontFamily: 'Helvetica Neue', fontSize: 20, fontWeight: '500', color: G.muted, letterSpacing: -0.3},
-  footKg: {fontSize: 9, fontWeight: '800', letterSpacing: 3, color: G.gold},
-    offscreen: {position: 'absolute', left: -4000, top: 0, opacity: 0},
+  // ── 인증서 ──
+  certScreen: {flex: 1, backgroundColor: '#08070A'},
+  certContent: {alignItems: 'center', paddingHorizontal: 28},
+  certFrame: {position: 'absolute', left: 16, right: 16, bottom: 16, borderRadius: 18, borderWidth: 1, borderColor: G.soft, zIndex: 1},
+  certX: {position: 'absolute', right: 24, width: 34, height: 34, borderRadius: 17, borderWidth: 1, borderColor: G.line, backgroundColor: 'rgba(0,0,0,0.3)', alignItems: 'center', justifyContent: 'center', zIndex: 2},
+  coDoctype: {fontFamily: FONT, fontSize: 11, fontWeight: '800', letterSpacing: 3, color: G.gold, marginTop: 6},
+  coDoctypeKr: {fontFamily: SERIF, fontSize: 15, fontWeight: '700', color: G.muted, marginTop: 5},
+  coOver: {fontSize: 9, fontWeight: '800', letterSpacing: 2.2, color: G.faint, marginTop: 30},
+  coBrand: {fontSize: 11, fontWeight: '800', letterSpacing: 2.2, color: G.gold, marginTop: 14},
+  coModel: {fontFamily: SERIF, fontSize: 27, fontWeight: '800', color: G.txt, marginTop: 7, textAlign: 'center'},
+  coUnit: {fontFamily: FONT, fontSize: 11, fontWeight: '800', letterSpacing: 3.4, color: G.txt, marginTop: 12},
+  coQuote: {fontFamily: SERIF, fontSize: 16, fontWeight: '700', color: G.txt, marginTop: 20, textAlign: 'center'},
+  coMeta: {flexDirection: 'row', alignSelf: 'stretch', marginTop: 28},
+  coCell: {flex: 1, gap: 5, paddingHorizontal: 8, alignItems: 'center'},
+  coCellDiv: {borderLeftWidth: 1, borderLeftColor: G.line},
+  coK: {fontFamily: FONT, fontSize: 8, fontWeight: '800', letterSpacing: 1.2, color: G.faint},
+  coV: {fontFamily: DISPLAY, fontSize: 13, fontWeight: '700', color: G.txt, textAlign: 'center', lineHeight: 18},
+  coS: {fontFamily: DISPLAY, fontSize: 11, fontWeight: '600', color: G.muted, fontVariant: ['tabular-nums']},
+  coRule: {alignSelf: 'stretch', height: 1, backgroundColor: G.line, marginTop: 26},
+  coAttest: {alignSelf: 'stretch', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 22},
+  coSeal: {width: 72, height: 72, borderRadius: 36, borderWidth: 1.5, borderColor: G.soft, alignItems: 'center', justifyContent: 'center'},
+  coSealInner: {position: 'absolute', top: 5, left: 5, right: 5, bottom: 5, borderRadius: 31, borderWidth: 1, borderColor: 'rgba(214,180,120,0.26)'},
+  coSealT: {fontFamily: FONT, fontSize: 7, fontWeight: '800', letterSpacing: 1.3, color: G.gold},
+  coSealN: {fontFamily: SERIF, fontSize: 16, fontWeight: '800', color: G.gold, lineHeight: 18},
+  coSealB: {fontFamily: FONT, fontSize: 6, fontWeight: '800', letterSpacing: 1, color: G.faint},
+  coSign: {alignItems: 'flex-end'},
+  coSignK: {fontFamily: FONT, fontSize: 8, fontWeight: '800', letterSpacing: 1.4, color: G.faint},
+  coSignNm: {fontFamily: SERIF, fontSize: 19, fontWeight: '800', color: G.txt, marginTop: 5},
+  coShare: {marginTop: 28, flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 12, paddingHorizontal: 22, borderRadius: 999, borderWidth: 1, borderColor: G.soft, backgroundColor: 'rgba(214,180,120,0.04)'},
+  coShareTxt: {fontFamily: FONT, fontSize: 12, fontWeight: '800', letterSpacing: 0.4, color: G.gold},
+  coFoot: {flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 16},
+  coFootLine: {width: 22, height: 1, backgroundColor: G.soft},
+  coFootKg: {fontFamily: FONT, fontSize: 10, fontWeight: '800', letterSpacing: 2.8, color: G.gold},
+  offscreen: {position: 'absolute', left: -4000, top: 0, opacity: 0},
 
   // ── 빈 상태 ──
   empty: {alignItems: 'center', paddingTop: 26},
   emptyArt: {width: 250, height: 190, alignItems: 'center', justifyContent: 'center'},
   emblem: {alignItems: 'center', justifyContent: 'center'},
-  eLabel: {fontSize: 11, fontWeight: '800', letterSpacing: 3.3, color: G.gold, marginTop: 30},
+  eLabel: {fontFamily: FONT, fontSize: 11, fontWeight: '800', letterSpacing: 3.3, color: G.gold, marginTop: 30},
   eTitle: {fontFamily: SERIF, fontSize: 24, fontWeight: '800', color: G.txt, marginTop: 14},
   eDesc: {fontSize: 14, fontWeight: '500', color: G.muted, lineHeight: 23, marginTop: 14, textAlign: 'center', maxWidth: 286},
   cta: {alignSelf: 'stretch', height: 54, borderRadius: 16, borderWidth: 1, borderColor: G.soft, backgroundColor: 'rgba(214,180,120,0.10)', alignItems: 'center', justifyContent: 'center', marginTop: 38},
