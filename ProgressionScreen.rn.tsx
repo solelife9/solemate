@@ -267,6 +267,7 @@ export default function ProgressionScreen({
               얇은 구분선으로 두 역할을 나눈다. */}
           <View style={s.guideInner} testID="rank-guide">
             {guide.nextTier ? (
+              <>
               <View style={s.nextRow} testID="rank-next">
                 <Text style={[s.nextTierTxt, {color: rankColor}]}>
                   {TIER_LABEL[guide.tier]}
@@ -287,6 +288,12 @@ export default function ProgressionScreen({
                   {TIER_LABEL[guide.nextTier]}
                 </Text>
               </View>
+              {guide.xpForNext > 0 && (
+                <Text style={s.toNext} testID="rank-to-next">
+                  다음 티어까지 {guide.xpForNext.toLocaleString()} XP
+                </Text>
+              )}
+              </>
             ) : (
               <Text style={[s.maxTier, {color: rankColor}]} testID="rank-max">
                 가장 높은 곳 — 최고 등급
@@ -454,6 +461,8 @@ const s = StyleSheet.create({
   heroSub: {fontFamily: FONT, color: T3, fontSize: 13, fontWeight: '600'},
   // 티어 진행바 — 히어로 카드에 통합, 정체성과 얇은 구분선으로 분리
   guideInner: {alignSelf: 'stretch', marginTop: SPACE.md, paddingTop: SPACE.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: CARD_BORDER},
+  // 승급까지 남은 XP — 게임 히어로가 아니라 속삭임(작고 뮤트, 우측 정렬)
+  toNext: {fontFamily: FONT, color: T3, fontSize: 12, fontWeight: '600', letterSpacing: 0.1, textAlign: 'right', marginTop: 10, fontVariant: ['tabular-nums']},
   xpRow: {flexDirection: 'row', alignItems: 'baseline', gap: 0},
   xpNum: {fontFamily: DISPLAY, fontSize: 30, fontWeight: '800', letterSpacing: -0.8, fontVariant: ['tabular-nums']},
   xpUnit: {fontFamily: FONT, color: T3, fontSize: 14, fontWeight: '600'},

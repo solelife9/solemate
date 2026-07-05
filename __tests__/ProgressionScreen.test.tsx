@@ -162,19 +162,23 @@ describe('ProgressionScreen — 진척 표면', () => {
     expect(w.endsWith('%')).toBe(true);
   });
 
-  test('메타 화폐(XP)·레어리티 라벨이 화면에 노출되지 않는다', async () => {
+  test('XP 히어로 카드·영문 레어리티는 노출 안 함 — XP 는 승급 캡션에만(속삭임)', async () => {
     const r = await render(
       <ProgressionScreen runs={RUNS} shoes={SHOES} now={NOW} initialState={seenSuppressedState()} />,
     );
     const root = r.root;
 
-    // 총 XP 카드 제거 + 화면 어디에도 'XP'/영문 레어리티 라벨이 없다('러닝의 옷').
+    // 게임 느낌의 '총 XP' 히어로 카드는 없다. 히어로 부제에도 XP 없음(업적 수만).
     expect(byTestID(root, 'progression-points').length).toBe(0);
+    expect(textOf(byTestID(root, 'progression-xp')[0])).not.toContain('XP');
+    // 영문 레어리티 라벨은 색으로만 — 텍스트 노출 금지.
     const all = textOf(root);
-    expect(all).not.toContain('XP');
     for (const label of ['Common', 'Rare', 'Epic', 'Legendary']) {
       expect(all).not.toContain(label);
     }
+    // XP 가 보인다면 오직 '다음 티어까지 N XP' 승급 안내 캡션에서만(사용자 결정 2026-07-05).
+    const toNext = byTestID(root, 'rank-to-next');
+    if (toNext.length) expect(textOf(toNext[0])).toContain('XP');
   });
 
   test('진척 화면은 업적만 노출한다(챌린지는 마이 탭으로 이관 — 챌린지 섹션 없음)', async () => {
