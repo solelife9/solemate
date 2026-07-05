@@ -122,8 +122,9 @@ export default function RunActiveScreen({
   statusLabel?: string;
   liveCoords?: { lat: number; lon: number }[];
   // 트랙 모드 — 있으면 링 센터를 '바퀴 수' 중심으로 바꾸고 랩 기록 버튼을 띄운다.
-  // lapM=확정 한 바퀴(m), lapDistKm=랩수×lapM, calibrated=첫 랩 GPS 보정 완료.
-  track?: { lapCount: number; lapM: number; lapDistKm: number; calibrated: boolean } | null;
+  // lapM=확정 한 바퀴(m), lapDistKm=랩수×lapM, calibrated=첫 랩 GPS 보정 완료,
+  // progress=현재 바퀴 진행(0~1, 링 채움), recent=지난 랩(최근 3, 구간시간 초).
+  track?: { lapCount: number; lapM: number; lapDistKm: number; calibrated: boolean; progress: number; recent: { lap: number; split: number }[] } | null;
   onLap?: () => void;      // 수동 랩 기록(+1)
   onUndoLap?: () => void;  // 마지막 랩 되돌리기(-1)
 }) {
@@ -187,6 +188,8 @@ export default function RunActiveScreen({
     { v: calories > 0 ? String(calories) : '--', l: '칼로리', u: 'kcal' },
     { v: elevationM != null ? String(elevationM) : '--', l: '고도', u: 'm' },
   ]), [avgPaceLabel, cadence, calories, elevationM]);
+  // 랩 구간시간(초) → m'ss" (트랙 '지난 랩' 표시용).
+  const fmtLapSplit = (s: number) => `${Math.floor(s / 60)}'${String(Math.round(s % 60)).padStart(2, '0')}"`;
 
   return (
     <View style={[r.screen, { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 16 }]}>
@@ -224,15 +227,14 @@ export default function RunActiveScreen({
         </Pressable>
       )}
 
-      {/* ring — 거리/자유 모드는 거리 히어로, 트랙 모드는 '바퀴 수' 히어로 */}
+      {/* ring — 거리/자유 모드는 거리 히어로, 트랙 모드는 '바퀴 수' 히어로(링=현재 바퀴 진행) */}
       <View style={r.ringWrap}>
-        <Ring size={232} stroke={14} progress={track ? 0 : pct}>
+        <Ring size={216} stroke={13} progress={track ? track.progress : pct}>
           {track ? (
             <View style={{ alignItems: 'center' }} accessibilityRole="text" accessibilityLiveRegion="polite"
               accessibilityLabel={`${track.lapCount}바퀴, ${track.lapDistKm.toFixed(2)}킬로미터, 한 바퀴 ${track.lapM}미터 ${track.calibrated ? 'GPS 보정됨' : '예상'}`}>
-              <Text style={r.goal}>{track.lapM}m/랩 · {track.calibrated ? 'GPS 보정됨' : '예상'}</Text>
-              <Text style={r.bigDist}>{track.lapCount}</Text>
-              <Text style={r.bigUnit}>바퀴 · {track.lapDistKm.toFixed(2)}km</Text>
+              <Text style={r.lapHero}>{track.lapCount}</Text>
+              <Text style={r.lapHeroUnit}>바퀴</Text>
             </View>
           ) : (
             <View style={{ alignItems: 'center' }} accessibilityRole="text" accessibilityLiveRegion="polite"
@@ -250,6 +252,13 @@ export default function RunActiveScreen({
           )}
         </Ring>
       </View>
+
+      {/* 트랙: 링 아래 회색 한 줄 — 거리 · 확정 랩거리 · 보정 상태(박스·색 없이 조용히) */}
+      {track && (
+        <Text style={r.trackUnder} accessibilityLabel={`${track.lapDistKm.toFixed(2)}킬로미터, 한 바퀴 ${track.lapM}미터${track.calibrated ? ', GPS 보정됨' : ''}`}>
+          <Text style={r.trackUnderStrong}>{track.lapDistKm.toFixed(2)}</Text> km · {track.lapM} m 랩{track.calibrated ? <Text style={r.trackUnderCk}> · 보정됨</Text> : ''}
+        </Text>
+      )}
 
       {/* 스피드 코칭 — 현재 km 목표 페이스 대비 빠름/적정/느림(targetPaceSec 있을 때만) */}
       {targetPaceSec != null && (() => {
@@ -273,10 +282,22 @@ export default function RunActiveScreen({
 
       {/* hero metrics — 달릴 땐 큰 핵심 3개(페이스·심박·시간)만. 작은 서브는 멈췄을 때만. */}
       <View style={r.heroMetrics}>
-        <View style={r.hm} accessibilityRole="text" accessibilityLabel={`현재 페이스 ${paceLabel}`}><Text style={r.hmV}>{paceLabel}</Text><Text style={r.hmL}>현재 페이스</Text></View>
+        <View style={r.hm} accessibilityRole="text" accessibilityLabel={`${track ? '랩 페이스' : '현재 페이스'} ${paceLabel}`}><Text style={r.hmV}>{paceLabel}</Text><Text style={r.hmL}>{track ? '랩 페이스' : '현재 페이스'}</Text></View>
         <View style={[r.hm, r.hmDivider]} accessibilityRole="text" accessibilityLabel={hrZone !== 0 ? `심박 ${bpm}, 존 ${hrZone} ${HR_ZONE_LABEL[hrZone]}` : bpm > 0 ? `심박 ${bpm}` : '심박 측정 안 됨'}><Text style={[r.hmV, hrZone !== 0 && { color: hrColor }]}>{bpm > 0 ? String(bpm) : '--'}</Text><Text style={[r.hmL, hrZone !== 0 && { color: hrColor, fontWeight: '600' }]}>{hrZone !== 0 ? `Z${hrZone} ${HR_ZONE_LABEL[hrZone]}` : '심박'}</Text></View>
         <View style={[r.hm, r.hmDivider]} accessibilityRole="text" accessibilityLabel={`시간 ${timeLabel}`}><Text style={r.hmV}>{timeLabel}</Text><Text style={r.hmL}>시간</Text></View>
       </View>
+
+      {/* 트랙: 지난 랩(최근 3) — 박스 없는 한 줄, 라벨 회색 + 랩번호/구간시간(직전 랩을 즉시 확인). */}
+      {track && track.recent.length > 0 && (
+        <View style={r.recent}>
+          <Text style={r.recentK}>지난 랩</Text>
+          {track.recent.map(rl => (
+            <Text key={rl.lap} style={r.recentV} accessibilityLabel={`${rl.lap}랩 ${fmtLapSplit(rl.split)}`}>
+              <Text style={r.recentN}>{rl.lap} </Text>{fmtLapSplit(rl.split)}
+            </Text>
+          ))}
+        </View>
+      )}
 
       {/* sub metrics — 일시정지 시에만 전체 펼침(평균페이스·케이던스·칼로리·고도). 달리는
           동안은 숨겨 핵심 지표만 크게 보이게 한다(나이키런 방식: 흘끗 봐도 읽힘). */}
@@ -295,16 +316,17 @@ export default function RunActiveScreen({
           주력 + 야외 보정용. 마지막 랩 되돌리기(-1)로 오검지/중복을 정리한다. */}
       {track && !paused && (
         <View style={r.lapBar}>
-          <Pressable onPress={() => { tap(); onLap?.(); }} accessibilityRole="button"
+          <Pressable onPress={() => onLap?.()} accessibilityRole="button"
             accessibilityLabel={`랩 기록, 현재 ${track.lapCount}바퀴`}
             style={({ pressed }) => [r.lapBtn, pressed && { opacity: 0.85 }]}>
-            <Ionicons name="flag" size={20} color={T1} />
+            <Ionicons name="flag-outline" size={19} color={T1} />
             <Text style={r.lapBtnText}>랩 기록</Text>
+            <Text style={r.lapBtnCount}>{track.lapCount}</Text>
           </Pressable>
           {track.lapCount > 0 && (
             <Pressable onPress={onUndoLap} accessibilityRole="button" accessibilityLabel="마지막 랩 되돌리기"
               hitSlop={8} style={({ pressed }) => [r.lapUndo, pressed && { opacity: 0.7 }]}>
-              <Ionicons name="arrow-undo" size={18} color={T3} />
+              <Ionicons name="arrow-undo" size={17} color={T3} />
             </Pressable>
           )}
         </View>
@@ -384,6 +406,18 @@ const r = StyleSheet.create({
   goalMetText: { color: GOOD, fontFamily: FONT, fontSize: 13, fontWeight: '600' },
   bigDist: { color: T1, fontFamily: DISPLAY, fontSize: HERO.mega, fontWeight: '700', letterSpacing: -2, lineHeight: 80, includeFontPadding: false, fontVariant: ['tabular-nums'] },
   bigUnit: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '500', marginTop: 8 },
+  // 트랙 링 센터 — 바퀴수 하나만 히어로, 그 밑 작은 '바퀴'.
+  lapHero: { color: T1, fontFamily: DISPLAY, fontSize: 88, fontWeight: '700', letterSpacing: -3, lineHeight: 88, includeFontPadding: false, fontVariant: ['tabular-nums'] },
+  lapHeroUnit: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '500', letterSpacing: 0.6, marginTop: 6 },
+  // 링 아래 회색 한 줄(거리 · 랩거리 · 보정) — 박스·색 없이 조용히.
+  trackUnder: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '500', textAlign: 'center', marginTop: 16, fontVariant: ['tabular-nums'] },
+  trackUnderStrong: { color: T1, fontFamily: DISPLAY, fontWeight: '700' },
+  trackUnderCk: { color: ACCENT_2, fontWeight: '600' },
+  // 지난 랩 한 줄 — 라벨 회색 + 랩번호(T4)/구간시간(T2), 박스 없음.
+  recent: { flexDirection: 'row', alignItems: 'center', gap: 14, marginTop: 16, paddingHorizontal: 2 },
+  recentK: { color: T4, fontFamily: FONT, fontSize: 11, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase' },
+  recentV: { color: T2, fontFamily: DISPLAY, fontSize: 13, fontWeight: '600', fontVariant: ['tabular-nums'] },
+  recentN: { color: T4, fontWeight: '700' },
   coach: { flexDirection: 'row', alignItems: 'center', alignSelf: 'center', gap: 8, marginTop: 18, paddingHorizontal: 14, height: 38, borderRadius: 999, borderWidth: 1 },
   coachTarget: { color: T2, fontFamily: FONT, fontSize: 14, fontWeight: '600' },
   coachDot: { width: 3, height: 3, borderRadius: 2, backgroundColor: T4 },
@@ -425,10 +459,12 @@ const r = StyleSheet.create({
     elevation: 4,
   },
   // 트랙 랩 기록 바 — 큰 '랩 기록' 필 + 작은 되돌리기. 유리 문법(홈 CTA 계열).
-  lapBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: 20 },
-  lapBtn: { flexDirection: 'row', alignItems: 'center', gap: 9, height: 52, paddingHorizontal: 30, borderRadius: 999, backgroundColor: withAlpha(T1, 0.1), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.16) },
+  // 랩 기록 = 주 동작(오렌지 유리 필, 넓게) + 우측 현재 바퀴수. 되돌리기(-1)는 작은 보조.
+  lapBar: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 18 },
+  lapBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, height: 58, borderRadius: 18, borderCurve: 'continuous', backgroundColor: withAlpha(ACCENT, 0.12), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.4) },
   lapBtnText: { color: T1, fontFamily: DISPLAY, fontSize: 16, fontWeight: '700', letterSpacing: -0.2 },
-  lapUndo: { width: 44, height: 44, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
+  lapBtnCount: { position: 'absolute', right: 18, color: ACCENT_2, fontFamily: DISPLAY, fontSize: 14, fontWeight: '700', fontVariant: ['tabular-nums'] },
+  lapUndo: { width: 52, height: 52, borderRadius: 16, borderCurve: 'continuous', alignItems: 'center', justifyContent: 'center', backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
 
   controls: { flexDirection: 'row', justifyContent: 'center', gap: 48, paddingBottom: 8 },
   // 러닝 컨트롤 — 오렌지 필 대신 투명 유리(홈 CTA 와 같은 문법). 종료(cStop)만 DANGER

@@ -237,12 +237,15 @@ export default function RunGoalScreen({
       {/* center */}
       <View style={s.center}>
         {mode === 'track' ? (
-          // 트랙 모드 — 한 바퀴 예상 거리(m)를 칩으로 고른다. 야외선 첫 랩 GPS 가 이 값을
-          // 실제 랩거리로 자동 보정하므로 '예상치'로 충분하고, 실내(GPS✗)에선 이 값이 확정.
+          // 트랙 모드 — 거리 모드와 같은 위계(큰 숫자 = 선택한 한 바퀴). 칩이 유일한 컨트롤.
+          // 야외선 첫 랩 GPS 가 이 값을 실제 랩거리로 자동 보정, 실내(GPS✗)에선 이 값이 확정.
           <View style={s.trackWrap}>
-            <View style={s.trackGlyph}><Icon name="track" size={40} color={ACCENT} /></View>
-            <Text style={s.trackTitle}>트랙에서 달리기</Text>
-            <Text style={s.trackSub}>한 바퀴 거리를 정해요{'\n'}야외에선 첫 바퀴를 GPS로 자동 보정해요</Text>
+            <Text style={s.trackLbl}>한 바퀴</Text>
+            <View style={s.bigRow}>
+              <Text style={s.bigVal}>{lapM}</Text>
+              <Text style={s.bigUnit}>m</Text>
+            </View>
+            <Text style={s.estimate}>야외에선 첫 바퀴를 GPS로 자동 보정해요</Text>
             <View style={s.lapChips}>
               {LAP_PRESETS.map(m => {
                 const on = !lapCustom && lapM === m;
@@ -450,17 +453,15 @@ const s = StyleSheet.create({
   presetText: { color: T2, fontFamily: DISPLAY, fontSize: 13, fontWeight: '600' },
   presetTextOn: { color: ACCENT },
 
-  // 트랙 모드 — 자유 모드와 같은 중앙 정렬 문법 + 랩거리 칩.
+  // 트랙 모드 — 거리 모드와 같은 큰 숫자 위계(bigRow/bigVal/bigUnit/estimate 재사용) + 랩거리 칩.
   trackWrap: { alignItems: 'center', paddingHorizontal: 14 },
-  trackGlyph: { width: 88, height: 88, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(ACCENT, 0.1), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.26), marginBottom: 22 },
-  trackTitle: { color: T1, fontFamily: DISPLAY, fontSize: 24, fontWeight: '600', letterSpacing: -0.4, marginBottom: 10 },
-  trackSub: { color: T3, fontFamily: FONT, fontSize: 14, fontWeight: '500', lineHeight: 21, textAlign: 'center', maxWidth: 280, marginBottom: 26 },
-  lapChips: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 10 },
-  lapChip: { minWidth: 74, height: 60, paddingHorizontal: 16, borderRadius: RADIUS.lg, borderCurve: 'continuous', flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', gap: 2, backgroundColor: withAlpha(T1, 0.04), borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
-  lapChipOn: { backgroundColor: withAlpha(ACCENT, 0.14), borderColor: withAlpha(ACCENT, 0.45) },
-  lapChipVal: { color: T2, fontFamily: DISPLAY, fontSize: 22, fontWeight: '700', letterSpacing: -0.5 },
+  trackLbl: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', marginBottom: 4 },
+  lapChips: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 9, marginTop: 36 },
+  lapChip: { minWidth: 60, height: 50, paddingHorizontal: 15, borderRadius: 15, borderCurve: 'continuous', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(T1, 0.03), borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
+  lapChipOn: { backgroundColor: withAlpha(ACCENT, 0.13), borderColor: withAlpha(ACCENT, 0.45) },
+  lapChipVal: { color: T3, fontFamily: DISPLAY, fontSize: 18, fontWeight: '700', letterSpacing: -0.4 },
   lapChipValOn: { color: ACCENT },
-  lapChipUnit: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600' },
+  lapChipUnit: { color: T4, fontFamily: FONT, fontSize: 10, fontWeight: '600', marginTop: 1 },
 
   free: { alignItems: 'center', paddingHorizontal: 14 },
   freeGlyph: { width: 88, height: 88, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(ACCENT, 0.1), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.26), marginBottom: 22 },

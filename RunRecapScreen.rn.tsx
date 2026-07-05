@@ -63,6 +63,7 @@ export default function RunRecapScreen({
   loadInfo,
   route = null,
   unit = 'km',
+  track = null,
   runId,
   onSaveMeta,
   onClose,
@@ -88,6 +89,8 @@ export default function RunRecapScreen({
   /** GPS 경로 원문(route_ 사이드카와 동일 blob). 있으면 코스 지도 + 경로 공유 카드. */
   route?: string | null;
   unit?: Unit;
+  /** 트랙 세션이면 랩 정보 — 배지 '트랙 · 400m × N랩' + SNS 카드 LAPS 칸. */
+  track?: {lapM: number; laps: number} | null;
   /** 방금 저장된 런 id — 사진/메모 저장 대상(없으면 섹션 숨김). */
   runId?: string;
   /** 사진/메모 영속(App.saveRunMeta). memo 는 레코드 동기, photoUri 는 로컬 사이드카. */
@@ -138,6 +141,7 @@ export default function RunRecapScreen({
     durationS,
     shoeModel: shoeName || '',
     date: todayLabelKo(),
+    track: track && track.laps > 0 ? track : null,
   };
   const cardModel = buildShareCardModel(shareInput);
   const onShare = () => {
@@ -183,9 +187,15 @@ export default function RunRecapScreen({
           <Text style={s.heroUnit}>{unit}</Text>
         </View>
 
-        {/* 배지 — 목표 달성 / 신기록 */}
-        {(goalHit || prKinds.length > 0) && (
+        {/* 배지 — 트랙 / 목표 달성 / 신기록 */}
+        {(!!track && track.laps > 0) || goalHit || prKinds.length > 0 ? (
           <View style={s.badges}>
+            {!!track && track.laps > 0 && (
+              <View style={[s.badge, {borderColor: withAlpha(ACCENT, 0.4), backgroundColor: withAlpha(ACCENT, 0.12)}]} testID="recap-track">
+                <Ionicons name="ellipse-outline" size={13} color={ACCENT} />
+                <Text style={[s.badgeTxt, {color: ACCENT}]}>트랙 · {track.lapM}m × {track.laps}랩</Text>
+              </View>
+            )}
             {goalHit && (
               <View style={[s.badge, {borderColor: withAlpha(ACCENT, 0.4), backgroundColor: withAlpha(ACCENT, 0.12)}]}>
                 <Ionicons name="flag" size={13} color={ACCENT} />
@@ -199,7 +209,7 @@ export default function RunRecapScreen({
               </View>
             ))}
           </View>
-        )}
+        ) : null}
 
         {/* 오늘의 코스 — GPS 경로가 있으면 진짜 지도 위 경로(없으면 스스로 숨김).
             완주 직후가 러너가 코스를 가장 자랑하고 싶은 순간(공유 트리거). */}

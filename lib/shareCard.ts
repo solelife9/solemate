@@ -37,6 +37,8 @@ export interface ShareCardInput {
   photoUri?: string;
   /** 러닝 소요 초. 있으면 카드 TIME 을 항상 6자리 HH:MM:SS 로 표기한다(레퍼런스 톤). */
   durationS?: number;
+  /** 트랙 세션이면 랩 정보(있으면 카드에 LAPS 칸 추가 — 거리=랩수×확정랩거리). */
+  track?: {lapM: number; laps: number} | null;
 }
 
 /** 항상 6자리 HH:MM:SS(시 2자리 0패딩). 카드 TIME 전용 — fmtTime 은 시<1h 면 MM:SS 라 별도. */
@@ -102,6 +104,10 @@ export function buildShareCardModel(input: ShareCardInput): ShareCardModel {
   if (input.time && input.time !== '--') {
     // durationS 가 있으면 항상 6자리 HH:MM:SS(레퍼런스 톤), 없으면 표시 문자열 그대로.
     stats.push({label: 'TIME', value: input.durationS != null ? hms(input.durationS) : input.time});
+  }
+  // 트랙 세션 — 바퀴 수 칸 추가(랩거리는 거리 히어로에 이미 반영). 라벨 영문 톤 유지.
+  if (input.track && input.track.laps > 0) {
+    stats.push({label: 'LAPS', value: `${input.track.laps}`});
   }
 
   return {

@@ -75,6 +75,19 @@ describe('buildShareCardModel (필드 매핑)', () => {
     expect(m.distance).toBe('7.35'); // 7.345 → 반올림 7.35
     expect(m.unit).toBe('km');
   });
+
+  test('트랙 세션이면 LAPS 칸이 페이스·시간 뒤에 붙는다(SNS 공유 카드)', () => {
+    const m = buildShareCardModel({distKm: 4.8, pace: "4'00\"", time: '19:12', durationS: 1152, track: {lapM: 400, laps: 12}});
+    expect(m.stats).toEqual([
+      {label: 'PACE', value: "4'00\" /km"},
+      {label: 'TIME', value: '00:19:12'},
+      {label: 'LAPS', value: '12'},
+    ]);
+  });
+  test('laps<=0 이거나 track 없으면 LAPS 칸이 안 붙는다', () => {
+    expect(buildShareCardModel({distKm: 5, track: {lapM: 400, laps: 0}}).stats).toEqual([]);
+    expect(buildShareCardModel({distKm: 5}).stats).toEqual([]);
+  });
 });
 
 describe('captureCardDataUrl (dataURL 생성 경로)', () => {

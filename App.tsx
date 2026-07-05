@@ -288,7 +288,7 @@ function Main(){
   const [showArchive,setShowArchive]=useState(false);
   // 부상위험 상세(시그니처) 전체화면 — 홈 신호등 카드 탭이 열고 뒤로가 닫는다(오버레이형).
   // 완주 리캡(P0-2) — 러닝 저장 직후 축하 풀스크린. '완료'로 닫으면 기록 탭으로 이동.
-  const [runRecap,setRunRecap]=useState<{km:number;durationS:number;cadence:number;splits:any[];elevationM:number;calories:number;prKinds:PRKind[];shoeName?:string;goalKm?:number;pacePlan?:number[];shoeWear?:{addedKm:number;remainingPct:number;deltaPct:number}|null;loadInfo?:{phrase:string;word:string;level:LoadLevel}|null;route?:string|null;runId?:string}|null>(null);
+  const [runRecap,setRunRecap]=useState<{km:number;durationS:number;cadence:number;splits:any[];elevationM:number;calories:number;prKinds:PRKind[];shoeName?:string;goalKm?:number;pacePlan?:number[];shoeWear?:{addedKm:number;remainingPct:number;deltaPct:number}|null;loadInfo?:{phrase:string;word:string;level:LoadLevel}|null;route?:string|null;track?:{lapM:number;laps:number}|null;runId?:string}|null>(null);
   // 위치 권한 설명(priming) 풀스크린 — 첫 GPS 런 직전 들고 있을 목표(RunGoal). null=미표시.
   // '계속'에서 권한 안내 완료 영속 + 런 진입, '나중에'면 닫고 시작 취소.
   const [locPrimeGoal,setLocPrimeGoal]=useState<RunGoal|null>(null);
@@ -1800,7 +1800,7 @@ function Main(){
           const loadInfo=loadAfter.confident?{phrase:loadRatioPhraseKo(loadAfter),word:LOAD_WORD[loadAfter.level],level:loadAfter.level as LoadLevel}:null;
           setResumeSnap(null);setActiveRun(null);setOverlay('none');
           // route 원문도 리캡에 전달 — 완주 직후 '오늘의 코스' 지도 + 경로 포함 공유 카드.
-          setRunRecap({km,durationS:dur,cadence:cad||0,splits:splits||[],elevationM:elevM||0,calories:cal||0,prKinds,shoeName:shoeLabel,goalKm,pacePlan:activeRun.pacePlan,shoeWear,loadInfo,route:route||null,runId:newId});
+          setRunRecap({km,durationS:dur,cadence:cad||0,splits:splits||[],elevationM:elevM||0,calories:cal||0,prKinds,shoeName:shoeLabel,goalKm,pacePlan:activeRun.pacePlan,shoeWear,loadInfo,route:route||null,track:trackMeta||null,runId:newId});
         }}
         onDiscard={()=>{void clearSnapshot();setResumeSnap(null);setActiveRun(null);setOverlay('none');}}
       />
@@ -2588,6 +2588,21 @@ function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],track=null,weightKg,age
     const dt=lt[lt.length-1]-prev;return dt>0?dt/(lapM/1000):null;
   })():null;
   const dispDist=trackMode?trackDistKm:km;
+  // 링을 '현재 바퀴 진행'으로 채운다(살아있는 링). 지난 랩 시간 대비 지금 몇 % 왔나 → 매 랩 리셋.
+  // 첫 랩 전엔 명목 페이스(5분/km=lapM*0.3초)로 추정해 처음부터 움직이게 한다.
+  const lapProgress=trackMode?(()=>{
+    const lt=lapTimesRef.current;const n=lt.length;
+    const lastAt=n>=1?lt[n-1]:0;
+    const lastDur=n>=1?(lt[n-1]-(n>=2?lt[n-2]:0)):0;
+    const expected=lastDur>0?lastDur:(lapM>0?lapM*0.3:120);
+    return expected>0?Math.max(0,Math.min(1,(elapsed-lastAt)/expected)):0;
+  })():0;
+  // 지난 랩(최근 3개) — 각 랩의 구간시간(초). 러닝 화면 '지난 랩' 한 줄에 표시.
+  const recentLaps=trackMode?(()=>{
+    const lt=lapTimesRef.current;const out:{lap:number;split:number}[]=[];
+    for(let i=lt.length-1;i>=0&&out.length<3;i--)out.push({lap:i+1,split:Math.max(0,lt[i]-(i>0?lt[i-1]:0))});
+    return out;
+  })():[];
   return (
     <RunActiveScreenView
       shoeLabel={ui.model||shoe.name}
@@ -2612,7 +2627,7 @@ function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],track=null,weightKg,age
       permLost={permLost}
       onOpenSettings={()=>{Promise.resolve(Linking.openSettings()).catch(()=>{});}}
       liveCoords={liveCoords}
-      track={trackMode?{lapCount,lapM,lapDistKm:trackDistKm,calibrated:lapLockedRef.current}:null}
+      track={trackMode?{lapCount,lapM,lapDistKm:trackDistKm,calibrated:lapLockedRef.current,progress:lapProgress,recent:recentLaps}:null}
       onLap={()=>registerLap(elapsedRef.current,false)}
       onUndoLap={undoLap}
     />
