@@ -1,8 +1,8 @@
 // ============================================================================
 // HallOfShoes.rn.tsx — 명예의 전당(은퇴한 러닝화의 기록)
 // ----------------------------------------------------------------------------
-// 사용자 확정 디자인(2026-07-05): 블랙&골드 세리프 전당. 명조 세리프는 iOS 내장
-// 'AppleMyungjo'(한글 명조)로 — Nanum Myeongjo 의도를 번들 없이 살린다.
+// 사용자 확정 디자인(2026-07-05): 블랙&골드 세리프 전당. 명조는 앱에 번들된
+// NanumMyeongjo(ExtraBold 페이스) — AppleMyungjo 는 iOS 미탑재(맥 전용) 폴백 버그.
 //   · 세리프 라지 타이틀 + 장식 오너먼트
 //   · 레거시 요약(총 KM·은퇴 켤레·함께한 러닝)
 //   · 최근 헌액 히어로(LATEST INDUCTEE 배지 + 포일 그라데이션 빅넘버)
@@ -31,7 +31,7 @@ const G = {
   muted: 'rgba(243,238,227,0.52)', faint: 'rgba(243,238,227,0.34)',
   gold: '#D6B478', soft: 'rgba(214,180,120,0.46)', line: 'rgba(214,180,120,0.20)',
 };
-const SERIF = Platform.OS === 'ios' ? 'AppleMyungjo' : 'serif';
+const SERIF = Platform.OS === 'ios' ? 'NanumMyeongjoExtraBold' : 'NanumMyeongjo';
 // 포일 그라데이션(큰 숫자) — 밝은 금 → 딥 골드 → 밝은 금(금박 반사).
 const FOIL: {o: number; c: string}[] = [
   {o: 0, c: '#F6E2A6'}, {o: 0.38, c: '#D0A557'}, {o: 0.64, c: '#9C7330'}, {o: 1, c: '#EFD590'},
@@ -263,11 +263,14 @@ function Certificate({shoe, unit, userName, onClose}: {shoe: RetiredShoeRecord; 
   return (
     <View style={st.certScreen}>
       <View style={[st.certFrame, {top: insets.top + 6}]} pointerEvents="none" />
-      <Pressable style={[st.certX, {top: insets.top + 6}]} onPress={onClose} hitSlop={10} accessibilityRole="button" accessibilityLabel="닫기">
-        <Ionicons name="close" size={15} color={G.gold} />
+      <Pressable style={[st.certX, {left: 20, top: insets.top + 6}]} onPress={onClose} hitSlop={10} accessibilityRole="button" accessibilityLabel="닫기">
+        <Ionicons name="close" size={16} color={G.muted} />
+      </Pressable>
+      <Pressable style={[st.certX, {right: 20, top: insets.top + 6}]} onPress={onShare} hitSlop={10} accessibilityRole="button" accessibilityLabel="인증서 공유" testID="cert-share">
+        <Ionicons name="share-outline" size={15} color={G.gold} />
       </Pressable>
 
-      <ScrollView contentContainerStyle={[st.certContent, {paddingTop: insets.top + 30, paddingBottom: insets.bottom + 36}]} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[st.certContent, {paddingTop: insets.top + 50, paddingBottom: insets.bottom + 40}]} showsVerticalScrollIndicator={false}>
         {/* 마스트헤드(사용자 확정): RUNNER 좌상 · RETIRED 뱃지 우상 */}
         <View style={st.coMast}>
           <View style={st.coRunner}>
@@ -305,11 +308,6 @@ function Certificate({shoe, unit, userName, onClose}: {shoe: RetiredShoeRecord; 
         </View>
 
         <View style={st.coRule} />
-
-        <Pressable style={({pressed}) => [st.coShare, pressed && {opacity: 0.85}]} onPress={onShare} accessibilityRole="button" accessibilityLabel="인증서 공유" testID="cert-share">
-          <Ionicons name="share-outline" size={13} color={G.gold} />
-          <Text style={st.coShareTxt}>인증서 공유</Text>
-        </Pressable>
 
         <View style={st.coFoot}>
           <View style={st.coFootLine} />
@@ -413,7 +411,7 @@ const st = StyleSheet.create({
   featBrand: {fontFamily: FONT, fontSize: 10, fontWeight: '800', letterSpacing: 1.8, color: G.gold},
   featModel: {fontFamily: SERIF, fontSize: 24, fontWeight: '800', color: G.txt, marginTop: 7},
   featQuote: {fontFamily: FONT, fontSize: 12, fontWeight: '600', color: G.muted, marginTop: 9},
-  featDist: {flexDirection: 'row', alignItems: 'baseline', gap: 4},
+  featDist: {flexDirection: 'row', alignItems: 'baseline', gap: 4, marginBottom: 8},
   featNum: {fontFamily: DISPLAY, fontSize: 44, fontWeight: '800', color: G.gold, letterSpacing: -1.5, fontVariant: ['tabular-nums']},
   featKm: {fontFamily: DISPLAY, fontSize: 15, fontWeight: '700', color: G.gold, opacity: 0.7},
 
@@ -433,10 +431,10 @@ const st = StyleSheet.create({
   certScreen: {flex: 1, backgroundColor: '#08070A'},
   certContent: {alignItems: 'center', paddingHorizontal: 28},
   certFrame: {position: 'absolute', left: 16, right: 16, bottom: 16, borderRadius: 18, borderWidth: 1, borderColor: G.soft, zIndex: 1},
-  certX: {position: 'absolute', right: 24, width: 34, height: 34, borderRadius: 17, borderWidth: 1, borderColor: G.line, backgroundColor: 'rgba(0,0,0,0.3)', alignItems: 'center', justifyContent: 'center', zIndex: 2},
+  certX: {position: 'absolute', width: 34, height: 34, borderRadius: 17, borderWidth: 1, borderColor: G.line, backgroundColor: 'rgba(0,0,0,0.3)', alignItems: 'center', justifyContent: 'center', zIndex: 2},
   coDoctype: {fontFamily: SERIF, fontSize: 20, color: G.gold, letterSpacing: 5, marginTop: 8},
   coDoctypeKr: {fontFamily: FONT, fontSize: 12, fontWeight: '500', color: G.muted, letterSpacing: 0.3, marginTop: 8},
-  coBrand: {fontSize: 11, fontWeight: '800', letterSpacing: 2.2, color: G.gold, marginTop: 14},
+  coBrand: {fontFamily: FONT, fontSize: 11, fontWeight: '800', letterSpacing: 2.2, color: G.gold, marginTop: 32},
   coModel: {fontFamily: SERIF, fontSize: 27, fontWeight: '800', color: G.txt, marginTop: 7, textAlign: 'center'},
   coUnit: {fontFamily: FONT, fontSize: 11, fontWeight: '800', letterSpacing: 3.4, color: G.txt, marginTop: 12},
   coQuote: {fontFamily: SERIF, fontSize: 16, fontWeight: '700', color: G.txt, marginTop: 20, textAlign: 'center'},
@@ -452,7 +450,7 @@ const st = StyleSheet.create({
   coSealT: {fontFamily: SERIF, fontSize: 7, fontWeight: '800', letterSpacing: 1.3, color: G.gold},
   coSealN: {fontFamily: SERIF, fontSize: 16, fontWeight: '800', color: G.gold, lineHeight: 18},
   coSealB: {fontFamily: SERIF, fontSize: 6, fontWeight: '800', letterSpacing: 1, color: G.faint},
-  coMast: {flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', alignSelf: 'stretch', marginBottom: 26},
+  coMast: {flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', alignSelf: 'stretch', marginHorizontal: -6, marginBottom: 28},
   coRunner: {alignItems: 'flex-start', paddingTop: 8, gap: 5},
   coSign: {alignItems: 'flex-end'},
   coSignK: {fontFamily: SERIF, fontSize: 8, fontWeight: '800', letterSpacing: 1.4, color: G.faint},
