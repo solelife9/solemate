@@ -11,6 +11,7 @@ import {View, Text, Pressable, StyleSheet} from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {CARD, CARD_HI, ACCENT, GOOD, T1, T2, T3, SEP, FONT, DISPLAY, RADIUS, withAlpha} from './theme';
 import {weeklyGoalTier} from './lib/goalTier';
+import {SPORT_VIOLET} from './theme';
 import {Ring, Pill, Stepper} from './primitives';
 import {ChallengeRun, ChallengeProgressResult} from './lib/challenges';
 import {
@@ -99,7 +100,7 @@ export function SmartChallengeCard({
     <View style={s.smartCard} testID="smart-challenge">
       <View style={s.smartHead}>
         <Pill tone="accent" icon="sparkles" label="주간 목표" testID="smart-challenge-tag" />
-        <Text style={{color: tier.color, fontFamily: FONT, fontSize: 12, fontWeight: '800', letterSpacing: 0.3}} testID="goal-difficulty">{tier.label}</Text>
+        <Text style={{color: SPORT_VIOLET, fontFamily: FONT, fontSize: 12, fontWeight: '800', letterSpacing: 0.3}} testID="goal-difficulty">{tier.label}</Text>
         {p.completed && !editing && (
           <Pill tone="good" icon="trophy" label="달성!" testID="smart-challenge-badge" />
         )}
@@ -133,7 +134,7 @@ export function SmartChallengeCard({
         </View>
       ) : (
         <View style={s.smartBody}>
-          <Ring size={64} stroke={7} progress={p.pct} color={tier.color}>
+          <Ring size={64} stroke={7} progress={p.pct} color={SPORT_VIOLET}>
             <Text style={s.ringPct} testID="smart-challenge-pct">
               {pctLabel}
             </Text>
