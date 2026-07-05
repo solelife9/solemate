@@ -261,40 +261,38 @@ export default function ProgressionScreen({
           <Text style={s.heroSub} testID="progression-xp">
             업적 {achievementCount}개 달성
           </Text>
-        </View>
 
-        {/* 나의 여정 — 티어명 ↔ 다음 티어명 + 진행 바. 숫자(XP)는 표면에 세우지
-            않는다(바가 진행을 말한다 — 홈 주간 목표 바와 같은 문법, '러닝의 옷'
-            리스킨 2026-07-04). 엔진(XP)은 그대로, 표현만 여정의 언어로. */}
-        <View style={s.guide} testID="rank-guide">
-          <Text style={s.guideTitle}>나의 여정</Text>
-
-          {guide.nextTier ? (
-            <View style={[s.nextRow, {marginTop: 14}]} testID="rank-next">
-              <Text style={[s.nextTierTxt, {color: rankColor}]}>
-                {TIER_LABEL[guide.tier]}
-              </Text>
-              <View style={s.nextTrack}>
-                <View
-                  style={[
-                    s.nextFill,
-                    {
-                      width: `${Math.round(guide.progressToNext * 100)}%`,
-                      backgroundColor: rankColor,
-                    },
-                  ]}
-                />
+          {/* 티어 진행바 — 별도 '나의 여정' 카드를 정체성 밑으로 통합(사용자 2026-07-05).
+              한 카드에서 '지금의 나'(티어·이름) 아래 '가는 길'(다음 티어)을 잇는다.
+              얇은 구분선으로 두 역할을 나눈다. */}
+          <View style={s.guideInner} testID="rank-guide">
+            {guide.nextTier ? (
+              <View style={s.nextRow} testID="rank-next">
+                <Text style={[s.nextTierTxt, {color: rankColor}]}>
+                  {TIER_LABEL[guide.tier]}
+                </Text>
+                <View style={s.nextTrack}>
+                  <View
+                    style={[
+                      s.nextFill,
+                      {
+                        width: `${Math.round(guide.progressToNext * 100)}%`,
+                        backgroundColor: rankColor,
+                      },
+                    ]}
+                  />
+                </View>
+                <Text
+                  style={[s.nextTierTxt, {color: TIER_COLORS[guide.nextTier]}]}>
+                  {TIER_LABEL[guide.nextTier]}
+                </Text>
               </View>
-              <Text
-                style={[s.nextTierTxt, {color: TIER_COLORS[guide.nextTier]}]}>
-                {TIER_LABEL[guide.nextTier]}
+            ) : (
+              <Text style={[s.maxTier, {color: rankColor}]} testID="rank-max">
+                가장 높은 곳 — 최고 등급
               </Text>
-            </View>
-          ) : (
-            <Text style={[s.maxTier, {color: rankColor}]} testID="rank-max">
-              가장 높은 곳 — 최고 등급
-            </Text>
-          )}
+            )}
+          </View>
         </View>
 
         {/* 스탯 줄 */}
@@ -454,17 +452,8 @@ const s = StyleSheet.create({
     letterSpacing: -0.5,
   },
   heroSub: {fontFamily: FONT, color: T3, fontSize: 13, fontWeight: '600'},
-  // XP 진행 카드
-  guide: {
-    backgroundColor: CARD,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: CARD_BORDER,
-    borderRadius: RADIUS.lg,
-    borderCurve: 'continuous',
-    padding: SPACE.lg,
-    gap: SPACE.sm,
-  },
-  guideTitle: {fontFamily: DISPLAY, color: T1, fontSize: 15, fontWeight: '800', letterSpacing: -0.2},
+  // 티어 진행바 — 히어로 카드에 통합, 정체성과 얇은 구분선으로 분리
+  guideInner: {alignSelf: 'stretch', marginTop: SPACE.md, paddingTop: SPACE.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: CARD_BORDER},
   xpRow: {flexDirection: 'row', alignItems: 'baseline', gap: 0},
   xpNum: {fontFamily: DISPLAY, fontSize: 30, fontWeight: '800', letterSpacing: -0.8, fontVariant: ['tabular-nums']},
   xpUnit: {fontFamily: FONT, color: T3, fontSize: 14, fontWeight: '600'},
