@@ -33,6 +33,7 @@ import { ExtRun, ExtShoe } from './lib/progression/challengesExt';
 import { mergeCloudData, nextAuthState, AuthState } from './lib/cloudSync';
 import type { CloudPort, CloudProvider, CloudUser } from './lib/cloudPort';
 import { loadCloudAccount, saveCloudAccount, clearCloudAccount, CLOUD_PROVIDER_LABEL } from './lib/cloudAccount';
+import type { RunBestEfforts } from './lib/bestEfforts';
 import { authErrorMessage } from './lib/authErrorMessage';
 import { PRIVACY_URL, TERMS_URL } from './lib/legalLinks';
 import type { RankTier } from './lib/progression/types';
@@ -92,7 +93,7 @@ function NotifToggle({ label, value, onToggle, testID }: { label: string; value:
 // 스텝퍼는 앱 공용 프리미티브(primitives.Stepper) — 로컬 구현 제거(2026-07-04 DS 통일).
 
 export default function ProfileScreen({
-  profile = DEFAULT_PROFILE, badges: _badges = [], records = [], onTab,
+  profile = DEFAULT_PROFILE, badges: _badges = [], records = [], distancePBs = {}, onTab,
   profilePhotoUri = '', onChangeName, onPickPhoto,
   weightKg = DEFAULT_SETTINGS.weightKg, onChangeWeight,
   age = DEFAULT_SETTINGS.age, onChangeAge,
@@ -117,6 +118,7 @@ export default function ProfileScreen({
   profile?: Profile;
   badges?: Badge[];
   records?: PersonalRecord[];
+  distancePBs?: RunBestEfforts;
   onTab?: (i: number) => void;
   // 프로필 정체성(로컬 영속). 사진 URI(없으면 아이콘 폴백), 이름 변경, 사진 선택 콜백.
   profilePhotoUri?: string;

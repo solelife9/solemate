@@ -86,6 +86,8 @@ import {
 } from './lib/settings';
 import {estimateCalories} from './lib/calories';
 import {detectPRs, PRKind} from './lib/records';
+import {getDistancePBs, PB_CACHE_KEY} from './lib/distancePBStore';
+import type {RunBestEfforts} from './lib/bestEfforts';
 import {hkSaveRunWorkout, hkBackfillHeartRate} from './lib/healthkit';
 import {currentTargetPace} from './lib/pacePlan';
 import {liveActivity} from './lib/liveActivity';
@@ -242,6 +244,20 @@ function Main(){
   const [tab,setTab]=useState(0);                 // 0 home · 1 history · 2 shoes · 3 profile
   const [shoes,setShoes]=useState<BackendShoe[]>([]);
   const [runs,setRuns]=useState<BackendRun[]>([]);
+  // 거리 PB(러너 스펙) — paceTrack 베스트에포트 집계. 캐시·마이그레이션·삭제복구는 store 담당.
+  const pbDeps=useMemo(()=>({
+    loadTrack:async(id:string)=>{try{const raw=await AsyncStorage.getItem('paceTrack_'+id);return raw?JSON.parse(raw):null;}catch{return null;}},
+    getCache:async()=>{try{const raw=await AsyncStorage.getItem(PB_CACHE_KEY);return raw?JSON.parse(raw):null;}catch{return null;}},
+    setCache:async(c:any)=>{try{await AsyncStorage.setItem(PB_CACHE_KEY,JSON.stringify(c));}catch{}},
+  }),[]);
+  const [distancePBs,setDistancePBs]=useState<RunBestEfforts>({});
+  const runIdSig=runs.map(r=>String((r as any).id)).filter(Boolean).join(',');
+  useEffect(()=>{
+    let alive=true;
+    getDistancePBs(runIdSig?runIdSig.split(','):[],pbDeps).then(pb=>{if(alive)setDistancePBs(pb);}).catch(()=>{});
+    return()=>{alive=false;};
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[runIdSig]);
   // audit a2: soft-delete 묘비 저장소. 라이브 shoes/runs 는 항상 묘비-free(삭제 레코드 0)라
   // 화면/집계가 자동으로 삭제를 제외한다. 묘비는 여기에만 모아 backupData 에 합류시켜 동기로
   // 삭제를 전파하고, 머지 결과는 applyBackupPayload 가 다시 live/묘비로 분리해 이 불변식을
@@ -1863,7 +1879,7 @@ function Main(){
         )}
         {tab===3&&(
           <ProfileScreen
-            profile={profile} badges={badges} records={records} onTab={setTab}
+            profile={profile} badges={badges} records={records} distancePBs={distancePBs} onTab={setTab}
             profilePhotoUri={profilePhoto} onChangeName={changeProfileName} onPickPhoto={pickProfilePhoto}
             weightKg={weightKg} onChangeWeight={changeWeight}
             age={age} onChangeAge={changeAge} sex={sex} onChangeSex={changeSex}
