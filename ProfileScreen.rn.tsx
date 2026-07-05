@@ -23,7 +23,7 @@ import {
   AlertSettings, THRESHOLD_STEP,
   MIN_THRESHOLD_PCT, MAX_THRESHOLD_PCT, DEFAULT_SETTINGS, DEFAULT_ALERTS,
   WEIGHT_STEP, MIN_WEIGHT_KG, MAX_WEIGHT_KG,
-  AGE_STEP, MIN_AGE, MAX_AGE, REST_HR_STEP, MIN_REST_HR, MAX_REST_HR,
+  AGE_STEP, MIN_AGE, MAX_AGE,
 } from './lib/settings';
 import { NotifSettings, DEFAULT_NOTIF_SETTINGS } from './lib/notifications';
 import { requestPushPermission as defaultRequestPushPermission } from './lib/pushMessaging';
@@ -32,6 +32,7 @@ import ChallengesSection from './ChallengesSection';
 import { ExtRun, ExtShoe } from './lib/progression/challengesExt';
 import { mergeCloudData, nextAuthState, AuthState } from './lib/cloudSync';
 import type { CloudPort, CloudProvider, CloudUser } from './lib/cloudPort';
+import { loadCloudAccount, saveCloudAccount, clearCloudAccount, CLOUD_PROVIDER_LABEL } from './lib/cloudAccount';
 import { authErrorMessage } from './lib/authErrorMessage';
 import { PRIVACY_URL, TERMS_URL } from './lib/legalLinks';
 import type { RankTier } from './lib/progression/types';
@@ -246,6 +247,20 @@ export default function ProfileScreen({
   // 상태 표시 + 트리거만 담당한다(백엔드는 firebaseCloudPort, 테스트는 메모리 목 포트).
   const [authState, setAuthState] = useState<AuthState>('signedOut');
   const [cloudUser, setCloudUser] = useState<CloudUser | null>(null);
+  const [cloudProvider, setCloudProvider] = useState<CloudProvider | null>(null);
+  // 로그인 상태 복원(2026-07-05): App 은 Firebase 세션으로 이미 게이팅하지만 이 패널의
+  // authState 는 재시작 시 'signedOut'으로 초기화돼 로그인해도 '카카오로 계속…' 버튼이
+  // 계속 떴다. 저장된 계정을 읽어 로그인 상태 + 제공자를 복원한다.
+  useEffect(() => {
+    let alive = true;
+    void loadCloudAccount().then((acc) => {
+      if (!alive || !acc) return;
+      setCloudUser({uid: acc.uid, email: acc.email ?? null, displayName: acc.displayName ?? null});
+      setCloudProvider(acc.provider);
+      setAuthState((s) => (s === 'signedOut' ? 'signedIn' : s));
+    });
+    return () => { alive = false; };
+  }, []);
   const [lastSyncAt, setLastSyncAt] = useState<number | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [cloudMsg, setCloudMsg] = useState<{ ok: boolean; text: string } | null>(null);
@@ -261,6 +276,8 @@ export default function ProfileScreen({
     try {
       const user = await cloudPort.signIn(provider);
       setCloudUser(user);
+      setCloudProvider(provider);
+      void saveCloudAccount(provider, user);
       setAuthState((s) => nextAuthState(s, 'signInSuccess'));
       // 동기는 아래 자동 동기 effect 가 (signedIn 전환 + 데이터 변경 시) 처리한다.
     } catch (e: any) {
@@ -281,6 +298,8 @@ export default function ProfileScreen({
       // 네트워크 실패로 원격 세션이 안 닫혀도 화면은 로그아웃으로 떨군다.
     }
     setCloudUser(null);
+    setCloudProvider(null);
+    void clearCloudAccount();
     setLastSyncAt(null);
     setCloudMsg(null);
     setAuthState((s) => nextAuthState(s, 'signOut'));
@@ -376,10 +395,6 @@ export default function ProfileScreen({
   const stepAge = (dir: 1 | -1) => {
     const base = age > 0 ? age : (dir > 0 ? MIN_AGE - AGE_STEP : MIN_AGE);
     onChangeAge?.(Math.max(MIN_AGE, Math.min(MAX_AGE, base + dir * AGE_STEP)));
-  };
-  const stepRestHR = (dir: 1 | -1) => {
-    const base = restHR > 0 ? restHR : (dir > 0 ? MIN_REST_HR - REST_HR_STEP : MIN_REST_HR);
-    onChangeRestHR?.(Math.max(MIN_REST_HR, Math.min(MAX_REST_HR, base + dir * REST_HR_STEP)));
   };
 
   const toggleAlerts = () => onChangeAlerts?.({ ...alerts, enabled: !alerts.enabled });
@@ -837,10 +852,20 @@ export default function ProfileScreen({
                     ))}
                   </View>
                 </View>
-                <View style={{ marginTop: 14 }}>
-                  <Stepper value={restHR > 0 ? restHR : '미설정'} suffix="안정시심박(bpm)" onMinus={() => stepRestHR(-1)} onPlus={() => stepRestHR(1)} />
-                </View>
-                <Text style={s.panelHint}>심박 존·트레이닝 부하 계산에 쓰여요</Text>
+                {/* 안정시 심박 수동 입력 제거(2026-07-05): 보통 러너는 자기 안정시 심박을
+                    몰라 — 대충 찍으면 오히려 부정확. Apple 건강에서 자동으로 채우고(워치),
+                    없으면 나이 기반(%HRmax)으로 심박 존을 낸다(가민 기본값과 동일). */}
+                {restHR > 0 && (
+                  <View style={{ marginTop: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Text style={s.settingLabel}>안정시 심박</Text>
+                    <Text style={s.settingDetail}>{restHR}bpm · Apple 건강</Text>
+                  </View>
+                )}
+                <Text style={s.panelHint}>
+                  {restHR > 0
+                    ? '심박 존을 더 정확하게 — Apple 건강에서 자동으로 가져와요'
+                    : '나이로 심박 존을 계산해요. Apple 건강을 연동하면 더 정확해져요'}
+                </Text>
               </View>
             )}
           </View>
@@ -856,8 +881,15 @@ export default function ProfileScreen({
                 <View style={[s.settingRow, s.settingBorder]} testID="cloud-account">
                   <View style={s.settingIcon}><Ionicons name="person-circle-outline" size={17} color={ACCENT} /></View>
                   <View style={{ flex: 1, minWidth: 0 }}>
-                    <Text style={s.settingLabel} numberOfLines={1}>{accountLabel}</Text>
-                    <Text style={s.cloudSub} testID="cloud-last-sync">{syncing ? '자동 동기 중…' : (lastSyncAt == null ? '클라우드 연결됨 · 자동 동기' : `${lastSyncLabel} · 자동`)}</Text>
+                    {/* 어떤 provider 로 로그인했는지 표시(2026-07-05) — '카카오 계정' + 이메일. */}
+                    <Text style={s.settingLabel} numberOfLines={1} testID="cloud-provider">
+                      {cloudProvider ? `${CLOUD_PROVIDER_LABEL[cloudProvider]} 계정` : accountLabel}
+                    </Text>
+                    <Text style={s.cloudSub} numberOfLines={1}>
+                      {cloudProvider && (cloudUser?.email || cloudUser?.displayName)
+                        ? (cloudUser.email || cloudUser.displayName)
+                        : (syncing ? '자동 동기 중…' : (lastSyncAt == null ? '클라우드 연결됨 · 자동 동기' : `${lastSyncLabel} · 자동`))}
+                    </Text>
                   </View>
                   <Ionicons name={syncing ? 'sync-outline' : 'cloud-done-outline'} size={18} color={GOOD} />
                 </View>

@@ -14,6 +14,7 @@
  */
 import React from 'react';
 import ReactTestRenderer, {act} from 'react-test-renderer';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import ProfileScreen from '../ProfileScreen.rn';
 import type {CloudProvider} from '../lib/cloudPort';
 import type {BackupPayload} from '../lib/backup';
@@ -349,4 +350,21 @@ describe('ProfileScreen 로그아웃', () => {
     expect(hasId(root, 'cloud-signin-google')).toBe(true);
     expect(hasId(root, 'cloud-account')).toBe(false);
   });
+});
+
+// ── 로그인 상태 복원 + provider 표시(2026-07-05) ──────────────────────────────
+test('저장된 계정이 있으면 재마운트 시 로그인 상태·제공자를 복원한다(카카오 계정, 버튼 숨김)', async () => {
+  await AsyncStorage.clear();
+  await AsyncStorage.setItem('cloud_account', JSON.stringify({provider: 'kakao', uid: 'u-1', email: 'runner@keego.app', displayName: null}));
+  const port = mockPort();
+  let renderer!: ReactTestRenderer.ReactTestRenderer;
+  await act(async () => { renderer = ReactTestRenderer.create(<ProfileScreen cloudPort={port} />); });
+  await act(async () => { renderer.root.findAll((n: any) => n.props?.accessibilityLabel === '설정 열기')[0]?.props?.onPress?.(); });
+  await act(async () => { await Promise.resolve(); });
+  const root = renderer.root;
+  // 로그인 상태로 복원 — 로그인 버튼 사라지고 계정 행 노출.
+  expect(hasId(root, 'cloud-signin-kakao')).toBe(false);
+  expect(hasId(root, 'cloud-account')).toBe(true);
+  // 어떤 provider 로 로그인했는지 표시된다.
+  expect(textOf(byTestId(root, 'cloud-provider'))).toContain('카카오 계정');
 });

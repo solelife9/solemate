@@ -12,5 +12,5 @@
 /** 공개 개인정보 처리방침 URL(GitHub Pages — docs/privacy.html). */
 export const PRIVACY_URL = 'https://solelife9.github.io/solemate/privacy.html';
 
-/** 이용약관 URL. 현재는 개인정보 처리방침 페이지로 통합(별도 약관 페이지 생기면 교체). */
-export const TERMS_URL = 'https://solelife9.github.io/solemate/privacy.html';
+/** 이용약관 URL(GitHub Pages — docs/terms.html, 2026-07-05 분리). */
+export const TERMS_URL = 'https://solelife9.github.io/solemate/terms.html';

@@ -20,6 +20,7 @@ import {
 } from './theme';
 import type {CloudPort, CloudProvider, CloudUser} from './lib/cloudPort';
 import {authErrorMessage} from './lib/authErrorMessage';
+import {saveCloudAccount} from './lib/cloudAccount';
 
 interface LoginScreenProps {
   cloudPort: CloudPort;
@@ -38,6 +39,9 @@ export function LoginScreen({cloudPort, onSignedIn}: LoginScreenProps) {
     setError(null);
     try {
       const user = await cloudPort.signIn(provider);
+      // 로그인 계정+제공자를 영속 — ProfileScreen 이 재시작 후에도 '카카오 계정'처럼
+      // 어떤 걸로 로그인했는지 표시하고 로그인 상태를 복원하게(2026-07-05).
+      void saveCloudAccount(provider, user);
       onSignedIn(user);
     } catch (e: any) {
       // 원문(서버 응답·SDK 코드)은 진단용 로그로만 — 화면엔 사용자 언어만(출시 감사).
