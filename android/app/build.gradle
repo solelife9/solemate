@@ -103,8 +103,12 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         // 버전 체계: CI/로컬에서 ~/.gradle/gradle.properties 또는 -P 로 덮어쓸 수 있게(스토어
         // 업로드마다 versionCode 를 올려야 한다). 미설정 시 기본값. versionName 은 SemVer.
-        versionCode (project.findProperty('KEEGO_VERSION_CODE') ?: '1').toString().toInteger()
-        versionName (project.findProperty('KEEGO_VERSION_NAME') ?: '1.0.0').toString()
+        // 지역 변수로 분리 — `versionCode (…)` 공백이 Groovy 에서 인자 아닌 반환값 체이닝으로
+        // 파싱돼 null.toString() 으로 터지던 것 방지(카카오 키와 동일 패턴).
+        def keegoVersionCode = (project.findProperty('KEEGO_VERSION_CODE') ?: '1').toString().toInteger()
+        def keegoVersionName = (project.findProperty('KEEGO_VERSION_NAME') ?: '1.0.0').toString()
+        versionCode keegoVersionCode
+        versionName keegoVersionName
         // 카카오 네이티브 앱 키는 공개 저장소에 두지 않는다 — ~/.gradle/gradle.properties 의
         // KAKAO_NATIVE_APP_KEY 에서 읽어 (1) kakao_app_key 문자열 리소스(KakaoSdk.init 가
         // 읽음)와 (2) AndroidManifest redirect scheme(kakao<KEY>) 플레이스홀더로 주입한다.
