@@ -34,6 +34,9 @@ import { mergeCloudData, nextAuthState, AuthState } from './lib/cloudSync';
 import type { CloudPort, CloudProvider, CloudUser } from './lib/cloudPort';
 import { loadCloudAccount, saveCloudAccount, clearCloudAccount, CLOUD_PROVIDER_LABEL } from './lib/cloudAccount';
 import type { RunBestEfforts } from './lib/bestEfforts';
+import { STANDARD_DISTANCES } from './lib/bestEfforts';
+import { fitnessSummary } from './lib/analytics/fitness';
+import { fmtTime } from './lib/format';
 import { authErrorMessage } from './lib/authErrorMessage';
 import { PRIVACY_URL, TERMS_URL } from './lib/legalLinks';
 import type { RankTier } from './lib/progression/types';
@@ -460,6 +463,17 @@ export default function ProfileScreen({
   );
   // 화면 표시용 PR 행(카드와 동일 포맷 재사용). 표시 단위 환산은 빌더가 처리.
   const recapPRs = formatRecapPRs(recap.prs, unit);
+  // 심폐 체력(VO2max) — 러너 스펙(기록 탭 FitnessCard 를 마이 탭 스펙 카드로 이관). 같은 매핑.
+  const vo2 = useMemo(
+    () => fitnessSummary(
+      (recapRuns as RecapRun[]).map((r) => ({ km: Number(r?.km ?? 0), durationS: Number(r?.duration ?? 0), runDate: String(r?.run_date || '') })),
+      todayISO || '',
+    ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [recapRuns.length, (recapRuns as RecapRun[])[recapRuns.length - 1]?.id, todayISO],
+  );
+  const paceRec = records.find((r) => r.label.includes('1km'));
+  const longRec = records.find((r) => r.label.includes('최장'));
   const recapTotalDisplay = displayNum(recap.totalKm, unit, 1);
   // 공유 카드(화면 밖 마운트) 모델 — press 시 Svg.toDataURL 로 캡처해 공유.
   const recapCardRef = useRef<SvgCapturable | null>(null);
@@ -692,22 +706,46 @@ export default function ProfileScreen({
           </Pressable>
         )}
 
-        {/* personal records (PR) — 1km 페이스 · 5km 기록 · 최장 거리 */}
-        {records.length > 0 && (
-          <View style={[s.card, { padding: 22 }]}>
-            <Text style={s.cardTitle}>개인 기록</Text>
-            <StatGrid
-              divider
-              valueSize={26}
-              valueWeight="400"
-              valueLS={0.3}
-              items={records.map((r) => ({
-                value: r.value,
-                unit: r.unit || undefined,
-                label: r.label,
-                top: <Ionicons name={r.icon} size={18} color={T2} style={{ marginBottom: 6 }} />,
-              }))}
-            />
+        {/* 러너 스펙 — VO2max + 거리 PB 훈장(5K·10K·하프·풀, 미달성 잠금) + 최고페이스/최장.
+            러너의 정체성 '스펙 시트'(사용자 방향 2026-07-05). 거리 PB 는 paceTrack 베스트에포트. */}
+        {(records.length > 0 || vo2.vo2max > 0) && (
+          <View style={[s.card, { padding: 22 }]} testID="runner-spec">
+            <Text style={s.cardTitle}>러너 스펙</Text>
+
+            {vo2.vo2max > 0 && (
+              <View style={s.specVo2}>
+                <Text style={s.specVo2Label}>심폐 체력</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6 }}>
+                  <Text style={s.specVo2Num}>{vo2.vo2max.toFixed(1)}</Text>
+                  <Text style={s.specVo2Unit}>VO₂max</Text>
+                  <Text style={s.specVo2Grade}>{vo2.vo2maxLabel}</Text>
+                </View>
+              </View>
+            )}
+
+            <View style={s.medalGrid}>
+              {STANDARD_DISTANCES.map((d) => {
+                const sec = distancePBs[d.key];
+                const earned = typeof sec === 'number' && sec > 0;
+                return (
+                  <View key={d.key} style={s.medalCell} testID={`pb-${d.key}`}>
+                    <View style={s.medalHead}>
+                      <Ionicons name={earned ? 'medal' : 'lock-closed'} size={13} color={earned ? ACCENT : T3} />
+                      <Text style={[s.medalLabel, { color: earned ? T1 : T3 }]}>{d.label}</Text>
+                    </View>
+                    <Text style={[s.medalVal, { color: earned ? T1 : T3 }]}>
+                      {earned ? fmtTime(Math.round(sec)) : '아직'}
+                    </Text>
+                  </View>
+                );
+              })}
+            </View>
+
+            {(!!paceRec || !!longRec) && (
+              <Text style={s.specFoot}>
+                1km 최고 {paceRec?.value ?? '--'}{paceRec && paceRec.value !== '--' ? (paceRec.unit ?? '') : ''} · 최장 {longRec?.value ?? '--'}{longRec && longRec.value !== '--' ? (longRec.unit ?? '') : ''}
+              </Text>
+            )}
           </View>
         )}
 
@@ -1036,6 +1074,18 @@ const s = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   card: { backgroundColor: CARD_DIM, borderRadius: RADIUS.lg, borderCurve: 'continuous', borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER },
   cardTitle: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600', marginBottom: 16 },
+  // 러너 스펙 카드
+  specVo2: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', paddingBottom: 16, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: CARD_BORDER },
+  specVo2Label: { color: T2, fontFamily: FONT, fontSize: 13, fontWeight: '600' },
+  specVo2Num: { color: T1, fontFamily: DISPLAY, fontSize: 30, fontWeight: '700', letterSpacing: -0.5 },
+  specVo2Unit: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500' },
+  specVo2Grade: { color: ACCENT, fontFamily: FONT, fontSize: 13, fontWeight: '700' },
+  medalGrid: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 16 },
+  medalCell: { width: '50%', paddingVertical: 10 },
+  medalHead: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  medalLabel: { fontFamily: FONT, fontSize: 12, fontWeight: '700', letterSpacing: 0.3 },
+  medalVal: { fontFamily: DISPLAY, fontSize: 20, fontWeight: '700', letterSpacing: -0.3, marginTop: 4, fontVariant: ['tabular-nums'] },
+  specFoot: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500', marginTop: 16, paddingTop: 14, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: CARD_BORDER },
   sectionLabel: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600', letterSpacing: 0.4, paddingHorizontal: 4 },
   progressRow: { flexDirection: 'row', alignItems: 'center', gap: 13, padding: 16 },
   progressIcon: { width: 38, height: 38, borderRadius: RADIUS.sm, backgroundColor: withAlpha(ACCENT, 0.12), alignItems: 'center', justifyContent: 'center' },

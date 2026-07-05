@@ -17,7 +17,6 @@ import { Unit, displayNum, displayToKm } from './lib/units';
 import { ymdLocal } from './lib/format';
 import { sumKm, summaryOf, monthBuckets, weekBuckets, yearBuckets } from './lib/stats';
 import { fitnessSummary, thresholdPaceSec } from './lib/analytics/fitness';
-import { FitnessCard } from './FitnessCard';
 import { gradeAdjustedPaceSec, smoothElevation, resampleByDistance } from './lib/analytics/gap';
 import { estimateMaxHR, timeInZones, hrSummary, zoneBoundaries, HR_ZONE_LABEL, type HRZone } from './lib/analytics/hrZones';
 import { trimp, paceLoad, effortBand } from './lib/analytics/load';
@@ -978,10 +977,8 @@ export default function HistoryScreen({
                 </View>
               )}
             </View>
-            {/* 체력 트렌드(FitnessCard) — MVP 홈 다이어트로 홈에서 기록 탭 인사이트로 이관.
-                분석은 원하는 사람이 찾아오는 곳(기록)에 두고 홈은 러닝 시작 저니에 집중한다.
-                타임 있는 노력 런이 없으면 카드가 스스로 숨는다(null). */}
-            {!!todayISO && <FitnessCard runs={runs} todayISO={todayISO} />}
+            {/* 심폐 체력(VO2max)은 마이 탭 '러너 스펙' 카드로 이관(2026-07-05) — 러너 정체성
+                스펙(거리 PB·VO2max)을 한곳에 모은다. */}
             <Text style={s.sectionLabel}>러닝 기록</Text>
           </View>
         }

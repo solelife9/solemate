@@ -150,8 +150,9 @@ test('런 삭제 → 확인 Alert 후 신발 사용거리(km) 감소', async () 
 // 제거되어(RunDetail), 편집 폼으로의 진입점이 없다. 수동 추가와 마찬가지로, 편집 또한
 // UI 흐름으로 도달 불가하므로 해당 통합 테스트를 폐지한다(폐지된 기능 검증 금지).
 
-test('개인 기록(PR) 카드: 1km 페이스·5km 기록·최장 거리 렌더', async () => {
-  // 5km/1500s → 1km 5\'00", 5km 25:00. 21.1km → 최장 거리.
+test('러너 스펙 카드: VO2max + 거리 PB 훈장 + 최고페이스/최장 렌더', async () => {
+  // 5km/1500s → 1km 5\'00". 21.1km → 최장 거리. (거리 PB 는 paceTrack 사이드카가 있어야
+  // 계산되는데 테스트엔 없어 훈장은 '아직'(잠금)으로 뜬다 — 옳은 동작.)
   const runs: ApiRun[] = [
     {id: 'r1', shoe_id: 's1', km: 5, run_date: '2026-05-20', duration: 1500},
     {id: 'r2', shoe_id: 's1', km: 21.1, run_date: '2026-05-10', duration: 7200},
@@ -160,9 +161,13 @@ test('개인 기록(PR) 카드: 1km 페이스·5km 기록·최장 거리 렌더'
 
   await tap(pressBy(root, '마이'));
   const txt = textOf(root);
-  expect(txt).toContain('개인 기록');
-  expect(txt).toContain('1km 최고 페이스');
+  expect(txt).toContain('러너 스펙');
+  // 거리 PB 훈장 라벨(5K·10K·하프·풀). paceTrack 없어 잠금.
+  expect(txt).toContain('5K');
+  expect(txt).toContain('하프');
+  expect(txt).toContain('아직');
+  // 최고페이스/최장 푸터.
+  expect(txt).toContain('1km 최고');
   expect(txt).toContain("5'00\"");   // 1km 최고 페이스
-  expect(txt).toContain('25:00');     // 5km 최고 기록
   expect(txt).toContain('21.1');      // 최장 거리
 });
