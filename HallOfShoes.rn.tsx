@@ -187,9 +187,11 @@ function HallOfShoes({records = [], unit = 'km', onBack, userName, onGoShoes}: H
               <Text style={st.secC}>전체 {count}</Text>
             </View>
             <View style={st.grid}>
-              {list.map(r => {
+              {list.map((r, i) => {
                 const nm = splitName(r.name);
                 const yy = yearOf(r);
+                // 헌액 순번(#1 = 가장 먼저 은퇴 = 첫 헌액자). list 는 최신순이라 count-i.
+                const order = count - i;
                 return (
                   <Pressable
                     key={r.shoeId}
@@ -199,7 +201,7 @@ function HallOfShoes({records = [], unit = 'km', onBack, userName, onGoShoes}: H
                     accessibilityLabel={`${r.name} 인증서`}
                     testID={`hall-plaque-${r.shoeId}`}>
                     <View style={st.seal}>
-                      <Text style={st.sealTxt}>{yy ? `’${yy.slice(2)}` : '··'}</Text>
+                      <Text style={st.sealNo}>{order}</Text>
                     </View>
                     {!!nm.brand && <Text style={st.pbrand}>{nm.brand}</Text>}
                     <Text style={st.pmodel} numberOfLines={2}>{nm.model}</Text>
@@ -401,7 +403,7 @@ const st = StyleSheet.create({
   grid: {flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 14},
   plaque: {width: '48%', borderRadius: 16, borderWidth: 1, borderColor: G.line, backgroundColor: '#120f0b', padding: 16, paddingBottom: 15, minHeight: 168, overflow: 'hidden'},
   seal: {width: 30, height: 30, borderRadius: 15, borderWidth: 1, borderColor: G.soft, alignItems: 'center', justifyContent: 'center'},
-  sealTxt: {fontFamily: SERIF, fontSize: 9, fontWeight: '800', color: G.gold},
+  sealNo: {fontFamily: SERIF, fontSize: 14, color: G.gold, fontVariant: ['tabular-nums']},
   pbrand: {fontSize: 9, fontWeight: '800', letterSpacing: 1.4, color: G.gold, marginTop: 16},
   pmodel: {fontFamily: SERIF, fontSize: 16, fontWeight: '800', color: G.txt, marginTop: 5, lineHeight: 19},
   pfoot: {marginTop: 'auto', paddingTop: 12, flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: G.line},
