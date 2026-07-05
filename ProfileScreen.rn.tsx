@@ -535,7 +535,7 @@ export default function ProfileScreen({
         {/* header — 마이(프로필+기록) ↔ 설정 뷰 전환 */}
         {showSettings ? (
           <View style={s.headerRow}>
-            <Pressable onPress={() => setShowSettings(false)} accessibilityRole="button" accessibilityLabel="뒤로" style={({ pressed }) => [s.iconBtn, pressed && { backgroundColor: CARD }]}><Ionicons name="chevron-back" size={20} color={T2} /></Pressable>
+            <Pressable onPress={() => setShowSettings(false)} accessibilityRole="button" accessibilityLabel="뒤로" hitSlop={8} style={({ pressed }) => [s.iconBtn, pressed && { backgroundColor: CARD }]}><Ionicons name="chevron-back" size={20} color={T2} /></Pressable>
             <Text style={s.title}>설정</Text>
             <View style={{ width: 38 }} />
           </View>
@@ -543,8 +543,8 @@ export default function ProfileScreen({
           <View style={s.headerRow}>
             <Text style={s.title}>마이</Text>
             <View style={{ flexDirection: 'row', gap: 8 }}>
-              <Pressable onPress={() => { Share.share({ message: 'Keego에서 내 러닝화 수명을 관리하고 있어요 🏃' }).catch(() => {}); }} accessibilityRole="button" accessibilityLabel="기록 공유" style={({ pressed }) => [s.iconBtn, pressed && { backgroundColor: CARD }]}><Ionicons name="share-outline" size={18} color={T2} /></Pressable>
-            <Pressable onPress={() => setShowSettings(true)} accessibilityRole="button" accessibilityLabel="설정 열기" style={({ pressed }) => [s.iconBtn, pressed && { backgroundColor: CARD }]}><Ionicons name="settings-outline" size={19} color={T2} /></Pressable>
+              <Pressable onPress={() => { Share.share({ message: 'Keego에서 내 러닝화 수명을 관리하고 있어요 🏃' }).catch(() => {}); }} accessibilityRole="button" accessibilityLabel="기록 공유" hitSlop={8} style={({ pressed }) => [s.iconBtn, pressed && { backgroundColor: CARD }]}><Ionicons name="share-outline" size={18} color={T2} /></Pressable>
+            <Pressable onPress={() => setShowSettings(true)} accessibilityRole="button" accessibilityLabel="설정 열기" hitSlop={8} style={({ pressed }) => [s.iconBtn, pressed && { backgroundColor: CARD }]}><Ionicons name="settings-outline" size={19} color={T2} /></Pressable>
             </View>
           </View>
         )}
@@ -578,7 +578,7 @@ export default function ProfileScreen({
                   style={s.nameInput}
                   accessibilityLabel="이름 입력"
                 />
-                <Pressable onPress={saveName} accessibilityRole="button" accessibilityLabel="이름 저장" style={s.nameSaveBtn}>
+                <Pressable onPress={saveName} accessibilityRole="button" accessibilityLabel="이름 저장" hitSlop={8} style={s.nameSaveBtn}>
                   <Ionicons name="checkmark" size={18} color={BG} />
                 </Pressable>
               </View>

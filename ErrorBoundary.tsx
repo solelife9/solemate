@@ -43,7 +43,7 @@ export default class ErrorBoundary extends React.Component<Props, State> {
         <View style={styles.screen} testID="error-fallback">
           <Text style={styles.title}>문제가 발생했어요</Text>
           <Text style={styles.body}>
-            앱에 일시적인 오류가 생겼습니다.{'\n'}잠시 후 다시 시도해 주세요.
+            앱에 일시적인 오류가 생겼어요.{'\n'}잠시 후 다시 시도해 주세요.
           </Text>
           <TouchableOpacity
             style={styles.btn}

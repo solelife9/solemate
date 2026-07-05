@@ -635,7 +635,7 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'm
               {/* TRIMP(트레이닝 부하)는 위 '트레이닝 부하' 카드가 밴드까지 붙여 보여주므로 여기선
                   중복 노출하지 않는다. 심박 존 카드는 '분포 + 평균/최대'에 집중. */}
               {!hr.rest && (
-                <Text style={{ color: T4, fontFamily: FONT, fontSize: 11, marginTop: 8 }}>마이 탭에서 안정시심박을 설정하면 심박 존이 더 정확해져요</Text>
+                <Text style={{ color: T3, fontFamily: FONT, fontSize: 11, marginTop: 8 }}>마이 탭에서 안정시심박을 설정하면 심박 존이 더 정확해져요</Text>
               )}
             </View>
           );

@@ -604,7 +604,7 @@ function Welcome({goNext, goLogin, insetTop, insetBottom}: {goNext: () => void; 
         style={StyleSheet.absoluteFill}
         imageStyle={{opacity: 0.92}}>
         {/* 따뜻한 브랜드 그라데이션(좌상단) */}
-        <LinearGrad x1={0} y1={0} x2={1} y2={1} stops={[{color: 'rgba(255,101,0,0.30)', offset: 0}, {color: 'rgba(255,101,0,0)', offset: 0.55}]} />
+        <LinearGrad x1={0} y1={0} x2={1} y2={1} stops={[{color: withAlpha(ACCENT, 0.3), offset: 0}, {color: withAlpha(ACCENT, 0), offset: 0.55}]} />
         {/* 하단 가독성 페이드 → bgDeep */}
         <LinearGrad
           x1={0}
@@ -634,7 +634,7 @@ function Welcome({goNext, goLogin, insetTop, insetBottom}: {goNext: () => void; 
           <Text style={s.heroSub}>멈추지 않는 발걸음을 위해</Text>
         </Rise>
         <Rise delay={320}>
-          <Text style={s.heroBody}>Keego가 러닝화 수명을 추적해, 부상 없이{'\n'}끝까지 달릴 수 있도록 돕습니다.</Text>
+          <Text style={s.heroBody}>Keego가 러닝화 수명을 추적해, 부상 없이{'\n'}끝까지 달릴 수 있도록 도와요.</Text>
         </Rise>
         <Rise delay={440} style={{marginTop: 26}}>
           <PrimaryButton testID="onboarding-start" label="시작하기" onPress={goNext} />
@@ -693,9 +693,9 @@ function ShoesMatter({goNext, onSkip, insetTop, insetBottom}: ScreenProps) {
       <ScrollView style={s.flex1} contentContainerStyle={s.bodyContent} showsVerticalScrollIndicator={false}>
         <Rise>
           <Eyebrow>Your shoes matter</Eyebrow>
-          <Text style={s.title}>러닝화도 관리가 필요합니다</Text>
+          <Text style={s.title}>러닝화도 관리가 필요해요</Text>
           <Text style={s.body}>
-            러닝화는 <Text style={s.bodyStrong}>누적 거리에 따라 성능이 달라집니다.</Text> 쿠셔닝이 닳은 신발은 충격을 그대로 무릎과 발목에 전달합니다.
+            러닝화는 <Text style={s.bodyStrong}>누적 거리에 따라 성능이 달라져요.</Text> 쿠셔닝이 닳은 신발은 충격을 그대로 무릎과 발목에 전달해요.
           </Text>
         </Rise>
 
@@ -714,7 +714,7 @@ function ShoesMatter({goNext, onSkip, insetTop, insetBottom}: ScreenProps) {
           <View style={{paddingHorizontal: 14, paddingTop: 10, paddingBottom: 14}}>
             <View style={{flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8}}>
               <Text style={{fontFamily: FONT, fontSize: 12, color: T4, letterSpacing: 0.8}}>쿠셔닝 성능</Text>
-              <Text style={{fontFamily: FONT, fontSize: 12, color: T4}}>0 → 800 KM</Text>
+              <Text style={{fontFamily: FONT, fontSize: 12, color: T3}}>0 → 800 KM</Text>
             </View>
             <DegradeCurve />
           </View>
@@ -727,7 +727,7 @@ function ShoesMatter({goNext, onSkip, insetTop, insetBottom}: ScreenProps) {
             <Metric value="500–800" unit="KM" size={30} />
           </View>
           <Text style={{marginLeft: 'auto', fontFamily: FONT, fontSize: 13, color: T3, textAlign: 'right', lineHeight: 18}}>
-            대부분의 러너가{'\n'}이 시기를 놓칩니다
+            대부분의 러너가{'\n'}이 시기를 놓쳐요
           </Text>
         </Rise>
       </ScrollView>
@@ -927,7 +927,7 @@ function Register({goNext, onSkip, onRegister, insetTop, insetBottom}: ScreenPro
         </Rise>
 
         {/* 라이브 프리뷰 카드 */}
-        <Rise delay={120} style={[s.previewCard, {borderColor: ready ? 'rgba(255,101,0,0.3)' : SEP, overflow: 'hidden'}]}>
+        <Rise delay={120} style={[s.previewCard, {borderColor: ready ? withAlpha(ACCENT, 0.3) : SEP, overflow: 'hidden'}]}>
           <LinearGrad stops={[{color: '#1C1C22', offset: 0}, {color: '#141417', offset: 1}]} radius={18} />
           <PctRing pct={remain} color={col} size={52} stroke={6} animate={false} />
           <View style={{flex: 1, minWidth: 0, marginLeft: 14}}>
@@ -971,7 +971,7 @@ function Register({goNext, onSkip, onRegister, insetTop, insetBottom}: ScreenPro
               ))}
             </View>
           ) : (
-            <Text style={{fontFamily: FONT, fontSize: 13, color: T4, marginTop: 8, paddingVertical: 3}}>브랜드를 먼저 선택하세요</Text>
+            <Text style={{fontFamily: FONT, fontSize: 13, color: T3, marginTop: 8, paddingVertical: 3}}>브랜드를 먼저 선택하세요</Text>
           )}
         </View>
 
@@ -1051,7 +1051,7 @@ function Ready({registered, onFinish, onSkip, insetTop, insetBottom}: ScreenProp
         x2={0}
         y2={1}
         style={{height: 260}}
-        stops={[{color: 'rgba(255,101,0,0.22)', offset: 0}, {color: 'rgba(255,101,0,0)', offset: 0.65}]}
+        stops={[{color: withAlpha(ACCENT, 0.22), offset: 0}, {color: withAlpha(ACCENT, 0), offset: 0.65}]}
       />
       <FlowHeader step={5} total={5} onSkip={onSkip} insetTop={insetTop} />
       <ScrollView style={s.flex1} contentContainerStyle={[s.bodyContent, {alignItems: 'center'}]} showsVerticalScrollIndicator={false}>
@@ -1062,7 +1062,7 @@ function Ready({registered, onFinish, onSkip, insetTop, insetBottom}: ScreenProp
         </Rise>
         <Rise delay={120} style={{alignSelf: 'stretch'}}>
           <Text style={[s.title, {textAlign: 'center', marginTop: 14}]}>
-            {shoe ? '이제 달릴 준비가\n되었습니다' : '다시 오신 걸\n환영합니다'}
+            {shoe ? '이제 달릴 준비가\n됐어요' : '다시 오신 걸\n환영해요'}
           </Text>
           <Text style={[s.body, {textAlign: 'center'}]}>
             {shoe ? 'Keego와 함께 더 오래,\n더 건강하게 달리세요.' : '로그인하고 이어서 달려보세요.'}
@@ -1093,7 +1093,7 @@ function Ready({registered, onFinish, onSkip, insetTop, insetBottom}: ScreenProp
       <View style={[s.footer, {paddingBottom: Math.max(insetBottom, 18), gap: 10}]}>
         <PrimaryButton testID="onboarding-finish" label="시작하기" onPress={onFinish} />
         <Text style={{fontFamily: FONT, fontSize: 11, color: T4, textAlign: 'center', lineHeight: 17, marginTop: 8}}>
-          계속 진행하면 Keego의 <Text style={{textDecorationLine: 'underline'}} accessibilityRole="link" accessibilityLabel="이용약관 열기" onPress={() => { Linking.openURL(TERMS_URL).catch(() => {}); }}>이용약관</Text>과 <Text style={{textDecorationLine: 'underline'}} accessibilityRole="link" accessibilityLabel="개인정보 처리방침 열기" onPress={() => { Linking.openURL(PRIVACY_URL).catch(() => {}); }}>개인정보 처리방침</Text>에{'\n'}동의하는 것으로 간주됩니다.
+          계속 진행하면 Keego의 <Text style={{textDecorationLine: 'underline'}} accessibilityRole="link" accessibilityLabel="이용약관 열기" onPress={() => { Linking.openURL(TERMS_URL).catch(() => {}); }}>이용약관</Text>과 <Text style={{textDecorationLine: 'underline'}} accessibilityRole="link" accessibilityLabel="개인정보 처리방침 열기" onPress={() => { Linking.openURL(PRIVACY_URL).catch(() => {}); }}>개인정보 처리방침</Text>에{'\n'}동의하는 것으로 간주돼요.
         </Text>
       </View>
     </View>
@@ -1177,9 +1177,9 @@ const s = StyleSheet.create({
     marginTop: 10,
     padding: 13,
     borderRadius: 18, borderCurve: 'continuous',
-    backgroundColor: 'rgba(255,101,0,0.08)',
+    backgroundColor: withAlpha(ACCENT, 0.08),
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(255,101,0,0.22)',
+    borderColor: withAlpha(ACCENT, 0.22),
   },
   analyticCard: {padding: 13, borderRadius: 18, borderCurve: 'continuous', backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP},
   alertBanner: {
@@ -1193,7 +1193,7 @@ const s = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: SEP,
   },
-  alertIconChip: {width: 34, height: 34, borderRadius: 11, backgroundColor: 'rgba(255,101,0,0.14)', alignItems: 'center', justifyContent: 'center'},
+  alertIconChip: {width: 34, height: 34, borderRadius: 11, backgroundColor: withAlpha(ACCENT, 0.14), alignItems: 'center', justifyContent: 'center'},
 
   // Management
   summaryHero: {
@@ -1202,9 +1202,9 @@ const s = StyleSheet.create({
     justifyContent: 'space-between',
     padding: 14,
     borderRadius: 20, borderCurve: 'continuous',
-    backgroundColor: 'rgba(255,101,0,0.10)',
+    backgroundColor: withAlpha(ACCENT, 0.1),
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(255,101,0,0.22)',
+    borderColor: withAlpha(ACCENT, 0.22),
   },
   shoeCard: {
     flexDirection: 'row',
@@ -1261,9 +1261,9 @@ const s = StyleSheet.create({
     height: 56,
     borderRadius: 18, borderCurve: 'continuous',
     marginTop: 14,
-    backgroundColor: 'rgba(255,101,0,0.14)',
+    backgroundColor: withAlpha(ACCENT, 0.14),
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(255,101,0,0.3)',
+    borderColor: withAlpha(ACCENT, 0.3),
     alignItems: 'center',
     justifyContent: 'center',
   },

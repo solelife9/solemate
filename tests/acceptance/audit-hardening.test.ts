@@ -1080,6 +1080,13 @@ describe('Audit Hardening 수용', () => {
       expect(consumes('SCRIM').length).toBeGreaterThan(0);
       expect(consumes('GUTTER').length).toBeGreaterThan(0);
 
+      // ⑥-b ACCENT(#FF6500) 알파는 withAlpha(ACCENT,x)로만 — raw 'rgba(255,101,0,x)' 리터럴 금지.
+      //    하드코딩하면 브랜드색 변경 시 desync(테스트 안 잡힘). 2026-07-06 온보딩 12곳 정리 후 고정.
+      const rawAccent = listSrc().filter(
+        f => path.basename(f) !== 'theme.ts' && /rgba\(\s*255\s*,\s*101\s*,\s*0\s*,/.test(strip(readFile(f))),
+      );
+      expect(rawAccent).toEqual([]);
+
       // ⑦ hero 사이즈가 실제 렌더 산출물에 반영된다(관찰): Stat 값 Text 의 fontSize === HERO.heroLg.
       const h = renderTree(el(Stat, {value: '42', unit: 'km', valueSize: HERO.heroLg, testID: 'hero'}));
       const heroVal = h.root.findAll((n: ReactTestRenderer.ReactTestInstance) => {

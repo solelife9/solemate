@@ -288,7 +288,7 @@ export default function RunRecapScreen({
             {photoUri ? (
               <View>
                 <Image source={{uri: photoUri}} style={s.metaPhoto} resizeMode="cover" accessible accessibilityLabel="러닝 사진" />
-                <Pressable onPress={removePhoto} accessibilityRole="button" accessibilityLabel="사진 제거"
+                <Pressable onPress={removePhoto} accessibilityRole="button" accessibilityLabel="사진 제거" hitSlop={8}
                   style={({pressed}) => [s.metaPhotoRemove, pressed && {opacity: 0.8}]}>
                   <Ionicons name="close" size={14} color={T1} />
                 </Pressable>
@@ -374,7 +374,7 @@ const s = StyleSheet.create({
   planSummary: {fontFamily: FONT, fontSize: 13, fontWeight: '700'},
   planRow: {flexDirection: 'row', alignItems: 'center', paddingVertical: 7, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP},
   planKm: {color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '700', width: 42},
-  planTgt: {color: T4, fontFamily: FONT, fontSize: 13, fontWeight: '500', flex: 1},
+  planTgt: {color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '500', flex: 1},
   planAct: {color: T1, fontFamily: FONT, fontSize: 14, fontWeight: '700', width: 64, textAlign: 'right'},
   planDelta: {fontFamily: FONT, fontSize: 13, fontWeight: '700', width: 52, textAlign: 'right'},
   footer: {paddingHorizontal: 18, paddingTop: 10, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP, backgroundColor: CARD_HI},
