@@ -175,8 +175,8 @@ function HallOfShoes({records = [], unit = 'km', onBack, userName, onGoShoes}: H
                   <Text style={st.featQuote}>{kmInt(latest.km)}{unit}의 여정, 고마웠어.</Text>
                 </View>
                 <View style={st.featDist}>
-                  <FoilText text={String(displayNum(latest.km, unit, 0))} size={44} width={130} ls={-2} />
-                  <Text style={st.featKm}>{unit.toUpperCase()}</Text>
+                  <Text style={st.featNum}>{displayNum(latest.km, unit, 0)}</Text>
+                  <Text style={st.featKm}>{unit}</Text>
                 </View>
               </View>
             </Pressable>
@@ -394,8 +394,9 @@ const st = StyleSheet.create({
   featBrand: {fontSize: 10, fontWeight: '800', letterSpacing: 1.8, color: G.gold},
   featModel: {fontFamily: SERIF, fontSize: 24, fontWeight: '800', color: G.txt, marginTop: 7},
   featQuote: {fontSize: 12, fontWeight: '600', color: G.muted, marginTop: 9},
-  featDist: {alignItems: 'flex-end'},
-  featKm: {fontSize: 10, fontWeight: '800', letterSpacing: 2.4, color: G.txt, marginTop: 2},
+  featDist: {flexDirection: 'row', alignItems: 'baseline', gap: 4},
+  featNum: {fontSize: 46, fontWeight: '800', color: G.gold, letterSpacing: -1.5, fontVariant: ['tabular-nums']},
+  featKm: {fontSize: 16, fontWeight: '700', color: G.gold, opacity: 0.72},
 
   grid: {flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 14},
   plaque: {width: '48%', borderRadius: 16, borderWidth: 1, borderColor: G.line, backgroundColor: '#120f0b', padding: 16, paddingBottom: 15, minHeight: 168, overflow: 'hidden'},
