@@ -55,6 +55,7 @@ const SNAP: RunSnapshot = {
   goalKm: 5,
   cadence: 172,
   location: '서울',
+  track: null,
   savedAt: 1_700_000_745_000,
 };
 
@@ -109,6 +110,16 @@ describe('iron law — no negative / NaN reaches storage', () => {
   test('sanitizeSnapshot returns null when no shoe identity is present', () => {
     expect(sanitizeSnapshot({dist: 5})).toBeNull();
     expect(sanitizeSnapshot(null)).toBeNull();
+  });
+
+  test('sanitizeSnapshot restores track lap meta (크래시 복구용)', () => {
+    const s = sanitizeSnapshot({...SNAP, track: {lapM: 400, lapTimes: [90, 185, -5, 'x', 280], locked: true}});
+    // 유한·비음 랩시각만 통과(-5, 'x' 제거).
+    expect(s!.track).toEqual({lapM: 400, lapTimes: [90, 185, 280], locked: true});
+  });
+  test('sanitizeSnapshot drops track when lapM<=0 (비트랙/오염)', () => {
+    expect(sanitizeSnapshot({...SNAP, track: {lapM: 0, lapTimes: [1], locked: false}})!.track).toBeNull();
+    expect(sanitizeSnapshot({...SNAP, track: 'nope'})!.track).toBeNull();
   });
 });
 

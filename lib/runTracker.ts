@@ -130,6 +130,9 @@ class RunTracker {
   private shoe: {id: string; name: string} = {id: '', name: ''};
   private cadence = 0;
   private location = '';
+  // 트랙 모드 랩 상태(엔진은 계산 안 함 — 컨테이너가 setTrackMeta 로 먹인다). 스냅샷에 실어
+  // 크래시 복구 시 랩수·확정랩거리·lock 을 복원한다(트랙 런이 GPS 런으로 잘못 복구되는 것 방지).
+  private trackMeta: {lapM: number; lapTimes: number[]; locked: boolean} | null = null;
   private accuracyM: number | null = null;
   private permissionRevoked = false;
   // Elapsed seconds captured at permission-revocation; once set, getElapsed()
@@ -177,6 +180,7 @@ class RunTracker {
     this.shoe = config.shoe;
     this.cadence = 0;
     this.location = '';
+    this.trackMeta = null;
     this.accuracyM = null;
     this.permissionRevoked = false;
     this.frozenElapsed = null;
@@ -234,6 +238,11 @@ class RunTracker {
   setMeta(meta: {cadence?: number; location?: string}) {
     if (typeof meta.cadence === 'number') this.cadence = meta.cadence;
     if (typeof meta.location === 'string') this.location = meta.location;
+  }
+
+  /** 트랙 랩 상태를 엔진에 실어 스냅샷에 영속되게 한다(컨테이너가 랩 변화 시 호출). null=비트랙. */
+  setTrackMeta(t: {lapM: number; lapTimes: number[]; locked: boolean} | null) {
+    this.trackMeta = t ? {lapM: t.lapM, lapTimes: t.lapTimes.slice(), locked: t.locked} : null;
   }
 
   // ── pause control ─────────────────────────────────────────────────
@@ -584,6 +593,7 @@ class RunTracker {
       goalKm: this.goalKm,
       cadence: this.cadence,
       location: this.location,
+      track: this.trackMeta,
       savedAt: this.now(),
     }).catch(() => {});
   }

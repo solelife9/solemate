@@ -48,27 +48,38 @@ export function snapLapDistance(measuredM: number, tolFrac = 0.06): LapSnap {
   return {meters: Math.round(measuredM), label: '측정값', snapped: false};
 }
 
+/** 비표준 랩거리를 몇 랩 평균한 뒤에야 채택할지 — 단일 랩 GPS 노이즈를 눌러 신뢰 확보. */
+export const NONSTD_ADOPT_LAPS = 3;
+
 /**
- * 첫 자동랩 GPS 보정 — 여기까지의 GPS 누적거리(km)와 지금까지의 랩수로 '실측 한 바퀴(m)'를
- * 내고, 표준(200/300/400)에 깔끔히 스냅될 때만 확정 랩거리를 교체한다. 애매한 값(비표준)은
- * 사용자 선택(currentLapM)을 유지 — 노이즈 GPS 보다 사람 판단을 신뢰. 실내(GPS✗)는 애초에
- * 자동랩이 안 울려 호출 자체가 없다. 사용자가 400 골랐어도 GPS 가 300 트랙을 잡아내 교정한다.
+ * 트랙 GPS 보정 — 매 자동랩마다 호출한다(locked 되면 그대로). 여기까지의 GPS 누적거리(km)와
+ * 랩수로 '실측 평균 한 바퀴(m)'를 내고 확정 랩거리를 정한다. 두 단계 신뢰:
+ *   1) 표준(200/300/400)에 6% 내로 스냅 → 즉시 채택 + lock (1랩부터, 고신뢰).
+ *   2) 비표준(예 350·333) → 단일 랩은 노이즈라 곧장 못 믿고, NONSTD_ADOPT_LAPS 랩 이상
+ *      평균됐을 때 5m 반올림으로 채택 + lock (진짜 비표준 트랙을 잡아냄). 그 전엔 선택 유지·미lock.
+ * 측정 0(실내/死구간: 누적 0)이면 보정하지 않는다 — snapLapDistance 가 0 을 400 폴백으로
+ * 스냅하므로, 여기서 걸러 200 선택이 400 으로 뒤집히는 걸 막는다. 실내는 자동랩이 애초에
+ * 안 울려 호출 자체가 드물다. lock 후엔 재평가하지 않아 거리(랩수×랩거리)가 중간에 안 튄다.
  */
 export function calibrateLapM(
-  cumDistKm: number, lapsSoFar: number, currentLapM: number,
-): {lapM: number; changed: boolean; measuredM: number; snapped: boolean} {
+  cumDistKm: number, lapsSoFar: number, currentLapM: number, locked: boolean,
+): {lapM: number; changed: boolean; locked: boolean; measuredM: number; snapped: boolean} {
   const measuredM = (cumDistKm * 1000) / Math.max(1, lapsSoFar);
-  // 측정값이 없으면(실내·GPS 死구간: 누적 0) 보정하지 않는다 — snapLapDistance 는 0 을
-  // 400 안전폴백으로 스냅하므로, 여기서 걸러 200 선택이 400 으로 뒤집히는 걸 막는다.
-  if (!(measuredM > 0)) return {lapM: currentLapM, changed: false, measuredM: 0, snapped: false};
-  const snap = snapLapDistance(measuredM);
-  // 표준에 깔끔히 스냅될 때만 확정 랩거리를 교체(고신뢰). 비표준(예 350m)은 사용자 선택을
-  // 유지하되 measuredM 을 함께 돌려줘, 호출부가 '측정≠선택'을 사용자에게 알릴 수 있게 한다
-  // (조용히 추측하지 않고 사람을 루프에 — 진짜 350 트랙 vs 잘못 잰 400 은 측정만으론 못 가름).
-  if (snap.snapped && Math.round(snap.meters) !== Math.round(currentLapM)) {
-    return {lapM: snap.meters, changed: true, measuredM, snapped: true};
+  if (locked || !(measuredM > 0)) {
+    return {lapM: currentLapM, changed: false, locked, measuredM: measuredM > 0 ? measuredM : 0, snapped: false};
   }
-  return {lapM: currentLapM, changed: false, measuredM, snapped: snap.snapped};
+  const snap = snapLapDistance(measuredM);
+  if (snap.snapped) {
+    // 표준 스냅 = 고신뢰 → 확정 + lock. 선택과 같으면 확정만(변경 없음).
+    return {lapM: snap.meters, changed: Math.round(snap.meters) !== Math.round(currentLapM), locked: true, measuredM, snapped: true};
+  }
+  if (lapsSoFar >= NONSTD_ADOPT_LAPS) {
+    // 비표준이 여러 랩 평균으로 안정 → 실측값(5m 반올림) 채택 + lock. 진짜 350 트랙을 잡는다.
+    const adopted = Math.round(measuredM / 5) * 5;
+    return {lapM: adopted, changed: Math.round(adopted) !== Math.round(currentLapM), locked: true, measuredM, snapped: false};
+  }
+  // 비표준 + 아직 표본 부족 → 선택 유지, 미lock(다음 랩에 재평가).
+  return {lapM: currentLapM, changed: false, locked: false, measuredM, snapped: false};
 }
 
 export interface GeoPoint {

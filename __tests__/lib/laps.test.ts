@@ -98,42 +98,49 @@ describe('lapsToTrack + lapDistanceKm — 시계열/거리', () => {
   });
 });
 
-describe('calibrateLapM — 첫 자동랩 GPS 보정', () => {
-  test('사용자 400 선택인데 GPS 가 300 트랙을 잡으면 교정한다', () => {
-    // 첫 랩(1바퀴) GPS 누적 0.301km → 실측 301m → 300 표준 스냅.
-    const c = calibrateLapM(0.301, 1, 400);
+describe('calibrateLapM — 트랙 GPS 보정(2단계 신뢰)', () => {
+  test('표준 스냅: 400 선택인데 GPS 가 300 트랙을 잡으면 1랩에 교정+lock', () => {
+    const c = calibrateLapM(0.301, 1, 400, false); // 301m → 300 표준 스냅
     expect(c.lapM).toBe(300);
     expect(c.changed).toBe(true);
+    expect(c.locked).toBe(true);
   });
-  test('GPS 가 선택과 같은 표준을 잡으면 그대로(변경 없음)', () => {
-    const c = calibrateLapM(0.401, 1, 400); // 401m → 400 스냅 = 선택과 동일
+  test('표준 스냅이 선택과 같으면 확정만(변경 없음)하고 lock', () => {
+    const c = calibrateLapM(0.401, 1, 400, false); // 401 → 400 = 선택과 동일
     expect(c.lapM).toBe(400);
     expect(c.changed).toBe(false);
+    expect(c.locked).toBe(true);
   });
-  test('여러 랩 누적 ÷ 랩수로 평균 한 바퀴를 낸다(수동랩 섞여도)', () => {
-    // 3바퀴 후 GPS 누적 1.203km → ÷3 = 401m → 400 스냅.
-    const c = calibrateLapM(1.203, 3, 200);
+  test('여러 랩 누적 ÷ 랩수로 평균 한 바퀴(수동랩 섞여도)', () => {
+    const c = calibrateLapM(1.203, 3, 200, false); // ÷3 = 401 → 400 스냅
     expect(c.lapM).toBe(400);
+    expect(c.locked).toBe(true);
+  });
+  test('비표준 350m: 표본 부족(1~2랩)이면 선택 유지·미lock(재평가 대기)', () => {
+    const c1 = calibrateLapM(0.35, 1, 400, false); // 350m 비표준, 1랩
+    expect(c1.lapM).toBe(400);
+    expect(c1.changed).toBe(false);
+    expect(c1.locked).toBe(false); // 아직 확정 안 함 → 다음 랩 재평가
+    expect(c1.measuredM).toBeCloseTo(350, 0);
+  });
+  test('비표준 350m 트랙: 3랩 평균 안정되면 실측값 채택+lock', () => {
+    const c = calibrateLapM(1.05, 3, 400, false); // 1.05km ÷3 = 350m, 3랩 → 채택
+    expect(c.lapM).toBe(350);
     expect(c.changed).toBe(true);
-  });
-  test('애매한 값(비표준)이면 사용자 선택 유지 — 노이즈보다 사람 신뢰', () => {
-    // 실측 340m 는 어느 표준에도 6% 내로 안 붙음 → 선택(400) 유지.
-    const c = calibrateLapM(0.34, 1, 400);
-    expect(c.lapM).toBe(400);
-    expect(c.changed).toBe(false);
-  });
-  test('비표준 350m 트랙: 선택 유지하되 측정값을 함께 돌려 알릴 수 있게', () => {
-    // 진짜 350m 트랙인데 400 선택 → 안 덮어쓰지만 measuredM=350 을 노출(호출부가 토스트).
-    const c = calibrateLapM(0.35, 1, 400);
-    expect(c.changed).toBe(false);
+    expect(c.locked).toBe(true);
     expect(c.snapped).toBe(false);
-    expect(c.measuredM).toBeCloseTo(350, 0);
-    expect(c.lapM).toBe(400);
   });
-  test('GPS 거리 0(실내/신호없음)이면 선택 유지', () => {
-    const c = calibrateLapM(0, 1, 200);
+  test('lock 이후엔 재평가하지 않는다(거리 안 튐)', () => {
+    const c = calibrateLapM(1.2, 4, 300, true); // locked=true → 그대로
+    expect(c.lapM).toBe(300);
+    expect(c.changed).toBe(false);
+    expect(c.locked).toBe(true);
+  });
+  test('GPS 거리 0(실내/신호없음)이면 보정 안 함·미lock', () => {
+    const c = calibrateLapM(0, 1, 200, false);
     expect(c.lapM).toBe(200);
     expect(c.changed).toBe(false);
+    expect(c.locked).toBe(false);
   });
 });
 

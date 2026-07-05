@@ -340,6 +340,37 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'm
       .catch(() => { if (alive) setRecordedSplits([]); });
     return () => { alive = false; };
   }, [run.id]);
+  // 트랙 세션 마커(track_<id>, App.onSave가 영속) — {lapM, laps, lapTimes(랩 완료 경과초)}.
+  // 있으면 이 런은 트랙 모드 → per-km 스플릿 대신 랩별 표를 보여준다(없으면 null → 일반 처리).
+  const [trackMeta, setTrackMeta] = useState<{ lapM: number; laps: number; lapTimes: number[] } | null>(null);
+  useEffect(() => {
+    let alive = true;
+    if (!run.id) { setTrackMeta(null); return; }
+    AsyncStorage.getItem('track_' + run.id)
+      .then(raw => {
+        if (!alive) return;
+        try {
+          const o = raw ? JSON.parse(raw) : null;
+          if (o && typeof o.lapM === 'number' && Array.isArray(o.lapTimes)) {
+            setTrackMeta({ lapM: o.lapM, laps: typeof o.laps === 'number' ? o.laps : o.lapTimes.length, lapTimes: o.lapTimes });
+          } else setTrackMeta(null);
+        } catch { setTrackMeta(null); }
+      })
+      .catch(() => { if (alive) setTrackMeta(null); });
+    return () => { alive = false; };
+  }, [run.id]);
+  // 랩별 스플릿 — 누적 랩시각을 구간(랩)시간으로 환산하고 랩거리로 km당 페이스를 낸다.
+  const lapRows = useMemo(() => {
+    if (!trackMeta) return [] as { lap: number; split: number; paceSec: number }[];
+    const lm = trackMeta.lapM; const lt = trackMeta.lapTimes;
+    const rows: { lap: number; split: number; paceSec: number }[] = [];
+    let prev = 0;
+    for (let i = 0; i < lt.length; i++) {
+      const split = Math.max(0, lt[i] - prev); prev = lt[i];
+      rows.push({ lap: i + 1, split, paceSec: lm > 0 ? split / (lm / 1000) : 0 });
+    }
+    return rows;
+  }, [trackMeta]);
   // GAP(경사보정페이스)용 (거리,경과초,고도) 시계열(gapTrack_<id>, App.onSave가 영속). 있으면
   // 스무딩→지형스케일 빈평균→Minetti 로 평지 등가 페이스를 낸다. 없으면(옛 런/평지/고도無) null.
   const [gapTrack, setGapTrack] = useState<{ d: number; t: number; e: number }[]>([]);
@@ -618,10 +649,37 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'm
         )}
         {/* 달린 위치(경로) 지도 — route_<id> 가 있으면 SVG 코스맵으로 표시(없으면 자동 숨김). */}
         <CourseMap points={route} style={{ marginTop: 16 }} />
-        {/* 구간별 페이스 스플릿(km · 페이스 바 · 고도). 페이스 곡선(추세)은 개선 시도
-            (평균선·눈금·스무딩) 후에도 '봐도 모르겠다'는 실사용 판정으로 제거 확정
-            (2026-07-04) — 구간 정보는 이 표의 대비 강화된 막대가 담당한다. */}
-        <RunSplits splits={recordedSplits.length >= 2 ? recordedSplits : buildSplits(run, route)} />
+        {/* 트랙 세션이면 랩별 표(랩 · 페이스바 · km당 페이스 · 랩시간). 아니면 per-km 스플릿. */}
+        {trackMeta && lapRows.length >= 1 ? (() => {
+          const fmtP = (sec: number) => sec > 0 ? `${Math.floor(sec / 60)}'${String(Math.round(sec % 60)).padStart(2, '0')}"` : '--';
+          const fmtT = (sec: number) => `${Math.floor(sec / 60)}:${String(Math.round(sec % 60)).padStart(2, '0')}`;
+          const paces = lapRows.map(r => r.paceSec).filter(p => p > 0);
+          const fastest = paces.length ? Math.min(...paces) : 0;
+          return (
+            <View style={s.trackCard} accessibilityLabel={`트랙 ${trackMeta.lapM}미터 ${trackMeta.laps}랩`}>
+              <View style={s.trackHead}>
+                <Text style={s.trackTitle}>트랙 · {trackMeta.lapM}m × {trackMeta.laps}랩</Text>
+                <Text style={s.trackSub}>{(trackMeta.laps * trackMeta.lapM / 1000).toFixed(2)}km</Text>
+              </View>
+              {lapRows.map(r => {
+                const rel = fastest > 0 && r.paceSec > 0 ? fastest / r.paceSec : 1; // 빠를수록 1
+                return (
+                  <View key={r.lap} style={s.lapRow} accessibilityLabel={`${r.lap}랩, 페이스 킬로미터당 ${fmtP(r.paceSec)}, ${fmtT(r.split)}`}>
+                    <Text style={s.lapNum}>{r.lap}</Text>
+                    <View style={s.lapBarWrap}><View style={[s.lapBarFill, { width: `${Math.max(8, Math.round(rel * 100))}%` }]} /></View>
+                    <Text style={s.lapPace}>{fmtP(r.paceSec)}<Text style={s.lapPaceU}> /km</Text></Text>
+                    <Text style={s.lapTime}>{fmtT(r.split)}</Text>
+                  </View>
+                );
+              })}
+            </View>
+          );
+        })() : (
+          /* 구간별 페이스 스플릿(km · 페이스 바 · 고도). 페이스 곡선(추세)은 개선 시도
+             (평균선·눈금·스무딩) 후에도 '봐도 모르겠다'는 실사용 판정으로 제거 확정
+             (2026-07-04) — 구간 정보는 이 표의 대비 강화된 막대가 담당한다. */
+          <RunSplits splits={recordedSplits.length >= 2 ? recordedSplits : buildSplits(run, route)} />
+        )}
         {/* 데이터 내보내기 — 조용한 하단 진입점. 경로가 있는(GPS) 런에서만. 감정적 공유(위
             공유 버튼)와 분리해, 가민/스트라바로 코스를 옮기려는 사람만 찾아 쓴다. */}
         {route.length >= 2 && (
@@ -1070,6 +1128,18 @@ const s = StyleSheet.create({
   // 공유 카드 캡처용: 화면 밖(좌측 far-off)으로 밀어 보이지 않게 하되 마운트는 유지.
   runPhoto: { width: '100%', height: 200, borderRadius: 16, borderCurve: 'continuous', marginTop: 16 },
   runMemo: { color: T2, fontFamily: FONT, fontSize: 14, lineHeight: 21, marginTop: 12, fontStyle: 'italic' },
+  // 트랙 랩 표 — 랩번호 · 상대페이스 바 · km당 페이스 · 랩시간.
+  trackCard: { marginTop: 16, backgroundColor: CARD, borderRadius: RADIUS.lg, borderCurve: 'continuous', borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER, paddingHorizontal: 16, paddingVertical: 14 },
+  trackHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 12 },
+  trackTitle: { color: T1, fontFamily: DISPLAY, fontSize: 15, fontWeight: '700', letterSpacing: -0.2 },
+  trackSub: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600' },
+  lapRow: { flexDirection: 'row', alignItems: 'center', gap: 10, height: 34 },
+  lapNum: { width: 22, color: T3, fontFamily: DISPLAY, fontSize: 13, fontWeight: '700', textAlign: 'center' },
+  lapBarWrap: { flex: 1, height: 6, borderRadius: 3, backgroundColor: withAlpha(T1, 0.06), overflow: 'hidden' },
+  lapBarFill: { height: 6, borderRadius: 3, backgroundColor: ACCENT },
+  lapPace: { width: 78, textAlign: 'right', color: T1, fontFamily: DISPLAY, fontSize: 14, fontWeight: '600', fontVariant: ['tabular-nums'] },
+  lapPaceU: { color: T3, fontFamily: FONT, fontSize: 10, fontWeight: '500' },
+  lapTime: { width: 46, textAlign: 'right', color: T3, fontFamily: DISPLAY, fontSize: 13, fontWeight: '500', fontVariant: ['tabular-nums'] },
   gpxRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 24, paddingVertical: 12, paddingHorizontal: 2, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP },
   gpxTxt: { color: T2, fontFamily: FONT, fontSize: 13, fontWeight: '600' },
   gpxHint: { color: T4, fontFamily: FONT, fontSize: 11, marginLeft: 'auto' },

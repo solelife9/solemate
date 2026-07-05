@@ -37,6 +37,9 @@ export interface RunSnapshot {
   goalKm: number; // target distance (>= 0)
   cadence: number; // last spm reading (>= 0)
   location: string; // reverse-geocoded label, '' until resolved
+  // 트랙 모드 랩 상태(비트랙이면 null/부재). lapM=확정 한바퀴(m), lapTimes=랩 완료 경과초,
+  // locked=보정 확정. 복구 시 이게 있으면 트랙 런으로 이어받는다(거리=랩수×lapM).
+  track?: {lapM: number; lapTimes: number[]; locked: boolean} | null;
   savedAt: number; // epoch ms this snapshot was written
 }
 
@@ -101,8 +104,21 @@ export function sanitizeSnapshot(raw: unknown): RunSnapshot | null {
     goalKm: nonNeg(r.goalKm),
     cadence: Math.floor(nonNeg(r.cadence)),
     location: typeof r.location === 'string' ? r.location : '',
+    track: sanitizeTrackMeta(r.track),
     savedAt: nonNeg(r.savedAt),
   };
+}
+
+/** 트랙 랩 메타 복원 — lapM>0 이고 lapTimes 가 유한 숫자 배열일 때만(아니면 null=비트랙). */
+export function sanitizeTrackMeta(raw: unknown): {lapM: number; lapTimes: number[]; locked: boolean} | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const t = raw as Record<string, unknown>;
+  const lapM = nonNeg(t.lapM);
+  if (!(lapM > 0)) return null;
+  const lapTimes = Array.isArray(t.lapTimes)
+    ? t.lapTimes.map(v => (typeof v === 'number' ? v : parseFloat(String(v)))).filter(v => Number.isFinite(v) && v >= 0)
+    : [];
+  return {lapM, lapTimes, locked: !!t.locked};
 }
 
 /** A snapshot is worth recovering only once the run logged real progress. */
