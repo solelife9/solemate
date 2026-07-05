@@ -458,54 +458,85 @@ function FormatE({model}: {model: RetirementCardModel}) {
 // ── S · 스토리(1080×1920) — 명예의 전당 언어(샴페인 골드 + 절제) ─────────────────
 // 인스타 스토리 규격. 새 전당 인증서와 같은 문법: RETIRED 씰(얇은 골드 링) → 신발명 →
 // 거대 거리(HALL_GOLD) → KM TOGETHER 캡스 → 기간 → keego / KEEP GOING 푸터.
+// 선셋 바이올렛 키프세이크(사용자 확정 2026-07-05): 미드나잇 카드 + 상단 마젠타 글로우,
+// 3존(라벨 · 주인공 · 배웅). 거대 거리와 배웅 문장은 98° 선셋 바이올렛 그라데이션
+// (#FFB060 → #FF6C7E → #B57BFF). 인스타 스토리 규격(1080×1920) 유지.
+const SUNSET: {o: number; c: string}[] = [
+  {o: 0, c: '#FFB060'}, {o: 0.52, c: '#FF6C7E'}, {o: 1, c: '#B57BFF'},
+];
 function FormatS({model}: {model: RetirementCardModel}) {
-  const meta: string[] = [`${model.runCountLabel}번의 러닝`];
-  if (model.dateRange) meta.push(model.dateRange);
+  const hair = 'rgba(255,255,255,0.10)';
+  const moment = typeof model.mostMemorable === 'string' ? model.mostMemorable.trim() : '';
+  // 거대 거리 — 숫자 + 작은 km, 하나의 SVG 안 연속 그라데이션(userSpaceOnUse).
+  const numSize = 260;
+  const unitSize = 96;
+  const numW = String(model.distance).length * numSize * 0.6;
+  const distW = numW + 20 + unitSize * 1.3;
+  const distX = CX - distW / 2;
   return (
     <G>
-      {/* RETIRED 씰 — 한 겹의 얇은 링 */}
-      <Circle cx={CX} cy={330} r={96} fill="none" stroke={withAlpha(HALL_GOLD, 0.5)} strokeWidth={3} />
-      <SvgText x={CX} y={316} fill={HALL_GOLD} fontFamily={DISPLAY} fontSize={22} fontWeight="600" letterSpacing={5} textAnchor="middle">
-        RETIRED
-      </SvgText>
-      {model.retireYear > 0 && (
-        <SvgText x={CX} y={368} fill={HALL_GOLD} fontFamily={DISPLAY} fontSize={40} fontWeight="700" textAnchor="middle">
-          {String(model.retireYear)}
-        </SvgText>
-      )}
+      <Defs>
+        {/* 상단 마젠타 라디얼 글로우 */}
+        <RadialGradient id="s-glow" cx="50%" cy="2%" rx="52%" ry="30%">
+          <Stop offset="0" stopColor="#3a1430" stopOpacity={1} />
+          <Stop offset="0.6" stopColor="#3a1430" stopOpacity={0} />
+        </RadialGradient>
+        <LinearGradient id="s-dist" x1={distX} y1="0" x2={distX + distW} y2={numSize * 0.14} gradientUnits="userSpaceOnUse">
+          {SUNSET.map((s, i) => <Stop key={i} offset={s.o} stopColor={s.c} />)}
+        </LinearGradient>
+        <LinearGradient id="s-bye" x1="0" y1="0" x2="1" y2="0.16">
+          {SUNSET.map((s, i) => <Stop key={i} offset={s.o} stopColor={s.c} />)}
+        </LinearGradient>
+      </Defs>
+      <Rect x={0} y={0} width={CARD_W} height={STORY_H} fill="url(#s-glow)" />
 
-      {/* 신발명 */}
-      <SvgText x={CX} y={600} fill={T1} fontFamily={FONT} fontSize={72} fontWeight="700" textAnchor="middle">
+      {/* 존 1 · 라벨 */}
+      <Line x1={CX - 250} y1={300} x2={CX + 250} y2={300} stroke={hair} strokeWidth={2} />
+      <SvgText x={CX} y={360} fill="rgba(255,255,255,0.5)" fontFamily={FONT} fontSize={32} fontWeight="800" letterSpacing={9} textAnchor="middle">
+        RUNNING SHOE RETIREMENT
+      </SvgText>
+
+      {/* 존 2 · 주인공 */}
+      <SvgText x={CX} y={640} fill="rgba(255,255,255,0.48)" fontFamily={FONT} fontSize={34} fontWeight="700" letterSpacing={7} textAnchor="middle">
+        {model.brand.toUpperCase()}
+      </SvgText>
+      <SvgText x={CX} y={740} fill={T1} fontFamily={FONT} fontSize={78} fontWeight="800" letterSpacing={-2} textAnchor="middle">
         {model.shoeName}
       </SvgText>
 
-      {/* 거대 거리 — 스토리의 주인공 */}
-      <SvgText x={CX} y={1010} fill={HALL_GOLD} fontFamily={DISPLAY} fontSize={300} fontWeight="700" letterSpacing={-10} textAnchor="middle">
+      {/* 거대 거리(선셋 그라데이션) + km */}
+      <SvgText x={distX} y={1020} fill="url(#s-dist)" fontFamily={DISPLAY} fontSize={numSize} fontWeight="800" letterSpacing={-numSize * 0.04} textAnchor="start">
         {model.distance}
       </SvgText>
-      <SvgText x={CX} y={1090} fill={T2} fontFamily={DISPLAY} fontSize={30} fontWeight="600" letterSpacing={10} textAnchor="middle">
-        {`${model.unit.toUpperCase()} TOGETHER`}
+      <SvgText x={distX + numW + 20} y={1020} fill="url(#s-dist)" fontFamily={DISPLAY} fontSize={unitSize} fontWeight="800" textAnchor="start">
+        {model.unit}
+      </SvgText>
+      <SvgText x={CX} y={1110} fill="rgba(255,255,255,0.52)" fontFamily={FONT} fontSize={38} fontWeight="600" textAnchor="middle">
+        함께 달린 거리
       </SvgText>
 
-      {/* 여정 메타 */}
-      {meta.map((line, i) => (
-        <SvgText key={line + i} x={CX} y={1240 + i * 58} fill={T3} fontFamily={FONT} fontSize={34} textAnchor="middle">
-          {line}
+      {/* 메타 — 기간 + 기억 칩 */}
+      {!!model.dateRange && (
+        <SvgText x={CX} y={1250} fill="rgba(255,255,255,0.56)" fontFamily={DISPLAY} fontSize={40} fontWeight="600" textAnchor="middle">
+          {model.dateRange}
         </SvgText>
-      ))}
-      <SvgText x={CX} y={1430} fill={T2} fontFamily={FONT} fontSize={38} fontWeight="500" textAnchor="middle">
-        {`${model.distanceLabel}의 여정, 고마웠어.`}
-      </SvgText>
+      )}
+      {!!moment && (
+        <>
+          <Rect x={CX - 240} y={1310} width={480} height={82} rx={41} fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.09)" strokeWidth={2} />
+          <SvgText x={CX} y={1364} fill={T1} fontFamily={FONT} fontSize={38} fontWeight="700" textAnchor="middle">
+            {`\u{1F3C6}  ${moment}`}
+          </SvgText>
+        </>
+      )}
 
-      {/* 푸터 — keego 워드마크 + KEEP GOING */}
-      <Line x1={CX - 130} y1={1660} x2={CX - 46} y2={1660} stroke={withAlpha(HALL_GOLD, 0.4)} strokeWidth={2} />
-      <Line x1={CX + 46} y1={1660} x2={CX + 130} y2={1660} stroke={withAlpha(HALL_GOLD, 0.4)} strokeWidth={2} />
-      <Circle cx={CX} cy={1660} r={5} fill={withAlpha(HALL_GOLD, 0.6)} />
-      <SvgText x={CX} y={1740} fill={T1} fontFamily="Helvetica Neue" fontSize={54} fontWeight="500" letterSpacing={-1} textAnchor="middle">
-        keego
+      {/* 존 3 · 배웅(선셋 그라데이션) + 푸터 */}
+      <SvgText x={CX} y={1620} fill="url(#s-bye)" fontFamily={FONT} fontSize={58} fontWeight="800" letterSpacing={-1} textAnchor="middle">
+        {model.farewell}
       </SvgText>
-      <SvgText x={CX} y={1790} fill={HALL_GOLD} fontFamily={DISPLAY} fontSize={22} fontWeight="600" letterSpacing={8} textAnchor="middle">
-        KEEP GOING
+      <Line x1={CX - 250} y1={1720} x2={CX + 250} y2={1720} stroke={hair} strokeWidth={2} />
+      <SvgText x={CX} y={1790} fill="rgba(255,255,255,0.92)" fontFamily={FONT} fontSize={34} fontWeight="800" letterSpacing={11} textAnchor="middle">
+        KEEGO
       </SvgText>
     </G>
   );

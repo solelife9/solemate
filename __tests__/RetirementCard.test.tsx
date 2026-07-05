@@ -83,13 +83,13 @@ describe('RetirementCard 5개 포맷 렌더', () => {
     expect(txt).toContain('KEEGO');
   });
 
-  test("S(스토리 9:16): 전당 골드 언어 — RETIRED 씰·KM TOGETHER·keego 푸터, 1080×1920", () => {
+  test("S(스토리 9:16): 선셋 바이올렛 키프세이크 — RUNNING SHOE RETIREMENT·함께 달린 거리·고마웠어·KEEGO, 1080×1920", () => {
     const r = render(<RetirementCard model={MODEL} format="S" />);
     const txt = textOf(r.root);
-    expect(txt).toContain('RETIRED');
-    expect(txt).toContain('KM TOGETHER');
-    expect(txt).toContain('KEEP GOING');
-    expect(txt).toContain('keego');
+    expect(txt).toContain('RUNNING SHOE RETIREMENT');
+    expect(txt).toContain('함께 달린 거리');
+    expect(txt).toContain('고마웠어');
+    expect(txt).toContain('KEEGO');
     expect(txt).toContain('512');
     expect(txt.toLowerCase()).toContain('alphafly 3'.toLowerCase());
     // 루트 Svg 가 스토리 세로 규격이다.
