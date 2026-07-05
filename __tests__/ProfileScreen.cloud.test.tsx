@@ -361,6 +361,8 @@ describe('ProfileScreen 로그아웃', () => {
     await press(byTestId(root, 'cloud-signin-google'));
     expect(hasId(root, 'cloud-account')).toBe(true); // signedIn 확인
 
+    // 계정·클라우드 아코디언(2026-07-05): 로그아웃은 헤더를 탭해 펼쳐야 노출된다.
+    await press(byTestId(root, 'cloud-account'));
     const signOutBtn = root.find(
       (n: any) => n.props?.accessibilityLabel === '로그아웃' && typeof n.props?.onPress === 'function',
     );

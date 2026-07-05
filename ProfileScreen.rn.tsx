@@ -267,6 +267,8 @@ export default function ProfileScreen({
   // 자동 동기가 실패하면 계정 카드에 '동기화 실패 · 다시 시도'로 알리고 재시도 가능하게.
   const [syncFailed, setSyncFailed] = useState(false);
   const [cloudMsg, setCloudMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  // 계정·클라우드 아코디언(사용자 2026-07-05): 로그인 시 6행 → 헤더 1행 + 탭하면 펼침.
+  const [acctOpen, setAcctOpen] = useState(false);
   const signedIn = authState === 'signedIn';
   const signingIn = authState === 'signingIn';
 
@@ -469,6 +471,31 @@ export default function ProfileScreen({
   const DOW = ['월', '화', '수', '목', '금', '토', '일'];
 
   const insets = useSafeAreaInsets();
+  // 법적 문서(개인정보·이용약관) — 로그인 시엔 계정 아코디언 안에, 로그아웃 시엔 상시 노출.
+  const legalRows = (
+    <>
+      <Pressable
+        testID="legal-privacy"
+        onPress={() => { Linking.openURL(PRIVACY_URL).catch(() => {}); }}
+        accessibilityRole="link"
+        accessibilityLabel="개인정보 처리방침 열기"
+        style={({ pressed }) => [s.settingRow, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.07) }, pressed && { backgroundColor: CARD_HI }]}>
+        <View style={s.settingIcon}><Ionicons name="shield-checkmark-outline" size={16} color={T2} /></View>
+        <Text style={s.settingLabel}>개인정보 처리방침</Text>
+        <Ionicons name="open-outline" size={15} color={T3} />
+      </Pressable>
+      <Pressable
+        testID="legal-terms"
+        onPress={() => { Linking.openURL(TERMS_URL).catch(() => {}); }}
+        accessibilityRole="link"
+        accessibilityLabel="이용약관 열기"
+        style={({ pressed }) => [s.settingRow, pressed && { backgroundColor: CARD_HI }]}>
+        <View style={s.settingIcon}><Ionicons name="document-text-outline" size={16} color={T2} /></View>
+        <Text style={s.settingLabel}>이용약관</Text>
+        <Ionicons name="open-outline" size={15} color={T3} />
+      </Pressable>
+    </>
+  );
   return (
     <View style={s.screen}>
       <ScrollView ref={scrollRef} contentContainerStyle={{ paddingTop: insets.top + 12, paddingHorizontal: 18, paddingBottom: TABBAR_CLEARANCE, gap: 16 }}>
@@ -883,8 +910,15 @@ export default function ProfileScreen({
           <View style={[s.card, { overflow: 'hidden' }]}>
             {signedIn ? (
               <>
-                {/* 로그인 상태 — 계정 + 자동 동기 상태(수동 버튼 없음: 로그인·변경 시 자동 동기) */}
-                <View style={[s.settingRow, s.settingBorder]} testID="cloud-account">
+                {/* 계정 헤더 — 탭하면 아코디언(사용자 2026-07-05): 6행 → 1행 + 펼침.
+                    접혀 있어도 우측 동기 아이콘이 상태(연결/실패)를 한눈에 말한다. */}
+                <Pressable
+                  onPress={() => setAcctOpen(o => !o)}
+                  accessibilityRole="button"
+                  accessibilityLabel="계정 · 클라우드 설정"
+                  accessibilityState={{ expanded: acctOpen }}
+                  style={({ pressed }) => [s.settingRow, s.settingBorder, pressed && { backgroundColor: CARD_HI }]}
+                  testID="cloud-account">
                   <View style={s.settingIcon}><Ionicons name="person-circle-outline" size={17} color={ACCENT} /></View>
                   <View style={{ flex: 1, minWidth: 0 }}>
                     {/* 어떤 provider 로 로그인했는지 표시(2026-07-05) — '카카오 계정' + 이메일. */}
@@ -897,43 +931,52 @@ export default function ProfileScreen({
                   </View>
                   <Ionicons
                     name={syncing ? 'sync-outline' : syncFailed ? 'cloud-offline-outline' : 'cloud-done-outline'}
-                    size={18}
+                    size={17}
                     color={syncFailed ? DANGER : GOOD}
                   />
-                </View>
-
-                {/* 동기화 상태 줄 — 실패 시 눌러서 다시 시도(조용한 실패 방지 2026-07-05). */}
-                <Pressable
-                  onPress={syncFailed && !syncing ? () => { void runSync(false); } : undefined}
-                  disabled={!syncFailed || syncing}
-                  accessibilityRole={syncFailed ? 'button' : 'text'}
-                  accessibilityLabel={syncing ? '동기화 중' : syncFailed ? '동기화 실패, 눌러서 다시 시도' : lastSyncAt == null ? '클라우드 연결됨' : `${lastSyncLabel}`}
-                  style={({ pressed }) => [s.settingRow, s.settingBorder, pressed && syncFailed && { backgroundColor: CARD_HI }]}
-                  testID="cloud-sync-status">
-                  <View style={s.settingIcon}><Ionicons name={syncing ? 'sync-outline' : syncFailed ? 'alert-circle-outline' : 'checkmark-circle-outline'} size={16} color={syncFailed ? DANGER : T3} /></View>
-                  <Text style={[s.settingLabel, { fontWeight: '500', color: syncFailed ? DANGER : T2 }]}>
-                    {syncing ? '동기화 중…' : syncFailed ? '동기화 실패 · 다시 시도' : (lastSyncAt == null ? '클라우드 연결됨 · 자동 동기' : lastSyncLabel)}
-                  </Text>
-                  {syncFailed && !syncing && <Ionicons name="refresh" size={15} color={DANGER} />}
+                  <Ionicons name={acctOpen ? 'chevron-up' : 'chevron-down'} size={16} color={T3} />
                 </Pressable>
 
-                {/* 로그아웃 */}
-                <Pressable onPress={handleSignOut} accessibilityRole="button" accessibilityLabel="로그아웃" style={({ pressed }) => [s.settingRow, pressed && { backgroundColor: CARD_HI }]}>
-                  <View style={s.settingIcon}><Ionicons name="log-out-outline" size={17} color={DANGER} /></View>
-                  <Text style={[s.settingLabel, { color: DANGER }]}>로그아웃</Text>
-                  <Ionicons name="chevron-forward" size={16} color={T3} />
-                </Pressable>
-
-                {/* 회원 탈퇴(영구 삭제) — 앱스토어 인앱 탈퇴 요건 */}
-                {onDeleteAccount && (
-                  <Pressable testID="account-delete" onPress={handleDeleteAccount} accessibilityRole="button" accessibilityLabel="회원 탈퇴" style={({ pressed }) => [s.settingRow, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.07) }, pressed && { backgroundColor: CARD_HI }]}>
-                    <View style={s.settingIcon}><Ionicons name="trash-outline" size={16} color={DANGER} /></View>
-                    <View style={{ flex: 1, minWidth: 0 }}>
-                      <Text style={[s.settingLabel, { color: DANGER }]}>회원 탈퇴</Text>
-                      <Text style={s.cloudSub}>계정·데이터 영구 삭제(복구 불가)</Text>
-                    </View>
-                    <Ionicons name="chevron-forward" size={16} color={T3} />
+                {/* 동기화 상태 줄 — 실패 시엔 접혀 있어도 항상 노출(조치 가능). 그 외엔 펼침 시. */}
+                {(acctOpen || syncFailed) && (
+                  <Pressable
+                    onPress={syncFailed && !syncing ? () => { void runSync(false); } : undefined}
+                    disabled={!syncFailed || syncing}
+                    accessibilityRole={syncFailed ? 'button' : 'text'}
+                    accessibilityLabel={syncing ? '동기화 중' : syncFailed ? '동기화 실패, 눌러서 다시 시도' : lastSyncAt == null ? '클라우드 연결됨' : `${lastSyncLabel}`}
+                    style={({ pressed }) => [s.settingRow, s.settingBorder, pressed && syncFailed && { backgroundColor: CARD_HI }]}
+                    testID="cloud-sync-status">
+                    <View style={s.settingIcon}><Ionicons name={syncing ? 'sync-outline' : syncFailed ? 'alert-circle-outline' : 'checkmark-circle-outline'} size={16} color={syncFailed ? DANGER : T3} /></View>
+                    <Text style={[s.settingLabel, { fontWeight: '500', color: syncFailed ? DANGER : T2 }]}>
+                      {syncing ? '동기화 중…' : syncFailed ? '동기화 실패 · 다시 시도' : (lastSyncAt == null ? '클라우드 연결됨 · 자동 동기' : lastSyncLabel)}
+                    </Text>
+                    {syncFailed && !syncing && <Ionicons name="refresh" size={15} color={DANGER} />}
                   </Pressable>
+                )}
+
+                {acctOpen && (
+                  <>
+                    {/* 로그아웃 */}
+                    <Pressable onPress={handleSignOut} accessibilityRole="button" accessibilityLabel="로그아웃" style={({ pressed }) => [s.settingRow, pressed && { backgroundColor: CARD_HI }]}>
+                      <View style={s.settingIcon}><Ionicons name="log-out-outline" size={17} color={DANGER} /></View>
+                      <Text style={[s.settingLabel, { color: DANGER }]}>로그아웃</Text>
+                      <Ionicons name="chevron-forward" size={16} color={T3} />
+                    </Pressable>
+
+                    {/* 회원 탈퇴(영구 삭제) — 앱스토어 인앱 탈퇴 요건 */}
+                    {onDeleteAccount && (
+                      <Pressable testID="account-delete" onPress={handleDeleteAccount} accessibilityRole="button" accessibilityLabel="회원 탈퇴" style={({ pressed }) => [s.settingRow, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.07) }, pressed && { backgroundColor: CARD_HI }]}>
+                        <View style={s.settingIcon}><Ionicons name="trash-outline" size={16} color={DANGER} /></View>
+                        <View style={{ flex: 1, minWidth: 0 }}>
+                          <Text style={[s.settingLabel, { color: DANGER }]}>회원 탈퇴</Text>
+                          <Text style={s.cloudSub}>계정·데이터 영구 삭제(복구 불가)</Text>
+                        </View>
+                        <Ionicons name="chevron-forward" size={16} color={T3} />
+                      </Pressable>
+                    )}
+
+                    {legalRows}
+                  </>
                 )}
               </>
             ) : (
@@ -961,28 +1004,9 @@ export default function ProfileScreen({
                 </Pressable>
               </View>
             )}
-            {/* 법적 문서 — 온보딩에서만 보이던 링크를 상시 접근 가능하게(스토어 심사·신뢰,
-                출시 감사 2026-07-04). 로그인 여부와 무관하게 노출한다. */}
-            <Pressable
-              testID="legal-privacy"
-              onPress={() => { Linking.openURL(PRIVACY_URL).catch(() => {}); }}
-              accessibilityRole="link"
-              accessibilityLabel="개인정보 처리방침 열기"
-              style={({ pressed }) => [s.settingRow, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.07) }, pressed && { backgroundColor: CARD_HI }]}>
-              <View style={s.settingIcon}><Ionicons name="shield-checkmark-outline" size={16} color={T2} /></View>
-              <Text style={s.settingLabel}>개인정보 처리방침</Text>
-              <Ionicons name="open-outline" size={15} color={T3} />
-            </Pressable>
-            <Pressable
-              testID="legal-terms"
-              onPress={() => { Linking.openURL(TERMS_URL).catch(() => {}); }}
-              accessibilityRole="link"
-              accessibilityLabel="이용약관 열기"
-              style={({ pressed }) => [s.settingRow, pressed && { backgroundColor: CARD_HI }]}>
-              <View style={s.settingIcon}><Ionicons name="document-text-outline" size={16} color={T2} /></View>
-              <Text style={s.settingLabel}>이용약관</Text>
-              <Ionicons name="open-outline" size={15} color={T3} />
-            </Pressable>
+            {/* 법적 문서 — 로그아웃 시엔 상시 노출(스토어 심사·신뢰), 로그인 시엔 위 계정
+                아코디언 안으로 접힌다(한 칸으로 줄이기, 사용자 2026-07-05). */}
+            {!signedIn && legalRows}
             {/* 앱·기기 정보(읽기 전용) — 기존 '계정 설정' 행을 계정 섹션으로 통합(이름 중복 제거). */}
             <View style={[s.panel, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.07) }]} testID="app-info">
               <View style={s.acctRow}><Text style={s.acctK}>가입</Text><Text style={s.acctV}>{profile.since || '기록 없음'}</Text></View>
