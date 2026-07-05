@@ -378,11 +378,20 @@ function AchievementCard({a}: {a: AchievementView}) {
             {a.name}
           </Text>
         </View>
-        {/* 레어리티 칩·+XP 뱃지 제거('러닝의 옷' 2026-07-04) — 게임 어휘 대신
-            색(진행 바·체크)이 희귀도를 조용히 말한다. 반복 업적만 ×N켤레 표기. */}
-        {a.repeatablePerShoe && a.earnedCount > 1 && (
-          <Text style={[s.rarTxt, {color: aColor}]}>×{a.earnedCount}켤레</Text>
-        )}
+        {/* XP 보상을 작게 노출(사용자 2026-07-05): 레어리티별 고정 XP가 아니라 업적마다
+            달라서, 각 업적의 실제 XP를 레어리티 색으로 표시 — 색=희귀도, 숫자=보상. */}
+        <View style={s.achMeta}>
+          {a.repeatablePerShoe && a.earnedCount > 1 && (
+            <Text style={[s.rarTxt, {color: aColor}]}>×{a.earnedCount}켤레</Text>
+          )}
+          {a.xp > 0 && (
+            <Text
+              style={[s.achXp, {color: aColor, opacity: a.unlocked ? 1 : 0.7}]}
+              testID={`ach-xp-${a.key}`}>
+              {a.xp.toLocaleString()} XP
+            </Text>
+          )}
+        </View>
       </View>
 
       {a.description ? (
@@ -506,6 +515,8 @@ const s = StyleSheet.create({
   achDesc: {fontFamily: FONT, color: T3, fontSize: 12, lineHeight: 17},
   rar: {borderRadius: 6, paddingHorizontal: 7, paddingVertical: 3},
   rarTxt: {fontFamily: FONT, fontSize: 9, fontWeight: '800', letterSpacing: 0.4},
+  achMeta: {flexDirection: 'row', alignItems: 'center', gap: 8},
+  achXp: {fontFamily: DISPLAY, fontSize: 11, fontWeight: '700', letterSpacing: 0.2, fontVariant: ['tabular-nums']},
   achFooter: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'},
   achProgTxt: {
     fontFamily: FONT,
