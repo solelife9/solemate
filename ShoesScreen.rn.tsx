@@ -317,19 +317,12 @@ function ShoeDetail({
         {/* '남은 수명' 옆 연필로 펼치는 신발 수명(max_km) 보정기 — ±로 교체 임계의 분모를
             직접 조정한다(기본 접힘). 보관된 신발은 조정 동선에서 제외(기록은 그대로 유지). */}
 
-        {/* 교체 내러티브(keep-going 보이스) — 교체 tier 도달 시, 교체를 '손실'이 아니라
-            '부상 없이 계속 달리기'의 조건으로 프레이밍해 상세를 마감한다. KEEP_GOING_REPLACE
-            (lib/shoe 단일 카피)에서 파생. */}
-        {!retired && shoe.condition === '교체' && (
-          <View style={s.keepGoing}>
-            <Ionicons name="shield-checkmark" size={17} color={ACCENT} />
-            <Text style={s.keepGoingText}>{`${KEEP_GOING_REPLACE} 달릴 수 있어요`}</Text>
-          </View>
-        )}
+        {/* (keep-going 중복 배너 제거 2026-07-05: '지금 교체하면 부상 없이…'가 위 부상
+            배너와 거의 같은 문장이라 중복이었다. 안전 신호는 부상 배너가, 은퇴의 긍정
+            프레이밍은 아래 '훌륭한 여정' 카드가 담당한다.) */}
 
         {/* 은퇴 키프세이크 트리거(수명 도달 시) — 절대 자동 은퇴하지 않는다. 사용자가
-            [계속 사용] 또는 [은퇴]를 직접 고른다. [은퇴]는 3스텝 회고+카드 플로우를 연다.
-            rawShoe/ctx 가 주입된 경우에만(요약을 실데이터로 만들 수 있을 때) 노출. */}
+            [계속 사용] 또는 [은퇴]를 직접 고른다. [은퇴]는 3스텝 회고+카드 플로우를 연다. */}
         {keepsakeReady && atLifespan && !kept && (
           <View testID="retire-keepsake-trigger" style={[s.card, s.keepsakeCard]}>
             <Text style={s.keepsakeTitle}>훌륭한 여정이었어요</Text>
@@ -357,11 +350,24 @@ function ShoeDetail({
           </View>
         )}
 
-        {/* 수익화 v1: 교체임박(forecast overdue/≤3주)이면 같은 카테고리 '다음 러닝화'를
-            상세에서도 추천(여유 있는 신발엔 미노출, 보관 신발 제외 — 홈과 동일 트리거). */}
-        {!retired && shouldRecommendNextShoe(wearView.forecast) && (
-          <NextShoeCard shoe={shoe} />
+        {/* 계속 사용 후에도 은퇴 진입점 유지(2026-07-05): [계속 사용]을 누르면 카드가
+            사라져 '은퇴 어떻게 시키지?'가 되던 문제 — 조용한 링크 하나를 남긴다. */}
+        {keepsakeReady && atLifespan && kept && (
+          <Pressable
+            onPress={() => setFlowOpen(true)}
+            accessibilityRole="button"
+            accessibilityLabel="이 신발 은퇴시키기"
+            testID="retire-open-flow"
+            style={({ pressed }) => [s.retireLink, pressed && s.pressed]}>
+            <Ionicons name="ribbon-outline" size={15} color={T3} />
+            <Text style={s.retireLinkTxt}>이 신발 은퇴시키기</Text>
+            <Ionicons name="chevron-forward" size={14} color={T4} />
+          </Pressable>
         )}
+
+        {/* (다음 러닝화 쇼핑 추천은 어필리에이트 정식 도입 전까지 상세에서 숨김 —
+            2026-07-05: 수명 다한 상세가 쇼핑 카드로 조잡해진다는 사용자 피드백. 재도입 시
+            NextShoeCard 되살리면 됨.) */}
 
         {/* totals — 3×2 그리드(2026-07-04 확장): 기존 4개 + 최장 런(이 신발의 베스트)
             + 주 평균(최근 4주 — 교체 예상의 근거). 아래에 점유율 한 줄(로테이션 인사이트). */}
@@ -773,6 +779,8 @@ const s = StyleSheet.create({
 
   // 교체 내러티브 배너(keep-going 보이스) — accent 톤 반투명 표면(withAlpha 파생).
   keepGoing: { flexDirection: 'row', alignItems: 'center', gap: 9, backgroundColor: withAlpha(ACCENT, 0.12), borderRadius: RADIUS.md, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.35), paddingHorizontal: 16, paddingVertical: 13 },
+  retireLink: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 14, paddingHorizontal: 4, marginTop: 4 },
+  retireLinkTxt: { flex: 1, color: T3, fontFamily: FONT, fontSize: 14, fontWeight: '600' },
   keepGoingText: { flex: 1, color: ACCENT, fontFamily: FONT, fontSize: 13, fontWeight: '600', letterSpacing: -0.1, lineHeight: 18 },
   // 은퇴 키프세이크 트리거 카드(수명 도달) — 자랑스러운 톤. accent 보더로 주목.
   keepsakeCard: { padding: 18, gap: 6, borderColor: withAlpha(ACCENT, 0.3) },

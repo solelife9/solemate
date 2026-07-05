@@ -60,41 +60,19 @@ const openDetail = (shoe: Shoe, runs: Run[] = []) => {
   return root;
 };
 
-describe('ShoesScreen 상세 — 교체임박 다음 러닝화 추천', () => {
-  test('교체임박 신발 상세에 추천 카드가 뜨고 추천 모델 + 쇼핑몰 버튼을 렌더한다', () => {
+describe('ShoesScreen 상세 — 다음 러닝화 쇼핑 추천은 숨김(2026-07-05 declutter)', () => {
+  // 어필리에이트 정식 도입 전까지 상세에서 쇼핑 추천 카드를 숨긴다(수명 다한 상세가
+  // 쇼핑 카드로 조잡해진다는 사용자 피드백). 재도입 시 이 테스트를 되돌리고 NextShoeCard 복원.
+  test('교체임박 신발 상세에도 쇼핑 추천 카드가 뜨지 않는다', () => {
     const root = openDetail(WORN, WORN_RUNS);
-    const card = byTestID(root, 'shoe-detail-next-shoe');
-    expect(card.length).toBeGreaterThanOrEqual(1);
-    const txt = textOf(card[0]);
-    // 실제 추천 1순위 모델(lib 에서 파생 — 같은 카테고리 동급) 텍스트 노출
-    const recs = recommendNextShoes({brand: WORN.brand, model: WORN.model}, 3);
-    expect(recs.length).toBeGreaterThan(0);
-    expect(txt).toContain(recs[0].brand);
-    expect(txt).toContain(recs[0].model);
-    // 같은 카테고리(데일리 트레이너) 라벨 + 4개 쇼핑몰 버튼
-    expect(txt).toContain('데일리 트레이너');
-    expect(txt).toContain('쿠팡');
-    expect(txt).toContain('네이버쇼핑');
-    expect(txt).toContain('무신사');
-    expect(txt).toContain('29CM');
-    // 투명성 고지(제휴 가능성 + 러너 우선)
-    expect(txt).toContain('러너');
+    expect(byTestID(root, 'shoe-detail-next-shoe').length).toBe(0);
+    // 쇼핑몰 버튼도 없다(상세가 커머스로 어수선해지지 않는다).
+    const txt = textOf(root);
+    expect(txt).not.toContain('쿠팡');
+    expect(txt).not.toContain('네이버쇼핑');
   });
 
-  test('쇼핑몰 버튼을 누르면 Linking.openURL 로 검색 URL 을 연다', () => {
-    const spy = jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined as any);
-    const root = openDetail(WORN, WORN_RUNS);
-    const hits = root.findAll(
-      (n: any) => n && n.props && typeof n.props.onPress === 'function' && textOf(n) === '쿠팡',
-    );
-    expect(hits.length).toBeGreaterThan(0);
-    act(() => { hits[0].props.onPress(); });
-    expect(spy).toHaveBeenCalledTimes(1);
-    expect(String(spy.mock.calls[0][0])).toContain('coupang.com');
-    spy.mockRestore();
-  });
-
-  test('여유 있는 신발 상세에는 추천 카드가 뜨지 않는다', () => {
+  test('여유 있는 신발 상세에도 추천 카드가 없다', () => {
     const root = openDetail(ROOMY, []);
     expect(byTestID(root, 'shoe-detail-next-shoe').length).toBe(0);
   });

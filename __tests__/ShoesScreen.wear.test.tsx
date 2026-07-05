@@ -82,7 +82,7 @@ describe('ShoesScreen 상세 — 실효 마모 + 교체 예측', () => {
     expect(txt).not.toContain('정확히');
   });
 
-  test('overdue 분기: 잔여≤0이면 "지금 교체하면 부상 없이 계속" 카피를 렌더', () => {
+  test('overdue 분기: 고마모 신발 상세에 부상 배너(교체 안내)가 렌더된다', () => {
     // max(권장 수명) 100km인데 최근 큰 런들로 실효 마모가 이를 초과 → overdue.
     const shoe: Shoe = {id: 'a', brand: 'Hoka', model: 'Clifton 10', used: 90, max: 100, condition: '교체'};
     const runs: Run[] = [
@@ -93,7 +93,9 @@ describe('ShoesScreen 상세 — 실효 마모 + 교체 예측', () => {
     expect(view.forecast.reason).toBe('overdue');
 
     const txt = openDetail(shoe, runs);
-    expect(txt).toContain('지금 교체하면 부상 없이 계속 달릴 수 있어요');
+    // 중복 keep-going 배너 제거(2026-07-05) — 부상 배너가 안전 메시지를 단독 담당(공통 문구).
+    expect(txt).toContain('부상 없이 계속 달릴 수 있어요');
+    expect(txt).not.toContain('지금 교체하면 부상 없이 계속 달릴 수 있어요');
   });
 
   test('no_recent 분기: 예측 불가(최근 28일 주행 없음)면 교체 예상 카드를 숨긴다(핸드오프 정합)', () => {

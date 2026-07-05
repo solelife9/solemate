@@ -97,7 +97,10 @@ describe('교체 내러티브(keep-going 보이스)는 교체 tier에서만 노�
     tap(pressBy(root, 'Clifton 9'));
 
     const txt = textOf(root);
-    expect(txt).toContain('지금 교체하면 부상 없이 계속 달릴 수 있어요');
+    // keep-going 중복 배너 제거(2026-07-05): '지금 교체하면…'(🛡)은 부상 배너의
+    // '이 신발 곧 교체하면…'(⚠️)과 거의 같아 제거. 안전 메시지는 부상 배너가 단독 담당.
+    expect(txt).toContain('이 신발 곧 교체하면 부상 없이 계속 달릴 수 있어요');
+    expect(txt).not.toContain('지금 교체하면 부상 없이 계속 달릴 수 있어요');
     // 상세 헤더는 목록과 100% 동일한 wearTier 칩. Clifton 580/600 ≈ 96.7% → replace(교체 권장).
     // (TierBadge 3단계는 폐지 — 모든 화면이 wearTier 4단계로 통일. 90%+ = 교체 권장(P1 #3).)
     expect(byTestID(root, 'detail-cond-replace').length).toBeGreaterThanOrEqual(1);
@@ -201,9 +204,11 @@ test('비보관 교체 신발 상세에서 keep-going 카피는 정확히 한 �
   tap(pressBy(root, 'Clifton 9')); // 교체 tier, 미보관
 
   const txt = textOf(root);
-  const needle = '지금 교체하면 부상 없이 계속 달릴 수 있어요';
+  // 부상 배너(안전 메시지)는 정확히 한 번만(중복 keep-going 배너 제거 2026-07-05).
+  const needle = '이 신발 곧 교체하면 부상 없이 계속 달릴 수 있어요';
   const occurrences = txt.split(needle).length - 1;
   expect(occurrences).toBe(1);
+  expect(txt).not.toContain('지금 교체하면 부상 없이 계속 달릴 수 있어요');
 });
 
 // (수명 직접 입력 테스트 2건 제거 — 회사 변경으로 신발 상세의 수명(max_km) 조정 UI(연필
