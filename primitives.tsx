@@ -973,11 +973,16 @@ const metric = StyleSheet.create({
   },
 });
 
-// ── Keego wordmark (2026-07-04 최종 확정: B안 — Helvetica Neue Medium) ────────
-// 소문자 'keego' · Helvetica Neue Medium(iOS 내장, Walter Neue 결) · 흰색(T1) · 점 없음.
-// 명조(A안)는 목업에선 우아했으나 기기 실물 20px대에서 헤어라인이 말라 약하다는
-// 사용자 판정으로 교체. 옛 오렌지 그라데이션은 폐기(오렌지=데이터 강조 전용 원칙).
-export const WORDMARK_FONT = 'Helvetica Neue';
+// ── Keego wordmark (2026-07-04 확정 B안 — Helvetica Neue Medium) ────────────────
+// 소문자 'keego' · Medium · 흰색(T1) · 점 없음.
+// iOS: Helvetica Neue(내장). Android: Helvetica Neue 가 없어 Roboto 로 폴백되던 것을
+// 번들 Pretendard 로 대체(2026-07-06 사용자 결정 — iOS 룩 유지, Android 만 Pretendard).
+// 두 플랫폼이 완전 동일하진 않지만(자간·g 결) Roboto 폴백보다 훨씬 브랜드에 맞는다.
+export const WORDMARK_FONT = Platform.select({
+  ios: 'Helvetica Neue',
+  android: 'PretendardVariable',
+  default: 'Helvetica Neue',
+}) as string;
 
 export function KeegoWordmark({
   size = 24,
