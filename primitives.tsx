@@ -509,7 +509,9 @@ const SEG_VARIANTS: Record<
       padding: 3,
       gap: 3,
     },
-    item: {minHeight: 44, paddingVertical: 6, borderRadius: 10},
+    // 44→38: 기간 스트립이 위아래로 뚱뚱하다는 사용자 피드백(2026-07-07). 시각 높이만
+    // 줄이고 실효 터치 타깃은 item hitSlop(아래 SEG_VSLOP)으로 44pt 를 유지한다(HIG).
+    item: {minHeight: 38, paddingVertical: 5, borderRadius: 10},
     itemOn: {backgroundColor: withAlpha(T1, 0.09)},
     textOff: {color: T3, fontSize: 14, fontWeight: '500'},
     textOn: {color: T1, fontSize: 14, fontWeight: '700'},
@@ -560,6 +562,10 @@ const SEG_VARIANTS: Record<
   },
 };
 
+// 시각 높이 < 44pt 인 variant 의 세로 hitSlop — 실효 터치 타깃을 44pt 로 끌어올린다.
+// (neutral 항목 38 + 3·2 = 44. 나머지 variant 는 자체 높이로 충분해 0.)
+const SEG_VSLOP: Record<SegVariant, number> = {neutral: 3, raised: 0, accentTint: 3, accentSolid: 0};
+
 export function SegmentedControl({
   items,
   value,
@@ -591,6 +597,7 @@ export function SegmentedControl({
             key={item.key}
             testID={testIDFor ? testIDFor(item) : undefined}
             onPress={() => onChange(item.key)}
+            hitSlop={SEG_VSLOP[variant] ? {top: SEG_VSLOP[variant], bottom: SEG_VSLOP[variant]} : undefined}
             accessibilityRole={role}
             accessibilityState={{selected: on}}
             accessibilityLabel={labelFor ? labelFor(item, on) : item.label}
@@ -1026,12 +1033,15 @@ const section = StyleSheet.create({
 // 유리 블러는 BlurView 를 dock 의 absolute 배경으로 깔아(신아키텍처 flex 붕괴 회피) 구현.
 // 탭바 러닝화: 브랜드 라인아트 글리프(사용자 확정 에셋, 2026-07-03). 알파 채널만 쓰는
 // 흰 글리프라 tintColor 로 활성/비활성 색을 입힌다. 원본이 왼쪽을 향하므로 flip 불필요.
+// filled 변형(tab-shoe-fill.png)은 원본 스트로크의 몸통을 채우고 밑창 스트라이프만 컷아웃으로
+// 남긴 파생 에셋 — Ionicons outline↔filled 와 같은 활성 문법(선택 시 러닝화 탭만 안 변하던 문제).
 const TAB_SHOE = require('./assets/tab-shoe.png');
+const TAB_SHOE_FILL = require('./assets/tab-shoe-fill.png');
 
-function ShoeIcon({color}: {color: string}) {
+function ShoeIcon({color, filled = false}: {color: string; filled?: boolean}) {
   return (
     <Image
-      source={TAB_SHOE}
+      source={filled ? TAB_SHOE_FILL : TAB_SHOE}
       style={{width: 26, height: 26, tintColor: color}}
       resizeMode="contain"
     />
@@ -1230,7 +1240,7 @@ export function TabBar({active, onTab}: {active: number; onTab: (i: number) => v
               style={({pressed}) => [t.item, pressed && {opacity: 0.55}]}>
               <View style={tab.flip ? {transform: [{scaleX: -1}]} : undefined}>
                 {tab.shoe ? (
-                  <ShoeIcon color={color} />
+                  <ShoeIcon color={color} filled={on} />
                 ) : (
                   <Ionicons name={on ? tab.icon : `${tab.icon}-outline`} size={24} color={color} />
                 )}

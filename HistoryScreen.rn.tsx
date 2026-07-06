@@ -1157,7 +1157,7 @@ const s = StyleSheet.create({
   sumMetric: {},
   sumMetricV: { color: T1, fontFamily: DISPLAY, fontSize: 19, fontWeight: '700', letterSpacing: -0.2 },
   sumMetricU: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '600' },
-  sumMetricL: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500', marginTop: 4 },
+  sumMetricL: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500', marginTop: 4, marginLeft: 1 },
   // 개인 기록(PR, 1-3) — 2x2 그리드(최장거리/최고페이스/최장시간/최장스트릭).
   prGrid: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 16, rowGap: 18 },
   prCell: { width: '50%' },
@@ -1226,7 +1226,9 @@ const s = StyleSheet.create({
   runMetrics: { flexDirection: 'row', gap: 18, marginTop: 10 },
   runV: { color: T1, fontFamily: DISPLAY, fontSize: 20, letterSpacing: 0.2, fontVariant: ['tabular-nums'] },
   runU: { color: T3, fontFamily: FONT, fontSize: 12, marginLeft: 3, marginBottom: 1 },
-  runML: { color: T2, fontFamily: FONT, fontSize: 11, fontWeight: '500', marginTop: 3 },
+  // marginLeft 1 — 옵티컬 정렬: 타뷸러 숫자는 좌측 사이드베어링이 있고 한글 라벨은 꽉 차서,
+  // 같은 x에서 라벨이 살짝 왼쪽으로 튀어나와 보인다(사용자 피드백 2026-07-07).
+  runML: { color: T2, fontFamily: FONT, fontSize: 11, fontWeight: '500', marginTop: 3, marginLeft: 1 },
 
   // detail
   nav: { paddingTop: 12, paddingHorizontal: 16, paddingBottom: 6 },

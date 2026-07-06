@@ -265,7 +265,9 @@ test('② 기간 요약 카드 — 거리는 큰 숫자, 횟수/평균페이스/
   expect(txt).toContain('7:40'); // 시간
 });
 
-test('② 기간 세그먼트 항목은 접근성 터치 타깃(minHeight ≥ 44)을 유지한다', () => {
+test('② 기간 세그먼트 항목은 접근성 터치 타깃(시각 높이 + hitSlop ≥ 44)을 유지한다', () => {
+  // 2026-07-07: 시각 높이는 38로 슬림해졌지만(사용자 피드백) 실효 터치 타깃은 세로
+  // hitSlop 으로 44pt 를 유지한다 — crosscut.polish 의 declaredVTarget 과 같은 측정.
   const root = render(<HistoryScreen runs={[]} unit="km" />).root;
   const segs = root.findAll(
     (n: any) =>
@@ -278,13 +280,14 @@ test('② 기간 세그먼트 항목은 접근성 터치 타깃(minHeight ≥ 44
   expect(segs.length).toBeGreaterThan(0);
   segs.forEach(seg => {
     const st = flatStyle(seg);
-    const target =
+    const base =
       typeof st.height === 'number'
         ? st.height
         : typeof st.minHeight === 'number'
         ? st.minHeight
         : 0;
-    expect(target).toBeGreaterThanOrEqual(44);
+    const slop = seg.props.hitSlop ? (seg.props.hitSlop.top || 0) + (seg.props.hitSlop.bottom || 0) : 0;
+    expect(base + slop).toBeGreaterThanOrEqual(44);
   });
 });
 

@@ -14,7 +14,7 @@
 // ============================================================================
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, Pressable, StyleSheet, Animated, Easing, StatusBar } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Animated, Easing, StatusBar, LayoutAnimation } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Svg, { Path, Circle, Defs, LinearGradient as SvgLinear, Stop } from 'react-native-svg';
@@ -131,6 +131,23 @@ export default function RunActiveScreen({
   const insets = useSafeAreaInsets();
   const [pausedState, setPausedState] = useState(false);
   const paused = pausedProp ?? pausedState;
+
+  // 확대↔축소 호흡(2026-07-07 사용자): 달릴 땐 링·핵심 지표가 크게, 일시정지하면 줄어들며
+  // 서브 지표(평균페이스·케이던스·칼로리·고도)가 펼쳐진다. paused 는 수동·자동(autoPause)
+  // 양쪽에서 바뀌므로 로컬 uiPaused 로 한 박자 미러링해 어느 경로든 같은 전환이 걸리게 한다.
+  // 레이아웃 변화(폰트·마진 축소, 서브 등장)는 LayoutAnimation, 링 축소는 native 스프링.
+  const [uiPaused, setUiPaused] = useState(paused);
+  const ringScale = useRef(new Animated.Value(paused ? 0.86 : 1)).current;
+  const subIn = useRef(new Animated.Value(paused ? 1 : 0)).current;
+  useEffect(() => {
+    if (paused === uiPaused) return;
+    LayoutAnimation.configureNext(LayoutAnimation.create(260, LayoutAnimation.Types.easeInEaseOut, LayoutAnimation.Properties.opacity));
+    setUiPaused(paused);
+    Animated.parallel([
+      Animated.spring(ringScale, { toValue: paused ? 0.86 : 1, useNativeDriver: true, speed: 14, bounciness: 6 }),
+      Animated.timing(subIn, { toValue: paused ? 1 : 0, duration: paused ? 260 : 160, delay: paused ? 70 : 0, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+    ]).start();
+  }, [paused, uiPaused, ringScale, subIn]);
   // 라이브 심박 존 — 심박이 흐를 때만 산출(bpm>0). 워치 미연동이면 0 → 존 미표시.
   const hrZone = bpm > 0 ? zoneOf(bpm, estimateMaxHR(age), restHR || undefined) : 0;
   const hrColor = hrZone !== 0 ? HR_ZONE_COLORS[hrZone] : T1;
@@ -227,8 +244,10 @@ export default function RunActiveScreen({
         </Pressable>
       )}
 
-      {/* ring — 거리/자유 모드는 거리 히어로, 트랙 모드는 '바퀴 수' 히어로(링=현재 바퀴 진행) */}
-      <View style={r.ringWrap}>
+      {/* ring — 거리/자유 모드는 거리 히어로, 트랙 모드는 '바퀴 수' 히어로(링=현재 바퀴 진행)
+          일시정지 시 스프링으로 살짝 축소(transform은 레이아웃 불변 — 줄어든 시각 여백은
+          ringWrap 마진 축소가 LayoutAnimation 으로 메운다). */}
+      <Animated.View style={[r.ringWrap, uiPaused && r.ringWrapPaused, { transform: [{ scale: ringScale }] }]}>
         <Ring size={216} stroke={13} progress={track ? track.progress : pct}>
           {track ? (
             <View style={{ alignItems: 'center' }} accessibilityRole="text" accessibilityLiveRegion="polite"
@@ -251,7 +270,7 @@ export default function RunActiveScreen({
             </View>
           )}
         </Ring>
-      </View>
+      </Animated.View>
 
       {/* 트랙: 링 아래 회색 한 줄 — 거리 · 확정 랩거리 · 보정 상태(박스·색 없이 조용히) */}
       {track && (
@@ -280,11 +299,12 @@ export default function RunActiveScreen({
         );
       })()}
 
-      {/* hero metrics — 달릴 땐 큰 핵심 3개(페이스·심박·시간)만. 작은 서브는 멈췄을 때만. */}
-      <View style={r.heroMetrics}>
-        <View style={r.hm} accessibilityRole="text" accessibilityLabel={`${track ? '랩 페이스' : '현재 페이스'} ${paceLabel}`}><Text style={r.hmV}>{paceLabel}</Text><Text style={r.hmL}>{track ? '랩 페이스' : '현재 페이스'}</Text></View>
-        <View style={[r.hm, r.hmDivider]} accessibilityRole="text" accessibilityLabel={hrZone !== 0 ? `심박 ${bpm}, 존 ${hrZone} ${HR_ZONE_LABEL[hrZone]}` : bpm > 0 ? `심박 ${bpm}` : '심박 측정 안 됨'}><Text style={[r.hmV, hrZone !== 0 && { color: hrColor }]}>{bpm > 0 ? String(bpm) : '--'}</Text><Text style={[r.hmL, hrZone !== 0 && { color: hrColor, fontWeight: '600' }]}>{hrZone !== 0 ? `Z${hrZone} ${HR_ZONE_LABEL[hrZone]}` : '심박'}</Text></View>
-        <View style={[r.hm, r.hmDivider]} accessibilityRole="text" accessibilityLabel={`시간 ${timeLabel}`}><Text style={r.hmV}>{timeLabel}</Text><Text style={r.hmL}>시간</Text></View>
+      {/* hero metrics — 달릴 땐 큰 핵심 3개(페이스·심박·시간)만 크게(34), 일시정지 시 22로
+          줄며 아래로 서브 지표가 펼쳐진다. 긴 시간(1:02:33)은 adjustsFontSizeToFit 이 흡수. */}
+      <View style={[r.heroMetrics, uiPaused && r.heroMetricsPaused]}>
+        <View style={r.hm} accessibilityRole="text" accessibilityLabel={`${track ? '랩 페이스' : '현재 페이스'} ${paceLabel}`}><Text style={[r.hmV, uiPaused && r.hmVPaused]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72}>{paceLabel}</Text><Text style={r.hmL}>{track ? '랩 페이스' : '현재 페이스'}</Text></View>
+        <View style={[r.hm, r.hmDivider]} accessibilityRole="text" accessibilityLabel={hrZone !== 0 ? `심박 ${bpm}, 존 ${hrZone} ${HR_ZONE_LABEL[hrZone]}` : bpm > 0 ? `심박 ${bpm}` : '심박 측정 안 됨'}><Text style={[r.hmV, uiPaused && r.hmVPaused, hrZone !== 0 && { color: hrColor }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72}>{bpm > 0 ? String(bpm) : '--'}</Text><Text style={[r.hmL, hrZone !== 0 && { color: hrColor, fontWeight: '600' }]}>{hrZone !== 0 ? `Z${hrZone} ${HR_ZONE_LABEL[hrZone]}` : '심박'}</Text></View>
+        <View style={[r.hm, r.hmDivider]} accessibilityRole="text" accessibilityLabel={`시간 ${timeLabel}`}><Text style={[r.hmV, uiPaused && r.hmVPaused]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72}>{timeLabel}</Text><Text style={r.hmL}>시간</Text></View>
       </View>
 
       {/* 트랙: 지난 랩(최근 3) — 박스 없는 한 줄, 라벨 회색 + 랩번호/구간시간(직전 랩을 즉시 확인). */}
@@ -300,16 +320,17 @@ export default function RunActiveScreen({
       )}
 
       {/* sub metrics — 일시정지 시에만 전체 펼침(평균페이스·케이던스·칼로리·고도). 달리는
-          동안은 숨겨 핵심 지표만 크게 보이게 한다(나이키런 방식: 흘끗 봐도 읽힘). */}
-      {paused && (
-        <View style={r.subMetrics}>
+          동안은 숨겨 핵심 지표만 크게 보이게 한다(나이키런 방식: 흘끗 봐도 읽힘).
+          등장은 위 히어로가 줄어든 뒤 살짝 늦게 올라오며 펼쳐진다(subIn). */}
+      {uiPaused && (
+        <Animated.View style={[r.subMetrics, { opacity: subIn, transform: [{ translateY: subIn.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }] }]}>
           {sub.map((m, i) => (
             <View key={i} style={r.sm}>
               <Text style={r.smV}>{m.v}{m.u ? <Text style={r.smU}> {m.u}</Text> : null}</Text>
               <Text style={r.smL}>{m.l}</Text>
             </View>
           ))}
-        </View>
+        </Animated.View>
       )}
 
       {/* 트랙 모드 랩 기록 — 달리는 중에만. 자동랩(GPS 복귀)이 기본이고 이 버튼은 실내(GPS✗)
@@ -401,6 +422,8 @@ const r = StyleSheet.create({
   permBannerText: { flex: 1, color: T1, fontFamily: FONT, fontSize: 13, fontWeight: '500', lineHeight: 17 },
 
   ringWrap: { alignItems: 'center', marginTop: 24 },
+  // 일시정지: transform 축소(0.86)는 레이아웃을 안 줄이므로 마진으로 시각 여백을 회수한다.
+  ringWrapPaused: { marginTop: 8, marginBottom: -18 },
   goal: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '500', marginBottom: 10 },
   goalMet: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 10 },
   goalMetText: { color: GOOD, fontFamily: FONT, fontSize: 13, fontWeight: '600' },
@@ -423,10 +446,13 @@ const r = StyleSheet.create({
   coachDot: { width: 3, height: 3, borderRadius: 2, backgroundColor: T4 },
   coachMsg: { fontFamily: FONT, fontSize: 14, fontWeight: '700' },
 
+  // 달릴 땐 34(빈약하다는 피드백 → 30에서 확대), 일시정지 시 22로 줄어 서브에 자리를 내준다.
   heroMetrics: { flexDirection: 'row', marginTop: 26, paddingVertical: 16, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: SEP },
+  heroMetricsPaused: { marginTop: 14, paddingVertical: 10 },
   hm: { flex: 1, alignItems: 'center' },
   hmDivider: { borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: withAlpha(T1, 0.045) },
-  hmV: { color: T1, fontFamily: DISPLAY, fontSize: 30, fontWeight: '700', letterSpacing: -1, fontVariant: ['tabular-nums'] },
+  hmV: { color: T1, fontFamily: DISPLAY, fontSize: 34, fontWeight: '700', letterSpacing: -1, fontVariant: ['tabular-nums'] },
+  hmVPaused: { fontSize: 22, letterSpacing: -0.5 },
   hmL: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500', marginTop: 5 },
 
   subMetrics: { flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 14 },
