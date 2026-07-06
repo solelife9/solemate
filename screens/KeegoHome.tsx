@@ -392,7 +392,10 @@ const styles = StyleSheet.create({
   title: {fontFamily: FONT, fontSize: 26, fontWeight: '700', letterSpacing: -0.7, color: T1, marginTop: 3},
 
   card: {
-    borderRadius: CARD_RADIUS, borderCurve: 'continuous', overflow: 'hidden', backgroundColor: CARD,
+    // borderCurve:'continuous'(스퀴클) 제거 — iOS 스퀴클 클립이 GlassEdge 의 원호(Rect rx) 코너와
+    // 어긋나 좌상단 모서리가 미세하게 어둡게 잘려 보였다(사용자 발견). Android 는 continuous 를
+    // 무시(원호)해 애초에 정합이라 괜찮았다. 원호로 통일하면 하이라이트가 코너에서 매끈히 이어진다.
+    borderRadius: CARD_RADIUS, overflow: 'hidden', backgroundColor: CARD,
     // 카드가 배경에서 떠 보이도록 그림자(iOS/안드 공통 근사).
     shadowColor: '#000', shadowOpacity: 0.5, shadowRadius: 24, shadowOffset: {width: 0, height: 18}, elevation: 12,
   },
