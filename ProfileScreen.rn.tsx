@@ -11,7 +11,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, ScrollView, Pressable, StyleSheet, TextInput, Image, Share, Alert, Linking } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { BG, CARD, CARD_DIM, CARD_HI, ACCENT, GOOD, DANGER, WARN, T1, T2, T3, SEP, CARD_BORDER, FONT, DISPLAY, withAlpha, TIER_COLORS, TIER_LABEL, KAKAO_YELLOW, KAKAO_LABEL, NAVER_GREEN, NAVER_LABEL, RADIUS } from './theme';
+import { BG, CARD, CARD_DIM, CARD_HI, ACCENT, GOOD, DANGER, WARN, T1, T2, T3, SEP, CARD_BORDER, FONT, DISPLAY, withAlpha, TIER_COLORS, TIER_LABEL, KAKAO_YELLOW, KAKAO_LABEL, NAVER_GREEN, NAVER_LABEL, RADIUS, HALL_GOLD } from './theme';
 // recap 토글 = SegmentedControl(accentSolid), 스탯 그리드들 = StatGrid 단일 프리미티브.
 import { TabBar, TABBAR_CLEARANCE, Pill, SectionTitle, Button, SegmentedControl, StatGrid, Stepper } from './primitives';
 import { Unit, unitKorean, displayNum } from './lib/units';
@@ -493,6 +493,7 @@ export default function ProfileScreen({
     }),
     pace: paceRec && paceRec.value !== '--' ? `${paceRec.value}${paceRec.unit ?? ''}` : '--',
     longest: longRec && longRec.value !== '--' ? `${longRec.value}${longRec.unit ?? ''}` : '--',
+    totalKm: profile.totalKm > 0 ? `${displayNum(profile.totalKm, unit, 0)}${unit}` : undefined,
   };
   const onShareSpec = () => { shareRunnerSpecCard(specCardRef, `${profile?.name || '러너'}의 러너 스펙 — Keego`); };
   const onShareRecap = () => {
@@ -622,28 +623,20 @@ export default function ProfileScreen({
               </Pressable>
             </View>
 
-            {vo2.vo2max > 0 && (
-              <View style={s.specVo2}>
-                <Text style={s.specVo2Label}>심폐 체력</Text>
-                <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6 }}>
-                  <Text style={s.specVo2Num}>{vo2.vo2max.toFixed(1)}</Text>
-                  <Text style={s.specVo2Unit}>VO₂max</Text>
-                  <Text style={s.specVo2Grade}>{vo2.vo2maxLabel}</Text>
-                </View>
-              </View>
-            )}
-
-            <View style={s.medalGrid}>
+            {/* 거리 PB — 러너 스펙의 메인(사용자 확정 A안). 5K·10K·하프·풀 최고 기록 타일 2×2.
+                달성 = 골드 메달, 미달성 = 잠금 + '아직'(빈 칸도 채우고 싶은 목표로 동작). */}
+            <View style={s.pbGrid}>
               {STANDARD_DISTANCES.map((d) => {
                 const sec = distancePBs[d.key];
                 const earned = typeof sec === 'number' && sec > 0;
                 return (
-                  <View key={d.key} style={s.medalCell} testID={`pb-${d.key}`}>
-                    <View style={s.medalHead}>
-                      <Ionicons name={earned ? 'medal' : 'lock-closed'} size={13} color={earned ? ACCENT : T3} />
-                      <Text style={[s.medalLabel, { color: earned ? T1 : T3 }]}>{d.label}</Text>
+                  <View key={d.key} style={[s.pbTile, earned ? s.pbTileOn : s.pbTileOff]} testID={`pb-${d.key}`}
+                    accessible accessibilityLabel={`${d.label} ${earned ? `최고 기록 ${fmtTime(Math.round(sec))}` : '아직 기록 없음'}`}>
+                    <View style={s.pbHead}>
+                      <Ionicons name={earned ? 'medal' : 'lock-closed'} size={14} color={earned ? HALL_GOLD : T3} />
+                      <Text style={[s.pbLabel, { color: earned ? T1 : T3 }]}>{d.label}</Text>
                     </View>
-                    <Text style={[s.medalVal, { color: earned ? T1 : T3 }]}>
+                    <Text style={[s.pbVal, earned ? s.pbValOn : s.pbValOff]}>
                       {earned ? fmtTime(Math.round(sec)) : '아직'}
                     </Text>
                   </View>
@@ -651,10 +644,31 @@ export default function ProfileScreen({
               })}
             </View>
 
-            {(!!paceRec || !!longRec) && (
-              <Text style={s.specFoot}>
-                1km 최고 {paceRec?.value ?? '--'}{paceRec && paceRec.value !== '--' ? (paceRec.unit ?? '') : ''} · 최장 {longRec?.value ?? '--'}{longRec && longRec.value !== '--' ? (longRec.unit ?? '') : ''}
-              </Text>
+            {/* 서브 스탯 — 러너가 자랑하는 3지표: 누적 거리 · 최장 러닝 · 1km 최고 페이스. */}
+            <View style={s.specSubRow}>
+              <View style={s.specSub}>
+                <Text style={s.specSubVal}>{displayNum(profile.totalKm || 0, unit, 0)}<Text style={s.specSubUnit}> {unit}</Text></Text>
+                <Text style={s.specSubLabel}>누적 거리</Text>
+              </View>
+              <View style={[s.specSub, s.specSubDiv]}>
+                <Text style={s.specSubVal}>
+                  {longRec && longRec.value !== '--' ? longRec.value : '--'}
+                  {longRec && longRec.value !== '--' ? <Text style={s.specSubUnit}> {longRec.unit ?? unit}</Text> : null}
+                </Text>
+                <Text style={s.specSubLabel}>최장 러닝</Text>
+              </View>
+              <View style={[s.specSub, s.specSubDiv]}>
+                <Text style={s.specSubVal}>{paceRec && paceRec.value !== '--' ? paceRec.value : '--'}</Text>
+                <Text style={s.specSubLabel}>1km 최고</Text>
+              </View>
+            </View>
+
+            {/* 심폐 체력(VO₂max) — 낯설고 앱마다 값이 다른 지표라 보조로 강등(푸터 한 줄, 사용자 지시). */}
+            {vo2.vo2max > 0 && (
+              <View style={s.specVo2Foot} accessible accessibilityLabel={`심폐 체력 ${vo2.vo2max.toFixed(1)} VO2max, ${vo2.vo2maxLabel}`}>
+                <Ionicons name="pulse-outline" size={14} color={T3} />
+                <Text style={s.specVo2FootText}>심폐 체력 <Text style={s.specVo2FootStrong}>{vo2.vo2max.toFixed(1)} VO₂max</Text> · {vo2.vo2maxLabel}</Text>
+              </View>
             )}
           </View>
         )}
@@ -1100,17 +1114,27 @@ const s = StyleSheet.create({
   card: { backgroundColor: CARD_DIM, borderRadius: RADIUS.lg, borderCurve: 'continuous', borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER },
   cardTitle: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600', marginBottom: 16 },
   // 러너 스펙 카드
-  specVo2: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', paddingBottom: 16, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: CARD_BORDER },
-  specVo2Label: { color: T2, fontFamily: FONT, fontSize: 13, fontWeight: '600' },
-  specVo2Num: { color: T1, fontFamily: DISPLAY, fontSize: 30, fontWeight: '700', letterSpacing: -0.5 },
-  specVo2Unit: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500' },
-  specVo2Grade: { color: ACCENT, fontFamily: FONT, fontSize: 13, fontWeight: '700' },
-  medalGrid: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 16 },
-  medalCell: { width: '50%', paddingVertical: 10 },
-  medalHead: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  medalLabel: { fontFamily: FONT, fontSize: 12, fontWeight: '700', letterSpacing: 0.3 },
-  medalVal: { fontFamily: DISPLAY, fontSize: 20, fontWeight: '700', letterSpacing: -0.3, marginTop: 4, fontVariant: ['tabular-nums'] },
-  specFoot: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500', marginTop: 16, paddingTop: 14, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: CARD_BORDER },
+  // 거리 PB 메달 타일 2×2(러너 스펙 메인) — 달성=CARD_HI + 골드, 미달성=흐린 판.
+  pbGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 10 },
+  pbTile: { width: '48.5%', paddingHorizontal: 14, paddingVertical: 13, borderRadius: 14, borderCurve: 'continuous' },
+  pbTileOn: { backgroundColor: CARD_HI },
+  pbTileOff: { backgroundColor: withAlpha(T1, 0.04) },
+  pbHead: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  pbLabel: { fontFamily: FONT, fontSize: 12, fontWeight: '700', letterSpacing: 0.3 },
+  pbVal: { fontFamily: DISPLAY, marginTop: 6, fontVariant: ['tabular-nums'] },
+  pbValOn: { color: T1, fontSize: 22, fontWeight: '700', letterSpacing: -0.4 },
+  pbValOff: { color: withAlpha(T1, 0.32), fontSize: 15, fontWeight: '600' },
+  // 서브 스탯 3열(누적·최장·1km 최고).
+  specSubRow: { flexDirection: 'row', marginTop: 16, paddingTop: 16, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: CARD_BORDER },
+  specSub: { flex: 1, alignItems: 'center', gap: 3 },
+  specSubDiv: { borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: CARD_BORDER },
+  specSubVal: { color: T1, fontFamily: DISPLAY, fontSize: 17, fontWeight: '600', letterSpacing: -0.3, fontVariant: ['tabular-nums'] },
+  specSubUnit: { color: T3, fontFamily: FONT, fontSize: 11, fontWeight: '600' },
+  specSubLabel: { color: T3, fontFamily: FONT, fontSize: 11, fontWeight: '500' },
+  // 심폐 체력(VO₂max) 강등 푸터 — 한 줄.
+  specVo2Foot: { flexDirection: 'row', alignItems: 'center', gap: 7, marginTop: 16, paddingTop: 14, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: CARD_BORDER },
+  specVo2FootText: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500' },
+  specVo2FootStrong: { color: T2, fontWeight: '700' },
   sectionLabel: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600', letterSpacing: 0.4, paddingHorizontal: 4 },
   progressRow: { flexDirection: 'row', alignItems: 'center', gap: 13, padding: 16 },
   progressIcon: { width: 38, height: 38, borderRadius: RADIUS.sm, backgroundColor: withAlpha(ACCENT, 0.12), alignItems: 'center', justifyContent: 'center' },
