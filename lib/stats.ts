@@ -5,7 +5,7 @@
 // (via `ymdLocal` and local Date components) so a late-night run lands in the
 // day the runner actually ran it, not a UTC-shifted neighbor.
 
-import {fmtPace, ymdLocal} from './format';
+import {fmtPace, ymdLocal, fmtTime} from './format';
 
 /** Structural mirror of HistoryScreen's PeriodSummary (km/runs/pace/time). */
 export interface PeriodSummary {
@@ -71,7 +71,12 @@ export function summaryOf(list: RunRow[]): PeriodSummary {
     km: sumKm(l).toFixed(1),
     runs: l.length,
     pace: avgPaceLabel(l),
-    time: totalTimeLabel(l),
+    // 요약 '총 시간'도 러닝기록 행과 같은 시계 표기(mm:ss·H:MM:SS)로 통일 — '18분' 대신 '18:00'
+    // (사용자 요청 2026-07-06). 0초(빈 기간)는 '--'.
+    time: (() => {
+      const sec = l.reduce((a, r) => a + (Number(r.duration) || 0), 0);
+      return sec > 0 ? fmtTime(sec) : '--';
+    })(),
   };
 }
 

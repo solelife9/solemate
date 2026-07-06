@@ -78,7 +78,8 @@ describe('durationLabel — 서버 truth run_time(초) 포맷(audit#9/#10)', () 
 describe('summaryOf', () => {
   test('produces km(1dp)/runs/pace/time summary', () => {
     const s = summaryOf([{km: 5, duration: 1500}, {km: 5, duration: 1500}]);
-    expect(s).toEqual({km: '10.0', runs: 2, pace: "5'00\"", time: '50분'});
+    // 총 시간은 러닝기록 행과 같은 시계 표기(mm:ss) — 3000s → '50:00'(구 '50분'에서 변경).
+    expect(s).toEqual({km: '10.0', runs: 2, pace: "5'00\"", time: '50:00'});
   });
   test('empty list → zeros & guards', () => {
     expect(summaryOf([])).toEqual({km: '0.0', runs: 0, pace: '--', time: '--'});
