@@ -6,7 +6,7 @@
 // points < 2 면 스스로 숨는다(경로 없는 수동 기록·GPS 실패 런은 여백도 안 생김).
 // ============================================================================
 import React, {useState} from 'react';
-import {View, Text, StyleSheet, type LayoutChangeEvent} from 'react-native';
+import {View, Text, StyleSheet, Platform, type LayoutChangeEvent} from 'react-native';
 import Svg, {Polyline, Circle} from 'react-native-svg';
 import {CARD, CARD_DIM, CARD_BORDER, ACCENT, T1, T3, FONT, RADIUS, SEP} from './theme';
 import {DARK_MAP_STYLE} from './lib/mapStyle';
@@ -88,9 +88,14 @@ export function CourseMap({points, title = '코스', style}: {
       {MAPS_AVAILABLE ? (
         <View style={[m.mapWell, {overflow: 'hidden'}]}>
           <MapView
-            provider={MAP_PROVIDER_GOOGLE}
+            // iOS 는 Google 서브스펙(Podfile 'react-native-maps/Google') 미설치 —
+            // PROVIDER_GOOGLE 을 주면 네이티브 뷰가 못 떠 지도가 통째로 빈다(실기기 버그).
+            // 애플 지도(기본)로 두고 userInterfaceStyle 로 다크만 강제한다(키 불필요).
+            // Android 는 Google(매니페스트에 API 키 있음) + customMapStyle 다크 유지.
+            provider={Platform.OS === 'android' ? MAP_PROVIDER_GOOGLE : undefined}
+            userInterfaceStyle="dark"
             style={StyleSheet.absoluteFill}
-            customMapStyle={DARK_MAP_STYLE}
+            customMapStyle={Platform.OS === 'android' ? DARK_MAP_STYLE : undefined}
             initialRegion={routeRegion(points)}
             scrollEnabled={false}
             zoomEnabled={false}
