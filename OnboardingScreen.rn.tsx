@@ -1,14 +1,15 @@
 // ============================================================================
-// OnboardingScreen.rn.tsx — Keego 첫 실행 온보딩 (6-screen cinematic flow)
+// OnboardingScreen.rn.tsx — keego 첫 실행 온보딩 (4-screen flow, 2026-07-07 재설계)
 //
-// design_handoff_keego_onboarding 핸드오프를 React Native로 재현한다:
-//   0 Welcome → 1 Shoes Matter → 2 Injury → 3 Management → 4 Register → 5 Ready
-// 프로토타입(HTML/React)을 시각·인터랙션 스펙으로 삼아 RN 패턴으로 옮겼다.
-//
-// - 큰 숫자/헤드라인은 디스플레이 페이스(theme DISPLAY=Pretendard), 본문은 FONT(Pretendard).
-// - 그라데이션/링/마모 곡선은 react-native-svg(앱에 expo-linear-gradient 미설치).
-// - 등록 단계는 프로토타입과 동일하게 화면-로컬 상태로 동작하고, 완료 시 onDone로
-//   브랜드/모델/거리를 상위(App)에 넘겨 실제 신발 등록에 연결할 수 있게 한다.
+// 사용자 승인 목업(아티팩트 f0755f95, 스펙: memory solemate-onboarding-redesign-spec)을
+// RN 으로 구현한다. 기존 6화면(Welcome→신발→부상→관리→등록→Ready)을 4화면으로 통합:
+//   0 Welcome(훅) → 1 신발 인텔리전스(신발+부상+관리 통합) → 2 성능(신규) → 3 등록
+// 등록 완료 시 Ready/축하 화면 없이 바로 홈(onDone). 확정 원칙:
+//   · 충격흡수율 등 앱에 없는 지표 금지 — 누적 거리 추적으로만 말한다
+//   · 상태 용어는 lib/shoe wearTier 4단계(최상/양호/교체 고려/교체 권장) 단일 소스
+//   · 성능 화면은 가짜 개인 숫자 금지(신규 유저 첫 실행은 '측정 전') — 기능 목록으로
+//   · 러닝화 선택은 2열 분할 피커(브랜드 레일+모델, 알파벳순+검색) — 인기순 큐레이션 금지
+//   · 브랜드명 표기는 소문자 keego
 // - 완료 영속(AsyncStorage 'onboarded')은 App.tsx가 onDone 콜백에서 처리한다.
 // ============================================================================
 import React, {useContext, useEffect, useId, useMemo, useRef, useState} from 'react';
@@ -30,12 +31,13 @@ import {
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {PRIVACY_URL, TERMS_URL} from './lib/legalLinks';
 // 신발 브랜드/모델·권장수명은 data/shoeModels(단일 소스)에서 — 메인 AddShoe 화면과 동일.
-import {BRANDS, modelsForBrand, getRecommendedLifespanKm} from './data/shoeModels';
+import {getRecommendedLifespanKm} from './data/shoeModels';
+import {wearTier} from './lib/shoe';
 import Svg, {
   Circle,
   Path,
-  G,
   Rect,
+  Ellipse,
   Defs,
   LinearGradient as SvgGradient,
   Stop,
@@ -44,10 +46,11 @@ import {
   BG,
   CARD,
   ACCENT,
-  ACCENT_2,
   GOOD,
   WARN,
   DANGER,
+  BEST,
+  HALL_GOLD,
   T1,
   T3,
   T4,
@@ -56,52 +59,20 @@ import {
   DISPLAY,
   withAlpha,
 } from './theme';
-import {Button, Chip as ChipPrim} from './primitives';
-
-// ── 디자인 토큰 흡수 ──────────────────────────────────────────────────────────
-// 과거 이 화면은 자체 다크 팔레트(const KG)와 BebasNeue 디스플레이 별칭(DISP)을 들고
-// 있었으나, 메인 앱과 단일 소스를 공유하도록 theme.ts 토큰으로 흡수했다(시각 동등):
-//   bg→BG · card→CARD · orange→ACCENT · green→GOOD · amber→WARN · red→DANGER ·
-//   text→T1 · dim→T3 · faint→T4 · line→SEP · line2→withAlpha(T1,.14). 디스플레이/본문
-//   폰트는 DISPLAY/FONT(둘 다 Pretendard — 핸드오프 정합). 알파 틴트는 withAlpha 로
-//   토큰에서 파생해 raw rgba desync 를 막는다. 시네마틱 그라데이션 스톱(장식)만 인라인.
-
-type StatusKey = 'good' | 'caution' | 'replace';
-const STATUS: Record<StatusKey, {c: string; label: string; bg: string}> = {
-  good: {c: GOOD, label: '좋음', bg: withAlpha(GOOD, 0.14)},
-  caution: {c: WARN, label: '점검', bg: withAlpha(WARN, 0.14)},
-  replace: {c: DANGER, label: '교체 권장', bg: withAlpha(DANGER, 0.14)},
-};
-function statusFor(km: number, max: number): StatusKey {
-  const r = km / max;
-  if (r >= 0.9) return 'replace';
-  if (r >= 0.6) return 'caution';
-  return 'good';
-}
-
-// 관리 화면 데모용 신발(핸드오프 데이터).
-const SHOES = [
-  {id: 'alphafly', brand: 'Nike', model: 'Alphafly 3', km: 118, max: 500},
-  {id: 'novablast', brand: 'ASICS', model: 'Novablast 5', km: 540, max: 800},
-  {id: 'adios', brand: 'adidas', model: 'Adizero Adios Pro 4', km: 752, max: 800},
-];
+import {Button, KeegoWordmark, ShoeGlyph, WEAR_TONE_COLOR} from './primitives';
+// 러닝화 선택 모달(2열 분할 피커)은 메인 등록(AddShoeScreen)과 공유하는 단일 소스.
+import {ShoePicker, type PickedShoe} from './ShoePicker';
 
 export type RegisteredShoe = {brand: string; model: string; km: number; max: number};
 
 // ════════════════════════════════════════════════════════════════════════════
-// 모션(진입 stagger / 카운트업 / 링 드로우 / 컨페티)
-//
-// 핸드오프의 시네마틱 진입을 RN 내장 Animated로 재현한다(reanimated 미설치).
-// 접근성: '동작 줄이기'가 켜져 있으면 모든 애니메이션을 끄고 최종 상태를 즉시 보여준다.
+// 모션(진입 stagger) — 접근성 '동작 줄이기' 시 전부 생략하고 최종 상태 즉시 표시.
 // ════════════════════════════════════════════════════════════════════════════
-const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 // jest 워커에서는 타이머 기반 애니메이션을 건너뛰고 최종 상태를 즉시 보여준다(reduce-motion
-// 과 동일 취급). 실제 앱 런타임엔 JEST_WORKER_ID가 없어 애니메이션이 정상 동작한다. 테스트
-// teardown 뒤 잔여 Animated 타이머가 워커를 붙잡는 leak을 원천 차단한다.
+// 과 동일 취급). 실제 앱 런타임엔 JEST_WORKER_ID가 없어 애니메이션이 정상 동작한다.
 const SKIP_ANIM = !!(typeof process !== 'undefined' && process.env && process.env.JEST_WORKER_ID);
 
-// 트리 전역으로 reduce-motion 플래그를 내려, 모든 모션 헬퍼가 동일 값을 공유한다.
 const ReduceMotionCtx = React.createContext(false);
 
 function useReduceMotion(): boolean {
@@ -129,8 +100,7 @@ function Rise({delay = 0, children, style}: {delay?: number; children: React.Rea
       a.setValue(1);
       return;
     }
-    // JS 드라이버(useNativeDriver:false): 단발 진입(opacity/translate)이라 성능 영향이
-    // 미미하고, 네이티브 드라이버는 jest 환경에 NativeAnimated 모듈이 없어 throw한다.
+    // JS 드라이버: 단발 진입이라 성능 영향 미미 + jest 에 NativeAnimated 모듈이 없다.
     const anim = Animated.timing(a, {toValue: 1, duration: 460, delay, easing: Easing.out(Easing.cubic), useNativeDriver: false});
     anim.start();
     return () => anim.stop();
@@ -143,89 +113,11 @@ function Rise({delay = 0, children, style}: {delay?: number; children: React.Rea
   );
 }
 
-// 0 → target 카운트업 정수. animate=false(예: 슬라이더 실시간 값)거나 reduce-motion이면
-// 즉시 target을 따라간다.
-function useCountUp(target: number, animate = true, duration = 1200): number {
-  const rm = useContext(ReduceMotionCtx);
-  const [val, setVal] = useState(rm || SKIP_ANIM || !animate ? target : 0);
-  useEffect(() => {
-    if (rm || SKIP_ANIM || !animate) {
-      setVal(target);
-      return;
-    }
-    const a = new Animated.Value(0);
-    const id = a.addListener(({value}) => setVal(Math.round(value)));
-    const anim = Animated.timing(a, {toValue: target, duration, easing: Easing.out(Easing.cubic), useNativeDriver: false});
-    anim.start();
-    return () => {
-      anim.stop();
-      a.removeListener(id);
-    };
-  }, [target, animate, duration, rm]);
-  return val;
-}
-
-// 등록 성공 컨페티(가벼운 낙하). reduce-motion이면 렌더 안 함.
-const CONFETTI_COLORS = [ACCENT, ACCENT_2, GOOD, WARN, T1];
-function Confetti() {
-  const rm = useContext(ReduceMotionCtx);
-  const pieces = useMemo(
-    () =>
-      Array.from({length: 16}, (_, i) => ({
-        leftPct: Math.round((i / 16) * 100),
-        size: 6 + Math.round(Math.random() * 6),
-        color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
-        delay: Math.round(Math.random() * 400),
-        drift: Math.round((Math.random() - 0.5) * 40),
-        rounded: i % 2 === 0,
-      })),
-    [],
-  );
-  if (rm || SKIP_ANIM) return null;
-  return (
-    <View pointerEvents="none" style={StyleSheet.absoluteFill}>
-      {pieces.map((p, i) => (
-        <ConfettiPiece key={i} {...p} />
-      ))}
-    </View>
-  );
-}
-function ConfettiPiece({leftPct, size, color, delay, drift, rounded}: {leftPct: number; size: number; color: string; delay: number; drift: number; rounded: boolean}) {
-  const t = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    const anim = Animated.timing(t, {toValue: 1, duration: 1400, delay, easing: Easing.in(Easing.quad), useNativeDriver: false});
-    anim.start();
-    return () => anim.stop();
-  }, [t, delay]);
-  return (
-    <Animated.View
-      style={{
-        position: 'absolute',
-        top: 0,
-        left: `${leftPct}%`,
-        width: size,
-        height: size,
-        borderRadius: rounded ? size / 2 : 2,
-        backgroundColor: color,
-        opacity: t.interpolate({inputRange: [0, 0.1, 0.85, 1], outputRange: [0, 1, 1, 0]}),
-        transform: [
-          {translateY: t.interpolate({inputRange: [0, 1], outputRange: [-20, 620]})},
-          {translateX: t.interpolate({inputRange: [0, 1], outputRange: [0, drift]})},
-          {rotate: t.interpolate({inputRange: [0, 1], outputRange: ['0deg', '420deg']})},
-        ],
-      }}
-    />
-  );
-}
-
 // ════════════════════════════════════════════════════════════════════════════
 // 공용 프리미티브
 // ════════════════════════════════════════════════════════════════════════════
 
-// 세로형 선형 그라데이션을 절대 레이어로 깐다(카드 배경·레전더빌리티 페이드).
-// react-native-svg 의 <Stop> 은 stopColor 의 rgba 알파를 무시하고 불투명으로 칠한다.
-// 따라서 'rgba(r,g,b,a)' 를 rgb 색 + stopOpacity 로 분리해 넘겨야 투명 페이드가 실제로
-// 비친다(미분리 시 페이드가 불투명 판이 되어 아래 이미지를 가린다). hex/rgb 는 그대로.
+// react-native-svg 의 <Stop> 은 stopColor 의 rgba 알파를 무시한다 → rgb + stopOpacity 분리.
 function splitStopColor(color: string): {color: string; opacity: number} {
   const m =
     /^rgba\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*\)$/i.exec(
@@ -256,7 +148,7 @@ function LinearGrad({
 }) {
   const id = `kg-grad-${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
   return (
-    // pointerEvents none: 장식용 절대 레이어가 위에 깔려도 아래 Pressable(버튼)/칩 터치를 가로채지 않게 한다.
+    // pointerEvents none: 장식 레이어가 아래 Pressable 터치를 가로채지 않게.
     <Svg pointerEvents="none" style={[StyleSheet.absoluteFill, style]}>
       <Defs>
         <SvgGradient id={id} x1={String(x1)} y1={String(y1)} x2={String(x2)} y2={String(y2)}>
@@ -275,119 +167,6 @@ function LinearGrad({
       </Defs>
       <Rect x="0" y="0" width="100%" height="100%" rx={radius} ry={radius} fill={`url(#${id})`} />
     </Svg>
-  );
-}
-
-// 진행 링(상태색 단색 + 배경 트랙). center 라벨은 children으로.
-function ProgressRing({
-  size,
-  stroke,
-  progress,
-  color,
-  children,
-  animate = true,
-}: {
-  size: number;
-  stroke: number;
-  progress: number;
-  color: string;
-  children?: React.ReactNode;
-  animate?: boolean;
-}) {
-  const rm = useContext(ReduceMotionCtx);
-  const r = (size - stroke) / 2;
-  const c = 2 * Math.PI * r;
-  const p = Math.max(0, Math.min(1, progress));
-  const target = c * (1 - p);
-  // 정적이면(예: 등록 프리뷰처럼 슬라이더로 실시간 갱신) 바로 target. 진입 시엔 빈
-  // 원(offset=c)에서 target까지 stroke-dashoffset을 그려 링이 채워지는 연출.
-  const off = useRef(new Animated.Value(rm || SKIP_ANIM || !animate ? target : c)).current;
-  useEffect(() => {
-    if (rm || SKIP_ANIM || !animate) {
-      off.setValue(target);
-      return;
-    }
-    const anim = Animated.timing(off, {toValue: target, duration: 1200, delay: 150, easing: Easing.out(Easing.cubic), useNativeDriver: false});
-    anim.start();
-    return () => anim.stop();
-  }, [off, target, c, rm, animate]);
-  return (
-    <View style={{width: size, height: size, alignItems: 'center', justifyContent: 'center'}}>
-      <Svg width={size} height={size} style={{position: 'absolute', transform: [{rotate: '-90deg'}]}}>
-        <Circle cx={size / 2} cy={size / 2} r={r} stroke="rgba(255,255,255,0.08)" strokeWidth={stroke} fill="none" />
-        <AnimatedCircle
-          cx={size / 2}
-          cy={size / 2}
-          r={r}
-          stroke={color}
-          strokeWidth={stroke}
-          fill="none"
-          strokeLinecap="round"
-          strokeDasharray={c}
-          strokeDashoffset={off}
-        />
-      </Svg>
-      {children}
-    </View>
-  );
-}
-
-// 수명 링(중앙: km / max KM). 진입 시 링 드로우 + km 카운트업.
-function LifespanRing({km, max, size = 128, stroke = 11, animate = true}: {km: number; max: number; size?: number; stroke?: number; animate?: boolean}) {
-  const col = STATUS[statusFor(km, max)].c;
-  const shown = useCountUp(km, animate);
-  return (
-    <ProgressRing size={size} stroke={stroke} progress={km / max} color={col} animate={animate}>
-      <View style={{alignItems: 'center'}}>
-        <Text style={{fontFamily: DISPLAY, fontSize: Math.round(size * 0.3), color: T1}}>{shown}</Text>
-        <Text style={{fontFamily: FONT, fontSize: 11, color: T3, marginTop: 2, letterSpacing: 0.5}}>/ {max} KM</Text>
-      </View>
-    </ProgressRing>
-  );
-}
-
-// 잔여수명 % 링(중앙: NN%). animate=false면 링/숫자 즉시(예: 등록 프리뷰 실시간 갱신).
-function PctRing({pct, color, size = 72, stroke = 7, animate = true}: {pct: number; color: string; size?: number; stroke?: number; animate?: boolean}) {
-  const shown = useCountUp(pct, animate);
-  return (
-    <ProgressRing size={size} stroke={stroke} progress={pct / 100} color={color} animate={animate}>
-      <View style={{flexDirection: 'row', alignItems: 'baseline'}}>
-        <Text style={{fontFamily: DISPLAY, fontSize: Math.round(size * 0.3), color: T1}}>{shown}</Text>
-        <Text style={{fontFamily: FONT, fontSize: Math.round(size * 0.16), color: T3}}>%</Text>
-      </View>
-    </ProgressRing>
-  );
-}
-
-function Metric({
-  value,
-  unit,
-  size = 40,
-  color = T1,
-  unitColor = T4,
-  countUp = false,
-}: {
-  value: string | number;
-  unit?: string;
-  size?: number;
-  color?: string;
-  unitColor?: string;
-  countUp?: boolean;
-}) {
-  const us = Math.max(12, Math.round(size * 0.4));
-  // 숫자 값일 때만 0→value 카운트업. 문자열("500–800","1,410")은 그대로 표시.
-  const numeric = typeof value === 'number';
-  const counted = useCountUp(numeric ? value : 0, countUp && numeric);
-  const display = numeric ? counted : value;
-  return (
-    <View style={{flexDirection: 'row', alignItems: 'baseline'}}>
-      <Text style={{fontFamily: DISPLAY, fontSize: size, color, letterSpacing: 0.2}}>{display}</Text>
-      {unit ? (
-        <Text style={{fontFamily: FONT, fontSize: us, fontWeight: '600', color: unitColor, marginLeft: Math.max(5, Math.round(size * 0.14))}}>
-          {unit}
-        </Text>
-      ) : null}
-    </View>
   );
 }
 
@@ -412,19 +191,7 @@ function Eyebrow({children}: {children: React.ReactNode}) {
   return <Text style={s.eyebrow}>{children}</Text>;
 }
 
-function StatusPill({status}: {status: StatusKey}) {
-  const st = STATUS[status];
-  return (
-    <View style={[s.pill, {backgroundColor: st.bg}]}>
-      <View style={{width: 6, height: 6, borderRadius: 3, backgroundColor: st.c}} />
-      <Text style={{color: st.c, fontFamily: FONT, fontSize: 13, fontWeight: '600'}}>{st.label}</Text>
-    </View>
-  );
-}
-
-// 온보딩 1차 CTA. 과거엔 자체 LinearGrad(오렌지 그라데이션) + cta 스타일로 주황
-// 그라데이션 버튼을 복제했으나, 앱 전역 단일 Button 프리미티브로 위임한다(그라데이션은
-// GRAD_TOP/BOT 토큰·글로우·radius 토큰 일원화 — 중복 그라데이션 정의 제거). 시각 동등.
+// 온보딩 1차 CTA — 앱 전역 단일 Button 프리미티브에 위임.
 function PrimaryButton({
   label,
   onPress,
@@ -437,19 +204,6 @@ function PrimaryButton({
   testID?: string;
 }) {
   return <Button label={label} onPress={onPress} disabled={disabled} testID={testID} />;
-}
-
-// 앱 공용 Chip 프리미티브에 위임(2026-07-04 DS 통일) — 호출부 시그니처 유지.
-function Chip({label, active, onPress, small}: {label: string; active: boolean; onPress: () => void; small?: boolean}) {
-  return <ChipPrim label={label} selected={active} onPress={onPress} size={small ? 'sm' : 'md'} />;
-}
-
-function WearBar({pct, color}: {pct: number; color: string}) {
-  return (
-    <View style={{width: '100%', height: 6, borderRadius: 6, backgroundColor: 'rgba(255,255,255,0.08)', overflow: 'hidden'}}>
-      <View style={{height: '100%', borderRadius: 6, width: `${Math.max(0, Math.min(100, pct))}%`, backgroundColor: color}} />
-    </View>
-  );
 }
 
 // 누적 거리 슬라이더(PanResponder 트랙, 오렌지 채움 + 흰 썸).
@@ -472,8 +226,6 @@ function KmSlider({value, min, max, step, onChange}: {value: number; min: number
       onPanResponderMove: e => handle(e.nativeEvent.locationX),
     }),
   ).current;
-  // 접근성: 스크린리더가 트랙을 '조절 가능' 슬라이더로 읽고 현재/최소/최대 km 를 announce
-  // 한다. adjustmentAction(증가/감소)으로 step 만큼 키보드/제스처 조절도 지원한다.
   const adjust = (dir: 1 | -1) => onChange(Math.max(min, Math.min(max, value + dir * step)));
   return (
     <View
@@ -510,77 +262,63 @@ function KmSlider({value, min, max, step, onChange}: {value: number; min: number
   );
 }
 
-// Keego 앱마크: 내구도 게이지(마모=오렌지, 잔여=흐림)가 'K'를 감싼다.
-function KeegoMark({size = 34, fill = 0.62}: {size?: number; fill?: number}) {
-  const gid = `kg-mark-${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
-  const R = 16.5,
-    cx = 20,
-    cy = 20,
-    gap = 34;
-  const pt = (deg: number): [number, number] => {
-    const a = (deg * Math.PI) / 180;
-    return [cx + R * Math.cos(a), cy + R * Math.sin(a)];
-  };
-  const start = 90 + gap,
-    end = 90 - gap + 360;
-  const [sx, sy] = pt(start);
-  const [ex, ey] = pt(end);
-  const [fx, fy] = pt(start + (end - start) * fill);
-  const big = end - start > 180 ? 1 : 0;
-  const bigF = (end - start) * fill > 180 ? 1 : 0;
+// ── 인라인 라인 아이콘(성능 목록·알림 행) ────────────────────────────────────
+function BellIcon({size = 16, color = T3}: {size?: number; color?: string}) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 40 40">
-      <Defs>
-        <SvgGradient id={gid} x1="6" y1="34" x2="34" y2="6" gradientUnits="userSpaceOnUse">
-          <Stop offset="0" stopColor={ACCENT} />
-          <Stop offset="1" stopColor={ACCENT_2} />
-        </SvgGradient>
-      </Defs>
-      <Path d={`M${sx.toFixed(2)} ${sy.toFixed(2)} A${R} ${R} 0 ${big} 1 ${ex.toFixed(2)} ${ey.toFixed(2)}`} stroke="rgba(255,255,255,0.18)" strokeWidth={3.4} strokeLinecap="round" fill="none" />
-      <Path d={`M${sx.toFixed(2)} ${sy.toFixed(2)} A${R} ${R} 0 ${bigF} 1 ${fx.toFixed(2)} ${fy.toFixed(2)}`} stroke={`url(#${gid})`} strokeWidth={3.4} strokeLinecap="round" fill="none" />
-      <G stroke={T1} strokeWidth={3.2} strokeLinecap="round" strokeLinejoin="round" fill="none">
-        <Path d="M15.5 11.5 V28.5" />
-        <Path d="M15.5 20.2 L24 12" />
-        <Path d="M15.5 19.8 L24.5 28.5" />
-      </G>
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M18 8a6 6 0 0 0-12 0c0 7-3 8-3 8h18s-3-1-3-8" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M13.7 20a2 2 0 0 1-3.4 0" stroke={color} strokeWidth={1.8} strokeLinecap="round" />
+    </Svg>
+  );
+}
+function MedalIcon({size = 18, color = T1}: {size?: number; color?: string}) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Circle cx={12} cy={9} r={5} stroke={color} strokeWidth={1.8} />
+      <Path d="M9.5 13.5 7.5 21l4.5-2.6L16.5 21l-2-7.5" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
+  );
+}
+function PulseIcon({size = 18, color = T1}: {size?: number; color?: string}) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M3 12h4l2.5-6.5L14 18l2.5-6H21" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
+  );
+}
+function TrackIcon({size = 18, color = T1}: {size?: number; color?: string}) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Ellipse cx={12} cy={12} rx={9} ry={5.5} stroke={color} strokeWidth={1.8} />
+      <Ellipse cx={12} cy={12} rx={4.5} ry={2.2} stroke={color} strokeWidth={1.8} />
+    </Svg>
+  );
+}
+function GaugeIcon({size = 18, color = T1}: {size?: number; color?: string}) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M5 19a8 8 0 1 1 14 0" stroke={color} strokeWidth={1.8} strokeLinecap="round" />
+      <Path d="M12 14l3.5-3.5" stroke={color} strokeWidth={1.8} strokeLinecap="round" />
+    </Svg>
+  );
+}
+function SearchIcon({size = 15, color = T3}: {size?: number; color?: string}) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Circle cx={11} cy={11} r={7} stroke={color} strokeWidth={2} />
+      <Path d="M21 21l-4.3-4.3" stroke={color} strokeWidth={2} strokeLinecap="round" />
+    </Svg>
+  );
+}
+function ChevronDown({size = 12, color = T3}: {size?: number; color?: string}) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M6 9l6 6 6-6" stroke={color} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" />
     </Svg>
   );
 }
 
-// ── 인라인 라인 아이콘 ────────────────────────────────────────────────────────
-function SparkIcon({size = 18, color = T1}: {size?: number; color?: string}) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24">
-      <Path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6L12 3z" fill={color} />
-    </Svg>
-  );
-}
-function HeartIcon({size = 17, color = T3}: {size?: number; color?: string}) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path d="M12 20s-7-4.6-7-9.5A4.5 4.5 0 0112 7a4.5 4.5 0 017 3.5C19 15.4 12 20 12 20z" stroke={color} strokeWidth={1.8} strokeLinejoin="round" />
-    </Svg>
-  );
-}
-function RulerIcon({size = 17, color = T3}: {size?: number; color?: string}) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Rect x="3" y="8" width="18" height="8" rx="1.5" stroke={color} strokeWidth={1.8} />
-      <Path d="M7 8v3M11 8v4M15 8v3M19 8v4" stroke={color} strokeWidth={1.6} strokeLinecap="round" />
-    </Svg>
-  );
-}
-function CheckIcon({size = 44, color = T1}: {size?: number; color?: string}) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path d="M5 13l4 4L19 7" stroke={color} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" />
-    </Svg>
-  );
-}
-
-// (소셜 로그인 마크/버튼 제거 — 인증은 LoginScreen 단일화. 온보딩 마지막은 '시작하기' CTA만.)
-
-// 화면 1~5 공통 상단(진행 바 + 건너뛰기).
+// 화면 1~3 공통 상단(진행 바 + 건너뛰기).
 function FlowHeader({step, total, onSkip, insetTop}: {step: number; total: number; onSkip: () => void; insetTop: number}) {
   return (
     <View style={[s.flowHeader, {paddingTop: insetTop + 14}]}>
@@ -593,7 +331,7 @@ function FlowHeader({step, total, onSkip, insetTop}: {step: number; total: numbe
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// 0 · Welcome
+// 0 · Welcome — 훅. 기존 배경(흑백 러너 사진 + 브랜드 그라데이션 + 하단 페이드) 유지.
 // ════════════════════════════════════════════════════════════════════════════
 function Welcome({goNext, goLogin, insetTop, insetBottom}: {goNext: () => void; goLogin: () => void; insetTop: number; insetBottom: number}) {
   return (
@@ -620,8 +358,8 @@ function Welcome({goNext, goLogin, insetTop, insetBottom}: {goNext: () => void; 
         />
       </ImageBackground>
 
-      {/* 워드마크 */}
-      <Text style={[s.wordmark, {top: insetTop + 18}]}>KEEGO</Text>
+      {/* 워드마크 — 홈과 동일한 공용 소문자 'keego'(KeegoWordmark). */}
+      <KeegoWordmark size={26} style={{position: 'absolute', left: 24, top: insetTop + 18}} />
 
       {/* 하단 콘텐츠 — staggered 진입 */}
       <View style={{flex: 1, justifyContent: 'flex-end', paddingHorizontal: 24, paddingBottom: Math.max(insetBottom, 24) + 8}}>
@@ -634,13 +372,13 @@ function Welcome({goNext, goLogin, insetTop, insetBottom}: {goNext: () => void; 
           <Text style={s.heroSub}>멈추지 않는 발걸음을 위해</Text>
         </Rise>
         <Rise delay={320}>
-          <Text style={s.heroBody}>Keego가 러닝화 수명을 추적해, 부상 없이{'\n'}끝까지 달릴 수 있도록 도와요.</Text>
+          <Text style={s.heroBody}>keego가 러닝화 수명을 추적해,{'\n'}부상 없이 러닝 라이프를 이어갈 수 있도록 도와요.</Text>
         </Rise>
         <Rise delay={440} style={{marginTop: 26}}>
           <PrimaryButton testID="onboarding-start" label="시작하기" onPress={goNext} />
-          {/* 이미 계정이 있는 사용자: 온보딩 투어를 건너뛰고 곧장 로그인(Ready) 화면으로.
-              과거 버그 — 이 링크가 goNext()를 불러 '다음 온보딩 단계'로 갈 뿐 로그인이
-              아니었다. 이제 goLogin()이 마지막 로그인 화면(소셜/이메일 인증)으로 점프한다. */}
+          {/* 기존 계정 사용자: 온보딩 소개를 건너뛰고 바로 완료 — 인증 게이트(LoginScreen)는
+              온보딩보다 먼저이므로 여기 도달한 시점엔 이미 로그인돼 있고, 동기화된 신발이
+              있으면 온보딩 자체가 안 뜬다. 이 링크는 '소개 스킵' 의미로 유지한다. */}
           <Pressable
             testID="onboarding-login"
             onPress={goLogin}
@@ -652,6 +390,10 @@ function Welcome({goNext, goLogin, insetTop, insetBottom}: {goNext: () => void; 
               이미 계정이 있나요? <Text style={{color: T1}}>로그인</Text>
             </Text>
           </Pressable>
+          {/* 약관 고지 — Ready 화면 제거(2026-07-07 재설계)로 첫 CTA 아래로 이전. */}
+          <Text style={s.termsCaption}>
+            계속 진행하면 keego의 <Text style={{textDecorationLine: 'underline'}} accessibilityRole="link" accessibilityLabel="이용약관 열기" onPress={() => { Linking.openURL(TERMS_URL).catch(() => {}); }}>이용약관</Text>과 <Text style={{textDecorationLine: 'underline'}} accessibilityRole="link" accessibilityLabel="개인정보 처리방침 열기" onPress={() => { Linking.openURL(PRIVACY_URL).catch(() => {}); }}>개인정보 처리방침</Text>에 동의하는 것으로 간주돼요.
+          </Text>
         </Rise>
       </View>
     </View>
@@ -659,17 +401,24 @@ function Welcome({goNext, goLogin, insetTop, insetBottom}: {goNext: () => void; 
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// 1 · Shoes Matter
+// 1 · 신발 인텔리전스 — 기존 신발·부상·관리 3화면 통합(문제→해법→알림, A안).
 // ════════════════════════════════════════════════════════════════════════════
+
+// 데모 신발(온보딩 예시) — 수명은 카탈로그 실제값(Novablast 5 = 데일리 650km)과 일치시켜
+// 등록 화면의 자동 설정 값과 모순되지 않게 한다.
+const DEMO_SHOE = {brand: 'ASICS', model: 'Novablast 5', km: 442, max: 650};
+
 function DegradeCurve() {
   const line = 'M6 18 C 70 22, 120 34, 180 70 S 300 120, 354 132';
   const area = 'M6 18 C 70 22, 120 34, 180 70 S 300 120, 354 132 L354 150 L6 150 Z';
   return (
     <Svg viewBox="0 0 360 150" width="100%" height={92}>
       <Defs>
-        <SvgGradient id="kg-dg" x1="0" y1="0" x2="0" y2="1">
-          <Stop offset="0" stopColor="rgba(55,214,122,0.30)" />
-          <Stop offset="1" stopColor="rgba(255,77,77,0.02)" />
+        {/* 면 채움도 가로 초록→빨강(라인과 동일 축) — 신품(좌)=초록, 마모(우)=빨강이 한눈에. */}
+        <SvgGradient id="kg-dg" x1="0" y1="0" x2="1" y2="0">
+          <Stop offset="0" stopColor={GOOD} stopOpacity={0.22} />
+          <Stop offset="0.6" stopColor={WARN} stopOpacity={0.13} />
+          <Stop offset="1" stopColor={DANGER} stopOpacity={0.2} />
         </SvgGradient>
         <SvgGradient id="kg-dl" x1="0" y1="0" x2="1" y2="0">
           <Stop offset="0" stopColor={GOOD} />
@@ -686,116 +435,64 @@ function DegradeCurve() {
   );
 }
 
-function ShoesMatter({goNext, onSkip, insetTop, insetBottom}: ScreenProps) {
+function ShoeIntelligence({goNext, onSkip, insetTop, insetBottom}: ScreenProps) {
+  // 상태 필은 앱 실제 4단계(wearTier) 단일 소스 — 68% → '양호'(🟡).
+  const pctUsed = Math.round((DEMO_SHOE.km / DEMO_SHOE.max) * 100);
+  const tier = wearTier(pctUsed);
+  const tierColor = WEAR_TONE_COLOR[tier.tone];
   return (
     <View style={s.screen}>
-      <FlowHeader step={1} total={5} onSkip={onSkip} insetTop={insetTop} />
+      <FlowHeader step={1} total={3} onSkip={onSkip} insetTop={insetTop} />
       <ScrollView style={s.flex1} contentContainerStyle={s.bodyContent} showsVerticalScrollIndicator={false}>
         <Rise>
           <Eyebrow>Your shoes matter</Eyebrow>
           <Text style={s.title}>러닝화도 관리가 필요해요</Text>
           <Text style={s.body}>
-            러닝화는 <Text style={s.bodyStrong}>누적 거리에 따라 성능이 달라져요.</Text> 쿠셔닝이 닳은 신발은 충격을 그대로 무릎과 발목에 전달해요.
+            러닝화는 <Text style={s.bodyStrong}>누적 거리에 따라 성능이 달라져요.</Text>{'\n'}쿠셔닝이 닳은 신발은 충격을 그대로{'\n'}무릎과 발목에 전달해요.
           </Text>
         </Rise>
 
-        {/* 마모 곡선 카드 */}
+        {/* 마모 곡선 카드 — 축은 예시 신발의 실제 권장 수명(650km)과 일치 */}
         <Rise delay={130} style={[s.heroCard, {overflow: 'hidden'}]}>
           <LinearGrad stops={[{color: '#1A1A1F', offset: 0}, {color: '#141417', offset: 1}]} radius={22} />
-          <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', padding: 14, paddingBottom: 0}}>
-            <View>
-              <Text style={{fontFamily: FONT, fontSize: 13, color: T3}}>당신의 데일리 러닝화</Text>
-              <Text style={{fontFamily: FONT, fontSize: 16, fontWeight: '700', color: T1, marginTop: 2}}>
-                누적 <Text style={{color: DANGER}}>742 km</Text>
-              </Text>
-            </View>
-            <StatusPill status="replace" />
-          </View>
-          <View style={{paddingHorizontal: 14, paddingTop: 10, paddingBottom: 14}}>
+          <View style={{paddingHorizontal: 14, paddingTop: 14, paddingBottom: 14}}>
             <View style={{flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8}}>
-              <Text style={{fontFamily: FONT, fontSize: 12, color: T4, letterSpacing: 0.8}}>쿠셔닝 성능</Text>
-              <Text style={{fontFamily: FONT, fontSize: 12, color: T3}}>0 → 800 KM</Text>
+              <Text style={{fontFamily: FONT, fontSize: 13, fontWeight: '600', color: T1, letterSpacing: -0.2}}>쿠셔닝 성능</Text>
+              <Text style={{fontFamily: FONT, fontSize: 12, color: T3, letterSpacing: 0.6}}>0 → {DEMO_SHOE.max} KM</Text>
             </View>
             <DegradeCurve />
-          </View>
-        </Rise>
-
-        {/* 권장 수명 팩트 스트립 */}
-        <Rise delay={240} style={s.factStrip}>
-          <View>
-            <Text style={{fontFamily: FONT, fontSize: 14, color: T3}}>러닝화 권장 수명</Text>
-            <Metric value="500–800" unit="KM" size={30} />
-          </View>
-          <Text style={{marginLeft: 'auto', fontFamily: FONT, fontSize: 13, color: T3, textAlign: 'right', lineHeight: 18}}>
-            대부분의 러너가{'\n'}이 시기를 놓쳐요
-          </Text>
-        </Rise>
-      </ScrollView>
-      <View style={[s.footer, {paddingBottom: Math.max(insetBottom, 18)}]}>
-        <PrimaryButton label="다음" onPress={goNext} />
-      </View>
-    </View>
-  );
-}
-
-// ════════════════════════════════════════════════════════════════════════════
-// 2 · Injury
-// ════════════════════════════════════════════════════════════════════════════
-function Injury({goNext, onSkip, insetTop, insetBottom}: ScreenProps) {
-  return (
-    <View style={s.screen}>
-      <FlowHeader step={2} total={5} onSkip={onSkip} insetTop={insetTop} />
-      <ScrollView style={s.flex1} contentContainerStyle={s.bodyContent} showsVerticalScrollIndicator={false}>
-        <Rise>
-          <Eyebrow>Run injury free</Eyebrow>
-          <Text style={s.title}>부상 없이 오래 달리세요</Text>
-          <Text style={s.body}>
-            Keego가 신발 마일리지를 추적해 <Text style={s.bodyStrong}>교체 시기를 미리</Text> 알려드려요.
-          </Text>
-        </Rise>
-
-        {/* 링 히어로 */}
-        <Rise delay={130} style={[s.heroCard, {flexDirection: 'row', alignItems: 'center', gap: 18, padding: 14, overflow: 'hidden'}]}>
-          <LinearGrad stops={[{color: '#1E1E24', offset: 0}, {color: '#141417', offset: 1}]} radius={22} />
-          <LifespanRing km={540} max={800} size={104} stroke={9} />
-          <View style={{flex: 1}}>
-            <StatusPill status="caution" />
-            <Text style={{fontFamily: FONT, fontSize: 17, fontWeight: '700', color: T1, marginTop: 10}}>ASICS Novablast 5</Text>
-            <Text style={{fontFamily: FONT, fontSize: 13, color: T3, marginTop: 3, lineHeight: 19}}>
-              수명의 <Text style={{color: WARN, fontWeight: '600'}}>68%</Text>를 사용했어요.
+            <Text style={{fontFamily: FONT, fontSize: 10, fontWeight: '600', color: withAlpha(DANGER, 0.85), textAlign: 'right', marginTop: 6, letterSpacing: 0.4}}>
+              대부분의 러너가 이 구간을 놓쳐요
             </Text>
           </View>
         </Rise>
 
-        {/* 분석 그리드 */}
-        <Rise delay={240} style={{flexDirection: 'row', gap: 12, marginTop: 10}}>
-          <View style={[s.analyticCard, {flex: 1}]}>
-            <View style={{flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 8}}>
-              <HeartIcon />
-              <Text style={{fontFamily: FONT, fontSize: 13, color: T3}}>충격 흡수율</Text>
-            </View>
-            <Metric value={78} unit="%" size={32} countUp />
-            <View style={{marginTop: 8}}>
-              <WearBar pct={78} color={WARN} />
-            </View>
+        {/* 신발 카드 — 앱 실제 카드 문법(글리프 + 누적/총 + wearTier 필) */}
+        <Rise delay={240}>
+        <View style={s.shoeRowCard} accessible accessibilityLabel={`${DEMO_SHOE.brand} ${DEMO_SHOE.model}, ${DEMO_SHOE.km} / ${DEMO_SHOE.max} 킬로미터, 수명의 ${pctUsed}퍼센트, 상태 ${tier.label}`}>
+          <View style={s.shoeThumb}>
+            <ShoeGlyph size={26} color={withAlpha(T1, 0.75)} />
           </View>
-          <View style={[s.analyticCard, {flex: 1}]}>
-            <View style={{flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 8}}>
-              <RulerIcon />
-              <Text style={{fontFamily: FONT, fontSize: 13, color: T3}}>교체까지</Text>
-            </View>
-            <Metric value={260} unit="KM" size={32} countUp />
-            <Text style={{fontFamily: FONT, fontSize: 12, color: T3, marginTop: 8}}>약 3주 후 예상</Text>
+          <View style={{flex: 1, minWidth: 0}}>
+            <Text numberOfLines={1} style={{fontFamily: FONT, fontSize: 15, fontWeight: '600', color: T1, letterSpacing: -0.2}}>
+              {DEMO_SHOE.brand} {DEMO_SHOE.model}
+            </Text>
+            <Text style={{fontFamily: FONT, fontSize: 12, color: T3, marginTop: 3, fontVariant: ['tabular-nums']}}>
+              {DEMO_SHOE.km} / {DEMO_SHOE.max} km · 수명의 {pctUsed}%
+            </Text>
           </View>
+          <View style={[s.pill, {backgroundColor: withAlpha(tierColor, 0.14)}]}>
+            <View style={{width: 6, height: 6, borderRadius: 3, backgroundColor: tierColor}} />
+            <Text style={{color: tierColor, fontFamily: FONT, fontSize: 12, fontWeight: '600'}}>{tier.label}</Text>
+          </View>
+        </View>
         </Rise>
 
-        {/* 알림 배너 */}
-        <Rise delay={340} style={s.alertBanner}>
-          <View style={s.alertIconChip}>
-            <SparkIcon size={18} color={ACCENT} />
-          </View>
-          <Text style={{flex: 1, fontFamily: FONT, fontSize: 14, color: T1, lineHeight: 19}}>
-            교체 시점 <Text style={{color: ACCENT, fontWeight: '600'}}>50 km 전</Text> 미리 알림을 보내드려요.
+        {/* 알림 한 줄 — 박스 없이 조용히 */}
+        <Rise delay={340} style={s.alertRow}>
+          <BellIcon size={16} color={withAlpha(T1, 0.75)} />
+          <Text style={{flex: 1, fontFamily: FONT, fontSize: 13, color: T3, letterSpacing: -0.1}}>
+            교체 시점 <Text style={{color: T1, fontWeight: '600'}}>50 km 전</Text>, 미리 알려드려요
           </Text>
         </Rise>
       </ScrollView>
@@ -807,80 +504,54 @@ function Injury({goNext, onSkip, insetTop, insetBottom}: ScreenProps) {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// 3 · Management
+// 2 · 성능 (신규) — 기능 목록형. 가짜 개인 숫자 금지(신규 유저 첫 실행은 '측정 전').
+// 심박 존은 Apple Watch 연동 전까지 실사용에서 안 보이므로 제외(정직 원칙).
 // ════════════════════════════════════════════════════════════════════════════
-function ShoeCard({shoe}: {shoe: (typeof SHOES)[number]}) {
-  const st = statusFor(shoe.km, shoe.max);
-  const col = STATUS[st].c;
-  const remain = Math.round((1 - shoe.km / shoe.max) * 100);
-  const isReplace = st === 'replace';
-  return (
-    <View style={[s.shoeCard, isReplace && {borderColor: 'rgba(255,77,77,0.28)'}]}>
-      <PctRing pct={remain} color={col} size={56} stroke={6} />
-      <View style={{flex: 1, minWidth: 0}}>
-        <Text style={s.brandEyebrow}>{shoe.brand.toUpperCase()}</Text>
-        <Text numberOfLines={1} style={{fontFamily: FONT, fontSize: 18, fontWeight: '700', color: T1, marginTop: 2}}>
-          {shoe.model}
-        </Text>
-        <Text style={{fontFamily: FONT, fontSize: 14, color: T3, marginTop: 7}}>
-          {shoe.km.toLocaleString()} / {shoe.max.toLocaleString()} km
-          <Text style={{color: T4}}> · </Text>
-          <Text style={{color: col, fontWeight: '600'}}>{STATUS[st].label}</Text>
-        </Text>
-      </View>
-    </View>
-  );
-}
+const FEATURES: {color: string; Icon: (p: {size?: number; color?: string}) => React.JSX.Element; title: string; desc: string}[] = [
+  {color: HALL_GOLD, Icon: MedalIcon, title: '거리 PB', desc: '5K부터 풀코스까지, 최고 기록을 자동 갱신해요'},
+  {color: BEST, Icon: PulseIcon, title: '심폐 체력', desc: '달린 페이스로 VO₂max를 추정 — 따로 측정할 필요 없어요'},
+  // SPORT_VIOLET(#7C3AED)은 다크 14% 틴트 위에서 획이 묻혀 한 톤 밝힌 값을 쓴다(목업 확정).
+  {color: '#9B6DF3', Icon: TrackIcon, title: '트랙 모드', desc: '400m 트랙에서 랩을 자동으로 세어줘요'},
+  {color: WARN, Icon: GaugeIcon, title: '훈련 부하', desc: '과부하가 오기 전에 미리 알려줘요'},
+];
 
-function Management({goNext, onSkip, insetTop, insetBottom}: ScreenProps) {
+function Performance({goNext, onSkip, insetTop, insetBottom}: ScreenProps) {
   return (
     <View style={s.screen}>
-      <FlowHeader step={3} total={5} onSkip={onSkip} insetTop={insetTop} />
+      <FlowHeader step={2} total={3} onSkip={onSkip} insetTop={insetTop} />
       <ScrollView style={s.flex1} contentContainerStyle={s.bodyContent} showsVerticalScrollIndicator={false}>
         <Rise>
-          <Eyebrow>Smart shoe management</Eyebrow>
-          <Text style={s.title}>신발 수명을 한눈에</Text>
+          <Eyebrow>Run stronger</Eyebrow>
+          <Text style={s.title}>달릴수록 강해지는 기록</Text>
+          <Text style={s.body}>아이폰 하나로, 달릴 때마다 자동으로 쌓여요.</Text>
         </Rise>
 
-        {/* 요약 히어로 */}
-        <Rise delay={120} style={[s.summaryHero, {marginTop: 12}]}>
-          <View>
-            <Text style={{fontFamily: FONT, fontSize: 12, color: T3, letterSpacing: 0.8}}>전체 누적 거리</Text>
-            <Metric value="1,410" unit="KM" size={40} unitColor={T3} />
-          </View>
-          <View style={{alignItems: 'flex-end'}}>
-            <Text style={{fontFamily: DISPLAY, fontSize: 34, color: T1}}>3</Text>
-            <Text style={{fontFamily: FONT, fontSize: 12, color: T3}}>켤레 관리 중</Text>
-          </View>
-        </Rise>
-
-        {/* 신발 리스트 — 카드별 stagger */}
-        <View style={{marginTop: 10, gap: 8}}>
-          {SHOES.map((sh, i) => (
-            <Rise key={sh.id} delay={220 + i * 90}>
-              <ShoeCard shoe={sh} />
-            </Rise>
+        <Rise delay={130} style={s.featCard}>
+          {FEATURES.map((f, i) => (
+            <View key={f.title} style={[s.featRow, i > 0 && s.featRowDivider]} accessible accessibilityLabel={`${f.title}: ${f.desc}`}>
+              <View style={[s.featIc, {backgroundColor: withAlpha(f.color, 0.14)}]}>
+                <f.Icon size={18} color={f.color} />
+              </View>
+              <View style={{flex: 1, minWidth: 0}}>
+                <Text style={{fontFamily: FONT, fontSize: 15, fontWeight: '600', color: T1, letterSpacing: -0.2}}>{f.title}</Text>
+                <Text style={{fontFamily: FONT, fontSize: 13, color: T3, marginTop: 3, lineHeight: 18}}>{f.desc}</Text>
+              </View>
+            </View>
           ))}
-        </View>
-
-        {/* 추천 스트립 */}
-        <Rise delay={220 + SHOES.length * 90} style={s.recoStrip}>
-          <SparkIcon size={18} color={DANGER} />
-          <Text style={{flex: 1, fontFamily: FONT, fontSize: 14, color: T1, lineHeight: 19}}>
-            <Text style={{fontWeight: '700'}}>Adizero Adios Pro 4</Text> 교체 시기예요. 새 러닝화를 추천받아 보세요.
-          </Text>
         </Rise>
       </ScrollView>
       <View style={[s.footer, {paddingBottom: Math.max(insetBottom, 18)}]}>
-        <PrimaryButton label="내 신발 등록하기" onPress={goNext} />
+        <PrimaryButton label="다음" onPress={goNext} />
       </View>
     </View>
   );
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// 4 · Register (interactive)
+// 3 · 등록 — '내 러닝화' 선택(2열 분할 피커) + 현재 누적 거리. 완료 → 바로 홈.
+// '구매 시기' 필드는 폐기: 기존에도 저장되지 않던 죽은 입력(사용자 확인 2026-07-07).
 // ════════════════════════════════════════════════════════════════════════════
+
 function FieldLabel({n, label}: {n: string; label: string}) {
   return (
     <View style={{flexDirection: 'row', alignItems: 'center', gap: 9}}>
@@ -892,106 +563,66 @@ function FieldLabel({n, label}: {n: string; label: string}) {
   );
 }
 
-function Register({goNext, onSkip, onRegister, insetTop, insetBottom}: ScreenProps & {onRegister: (r: RegisteredShoe) => void}) {
-  const [brand, setBrand] = useState<string | null>(null);
-  const [model, setModel] = useState<string | null>(null);
-  const [when, setWhen] = useState<string | null>(null);
-  const [km, setKm] = useState(60);
-  const [done, setDone] = useState(false);
-  const ready = !!brand && !!model;
-  // 권장 수명은 선택한 브랜드/모델 기준(data/shoeModels) — 메인 AddShoe 화면과 동일.
-  const max = useMemo(() => getRecommendedLifespanKm({brand: brand ?? undefined, model: model ?? undefined}), [brand, model]);
+function Register({onSkip, onComplete, insetTop, insetBottom}: Omit<ScreenProps, 'goNext'> & {onComplete: (r: RegisteredShoe) => void}) {
+  const [picked, setPicked] = useState<PickedShoe | null>(null);
+  const [km, setKm] = useState(0);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const ready = !!picked;
+  // 권장 수명은 카탈로그 기준(모델 미확정이면 브랜드/기본값) — AddShoe 화면과 동일 소스.
+  const max = useMemo(
+    () => getRecommendedLifespanKm({brand: picked?.brand || undefined, model: picked?.model || undefined}),
+    [picked],
+  );
   // 모델 변경으로 권장수명이 줄면 기존 누적거리 입력이 수명을 넘지 않도록 클램프.
-  useEffect(() => { setKm(k => Math.min(k, max)); }, [max]);
-  const st = statusFor(km, max);
-  const col = STATUS[st].c;
-  const remain = Math.round((1 - km / max) * 100);
+  useEffect(() => {
+    setKm(k => Math.min(k, max));
+  }, [max]);
 
   const submit = () => {
-    if (!ready) return;
-    onRegister({brand: brand!, model: model!, km, max});
-    setDone(true);
+    if (!picked) return;
+    // 등록 완료 → Ready/축하 화면 없이 바로 홈(승인 스펙). 신발 생성은 App.completeOnboarding.
+    onComplete({brand: picked.brand, model: picked.model, km, max});
   };
 
   return (
     <View style={s.screen}>
-      <FlowHeader step={4} total={5} onSkip={onSkip} insetTop={insetTop} />
+      <FlowHeader step={3} total={3} onSkip={onSkip} insetTop={insetTop} />
       <ScrollView style={s.flex1} contentContainerStyle={s.bodyContent} showsVerticalScrollIndicator={false}>
         <Rise>
-          <View style={{flexDirection: 'row', alignItems: 'center', gap: 8}}>
-            <SparkIcon size={15} color={ACCENT} />
-            <Text style={[s.eyebrow, {marginBottom: 0}]}>거의 다 왔어요</Text>
-          </View>
-          <Text style={[s.title, {fontSize: 22}]}>첫 러닝화를{'\n'}등록해볼까요?</Text>
-          <Text style={s.body}>지금 신고 있는 러닝화를 등록하면{'\n'}Keego가 수명을 추적해드려요.</Text>
+          <Eyebrow>Your first pair</Eyebrow>
+          <Text style={s.title}>첫 러닝화를{'\n'}등록해볼까요?</Text>
+          <Text style={s.body}>지금 신는 러닝화를 등록하면{'\n'}keego가 수명을 추적해드려요.</Text>
         </Rise>
 
-        {/* 라이브 프리뷰 카드 */}
-        <Rise delay={120} style={[s.previewCard, {borderColor: ready ? withAlpha(ACCENT, 0.3) : SEP, overflow: 'hidden'}]}>
-          <LinearGrad stops={[{color: '#1C1C22', offset: 0}, {color: '#141417', offset: 1}]} radius={18} />
-          <PctRing pct={remain} color={col} size={52} stroke={6} animate={false} />
-          <View style={{flex: 1, minWidth: 0, marginLeft: 14}}>
-            <Text style={s.brandEyebrow}>{brand || '브랜드'}</Text>
-            <Text numberOfLines={1} style={{fontFamily: FONT, fontSize: 16, fontWeight: '700', color: model ? T1 : T4, marginTop: 2}}>
-              {model || '모델을 선택하세요'}
+        {/* 1 내 러닝화 — 누르면 2열 분할 피커 */}
+        <Rise delay={130} style={{marginTop: 16}}>
+          <FieldLabel n="1" label="내 러닝화" />
+          <Pressable
+            testID="onboarding-shoe-select"
+            onPress={() => setPickerOpen(true)}
+            accessibilityRole="button"
+            accessibilityLabel={picked ? `내 러닝화 ${picked.brand} ${picked.model}, 눌러서 변경` : '내 러닝화 선택'}
+            style={({pressed}) => [s.selector, pressed && {opacity: 0.85}]}>
+            <SearchIcon />
+            <Text numberOfLines={1} style={[s.selectorText, !picked && {color: T4, fontWeight: '500'}]}>
+              {picked ? `${picked.brand ? `${picked.brand} · ` : ''}${picked.model}` : '브랜드·모델 선택'}
             </Text>
-            <Text style={{fontFamily: FONT, fontSize: 13, color: T3, marginTop: 5}}>
-              {km.toLocaleString()} / {max} km
-              <Text style={{color: T4}}> · </Text>
-              <Text style={{color: col, fontWeight: '600'}}>{STATUS[st].label}</Text>
-            </Text>
-          </View>
+            <ChevronDown />
+          </Pressable>
+          <Text style={s.fieldHint}>
+            {picked ? `교체 권장 ${max} km 자동 설정 — 눌러서 변경할 수 있어요` : '누르면 브랜드와 모델을 고를 수 있어요'}
+          </Text>
         </Rise>
 
-        {/* 1 브랜드 */}
-        <View style={{marginTop: 12}}>
-          <FieldLabel n="1" label="브랜드" />
-          <View style={s.chipWrap}>
-            {BRANDS.map(b => (
-              <Chip
-                key={b}
-                label={b}
-                active={brand === b}
-                onPress={() => {
-                  setBrand(b);
-                  setModel(null);
-                }}
-              />
-            ))}
-          </View>
-        </View>
-
-        {/* 2 모델 */}
-        <View style={{marginTop: 12}}>
-          <FieldLabel n="2" label="모델" />
-          {brand ? (
-            <View style={s.chipWrap}>
-              {modelsForBrand(brand).map(m => (
-                <Chip key={m} label={m} active={model === m} onPress={() => setModel(m)} />
-              ))}
-            </View>
-          ) : (
-            <Text style={{fontFamily: FONT, fontSize: 13, color: T3, marginTop: 8, paddingVertical: 3}}>브랜드를 먼저 선택하세요</Text>
-          )}
-        </View>
-
-        {/* 3 구매 시기 */}
-        <View style={{marginTop: 12}}>
-          <FieldLabel n="3" label="구매 시기" />
-          <View style={s.chipWrap}>
-            {['1개월 이내', '3개월', '6개월', '직접 입력'].map(w => (
-              <Chip key={w} label={w} active={when === w} onPress={() => setWhen(w)} small />
-            ))}
-          </View>
-        </View>
-
-        {/* 4 현재 누적 거리 */}
-        <View style={{marginTop: 12}}>
+        {/* 2 현재 누적 거리 */}
+        <Rise delay={240} style={{marginTop: 22}}>
           <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
-            <FieldLabel n="4" label="현재 누적 거리" />
-            <Metric value={km} unit="KM" size={22} />
+            <FieldLabel n="2" label="현재 누적 거리" />
+            <Text style={s.kmVal}>
+              {km.toLocaleString()}<Text style={s.kmUnit}> KM</Text>
+            </Text>
           </View>
-          <View style={{marginTop: 10}}>
+          <View style={{marginTop: 14}}>
             <KmSlider value={km} min={0} max={max} step={10} onChange={setKm} />
             <View style={{flexDirection: 'row', justifyContent: 'space-between', marginTop: 6}}>
               <Text style={s.tick}>새 신발</Text>
@@ -999,103 +630,22 @@ function Register({goNext, onSkip, onRegister, insetTop, insetBottom}: ScreenPro
               <Text style={s.tick}>{max} km+</Text>
             </View>
           </View>
-        </View>
+          <Text style={[s.fieldHint, {marginTop: 10}]}>새 신발이면 0으로 두세요.</Text>
+        </Rise>
       </ScrollView>
 
-      {/* 스티키 CTA */}
       <View style={[s.footer, {paddingBottom: Math.max(insetBottom, 18)}]}>
-        <PrimaryButton label={ready ? '등록 완료' : '브랜드와 모델을 선택하세요'} onPress={submit} disabled={!ready} />
+        <PrimaryButton testID="onboarding-register" label={ready ? '등록 완료' : '러닝화를 선택하세요'} onPress={submit} disabled={!ready} />
+        <Text style={s.ctaCaption}>등록하면 바로 러닝을 시작할 수 있어요 · 신발은 나중에 더 추가할 수 있어요</Text>
       </View>
 
-      {done && (
-        <View style={s.successOverlay}>
-          <Confetti />
-          <View style={s.successBadge}>
-            <CheckIcon size={44} />
-          </View>
-          <Text style={{fontFamily: DISPLAY, fontSize: 46, color: T1, marginTop: 24}}>등록 완료!</Text>
-          <Text style={{fontFamily: FONT, fontSize: 15, color: T3, marginTop: 12, lineHeight: 22, textAlign: 'center'}}>
-            <Text style={{color: T1, fontWeight: '600'}}>
-              {brand} {model}
-            </Text>
-            {'\n'}이제 Keego가 {km}km부터 수명을 추적해드려요.
-          </Text>
-          <View style={{width: '100%', marginTop: 30}}>
-            <PrimaryButton label="마지막 단계로" onPress={goNext} />
-          </View>
-        </View>
-      )}
-    </View>
-  );
-}
-
-// ════════════════════════════════════════════════════════════════════════════
-// 5 · Ready
-// ════════════════════════════════════════════════════════════════════════════
-function Ready({registered, onFinish, onSkip, insetTop, insetBottom}: ScreenProps & {registered: RegisteredShoe | null; onFinish: () => void}) {
-  // 신발 요약 카드는 *실제로 등록한 신발이 있을 때만* 보여준다. 과거엔 폴백
-  // {Nike Alphafly 3, 60/600}을 깔아 두었는데, '이미 계정이 있나요? 로그인'으로 진입한
-  // 복귀 유저(registered=null)에게 그 날조 신발 + '추적 시작됨' + '이제 달릴 준비가
-  // 되었습니다' 축하문구가 노출돼 오해를 줬다(날조 금지 위배). 등록이 없으면 카드를
-  // 숨기고 헤드라인/본문을 로그인 맥락으로 바꾼다.
-  const shoe = registered;
-  const st = shoe ? statusFor(shoe.km, shoe.max || 600) : 'good';
-  const col = STATUS[st].c;
-  const remain = shoe ? Math.round((1 - shoe.km / (shoe.max || 600)) * 100) : 0;
-  return (
-    <View style={s.screen}>
-      {/* 상단 글로우 */}
-      <LinearGrad
-        x1={0}
-        y1={0}
-        x2={0}
-        y2={1}
-        style={{height: 260}}
-        stops={[{color: withAlpha(ACCENT, 0.22), offset: 0}, {color: withAlpha(ACCENT, 0), offset: 0.65}]}
+      <ShoePicker
+        visible={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        onPick={setPicked}
+        insetTop={insetTop}
+        insetBottom={insetBottom}
       />
-      <FlowHeader step={5} total={5} onSkip={onSkip} insetTop={insetTop} />
-      <ScrollView style={s.flex1} contentContainerStyle={[s.bodyContent, {alignItems: 'center'}]} showsVerticalScrollIndicator={false}>
-        <Rise>
-          <View style={s.readyBadge}>
-            <KeegoMark size={30} />
-          </View>
-        </Rise>
-        <Rise delay={120} style={{alignSelf: 'stretch'}}>
-          <Text style={[s.title, {textAlign: 'center', marginTop: 14}]}>
-            {shoe ? '이제 달릴 준비가\n됐어요' : '다시 오신 걸\n환영해요'}
-          </Text>
-          <Text style={[s.body, {textAlign: 'center'}]}>
-            {shoe ? 'Keego와 함께 더 오래,\n더 건강하게 달리세요.' : '로그인하고 이어서 달려보세요.'}
-          </Text>
-        </Rise>
-
-        {/* 등록 신발 요약 — 실제 등록한 신발이 있을 때만(로그인 진입 시엔 숨김, 날조 금지) */}
-        {shoe && (
-          <Rise delay={240} style={[s.readyShoeCard, {alignSelf: 'stretch'}]}>
-            <PctRing pct={remain} color={col} size={52} stroke={6} />
-            <View style={{flex: 1, minWidth: 0, marginLeft: 15}}>
-              <Text style={[s.brandEyebrow, {fontSize: 11}]}>추적 시작됨</Text>
-              <Text numberOfLines={1} style={{fontFamily: FONT, fontSize: 16, fontWeight: '700', color: T1, marginTop: 1}}>
-                {shoe.brand} {shoe.model}
-              </Text>
-              <Text style={{fontFamily: FONT, fontSize: 13, color: T3, marginTop: 5}}>
-                {shoe.km.toLocaleString()} / {(shoe.max || 600).toLocaleString()} km
-                <Text style={{color: T4}}> · </Text>
-                <Text style={{color: col, fontWeight: '600'}}>{STATUS[st].label}</Text>
-              </Text>
-            </View>
-          </Rise>
-        )}
-      </ScrollView>
-
-      {/* 시작 — 인증은 앱 진입 전 LoginScreen 에서 이미 끝났으므로 온보딩 마지막은 단일
-          완료 CTA 하나다(여기에 또 로그인 버튼을 두면 인증 끝난 유저에게 중복·혼동). */}
-      <View style={[s.footer, {paddingBottom: Math.max(insetBottom, 18), gap: 10}]}>
-        <PrimaryButton testID="onboarding-finish" label="시작하기" onPress={onFinish} />
-        <Text style={{fontFamily: FONT, fontSize: 11, color: T4, textAlign: 'center', lineHeight: 17, marginTop: 8}}>
-          계속 진행하면 Keego의 <Text style={{textDecorationLine: 'underline'}} accessibilityRole="link" accessibilityLabel="이용약관 열기" onPress={() => { Linking.openURL(TERMS_URL).catch(() => {}); }}>이용약관</Text>과 <Text style={{textDecorationLine: 'underline'}} accessibilityRole="link" accessibilityLabel="개인정보 처리방침 열기" onPress={() => { Linking.openURL(PRIVACY_URL).catch(() => {}); }}>개인정보 처리방침</Text>에{'\n'}동의하는 것으로 간주돼요.
-        </Text>
-      </View>
     </View>
   );
 }
@@ -1114,12 +664,10 @@ export default function OnboardingScreen({onDone}: {onDone: (registered: Registe
   const insets = useSafeAreaInsets();
   const reduceMotion = useReduceMotion();
   const [index, setIndex] = useState(0);
-  const [registered, setRegistered] = useState<RegisteredShoe | null>(null);
-  const goNext = () => setIndex(i => Math.min(5, i + 1));
-  // 로그인 진입: 기존 계정 사용자는 온보딩 소개(1~4)를 건너뛰고 마지막 인증 화면(Ready,
-  // index 5)으로 곧장 간다. 거기 소셜/이메일 로그인이 끝나면 onFinish→onDone 로 온보딩이
-  // 종료되고 App 이 로그인 후 홈으로 전환한다.
-  const goLogin = () => setIndex(5);
+  const goNext = () => setIndex(i => Math.min(3, i + 1));
+  // 기존 계정 링크: 인증 게이트는 온보딩보다 먼저라 이미 로그인 상태 — 소개를 건너뛰고
+  // 즉시 완료 처리한다(과거 Ready 인터스티셜 제거, 동일 종착지).
+  const goLogin = () => onDone(null);
   const onSkip = () => onDone(null);
   const common = {insetTop: insets.top, insetBottom: insets.bottom, onSkip, goNext};
 
@@ -1128,11 +676,9 @@ export default function OnboardingScreen({onDone}: {onDone: (registered: Registe
     <ReduceMotionCtx.Provider value={reduceMotion}>
       <View testID="onboarding" style={{flex: 1, backgroundColor: BG}}>
         {index === 0 && <Welcome goNext={goNext} goLogin={goLogin} insetTop={insets.top} insetBottom={insets.bottom} />}
-        {index === 1 && <ShoesMatter {...common} />}
-        {index === 2 && <Injury {...common} />}
-        {index === 3 && <Management {...common} />}
-        {index === 4 && <Register {...common} onRegister={setRegistered} />}
-        {index === 5 && <Ready {...common} registered={registered} onFinish={() => onDone(registered)} />}
+        {index === 1 && <ShoeIntelligence {...common} />}
+        {index === 2 && <Performance {...common} />}
+        {index === 3 && <Register insetTop={insets.top} insetBottom={insets.bottom} onSkip={onSkip} onComplete={onDone} />}
       </View>
     </ReduceMotionCtx.Provider>
   );
@@ -1145,9 +691,6 @@ const s = StyleSheet.create({
   screen: {flex: 1, backgroundColor: BG},
   flowHeader: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24, paddingBottom: 6},
   skip: {fontFamily: FONT, fontSize: 13, color: T4, fontWeight: '500'},
-  // 본문은 ScrollView로 감싸되 contentContainerStyle에 flexGrow:1을 줘, 콘텐츠가 화면에
-  // 들어오면 스크롤이 생기지 않고(=한 화면), 넘칠 때만 스크롤된다. footer(CTA)는 ScrollView
-  // 바깥 형제로 항상 하단에 고정돼 어떤 선택 상태에서도 사라지지 않는다.
   flex1: {flex: 1},
   bodyContent: {flexGrow: 1, paddingHorizontal: 24, paddingTop: 8},
   eyebrow: {fontFamily: FONT, fontSize: 12, fontWeight: '700', letterSpacing: 1.4, color: ACCENT, textTransform: 'uppercase', marginBottom: 6},
@@ -1155,127 +698,56 @@ const s = StyleSheet.create({
   body: {fontFamily: FONT, fontSize: 14, lineHeight: 19, color: T3, marginTop: 8, maxWidth: 360},
   bodyStrong: {color: T1, fontWeight: '600'},
 
-  // Welcome
-  wordmark: {position: 'absolute', left: 24, fontFamily: DISPLAY, fontSize: 26, letterSpacing: 1.2, color: T1},
-  // lineHeight 90: 맥의 'KEEP GOING' 헤드라인 글자 잘림 수정 보존(76→90).
-  heroHeadline: {fontFamily: DISPLAY, fontSize: 88, lineHeight: 90, color: T1},
+  // Welcome — 헤드라인 88→64→48 재축소(사용자 확정 2026-07-07).
+  heroHeadline: {fontFamily: DISPLAY, fontSize: 48, lineHeight: 52, letterSpacing: -1.5, fontWeight: '600', color: T1},
   heroSub: {fontFamily: FONT, fontSize: 17, fontWeight: '600', color: T1, marginTop: 18},
   heroBody: {fontFamily: FONT, fontSize: 15, lineHeight: 22, color: 'rgba(246,246,248,0.66)', marginTop: 7},
-
-  // CTA
-  // CTA 사각 스타일(cta/ctaGhost/ctaGloss/ctaLabel)은 단일 Button 프리미티브로
-  // 대체하며 제거했다(PrimaryButton 참조).
+  termsCaption: {fontFamily: FONT, fontSize: 11, color: T4, textAlign: 'center', lineHeight: 17, marginTop: 14},
 
   footer: {paddingHorizontal: 24, paddingTop: 8},
+  ctaCaption: {fontFamily: FONT, fontSize: 12, color: T3, textAlign: 'center', marginTop: 10},
 
-  // cards
-  heroCard: {marginTop: 12, borderRadius: 22, borderCurve: 'continuous', backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP},
-  factStrip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    marginTop: 10,
-    padding: 13,
-    borderRadius: 18, borderCurve: 'continuous',
-    backgroundColor: withAlpha(ACCENT, 0.08),
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: withAlpha(ACCENT, 0.22),
-  },
-  analyticCard: {padding: 13, borderRadius: 18, borderCurve: 'continuous', backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP},
-  alertBanner: {
+  // 신발 인텔리전스
+  heroCard: {marginTop: 16, borderRadius: 22, borderCurve: 'continuous', backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP},
+  shoeRowCard: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    marginTop: 10,
-    padding: 12,
-    borderRadius: 16, borderCurve: 'continuous',
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: SEP,
-  },
-  alertIconChip: {width: 34, height: 34, borderRadius: 11, backgroundColor: withAlpha(ACCENT, 0.14), alignItems: 'center', justifyContent: 'center'},
-
-  // Management
-  summaryHero: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 14,
-    borderRadius: 20, borderCurve: 'continuous',
-    backgroundColor: withAlpha(ACCENT, 0.1),
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: withAlpha(ACCENT, 0.22),
-  },
-  shoeCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    padding: 13,
-    borderRadius: 18, borderCurve: 'continuous',
+    marginTop: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 22, borderCurve: 'continuous',
     backgroundColor: CARD,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: SEP,
   },
-  brandEyebrow: {fontFamily: FONT, fontSize: 12, color: T4, letterSpacing: 0.7},
-  recoStrip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginTop: 10,
-    padding: 12,
-    borderRadius: 16, borderCurve: 'continuous',
-    backgroundColor: 'rgba(255,77,77,0.08)',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(255,77,77,0.22)',
-  },
+  shoeThumb: {width: 44, height: 44, borderRadius: 12, borderCurve: 'continuous', backgroundColor: 'rgba(255,255,255,0.06)', alignItems: 'center', justifyContent: 'center'},
+  pill: {flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 5, paddingHorizontal: 10, borderRadius: 100, alignSelf: 'center'},
+  alertRow: {flexDirection: 'row', alignItems: 'center', gap: 9, marginTop: 16, paddingHorizontal: 2},
 
-  // Register
-  previewCard: {marginTop: 12, padding: 12, borderRadius: 18, borderCurve: 'continuous', flexDirection: 'row', alignItems: 'center', backgroundColor: CARD, borderWidth: 1},
-  chipWrap: {flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginTop: 8},
+  // 성능(기능 목록)
+  featCard: {marginTop: 16, paddingHorizontal: 18, paddingVertical: 4, borderRadius: 22, borderCurve: 'continuous', backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP},
+  featRow: {flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 15},
+  featRowDivider: {borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP},
+  featIc: {width: 38, height: 38, borderRadius: 11, borderCurve: 'continuous', alignItems: 'center', justifyContent: 'center'},
+
+  // 등록
   fieldBadge: {width: 20, height: 20, borderRadius: 6, backgroundColor: 'rgba(255,255,255,0.08)', alignItems: 'center', justifyContent: 'center'},
-  tick: {fontFamily: FONT, fontSize: 11, color: T4},
-  pill: {flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 5, paddingHorizontal: 11, borderRadius: 100, alignSelf: 'flex-start'},
-  successOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(8,8,10,0.92)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 32,
-  },
-  successBadge: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    backgroundColor: ACCENT,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  // Ready
-  readyBadge: {
-    width: 56,
-    height: 56,
-    borderRadius: 18, borderCurve: 'continuous',
-    marginTop: 14,
-    backgroundColor: withAlpha(ACCENT, 0.14),
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: withAlpha(ACCENT, 0.3),
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  readyShoeCard: {
+  selector: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 16,
-    padding: 14,
-    borderRadius: 18, borderCurve: 'continuous',
+    gap: 10,
+    height: 48,
+    marginTop: 10,
+    paddingHorizontal: 14,
+    borderRadius: 14, borderCurve: 'continuous',
     backgroundColor: CARD,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: SEP,
-    alignSelf: 'stretch',
+    borderColor: withAlpha(T1, 0.12),
   },
+  selectorText: {flex: 1, fontFamily: FONT, fontSize: 15, fontWeight: '600', color: T1, letterSpacing: -0.2},
+  fieldHint: {fontFamily: FONT, fontSize: 12, color: T3, marginTop: 8, lineHeight: 17},
+  kmVal: {fontFamily: DISPLAY, fontSize: 22, fontWeight: '600', color: T1, letterSpacing: -0.5, fontVariant: ['tabular-nums']},
+  kmUnit: {fontFamily: FONT, fontSize: 12, fontWeight: '600', color: T3, letterSpacing: 0.5},
+  tick: {fontFamily: FONT, fontSize: 11, color: T4},
 });

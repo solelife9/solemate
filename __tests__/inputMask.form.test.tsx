@@ -213,13 +213,14 @@ describe('AddShoeScreen — maxKm 0 인라인 차단(화면)', () => {
     await flush();
     return r.root;
   }
-  // 모델 선택 모달을 열고 첫 추천을 골라 유효 상태로 만든다.
+  // 공용 2열 분할 피커(러닝화 선택)를 열고 첫 모델 행을 골라 유효 상태로 만든다.
   async function pickFirstModel(root: ReactTestRenderer.ReactTestInstance) {
-    await tap(root, '모델 선택');
+    await tap(root, '러닝화 선택');
+    // 모델 행 = role=button + 라벨에 '권장'(sub 문구) 포함. 브랜드 레일(role=tab)·직접추가 제외.
     const sug = root.findAll(
       (n: any) => n && n.props && typeof n.props.onPress === 'function' &&
-        typeof n.props.accessibilityLabel === 'string' && /\dkm$/.test(textOf(n)) &&
-        !n.props.accessibilityLabel.startsWith('직접 추가'),
+        n.props.accessibilityRole === 'button' &&
+        typeof n.props.accessibilityLabel === 'string' && n.props.accessibilityLabel.includes('권장'),
     )[0];
     await act(async () => { sug.props.onPress(); });
     await flush();

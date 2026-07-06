@@ -302,6 +302,10 @@ function Main(){
   const celebQueueRef=useRef<CelebrationData[]>([]);
   const celebBaselineRef=useRef<{ach:string[];tier:string}|null>(null);
   const [celebReady,setCelebReady]=useState(false);
+  // TEMP(리뷰용, 2026-07-06): 온보딩 미리보기 — 계정에 신발이 있어 자연 노출 안 되는 온보딩을
+  // 실행 시 강제로 보여준다(넘기면 홈으로, 비영속). 리뷰 끝나면 이 상태 + 아래 게이트 제거.
+  // jest 에선 끈다 — 부팅/온보딩 통합 테스트가 실제 게이트 조건(!onboarded)을 검증해야 한다.
+  const [previewOnboard,setPreviewOnboard]=useState(!(typeof process!=='undefined'&&process.env&&process.env.JEST_WORKER_ID));
   const [overlay,setOverlay]=useState<'none'|'add'|'goal'|'countdown'|'run'>('none');
   const [pendingShoe,setPendingShoe]=useState<{id:string;name:string;ui:Shoe}|null>(null);
   const [activeRun,setActiveRun]=useState<{id:string;name:string;goalKm:number;goalMin:number;pacePlan:number[];trackLapM?:number}|null>(null);
@@ -1699,6 +1703,10 @@ function Main(){
   }
   // 첫 실행 온보딩: 신발이 없고(신규) 아직 온보딩 전이면 신발→런→수명 차감 흐름을
   // 1회 소개한다. 신발을 이미 가진 사용자/완료자에겐 뜨지 않는다.
+  // TEMP(리뷰용): 온보딩 미리보기 — 넘기면 비영속으로 닫고 홈으로. 리뷰 후 이 블록 제거.
+  if(previewOnboard){
+    return <OnboardingScreen onDone={()=>setPreviewOnboard(false)}/>;
+  }
   if(!onboarded&&shoes.length===0&&overlay==='none'){
     return <OnboardingScreen onDone={completeOnboarding}/>;
   }

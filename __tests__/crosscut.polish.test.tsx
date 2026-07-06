@@ -97,11 +97,10 @@ const SHOES: Shoe[] = [
 
 // ── 1) 44pt touch targets ─────────────────────────────────────────────────────
 describe('44pt touch targets — no control regresses below 44pt', () => {
-  // The three controls the code_critic flagged (preset 38 · chip 40 · segment ~36)
-  // are exactly the role=button + accessibilityState.selected selection controls
-  // on these screens. Each must now reach ≥44pt vertically.
+  // History 기간 세그먼트(role=button + accessibilityState.selected) 선택 컨트롤이
+  // 세로 ≥44pt(시각 높이 + hitSlop)를 유지하는지. (AddShoe 브랜드 칩은 2026-07-07
+  // 공용 ShoePicker 로 통합돼 이 화면에서 사라졌다 — 피커 레일은 별도.)
   test.each([
-    ['AddShoe brand chip', <AddShoeScreen />],
     ['History period segment', <HistoryScreen shoes={SHOES} runs={[]} />],
   ])('%s selection controls reach a ≥44pt vertical target', (_name, el) => {
     const root = render(el as React.ReactElement).root;

@@ -459,32 +459,23 @@ describe('Audit Hardening 수용', () => {
       expect(pressableByLabel(onb, '시작하기').props.accessibilityRole).toBe('button');
     });
 
-    test('온보딩 로그인 링크가 로그인 화면(Ready)으로 진입한다(goNext 아님)', () => {
+    test('온보딩 로그인 링크는 소개를 건너뛰고 즉시 완료한다(goNext 아님, Ready 인터스티셜 없음)', () => {
+      // 2026-07-07 재설계: 인증 게이트(LoginScreen)는 온보딩보다 먼저라 이 링크가 눌리는
+      // 시점엔 이미 로그인 상태다. 과거엔 Ready(index 5) 인터스티셜('다시 오신 걸')로
+      // 점프했지만, Ready 화면 제거로 링크는 곧장 onDone(null) — 같은 종착지(홈), 화면 하나 덜.
       const onDone = jest.fn();
       const root = renderTree(el(OnboardingScreen, {onDone})).root;
-
-      // Welcome 단계: 아직 로그인(Ready) 화면이 아니다(복귀 환영 문구 미노출).
-      expect(renderedText(root)).not.toContain('다시 오신 걸');
 
       // '이미 계정이 있나요? 로그인' 을 누른다.
       act(() => {
         pressableByLabel(root, '이미 계정이 있나요? 로그인').props.onPress();
       });
 
-      // 이제 로그인(Ready, index 5) 화면으로 점프했다. 인증은 LoginScreen 으로 단일화됐으므로
-      // Ready 엔 가짜 소셜 버튼 대신 '시작하기' CTA + 복귀 환영만 있다(아래 환영 문구로 검증).
-      // 과거 버그였다면 goNext 로 1단계 'Shoes Matter'(다음 CTA)가 떴을 것 — '다음'이 없어야 한다.
+      // 과거 버그였다면 goNext 로 다음 소개 화면('다음' CTA)이 떴을 것 — 대신 즉시 완료.
       expect(hasLabel(root, '다음')).toBe(false);
-      expect(renderedText(root)).toContain('시작하기');
-
-      // 날조 금지: 등록한 신발이 없는 로그인 진입(registered=null)이므로, 폴백 신발
-      // 카드(Nike Alphafly 3 / 60·600km / '추적 시작됨')도 '준비됐다' 축하문구도 뜨면 안 된다.
-      const text = renderedText(root);
-      expect(text).not.toContain('Alphafly 3');
-      expect(text).not.toContain('추적 시작됨');
-      expect(text).not.toContain('이제 달릴 준비가');
-      // 대신 로그인 맥락의 환영 문구가 보인다.
-      expect(text).toContain('다시 오신 걸');
+      expect(onDone).toHaveBeenCalledTimes(1);
+      // 날조 금지: 등록한 신발 없이 나가는 경로이므로 등록 정보는 null 이어야 한다.
+      expect(onDone).toHaveBeenCalledWith(null);
     });
   });
 

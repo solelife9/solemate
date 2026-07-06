@@ -1,38 +1,34 @@
 // ============================================================================
-// AddShoeScreen.rn.tsx — register a new shoe (brand chips, model autocomplete,
-// auto-filled recommended life with a '권장' badge, real photo attach)
+// AddShoeScreen.rn.tsx — register a new shoe.
+// 2026-07-07: 등록 UX 를 온보딩과 통일 — 브랜드 칩 + 모델 검색 모달을 하나의
+// '내 러닝화' 선택 필드 + 공용 2열 분할 피커(ShoePicker)로 대체한다(사용자 지시).
+// 나머지(사진·교체 권장 거리·현재 누적 거리)는 그대로 유지한다.
 // ============================================================================
 import React, { useState } from 'react';
-import { View, Text, TextInput, ScrollView, Pressable, Image, StyleSheet, Modal, KeyboardAvoidingView, Platform, Alert, Linking } from 'react-native';
+import { View, Text, TextInput, ScrollView, Pressable, Image, StyleSheet, KeyboardAvoidingView, Platform, Alert, Linking } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {
   BG, CARD_DIM, CARD_HI, ACCENT, DANGER, T1, T2, T3, T4, FONT, DISPLAY, withAlpha, Shoe,
 } from './theme';
-import { Pill, Button, Chip } from './primitives';
-// 신발 모델 카탈로그·권장수명은 data/shoeModels(단일 소스)에서 가져온다.
-import { BRANDS, modelsForBrand, getRecommendedLifespanKm } from './data/shoeModels';
+import { Pill, Button } from './primitives';
+// 러닝화 모델 카탈로그·권장수명은 data/shoeModels(단일 소스)에서 가져온다.
+import { getRecommendedLifespanKm } from './data/shoeModels';
+// 러닝화 선택은 온보딩과 공유하는 2열 분할 피커(단일 소스).
+import { ShoePicker, type PickedShoe } from './ShoePicker';
 // maxKm 0 같은 비정상값을 제출 시 인라인으로 차단(빨강 헬퍼텍스트).
 import { validateMaxKm } from './lib/inputMask';
 // 사진 첨부는 expo-image-picker 래퍼(lib/photo)를 통해 실제로 동작한다.
 import { pickPhotoWithPermission } from './lib/photo';
 
-// 브랜드 목록에 없는 신발을 위한 '기타'(직접 입력) 센티넬.
-const CUSTOM_BRAND = '기타';
-
 export default function AddShoeScreen({
   onClose, onSave,
 }: { onClose?: () => void; onSave?: (shoe: Shoe) => void }) {
-  const [brand, setBrand] = useState(BRANDS[0]);
-  // '기타'(커스텀 브랜드) 선택 시 직접 입력한 브랜드명. 목록에 없는 브랜드의 신발도 등록 가능.
-  const [customBrand, setCustomBrand] = useState('');
-  const [model, setModel] = useState('');
-  // 전용 모델 검색 모달(전체화면): 탭하면 열리고, 검색창(상단)+알파벳 목록(중간)+키보드(하단)
-  // 구조라 목록이 키보드에 가리지 않는다. search는 모달 내부의 실시간 검색어(커밋값은 model).
+  // 러닝화(브랜드+모델)는 공용 피커로 한 번에 고른다. 브랜드는 선택 결과에 따라온다.
+  const [picked, setPicked] = useState<PickedShoe | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [search, setSearch] = useState('');
   // 권장 수명(km) — 모델 선택 시 자동 채워지며 사용자가 직접 수정 가능.
-  const [max, setMax] = useState(getRecommendedLifespanKm({ brand: BRANDS[0] }));
+  const [max, setMax] = useState(0);
   const [used, setUsed] = useState('0');
   // maxKm 0/비정상값 인라인 차단 — 제출 시 검증해 필드 아래 빨강 헬퍼텍스트로 표시한다.
   const [maxErr, setMaxErr] = useState<string | undefined>(undefined);
@@ -41,50 +37,29 @@ export default function AddShoeScreen({
   const [photoError, setPhotoError] = useState(false);
   const [picking, setPicking] = useState(false);
 
-  const q = search.trim().toLowerCase();
-  // 모델 목록은 data/shoeModels(modelsForBrand)를 단일 소스로 쓰고 알파벳순(localeCompare)으로 정렬.
-  const sortedModels = modelsForBrand(brand).slice().sort((a, b) => a.localeCompare(b));
-  // 모달 검색: 비면 브랜드 전체(알파벳순). 입력하면 부분일치 전체를, '검색어로 시작'하는
-  // 모델을 앞에(그다음 '포함'), 각 그룹은 알파벳순으로 정렬한다(예: s → Superblast 먼저).
-  const matches = q
-    ? sortedModels
-        .filter((m) => m.toLowerCase().includes(q))
-        .sort((a, b) => {
-          const sa = a.toLowerCase().startsWith(q) ? 0 : 1;
-          const sb = b.toLowerCase().startsWith(q) ? 0 : 1;
-          return sa - sb || a.localeCompare(b);
-        })
-    : sortedModels;
-  const suggestions = matches.map(
-    (m) => [m, getRecommendedLifespanKm({ brand, model: m })] as [string, number],
-  );
-  // 직접 입력: 검색어가 있고 DB에 정확 일치가 없으면, 입력값을 커스텀 모델로 추가하는 옵션을 준다.
-  const trimmed = search.trim();
-  const exact = sortedModels.some((m) => m.toLowerCase() === q);
-  const customOption: [string, number] | null =
-    trimmed.length > 0 && !exact ? [trimmed, getRecommendedLifespanKm({ brand, model: trimmed })] : null;
-  // 저장에 쓸 실제 브랜드 — '기타'면 직접 입력값. 커스텀이면 브랜드명도 채워져야 유효.
-  const effBrand = brand === CUSTOM_BRAND ? customBrand.trim() : brand;
-  const valid = model.trim().length > 0 && effBrand.length > 0;
+  // 모델만 있으면 등록 가능 — 검색창 직접 추가는 브랜드가 비어 있을 수 있다(온보딩과 동일).
+  // '기타' 레일 직접 입력은 브랜드명을 받으므로 그 경로는 브랜드가 채워진다.
+  const valid = !!picked && picked.model.trim().length > 0;
 
   // 현재 brand+model 기준 권장 수명. max가 이 값과 같으면 '권장'(자동값), 다르면 사용자 수정값.
-  const recommendedKm = getRecommendedLifespanKm({ brand, model });
-  const isRecommended = max === recommendedKm;
+  const recommendedKm = picked ? getRecommendedLifespanKm({ brand: picked.brand, model: picked.model }) : 0;
+  const isRecommended = !!picked && max === recommendedKm;
 
-  const openPicker = () => { setSearch(''); setPickerOpen(true); };
-  const closePicker = () => setPickerOpen(false);
-  const pickModel = (name: string, km: number) => { setModel(name); setMax(km); setMaxErr(undefined); setPickerOpen(false); setSearch(''); };
-  // 브랜드를 바꾸면 모델을 비우고 권장 수명도 새 브랜드 기준으로 되돌린다.
-  const pickBrand = (b: string) => { setBrand(b); setModel(''); setMax(getRecommendedLifespanKm({ brand: b })); setMaxErr(undefined); };
+  // 피커에서 러닝화를 고르면 권장 수명을 자동 채운다(사용자가 아래에서 수정 가능).
+  const onPick = (p: PickedShoe) => {
+    setPicked(p);
+    setMax(getRecommendedLifespanKm({ brand: p.brand, model: p.model }));
+    setMaxErr(undefined);
+  };
 
   const onPickPhoto = async () => {
     if (picking) return;
     setPicking(true);
     setPhotoError(false);
     try {
-      const picked = await pickPhotoWithPermission();
-      if (picked.ok) setPhotoUri(picked.uri);
-      else if (picked.reason === 'denied') {
+      const pickedPhoto = await pickPhotoWithPermission();
+      if (pickedPhoto.ok) setPhotoUri(pickedPhoto.uri);
+      else if (pickedPhoto.reason === 'denied') {
         // 권한 거부 시 무반응이던 것 개선(2026-07-05) — 설정 안내(비차단).
         Alert.alert('사진 접근 권한이 필요해요', '설정에서 사진 권한을 허용하면 신발 사진을 등록할 수 있어요.', [
           {text: '설정 열기', onPress: () => { Promise.resolve(Linking.openSettings()).catch(() => {}); }},
@@ -100,14 +75,14 @@ export default function AddShoeScreen({
   };
 
   const save = () => {
-    if (!valid) return;
+    if (!valid || !picked) return;
     // maxKm 0 같은 비정상값을 인라인으로 차단한다(Alert 없이 필드 아래 빨강 헬퍼텍스트).
     const me = validateMaxKm(max);
     setMaxErr(me);
     if (me) return;
     onSave?.({
-      brand: effBrand,
-      model: model.trim(),
+      brand: picked.brand.trim(),
+      model: picked.model.trim(),
       max,
       used: Number(used) || 0,
       condition: '양호',
@@ -149,34 +124,13 @@ export default function AddShoeScreen({
         )}
         {!photoError && <Text style={s.photoOpt}>선택 — 사진 없이도 등록할 수 있어요</Text>}
 
-        {/* brand */}
-        <Text style={s.label}>브랜드</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingRight: 8 }}>
-          {[...BRANDS, CUSTOM_BRAND].map((b) => {
-            const on = b === brand;
-            return (
-              <Chip key={b} label={b} selected={on} onPress={() => pickBrand(b)} />
-            );
-          })}
-        </ScrollView>
-        {/* '기타' 선택 시 브랜드명 직접 입력 — 목록에 없는 브랜드도 등록 가능. */}
-        {brand === CUSTOM_BRAND && (
-          <TextInput
-            style={[s.input, { marginTop: 10 }]}
-            value={customBrand}
-            onChangeText={setCustomBrand}
-            placeholder="브랜드명을 입력하세요"
-            placeholderTextColor={T3}
-            accessibilityLabel="브랜드명 직접 입력"
-            testID="add-shoe-custom-brand"
-            returnKeyType="done"
-          />
-        )}
-
-        {/* model — 탭하면 전체화면 검색 모달이 열린다(키보드가 목록을 가리지 않음) */}
-        <Text style={[s.label, { marginTop: 22 }]}>모델명</Text>
-        <Pressable onPress={openPicker} accessibilityRole="button" accessibilityLabel="모델 선택" style={({ pressed }) => [s.selector, pressed && s.pressed]}>
-          <Text style={[s.selectorText, !model && { color: T3 }]} numberOfLines={1}>{model || '모델 선택 또는 검색'}</Text>
+        {/* 러닝화(브랜드+모델) — 탭하면 온보딩과 동일한 2열 분할 피커가 열린다 */}
+        <Text style={s.label}>러닝화</Text>
+        <Pressable onPress={() => setPickerOpen(true)} accessibilityRole="button" accessibilityLabel={picked ? `러닝화 ${picked.brand} ${picked.model}, 눌러서 변경` : '러닝화 선택'} testID="add-shoe-select" style={({ pressed }) => [s.selector, pressed && s.pressed]}>
+          <Ionicons name="search" size={18} color={T3} />
+          <Text style={[s.selectorText, !picked && { color: T3 }]} numberOfLines={1}>
+            {picked ? `${picked.brand ? `${picked.brand} · ` : ''}${picked.model}` : '브랜드·모델 선택'}
+          </Text>
           <Ionicons name="chevron-down" size={18} color={T3} />
         </Pressable>
 
@@ -216,67 +170,20 @@ export default function AddShoeScreen({
         <Text style={s.hint}>새 신발이면 0으로 두세요.</Text>
       </ScrollView>
 
-      {/* CTA — 목업 그라데이션+글로우 버튼(MockupButton). 미선택 시 ghost 비활성. */}
+      {/* CTA — 미선택 시 ghost 비활성. */}
       <View style={s.ctaWrap}>
         <Button label="러닝화 등록" onPress={save} disabled={!valid} />
       </View>
       </KeyboardAvoidingView>
 
-      {/* 전용 모델 검색 모달 — 검색창(상단) + 알파벳 목록(중간, flex) + 키보드(하단).
-          목록이 키보드에 가리지 않고, DB에 없는 모델은 '직접 추가'로 입력할 수 있다. */}
-      {pickerOpen && (
-        <Modal visible animationType="slide" onRequestClose={closePicker}>
-          <View style={[s.screen, { paddingTop: insets.top }]}>
-            <View style={s.nav}>
-              <Pressable onPress={closePicker} hitSlop={10} accessibilityRole="button" accessibilityLabel="닫기" style={({ pressed }) => [s.iconBtn, pressed && s.pressed]}>
-                <Ionicons name="chevron-back" size={20} color={T2} />
-              </Pressable>
-              <Text style={s.navTitle}>{brand} 모델</Text>
-              <View style={{ width: 38 }} />
-            </View>
-
-            <View style={s.searchBar}>
-              <Ionicons name="search" size={18} color={T3} />
-              <TextInput
-                value={search}
-                onChangeText={setSearch}
-                autoFocus
-                placeholder="모델 검색 또는 직접 입력"
-                placeholderTextColor={T3}
-                style={s.searchInput}
-                returnKeyType="done"
-                autoCorrect={false}
-                autoCapitalize="none"
-              />
-              {search.length > 0 && (
-                <Pressable onPress={() => setSearch('')} hitSlop={8} accessibilityRole="button" accessibilityLabel="검색 지우기">
-                  <Ionicons name="close-circle" size={18} color={T3} />
-                </Pressable>
-              )}
-            </View>
-
-            <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 12, paddingBottom: 24 }} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets showsVerticalScrollIndicator={false}>
-              {suggestions.map(([m, km]) => (
-                <Pressable key={m} onPress={() => pickModel(m, km)} accessibilityRole="button" accessibilityLabel={m} style={({ pressed }) => [s.suggestion, pressed && { backgroundColor: CARD_HI }]}>
-                  <Text style={s.sugBrand}>{brand}</Text>
-                  <Text style={s.sugModel}>{m}</Text>
-                  <Text style={s.sugKm}>{km}km</Text>
-                </Pressable>
-              ))}
-              {customOption && (
-                <Pressable onPress={() => pickModel(customOption[0], customOption[1])} accessibilityRole="button" accessibilityLabel={`직접 추가 ${customOption[0]}`} style={({ pressed }) => [s.suggestion, s.customRow, pressed && { backgroundColor: CARD_HI }]}>
-                  <Ionicons name="add-circle-outline" size={18} color={ACCENT} />
-                  <Text style={s.customText} numberOfLines={1}>"{customOption[0]}" 직접 추가</Text>
-                  <Text style={s.sugKm}>{customOption[1]}km</Text>
-                </Pressable>
-              )}
-              {suggestions.length === 0 && !customOption && (
-                <Text style={s.noResult}>검색 결과가 없어요 — 모델명을 입력해 직접 추가하세요.</Text>
-              )}
-            </ScrollView>
-          </View>
-        </Modal>
-      )}
+      {/* 러닝화 선택 — 온보딩과 공유하는 2열 분할 피커(브랜드 레일 + 모델 알파벳순 + 검색). */}
+      <ShoePicker
+        visible={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        onPick={onPick}
+        insetTop={insets.top}
+        insetBottom={insets.bottom}
+      />
     </View>
   );
 }
@@ -297,21 +204,9 @@ const s = StyleSheet.create({
 
   label: { color: T2, fontFamily: FONT, fontSize: 13, fontWeight: '500', letterSpacing: 0.2, paddingHorizontal: 4, paddingBottom: 10 },
 
-
-  // 모델 선택 트리거(탭하면 검색 모달). 입력칸처럼 보이되 누르면 모달이 열린다.
-  selector: { backgroundColor: CARD_DIM, borderRadius: 16, borderCurve: 'continuous', borderWidth: 1, borderColor: withAlpha(T1, 0.07), flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingVertical: 16 },
-  input: { backgroundColor: CARD_DIM, borderRadius: 16, borderCurve: 'continuous', borderWidth: 1, borderColor: withAlpha(T1, 0.07), paddingHorizontal: 18, paddingVertical: 14, color: T1, fontFamily: FONT, fontSize: 16 },
+  // 러닝화 선택 트리거(탭하면 2열 분할 피커). 입력칸처럼 보이되 누르면 모달이 열린다.
+  selector: { backgroundColor: CARD_DIM, borderRadius: 16, borderCurve: 'continuous', borderWidth: 1, borderColor: withAlpha(T1, 0.07), flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 18, paddingVertical: 16 },
   selectorText: { flex: 1, color: T1, fontFamily: FONT, fontSize: 16, fontWeight: '500', letterSpacing: -0.2 },
-  // 모달 검색바(상단 고정) + 결과 행
-  searchBar: { flexDirection: 'row', alignItems: 'center', gap: 9, marginHorizontal: 18, marginTop: 4, marginBottom: 10, backgroundColor: CARD_DIM, borderRadius: 14, borderCurve: 'continuous', paddingHorizontal: 16, paddingVertical: 12, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.07) },
-  searchInput: { flex: 1, color: T1, fontFamily: FONT, fontSize: 16, fontWeight: '500', letterSpacing: -0.2, paddingVertical: 0 },
-  customRow: { borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.4), backgroundColor: withAlpha(ACCENT, 0.08), marginTop: 6 },
-  customText: { flex: 1, color: ACCENT, fontFamily: FONT, fontSize: 15, fontWeight: '600', letterSpacing: -0.2 },
-  noResult: { color: T3, fontFamily: FONT, fontSize: 14, textAlign: 'center', paddingVertical: 28 },
-  suggestion: { flexDirection: 'row', alignItems: 'center', gap: 9, paddingVertical: 14, paddingHorizontal: 12, borderRadius: 11 },
-  sugBrand: { color: T3, fontFamily: FONT, fontSize: 10, fontWeight: '600', letterSpacing: 0.8 },
-  sugModel: { flex: 1, color: T1, fontFamily: FONT, fontSize: 15, fontWeight: '500', letterSpacing: -0.2 },
-  sugKm: { color: T3, fontFamily: FONT, fontSize: 11, fontWeight: '500' },
 
   maxHead: { marginTop: 22, flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 4, paddingBottom: 10 },
 
@@ -324,7 +219,5 @@ const s = StyleSheet.create({
   usedInput: { flex: 1, color: T1, fontFamily: DISPLAY, fontSize: 24, paddingVertical: 12 },
   usedUnit: { color: T3, fontFamily: FONT, fontSize: 15 },
 
-  // CTA 는 단일 Button 프리미티브(그라데이션·글로우·radius 토큰 일원화)로 대체했다.
-  // 과거 사각 cta/ctaDisabled/ctaText 스타일은 제거 — ctaWrap 레이아웃만 남긴다.
   ctaWrap: { paddingHorizontal: 18, paddingTop: 6, paddingBottom: 34, backgroundColor: BG },
 });
