@@ -105,3 +105,4 @@ android/app/src/main/assets/index.android.bundle
 *.jks
 .elevenkey
 voice_samples/
+/android/app/src/main/res/**/assets_*
