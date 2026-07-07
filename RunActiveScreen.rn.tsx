@@ -137,17 +137,23 @@ export default function RunActiveScreen({
   // 양쪽에서 바뀌므로 로컬 uiPaused 로 한 박자 미러링해 어느 경로든 같은 전환이 걸리게 한다.
   // 레이아웃 변화(폰트·마진 축소, 서브 등장)는 LayoutAnimation, 링 축소는 native 스프링.
   const [uiPaused, setUiPaused] = useState(paused);
-  const ringScale = useRef(new Animated.Value(paused ? 0.60 : 1)).current;
+  // 전환값 t (0=러닝, 1=일시정지). 링 스케일·마진을 한 값으로 묶어(비네이티브) desync 방지 —
+  // 스케일(네이티브)과 마진(레이아웃)을 따로 돌리면 재개 시 링이 원래 크기로 안 돌아오는
+  // 버그가 있었다(기기 피드백). 이제 t 하나로 스케일·상하 마진을 동시에 보간해 확실히 복귀.
+  const t = useRef(new Animated.Value(paused ? 1 : 0)).current;
   const subIn = useRef(new Animated.Value(paused ? 1 : 0)).current;
   useEffect(() => {
     if (paused === uiPaused) return;
     LayoutAnimation.configureNext(LayoutAnimation.create(260, LayoutAnimation.Types.easeInEaseOut, LayoutAnimation.Properties.opacity));
     setUiPaused(paused);
     Animated.parallel([
-      Animated.spring(ringScale, { toValue: paused ? 0.60 : 1, useNativeDriver: true, speed: 14, bounciness: 6 }),
+      Animated.timing(t, { toValue: paused ? 1 : 0, duration: 300, easing: Easing.inOut(Easing.cubic), useNativeDriver: false }),
       Animated.timing(subIn, { toValue: paused ? 1 : 0, duration: paused ? 260 : 160, delay: paused ? 70 : 0, easing: Easing.out(Easing.quad), useNativeDriver: true }),
     ]).start();
-  }, [paused, uiPaused, ringScale, subIn]);
+  }, [paused, uiPaused, t, subIn]);
+  const ringScale = t.interpolate({ inputRange: [0, 1], outputRange: [1, 0.62] });
+  const ringMT = t.interpolate({ inputRange: [0, 1], outputRange: [30, -30] });
+  const ringMB = t.interpolate({ inputRange: [0, 1], outputRange: [0, -48] });
   // 라이브 심박 존 — 심박이 흐를 때만 산출(bpm>0). 워치 미연동이면 0 → 존 미표시.
   const hrZone = bpm > 0 ? zoneOf(bpm, estimateMaxHR(age), restHR || undefined) : 0;
   const hrColor = hrZone !== 0 ? HR_ZONE_COLORS[hrZone] : T1;
@@ -247,7 +253,7 @@ export default function RunActiveScreen({
       {/* ring — 거리/자유 모드는 거리 히어로, 트랙 모드는 '바퀴 수' 히어로(링=현재 바퀴 진행)
           일시정지 시 스프링으로 살짝 축소(transform은 레이아웃 불변 — 줄어든 시각 여백은
           ringWrap 마진 축소가 LayoutAnimation 으로 메운다). */}
-      <Animated.View style={[r.ringWrap, uiPaused && r.ringWrapPaused, { transform: [{ scale: ringScale }] }]}>
+      <Animated.View style={[r.ringWrap, { marginTop: ringMT, marginBottom: ringMB, transform: [{ scale: ringScale }] }]}>
         <Ring size={296} stroke={7} progress={track ? track.progress : pct}>
           {track ? (
             <View style={{ alignItems: 'center' }} accessibilityRole="text" accessibilityLiveRegion="polite"
@@ -452,16 +458,16 @@ const r = StyleSheet.create({
   heroMetricsPaused: { marginTop: 16, paddingTop: 16, paddingBottom: 4 },
   hm: { flex: 1, alignItems: 'center' },
   hmDivider: { borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: withAlpha(T1, 0.045) },
-  hmV: { color: T1, fontFamily: DISPLAY, fontSize: 30, fontWeight: '500', letterSpacing: -0.8, fontVariant: ['tabular-nums'] },
-  hmVPaused: { fontSize: 22, letterSpacing: -0.5 },
-  hmL: { color: withAlpha(T1, 0.45), fontFamily: FONT, fontSize: 11, fontWeight: '700', letterSpacing: 1.2, marginTop: 9 },
+  hmV: { color: T1, fontFamily: DISPLAY, fontSize: 37, fontWeight: '500', letterSpacing: -0.8, fontVariant: ['tabular-nums'] },
+  hmVPaused: { fontSize: 27, letterSpacing: -0.5 },
+  hmL: { color: withAlpha(T1, 0.45), fontFamily: FONT, fontSize: 13, fontWeight: "600", letterSpacing: 0.4, marginTop: 9 },
 
   // 일시정지 하단 3칸(케이던스·칼로리·고도) — 상단 히어로 행과 같은 3열 그리드(6칸처럼).
   subMetrics: { flexDirection: 'row', paddingTop: 14, paddingBottom: 6 },
   sm: { flex: 1, alignItems: 'center' },
-  smV: { color: T1, fontFamily: DISPLAY, fontSize: 22, fontWeight: '500', letterSpacing: -0.5, fontVariant: ['tabular-nums'] },
+  smV: { color: T1, fontFamily: DISPLAY, fontSize: 27, fontWeight: '500', letterSpacing: -0.5, fontVariant: ['tabular-nums'] },
   smU: { color: withAlpha(T1, 0.45), fontFamily: FONT, fontSize: 11 },
-  smL: { color: withAlpha(T1, 0.45), fontFamily: FONT, fontSize: 11, fontWeight: '700', letterSpacing: 1.2, marginTop: 9 },
+  smL: { color: withAlpha(T1, 0.45), fontFamily: FONT, fontSize: 13, fontWeight: "600", letterSpacing: 0.4, marginTop: 9 },
 
   mapWrap: {
     flex: 1,
