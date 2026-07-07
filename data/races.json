@@ -1,0 +1,97 @@
+{
+  "source": "웹 조사(runningwikii·marathongo·동아/JTBC 공식) 2026 국내 마라톤 일정",
+  "updated": "2026-07-07",
+  "note": "startLat/startLon 은 출발지 대표 좌표(공개 장소 근사) — 감지 반경 3km 기준이라 근사로 충분. 정확 출발선은 Firestore races 로 갱신 가능(앱 재배포 불필요).",
+  "races": [
+    {
+      "id": "yeosu-marine-2026",
+      "name": "제20회 여수해양마라톤",
+      "date": "2026-01-11",
+      "region": "여수",
+      "venue": "여수",
+      "startLat": 34.744,
+      "startLon": 127.74,
+      "distances": ["full", "half", "10k", "5k"]
+    },
+    {
+      "id": "hangang-seoul-half-2026",
+      "name": "제2회 한강 서울 하프 마라톤",
+      "date": "2026-01-25",
+      "region": "서울",
+      "venue": "월드컵공원 평화의광장",
+      "startLat": 37.5701,
+      "startLon": 126.8899,
+      "distances": ["half", "10k", "5k"]
+    },
+    {
+      "id": "daegu-intl-2026",
+      "name": "2026 대구국제마라톤",
+      "date": "2026-02-22",
+      "region": "대구",
+      "venue": "대구스타디움",
+      "startLat": 35.8203,
+      "startLon": 128.6862,
+      "distances": ["full", "half", "10k"]
+    },
+    {
+      "id": "samiljeol-mtn-2026",
+      "name": "2026 삼일절 마라톤",
+      "date": "2026-03-01",
+      "region": "서울",
+      "venue": "뚝섬한강공원 수변무대",
+      "startLat": 37.5303,
+      "startLon": 127.0699,
+      "distances": ["full", "half", "10k", "5k"]
+    },
+    {
+      "id": "seoul-marathon-dong-a-2026",
+      "name": "2026 서울마라톤 (동아)",
+      "date": "2026-03-15",
+      "region": "서울",
+      "venue": "광화문광장 → 잠실종합운동장",
+      "startLat": 37.5721,
+      "startLon": 126.9769,
+      "distances": ["full", "10k"]
+    },
+    {
+      "id": "gyeongju-cherry-2026",
+      "name": "2026 경주벚꽃마라톤",
+      "date": "2026-04-04",
+      "region": "경주",
+      "venue": "경주시민운동장",
+      "startLat": 35.8467,
+      "startLon": 129.2113,
+      "distances": ["full", "half", "10k", "5k"]
+    },
+    {
+      "id": "seoul-half-2026",
+      "name": "2026 서울하프마라톤",
+      "date": "2026-04-26",
+      "region": "서울",
+      "venue": "광화문광장",
+      "startLat": 37.5721,
+      "startLon": 126.9769,
+      "distances": ["half", "10k"]
+    },
+    {
+      "id": "chuncheon-2026",
+      "name": "2026 춘천마라톤",
+      "date": "2026-10-25",
+      "region": "춘천",
+      "venue": "의암호 (송암스포츠타운)",
+      "startLat": 37.8544,
+      "startLon": 127.7086,
+      "distances": ["full", "half", "10k"]
+    },
+    {
+      "id": "jtbc-seoul-2026",
+      "name": "2026 JTBC 서울마라톤",
+      "date": "2026-11-01",
+      "region": "서울",
+      "venue": "상암월드컵경기장",
+      "startLat": 37.5683,
+      "startLon": 126.8972,
+      "distances": ["full", "10k"]
+    }
+  ]
+}
