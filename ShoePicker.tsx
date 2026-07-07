@@ -42,12 +42,10 @@ export function ShoePicker({visible, onClose, onPick, insetTop, insetBottom}: {
   const [selBrand, setSelBrand] = useState<string>(BRANDS[0]);
   const [customModel, setCustomModel] = useState('');
   const [customBrand, setCustomBrand] = useState('');
-  const [customMode, setCustomMode] = useState(false);
 
   // 모달을 닫을 때 검색/입력 상태를 리셋해 다음 진입이 항상 깨끗하게 시작한다.
   const close = () => {
     setQuery('');
-    setCustomMode(false);
     setCustomModel('');
     setCustomBrand('');
     onClose();
@@ -58,46 +56,37 @@ export function ShoePicker({visible, onClose, onPick, insetTop, insetBottom}: {
   };
 
   const q = norm(query);
-  // 검색: 브랜드+모델 동시 매칭. 정렬은 '접두 일치 우선' — "nova" 치면 Novablast(모델
-  // 접두)가 브랜드 알파벳순보다 먼저 뜬다(사용자 피드백 2026-07-07). 랭크: 모델 접두(0) →
-  // 브랜드/브랜드+모델 접두(1) → 부분일치(2), 동랭크는 브랜드→모델 알파벳순.
-  const searchResults = useMemo(() => {
-    if (!q) return [];
-    const rank = (m: {brand: string; model: string}) => {
-      if (norm(m.model).startsWith(q)) return 0;
-      if (norm(m.brand).startsWith(q) || norm(`${m.brand} ${m.model}`).startsWith(q)) return 1;
-      return 2;
-    };
-    return SHOE_MODELS
-      .filter(m => norm(`${m.brand} ${m.model}`).includes(q) || norm(m.model).includes(q))
-      .sort((a, b) => rank(a) - rank(b) || a.brand.localeCompare(b.brand) || a.model.localeCompare(b.model));
-  }, [q]);
-
-  // 레일 브랜드의 모델(알파벳순) — 시드 순서가 아닌 정렬 고정.
-  const brandModels = useMemo(
-    () =>
-      SHOE_MODELS.filter(m => norm(m.brand) === norm(selBrand)).sort((a, b) =>
-        a.model.localeCompare(b.model),
-      ),
-    [selBrand],
-  );
-
   const isOther = selBrand === OTHER;
-  const showCustomForm = customMode || isOther;
+
+  // 검색은 '선택된 브랜드 안에서만'(사용자 요청 2026-07-07: 브랜드를 레일에서 고르면 그
+  // 브랜드에서만 검색). 브랜드명이 이미 레일로 드러나므로 결과 행엔 모델명만 — "Hoka Bondi"
+  // 처럼 붙어 헷갈리지 않는다. 모델 접두 일치 우선("b"→Bondi), 그다음 알파벳순.
+  const brandModels = useMemo(() => {
+    const all = SHOE_MODELS.filter(m => norm(m.brand) === norm(selBrand));
+    const filtered = q ? all.filter(m => norm(m.model).includes(q)) : all;
+    return filtered.sort((a, b) => {
+      const ra = q && norm(a.model).startsWith(q) ? 0 : 1;
+      const rb = q && norm(b.model).startsWith(q) ? 0 : 1;
+      return ra - rb || a.model.localeCompare(b.model);
+    });
+  }, [selBrand, q]);
+
+  // 검색어와 정확히 일치하는 모델이 없으면 '직접 추가'(그 브랜드에 커스텀 모델).
+  const exactExists = brandModels.some(m => norm(m.model) === q);
 
   const subFor = (brand: string, model: string) => {
     const m = findShoeModel(brand, model);
     if (!m) return `권장 ${getRecommendedLifespanKm({brand, model})} km`;
     return `${categoryLabelKo[m.category]} · 권장 ${m.recommendedKm} km`;
   };
-  const modelRow = (brand: string, model: string, sub: string, key: string, showBrand: boolean) => (
+  const modelRow = (brand: string, model: string, sub: string) => (
     <Pressable
-      key={key}
+      key={`${brand}-${model}`}
       onPress={() => pick(brand, model)}
       accessibilityRole="button"
       accessibilityLabel={`${brand} ${model}, ${sub}`}
       style={({pressed}) => [s.pkRow, pressed && {opacity: 0.7}]}>
-      <Text numberOfLines={1} style={s.pkRowName}>{showBrand ? `${brand} ${model}` : model}</Text>
+      <Text numberOfLines={1} style={s.pkRowName}>{model}</Text>
       <Text style={s.pkRowSub}>{sub}</Text>
     </Pressable>
   );
@@ -105,125 +94,106 @@ export function ShoePicker({visible, onClose, onPick, insetTop, insetBottom}: {
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={close} presentationStyle="fullScreen">
       <View style={[s.screen, {paddingTop: insetTop + 10}]}>
-        {/* 검색 + 취소 */}
-        <View style={s.pkHeader}>
-          <View style={s.pkSearch}>
-            <SearchIcon />
-            <TextInput
-              value={query}
-              onChangeText={t => {
-                setQuery(t);
-                setCustomMode(false);
-              }}
-              placeholder="브랜드·모델 검색"
-              placeholderTextColor={T4}
-              style={s.pkInput}
-              autoCorrect={false}
-              autoCapitalize="none"
-              accessibilityLabel="브랜드 또는 모델 검색"
-              testID="picker-search"
-            />
-          </View>
+        <View style={s.pkTopBar}>
+          <Text style={s.pkTitle}>러닝화 선택</Text>
           <Pressable onPress={close} hitSlop={8} accessibilityRole="button" accessibilityLabel="닫기">
             <Text style={s.pkCancel}>취소</Text>
           </Pressable>
         </View>
 
-        {q ? (
-          // ── 검색 결과(브랜드 무관 플랫 목록) ──
-          <ScrollView style={s.flex1} contentContainerStyle={{paddingHorizontal: 24, paddingBottom: Math.max(insetBottom, 16)}} keyboardShouldPersistTaps="handled">
-            <Text style={s.pkSection}>검색 결과</Text>
-            {searchResults.map(m => modelRow(m.brand, m.model, subFor(m.brand, m.model), `${m.brand}-${m.model}`, true))}
-            {searchResults.length === 0 && (
-              <Text style={{fontFamily: FONT, fontSize: 13, color: T3, marginTop: 4, lineHeight: 19}}>
-                검색 결과가 없어요 — 아래에서 직접 추가할 수 있어요.
-              </Text>
-            )}
-            <Pressable
-              onPress={() => pick('', query.trim())}
-              accessibilityRole="button"
-              accessibilityLabel={`${query.trim()} 직접 추가`}
-              style={({pressed}) => [s.pkAddRow, pressed && {opacity: 0.7}]}>
-              <Text style={{fontFamily: FONT, fontSize: 14, color: T3}}>
-                “<Text style={{color: T1, fontWeight: '600'}}>{query.trim()}</Text>” 직접 추가
-              </Text>
-            </Pressable>
+        {/* 항상 2열: 브랜드 레일 + (그 브랜드) 검색·모델. 브랜드는 왼쪽에서 고르고 검색은 그 안에서. */}
+        <View style={s.pkSplit}>
+          <ScrollView style={s.pkRail} showsVerticalScrollIndicator={false}>
+            {[...BRANDS, OTHER].map(b => {
+              const on = b === selBrand;
+              return (
+                <Pressable
+                  key={b}
+                  onPress={() => { setSelBrand(b); setQuery(''); }}
+                  accessibilityRole="tab"
+                  accessibilityState={{selected: on}}
+                  accessibilityLabel={`브랜드 ${b}`}
+                  style={({pressed}) => [s.pkRailItem, on && s.pkRailItemOn, pressed && !on && {opacity: 0.7}]}>
+                  {on && <View style={s.pkRailBar} />}
+                  <Text style={[s.pkRailText, on && s.pkRailTextOn]} numberOfLines={1}>{b}</Text>
+                </Pressable>
+              );
+            })}
           </ScrollView>
-        ) : (
-          // ── 2열 분할: 브랜드 레일 + 모델 ──
-          <View style={s.pkSplit}>
-            <ScrollView style={s.pkRail} showsVerticalScrollIndicator={false}>
-              {[...BRANDS, OTHER].map(b => {
-                const on = b === selBrand;
-                return (
-                  <Pressable
-                    key={b}
-                    onPress={() => {
-                      setSelBrand(b);
-                      setCustomMode(false);
-                    }}
-                    accessibilityRole="tab"
-                    accessibilityState={{selected: on}}
-                    accessibilityLabel={`브랜드 ${b}`}
-                    style={({pressed}) => [s.pkRailItem, on && s.pkRailItemOn, pressed && !on && {opacity: 0.7}]}>
-                    {on && <View style={s.pkRailBar} />}
-                    <Text style={[s.pkRailText, on && s.pkRailTextOn]} numberOfLines={1}>{b}</Text>
+
+          {!isOther ? (
+            <View style={s.pkRight}>
+              {/* 선택 브랜드 안에서만 검색 */}
+              <View style={s.pkSearchScoped}>
+                <SearchIcon />
+                <TextInput
+                  value={query}
+                  onChangeText={setQuery}
+                  placeholder={`${selBrand} 검색`}
+                  placeholderTextColor={T4}
+                  style={s.pkInput}
+                  autoCorrect={false}
+                  autoCapitalize="none"
+                  accessibilityLabel={`${selBrand} 모델 검색`}
+                  testID="picker-search"
+                />
+                {query.length > 0 && (
+                  <Pressable onPress={() => setQuery('')} hitSlop={8} accessibilityRole="button" accessibilityLabel="검색 지우기">
+                    <Text style={s.pkClear}>✕</Text>
                   </Pressable>
-                );
-              })}
-            </ScrollView>
-            <ScrollView style={s.flex1} contentContainerStyle={{paddingHorizontal: 18, paddingBottom: Math.max(insetBottom, 16)}} keyboardShouldPersistTaps="handled">
-              {!showCustomForm ? (
-                <>
-                  {brandModels.map(m => modelRow(m.brand, m.model, subFor(m.brand, m.model), m.model, false))}
+                )}
+              </View>
+              <ScrollView style={s.flex1} contentContainerStyle={{paddingHorizontal: 18, paddingBottom: Math.max(insetBottom, 16)}} keyboardShouldPersistTaps="handled">
+                {brandModels.map(m => modelRow(m.brand, m.model, subFor(m.brand, m.model)))}
+                {brandModels.length === 0 && (
+                  <Text style={{fontFamily: FONT, fontSize: 13, color: T3, marginTop: 6, lineHeight: 19}}>
+                    “{query.trim()}” 검색 결과가 없어요.
+                  </Text>
+                )}
+                {q.length > 0 && !exactExists && (
                   <Pressable
-                    onPress={() => setCustomMode(true)}
+                    onPress={() => pick(selBrand, query.trim())}
                     accessibilityRole="button"
-                    accessibilityLabel="목록에 없는 모델 직접 입력해 추가"
+                    accessibilityLabel={`${query.trim()} 직접 추가`}
                     style={({pressed}) => [s.pkAddRow, pressed && {opacity: 0.7}]}>
-                    <Text style={{fontFamily: FONT, fontSize: 14, color: T3}}>+ 직접 입력해 추가</Text>
+                    <Text style={{fontFamily: FONT, fontSize: 14, color: T3}}>
+                      “<Text style={{color: T1, fontWeight: '600'}}>{query.trim()}</Text>” 직접 추가
+                    </Text>
                   </Pressable>
-                </>
-              ) : (
-                // 직접 입력 — 레일이 '기타'면 브랜드명부터, 아니면 선택된 브랜드에 모델만.
-                <View style={{paddingTop: 6}}>
-                  {isOther && (
-                    <TextInput
-                      value={customBrand}
-                      onChangeText={setCustomBrand}
-                      placeholder="브랜드명을 입력하세요"
-                      placeholderTextColor={T4}
-                      style={s.pkFormInput}
-                      autoCorrect={false}
-                      accessibilityLabel="브랜드명 입력"
-                    />
-                  )}
-                  <TextInput
-                    value={customModel}
-                    onChangeText={setCustomModel}
-                    placeholder="모델명을 입력하세요"
-                    placeholderTextColor={T4}
-                    style={[s.pkFormInput, isOther && {marginTop: 8}]}
-                    autoCorrect={false}
-                    accessibilityLabel="모델명 입력"
-                  />
-                  <View style={{marginTop: 12}}>
-                    <Button
-                      label="추가"
-                      disabled={!customModel.trim() || (isOther && !customBrand.trim())}
-                      onPress={() => pick(isOther ? customBrand.trim() : selBrand, customModel.trim())}
-                    />
-                  </View>
-                  {!isOther && (
-                    <Pressable onPress={() => setCustomMode(false)} hitSlop={8} style={{alignItems: 'center', marginTop: 14}} accessibilityRole="button" accessibilityLabel="모델 목록으로 돌아가기">
-                      <Text style={{fontFamily: FONT, fontSize: 13, color: T3}}>목록으로 돌아가기</Text>
-                    </Pressable>
-                  )}
-                </View>
-              )}
+                )}
+              </ScrollView>
+            </View>
+          ) : (
+            // 기타 — 브랜드명 + 모델명 직접 입력
+            <ScrollView style={s.flex1} contentContainerStyle={{paddingHorizontal: 18, paddingTop: 12, paddingBottom: Math.max(insetBottom, 16)}} keyboardShouldPersistTaps="handled">
+              <TextInput
+                value={customBrand}
+                onChangeText={setCustomBrand}
+                placeholder="브랜드명을 입력하세요"
+                placeholderTextColor={T4}
+                style={s.pkFormInput}
+                autoCorrect={false}
+                accessibilityLabel="브랜드명 입력"
+              />
+              <TextInput
+                value={customModel}
+                onChangeText={setCustomModel}
+                placeholder="모델명을 입력하세요"
+                placeholderTextColor={T4}
+                style={[s.pkFormInput, {marginTop: 8}]}
+                autoCorrect={false}
+                accessibilityLabel="모델명 입력"
+              />
+              <View style={{marginTop: 12}}>
+                <Button
+                  label="추가"
+                  disabled={!customModel.trim() || !customBrand.trim()}
+                  onPress={() => pick(customBrand.trim(), customModel.trim())}
+                />
+              </View>
             </ScrollView>
-          </View>
-        )}
+          )}
+        </View>
       </View>
     </Modal>
   );
@@ -232,23 +202,27 @@ export function ShoePicker({visible, onClose, onPick, insetTop, insetBottom}: {
 const s = StyleSheet.create({
   screen: {flex: 1, backgroundColor: BG},
   flex1: {flex: 1},
-  pkHeader: {flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 24, paddingBottom: 14},
-  pkSearch: {
-    flex: 1,
+  pkTopBar: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24, paddingBottom: 12},
+  pkTitle: {fontFamily: FONT, fontSize: 16, fontWeight: '600', color: T1, letterSpacing: -0.2},
+  pkInput: {flex: 1, fontFamily: FONT, fontSize: 15, fontWeight: '500', color: T1, paddingVertical: 0},
+  pkClear: {color: T3, fontSize: 15, fontWeight: '600'},
+  pkCancel: {fontFamily: FONT, fontSize: 15, fontWeight: '500', color: T1},
+  pkSplit: {flex: 1, flexDirection: 'row', borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP},
+  pkRight: {flex: 1},
+  pkSearchScoped: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    height: 48,
-    paddingHorizontal: 14,
-    borderRadius: 14, borderCurve: 'continuous',
+    gap: 8,
+    height: 42,
+    marginHorizontal: 14,
+    marginTop: 8,
+    marginBottom: 2,
+    paddingHorizontal: 12,
+    borderRadius: 12, borderCurve: 'continuous',
     backgroundColor: CARD,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: withAlpha(T1, 0.12),
+    borderColor: withAlpha(T1, 0.1),
   },
-  pkInput: {flex: 1, fontFamily: FONT, fontSize: 15, fontWeight: '500', color: T1, paddingVertical: 0},
-  pkCancel: {fontFamily: FONT, fontSize: 15, fontWeight: '500', color: T1},
-  pkSection: {fontFamily: FONT, fontSize: 11, fontWeight: '600', letterSpacing: 0.8, color: T3, textTransform: 'uppercase', marginBottom: 4},
-  pkSplit: {flex: 1, flexDirection: 'row', borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP},
   pkRail: {width: 126, flexGrow: 0, borderRightWidth: StyleSheet.hairlineWidth, borderRightColor: SEP, paddingVertical: 6},
   pkRailItem: {paddingVertical: 13, paddingHorizontal: 16, justifyContent: 'center'},
   pkRailItemOn: {backgroundColor: 'rgba(255,255,255,0.05)'},

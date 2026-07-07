@@ -85,6 +85,12 @@ async function openPicker(root: ReactTestRenderer.ReactTestInstance) {
 function searchInput(root: ReactTestRenderer.ReactTestInstance) {
   return root.findAll((n: any) => n.type === TextInput && n.props.testID === 'picker-search')[0];
 }
+// 브랜드 레일에서 브랜드 선택(검색은 그 브랜드 안에서만 됨).
+async function pickBrand(root: ReactTestRenderer.ReactTestInstance, brand: string) {
+  const rail = root.findAll((n: any) => n && n.props && n.props.accessibilityLabel === `브랜드 ${brand}`)[0];
+  await act(async () => { rail.props.onPress(); });
+  await flush();
+}
 async function search(root: ReactTestRenderer.ReactTestInstance, text: string) {
   if (!searchInput(root)) await openPicker(root);
   await act(async () => { searchInput(root).props.onChangeText(text); });
@@ -249,15 +255,20 @@ test('모델명을 검색하면 전체 목록이 부분일치로 필터된다', 
   expect(filtered.every(bm => bm.toLowerCase().includes('pegasus'))).toBe(true);
 });
 
-// ── 7b) 검색 정렬은 접두 일치 우선 — "nova" → Novablast(모델 접두)가 맨 위 ───────────
-test('검색은 접두 일치를 먼저 보여준다(nova → Novablast가 첫 결과)', async () => {
+// ── 7b) 브랜드 안 검색 + 접두 일치 우선 — ASICS 골라 "nova" → Novablast가 맨 위 ────────
+test('브랜드를 고르면 그 브랜드 안에서만 검색되고, 접두 일치가 먼저다(ASICS·nova → Novablast)', async () => {
   const onSave = jest.fn();
   const root = await mountScreen(onSave);
 
-  await search(root, 'nova');
-  const rows = modelRows(root); // "브랜드 모델" 순서대로
+  await openPicker(root);
+  await pickBrand(root, 'ASICS');   // 브랜드를 레일에서 먼저 선택
+  await act(async () => { searchInput(root).props.onChangeText('nova'); });
+  await flush();
+
+  const rows = modelRows(root);
   expect(rows.length).toBeGreaterThan(0);
-  // 첫 결과의 모델명이 nova 로 시작해야 한다(브랜드 알파벳순에 밀리지 않음).
+  // 전부 ASICS(브랜드 스코프) + 첫 결과 모델명이 nova 접두.
+  expect(rows.every(bm => bm.startsWith('ASICS '))).toBe(true);
   const firstModel = rows[0].replace(/^\S+ /, '').toLowerCase();
   expect(firstModel.startsWith('nova')).toBe(true);
 });
