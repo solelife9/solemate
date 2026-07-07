@@ -137,14 +137,14 @@ export default function RunActiveScreen({
   // 양쪽에서 바뀌므로 로컬 uiPaused 로 한 박자 미러링해 어느 경로든 같은 전환이 걸리게 한다.
   // 레이아웃 변화(폰트·마진 축소, 서브 등장)는 LayoutAnimation, 링 축소는 native 스프링.
   const [uiPaused, setUiPaused] = useState(paused);
-  const ringScale = useRef(new Animated.Value(paused ? 0.86 : 1)).current;
+  const ringScale = useRef(new Animated.Value(paused ? 0.60 : 1)).current;
   const subIn = useRef(new Animated.Value(paused ? 1 : 0)).current;
   useEffect(() => {
     if (paused === uiPaused) return;
     LayoutAnimation.configureNext(LayoutAnimation.create(260, LayoutAnimation.Types.easeInEaseOut, LayoutAnimation.Properties.opacity));
     setUiPaused(paused);
     Animated.parallel([
-      Animated.spring(ringScale, { toValue: paused ? 0.86 : 1, useNativeDriver: true, speed: 14, bounciness: 6 }),
+      Animated.spring(ringScale, { toValue: paused ? 0.60 : 1, useNativeDriver: true, speed: 14, bounciness: 6 }),
       Animated.timing(subIn, { toValue: paused ? 1 : 0, duration: paused ? 260 : 160, delay: paused ? 70 : 0, easing: Easing.out(Easing.quad), useNativeDriver: true }),
     ]).start();
   }, [paused, uiPaused, ringScale, subIn]);
@@ -199,12 +199,12 @@ export default function RunActiveScreen({
 
   const gpsTextStr = gpsLevel >= 3 ? 'GPS 신호 좋음' : gpsLevel === 2 ? 'GPS 신호 보통' : gpsLevel <= 0 ? 'GPS 검색 중…' : 'GPS 신호 약함';
   const gpsColor = gpsLevel >= 3 ? GOOD : gpsLevel === 2 ? WARN : gpsLevel <= 0 ? T3 : DANGER;
+  // 일시정지 하단 3칸 — 평균 페이스는 상단 히어로(현재 페이스 자리)로 올라가므로 여기선 제외.
   const sub = useMemo(() => ([
-    { v: avgPaceLabel, l: '평균 페이스', u: '' },
     { v: cadence > 0 ? String(cadence) : '--', l: '케이던스', u: '' },
     { v: calories > 0 ? String(calories) : '--', l: '칼로리', u: 'kcal' },
     { v: elevationM != null ? String(elevationM) : '--', l: '고도', u: 'm' },
-  ]), [avgPaceLabel, cadence, calories, elevationM]);
+  ]), [cadence, calories, elevationM]);
   // 랩 구간시간(초) → m'ss" (트랙 '지난 랩' 표시용).
   const fmtLapSplit = (s: number) => `${Math.floor(s / 60)}'${String(Math.round(s % 60)).padStart(2, '0')}"`;
 
@@ -248,7 +248,7 @@ export default function RunActiveScreen({
           일시정지 시 스프링으로 살짝 축소(transform은 레이아웃 불변 — 줄어든 시각 여백은
           ringWrap 마진 축소가 LayoutAnimation 으로 메운다). */}
       <Animated.View style={[r.ringWrap, uiPaused && r.ringWrapPaused, { transform: [{ scale: ringScale }] }]}>
-        <Ring size={216} stroke={13} progress={track ? track.progress : pct}>
+        <Ring size={296} stroke={7} progress={track ? track.progress : pct}>
           {track ? (
             <View style={{ alignItems: 'center' }} accessibilityRole="text" accessibilityLiveRegion="polite"
               accessibilityLabel={`${track.lapCount}바퀴, ${track.lapDistKm.toFixed(2)}킬로미터, 한 바퀴 ${track.lapM}미터 ${track.calibrated ? 'GPS 보정됨' : '예상'}`}>
@@ -299,12 +299,12 @@ export default function RunActiveScreen({
         );
       })()}
 
-      {/* hero metrics — 달릴 땐 큰 핵심 3개(페이스·심박·시간)만 크게(34), 일시정지 시 22로
-          줄며 아래로 서브 지표가 펼쳐진다. 긴 시간(1:02:33)은 adjustsFontSizeToFit 이 흡수. */}
+      {/* hero metrics — 순서: 시간 · 심박 · 페이스(사용자 지정). 프리미엄: 가벼운 값 + 마이크로
+          라벨, 위 헤어라인만. 일시정지 시 22로 줄며 아래로 서브 지표가 펼쳐진다. */}
       <View style={[r.heroMetrics, uiPaused && r.heroMetricsPaused]}>
-        <View style={r.hm} accessibilityRole="text" accessibilityLabel={`${track ? '랩 페이스' : '현재 페이스'} ${paceLabel}`}><Text style={[r.hmV, uiPaused && r.hmVPaused]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72}>{paceLabel}</Text><Text style={r.hmL}>{track ? '랩 페이스' : '현재 페이스'}</Text></View>
+        <View style={r.hm} accessibilityRole="text" accessibilityLabel={`시간 ${timeLabel}`}><Text style={[r.hmV, uiPaused && r.hmVPaused]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72}>{timeLabel}</Text><Text style={r.hmL}>시간</Text></View>
         <View style={[r.hm, r.hmDivider]} accessibilityRole="text" accessibilityLabel={hrZone !== 0 ? `심박 ${bpm}, 존 ${hrZone} ${HR_ZONE_LABEL[hrZone]}` : bpm > 0 ? `심박 ${bpm}` : '심박 측정 안 됨'}><Text style={[r.hmV, uiPaused && r.hmVPaused, hrZone !== 0 && { color: hrColor }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72}>{bpm > 0 ? String(bpm) : '--'}</Text><Text style={[r.hmL, hrZone !== 0 && { color: hrColor, fontWeight: '600' }]}>{hrZone !== 0 ? `Z${hrZone} ${HR_ZONE_LABEL[hrZone]}` : '심박'}</Text></View>
-        <View style={[r.hm, r.hmDivider]} accessibilityRole="text" accessibilityLabel={`시간 ${timeLabel}`}><Text style={[r.hmV, uiPaused && r.hmVPaused]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72}>{timeLabel}</Text><Text style={r.hmL}>시간</Text></View>
+        <View style={[r.hm, r.hmDivider]} accessibilityRole="text" accessibilityLabel={`${uiPaused ? '평균 페이스' : (track ? '랩 페이스' : '현재 페이스')} ${uiPaused ? avgPaceLabel : paceLabel}`}><Text style={[r.hmV, uiPaused && r.hmVPaused]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72}>{uiPaused ? avgPaceLabel : paceLabel}</Text><Text style={r.hmL}>{uiPaused ? '평균 페이스' : (track ? '랩 페이스' : '현재 페이스')}</Text></View>
       </View>
 
       {/* 트랙: 지난 랩(최근 3) — 박스 없는 한 줄, 라벨 회색 + 랩번호/구간시간(직전 랩을 즉시 확인). */}
@@ -325,7 +325,7 @@ export default function RunActiveScreen({
       {uiPaused && (
         <Animated.View style={[r.subMetrics, { opacity: subIn, transform: [{ translateY: subIn.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }] }]}>
           {sub.map((m, i) => (
-            <View key={i} style={r.sm}>
+            <View key={i} style={[r.sm, i > 0 && r.hmDivider]}>
               <Text style={r.smV}>{m.v}{m.u ? <Text style={r.smU}> {m.u}</Text> : null}</Text>
               <Text style={r.smL}>{m.l}</Text>
             </View>
@@ -421,14 +421,14 @@ const r = StyleSheet.create({
   permBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 12, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 12, borderWidth: StyleSheet.hairlineWidth, borderColor: DANGER, backgroundColor: withAlpha(DANGER, 0.14) },
   permBannerText: { flex: 1, color: T1, fontFamily: FONT, fontSize: 13, fontWeight: '500', lineHeight: 17 },
 
-  ringWrap: { alignItems: 'center', marginTop: 24 },
+  ringWrap: { alignItems: 'center', marginTop: 26 },
   // 일시정지: transform 축소(0.86)는 레이아웃을 안 줄이므로 마진으로 시각 여백을 회수한다.
-  ringWrapPaused: { marginTop: 8, marginBottom: -18 },
-  goal: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '500', marginBottom: 10 },
-  goalMet: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 10 },
-  goalMetText: { color: GOOD, fontFamily: FONT, fontSize: 13, fontWeight: '600' },
-  bigDist: { color: T1, fontFamily: DISPLAY, fontSize: HERO.mega, fontWeight: '700', letterSpacing: -2, lineHeight: 80, includeFontPadding: false, fontVariant: ['tabular-nums'] },
-  bigUnit: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '500', marginTop: 8 },
+  ringWrapPaused: { marginTop: -30, marginBottom: -48 },
+  goal: { color: withAlpha(T1, 0.5), fontFamily: FONT, fontSize: 12, fontWeight: '700', letterSpacing: 1.2, marginBottom: 16 },
+  goalMet: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 16 },
+  goalMetText: { color: GOOD, fontFamily: FONT, fontSize: 12, fontWeight: '700', letterSpacing: 0.6 },
+  bigDist: { color: T1, fontFamily: DISPLAY, fontSize: 94, fontWeight: '500', letterSpacing: -4, lineHeight: 96, includeFontPadding: false, fontVariant: ['tabular-nums'] },
+  bigUnit: { color: withAlpha(T1, 0.5), fontFamily: FONT, fontSize: 12, fontWeight: '600', letterSpacing: 0.8, marginTop: 16 },
   // 트랙 링 센터 — 바퀴수 하나만 히어로, 그 밑 작은 '바퀴'.
   lapHero: { color: T1, fontFamily: DISPLAY, fontSize: 88, fontWeight: '700', letterSpacing: -3, lineHeight: 88, includeFontPadding: false, fontVariant: ['tabular-nums'] },
   lapHeroUnit: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '500', letterSpacing: 0.6, marginTop: 6 },
@@ -447,19 +447,21 @@ const r = StyleSheet.create({
   coachMsg: { fontFamily: FONT, fontSize: 14, fontWeight: '700' },
 
   // 달릴 땐 34(빈약하다는 피드백 → 30에서 확대), 일시정지 시 22로 줄어 서브에 자리를 내준다.
-  heroMetrics: { flexDirection: 'row', marginTop: 26, paddingVertical: 16, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: SEP },
-  heroMetricsPaused: { marginTop: 14, paddingVertical: 10 },
+  // 프리미엄: 위 헤어라인만(아래 테두리 제거), 여백 크게, 가벼운 값 + 마이크로 라벨.
+  heroMetrics: { flexDirection: 'row', marginTop: 30, paddingTop: 22, paddingBottom: 6, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP },
+  heroMetricsPaused: { marginTop: 16, paddingTop: 16, paddingBottom: 4 },
   hm: { flex: 1, alignItems: 'center' },
   hmDivider: { borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: withAlpha(T1, 0.045) },
-  hmV: { color: T1, fontFamily: DISPLAY, fontSize: 34, fontWeight: '700', letterSpacing: -1, fontVariant: ['tabular-nums'] },
+  hmV: { color: T1, fontFamily: DISPLAY, fontSize: 30, fontWeight: '500', letterSpacing: -0.8, fontVariant: ['tabular-nums'] },
   hmVPaused: { fontSize: 22, letterSpacing: -0.5 },
-  hmL: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500', marginTop: 5 },
+  hmL: { color: withAlpha(T1, 0.45), fontFamily: FONT, fontSize: 11, fontWeight: '700', letterSpacing: 1.2, marginTop: 9 },
 
-  subMetrics: { flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 14 },
-  sm: { alignItems: 'center' },
-  smV: { color: T1, fontFamily: DISPLAY, fontSize: 17, fontWeight: '600', fontVariant: ['tabular-nums'] },
-  smU: { color: T4, fontFamily: FONT, fontSize: 10 },
-  smL: { color: T4, fontFamily: FONT, fontSize: 11, fontWeight: '500', marginTop: 3 },
+  // 일시정지 하단 3칸(케이던스·칼로리·고도) — 상단 히어로 행과 같은 3열 그리드(6칸처럼).
+  subMetrics: { flexDirection: 'row', paddingTop: 14, paddingBottom: 6 },
+  sm: { flex: 1, alignItems: 'center' },
+  smV: { color: T1, fontFamily: DISPLAY, fontSize: 22, fontWeight: '500', letterSpacing: -0.5, fontVariant: ['tabular-nums'] },
+  smU: { color: withAlpha(T1, 0.45), fontFamily: FONT, fontSize: 11 },
+  smL: { color: withAlpha(T1, 0.45), fontFamily: FONT, fontSize: 11, fontWeight: '700', letterSpacing: 1.2, marginTop: 9 },
 
   mapWrap: {
     flex: 1,
