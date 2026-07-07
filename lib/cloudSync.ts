@@ -263,12 +263,37 @@ export function mergeCloudData(local: BackupPayload, remote: BackupPayload | nul
   }
   // progression(은퇴 신발·진척)은 단일 객체라 union/max 로 무손실 병합한다(mergeProgression).
   const progression = mergeProgression(local.progression, remote.progression);
+  // 메달은 id 합집합 + createdAt 최신 우선(신발/러닝 머지와 독립 — 그쪽 무결성에 영향 0).
+  const medals = mergeMedals(local.medals, remote.medals);
   return {
     shoes: mergeRecords(local.shoes, remote.shoes),
     runs: mergeRecords(local.runs, remote.runs),
     settings: { ...remote.settings, ...local.settings },
     ...(progression ? { progression } : {}),
+    ...(medals.length ? { medals } : {}),
   };
+}
+
+/**
+ * 메달 병합 — id 합집합, 동일 id 는 createdAt 이 더 늦은 쪽(동률이면 로컬) 유지. 메달은
+ * 사실상 불변(append)이라 삭제 전파 없이도 안전하다(다른 기기 삭제분은 재등장할 수 있으나
+ * 키프세이크라 무해). 잘못된 원소(id 없음/객체 아님)는 버린다.
+ */
+export function mergeMedals(local: unknown[] | undefined, remote: unknown[] | undefined): unknown[] {
+  const byId = new Map<string, {createdAt: string; rec: unknown}>();
+  const put = (arr: unknown[] | undefined) => {
+    for (const m of arr ?? []) {
+      if (!m || typeof m !== 'object') continue;
+      const id = (m as {id?: unknown}).id;
+      if (typeof id !== 'string') continue;
+      const createdAt = String((m as {createdAt?: unknown}).createdAt ?? '');
+      const cur = byId.get(id);
+      if (!cur || createdAt >= cur.createdAt) byId.set(id, {createdAt, rec: m});
+    }
+  };
+  put(remote);
+  put(local); // 로컬을 나중에 → 동률(같은 createdAt) 시 로컬 우선
+  return [...byId.values()].map((v) => v.rec);
 }
 
 /**

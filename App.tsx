@@ -39,8 +39,9 @@ import RunRecapScreen from './RunRecapScreen.rn';
 import MedalArchiveScreen from './MedalArchiveScreen.rn';
 import RaceMedalScreen from './RaceMedalScreen.rn';
 // 마라톤 메달 아카이브 — 완주 감지(위치+날짜) → 대회 기록 흐름 → 아카이브(로컬 우선).
-import {loadMedals, addMedal as addMedalStore, removeMedal as removeMedalStore, type Medal} from './lib/medals';
-import {detectRace, SEED_RACES, type RaceMatch, type RaceDistance} from './data/raceEvents';
+import {loadMedals, saveMedals, normalizeMedals, addMedal as addMedalStore, removeMedal as removeMedalStore, type Medal} from './lib/medals';
+import {detectRace, SEED_RACES, type RaceEvent, type RaceMatch, type RaceDistance} from './data/raceEvents';
+import {fetchRaces} from './lib/raceStore';
 import {nativeRecognizer} from './lib/ocrNative';
 import {parseRoute} from './lib/route';
 import LocationPrimeScreen from './LocationPrimeScreen.rn';
@@ -115,7 +116,7 @@ import {ExtChallenge, challengeExtProgress, type ExtRun, type ExtShoe} from './l
 import {createFirebaseCloudPort} from './lib/firebaseCloudPort';
 import {getAuth, onAuthStateChanged} from '@react-native-firebase/auth';
 import {LoginScreen} from './LoginScreen.rn';
-import {stampUpdatedAt, markDeleted, partitionTombstones, mergeCloudData, liveRecords, reconcileLivePreservingLocal, unionTombstones} from './lib/cloudSync';
+import {stampUpdatedAt, markDeleted, partitionTombstones, mergeCloudData, mergeMedals, liveRecords, reconcileLivePreservingLocal, unionTombstones} from './lib/cloudSync';
 import {publishMyRanking} from './lib/progression/firestoreRankingStore';
 import {migrateRestToFirestore, REST_MIGRATION_KEY} from './lib/restToFirestoreMigration';
 import {genRunId, genShoeId} from './lib/genId';
@@ -300,7 +301,9 @@ function Main(){
   const [medalFlow,setMedalFlow]=useState<null|{date:string;runId?:string;appTimeSec?:number;appPaceSec?:number;presetRaceId?:string;presetDistance?:RaceDistance}>(null);
   // 완주 리캡의 대회 감지 컨텍스트(배너용) — setRunRecap 과 함께 세팅, 닫을 때 함께 해제.
   const [recapRace,setRecapRace]=useState<null|{match:RaceMatch;date:string;runId?:string;appTimeSec:number;appPaceSec?:number}>(null);
-  useEffect(()=>{void loadMedals().then(setMedals);},[]);
+  // 대회 카탈로그 — 번들 시드로 시작, 부팅 시 Firestore 'races' 머지(서버 갱신 반영). 실패 시 시드 유지.
+  const [races,setRaces]=useState<RaceEvent[]>(SEED_RACES);
+  useEffect(()=>{void loadMedals().then(setMedals);void fetchRaces().then(setRaces).catch(()=>{});},[]);
   // 부상위험 상세(시그니처) 전체화면 — 홈 신호등 카드 탭이 열고 뒤로가 닫는다(오버레이형).
   // 완주 리캡(P0-2) — 러닝 저장 직후 축하 풀스크린. '완료'로 닫으면 기록 탭으로 이동.
   const [runRecap,setRunRecap]=useState<{km:number;durationS:number;cadence:number;splits:any[];elevationM:number;calories:number;prKinds:PRKind[];shoeName?:string;goalKm?:number;pacePlan?:number[];shoeWear?:{addedKm:number;remainingPct:number;deltaPct:number}|null;loadInfo?:{phrase:string;word:string;level:LoadLevel}|null;route?:string|null;track?:{lapM:number;laps:number}|null;runId?:string}|null>(null);
@@ -1066,6 +1069,8 @@ function Main(){
     settings:{unit,goal_weekly_km:goalWeeklyKm,alerts},
     // 진척(은퇴 신발·랭크·업적 seen)도 클라우드 백업에 포함 — 재설치/기기변경 복원(유실 0).
     ...(progState?{progression:progState}:{}),
+    // 마라톤 메달도 클라우드 백업에 포함 — 재설치/기기변경에도 컬렉션 유지(동기 병합=mergeMedals).
+    ...(medals.length?{medals}:{}),
   };
   // 가져오기: ProfileScreen이 parseBackup으로 *검증에 성공한* BackupV1만 넘겨준다.
   // 검증 실패 시엔 호출 자체가 없으므로 여기 도달하면 기존 데이터를 안전하게 교체한다.
@@ -1123,6 +1128,16 @@ function Main(){
     if(data.progression&&typeof data.progression==='object'){
       setProgState(data.progression as ProgressionState);
       void saveProgression(data.progression as ProgressionState);
+    }
+    // 메달 복원/병합 — 동기 왕복 중 로컬 추가분을 잃지 않게 함수형 updater 로 prev 와 union
+    // (신발/러닝의 reconcileLivePreservingLocal 과 같은 취지). normalizeMedals 가 검증·정렬.
+    if(Array.isArray(data.medals)){
+      const incoming=data.medals as unknown[];
+      setMedals(prev=>{
+        const merged=normalizeMedals(mergeMedals(incoming,prev));
+        void saveMedals(merged);
+        return merged;
+      });
     }
   };
   const importBackup=(data:BackupV1)=>{
@@ -1825,7 +1840,7 @@ function Main(){
           // 대회 감지 — GPS 시작 위치 + 날짜로 특정 대회 확정("상암 11/1 하프 → JTBC"),
           // 없으면 하프/풀 완주 시 일반 감지. 매치되면 리캡에 '대회 기록 남기기' 배너.
           const startPt=parseRoute(route||'')[0];
-          const rMatch=detectRace({date:today(),startLat:startPt?.lat,startLon:startPt?.lon,km},SEED_RACES);
+          const rMatch=detectRace({date:today(),startLat:startPt?.lat,startLon:startPt?.lon,km},races);
           setRecapRace(rMatch?{match:rMatch,date:today(),runId:newId,appTimeSec:dur,appPaceSec:km>0?dur/km:undefined}:null);
           // route 원문도 리캡에 전달 — 완주 직후 '오늘의 코스' 지도 + 경로 포함 공유 카드.
           setRunRecap({km,durationS:dur,cadence:cad||0,splits:splits||[],elevationM:elevM||0,calories:cal||0,prKinds,shoeName:shoeLabel,goalKm,pacePlan:activeRun.pacePlan,shoeWear,loadInfo,route:route||null,track:trackMeta||null,runId:newId});
@@ -1876,7 +1891,7 @@ function Main(){
       date={medalFlow.date} runId={medalFlow.runId}
       appTimeSec={medalFlow.appTimeSec} appPaceSec={medalFlow.appPaceSec}
       presetRaceId={medalFlow.presetRaceId} presetDistance={medalFlow.presetDistance}
-      races={SEED_RACES} recognizer={nativeRecognizer ?? undefined}
+      races={races} recognizer={nativeRecognizer ?? undefined}
       onSave={(m)=>{setMedals(cur=>[m,...cur.filter(x=>x.id!==m.id)]);void addMedalStore(m);setMedalFlow(null);setShowMedalArchive(true);}}
       onClose={()=>setMedalFlow(null)}/>;
   }

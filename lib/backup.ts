@@ -24,6 +24,11 @@ export interface BackupPayload {
    * 하위호환). 로컬 파일 백업(serializeBackup)에는 포함하지 않는다(클라우드 경로 전용).
    */
   progression?: ProgressionState;
+  /**
+   * 마라톤 메달 아카이브 — 클라우드 동기(재설치·기기변경에도 유지). id 합집합 + createdAt
+   * 최신 우선으로 병합(mergeMedals). progression 처럼 클라우드 경로 전용(로컬 파일 export 제외).
+   */
+  medals?: unknown[];
 }
 
 export interface BackupV1 extends BackupPayload {

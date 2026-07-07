@@ -13,6 +13,7 @@ import type { BackupPayload } from '../../lib/backup';
 import {
   nextAuthState,
   mergeCloudData,
+  mergeMedals,
   migrateDeviceToAccount,
   stampUpdatedAt,
   markDeleted,
@@ -30,6 +31,35 @@ const payload = (over: Partial<BackupPayload> = {}): BackupPayload => ({
   runs: [],
   settings: {},
   ...over,
+});
+
+describe('mergeMedals — 메달 클라우드 병합(id 합집합·최신 우선)', () => {
+  const md = (id: string, createdAt: string, extra: object = {}) => ({id, raceName: 'x', date: '2026-01-01', distance: 'half', createdAt, ...extra});
+  test('양쪽 id 합집합(유실 0)', () => {
+    const out = mergeMedals([md('a', '1')], [md('b', '2')]);
+    expect(out.map((m: any) => m.id).sort()).toEqual(['a', 'b']);
+  });
+  test('같은 id 는 createdAt 늦은 쪽 유지', () => {
+    const out = mergeMedals([md('a', '2026-02-02T00:00:00Z', {bib: 'local'})], [md('a', '2026-01-01T00:00:00Z', {bib: 'remote'})]);
+    expect(out.length).toBe(1);
+    expect((out[0] as any).bib).toBe('local'); // 로컬이 더 늦음
+  });
+  test('createdAt 동률이면 로컬 우선', () => {
+    const out = mergeMedals([md('a', '2026-01-01T00:00:00Z', {bib: 'local'})], [md('a', '2026-01-01T00:00:00Z', {bib: 'remote'})]);
+    expect((out[0] as any).bib).toBe('local');
+  });
+  test('잘못된 원소(id 없음/객체 아님)는 버린다', () => {
+    const out = mergeMedals([md('a', '1'), {no: 'id'}, null as any, 'garbage' as any], undefined);
+    expect(out.map((m: any) => m.id)).toEqual(['a']);
+  });
+  test('mergeCloudData 에 medals 가 병합돼 실린다', () => {
+    const merged = mergeCloudData(payload({medals: [md('a', '1')]}), payload({medals: [md('b', '2')]}));
+    expect((merged.medals as any[]).map((m) => m.id).sort()).toEqual(['a', 'b']);
+  });
+  test('medals 없으면 필드 자체가 안 실린다(하위호환)', () => {
+    const merged = mergeCloudData(payload(), payload());
+    expect(merged.medals).toBeUndefined();
+  });
 });
 
 describe('nextAuthState', () => {
