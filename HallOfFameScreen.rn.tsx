@@ -134,23 +134,36 @@ export default function HallOfFameScreen({
     let alive = true;
     setLoading(true);
     (async () => {
-      const lb = await provider.getLeaderboard(category, yearMonth);
-      const mine = await provider.getMyRanking(category, yearMonth);
-      if (!alive) return;
-      setEntries(Array.isArray(lb.entries) ? lb.entries : []);
-      setLbAvailable(lb.kind === 'remote' && lb.available === true);
-      if (mine.kind === 'remote') {
-        setMyAvailable(mine.available === true && mine.me !== null);
-        setMyEntry(mine.me);
-        setTopPercent(mine.topPercent);
-        setTotal(mine.total);
-      } else {
+      try {
+        const lb = await provider.getLeaderboard(category, yearMonth);
+        const mine = await provider.getMyRanking(category, yearMonth);
+        if (!alive) return;
+        setEntries(Array.isArray(lb.entries) ? lb.entries : []);
+        setLbAvailable(lb.kind === 'remote' && lb.available === true);
+        if (mine.kind === 'remote') {
+          setMyAvailable(mine.available === true && mine.me !== null);
+          setMyEntry(mine.me);
+          setTopPercent(mine.topPercent);
+          setTotal(mine.total);
+        } else {
+          setMyAvailable(false);
+          setMyEntry(null);
+          setTopPercent(null);
+          setTotal(0);
+        }
+      } catch {
+        // 로드 실패(네트워크·Firestore) 시 빈 상태로 폴백 — catch 가 없으면 setLoading(false)
+        // 에 못 가 스피너에 영구 고착되던 버그(감사 발견). available=false → 빈 상태 렌더.
+        if (!alive) return;
+        setEntries([]);
+        setLbAvailable(false);
         setMyAvailable(false);
         setMyEntry(null);
         setTopPercent(null);
         setTotal(0);
+      } finally {
+        if (alive) setLoading(false);
       }
-      setLoading(false);
     })();
     return () => {
       alive = false;

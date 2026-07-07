@@ -14,7 +14,7 @@ import {runVoice} from './lib/runVoice/voice';
 
 import {
   BG, CARD, CARD_HI as SURFACE, ACCENT, WARN, DANGER, T1, T2, T3,
-  FONT as FP, DISPLAY as FH, SEP, RADIUS, Shoe, Run,
+  FONT as FP, DISPLAY as FH, SEP, RADIUS, Shoe, Run, withAlpha,
 } from './theme';
 import {Ring, Button} from './primitives';
 import ErrorBoundary from './ErrorBoundary';
@@ -903,8 +903,13 @@ function Main(){
       run_time:timeStr, updatedAt:stampedAt,
     };
     // ── 1) 로컬 우선 영속화(크래시-세이프티) — 사이드키 + 캐시 즉시 durable 기록 ──
-    if(route) await AsyncStorage.setItem('route_'+localId, route);
-    await AsyncStorage.setItem('time_'+localId, timeStr);
+    // 사이드키(route/time)는 보조 데이터다 — setItem 이 실패해도 삼켜서 런 자체(캐시+상태)는
+    // 반드시 남긴다(예전엔 여기서 throw 하면 persistRunToCache·setRuns 에 못 가 완주 기록이
+    // 통째로 유실되고 저장 화면엔 아무 안내도 없었다 — 감사 발견).
+    try{
+      if(route) await AsyncStorage.setItem('route_'+localId, route);
+      await AsyncStorage.setItem('time_'+localId, timeStr);
+    }catch{/* 사이드키 영속 실패는 무시 — 아래 캐시/상태가 런의 진실원 */}
     await persistRunToCache(record);
     // ── 2) 낙관적 상태 반영(영속은 cloudSync 가 Firestore 로 push) ──
     setRuns(prev=>[record,...prev]);
@@ -2588,7 +2593,20 @@ function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],track=null,weightKg,age
       await onSave(Math.round(finKm*100)/100,finTime,finCad,memo,finRoute,loc,finSplits,finElev,estimateCalories(finKm,weightKg),finPaceTrack,finHrTrack,finGapTrack,
         trackMode?{lapM:Math.round(lapMRef.current),laps:lapTimesRef.current.length,lapTimes:lapTimesRef.current.slice()}:null);
       hapticSuccess(); // 저장 성공 — 완주 보상 촉각(설정 off 면 graceful no-op).
+    }catch(e){
+      // 저장 실패 — 예전엔 catch 가 없어 버튼만 조용히 다시 활성화되고 사용자는 이유를
+      // 몰랐다. 화면·상태를 그대로 두어(스냅샷 보존) 다시 저장을 누를 수 있게 안내한다.
+      Alert.alert('저장하지 못했어요','방금 달린 기록은 아직 남아 있어요 — 잠시 후 저장을 다시 눌러 주세요.');
     }finally{setSaving(false);}
+  }
+
+  // 완주 검토 화면의 '버리기'는 되돌릴 수 없는 파괴적 동작(방금 완주한 기록 영구 소실)이라
+  // 확인을 받는다 — 저장된 기록 삭제(HistoryScreen)와 동일한 보호. 오탭 한 번으로 유실 금지.
+  function confirmDiscard(){
+    Alert.alert('이 기록을 버릴까요?',`방금 달린 ${finKm.toFixed(2)}km 기록이 사라지고 되돌릴 수 없어요.`,[
+      {text:'취소',style:'cancel'},
+      {text:'버리기',style:'destructive',onPress:onDiscard},
+    ]);
   }
 
   const pauseLabel=autoPaused?'자동 일시정지':paused?'일시정지':'러닝 중';
@@ -2631,7 +2649,7 @@ function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],track=null,weightKg,age
       </View>
       <TextInput style={run.memo} value={memo} onChangeText={setMemo} placeholder="메모 (선택)" placeholderTextColor={T3} autoCorrect={false} autoCapitalize="none"/>
       <View style={run.actionRow}>
-        <TouchableOpacity style={run.discardBtn} onPress={onDiscard} accessibilityRole="button" accessibilityLabel="버리기"><Text style={run.discardTxt}>버리기</Text></TouchableOpacity>
+        <TouchableOpacity style={run.discardBtn} onPress={confirmDiscard} accessibilityRole="button" accessibilityLabel="버리기"><Text style={run.discardTxt}>버리기</Text></TouchableOpacity>
         <Button style={run.saveBtn} label={saving?'저장 중...':'저장하기'} onPress={handleSave} disabled={saving}/>
       </View>
     </View>
@@ -2711,8 +2729,8 @@ const run=StyleSheet.create({
   gpsRow:{flexDirection:'row',alignItems:'center',marginTop:8},
   gpsText:{color:T3,fontFamily:FP,fontSize:14,fontWeight:'600'},
   banner:{flexDirection:'row',alignItems:'center',gap:8,marginTop:10,paddingVertical:10,paddingHorizontal:12,borderRadius:12,borderWidth:StyleSheet.hairlineWidth},
-  bannerWarn:{backgroundColor:'rgba(255,193,7,0.12)',borderColor:WARN},
-  bannerDanger:{backgroundColor:'rgba(255,69,58,0.14)',borderColor:DANGER},
+  bannerWarn:{backgroundColor:withAlpha(WARN,0.12),borderColor:WARN},
+  bannerDanger:{backgroundColor:withAlpha(DANGER,0.14),borderColor:DANGER},
   bannerText:{flex:1,color:T1,fontFamily:FP,fontSize:14,fontWeight:'500',lineHeight:17},
   body:{flex:1,alignItems:'center',justifyContent:'center'},
   goalText:{color:T3,fontFamily:FP,fontSize:13,fontWeight:'500',letterSpacing:1},
@@ -2736,9 +2754,6 @@ const run=StyleSheet.create({
   smV:{fontFamily:FH,fontSize:16,fontWeight:'500',color:T2,textAlign:'center'},
   smL:{color:T3,fontFamily:FP,fontSize:11,fontWeight:'500',marginTop:3,textAlign:'center'},
   controls:{flexDirection:'row',alignItems:'flex-start',justifyContent:'center',gap:40,paddingTop:4,paddingBottom:8},
-  ctrlPrimary:{width:92,height:92,borderRadius:999,backgroundColor:ACCENT,alignItems:'center',justifyContent:'center'},
-  ctrlPrimaryLg:{width:96,height:96,borderRadius:999,backgroundColor:ACCENT,alignItems:'center',justifyContent:'center'},
-  ctrlStop:{width:72,height:72,borderRadius:999,backgroundColor:'rgba(255,69,58,0.18)',alignItems:'center',justifyContent:'center',marginTop:10},
   ctrlHint:{color:T3,fontFamily:FP,fontSize:12,letterSpacing:0.5,textAlign:'center'},
   memo:{backgroundColor:SURFACE,borderRadius:14,padding:14,color:T1,fontSize:16,fontFamily:FP,marginBottom:16},
   actionRow:{flexDirection:'row',gap:12},

@@ -13,6 +13,7 @@
  */
 
 import React from 'react';
+import {Alert} from 'react-native';
 import ReactTestRenderer, {act} from 'react-test-renderer';
 import * as Location from 'expo-location';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -201,10 +202,15 @@ test('discarding the run clears the snapshot', async () => {
   pressByText(root, 'pause');
   longPressByText(root, 'stop');
   await flushMicrotasks();
+  // '버리기'는 이제 확인 다이얼로그를 띄운다(오탭 유실 방지) — destructive 버튼을 눌러 확정.
+  const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation((_t, _m, buttons) => {
+    (buttons || []).find(b => b.style === 'destructive')?.onPress?.();
+  });
   pressByText(root, '버리기');
   await flushMicrotasks();
 
   expect(await readSnapshot()).toBeNull();
 
+  alertSpy.mockRestore();
   act(() => renderer.unmount());
 });
