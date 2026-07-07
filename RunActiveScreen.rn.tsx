@@ -147,13 +147,15 @@ export default function RunActiveScreen({
     LayoutAnimation.configureNext(LayoutAnimation.create(260, LayoutAnimation.Types.easeInEaseOut, LayoutAnimation.Properties.opacity));
     setUiPaused(paused);
     Animated.parallel([
-      Animated.timing(t, { toValue: paused ? 1 : 0, duration: 300, easing: Easing.inOut(Easing.cubic), useNativeDriver: false }),
+      Animated.timing(t, { toValue: paused ? 1 : 0, duration: 300, easing: Easing.inOut(Easing.cubic), useNativeDriver: true }),
       Animated.timing(subIn, { toValue: paused ? 1 : 0, duration: paused ? 260 : 160, delay: paused ? 70 : 0, easing: Easing.out(Easing.quad), useNativeDriver: true }),
     ]).start();
   }, [paused, uiPaused, t, subIn]);
-  const ringScale = t.interpolate({ inputRange: [0, 1], outputRange: [1, 0.62] });
-  const ringMT = t.interpolate({ inputRange: [0, 1], outputRange: [30, -30] });
-  const ringMB = t.interpolate({ inputRange: [0, 1], outputRange: [0, -48] });
+  // 일시정지 시 링을 '아주 살짝'만 축소(0.92) — 링 안 거리 숫자가 항상 크게 읽히도록. 스케일은
+  // 네이티브 드라이버(transform)만 쓰므로 재개 시 반드시 원래 크기로 복귀한다(예전엔 스케일+
+  // Animated 마진+LayoutAnimation 이 서로 다른 시스템으로 같은 뷰를 밀며 desync→복귀불능 버그).
+  // 서브 지표가 들어설 세로 공간은 스케일이 아니라 ringWrapPaused 여백 축소(LayoutAnimation)가 만든다.
+  const ringScale = t.interpolate({ inputRange: [0, 1], outputRange: [1, 0.92] });
   // 라이브 심박 존 — 심박이 흐를 때만 산출(bpm>0). 워치 미연동이면 0 → 존 미표시.
   const hrZone = bpm > 0 ? zoneOf(bpm, estimateMaxHR(age), restHR || undefined) : 0;
   const hrColor = hrZone !== 0 ? HR_ZONE_COLORS[hrZone] : T1;
@@ -258,8 +260,8 @@ export default function RunActiveScreen({
       {/* ring — 거리/자유 모드는 거리 히어로, 트랙 모드는 '바퀴 수' 히어로(링=현재 바퀴 진행)
           일시정지 시 스프링으로 살짝 축소(transform은 레이아웃 불변 — 줄어든 시각 여백은
           ringWrap 마진 축소가 LayoutAnimation 으로 메운다). */}
-      <Animated.View style={[r.ringWrap, { marginTop: ringMT, marginBottom: ringMB, transform: [{ scale: ringScale }] }]}>
-        <Ring size={296} stroke={7} progress={track ? track.progress : pct}>
+      <Animated.View style={[r.ringWrap, uiPaused && r.ringWrapPaused, { transform: [{ scale: ringScale }] }]}>
+        <Ring size={310} stroke={8} progress={track ? track.progress : pct}>
           {track ? (
             <View style={{ alignItems: 'center' }} accessibilityRole="text" accessibilityLiveRegion="polite"
               accessibilityLabel={`${track.lapCount}바퀴, ${track.lapDistKm.toFixed(2)}킬로미터, 한 바퀴 ${track.lapM}미터 ${track.calibrated ? 'GPS 보정됨' : '예상'}`}>
@@ -433,15 +435,16 @@ const r = StyleSheet.create({
   permBannerText: { flex: 1, color: T1, fontFamily: FONT, fontSize: 13, fontWeight: '500', lineHeight: 17 },
 
   ringWrap: { alignItems: 'center', marginTop: 26 },
-  // 일시정지: transform 축소(0.86)는 레이아웃을 안 줄이므로 마진으로 시각 여백을 회수한다.
-  ringWrapPaused: { marginTop: -30, marginBottom: -48 },
-  goal: { color: withAlpha(T1, 0.5), fontFamily: FONT, fontSize: 12, fontWeight: '700', letterSpacing: 1.2, marginBottom: 16 },
+  // 일시정지: 링을 살짝 위로 당기고(marginTop↓) 아래 시각 여백을 조금 회수(marginBottom-)해
+  // 서브 지표가 들어설 공간을 낸다. 스케일이 0.92로 완만하므로 마진도 완만하게(겹침 방지).
+  ringWrapPaused: { marginTop: 8, marginBottom: -14 },
+  goal: { color: withAlpha(T1, 0.5), fontFamily: FONT, fontSize: 13, fontWeight: '700', letterSpacing: 1.2, marginBottom: 16 },
   goalMet: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 16 },
-  goalMetText: { color: GOOD, fontFamily: FONT, fontSize: 12, fontWeight: '700', letterSpacing: 0.6 },
-  bigDist: { color: T1, fontFamily: DISPLAY, fontSize: 94, fontWeight: '500', letterSpacing: -4, lineHeight: 96, includeFontPadding: false, fontVariant: ['tabular-nums'] },
-  bigUnit: { color: withAlpha(T1, 0.5), fontFamily: FONT, fontSize: 12, fontWeight: '600', letterSpacing: 0.8, marginTop: 16 },
+  goalMetText: { color: GOOD, fontFamily: FONT, fontSize: 13, fontWeight: '700', letterSpacing: 0.6 },
+  bigDist: { color: T1, fontFamily: DISPLAY, fontSize: 104, fontWeight: '500', letterSpacing: -4, lineHeight: 106, includeFontPadding: false, fontVariant: ['tabular-nums'] },
+  bigUnit: { color: withAlpha(T1, 0.5), fontFamily: FONT, fontSize: 13, fontWeight: '600', letterSpacing: 0.8, marginTop: 16 },
   // 트랙 링 센터 — 바퀴수 하나만 히어로, 그 밑 작은 '바퀴'.
-  lapHero: { color: T1, fontFamily: DISPLAY, fontSize: 88, fontWeight: '700', letterSpacing: -3, lineHeight: 88, includeFontPadding: false, fontVariant: ['tabular-nums'] },
+  lapHero: { color: T1, fontFamily: DISPLAY, fontSize: 96, fontWeight: '700', letterSpacing: -3, lineHeight: 96, includeFontPadding: false, fontVariant: ['tabular-nums'] },
   lapHeroUnit: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '500', letterSpacing: 0.6, marginTop: 6 },
   // 링 아래 회색 한 줄(거리 · 랩거리 · 보정) — 박스·색 없이 조용히.
   trackUnder: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '500', textAlign: 'center', marginTop: 16, fontVariant: ['tabular-nums'] },
