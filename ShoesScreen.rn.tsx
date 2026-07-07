@@ -742,7 +742,7 @@ const s = StyleSheet.create({
   shoeBar: { height: 6, borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.1), overflow: 'hidden' },
   shoeBarFill: { height: '100%', borderRadius: RADIUS.pill },
   shoeBarLabels: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 7 },
-  shoeBarLabel: { color: T4, fontFamily: FONT, fontSize: 12, fontWeight: '500' },
+  shoeBarLabel: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500' },
   fcRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 9 },
   fcText: { flex: 1, color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '500' },
   soonHeader: { flexDirection: 'row', alignItems: 'center', gap: 7, backgroundColor: withAlpha(WARN, 0.1), borderRadius: RADIUS.md, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(WARN, 0.35), paddingHorizontal: 13, paddingVertical: 10 },
