@@ -455,9 +455,9 @@ const r = StyleSheet.create({
   trackUnderCk: { color: ACCENT_2, fontWeight: '600' },
   // 지난 랩 한 줄 — 라벨 회색 + 랩번호(T4)/구간시간(T2), 박스 없음.
   recent: { flexDirection: 'row', alignItems: 'center', gap: 14, marginTop: 16, paddingHorizontal: 2 },
-  recentK: { color: T4, fontFamily: FONT, fontSize: 12, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase' },
+  recentK: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase' },
   recentV: { color: T2, fontFamily: DISPLAY, fontSize: 14, fontWeight: '600', fontVariant: ['tabular-nums'] },
-  recentN: { color: T4, fontWeight: '700' },
+  recentN: { color: T2, fontWeight: '700' },
   coach: { flexDirection: 'row', alignItems: 'center', alignSelf: 'center', gap: 8, marginTop: 18, paddingHorizontal: 14, height: 38, borderRadius: 999, borderWidth: 1 },
   coachTarget: { color: T2, fontFamily: FONT, fontSize: 15, fontWeight: '600' },
   coachDot: { width: 3, height: 3, borderRadius: 2, backgroundColor: T4 },
