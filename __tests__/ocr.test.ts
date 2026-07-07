@@ -58,6 +58,30 @@ describe('parseCertText — 강화해변마라톤 SMART CHIP 형식', () => {
   });
 });
 
+describe('parseCertText — MBN 서울마라톤 10km(사용자 제공 실제 기록증)', () => {
+  // 함정: PASS TIME 08:57:05(시계-of-day, 6h 초과) > 완주 00:55:42, Speed 10.91 km/h.
+  const CERT = [
+    '2025 MBN 서울마라톤',
+    'SMART CHIP  No1 Timing System',
+    '10km  BIB 1234',
+    'Speed 10.91 km/h',
+    'Pace 05:34 min/km',
+    'POINT   TIME       PASS TIME   PACE',
+    '5.0km   00:27:55   08:29:18    05:34',
+    '10.0km  00:55:42   08:57:05    05:33',
+  ].join('\n');
+
+  test('완주 = 00:55:42(범위 내 최대) — PASS TIME/스플릿/속도 함정 배제', () => {
+    expect(parseCertText(CERT).officialTimeSec).toBe(55 * 60 + 42);
+  });
+  test('페이스 05:34 · 거리 10k · 속도(km/h) 무시', () => {
+    const f = parseCertText(CERT);
+    expect(f.paceSec).toBe(5 * 60 + 34);
+    expect(f.distance).toBe('10k');
+    expect(f.distanceKm).toBe(10);
+  });
+});
+
 describe('parseCertText — 한글 라벨/풀코스', () => {
   test('기록/페이스/배번 한글 라벨', () => {
     const t = '2026 JTBC 서울마라톤\n종목 풀코스 42.195km\n기록 3:52:10\n페이스 5:30\n배번호 1234';
