@@ -36,6 +36,13 @@ import ProgressionScreen from './ProgressionScreen.rn';
 import HallOfShoes from './HallOfShoes.rn';
 import ShoeArchiveScreen from './ShoeArchiveScreen.rn';
 import RunRecapScreen from './RunRecapScreen.rn';
+import MedalArchiveScreen from './MedalArchiveScreen.rn';
+import RaceMedalScreen from './RaceMedalScreen.rn';
+// 마라톤 메달 아카이브 — 완주 감지(위치+날짜) → 대회 기록 흐름 → 아카이브(로컬 우선).
+import {loadMedals, addMedal as addMedalStore, removeMedal as removeMedalStore, type Medal} from './lib/medals';
+import {detectRace, SEED_RACES, type RaceMatch, type RaceDistance} from './data/raceEvents';
+import {nativeRecognizer} from './lib/ocrNative';
+import {parseRoute} from './lib/route';
 import LocationPrimeScreen from './LocationPrimeScreen.rn';
 import HallOfFameScreen from './HallOfFameScreen.rn';
 import {buildContext} from './lib/progression/context';
@@ -286,6 +293,14 @@ function Main(){
   // 뒤로 버튼이 닫는다. 진척과 같은 오버레이형 게이트(부트 흐름과 독립).
   const [showHallOfShoes,setShowHallOfShoes]=useState(false);
   const [showArchive,setShowArchive]=useState(false);
+  // 마라톤 메달 아카이브(로컬 우선) — 부팅 시 로드. 마이 탭 진입 갤러리 + 완주 기록 흐름.
+  const [medals,setMedals]=useState<Medal[]>([]);
+  const [showMedalArchive,setShowMedalArchive]=useState(false);
+  // 대회 기록 흐름(완주 감지 배너 또는 아카이브 '추가'에서 진입). null = 미표시.
+  const [medalFlow,setMedalFlow]=useState<null|{date:string;runId?:string;appTimeSec?:number;appPaceSec?:number;presetRaceId?:string;presetDistance?:RaceDistance}>(null);
+  // 완주 리캡의 대회 감지 컨텍스트(배너용) — setRunRecap 과 함께 세팅, 닫을 때 함께 해제.
+  const [recapRace,setRecapRace]=useState<null|{match:RaceMatch;date:string;runId?:string;appTimeSec:number;appPaceSec?:number}>(null);
+  useEffect(()=>{void loadMedals().then(setMedals);},[]);
   // 부상위험 상세(시그니처) 전체화면 — 홈 신호등 카드 탭이 열고 뒤로가 닫는다(오버레이형).
   // 완주 리캡(P0-2) — 러닝 저장 직후 축하 풀스크린. '완료'로 닫으면 기록 탭으로 이동.
   const [runRecap,setRunRecap]=useState<{km:number;durationS:number;cadence:number;splits:any[];elevationM:number;calories:number;prKinds:PRKind[];shoeName?:string;goalKm?:number;pacePlan?:number[];shoeWear?:{addedKm:number;remainingPct:number;deltaPct:number}|null;loadInfo?:{phrase:string;word:string;level:LoadLevel}|null;route?:string|null;track?:{lapM:number;laps:number}|null;runId?:string}|null>(null);
@@ -1807,6 +1822,11 @@ function Main(){
           const loadAfter=assessTrainingLoad([...(runs as any[]),{run_date:today(),km,duration:dur}],today());
           const loadInfo=loadAfter.confident?{phrase:loadRatioPhraseKo(loadAfter),word:LOAD_WORD[loadAfter.level],level:loadAfter.level as LoadLevel}:null;
           setResumeSnap(null);setActiveRun(null);setOverlay('none');
+          // 대회 감지 — GPS 시작 위치 + 날짜로 특정 대회 확정("상암 11/1 하프 → JTBC"),
+          // 없으면 하프/풀 완주 시 일반 감지. 매치되면 리캡에 '대회 기록 남기기' 배너.
+          const startPt=parseRoute(route||'')[0];
+          const rMatch=detectRace({date:today(),startLat:startPt?.lat,startLon:startPt?.lon,km},SEED_RACES);
+          setRecapRace(rMatch?{match:rMatch,date:today(),runId:newId,appTimeSec:dur,appPaceSec:km>0?dur/km:undefined}:null);
           // route 원문도 리캡에 전달 — 완주 직후 '오늘의 코스' 지도 + 경로 포함 공유 카드.
           setRunRecap({km,durationS:dur,cadence:cad||0,splits:splits||[],elevationM:elevM||0,calories:cal||0,prKinds,shoeName:shoeLabel,goalKm,pacePlan:activeRun.pacePlan,shoeWear,loadInfo,route:route||null,track:trackMeta||null,runId:newId});
         }}
@@ -1850,10 +1870,31 @@ function Main(){
   // 전체 런 부하를 융합해 코칭을 보여준다. runs/활성 신발만 읽는 읽기 전용 오버레이.
   // (부상위험 상세 화면 제거 2026-07-05 애널리틱스 다이어트 — 홈 진입점이 사라져 도달 불가.)
   // 완주 리캡 — 러닝 저장 직후 축하 풀스크린. '완료'로 닫으면 기록 탭으로 이동한다.
+  // 대회 기록 흐름 — 완주 감지 배너/아카이브 추가에서 진입. 저장 시 로컬 우선 영속 + 상태 갱신.
+  if(medalFlow){
+    return <RaceMedalScreen
+      date={medalFlow.date} runId={medalFlow.runId}
+      appTimeSec={medalFlow.appTimeSec} appPaceSec={medalFlow.appPaceSec}
+      presetRaceId={medalFlow.presetRaceId} presetDistance={medalFlow.presetDistance}
+      races={SEED_RACES} recognizer={nativeRecognizer ?? undefined}
+      onSave={(m)=>{setMedals(cur=>[m,...cur.filter(x=>x.id!==m.id)]);void addMedalStore(m);setMedalFlow(null);setShowMedalArchive(true);}}
+      onClose={()=>setMedalFlow(null)}/>;
+  }
+  if(showMedalArchive){
+    return <MedalArchiveScreen medals={medals}
+      onBack={()=>setShowMedalArchive(false)}
+      onDelete={(id)=>{setMedals(cur=>cur.filter(m=>m.id!==id));void removeMedalStore(id);}}/>;
+  }
   if(runRecap){
     return <RunRecapScreen {...runRecap} unit={unit}
       onSaveMeta={saveRunMeta}
-      onClose={()=>{setRunRecap(null);setTab(2);}}/>;
+      raceMatch={recapRace?.match ?? null}
+      onLogRace={recapRace?()=>{
+        const rc=recapRace;setRunRecap(null);setRecapRace(null);
+        setMedalFlow({date:rc.date,runId:rc.runId,appTimeSec:rc.appTimeSec,appPaceSec:rc.appPaceSec,
+          presetRaceId:rc.match.kind==='geo'?rc.match.race?.id:undefined,presetDistance:rc.match.distance});
+      }:undefined}
+      onClose={()=>{setRunRecap(null);setRecapRace(null);setTab(2);}}/>;
   }
   return(
     <View style={{flex:1,backgroundColor:BG}}>
@@ -1918,6 +1959,7 @@ function Main(){
             onDeleteAccount={handleDeleteAccount}
             onOpenProgression={()=>setShowProgression(true)}
             onOpenHallOfShoes={()=>setShowHallOfShoes(true)} retiredCount={retiredRecords.length}
+            onOpenMedalArchive={()=>setShowMedalArchive(true)} medalCount={medals.length}
             onOpenArchive={()=>setShowArchive(true)}
             archivedCount={archivedUiShoes.length}
           />

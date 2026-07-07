@@ -23,6 +23,7 @@
     "@react-native-firebase/firestore": "24.0.0",
     "@react-native-firebase/messaging": "^24.0.0",
     "@react-native-google-signin/google-signin": "^16.1.2",
+    "@react-native-ml-kit/text-recognition": "^2.0.0",
     "@react-native-seoul/kakao-login": "^5.4.2",
     "@react-native-seoul/naver-login": "^4.2.4",
     "@react-native/new-app-screen": "0.85.2",

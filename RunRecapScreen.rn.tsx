@@ -9,7 +9,8 @@ import React, {useMemo, useRef, useState} from 'react';
 import {View, Text, ScrollView, Pressable, StyleSheet, Alert, TextInput, Image, Linking} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import {BG, CARD, CARD_HI, ACCENT, GOOD, WARN, DANGER, T1, T2, T3, T4, FONT, DISPLAY, RADIUS, SEP, withAlpha} from './theme';
+import {BG, CARD, CARD_HI, ACCENT, GOOD, WARN, DANGER, HALL_GOLD, T1, T2, T3, T4, FONT, DISPLAY, RADIUS, SEP, withAlpha} from './theme';
+import {RACE_DISTANCE_LABEL, type RaceMatch} from './data/raceEvents';
 import {fmtPaceSec} from './lib/pacePlan';
 import {fmtPace} from './lib/format';
 import {GlassEdge} from './primitives';
@@ -66,6 +67,8 @@ export default function RunRecapScreen({
   track = null,
   runId,
   onSaveMeta,
+  raceMatch = null,
+  onLogRace,
   onClose,
 }: {
   km: number;
@@ -95,6 +98,10 @@ export default function RunRecapScreen({
   runId?: string;
   /** 사진/메모 영속(App.saveRunMeta). memo 는 레코드 동기, photoUri 는 로컬 사이드카. */
   onSaveMeta?: (id: string, meta: {memo?: string; photoUri?: string | null}) => void;
+  /** 대회 감지 결과 — 위치+날짜 특정(geo) 또는 하프/풀 완주(distance). 있으면 메달 배너. */
+  raceMatch?: RaceMatch | null;
+  /** '대회 기록 남기기' — App 이 메달 기록 흐름을 연다. 없으면 배너 미표시. */
+  onLogRace?: () => void;
   onClose?: () => void;
 }) {
   const insets = useSafeAreaInsets();
@@ -103,6 +110,8 @@ export default function RunRecapScreen({
   //    저장은 비차단: 사진은 고르는 즉시, 메모는 blur/닫기 시점에 onSaveMeta 로.
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [memo, setMemo] = useState('');
+  // 대회 감지 배너 — '일반 러닝이에요'로 닫으면 이 세션 동안 숨긴다(재촉 금지).
+  const [raceDismissed, setRaceDismissed] = useState(false);
   const memoSavedRef = useRef('');
   const canMeta = !!runId && !!onSaveMeta;
   const attachPhoto = async () => {
@@ -210,6 +219,34 @@ export default function RunRecapScreen({
             ))}
           </View>
         ) : null}
+
+        {/* 대회 완주 감지 배너 — 위치+날짜로 특정 대회면 콕 집어, 아니면 하프/풀 완주면 일반.
+            '대회 기록 남기기' → 메달 기록 흐름. '일반 러닝이에요'로 닫으면 재촉 안 함(절제). */}
+        {raceMatch && onLogRace && !raceDismissed && (
+          <View style={s.raceBanner} testID="recap-race-banner">
+            <View style={s.raceBannerHead}>
+              <Ionicons name="medal" size={16} color={HALL_GOLD} />
+              <Text style={s.raceBannerTitle}>
+                {raceMatch.kind === 'geo' && raceMatch.race
+                  ? `${raceMatch.race.name} 달리셨나요?`
+                  : `${RACE_DISTANCE_LABEL[raceMatch.distance]} 거리를 완주했어요!`}
+              </Text>
+            </View>
+            <Text style={s.raceBannerDesc}>
+              {raceMatch.kind === 'geo'
+                ? '메달과 공식 기록을 아카이브에 남겨보세요.'
+                : '대회였다면 메달과 기록을 아카이브에 남겨보세요.'}
+            </Text>
+            <View style={s.raceBannerBtns}>
+              <Pressable onPress={onLogRace} accessibilityRole="button" accessibilityLabel="대회 기록 남기기" style={({pressed}) => [s.raceBannerPrimary, pressed && {opacity: 0.85}]}>
+                <Text style={s.raceBannerPrimaryT}>대회 기록 남기기</Text>
+              </Pressable>
+              <Pressable onPress={() => setRaceDismissed(true)} accessibilityRole="button" accessibilityLabel="일반 러닝이에요" hitSlop={6} style={({pressed}) => [s.raceBannerGhost, pressed && {opacity: 0.6}]}>
+                <Text style={s.raceBannerGhostT}>일반 러닝이에요</Text>
+              </Pressable>
+            </View>
+          </View>
+        )}
 
         {/* 오늘의 코스 — GPS 경로가 있으면 진짜 지도 위 경로(없으면 스스로 숨김).
             완주 직후가 러너가 코스를 가장 자랑하고 싶은 순간(공유 트리거). */}
@@ -353,6 +390,17 @@ const s = StyleSheet.create({
   badges: {flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, marginBottom: 16},
   badge: {flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, height: 30, borderRadius: RADIUS.pill, borderWidth: 1},
   badgeTxt: {fontFamily: FONT, fontSize: 13, fontWeight: '700'},
+
+  // 대회 완주 감지 배너(골드) — 완주 직후 러너가 메달을 남기고 싶은 순간.
+  raceBanner: {marginTop: 14, padding: 16, borderRadius: 18, borderCurve: 'continuous', backgroundColor: withAlpha(HALL_GOLD, 0.08), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(HALL_GOLD, 0.35)},
+  raceBannerHead: {flexDirection: 'row', alignItems: 'center', gap: 8},
+  raceBannerTitle: {flex: 1, color: HALL_GOLD, fontFamily: FONT, fontSize: 15, fontWeight: '700', letterSpacing: -0.2},
+  raceBannerDesc: {color: T2, fontFamily: FONT, fontSize: 13, marginTop: 6, lineHeight: 18},
+  raceBannerBtns: {flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 14},
+  raceBannerPrimary: {flex: 1, height: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(HALL_GOLD, 0.18), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(HALL_GOLD, 0.4)},
+  raceBannerPrimaryT: {color: HALL_GOLD, fontFamily: FONT, fontSize: 14, fontWeight: '700'},
+  raceBannerGhost: {height: 42, paddingHorizontal: 14, alignItems: 'center', justifyContent: 'center'},
+  raceBannerGhostT: {color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '500'},
   grid: {flexDirection: 'row', flexWrap: 'wrap', backgroundColor: CARD, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP, paddingVertical: 6},
   stat: {width: '50%', paddingVertical: 14, paddingHorizontal: 18, alignItems: 'flex-start'},
   statValue: {color: T1, fontFamily: DISPLAY, fontSize: 26, fontWeight: '700', letterSpacing: -0.6},

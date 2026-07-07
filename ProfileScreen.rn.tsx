@@ -115,6 +115,7 @@ export default function ProfileScreen({
   cloudPort, onCloudMerged, onDeleteAccount, cloudClock = () => Date.now(),
   onOpenProgression,
   onOpenHallOfShoes, retiredCount = 0,
+  onOpenMedalArchive, medalCount = 0,
   onOpenArchive, archivedCount = 0,
   challengeExtRuns = [], challengeExtShoes = [], todayISO = '',
   weeklyGoalKm = 0, onEditSmartTarget,
@@ -195,6 +196,9 @@ export default function ProfileScreen({
   // 명예의 전당(은퇴 신발 박물관) 진입. 없으면 진입 버튼 미표시(안전한 no-op).
   // (신발탭 이동을 검토했으나 사용자 결정으로 마이탭 유지 — 2026-07-02.)
   onOpenHallOfShoes?: () => void;
+  // 마라톤 메달 아카이브 진입(명예의 전당 옆). 없으면 행 미표시(안전한 no-op).
+  onOpenMedalArchive?: () => void;
+  medalCount?: number;
   // 은퇴한 신발 수(전당 진입 행의 부제에 표시). 0이어도 진입은 가능(빈 전당 안내).
   retiredCount?: number;
   // 신발 보관함(보관 처리한 신발 복원) 진입. 없으면 행 미표시(안전한 no-op).
@@ -742,6 +746,23 @@ export default function ProfileScreen({
             <View style={{ flex: 1, minWidth: 0 }}>
               <Text style={s.progressTitle}>명예의 전당</Text>
               <Text style={s.progressSub}>{retiredCount > 0 ? `은퇴한 신발 ${retiredCount}켤레` : '은퇴한 신발들의 박물관'}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={T3} />
+          </Pressable>
+        )}
+
+        {/* 메달 아카이브(마라톤 완주 메달·기록) — 명예의 전당과 짝을 이루는 컬렉션. */}
+        {onOpenMedalArchive && (
+          <Pressable
+            onPress={onOpenMedalArchive}
+            testID="open-medal-archive"
+            accessibilityRole="button"
+            accessibilityLabel="메달 아카이브 열기"
+            style={({ pressed }) => [s.card, s.progressRow, pressed && { backgroundColor: CARD_HI }]}>
+            <View style={s.progressIcon}><Ionicons name="medal-outline" size={19} color={ACCENT} /></View>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text style={s.progressTitle}>메달 아카이브</Text>
+              <Text style={s.progressSub}>{medalCount > 0 ? `완주 메달 ${medalCount}개` : '완주한 대회의 메달과 기록'}</Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={T3} />
           </Pressable>
