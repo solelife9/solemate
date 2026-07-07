@@ -194,30 +194,30 @@ const s = StyleSheet.create({
 
   nav: { paddingTop: 12, paddingHorizontal: 18, paddingBottom: 6, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   iconBtn: { width: 38, height: 38, borderRadius: 999, backgroundColor: CARD_HI, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.12), alignItems: 'center', justifyContent: 'center' },
-  navTitle: { color: T1, fontFamily: FONT, fontSize: 16, fontWeight: '500', letterSpacing: -0.2 },
+  navTitle: { color: T1, fontFamily: FONT, fontSize: 17, fontWeight: '500', letterSpacing: -0.2 },
 
   photo: { alignSelf: 'center', width: 120, height: 120, borderRadius: 26, borderCurve: 'continuous', borderWidth: 1, borderStyle: 'dashed', borderColor: withAlpha(T1, 0.14), backgroundColor: withAlpha(T1, 0.02), alignItems: 'center', justifyContent: 'center', gap: 7, marginBottom: 10, overflow: 'hidden' },
   photoImg: { width: '100%', height: '100%' },
-  photoText: { color: T3, fontFamily: FONT, fontSize: 12 },
-  photoErr: { color: T3, fontFamily: FONT, fontSize: 12, textAlign: 'center', marginBottom: 16, paddingHorizontal: 12 },
-  photoOpt: { color: T4, fontFamily: FONT, fontSize: 11, textAlign: 'center', marginBottom: 18 },
+  photoText: { color: T3, fontFamily: FONT, fontSize: 13 },
+  photoErr: { color: T3, fontFamily: FONT, fontSize: 13, textAlign: 'center', marginBottom: 16, paddingHorizontal: 12 },
+  photoOpt: { color: T4, fontFamily: FONT, fontSize: 12, textAlign: 'center', marginBottom: 18 },
 
-  label: { color: T2, fontFamily: FONT, fontSize: 13, fontWeight: '500', letterSpacing: 0.2, paddingHorizontal: 4, paddingBottom: 10 },
+  label: { color: T2, fontFamily: FONT, fontSize: 14, fontWeight: '500', letterSpacing: 0.2, paddingHorizontal: 4, paddingBottom: 10 },
 
   // 러닝화 선택 트리거(탭하면 2열 분할 피커). 입력칸처럼 보이되 누르면 모달이 열린다.
   selector: { backgroundColor: CARD_DIM, borderRadius: 16, borderCurve: 'continuous', borderWidth: 1, borderColor: withAlpha(T1, 0.07), flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 18, paddingVertical: 16 },
-  selectorText: { flex: 1, color: T1, fontFamily: FONT, fontSize: 16, fontWeight: '500', letterSpacing: -0.2 },
+  selectorText: { flex: 1, color: T1, fontFamily: FONT, fontSize: 17, fontWeight: '500', letterSpacing: -0.2 },
 
   maxHead: { marginTop: 22, flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 4, paddingBottom: 10 },
 
-  hint: { color: T3, fontFamily: FONT, fontSize: 12, paddingHorizontal: 4, paddingTop: 9 },
+  hint: { color: T3, fontFamily: FONT, fontSize: 13, paddingHorizontal: 4, paddingTop: 9 },
 
   usedRow: { backgroundColor: CARD_DIM, borderRadius: 16, borderCurve: 'continuous', borderWidth: 1, borderColor: withAlpha(T1, 0.07), flexDirection: 'row', alignItems: 'center', paddingHorizontal: 18 },
   // 검증 실패 시 입력칸 테두리를 빨강으로 강조하고 아래 인라인 헬퍼텍스트를 띄운다.
   usedRowErr: { borderColor: DANGER },
-  errText: { color: DANGER, fontFamily: FONT, fontSize: 12, fontWeight: '500', paddingHorizontal: 4, paddingTop: 8 },
-  usedInput: { flex: 1, color: T1, fontFamily: DISPLAY, fontSize: 24, paddingVertical: 12 },
-  usedUnit: { color: T3, fontFamily: FONT, fontSize: 15 },
+  errText: { color: DANGER, fontFamily: FONT, fontSize: 13, fontWeight: '500', paddingHorizontal: 4, paddingTop: 8 },
+  usedInput: { flex: 1, color: T1, fontFamily: DISPLAY, fontSize: 25, paddingVertical: 12 },
+  usedUnit: { color: T3, fontFamily: FONT, fontSize: 16 },
 
   ctaWrap: { paddingHorizontal: 18, paddingTop: 6, paddingBottom: 34, backgroundColor: BG },
 });

@@ -149,16 +149,17 @@ export type TypePreset = {
   fontWeight: '400' | '500' | '600' | '700';
   letterSpacing: number;
 };
-// 본문 위계 타입 스케일(≤ display 32). 모든 사이즈는 정수 — 화면들이 흩어 쓰던 반px
+// 본문 위계 타입 스케일(≤ display 33). 모든 사이즈는 정수 — 화면들이 흩어 쓰던 반px
 // (11.5/12.5/13.5/14.5/16.5 …)은 이 정수 스케일로 수렴한다(반올림 ≤0.5px = 시각 동등).
+// 2026-07-08 전역 +1 상향(나이키 대비 작다는 피드백) — 이 스케일이 '살짝 키운' 새 기준.
 export const TYPE = {
-  display: { fontSize: 32, fontWeight: '500', letterSpacing: -0.8 },
-  title:   { fontSize: 22, fontWeight: '600', letterSpacing: -0.4 },
-  heading: { fontSize: 17, fontWeight: '600', letterSpacing: -0.2 },
-  body:    { fontSize: 15, fontWeight: '500', letterSpacing: -0.2 },
-  label:   { fontSize: 13, fontWeight: '500', letterSpacing: 0.2 },
-  caption: { fontSize: 12, fontWeight: '500', letterSpacing: 0.2 },
-  micro:   { fontSize: 10, fontWeight: '600', letterSpacing: 0.8 },
+  display: { fontSize: 33, fontWeight: '500', letterSpacing: -0.8 },
+  title:   { fontSize: 23, fontWeight: '600', letterSpacing: -0.4 },
+  heading: { fontSize: 18, fontWeight: '600', letterSpacing: -0.2 },
+  body:    { fontSize: 16, fontWeight: '500', letterSpacing: -0.2 },
+  label:   { fontSize: 14, fontWeight: '500', letterSpacing: 0.2 },
+  caption: { fontSize: 13, fontWeight: '500', letterSpacing: 0.2 },
+  micro:   { fontSize: 11, fontWeight: '600', letterSpacing: 0.8 },
 } as const satisfies Record<string, TypePreset>;
 export type TypeKey = keyof typeof TYPE;
 

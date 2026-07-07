@@ -145,19 +145,19 @@ const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: BG, paddingTop: 60, paddingBottom: 34 },
   top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 22 },
   cancel: { flexDirection: 'row', alignItems: 'center', gap: 6, height: 34, paddingLeft: 10, paddingRight: 14, borderRadius: 999, backgroundColor: withAlpha(T1, 0.05), borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
-  cancelText: { color: T2, fontFamily: FONT, fontSize: 13, fontWeight: '500' },
+  cancelText: { color: T2, fontFamily: FONT, fontSize: 14, fontWeight: '500' },
   shoeChip: { flexDirection: 'row', alignItems: 'center', gap: 7, height: 34, paddingHorizontal: 14, borderRadius: 999, backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
-  shoeText: { color: T2, fontFamily: DISPLAY, fontSize: 13, fontWeight: '600' },
+  shoeText: { color: T2, fontFamily: DISPLAY, fontSize: 14, fontWeight: '600' },
 
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: 76 },
   dial: { width: DIAL, height: DIAL, alignItems: 'center', justifyContent: 'center' },
   dialFace: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, alignItems: 'center', justifyContent: 'center' },
   count: { color: T1, fontFamily: DISPLAY, fontSize: 150, fontWeight: '600', letterSpacing: -4, lineHeight: 156, includeFontPadding: false },
-  countLabel: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '500', marginTop: 2 },
+  countLabel: { color: T3, fontFamily: FONT, fontSize: 14, fontWeight: '500', marginTop: 2 },
   go: { color: ACCENT, fontFamily: DISPLAY, fontSize: 104, fontWeight: '700', letterSpacing: -1, includeFontPadding: false },
 
   chips: { flexDirection: 'row', gap: 8, marginTop: 14 },
   chip: { flexDirection: 'row', alignItems: 'center', gap: 7, height: 32, paddingHorizontal: 14, borderRadius: 999, backgroundColor: withAlpha(T1, 0.04), borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
-  chipText: { color: T2, fontFamily: FONT, fontSize: 13, fontWeight: '500' },
+  chipText: { color: T2, fontFamily: FONT, fontSize: 14, fontWeight: '500' },
   chipB: { color: T1, fontFamily: DISPLAY, fontWeight: '600' },
 });

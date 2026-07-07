@@ -569,13 +569,13 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'm
             accessible accessibilityLabel={`트레이닝 부하 ${effort.score}, ${effort.band}`}>
             <View style={{ flex: 1, paddingRight: 12 }}>
               <Text style={s.cardTitle}>트레이닝 부하</Text>
-              <Text style={{ color: T3, fontFamily: FONT, fontSize: 11, marginTop: 3 }}>
+              <Text style={{ color: T3, fontFamily: FONT, fontSize: 12, marginTop: 3 }}>
                 {effort.method === 'HR' ? '심박 기반 — 이 러닝의 체감 강도' : '페이스 기반 — 체력 대비 이 러닝의 강도'}
               </Text>
             </View>
             <View style={{ alignItems: 'flex-end' }}>
-              <Text style={{ color: T1, fontFamily: DISPLAY, fontSize: 24, fontWeight: '700' }}>{effort.score}</Text>
-              <Text style={{ color: ACCENT, fontFamily: FONT, fontSize: 12, fontWeight: '700' }}>{effort.band}</Text>
+              <Text style={{ color: T1, fontFamily: DISPLAY, fontSize: 25, fontWeight: '700' }}>{effort.score}</Text>
+              <Text style={{ color: ACCENT, fontFamily: FONT, fontSize: 13, fontWeight: '700' }}>{effort.band}</Text>
             </View>
           </View>
         )}
@@ -591,12 +591,12 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'm
               accessible accessibilityLabel={`경사 보정 페이스 GAP, 킬로미터당 ${fmtPace(gapSec)}`}>
               <View style={{ flex: 1, paddingRight: 12 }}>
                 <Text style={s.cardTitle}>경사 보정 페이스 (GAP)</Text>
-                <Text style={{ color: T3, fontFamily: FONT, fontSize: 11, marginTop: 3 }}>
+                <Text style={{ color: T3, fontFamily: FONT, fontSize: 12, marginTop: 3 }}>
                   {harder ? '오르막 코스 — 평지였다면 이 페이스' : '내리막 이득을 평지 기준으로 환산'}
                 </Text>
               </View>
-              <Text style={{ color: T1, fontFamily: DISPLAY, fontSize: 22, fontWeight: '700' }}>
-                {fmtPace(gapSec)}<Text style={{ fontSize: 12, color: T3, fontWeight: '500' }}> /km</Text>
+              <Text style={{ color: T1, fontFamily: DISPLAY, fontSize: 23, fontWeight: '700' }}>
+                {fmtPace(gapSec)}<Text style={{ fontSize: 13, color: T3, fontWeight: '500' }}> /km</Text>
               </Text>
             </View>
           );
@@ -613,7 +613,7 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'm
                   개별 낭독되게 둔다(존 색은 Z{n} 라벨·시간 텍스트로 병기됨). */}
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
                 <Text style={s.cardTitle}>심박 존</Text>
-                <Text style={{ color: T2, fontFamily: FONT, fontSize: 13 }}>
+                <Text style={{ color: T2, fontFamily: FONT, fontSize: 14 }}>
                   평균 <Text style={{ color: T1, fontWeight: '700' }}>{hr.avg}</Text> · 최대 <Text style={{ color: T1, fontWeight: '700' }}>{hr.max}</Text> bpm
                 </Text>
               </View>
@@ -623,11 +623,11 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'm
                   const pct = hr.total > 0 ? sec / hr.total : 0;
                   return (
                     <View key={z} style={{ flexDirection: 'row', alignItems: 'center' }}>
-                      <Text style={{ width: 60, color: T3, fontFamily: FONT, fontSize: 11, fontWeight: '600' }}>Z{z} {HR_ZONE_LABEL[z]}</Text>
+                      <Text style={{ width: 60, color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '600' }}>Z{z} {HR_ZONE_LABEL[z]}</Text>
                       <View style={{ flex: 1, height: 8, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 4, overflow: 'hidden', marginHorizontal: 8 }}>
                         <View style={{ width: `${Math.round(pct * 100)}%`, height: 8, backgroundColor: HR_ZONE_COLORS[z], borderRadius: 4 }} />
                       </View>
-                      <Text style={{ width: 44, textAlign: 'right', color: T2, fontFamily: DISPLAY, fontSize: 12, fontWeight: '600' }}>{fmtT(sec)}</Text>
+                      <Text style={{ width: 44, textAlign: 'right', color: T2, fontFamily: DISPLAY, fontSize: 13, fontWeight: '600' }}>{fmtT(sec)}</Text>
                     </View>
                   );
                 })}
@@ -635,7 +635,7 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'm
               {/* TRIMP(트레이닝 부하)는 위 '트레이닝 부하' 카드가 밴드까지 붙여 보여주므로 여기선
                   중복 노출하지 않는다. 심박 존 카드는 '분포 + 평균/최대'에 집중. */}
               {!hr.rest && (
-                <Text style={{ color: T3, fontFamily: FONT, fontSize: 11, marginTop: 8 }}>마이 탭에서 안정시심박을 설정하면 심박 존이 더 정확해져요</Text>
+                <Text style={{ color: T3, fontFamily: FONT, fontSize: 12, marginTop: 8 }}>마이 탭에서 안정시심박을 설정하면 심박 존이 더 정확해져요</Text>
               )}
             </View>
           );
@@ -1007,12 +1007,12 @@ export default function HistoryScreen({
               ? (
                 <Pressable onPress={openPicker} accessibilityRole="button"
                   style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', gap: 5, paddingVertical: 4, paddingHorizontal: 10 }}>
-                  <Text style={{ color: T1, fontFamily: DISPLAY, fontSize: 16, fontWeight: '700' }}>{periodTitle}</Text>
+                  <Text style={{ color: T1, fontFamily: DISPLAY, fontSize: 17, fontWeight: '700' }}>{periodTitle}</Text>
                   <Ionicons name="chevron-down" size={14} color={T3} />
                 </Pressable>
               ) : (
                 <View style={{ paddingVertical: 4, paddingHorizontal: 10 }}>
-                  <Text style={{ color: T1, fontFamily: DISPLAY, fontSize: 16, fontWeight: '700' }}>
+                  <Text style={{ color: T1, fontFamily: DISPLAY, fontSize: 17, fontWeight: '700' }}>
                     {allYearKeys.length >= 2 ? `${allYearKeys[0]} — ${allYearKeys[allYearKeys.length - 1]}` : allYearKeys.length === 1 ? `${allYearKeys[0]}년` : '전체 기간'}
                   </Text>
                 </View>
@@ -1045,13 +1045,13 @@ export default function HistoryScreen({
             // 첫 러닝 전(전체 런 0) — 기간이 비어서가 아니라 아직 시작 안 한 것. 격려 + 추가 진입점.
             <View style={[s.card, { padding: 28, alignItems: 'center', gap: 10 }]}>
               <Ionicons name="footsteps-outline" size={28} color={T3} />
-              <Text style={[s.emptyHint, { color: T1, fontWeight: '700', fontSize: 15 }]}>아직 기록이 없어요</Text>
+              <Text style={[s.emptyHint, { color: T1, fontWeight: '700', fontSize: 16 }]}>아직 기록이 없어요</Text>
               <Text style={s.emptyHint}>가볍게 한 걸음부터 — 첫 러닝을 시작해보세요.{'\n'}직접 기록을 추가할 수도 있어요.</Text>
               {!!onAddRun && (
                 <Pressable onPress={() => setForm({ mode: 'add' })} accessibilityRole="button" accessibilityLabel="기록 직접 추가"
                   style={({ pressed }) => [{ marginTop: 4, flexDirection: 'row', alignItems: 'center', gap: 5, paddingVertical: 8, paddingHorizontal: 16, borderRadius: RADIUS.pill, backgroundColor: CARD_HI }, pressed && { opacity: 0.7 }]}>
                   <Ionicons name="add" size={16} color={ACCENT} />
-                  <Text style={{ color: T1, fontFamily: FONT, fontSize: 13, fontWeight: '600' }}>기록 추가</Text>
+                  <Text style={{ color: T1, fontFamily: FONT, fontSize: 14, fontWeight: '600' }}>기록 추가</Text>
                 </Pressable>
               )}
             </View>
@@ -1068,13 +1068,13 @@ export default function HistoryScreen({
         <View style={{ backgroundColor: CARD, borderTopLeftRadius: RADIUS.xl, borderTopRightRadius: RADIUS.xl, paddingBottom: insets.bottom + 16 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 16 }}>
             <Pressable onPress={() => setShowPicker(false)} hitSlop={8}>
-              <Text style={{ color: T3, fontFamily: FONT, fontSize: 15 }}>취소</Text>
+              <Text style={{ color: T3, fontFamily: FONT, fontSize: 16 }}>취소</Text>
             </Pressable>
-            <Text style={{ color: T1, fontFamily: FONT, fontSize: 15, fontWeight: '600' }}>
+            <Text style={{ color: T1, fontFamily: FONT, fontSize: 16, fontWeight: '600' }}>
               {period === '주' ? '주 선택' : period === '월' ? '월 선택' : '연도 선택'}
             </Text>
             <Pressable onPress={confirmPicker} hitSlop={8}>
-              <Text style={{ color: ACCENT, fontFamily: FONT, fontSize: 15, fontWeight: '700' }}>확인</Text>
+              <Text style={{ color: ACCENT, fontFamily: FONT, fontSize: 16, fontWeight: '700' }}>확인</Text>
             </Pressable>
           </View>
 
@@ -1127,49 +1127,49 @@ const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: BG },
   // 공유 카드 캡처용: 화면 밖(좌측 far-off)으로 밀어 보이지 않게 하되 마운트는 유지.
   runPhoto: { width: '100%', height: 200, borderRadius: 16, borderCurve: 'continuous', marginTop: 16 },
-  runMemo: { color: T2, fontFamily: FONT, fontSize: 14, lineHeight: 21, marginTop: 12, fontStyle: 'italic' },
+  runMemo: { color: T2, fontFamily: FONT, fontSize: 15, lineHeight: 21, marginTop: 12, fontStyle: 'italic' },
   // 트랙 랩 표 — 랩번호 · 상대페이스 바 · km당 페이스 · 랩시간.
   trackCard: { marginTop: 16, backgroundColor: CARD, borderRadius: RADIUS.lg, borderCurve: 'continuous', borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER, paddingHorizontal: 16, paddingVertical: 14 },
   trackHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 12 },
-  trackTitle: { color: T1, fontFamily: DISPLAY, fontSize: 15, fontWeight: '700', letterSpacing: -0.2 },
-  trackSub: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600' },
+  trackTitle: { color: T1, fontFamily: DISPLAY, fontSize: 16, fontWeight: '700', letterSpacing: -0.2 },
+  trackSub: { color: T3, fontFamily: FONT, fontSize: 14, fontWeight: '600' },
   lapRow: { flexDirection: 'row', alignItems: 'center', gap: 10, height: 34 },
-  lapNum: { width: 22, color: T3, fontFamily: DISPLAY, fontSize: 13, fontWeight: '700', textAlign: 'center' },
+  lapNum: { width: 22, color: T3, fontFamily: DISPLAY, fontSize: 14, fontWeight: '700', textAlign: 'center' },
   lapBarWrap: { flex: 1, height: 6, borderRadius: 3, backgroundColor: withAlpha(T1, 0.06), overflow: 'hidden' },
   lapBarFill: { height: 6, borderRadius: 3, backgroundColor: ACCENT },
-  lapPace: { width: 78, textAlign: 'right', color: T1, fontFamily: DISPLAY, fontSize: 14, fontWeight: '600', fontVariant: ['tabular-nums'] },
-  lapPaceU: { color: T3, fontFamily: FONT, fontSize: 10, fontWeight: '500' },
-  lapTime: { width: 46, textAlign: 'right', color: T3, fontFamily: DISPLAY, fontSize: 13, fontWeight: '500', fontVariant: ['tabular-nums'] },
+  lapPace: { width: 78, textAlign: 'right', color: T1, fontFamily: DISPLAY, fontSize: 15, fontWeight: '600', fontVariant: ['tabular-nums'] },
+  lapPaceU: { color: T3, fontFamily: FONT, fontSize: 11, fontWeight: '500' },
+  lapTime: { width: 46, textAlign: 'right', color: T3, fontFamily: DISPLAY, fontSize: 14, fontWeight: '500', fontVariant: ['tabular-nums'] },
   gpxRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 24, paddingVertical: 12, paddingHorizontal: 2, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP },
-  gpxTxt: { color: T2, fontFamily: FONT, fontSize: 13, fontWeight: '600' },
-  gpxHint: { color: T4, fontFamily: FONT, fontSize: 11, marginLeft: 'auto' },
+  gpxTxt: { color: T2, fontFamily: FONT, fontSize: 14, fontWeight: '600' },
+  gpxHint: { color: T4, fontFamily: FONT, fontSize: 12, marginLeft: 'auto' },
   offscreen: { position: 'absolute', left: -10000, top: 0, opacity: 0 },
   baselineRow: { flexDirection: 'row', alignItems: 'flex-end' },
   card: { backgroundColor: CARD, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER },
-  cardTitle: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600' },
-  sectionLabel: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600', letterSpacing: 0.4, paddingHorizontal: 4 },
+  cardTitle: { color: T3, fontFamily: FONT, fontSize: 14, fontWeight: '600' },
+  sectionLabel: { color: T3, fontFamily: FONT, fontSize: 14, fontWeight: '600', letterSpacing: 0.4, paddingHorizontal: 4 },
   // 요약 카드(큰 거리) — 목업 기록(10)
-  sumTitle: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600', letterSpacing: 0.2 },
+  sumTitle: { color: T3, fontFamily: FONT, fontSize: 14, fontWeight: '600', letterSpacing: 0.2 },
   sumBigKm: { color: T1, fontFamily: DISPLAY, fontSize: 42, fontWeight: '700', letterSpacing: -1, fontVariant: ['tabular-nums'], marginLeft: 0 },
-  sumBigU: { color: T3, fontFamily: FONT, fontSize: 17, fontWeight: '500', marginLeft: 4, paddingBottom: 6 },
-  sumSub: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '500', marginTop: 2 },
+  sumBigU: { color: T3, fontFamily: FONT, fontSize: 18, fontWeight: '500', marginLeft: 4, paddingBottom: 6 },
+  sumSub: { color: T3, fontFamily: FONT, fontSize: 14, fontWeight: '500', marginTop: 2 },
   sumMetricRow: { flexDirection: 'row', justifyContent: 'flex-start', gap: 28, marginTop: 14, paddingLeft: 2 },
   sumMetric: {},
-  sumMetricV: { color: T1, fontFamily: DISPLAY, fontSize: 19, fontWeight: '700', letterSpacing: -0.2 },
-  sumMetricU: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '600' },
-  sumMetricL: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500', marginTop: 4, marginLeft: 1 },
+  sumMetricV: { color: T1, fontFamily: DISPLAY, fontSize: 20, fontWeight: '700', letterSpacing: -0.2 },
+  sumMetricU: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600' },
+  sumMetricL: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '500', marginTop: 4, marginLeft: 1 },
   // 개인 기록(PR, 1-3) — 2x2 그리드(최장거리/최고페이스/최장시간/최장스트릭).
   prGrid: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 16, rowGap: 18 },
   prCell: { width: '50%' },
-  prV: { color: T1, fontFamily: DISPLAY, fontSize: 22, fontWeight: '700', letterSpacing: -0.4 },
-  prU: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '600', marginLeft: 3 },
-  prL: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500', marginTop: 5 },
+  prV: { color: T1, fontFamily: DISPLAY, fontSize: 23, fontWeight: '700', letterSpacing: -0.4 },
+  prU: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600', marginLeft: 3 },
+  prL: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '500', marginTop: 5 },
   // 런 카드 — 목업 기록(10): 신발+날짜 + 거리·평균페이스·시간
   runCard: { backgroundColor: CARD, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER, padding: 18 },
   runCardTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, marginBottom: 14 },
-  runCardBrand: { color: T3, fontFamily: DISPLAY, fontSize: 11, fontWeight: '500', letterSpacing: 1.2 },
-  runCardModel: { color: T1, fontFamily: DISPLAY, fontSize: 16, fontWeight: '700', letterSpacing: -0.2, marginTop: 2 },
-  runCardDate: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '500', flexShrink: 0 },
+  runCardBrand: { color: T3, fontFamily: DISPLAY, fontSize: 12, fontWeight: '500', letterSpacing: 1.2 },
+  runCardModel: { color: T1, fontFamily: DISPLAY, fontSize: 17, fontWeight: '700', letterSpacing: -0.2, marginTop: 2 },
+  runCardDate: { color: T3, fontFamily: FONT, fontSize: 14, fontWeight: '500', flexShrink: 0 },
   // 메트릭 3칸을 균등 1/3 폭으로 고정 — 거리 숫자 폭이 달라도 평균페이스·시간 열 위치가
   // 흔들리지 않아 카드끼리 세로로 정렬된다(사용자 요청: 자리 고정).
   runCardMetrics: { flexDirection: 'row' },
@@ -1177,7 +1177,7 @@ const s = StyleSheet.create({
 
   header: { paddingTop: 8, paddingHorizontal: 22, paddingBottom: 6 },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  title: { color: T1, fontFamily: FONT, fontSize: 28, fontWeight: '500', letterSpacing: -0.8 },
+  title: { color: T1, fontFamily: FONT, fontSize: 29, fontWeight: '500', letterSpacing: -0.8 },
 
   // 기간 세그먼트는 SegmentedControl(neutral) 프리미티브로 이전 — 컨테이너/항목/선택칩
   // 토큰을 그쪽이 책임진다(과거 segment/segItem/segItemOn/segText 제거, 시각 동등).
@@ -1185,7 +1185,7 @@ const s = StyleSheet.create({
   // bar chart (right-side km gridlines · accent bars)
   chartGrid: { position: 'absolute', left: 0, right: 0 },
   chartGridLine: { position: 'absolute', left: 0, right: 42, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP },
-  chartTick: { position: 'absolute', right: 0, width: 42, textAlign: 'right', color: T3, fontFamily: DISPLAY, fontSize: 11, marginBottom: -7 },
+  chartTick: { position: 'absolute', right: 0, width: 42, textAlign: 'right', color: T3, fontFamily: DISPLAY, fontSize: 12, marginBottom: -7 },
   chartBars: { position: 'absolute', left: 0, right: 42, top: 0, bottom: 0, flexDirection: 'row', alignItems: 'flex-end' },
   chartBarSlot: { flex: 1, alignItems: 'center' },
   chartBar: { width: '100%', borderRadius: RADIUS.pill, backgroundColor: ACCENT },
@@ -1193,12 +1193,12 @@ const s = StyleSheet.create({
   chartLabel: { flex: 1, textAlign: 'center', color: T3, fontFamily: FONT, fontWeight: '600' },
   chartTipWrap: { position: 'absolute', left: -26, right: -26, alignItems: 'center', zIndex: 5 },
   chartTip: { backgroundColor: CARD_HI, borderRadius: 8, paddingHorizontal: 9, paddingVertical: 5, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.14) },
-  chartBarVal: { fontFamily: DISPLAY, fontSize: 10, fontWeight: '600', color: T3, fontVariant: ['tabular-nums'] },
-  chartTipVal: { color: T1, fontFamily: DISPLAY, fontSize: 13, fontWeight: '600', letterSpacing: 0.2 },
-  chartTipU: { color: T3, fontFamily: FONT, fontSize: 10, fontWeight: '500' },
+  chartBarVal: { fontFamily: DISPLAY, fontSize: 11, fontWeight: '600', color: T3, fontVariant: ['tabular-nums'] },
+  chartTipVal: { color: T1, fontFamily: DISPLAY, fontSize: 14, fontWeight: '600', letterSpacing: 0.2 },
+  chartTipU: { color: T3, fontFamily: FONT, fontSize: 11, fontWeight: '500' },
 
   // course map (recessed well, svg polyline)
-  emptyHint: { color: T3, fontFamily: FONT, fontSize: 14, textAlign: 'center' },
+  emptyHint: { color: T3, fontFamily: FONT, fontSize: 15, textAlign: 'center' },
 
   // 콤팩트: 요약 4칸(거리/횟수/페이스/시간)의 패딩·값 폰트·여백을 줄여 세로 높이를
   // 압축한다(정보는 그대로 유지 — 라벨/값/단위 모두 렌더). 리스트가 위로 올라온다.
@@ -1208,27 +1208,27 @@ const s = StyleSheet.create({
   sumRow: { flexDirection: 'row', marginTop: 6, marginBottom: 2 },
   sumCell: { flex: 1, paddingHorizontal: 2 },
   sumCellDiv: { borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: withAlpha(T1, 0.045), paddingLeft: 12 },
-  sumValue: { color: T1, fontFamily: DISPLAY, fontSize: 22, fontWeight: '500', letterSpacing: -0.4, fontVariant: ['tabular-nums'] },
-  sumUnit: { color: T4, fontFamily: FONT, fontSize: 11, fontWeight: '500' },
-  sumLabel: { color: T3, fontFamily: FONT, fontSize: 11, fontWeight: '500', marginTop: 5 },
-  summaryLabel: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '600', letterSpacing: 0.2 },
-  summaryValue: { color: T1, fontFamily: DISPLAY, fontSize: 22, letterSpacing: 0.3, marginTop: 2 },
-  summaryUnit: { color: T3, fontFamily: FONT, fontSize: 12, marginTop: 1 },
+  sumValue: { color: T1, fontFamily: DISPLAY, fontSize: 23, fontWeight: '500', letterSpacing: -0.4, fontVariant: ['tabular-nums'] },
+  sumUnit: { color: T4, fontFamily: FONT, fontSize: 12, fontWeight: '500' },
+  sumLabel: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500', marginTop: 5 },
+  summaryLabel: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600', letterSpacing: 0.2 },
+  summaryValue: { color: T1, fontFamily: DISPLAY, fontSize: 23, letterSpacing: 0.3, marginTop: 2 },
+  summaryUnit: { color: T3, fontFamily: FONT, fontSize: 13, marginTop: 1 },
 
   runRow: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 16, paddingHorizontal: 18 },
   runRowBorder: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: SEP },
   runDate: { width: 42, alignItems: 'center' },
-  runDay: { color: T3, fontFamily: FONT, fontSize: 11, fontWeight: '500' },
-  runDateNum: { color: T1, fontFamily: DISPLAY, fontSize: 17 },
+  runDay: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500' },
+  runDateNum: { color: T1, fontFamily: DISPLAY, fontSize: 18 },
   runDivider: { width: StyleSheet.hairlineWidth, alignSelf: 'stretch', backgroundColor: SEP, marginVertical: 2 },
-  runBrand: { color: T3, fontFamily: FONT, fontSize: 10, fontWeight: '500', letterSpacing: 1.3 },
-  runModel: { color: T1, fontFamily: FONT, fontSize: 15, fontWeight: '500', marginTop: 1 },
+  runBrand: { color: T3, fontFamily: FONT, fontSize: 11, fontWeight: '500', letterSpacing: 1.3 },
+  runModel: { color: T1, fontFamily: FONT, fontSize: 16, fontWeight: '500', marginTop: 1 },
   runMetrics: { flexDirection: 'row', gap: 18, marginTop: 10 },
-  runV: { color: T1, fontFamily: DISPLAY, fontSize: 20, fontWeight: '700', letterSpacing: 0.2, fontVariant: ['tabular-nums'] },
-  runU: { color: T3, fontFamily: FONT, fontSize: 12, marginLeft: 3, marginBottom: 1 },
+  runV: { color: T1, fontFamily: DISPLAY, fontSize: 21, fontWeight: '700', letterSpacing: 0.2, fontVariant: ['tabular-nums'] },
+  runU: { color: T3, fontFamily: FONT, fontSize: 13, marginLeft: 3, marginBottom: 1 },
   // marginLeft 1 — 옵티컬 정렬: 타뷸러 숫자는 좌측 사이드베어링이 있고 한글 라벨은 꽉 차서,
   // 같은 x에서 라벨이 살짝 왼쪽으로 튀어나와 보인다(사용자 피드백 2026-07-07).
-  runML: { color: T3, fontFamily: FONT, fontSize: 11, fontWeight: '500', marginTop: 3, marginLeft: 1 },
+  runML: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500', marginTop: 3, marginLeft: 1 },
 
   // detail
   nav: { paddingTop: 12, paddingHorizontal: 16, paddingBottom: 6 },
@@ -1237,22 +1237,22 @@ const s = StyleSheet.create({
   iconBtn: { width: 38, height: 38, borderRadius: RADIUS.pill, backgroundColor: CARD_HI, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.12), alignItems: 'center', justifyContent: 'center' },
 
   // manual-run / edit form
-  formTitle: { color: T1, fontFamily: FONT, fontSize: 17, fontWeight: '600' },
-  formLabel: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600', marginBottom: 8, paddingHorizontal: 2 },
-  formHint: { color: T3, fontFamily: FONT, fontSize: 13 },
+  formTitle: { color: T1, fontFamily: FONT, fontSize: 18, fontWeight: '600' },
+  formLabel: { color: T3, fontFamily: FONT, fontSize: 14, fontWeight: '600', marginBottom: 8, paddingHorizontal: 2 },
+  formHint: { color: T3, fontFamily: FONT, fontSize: 14 },
   chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  input: { backgroundColor: CARD, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14, color: T1, fontFamily: FONT, fontSize: 15, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
+  input: { backgroundColor: CARD, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14, color: T1, fontFamily: FONT, fontSize: 16, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
   // 검증 실패 시 입력칸 테두리를 빨강으로 강조하고, 아래에 인라인 헬퍼텍스트를 띄운다.
   inputErr: { borderColor: DANGER, borderWidth: 1 },
-  errText: { color: DANGER, fontFamily: FONT, fontSize: 13, fontWeight: '500', marginTop: 7, paddingHorizontal: 2 },
+  errText: { color: DANGER, fontFamily: FONT, fontSize: 14, fontWeight: '500', marginTop: 7, paddingHorizontal: 2 },
   // 저장/추가 CTA 는 단일 Button 프리미티브(그라데이션·글로우·radius 토큰). 화면
   // 고유 여백만 남긴다(과거 RADIUS.md 사각 ACCENT 버튼 제거).
   saveBtn: { marginTop: 6 },
-  detailDate: { color: T3, fontFamily: FONT, fontSize: 13 },
+  detailDate: { color: T3, fontFamily: FONT, fontSize: 14 },
   detailDist: { color: T1, fontFamily: DISPLAY, fontSize: HERO.heroLg, fontWeight: '700', letterSpacing: 0.5 },
-  detailDistU: { color: T3, fontFamily: FONT, fontSize: 17, fontWeight: '500', marginLeft: 6, marginBottom: 8 },
-  detailBrand: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '600', letterSpacing: 1.4 },
-  detailModel: { color: T1, fontFamily: FONT, fontSize: 24, fontWeight: '700', letterSpacing: -0.4, marginTop: 4 },
+  detailDistU: { color: T3, fontFamily: FONT, fontSize: 18, fontWeight: '500', marginLeft: 6, marginBottom: 8 },
+  detailBrand: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600', letterSpacing: 1.4 },
+  detailModel: { color: T1, fontFamily: FONT, fontSize: 25, fontWeight: '700', letterSpacing: -0.4, marginTop: 4 },
   // 메트릭 한 카드(디자인 11) — 2x3 그리드. 칸 레이아웃·값/단위/라벨은 StatGrid
   // 프리미티브가 책임지고(columns=3·align=left), 여기선 카드 내부 여백만 얹는다.
   statGrid: { paddingVertical: 16, paddingHorizontal: GUTTER, rowGap: 18, marginTop: 16 },

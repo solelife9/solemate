@@ -57,16 +57,16 @@ export function RunSplits({splits}: {splits: Split[]}) {
 
 const r = StyleSheet.create({
   wrap: {marginTop: 24},
-  title: {color: T2, fontFamily: FONT, fontSize: 15, fontWeight: '600', letterSpacing: -0.2, paddingHorizontal: 2, marginBottom: 8},
+  title: {color: T2, fontFamily: FONT, fontSize: 16, fontWeight: '600', letterSpacing: -0.2, paddingHorizontal: 2, marginBottom: 8},
   head: {flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 2, paddingBottom: 8},
-  hcell: {color: T3, fontFamily: FONT, fontSize: 11, fontWeight: '600', opacity: 0.8},
+  hcell: {color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '600', opacity: 0.8},
   row: {flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 9, paddingHorizontal: 2},
   rowSep: {borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: 'rgba(255,255,255,0.045)'},
-  km: {width: 34, fontFamily: DISPLAY, fontSize: 17, fontWeight: '600', color: T1},
+  km: {width: 34, fontFamily: DISPLAY, fontSize: 18, fontWeight: '600', color: T1},
   barWrap: {flex: 1, height: 10, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.04)', overflow: 'hidden'},
   bar: {height: '100%', borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.30)'},
   barBest: {backgroundColor: ACCENT},
-  pace: {width: 60, textAlign: 'right', fontFamily: DISPLAY, fontSize: 14, fontWeight: '500', color: T1},
+  pace: {width: 60, textAlign: 'right', fontFamily: DISPLAY, fontSize: 15, fontWeight: '500', color: T1},
   paceBest: {color: ACCENT},
-  elev: {width: 46, textAlign: 'right', fontFamily: DISPLAY, fontSize: 13, fontWeight: '500', color: T3},
+  elev: {width: 46, textAlign: 'right', fontFamily: DISPLAY, fontSize: 14, fontWeight: '500', color: T3},
 });

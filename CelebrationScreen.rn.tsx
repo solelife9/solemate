@@ -257,20 +257,20 @@ const st = StyleSheet.create({
   screen: {flex: 1, backgroundColor: BG, alignItems: 'center', paddingHorizontal: 28, overflow: 'hidden'},
   glow: {position: 'absolute', top: '-8%'},
   skip: {position: 'absolute', right: 22, zIndex: 2, padding: 6},
-  skipTxt: {fontSize: 13, fontWeight: '500', color: T3, fontFamily: FONT},
+  skipTxt: {fontSize: 14, fontWeight: '500', color: T3, fontFamily: FONT},
   body: {flex: 1, alignItems: 'center', justifyContent: 'center'},
 
-  eyebrow: {fontSize: 12, fontWeight: '700', letterSpacing: 2.6, marginBottom: 32, textTransform: 'uppercase', fontFamily: FONT},
+  eyebrow: {fontSize: 13, fontWeight: '700', letterSpacing: 2.6, marginBottom: 32, textTransform: 'uppercase', fontFamily: FONT},
   medalwrap: {width: 124, height: 124, marginBottom: 30, alignItems: 'center', justifyContent: 'center'},
   ring: {position: 'absolute', width: 124, height: 124, borderRadius: 62, borderCurve: 'continuous', borderWidth: 1},
 
-  rankfrom: {fontSize: 14, fontWeight: '500', color: T3, marginBottom: 2, fontFamily: FONT, textAlign: 'center'},
+  rankfrom: {fontSize: 15, fontWeight: '500', color: T3, marginBottom: 2, fontFamily: FONT, textAlign: 'center'},
   name: {fontSize: 32, fontWeight: '700', color: T1, letterSpacing: -0.6, lineHeight: 38, textAlign: 'center', fontFamily: DISPLAY},
-  meta: {fontSize: 13, fontWeight: '500', color: T3, fontFamily: FONT},
-  desc: {fontSize: 15, color: withAlpha(T1, 0.72), lineHeight: 24, marginTop: 18, maxWidth: 300, textAlign: 'center', fontFamily: FONT},
+  meta: {fontSize: 14, fontWeight: '500', color: T3, fontFamily: FONT},
+  desc: {fontSize: 16, color: withAlpha(T1, 0.72), lineHeight: 24, marginTop: 18, maxWidth: 300, textAlign: 'center', fontFamily: FONT},
   b: {color: T1, fontWeight: '700'},
 
   actions: {alignSelf: 'stretch'},
   primary: {height: 56, borderRadius: RADIUS.md, borderCurve: 'continuous', backgroundColor: ACCENT, alignItems: 'center', justifyContent: 'center'},
-  primaryTxt: {fontSize: 17, fontWeight: '700', color: T1, fontFamily: FONT},
+  primaryTxt: {fontSize: 18, fontWeight: '700', color: T1, fontFamily: FONT},
 });

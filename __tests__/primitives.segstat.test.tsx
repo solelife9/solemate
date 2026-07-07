@@ -239,15 +239,15 @@ describe('Stat / StatGrid — per-site unit & label typography', () => {
     return StyleSheet.flatten(hosts[hosts.length - 1].props.style) as any;
   };
 
-  test('Profile (defaults): unit 12/600, label 12/600 mt4, no extra cell padding', () => {
+  test('Profile (defaults): unit 13/600, label 13/600 mt4, no extra cell padding', () => {
     const {root} = render(
       <Stat value="42" unit="km" label="총 거리" valueSize={26} testID="p" />,
     );
     const unit = textByString(root, 'km');
-    expect(unit.fontSize).toBe(12);
+    expect(unit.fontSize).toBe(13);
     expect(unit.fontWeight).toBe('600');
     const label = textByString(root, '총 거리');
-    expect(label.fontSize).toBe(12);
+    expect(label.fontSize).toBe(13);
     expect(label.fontWeight).toBe('600');
     expect(label.marginTop).toBe(4);
     expect(cellHostStyle(root, 'p').paddingVertical).toBeFalsy();

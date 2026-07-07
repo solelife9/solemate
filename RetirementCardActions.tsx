@@ -78,7 +78,7 @@ const s = StyleSheet.create({
   share: {backgroundColor: ACCENT},
   pressed: {opacity: 0.7},
   busy: {opacity: 0.5},
-  label: {fontFamily: FONT, fontSize: 15, fontWeight: '700'},
+  label: {fontFamily: FONT, fontSize: 16, fontWeight: '700'},
   saveLabel: {color: T1},
   shareLabel: {color: BG},
 });

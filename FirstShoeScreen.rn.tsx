@@ -189,49 +189,49 @@ const s = StyleSheet.create({
 
   // ── 빈 상태(첫 러닝화 — design-reference/first-shoe) ──
   greetWrap: {paddingHorizontal: 20, paddingTop: 18, paddingBottom: 20},
-  date: {color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '500'},
-  greeting: {marginTop: 6, color: T1, fontFamily: FONT, fontSize: 23, fontWeight: '700', letterSpacing: -0.4, lineHeight: 31},
+  date: {color: T3, fontFamily: FONT, fontSize: 14, fontWeight: '500'},
+  greeting: {marginTop: 6, color: T1, fontFamily: FONT, fontSize: 24, fontWeight: '700', letterSpacing: -0.4, lineHeight: 31},
   // 스테이지 — 고스트 카드 + 철학 한 줄. 절대 탭 독에 가리지 않게 하단 여백 확보.
   stage: {flex: 1, justifyContent: 'center', gap: 26, paddingHorizontal: 20, paddingBottom: 96},
-  philosophy: {textAlign: 'center', color: T3, fontFamily: FONT, fontSize: 15, lineHeight: 24},
+  philosophy: {textAlign: 'center', color: T3, fontFamily: FONT, fontSize: 16, lineHeight: 24},
 
   // header
   header: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 22, paddingTop: 8, paddingBottom: 4},
-  h1: {color: T1, fontFamily: FONT, fontSize: 27, fontWeight: '700', letterSpacing: -0.6},
+  h1: {color: T1, fontFamily: FONT, fontSize: 28, fontWeight: '700', letterSpacing: -0.6},
   iconBtn: {width: 38, height: 38, borderRadius: 999, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.08), alignItems: 'center', justifyContent: 'center'},
 
   // empty
   emptyBody: {flex: 1, paddingHorizontal: 30},
   hero: {flex: 1, alignItems: 'center', justifyContent: 'center'},
-  emptyTitle: {marginTop: 30, color: T1, fontFamily: FONT, fontSize: 29, fontWeight: '700', letterSpacing: -0.6, lineHeight: 34, textAlign: 'center'},
-  emptyDesc: {marginTop: 13, color: T3, fontFamily: FONT, fontSize: 14, lineHeight: 21, textAlign: 'center', maxWidth: 270},
+  emptyTitle: {marginTop: 30, color: T1, fontFamily: FONT, fontSize: 30, fontWeight: '700', letterSpacing: -0.6, lineHeight: 34, textAlign: 'center'},
+  emptyDesc: {marginTop: 13, color: T3, fontFamily: FONT, fontSize: 15, lineHeight: 21, textAlign: 'center', maxWidth: 270},
 
   benefits: {marginBottom: 8},
   benefit: {flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 14},
   benefitDivider: {borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.045)},
   benefitIcon: {width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(ACCENT, 0.10), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.22)},
-  benefitTitle: {color: T1, fontFamily: FONT, fontSize: 14, fontWeight: '600', letterSpacing: -0.2},
-  benefitSub: {marginTop: 2, color: T3, fontFamily: FONT, fontSize: 12, lineHeight: 16},
+  benefitTitle: {color: T1, fontFamily: FONT, fontSize: 15, fontWeight: '600', letterSpacing: -0.2},
+  benefitSub: {marginTop: 2, color: T3, fontFamily: FONT, fontSize: 13, lineHeight: 16},
 
   ctaWrap: {paddingHorizontal: 22, paddingTop: 14, paddingBottom: 6},
 
   // success
   checkBadge: {alignSelf: 'center', width: 64, height: 64, borderRadius: 999, alignItems: 'center', justifyContent: 'center', marginTop: 18, marginBottom: 18, backgroundColor: withAlpha(GOOD, 0.14), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(GOOD, 0.4)},
-  successTitle: {color: T1, fontFamily: FONT, fontSize: 26, fontWeight: '700', letterSpacing: -0.6, textAlign: 'center'},
-  successSub: {marginTop: 11, color: T3, fontFamily: FONT, fontSize: 14, lineHeight: 21, textAlign: 'center', alignSelf: 'center', maxWidth: 264},
+  successTitle: {color: T1, fontFamily: FONT, fontSize: 27, fontWeight: '700', letterSpacing: -0.6, textAlign: 'center'},
+  successSub: {marginTop: 11, color: T3, fontFamily: FONT, fontSize: 15, lineHeight: 21, textAlign: 'center', alignSelf: 'center', maxWidth: 264},
 
   shoeCard: {marginTop: 26, backgroundColor: CARD, borderRadius: 22, borderCurve: 'continuous', borderWidth: 1, borderColor: SEP, padding: 20},
   shoeRow: {flexDirection: 'row', alignItems: 'center', gap: 18},
-  shoeBrand: {color: T3, fontFamily: FONT, fontSize: 11, fontWeight: '600', letterSpacing: 1.4},
-  shoeModel: {marginTop: 4, color: T1, fontFamily: FONT, fontSize: 22, fontWeight: '700', letterSpacing: -0.6},
+  shoeBrand: {color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '600', letterSpacing: 1.4},
+  shoeModel: {marginTop: 4, color: T1, fontFamily: FONT, fontSize: 23, fontWeight: '700', letterSpacing: -0.6},
 
   track: {height: 12, borderRadius: 999, overflow: 'hidden', backgroundColor: withAlpha(T1, 0.04)},
   trackFill: {position: 'absolute', left: 0, top: 0, bottom: 0, borderRadius: 999, backgroundColor: ACCENT},
   scaleRow: {flexDirection: 'row', justifyContent: 'space-between', marginTop: 9},
-  scaleText: {color: T3, fontFamily: FONT, fontSize: 11, fontWeight: '500'},
+  scaleText: {color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500'},
 
   nextCard: {flexDirection: 'row', alignItems: 'center', gap: 13, marginTop: 14, borderRadius: 18, borderCurve: 'continuous', paddingHorizontal: 16, paddingVertical: 15, backgroundColor: withAlpha(ACCENT, 0.07), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.22)},
   nextIcon: {width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(ACCENT, 0.14)},
-  nextTitle: {color: T1, fontFamily: FONT, fontSize: 14, fontWeight: '600', letterSpacing: -0.2},
-  nextSub: {marginTop: 2, color: T3, fontFamily: FONT, fontSize: 12},
+  nextTitle: {color: T1, fontFamily: FONT, fontSize: 15, fontWeight: '600', letterSpacing: -0.2},
+  nextSub: {marginTop: 2, color: T3, fontFamily: FONT, fontSize: 13},
 });

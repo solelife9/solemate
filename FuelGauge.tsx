@@ -60,15 +60,15 @@ const g = StyleSheet.create({
   wrap: {marginTop: 0},
   top: {flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between'},
   labelRow: {flexDirection: 'row', alignItems: 'center', gap: 8},
-  label: {color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600', letterSpacing: 0.2},
-  lead: {color: T2, fontFamily: FONT, fontSize: 16, fontWeight: '500', letterSpacing: -0.2, marginTop: 8, lineHeight: 23},
+  label: {color: T3, fontFamily: FONT, fontSize: 14, fontWeight: '600', letterSpacing: 0.2},
+  lead: {color: T2, fontFamily: FONT, fontSize: 17, fontWeight: '500', letterSpacing: -0.2, marginTop: 8, lineHeight: 23},
   leadBold: {color: T1, fontFamily: DISPLAY, fontWeight: '700'},
   remRow: {flexDirection: 'row', alignItems: 'flex-end', marginTop: 4},
   rem: {color: T1, fontFamily: DISPLAY, fontSize: 40, fontWeight: '600', letterSpacing: -1.4, lineHeight: 38},
-  remU: {color: T2, fontFamily: FONT, fontSize: 16, fontWeight: '500', marginLeft: 3, marginBottom: 4},
+  remU: {color: T2, fontFamily: FONT, fontSize: 17, fontWeight: '500', marginLeft: 3, marginBottom: 4},
   cond: {flexDirection: 'row', alignItems: 'center', gap: 7},
   dot: {width: 7, height: 7, borderRadius: 999},
-  condTxt: {color: T2, fontFamily: FONT, fontSize: 13, fontWeight: '500'},
+  condTxt: {color: T2, fontFamily: FONT, fontSize: 14, fontWeight: '500'},
   track: {flexDirection: 'row', height: 14, borderRadius: 999, overflow: 'hidden', marginTop: 16, backgroundColor: 'rgba(255,255,255,0.04)'},
   seg: {height: '100%'},
   fill: {position: 'absolute', left: 0, top: 0, bottom: 0, borderRadius: 999, backgroundColor: ACCENT},
@@ -76,7 +76,7 @@ const g = StyleSheet.create({
   marker: {position: 'absolute', top: '50%', width: 18, height: 18, borderRadius: 999, backgroundColor: T1,
     borderWidth: 3, borderColor: ACCENT, marginTop: -9, marginLeft: -9},
   scale: {flexDirection: 'row', justifyContent: 'space-between', marginTop: 10},
-  scaleTxt: {color: T3, fontFamily: DISPLAY, fontSize: 11, opacity: 0.8},
+  scaleTxt: {color: T3, fontFamily: DISPLAY, fontSize: 12, opacity: 0.8},
 });
 
 export default FuelGauge;

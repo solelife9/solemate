@@ -67,11 +67,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 32,
   },
-  title: {color: T1, fontFamily: FH, fontSize: 24, marginBottom: 12, letterSpacing: 0.3},
+  title: {color: T1, fontFamily: FH, fontSize: 25, marginBottom: 12, letterSpacing: 0.3},
   body: {
     color: T3,
     fontFamily: FP,
-    fontSize: 14,
+    fontSize: 15,
     lineHeight: 21,
     textAlign: 'center',
     marginBottom: 28,
@@ -82,5 +82,5 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 36,
   },
-  btnText: {color: T1, fontFamily: FP, fontSize: 16, fontWeight: '600'},
+  btnText: {color: T1, fontFamily: FP, fontSize: 17, fontWeight: '600'},
 });

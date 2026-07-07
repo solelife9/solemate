@@ -122,7 +122,7 @@ export function CourseMap({points, title = '코스', style}: {
 
 const m = StyleSheet.create({
   card: {backgroundColor: CARD, borderRadius: RADIUS.lg, borderCurve: 'continuous', borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER, padding: 16},
-  label: {color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '600', letterSpacing: 0.4},
+  label: {color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600', letterSpacing: 0.4},
   mapWell: {height: MAP_H, marginTop: 10, borderRadius: 14, borderCurve: 'continuous', overflow: 'hidden', backgroundColor: CARD_DIM, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP},
   startDot: {width: 12, height: 12, borderRadius: 6, borderCurve: 'continuous', backgroundColor: ACCENT, borderWidth: 2, borderColor: T1},
   endDot: {width: 14, height: 14, borderRadius: 7, borderCurve: 'continuous', backgroundColor: T1, borderWidth: 3, borderColor: ACCENT},
