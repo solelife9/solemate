@@ -1,6 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.CAMERA" />
     <!-- 햅틱(진동) — 없으면 RN Vibration.vibrate([pattern]) 이 SecurityException 으로 앱을 죽인다
          (신발 등록 성공 햅틱 등). VIBRATE 는 normal 권한이라 런타임 요청 불필요, 선언만 하면 됨. -->
     <uses-permission android:name="android.permission.VIBRATE" />

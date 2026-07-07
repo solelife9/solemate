@@ -15,6 +15,7 @@ import {captureCertPhoto} from './lib/photo';
 import MedalCamera from './MedalCamera';
 import {fmtTime} from './lib/format';
 import {parseClock, extractCertFields, type TextRecognizer} from './lib/ocr';
+import {maskDate, isValidYmd} from './lib/inputMask';
 import {
   racesByProximity, searchRaces, RACE_DISTANCE_LABEL,
   type RaceEvent, type RaceDistance,
@@ -75,6 +76,8 @@ export default function RaceMedalScreen({
   const [ocrEmpty, setOcrEmpty] = useState(false);
   const [cameraOpen, setCameraOpen] = useState(false);
   const [dist, setDist] = useState<RaceDistance>(presetDistance ?? 'half');
+  // 대회 날짜 — 과거 대회 메달도 정확히 넣게 편집 가능(기본: 프리셋 대회일 또는 오늘).
+  const [dateStr, setDateStr] = useState(presetRace?.date ?? date);
   const [officialStr, setOfficialStr] = useState(''); // "H:MM:SS"
   const [paceStr, setPaceStr] = useState('');          // "M:SS"
   const [bib, setBib] = useState('');
@@ -124,7 +127,7 @@ export default function RaceMedalScreen({
       raceId: race?.id,
       raceName,
       region: race?.region,
-      date: race?.date ?? date,
+      date: isValidYmd(dateStr) ? dateStr : (race?.date ?? date),
       distance: dist,
       officialTimeSec: officialSec,
       appTimeSec: appTimeSec,
@@ -154,7 +157,7 @@ export default function RaceMedalScreen({
         <ScrollView contentContainerStyle={{paddingHorizontal: 18, paddingBottom: insets.bottom + 20}} keyboardShouldPersistTaps="handled">
           <Text style={s.section}>{query.trim() ? '검색 결과' : '러닝 날짜 근처 대회'}</Text>
           {results.map((r) => (
-            <Pressable key={r.id} onPress={() => { setRace(r); setDist(r.distances[0] ?? 'half'); setStep('record'); }}
+            <Pressable key={r.id} onPress={() => { setRace(r); setDist(r.distances[0] ?? 'half'); setDateStr(r.date); setStep('record'); }}
               accessibilityRole="button" accessibilityLabel={`${r.name}, ${r.date}, ${r.region}`}
               style={({pressed}) => [s.raceRow, pressed && {opacity: 0.7}]}>
               <View style={{flex: 1, minWidth: 0}}>
@@ -199,6 +202,22 @@ export default function RaceMedalScreen({
         </View>
         {ocrDone && <Text style={s.ocrNote}>기록증에서 자동으로 읽었어요 — 확인하고 저장하세요.</Text>}
         {ocrEmpty && <Text style={[s.ocrNote, {color: WARN}]}>기록을 못 읽었어요. 기록증을 또렷하게 다시 찍거나, 아래에 직접 입력하세요.</Text>}
+
+        {/* 대회 날짜 — 과거 대회 메달도 정확히 (기본: 대회일 또는 오늘, 편집 가능) */}
+        <Text style={s.fieldLabel}>대회 날짜</Text>
+        <View style={s.inputRow}>
+          <TextInput
+            value={dateStr}
+            onChangeText={(v) => setDateStr(maskDate(v))}
+            placeholder="2019-11-03"
+            placeholderTextColor={T4}
+            style={[s.input, {fontSize: 18}]}
+            keyboardType="number-pad"
+            accessibilityLabel="대회 날짜"
+            testID="race-date"
+          />
+        </View>
+        <Text style={s.hint}>예전에 뛴 대회 메달도 날짜만 바꿔 그대로 넣을 수 있어요.</Text>
 
         {/* 종목 */}
         <Text style={s.fieldLabel}>종목</Text>
