@@ -343,3 +343,13 @@ export async function shareRunnerSpecCard(ref: SvgRefLike, fallbackText: string)
     await Share.share({message: fallbackText}).catch(() => {});
   }
 }
+
+/** 마라톤 메달 자랑 카드 공유 — 캡처 실패 시 텍스트 폴백. BIB·이름은 카드에 없음(프라이버시). */
+export async function shareMedalCard(ref: SvgRefLike, fallbackText: string): Promise<void> {
+  try {
+    const url = await captureCardDataUrl(ref);
+    await Share.share({url});
+  } catch {
+    await Share.share({message: fallbackText}).catch(() => {});
+  }
+}

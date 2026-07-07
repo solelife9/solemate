@@ -1,0 +1,130 @@
+// ============================================================================
+// MedalCamera.tsx — 메달 원형 가이드 카메라
+// 풀스크린 카메라 + 어두운 스크림에 뚫린 동그라미 가이드 + 셔터. 촬영하면 중앙 정사각형으로
+// 크롭(원의 바운딩 박스)해 균일한 원형 메달로 저장한다("자르기" 시스템 단계 없음). 앨범
+// 선택 폴백도 제공. 색은 theme 토큰만.
+// ============================================================================
+import React, {useRef, useState} from 'react';
+import {View, Text, Pressable, StyleSheet, useWindowDimensions, ActivityIndicator} from 'react-native';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import Svg, {Defs, Mask, Rect, Circle} from 'react-native-svg';
+import {CameraView, useCameraPermissions} from 'expo-camera';
+import {manipulateAsync, SaveFormat} from 'expo-image-manipulator';
+import {BG, HALL_GOLD, T1, T2, T3, withAlpha} from './theme';
+import {pickShoePhoto} from './lib/photo';
+
+export default function MedalCamera({onCapture, onCancel}: {onCapture: (uri: string) => void; onCancel: () => void}) {
+  const insets = useSafeAreaInsets();
+  const {width, height} = useWindowDimensions();
+  const [perm, requestPerm] = useCameraPermissions();
+  const camRef = useRef<CameraView>(null);
+  const [busy, setBusy] = useState(false);
+
+  // 원형 가이드 — 화면 폭의 78% 지름, 세로 중앙보다 살짝 위.
+  const r = Math.round(Math.min(width, height) * 0.39);
+  const cx = width / 2;
+  const cy = height * 0.44;
+
+  const shoot = async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const photo = await camRef.current?.takePictureAsync({quality: 0.85});
+      if (!photo?.uri) { setBusy(false); return; }
+      // 중앙 정사각형 크롭(원의 바운딩 박스) → 균일 원형 표시. 좌표는 이미지 픽셀 기준.
+      const size = Math.min(photo.width ?? 0, photo.height ?? 0);
+      if (size > 0) {
+        const originX = Math.round(((photo.width ?? 0) - size) / 2);
+        const originY = Math.round(((photo.height ?? 0) - size) / 2);
+        const out = await manipulateAsync(
+          photo.uri,
+          [{crop: {originX, originY, width: size, height: size}}, {resize: {width: 640, height: 640}}],
+          {compress: 0.85, format: SaveFormat.JPEG},
+        );
+        onCapture(out.uri);
+      } else {
+        onCapture(photo.uri);
+      }
+    } catch {
+      // 촬영 실패 — 조용히 닫지 않고 상태만 해제(사용자 재시도).
+      setBusy(false);
+    }
+  };
+
+  const fromLibrary = async () => {
+    const p = await pickShoePhoto();
+    if (p) onCapture(p.uri);
+  };
+
+  // 권한 처리 — 아직 미결정이면 요청, 거부면 안내 + 앨범 폴백.
+  if (!perm) return <View style={[c.screen, {backgroundColor: BG}]} />;
+  if (!perm.granted) {
+    return (
+      <View style={[c.screen, {paddingTop: insets.top}]}>
+        <View style={c.permBox}>
+          <Ionicons name="camera-outline" size={40} color={T3} />
+          <Text style={c.permT}>카메라 권한이 필요해요</Text>
+          <Text style={c.permD}>메달을 촬영하려면 카메라를 허용해주세요. 앨범에서 고를 수도 있어요.</Text>
+          <Pressable onPress={() => void requestPerm()} style={c.permBtn}><Text style={c.permBtnT}>카메라 허용</Text></Pressable>
+          <Pressable onPress={fromLibrary} style={c.permGhost}><Text style={c.permGhostT}>앨범에서 선택</Text></Pressable>
+          <Pressable onPress={onCancel} style={c.permGhost}><Text style={c.permGhostT}>취소</Text></Pressable>
+        </View>
+      </View>
+    );
+  }
+
+  return (
+    <View style={c.screen}>
+      <CameraView ref={camRef} style={StyleSheet.absoluteFill} facing="back" />
+      {/* 어두운 스크림 + 동그라미 구멍 + 흰 링 */}
+      <Svg style={StyleSheet.absoluteFill} pointerEvents="none">
+        <Defs>
+          <Mask id="medalHole">
+            <Rect x="0" y="0" width={width} height={height} fill="white" />
+            <Circle cx={cx} cy={cy} r={r} fill="black" />
+          </Mask>
+        </Defs>
+        <Rect x="0" y="0" width={width} height={height} fill="rgba(0,0,0,0.55)" mask="url(#medalHole)" />
+        <Circle cx={cx} cy={cy} r={r} stroke={withAlpha(HALL_GOLD, 0.95)} strokeWidth={2.5} fill="none" />
+      </Svg>
+
+      <Text style={[c.hint, {top: cy - r - 52}]}>메달을 원 안에 맞춰주세요</Text>
+      <Text style={[c.sub, {top: cy - r - 28}]}>가운데 정렬하면 자동으로 원형으로 담겨요</Text>
+
+      {/* 상단 취소 */}
+      <Pressable onPress={onCancel} hitSlop={10} style={[c.close, {top: insets.top + 8}]} accessibilityRole="button" accessibilityLabel="닫기">
+        <Ionicons name="close" size={26} color={T1} />
+      </Pressable>
+
+      {/* 하단 컨트롤: 앨범 · 셔터 */}
+      <View style={[c.controls, {bottom: insets.bottom + 30}]}>
+        <Pressable onPress={fromLibrary} hitSlop={8} style={c.libBtn} accessibilityRole="button" accessibilityLabel="앨범에서 선택">
+          <Ionicons name="images-outline" size={24} color={T1} />
+        </Pressable>
+        <Pressable onPress={shoot} disabled={busy} accessibilityRole="button" accessibilityLabel="촬영" style={c.shutterWrap}>
+          <View style={c.shutter}>{busy ? <ActivityIndicator color={BG} /> : null}</View>
+        </Pressable>
+        <View style={{width: 48}} />
+      </View>
+    </View>
+  );
+}
+
+const c = StyleSheet.create({
+  screen: {flex: 1, backgroundColor: '#000'},
+  hint: {position: 'absolute', left: 0, right: 0, textAlign: 'center', color: T1, fontFamily: 'PretendardVariable', fontSize: 16, fontWeight: '600', letterSpacing: -0.2},
+  sub: {position: 'absolute', left: 0, right: 0, textAlign: 'center', color: withAlpha(T1, 0.7), fontFamily: 'PretendardVariable', fontSize: 12},
+  close: {position: 'absolute', left: 18, width: 40, height: 40, borderRadius: 999, backgroundColor: 'rgba(0,0,0,0.35)', alignItems: 'center', justifyContent: 'center'},
+  controls: {position: 'absolute', left: 0, right: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 40},
+  libBtn: {width: 48, height: 48, borderRadius: 999, backgroundColor: 'rgba(0,0,0,0.35)', alignItems: 'center', justifyContent: 'center'},
+  shutterWrap: {width: 76, height: 76, borderRadius: 999, borderWidth: 4, borderColor: withAlpha(T1, 0.4), alignItems: 'center', justifyContent: 'center'},
+  shutter: {width: 60, height: 60, borderRadius: 999, backgroundColor: T1, alignItems: 'center', justifyContent: 'center'},
+  permBox: {flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 40, gap: 10},
+  permT: {color: T2, fontFamily: 'PretendardVariable', fontSize: 16, fontWeight: '600', marginTop: 8},
+  permD: {color: T3, fontFamily: 'PretendardVariable', fontSize: 13, textAlign: 'center', lineHeight: 19, marginBottom: 8},
+  permBtn: {marginTop: 6, paddingVertical: 12, paddingHorizontal: 24, borderRadius: 12, backgroundColor: withAlpha(HALL_GOLD, 0.16), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(HALL_GOLD, 0.4)},
+  permBtnT: {color: HALL_GOLD, fontFamily: 'PretendardVariable', fontSize: 14, fontWeight: '700'},
+  permGhost: {paddingVertical: 10},
+  permGhostT: {color: T3, fontFamily: 'PretendardVariable', fontSize: 13},
+});

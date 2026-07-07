@@ -53,6 +53,19 @@ export async function pickShoePhoto(): Promise<PickedPhoto | null> {
 }
 
 /**
+ * 기록증 촬영 — 카메라로 바로 찍어 반환(편집/크롭 단계 없이 즉시). OCR 원본이라 자르면 안
+ * 되고, '자르기 눌러야 저장' 혼란도 없앤다. 권한 거부·취소 → null(조용히).
+ */
+export async function captureCertPhoto(): Promise<PickedPhoto | null> {
+  const perm = await ImagePicker.requestCameraPermissionsAsync();
+  if (!perm.granted) return null;
+  const res = await ImagePicker.launchCameraAsync({mediaTypes: ['images'], allowsEditing: false, quality: 0.8});
+  if (res.canceled) return null;
+  const a = res.assets && res.assets[0];
+  return a ? {uri: a.uri} : null;
+}
+
+/**
  * 공유 카드 배경용 사진을 카메라 촬영 또는 앨범 선택으로 받는다(러닝 직후 '바로 찍어
  * 자랑' 플로우). 권한 거부·취소 → null(조용히 사진 없이 진행). 9:16~4:5 카드라 편집 허용.
  *

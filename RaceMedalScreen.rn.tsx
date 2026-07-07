@@ -9,9 +9,10 @@ import React, {useMemo, useState} from 'react';
 import {View, Text, ScrollView, Pressable, TextInput, Image, StyleSheet, ActivityIndicator} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import {BG, CARD, CARD_HI, ACCENT, GOOD, HALL_GOLD, T1, T2, T3, T4, SEP, CARD_BORDER, FONT, DISPLAY, withAlpha} from './theme';
+import {BG, CARD, CARD_HI, ACCENT, GOOD, WARN, HALL_GOLD, T1, T2, T3, T4, SEP, CARD_BORDER, FONT, DISPLAY, withAlpha} from './theme';
 import {Button, Chip} from './primitives';
-import {pickPhotoFrom} from './lib/photo';
+import {captureCertPhoto} from './lib/photo';
+import MedalCamera from './MedalCamera';
 import {fmtTime} from './lib/format';
 import {parseClock, extractCertFields, type TextRecognizer} from './lib/ocr';
 import {
@@ -70,6 +71,9 @@ export default function RaceMedalScreen({
   const [certUri, setCertUri] = useState<string | null>(null);
   const [ocrBusy, setOcrBusy] = useState(false);
   const [ocrDone, setOcrDone] = useState(false);
+  // 기록증에서 값을 하나도 못 읽었을 때(엉뚱한 사진 등) 안내용. certUri 는 있으나 ocrDone=false.
+  const [ocrEmpty, setOcrEmpty] = useState(false);
+  const [cameraOpen, setCameraOpen] = useState(false);
   const [dist, setDist] = useState<RaceDistance>(presetDistance ?? 'half');
   const [officialStr, setOfficialStr] = useState(''); // "H:MM:SS"
   const [paceStr, setPaceStr] = useState('');          // "M:SS"
@@ -82,14 +86,15 @@ export default function RaceMedalScreen({
     return base;
   }, [query, races, date]);
 
-  const shotMedal = async () => {
-    try { const p = await pickPhotoFrom('camera'); if (p) setMedalUri(p.uri); } catch { /* 비차단 */ }
-  };
+  // 메달 — 원형 가이드 카메라(자르기 단계 없음). 촬영 완료 시 원형 크롭 uri 반환.
+  const onMedalCaptured = (uri: string) => { setMedalUri(uri); setCameraOpen(false); };
+
   const shotCert = async () => {
     try {
-      const p = await pickPhotoFrom('camera');
+      const p = await captureCertPhoto(); // 편집/크롭 없이 즉시(OCR 원본)
       if (!p) return;
       setCertUri(p.uri);
+      setOcrDone(false); setOcrEmpty(false);
       if (!recognizer) return; // 인식기 없으면 사진만 보관, 값은 직접 입력
       setOcrBusy(true);
       try {
@@ -98,8 +103,11 @@ export default function RaceMedalScreen({
         if (f.paceSec) setPaceStr(fmtPace(f.paceSec));
         if (f.distance) setDist(f.distance);
         if (f.bib) setBib(f.bib);
-        setOcrDone(true);
-      } catch { /* 인식 실패 → 직접 입력 폴백(조용히) */ }
+        // '인식됨'은 실제로 기록/거리/페이스를 뽑았을 때만 — 엉뚱한 사진(음료수 등)엔 안 뜬다.
+        const got = f.officialTimeSec != null || f.distance != null || f.paceSec != null;
+        setOcrDone(got);
+        setOcrEmpty(!got);
+      } catch { setOcrEmpty(true); /* 인식 실패 → 직접 입력 폴백 */ }
       finally { setOcrBusy(false); }
     } catch { /* 비차단 */ }
   };
@@ -180,16 +188,17 @@ export default function RaceMedalScreen({
         <View style={{width: 36}} />
       </View>
       <ScrollView contentContainerStyle={{paddingHorizontal: 18, paddingBottom: insets.bottom + 20}} keyboardShouldPersistTaps="handled">
-        {/* 촬영 2슬롯 */}
+        {/* 촬영 2슬롯 — 메달은 원형 가이드 카메라, 기록증은 즉시 촬영 → OCR */}
         <View style={s.shotRow}>
-          <Pressable onPress={shotMedal} accessibilityRole="button" accessibilityLabel="메달 사진 찍기" style={({pressed}) => [s.shot, s.shotMedal, medalUri && s.shotDone, pressed && {opacity: 0.85}]}>
+          <Pressable onPress={() => setCameraOpen(true)} accessibilityRole="button" accessibilityLabel="메달 촬영" style={({pressed}) => [s.shot, s.shotMedal, medalUri && s.shotDone, pressed && {opacity: 0.85}]}>
             {medalUri ? <Image source={{uri: medalUri}} style={s.shotImgRound} resizeMode="cover" /> : <><Ionicons name="medal-outline" size={26} color={HALL_GOLD} /><Text style={[s.shotT, {color: HALL_GOLD}]}>메달 촬영</Text><Text style={s.shotS}>원 안에 맞춰 찍어요</Text></>}
           </Pressable>
-          <Pressable onPress={shotCert} accessibilityRole="button" accessibilityLabel="기록증 사진 찍기" style={({pressed}) => [s.shot, ocrDone && s.shotDoneGood, pressed && {opacity: 0.85}]}>
-            {ocrBusy ? <ActivityIndicator color={T2} /> : ocrDone ? <><Ionicons name="checkmark-circle" size={26} color={GOOD} /><Text style={[s.shotT, {color: GOOD}]}>기록증 인식됨</Text><Text style={s.shotS}>다시 찍기</Text></> : certUri ? <><Ionicons name="document-text" size={26} color={T2} /><Text style={s.shotT}>기록증 저장됨</Text><Text style={s.shotS}>값은 아래 입력</Text></> : <><Ionicons name="document-text-outline" size={26} color={T3} /><Text style={s.shotT}>기록증 촬영</Text><Text style={s.shotS}>공식 기록 자동 인식</Text></>}
+          <Pressable onPress={shotCert} accessibilityRole="button" accessibilityLabel="기록증 사진 찍기" style={({pressed}) => [s.shot, ocrDone && s.shotDoneGood, ocrEmpty && s.shotDoneWarn, pressed && {opacity: 0.85}]}>
+            {ocrBusy ? <ActivityIndicator color={T2} /> : ocrDone ? <><Ionicons name="checkmark-circle" size={26} color={GOOD} /><Text style={[s.shotT, {color: GOOD}]}>기록증 인식됨</Text><Text style={s.shotS}>다시 찍기</Text></> : ocrEmpty ? <><Ionicons name="alert-circle-outline" size={26} color={WARN} /><Text style={[s.shotT, {color: WARN}]}>기록을 못 읽었어요</Text><Text style={s.shotS}>다시 찍거나 직접 입력</Text></> : certUri ? <><Ionicons name="document-text" size={26} color={T2} /><Text style={s.shotT}>기록증 저장됨</Text><Text style={s.shotS}>값은 아래 입력</Text></> : <><Ionicons name="document-text-outline" size={26} color={T3} /><Text style={s.shotT}>기록증 촬영</Text><Text style={s.shotS}>공식 기록 자동 인식</Text></>}
           </Pressable>
         </View>
         {ocrDone && <Text style={s.ocrNote}>기록증에서 자동으로 읽었어요 — 확인하고 저장하세요.</Text>}
+        {ocrEmpty && <Text style={[s.ocrNote, {color: WARN}]}>기록을 못 읽었어요. 기록증을 또렷하게 다시 찍거나, 아래에 직접 입력하세요.</Text>}
 
         {/* 종목 */}
         <Text style={s.fieldLabel}>종목</Text>
@@ -226,6 +235,9 @@ export default function RaceMedalScreen({
       <View style={s.footer}>
         <Button label="아카이브에 저장" disabled={!canSave} onPress={save} testID="medal-save" />
       </View>
+
+      {/* 메달 원형 가이드 카메라 — 전체화면 오버레이 */}
+      {cameraOpen && <MedalCamera onCapture={onMedalCaptured} onCancel={() => setCameraOpen(false)} />}
     </View>
   );
 }
@@ -254,6 +266,7 @@ const s = StyleSheet.create({
   shotMedal: {borderColor: withAlpha(HALL_GOLD, 0.45), backgroundColor: withAlpha(HALL_GOLD, 0.05)},
   shotDone: {borderStyle: 'solid', borderColor: withAlpha(HALL_GOLD, 0.5)},
   shotDoneGood: {borderStyle: 'solid', borderColor: withAlpha(GOOD, 0.5), backgroundColor: withAlpha(GOOD, 0.06)},
+  shotDoneWarn: {borderStyle: 'solid', borderColor: withAlpha(WARN, 0.5), backgroundColor: withAlpha(WARN, 0.06)},
   shotImgRound: {width: 110, height: 110, borderRadius: 55},
   shotT: {color: T2, fontFamily: FONT, fontSize: 13, fontWeight: '600', textAlign: 'center'},
   shotS: {color: T3, fontFamily: FONT, fontSize: 11, textAlign: 'center'},

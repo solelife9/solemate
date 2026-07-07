@@ -87,6 +87,22 @@ jest.mock('expo-image-picker', () => ({
   ),
 }));
 
+// ── expo-camera + expo-image-manipulator ─────────────────────────────────────
+// 메달 원형 가이드 카메라. 기본: 권한 허용. CameraView 는 렌더만(촬영은 통합 테스트 대상 아님).
+jest.mock('expo-camera', () => {
+  const React = require('react');
+  return {
+    __esModule: true,
+    CameraView: React.forwardRef((props, _ref) => React.createElement('CameraView', props, props.children)),
+    useCameraPermissions: jest.fn(() => [{granted: true, status: 'granted'}, jest.fn()]),
+  };
+});
+jest.mock('expo-image-manipulator', () => ({
+  __esModule: true,
+  SaveFormat: {JPEG: 'jpeg', PNG: 'png'},
+  manipulateAsync: jest.fn(() => Promise.resolve({uri: 'file:///cropped.jpg', width: 640, height: 640})),
+}));
+
 // ── expo-file-system/legacy + expo-media-library ─────────────────────────────
 // 공유 카드(투명 PNG)를 사진앱에 저장하는 경로. 기본: 파일 기록 성공 + 권한 허용 + 저장 성공.
 jest.mock('expo-file-system/legacy', () => ({

@@ -4,7 +4,7 @@
 // 깔끔하다(신발 명예의 전당과 짝, HALL_GOLD 무드). 목록은 App 이 lib/medals 에서 주입한다.
 // 원반 탭 → 상세(큰 원형 메달 + 기록증 + 공식 기록 + 그 러닝 링크 + BIB). 색은 theme 토큰만.
 // ============================================================================
-import React, {useState} from 'react';
+import React, {useRef, useState} from 'react';
 import {View, Text, ScrollView, Pressable, Image, StyleSheet} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -13,6 +13,8 @@ import {SwipeBack} from './primitives';
 import {fmtTime} from './lib/format';
 import {RACE_DISTANCE_LABEL} from './data/raceEvents';
 import {medalTimeSec, type Medal} from './lib/medals';
+import MedalShareCard, {type MedalShareModel} from './MedalShareCard';
+import {shareMedalCard, type SvgCapturable} from './lib/shareCard';
 
 function MedalDisc({photoUri, size = 84}: {photoUri?: string; size?: number}) {
   return (
@@ -138,17 +140,42 @@ function MedalDetail({medal, insetTop, insetBottom, onClose, onOpenRun, onDelete
   rows.push({l: '날짜', v: medal.date});
   if (medal.bib) rows.push({l: '배번', v: medal.bib});
 
+  // 자랑 카드 — 캡처용 off-screen ref. 정본 시간(공식 우선)으로 브래그. BIB·이름 미포함(프라이버시).
+  const cardRef = useRef<SvgCapturable | null>(null);
+  const brag = official ?? app;
+  const shareModel: MedalShareModel = {
+    brand: 'keego',
+    raceName: medal.raceName,
+    distanceLabel: RACE_DISTANCE_LABEL[medal.distance],
+    officialTime: brag ? fmtTime(brag) : '',
+    date: medal.date.replace(/-/g, '.'),
+    paceLabel: typeof medal.paceSec === 'number' ? `${Math.floor(medal.paceSec / 60)}'${String(Math.round(medal.paceSec % 60)).padStart(2, '0')}"/km` : undefined,
+    medalPhotoUri: medal.medalPhotoUri,
+  };
+  const onShare = () => {
+    void shareMedalCard(cardRef, `${medal.raceName} ${RACE_DISTANCE_LABEL[medal.distance]}${brag ? ` ${fmtTime(brag)}` : ''} 완주 — keego`);
+  };
+
   return (
     <View style={m.detailOverlay} testID="medal-detail">
       <View style={[m.detailNav, {paddingTop: insetTop + 6}]}>
         <Pressable onPress={onClose} hitSlop={8} accessibilityRole="button" accessibilityLabel="닫기" style={m.iconBtn}>
           <Ionicons name="chevron-down" size={22} color={T1} />
         </Pressable>
-        {onDelete && (
-          <Pressable onPress={onDelete} hitSlop={8} accessibilityRole="button" accessibilityLabel="메달 삭제" style={m.iconBtn}>
-            <Ionicons name="trash-outline" size={18} color={T3} />
+        <View style={{flexDirection: 'row', gap: 8}}>
+          <Pressable onPress={onShare} hitSlop={8} accessibilityRole="button" accessibilityLabel="메달 공유" testID="medal-share" style={m.iconBtn}>
+            <Ionicons name="share-outline" size={18} color={HALL_GOLD} />
           </Pressable>
-        )}
+          {onDelete && (
+            <Pressable onPress={onDelete} hitSlop={8} accessibilityRole="button" accessibilityLabel="메달 삭제" style={m.iconBtn}>
+              <Ionicons name="trash-outline" size={18} color={T3} />
+            </Pressable>
+          )}
+        </View>
+      </View>
+      {/* 공유 카드(화면 밖 마운트) — 캡처 전용, 사용자에겐 안 보임 */}
+      <View style={{position: 'absolute', left: -9999, top: 0}} pointerEvents="none">
+        <MedalShareCard ref={cardRef} model={shareModel} />
       </View>
       <ScrollView contentContainerStyle={{alignItems: 'center', paddingHorizontal: 24, paddingBottom: insetBottom + 24}} showsVerticalScrollIndicator={false}>
         <MedalDisc photoUri={medal.medalPhotoUri} size={168} />
