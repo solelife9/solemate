@@ -29,7 +29,12 @@ export function fmtPace(km: number, s: number): string {
   // 의미 없는 거리(<0.01km)·비유한·0 이하 시간은 가짜 페이스 대신 '--'.
   if (!Number.isFinite(km) || km < 0.01 || !Number.isFinite(s) || s <= 0) return '--';
   const p = s / km;
-  return `${Math.floor(p / 60)}'${String(Math.round(p % 60)).padStart(2, '0')}"`;
+  // 초를 먼저 반올림한 뒤 자리올림 처리 — 안 하면 59.6초 같은 값이 "5'60\"" 로 표기된다
+  // (km/시간이 소수여서 p가 정수가 아닐 때 실제로 발생: 리캡·기록·GAP 페이스).
+  let sec = Math.round(p % 60);
+  let min = Math.floor(p / 60);
+  if (sec === 60) { sec = 0; min += 1; }
+  return `${min}'${String(sec).padStart(2, '0')}"`;
 }
 
 /** Local calendar date as `YYYY-MM-DD` (audit#11: local, not UTC). */

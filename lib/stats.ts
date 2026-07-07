@@ -43,8 +43,11 @@ export function sumKm(list: RunRow[]): number {
 export function avgPaceLabel(list: RunRow[]): string {
   const p = asList(list).filter(r => (r.duration || 0) > 0 && parseFloat(r.km as string) > 0.1);
   if (!p.length) return '--';
-  const sec = p.reduce((a, r) => a + r.duration! / parseFloat(r.km as string), 0) / p.length;
-  return fmtPace(1, sec);
+  // 기간 평균 페이스 = Σ시간 / Σ거리(거리 가중). 런별 페이스를 런 개수로 나눈 산술평균은
+  // 짧은 런을 과대 가중해 값이 틀린다(예: 1km@7'00" + 20km@5'00" → 6'00"(오답)·정답 5'06").
+  const totalSec = p.reduce((a, r) => a + r.duration!, 0);
+  const totalKm = p.reduce((a, r) => a + parseFloat(r.km as string), 0);
+  return fmtPace(totalKm, totalSec);
 }
 
 /** Format a duration in seconds as "Hh Mm" / "Mm", or '--' when not positive.
@@ -122,7 +125,9 @@ export function monthBuckets(monthRuns: RunRow[], year: number, monthIndex: numb
   const weekCount = Math.ceil(daysInMonth / 7);
   const out: number[] = Array(weekCount).fill(0);
   asList(monthRuns).forEach(r => {
+    if (!r.run_date) return;               // run_date 결측 시 NaN 버킷으로 새어 거리 소실 방지
     const day = new Date(r.run_date + 'T00:00:00').getDate();
+    if (!Number.isFinite(day)) return;
     const b = Math.min(weekCount - 1, Math.ceil(day / 7) - 1);
     out[b] += parseFloat(r.km as string) || 0;
   });
@@ -133,7 +138,9 @@ export function monthBuckets(monthRuns: RunRow[], year: number, monthIndex: numb
 export function yearBuckets(yearRuns: RunRow[]): number[] {
   const out: number[] = Array(12).fill(0);
   asList(yearRuns).forEach(r => {
+    if (!r.run_date) return;               // run_date 결측 시 NaN 버킷으로 새어 거리 소실 방지
     const m = new Date(r.run_date + 'T00:00:00').getMonth();
+    if (!Number.isFinite(m)) return;
     out[m] += parseFloat(r.km as string) || 0;
   });
   return out;

@@ -584,7 +584,11 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'm
         {gapSec != null && (() => {
           const actual = (run.durationS || 0) > 0 && run.dist > 0 ? (run.durationS || 0) / run.dist : 0;
           const harder = actual > 0 && gapSec < actual; // GAP 가 더 빠름 = 평지보다 힘든(오르막) 코스
-          const fmtPace = (sec: number) => `${Math.floor(sec / 60)}'${String(Math.round(sec % 60)).padStart(2, '0')}"`;
+          const fmtPace = (sec: number) => {
+            let s = Math.round(sec % 60), m = Math.floor(sec / 60);
+            if (s === 60) { s = 0; m += 1; }  // 자리올림 — 안 하면 "5'60\"" 표기(gapSec 는 소수)
+            return `${m}'${String(s).padStart(2, '0')}"`;
+          };
           return (
             <View
               style={[s.card, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingVertical: 14, marginTop: 12 }]}
@@ -1209,7 +1213,7 @@ const s = StyleSheet.create({
   sumCell: { flex: 1, paddingHorizontal: 2 },
   sumCellDiv: { borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: withAlpha(T1, 0.045), paddingLeft: 12 },
   sumValue: { color: T1, fontFamily: DISPLAY, fontSize: 23, fontWeight: '500', letterSpacing: -0.4, fontVariant: ['tabular-nums'] },
-  sumUnit: { color: T4, fontFamily: FONT, fontSize: 12, fontWeight: '500' },
+  sumUnit: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500' },
   sumLabel: { color: T3, fontFamily: FONT, fontSize: 12, fontWeight: '500', marginTop: 5 },
   summaryLabel: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600', letterSpacing: 0.2 },
   summaryValue: { color: T1, fontFamily: DISPLAY, fontSize: 23, letterSpacing: 0.3, marginTop: 2 },

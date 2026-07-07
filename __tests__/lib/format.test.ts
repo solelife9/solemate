@@ -32,6 +32,13 @@ describe('fmtPace', () => {
   test('formats as m\'ss"', () => {
     expect(fmtPace(1, 330)).toMatch(/^\d+'\d{2}"$/);
   });
+  test('반올림 자리올림 — 59.6초가 60으로 반올림돼도 "5\'60\"" 금지, 6\'00" 로 올림', () => {
+    // 소수 거리/시간에서 s/km 가 정수가 아닐 때(예: 7km ÷ 2517s ≈ 359.57s/km) 발생하던 버그.
+    expect(fmtPace(7, 2517)).toBe("6'00\"");
+    // 초 몫이 59.5 이상이면 항상 다음 분으로 올림(끝이 60" 로 새지 않음).
+    expect(fmtPace(1, 359.6)).toBe("6'00\"");
+    expect(fmtPace(1, 359.6)).not.toMatch(/60"$/);
+  });
 });
 
 describe('ymdLocal (audit#11 — local, not UTC)', () => {

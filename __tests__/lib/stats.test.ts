@@ -44,6 +44,11 @@ describe('avgPaceLabel', () => {
     // two runs both at 300 s/km → 5'00"
     expect(avgPaceLabel([{km: 2, duration: 600}, {km: 1, duration: 300}])).toBe("5'00\"");
   });
+  test('거리 가중 평균(Σ시간/Σ거리) — 짧은 런을 과대가중하지 않는다', () => {
+    // 1km@7'00"(420s) + 20km@5'00"(6000s): 단순평균이면 6'00"(오답).
+    // 올바른 기간 페이스 = (420+6000)/(1+20) = 305.7 s/km → 5'06".
+    expect(avgPaceLabel([{km: 1, duration: 420}, {km: 20, duration: 6000}])).toBe("5'06\"");
+  });
 });
 
 describe('totalTimeLabel', () => {
