@@ -53,6 +53,14 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // ── 대회 카탈로그(전역, 읽기 전용) ──────────────────────────────────────
+    // 마라톤 메달 아카이브의 대회 목록. 큐레이션 데이터라 클라이언트는 읽기만(자동 감지·
+    // 대회 선택). 등록/수정은 Firebase 콘솔 또는 관리 스크립트(admin SDK, 규칙 우회)로만.
+    match /races/{raceId} {
+      allow read: if signedIn();
+      allow write: if false;
+    }
+
     // ── 그 외 전부 거부 ──────────────────────────────────────────────────────
     match /{document=**} {
       allow read, write: if false;
