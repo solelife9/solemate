@@ -27,8 +27,13 @@ describe('completedRaceDistance — 하프/풀 완주 판정(±3%)', () => {
     expect(completedRaceDistance(21.1)).toBe('half');
     expect(completedRaceDistance(20.5)).toBe('half');
   });
-  test('어중간한 거리는 null', () => {
-    expect(completedRaceDistance(10)).toBeNull();
+  test('10K ±3% 통과(초보·최다 참가 대회)', () => {
+    expect(completedRaceDistance(10)).toBe('10k');
+    expect(completedRaceDistance(9.8)).toBe('10k');
+  });
+  test('어중간한 거리는 null(5K 는 훈련과 겹쳐 자동 감지 제외)', () => {
+    expect(completedRaceDistance(5)).toBeNull();
+    expect(completedRaceDistance(7)).toBeNull();
     expect(completedRaceDistance(30)).toBeNull();
   });
 });
@@ -40,24 +45,31 @@ describe('detectRace — 날짜+위치 특정 감지', () => {
     expect(m).toEqual({kind: 'geo', race: expect.objectContaining({id: 'jtbc'}), distance: 'half'});
   });
 
-  test('완주거리 미달이어도 geo 매치면 대회 최장 종목으로 추정', () => {
-    // 상암 근처 11/1 10km → 여전히 JTBC 특정(종목은 완주 판정 없어 대회 최장=full 추정).
+  test('그날 그 장소 10K → geo 로 특정 대회 확정(10K 라벨)', () => {
+    // 상암 11/1 10km → JTBC 10K 확정(초보 최다 참가 거리, 위치+날짜라 데일리런과 구분).
     const m = detectRace({date: '2026-11-01', startLat: 37.5690, startLon: 126.8980, km: 10}, RACES);
     expect(m?.kind).toBe('geo');
     expect(m?.race?.id).toBe('jtbc');
+    expect(m?.distance).toBe('10k');
+  });
+
+  test('완주거리 미달(8km)이어도 geo 매치면 대회 최장 종목으로 추정', () => {
+    const m = detectRace({date: '2026-11-01', startLat: 37.5690, startLon: 126.8980, km: 8}, RACES);
+    expect(m?.kind).toBe('geo');
     expect(m?.distance).toBe('full');
   });
 
-  test('같은 날 다른 장소 → geo 미스, 완주면 distance 폴백', () => {
-    // 11/1 이지만 엉뚱한 위치(제주)에서 하프 완주 → 대회 미상 일반 감지.
-    const m = detectRace({date: '2026-11-01', startLat: 33.45, startLon: 126.5, km: 21.1}, RACES);
-    expect(m).toEqual({kind: 'distance', distance: 'half'});
+  test('데일리 10K(동네·대회일 아님) → 배너 안 뜸(null)', () => {
+    // 사용자 핵심 우려: 평소 10K 데일리런. geo 미스 + 10K 는 거리-only 폴백 제외 → null.
+    expect(detectRace({date: '2026-06-15', startLat: 37.5, startLon: 127.0, km: 10}, RACES)).toBeNull();
+    // 대회일이어도 위치가 다르면(제주) 마찬가지로 안 뜸.
+    expect(detectRace({date: '2026-11-01', startLat: 33.45, startLon: 126.5, km: 10}, RACES)).toBeNull();
   });
 
-  test('날짜 안 맞으면 좌표 가까워도 geo 미스', () => {
-    // 상암 근처지만 대회 없는 날 → geo 미스. 하프도 아니면 null.
-    const m = detectRace({date: '2026-06-15', startLat: 37.5690, startLon: 126.8980, km: 10}, RACES);
-    expect(m).toBeNull();
+  test('같은 날 다른 장소 하프 → geo 미스지만 하프는 거리 폴백(대회 미상)', () => {
+    // 하프/풀은 위치 없어도 대회 확률 높아 거리-only 폴백 유지.
+    const m = detectRace({date: '2026-11-01', startLat: 33.45, startLon: 126.5, km: 21.1}, RACES);
+    expect(m).toEqual({kind: 'distance', distance: 'half'});
   });
 
   test('가장 가까운 대회를 고른다(같은 날 여러 대회)', () => {

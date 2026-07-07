@@ -29,11 +29,14 @@ function MedalDisc({photoUri, size = 84}: {photoUri?: string; size?: number}) {
 export default function MedalArchiveScreen({
   medals = [],
   onBack,
+  onAddMedal,
   onOpenRun,
   onDelete,
 }: {
   medals?: Medal[];
   onBack?: () => void;
+  /** 직접 메달 추가(과거 대회 포함) — 대회 기록 흐름을 연다. 없으면 버튼 미표시. */
+  onAddMedal?: () => void;
   /** 연결된 러닝으로 이동(있으면 상세에서 '러닝 기록 보기'). */
   onOpenRun?: (runId: string) => void;
   onDelete?: (id: string) => void;
@@ -50,7 +53,11 @@ export default function MedalArchiveScreen({
             <Ionicons name="chevron-back" size={20} color={T1} />
           </Pressable>
           <Text style={m.navTitle}>메달 아카이브</Text>
-          <View style={{width: 36}} />
+          {onAddMedal ? (
+            <Pressable onPress={onAddMedal} hitSlop={8} accessibilityRole="button" accessibilityLabel="메달 추가" testID="medal-add" style={m.iconBtn}>
+              <Ionicons name="add" size={24} color={ACCENT} />
+            </Pressable>
+          ) : <View style={{width: 36}} />}
         </View>
 
         <ScrollView contentContainerStyle={{padding: 18, paddingBottom: insets.bottom + 28}} showsVerticalScrollIndicator={false}>
@@ -66,7 +73,13 @@ export default function MedalArchiveScreen({
                 <Ionicons name="medal-outline" size={34} color={T4} />
               </View>
               <Text style={m.emptyT}>아직 메달이 없어요</Text>
-              <Text style={m.emptyD}>대회를 완주하면 러닝 요약에서{'\n'}메달과 기록을 남길 수 있어요.</Text>
+              <Text style={m.emptyD}>완주한 대회의 메달과 기록을 남겨보세요.{'\n'}대회를 완주하면 러닝 요약에서도 뜨고, 아래로 지금 추가할 수도 있어요.</Text>
+              {onAddMedal && (
+                <Pressable onPress={onAddMedal} accessibilityRole="button" accessibilityLabel="메달 추가하기" style={({pressed}) => [m.emptyCta, pressed && {opacity: 0.85}]}>
+                  <Ionicons name="add" size={18} color={HALL_GOLD} />
+                  <Text style={m.emptyCtaT}>메달 추가하기</Text>
+                </Pressable>
+              )}
             </View>
           ) : (
             <View style={m.grid}>
@@ -195,7 +208,9 @@ const m = StyleSheet.create({
 
   empty: {alignItems: 'center', gap: 10, paddingVertical: 56},
   emptyT: {color: T2, fontFamily: FONT, fontSize: 15, fontWeight: '600', marginTop: 6},
-  emptyD: {color: T3, fontFamily: FONT, fontSize: 13, textAlign: 'center', lineHeight: 19},
+  emptyD: {color: T3, fontFamily: FONT, fontSize: 13, textAlign: 'center', lineHeight: 19, paddingHorizontal: 12},
+  emptyCta: {flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 16, paddingVertical: 12, paddingHorizontal: 20, borderRadius: 999, backgroundColor: withAlpha(HALL_GOLD, 0.12), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(HALL_GOLD, 0.4)},
+  emptyCtaT: {color: HALL_GOLD, fontFamily: FONT, fontSize: 14, fontWeight: '700'},
 
   // 상세 오버레이
   detailOverlay: {position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: BG},

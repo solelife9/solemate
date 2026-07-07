@@ -63,11 +63,16 @@ export type RaceMatch = {
   distance: RaceDistance;    // 완주로 판정된 종목(마일리지 아카이브 라벨)
 };
 
-/** 하프/풀 완주 판정 — 실측 거리(km)를 표준 거리 ±3% 로 본다(GPS 오차 흡수). */
+/**
+ * 대회 완주 거리 판정 — 실측 거리(km)를 표준 거리 ±3% 로 본다(GPS 오차 흡수).
+ * 10K 포함: 국내 마라톤은 10K 참가자가 가장 많고, 초보자에겐 10K 완주가 큰 자랑거리
+ * (사용자 요청 2026-07-07). 5K 는 훈련 러닝과 겹침이 커 자동 감지 제외 — 직접 추가로 남긴다.
+ */
 export function completedRaceDistance(km: number): RaceDistance | null {
   const within = (target: number) => Math.abs(km - target) / target <= 0.03;
   if (within(42.195)) return 'full';
   if (within(21.0975)) return 'half';
+  if (within(10)) return '10k';
   return null;
 }
 
@@ -101,7 +106,9 @@ export function detectRace(
     }
   }
 
-  if (completed) return {kind: 'distance', distance: completed};
+  // 거리-only 폴백(위치 매치 없음) — 하프/풀만. 10K/5K 는 데일리 러닝과 겹쳐, 위치 없이
+  // 거리만으로 '대회'라 단정하면 스팸이 된다(사용자 지적). 10K 대회는 위 geo 경로로만 감지.
+  if (completed === 'full' || completed === 'half') return {kind: 'distance', distance: completed};
   return null;
 }
 

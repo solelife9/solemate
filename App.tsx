@@ -1883,6 +1883,7 @@ function Main(){
   if(showMedalArchive){
     return <MedalArchiveScreen medals={medals}
       onBack={()=>setShowMedalArchive(false)}
+      onAddMedal={()=>setMedalFlow({date:today()})}
       onDelete={(id)=>{setMedals(cur=>cur.filter(m=>m.id!==id));void removeMedalStore(id);}}/>;
   }
   if(runRecap){
