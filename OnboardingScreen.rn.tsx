@@ -692,7 +692,9 @@ const s = StyleSheet.create({
   flowHeader: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24, paddingBottom: 6},
   skip: {fontFamily: FONT, fontSize: 13, color: T4, fontWeight: '500'},
   flex1: {flex: 1},
-  bodyContent: {flexGrow: 1, paddingHorizontal: 24, paddingTop: 8},
+  // 내용을 세로 중앙쪽으로 배치 — 길쭉한 화면(iPhone 15 Pro 등)에서 위에만 몰려 아래가
+  // 비던 문제(기기 피드백). 짧은 화면은 원래 꽉 차 그대로. 내용이 넘치면 스크롤로 폴백.
+  bodyContent: {flexGrow: 1, justifyContent: 'center', paddingHorizontal: 24, paddingVertical: 12},
   eyebrow: {fontFamily: FONT, fontSize: 12, fontWeight: '700', letterSpacing: 1.4, color: ACCENT, textTransform: 'uppercase', marginBottom: 6},
   title: {fontFamily: FONT, fontSize: 23, lineHeight: 29, fontWeight: '700', letterSpacing: -0.5, color: T1},
   body: {fontFamily: FONT, fontSize: 14, lineHeight: 19, color: T3, marginTop: 8, maxWidth: 360},
