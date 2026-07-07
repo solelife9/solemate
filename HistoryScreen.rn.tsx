@@ -1224,11 +1224,11 @@ const s = StyleSheet.create({
   runBrand: { color: T3, fontFamily: FONT, fontSize: 10, fontWeight: '500', letterSpacing: 1.3 },
   runModel: { color: T1, fontFamily: FONT, fontSize: 15, fontWeight: '500', marginTop: 1 },
   runMetrics: { flexDirection: 'row', gap: 18, marginTop: 10 },
-  runV: { color: T1, fontFamily: DISPLAY, fontSize: 20, letterSpacing: 0.2, fontVariant: ['tabular-nums'] },
+  runV: { color: T1, fontFamily: DISPLAY, fontSize: 20, fontWeight: '700', letterSpacing: 0.2, fontVariant: ['tabular-nums'] },
   runU: { color: T3, fontFamily: FONT, fontSize: 12, marginLeft: 3, marginBottom: 1 },
   // marginLeft 1 — 옵티컬 정렬: 타뷸러 숫자는 좌측 사이드베어링이 있고 한글 라벨은 꽉 차서,
   // 같은 x에서 라벨이 살짝 왼쪽으로 튀어나와 보인다(사용자 피드백 2026-07-07).
-  runML: { color: T2, fontFamily: FONT, fontSize: 11, fontWeight: '500', marginTop: 3, marginLeft: 1 },
+  runML: { color: T3, fontFamily: FONT, fontSize: 11, fontWeight: '500', marginTop: 3, marginLeft: 1 },
 
   // detail
   nav: { paddingTop: 12, paddingHorizontal: 16, paddingBottom: 6 },
