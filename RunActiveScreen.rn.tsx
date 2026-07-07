@@ -261,7 +261,7 @@ export default function RunActiveScreen({
           일시정지 시 스프링으로 살짝 축소(transform은 레이아웃 불변 — 줄어든 시각 여백은
           ringWrap 마진 축소가 LayoutAnimation 으로 메운다). */}
       <Animated.View style={[r.ringWrap, uiPaused && r.ringWrapPaused, { transform: [{ scale: ringScale }] }]}>
-        <Ring size={310} stroke={8} progress={track ? track.progress : pct}>
+        <Ring size={310} stroke={10} progress={track ? track.progress : pct}>
           {track ? (
             <View style={{ alignItems: 'center' }} accessibilityRole="text" accessibilityLiveRegion="polite"
               accessibilityLabel={`${track.lapCount}바퀴, ${track.lapDistKm.toFixed(2)}킬로미터, 한 바퀴 ${track.lapM}미터 ${track.calibrated ? 'GPS 보정됨' : '예상'}`}>
@@ -271,15 +271,18 @@ export default function RunActiveScreen({
           ) : (
             <View style={{ alignItems: 'center' }} accessibilityRole="text" accessibilityLiveRegion="polite"
               accessibilityLabel={`달린 거리 ${distanceKm.toFixed(2)}킬로미터${goalKm ? (met ? `, 목표 ${goalKm}킬로미터 달성, ${over.toFixed(2)}킬로미터 초과` : `, 목표 ${goalKm}킬로미터까지 ${remain.toFixed(2)}킬로미터 남음`) : ''}`}>
-              {met ? (
-                <View style={r.goalMet}><Ionicons name="checkmark-circle" size={14} color={GOOD} /><Text style={r.goalMetText}>목표 {goalKm}km 달성</Text></View>
-              ) : (
-                <Text style={r.goal}>목표 {goalKm}km · {Math.round(pct * 100)}%</Text>
-              )}
+              {/* 링 센터: 큰 거리 숫자 + 그 아래 목표·퍼센티지만(남은거리 표기는 제거 — 사용자
+                  요청). 스크린리더 라벨엔 남음/초과를 그대로 두어 접근성은 보존한다. */}
               <Text style={r.bigDist}>{distanceKm.toFixed(2)}</Text>
-              <Text style={[r.bigUnit, met && { color: GOOD, fontWeight: '600' }]}>
-                {goalKm ? (met ? `+${over.toFixed(2)}km 초과` : `${remain.toFixed(2)}km 남음`) : 'km'}
-              </Text>
+              {goalKm ? (
+                met ? (
+                  <View style={r.goalMet}><Ionicons name="checkmark-circle" size={16} color={GOOD} /><Text style={r.goalMetText}>목표 {goalKm}km 달성</Text></View>
+                ) : (
+                  <Text style={r.goal}>목표 {goalKm}km · {Math.round(pct * 100)}%</Text>
+                )
+              ) : (
+                <Text style={r.goal}>km</Text>
+              )}
             </View>
           )}
         </Ring>
@@ -438,11 +441,11 @@ const r = StyleSheet.create({
   // 일시정지: 링을 살짝 위로 당기고(marginTop↓) 아래 시각 여백을 조금 회수(marginBottom-)해
   // 서브 지표가 들어설 공간을 낸다. 스케일이 0.92로 완만하므로 마진도 완만하게(겹침 방지).
   ringWrapPaused: { marginTop: 8, marginBottom: -14 },
-  goal: { color: withAlpha(T1, 0.5), fontFamily: FONT, fontSize: 14, fontWeight: '700', letterSpacing: 1.2, marginBottom: 16 },
-  goalMet: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 16 },
-  goalMetText: { color: GOOD, fontFamily: FONT, fontSize: 14, fontWeight: '700', letterSpacing: 0.6 },
+  goal: { color: withAlpha(T1, 0.62), fontFamily: FONT, fontSize: 16, fontWeight: '700', letterSpacing: 1.2, marginTop: 14 },
+  goalMet: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 14 },
+  goalMetText: { color: GOOD, fontFamily: FONT, fontSize: 16, fontWeight: '700', letterSpacing: 0.6 },
   bigDist: { color: T1, fontFamily: DISPLAY, fontSize: 104, fontWeight: '500', letterSpacing: -4, lineHeight: 106, includeFontPadding: false, fontVariant: ['tabular-nums'] },
-  bigUnit: { color: withAlpha(T1, 0.5), fontFamily: FONT, fontSize: 14, fontWeight: '600', letterSpacing: 0.8, marginTop: 16 },
+  bigUnit: { color: withAlpha(T1, 0.62), fontFamily: FONT, fontSize: 16, fontWeight: '600', letterSpacing: 0.8, marginTop: 16 },
   // 트랙 링 센터 — 바퀴수 하나만 히어로, 그 밑 작은 '바퀴'.
   lapHero: { color: T1, fontFamily: DISPLAY, fontSize: 96, fontWeight: '700', letterSpacing: -3, lineHeight: 96, includeFontPadding: false, fontVariant: ['tabular-nums'] },
   lapHeroUnit: { color: T3, fontFamily: FONT, fontSize: 14, fontWeight: '500', letterSpacing: 0.6, marginTop: 6 },
