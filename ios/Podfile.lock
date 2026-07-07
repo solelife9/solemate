@@ -1267,6 +1267,12 @@ PODS:
     - ExpoModulesCore
   - ExpoAudio (56.0.12):
     - ExpoModulesCore
+  - ExpoCamera (57.0.1):
+    - ExpoModulesCore
+  - ExpoCameraBarcodeScanning (57.0.1):
+    - ExpoCamera
+    - ZXingObjC/OneD
+    - ZXingObjC/PDF417
   - ExpoCrypto (56.0.4):
     - ExpoModulesCore
   - ExpoDomWebView (56.0.5):
@@ -1275,6 +1281,9 @@ PODS:
     - ExpoModulesCore
   - ExpoFont (56.0.5):
     - ExpoModulesCore
+  - ExpoImageManipulator (57.0.2):
+    - ExpoModulesCore
+    - SDWebImageWebPCoder
   - ExpoImagePicker (56.0.15):
     - ExpoModulesCore
   - ExpoKeepAwake (56.0.3):
@@ -1580,6 +1589,18 @@ PODS:
   - KakaoSDKUser (2.22.0):
     - KakaoSDKAuth (= 2.22.0)
   - leveldb-library (1.22.6)
+  - libwebp (1.5.0):
+    - libwebp/demux (= 1.5.0)
+    - libwebp/mux (= 1.5.0)
+    - libwebp/sharpyuv (= 1.5.0)
+    - libwebp/webp (= 1.5.0)
+  - libwebp/demux (1.5.0):
+    - libwebp/webp
+  - libwebp/mux (1.5.0):
+    - libwebp/demux
+  - libwebp/sharpyuv (1.5.0)
+  - libwebp/webp (1.5.0):
+    - libwebp/sharpyuv
   - MLImage (1.0.0-beta7)
   - MLKitCommon (13.0.0):
     - GoogleDataTransport (~> 10.0)
@@ -3711,10 +3732,19 @@ PODS:
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
     - Yoga
+  - SDWebImage/Core (5.21.7)
+  - SDWebImageWebPCoder (0.15.0):
+    - libwebp (~> 1.0)
+    - SDWebImage/Core (~> 5.17)
   - TextToSpeech (4.1.1):
     - React-Core
   - UMAppLoader (56.0.1)
   - Yoga (0.0.0)
+  - ZXingObjC/Core (3.6.9)
+  - ZXingObjC/OneD (3.6.9):
+    - ZXingObjC/Core
+  - ZXingObjC/PDF417 (3.6.9):
+    - ZXingObjC/Core
 
 DEPENDENCIES:
   - "AsyncStorage (from `../node_modules/@react-native-async-storage/async-storage`)"
@@ -3725,10 +3755,13 @@ DEPENDENCIES:
   - ExpoAppleAuthentication (from `../node_modules/expo-apple-authentication/ios`)
   - ExpoAsset (from `../node_modules/expo-asset/ios`)
   - ExpoAudio (from `../node_modules/expo-audio/ios`)
+  - ExpoCamera (from `../node_modules/expo-camera/ios`)
+  - ExpoCameraBarcodeScanning (from `../node_modules/expo-camera/ios`)
   - ExpoCrypto (from `../node_modules/expo-crypto/ios`)
   - "ExpoDomWebView (from `../node_modules/expo/node_modules/@expo/dom-webview/ios`)"
   - ExpoFileSystem (from `../node_modules/expo-file-system/ios`)
   - ExpoFont (from `../node_modules/expo/node_modules/expo-font/ios`)
+  - ExpoImageManipulator (from `../node_modules/expo-image-manipulator/ios`)
   - ExpoImagePicker (from `../node_modules/expo-image-picker/ios`)
   - ExpoKeepAwake (from `../node_modules/expo-keep-awake/ios`)
   - ExpoLocation (from `../node_modules/expo-location/ios`)
@@ -3869,6 +3902,7 @@ SPEC REPOS:
     - KakaoSDKCommon
     - KakaoSDKUser
     - leveldb-library
+    - libwebp
     - MLImage
     - MLKitCommon
     - MLKitTextRecognition
@@ -3883,6 +3917,9 @@ SPEC REPOS:
     - PromisesObjC
     - PromisesSwift
     - RecaptchaInterop
+    - SDWebImage
+    - SDWebImageWebPCoder
+    - ZXingObjC
 
 EXTERNAL SOURCES:
   AsyncStorage:
@@ -3901,6 +3938,10 @@ EXTERNAL SOURCES:
     :path: "../node_modules/expo-asset/ios"
   ExpoAudio:
     :path: "../node_modules/expo-audio/ios"
+  ExpoCamera:
+    :path: "../node_modules/expo-camera/ios"
+  ExpoCameraBarcodeScanning:
+    :path: "../node_modules/expo-camera/ios"
   ExpoCrypto:
     :path: "../node_modules/expo-crypto/ios"
   ExpoDomWebView:
@@ -3909,6 +3950,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/expo-file-system/ios"
   ExpoFont:
     :path: "../node_modules/expo/node_modules/expo-font/ios"
+  ExpoImageManipulator:
+    :path: "../node_modules/expo-image-manipulator/ios"
   ExpoImagePicker:
     :path: "../node_modules/expo-image-picker/ios"
   ExpoKeepAwake:
@@ -4131,10 +4174,13 @@ SPEC CHECKSUMS:
   ExpoAppleAuthentication: 3dd8ddd3016396a8171f06af8cc5e3e008e8eaf4
   ExpoAsset: b4d20fb5e56abe866465a1bb0cc22870a6a4e4d3
   ExpoAudio: 8c4882515dee2f71d519ee64bb05c14945a5e1a2
+  ExpoCamera: d30fb3af6f5e97d1567c3b2d84413707a78d9005
+  ExpoCameraBarcodeScanning: 0cd97b138b31f7534201816611dd164543429b37
   ExpoCrypto: b54a97c4357d46d7f8de079e69fa89029572244b
   ExpoDomWebView: 27205be8754f9992913b8a9a08e65019f2207075
   ExpoFileSystem: 9dc04ec1e11bc3c7b965d7feb2de12c789755c7b
   ExpoFont: 6fe496f2be617ed4367f159f215dcc4ba27d37d6
+  ExpoImageManipulator: ff3ced92b541af9561e94867cbba949e68af6de2
   ExpoImagePicker: 808f5ed1553dca885ed5b05a8d6c67bf1d379da3
   ExpoKeepAwake: 359c47a1d9ccc3a3c519bca6e39562cce230c5bb
   ExpoLocation: ed45ae27d6eb115a84b16713f3e5a9c5822a5b24
@@ -4177,6 +4223,7 @@ SPEC CHECKSUMS:
   KakaoSDKCommon: d57127c339fc79e73aa8b236a4c77211c29924f1
   KakaoSDKUser: 043bcd7e91454ebf3bf64f150c430e6f65f0a08d
   leveldb-library: cc8b8f8e013647a295ad3f8cd2ddf49a6f19be19
+  libwebp: 02b23773aedb6ff1fd38cec7a77b81414c6842a8
   MLImage: 2ab9c968e75f57911c16f4c9d9e8a8e9604a86a1
   MLKitCommon: 26b779f072a182c1603d4c88a101c350cac837b1
   MLKitTextRecognition: 072488cfd29f1726733378661881f88db74ba3dc
@@ -4277,9 +4324,12 @@ SPEC CHECKSUMS:
   RNSensors: 111159597ac51505df10413c61b28bcd28e88983
   RNSVG: 80ea43654e32127636e6d3db6045bf98945ad9cd
   RNVectorIcons: 78d08c213289b35e105acd4e72720599f9934eb6
+  SDWebImage: e9fc87c1aab89a8ab1bbd74eba378c6f53be8abf
+  SDWebImageWebPCoder: 0e06e365080397465cc73a7a9b472d8a3bd0f377
   TextToSpeech: 89b239221ec378d213af422d14789a729705360b
   UMAppLoader: b7d22886a244871c20b5a8f2fcea13c18534e677
   Yoga: 9d8e8094a2bed6a175d9e6001a0546d5dae663ee
+  ZXingObjC: 8898711ab495761b2dbbdec76d90164a6d7e14c5
 
 PODFILE CHECKSUM: 3b3b6530c536626bc6cafcfe5583547109ac5031
 
