@@ -249,6 +249,19 @@ test('모델명을 검색하면 전체 목록이 부분일치로 필터된다', 
   expect(filtered.every(bm => bm.toLowerCase().includes('pegasus'))).toBe(true);
 });
 
+// ── 7b) 검색 정렬은 접두 일치 우선 — "nova" → Novablast(모델 접두)가 맨 위 ───────────
+test('검색은 접두 일치를 먼저 보여준다(nova → Novablast가 첫 결과)', async () => {
+  const onSave = jest.fn();
+  const root = await mountScreen(onSave);
+
+  await search(root, 'nova');
+  const rows = modelRows(root); // "브랜드 모델" 순서대로
+  expect(rows.length).toBeGreaterThan(0);
+  // 첫 결과의 모델명이 nova 로 시작해야 한다(브랜드 알파벳순에 밀리지 않음).
+  const firstModel = rows[0].replace(/^\S+ /, '').toLowerCase();
+  expect(firstModel.startsWith('nova')).toBe(true);
+});
+
 // ── 8) DB에 없는 모델명은 검색 결과의 '직접 추가'로 등록할 수 있다 ─────────────────────
 test('DB에 없는 모델명을 검색하면 직접 추가로 등록된다(카테고리 기본 권장수명)', async () => {
   const onSave = jest.fn();

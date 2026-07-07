@@ -58,12 +58,19 @@ export function ShoePicker({visible, onClose, onPick, insetTop, insetBottom}: {
   };
 
   const q = norm(query);
-  // 검색: 브랜드+모델 텍스트 동시 매칭, 알파벳순(브랜드→모델).
+  // 검색: 브랜드+모델 동시 매칭. 정렬은 '접두 일치 우선' — "nova" 치면 Novablast(모델
+  // 접두)가 브랜드 알파벳순보다 먼저 뜬다(사용자 피드백 2026-07-07). 랭크: 모델 접두(0) →
+  // 브랜드/브랜드+모델 접두(1) → 부분일치(2), 동랭크는 브랜드→모델 알파벳순.
   const searchResults = useMemo(() => {
     if (!q) return [];
+    const rank = (m: {brand: string; model: string}) => {
+      if (norm(m.model).startsWith(q)) return 0;
+      if (norm(m.brand).startsWith(q) || norm(`${m.brand} ${m.model}`).startsWith(q)) return 1;
+      return 2;
+    };
     return SHOE_MODELS
       .filter(m => norm(`${m.brand} ${m.model}`).includes(q) || norm(m.model).includes(q))
-      .sort((a, b) => a.brand.localeCompare(b.brand) || a.model.localeCompare(b.model));
+      .sort((a, b) => rank(a) - rank(b) || a.brand.localeCompare(b.brand) || a.model.localeCompare(b.model));
   }, [q]);
 
   // 레일 브랜드의 모델(알파벳순) — 시드 순서가 아닌 정렬 고정.
