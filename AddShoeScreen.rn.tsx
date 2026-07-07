@@ -105,7 +105,7 @@ export default function AddShoeScreen({
       {/* 키보드가 입력칸·등록 버튼을 가리지 않게 폼+CTA를 KeyboardAvoidingView로 감싼다
           (iOS=padding, Android는 adjustResize에 맡겨 undefined). */}
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={insets.top + 8}>
-      <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: 20 }} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 18, paddingBottom: 20 }} keyboardShouldPersistTaps="handled">
         {/* photo — tap to pick from library; non-blocking on failure */}
         <Pressable onPress={onPickPhoto} disabled={picking} style={({ pressed }) => [s.photo, pressed && s.pressed]}>
           {photoUri ? (

@@ -497,7 +497,7 @@ const s = StyleSheet.create({
   dotOn: {backgroundColor: ACCENT, width: 20},
   dotDone: {backgroundColor: withAlpha(ACCENT, 0.5)},
 
-  body: {padding: SPACE.xl, paddingBottom: SPACE.xxl, gap: SPACE.lg},
+  body: {flexGrow: 1, justifyContent: 'center', padding: SPACE.xl, paddingBottom: SPACE.xxl, gap: SPACE.lg},
   stepWrap: {gap: SPACE.md},
   eyebrow: {
     color: ACCENT,

@@ -117,7 +117,7 @@ function SuccessState({shoe, onStartRun, onDone, onSearch, onTab}: FirstShoeProp
   return (
     <View style={[s.screen, {paddingTop: insets.top}]}>
       <Header onSearch={onSearch} />
-      <ScrollView contentContainerStyle={{paddingHorizontal: 22, paddingBottom: 12}} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={{flexGrow: 1, justifyContent: 'center', paddingHorizontal: 22, paddingBottom: 12}} showsVerticalScrollIndicator={false}>
         <View style={s.checkBadge}>
           <Ionicons name="checkmark" size={30} color={GOOD} />
         </View>

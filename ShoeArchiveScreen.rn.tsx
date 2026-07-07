@@ -38,7 +38,7 @@ export default function ShoeArchiveScreen({
         <Text style={s.title}>보관함</Text>
         <View style={{width: 36}} />
       </View>
-      <ScrollView contentContainerStyle={{paddingHorizontal: 18, paddingBottom: 28, gap: 12, paddingTop: 6}} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={{flexGrow: 1, justifyContent: 'center', paddingHorizontal: 18, paddingBottom: 28, gap: 12, paddingTop: 6}} showsVerticalScrollIndicator={false}>
         <Text style={s.sub}>러닝 목록에서 숨긴 신발이에요. 복원하면 다시 러닝에 사용할 수 있어요.</Text>
         {shoes.length === 0 ? (
           <View style={s.empty} testID="shoe-archive-empty">

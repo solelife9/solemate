@@ -62,7 +62,7 @@ export default function MedalArchiveScreen({
           ) : <View style={{width: 36}} />}
         </View>
 
-        <ScrollView contentContainerStyle={{padding: 18, paddingBottom: insets.bottom + 28}} showsVerticalScrollIndicator={false}>
+        <ScrollView contentContainerStyle={{flexGrow: 1, justifyContent: 'center', padding: 18, paddingBottom: insets.bottom + 28}} showsVerticalScrollIndicator={false}>
           <View style={m.head}>
             <Text style={m.h}>메달 아카이브</Text>
             <Text style={m.count}>{medals.length}개 수집</Text>
