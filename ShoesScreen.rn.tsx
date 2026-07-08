@@ -3,7 +3,7 @@
 // (sample data removed — real shoes/runs/totals injected via props)
 // ============================================================================
 import React, { useEffect, useMemo, useState } from 'react';
-import { rf } from './lib/responsive';
+import { rf, rs, ri } from './lib/responsive';
 import { View, Text, ScrollView, Pressable, TextInput, Alert, StyleSheet, Linking } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
@@ -32,7 +32,7 @@ function NextShoeCard({ shoe }: { shoe: Shoe }) {
   if (recs.length === 0) return null;
   const open = (url: string) => { Promise.resolve(Linking.openURL(url)).catch(() => {}); };
   return (
-    <View testID="shoe-detail-next-shoe" style={{ gap: 12 }}>
+    <View testID="shoe-detail-next-shoe" style={{ gap: rs(12) }}>
       <SectionTitle style={s.nextSectionLabel}>이제 교체할 때 — 다음 러닝화</SectionTitle>
       <View style={[s.card, s.nextCard]}>
         <Text style={s.nextSub}>
@@ -250,24 +250,24 @@ function ShoeDetail({
     <SwipeBack onBack={onBack}>
     <View style={[s.screen, { paddingTop: insets.top }]}>
       <View style={s.detailNav}>
-        <Pressable onPress={onBack} hitSlop={6} accessibilityRole="button" accessibilityLabel="뒤로" style={s.iconBtn}><Ionicons name="chevron-back" size={20} color={T1} /></Pressable>
-        <View style={{ flexDirection: 'row', gap: 10 }}>
-          <Pressable onPress={() => setEditing((e) => !e)} hitSlop={6} accessibilityRole="button" accessibilityLabel="이름 편집" style={s.iconBtn}><Ionicons name="pencil" size={16} color={T2} /></Pressable>
-          <Pressable onPress={confirmDelete} hitSlop={6} accessibilityRole="button" accessibilityLabel="신발 삭제" style={s.iconBtn}><Ionicons name="trash-outline" size={16} color={DANGER} /></Pressable>
+        <Pressable onPress={onBack} hitSlop={6} accessibilityRole="button" accessibilityLabel="뒤로" style={s.iconBtn}><Ionicons name="chevron-back" size={ri(20)} color={T1} /></Pressable>
+        <View style={{ flexDirection: 'row', gap: rs(10) }}>
+          <Pressable onPress={() => setEditing((e) => !e)} hitSlop={6} accessibilityRole="button" accessibilityLabel="이름 편집" style={s.iconBtn}><Ionicons name="pencil" size={ri(16)} color={T2} /></Pressable>
+          <Pressable onPress={confirmDelete} hitSlop={6} accessibilityRole="button" accessibilityLabel="신발 삭제" style={s.iconBtn}><Ionicons name="trash-outline" size={ri(16)} color={DANGER} /></Pressable>
         </View>
       </View>
-      <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: 28, gap: 16 }} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={{ padding: rs(18), paddingBottom: rs(28), gap: rs(16) }} keyboardShouldPersistTaps="handled">
         {editing ? (
-          <View style={[s.card, { padding: 16, gap: 12 }]}>
+          <View style={[s.card, { padding: rs(16), gap: rs(12) }]}>
             <Text style={s.dHeroLabel}>신발 이름</Text>
             <TextInput value={name} onChangeText={setName} style={s.editInput} placeholderTextColor={T3} accessibilityLabel="신발 이름" autoFocus />
-            <View style={{ flexDirection: 'row', gap: 10 }}>
+            <View style={{ flexDirection: 'row', gap: rs(10) }}>
               <Pressable onPress={() => setEditing(false)} style={[s.editBtn, { backgroundColor: CARD_HI }]}><Text style={[s.editBtnTxt, { color: T2 }]}>취소</Text></Pressable>
               <Button label="저장" onPress={saveName} style={s.editBtn} />
             </View>
           </View>
         ) : (
-          <View style={{ paddingHorizontal: 4 }}>
+          <View style={{ paddingHorizontal: rs(4) }}>
             {/* 헤더 한 줄(사용자 요청): 좌 = 브랜드 + 종류 칩(데일리), 우 = 컨디션 상태.
                 양호: 회색 칩 + 점. 주의/교체: tier 배지(testID 유지). 보관됨은 우측에 함께. */}
             <View style={s.dHeaderRow}>
@@ -298,7 +298,7 @@ function ShoeDetail({
         )}
 
         {/* durability — 잔여 수명 카드(목업 09): 게이지 + 수명 조정 토글 */}
-        <View style={[s.card, { padding: 18 }]}>
+        <View style={[s.card, { padding: rs(18) }]}>
           <FuelGauge
             remainLabel={String(remain)}
             unit={unit}
@@ -360,9 +360,9 @@ function ShoeDetail({
             accessibilityLabel="이 신발 은퇴시키기"
             testID="retire-open-flow"
             style={({ pressed }) => [s.retireLink, pressed && s.pressed]}>
-            <Ionicons name="ribbon-outline" size={15} color={T3} />
+            <Ionicons name="ribbon-outline" size={ri(15)} color={T3} />
             <Text style={s.retireLinkTxt}>이 신발 은퇴시키기</Text>
-            <Ionicons name="chevron-forward" size={14} color={T4} />
+            <Ionicons name="chevron-forward" size={ri(14)} color={T4} />
           </Pressable>
         )}
 
@@ -411,7 +411,7 @@ function ShoeDetail({
         )}
 
         {/* runs */}
-        <View style={[s.row, { paddingHorizontal: 4, justifyContent: 'space-between' }]}>
+        <View style={[s.row, { paddingHorizontal: rs(4), justifyContent: 'space-between' }]}>
           <Text style={s.sectionLabel}>이 신발로 달린 기록</Text>
           {!!totals.lastWorn && (
             <Text style={s.lastWorn}>
@@ -420,13 +420,13 @@ function ShoeDetail({
           )}
         </View>
         {shoeRuns.length === 0 ? (
-          <View style={[s.card, { padding: 24, alignItems: 'center' }]}>
+          <View style={[s.card, { padding: rs(24), alignItems: 'center' }]}>
             <Text style={{ color: T3, fontFamily: FONT, fontSize: rf(14) }}>아직 기록이 없어요</Text>
           </View>
         ) : (
           // 기록탭과 완전히 같은 행(RunCard 재사용, 2026-07-04 사용자 결정) — '이 신발로
           // 얼마나 어떻게 달렸는지'를 기록탭의 언어 그대로 신발별로 모아 보여준다.
-          <View style={{ gap: 10 }}>
+          <View style={{ gap: rs(10) }}>
             {shoeRuns.map((r, i) => (
               <RunCard key={r.id || i} run={r} shoes={allShoes} unit={unit} hideShoe onPress={() => setSelRun(r)} />
             ))}
@@ -442,7 +442,7 @@ function ShoeDetail({
             accessibilityRole="button"
             accessibilityLabel={retired ? '복원' : '보관 처리'}
             style={({ pressed }) => [retired ? s.restoreBtn : s.retireBtn, pressed && s.pressed]}>
-            <Ionicons name={retired ? 'arrow-undo-outline' : 'archive-outline'} size={16} color={retired ? T2 : DANGER} />
+            <Ionicons name={retired ? 'arrow-undo-outline' : 'archive-outline'} size={ri(16)} color={retired ? T2 : DANGER} />
             <Text style={[s.retireBtnText, { color: retired ? T2 : DANGER }]}>{retired ? '복원' : '보관 처리'}</Text>
           </Pressable>
         )}
@@ -502,10 +502,10 @@ function ShoeCard({ shoe, featured, onPress, onPlay, unit, pace: _pace, forecast
           </View>
           {!retired && onPlay ? (
             <Pressable onPress={onPlay} hitSlop={10} accessibilityRole="button" accessibilityLabel={`${shoe.brand} ${shoe.model}로 달리기`} style={({ pressed }) => [s.cardPlay, pressed && s.pressed]} testID={shoe.id ? `shoe-play-${shoe.id}` : undefined}>
-              <Ionicons name="play" size={14} color={T2} />
+              <Ionicons name="play" size={ri(14)} color={T2} />
             </Pressable>
           ) : (
-            <Ionicons name="chevron-forward" size={18} color={T3} />
+            <Ionicons name="chevron-forward" size={ri(18)} color={T3} />
           )}
         </View>
       </View>
@@ -532,7 +532,7 @@ function ShoeCard({ shoe, featured, onPress, onPlay, unit, pace: _pace, forecast
       {/* 교체 예측 한 줄(#2) — 실효마모 모델 전면화. ok/overdue 일 때만. */}
       {fcLine && !retired && (
         <View style={s.fcRow} testID={shoe.id ? `shoe-forecast-${shoe.id}` : undefined}>
-          <Ionicons name={fcOverdue ? 'alert-circle' : 'time-outline'} size={13} color={fcOverdue ? WARN : T3} />
+          <Ionicons name={fcOverdue ? 'alert-circle' : 'time-outline'} size={ri(13)} color={fcOverdue ? WARN : T3} />
           <Text style={[s.fcText, fcOverdue && { color: WARN, fontWeight: '600' }]} numberOfLines={1}>{fcLine}</Text>
         </View>
       )}
@@ -661,14 +661,14 @@ export default function ShoesScreen({
         </View>
         <Pressable onPress={onAddShoe} accessibilityRole="button" accessibilityLabel="신발 추가" hitSlop={8} style={({ pressed }) => [s.addPill, pressed && s.pressed]}>
           <Text style={s.addPillText}>신발 추가</Text>
-          <Ionicons name="add" size={15} color={T1} />
+          <Ionicons name="add" size={ri(15)} color={T1} />
         </Pressable>
       </View>
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 18, paddingBottom: TABBAR_CLEARANCE, gap: 14, paddingTop: 12 }}>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: rs(18), paddingBottom: TABBAR_CLEARANCE, gap: rs(14), paddingTop: rs(12) }}>
         {/* 교체 임박 요약(#2) — 곧 교체할 신발 N켤레. 0이면 숨김. */}
         {soonCount > 0 && (
           <View style={s.soonHeader} testID="shoes-soon-header">
-            <Ionicons name="alert-circle" size={16} color={WARN} />
+            <Ionicons name="alert-circle" size={ri(16)} color={WARN} />
             <Text style={s.soonText}>곧 교체할 신발 <Text style={s.soonStrong}>{soonCount}켤레</Text></Text>
           </View>
         )}
@@ -696,18 +696,18 @@ export default function ShoesScreen({
 const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: BG },
   pressed: { opacity: 0.85 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 7 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: rs(7) },
   baselineRow: { flexDirection: 'row', alignItems: 'flex-end' },
   card: { backgroundColor: CARD_DIM, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.07) },
-  sectionLabel: { color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '600', letterSpacing: 0.4, paddingHorizontal: 4 },
-  dot: { width: 7, height: 7, borderRadius: RADIUS.pill },
+  sectionLabel: { color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '600', letterSpacing: 0.4, paddingHorizontal: rs(4) },
+  dot: { width: rs(7), height: rs(7), borderRadius: RADIUS.pill },
   condText: { fontFamily: FONT, fontSize: rf(14), fontWeight: '500' },
   condSub: { color: T3, fontFamily: FONT, fontSize: rf(14) },
 
   // 목업 정합: 제목 + '신발 추가' 버튼 한 줄(topbar)
-  topbar: { paddingTop: 8, paddingHorizontal: 22, paddingBottom: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  topbar: { paddingTop: rs(8), paddingHorizontal: rs(22), paddingBottom: rs(8), flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   title: { color: T1, fontFamily: FONT, fontSize: rf(29), fontWeight: '600', letterSpacing: -0.6 },
-  addPill: { height: 34, paddingHorizontal: 14, borderRadius: RADIUS.pill, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.2), backgroundColor: CARD_HI, flexDirection: 'row', alignItems: 'center', gap: 6 },
+  addPill: { height: rs(34), paddingHorizontal: rs(14), borderRadius: RADIUS.pill, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.2), backgroundColor: CARD_HI, flexDirection: 'row', alignItems: 'center', gap: rs(6) },
   addPillText: { color: T1, fontFamily: FONT, fontSize: rf(14), fontWeight: '600' },
 
   // 카드 하단 중복 진행바(track/trackFill)를 제거하고 원형 Ring 만 유지한다. 바가
@@ -715,162 +715,162 @@ const s = StyleSheet.create({
   // 재조정했다 — 같은 pct 를 두 번 그리던 중복을 없애 시선이 링에 모인다.
   // 목업 정합: 카드 배경을 near-black(CARD_DIM)에서 살짝 떠 보이는 회색(HERO_BG — 홈
   // 히어로 카드와 동일 톤)으로 올려 black-on-black 을 피한다.
-  shoeCard: { backgroundColor: HERO_BG, borderRadius: RADIUS.lg, borderCurve: 'continuous', padding: 16 },
+  shoeCard: { backgroundColor: HERO_BG, borderRadius: RADIUS.lg, borderCurve: 'continuous', padding: rs(16) },
   shoeCardFeatured: { borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.2) },
   shoeCardIdle: { borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.08) },
   shoeCardRetired: { opacity: 0.55, borderColor: withAlpha(T1, 0.05) },
   // 상단: 좌(브랜드·모델) ↔ 우(컨디션 위 · ▶/화살표 아래) — 사진 정합
-  shoeTopSection: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 },
-  shoeRightCol: { alignItems: 'flex-end', gap: 10, flexShrink: 0 },
+  shoeTopSection: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: rs(10) },
+  shoeRightCol: { alignItems: 'flex-end', gap: rs(10), flexShrink: 0 },
   shoeBrand: { color: T3, fontFamily: DISPLAY, fontSize: rf(12), fontWeight: '500', letterSpacing: 1.3 },
   shoeUsing: { color: T3, fontFamily: FONT, fontSize: rf(13), fontWeight: '500' },
-  shoeModel: { color: T1, fontFamily: DISPLAY, fontSize: rf(23), fontWeight: '700', letterSpacing: -0.5, lineHeight: rf(27), marginTop: 4 },
-  shoeCondRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
+  shoeModel: { color: T1, fontFamily: DISPLAY, fontSize: rf(23), fontWeight: '700', letterSpacing: -0.5, lineHeight: rf(27), marginTop: rs(4) },
+  shoeCondRow: { flexDirection: 'row', alignItems: 'center', gap: rs(7) },
   // 종류 칩(카본 레이싱 등) — 브랜드 옆
-  cardTypeChip: { backgroundColor: withAlpha(ACCENT, 0.14), borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2 },
+  cardTypeChip: { backgroundColor: withAlpha(ACCENT, 0.14), borderRadius: rs(6), paddingHorizontal: rs(7), paddingVertical: rs(2) },
   cardTypeChipText: { color: ACCENT, fontFamily: FONT, fontSize: rf(11), fontWeight: '700', letterSpacing: 0.1 },
   // 추천 용도(러닝 종류) 한 줄 — 카드 중간
-  shoePurpose: { color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '500', letterSpacing: -0.1, marginTop: 10 },
-  cardPlay: { width: 32, height: 32, borderRadius: RADIUS.pill, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.14), alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(BG, 0.3) },
-  shoeCondDot: { width: 7, height: 7, borderRadius: RADIUS.pill },
+  shoePurpose: { color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '500', letterSpacing: -0.1, marginTop: rs(10) },
+  cardPlay: { width: rs(32), height: rs(32), borderRadius: RADIUS.pill, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.14), alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(BG, 0.3) },
+  shoeCondDot: { width: rs(7), height: rs(7), borderRadius: RADIUS.pill },
   shoeCondText: { color: T2, fontFamily: FONT, fontSize: rf(14), fontWeight: '500' },
   // 누적 거리(큰 숫자) + 교체까지 남은 거리 — 목업 lifeRow 정합
-  shoeLifeRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 14, marginBottom: 10 },
+  shoeLifeRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginTop: rs(14), marginBottom: rs(10) },
   shoeUsedNum: { color: T1, fontFamily: DISPLAY, fontSize: rf(26), fontWeight: '700', letterSpacing: -0.6 },
-  shoeUsedU: { color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '500', marginLeft: 2 },
+  shoeUsedU: { color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '500', marginLeft: rs(2) },
   shoeRemain: { color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '500' },
   // 라벨바(목업 LifeBar): 사용/총 수명 양끝 라벨 + 가운데 평균 페이스
-  shoeBar: { height: 6, borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.1), overflow: 'hidden' },
+  shoeBar: { height: rs(6), borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.1), overflow: 'hidden' },
   shoeBarFill: { height: '100%', borderRadius: RADIUS.pill },
-  shoeBarLabels: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 7 },
+  shoeBarLabels: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: rs(7) },
   shoeBarLabel: { color: T3, fontFamily: FONT, fontSize: rf(12), fontWeight: '500' },
-  fcRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 9 },
+  fcRow: { flexDirection: 'row', alignItems: 'center', gap: rs(5), marginTop: rs(9) },
   fcText: { flex: 1, color: T3, fontFamily: FONT, fontSize: rf(13), fontWeight: '500' },
-  soonHeader: { flexDirection: 'row', alignItems: 'center', gap: 7, backgroundColor: withAlpha(WARN, 0.1), borderRadius: RADIUS.md, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(WARN, 0.35), paddingHorizontal: 13, paddingVertical: 10 },
+  soonHeader: { flexDirection: 'row', alignItems: 'center', gap: rs(7), backgroundColor: withAlpha(WARN, 0.1), borderRadius: RADIUS.md, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(WARN, 0.35), paddingHorizontal: rs(13), paddingVertical: rs(10) },
   soonText: { color: T2, fontFamily: FONT, fontSize: rf(14), fontWeight: '500' },
   soonStrong: { color: WARN, fontWeight: '700' },
   shoePaceVal: { color: T3, fontFamily: DISPLAY, fontSize: rf(13) },
-  cardPlayAbs: { position: 'absolute', top: 14, right: 14, width: 36, height: 36, borderRadius: RADIUS.pill, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.14), alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(BG, 0.3) },
-  retireBtn: { height: 54, borderRadius: RADIUS.md, marginTop: 22, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: withAlpha(DANGER, 0.06), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(DANGER, 0.45) },
-  restoreBtn: { height: 54, borderRadius: RADIUS.md, marginTop: 22, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: 'transparent', borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.14) },
+  cardPlayAbs: { position: 'absolute', top: 14, right: 14, width: rs(36), height: rs(36), borderRadius: RADIUS.pill, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.14), alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(BG, 0.3) },
+  retireBtn: { height: rs(54), borderRadius: RADIUS.md, marginTop: rs(22), flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rs(8), backgroundColor: withAlpha(DANGER, 0.06), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(DANGER, 0.45) },
+  restoreBtn: { height: rs(54), borderRadius: RADIUS.md, marginTop: rs(22), flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rs(8), backgroundColor: 'transparent', borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.14) },
   retireBtnText: { fontFamily: FONT, fontSize: rf(16), fontWeight: '600', letterSpacing: -0.2 },
 
 
 
   // detail
-  detailNav: { paddingTop: 12, paddingHorizontal: 16, paddingBottom: 6, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  iconBtn: { width: 38, height: 38, borderRadius: RADIUS.pill, backgroundColor: CARD_HI, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.12), alignItems: 'center', justifyContent: 'center' },
+  detailNav: { paddingTop: rs(12), paddingHorizontal: rs(16), paddingBottom: rs(6), flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  iconBtn: { width: rs(38), height: rs(38), borderRadius: RADIUS.pill, backgroundColor: CARD_HI, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.12), alignItems: 'center', justifyContent: 'center' },
   // 상태 칩(목업 09) — 회색 알약 + 흰 글씨 + 점(녹색 아님)
-  statusPill: { flexDirection: 'row', alignItems: 'center', gap: 7, backgroundColor: CARD_HI, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 7, alignSelf: 'flex-start' },
-  statusDot: { width: 6, height: 6, borderRadius: RADIUS.pill, backgroundColor: T1 },
+  statusPill: { flexDirection: 'row', alignItems: 'center', gap: rs(7), backgroundColor: CARD_HI, borderRadius: RADIUS.pill, paddingHorizontal: rs(12), paddingVertical: rs(7), alignSelf: 'flex-start' },
+  statusDot: { width: rs(6), height: rs(6), borderRadius: RADIUS.pill, backgroundColor: T1 },
   statusPillText: { color: T1, fontFamily: FONT, fontSize: rf(14), fontWeight: '600' },
   dBrand: { color: T3, fontFamily: DISPLAY, fontSize: rf(13), fontWeight: '500', letterSpacing: 1.6 },
-  dModel: { color: T1, fontFamily: DISPLAY, fontSize: rf(32), fontWeight: '700', letterSpacing: -0.5, marginTop: 2, lineHeight: rf(38) },
-  dPurpose: { color: T2, fontFamily: FONT, fontSize: rf(16), fontWeight: '500', letterSpacing: -0.2, lineHeight: rf(22), marginTop: 10 },
-  dTags: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 12 },
-  dTag: { backgroundColor: CARD_HI, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 5 },
+  dModel: { color: T1, fontFamily: DISPLAY, fontSize: rf(32), fontWeight: '700', letterSpacing: -0.5, marginTop: rs(2), lineHeight: rf(38) },
+  dPurpose: { color: T2, fontFamily: FONT, fontSize: rf(16), fontWeight: '500', letterSpacing: -0.2, lineHeight: rf(22), marginTop: rs(10) },
+  dTags: { flexDirection: 'row', flexWrap: 'wrap', gap: rs(6), marginTop: rs(12) },
+  dTag: { backgroundColor: CARD_HI, borderRadius: RADIUS.pill, paddingHorizontal: rs(11), paddingVertical: rs(5) },
   dTagText: { color: T2, fontFamily: FONT, fontSize: rf(13), fontWeight: '600' },
   // 헤더 한 줄: 좌(브랜드+종류칩) ↔ 우(컨디션). 수직 가운데 정렬.
-  dHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 10 },
-  dTypeChip: { backgroundColor: withAlpha(ACCENT, 0.14), borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 5 },
+  dHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: rs(8), marginBottom: rs(10) },
+  dTypeChip: { backgroundColor: withAlpha(ACCENT, 0.14), borderRadius: RADIUS.pill, paddingHorizontal: rs(11), paddingVertical: rs(5) },
   dTypeChipText: { color: ACCENT, fontFamily: FONT, fontSize: rf(13), fontWeight: '700', letterSpacing: 0.1 },
-  dPurposeLabel: { color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '600', marginTop: 16 },
-  runCta: { height: 46, borderRadius: 14, backgroundColor: 'transparent', borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.14), flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  dPurposeLabel: { color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '600', marginTop: rs(16) },
+  runCta: { height: rs(46), borderRadius: rs(14), backgroundColor: 'transparent', borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.14), flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rs(8) },
   runCtaText: { color: T2, fontFamily: FONT, fontSize: rf(16), fontWeight: '600', letterSpacing: -0.2 },
 
   // 교체 내러티브 배너(keep-going 보이스) — accent 톤 반투명 표면(withAlpha 파생).
-  keepGoing: { flexDirection: 'row', alignItems: 'center', gap: 9, backgroundColor: withAlpha(ACCENT, 0.12), borderRadius: RADIUS.md, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.35), paddingHorizontal: 16, paddingVertical: 13 },
-  retireLink: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 14, paddingHorizontal: 4, marginTop: 4 },
+  keepGoing: { flexDirection: 'row', alignItems: 'center', gap: rs(9), backgroundColor: withAlpha(ACCENT, 0.12), borderRadius: RADIUS.md, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.35), paddingHorizontal: rs(16), paddingVertical: rs(13) },
+  retireLink: { flexDirection: 'row', alignItems: 'center', gap: rs(8), paddingVertical: rs(14), paddingHorizontal: rs(4), marginTop: rs(4) },
   retireLinkTxt: { flex: 1, color: T3, fontFamily: FONT, fontSize: rf(15), fontWeight: '600' },
   keepGoingText: { flex: 1, color: ACCENT, fontFamily: FONT, fontSize: rf(14), fontWeight: '600', letterSpacing: -0.1, lineHeight: rf(18) },
   // 은퇴 키프세이크 트리거 카드(수명 도달) — 자랑스러운 톤. accent 보더로 주목.
-  keepsakeCard: { padding: 18, gap: 6, borderColor: withAlpha(ACCENT, 0.3) },
+  keepsakeCard: { padding: rs(18), gap: rs(6), borderColor: withAlpha(ACCENT, 0.3) },
   keepsakeTitle: { color: T1, fontFamily: DISPLAY, fontSize: rf(19), fontWeight: '700', letterSpacing: -0.2 },
   keepsakeSub: { color: T3, fontFamily: FONT, fontSize: rf(14), lineHeight: rf(19) },
-  keepsakeBtns: { flexDirection: 'row', gap: 10, marginTop: 8 },
+  keepsakeBtns: { flexDirection: 'row', gap: rs(10), marginTop: rs(8) },
   // 계속 사용(CARD_HI flat) — 모서리는 은퇴(단일 Button=RADIUS.btn)와 맞춰 통일.
-  keepsakeBtn: { flex: 1, height: 50, borderRadius: RADIUS.btn, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7 },
+  keepsakeBtn: { flex: 1, height: rs(50), borderRadius: RADIUS.btn, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rs(7) },
   keepUsingBtn: { backgroundColor: CARD_HI },
   // 은퇴는 단일 Button 프리미티브로 라우팅(그라데이션/글로우/RADIUS.btn). 여기선 박스 크기만.
-  retireFlowBtn: { flex: 1, height: 50 },
+  retireFlowBtn: { flex: 1, height: rs(50) },
   keepsakeBtnTxt: { fontFamily: FONT, fontSize: rf(16), fontWeight: '700' },
   // 실효 마모 + 교체 예측 카드(차별점) — 본문 카드 톤에 accent 절제(라벨 아이콘/예측 라인만).
-  wearCard: { padding: 18, gap: 2 },
+  wearCard: { padding: rs(18), gap: rs(2) },
   wearLabel: { color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '600', letterSpacing: 0.2 },
   wearValue: { color: T1, fontFamily: DISPLAY, fontSize: rf(30), fontWeight: '700', letterSpacing: 0.3 },
-  wearUnit: { color: T3, fontFamily: FONT, fontSize: rf(14), marginLeft: 4, marginBottom: 4 },
-  wearTarget: { color: T3, fontFamily: FONT, fontSize: rf(14), marginBottom: 4 },
-  wearForecast: { color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '500', letterSpacing: -0.1, lineHeight: rf(18), marginTop: 8 },
+  wearUnit: { color: T3, fontFamily: FONT, fontSize: rf(14), marginLeft: rs(4), marginBottom: rs(4) },
+  wearTarget: { color: T3, fontFamily: FONT, fontSize: rf(14), marginBottom: rs(4) },
+  wearForecast: { color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '500', letterSpacing: -0.1, lineHeight: rf(18), marginTop: rs(8) },
   // 교체 예상 lead(핸드오프 lead 정합: 16px·lineHeight 23) + 주수 강조(bold·T1).
-  replaceForecastText: { color: T2, fontFamily: FONT, fontSize: rf(17), fontWeight: '500', letterSpacing: -0.2, lineHeight: rf(23), marginTop: 8 },
+  replaceForecastText: { color: T2, fontFamily: FONT, fontSize: rf(17), fontWeight: '500', letterSpacing: -0.2, lineHeight: rf(23), marginTop: rs(8) },
   dForecastBold: { color: T1, fontWeight: '700' },
   // 예측 투명성(1-1): 라벨 우측 정확도 칩 + 근거 한 줄. accent 절제(정확도색만 톤).
   wearLabelRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  confChip: { flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: RADIUS.pill, paddingHorizontal: 9, paddingVertical: 4 },
+  confChip: { flexDirection: 'row', alignItems: 'center', gap: rs(5), borderRadius: RADIUS.pill, paddingHorizontal: rs(9), paddingVertical: rs(4) },
   confChipHi: { backgroundColor: withAlpha(GOOD, 0.12) },
   confChipLo: { backgroundColor: withAlpha(T1, 0.06) },
-  confDot: { width: 5, height: 5, borderRadius: RADIUS.pill },
+  confDot: { width: rs(5), height: rs(5), borderRadius: RADIUS.pill },
   confChipText: { fontFamily: FONT, fontSize: rf(12), fontWeight: '700', letterSpacing: 0.1 },
-  wearBasisText: { color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '500', letterSpacing: -0.1, lineHeight: rf(18), marginTop: 8 },
-  maxEditRow: { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-end', marginTop: 12 },
+  wearBasisText: { color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '500', letterSpacing: -0.1, lineHeight: rf(18), marginTop: rs(8) },
+  maxEditRow: { flexDirection: 'row', alignItems: 'center', gap: rs(4), alignSelf: 'flex-end', marginTop: rs(12) },
   maxEditTxt: { color: T3, fontFamily: FONT, fontSize: rf(13), fontWeight: '500' },
-  gaugeNote: { marginTop: 10, color: T3, fontFamily: FONT, fontSize: rf(13), lineHeight: rf(17) },
+  gaugeNote: { marginTop: rs(10), color: T3, fontFamily: FONT, fontSize: rf(13), lineHeight: rf(17) },
 
-  dHero: { padding: 24, flexDirection: 'row', alignItems: 'center', gap: 22 },
+  dHero: { padding: rs(24), flexDirection: 'row', alignItems: 'center', gap: rs(22) },
   dHeroPct: { color: T1, fontFamily: DISPLAY, fontSize: rf(30) },
   dHeroPctU: { color: T3, fontFamily: FONT, fontSize: rf(14) },
   dHeroLabel: { color: T3, fontFamily: FONT, fontSize: rf(14) },
-  dHeroLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  maxEditToggle: { width: 26, height: 26, borderRadius: 8, backgroundColor: CARD_HI, alignItems: 'center', justifyContent: 'center' },
+  dHeroLabelRow: { flexDirection: 'row', alignItems: 'center', gap: rs(8) },
+  maxEditToggle: { width: rs(26), height: rs(26), borderRadius: rs(8), backgroundColor: CARD_HI, alignItems: 'center', justifyContent: 'center' },
   dHeroRemain: { color: T1, fontFamily: DISPLAY, fontSize: rf(44), letterSpacing: 0.5 },
-  dHeroRemainU: { color: T2, fontFamily: FONT, fontSize: rf(17), marginLeft: 5, marginBottom: 6 },
+  dHeroRemainU: { color: T2, fontFamily: FONT, fontSize: rf(17), marginLeft: rs(5), marginBottom: rs(6) },
 
-  editInput: { backgroundColor: CARD_HI, borderRadius: 14, color: T1, fontFamily: FONT, fontSize: rf(17), fontWeight: '500', paddingHorizontal: 16, paddingVertical: 13 },
-  editBtn: { flex: 1, height: 46, borderRadius: RADIUS.btn, alignItems: 'center', justifyContent: 'center' },
+  editInput: { backgroundColor: CARD_HI, borderRadius: rs(14), color: T1, fontFamily: FONT, fontSize: rf(17), fontWeight: '500', paddingHorizontal: rs(16), paddingVertical: rs(13) },
+  editBtn: { flex: 1, height: rs(46), borderRadius: RADIUS.btn, alignItems: 'center', justifyContent: 'center' },
   editBtnTxt: { fontFamily: FONT, fontSize: rf(16), fontWeight: '600' },
 
-  statRow: { flexDirection: 'row', paddingVertical: 20, paddingHorizontal: 14 },
+  statRow: { flexDirection: 'row', paddingVertical: rs(20), paddingHorizontal: rs(14) },
   statCell: { flex: 1, alignItems: 'center' },
   statDivider: { borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: SEP },
   // 2x2 통계 그리드(총거리/총횟수/총시간/평균페이스). 한 카드 안에 4칸을 넉넉히.
-  nextSectionLabel: { paddingHorizontal: 4 },
-  nextCard: { backgroundColor: CARD_DIM, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.3), padding: 16 },
-  nextSub: { color: T3, fontFamily: FONT, fontSize: rf(14), lineHeight: rf(18), marginBottom: 6 },
-  nextRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 11 },
+  nextSectionLabel: { paddingHorizontal: rs(4) },
+  nextCard: { backgroundColor: CARD_DIM, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.3), padding: rs(16) },
+  nextSub: { color: T3, fontFamily: FONT, fontSize: rf(14), lineHeight: rf(18), marginBottom: rs(6) },
+  nextRow: { flexDirection: 'row', alignItems: 'center', gap: rs(12), paddingVertical: rs(11) },
   nextRowSep: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.07) },
   nextBrand: { color: T3, fontFamily: DISPLAY, fontSize: rf(11), fontWeight: '500', letterSpacing: 1.2 },
-  nextModel: { color: T1, fontFamily: DISPLAY, fontSize: rf(16), fontWeight: '600', letterSpacing: -0.1, marginTop: 3 },
-  nextCat: { color: T3, fontFamily: FONT, fontSize: rf(12), marginTop: 3 },
-  shopBtns: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, justifyContent: 'flex-end', maxWidth: 132 },
-  shopBtn: { borderRadius: RADIUS.pill, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.4), backgroundColor: withAlpha(ACCENT, 0.1), paddingHorizontal: 11, paddingVertical: 6 },
+  nextModel: { color: T1, fontFamily: DISPLAY, fontSize: rf(16), fontWeight: '600', letterSpacing: -0.1, marginTop: rs(3) },
+  nextCat: { color: T3, fontFamily: FONT, fontSize: rf(12), marginTop: rs(3) },
+  shopBtns: { flexDirection: 'row', flexWrap: 'wrap', gap: rs(6), justifyContent: 'flex-end', maxWidth: rs(132) },
+  shopBtn: { borderRadius: RADIUS.pill, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.4), backgroundColor: withAlpha(ACCENT, 0.1), paddingHorizontal: rs(11), paddingVertical: rs(6) },
   shopBtnTxt: { color: ACCENT, fontFamily: FONT, fontSize: rf(13), fontWeight: '600' },
-  nextDisclosure: { color: T3, fontFamily: FONT, fontSize: rf(12), lineHeight: rf(15), marginTop: 12, opacity: 0.85 },
+  nextDisclosure: { color: T3, fontFamily: FONT, fontSize: rf(12), lineHeight: rf(15), marginTop: rs(12), opacity: 0.85 },
   // stats 2x2 — 사진(디자인 09)처럼 왼쪽 정렬. 글씨 비율에 맞게 패딩을 조여 카드가
   // 과하게 커지지 않게 한다(사용자 요청).
-  statGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingVertical: 6, paddingHorizontal: 18 },
-  statGridCell: { width: '50%', paddingVertical: 10 },
-  statGridCell3: { width: '33.3%', paddingVertical: 10 },
-  shareLine: { color: T3, fontFamily: FONT, fontSize: rf(13), paddingHorizontal: 18, paddingBottom: 14, marginTop: -2 },
+  statGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingVertical: rs(6), paddingHorizontal: rs(18) },
+  statGridCell: { width: '50%', paddingVertical: rs(10) },
+  statGridCell3: { width: '33.3%', paddingVertical: rs(10) },
+  shareLine: { color: T3, fontFamily: FONT, fontSize: rf(13), paddingHorizontal: rs(18), paddingBottom: rs(14), marginTop: rs(-2) },
   statValue: { color: T1, fontFamily: DISPLAY, fontSize: rf(23), letterSpacing: 0.3 },
   statUnit: { color: T3, fontFamily: FONT, fontSize: rf(13) },
-  statLabel: { color: T3, fontFamily: FONT, fontSize: rf(12), marginTop: 4 },
+  statLabel: { color: T3, fontFamily: FONT, fontSize: rf(12), marginTop: rs(4) },
 
   lastWorn: { color: T3, fontFamily: FONT, fontSize: rf(13), fontWeight: '500' },
 
   // 신발 수명(max_km) 조정 스테퍼 + 직접 입력
   maxInputRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'center' },
-  maxInput: { color: T1, fontFamily: DISPLAY, fontSize: rf(29), letterSpacing: 0.3, textAlign: 'center', minWidth: 70, paddingVertical: 0, paddingBottom: 2, borderBottomWidth: 1, borderBottomColor: withAlpha(ACCENT, 0.4) },
-  maxStepUnit: { color: T3, fontFamily: FONT, fontSize: rf(14), marginBottom: 3 },
-  maxStepCaption: { color: T3, fontFamily: FONT, fontSize: rf(13), fontWeight: '600', marginTop: 3 },
+  maxInput: { color: T1, fontFamily: DISPLAY, fontSize: rf(29), letterSpacing: 0.3, textAlign: 'center', minWidth: rs(70), paddingVertical: rs(0), paddingBottom: rs(2), borderBottomWidth: 1, borderBottomColor: withAlpha(ACCENT, 0.4) },
+  maxStepUnit: { color: T3, fontFamily: FONT, fontSize: rf(14), marginBottom: rs(3) },
+  maxStepCaption: { color: T3, fontFamily: FONT, fontSize: rf(13), fontWeight: '600', marginTop: rs(3) },
   maxHint: { color: T3, fontFamily: FONT, fontSize: rf(13), lineHeight: rf(18) },
 
-  runRow: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 15, paddingHorizontal: 18 },
+  runRow: { flexDirection: 'row', alignItems: 'center', gap: rs(14), paddingVertical: rs(15), paddingHorizontal: rs(18) },
   runRowBorder: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: SEP },
-  runDate: { width: 42, alignItems: 'center' },
+  runDate: { width: rs(42), alignItems: 'center' },
   runDay: { color: T3, fontFamily: FONT, fontSize: rf(12), fontWeight: '500' },
   runDateNum: { color: T1, fontFamily: DISPLAY, fontSize: rf(17) },
-  runDivider: { width: StyleSheet.hairlineWidth, alignSelf: 'stretch', backgroundColor: SEP, marginVertical: 2 },
+  runDivider: { width: StyleSheet.hairlineWidth, alignSelf: 'stretch', backgroundColor: SEP, marginVertical: rs(2) },
   runDist: { color: T1, fontFamily: DISPLAY, fontSize: rf(22), letterSpacing: 0.3 },
-  runDistU: { color: T3, fontFamily: FONT, fontSize: rf(14), marginLeft: 4, marginBottom: 1 },
-  runSub: { color: T3, fontFamily: FONT, fontSize: rf(13), marginTop: 3 },
+  runDistU: { color: T3, fontFamily: FONT, fontSize: rf(14), marginLeft: rs(4), marginBottom: rs(1) },
+  runSub: { color: T3, fontFamily: FONT, fontSize: rf(13), marginTop: rs(3) },
 });

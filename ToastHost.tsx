@@ -9,6 +9,7 @@
 // 액션 버튼 — 탭하면 runToastAction 이 onAction 을 부르고 토스트를 닫는다.
 
 import React, {useEffect, useRef, useState} from 'react';
+import { rs } from './lib/responsive';
 import {Animated, StyleSheet, Text, Pressable, Easing} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {CARD_HI, ACCENT, T1, SEP, FONT, RADIUS, SPACE, TYPE} from './theme';
@@ -122,7 +123,7 @@ const styles = StyleSheet.create({
   bar: {
     flexDirection: 'row',
     alignItems: 'center',
-    maxWidth: 560,
+    maxWidth: rs(560),
     width: '100%',
     backgroundColor: CARD_HI,
     borderRadius: RADIUS.md, borderCurve: 'continuous',
@@ -134,7 +135,7 @@ const styles = StyleSheet.create({
     shadowColor: '#000',
     shadowOpacity: 0.4,
     shadowRadius: 12,
-    shadowOffset: {width: 0, height: 4},
+    shadowOffset: {width: 0, height: rs(4)},
     elevation: 6,
   },
   message: {

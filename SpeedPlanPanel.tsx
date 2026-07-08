@@ -6,7 +6,7 @@
 // 라이브 코칭은 RunActiveScreen 이 plan 으로 현재 km 목표 대비 빠름/느림을 보여준다.
 // ============================================================================
 import React, {useEffect, useRef, useState} from 'react';
-import { rf } from './lib/responsive';
+import { rf, rs, ri } from './lib/responsive';
 import {View, Text, Pressable, ScrollView, StyleSheet} from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {ACCENT, CARD, CARD_HI, T1, T2, T3, T4, SEP, FONT, RADIUS, withAlpha} from './theme';
@@ -21,7 +21,7 @@ function PaceStepper({value, onDec, onInc, decLabel, incLabel}: {
   value: string; onDec: () => void; onInc: () => void; decLabel: string; incLabel: string;
 }) {
   return (
-    <Stepper size={38} onMinus={onDec} onPlus={onInc} minusLabel={decLabel} plusLabel={incLabel} style={{gap: 0}}>
+    <Stepper size={ri(38)} onMinus={onDec} onPlus={onInc} minusLabel={decLabel} plusLabel={incLabel} style={{gap: rs(0)}}>
       <Text style={s.stepVal}>{value}</Text>
     </Stepper>
   );
@@ -129,18 +129,18 @@ export default function SpeedPlanPanel({
 }
 
 const s = StyleSheet.create({
-  wrap: {width: '100%', gap: 12},
+  wrap: {width: '100%', gap: rs(12)},
   row: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'},
-  tuneRow: {backgroundColor: CARD, borderRadius: RADIUS.lg, borderCurve: 'continuous', borderWidth: StyleSheet.hairlineWidth, borderColor: SEP, paddingHorizontal: 16, paddingVertical: 12},
+  tuneRow: {backgroundColor: CARD, borderRadius: RADIUS.lg, borderCurve: 'continuous', borderWidth: StyleSheet.hairlineWidth, borderColor: SEP, paddingHorizontal: rs(16), paddingVertical: rs(12)},
   rowLabel: {color: T2, fontFamily: FONT, fontSize: rf(15), fontWeight: '600'},
-  stepVal: {color: T1, fontFamily: FONT, fontSize: rf(18), fontWeight: '700', minWidth: 92, textAlign: 'center'},
-  seg: {marginTop: 2},
-  hint: {color: T3, fontFamily: FONT, fontSize: rf(13), lineHeight: rf(17), marginTop: -4},
-  chips: {gap: 8, paddingVertical: 2, paddingRight: 4},
-  kmChip: {minWidth: 58, alignItems: 'center', paddingVertical: 9, paddingHorizontal: 12, borderRadius: RADIUS.md, borderCurve: 'continuous', backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP},
+  stepVal: {color: T1, fontFamily: FONT, fontSize: rf(18), fontWeight: '700', minWidth: rs(92), textAlign: 'center'},
+  seg: {marginTop: rs(2)},
+  hint: {color: T3, fontFamily: FONT, fontSize: rf(13), lineHeight: rf(17), marginTop: rs(-4)},
+  chips: {gap: rs(8), paddingVertical: rs(2), paddingRight: rs(4)},
+  kmChip: {minWidth: rs(58), alignItems: 'center', paddingVertical: rs(9), paddingHorizontal: rs(12), borderRadius: RADIUS.md, borderCurve: 'continuous', backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP},
   kmChipOn: {backgroundColor: withAlpha(ACCENT, 0.14), borderColor: withAlpha(ACCENT, 0.5)},
   kmChipNum: {color: T4, fontFamily: FONT, fontSize: rf(12), fontWeight: '700'},
   kmChipNumOn: {color: ACCENT},
-  kmChipPace: {color: T1, fontFamily: FONT, fontSize: rf(15), fontWeight: '700', marginTop: 2},
+  kmChipPace: {color: T1, fontFamily: FONT, fontSize: rf(15), fontWeight: '700', marginTop: rs(2)},
   kmChipPaceOn: {color: ACCENT},
 });

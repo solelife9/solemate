@@ -6,7 +6,7 @@
 // 닫기(onClose)에서 App 이 기록 탭으로 이동한다.
 // ============================================================================
 import React, {useMemo, useRef, useState} from 'react';
-import { rf } from './lib/responsive';
+import { rf, rs, ri } from './lib/responsive';
 import {View, Text, ScrollView, Pressable, StyleSheet, Alert, TextInput, Image, Linking} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -183,10 +183,10 @@ export default function RunRecapScreen({
   const closeWithMeta = () => { commitMemo(); onClose?.(); };
   return (
     <View style={[s.screen, {paddingTop: insets.top}]} testID="run-recap-screen">
-      <ScrollView contentContainerStyle={{paddingHorizontal: 18, paddingBottom: insets.bottom + 24, paddingTop: 8}} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={{paddingHorizontal: rs(18), paddingBottom: insets.bottom + 24, paddingTop: rs(8)}} showsVerticalScrollIndicator={false}>
         {/* 축하 헤더 */}
         <View style={s.celebrate}>
-          <View style={s.medal}><Ionicons name="checkmark-done" size={26} color={GOOD} /></View>
+          <View style={s.medal}><Ionicons name="checkmark-done" size={ri(26)} color={GOOD} /></View>
           <Text style={s.title}>러닝 완료</Text>
           {shoeName ? <Text style={s.shoe} numberOfLines={1}>{shoeName}</Text> : null}
         </View>
@@ -202,19 +202,19 @@ export default function RunRecapScreen({
           <View style={s.badges}>
             {!!track && track.laps > 0 && (
               <View style={[s.badge, {borderColor: withAlpha(ACCENT, 0.4), backgroundColor: withAlpha(ACCENT, 0.12)}]} testID="recap-track">
-                <Ionicons name="ellipse-outline" size={13} color={ACCENT} />
+                <Ionicons name="ellipse-outline" size={ri(13)} color={ACCENT} />
                 <Text style={[s.badgeTxt, {color: ACCENT}]}>트랙 · {track.lapM}m × {track.laps}랩</Text>
               </View>
             )}
             {goalHit && (
               <View style={[s.badge, {borderColor: withAlpha(ACCENT, 0.4), backgroundColor: withAlpha(ACCENT, 0.12)}]}>
-                <Ionicons name="flag" size={13} color={ACCENT} />
+                <Ionicons name="flag" size={ri(13)} color={ACCENT} />
                 <Text style={[s.badgeTxt, {color: ACCENT}]}>목표 {goalKm}{unit} 달성</Text>
               </View>
             )}
             {prKinds.map((k) => (
               <View key={k} testID={`recap-pr-${k}`} style={[s.badge, {borderColor: withAlpha(GOOD, 0.4), backgroundColor: withAlpha(GOOD, 0.12)}]}>
-                <Ionicons name="trophy" size={13} color={GOOD} />
+                <Ionicons name="trophy" size={ri(13)} color={GOOD} />
                 <Text style={[s.badgeTxt, {color: GOOD}]}>신기록 · {PR_LABEL[k]}</Text>
               </View>
             ))}
@@ -226,7 +226,7 @@ export default function RunRecapScreen({
         {raceMatch && onLogRace && !raceDismissed && (
           <View style={s.raceBanner} testID="recap-race-banner">
             <View style={s.raceBannerHead}>
-              <Ionicons name="medal" size={16} color={HALL_GOLD} />
+              <Ionicons name="medal" size={ri(16)} color={HALL_GOLD} />
               <Text style={s.raceBannerTitle}>
                 {raceMatch.kind === 'geo' && raceMatch.race
                   ? `${raceMatch.race.name} 달리셨나요?`
@@ -251,12 +251,12 @@ export default function RunRecapScreen({
 
         {/* 오늘의 코스 — GPS 경로가 있으면 진짜 지도 위 경로(없으면 스스로 숨김).
             완주 직후가 러너가 코스를 가장 자랑하고 싶은 순간(공유 트리거). */}
-        <CourseMap points={routePoints} title="오늘의 코스" style={{marginTop: 14}} />
+        <CourseMap points={routePoints} title="오늘의 코스" style={{marginTop: rs(14)}} />
 
         {/* 신발 마모 델타(시그니처) — 이 런이 신발 수명에 미친 영향 */}
         {shoeWear && (
           <View style={s.shoeCard} testID="recap-shoe-wear">
-            <View style={s.shoeIcon}><Ionicons name="footsteps" size={18} color={ACCENT} /></View>
+            <View style={s.shoeIcon}><Ionicons name="footsteps" size={ri(18)} color={ACCENT} /></View>
             <View style={{flex: 1, minWidth: 0}}>
               <Text style={s.shoeName} numberOfLines={1}>{shoeName || '신발'}</Text>
               <Text style={s.shoeMeta}>
@@ -328,13 +328,13 @@ export default function RunRecapScreen({
                 <Image source={{uri: photoUri}} style={s.metaPhoto} resizeMode="cover" accessible accessibilityLabel="러닝 사진" />
                 <Pressable onPress={removePhoto} accessibilityRole="button" accessibilityLabel="사진 제거" hitSlop={8}
                   style={({pressed}) => [s.metaPhotoRemove, pressed && {opacity: 0.8}]}>
-                  <Ionicons name="close" size={14} color={T1} />
+                  <Ionicons name="close" size={ri(14)} color={T1} />
                 </Pressable>
               </View>
             ) : (
               <Pressable onPress={attachPhoto} accessibilityRole="button" accessibilityLabel="사진 추가" testID="recap-add-photo"
                 style={({pressed}) => [s.metaPhotoAdd, pressed && {backgroundColor: CARD_HI}]}>
-                <Ionicons name="camera-outline" size={18} color={T2} />
+                <Ionicons name="camera-outline" size={ri(18)} color={T2} />
                 <Text style={s.metaPhotoAddTxt}>오늘의 한 컷 남기기</Text>
               </Pressable>
             )}
@@ -366,7 +366,7 @@ export default function RunRecapScreen({
         <Pressable onPress={onShare} accessibilityRole="button" accessibilityLabel="러닝 공유" testID="recap-share"
           style={({pressed}) => [s.shareBtn, pressed && {opacity: 0.85}]}>
           <GlassEdge radius={RADIUS.lg} />
-          <Ionicons name="share-outline" size={17} color={T1} style={{marginRight: 7}} />
+          <Ionicons name="share-outline" size={ri(17)} color={T1} style={{marginRight: rs(7)}} />
           <Text style={s.doneTxt}>공유</Text>
         </Pressable>
         <Pressable onPress={closeWithMeta} accessibilityRole="button" accessibilityLabel="완료" testID="recap-done"
@@ -381,63 +381,63 @@ export default function RunRecapScreen({
 
 const s = StyleSheet.create({
   screen: {flex: 1, backgroundColor: BG},
-  celebrate: {alignItems: 'center', gap: 6, marginTop: 12, marginBottom: 6},
-  medal: {width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(GOOD, 0.14)},
+  celebrate: {alignItems: 'center', gap: rs(6), marginTop: rs(12), marginBottom: rs(6)},
+  medal: {width: rs(52), height: rs(52), borderRadius: rs(26), alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(GOOD, 0.14)},
   title: {color: T1, fontFamily: FONT, fontSize: rf(23), fontWeight: '700', letterSpacing: -0.4},
   shoe: {color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '600'},
-  hero: {flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'center', gap: 6, marginTop: 8, marginBottom: 14},
+  hero: {flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'center', gap: rs(6), marginTop: rs(8), marginBottom: rs(14)},
   heroNum: {color: T1, fontFamily: DISPLAY, fontSize: rf(68), fontWeight: '700', letterSpacing: -2, lineHeight: rf(72)},
-  heroUnit: {color: T2, fontFamily: FONT, fontSize: rf(21), fontWeight: '700', marginBottom: 10},
-  badges: {flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, marginBottom: 16},
-  badge: {flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, height: 30, borderRadius: RADIUS.pill, borderWidth: 1},
+  heroUnit: {color: T2, fontFamily: FONT, fontSize: rf(21), fontWeight: '700', marginBottom: rs(10)},
+  badges: {flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: rs(8), marginBottom: rs(16)},
+  badge: {flexDirection: 'row', alignItems: 'center', gap: rs(5), paddingHorizontal: rs(12), height: rs(30), borderRadius: RADIUS.pill, borderWidth: 1},
   badgeTxt: {fontFamily: FONT, fontSize: rf(14), fontWeight: '700'},
 
   // 대회 완주 감지 배너(골드) — 완주 직후 러너가 메달을 남기고 싶은 순간.
-  raceBanner: {marginTop: 14, padding: 16, borderRadius: 18, borderCurve: 'continuous', backgroundColor: withAlpha(HALL_GOLD, 0.08), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(HALL_GOLD, 0.35)},
-  raceBannerHead: {flexDirection: 'row', alignItems: 'center', gap: 8},
+  raceBanner: {marginTop: rs(14), padding: rs(16), borderRadius: rs(18), borderCurve: 'continuous', backgroundColor: withAlpha(HALL_GOLD, 0.08), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(HALL_GOLD, 0.35)},
+  raceBannerHead: {flexDirection: 'row', alignItems: 'center', gap: rs(8)},
   raceBannerTitle: {flex: 1, color: HALL_GOLD, fontFamily: FONT, fontSize: rf(16), fontWeight: '700', letterSpacing: -0.2},
-  raceBannerDesc: {color: T2, fontFamily: FONT, fontSize: rf(14), marginTop: 6, lineHeight: rf(18)},
-  raceBannerBtns: {flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 14},
-  raceBannerPrimary: {flex: 1, height: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(HALL_GOLD, 0.18), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(HALL_GOLD, 0.4)},
+  raceBannerDesc: {color: T2, fontFamily: FONT, fontSize: rf(14), marginTop: rs(6), lineHeight: rf(18)},
+  raceBannerBtns: {flexDirection: 'row', alignItems: 'center', gap: rs(8), marginTop: rs(14)},
+  raceBannerPrimary: {flex: 1, height: rs(42), borderRadius: rs(12), alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(HALL_GOLD, 0.18), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(HALL_GOLD, 0.4)},
   raceBannerPrimaryT: {color: HALL_GOLD, fontFamily: FONT, fontSize: rf(15), fontWeight: '700'},
-  raceBannerGhost: {height: 42, paddingHorizontal: 14, alignItems: 'center', justifyContent: 'center'},
+  raceBannerGhost: {height: rs(42), paddingHorizontal: rs(14), alignItems: 'center', justifyContent: 'center'},
   raceBannerGhostT: {color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '500'},
-  grid: {flexDirection: 'row', flexWrap: 'wrap', backgroundColor: CARD, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP, paddingVertical: 6},
-  stat: {width: '50%', paddingVertical: 14, paddingHorizontal: 18, alignItems: 'flex-start'},
+  grid: {flexDirection: 'row', flexWrap: 'wrap', backgroundColor: CARD, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP, paddingVertical: rs(6)},
+  stat: {width: '50%', paddingVertical: rs(14), paddingHorizontal: rs(18), alignItems: 'flex-start'},
   statValue: {color: T1, fontFamily: DISPLAY, fontSize: rf(27), fontWeight: '700', letterSpacing: -0.6},
-  statLabel: {color: T3, fontFamily: FONT, fontSize: rf(13), fontWeight: '600', marginTop: 3},
+  statLabel: {color: T3, fontFamily: FONT, fontSize: rf(13), fontWeight: '600', marginTop: rs(3)},
   statSub: {color: T3, fontFamily: FONT, fontSize: rf(12), fontWeight: '500'},
-  shoeCard: {flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: CARD, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP, paddingHorizontal: 14, paddingVertical: 12, marginBottom: 12},
-  shoeIcon: {width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(ACCENT, 0.12)},
+  shoeCard: {flexDirection: 'row', alignItems: 'center', gap: rs(12), backgroundColor: CARD, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP, paddingHorizontal: rs(14), paddingVertical: rs(12), marginBottom: rs(12)},
+  shoeIcon: {width: rs(36), height: rs(36), borderRadius: rs(18), alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(ACCENT, 0.12)},
   shoeName: {color: T1, fontFamily: FONT, fontSize: rf(16), fontWeight: '700', letterSpacing: -0.2},
-  shoeMeta: {color: T2, fontFamily: FONT, fontSize: rf(14), fontWeight: '500', marginTop: 2},
+  shoeMeta: {color: T2, fontFamily: FONT, fontSize: rf(14), fontWeight: '500', marginTop: rs(2)},
   shoeStrong: {color: T1, fontWeight: '700'},
   shoeDelta: {color: T3, fontWeight: '600'},
-  load: {flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12, paddingHorizontal: 2},
-  loadDot: {width: 8, height: 8, borderRadius: 4},
+  load: {flexDirection: 'row', alignItems: 'center', gap: rs(8), marginBottom: rs(12), paddingHorizontal: rs(2)},
+  loadDot: {width: rs(8), height: rs(8), borderRadius: rs(4)},
   loadTxt: {flex: 1, color: T2, fontFamily: FONT, fontSize: rf(14), fontWeight: '500'},
   loadStrong: {fontWeight: '700'},
-  plan: {backgroundColor: CARD, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP, paddingHorizontal: 16, paddingVertical: 12, marginTop: 12},
-  planHead: {flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 8},
+  plan: {backgroundColor: CARD, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP, paddingHorizontal: rs(16), paddingVertical: rs(12), marginTop: rs(12)},
+  planHead: {flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: rs(8)},
   planTitle: {color: T1, fontFamily: FONT, fontSize: rf(16), fontWeight: '700'},
   planSummary: {fontFamily: FONT, fontSize: rf(14), fontWeight: '700'},
-  planRow: {flexDirection: 'row', alignItems: 'center', paddingVertical: 7, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP},
-  planKm: {color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '700', width: 42},
+  planRow: {flexDirection: 'row', alignItems: 'center', paddingVertical: rs(7), borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP},
+  planKm: {color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '700', width: rs(42)},
   planTgt: {color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '500', flex: 1},
-  planAct: {color: T1, fontFamily: FONT, fontSize: rf(15), fontWeight: '700', width: 64, textAlign: 'right'},
-  planDelta: {fontFamily: FONT, fontSize: rf(14), fontWeight: '700', width: 52, textAlign: 'right'},
-  footer: {paddingHorizontal: 18, paddingTop: 10, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP, backgroundColor: CARD_HI},
+  planAct: {color: T1, fontFamily: FONT, fontSize: rf(15), fontWeight: '700', width: rs(64), textAlign: 'right'},
+  planDelta: {fontFamily: FONT, fontSize: rf(14), fontWeight: '700', width: rs(52), textAlign: 'right'},
+  footer: {paddingHorizontal: rs(18), paddingTop: rs(10), borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP, backgroundColor: CARD_HI},
   // 투명 유리 CTA(홈 '러닝 시작'과 동일 문법) — 오렌지 필 폐지, 포인트 컬러는 지표에만.
   // 공유(보조)와 완료(주) — 같은 유리, 폭 비율로만 위계(공유 1 : 완료 1.6).
-  footerRow: {flexDirection: 'row', gap: 10},
-  shareBtn: {flex: 1, height: 52, borderRadius: RADIUS.lg, borderCurve: 'continuous', overflow: 'hidden', backgroundColor: withAlpha(T1, 0.06), flexDirection: 'row', alignItems: 'center', justifyContent: 'center'},
-  doneBtn: {flex: 1.6, height: 52, borderRadius: RADIUS.lg, borderCurve: 'continuous', overflow: 'hidden', backgroundColor: withAlpha(T1, 0.1), alignItems: 'center', justifyContent: 'center'},
+  footerRow: {flexDirection: 'row', gap: rs(10)},
+  shareBtn: {flex: 1, height: rs(52), borderRadius: RADIUS.lg, borderCurve: 'continuous', overflow: 'hidden', backgroundColor: withAlpha(T1, 0.06), flexDirection: 'row', alignItems: 'center', justifyContent: 'center'},
+  doneBtn: {flex: 1.6, height: rs(52), borderRadius: RADIUS.lg, borderCurve: 'continuous', overflow: 'hidden', backgroundColor: withAlpha(T1, 0.1), alignItems: 'center', justifyContent: 'center'},
   doneTxt: {color: T1, fontFamily: FONT, fontSize: rf(17), fontWeight: '700'},
-  metaCard: {backgroundColor: CARD, borderRadius: RADIUS.lg, borderCurve: 'continuous', padding: 14, marginTop: 12, gap: 12},
-  metaPhoto: {width: '100%', height: 180, borderRadius: RADIUS.md, borderCurve: 'continuous'},
-  metaPhotoRemove: {position: 'absolute', top: 8, right: 8, width: 26, height: 26, borderRadius: 13, backgroundColor: 'rgba(0,0,0,0.55)', alignItems: 'center', justifyContent: 'center'},
-  metaPhotoAdd: {flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: RADIUS.md, borderCurve: 'continuous', borderWidth: StyleSheet.hairlineWidth, borderColor: SEP, paddingVertical: 14},
+  metaCard: {backgroundColor: CARD, borderRadius: RADIUS.lg, borderCurve: 'continuous', padding: rs(14), marginTop: rs(12), gap: rs(12)},
+  metaPhoto: {width: '100%', height: rs(180), borderRadius: RADIUS.md, borderCurve: 'continuous'},
+  metaPhotoRemove: {position: 'absolute', top: 8, right: 8, width: rs(26), height: rs(26), borderRadius: rs(13), backgroundColor: 'rgba(0,0,0,0.55)', alignItems: 'center', justifyContent: 'center'},
+  metaPhotoAdd: {flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rs(8), borderRadius: RADIUS.md, borderCurve: 'continuous', borderWidth: StyleSheet.hairlineWidth, borderColor: SEP, paddingVertical: rs(14)},
   metaPhotoAddTxt: {color: T2, fontFamily: FONT, fontSize: rf(14), fontWeight: '600'},
-  metaInput: {color: T1, fontFamily: FONT, fontSize: rf(15), paddingVertical: 8, paddingHorizontal: 2, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: SEP},
+  metaInput: {color: T1, fontFamily: FONT, fontSize: rf(15), paddingVertical: rs(8), paddingHorizontal: rs(2), borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: SEP},
   offscreen: {position: 'absolute', left: -10000, top: 0, opacity: 0},
 });

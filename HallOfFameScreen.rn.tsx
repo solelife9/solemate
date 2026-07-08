@@ -14,7 +14,7 @@
 // 토큰만 사용(theme.ts) — 색/폰트/간격 하드코딩 0. 티어 색은 TIER_COLORS 권위.
 // ============================================================================
 import React, {useEffect, useState} from 'react';
-import { rf } from './lib/responsive';
+import { rf, rs, ri } from './lib/responsive';
 import {
   View,
   Text,
@@ -223,7 +223,7 @@ export default function HallOfFameScreen({
       <ScrollView
         contentContainerStyle={{
           paddingTop: insets.top + 12,
-          paddingHorizontal: 18,
+          paddingHorizontal: rs(18),
           paddingBottom: insets.bottom + 28,
           gap: SPACE.lg,
         }}>
@@ -236,13 +236,13 @@ export default function HallOfFameScreen({
               accessibilityRole="button"
               accessibilityLabel="뒤로"
               style={({pressed}) => [s.iconBtn, pressed && {backgroundColor: CARD}]}>
-              <Ionicons name="chevron-back" size={20} color={T2} />
+              <Ionicons name="chevron-back" size={ri(20)} color={T2} />
             </Pressable>
           ) : (
-            <View style={{width: 38}} />
+            <View style={{width: rs(38)}} />
           )}
           <Text style={s.title}>랭킹</Text>
-          <View style={{width: 38}} />
+          <View style={{width: rs(38)}} />
         </View>
         <Text style={s.monthLabel}>{yearMonth} · 이번 달 랭킹</Text>
 
@@ -250,7 +250,7 @@ export default function HallOfFameScreen({
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{gap: 8, paddingRight: 8}}>
+          contentContainerStyle={{gap: rs(8), paddingRight: rs(8)}}>
           {CATEGORIES.map(c => {
             const active = category === c.key;
             return (
@@ -261,7 +261,7 @@ export default function HallOfFameScreen({
                 accessibilityRole="tab"
                 accessibilityState={{selected: active}}
                 style={[s.catChip, active && {backgroundColor: CARD_HI, borderColor: withAlpha(ACCENT, 0.5)}]}>
-                <Ionicons name={c.icon} size={13} color={active ? ACCENT : T3} />
+                <Ionicons name={c.icon} size={ri(13)} color={active ? ACCENT : T3} />
                 <Text style={[s.catChipTxt, active && {color: T1}]}>{c.label}</Text>
               </Pressable>
             );
@@ -287,7 +287,7 @@ export default function HallOfFameScreen({
           </View>
         ) : (
           <View style={s.hint} testID="hof-my-unavailable">
-            <Ionicons name="person-circle-outline" size={18} color={T3} />
+            <Ionicons name="person-circle-outline" size={ri(18)} color={T3} />
             <Text style={s.hintTxt}>
               로그인 후 동기화하면 내 순위가 표시돼요
             </Text>
@@ -300,12 +300,12 @@ export default function HallOfFameScreen({
             <ActivityIndicator color={ACCENT} />
           </View>
         ) : lbAvailable && entries.length > 0 ? (
-          <View style={{gap: 8}} testID="hof-leaderboard">
+          <View style={{gap: rs(8)}} testID="hof-leaderboard">
             {entries.map(e => renderRow(e, e.uid === myUid))}
           </View>
         ) : (
           <View style={s.empty} testID="hof-empty">
-            <Ionicons name="trophy-outline" size={26} color={T3} />
+            <Ionicons name="trophy-outline" size={ri(26)} color={T3} />
             <Text style={s.emptyTitle}>랭킹이 곧 열려요</Text>
             <Text style={s.emptyTxt}>
               친구들과 거리·꾸준함·신발 관리로 경쟁해 보세요.{'\n'}
@@ -326,8 +326,8 @@ const s = StyleSheet.create({
     justifyContent: 'space-between',
   },
   iconBtn: {
-    width: 38,
-    height: 38,
+    width: rs(38),
+    height: rs(38),
     borderRadius: RADIUS.pill,
     alignItems: 'center',
     justifyContent: 'center',
@@ -345,19 +345,19 @@ const s = StyleSheet.create({
     fontSize: rf(13),
     fontWeight: '600',
     textAlign: 'center',
-    marginTop: -8,
+    marginTop: rs(-8),
   },
   // 카테고리 칩
   catChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: rs(6),
     backgroundColor: CARD,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: SEP,
     borderRadius: RADIUS.pill,
-    paddingHorizontal: 13,
-    paddingVertical: 8,
+    paddingHorizontal: rs(13),
+    paddingVertical: rs(8),
   },
   catChipTxt: {fontFamily: FONT, color: T3, fontSize: rf(14), fontWeight: '700'},
   // 내 순위 카드
@@ -378,10 +378,10 @@ const s = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: -0.6,
     fontVariant: ['tabular-nums'],
-    marginTop: 2,
+    marginTop: rs(2),
   },
   myTotal: {fontFamily: FONT, color: T3, fontSize: rf(15), fontWeight: '700'},
-  myPct: {fontFamily: FONT, color: ACCENT, fontSize: rf(14), fontWeight: '700', marginTop: 2},
+  myPct: {fontFamily: FONT, color: ACCENT, fontSize: rf(14), fontWeight: '700', marginTop: rs(2)},
   myScore: {
     fontFamily: DISPLAY,
     color: T1,
@@ -400,22 +400,22 @@ const s = StyleSheet.create({
     borderColor: SEP,
     borderRadius: RADIUS.md,
     paddingHorizontal: SPACE.lg,
-    paddingVertical: 13,
+    paddingVertical: rs(13),
   },
   hintTxt: {flex: 1, fontFamily: FONT, color: T2, fontSize: rf(14), fontWeight: '600'},
   // 리더보드 행
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: rs(10),
     backgroundColor: CARD,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: SEP,
     borderRadius: RADIUS.md,
-    paddingHorizontal: 13,
-    paddingVertical: 12,
+    paddingHorizontal: rs(13),
+    paddingVertical: rs(12),
   },
-  rankCol: {width: 30, alignItems: 'center'},
+  rankCol: {width: rs(30), alignItems: 'center'},
   rankNum: {
     fontFamily: DISPLAY,
     color: T2,
@@ -423,16 +423,16 @@ const s = StyleSheet.create({
     fontWeight: '700',
     fontVariant: ['tabular-nums'],
   },
-  tierDot: {width: 8, height: 8, borderRadius: 4},
+  tierDot: {width: rs(8), height: rs(8), borderRadius: rs(4)},
   rowName: {fontFamily: FONT, color: T1, fontSize: rf(15), fontWeight: '700'},
   titlePill: {
     flexDirection: 'row',
     alignSelf: 'flex-start',
     borderWidth: StyleSheet.hairlineWidth,
     borderRadius: RADIUS.pill,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    marginTop: 4,
+    paddingHorizontal: rs(8),
+    paddingVertical: rs(2),
+    marginTop: rs(4),
     maxWidth: '100%',
   },
   titlePillTxt: {fontFamily: FONT, fontSize: rf(12), fontWeight: '700', flexShrink: 1},
@@ -445,8 +445,8 @@ const s = StyleSheet.create({
     fontVariant: ['tabular-nums'],
   },
   // 상태
-  center: {paddingVertical: 48, alignItems: 'center'},
-  empty: {alignItems: 'center', gap: 8, paddingVertical: 40, paddingHorizontal: GUTTER},
-  emptyTitle: {fontFamily: DISPLAY, color: T1, fontSize: rf(17), fontWeight: '700', marginTop: 4},
+  center: {paddingVertical: rs(48), alignItems: 'center'},
+  empty: {alignItems: 'center', gap: rs(8), paddingVertical: rs(40), paddingHorizontal: GUTTER},
+  emptyTitle: {fontFamily: DISPLAY, color: T1, fontSize: rf(17), fontWeight: '700', marginTop: rs(4)},
   emptyTxt: {fontFamily: FONT, color: T3, fontSize: rf(14), fontWeight: '600', lineHeight: rf(18), textAlign: 'center'},
 });

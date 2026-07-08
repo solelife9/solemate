@@ -5,7 +5,7 @@
 // 원반 탭 → 상세(큰 원형 메달 + 기록증 + 공식 기록 + 그 러닝 링크 + BIB). 색은 theme 토큰만.
 // ============================================================================
 import React, {useRef, useState} from 'react';
-import { rf } from './lib/responsive';
+import { rf, rs, ri } from './lib/responsive';
 import {View, Text, ScrollView, Pressable, Image, StyleSheet} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -53,17 +53,17 @@ export default function MedalArchiveScreen({
       <View style={[m.screen, {paddingTop: insets.top}]} testID="medal-archive-screen">
         <View style={m.nav}>
           <Pressable onPress={onBack} hitSlop={8} accessibilityRole="button" accessibilityLabel="뒤로" style={m.iconBtn}>
-            <Ionicons name="chevron-back" size={20} color={T1} />
+            <Ionicons name="chevron-back" size={ri(20)} color={T1} />
           </Pressable>
           <Text style={m.navTitle}>메달 아카이브</Text>
           {onAddMedal ? (
             <Pressable onPress={onAddMedal} hitSlop={8} accessibilityRole="button" accessibilityLabel="메달 추가" testID="medal-add" style={m.iconBtn}>
-              <Ionicons name="add" size={24} color={ACCENT} />
+              <Ionicons name="add" size={ri(24)} color={ACCENT} />
             </Pressable>
-          ) : <View style={{width: 36}} />}
+          ) : <View style={{width: rs(36)}} />}
         </View>
 
-        <ScrollView contentContainerStyle={{flexGrow: 1, justifyContent: 'center', padding: 18, paddingBottom: insets.bottom + 28}} showsVerticalScrollIndicator={false}>
+        <ScrollView contentContainerStyle={{flexGrow: 1, justifyContent: 'center', padding: rs(18), paddingBottom: insets.bottom + 28}} showsVerticalScrollIndicator={false}>
           <View style={m.head}>
             <Text style={m.h}>메달 아카이브</Text>
             <Text style={m.count}>{medals.length}개 수집</Text>
@@ -72,14 +72,14 @@ export default function MedalArchiveScreen({
 
           {medals.length === 0 ? (
             <View style={m.empty} testID="medal-empty">
-              <View style={[m.disc, {width: 84, height: 84, borderRadius: 42, borderStyle: 'dashed'}]}>
-                <Ionicons name="medal-outline" size={34} color={T4} />
+              <View style={[m.disc, {width: rs(84), height: rs(84), borderRadius: rs(42), borderStyle: 'dashed'}]}>
+                <Ionicons name="medal-outline" size={ri(34)} color={T4} />
               </View>
               <Text style={m.emptyT}>아직 메달이 없어요</Text>
               <Text style={m.emptyD}>완주한 대회의 메달과 기록을 남겨보세요.{'\n'}대회를 완주하면 러닝 요약에서도 뜨고, 아래로 지금 추가할 수도 있어요.</Text>
               {onAddMedal && (
                 <Pressable onPress={onAddMedal} accessibilityRole="button" accessibilityLabel="메달 추가하기" style={({pressed}) => [m.emptyCta, pressed && {opacity: 0.85}]}>
-                  <Ionicons name="add" size={18} color={HALL_GOLD} />
+                  <Ionicons name="add" size={ri(18)} color={HALL_GOLD} />
                   <Text style={m.emptyCtaT}>메달 추가하기</Text>
                 </Pressable>
               )}
@@ -161,15 +161,15 @@ function MedalDetail({medal, insetTop, insetBottom, onClose, onOpenRun, onDelete
     <View style={m.detailOverlay} testID="medal-detail">
       <View style={[m.detailNav, {paddingTop: insetTop + 6}]}>
         <Pressable onPress={onClose} hitSlop={8} accessibilityRole="button" accessibilityLabel="닫기" style={m.iconBtn}>
-          <Ionicons name="chevron-down" size={22} color={T1} />
+          <Ionicons name="chevron-down" size={ri(22)} color={T1} />
         </Pressable>
-        <View style={{flexDirection: 'row', gap: 8}}>
+        <View style={{flexDirection: 'row', gap: rs(8)}}>
           <Pressable onPress={onShare} hitSlop={8} accessibilityRole="button" accessibilityLabel="메달 공유" testID="medal-share" style={m.iconBtn}>
-            <Ionicons name="share-outline" size={18} color={HALL_GOLD} />
+            <Ionicons name="share-outline" size={ri(18)} color={HALL_GOLD} />
           </Pressable>
           {onDelete && (
             <Pressable onPress={onDelete} hitSlop={8} accessibilityRole="button" accessibilityLabel="메달 삭제" style={m.iconBtn}>
-              <Ionicons name="trash-outline" size={18} color={T3} />
+              <Ionicons name="trash-outline" size={ri(18)} color={T3} />
             </Pressable>
           )}
         </View>
@@ -178,8 +178,8 @@ function MedalDetail({medal, insetTop, insetBottom, onClose, onOpenRun, onDelete
       <View style={{position: 'absolute', left: -9999, top: 0}} pointerEvents="none">
         <MedalShareCard ref={cardRef} model={shareModel} />
       </View>
-      <ScrollView contentContainerStyle={{alignItems: 'center', paddingHorizontal: 24, paddingBottom: insetBottom + 24}} showsVerticalScrollIndicator={false}>
-        <MedalDisc photoUri={medal.medalPhotoUri} size={168} />
+      <ScrollView contentContainerStyle={{alignItems: 'center', paddingHorizontal: rs(24), paddingBottom: insetBottom + 24}} showsVerticalScrollIndicator={false}>
+        <MedalDisc photoUri={medal.medalPhotoUri} size={ri(168)} />
         <Text style={m.detailName}>{medal.raceName}</Text>
         {official && <Text style={m.detailTime}>{fmtTime(official)}</Text>}
         {!official && app && <Text style={m.detailTime}>{fmtTime(app)}</Text>}
@@ -205,7 +205,7 @@ function MedalDetail({medal, insetTop, insetBottom, onClose, onOpenRun, onDelete
 
         {!!medal.runId && onOpenRun && (
           <Pressable onPress={() => onOpenRun(medal.runId!)} accessibilityRole="button" accessibilityLabel="이 대회 러닝 기록 보기" style={({pressed}) => [m.runLink, pressed && {opacity: 0.7}]}>
-            <Ionicons name="footsteps-outline" size={16} color={ACCENT} />
+            <Ionicons name="footsteps-outline" size={ri(16)} color={ACCENT} />
             <Text style={m.runLinkT}>이 대회 러닝 기록 보기</Text>
           </Pressable>
         )}
@@ -216,17 +216,17 @@ function MedalDetail({medal, insetTop, insetBottom, onClose, onOpenRun, onDelete
 
 const m = StyleSheet.create({
   screen: {flex: 1, backgroundColor: BG},
-  nav: {paddingTop: 12, paddingHorizontal: 14, paddingBottom: 6, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'},
-  iconBtn: {width: 36, height: 36, borderRadius: 999, backgroundColor: CARD_HI, alignItems: 'center', justifyContent: 'center'},
+  nav: {paddingTop: rs(12), paddingHorizontal: rs(14), paddingBottom: rs(6), flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'},
+  iconBtn: {width: rs(36), height: rs(36), borderRadius: 999, backgroundColor: CARD_HI, alignItems: 'center', justifyContent: 'center'},
   navTitle: {color: T1, fontFamily: FONT, fontSize: rf(17), fontWeight: '600', letterSpacing: -0.2},
 
-  head: {flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 4},
+  head: {flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: rs(4)},
   h: {color: T1, fontFamily: DISPLAY, fontSize: rf(25), fontWeight: '700', letterSpacing: -0.5},
   count: {color: HALL_GOLD, fontFamily: FONT, fontSize: rf(13), fontWeight: '600'},
-  sub: {color: T3, fontFamily: FONT, fontSize: rf(14), marginBottom: 8},
+  sub: {color: T3, fontFamily: FONT, fontSize: rf(14), marginBottom: rs(8)},
 
-  grid: {flexDirection: 'row', flexWrap: 'wrap', marginTop: 8},
-  cell: {width: '33.33%', alignItems: 'center', gap: 7, paddingVertical: 12, paddingHorizontal: 4},
+  grid: {flexDirection: 'row', flexWrap: 'wrap', marginTop: rs(8)},
+  cell: {width: '33.33%', alignItems: 'center', gap: rs(7), paddingVertical: rs(12), paddingHorizontal: rs(4)},
   disc: {
     borderWidth: 1, borderColor: withAlpha(HALL_GOLD, 0.35),
     backgroundColor: '#1a160e', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
@@ -234,26 +234,26 @@ const m = StyleSheet.create({
   cellName: {color: T2, fontFamily: FONT, fontSize: rf(12), fontWeight: '600', letterSpacing: -0.2, textAlign: 'center', lineHeight: rf(14)},
   cellTime: {color: HALL_GOLD, fontFamily: FONT, fontSize: rf(12), fontWeight: '700', fontVariant: ['tabular-nums']},
 
-  empty: {alignItems: 'center', gap: 10, paddingVertical: 56},
-  emptyT: {color: T2, fontFamily: FONT, fontSize: rf(16), fontWeight: '600', marginTop: 6},
-  emptyD: {color: T3, fontFamily: FONT, fontSize: rf(14), textAlign: 'center', lineHeight: rf(19), paddingHorizontal: 12},
-  emptyCta: {flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 16, paddingVertical: 12, paddingHorizontal: 20, borderRadius: 999, backgroundColor: withAlpha(HALL_GOLD, 0.12), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(HALL_GOLD, 0.4)},
+  empty: {alignItems: 'center', gap: rs(10), paddingVertical: rs(56)},
+  emptyT: {color: T2, fontFamily: FONT, fontSize: rf(16), fontWeight: '600', marginTop: rs(6)},
+  emptyD: {color: T3, fontFamily: FONT, fontSize: rf(14), textAlign: 'center', lineHeight: rf(19), paddingHorizontal: rs(12)},
+  emptyCta: {flexDirection: 'row', alignItems: 'center', gap: rs(6), marginTop: rs(16), paddingVertical: rs(12), paddingHorizontal: rs(20), borderRadius: 999, backgroundColor: withAlpha(HALL_GOLD, 0.12), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(HALL_GOLD, 0.4)},
   emptyCtaT: {color: HALL_GOLD, fontFamily: FONT, fontSize: rf(15), fontWeight: '700'},
 
   // 상세 오버레이
   detailOverlay: {position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: BG},
-  detailNav: {paddingHorizontal: 14, paddingBottom: 4, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'},
-  detailName: {color: T1, fontFamily: FONT, fontSize: rf(21), fontWeight: '700', letterSpacing: -0.4, textAlign: 'center', marginTop: 20, textWrap: 'balance'} as any,
-  detailTime: {color: HALL_GOLD, fontFamily: DISPLAY, fontSize: rf(40), fontWeight: '700', letterSpacing: -1, marginTop: 8, fontVariant: ['tabular-nums']},
-  detailNote: {color: T3, fontFamily: FONT, fontSize: rf(13), marginTop: 6, textAlign: 'center'},
-  detailCard: {alignSelf: 'stretch', backgroundColor: CARD, borderRadius: 18, borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER, paddingHorizontal: 16, marginTop: 22},
-  detailRow: {flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 14},
+  detailNav: {paddingHorizontal: rs(14), paddingBottom: rs(4), flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'},
+  detailName: {color: T1, fontFamily: FONT, fontSize: rf(21), fontWeight: '700', letterSpacing: -0.4, textAlign: 'center', marginTop: rs(20), textWrap: 'balance'} as any,
+  detailTime: {color: HALL_GOLD, fontFamily: DISPLAY, fontSize: rf(40), fontWeight: '700', letterSpacing: -1, marginTop: rs(8), fontVariant: ['tabular-nums']},
+  detailNote: {color: T3, fontFamily: FONT, fontSize: rf(13), marginTop: rs(6), textAlign: 'center'},
+  detailCard: {alignSelf: 'stretch', backgroundColor: CARD, borderRadius: rs(18), borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER, paddingHorizontal: rs(16), marginTop: rs(22)},
+  detailRow: {flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: rs(14)},
   detailRowDiv: {borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP},
   detailRowL: {color: T3, fontFamily: FONT, fontSize: rf(14)},
   detailRowV: {color: T1, fontFamily: FONT, fontSize: rf(15), fontWeight: '600', fontVariant: ['tabular-nums']},
-  certWrap: {alignSelf: 'stretch', marginTop: 18, gap: 8},
+  certWrap: {alignSelf: 'stretch', marginTop: rs(18), gap: rs(8)},
   certLabel: {color: T3, fontFamily: FONT, fontSize: rf(13), fontWeight: '600', letterSpacing: 0.4},
-  certImg: {width: '100%', height: 260, borderRadius: 14, backgroundColor: CARD},
-  runLink: {flexDirection: 'row', alignItems: 'center', gap: 7, marginTop: 20, paddingVertical: 12, paddingHorizontal: 16, borderRadius: 12, backgroundColor: withAlpha(ACCENT, 0.1), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.3)},
+  certImg: {width: '100%', height: rs(260), borderRadius: rs(14), backgroundColor: CARD},
+  runLink: {flexDirection: 'row', alignItems: 'center', gap: rs(7), marginTop: rs(20), paddingVertical: rs(12), paddingHorizontal: rs(16), borderRadius: rs(12), backgroundColor: withAlpha(ACCENT, 0.1), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.3)},
   runLinkT: {color: ACCENT, fontFamily: FONT, fontSize: rf(15), fontWeight: '600'},
 });

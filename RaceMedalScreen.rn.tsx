@@ -6,7 +6,7 @@
 // OCR 인식기(recognizer)는 네이티브 모듈 주입 — 없거나 실패하면 직접 입력으로 폴백.
 // ============================================================================
 import React, {useMemo, useState} from 'react';
-import { rf } from './lib/responsive';
+import { rf, rs, ri } from './lib/responsive';
 import {View, Text, ScrollView, Pressable, TextInput, Image, StyleSheet, ActivityIndicator} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -147,15 +147,15 @@ export default function RaceMedalScreen({
     return (
       <View style={[s.screen, {paddingTop: insets.top}]} testID="race-medal-select">
         <View style={s.nav}>
-          <Pressable onPress={onClose} hitSlop={8} accessibilityRole="button" accessibilityLabel="닫기" style={s.iconBtn}><Ionicons name="close" size={18} color={T2} /></Pressable>
+          <Pressable onPress={onClose} hitSlop={8} accessibilityRole="button" accessibilityLabel="닫기" style={s.iconBtn}><Ionicons name="close" size={ri(18)} color={T2} /></Pressable>
           <Text style={s.navTitle}>어떤 대회였나요?</Text>
-          <View style={{width: 36}} />
+          <View style={{width: rs(36)}} />
         </View>
         <View style={s.search}>
-          <Ionicons name="search" size={16} color={T3} />
+          <Ionicons name="search" size={ri(16)} color={T3} />
           <TextInput value={query} onChangeText={setQuery} placeholder="대회 이름 검색" placeholderTextColor={T4} style={s.searchInput} autoCorrect={false} testID="race-search" />
         </View>
-        <ScrollView contentContainerStyle={{paddingHorizontal: 18, paddingBottom: insets.bottom + 20}} keyboardShouldPersistTaps="handled">
+        <ScrollView contentContainerStyle={{paddingHorizontal: rs(18), paddingBottom: insets.bottom + 20}} keyboardShouldPersistTaps="handled">
           <Text style={s.section}>{query.trim() ? '검색 결과' : '러닝 날짜 근처 대회'}</Text>
           {results.map((r) => (
             <Pressable key={r.id} onPress={() => { setRace(r); setDist(r.distances[0] ?? 'half'); setDateStr(r.date); setStep('record'); }}
@@ -174,7 +174,7 @@ export default function RaceMedalScreen({
           <View style={s.customBox}>
             <Text style={s.customLabel}>찾는 대회가 없나요?</Text>
             <TextInput value={customName} onChangeText={setCustomName} placeholder="대회 이름 직접 입력" placeholderTextColor={T4} style={s.customInput} autoCorrect={false} testID="race-custom" />
-            <View style={{marginTop: 10}}>
+            <View style={{marginTop: rs(10)}}>
               <Button label="이 대회로" disabled={!customName.trim()} onPress={() => { setRace(null); setStep('record'); }} />
             </View>
           </View>
@@ -189,16 +189,16 @@ export default function RaceMedalScreen({
       <View style={s.nav}>
         <Pressable onPress={() => (presetRace ? onClose() : setStep('race'))} hitSlop={8} accessibilityRole="button" accessibilityLabel="뒤로" style={s.iconBtn}><Ionicons name={presetRace ? 'close' : 'chevron-back'} size={presetRace ? 18 : 20} color={T2} /></Pressable>
         <Text style={s.navTitle} numberOfLines={1}>{raceName || '대회 기록'}</Text>
-        <View style={{width: 36}} />
+        <View style={{width: rs(36)}} />
       </View>
-      <ScrollView contentContainerStyle={{paddingHorizontal: 18, paddingBottom: insets.bottom + 20}} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={{paddingHorizontal: rs(18), paddingBottom: insets.bottom + 20}} keyboardShouldPersistTaps="handled">
         {/* 촬영 2슬롯 — 메달은 원형 가이드 카메라, 기록증은 즉시 촬영 → OCR */}
         <View style={s.shotRow}>
           <Pressable onPress={() => setCameraOpen(true)} accessibilityRole="button" accessibilityLabel="메달 촬영" style={({pressed}) => [s.shot, s.shotMedal, medalUri && s.shotDone, pressed && {opacity: 0.85}]}>
-            {medalUri ? <Image source={{uri: medalUri}} style={s.shotImgRound} resizeMode="cover" /> : <><Ionicons name="medal-outline" size={26} color={HALL_GOLD} /><Text style={[s.shotT, {color: HALL_GOLD}]}>메달 촬영</Text><Text style={s.shotS}>원 안에 맞춰 찍어요</Text></>}
+            {medalUri ? <Image source={{uri: medalUri}} style={s.shotImgRound} resizeMode="cover" /> : <><Ionicons name="medal-outline" size={ri(26)} color={HALL_GOLD} /><Text style={[s.shotT, {color: HALL_GOLD}]}>메달 촬영</Text><Text style={s.shotS}>원 안에 맞춰 찍어요</Text></>}
           </Pressable>
           <Pressable onPress={shotCert} accessibilityRole="button" accessibilityLabel="기록증 사진 찍기" style={({pressed}) => [s.shot, ocrDone && s.shotDoneGood, ocrEmpty && s.shotDoneWarn, pressed && {opacity: 0.85}]}>
-            {ocrBusy ? <ActivityIndicator color={T2} /> : ocrDone ? <><Ionicons name="checkmark-circle" size={26} color={GOOD} /><Text style={[s.shotT, {color: GOOD}]}>기록증 인식됨</Text><Text style={s.shotS}>다시 찍기</Text></> : ocrEmpty ? <><Ionicons name="alert-circle-outline" size={26} color={WARN} /><Text style={[s.shotT, {color: WARN}]}>기록을 못 읽었어요</Text><Text style={s.shotS}>다시 찍거나 직접 입력</Text></> : certUri ? <><Ionicons name="document-text" size={26} color={T2} /><Text style={s.shotT}>기록증 저장됨</Text><Text style={s.shotS}>값은 아래 입력</Text></> : <><Ionicons name="document-text-outline" size={26} color={T3} /><Text style={s.shotT}>기록증 촬영</Text><Text style={s.shotS}>공식 기록 자동 인식</Text></>}
+            {ocrBusy ? <ActivityIndicator color={T2} /> : ocrDone ? <><Ionicons name="checkmark-circle" size={ri(26)} color={GOOD} /><Text style={[s.shotT, {color: GOOD}]}>기록증 인식됨</Text><Text style={s.shotS}>다시 찍기</Text></> : ocrEmpty ? <><Ionicons name="alert-circle-outline" size={ri(26)} color={WARN} /><Text style={[s.shotT, {color: WARN}]}>기록을 못 읽었어요</Text><Text style={s.shotS}>다시 찍거나 직접 입력</Text></> : certUri ? <><Ionicons name="document-text" size={ri(26)} color={T2} /><Text style={s.shotT}>기록증 저장됨</Text><Text style={s.shotS}>값은 아래 입력</Text></> : <><Ionicons name="document-text-outline" size={ri(26)} color={T3} /><Text style={s.shotT}>기록증 촬영</Text><Text style={s.shotS}>공식 기록 자동 인식</Text></>}
           </Pressable>
         </View>
         {ocrDone && <Text style={s.ocrNote}>기록증에서 자동으로 읽었어요 — 확인하고 저장하세요.</Text>}
@@ -264,42 +264,42 @@ export default function RaceMedalScreen({
 
 const s = StyleSheet.create({
   screen: {flex: 1, backgroundColor: BG},
-  nav: {paddingTop: 12, paddingHorizontal: 14, paddingBottom: 6, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'},
-  iconBtn: {width: 36, height: 36, borderRadius: 999, backgroundColor: CARD_HI, alignItems: 'center', justifyContent: 'center'},
-  navTitle: {flex: 1, textAlign: 'center', color: T1, fontFamily: FONT, fontSize: rf(17), fontWeight: '600', letterSpacing: -0.2, marginHorizontal: 8},
+  nav: {paddingTop: rs(12), paddingHorizontal: rs(14), paddingBottom: rs(6), flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'},
+  iconBtn: {width: rs(36), height: rs(36), borderRadius: 999, backgroundColor: CARD_HI, alignItems: 'center', justifyContent: 'center'},
+  navTitle: {flex: 1, textAlign: 'center', color: T1, fontFamily: FONT, fontSize: rf(17), fontWeight: '600', letterSpacing: -0.2, marginHorizontal: rs(8)},
 
-  search: {flexDirection: 'row', alignItems: 'center', gap: 9, marginHorizontal: 18, marginTop: 4, marginBottom: 12, height: 46, paddingHorizontal: 14, borderRadius: 14, backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.1)},
-  searchInput: {flex: 1, color: T1, fontFamily: FONT, fontSize: rf(16), fontWeight: '500', paddingVertical: 0},
-  section: {color: T3, fontFamily: FONT, fontSize: rf(12), fontWeight: '600', letterSpacing: 0.6, textTransform: 'uppercase', marginBottom: 8, marginTop: 4},
-  raceRow: {flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 13, paddingHorizontal: 14, borderRadius: 14, backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP, marginBottom: 8},
+  search: {flexDirection: 'row', alignItems: 'center', gap: rs(9), marginHorizontal: rs(18), marginTop: rs(4), marginBottom: rs(12), height: rs(46), paddingHorizontal: rs(14), borderRadius: rs(14), backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.1)},
+  searchInput: {flex: 1, color: T1, fontFamily: FONT, fontSize: rf(16), fontWeight: '500', paddingVertical: rs(0)},
+  section: {color: T3, fontFamily: FONT, fontSize: rf(12), fontWeight: '600', letterSpacing: 0.6, textTransform: 'uppercase', marginBottom: rs(8), marginTop: rs(4)},
+  raceRow: {flexDirection: 'row', alignItems: 'center', gap: rs(12), paddingVertical: rs(13), paddingHorizontal: rs(14), borderRadius: rs(14), backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP, marginBottom: rs(8)},
   raceName: {color: T1, fontFamily: FONT, fontSize: rf(16), fontWeight: '600', letterSpacing: -0.2},
-  raceMeta: {color: T3, fontFamily: FONT, fontSize: rf(13), marginTop: 2},
-  distPill: {backgroundColor: withAlpha(HALL_GOLD, 0.12), borderRadius: 999, paddingHorizontal: 9, paddingVertical: 4},
+  raceMeta: {color: T3, fontFamily: FONT, fontSize: rf(13), marginTop: rs(2)},
+  distPill: {backgroundColor: withAlpha(HALL_GOLD, 0.12), borderRadius: 999, paddingHorizontal: rs(9), paddingVertical: rs(4)},
   distPillT: {color: HALL_GOLD, fontFamily: FONT, fontSize: rf(12), fontWeight: '700'},
-  noResult: {color: T3, fontFamily: FONT, fontSize: rf(14), marginTop: 4, marginBottom: 6},
-  customBox: {marginTop: 16, padding: 14, borderRadius: 16, borderWidth: 1, borderStyle: 'dashed', borderColor: withAlpha(T1, 0.16)},
-  customLabel: {color: T2, fontFamily: FONT, fontSize: rf(14), fontWeight: '600', marginBottom: 10},
-  customInput: {height: 46, paddingHorizontal: 14, borderRadius: 12, backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.1), color: T1, fontFamily: FONT, fontSize: rf(16)},
+  noResult: {color: T3, fontFamily: FONT, fontSize: rf(14), marginTop: rs(4), marginBottom: rs(6)},
+  customBox: {marginTop: rs(16), padding: rs(14), borderRadius: rs(16), borderWidth: 1, borderStyle: 'dashed', borderColor: withAlpha(T1, 0.16)},
+  customLabel: {color: T2, fontFamily: FONT, fontSize: rf(14), fontWeight: '600', marginBottom: rs(10)},
+  customInput: {height: rs(46), paddingHorizontal: rs(14), borderRadius: rs(12), backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.1), color: T1, fontFamily: FONT, fontSize: rf(16)},
 
-  shotRow: {flexDirection: 'row', gap: 10, marginTop: 8},
-  shot: {flex: 1, height: 150, borderRadius: 20, borderWidth: 1.5, borderStyle: 'dashed', borderColor: withAlpha(T1, 0.16), backgroundColor: withAlpha(T1, 0.02), alignItems: 'center', justifyContent: 'center', gap: 7, overflow: 'hidden', paddingHorizontal: 10},
+  shotRow: {flexDirection: 'row', gap: rs(10), marginTop: rs(8)},
+  shot: {flex: 1, height: rs(150), borderRadius: rs(20), borderWidth: 1.5, borderStyle: 'dashed', borderColor: withAlpha(T1, 0.16), backgroundColor: withAlpha(T1, 0.02), alignItems: 'center', justifyContent: 'center', gap: rs(7), overflow: 'hidden', paddingHorizontal: rs(10)},
   shotMedal: {borderColor: withAlpha(HALL_GOLD, 0.45), backgroundColor: withAlpha(HALL_GOLD, 0.05)},
   shotDone: {borderStyle: 'solid', borderColor: withAlpha(HALL_GOLD, 0.5)},
   shotDoneGood: {borderStyle: 'solid', borderColor: withAlpha(GOOD, 0.5), backgroundColor: withAlpha(GOOD, 0.06)},
   shotDoneWarn: {borderStyle: 'solid', borderColor: withAlpha(WARN, 0.5), backgroundColor: withAlpha(WARN, 0.06)},
-  shotImgRound: {width: 110, height: 110, borderRadius: 55},
+  shotImgRound: {width: rs(110), height: rs(110), borderRadius: rs(55)},
   shotT: {color: T2, fontFamily: FONT, fontSize: rf(14), fontWeight: '600', textAlign: 'center'},
   shotS: {color: T3, fontFamily: FONT, fontSize: rf(12), textAlign: 'center'},
-  ocrNote: {flexDirection: 'row', color: GOOD, fontFamily: FONT, fontSize: rf(13), fontWeight: '600', marginTop: 12},
+  ocrNote: {flexDirection: 'row', color: GOOD, fontFamily: FONT, fontSize: rf(13), fontWeight: '600', marginTop: rs(12)},
 
-  fieldLabel: {color: T2, fontFamily: FONT, fontSize: rf(14), fontWeight: '600', marginTop: 20, marginBottom: 10, paddingHorizontal: 2},
-  fieldHead: {flexDirection: 'row', alignItems: 'center', gap: 8},
-  tag: {backgroundColor: withAlpha(GOOD, 0.14), borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2, marginTop: 20, marginBottom: 10},
+  fieldLabel: {color: T2, fontFamily: FONT, fontSize: rf(14), fontWeight: '600', marginTop: rs(20), marginBottom: rs(10), paddingHorizontal: rs(2)},
+  fieldHead: {flexDirection: 'row', alignItems: 'center', gap: rs(8)},
+  tag: {backgroundColor: withAlpha(GOOD, 0.14), borderRadius: rs(6), paddingHorizontal: rs(6), paddingVertical: rs(2), marginTop: rs(20), marginBottom: rs(10)},
   tagT: {color: GOOD, fontFamily: FONT, fontSize: rf(11), fontWeight: '700', letterSpacing: 0.3},
-  chipRow: {flexDirection: 'row', flexWrap: 'wrap', gap: 8},
-  inputRow: {flexDirection: 'row', alignItems: 'center', height: 52, paddingHorizontal: 16, borderRadius: 14, backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.08)},
-  input: {flex: 1, color: T1, fontFamily: DISPLAY, fontSize: rf(21), fontVariant: ['tabular-nums'], paddingVertical: 0},
-  hint: {color: T3, fontFamily: FONT, fontSize: rf(13), marginTop: 8, paddingHorizontal: 2, lineHeight: rf(17)},
+  chipRow: {flexDirection: 'row', flexWrap: 'wrap', gap: rs(8)},
+  inputRow: {flexDirection: 'row', alignItems: 'center', height: rs(52), paddingHorizontal: rs(16), borderRadius: rs(14), backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.08)},
+  input: {flex: 1, color: T1, fontFamily: DISPLAY, fontSize: rf(21), fontVariant: ['tabular-nums'], paddingVertical: rs(0)},
+  hint: {color: T3, fontFamily: FONT, fontSize: rf(13), marginTop: rs(8), paddingHorizontal: rs(2), lineHeight: rf(17)},
 
-  footer: {paddingHorizontal: 18, paddingTop: 8, paddingBottom: 30, backgroundColor: BG, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP},
+  footer: {paddingHorizontal: rs(18), paddingTop: rs(8), paddingBottom: rs(30), backgroundColor: BG, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP},
 });

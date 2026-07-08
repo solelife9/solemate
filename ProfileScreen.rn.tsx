@@ -8,7 +8,7 @@
 // 값은 App이 소유(영속은 lib/settings)하고, 이 화면은 표시 + 변경 콜백만 담당한다.
 // ============================================================================
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { rf } from './lib/responsive';
+import { rf, rs, ri } from './lib/responsive';
 import { View, Text, ScrollView, Pressable, StyleSheet, TextInput, Image, Share, Alert, Linking } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -88,7 +88,7 @@ function NotifToggle({ label, value, onToggle, testID }: { label: string; value:
       accessibilityState={{ checked: value }}
       style={[s.toggle, value ? s.toggleOn : s.toggleOff]}
     >
-      <Ionicons name={value ? 'notifications' : 'notifications-off'} size={16} color={value ? T1 : T2} />
+      <Ionicons name={value ? 'notifications' : 'notifications-off'} size={ri(16)} color={value ? T1 : T2} />
       <Text style={[s.toggleTxt, { color: value ? T1 : T2 }]}>{`${label} ${value ? '켜짐' : '꺼짐'}`}</Text>
     </Pressable>
   );
@@ -519,9 +519,9 @@ export default function ProfileScreen({
         accessibilityRole="link"
         accessibilityLabel="개인정보 처리방침 열기"
         style={({ pressed }) => [s.settingRow, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.07) }, pressed && { backgroundColor: CARD_HI }]}>
-        <View style={s.settingIcon}><Ionicons name="shield-checkmark-outline" size={16} color={T2} /></View>
+        <View style={s.settingIcon}><Ionicons name="shield-checkmark-outline" size={ri(16)} color={T2} /></View>
         <Text style={s.settingLabel}>개인정보 처리방침</Text>
-        <Ionicons name="open-outline" size={15} color={T3} />
+        <Ionicons name="open-outline" size={ri(15)} color={T3} />
       </Pressable>
       <Pressable
         testID="legal-terms"
@@ -529,28 +529,28 @@ export default function ProfileScreen({
         accessibilityRole="link"
         accessibilityLabel="이용약관 열기"
         style={({ pressed }) => [s.settingRow, pressed && { backgroundColor: CARD_HI }]}>
-        <View style={s.settingIcon}><Ionicons name="document-text-outline" size={16} color={T2} /></View>
+        <View style={s.settingIcon}><Ionicons name="document-text-outline" size={ri(16)} color={T2} /></View>
         <Text style={s.settingLabel}>이용약관</Text>
-        <Ionicons name="open-outline" size={15} color={T3} />
+        <Ionicons name="open-outline" size={ri(15)} color={T3} />
       </Pressable>
     </>
   );
   return (
     <View style={s.screen}>
-      <ScrollView ref={scrollRef} contentContainerStyle={{ paddingTop: insets.top + 12, paddingHorizontal: 18, paddingBottom: TABBAR_CLEARANCE, gap: 16 }}>
+      <ScrollView ref={scrollRef} contentContainerStyle={{ paddingTop: insets.top + 12, paddingHorizontal: rs(18), paddingBottom: TABBAR_CLEARANCE, gap: rs(16) }}>
         {/* header — 마이(프로필+기록) ↔ 설정 뷰 전환 */}
         {showSettings ? (
           <View style={s.headerRow}>
-            <Pressable onPress={() => setShowSettings(false)} accessibilityRole="button" accessibilityLabel="뒤로" hitSlop={8} style={({ pressed }) => [s.iconBtn, pressed && { backgroundColor: CARD }]}><Ionicons name="chevron-back" size={20} color={T2} /></Pressable>
+            <Pressable onPress={() => setShowSettings(false)} accessibilityRole="button" accessibilityLabel="뒤로" hitSlop={8} style={({ pressed }) => [s.iconBtn, pressed && { backgroundColor: CARD }]}><Ionicons name="chevron-back" size={ri(20)} color={T2} /></Pressable>
             <Text style={s.title}>설정</Text>
-            <View style={{ width: 38 }} />
+            <View style={{ width: rs(38) }} />
           </View>
         ) : (
           <View style={s.headerRow}>
             <Text style={s.title}>마이</Text>
-            <View style={{ flexDirection: 'row', gap: 8 }}>
-              <Pressable onPress={() => { Share.share({ message: 'Keego에서 내 러닝화 수명을 관리하고 있어요 🏃' }).catch(() => {}); }} accessibilityRole="button" accessibilityLabel="기록 공유" hitSlop={8} style={({ pressed }) => [s.iconBtn, pressed && { backgroundColor: CARD }]}><Ionicons name="share-outline" size={18} color={T2} /></Pressable>
-            <Pressable onPress={() => setShowSettings(true)} accessibilityRole="button" accessibilityLabel="설정 열기" hitSlop={8} style={({ pressed }) => [s.iconBtn, pressed && { backgroundColor: CARD }]}><Ionicons name="settings-outline" size={19} color={T2} /></Pressable>
+            <View style={{ flexDirection: 'row', gap: rs(8) }}>
+              <Pressable onPress={() => { Share.share({ message: 'Keego에서 내 러닝화 수명을 관리하고 있어요 🏃' }).catch(() => {}); }} accessibilityRole="button" accessibilityLabel="기록 공유" hitSlop={8} style={({ pressed }) => [s.iconBtn, pressed && { backgroundColor: CARD }]}><Ionicons name="share-outline" size={ri(18)} color={T2} /></Pressable>
+            <Pressable onPress={() => setShowSettings(true)} accessibilityRole="button" accessibilityLabel="설정 열기" hitSlop={8} style={({ pressed }) => [s.iconBtn, pressed && { backgroundColor: CARD }]}><Ionicons name="settings-outline" size={ri(19)} color={T2} /></Pressable>
             </View>
           </View>
         )}
@@ -563,10 +563,10 @@ export default function ProfileScreen({
               {profilePhotoUri ? (
                 <Image source={{ uri: profilePhotoUri }} style={s.avatarImg} testID="profile-avatar-img" />
               ) : (
-                <Ionicons name="person" size={30} color={T3} />
+                <Ionicons name="person" size={ri(30)} color={T3} />
               )}
             </View>
-            <View style={s.avatarEdit}><Ionicons name="camera" size={11} color={BG} /></View>
+            <View style={s.avatarEdit}><Ionicons name="camera" size={ri(11)} color={BG} /></View>
           </Pressable>
           <View style={{ flex: 1, minWidth: 0 }}>
             {editingName ? (
@@ -585,7 +585,7 @@ export default function ProfileScreen({
                   accessibilityLabel="이름 입력"
                 />
                 <Pressable onPress={saveName} accessibilityRole="button" accessibilityLabel="이름 저장" hitSlop={8} style={s.nameSaveBtn}>
-                  <Ionicons name="checkmark" size={18} color={BG} />
+                  <Ionicons name="checkmark" size={ri(18)} color={BG} />
                 </Pressable>
               </View>
             ) : (
@@ -595,13 +595,13 @@ export default function ProfileScreen({
                 </Text>
                 <Pressable onPress={startEditName} accessibilityRole="button" accessibilityLabel="이름 편집" style={s.nameRow} testID="profile-name">
                   <Text style={s.name} numberOfLines={1}>{profile.name}</Text>
-                  <Ionicons name="pencil" size={13} color={T3} />
+                  <Ionicons name="pencil" size={ri(13)} color={T3} />
                 </Pressable>
               </>
             )}
             {/* 티어·메타(2026-07-04 재구성): 칩 상자·유령 타이틀필(타이틀 시스템 폐지
                 잔재) 제거 — 진척탭과 같은 타이포 락업(아이브로우가 이름 위, 메타 한 줄). */}
-            <View style={[s.row, { marginTop: 6, gap: 8 }]} testID="profile-progression-stats">
+            <View style={[s.row, { marginTop: rs(6), gap: rs(8) }]} testID="profile-progression-stats">
               {!!profile.since && <Text style={s.since}>{profile.since}</Text>}
               {!!profile.since && <Text style={s.since}>·</Text>}
               {(profile.achievementCount ?? 0) > 0 && (
@@ -619,11 +619,11 @@ export default function ProfileScreen({
         {/* 러너 스펙 — VO2max + 거리 PB 훈장(5K·10K·하프·풀, 미달성 잠금) + 최고페이스/최장.
             러너의 정체성 '스펙 시트'(사용자 방향 2026-07-05). 거리 PB 는 paceTrack 베스트에포트. */}
         {(records.length > 0 || vo2.vo2max > 0) && (
-          <View style={[s.card, { padding: 22 }]} testID="runner-spec">
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-              <Text style={[s.cardTitle, { marginBottom: 0 }]}>러너 스펙</Text>
-              <Pressable onPress={onShareSpec} testID="spec-share" accessibilityRole="button" accessibilityLabel="러너 스펙 공유" hitSlop={8} style={({ pressed }) => [{ flexDirection: 'row', alignItems: 'center', gap: 5 }, pressed && { opacity: 0.6 }]}>
-                <Ionicons name="share-outline" size={16} color={ACCENT} />
+          <View style={[s.card, { padding: rs(22) }]} testID="runner-spec">
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: rs(16) }}>
+              <Text style={[s.cardTitle, { marginBottom: rs(0) }]}>러너 스펙</Text>
+              <Pressable onPress={onShareSpec} testID="spec-share" accessibilityRole="button" accessibilityLabel="러너 스펙 공유" hitSlop={8} style={({ pressed }) => [{ flexDirection: 'row', alignItems: 'center', gap: rs(5) }, pressed && { opacity: 0.6 }]}>
+                <Ionicons name="share-outline" size={ri(16)} color={ACCENT} />
                 <Text style={{ color: ACCENT, fontFamily: FONT, fontSize: rf(14), fontWeight: '700' }}>공유</Text>
               </Pressable>
             </View>
@@ -638,7 +638,7 @@ export default function ProfileScreen({
                   <View key={d.key} style={[s.pbTile, earned ? s.pbTileOn : s.pbTileOff]} testID={`pb-${d.key}`}
                     accessible accessibilityLabel={`${d.label} ${earned ? `최고 기록 ${fmtTime(Math.round(sec))}` : '아직 기록 없음'}`}>
                     <View style={s.pbHead}>
-                      <Ionicons name={earned ? 'medal' : 'lock-closed'} size={14} color={earned ? HALL_GOLD : T3} />
+                      <Ionicons name={earned ? 'medal' : 'lock-closed'} size={ri(14)} color={earned ? HALL_GOLD : T3} />
                       <Text style={[s.pbLabel, { color: earned ? T1 : T3 }]}>{d.label}</Text>
                     </View>
                     <Text style={[s.pbVal, earned ? s.pbValOn : s.pbValOff]}>
@@ -671,7 +671,7 @@ export default function ProfileScreen({
             {/* 심폐 체력(VO₂max) — 낯설고 앱마다 값이 다른 지표라 보조로 강등(푸터 한 줄, 사용자 지시). */}
             {vo2.vo2max > 0 && (
               <View style={s.specVo2Foot} accessible accessibilityLabel={`심폐 체력 ${vo2.vo2max.toFixed(1)} VO2max, ${vo2.vo2maxLabel}`}>
-                <Ionicons name="pulse-outline" size={14} color={T3} />
+                <Ionicons name="pulse-outline" size={ri(14)} color={T3} />
                 <Text style={s.specVo2FootText}>심폐 체력 <Text style={s.specVo2FootStrong}>{vo2.vo2max.toFixed(1)} VO₂max</Text> · {vo2.vo2maxLabel}</Text>
               </View>
             )}
@@ -693,7 +693,7 @@ export default function ProfileScreen({
                   accessible accessibilityLabel={`${d}요일 ${done ? '달림' : today ? '오늘' : '쉼'}`}>
                   {/* 달림 여부가 색·체크로만 전달되던 것을 라벨로 병기(2026-07-05 a11y — 색맹·스크린리더). */}
                   <View style={[s.streakDot, done ? s.streakDotDone : today ? s.streakDotToday : s.streakDotIdle]}>
-                    {done && <Ionicons name="checkmark" size={14} color={T1} />}
+                    {done && <Ionicons name="checkmark" size={ri(14)} color={T1} />}
                   </View>
                   <Text style={[s.streakDayLabel, today && s.streakDayLabelToday]}>{d}</Text>
                 </View>
@@ -725,12 +725,12 @@ export default function ProfileScreen({
             accessibilityRole="button"
             accessibilityLabel="진척 열기"
             style={({ pressed }) => [s.card, s.progressRow, pressed && { backgroundColor: CARD_HI }]}>
-            <View style={s.progressIcon}><Ionicons name="trophy-outline" size={19} color={ACCENT} /></View>
+            <View style={s.progressIcon}><Ionicons name="trophy-outline" size={ri(19)} color={ACCENT} /></View>
             <View style={{ flex: 1, minWidth: 0 }}>
               <Text style={s.progressTitle}>진척</Text>
               <Text style={s.progressSub}>나의 여정 · 업적</Text>
             </View>
-            <Ionicons name="chevron-forward" size={18} color={T3} />
+            <Ionicons name="chevron-forward" size={ri(18)} color={T3} />
           </Pressable>
         )}
 
@@ -743,12 +743,12 @@ export default function ProfileScreen({
             accessibilityRole="button"
             accessibilityLabel="명예의 전당 열기"
             style={({ pressed }) => [s.card, s.progressRow, pressed && { backgroundColor: CARD_HI }]}>
-            <View style={s.progressIcon}><Ionicons name="ribbon-outline" size={19} color={ACCENT} /></View>
+            <View style={s.progressIcon}><Ionicons name="ribbon-outline" size={ri(19)} color={ACCENT} /></View>
             <View style={{ flex: 1, minWidth: 0 }}>
               <Text style={s.progressTitle}>명예의 전당</Text>
               <Text style={s.progressSub}>{retiredCount > 0 ? `은퇴한 신발 ${retiredCount}켤레` : '은퇴한 신발들의 박물관'}</Text>
             </View>
-            <Ionicons name="chevron-forward" size={18} color={T3} />
+            <Ionicons name="chevron-forward" size={ri(18)} color={T3} />
           </Pressable>
         )}
 
@@ -760,12 +760,12 @@ export default function ProfileScreen({
             accessibilityRole="button"
             accessibilityLabel="메달 아카이브 열기"
             style={({ pressed }) => [s.card, s.progressRow, pressed && { backgroundColor: CARD_HI }]}>
-            <View style={s.progressIcon}><Ionicons name="medal-outline" size={19} color={ACCENT} /></View>
+            <View style={s.progressIcon}><Ionicons name="medal-outline" size={ri(19)} color={ACCENT} /></View>
             <View style={{ flex: 1, minWidth: 0 }}>
               <Text style={s.progressTitle}>메달 아카이브</Text>
               <Text style={s.progressSub}>{medalCount > 0 ? `완주 메달 ${medalCount}개` : '완주한 대회의 메달과 기록'}</Text>
             </View>
-            <Ionicons name="chevron-forward" size={18} color={T3} />
+            <Ionicons name="chevron-forward" size={ri(18)} color={T3} />
           </Pressable>
         )}
 
@@ -779,14 +779,14 @@ export default function ProfileScreen({
             accessibilityLabel="Apple 건강 연동"
             accessibilityState={{disabled: hkOn}}
             style={({ pressed }) => [s.card, s.progressRow, pressed && !hkOn && { backgroundColor: CARD_HI }]}>
-            <View style={s.progressIcon}><Ionicons name="heart-outline" size={19} color={ACCENT} /></View>
+            <View style={s.progressIcon}><Ionicons name="heart-outline" size={ri(19)} color={ACCENT} /></View>
             <View style={{ flex: 1, minWidth: 0 }}>
               <Text style={s.progressTitle}>Apple 건강</Text>
               <Text style={s.progressSub}>{hkOn ? '연동됨 — 심박·워크아웃 동기화 중' : '연동하면 워치 심박과 워크아웃이 이어져요'}</Text>
             </View>
             {hkOn
-              ? <Ionicons name="checkmark-circle" size={18} color={GOOD} />
-              : <Ionicons name="chevron-forward" size={18} color={T3} />}
+              ? <Ionicons name="checkmark-circle" size={ri(18)} color={GOOD} />
+              : <Ionicons name="chevron-forward" size={ri(18)} color={T3} />}
           </Pressable>
         )}
 
@@ -799,12 +799,12 @@ export default function ProfileScreen({
             accessibilityRole="button"
             accessibilityLabel="신발 보관함 열기"
             style={({ pressed }) => [s.card, s.progressRow, pressed && { backgroundColor: CARD_HI }]}>
-            <View style={s.progressIcon}><Ionicons name="archive-outline" size={19} color={ACCENT} /></View>
+            <View style={s.progressIcon}><Ionicons name="archive-outline" size={ri(19)} color={ACCENT} /></View>
             <View style={{ flex: 1, minWidth: 0 }}>
               <Text style={s.progressTitle}>신발 보관함</Text>
               <Text style={s.progressSub}>{archivedCount > 0 ? `보관한 신발 ${archivedCount}켤레` : '러닝 목록에서 숨긴 신발'}</Text>
             </View>
-            <Ionicons name="chevron-forward" size={18} color={T3} />
+            <Ionicons name="chevron-forward" size={ri(18)} color={T3} />
           </Pressable>
         )}
 
@@ -823,7 +823,7 @@ export default function ProfileScreen({
               testIDFor={(it) => `recap-toggle-${it.key}`}
             />
           </View>
-          <View style={[s.card, { padding: 20 }]} testID="recap-card">
+          <View style={[s.card, { padding: rs(20) }]} testID="recap-card">
             <View style={s.recapTopRow}>
               <Text style={s.recapPeriod} testID="recap-period">{recap.periodLabel}</Text>
               <Pressable
@@ -832,7 +832,7 @@ export default function ProfileScreen({
                 accessibilityRole="button"
                 accessibilityLabel="리캡 카드 공유"
                 style={({ pressed }) => [s.recapShareBtn, pressed && { backgroundColor: CARD_HI }]}>
-                <Ionicons name="share-outline" size={16} color={ACCENT} />
+                <Ionicons name="share-outline" size={ri(16)} color={ACCENT} />
                 <Text style={s.recapShareTxt}>공유</Text>
               </Pressable>
             </View>
@@ -840,7 +840,7 @@ export default function ProfileScreen({
             {recap.isEmpty ? (
               // 빈 데이터 graceful — keep-going 보이스(A8-5). 수치 대신 응원 한 줄.
               <View style={s.recapEmpty} testID="recap-empty">
-                <Ionicons name="footsteps-outline" size={26} color={ACCENT} style={{ marginBottom: 8 }} />
+                <Ionicons name="footsteps-outline" size={ri(26)} color={ACCENT} style={{ marginBottom: rs(8) }} />
                 <Text style={s.recapEmptyTxt}>
                   {recapMode === 'monthly'
                     ? '이번 달은 아직 기록이 없어요.\n가볍게 한 걸음부터 — Keep Going'
@@ -851,9 +851,9 @@ export default function ProfileScreen({
               <>
                 {/* 총거리·런수·평균 페이스 3칸 (StatGrid) */}
                 <StatGrid
-                  style={{ marginTop: 6 }}
+                  style={{ marginTop: rs(6) }}
                   divider
-                  valueSize={26}
+                  valueSize={rf(26)}
                   valueWeight="400"
                   valueLS={0.3}
                   items={[
@@ -866,7 +866,7 @@ export default function ProfileScreen({
                 {/* 최다 착용 신발 */}
                 {recap.mostWornShoe && (
                   <View style={s.recapMostWorn} testID="recap-most-worn">
-                    <Ionicons name="footsteps" size={15} color={ACCENT} />
+                    <Ionicons name="footsteps" size={ri(15)} color={ACCENT} />
                     <Text style={s.recapMostWornTxt} numberOfLines={1}>
                       최다 착용 · <Text style={{ color: T1, fontWeight: '700' }}>{recap.mostWornShoe.name}</Text>
                       <Text style={{ color: T3 }}>{`  ${recap.mostWornShoe.km}km`}</Text>
@@ -897,17 +897,17 @@ export default function ProfileScreen({
         {showSettings && (<>
         {/* settings — 실제 구동 */}
         <View>
-          <Text style={[s.sectionLabel, { paddingBottom: 12 }]}>설정</Text>
+          <Text style={[s.sectionLabel, { paddingBottom: rs(12) }]}>설정</Text>
           <View style={[s.card, { overflow: 'hidden' }]}>
             {/* 알림(단일화 2026-07-05, 노이즈 감사): 예전엔 인앱 '알림'(임계 %)과 '푸시
                 알림'이 별개 행이라 신발 교체 알림을 두 군데서 만났다 — 한 행으로 병합.
                 교체 임박 토글이 인앱 배지(alerts.enabled)와 푸시를 함께 다루고, 임계
                 스텝퍼는 그 아래에 산다. */}
             <Pressable onPress={() => toggleOpen('notif')} accessibilityRole="button" accessibilityLabel={`알림, ${notifOnCount}개 켜짐`} accessibilityState={{ expanded: open === 'notif' }} style={({ pressed }) => [s.settingRow, s.settingBorder, pressed && { backgroundColor: CARD_HI }]} testID="notif-row">
-              <View style={s.settingIcon}><Ionicons name="notifications-outline" size={17} color={ACCENT} /></View>
+              <View style={s.settingIcon}><Ionicons name="notifications-outline" size={ri(17)} color={ACCENT} /></View>
               <Text style={s.settingLabel}>알림</Text>
               <Text style={s.settingDetail} testID="notif-detail">{notifOnCount > 0 ? `${notifOnCount}개 켜짐` : '꺼짐'}</Text>
-              <Ionicons name={open === 'notif' ? 'chevron-up' : 'chevron-forward'} size={16} color={T3} />
+              <Ionicons name={open === 'notif' ? 'chevron-up' : 'chevron-forward'} size={ri(16)} color={T3} />
             </Pressable>
             {open === 'notif' && (
               <View style={[s.panel, s.settingBorder]} testID="notif-panel">
@@ -945,18 +945,18 @@ export default function ProfileScreen({
 
             {/* 3) 단위 — 즉시 토글(전 화면 환산 반영) */}
             <Pressable onPress={() => onChangeUnit?.(unit === 'km' ? 'mi' : 'km')} accessibilityRole="button" accessibilityLabel={`단위, 현재 ${unitKorean(unit)}. 눌러서 전환`} style={({ pressed }) => [s.settingRow, s.settingBorder, pressed && { backgroundColor: CARD_HI }]}>
-              <View style={s.settingIcon}><Ionicons name="speedometer-outline" size={17} color={ACCENT} /></View>
+              <View style={s.settingIcon}><Ionicons name="speedometer-outline" size={ri(17)} color={ACCENT} /></View>
               <Text style={s.settingLabel}>단위</Text>
               <Text style={s.settingDetail}>{unitKorean(unit)}</Text>
-              <Ionicons name="swap-horizontal" size={16} color={T3} />
+              <Ionicons name="swap-horizontal" size={ri(16)} color={T3} />
             </Pressable>
 
             {/* 3.5) 체중 — 칼로리 추정용 */}
             <Pressable onPress={() => toggleOpen('weight')} accessibilityRole="button" accessibilityLabel={`체중, ${weightKg}kg`} accessibilityState={{ expanded: open === 'weight' }} style={({ pressed }) => [s.settingRow, s.settingBorder, pressed && { backgroundColor: CARD_HI }]}>
-              <View style={s.settingIcon}><Ionicons name="body-outline" size={17} color={ACCENT} /></View>
+              <View style={s.settingIcon}><Ionicons name="body-outline" size={ri(17)} color={ACCENT} /></View>
               <Text style={s.settingLabel}>체중</Text>
               <Text style={s.settingDetail}>{weightKg}kg</Text>
-              <Ionicons name={open === 'weight' ? 'chevron-up' : 'chevron-forward'} size={16} color={T3} />
+              <Ionicons name={open === 'weight' ? 'chevron-up' : 'chevron-forward'} size={ri(16)} color={T3} />
             </Pressable>
             {open === 'weight' && (
               <View style={[s.panel, s.settingBorder]}>
@@ -966,20 +966,20 @@ export default function ProfileScreen({
             )}
             {/* 심박·신체 — 심박존/트레이닝효과 정확도용(나이·성별·안정심박). 선택 입력. */}
             <Pressable onPress={() => toggleOpen('body')} accessibilityRole="button" accessibilityLabel="심박 · 신체 설정" accessibilityState={{ expanded: open === 'body' }} style={({ pressed }) => [s.settingRow, pressed && { backgroundColor: CARD_HI }]}>
-              <View style={s.settingIcon}><Ionicons name="heart-outline" size={17} color={ACCENT} /></View>
+              <View style={s.settingIcon}><Ionicons name="heart-outline" size={ri(17)} color={ACCENT} /></View>
               <Text style={s.settingLabel}>심박 · 신체</Text>
               <Text style={s.settingDetail}>{age > 0 ? `${age}세` : '미설정'}</Text>
-              <Ionicons name={open === 'body' ? 'chevron-up' : 'chevron-forward'} size={16} color={T3} />
+              <Ionicons name={open === 'body' ? 'chevron-up' : 'chevron-forward'} size={ri(16)} color={T3} />
             </Pressable>
             {open === 'body' && (
               <View style={[s.panel, s.settingBorder]}>
                 <Stepper value={age > 0 ? age : '미설정'} suffix="나이(세)" onMinus={() => stepAge(-1)} onPlus={() => stepAge(1)} />
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 14 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: rs(14) }}>
                   <Text style={s.settingLabel}>성별</Text>
-                  <View style={{ flexDirection: 'row', gap: 8 }}>
+                  <View style={{ flexDirection: 'row', gap: rs(8) }}>
                     {(['male', 'female'] as const).map((sx) => (
                       <Pressable key={sx} onPress={() => onChangeSex?.(sx)} accessibilityRole="button" accessibilityLabel={sx === 'male' ? '남성' : '여성'} accessibilityState={{ selected: sex === sx }}
-                        style={{ paddingVertical: 6, paddingHorizontal: 16, borderRadius: RADIUS.sm, backgroundColor: sex === sx ? ACCENT : CARD_HI }}>
+                        style={{ paddingVertical: rs(6), paddingHorizontal: rs(16), borderRadius: RADIUS.sm, backgroundColor: sex === sx ? ACCENT : CARD_HI }}>
                         <Text style={{ color: sex === sx ? BG : T2, fontFamily: FONT, fontWeight: '700', fontSize: rf(14) }}>{sx === 'male' ? '남성' : '여성'}</Text>
                       </Pressable>
                     ))}
@@ -989,7 +989,7 @@ export default function ProfileScreen({
                     몰라 — 대충 찍으면 오히려 부정확. Apple 건강에서 자동으로 채우고(워치),
                     없으면 나이 기반(%HRmax)으로 심박 존을 낸다(가민 기본값과 동일). */}
                 {restHR > 0 && (
-                  <View style={{ marginTop: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <View style={{ marginTop: rs(14), flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                     <Text style={s.settingLabel}>안정시 심박</Text>
                     <Text style={s.settingDetail}>{restHR}bpm · Apple 건강</Text>
                   </View>
@@ -1006,7 +1006,7 @@ export default function ProfileScreen({
 
         {/* 계정 · 클라우드 동기 — 로그인하면 신발/런/설정을 계정 클라우드와 무손실 동기 */}
         <View testID="cloud-section">
-          <Text style={[s.sectionLabel, { paddingBottom: 12 }]}>계정 · 클라우드</Text>
+          <Text style={[s.sectionLabel, { paddingBottom: rs(12) }]}>계정 · 클라우드</Text>
           <View style={[s.card, { overflow: 'hidden' }]}>
             {signedIn ? (
               <>
@@ -1019,7 +1019,7 @@ export default function ProfileScreen({
                   accessibilityState={{ expanded: acctOpen }}
                   style={({ pressed }) => [s.settingRow, s.settingBorder, pressed && { backgroundColor: CARD_HI }]}
                   testID="cloud-account">
-                  <View style={s.settingIcon}><Ionicons name="person-circle-outline" size={17} color={ACCENT} /></View>
+                  <View style={s.settingIcon}><Ionicons name="person-circle-outline" size={ri(17)} color={ACCENT} /></View>
                   <View style={{ flex: 1, minWidth: 0 }}>
                     {/* 어떤 provider 로 로그인했는지 표시(2026-07-05) — '카카오 계정' + 이메일. */}
                     <Text style={s.settingLabel} numberOfLines={1} testID="cloud-provider">
@@ -1031,10 +1031,10 @@ export default function ProfileScreen({
                   </View>
                   <Ionicons
                     name={syncing ? 'sync-outline' : syncFailed ? 'cloud-offline-outline' : 'cloud-done-outline'}
-                    size={17}
+                    size={ri(17)}
                     color={syncFailed ? DANGER : GOOD}
                   />
-                  <Ionicons name={acctOpen ? 'chevron-up' : 'chevron-down'} size={16} color={T3} />
+                  <Ionicons name={acctOpen ? 'chevron-up' : 'chevron-down'} size={ri(16)} color={T3} />
                 </Pressable>
 
                 {/* 동기화 상태 줄 — 실패 시엔 접혀 있어도 항상 노출(조치 가능). 그 외엔 펼침 시. */}
@@ -1046,11 +1046,11 @@ export default function ProfileScreen({
                     accessibilityLabel={syncing ? '동기화 중' : syncFailed ? '동기화 실패, 눌러서 다시 시도' : lastSyncAt == null ? '클라우드 연결됨' : `${lastSyncLabel}`}
                     style={({ pressed }) => [s.settingRow, s.settingBorder, pressed && syncFailed && { backgroundColor: CARD_HI }]}
                     testID="cloud-sync-status">
-                    <View style={s.settingIcon}><Ionicons name={syncing ? 'sync-outline' : syncFailed ? 'alert-circle-outline' : 'checkmark-circle-outline'} size={16} color={syncFailed ? DANGER : T3} /></View>
+                    <View style={s.settingIcon}><Ionicons name={syncing ? 'sync-outline' : syncFailed ? 'alert-circle-outline' : 'checkmark-circle-outline'} size={ri(16)} color={syncFailed ? DANGER : T3} /></View>
                     <Text style={[s.settingLabel, { fontWeight: '500', color: syncFailed ? DANGER : T2 }]}>
                       {syncing ? '동기화 중…' : syncFailed ? '동기화 실패 · 다시 시도' : (lastSyncAt == null ? '클라우드 연결됨 · 자동 동기' : lastSyncLabel)}
                     </Text>
-                    {syncFailed && !syncing && <Ionicons name="refresh" size={15} color={DANGER} />}
+                    {syncFailed && !syncing && <Ionicons name="refresh" size={ri(15)} color={DANGER} />}
                   </Pressable>
                 )}
 
@@ -1058,20 +1058,20 @@ export default function ProfileScreen({
                   <>
                     {/* 로그아웃 */}
                     <Pressable onPress={handleSignOut} accessibilityRole="button" accessibilityLabel="로그아웃" style={({ pressed }) => [s.settingRow, pressed && { backgroundColor: CARD_HI }]}>
-                      <View style={s.settingIcon}><Ionicons name="log-out-outline" size={17} color={DANGER} /></View>
+                      <View style={s.settingIcon}><Ionicons name="log-out-outline" size={ri(17)} color={DANGER} /></View>
                       <Text style={[s.settingLabel, { color: DANGER }]}>로그아웃</Text>
-                      <Ionicons name="chevron-forward" size={16} color={T3} />
+                      <Ionicons name="chevron-forward" size={ri(16)} color={T3} />
                     </Pressable>
 
                     {/* 회원 탈퇴(영구 삭제) — 앱스토어 인앱 탈퇴 요건 */}
                     {onDeleteAccount && (
                       <Pressable testID="account-delete" onPress={handleDeleteAccount} accessibilityRole="button" accessibilityLabel="회원 탈퇴" style={({ pressed }) => [s.settingRow, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.07) }, pressed && { backgroundColor: CARD_HI }]}>
-                        <View style={s.settingIcon}><Ionicons name="trash-outline" size={16} color={DANGER} /></View>
+                        <View style={s.settingIcon}><Ionicons name="trash-outline" size={ri(16)} color={DANGER} /></View>
                         <View style={{ flex: 1, minWidth: 0 }}>
                           <Text style={[s.settingLabel, { color: DANGER }]}>회원 탈퇴</Text>
                           <Text style={s.cloudSub}>계정·데이터 영구 삭제(복구 불가)</Text>
                         </View>
-                        <Ionicons name="chevron-forward" size={16} color={T3} />
+                        <Ionicons name="chevron-forward" size={ri(16)} color={T3} />
                       </Pressable>
                     )}
 
@@ -1095,11 +1095,11 @@ export default function ProfileScreen({
                   label={signingIn ? '로그인 중…' : 'Google로 계속'}
                   onPress={() => handleSignIn('google')}
                   disabled={signingIn}
-                  iconNode={<Ionicons name="logo-google" size={17} color={signingIn ? T3 : T1} />}
+                  iconNode={<Ionicons name="logo-google" size={ri(17)} color={signingIn ? T3 : T1} />}
                   style={s.cloudBtnGoogle}
                 />
                 <Pressable testID="cloud-signin-apple" onPress={() => handleSignIn('apple')} disabled={signingIn} accessibilityRole="button" accessibilityLabel="Apple로 로그인" accessibilityState={{ disabled: signingIn }} style={({ pressed }) => [s.cloudBtn, s.cloudBtnApple, pressed && { opacity: 0.85 }]}>
-                  <Ionicons name="logo-apple" size={18} color={T1} />
+                  <Ionicons name="logo-apple" size={ri(18)} color={T1} />
                   <Text style={s.cloudBtnTxt}>{signingIn ? '로그인 중…' : 'Apple로 계속'}</Text>
                 </Pressable>
               </View>
@@ -1132,63 +1132,63 @@ export default function ProfileScreen({
 
 const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: BG },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 7 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: rs(7) },
   card: { backgroundColor: CARD_DIM, borderRadius: RADIUS.lg, borderCurve: 'continuous', borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER },
-  cardTitle: { color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '600', marginBottom: 16 },
+  cardTitle: { color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '600', marginBottom: rs(16) },
   // 러너 스펙 카드
   // 거리 PB 메달 타일 2×2(러너 스펙 메인) — 달성=CARD_HI + 골드, 미달성=흐린 판.
-  pbGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 10 },
-  pbTile: { width: '48.5%', paddingHorizontal: 14, paddingVertical: 13, borderRadius: 14, borderCurve: 'continuous' },
+  pbGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: rs(10) },
+  pbTile: { width: '48.5%', paddingHorizontal: rs(14), paddingVertical: rs(13), borderRadius: rs(14), borderCurve: 'continuous' },
   pbTileOn: { backgroundColor: CARD_HI },
   pbTileOff: { backgroundColor: withAlpha(T1, 0.04) },
-  pbHead: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  pbHead: { flexDirection: 'row', alignItems: 'center', gap: rs(6) },
   pbLabel: { fontFamily: FONT, fontSize: rf(13), fontWeight: '700', letterSpacing: 0.3 },
-  pbVal: { fontFamily: DISPLAY, marginTop: 6, fontVariant: ['tabular-nums'] },
+  pbVal: { fontFamily: DISPLAY, marginTop: rs(6), fontVariant: ['tabular-nums'] },
   pbValOn: { color: T1, fontSize: rf(23), fontWeight: '700', letterSpacing: -0.4 },
   pbValOff: { color: withAlpha(T1, 0.32), fontSize: rf(16), fontWeight: '600' },
   // 서브 스탯 3열(누적·최장·1km 최고).
-  specSubRow: { flexDirection: 'row', marginTop: 16, paddingTop: 16, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: CARD_BORDER },
-  specSub: { flex: 1, alignItems: 'center', gap: 3 },
+  specSubRow: { flexDirection: 'row', marginTop: rs(16), paddingTop: rs(16), borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: CARD_BORDER },
+  specSub: { flex: 1, alignItems: 'center', gap: rs(3) },
   specSubDiv: { borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: CARD_BORDER },
   specSubVal: { color: T1, fontFamily: DISPLAY, fontSize: rf(18), fontWeight: '600', letterSpacing: -0.3, fontVariant: ['tabular-nums'] },
   specSubUnit: { color: T3, fontFamily: FONT, fontSize: rf(12), fontWeight: '600' },
   specSubLabel: { color: T3, fontFamily: FONT, fontSize: rf(12), fontWeight: '500' },
   // 심폐 체력(VO₂max) 강등 푸터 — 한 줄.
-  specVo2Foot: { flexDirection: 'row', alignItems: 'center', gap: 7, marginTop: 16, paddingTop: 14, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: CARD_BORDER },
+  specVo2Foot: { flexDirection: 'row', alignItems: 'center', gap: rs(7), marginTop: rs(16), paddingTop: rs(14), borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: CARD_BORDER },
   specVo2FootText: { color: T3, fontFamily: FONT, fontSize: rf(13), fontWeight: '500' },
   specVo2FootStrong: { color: T2, fontWeight: '700' },
-  sectionLabel: { color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '600', letterSpacing: 0.4, paddingHorizontal: 4 },
-  progressRow: { flexDirection: 'row', alignItems: 'center', gap: 13, padding: 16 },
-  progressIcon: { width: 38, height: 38, borderRadius: RADIUS.sm, backgroundColor: withAlpha(ACCENT, 0.12), alignItems: 'center', justifyContent: 'center' },
+  sectionLabel: { color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '600', letterSpacing: 0.4, paddingHorizontal: rs(4) },
+  progressRow: { flexDirection: 'row', alignItems: 'center', gap: rs(13), padding: rs(16) },
+  progressIcon: { width: rs(38), height: rs(38), borderRadius: RADIUS.sm, backgroundColor: withAlpha(ACCENT, 0.12), alignItems: 'center', justifyContent: 'center' },
   progressTitle: { color: T1, fontFamily: FONT, fontSize: rf(16), fontWeight: '700' },
-  progressSub: { color: T3, fontFamily: FONT, fontSize: rf(13), fontWeight: '500', marginTop: 3 },
+  progressSub: { color: T3, fontFamily: FONT, fontSize: rf(13), fontWeight: '500', marginTop: rs(3) },
 
-  headerRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', paddingHorizontal: 4 },
+  headerRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', paddingHorizontal: rs(4) },
   title: { color: T1, fontFamily: FONT, fontSize: rf(32), fontWeight: '500', letterSpacing: -0.8 },
-  iconBtn: { width: 38, height: 38, borderRadius: RADIUS.pill, backgroundColor: CARD_HI, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.12), alignItems: 'center', justifyContent: 'center' },
+  iconBtn: { width: rs(38), height: rs(38), borderRadius: RADIUS.pill, backgroundColor: CARD_HI, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.12), alignItems: 'center', justifyContent: 'center' },
 
-  identity: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 4, paddingTop: 4 },
-  avatarRing: { padding: 2, borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.12) },
+  identity: { flexDirection: 'row', alignItems: 'center', gap: rs(14), paddingHorizontal: rs(4), paddingTop: rs(4) },
+  avatarRing: { padding: rs(2), borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.12) },
   avatarInner: { padding: 2.5, borderRadius: RADIUS.pill, backgroundColor: BG, alignItems: 'center', justifyContent: 'center' },
-  avatarImg: { width: 50, height: 50, borderRadius: RADIUS.pill },
-  avatarEdit: { position: 'absolute', right: -1, bottom: -1, width: 18, height: 18, borderRadius: RADIUS.pill, backgroundColor: T3, borderWidth: 2, borderColor: BG, alignItems: 'center', justifyContent: 'center' },
-  tierEyebrow: { fontFamily: DISPLAY, fontSize: rf(12), fontWeight: '600', letterSpacing: 3.5, textTransform: 'uppercase', marginBottom: 3 },
+  avatarImg: { width: rs(50), height: rs(50), borderRadius: RADIUS.pill },
+  avatarEdit: { position: 'absolute', right: -1, bottom: -1, width: rs(18), height: rs(18), borderRadius: RADIUS.pill, backgroundColor: T3, borderWidth: 2, borderColor: BG, alignItems: 'center', justifyContent: 'center' },
+  tierEyebrow: { fontFamily: DISPLAY, fontSize: rf(12), fontWeight: '600', letterSpacing: 3.5, textTransform: 'uppercase', marginBottom: rs(3) },
   name: { color: T1, fontFamily: FONT, fontSize: rf(25), fontWeight: '600', letterSpacing: -0.5 },
-  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
-  nameEditRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  nameInput: { flex: 1, color: T1, fontFamily: FONT, fontSize: rf(23), fontWeight: '500', letterSpacing: -0.5, borderBottomWidth: 1, borderBottomColor: ACCENT, paddingVertical: 2, paddingHorizontal: 0 },
-  nameSaveBtn: { width: 34, height: 34, borderRadius: RADIUS.pill, backgroundColor: ACCENT, alignItems: 'center', justifyContent: 'center' },
+  nameRow: { flexDirection: 'row', alignItems: 'center', gap: rs(7) },
+  nameEditRow: { flexDirection: 'row', alignItems: 'center', gap: rs(8) },
+  nameInput: { flex: 1, color: T1, fontFamily: FONT, fontSize: rf(23), fontWeight: '500', letterSpacing: -0.5, borderBottomWidth: 1, borderBottomColor: ACCENT, paddingVertical: rs(2), paddingHorizontal: rs(0) },
+  nameSaveBtn: { width: rs(34), height: rs(34), borderRadius: RADIUS.pill, backgroundColor: ACCENT, alignItems: 'center', justifyContent: 'center' },
   idStat: { fontFamily: FONT, color: T3, fontSize: rf(13), fontWeight: '600' },
   idStatNum: { fontFamily: DISPLAY, color: T1, fontSize: rf(14), fontWeight: '700' },
   since: { color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '600' },
 
   // 이번 주 스트릭 카드
-  streakCard: { padding: 16 },
-  streakHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 },
+  streakCard: { padding: rs(16) },
+  streakHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: rs(14) },
   streakCount: { color: ACCENT, fontFamily: FONT, fontSize: rf(13), fontWeight: '700' },
   streakRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  streakDay: { alignItems: 'center', gap: 6 },
-  streakDot: { width: 30, height: 30, borderRadius: RADIUS.pill, alignItems: 'center', justifyContent: 'center' },
+  streakDay: { alignItems: 'center', gap: rs(6) },
+  streakDot: { width: rs(30), height: rs(30), borderRadius: RADIUS.pill, alignItems: 'center', justifyContent: 'center' },
   streakDotDone: { backgroundColor: ACCENT },
   streakDotIdle: { backgroundColor: CARD_DIM },
   streakDotToday: { backgroundColor: CARD_DIM, borderWidth: 1.5, borderStyle: 'dashed', borderColor: T3 },
@@ -1198,46 +1198,46 @@ const s = StyleSheet.create({
   // 누적/개인 기록·리캡 요약 스탯 줄은 StatGrid 프리미티브로 이전(셀·값·라벨 토큰을
   // 그쪽이 단일 소스로 책임 — 과거 statRow/statCell/statDivider/statValue/Unit/Label 제거).
 
-  badge: { flex: 1, backgroundColor: CARD, borderRadius: RADIUS.lg, borderCurve: 'continuous', paddingVertical: 16, paddingHorizontal: 8, alignItems: 'center', gap: 8, borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER },
-  badgeIcon: { width: 44, height: 44, borderRadius: RADIUS.pill, alignItems: 'center', justifyContent: 'center' },
+  badge: { flex: 1, backgroundColor: CARD, borderRadius: RADIUS.lg, borderCurve: 'continuous', paddingVertical: rs(16), paddingHorizontal: rs(8), alignItems: 'center', gap: rs(8), borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER },
+  badgeIcon: { width: rs(44), height: rs(44), borderRadius: RADIUS.pill, alignItems: 'center', justifyContent: 'center' },
   badgeLabel: { fontFamily: FONT, fontSize: rf(12), fontWeight: '500', textAlign: 'center' },
 
-  settingRow: { flexDirection: 'row', alignItems: 'center', gap: 13, paddingVertical: 14, paddingHorizontal: 16 },
+  settingRow: { flexDirection: 'row', alignItems: 'center', gap: rs(13), paddingVertical: rs(14), paddingHorizontal: rs(16) },
   settingBorder: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: SEP },
-  settingIcon: { width: 30, height: 30, borderRadius: 9, backgroundColor: withAlpha(T1, 0.06), alignItems: 'center', justifyContent: 'center' },
+  settingIcon: { width: rs(30), height: rs(30), borderRadius: rs(9), backgroundColor: withAlpha(T1, 0.06), alignItems: 'center', justifyContent: 'center' },
   settingLabel: { flex: 1, color: T1, fontFamily: FONT, fontSize: rf(16), fontWeight: '600' },
   settingDetail: { color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '500' },
 
   // expandable panels
-  panel: { paddingHorizontal: 18, paddingVertical: 16, gap: 14, backgroundColor: withAlpha(T1, 0.02) },
+  panel: { paddingHorizontal: rs(18), paddingVertical: rs(16), gap: rs(14), backgroundColor: withAlpha(T1, 0.02) },
   panelHint: { color: T3, fontFamily: FONT, fontSize: rf(14), lineHeight: rf(18) },
 
   notifDenied: { color: WARN, fontFamily: FONT, fontSize: rf(14), lineHeight: rf(18) },
 
   // ── 돌아보기(리캡) ───────────────────────────────────────────────────────────
-  recapHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 12, paddingHorizontal: 4 },
+  recapHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingBottom: rs(12), paddingHorizontal: rs(4) },
   // 주/월 토글은 SegmentedControl(accentSolid, block=false)로 이전(과거 recapToggle/
   // recapTab/recapTabOn/recapTabTxt/recapTabTxtOn 제거, 시각 동등).
-  recapTopRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
+  recapTopRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: rs(8) },
   recapPeriod: { color: T2, fontFamily: FONT, fontSize: rf(15), fontWeight: '700' },
-  recapShareBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 7, borderRadius: RADIUS.pill, backgroundColor: withAlpha(ACCENT, 0.12) },
+  recapShareBtn: { flexDirection: 'row', alignItems: 'center', gap: rs(5), paddingHorizontal: rs(12), paddingVertical: rs(7), borderRadius: RADIUS.pill, backgroundColor: withAlpha(ACCENT, 0.12) },
   recapShareTxt: { color: ACCENT, fontFamily: FONT, fontSize: rf(14), fontWeight: '700' },
-  recapEmpty: { alignItems: 'center', paddingVertical: 22 },
+  recapEmpty: { alignItems: 'center', paddingVertical: rs(22) },
   recapEmptyTxt: { color: T3, fontFamily: FONT, fontSize: rf(15), fontWeight: '600', lineHeight: rf(20), textAlign: 'center' },
-  recapMostWorn: { flexDirection: 'row', alignItems: 'center', gap: 7, marginTop: 16, paddingTop: 14, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP },
+  recapMostWorn: { flexDirection: 'row', alignItems: 'center', gap: rs(7), marginTop: rs(16), paddingTop: rs(14), borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP },
   recapMostWornTxt: { flex: 1, color: T2, fontFamily: FONT, fontSize: rf(14), fontWeight: '600' },
-  recapPrBox: { marginTop: 14, gap: 2 },
-  recapPrRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 7 },
+  recapPrBox: { marginTop: rs(14), gap: rs(2) },
+  recapPrRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: rs(7) },
   recapPrLabel: { color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '600' },
   recapPrValue: { color: T1, fontFamily: DISPLAY, fontSize: rf(18), fontWeight: '600', letterSpacing: -0.2 },
   offscreen: { position: 'absolute', left: -10000, top: 0, opacity: 0 },
 
-  toggle: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 44, borderRadius: 14, borderCurve: 'continuous' },
+  toggle: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rs(8), height: rs(44), borderRadius: rs(14), borderCurve: 'continuous' },
   toggleOn: { backgroundColor: ACCENT },
   toggleOff: { backgroundColor: CARD_HI },
   toggleTxt: { fontFamily: FONT, fontSize: rf(16), fontWeight: '600' },
 
-  acctRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 14 },
+  acctRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: rs(14) },
   acctK: { color: T3, fontFamily: FONT, fontSize: rf(15), fontWeight: '500' },
   acctV: { flex: 1, textAlign: 'right', color: T2, fontFamily: FONT, fontSize: rf(15), fontWeight: '500' },
 
@@ -1248,18 +1248,18 @@ const s = StyleSheet.create({
   dataMsgErr: { color: DANGER },
 
   // 계정 · 클라우드 동기
-  cloudSub: { color: T3, fontFamily: FONT, fontSize: rf(13), fontWeight: '600', marginTop: 2 },
-  cloudPad: { padding: 16, gap: 12 },
+  cloudSub: { color: T3, fontFamily: FONT, fontSize: rf(13), fontWeight: '600', marginTop: rs(2) },
+  cloudPad: { padding: rs(16), gap: rs(12) },
   cloudIntro: { color: T3, fontFamily: FONT, fontSize: rf(14), lineHeight: rf(18) },
   // 브랜드 로그인 버튼(카카오/네이버/애플) 공용 박스 — 모서리는 Google(단일 Button=
   // RADIUS.btn)과 맞춰 통일. Google 은 단일 Button 프리미티브로 라우팅(아래 cloudBtnGoogle).
-  cloudBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 48, borderRadius: RADIUS.btn },
+  cloudBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rs(8), height: rs(48), borderRadius: RADIUS.btn },
   // Google = 앱 accent CTA → 단일 Button(그라데이션/글로우/RADIUS.btn). 여기선 높이만.
-  cloudBtnGoogle: { height: 48 },
+  cloudBtnGoogle: { height: rs(48) },
   cloudBtnApple: { backgroundColor: CARD_HI },
   cloudBtnKakao: { backgroundColor: KAKAO_YELLOW },
   cloudBtnNaver: { backgroundColor: NAVER_GREEN },
   brandMark: { fontFamily: DISPLAY, fontSize: rf(18), fontWeight: '700' },
   cloudBtnTxt: { color: T1, fontFamily: FONT, fontSize: rf(16), fontWeight: '600' },
-  cloudMsg: { fontFamily: FONT, fontSize: rf(14), fontWeight: '600', lineHeight: rf(18), paddingHorizontal: 16, paddingBottom: 14 },
+  cloudMsg: { fontFamily: FONT, fontSize: rf(14), fontWeight: '600', lineHeight: rf(18), paddingHorizontal: rs(16), paddingBottom: rs(14) },
 });

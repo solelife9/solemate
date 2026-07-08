@@ -12,7 +12,7 @@
 // 의존성: react-native-svg 만 필요. 색·타이포·간격은 theme 토큰, 링 연속색은 lib/ringColor.
 
 import React, {useRef, useState, useCallback, useEffect} from 'react';
-import { rf } from '../lib/responsive';
+import { rf, rs, ri } from '../lib/responsive';
 import {
   View, Text, Pressable, StyleSheet, Animated, Easing, useWindowDimensions,
   type NativeSyntheticEvent, type NativeScrollEvent,
@@ -79,7 +79,7 @@ export default function KeegoHome({shoes, runs = [], onStartRun, onOpenShoe, onO
           <Text style={styles.wordmark}>Keego</Text>
         </View>
         <Pressable style={styles.avatar} onPress={onOpenProfile} hitSlop={8}>
-          <Ionicons name="person" size={16} color={withAlpha(T1, 0.9)} />
+          <Ionicons name="person" size={ri(16)} color={withAlpha(T1, 0.9)} />
         </Pressable>
       </View>
 
@@ -98,7 +98,7 @@ export default function KeegoHome({shoes, runs = [], onStartRun, onOpenShoe, onO
         onScroll={onScroll}
         onMomentumScrollEnd={onMomentumEnd}
         scrollEventThrottle={16}
-        contentContainerStyle={{paddingHorizontal: SIDE - CARD_GAP / 2, gap: CARD_GAP, paddingVertical: 8}}
+        contentContainerStyle={{paddingHorizontal: SIDE - CARD_GAP / 2, gap: CARD_GAP, paddingVertical: rs(8)}}
       >
         {shoes.map((shoe, i) => (
           <ShoeCard
@@ -266,7 +266,7 @@ export function ShoeCard({
             accessibilityRole="button" accessibilityLabel="러닝 시작"
           >
             <GlassEdge id={`edge-run-${i}`} radius={RADIUS.btn} />
-            <Ionicons name="play" size={15} color={T1} style={{marginRight: 6}} />
+            <Ionicons name="play" size={ri(15)} color={T1} style={{marginRight: rs(6)}} />
             <Text style={styles.runLabel}>러닝 시작</Text>
           </Pressable>
         </View>
@@ -300,7 +300,7 @@ export function GhostShoeCard({width, onPress}: {width: number; onPress?: () => 
                 />
               </Svg>
               <View style={styles.ringCenter}>
-                <ShoeGlyph size={46} />
+                <ShoeGlyph size={ri(46)} />
               </View>
             </View>
             <Text style={styles.ghostHint}>등록하면 이 링이 신발 수명을 지켜봐요</Text>
@@ -318,7 +318,7 @@ export function GhostShoeCard({width, onPress}: {width: number; onPress?: () => 
             accessibilityRole="button" accessibilityLabel="러닝화 등록"
           >
             <GlassEdge id="edge-run-ghost" radius={RADIUS.btn} />
-            <Ionicons name="add" size={16} color={T1} style={{marginRight: 6}} />
+            <Ionicons name="add" size={ri(16)} color={T1} style={{marginRight: rs(6)}} />
             <Text style={styles.runLabel}>러닝화 등록</Text>
           </Pressable>
         </View>
@@ -374,23 +374,23 @@ function catOf(shoe: any): string {
 }
 
 const styles = StyleSheet.create({
-  root: {flex: 1, backgroundColor: BG, paddingTop: 8},
+  root: {flex: 1, backgroundColor: BG, paddingTop: rs(8)},
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: GUTTER, paddingTop: 6,
+    paddingHorizontal: GUTTER, paddingTop: rs(6),
   },
-  brandRow: {flexDirection: 'row', alignItems: 'center', gap: 8},
-  brandDot: {width: 9, height: 9, borderRadius: 999, backgroundColor: WARN},
+  brandRow: {flexDirection: 'row', alignItems: 'center', gap: rs(8)},
+  brandDot: {width: rs(9), height: rs(9), borderRadius: 999, backgroundColor: WARN},
   wordmark: {fontFamily: DISPLAY, fontSize: rf(20), fontWeight: '700', letterSpacing: -0.5, color: T1},
   avatar: {
-    width: 36, height: 36, borderRadius: 999, alignItems: 'center', justifyContent: 'center',
+    width: rs(36), height: rs(36), borderRadius: 999, alignItems: 'center', justifyContent: 'center',
     backgroundColor: withAlpha(T1, 0.08), borderWidth: 1, borderColor: withAlpha(T1, 0.12),
   },
   avatarGlyph: {fontFamily: FONT, color: withAlpha(T1, 0.9), fontSize: rf(17)},
 
-  titleWrap: {paddingHorizontal: GUTTER, paddingTop: 16, paddingBottom: 10},
+  titleWrap: {paddingHorizontal: GUTTER, paddingTop: rs(16), paddingBottom: rs(10)},
   eyebrow: {fontFamily: FONT, ...TYPE.label, color: T3},
-  title: {fontFamily: FONT, fontSize: rf(27), fontWeight: '700', letterSpacing: -0.7, color: T1, marginTop: 3},
+  title: {fontFamily: FONT, fontSize: rf(27), fontWeight: '700', letterSpacing: -0.7, color: T1, marginTop: rs(3)},
 
   card: {
     // borderCurve:'continuous'(스퀴클) 제거 — iOS 스퀴클 클립이 GlassEdge 의 원호(Rect rx) 코너와
@@ -398,54 +398,54 @@ const styles = StyleSheet.create({
     // 무시(원호)해 애초에 정합이라 괜찮았다. 원호로 통일하면 하이라이트가 코너에서 매끈히 이어진다.
     borderRadius: CARD_RADIUS, overflow: 'hidden', backgroundColor: CARD,
     // 카드가 배경에서 떠 보이도록 그림자(iOS/안드 공통 근사).
-    shadowColor: '#000', shadowOpacity: 0.5, shadowRadius: 24, shadowOffset: {width: 0, height: 18}, elevation: 12,
+    shadowColor: '#000', shadowOpacity: 0.5, shadowRadius: 24, shadowOffset: {width: 0, height: rs(18)}, elevation: 12,
   },
-  cardInner: {padding: 24},
-  cardTop: {flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10},
+  cardInner: {padding: rs(24)},
+  cardTop: {flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: rs(10)},
   cardBrand: {fontFamily: FONT, fontSize: rf(13), fontWeight: '600', letterSpacing: 1.2, color: withAlpha(T1, 0.55)},
-  cardModel: {fontFamily: FONT, fontSize: rf(25), fontWeight: '700', letterSpacing: -0.6, color: T1, marginTop: 4},
+  cardModel: {fontFamily: FONT, fontSize: rf(25), fontWeight: '700', letterSpacing: -0.6, color: T1, marginTop: rs(4)},
   // 컨디션 표기 — 칩 박스 없이 점+텍스트(점만 컨디션색, 텍스트는 밝은 무채색).
-  condChip: {flexDirection: 'row', alignItems: 'center', gap: 7, flexShrink: 0, paddingVertical: 6},
-  condDot: {width: 7, height: 7, borderRadius: 999},
+  condChip: {flexDirection: 'row', alignItems: 'center', gap: rs(7), flexShrink: 0, paddingVertical: rs(6)},
+  condDot: {width: rs(7), height: rs(7), borderRadius: 999},
   condLabel: {fontFamily: FONT, fontSize: rf(14), fontWeight: '600', color: T2},
 
   // width/height 는 렌더에서 화면 비례값(ring)으로 덮어쓴다.
-  ringWrap: {alignSelf: 'center', marginTop: 20, alignItems: 'center', justifyContent: 'center'},
+  ringWrap: {alignSelf: 'center', marginTop: rs(20), alignItems: 'center', justifyContent: 'center'},
   ringCenter: {position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center'},
   ringPctSub: {fontFamily: FONT, fontSize: rf(13), fontWeight: '600', color: withAlpha(T1, 0.55)},
-  ringPctRow: {flexDirection: 'row', alignItems: 'flex-start', marginTop: 2},
+  ringPctRow: {flexDirection: 'row', alignItems: 'flex-start', marginTop: rs(2)},
   // 58 → 52: 링 안에서 숫자가 꽉 차 보인다는 피드백(2026-07-04) — 살짝 줄여 숨통.
   ringPct: {fontFamily: DISPLAY, fontSize: rf(52), fontWeight: '700', letterSpacing: -2.6, lineHeight: rf(54), color: T1},
-  ringPctUnit: {fontFamily: DISPLAY, fontSize: rf(19), fontWeight: '700', color: withAlpha(T1, 0.7), marginTop: 6},
+  ringPctUnit: {fontFamily: DISPLAY, fontSize: rf(19), fontWeight: '700', color: withAlpha(T1, 0.7), marginTop: rs(6)},
 
-  kmRow: {flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 11, marginTop: 20},
+  kmRow: {flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rs(11), marginTop: rs(20)},
   kmLabel: {fontFamily: FONT, fontSize: rf(14), fontWeight: '600', color: T3},
   kmStrong: {color: T1},
-  kmSep: {width: 3, height: 3, borderRadius: 999, backgroundColor: withAlpha(T1, 0.28)},
+  kmSep: {width: rs(3), height: rs(3), borderRadius: 999, backgroundColor: withAlpha(T1, 0.28)},
 
   runBtn: {
-    height: 54, borderRadius: RADIUS.btn, borderCurve: 'continuous', marginTop: 20, overflow: 'hidden',
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9,
+    height: rs(54), borderRadius: RADIUS.btn, borderCurve: 'continuous', marginTop: rs(20), overflow: 'hidden',
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rs(9),
     backgroundColor: withAlpha(T1, 0.1),
   },
   runGlyph: {fontFamily: FONT, color: T1, fontSize: rf(16)},
   runLabel: {fontFamily: FONT, fontSize: rf(17), fontWeight: '700', letterSpacing: -0.2, color: T1},
 
   // 고스트 카드(빈 상태) 전용 — 힌트/가치 라인은 실카드 kmRow 자리의 유령.
-  ghostHint: {textAlign: 'center', color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '500', letterSpacing: -0.2, marginTop: 20},
-  ghostValues: {flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 11, marginTop: 12},
+  ghostHint: {textAlign: 'center', color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '500', letterSpacing: -0.2, marginTop: rs(20)},
+  ghostValues: {flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rs(11), marginTop: rs(12)},
   ghostValTxt: {color: withAlpha(T1, 0.35), fontFamily: FONT, fontSize: rf(13), fontWeight: '500'},
 
-  dots: {flexDirection: 'row', justifyContent: 'center', gap: 7, marginTop: 16},
-  dot: {height: 6, borderRadius: 999},
-  dotActive: {width: 20, backgroundColor: WARN},
-  dotIdle: {width: 6, backgroundColor: withAlpha(T1, 0.22)},
+  dots: {flexDirection: 'row', justifyContent: 'center', gap: rs(7), marginTop: rs(16)},
+  dot: {height: rs(6), borderRadius: 999},
+  dotActive: {width: rs(20), backgroundColor: WARN},
+  dotIdle: {width: rs(6), backgroundColor: withAlpha(T1, 0.22)},
 
   guardian: {
-    flexDirection: 'row', alignItems: 'center', gap: 12, marginHorizontal: GUTTER, marginTop: 20,
-    paddingHorizontal: 18, paddingVertical: 14, borderRadius: 18, borderWidth: 1,
+    flexDirection: 'row', alignItems: 'center', gap: rs(12), marginHorizontal: GUTTER, marginTop: rs(20),
+    paddingHorizontal: rs(18), paddingVertical: rs(14), borderRadius: rs(18), borderWidth: 1,
   },
-  guardDot: {width: 9, height: 9, borderRadius: 999},
+  guardDot: {width: rs(9), height: rs(9), borderRadius: 999},
   guardText: {flex: 1, fontFamily: FONT, fontSize: rf(15), fontWeight: '600', letterSpacing: -0.2, color: T1},
   guardCta: {fontFamily: FONT, fontSize: rf(14), fontWeight: '700'},
 });

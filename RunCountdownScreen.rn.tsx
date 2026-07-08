@@ -18,7 +18,7 @@
 // ============================================================================
 
 import React, { useEffect, useRef, useState } from 'react';
-import { rf } from './lib/responsive';
+import { rf, rs, ri } from './lib/responsive';
 import { View, Text, Pressable, StyleSheet, Animated, Easing, StatusBar } from 'react-native';
 import { ShoeGlyph } from './primitives';
 import Svg, { Path, Circle } from 'react-native-svg';
@@ -107,9 +107,9 @@ export default function RunCountdownScreen({
       {/* top */}
       <View style={s.top}>
         <Pressable onPress={cancel} hitSlop={8} style={s.cancel} accessibilityRole="button" accessibilityLabel="카운트다운 취소">
-          <Icon name="back" size={18} color={T2} /><Text style={s.cancelText}>취소</Text>
+          <Icon name="back" size={ri(18)} color={T2} /><Text style={s.cancelText}>취소</Text>
         </Pressable>
-        <View style={s.shoeChip} accessibilityRole="text" accessibilityLabel={`선택한 신발 ${shoeLabel}`}><ShoeGlyph color={T2} size={15} /><Text style={s.shoeText}>{shoeLabel}</Text></View>
+        <View style={s.shoeChip} accessibilityRole="text" accessibilityLabel={`선택한 신발 ${shoeLabel}`}><ShoeGlyph color={T2} size={ri(15)} /><Text style={s.shoeText}>{shoeLabel}</Text></View>
       </View>
 
       {/* dial */}
@@ -134,8 +134,8 @@ export default function RunCountdownScreen({
 
         {/* goal chips */}
         <View style={s.chips}>
-          <View style={s.chip} accessibilityRole="text" accessibilityLabel={`목표 ${goalKm}.0 킬로미터`}><Icon name="target" size={14} color={T3} /><Text style={s.chipText}>목표 <Text style={s.chipB}>{goalKm}.0 km</Text></Text></View>
-          <View style={s.chip} accessibilityRole="text" accessibilityLabel={outdoor ? '야외 러닝' : '실내 러닝'}><Icon name="route" size={14} color={T3} /><Text style={s.chipText}>{outdoor ? '야외 러닝' : '실내 러닝'}</Text></View>
+          <View style={s.chip} accessibilityRole="text" accessibilityLabel={`목표 ${goalKm}.0 킬로미터`}><Icon name="target" size={ri(14)} color={T3} /><Text style={s.chipText}>목표 <Text style={s.chipB}>{goalKm}.0 km</Text></Text></View>
+          <View style={s.chip} accessibilityRole="text" accessibilityLabel={outdoor ? '야외 러닝' : '실내 러닝'}><Icon name="route" size={ri(14)} color={T3} /><Text style={s.chipText}>{outdoor ? '야외 러닝' : '실내 러닝'}</Text></View>
         </View>
       </View>
     </View>
@@ -143,22 +143,22 @@ export default function RunCountdownScreen({
 }
 
 const s = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: BG, paddingTop: 60, paddingBottom: 34 },
-  top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 22 },
-  cancel: { flexDirection: 'row', alignItems: 'center', gap: 6, height: 34, paddingLeft: 10, paddingRight: 14, borderRadius: 999, backgroundColor: withAlpha(T1, 0.05), borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
+  screen: { flex: 1, backgroundColor: BG, paddingTop: rs(60), paddingBottom: rs(34) },
+  top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: rs(22) },
+  cancel: { flexDirection: 'row', alignItems: 'center', gap: rs(6), height: rs(34), paddingLeft: rs(10), paddingRight: rs(14), borderRadius: 999, backgroundColor: withAlpha(T1, 0.05), borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
   cancelText: { color: T2, fontFamily: FONT, fontSize: rf(14), fontWeight: '500' },
-  shoeChip: { flexDirection: 'row', alignItems: 'center', gap: 7, height: 34, paddingHorizontal: 14, borderRadius: 999, backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
+  shoeChip: { flexDirection: 'row', alignItems: 'center', gap: rs(7), height: rs(34), paddingHorizontal: rs(14), borderRadius: 999, backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
   shoeText: { color: T2, fontFamily: DISPLAY, fontSize: rf(14), fontWeight: '600' },
 
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: 76 },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: rs(76) },
   dial: { width: DIAL, height: DIAL, alignItems: 'center', justifyContent: 'center' },
   dialFace: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, alignItems: 'center', justifyContent: 'center' },
   count: { color: T1, fontFamily: DISPLAY, fontSize: rf(150), fontWeight: '600', letterSpacing: -4, lineHeight: rf(156), includeFontPadding: false },
-  countLabel: { color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '500', marginTop: 2 },
+  countLabel: { color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '500', marginTop: rs(2) },
   go: { color: ACCENT, fontFamily: DISPLAY, fontSize: rf(104), fontWeight: '700', letterSpacing: -1, includeFontPadding: false },
 
-  chips: { flexDirection: 'row', gap: 8, marginTop: 14 },
-  chip: { flexDirection: 'row', alignItems: 'center', gap: 7, height: 32, paddingHorizontal: 14, borderRadius: 999, backgroundColor: withAlpha(T1, 0.04), borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
+  chips: { flexDirection: 'row', gap: rs(8), marginTop: rs(14) },
+  chip: { flexDirection: 'row', alignItems: 'center', gap: rs(7), height: rs(32), paddingHorizontal: rs(14), borderRadius: 999, backgroundColor: withAlpha(T1, 0.04), borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
   chipText: { color: T2, fontFamily: FONT, fontSize: rf(14), fontWeight: '500' },
   chipB: { color: T1, fontFamily: DISPLAY, fontWeight: '600' },
 });

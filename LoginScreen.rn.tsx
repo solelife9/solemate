@@ -9,7 +9,7 @@
 // (단일 진실원). 이 화면은 표시 + 호출만 담당하고 인증 구현엔 관여하지 않는다.
 // ============================================================================
 import React, {useState} from 'react';
-import { rf } from './lib/responsive';
+import { rf, rs, ri } from './lib/responsive';
 import {View, Text, Pressable, StyleSheet, Platform, ActivityIndicator} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -108,7 +108,7 @@ export function LoginScreen({cloudPort, onSignedIn}: LoginScreenProps) {
           label={busy === 'google' ? '로그인 중…' : 'Google로 계속'}
           onPress={() => signIn('google')}
           disabled={signingIn}
-          iconNode={<Ionicons name="logo-google" size={17} color={signingIn ? T3 : T1} />}
+          iconNode={<Ionicons name="logo-google" size={ri(17)} color={signingIn ? T3 : T1} />}
           style={st.btnGoogle}
         />
 
@@ -124,7 +124,7 @@ export function LoginScreen({cloudPort, onSignedIn}: LoginScreenProps) {
             {busy === 'apple'
               ? <ActivityIndicator color={T1} />
               : <>
-                  <Ionicons name="logo-apple" size={18} color={T1} />
+                  <Ionicons name="logo-apple" size={ri(18)} color={T1} />
                   <Text style={st.btnTxt}>Apple로 계속</Text>
                 </>}
           </Pressable>
@@ -143,26 +143,26 @@ export function LoginScreen({cloudPort, onSignedIn}: LoginScreenProps) {
 }
 
 const st = StyleSheet.create({
-  screen: {flex: 1, backgroundColor: BG, paddingHorizontal: 28, justifyContent: 'space-between'},
-  hero: {flex: 1, alignItems: 'center', justifyContent: 'center', gap: 14},
+  screen: {flex: 1, backgroundColor: BG, paddingHorizontal: rs(28), justifyContent: 'space-between'},
+  hero: {flex: 1, alignItems: 'center', justifyContent: 'center', gap: rs(14)},
   logoBadge: {
-    width: 84, height: 84, borderRadius: 22, borderCurve: 'continuous', overflow: 'hidden',
+    width: rs(84), height: rs(84), borderRadius: rs(22), borderCurve: 'continuous', overflow: 'hidden',
     backgroundColor: withAlpha(T1, 0.06),
     alignItems: 'center', justifyContent: 'center',
   },
-  logoK: {fontFamily: DISPLAY, fontSize: rf(48), fontWeight: '700', color: ACCENT, marginTop: -2},
+  logoK: {fontFamily: DISPLAY, fontSize: rf(48), fontWeight: '700', color: ACCENT, marginTop: rs(-2)},
   // 워드마크 = Helvetica Neue Medium 소문자 흰색(2026-07-04 B안 확정).
   wordmark: {fontFamily: WORDMARK_FONT, fontWeight: '500', fontSize: rf(34), color: T1, letterSpacing: -0.3},
   tagline: {fontFamily: FONT, fontSize: rf(16), color: T3},
-  actions: {gap: 12},
-  lead: {fontFamily: FONT, fontSize: rf(15), fontWeight: '600', color: T2, textAlign: 'center', marginBottom: 4},
-  btn: {flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 50, borderRadius: RADIUS.btn, borderCurve: 'continuous'},
-  btnGoogle: {height: 50},
+  actions: {gap: rs(12)},
+  lead: {fontFamily: FONT, fontSize: rf(15), fontWeight: '600', color: T2, textAlign: 'center', marginBottom: rs(4)},
+  btn: {flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rs(8), height: rs(50), borderRadius: RADIUS.btn, borderCurve: 'continuous'},
+  btnGoogle: {height: rs(50)},
   btnApple: {backgroundColor: CARD_HI},
   btnKakao: {backgroundColor: KAKAO_YELLOW},
   btnNaver: {backgroundColor: NAVER_GREEN},
   brandMark: {fontFamily: DISPLAY, fontSize: rf(18), fontWeight: '700'},
   btnTxt: {color: T1, fontFamily: FONT, fontSize: rf(16), fontWeight: '600'},
-  error: {fontFamily: FONT, fontSize: rf(14), color: DANGER, textAlign: 'center', marginTop: 4},
-  footnote: {fontFamily: FONT, fontSize: rf(13), lineHeight: rf(17), color: T3, textAlign: 'center', marginTop: 8},
+  error: {fontFamily: FONT, fontSize: rf(14), color: DANGER, textAlign: 'center', marginTop: rs(4)},
+  footnote: {fontFamily: FONT, fontSize: rf(13), lineHeight: rf(17), color: T3, textAlign: 'center', marginTop: rs(8)},
 });

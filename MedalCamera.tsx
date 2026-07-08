@@ -5,7 +5,7 @@
 // 선택 폴백도 제공. 색은 theme 토큰만.
 // ============================================================================
 import React, {useRef, useState} from 'react';
-import { rf } from './lib/responsive';
+import { rf, rs, ri } from './lib/responsive';
 import {View, Text, Pressable, StyleSheet, useWindowDimensions, ActivityIndicator} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -40,7 +40,7 @@ export default function MedalCamera({onCapture, onCancel}: {onCapture: (uri: str
         const originY = Math.round(((photo.height ?? 0) - size) / 2);
         const out = await manipulateAsync(
           photo.uri,
-          [{crop: {originX, originY, width: size, height: size}}, {resize: {width: 640, height: 640}}],
+          [{crop: {originX, originY, width: size, height: size}}, {resize: {width: rs(640), height: rs(640)}}],
           {compress: 0.85, format: SaveFormat.JPEG},
         );
         onCapture(out.uri);
@@ -64,7 +64,7 @@ export default function MedalCamera({onCapture, onCancel}: {onCapture: (uri: str
     return (
       <View style={[c.screen, {paddingTop: insets.top}]}>
         <View style={c.permBox}>
-          <Ionicons name="camera-outline" size={40} color={T3} />
+          <Ionicons name="camera-outline" size={ri(40)} color={T3} />
           <Text style={c.permT}>카메라 권한이 필요해요</Text>
           <Text style={c.permD}>메달을 촬영하려면 카메라를 허용해주세요. 앨범에서 고를 수도 있어요.</Text>
           <Pressable onPress={() => void requestPerm()} style={c.permBtn}><Text style={c.permBtnT}>카메라 허용</Text></Pressable>
@@ -95,18 +95,18 @@ export default function MedalCamera({onCapture, onCancel}: {onCapture: (uri: str
 
       {/* 상단 취소 */}
       <Pressable onPress={onCancel} hitSlop={10} style={[c.close, {top: insets.top + 8}]} accessibilityRole="button" accessibilityLabel="닫기">
-        <Ionicons name="close" size={26} color={T1} />
+        <Ionicons name="close" size={ri(26)} color={T1} />
       </Pressable>
 
       {/* 하단 컨트롤: 앨범 · 셔터 */}
       <View style={[c.controls, {bottom: insets.bottom + 30}]}>
         <Pressable onPress={fromLibrary} hitSlop={8} style={c.libBtn} accessibilityRole="button" accessibilityLabel="앨범에서 선택">
-          <Ionicons name="images-outline" size={24} color={T1} />
+          <Ionicons name="images-outline" size={ri(24)} color={T1} />
         </Pressable>
         <Pressable onPress={shoot} disabled={busy} accessibilityRole="button" accessibilityLabel="촬영" style={c.shutterWrap}>
           <View style={c.shutter}>{busy ? <ActivityIndicator color={BG} /> : null}</View>
         </Pressable>
-        <View style={{width: 48}} />
+        <View style={{width: rs(48)}} />
       </View>
     </View>
   );
@@ -116,16 +116,16 @@ const c = StyleSheet.create({
   screen: {flex: 1, backgroundColor: '#000'},
   hint: {position: 'absolute', left: 0, right: 0, textAlign: 'center', color: T1, fontFamily: 'PretendardVariable', fontSize: rf(17), fontWeight: '600', letterSpacing: -0.2},
   sub: {position: 'absolute', left: 0, right: 0, textAlign: 'center', color: withAlpha(T1, 0.7), fontFamily: 'PretendardVariable', fontSize: rf(13)},
-  close: {position: 'absolute', left: 18, width: 40, height: 40, borderRadius: 999, backgroundColor: 'rgba(0,0,0,0.35)', alignItems: 'center', justifyContent: 'center'},
-  controls: {position: 'absolute', left: 0, right: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 40},
-  libBtn: {width: 48, height: 48, borderRadius: 999, backgroundColor: 'rgba(0,0,0,0.35)', alignItems: 'center', justifyContent: 'center'},
-  shutterWrap: {width: 76, height: 76, borderRadius: 999, borderWidth: 4, borderColor: withAlpha(T1, 0.4), alignItems: 'center', justifyContent: 'center'},
-  shutter: {width: 60, height: 60, borderRadius: 999, backgroundColor: T1, alignItems: 'center', justifyContent: 'center'},
-  permBox: {flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 40, gap: 10},
-  permT: {color: T2, fontFamily: 'PretendardVariable', fontSize: rf(17), fontWeight: '600', marginTop: 8},
-  permD: {color: T3, fontFamily: 'PretendardVariable', fontSize: rf(14), textAlign: 'center', lineHeight: rf(19), marginBottom: 8},
-  permBtn: {marginTop: 6, paddingVertical: 12, paddingHorizontal: 24, borderRadius: 12, backgroundColor: withAlpha(HALL_GOLD, 0.16), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(HALL_GOLD, 0.4)},
+  close: {position: 'absolute', left: 18, width: rs(40), height: rs(40), borderRadius: 999, backgroundColor: 'rgba(0,0,0,0.35)', alignItems: 'center', justifyContent: 'center'},
+  controls: {position: 'absolute', left: 0, right: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: rs(40)},
+  libBtn: {width: rs(48), height: rs(48), borderRadius: 999, backgroundColor: 'rgba(0,0,0,0.35)', alignItems: 'center', justifyContent: 'center'},
+  shutterWrap: {width: rs(76), height: rs(76), borderRadius: 999, borderWidth: 4, borderColor: withAlpha(T1, 0.4), alignItems: 'center', justifyContent: 'center'},
+  shutter: {width: rs(60), height: rs(60), borderRadius: 999, backgroundColor: T1, alignItems: 'center', justifyContent: 'center'},
+  permBox: {flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: rs(40), gap: rs(10)},
+  permT: {color: T2, fontFamily: 'PretendardVariable', fontSize: rf(17), fontWeight: '600', marginTop: rs(8)},
+  permD: {color: T3, fontFamily: 'PretendardVariable', fontSize: rf(14), textAlign: 'center', lineHeight: rf(19), marginBottom: rs(8)},
+  permBtn: {marginTop: rs(6), paddingVertical: rs(12), paddingHorizontal: rs(24), borderRadius: rs(12), backgroundColor: withAlpha(HALL_GOLD, 0.16), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(HALL_GOLD, 0.4)},
   permBtnT: {color: HALL_GOLD, fontFamily: 'PretendardVariable', fontSize: rf(15), fontWeight: '700'},
-  permGhost: {paddingVertical: 10},
+  permGhost: {paddingVertical: rs(10)},
   permGhostT: {color: T3, fontFamily: 'PretendardVariable', fontSize: rf(14)},
 });

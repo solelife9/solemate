@@ -13,7 +13,7 @@
 // ============================================================================
 
 import React, {useMemo, useRef, useState} from 'react';
-import { rf } from './lib/responsive';
+import { rf, rs, ri } from './lib/responsive';
 import {View, Text, ScrollView, Pressable, Modal, StyleSheet, Platform, useWindowDimensions} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -130,11 +130,11 @@ function HallOfShoes({records = [], unit = 'km', onBack, userName, onGoShoes}: H
     <View style={[st.screen, {paddingTop: insets.top + 8}]}>
       <View style={st.topbar}>
         <Pressable style={st.iconbtn} onPress={onBack} hitSlop={10} accessibilityRole="button" accessibilityLabel="뒤로" testID="hall-back">
-          <Ionicons name="chevron-back" size={17} color={G.gold} />
+          <Ionicons name="chevron-back" size={ri(17)} color={G.gold} />
         </Pressable>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{paddingHorizontal: 22, paddingBottom: insets.bottom + 30}}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{paddingHorizontal: rs(22), paddingBottom: insets.bottom + 30}}>
         {/* 헤더 — 애플 라지 타이틀(좌측, 라인 최소) */}
         <View style={st.head}>
           <Text style={st.title}>명예의 전당</Text>
@@ -265,10 +265,10 @@ function Certificate({shoe, unit, userName, onClose}: {shoe: RetiredShoeRecord; 
     <View style={st.certScreen}>
       <View style={[st.certFrame, {top: insets.top + 6}]} pointerEvents="none" />
       <Pressable style={[st.certX, {left: 20, top: insets.top + 6}]} onPress={onClose} hitSlop={10} accessibilityRole="button" accessibilityLabel="닫기">
-        <Ionicons name="close" size={16} color={G.muted} />
+        <Ionicons name="close" size={ri(16)} color={G.muted} />
       </Pressable>
       <Pressable style={[st.certX, {right: 20, top: insets.top + 6}]} onPress={onShare} hitSlop={10} accessibilityRole="button" accessibilityLabel="인증서 공유" testID="cert-share">
-        <Ionicons name="share-outline" size={15} color={G.gold} />
+        <Ionicons name="share-outline" size={ri(15)} color={G.gold} />
       </Pressable>
 
       <ScrollView contentContainerStyle={[st.certContent, {paddingTop: insets.top + 50, paddingBottom: insets.bottom + 40}]} showsVerticalScrollIndicator={false}>
@@ -291,7 +291,7 @@ function Certificate({shoe, unit, userName, onClose}: {shoe: RetiredShoeRecord; 
         <Text style={st.coDoctypeKr}>이 신발과의 여정을 기립니다</Text>
         {!!nm.brand && <Text style={st.coBrand}>{nm.brand}</Text>}
         <Text style={st.coModel}>{nm.model}</Text>
-        <View style={{marginTop: 18}}><FoilText text={String(d)} size={92} width={width - 56} ls={-4} /></View>
+        <View style={{marginTop: rs(18)}}><FoilText text={String(d)} size={ri(92)} width={width - 56} ls={-4} /></View>
         <Text style={st.coUnit}>함께 달린 거리</Text>
         <Text style={st.coQuote}>{d}{unit}의 여정, 고마웠어.</Text>
 
@@ -362,7 +362,7 @@ function EmptyHall({onRegister}: {onRegister?: () => void}) {
           <Rect x="80" y="149" width="90" height="2.5" rx="1.2" fill={G.gold} opacity={0.45} />
         </Svg>
         <View style={st.emblem}>
-          <Ionicons name="trophy" size={30} color={G.gold} />
+          <Ionicons name="trophy" size={ri(30)} color={G.gold} />
         </View>
       </View>
 
@@ -381,48 +381,48 @@ function EmptyHall({onRegister}: {onRegister?: () => void}) {
 
 const st = StyleSheet.create({
   screen: {flex: 1, backgroundColor: G.bg},
-  topbar: {height: 40, justifyContent: 'center', paddingHorizontal: 22},
-  iconbtn: {width: 36, height: 36, borderRadius: 18, borderWidth: 1, borderColor: G.line, alignItems: 'center', justifyContent: 'center'},
+  topbar: {height: rs(40), justifyContent: 'center', paddingHorizontal: rs(22)},
+  iconbtn: {width: rs(36), height: rs(36), borderRadius: rs(18), borderWidth: 1, borderColor: G.line, alignItems: 'center', justifyContent: 'center'},
 
-  head: {alignItems: 'flex-start', gap: 6, paddingTop: 12, paddingBottom: 26},
+  head: {alignItems: 'flex-start', gap: rs(6), paddingTop: rs(12), paddingBottom: rs(26)},
   title: {fontFamily: SERIF, fontSize: rf(30), fontWeight: '700', color: G.txt, letterSpacing: -0.3},
   subtitle: {fontFamily: FONT, fontSize: rf(14), fontWeight: '500', color: G.muted},
-  orn: {flexDirection: 'row', alignItems: 'center', gap: 10},
+  orn: {flexDirection: 'row', alignItems: 'center', gap: rs(10)},
   ornLine: {flex: 1, height: 1, backgroundColor: G.soft, opacity: 0.55},
-  ornDot: {width: 5, height: 5, backgroundColor: G.gold, transform: [{rotate: '45deg'}]},
+  ornDot: {width: rs(5), height: rs(5), backgroundColor: G.gold, transform: [{rotate: '45deg'}]},
 
-  legacy: {flexDirection: 'row', borderWidth: 1, borderColor: G.line, borderRadius: 18, backgroundColor: 'rgba(214,180,120,0.04)', paddingVertical: 18, marginBottom: 28},
-  lcell: {flex: 1, alignItems: 'center', gap: 5},
+  legacy: {flexDirection: 'row', borderWidth: 1, borderColor: G.line, borderRadius: rs(18), backgroundColor: 'rgba(214,180,120,0.04)', paddingVertical: rs(18), marginBottom: rs(28)},
+  lcell: {flex: 1, alignItems: 'center', gap: rs(5)},
   lcellDiv: {borderLeftWidth: 1, borderLeftColor: G.line},
   lval: {fontFamily: DISPLAY, fontSize: rf(26), fontWeight: '600', color: G.txt, letterSpacing: -0.5, fontVariant: ['tabular-nums']},
   llabel: {fontFamily: FONT, fontSize: rf(11), fontWeight: '700', letterSpacing: 1.2, color: G.faint},
 
-  sec: {flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 13},
+  sec: {flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: rs(13)},
   secT: {fontFamily: FONT, fontSize: rf(14), fontWeight: '700', color: G.txt},
   secC: {fontFamily: DISPLAY, fontSize: rf(12), fontWeight: '700', color: G.gold, letterSpacing: 0.4, fontVariant: ['tabular-nums']},
 
-  featured: {borderRadius: 20, borderWidth: 1, borderColor: G.soft, backgroundColor: G.surface, padding: 22, paddingBottom: 20, marginBottom: 30, overflow: 'hidden'},
+  featured: {borderRadius: rs(20), borderWidth: 1, borderColor: G.soft, backgroundColor: G.surface, padding: rs(22), paddingBottom: rs(20), marginBottom: rs(30), overflow: 'hidden'},
   featTop: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'},
-  badge: {flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1, borderColor: G.line, borderRadius: 999, paddingVertical: 5, paddingHorizontal: 10},
-  badgeDot: {width: 5, height: 5, borderRadius: 3, backgroundColor: G.gold},
+  badge: {flexDirection: 'row', alignItems: 'center', gap: rs(6), borderWidth: 1, borderColor: G.line, borderRadius: 999, paddingVertical: rs(5), paddingHorizontal: rs(10)},
+  badgeDot: {width: rs(5), height: rs(5), borderRadius: rs(3), backgroundColor: G.gold},
   badgeTxt: {fontFamily: FONT, fontSize: rf(9), fontWeight: '700', letterSpacing: 1.4, color: G.gold},
   featYear: {fontFamily: SERIF, fontSize: rf(14), color: G.muted, fontVariant: ['tabular-nums']},
-  featBody: {flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: 14, marginTop: 26},
+  featBody: {flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: rs(14), marginTop: rs(26)},
   featName: {flex: 1},
   featBrand: {fontFamily: FONT, fontSize: rf(11), fontWeight: '700', letterSpacing: 1.8, color: G.gold},
-  featModel: {fontFamily: SERIF, fontSize: rf(25), fontWeight: '700', color: G.txt, marginTop: 7},
-  featQuote: {fontFamily: FONT, fontSize: rf(13), fontWeight: '600', color: G.muted, marginTop: 9},
-  featDist: {flexDirection: 'row', alignItems: 'baseline', gap: 4, marginBottom: 8},
+  featModel: {fontFamily: SERIF, fontSize: rf(25), fontWeight: '700', color: G.txt, marginTop: rs(7)},
+  featQuote: {fontFamily: FONT, fontSize: rf(13), fontWeight: '600', color: G.muted, marginTop: rs(9)},
+  featDist: {flexDirection: 'row', alignItems: 'baseline', gap: rs(4), marginBottom: rs(8)},
   featNum: {fontFamily: DISPLAY, fontSize: rf(44), fontWeight: '700', color: G.gold, letterSpacing: -1.5, fontVariant: ['tabular-nums']},
   featKm: {fontFamily: DISPLAY, fontSize: rf(16), fontWeight: '700', color: G.gold, opacity: 0.7},
 
-  grid: {flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 14},
-  plaque: {width: '48%', borderRadius: 16, borderWidth: 1, borderColor: G.line, backgroundColor: '#120f0b', padding: 16, paddingBottom: 15, minHeight: 168, overflow: 'hidden'},
-  seal: {width: 30, height: 30, borderRadius: 15, borderWidth: 1, borderColor: G.soft, alignItems: 'center', justifyContent: 'center'},
+  grid: {flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: rs(14)},
+  plaque: {width: '48%', borderRadius: rs(16), borderWidth: 1, borderColor: G.line, backgroundColor: '#120f0b', padding: rs(16), paddingBottom: rs(15), minHeight: rs(168), overflow: 'hidden'},
+  seal: {width: rs(30), height: rs(30), borderRadius: rs(15), borderWidth: 1, borderColor: G.soft, alignItems: 'center', justifyContent: 'center'},
   sealTxt: {fontFamily: SERIF, fontSize: rf(9), fontWeight: '700', color: G.gold},
-  pbrand: {fontFamily: FONT, fontSize: rf(9), fontWeight: '700', letterSpacing: 1.4, color: G.gold, marginTop: 16},
-  pmodel: {fontFamily: SERIF, fontSize: rf(17), fontWeight: '700', color: G.txt, marginTop: 5, lineHeight: rf(19)},
-  pfoot: {marginTop: 'auto', paddingTop: 12, flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: G.line},
+  pbrand: {fontFamily: FONT, fontSize: rf(9), fontWeight: '700', letterSpacing: 1.4, color: G.gold, marginTop: rs(16)},
+  pmodel: {fontFamily: SERIF, fontSize: rf(17), fontWeight: '700', color: G.txt, marginTop: rs(5), lineHeight: rf(19)},
+  pfoot: {marginTop: 'auto', paddingTop: rs(12), flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: G.line},
   pkm: {fontFamily: DISPLAY, fontSize: rf(18), fontWeight: '600', color: G.txt, letterSpacing: -0.3, fontVariant: ['tabular-nums']},
   pkmU: {fontFamily: DISPLAY, fontSize: rf(11), fontWeight: '700', color: G.muted},
   pyear: {fontFamily: DISPLAY, fontSize: rf(12), fontWeight: '600', color: G.faint, fontVariant: ['tabular-nums']},
@@ -430,47 +430,47 @@ const st = StyleSheet.create({
 
   // ── 인증서 ──
   certScreen: {flex: 1, backgroundColor: '#08070A'},
-  certContent: {alignItems: 'center', paddingHorizontal: 28},
-  certFrame: {position: 'absolute', left: 16, right: 16, bottom: 16, borderRadius: 18, borderWidth: 1, borderColor: G.soft, zIndex: 1},
-  certX: {position: 'absolute', width: 34, height: 34, borderRadius: 17, borderWidth: 1, borderColor: G.line, backgroundColor: 'rgba(0,0,0,0.3)', alignItems: 'center', justifyContent: 'center', zIndex: 2},
-  coDoctype: {fontFamily: SERIF, fontSize: rf(21), color: G.gold, letterSpacing: 5, marginTop: 8},
-  coDoctypeKr: {fontFamily: FONT, fontSize: rf(13), fontWeight: '500', color: G.muted, letterSpacing: 0.3, marginTop: 8},
-  coBrand: {fontFamily: FONT, fontSize: rf(12), fontWeight: '700', letterSpacing: 2.2, color: G.gold, marginTop: 32},
-  coModel: {fontFamily: SERIF, fontSize: rf(28), fontWeight: '700', color: G.txt, marginTop: 7, textAlign: 'center'},
-  coUnit: {fontFamily: FONT, fontSize: rf(12), fontWeight: '700', letterSpacing: 3.4, color: G.txt, marginTop: 12},
-  coQuote: {fontFamily: SERIF, fontSize: rf(17), fontWeight: '700', color: G.txt, marginTop: 20, textAlign: 'center'},
-  coMeta: {flexDirection: 'row', alignSelf: 'stretch', marginTop: 28},
-  coCell: {flex: 1, gap: 5, paddingHorizontal: 8, alignItems: 'center'},
+  certContent: {alignItems: 'center', paddingHorizontal: rs(28)},
+  certFrame: {position: 'absolute', left: 16, right: 16, bottom: 16, borderRadius: rs(18), borderWidth: 1, borderColor: G.soft, zIndex: 1},
+  certX: {position: 'absolute', width: rs(34), height: rs(34), borderRadius: rs(17), borderWidth: 1, borderColor: G.line, backgroundColor: 'rgba(0,0,0,0.3)', alignItems: 'center', justifyContent: 'center', zIndex: 2},
+  coDoctype: {fontFamily: SERIF, fontSize: rf(21), color: G.gold, letterSpacing: 5, marginTop: rs(8)},
+  coDoctypeKr: {fontFamily: FONT, fontSize: rf(13), fontWeight: '500', color: G.muted, letterSpacing: 0.3, marginTop: rs(8)},
+  coBrand: {fontFamily: FONT, fontSize: rf(12), fontWeight: '700', letterSpacing: 2.2, color: G.gold, marginTop: rs(32)},
+  coModel: {fontFamily: SERIF, fontSize: rf(28), fontWeight: '700', color: G.txt, marginTop: rs(7), textAlign: 'center'},
+  coUnit: {fontFamily: FONT, fontSize: rf(12), fontWeight: '700', letterSpacing: 3.4, color: G.txt, marginTop: rs(12)},
+  coQuote: {fontFamily: SERIF, fontSize: rf(17), fontWeight: '700', color: G.txt, marginTop: rs(20), textAlign: 'center'},
+  coMeta: {flexDirection: 'row', alignSelf: 'stretch', marginTop: rs(28)},
+  coCell: {flex: 1, gap: rs(5), paddingHorizontal: rs(8), alignItems: 'center'},
   coCellDiv: {borderLeftWidth: 1, borderLeftColor: G.line},
   coK: {fontFamily: FONT, fontSize: rf(8), fontWeight: '700', letterSpacing: 1.2, color: G.faint},
   coV: {fontFamily: DISPLAY, fontSize: rf(14), fontWeight: '700', color: G.txt, textAlign: 'center', lineHeight: rf(18)},
   coS: {fontFamily: DISPLAY, fontSize: rf(12), fontWeight: '600', color: G.muted, fontVariant: ['tabular-nums']},
-  coRule: {alignSelf: 'stretch', height: 1, backgroundColor: G.line, marginTop: 26},
-  coSeal: {width: 72, height: 72, borderRadius: 36, borderWidth: 1.5, borderColor: G.soft, alignItems: 'center', justifyContent: 'center'},
-  coSealInner: {position: 'absolute', top: 5, left: 5, right: 5, bottom: 5, borderRadius: 31, borderWidth: 1, borderColor: 'rgba(214,180,120,0.26)'},
+  coRule: {alignSelf: 'stretch', height: 1, backgroundColor: G.line, marginTop: rs(26)},
+  coSeal: {width: rs(72), height: rs(72), borderRadius: rs(36), borderWidth: 1.5, borderColor: G.soft, alignItems: 'center', justifyContent: 'center'},
+  coSealInner: {position: 'absolute', top: 5, left: 5, right: 5, bottom: 5, borderRadius: rs(31), borderWidth: 1, borderColor: 'rgba(214,180,120,0.26)'},
   coSealT: {fontFamily: SERIF, fontSize: rf(7), fontWeight: '700', letterSpacing: 1.3, color: G.gold},
   coSealN: {fontFamily: SERIF, fontSize: rf(17), fontWeight: '700', color: G.gold, lineHeight: rf(18)},
   coSealB: {fontFamily: SERIF, fontSize: rf(6), fontWeight: '700', letterSpacing: 1, color: G.faint},
-  coMast: {flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', alignSelf: 'stretch', marginHorizontal: -6, marginBottom: 28},
-  coRunner: {alignItems: 'flex-start', paddingTop: 8, gap: 5},
+  coMast: {flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', alignSelf: 'stretch', marginHorizontal: rs(-6), marginBottom: rs(28)},
+  coRunner: {alignItems: 'flex-start', paddingTop: rs(8), gap: rs(5)},
   coSign: {alignItems: 'flex-end'},
   coSignK: {fontFamily: SERIF, fontSize: rf(8), fontWeight: '700', letterSpacing: 1.4, color: G.faint},
-  coSignNm: {fontFamily: SERIF, fontSize: rf(20), fontWeight: '700', color: G.txt, marginTop: 5},
-  coShare: {marginTop: 24, flexDirection: 'row', alignItems: 'center', gap: 7, paddingVertical: 9, paddingHorizontal: 16, borderRadius: 999, borderWidth: 1, borderColor: G.soft, backgroundColor: 'rgba(214,180,120,0.04)'},
+  coSignNm: {fontFamily: SERIF, fontSize: rf(20), fontWeight: '700', color: G.txt, marginTop: rs(5)},
+  coShare: {marginTop: rs(24), flexDirection: 'row', alignItems: 'center', gap: rs(7), paddingVertical: rs(9), paddingHorizontal: rs(16), borderRadius: 999, borderWidth: 1, borderColor: G.soft, backgroundColor: 'rgba(214,180,120,0.04)'},
   coShareTxt: {fontFamily: FONT, fontSize: rf(12), fontWeight: '700', letterSpacing: 0.3, color: G.gold},
-  coFoot: {flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 16},
-  coFootLine: {width: 22, height: 1, backgroundColor: G.soft},
+  coFoot: {flexDirection: 'row', alignItems: 'center', gap: rs(10), marginTop: rs(16)},
+  coFootLine: {width: rs(22), height: 1, backgroundColor: G.soft},
   coFootKg: {fontFamily: SERIF, fontSize: rf(11), fontWeight: '700', letterSpacing: 2.8, color: G.gold},
   offscreen: {position: 'absolute', left: -4000, top: 0, opacity: 0},
 
   // ── 빈 상태 ──
-  empty: {alignItems: 'center', paddingTop: 26},
-  emptyArt: {width: 250, height: 190, alignItems: 'center', justifyContent: 'center'},
+  empty: {alignItems: 'center', paddingTop: rs(26)},
+  emptyArt: {width: rs(250), height: rs(190), alignItems: 'center', justifyContent: 'center'},
   emblem: {alignItems: 'center', justifyContent: 'center'},
-  eLabel: {fontFamily: FONT, fontSize: rf(12), fontWeight: '700', letterSpacing: 3.3, color: G.gold, marginTop: 30},
-  eTitle: {fontFamily: SERIF, fontSize: rf(25), fontWeight: '700', color: G.txt, marginTop: 14},
-  eDesc: {fontSize: rf(15), fontWeight: '500', color: G.muted, lineHeight: rf(23), marginTop: 14, textAlign: 'center', maxWidth: 286},
-  cta: {alignSelf: 'stretch', height: 54, borderRadius: 16, borderWidth: 1, borderColor: G.soft, backgroundColor: 'rgba(214,180,120,0.10)', alignItems: 'center', justifyContent: 'center', marginTop: 38},
+  eLabel: {fontFamily: FONT, fontSize: rf(12), fontWeight: '700', letterSpacing: 3.3, color: G.gold, marginTop: rs(30)},
+  eTitle: {fontFamily: SERIF, fontSize: rf(25), fontWeight: '700', color: G.txt, marginTop: rs(14)},
+  eDesc: {fontSize: rf(15), fontWeight: '500', color: G.muted, lineHeight: rf(23), marginTop: rs(14), textAlign: 'center', maxWidth: rs(286)},
+  cta: {alignSelf: 'stretch', height: rs(54), borderRadius: rs(16), borderWidth: 1, borderColor: G.soft, backgroundColor: 'rgba(214,180,120,0.10)', alignItems: 'center', justifyContent: 'center', marginTop: rs(38)},
   ctaTxt: {fontSize: rf(16), fontWeight: '700', color: G.gold},
 });
 

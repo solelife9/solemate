@@ -8,7 +8,7 @@
 // 색은 호출부가 넘긴 tierColor/rarityColor(=theme TIER_COLORS / 희귀도색)만 사용.
 // ============================================================================
 import React, {useEffect, useRef} from 'react';
-import { rf } from './lib/responsive';
+import { rf, rs, ri } from './lib/responsive';
 import {View, Text, Pressable, StyleSheet, Animated, Easing} from 'react-native';
 import Svg, {Defs, RadialGradient, LinearGradient, Stop, Circle, Ellipse, Path} from 'react-native-svg';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
@@ -78,7 +78,7 @@ function Medal({color, legendary, icon}: {color: string; legendary?: boolean; ic
   const c = legendary ? HALL_GOLD : color;
   const uid = icon; // 화면당 1개 마운트 — id 충돌 없음
   return (
-    <View style={{width: 148, height: 148, alignItems: 'center', justifyContent: 'center'}}>
+    <View style={{width: rs(148), height: rs(148), alignItems: 'center', justifyContent: 'center'}}>
       <Svg width={148} height={148}>
         <Defs>
           <LinearGradient id={`rim-${uid}`} x1="0" y1="0" x2="0" y2="1">
@@ -105,7 +105,7 @@ function Medal({color, legendary, icon}: {color: string; legendary?: boolean; ic
         <Ellipse cx={54} cy={44} rx={30} ry={15} fill="#FFFFFF" opacity={0.09} />
       </Svg>
       <View style={{position: 'absolute'}} pointerEvents="none">
-        <AchIcon id={icon} size={62} color={legendary ? '#F4E8C8' : '#F1EFE9'} />
+        <AchIcon id={icon} size={ri(62)} color={legendary ? '#F4E8C8' : '#F1EFE9'} />
       </View>
     </View>
   );
@@ -255,23 +255,23 @@ export default function CelebrationScreen({data, onClose}: {data: CelebrationDat
 }
 
 const st = StyleSheet.create({
-  screen: {flex: 1, backgroundColor: BG, alignItems: 'center', paddingHorizontal: 28, overflow: 'hidden'},
+  screen: {flex: 1, backgroundColor: BG, alignItems: 'center', paddingHorizontal: rs(28), overflow: 'hidden'},
   glow: {position: 'absolute', top: '-8%'},
-  skip: {position: 'absolute', right: 22, zIndex: 2, padding: 6},
+  skip: {position: 'absolute', right: 22, zIndex: 2, padding: rs(6)},
   skipTxt: {fontSize: rf(14), fontWeight: '500', color: T3, fontFamily: FONT},
   body: {flex: 1, alignItems: 'center', justifyContent: 'center'},
 
-  eyebrow: {fontSize: rf(13), fontWeight: '700', letterSpacing: 2.6, marginBottom: 32, textTransform: 'uppercase', fontFamily: FONT},
-  medalwrap: {width: 124, height: 124, marginBottom: 30, alignItems: 'center', justifyContent: 'center'},
-  ring: {position: 'absolute', width: 124, height: 124, borderRadius: 62, borderCurve: 'continuous', borderWidth: 1},
+  eyebrow: {fontSize: rf(13), fontWeight: '700', letterSpacing: 2.6, marginBottom: rs(32), textTransform: 'uppercase', fontFamily: FONT},
+  medalwrap: {width: rs(124), height: rs(124), marginBottom: rs(30), alignItems: 'center', justifyContent: 'center'},
+  ring: {position: 'absolute', width: rs(124), height: rs(124), borderRadius: 62, borderCurve: 'continuous', borderWidth: 1},
 
-  rankfrom: {fontSize: rf(15), fontWeight: '500', color: T3, marginBottom: 2, fontFamily: FONT, textAlign: 'center'},
+  rankfrom: {fontSize: rf(15), fontWeight: '500', color: T3, marginBottom: rs(2), fontFamily: FONT, textAlign: 'center'},
   name: {fontSize: rf(32), fontWeight: '700', color: T1, letterSpacing: -0.6, lineHeight: rf(38), textAlign: 'center', fontFamily: DISPLAY},
   meta: {fontSize: rf(14), fontWeight: '500', color: T3, fontFamily: FONT},
-  desc: {fontSize: rf(16), color: withAlpha(T1, 0.72), lineHeight: rf(24), marginTop: 18, maxWidth: 300, textAlign: 'center', fontFamily: FONT},
+  desc: {fontSize: rf(16), color: withAlpha(T1, 0.72), lineHeight: rf(24), marginTop: rs(18), maxWidth: rs(300), textAlign: 'center', fontFamily: FONT},
   b: {color: T1, fontWeight: '700'},
 
   actions: {alignSelf: 'stretch'},
-  primary: {height: 56, borderRadius: RADIUS.md, borderCurve: 'continuous', backgroundColor: ACCENT, alignItems: 'center', justifyContent: 'center'},
+  primary: {height: rs(56), borderRadius: RADIUS.md, borderCurve: 'continuous', backgroundColor: ACCENT, alignItems: 'center', justifyContent: 'center'},
   primaryTxt: {fontSize: rf(18), fontWeight: '700', color: T1, fontFamily: FONT},
 });

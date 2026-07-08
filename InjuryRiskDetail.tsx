@@ -6,7 +6,7 @@
 // 시트/스크린 어디에 얹어도 되도록 순수 프레젠테이션(상태/네비게이션 0).
 // ============================================================================
 import React from 'react';
-import { rf } from './lib/responsive';
+import { rf, rs, ri } from './lib/responsive';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {
@@ -58,7 +58,7 @@ function GuidanceCard({ tone, icon, title, body }: {
   return (
     <View style={[styles.guide, { borderColor: withAlpha(color, 0.3) }]}>
       <View style={[styles.guideIcon, { backgroundColor: withAlpha(color, 0.14) }]}>
-        <Ionicons name={icon} size={18} color={color} />
+        <Ionicons name={icon} size={ri(18)} color={color} />
       </View>
       <View style={{ flex: 1 }}>
         <Text style={styles.guideTitle}>{title}</Text>
@@ -126,7 +126,7 @@ const styles = StyleSheet.create({
   root: { backgroundColor: CARD, borderRadius: RADIUS.xl, borderCurve: 'continuous' },
   content: { padding: SPACE.lg, gap: SPACE.md },
   header: { flexDirection: 'row', alignItems: 'center', gap: SPACE.sm },
-  dot: { width: 12, height: 12, borderRadius: 6 },
+  dot: { width: rs(12), height: rs(12), borderRadius: rs(6) },
   level: { ...TYPE.label, color: T1 },
   headline: { ...TYPE.title, color: T1, lineHeight: rf(30) },
   // 신호 분해
@@ -137,9 +137,9 @@ const styles = StyleSheet.create({
     paddingVertical: SPACE.xs,
   },
   signalRow: { flexDirection: 'row', alignItems: 'center', gap: SPACE.sm, paddingVertical: SPACE.md },
-  signalDot: { width: 8, height: 8, borderRadius: 4 },
+  signalDot: { width: rs(8), height: rs(8), borderRadius: rs(4) },
   signalLabel: { ...TYPE.body, color: T1 },
-  signalSub: { ...TYPE.caption, color: T3, marginTop: 1 },
+  signalSub: { ...TYPE.caption, color: T3, marginTop: rs(1) },
   signalValue: { ...TYPE.heading, color: T1 },
   signalSep: { height: 1, backgroundColor: CARD_BORDER },
   // 코칭
@@ -153,11 +153,11 @@ const styles = StyleSheet.create({
     padding: SPACE.md,
   },
   guideIcon: {
-    width: 34, height: 34, borderRadius: 17, borderCurve: 'continuous',
+    width: rs(34), height: rs(34), borderRadius: rs(17), borderCurve: 'continuous',
     alignItems: 'center', justifyContent: 'center',
   },
   guideTitle: { ...TYPE.body, color: T1 },
-  guideBody: { ...TYPE.label, color: T2, lineHeight: rf(19), marginTop: 3, fontWeight: '400' },
+  guideBody: { ...TYPE.label, color: T2, lineHeight: rf(19), marginTop: rs(3), fontWeight: '400' },
   foot: { ...TYPE.caption, color: T3, lineHeight: rf(16), marginTop: SPACE.xs },
   disclaimer: { ...TYPE.caption, color: T4 },
 });

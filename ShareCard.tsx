@@ -9,6 +9,7 @@
 // 색은 theme 토큰만 사용(raw hex 0) — 투명도는 *Opacity prop 으로 표현한다.
 // ============================================================================
 import React from 'react';
+import { rs } from './lib/responsive';
 import Svg, {Rect, Path, Circle, Text as SvgText, G, Image as SvgImage} from 'react-native-svg';
 import {ACCENT, T1} from './theme';
 
@@ -48,7 +49,7 @@ export interface ShareCardProps {
 }
 
 const ShareCard = React.forwardRef<unknown, ShareCardProps>(({model, route = [], photoUri = null}, ref) => {
-  const proj = projectRoute(route, {width: ROUTE_BOX, height: ROUTE_BOX, padding: 76});
+  const proj = projectRoute(route, {width: ROUTE_BOX, height: ROUTE_BOX, padding: rs(76)});
   const pathD = pointsToPath(proj.points);
   const start = proj.points[0];
   const end = proj.points[proj.points.length - 1];

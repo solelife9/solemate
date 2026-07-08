@@ -7,6 +7,7 @@
 // react-native-svg 만 사용(추가 의존 없음).
 // ============================================================================
 import React from 'react';
+import { rs } from './lib/responsive';
 import {TouchableOpacity, View, StyleSheet, StyleProp, ViewStyle} from 'react-native';
 import Svg, {Defs, LinearGradient, Stop, Circle} from 'react-native-svg';
 import {ACCENT, GRAD_TOP, GRAD_BOT} from './theme';
@@ -41,7 +42,7 @@ export function GradientCircleButton({
           shadowColor: ACCENT,
           shadowOpacity: 0.5,
           shadowRadius: 16,
-          shadowOffset: {width: 0, height: 12},
+          shadowOffset: {width: 0, height: rs(12)},
           elevation: 10,
         },
         style,

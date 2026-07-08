@@ -1,5 +1,5 @@
 import React from 'react';
-import { rf } from './lib/responsive';
+import { rf, rs } from './lib/responsive';
 import {View, Text, TouchableOpacity, StyleSheet} from 'react-native';
 import {BG, ACCENT, T1, T3, FONT as FP, DISPLAY as FH} from './theme';
 import {recordError} from './lib/crashlytics';
@@ -66,22 +66,22 @@ const styles = StyleSheet.create({
     backgroundColor: BG,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 32,
+    paddingHorizontal: rs(32),
   },
-  title: {color: T1, fontFamily: FH, fontSize: rf(25), marginBottom: 12, letterSpacing: 0.3},
+  title: {color: T1, fontFamily: FH, fontSize: rf(25), marginBottom: rs(12), letterSpacing: 0.3},
   body: {
     color: T3,
     fontFamily: FP,
     fontSize: rf(15),
     lineHeight: rf(21),
     textAlign: 'center',
-    marginBottom: 28,
+    marginBottom: rs(28),
   },
   btn: {
     backgroundColor: ACCENT,
-    borderRadius: 16, borderCurve: 'continuous',
-    paddingVertical: 14,
-    paddingHorizontal: 36,
+    borderRadius: rs(16), borderCurve: 'continuous',
+    paddingVertical: rs(14),
+    paddingHorizontal: rs(36),
   },
   btnText: {color: T1, fontFamily: FP, fontSize: rf(17), fontWeight: '600'},
 });

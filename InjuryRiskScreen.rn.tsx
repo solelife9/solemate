@@ -5,7 +5,7 @@
 // 다른 오버레이(ShoeArchiveScreen/HallOfShoes)와 동일한 셸 패턴(SafeArea + nav).
 // ============================================================================
 import React from 'react';
-import { rf } from './lib/responsive';
+import { rf, rs, ri } from './lib/responsive';
 import {View, Text, Pressable, StyleSheet} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -37,10 +37,10 @@ export default function InjuryRiskScreen({
     <View style={[s.screen, {paddingTop: insets.top}]} testID="injury-risk-screen">
       <View style={s.nav}>
         <Pressable onPress={onBack} hitSlop={8} accessibilityRole="button" accessibilityLabel="뒤로" style={s.iconBtn}>
-          <Ionicons name="chevron-back" size={20} color={T1} />
+          <Ionicons name="chevron-back" size={ri(20)} color={T1} />
         </Pressable>
         <Text style={s.title}>부상위험</Text>
-        <View style={{width: 36}} />
+        <View style={{width: rs(36)}} />
       </View>
       <View style={s.body}>
         <InjuryRiskDetail runs={runs} shoe={shoe} shoeName={shoeName} todayISO={todayISO} />
@@ -52,8 +52,8 @@ export default function InjuryRiskScreen({
 
 const s = StyleSheet.create({
   screen: {flex: 1, backgroundColor: BG},
-  nav: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingTop: 6, paddingBottom: 10},
-  iconBtn: {width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center'},
+  nav: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: rs(14), paddingTop: rs(6), paddingBottom: rs(10)},
+  iconBtn: {width: rs(36), height: rs(36), borderRadius: rs(18), alignItems: 'center', justifyContent: 'center'},
   title: {color: T1, fontFamily: FONT, fontSize: rf(19), fontWeight: '700', letterSpacing: -0.3},
-  body: {flex: 1, justifyContent: 'center', paddingHorizontal: 14, paddingBottom: 10},
+  body: {flex: 1, justifyContent: 'center', paddingHorizontal: rs(14), paddingBottom: rs(10)},
 });

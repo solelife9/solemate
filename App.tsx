@@ -1,5 +1,5 @@
 import React, {useState, useEffect, useRef, useMemo, useCallback} from 'react';
-import { rf } from './lib/responsive';
+import { rf, rs, ri } from './lib/responsive';
 import {
   View, Text, StyleSheet, TouchableOpacity, TextInput, Alert, StatusBar,
   Linking, AppState,
@@ -1996,31 +1996,31 @@ function Main(){
 // 자리표시 형태를 회색 블록으로 미리 보여줘 '레이아웃이 곧 채워진다'는 신호를 준다.
 // testID로 통합테스트가 로딩 상태를 식별한다.
 function SkelBlock({h,w,style}:{h:number;w?:number|string;style?:any}){
-  return <View style={[{height:h,width:(w as any)??'100%',borderRadius:10,backgroundColor:SURFACE},style]}/>;
+  return <View style={[{height:h,width:(w as any)??'100%',borderRadius: rs(10),backgroundColor:SURFACE},style]}/>;
 }
 function BootSkeleton(){
   const insets=useSafeAreaInsets();
   return (
     <View testID="boot-skeleton" style={[boot.screen,{paddingTop:insets.top+12}]}>
-      <View style={{height:24}}/>
+      <View style={{height: rs(24)}}/>
       <Text testID="boot-loading-copy" style={boot.loadingCaption}>{KEEP_GOING_LOADING}</Text>
-      <View style={{height:14}}/>
+      <View style={{height: rs(14)}}/>
       <SkelBlock h={14} w={120}/>
-      <View style={{height:18}}/>
+      <View style={{height: rs(18)}}/>
       {/* 히어로 카드 자리 */}
-      <SkelBlock h={150} style={{borderRadius:20, borderCurve: 'continuous'}}/>
-      <View style={{height:16}}/>
+      <SkelBlock h={150} style={{borderRadius: rs(20), borderCurve: 'continuous'}}/>
+      <View style={{height: rs(16)}}/>
       {/* 주간 통계 3칸 */}
-      <View style={{flexDirection:'row',gap:10}}>
+      <View style={{flexDirection:'row',gap: rs(10)}}>
         <SkelBlock h={64} w={'31%'as any}/>
         <SkelBlock h={64} w={'31%'as any}/>
         <SkelBlock h={64} w={'31%'as any}/>
       </View>
-      <View style={{height:16}}/>
+      <View style={{height: rs(16)}}/>
       {/* 신발 줄 자리 */}
-      <SkelBlock h={84} style={{borderRadius:16, borderCurve: 'continuous'}}/>
-      <View style={{height:10}}/>
-      <SkelBlock h={84} style={{borderRadius:16, borderCurve: 'continuous'}}/>
+      <SkelBlock h={84} style={{borderRadius: rs(16), borderCurve: 'continuous'}}/>
+      <View style={{height: rs(10)}}/>
+      <SkelBlock h={84} style={{borderRadius: rs(16), borderCurve: 'continuous'}}/>
     </View>
   );
 }
@@ -2033,7 +2033,7 @@ function BootError({onRetry}:{onRetry:()=>void}){
   return (
     <View testID="boot-error" style={[boot.screen,{justifyContent:'center',paddingTop:insets.top+12}]}>
       <View style={boot.card}>
-        <Ionicons name="cloud-offline-outline" size={40} color={WARN}/>
+        <Ionicons name="cloud-offline-outline" size={ri(40)} color={WARN}/>
         <Text style={boot.cardTitle}>연결이 잠시 끊겼어요</Text>
         <Text style={boot.cardBody}>{KEEP_GOING_RETRY}</Text>
         <Button testID="boot-retry" label="다시 시도" onPress={onRetry} icon="refresh" style={boot.retryBtn}/>
@@ -2043,15 +2043,15 @@ function BootError({onRetry}:{onRetry:()=>void}){
 }
 
 const boot=StyleSheet.create({
-  screen:{flex:1,backgroundColor:BG,paddingHorizontal:18,paddingTop:12},
-  card:{backgroundColor:CARD,borderRadius:20, borderCurve: 'continuous',padding:24,alignItems:'center',gap:12,
+  screen:{flex:1,backgroundColor:BG,paddingHorizontal: rs(18),paddingTop: rs(12)},
+  card:{backgroundColor:CARD,borderRadius: rs(20), borderCurve: 'continuous',padding: rs(24),alignItems:'center',gap: rs(12),
     borderWidth:StyleSheet.hairlineWidth,borderColor:SEP},
-  cardTitle:{color:T1,fontFamily:FP,fontSize: rf(19),fontWeight:'700',marginTop:4},
+  cardTitle:{color:T1,fontFamily:FP,fontSize: rf(19),fontWeight:'700',marginTop: rs(4)},
   cardBody:{color:T3,fontFamily:FP,fontSize: rf(15),lineHeight: rf(20),textAlign:'center'},
   loadingCaption:{color:T3,fontFamily:FP,fontSize: rf(14),lineHeight: rf(19)},
   // 단일 Button 프리미티브로 라우팅 — 모서리/그라데이션/글로우는 Button 이 책임진다.
   // 여기선 레이아웃(가로 stretch + 위 여백)만 얹는다.
-  retryBtn:{marginTop:8,alignSelf:'stretch'},
+  retryBtn:{marginTop: rs(8),alignSelf:'stretch'},
 });
 
 // ─── Live run screen (GPS / sensors / TTS engine + handoff Ring UI) ─────────
@@ -2624,10 +2624,10 @@ function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],track=null,weightKg,age
     <View style={[run.screen,{paddingTop:insets.top+24,paddingBottom:insets.bottom+28}]}>
       <View style={run.top}>
         <View style={run.liveRow}><Text style={[run.liveText,{color:ACCENT}]}>완료</Text></View>
-        <View style={run.shoeChip}><MaterialCommunityIcons name="shoe-sneaker" size={15} color={T3}/><Text style={run.shoeChipText}>{ui.model||shoe.name}</Text></View>
+        <View style={run.shoeChip}><MaterialCommunityIcons name="shoe-sneaker" size={ri(15)} color={T3}/><Text style={run.shoeChipText}>{ui.model||shoe.name}</Text></View>
       </View>
       <View style={run.body}>
-        <Ring size={272} stroke={16} progress={1} color={ACCENT}>
+        <Ring size={ri(272)} stroke={16} progress={1} color={ACCENT}>
           <View style={{alignItems:'center'}}>
             <Text style={run.goalText}>{trackMode?`트랙 · ${Math.round(lapMRef.current)}m × ${lapTimesRef.current.length}랩`:`목표 ${goalKm}km 완료`}</Text>
             <Text style={run.bigDist}>{finKm.toFixed(2)}</Text>
@@ -2724,46 +2724,46 @@ function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],track=null,weightKg,age
 }
 
 const run=StyleSheet.create({
-  screen:{flex:1,backgroundColor:BG,paddingHorizontal:22},
+  screen:{flex:1,backgroundColor:BG,paddingHorizontal: rs(22)},
   top:{flexDirection:'row',alignItems:'center',justifyContent:'space-between'},
-  liveRow:{flexDirection:'row',alignItems:'center',gap:7},
-  liveDot:{width:8,height:8,borderRadius:999},
+  liveRow:{flexDirection:'row',alignItems:'center',gap: rs(7)},
+  liveDot:{width: rs(8),height: rs(8),borderRadius:999},
   liveText:{fontFamily:FP,fontSize: rf(15),fontWeight:'500',letterSpacing:0.3},
-  shoeChip:{flexDirection:'row',alignItems:'center',gap:7,height:30,paddingHorizontal:12,borderRadius:999,backgroundColor:SURFACE},
+  shoeChip:{flexDirection:'row',alignItems:'center',gap: rs(7),height: rs(30),paddingHorizontal: rs(12),borderRadius:999,backgroundColor:SURFACE},
   shoeChipText:{color:T3,fontFamily:FH,fontSize: rf(14),fontWeight:'600'},
-  gpsRow:{flexDirection:'row',alignItems:'center',marginTop:8},
+  gpsRow:{flexDirection:'row',alignItems:'center',marginTop: rs(8)},
   gpsText:{color:T3,fontFamily:FP,fontSize: rf(14),fontWeight:'600'},
-  banner:{flexDirection:'row',alignItems:'center',gap:8,marginTop:10,paddingVertical:10,paddingHorizontal:12,borderRadius:12,borderWidth:StyleSheet.hairlineWidth},
+  banner:{flexDirection:'row',alignItems:'center',gap: rs(8),marginTop: rs(10),paddingVertical: rs(10),paddingHorizontal: rs(12),borderRadius: rs(12),borderWidth:StyleSheet.hairlineWidth},
   bannerWarn:{backgroundColor:withAlpha(WARN,0.12),borderColor:WARN},
   bannerDanger:{backgroundColor:withAlpha(DANGER,0.14),borderColor:DANGER},
   bannerText:{flex:1,color:T1,fontFamily:FP,fontSize: rf(14),fontWeight:'500',lineHeight: rf(17)},
   body:{flex:1,alignItems:'center',justifyContent:'center'},
   goalText:{color:T3,fontFamily:FP,fontSize: rf(13),fontWeight:'500',letterSpacing:1},
-  bigDist:{color:T1,fontFamily:FH,fontSize: rf(84),letterSpacing:1,marginTop:6},
-  bigUnit:{color:T3,fontFamily:FP,fontSize: rf(15),fontWeight:'600',marginTop:2},
-  metrics:{flexDirection:'row',marginHorizontal:-4,paddingVertical:14,paddingBottom:24,borderTopWidth:StyleSheet.hairlineWidth,borderTopColor:SEP},
-  metric:{flex:1,alignItems:'center',gap:4},
+  bigDist:{color:T1,fontFamily:FH,fontSize: rf(84),letterSpacing:1,marginTop: rs(6)},
+  bigUnit:{color:T3,fontFamily:FP,fontSize: rf(15),fontWeight:'600',marginTop: rs(2)},
+  metrics:{flexDirection:'row',marginHorizontal: rs(-4),paddingVertical: rs(14),paddingBottom: rs(24),borderTopWidth:StyleSheet.hairlineWidth,borderTopColor:SEP},
+  metric:{flex:1,alignItems:'center',gap: rs(4)},
   // 5지표 그리드(시간/페이스/케이던스/칼로리/고도) — 3열로 흘러 2행(3+2).
-  metricsGrid:{flexDirection:'row',flexWrap:'wrap',paddingTop:14,paddingBottom:20,borderTopWidth:StyleSheet.hairlineWidth,borderTopColor:SEP},
-  metricCell:{width:'33.33%',alignItems:'center',gap:4,paddingVertical:8},
+  metricsGrid:{flexDirection:'row',flexWrap:'wrap',paddingTop: rs(14),paddingBottom: rs(20),borderTopWidth:StyleSheet.hairlineWidth,borderTopColor:SEP},
+  metricCell:{width:'33.33%',alignItems:'center',gap: rs(4),paddingVertical: rs(8)},
   metricVRow:{flexDirection:'row',alignItems:'flex-end'},
   metricV:{color:T1,fontFamily:FH,fontSize: rf(26),letterSpacing:0.3},
-  metricU:{color:T3,fontFamily:FP,fontSize: rf(12),marginBottom:3},
+  metricU:{color:T3,fontFamily:FP,fontSize: rf(12),marginBottom: rs(3)},
   metricL:{color:T3,fontFamily:FP,fontSize: rf(13),fontWeight:'600'},
   // 러닝 중 메트릭 위계 — 시간·페이스 hero(큰) + 케이던스·칼로리·고도 sub(작은).
-  heroMetrics:{flexDirection:'row',paddingVertical:16,borderTopWidth:StyleSheet.hairlineWidth,borderTopColor:SEP},
+  heroMetrics:{flexDirection:'row',paddingVertical: rs(16),borderTopWidth:StyleSheet.hairlineWidth,borderTopColor:SEP},
   hm:{flex:1,alignItems:'center'},
   hmV:{fontFamily:FH,fontSize: rf(34),fontWeight:'600',color:T1,letterSpacing:-1},
-  hmL:{color:T3,fontFamily:FP,fontSize: rf(13),fontWeight:'500',marginTop:5},
-  subMetrics:{flexDirection:'row',justifyContent:'space-around',paddingVertical:12},
+  hmL:{color:T3,fontFamily:FP,fontSize: rf(13),fontWeight:'500',marginTop: rs(5)},
+  subMetrics:{flexDirection:'row',justifyContent:'space-around',paddingVertical: rs(12)},
   smV:{fontFamily:FH,fontSize: rf(16),fontWeight:'500',color:T2,textAlign:'center'},
-  smL:{color:T3,fontFamily:FP,fontSize: rf(11),fontWeight:'500',marginTop:3,textAlign:'center'},
-  controls:{flexDirection:'row',alignItems:'flex-start',justifyContent:'center',gap:40,paddingTop:4,paddingBottom:8},
+  smL:{color:T3,fontFamily:FP,fontSize: rf(11),fontWeight:'500',marginTop: rs(3),textAlign:'center'},
+  controls:{flexDirection:'row',alignItems:'flex-start',justifyContent:'center',gap: rs(40),paddingTop: rs(4),paddingBottom: rs(8)},
   ctrlHint:{color:T3,fontFamily:FP,fontSize: rf(12),letterSpacing:0.5,textAlign:'center'},
-  memo:{backgroundColor:SURFACE,borderRadius:14,padding:14,color:T1,fontSize: rf(16),fontFamily:FP,marginBottom:16},
-  actionRow:{flexDirection:'row',gap:12},
+  memo:{backgroundColor:SURFACE,borderRadius: rs(14),padding: rs(14),color:T1,fontSize: rf(16),fontFamily:FP,marginBottom: rs(16)},
+  actionRow:{flexDirection:'row',gap: rs(12)},
   // 버리기는 SURFACE flat 보조 버튼 — 모서리는 saveBtn(단일 Button=RADIUS.btn)과 맞춰 통일.
-  discardBtn:{flex:1,backgroundColor:SURFACE,borderRadius:RADIUS.btn,padding:16,alignItems:'center'},
+  discardBtn:{flex:1,backgroundColor:SURFACE,borderRadius:RADIUS.btn,padding: rs(16),alignItems:'center'},
   discardTxt:{color:T1,fontSize: rf(17),fontFamily:FP,fontWeight:'600'},
   // 저장하기는 단일 Button 프리미티브로 라우팅(그라데이션/글로우/RADIUS.btn). 여기선 flex 비율만.
   saveBtn:{flex:2},

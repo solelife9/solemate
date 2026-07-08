@@ -10,7 +10,7 @@
 // onPick 은 {brand, model} 만 넘긴다. 권장 수명(km)은 호출부가 카탈로그에서 파생한다.
 // ============================================================================
 import React, {useMemo, useState} from 'react';
-import { rf } from './lib/responsive';
+import { rf, rs } from './lib/responsive';
 import {View, Text, StyleSheet, Pressable, ScrollView, Modal, TextInput} from 'react-native';
 import Svg, {Circle, Path} from 'react-native-svg';
 import {BRANDS, SHOE_MODELS, findShoeModel, getRecommendedLifespanKm} from './data/shoeModels';
@@ -144,10 +144,10 @@ export function ShoePicker({visible, onClose, onPick, insetTop, insetBottom}: {
                   </Pressable>
                 )}
               </View>
-              <ScrollView style={s.flex1} contentContainerStyle={{paddingHorizontal: 18, paddingBottom: Math.max(insetBottom, 16)}} keyboardShouldPersistTaps="handled">
+              <ScrollView style={s.flex1} contentContainerStyle={{paddingHorizontal: rs(18), paddingBottom: Math.max(insetBottom, 16)}} keyboardShouldPersistTaps="handled">
                 {brandModels.map(m => modelRow(m.brand, m.model, subFor(m.brand, m.model)))}
                 {brandModels.length === 0 && (
-                  <Text style={{fontFamily: FONT, fontSize: rf(14), color: T3, marginTop: 6, lineHeight: rf(19)}}>
+                  <Text style={{fontFamily: FONT, fontSize: rf(14), color: T3, marginTop: rs(6), lineHeight: rf(19)}}>
                     “{query.trim()}” 검색 결과가 없어요.
                   </Text>
                 )}
@@ -166,7 +166,7 @@ export function ShoePicker({visible, onClose, onPick, insetTop, insetBottom}: {
             </View>
           ) : (
             // 기타 — 브랜드명 + 모델명 직접 입력
-            <ScrollView style={s.flex1} contentContainerStyle={{paddingHorizontal: 18, paddingTop: 12, paddingBottom: Math.max(insetBottom, 16)}} keyboardShouldPersistTaps="handled">
+            <ScrollView style={s.flex1} contentContainerStyle={{paddingHorizontal: rs(18), paddingTop: rs(12), paddingBottom: Math.max(insetBottom, 16)}} keyboardShouldPersistTaps="handled">
               <TextInput
                 value={customBrand}
                 onChangeText={setCustomBrand}
@@ -181,11 +181,11 @@ export function ShoePicker({visible, onClose, onPick, insetTop, insetBottom}: {
                 onChangeText={setCustomModel}
                 placeholder="모델명을 입력하세요"
                 placeholderTextColor={T4}
-                style={[s.pkFormInput, {marginTop: 8}]}
+                style={[s.pkFormInput, {marginTop: rs(8)}]}
                 autoCorrect={false}
                 accessibilityLabel="모델명 입력"
               />
-              <View style={{marginTop: 12}}>
+              <View style={{marginTop: rs(12)}}>
                 <Button
                   label="추가"
                   disabled={!customModel.trim() || !customBrand.trim()}
@@ -203,9 +203,9 @@ export function ShoePicker({visible, onClose, onPick, insetTop, insetBottom}: {
 const s = StyleSheet.create({
   screen: {flex: 1, backgroundColor: BG},
   flex1: {flex: 1},
-  pkTopBar: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24, paddingBottom: 12},
+  pkTopBar: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: rs(24), paddingBottom: rs(12)},
   pkTitle: {fontFamily: FONT, fontSize: rf(17), fontWeight: '600', color: T1, letterSpacing: -0.2},
-  pkInput: {flex: 1, fontFamily: FONT, fontSize: rf(16), fontWeight: '500', color: T1, paddingVertical: 0},
+  pkInput: {flex: 1, fontFamily: FONT, fontSize: rf(16), fontWeight: '500', color: T1, paddingVertical: rs(0)},
   pkClear: {color: T3, fontSize: rf(16), fontWeight: '600'},
   pkCancel: {fontFamily: FONT, fontSize: rf(16), fontWeight: '500', color: T1},
   pkSplit: {flex: 1, flexDirection: 'row', borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP},
@@ -213,40 +213,40 @@ const s = StyleSheet.create({
   pkSearchScoped: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    height: 42,
-    marginHorizontal: 14,
-    marginTop: 8,
-    marginBottom: 2,
-    paddingHorizontal: 12,
-    borderRadius: 12, borderCurve: 'continuous',
+    gap: rs(8),
+    height: rs(42),
+    marginHorizontal: rs(14),
+    marginTop: rs(8),
+    marginBottom: rs(2),
+    paddingHorizontal: rs(12),
+    borderRadius: rs(12), borderCurve: 'continuous',
     backgroundColor: CARD,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: withAlpha(T1, 0.1),
   },
-  pkRail: {width: 126, flexGrow: 0, borderRightWidth: StyleSheet.hairlineWidth, borderRightColor: SEP, paddingVertical: 6},
-  pkRailItem: {paddingVertical: 13, paddingHorizontal: 16, justifyContent: 'center'},
+  pkRail: {width: rs(126), flexGrow: 0, borderRightWidth: StyleSheet.hairlineWidth, borderRightColor: SEP, paddingVertical: rs(6)},
+  pkRailItem: {paddingVertical: rs(13), paddingHorizontal: rs(16), justifyContent: 'center'},
   pkRailItemOn: {backgroundColor: 'rgba(255,255,255,0.05)'},
-  pkRailBar: {position: 'absolute', left: 0, top: 12, bottom: 12, width: 3, borderTopRightRadius: 3, borderBottomRightRadius: 3, backgroundColor: T1},
+  pkRailBar: {position: 'absolute', left: 0, top: 12, bottom: 12, width: rs(3), borderTopRightRadius: 3, borderBottomRightRadius: 3, backgroundColor: T1},
   pkRailText: {fontFamily: FONT, fontSize: rf(14), fontWeight: '500', color: T3, letterSpacing: -0.2},
   pkRailTextOn: {color: T1, fontWeight: '600'},
-  pkRow: {paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: withAlpha(T1, 0.06)},
+  pkRow: {paddingVertical: rs(12), borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: withAlpha(T1, 0.06)},
   pkRowName: {fontFamily: FONT, fontSize: rf(15), fontWeight: '600', color: T1, letterSpacing: -0.2},
-  pkRowSub: {fontFamily: FONT, fontSize: rf(12), fontWeight: '500', color: T3, marginTop: 2},
+  pkRowSub: {fontFamily: FONT, fontSize: rf(12), fontWeight: '500', color: T3, marginTop: rs(2)},
   pkAddRow: {
-    marginTop: 12,
-    paddingVertical: 13,
-    paddingHorizontal: 14,
-    borderRadius: 14, borderCurve: 'continuous',
+    marginTop: rs(12),
+    paddingVertical: rs(13),
+    paddingHorizontal: rs(14),
+    borderRadius: rs(14), borderCurve: 'continuous',
     borderWidth: 1,
     borderStyle: 'dashed',
     borderColor: withAlpha(T1, 0.16),
     alignItems: 'center',
   },
   pkFormInput: {
-    height: 48,
-    paddingHorizontal: 14,
-    borderRadius: 14, borderCurve: 'continuous',
+    height: rs(48),
+    paddingHorizontal: rs(14),
+    borderRadius: rs(14), borderCurve: 'continuous',
     backgroundColor: CARD,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: withAlpha(T1, 0.12),

@@ -5,7 +5,7 @@
 // 나머지(사진·교체 권장 거리·현재 누적 거리)는 그대로 유지한다.
 // ============================================================================
 import React, { useState } from 'react';
-import { rf } from './lib/responsive';
+import { rf, rs, ri } from './lib/responsive';
 import { View, Text, TextInput, ScrollView, Pressable, Image, StyleSheet, KeyboardAvoidingView, Platform, Alert, Linking } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -97,23 +97,23 @@ export default function AddShoeScreen({
       {/* nav */}
       <View style={s.nav}>
         <Pressable onPress={onClose} hitSlop={10} accessibilityRole="button" accessibilityLabel="닫기" style={({ pressed }) => [s.iconBtn, pressed && s.pressed]}>
-          <Ionicons name="close" size={18} color={T2} />
+          <Ionicons name="close" size={ri(18)} color={T2} />
         </Pressable>
         <Text style={s.navTitle}>러닝화 등록</Text>
-        <View style={{ width: 38 }} />
+        <View style={{ width: rs(38) }} />
       </View>
 
       {/* 키보드가 입력칸·등록 버튼을 가리지 않게 폼+CTA를 KeyboardAvoidingView로 감싼다
           (iOS=padding, Android는 adjustResize에 맡겨 undefined). */}
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={insets.top + 8}>
-      <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 18, paddingBottom: 20 }} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: rs(18), paddingBottom: rs(20) }} keyboardShouldPersistTaps="handled">
         {/* photo — tap to pick from library; non-blocking on failure */}
         <Pressable onPress={onPickPhoto} disabled={picking} style={({ pressed }) => [s.photo, pressed && s.pressed]}>
           {photoUri ? (
             <Image source={{ uri: photoUri }} style={s.photoImg} resizeMode="cover" />
           ) : (
             <>
-              <Ionicons name={photoError ? 'refresh-outline' : 'camera-outline'} size={26} color={photoError ? ACCENT : T3} />
+              <Ionicons name={photoError ? 'refresh-outline' : 'camera-outline'} size={ri(26)} color={photoError ? ACCENT : T3} />
               <Text style={[s.photoText, photoError && { color: ACCENT }]}>
                 {picking ? '불러오는 중…' : photoError ? '다시 시도' : '신발 사진'}
               </Text>
@@ -128,16 +128,16 @@ export default function AddShoeScreen({
         {/* 러닝화(브랜드+모델) — 탭하면 온보딩과 동일한 2열 분할 피커가 열린다 */}
         <Text style={s.label}>러닝화</Text>
         <Pressable onPress={() => setPickerOpen(true)} accessibilityRole="button" accessibilityLabel={picked ? `러닝화 ${picked.brand} ${picked.model}, 눌러서 변경` : '러닝화 선택'} testID="add-shoe-select" style={({ pressed }) => [s.selector, pressed && s.pressed]}>
-          <Ionicons name="search" size={18} color={T3} />
+          <Ionicons name="search" size={ri(18)} color={T3} />
           <Text style={[s.selectorText, !picked && { color: T3 }]} numberOfLines={1}>
             {picked ? `${picked.brand ? `${picked.brand} · ` : ''}${picked.model}` : '브랜드·모델 선택'}
           </Text>
-          <Ionicons name="chevron-down" size={18} color={T3} />
+          <Ionicons name="chevron-down" size={ri(18)} color={T3} />
         </Pressable>
 
         {/* 권장 교체 거리 — 쿠셔닝(성능) 기준 가이드. 자동 입력·수정 가능, 미수정 시 '권장' 배지 */}
         <View style={s.maxHead}>
-          <Text style={[s.label, { paddingBottom: 0 }]}>교체 권장 거리</Text>
+          <Text style={[s.label, { paddingBottom: rs(0) }]}>교체 권장 거리</Text>
           {isRecommended && <Pill tone="accent" label="권장" icon="sparkles-outline" />}
         </View>
         <View style={[s.usedRow, !!maxErr && s.usedRowErr]}>
@@ -157,7 +157,7 @@ export default function AddShoeScreen({
         </Text>
 
         {/* current mileage */}
-        <Text style={[s.label, { marginTop: 22 }]}>현재 누적 거리</Text>
+        <Text style={[s.label, { marginTop: rs(22) }]}>현재 누적 거리</Text>
         <View style={s.usedRow}>
           <TextInput
             value={used}
@@ -193,32 +193,32 @@ const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: BG },
   pressed: { opacity: 0.85, transform: [{ scale: 0.98 }] },
 
-  nav: { paddingTop: 12, paddingHorizontal: 18, paddingBottom: 6, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  iconBtn: { width: 38, height: 38, borderRadius: 999, backgroundColor: CARD_HI, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.12), alignItems: 'center', justifyContent: 'center' },
+  nav: { paddingTop: rs(12), paddingHorizontal: rs(18), paddingBottom: rs(6), flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  iconBtn: { width: rs(38), height: rs(38), borderRadius: 999, backgroundColor: CARD_HI, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.12), alignItems: 'center', justifyContent: 'center' },
   navTitle: { color: T1, fontFamily: FONT, fontSize: rf(17), fontWeight: '500', letterSpacing: -0.2 },
 
-  photo: { alignSelf: 'center', width: 120, height: 120, borderRadius: 26, borderCurve: 'continuous', borderWidth: 1, borderStyle: 'dashed', borderColor: withAlpha(T1, 0.14), backgroundColor: withAlpha(T1, 0.02), alignItems: 'center', justifyContent: 'center', gap: 7, marginBottom: 10, overflow: 'hidden' },
+  photo: { alignSelf: 'center', width: rs(120), height: rs(120), borderRadius: rs(26), borderCurve: 'continuous', borderWidth: 1, borderStyle: 'dashed', borderColor: withAlpha(T1, 0.14), backgroundColor: withAlpha(T1, 0.02), alignItems: 'center', justifyContent: 'center', gap: rs(7), marginBottom: rs(10), overflow: 'hidden' },
   photoImg: { width: '100%', height: '100%' },
   photoText: { color: T3, fontFamily: FONT, fontSize: rf(13) },
-  photoErr: { color: T3, fontFamily: FONT, fontSize: rf(13), textAlign: 'center', marginBottom: 16, paddingHorizontal: 12 },
-  photoOpt: { color: T4, fontFamily: FONT, fontSize: rf(12), textAlign: 'center', marginBottom: 18 },
+  photoErr: { color: T3, fontFamily: FONT, fontSize: rf(13), textAlign: 'center', marginBottom: rs(16), paddingHorizontal: rs(12) },
+  photoOpt: { color: T4, fontFamily: FONT, fontSize: rf(12), textAlign: 'center', marginBottom: rs(18) },
 
-  label: { color: T2, fontFamily: FONT, fontSize: rf(14), fontWeight: '500', letterSpacing: 0.2, paddingHorizontal: 4, paddingBottom: 10 },
+  label: { color: T2, fontFamily: FONT, fontSize: rf(14), fontWeight: '500', letterSpacing: 0.2, paddingHorizontal: rs(4), paddingBottom: rs(10) },
 
   // 러닝화 선택 트리거(탭하면 2열 분할 피커). 입력칸처럼 보이되 누르면 모달이 열린다.
-  selector: { backgroundColor: CARD_DIM, borderRadius: 16, borderCurve: 'continuous', borderWidth: 1, borderColor: withAlpha(T1, 0.07), flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 18, paddingVertical: 16 },
+  selector: { backgroundColor: CARD_DIM, borderRadius: rs(16), borderCurve: 'continuous', borderWidth: 1, borderColor: withAlpha(T1, 0.07), flexDirection: 'row', alignItems: 'center', gap: rs(10), paddingHorizontal: rs(18), paddingVertical: rs(16) },
   selectorText: { flex: 1, color: T1, fontFamily: FONT, fontSize: rf(17), fontWeight: '500', letterSpacing: -0.2 },
 
-  maxHead: { marginTop: 22, flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 4, paddingBottom: 10 },
+  maxHead: { marginTop: rs(22), flexDirection: 'row', alignItems: 'center', gap: rs(8), paddingHorizontal: rs(4), paddingBottom: rs(10) },
 
-  hint: { color: T3, fontFamily: FONT, fontSize: rf(13), paddingHorizontal: 4, paddingTop: 9 },
+  hint: { color: T3, fontFamily: FONT, fontSize: rf(13), paddingHorizontal: rs(4), paddingTop: rs(9) },
 
-  usedRow: { backgroundColor: CARD_DIM, borderRadius: 16, borderCurve: 'continuous', borderWidth: 1, borderColor: withAlpha(T1, 0.07), flexDirection: 'row', alignItems: 'center', paddingHorizontal: 18 },
+  usedRow: { backgroundColor: CARD_DIM, borderRadius: rs(16), borderCurve: 'continuous', borderWidth: 1, borderColor: withAlpha(T1, 0.07), flexDirection: 'row', alignItems: 'center', paddingHorizontal: rs(18) },
   // 검증 실패 시 입력칸 테두리를 빨강으로 강조하고 아래 인라인 헬퍼텍스트를 띄운다.
   usedRowErr: { borderColor: DANGER },
-  errText: { color: DANGER, fontFamily: FONT, fontSize: rf(13), fontWeight: '500', paddingHorizontal: 4, paddingTop: 8 },
-  usedInput: { flex: 1, color: T1, fontFamily: DISPLAY, fontSize: rf(25), paddingVertical: 12 },
+  errText: { color: DANGER, fontFamily: FONT, fontSize: rf(13), fontWeight: '500', paddingHorizontal: rs(4), paddingTop: rs(8) },
+  usedInput: { flex: 1, color: T1, fontFamily: DISPLAY, fontSize: rf(25), paddingVertical: rs(12) },
   usedUnit: { color: T3, fontFamily: FONT, fontSize: rf(16) },
 
-  ctaWrap: { paddingHorizontal: 18, paddingTop: 6, paddingBottom: 34, backgroundColor: BG },
+  ctaWrap: { paddingHorizontal: rs(18), paddingTop: rs(6), paddingBottom: rs(34), backgroundColor: BG },
 });

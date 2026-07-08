@@ -8,6 +8,7 @@
 // react-native-maps 미링크 빌드면 조용히 no-op(CourseMap 규약 재사용).
 // ============================================================================
 import React, {useEffect, useRef, useState} from 'react';
+import { rs } from './lib/responsive';
 import {View, StyleSheet, Platform} from 'react-native';
 import * as Location from 'expo-location';
 import {ACCENT} from './theme';
@@ -125,17 +126,17 @@ export function RunLiveMap({coords, interactive = false, recenterKey = 0}: {coor
 
 const s = StyleSheet.create({
   posOuter: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+    width: rs(22),
+    height: rs(22),
+    borderRadius: rs(11),
     backgroundColor: 'rgba(255,122,45,0.25)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   posInner: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+    width: rs(12),
+    height: rs(12),
+    borderRadius: rs(6),
     backgroundColor: ACCENT,
     borderWidth: 2,
     borderColor: '#fff',

@@ -14,7 +14,7 @@
 // 토큰만(theme.ts) — 색/폰트/간격/반경 하드코딩 0.
 // ============================================================================
 import React, {useEffect, useMemo, useRef, useState} from 'react';
-import { rf } from './lib/responsive';
+import { rf, rs, ri } from './lib/responsive';
 import {
   View,
   Text,
@@ -205,7 +205,7 @@ export default function ProgressionScreen({
       <ScrollView
         contentContainerStyle={{
           paddingTop: insets.top + 12,
-          paddingHorizontal: 18,
+          paddingHorizontal: rs(18),
           paddingBottom: insets.bottom + 28,
           gap: SPACE.lg,
         }}>
@@ -218,10 +218,10 @@ export default function ProgressionScreen({
               accessibilityRole="button"
               accessibilityLabel="뒤로"
               style={({pressed}) => [s.iconBtn, pressed && {backgroundColor: CARD}]}>
-              <Ionicons name="chevron-back" size={20} color={T2} />
+              <Ionicons name="chevron-back" size={ri(20)} color={T2} />
             </Pressable>
           ) : (
-            <View style={{width: 38}} />
+            <View style={{width: rs(38)}} />
           )}
           <Text style={s.title}>진척</Text>
           {onOpenHallOfFame ? (
@@ -231,10 +231,10 @@ export default function ProgressionScreen({
               accessibilityRole="button"
               accessibilityLabel="랭킹"
               style={({pressed}) => [s.iconBtn, pressed && {backgroundColor: CARD}]}>
-              <Ionicons name="trophy" size={19} color={ACCENT} />
+              <Ionicons name="trophy" size={ri(19)} color={ACCENT} />
             </Pressable>
           ) : (
-            <View style={{width: 38}} />
+            <View style={{width: rs(38)}} />
           )}
         </View>
 
@@ -245,7 +245,7 @@ export default function ProgressionScreen({
             testID="unlock-banner"
             accessible
             accessibilityLabel={`새로 해제: ${bannerNames}`}>
-            <Ionicons name="sparkles" size={16} color={ACCENT} />
+            <Ionicons name="sparkles" size={ri(16)} color={ACCENT} />
             <Text style={s.bannerTxt} numberOfLines={2}>
               업적 달성 ·{' '}
               <Text style={{color: T1, fontWeight: '700'}}>{bannerNames}</Text>
@@ -313,12 +313,12 @@ export default function ProgressionScreen({
           testID="stat-row"
           style={s.statCard}
           divider
-          valueSize={20}
+          valueSize={rf(20)}
           valueWeight="600"
           valueLS={-0.4}
-          unitSize={11}
+          unitSize={rf(11)}
           unitWeight="600"
-          labelSize={11}
+          labelSize={rf(11)}
           labelWeight="600"
           labelMarginTop={5}
           items={[
@@ -339,7 +339,7 @@ export default function ProgressionScreen({
             return (
               <View key={cat} style={{gap: SPACE.sm}}>
                 <View style={s.catHeader}>
-                  <Ionicons name={meta.icon as any} size={14} color={T3} />
+                  <Ionicons name={meta.icon as any} size={ri(14)} color={T3} />
                   <Text style={s.groupLabel}>{meta.label}</Text>
                   <Text style={s.groupCount}>{done}/{items.length}</Text>
                 </View>
@@ -376,9 +376,9 @@ function AchievementCard({a}: {a: AchievementView}) {
       <View style={s.achTop}>
         <View style={s.achNameRow}>
           {a.unlocked ? (
-            <Ionicons name="checkmark-circle" size={14} color={aColor} />
+            <Ionicons name="checkmark-circle" size={ri(14)} color={aColor} />
           ) : a.signature ? (
-            <Ionicons name="star" size={14} color={T3} />
+            <Ionicons name="star" size={ri(14)} color={T3} />
           ) : null}
           <Text style={[s.achName, a.unlocked && {color: T1}]} numberOfLines={1}>
             {a.name}
@@ -431,8 +431,8 @@ const s = StyleSheet.create({
     justifyContent: 'space-between',
   },
   iconBtn: {
-    width: 38,
-    height: 38,
+    width: rs(38),
+    height: rs(38),
     borderRadius: RADIUS.pill,
     alignItems: 'center',
     justifyContent: 'center',
@@ -453,7 +453,7 @@ const s = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     borderRadius: RADIUS.md,
     paddingHorizontal: SPACE.lg,
-    paddingVertical: 11,
+    paddingVertical: rs(11),
   },
   bannerTxt: {flex: 1, color: T2, fontFamily: FONT, fontSize: rf(14), fontWeight: '600'},
   // 히어로
@@ -477,15 +477,15 @@ const s = StyleSheet.create({
   // 티어 진행바 — 히어로 카드에 통합, 정체성과 얇은 구분선으로 분리
   guideInner: {alignSelf: 'stretch', marginTop: SPACE.md, paddingTop: SPACE.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: CARD_BORDER},
   // 승급까지 남은 XP — 게임 히어로가 아니라 속삭임(작고 뮤트, 우측 정렬)
-  toNext: {fontFamily: FONT, color: T3, fontSize: rf(13), fontWeight: '600', letterSpacing: 0.1, textAlign: 'right', marginTop: 10, fontVariant: ['tabular-nums']},
-  xpRow: {flexDirection: 'row', alignItems: 'baseline', gap: 0},
+  toNext: {fontFamily: FONT, color: T3, fontSize: rf(13), fontWeight: '600', letterSpacing: 0.1, textAlign: 'right', marginTop: rs(10), fontVariant: ['tabular-nums']},
+  xpRow: {flexDirection: 'row', alignItems: 'baseline', gap: rs(0)},
   xpNum: {fontFamily: DISPLAY, fontSize: rf(30), fontWeight: '700', letterSpacing: -0.8, fontVariant: ['tabular-nums']},
   xpUnit: {fontFamily: FONT, color: T3, fontSize: rf(15), fontWeight: '600'},
-  nextRow: {flexDirection: 'row', alignItems: 'center', gap: 10},
+  nextRow: {flexDirection: 'row', alignItems: 'center', gap: rs(10)},
   nextTierTxt: {fontFamily: FONT, fontSize: rf(13), fontWeight: '700', letterSpacing: 0.2},
   nextTrack: {
     flex: 1,
-    height: 6,
+    height: rs(6),
     backgroundColor: CARD_HI,
     borderRadius: RADIUS.pill,
     overflow: 'hidden',
@@ -500,10 +500,10 @@ const s = StyleSheet.create({
     borderColor: CARD_BORDER,
     borderRadius: RADIUS.lg,
     borderCurve: 'continuous',
-    paddingVertical: 16,
+    paddingVertical: rs(16),
   },
   // 카테고리 헤더
-  catHeader: {flexDirection: 'row', alignItems: 'center', gap: 6},
+  catHeader: {flexDirection: 'row', alignItems: 'center', gap: rs(6)},
   groupLabel: {flex: 1, fontFamily: FONT, color: T2, fontSize: rf(14), fontWeight: '700'},
   groupCount: {fontFamily: FONT, color: T3, fontSize: rf(12), fontWeight: '700'},
   // 업적 카드
@@ -512,16 +512,16 @@ const s = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: CARD_BORDER,
     borderRadius: RADIUS.sm,
-    padding: 14,
+    padding: rs(14),
     gap: SPACE.sm,
   },
-  achTop: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8},
-  achNameRow: {flex: 1, flexDirection: 'row', alignItems: 'center', gap: 6},
+  achTop: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: rs(8)},
+  achNameRow: {flex: 1, flexDirection: 'row', alignItems: 'center', gap: rs(6)},
   achName: {flex: 1, fontFamily: FONT, color: T2, fontSize: rf(15), fontWeight: '700'},
   achDesc: {fontFamily: FONT, color: T3, fontSize: rf(13), lineHeight: rf(17)},
-  rar: {borderRadius: 6, paddingHorizontal: 7, paddingVertical: 3},
+  rar: {borderRadius: rs(6), paddingHorizontal: rs(7), paddingVertical: rs(3)},
   rarTxt: {fontFamily: FONT, fontSize: rf(9), fontWeight: '700', letterSpacing: 0.4},
-  achMeta: {flexDirection: 'row', alignItems: 'center', gap: 8},
+  achMeta: {flexDirection: 'row', alignItems: 'center', gap: rs(8)},
   achXp: {fontFamily: DISPLAY, fontSize: rf(12), fontWeight: '700', letterSpacing: 0.2, fontVariant: ['tabular-nums']},
   achFooter: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'},
   achProgTxt: {
@@ -532,7 +532,7 @@ const s = StyleSheet.create({
     fontVariant: ['tabular-nums'],
   },
   xpChip: {fontFamily: FONT, fontSize: rf(12), fontWeight: '700'},
-  track: {height: 5, backgroundColor: CARD_HI, borderRadius: RADIUS.pill, overflow: 'hidden'},
+  track: {height: rs(5), backgroundColor: CARD_HI, borderRadius: RADIUS.pill, overflow: 'hidden'},
   fill: {height: '100%', borderRadius: RADIUS.pill},
   // 총 XP
   xpTotal: {
@@ -542,8 +542,8 @@ const s = StyleSheet.create({
     backgroundColor: CARD,
     borderWidth: StyleSheet.hairlineWidth,
     borderRadius: RADIUS.md,
-    paddingHorizontal: 17,
-    paddingVertical: 15,
+    paddingHorizontal: rs(17),
+    paddingVertical: rs(15),
     marginTop: SPACE.xs,
   },
   xpTotalLabel: {fontFamily: FONT, color: T2, fontSize: rf(13), fontWeight: '700'},
@@ -556,6 +556,6 @@ const s = StyleSheet.create({
     fontVariant: ['tabular-nums'],
   },
   // 챌린지 빈 상태
-  empty: {alignItems: 'center', gap: 8, paddingVertical: 36},
+  empty: {alignItems: 'center', gap: rs(8), paddingVertical: rs(36)},
   emptyTxt: {fontFamily: FONT, color: T3, fontSize: rf(14), fontWeight: '600'},
 });

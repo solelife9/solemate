@@ -18,7 +18,7 @@
 // 은퇴 확정은 스텝 2 → 3 전환에서 단 한 번 일어난다.
 // ============================================================================
 import React, {useMemo, useRef, useState} from 'react';
-import { rf } from './lib/responsive';
+import { rf, rs, ri } from './lib/responsive';
 import {View, Text, ScrollView, Pressable, StyleSheet} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -176,7 +176,7 @@ function RetirementFlow({
           accessibilityLabel="닫기"
           testID="retire-flow-close"
           style={s.iconBtn}>
-          <Ionicons name="close" size={20} color={T2} />
+          <Ionicons name="close" size={ri(20)} color={T2} />
         </Pressable>
         <View style={s.dots}>
           {[0, 1, 2, 3].map(i => (
@@ -400,7 +400,7 @@ function HighlightsStep({
               key={h + i}
               style={[s.hlRow, i < model.highlights.length - 1 && s.hlRowBorder]}
               testID={`highlight-${i}`}>
-              <Ionicons name="ribbon-outline" size={16} color={ACCENT} />
+              <Ionicons name="ribbon-outline" size={ri(16)} color={ACCENT} />
               <Text style={s.hlText}>{h}</Text>
             </View>
           ))}
@@ -481,21 +481,21 @@ const s = StyleSheet.create({
     justifyContent: 'space-between',
   },
   iconBtn: {
-    width: 38,
-    height: 38,
+    width: rs(38),
+    height: rs(38),
     borderRadius: RADIUS.pill,
     backgroundColor: CARD_HI,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  dots: {flexDirection: 'row', alignItems: 'center', gap: 7},
+  dots: {flexDirection: 'row', alignItems: 'center', gap: rs(7)},
   dot: {
-    width: 7,
-    height: 7,
+    width: rs(7),
+    height: rs(7),
     borderRadius: RADIUS.pill,
     backgroundColor: withAlpha(T1, 0.16),
   },
-  dotOn: {backgroundColor: ACCENT, width: 20},
+  dotOn: {backgroundColor: ACCENT, width: rs(20)},
   dotDone: {backgroundColor: withAlpha(ACCENT, 0.5)},
 
   body: {flexGrow: 1, justifyContent: 'center', padding: SPACE.xl, paddingBottom: SPACE.xxl, gap: SPACE.lg},
@@ -574,7 +574,7 @@ const s = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 0.2,
   },
-  gridLabel: {color: T3, fontFamily: FONT, fontSize: rf(13), marginTop: 4},
+  gridLabel: {color: T3, fontFamily: FONT, fontSize: rf(13), marginTop: rs(4)},
 
   gradeBadge: {
     alignSelf: 'flex-start',
@@ -587,7 +587,7 @@ const s = StyleSheet.create({
 
   momentCard: {
     padding: SPACE.lg,
-    gap: 6,
+    gap: rs(6),
     borderColor: withAlpha(ACCENT, 0.3),
   },
   momentLabel: {
@@ -621,7 +621,7 @@ const s = StyleSheet.create({
   formatRow: {flexDirection: 'row', gap: SPACE.sm},
   formatBtn: {
     flex: 1,
-    height: 42,
+    height: rs(42),
     borderRadius: RADIUS.sm,
     backgroundColor: CARD_HI,
     alignItems: 'center',
@@ -654,7 +654,7 @@ const s = StyleSheet.create({
   // 보조(취소/이전) ghost 버튼 박스 — 모서리는 primary(단일 Button=RADIUS.btn)와 통일.
   btn: {
     flex: 1,
-    height: 54,
+    height: rs(54),
     borderRadius: RADIUS.btn,
     alignItems: 'center',
     justifyContent: 'center',
@@ -667,7 +667,7 @@ const s = StyleSheet.create({
   },
   // primary(다음/확정/완료)는 단일 Button 프리미티브로 라우팅 — 그라데이션/글로우/RADIUS.btn.
   // 여기선 박스 크기만(ghost 형제와 동일 flex/height 로 페어 정렬).
-  btnPrimary: {flex: 1, height: 54},
+  btnPrimary: {flex: 1, height: rs(54)},
   btnTxt: {fontFamily: FONT, fontSize: rf(17), fontWeight: '700'},
 });
 

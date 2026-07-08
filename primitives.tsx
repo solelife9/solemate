@@ -6,7 +6,7 @@
 // Deps: react-native-svg, react-native-vector-icons
 // ============================================================================
 import React, {useId, useMemo, useRef, useState, useEffect, useContext} from 'react';
-import { rf } from './lib/responsive';
+import { rf, rs, ri } from './lib/responsive';
 import {
   View,
   Text,
@@ -113,20 +113,20 @@ export function Stepper({
     },
   ];
   return (
-    <View style={[{flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 14}, style]}>
+    <View style={[{flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: rs(14)}, style]}>
       <Pressable onPress={onMinus} hitSlop={8} accessibilityRole="button"
         accessibilityLabel={minusLabel ?? `${suffix} 줄이기`} style={({pressed}) => btn(pressed)}>
-        <Ionicons name="remove" size={20} color={T1} />
+        <Ionicons name="remove" size={ri(20)} color={T1} />
       </Pressable>
       {children ?? (
         <View style={{flex: 1, alignItems: 'center'}} accessible accessibilityLabel={`${value} ${suffix}`}>
           <Text style={{color: T1, fontFamily: DISPLAY, fontSize: rf(30), letterSpacing: 0.3}}>{value}</Text>
-          {!!suffix && <Text style={{color: T3, fontFamily: FONT, fontSize: rf(13), fontWeight: '600', marginTop: 2}}>{suffix}</Text>}
+          {!!suffix && <Text style={{color: T3, fontFamily: FONT, fontSize: rf(13), fontWeight: '600', marginTop: rs(2)}}>{suffix}</Text>}
         </View>
       )}
       <Pressable onPress={onPlus} hitSlop={8} accessibilityRole="button"
         accessibilityLabel={plusLabel ?? `${suffix} 늘리기`} style={({pressed}) => btn(pressed)}>
-        <Ionicons name="add" size={20} color={T1} />
+        <Ionicons name="add" size={ri(20)} color={T1} />
       </Pressable>
     </View>
   );
@@ -174,7 +174,7 @@ export function Chip({
         {
           height: h, paddingHorizontal: size === 'sm' ? 12 : 15,
           borderRadius: RADIUS.pill, borderCurve: 'continuous',
-          alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6,
+          alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: rs(6),
           backgroundColor: selected ? withAlpha(ACCENT, 0.16) : CARD_HI,
           borderWidth: StyleSheet.hairlineWidth,
           borderColor: selected ? withAlpha(ACCENT, 0.55) : 'transparent',
@@ -420,7 +420,7 @@ export function Button({
         style,
       ]}>
       {filled ? <GlassEdge radius={RADIUS.btn} /> : null}
-      {iconNode ?? (icon ? <Ionicons name={icon} size={20} color={disabled ? T3 : T1} /> : null)}
+      {iconNode ?? (icon ? <Ionicons name={icon} size={ri(20)} color={disabled ? T3 : T1} /> : null)}
       <Text style={[btn.label, disabled && btn.labelDim]}>{label}</Text>
     </Pressable>
   );
@@ -506,13 +506,13 @@ const SEG_VARIANTS: Record<
       backgroundColor: withAlpha(T1, 0.035),
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: CARD_BORDER,
-      borderRadius: 13,
-      padding: 3,
-      gap: 3,
+      borderRadius: rs(13),
+      padding: rs(3),
+      gap: rs(3),
     },
     // 44→38: 기간 스트립이 위아래로 뚱뚱하다는 사용자 피드백(2026-07-07). 시각 높이만
     // 줄이고 실효 터치 타깃은 item hitSlop(아래 SEG_VSLOP)으로 44pt 를 유지한다(HIG).
-    item: {minHeight: 38, paddingVertical: 5, borderRadius: 10},
+    item: {minHeight: rs(38), paddingVertical: rs(5), borderRadius: rs(10)},
     itemOn: {backgroundColor: withAlpha(T1, 0.09)},
     textOff: {color: T3, fontSize: rf(15), fontWeight: '500'},
     textOn: {color: T1, fontSize: rf(15), fontWeight: '700'},
@@ -523,10 +523,10 @@ const SEG_VARIANTS: Record<
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: CARD_BORDER,
       borderRadius: RADIUS.pill,
-      padding: 4,
-      gap: 6,
+      padding: rs(4),
+      gap: rs(6),
     },
-    item: {paddingVertical: 9, borderRadius: RADIUS.pill},
+    item: {paddingVertical: rs(9), borderRadius: RADIUS.pill},
     itemOn: {backgroundColor: CARD_HI},
     textOff: {color: T3, fontSize: rf(14), fontWeight: '700'},
     textOn: {color: T1, fontSize: rf(14), fontWeight: '700'},
@@ -536,11 +536,11 @@ const SEG_VARIANTS: Record<
       backgroundColor: CARD,
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: CARD_BORDER,
-      borderRadius: 14,
-      padding: 4,
-      gap: 4,
+      borderRadius: rs(14),
+      padding: rs(4),
+      gap: rs(4),
     },
-    item: {height: 38, borderRadius: 10},
+    item: {height: rs(38), borderRadius: rs(10)},
     itemOn: {
       backgroundColor: withAlpha(ACCENT, 0.16),
       borderWidth: StyleSheet.hairlineWidth,
@@ -553,10 +553,10 @@ const SEG_VARIANTS: Record<
     container: {
       backgroundColor: CARD_DIM,
       borderRadius: RADIUS.pill,
-      padding: 3,
-      gap: 2,
+      padding: rs(3),
+      gap: rs(2),
     },
-    item: {paddingHorizontal: 14, paddingVertical: 6, borderRadius: RADIUS.pill},
+    item: {paddingHorizontal: rs(14), paddingVertical: rs(6), borderRadius: RADIUS.pill},
     itemOn: {backgroundColor: ACCENT},
     textOff: {color: T3, fontSize: rf(14), fontWeight: '600'},
     textOn: {color: T1, fontSize: rf(14), fontWeight: '600'},
@@ -644,12 +644,12 @@ export function Stat({
   label,
   top,
   align = 'center',
-  valueSize = 22,
+  valueSize = rf(22),
   valueWeight = '700',
   valueLS = 0.2,
-  unitSize = 13,
+  unitSize = rf(13),
   unitWeight = '600',
-  labelSize = 13,
+  labelSize = rf(13),
   labelWeight = '600',
   labelMarginTop = 4,
   verticalPadding = 0,
@@ -719,12 +719,12 @@ export function StatGrid({
   align = 'center',
   divider = false,
   columns,
-  valueSize = 22,
+  valueSize = rf(22),
   valueWeight = '700',
   valueLS = 0.2,
-  unitSize = 13,
+  unitSize = rf(13),
   unitWeight = '600',
-  labelSize = 13,
+  labelSize = rf(13),
   labelWeight = '600',
   labelMarginTop = 4,
   verticalPadding = 0,
@@ -841,8 +841,8 @@ const pill = StyleSheet.create({
     alignSelf: 'flex-start',
     borderRadius: RADIUS.pill,
   },
-  sm: {gap: SPACE.xs, paddingHorizontal: SPACE.sm, paddingVertical: 3},
-  md: {gap: 5, paddingHorizontal: 11, paddingVertical: 5},
+  sm: {gap: SPACE.xs, paddingHorizontal: SPACE.sm, paddingVertical: rs(3)},
+  md: {gap: rs(5), paddingHorizontal: rs(11), paddingVertical: rs(5)},
   label: {fontFamily: FONT, fontWeight: '700', letterSpacing: 0.2},
 });
 
@@ -899,7 +899,7 @@ export function InjuryBanner({
       ]}>
       <Ionicons
         name={level === 'high' ? 'alert-circle' : 'warning'}
-        size={17}
+        size={ri(17)}
         color={fg}
       />
       <Text style={[injury.text, {color: fg}]}>{message}</Text>
@@ -911,11 +911,11 @@ const injury = StyleSheet.create({
   banner: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 9,
+    gap: rs(9),
     borderRadius: RADIUS.md,
     borderWidth: StyleSheet.hairlineWidth,
     paddingHorizontal: SPACE.lg,
-    paddingVertical: 12,
+    paddingVertical: rs(12),
   },
   text: {
     flex: 1,
@@ -1043,7 +1043,7 @@ function ShoeIcon({color, filled = false}: {color: string; filled?: boolean}) {
   return (
     <Image
       source={filled ? TAB_SHOE_FILL : TAB_SHOE}
-      style={{width: 26, height: 26, tintColor: color}}
+      style={{width: rs(26), height: rs(26), tintColor: color}}
       resizeMode="contain"
     />
   );
@@ -1243,7 +1243,7 @@ export function TabBar({active, onTab}: {active: number; onTab: (i: number) => v
                 {tab.shoe ? (
                   <ShoeIcon color={color} filled={on} />
                 ) : (
-                  <Ionicons name={on ? tab.icon : `${tab.icon}-outline`} size={24} color={color} />
+                  <Ionicons name={on ? tab.icon : `${tab.icon}-outline`} size={ri(24)} color={color} />
                 )}
               </View>
             </Pressable>
@@ -1258,14 +1258,14 @@ const t = StyleSheet.create({
   // 독을 화면 좌우에서 띄워(40dp) 폭을 줄인다 — 프로토타입과 동일.
   // absolute 하단 고정: 콘텐츠가 독 '밑으로' 스크롤되어 유리 너머로 비친다(진짜 글래스).
   // 각 탭 화면은 TABBAR_CLEARANCE 만큼 스크롤 하단 여백을 확보한다.
-  wrap: {position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 40, paddingTop: 6},
+  wrap: {position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: rs(40), paddingTop: rs(6)},
   dock: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 62,
+    height: rs(62),
     // 좌우 안쪽 패딩 9 — 끝 탭 하이라이트가 독 가장자리에서 6dp 뜨게 해(끝 pill left
     // = paddingLeft - HL_PAD/2 = 9 - 3 = 6) 상하 여백(=(62-50)/2=6)과 정확히 일치시킨다.
-    paddingHorizontal: 9,
+    paddingHorizontal: rs(9),
     borderRadius: RADIUS.pill,
     overflow: 'hidden',                       // 하이라이트를 알약으로 클립
     borderWidth: StyleSheet.hairlineWidth,
@@ -1278,18 +1278,18 @@ const t = StyleSheet.create({
     shadowColor: BG,
     shadowOpacity: 0.7,
     shadowRadius: 20,
-    shadowOffset: {width: 0, height: 14},
+    shadowOffset: {width: 0, height: rs(14)},
     elevation: 14,
   },
   hl: {
     position: 'absolute',
     top: '50%',
-    height: 50,
-    marginTop: -25,            // 세로 정중앙(translateY(-50%) 대응)
+    height: rs(50),
+    marginTop: rs(-25),            // 세로 정중앙(translateY(-50%) 대응)
     borderRadius: RADIUS.pill,
     // 활성 하이라이트 강화(0.15→0.24) — 비활성 아이콘이 밝아진 만큼 활성 탭을 또렷이.
     backgroundColor: 'rgba(255,255,255,0.24)',
   },
-  item: {flex: 1, height: 62, alignItems: 'center', justifyContent: 'center'},
+  item: {flex: 1, height: rs(62), alignItems: 'center', justifyContent: 'center'},
   label: {fontFamily: FONT, fontSize: rf(11), letterSpacing: 0.1},
 });
