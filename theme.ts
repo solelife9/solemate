@@ -6,6 +6,14 @@ import type {RankTier} from './lib/progression/types';
 // jest 에선 항등(원본값)이라 크기 단언 테스트 불변. import { rf } from './lib/responsive'.
 import {rf} from './lib/responsive';
 
+// ── 하위호환 재수출 (분리된 모듈을 theme 통해 계속 접근) ────────────────────────
+// 화면 전용 키프세이크 팔레트 → theme.palettes.ts, 도메인 타입/데이터 → appTypes.ts
+// 로 분리(디자인 토큰 파일 슬림화, 2026-07-09). 85개 화면의 `from './theme'` import 를
+// 깨지 않도록 여기서 그대로 재수출한다(단일 진입점 유지).
+export * from './theme.palettes';
+export type {Shoe, Run} from './appTypes';
+export {SHOES} from './appTypes';
+
 // 색 토큰은 디자인 마무리 핸드오프(keego-rn/theme.js) 값 그대로:
 // bg #0A0A0A · card #141414 · card2 #171717. (이전 순흑 #000 + #161618 보다 사진과 정합)
 export const BG = '#0A0A0A';
@@ -55,14 +63,6 @@ export const KAKAO_LABEL = '#000000';
 export const NAVER_GREEN = '#03C75A';
 export const NAVER_LABEL = '#FFFFFF';
 
-// ── 은퇴 키프세이크 카드(Midnight) 팔레트 ──────────────────────────────────────
-// 디자인 마무리 핸드오프(keego-rn/components/RetirementCard.js)의 'Midnight + 배웅' 카드
-// 전용 색. 일반 다크 표면(BG/CARD)과 다른 보랏빛 무드라 별도 토큰으로 모아 둔다(카드만 참조).
-export const RETIRE_MIDNIGHT_BG = '#130B11';     // 카드 배경(미드나잇 자줏빛 블랙)
-export const RETIRE_MIDNIGHT_GLOW = '#3A1430';   // 상단 radial 글로우
-// 거리/배웅 그라데이션 스톱(웜오렌지→코랄→바이올렛). 카드 GradientText 가 소비.
-export const RETIRE_GRAD_STOPS: readonly string[] = ['#FFB060', '#FF6C7E', '#B57BFF'];
-
 // ── rank tier colors (progression Slice A — AUTHORITATIVE) ───────────────────
 // 합성 랭크 티어 색. 진척 엔진/칩/링은 이 토큰만 참조한다(화면·lib 하드코딩 금지).
 // 값은 spec 권위표: Bronze→Legend. Legend = KEEGO 오렌지(#FF6500, ACCENT 와 동일 의도).
@@ -88,37 +88,6 @@ export const RARITY_COLORS = {
   epic: '#A468F0',
   legendary: '#E7B84B',
 } as const;
-
-// 명예의 전당 전용 골드 — 채도 낮춘 샴페인 골드(애플 톤). HallOfShoes·은퇴 인증서에서만
-// 쓴다(일반 화면 액센트는 ACCENT 단일 — 전당의 '식장' 무드를 위한 유일한 예외 토큰).
-export const HALL_GOLD = '#D8B872';
-
-// ── 명예의 전당 '식장' 팔레트(웜골드 온 니어블랙) ──────────────────────────────
-// HallOfShoes(은퇴 전당) 전용 무드 — 일반 다크 표면(BG/CARD)이 아니라 따뜻한 골드가
-// 근검정 위에 놓인 '식장' 분위기. HALL_GOLD(#D8B872, 위)는 인증서 빅넘버용 샴페인 골드,
-// 이 그룹의 HALL_GOLD_2(#D6B478)는 전당 화면 본문 골드다(둘 다 사용자 확정값이라 병존).
-// muted/faint/soft/line 반투명 톤은 화면에서 withAlpha 로 파생한다(단일 진실원).
-export const HALL_BG = '#0A0908';        // 전당 배경(웜 니어블랙)
-export const HALL_SURFACE = '#121110';   // 카드/표면
-export const HALL_TXT = '#F3EEE3';       // 본문(웜 화이트) — muted/faint 파생 원
-export const HALL_GOLD_2 = '#D6B478';    // 전당 본문 골드 — soft/line 파생 원
-export const HALL_PLAQUE_BG = '#120f0b'; // 그리드 명패(plaque) 배경
-export const HALL_CERT_BG = '#08070A';   // 은퇴 인증서 전체화면 배경
-// 포일 빅넘버 그라데이션 스톱(밝은 금→딥 골드→밝은 금, 금박 반사). 화면 FOIL 이 소비.
-export const HALL_FOIL_STOPS: readonly string[] = ['#F6E2A6', '#D0A557', '#9C7330', '#EFD590'];
-
-// ── 셀러브레이션 메달 셰이딩(3D 모델링 보조색) ─────────────────────────────────
-// CelebrationScreen 메달의 하이라이트/그늘은 T1(#FFFFFF)·BLACK(#000000) 알파 스톱으로
-// 만든다(위 토큰 참조). 아래는 그 외 고정 보조색: 새김 페이스 배경 + 글리프 웜틴트.
-export const CELEB_FACE_BG = '#141417';         // 메달 페이스(새김 홈) 딥 차콜
-export const CELEB_ICON_LEGENDARY = '#F4E8C8';  // 레전더리 글리프 샴페인 웜화이트
-export const CELEB_ICON_DEFAULT = '#F1EFE9';    // 일반 글리프 웜화이트
-
-// ── 온보딩 카드 그라데이션 ─────────────────────────────────────────────────────
-// 온보딩 마모곡선 카드 배경 그라데이션(상단 살짝 밝은 표면 → 하단 딥). 일반 CARD 와
-// 다른 미묘한 상하 그라데이션이라 별도 토큰으로 둔다(화면은 이 토큰만 참조).
-export const ONBOARD_CARD_GRAD_TOP = '#1A1A1F';
-export const ONBOARD_CARD_GRAD_BOT = '#141417';
 
 // 심박 존(Z1–Z5) 색 — 회복(파랑)→유산소(초록)→템포(노랑)→역치(주황)→무산소(빨강).
 // 기존 컨디션 토큰 재사용(BEST/GOOD/DANGER) + 중간 2색만 신규. 화면은 이 토큰만 참조한다.
@@ -210,7 +179,7 @@ export const TYPE = {
 export type TypeKey = keyof typeof TYPE;
 
 // ── hero display sizes (대형 숫자/타이머 — TYPE 스케일 위 영역) ─────────────────
-// TYPE 프리셋(≤ display 32)보다 큰 '명명된 hero 사이즈'. 런 타이머·카운트다운·대형
+// TYPE 프리셋(≤ display 33)보다 큰 '명명된 hero 사이즈'. 런 타이머·카운트다운·대형
 // 통계 숫자가 화면마다 raw 로 흩어 쓰던 40/56/76 을 이 단일 스케일로 모은다. TYPE 와
 // 분리한 이유: TYPE.display 가 '본문 최대' 위계를 유지해야 하기 때문(theme.test 의
 // display=max(TYPE) 계약). 화면은 이 토큰을 참조해 대형 숫자를 단일 소스로 둔다.
@@ -227,43 +196,3 @@ export const GUTTER = 20;
 // 모달·바텀시트 뒤를 어둡게 까는 반투명 검정. 화면들이 각자 복제하던 rgba(0,0,0,0.6)
 // 리터럴을 이 단일 토큰으로 모은다(값 동일 → 시각 동등).
 export const SCRIM = 'rgba(0,0,0,0.6)';
-
-// ── shared UI types (presentational shapes used by the handoff screens) ───────
-export type Shoe = {
-  id?: string;          // backend id (optional for pure-UI usage)
-  brand: string;
-  model: string;
-  used: number;
-  max: number;
-  // Proportional wear tier — see lib/shoe.ts shoeHealth (audit#7).
-  condition: '양호' | '주의' | '교체';
-  retired?: boolean;    // archived: hidden from run pickers, records preserved
-  photoUri?: string;    // local image-picker URI (optional; absent = no photo)
-};
-
-export type Run = {
-  id?: string;
-  date: string;   // "5월 28일"
-  day: string;    // "수"
-  dateNum: string; // "28"
-  dist: number;
-  pace: string;   // "5'02\""
-  time: string;   // "40:41"
-  shoe: number;   // index into shoes[]
-  shoeName?: string; // 신발명(삭제 신발 포함) — 공유 카드 폴백(인덱스로 못 찾을 때)
-  cal: number;
-  cadence: number;
-  bpm: number;
-  elev: number;
-  // 편집 폼 프리필용 원본 값(표시 파생값과 별개). 거리는 dist(km)에 이미 있고,
-  // 날짜는 'YYYY-MM-DD' 저장 표준, 시간은 초(duration)로 보존한다.
-  runDate?: string;  // 'YYYY-MM-DD' (run_date 원본)
-  durationS?: number; // 소요 시간(초, duration 원본)
-  memo?: string;      // 러닝 한 줄 메모(리캡에서 입력, 레코드 동기 — 2026-07-05)
-  // per-km 구간 스플릿(레코더가 1km 통과 시각으로 기록). 없으면 RunSplits 자동 숨김.
-  splits?: { km: number; paceSec: number; elevM: number }[];
-};
-
-// Fallback used only when a screen is rendered without data (kept empty so no
-// fake data ever shows in the real app).
-export const SHOES: Shoe[] = [];

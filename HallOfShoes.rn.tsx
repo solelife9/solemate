@@ -26,7 +26,7 @@ import {
   HALL_BG,
   HALL_SURFACE,
   HALL_TXT,
-  HALL_GOLD_2,
+  HALL_GOLD,
   HALL_PLAQUE_BG,
   HALL_CERT_BG,
   HALL_FOIL_STOPS,
@@ -43,7 +43,7 @@ import type {RetiredShoeRecord} from './lib/progression/types';
 const G = {
   bg: HALL_BG, surface: HALL_SURFACE, txt: HALL_TXT,
   muted: withAlpha(HALL_TXT, 0.52), faint: withAlpha(HALL_TXT, 0.34),
-  gold: HALL_GOLD_2, soft: withAlpha(HALL_GOLD_2, 0.46), line: withAlpha(HALL_GOLD_2, 0.20),
+  gold: HALL_GOLD, soft: withAlpha(HALL_GOLD, 0.46), line: withAlpha(HALL_GOLD, 0.20),
 };
 const SERIF = Platform.OS === 'ios' ? 'NanumMyeongjoExtraBold' : 'NanumMyeongjo';
 // 포일 그라데이션(큰 숫자) — 밝은 금 → 딥 골드 → 밝은 금(금박 반사). 스톱색은 theme.
