@@ -31,10 +31,14 @@ describe('completedRaceDistance — 하프/풀 완주 판정(±3%)', () => {
     expect(completedRaceDistance(10)).toBe('10k');
     expect(completedRaceDistance(9.8)).toBe('10k');
   });
-  test('어중간한 거리는 null(5K 는 훈련과 겹쳐 자동 감지 제외)', () => {
-    expect(completedRaceDistance(5)).toBeNull();
+  test('5K 도 대회 거리로 판정(날짜 게이팅으로 데일리 5K 스팸 없음)', () => {
+    expect(completedRaceDistance(5)).toBe('5k');
+    expect(completedRaceDistance(4.9)).toBe('5k');
+  });
+  test('어중간한 거리는 null', () => {
     expect(completedRaceDistance(7)).toBeNull();
     expect(completedRaceDistance(30)).toBeNull();
+    expect(completedRaceDistance(3)).toBeNull();
   });
 });
 
@@ -66,10 +70,19 @@ describe('detectRace — 날짜+위치 특정 감지', () => {
     expect(detectRace({date: '2026-11-01', startLat: 33.45, startLon: 126.5, km: 10}, RACES)).toBeNull();
   });
 
-  test('같은 날 다른 장소 하프 → geo 미스지만 하프는 거리 폴백(대회 미상)', () => {
-    // 하프/풀은 위치 없어도 대회 확률 높아 거리-only 폴백 유지.
+  test('같은 날 좌표없는 캘린더 대회(그 종목) → 후보 제안(candidates)', () => {
+    // 11/1 제주에서 하프. JTBC(상암)는 하프 미개최+위치 밖이라 제외, 부산 좌표없는대회는
+    // 하프 개최 → 위치 검증 불가라 후보로 제안(자동 단정 X, 사용자가 고름).
     const m = detectRace({date: '2026-11-01', startLat: 33.45, startLon: 126.5, km: 21.1}, RACES);
-    expect(m).toEqual({kind: 'distance', distance: 'half'});
+    expect(m?.kind).toBe('candidates');
+    expect(m?.candidates?.map(r => r.id)).toEqual(['nocoord']);
+    expect(m?.distance).toBe('half');
+  });
+
+  test('평일 롱런(그 날짜에 대회 없음) → null (오탐 0 — 핵심)', () => {
+    // 하프/풀을 뛰어도 그 날짜에 알려진 대회가 없으면 절대 안 뜬다(스팸 방지).
+    expect(detectRace({date: '2026-06-15', startLat: 37.5, startLon: 127.0, km: 21.1}, RACES)).toBeNull();
+    expect(detectRace({date: '2026-06-15', km: 42.2}, RACES)).toBeNull();
   });
 
   test('가장 가까운 대회를 고른다(같은 날 여러 대회)', () => {
@@ -78,9 +91,12 @@ describe('detectRace — 날짜+위치 특정 감지', () => {
     expect(m?.race?.id).toBe('jtbc');
   });
 
-  test('좌표 없는 러닝 → 완주거리 기반 distance 폴백만', () => {
+  test('좌표 없는 러닝 + 그 날짜 그 종목 대회 → 후보 제안', () => {
+    // 위치 검증 불가라 그날 그 종목 여는 대회를 후보로(JTBC 풀). 자동 단정 X.
     const m = detectRace({date: '2026-11-01', km: 42.2}, RACES);
-    expect(m).toEqual({kind: 'distance', distance: 'full'});
+    expect(m?.kind).toBe('candidates');
+    expect(m?.candidates?.map(r => r.id)).toEqual(['jtbc']);
+    expect(m?.distance).toBe('full');
   });
 });
 

@@ -57,31 +57,41 @@ export const RACE_DETECT_RADIUS_KM = 3;
 
 // ── 감지 ────────────────────────────────────────────────────────────────────
 export type RaceMatch = {
-  /** 'geo' = 날짜+위치로 특정 대회 확정 · 'distance' = 완주거리 기반 일반 감지(대회 미상) */
-  kind: 'geo' | 'distance';
-  race?: RaceEvent;          // geo 매치일 때만
-  distance: RaceDistance;    // 완주로 판정된 종목(마일리지 아카이브 라벨)
+  /**
+   * 'geo'        = 날짜+위치(좌표 반경)로 특정 대회 확정.
+   * 'candidates' = 같은 날짜에 그 종목을 여는 알려진 대회가 있음(좌표 없는 캘린더 대회 등) →
+   *                사용자가 목록에서 고른다(자동 단정 X, 제안 O). 여러 개일 수 있음.
+   */
+  kind: 'geo' | 'candidates';
+  race?: RaceEvent;            // geo 매치일 때만(확정)
+  candidates?: RaceEvent[];    // candidates 일 때(고를 후보들)
+  distance: RaceDistance;      // 완주로 판정된 종목(아카이브 라벨)
 };
 
 /**
  * 대회 완주 거리 판정 — 실측 거리(km)를 표준 거리 ±3% 로 본다(GPS 오차 흡수).
- * 10K 포함: 국내 마라톤은 10K 참가자가 가장 많고, 초보자에겐 10K 완주가 큰 자랑거리
- * (사용자 요청 2026-07-07). 5K 는 훈련 러닝과 겹침이 커 자동 감지 제외 — 직접 추가로 남긴다.
+ * 5K·10K 포함: 국내 마라톤은 10K·5K 참가자가 가장 많고 초보에겐 큰 자랑거리. 예전엔 5K 를
+ * '훈련과 겹침'으로 제외했으나, 이제 감지가 '그 날짜에 실제 대회가 있을 때만' 뜨도록 게이팅돼
+ * (detectRace Tier2) 데일리 5K 로는 배너가 안 뜬다 → 5K 대회도 안전하게 감지 대상에 포함.
  */
 export function completedRaceDistance(km: number): RaceDistance | null {
   const within = (target: number) => Math.abs(km - target) / target <= 0.03;
   if (within(42.195)) return 'full';
   if (within(21.0975)) return 'half';
   if (within(10)) return '10k';
+  if (within(5)) return '5k';
   return null;
 }
 
 /**
- * 러닝 → 대회 감지. 우선순위:
- *  1) geo: 같은 날짜(date)에 열린 대회 중 출발 좌표가 시작 위치와 반경 내 → 그 대회 확정.
- *     (여러 개면 가장 가까운 것. 종목은 완주거리로, 없으면 그 대회 최장 종목 추정.)
- *  2) distance: geo 미스 & 하프/풀 완주 → 대회 미상 일반 감지(사용자가 대회 선택/직접입력).
- * 둘 다 아니면 null(감지 안 함 — 일반 러닝).
+ * 러닝 → 대회 감지(3티어). 오탐(평일 롱런 스팸) 없이, 진짜 대회일 때만 뜬다.
+ *  1) geo: 같은 날짜에 열린 대회 중 출발 좌표가 시작 위치와 반경 내 → 그 대회 확정(가장 가까운 것).
+ *          위치+날짜가 맞으면 거리 미달이어도 대회로 보고 대회 최장 종목으로 라벨.
+ *  2) candidates: 완주 거리가 대회 거리(풀/하프/10K/5K)이고, 같은 날짜에 그 종목을 여는 대회가
+ *          있을 때 → 그 대회들을 후보로 제안. 단 좌표가 있는 대회인데 러닝이 그 반경 밖이면
+ *          '거기엔 없었던 것'이라 제외한다(제주에서 뛴 날 서울 대회 안 뜸). 좌표 없는 캘린더
+ *          대회는 위치 검증이 불가하므로 날짜+종목만으로 후보에 포함.
+ *  3) 그 날짜에 알려진 대회가 없으면 null → 감지 안 함(평일 롱런엔 절대 안 뜬다).
  */
 export function detectRace(
   input: {date: string; startLat?: number; startLon?: number; km: number},
@@ -89,26 +99,37 @@ export function detectRace(
 ): RaceMatch | null {
   const {date, startLat, startLon, km} = input;
   const completed = completedRaceDistance(km);
+  const hasCoords = typeof startLat === 'number' && typeof startLon === 'number';
 
-  if (typeof startLat === 'number' && typeof startLon === 'number') {
-    const sameDay = races.filter(
-      (r) => r.date === date && typeof r.startLat === 'number' && typeof r.startLon === 'number',
-    );
+  // 1) geo — 위치+날짜 특정.
+  if (hasCoords) {
     let best: {race: RaceEvent; d: number} | null = null;
-    for (const r of sameDay) {
-      const d = haversineKm(startLat, startLon, r.startLat as number, r.startLon as number);
+    for (const r of races) {
+      if (r.date !== date || typeof r.startLat !== 'number' || typeof r.startLon !== 'number') continue;
+      const d = haversineKm(startLat as number, startLon as number, r.startLat, r.startLon);
       if (d <= RACE_DETECT_RADIUS_KM && (!best || d < best.d)) best = {race: r, d};
     }
     if (best) {
-      // 종목: 완주거리로 확정, 아니면 그 대회가 여는 최장 종목으로 추정(라벨용).
       const distance = completed ?? longestDistance(best.race) ?? '10k';
       return {kind: 'geo', race: best.race, distance};
     }
   }
 
-  // 거리-only 폴백(위치 매치 없음) — 하프/풀만. 10K/5K 는 데일리 러닝과 겹쳐, 위치 없이
-  // 거리만으로 '대회'라 단정하면 스팸이 된다(사용자 지적). 10K 대회는 위 geo 경로로만 감지.
-  if (completed === 'full' || completed === 'half') return {kind: 'distance', distance: completed};
+  // 2) candidates — 완주 거리가 대회 거리일 때만, 그 날짜에 그 종목 여는 대회 제안(위치로 부정 가능한 것 제외).
+  if (completed) {
+    const candidates = races.filter((r) => {
+      if (r.date !== date || !r.distances.includes(completed)) return false;
+      // 좌표 있는 대회 + 러닝 좌표 있음 → 반경 밖이면 거기엔 없었던 것(제외). geo(Tier1)에서 이미
+      // 반경 내는 잡혔으므로 여기 남는 좌표대회는 사실상 '반경 밖'이라 제외된다.
+      if (hasCoords && typeof r.startLat === 'number' && typeof r.startLon === 'number') {
+        return haversineKm(startLat as number, startLon as number, r.startLat, r.startLon) <= RACE_DETECT_RADIUS_KM;
+      }
+      return true; // 좌표 없는 캘린더 대회 · 러닝 좌표 없음 → 위치 검증 불가 → 후보 포함
+    });
+    if (candidates.length > 0) return {kind: 'candidates', candidates, distance: completed};
+  }
+
+  // 3) 그 날짜에 알려진 대회 없음 → 감지 안 함(스팸 방지).
   return null;
 }
 

@@ -230,13 +230,17 @@ export default function RunRecapScreen({
               <Text style={s.raceBannerTitle}>
                 {raceMatch.kind === 'geo' && raceMatch.race
                   ? `${raceMatch.race.name} 달리셨나요?`
-                  : `${RACE_DISTANCE_LABEL[raceMatch.distance]} 거리를 완주했어요!`}
+                  : raceMatch.candidates && raceMatch.candidates.length === 1
+                    ? `${raceMatch.candidates[0].name} 뛰셨나요?`
+                    : `${RACE_DISTANCE_LABEL[raceMatch.distance]} 완주! 대회 기록인가요?`}
               </Text>
             </View>
             <Text style={s.raceBannerDesc}>
               {raceMatch.kind === 'geo'
                 ? '메달과 공식 기록을 아카이브에 남겨보세요.'
-                : '대회였다면 메달과 기록을 아카이브에 남겨보세요.'}
+                : raceMatch.candidates && raceMatch.candidates.length >= 1
+                  ? '이 날 열린 대회 목록에서 골라 메달·기록을 남기세요.'
+                  : '대회였다면 메달과 기록을 아카이브에 남겨보세요.'}
             </Text>
             <View style={s.raceBannerBtns}>
               <Pressable onPress={onLogRace} accessibilityRole="button" accessibilityLabel="대회 기록 남기기" style={({pressed}) => [s.raceBannerPrimary, pressed && {opacity: 0.85}]}>
