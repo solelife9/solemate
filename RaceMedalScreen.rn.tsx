@@ -7,7 +7,7 @@
 // ============================================================================
 import React, {useMemo, useState} from 'react';
 import { rf, rs, ri, rv } from './lib/responsive';
-import {View, Text, ScrollView, Pressable, TextInput, Image, StyleSheet, ActivityIndicator} from 'react-native';
+import {View, Text, ScrollView, Pressable, TextInput, Image, StyleSheet, ActivityIndicator, Modal} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {BG, CARD, CARD_HI, GOOD, WARN, HALL_GOLD, T1, T2, T3, T4, SEP, FONT, DISPLAY, withAlpha} from './theme';
@@ -256,8 +256,17 @@ export default function RaceMedalScreen({
         <Button label="아카이브에 저장" disabled={!canSave} onPress={save} testID="medal-save" />
       </View>
 
-      {/* 메달 원형 가이드 카메라 — 전체화면 오버레이 */}
-      {cameraOpen && <MedalCamera onCapture={onMedalCaptured} onCancel={() => setCameraOpen(false)} />}
+      {/* 메달 원형 가이드 카메라 — 전체화면 Modal 오버레이.
+          (과거: s.screen flex 컬럼 안의 flex:1 형제라 ScrollView 와 공간을 나눠 카메라가
+          하단 절반에 찌그러져 '안 뜨는' 것처럼 보였다. Modal 로 flex 레이아웃·부모 패딩을
+          벗어나 진짜 전체화면 오버레이가 된다. 닫으면 언마운트되어 카메라 하드웨어 해제.) */}
+      <Modal
+        visible={cameraOpen}
+        animationType="slide"
+        presentationStyle="fullScreen"
+        onRequestClose={() => setCameraOpen(false)}>
+        {cameraOpen && <MedalCamera onCapture={onMedalCaptured} onCancel={() => setCameraOpen(false)} />}
+      </Modal>
     </View>
   );
 }
