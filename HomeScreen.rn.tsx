@@ -500,7 +500,6 @@ export default function HomeScreen({
       <ScrollView style={s.scroll} contentContainerStyle={s.scrollContent} showsVerticalScrollIndicator={false}
         refreshControl={onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={ACCENT} colors={[ACCENT]} /> : undefined}>
       <View style={s.greetWrap}>
-        {!!dateLabel && <Text style={s.date}>{dateLabel}</Text>}
         <Text style={s.greet} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.82}>
           {active
             ? '오늘의 신발'
