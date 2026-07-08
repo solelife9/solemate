@@ -22,7 +22,6 @@ import Svg, {
   Text as SvgText,
   G,
   Line,
-  Circle,
   Defs,
   LinearGradient,
   RadialGradient,

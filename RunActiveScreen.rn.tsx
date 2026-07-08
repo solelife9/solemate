@@ -18,7 +18,7 @@ import { rf, rs, ri, rv } from './lib/responsive';
 import { View, Text, Pressable, StyleSheet, Animated, Easing, StatusBar, LayoutAnimation, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import Svg, { Path, Circle, Defs, LinearGradient as SvgLinear, Stop } from 'react-native-svg';
+import Svg, { Circle, Defs, LinearGradient as SvgLinear, Stop } from 'react-native-svg';
 import { GlassEdge, ShoeGlyph } from './primitives';
 import { RunLiveMap } from './RunLiveMap';
 // 색·폰트는 전역 디자인 토큰(theme.ts)만 참조한다 — 사설 색객체(const C) 폐기.
@@ -27,7 +27,7 @@ import { RunLiveMap } from './RunLiveMap';
 // (시각 동등: 다크+오렌지 유지)
 import {
   BG, CARD, ACCENT, ACCENT_2, GRAD_BOT, GOOD, WARN, DANGER, T1, T2, T3, T4, SEP,
-  FONT, DISPLAY, HERO, withAlpha, HR_ZONE_COLORS,
+  FONT, DISPLAY, withAlpha, HR_ZONE_COLORS,
 } from './theme';
 import { estimateMaxHR, zoneOf, HR_ZONE_LABEL } from './lib/analytics/hrZones';
 import { fmtPaceSec } from './lib/pacePlan';

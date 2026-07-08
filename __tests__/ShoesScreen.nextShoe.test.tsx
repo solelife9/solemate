@@ -13,9 +13,7 @@
  */
 import React from 'react';
 import ReactTestRenderer, {act} from 'react-test-renderer';
-import {Linking} from 'react-native';
 import ShoesScreen from '../ShoesScreen.rn';
-import {recommendNextShoes} from '../lib/affiliate';
 import {Shoe, Run} from '../theme';
 
 function textOf(node: ReactTestRenderer.ReactTestInstance): string {

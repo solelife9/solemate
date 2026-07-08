@@ -24,8 +24,6 @@ import {
   GOOD,
   WARN,
   DANGER,
-  ACCENT,
-  ACCENT_2,
   CARD_HI,
   RADIUS,
   T1,

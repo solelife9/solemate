@@ -63,6 +63,9 @@ export function RunLiveMap({coords, interactive = false, recenterKey = 0}: {coor
     const map = mapRef.current;
     if (!center || !map || typeof map.animateCamera !== 'function') return;
     map.animateCamera({center: {latitude: center.lat, longitude: center.lon}}, {duration: 500});
+    // center 객체 대신 좌표 프리미티브에 의존 — 객체 정체성이 바뀌어도 좌표가 같으면 카메라를
+    // 다시 안 움직인다(의도적 granular dep).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [center?.lat, center?.lon, interactive]);
 
   // '내 위치로 이동' — recenterKey 가 바뀔 때(전체화면 좌하단 버튼) 현재 좌표로 카메라 이동.
@@ -72,6 +75,9 @@ export function RunLiveMap({coords, interactive = false, recenterKey = 0}: {coor
     const map = mapRef.current;
     if (!center || !map || typeof map.animateCamera !== 'function') return;
     map.animateCamera({center: {latitude: center.lat, longitude: center.lon}, zoom: 16}, {duration: 500});
+    // recenterKey(버튼) 변화에만 재센터 — center 를 dep 에 넣으면 매 GPS 갱신마다 카메라가
+    // 튀어 사용자 팬을 덮어쓴다. 의도적 생략.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [recenterKey]);
 
   if (!MAPS_AVAILABLE || !center) return null;

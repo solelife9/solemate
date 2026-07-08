@@ -4,66 +4,23 @@
 // ============================================================================
 import React, { useEffect, useMemo, useState } from 'react';
 import { rf, rs, ri, rv } from './lib/responsive';
-import { View, Text, ScrollView, Pressable, TextInput, Alert, StyleSheet, Linking } from 'react-native';
+import { View, Text, ScrollView, Pressable, TextInput, Alert, StyleSheet } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {
   BG, CARD_DIM, CARD_HI, HERO_BG, ACCENT, DANGER, WARN, GOOD, BEST, T1, T2, T3, T4, SEP, FONT, DISPLAY, withAlpha, RADIUS, Shoe, Run, SHOES,
 } from './theme';
-import { TabBar, TABBAR_CLEARANCE, Pill, InjuryBanner, SectionTitle, Button, SwipeBack } from './primitives';
+import { TabBar, TABBAR_CLEARANCE, Pill, InjuryBanner, Button, SwipeBack } from './primitives';
 import { RunCard, RunDetail } from './HistoryScreen.rn';
 import { FuelGauge } from './FuelGauge';
 import FirstShoeScreen from './FirstShoeScreen.rn';
 import { Unit, displayNum } from './lib/units';
-import { KEEP_GOING_REPLACE, wearTier, WearTierTone } from './lib/shoe';
+import { wearTier, WearTierTone } from './lib/shoe';
 import { assessShoeInjuryRisk } from './lib/injury';
-import { buildWearView, forecastBasisKo, forecastConfidenceKo, forecastLineKo, type ReplacementForecast, type Surface } from './lib/wearView';
-import { recommendNextShoes, buildShopLinks, categoryLabelKo, AFFILIATE_DISCLOSURE } from './lib/affiliate';
-import { findShoeClass, typeLabel, TYPE_DESCRIPTIONS, purposeSentenceKo } from './data/shoeClass';
-import { shouldRecommendNextShoe } from './lib/recommendTrigger';
+import { buildWearView, forecastConfidenceKo, forecastLineKo, type ReplacementForecast, type Surface } from './lib/wearView';
+import { findShoeClass, typeLabel, purposeSentenceKo } from './data/shoeClass';
 import RetirementFlow from './RetirementFlow.rn';
 import type { ProgressionContext, RetiredShoeRecord } from './lib/progression/types';
-
-// 수익화 v1(차별점 정합): 이 신발이 교체임박(forecast overdue/≤3주)일 때, 같은 카테고리의
-// '다음 러닝화'를 상세에서도 추천한다(구매 의도 최고 시점의 contextual 추천 — 배너광고 아님).
-// 쇼핑몰 검색 링크는 Linking.openURL 로 외부에서 열고, 투명성 안내를 하단에 명시한다.
-function NextShoeCard({ shoe }: { shoe: Shoe }) {
-  const recs = recommendNextShoes({ brand: shoe.brand, model: shoe.model }, 3);
-  if (recs.length === 0) return null;
-  const open = (url: string) => { Promise.resolve(Linking.openURL(url)).catch(() => {}); };
-  return (
-    <View testID="shoe-detail-next-shoe" style={{ gap: rv(12) }}>
-      <SectionTitle style={s.nextSectionLabel}>이제 교체할 때 — 다음 러닝화</SectionTitle>
-      <View style={[s.card, s.nextCard]}>
-        <Text style={s.nextSub}>
-          <Text style={{ color: T2, fontWeight: '600' }}>{shoe.model}</Text>의 수명이 거의 다 됐어요. 같은 용도의 다음 신발이에요.
-        </Text>
-        {recs.map((r, i) => (
-          <View key={`${r.brand}-${r.model}`} style={[s.nextRow, i > 0 && s.nextRowSep]}>
-            <View style={{ flex: 1, minWidth: 0 }}>
-              <Text style={s.nextBrand} numberOfLines={1}>{r.brand}</Text>
-              <Text style={s.nextModel} numberOfLines={1}>{r.model}</Text>
-              <Text style={s.nextCat}>{categoryLabelKo[r.category]}</Text>
-            </View>
-            <View style={s.shopBtns}>
-              {buildShopLinks(r).map((link) => (
-                <Pressable
-                  key={link.shop}
-                  onPress={() => open(link.url)}
-                  accessibilityRole="link"
-                  accessibilityLabel={`${r.brand} ${r.model} ${link.shop}에서 보기`}
-                  style={({ pressed }) => [s.shopBtn, pressed && s.pressed]}>
-                  <Text style={s.shopBtnTxt}>{link.shop}</Text>
-                </Pressable>
-              ))}
-            </View>
-          </View>
-        ))}
-        <Text style={s.nextDisclosure}>{AFFILIATE_DISCLOSURE}</Text>
-      </View>
-    </View>
-  );
-}
 
 // lastWorn: 이 신발의 마지막 착용일(런에서 파생, 한국어 표기). 미착용이면 생략.
 // avgPace: 이 신발로 달린 런들의 평균 페이스(예 "5'30\"" / 기록 없으면 '--'). 신발끼리
@@ -120,11 +77,6 @@ function ShoeDetail({
   const shoeRuns = runs.filter((r) => r.shoe === idx);
   // 사용자 DB(shoes.json): 종류(type)+추천 용도(recommended). 종류는 칩, 추천 용도는 recommended.
   const detailClass = findShoeClass(shoe.brand, shoe.model);
-  const detailType = typeLabel(detailClass?.type);
-  // 용도 문장(핸드오프처럼 자연어로 풀어서) — 추천 러닝을 '…에 적합해요' 문장으로.
-  // 없으면 타입 한 줄 설명으로 폴백.
-  const purposeSentence = purposeSentenceKo(detailClass?.recommended)
-    ?? (detailClass ? TYPE_DESCRIPTIONS[detailClass.type] : undefined);
   // 실효 마모/교체 예측(차별점): 단순 누적 km 가 아니라 체중·노면·페이스·세월 보정 "진짜
   // 마모"와 "이 페이스면 약 N주 후 교체"를 파생한다(lib/wearView → wearModel/forecast 재사용).
   // 원본 shoe/run 은 읽기만 한다(A6-1). 모든 엣지에서 NaN/음수 없음(A6-2).
@@ -141,8 +93,7 @@ function ShoeDetail({
       : null;
   const detailReplaceWeeks =
     rawReplaceWeeks != null && rawReplaceWeeks <= REPLACE_CARD_WEEKS ? rawReplaceWeeks : null;
-  // 예측 투명성(탑티어 1-1): '왜 N주인지' 근거 + 정확도(confidence)를 사용자에게 노출.
-  const detailBasis = forecastBasisKo(wearView.forecast);
+  // 예측 투명성(탑티어 1-1): 정확도(confidence)를 사용자에게 노출.
   const detailConfHigh = wearView.forecast?.confidence === 'high';
   const detailConfLabel = forecastConfidenceKo(wearView.forecast);
   // 부상예방 경고(주의/위험) — shoeHealth 와 같은 마모 분모(used/max)로 판정한다.
@@ -454,7 +405,6 @@ function ShoeDetail({
 
 // ── locker ─────────────────────────────────────────────────────────────────
 function ShoeCard({ shoe, featured, onPress, onPlay, unit, pace: _pace, forecast }: { shoe: Shoe; featured: boolean; onPress: () => void; onPlay?: () => void; unit: Unit; pace?: string; forecast?: ReplacementForecast | null }) {
-  const remainKm = Math.max(0, shoe.max - shoe.used);
   // 교체 예측 한 줄(#2) — '약 N주 후 교체 예상' / 임박(overdue). ok·overdue 일 때만.
   // ok 예측은 8주 이내로 임박했을 때만(상세와 동일 — 등장이 곧 신호). overdue 는 항상.
   const fcNear = forecast?.reason === 'ok' && forecast.weeksRemaining != null && forecast.weeksRemaining <= 8;

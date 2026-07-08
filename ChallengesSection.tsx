@@ -11,7 +11,6 @@ import { rf, rs, ri, rv } from './lib/responsive';
 import {View, Text, Pressable, StyleSheet} from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {CARD, CARD_HI, ACCENT, GOOD, T1, T2, T3, SEP, FONT, DISPLAY, RADIUS, withAlpha} from './theme';
-import {weeklyGoalTier} from './lib/goalTier';
 import {SPORT_VIOLET} from './theme';
 import {Ring, Pill, Stepper} from './primitives';
 import {ChallengeRun, ChallengeProgressResult} from './lib/challenges';

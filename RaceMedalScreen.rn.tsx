@@ -10,7 +10,7 @@ import { rf, rs, ri, rv } from './lib/responsive';
 import {View, Text, ScrollView, Pressable, TextInput, Image, StyleSheet, ActivityIndicator} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import {BG, CARD, CARD_HI, ACCENT, GOOD, WARN, HALL_GOLD, T1, T2, T3, T4, SEP, CARD_BORDER, FONT, DISPLAY, withAlpha} from './theme';
+import {BG, CARD, CARD_HI, GOOD, WARN, HALL_GOLD, T1, T2, T3, T4, SEP, FONT, DISPLAY, withAlpha} from './theme';
 import {Button, Chip} from './primitives';
 import {captureCertPhoto} from './lib/photo';
 import MedalCamera from './MedalCamera';

@@ -14,7 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { BG, CARD, CARD_DIM, CARD_HI, ACCENT, GOOD, DANGER, WARN, T1, T2, T3, SEP, CARD_BORDER, FONT, DISPLAY, withAlpha, TIER_COLORS, TIER_LABEL, KAKAO_YELLOW, KAKAO_LABEL, NAVER_GREEN, NAVER_LABEL, RADIUS, HALL_GOLD } from './theme';
 // recap 토글 = SegmentedControl(accentSolid), 스탯 그리드들 = StatGrid 단일 프리미티브.
-import { TabBar, TABBAR_CLEARANCE, Pill, SectionTitle, Button, SegmentedControl, StatGrid, Stepper } from './primitives';
+import { TabBar, TABBAR_CLEARANCE, SectionTitle, Button, SegmentedControl, StatGrid, Stepper } from './primitives';
 import { Unit, unitKorean, displayNum } from './lib/units';
 import { weeklyRecap, monthlyRecap, type RecapRun, type RecapShoe } from './lib/recap';
 import { hkAvailable, hkLinked, hkLink, hkRestingHR } from './lib/healthkit';
@@ -111,7 +111,6 @@ export default function ProfileScreen({
   notifSettings = DEFAULT_NOTIF_SETTINGS, onChangeNotifSettings,
   onRequestPushPermission = defaultRequestPushPermission,
   recapRuns = [], recapShoes = [], recapNow,
-  deviceId = '',
   backupData = { shoes: [], runs: [], settings: {} },
   cloudPort, onCloudMerged, onDeleteAccount, cloudClock = () => Date.now(),
   onOpenProgression,

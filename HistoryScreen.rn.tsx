@@ -4,10 +4,9 @@
 // ============================================================================
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { rf, rs, ri, rv } from './lib/responsive';
-import { View, Text, ScrollView, FlatList, Pressable, StyleSheet, LayoutChangeEvent, TextInput, Alert, KeyboardAvoidingView, Platform, RefreshControl, Modal , Image} from 'react-native';
+import { View, Text, ScrollView, FlatList, Pressable, StyleSheet, TextInput, Alert, KeyboardAvoidingView, Platform, RefreshControl, Modal , Image} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Polyline, Circle } from 'react-native-svg';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {
   BG, CARD, CARD_DIM, CARD_HI, ACCENT, DANGER, T1, T2, T3, T4, SEP, CARD_BORDER, FONT, DISPLAY, Shoe, Run, SHOES, withAlpha, RADIUS, GUTTER, HERO, SCRIM, HR_ZONE_COLORS,
@@ -323,6 +322,9 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'm
       })
       .catch(() => { if (alive) setRoute(parseRoute((run as any).route)); });
     return () => { alive = false; };
+    // route 는 run.id 로만 재로드 — 레코드는 id 기준 불변이라 (run as any).route 는 안정적.
+    // 전체 run 을 dep 에 넣으면 매 렌더 재로드된다(의도적 granular dep).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [run.id]);
   // 레코더가 1km 통과 시각으로 남긴 실측 구간 스플릿(splits_<id>, App.onSave가 영속).
   // 경로엔 타임스탬프가 없어 못 만들던 '실제' 구간 페이스다. 없으면 [] → RunSplits 자동 숨김.
@@ -791,7 +793,7 @@ export function RunCard({ run, shoes, onPress, unit, hideShoe }: { run: Run; sho
 export default function HistoryScreen({
   shoes = SHOES, runs = [], summary = {}, chart = {}, onTab, unit = 'km',
   onAddRun, onEditRun, onDeleteRun, onRefresh,
-  age = 0, sex = 'male', restHR = 0, todayISO = '',
+  age = 0, sex = 'male', restHR = 0,
 }: {
   shoes?: Shoe[];
   runs?: Run[];

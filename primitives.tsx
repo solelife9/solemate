@@ -27,13 +27,11 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import {BlurView} from '@react-native-community/blur';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Svg, {
-  Path,
   Circle,
   Defs,
   LinearGradient as SvgGradient,
   Stop,
   Rect,
-  Text as SvgText,
 } from 'react-native-svg';
 import {
   BG,

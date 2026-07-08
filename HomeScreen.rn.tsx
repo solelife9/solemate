@@ -418,11 +418,11 @@ function EmptyHome({ onAddShoe }: { onAddShoe?: () => void }) {
 }
 
 export default function HomeScreen({
-  shoes = SHOES, dateLabel = '', onStart, onAddShoe, onTab,
+  shoes = SHOES, onStart, onAddShoe, onTab,
   activeIdx: activeIdxProp, onSelect, unit = 'km', week, rotation, onPickShoe,
   onOpenShoe, forecast, progression,
-  onRefresh, lastSyncAt: _lastSyncAt, userName, runs = [], onOpenInjuryRisk,
-  weeklyGoalKm = 0, streakDays = 0, todayISO = '',
+  onRefresh, lastSyncAt: _lastSyncAt, userName,
+  weeklyGoalKm = 0, streakDays = 0,
 }: {
   shoes?: Shoe[];
   userName?: string;
