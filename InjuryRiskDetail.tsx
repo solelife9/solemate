@@ -6,6 +6,7 @@
 // 시트/스크린 어디에 얹어도 되도록 순수 프레젠테이션(상태/네비게이션 0).
 // ============================================================================
 import React from 'react';
+import { rf } from './lib/responsive';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {
@@ -127,7 +128,7 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', gap: SPACE.sm },
   dot: { width: 12, height: 12, borderRadius: 6 },
   level: { ...TYPE.label, color: T1 },
-  headline: { ...TYPE.title, color: T1, lineHeight: 30 },
+  headline: { ...TYPE.title, color: T1, lineHeight: rf(30) },
   // 신호 분해
   signals: {
     backgroundColor: CARD_HI,
@@ -156,7 +157,7 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   guideTitle: { ...TYPE.body, color: T1 },
-  guideBody: { ...TYPE.label, color: T2, lineHeight: 19, marginTop: 3, fontWeight: '400' },
-  foot: { ...TYPE.caption, color: T3, lineHeight: 16, marginTop: SPACE.xs },
+  guideBody: { ...TYPE.label, color: T2, lineHeight: rf(19), marginTop: 3, fontWeight: '400' },
+  foot: { ...TYPE.caption, color: T3, lineHeight: rf(16), marginTop: SPACE.xs },
   disclaimer: { ...TYPE.caption, color: T4 },
 });

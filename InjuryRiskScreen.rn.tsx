@@ -5,6 +5,7 @@
 // 다른 오버레이(ShoeArchiveScreen/HallOfShoes)와 동일한 셸 패턴(SafeArea + nav).
 // ============================================================================
 import React from 'react';
+import { rf } from './lib/responsive';
 import {View, Text, Pressable, StyleSheet} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -53,6 +54,6 @@ const s = StyleSheet.create({
   screen: {flex: 1, backgroundColor: BG},
   nav: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingTop: 6, paddingBottom: 10},
   iconBtn: {width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center'},
-  title: {color: T1, fontFamily: FONT, fontSize: 19, fontWeight: '700', letterSpacing: -0.3},
+  title: {color: T1, fontFamily: FONT, fontSize: rf(19), fontWeight: '700', letterSpacing: -0.3},
   body: {flex: 1, justifyContent: 'center', paddingHorizontal: 14, paddingBottom: 10},
 });

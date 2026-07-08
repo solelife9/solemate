@@ -6,6 +6,7 @@
 // theme 토큰만. retired 플래그 토글은 onRestore(=App.retireShoe(id,false))에 위임한다.
 // ============================================================================
 import React from 'react';
+import { rf } from './lib/responsive';
 import {View, Text, ScrollView, Pressable, StyleSheet} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -78,15 +79,15 @@ const s = StyleSheet.create({
   screen: {flex: 1, backgroundColor: BG},
   nav: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingTop: 6, paddingBottom: 10},
   iconBtn: {width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center'},
-  title: {color: T1, fontFamily: FONT, fontSize: 19, fontWeight: '700', letterSpacing: -0.3},
-  sub: {color: T3, fontFamily: FONT, fontSize: 14, lineHeight: 18, paddingHorizontal: 4, marginBottom: 2},
+  title: {color: T1, fontFamily: FONT, fontSize: rf(19), fontWeight: '700', letterSpacing: -0.3},
+  sub: {color: T3, fontFamily: FONT, fontSize: rf(14), lineHeight: rf(18), paddingHorizontal: 4, marginBottom: 2},
   card: {flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: CARD, borderRadius: RADIUS.lg, borderCurve: 'continuous', padding: 16, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP},
-  brand: {color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600', letterSpacing: 0.4},
-  model: {color: T1, fontFamily: FONT, fontSize: 18, fontWeight: '700', letterSpacing: -0.2, marginTop: 1},
-  meta: {color: T2, fontFamily: FONT, fontSize: 14, fontWeight: '500', marginTop: 4},
+  brand: {color: T3, fontFamily: FONT, fontSize: rf(13), fontWeight: '600', letterSpacing: 0.4},
+  model: {color: T1, fontFamily: FONT, fontSize: rf(18), fontWeight: '700', letterSpacing: -0.2, marginTop: 1},
+  meta: {color: T2, fontFamily: FONT, fontSize: rf(14), fontWeight: '500', marginTop: 4},
   restoreBtn: {flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 14, height: 36, borderRadius: RADIUS.pill, backgroundColor: withAlpha(ACCENT, 0.14)},
-  restoreText: {color: ACCENT, fontFamily: FONT, fontSize: 15, fontWeight: '700'},
+  restoreText: {color: ACCENT, fontFamily: FONT, fontSize: rf(15), fontWeight: '700'},
   empty: {alignItems: 'center', gap: 8, paddingVertical: 56, backgroundColor: CARD_HI, borderRadius: RADIUS.lg, borderCurve: 'continuous', marginTop: 4},
-  emptyText: {color: T2, fontFamily: FONT, fontSize: 16, fontWeight: '600'},
-  emptySub: {color: T3, fontFamily: FONT, fontSize: 14},
+  emptyText: {color: T2, fontFamily: FONT, fontSize: rf(16), fontWeight: '600'},
+  emptySub: {color: T3, fontFamily: FONT, fontSize: rf(14)},
 });

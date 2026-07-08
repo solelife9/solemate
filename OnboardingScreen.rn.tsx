@@ -13,6 +13,7 @@
 // - 완료 영속(AsyncStorage 'onboarded')은 App.tsx가 onDone 콜백에서 처리한다.
 // ============================================================================
 import React, {useContext, useEffect, useId, useMemo, useRef, useState} from 'react';
+import { rf } from './lib/responsive';
 import {
   View,
   Text,
@@ -386,7 +387,7 @@ function Welcome({goNext, goLogin, insetTop, insetBottom}: {goNext: () => void; 
             style={{alignItems: 'center', marginTop: 14}}
             accessibilityRole="button"
             accessibilityLabel="이미 계정이 있나요? 로그인">
-            <Text style={{fontFamily: FONT, fontSize: 15, color: T3, fontWeight: '500'}}>
+            <Text style={{fontFamily: FONT, fontSize: rf(15), color: T3, fontWeight: '500'}}>
               이미 계정이 있나요? <Text style={{color: T1}}>로그인</Text>
             </Text>
           </Pressable>
@@ -457,11 +458,11 @@ function ShoeIntelligence({goNext, onSkip, insetTop, insetBottom}: ScreenProps) 
           <LinearGrad stops={[{color: '#1A1A1F', offset: 0}, {color: '#141417', offset: 1}]} radius={22} />
           <View style={{paddingHorizontal: 14, paddingTop: 14, paddingBottom: 14}}>
             <View style={{flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8}}>
-              <Text style={{fontFamily: FONT, fontSize: 14, fontWeight: '600', color: T1, letterSpacing: -0.2}}>쿠셔닝 성능</Text>
-              <Text style={{fontFamily: FONT, fontSize: 13, color: T3, letterSpacing: 0.6}}>0 → {DEMO_SHOE.max} KM</Text>
+              <Text style={{fontFamily: FONT, fontSize: rf(14), fontWeight: '600', color: T1, letterSpacing: -0.2}}>쿠셔닝 성능</Text>
+              <Text style={{fontFamily: FONT, fontSize: rf(13), color: T3, letterSpacing: 0.6}}>0 → {DEMO_SHOE.max} KM</Text>
             </View>
             <DegradeCurve />
-            <Text style={{fontFamily: FONT, fontSize: 11, fontWeight: '600', color: withAlpha(DANGER, 0.85), textAlign: 'right', marginTop: 6, letterSpacing: 0.4}}>
+            <Text style={{fontFamily: FONT, fontSize: rf(11), fontWeight: '600', color: withAlpha(DANGER, 0.85), textAlign: 'right', marginTop: 6, letterSpacing: 0.4}}>
               대부분의 러너가 이 구간을 놓쳐요
             </Text>
           </View>
@@ -474,16 +475,16 @@ function ShoeIntelligence({goNext, onSkip, insetTop, insetBottom}: ScreenProps) 
             <ShoeGlyph size={26} color={withAlpha(T1, 0.75)} />
           </View>
           <View style={{flex: 1, minWidth: 0}}>
-            <Text numberOfLines={1} style={{fontFamily: FONT, fontSize: 16, fontWeight: '600', color: T1, letterSpacing: -0.2}}>
+            <Text numberOfLines={1} style={{fontFamily: FONT, fontSize: rf(16), fontWeight: '600', color: T1, letterSpacing: -0.2}}>
               {DEMO_SHOE.brand} {DEMO_SHOE.model}
             </Text>
-            <Text style={{fontFamily: FONT, fontSize: 13, color: T3, marginTop: 3, fontVariant: ['tabular-nums']}}>
+            <Text style={{fontFamily: FONT, fontSize: rf(13), color: T3, marginTop: 3, fontVariant: ['tabular-nums']}}>
               {DEMO_SHOE.km} / {DEMO_SHOE.max} km · 수명의 {pctUsed}%
             </Text>
           </View>
           <View style={[s.pill, {backgroundColor: withAlpha(tierColor, 0.14)}]}>
             <View style={{width: 6, height: 6, borderRadius: 3, backgroundColor: tierColor}} />
-            <Text style={{color: tierColor, fontFamily: FONT, fontSize: 13, fontWeight: '600'}}>{tier.label}</Text>
+            <Text style={{color: tierColor, fontFamily: FONT, fontSize: rf(13), fontWeight: '600'}}>{tier.label}</Text>
           </View>
         </View>
         </Rise>
@@ -491,7 +492,7 @@ function ShoeIntelligence({goNext, onSkip, insetTop, insetBottom}: ScreenProps) 
         {/* 알림 한 줄 — 박스 없이 조용히 */}
         <Rise delay={340} style={s.alertRow}>
           <BellIcon size={16} color={withAlpha(T1, 0.75)} />
-          <Text style={{flex: 1, fontFamily: FONT, fontSize: 14, color: T3, letterSpacing: -0.1}}>
+          <Text style={{flex: 1, fontFamily: FONT, fontSize: rf(14), color: T3, letterSpacing: -0.1}}>
             교체 시점 <Text style={{color: T1, fontWeight: '600'}}>50 km 전</Text>, 미리 알려드려요
           </Text>
         </Rise>
@@ -533,8 +534,8 @@ function Performance({goNext, onSkip, insetTop, insetBottom}: ScreenProps) {
                 <f.Icon size={18} color={f.color} />
               </View>
               <View style={{flex: 1, minWidth: 0}}>
-                <Text style={{fontFamily: FONT, fontSize: 16, fontWeight: '600', color: T1, letterSpacing: -0.2}}>{f.title}</Text>
-                <Text style={{fontFamily: FONT, fontSize: 14, color: T3, marginTop: 3, lineHeight: 18}}>{f.desc}</Text>
+                <Text style={{fontFamily: FONT, fontSize: rf(16), fontWeight: '600', color: T1, letterSpacing: -0.2}}>{f.title}</Text>
+                <Text style={{fontFamily: FONT, fontSize: rf(14), color: T3, marginTop: 3, lineHeight: rf(18)}}>{f.desc}</Text>
               </View>
             </View>
           ))}
@@ -556,9 +557,9 @@ function FieldLabel({n, label}: {n: string; label: string}) {
   return (
     <View style={{flexDirection: 'row', alignItems: 'center', gap: 9}}>
       <View style={s.fieldBadge}>
-        <Text style={{fontFamily: FONT, fontSize: 13, fontWeight: '700', color: T3}}>{n}</Text>
+        <Text style={{fontFamily: FONT, fontSize: rf(13), fontWeight: '700', color: T3}}>{n}</Text>
       </View>
-      <Text style={{fontFamily: FONT, fontSize: 15, fontWeight: '600', color: T1}}>{label}</Text>
+      <Text style={{fontFamily: FONT, fontSize: rf(15), fontWeight: '600', color: T1}}>{label}</Text>
     </View>
   );
 }
@@ -690,22 +691,22 @@ export default function OnboardingScreen({onDone}: {onDone: (registered: Registe
 const s = StyleSheet.create({
   screen: {flex: 1, backgroundColor: BG},
   flowHeader: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24, paddingBottom: 6},
-  skip: {fontFamily: FONT, fontSize: 14, color: T4, fontWeight: '500'},
+  skip: {fontFamily: FONT, fontSize: rf(14), color: T4, fontWeight: '500'},
   flex1: {flex: 1},
   bodyContent: {flexGrow: 1, paddingHorizontal: 24, paddingTop: 8},
-  eyebrow: {fontFamily: FONT, fontSize: 13, fontWeight: '700', letterSpacing: 1.4, color: ACCENT, textTransform: 'uppercase', marginBottom: 6},
-  title: {fontFamily: FONT, fontSize: 24, lineHeight: 29, fontWeight: '700', letterSpacing: -0.5, color: T1},
-  body: {fontFamily: FONT, fontSize: 15, lineHeight: 19, color: T3, marginTop: 8, maxWidth: 360},
+  eyebrow: {fontFamily: FONT, fontSize: rf(13), fontWeight: '700', letterSpacing: 1.4, color: ACCENT, textTransform: 'uppercase', marginBottom: 6},
+  title: {fontFamily: FONT, fontSize: rf(24), lineHeight: rf(29), fontWeight: '700', letterSpacing: -0.5, color: T1},
+  body: {fontFamily: FONT, fontSize: rf(15), lineHeight: rf(19), color: T3, marginTop: 8, maxWidth: 360},
   bodyStrong: {color: T1, fontWeight: '600'},
 
   // Welcome — 헤드라인 88→64→48 재축소(사용자 확정 2026-07-07).
-  heroHeadline: {fontFamily: DISPLAY, fontSize: 48, lineHeight: 52, letterSpacing: -1.5, fontWeight: '600', color: T1},
-  heroSub: {fontFamily: FONT, fontSize: 18, fontWeight: '600', color: T1, marginTop: 18},
-  heroBody: {fontFamily: FONT, fontSize: 16, lineHeight: 22, color: 'rgba(246,246,248,0.66)', marginTop: 7},
-  termsCaption: {fontFamily: FONT, fontSize: 12, color: T4, textAlign: 'center', lineHeight: 17, marginTop: 14},
+  heroHeadline: {fontFamily: DISPLAY, fontSize: rf(48), lineHeight: rf(52), letterSpacing: -1.5, fontWeight: '600', color: T1},
+  heroSub: {fontFamily: FONT, fontSize: rf(18), fontWeight: '600', color: T1, marginTop: 18},
+  heroBody: {fontFamily: FONT, fontSize: rf(16), lineHeight: rf(22), color: 'rgba(246,246,248,0.66)', marginTop: 7},
+  termsCaption: {fontFamily: FONT, fontSize: rf(12), color: T4, textAlign: 'center', lineHeight: rf(17), marginTop: 14},
 
   footer: {paddingHorizontal: 24, paddingTop: 8},
-  ctaCaption: {fontFamily: FONT, fontSize: 13, color: T3, textAlign: 'center', marginTop: 10},
+  ctaCaption: {fontFamily: FONT, fontSize: rf(13), color: T3, textAlign: 'center', marginTop: 10},
 
   // 신발 인텔리전스
   heroCard: {marginTop: 16, borderRadius: 22, borderCurve: 'continuous', backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP},
@@ -745,9 +746,9 @@ const s = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: withAlpha(T1, 0.12),
   },
-  selectorText: {flex: 1, fontFamily: FONT, fontSize: 16, fontWeight: '600', color: T1, letterSpacing: -0.2},
-  fieldHint: {fontFamily: FONT, fontSize: 13, color: T3, marginTop: 8, lineHeight: 17},
-  kmVal: {fontFamily: DISPLAY, fontSize: 23, fontWeight: '600', color: T1, letterSpacing: -0.5, fontVariant: ['tabular-nums']},
-  kmUnit: {fontFamily: FONT, fontSize: 13, fontWeight: '600', color: T3, letterSpacing: 0.5},
-  tick: {fontFamily: FONT, fontSize: 12, color: T4},
+  selectorText: {flex: 1, fontFamily: FONT, fontSize: rf(16), fontWeight: '600', color: T1, letterSpacing: -0.2},
+  fieldHint: {fontFamily: FONT, fontSize: rf(13), color: T3, marginTop: 8, lineHeight: rf(17)},
+  kmVal: {fontFamily: DISPLAY, fontSize: rf(23), fontWeight: '600', color: T1, letterSpacing: -0.5, fontVariant: ['tabular-nums']},
+  kmUnit: {fontFamily: FONT, fontSize: rf(13), fontWeight: '600', color: T3, letterSpacing: 0.5},
+  tick: {fontFamily: FONT, fontSize: rf(12), color: T4},
 });

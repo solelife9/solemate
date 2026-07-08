@@ -18,6 +18,7 @@
 // 은퇴 확정은 스텝 2 → 3 전환에서 단 한 번 일어난다.
 // ============================================================================
 import React, {useMemo, useRef, useState} from 'react';
+import { rf } from './lib/responsive';
 import {View, Text, ScrollView, Pressable, StyleSheet} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -502,39 +503,39 @@ const s = StyleSheet.create({
   eyebrow: {
     color: ACCENT,
     fontFamily: FONT,
-    fontSize: 14,
+    fontSize: rf(14),
     fontWeight: '700',
     letterSpacing: 1,
   },
   shoeName: {
     color: T1,
     fontFamily: DISPLAY,
-    fontSize: 34,
+    fontSize: rf(34),
     fontWeight: '700',
     letterSpacing: -0.6,
-    lineHeight: 40,
+    lineHeight: rf(40),
   },
   stepTitle: {
     color: T1,
     fontFamily: DISPLAY,
-    fontSize: 27,
+    fontSize: rf(27),
     fontWeight: '700',
     letterSpacing: -0.4,
   },
   lede: {
     color: T2,
     fontFamily: FONT,
-    fontSize: 18,
+    fontSize: rf(18),
     fontWeight: '500',
-    lineHeight: 25,
+    lineHeight: rf(25),
   },
   ledeStrong: {color: T1, fontWeight: '700'},
-  dateRange: {color: T3, fontFamily: FONT, fontSize: 15, fontWeight: '500'},
+  dateRange: {color: T3, fontFamily: FONT, fontSize: rf(15), fontWeight: '500'},
   note: {
     color: T3,
     fontFamily: FONT,
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: rf(14),
+    lineHeight: rf(20),
     marginTop: SPACE.xs,
   },
 
@@ -556,8 +557,8 @@ const s = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: SEP,
   },
-  basicLabel: {color: T3, fontFamily: FONT, fontSize: 15, fontWeight: '500'},
-  basicValue: {color: T1, fontFamily: DISPLAY, fontSize: 19, fontWeight: '700'},
+  basicLabel: {color: T3, fontFamily: FONT, fontSize: rf(15), fontWeight: '500'},
+  basicValue: {color: T1, fontFamily: DISPLAY, fontSize: rf(19), fontWeight: '700'},
 
   grid: {
     flexDirection: 'row',
@@ -569,11 +570,11 @@ const s = StyleSheet.create({
   gridValue: {
     color: T1,
     fontFamily: DISPLAY,
-    fontSize: 23,
+    fontSize: rf(23),
     fontWeight: '700',
     letterSpacing: 0.2,
   },
-  gridLabel: {color: T3, fontFamily: FONT, fontSize: 13, marginTop: 4},
+  gridLabel: {color: T3, fontFamily: FONT, fontSize: rf(13), marginTop: 4},
 
   gradeBadge: {
     alignSelf: 'flex-start',
@@ -582,7 +583,7 @@ const s = StyleSheet.create({
     paddingHorizontal: SPACE.md + 2,
     paddingVertical: SPACE.sm,
   },
-  gradeText: {fontFamily: FONT, fontSize: 15, fontWeight: '700'},
+  gradeText: {fontFamily: FONT, fontSize: rf(15), fontWeight: '700'},
 
   momentCard: {
     padding: SPACE.lg,
@@ -592,14 +593,14 @@ const s = StyleSheet.create({
   momentLabel: {
     color: ACCENT,
     fontFamily: FONT,
-    fontSize: 13,
+    fontSize: rf(13),
     fontWeight: '700',
     letterSpacing: 0.5,
   },
   momentValue: {
     color: T1,
     fontFamily: DISPLAY,
-    fontSize: 21,
+    fontSize: rf(21),
     fontWeight: '700',
     letterSpacing: -0.2,
   },
@@ -615,7 +616,7 @@ const s = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: SEP,
   },
-  hlText: {color: T1, fontFamily: FONT, fontSize: 16, fontWeight: '600'},
+  hlText: {color: T1, fontFamily: FONT, fontSize: rf(16), fontWeight: '600'},
 
   formatRow: {flexDirection: 'row', gap: SPACE.sm},
   formatBtn: {
@@ -632,7 +633,7 @@ const s = StyleSheet.create({
     borderColor: withAlpha(ACCENT, 0.6),
     backgroundColor: withAlpha(ACCENT, 0.14),
   },
-  formatTxt: {color: T3, fontFamily: DISPLAY, fontSize: 17, fontWeight: '700'},
+  formatTxt: {color: T3, fontFamily: DISPLAY, fontSize: rf(17), fontWeight: '700'},
   formatTxtOn: {color: ACCENT},
 
   preview: {
@@ -667,7 +668,7 @@ const s = StyleSheet.create({
   // primary(다음/확정/완료)는 단일 Button 프리미티브로 라우팅 — 그라데이션/글로우/RADIUS.btn.
   // 여기선 박스 크기만(ghost 형제와 동일 flex/height 로 페어 정렬).
   btnPrimary: {flex: 1, height: 54},
-  btnTxt: {fontFamily: FONT, fontSize: 17, fontWeight: '700'},
+  btnTxt: {fontFamily: FONT, fontSize: rf(17), fontWeight: '700'},
 });
 
 export default RetirementFlow;

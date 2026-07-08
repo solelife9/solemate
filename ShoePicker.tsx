@@ -10,6 +10,7 @@
 // onPick 은 {brand, model} 만 넘긴다. 권장 수명(km)은 호출부가 카탈로그에서 파생한다.
 // ============================================================================
 import React, {useMemo, useState} from 'react';
+import { rf } from './lib/responsive';
 import {View, Text, StyleSheet, Pressable, ScrollView, Modal, TextInput} from 'react-native';
 import Svg, {Circle, Path} from 'react-native-svg';
 import {BRANDS, SHOE_MODELS, findShoeModel, getRecommendedLifespanKm} from './data/shoeModels';
@@ -146,7 +147,7 @@ export function ShoePicker({visible, onClose, onPick, insetTop, insetBottom}: {
               <ScrollView style={s.flex1} contentContainerStyle={{paddingHorizontal: 18, paddingBottom: Math.max(insetBottom, 16)}} keyboardShouldPersistTaps="handled">
                 {brandModels.map(m => modelRow(m.brand, m.model, subFor(m.brand, m.model)))}
                 {brandModels.length === 0 && (
-                  <Text style={{fontFamily: FONT, fontSize: 14, color: T3, marginTop: 6, lineHeight: 19}}>
+                  <Text style={{fontFamily: FONT, fontSize: rf(14), color: T3, marginTop: 6, lineHeight: rf(19)}}>
                     “{query.trim()}” 검색 결과가 없어요.
                   </Text>
                 )}
@@ -156,7 +157,7 @@ export function ShoePicker({visible, onClose, onPick, insetTop, insetBottom}: {
                     accessibilityRole="button"
                     accessibilityLabel={`${query.trim()} 직접 추가`}
                     style={({pressed}) => [s.pkAddRow, pressed && {opacity: 0.7}]}>
-                    <Text style={{fontFamily: FONT, fontSize: 15, color: T3}}>
+                    <Text style={{fontFamily: FONT, fontSize: rf(15), color: T3}}>
                       “<Text style={{color: T1, fontWeight: '600'}}>{query.trim()}</Text>” 직접 추가
                     </Text>
                   </Pressable>
@@ -203,10 +204,10 @@ const s = StyleSheet.create({
   screen: {flex: 1, backgroundColor: BG},
   flex1: {flex: 1},
   pkTopBar: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24, paddingBottom: 12},
-  pkTitle: {fontFamily: FONT, fontSize: 17, fontWeight: '600', color: T1, letterSpacing: -0.2},
-  pkInput: {flex: 1, fontFamily: FONT, fontSize: 16, fontWeight: '500', color: T1, paddingVertical: 0},
-  pkClear: {color: T3, fontSize: 16, fontWeight: '600'},
-  pkCancel: {fontFamily: FONT, fontSize: 16, fontWeight: '500', color: T1},
+  pkTitle: {fontFamily: FONT, fontSize: rf(17), fontWeight: '600', color: T1, letterSpacing: -0.2},
+  pkInput: {flex: 1, fontFamily: FONT, fontSize: rf(16), fontWeight: '500', color: T1, paddingVertical: 0},
+  pkClear: {color: T3, fontSize: rf(16), fontWeight: '600'},
+  pkCancel: {fontFamily: FONT, fontSize: rf(16), fontWeight: '500', color: T1},
   pkSplit: {flex: 1, flexDirection: 'row', borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP},
   pkRight: {flex: 1},
   pkSearchScoped: {
@@ -227,11 +228,11 @@ const s = StyleSheet.create({
   pkRailItem: {paddingVertical: 13, paddingHorizontal: 16, justifyContent: 'center'},
   pkRailItemOn: {backgroundColor: 'rgba(255,255,255,0.05)'},
   pkRailBar: {position: 'absolute', left: 0, top: 12, bottom: 12, width: 3, borderTopRightRadius: 3, borderBottomRightRadius: 3, backgroundColor: T1},
-  pkRailText: {fontFamily: FONT, fontSize: 14, fontWeight: '500', color: T3, letterSpacing: -0.2},
+  pkRailText: {fontFamily: FONT, fontSize: rf(14), fontWeight: '500', color: T3, letterSpacing: -0.2},
   pkRailTextOn: {color: T1, fontWeight: '600'},
   pkRow: {paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: withAlpha(T1, 0.06)},
-  pkRowName: {fontFamily: FONT, fontSize: 15, fontWeight: '600', color: T1, letterSpacing: -0.2},
-  pkRowSub: {fontFamily: FONT, fontSize: 12, fontWeight: '500', color: T3, marginTop: 2},
+  pkRowName: {fontFamily: FONT, fontSize: rf(15), fontWeight: '600', color: T1, letterSpacing: -0.2},
+  pkRowSub: {fontFamily: FONT, fontSize: rf(12), fontWeight: '500', color: T3, marginTop: 2},
   pkAddRow: {
     marginTop: 12,
     paddingVertical: 13,
@@ -250,7 +251,7 @@ const s = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: withAlpha(T1, 0.12),
     fontFamily: FONT,
-    fontSize: 16,
+    fontSize: rf(16),
     color: T1,
   },
 });

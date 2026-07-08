@@ -8,6 +8,7 @@
 // 캡처가 진행 중인 동안 두 버튼을 잠가(busy) 빠른 연타로 인한 중복 트리거를 막는다.
 // ============================================================================
 import React, {useRef, useState} from 'react';
+import { rf } from './lib/responsive';
 import {View, Text, Pressable, StyleSheet} from 'react-native';
 import {ACCENT, BG, T1, CARD_HI, RADIUS, SPACE, FONT} from './theme';
 
@@ -78,7 +79,7 @@ const s = StyleSheet.create({
   share: {backgroundColor: ACCENT},
   pressed: {opacity: 0.7},
   busy: {opacity: 0.5},
-  label: {fontFamily: FONT, fontSize: 16, fontWeight: '700'},
+  label: {fontFamily: FONT, fontSize: rf(16), fontWeight: '700'},
   saveLabel: {color: T1},
   shareLabel: {color: BG},
 });

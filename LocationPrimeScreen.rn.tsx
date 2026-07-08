@@ -7,6 +7,7 @@
 // '계속' → onContinue(권한 안내 완료 영속 + 런 진입), '나중에' → onCancel.
 // ============================================================================
 import React from 'react';
+import { rf } from './lib/responsive';
 import {View, Text, Pressable, StyleSheet} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -76,17 +77,17 @@ const s = StyleSheet.create({
   screen: {flex: 1, backgroundColor: BG, paddingHorizontal: 22},
   body: {flex: 1, justifyContent: 'center'},
   hero: {alignSelf: 'center', width: 80, height: 80, borderRadius: 40, borderCurve: 'continuous', alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(ACCENT, 0.12), marginBottom: 18},
-  title: {color: T1, fontFamily: FONT, fontSize: 25, fontWeight: '700', letterSpacing: -0.5, textAlign: 'center'},
-  lead: {color: T3, fontFamily: FONT, fontSize: 15, lineHeight: 20, textAlign: 'center', marginTop: 8, marginBottom: 22},
+  title: {color: T1, fontFamily: FONT, fontSize: rf(25), fontWeight: '700', letterSpacing: -0.5, textAlign: 'center'},
+  lead: {color: T3, fontFamily: FONT, fontSize: rf(15), lineHeight: rf(20), textAlign: 'center', marginTop: 8, marginBottom: 22},
   card: {backgroundColor: CARD, borderRadius: RADIUS.lg, borderCurve: 'continuous', borderWidth: StyleSheet.hairlineWidth, borderColor: SEP, paddingHorizontal: 16, paddingVertical: 4},
   row: {flexDirection: 'row', alignItems: 'flex-start', gap: 13, paddingVertical: 15},
   rowIcon: {width: 36, height: 36, borderRadius: 18, borderCurve: 'continuous', alignItems: 'center', justifyContent: 'center', marginTop: 1},
-  rowTitle: {color: T1, fontFamily: FONT, fontSize: 16, fontWeight: '700', letterSpacing: -0.2},
-  rowBody: {color: T2, fontFamily: FONT, fontSize: 14, lineHeight: 18, marginTop: 3, fontWeight: '400'},
+  rowTitle: {color: T1, fontFamily: FONT, fontSize: rf(16), fontWeight: '700', letterSpacing: -0.2},
+  rowBody: {color: T2, fontFamily: FONT, fontSize: rf(14), lineHeight: rf(18), marginTop: 3, fontWeight: '400'},
   sep: {height: StyleSheet.hairlineWidth, backgroundColor: SEP, marginLeft: 49},
   footer: {gap: 6},
   primary: {height: 54, borderRadius: RADIUS.lg, borderCurve: 'continuous', backgroundColor: ACCENT, alignItems: 'center', justifyContent: 'center'},
-  primaryTxt: {color: BG, fontFamily: FONT, fontSize: 17, fontWeight: '700'},
+  primaryTxt: {color: BG, fontFamily: FONT, fontSize: rf(17), fontWeight: '700'},
   ghost: {height: 46, alignItems: 'center', justifyContent: 'center'},
-  ghostTxt: {color: T3, fontFamily: FONT, fontSize: 15, fontWeight: '600'},
+  ghostTxt: {color: T3, fontFamily: FONT, fontSize: rf(15), fontWeight: '600'},
 });

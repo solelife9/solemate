@@ -5,6 +5,7 @@
 // 선택 폴백도 제공. 색은 theme 토큰만.
 // ============================================================================
 import React, {useRef, useState} from 'react';
+import { rf } from './lib/responsive';
 import {View, Text, Pressable, StyleSheet, useWindowDimensions, ActivityIndicator} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -113,18 +114,18 @@ export default function MedalCamera({onCapture, onCancel}: {onCapture: (uri: str
 
 const c = StyleSheet.create({
   screen: {flex: 1, backgroundColor: '#000'},
-  hint: {position: 'absolute', left: 0, right: 0, textAlign: 'center', color: T1, fontFamily: 'PretendardVariable', fontSize: 17, fontWeight: '600', letterSpacing: -0.2},
-  sub: {position: 'absolute', left: 0, right: 0, textAlign: 'center', color: withAlpha(T1, 0.7), fontFamily: 'PretendardVariable', fontSize: 13},
+  hint: {position: 'absolute', left: 0, right: 0, textAlign: 'center', color: T1, fontFamily: 'PretendardVariable', fontSize: rf(17), fontWeight: '600', letterSpacing: -0.2},
+  sub: {position: 'absolute', left: 0, right: 0, textAlign: 'center', color: withAlpha(T1, 0.7), fontFamily: 'PretendardVariable', fontSize: rf(13)},
   close: {position: 'absolute', left: 18, width: 40, height: 40, borderRadius: 999, backgroundColor: 'rgba(0,0,0,0.35)', alignItems: 'center', justifyContent: 'center'},
   controls: {position: 'absolute', left: 0, right: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 40},
   libBtn: {width: 48, height: 48, borderRadius: 999, backgroundColor: 'rgba(0,0,0,0.35)', alignItems: 'center', justifyContent: 'center'},
   shutterWrap: {width: 76, height: 76, borderRadius: 999, borderWidth: 4, borderColor: withAlpha(T1, 0.4), alignItems: 'center', justifyContent: 'center'},
   shutter: {width: 60, height: 60, borderRadius: 999, backgroundColor: T1, alignItems: 'center', justifyContent: 'center'},
   permBox: {flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 40, gap: 10},
-  permT: {color: T2, fontFamily: 'PretendardVariable', fontSize: 17, fontWeight: '600', marginTop: 8},
-  permD: {color: T3, fontFamily: 'PretendardVariable', fontSize: 14, textAlign: 'center', lineHeight: 19, marginBottom: 8},
+  permT: {color: T2, fontFamily: 'PretendardVariable', fontSize: rf(17), fontWeight: '600', marginTop: 8},
+  permD: {color: T3, fontFamily: 'PretendardVariable', fontSize: rf(14), textAlign: 'center', lineHeight: rf(19), marginBottom: 8},
   permBtn: {marginTop: 6, paddingVertical: 12, paddingHorizontal: 24, borderRadius: 12, backgroundColor: withAlpha(HALL_GOLD, 0.16), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(HALL_GOLD, 0.4)},
-  permBtnT: {color: HALL_GOLD, fontFamily: 'PretendardVariable', fontSize: 15, fontWeight: '700'},
+  permBtnT: {color: HALL_GOLD, fontFamily: 'PretendardVariable', fontSize: rf(15), fontWeight: '700'},
   permGhost: {paddingVertical: 10},
-  permGhostT: {color: T3, fontFamily: 'PretendardVariable', fontSize: 14},
+  permGhostT: {color: T3, fontFamily: 'PretendardVariable', fontSize: rf(14)},
 });

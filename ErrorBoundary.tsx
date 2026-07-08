@@ -1,4 +1,5 @@
 import React from 'react';
+import { rf } from './lib/responsive';
 import {View, Text, TouchableOpacity, StyleSheet} from 'react-native';
 import {BG, ACCENT, T1, T3, FONT as FP, DISPLAY as FH} from './theme';
 import {recordError} from './lib/crashlytics';
@@ -67,12 +68,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 32,
   },
-  title: {color: T1, fontFamily: FH, fontSize: 25, marginBottom: 12, letterSpacing: 0.3},
+  title: {color: T1, fontFamily: FH, fontSize: rf(25), marginBottom: 12, letterSpacing: 0.3},
   body: {
     color: T3,
     fontFamily: FP,
-    fontSize: 15,
-    lineHeight: 21,
+    fontSize: rf(15),
+    lineHeight: rf(21),
     textAlign: 'center',
     marginBottom: 28,
   },
@@ -82,5 +83,5 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 36,
   },
-  btnText: {color: T1, fontFamily: FP, fontSize: 17, fontWeight: '600'},
+  btnText: {color: T1, fontFamily: FP, fontSize: rf(17), fontWeight: '600'},
 });

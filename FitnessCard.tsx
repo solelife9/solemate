@@ -6,6 +6,7 @@
 // (가민 'VO2max'·애플 '심폐 체력'과 같은 개념. 타임 있는 노력 런 없으면 숨긴다.)
 // ============================================================================
 import React, { useMemo } from 'react';
+import { rf } from './lib/responsive';
 import { View, Text, StyleSheet } from 'react-native';
 import { CARD, CARD_BORDER, ACCENT, T1, T3, T4, FONT, DISPLAY, RADIUS } from './theme';
 import { fitnessSummary } from './lib/analytics/fitness';
@@ -37,10 +38,10 @@ export function FitnessCard({ runs = [], todayISO, style }: { runs?: any[]; toda
       <Text style={st.title}>심폐 체력</Text>
       {/* VO2max — 최근 6주 최고 노력 기준(이지런 과소추정 보정). */}
       <View style={{ flexDirection: 'row', alignItems: 'flex-end', marginTop: 10 }}>
-        <Text style={{ color: T1, fontFamily: DISPLAY, fontSize: 40, fontWeight: '700', letterSpacing: -0.5, lineHeight: 42 }}>{fitness.vo2max.toFixed(1)}</Text>
+        <Text style={{ color: T1, fontFamily: DISPLAY, fontSize: rf(40), fontWeight: '700', letterSpacing: -0.5, lineHeight: rf(42) }}>{fitness.vo2max.toFixed(1)}</Text>
         <View style={{ marginLeft: 10, paddingBottom: 5 }}>
-          <Text style={{ color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '500' }}>VO₂max</Text>
-          <Text style={{ color: ACCENT, fontFamily: FONT, fontSize: 14, fontWeight: '700', marginTop: 2 }}>{fitness.vo2maxLabel}</Text>
+          <Text style={{ color: T3, fontFamily: FONT, fontSize: rf(13), fontWeight: '500' }}>VO₂max</Text>
+          <Text style={{ color: ACCENT, fontFamily: FONT, fontSize: rf(14), fontWeight: '700', marginTop: 2 }}>{fitness.vo2maxLabel}</Text>
         </View>
       </View>
       {/* 이해되는 한 줄 — 이 숫자가 뭔지·어떻게 오르는지(만든 사람도 헷갈리지 않게). */}
@@ -51,6 +52,6 @@ export function FitnessCard({ runs = [], todayISO, style }: { runs?: any[]; toda
 
 const st = StyleSheet.create({
   card: { backgroundColor: CARD, borderRadius: RADIUS.lg, borderCurve: 'continuous', borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER, paddingHorizontal: 20, paddingTop: 14, paddingBottom: 18 },
-  title: { color: T3, fontFamily: FONT, fontSize: 14, fontWeight: '600' },
-  caption: { color: T4, fontFamily: FONT, fontSize: 13, lineHeight: 18, marginTop: 12 },
+  title: { color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '600' },
+  caption: { color: T4, fontFamily: FONT, fontSize: rf(13), lineHeight: rf(18), marginTop: 12 },
 });

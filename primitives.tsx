@@ -6,6 +6,7 @@
 // Deps: react-native-svg, react-native-vector-icons
 // ============================================================================
 import React, {useId, useMemo, useRef, useState, useEffect, useContext} from 'react';
+import { rf } from './lib/responsive';
 import {
   View,
   Text,
@@ -119,8 +120,8 @@ export function Stepper({
       </Pressable>
       {children ?? (
         <View style={{flex: 1, alignItems: 'center'}} accessible accessibilityLabel={`${value} ${suffix}`}>
-          <Text style={{color: T1, fontFamily: DISPLAY, fontSize: 30, letterSpacing: 0.3}}>{value}</Text>
-          {!!suffix && <Text style={{color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600', marginTop: 2}}>{suffix}</Text>}
+          <Text style={{color: T1, fontFamily: DISPLAY, fontSize: rf(30), letterSpacing: 0.3}}>{value}</Text>
+          {!!suffix && <Text style={{color: T3, fontFamily: FONT, fontSize: rf(13), fontWeight: '600', marginTop: 2}}>{suffix}</Text>}
         </View>
       )}
       <Pressable onPress={onPlus} hitSlop={8} accessibilityRole="button"
@@ -513,8 +514,8 @@ const SEG_VARIANTS: Record<
     // 줄이고 실효 터치 타깃은 item hitSlop(아래 SEG_VSLOP)으로 44pt 를 유지한다(HIG).
     item: {minHeight: 38, paddingVertical: 5, borderRadius: 10},
     itemOn: {backgroundColor: withAlpha(T1, 0.09)},
-    textOff: {color: T3, fontSize: 15, fontWeight: '500'},
-    textOn: {color: T1, fontSize: 15, fontWeight: '700'},
+    textOff: {color: T3, fontSize: rf(15), fontWeight: '500'},
+    textOn: {color: T1, fontSize: rf(15), fontWeight: '700'},
   },
   raised: {
     container: {
@@ -527,8 +528,8 @@ const SEG_VARIANTS: Record<
     },
     item: {paddingVertical: 9, borderRadius: RADIUS.pill},
     itemOn: {backgroundColor: CARD_HI},
-    textOff: {color: T3, fontSize: 14, fontWeight: '700'},
-    textOn: {color: T1, fontSize: 14, fontWeight: '700'},
+    textOff: {color: T3, fontSize: rf(14), fontWeight: '700'},
+    textOn: {color: T1, fontSize: rf(14), fontWeight: '700'},
   },
   accentTint: {
     container: {
@@ -545,8 +546,8 @@ const SEG_VARIANTS: Record<
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: withAlpha(ACCENT, 0.28),
     },
-    textOff: {color: T3, fontSize: 15, fontWeight: '600'},
-    textOn: {color: ACCENT, fontSize: 15, fontWeight: '600'},
+    textOff: {color: T3, fontSize: rf(15), fontWeight: '600'},
+    textOn: {color: ACCENT, fontSize: rf(15), fontWeight: '600'},
   },
   accentSolid: {
     container: {
@@ -557,8 +558,8 @@ const SEG_VARIANTS: Record<
     },
     item: {paddingHorizontal: 14, paddingVertical: 6, borderRadius: RADIUS.pill},
     itemOn: {backgroundColor: ACCENT},
-    textOff: {color: T3, fontSize: 14, fontWeight: '600'},
-    textOn: {color: T1, fontSize: 14, fontWeight: '600'},
+    textOff: {color: T3, fontSize: rf(14), fontWeight: '600'},
+    textOn: {color: T1, fontSize: rf(14), fontWeight: '600'},
   },
 };
 
@@ -919,10 +920,10 @@ const injury = StyleSheet.create({
   text: {
     flex: 1,
     fontFamily: FONT,
-    fontSize: 14,
+    fontSize: rf(14),
     fontWeight: '600',
     letterSpacing: -0.1,
-    lineHeight: 18,
+    lineHeight: rf(18),
   },
 });
 
@@ -1290,5 +1291,5 @@ const t = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.24)',
   },
   item: {flex: 1, height: 62, alignItems: 'center', justifyContent: 'center'},
-  label: {fontFamily: FONT, fontSize: 11, letterSpacing: 0.1},
+  label: {fontFamily: FONT, fontSize: rf(11), letterSpacing: 0.1},
 });

@@ -14,6 +14,7 @@
 // 토큰만(theme.ts) — 색/폰트/간격/반경 하드코딩 0.
 // ============================================================================
 import React, {useEffect, useMemo, useRef, useState} from 'react';
+import { rf } from './lib/responsive';
 import {
   View,
   Text,
@@ -454,7 +455,7 @@ const s = StyleSheet.create({
     paddingHorizontal: SPACE.lg,
     paddingVertical: 11,
   },
-  bannerTxt: {flex: 1, color: T2, fontFamily: FONT, fontSize: 14, fontWeight: '600'},
+  bannerTxt: {flex: 1, color: T2, fontFamily: FONT, fontSize: rf(14), fontWeight: '600'},
   // 히어로
   hero: {
     backgroundColor: HERO_BG,
@@ -464,24 +465,24 @@ const s = StyleSheet.create({
     padding: SPACE.xl,
     gap: SPACE.xs,
   },
-  tierEyebrow: {fontFamily: DISPLAY, fontSize: 14, fontWeight: '600', letterSpacing: 4, textTransform: 'uppercase'},
+  tierEyebrow: {fontFamily: DISPLAY, fontSize: rf(14), fontWeight: '600', letterSpacing: 4, textTransform: 'uppercase'},
   nick: {
     fontFamily: DISPLAY,
     color: T1,
-    fontSize: 23,
+    fontSize: rf(23),
     fontWeight: '700',
     letterSpacing: -0.5,
   },
-  heroSub: {fontFamily: FONT, color: T3, fontSize: 14, fontWeight: '600'},
+  heroSub: {fontFamily: FONT, color: T3, fontSize: rf(14), fontWeight: '600'},
   // 티어 진행바 — 히어로 카드에 통합, 정체성과 얇은 구분선으로 분리
   guideInner: {alignSelf: 'stretch', marginTop: SPACE.md, paddingTop: SPACE.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: CARD_BORDER},
   // 승급까지 남은 XP — 게임 히어로가 아니라 속삭임(작고 뮤트, 우측 정렬)
-  toNext: {fontFamily: FONT, color: T3, fontSize: 13, fontWeight: '600', letterSpacing: 0.1, textAlign: 'right', marginTop: 10, fontVariant: ['tabular-nums']},
+  toNext: {fontFamily: FONT, color: T3, fontSize: rf(13), fontWeight: '600', letterSpacing: 0.1, textAlign: 'right', marginTop: 10, fontVariant: ['tabular-nums']},
   xpRow: {flexDirection: 'row', alignItems: 'baseline', gap: 0},
-  xpNum: {fontFamily: DISPLAY, fontSize: 30, fontWeight: '700', letterSpacing: -0.8, fontVariant: ['tabular-nums']},
-  xpUnit: {fontFamily: FONT, color: T3, fontSize: 15, fontWeight: '600'},
+  xpNum: {fontFamily: DISPLAY, fontSize: rf(30), fontWeight: '700', letterSpacing: -0.8, fontVariant: ['tabular-nums']},
+  xpUnit: {fontFamily: FONT, color: T3, fontSize: rf(15), fontWeight: '600'},
   nextRow: {flexDirection: 'row', alignItems: 'center', gap: 10},
-  nextTierTxt: {fontFamily: FONT, fontSize: 13, fontWeight: '700', letterSpacing: 0.2},
+  nextTierTxt: {fontFamily: FONT, fontSize: rf(13), fontWeight: '700', letterSpacing: 0.2},
   nextTrack: {
     flex: 1,
     height: 6,
@@ -490,8 +491,8 @@ const s = StyleSheet.create({
     overflow: 'hidden',
   },
   nextFill: {height: '100%', borderRadius: RADIUS.pill},
-  maxTier: {fontFamily: FONT, fontSize: 14, fontWeight: '700'},
-  xpForNext: {fontFamily: FONT, color: T3, fontSize: 13, fontWeight: '600'},
+  maxTier: {fontFamily: FONT, fontSize: rf(14), fontWeight: '700'},
+  xpForNext: {fontFamily: FONT, color: T3, fontSize: rf(13), fontWeight: '600'},
   // 스탯 카드
   statCard: {
     backgroundColor: CARD,
@@ -503,8 +504,8 @@ const s = StyleSheet.create({
   },
   // 카테고리 헤더
   catHeader: {flexDirection: 'row', alignItems: 'center', gap: 6},
-  groupLabel: {flex: 1, fontFamily: FONT, color: T2, fontSize: 14, fontWeight: '700'},
-  groupCount: {fontFamily: FONT, color: T3, fontSize: 12, fontWeight: '700'},
+  groupLabel: {flex: 1, fontFamily: FONT, color: T2, fontSize: rf(14), fontWeight: '700'},
+  groupCount: {fontFamily: FONT, color: T3, fontSize: rf(12), fontWeight: '700'},
   // 업적 카드
   ach: {
     backgroundColor: CARD,
@@ -516,21 +517,21 @@ const s = StyleSheet.create({
   },
   achTop: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8},
   achNameRow: {flex: 1, flexDirection: 'row', alignItems: 'center', gap: 6},
-  achName: {flex: 1, fontFamily: FONT, color: T2, fontSize: 15, fontWeight: '700'},
-  achDesc: {fontFamily: FONT, color: T3, fontSize: 13, lineHeight: 17},
+  achName: {flex: 1, fontFamily: FONT, color: T2, fontSize: rf(15), fontWeight: '700'},
+  achDesc: {fontFamily: FONT, color: T3, fontSize: rf(13), lineHeight: rf(17)},
   rar: {borderRadius: 6, paddingHorizontal: 7, paddingVertical: 3},
-  rarTxt: {fontFamily: FONT, fontSize: 9, fontWeight: '700', letterSpacing: 0.4},
+  rarTxt: {fontFamily: FONT, fontSize: rf(9), fontWeight: '700', letterSpacing: 0.4},
   achMeta: {flexDirection: 'row', alignItems: 'center', gap: 8},
-  achXp: {fontFamily: DISPLAY, fontSize: 12, fontWeight: '700', letterSpacing: 0.2, fontVariant: ['tabular-nums']},
+  achXp: {fontFamily: DISPLAY, fontSize: rf(12), fontWeight: '700', letterSpacing: 0.2, fontVariant: ['tabular-nums']},
   achFooter: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'},
   achProgTxt: {
     fontFamily: FONT,
     color: T3,
-    fontSize: 12,
+    fontSize: rf(12),
     fontWeight: '700',
     fontVariant: ['tabular-nums'],
   },
-  xpChip: {fontFamily: FONT, fontSize: 12, fontWeight: '700'},
+  xpChip: {fontFamily: FONT, fontSize: rf(12), fontWeight: '700'},
   track: {height: 5, backgroundColor: CARD_HI, borderRadius: RADIUS.pill, overflow: 'hidden'},
   fill: {height: '100%', borderRadius: RADIUS.pill},
   // 총 XP
@@ -545,16 +546,16 @@ const s = StyleSheet.create({
     paddingVertical: 15,
     marginTop: SPACE.xs,
   },
-  xpTotalLabel: {fontFamily: FONT, color: T2, fontSize: 13, fontWeight: '700'},
+  xpTotalLabel: {fontFamily: FONT, color: T2, fontSize: rf(13), fontWeight: '700'},
   xpTotalNum: {
     fontFamily: DISPLAY,
     color: ACCENT,
-    fontSize: 23,
+    fontSize: rf(23),
     fontWeight: '700',
     letterSpacing: -0.4,
     fontVariant: ['tabular-nums'],
   },
   // 챌린지 빈 상태
   empty: {alignItems: 'center', gap: 8, paddingVertical: 36},
-  emptyTxt: {fontFamily: FONT, color: T3, fontSize: 14, fontWeight: '600'},
+  emptyTxt: {fontFamily: FONT, color: T3, fontSize: rf(14), fontWeight: '600'},
 });

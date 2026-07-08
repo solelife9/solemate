@@ -6,6 +6,7 @@
 // 주인공이고, 오렌지는 핵심 수치·CTA에만(라벨/보조텍스트는 T3 회색).
 // ============================================================================
 import React, { useRef, useState, useEffect } from 'react';
+import { rf } from './lib/responsive';
 import {
   View, Text, ScrollView, Pressable, StyleSheet, Linking, Dimensions,
   RefreshControl, NativeSyntheticEvent, NativeScrollEvent, Animated, Easing,
@@ -573,91 +574,91 @@ const s = StyleSheet.create({
 
   topbar: { paddingTop: 8, paddingHorizontal: GUTTER, paddingBottom: SPACE.xs, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   addBtn: { height: 34, paddingHorizontal: 14, borderRadius: RADIUS.pill, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.2), backgroundColor: CARD_HI, flexDirection: 'row', alignItems: 'center', gap: 6 },
-  addBtnText: { color: T1, fontFamily: FONT, fontSize: 14, fontWeight: '600' },
+  addBtnText: { color: T1, fontFamily: FONT, fontSize: rf(14), fontWeight: '600' },
 
   // paddingBottom 20: '오늘의 신발' 라벨 행을 걷어낸 뒤 인사말과 히어로 카드가 붙어
   // 보인다는 피드백 — 라벨이 차지하던 만큼 숨 쉴 여백을 직접 준다.
   greetWrap: { paddingHorizontal: GUTTER, paddingTop: 8, paddingBottom: SPACE.xl },
-  date: { color: T3, fontFamily: FONT, fontSize: 14, letterSpacing: 0.2 },
-  greet: { color: T1, fontFamily: FONT, fontSize: 21, fontWeight: '500', letterSpacing: -0.4, marginTop: 3, lineHeight: 26 },
+  date: { color: T3, fontFamily: FONT, fontSize: rf(14), letterSpacing: 0.2 },
+  greet: { color: T1, fontFamily: FONT, fontSize: rf(21), fontWeight: '500', letterSpacing: -0.4, marginTop: 3, lineHeight: rf(26) },
 
   // 마지막 동기화 칩 — 인사 아래 절제된 회색(아이콘 T3 + 텍스트 T3). 당겨서 새로고침 안내.
   syncChip: { flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start', marginTop: 10, backgroundColor: CARD_DIM, borderRadius: RADIUS.pill, paddingHorizontal: 9, paddingVertical: 4 },
-  syncChipTxt: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '500', letterSpacing: 0.1 },
+  syncChipTxt: { color: T3, fontFamily: FONT, fontSize: rf(13), fontWeight: '500', letterSpacing: 0.1 },
 
   // 장착 타이틀 칩(인사 옆) — 절제: 액센트 아이콘 + T2 텍스트, 옅은 카드 배경.
   equipPill: { flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start', marginTop: 10, backgroundColor: CARD_HI, borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 4 },
-  equipPillTxt: { color: T2, fontFamily: FONT, fontSize: 13, fontWeight: '600', letterSpacing: 0.1 },
+  equipPillTxt: { color: T2, fontFamily: FONT, fontSize: rf(13), fontWeight: '600', letterSpacing: 0.1 },
 
 
 
   goalCard: { backgroundColor: CARD_DIM, borderRadius: 18, borderCurve: 'continuous', borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.06), padding: SPACE.md, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   goalInfo: { flex: 1, gap: 6, minWidth: 0 },
-  goalSub: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '500' },
+  goalSub: { color: T3, fontFamily: FONT, fontSize: rf(13), fontWeight: '500' },
   streakChip: { flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start', borderRadius: RADIUS.pill, paddingHorizontal: 9, paddingVertical: 4 },
   weekTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  weekStreakTxt: { color: ACCENT, fontFamily: FONT, fontSize: 13, fontWeight: '700' },
-  weekGoalTxt: { color: T3, fontFamily: FONT, fontSize: 14, fontWeight: '500' },
+  weekStreakTxt: { color: ACCENT, fontFamily: FONT, fontSize: rf(13), fontWeight: '700' },
+  weekGoalTxt: { color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '500' },
   streakChipOn: { backgroundColor: withAlpha(ACCENT, 0.14), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.4) },
   streakChipOff: { backgroundColor: CARD_HI },
-  streakText: { fontFamily: FONT, fontSize: 13, fontWeight: '600', letterSpacing: 0.1 },
-  goalRingPct: { color: T1, fontFamily: DISPLAY, fontSize: 18, letterSpacing: 0.2 },
-  goalRingU: { color: T3, fontFamily: FONT, fontSize: 11 },
+  streakText: { fontFamily: FONT, fontSize: rf(13), fontWeight: '600', letterSpacing: 0.1 },
+  goalRingPct: { color: T1, fontFamily: DISPLAY, fontSize: rf(18), letterSpacing: 0.2 },
+  goalRingU: { color: T3, fontFamily: FONT, fontSize: rf(11) },
 
   // 목업 카드: radius 20(RADIUS.lg) · 테두리 1px. 비활성 라인(흰 7%), 활성 오렌지(0.55).
   hero: { backgroundColor: HERO_BG, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.07), padding: 16 },
   heroActive: { borderColor: withAlpha(ACCENT, 0.55) },
   // 현재 상태 인사이트 카드(사용거리 | 교체예상) — 활성 신발 반영
-  weekEmptyTxt: { color: T3, fontFamily: FONT, fontSize: 14, lineHeight: 19 },
+  weekEmptyTxt: { color: T3, fontFamily: FONT, fontSize: rf(14), lineHeight: rf(19) },
   insightCard: { backgroundColor: CARD_DIM, borderRadius: RADIUS.lg, borderCurve: 'continuous', borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.07), padding: SPACE.lg },
   insightGrid: { flexDirection: 'row', alignItems: 'flex-start' },
   insightDivider: { width: StyleSheet.hairlineWidth, alignSelf: 'stretch', backgroundColor: withAlpha(T1, 0.08), marginHorizontal: SPACE.lg },
-  insightLabel: { color: T3, fontFamily: FONT, fontSize: 14, fontWeight: '600', letterSpacing: -0.1 },
-  insightNum: { color: T1, fontFamily: DISPLAY, fontSize: 23, fontWeight: '700', letterSpacing: -0.4 },
-  insightUnit: { color: T3, fontFamily: FONT, fontSize: 14, fontWeight: '500', marginLeft: 2 },
-  insightWeeks: { fontFamily: DISPLAY, fontSize: 23, fontWeight: '700', letterSpacing: -0.4, marginTop: 6 },
-  insightSub: { color: T3, fontFamily: FONT, fontSize: 14, fontWeight: '500', marginTop: 3 },
+  insightLabel: { color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '600', letterSpacing: -0.1 },
+  insightNum: { color: T1, fontFamily: DISPLAY, fontSize: rf(23), fontWeight: '700', letterSpacing: -0.4 },
+  insightUnit: { color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '500', marginLeft: 2 },
+  insightWeeks: { fontFamily: DISPLAY, fontSize: rf(23), fontWeight: '700', letterSpacing: -0.4, marginTop: 6 },
+  insightSub: { color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '500', marginTop: 3 },
   insightPurpose: { marginTop: SPACE.lg, paddingTop: SPACE.lg, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.07) },
   // 추천 용도 자연어 문장(핸드오프 lead 정합: 16px·lineHeight 23).
-  insightPurposeText: { color: T2, fontFamily: FONT, fontSize: 16, fontWeight: '500', letterSpacing: -0.2, lineHeight: 22, marginTop: 6 },
+  insightPurposeText: { color: T2, fontFamily: FONT, fontSize: rf(16), fontWeight: '500', letterSpacing: -0.2, lineHeight: rf(22), marginTop: 6 },
   insightTags: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 12 },
   insightTag: { backgroundColor: CARD_HI, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 5 },
-  insightTagText: { color: T2, fontFamily: FONT, fontSize: 13, fontWeight: '600' },
+  insightTagText: { color: T2, fontFamily: FONT, fontSize: rf(13), fontWeight: '600' },
   heroTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 14 },
-  heroBrand: { color: T3, fontFamily: DISPLAY, fontSize: 12, fontWeight: '500', letterSpacing: 1.4 },
+  heroBrand: { color: T3, fontFamily: DISPLAY, fontSize: rf(12), fontWeight: '500', letterSpacing: 1.4 },
   usingChip: { backgroundColor: CARD_HI, borderRadius: 6, paddingHorizontal: SPACE.sm, paddingVertical: 2 },
-  usingChipText: { color: T3, fontFamily: FONT, fontSize: 11, fontWeight: '500' },
+  usingChipText: { color: T3, fontFamily: FONT, fontSize: rf(11), fontWeight: '500' },
   // 신발 종류(카테고리) 칩 — 데이터에 적힌 카본/데일리 등을 오렌지 톤으로 표시
   catChip: { backgroundColor: withAlpha(ACCENT, 0.14), borderRadius: 6, paddingHorizontal: SPACE.sm, paddingVertical: 2 },
-  catChipText: { color: ACCENT, fontFamily: FONT, fontSize: 11, fontWeight: '700', letterSpacing: 0.1 },
-  heroModel: { color: T1, fontFamily: DISPLAY, fontSize: 28, fontWeight: '700', letterSpacing: -0.6, marginTop: 7, lineHeight: 32, marginBottom: 24 },
+  catChipText: { color: ACCENT, fontFamily: FONT, fontSize: rf(11), fontWeight: '700', letterSpacing: 0.1 },
+  heroModel: { color: T1, fontFamily: DISPLAY, fontSize: rf(28), fontWeight: '700', letterSpacing: -0.6, marginTop: 7, lineHeight: rf(32), marginBottom: 24 },
   // minHeight = 2줄(lineHeight 20×2) — 1줄짜리 reason 도 2줄 공간을 차지해 캐러셀 카드
   // 높이가 신발마다 흔들리지 않게 한다(numberOfLines={2} 와 짝).
-  heroReason: { color: T2, fontFamily: FONT, fontSize: 16, fontWeight: '500', letterSpacing: -0.2, marginTop: 6, lineHeight: 21, minHeight: 21 },
+  heroReason: { color: T2, fontFamily: FONT, fontSize: rf(16), fontWeight: '500', letterSpacing: -0.2, marginTop: 6, lineHeight: rf(21), minHeight: 21 },
   // 교체까지 남은 거리 — 문장형(목업 .remain). 숫자만 디스플레이 강조.
-  heroRemainLine: { color: T2, fontFamily: FONT, fontSize: 16, fontWeight: '500', letterSpacing: -0.2, marginTop: 10 },
-  heroRemainNum: { color: T1, fontFamily: DISPLAY, fontSize: 27, fontWeight: '700', letterSpacing: -0.6 },
-  heroRemainNumU: { color: T2, fontFamily: FONT, fontSize: 14, fontWeight: '500' },
+  heroRemainLine: { color: T2, fontFamily: FONT, fontSize: rf(16), fontWeight: '500', letterSpacing: -0.2, marginTop: 10 },
+  heroRemainNum: { color: T1, fontFamily: DISPLAY, fontSize: rf(27), fontWeight: '700', letterSpacing: -0.6 },
+  heroRemainNumU: { color: T2, fontFamily: FONT, fontSize: rf(14), fontWeight: '500' },
   gauge: { height: 4, borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.08), marginTop: 14, overflow: 'hidden' },
   gaugeFill: { height: '100%', borderRadius: RADIUS.pill },
   // 사용량 줄 — 좌(사용량) ↔ 우(사용률 %). marginTop 은 행에 두고 텍스트끼리는 가운데 정렬.
   usageRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 },
-  usage: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '500' },
-  usagePct: { color: T2, fontFamily: FONT, fontSize: 13, fontWeight: '700', letterSpacing: 0.2 },
+  usage: { color: T3, fontFamily: FONT, fontSize: rf(13), fontWeight: '500' },
+  usagePct: { color: T2, fontFamily: FONT, fontSize: rf(13), fontWeight: '700', letterSpacing: 0.2 },
   injuryWrap: { marginTop: 16 },
   // 교체 예측 ETA 한 줄(목업 .fore — 회색·상단 구분선).
   heroForecast: { flexDirection: 'row', alignItems: 'center', gap: 7, marginTop: 10, paddingTop: 10, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.06) },
-  heroForecastText: { flex: 1, color: T3, fontFamily: FONT, fontSize: 14, fontWeight: '500', letterSpacing: -0.1, lineHeight: 16 },
+  heroForecastText: { flex: 1, color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '500', letterSpacing: -0.1, lineHeight: rf(16) },
   // forecast 가 없는 신발: 같은 높이를 차지하되 보이지 않게(공간만 예약 → 카드 높이 통일).
   heroForecastHidden: { opacity: 0 },
   condpill: { flexDirection: 'row', alignItems: 'center', gap: 7, flexShrink: 0, marginTop: 2 },
   dot: { width: 7, height: 7, borderRadius: RADIUS.pill },
-  condText: { fontFamily: FONT, fontSize: 14, fontWeight: '500' },
+  condText: { fontFamily: FONT, fontSize: rf(14), fontWeight: '500' },
 
   sectionLabel: { paddingHorizontal: SPACE.xl, paddingBottom: SPACE.sm },
   sectionRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', paddingHorizontal: SPACE.xl, paddingTop: SPACE.sm, paddingBottom: SPACE.sm },
   sectionLabelInline: { paddingHorizontal: 0, paddingBottom: 0 },
-  sectionMore: { color: T4, fontFamily: FONT, fontSize: 13, fontWeight: '500' },
+  sectionMore: { color: T4, fontFamily: FONT, fontSize: rf(13), fontWeight: '500' },
 
   // 오늘의 신발 캐러셀 — 페이지 도트 + 스와이프 힌트(목업 정합)
   pageDots: { flexDirection: 'row', justifyContent: 'center', gap: 6, marginTop: SPACE.md },
@@ -666,48 +667,48 @@ const s = StyleSheet.create({
 
   // 홈 챌린지 카드
   chalWrap: { marginHorizontal: SPACE.xl, marginTop: SPACE.lg, backgroundColor: CARD_DIM, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.07), padding: SPACE.lg },
-  chalLabel: { color: T3, fontFamily: FONT, fontSize: 13, fontWeight: '600', letterSpacing: 0.6, textTransform: 'uppercase', flex: 1 },
-  chalMore: { color: ACCENT, fontFamily: FONT, fontSize: 13, fontWeight: '600' },
+  chalLabel: { color: T3, fontFamily: FONT, fontSize: rf(13), fontWeight: '600', letterSpacing: 0.6, textTransform: 'uppercase', flex: 1 },
+  chalMore: { color: ACCENT, fontFamily: FONT, fontSize: rf(13), fontWeight: '600' },
   chalEmpty: { alignItems: 'center', paddingVertical: 8 },
-  chalEmptyTxt: { color: T2, fontFamily: FONT, fontSize: 15, fontWeight: '500' },
-  chalEmptyHint: { color: T3, fontFamily: FONT, fontSize: 13, marginTop: 4 },
+  chalEmptyTxt: { color: T2, fontFamily: FONT, fontSize: rf(15), fontWeight: '500' },
+  chalEmptyHint: { color: T3, fontFamily: FONT, fontSize: rf(13), marginTop: 4 },
   chalItem: { paddingVertical: 8 },
   chalItemSep: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.07) },
   chalItemTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 },
-  chalItemLabel: { color: T1, fontFamily: FONT, fontSize: 14, fontWeight: '500', flex: 1 },
+  chalItemLabel: { color: T1, fontFamily: FONT, fontSize: rf(14), fontWeight: '500', flex: 1 },
   chalBar: { height: 3, borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.07), overflow: 'hidden' },
   chalBarFill: { height: '100%', borderRadius: RADIUS.pill },
-  chalPct: { color: T3, fontFamily: FONT, fontSize: 12, marginTop: 5 },
+  chalPct: { color: T3, fontFamily: FONT, fontSize: rf(12), marginTop: 5 },
 
   rotaWrap: { marginTop: SPACE.lg },
   rotaCard: { marginHorizontal: SPACE.xl, backgroundColor: CARD_DIM, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.07), paddingHorizontal: SPACE.lg },
-  rotaBrand: { color: T3, fontFamily: DISPLAY, fontSize: 12, fontWeight: '500', letterSpacing: 1.2 },
-  rotaModel: { color: T1, fontFamily: DISPLAY, fontSize: 16, fontWeight: '600', letterSpacing: -0.1, marginTop: 4 },
+  rotaBrand: { color: T3, fontFamily: DISPLAY, fontSize: rf(12), fontWeight: '500', letterSpacing: 1.2 },
+  rotaModel: { color: T1, fontFamily: DISPLAY, fontSize: rf(16), fontWeight: '600', letterSpacing: -0.1, marginTop: 4 },
   // 로테이션 인사이트 행
   insightRow: { paddingVertical: 14 },
   insightRowSep: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.07) },
   insightRowTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   insightBadgeChip: { borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 4, flexShrink: 0 },
-  insightBadgeText: { fontFamily: FONT, fontSize: 13, fontWeight: '600', letterSpacing: -0.1 },
-  insightDesc: { color: T3, fontFamily: FONT, fontSize: 14, letterSpacing: -0.1, marginTop: 5, lineHeight: 18 },
+  insightBadgeText: { fontFamily: FONT, fontSize: rf(13), fontWeight: '600', letterSpacing: -0.1 },
+  insightDesc: { color: T3, fontFamily: FONT, fontSize: rf(14), letterSpacing: -0.1, marginTop: 5, lineHeight: rf(18) },
 
   // 수익화 v1: 교체 시점 '다음 러닝화' 추천 카드(오렌지 절제 — 테두리만 액센트)
   nextWrap: { marginTop: SPACE.lg },
   nextCard: { marginHorizontal: SPACE.xl, backgroundColor: CARD_DIM, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.3), padding: SPACE.lg },
-  nextSub: { color: T3, fontFamily: FONT, fontSize: 14, lineHeight: 18, marginBottom: SPACE.sm },
+  nextSub: { color: T3, fontFamily: FONT, fontSize: rf(14), lineHeight: rf(18), marginBottom: SPACE.sm },
   nextRow: { flexDirection: 'row', alignItems: 'center', gap: SPACE.md, paddingVertical: 11 },
   nextRowSep: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.07) },
-  nextBrand: { color: T3, fontFamily: DISPLAY, fontSize: 11, fontWeight: '500', letterSpacing: 1.2 },
-  nextModel: { color: T1, fontFamily: DISPLAY, fontSize: 16, fontWeight: '600', letterSpacing: -0.1, marginTop: 3 },
-  nextCat: { color: T3, fontFamily: FONT, fontSize: 12, marginTop: 3 },
+  nextBrand: { color: T3, fontFamily: DISPLAY, fontSize: rf(11), fontWeight: '500', letterSpacing: 1.2 },
+  nextModel: { color: T1, fontFamily: DISPLAY, fontSize: rf(16), fontWeight: '600', letterSpacing: -0.1, marginTop: 3 },
+  nextCat: { color: T3, fontFamily: FONT, fontSize: rf(12), marginTop: 3 },
   shopBtns: { flexDirection: 'row', gap: 6 },
   shopBtn: { borderRadius: RADIUS.pill, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.4), backgroundColor: withAlpha(ACCENT, 0.1), paddingHorizontal: 11, paddingVertical: 6 },
-  shopBtnTxt: { color: ACCENT, fontFamily: FONT, fontSize: 13, fontWeight: '600' },
-  nextDisclosure: { color: T3, fontFamily: FONT, fontSize: 12, lineHeight: 15, marginTop: SPACE.md, opacity: 0.85 },
+  shopBtnTxt: { color: ACCENT, fontFamily: FONT, fontSize: rf(13), fontWeight: '600' },
+  nextDisclosure: { color: T3, fontFamily: FONT, fontSize: rf(12), lineHeight: rf(15), marginTop: SPACE.md, opacity: 0.85 },
 
 
 
   // 빈 홈 — 고스트 카드(KeegoHome GhostShoeCard) + 철학 한 줄. 구 대시 슬롯 스타일 폐기.
   empty: { paddingTop: 4, alignItems: 'center', gap: 26 },
-  emptyPhilosophy: { textAlign: 'center', color: T3, fontFamily: FONT, fontSize: 16, lineHeight: 24 },
+  emptyPhilosophy: { textAlign: 'center', color: T3, fontFamily: FONT, fontSize: rf(16), lineHeight: rf(24) },
 });
