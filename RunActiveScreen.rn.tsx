@@ -272,7 +272,7 @@ export default function RunActiveScreen({
           onPress={() => setMapFull(true)}
           accessibilityRole="button"
           accessibilityLabel="지도 전체화면으로 보기"
-          style={[r.mapPanel, { height: Math.round(winH * 0.38) }]}>
+          style={[r.mapPanel, { height: Math.round(winH * 0.32) }]}>
           <RunLiveMap coords={liveCoords} />
           <View style={r.mapExpandBadge} pointerEvents="none">
             <Ionicons name="expand" size={15} color={T1} />
@@ -294,39 +294,24 @@ export default function RunActiveScreen({
           ) : (
             <View style={{ alignItems: 'center' }} accessibilityRole="text" accessibilityLiveRegion="polite"
               accessibilityLabel={`달린 거리 ${distanceKm.toFixed(2)}킬로미터${goalKm ? (met ? `, 목표 ${goalKm}킬로미터 달성, ${over.toFixed(2)}킬로미터 초과` : `, 목표 ${goalKm}킬로미터까지 ${remain.toFixed(2)}킬로미터 남음`) : ''}`}>
-              {/* 링 센터: 큰 거리 숫자 + 그 아래 목표·퍼센티지만(남은거리 표기는 제거 — 사용자
-                  요청). 스크린리더 라벨엔 남음/초과를 그대로 두어 접근성은 보존한다. */}
+              {/* 링 센터: 큰 거리 숫자 + 'km' 단위만. 목표·퍼센티지 표기는 화면에서 제거하고
+                  음성으로만 안내한다(나이키식, 사용자 요청). 링의 채워지는 호가 진행을 시각화.
+                  스크린리더 라벨엔 목표/남음을 그대로 두어 접근성은 보존. */}
               <Text style={r.bigDist}>{distanceKm.toFixed(2)}</Text>
-              {goalKm ? (
-                met ? (
-                  <View style={r.goalMet}><Ionicons name="checkmark-circle" size={16} color={GOOD} /><Text style={r.goalMetText}>목표 {goalKm}km 달성</Text></View>
-                ) : (
-                  <Text style={r.goal}>목표 {goalKm}km · {Math.round(pct * 100)}%</Text>
-                )
-              ) : (
-                <Text style={r.goal}>km</Text>
-              )}
+              <Text style={r.goal}>km</Text>
             </View>
           )}
         </Ring>
       </Animated.View>
       )}
 
-      {/* 일시정지 하단 헤드 — 링이 사라진 자리 대신 거리 히어로 + 목표를 하단 지표 위에 얹는다
-          (지도 배경 위). 트랙 모드는 랩 정보가 아래 지표로 충분해 생략. */}
+      {/* 일시정지 하단 헤드 — 링이 사라진 자리 대신 거리 히어로(목표 표기 없음, 음성 안내). */}
       {uiPaused && !track && (
         <View style={r.pausedHead}>
           <View style={r.pausedDistRow}>
             <Text style={r.pausedDist}>{distanceKm.toFixed(2)}</Text>
             <Text style={r.pausedDistUnit}>km</Text>
           </View>
-          {goalKm ? (
-            met ? (
-              <View style={r.goalMet}><Ionicons name="checkmark-circle" size={15} color={GOOD} /><Text style={r.goalMetText}>목표 {goalKm}km 달성</Text></View>
-            ) : (
-              <Text style={r.pausedGoal}>목표 {goalKm}km · {Math.round(pct * 100)}%</Text>
-            )
-          ) : null}
         </View>
       )}
 
@@ -381,14 +366,14 @@ export default function RunActiveScreen({
           동안은 숨겨 핵심 지표만 크게 보이게 한다(나이키런 방식: 흘끗 봐도 읽힘).
           등장은 위 히어로가 줄어든 뒤 살짝 늦게 올라오며 펼쳐진다(subIn). */}
       {uiPaused && (
-        <Animated.View style={[r.subMetrics, { opacity: subIn, transform: [{ translateY: subIn.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }] }]}>
+        <View style={r.subMetrics}>
           {sub.map((m, i) => (
             <View key={i} style={[r.sm, i > 0 && r.hmDivider]}>
               <Text style={r.smV}>{m.v}{m.u ? <Text style={r.smU}> {m.u}</Text> : null}</Text>
               <Text style={r.smL}>{m.l}</Text>
             </View>
           ))}
-        </Animated.View>
+        </View>
       )}
 
       {/* 트랙 모드 랩 기록 — 달리는 중에만. 자동랩(GPS 복귀)이 기본이고 이 버튼은 실내(GPS✗)
@@ -458,24 +443,28 @@ export default function RunActiveScreen({
       {mapFull && (
         <View style={{ position: 'absolute', top: -(insets.top + 8), left: -24, right: -24, bottom: -(insets.bottom + 16), backgroundColor: BG }}>
           <RunLiveMap coords={liveCoords} interactive recenterKey={recenter} />
-          {/* 왼쪽 하단 — 내 위치 좌표로 이동(지도 움직인 뒤 현재 위치 쉽게 찾기) */}
-          <Pressable
-            onPress={() => setRecenter(x => x + 1)}
-            accessibilityRole="button"
-            accessibilityLabel="내 위치로 이동"
-            hitSlop={10}
-            style={[r.mapBtn, { left: 22, bottom: insets.bottom + 26 }]}>
-            <Ionicons name="locate" size={22} color={T1} />
-          </Pressable>
-          {/* 오른쪽 하단 — 지도 닫기(일시정지 화면으로 복귀) */}
-          <Pressable
-            onPress={() => setMapFull(false)}
-            accessibilityRole="button"
-            accessibilityLabel="지도 닫기"
-            hitSlop={10}
-            style={[r.mapBtn, { right: 22, bottom: insets.bottom + 26 }]}>
-            <Ionicons name="close" size={24} color={T1} />
-          </Pressable>
+          {/* 하단 중앙 버튼 행 — 구석이 아니라 가운데·크게·살짝 위로(잘 눌리게). 좌=내 위치로
+              이동, 우=닫기(일시정지 화면 복귀). 라벨 병기로 무엇인지 바로 읽힘. */}
+          <View style={[r.mapBtnRow, { bottom: insets.bottom + 84 }]} pointerEvents="box-none">
+            <Pressable
+              onPress={() => setRecenter(x => x + 1)}
+              accessibilityRole="button"
+              accessibilityLabel="내 위치로 이동"
+              hitSlop={12}
+              style={({ pressed }) => [r.mapBtn, pressed && { opacity: 0.8 }]}>
+              <Ionicons name="locate" size={26} color={T1} />
+              <Text style={r.mapBtnLabel}>내 위치</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => setMapFull(false)}
+              accessibilityRole="button"
+              accessibilityLabel="지도 닫기"
+              hitSlop={12}
+              style={({ pressed }) => [r.mapBtn, pressed && { opacity: 0.8 }]}>
+              <Ionicons name="close" size={28} color={T1} />
+              <Text style={r.mapBtnLabel}>닫기</Text>
+            </Pressable>
+          </View>
         </View>
       )}
     </View>
@@ -488,8 +477,11 @@ const r = StyleSheet.create({
   mapPanel: { borderRadius: 20, borderCurve: 'continuous', overflow: 'hidden', marginTop: 6, marginBottom: 14, backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
   // 패널 우하단 '전체화면' 힌트 배지.
   mapExpandBadge: { position: 'absolute', right: 12, bottom: 12, width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(0,0,0,0.55)', alignItems: 'center', justifyContent: 'center', borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.2) },
-  // 전체화면 지도 하단 버튼(좌=내위치, 우=닫기). zIndex/elevation 으로 네이티브 지도 위에서 탭.
-  mapBtn: { position: 'absolute', width: 52, height: 52, borderRadius: 26, backgroundColor: 'rgba(0,0,0,0.55)', alignItems: 'center', justifyContent: 'center', borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.25), zIndex: 20, elevation: 8 },
+  // 전체화면 지도 하단 중앙 버튼 행 — 구석 대신 가운데, 위로 올려 잘 눌리게.
+  mapBtnRow: { position: 'absolute', left: 0, right: 0, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 20, zIndex: 20, elevation: 8 },
+  // 큰 알약 버튼(아이콘+라벨). zIndex/elevation 으로 네이티브 지도 위에서 확실히 탭.
+  mapBtn: { height: 58, minWidth: 108, paddingHorizontal: 20, borderRadius: 29, backgroundColor: 'rgba(0,0,0,0.65)', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.3), zIndex: 20, elevation: 8 },
+  mapBtnLabel: { color: T1, fontFamily: FONT, fontSize: 15, fontWeight: '700' },
 
   // 목표 달성 토스트 — 오렌지 판 대신 어두운 유리 막(투명 통일). 축하의 오렌지는 체크
   // 아이콘(포인트 컬러=강조 요소에만)이 담당한다.
