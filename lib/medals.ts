@@ -53,6 +53,26 @@ export function sortMedals(medals: Medal[]): Medal[] {
   });
 }
 
+// 종목별 거리(km) — 완주 거리 합계용. RaceDistance 와 1:1(누락 시 0).
+const DIST_KM: Record<RaceDistance, number> = {full: 42.195, half: 21.0975, '10k': 10, '5k': 5};
+// 최장 종목 판정 순서(작은→큰).
+const DIST_ORDER: RaceDistance[] = ['5k', '10k', 'half', 'full'];
+
+/**
+ * 아카이브 요약 — 메달 수·완주 거리 합(km, 소수1자리)·최장 종목. 상단 요약 스탯 헤더용.
+ * 빈 배열이면 {count:0, totalKm:0, longest:null}. 입력 불변.
+ */
+export function medalArchiveStats(medals: Medal[]): {count: number; totalKm: number; longest: RaceDistance | null} {
+  const arr = Array.isArray(medals) ? medals : [];
+  let totalKm = 0;
+  let longest: RaceDistance | null = null;
+  for (const m of arr) {
+    totalKm += DIST_KM[m.distance] ?? 0;
+    if (longest === null || DIST_ORDER.indexOf(m.distance) > DIST_ORDER.indexOf(longest)) longest = m.distance;
+  }
+  return {count: arr.length, totalKm: Math.round(totalKm * 10) / 10, longest};
+}
+
 /** 배열 정규화 — 백업/저장에서 읽은 unknown 을 안전한 Medal[] 로. */
 export function normalizeMedals(raw: unknown): Medal[] {
   if (!Array.isArray(raw)) return [];

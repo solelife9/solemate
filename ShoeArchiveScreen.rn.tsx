@@ -10,7 +10,7 @@ import { rf, rs, ri, rv } from './lib/responsive';
 import {View, Text, ScrollView, Pressable, StyleSheet} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import {BG, CARD, CARD_HI, ACCENT, T1, T2, T3, SEP, FONT, RADIUS, withAlpha, Shoe} from './theme';
+import {BG, CARD, CARD_HI, ACCENT, T1, T2, T3, SEP, FONT, DISPLAY, RADIUS, withAlpha, Shoe} from './theme';
 import {SwipeBack} from './primitives';
 import {Unit} from './lib/units';
 
@@ -28,6 +28,7 @@ export default function ShoeArchiveScreen({
   onBack?: () => void;
 }) {
   const insets = useSafeAreaInsets();
+  const totalUsed = Math.round(shoes.reduce((a, sh) => a + (Number(sh.used) || 0), 0));
   return (
     // 엣지 스와이프 백 — 왼쪽 가장자리 우측 드래그로 복귀(iOS pop 제스처 대응).
     <SwipeBack onBack={onBack}>
@@ -39,8 +40,13 @@ export default function ShoeArchiveScreen({
         <Text style={s.title}>보관함</Text>
         <View style={{width: rs(36)}} />
       </View>
-      <ScrollView contentContainerStyle={{flexGrow: 1, justifyContent: 'center', paddingHorizontal: rs(18), paddingBottom: rv(28), gap: rv(12), paddingTop: rv(6)}} showsVerticalScrollIndicator={false}>
-        <Text style={s.sub}>러닝 목록에서 숨긴 신발이에요. 복원하면 다시 러닝에 사용할 수 있어요.</Text>
+      <ScrollView
+        contentContainerStyle={[
+          {paddingHorizontal: rs(18), paddingBottom: rv(28), gap: rv(12), paddingTop: rv(6)},
+          // 상단정렬 기본. 0개 빈 상태만 중앙 히어로(관용).
+          shoes.length === 0 && {flexGrow: 1, justifyContent: 'center'},
+        ]}
+        showsVerticalScrollIndicator={false}>
         {shoes.length === 0 ? (
           <View style={s.empty} testID="shoe-archive-empty">
             <Ionicons name="archive-outline" size={ri(36)} color={T3} />
@@ -48,7 +54,15 @@ export default function ShoeArchiveScreen({
             <Text style={s.emptySub}>신발 상세에서 '보관 처리'하면 여기에 모여요.</Text>
           </View>
         ) : (
-          shoes.map((sh) => (
+          <>
+            {/* 요약 스탯 헤더 — 상단정렬 + 공백을 보관 수·누적 거리로 채운다. */}
+            <View style={s.statStrip}>
+              <View style={s.stat}><Text style={s.statV}>{shoes.length}</Text><Text style={s.statL}>보관</Text></View>
+              <View style={s.statDiv} />
+              <View style={s.stat}><Text style={s.statV}>{totalUsed}<Text style={s.statU}> {unit}</Text></Text><Text style={s.statL}>누적 거리</Text></View>
+            </View>
+            <Text style={s.sub}>러닝 목록에서 숨긴 신발이에요. 복원하면 다시 러닝에 사용할 수 있어요.</Text>
+            {shoes.map((sh) => (
             <View key={sh.id} style={s.card} testID={`archive-shoe-${sh.id}`}>
               <View style={{flex: 1, minWidth: 0}}>
                 <Text style={s.brand} numberOfLines={1}>{sh.brand}</Text>
@@ -67,7 +81,8 @@ export default function ShoeArchiveScreen({
                 <Text style={s.restoreText}>복원</Text>
               </Pressable>
             </View>
-          ))
+          ))}
+          </>
         )}
       </ScrollView>
     </View>
@@ -81,6 +96,14 @@ const s = StyleSheet.create({
   iconBtn: {width: rs(36), height: rs(36), borderRadius: rs(18), alignItems: 'center', justifyContent: 'center'},
   title: {color: T1, fontFamily: FONT, fontSize: rf(19), fontWeight: '700', letterSpacing: -0.3},
   sub: {color: T3, fontFamily: FONT, fontSize: rf(14), lineHeight: rf(18), paddingHorizontal: rs(4), marginBottom: rv(2)},
+
+  // 요약 스탯 헤더(상단정렬 시 공백 채움)
+  statStrip: {flexDirection: 'row', alignItems: 'center', backgroundColor: CARD, borderRadius: RADIUS.lg, borderCurve: 'continuous', borderWidth: StyleSheet.hairlineWidth, borderColor: SEP, paddingVertical: rv(16)},
+  stat: {flex: 1, alignItems: 'center', gap: rv(4)},
+  statV: {color: T1, fontFamily: DISPLAY, fontSize: rf(24), fontWeight: '800', letterSpacing: -0.5, fontVariant: ['tabular-nums']},
+  statU: {color: T3, fontFamily: FONT, fontSize: rf(13), fontWeight: '700'},
+  statL: {color: T3, fontFamily: FONT, fontSize: rf(11.5), fontWeight: '600', letterSpacing: 0.3},
+  statDiv: {width: StyleSheet.hairlineWidth, alignSelf: 'stretch', backgroundColor: SEP, marginVertical: rv(4)},
   card: {flexDirection: 'row', alignItems: 'center', gap: rv(12), backgroundColor: CARD, borderRadius: RADIUS.lg, borderCurve: 'continuous', padding: rs(16), borderWidth: StyleSheet.hairlineWidth, borderColor: SEP},
   brand: {color: T3, fontFamily: FONT, fontSize: rf(13), fontWeight: '600', letterSpacing: 0.4},
   model: {color: T1, fontFamily: FONT, fontSize: rf(18), fontWeight: '700', letterSpacing: -0.2, marginTop: rv(1)},

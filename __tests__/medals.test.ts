@@ -9,6 +9,7 @@ import {
   loadMedals,
   addMedal,
   removeMedal,
+  medalArchiveStats,
   type Medal,
 } from '../lib/medals';
 
@@ -85,5 +86,21 @@ describe('로컬 CRUD', () => {
     await addMedal(mk({id: 'b'}));
     const next = await removeMedal('a');
     expect(next.map((m) => m.id)).toEqual(['b']);
+  });
+});
+
+describe('medalArchiveStats — 아카이브 요약', () => {
+  it('빈 배열이면 0/null', () => {
+    expect(medalArchiveStats([])).toEqual({count: 0, totalKm: 0, longest: null});
+  });
+  it('개수·완주 거리 합(km)·최장 종목', () => {
+    const s = medalArchiveStats([
+      mk({id: 'a', distance: 'full'}),
+      mk({id: 'b', distance: '10k'}),
+      mk({id: 'c', distance: 'half'}),
+    ]);
+    expect(s.count).toBe(3);
+    expect(s.totalKm).toBeCloseTo(73.3, 1); // 42.195 + 10 + 21.0975
+    expect(s.longest).toBe('full');
   });
 });

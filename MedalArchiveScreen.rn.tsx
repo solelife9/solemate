@@ -13,7 +13,7 @@ import {BG, CARD, CARD_HI, ACCENT, HALL_GOLD, T1, T2, T3, T4, SEP, CARD_BORDER, 
 import {SwipeBack} from './primitives';
 import {fmtTime} from './lib/format';
 import {RACE_DISTANCE_LABEL} from './data/raceEvents';
-import {medalTimeSec, type Medal} from './lib/medals';
+import {medalTimeSec, medalArchiveStats, type Medal} from './lib/medals';
 import MedalShareCard, {type MedalShareModel} from './MedalShareCard';
 import {shareMedalCard, type SvgCapturable} from './lib/shareCard';
 
@@ -47,6 +47,7 @@ export default function MedalArchiveScreen({
   const insets = useSafeAreaInsets();
   const [selId, setSelId] = useState<string | null>(null);
   const sel = medals.find((x) => x.id === selId) || null;
+  const stats = medalArchiveStats(medals);
 
   return (
     <SwipeBack onBack={onBack}>
@@ -63,13 +64,13 @@ export default function MedalArchiveScreen({
           ) : <View style={{width: rs(36)}} />}
         </View>
 
-        <ScrollView contentContainerStyle={{flexGrow: 1, justifyContent: 'center', padding: rs(18), paddingBottom: insets.bottom + 28}} showsVerticalScrollIndicator={false}>
-          <View style={m.head}>
-            <Text style={m.h}>메달 아카이브</Text>
-            <Text style={m.count}>{medals.length}개 수집</Text>
-          </View>
-          <Text style={m.sub}>완주한 대회의 메달과 기록.</Text>
-
+        <ScrollView
+          contentContainerStyle={[
+            {padding: rs(18), paddingBottom: insets.bottom + 28},
+            // 상단정렬 기본. 0개 빈 상태만 중앙 히어로(관용).
+            medals.length === 0 && {flexGrow: 1, justifyContent: 'center'},
+          ]}
+          showsVerticalScrollIndicator={false}>
           {medals.length === 0 ? (
             <View style={m.empty} testID="medal-empty">
               <View style={[m.disc, {width: rs(84), height: rs(84), borderRadius: rs(42), borderStyle: 'dashed'}]}>
@@ -85,6 +86,16 @@ export default function MedalArchiveScreen({
               )}
             </View>
           ) : (
+            <>
+              {/* 요약 스탯 헤더 — 상단정렬 + 공백을 개수·완주거리·최장으로 채운다(러닝 라이프 아카이브 가치). */}
+              <View style={m.statStrip}>
+                <View style={m.stat}><Text style={m.statV}>{stats.count}</Text><Text style={m.statL}>메달</Text></View>
+                <View style={m.statDiv} />
+                <View style={m.stat}><Text style={m.statV}>{stats.totalKm}<Text style={m.statU}> km</Text></Text><Text style={m.statL}>완주 거리</Text></View>
+                <View style={m.statDiv} />
+                <View style={m.stat}><Text style={m.statV}>{stats.longest ? RACE_DISTANCE_LABEL[stats.longest] : '—'}</Text><Text style={m.statL}>최장</Text></View>
+              </View>
+              <Text style={m.sub}>완주한 대회의 메달과 기록.</Text>
             <View style={m.grid}>
               {medals.map((md) => {
                 const t = medalTimeSec(md);
@@ -103,6 +114,7 @@ export default function MedalArchiveScreen({
                 );
               })}
             </View>
+            </>
           )}
         </ScrollView>
 
@@ -224,6 +236,14 @@ const m = StyleSheet.create({
   h: {color: T1, fontFamily: DISPLAY, fontSize: rf(25), fontWeight: '700', letterSpacing: -0.5},
   count: {color: HALL_GOLD, fontFamily: FONT, fontSize: rf(13), fontWeight: '600'},
   sub: {color: T3, fontFamily: FONT, fontSize: rf(14), marginBottom: rv(8)},
+
+  // 요약 스탯 헤더(상단정렬 시 공백 채움 + 아카이브 가치)
+  statStrip: {flexDirection: 'row', alignItems: 'center', backgroundColor: CARD, borderRadius: rs(18), borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER, paddingVertical: rv(16), marginTop: rv(2), marginBottom: rv(10)},
+  stat: {flex: 1, alignItems: 'center', gap: rv(4)},
+  statV: {color: T1, fontFamily: DISPLAY, fontSize: rf(24), fontWeight: '800', letterSpacing: -0.5, fontVariant: ['tabular-nums']},
+  statU: {color: T3, fontFamily: FONT, fontSize: rf(13), fontWeight: '700'},
+  statL: {color: T3, fontFamily: FONT, fontSize: rf(11.5), fontWeight: '600', letterSpacing: 0.3},
+  statDiv: {width: StyleSheet.hairlineWidth, alignSelf: 'stretch', backgroundColor: SEP, marginVertical: rv(4)},
 
   grid: {flexDirection: 'row', flexWrap: 'wrap', marginTop: rv(8)},
   cell: {width: '33.33%', alignItems: 'center', gap: rv(7), paddingVertical: rv(12), paddingHorizontal: rs(4)},
