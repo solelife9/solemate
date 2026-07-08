@@ -153,6 +153,9 @@ export default function RunActiveScreen({
       Animated.timing(subIn, { toValue: paused ? 1 : 0, duration: paused ? 260 : 160, delay: paused ? 70 : 0, easing: Easing.out(Easing.quad), useNativeDriver: true }),
     ]).start();
   }, [paused, uiPaused, t, subIn]);
+  // 일시정지 지도 패널을 탭하면 전체화면 인터랙티브 지도로 확장한다. 재개(uiPaused=false)하면 닫는다.
+  const [mapFull, setMapFull] = useState(false);
+  useEffect(() => { if (!uiPaused) setMapFull(false); }, [uiPaused]);
   // 일시정지 시 링을 '아주 살짝'만 축소(0.92) — 링 안 거리 숫자가 항상 크게 읽히도록. 스케일은
   // 네이티브 드라이버(transform)만 쓰므로 재개 시 반드시 원래 크기로 복귀한다(예전엔 스케일+
   // Animated 마진+LayoutAnimation 이 서로 다른 시스템으로 같은 뷰를 밀며 desync→복귀불능 버그).
@@ -221,19 +224,6 @@ export default function RunActiveScreen({
   return (
     <View style={[r.screen, { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 16 }]}>
       <StatusBar barStyle="light-content" />
-      {/* 옵션 A — 라이브 지도 배경: 야외(좌표 있음)에서만 전체화면 다크 지도 + 경로를 깔고,
-          그 위에 어두운 스크림을 얹어 링·지표·컨트롤 가독성을 확보한다. 좌표 없으면(실내·GPS
-          미확보) 지도·스크림 모두 생략 → 기본 다크 배경 그대로. 지도는 pointerEvents none. */}
-      {/* 달릴 땐 링에 집중(지도 없음), 일시정지하면 지도가 배경으로 올라온다(사용자 설계).
-          겹침이 없어 난잡하지 않다. 지도·경로는 일시정지 상태에서만 렌더. 풀블리드 래퍼로
-          좌우 패딩·상하 인셋을 상쇄해 진짜 전체화면이 되게 한다. 스크림은 RunLiveMap 내부 소유. */}
-      {uiPaused && liveCoords.length > 0 && (
-        <View
-          pointerEvents="none"
-          style={{ position: 'absolute', top: -(insets.top + 8), left: -24, right: -24, bottom: -(insets.bottom + 16) }}>
-          <RunLiveMap coords={liveCoords} />
-        </View>
-      )}
 
       {/* 목표 달성 축하 토스트 */}
       {met && (
@@ -267,10 +257,25 @@ export default function RunActiveScreen({
         </Pressable>
       )}
 
-      {/* 상단 스페이서 — 아래 컨트롤 앞 flex:1 과 짝을 이뤄 링+지표 블록을 세로 중앙에 둔다.
-          러닝 중엔 내용이 화면 중앙쯤으로 내려오고, 일시정지 땐 하단 여백이 과하지 않게 모인다
-          (기기 피드백: 러닝중 너무 위·일시정지 하단 여백 과다). */}
-      <View style={{ flex: 1 }} />
+      {/* 상단 스페이서 — 러닝 중(그리고 일시정지·실내처럼 지도가 없을 때)엔 아래 컨트롤 앞
+          flex:1 과 짝을 이뤄 링+지표 블록을 세로 중앙에 둔다. 일시정지 + 지도 있을 땐 지도 패널이
+          상단을 차지하므로 이 스페이서를 뺀다. */}
+      {(!uiPaused || liveCoords.length === 0) && <View style={{ flex: 1 }} />}
+
+      {/* 일시정지 상단 지도 패널(위 절반) — 야외(경로 있음)에서만. 탭하면 전체화면 인터랙티브
+          지도로 확장(mapFull). flex:1 로 상단을 채우고, 아래로 거리·지표(원래 6개)가 온다. */}
+      {uiPaused && liveCoords.length > 0 && (
+        <Pressable
+          onPress={() => setMapFull(true)}
+          accessibilityRole="button"
+          accessibilityLabel="지도 전체화면으로 보기"
+          style={r.mapPanel}>
+          <RunLiveMap coords={liveCoords} />
+          <View style={r.mapExpandBadge} pointerEvents="none">
+            <Ionicons name="expand" size={15} color={T1} />
+          </View>
+        </Pressable>
+      )}
 
       {/* ring — 러닝 중에만(사용자 설계: 달릴 땐 링, 일시정지엔 링 없이 지도+하단 지표).
           거리/자유 모드는 거리 히어로, 트랙 모드는 '바퀴 수' 히어로(링=현재 바퀴 진행). */}
@@ -444,15 +449,34 @@ export default function RunActiveScreen({
           </>
         )}
       </View>
+
+      {/* 전체화면 인터랙티브 지도 — 일시정지 지도 패널을 탭하면 열린다. 팬·줌 가능, 닫기 버튼.
+          화면 좌우 패딩·상하 인셋을 상쇄해 진짜 전체화면. 재개하면 자동으로 닫힘(mapFull 리셋). */}
+      {mapFull && (
+        <View style={{ position: 'absolute', top: -(insets.top + 8), left: -24, right: -24, bottom: -(insets.bottom + 16), backgroundColor: BG }}>
+          <RunLiveMap coords={liveCoords} interactive />
+          <Pressable
+            onPress={() => setMapFull(false)}
+            accessibilityRole="button"
+            accessibilityLabel="지도 닫기"
+            hitSlop={8}
+            style={[r.mapClose, { top: insets.top + 14 }]}>
+            <Ionicons name="close" size={22} color={T1} />
+          </Pressable>
+        </View>
+      )}
     </View>
   );
 }
 
 const r = StyleSheet.create({
   screen: { flex: 1, backgroundColor: BG, paddingHorizontal: 24 },
-  // 라이브 지도 위 가독성 스크림 — 지도를 어둡게 눌러 흰 숫자·지표·컨트롤이 읽히게 한다.
-  // (기기에서 밝기 조절 예정: 0.5 는 지도 보임 ↔ 텍스트 가독성 균형 초기값.)
-  mapScrim: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(6,6,9,0.5)' },
+  // 일시정지 상단 지도 패널(위 절반) — 둥근 카드, 탭하면 전체화면. flex:1 로 상단을 채운다.
+  mapPanel: { flex: 1, borderRadius: 20, borderCurve: 'continuous', overflow: 'hidden', marginTop: 6, marginBottom: 14, backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
+  // 패널 우하단 '전체화면' 힌트 배지.
+  mapExpandBadge: { position: 'absolute', right: 12, bottom: 12, width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(0,0,0,0.55)', alignItems: 'center', justifyContent: 'center', borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.2) },
+  // 전체화면 지도 닫기 버튼(우상단).
+  mapClose: { position: 'absolute', right: 18, width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(0,0,0,0.55)', alignItems: 'center', justifyContent: 'center', borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.22) },
 
   // 목표 달성 토스트 — 오렌지 판 대신 어두운 유리 막(투명 통일). 축하의 오렌지는 체크
   // 아이콘(포인트 컬러=강조 요소에만)이 담당한다.
