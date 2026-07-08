@@ -139,7 +139,7 @@ test('offline boot: 캐시 런 위에 미동기(pending) 런을 오버레이해 
 
   // 재시도 카드가 아니라 홈으로 부팅한다(캐시 폴백).
   expect(has(root, 'boot-error')).toBe(false);
-  expect(textOf(root)).toContain('오늘은 어떤 신발로');
+  expect(textOf(root)).toContain('오늘의 신발');
   // [관측 위치 변경] 홈의 '이번 주 거리' QuickStats 행은 제거됐다(HomeScreen.rn.tsx 의 week
   // prop 은 더 이상 렌더되지 않음). 오버레이 합산은 이제 신발 히어로의 사용/잔여 거리에서
   // 관측한다: 캐시 런(5) + 미동기 런(4.2) = 9.2 → 사용 '9', 잔여 600-9.2≈'591'. 오버레이가

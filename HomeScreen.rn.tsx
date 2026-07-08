@@ -503,7 +503,7 @@ export default function HomeScreen({
         {!!dateLabel && <Text style={s.date}>{dateLabel}</Text>}
         <Text style={s.greet} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.82}>
           {active
-            ? '오늘은 어떤 신발로 달려볼까요?'
+            ? '오늘의 신발'
             : `${(userName ?? '').trim() ? `${(userName ?? '').trim()}님, ` : ''}첫 러닝화를 등록해볼까요?`}
         </Text>
         {/* 동기화 상태 칩 제거 — 사용자 요청(불필요한 '동기화 안 됨' 표시). 동기화는

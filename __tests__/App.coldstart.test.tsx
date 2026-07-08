@@ -174,7 +174,7 @@ test('offline boot: 마지막 성공 데이터 캐시가 있으면 fetch 실패�
   // 재시도 카드/스켈레톤이 아니라 홈이 캐시 데이터로 렌더된다.
   expect(has(root, 'boot-error')).toBe(false);
   expect(has(root, 'boot-skeleton')).toBe(false);
-  expect(textOf(root)).toContain('오늘은 어떤 신발로');
+  expect(textOf(root)).toContain('오늘의 신발');
   expect(textOf(root)).toContain('Pegasus');
 
   act(() => renderer.unmount());
@@ -306,7 +306,7 @@ test('first-run onboarding introduces the shoe-lifespan value, advances on 시�
 
   expect(await AsyncStorage.getItem('onboarded')).toBe('1');
   expect(has(root, 'onboarding')).toBe(false);
-  // Home is now shown (its content mentions 신발: "오늘은 어떤 신발로 ...").
+  // Home is now shown (its content mentions 신발: "오늘의 신발").
   expect(textOf(root)).toContain('신발');
 
   act(() => renderer.unmount());
