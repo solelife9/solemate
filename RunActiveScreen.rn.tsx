@@ -224,13 +224,14 @@ export default function RunActiveScreen({
       {/* 옵션 A — 라이브 지도 배경: 야외(좌표 있음)에서만 전체화면 다크 지도 + 경로를 깔고,
           그 위에 어두운 스크림을 얹어 링·지표·컨트롤 가독성을 확보한다. 좌표 없으면(실내·GPS
           미확보) 지도·스크림 모두 생략 → 기본 다크 배경 그대로. 지도는 pointerEvents none. */}
-      {liveCoords.length > 0 && (
-        // 화면 좌우 패딩(24)·상하 인셋을 상쇄해 지도가 진짜 전체화면(풀블리드)이 되게 한다.
+      {/* 달릴 땐 링에 집중(지도 없음), 일시정지하면 지도가 배경으로 올라온다(사용자 설계).
+          겹침이 없어 난잡하지 않다. 지도·경로는 일시정지 상태에서만 렌더. 풀블리드 래퍼로
+          좌우 패딩·상하 인셋을 상쇄해 진짜 전체화면이 되게 한다. 스크림은 RunLiveMap 내부 소유. */}
+      {uiPaused && liveCoords.length > 0 && (
         <View
           pointerEvents="none"
           style={{ position: 'absolute', top: -(insets.top + 8), left: -24, right: -24, bottom: -(insets.bottom + 16) }}>
           <RunLiveMap coords={liveCoords} />
-          <View style={r.mapScrim} />
         </View>
       )}
 
@@ -271,10 +272,10 @@ export default function RunActiveScreen({
           (기기 피드백: 러닝중 너무 위·일시정지 하단 여백 과다). */}
       <View style={{ flex: 1 }} />
 
-      {/* ring — 거리/자유 모드는 거리 히어로, 트랙 모드는 '바퀴 수' 히어로(링=현재 바퀴 진행)
-          일시정지 시 스프링으로 살짝 축소(transform은 레이아웃 불변 — 줄어든 시각 여백은
-          ringWrap 마진 축소가 LayoutAnimation 으로 메운다). */}
-      <Animated.View style={[r.ringWrap, uiPaused && r.ringWrapPaused, { transform: [{ scale: ringScale }] }]}>
+      {/* ring — 러닝 중에만(사용자 설계: 달릴 땐 링, 일시정지엔 링 없이 지도+하단 지표).
+          거리/자유 모드는 거리 히어로, 트랙 모드는 '바퀴 수' 히어로(링=현재 바퀴 진행). */}
+      {!uiPaused && (
+      <Animated.View style={[r.ringWrap, { transform: [{ scale: ringScale }] }]}>
         <Ring size={310} stroke={10} progress={track ? track.progress : pct}>
           {track ? (
             <View style={{ alignItems: 'center' }} accessibilityRole="text" accessibilityLiveRegion="polite"
@@ -301,6 +302,25 @@ export default function RunActiveScreen({
           )}
         </Ring>
       </Animated.View>
+      )}
+
+      {/* 일시정지 하단 헤드 — 링이 사라진 자리 대신 거리 히어로 + 목표를 하단 지표 위에 얹는다
+          (지도 배경 위). 트랙 모드는 랩 정보가 아래 지표로 충분해 생략. */}
+      {uiPaused && !track && (
+        <View style={r.pausedHead}>
+          <View style={r.pausedDistRow}>
+            <Text style={r.pausedDist}>{distanceKm.toFixed(2)}</Text>
+            <Text style={r.pausedDistUnit}>km</Text>
+          </View>
+          {goalKm ? (
+            met ? (
+              <View style={r.goalMet}><Ionicons name="checkmark-circle" size={15} color={GOOD} /><Text style={r.goalMetText}>목표 {goalKm}km 달성</Text></View>
+            ) : (
+              <Text style={r.pausedGoal}>목표 {goalKm}km · {Math.round(pct * 100)}%</Text>
+            )
+          ) : null}
+        </View>
+      )}
 
       {/* 트랙: 링 아래 회색 한 줄 — 거리 · 확정 랩거리 · 보정 상태(박스·색 없이 조용히) */}
       {track && (
@@ -383,10 +403,10 @@ export default function RunActiveScreen({
         </View>
       )}
 
-      {/* 러닝 중엔 지도를 두지 않는다(야외·데이터 없음에서 타일 실패로 컨트롤이 가려지는
-          사고 방지). 경로 지도는 종료 후 상세보기에서 표시. 여기선 컨트롤을 하단에
-          고정하는 여백만 둔다. */}
-      <View style={{ flex: 1 }} />
+      {/* 하단 여백 — 러닝 중엔 링+지표 블록을 상단 스페이서와 함께 세로 중앙에 둔다.
+          일시정지 땐 이 여백을 없애 지표가 컨트롤 바로 위(하단)에 붙게 한다(상단 스페이서만
+          남아 지도 위로 밀어 내림 = 지표가 바닥으로). */}
+      {!uiPaused && <View style={{ flex: 1 }} />}
 
       {/* controls */}
       <View style={r.controls}>
@@ -463,6 +483,12 @@ const r = StyleSheet.create({
   goalMetText: { color: GOOD, fontFamily: FONT, fontSize: 16, fontWeight: '700', letterSpacing: 0.6 },
   bigDist: { color: T1, fontFamily: DISPLAY, fontSize: 104, fontWeight: '500', letterSpacing: -4, lineHeight: 106, includeFontPadding: false, fontVariant: ['tabular-nums'] },
   bigUnit: { color: withAlpha(T1, 0.62), fontFamily: FONT, fontSize: 16, fontWeight: '600', letterSpacing: 0.8, marginTop: 16 },
+  // 일시정지 하단 헤드 — 링 없이 거리 히어로 + 목표를, 지도 위·하단 지표 위에 얹는다.
+  pausedHead: { alignItems: 'center', marginBottom: 8 },
+  pausedDistRow: { flexDirection: 'row', alignItems: 'flex-end' },
+  pausedDist: { color: T1, fontFamily: DISPLAY, fontSize: 56, fontWeight: '600', letterSpacing: -2, lineHeight: 58, includeFontPadding: false, fontVariant: ['tabular-nums'] },
+  pausedDistUnit: { color: withAlpha(T1, 0.55), fontFamily: FONT, fontSize: 16, fontWeight: '700', marginLeft: 6, marginBottom: 8 },
+  pausedGoal: { color: withAlpha(T1, 0.62), fontFamily: FONT, fontSize: 14, fontWeight: '700', letterSpacing: 0.8, marginTop: 8 },
   // 트랙 링 센터 — 바퀴수 하나만 히어로, 그 밑 작은 '바퀴'.
   lapHero: { color: T1, fontFamily: DISPLAY, fontSize: 96, fontWeight: '700', letterSpacing: -3, lineHeight: 96, includeFontPadding: false, fontVariant: ['tabular-nums'] },
   lapHeroUnit: { color: T3, fontFamily: FONT, fontSize: 14, fontWeight: '500', letterSpacing: 0.6, marginTop: 6 },
