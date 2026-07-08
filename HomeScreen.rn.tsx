@@ -501,10 +501,10 @@ export default function HomeScreen({
         refreshControl={onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={ACCENT} colors={[ACCENT]} /> : undefined}>
       <View style={s.greetWrap}>
         {!!dateLabel && <Text style={s.date}>{dateLabel}</Text>}
-        <Text style={s.greet}>
+        <Text style={s.greet} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.82}>
           {active
-            ? '오늘은 어떤 신발로\n달려볼까요?'
-            : `${(userName ?? '').trim() ? `${(userName ?? '').trim()}님,\n` : ''}첫 러닝화를 등록해볼까요?`}
+            ? '오늘은 어떤 신발로 달려볼까요?'
+            : `${(userName ?? '').trim() ? `${(userName ?? '').trim()}님, ` : ''}첫 러닝화를 등록해볼까요?`}
         </Text>
         {/* 동기화 상태 칩 제거 — 사용자 요청(불필요한 '동기화 안 됨' 표시). 동기화는
             백그라운드 자동이며, 당겨서 새로고침(RefreshControl)은 그대로 동작한다. */}
@@ -532,7 +532,7 @@ export default function HomeScreen({
           {/* 이번 주 러닝 — 내 활동 요약(거리·횟수·평균 페이스). 신발 상태(히어로)와 별개로
               '내가 얼마나 뛰었나'를 보여준다. 자세히 → 기록 탭. 신발 마모는 히어로/상세에. */}
           <Rise delay={120}>
-            <View style={[s.sectionRow, { marginTop: SPACE.lg }]}>
+            <View style={[s.sectionRow, { marginTop: rv(4) }]}>
               <SectionTitle style={s.sectionLabelInline}>이번 주 러닝</SectionTitle>
               <Pressable onPress={() => onTab?.(2)} hitSlop={8} accessibilityRole="button" accessibilityLabel="기록 전체 보기">
                 <Text style={s.sectionMore}>전체 보기 ›</Text>
@@ -578,7 +578,7 @@ const s = StyleSheet.create({
 
   // paddingBottom 20: '오늘의 신발' 라벨 행을 걷어낸 뒤 인사말과 히어로 카드가 붙어
   // 보인다는 피드백 — 라벨이 차지하던 만큼 숨 쉴 여백을 직접 준다.
-  greetWrap: { paddingHorizontal: GUTTER, paddingTop: rv(8), paddingBottom: SPACE.xl },
+  greetWrap: { paddingHorizontal: GUTTER, paddingTop: rv(4), paddingBottom: rv(10) },
   date: { color: T3, fontFamily: FONT, fontSize: rf(14), letterSpacing: 0.2 },
   greet: { color: T1, fontFamily: FONT, fontSize: rf(21), fontWeight: '500', letterSpacing: -0.4, marginTop: rv(3), lineHeight: rf(26) },
 
