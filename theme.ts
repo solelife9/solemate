@@ -2,6 +2,9 @@
 // theme.ts — Keego design tokens (React Native, bare RN 0.85)
 // ============================================================================
 import type {RankTier} from './lib/progression/types';
+// 반응형 스케일 — 폰트/hero 사이즈를 기기 폭에 비례해 스케일한다(기준 iPhone 15 Pro=원본).
+// jest 에선 항등(원본값)이라 크기 단언 테스트 불변. import { rf } from './lib/responsive'.
+import {rf} from './lib/responsive';
 
 // 색 토큰은 디자인 마무리 핸드오프(keego-rn/theme.js) 값 그대로:
 // bg #0A0A0A · card #141414 · card2 #171717. (이전 순흑 #000 + #161618 보다 사진과 정합)
@@ -153,13 +156,13 @@ export type TypePreset = {
 // (11.5/12.5/13.5/14.5/16.5 …)은 이 정수 스케일로 수렴한다(반올림 ≤0.5px = 시각 동등).
 // 2026-07-08 전역 +1 상향(나이키 대비 작다는 피드백) — 이 스케일이 '살짝 키운' 새 기준.
 export const TYPE = {
-  display: { fontSize: 33, fontWeight: '500', letterSpacing: -0.8 },
-  title:   { fontSize: 23, fontWeight: '600', letterSpacing: -0.4 },
-  heading: { fontSize: 18, fontWeight: '600', letterSpacing: -0.2 },
-  body:    { fontSize: 16, fontWeight: '500', letterSpacing: -0.2 },
-  label:   { fontSize: 14, fontWeight: '500', letterSpacing: 0.2 },
-  caption: { fontSize: 13, fontWeight: '500', letterSpacing: 0.2 },
-  micro:   { fontSize: 11, fontWeight: '600', letterSpacing: 0.8 },
+  display: { fontSize: rf(33), fontWeight: '500', letterSpacing: -0.8 },
+  title:   { fontSize: rf(23), fontWeight: '600', letterSpacing: -0.4 },
+  heading: { fontSize: rf(18), fontWeight: '600', letterSpacing: -0.2 },
+  body:    { fontSize: rf(16), fontWeight: '500', letterSpacing: -0.2 },
+  label:   { fontSize: rf(14), fontWeight: '500', letterSpacing: 0.2 },
+  caption: { fontSize: rf(13), fontWeight: '500', letterSpacing: 0.2 },
+  micro:   { fontSize: rf(11), fontWeight: '600', letterSpacing: 0.8 },
 } as const satisfies Record<string, TypePreset>;
 export type TypeKey = keyof typeof TYPE;
 
@@ -168,7 +171,7 @@ export type TypeKey = keyof typeof TYPE;
 // 통계 숫자가 화면마다 raw 로 흩어 쓰던 40/56/76 을 이 단일 스케일로 모은다. TYPE 와
 // 분리한 이유: TYPE.display 가 '본문 최대' 위계를 유지해야 하기 때문(theme.test 의
 // display=max(TYPE) 계약). 화면은 이 토큰을 참조해 대형 숫자를 단일 소스로 둔다.
-export const HERO = { hero: 40, heroLg: 56, mega: 76 } as const;
+export const HERO = { hero: rf(40), heroLg: rf(56), mega: rf(76) } as const;
 export type HeroKey = keyof typeof HERO;
 
 // ── screen gutter (화면 좌우 거터 단일 토큰) ───────────────────────────────────
