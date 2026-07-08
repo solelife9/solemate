@@ -462,7 +462,7 @@ function FormatE({model}: {model: RetirementCardModel}) {
 // 3존(라벨 · 주인공 · 배웅). 거대 거리와 배웅 문장은 98° 선셋 바이올렛 그라데이션
 // (#FFB060 → #FF6C7E → #B57BFF). 인스타 스토리 규격(1080×1920) 유지.
 const SUNSET: {o: number; c: string}[] = [
-  {o: 0, c: '#FFB060'}, {o: 0.52, c: '#FF6C7E'}, {o: 1, c: '#B57BFF'},
+  {o: 0, c: RETIRE_GRAD_STOPS[0]}, {o: 0.52, c: RETIRE_GRAD_STOPS[1]}, {o: 1, c: RETIRE_GRAD_STOPS[2]},
 ];
 function FormatS({model}: {model: RetirementCardModel}) {
   const hair = 'rgba(255,255,255,0.10)';
@@ -478,8 +478,8 @@ function FormatS({model}: {model: RetirementCardModel}) {
       <Defs>
         {/* 상단 마젠타 라디얼 글로우 */}
         <RadialGradient id="s-glow" cx="50%" cy="2%" rx="52%" ry="30%">
-          <Stop offset="0" stopColor="#3a1430" stopOpacity={1} />
-          <Stop offset="0.6" stopColor="#3a1430" stopOpacity={0} />
+          <Stop offset="0" stopColor={RETIRE_MIDNIGHT_GLOW} stopOpacity={1} />
+          <Stop offset="0.6" stopColor={RETIRE_MIDNIGHT_GLOW} stopOpacity={0} />
         </RadialGradient>
         <LinearGradient id="s-dist" x1={distX} y1="0" x2={distX + distW} y2={numSize * 0.14} gradientUnits="userSpaceOnUse">
           {SUNSET.map((s, i) => <Stop key={i} offset={s.o} stopColor={s.c} />)}

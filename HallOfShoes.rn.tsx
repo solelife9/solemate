@@ -19,7 +19,18 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Svg, {Defs, LinearGradient, RadialGradient, Stop, Rect, Path, Circle, Text as SvgText} from 'react-native-svg';
 import {Unit, displayNum} from './lib/units';
-import {FONT, DISPLAY} from './theme';
+import {
+  FONT,
+  DISPLAY,
+  withAlpha,
+  HALL_BG,
+  HALL_SURFACE,
+  HALL_TXT,
+  HALL_GOLD_2,
+  HALL_PLAQUE_BG,
+  HALL_CERT_BG,
+  HALL_FOIL_STOPS,
+} from './theme';
 import {SwipeBack} from './primitives';
 import RetirementCard from './RetirementCard';
 import {buildRetirementCardModel, highlightLabel} from './lib/progression/retirementCard';
@@ -27,15 +38,17 @@ import {shareRetirementCard} from './lib/progression/retirementShare';
 import type {RetiredShoeRecord} from './lib/progression/types';
 
 // ── 블랙&골드 토큰(사용자 디자인) ──────────────────────────────────────────────
+// 식장 팔레트는 theme HALL_* 토큰을 참조한다(raw hex 0). muted/faint/soft/line 반투명
+// 톤은 본문 골드/화이트에서 withAlpha 로 파생 — 원색 토큰을 바꾸면 함께 따라간다.
 const G = {
-  bg: '#0A0908', surface: '#121110', txt: '#F3EEE3',
-  muted: 'rgba(243,238,227,0.52)', faint: 'rgba(243,238,227,0.34)',
-  gold: '#D6B478', soft: 'rgba(214,180,120,0.46)', line: 'rgba(214,180,120,0.20)',
+  bg: HALL_BG, surface: HALL_SURFACE, txt: HALL_TXT,
+  muted: withAlpha(HALL_TXT, 0.52), faint: withAlpha(HALL_TXT, 0.34),
+  gold: HALL_GOLD_2, soft: withAlpha(HALL_GOLD_2, 0.46), line: withAlpha(HALL_GOLD_2, 0.20),
 };
 const SERIF = Platform.OS === 'ios' ? 'NanumMyeongjoExtraBold' : 'NanumMyeongjo';
-// 포일 그라데이션(큰 숫자) — 밝은 금 → 딥 골드 → 밝은 금(금박 반사).
+// 포일 그라데이션(큰 숫자) — 밝은 금 → 딥 골드 → 밝은 금(금박 반사). 스톱색은 theme.
 const FOIL: {o: number; c: string}[] = [
-  {o: 0, c: '#F6E2A6'}, {o: 0.38, c: '#D0A557'}, {o: 0.64, c: '#9C7330'}, {o: 1, c: '#EFD590'},
+  {o: 0, c: HALL_FOIL_STOPS[0]}, {o: 0.38, c: HALL_FOIL_STOPS[1]}, {o: 0.64, c: HALL_FOIL_STOPS[2]}, {o: 1, c: HALL_FOIL_STOPS[3]},
 ];
 
 export interface HallOfShoesProps {
@@ -417,7 +430,7 @@ const st = StyleSheet.create({
   featKm: {fontFamily: DISPLAY, fontSize: rf(16), fontWeight: '700', color: G.gold, opacity: 0.7},
 
   grid: {flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: rv(14)},
-  plaque: {width: '48%', borderRadius: rs(16), borderWidth: 1, borderColor: G.line, backgroundColor: '#120f0b', padding: rs(16), paddingBottom: rv(15), minHeight: rs(168), overflow: 'hidden'},
+  plaque: {width: '48%', borderRadius: rs(16), borderWidth: 1, borderColor: G.line, backgroundColor: HALL_PLAQUE_BG, padding: rs(16), paddingBottom: rv(15), minHeight: rs(168), overflow: 'hidden'},
   seal: {width: rs(30), height: rs(30), borderRadius: rs(15), borderWidth: 1, borderColor: G.soft, alignItems: 'center', justifyContent: 'center'},
   sealTxt: {fontFamily: SERIF, fontSize: rf(9), fontWeight: '700', color: G.gold},
   pbrand: {fontFamily: FONT, fontSize: rf(9), fontWeight: '700', letterSpacing: 1.4, color: G.gold, marginTop: rv(16)},
@@ -429,7 +442,7 @@ const st = StyleSheet.create({
 
 
   // ── 인증서 ──
-  certScreen: {flex: 1, backgroundColor: '#08070A'},
+  certScreen: {flex: 1, backgroundColor: HALL_CERT_BG},
   certContent: {alignItems: 'center', paddingHorizontal: rs(28)},
   certFrame: {position: 'absolute', left: 16, right: 16, bottom: 16, borderRadius: rs(18), borderWidth: 1, borderColor: G.soft, zIndex: 1},
   certX: {position: 'absolute', width: rs(34), height: rs(34), borderRadius: rs(17), borderWidth: 1, borderColor: G.line, backgroundColor: 'rgba(0,0,0,0.3)', alignItems: 'center', justifyContent: 'center', zIndex: 2},

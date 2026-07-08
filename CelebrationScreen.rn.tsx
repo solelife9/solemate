@@ -12,7 +12,7 @@ import { rf, rs, ri, rv } from './lib/responsive';
 import {View, Text, Pressable, StyleSheet, Animated, Easing} from 'react-native';
 import Svg, {Defs, RadialGradient, LinearGradient, Stop, Circle, Ellipse, Path} from 'react-native-svg';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {BG, T1, T3, ACCENT, FONT, DISPLAY, RADIUS, HALL_GOLD, withAlpha} from './theme';
+import {BG, T1, T3, ACCENT, FONT, DISPLAY, RADIUS, HALL_GOLD, BLACK, CELEB_FACE_BG, CELEB_ICON_LEGENDARY, CELEB_ICON_DEFAULT, withAlpha} from './theme';
 import {success, impactHeavy} from './lib/haptics';
 
 export type CelebrationData =
@@ -82,9 +82,9 @@ function Medal({color, legendary, icon}: {color: string; legendary?: boolean; ic
       <Svg width={148} height={148}>
         <Defs>
           <LinearGradient id={`rim-${uid}`} x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0" stopColor="#FFFFFF" stopOpacity={0.55} />
-            <Stop offset="0.45" stopColor="#FFFFFF" stopOpacity={0.06} />
-            <Stop offset="1" stopColor="#000000" stopOpacity={0.5} />
+            <Stop offset="0" stopColor={T1} stopOpacity={0.55} />
+            <Stop offset="0.45" stopColor={T1} stopOpacity={0.06} />
+            <Stop offset="1" stopColor={BLACK} stopOpacity={0.5} />
           </LinearGradient>
           <RadialGradient id={`face-${uid}`} cx="50%" cy="36%" rx="72%" ry="72%">
             <Stop offset="0" stopColor={c} stopOpacity={0.3} />
@@ -96,16 +96,16 @@ function Medal({color, legendary, icon}: {color: string; legendary?: boolean; ic
         <Circle cx={74} cy={74} r={70} fill={c} opacity={0.92} />
         <Circle cx={74} cy={74} r={70} fill={`url(#rim-${uid})`} />
         {/* 페이스 — 깊은 차콜 + 등급색 틴트 */}
-        <Circle cx={74} cy={74} r={59} fill="#141417" />
+        <Circle cx={74} cy={74} r={59} fill={CELEB_FACE_BG} />
         <Circle cx={74} cy={74} r={59} fill={`url(#face-${uid})`} />
         {/* 새김 홈 — 위 밝음/아래 어두움의 1px 쌍 */}
-        <Circle cx={74} cy={74} r={52.5} stroke={withAlpha('#FFFFFF', 0.12)} strokeWidth={1} fill="none" />
-        <Circle cx={74} cy={74} r={51.5} stroke={withAlpha('#000000', 0.4)} strokeWidth={1} fill="none" />
+        <Circle cx={74} cy={74} r={52.5} stroke={withAlpha(T1, 0.12)} strokeWidth={1} fill="none" />
+        <Circle cx={74} cy={74} r={51.5} stroke={withAlpha(BLACK, 0.4)} strokeWidth={1} fill="none" />
         {/* 좌상단 스펙큘러 */}
-        <Ellipse cx={54} cy={44} rx={30} ry={15} fill="#FFFFFF" opacity={0.09} />
+        <Ellipse cx={54} cy={44} rx={30} ry={15} fill={T1} opacity={0.09} />
       </Svg>
       <View style={{position: 'absolute'}} pointerEvents="none">
-        <AchIcon id={icon} size={ri(62)} color={legendary ? '#F4E8C8' : '#F1EFE9'} />
+        <AchIcon id={icon} size={ri(62)} color={legendary ? CELEB_ICON_LEGENDARY : CELEB_ICON_DEFAULT} />
       </View>
     </View>
   );

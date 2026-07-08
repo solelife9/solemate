@@ -25,6 +25,9 @@ export const DANGER = '#FF5A45';
 export const GOOD = '#46C98B';           // healthy condition dot (핸드오프 good)
 export const BEST = '#4A9FF0';           // 최상 컨디션 파란색
 export const SPORT_VIOLET = '#7C3AED';   // 스포티 일렉트릭 바이올렛(주간목표 '도전' 난이도)
+// 다크 14% 틴트 위에서 SPORT_VIOLET 원색은 획이 묻힌다 → 한 톤 밝힌 소프트 변주(온보딩
+// 트랙 모드 아이콘 · 목업 확정). 원색과 별개 값이라 별도 토큰으로 둔다(화면은 이것만 참조).
+export const SPORT_VIOLET_SOFT = '#9B6DF3';
 export const T1 = '#FFFFFF';
 export const T2 = '#EBEBF5';
 // Tertiary/secondary text. Lifted from iOS systemGray(#8E8E93) to #9C9CA3 so the
@@ -34,6 +37,9 @@ export const T3 = '#9C9CA3';
 // Quaternary text — dimmer than T3 for the faintest captions/units (sub-metric
 // 단위·라벨, 빈 GPS 바). 다크 표면에서 보조 정보 위계의 가장 약한 톤.
 export const T4 = '#54545b';
+// 순수 검정 — 셰이딩/그림자 프리미티브(메달 3D 모델링의 그늘 알파 스톱 등) 단일 토큰.
+// 표면 배경은 BG(#0A0A0A)를 쓰고, 이 토큰은 오직 셰이딩·그림자 알파 스톱에만 쓴다.
+export const BLACK = '#000000';
 export const SEP = 'rgba(255,255,255,0.07)';  // 핸드오프 line
 // 카드/세그먼트 보더 단일 토큰. 과거 화면마다 SEP · withAlpha(T1,0.07) · borderWidth 1
 // vs hairline 으로 흩어져 있던 카드 외곽선을 이 한 토큰으로 통일한다. 값은 SEP 과 동일한
@@ -73,9 +79,46 @@ export const TIER_COLORS: Record<RankTier, string> = {
   legend: '#FF6500',
 };
 
+// ── 업적 희귀도 색(common→legendary) ──────────────────────────────────────────
+// 셀러브레이션/업적 배지의 희귀도 색. TIER_COLORS 와 같은 위계의 시맨틱 세트 —
+// App/화면은 이 토큰만 참조한다(라벨 'ko'는 소비부가 소유). 값은 기존 확정 팔레트 그대로.
+export const RARITY_COLORS = {
+  common: '#9A9A9A',
+  rare: '#4B93F7',
+  epic: '#A468F0',
+  legendary: '#E7B84B',
+} as const;
+
 // 명예의 전당 전용 골드 — 채도 낮춘 샴페인 골드(애플 톤). HallOfShoes·은퇴 인증서에서만
 // 쓴다(일반 화면 액센트는 ACCENT 단일 — 전당의 '식장' 무드를 위한 유일한 예외 토큰).
 export const HALL_GOLD = '#D8B872';
+
+// ── 명예의 전당 '식장' 팔레트(웜골드 온 니어블랙) ──────────────────────────────
+// HallOfShoes(은퇴 전당) 전용 무드 — 일반 다크 표면(BG/CARD)이 아니라 따뜻한 골드가
+// 근검정 위에 놓인 '식장' 분위기. HALL_GOLD(#D8B872, 위)는 인증서 빅넘버용 샴페인 골드,
+// 이 그룹의 HALL_GOLD_2(#D6B478)는 전당 화면 본문 골드다(둘 다 사용자 확정값이라 병존).
+// muted/faint/soft/line 반투명 톤은 화면에서 withAlpha 로 파생한다(단일 진실원).
+export const HALL_BG = '#0A0908';        // 전당 배경(웜 니어블랙)
+export const HALL_SURFACE = '#121110';   // 카드/표면
+export const HALL_TXT = '#F3EEE3';       // 본문(웜 화이트) — muted/faint 파생 원
+export const HALL_GOLD_2 = '#D6B478';    // 전당 본문 골드 — soft/line 파생 원
+export const HALL_PLAQUE_BG = '#120f0b'; // 그리드 명패(plaque) 배경
+export const HALL_CERT_BG = '#08070A';   // 은퇴 인증서 전체화면 배경
+// 포일 빅넘버 그라데이션 스톱(밝은 금→딥 골드→밝은 금, 금박 반사). 화면 FOIL 이 소비.
+export const HALL_FOIL_STOPS: readonly string[] = ['#F6E2A6', '#D0A557', '#9C7330', '#EFD590'];
+
+// ── 셀러브레이션 메달 셰이딩(3D 모델링 보조색) ─────────────────────────────────
+// CelebrationScreen 메달의 하이라이트/그늘은 T1(#FFFFFF)·BLACK(#000000) 알파 스톱으로
+// 만든다(위 토큰 참조). 아래는 그 외 고정 보조색: 새김 페이스 배경 + 글리프 웜틴트.
+export const CELEB_FACE_BG = '#141417';         // 메달 페이스(새김 홈) 딥 차콜
+export const CELEB_ICON_LEGENDARY = '#F4E8C8';  // 레전더리 글리프 샴페인 웜화이트
+export const CELEB_ICON_DEFAULT = '#F1EFE9';    // 일반 글리프 웜화이트
+
+// ── 온보딩 카드 그라데이션 ─────────────────────────────────────────────────────
+// 온보딩 마모곡선 카드 배경 그라데이션(상단 살짝 밝은 표면 → 하단 딥). 일반 CARD 와
+// 다른 미묘한 상하 그라데이션이라 별도 토큰으로 둔다(화면은 이 토큰만 참조).
+export const ONBOARD_CARD_GRAD_TOP = '#1A1A1F';
+export const ONBOARD_CARD_GRAD_BOT = '#141417';
 
 // 심박 존(Z1–Z5) 색 — 회복(파랑)→유산소(초록)→템포(노랑)→역치(주황)→무산소(빨강).
 // 기존 컨디션 토큰 재사용(BEST/GOOD/DANGER) + 중간 2색만 신규. 화면은 이 토큰만 참조한다.

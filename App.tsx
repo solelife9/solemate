@@ -50,7 +50,7 @@ import HallOfFameScreen from './HallOfFameScreen.rn';
 import {buildContext} from './lib/progression/context';
 import {getProgression, pickRecentAchievement, collectUnlockedKeys} from './lib/progression';
 import {RANK_XP} from './lib/progression/rank';
-import {TIER_LABEL} from './theme';
+import {TIER_LABEL, RARITY_COLORS} from './theme';
 import CelebrationScreen, {CelebrationData} from './CelebrationScreen.rn';
 import {loadProgression, saveProgression} from './lib/progression/storage';
 import {mergeCelebBaseline} from './lib/celebrationBaseline';
@@ -170,7 +170,7 @@ const CELEB_ICON: Record<string, 'medal'|'trophy'|'flag'|'route'|'run'|'star'|'s
   runningMilestone: 'flag', distanceMilestone: 'route', consistency: 'run',
   shoeJourney: 'medal', shoeMemory: 'trophy', experience: 'sparkles', keego: 'infinite',
 };
-const CELEB_RARITY: Record<string, {ko: string; color: string}> = {common: {ko: '커먼', color: '#9A9A9A'}, rare: {ko: '레어', color: '#4B93F7'}, epic: {ko: '에픽', color: '#A468F0'}, legendary: {ko: '레전더리', color: '#E7B84B'}};
+const CELEB_RARITY: Record<string, {ko: string; color: string}> = {common: {ko: '커먼', color: RARITY_COLORS.common}, rare: {ko: '레어', color: RARITY_COLORS.rare}, epic: {ko: '에픽', color: RARITY_COLORS.epic}, legendary: {ko: '레전더리', color: RARITY_COLORS.legendary}};
 /** 부팅 폴백 캐시 로드 — 신발 배열이 있으면 {shoes,runs}, 없으면(미존재/손상) null. */
 async function loadBootCache(): Promise<{shoes: any[]; runs: any[]} | null> {
   try {

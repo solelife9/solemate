@@ -34,10 +34,11 @@ import { fmtPaceSec } from './lib/pacePlan';
 // lib/haptics 배선: 일시정지/재개 → tap · 목표 달성 → impactHeavy · 종료 확정 → warning.
 import { tap, impactHeavy, warning } from './lib/haptics';
 
-// 러닝 중 화면엔 지도를 두지 않는다. 야외·데이터 없음(공기계)에서 Google Maps 타일이
-// 안 떠 흰 "Google" 화면이 컨트롤(일시정지/정지)을 가려 저장조차 못 하는 사고가 있었다.
-// → 라이브 경로 지도는 러닝이 끝난 뒤 "상세보기"에서 보여준다(보통 WiFi 환경). GPS 거리·
-// 페이스 기록은 지도와 무관하게 계속된다.
+// 지도 배치 규칙(2026-07-09 승인). 러닝 '중'(active)엔 지도를 두지 않고 링+지표만 둔다 —
+// 달리는 동안 화면 정보는 최소화. 지도는 '일시정지' 시 상단 패널로 등장하고(탭하면 전체화면
+// 인터랙티브), 러닝 종료 후 "상세보기"에서 경로를 본다. Apple Maps(react-native-maps) 전환으로
+// 옛 구글맵 타일 실패(흰 "Google" 화면이 컨트롤을 가려 저장조차 못 하던 사고)는 해소됨.
+// GPS 거리·페이스 기록은 지도와 무관하게 계속된다.
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 

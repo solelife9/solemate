@@ -52,6 +52,9 @@ import {
   DANGER,
   BEST,
   HALL_GOLD,
+  SPORT_VIOLET_SOFT,
+  ONBOARD_CARD_GRAD_TOP,
+  ONBOARD_CARD_GRAD_BOT,
   T1,
   T3,
   T4,
@@ -455,7 +458,7 @@ function ShoeIntelligence({goNext, onSkip, insetTop, insetBottom}: ScreenProps) 
 
         {/* 마모 곡선 카드 — 축은 예시 신발의 실제 권장 수명(650km)과 일치 */}
         <Rise delay={130} style={[s.heroCard, {overflow: 'hidden'}]}>
-          <LinearGrad stops={[{color: '#1A1A1F', offset: 0}, {color: '#141417', offset: 1}]} radius={22} />
+          <LinearGrad stops={[{color: ONBOARD_CARD_GRAD_TOP, offset: 0}, {color: ONBOARD_CARD_GRAD_BOT, offset: 1}]} radius={22} />
           <View style={{paddingHorizontal: rs(14), paddingTop: rv(14), paddingBottom: rv(14)}}>
             <View style={{flexDirection: 'row', justifyContent: 'space-between', marginBottom: rv(8)}}>
               <Text style={{fontFamily: FONT, fontSize: rf(14), fontWeight: '600', color: T1, letterSpacing: -0.2}}>쿠셔닝 성능</Text>
@@ -511,8 +514,8 @@ function ShoeIntelligence({goNext, onSkip, insetTop, insetBottom}: ScreenProps) 
 const FEATURES: {color: string; Icon: (p: {size?: number; color?: string}) => React.JSX.Element; title: string; desc: string}[] = [
   {color: HALL_GOLD, Icon: MedalIcon, title: '거리 PB', desc: '5K부터 풀코스까지, 최고 기록을 자동 갱신해요'},
   {color: BEST, Icon: PulseIcon, title: '심폐 체력', desc: '달린 페이스로 VO₂max를 추정 — 따로 측정할 필요 없어요'},
-  // SPORT_VIOLET(#7C3AED)은 다크 14% 틴트 위에서 획이 묻혀 한 톤 밝힌 값을 쓴다(목업 확정).
-  {color: '#9B6DF3', Icon: TrackIcon, title: '트랙 모드', desc: '400m 트랙에서 랩을 자동으로 세어줘요'},
+  // SPORT_VIOLET 원색은 다크 14% 틴트 위에서 획이 묻혀 한 톤 밝힌 SPORT_VIOLET_SOFT 를 쓴다(목업 확정).
+  {color: SPORT_VIOLET_SOFT, Icon: TrackIcon, title: '트랙 모드', desc: '400m 트랙에서 랩을 자동으로 세어줘요'},
   {color: WARN, Icon: GaugeIcon, title: '훈련 부하', desc: '과부하가 오기 전에 미리 알려줘요'},
 ];
 
