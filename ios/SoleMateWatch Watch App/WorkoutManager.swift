@@ -10,6 +10,10 @@ import WatchConnectivity
 
 @MainActor
 final class WorkoutManager: NSObject, ObservableObject {
+  // 폰(startWatchApp)이 띄운 워치앱의 handle(workoutConfiguration:)·폰 원격 명령이 모두
+  // 같은 인스턴스를 제어하도록 공유 싱글턴을 둔다(App 의 @StateObject 도 이걸 참조).
+  static let shared = WorkoutManager()
+
   @Published var heartRate: Double = 0
   @Published var running = false
 
@@ -102,4 +106,16 @@ extension WorkoutManager: WCSessionDelegate {
   nonisolated func session(_ session: WCSession,
                            activationDidCompleteWith activationState: WCSessionActivationState,
                            error: Error?) {}
+
+  // 폰 → 워치 원격 명령. { "cmd": "start" | "stop" }. 폰에서 러닝 시작/종료를 누르면
+  // 워치 워크아웃도 자동으로 시작/종료된다(사용자가 손목을 만질 필요 없음). start 는 보통
+  // startWatchApp(handle:)로 앱이 이미 떠 세션이 시작되므로 여기선 idempotent 가드만,
+  // stop 은 실행 중 워크아웃을 종료한다.
+  nonisolated func session(_ session: WCSession, didReceiveMessage message: [String: Any]) {
+    guard let cmd = message["cmd"] as? String else { return }
+    Task { @MainActor in
+      if cmd == "start" { if !self.running { self.start() } }
+      else if cmd == "stop" { self.stop() }
+    }
+  }
 }

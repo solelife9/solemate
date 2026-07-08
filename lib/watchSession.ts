@@ -22,4 +22,25 @@ export const watchSession = {
     });
     return () => sub.remove();
   },
+  /**
+   * 러닝 시작 시 페어링된 애플워치의 워크아웃을 자동 실행한다(startWatchApp) → 손목을
+   * 만지지 않아도 심박이 흐른다. 워치 미페어링/미설치·구버전 네이티브면 조용히 false.
+   * 실패해도 앱은 그대로 동작(심박만 '--').
+   */
+  async startWorkout(): Promise<boolean> {
+    if (!available || !M?.startWatchWorkout) return false;
+    try {
+      return !!(await M.startWatchWorkout());
+    } catch {
+      return false;
+    }
+  },
+  /** 러닝 종료 시 워치 워크아웃도 종료. 네이티브 미지원이면 no-op. */
+  stopWorkout(): void {
+    try {
+      M?.stopWatchWorkout?.();
+    } catch {
+      /* no-op */
+    }
+  },
 };

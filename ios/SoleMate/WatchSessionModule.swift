@@ -6,11 +6,13 @@
 // ⚠️ 이 파일은 'SoleMate'(앱) 타깃에 멤버십을 넣어야 한다(Xcode File Inspector).
 import Foundation
 import WatchConnectivity
+import HealthKit
 import React
 
 @objc(WatchSessionModule)
 class WatchSessionModule: RCTEventEmitter, WCSessionDelegate {
   private var hasListeners = false
+  private let healthStore = HKHealthStore()
 
   override init() {
     super.init()
@@ -40,6 +42,37 @@ class WatchSessionModule: RCTEventEmitter, WCSessionDelegate {
     guard let bpm = userInfo["bpm"] as? Double else { return }
     DispatchQueue.main.async {
       if self.hasListeners { self.sendEvent(withName: "onHeartRate", body: ["bpm": bpm]) }
+    }
+  }
+
+  // 폰 → 워치: 러닝 시작 시 워치 워크아웃을 자동 실행한다. HKHealthStore.startWatchApp 이
+  // 페어링된 워치의 컴패니언 앱을 띄우고 handle(workoutConfiguration:)로 세션을 시작시킨다
+  // → 사용자가 손목을 만지지 않아도 애플워치 심박이 흐른다. 워치 미페어링/미설치면 실패를
+  // 조용히 resolve(false) 로 돌려 앱은 그대로 동작(심박만 '--').
+  @objc(startWatchWorkout:rejecter:)
+  func startWatchWorkout(_ resolve: @escaping RCTPromiseResolveBlock, rejecter reject: @escaping RCTPromiseRejectBlock) {
+    guard HKHealthStore.isHealthDataAvailable() else { resolve(false); return }
+    let config = HKWorkoutConfiguration()
+    config.activityType = .running
+    config.locationType = .outdoor
+    // startWatchApp 은 워크아웃 공유 권한이 필요하다 — 요청 후(이미 허용됐으면 즉시) 실행.
+    let share: Set<HKSampleType> = [HKObjectType.workoutType()]
+    healthStore.requestAuthorization(toShare: share, read: []) { [weak self] _, _ in
+      guard let self = self else { resolve(false); return }
+      self.healthStore.startWatchApp(with: config) { success, _ in
+        DispatchQueue.main.async { resolve(success) }
+      }
+    }
+  }
+
+  // 폰 → 워치: 러닝 종료 시 워치 워크아웃도 종료(도달 가능하면 즉시, 아니면 컨텍스트 폴백).
+  @objc(stopWatchWorkout)
+  func stopWatchWorkout() {
+    let s = WCSession.default
+    if s.isReachable {
+      s.sendMessage(["cmd": "stop"], replyHandler: nil, errorHandler: nil)
+    } else {
+      try? s.updateApplicationContext(["cmd": "stop"])
     }
   }
 

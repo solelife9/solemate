@@ -2402,6 +2402,9 @@ function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],track=null,weightKg,age
   async function beginRun(){
     // 러닝 시작 — 화면 자동잠금 방지(글랜서빌리티). 실패해도 러닝엔 무관(best-effort).
     void activateKeepAwakeAsync(KEEP_AWAKE_TAG).catch(()=>{});
+    // 페어링된 애플워치가 있으면 워크아웃을 자동 실행해 심박이 손목 조작 없이 흐르게 한다
+    // (startWatchApp). 워치 없으면 조용히 no-op — 심박만 '--'. best-effort.
+    void watchSession.startWorkout().catch(()=>{});
     // 기압 고도계 누적 상태 리셋(이어 달리기/재시작 대비) — 구독은 아래에서 새로 건다.
     baroElev.current=initElevState();baroAvail.current=false;
     // 잠금화면 Live Activity 시작(iOS 위젯 타깃 있을 때만 동작 — 없으면 no-op).
@@ -2502,6 +2505,7 @@ function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],track=null,weightKg,age
     if(stepSub.current){clearInterval(stepSub.current);stepSub.current=null;}
     if(baroSub.current){try{baroSub.current.remove();}catch{/* noop */}baroSub.current=null;}
     liveActivity.end(); // 잠금화면 위젯 닫기(종료/완주/취소/언마운트 모두 stop 경유)
+    watchSession.stopWorkout(); // 워치 워크아웃도 종료(자동시작의 짝) — 종료/완주/취소 모두 경유
     clearInterval(timer.current);
     clearInterval(snapTimer.current);
     void stopTracking();
