@@ -19,6 +19,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Svg, { Path, Circle, Defs, LinearGradient as SvgLinear, Stop } from 'react-native-svg';
 import { GlassEdge, ShoeGlyph } from './primitives';
+import { RunLiveMap } from './RunLiveMap';
 // 색·폰트는 전역 디자인 토큰(theme.ts)만 참조한다 — 사설 색객체(const C) 폐기.
 // 매핑: bg→BG · surface→CARD · accent→ACCENT · sage→GOOD · amber→WARN ·
 // red→DANGER · text→T1–T4 · sep→SEP. 폰트 UI/DP → FONT/DISPLAY.
@@ -104,6 +105,7 @@ export default function RunActiveScreen({
   paused: pausedProp, onPause, onStop,
   permLost = false, onOpenSettings, statusLabel,
   currentPaceSec = null, targetPaceSec = null,
+  liveCoords = [],
   track = null, onLap, onUndoLap,
 }: {
   shoeLabel?: string; distanceKm?: number; goalKm?: number;
@@ -219,6 +221,18 @@ export default function RunActiveScreen({
   return (
     <View style={[r.screen, { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 16 }]}>
       <StatusBar barStyle="light-content" />
+      {/* 옵션 A — 라이브 지도 배경: 야외(좌표 있음)에서만 전체화면 다크 지도 + 경로를 깔고,
+          그 위에 어두운 스크림을 얹어 링·지표·컨트롤 가독성을 확보한다. 좌표 없으면(실내·GPS
+          미확보) 지도·스크림 모두 생략 → 기본 다크 배경 그대로. 지도는 pointerEvents none. */}
+      {liveCoords.length > 0 && (
+        // 화면 좌우 패딩(24)·상하 인셋을 상쇄해 지도가 진짜 전체화면(풀블리드)이 되게 한다.
+        <View
+          pointerEvents="none"
+          style={{ position: 'absolute', top: -(insets.top + 8), left: -24, right: -24, bottom: -(insets.bottom + 16) }}>
+          <RunLiveMap coords={liveCoords} />
+          <View style={r.mapScrim} />
+        </View>
+      )}
 
       {/* 목표 달성 축하 토스트 */}
       {met && (
@@ -416,6 +430,9 @@ export default function RunActiveScreen({
 
 const r = StyleSheet.create({
   screen: { flex: 1, backgroundColor: BG, paddingHorizontal: 24 },
+  // 라이브 지도 위 가독성 스크림 — 지도를 어둡게 눌러 흰 숫자·지표·컨트롤이 읽히게 한다.
+  // (기기에서 밝기 조절 예정: 0.5 는 지도 보임 ↔ 텍스트 가독성 균형 초기값.)
+  mapScrim: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(6,6,9,0.5)' },
 
   // 목표 달성 토스트 — 오렌지 판 대신 어두운 유리 막(투명 통일). 축하의 오렌지는 체크
   // 아이콘(포인트 컬러=강조 요소에만)이 담당한다.
