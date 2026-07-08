@@ -8,14 +8,14 @@
 ## Visual Principles
 
 ### Color (theme.ts 토큰 — 화면 하드코딩 금지)
-- 배경: `BG #000000` · 카드 `CARD #1C1C1E` / `CARD_HI #2C2C2E` / `CARD_DIM #0D0D0D` / `HERO_BG #161618`
+- 배경: `BG #0A0A0A` · 카드 `CARD #1C1C1E` / `CARD_HI #2C2C2E` / `CARD_DIM #1C1C1E`(=CARD 통일) / `HERO_BG #242426`
 - 액센트(그라데이션): `ACCENT #FF6500` → `ACCENT_2 #FF9F4A` — **CTA·핵심 강조에만**
-- 상태색: `WARN #FF9F0A` / `DANGER #FF453A` / `GOOD #30D158`
-- 텍스트: `T1 #FFFFFF` / `T2 #EBEBF5` / `T3 #8E8E93` · 구분선 `SEP rgba(255,255,255,0.08)`
+- 상태색: `WARN #E6A23C` / `DANGER #FF5A45` / `GOOD #46C98B`
+- 텍스트: `T1 #FFFFFF` / `T2 #EBEBF5` / `T3 #9C9CA3` · 구분선 `SEP rgba(255,255,255,0.07)`
 - **오렌지 절제 규칙**: 라벨·보조 텍스트는 T3 회색. 오렌지는 CTA, 선택 상태, 핵심 수치 강조에 한정. 신발 수명은 양호=GOOD/차분, 임계 근접=WARN, 초과=DANGER로 단계 표현.
 
 ### Typography — **Pretendard 단일 패밀리 (Bebas 제거)**
-- 모든 텍스트 `FONT = 'PretendardVariable'`. `theme.ts`의 `DISPLAY = 'BebasNeue-Regular'` 사용처를 Pretendard로 교체.
+- 모든 텍스트 `FONT = 'PretendardVariable'`. `theme.ts`의 `DISPLAY`는 Pretendard로 교체 완료(2026-06 — BebasNeue 제거됨).
 - 큰 숫자(거리/페이스/시간/목표/통계): Pretendard **Bold(700~800)** + `fontVariant: ['tabular-nums']`(가능 시) + 타이트한 letterSpacing(예: -0.5). 콘덴스드 금지.
 - 위계(권장 스케일, 토큰화): Display 56–64 / H1 28 / H2 22 / Title 18 / Body 15 / Caption 12.5 / Micro 11. weight 400/600/800.
 - 단위(km, spm 등)는 숫자보다 작게(예: 0.5x), baseline 정렬, 적절한 좌측 간격으로 cramped 방지.
@@ -52,7 +52,7 @@
 > Tone benchmark: Apple Fitness · WHOOP · PlayStation Trophies · Spotify Wrapped. **Never childish, meme, or RPG.**
 
 ## Chosen direction
-- **Dark + KEEGO orange, single family.** Continues the shipped Slice-3 system: background `#0A0A0A`, cards `#141414` / recessed `#171717`, one brand accent `#FF6500` used sparingly (CTAs, Legend tier, wordmark).
+- **Dark + KEEGO orange, single family.** Continues the shipped Slice-3 system: background `#0A0A0A`, cards `#1C1C1E` / raised `#2C2C2E`, one brand accent `#FF6500` used sparingly (CTAs, Legend tier, wordmark).
 - **Pretendard single family** (display + body), no secondary display face. Artifacts use the system stack (no web fonts allowed); production uses `PretendardVariable`.
 - **Tabular numerals everywhere** so km / paces / progress counts align.
 - Clean single hierarchy (800 headings, regular body), generous spacing, rounded corners 14–26. Phone-framed UI (~390px) on black; retirement cards square (~360px scaling a 1080×1080 keepsake).

@@ -1,5 +1,11 @@
 # Harness: Quality Contract
 
+## 🧭 최상위 기준 — 프로젝트 헌법 (`/MISSION.md`)
+이 품질 계약보다 **위**에 루트 `MISSION.md`(미션 + 엔지니어링 원칙)가 있다. **모든 결정의 최상위 기준**이며, 충돌 시 MISSION.md가 이 문서를 이긴다. 요지:
+- **미션:** world's best running platform — "Keego is all I need". Strava·Garmin·NRC·COROS·Runna·Apple Fitness와 정면 경쟁하는 **월드클래스 러닝 기본기**를 절대 타협하지 않고, 차별화(신발 관리·러닝 라이프 아카이브)는 **탁월함 위에** 얹는다.
+- **더 많은 기능이 아니라 더 나은 제품.** 기능 추가 전 자문: 월드클래스인가 · 러너에게 진짜 도움되는가 · 실제 워크플로에 자연스러운가 · Keego 고유가치를 강화하는가 · 사라지면 아쉬운가.
+- **엔지니어링:** 프로토타입 아님, 10년 유지보수 관점. 기존 제품/아키텍처 먼저 이해·존중, 중복·무단 제거 금지, **임시방편·해킹·우회 금지 → 근본원인 해결**, 필요하면 리팩터링(기술부채 금지). "이 코드를 10년 유지한다면 이렇게 짤 것인가?"
+
 ## Project Context
 **Keego** (구 SoleMate/SoleLife) — React Native 러닝/신발 관리 앱. 브랜드명 Keego = "keep going" 축약(러닝화 내구도 관리로 부상 없이 러닝을 계속 이어가게 한다). 핵심 차별점 = 러닝화 내구도 관리 + shoe-first(신발 고르고 바로 러닝→자동 거리 차감). 경쟁 대상 Nike Run Club·Strava. in-app 워드마크/카피는 Keego로 통일하되 네이티브 앱 표시명/패키지 rename은 빌드 영향 확인 후 별도 진행.
 - 핵심 기능: GPS 런 트래킹(Kalman 필터 기반 좌표 보정), 가속도계, TTS 음성 안내, 신발 누적 거리/수명 관리, 주간/기간별 통계.
@@ -81,5 +87,5 @@ unit_test_coverage: >= 60% for new code (특히 순수 함수: 거리 계산, �
 - **새 네이티브 의존성 추가 금지**(자율 검증 불가). 햅틱=RN 내장 `Vibration` 래퍼(`lib/haptics`), 토스트=커스텀 `Animated` 오버레이(`lib/toast`+ToastHost), 당겨서 새로고침=내장 `RefreshControl`. react-native-haptic-feedback·@react-native-community/datetimepicker·gesture-handler·reanimated·toast-message **설치 금지**(후속·사용자 액션).
 - **데이터 형태**: 신발/런에 선택적 `updatedAt:number`·`deleted?:boolean` 추가는 비파괴·하위호환. 부팅 1회 마이그레이션으로 기존 레코드 `updatedAt` 시드(스토리지 스키마 버전 키). 기존 값 손상 금지.
 - **순수 로직 불변**: 햅틱/토스트/포맷/타입/디자인 변경이 거리·페이스·시간·신발수명 계산 결과를 바꾸면 안 된다(기존 jest 회귀로 강제).
-- **다크(#0A0A0C)+오렌지(#FF6500) 정체성 유지**: 런플로우/온보딩 theme 흡수는 값 보존(시각 동등), 색/폰트 깨짐 금지.
+- **다크(#0A0A0A)+오렌지(#FF6500) 정체성 유지**: 런플로우/온보딩 theme 흡수는 값 보존(시각 동등), 색/폰트 깨짐 금지.
 - **솔레라이프 백엔드 repo는 이 run에서 변경하지 않는다**(별도 repo·danger zone). 백엔드측 작업(updatedAt 컬럼·FCM 등록 엔드포인트)은 문서화된 후속.
