@@ -40,7 +40,7 @@ import RunRecapScreen from './RunRecapScreen.rn';
 import MedalArchiveScreen from './MedalArchiveScreen.rn';
 import RaceMedalScreen from './RaceMedalScreen.rn';
 // 마라톤 메달 아카이브 — 완주 감지(위치+날짜) → 대회 기록 흐름 → 아카이브(로컬 우선).
-import {loadMedals, saveMedals, normalizeMedals, addMedal as addMedalStore, removeMedal as removeMedalStore, type Medal} from './lib/medals';
+import {loadMedals, saveMedals, normalizeMedals, sortMedals, addMedal as addMedalStore, removeMedal as removeMedalStore, type Medal} from './lib/medals';
 import {detectRace, SEED_RACES, type RaceEvent, type RaceMatch, type RaceDistance} from './data/raceEvents';
 import {fetchRaces} from './lib/raceStore';
 import {nativeRecognizer} from './lib/ocrNative';
@@ -79,7 +79,7 @@ import {
   sumKm, avgPaceLabel, totalTimeLabel, durationLabel, summaryOf, maxDayStreak,
   weekBuckets, monthBuckets, yearBuckets,
 } from './lib/stats';
-import {parseShoeName, shoeHealth, isRetired, DEFAULT_MAX_KM, clampMaxKm, reconcileShoeAlerts, KEEP_GOING_REPLACE} from './lib/shoe';
+import {parseShoeName, shoeHealth, isRetired, DEFAULT_MAX_KM, clampMaxKm, reconcileShoeAlerts} from './lib/shoe';
 import {setRunSurface, parseSurface, type Surface} from './lib/wearModel';
 import {forecastReplacement, type ReplacementForecast} from './lib/replacementForecast';
 import {mostRecentShoeId, lastWornDate} from './lib/shoeRecommend';
@@ -1898,7 +1898,7 @@ function Main(){
       appTimeSec={medalFlow.appTimeSec} appPaceSec={medalFlow.appPaceSec}
       presetRaceId={medalFlow.presetRaceId} presetDistance={medalFlow.presetDistance}
       races={races} recognizer={nativeRecognizer ?? undefined}
-      onSave={(m)=>{setMedals(cur=>[m,...cur.filter(x=>x.id!==m.id)]);void addMedalStore(m);setMedalFlow(null);setShowMedalArchive(true);}}
+      onSave={(m)=>{setMedals(cur=>sortMedals([m,...cur.filter(x=>x.id!==m.id)]));void addMedalStore(m);setMedalFlow(null);setShowMedalArchive(true);}}
       onClose={()=>setMedalFlow(null)}/>;
   }
   if(showMedalArchive){
@@ -2598,7 +2598,7 @@ function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],track=null,weightKg,age
       await onSave(Math.round(finKm*100)/100,finTime,finCad,memo,finRoute,loc,finSplits,finElev,estimateCalories(finKm,weightKg),finPaceTrack,finHrTrack,finGapTrack,
         trackMode?{lapM:Math.round(lapMRef.current),laps:lapTimesRef.current.length,lapTimes:lapTimesRef.current.slice()}:null);
       hapticSuccess(); // 저장 성공 — 완주 보상 촉각(설정 off 면 graceful no-op).
-    }catch(e){
+    }catch{
       // 저장 실패 — 예전엔 catch 가 없어 버튼만 조용히 다시 활성화되고 사용자는 이유를
       // 몰랐다. 화면·상태를 그대로 두어(스냅샷 보존) 다시 저장을 누를 수 있게 안내한다.
       Alert.alert('저장하지 못했어요','방금 달린 기록은 아직 남아 있어요 — 잠시 후 저장을 다시 눌러 주세요.');

@@ -95,5 +95,6 @@ export function hrSummary(track: HRSample[]): { avg: number; max: number } {
   const bpms = (Array.isArray(track) ? track : []).map(p => p && p.bpm).filter((b): b is number => Number.isFinite(b) && b > 0);
   if (bpms.length === 0) return { avg: 0, max: 0 };
   const avg = Math.round(bpms.reduce((a, b) => a + b, 0) / bpms.length);
-  return { avg, max: Math.round(Math.max(...bpms)) };
+  // reduce 로 최댓값 — Math.max(...bpms) 는 초대형 트랙(>~10만 표본)에서 스택 초과(RangeError).
+  return { avg, max: Math.round(bpms.reduce((m, b) => (b > m ? b : m), 0)) };
 }

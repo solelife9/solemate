@@ -126,7 +126,7 @@ export function monthBuckets(monthRuns: RunRow[], year: number, monthIndex: numb
   const out: number[] = Array(weekCount).fill(0);
   asList(monthRuns).forEach(r => {
     if (!r.run_date) return;               // run_date 결측 시 NaN 버킷으로 새어 거리 소실 방지
-    const day = new Date(r.run_date + 'T00:00:00').getDate();
+    const day = new Date(String(r.run_date).slice(0, 10) + 'T00:00:00').getDate();
     if (!Number.isFinite(day)) return;
     const b = Math.min(weekCount - 1, Math.ceil(day / 7) - 1);
     out[b] += parseFloat(r.km as string) || 0;
@@ -139,7 +139,7 @@ export function yearBuckets(yearRuns: RunRow[]): number[] {
   const out: number[] = Array(12).fill(0);
   asList(yearRuns).forEach(r => {
     if (!r.run_date) return;               // run_date 결측 시 NaN 버킷으로 새어 거리 소실 방지
-    const m = new Date(r.run_date + 'T00:00:00').getMonth();
+    const m = new Date(String(r.run_date).slice(0, 10) + 'T00:00:00').getMonth();
     if (!Number.isFinite(m)) return;
     out[m] += parseFloat(r.km as string) || 0;
   });

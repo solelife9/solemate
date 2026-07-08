@@ -54,8 +54,14 @@ export default function MedalCamera({onCapture, onCancel}: {onCapture: (uri: str
   };
 
   const fromLibrary = async () => {
-    const p = await pickShoePhoto();
-    if (p) onCapture(p.uri);
+    // pickShoePhoto 계약: 취소/거부는 null, 네이티브 런처 예외는 throw(호출부가 비차단 처리).
+    // shoot() 의 catch 와 동일 정책 — 실패해도 크래시 없이 조용히 무시(사용자 재시도).
+    try {
+      const p = await pickShoePhoto();
+      if (p) onCapture(p.uri);
+    } catch {
+      // 앨범 열기 실패 — 무시.
+    }
   };
 
   // 권한 처리 — 아직 미결정이면 요청, 거부면 안내 + 앨범 폴백.
