@@ -5,7 +5,7 @@
 // 다른 오버레이(ShoeArchiveScreen/HallOfShoes)와 동일한 셸 패턴(SafeArea + nav).
 // ============================================================================
 import React from 'react';
-import { rf, rs, ri } from './lib/responsive';
+import { rf, rs, ri, rv } from './lib/responsive';
 import {View, Text, Pressable, StyleSheet} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -52,8 +52,8 @@ export default function InjuryRiskScreen({
 
 const s = StyleSheet.create({
   screen: {flex: 1, backgroundColor: BG},
-  nav: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: rs(14), paddingTop: rs(6), paddingBottom: rs(10)},
+  nav: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: rs(14), paddingTop: rv(6), paddingBottom: rv(10)},
   iconBtn: {width: rs(36), height: rs(36), borderRadius: rs(18), alignItems: 'center', justifyContent: 'center'},
   title: {color: T1, fontFamily: FONT, fontSize: rf(19), fontWeight: '700', letterSpacing: -0.3},
-  body: {flex: 1, justifyContent: 'center', paddingHorizontal: rs(14), paddingBottom: rs(10)},
+  body: {flex: 1, justifyContent: 'center', paddingHorizontal: rs(14), paddingBottom: rv(10)},
 });

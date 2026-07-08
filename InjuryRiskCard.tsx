@@ -11,7 +11,7 @@
 //   · 분해 칩: ACWR 부하 + 신발 마모% (어느 신호가 위험을 끌어올렸는지 강조)
 // ============================================================================
 import React from 'react';
-import { rf, rs } from './lib/responsive';
+import { rf, rs, rv } from './lib/responsive';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import {
   CARD, CARD_BORDER, GOOD, WARN, DANGER, T1, T2, T3, T4,
@@ -165,7 +165,7 @@ const styles = StyleSheet.create({
     borderColor: CARD_BORDER,
     paddingVertical: SPACE.sm,
     paddingHorizontal: SPACE.md,
-    gap: rs(2),
+    gap: rv(2),
   },
   chipOn: { borderColor: withAlpha(WARN, 0.5) },
   chipLabel: { ...TYPE.caption, color: T3 },

@@ -3,7 +3,7 @@
 // (sample data removed — real summary/chart/runs are injected via props)
 // ============================================================================
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { rf, rs, ri } from './lib/responsive';
+import { rf, rs, ri, rv } from './lib/responsive';
 import { View, Text, ScrollView, FlatList, Pressable, StyleSheet, LayoutChangeEvent, TextInput, Alert, KeyboardAvoidingView, Platform, RefreshControl, Modal , Image} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -205,7 +205,7 @@ export function RunForm({
       {/* 키보드가 입력칸·저장 버튼을 가리지 않게 폼 전체를 KeyboardAvoidingView로 감싼다
           (iOS=padding, Android는 windowSoftInputMode adjustResize에 맡겨 undefined). */}
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={insets.top + 8}>
-      <ScrollView contentContainerStyle={{ padding: rs(18), paddingBottom: rs(40), gap: rs(18) }} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={{ padding: rs(18), paddingBottom: rv(40), gap: rv(18) }} keyboardShouldPersistTaps="handled">
         {/* 신발 선택 */}
         <View>
           <Text style={s.formLabel}>신발</Text>
@@ -529,22 +529,22 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'm
           )}
         </View>
       </View>
-      <ScrollView contentContainerStyle={{ padding: rs(18), paddingBottom: rs(28) }}>
+      <ScrollView contentContainerStyle={{ padding: rs(18), paddingBottom: rv(28) }}>
         {/* 신발(브랜드+모델)을 카드 없이 맨 위에 — 이 런의 '제목'처럼(사용자 요청). */}
         {shoe ? (
-          <View style={{ marginBottom: rs(14) }}>
+          <View style={{ marginBottom: rv(14) }}>
             <Text style={s.detailBrand}>{shoe.brand}</Text>
             <Text style={s.detailModel}>{shoe.model}</Text>
           </View>
         ) : (run.shoeName ? (
           // 삭제된 신발 — 목록 카드(RunCard)처럼 묘비 신발명을 제목으로 살려 런의 정체성을 보존한다.
-          <View style={{ marginBottom: rs(14) }}>
+          <View style={{ marginBottom: rv(14) }}>
             <Text style={s.detailBrand}>삭제된 신발</Text>
             <Text style={s.detailModel} numberOfLines={1}>{run.shoeName}</Text>
           </View>
         ) : null)}
         <Text style={[s.detailDate, { marginLeft: rs(7) }]}>{run.date} {run.day}요일</Text>
-        <View style={[s.baselineRow, { marginTop: rs(8), marginLeft: rs(3) }]}>
+        <View style={[s.baselineRow, { marginTop: rv(8), marginLeft: rs(3) }]}>
           <Text style={s.detailDist}>{displayNum(run.dist, unit, 2)}</Text>
           <Text style={s.detailDistU}>{unit}</Text>
         </View>
@@ -566,11 +566,11 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'm
             TRIMP, 없으면 페이스 기반 rTSS. 타임·체력 정보가 없어 산출 불가면 숨김. */}
         {effort && (
           <View
-            style={[s.card, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: rs(18), paddingVertical: rs(14), marginTop: rs(12) }]}
+            style={[s.card, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: rs(18), paddingVertical: rv(14), marginTop: rv(12) }]}
             accessible accessibilityLabel={`트레이닝 부하 ${effort.score}, ${effort.band}`}>
             <View style={{ flex: 1, paddingRight: rs(12) }}>
               <Text style={s.cardTitle}>트레이닝 부하</Text>
-              <Text style={{ color: T3, fontFamily: FONT, fontSize: rf(12), marginTop: rs(3) }}>
+              <Text style={{ color: T3, fontFamily: FONT, fontSize: rf(12), marginTop: rv(3) }}>
                 {effort.method === 'HR' ? '심박 기반 — 이 러닝의 체감 강도' : '페이스 기반 — 체력 대비 이 러닝의 강도'}
               </Text>
             </View>
@@ -592,11 +592,11 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'm
           };
           return (
             <View
-              style={[s.card, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: rs(18), paddingVertical: rs(14), marginTop: rs(12) }]}
+              style={[s.card, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: rs(18), paddingVertical: rv(14), marginTop: rv(12) }]}
               accessible accessibilityLabel={`경사 보정 페이스 GAP, 킬로미터당 ${fmtPace(gapSec)}`}>
               <View style={{ flex: 1, paddingRight: rs(12) }}>
                 <Text style={s.cardTitle}>경사 보정 페이스 (GAP)</Text>
-                <Text style={{ color: T3, fontFamily: FONT, fontSize: rf(12), marginTop: rs(3) }}>
+                <Text style={{ color: T3, fontFamily: FONT, fontSize: rf(12), marginTop: rv(3) }}>
                   {harder ? '오르막 코스 — 평지였다면 이 페이스' : '내리막 이득을 평지 기준으로 환산'}
                 </Text>
               </View>
@@ -612,7 +612,7 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'm
           const fmtT = (sec: number) => { const m = Math.floor(sec / 60); const ss = Math.round(sec % 60); return `${m}:${String(ss).padStart(2, '0')}`; };
           return (
             <View
-              style={[s.card, { paddingHorizontal: rs(18), paddingVertical: rs(16), marginTop: rs(12) }]}>
+              style={[s.card, { paddingHorizontal: rs(18), paddingVertical: rv(16), marginTop: rv(12) }]}>
               {/* accessible 붕괴 제거(2026-07-05 a11y): 카드를 한 요소로 묶으면 Z1~Z5
                   존별 체류 시간이 낭독 안 됐다. 제목·평균/최대·각 존 행이 텍스트라
                   개별 낭독되게 둔다(존 색은 Z{n} 라벨·시간 텍스트로 병기됨). */}
@@ -622,7 +622,7 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'm
                   평균 <Text style={{ color: T1, fontWeight: '700' }}>{hr.avg}</Text> · 최대 <Text style={{ color: T1, fontWeight: '700' }}>{hr.max}</Text> bpm
                 </Text>
               </View>
-              <View style={{ marginTop: rs(12), gap: rs(7) }}>
+              <View style={{ marginTop: rv(12), gap: rv(7) }}>
                 {([5, 4, 3, 2, 1] as HRZone[]).map((z) => {
                   const sec = hr.secs[z];
                   const pct = hr.total > 0 ? sec / hr.total : 0;
@@ -640,7 +640,7 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'm
               {/* TRIMP(트레이닝 부하)는 위 '트레이닝 부하' 카드가 밴드까지 붙여 보여주므로 여기선
                   중복 노출하지 않는다. 심박 존 카드는 '분포 + 평균/최대'에 집중. */}
               {!hr.rest && (
-                <Text style={{ color: T3, fontFamily: FONT, fontSize: rf(12), marginTop: rs(8) }}>마이 탭에서 안정시심박을 설정하면 심박 존이 더 정확해져요</Text>
+                <Text style={{ color: T3, fontFamily: FONT, fontSize: rf(12), marginTop: rv(8) }}>마이 탭에서 안정시심박을 설정하면 심박 존이 더 정확해져요</Text>
               )}
             </View>
           );
@@ -653,7 +653,7 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'm
           <Text style={s.runMemo} testID="run-memo">“{run.memo}”</Text>
         )}
         {/* 달린 위치(경로) 지도 — route_<id> 가 있으면 SVG 코스맵으로 표시(없으면 자동 숨김). */}
-        <CourseMap points={route} style={{ marginTop: rs(16) }} />
+        <CourseMap points={route} style={{ marginTop: rv(16) }} />
         {/* 트랙 세션이면 랩별 표(랩 · 페이스바 · km당 페이스 · 랩시간). 아니면 per-km 스플릿. */}
         {trackMeta && lapRows.length >= 1 ? (() => {
           const fmtP = (sec: number) => sec > 0 ? `${Math.floor(sec / 60)}'${String(Math.round(sec % 60)).padStart(2, '0')}"` : '--';
@@ -998,10 +998,10 @@ export default function HistoryScreen({
         renderItem={({ item }) => (
           <RunCard run={item} shoes={shoes} onPress={() => setDetail(item)} unit={unit} />
         )}
-        contentContainerStyle={{ padding: rs(14), paddingBottom: TABBAR_CLEARANCE, gap: rs(10) }}
+        contentContainerStyle={{ padding: rs(14), paddingBottom: TABBAR_CLEARANCE, gap: rv(10) }}
         refreshControl={onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={ACCENT} colors={[ACCENT]} /> : undefined}
         ListHeaderComponent={
-          <View style={{ gap: rs(10) }}>
+          <View style={{ gap: rv(10) }}>
             <SegmentedControl
               variant="neutral"
               items={PERIODS.map((p) => ({ key: p, label: p }))}
@@ -1011,20 +1011,20 @@ export default function HistoryScreen({
             {period !== '전체'
               ? (
                 <Pressable onPress={openPicker} accessibilityRole="button"
-                  style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', gap: rs(5), paddingVertical: rs(4), paddingHorizontal: rs(10) }}>
+                  style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', gap: rv(5), paddingVertical: rv(4), paddingHorizontal: rs(10) }}>
                   <Text style={{ color: T1, fontFamily: DISPLAY, fontSize: rf(17), fontWeight: '700' }}>{periodTitle}</Text>
                   <Ionicons name="chevron-down" size={ri(14)} color={T3} />
                 </Pressable>
               ) : (
-                <View style={{ paddingVertical: rs(4), paddingHorizontal: rs(10) }}>
+                <View style={{ paddingVertical: rv(4), paddingHorizontal: rs(10) }}>
                   <Text style={{ color: T1, fontFamily: DISPLAY, fontSize: rf(17), fontWeight: '700' }}>
                     {allYearKeys.length >= 2 ? `${allYearKeys[0]} — ${allYearKeys[allYearKeys.length - 1]}` : allYearKeys.length === 1 ? `${allYearKeys[0]}년` : '전체 기간'}
                   </Text>
                 </View>
               )
             }
-            <View style={[s.card, { paddingHorizontal: rs(20), paddingTop: rs(12), paddingBottom: rs(24) }]}>
-              <View style={[s.baselineRow, { marginTop: rs(0) }]}>
+            <View style={[s.card, { paddingHorizontal: rs(20), paddingTop: rv(12), paddingBottom: rv(24) }]}>
+              <View style={[s.baselineRow, { marginTop: rv(0) }]}>
                 <Text style={s.sumBigKm}>{sum.km}</Text><Text style={s.sumBigU}>{unit}</Text>
               </View>
 
@@ -1034,9 +1034,9 @@ export default function HistoryScreen({
                 <View style={s.sumMetric}><Text style={s.sumMetricV}>{sum.time}</Text><Text style={s.sumMetricL}>총 시간</Text></View>
               </View>
               {ch && ch.data.length > 0 && (
-                <View style={{ marginTop: rs(20), paddingTop: rs(20), borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.18)' }}>
+                <View style={{ marginTop: rv(20), paddingTop: rv(20), borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.18)' }}>
                   <Text style={s.cardTitle}>{ch.title}</Text>
-                  <View style={{ marginTop: rs(18) }}><PeriodChartView data={ch.data} labels={ch.labels} unit={unit} /></View>
+                  <View style={{ marginTop: rv(18) }}><PeriodChartView data={ch.data} labels={ch.labels} unit={unit} /></View>
                 </View>
               )}
             </View>
@@ -1048,13 +1048,13 @@ export default function HistoryScreen({
         ListEmptyComponent={
           runs.length === 0 ? (
             // 첫 러닝 전(전체 런 0) — 기간이 비어서가 아니라 아직 시작 안 한 것. 격려 + 추가 진입점.
-            <View style={[s.card, { padding: rs(28), alignItems: 'center', gap: rs(10) }]}>
+            <View style={[s.card, { padding: rs(28), alignItems: 'center', gap: rv(10) }]}>
               <Ionicons name="footsteps-outline" size={ri(28)} color={T3} />
               <Text style={[s.emptyHint, { color: T1, fontWeight: '700', fontSize: rf(16) }]}>아직 기록이 없어요</Text>
               <Text style={s.emptyHint}>가볍게 한 걸음부터 — 첫 러닝을 시작해보세요.{'\n'}직접 기록을 추가할 수도 있어요.</Text>
               {!!onAddRun && (
                 <Pressable onPress={() => setForm({ mode: 'add' })} accessibilityRole="button" accessibilityLabel="기록 직접 추가"
-                  style={({ pressed }) => [{ marginTop: rs(4), flexDirection: 'row', alignItems: 'center', gap: rs(5), paddingVertical: rs(8), paddingHorizontal: rs(16), borderRadius: RADIUS.pill, backgroundColor: CARD_HI }, pressed && { opacity: 0.7 }]}>
+                  style={({ pressed }) => [{ marginTop: rv(4), flexDirection: 'row', alignItems: 'center', gap: rv(5), paddingVertical: rv(8), paddingHorizontal: rs(16), borderRadius: RADIUS.pill, backgroundColor: CARD_HI }, pressed && { opacity: 0.7 }]}>
                   <Ionicons name="add" size={ri(16)} color={ACCENT} />
                   <Text style={{ color: T1, fontFamily: FONT, fontSize: rf(14), fontWeight: '600' }}>기록 추가</Text>
                 </Pressable>
@@ -1071,7 +1071,7 @@ export default function HistoryScreen({
       <Modal visible={showPicker} transparent animationType="slide" onRequestClose={() => setShowPicker(false)}>
         <Pressable style={{ flex: 1, backgroundColor: SCRIM }} onPress={() => setShowPicker(false)} />
         <View style={{ backgroundColor: CARD, borderTopLeftRadius: RADIUS.xl, borderTopRightRadius: RADIUS.xl, paddingBottom: insets.bottom + 16 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: rs(20), paddingVertical: rs(16) }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: rs(20), paddingVertical: rv(16) }}>
             <Pressable onPress={() => setShowPicker(false)} hitSlop={8}>
               <Text style={{ color: T3, fontFamily: FONT, fontSize: rf(16) }}>취소</Text>
             </Pressable>
@@ -1084,7 +1084,7 @@ export default function HistoryScreen({
           </View>
 
           {period === '주' && (
-            <View style={{ paddingHorizontal: rs(12), paddingBottom: rs(8), height: DRUM_H }}>
+            <View style={{ paddingHorizontal: rs(12), paddingBottom: rv(8), height: DRUM_H }}>
               <DrumColumn
                 items={Array.from({ length: MAX_WEEK_OFFSET + 1 }, (_, i) =>
                   i === 0 ? '이번 주' : i === 1 ? '지난 주' : `${i}주 전`
@@ -1096,7 +1096,7 @@ export default function HistoryScreen({
           )}
 
           {period === '월' && (
-            <View style={{ flexDirection: 'row', paddingHorizontal: rs(12), paddingBottom: rs(8) }}>
+            <View style={{ flexDirection: 'row', paddingHorizontal: rs(12), paddingBottom: rv(8) }}>
               <DrumColumn
                 items={PICKER_YEARS.map(y => `${y}년`)}
                 selectedIndex={Math.max(0, PICKER_YEARS.indexOf(draftYear))}
@@ -1111,7 +1111,7 @@ export default function HistoryScreen({
           )}
 
           {period === '년' && (
-            <View style={{ paddingHorizontal: rs(12), paddingBottom: rs(8), height: DRUM_H }}>
+            <View style={{ paddingHorizontal: rs(12), paddingBottom: rv(8), height: DRUM_H }}>
               <DrumColumn
                 items={[...PICKER_YEARS].reverse().map(y => `${y}년`)}
                 selectedIndex={Math.max(0, [...PICKER_YEARS].reverse().indexOf(draftYearYear))}
@@ -1131,21 +1131,21 @@ export default function HistoryScreen({
 const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: BG },
   // 공유 카드 캡처용: 화면 밖(좌측 far-off)으로 밀어 보이지 않게 하되 마운트는 유지.
-  runPhoto: { width: '100%', height: rs(200), borderRadius: rs(16), borderCurve: 'continuous', marginTop: rs(16) },
-  runMemo: { color: T2, fontFamily: FONT, fontSize: rf(15), lineHeight: rf(21), marginTop: rs(12), fontStyle: 'italic' },
+  runPhoto: { width: '100%', height: rs(200), borderRadius: rs(16), borderCurve: 'continuous', marginTop: rv(16) },
+  runMemo: { color: T2, fontFamily: FONT, fontSize: rf(15), lineHeight: rf(21), marginTop: rv(12), fontStyle: 'italic' },
   // 트랙 랩 표 — 랩번호 · 상대페이스 바 · km당 페이스 · 랩시간.
-  trackCard: { marginTop: rs(16), backgroundColor: CARD, borderRadius: RADIUS.lg, borderCurve: 'continuous', borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER, paddingHorizontal: rs(16), paddingVertical: rs(14) },
-  trackHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: rs(12) },
+  trackCard: { marginTop: rv(16), backgroundColor: CARD, borderRadius: RADIUS.lg, borderCurve: 'continuous', borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER, paddingHorizontal: rs(16), paddingVertical: rv(14) },
+  trackHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: rv(12) },
   trackTitle: { color: T1, fontFamily: DISPLAY, fontSize: rf(16), fontWeight: '700', letterSpacing: -0.2 },
   trackSub: { color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '600' },
-  lapRow: { flexDirection: 'row', alignItems: 'center', gap: rs(10), height: rs(34) },
+  lapRow: { flexDirection: 'row', alignItems: 'center', gap: rv(10), height: rs(34) },
   lapNum: { width: rs(22), color: T3, fontFamily: DISPLAY, fontSize: rf(14), fontWeight: '700', textAlign: 'center' },
   lapBarWrap: { flex: 1, height: rs(6), borderRadius: rs(3), backgroundColor: withAlpha(T1, 0.06), overflow: 'hidden' },
   lapBarFill: { height: rs(6), borderRadius: rs(3), backgroundColor: ACCENT },
   lapPace: { width: rs(78), textAlign: 'right', color: T1, fontFamily: DISPLAY, fontSize: rf(15), fontWeight: '600', fontVariant: ['tabular-nums'] },
   lapPaceU: { color: T3, fontFamily: FONT, fontSize: rf(11), fontWeight: '500' },
   lapTime: { width: rs(46), textAlign: 'right', color: T3, fontFamily: DISPLAY, fontSize: rf(14), fontWeight: '500', fontVariant: ['tabular-nums'] },
-  gpxRow: { flexDirection: 'row', alignItems: 'center', gap: rs(8), marginTop: rs(24), paddingVertical: rs(12), paddingHorizontal: rs(2), borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP },
+  gpxRow: { flexDirection: 'row', alignItems: 'center', gap: rv(8), marginTop: rv(24), paddingVertical: rv(12), paddingHorizontal: rs(2), borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP },
   gpxTxt: { color: T2, fontFamily: FONT, fontSize: rf(14), fontWeight: '600' },
   gpxHint: { color: T4, fontFamily: FONT, fontSize: rf(12), marginLeft: 'auto' },
   offscreen: { position: 'absolute', left: -10000, top: 0, opacity: 0 },
@@ -1156,31 +1156,31 @@ const s = StyleSheet.create({
   // 요약 카드(큰 거리) — 목업 기록(10)
   sumTitle: { color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '600', letterSpacing: 0.2 },
   sumBigKm: { color: T1, fontFamily: DISPLAY, fontSize: rf(42), fontWeight: '700', letterSpacing: -1, fontVariant: ['tabular-nums'], marginLeft: rs(0) },
-  sumBigU: { color: T3, fontFamily: FONT, fontSize: rf(18), fontWeight: '500', marginLeft: rs(4), paddingBottom: rs(6) },
-  sumSub: { color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '500', marginTop: rs(2) },
-  sumMetricRow: { flexDirection: 'row', justifyContent: 'flex-start', gap: rs(28), marginTop: rs(14), paddingLeft: rs(2) },
+  sumBigU: { color: T3, fontFamily: FONT, fontSize: rf(18), fontWeight: '500', marginLeft: rs(4), paddingBottom: rv(6) },
+  sumSub: { color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '500', marginTop: rv(2) },
+  sumMetricRow: { flexDirection: 'row', justifyContent: 'flex-start', gap: rv(28), marginTop: rv(14), paddingLeft: rs(2) },
   sumMetric: {},
   sumMetricV: { color: T1, fontFamily: DISPLAY, fontSize: rf(20), fontWeight: '700', letterSpacing: -0.2 },
   sumMetricU: { color: T3, fontFamily: FONT, fontSize: rf(13), fontWeight: '600' },
-  sumMetricL: { color: T3, fontFamily: FONT, fontSize: rf(13), fontWeight: '500', marginTop: rs(4), marginLeft: rs(1) },
+  sumMetricL: { color: T3, fontFamily: FONT, fontSize: rf(13), fontWeight: '500', marginTop: rv(4), marginLeft: rs(1) },
   // 개인 기록(PR, 1-3) — 2x2 그리드(최장거리/최고페이스/최장시간/최장스트릭).
-  prGrid: { flexDirection: 'row', flexWrap: 'wrap', marginTop: rs(16), rowGap: rs(18) },
+  prGrid: { flexDirection: 'row', flexWrap: 'wrap', marginTop: rv(16), rowGap: rv(18) },
   prCell: { width: '50%' },
   prV: { color: T1, fontFamily: DISPLAY, fontSize: rf(23), fontWeight: '700', letterSpacing: -0.4 },
   prU: { color: T3, fontFamily: FONT, fontSize: rf(13), fontWeight: '600', marginLeft: rs(3) },
-  prL: { color: T3, fontFamily: FONT, fontSize: rf(13), fontWeight: '500', marginTop: rs(5) },
+  prL: { color: T3, fontFamily: FONT, fontSize: rf(13), fontWeight: '500', marginTop: rv(5) },
   // 런 카드 — 목업 기록(10): 신발+날짜 + 거리·평균페이스·시간
   runCard: { backgroundColor: CARD, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER, padding: rs(18) },
-  runCardTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: rs(10), marginBottom: rs(14) },
+  runCardTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: rv(10), marginBottom: rv(14) },
   runCardBrand: { color: T3, fontFamily: DISPLAY, fontSize: rf(12), fontWeight: '500', letterSpacing: 1.2 },
-  runCardModel: { color: T1, fontFamily: DISPLAY, fontSize: rf(17), fontWeight: '700', letterSpacing: -0.2, marginTop: rs(2) },
+  runCardModel: { color: T1, fontFamily: DISPLAY, fontSize: rf(17), fontWeight: '700', letterSpacing: -0.2, marginTop: rv(2) },
   runCardDate: { color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '500', flexShrink: 0 },
   // 메트릭 3칸을 균등 1/3 폭으로 고정 — 거리 숫자 폭이 달라도 평균페이스·시간 열 위치가
   // 흔들리지 않아 카드끼리 세로로 정렬된다(사용자 요청: 자리 고정).
   runCardMetrics: { flexDirection: 'row' },
   runCardMetric: { flex: 1 },
 
-  header: { paddingTop: rs(8), paddingHorizontal: rs(22), paddingBottom: rs(6) },
+  header: { paddingTop: rv(8), paddingHorizontal: rs(22), paddingBottom: rv(6) },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   title: { color: T1, fontFamily: FONT, fontSize: rf(29), fontWeight: '500', letterSpacing: -0.8 },
 
@@ -1190,14 +1190,14 @@ const s = StyleSheet.create({
   // bar chart (right-side km gridlines · accent bars)
   chartGrid: { position: 'absolute', left: 0, right: 0 },
   chartGridLine: { position: 'absolute', left: 0, right: 42, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP },
-  chartTick: { position: 'absolute', right: 0, width: rs(42), textAlign: 'right', color: T3, fontFamily: DISPLAY, fontSize: rf(12), marginBottom: rs(-7) },
+  chartTick: { position: 'absolute', right: 0, width: rs(42), textAlign: 'right', color: T3, fontFamily: DISPLAY, fontSize: rf(12), marginBottom: rv(-7) },
   chartBars: { position: 'absolute', left: 0, right: 42, top: 0, bottom: 0, flexDirection: 'row', alignItems: 'flex-end' },
   chartBarSlot: { flex: 1, alignItems: 'center' },
   chartBar: { width: '100%', borderRadius: RADIUS.pill, backgroundColor: ACCENT },
-  chartLabels: { flexDirection: 'row', marginTop: rs(8), paddingRight: rs(42) },
+  chartLabels: { flexDirection: 'row', marginTop: rv(8), paddingRight: rs(42) },
   chartLabel: { flex: 1, textAlign: 'center', color: T3, fontFamily: FONT, fontWeight: '600' },
   chartTipWrap: { position: 'absolute', left: -26, right: -26, alignItems: 'center', zIndex: 5 },
-  chartTip: { backgroundColor: CARD_HI, borderRadius: rs(8), paddingHorizontal: rs(9), paddingVertical: rs(5), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.14) },
+  chartTip: { backgroundColor: CARD_HI, borderRadius: rs(8), paddingHorizontal: rs(9), paddingVertical: rv(5), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.14) },
   chartBarVal: { fontFamily: DISPLAY, fontSize: rf(11), fontWeight: '600', color: T3, fontVariant: ['tabular-nums'] },
   chartTipVal: { color: T1, fontFamily: DISPLAY, fontSize: rf(14), fontWeight: '600', letterSpacing: 0.2 },
   chartTipU: { color: T3, fontFamily: FONT, fontSize: rf(11), fontWeight: '500' },
@@ -1207,58 +1207,58 @@ const s = StyleSheet.create({
 
   // 콤팩트: 요약 4칸(거리/횟수/페이스/시간)의 패딩·값 폰트·여백을 줄여 세로 높이를
   // 압축한다(정보는 그대로 유지 — 라벨/값/단위 모두 렌더). 리스트가 위로 올라온다.
-  summaryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: rs(8) },
+  summaryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: rv(8) },
   summaryCell: { width: '47.5%', flexGrow: 1, backgroundColor: CARD_DIM, borderRadius: RADIUS.md, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP, padding: rs(13) },
   // 4열 요약 행(Screens Refined) — 카드 없이 헤어라인 구분.
-  sumRow: { flexDirection: 'row', marginTop: rs(6), marginBottom: rs(2) },
+  sumRow: { flexDirection: 'row', marginTop: rv(6), marginBottom: rv(2) },
   sumCell: { flex: 1, paddingHorizontal: rs(2) },
   sumCellDiv: { borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: withAlpha(T1, 0.045), paddingLeft: rs(12) },
   sumValue: { color: T1, fontFamily: DISPLAY, fontSize: rf(23), fontWeight: '500', letterSpacing: -0.4, fontVariant: ['tabular-nums'] },
   sumUnit: { color: T3, fontFamily: FONT, fontSize: rf(12), fontWeight: '500' },
-  sumLabel: { color: T3, fontFamily: FONT, fontSize: rf(12), fontWeight: '500', marginTop: rs(5) },
+  sumLabel: { color: T3, fontFamily: FONT, fontSize: rf(12), fontWeight: '500', marginTop: rv(5) },
   summaryLabel: { color: T3, fontFamily: FONT, fontSize: rf(13), fontWeight: '600', letterSpacing: 0.2 },
-  summaryValue: { color: T1, fontFamily: DISPLAY, fontSize: rf(23), letterSpacing: 0.3, marginTop: rs(2) },
-  summaryUnit: { color: T3, fontFamily: FONT, fontSize: rf(13), marginTop: rs(1) },
+  summaryValue: { color: T1, fontFamily: DISPLAY, fontSize: rf(23), letterSpacing: 0.3, marginTop: rv(2) },
+  summaryUnit: { color: T3, fontFamily: FONT, fontSize: rf(13), marginTop: rv(1) },
 
-  runRow: { flexDirection: 'row', alignItems: 'center', gap: rs(14), paddingVertical: rs(16), paddingHorizontal: rs(18) },
+  runRow: { flexDirection: 'row', alignItems: 'center', gap: rv(14), paddingVertical: rv(16), paddingHorizontal: rs(18) },
   runRowBorder: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: SEP },
   runDate: { width: rs(42), alignItems: 'center' },
   runDay: { color: T3, fontFamily: FONT, fontSize: rf(12), fontWeight: '500' },
   runDateNum: { color: T1, fontFamily: DISPLAY, fontSize: rf(18) },
-  runDivider: { width: StyleSheet.hairlineWidth, alignSelf: 'stretch', backgroundColor: SEP, marginVertical: rs(2) },
+  runDivider: { width: StyleSheet.hairlineWidth, alignSelf: 'stretch', backgroundColor: SEP, marginVertical: rv(2) },
   runBrand: { color: T3, fontFamily: FONT, fontSize: rf(11), fontWeight: '500', letterSpacing: 1.3 },
-  runModel: { color: T1, fontFamily: FONT, fontSize: rf(16), fontWeight: '500', marginTop: rs(1) },
-  runMetrics: { flexDirection: 'row', gap: rs(18), marginTop: rs(10) },
+  runModel: { color: T1, fontFamily: FONT, fontSize: rf(16), fontWeight: '500', marginTop: rv(1) },
+  runMetrics: { flexDirection: 'row', gap: rv(18), marginTop: rv(10) },
   runV: { color: T1, fontFamily: DISPLAY, fontSize: rf(21), fontWeight: '700', letterSpacing: 0.2, fontVariant: ['tabular-nums'] },
-  runU: { color: T3, fontFamily: FONT, fontSize: rf(13), marginLeft: rs(3), marginBottom: rs(1) },
+  runU: { color: T3, fontFamily: FONT, fontSize: rf(13), marginLeft: rs(3), marginBottom: rv(1) },
   // marginLeft 1 — 옵티컬 정렬: 타뷸러 숫자는 좌측 사이드베어링이 있고 한글 라벨은 꽉 차서,
   // 같은 x에서 라벨이 살짝 왼쪽으로 튀어나와 보인다(사용자 피드백 2026-07-07).
-  runML: { color: T3, fontFamily: FONT, fontSize: rf(12), fontWeight: '500', marginTop: rs(3), marginLeft: rs(1) },
+  runML: { color: T3, fontFamily: FONT, fontSize: rf(12), fontWeight: '500', marginTop: rv(3), marginLeft: rs(1) },
 
   // detail
-  nav: { paddingTop: rs(12), paddingHorizontal: rs(16), paddingBottom: rs(6) },
+  nav: { paddingTop: rv(12), paddingHorizontal: rs(16), paddingBottom: rv(6) },
   navRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  navActions: { flexDirection: 'row', alignItems: 'center', gap: rs(8) },
+  navActions: { flexDirection: 'row', alignItems: 'center', gap: rv(8) },
   iconBtn: { width: rs(38), height: rs(38), borderRadius: RADIUS.pill, backgroundColor: CARD_HI, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.12), alignItems: 'center', justifyContent: 'center' },
 
   // manual-run / edit form
   formTitle: { color: T1, fontFamily: FONT, fontSize: rf(18), fontWeight: '600' },
-  formLabel: { color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '600', marginBottom: rs(8), paddingHorizontal: rs(2) },
+  formLabel: { color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '600', marginBottom: rv(8), paddingHorizontal: rs(2) },
   formHint: { color: T3, fontFamily: FONT, fontSize: rf(14) },
-  chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: rs(8) },
-  input: { backgroundColor: CARD, borderRadius: rs(14), paddingHorizontal: rs(16), paddingVertical: rs(14), color: T1, fontFamily: FONT, fontSize: rf(16), borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
+  chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: rv(8) },
+  input: { backgroundColor: CARD, borderRadius: rs(14), paddingHorizontal: rs(16), paddingVertical: rv(14), color: T1, fontFamily: FONT, fontSize: rf(16), borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
   // 검증 실패 시 입력칸 테두리를 빨강으로 강조하고, 아래에 인라인 헬퍼텍스트를 띄운다.
   inputErr: { borderColor: DANGER, borderWidth: 1 },
-  errText: { color: DANGER, fontFamily: FONT, fontSize: rf(14), fontWeight: '500', marginTop: rs(7), paddingHorizontal: rs(2) },
+  errText: { color: DANGER, fontFamily: FONT, fontSize: rf(14), fontWeight: '500', marginTop: rv(7), paddingHorizontal: rs(2) },
   // 저장/추가 CTA 는 단일 Button 프리미티브(그라데이션·글로우·radius 토큰). 화면
   // 고유 여백만 남긴다(과거 RADIUS.md 사각 ACCENT 버튼 제거).
-  saveBtn: { marginTop: rs(6) },
+  saveBtn: { marginTop: rv(6) },
   detailDate: { color: T3, fontFamily: FONT, fontSize: rf(14) },
   detailDist: { color: T1, fontFamily: DISPLAY, fontSize: HERO.heroLg, fontWeight: '700', letterSpacing: 0.5 },
-  detailDistU: { color: T3, fontFamily: FONT, fontSize: rf(18), fontWeight: '500', marginLeft: rs(6), marginBottom: rs(8) },
+  detailDistU: { color: T3, fontFamily: FONT, fontSize: rf(18), fontWeight: '500', marginLeft: rs(6), marginBottom: rv(8) },
   detailBrand: { color: T3, fontFamily: FONT, fontSize: rf(13), fontWeight: '600', letterSpacing: 1.4 },
-  detailModel: { color: T1, fontFamily: FONT, fontSize: rf(25), fontWeight: '700', letterSpacing: -0.4, marginTop: rs(4) },
+  detailModel: { color: T1, fontFamily: FONT, fontSize: rf(25), fontWeight: '700', letterSpacing: -0.4, marginTop: rv(4) },
   // 메트릭 한 카드(디자인 11) — 2x3 그리드. 칸 레이아웃·값/단위/라벨은 StatGrid
   // 프리미티브가 책임지고(columns=3·align=left), 여기선 카드 내부 여백만 얹는다.
-  statGrid: { paddingVertical: rs(16), paddingHorizontal: GUTTER, rowGap: rs(18), marginTop: rs(16) },
+  statGrid: { paddingVertical: rv(16), paddingHorizontal: GUTTER, rowGap: rv(18), marginTop: rv(16) },
 });

@@ -12,7 +12,7 @@
 // ============================================================================
 
 import React, { useMemo, useRef, useState, useCallback } from 'react';
-import { rf, rs, ri } from './lib/responsive';
+import { rf, rs, ri, rv } from './lib/responsive';
 import {
   View, Text, Pressable, ScrollView, StyleSheet, Modal,
   LayoutChangeEvent, NativeSyntheticEvent, NativeScrollEvent, StatusBar,
@@ -426,29 +426,29 @@ export default function RunGoalScreen({
 }
 
 const s = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: BG, paddingTop: rs(54) },
+  screen: { flex: 1, backgroundColor: BG, paddingTop: rv(54) },
   nav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: rs(16), height: rs(44) },
   navIc: { width: rs(36), height: rs(36), alignItems: 'center', justifyContent: 'center' },
   navTitle: { color: T1, fontFamily: DISPLAY, fontSize: rf(17), fontWeight: '600', letterSpacing: -0.2 },
 
   // 컨테이너 표면(배경/보더/반경/패딩)은 SegmentedControl accentTint variant 가 책임진다.
   // 화면 고유 레이아웃(좌우·상단 여백)만 남긴다(과거 segBtn/On·segText/On 제거).
-  seg: { marginHorizontal: rs(22), marginTop: rs(14) },
+  seg: { marginHorizontal: rs(22), marginTop: rv(14) },
 
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: rs(22) },
   bigRow: { flexDirection: 'row', alignItems: 'flex-end' },
   bigVal: { color: T1, fontFamily: DISPLAY, fontSize: rf(104), fontWeight: '600', letterSpacing: -3, lineHeight: rf(104), includeFontPadding: false },
-  bigUnit: { color: T2, fontFamily: FONT, fontSize: rf(27), fontWeight: '600', marginLeft: rs(8), marginBottom: rs(12) },
-  estimate: { color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '500', marginTop: rs(14) },
+  bigUnit: { color: T2, fontFamily: FONT, fontSize: rf(27), fontWeight: '600', marginLeft: rs(8), marginBottom: rv(12) },
+  estimate: { color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '500', marginTop: rv(14) },
 
-  rulerWrap: { width: '100%', height: rs(78), marginTop: rs(30), position: 'relative' },
+  rulerWrap: { width: '100%', height: rs(78), marginTop: rv(30), position: 'relative' },
   tick: { position: 'absolute', bottom: 26, width: 2, borderRadius: rs(2) },
   tickMinor: { height: rs(14), backgroundColor: withAlpha(T1, 0.18) },
   tickMajor: { height: rs(26), backgroundColor: withAlpha(T1, 0.38) },
   tickLabel: { position: 'absolute', bottom: 2, width: rs(28), textAlign: 'center', color: T3, fontFamily: DISPLAY, fontSize: rf(13), fontWeight: '500' },
   pointer: { position: 'absolute', left: '50%', marginLeft: -1.5, top: 2, bottom: 24, width: rs(3), borderRadius: rs(3), backgroundColor: ACCENT },
 
-  presets: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: rs(8), marginTop: rs(26) },
+  presets: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: rv(8), marginTop: rv(26) },
   preset: { height: rs(36), paddingHorizontal: rs(16), borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(T1, 0.04), borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
   presetOn: { backgroundColor: withAlpha(ACCENT, 0.14), borderColor: withAlpha(ACCENT, 0.4) },
   presetText: { color: T2, fontFamily: DISPLAY, fontSize: rf(14), fontWeight: '600' },
@@ -456,48 +456,48 @@ const s = StyleSheet.create({
 
   // 트랙 모드 — 거리 모드와 같은 큰 숫자 위계(bigRow/bigVal/bigUnit/estimate 재사용) + 랩거리 칩.
   trackWrap: { alignItems: 'center', paddingHorizontal: rs(14) },
-  trackLbl: { color: T3, fontFamily: FONT, fontSize: rf(13), fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', marginBottom: rs(4) },
-  lapChips: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: rs(9), marginTop: rs(36) },
+  trackLbl: { color: T3, fontFamily: FONT, fontSize: rf(13), fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', marginBottom: rv(4) },
+  lapChips: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: rv(9), marginTop: rv(36) },
   lapChip: { minWidth: rs(60), height: rs(50), paddingHorizontal: rs(15), borderRadius: rs(15), borderCurve: 'continuous', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(T1, 0.03), borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
   lapChipOn: { backgroundColor: withAlpha(ACCENT, 0.13), borderColor: withAlpha(ACCENT, 0.45) },
   lapChipVal: { color: T3, fontFamily: DISPLAY, fontSize: rf(19), fontWeight: '700', letterSpacing: -0.4 },
   lapChipValOn: { color: ACCENT },
-  lapChipUnit: { color: T4, fontFamily: FONT, fontSize: rf(11), fontWeight: '600', marginTop: rs(1) },
+  lapChipUnit: { color: T4, fontFamily: FONT, fontSize: rf(11), fontWeight: '600', marginTop: rv(1) },
 
   free: { alignItems: 'center', paddingHorizontal: rs(14) },
-  freeGlyph: { width: rs(88), height: rs(88), borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(ACCENT, 0.1), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.26), marginBottom: rs(22) },
-  freeTitle: { color: T1, fontFamily: DISPLAY, fontSize: rf(25), fontWeight: '600', letterSpacing: -0.4, marginBottom: rs(10) },
+  freeGlyph: { width: rs(88), height: rs(88), borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(ACCENT, 0.1), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.26), marginBottom: rv(22) },
+  freeTitle: { color: T1, fontFamily: DISPLAY, fontSize: rf(25), fontWeight: '600', letterSpacing: -0.4, marginBottom: rv(10) },
   freeSub: { color: T3, fontFamily: FONT, fontSize: rf(15), fontWeight: '500', lineHeight: rf(21), textAlign: 'center', maxWidth: rs(250) },
 
-  foot: { paddingHorizontal: rs(22), paddingTop: rs(4), paddingBottom: rs(30) },
-  shoeSel: { flexDirection: 'row', alignItems: 'center', gap: rs(13), padding: rs(13), borderRadius: RADIUS.lg, borderCurve: 'continuous', backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER },
+  foot: { paddingHorizontal: rs(22), paddingTop: rv(4), paddingBottom: rv(30) },
+  shoeSel: { flexDirection: 'row', alignItems: 'center', gap: rv(13), padding: rs(13), borderRadius: RADIUS.lg, borderCurve: 'continuous', backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER },
   // 신발 전환 시트(하단) — History 기간 피커와 같은 문법(SCRIM + 하단 카드).
-  pickerSheet: { backgroundColor: CARD, borderTopLeftRadius: RADIUS.xl, borderTopRightRadius: RADIUS.xl, borderCurve: 'continuous', paddingHorizontal: rs(18), paddingTop: rs(18), paddingBottom: rs(34), gap: rs(10) },
+  pickerSheet: { backgroundColor: CARD, borderTopLeftRadius: RADIUS.xl, borderTopRightRadius: RADIUS.xl, borderCurve: 'continuous', paddingHorizontal: rs(18), paddingTop: rv(18), paddingBottom: rv(34), gap: rv(10) },
   // 목표 직접 입력 키패드 — 시트 규약은 pickerSheet 재사용, 키만 추가.
-  kpValRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', gap: rs(6), marginBottom: rs(6), minHeight: rs(44) },
+  kpValRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', gap: rv(6), marginBottom: rv(6), minHeight: rs(44) },
   kpVal: { color: T1, fontFamily: DISPLAY, fontSize: rf(40), fontWeight: '600', letterSpacing: -1 },
   kpValGhost: { color: T4 },
   kpUnit: { color: T3, fontFamily: FONT, fontSize: rf(17), fontWeight: '600' },
-  kpGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: rs(8) },
-  kpKey: { width: '31.5%', flexGrow: 1, alignItems: 'center', paddingVertical: rs(13), borderRadius: RADIUS.md, borderCurve: 'continuous', backgroundColor: CARD_BORDER },
+  kpGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: rv(8) },
+  kpKey: { width: '31.5%', flexGrow: 1, alignItems: 'center', paddingVertical: rv(13), borderRadius: RADIUS.md, borderCurve: 'continuous', backgroundColor: CARD_BORDER },
   kpKeyTxt: { color: T1, fontFamily: DISPLAY, fontSize: rf(22), fontWeight: '600' },
-  kpOk: { marginTop: rs(6) },
-  pickerTitle: { color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '600', letterSpacing: 0.2, marginBottom: rs(4) },
-  pickerRow: { flexDirection: 'row', alignItems: 'center', gap: rs(12), padding: rs(14), borderRadius: RADIUS.lg, borderCurve: 'continuous', backgroundColor: withAlpha(T1, 0.04), borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER },
+  kpOk: { marginTop: rv(6) },
+  pickerTitle: { color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '600', letterSpacing: 0.2, marginBottom: rv(4) },
+  pickerRow: { flexDirection: 'row', alignItems: 'center', gap: rv(12), padding: rs(14), borderRadius: RADIUS.lg, borderCurve: 'continuous', backgroundColor: withAlpha(T1, 0.04), borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER },
   pickerRowOn: { backgroundColor: withAlpha(T1, 0.09), borderColor: withAlpha(T1, 0.2) },
   pickerBrand: { color: T3, fontFamily: FONT, fontSize: rf(12), fontWeight: '600', letterSpacing: 0.6 },
-  pickerModel: { color: T1, fontFamily: FONT, fontSize: rf(17), fontWeight: '700', letterSpacing: -0.2, marginTop: rs(1) },
-  pickerMeta: { flexDirection: 'row', alignItems: 'center', gap: rs(6) },
+  pickerModel: { color: T1, fontFamily: FONT, fontSize: rf(17), fontWeight: '700', letterSpacing: -0.2, marginTop: rv(1) },
+  pickerMeta: { flexDirection: 'row', alignItems: 'center', gap: rv(6) },
   pickerRemain: { color: T2, fontFamily: FONT, fontSize: rf(14), fontWeight: '500' },
   pickerCheck: { color: T1, fontFamily: FONT, fontSize: rf(17), fontWeight: '700', marginLeft: rs(2) },
   shoeThumb: { width: rs(46), height: rs(46), borderRadius: rs(13), alignItems: 'center', justifyContent: 'center', backgroundColor: HERO_BG, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
   shoeBrand: { color: T3, fontFamily: DISPLAY, fontSize: rf(11), fontWeight: '600', letterSpacing: 1.4 },
-  shoeModel: { color: T1, fontFamily: FONT, fontSize: rf(16), fontWeight: '600', letterSpacing: -0.2, marginTop: rs(2) },
-  shoeCond: { flexDirection: 'row', alignItems: 'center', gap: rs(5), marginTop: rs(4) },
+  shoeModel: { color: T1, fontFamily: FONT, fontSize: rf(16), fontWeight: '600', letterSpacing: -0.2, marginTop: rv(2) },
+  shoeCond: { flexDirection: 'row', alignItems: 'center', gap: rv(5), marginTop: rv(4) },
   shoeDot: { width: rs(6), height: rs(6), borderRadius: 999 },
   shoeCondText: { color: T3, fontFamily: FONT, fontSize: rf(13), fontWeight: '500' },
 
   // CTA 는 단일 Button 프리미티브(그라데이션·글로우·radius 토큰). 화면 고유 레이아웃
   // (상단 여백·높이)만 style 로 넘기고 모양/그라데이션/광택은 Button 이 책임진다.
-  cta: { marginTop: rs(14), height: rs(60) },
+  cta: { marginTop: rv(14), height: rs(60) },
 });

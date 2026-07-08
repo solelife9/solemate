@@ -8,7 +8,7 @@
 // 색은 호출부가 넘긴 tierColor/rarityColor(=theme TIER_COLORS / 희귀도색)만 사용.
 // ============================================================================
 import React, {useEffect, useRef} from 'react';
-import { rf, rs, ri } from './lib/responsive';
+import { rf, rs, ri, rv } from './lib/responsive';
 import {View, Text, Pressable, StyleSheet, Animated, Easing} from 'react-native';
 import Svg, {Defs, RadialGradient, LinearGradient, Stop, Circle, Ellipse, Path} from 'react-native-svg';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
@@ -261,14 +261,14 @@ const st = StyleSheet.create({
   skipTxt: {fontSize: rf(14), fontWeight: '500', color: T3, fontFamily: FONT},
   body: {flex: 1, alignItems: 'center', justifyContent: 'center'},
 
-  eyebrow: {fontSize: rf(13), fontWeight: '700', letterSpacing: 2.6, marginBottom: rs(32), textTransform: 'uppercase', fontFamily: FONT},
-  medalwrap: {width: rs(124), height: rs(124), marginBottom: rs(30), alignItems: 'center', justifyContent: 'center'},
+  eyebrow: {fontSize: rf(13), fontWeight: '700', letterSpacing: 2.6, marginBottom: rv(32), textTransform: 'uppercase', fontFamily: FONT},
+  medalwrap: {width: rs(124), height: rs(124), marginBottom: rv(30), alignItems: 'center', justifyContent: 'center'},
   ring: {position: 'absolute', width: rs(124), height: rs(124), borderRadius: 62, borderCurve: 'continuous', borderWidth: 1},
 
-  rankfrom: {fontSize: rf(15), fontWeight: '500', color: T3, marginBottom: rs(2), fontFamily: FONT, textAlign: 'center'},
+  rankfrom: {fontSize: rf(15), fontWeight: '500', color: T3, marginBottom: rv(2), fontFamily: FONT, textAlign: 'center'},
   name: {fontSize: rf(32), fontWeight: '700', color: T1, letterSpacing: -0.6, lineHeight: rf(38), textAlign: 'center', fontFamily: DISPLAY},
   meta: {fontSize: rf(14), fontWeight: '500', color: T3, fontFamily: FONT},
-  desc: {fontSize: rf(16), color: withAlpha(T1, 0.72), lineHeight: rf(24), marginTop: rs(18), maxWidth: rs(300), textAlign: 'center', fontFamily: FONT},
+  desc: {fontSize: rf(16), color: withAlpha(T1, 0.72), lineHeight: rf(24), marginTop: rv(18), maxWidth: rs(300), textAlign: 'center', fontFamily: FONT},
   b: {color: T1, fontWeight: '700'},
 
   actions: {alignSelf: 'stretch'},

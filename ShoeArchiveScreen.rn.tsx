@@ -6,7 +6,7 @@
 // theme 토큰만. retired 플래그 토글은 onRestore(=App.retireShoe(id,false))에 위임한다.
 // ============================================================================
 import React from 'react';
-import { rf, rs, ri } from './lib/responsive';
+import { rf, rs, ri, rv } from './lib/responsive';
 import {View, Text, ScrollView, Pressable, StyleSheet} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -39,7 +39,7 @@ export default function ShoeArchiveScreen({
         <Text style={s.title}>보관함</Text>
         <View style={{width: rs(36)}} />
       </View>
-      <ScrollView contentContainerStyle={{flexGrow: 1, justifyContent: 'center', paddingHorizontal: rs(18), paddingBottom: rs(28), gap: rs(12), paddingTop: rs(6)}} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={{flexGrow: 1, justifyContent: 'center', paddingHorizontal: rs(18), paddingBottom: rv(28), gap: rv(12), paddingTop: rv(6)}} showsVerticalScrollIndicator={false}>
         <Text style={s.sub}>러닝 목록에서 숨긴 신발이에요. 복원하면 다시 러닝에 사용할 수 있어요.</Text>
         {shoes.length === 0 ? (
           <View style={s.empty} testID="shoe-archive-empty">
@@ -77,17 +77,17 @@ export default function ShoeArchiveScreen({
 
 const s = StyleSheet.create({
   screen: {flex: 1, backgroundColor: BG},
-  nav: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: rs(14), paddingTop: rs(6), paddingBottom: rs(10)},
+  nav: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: rs(14), paddingTop: rv(6), paddingBottom: rv(10)},
   iconBtn: {width: rs(36), height: rs(36), borderRadius: rs(18), alignItems: 'center', justifyContent: 'center'},
   title: {color: T1, fontFamily: FONT, fontSize: rf(19), fontWeight: '700', letterSpacing: -0.3},
-  sub: {color: T3, fontFamily: FONT, fontSize: rf(14), lineHeight: rf(18), paddingHorizontal: rs(4), marginBottom: rs(2)},
-  card: {flexDirection: 'row', alignItems: 'center', gap: rs(12), backgroundColor: CARD, borderRadius: RADIUS.lg, borderCurve: 'continuous', padding: rs(16), borderWidth: StyleSheet.hairlineWidth, borderColor: SEP},
+  sub: {color: T3, fontFamily: FONT, fontSize: rf(14), lineHeight: rf(18), paddingHorizontal: rs(4), marginBottom: rv(2)},
+  card: {flexDirection: 'row', alignItems: 'center', gap: rv(12), backgroundColor: CARD, borderRadius: RADIUS.lg, borderCurve: 'continuous', padding: rs(16), borderWidth: StyleSheet.hairlineWidth, borderColor: SEP},
   brand: {color: T3, fontFamily: FONT, fontSize: rf(13), fontWeight: '600', letterSpacing: 0.4},
-  model: {color: T1, fontFamily: FONT, fontSize: rf(18), fontWeight: '700', letterSpacing: -0.2, marginTop: rs(1)},
-  meta: {color: T2, fontFamily: FONT, fontSize: rf(14), fontWeight: '500', marginTop: rs(4)},
-  restoreBtn: {flexDirection: 'row', alignItems: 'center', gap: rs(5), paddingHorizontal: rs(14), height: rs(36), borderRadius: RADIUS.pill, backgroundColor: withAlpha(ACCENT, 0.14)},
+  model: {color: T1, fontFamily: FONT, fontSize: rf(18), fontWeight: '700', letterSpacing: -0.2, marginTop: rv(1)},
+  meta: {color: T2, fontFamily: FONT, fontSize: rf(14), fontWeight: '500', marginTop: rv(4)},
+  restoreBtn: {flexDirection: 'row', alignItems: 'center', gap: rv(5), paddingHorizontal: rs(14), height: rs(36), borderRadius: RADIUS.pill, backgroundColor: withAlpha(ACCENT, 0.14)},
   restoreText: {color: ACCENT, fontFamily: FONT, fontSize: rf(15), fontWeight: '700'},
-  empty: {alignItems: 'center', gap: rs(8), paddingVertical: rs(56), backgroundColor: CARD_HI, borderRadius: RADIUS.lg, borderCurve: 'continuous', marginTop: rs(4)},
+  empty: {alignItems: 'center', gap: rv(8), paddingVertical: rv(56), backgroundColor: CARD_HI, borderRadius: RADIUS.lg, borderCurve: 'continuous', marginTop: rv(4)},
   emptyText: {color: T2, fontFamily: FONT, fontSize: rf(16), fontWeight: '600'},
   emptySub: {color: T3, fontFamily: FONT, fontSize: rf(14)},
 });

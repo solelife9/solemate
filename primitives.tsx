@@ -6,7 +6,7 @@
 // Deps: react-native-svg, react-native-vector-icons
 // ============================================================================
 import React, {useId, useMemo, useRef, useState, useEffect, useContext} from 'react';
-import { rf, rs, ri } from './lib/responsive';
+import { rf, rs, ri, rv } from './lib/responsive';
 import {
   View,
   Text,
@@ -113,7 +113,7 @@ export function Stepper({
     },
   ];
   return (
-    <View style={[{flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: rs(14)}, style]}>
+    <View style={[{flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: rv(14)}, style]}>
       <Pressable onPress={onMinus} hitSlop={8} accessibilityRole="button"
         accessibilityLabel={minusLabel ?? `${suffix} 줄이기`} style={({pressed}) => btn(pressed)}>
         <Ionicons name="remove" size={ri(20)} color={T1} />
@@ -121,7 +121,7 @@ export function Stepper({
       {children ?? (
         <View style={{flex: 1, alignItems: 'center'}} accessible accessibilityLabel={`${value} ${suffix}`}>
           <Text style={{color: T1, fontFamily: DISPLAY, fontSize: rf(30), letterSpacing: 0.3}}>{value}</Text>
-          {!!suffix && <Text style={{color: T3, fontFamily: FONT, fontSize: rf(13), fontWeight: '600', marginTop: rs(2)}}>{suffix}</Text>}
+          {!!suffix && <Text style={{color: T3, fontFamily: FONT, fontSize: rf(13), fontWeight: '600', marginTop: rv(2)}}>{suffix}</Text>}
         </View>
       )}
       <Pressable onPress={onPlus} hitSlop={8} accessibilityRole="button"
@@ -174,7 +174,7 @@ export function Chip({
         {
           height: h, paddingHorizontal: size === 'sm' ? 12 : 15,
           borderRadius: RADIUS.pill, borderCurve: 'continuous',
-          alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: rs(6),
+          alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: rv(6),
           backgroundColor: selected ? withAlpha(ACCENT, 0.16) : CARD_HI,
           borderWidth: StyleSheet.hairlineWidth,
           borderColor: selected ? withAlpha(ACCENT, 0.55) : 'transparent',
@@ -508,11 +508,11 @@ const SEG_VARIANTS: Record<
       borderColor: CARD_BORDER,
       borderRadius: rs(13),
       padding: rs(3),
-      gap: rs(3),
+      gap: rv(3),
     },
     // 44→38: 기간 스트립이 위아래로 뚱뚱하다는 사용자 피드백(2026-07-07). 시각 높이만
     // 줄이고 실효 터치 타깃은 item hitSlop(아래 SEG_VSLOP)으로 44pt 를 유지한다(HIG).
-    item: {minHeight: rs(38), paddingVertical: rs(5), borderRadius: rs(10)},
+    item: {minHeight: rs(38), paddingVertical: rv(5), borderRadius: rs(10)},
     itemOn: {backgroundColor: withAlpha(T1, 0.09)},
     textOff: {color: T3, fontSize: rf(15), fontWeight: '500'},
     textOn: {color: T1, fontSize: rf(15), fontWeight: '700'},
@@ -524,9 +524,9 @@ const SEG_VARIANTS: Record<
       borderColor: CARD_BORDER,
       borderRadius: RADIUS.pill,
       padding: rs(4),
-      gap: rs(6),
+      gap: rv(6),
     },
-    item: {paddingVertical: rs(9), borderRadius: RADIUS.pill},
+    item: {paddingVertical: rv(9), borderRadius: RADIUS.pill},
     itemOn: {backgroundColor: CARD_HI},
     textOff: {color: T3, fontSize: rf(14), fontWeight: '700'},
     textOn: {color: T1, fontSize: rf(14), fontWeight: '700'},
@@ -538,7 +538,7 @@ const SEG_VARIANTS: Record<
       borderColor: CARD_BORDER,
       borderRadius: rs(14),
       padding: rs(4),
-      gap: rs(4),
+      gap: rv(4),
     },
     item: {height: rs(38), borderRadius: rs(10)},
     itemOn: {
@@ -554,9 +554,9 @@ const SEG_VARIANTS: Record<
       backgroundColor: CARD_DIM,
       borderRadius: RADIUS.pill,
       padding: rs(3),
-      gap: rs(2),
+      gap: rv(2),
     },
-    item: {paddingHorizontal: rs(14), paddingVertical: rs(6), borderRadius: RADIUS.pill},
+    item: {paddingHorizontal: rs(14), paddingVertical: rv(6), borderRadius: RADIUS.pill},
     itemOn: {backgroundColor: ACCENT},
     textOff: {color: T3, fontSize: rf(14), fontWeight: '600'},
     textOn: {color: T1, fontSize: rf(14), fontWeight: '600'},
@@ -841,8 +841,8 @@ const pill = StyleSheet.create({
     alignSelf: 'flex-start',
     borderRadius: RADIUS.pill,
   },
-  sm: {gap: SPACE.xs, paddingHorizontal: SPACE.sm, paddingVertical: rs(3)},
-  md: {gap: rs(5), paddingHorizontal: rs(11), paddingVertical: rs(5)},
+  sm: {gap: SPACE.xs, paddingHorizontal: SPACE.sm, paddingVertical: rv(3)},
+  md: {gap: rv(5), paddingHorizontal: rs(11), paddingVertical: rv(5)},
   label: {fontFamily: FONT, fontWeight: '700', letterSpacing: 0.2},
 });
 
@@ -911,11 +911,11 @@ const injury = StyleSheet.create({
   banner: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: rs(9),
+    gap: rv(9),
     borderRadius: RADIUS.md,
     borderWidth: StyleSheet.hairlineWidth,
     paddingHorizontal: SPACE.lg,
-    paddingVertical: rs(12),
+    paddingVertical: rv(12),
   },
   text: {
     flex: 1,
@@ -1258,7 +1258,7 @@ const t = StyleSheet.create({
   // 독을 화면 좌우에서 띄워(40dp) 폭을 줄인다 — 프로토타입과 동일.
   // absolute 하단 고정: 콘텐츠가 독 '밑으로' 스크롤되어 유리 너머로 비친다(진짜 글래스).
   // 각 탭 화면은 TABBAR_CLEARANCE 만큼 스크롤 하단 여백을 확보한다.
-  wrap: {position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: rs(40), paddingTop: rs(6)},
+  wrap: {position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: rs(40), paddingTop: rv(6)},
   dock: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1285,7 +1285,7 @@ const t = StyleSheet.create({
     position: 'absolute',
     top: '50%',
     height: rs(50),
-    marginTop: rs(-25),            // 세로 정중앙(translateY(-50%) 대응)
+    marginTop: rv(-25),            // 세로 정중앙(translateY(-50%) 대응)
     borderRadius: RADIUS.pill,
     // 활성 하이라이트 강화(0.15→0.24) — 비활성 아이콘이 밝아진 만큼 활성 탭을 또렷이.
     backgroundColor: 'rgba(255,255,255,0.24)',

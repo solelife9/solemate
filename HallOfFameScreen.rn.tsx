@@ -14,7 +14,7 @@
 // 토큰만 사용(theme.ts) — 색/폰트/간격 하드코딩 0. 티어 색은 TIER_COLORS 권위.
 // ============================================================================
 import React, {useEffect, useState} from 'react';
-import { rf, rs, ri } from './lib/responsive';
+import { rf, rs, ri, rv } from './lib/responsive';
 import {
   View,
   Text,
@@ -250,7 +250,7 @@ export default function HallOfFameScreen({
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{gap: rs(8), paddingRight: rs(8)}}>
+          contentContainerStyle={{gap: rv(8), paddingRight: rs(8)}}>
           {CATEGORIES.map(c => {
             const active = category === c.key;
             return (
@@ -300,7 +300,7 @@ export default function HallOfFameScreen({
             <ActivityIndicator color={ACCENT} />
           </View>
         ) : lbAvailable && entries.length > 0 ? (
-          <View style={{gap: rs(8)}} testID="hof-leaderboard">
+          <View style={{gap: rv(8)}} testID="hof-leaderboard">
             {entries.map(e => renderRow(e, e.uid === myUid))}
           </View>
         ) : (
@@ -345,19 +345,19 @@ const s = StyleSheet.create({
     fontSize: rf(13),
     fontWeight: '600',
     textAlign: 'center',
-    marginTop: rs(-8),
+    marginTop: rv(-8),
   },
   // 카테고리 칩
   catChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: rs(6),
+    gap: rv(6),
     backgroundColor: CARD,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: SEP,
     borderRadius: RADIUS.pill,
     paddingHorizontal: rs(13),
-    paddingVertical: rs(8),
+    paddingVertical: rv(8),
   },
   catChipTxt: {fontFamily: FONT, color: T3, fontSize: rf(14), fontWeight: '700'},
   // 내 순위 카드
@@ -378,10 +378,10 @@ const s = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: -0.6,
     fontVariant: ['tabular-nums'],
-    marginTop: rs(2),
+    marginTop: rv(2),
   },
   myTotal: {fontFamily: FONT, color: T3, fontSize: rf(15), fontWeight: '700'},
-  myPct: {fontFamily: FONT, color: ACCENT, fontSize: rf(14), fontWeight: '700', marginTop: rs(2)},
+  myPct: {fontFamily: FONT, color: ACCENT, fontSize: rf(14), fontWeight: '700', marginTop: rv(2)},
   myScore: {
     fontFamily: DISPLAY,
     color: T1,
@@ -400,20 +400,20 @@ const s = StyleSheet.create({
     borderColor: SEP,
     borderRadius: RADIUS.md,
     paddingHorizontal: SPACE.lg,
-    paddingVertical: rs(13),
+    paddingVertical: rv(13),
   },
   hintTxt: {flex: 1, fontFamily: FONT, color: T2, fontSize: rf(14), fontWeight: '600'},
   // 리더보드 행
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: rs(10),
+    gap: rv(10),
     backgroundColor: CARD,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: SEP,
     borderRadius: RADIUS.md,
     paddingHorizontal: rs(13),
-    paddingVertical: rs(12),
+    paddingVertical: rv(12),
   },
   rankCol: {width: rs(30), alignItems: 'center'},
   rankNum: {
@@ -431,8 +431,8 @@ const s = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     borderRadius: RADIUS.pill,
     paddingHorizontal: rs(8),
-    paddingVertical: rs(2),
-    marginTop: rs(4),
+    paddingVertical: rv(2),
+    marginTop: rv(4),
     maxWidth: '100%',
   },
   titlePillTxt: {fontFamily: FONT, fontSize: rf(12), fontWeight: '700', flexShrink: 1},
@@ -445,8 +445,8 @@ const s = StyleSheet.create({
     fontVariant: ['tabular-nums'],
   },
   // 상태
-  center: {paddingVertical: rs(48), alignItems: 'center'},
-  empty: {alignItems: 'center', gap: rs(8), paddingVertical: rs(40), paddingHorizontal: GUTTER},
-  emptyTitle: {fontFamily: DISPLAY, color: T1, fontSize: rf(17), fontWeight: '700', marginTop: rs(4)},
+  center: {paddingVertical: rv(48), alignItems: 'center'},
+  empty: {alignItems: 'center', gap: rv(8), paddingVertical: rv(40), paddingHorizontal: GUTTER},
+  emptyTitle: {fontFamily: DISPLAY, color: T1, fontSize: rf(17), fontWeight: '700', marginTop: rv(4)},
   emptyTxt: {fontFamily: FONT, color: T3, fontSize: rf(14), fontWeight: '600', lineHeight: rf(18), textAlign: 'center'},
 });

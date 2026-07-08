@@ -5,7 +5,7 @@
 // 선택 폴백도 제공. 색은 theme 토큰만.
 // ============================================================================
 import React, {useRef, useState} from 'react';
-import { rf, rs, ri } from './lib/responsive';
+import { rf, rs, ri, rv } from './lib/responsive';
 import {View, Text, Pressable, StyleSheet, useWindowDimensions, ActivityIndicator} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -121,11 +121,11 @@ const c = StyleSheet.create({
   libBtn: {width: rs(48), height: rs(48), borderRadius: 999, backgroundColor: 'rgba(0,0,0,0.35)', alignItems: 'center', justifyContent: 'center'},
   shutterWrap: {width: rs(76), height: rs(76), borderRadius: 999, borderWidth: 4, borderColor: withAlpha(T1, 0.4), alignItems: 'center', justifyContent: 'center'},
   shutter: {width: rs(60), height: rs(60), borderRadius: 999, backgroundColor: T1, alignItems: 'center', justifyContent: 'center'},
-  permBox: {flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: rs(40), gap: rs(10)},
-  permT: {color: T2, fontFamily: 'PretendardVariable', fontSize: rf(17), fontWeight: '600', marginTop: rs(8)},
-  permD: {color: T3, fontFamily: 'PretendardVariable', fontSize: rf(14), textAlign: 'center', lineHeight: rf(19), marginBottom: rs(8)},
-  permBtn: {marginTop: rs(6), paddingVertical: rs(12), paddingHorizontal: rs(24), borderRadius: rs(12), backgroundColor: withAlpha(HALL_GOLD, 0.16), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(HALL_GOLD, 0.4)},
+  permBox: {flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: rs(40), gap: rv(10)},
+  permT: {color: T2, fontFamily: 'PretendardVariable', fontSize: rf(17), fontWeight: '600', marginTop: rv(8)},
+  permD: {color: T3, fontFamily: 'PretendardVariable', fontSize: rf(14), textAlign: 'center', lineHeight: rf(19), marginBottom: rv(8)},
+  permBtn: {marginTop: rv(6), paddingVertical: rv(12), paddingHorizontal: rs(24), borderRadius: rs(12), backgroundColor: withAlpha(HALL_GOLD, 0.16), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(HALL_GOLD, 0.4)},
   permBtnT: {color: HALL_GOLD, fontFamily: 'PretendardVariable', fontSize: rf(15), fontWeight: '700'},
-  permGhost: {paddingVertical: rs(10)},
+  permGhost: {paddingVertical: rv(10)},
   permGhostT: {color: T3, fontFamily: 'PretendardVariable', fontSize: rf(14)},
 });

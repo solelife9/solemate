@@ -1,5 +1,5 @@
 import React, {useState, useEffect, useRef, useMemo, useCallback} from 'react';
-import { rf, rs, ri } from './lib/responsive';
+import { rf, rs, ri, rv } from './lib/responsive';
 import {
   View, Text, StyleSheet, TouchableOpacity, TextInput, Alert, StatusBar,
   Linking, AppState,
@@ -2011,7 +2011,7 @@ function BootSkeleton(){
       <SkelBlock h={150} style={{borderRadius: rs(20), borderCurve: 'continuous'}}/>
       <View style={{height: rs(16)}}/>
       {/* 주간 통계 3칸 */}
-      <View style={{flexDirection:'row',gap: rs(10)}}>
+      <View style={{flexDirection:'row',gap: rv(10)}}>
         <SkelBlock h={64} w={'31%'as any}/>
         <SkelBlock h={64} w={'31%'as any}/>
         <SkelBlock h={64} w={'31%'as any}/>
@@ -2043,15 +2043,15 @@ function BootError({onRetry}:{onRetry:()=>void}){
 }
 
 const boot=StyleSheet.create({
-  screen:{flex:1,backgroundColor:BG,paddingHorizontal: rs(18),paddingTop: rs(12)},
-  card:{backgroundColor:CARD,borderRadius: rs(20), borderCurve: 'continuous',padding: rs(24),alignItems:'center',gap: rs(12),
+  screen:{flex:1,backgroundColor:BG,paddingHorizontal: rs(18),paddingTop: rv(12)},
+  card:{backgroundColor:CARD,borderRadius: rs(20), borderCurve: 'continuous',padding: rs(24),alignItems:'center',gap: rv(12),
     borderWidth:StyleSheet.hairlineWidth,borderColor:SEP},
-  cardTitle:{color:T1,fontFamily:FP,fontSize: rf(19),fontWeight:'700',marginTop: rs(4)},
+  cardTitle:{color:T1,fontFamily:FP,fontSize: rf(19),fontWeight:'700',marginTop: rv(4)},
   cardBody:{color:T3,fontFamily:FP,fontSize: rf(15),lineHeight: rf(20),textAlign:'center'},
   loadingCaption:{color:T3,fontFamily:FP,fontSize: rf(14),lineHeight: rf(19)},
   // 단일 Button 프리미티브로 라우팅 — 모서리/그라데이션/글로우는 Button 이 책임진다.
   // 여기선 레이아웃(가로 stretch + 위 여백)만 얹는다.
-  retryBtn:{marginTop: rs(8),alignSelf:'stretch'},
+  retryBtn:{marginTop: rv(8),alignSelf:'stretch'},
 });
 
 // ─── Live run screen (GPS / sensors / TTS engine + handoff Ring UI) ─────────
@@ -2726,42 +2726,42 @@ function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],track=null,weightKg,age
 const run=StyleSheet.create({
   screen:{flex:1,backgroundColor:BG,paddingHorizontal: rs(22)},
   top:{flexDirection:'row',alignItems:'center',justifyContent:'space-between'},
-  liveRow:{flexDirection:'row',alignItems:'center',gap: rs(7)},
+  liveRow:{flexDirection:'row',alignItems:'center',gap: rv(7)},
   liveDot:{width: rs(8),height: rs(8),borderRadius:999},
   liveText:{fontFamily:FP,fontSize: rf(15),fontWeight:'500',letterSpacing:0.3},
-  shoeChip:{flexDirection:'row',alignItems:'center',gap: rs(7),height: rs(30),paddingHorizontal: rs(12),borderRadius:999,backgroundColor:SURFACE},
+  shoeChip:{flexDirection:'row',alignItems:'center',gap: rv(7),height: rs(30),paddingHorizontal: rs(12),borderRadius:999,backgroundColor:SURFACE},
   shoeChipText:{color:T3,fontFamily:FH,fontSize: rf(14),fontWeight:'600'},
-  gpsRow:{flexDirection:'row',alignItems:'center',marginTop: rs(8)},
+  gpsRow:{flexDirection:'row',alignItems:'center',marginTop: rv(8)},
   gpsText:{color:T3,fontFamily:FP,fontSize: rf(14),fontWeight:'600'},
-  banner:{flexDirection:'row',alignItems:'center',gap: rs(8),marginTop: rs(10),paddingVertical: rs(10),paddingHorizontal: rs(12),borderRadius: rs(12),borderWidth:StyleSheet.hairlineWidth},
+  banner:{flexDirection:'row',alignItems:'center',gap: rv(8),marginTop: rv(10),paddingVertical: rv(10),paddingHorizontal: rs(12),borderRadius: rs(12),borderWidth:StyleSheet.hairlineWidth},
   bannerWarn:{backgroundColor:withAlpha(WARN,0.12),borderColor:WARN},
   bannerDanger:{backgroundColor:withAlpha(DANGER,0.14),borderColor:DANGER},
   bannerText:{flex:1,color:T1,fontFamily:FP,fontSize: rf(14),fontWeight:'500',lineHeight: rf(17)},
   body:{flex:1,alignItems:'center',justifyContent:'center'},
   goalText:{color:T3,fontFamily:FP,fontSize: rf(13),fontWeight:'500',letterSpacing:1},
-  bigDist:{color:T1,fontFamily:FH,fontSize: rf(84),letterSpacing:1,marginTop: rs(6)},
-  bigUnit:{color:T3,fontFamily:FP,fontSize: rf(15),fontWeight:'600',marginTop: rs(2)},
-  metrics:{flexDirection:'row',marginHorizontal: rs(-4),paddingVertical: rs(14),paddingBottom: rs(24),borderTopWidth:StyleSheet.hairlineWidth,borderTopColor:SEP},
-  metric:{flex:1,alignItems:'center',gap: rs(4)},
+  bigDist:{color:T1,fontFamily:FH,fontSize: rf(84),letterSpacing:1,marginTop: rv(6)},
+  bigUnit:{color:T3,fontFamily:FP,fontSize: rf(15),fontWeight:'600',marginTop: rv(2)},
+  metrics:{flexDirection:'row',marginHorizontal: rs(-4),paddingVertical: rv(14),paddingBottom: rv(24),borderTopWidth:StyleSheet.hairlineWidth,borderTopColor:SEP},
+  metric:{flex:1,alignItems:'center',gap: rv(4)},
   // 5지표 그리드(시간/페이스/케이던스/칼로리/고도) — 3열로 흘러 2행(3+2).
-  metricsGrid:{flexDirection:'row',flexWrap:'wrap',paddingTop: rs(14),paddingBottom: rs(20),borderTopWidth:StyleSheet.hairlineWidth,borderTopColor:SEP},
-  metricCell:{width:'33.33%',alignItems:'center',gap: rs(4),paddingVertical: rs(8)},
+  metricsGrid:{flexDirection:'row',flexWrap:'wrap',paddingTop: rv(14),paddingBottom: rv(20),borderTopWidth:StyleSheet.hairlineWidth,borderTopColor:SEP},
+  metricCell:{width:'33.33%',alignItems:'center',gap: rv(4),paddingVertical: rv(8)},
   metricVRow:{flexDirection:'row',alignItems:'flex-end'},
   metricV:{color:T1,fontFamily:FH,fontSize: rf(26),letterSpacing:0.3},
-  metricU:{color:T3,fontFamily:FP,fontSize: rf(12),marginBottom: rs(3)},
+  metricU:{color:T3,fontFamily:FP,fontSize: rf(12),marginBottom: rv(3)},
   metricL:{color:T3,fontFamily:FP,fontSize: rf(13),fontWeight:'600'},
   // 러닝 중 메트릭 위계 — 시간·페이스 hero(큰) + 케이던스·칼로리·고도 sub(작은).
-  heroMetrics:{flexDirection:'row',paddingVertical: rs(16),borderTopWidth:StyleSheet.hairlineWidth,borderTopColor:SEP},
+  heroMetrics:{flexDirection:'row',paddingVertical: rv(16),borderTopWidth:StyleSheet.hairlineWidth,borderTopColor:SEP},
   hm:{flex:1,alignItems:'center'},
   hmV:{fontFamily:FH,fontSize: rf(34),fontWeight:'600',color:T1,letterSpacing:-1},
-  hmL:{color:T3,fontFamily:FP,fontSize: rf(13),fontWeight:'500',marginTop: rs(5)},
-  subMetrics:{flexDirection:'row',justifyContent:'space-around',paddingVertical: rs(12)},
+  hmL:{color:T3,fontFamily:FP,fontSize: rf(13),fontWeight:'500',marginTop: rv(5)},
+  subMetrics:{flexDirection:'row',justifyContent:'space-around',paddingVertical: rv(12)},
   smV:{fontFamily:FH,fontSize: rf(16),fontWeight:'500',color:T2,textAlign:'center'},
-  smL:{color:T3,fontFamily:FP,fontSize: rf(11),fontWeight:'500',marginTop: rs(3),textAlign:'center'},
-  controls:{flexDirection:'row',alignItems:'flex-start',justifyContent:'center',gap: rs(40),paddingTop: rs(4),paddingBottom: rs(8)},
+  smL:{color:T3,fontFamily:FP,fontSize: rf(11),fontWeight:'500',marginTop: rv(3),textAlign:'center'},
+  controls:{flexDirection:'row',alignItems:'flex-start',justifyContent:'center',gap: rv(40),paddingTop: rv(4),paddingBottom: rv(8)},
   ctrlHint:{color:T3,fontFamily:FP,fontSize: rf(12),letterSpacing:0.5,textAlign:'center'},
-  memo:{backgroundColor:SURFACE,borderRadius: rs(14),padding: rs(14),color:T1,fontSize: rf(16),fontFamily:FP,marginBottom: rs(16)},
-  actionRow:{flexDirection:'row',gap: rs(12)},
+  memo:{backgroundColor:SURFACE,borderRadius: rs(14),padding: rs(14),color:T1,fontSize: rf(16),fontFamily:FP,marginBottom: rv(16)},
+  actionRow:{flexDirection:'row',gap: rv(12)},
   // 버리기는 SURFACE flat 보조 버튼 — 모서리는 saveBtn(단일 Button=RADIUS.btn)과 맞춰 통일.
   discardBtn:{flex:1,backgroundColor:SURFACE,borderRadius:RADIUS.btn,padding: rs(16),alignItems:'center'},
   discardTxt:{color:T1,fontSize: rf(17),fontFamily:FP,fontWeight:'600'},

@@ -14,7 +14,7 @@
 // ============================================================================
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { rf, rs, ri } from './lib/responsive';
+import { rf, rs, ri, rv } from './lib/responsive';
 import { View, Text, Pressable, StyleSheet, Animated, Easing, StatusBar, LayoutAnimation, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -405,13 +405,13 @@ export default function RunActiveScreen({
       {/* controls */}
       <View style={r.controls}>
         {!paused ? (
-          <View style={{ alignItems: 'center', gap: rs(9) }}>
+          <View style={{ alignItems: 'center', gap: rv(9) }}>
             <Pressable onPress={pauseRun} accessibilityRole="button" accessibilityLabel="일시정지" style={({ pressed }) => [r.cPrimary, pressed && { opacity: 0.85 }]}><GlassEdge radius={44} /><Ionicons name="pause" size={ri(36)} color={T1} /></Pressable>
             <Text style={r.ctrlHint}>일시정지</Text>
           </View>
         ) : (
           <>
-            <View style={{ alignItems: 'center', gap: rs(9) }}>
+            <View style={{ alignItems: 'center', gap: rv(9) }}>
               {/* 홀드 진행 링: 길게 누르는 동안 DANGER 호가 채워져 '얼마나 더 눌러야
                   종료되는지'를 시각으로 보여준다(실수 종료 방지). */}
               <View style={r.cStopWrap}>
@@ -431,7 +431,7 @@ export default function RunActiveScreen({
               </View>
               <Text style={r.ctrlHint}>길게 눌러 종료</Text>
             </View>
-            <View style={{ alignItems: 'center', gap: rs(9) }}>
+            <View style={{ alignItems: 'center', gap: rv(9) }}>
               <Pressable onPress={resumeRun} accessibilityRole="button" accessibilityLabel="재개" style={({ pressed }) => [r.cResume, pressed && { opacity: 0.85 }]}><GlassEdge radius={38} /><Ionicons name="play" size={ri(32)} color={T1} /></Pressable>
               <Text style={r.ctrlHint}>재개</Text>
             </View>
@@ -473,89 +473,89 @@ export default function RunActiveScreen({
 const r = StyleSheet.create({
   screen: { flex: 1, backgroundColor: BG, paddingHorizontal: rs(24) },
   // 일시정지 상단 지도 패널(위 절반) — 둥근 카드, 탭하면 전체화면. flex:1 로 상단을 채운다.
-  mapPanel: { borderRadius: rs(20), borderCurve: 'continuous', overflow: 'hidden', marginTop: rs(6), marginBottom: rs(14), backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
+  mapPanel: { borderRadius: rs(20), borderCurve: 'continuous', overflow: 'hidden', marginTop: rv(6), marginBottom: rv(14), backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
   // 패널 우하단 '전체화면' 힌트 배지.
   mapExpandBadge: { position: 'absolute', right: 12, bottom: 12, width: rs(32), height: rs(32), borderRadius: rs(16), backgroundColor: 'rgba(0,0,0,0.55)', alignItems: 'center', justifyContent: 'center', borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.2) },
   // 전체화면 지도 하단 중앙 버튼 행 — 구석 대신 가운데, 위로 올려 잘 눌리게.
-  mapBtnRow: { position: 'absolute', left: 0, right: 0, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: rs(20), zIndex: 20, elevation: 8 },
+  mapBtnRow: { position: 'absolute', left: 0, right: 0, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: rv(20), zIndex: 20, elevation: 8 },
   // 큰 원형 아이콘 버튼(라벨 없음). zIndex/elevation 으로 네이티브 지도 위에서 확실히 탭.
   mapBtn: { width: rs(60), height: rs(60), borderRadius: rs(30), backgroundColor: 'rgba(0,0,0,0.65)', alignItems: 'center', justifyContent: 'center', borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.3), zIndex: 20, elevation: 8 },
 
   // 목표 달성 토스트 — 오렌지 판 대신 어두운 유리 막(투명 통일). 축하의 오렌지는 체크
   // 아이콘(포인트 컬러=강조 요소에만)이 담당한다.
-  toast: { position: 'absolute', left: 18, right: 18, top: 50, zIndex: 20, flexDirection: 'row', alignItems: 'center', gap: rs(12), paddingVertical: rs(13), paddingHorizontal: rs(15), borderRadius: rs(16), borderCurve: 'continuous', backgroundColor: 'rgba(28,28,30,0.94)', borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.16) },
+  toast: { position: 'absolute', left: 18, right: 18, top: 50, zIndex: 20, flexDirection: 'row', alignItems: 'center', gap: rv(12), paddingVertical: rv(13), paddingHorizontal: rs(15), borderRadius: rs(16), borderCurve: 'continuous', backgroundColor: 'rgba(28,28,30,0.94)', borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.16) },
   toastTick: { width: rs(34), height: rs(34), borderRadius: 999, backgroundColor: withAlpha(ACCENT, 0.2), alignItems: 'center', justifyContent: 'center' },
   toastA: { color: T1, fontFamily: FONT, fontSize: rf(16), fontWeight: '700', letterSpacing: -0.2 },
-  toastB: { color: withAlpha(T1, 0.88), fontFamily: FONT, fontSize: rf(13), fontWeight: '500', marginTop: rs(2) },
+  toastB: { color: withAlpha(T1, 0.88), fontFamily: FONT, fontSize: rf(13), fontWeight: '500', marginTop: rv(2) },
 
   top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  live: { flexDirection: 'row', alignItems: 'center', gap: rs(7) },
+  live: { flexDirection: 'row', alignItems: 'center', gap: rv(7) },
   liveDot: { width: rs(8), height: rs(8), borderRadius: 999, backgroundColor: ACCENT },
   liveText: { color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '500', letterSpacing: 0.2 },
-  shoeChip: { flexDirection: 'row', alignItems: 'center', gap: rs(7), backgroundColor: CARD, borderRadius: 999, paddingHorizontal: rs(12), height: rs(30), borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
+  shoeChip: { flexDirection: 'row', alignItems: 'center', gap: rv(7), backgroundColor: CARD, borderRadius: 999, paddingHorizontal: rs(12), height: rs(30), borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
   shoeText: { color: T3, fontFamily: DISPLAY, fontSize: rf(14), fontWeight: '600' },
 
-  gpsRow: { flexDirection: 'row', alignItems: 'center', gap: rs(8), marginTop: rs(14), justifyContent: 'center' },
+  gpsRow: { flexDirection: 'row', alignItems: 'center', gap: rv(8), marginTop: rv(14), justifyContent: 'center' },
   gpsLabel: { fontFamily: FONT, fontSize: rf(14), fontWeight: '600' },
 
-  permBanner: { flexDirection: 'row', alignItems: 'center', gap: rs(8), marginTop: rs(12), paddingVertical: rs(10), paddingHorizontal: rs(12), borderRadius: rs(12), borderWidth: StyleSheet.hairlineWidth, borderColor: DANGER, backgroundColor: withAlpha(DANGER, 0.14) },
+  permBanner: { flexDirection: 'row', alignItems: 'center', gap: rv(8), marginTop: rv(12), paddingVertical: rv(10), paddingHorizontal: rs(12), borderRadius: rs(12), borderWidth: StyleSheet.hairlineWidth, borderColor: DANGER, backgroundColor: withAlpha(DANGER, 0.14) },
   permBannerText: { flex: 1, color: T1, fontFamily: FONT, fontSize: rf(14), fontWeight: '500', lineHeight: rf(17) },
 
-  ringWrap: { alignItems: 'center', marginTop: rs(26) },
+  ringWrap: { alignItems: 'center', marginTop: rv(26) },
   // 일시정지: 링을 살짝 위로 당기고(marginTop↓) 아래 시각 여백을 조금 회수(marginBottom-)해
   // 서브 지표가 들어설 공간을 낸다. 스케일이 0.92로 완만하므로 마진도 완만하게(겹침 방지).
-  ringWrapPaused: { marginTop: rs(8), marginBottom: rs(-14) },
-  goal: { color: withAlpha(T1, 0.62), fontFamily: FONT, fontSize: rf(16), fontWeight: '700', letterSpacing: 1.2, marginTop: rs(14) },
-  goalMet: { flexDirection: 'row', alignItems: 'center', gap: rs(5), marginTop: rs(14) },
+  ringWrapPaused: { marginTop: rv(8), marginBottom: rv(-14) },
+  goal: { color: withAlpha(T1, 0.62), fontFamily: FONT, fontSize: rf(16), fontWeight: '700', letterSpacing: 1.2, marginTop: rv(14) },
+  goalMet: { flexDirection: 'row', alignItems: 'center', gap: rv(5), marginTop: rv(14) },
   goalMetText: { color: GOOD, fontFamily: FONT, fontSize: rf(16), fontWeight: '700', letterSpacing: 0.6 },
   bigDist: { color: T1, fontFamily: DISPLAY, fontSize: rf(104), fontWeight: '500', letterSpacing: -4, lineHeight: rf(106), includeFontPadding: false, fontVariant: ['tabular-nums'] },
-  bigUnit: { color: withAlpha(T1, 0.62), fontFamily: FONT, fontSize: rf(16), fontWeight: '600', letterSpacing: 0.8, marginTop: rs(16) },
+  bigUnit: { color: withAlpha(T1, 0.62), fontFamily: FONT, fontSize: rf(16), fontWeight: '600', letterSpacing: 0.8, marginTop: rv(16) },
   // 일시정지 하단 헤드 — 링 없이 거리 히어로 + 목표를, 지도 위·하단 지표 위에 얹는다.
-  pausedHead: { alignItems: 'center', marginBottom: rs(8) },
+  pausedHead: { alignItems: 'center', marginBottom: rv(8) },
   pausedDistRow: { flexDirection: 'row', alignItems: 'flex-end' },
   pausedDist: { color: T1, fontFamily: DISPLAY, fontSize: rf(56), fontWeight: '600', letterSpacing: -2, lineHeight: rf(58), includeFontPadding: false, fontVariant: ['tabular-nums'] },
-  pausedDistUnit: { color: withAlpha(T1, 0.55), fontFamily: FONT, fontSize: rf(16), fontWeight: '700', marginLeft: rs(6), marginBottom: rs(8) },
-  pausedGoal: { color: withAlpha(T1, 0.62), fontFamily: FONT, fontSize: rf(14), fontWeight: '700', letterSpacing: 0.8, marginTop: rs(8) },
+  pausedDistUnit: { color: withAlpha(T1, 0.55), fontFamily: FONT, fontSize: rf(16), fontWeight: '700', marginLeft: rs(6), marginBottom: rv(8) },
+  pausedGoal: { color: withAlpha(T1, 0.62), fontFamily: FONT, fontSize: rf(14), fontWeight: '700', letterSpacing: 0.8, marginTop: rv(8) },
   // 트랙 링 센터 — 바퀴수 하나만 히어로, 그 밑 작은 '바퀴'.
   lapHero: { color: T1, fontFamily: DISPLAY, fontSize: rf(96), fontWeight: '700', letterSpacing: -3, lineHeight: rf(96), includeFontPadding: false, fontVariant: ['tabular-nums'] },
-  lapHeroUnit: { color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '500', letterSpacing: 0.6, marginTop: rs(6) },
+  lapHeroUnit: { color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '500', letterSpacing: 0.6, marginTop: rv(6) },
   // 링 아래 회색 한 줄(거리 · 랩거리 · 보정) — 박스·색 없이 조용히.
-  trackUnder: { color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '500', textAlign: 'center', marginTop: rs(16), fontVariant: ['tabular-nums'] },
+  trackUnder: { color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '500', textAlign: 'center', marginTop: rv(16), fontVariant: ['tabular-nums'] },
   trackUnderStrong: { color: T1, fontFamily: DISPLAY, fontWeight: '700' },
   trackUnderCk: { color: ACCENT_2, fontWeight: '600' },
   // 지난 랩 한 줄 — 라벨 회색 + 랩번호(T4)/구간시간(T2), 박스 없음.
-  recent: { flexDirection: 'row', alignItems: 'center', gap: rs(14), marginTop: rs(16), paddingHorizontal: rs(2) },
+  recent: { flexDirection: 'row', alignItems: 'center', gap: rv(14), marginTop: rv(16), paddingHorizontal: rs(2) },
   recentK: { color: T3, fontFamily: FONT, fontSize: rf(12), fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase' },
   recentV: { color: T2, fontFamily: DISPLAY, fontSize: rf(14), fontWeight: '600', fontVariant: ['tabular-nums'] },
   recentN: { color: T2, fontWeight: '700' },
-  coach: { flexDirection: 'row', alignItems: 'center', alignSelf: 'center', gap: rs(8), marginTop: rs(18), paddingHorizontal: rs(14), height: rs(38), borderRadius: 999, borderWidth: 1 },
+  coach: { flexDirection: 'row', alignItems: 'center', alignSelf: 'center', gap: rv(8), marginTop: rv(18), paddingHorizontal: rs(14), height: rs(38), borderRadius: 999, borderWidth: 1 },
   coachTarget: { color: T2, fontFamily: FONT, fontSize: rf(15), fontWeight: '600' },
   coachDot: { width: rs(3), height: rs(3), borderRadius: rs(2), backgroundColor: T4 },
   coachMsg: { fontFamily: FONT, fontSize: rf(15), fontWeight: '700' },
 
   // 달릴 땐 34(빈약하다는 피드백 → 30에서 확대), 일시정지 시 22로 줄어 서브에 자리를 내준다.
   // 프리미엄: 위 헤어라인만(아래 테두리 제거), 여백 크게, 가벼운 값 + 마이크로 라벨.
-  heroMetrics: { flexDirection: 'row', marginTop: rs(30), paddingTop: rs(22), paddingBottom: rs(6), borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP },
-  heroMetricsPaused: { marginTop: rs(16), paddingTop: rs(16), paddingBottom: rs(4) },
+  heroMetrics: { flexDirection: 'row', marginTop: rv(30), paddingTop: rv(22), paddingBottom: rv(6), borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP },
+  heroMetricsPaused: { marginTop: rv(16), paddingTop: rv(16), paddingBottom: rv(4) },
   hm: { flex: 1, alignItems: 'center' },
   hmDivider: { borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: withAlpha(T1, 0.045) },
   hmV: { color: T1, fontFamily: DISPLAY, fontSize: rf(37), fontWeight: '500', letterSpacing: -0.8, fontVariant: ['tabular-nums'] },
   hmVPaused: { fontSize: rf(28), letterSpacing: -0.5 },
-  hmL: { color: withAlpha(T1, 0.45), fontFamily: FONT, fontSize: rf(14), fontWeight: "600", letterSpacing: 0.4, marginTop: rs(9) },
+  hmL: { color: withAlpha(T1, 0.45), fontFamily: FONT, fontSize: rf(14), fontWeight: "600", letterSpacing: 0.4, marginTop: rv(9) },
 
   // 일시정지 하단 3칸(케이던스·칼로리·고도) — 상단 히어로 행과 같은 3열 그리드(6칸처럼).
-  subMetrics: { flexDirection: 'row', paddingTop: rs(14), paddingBottom: rs(6) },
+  subMetrics: { flexDirection: 'row', paddingTop: rv(14), paddingBottom: rv(6) },
   sm: { flex: 1, alignItems: 'center' },
   smV: { color: T1, fontFamily: DISPLAY, fontSize: rf(28), fontWeight: '500', letterSpacing: -0.5, fontVariant: ['tabular-nums'] },
   smU: { color: withAlpha(T1, 0.45), fontFamily: FONT, fontSize: rf(12) },
-  smL: { color: withAlpha(T1, 0.45), fontFamily: FONT, fontSize: rf(14), fontWeight: "600", letterSpacing: 0.4, marginTop: rs(9) },
+  smL: { color: withAlpha(T1, 0.45), fontFamily: FONT, fontSize: rf(14), fontWeight: "600", letterSpacing: 0.4, marginTop: rv(9) },
 
   mapWrap: {
     flex: 1,
     minHeight: rs(130),
     maxHeight: rs(180),
-    marginTop: rs(10),
-    marginBottom: rs(4),
+    marginTop: rv(10),
+    marginBottom: rv(4),
     borderRadius: rs(16), borderCurve: 'continuous',
     overflow: 'hidden',
     borderWidth: StyleSheet.hairlineWidth,
@@ -575,13 +575,13 @@ const r = StyleSheet.create({
   },
   // 트랙 랩 기록 바 — 큰 '랩 기록' 필 + 작은 되돌리기. 유리 문법(홈 CTA 계열).
   // 랩 기록 = 주 동작(오렌지 유리 필, 넓게) + 우측 현재 바퀴수. 되돌리기(-1)는 작은 보조.
-  lapBar: { flexDirection: 'row', alignItems: 'center', gap: rs(10), marginTop: rs(18) },
-  lapBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rs(9), height: rs(58), borderRadius: rs(18), borderCurve: 'continuous', backgroundColor: withAlpha(ACCENT, 0.12), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.4) },
+  lapBar: { flexDirection: 'row', alignItems: 'center', gap: rv(10), marginTop: rv(18) },
+  lapBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(9), height: rs(58), borderRadius: rs(18), borderCurve: 'continuous', backgroundColor: withAlpha(ACCENT, 0.12), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.4) },
   lapBtnText: { color: T1, fontFamily: DISPLAY, fontSize: rf(17), fontWeight: '700', letterSpacing: -0.2 },
   lapBtnCount: { position: 'absolute', right: 18, color: ACCENT_2, fontFamily: DISPLAY, fontSize: rf(15), fontWeight: '700', fontVariant: ['tabular-nums'] },
   lapUndo: { width: rs(52), height: rs(52), borderRadius: rs(16), borderCurve: 'continuous', alignItems: 'center', justifyContent: 'center', backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
 
-  controls: { flexDirection: 'row', justifyContent: 'center', gap: rs(48), paddingBottom: rs(8) },
+  controls: { flexDirection: 'row', justifyContent: 'center', gap: rv(48), paddingBottom: rv(8) },
   // 러닝 컨트롤 — 오렌지 필 대신 투명 유리(홈 CTA 와 같은 문법). 종료(cStop)만 DANGER
   // 색을 유지해 '위험한 동작'의 색 언어를 지킨다.
   cPrimary: { width: rs(88), height: rs(88), borderRadius: 999, overflow: 'hidden', backgroundColor: withAlpha(T1, 0.1), alignItems: 'center', justifyContent: 'center' },

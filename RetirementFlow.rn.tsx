@@ -18,7 +18,7 @@
 // 은퇴 확정은 스텝 2 → 3 전환에서 단 한 번 일어난다.
 // ============================================================================
 import React, {useMemo, useRef, useState} from 'react';
-import { rf, rs, ri } from './lib/responsive';
+import { rf, rs, ri, rv } from './lib/responsive';
 import {View, Text, ScrollView, Pressable, StyleSheet} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -488,7 +488,7 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  dots: {flexDirection: 'row', alignItems: 'center', gap: rs(7)},
+  dots: {flexDirection: 'row', alignItems: 'center', gap: rv(7)},
   dot: {
     width: rs(7),
     height: rs(7),
@@ -574,7 +574,7 @@ const s = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 0.2,
   },
-  gridLabel: {color: T3, fontFamily: FONT, fontSize: rf(13), marginTop: rs(4)},
+  gridLabel: {color: T3, fontFamily: FONT, fontSize: rf(13), marginTop: rv(4)},
 
   gradeBadge: {
     alignSelf: 'flex-start',
@@ -587,7 +587,7 @@ const s = StyleSheet.create({
 
   momentCard: {
     padding: SPACE.lg,
-    gap: rs(6),
+    gap: rv(6),
     borderColor: withAlpha(ACCENT, 0.3),
   },
   momentLabel: {

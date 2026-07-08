@@ -8,7 +8,7 @@
 // editSlot: 앱의 '수명 수정' 연필을 '남은 수명' 라벨 우측에 끼우는 선택 슬롯(목업엔 없음).
 // ============================================================================
 import React from 'react';
-import { rf, rs } from './lib/responsive';
+import { rf, rs, rv } from './lib/responsive';
 import {View, Text, StyleSheet} from 'react-native';
 import {ACCENT, GOOD, WARN, DANGER, T1, T2, T3, FONT, DISPLAY, withAlpha} from './theme';
 import {wearTier, WearTierTone} from './lib/shoe';
@@ -44,7 +44,7 @@ export function FuelGauge({remainLabel, unit, fillPct, maxLabel, replaceLabel, e
       <Text style={g.lead}>교체까지 약 <Text style={g.leadBold}>{remainLabel}{unit}</Text> 남았어요</Text>
       {/* 수명 바 = 남은 수명 게이지(배터리 방향 — 홈 링·락커 바와 통일, 사용자 결정).
           새 신발 = 가득 참, 닳을수록 비워진다. 색은 마모 tier 그대로(양호=흰색·주의=주황·교체=빨강). */}
-      <View style={[g.track, {marginTop: rs(14)}]}>
+      <View style={[g.track, {marginTop: rv(14)}]}>
         <View style={[g.fill, {width: `${(1 - p) * 100}%`, backgroundColor: tier.key === 'best' ? withAlpha(T1, 0.85) : cc}]} />
       </View>
       {/* 남은 수명 % 복원(2026-07-05 사용자 결정) — 락커 카드와 같은 라벨 한 벌
@@ -58,25 +58,25 @@ export function FuelGauge({remainLabel, unit, fillPct, maxLabel, replaceLabel, e
 }
 
 const g = StyleSheet.create({
-  wrap: {marginTop: rs(0)},
+  wrap: {marginTop: rv(0)},
   top: {flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between'},
-  labelRow: {flexDirection: 'row', alignItems: 'center', gap: rs(8)},
+  labelRow: {flexDirection: 'row', alignItems: 'center', gap: rv(8)},
   label: {color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '600', letterSpacing: 0.2},
-  lead: {color: T2, fontFamily: FONT, fontSize: rf(17), fontWeight: '500', letterSpacing: -0.2, marginTop: rs(8), lineHeight: rf(23)},
+  lead: {color: T2, fontFamily: FONT, fontSize: rf(17), fontWeight: '500', letterSpacing: -0.2, marginTop: rv(8), lineHeight: rf(23)},
   leadBold: {color: T1, fontFamily: DISPLAY, fontWeight: '700'},
-  remRow: {flexDirection: 'row', alignItems: 'flex-end', marginTop: rs(4)},
+  remRow: {flexDirection: 'row', alignItems: 'flex-end', marginTop: rv(4)},
   rem: {color: T1, fontFamily: DISPLAY, fontSize: rf(40), fontWeight: '600', letterSpacing: -1.4, lineHeight: rf(38)},
-  remU: {color: T2, fontFamily: FONT, fontSize: rf(17), fontWeight: '500', marginLeft: rs(3), marginBottom: rs(4)},
-  cond: {flexDirection: 'row', alignItems: 'center', gap: rs(7)},
+  remU: {color: T2, fontFamily: FONT, fontSize: rf(17), fontWeight: '500', marginLeft: rs(3), marginBottom: rv(4)},
+  cond: {flexDirection: 'row', alignItems: 'center', gap: rv(7)},
   dot: {width: rs(7), height: rs(7), borderRadius: 999},
   condTxt: {color: T2, fontFamily: FONT, fontSize: rf(14), fontWeight: '500'},
-  track: {flexDirection: 'row', height: rs(14), borderRadius: 999, overflow: 'hidden', marginTop: rs(16), backgroundColor: 'rgba(255,255,255,0.04)'},
+  track: {flexDirection: 'row', height: rs(14), borderRadius: 999, overflow: 'hidden', marginTop: rv(16), backgroundColor: 'rgba(255,255,255,0.04)'},
   seg: {height: '100%'},
   fill: {position: 'absolute', left: 0, top: 0, bottom: 0, borderRadius: 999, backgroundColor: ACCENT},
   zone: {position: 'absolute', top: 0, bottom: 0, width: 1, backgroundColor: 'rgba(255,255,255,0.18)'},
   marker: {position: 'absolute', top: '50%', width: rs(18), height: rs(18), borderRadius: 999, backgroundColor: T1,
-    borderWidth: 3, borderColor: ACCENT, marginTop: rs(-9), marginLeft: rs(-9)},
-  scale: {flexDirection: 'row', justifyContent: 'space-between', marginTop: rs(10)},
+    borderWidth: 3, borderColor: ACCENT, marginTop: rv(-9), marginLeft: rs(-9)},
+  scale: {flexDirection: 'row', justifyContent: 'space-between', marginTop: rv(10)},
   scaleTxt: {color: T3, fontFamily: DISPLAY, fontSize: rf(12), opacity: 0.8},
 });
 

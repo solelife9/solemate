@@ -6,7 +6,7 @@
 // 시트/스크린 어디에 얹어도 되도록 순수 프레젠테이션(상태/네비게이션 0).
 // ============================================================================
 import React from 'react';
-import { rf, rs, ri } from './lib/responsive';
+import { rf, rs, ri, rv } from './lib/responsive';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {
@@ -139,7 +139,7 @@ const styles = StyleSheet.create({
   signalRow: { flexDirection: 'row', alignItems: 'center', gap: SPACE.sm, paddingVertical: SPACE.md },
   signalDot: { width: rs(8), height: rs(8), borderRadius: rs(4) },
   signalLabel: { ...TYPE.body, color: T1 },
-  signalSub: { ...TYPE.caption, color: T3, marginTop: rs(1) },
+  signalSub: { ...TYPE.caption, color: T3, marginTop: rv(1) },
   signalValue: { ...TYPE.heading, color: T1 },
   signalSep: { height: 1, backgroundColor: CARD_BORDER },
   // 코칭
@@ -157,7 +157,7 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   guideTitle: { ...TYPE.body, color: T1 },
-  guideBody: { ...TYPE.label, color: T2, lineHeight: rf(19), marginTop: rs(3), fontWeight: '400' },
+  guideBody: { ...TYPE.label, color: T2, lineHeight: rf(19), marginTop: rv(3), fontWeight: '400' },
   foot: { ...TYPE.caption, color: T3, lineHeight: rf(16), marginTop: SPACE.xs },
   disclaimer: { ...TYPE.caption, color: T4 },
 });

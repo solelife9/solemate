@@ -6,7 +6,7 @@
 // OCR 인식기(recognizer)는 네이티브 모듈 주입 — 없거나 실패하면 직접 입력으로 폴백.
 // ============================================================================
 import React, {useMemo, useState} from 'react';
-import { rf, rs, ri } from './lib/responsive';
+import { rf, rs, ri, rv } from './lib/responsive';
 import {View, Text, ScrollView, Pressable, TextInput, Image, StyleSheet, ActivityIndicator} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -174,7 +174,7 @@ export default function RaceMedalScreen({
           <View style={s.customBox}>
             <Text style={s.customLabel}>찾는 대회가 없나요?</Text>
             <TextInput value={customName} onChangeText={setCustomName} placeholder="대회 이름 직접 입력" placeholderTextColor={T4} style={s.customInput} autoCorrect={false} testID="race-custom" />
-            <View style={{marginTop: rs(10)}}>
+            <View style={{marginTop: rv(10)}}>
               <Button label="이 대회로" disabled={!customName.trim()} onPress={() => { setRace(null); setStep('record'); }} />
             </View>
           </View>
@@ -264,25 +264,25 @@ export default function RaceMedalScreen({
 
 const s = StyleSheet.create({
   screen: {flex: 1, backgroundColor: BG},
-  nav: {paddingTop: rs(12), paddingHorizontal: rs(14), paddingBottom: rs(6), flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'},
+  nav: {paddingTop: rv(12), paddingHorizontal: rs(14), paddingBottom: rv(6), flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'},
   iconBtn: {width: rs(36), height: rs(36), borderRadius: 999, backgroundColor: CARD_HI, alignItems: 'center', justifyContent: 'center'},
   navTitle: {flex: 1, textAlign: 'center', color: T1, fontFamily: FONT, fontSize: rf(17), fontWeight: '600', letterSpacing: -0.2, marginHorizontal: rs(8)},
 
-  search: {flexDirection: 'row', alignItems: 'center', gap: rs(9), marginHorizontal: rs(18), marginTop: rs(4), marginBottom: rs(12), height: rs(46), paddingHorizontal: rs(14), borderRadius: rs(14), backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.1)},
-  searchInput: {flex: 1, color: T1, fontFamily: FONT, fontSize: rf(16), fontWeight: '500', paddingVertical: rs(0)},
-  section: {color: T3, fontFamily: FONT, fontSize: rf(12), fontWeight: '600', letterSpacing: 0.6, textTransform: 'uppercase', marginBottom: rs(8), marginTop: rs(4)},
-  raceRow: {flexDirection: 'row', alignItems: 'center', gap: rs(12), paddingVertical: rs(13), paddingHorizontal: rs(14), borderRadius: rs(14), backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP, marginBottom: rs(8)},
+  search: {flexDirection: 'row', alignItems: 'center', gap: rv(9), marginHorizontal: rs(18), marginTop: rv(4), marginBottom: rv(12), height: rs(46), paddingHorizontal: rs(14), borderRadius: rs(14), backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.1)},
+  searchInput: {flex: 1, color: T1, fontFamily: FONT, fontSize: rf(16), fontWeight: '500', paddingVertical: rv(0)},
+  section: {color: T3, fontFamily: FONT, fontSize: rf(12), fontWeight: '600', letterSpacing: 0.6, textTransform: 'uppercase', marginBottom: rv(8), marginTop: rv(4)},
+  raceRow: {flexDirection: 'row', alignItems: 'center', gap: rv(12), paddingVertical: rv(13), paddingHorizontal: rs(14), borderRadius: rs(14), backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP, marginBottom: rv(8)},
   raceName: {color: T1, fontFamily: FONT, fontSize: rf(16), fontWeight: '600', letterSpacing: -0.2},
-  raceMeta: {color: T3, fontFamily: FONT, fontSize: rf(13), marginTop: rs(2)},
-  distPill: {backgroundColor: withAlpha(HALL_GOLD, 0.12), borderRadius: 999, paddingHorizontal: rs(9), paddingVertical: rs(4)},
+  raceMeta: {color: T3, fontFamily: FONT, fontSize: rf(13), marginTop: rv(2)},
+  distPill: {backgroundColor: withAlpha(HALL_GOLD, 0.12), borderRadius: 999, paddingHorizontal: rs(9), paddingVertical: rv(4)},
   distPillT: {color: HALL_GOLD, fontFamily: FONT, fontSize: rf(12), fontWeight: '700'},
-  noResult: {color: T3, fontFamily: FONT, fontSize: rf(14), marginTop: rs(4), marginBottom: rs(6)},
-  customBox: {marginTop: rs(16), padding: rs(14), borderRadius: rs(16), borderWidth: 1, borderStyle: 'dashed', borderColor: withAlpha(T1, 0.16)},
-  customLabel: {color: T2, fontFamily: FONT, fontSize: rf(14), fontWeight: '600', marginBottom: rs(10)},
+  noResult: {color: T3, fontFamily: FONT, fontSize: rf(14), marginTop: rv(4), marginBottom: rv(6)},
+  customBox: {marginTop: rv(16), padding: rs(14), borderRadius: rs(16), borderWidth: 1, borderStyle: 'dashed', borderColor: withAlpha(T1, 0.16)},
+  customLabel: {color: T2, fontFamily: FONT, fontSize: rf(14), fontWeight: '600', marginBottom: rv(10)},
   customInput: {height: rs(46), paddingHorizontal: rs(14), borderRadius: rs(12), backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.1), color: T1, fontFamily: FONT, fontSize: rf(16)},
 
-  shotRow: {flexDirection: 'row', gap: rs(10), marginTop: rs(8)},
-  shot: {flex: 1, height: rs(150), borderRadius: rs(20), borderWidth: 1.5, borderStyle: 'dashed', borderColor: withAlpha(T1, 0.16), backgroundColor: withAlpha(T1, 0.02), alignItems: 'center', justifyContent: 'center', gap: rs(7), overflow: 'hidden', paddingHorizontal: rs(10)},
+  shotRow: {flexDirection: 'row', gap: rv(10), marginTop: rv(8)},
+  shot: {flex: 1, height: rs(150), borderRadius: rs(20), borderWidth: 1.5, borderStyle: 'dashed', borderColor: withAlpha(T1, 0.16), backgroundColor: withAlpha(T1, 0.02), alignItems: 'center', justifyContent: 'center', gap: rv(7), overflow: 'hidden', paddingHorizontal: rs(10)},
   shotMedal: {borderColor: withAlpha(HALL_GOLD, 0.45), backgroundColor: withAlpha(HALL_GOLD, 0.05)},
   shotDone: {borderStyle: 'solid', borderColor: withAlpha(HALL_GOLD, 0.5)},
   shotDoneGood: {borderStyle: 'solid', borderColor: withAlpha(GOOD, 0.5), backgroundColor: withAlpha(GOOD, 0.06)},
@@ -290,16 +290,16 @@ const s = StyleSheet.create({
   shotImgRound: {width: rs(110), height: rs(110), borderRadius: rs(55)},
   shotT: {color: T2, fontFamily: FONT, fontSize: rf(14), fontWeight: '600', textAlign: 'center'},
   shotS: {color: T3, fontFamily: FONT, fontSize: rf(12), textAlign: 'center'},
-  ocrNote: {flexDirection: 'row', color: GOOD, fontFamily: FONT, fontSize: rf(13), fontWeight: '600', marginTop: rs(12)},
+  ocrNote: {flexDirection: 'row', color: GOOD, fontFamily: FONT, fontSize: rf(13), fontWeight: '600', marginTop: rv(12)},
 
-  fieldLabel: {color: T2, fontFamily: FONT, fontSize: rf(14), fontWeight: '600', marginTop: rs(20), marginBottom: rs(10), paddingHorizontal: rs(2)},
-  fieldHead: {flexDirection: 'row', alignItems: 'center', gap: rs(8)},
-  tag: {backgroundColor: withAlpha(GOOD, 0.14), borderRadius: rs(6), paddingHorizontal: rs(6), paddingVertical: rs(2), marginTop: rs(20), marginBottom: rs(10)},
+  fieldLabel: {color: T2, fontFamily: FONT, fontSize: rf(14), fontWeight: '600', marginTop: rv(20), marginBottom: rv(10), paddingHorizontal: rs(2)},
+  fieldHead: {flexDirection: 'row', alignItems: 'center', gap: rv(8)},
+  tag: {backgroundColor: withAlpha(GOOD, 0.14), borderRadius: rs(6), paddingHorizontal: rs(6), paddingVertical: rv(2), marginTop: rv(20), marginBottom: rv(10)},
   tagT: {color: GOOD, fontFamily: FONT, fontSize: rf(11), fontWeight: '700', letterSpacing: 0.3},
-  chipRow: {flexDirection: 'row', flexWrap: 'wrap', gap: rs(8)},
+  chipRow: {flexDirection: 'row', flexWrap: 'wrap', gap: rv(8)},
   inputRow: {flexDirection: 'row', alignItems: 'center', height: rs(52), paddingHorizontal: rs(16), borderRadius: rs(14), backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.08)},
-  input: {flex: 1, color: T1, fontFamily: DISPLAY, fontSize: rf(21), fontVariant: ['tabular-nums'], paddingVertical: rs(0)},
-  hint: {color: T3, fontFamily: FONT, fontSize: rf(13), marginTop: rs(8), paddingHorizontal: rs(2), lineHeight: rf(17)},
+  input: {flex: 1, color: T1, fontFamily: DISPLAY, fontSize: rf(21), fontVariant: ['tabular-nums'], paddingVertical: rv(0)},
+  hint: {color: T3, fontFamily: FONT, fontSize: rf(13), marginTop: rv(8), paddingHorizontal: rs(2), lineHeight: rf(17)},
 
-  footer: {paddingHorizontal: rs(18), paddingTop: rs(8), paddingBottom: rs(30), backgroundColor: BG, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP},
+  footer: {paddingHorizontal: rs(18), paddingTop: rv(8), paddingBottom: rv(30), backgroundColor: BG, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP},
 });

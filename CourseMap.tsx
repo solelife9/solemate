@@ -6,7 +6,7 @@
 // points < 2 면 스스로 숨는다(경로 없는 수동 기록·GPS 실패 런은 여백도 안 생김).
 // ============================================================================
 import React, {useState} from 'react';
-import { rf, rs } from './lib/responsive';
+import { rf, rs, rv } from './lib/responsive';
 import {View, Text, StyleSheet, Platform, type LayoutChangeEvent} from 'react-native';
 import Svg, {Polyline, Circle} from 'react-native-svg';
 import {CARD, CARD_DIM, CARD_BORDER, ACCENT, T1, T3, FONT, RADIUS, SEP} from './theme';
@@ -124,7 +124,7 @@ export function CourseMap({points, title = '코스', style}: {
 const m = StyleSheet.create({
   card: {backgroundColor: CARD, borderRadius: RADIUS.lg, borderCurve: 'continuous', borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER, padding: rs(16)},
   label: {color: T3, fontFamily: FONT, fontSize: rf(13), fontWeight: '600', letterSpacing: 0.4},
-  mapWell: {height: MAP_H, marginTop: rs(10), borderRadius: rs(14), borderCurve: 'continuous', overflow: 'hidden', backgroundColor: CARD_DIM, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP},
+  mapWell: {height: MAP_H, marginTop: rv(10), borderRadius: rs(14), borderCurve: 'continuous', overflow: 'hidden', backgroundColor: CARD_DIM, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP},
   startDot: {width: rs(12), height: rs(12), borderRadius: rs(6), borderCurve: 'continuous', backgroundColor: ACCENT, borderWidth: 2, borderColor: T1},
   endDot: {width: rs(14), height: rs(14), borderRadius: rs(7), borderCurve: 'continuous', backgroundColor: T1, borderWidth: 3, borderColor: ACCENT},
 });

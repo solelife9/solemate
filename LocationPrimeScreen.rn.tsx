@@ -7,7 +7,7 @@
 // '계속' → onContinue(권한 안내 완료 영속 + 런 진입), '나중에' → onCancel.
 // ============================================================================
 import React from 'react';
-import { rf, rs, ri } from './lib/responsive';
+import { rf, rs, ri, rv } from './lib/responsive';
 import {View, Text, Pressable, StyleSheet} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -76,16 +76,16 @@ export default function LocationPrimeScreen({
 const s = StyleSheet.create({
   screen: {flex: 1, backgroundColor: BG, paddingHorizontal: rs(22)},
   body: {flex: 1, justifyContent: 'center'},
-  hero: {alignSelf: 'center', width: rs(80), height: rs(80), borderRadius: rs(40), borderCurve: 'continuous', alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(ACCENT, 0.12), marginBottom: rs(18)},
+  hero: {alignSelf: 'center', width: rs(80), height: rs(80), borderRadius: rs(40), borderCurve: 'continuous', alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(ACCENT, 0.12), marginBottom: rv(18)},
   title: {color: T1, fontFamily: FONT, fontSize: rf(25), fontWeight: '700', letterSpacing: -0.5, textAlign: 'center'},
-  lead: {color: T3, fontFamily: FONT, fontSize: rf(15), lineHeight: rf(20), textAlign: 'center', marginTop: rs(8), marginBottom: rs(22)},
-  card: {backgroundColor: CARD, borderRadius: RADIUS.lg, borderCurve: 'continuous', borderWidth: StyleSheet.hairlineWidth, borderColor: SEP, paddingHorizontal: rs(16), paddingVertical: rs(4)},
-  row: {flexDirection: 'row', alignItems: 'flex-start', gap: rs(13), paddingVertical: rs(15)},
-  rowIcon: {width: rs(36), height: rs(36), borderRadius: rs(18), borderCurve: 'continuous', alignItems: 'center', justifyContent: 'center', marginTop: rs(1)},
+  lead: {color: T3, fontFamily: FONT, fontSize: rf(15), lineHeight: rf(20), textAlign: 'center', marginTop: rv(8), marginBottom: rv(22)},
+  card: {backgroundColor: CARD, borderRadius: RADIUS.lg, borderCurve: 'continuous', borderWidth: StyleSheet.hairlineWidth, borderColor: SEP, paddingHorizontal: rs(16), paddingVertical: rv(4)},
+  row: {flexDirection: 'row', alignItems: 'flex-start', gap: rv(13), paddingVertical: rv(15)},
+  rowIcon: {width: rs(36), height: rs(36), borderRadius: rs(18), borderCurve: 'continuous', alignItems: 'center', justifyContent: 'center', marginTop: rv(1)},
   rowTitle: {color: T1, fontFamily: FONT, fontSize: rf(16), fontWeight: '700', letterSpacing: -0.2},
-  rowBody: {color: T2, fontFamily: FONT, fontSize: rf(14), lineHeight: rf(18), marginTop: rs(3), fontWeight: '400'},
+  rowBody: {color: T2, fontFamily: FONT, fontSize: rf(14), lineHeight: rf(18), marginTop: rv(3), fontWeight: '400'},
   sep: {height: StyleSheet.hairlineWidth, backgroundColor: SEP, marginLeft: rs(49)},
-  footer: {gap: rs(6)},
+  footer: {gap: rv(6)},
   primary: {height: rs(54), borderRadius: RADIUS.lg, borderCurve: 'continuous', backgroundColor: ACCENT, alignItems: 'center', justifyContent: 'center'},
   primaryTxt: {color: BG, fontFamily: FONT, fontSize: rf(17), fontWeight: '700'},
   ghost: {height: rs(46), alignItems: 'center', justifyContent: 'center'},

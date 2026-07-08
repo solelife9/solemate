@@ -5,7 +5,7 @@
 // 원반 탭 → 상세(큰 원형 메달 + 기록증 + 공식 기록 + 그 러닝 링크 + BIB). 색은 theme 토큰만.
 // ============================================================================
 import React, {useRef, useState} from 'react';
-import { rf, rs, ri } from './lib/responsive';
+import { rf, rs, ri, rv } from './lib/responsive';
 import {View, Text, ScrollView, Pressable, Image, StyleSheet} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -163,7 +163,7 @@ function MedalDetail({medal, insetTop, insetBottom, onClose, onOpenRun, onDelete
         <Pressable onPress={onClose} hitSlop={8} accessibilityRole="button" accessibilityLabel="닫기" style={m.iconBtn}>
           <Ionicons name="chevron-down" size={ri(22)} color={T1} />
         </Pressable>
-        <View style={{flexDirection: 'row', gap: rs(8)}}>
+        <View style={{flexDirection: 'row', gap: rv(8)}}>
           <Pressable onPress={onShare} hitSlop={8} accessibilityRole="button" accessibilityLabel="메달 공유" testID="medal-share" style={m.iconBtn}>
             <Ionicons name="share-outline" size={ri(18)} color={HALL_GOLD} />
           </Pressable>
@@ -216,17 +216,17 @@ function MedalDetail({medal, insetTop, insetBottom, onClose, onOpenRun, onDelete
 
 const m = StyleSheet.create({
   screen: {flex: 1, backgroundColor: BG},
-  nav: {paddingTop: rs(12), paddingHorizontal: rs(14), paddingBottom: rs(6), flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'},
+  nav: {paddingTop: rv(12), paddingHorizontal: rs(14), paddingBottom: rv(6), flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'},
   iconBtn: {width: rs(36), height: rs(36), borderRadius: 999, backgroundColor: CARD_HI, alignItems: 'center', justifyContent: 'center'},
   navTitle: {color: T1, fontFamily: FONT, fontSize: rf(17), fontWeight: '600', letterSpacing: -0.2},
 
-  head: {flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: rs(4)},
+  head: {flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: rv(4)},
   h: {color: T1, fontFamily: DISPLAY, fontSize: rf(25), fontWeight: '700', letterSpacing: -0.5},
   count: {color: HALL_GOLD, fontFamily: FONT, fontSize: rf(13), fontWeight: '600'},
-  sub: {color: T3, fontFamily: FONT, fontSize: rf(14), marginBottom: rs(8)},
+  sub: {color: T3, fontFamily: FONT, fontSize: rf(14), marginBottom: rv(8)},
 
-  grid: {flexDirection: 'row', flexWrap: 'wrap', marginTop: rs(8)},
-  cell: {width: '33.33%', alignItems: 'center', gap: rs(7), paddingVertical: rs(12), paddingHorizontal: rs(4)},
+  grid: {flexDirection: 'row', flexWrap: 'wrap', marginTop: rv(8)},
+  cell: {width: '33.33%', alignItems: 'center', gap: rv(7), paddingVertical: rv(12), paddingHorizontal: rs(4)},
   disc: {
     borderWidth: 1, borderColor: withAlpha(HALL_GOLD, 0.35),
     backgroundColor: '#1a160e', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
@@ -234,26 +234,26 @@ const m = StyleSheet.create({
   cellName: {color: T2, fontFamily: FONT, fontSize: rf(12), fontWeight: '600', letterSpacing: -0.2, textAlign: 'center', lineHeight: rf(14)},
   cellTime: {color: HALL_GOLD, fontFamily: FONT, fontSize: rf(12), fontWeight: '700', fontVariant: ['tabular-nums']},
 
-  empty: {alignItems: 'center', gap: rs(10), paddingVertical: rs(56)},
-  emptyT: {color: T2, fontFamily: FONT, fontSize: rf(16), fontWeight: '600', marginTop: rs(6)},
+  empty: {alignItems: 'center', gap: rv(10), paddingVertical: rv(56)},
+  emptyT: {color: T2, fontFamily: FONT, fontSize: rf(16), fontWeight: '600', marginTop: rv(6)},
   emptyD: {color: T3, fontFamily: FONT, fontSize: rf(14), textAlign: 'center', lineHeight: rf(19), paddingHorizontal: rs(12)},
-  emptyCta: {flexDirection: 'row', alignItems: 'center', gap: rs(6), marginTop: rs(16), paddingVertical: rs(12), paddingHorizontal: rs(20), borderRadius: 999, backgroundColor: withAlpha(HALL_GOLD, 0.12), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(HALL_GOLD, 0.4)},
+  emptyCta: {flexDirection: 'row', alignItems: 'center', gap: rv(6), marginTop: rv(16), paddingVertical: rv(12), paddingHorizontal: rs(20), borderRadius: 999, backgroundColor: withAlpha(HALL_GOLD, 0.12), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(HALL_GOLD, 0.4)},
   emptyCtaT: {color: HALL_GOLD, fontFamily: FONT, fontSize: rf(15), fontWeight: '700'},
 
   // 상세 오버레이
   detailOverlay: {position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: BG},
-  detailNav: {paddingHorizontal: rs(14), paddingBottom: rs(4), flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'},
-  detailName: {color: T1, fontFamily: FONT, fontSize: rf(21), fontWeight: '700', letterSpacing: -0.4, textAlign: 'center', marginTop: rs(20), textWrap: 'balance'} as any,
-  detailTime: {color: HALL_GOLD, fontFamily: DISPLAY, fontSize: rf(40), fontWeight: '700', letterSpacing: -1, marginTop: rs(8), fontVariant: ['tabular-nums']},
-  detailNote: {color: T3, fontFamily: FONT, fontSize: rf(13), marginTop: rs(6), textAlign: 'center'},
-  detailCard: {alignSelf: 'stretch', backgroundColor: CARD, borderRadius: rs(18), borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER, paddingHorizontal: rs(16), marginTop: rs(22)},
-  detailRow: {flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: rs(14)},
+  detailNav: {paddingHorizontal: rs(14), paddingBottom: rv(4), flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'},
+  detailName: {color: T1, fontFamily: FONT, fontSize: rf(21), fontWeight: '700', letterSpacing: -0.4, textAlign: 'center', marginTop: rv(20), textWrap: 'balance'} as any,
+  detailTime: {color: HALL_GOLD, fontFamily: DISPLAY, fontSize: rf(40), fontWeight: '700', letterSpacing: -1, marginTop: rv(8), fontVariant: ['tabular-nums']},
+  detailNote: {color: T3, fontFamily: FONT, fontSize: rf(13), marginTop: rv(6), textAlign: 'center'},
+  detailCard: {alignSelf: 'stretch', backgroundColor: CARD, borderRadius: rs(18), borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER, paddingHorizontal: rs(16), marginTop: rv(22)},
+  detailRow: {flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: rv(14)},
   detailRowDiv: {borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP},
   detailRowL: {color: T3, fontFamily: FONT, fontSize: rf(14)},
   detailRowV: {color: T1, fontFamily: FONT, fontSize: rf(15), fontWeight: '600', fontVariant: ['tabular-nums']},
-  certWrap: {alignSelf: 'stretch', marginTop: rs(18), gap: rs(8)},
+  certWrap: {alignSelf: 'stretch', marginTop: rv(18), gap: rv(8)},
   certLabel: {color: T3, fontFamily: FONT, fontSize: rf(13), fontWeight: '600', letterSpacing: 0.4},
   certImg: {width: '100%', height: rs(260), borderRadius: rs(14), backgroundColor: CARD},
-  runLink: {flexDirection: 'row', alignItems: 'center', gap: rs(7), marginTop: rs(20), paddingVertical: rs(12), paddingHorizontal: rs(16), borderRadius: rs(12), backgroundColor: withAlpha(ACCENT, 0.1), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.3)},
+  runLink: {flexDirection: 'row', alignItems: 'center', gap: rv(7), marginTop: rv(20), paddingVertical: rv(12), paddingHorizontal: rs(16), borderRadius: rs(12), backgroundColor: withAlpha(ACCENT, 0.1), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.3)},
   runLinkT: {color: ACCENT, fontFamily: FONT, fontSize: rf(15), fontWeight: '600'},
 });
