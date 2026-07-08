@@ -36,6 +36,19 @@ describe('비배열 입력 방어(크래시 없음)', () => {
   });
 });
 
+describe('monthBuckets/yearBuckets — run_date 시간접미사 방어', () => {
+  // 시간접미사('...T10:30')가 붙으면 new Date(rd+'T00:00:00')가 Invalid → NaN 버킷으로
+  // 거리가 소실됐다. slice(0,10)로 형제 함수(recap/goals 등)와 동일하게 방어.
+  test('YYYY-MM-DDTHH:mm 형식도 거리 집계에 포함', () => {
+    const runs = [
+      {run_date: '2026-03-05T10:30', km: 5},
+      {run_date: '2026-03-20', km: 3},
+    ] as any;
+    expect(monthBuckets(runs, 2026, 2).reduce((a, b) => a + b, 0)).toBeCloseTo(8, 5); // 3월
+    expect(yearBuckets(runs)[2]).toBeCloseTo(8, 5); // 3월 index
+  });
+});
+
 describe('avgPaceLabel', () => {
   test('-- when no run has usable duration & distance', () => {
     expect(avgPaceLabel([{km: 0.05, duration: 100}, {km: 5, duration: 0}])).toBe('--');

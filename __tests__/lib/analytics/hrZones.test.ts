@@ -76,6 +76,12 @@ describe('hrSummary', () => {
   test('표본 없으면 0', () => {
     expect(hrSummary([])).toEqual({avg: 0, max: 0});
   });
+  test('초대형 트랙에서도 최댓값 정확 — Math.max(...arr) 스택초과 방어', () => {
+    // 20만 표본: Math.max(...bpms) 는 RangeError(스택초과)로 던졌다 → reduce 로 방어.
+    const big = Array.from({length: 200000}, (_, i) => ({t: i, bpm: 120 + (i % 60)}));
+    expect(() => hrSummary(big)).not.toThrow();
+    expect(hrSummary(big).max).toBe(179); // 120 + 59
+  });
 });
 
 test('HR_ZONE_LABEL 5존 한국어', () => {
