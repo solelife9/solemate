@@ -32,7 +32,7 @@ const MAPS_AVAILABLE = !!MapView;
 
 type LL = {lat: number; lon: number};
 
-export function RunLiveMap({coords, interactive = false}: {coords: LL[]; interactive?: boolean}) {
+export function RunLiveMap({coords, interactive = false, recenterKey = 0}: {coords: LL[]; interactive?: boolean; recenterKey?: number}) {
   const mapRef = useRef<any>(null);
   const [preview, setPreview] = useState<LL | null>(null);
   const list = Array.isArray(coords) ? coords : [];
@@ -63,6 +63,15 @@ export function RunLiveMap({coords, interactive = false}: {coords: LL[]; interac
     if (!center || !map || typeof map.animateCamera !== 'function') return;
     map.animateCamera({center: {latitude: center.lat, longitude: center.lon}}, {duration: 500});
   }, [center?.lat, center?.lon, interactive]);
+
+  // '내 위치로 이동' — recenterKey 가 바뀔 때(전체화면 좌하단 버튼) 현재 좌표로 카메라 이동.
+  // interactive 모드에서도 동작(사용자가 지도를 옮긴 뒤 내 위치로 복귀).
+  useEffect(() => {
+    if (!recenterKey) return; // 0 = 초기값, 무시
+    const map = mapRef.current;
+    if (!center || !map || typeof map.animateCamera !== 'function') return;
+    map.animateCamera({center: {latitude: center.lat, longitude: center.lon}, zoom: 16}, {duration: 500});
+  }, [recenterKey]);
 
   if (!MAPS_AVAILABLE || !center) return null;
 

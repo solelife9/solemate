@@ -14,7 +14,7 @@
 // ============================================================================
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, Pressable, StyleSheet, Animated, Easing, StatusBar, LayoutAnimation } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Animated, Easing, StatusBar, LayoutAnimation, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Svg, { Path, Circle, Defs, LinearGradient as SvgLinear, Stop } from 'react-native-svg';
@@ -131,6 +131,7 @@ export default function RunActiveScreen({
   onUndoLap?: () => void;  // 마지막 랩 되돌리기(-1)
 }) {
   const insets = useSafeAreaInsets();
+  const { height: winH } = useWindowDimensions();
   const [pausedState, setPausedState] = useState(false);
   const paused = pausedProp ?? pausedState;
 
@@ -156,6 +157,8 @@ export default function RunActiveScreen({
   // 일시정지 지도 패널을 탭하면 전체화면 인터랙티브 지도로 확장한다. 재개(uiPaused=false)하면 닫는다.
   const [mapFull, setMapFull] = useState(false);
   useEffect(() => { if (!uiPaused) setMapFull(false); }, [uiPaused]);
+  // 전체화면 지도에서 '내 위치로 이동' 버튼 — 카운터가 바뀌면 RunLiveMap 이 현재 좌표로 카메라 이동.
+  const [recenter, setRecenter] = useState(0);
   // 일시정지 시 링을 '아주 살짝'만 축소(0.92) — 링 안 거리 숫자가 항상 크게 읽히도록. 스케일은
   // 네이티브 드라이버(transform)만 쓰므로 재개 시 반드시 원래 크기로 복귀한다(예전엔 스케일+
   // Animated 마진+LayoutAnimation 이 서로 다른 시스템으로 같은 뷰를 밀며 desync→복귀불능 버그).
@@ -269,7 +272,7 @@ export default function RunActiveScreen({
           onPress={() => setMapFull(true)}
           accessibilityRole="button"
           accessibilityLabel="지도 전체화면으로 보기"
-          style={r.mapPanel}>
+          style={[r.mapPanel, { height: Math.round(winH * 0.38) }]}>
           <RunLiveMap coords={liveCoords} />
           <View style={r.mapExpandBadge} pointerEvents="none">
             <Ionicons name="expand" size={15} color={T1} />
@@ -408,10 +411,10 @@ export default function RunActiveScreen({
         </View>
       )}
 
-      {/* 하단 여백 — 러닝 중엔 링+지표 블록을 상단 스페이서와 함께 세로 중앙에 둔다.
-          일시정지 땐 이 여백을 없애 지표가 컨트롤 바로 위(하단)에 붙게 한다(상단 스페이서만
-          남아 지도 위로 밀어 내림 = 지표가 바닥으로). */}
-      {!uiPaused && <View style={{ flex: 1 }} />}
+      {/* 하단 여백 — 러닝 중(상단 스페이서와 짝) 또는 일시정지-야외(지도 고정높이 아래 지표 뒤)
+          엔 이 여백으로 컨트롤을 바닥에 고정한다. 일시정지-실내(지도 없음)엔 상단 스페이서가
+          지표를 하단으로 밀므로 이 여백을 뺀다. */}
+      {(!uiPaused || liveCoords.length > 0) && <View style={{ flex: 1 }} />}
 
       {/* controls */}
       <View style={r.controls}>
@@ -454,14 +457,24 @@ export default function RunActiveScreen({
           화면 좌우 패딩·상하 인셋을 상쇄해 진짜 전체화면. 재개하면 자동으로 닫힘(mapFull 리셋). */}
       {mapFull && (
         <View style={{ position: 'absolute', top: -(insets.top + 8), left: -24, right: -24, bottom: -(insets.bottom + 16), backgroundColor: BG }}>
-          <RunLiveMap coords={liveCoords} interactive />
+          <RunLiveMap coords={liveCoords} interactive recenterKey={recenter} />
+          {/* 왼쪽 하단 — 내 위치 좌표로 이동(지도 움직인 뒤 현재 위치 쉽게 찾기) */}
+          <Pressable
+            onPress={() => setRecenter(x => x + 1)}
+            accessibilityRole="button"
+            accessibilityLabel="내 위치로 이동"
+            hitSlop={10}
+            style={[r.mapBtn, { left: 22, bottom: insets.bottom + 26 }]}>
+            <Ionicons name="locate" size={22} color={T1} />
+          </Pressable>
+          {/* 오른쪽 하단 — 지도 닫기(일시정지 화면으로 복귀) */}
           <Pressable
             onPress={() => setMapFull(false)}
             accessibilityRole="button"
             accessibilityLabel="지도 닫기"
-            hitSlop={8}
-            style={[r.mapClose, { top: insets.top + 14 }]}>
-            <Ionicons name="close" size={22} color={T1} />
+            hitSlop={10}
+            style={[r.mapBtn, { right: 22, bottom: insets.bottom + 26 }]}>
+            <Ionicons name="close" size={24} color={T1} />
           </Pressable>
         </View>
       )}
@@ -472,11 +485,11 @@ export default function RunActiveScreen({
 const r = StyleSheet.create({
   screen: { flex: 1, backgroundColor: BG, paddingHorizontal: 24 },
   // 일시정지 상단 지도 패널(위 절반) — 둥근 카드, 탭하면 전체화면. flex:1 로 상단을 채운다.
-  mapPanel: { flex: 1, borderRadius: 20, borderCurve: 'continuous', overflow: 'hidden', marginTop: 6, marginBottom: 14, backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
+  mapPanel: { borderRadius: 20, borderCurve: 'continuous', overflow: 'hidden', marginTop: 6, marginBottom: 14, backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
   // 패널 우하단 '전체화면' 힌트 배지.
   mapExpandBadge: { position: 'absolute', right: 12, bottom: 12, width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(0,0,0,0.55)', alignItems: 'center', justifyContent: 'center', borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.2) },
-  // 전체화면 지도 닫기 버튼(우상단).
-  mapClose: { position: 'absolute', right: 18, width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(0,0,0,0.55)', alignItems: 'center', justifyContent: 'center', borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.22) },
+  // 전체화면 지도 하단 버튼(좌=내위치, 우=닫기). zIndex/elevation 으로 네이티브 지도 위에서 탭.
+  mapBtn: { position: 'absolute', width: 52, height: 52, borderRadius: 26, backgroundColor: 'rgba(0,0,0,0.55)', alignItems: 'center', justifyContent: 'center', borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.25), zIndex: 20, elevation: 8 },
 
   // 목표 달성 토스트 — 오렌지 판 대신 어두운 유리 막(투명 통일). 축하의 오렌지는 체크
   // 아이콘(포인트 컬러=강조 요소에만)이 담당한다.
