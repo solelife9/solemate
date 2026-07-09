@@ -1,7 +1,7 @@
 // ============================================================================
 // RunSplits.tsx — 기록 상세 "구간" 스플릿 (Nike Run Club 스타일)
 // HistoryScreen.rn.tsx 의 RunDetail 에서 통계 그리드(statGrid) 아래에 렌더한다.
-// km · 평균 페이스 · 고도 열, 막대는 빠를수록 길게(가장 빠른 구간만 ACCENT).
+// km · 평균 페이스 · 고도 열, 막대는 빠를수록 길게(가장 빠른 구간만 BRAND).
 //
 // 데이터: per-km 스플릿이 필요하다. App.addRun 이 저장하는 GPS 경로(route_<id>)를
 // 누적거리 기준으로 1km 단위로 끊어 [{km, paceSec, elevM}] 를 만든다(lib helper 권장).
@@ -13,7 +13,7 @@
 import React from 'react';
 import { rf, rs, rv } from './lib/responsive';
 import {View, Text, StyleSheet} from 'react-native';
-import {ACCENT, T1, T2, T3, FONT, DISPLAY} from './theme';
+import {BRAND, T1, T2, T3, FONT, DISPLAY} from './theme';
 
 export type Split = {km: number; paceSec: number; elevM: number};
 
@@ -66,8 +66,8 @@ const r = StyleSheet.create({
   km: {width: rs(34), fontFamily: DISPLAY, fontSize: rf(18), fontWeight: '600', color: T1},
   barWrap: {flex: 1, height: rs(10), borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.04)', overflow: 'hidden'},
   bar: {height: '100%', borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.30)'},
-  barBest: {backgroundColor: ACCENT},
+  barBest: {backgroundColor: BRAND},
   pace: {width: rs(60), textAlign: 'right', fontFamily: DISPLAY, fontSize: rf(15), fontWeight: '500', color: T1},
-  paceBest: {color: ACCENT},
+  paceBest: {color: BRAND},
   elev: {width: rs(46), textAlign: 'right', fontFamily: DISPLAY, fontSize: rf(14), fontWeight: '500', color: T3},
 });

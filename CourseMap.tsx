@@ -9,7 +9,7 @@ import React, {useState} from 'react';
 import { rf, rs, rv } from './lib/responsive';
 import {View, Text, StyleSheet, Platform, type LayoutChangeEvent} from 'react-native';
 import Svg, {Polyline, Circle} from 'react-native-svg';
-import {CARD, CARD_DIM, CARD_BORDER, ACCENT, T1, T2, T3, FONT, RADIUS, SEP} from './theme';
+import {CARD, CARD_DIM, CARD_BORDER, BRAND, T1, T2, T3, FONT, RADIUS, SEP} from './theme';
 import {DARK_MAP_STYLE} from './lib/mapStyle';
 import {projectRoute, type LatLon} from './lib/route';
 
@@ -61,13 +61,13 @@ function SvgCourse({points}: {points: LatLon[]}) {
           <Polyline
             points={proj.svgPoints}
             fill="none"
-            stroke={ACCENT}
+            stroke={BRAND}
             strokeWidth={3}
             strokeLinecap="round"
             strokeLinejoin="round"
           />
-          {!!start && <Circle cx={start.x} cy={start.y} r={5} fill={ACCENT} />}
-          {!!end && <Circle cx={end.x} cy={end.y} r={5} fill={T1} stroke={ACCENT} strokeWidth={2} />}
+          {!!start && <Circle cx={start.x} cy={start.y} r={5} fill={BRAND} />}
+          {!!end && <Circle cx={end.x} cy={end.y} r={5} fill={T1} stroke={BRAND} strokeWidth={2} />}
         </Svg>
       )}
     </View>
@@ -105,7 +105,7 @@ export function CourseMap({points, title = '코스', style}: {
             toolbarEnabled={false}
             liteMode
           >
-            <MapPolyline coordinates={coords} strokeColor={ACCENT} strokeWidth={4} lineCap="round" lineJoin="round" />
+            <MapPolyline coordinates={coords} strokeColor={BRAND} strokeWidth={4} lineCap="round" lineJoin="round" />
             <MapMarker coordinate={start} anchor={{x: 0.5, y: 0.5}} tracksViewChanges={false}>
               <View style={m.startDot} />
             </MapMarker>
@@ -126,7 +126,7 @@ const m = StyleSheet.create({
   label: {color: T3, fontFamily: FONT, fontSize: rf(13), fontWeight: '600', letterSpacing: 0.4},
   mapWell: {height: MAP_H, marginTop: rv(10), borderRadius: rs(14), borderCurve: 'continuous', overflow: 'hidden', backgroundColor: CARD_DIM, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP},
   startDot: {width: rs(12), height: rs(12), borderRadius: rs(6), borderCurve: 'continuous', backgroundColor: T2, borderWidth: 2, borderColor: T1},
-  endDot: {width: rs(14), height: rs(14), borderRadius: rs(7), borderCurve: 'continuous', backgroundColor: T1, borderWidth: 3, borderColor: ACCENT},
+  endDot: {width: rs(14), height: rs(14), borderRadius: rs(7), borderCurve: 'continuous', backgroundColor: T1, borderWidth: 3, borderColor: BRAND},
 });
 
 export default CourseMap;
