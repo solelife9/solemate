@@ -239,7 +239,7 @@ function MedalDetail({medal, insetTop, insetBottom, onClose, onOpenRun, onDelete
 const m = StyleSheet.create({
   screen: {flex: 1, backgroundColor: BG},
   nav: {paddingTop: rv(12), paddingHorizontal: rs(14), paddingBottom: rv(6), flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'},
-  iconBtn: {width: rs(36), height: rs(36), borderRadius: 999, backgroundColor: CARD_HI, alignItems: 'center', justifyContent: 'center'},
+  iconBtn: {width: rs(36), height: rs(36), borderRadius: RADIUS.pill, backgroundColor: CARD_HI, alignItems: 'center', justifyContent: 'center'},
   navTitle: {color: T1, fontFamily: FONT, fontSize: TYPE.heading.fontSize, fontWeight: '600', letterSpacing: -0.2},
 
   head: {flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: rv(4)},

@@ -28,7 +28,7 @@ import { RunLiveMap } from './RunLiveMap';
 import {
   BG, CARD, ACCENT, ACCENT_2, RING_ACCENT, RING_ACCENT_HI, RING_ACCENT_LO,
   GOOD, WARN, DANGER, T1, T2, T3, T4, SEP,
-  FONT, DISPLAY, withAlpha, HR_ZONE_COLORS, TYPE, HERO,
+  FONT, DISPLAY, withAlpha, HR_ZONE_COLORS, TYPE, HERO, RADIUS,
 } from './theme';
 import { estimateMaxHR, zoneOf, HR_ZONE_LABEL } from './lib/analytics/hrZones';
 import { fmtPaceSec } from './lib/pacePlan';
@@ -486,15 +486,15 @@ const r = StyleSheet.create({
   // 목표 달성 토스트 — 오렌지 판 대신 어두운 유리 막(투명 통일). 축하의 오렌지는 체크
   // 아이콘(포인트 컬러=강조 요소에만)이 담당한다.
   toast: { position: 'absolute', left: 18, right: 18, top: 50, zIndex: 20, flexDirection: 'row', alignItems: 'center', gap: rv(12), paddingVertical: rv(13), paddingHorizontal: rs(15), borderRadius: rs(16), borderCurve: 'continuous', backgroundColor: 'rgba(28,28,30,0.94)', borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.16) },
-  toastTick: { width: rs(34), height: rs(34), borderRadius: 999, backgroundColor: withAlpha(ACCENT, 0.2), alignItems: 'center', justifyContent: 'center' },
+  toastTick: { width: rs(34), height: rs(34), borderRadius: RADIUS.pill, backgroundColor: withAlpha(ACCENT, 0.2), alignItems: 'center', justifyContent: 'center' },
   toastA: { color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '700', letterSpacing: -0.2 },
   toastB: { color: withAlpha(T1, 0.88), fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500', marginTop: rv(2) },
 
   top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   live: { flexDirection: 'row', alignItems: 'center', gap: rv(7) },
-  liveDot: { width: rs(8), height: rs(8), borderRadius: 999, backgroundColor: ACCENT },
+  liveDot: { width: rs(8), height: rs(8), borderRadius: RADIUS.pill, backgroundColor: ACCENT },
   liveText: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500', letterSpacing: 0.2 },
-  shoeChip: { flexDirection: 'row', alignItems: 'center', gap: rv(7), backgroundColor: CARD, borderRadius: 999, paddingHorizontal: rs(12), height: rs(30), borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
+  shoeChip: { flexDirection: 'row', alignItems: 'center', gap: rv(7), backgroundColor: CARD, borderRadius: RADIUS.pill, paddingHorizontal: rs(12), height: rs(30), borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
   shoeText: { color: T3, fontFamily: DISPLAY, fontSize: TYPE.label.fontSize, fontWeight: '600' },
 
   gpsRow: { flexDirection: 'row', alignItems: 'center', gap: rv(8), marginTop: rv(14), justifyContent: 'center' },
@@ -530,7 +530,7 @@ const r = StyleSheet.create({
   recentK: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase' },
   recentV: { color: T2, fontFamily: DISPLAY, fontSize: TYPE.label.fontSize, fontWeight: '600', fontVariant: ['tabular-nums'] },
   recentN: { color: T2, fontWeight: '700' },
-  coach: { flexDirection: 'row', alignItems: 'center', alignSelf: 'center', gap: rv(8), marginTop: rv(18), paddingHorizontal: rs(14), height: rs(38), borderRadius: 999, borderWidth: 1 },
+  coach: { flexDirection: 'row', alignItems: 'center', alignSelf: 'center', gap: rv(8), marginTop: rv(18), paddingHorizontal: rs(14), height: rs(38), borderRadius: RADIUS.pill, borderWidth: 1 },
   coachTarget: { color: T2, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600' },
   coachDot: { width: rs(3), height: rs(3), borderRadius: rs(2), backgroundColor: T4 },
   coachMsg: { fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '700' },
@@ -586,9 +586,9 @@ const r = StyleSheet.create({
   controls: { flexDirection: 'row', justifyContent: 'center', gap: rv(48), paddingBottom: rv(8) },
   // 러닝 컨트롤 — 오렌지 필 대신 투명 유리(홈 CTA 와 같은 문법). 종료(cStop)만 DANGER
   // 색을 유지해 '위험한 동작'의 색 언어를 지킨다.
-  cPrimary: { width: rs(88), height: rs(88), borderRadius: 999, overflow: 'hidden', backgroundColor: withAlpha(T1, 0.1), alignItems: 'center', justifyContent: 'center' },
-  cResume: { width: rs(76), height: rs(76), borderRadius: 999, overflow: 'hidden', backgroundColor: withAlpha(T1, 0.1), alignItems: 'center', justifyContent: 'center' },
+  cPrimary: { width: rs(88), height: rs(88), borderRadius: RADIUS.pill, overflow: 'hidden', backgroundColor: withAlpha(T1, 0.1), alignItems: 'center', justifyContent: 'center' },
+  cResume: { width: rs(76), height: rs(76), borderRadius: RADIUS.pill, overflow: 'hidden', backgroundColor: withAlpha(T1, 0.1), alignItems: 'center', justifyContent: 'center' },
   cStopWrap: { width: rs(76), height: rs(76), alignItems: 'center', justifyContent: 'center' },
-  cStop: { width: rs(76), height: rs(76), borderRadius: 999, backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(DANGER, 0.5), alignItems: 'center', justifyContent: 'center' },
+  cStop: { width: rs(76), height: rs(76), borderRadius: RADIUS.pill, backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(DANGER, 0.5), alignItems: 'center', justifyContent: 'center' },
   ctrlHint: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500' },
 });

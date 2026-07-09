@@ -25,7 +25,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import {
   BG, CARD, ACCENT, GOOD, WARN, DANGER, T1, T2, T3, SEP,
-  FONT, withAlpha, Shoe, TYPE,
+  FONT, withAlpha, Shoe, TYPE, RADIUS,
 } from './theme';
 import {Pill, TabBar, Button, ShoeGlyph} from './primitives';
 import {GhostShoeCard} from './screens/KeegoHome';
@@ -200,7 +200,7 @@ const s = StyleSheet.create({
   // header
   header: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: rs(22), paddingTop: rv(8), paddingBottom: rv(4)},
   h1: {color: T1, fontFamily: FONT, fontSize: TYPE.title1.fontSize, fontWeight: '700', letterSpacing: -0.6},
-  iconBtn: {width: rs(38), height: rs(38), borderRadius: 999, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.08), alignItems: 'center', justifyContent: 'center'},
+  iconBtn: {width: rs(38), height: rs(38), borderRadius: RADIUS.pill, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.08), alignItems: 'center', justifyContent: 'center'},
 
   // empty
   emptyBody: {flex: 1, paddingHorizontal: rs(30)},
@@ -218,7 +218,7 @@ const s = StyleSheet.create({
   ctaWrap: {paddingHorizontal: rs(22), paddingTop: rv(14), paddingBottom: rv(6)},
 
   // success
-  checkBadge: {alignSelf: 'center', width: rs(64), height: rs(64), borderRadius: 999, alignItems: 'center', justifyContent: 'center', marginTop: rv(18), marginBottom: rv(18), backgroundColor: withAlpha(GOOD, 0.14), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(GOOD, 0.4)},
+  checkBadge: {alignSelf: 'center', width: rs(64), height: rs(64), borderRadius: RADIUS.pill, alignItems: 'center', justifyContent: 'center', marginTop: rv(18), marginBottom: rv(18), backgroundColor: withAlpha(GOOD, 0.14), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(GOOD, 0.4)},
   successTitle: {color: T1, fontFamily: FONT, fontSize: TYPE.title1.fontSize, fontWeight: '700', letterSpacing: -0.6, textAlign: 'center'},
   successSub: {marginTop: rv(11), color: T3, fontFamily: FONT, fontSize: TYPE.body.fontSize, lineHeight: rf(21), textAlign: 'center', alignSelf: 'center', maxWidth: rs(264)},
 
@@ -227,8 +227,8 @@ const s = StyleSheet.create({
   shoeBrand: {color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600', letterSpacing: 1.4},
   shoeModel: {marginTop: rv(4), color: T1, fontFamily: FONT, fontSize: TYPE.title.fontSize, fontWeight: '700', letterSpacing: -0.6},
 
-  track: {height: rs(12), borderRadius: 999, overflow: 'hidden', backgroundColor: withAlpha(T1, 0.04)},
-  trackFill: {position: 'absolute', left: 0, top: 0, bottom: 0, borderRadius: 999, backgroundColor: ACCENT},
+  track: {height: rs(12), borderRadius: RADIUS.pill, overflow: 'hidden', backgroundColor: withAlpha(T1, 0.04)},
+  trackFill: {position: 'absolute', left: 0, top: 0, bottom: 0, borderRadius: RADIUS.pill, backgroundColor: ACCENT},
   scaleRow: {flexDirection: 'row', justifyContent: 'space-between', marginTop: rv(9)},
   scaleText: {color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500'},
 

@@ -12,7 +12,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import Svg, {Defs, Mask, Rect, Circle} from 'react-native-svg';
 import {CameraView, useCameraPermissions} from 'expo-camera';
 import {manipulateAsync, SaveFormat} from 'expo-image-manipulator';
-import {BG, HALL_GOLD, T1, T2, T3, withAlpha} from './theme';
+import {BG, HALL_GOLD, T1, T2, T3, withAlpha, RADIUS} from './theme';
 import {pickShoePhoto} from './lib/photo';
 import {medalCropRect} from './lib/medalCrop';
 
@@ -127,11 +127,11 @@ const c = StyleSheet.create({
   screen: {flex: 1, backgroundColor: '#000'},
   hint: {position: 'absolute', left: 0, right: 0, textAlign: 'center', color: T1, fontFamily: 'PretendardVariable', fontSize: rf(17), fontWeight: '600', letterSpacing: -0.2},
   sub: {position: 'absolute', left: 0, right: 0, textAlign: 'center', color: withAlpha(T1, 0.7), fontFamily: 'PretendardVariable', fontSize: rf(13)},
-  close: {position: 'absolute', left: 18, width: rs(40), height: rs(40), borderRadius: 999, backgroundColor: 'rgba(0,0,0,0.35)', alignItems: 'center', justifyContent: 'center'},
+  close: {position: 'absolute', left: 18, width: rs(40), height: rs(40), borderRadius: RADIUS.pill, backgroundColor: 'rgba(0,0,0,0.35)', alignItems: 'center', justifyContent: 'center'},
   controls: {position: 'absolute', left: 0, right: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: rs(40)},
-  libBtn: {width: rs(48), height: rs(48), borderRadius: 999, backgroundColor: 'rgba(0,0,0,0.35)', alignItems: 'center', justifyContent: 'center'},
-  shutterWrap: {width: rs(76), height: rs(76), borderRadius: 999, borderWidth: 4, borderColor: withAlpha(T1, 0.4), alignItems: 'center', justifyContent: 'center'},
-  shutter: {width: rs(60), height: rs(60), borderRadius: 999, backgroundColor: T1, alignItems: 'center', justifyContent: 'center'},
+  libBtn: {width: rs(48), height: rs(48), borderRadius: RADIUS.pill, backgroundColor: 'rgba(0,0,0,0.35)', alignItems: 'center', justifyContent: 'center'},
+  shutterWrap: {width: rs(76), height: rs(76), borderRadius: RADIUS.pill, borderWidth: 4, borderColor: withAlpha(T1, 0.4), alignItems: 'center', justifyContent: 'center'},
+  shutter: {width: rs(60), height: rs(60), borderRadius: RADIUS.pill, backgroundColor: T1, alignItems: 'center', justifyContent: 'center'},
   permBox: {flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: rs(40), gap: rv(10)},
   permT: {color: T2, fontFamily: 'PretendardVariable', fontSize: rf(17), fontWeight: '600', marginTop: rv(8)},
   permD: {color: T3, fontFamily: 'PretendardVariable', fontSize: rf(14), textAlign: 'center', lineHeight: rf(19), marginBottom: rv(8)},

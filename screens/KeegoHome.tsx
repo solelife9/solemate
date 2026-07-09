@@ -357,10 +357,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: GUTTER, paddingTop: rv(6),
   },
   brandRow: {flexDirection: 'row', alignItems: 'center', gap: rv(8)},
-  brandDot: {width: rs(9), height: rs(9), borderRadius: 999, backgroundColor: WARN},
+  brandDot: {width: rs(9), height: rs(9), borderRadius: RADIUS.pill, backgroundColor: WARN},
   wordmark: {fontFamily: DISPLAY, fontSize: TYPE.heading.fontSize, fontWeight: '700', letterSpacing: -0.5, color: T1},
   avatar: {
-    width: rs(36), height: rs(36), borderRadius: 999, alignItems: 'center', justifyContent: 'center',
+    width: rs(36), height: rs(36), borderRadius: RADIUS.pill, alignItems: 'center', justifyContent: 'center',
     backgroundColor: withAlpha(T1, 0.08), borderWidth: 1, borderColor: withAlpha(T1, 0.12),
   },
   avatarGlyph: {fontFamily: FONT, color: withAlpha(T1, 0.9), fontSize: TYPE.heading.fontSize},
@@ -385,7 +385,7 @@ const styles = StyleSheet.create({
   cardModel: {fontFamily: FONT, fontSize: TYPE.title.fontSize, fontWeight: '700', letterSpacing: -0.6, color: T1, marginTop: rv(4)},
   // 컨디션 표기 — 칩 박스 없이 점+텍스트(점만 컨디션색, 텍스트는 밝은 무채색).
   condChip: {flexDirection: 'row', alignItems: 'center', gap: rv(7), flexShrink: 0, paddingVertical: rv(6)},
-  condDot: {width: rs(7), height: rs(7), borderRadius: 999},
+  condDot: {width: rs(7), height: rs(7), borderRadius: RADIUS.pill},
   condLabel: {fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600', color: T2},
 
   // width/height 는 렌더에서 화면 비례값(ring)으로 덮어쓴다.
@@ -400,7 +400,7 @@ const styles = StyleSheet.create({
   kmRow: {flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(11), marginTop: rv(20)},
   kmLabel: {fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600', color: T3},
   kmStrong: {color: T1},
-  kmSep: {width: rs(3), height: rs(3), borderRadius: 999, backgroundColor: withAlpha(T1, 0.28)},
+  kmSep: {width: rs(3), height: rs(3), borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.28)},
 
   runBtn: {
     height: rs(54), borderRadius: RADIUS.btn, borderCurve: 'continuous', marginTop: rv(20), overflow: 'hidden',
@@ -416,7 +416,7 @@ const styles = StyleSheet.create({
   ghostValTxt: {color: withAlpha(T1, 0.35), fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500'},
 
   dots: {flexDirection: 'row', justifyContent: 'center', gap: rv(7), marginTop: rv(16)},
-  dot: {height: rs(6), borderRadius: 999},
+  dot: {height: rs(6), borderRadius: RADIUS.pill},
   dotActive: {width: rs(20), backgroundColor: WARN},
   dotIdle: {width: rs(6), backgroundColor: withAlpha(T1, 0.22)},
 
@@ -424,7 +424,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: rv(12), marginHorizontal: GUTTER, marginTop: rv(20),
     paddingHorizontal: rs(18), paddingVertical: rv(14), borderRadius: rs(18), borderWidth: 1,
   },
-  guardDot: {width: rs(9), height: rs(9), borderRadius: 999},
+  guardDot: {width: rs(9), height: rs(9), borderRadius: RADIUS.pill},
   guardText: {flex: 1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600', letterSpacing: -0.2, color: T1},
   guardCta: {fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '700'},
 });

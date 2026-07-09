@@ -10,7 +10,7 @@
 import React from 'react';
 import { rf, rs, rv } from './lib/responsive';
 import {View, Text, StyleSheet} from 'react-native';
-import {ACCENT, GOOD, WARN, DANGER, T1, T2, T3, FONT, DISPLAY, withAlpha} from './theme';
+import {ACCENT, GOOD, WARN, DANGER, T1, T2, T3, FONT, DISPLAY, withAlpha, RADIUS} from './theme';
 import {wearTier, WearTierTone} from './lib/shoe';
 
 type Props = {
@@ -68,13 +68,13 @@ const g = StyleSheet.create({
   rem: {color: T1, fontFamily: DISPLAY, fontSize: rf(40), fontWeight: '600', letterSpacing: -1.4, lineHeight: rf(38)},
   remU: {color: T2, fontFamily: FONT, fontSize: rf(17), fontWeight: '500', marginLeft: rs(3), marginBottom: rv(4)},
   cond: {flexDirection: 'row', alignItems: 'center', gap: rv(7)},
-  dot: {width: rs(7), height: rs(7), borderRadius: 999},
+  dot: {width: rs(7), height: rs(7), borderRadius: RADIUS.pill},
   condTxt: {color: T2, fontFamily: FONT, fontSize: rf(14), fontWeight: '500'},
-  track: {flexDirection: 'row', height: rs(14), borderRadius: 999, overflow: 'hidden', marginTop: rv(16), backgroundColor: 'rgba(255,255,255,0.04)'},
+  track: {flexDirection: 'row', height: rs(14), borderRadius: RADIUS.pill, overflow: 'hidden', marginTop: rv(16), backgroundColor: 'rgba(255,255,255,0.04)'},
   seg: {height: '100%'},
-  fill: {position: 'absolute', left: 0, top: 0, bottom: 0, borderRadius: 999, backgroundColor: ACCENT},
+  fill: {position: 'absolute', left: 0, top: 0, bottom: 0, borderRadius: RADIUS.pill, backgroundColor: ACCENT},
   zone: {position: 'absolute', top: 0, bottom: 0, width: 1, backgroundColor: 'rgba(255,255,255,0.18)'},
-  marker: {position: 'absolute', top: '50%', width: rs(18), height: rs(18), borderRadius: 999, backgroundColor: T1,
+  marker: {position: 'absolute', top: '50%', width: rs(18), height: rs(18), borderRadius: RADIUS.pill, backgroundColor: T1,
     borderWidth: 3, borderColor: ACCENT, marginTop: rv(-9), marginLeft: rs(-9)},
   scale: {flexDirection: 'row', justifyContent: 'space-between', marginTop: rv(10)},
   scaleTxt: {color: T3, fontFamily: DISPLAY, fontSize: rf(12), opacity: 0.8},

@@ -29,7 +29,7 @@ import {
   HALL_GOLD,
   HALL_PLAQUE_BG,
   HALL_CERT_BG,
-  HALL_FOIL_STOPS, TYPE,
+  HALL_FOIL_STOPS, TYPE, RADIUS,
 } from './theme';
 import {SwipeBack} from './primitives';
 import RetirementCard from './RetirementCard';
@@ -416,7 +416,7 @@ const st = StyleSheet.create({
 
   featured: {borderRadius: rs(20), borderWidth: 1, borderColor: G.soft, backgroundColor: G.surface, padding: rs(22), paddingBottom: rv(20), marginBottom: rv(30), overflow: 'hidden'},
   featTop: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'},
-  badge: {flexDirection: 'row', alignItems: 'center', gap: rv(6), borderWidth: 1, borderColor: G.line, borderRadius: 999, paddingVertical: rv(5), paddingHorizontal: rs(10)},
+  badge: {flexDirection: 'row', alignItems: 'center', gap: rv(6), borderWidth: 1, borderColor: G.line, borderRadius: RADIUS.pill, paddingVertical: rv(5), paddingHorizontal: rs(10)},
   badgeDot: {width: rs(5), height: rs(5), borderRadius: rs(3), backgroundColor: G.gold},
   badgeTxt: {fontFamily: FONT, fontSize: rf(9), fontWeight: '700', letterSpacing: 1.4, color: G.gold},
   featYear: {fontFamily: SERIF, fontSize: TYPE.label.fontSize, color: G.muted, fontVariant: ['tabular-nums']},
@@ -469,7 +469,7 @@ const st = StyleSheet.create({
   coSign: {alignItems: 'flex-end'},
   coSignK: {fontFamily: SERIF, fontSize: rf(8), fontWeight: '700', letterSpacing: 1.4, color: G.faint},
   coSignNm: {fontFamily: SERIF, fontSize: TYPE.heading.fontSize, fontWeight: '700', color: G.txt, marginTop: rv(5)},
-  coShare: {marginTop: rv(24), flexDirection: 'row', alignItems: 'center', gap: rv(7), paddingVertical: rv(9), paddingHorizontal: rs(16), borderRadius: 999, borderWidth: 1, borderColor: G.soft, backgroundColor: 'rgba(214,180,120,0.04)'},
+  coShare: {marginTop: rv(24), flexDirection: 'row', alignItems: 'center', gap: rv(7), paddingVertical: rv(9), paddingHorizontal: rs(16), borderRadius: RADIUS.pill, borderWidth: 1, borderColor: G.soft, backgroundColor: 'rgba(214,180,120,0.04)'},
   coShareTxt: {fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '700', letterSpacing: 0.3, color: G.gold},
   coFoot: {flexDirection: 'row', alignItems: 'center', gap: rv(10), marginTop: rv(16)},
   coFootLine: {width: rs(22), height: 1, backgroundColor: G.soft},

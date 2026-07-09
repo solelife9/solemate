@@ -10,7 +10,7 @@ import { rf, rs, ri, rv } from './lib/responsive';
 import {View, Text, ScrollView, Pressable, TextInput, Image, StyleSheet, ActivityIndicator, Modal} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import {BG, CARD_HI, GOOD, WARN, HALL_GOLD, T1, T2, T3, T4, SEP, FONT, DISPLAY, withAlpha, TYPE, GLASS} from './theme';
+import {BG, CARD_HI, GOOD, WARN, HALL_GOLD, T1, T2, T3, T4, SEP, FONT, DISPLAY, withAlpha, TYPE, GLASS, RADIUS} from './theme';
 import {Button, Chip} from './primitives';
 import {captureCertPhoto} from './lib/photo';
 import MedalCamera from './MedalCamera';
@@ -274,7 +274,7 @@ export default function RaceMedalScreen({
 const s = StyleSheet.create({
   screen: {flex: 1, backgroundColor: BG},
   nav: {paddingTop: rv(12), paddingHorizontal: rs(14), paddingBottom: rv(6), flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'},
-  iconBtn: {width: rs(36), height: rs(36), borderRadius: 999, backgroundColor: CARD_HI, alignItems: 'center', justifyContent: 'center'},
+  iconBtn: {width: rs(36), height: rs(36), borderRadius: RADIUS.pill, backgroundColor: CARD_HI, alignItems: 'center', justifyContent: 'center'},
   navTitle: {flex: 1, textAlign: 'center', color: T1, fontFamily: FONT, fontSize: TYPE.heading.fontSize, fontWeight: '600', letterSpacing: -0.2, marginHorizontal: rs(8)},
 
   search: {flexDirection: 'row', alignItems: 'center', gap: rv(9), marginHorizontal: rs(18), marginTop: rv(4), marginBottom: rv(12), height: rs(46), paddingHorizontal: rs(14), borderRadius: rs(14), backgroundColor: GLASS.fill, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.1)},
@@ -283,7 +283,7 @@ const s = StyleSheet.create({
   raceRow: {flexDirection: 'row', alignItems: 'center', gap: rv(12), paddingVertical: rv(13), paddingHorizontal: rs(14), borderRadius: rs(14), backgroundColor: GLASS.fill, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP, marginBottom: rv(8)},
   raceName: {color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600', letterSpacing: -0.2},
   raceMeta: {color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, marginTop: rv(2)},
-  distPill: {backgroundColor: withAlpha(HALL_GOLD, 0.12), borderRadius: 999, paddingHorizontal: rs(9), paddingVertical: rv(4)},
+  distPill: {backgroundColor: withAlpha(HALL_GOLD, 0.12), borderRadius: RADIUS.pill, paddingHorizontal: rs(9), paddingVertical: rv(4)},
   distPillT: {color: HALL_GOLD, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '700'},
   noResult: {color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, marginTop: rv(4), marginBottom: rv(6)},
   customBox: {marginTop: rv(16), padding: rs(14), borderRadius: rs(16), borderWidth: 1, borderStyle: 'dashed', borderColor: withAlpha(T1, 0.16)},

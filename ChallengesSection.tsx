@@ -244,7 +244,7 @@ const s = StyleSheet.create({
   progressCur: {color: T1, fontFamily: DISPLAY, fontSize: rf(19), letterSpacing: 0.2},
   progressTot: {color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '700'},
   period: {color: T3, fontFamily: FONT, fontSize: rf(12), fontWeight: '500', marginTop: rv(4)},
-  del: {width: rs(28), height: rs(28), borderRadius: 999, borderCurve: 'continuous', alignItems: 'center', justifyContent: 'center', backgroundColor: CARD_HI},
+  del: {width: rs(28), height: rs(28), borderRadius: RADIUS.pill, borderCurve: 'continuous', alignItems: 'center', justifyContent: 'center', backgroundColor: CARD_HI},
 
   form: {backgroundColor: CARD, borderRadius: RADIUS.xl, borderCurve: 'continuous', padding: rs(16), gap: rv(14), marginBottom: rv(12)},
   segRow: {flexDirection: 'row', gap: rv(8)},

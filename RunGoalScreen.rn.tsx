@@ -449,7 +449,7 @@ const s = StyleSheet.create({
   pointer: { position: 'absolute', left: '50%', marginLeft: -1.5, top: 2, bottom: 24, width: rs(3), borderRadius: rs(3), backgroundColor: ACCENT },
 
   presets: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: rv(8), marginTop: rv(26) },
-  preset: { height: rs(36), paddingHorizontal: rs(16), borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(T1, 0.04), borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
+  preset: { height: rs(36), paddingHorizontal: rs(16), borderRadius: RADIUS.pill, alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(T1, 0.04), borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
   presetOn: { backgroundColor: withAlpha(ACCENT, 0.14), borderColor: withAlpha(ACCENT, 0.4) },
   presetText: { color: T2, fontFamily: DISPLAY, fontSize: TYPE.label.fontSize, fontWeight: '600' },
   presetTextOn: { color: ACCENT },
@@ -465,7 +465,7 @@ const s = StyleSheet.create({
   lapChipUnit: { color: T4, fontFamily: FONT, fontSize: TYPE.micro.fontSize, fontWeight: '600', marginTop: rv(1) },
 
   free: { alignItems: 'center', paddingHorizontal: rs(14) },
-  freeGlyph: { width: rs(88), height: rs(88), borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(ACCENT, 0.1), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.26), marginBottom: rv(22) },
+  freeGlyph: { width: rs(88), height: rs(88), borderRadius: RADIUS.pill, alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(ACCENT, 0.1), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.26), marginBottom: rv(22) },
   freeTitle: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.title.fontSize, fontWeight: '600', letterSpacing: -0.4, marginBottom: rv(10) },
   freeSub: { color: T3, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '500', lineHeight: rf(21), textAlign: 'center', maxWidth: rs(250) },
 
@@ -494,7 +494,7 @@ const s = StyleSheet.create({
   shoeBrand: { color: T3, fontFamily: DISPLAY, fontSize: TYPE.micro.fontSize, fontWeight: '600', letterSpacing: 1.4 },
   shoeModel: { color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600', letterSpacing: -0.2, marginTop: rv(2) },
   shoeCond: { flexDirection: 'row', alignItems: 'center', gap: rv(5), marginTop: rv(4) },
-  shoeDot: { width: rs(6), height: rs(6), borderRadius: 999 },
+  shoeDot: { width: rs(6), height: rs(6), borderRadius: RADIUS.pill },
   shoeCondText: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500' },
 
   // CTA 는 단일 Button 프리미티브(그라데이션·글로우·radius 토큰). 화면 고유 레이아웃
