@@ -73,7 +73,7 @@ export const NAVER_LABEL = '#FFFFFF';
 
 // ── rank tier colors (progression Slice A — AUTHORITATIVE) ───────────────────
 // 합성 랭크 티어 색. 진척 엔진/칩/링은 이 토큰만 참조한다(화면·lib 하드코딩 금지).
-// 값은 spec 권위표: Bronze→Legend. Legend = KEEGO 오렌지(#FF6500, ACCENT 와 동일 의도).
+// 값은 spec 권위표: Bronze→Legend. Legend = 골드/오렌지(#FF6500) — 성취 도메인 전용(브랜드 액센트 아님).
 // 키 타입은 lib/progression/types 의 RankTier 를 직접 import(타입 전용)해 컴파일타임
 // 완전성(exhaustiveness)을 강제한다 — 티어가 추가되면 여기서 키 누락이 타입 에러로 잡힌다.
 // types.ts 는 아무것도 import 하지 않으므로 순환 의존은 발생하지 않는다.

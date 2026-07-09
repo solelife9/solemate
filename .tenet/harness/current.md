@@ -87,5 +87,5 @@ unit_test_coverage: >= 60% for new code (특히 순수 함수: 거리 계산, �
 - **새 네이티브 의존성 추가 금지**(자율 검증 불가). 햅틱=RN 내장 `Vibration` 래퍼(`lib/haptics`), 토스트=커스텀 `Animated` 오버레이(`lib/toast`+ToastHost), 당겨서 새로고침=내장 `RefreshControl`. react-native-haptic-feedback·@react-native-community/datetimepicker·gesture-handler·reanimated·toast-message **설치 금지**(후속·사용자 액션).
 - **데이터 형태**: 신발/런에 선택적 `updatedAt:number`·`deleted?:boolean` 추가는 비파괴·하위호환. 부팅 1회 마이그레이션으로 기존 레코드 `updatedAt` 시드(스토리지 스키마 버전 키). 기존 값 손상 금지.
 - **순수 로직 불변**: 햅틱/토스트/포맷/타입/디자인 변경이 거리·페이스·시간·신발수명 계산 결과를 바꾸면 안 된다(기존 jest 회귀로 강제).
-- **다크(#0A0A0A) 무채 글래스 + 바이올렛 액센트(#8B5CF6) 정체성**(2026-07-09, 오렌지 폐지): 색은 theme 토큰 경유(하드코딩 금지), 액센트 절제·색은 의미에만.
+- **다크(#0A0A0A) 무채 글래스 + 러닝 링 전용 McLaren 파파야(RING_ACCENT #FF8000) 정체성**(2026-07-09 확정 — ACCENT=#FFFFFF 흰=강조, 바이올렛 전역 액센트 폐지): 색은 theme 토큰 경유(하드코딩 금지), 브랜드색은 링에만·그 외 색은 의미에만.
 - **솔레라이프 백엔드 repo는 이 run에서 변경하지 않는다**(별도 repo·danger zone). 백엔드측 작업(updatedAt 컬럼·FCM 등록 엔드포인트)은 문서화된 후속.

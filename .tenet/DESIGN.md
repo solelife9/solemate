@@ -9,10 +9,11 @@
 
 ### Color (theme.ts 토큰 — 화면 하드코딩 금지)
 - 배경: `BG #0A0A0A` · 카드 `CARD #1C1C1E` / `CARD_HI #2C2C2E` / `CARD_DIM #1C1C1E`(=CARD 통일) / `HERO_BG #242426`
-- 액센트(그라데이션): `ACCENT #8B5CF6`(일렉트릭 바이올렛) → `ACCENT_2 #A374FF` — **러닝 링 등 시그니처 순간에만**(무채 베이스 + 액센트 절제)
+- 브랜드색(러닝 링 전용): `RING_ACCENT #FF8000`(McLaren 파파야) — 링 그라데이션 `RING_ACCENT_HI #FFB458` → `RING_ACCENT_LO #E56600`
+- 무채 강조: `ACCENT #FFFFFF`(흰=강조) / `ACCENT_2 #EBEBF5` / `GRAD_TOP #EBEBF5` → `GRAD_BOT #C7C7CC` — **비-링 강조는 전부 무채**(토글·선택·아이콘·버튼)
 - 상태색: `WARN #E6A23C` / `DANGER #FF5A45` / `GOOD #46C98B`
 - 텍스트: `T1 #FFFFFF` / `T2 #EBEBF5` / `T3 #9C9CA3` · 구분선 `SEP rgba(255,255,255,0.07)`
-- **액센트 절제 규칙(2026-07-09 갱신)**: 무채 글래스가 기본. 브랜드 액센트(바이올렛)는 러닝 링·컨트롤 등 시그니처 순간에만. 라벨·보조 텍스트는 T3 회색. 색은 의미에만 — 신발 수명은 양호=GOOD/차분, 임계 근접=WARN, 초과=DANGER. Apple급 프리미엄=재질·타이포·절제(색 아님).
+- **액센트 절제 규칙(2026-07-09 확정)**: 무채 글래스가 기본, 흰=강조(모노크롬 시스템). 브랜드색(McLaren 파파야)은 **러닝 링에만** 생존 — 바이올렛 전역 액센트(`#8B5CF6`)는 실기기에서 남발로 판정돼 당일 폐지. 토글 ON=GOOD(초록), 솔리드 버튼=글래스(대비 보존). 라벨·보조 텍스트는 T3 회색. 색은 의미에만 — 신발 수명은 양호=GOOD/차분, 임계 근접=WARN, 초과=DANGER. Apple급 프리미엄=재질·타이포·절제(색 아님).
 
 ### Typography — **Pretendard 단일 패밀리 (Bebas 제거)**
 - 모든 텍스트 `FONT = 'PretendardVariable'`. `theme.ts`의 `DISPLAY`는 Pretendard로 교체 완료(2026-06 — BebasNeue 제거됨).
@@ -26,8 +27,8 @@
 
 ## Component Patterns (primitives.tsx)
 - **Ring**(기존): 신발 수명/목표 달성률. 그라데이션 stroke, 중앙에 숫자+라벨. 수명 상태색 연동.
-- **TabBar**(기존): 홈/기록/신발/프로필, 액티브=오렌지. 유지·정제.
-- **Button(CTA)**: 오렌지 그라데이션, radius 16, 굵은 텍스트. ghost 변형=CARD_HI.
+- **TabBar**: 홈/기록/신발/프로필. 떠있는 유리 블러 캡슐 독, 활성=T1 흰(채운 아이콘)+슬라이딩 하이라이트 오벌 — 색 대비가 아닌 형태로 구분.
+- **Button(CTA)**: 무채 그라데이션(GRAD_TOP→GRAD_BOT)·글래스, radius 16, 굵은 텍스트. ghost 변형=CARD_HI.
 - **Card**: CARD 배경, SEP 보더, radius 18, 패딩 16.
 - **Badge/Chip**: 상태(양호/주의/교체)·"교체 임박" — WARN/DANGER/GOOD 반투명 배경. (신규 추출 권장)
 - **StatTile**: 큰 숫자 + T3 라벨 + 단위. 정렬 규칙 준수.
@@ -53,7 +54,7 @@
 > Tone benchmark: Apple Fitness · WHOOP · PlayStation Trophies · Spotify Wrapped. **Never childish, meme, or RPG.**
 
 ## Chosen direction
-- **Dark, monochrome-glass base + one restrained violet accent (2026-07-09).** background `#0A0A0A`, cards `#1C1C1E` / raised `#2C2C2E`. Premium comes from material·typography·restraint (Apple/WHOOP/Linear), not a hue. Brand accent `#8B5CF6` (electric violet) used only on signature moments (run ring). Legend tier keeps its own gold/orange (achievement domain).
+- **Dark, monochrome-glass base + ring-only brand color (2026-07-09 확정).** background `#0A0A0A`, cards `#1C1C1E` / raised `#2C2C2E`. Premium comes from material·typography·restraint (Apple/WHOOP/Linear), not a hue. `ACCENT #FFFFFF` (white = emphasis); the single brand color is McLaren papaya `RING_ACCENT #FF8000`, living only on the run ring. Legend tier keeps its own gold/orange (achievement domain).
 - **Pretendard single family** (display + body), no secondary display face. Artifacts use the system stack (no web fonts allowed); production uses `PretendardVariable`.
 - **Tabular numerals everywhere** so km / paces / progress counts align.
 - Clean single hierarchy (800 headings, regular body), generous spacing, rounded corners 14–26. Phone-framed UI (~390px) on black; retirement cards square (~360px scaling a 1080×1080 keepsake).
@@ -88,12 +89,12 @@ All carry the subtle **KEEGO / Keep Going** wordmark + real aggregates (distance
 - **Achievement progress bar** — name + rarity label (rarity-colored), `current / target`, 6px track with tier-gradient fill; live, no fabrication.
 - **Retirement card** — square keepsake, four layouts (default C), grade badge + wordmark, Save Image / Share.
 - **Hall of Shoes grid** — 2-col cards (shoe glyph, model, big km, "은퇴 YYYY", RETIRED tag); persists forever, never disappears.
-- **Smart challenge card** — orange-tinted, "FOR YOU" badge, transparent **reason** block (rotation/wear data).
+- **Smart challenge card** — accent-tinted(현 무채), "FOR YOU" badge, transparent **reason** block (rotation/wear data).
 - **Hall of Fame state** — dashed "준비 중 / 개인 기록 모드 · Coming soon"; **no fabricated competitors** (cross-user ranking deferred E/F).
 
 ## Premium / non-RPG tone principles
 1. **Celebrate, don't gamify** — recognition of real running behavior, not XP grinding. No levels/HP/loot.
-2. **Restraint with accent** — one orange; tier colors do the categorical work; whitespace > decoration.
+2. **Restraint with accent** — monochrome emphasis (papaya lives only on the run ring); tier colors do the categorical work; whitespace > decoration.
 3. **Truth only** — every number is a real aggregate; achievements unlock on real criteria; no fake leaderboards.
 4. **Never forced** — retirement always offers Continue; bittersweet-proud tone, not punitive.
 5. **Shoe-first stays shoe-first** — Home keeps the shoe hero; progression surfaced as compact chips/modules.
