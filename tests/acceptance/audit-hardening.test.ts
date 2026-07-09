@@ -939,7 +939,7 @@ describe('Audit Hardening 수용', () => {
         (n: ReactTestRenderer.ReactTestInstance) =>
           !!n.type && (n.type as {displayName?: string}).displayName === 'Rect',
       );
-      expect(rects.length).toBeGreaterThanOrEqual(3); // 형태 림 + 블룸 + 코어 (+ 바닥광)
+      expect(rects.length).toBeGreaterThanOrEqual(2); // 블룸 + 코어 (4면 균일 라인 제거, 대각선 광)
       rects.forEach(n => {
         expect(n.props.rx).toBeGreaterThan(0); // 자체 라운딩 — 모서리 삐짐 방지
         expect(n.props.rx).toBeLessThanOrEqual(RADIUS.btn);

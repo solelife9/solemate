@@ -218,19 +218,12 @@ export const TONE_BG: Record<Tone, string> = {
 
 // ── GlassEdge — 유리 엣지(빛을 받은 테두리) ───────────────────────────────────
 // '좌상단에서 비스듬히 내려오는 단일 광원' 모델(사용자 피드백: 수직 낙하광 → 약간 대각선).
-// 구버전(KeegoHome 로컬)의 좌상↔우하 대각 그라데이션은 위아래가 비슷한 밝기로 빛나
-// 인공적인 대칭으로 읽혔다 — 실제 유리는 그렇게 빛나지 않는다.
-//   · 주광 림 = 밝은 코어(1.3px) 위에 옅고 넓은 블룸(×2.6)을 겹쳐 빛이 유리 단면에 맺혀
-//     살짝 번지는 느낌. 그라데이션 축을 (0,0)→(0.7,1)로 살짝 기울여 좌상단 코너가 가장
-//     밝고, 하이라이트가 상단·왼쪽 엣지를 감으며 어두운 구간으로 내려가 자연 소멸한다.
-//   · 형태 림 = 아주 옅은 균일 보더(9%) — 옆면·아랫면에서 유리 판의 존재만 알린다.
-//   · 반사광 = 광원 반대편(우하단 코너)에 13% — 주광의 1/4 수준. 같은 축을 공유해 물리적으로
-//     일관되고, 주광·반사광의 비대칭이 자연스러움의 핵심.
+// 대각선 광 모델(2026-07-09 사용자 확정):
+//   · 광축 = 우상↔좌하(anti-diagonal). 픽셀공간 고정 축의 중앙(=좌상-우하 대각선)에서 피크 →
+//     좌상단·우하단 코너가 가장 밝고, 우상단·좌하단으로 갈수록 자연 소멸한다.
+//   · 4면 균일 보더는 두지 않는다(박스처럼 갇혀 보였다 — 사용자 피드백). 엣지는 이 대각선
+//     하이라이트(코어 + 옅은 블룸)만으로 유리 단면의 존재를 알린다.
 // id 는 생략 가능(useId 자동 — 같은 화면 다중 인스턴스 안전). radius 는 부모 모서리와 동일값.
-// 광선 방향 — 수직에서 18° 기울인 단위벡터(sin18°, cos18°). 모든 GlassEdge 가 같은
-// 하늘의 같은 광원을 공유한다(픽셀 공간 고정 — 요소 비율과 무관하게 물리각 일정).
-const LIGHT_DX = 0.309;
-const LIGHT_DY = 0.951;
 
 export function GlassEdge({
   id,
@@ -265,32 +258,22 @@ export function GlassEdge({
       {s.w > 1 ? (
         <Svg width={s.w} height={s.h}>
           <Defs>
-            {/* 주광·반사광이 같은 광선 축을 공유 — 좌상단 광원, 우하단 반사.
-                축은 정규화(0~1)가 아니라 '실제 픽셀 공간'(userSpaceOnUse)에 수직 18° 기울임으로
-                고정한다. 정규화 축은 가로로 긴 요소(러닝 시작 버튼)에서 실질 수평광이 되어
-                왼쪽 옆면만 통째로 빛나는 왜곡을 만들었다(사용자 피드백). 픽셀 고정 각이면
-                같은 광원 아래에서 카드는 대각선 느낌, 납작한 버튼은 윗변 전체가 은은히
-                빛나며 오른쪽으로 자연 감쇠한다. */}
+            {/* 대각선 광 — 축을 우상(w,0)→좌하(0,h)로 두고 중앙(=좌상-우하 대각선)에서 피크.
+                userSpaceOnUse(픽셀공간)라 요소 비율과 무관하게 물리각 일정. 좌상·우하 코너가
+                가장 밝고 우상·좌하로 자연 소멸한다. */}
             <SvgGradient
-              id={`${gid}-top`} gradientUnits="userSpaceOnUse"
-              x1="0" y1="0" x2={LIGHT_DX * (LIGHT_DX * s.w + LIGHT_DY * s.h)} y2={LIGHT_DY * (LIGHT_DX * s.w + LIGHT_DY * s.h)}>
-              <Stop offset="0" stopColor={T1} stopOpacity={0.55} />
-              <Stop offset="0.16" stopColor={T1} stopOpacity={0.14} />
-              <Stop offset="0.4" stopColor={T1} stopOpacity={0} />
+              id={`${gid}-diag`} gradientUnits="userSpaceOnUse"
+              x1={s.w} y1="0" x2="0" y2={s.h}>
+              <Stop offset="0" stopColor={T1} stopOpacity={0} />
+              <Stop offset="0.24" stopColor={T1} stopOpacity={0.03} />
+              <Stop offset="0.5" stopColor={T1} stopOpacity={0.36} />
+              <Stop offset="0.76" stopColor={T1} stopOpacity={0.03} />
               <Stop offset="1" stopColor={T1} stopOpacity={0} />
             </SvgGradient>
-            <SvgGradient
-              id={`${gid}-bot`} gradientUnits="userSpaceOnUse"
-              x1="0" y1="0" x2={LIGHT_DX * (LIGHT_DX * s.w + LIGHT_DY * s.h)} y2={LIGHT_DY * (LIGHT_DX * s.w + LIGHT_DY * s.h)}>
-              <Stop offset="0" stopColor={T1} stopOpacity={0} />
-              <Stop offset="0.75" stopColor={T1} stopOpacity={0} />
-              <Stop offset="1" stopColor={T1} stopOpacity={0.13} />
-            </SvgGradient>
           </Defs>
-          <Rect {...edge(1)} fill="none" stroke={withAlpha(T1, 0.09)} strokeWidth={1} />
-          <Rect {...edge(bloomW)} fill="none" stroke={`url(#${gid}-top)`} strokeWidth={bloomW} opacity={0.22} />
-          <Rect {...edge(strokeWidth)} fill="none" stroke={`url(#${gid}-top)`} strokeWidth={strokeWidth} />
-          <Rect {...edge(1)} fill="none" stroke={`url(#${gid}-bot)`} strokeWidth={1} />
+          {/* 옅은 블룸(넓은 스트로크) → 코어. 4면 균일 라인은 없음(대각선 하이라이트만). */}
+          <Rect {...edge(bloomW)} fill="none" stroke={`url(#${gid}-diag)`} strokeWidth={bloomW} opacity={0.4} />
+          <Rect {...edge(strokeWidth)} fill="none" stroke={`url(#${gid}-diag)`} strokeWidth={strokeWidth} />
         </Svg>
       ) : null}
     </View>

@@ -187,18 +187,22 @@ const pressableStyleAt = (
 };
 
 describe('Button — unified CTA surface (glass · matte · radius token)', () => {
-  test('cta glass highlight is lit from above: bright top core, faint floor bounce', () => {
-    // 자연광 계약: GlassEdge 의 세로 그라데이션에서 상단 하이라이트(0.55)가 하단
-    // 바닥 반사광(0.13)보다 뚜렷이 밝아야 한다 — 위아래 동일 밝기의 인공 대칭 금지.
+  test('cta glass edge is a diagonal light: mid-peak on TL–BR, fading to 0 at both ends', () => {
+    // 대각선 광 계약(2026-07-09): 광축 중앙(=좌상-우하 대각선)에서 피크(~0.36),
+    // 양 끝(우상·좌하)은 0 으로 자연 소멸. 옛 상단 0.55 코어보다 절제.
     const {root} = render(<Button label="시작" variant="cta" />);
     layoutGlassEdges(root);
     const stops = byName(root, 'Stop').filter((s: any) => s.props.stopColor === T1);
-    expect(stops.length).toBeGreaterThanOrEqual(2);
-    const opacities = stops.map((s: any) => s.props.stopOpacity);
-    const topCore = Math.max(...opacities);
-    expect(topCore).toBeGreaterThanOrEqual(0.5); // 주광원(상단 코어)
-    expect(opacities).toContain(0.13); // 바닥 반사광 — 주광의 1/4 수준
-    expect(topCore).toBeGreaterThan(0.13 * 3); // 비대칭이 자연스러움의 계약
+    expect(stops.length).toBeGreaterThanOrEqual(3);
+    const withOff = stops.map((s: any) => ({o: Number(s.props.offset), op: Number(s.props.stopOpacity)}));
+    const peak = Math.max(...withOff.map((s) => s.op));
+    expect(peak).toBeGreaterThanOrEqual(0.3); // 대각선 피크
+    expect(peak).toBeLessThan(0.5); // 옛 0.55 코어보다 절제
+    expect(withOff.find((s) => s.o === 0)?.op).toBe(0); // 우상단 끝 = 소멸
+    expect(withOff.find((s) => s.o === 1)?.op).toBe(0); // 좌하단 끝 = 소멸
+    const peakStop = withOff.find((s) => s.op === peak)!;
+    expect(peakStop.o).toBeGreaterThan(0); // 피크는 중앙(끝이 아님)
+    expect(peakStop.o).toBeLessThan(1);
   });
 
   test('cta is matte — no glow shadow of any colour', () => {
@@ -213,7 +217,7 @@ describe('Button — unified CTA surface (glass · matte · radius token)', () =
     // rx 는 RADIUS.btn 이하(부모 모서리 밖으로 삐지지 않음), 0 초과여야 한다.
     layoutGlassEdges(root);
     const rects = byName(root, 'Rect');
-    expect(rects.length).toBeGreaterThanOrEqual(3); // 형태 림 + 블룸 + 코어 (+ 바닥광)
+    expect(rects.length).toBeGreaterThanOrEqual(2); // 블룸 + 코어 (4면 균일 라인 제거)
     rects.forEach((r: any) => {
       expect(r.props.rx).toBeGreaterThan(0);
       expect(r.props.rx).toBeLessThanOrEqual(RADIUS.btn);
