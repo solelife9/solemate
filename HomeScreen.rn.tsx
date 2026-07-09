@@ -551,7 +551,7 @@ const s = StyleSheet.create({
   baselineRow: { flexDirection: 'row', alignItems: 'flex-end' },
 
   topbar: { paddingTop: rv(8), paddingHorizontal: GUTTER, paddingBottom: SPACE.xs, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  addBtn: { height: rs(34), paddingHorizontal: rs(14), borderRadius: RADIUS.pill, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.2), backgroundColor: CARD_HI, flexDirection: 'row', alignItems: 'center', gap: rv(6) },
+  addBtn: { height: rs(34), paddingHorizontal: rs(14), borderRadius: RADIUS.pill, borderWidth: 1, borderColor: withAlpha(T1, 0.2), backgroundColor: CARD_HI, flexDirection: 'row', alignItems: 'center', gap: rv(6) },
   addBtnText: { color: T1, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600' },
 
   // paddingBottom 20: '오늘의 신발' 라벨 행을 걷어낸 뒤 인사말과 히어로 카드가 붙어
@@ -570,7 +570,7 @@ const s = StyleSheet.create({
 
 
 
-  goalCard: { backgroundColor: GLASS.fill, borderRadius: rs(18), borderCurve: 'continuous', borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER, padding: SPACE.md, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  goalCard: { backgroundColor: GLASS.fill, borderRadius: rs(18), borderCurve: 'continuous', borderWidth: 1, borderColor: CARD_BORDER, padding: SPACE.md, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   goalInfo: { flex: 1, gap: rv(6), minWidth: 0 },
   goalSub: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500' },
   streakChip: { flexDirection: 'row', alignItems: 'center', gap: rv(4), alignSelf: 'flex-start', borderRadius: RADIUS.pill, paddingHorizontal: rs(8), paddingVertical: rv(4) },
@@ -585,7 +585,7 @@ const s = StyleSheet.create({
 
   // 현재 상태 인사이트 카드(사용거리 | 교체예상) — 활성 신발 반영
   weekEmptyTxt: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, lineHeight: rf(19) },
-  insightCard: { backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderCurve: 'continuous', borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER, padding: SPACE.lg },
+  insightCard: { backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderCurve: 'continuous', borderWidth: 1, borderColor: CARD_BORDER, padding: SPACE.lg },
   insightGrid: { flexDirection: 'row', alignItems: 'flex-start' },
   insightDivider: { width: StyleSheet.hairlineWidth, alignSelf: 'stretch', backgroundColor: withAlpha(T1, 0.08), marginHorizontal: SPACE.lg },
   insightLabel: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600', letterSpacing: -0.1 },
@@ -613,7 +613,7 @@ const s = StyleSheet.create({
   pageDotOn: { width: rs(16), backgroundColor: T2 },
 
   // 홈 챌린지 카드
-  chalWrap: { marginHorizontal: SPACE.xl, marginTop: SPACE.lg, backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER, padding: SPACE.lg },
+  chalWrap: { marginHorizontal: SPACE.xl, marginTop: SPACE.lg, backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: CARD_BORDER, padding: SPACE.lg },
   chalLabel: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600', letterSpacing: 0.6, textTransform: 'uppercase', flex: 1 },
   chalMore: { color: ACCENT, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600' },
   chalEmpty: { alignItems: 'center', paddingVertical: rv(8) },
@@ -628,7 +628,7 @@ const s = StyleSheet.create({
   chalPct: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, marginTop: rv(4) },
 
   rotaWrap: { marginTop: SPACE.lg },
-  rotaCard: { marginHorizontal: SPACE.xl, backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER, paddingHorizontal: SPACE.lg },
+  rotaCard: { marginHorizontal: SPACE.xl, backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: CARD_BORDER, paddingHorizontal: SPACE.lg },
   rotaBrand: { color: T3, fontFamily: DISPLAY, fontSize: TYPE.caption.fontSize, fontWeight: '500', letterSpacing: 1.2 },
   rotaModel: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.body.fontSize, fontWeight: '600', letterSpacing: -0.1, marginTop: rv(4) },
   // 로테이션 인사이트 행

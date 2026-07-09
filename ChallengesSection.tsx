@@ -248,7 +248,7 @@ const s = StyleSheet.create({
 
   form: {backgroundColor: CARD, borderRadius: RADIUS.xl, borderCurve: 'continuous', padding: rs(16), gap: rv(14), marginBottom: rv(12)},
   segRow: {flexDirection: 'row', gap: rv(8)},
-  seg: {flex: 1, alignItems: 'center', paddingVertical: rv(10), borderRadius: RADIUS.md, borderCurve: 'continuous', backgroundColor: CARD_HI, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP},
+  seg: {flex: 1, alignItems: 'center', paddingVertical: rv(10), borderRadius: RADIUS.md, borderCurve: 'continuous', backgroundColor: CARD_HI, borderWidth: 1, borderColor: SEP},
   segOn: {backgroundColor: withAlpha(ACCENT, 0.16), borderColor: ACCENT},
   segTxt: {color: T2, fontFamily: FONT, fontSize: rf(15), fontWeight: '600'},
   segTxtOn: {color: ACCENT, fontWeight: '700'},

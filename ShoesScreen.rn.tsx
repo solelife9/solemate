@@ -654,7 +654,7 @@ const s = StyleSheet.create({
   pressed: { opacity: 0.85 },
   row: { flexDirection: 'row', alignItems: 'center', gap: rv(8) },
   baselineRow: { flexDirection: 'row', alignItems: 'flex-end' },
-  card: { backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER },
+  card: { backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: CARD_BORDER },
   sectionLabel: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600', letterSpacing: 0.4, paddingHorizontal: rs(4) },
   dot: { width: rs(7), height: rs(7), borderRadius: RADIUS.pill },
   condText: { fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500' },
@@ -663,7 +663,7 @@ const s = StyleSheet.create({
   // 목업 정합: 제목 + '신발 추가' 버튼 한 줄(topbar)
   topbar: { paddingTop: rv(8), paddingHorizontal: rs(22), paddingBottom: rv(8), flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   title: { color: T1, fontFamily: FONT, fontSize: TYPE.title1.fontSize, fontWeight: '600', letterSpacing: -0.6 },
-  addPill: { height: rs(34), paddingHorizontal: rs(14), borderRadius: RADIUS.pill, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.2), backgroundColor: CARD_HI, flexDirection: 'row', alignItems: 'center', gap: rv(6) },
+  addPill: { height: rs(34), paddingHorizontal: rs(14), borderRadius: RADIUS.pill, borderWidth: 1, borderColor: withAlpha(T1, 0.2), backgroundColor: CARD_HI, flexDirection: 'row', alignItems: 'center', gap: rv(6) },
   addPillText: { color: T1, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600' },
 
   // 카드 하단 중복 진행바(track/trackFill)를 제거하고 원형 Ring 만 유지한다. 바가
@@ -671,9 +671,9 @@ const s = StyleSheet.create({
   // 재조정했다 — 같은 pct 를 두 번 그리던 중복을 없애 시선이 링에 모인다.
   // 목업 정합: 카드 배경을 near-black(CARD_DIM)에서 살짝 떠 보이는 회색(HERO_BG — 홈
   // 히어로 카드와 동일 톤)으로 올려 black-on-black 을 피한다.
-  shoeCard: { backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderCurve: 'continuous', borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER, padding: rs(16) },
-  shoeCardFeatured: { borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.2) },
-  shoeCardIdle: { borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.08) },
+  shoeCard: { backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderCurve: 'continuous', borderWidth: 1, borderColor: CARD_BORDER, padding: rs(16) },
+  shoeCardFeatured: { borderWidth: 1, borderColor: withAlpha(T1, 0.2) },
+  shoeCardIdle: { borderWidth: 1, borderColor: withAlpha(T1, 0.08) },
   shoeCardRetired: { opacity: 0.55, borderColor: withAlpha(T1, 0.05) },
   // 상단: 좌(브랜드·모델) ↔ 우(컨디션 위 · ▶/화살표 아래) — 사진 정합
   shoeTopSection: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: rv(10) },
@@ -687,7 +687,7 @@ const s = StyleSheet.create({
   cardTypeChipText: { color: ACCENT, fontFamily: FONT, fontSize: TYPE.micro.fontSize, fontWeight: '700', letterSpacing: 0.1 },
   // 추천 용도(러닝 종류) 한 줄 — 카드 중간
   shoePurpose: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500', letterSpacing: -0.1, marginTop: rv(10) },
-  cardPlay: { width: rs(32), height: rs(32), borderRadius: RADIUS.pill, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.14), alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(BG, 0.3) },
+  cardPlay: { width: rs(32), height: rs(32), borderRadius: RADIUS.pill, borderWidth: 1, borderColor: withAlpha(T1, 0.14), alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(BG, 0.3) },
   shoeCondDot: { width: rs(7), height: rs(7), borderRadius: RADIUS.pill },
   shoeCondText: { color: T2, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500' },
   // 누적 거리(큰 숫자) + 교체까지 남은 거리 — 목업 lifeRow 정합
@@ -706,16 +706,16 @@ const s = StyleSheet.create({
   soonText: { color: T2, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500' },
   soonStrong: { color: WARN, fontWeight: '700' },
   shoePaceVal: { color: T3, fontFamily: DISPLAY, fontSize: TYPE.caption.fontSize },
-  cardPlayAbs: { position: 'absolute', top: 14, right: 14, width: rs(36), height: rs(36), borderRadius: RADIUS.pill, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.14), alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(BG, 0.3) },
+  cardPlayAbs: { position: 'absolute', top: 14, right: 14, width: rs(36), height: rs(36), borderRadius: RADIUS.pill, borderWidth: 1, borderColor: withAlpha(T1, 0.14), alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(BG, 0.3) },
   retireBtn: { height: rs(54), borderRadius: RADIUS.md, marginTop: rv(22), flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(8), backgroundColor: withAlpha(DANGER, 0.06), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(DANGER, 0.45) },
-  restoreBtn: { height: rs(54), borderRadius: RADIUS.md, marginTop: rv(22), flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(8), backgroundColor: 'transparent', borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.14) },
+  restoreBtn: { height: rs(54), borderRadius: RADIUS.md, marginTop: rv(22), flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(8), backgroundColor: 'transparent', borderWidth: 1, borderColor: withAlpha(T1, 0.14) },
   retireBtnText: { fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600', letterSpacing: -0.2 },
 
 
 
   // detail
   detailNav: { paddingTop: rv(12), paddingHorizontal: rs(16), paddingBottom: rv(6), flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  iconBtn: { width: rs(38), height: rs(38), borderRadius: RADIUS.pill, backgroundColor: CARD_HI, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.12), alignItems: 'center', justifyContent: 'center' },
+  iconBtn: { width: rs(38), height: rs(38), borderRadius: RADIUS.pill, backgroundColor: CARD_HI, borderWidth: 1, borderColor: withAlpha(T1, 0.12), alignItems: 'center', justifyContent: 'center' },
   // 상태 칩(목업 09) — 회색 알약 + 흰 글씨 + 점(녹색 아님)
   statusPill: { flexDirection: 'row', alignItems: 'center', gap: rv(8), backgroundColor: CARD_HI, borderRadius: RADIUS.pill, paddingHorizontal: rs(12), paddingVertical: rv(8), alignSelf: 'flex-start' },
   statusDot: { width: rs(6), height: rs(6), borderRadius: RADIUS.pill, backgroundColor: T1 },
@@ -731,7 +731,7 @@ const s = StyleSheet.create({
   dTypeChip: { backgroundColor: withAlpha(ACCENT, 0.14), borderRadius: RADIUS.pill, paddingHorizontal: rs(12), paddingVertical: rv(4) },
   dTypeChipText: { color: ACCENT, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '700', letterSpacing: 0.1 },
   dPurposeLabel: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600', marginTop: rv(16) },
-  runCta: { height: rs(46), borderRadius: rs(14), backgroundColor: 'transparent', borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.14), flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(8) },
+  runCta: { height: rs(46), borderRadius: rs(14), backgroundColor: 'transparent', borderWidth: 1, borderColor: withAlpha(T1, 0.14), flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(8) },
   runCtaText: { color: T2, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600', letterSpacing: -0.2 },
 
   // 교체 내러티브 배너(keep-going 보이스) — accent 톤 반투명 표면(withAlpha 파생).

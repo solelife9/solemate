@@ -115,13 +115,13 @@ const s = StyleSheet.create({
   sub: {color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, lineHeight: rf(18), paddingHorizontal: rs(4), marginBottom: rv(2)},
 
   // 요약 스탯 헤더(상단정렬 시 공백 채움)
-  statStrip: {flexDirection: 'row', alignItems: 'center', backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderCurve: 'continuous', borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER, paddingVertical: rv(16)},
+  statStrip: {flexDirection: 'row', alignItems: 'center', backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderCurve: 'continuous', borderWidth: 1, borderColor: CARD_BORDER, paddingVertical: rv(16)},
   stat: {flex: 1, alignItems: 'center', gap: rv(4)},
   statV: {color: T1, fontFamily: DISPLAY, fontSize: TYPE.title.fontSize, fontWeight: '800', letterSpacing: -0.5, fontVariant: ['tabular-nums']},
   statU: {color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '700'},
   statL: {color: T3, fontFamily: FONT, fontSize: TYPE.micro.fontSize, fontWeight: '600', letterSpacing: 0.3},
   statDiv: {width: StyleSheet.hairlineWidth, alignSelf: 'stretch', backgroundColor: SEP, marginVertical: rv(4)},
-  card: {flexDirection: 'row', alignItems: 'center', gap: rv(12), backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderCurve: 'continuous', padding: rs(16), borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER},
+  card: {flexDirection: 'row', alignItems: 'center', gap: rv(12), backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderCurve: 'continuous', padding: rs(16), borderWidth: 1, borderColor: CARD_BORDER},
   brand: {color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600', letterSpacing: 0.4},
   model: {color: T1, fontFamily: FONT, fontSize: TYPE.heading.fontSize, fontWeight: '700', letterSpacing: -0.2, marginTop: rv(1)},
   meta: {color: T2, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500', marginTop: rv(4)},

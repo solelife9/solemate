@@ -462,7 +462,7 @@ const s = StyleSheet.create({
   // 히어로
   hero: {
     backgroundColor: HERO_BG,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1,
     borderColor: CARD_BORDER,
     borderRadius: RADIUS.xl,
     padding: SPACE.xl,
@@ -499,7 +499,7 @@ const s = StyleSheet.create({
   // 스탯 카드
   statCard: {
     backgroundColor: GLASS.fill,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1,
     borderColor: CARD_BORDER,
     borderRadius: RADIUS.lg,
     borderCurve: 'continuous',
@@ -512,7 +512,7 @@ const s = StyleSheet.create({
   // 업적 카드
   ach: {
     backgroundColor: GLASS.fill,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1,
     borderColor: CARD_BORDER,
     borderRadius: RADIUS.sm,
     padding: rs(14),

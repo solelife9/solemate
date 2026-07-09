@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
     width: '100%',
     backgroundColor: CARD_HI,
     borderRadius: RADIUS.md, borderCurve: 'continuous',
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1,
     borderColor: SEP,
     paddingVertical: SPACE.md,
     paddingHorizontal: SPACE.lg,

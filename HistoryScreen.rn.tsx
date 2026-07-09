@@ -1160,7 +1160,7 @@ const s = StyleSheet.create({
   runPhoto: { width: '100%', height: rs(200), borderRadius: rs(16), borderCurve: 'continuous', marginTop: rv(16) },
   runMemo: { color: T2, fontFamily: FONT, fontSize: TYPE.body.fontSize, lineHeight: rf(21), marginTop: rv(12), fontStyle: 'italic' },
   // 트랙 랩 표 — 랩번호 · 상대페이스 바 · km당 페이스 · 랩시간.
-  trackCard: { marginTop: rv(16), backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderCurve: 'continuous', borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER, paddingHorizontal: rs(16), paddingVertical: rv(14) },
+  trackCard: { marginTop: rv(16), backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderCurve: 'continuous', borderWidth: 1, borderColor: CARD_BORDER, paddingHorizontal: rs(16), paddingVertical: rv(14) },
   trackHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: rv(12) },
   trackTitle: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.body.fontSize, fontWeight: '700', letterSpacing: -0.2 },
   trackSub: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600' },
@@ -1176,7 +1176,7 @@ const s = StyleSheet.create({
   gpxHint: { color: T4, fontFamily: FONT, fontSize: TYPE.caption.fontSize, marginLeft: 'auto' },
   offscreen: { position: 'absolute', left: -10000, top: 0, opacity: 0 },
   baselineRow: { flexDirection: 'row', alignItems: 'flex-end' },
-  card: { backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER },
+  card: { backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: CARD_BORDER },
   cardTitle: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600' },
   sectionLabel: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600', letterSpacing: 0.4, paddingHorizontal: rs(4) },
   // 요약 카드(큰 거리) — 목업 기록(10)
@@ -1196,7 +1196,7 @@ const s = StyleSheet.create({
   prU: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600', marginLeft: rs(3) },
   prL: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500', marginTop: rv(4) },
   // 런 카드 — 목업 기록(10): 신발+날짜 + 거리·평균페이스·시간
-  runCard: { backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER, padding: rs(18) },
+  runCard: { backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: CARD_BORDER, padding: rs(18) },
   runCardTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: rv(10), marginBottom: rv(14) },
   runCardBrand: { color: T3, fontFamily: DISPLAY, fontSize: TYPE.caption.fontSize, fontWeight: '500', letterSpacing: 1.2 },
   runCardModel: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.heading.fontSize, fontWeight: '700', letterSpacing: -0.2, marginTop: rv(2) },
@@ -1223,7 +1223,7 @@ const s = StyleSheet.create({
   chartLabels: { flexDirection: 'row', marginTop: rv(8), paddingRight: rs(42) },
   chartLabel: { flex: 1, textAlign: 'center', color: T3, fontFamily: FONT, fontWeight: '600' },
   chartTipWrap: { position: 'absolute', left: -26, right: -26, alignItems: 'center', zIndex: 5 },
-  chartTip: { backgroundColor: CARD_HI, borderRadius: rs(8), paddingHorizontal: rs(8), paddingVertical: rv(4), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.14) },
+  chartTip: { backgroundColor: CARD_HI, borderRadius: rs(8), paddingHorizontal: rs(8), paddingVertical: rv(4), borderWidth: 1, borderColor: withAlpha(T1, 0.14) },
   chartBarVal: { fontFamily: DISPLAY, fontSize: TYPE.micro.fontSize, fontWeight: '600', color: T3, fontVariant: ['tabular-nums'] },
   chartTipVal: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.label.fontSize, fontWeight: '600', letterSpacing: 0.2 },
   chartTipU: { color: T3, fontFamily: FONT, fontSize: TYPE.micro.fontSize, fontWeight: '500' },
@@ -1234,7 +1234,7 @@ const s = StyleSheet.create({
   // 콤팩트: 요약 4칸(거리/횟수/페이스/시간)의 패딩·값 폰트·여백을 줄여 세로 높이를
   // 압축한다(정보는 그대로 유지 — 라벨/값/단위 모두 렌더). 리스트가 위로 올라온다.
   summaryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: rv(8) },
-  summaryCell: { width: '47.5%', flexGrow: 1, backgroundColor: GLASS.fill, borderRadius: RADIUS.md, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP, padding: rs(12) },
+  summaryCell: { width: '47.5%', flexGrow: 1, backgroundColor: GLASS.fill, borderRadius: RADIUS.md, borderWidth: 1, borderColor: SEP, padding: rs(12) },
   // 4열 요약 행(Screens Refined) — 카드 없이 헤어라인 구분.
   sumRow: { flexDirection: 'row', marginTop: rv(6), marginBottom: rv(2) },
   sumCell: { flex: 1, paddingHorizontal: rs(2) },
@@ -1265,14 +1265,14 @@ const s = StyleSheet.create({
   nav: { paddingTop: rv(12), paddingHorizontal: rs(16), paddingBottom: rv(6) },
   navRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   navActions: { flexDirection: 'row', alignItems: 'center', gap: rv(8) },
-  iconBtn: { width: rs(38), height: rs(38), borderRadius: RADIUS.pill, backgroundColor: CARD_HI, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.12), alignItems: 'center', justifyContent: 'center' },
+  iconBtn: { width: rs(38), height: rs(38), borderRadius: RADIUS.pill, backgroundColor: CARD_HI, borderWidth: 1, borderColor: withAlpha(T1, 0.12), alignItems: 'center', justifyContent: 'center' },
 
   // manual-run / edit form
   formTitle: { color: T1, fontFamily: FONT, fontSize: TYPE.heading.fontSize, fontWeight: '600' },
   formLabel: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600', marginBottom: rv(8), paddingHorizontal: rs(2) },
   formHint: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize },
   chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: rv(8) },
-  input: { backgroundColor: GLASS.fill, borderRadius: rs(14), paddingHorizontal: rs(16), paddingVertical: rv(14), color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
+  input: { backgroundColor: GLASS.fill, borderRadius: rs(14), paddingHorizontal: rs(16), paddingVertical: rv(14), color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, borderWidth: 1, borderColor: SEP },
   // 검증 실패 시 입력칸 테두리를 빨강으로 강조하고, 아래에 인라인 헬퍼텍스트를 띄운다.
   inputErr: { borderColor: DANGER, borderWidth: 1 },
   errText: { color: DANGER, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500', marginTop: rv(8), paddingHorizontal: rs(2) },

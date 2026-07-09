@@ -662,7 +662,7 @@ const s = StyleSheet.create({
   btnFull: {flex: 0},
   btnGhost: {
     backgroundColor: 'transparent',
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1,
     borderColor: withAlpha(T1, 0.16),
   },
   // primary(다음/확정/완료)는 단일 Button 프리미티브로 라우팅 — 그라데이션/글로우/RADIUS.btn.

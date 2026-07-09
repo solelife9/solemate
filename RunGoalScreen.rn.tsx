@@ -449,7 +449,7 @@ const s = StyleSheet.create({
   pointer: { position: 'absolute', left: '50%', marginLeft: -1.5, top: 2, bottom: 24, width: rs(3), borderRadius: rs(3), backgroundColor: ACCENT },
 
   presets: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: rv(8), marginTop: rv(26) },
-  preset: { height: rs(36), paddingHorizontal: rs(16), borderRadius: RADIUS.pill, alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(T1, 0.04), borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
+  preset: { height: rs(36), paddingHorizontal: rs(16), borderRadius: RADIUS.pill, alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(T1, 0.04), borderWidth: 1, borderColor: SEP },
   presetOn: { backgroundColor: withAlpha(ACCENT, 0.14), borderColor: withAlpha(ACCENT, 0.4) },
   presetText: { color: T2, fontFamily: DISPLAY, fontSize: TYPE.label.fontSize, fontWeight: '600' },
   presetTextOn: { color: ACCENT },
@@ -458,7 +458,7 @@ const s = StyleSheet.create({
   trackWrap: { alignItems: 'center', paddingHorizontal: rs(14) },
   trackLbl: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', marginBottom: rv(4) },
   lapChips: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: rv(8), marginTop: rv(36) },
-  lapChip: { minWidth: rs(60), height: rs(50), paddingHorizontal: rs(16), borderRadius: rs(15), borderCurve: 'continuous', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(T1, 0.03), borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
+  lapChip: { minWidth: rs(60), height: rs(50), paddingHorizontal: rs(16), borderRadius: rs(15), borderCurve: 'continuous', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(T1, 0.03), borderWidth: 1, borderColor: SEP },
   lapChipOn: { backgroundColor: withAlpha(ACCENT, 0.13), borderColor: withAlpha(ACCENT, 0.45) },
   lapChipVal: { color: T3, fontFamily: DISPLAY, fontSize: TYPE.heading.fontSize, fontWeight: '700', letterSpacing: -0.4 },
   lapChipValOn: { color: ACCENT },
@@ -470,7 +470,7 @@ const s = StyleSheet.create({
   freeSub: { color: T3, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '500', lineHeight: rf(21), textAlign: 'center', maxWidth: rs(250) },
 
   foot: { paddingHorizontal: rs(22), paddingTop: rv(4), paddingBottom: rv(30) },
-  shoeSel: { flexDirection: 'row', alignItems: 'center', gap: rv(12), padding: rs(12), borderRadius: RADIUS.lg, borderCurve: 'continuous', backgroundColor: GLASS.fill, borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER },
+  shoeSel: { flexDirection: 'row', alignItems: 'center', gap: rv(12), padding: rs(12), borderRadius: RADIUS.lg, borderCurve: 'continuous', backgroundColor: GLASS.fill, borderWidth: 1, borderColor: CARD_BORDER },
   // 신발 전환 시트(하단) — History 기간 피커와 같은 문법(SCRIM + 하단 카드).
   pickerSheet: { backgroundColor: CARD, borderTopLeftRadius: RADIUS.xl, borderTopRightRadius: RADIUS.xl, borderCurve: 'continuous', paddingHorizontal: rs(18), paddingTop: rv(18), paddingBottom: rv(34), gap: rv(10) },
   // 목표 직접 입력 키패드 — 시트 규약은 pickerSheet 재사용, 키만 추가.
@@ -483,14 +483,14 @@ const s = StyleSheet.create({
   kpKeyTxt: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.title.fontSize, fontWeight: '600' },
   kpOk: { marginTop: rv(6) },
   pickerTitle: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600', letterSpacing: 0.2, marginBottom: rv(4) },
-  pickerRow: { flexDirection: 'row', alignItems: 'center', gap: rv(12), padding: rs(14), borderRadius: RADIUS.lg, borderCurve: 'continuous', backgroundColor: withAlpha(T1, 0.04), borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER },
+  pickerRow: { flexDirection: 'row', alignItems: 'center', gap: rv(12), padding: rs(14), borderRadius: RADIUS.lg, borderCurve: 'continuous', backgroundColor: withAlpha(T1, 0.04), borderWidth: 1, borderColor: CARD_BORDER },
   pickerRowOn: { backgroundColor: withAlpha(T1, 0.09), borderColor: withAlpha(T1, 0.2) },
   pickerBrand: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600', letterSpacing: 0.6 },
   pickerModel: { color: T1, fontFamily: FONT, fontSize: TYPE.heading.fontSize, fontWeight: '700', letterSpacing: -0.2, marginTop: rv(1) },
   pickerMeta: { flexDirection: 'row', alignItems: 'center', gap: rv(6) },
   pickerRemain: { color: T2, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500' },
   pickerCheck: { color: T1, fontFamily: FONT, fontSize: TYPE.heading.fontSize, fontWeight: '700', marginLeft: rs(2) },
-  shoeThumb: { width: rs(46), height: rs(46), borderRadius: rs(13), alignItems: 'center', justifyContent: 'center', backgroundColor: HERO_BG, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
+  shoeThumb: { width: rs(46), height: rs(46), borderRadius: rs(13), alignItems: 'center', justifyContent: 'center', backgroundColor: HERO_BG, borderWidth: 1, borderColor: SEP },
   shoeBrand: { color: T3, fontFamily: DISPLAY, fontSize: TYPE.micro.fontSize, fontWeight: '600', letterSpacing: 1.4 },
   shoeModel: { color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600', letterSpacing: -0.2, marginTop: rv(2) },
   shoeCond: { flexDirection: 'row', alignItems: 'center', gap: rv(4), marginTop: rv(4) },

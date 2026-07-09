@@ -508,7 +508,7 @@ const card = StyleSheet.create({
   },
   quiet: {
     backgroundColor: GLASS.fill,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1,
     borderColor: CARD_BORDER,
   },
   hero: {
@@ -633,7 +633,7 @@ const SEG_VARIANTS: Record<
   neutral: {
     container: {
       backgroundColor: withAlpha(T1, 0.035),
-      borderWidth: StyleSheet.hairlineWidth,
+      borderWidth: 1,
       borderColor: CARD_BORDER,
       borderRadius: rs(13),
       padding: rs(3),
@@ -649,7 +649,7 @@ const SEG_VARIANTS: Record<
   raised: {
     container: {
       backgroundColor: CARD,
-      borderWidth: StyleSheet.hairlineWidth,
+      borderWidth: 1,
       borderColor: CARD_BORDER,
       borderRadius: RADIUS.pill,
       padding: rs(4),
@@ -663,7 +663,7 @@ const SEG_VARIANTS: Record<
   accentTint: {
     container: {
       backgroundColor: CARD,
-      borderWidth: StyleSheet.hairlineWidth,
+      borderWidth: 1,
       borderColor: CARD_BORDER,
       borderRadius: rs(14),
       padding: rs(4),

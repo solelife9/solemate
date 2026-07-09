@@ -720,7 +720,7 @@ const s = StyleSheet.create({
   ctaCaption: {fontFamily: FONT, fontSize: TYPE.caption.fontSize, color: T3, textAlign: 'center', marginTop: rv(10)},
 
   // 신발 인텔리전스
-  heroCard: {marginTop: rv(24), borderRadius: rs(22), borderCurve: 'continuous', backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP},
+  heroCard: {marginTop: rv(24), borderRadius: rs(22), borderCurve: 'continuous', backgroundColor: CARD, borderWidth: 1, borderColor: SEP},
   shoeRowCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -730,7 +730,7 @@ const s = StyleSheet.create({
     paddingHorizontal: rs(16),
     borderRadius: rs(22), borderCurve: 'continuous',
     backgroundColor: CARD,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1,
     borderColor: SEP,
   },
   shoeThumb: {width: rs(44), height: rs(44), borderRadius: rs(12), borderCurve: 'continuous', backgroundColor: 'rgba(255,255,255,0.06)', alignItems: 'center', justifyContent: 'center'},
@@ -738,7 +738,7 @@ const s = StyleSheet.create({
   alertRow: {flexDirection: 'row', alignItems: 'center', gap: rv(8), marginTop: rv(22), paddingHorizontal: rs(2)},
 
   // 성능(기능 목록)
-  featCard: {marginTop: rv(24), paddingHorizontal: rs(18), paddingVertical: rv(4), borderRadius: rs(22), borderCurve: 'continuous', backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP},
+  featCard: {marginTop: rv(24), paddingHorizontal: rs(18), paddingVertical: rv(4), borderRadius: rs(22), borderCurve: 'continuous', backgroundColor: CARD, borderWidth: 1, borderColor: SEP},
   featRow: {flexDirection: 'row', alignItems: 'center', gap: rv(14), paddingVertical: rv(18)},
   featRowDivider: {borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP},
   featIc: {width: rs(38), height: rs(38), borderRadius: rs(11), borderCurve: 'continuous', alignItems: 'center', justifyContent: 'center'},
@@ -754,7 +754,7 @@ const s = StyleSheet.create({
     paddingHorizontal: rs(14),
     borderRadius: rs(14), borderCurve: 'continuous',
     backgroundColor: CARD,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1,
     borderColor: withAlpha(T1, 0.12),
   },
   selectorText: {flex: 1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600', color: T1, letterSpacing: -0.2},

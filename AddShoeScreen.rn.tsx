@@ -194,7 +194,7 @@ const s = StyleSheet.create({
   pressed: { opacity: 0.85, transform: [{ scale: 0.98 }] },
 
   nav: { paddingTop: rv(12), paddingHorizontal: rs(18), paddingBottom: rv(6), flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  iconBtn: { width: rs(38), height: rs(38), borderRadius: RADIUS.pill, backgroundColor: CARD_HI, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.12), alignItems: 'center', justifyContent: 'center' },
+  iconBtn: { width: rs(38), height: rs(38), borderRadius: RADIUS.pill, backgroundColor: CARD_HI, borderWidth: 1, borderColor: withAlpha(T1, 0.12), alignItems: 'center', justifyContent: 'center' },
   navTitle: { color: T1, fontFamily: FONT, fontSize: TYPE.heading.fontSize, fontWeight: '500', letterSpacing: -0.2 },
 
   photo: { alignSelf: 'center', width: rs(120), height: rs(120), borderRadius: rs(26), borderCurve: 'continuous', borderWidth: 1, borderStyle: 'dashed', borderColor: withAlpha(T1, 0.14), backgroundColor: withAlpha(T1, 0.02), alignItems: 'center', justifyContent: 'center', gap: rv(8), marginBottom: rv(10), overflow: 'hidden' },

@@ -200,7 +200,7 @@ const s = StyleSheet.create({
   // header
   header: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: rs(22), paddingTop: rv(8), paddingBottom: rv(4)},
   h1: {color: T1, fontFamily: FONT, fontSize: TYPE.title1.fontSize, fontWeight: '700', letterSpacing: -0.6},
-  iconBtn: {width: rs(38), height: rs(38), borderRadius: RADIUS.pill, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.08), alignItems: 'center', justifyContent: 'center'},
+  iconBtn: {width: rs(38), height: rs(38), borderRadius: RADIUS.pill, borderWidth: 1, borderColor: withAlpha(T1, 0.08), alignItems: 'center', justifyContent: 'center'},
 
   // empty
   emptyBody: {flex: 1, paddingHorizontal: rs(30)},

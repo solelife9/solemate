@@ -287,7 +287,7 @@ export default function RunActiveScreen({
           거리/자유 모드는 거리 히어로, 트랙 모드는 '바퀴 수' 히어로(링=현재 바퀴 진행). */}
       {!uiPaused && (
       <Animated.View style={[r.ringWrap, { transform: [{ scale: ringScale }] }]}>
-        <Ring size={ri(310)} stroke={16} progress={track ? track.progress : pct}>
+        <Ring size={ri(280)} stroke={16} progress={track ? track.progress : pct}>
           {track ? (
             <View style={{ alignItems: 'center' }} accessibilityRole="text" accessibilityLiveRegion="polite"
               accessibilityLabel={`${track.lapCount}바퀴, ${track.lapDistKm.toFixed(2)}킬로미터, 한 바퀴 ${track.lapM}미터 ${track.calibrated ? 'GPS 보정됨' : '예상'}`}>
@@ -475,17 +475,17 @@ export default function RunActiveScreen({
 const r = StyleSheet.create({
   screen: { flex: 1, backgroundColor: BG, paddingHorizontal: rs(24) },
   // 일시정지 상단 지도 패널(위 절반) — 둥근 카드, 탭하면 전체화면. flex:1 로 상단을 채운다.
-  mapPanel: { borderRadius: rs(20), borderCurve: 'continuous', overflow: 'hidden', marginTop: rv(6), marginBottom: rv(14), backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
+  mapPanel: { borderRadius: rs(20), borderCurve: 'continuous', overflow: 'hidden', marginTop: rv(6), marginBottom: rv(14), backgroundColor: CARD, borderWidth: 1, borderColor: SEP },
   // 패널 우하단 '전체화면' 힌트 배지.
-  mapExpandBadge: { position: 'absolute', right: 12, bottom: 12, width: rs(32), height: rs(32), borderRadius: rs(16), backgroundColor: 'rgba(0,0,0,0.55)', alignItems: 'center', justifyContent: 'center', borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.2) },
+  mapExpandBadge: { position: 'absolute', right: 12, bottom: 12, width: rs(32), height: rs(32), borderRadius: rs(16), backgroundColor: 'rgba(0,0,0,0.55)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: withAlpha(T1, 0.2) },
   // 전체화면 지도 하단 중앙 버튼 행 — 구석 대신 가운데, 위로 올려 잘 눌리게.
   mapBtnRow: { position: 'absolute', left: 0, right: 0, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: rv(20), zIndex: 20, elevation: 8 },
   // 큰 원형 아이콘 버튼(라벨 없음). zIndex/elevation 으로 네이티브 지도 위에서 확실히 탭.
-  mapBtn: { width: rs(60), height: rs(60), borderRadius: rs(30), backgroundColor: 'rgba(0,0,0,0.65)', alignItems: 'center', justifyContent: 'center', borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.3), zIndex: 20, elevation: 8 },
+  mapBtn: { width: rs(60), height: rs(60), borderRadius: rs(30), backgroundColor: 'rgba(0,0,0,0.65)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: withAlpha(T1, 0.3), zIndex: 20, elevation: 8 },
 
   // 목표 달성 토스트 — 오렌지 판 대신 어두운 유리 막(투명 통일). 축하의 오렌지는 체크
   // 아이콘(포인트 컬러=강조 요소에만)이 담당한다.
-  toast: { position: 'absolute', left: 18, right: 18, top: 50, zIndex: 20, flexDirection: 'row', alignItems: 'center', gap: rv(12), paddingVertical: rv(12), paddingHorizontal: rs(16), borderRadius: rs(16), borderCurve: 'continuous', backgroundColor: 'rgba(28,28,30,0.94)', borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.16) },
+  toast: { position: 'absolute', left: 18, right: 18, top: 50, zIndex: 20, flexDirection: 'row', alignItems: 'center', gap: rv(12), paddingVertical: rv(12), paddingHorizontal: rs(16), borderRadius: rs(16), borderCurve: 'continuous', backgroundColor: 'rgba(28,28,30,0.94)', borderWidth: 1, borderColor: withAlpha(T1, 0.16) },
   toastTick: { width: rs(34), height: rs(34), borderRadius: RADIUS.pill, backgroundColor: withAlpha(ACCENT, 0.2), alignItems: 'center', justifyContent: 'center' },
   toastA: { color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '700', letterSpacing: -0.2 },
   toastB: { color: withAlpha(T1, 0.88), fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500', marginTop: rv(2) },
@@ -494,7 +494,7 @@ const r = StyleSheet.create({
   live: { flexDirection: 'row', alignItems: 'center', gap: rv(8) },
   liveDot: { width: rs(8), height: rs(8), borderRadius: RADIUS.pill, backgroundColor: ACCENT },
   liveText: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500', letterSpacing: 0.2 },
-  shoeChip: { flexDirection: 'row', alignItems: 'center', gap: rv(8), backgroundColor: CARD, borderRadius: RADIUS.pill, paddingHorizontal: rs(12), height: rs(30), borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
+  shoeChip: { flexDirection: 'row', alignItems: 'center', gap: rv(8), backgroundColor: CARD, borderRadius: RADIUS.pill, paddingHorizontal: rs(12), height: rs(30), borderWidth: 1, borderColor: SEP },
   shoeText: { color: T3, fontFamily: DISPLAY, fontSize: TYPE.label.fontSize, fontWeight: '600' },
 
   gpsRow: { flexDirection: 'row', alignItems: 'center', gap: rv(8), marginTop: rv(14), justifyContent: 'center' },
@@ -560,7 +560,7 @@ const r = StyleSheet.create({
     marginBottom: rv(4),
     borderRadius: rs(16), borderCurve: 'continuous',
     overflow: 'hidden',
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1,
     borderColor: SEP,
   },
   positionDot: {
@@ -581,7 +581,7 @@ const r = StyleSheet.create({
   lapBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(8), height: rs(58), borderRadius: rs(18), borderCurve: 'continuous', backgroundColor: withAlpha(ACCENT, 0.12), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.4) },
   lapBtnText: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.heading.fontSize, fontWeight: '700', letterSpacing: -0.2 },
   lapBtnCount: { position: 'absolute', right: 18, color: ACCENT_2, fontFamily: DISPLAY, fontSize: TYPE.body.fontSize, fontWeight: '700', fontVariant: ['tabular-nums'] },
-  lapUndo: { width: rs(52), height: rs(52), borderRadius: rs(16), borderCurve: 'continuous', alignItems: 'center', justifyContent: 'center', backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
+  lapUndo: { width: rs(52), height: rs(52), borderRadius: rs(16), borderCurve: 'continuous', alignItems: 'center', justifyContent: 'center', backgroundColor: CARD, borderWidth: 1, borderColor: SEP },
 
   controls: { flexDirection: 'row', justifyContent: 'center', gap: rv(48), paddingBottom: rv(8) },
   // 러닝 컨트롤 — 오렌지 필 대신 투명 유리(홈 CTA 와 같은 문법). 종료(cStop)만 DANGER

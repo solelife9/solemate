@@ -971,7 +971,7 @@ describe('Audit Hardening 수용', () => {
       cardHosts.forEach(n => {
         const f = StyleSheet.flatten(n.props.style) as {borderColor?: string; borderWidth?: number};
         expect(f.borderColor).toBe(CARD_BORDER);          // 단일 보더 토큰
-        expect(f.borderWidth).toBe(StyleSheet.hairlineWidth);
+        expect(f.borderWidth).toBe(1); // 1px 헤어라인(2026-07-10 확정 — 0.33px 는 7% 알파에서 소멸)
       });
       expect(renderedText(c.root)).toContain('카드 본문');
       act(() => c.unmount());

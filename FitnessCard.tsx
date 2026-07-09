@@ -51,7 +51,7 @@ export function FitnessCard({ runs = [], todayISO, style }: { runs?: any[]; toda
 }
 
 const st = StyleSheet.create({
-  card: { backgroundColor: CARD, borderRadius: RADIUS.lg, borderCurve: 'continuous', borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER, paddingHorizontal: rs(20), paddingTop: rv(14), paddingBottom: rv(18) },
+  card: { backgroundColor: CARD, borderRadius: RADIUS.lg, borderCurve: 'continuous', borderWidth: 1, borderColor: CARD_BORDER, paddingHorizontal: rs(20), paddingTop: rv(14), paddingBottom: rv(18) },
   title: { color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '600' },
   caption: { color: T4, fontFamily: FONT, fontSize: rf(13), lineHeight: rf(18), marginTop: rv(12) },
 });
