@@ -539,6 +539,51 @@ export function AmbientBackdrop() {
   );
 }
 
+// ── 고스트 빈 상태 부품(앱 전역 표준 — 2026-07-09 사용자 확정) ──────────────────
+// 빈 화면은 '채워질 모습'을 실루엣으로 말한다(홈 GhostShoeCard 문법의 전역화).
+// 중앙 히어로·안내문 박스 폐지 — 상단 시작: EmptyGhostHeader(타이포) + 실카드와
+// 같은 재질의 고스트 아이템(내용만 딤 실루엣). 점선 금지(유틸리티 드롭존으로 읽힘).
+// 화면은 이 부품으로 실카드 레이아웃을 그대로 흉내 낸다 — 실카드가 진화하면 고스트도 따라온다.
+export function EmptyGhostHeader({title, sub}: {title: string; sub?: React.ReactNode}) {
+  return (
+    <View style={ghostS.head}>
+      <Text style={ghostS.title}>{title}</Text>
+      {sub ? <Text style={ghostS.sub}>{sub}</Text> : null}
+    </View>
+  );
+}
+/** 헤더 sub 안에서 강조할 단어를 감싼다(예: '보관 처리'). */
+export function GhostStrong({children}: {children: React.ReactNode}) {
+  return <Text style={ghostS.strong}>{children}</Text>;
+}
+/** 텍스트 실루엣 바. w = 퍼센트/px 폭, dim = 두 번째 줄 톤. */
+export function GhostBar({w, dim, style}: {w: number | `${number}%`; dim?: boolean; style?: StyleProp<ViewStyle>}) {
+  return <View style={[ghostS.bar, dim && ghostS.barDim, {width: w}, style]} />;
+}
+/** 썸네일 실루엣(글리프 자리). */
+export function GhostThumb({size = 44, children}: {size?: number; children?: React.ReactNode}) {
+  return <View style={[ghostS.thumb, {width: rs(size), height: rs(size)}]}>{children}</View>;
+}
+/** 비활성 액션 실루엣(예: '복원' 알약). */
+export function GhostPill({label}: {label: string}) {
+  return (
+    <View style={ghostS.pill}>
+      <Text style={ghostS.pillText}>{label}</Text>
+    </View>
+  );
+}
+const ghostS = StyleSheet.create({
+  head: {paddingHorizontal: rs(4), marginBottom: SPACE.lg},
+  title: {color: T1, fontFamily: FONT, fontSize: TYPE.heading.fontSize, fontWeight: '700', letterSpacing: -0.3, marginTop: SPACE.xs},
+  sub: {color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, lineHeight: rf(21), marginTop: SPACE.xs + 2},
+  strong: {color: T2, fontWeight: '700'},
+  bar: {height: rs(9), borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.1)},
+  barDim: {backgroundColor: withAlpha(T1, 0.07), marginTop: rs(7)},
+  thumb: {borderRadius: RADIUS.sm, backgroundColor: withAlpha(T1, 0.05), alignItems: 'center', justifyContent: 'center'},
+  pill: {paddingHorizontal: rs(14), paddingVertical: rs(8), borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.05)},
+  pillText: {color: withAlpha(T1, 0.3), fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '700'},
+});
+
 // ── SegmentedControl (탭 스트립 단일 프리미티브) ───────────────────────────────
 // 앱 전역에 흩어져 있던 4개 탭 스트립(History 기간 · Profile recap · Progression 섹션 ·
 // RunGoal 모드)을 하나로 통합한다. 선택 상태·접근성(role/selected/label)·press 동작을

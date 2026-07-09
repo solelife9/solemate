@@ -10,8 +10,8 @@ import { rf, rs, ri, rv } from './lib/responsive';
 import {View, Text, ScrollView, Pressable, StyleSheet} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import {BG, CARD, CARD_HI, ACCENT, T1, T2, T3, SEP, FONT, DISPLAY, RADIUS, withAlpha, Shoe, TYPE} from './theme';
-import {SwipeBack} from './primitives';
+import {BG, GLASS, CARD_BORDER, ACCENT, T1, T2, T3, SEP, FONT, DISPLAY, RADIUS, withAlpha, Shoe, TYPE} from './theme';
+import {SwipeBack, EmptyGhostHeader, GhostStrong, GhostBar, GhostThumb, GhostPill, ShoeGlyph} from './primitives';
 import {Unit} from './lib/units';
 
 export default function ShoeArchiveScreen({
@@ -44,27 +44,29 @@ export default function ShoeArchiveScreen({
         contentContainerStyle={{paddingHorizontal: rs(18), paddingBottom: rv(28), gap: rv(12), paddingTop: rv(6)}}
         showsVerticalScrollIndicator={false}>
         {shoes.length === 0 ? (
-          // 빈 상태 — 중앙 히어로를 폐지하고 상단 시작 + 안내 콘텐츠로 채운다
-          // (기기 피드백 2026-07-09: "허전하고 화면 중앙에 동떨어져 있다").
-          // 보관함이 '무엇이고 어떻게 쓰는지'가 빈 화면의 콘텐츠가 된다.
-          <View style={s.empty} testID="shoe-archive-empty">
-            <View style={s.emptyBadge}>
-              <Ionicons name="archive-outline" size={ri(30)} color={T2} />
+          // 빈 상태 = 고스트 카드(사용자 확정 2026-07-09) — 홈 GhostShoeCard 와 같은
+          // '채워질 모습을 형태로 말하기' 문법. 점선은 유틸리티(드롭존)로 읽혀 배제 —
+          // 실카드와 동일한 콰이어트 글라스에 내용만 실루엣으로 딤 처리한다.
+          <View testID="shoe-archive-empty">
+            <EmptyGhostHeader
+              title="아직 쉬는 신발이 없어요"
+              sub={<>신발 상세에서 <GhostStrong>보관 처리</GhostStrong>하면 이 자리로 옮겨져요.{'\n'}기록은 그대로 남고, 복원은 언제든.</>}
+            />
+            {/* 고스트 아이템 — 실카드(s.card)와 같은 재질, 내용만 실루엣 */}
+            <View style={s.card}>
+              <GhostThumb><ShoeGlyph size={ri(24)} color={withAlpha(T1, 0.35)} /></GhostThumb>
+              <View style={{flex: 1, minWidth: 0}}>
+                <GhostBar w="38%" />
+                <GhostBar w="62%" dim />
+              </View>
+              <GhostPill label="복원" />
             </View>
-            <Text style={s.emptyText}>보관한 신발이 없어요</Text>
-            <Text style={s.emptySub}>당장 안 신는 신발을 러닝 목록에서 잠시 치워두는 곳이에요.</Text>
-            <View style={s.emptyDivider} />
-            <View style={s.emptyRow}>
-              <Ionicons name="footsteps-outline" size={ri(17)} color={T3} style={s.emptyRowIcon} />
-              <Text style={s.emptyRowText}>신발 상세에서 <Text style={s.emptyRowStrong}>보관 처리</Text>하면 여기로 옮겨져요.</Text>
-            </View>
-            <View style={s.emptyRow}>
-              <Ionicons name="shield-checkmark-outline" size={ri(17)} color={T3} style={s.emptyRowIcon} />
-              <Text style={s.emptyRowText}>보관해도 누적 거리와 러닝 기록은 그대로 남아요.</Text>
-            </View>
-            <View style={s.emptyRow}>
-              <Ionicons name="arrow-undo-outline" size={ri(17)} color={T3} style={s.emptyRowIcon} />
-              <Text style={s.emptyRowText}><Text style={s.emptyRowStrong}>복원</Text>하면 언제든 다시 러닝에 쓸 수 있어요.</Text>
+            <View style={[s.card, s.ghostFar]}>
+              <GhostThumb />
+              <View style={{flex: 1, minWidth: 0}}>
+                <GhostBar w="30%" />
+                <GhostBar w="52%" dim />
+              </View>
             </View>
           </View>
         ) : (
@@ -112,27 +114,18 @@ const s = StyleSheet.create({
   sub: {color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, lineHeight: rf(18), paddingHorizontal: rs(4), marginBottom: rv(2)},
 
   // 요약 스탯 헤더(상단정렬 시 공백 채움)
-  statStrip: {flexDirection: 'row', alignItems: 'center', backgroundColor: CARD, borderRadius: RADIUS.lg, borderCurve: 'continuous', borderWidth: StyleSheet.hairlineWidth, borderColor: SEP, paddingVertical: rv(16)},
+  statStrip: {flexDirection: 'row', alignItems: 'center', backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderCurve: 'continuous', borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER, paddingVertical: rv(16)},
   stat: {flex: 1, alignItems: 'center', gap: rv(4)},
   statV: {color: T1, fontFamily: DISPLAY, fontSize: TYPE.title.fontSize, fontWeight: '800', letterSpacing: -0.5, fontVariant: ['tabular-nums']},
   statU: {color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '700'},
   statL: {color: T3, fontFamily: FONT, fontSize: TYPE.micro.fontSize, fontWeight: '600', letterSpacing: 0.3},
   statDiv: {width: StyleSheet.hairlineWidth, alignSelf: 'stretch', backgroundColor: SEP, marginVertical: rv(4)},
-  card: {flexDirection: 'row', alignItems: 'center', gap: rv(12), backgroundColor: CARD, borderRadius: RADIUS.lg, borderCurve: 'continuous', padding: rs(16), borderWidth: StyleSheet.hairlineWidth, borderColor: SEP},
+  card: {flexDirection: 'row', alignItems: 'center', gap: rv(12), backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderCurve: 'continuous', padding: rs(16), borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER},
   brand: {color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600', letterSpacing: 0.4},
   model: {color: T1, fontFamily: FONT, fontSize: TYPE.heading.fontSize, fontWeight: '700', letterSpacing: -0.2, marginTop: rv(1)},
   meta: {color: T2, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500', marginTop: rv(4)},
   restoreBtn: {flexDirection: 'row', alignItems: 'center', gap: rv(5), paddingHorizontal: rs(14), height: rs(36), borderRadius: RADIUS.pill, backgroundColor: withAlpha(ACCENT, 0.14)},
   restoreText: {color: ACCENT, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '700'},
-  // 빈 상태 — 상단 시작 콘텐츠 카드(중앙 히어로 폐지). 아이콘 배지 + 제목 + 설명 +
-  // 사용법 3행으로 세로를 채운다.
-  empty: {alignItems: 'center', gap: rv(8), paddingVertical: rv(28), paddingHorizontal: rs(20), backgroundColor: CARD_HI, borderRadius: RADIUS.lg, borderCurve: 'continuous', marginTop: rv(4)},
-  emptyBadge: {width: rs(64), height: rs(64), borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.06), alignItems: 'center', justifyContent: 'center', marginBottom: rv(6)},
-  emptyText: {color: T1, fontFamily: FONT, fontSize: TYPE.heading.fontSize, fontWeight: '700', letterSpacing: -0.3},
-  emptySub: {color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, lineHeight: rf(20), textAlign: 'center'},
-  emptyDivider: {alignSelf: 'stretch', height: StyleSheet.hairlineWidth, backgroundColor: SEP, marginVertical: rv(14)},
-  emptyRow: {flexDirection: 'row', alignItems: 'flex-start', alignSelf: 'stretch', gap: rv(10), paddingVertical: rv(7)},
-  emptyRowIcon: {marginTop: rv(1)},
-  emptyRowText: {flex: 1, color: T2, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '500', lineHeight: rf(21), letterSpacing: -0.2},
-  emptyRowStrong: {color: T1, fontWeight: '700'},
+  // 빈 상태 = 프리미티브(EmptyGhostHeader/GhostBar 등) — 로컬 스타일은 깊이감용 하나뿐.
+  ghostFar: {opacity: 0.55, marginTop: rv(10)},
 });

@@ -9,8 +9,8 @@ import { rf, rs, ri, rv } from './lib/responsive';
 import {View, Text, ScrollView, Pressable, Image, StyleSheet} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import {BG, CARD, CARD_HI, ACCENT, HALL_GOLD, T1, T2, T3, T4, SEP, CARD_BORDER, FONT, DISPLAY, withAlpha, TYPE, HERO} from './theme';
-import {SwipeBack} from './primitives';
+import {BG, CARD, CARD_HI, ACCENT, HALL_GOLD, T1, T2, T3, T4, SEP, CARD_BORDER, FONT, DISPLAY, withAlpha, TYPE, HERO, GLASS, RADIUS} from './theme';
+import {SwipeBack, EmptyGhostHeader, GhostStrong, GhostBar} from './primitives';
 import {fmtTime} from './lib/format';
 import {RACE_DISTANCE_LABEL} from './data/raceEvents';
 import {medalTimeSec, medalArchiveStats, type Medal} from './lib/medals';
@@ -65,19 +65,29 @@ export default function MedalArchiveScreen({
         </View>
 
         <ScrollView
-          contentContainerStyle={[
-            {padding: rs(18), paddingBottom: insets.bottom + 28},
-            // 상단정렬 기본. 0개 빈 상태만 중앙 히어로(관용).
-            medals.length === 0 && {flexGrow: 1, justifyContent: 'center'},
-          ]}
+          contentContainerStyle={{padding: rs(18), paddingBottom: insets.bottom + 28}}
           showsVerticalScrollIndicator={false}>
           {medals.length === 0 ? (
-            <View style={m.empty} testID="medal-empty">
-              <View style={[m.disc, {width: rs(84), height: rs(84), borderRadius: rs(42), borderStyle: 'dashed'}]}>
-                <Ionicons name="medal-outline" size={ri(34)} color={T4} />
+            // 빈 상태 = 고스트 메달 타일(전역 표준) — 걸릴 메달의 자리를 실루엣으로.
+            <View testID="medal-empty">
+              <EmptyGhostHeader
+                title="아직 메달이 없어요"
+                sub={<>대회를 완주하면 자동으로 감지해 이 자리에 걸려요.{'\n'}지난 대회의 메달은 <GhostStrong>메달 추가하기</GhostStrong>로 지금 남길 수 있어요.</>}
+              />
+              <View style={{flexDirection: 'row', gap: rs(12)}}>
+                <View style={m.ghostTile}>
+                  <View style={[m.disc, {width: rs(64), height: rs(64), borderRadius: rs(32)}]}>
+                    <Ionicons name="medal-outline" size={ri(26)} color={T4} />
+                  </View>
+                  <GhostBar w="72%" style={{marginTop: rv(14)}} />
+                  <GhostBar w="46%" dim />
+                </View>
+                <View style={[m.ghostTile, {opacity: 0.55}]}>
+                  <View style={[m.disc, {width: rs(64), height: rs(64), borderRadius: rs(32)}]} />
+                  <GhostBar w="60%" style={{marginTop: rv(14)}} />
+                  <GhostBar w="38%" dim />
+                </View>
               </View>
-              <Text style={m.emptyT}>아직 메달이 없어요</Text>
-              <Text style={m.emptyD}>완주한 대회의 메달과 기록을 남겨보세요.{'\n'}대회를 완주하면 러닝 요약에서도 뜨고, 아래로 지금 추가할 수도 있어요.</Text>
               {onAddMedal && (
                 <Pressable onPress={onAddMedal} accessibilityRole="button" accessibilityLabel="메달 추가하기" style={({pressed}) => [m.emptyCta, pressed && {opacity: 0.85}]}>
                   <Ionicons name="add" size={ri(18)} color={HALL_GOLD} />
@@ -254,10 +264,9 @@ const m = StyleSheet.create({
   cellName: {color: T2, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600', letterSpacing: -0.2, textAlign: 'center', lineHeight: rf(14)},
   cellTime: {color: HALL_GOLD, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '700', fontVariant: ['tabular-nums']},
 
-  empty: {alignItems: 'center', gap: rv(10), paddingVertical: rv(56)},
-  emptyT: {color: T2, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600', marginTop: rv(6)},
-  emptyD: {color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, textAlign: 'center', lineHeight: rf(19), paddingHorizontal: rs(12)},
-  emptyCta: {flexDirection: 'row', alignItems: 'center', gap: rv(6), marginTop: rv(16), paddingVertical: rv(12), paddingHorizontal: rs(20), borderRadius: 999, backgroundColor: withAlpha(HALL_GOLD, 0.12), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(HALL_GOLD, 0.4)},
+  // 고스트 메달 타일(빈 상태) — 실그리드 카드와 같은 재질, 내용만 실루엣.
+  ghostTile: {flex: 1, alignItems: 'center', backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderCurve: 'continuous', borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER, paddingVertical: rv(22), paddingHorizontal: rs(14)},
+  emptyCta: {flexDirection: 'row', alignItems: 'center', gap: rv(6), marginTop: rv(16), alignSelf: 'flex-start', paddingVertical: rv(12), paddingHorizontal: rs(20), borderRadius: RADIUS.pill, backgroundColor: withAlpha(HALL_GOLD, 0.12), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(HALL_GOLD, 0.4)},
   emptyCtaT: {color: HALL_GOLD, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '700'},
 
   // 상세 오버레이

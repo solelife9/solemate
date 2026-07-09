@@ -12,7 +12,7 @@ import {
   BG, CARD, CARD_DIM, CARD_HI, GLASS, ACCENT, BRAND, DANGER, T1, T2, T3, T4, SEP, CARD_BORDER, FONT, DISPLAY, Shoe, Run, SHOES, withAlpha, RADIUS, GUTTER, HERO, SCRIM, HR_ZONE_COLORS, TYPE,
 } from './theme';
 // 기간 탭 스트립 = SegmentedControl(neutral), 러닝 상세 2×3 메트릭 = StatGrid 프리미티브.
-import { TabBar, TABBAR_CLEARANCE, Button, SegmentedControl, StatGrid, SwipeBack, Chip, AmbientBackdrop } from './primitives';
+import { TabBar, TABBAR_CLEARANCE, Button, SegmentedControl, StatGrid, SwipeBack, Chip, AmbientBackdrop, EmptyGhostHeader, GhostStrong, GhostBar } from './primitives';
 import { Unit, displayNum, displayToKm } from './lib/units';
 import { ymdLocal } from './lib/format';
 import { sumKm, summaryOf, monthBuckets, weekBuckets, yearBuckets } from './lib/stats';
@@ -1052,14 +1052,28 @@ export default function HistoryScreen({
         }
         ListEmptyComponent={
           runs.length === 0 ? (
-            // 첫 러닝 전(전체 런 0) — 기간이 비어서가 아니라 아직 시작 안 한 것. 격려 + 추가 진입점.
-            <View style={[s.card, { padding: rs(28), alignItems: 'center', gap: rv(10) }]}>
-              <Ionicons name="footsteps-outline" size={ri(28)} color={T3} />
-              <Text style={[s.emptyHint, { color: T1, fontWeight: '700', fontSize: TYPE.body.fontSize }]}>아직 기록이 없어요</Text>
-              <Text style={s.emptyHint}>가볍게 한 걸음부터 — 첫 러닝을 시작해보세요.{'\n'}직접 기록을 추가할 수도 있어요.</Text>
+            // 첫 러닝 전 — 고스트 런카드(전역 빈 상태 표준): 채워질 기록의 실루엣 + 격려.
+            <View>
+              <EmptyGhostHeader
+                title="아직 기록이 없어요"
+                sub={<>가볍게 한 걸음부터 — 첫 러닝을 마치면 이 자리에 쌓여요.{'\n'}지난 러닝은 <GhostStrong>기록 추가</GhostStrong>로 직접 남길 수도 있어요.</>}
+              />
+              <View style={s.runCard}>
+                <GhostBar w="34%" />
+                <GhostBar w="58%" dim />
+                <View style={{ flexDirection: 'row', gap: rs(24), marginTop: rv(18) }}>
+                  <GhostBar w={rs(56)} dim style={{ marginTop: 0 }} />
+                  <GhostBar w={rs(56)} dim style={{ marginTop: 0 }} />
+                  <GhostBar w={rs(56)} dim style={{ marginTop: 0 }} />
+                </View>
+              </View>
+              <View style={[s.runCard, { opacity: 0.55, marginTop: rv(10) }]}>
+                <GhostBar w="28%" />
+                <GhostBar w="50%" dim />
+              </View>
               {!!onAddRun && (
                 <Pressable onPress={() => setForm({ mode: 'add' })} accessibilityRole="button" accessibilityLabel="기록 직접 추가"
-                  style={({ pressed }) => [{ marginTop: rv(4), flexDirection: 'row', alignItems: 'center', gap: rv(5), paddingVertical: rv(8), paddingHorizontal: rs(16), borderRadius: RADIUS.pill, backgroundColor: CARD_HI }, pressed && { opacity: 0.7 }]}>
+                  style={({ pressed }) => [{ marginTop: rv(16), alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: rv(5), paddingVertical: rv(8), paddingHorizontal: rs(16), borderRadius: RADIUS.pill, backgroundColor: CARD_HI }, pressed && { opacity: 0.7 }]}>
                   <Ionicons name="add" size={ri(16)} color={ACCENT} />
                   <Text style={{ color: T1, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600' }}>기록 추가</Text>
                 </Pressable>
