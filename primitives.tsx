@@ -55,6 +55,7 @@ import {
   RADIUS,
   TYPE,
   GLASS,
+  BRAND,
   withAlpha,
 } from './theme';
 import {tap as hapticTap} from './lib/haptics';
@@ -258,14 +259,16 @@ export function GlassEdge({
     rx: Math.max(0, Math.min(radius - sw / 2, (s.w - sw) / 2)),
   });
   const op = (v: number) => Math.min(1, v * intensity);
-  // 글린트 반경 — 긴 변의 절반 남짓: 코너에서 시작해 인접 변 중앙쯤에서 헤어라인으로 합류.
-  const R = Math.max(s.w, s.h) * 0.48;
+  // 글린트 반경 — 긴 변의 0.8: 빛이 인접 두 변을 따라 멀리 여행하며 반대편 코너 근처에서
+  // 거의 소멸한다(기기 피드백: "멀어질수록 자연스럽게 옅어지게"). 감쇠는 4스톱 이징 —
+  // 스톱이 적으면 코너 아크→직선 전환부에서 밝기 단차가 보인다(기기 피드백).
+  const R = Math.max(s.w, s.h) * 0.8;
   const corners = [
     {key: 'tl', cx: 0, cy: 0, peak: GLASS.edgeTL},
     {key: 'tr', cx: s.w, cy: 0, peak: GLASS.edgeTR},
     {key: 'br', cx: s.w, cy: s.h, peak: GLASS.edgeBR},
     {key: 'bl', cx: 0, cy: s.h, peak: GLASS.edgeBL},
-  ] as const;
+  ].filter(c => c.peak > 0.005);
   return (
     <View testID="glass-edge" pointerEvents="none" style={StyleSheet.absoluteFill} onLayout={onLayout}>
       {s.w > 1 ? (
@@ -277,7 +280,8 @@ export function GlassEdge({
                 id={`${gid}-${c.key}`} gradientUnits="userSpaceOnUse"
                 cx={c.cx} cy={c.cy} fx={c.cx} fy={c.cy} rx={R} ry={R}>
                 <Stop offset="0" stopColor={T1} stopOpacity={op(c.peak)} />
-                <Stop offset="0.55" stopColor={T1} stopOpacity={op(c.peak * 0.32)} />
+                <Stop offset="0.35" stopColor={T1} stopOpacity={op(c.peak * 0.42)} />
+                <Stop offset="0.7" stopColor={T1} stopOpacity={op(c.peak * 0.12)} />
                 <Stop offset="1" stopColor={T1} stopOpacity={0} />
               </SvgRadialGradient>
             ))}
@@ -462,28 +466,72 @@ const btn = StyleSheet.create({
 });
 
 // ── Card (CARD surface · SEP hairline border · radius) ────────────────────────
+// 유리 2위계(2026-07-09 사용자 확정): 모든 카드가 같은 재질을 공유하되,
+//   • quiet(기본) — 반투명 표면(GLASS.fill) + 헤어라인만. 콘텐츠 카드·리스트 아이템.
+//     글린트 SVG 가 없어 긴 FlatList 에도 부담 없다.
+//   • hero — 활성 표면(GLASS.fillActive) + 코너 글린트 림(GlassEdge). 화면당 소수의
+//     주인공(히어로 카드·핵심 CTA 컨테이너)만. 전부 반짝이면 아무것도 반짝이지 않는다.
+// 화면은 변형만 고른다 — 배경/보더/radius 를 인라인으로 조립하는 것 금지(DESIGN.md §5).
 export function Card({
   children,
   style,
   padded = true,
+  variant = 'quiet',
 }: {
   children?: React.ReactNode;
   style?: StyleProp<ViewStyle>;
   padded?: boolean;
+  variant?: 'quiet' | 'hero';
 }) {
-  return <View style={[card.base, padded && card.padded, style]}>{children}</View>;
+  return (
+    <View style={[card.base, variant === 'hero' ? card.hero : card.quiet, padded && card.padded, style]}>
+      {variant === 'hero' ? <GlassEdge radius={RADIUS.lg} intensity={GLASS.activeIntensity} /> : null}
+      {children}
+    </View>
+  );
 }
 
 const card = StyleSheet.create({
   base: {
-    backgroundColor: CARD,
     borderRadius: RADIUS.lg,
     borderCurve: 'continuous', // 애플 스쿼클(iOS)
+    overflow: 'hidden',
+  },
+  quiet: {
+    backgroundColor: GLASS.fill,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: CARD_BORDER,
   },
+  hero: {
+    backgroundColor: GLASS.fillActive,
+  },
   padded: {padding: SPACE.lg},
 });
+
+// ── AmbientBackdrop — 화면 상단 앰비언트 광(2026-07-09 사용자 확정 '나') ─────────
+// 순흑 배경은 유리가 '비칠 것'이 없어 반투명 표면이 평평한 회색으로 죽는다. 상단에
+// 아주 옅은 무채 광을 깔아 유리 너머로 비치는 명암을 만든다(레퍼런스 앱들의 문법).
+// 무채 원칙 유지 — 색이 아니라 밝기만. 각 탭 화면 루트의 첫 자식으로 깐다(BG 위).
+export function AmbientBackdrop() {
+  const {width: w, height: winH} = useWindowDimensions();
+  const h = Math.round(winH * 0.45);
+  return (
+    <View testID="ambient-backdrop" pointerEvents="none" style={[StyleSheet.absoluteFill, {height: h}]}>
+      <Svg width={w} height={h}>
+        <Defs>
+          <SvgRadialGradient
+            id="keego-ambient" gradientUnits="userSpaceOnUse"
+            cx={w / 2} cy={-h * 0.3} fx={w / 2} fy={-h * 0.3} rx={w * 0.95} ry={h * 1.1}>
+            <Stop offset="0" stopColor={T1} stopOpacity={0.07} />
+            <Stop offset="0.55" stopColor={T1} stopOpacity={0.03} />
+            <Stop offset="1" stopColor={T1} stopOpacity={0} />
+          </SvgRadialGradient>
+        </Defs>
+        <Rect x="0" y="0" width={w} height={h} fill="url(#keego-ambient)" />
+      </Svg>
+    </View>
+  );
+}
 
 // ── SegmentedControl (탭 스트립 단일 프리미티브) ───────────────────────────────
 // 앱 전역에 흩어져 있던 4개 탭 스트립(History 기간 · Profile recap · Progression 섹션 ·
@@ -990,7 +1038,7 @@ const metric = StyleSheet.create({
 });
 
 // ── Keego wordmark (2026-07-04 확정 B안 — Helvetica Neue Medium) ────────────────
-// 소문자 'keego' · Medium · 흰색(T1) · 점 없음.
+// 소문자 'keego' · Medium · 파파야(BRAND — 2026-07-09 'B 서명+진행' 확정, 흰→브랜드색) · 점 없음.
 // iOS: Helvetica Neue(내장). Android: Helvetica Neue 가 없어 Roboto 로 폴백되던 것을
 // 번들 Pretendard 로 대체(2026-07-06 사용자 결정 — iOS 룩 유지, Android 만 Pretendard).
 // 두 플랫폼이 완전 동일하진 않지만(자간·g 결) Roboto 폴백보다 훨씬 브랜드에 맞는다.
@@ -1009,7 +1057,7 @@ export function KeegoWordmark({
 }) {
   return (
     <Text
-      style={[{fontFamily: WORDMARK_FONT, fontWeight: '500', fontSize: size, color: T1, letterSpacing: -0.3, includeFontPadding: false} as TextStyle, style]}
+      style={[{fontFamily: WORDMARK_FONT, fontWeight: '500', fontSize: size, color: BRAND, letterSpacing: -0.3, includeFontPadding: false} as TextStyle, style]}
       accessibilityLabel="keego">
       keego
     </Text>

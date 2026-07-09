@@ -12,15 +12,13 @@ import {
   RefreshControl, NativeSyntheticEvent, NativeScrollEvent, Animated, Easing,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import Svg, { Defs, RadialGradient as SvgRadial, Stop, Rect } from 'react-native-svg';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import { ringColor } from './lib/ringColor';
 import {
-  BG, CARD_DIM, CARD_HI, ACCENT, WARN, GOOD, T1, T2, T3, T4,
-  FONT, DISPLAY, SPACE, RADIUS, GUTTER, withAlpha, Shoe, SHOES,
+  BG, CARD_HI, ACCENT, BRAND, GLASS, WARN, GOOD, T1, T2, T3, T4,
+  FONT, DISPLAY, SPACE, RADIUS, GUTTER, CARD_BORDER, withAlpha, Shoe, SHOES,
 } from './theme';
 import type { RankTier } from './lib/progression/types';
-import { TabBar, TABBAR_CLEARANCE, KeegoWordmark, SectionTitle } from './primitives';
+import { TabBar, TABBAR_CLEARANCE, KeegoWordmark, SectionTitle, AmbientBackdrop } from './primitives';
 import { Unit } from './lib/units';
 import { ShoeCard as KeegoShoeCard, GhostShoeCard } from './screens/KeegoHome';
 import type { LoadRun } from './lib/trainingLoad';
@@ -66,23 +64,8 @@ export type HomeProgression = {
 //  pill 과 App 파생 로직이 계속 쓰므로 유지.)
 
 
-// 앰비언트 배경 — 활성 신발의 컨디션 색을 화면 상단에 최대 5.5% 라디얼로 깐다.
-// '광원 효과'가 아니라 유리(엣지·탭바 블러)가 비칠 대상을 만드는 조명이다. 맨눈엔
-// 거의 안 보이지만 유리 표면이 그 위를 지날 때 은은히 살아난다(글로우 금지 원칙과 양립).
-function AmbientBackdrop({ tint }: { tint: string }) {
-  return (
-    <Svg pointerEvents="none" style={StyleSheet.absoluteFill}>
-      <Defs>
-        <SvgRadial id="home-ambient" cx="50%" cy="12%" r="80%">
-          <Stop offset="0" stopColor={tint} stopOpacity={0.055} />
-          <Stop offset="0.55" stopColor={tint} stopOpacity={0.02} />
-          <Stop offset="1" stopColor={tint} stopOpacity={0} />
-        </SvgRadial>
-      </Defs>
-      <Rect width="100%" height="100%" fill="url(#home-ambient)" />
-    </Svg>
-  );
-}
+// 앰비언트 배경 — primitives.AmbientBackdrop(무채 상단 광, 2026-07-09 확정 '나')으로
+// 일원화. 구 컨디션색 틴트 라디얼은 폐지 — 4개 탭이 같은 조명을 공유한다(색은 의미에만).
 
 // 섹션 등장 스태거 — 마운트 시 살짝 떠오르며 페이드인(60ms 간격). 홈이 '켜지는' 느낌을
 // 주는 유일한 전환 모션. JS 드라이버(false) — 코드베이스 관례(TabBar 등)이자
@@ -105,8 +88,8 @@ function Rise({ delay = 0, children }: { delay?: number; children: React.ReactNo
 function TopBar({ onAddShoe }: { onAddShoe?: () => void }) {
   return (
     <View style={s.topbar}>
-      {/* 홈 헤더만 브랜드 오렌지(사용자 확정 2026-07-04) — 공유카드·로그인은 흰색 유지. */}
-      <KeegoWordmark size={ri(24)} style={{color: ACCENT}} />
+      {/* 워드마크 = BRAND 파파야(primitives 기본값 — 2026-07-09 'B 서명+진행' 확정). */}
+      <KeegoWordmark size={ri(24)} />
       <Pressable
         onPress={onAddShoe}
         accessibilityRole="button"
@@ -216,7 +199,7 @@ function WeekCard({ week, unit = 'km', weeklyGoalKm = 0, streakDays = 0 }: { wee
         )}
         {weeklyGoalKm > 0 && (
           <View style={[s.gauge, { marginTop: rv(8), marginBottom: rv(10) }]}>
-            <View testID="home-week-goal-bar" style={[s.gaugeFill, { width: '0%', backgroundColor: ACCENT }]} />
+            <View testID="home-week-goal-bar" style={[s.gaugeFill, { width: '0%', backgroundColor: BRAND }]} />
           </View>
         )}
         <Text style={s.weekEmptyTxt} testID="home-week-empty">이번 주 첫 러닝을 시작해보세요</Text>
@@ -242,7 +225,7 @@ function WeekCard({ week, unit = 'km', weeklyGoalKm = 0, streakDays = 0 }: { wee
       )}
       {weeklyGoalKm > 0 && (
         <View style={[s.gauge, { marginTop: rv(8), marginBottom: rv(4) }]}>
-          <View testID="home-week-goal-bar" style={[s.gaugeFill, { width: `${goalPct}%`, backgroundColor: ACCENT }]} />
+          <View testID="home-week-goal-bar" style={[s.gaugeFill, { width: `${goalPct}%`, backgroundColor: BRAND }]} />
         </View>
       )}
       <View style={s.insightGrid}>
@@ -486,14 +469,10 @@ export default function HomeScreen({
   const select = (i: number) => { if (controlled) onSelect?.(i); else setInternalIdx(i); };
   const active = shoes[idx];
   const insets = useSafeAreaInsets();
-  // 앰비언트 조명 색 = 활성 신발의 컨디션 링 색(마모 기준). 신발이 없으면 액센트.
-  const ambientTint = active && active.max > 0
-    ? ringColor((active.used / active.max) * 100).solid
-    : ACCENT;
 
   return (
     <View style={[s.screen, { paddingTop: insets.top }]}>
-      <AmbientBackdrop tint={ambientTint} />
+      <AmbientBackdrop />
       <TopBar onAddShoe={onAddShoe} />
       {/* 콘텐츠는 스크롤되고 TabBar는 화면 바닥에 고정된다(신발 많을 때 탭바가 밀려 사라지던 문제 해결) */}
       {/* 당겨서 새로고침 — RN 내장 RefreshControl 만(새 네이티브 0). onRefresh 가 있을 때만 단다. */}
@@ -582,7 +561,7 @@ const s = StyleSheet.create({
   greet: { color: T1, fontFamily: FONT, fontSize: rf(21), fontWeight: '500', letterSpacing: -0.4, marginTop: rv(3), lineHeight: rf(26) },
 
   // 마지막 동기화 칩 — 인사 아래 절제된 회색(아이콘 T3 + 텍스트 T3). 당겨서 새로고침 안내.
-  syncChip: { flexDirection: 'row', alignItems: 'center', gap: rv(5), alignSelf: 'flex-start', marginTop: rv(10), backgroundColor: CARD_DIM, borderRadius: RADIUS.pill, paddingHorizontal: rs(9), paddingVertical: rv(4) },
+  syncChip: { flexDirection: 'row', alignItems: 'center', gap: rv(5), alignSelf: 'flex-start', marginTop: rv(10), backgroundColor: CARD_HI, borderRadius: RADIUS.pill, paddingHorizontal: rs(9), paddingVertical: rv(4) },
   syncChipTxt: { color: T3, fontFamily: FONT, fontSize: rf(13), fontWeight: '500', letterSpacing: 0.1 },
 
   // 장착 타이틀 칩(인사 옆) — 절제: 액센트 아이콘 + T2 텍스트, 옅은 카드 배경.
@@ -591,7 +570,7 @@ const s = StyleSheet.create({
 
 
 
-  goalCard: { backgroundColor: CARD_DIM, borderRadius: rs(18), borderCurve: 'continuous', borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.06), padding: SPACE.md, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  goalCard: { backgroundColor: GLASS.fill, borderRadius: rs(18), borderCurve: 'continuous', borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER, padding: SPACE.md, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   goalInfo: { flex: 1, gap: rv(6), minWidth: 0 },
   goalSub: { color: T3, fontFamily: FONT, fontSize: rf(13), fontWeight: '500' },
   streakChip: { flexDirection: 'row', alignItems: 'center', gap: rv(5), alignSelf: 'flex-start', borderRadius: RADIUS.pill, paddingHorizontal: rs(9), paddingVertical: rv(4) },
@@ -606,7 +585,7 @@ const s = StyleSheet.create({
 
   // 현재 상태 인사이트 카드(사용거리 | 교체예상) — 활성 신발 반영
   weekEmptyTxt: { color: T3, fontFamily: FONT, fontSize: rf(14), lineHeight: rf(19) },
-  insightCard: { backgroundColor: CARD_DIM, borderRadius: RADIUS.lg, borderCurve: 'continuous', borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.07), padding: SPACE.lg },
+  insightCard: { backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderCurve: 'continuous', borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER, padding: SPACE.lg },
   insightGrid: { flexDirection: 'row', alignItems: 'flex-start' },
   insightDivider: { width: StyleSheet.hairlineWidth, alignSelf: 'stretch', backgroundColor: withAlpha(T1, 0.08), marginHorizontal: SPACE.lg },
   insightLabel: { color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '600', letterSpacing: -0.1 },
@@ -634,7 +613,7 @@ const s = StyleSheet.create({
   pageDotOn: { width: rs(16), backgroundColor: T2 },
 
   // 홈 챌린지 카드
-  chalWrap: { marginHorizontal: SPACE.xl, marginTop: SPACE.lg, backgroundColor: CARD_DIM, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.07), padding: SPACE.lg },
+  chalWrap: { marginHorizontal: SPACE.xl, marginTop: SPACE.lg, backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER, padding: SPACE.lg },
   chalLabel: { color: T3, fontFamily: FONT, fontSize: rf(13), fontWeight: '600', letterSpacing: 0.6, textTransform: 'uppercase', flex: 1 },
   chalMore: { color: ACCENT, fontFamily: FONT, fontSize: rf(13), fontWeight: '600' },
   chalEmpty: { alignItems: 'center', paddingVertical: rv(8) },
@@ -649,7 +628,7 @@ const s = StyleSheet.create({
   chalPct: { color: T3, fontFamily: FONT, fontSize: rf(12), marginTop: rv(5) },
 
   rotaWrap: { marginTop: SPACE.lg },
-  rotaCard: { marginHorizontal: SPACE.xl, backgroundColor: CARD_DIM, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.07), paddingHorizontal: SPACE.lg },
+  rotaCard: { marginHorizontal: SPACE.xl, backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER, paddingHorizontal: SPACE.lg },
   rotaBrand: { color: T3, fontFamily: DISPLAY, fontSize: rf(12), fontWeight: '500', letterSpacing: 1.2 },
   rotaModel: { color: T1, fontFamily: DISPLAY, fontSize: rf(16), fontWeight: '600', letterSpacing: -0.1, marginTop: rv(4) },
   // 로테이션 인사이트 행
@@ -662,7 +641,7 @@ const s = StyleSheet.create({
 
   // 수익화 v1: 교체 시점 '다음 러닝화' 추천 카드(오렌지 절제 — 테두리만 액센트)
   nextWrap: { marginTop: SPACE.lg },
-  nextCard: { marginHorizontal: SPACE.xl, backgroundColor: CARD_DIM, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.3), padding: SPACE.lg },
+  nextCard: { marginHorizontal: SPACE.xl, backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.3), padding: SPACE.lg },
   nextSub: { color: T3, fontFamily: FONT, fontSize: rf(14), lineHeight: rf(18), marginBottom: SPACE.sm },
   nextRow: { flexDirection: 'row', alignItems: 'center', gap: SPACE.md, paddingVertical: rv(11) },
   nextRowSep: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.07) },

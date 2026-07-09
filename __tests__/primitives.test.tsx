@@ -29,6 +29,7 @@ import {
   T1,
   T3,
   GLASS,
+  BRAND,
   withAlpha,
 } from '../theme';
 
@@ -89,7 +90,7 @@ describe('conditionColor / conditionTone map shoe condition → theme token', ()
   });
 });
 
-// ── KeegoWordmark — 2026-07-04 B안 확정: 소문자 'keego'·Helvetica Neue Medium·흰색(T1) ──
+// ── KeegoWordmark — 소문자 'keego'·Helvetica Neue Medium·BRAND 파파야(2026-07-09 'B 서명+진행') ──
 describe('KeegoWordmark', () => {
   test("renders the literal lowercase 'keego'", () => {
     const {root} = render(<KeegoWordmark />);
@@ -98,13 +99,13 @@ describe('KeegoWordmark', () => {
     expect(texts.map(t => t.props.children)).toContain('keego');
   });
 
-  test('Helvetica Neue Medium + 흰색(T1) — 그라데이션/오렌지 없음', () => {
+  test('Helvetica Neue Medium + BRAND 파파야 — 그라데이션 없음(솔리드 서명)', () => {
     const {root} = render(<KeegoWordmark />);
     const t = byName(root, 'Text').find(n => n.props.children === 'keego')!;
     const st = Array.isArray(t.props.style) ? Object.assign({}, ...t.props.style.flat().filter(Boolean)) : t.props.style;
     expect(st.fontFamily).toBe('Helvetica Neue');
     expect(st.fontWeight).toBe('500');
-    expect(st.color).toBe(T1);
+    expect(st.color).toBe(BRAND);
     expect(byName(root, 'Stop').length).toBe(0); // 옛 그라데이션 폐기
   });
 });
@@ -194,9 +195,10 @@ describe('Button — unified CTA surface (glass · matte · radius token)', () =
     // 위치투영 대각선 모델(넓은 버튼에서 좌우 변이 꺼지는 붕괴)은 폐지.
     const {root} = render(<Button label="시작" variant="cta" />);
     layoutGlassEdges(root);
-    // 코너 방사형 그라데이션 4점 — 각 코너의 피크 불투명도가 확정 배광과 일치.
+    // 코너 방사형 글린트 = 주광(좌상)·반사(우하) 2점만 — 우상/좌하는 글린트 없음
+    // (기기 피드백 2026-07-09: 빛에서 멀어질수록 자연 감쇠, 반대편 코너는 거의 안 보이게).
     const radials = byName(root, 'RadialGradient');
-    expect(radials.length).toBe(4);
+    expect(radials.length).toBe(2);
     const peakOf = (suffix: string) => {
       const g = radials.find((r: any) => String(r.props.id).endsWith(`-${suffix}`))!;
       const stops = g.props.children.filter((c: any) => c?.props?.stopColor === T1);
@@ -204,15 +206,15 @@ describe('Button — unified CTA surface (glass · matte · radius token)', () =
     };
     expect(peakOf('tl')).toBeCloseTo(GLASS.edgeTL); // 좌상 주광
     expect(peakOf('br')).toBeCloseTo(GLASS.edgeBR); // 우하 반사(대각 밸런스)
-    expect(peakOf('tr')).toBeCloseTo(GLASS.edgeTR);
-    expect(peakOf('bl')).toBeCloseTo(GLASS.edgeBL);
     expect(peakOf('tl')).toBeGreaterThan(peakOf('br')); // 주광 > 반사
-    expect(peakOf('br')).toBeGreaterThan(peakOf('tr')); // 반사 > 측면 코너
-    // 전 둘레 헤어라인 — 빛이 안 닿는 변에서도 유리 판이 끊기지 않는다.
+    expect(GLASS.edgeTR).toBe(0); // 우상/좌하 글린트 폐지 계약
+    expect(GLASS.edgeBL).toBe(0);
+    // 전 둘레 헤어라인 — 거의 안 보이는 최소 존재감(0.02)으로만 유리 판을 잇는다.
     const hairline = byName(root, 'Rect').find(
       (r: any) => r.props.stroke === T1 && r.props.fill === 'none',
     )!;
     expect(Number(hairline.props.strokeOpacity)).toBeCloseTo(GLASS.edgeBase);
+    expect(GLASS.edgeBase).toBeLessThanOrEqual(0.02);
   });
 
   test('cta is matte — no glow shadow of any colour', () => {

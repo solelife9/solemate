@@ -8,9 +8,9 @@ import { View, Text, ScrollView, Pressable, TextInput, Alert, StyleSheet } from 
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {
-  BG, CARD_DIM, CARD_HI, HERO_BG, ACCENT, DANGER, WARN, GOOD, BEST, T1, T2, T3, T4, SEP, FONT, DISPLAY, withAlpha, RADIUS, Shoe, Run, SHOES,
+  BG, CARD_HI, GLASS, ACCENT, DANGER, WARN, GOOD, BEST, T1, T2, T3, T4, SEP, CARD_BORDER, FONT, DISPLAY, withAlpha, RADIUS, Shoe, Run, SHOES,
 } from './theme';
-import { TabBar, TABBAR_CLEARANCE, Pill, InjuryBanner, Button, SwipeBack } from './primitives';
+import { TabBar, TABBAR_CLEARANCE, Pill, InjuryBanner, Button, SwipeBack, AmbientBackdrop } from './primitives';
 import { RunCard, RunDetail } from './HistoryScreen.rn';
 import { FuelGauge } from './FuelGauge';
 import FirstShoeScreen from './FirstShoeScreen.rn';
@@ -200,6 +200,7 @@ function ShoeDetail({
     // 엣지 스와이프 백 — 왼쪽 가장자리 우측 드래그로 락커 목록 복귀(iOS pop 제스처 대응).
     <SwipeBack onBack={onBack}>
     <View style={[s.screen, { paddingTop: insets.top }]}>
+      <AmbientBackdrop />
       <View style={s.detailNav}>
         <Pressable onPress={onBack} hitSlop={6} accessibilityRole="button" accessibilityLabel="뒤로" style={s.iconBtn}><Ionicons name="chevron-back" size={ri(20)} color={T1} /></Pressable>
         <View style={{ flexDirection: 'row', gap: rv(10) }}>
@@ -605,6 +606,7 @@ export default function ShoesScreen({
 
   return (
     <View style={[s.screen, { paddingTop: insets.top }]}>
+      <AmbientBackdrop />
       <View style={s.topbar}>
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={s.title}>신발</Text>
@@ -648,7 +650,7 @@ const s = StyleSheet.create({
   pressed: { opacity: 0.85 },
   row: { flexDirection: 'row', alignItems: 'center', gap: rv(7) },
   baselineRow: { flexDirection: 'row', alignItems: 'flex-end' },
-  card: { backgroundColor: CARD_DIM, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.07) },
+  card: { backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER },
   sectionLabel: { color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '600', letterSpacing: 0.4, paddingHorizontal: rs(4) },
   dot: { width: rs(7), height: rs(7), borderRadius: RADIUS.pill },
   condText: { fontFamily: FONT, fontSize: rf(14), fontWeight: '500' },
@@ -665,7 +667,7 @@ const s = StyleSheet.create({
   // 재조정했다 — 같은 pct 를 두 번 그리던 중복을 없애 시선이 링에 모인다.
   // 목업 정합: 카드 배경을 near-black(CARD_DIM)에서 살짝 떠 보이는 회색(HERO_BG — 홈
   // 히어로 카드와 동일 톤)으로 올려 black-on-black 을 피한다.
-  shoeCard: { backgroundColor: HERO_BG, borderRadius: RADIUS.lg, borderCurve: 'continuous', padding: rs(16) },
+  shoeCard: { backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderCurve: 'continuous', borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER, padding: rs(16) },
   shoeCardFeatured: { borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.2) },
   shoeCardIdle: { borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.08) },
   shoeCardRetired: { opacity: 0.55, borderColor: withAlpha(T1, 0.05) },
@@ -784,7 +786,7 @@ const s = StyleSheet.create({
   statDivider: { borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: SEP },
   // 2x2 통계 그리드(총거리/총횟수/총시간/평균페이스). 한 카드 안에 4칸을 넉넉히.
   nextSectionLabel: { paddingHorizontal: rs(4) },
-  nextCard: { backgroundColor: CARD_DIM, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.3), padding: rs(16) },
+  nextCard: { backgroundColor: GLASS.fill, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.3), padding: rs(16) },
   nextSub: { color: T3, fontFamily: FONT, fontSize: rf(14), lineHeight: rf(18), marginBottom: rv(6) },
   nextRow: { flexDirection: 'row', alignItems: 'center', gap: rv(12), paddingVertical: rv(11) },
   nextRowSep: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.07) },

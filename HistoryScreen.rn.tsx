@@ -9,10 +9,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {
-  BG, CARD, CARD_DIM, CARD_HI, ACCENT, DANGER, T1, T2, T3, T4, SEP, CARD_BORDER, FONT, DISPLAY, Shoe, Run, SHOES, withAlpha, RADIUS, GUTTER, HERO, SCRIM, HR_ZONE_COLORS,
+  BG, CARD, CARD_DIM, CARD_HI, GLASS, ACCENT, DANGER, T1, T2, T3, T4, SEP, CARD_BORDER, FONT, DISPLAY, Shoe, Run, SHOES, withAlpha, RADIUS, GUTTER, HERO, SCRIM, HR_ZONE_COLORS,
 } from './theme';
 // 기간 탭 스트립 = SegmentedControl(neutral), 러닝 상세 2×3 메트릭 = StatGrid 프리미티브.
-import { TabBar, TABBAR_CLEARANCE, Button, SegmentedControl, StatGrid, SwipeBack, Chip } from './primitives';
+import { TabBar, TABBAR_CLEARANCE, Button, SegmentedControl, StatGrid, SwipeBack, Chip, AmbientBackdrop } from './primitives';
 import { Unit, displayNum, displayToKm } from './lib/units';
 import { ymdLocal } from './lib/format';
 import { sumKm, summaryOf, monthBuckets, weekBuckets, yearBuckets } from './lib/stats';
@@ -196,6 +196,7 @@ export function RunForm({
   const insets = useSafeAreaInsets();
   return (
     <View style={[s.screen, { paddingTop: insets.top }]}>
+      <AmbientBackdrop />
       <View style={[s.nav, s.navRow]}>
         <Pressable onPress={onCancel} hitSlop={6} accessibilityRole="button" accessibilityLabel="뒤로" style={s.iconBtn}><Ionicons name="chevron-back" size={ri(20)} color={T1} /></Pressable>
         <Text style={s.formTitle}>{editing ? '러닝 편집' : '수동 기록 추가'}</Text>
@@ -518,6 +519,7 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'm
     // 엣지 스와이프 백 — 왼쪽 가장자리 우측 드래그로 기록 목록 복귀(iOS pop 제스처 대응).
     <SwipeBack onBack={onBack}>
     <View style={[s.screen, { paddingTop: insets.top }]}>
+      <AmbientBackdrop />
       <View style={[s.nav, s.navRow]}>
         <Pressable onPress={onBack} hitSlop={6} accessibilityRole="button" accessibilityLabel="뒤로" style={s.iconBtn}><Ionicons name="chevron-back" size={ri(20)} color={T1} /></Pressable>
         <View style={s.navActions}>
@@ -980,6 +982,7 @@ export default function HistoryScreen({
 
   return (
     <View style={[s.screen, { paddingTop: insets.top }]}>
+      <AmbientBackdrop />
       <View style={[s.header, s.headerRow, { justifyContent: 'space-between' }]}>
         <Text style={s.title}>기록</Text>
         {/* 수동 기록 추가 — 앱 없이/기록 못한 러닝을 직접 넣는 진입점(라이브 GPS 외 보조 경로). */}
@@ -1152,7 +1155,7 @@ const s = StyleSheet.create({
   gpxHint: { color: T4, fontFamily: FONT, fontSize: rf(12), marginLeft: 'auto' },
   offscreen: { position: 'absolute', left: -10000, top: 0, opacity: 0 },
   baselineRow: { flexDirection: 'row', alignItems: 'flex-end' },
-  card: { backgroundColor: CARD, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER },
+  card: { backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER },
   cardTitle: { color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '600' },
   sectionLabel: { color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '600', letterSpacing: 0.4, paddingHorizontal: rs(4) },
   // 요약 카드(큰 거리) — 목업 기록(10)
@@ -1172,7 +1175,7 @@ const s = StyleSheet.create({
   prU: { color: T3, fontFamily: FONT, fontSize: rf(13), fontWeight: '600', marginLeft: rs(3) },
   prL: { color: T3, fontFamily: FONT, fontSize: rf(13), fontWeight: '500', marginTop: rv(5) },
   // 런 카드 — 목업 기록(10): 신발+날짜 + 거리·평균페이스·시간
-  runCard: { backgroundColor: CARD, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER, padding: rs(18) },
+  runCard: { backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER, padding: rs(18) },
   runCardTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: rv(10), marginBottom: rv(14) },
   runCardBrand: { color: T3, fontFamily: DISPLAY, fontSize: rf(12), fontWeight: '500', letterSpacing: 1.2 },
   runCardModel: { color: T1, fontFamily: DISPLAY, fontSize: rf(17), fontWeight: '700', letterSpacing: -0.2, marginTop: rv(2) },

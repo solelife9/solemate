@@ -80,7 +80,7 @@ import {syncLabel} from '../../lib/syncStatus';
 import type {Shoe, Run} from '../../theme';
 import {
   TIER_LABEL, RADIUS, T1, withAlpha,
-  TYPE, HERO, GUTTER, SCRIM, CARD, CARD_BORDER, DISPLAY,
+  TYPE, HERO, GUTTER, SCRIM, CARD_BORDER, GLASS, DISPLAY,
 } from '../../theme';
 import {ymLocal, ymdLocal} from '../../lib/format';
 
@@ -957,15 +957,15 @@ describe('Audit Hardening 수용', () => {
     });
 
     test('Card·SegmentedControl·StatGrid 프리미티브가 단일 보더 토큰 + 관찰 가능한 동작으로 렌더된다', () => {
-      // ① Card — 단일 표면(CARD) + 단일 보더 토큰(CARD_BORDER) + 단일 반경(RADIUS.lg).
-      //    화면마다 SEP·withAlpha(T1,.07)·borderWidth 1 로 흩어졌던 카드 외곽선이 한 토큰으로
-      //    모인다. 관찰: 카드 호스트 style 의 backgroundColor/borderColor/borderRadius.
+      // ① Card — 콰이어트 글라스(2026-07-09 확정): 반투명 표면(GLASS.fill) + 단일 보더
+      //    토큰(CARD_BORDER) + 단일 반경(RADIUS.lg). 화면마다 CARD/CARD_DIM/HERO_BG 로
+      //    갈라졌던 카드 표면이 한 재질로 모인다. 관찰: 호스트 style 의 표면/보더/반경.
       const c = renderTree(el(Card, {children: el(Text, {children: '카드 본문'})}));
       const cardHosts = c.root.findAll((n: ReactTestRenderer.ReactTestInstance) => {
         const f = StyleSheet.flatten(n.props && n.props.style) as
           | {backgroundColor?: string; borderRadius?: number; borderColor?: string; borderWidth?: number}
           | undefined;
-        return !!f && f.backgroundColor === CARD && f.borderRadius === RADIUS.lg;
+        return !!f && f.backgroundColor === GLASS.fill && f.borderRadius === RADIUS.lg;
       });
       expect(cardHosts.length).toBeGreaterThanOrEqual(1);
       cardHosts.forEach(n => {

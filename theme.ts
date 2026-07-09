@@ -31,6 +31,12 @@ export const HERO_BG = '#242426';        // selected/featured card surface (CARD
 export const RING_ACCENT = '#FF8000';        // McLaren 파파야 (러닝 링 유일 브랜드 색)
 export const RING_ACCENT_HI = '#FFB458';     // 링 그라데이션 top(밝은 파파야)
 export const RING_ACCENT_LO = '#E56600';     // 링 그라데이션 bottom(진한 파파야)
+// ── 브랜드 액센트 확장(2026-07-09 사용자 확정 — 목업 'B 서명+진행') ─────────────
+// 파파야를 링 밖으로: ① 브랜드 서명(keego 워드마크) ② 러닝 에너지·진행 지표(주간
+// 목표 게이지 등)에 포인트로 쓴다. "스포츠앱인데 너무 조용하다" 피드백의 절제된 해답.
+// 가드레일: 넓은 면(버튼 채움·카드 배경) 금지 · 상태색(GOOD/WARN/DANGER) 대체 금지 ·
+// 한 시야에 파파야 포인트는 소수만. 값은 RING_ACCENT 와 동일(브랜드색 단일 진실원).
+export const BRAND = RING_ACCENT;
 export const ACCENT = '#FFFFFF';         // 무채 강조 = 흰(모노크롬 시스템)
 export const ACCENT_2 = '#EBEBF5';       // gradient/보조 강조 top stop (밝은 무채)
 export const GRAD_TOP = '#EBEBF5';       // CTA/그라데이션 top (무채)
@@ -72,11 +78,14 @@ export const GLASS = {
   fill: withAlpha(T1, 0.05),        // 기본 카드 표면
   fillActive: withAlpha(T1, 0.07),  // 활성/히어로 표면(+0.02)
   fillCta: withAlpha(T1, 0.1),      // CTA 버튼 표면(기존 값 유지)
-  edgeBase: 0.06,                   // 전 둘레 헤어라인 — 빛이 안 닿는 변도 유리 판이 끊기지 않게
+  // 기기 검증 피드백 반영(2026-07-09 밤): 우상/좌하 글린트 폐지(0) — 주광(좌상)·반사(우하)
+  // 에서 멀어질수록 변을 따라 길게 자연 감쇠하고, 우상·좌하 코너에선 라인이 거의 안 보인다.
+  // 베이스 헤어라인도 0.06→0.02 로 낮춰 '멀어지면 사라지는' 인상을 유지.
+  edgeBase: 0.02,                   // 전 둘레 헤어라인 — 거의 안 보이는 최소 존재감
   edgeTL: 0.3,                      // 좌상 코너 주광
-  edgeTR: 0.07,                     // 우상 — 헤어라인 근처로 잦아듦
+  edgeTR: 0,                        // 우상 — 글린트 없음(주광 감쇠의 끝)
   edgeBR: 0.24,                     // 우하 코너 반사(주광과 대각 밸런스)
-  edgeBL: 0.07,                     // 좌하 — 헤어라인 근처로 잦아듦
+  edgeBL: 0,                        // 좌하 — 글린트 없음(반사 감쇠의 끝)
   sheen: 0.035,                     // 상단 안쪽 광택(아래로 42% 지점까지 소멸)
   activeIntensity: 1.5,             // 활성 카드 림 배율(GlassEdge intensity)
 } as const;
