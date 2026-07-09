@@ -9,10 +9,10 @@
 
 ### Color (theme.ts 토큰 — 화면 하드코딩 금지)
 - 배경: `BG #0A0A0A` · 카드 `CARD #1C1C1E` / `CARD_HI #2C2C2E` / `CARD_DIM #1C1C1E`(=CARD 통일) / `HERO_BG #242426`
-- 액센트(그라데이션): `ACCENT #FF6500` → `ACCENT_2 #FF9F4A` — **CTA·핵심 강조에만**
+- 액센트(그라데이션): `ACCENT #8B5CF6`(일렉트릭 바이올렛) → `ACCENT_2 #A374FF` — **러닝 링 등 시그니처 순간에만**(무채 베이스 + 액센트 절제)
 - 상태색: `WARN #E6A23C` / `DANGER #FF5A45` / `GOOD #46C98B`
 - 텍스트: `T1 #FFFFFF` / `T2 #EBEBF5` / `T3 #9C9CA3` · 구분선 `SEP rgba(255,255,255,0.07)`
-- **오렌지 절제 규칙**: 라벨·보조 텍스트는 T3 회색. 오렌지는 CTA, 선택 상태, 핵심 수치 강조에 한정. 신발 수명은 양호=GOOD/차분, 임계 근접=WARN, 초과=DANGER로 단계 표현.
+- **액센트 절제 규칙(2026-07-09 갱신)**: 무채 글래스가 기본. 브랜드 액센트(바이올렛)는 러닝 링·컨트롤 등 시그니처 순간에만. 라벨·보조 텍스트는 T3 회색. 색은 의미에만 — 신발 수명은 양호=GOOD/차분, 임계 근접=WARN, 초과=DANGER. Apple급 프리미엄=재질·타이포·절제(색 아님).
 
 ### Typography — **Pretendard 단일 패밀리 (Bebas 제거)**
 - 모든 텍스트 `FONT = 'PretendardVariable'`. `theme.ts`의 `DISPLAY`는 Pretendard로 교체 완료(2026-06 — BebasNeue 제거됨).
@@ -53,7 +53,7 @@
 > Tone benchmark: Apple Fitness · WHOOP · PlayStation Trophies · Spotify Wrapped. **Never childish, meme, or RPG.**
 
 ## Chosen direction
-- **Dark + KEEGO orange, single family.** Continues the shipped Slice-3 system: background `#0A0A0A`, cards `#1C1C1E` / raised `#2C2C2E`, one brand accent `#FF6500` used sparingly (CTAs, Legend tier, wordmark).
+- **Dark, monochrome-glass base + one restrained violet accent (2026-07-09).** background `#0A0A0A`, cards `#1C1C1E` / raised `#2C2C2E`. Premium comes from material·typography·restraint (Apple/WHOOP/Linear), not a hue. Brand accent `#8B5CF6` (electric violet) used only on signature moments (run ring). Legend tier keeps its own gold/orange (achievement domain).
 - **Pretendard single family** (display + body), no secondary display face. Artifacts use the system stack (no web fonts allowed); production uses `PretendardVariable`.
 - **Tabular numerals everywhere** so km / paces / progress counts align.
 - Clean single hierarchy (800 headings, regular body), generous spacing, rounded corners 14–26. Phone-framed UI (~390px) on black; retirement cards square (~360px scaling a 1080×1080 keepsake).

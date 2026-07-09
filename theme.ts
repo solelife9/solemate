@@ -23,10 +23,13 @@ export const CARD = '#1C1C1E';           // 기본 카드(상세·기록·마이
 export const CARD_HI = '#2C2C2E';        // raised surface (chips / pressed) — 애플헬스 tertiary
 export const CARD_DIM = '#1C1C1E';       // recessed card = CARD 와 통일
 export const HERO_BG = '#242426';        // selected/featured card surface (CARD 보다 한 단 위)
-export const ACCENT = '#FF6500';
-export const ACCENT_2 = '#FF9F4A';       // gradient top stop
-export const GRAD_TOP = '#FF7A2E';       // button CTA gradient top stop
-export const GRAD_BOT = '#F25E00';       // button CTA gradient bottom stop
+// 브랜드 액센트 = 일렉트릭 바이올렛(2026-07-09 확정). 무채 글래스 베이스 + 액센트 절제
+// (Apple급 프리미엄). 오렌지(#FF6500)는 Strava 인접 + 무채 방향과 어긋나 폐지. 액센트는
+// 러닝 링·컨트롤 등 시그니처 순간에만; 나머지는 무채/의미색(조건색은 그대로).
+export const ACCENT = '#8B5CF6';
+export const ACCENT_2 = '#A374FF';       // gradient top stop (밝은 바이올렛)
+export const GRAD_TOP = '#A374FF';       // CTA/링 그라데이션 top
+export const GRAD_BOT = '#7C4DEC';       // CTA/링 그라데이션 bottom (딥 바이올렛)
 // 상태색 — 디자인 마무리 핸드오프(theme.js) 값 그대로: good/warn/danger.
 export const WARN = '#E6A23C';
 export const DANGER = '#FF5A45';
