@@ -18,7 +18,7 @@ import {
   FONT, DISPLAY, SPACE, RADIUS, GUTTER, CARD_BORDER, withAlpha, Shoe, SHOES, TYPE,
 } from './theme';
 import type { RankTier } from './lib/progression/types';
-import { TabBar, TABBAR_CLEARANCE, KeegoWordmark, SectionTitle, AmbientBackdrop, GhostBar } from './primitives';
+import { TabBar, TABBAR_CLEARANCE, KeegoWordmark, SectionTitle, AmbientBackdrop } from './primitives';
 import { Unit } from './lib/units';
 import { ShoeCard as KeegoShoeCard, GhostShoeCard } from './screens/KeegoHome';
 import type { LoadRun } from './lib/trainingLoad';
@@ -396,17 +396,6 @@ function EmptyHome({ onAddShoe }: { onAddShoe?: () => void }) {
           신발이 얼마나 닳았는지 기록해서,{'\n'}부상 없이 더 오래 달리게 해드려요.
         </Text>
       </Rise>
-      {/* 고스트 '이번 주 러닝' — 등록 후 채워질 홈 구조의 실루엣(하단 여백 채움). */}
-      <Rise delay={160}>
-        <View style={s.ghostWeek}>
-          <GhostBar w="30%" />
-          <View style={{ flexDirection: 'row', gap: rs(24), marginTop: rv(16) }}>
-            <GhostBar w={rs(56)} dim style={{ marginTop: 0 }} />
-            <GhostBar w={rs(56)} dim style={{ marginTop: 0 }} />
-            <GhostBar w={rs(56)} dim style={{ marginTop: 0 }} />
-          </View>
-        </View>
-      </Rise>
     </View>
   );
 }
@@ -667,8 +656,7 @@ const s = StyleSheet.create({
 
 
   // 빈 홈 — 고스트 카드(KeegoHome GhostShoeCard) + 철학 한 줄. 구 대시 슬롯 스타일 폐기.
+  // 빈 홈 비율 = 2줄 인사말 + paddingTop 20 으로 성립(고스트 주간 카드는 과해서 제거 — 사용자 확정 07-10).
   empty: { paddingTop: rv(20), alignItems: 'center', gap: rv(26) },
-  // 고스트 주간 카드(빈 홈 하단 채움) — 콰이어트 글라스 + 실루엣, 55% 딤.
-  ghostWeek: { width: HERO_W, backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderCurve: 'continuous', borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER, padding: SPACE.lg, opacity: 0.55 },
   emptyPhilosophy: { textAlign: 'center', color: T3, fontFamily: FONT, fontSize: TYPE.body.fontSize, lineHeight: rf(24) },
 });
