@@ -12,7 +12,7 @@ import { rf, rs, ri, rv } from './lib/responsive';
 import { View, Text, ScrollView, Pressable, StyleSheet, TextInput, Image, Share, Alert, Linking } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { BG, CARD, CARD_DIM, CARD_HI, ACCENT, GOOD, DANGER, WARN, T1, T2, T3, SEP, CARD_BORDER, FONT, DISPLAY, withAlpha, TIER_COLORS, TIER_LABEL, KAKAO_YELLOW, KAKAO_LABEL, NAVER_GREEN, NAVER_LABEL, RADIUS, HALL_GOLD } from './theme';
+import { BG, CARD, CARD_DIM, CARD_HI, ACCENT, BRAND, GOOD, DANGER, WARN, T1, T2, T3, SEP, CARD_BORDER, FONT, DISPLAY, withAlpha, TIER_COLORS, TIER_LABEL, KAKAO_YELLOW, KAKAO_LABEL, NAVER_GREEN, NAVER_LABEL, RADIUS, HALL_GOLD } from './theme';
 // recap 토글 = SegmentedControl(accentSolid), 스탯 그리드들 = StatGrid 단일 프리미티브.
 import { TabBar, TABBAR_CLEARANCE, SectionTitle, Button, SegmentedControl, StatGrid, Stepper, AmbientBackdrop } from './primitives';
 import { Unit, unitKorean, displayNum } from './lib/units';
@@ -734,25 +734,25 @@ export default function ProfileScreen({
           </Pressable>
         )}
 
-        {/* 명예의 전당(은퇴 신발 박물관) 진입 — 전체화면 HallOfShoes 로 전환.
+        {/* 러닝화 아카이브(은퇴 신발 — 구명 명예의 전당) 진입 — 전체화면 HallOfShoes 로 전환.
             (신발탭 이동을 검토했으나 사용자 결정으로 마이탭 유지 — 2026-07-02.) */}
         {onOpenHallOfShoes && (
           <Pressable
             onPress={onOpenHallOfShoes}
             testID="open-hall-of-shoes"
             accessibilityRole="button"
-            accessibilityLabel="명예의 전당 열기"
+            accessibilityLabel="러닝화 아카이브 열기"
             style={({ pressed }) => [s.card, s.progressRow, pressed && { backgroundColor: CARD_HI }]}>
             <View style={s.progressIcon}><Ionicons name="ribbon-outline" size={ri(19)} color={ACCENT} /></View>
             <View style={{ flex: 1, minWidth: 0 }}>
-              <Text style={s.progressTitle}>명예의 전당</Text>
-              <Text style={s.progressSub}>{retiredCount > 0 ? `은퇴한 신발 ${retiredCount}켤레` : '은퇴한 신발들의 박물관'}</Text>
+              <Text style={s.progressTitle}>러닝화 아카이브</Text>
+              <Text style={s.progressSub}>{retiredCount > 0 ? `은퇴한 신발 ${retiredCount}켤레` : '은퇴한 러닝화의 기록이 남는 곳'}</Text>
             </View>
             <Ionicons name="chevron-forward" size={ri(18)} color={T3} />
           </Pressable>
         )}
 
-        {/* 메달 아카이브(마라톤 완주 메달·기록) — 명예의 전당과 짝을 이루는 컬렉션. */}
+        {/* 메달 아카이브(마라톤 완주 메달·기록) — 러닝화 아카이브와 짝을 이루는 형제 컬렉션. */}
         {onOpenMedalArchive && (
           <Pressable
             onPress={onOpenMedalArchive}
@@ -1189,7 +1189,7 @@ const s = StyleSheet.create({
   streakRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   streakDay: { alignItems: 'center', gap: rv(6) },
   streakDot: { width: rs(30), height: rs(30), borderRadius: RADIUS.pill, alignItems: 'center', justifyContent: 'center' },
-  streakDotDone: { backgroundColor: T2 },
+  streakDotDone: { backgroundColor: BRAND },
   streakDotIdle: { backgroundColor: CARD_DIM },
   streakDotToday: { backgroundColor: CARD_DIM, borderWidth: 1.5, borderStyle: 'dashed', borderColor: T3 },
   streakDayLabel: { color: T3, fontFamily: FONT, fontSize: rf(11), fontWeight: '600' },

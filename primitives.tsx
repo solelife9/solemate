@@ -260,14 +260,18 @@ export function GlassEdge({
   });
   const op = (v: number) => Math.min(1, v * intensity);
   // 글린트 반경 — 긴 변의 0.8: 빛이 인접 두 변을 따라 멀리 여행하며 반대편 코너 근처에서
-  // 거의 소멸한다(기기 피드백: "멀어질수록 자연스럽게 옅어지게"). 감쇠는 4스톱 이징 —
-  // 스톱이 적으면 코너 아크→직선 전환부에서 밝기 단차가 보인다(기기 피드백).
+  // 거의 소멸한다(기기 피드백: "멀어질수록 자연스럽게 옅어지게").
   const R = Math.max(s.w, s.h) * 0.8;
+  // 글린트 중심 = 코너 '아크의 원 중심'(꼭짓점에서 radius 만큼 안쪽) — 꼭짓점 중심은
+  // 아크 구간 내내 거의 등거리(균일 밝기)다가 직선 진입 순간 감쇠가 시작돼 접점에서
+  // 밝기가 꺾여 보였다(기기 피드백 "뚝 끊김"). 아크 원 중심에 두면 아크 위 밝기가
+  // 정확히 균일하고, 직선 구간 감쇠가 기울기 0에서 시작돼 전환이 매끄럽다.
+  const rC = Math.max(0, Math.min(radius, s.w / 2, s.h / 2));
   const corners = [
-    {key: 'tl', cx: 0, cy: 0, peak: GLASS.edgeTL},
-    {key: 'tr', cx: s.w, cy: 0, peak: GLASS.edgeTR},
-    {key: 'br', cx: s.w, cy: s.h, peak: GLASS.edgeBR},
-    {key: 'bl', cx: 0, cy: s.h, peak: GLASS.edgeBL},
+    {key: 'tl', cx: rC, cy: rC, peak: GLASS.edgeTL},
+    {key: 'tr', cx: s.w - rC, cy: rC, peak: GLASS.edgeTR},
+    {key: 'br', cx: s.w - rC, cy: s.h - rC, peak: GLASS.edgeBR},
+    {key: 'bl', cx: rC, cy: s.h - rC, peak: GLASS.edgeBL},
   ].filter(c => c.peak > 0.005);
   return (
     <View testID="glass-edge" pointerEvents="none" style={StyleSheet.absoluteFill} onLayout={onLayout}>
@@ -280,8 +284,10 @@ export function GlassEdge({
                 id={`${gid}-${c.key}`} gradientUnits="userSpaceOnUse"
                 cx={c.cx} cy={c.cy} fx={c.cx} fy={c.cy} rx={R} ry={R}>
                 <Stop offset="0" stopColor={T1} stopOpacity={op(c.peak)} />
-                <Stop offset="0.35" stopColor={T1} stopOpacity={op(c.peak * 0.42)} />
-                <Stop offset="0.7" stopColor={T1} stopOpacity={op(c.peak * 0.12)} />
+                {/* 초반 완만한 플래토 — 코너 부근 밝기 변화율을 낮춰 전환을 한층 부드럽게. */}
+                <Stop offset="0.14" stopColor={T1} stopOpacity={op(c.peak * 0.92)} />
+                <Stop offset="0.42" stopColor={T1} stopOpacity={op(c.peak * 0.4)} />
+                <Stop offset="0.72" stopColor={T1} stopOpacity={op(c.peak * 0.11)} />
                 <Stop offset="1" stopColor={T1} stopOpacity={0} />
               </SvgRadialGradient>
             ))}

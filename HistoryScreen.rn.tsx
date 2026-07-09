@@ -9,7 +9,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {
-  BG, CARD, CARD_DIM, CARD_HI, GLASS, ACCENT, DANGER, T1, T2, T3, T4, SEP, CARD_BORDER, FONT, DISPLAY, Shoe, Run, SHOES, withAlpha, RADIUS, GUTTER, HERO, SCRIM, HR_ZONE_COLORS,
+  BG, CARD, CARD_DIM, CARD_HI, GLASS, ACCENT, BRAND, DANGER, T1, T2, T3, T4, SEP, CARD_BORDER, FONT, DISPLAY, Shoe, Run, SHOES, withAlpha, RADIUS, GUTTER, HERO, SCRIM, HR_ZONE_COLORS,
 } from './theme';
 // 기간 탭 스트립 = SegmentedControl(neutral), 러닝 상세 2×3 메트릭 = StatGrid 프리미티브.
 import { TabBar, TABBAR_CLEARANCE, Button, SegmentedControl, StatGrid, SwipeBack, Chip, AmbientBackdrop } from './primitives';
@@ -124,7 +124,7 @@ export function PeriodChartView({ data, labels, unit }: { data: number[]; labels
                     </View>
                   </View>
                 )}
-                <View style={[s.chartBar, { maxWidth: dense ? 12 : 18, height: bh, backgroundColor: dim ? withAlpha(ACCENT, 0.28) : ACCENT }]} />
+                <View style={[s.chartBar, { maxWidth: dense ? 12 : 18, height: bh, backgroundColor: dim ? withAlpha(BRAND, 0.28) : BRAND }]} />
               </Pressable>
             );
           })}
@@ -1198,7 +1198,7 @@ const s = StyleSheet.create({
   chartTick: { position: 'absolute', right: 0, width: rs(42), textAlign: 'right', color: T3, fontFamily: DISPLAY, fontSize: rf(12), marginBottom: rv(-7) },
   chartBars: { position: 'absolute', left: 0, right: 42, top: 0, bottom: 0, flexDirection: 'row', alignItems: 'flex-end' },
   chartBarSlot: { flex: 1, alignItems: 'center' },
-  chartBar: { width: '100%', borderRadius: RADIUS.pill, backgroundColor: ACCENT },
+  chartBar: { width: '100%', borderRadius: RADIUS.pill, backgroundColor: BRAND },
   chartLabels: { flexDirection: 'row', marginTop: rv(8), paddingRight: rs(42) },
   chartLabel: { flex: 1, textAlign: 'center', color: T3, fontFamily: FONT, fontWeight: '600' },
   chartTipWrap: { position: 'absolute', left: -26, right: -26, alignItems: 'center', zIndex: 5 },

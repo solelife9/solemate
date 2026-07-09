@@ -297,7 +297,7 @@ function ConfirmStep({
         <BasicRow label="사용 기간" value={period} last />
       </View>
       <Text style={s.note}>
-        은퇴해도 이 신발의 모든 러닝 기록은 그대로 보존돼요. 명예의 전당에서 언제든
+        은퇴해도 이 신발의 모든 러닝 기록은 그대로 보존돼요. 러닝화 아카이브에서 언제든
         다시 만날 수 있어요.
       </Text>
     </View>

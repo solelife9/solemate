@@ -1,5 +1,5 @@
 // ============================================================================
-// HallOfShoes.rn.tsx — 명예의 전당(은퇴한 러닝화의 기록)
+// HallOfShoes.rn.tsx — 러닝화 아카이브(은퇴한 러닝화의 기록 — 구명 명예의 전당, 2026-07-09 리네임)
 // ----------------------------------------------------------------------------
 // 사용자 확정 디자인(2026-07-05): 블랙&골드 세리프 전당. 명조는 앱에 번들된
 // NanumMyeongjo(ExtraBold 페이스) — AppleMyungjo 는 iOS 미탑재(맥 전용) 폴백 버그.
@@ -150,7 +150,7 @@ function HallOfShoes({records = [], unit = 'km', onBack, userName, onGoShoes}: H
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{paddingHorizontal: rs(22), paddingBottom: insets.bottom + 30}}>
         {/* 헤더 — 애플 라지 타이틀(좌측, 라인 최소) */}
         <View style={st.head}>
-          <Text style={st.title}>명예의 전당</Text>
+          <Text style={st.title}>러닝화 아카이브</Text>
           <Text style={st.subtitle}>은퇴한 러닝화의 기록</Text>
         </View>
 
@@ -381,7 +381,7 @@ function EmptyHall({onRegister}: {onRegister?: () => void}) {
 
       <Text style={st.eLabel}>빈 전당</Text>
       <Text style={st.eTitle}>첫 헌액을 기다려요</Text>
-      <Text style={st.eDesc}>신발 한 켤레와 끝까지 달린 뒤 은퇴시키면,{'\n'}그 여정이 이곳 명예의 전당에 영원히 새겨져요.</Text>
+      <Text style={st.eDesc}>신발 한 켤레와 끝까지 달린 뒤 은퇴시키면,{'\n'}그 여정이 이곳 러닝화 아카이브에 영원히 새겨져요.</Text>
 
       {!!onRegister && (
         <Pressable style={({pressed}) => [st.cta, pressed && {opacity: 0.85}]} onPress={onRegister} accessibilityRole="button" accessibilityLabel="내 신발 보러 가기">
