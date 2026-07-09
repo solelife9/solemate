@@ -30,6 +30,7 @@ import Svg, {
   Circle,
   Defs,
   LinearGradient as SvgGradient,
+  RadialGradient as SvgRadialGradient,
   Stop,
   Rect,
 } from 'react-native-svg';
@@ -53,6 +54,7 @@ import {
   SPACE,
   RADIUS,
   TYPE,
+  GLASS,
   withAlpha,
 } from './theme';
 import {tap as hapticTap} from './lib/haptics';
@@ -216,25 +218,29 @@ export const TONE_BG: Record<Tone, string> = {
   dim: CARD_HI,
 };
 
-// ── GlassEdge — 유리 엣지(빛을 받은 테두리) ───────────────────────────────────
-// '좌상단에서 비스듬히 내려오는 단일 광원' 모델(사용자 피드백: 수직 낙하광 → 약간 대각선).
-// 대각선 광 모델(2026-07-09 사용자 확정):
-//   · 광축 = 우상↔좌하(anti-diagonal). 픽셀공간 고정 축의 중앙(=좌상-우하 대각선)에서 피크 →
-//     좌상단·우하단 코너가 가장 밝고, 우상단·좌하단으로 갈수록 자연 소멸한다.
-//   · 4면 균일 보더는 두지 않는다(박스처럼 갇혀 보였다 — 사용자 피드백). 엣지는 이 대각선
-//     하이라이트(코어 + 옅은 블룸)만으로 유리 단면의 존재를 알린다.
+// ── GlassEdge — 유리 엣지(코너 글린트 림) ─────────────────────────────────────
+// 애플 유리 문법(2026-07-09 사용자 확정 — 목업 'B 대각 밸런스', theme.GLASS 단일 진실원):
+//   · 전 둘레 헤어라인(GLASS.edgeBase) — 빛이 닿지 않는 변에서도 유리 판이 끊기지 않는다.
+//   · 코너 글린트 4점: 좌상 주광(edgeTL) · 우하 반사(edgeBR) · 우상/좌하(edgeTR/BL)는
+//     헤어라인 근처로 잦아듦. 각 글린트 = 그 코너 중심의 방사형 그라데이션 스트로크라
+//     코너를 '감싸며' 인접 두 변으로 감쇠한다. (구 대각선 위치투영 모델은 넓은 버튼에서
+//     좌우 변이 완전히 꺼져 위아래 줄무늬만 남았다 — 종횡비 무관한 배광으로 근본 수정.)
+//   · sheen: 표면 상단 안쪽 광택(GLASS.sheen → 0, 42% 지점 소멸) — 유리 면의 빛맺힘.
+//   · intensity: 활성/히어로 강조 배율(GLASS.activeIntensity) — 굵은 활성 보더의 대체.
 // id 는 생략 가능(useId 자동 — 같은 화면 다중 인스턴스 안전). radius 는 부모 모서리와 동일값.
 
 export function GlassEdge({
   id,
   radius,
-  // 코어 1px — 하이라이트는 '가는 선이 살짝 번지는' 수준이어야 한다. 1.3px 코어+굵은
-  // 블룸은 코너에서 띠처럼 두껍게 읽혔다(사용자 피드백).
   strokeWidth = 1,
+  intensity = 1,
+  sheen = true,
 }: {
   id?: string;
   radius: number;
   strokeWidth?: number;
+  intensity?: number;
+  sheen?: boolean;
 }) {
   const autoId = useId().replace(/[^a-zA-Z0-9]/g, '');
   const gid = id ?? `glass-${autoId}`;
@@ -243,7 +249,7 @@ export function GlassEdge({
     const {width, height} = e.nativeEvent.layout;
     setS({w: width, h: height});
   };
-  // 각 스트로크는 자기 굵기의 절반만큼 안쪽으로 들여 부모 경계 안에만 그린다(클립 불필요).
+  // 스트로크는 자기 굵기의 절반만큼 안쪽으로 들여 부모 경계 안에만 그린다(클립 불필요).
   const edge = (sw: number) => ({
     x: sw / 2,
     y: sw / 2,
@@ -251,29 +257,50 @@ export function GlassEdge({
     height: s.h - sw,
     rx: Math.max(0, Math.min(radius - sw / 2, (s.w - sw) / 2)),
   });
-  // 블룸도 절제(×2.6/0.4 → ×2/0.22) — 번짐은 코어 바로 곁에서만 아주 옅게.
-  const bloomW = strokeWidth * 2;
+  const op = (v: number) => Math.min(1, v * intensity);
+  // 글린트 반경 — 긴 변의 절반 남짓: 코너에서 시작해 인접 변 중앙쯤에서 헤어라인으로 합류.
+  const R = Math.max(s.w, s.h) * 0.48;
+  const corners = [
+    {key: 'tl', cx: 0, cy: 0, peak: GLASS.edgeTL},
+    {key: 'tr', cx: s.w, cy: 0, peak: GLASS.edgeTR},
+    {key: 'br', cx: s.w, cy: s.h, peak: GLASS.edgeBR},
+    {key: 'bl', cx: 0, cy: s.h, peak: GLASS.edgeBL},
+  ] as const;
   return (
     <View testID="glass-edge" pointerEvents="none" style={StyleSheet.absoluteFill} onLayout={onLayout}>
       {s.w > 1 ? (
         <Svg width={s.w} height={s.h}>
           <Defs>
-            {/* 대각선 광 — 축을 우상(w,0)→좌하(0,h)로 두고 중앙(=좌상-우하 대각선)에서 피크.
-                userSpaceOnUse(픽셀공간)라 요소 비율과 무관하게 물리각 일정. 좌상·우하 코너가
-                가장 밝고 우상·좌하로 자연 소멸한다. */}
-            <SvgGradient
-              id={`${gid}-diag`} gradientUnits="userSpaceOnUse"
-              x1={s.w} y1="0" x2="0" y2={s.h}>
-              <Stop offset="0" stopColor={T1} stopOpacity={0} />
-              <Stop offset="0.24" stopColor={T1} stopOpacity={0.03} />
-              <Stop offset="0.5" stopColor={T1} stopOpacity={0.36} />
-              <Stop offset="0.76" stopColor={T1} stopOpacity={0.03} />
-              <Stop offset="1" stopColor={T1} stopOpacity={0} />
-            </SvgGradient>
+            {corners.map(c => (
+              <SvgRadialGradient
+                key={c.key}
+                id={`${gid}-${c.key}`} gradientUnits="userSpaceOnUse"
+                cx={c.cx} cy={c.cy} fx={c.cx} fy={c.cy} rx={R} ry={R}>
+                <Stop offset="0" stopColor={T1} stopOpacity={op(c.peak)} />
+                <Stop offset="0.55" stopColor={T1} stopOpacity={op(c.peak * 0.32)} />
+                <Stop offset="1" stopColor={T1} stopOpacity={0} />
+              </SvgRadialGradient>
+            ))}
+            {sheen ? (
+              <SvgGradient id={`${gid}-sheen`} x1="0" y1="0" x2="0" y2="1">
+                <Stop offset="0" stopColor={T1} stopOpacity={GLASS.sheen} />
+                <Stop offset="0.42" stopColor={T1} stopOpacity={0} />
+                <Stop offset="1" stopColor={T1} stopOpacity={0} />
+              </SvgGradient>
+            ) : null}
           </Defs>
-          {/* 옅은 블룸(넓은 스트로크) → 코어. 4면 균일 라인은 없음(대각선 하이라이트만). */}
-          <Rect {...edge(bloomW)} fill="none" stroke={`url(#${gid}-diag)`} strokeWidth={bloomW} opacity={0.4} />
-          <Rect {...edge(strokeWidth)} fill="none" stroke={`url(#${gid}-diag)`} strokeWidth={strokeWidth} />
+          {/* 상단 광택(면 채움) → 헤어라인(전 둘레) → 코너 글린트 4점 순으로 쌓는다. */}
+          {sheen ? (
+            <Rect
+              x={0} y={0} width={s.w} height={s.h}
+              rx={Math.max(0, Math.min(radius, s.w / 2, s.h / 2))}
+              fill={`url(#${gid}-sheen)`}
+            />
+          ) : null}
+          <Rect {...edge(strokeWidth)} fill="none" stroke={T1} strokeOpacity={op(GLASS.edgeBase)} strokeWidth={strokeWidth} />
+          {corners.map(c => (
+            <Rect key={c.key} {...edge(strokeWidth)} fill="none" stroke={`url(#${gid}-${c.key})`} strokeWidth={strokeWidth} />
+          ))}
         </Svg>
       ) : null}
     </View>
@@ -419,8 +446,8 @@ const btn = StyleSheet.create({
     borderCurve: 'continuous', // 애플 스쿼클(iOS) — 원호 모서리보다 부드러운 연속 곡률
   },
   // 투명 유리 CTA 표면 — 홈 카드 '러닝 시작' 버튼과 동일 문법(반투명 화이트 + GlassEdge).
-  // 글로우/그림자 없음: 대비는 표면 밝기와 상단 하이라이트가 만든다(매트 미니멀).
-  glass: {backgroundColor: withAlpha(T1, 0.1)},
+  // 글로우/그림자 없음: 대비는 표면 밝기와 코너 글린트가 만든다(매트 미니멀).
+  glass: {backgroundColor: GLASS.fillCta},
   // ghost / disabled 표면(올린 카드 톤). 그라데이션·글로우 없음.
   flat: {backgroundColor: CARD_HI},
   pressed: {opacity: 0.92, transform: [{scale: 0.97}]},

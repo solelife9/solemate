@@ -28,6 +28,7 @@ import {
   RADIUS,
   T1,
   T3,
+  GLASS,
   withAlpha,
 } from '../theme';
 
@@ -187,22 +188,31 @@ const pressableStyleAt = (
 };
 
 describe('Button — unified CTA surface (glass · matte · radius token)', () => {
-  test('cta glass edge is a diagonal light: mid-peak on TL–BR, fading to 0 at both ends', () => {
-    // 대각선 광 계약(2026-07-09): 광축 중앙(=좌상-우하 대각선)에서 피크(~0.36),
-    // 양 끝(우상·좌하)은 0 으로 자연 소멸. 옛 상단 0.55 코어보다 절제.
+  test('cta glass edge is a corner-glint rim: TL keylight + BR reflection over a full hairline', () => {
+    // 코너 글린트 계약(2026-07-09 확정 — 'B 대각 밸런스'): 전 둘레 헤어라인(edgeBase) 위에
+    // 코너 4점 방사형 글린트 — 좌상 주광(edgeTL) > 우하 반사(edgeBR) > 우상/좌하(edgeTR/BL).
+    // 위치투영 대각선 모델(넓은 버튼에서 좌우 변이 꺼지는 붕괴)은 폐지.
     const {root} = render(<Button label="시작" variant="cta" />);
     layoutGlassEdges(root);
-    const stops = byName(root, 'Stop').filter((s: any) => s.props.stopColor === T1);
-    expect(stops.length).toBeGreaterThanOrEqual(3);
-    const withOff = stops.map((s: any) => ({o: Number(s.props.offset), op: Number(s.props.stopOpacity)}));
-    const peak = Math.max(...withOff.map((s) => s.op));
-    expect(peak).toBeGreaterThanOrEqual(0.3); // 대각선 피크
-    expect(peak).toBeLessThan(0.5); // 옛 0.55 코어보다 절제
-    expect(withOff.find((s) => s.o === 0)?.op).toBe(0); // 우상단 끝 = 소멸
-    expect(withOff.find((s) => s.o === 1)?.op).toBe(0); // 좌하단 끝 = 소멸
-    const peakStop = withOff.find((s) => s.op === peak)!;
-    expect(peakStop.o).toBeGreaterThan(0); // 피크는 중앙(끝이 아님)
-    expect(peakStop.o).toBeLessThan(1);
+    // 코너 방사형 그라데이션 4점 — 각 코너의 피크 불투명도가 확정 배광과 일치.
+    const radials = byName(root, 'RadialGradient');
+    expect(radials.length).toBe(4);
+    const peakOf = (suffix: string) => {
+      const g = radials.find((r: any) => String(r.props.id).endsWith(`-${suffix}`))!;
+      const stops = g.props.children.filter((c: any) => c?.props?.stopColor === T1);
+      return Math.max(...stops.map((c: any) => Number(c.props.stopOpacity)));
+    };
+    expect(peakOf('tl')).toBeCloseTo(GLASS.edgeTL); // 좌상 주광
+    expect(peakOf('br')).toBeCloseTo(GLASS.edgeBR); // 우하 반사(대각 밸런스)
+    expect(peakOf('tr')).toBeCloseTo(GLASS.edgeTR);
+    expect(peakOf('bl')).toBeCloseTo(GLASS.edgeBL);
+    expect(peakOf('tl')).toBeGreaterThan(peakOf('br')); // 주광 > 반사
+    expect(peakOf('br')).toBeGreaterThan(peakOf('tr')); // 반사 > 측면 코너
+    // 전 둘레 헤어라인 — 빛이 안 닿는 변에서도 유리 판이 끊기지 않는다.
+    const hairline = byName(root, 'Rect').find(
+      (r: any) => r.props.stroke === T1 && r.props.fill === 'none',
+    )!;
+    expect(Number(hairline.props.strokeOpacity)).toBeCloseTo(GLASS.edgeBase);
   });
 
   test('cta is matte — no glow shadow of any colour', () => {

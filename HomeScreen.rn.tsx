@@ -16,7 +16,7 @@ import Svg, { Defs, RadialGradient as SvgRadial, Stop, Rect } from 'react-native
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import { ringColor } from './lib/ringColor';
 import {
-  BG, CARD_DIM, CARD_HI, HERO_BG, ACCENT, WARN, GOOD, T1, T2, T3, T4,
+  BG, CARD_DIM, CARD_HI, ACCENT, WARN, GOOD, T1, T2, T3, T4,
   FONT, DISPLAY, SPACE, RADIUS, GUTTER, withAlpha, Shoe, SHOES,
 } from './theme';
 import type { RankTier } from './lib/progression/types';
@@ -604,9 +604,6 @@ const s = StyleSheet.create({
   goalRingPct: { color: T1, fontFamily: DISPLAY, fontSize: rf(18), letterSpacing: 0.2 },
   goalRingU: { color: T3, fontFamily: FONT, fontSize: rf(11) },
 
-  // 목업 카드: radius 20(RADIUS.lg) · 테두리 1px. 비활성 라인(흰 7%), 활성 오렌지(0.55).
-  hero: { backgroundColor: HERO_BG, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.07), padding: rs(16) },
-  heroActive: { borderColor: withAlpha(ACCENT, 0.55) },
   // 현재 상태 인사이트 카드(사용거리 | 교체예상) — 활성 신발 반영
   weekEmptyTxt: { color: T3, fontFamily: FONT, fontSize: rf(14), lineHeight: rf(19) },
   insightCard: { backgroundColor: CARD_DIM, borderRadius: RADIUS.lg, borderCurve: 'continuous', borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.07), padding: SPACE.lg },
@@ -623,36 +620,8 @@ const s = StyleSheet.create({
   insightTags: { flexDirection: 'row', flexWrap: 'wrap', gap: rv(6), marginTop: rv(12) },
   insightTag: { backgroundColor: CARD_HI, borderRadius: RADIUS.pill, paddingHorizontal: rs(11), paddingVertical: rv(5) },
   insightTagText: { color: T2, fontFamily: FONT, fontSize: rf(13), fontWeight: '600' },
-  heroTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: rv(14) },
-  heroBrand: { color: T3, fontFamily: DISPLAY, fontSize: rf(12), fontWeight: '500', letterSpacing: 1.4 },
-  usingChip: { backgroundColor: CARD_HI, borderRadius: rs(6), paddingHorizontal: SPACE.sm, paddingVertical: rv(2) },
-  usingChipText: { color: T3, fontFamily: FONT, fontSize: rf(11), fontWeight: '500' },
-  // 신발 종류(카테고리) 칩 — 데이터에 적힌 카본/데일리 등을 오렌지 톤으로 표시
-  catChip: { backgroundColor: withAlpha(ACCENT, 0.14), borderRadius: rs(6), paddingHorizontal: SPACE.sm, paddingVertical: rv(2) },
-  catChipText: { color: ACCENT, fontFamily: FONT, fontSize: rf(11), fontWeight: '700', letterSpacing: 0.1 },
-  heroModel: { color: T1, fontFamily: DISPLAY, fontSize: rf(28), fontWeight: '700', letterSpacing: -0.6, marginTop: rv(7), lineHeight: rf(32), marginBottom: rv(24) },
-  // minHeight = 2줄(lineHeight 20×2) — 1줄짜리 reason 도 2줄 공간을 차지해 캐러셀 카드
-  // 높이가 신발마다 흔들리지 않게 한다(numberOfLines={2} 와 짝).
-  heroReason: { color: T2, fontFamily: FONT, fontSize: rf(16), fontWeight: '500', letterSpacing: -0.2, marginTop: rv(6), lineHeight: rf(21), minHeight: rs(21) },
-  // 교체까지 남은 거리 — 문장형(목업 .remain). 숫자만 디스플레이 강조.
-  heroRemainLine: { color: T2, fontFamily: FONT, fontSize: rf(16), fontWeight: '500', letterSpacing: -0.2, marginTop: rv(10) },
-  heroRemainNum: { color: T1, fontFamily: DISPLAY, fontSize: rf(27), fontWeight: '700', letterSpacing: -0.6 },
-  heroRemainNumU: { color: T2, fontFamily: FONT, fontSize: rf(14), fontWeight: '500' },
   gauge: { height: rs(4), borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.08), marginTop: rv(14), overflow: 'hidden' },
   gaugeFill: { height: '100%', borderRadius: RADIUS.pill },
-  // 사용량 줄 — 좌(사용량) ↔ 우(사용률 %). marginTop 은 행에 두고 텍스트끼리는 가운데 정렬.
-  usageRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: rv(10) },
-  usage: { color: T3, fontFamily: FONT, fontSize: rf(13), fontWeight: '500' },
-  usagePct: { color: T2, fontFamily: FONT, fontSize: rf(13), fontWeight: '700', letterSpacing: 0.2 },
-  injuryWrap: { marginTop: rv(16) },
-  // 교체 예측 ETA 한 줄(목업 .fore — 회색·상단 구분선).
-  heroForecast: { flexDirection: 'row', alignItems: 'center', gap: rv(7), marginTop: rv(10), paddingTop: rv(10), borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.06) },
-  heroForecastText: { flex: 1, color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '500', letterSpacing: -0.1, lineHeight: rf(16) },
-  // forecast 가 없는 신발: 같은 높이를 차지하되 보이지 않게(공간만 예약 → 카드 높이 통일).
-  heroForecastHidden: { opacity: 0 },
-  condpill: { flexDirection: 'row', alignItems: 'center', gap: rv(7), flexShrink: 0, marginTop: rv(2) },
-  dot: { width: rs(7), height: rs(7), borderRadius: RADIUS.pill },
-  condText: { fontFamily: FONT, fontSize: rf(14), fontWeight: '500' },
 
   sectionLabel: { paddingHorizontal: SPACE.xl, paddingBottom: SPACE.sm },
   sectionRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', paddingHorizontal: SPACE.xl, paddingTop: SPACE.sm, paddingBottom: SPACE.sm },

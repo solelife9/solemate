@@ -18,11 +18,11 @@ import {
   type NativeSyntheticEvent, type NativeScrollEvent,
 } from 'react-native';
 import Svg, {
-  Circle, Rect, Defs, Stop,
-  LinearGradient as SvgLinear, RadialGradient as SvgRadial,
+  Circle, Defs, Stop,
+  LinearGradient as SvgLinear,
 } from 'react-native-svg';
 import {
-  BG, CARD, HERO_BG, T1, T2, T3, WARN, DANGER, FONT, DISPLAY, TYPE, RADIUS, GUTTER, withAlpha,
+  BG, T1, T2, T3, WARN, DANGER, FONT, DISPLAY, TYPE, RADIUS, GUTTER, GLASS, withAlpha,
   type Shoe,
 } from '../theme';
 import {GlassEdge, ShoeGlyph} from '../primitives';
@@ -187,10 +187,10 @@ export function ShoeCard({
   return (
     <Animated.View style={{width, transform: [{scale}], opacity}}>
       <View style={styles.card}>
-        {/* 상승감 표면 + 컨디션 상단 글로우 (blur 없이 SVG 로) */}
-        <SurfaceBackground id={`surf-${i}`} glow={rc.solid} />
-        {/* 모서리 하이라이트 보더(애플 엣지) */}
-        <GlassEdge id={`edge-card-${i}`} radius={CARD_RADIUS} />
+        {/* 유리 재질(2026-07-09 확정): 반투명 표면(styles.card) + 코너 글린트 림 + 상단 광택.
+            구 그라데이션 표면·컨디션색 글로우는 폐지 — 효과가 겹겹이 싸워 어색하다는 실기기
+            피드백. 컨디션 색은 점·링에만(색은 의미, 질감은 무채). 히어로라 림을 한 단 올린다. */}
+        <GlassEdge id={`edge-card-${i}`} radius={CARD_RADIUS} intensity={GLASS.activeIntensity} />
 
         <View style={styles.cardInner}>
           {/* 정보영역(탭 → 상세). 러닝 시작 버튼은 이 Pressable '밖'의 형제라, 텍스트 기반
@@ -286,8 +286,7 @@ export function GhostShoeCard({width, onPress}: {width: number; onPress?: () => 
   return (
     <View style={{width, alignSelf: 'center'}}>
       <View style={styles.card}>
-        {/* 무채 문라이트 글로우 — 컨디션 색은 아직 없다(신발이 없으므로). */}
-        <SurfaceBackground id="surf-ghost" glow={withAlpha(T1, 0.5)} />
+        {/* 실카드와 동일한 유리 재질(글로우 없음) — 고스트는 기본 림 세기. */}
         <GlassEdge id="edge-card-ghost" radius={CARD_RADIUS} />
         <View style={styles.cardInner}>
           <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel="첫 러닝화 등록">
@@ -341,32 +340,10 @@ function Guardian({danger, pct}: {danger: boolean; pct: number}) {
   );
 }
 
-// ─── 상승감 표면 + 컨디션 상단 글로우 (SVG, blur 불필요) ─────────────
-// 부모 카드에 borderRadius + overflow:'hidden' 이 있어 모서리로 클립된다.
-function SurfaceBackground({id, glow}: {id: string; glow: string}) {
-  return (
-    <Svg style={StyleSheet.absoluteFill} width="100%" height="100%">
-      <Defs>
-        {/* 위가 밝고 아래가 어두운 세로 그라데이션 = 카드가 살짝 떠 보임 */}
-        <SvgLinear id={`${id}-surf`} x1="0" y1="0" x2="0" y2="1">
-          <Stop offset="0" stopColor={HERO_BG} />
-          <Stop offset="1" stopColor={CARD} />
-        </SvgLinear>
-        {/* 상단 중앙 컨디션 색 글로우(옅게) */}
-        <SvgRadial id={`${id}-glow`} cx="50%" cy="4%" rx="72%" ry="52%" fx="50%" fy="4%">
-          <Stop offset="0" stopColor={glow} stopOpacity={0.42} />
-          <Stop offset="1" stopColor={glow} stopOpacity={0} />
-        </SvgRadial>
-      </Defs>
-      <Rect x="0" y="0" width="100%" height="100%" fill={`url(#${id}-surf)`} />
-      <Rect x="0" y="0" width="100%" height="100%" fill={`url(#${id}-glow)`} />
-    </Svg>
-  );
-}
-
-// ─── 모서리 하이라이트 보더(애플 유리 엣지) ─────────────────────────
-// GlassEdge 는 primitives 로 승격했다(단일 광원 모델: 상단 코어+블룸, 옅은 형태 림,
-// 하단 바닥 반사광). 홈 카드·러닝 시작 버튼·전역 CTA(Button)가 같은 빛을 공유한다.
+// ─── 유리 재질 노트 ─────────────────────────────────────────────────
+// 구 SurfaceBackground(상승감 그라데이션 + 컨디션 글로우)는 2026-07-09 글라스 확정으로
+// 폐지 — 표면은 styles.card 의 반투명 채움, 빛은 primitives.GlassEdge(코너 글린트)가
+// 담당한다. 홈 카드·러닝 시작 버튼·전역 CTA(Button)가 같은 빛(theme.GLASS)을 공유한다.
 
 // 카테고리 라벨(카본/데일리 등)이 Shoe 에 없을 수 있어 안전 폴백.
 function catOf(shoe: any): string {
@@ -396,9 +373,11 @@ const styles = StyleSheet.create({
     // borderCurve:'continuous'(스퀴클) 제거 — iOS 스퀴클 클립이 GlassEdge 의 원호(Rect rx) 코너와
     // 어긋나 좌상단 모서리가 미세하게 어둡게 잘려 보였다(사용자 발견). Android 는 continuous 를
     // 무시(원호)해 애초에 정합이라 괜찮았다. 원호로 통일하면 하이라이트가 코너에서 매끈히 이어진다.
-    borderRadius: CARD_RADIUS, overflow: 'hidden', backgroundColor: CARD,
-    // 카드가 배경에서 떠 보이도록 그림자(iOS/안드 공통 근사).
-    shadowColor: '#000', shadowOpacity: 0.5, shadowRadius: 24, shadowOffset: {width: 0, height: rs(18)}, elevation: 12,
+    // 표면 = 반투명 유리(GLASS.fillActive — 히어로라 활성 채움). 불투명 CARD 판 폐지.
+    borderRadius: CARD_RADIUS, overflow: 'hidden', backgroundColor: GLASS.fillActive,
+    // 그림자는 절제 — 구 값(불투명 0.5·radius 24·offset 18)은 유리의 빛(코너 글린트)과
+    // 방향이 모순돼 재질이 싸웠다. 살짝 뜨는 정도만 남긴다.
+    shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 14, shadowOffset: {width: 0, height: rs(8)}, elevation: 6,
   },
   cardInner: {padding: rs(24)},
   cardTop: {flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: rv(10)},
