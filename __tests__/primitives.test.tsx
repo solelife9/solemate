@@ -168,7 +168,7 @@ describe('Button variant branch produces different output', () => {
 
   test('cta surface is the translucent glass, not the ghost CARD_HI surface', () => {
     const {root} = render(<Button label="시작" variant="cta" />);
-    expect(pressableStyle(root).backgroundColor).toBe(withAlpha(T1, 0.1));
+    expect(pressableStyle(root).backgroundColor).toBe(GLASS.fillCta);
   });
 });
 
@@ -209,12 +209,13 @@ describe('Button — unified CTA surface (glass · matte · radius token)', () =
     expect(peakOf('tl')).toBeGreaterThan(peakOf('br')); // 주광 > 반사
     expect(GLASS.edgeTR).toBe(0); // 우상/좌하 글린트 폐지 계약
     expect(GLASS.edgeBL).toBe(0);
-    // 전 둘레 헤어라인 — 거의 안 보이는 최소 존재감(0.02)으로만 유리 판을 잇는다.
+    // 전 둘레 헤어라인 — CARD_BORDER(7%)와 같은 시감으로 유리 요소를 또렷이 닫는다
+    // (2026-07-10 확정: "카드 전체를 제일 얇은 헤어라인으로").
     const hairline = byName(root, 'Rect').find(
       (r: any) => r.props.stroke === T1 && r.props.fill === 'none',
     )!;
     expect(Number(hairline.props.strokeOpacity)).toBeCloseTo(GLASS.edgeBase);
-    expect(GLASS.edgeBase).toBeLessThanOrEqual(0.02);
+    expect(GLASS.edgeBase).toBeCloseTo(0.07);
   });
 
   test('cta is matte — no glow shadow of any colour', () => {

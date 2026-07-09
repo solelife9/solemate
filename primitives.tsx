@@ -248,15 +248,18 @@ export function GlassEdge({
   const [s, setS] = useState({w: 0, h: 0});
   const onLayout = (e: LayoutChangeEvent) => {
     const {width, height} = e.nativeEvent.layout;
-    setS({w: width, h: height});
+    // 내림 처리 — 소수점 레이아웃 높이에서 SVG 캔버스가 뷰보다 커지면 아래 변 스트로크가
+    // overflow:hidden 에 반픽셀 잘려 사라졌다(기기 발견 2026-07-10: 러닝 시작 버튼 하변).
+    setS({w: Math.floor(width), h: Math.floor(height)});
   };
-  // 스트로크는 자기 굵기의 절반만큼 안쪽으로 들여 부모 경계 안에만 그린다(클립 불필요).
+  // 스트로크는 1px 안쪽에 그린다 — 절반(0.5px) 들임은 기기 픽셀 그리드에서 경계 변이
+  // 클립될 수 있다(위와 동일 원인). 1px 안쪽이면 어떤 배율에서도 네 변이 온전하다.
   const edge = (sw: number) => ({
-    x: sw / 2,
-    y: sw / 2,
-    width: s.w - sw,
-    height: s.h - sw,
-    rx: Math.max(0, Math.min(radius - sw / 2, (s.w - sw) / 2)),
+    x: sw,
+    y: sw,
+    width: s.w - sw * 2,
+    height: s.h - sw * 2,
+    rx: Math.max(0, Math.min(radius - sw, (s.w - sw * 2) / 2)),
   });
   const op = (v: number) => Math.min(1, v * intensity);
   // 글린트 반경 — 긴 변의 0.8: 빛이 인접 두 변을 따라 멀리 여행하며 반대편 코너 근처에서

@@ -786,7 +786,7 @@ describe('Audit Hardening 수용', () => {
       );
       expect(glassHosts.length).toBeGreaterThanOrEqual(1);
       const st = flatBtnStyle(root, label);
-      expect(st.backgroundColor).toBe(withAlpha(T1, 0.1));
+      expect(st.backgroundColor).toBe(GLASS.fillCta);
       expect(st.shadowColor).toBeUndefined();
       expect(st.borderRadius).toBe(RADIUS.btn);
       return node;
