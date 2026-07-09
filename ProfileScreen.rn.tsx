@@ -1167,7 +1167,7 @@ const s = StyleSheet.create({
   progressSub: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500', marginTop: rv(3) },
 
   headerRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', paddingHorizontal: rs(4) },
-  title: { color: T1, fontFamily: FONT, fontSize: TYPE.display.fontSize, fontWeight: '500', letterSpacing: -0.8 },
+  title: { color: T1, fontFamily: FONT, fontSize: TYPE.display.fontSize, fontWeight: '800', letterSpacing: -1 },
   iconBtn: { width: rs(38), height: rs(38), borderRadius: RADIUS.pill, backgroundColor: CARD_HI, borderWidth: 1, borderColor: withAlpha(T1, 0.12), alignItems: 'center', justifyContent: 'center' },
 
   identity: { flexDirection: 'row', alignItems: 'center', gap: rv(14), paddingHorizontal: rs(4), paddingTop: rv(4) },

@@ -558,7 +558,7 @@ const s = StyleSheet.create({
   // 보인다는 피드백 — 라벨이 차지하던 만큼 숨 쉴 여백을 직접 준다.
   greetWrap: { paddingHorizontal: GUTTER, paddingTop: rv(4), paddingBottom: rv(10) },
   date: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, letterSpacing: 0.2 },
-  greet: { color: T1, fontFamily: FONT, fontSize: TYPE.title.fontSize, fontWeight: '500', letterSpacing: -0.4, marginTop: rv(3), lineHeight: rf(26) },
+  greet: { color: T1, fontFamily: FONT, fontSize: TYPE.title.fontSize, fontWeight: '700', letterSpacing: -0.5, marginTop: rv(3), lineHeight: rf(26) },
 
   // 마지막 동기화 칩 — 인사 아래 절제된 회색(아이콘 T3 + 텍스트 T3). 당겨서 새로고침 안내.
   syncChip: { flexDirection: 'row', alignItems: 'center', gap: rv(4), alignSelf: 'flex-start', marginTop: rv(10), backgroundColor: CARD_HI, borderRadius: RADIUS.pill, paddingHorizontal: rs(8), paddingVertical: rv(4) },

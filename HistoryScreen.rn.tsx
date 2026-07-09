@@ -1208,7 +1208,7 @@ const s = StyleSheet.create({
 
   header: { paddingTop: rv(8), paddingHorizontal: rs(22), paddingBottom: rv(6) },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  title: { color: T1, fontFamily: FONT, fontSize: TYPE.title1.fontSize, fontWeight: '500', letterSpacing: -0.8 },
+  title: { color: T1, fontFamily: FONT, fontSize: TYPE.title1.fontSize, fontWeight: '800', letterSpacing: -0.9 },
 
   // 기간 세그먼트는 SegmentedControl(neutral) 프리미티브로 이전 — 컨테이너/항목/선택칩
   // 토큰을 그쪽이 책임진다(과거 segment/segItem/segItemOn/segText 제거, 시각 동등).

@@ -662,7 +662,7 @@ const s = StyleSheet.create({
 
   // 목업 정합: 제목 + '신발 추가' 버튼 한 줄(topbar)
   topbar: { paddingTop: rv(8), paddingHorizontal: rs(22), paddingBottom: rv(8), flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  title: { color: T1, fontFamily: FONT, fontSize: TYPE.title1.fontSize, fontWeight: '600', letterSpacing: -0.6 },
+  title: { color: T1, fontFamily: FONT, fontSize: TYPE.title1.fontSize, fontWeight: '800', letterSpacing: -0.9 },
   addPill: { height: rs(34), paddingHorizontal: rs(14), borderRadius: RADIUS.pill, borderWidth: 1, borderColor: withAlpha(T1, 0.2), backgroundColor: CARD_HI, flexDirection: 'row', alignItems: 'center', gap: rv(6) },
   addPillText: { color: T1, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600' },
 
