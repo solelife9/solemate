@@ -1399,7 +1399,7 @@ const t = StyleSheet.create({
     overflow: 'hidden',                       // 하이라이트를 알약으로 클립
     borderWidth: StyleSheet.hairlineWidth,
     // 테두리를 또렷이(0.10→0.20) — 캡슐이 검정 배경과 분리돼 보이도록.
-    borderColor: 'rgba(255,255,255,0.20)',
+    borderColor: withAlpha(T1, 0.20),
     // iOS: 콘텐츠가 독 밑으로 스크롤되므로 막을 얇게(0.62→0.30→0.14, 사용자 피드백) —
     // 블러 너머로 화면이 또렷이 비쳐야 유리다. 다크 블러 자체가 어둡게 깔아줘 가독성은 유지된다.
     // 안드로이드는 블러 미지원이 흔해 불투명 회색 유지(투명하면 글자와 아이콘이 충돌).
@@ -1417,7 +1417,7 @@ const t = StyleSheet.create({
     marginTop: rv(-25),            // 세로 정중앙(translateY(-50%) 대응)
     borderRadius: RADIUS.pill,
     // 활성 하이라이트 강화(0.15→0.24) — 비활성 아이콘이 밝아진 만큼 활성 탭을 또렷이.
-    backgroundColor: 'rgba(255,255,255,0.24)',
+    backgroundColor: withAlpha(T1, 0.24),
   },
   item: {flex: 1, height: rs(62), alignItems: 'center', justifyContent: 'center'},
   label: {fontFamily: FONT, fontSize: rf(11), letterSpacing: 0.1},

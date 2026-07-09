@@ -10,7 +10,7 @@ import React from 'react';
 import { rs } from './lib/responsive';
 import {TouchableOpacity, View, StyleSheet, StyleProp, ViewStyle} from 'react-native';
 import Svg, {Defs, LinearGradient, Stop, Circle} from 'react-native-svg';
-import {ACCENT, GRAD_TOP, GRAD_BOT, RADIUS} from './theme';
+import {ACCENT, GRAD_TOP, GRAD_BOT, RADIUS, withAlpha, T1} from './theme';
 
 export function GradientCircleButton({
   size = 74,
@@ -59,7 +59,7 @@ export function GradientCircleButton({
       {/* 상단 안쪽 광택 — 얇은 흰 아크 */}
       <View
         pointerEvents="none"
-        style={[StyleSheet.absoluteFill, {borderRadius: RADIUS.pill, borderCurve: 'continuous', borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.22)'}]}
+        style={[StyleSheet.absoluteFill, {borderRadius: RADIUS.pill, borderCurve: 'continuous', borderTopWidth: 1, borderTopColor: withAlpha(T1, 0.22)}]}
       />
       {children}
     </TouchableOpacity>

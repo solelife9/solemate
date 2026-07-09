@@ -13,7 +13,7 @@
 import React from 'react';
 import { rf, rs, rv } from './lib/responsive';
 import {View, Text, StyleSheet} from 'react-native';
-import {BRAND, T1, T2, T3, FONT, DISPLAY, RADIUS} from './theme';
+import {BRAND, T1, T2, T3, FONT, DISPLAY, RADIUS, withAlpha} from './theme';
 
 export type Split = {km: number; paceSec: number; elevM: number};
 
@@ -62,10 +62,10 @@ const r = StyleSheet.create({
   head: {flexDirection: 'row', alignItems: 'center', gap: rv(12), paddingHorizontal: rs(2), paddingBottom: rv(8)},
   hcell: {color: T3, fontFamily: FONT, fontSize: rf(12), fontWeight: '600', opacity: 0.8},
   row: {flexDirection: 'row', alignItems: 'center', gap: rv(12), paddingVertical: rv(8), paddingHorizontal: rs(2)},
-  rowSep: {borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: 'rgba(255,255,255,0.045)'},
+  rowSep: {borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.045)},
   km: {width: rs(34), fontFamily: DISPLAY, fontSize: rf(18), fontWeight: '600', color: T1},
-  barWrap: {flex: 1, height: rs(10), borderRadius: RADIUS.pill, backgroundColor: 'rgba(255,255,255,0.04)', overflow: 'hidden'},
-  bar: {height: '100%', borderRadius: RADIUS.pill, backgroundColor: 'rgba(255,255,255,0.30)'},
+  barWrap: {flex: 1, height: rs(10), borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.04), overflow: 'hidden'},
+  bar: {height: '100%', borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.30)},
   barBest: {backgroundColor: BRAND},
   pace: {width: rs(60), textAlign: 'right', fontFamily: DISPLAY, fontSize: rf(15), fontWeight: '500', color: T1},
   paceBest: {color: BRAND},

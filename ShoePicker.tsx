@@ -226,7 +226,7 @@ const s = StyleSheet.create({
   },
   pkRail: {width: rs(126), flexGrow: 0, borderRightWidth: StyleSheet.hairlineWidth, borderRightColor: SEP, paddingVertical: rv(6)},
   pkRailItem: {paddingVertical: rv(12), paddingHorizontal: rs(16), justifyContent: 'center'},
-  pkRailItemOn: {backgroundColor: 'rgba(255,255,255,0.05)'},
+  pkRailItemOn: {backgroundColor: withAlpha(T1, 0.05)},
   pkRailBar: {position: 'absolute', left: 0, top: 12, bottom: 12, width: rs(3), borderTopRightRadius: 3, borderBottomRightRadius: 3, backgroundColor: T1},
   pkRailText: {fontFamily: FONT, fontSize: rf(14), fontWeight: '500', color: T3, letterSpacing: -0.2},
   pkRailTextOn: {color: T1, fontWeight: '600'},

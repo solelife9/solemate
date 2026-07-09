@@ -464,7 +464,7 @@ const SUNSET: {o: number; c: string}[] = [
   {o: 0, c: RETIRE_GRAD_STOPS[0]}, {o: 0.52, c: RETIRE_GRAD_STOPS[1]}, {o: 1, c: RETIRE_GRAD_STOPS[2]},
 ];
 function FormatS({model}: {model: RetirementCardModel}) {
-  const hair = 'rgba(255,255,255,0.10)';
+  const hair = withAlpha(T1, 0.10);
   const moment = typeof model.mostMemorable === 'string' ? model.mostMemorable.trim() : '';
   // 거대 거리 — 숫자 + 작은 km, 하나의 SVG 안 연속 그라데이션(userSpaceOnUse).
   const numSize = 260;

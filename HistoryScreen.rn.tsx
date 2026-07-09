@@ -633,7 +633,7 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'm
                   return (
                     <View key={z} style={{ flexDirection: 'row', alignItems: 'center' }}>
                       <Text style={{ width: rs(60), color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600' }}>Z{z} {HR_ZONE_LABEL[z]}</Text>
-                      <View style={{ flex: 1, height: rs(8), backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: rs(4), overflow: 'hidden', marginHorizontal: rs(8) }}>
+                      <View style={{ flex: 1, height: rs(8), backgroundColor: withAlpha(T1, 0.06), borderRadius: rs(4), overflow: 'hidden', marginHorizontal: rs(8) }}>
                         <View style={{ width: `${Math.round(pct * 100)}%`, height: rs(8), backgroundColor: HR_ZONE_COLORS[z], borderRadius: rs(4) }} />
                       </View>
                       <Text style={{ width: rs(44), textAlign: 'right', color: T2, fontFamily: DISPLAY, fontSize: TYPE.caption.fontSize, fontWeight: '600' }}>{fmtT(sec)}</Text>
@@ -1040,7 +1040,7 @@ export default function HistoryScreen({
                 <View style={s.sumMetric}><Text style={s.sumMetricV}>{sum.time}</Text><Text style={s.sumMetricL}>총 시간</Text></View>
               </View>
               {ch && ch.data.length > 0 && (
-                <View style={{ marginTop: rv(20), paddingTop: rv(20), borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.18)' }}>
+                <View style={{ marginTop: rv(20), paddingTop: rv(20), borderTopWidth: 1, borderTopColor: withAlpha(T1, 0.18) }}>
                   <Text style={s.cardTitle}>{ch.title}</Text>
                   <View style={{ marginTop: rv(18) }}><PeriodChartView data={ch.data} labels={ch.labels} unit={unit} /></View>
                 </View>

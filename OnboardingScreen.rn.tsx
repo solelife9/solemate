@@ -248,7 +248,7 @@ function KmSlider({value, min, max, step, onChange}: {value: number; min: number
       }}
       accessibilityActions={[{name: 'increment'}, {name: 'decrement'}]}
       style={{height: rs(26), justifyContent: 'center'}}>
-      <View style={{position: 'absolute', left: 0, right: 0, height: rs(8), borderRadius: rs(8), backgroundColor: 'rgba(255,255,255,0.09)'}} />
+      <View style={{position: 'absolute', left: 0, right: 0, height: rs(8), borderRadius: rs(8), backgroundColor: withAlpha(T1, 0.09)}} />
       <View style={{position: 'absolute', left: 0, width: pct * w, height: rs(8), borderRadius: rs(8), backgroundColor: ACCENT}} />
       <View
         style={{
@@ -733,7 +733,7 @@ const s = StyleSheet.create({
     borderWidth: 1,
     borderColor: SEP,
   },
-  shoeThumb: {width: rs(44), height: rs(44), borderRadius: rs(12), borderCurve: 'continuous', backgroundColor: 'rgba(255,255,255,0.06)', alignItems: 'center', justifyContent: 'center'},
+  shoeThumb: {width: rs(44), height: rs(44), borderRadius: rs(12), borderCurve: 'continuous', backgroundColor: withAlpha(T1, 0.06), alignItems: 'center', justifyContent: 'center'},
   pill: {flexDirection: 'row', alignItems: 'center', gap: rv(6), paddingVertical: rv(4), paddingHorizontal: rs(10), borderRadius: 100, alignSelf: 'center'},
   alertRow: {flexDirection: 'row', alignItems: 'center', gap: rv(8), marginTop: rv(22), paddingHorizontal: rs(2)},
 
@@ -744,7 +744,7 @@ const s = StyleSheet.create({
   featIc: {width: rs(38), height: rs(38), borderRadius: rs(11), borderCurve: 'continuous', alignItems: 'center', justifyContent: 'center'},
 
   // 등록
-  fieldBadge: {width: rs(20), height: rs(20), borderRadius: rs(6), backgroundColor: 'rgba(255,255,255,0.08)', alignItems: 'center', justifyContent: 'center'},
+  fieldBadge: {width: rs(20), height: rs(20), borderRadius: rs(6), backgroundColor: withAlpha(T1, 0.08), alignItems: 'center', justifyContent: 'center'},
   selector: {
     flexDirection: 'row',
     alignItems: 'center',
