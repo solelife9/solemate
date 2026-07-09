@@ -543,6 +543,14 @@ function Performance({goNext, onSkip, insetTop, insetBottom}: ScreenProps) {
             </View>
           ))}
         </Rise>
+
+        {/* 하단 여백을 사실 한 줄로 채운다(기기 피드백) — HealthKit 워크아웃 쓰기는 실구현. */}
+        <Rise delay={260} style={s.alertRow}>
+          <PulseIcon size={ri(16)} color={withAlpha(T1, 0.75)} />
+          <Text style={{flex: 1, fontFamily: FONT, fontSize: TYPE.label.fontSize, color: T3, letterSpacing: -0.1}}>
+            달린 러닝은 <Text style={{color: T1, fontWeight: '600'}}>Apple 건강</Text>에도 자동으로 저장돼요
+          </Text>
+        </Rise>
       </ScrollView>
       <View style={[s.footer, {paddingBottom: Math.max(insetBottom, 18)}]}>
         <PrimaryButton label="다음" onPress={goNext} />
@@ -698,8 +706,8 @@ const s = StyleSheet.create({
   flex1: {flex: 1},
   bodyContent: {flexGrow: 1, paddingHorizontal: rs(24), paddingTop: rv(8)},
   eyebrow: {fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '700', letterSpacing: 1.4, color: ACCENT, textTransform: 'uppercase', marginBottom: rv(6)},
-  title: {fontFamily: FONT, fontSize: TYPE.title.fontSize, lineHeight: rf(29), fontWeight: '700', letterSpacing: -0.5, color: T1},
-  body: {fontFamily: FONT, fontSize: TYPE.body.fontSize, lineHeight: rf(19), color: T3, marginTop: rv(8), maxWidth: rs(360)},
+  title: {fontFamily: FONT, fontSize: TYPE.title1.fontSize, lineHeight: rf(33), fontWeight: '700', letterSpacing: -0.6, color: T1},
+  body: {fontFamily: FONT, fontSize: TYPE.body.fontSize, lineHeight: rf(22), color: T3, marginTop: rv(10), maxWidth: rs(360)},
   bodyStrong: {color: T1, fontWeight: '600'},
 
   // Welcome — 헤드라인 88→64→48 재축소(사용자 확정 2026-07-07).
@@ -730,8 +738,8 @@ const s = StyleSheet.create({
   alertRow: {flexDirection: 'row', alignItems: 'center', gap: rv(9), marginTop: rv(16), paddingHorizontal: rs(2)},
 
   // 성능(기능 목록)
-  featCard: {marginTop: rv(16), paddingHorizontal: rs(18), paddingVertical: rv(4), borderRadius: rs(22), borderCurve: 'continuous', backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP},
-  featRow: {flexDirection: 'row', alignItems: 'center', gap: rv(14), paddingVertical: rv(15)},
+  featCard: {marginTop: rv(20), paddingHorizontal: rs(18), paddingVertical: rv(4), borderRadius: rs(22), borderCurve: 'continuous', backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP},
+  featRow: {flexDirection: 'row', alignItems: 'center', gap: rv(14), paddingVertical: rv(18)},
   featRowDivider: {borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP},
   featIc: {width: rs(38), height: rs(38), borderRadius: rs(11), borderCurve: 'continuous', alignItems: 'center', justifyContent: 'center'},
 
