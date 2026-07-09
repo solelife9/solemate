@@ -10,12 +10,12 @@
 Keego(= keep going) — React Native 러닝/신발 관리 앱. 차별점 = **러닝화 내구도 관리 + shoe-first**(신발 고르고 바로 러닝 → 자동 거리 차감). 경쟁: Nike Run Club·Strava.
 스택: RN 0.85.2 · React 19 · TS 5.8 · React Navigation. 저장: AsyncStorage(로컬-퍼스트) + **Firestore(정본)**.
 
-## 작업 모드 — Tenet vs 그냥 Claude (중요)
-이 프로젝트는 **Tenet**(MCP 서버, `.mcp.json`의 `tenet serve`) 방법론 하니스로 개발한다. Tenet은 인터뷰→명세→슬라이스 분해→구현→저널→상태추적을 강제하고, 모든 작업을 `.tenet/journal/`·`.tenet/status/`에 기록한다.
-- **큰 기능 작업 → Tenet 사용** (명세·저널·추적 필요).
-- **작고 독립적인 수정 → 그냥 Claude 가능.** 단 이 파일 + 위 두 정본을 반영하고 커밋 컨벤션을 지킬 것.
-- ⚠️ **그냥 Claude로 한 작업은 Tenet의 `status/`·`journal/`에 자동 기록되지 않는다** → 추적 불일치(drift)를 막으려면, 의미 있는 변경은 사람이 상태를 동기화하거나 이후 Tenet 세션에서 재정리한다.
-- 이 Mac에는 tenet이 설치돼 있지 않다(iOS 빌드용 머신). 여기 작업은 기본적으로 "그냥 Claude" 모드다. 주 개발은 Windows + gradlew(Android).
+## 작업 모드 — 그냥 Claude (Tenet 제거됨 2026-07-09)
+이 프로젝트는 **터미널 Claude Code로 직접** 개발한다. 과거 Tenet MCP 방법론 하니스는 제거했다 — 매 변경마다 저널·status·harness·DESIGN 동기화가 따라와 느렸기 때문. (`.mcp.json`에서 tenet 비활성화. `.tenet/` 문서는 삭제하지 않고 **참고 정본**으로 유지.)
+- **작업 루프:** `MISSION.md`·`CLAUDE.md` 읽기 → 짧게 계획 → 승인 → 구현 → `tsc`·`lint`·`test` → 커밋(한국어).
+- **문서 갱신은 최소로.** 구현 변경(색·간격·버그)은 **코드 + 테스트만** 바꾼다. 문서(`CLAUDE.md`·`MISSION.md`·`DESIGN.md`)는 **규칙·방향이 실제 바뀔 때만** 갱신. `.tenet/`(저널·status·harness)는 **자동 갱신하지 않는다**.
+- **git 히스토리 = 작업 기록**(Tenet status/journal 대체). 커밋 메시지를 성실히 쓴다.
+- 규칙·품질 기준(빌드 게이트·Danger Zone·디자인 원칙)은 그대로 유효하다 — 없앤 건 '프로세스'지 '기준'이 아니다.
 
 ## 빌드/품질 게이트 (Iron Law — 어기면 머지 금지)
 - 머지 전 **전부 통과**: `npx tsc --noEmit` · `npm run lint` · `npm test`

@@ -1,11 +1,3 @@
 {
-  "mcpServers": {
-    "tenet": {
-      "type": "stdio",
-      "command": "tenet",
-      "args": [
-        "serve"
-      ]
-    }
-  }
+  "mcpServers": {}
 }
