@@ -457,8 +457,8 @@ const s = StyleSheet.create({
   // 트랙 모드 — 거리 모드와 같은 큰 숫자 위계(bigRow/bigVal/bigUnit/estimate 재사용) + 랩거리 칩.
   trackWrap: { alignItems: 'center', paddingHorizontal: rs(14) },
   trackLbl: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', marginBottom: rv(4) },
-  lapChips: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: rv(9), marginTop: rv(36) },
-  lapChip: { minWidth: rs(60), height: rs(50), paddingHorizontal: rs(15), borderRadius: rs(15), borderCurve: 'continuous', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(T1, 0.03), borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
+  lapChips: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: rv(8), marginTop: rv(36) },
+  lapChip: { minWidth: rs(60), height: rs(50), paddingHorizontal: rs(16), borderRadius: rs(15), borderCurve: 'continuous', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(T1, 0.03), borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
   lapChipOn: { backgroundColor: withAlpha(ACCENT, 0.13), borderColor: withAlpha(ACCENT, 0.45) },
   lapChipVal: { color: T3, fontFamily: DISPLAY, fontSize: TYPE.heading.fontSize, fontWeight: '700', letterSpacing: -0.4 },
   lapChipValOn: { color: ACCENT },
@@ -470,7 +470,7 @@ const s = StyleSheet.create({
   freeSub: { color: T3, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '500', lineHeight: rf(21), textAlign: 'center', maxWidth: rs(250) },
 
   foot: { paddingHorizontal: rs(22), paddingTop: rv(4), paddingBottom: rv(30) },
-  shoeSel: { flexDirection: 'row', alignItems: 'center', gap: rv(13), padding: rs(13), borderRadius: RADIUS.lg, borderCurve: 'continuous', backgroundColor: GLASS.fill, borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER },
+  shoeSel: { flexDirection: 'row', alignItems: 'center', gap: rv(12), padding: rs(12), borderRadius: RADIUS.lg, borderCurve: 'continuous', backgroundColor: GLASS.fill, borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER },
   // 신발 전환 시트(하단) — History 기간 피커와 같은 문법(SCRIM + 하단 카드).
   pickerSheet: { backgroundColor: CARD, borderTopLeftRadius: RADIUS.xl, borderTopRightRadius: RADIUS.xl, borderCurve: 'continuous', paddingHorizontal: rs(18), paddingTop: rv(18), paddingBottom: rv(34), gap: rv(10) },
   // 목표 직접 입력 키패드 — 시트 규약은 pickerSheet 재사용, 키만 추가.
@@ -479,7 +479,7 @@ const s = StyleSheet.create({
   kpValGhost: { color: T4 },
   kpUnit: { color: T3, fontFamily: FONT, fontSize: TYPE.heading.fontSize, fontWeight: '600' },
   kpGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: rv(8) },
-  kpKey: { width: '31.5%', flexGrow: 1, alignItems: 'center', paddingVertical: rv(13), borderRadius: RADIUS.md, borderCurve: 'continuous', backgroundColor: CARD_BORDER },
+  kpKey: { width: '31.5%', flexGrow: 1, alignItems: 'center', paddingVertical: rv(12), borderRadius: RADIUS.md, borderCurve: 'continuous', backgroundColor: CARD_BORDER },
   kpKeyTxt: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.title.fontSize, fontWeight: '600' },
   kpOk: { marginTop: rv(6) },
   pickerTitle: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600', letterSpacing: 0.2, marginBottom: rv(4) },
@@ -493,7 +493,7 @@ const s = StyleSheet.create({
   shoeThumb: { width: rs(46), height: rs(46), borderRadius: rs(13), alignItems: 'center', justifyContent: 'center', backgroundColor: HERO_BG, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
   shoeBrand: { color: T3, fontFamily: DISPLAY, fontSize: TYPE.micro.fontSize, fontWeight: '600', letterSpacing: 1.4 },
   shoeModel: { color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600', letterSpacing: -0.2, marginTop: rv(2) },
-  shoeCond: { flexDirection: 'row', alignItems: 'center', gap: rv(5), marginTop: rv(4) },
+  shoeCond: { flexDirection: 'row', alignItems: 'center', gap: rv(4), marginTop: rv(4) },
   shoeDot: { width: rs(6), height: rs(6), borderRadius: RADIUS.pill },
   shoeCondText: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500' },
 

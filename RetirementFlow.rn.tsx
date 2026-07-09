@@ -488,7 +488,7 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  dots: {flexDirection: 'row', alignItems: 'center', gap: rv(7)},
+  dots: {flexDirection: 'row', alignItems: 'center', gap: rv(8)},
   dot: {
     width: rs(7),
     height: rs(7),

@@ -384,7 +384,7 @@ const styles = StyleSheet.create({
   cardBrand: {fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600', letterSpacing: 1.2, color: withAlpha(T1, 0.55)},
   cardModel: {fontFamily: FONT, fontSize: TYPE.title.fontSize, fontWeight: '700', letterSpacing: -0.6, color: T1, marginTop: rv(4)},
   // 컨디션 표기 — 칩 박스 없이 점+텍스트(점만 컨디션색, 텍스트는 밝은 무채색).
-  condChip: {flexDirection: 'row', alignItems: 'center', gap: rv(7), flexShrink: 0, paddingVertical: rv(6)},
+  condChip: {flexDirection: 'row', alignItems: 'center', gap: rv(8), flexShrink: 0, paddingVertical: rv(6)},
   condDot: {width: rs(7), height: rs(7), borderRadius: RADIUS.pill},
   condLabel: {fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600', color: T2},
 
@@ -397,14 +397,14 @@ const styles = StyleSheet.create({
   ringPct: {fontFamily: DISPLAY, fontSize: rf(52), fontWeight: '700', letterSpacing: -2.6, lineHeight: rf(54), color: T1},
   ringPctUnit: {fontFamily: DISPLAY, fontSize: TYPE.heading.fontSize, fontWeight: '700', color: withAlpha(T1, 0.7), marginTop: rv(6)},
 
-  kmRow: {flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(11), marginTop: rv(20)},
+  kmRow: {flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(12), marginTop: rv(20)},
   kmLabel: {fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600', color: T3},
   kmStrong: {color: T1},
   kmSep: {width: rs(3), height: rs(3), borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.28)},
 
   runBtn: {
     height: rs(54), borderRadius: RADIUS.btn, borderCurve: 'continuous', marginTop: rv(20), overflow: 'hidden',
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(9),
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(8),
     backgroundColor: withAlpha(T1, 0.1),
   },
   runGlyph: {fontFamily: FONT, color: T1, fontSize: TYPE.body.fontSize},
@@ -412,10 +412,10 @@ const styles = StyleSheet.create({
 
   // 고스트 카드(빈 상태) 전용 — 힌트/가치 라인은 실카드 kmRow 자리의 유령.
   ghostHint: {textAlign: 'center', color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500', letterSpacing: -0.2, marginTop: rv(20)},
-  ghostValues: {flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(11), marginTop: rv(12)},
+  ghostValues: {flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(12), marginTop: rv(12)},
   ghostValTxt: {color: withAlpha(T1, 0.35), fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500'},
 
-  dots: {flexDirection: 'row', justifyContent: 'center', gap: rv(7), marginTop: rv(16)},
+  dots: {flexDirection: 'row', justifyContent: 'center', gap: rv(8), marginTop: rv(16)},
   dot: {height: rs(6), borderRadius: RADIUS.pill},
   dotActive: {width: rs(20), backgroundColor: WARN},
   dotIdle: {width: rs(6), backgroundColor: withAlpha(T1, 0.22)},

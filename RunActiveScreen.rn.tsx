@@ -407,13 +407,13 @@ export default function RunActiveScreen({
       {/* controls */}
       <View style={r.controls}>
         {!paused ? (
-          <View style={{ alignItems: 'center', gap: rv(9) }}>
+          <View style={{ alignItems: 'center', gap: rv(8) }}>
             <Pressable onPress={pauseRun} accessibilityRole="button" accessibilityLabel="일시정지" style={({ pressed }) => [r.cPrimary, pressed && { opacity: 0.85 }]}><GlassEdge radius={44} /><Ionicons name="pause" size={ri(36)} color={T1} /></Pressable>
             <Text style={r.ctrlHint}>일시정지</Text>
           </View>
         ) : (
           <>
-            <View style={{ alignItems: 'center', gap: rv(9) }}>
+            <View style={{ alignItems: 'center', gap: rv(8) }}>
               {/* 홀드 진행 링: 길게 누르는 동안 DANGER 호가 채워져 '얼마나 더 눌러야
                   종료되는지'를 시각으로 보여준다(실수 종료 방지). */}
               <View style={r.cStopWrap}>
@@ -433,7 +433,7 @@ export default function RunActiveScreen({
               </View>
               <Text style={r.ctrlHint}>길게 눌러 종료</Text>
             </View>
-            <View style={{ alignItems: 'center', gap: rv(9) }}>
+            <View style={{ alignItems: 'center', gap: rv(8) }}>
               <Pressable onPress={resumeRun} accessibilityRole="button" accessibilityLabel="재개" style={({ pressed }) => [r.cResume, pressed && { opacity: 0.85 }]}><GlassEdge radius={38} /><Ionicons name="play" size={ri(32)} color={T1} /></Pressable>
               <Text style={r.ctrlHint}>재개</Text>
             </View>
@@ -485,16 +485,16 @@ const r = StyleSheet.create({
 
   // 목표 달성 토스트 — 오렌지 판 대신 어두운 유리 막(투명 통일). 축하의 오렌지는 체크
   // 아이콘(포인트 컬러=강조 요소에만)이 담당한다.
-  toast: { position: 'absolute', left: 18, right: 18, top: 50, zIndex: 20, flexDirection: 'row', alignItems: 'center', gap: rv(12), paddingVertical: rv(13), paddingHorizontal: rs(15), borderRadius: rs(16), borderCurve: 'continuous', backgroundColor: 'rgba(28,28,30,0.94)', borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.16) },
+  toast: { position: 'absolute', left: 18, right: 18, top: 50, zIndex: 20, flexDirection: 'row', alignItems: 'center', gap: rv(12), paddingVertical: rv(12), paddingHorizontal: rs(16), borderRadius: rs(16), borderCurve: 'continuous', backgroundColor: 'rgba(28,28,30,0.94)', borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.16) },
   toastTick: { width: rs(34), height: rs(34), borderRadius: RADIUS.pill, backgroundColor: withAlpha(ACCENT, 0.2), alignItems: 'center', justifyContent: 'center' },
   toastA: { color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '700', letterSpacing: -0.2 },
   toastB: { color: withAlpha(T1, 0.88), fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500', marginTop: rv(2) },
 
   top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  live: { flexDirection: 'row', alignItems: 'center', gap: rv(7) },
+  live: { flexDirection: 'row', alignItems: 'center', gap: rv(8) },
   liveDot: { width: rs(8), height: rs(8), borderRadius: RADIUS.pill, backgroundColor: ACCENT },
   liveText: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500', letterSpacing: 0.2 },
-  shoeChip: { flexDirection: 'row', alignItems: 'center', gap: rv(7), backgroundColor: CARD, borderRadius: RADIUS.pill, paddingHorizontal: rs(12), height: rs(30), borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
+  shoeChip: { flexDirection: 'row', alignItems: 'center', gap: rv(8), backgroundColor: CARD, borderRadius: RADIUS.pill, paddingHorizontal: rs(12), height: rs(30), borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
   shoeText: { color: T3, fontFamily: DISPLAY, fontSize: TYPE.label.fontSize, fontWeight: '600' },
 
   gpsRow: { flexDirection: 'row', alignItems: 'center', gap: rv(8), marginTop: rv(14), justifyContent: 'center' },
@@ -508,7 +508,7 @@ const r = StyleSheet.create({
   // 서브 지표가 들어설 공간을 낸다. 스케일이 0.92로 완만하므로 마진도 완만하게(겹침 방지).
   ringWrapPaused: { marginTop: rv(8), marginBottom: rv(-14) },
   goal: { color: withAlpha(T1, 0.62), fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '700', letterSpacing: 1.2, marginTop: rv(14) },
-  goalMet: { flexDirection: 'row', alignItems: 'center', gap: rv(5), marginTop: rv(14) },
+  goalMet: { flexDirection: 'row', alignItems: 'center', gap: rv(4), marginTop: rv(14) },
   goalMetText: { color: GOOD, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '700', letterSpacing: 0.6 },
   bigDist: { color: T1, fontFamily: DISPLAY, fontSize: rf(104), fontWeight: '500', letterSpacing: -4, lineHeight: rf(106), includeFontPadding: false, fontVariant: ['tabular-nums'] },
   bigUnit: { color: withAlpha(T1, 0.62), fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600', letterSpacing: 0.8, marginTop: rv(16) },
@@ -543,14 +543,14 @@ const r = StyleSheet.create({
   hmDivider: { borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: withAlpha(T1, 0.045) },
   hmV: { color: T1, fontFamily: DISPLAY, fontSize: rf(37), fontWeight: '500', letterSpacing: -0.8, fontVariant: ['tabular-nums'] },
   hmVPaused: { fontSize: TYPE.title1.fontSize, letterSpacing: -0.5 },
-  hmL: { color: withAlpha(T1, 0.45), fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: "600", letterSpacing: 0.4, marginTop: rv(9) },
+  hmL: { color: withAlpha(T1, 0.45), fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: "600", letterSpacing: 0.4, marginTop: rv(8) },
 
   // 일시정지 하단 3칸(케이던스·칼로리·고도) — 상단 히어로 행과 같은 3열 그리드(6칸처럼).
   subMetrics: { flexDirection: 'row', paddingTop: rv(14), paddingBottom: rv(6) },
   sm: { flex: 1, alignItems: 'center' },
   smV: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.title1.fontSize, fontWeight: '500', letterSpacing: -0.5, fontVariant: ['tabular-nums'] },
   smU: { color: withAlpha(T1, 0.45), fontFamily: FONT, fontSize: TYPE.caption.fontSize },
-  smL: { color: withAlpha(T1, 0.45), fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: "600", letterSpacing: 0.4, marginTop: rv(9) },
+  smL: { color: withAlpha(T1, 0.45), fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: "600", letterSpacing: 0.4, marginTop: rv(8) },
 
   mapWrap: {
     flex: 1,
@@ -578,7 +578,7 @@ const r = StyleSheet.create({
   // 트랙 랩 기록 바 — 큰 '랩 기록' 필 + 작은 되돌리기. 유리 문법(홈 CTA 계열).
   // 랩 기록 = 주 동작(오렌지 유리 필, 넓게) + 우측 현재 바퀴수. 되돌리기(-1)는 작은 보조.
   lapBar: { flexDirection: 'row', alignItems: 'center', gap: rv(10), marginTop: rv(18) },
-  lapBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(9), height: rs(58), borderRadius: rs(18), borderCurve: 'continuous', backgroundColor: withAlpha(ACCENT, 0.12), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.4) },
+  lapBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(8), height: rs(58), borderRadius: rs(18), borderCurve: 'continuous', backgroundColor: withAlpha(ACCENT, 0.12), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.4) },
   lapBtnText: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.heading.fontSize, fontWeight: '700', letterSpacing: -0.2 },
   lapBtnCount: { position: 'absolute', right: 18, color: ACCENT_2, fontFamily: DISPLAY, fontSize: TYPE.body.fontSize, fontWeight: '700', fontVariant: ['tabular-nums'] },
   lapUndo: { width: rs(52), height: rs(52), borderRadius: rs(16), borderCurve: 'continuous', alignItems: 'center', justifyContent: 'center', backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },

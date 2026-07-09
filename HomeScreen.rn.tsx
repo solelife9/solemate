@@ -547,7 +547,7 @@ const s = StyleSheet.create({
   // 탭 독이 콘텐츠 위에 떠 있으므로(absolute 유리 독) 마지막 카드가 가리지 않게 여백 확보.
   scrollContent: { paddingBottom: TABBAR_CLEARANCE },
   pressed: { opacity: 0.85, transform: [{ scale: 0.98 }] },
-  row: { flexDirection: 'row', alignItems: 'center', gap: rv(7) },
+  row: { flexDirection: 'row', alignItems: 'center', gap: rv(8) },
   baselineRow: { flexDirection: 'row', alignItems: 'flex-end' },
 
   topbar: { paddingTop: rv(8), paddingHorizontal: GUTTER, paddingBottom: SPACE.xs, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
@@ -561,11 +561,11 @@ const s = StyleSheet.create({
   greet: { color: T1, fontFamily: FONT, fontSize: TYPE.title.fontSize, fontWeight: '500', letterSpacing: -0.4, marginTop: rv(3), lineHeight: rf(26) },
 
   // 마지막 동기화 칩 — 인사 아래 절제된 회색(아이콘 T3 + 텍스트 T3). 당겨서 새로고침 안내.
-  syncChip: { flexDirection: 'row', alignItems: 'center', gap: rv(5), alignSelf: 'flex-start', marginTop: rv(10), backgroundColor: CARD_HI, borderRadius: RADIUS.pill, paddingHorizontal: rs(9), paddingVertical: rv(4) },
+  syncChip: { flexDirection: 'row', alignItems: 'center', gap: rv(4), alignSelf: 'flex-start', marginTop: rv(10), backgroundColor: CARD_HI, borderRadius: RADIUS.pill, paddingHorizontal: rs(8), paddingVertical: rv(4) },
   syncChipTxt: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500', letterSpacing: 0.1 },
 
   // 장착 타이틀 칩(인사 옆) — 절제: 액센트 아이콘 + T2 텍스트, 옅은 카드 배경.
-  equipPill: { flexDirection: 'row', alignItems: 'center', gap: rv(5), alignSelf: 'flex-start', marginTop: rv(10), backgroundColor: CARD_HI, borderRadius: RADIUS.pill, paddingHorizontal: rs(10), paddingVertical: rv(4) },
+  equipPill: { flexDirection: 'row', alignItems: 'center', gap: rv(4), alignSelf: 'flex-start', marginTop: rv(10), backgroundColor: CARD_HI, borderRadius: RADIUS.pill, paddingHorizontal: rs(10), paddingVertical: rv(4) },
   equipPillTxt: { color: T2, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600', letterSpacing: 0.1 },
 
 
@@ -573,7 +573,7 @@ const s = StyleSheet.create({
   goalCard: { backgroundColor: GLASS.fill, borderRadius: rs(18), borderCurve: 'continuous', borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER, padding: SPACE.md, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   goalInfo: { flex: 1, gap: rv(6), minWidth: 0 },
   goalSub: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500' },
-  streakChip: { flexDirection: 'row', alignItems: 'center', gap: rv(5), alignSelf: 'flex-start', borderRadius: RADIUS.pill, paddingHorizontal: rs(9), paddingVertical: rv(4) },
+  streakChip: { flexDirection: 'row', alignItems: 'center', gap: rv(4), alignSelf: 'flex-start', borderRadius: RADIUS.pill, paddingHorizontal: rs(8), paddingVertical: rv(4) },
   weekTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   weekStreakTxt: { color: ACCENT, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '700' },
   weekGoalTxt: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500' },
@@ -597,7 +597,7 @@ const s = StyleSheet.create({
   // 추천 용도 자연어 문장(핸드오프 lead 정합: 16px·lineHeight 23).
   insightPurposeText: { color: T2, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '500', letterSpacing: -0.2, lineHeight: rf(22), marginTop: rv(6) },
   insightTags: { flexDirection: 'row', flexWrap: 'wrap', gap: rv(6), marginTop: rv(12) },
-  insightTag: { backgroundColor: CARD_HI, borderRadius: RADIUS.pill, paddingHorizontal: rs(11), paddingVertical: rv(5) },
+  insightTag: { backgroundColor: CARD_HI, borderRadius: RADIUS.pill, paddingHorizontal: rs(12), paddingVertical: rv(4) },
   insightTagText: { color: T2, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600' },
   gauge: { height: rs(4), borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.08), marginTop: rv(14), overflow: 'hidden' },
   gaugeFill: { height: '100%', borderRadius: RADIUS.pill },
@@ -625,7 +625,7 @@ const s = StyleSheet.create({
   chalItemLabel: { color: T1, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500', flex: 1 },
   chalBar: { height: rs(3), borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.07), overflow: 'hidden' },
   chalBarFill: { height: '100%', borderRadius: RADIUS.pill },
-  chalPct: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, marginTop: rv(5) },
+  chalPct: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, marginTop: rv(4) },
 
   rotaWrap: { marginTop: SPACE.lg },
   rotaCard: { marginHorizontal: SPACE.xl, backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER, paddingHorizontal: SPACE.lg },
@@ -637,19 +637,19 @@ const s = StyleSheet.create({
   insightRowTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: rv(8) },
   insightBadgeChip: { borderRadius: RADIUS.pill, paddingHorizontal: rs(10), paddingVertical: rv(4), flexShrink: 0 },
   insightBadgeText: { fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600', letterSpacing: -0.1 },
-  insightDesc: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, letterSpacing: -0.1, marginTop: rv(5), lineHeight: rf(18) },
+  insightDesc: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, letterSpacing: -0.1, marginTop: rv(4), lineHeight: rf(18) },
 
   // 수익화 v1: 교체 시점 '다음 러닝화' 추천 카드(오렌지 절제 — 테두리만 액센트)
   nextWrap: { marginTop: SPACE.lg },
   nextCard: { marginHorizontal: SPACE.xl, backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.3), padding: SPACE.lg },
   nextSub: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, lineHeight: rf(18), marginBottom: SPACE.sm },
-  nextRow: { flexDirection: 'row', alignItems: 'center', gap: SPACE.md, paddingVertical: rv(11) },
+  nextRow: { flexDirection: 'row', alignItems: 'center', gap: SPACE.md, paddingVertical: rv(12) },
   nextRowSep: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.07) },
   nextBrand: { color: T3, fontFamily: DISPLAY, fontSize: TYPE.micro.fontSize, fontWeight: '500', letterSpacing: 1.2 },
   nextModel: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.body.fontSize, fontWeight: '600', letterSpacing: -0.1, marginTop: rv(3) },
   nextCat: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, marginTop: rv(3) },
   shopBtns: { flexDirection: 'row', gap: rv(6) },
-  shopBtn: { borderRadius: RADIUS.pill, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.4), backgroundColor: withAlpha(ACCENT, 0.1), paddingHorizontal: rs(11), paddingVertical: rv(6) },
+  shopBtn: { borderRadius: RADIUS.pill, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.4), backgroundColor: withAlpha(ACCENT, 0.1), paddingHorizontal: rs(12), paddingVertical: rv(6) },
   shopBtnTxt: { color: ACCENT, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600' },
   nextDisclosure: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, lineHeight: rf(15), marginTop: SPACE.md, opacity: 0.85 },
 

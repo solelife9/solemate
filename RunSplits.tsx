@@ -61,7 +61,7 @@ const r = StyleSheet.create({
   title: {color: T2, fontFamily: FONT, fontSize: rf(16), fontWeight: '600', letterSpacing: -0.2, paddingHorizontal: rs(2), marginBottom: rv(8)},
   head: {flexDirection: 'row', alignItems: 'center', gap: rv(12), paddingHorizontal: rs(2), paddingBottom: rv(8)},
   hcell: {color: T3, fontFamily: FONT, fontSize: rf(12), fontWeight: '600', opacity: 0.8},
-  row: {flexDirection: 'row', alignItems: 'center', gap: rv(12), paddingVertical: rv(9), paddingHorizontal: rs(2)},
+  row: {flexDirection: 'row', alignItems: 'center', gap: rv(12), paddingVertical: rv(8), paddingHorizontal: rs(2)},
   rowSep: {borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: 'rgba(255,255,255,0.045)'},
   km: {width: rs(34), fontFamily: DISPLAY, fontSize: rf(18), fontWeight: '600', color: T1},
   barWrap: {flex: 1, height: rs(10), borderRadius: RADIUS.pill, backgroundColor: 'rgba(255,255,255,0.04)', overflow: 'hidden'},

@@ -133,7 +133,7 @@ function SuccessState({shoe, onStartRun, onDone, onSearch, onTab}: FirstShoeProp
             <View style={{flex: 1}}>
               <Text style={s.shoeBrand}>{s0.brand.toUpperCase()}</Text>
               <Text style={s.shoeModel}>{s0.model}</Text>
-              <View style={{marginTop: rv(9)}}>
+              <View style={{marginTop: rv(8)}}>
                 <Pill tone="good" label="최상의 컨디션" />
               </View>
             </View>
@@ -206,7 +206,7 @@ const s = StyleSheet.create({
   emptyBody: {flex: 1, paddingHorizontal: rs(30)},
   hero: {flex: 1, alignItems: 'center', justifyContent: 'center'},
   emptyTitle: {marginTop: rv(30), color: T1, fontFamily: FONT, fontSize: TYPE.display.fontSize, fontWeight: '700', letterSpacing: -0.6, lineHeight: rf(34), textAlign: 'center'},
-  emptyDesc: {marginTop: rv(13), color: T3, fontFamily: FONT, fontSize: TYPE.body.fontSize, lineHeight: rf(21), textAlign: 'center', maxWidth: rs(270)},
+  emptyDesc: {marginTop: rv(12), color: T3, fontFamily: FONT, fontSize: TYPE.body.fontSize, lineHeight: rf(21), textAlign: 'center', maxWidth: rs(270)},
 
   benefits: {marginBottom: rv(8)},
   benefit: {flexDirection: 'row', alignItems: 'center', gap: rv(14), paddingVertical: rv(14)},
@@ -220,7 +220,7 @@ const s = StyleSheet.create({
   // success
   checkBadge: {alignSelf: 'center', width: rs(64), height: rs(64), borderRadius: RADIUS.pill, alignItems: 'center', justifyContent: 'center', marginTop: rv(18), marginBottom: rv(18), backgroundColor: withAlpha(GOOD, 0.14), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(GOOD, 0.4)},
   successTitle: {color: T1, fontFamily: FONT, fontSize: TYPE.title1.fontSize, fontWeight: '700', letterSpacing: -0.6, textAlign: 'center'},
-  successSub: {marginTop: rv(11), color: T3, fontFamily: FONT, fontSize: TYPE.body.fontSize, lineHeight: rf(21), textAlign: 'center', alignSelf: 'center', maxWidth: rs(264)},
+  successSub: {marginTop: rv(12), color: T3, fontFamily: FONT, fontSize: TYPE.body.fontSize, lineHeight: rf(21), textAlign: 'center', alignSelf: 'center', maxWidth: rs(264)},
 
   shoeCard: {marginTop: rv(26), backgroundColor: CARD, borderRadius: rs(22), borderCurve: 'continuous', borderWidth: 1, borderColor: SEP, padding: rs(20)},
   shoeRow: {flexDirection: 'row', alignItems: 'center', gap: rv(18)},
@@ -229,10 +229,10 @@ const s = StyleSheet.create({
 
   track: {height: rs(12), borderRadius: RADIUS.pill, overflow: 'hidden', backgroundColor: withAlpha(T1, 0.04)},
   trackFill: {position: 'absolute', left: 0, top: 0, bottom: 0, borderRadius: RADIUS.pill, backgroundColor: ACCENT},
-  scaleRow: {flexDirection: 'row', justifyContent: 'space-between', marginTop: rv(9)},
+  scaleRow: {flexDirection: 'row', justifyContent: 'space-between', marginTop: rv(8)},
   scaleText: {color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500'},
 
-  nextCard: {flexDirection: 'row', alignItems: 'center', gap: rv(13), marginTop: rv(14), borderRadius: rs(18), borderCurve: 'continuous', paddingHorizontal: rs(16), paddingVertical: rv(15), backgroundColor: withAlpha(ACCENT, 0.07), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.22)},
+  nextCard: {flexDirection: 'row', alignItems: 'center', gap: rv(12), marginTop: rv(14), borderRadius: rs(18), borderCurve: 'continuous', paddingHorizontal: rs(16), paddingVertical: rv(16), backgroundColor: withAlpha(ACCENT, 0.07), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.22)},
   nextIcon: {width: rs(38), height: rs(38), borderRadius: rs(12), alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(ACCENT, 0.14)},
   nextTitle: {color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600', letterSpacing: -0.2},
   nextSub: {marginTop: rv(2), color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize},

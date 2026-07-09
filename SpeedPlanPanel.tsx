@@ -136,7 +136,7 @@ const s = StyleSheet.create({
   seg: {marginTop: rv(2)},
   hint: {color: T3, fontFamily: FONT, fontSize: rf(13), lineHeight: rf(17), marginTop: rv(-4)},
   chips: {gap: rv(8), paddingVertical: rv(2), paddingRight: rs(4)},
-  kmChip: {minWidth: rs(58), alignItems: 'center', paddingVertical: rv(9), paddingHorizontal: rs(12), borderRadius: RADIUS.md, borderCurve: 'continuous', backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP},
+  kmChip: {minWidth: rs(58), alignItems: 'center', paddingVertical: rv(8), paddingHorizontal: rs(12), borderRadius: RADIUS.md, borderCurve: 'continuous', backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP},
   kmChipOn: {backgroundColor: withAlpha(ACCENT, 0.14), borderColor: withAlpha(ACCENT, 0.5)},
   kmChipNum: {color: T4, fontFamily: FONT, fontSize: rf(12), fontWeight: '700'},
   kmChipNumOn: {color: ACCENT},

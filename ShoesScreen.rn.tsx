@@ -652,7 +652,7 @@ export default function ShoesScreen({
 const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: BG },
   pressed: { opacity: 0.85 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: rv(7) },
+  row: { flexDirection: 'row', alignItems: 'center', gap: rv(8) },
   baselineRow: { flexDirection: 'row', alignItems: 'flex-end' },
   card: { backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER },
   sectionLabel: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600', letterSpacing: 0.4, paddingHorizontal: rs(4) },
@@ -681,9 +681,9 @@ const s = StyleSheet.create({
   shoeBrand: { color: T3, fontFamily: DISPLAY, fontSize: TYPE.caption.fontSize, fontWeight: '500', letterSpacing: 1.3 },
   shoeUsing: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500' },
   shoeModel: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.title.fontSize, fontWeight: '700', letterSpacing: -0.5, lineHeight: rf(27), marginTop: rv(4) },
-  shoeCondRow: { flexDirection: 'row', alignItems: 'center', gap: rv(7) },
+  shoeCondRow: { flexDirection: 'row', alignItems: 'center', gap: rv(8) },
   // 종류 칩(카본 레이싱 등) — 브랜드 옆
-  cardTypeChip: { backgroundColor: withAlpha(ACCENT, 0.14), borderRadius: rs(6), paddingHorizontal: rs(7), paddingVertical: rv(2) },
+  cardTypeChip: { backgroundColor: withAlpha(ACCENT, 0.14), borderRadius: rs(6), paddingHorizontal: rs(8), paddingVertical: rv(2) },
   cardTypeChipText: { color: ACCENT, fontFamily: FONT, fontSize: TYPE.micro.fontSize, fontWeight: '700', letterSpacing: 0.1 },
   // 추천 용도(러닝 종류) 한 줄 — 카드 중간
   shoePurpose: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500', letterSpacing: -0.1, marginTop: rv(10) },
@@ -698,11 +698,11 @@ const s = StyleSheet.create({
   // 라벨바(목업 LifeBar): 사용/총 수명 양끝 라벨 + 가운데 평균 페이스
   shoeBar: { height: rs(6), borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.1), overflow: 'hidden' },
   shoeBarFill: { height: '100%', borderRadius: RADIUS.pill },
-  shoeBarLabels: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: rv(7) },
+  shoeBarLabels: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: rv(8) },
   shoeBarLabel: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500' },
-  fcRow: { flexDirection: 'row', alignItems: 'center', gap: rv(5), marginTop: rv(9) },
+  fcRow: { flexDirection: 'row', alignItems: 'center', gap: rv(4), marginTop: rv(8) },
   fcText: { flex: 1, color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500' },
-  soonHeader: { flexDirection: 'row', alignItems: 'center', gap: rv(7), backgroundColor: withAlpha(WARN, 0.1), borderRadius: RADIUS.md, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(WARN, 0.35), paddingHorizontal: rs(13), paddingVertical: rv(10) },
+  soonHeader: { flexDirection: 'row', alignItems: 'center', gap: rv(8), backgroundColor: withAlpha(WARN, 0.1), borderRadius: RADIUS.md, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(WARN, 0.35), paddingHorizontal: rs(12), paddingVertical: rv(10) },
   soonText: { color: T2, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500' },
   soonStrong: { color: WARN, fontWeight: '700' },
   shoePaceVal: { color: T3, fontFamily: DISPLAY, fontSize: TYPE.caption.fontSize },
@@ -717,25 +717,25 @@ const s = StyleSheet.create({
   detailNav: { paddingTop: rv(12), paddingHorizontal: rs(16), paddingBottom: rv(6), flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   iconBtn: { width: rs(38), height: rs(38), borderRadius: RADIUS.pill, backgroundColor: CARD_HI, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.12), alignItems: 'center', justifyContent: 'center' },
   // 상태 칩(목업 09) — 회색 알약 + 흰 글씨 + 점(녹색 아님)
-  statusPill: { flexDirection: 'row', alignItems: 'center', gap: rv(7), backgroundColor: CARD_HI, borderRadius: RADIUS.pill, paddingHorizontal: rs(12), paddingVertical: rv(7), alignSelf: 'flex-start' },
+  statusPill: { flexDirection: 'row', alignItems: 'center', gap: rv(8), backgroundColor: CARD_HI, borderRadius: RADIUS.pill, paddingHorizontal: rs(12), paddingVertical: rv(8), alignSelf: 'flex-start' },
   statusDot: { width: rs(6), height: rs(6), borderRadius: RADIUS.pill, backgroundColor: T1 },
   statusPillText: { color: T1, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600' },
   dBrand: { color: T3, fontFamily: DISPLAY, fontSize: TYPE.caption.fontSize, fontWeight: '500', letterSpacing: 1.6 },
   dModel: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.display.fontSize, fontWeight: '700', letterSpacing: -0.5, marginTop: rv(2), lineHeight: rf(38) },
   dPurpose: { color: T2, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '500', letterSpacing: -0.2, lineHeight: rf(22), marginTop: rv(10) },
   dTags: { flexDirection: 'row', flexWrap: 'wrap', gap: rv(6), marginTop: rv(12) },
-  dTag: { backgroundColor: CARD_HI, borderRadius: RADIUS.pill, paddingHorizontal: rs(11), paddingVertical: rv(5) },
+  dTag: { backgroundColor: CARD_HI, borderRadius: RADIUS.pill, paddingHorizontal: rs(12), paddingVertical: rv(4) },
   dTagText: { color: T2, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600' },
   // 헤더 한 줄: 좌(브랜드+종류칩) ↔ 우(컨디션). 수직 가운데 정렬.
   dHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: rv(8), marginBottom: rv(10) },
-  dTypeChip: { backgroundColor: withAlpha(ACCENT, 0.14), borderRadius: RADIUS.pill, paddingHorizontal: rs(11), paddingVertical: rv(5) },
+  dTypeChip: { backgroundColor: withAlpha(ACCENT, 0.14), borderRadius: RADIUS.pill, paddingHorizontal: rs(12), paddingVertical: rv(4) },
   dTypeChipText: { color: ACCENT, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '700', letterSpacing: 0.1 },
   dPurposeLabel: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600', marginTop: rv(16) },
   runCta: { height: rs(46), borderRadius: rs(14), backgroundColor: 'transparent', borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.14), flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(8) },
   runCtaText: { color: T2, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600', letterSpacing: -0.2 },
 
   // 교체 내러티브 배너(keep-going 보이스) — accent 톤 반투명 표면(withAlpha 파생).
-  keepGoing: { flexDirection: 'row', alignItems: 'center', gap: rv(9), backgroundColor: withAlpha(ACCENT, 0.12), borderRadius: RADIUS.md, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.35), paddingHorizontal: rs(16), paddingVertical: rv(13) },
+  keepGoing: { flexDirection: 'row', alignItems: 'center', gap: rv(8), backgroundColor: withAlpha(ACCENT, 0.12), borderRadius: RADIUS.md, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.35), paddingHorizontal: rs(16), paddingVertical: rv(12) },
   retireLink: { flexDirection: 'row', alignItems: 'center', gap: rv(8), paddingVertical: rv(14), paddingHorizontal: rs(4), marginTop: rv(4) },
   retireLinkTxt: { flex: 1, color: T3, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600' },
   keepGoingText: { flex: 1, color: ACCENT, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600', letterSpacing: -0.1, lineHeight: rf(18) },
@@ -745,7 +745,7 @@ const s = StyleSheet.create({
   keepsakeSub: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, lineHeight: rf(19) },
   keepsakeBtns: { flexDirection: 'row', gap: rv(10), marginTop: rv(8) },
   // 계속 사용(CARD_HI flat) — 모서리는 은퇴(단일 Button=RADIUS.btn)와 맞춰 통일.
-  keepsakeBtn: { flex: 1, height: rs(50), borderRadius: RADIUS.btn, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(7) },
+  keepsakeBtn: { flex: 1, height: rs(50), borderRadius: RADIUS.btn, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(8) },
   keepUsingBtn: { backgroundColor: CARD_HI },
   // 은퇴는 단일 Button 프리미티브로 라우팅(그라데이션/글로우/RADIUS.btn). 여기선 박스 크기만.
   retireFlowBtn: { flex: 1, height: rs(50) },
@@ -762,7 +762,7 @@ const s = StyleSheet.create({
   dForecastBold: { color: T1, fontWeight: '700' },
   // 예측 투명성(1-1): 라벨 우측 정확도 칩 + 근거 한 줄. accent 절제(정확도색만 톤).
   wearLabelRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  confChip: { flexDirection: 'row', alignItems: 'center', gap: rv(5), borderRadius: RADIUS.pill, paddingHorizontal: rs(9), paddingVertical: rv(4) },
+  confChip: { flexDirection: 'row', alignItems: 'center', gap: rv(4), borderRadius: RADIUS.pill, paddingHorizontal: rs(8), paddingVertical: rv(4) },
   confChipHi: { backgroundColor: withAlpha(GOOD, 0.12) },
   confChipLo: { backgroundColor: withAlpha(T1, 0.06) },
   confDot: { width: rs(5), height: rs(5), borderRadius: RADIUS.pill },
@@ -779,9 +779,9 @@ const s = StyleSheet.create({
   dHeroLabelRow: { flexDirection: 'row', alignItems: 'center', gap: rv(8) },
   maxEditToggle: { width: rs(26), height: rs(26), borderRadius: rs(8), backgroundColor: CARD_HI, alignItems: 'center', justifyContent: 'center' },
   dHeroRemain: { color: T1, fontFamily: DISPLAY, fontSize: rf(44), letterSpacing: 0.5 },
-  dHeroRemainU: { color: T2, fontFamily: FONT, fontSize: TYPE.heading.fontSize, marginLeft: rs(5), marginBottom: rv(6) },
+  dHeroRemainU: { color: T2, fontFamily: FONT, fontSize: TYPE.heading.fontSize, marginLeft: rs(4), marginBottom: rv(6) },
 
-  editInput: { backgroundColor: CARD_HI, borderRadius: rs(14), color: T1, fontFamily: FONT, fontSize: TYPE.heading.fontSize, fontWeight: '500', paddingHorizontal: rs(16), paddingVertical: rv(13) },
+  editInput: { backgroundColor: CARD_HI, borderRadius: rs(14), color: T1, fontFamily: FONT, fontSize: TYPE.heading.fontSize, fontWeight: '500', paddingHorizontal: rs(16), paddingVertical: rv(12) },
   editBtn: { flex: 1, height: rs(46), borderRadius: RADIUS.btn, alignItems: 'center', justifyContent: 'center' },
   editBtnTxt: { fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600' },
 
@@ -792,13 +792,13 @@ const s = StyleSheet.create({
   nextSectionLabel: { paddingHorizontal: rs(4) },
   nextCard: { backgroundColor: GLASS.fill, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.3), padding: rs(16) },
   nextSub: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, lineHeight: rf(18), marginBottom: rv(6) },
-  nextRow: { flexDirection: 'row', alignItems: 'center', gap: rv(12), paddingVertical: rv(11) },
+  nextRow: { flexDirection: 'row', alignItems: 'center', gap: rv(12), paddingVertical: rv(12) },
   nextRowSep: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.07) },
   nextBrand: { color: T3, fontFamily: DISPLAY, fontSize: TYPE.micro.fontSize, fontWeight: '500', letterSpacing: 1.2 },
   nextModel: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.body.fontSize, fontWeight: '600', letterSpacing: -0.1, marginTop: rv(3) },
   nextCat: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, marginTop: rv(3) },
   shopBtns: { flexDirection: 'row', flexWrap: 'wrap', gap: rv(6), justifyContent: 'flex-end', maxWidth: rs(132) },
-  shopBtn: { borderRadius: RADIUS.pill, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.4), backgroundColor: withAlpha(ACCENT, 0.1), paddingHorizontal: rs(11), paddingVertical: rv(6) },
+  shopBtn: { borderRadius: RADIUS.pill, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.4), backgroundColor: withAlpha(ACCENT, 0.1), paddingHorizontal: rs(12), paddingVertical: rv(6) },
   shopBtnTxt: { color: ACCENT, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600' },
   nextDisclosure: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, lineHeight: rf(15), marginTop: rv(12), opacity: 0.85 },
   // stats 2x2 — 사진(디자인 09)처럼 왼쪽 정렬. 글씨 비율에 맞게 패딩을 조여 카드가
@@ -820,7 +820,7 @@ const s = StyleSheet.create({
   maxStepCaption: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600', marginTop: rv(3) },
   maxHint: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, lineHeight: rf(18) },
 
-  runRow: { flexDirection: 'row', alignItems: 'center', gap: rv(14), paddingVertical: rv(15), paddingHorizontal: rs(18) },
+  runRow: { flexDirection: 'row', alignItems: 'center', gap: rv(14), paddingVertical: rv(16), paddingHorizontal: rs(18) },
   runRowBorder: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: SEP },
   runDate: { width: rs(42), alignItems: 'center' },
   runDay: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500' },

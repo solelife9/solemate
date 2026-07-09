@@ -547,7 +547,7 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'm
             <Text style={s.detailModel} numberOfLines={1}>{run.shoeName}</Text>
           </View>
         ) : null)}
-        <Text style={[s.detailDate, { marginLeft: rs(7) }]}>{run.date} {run.day}요일</Text>
+        <Text style={[s.detailDate, { marginLeft: rs(8) }]}>{run.date} {run.day}요일</Text>
         <View style={[s.baselineRow, { marginTop: rv(8), marginLeft: rs(3) }]}>
           <Text style={s.detailDist}>{displayNum(run.dist, unit, 2)}</Text>
           <Text style={s.detailDistU}>{unit}</Text>
@@ -626,7 +626,7 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'm
                   평균 <Text style={{ color: T1, fontWeight: '700' }}>{hr.avg}</Text> · 최대 <Text style={{ color: T1, fontWeight: '700' }}>{hr.max}</Text> bpm
                 </Text>
               </View>
-              <View style={{ marginTop: rv(12), gap: rv(7) }}>
+              <View style={{ marginTop: rv(12), gap: rv(8) }}>
                 {([5, 4, 3, 2, 1] as HRZone[]).map((z) => {
                   const sec = hr.secs[z];
                   const pct = hr.total > 0 ? sec / hr.total : 0;
@@ -1017,7 +1017,7 @@ export default function HistoryScreen({
             {period !== '전체'
               ? (
                 <Pressable onPress={openPicker} accessibilityRole="button"
-                  style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', gap: rv(5), paddingVertical: rv(4), paddingHorizontal: rs(10) }}>
+                  style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', gap: rv(4), paddingVertical: rv(4), paddingHorizontal: rs(10) }}>
                   <Text style={{ color: T1, fontFamily: DISPLAY, fontSize: TYPE.heading.fontSize, fontWeight: '700' }}>{periodTitle}</Text>
                   <Ionicons name="chevron-down" size={ri(14)} color={T3} />
                 </Pressable>
@@ -1079,7 +1079,7 @@ export default function HistoryScreen({
               </View>
               {!!onAddRun && (
                 <Pressable onPress={() => setForm({ mode: 'add' })} accessibilityRole="button" accessibilityLabel="기록 직접 추가"
-                  style={({ pressed }) => [{ marginTop: rv(16), alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: rv(5), paddingVertical: rv(8), paddingHorizontal: rs(16), borderRadius: RADIUS.pill, backgroundColor: CARD_HI }, pressed && { opacity: 0.7 }]}>
+                  style={({ pressed }) => [{ marginTop: rv(16), alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: rv(4), paddingVertical: rv(8), paddingHorizontal: rs(16), borderRadius: RADIUS.pill, backgroundColor: CARD_HI }, pressed && { opacity: 0.7 }]}>
                   <Ionicons name="add" size={ri(16)} color={ACCENT} />
                   <Text style={{ color: T1, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600' }}>기록 추가</Text>
                 </Pressable>
@@ -1194,7 +1194,7 @@ const s = StyleSheet.create({
   prCell: { width: '50%' },
   prV: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.title.fontSize, fontWeight: '700', letterSpacing: -0.4 },
   prU: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600', marginLeft: rs(3) },
-  prL: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500', marginTop: rv(5) },
+  prL: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500', marginTop: rv(4) },
   // 런 카드 — 목업 기록(10): 신발+날짜 + 거리·평균페이스·시간
   runCard: { backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER, padding: rs(18) },
   runCardTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: rv(10), marginBottom: rv(14) },
@@ -1223,7 +1223,7 @@ const s = StyleSheet.create({
   chartLabels: { flexDirection: 'row', marginTop: rv(8), paddingRight: rs(42) },
   chartLabel: { flex: 1, textAlign: 'center', color: T3, fontFamily: FONT, fontWeight: '600' },
   chartTipWrap: { position: 'absolute', left: -26, right: -26, alignItems: 'center', zIndex: 5 },
-  chartTip: { backgroundColor: CARD_HI, borderRadius: rs(8), paddingHorizontal: rs(9), paddingVertical: rv(5), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.14) },
+  chartTip: { backgroundColor: CARD_HI, borderRadius: rs(8), paddingHorizontal: rs(8), paddingVertical: rv(4), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.14) },
   chartBarVal: { fontFamily: DISPLAY, fontSize: TYPE.micro.fontSize, fontWeight: '600', color: T3, fontVariant: ['tabular-nums'] },
   chartTipVal: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.label.fontSize, fontWeight: '600', letterSpacing: 0.2 },
   chartTipU: { color: T3, fontFamily: FONT, fontSize: TYPE.micro.fontSize, fontWeight: '500' },
@@ -1234,14 +1234,14 @@ const s = StyleSheet.create({
   // 콤팩트: 요약 4칸(거리/횟수/페이스/시간)의 패딩·값 폰트·여백을 줄여 세로 높이를
   // 압축한다(정보는 그대로 유지 — 라벨/값/단위 모두 렌더). 리스트가 위로 올라온다.
   summaryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: rv(8) },
-  summaryCell: { width: '47.5%', flexGrow: 1, backgroundColor: GLASS.fill, borderRadius: RADIUS.md, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP, padding: rs(13) },
+  summaryCell: { width: '47.5%', flexGrow: 1, backgroundColor: GLASS.fill, borderRadius: RADIUS.md, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP, padding: rs(12) },
   // 4열 요약 행(Screens Refined) — 카드 없이 헤어라인 구분.
   sumRow: { flexDirection: 'row', marginTop: rv(6), marginBottom: rv(2) },
   sumCell: { flex: 1, paddingHorizontal: rs(2) },
   sumCellDiv: { borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: withAlpha(T1, 0.045), paddingLeft: rs(12) },
   sumValue: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.title.fontSize, fontWeight: '500', letterSpacing: -0.4, fontVariant: ['tabular-nums'] },
   sumUnit: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500' },
-  sumLabel: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500', marginTop: rv(5) },
+  sumLabel: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500', marginTop: rv(4) },
   summaryLabel: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600', letterSpacing: 0.2 },
   summaryValue: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.title.fontSize, letterSpacing: 0.3, marginTop: rv(2) },
   summaryUnit: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, marginTop: rv(1) },
@@ -1275,7 +1275,7 @@ const s = StyleSheet.create({
   input: { backgroundColor: GLASS.fill, borderRadius: rs(14), paddingHorizontal: rs(16), paddingVertical: rv(14), color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
   // 검증 실패 시 입력칸 테두리를 빨강으로 강조하고, 아래에 인라인 헬퍼텍스트를 띄운다.
   inputErr: { borderColor: DANGER, borderWidth: 1 },
-  errText: { color: DANGER, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500', marginTop: rv(7), paddingHorizontal: rs(2) },
+  errText: { color: DANGER, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500', marginTop: rv(8), paddingHorizontal: rs(2) },
   // 저장/추가 CTA 는 단일 Button 프리미티브(그라데이션·글로우·radius 토큰). 화면
   // 고유 여백만 남긴다(과거 RADIUS.md 사각 ACCENT 버튼 제거).
   saveBtn: { marginTop: rv(6) },

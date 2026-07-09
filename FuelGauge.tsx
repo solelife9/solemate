@@ -67,7 +67,7 @@ const g = StyleSheet.create({
   remRow: {flexDirection: 'row', alignItems: 'flex-end', marginTop: rv(4)},
   rem: {color: T1, fontFamily: DISPLAY, fontSize: rf(40), fontWeight: '600', letterSpacing: -1.4, lineHeight: rf(38)},
   remU: {color: T2, fontFamily: FONT, fontSize: rf(17), fontWeight: '500', marginLeft: rs(3), marginBottom: rv(4)},
-  cond: {flexDirection: 'row', alignItems: 'center', gap: rv(7)},
+  cond: {flexDirection: 'row', alignItems: 'center', gap: rv(8)},
   dot: {width: rs(7), height: rs(7), borderRadius: RADIUS.pill},
   condTxt: {color: T2, fontFamily: FONT, fontSize: rf(14), fontWeight: '500'},
   track: {flexDirection: 'row', height: rs(14), borderRadius: RADIUS.pill, overflow: 'hidden', marginTop: rv(16), backgroundColor: 'rgba(255,255,255,0.04)'},

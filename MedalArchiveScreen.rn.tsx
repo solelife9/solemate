@@ -256,7 +256,7 @@ const m = StyleSheet.create({
   statDiv: {width: StyleSheet.hairlineWidth, alignSelf: 'stretch', backgroundColor: SEP, marginVertical: rv(4)},
 
   grid: {flexDirection: 'row', flexWrap: 'wrap', marginTop: rv(8)},
-  cell: {width: '33.33%', alignItems: 'center', gap: rv(7), paddingVertical: rv(12), paddingHorizontal: rs(4)},
+  cell: {width: '33.33%', alignItems: 'center', gap: rv(8), paddingVertical: rv(12), paddingHorizontal: rs(4)},
   disc: {
     borderWidth: 1, borderColor: withAlpha(HALL_GOLD, 0.35),
     backgroundColor: '#1a160e', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
@@ -283,6 +283,6 @@ const m = StyleSheet.create({
   certWrap: {alignSelf: 'stretch', marginTop: rv(18), gap: rv(8)},
   certLabel: {color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600', letterSpacing: 0.4},
   certImg: {width: '100%', height: rs(260), borderRadius: rs(14), backgroundColor: CARD},
-  runLink: {flexDirection: 'row', alignItems: 'center', gap: rv(7), marginTop: rv(20), paddingVertical: rv(12), paddingHorizontal: rs(16), borderRadius: rs(12), backgroundColor: withAlpha(ACCENT, 0.1), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.3)},
+  runLink: {flexDirection: 'row', alignItems: 'center', gap: rv(8), marginTop: rv(20), paddingVertical: rv(12), paddingHorizontal: rs(16), borderRadius: rs(12), backgroundColor: withAlpha(ACCENT, 0.1), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.3)},
   runLinkT: {color: ACCENT, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600'},
 });

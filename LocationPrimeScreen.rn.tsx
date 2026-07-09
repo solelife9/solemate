@@ -80,7 +80,7 @@ const s = StyleSheet.create({
   title: {color: T1, fontFamily: FONT, fontSize: TYPE.title.fontSize, fontWeight: '700', letterSpacing: -0.5, textAlign: 'center'},
   lead: {color: T3, fontFamily: FONT, fontSize: TYPE.body.fontSize, lineHeight: rf(20), textAlign: 'center', marginTop: rv(8), marginBottom: rv(22)},
   card: {backgroundColor: CARD, borderRadius: RADIUS.lg, borderCurve: 'continuous', borderWidth: StyleSheet.hairlineWidth, borderColor: SEP, paddingHorizontal: rs(16), paddingVertical: rv(4)},
-  row: {flexDirection: 'row', alignItems: 'flex-start', gap: rv(13), paddingVertical: rv(15)},
+  row: {flexDirection: 'row', alignItems: 'flex-start', gap: rv(12), paddingVertical: rv(16)},
   rowIcon: {width: rs(36), height: rs(36), borderRadius: rs(18), borderCurve: 'continuous', alignItems: 'center', justifyContent: 'center', marginTop: rv(1)},
   rowTitle: {color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '700', letterSpacing: -0.2},
   rowBody: {color: T2, fontFamily: FONT, fontSize: TYPE.label.fontSize, lineHeight: rf(18), marginTop: rv(3), fontWeight: '400'},

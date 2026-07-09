@@ -370,7 +370,7 @@ export default function RunRecapScreen({
         <Pressable onPress={onShare} accessibilityRole="button" accessibilityLabel="러닝 공유" testID="recap-share"
           style={({pressed}) => [s.shareBtn, pressed && {opacity: 0.85}]}>
           <GlassEdge radius={RADIUS.lg} />
-          <Ionicons name="share-outline" size={ri(17)} color={T1} style={{marginRight: rs(7)}} />
+          <Ionicons name="share-outline" size={ri(17)} color={T1} style={{marginRight: rs(8)}} />
           <Text style={s.doneTxt}>공유</Text>
         </Pressable>
         <Pressable onPress={closeWithMeta} accessibilityRole="button" accessibilityLabel="완료" testID="recap-done"
@@ -393,7 +393,7 @@ const s = StyleSheet.create({
   heroNum: {color: T1, fontFamily: DISPLAY, fontSize: rf(68), fontWeight: '700', letterSpacing: -2, lineHeight: rf(72)},
   heroUnit: {color: T2, fontFamily: FONT, fontSize: TYPE.title.fontSize, fontWeight: '700', marginBottom: rv(10)},
   badges: {flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: rv(8), marginBottom: rv(16)},
-  badge: {flexDirection: 'row', alignItems: 'center', gap: rv(5), paddingHorizontal: rs(12), height: rs(30), borderRadius: RADIUS.pill, borderWidth: 1},
+  badge: {flexDirection: 'row', alignItems: 'center', gap: rv(4), paddingHorizontal: rs(12), height: rs(30), borderRadius: RADIUS.pill, borderWidth: 1},
   badgeTxt: {fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '700'},
 
   // 대회 완주 감지 배너(골드) — 완주 직후 러너가 메달을 남기고 싶은 순간.
@@ -425,7 +425,7 @@ const s = StyleSheet.create({
   planHead: {flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: rv(8)},
   planTitle: {color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '700'},
   planSummary: {fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '700'},
-  planRow: {flexDirection: 'row', alignItems: 'center', paddingVertical: rv(7), borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP},
+  planRow: {flexDirection: 'row', alignItems: 'center', paddingVertical: rv(8), borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP},
   planKm: {color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '700', width: rs(42)},
   planTgt: {color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500', flex: 1},
   planAct: {color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '700', width: rs(64), textAlign: 'right'},

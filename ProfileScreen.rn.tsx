@@ -623,7 +623,7 @@ export default function ProfileScreen({
           <View style={[s.card, { padding: rs(22) }]} testID="runner-spec">
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: rv(16) }}>
               <Text style={[s.cardTitle, { marginBottom: rv(0) }]}>러너 스펙</Text>
-              <Pressable onPress={onShareSpec} testID="spec-share" accessibilityRole="button" accessibilityLabel="러너 스펙 공유" hitSlop={8} style={({ pressed }) => [{ flexDirection: 'row', alignItems: 'center', gap: rv(5) }, pressed && { opacity: 0.6 }]}>
+              <Pressable onPress={onShareSpec} testID="spec-share" accessibilityRole="button" accessibilityLabel="러너 스펙 공유" hitSlop={8} style={({ pressed }) => [{ flexDirection: 'row', alignItems: 'center', gap: rv(4) }, pressed && { opacity: 0.6 }]}>
                 <Ionicons name="share-outline" size={ri(16)} color={ACCENT} />
                 <Text style={{ color: ACCENT, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '700' }}>공유</Text>
               </Pressable>
@@ -1134,13 +1134,13 @@ export default function ProfileScreen({
 
 const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: BG },
-  row: { flexDirection: 'row', alignItems: 'center', gap: rv(7) },
+  row: { flexDirection: 'row', alignItems: 'center', gap: rv(8) },
   card: { backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderCurve: 'continuous', borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER },
   cardTitle: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600', marginBottom: rv(16) },
   // 러너 스펙 카드
   // 거리 PB 메달 타일 2×2(러너 스펙 메인) — 달성=CARD_HI + 골드, 미달성=흐린 판.
   pbGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: rv(10) },
-  pbTile: { width: '48.5%', paddingHorizontal: rs(14), paddingVertical: rv(13), borderRadius: rs(14), borderCurve: 'continuous' },
+  pbTile: { width: '48.5%', paddingHorizontal: rs(14), paddingVertical: rv(12), borderRadius: rs(14), borderCurve: 'continuous' },
   pbTileOn: { backgroundColor: CARD_HI },
   pbTileOff: { backgroundColor: withAlpha(T1, 0.04) },
   pbHead: { flexDirection: 'row', alignItems: 'center', gap: rv(6) },
@@ -1156,11 +1156,11 @@ const s = StyleSheet.create({
   specSubUnit: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600' },
   specSubLabel: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500' },
   // 심폐 체력(VO₂max) 강등 푸터 — 한 줄.
-  specVo2Foot: { flexDirection: 'row', alignItems: 'center', gap: rv(7), marginTop: rv(16), paddingTop: rv(14), borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: CARD_BORDER },
+  specVo2Foot: { flexDirection: 'row', alignItems: 'center', gap: rv(8), marginTop: rv(16), paddingTop: rv(14), borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: CARD_BORDER },
   specVo2FootText: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500' },
   specVo2FootStrong: { color: T2, fontWeight: '700' },
   sectionLabel: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600', letterSpacing: 0.4, paddingHorizontal: rs(4) },
-  progressRow: { flexDirection: 'row', alignItems: 'center', gap: rv(13), padding: rs(16) },
+  progressRow: { flexDirection: 'row', alignItems: 'center', gap: rv(12), padding: rs(16) },
   progressIcon: { width: rs(38), height: rs(38), borderRadius: RADIUS.sm, backgroundColor: withAlpha(ACCENT, 0.12), alignItems: 'center', justifyContent: 'center' },
   progressTitle: { color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '700' },
   progressSub: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500', marginTop: rv(3) },
@@ -1176,7 +1176,7 @@ const s = StyleSheet.create({
   avatarEdit: { position: 'absolute', right: -1, bottom: -1, width: rs(18), height: rs(18), borderRadius: RADIUS.pill, backgroundColor: T3, borderWidth: 2, borderColor: BG, alignItems: 'center', justifyContent: 'center' },
   tierEyebrow: { fontFamily: DISPLAY, fontSize: TYPE.caption.fontSize, fontWeight: '600', letterSpacing: 3.5, textTransform: 'uppercase', marginBottom: rv(3) },
   name: { color: T1, fontFamily: FONT, fontSize: TYPE.title.fontSize, fontWeight: '600', letterSpacing: -0.5 },
-  nameRow: { flexDirection: 'row', alignItems: 'center', gap: rv(7) },
+  nameRow: { flexDirection: 'row', alignItems: 'center', gap: rv(8) },
   nameEditRow: { flexDirection: 'row', alignItems: 'center', gap: rv(8) },
   nameInput: { flex: 1, color: T1, fontFamily: FONT, fontSize: TYPE.title.fontSize, fontWeight: '500', letterSpacing: -0.5, borderBottomWidth: 1, borderBottomColor: ACCENT, paddingVertical: rv(2), paddingHorizontal: rs(0) },
   nameSaveBtn: { width: rs(34), height: rs(34), borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.1), alignItems: 'center', justifyContent: 'center' },
@@ -1204,7 +1204,7 @@ const s = StyleSheet.create({
   badgeIcon: { width: rs(44), height: rs(44), borderRadius: RADIUS.pill, alignItems: 'center', justifyContent: 'center' },
   badgeLabel: { fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500', textAlign: 'center' },
 
-  settingRow: { flexDirection: 'row', alignItems: 'center', gap: rv(13), paddingVertical: rv(14), paddingHorizontal: rs(16) },
+  settingRow: { flexDirection: 'row', alignItems: 'center', gap: rv(12), paddingVertical: rv(14), paddingHorizontal: rs(16) },
   settingBorder: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: SEP },
   settingIcon: { width: rs(30), height: rs(30), borderRadius: rs(9), backgroundColor: withAlpha(T1, 0.06), alignItems: 'center', justifyContent: 'center' },
   settingLabel: { flex: 1, color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600' },
@@ -1222,14 +1222,14 @@ const s = StyleSheet.create({
   // recapTab/recapTabOn/recapTabTxt/recapTabTxtOn 제거, 시각 동등).
   recapTopRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: rv(8) },
   recapPeriod: { color: T2, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '700' },
-  recapShareBtn: { flexDirection: 'row', alignItems: 'center', gap: rv(5), paddingHorizontal: rs(12), paddingVertical: rv(7), borderRadius: RADIUS.pill, backgroundColor: withAlpha(ACCENT, 0.12) },
+  recapShareBtn: { flexDirection: 'row', alignItems: 'center', gap: rv(4), paddingHorizontal: rs(12), paddingVertical: rv(8), borderRadius: RADIUS.pill, backgroundColor: withAlpha(ACCENT, 0.12) },
   recapShareTxt: { color: ACCENT, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '700' },
   recapEmpty: { alignItems: 'center', paddingVertical: rv(22) },
   recapEmptyTxt: { color: T3, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600', lineHeight: rf(20), textAlign: 'center' },
-  recapMostWorn: { flexDirection: 'row', alignItems: 'center', gap: rv(7), marginTop: rv(16), paddingTop: rv(14), borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP },
+  recapMostWorn: { flexDirection: 'row', alignItems: 'center', gap: rv(8), marginTop: rv(16), paddingTop: rv(14), borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP },
   recapMostWornTxt: { flex: 1, color: T2, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600' },
   recapPrBox: { marginTop: rv(14), gap: rv(2) },
-  recapPrRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: rv(7) },
+  recapPrRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: rv(8) },
   recapPrLabel: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600' },
   recapPrValue: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.heading.fontSize, fontWeight: '600', letterSpacing: -0.2 },
   offscreen: { position: 'absolute', left: -10000, top: 0, opacity: 0 },

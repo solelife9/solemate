@@ -177,7 +177,7 @@ function LinearGrad({
 // 상단 진행 세그먼트 바(현재=24px 흰 알약, 나머지=7px 점).
 function TopProgress({step, total}: {step: number; total: number}) {
   return (
-    <View style={{flexDirection: 'row', alignItems: 'center', gap: rv(5)}}>
+    <View style={{flexDirection: 'row', alignItems: 'center', gap: rv(4)}}>
       {Array.from({length: total}).map((_, i) => {
         const cur = i === step - 1;
         return (
@@ -566,7 +566,7 @@ function Performance({goNext, onSkip, insetTop, insetBottom}: ScreenProps) {
 
 function FieldLabel({n, label}: {n: string; label: string}) {
   return (
-    <View style={{flexDirection: 'row', alignItems: 'center', gap: rv(9)}}>
+    <View style={{flexDirection: 'row', alignItems: 'center', gap: rv(8)}}>
       <View style={s.fieldBadge}>
         <Text style={{fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '700', color: T3}}>{n}</Text>
       </View>
@@ -713,7 +713,7 @@ const s = StyleSheet.create({
   // Welcome — 헤드라인 88→64→48 재축소(사용자 확정 2026-07-07).
   heroHeadline: {fontFamily: DISPLAY, fontSize: rf(48), lineHeight: rf(52), letterSpacing: -1.5, fontWeight: '600', color: T1},
   heroSub: {fontFamily: FONT, fontSize: TYPE.heading.fontSize, fontWeight: '600', color: T1, marginTop: rv(18)},
-  heroBody: {fontFamily: FONT, fontSize: TYPE.body.fontSize, lineHeight: rf(22), color: 'rgba(246,246,248,0.66)', marginTop: rv(7)},
+  heroBody: {fontFamily: FONT, fontSize: TYPE.body.fontSize, lineHeight: rf(22), color: 'rgba(246,246,248,0.66)', marginTop: rv(8)},
   termsCaption: {fontFamily: FONT, fontSize: TYPE.caption.fontSize, color: T4, textAlign: 'center', lineHeight: rf(17), marginTop: rv(14)},
 
   footer: {paddingHorizontal: rs(24), paddingTop: rv(8)},
@@ -734,8 +734,8 @@ const s = StyleSheet.create({
     borderColor: SEP,
   },
   shoeThumb: {width: rs(44), height: rs(44), borderRadius: rs(12), borderCurve: 'continuous', backgroundColor: 'rgba(255,255,255,0.06)', alignItems: 'center', justifyContent: 'center'},
-  pill: {flexDirection: 'row', alignItems: 'center', gap: rv(6), paddingVertical: rv(5), paddingHorizontal: rs(10), borderRadius: 100, alignSelf: 'center'},
-  alertRow: {flexDirection: 'row', alignItems: 'center', gap: rv(9), marginTop: rv(22), paddingHorizontal: rs(2)},
+  pill: {flexDirection: 'row', alignItems: 'center', gap: rv(6), paddingVertical: rv(4), paddingHorizontal: rs(10), borderRadius: 100, alignSelf: 'center'},
+  alertRow: {flexDirection: 'row', alignItems: 'center', gap: rv(8), marginTop: rv(22), paddingHorizontal: rs(2)},
 
   // 성능(기능 목록)
   featCard: {marginTop: rv(24), paddingHorizontal: rs(18), paddingVertical: rv(4), borderRadius: rs(22), borderCurve: 'continuous', backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP},

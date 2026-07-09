@@ -225,7 +225,7 @@ const s = StyleSheet.create({
     borderColor: withAlpha(T1, 0.1),
   },
   pkRail: {width: rs(126), flexGrow: 0, borderRightWidth: StyleSheet.hairlineWidth, borderRightColor: SEP, paddingVertical: rv(6)},
-  pkRailItem: {paddingVertical: rv(13), paddingHorizontal: rs(16), justifyContent: 'center'},
+  pkRailItem: {paddingVertical: rv(12), paddingHorizontal: rs(16), justifyContent: 'center'},
   pkRailItemOn: {backgroundColor: 'rgba(255,255,255,0.05)'},
   pkRailBar: {position: 'absolute', left: 0, top: 12, bottom: 12, width: rs(3), borderTopRightRadius: 3, borderBottomRightRadius: 3, backgroundColor: T1},
   pkRailText: {fontFamily: FONT, fontSize: rf(14), fontWeight: '500', color: T3, letterSpacing: -0.2},
@@ -235,7 +235,7 @@ const s = StyleSheet.create({
   pkRowSub: {fontFamily: FONT, fontSize: rf(12), fontWeight: '500', color: T3, marginTop: rv(2)},
   pkAddRow: {
     marginTop: rv(12),
-    paddingVertical: rv(13),
+    paddingVertical: rv(12),
     paddingHorizontal: rs(14),
     borderRadius: rs(14), borderCurve: 'continuous',
     borderWidth: 1,

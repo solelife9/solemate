@@ -147,7 +147,7 @@ const s = StyleSheet.create({
   top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: rs(22) },
   cancel: { flexDirection: 'row', alignItems: 'center', gap: rv(6), height: rs(34), paddingLeft: rs(10), paddingRight: rs(14), borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.05), borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
   cancelText: { color: T2, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500' },
-  shoeChip: { flexDirection: 'row', alignItems: 'center', gap: rv(7), height: rs(34), paddingHorizontal: rs(14), borderRadius: RADIUS.pill, backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
+  shoeChip: { flexDirection: 'row', alignItems: 'center', gap: rv(8), height: rs(34), paddingHorizontal: rs(14), borderRadius: RADIUS.pill, backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
   shoeText: { color: T2, fontFamily: DISPLAY, fontSize: TYPE.label.fontSize, fontWeight: '600' },
 
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: rv(76) },
@@ -158,7 +158,7 @@ const s = StyleSheet.create({
   go: { color: ACCENT, fontFamily: DISPLAY, fontSize: rf(104), fontWeight: '700', letterSpacing: -1, includeFontPadding: false },
 
   chips: { flexDirection: 'row', gap: rv(8), marginTop: rv(14) },
-  chip: { flexDirection: 'row', alignItems: 'center', gap: rv(7), height: rs(32), paddingHorizontal: rs(14), borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.04), borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
+  chip: { flexDirection: 'row', alignItems: 'center', gap: rv(8), height: rs(32), paddingHorizontal: rs(14), borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.04), borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
   chipText: { color: T2, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500' },
   chipB: { color: T1, fontFamily: DISPLAY, fontWeight: '600' },
 });
