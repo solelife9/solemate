@@ -1,5 +1,9 @@
 # Design System — Keego
 
+> ⚠️ **이 문서는 기록용이다 (2026-07-09).** 디자인 정본은 루트 `/DESIGN.md`로 승격했다 —
+> 글라스 재질(코너 글린트)·타입 스케일(theme.ts TYPE/HERO 권위)·간격 규칙이 거기서 갱신된다.
+> 아래 내용 중 정본과 충돌하는 서술(권장 타입 스케일 56/28/22/15/12.5 등)은 폐기됐다.
+
 ## Chosen Direction
 - Selected mockup: `.tenet/visuals/2026-05-31-01-final-product.html` (+ slice 와이어프레임 02~04, walkthrough 05). 초기 계획 체크포인트 승인(2026-05-31).
 - Rationale: 기존 앱의 양호한 뼈대(다크+오렌지, shoe-first, 발자국/배지/링)를 유지하되 **타이포 정제·오렌지 절제·미완성 기능 실동작·Keego 브랜딩**으로 "깔끔하고 완성된" 수준으로 끌어올린다. 경쟁 기준 Nike Run Club / Strava.
