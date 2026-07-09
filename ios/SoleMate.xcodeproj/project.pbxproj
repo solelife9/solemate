@@ -113,12 +113,20 @@
 			);
 			target = CE47520D2FEECEC400FCC92A /* RunActivityExtension */;
 		};
+		CE19A2AA2FF150740030FFF0 /* Exceptions for "SoleMateWatch Watch App" folder in "SoleMateWatch Watch App" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = CE19A1E62FF150740030FFF0 /* SoleMateWatch Watch App */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		CE19A1EB2FF150740030FFF0 /* SoleMateWatch Watch App */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
+				CE19A2AA2FF150740030FFF0 /* Exceptions for "SoleMateWatch Watch App" folder in "SoleMateWatch Watch App" target */,
 			);
 			explicitFileTypes = {
 			};
@@ -889,11 +897,14 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "SoleMateWatch Watch App/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = SoleMateWatch;
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "러닝 중 실시간 심박을 표시하기 위해 사용합니다.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "러닝 운동을 건강 앱에 기록하기 위해 사용합니다.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "러닝 중 거리와 경로를 측정하기 위해 위치를 사용합니다.";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.solemate;
+				INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -942,11 +953,14 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "SoleMateWatch Watch App/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = SoleMateWatch;
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "러닝 중 실시간 심박을 표시하기 위해 사용합니다.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "러닝 운동을 건강 앱에 기록하기 위해 사용합니다.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "러닝 중 거리와 경로를 측정하기 위해 위치를 사용합니다.";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.solemate;
+				INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
