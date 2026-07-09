@@ -25,9 +25,9 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import {
   BG, CARD, ACCENT, GOOD, WARN, DANGER, T1, T2, T3, SEP,
-  FONT, withAlpha, Shoe, TYPE, GLASS, CARD_BORDER, RADIUS,
+  FONT, withAlpha, Shoe, TYPE,
 } from './theme';
-import {Pill, TabBar, Button, ShoeGlyph, GhostBar, GhostThumb} from './primitives';
+import {Pill, TabBar, Button, ShoeGlyph} from './primitives';
 import {GhostShoeCard} from './screens/KeegoHome';
 
 // ShoeGlyph 는 primitives 로 승격(고스트 카드가 화면 간 공유) — 기존 import 경로 호환 re-export.
@@ -78,18 +78,6 @@ function EmptyState({onRegister, onTab, userName}: FirstShoeProps) {
         <Text style={s.philosophy}>
           신발이 얼마나 닳았는지 기록해서,{'\n'}부상 없이 더 오래 달리게 해드려요.
         </Text>
-        {/* 고스트 락커 행 — 등록하면 채워질 목록의 실루엣(하단 여백 채움, 페이드). */}
-        <View style={{gap: rv(10), alignSelf: 'stretch'}}>
-          {[0.5, 0.22].map((o, i) => (
-            <View key={i} style={[s.ghostRow, {opacity: o}]}>
-              <GhostThumb size={40}>{i === 0 ? <ShoeGlyph size={ri(20)} color={withAlpha(T1, 0.3)} /> : null}</GhostThumb>
-              <View style={{flex: 1, minWidth: 0}}>
-                <GhostBar w={i ? '26%' : '34%'} />
-                <GhostBar w={i ? '46%' : '58%'} dim />
-              </View>
-            </View>
-          ))}
-        </View>
       </View>
       <TabBar active={1} onTab={(i) => onTab?.(i)} />
     </View>
@@ -205,9 +193,8 @@ const s = StyleSheet.create({
   date: {color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500'},
   greeting: {marginTop: rv(6), color: T1, fontFamily: FONT, fontSize: TYPE.title.fontSize, fontWeight: '700', letterSpacing: -0.4, lineHeight: rf(31)},
   // 스테이지 — 고스트 카드 + 철학 한 줄. 절대 탭 독에 가리지 않게 하단 여백 확보.
-  // 상단 시작(중앙 정렬 폐지 — 기기 피드백 '완전히 비어 있다') + 고스트 락커 행이 하단을 채운다.
+  // 히어로형 화면 — 고스트 카드 하나 + 여백이 비율(홈과 동일 결, 스택 없음 — 사용자 확정 07-10).
   stage: {flex: 1, gap: rv(24), paddingHorizontal: rs(20), paddingTop: rv(6), paddingBottom: rv(96), alignItems: 'center'},
-  ghostRow: {flexDirection: 'row', alignItems: 'center', gap: rv(12), alignSelf: 'stretch', backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderCurve: 'continuous', borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER, padding: rs(14)},
   philosophy: {textAlign: 'center', color: T3, fontFamily: FONT, fontSize: TYPE.body.fontSize, lineHeight: rf(24)},
 
   // header
