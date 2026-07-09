@@ -79,7 +79,7 @@ import {maskDuration, maskDate, validateRunForm} from '../../lib/inputMask';
 import {syncLabel} from '../../lib/syncStatus';
 import type {Shoe, Run} from '../../theme';
 import {
-  TIER_LABEL, RADIUS, T1, withAlpha,
+  TIER_LABEL, RADIUS,
   TYPE, HERO, GUTTER, SCRIM, CARD_BORDER, GLASS, DISPLAY,
 } from '../../theme';
 import {ymLocal, ymdLocal} from '../../lib/format';
