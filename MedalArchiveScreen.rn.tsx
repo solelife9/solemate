@@ -88,18 +88,6 @@ export default function MedalArchiveScreen({
                   <GhostBar w="38%" dim />
                 </View>
               </View>
-              <View style={{flexDirection: 'row', gap: rs(12), marginTop: rv(12)}}>
-                <View style={[m.ghostTile, {opacity: 0.3}]}>
-                  <View style={[m.disc, {width: rs(64), height: rs(64), borderRadius: rs(32)}]} />
-                  <GhostBar w="66%" style={{marginTop: rv(14)}} />
-                  <GhostBar w="42%" dim />
-                </View>
-                <View style={[m.ghostTile, {opacity: 0.14}]}>
-                  <View style={[m.disc, {width: rs(64), height: rs(64), borderRadius: rs(32)}]} />
-                  <GhostBar w="58%" style={{marginTop: rv(14)}} />
-                  <GhostBar w="36%" dim />
-                </View>
-              </View>
               {onAddMedal && (
                 <Pressable onPress={onAddMedal} accessibilityRole="button" accessibilityLabel="메달 추가하기" style={({pressed}) => [m.emptyCta, pressed && {opacity: 0.85}]}>
                   <Ionicons name="add" size={ri(18)} color={HALL_GOLD} />

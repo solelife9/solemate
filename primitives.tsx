@@ -573,9 +573,11 @@ export function GhostPill({label}: {label: string}) {
   );
 }
 const ghostS = StyleSheet.create({
-  head: {paddingHorizontal: rs(4), marginBottom: SPACE.lg},
-  title: {color: T1, fontFamily: FONT, fontSize: TYPE.heading.fontSize, fontWeight: '700', letterSpacing: -0.3, marginTop: SPACE.xs},
-  sub: {color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, lineHeight: rf(21), marginTop: SPACE.xs + 2},
+  // 에디토리얼 스케일(2026-07-10 사용자 확정 — '에디토리얼 타이포 + 고스트 1~2장'):
+  // 타이포가 빈 화면의 주인공, 고스트는 1~2장만 받쳐준다.
+  head: {paddingHorizontal: rs(4), marginBottom: SPACE.xl},
+  title: {color: T1, fontFamily: FONT, fontSize: TYPE.title.fontSize, fontWeight: '700', letterSpacing: -0.5, lineHeight: rf(30), marginTop: SPACE.xs},
+  sub: {color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, lineHeight: rf(22), marginTop: SPACE.md},
   strong: {color: T2, fontWeight: '700'},
   bar: {height: rs(9), borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.1)},
   barDim: {backgroundColor: withAlpha(T1, 0.07), marginTop: rs(7)},

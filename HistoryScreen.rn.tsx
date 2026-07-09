@@ -1067,17 +1067,15 @@ export default function HistoryScreen({
                   <GhostBar w={rs(56)} dim style={{ marginTop: 0 }} />
                 </View>
               </View>
-              {[0.5, 0.22].map((o, i) => (
-                <View key={i} style={[s.runCard, { opacity: o, marginTop: rv(10) }]}>
-                  <GhostBar w={i ? '24%' : '28%'} />
-                  <GhostBar w={i ? '44%' : '50%'} dim />
-                  <View style={{ flexDirection: 'row', gap: rs(24), marginTop: rv(18) }}>
-                    <GhostBar w={rs(56)} dim style={{ marginTop: 0 }} />
-                    <GhostBar w={rs(56)} dim style={{ marginTop: 0 }} />
-                    <GhostBar w={rs(56)} dim style={{ marginTop: 0 }} />
-                  </View>
+              <View style={[s.runCard, { opacity: 0.45, marginTop: rv(10) }]}>
+                <GhostBar w="28%" />
+                <GhostBar w="50%" dim />
+                <View style={{ flexDirection: 'row', gap: rs(24), marginTop: rv(18) }}>
+                  <GhostBar w={rs(56)} dim style={{ marginTop: 0 }} />
+                  <GhostBar w={rs(56)} dim style={{ marginTop: 0 }} />
+                  <GhostBar w={rs(56)} dim style={{ marginTop: 0 }} />
                 </View>
-              ))}
+              </View>
               {!!onAddRun && (
                 <Pressable onPress={() => setForm({ mode: 'add' })} accessibilityRole="button" accessibilityLabel="기록 직접 추가"
                   style={({ pressed }) => [{ marginTop: rv(16), alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: rv(5), paddingVertical: rv(8), paddingHorizontal: rs(16), borderRadius: RADIUS.pill, backgroundColor: CARD_HI }, pressed && { opacity: 0.7 }]}>

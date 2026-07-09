@@ -49,8 +49,8 @@ export default function ShoeArchiveScreen({
           // 실카드와 동일한 콰이어트 글라스에 내용만 실루엣으로 딤 처리한다.
           <View testID="shoe-archive-empty">
             <EmptyGhostHeader
-              title="아직 쉬는 신발이 없어요"
-              sub={<>신발 상세에서 <GhostStrong>보관 처리</GhostStrong>하면 이 자리로 옮겨져요.{'\n'}기록은 그대로 남고, 복원은 언제든.</>}
+              title={'당장 안 신는 신발은,\n잠시 쉬게 하세요'}
+              sub={<>신발 상세에서 <GhostStrong>보관 처리</GhostStrong>하면 러닝 목록에서 빠져요.{'\n'}기록은 그대로 남고, <GhostStrong>복원</GhostStrong>은 언제든.</>}
             />
             {/* 고스트 스택 — 실카드(s.card)와 같은 재질, 아래로 갈수록 사라지며
                 화면 세로를 채운다(기기 피드백: 두 장으론 하단이 빈다). */}
@@ -62,15 +62,13 @@ export default function ShoeArchiveScreen({
               </View>
               <GhostPill label="복원" />
             </View>
-            {[0.55, 0.3, 0.15].map((o, i) => (
-              <View key={i} style={[s.card, {opacity: o, marginTop: rv(10)}]}>
-                <GhostThumb />
-                <View style={{flex: 1, minWidth: 0}}>
-                  <GhostBar w={i % 2 ? '26%' : '32%'} />
-                  <GhostBar w={i % 2 ? '48%' : '55%'} dim />
-                </View>
+            <View style={[s.card, {opacity: 0.45, marginTop: rv(10)}]}>
+              <GhostThumb />
+              <View style={{flex: 1, minWidth: 0}}>
+                <GhostBar w="32%" />
+                <GhostBar w="55%" dim />
               </View>
-            ))}
+            </View>
           </View>
         ) : (
           <>
