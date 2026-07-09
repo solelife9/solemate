@@ -36,6 +36,15 @@ export interface Medal {
   runId?: string;
   /** 생성 시각 ISO(정렬 안정성). */
   createdAt: string;
+  /** soft-delete 묘비 — true 면 삭제됨. 배열에 남겨 동기 시 삭제가 전파되게 한다(부활 방지). */
+  deleted?: boolean;
+  /** 마지막 변경 epoch ms — mergeMedals 의 '최신 우선' 머지 기준(삭제/재등록 우열). */
+  updatedAt?: number;
+}
+
+/** 살아있는(삭제 안 된) 메달만 — 화면 렌더/집계용. 묘비는 배열에 남기되 여기서 거른다(방어적). */
+export function liveMedals(medals: Medal[]): Medal[] {
+  return (Array.isArray(medals) ? medals : []).filter((m) => m.deleted !== true);
 }
 
 /** 저장에 쓸 시간(초) — 공식 있으면 공식, 없으면 앱 측정. 라벨의 정본. */
@@ -63,7 +72,7 @@ const DIST_ORDER: RaceDistance[] = ['5k', '10k', 'half', 'full'];
  * 빈 배열이면 {count:0, totalKm:0, longest:null}. 입력 불변.
  */
 export function medalArchiveStats(medals: Medal[]): {count: number; totalKm: number; longest: RaceDistance | null} {
-  const arr = Array.isArray(medals) ? medals : [];
+  const arr = liveMedals(Array.isArray(medals) ? medals : []);
   let totalKm = 0;
   let longest: RaceDistance | null = null;
   for (const m of arr) {
@@ -98,6 +107,8 @@ export function normalizeMedals(raw: unknown): Medal[] {
       certPhotoUri: typeof o.certPhotoUri === 'string' ? o.certPhotoUri : undefined,
       runId: typeof o.runId === 'string' ? o.runId : undefined,
       createdAt: typeof o.createdAt === 'string' ? o.createdAt : '',
+      ...(o.deleted === true ? {deleted: true} : {}),
+      ...(typeof o.updatedAt === 'number' && Number.isFinite(o.updatedAt) ? {updatedAt: o.updatedAt} : {}),
     });
   }
   return out;
@@ -130,9 +141,14 @@ export async function addMedal(medal: Medal): Promise<Medal[]> {
   return next;
 }
 
-export async function removeMedal(id: string): Promise<Medal[]> {
+/**
+ * 메달 삭제 — 하드삭제 대신 soft-delete 묘비(`deleted:true` + updatedAt)로 남긴다. 배열에
+ * 그대로 두어(드롭 않음) 동기 시 삭제가 다른 기기로 전파돼 부활을 막는다. 화면/집계는
+ * liveMedals 로 거른다. 전체 배열(묘비 포함)을 영속·반환한다.
+ */
+export async function removeMedal(id: string, now: number): Promise<Medal[]> {
   const cur = await loadMedals();
-  const next = cur.filter((m) => m.id !== id);
+  const next = cur.map((m) => (m.id === id ? {...m, deleted: true, updatedAt: now} : m));
   await saveMedals(next);
   return next;
 }

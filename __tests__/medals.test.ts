@@ -7,6 +7,7 @@ import {
   sortMedals,
   normalizeMedals,
   loadMedals,
+  liveMedals,
   addMedal,
   removeMedal,
   medalArchiveStats,
@@ -81,11 +82,33 @@ describe('로컬 CRUD', () => {
     expect(next.length).toBe(1);
     expect(next[0].bib).toBe('222');
   });
-  test('removeMedal 로 삭제', async () => {
+  test('removeMedal 은 soft-delete 묘비(배열에 남고 live 에선 제외)', async () => {
     await addMedal(mk({id: 'a'}));
     await addMedal(mk({id: 'b'}));
-    const next = await removeMedal('a');
-    expect(next.map((m) => m.id)).toEqual(['b']);
+    const next = await removeMedal('a', 1700000000000);
+    // 'a' 는 묘비로 배열에 남는다(삭제 전파용).
+    const a = next.find((m) => m.id === 'a');
+    expect(a?.deleted).toBe(true);
+    expect(a?.updatedAt).toBe(1700000000000);
+    // 화면/집계는 live 만 본다.
+    expect(liveMedals(next).map((m) => m.id)).toEqual(['b']);
+  });
+  test('삭제한 id 를 다시 추가하면 live 로 복귀(묘비 교체)', async () => {
+    await addMedal(mk({id: 'a'}));
+    await removeMedal('a', 1700000000000);
+    const next = await addMedal(mk({id: 'a', updatedAt: 1700000000001}));
+    expect(liveMedals(next).map((m) => m.id)).toEqual(['a']);
+    expect(next.find((m) => m.id === 'a')?.deleted).not.toBe(true);
+  });
+});
+
+describe('liveMedals — 묘비 필터', () => {
+  test('deleted:true 는 제외, 나머지 유지', () => {
+    const arr = [mk({id: 'a'}), mk({id: 'b', deleted: true}), mk({id: 'c'})];
+    expect(liveMedals(arr).map((m) => m.id)).toEqual(['a', 'c']);
+  });
+  test('배열 아니면 빈 배열(방어적)', () => {
+    expect(liveMedals(null as unknown as Medal[])).toEqual([]);
   });
 });
 
@@ -102,5 +125,15 @@ describe('medalArchiveStats — 아카이브 요약', () => {
     expect(s.count).toBe(3);
     expect(s.totalKm).toBeCloseTo(73.3, 1); // 42.195 + 10 + 21.0975
     expect(s.longest).toBe('full');
+  });
+  it('묘비(deleted)는 개수·거리·최장에서 제외', () => {
+    const s = medalArchiveStats([
+      mk({id: 'a', distance: 'full', deleted: true}),
+      mk({id: 'b', distance: '10k'}),
+      mk({id: 'c', distance: 'half'}),
+    ]);
+    expect(s.count).toBe(2); // 'a' 묘비 제외
+    expect(s.totalKm).toBeCloseTo(31.1, 1); // 10 + 21.0975 (full 제외)
+    expect(s.longest).toBe('half'); // full 제외 → half 가 최장
   });
 });

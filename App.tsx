@@ -40,7 +40,7 @@ import RunRecapScreen from './RunRecapScreen.rn';
 import MedalArchiveScreen from './MedalArchiveScreen.rn';
 import RaceMedalScreen from './RaceMedalScreen.rn';
 // 마라톤 메달 아카이브 — 완주 감지(위치+날짜) → 대회 기록 흐름 → 아카이브(로컬 우선).
-import {loadMedals, saveMedals, normalizeMedals, sortMedals, addMedal as addMedalStore, removeMedal as removeMedalStore, type Medal} from './lib/medals';
+import {loadMedals, saveMedals, normalizeMedals, sortMedals, liveMedals, addMedal as addMedalStore, removeMedal as removeMedalStore, type Medal} from './lib/medals';
 import {detectRace, SEED_RACES, type RaceEvent, type RaceMatch, type RaceDistance} from './data/raceEvents';
 import {fetchRaces} from './lib/raceStore';
 import {nativeRecognizer} from './lib/ocrNative';
@@ -1898,14 +1898,14 @@ function Main(){
       appTimeSec={medalFlow.appTimeSec} appPaceSec={medalFlow.appPaceSec}
       presetRaceId={medalFlow.presetRaceId} presetDistance={medalFlow.presetDistance}
       races={races} recognizer={nativeRecognizer ?? undefined}
-      onSave={(m)=>{setMedals(cur=>sortMedals([m,...cur.filter(x=>x.id!==m.id)]));void addMedalStore(m);setMedalFlow(null);setShowMedalArchive(true);}}
+      onSave={(m)=>{const stamped={...m,updatedAt:Date.now()};setMedals(cur=>sortMedals([stamped,...cur.filter(x=>x.id!==stamped.id)]));void addMedalStore(stamped);setMedalFlow(null);setShowMedalArchive(true);}}
       onClose={()=>setMedalFlow(null)}/>;
   }
   if(showMedalArchive){
-    return <MedalArchiveScreen medals={medals}
+    return <MedalArchiveScreen medals={liveMedals(medals)}
       onBack={()=>setShowMedalArchive(false)}
       onAddMedal={()=>setMedalFlow({date:today()})}
-      onDelete={(id)=>{setMedals(cur=>cur.filter(m=>m.id!==id));void removeMedalStore(id);}}/>;
+      onDelete={(id)=>{const now=Date.now();setMedals(cur=>cur.map(m=>m.id===id?{...m,deleted:true,updatedAt:now}:m));void removeMedalStore(id,now);}}/>;
   }
   if(runRecap){
     return <RunRecapScreen {...runRecap} unit={unit}
@@ -1981,7 +1981,7 @@ function Main(){
             onDeleteAccount={handleDeleteAccount}
             onOpenProgression={()=>setShowProgression(true)}
             onOpenHallOfShoes={()=>setShowHallOfShoes(true)} retiredCount={retiredRecords.length}
-            onOpenMedalArchive={()=>setShowMedalArchive(true)} medalCount={medals.length}
+            onOpenMedalArchive={()=>setShowMedalArchive(true)} medalCount={liveMedals(medals).length}
             onOpenArchive={()=>setShowArchive(true)}
             archivedCount={archivedUiShoes.length}
           />

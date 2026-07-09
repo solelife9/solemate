@@ -60,6 +60,28 @@ describe('mergeMedals — 메달 클라우드 병합(id 합집합·최신 우선
     const merged = mergeCloudData(payload(), payload());
     expect(merged.medals).toBeUndefined();
   });
+  const T0 = Date.parse('2026-01-01T00:00:00Z'); // 생성 시각(updatedAt 없을 때 폴백 기준)
+  test('묘비(deleted, updatedAt 최신)가 원격의 오래된 live 사본을 이긴다 → 부활 방지', () => {
+    const tomb = md('a', '2026-01-01T00:00:00Z', {deleted: true, updatedAt: T0 + 86400000}); // 하루 뒤 삭제
+    const remoteLive = md('a', '2026-01-01T00:00:00Z', {bib: 'remote'}); // updatedAt 없음 → createdAt 로 폴백
+    const out = mergeMedals([tomb], [remoteLive]);
+    expect(out.length).toBe(1);
+    expect((out[0] as any).deleted).toBe(true); // 삭제 유지(묘비는 결과에 남아 전파)
+  });
+  test('재등록(updatedAt 이 묘비보다 나중)이 묘비를 이긴다 → live 복귀', () => {
+    const tomb = md('a', '2026-01-01T00:00:00Z', {deleted: true, updatedAt: T0 + 86400000});
+    const readd = md('a', '2026-01-01T00:00:00Z', {bib: 'readd', updatedAt: T0 + 172800000}); // 이틀 뒤 재등록
+    const out = mergeMedals([readd], [tomb]);
+    expect(out.length).toBe(1);
+    expect((out[0] as any).deleted).not.toBe(true);
+    expect((out[0] as any).bib).toBe('readd');
+  });
+  test('유효 타임스탬프 동률이면 묘비(삭제) 우선', () => {
+    const tomb = md('a', '2026-01-01T00:00:00Z', {deleted: true, updatedAt: T0 + 5000});
+    const live = md('a', '2026-01-01T00:00:00Z', {bib: 'live', updatedAt: T0 + 5000});
+    const out = mergeMedals([live], [tomb]); // 동률: 묘비 우선
+    expect((out[0] as any).deleted).toBe(true);
+  });
 });
 
 describe('nextAuthState', () => {

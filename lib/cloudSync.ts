@@ -275,24 +275,44 @@ export function mergeCloudData(local: BackupPayload, remote: BackupPayload | nul
 }
 
 /**
- * 메달 병합 — id 합집합, 동일 id 는 createdAt 이 더 늦은 쪽(동률이면 로컬) 유지. 메달은
- * 사실상 불변(append)이라 삭제 전파 없이도 안전하다(다른 기기 삭제분은 재등장할 수 있으나
- * 키프세이크라 무해). 잘못된 원소(id 없음/객체 아님)는 버린다.
+ * 메달 병합 — id 합집합, tombstone(soft-delete) 존중. 동일 id 는 '유효 타임스탬프'가 더 큰
+ * 쪽을 남기고, 동률이면 tombstone(deleted:true)을 우선해 부활을 막는다. 유효 타임스탬프는
+ * updatedAt(유한 숫자) → Date.parse(createdAt)(유한) → 0 순으로 정한다. 묘비는 결과에 그대로
+ * 남겨(드롭 않음) 다음 동기에서도 삭제가 계속 전파된다 — 화면/집계는 liveMedals 로 거른다.
+ * 잘못된 원소(id 없음/객체 아님)는 버린다. 순수 함수 — Date.now 를 부르지 않는다.
  */
 export function mergeMedals(local: unknown[] | undefined, remote: unknown[] | undefined): unknown[] {
-  const byId = new Map<string, {createdAt: string; rec: unknown}>();
-  const put = (arr: unknown[] | undefined) => {
+  const eff = (m: object): number => {
+    const u = (m as {updatedAt?: unknown}).updatedAt;
+    if (typeof u === 'number' && Number.isFinite(u)) return u;
+    const c = Date.parse(String((m as {createdAt?: unknown}).createdAt ?? ''));
+    return Number.isFinite(c) ? c : 0;
+  };
+  const byId = new Map<string, {ts: number; rec: object}>();
+  const put = (arr: unknown[] | undefined, isLocal: boolean) => {
     for (const m of arr ?? []) {
       if (!m || typeof m !== 'object') continue;
       const id = (m as {id?: unknown}).id;
       if (typeof id !== 'string') continue;
-      const createdAt = String((m as {createdAt?: unknown}).createdAt ?? '');
+      const ts = eff(m);
       const cur = byId.get(id);
-      if (!cur || createdAt >= cur.createdAt) byId.set(id, {createdAt, rec: m});
+      if (!cur) {
+        byId.set(id, {ts, rec: m});
+        continue;
+      }
+      if (ts > cur.ts) {
+        byId.set(id, {ts, rec: m});
+      } else if (ts === cur.ts) {
+        // 동률: tombstone(삭제) 우선 → 부활 방지. 둘 다 같은 상태면 로컬 우선(local 을 나중에 처리).
+        const newDel = isDeleted(m);
+        const curDel = isDeleted(cur.rec);
+        if (newDel && !curDel) byId.set(id, {ts, rec: m});
+        else if (newDel === curDel && isLocal) byId.set(id, {ts, rec: m});
+      }
     }
   };
-  put(remote);
-  put(local); // 로컬을 나중에 → 동률(같은 createdAt) 시 로컬 우선
+  put(remote, false);
+  put(local, true); // 로컬을 나중에 → 동률(같은 ts·같은 삭제상태) 시 로컬 우선
   return [...byId.values()].map((v) => v.rec);
 }
 
