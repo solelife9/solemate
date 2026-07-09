@@ -52,7 +52,8 @@ export default function ShoeArchiveScreen({
               title="아직 쉬는 신발이 없어요"
               sub={<>신발 상세에서 <GhostStrong>보관 처리</GhostStrong>하면 이 자리로 옮겨져요.{'\n'}기록은 그대로 남고, 복원은 언제든.</>}
             />
-            {/* 고스트 아이템 — 실카드(s.card)와 같은 재질, 내용만 실루엣 */}
+            {/* 고스트 스택 — 실카드(s.card)와 같은 재질, 아래로 갈수록 사라지며
+                화면 세로를 채운다(기기 피드백: 두 장으론 하단이 빈다). */}
             <View style={s.card}>
               <GhostThumb><ShoeGlyph size={ri(24)} color={withAlpha(T1, 0.35)} /></GhostThumb>
               <View style={{flex: 1, minWidth: 0}}>
@@ -61,13 +62,15 @@ export default function ShoeArchiveScreen({
               </View>
               <GhostPill label="복원" />
             </View>
-            <View style={[s.card, s.ghostFar]}>
-              <GhostThumb />
-              <View style={{flex: 1, minWidth: 0}}>
-                <GhostBar w="30%" />
-                <GhostBar w="52%" dim />
+            {[0.55, 0.3, 0.15].map((o, i) => (
+              <View key={i} style={[s.card, {opacity: o, marginTop: rv(10)}]}>
+                <GhostThumb />
+                <View style={{flex: 1, minWidth: 0}}>
+                  <GhostBar w={i % 2 ? '26%' : '32%'} />
+                  <GhostBar w={i % 2 ? '48%' : '55%'} dim />
+                </View>
               </View>
-            </View>
+            ))}
           </View>
         ) : (
           <>
@@ -126,6 +129,5 @@ const s = StyleSheet.create({
   meta: {color: T2, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500', marginTop: rv(4)},
   restoreBtn: {flexDirection: 'row', alignItems: 'center', gap: rv(5), paddingHorizontal: rs(14), height: rs(36), borderRadius: RADIUS.pill, backgroundColor: withAlpha(ACCENT, 0.14)},
   restoreText: {color: ACCENT, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '700'},
-  // 빈 상태 = 프리미티브(EmptyGhostHeader/GhostBar 등) — 로컬 스타일은 깊이감용 하나뿐.
-  ghostFar: {opacity: 0.55, marginTop: rv(10)},
+  // 빈 상태 = 프리미티브(EmptyGhostHeader/GhostBar 등) — 페이드 스택은 인라인 opacity.
 });
