@@ -358,16 +358,16 @@ const styles = StyleSheet.create({
   },
   brandRow: {flexDirection: 'row', alignItems: 'center', gap: rv(8)},
   brandDot: {width: rs(9), height: rs(9), borderRadius: 999, backgroundColor: WARN},
-  wordmark: {fontFamily: DISPLAY, fontSize: rf(20), fontWeight: '700', letterSpacing: -0.5, color: T1},
+  wordmark: {fontFamily: DISPLAY, fontSize: TYPE.heading.fontSize, fontWeight: '700', letterSpacing: -0.5, color: T1},
   avatar: {
     width: rs(36), height: rs(36), borderRadius: 999, alignItems: 'center', justifyContent: 'center',
     backgroundColor: withAlpha(T1, 0.08), borderWidth: 1, borderColor: withAlpha(T1, 0.12),
   },
-  avatarGlyph: {fontFamily: FONT, color: withAlpha(T1, 0.9), fontSize: rf(17)},
+  avatarGlyph: {fontFamily: FONT, color: withAlpha(T1, 0.9), fontSize: TYPE.heading.fontSize},
 
   titleWrap: {paddingHorizontal: GUTTER, paddingTop: rv(16), paddingBottom: rv(10)},
   eyebrow: {fontFamily: FONT, ...TYPE.label, color: T3},
-  title: {fontFamily: FONT, fontSize: rf(27), fontWeight: '700', letterSpacing: -0.7, color: T1, marginTop: rv(3)},
+  title: {fontFamily: FONT, fontSize: TYPE.title1.fontSize, fontWeight: '700', letterSpacing: -0.7, color: T1, marginTop: rv(3)},
 
   card: {
     // borderCurve:'continuous'(스퀴클) 제거 — iOS 스퀴클 클립이 GlassEdge 의 원호(Rect rx) 코너와
@@ -381,24 +381,24 @@ const styles = StyleSheet.create({
   },
   cardInner: {padding: rs(24)},
   cardTop: {flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: rv(10)},
-  cardBrand: {fontFamily: FONT, fontSize: rf(13), fontWeight: '600', letterSpacing: 1.2, color: withAlpha(T1, 0.55)},
-  cardModel: {fontFamily: FONT, fontSize: rf(25), fontWeight: '700', letterSpacing: -0.6, color: T1, marginTop: rv(4)},
+  cardBrand: {fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600', letterSpacing: 1.2, color: withAlpha(T1, 0.55)},
+  cardModel: {fontFamily: FONT, fontSize: TYPE.title.fontSize, fontWeight: '700', letterSpacing: -0.6, color: T1, marginTop: rv(4)},
   // 컨디션 표기 — 칩 박스 없이 점+텍스트(점만 컨디션색, 텍스트는 밝은 무채색).
   condChip: {flexDirection: 'row', alignItems: 'center', gap: rv(7), flexShrink: 0, paddingVertical: rv(6)},
   condDot: {width: rs(7), height: rs(7), borderRadius: 999},
-  condLabel: {fontFamily: FONT, fontSize: rf(14), fontWeight: '600', color: T2},
+  condLabel: {fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600', color: T2},
 
   // width/height 는 렌더에서 화면 비례값(ring)으로 덮어쓴다.
   ringWrap: {alignSelf: 'center', marginTop: rv(20), alignItems: 'center', justifyContent: 'center'},
   ringCenter: {position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center'},
-  ringPctSub: {fontFamily: FONT, fontSize: rf(13), fontWeight: '600', color: withAlpha(T1, 0.55)},
+  ringPctSub: {fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600', color: withAlpha(T1, 0.55)},
   ringPctRow: {flexDirection: 'row', alignItems: 'flex-start', marginTop: rv(2)},
   // 58 → 52: 링 안에서 숫자가 꽉 차 보인다는 피드백(2026-07-04) — 살짝 줄여 숨통.
   ringPct: {fontFamily: DISPLAY, fontSize: rf(52), fontWeight: '700', letterSpacing: -2.6, lineHeight: rf(54), color: T1},
-  ringPctUnit: {fontFamily: DISPLAY, fontSize: rf(19), fontWeight: '700', color: withAlpha(T1, 0.7), marginTop: rv(6)},
+  ringPctUnit: {fontFamily: DISPLAY, fontSize: TYPE.heading.fontSize, fontWeight: '700', color: withAlpha(T1, 0.7), marginTop: rv(6)},
 
   kmRow: {flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(11), marginTop: rv(20)},
-  kmLabel: {fontFamily: FONT, fontSize: rf(14), fontWeight: '600', color: T3},
+  kmLabel: {fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600', color: T3},
   kmStrong: {color: T1},
   kmSep: {width: rs(3), height: rs(3), borderRadius: 999, backgroundColor: withAlpha(T1, 0.28)},
 
@@ -407,13 +407,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(9),
     backgroundColor: withAlpha(T1, 0.1),
   },
-  runGlyph: {fontFamily: FONT, color: T1, fontSize: rf(16)},
-  runLabel: {fontFamily: FONT, fontSize: rf(17), fontWeight: '700', letterSpacing: -0.2, color: T1},
+  runGlyph: {fontFamily: FONT, color: T1, fontSize: TYPE.body.fontSize},
+  runLabel: {fontFamily: FONT, fontSize: TYPE.heading.fontSize, fontWeight: '700', letterSpacing: -0.2, color: T1},
 
   // 고스트 카드(빈 상태) 전용 — 힌트/가치 라인은 실카드 kmRow 자리의 유령.
-  ghostHint: {textAlign: 'center', color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '500', letterSpacing: -0.2, marginTop: rv(20)},
+  ghostHint: {textAlign: 'center', color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500', letterSpacing: -0.2, marginTop: rv(20)},
   ghostValues: {flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(11), marginTop: rv(12)},
-  ghostValTxt: {color: withAlpha(T1, 0.35), fontFamily: FONT, fontSize: rf(13), fontWeight: '500'},
+  ghostValTxt: {color: withAlpha(T1, 0.35), fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500'},
 
   dots: {flexDirection: 'row', justifyContent: 'center', gap: rv(7), marginTop: rv(16)},
   dot: {height: rs(6), borderRadius: 999},
@@ -425,6 +425,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: rs(18), paddingVertical: rv(14), borderRadius: rs(18), borderWidth: 1,
   },
   guardDot: {width: rs(9), height: rs(9), borderRadius: 999},
-  guardText: {flex: 1, fontFamily: FONT, fontSize: rf(15), fontWeight: '600', letterSpacing: -0.2, color: T1},
-  guardCta: {fontFamily: FONT, fontSize: rf(14), fontWeight: '700'},
+  guardText: {flex: 1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600', letterSpacing: -0.2, color: T1},
+  guardCta: {fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '700'},
 });

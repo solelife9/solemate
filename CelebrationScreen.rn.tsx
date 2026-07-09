@@ -12,7 +12,7 @@ import { rf, rs, ri, rv } from './lib/responsive';
 import {View, Text, Pressable, StyleSheet, Animated, Easing} from 'react-native';
 import Svg, {Defs, RadialGradient, LinearGradient, Stop, Circle, Ellipse, Path} from 'react-native-svg';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {BG, T1, T3, FONT, DISPLAY, RADIUS, HALL_GOLD, BLACK, CELEB_FACE_BG, CELEB_ICON_LEGENDARY, CELEB_ICON_DEFAULT, withAlpha} from './theme';
+import {BG, T1, T3, FONT, DISPLAY, RADIUS, HALL_GOLD, BLACK, CELEB_FACE_BG, CELEB_ICON_LEGENDARY, CELEB_ICON_DEFAULT, withAlpha, TYPE} from './theme';
 import {success, impactHeavy} from './lib/haptics';
 
 export type CelebrationData =
@@ -261,20 +261,20 @@ const st = StyleSheet.create({
   screen: {flex: 1, backgroundColor: BG, alignItems: 'center', paddingHorizontal: rs(28), overflow: 'hidden'},
   glow: {position: 'absolute', top: '-8%'},
   skip: {position: 'absolute', right: 22, zIndex: 2, padding: rs(6)},
-  skipTxt: {fontSize: rf(14), fontWeight: '500', color: T3, fontFamily: FONT},
+  skipTxt: {fontSize: TYPE.label.fontSize, fontWeight: '500', color: T3, fontFamily: FONT},
   body: {flex: 1, alignItems: 'center', justifyContent: 'center'},
 
-  eyebrow: {fontSize: rf(13), fontWeight: '700', letterSpacing: 2.6, marginBottom: rv(32), textTransform: 'uppercase', fontFamily: FONT},
+  eyebrow: {fontSize: TYPE.caption.fontSize, fontWeight: '700', letterSpacing: 2.6, marginBottom: rv(32), textTransform: 'uppercase', fontFamily: FONT},
   medalwrap: {width: rs(124), height: rs(124), marginBottom: rv(30), alignItems: 'center', justifyContent: 'center'},
   ring: {position: 'absolute', width: rs(124), height: rs(124), borderRadius: 62, borderCurve: 'continuous', borderWidth: 1},
 
-  rankfrom: {fontSize: rf(15), fontWeight: '500', color: T3, marginBottom: rv(2), fontFamily: FONT, textAlign: 'center'},
-  name: {fontSize: rf(32), fontWeight: '700', color: T1, letterSpacing: -0.6, lineHeight: rf(38), textAlign: 'center', fontFamily: DISPLAY},
-  meta: {fontSize: rf(14), fontWeight: '500', color: T3, fontFamily: FONT},
-  desc: {fontSize: rf(16), color: withAlpha(T1, 0.72), lineHeight: rf(24), marginTop: rv(18), maxWidth: rs(300), textAlign: 'center', fontFamily: FONT},
+  rankfrom: {fontSize: TYPE.body.fontSize, fontWeight: '500', color: T3, marginBottom: rv(2), fontFamily: FONT, textAlign: 'center'},
+  name: {fontSize: TYPE.display.fontSize, fontWeight: '700', color: T1, letterSpacing: -0.6, lineHeight: rf(38), textAlign: 'center', fontFamily: DISPLAY},
+  meta: {fontSize: TYPE.label.fontSize, fontWeight: '500', color: T3, fontFamily: FONT},
+  desc: {fontSize: TYPE.body.fontSize, color: withAlpha(T1, 0.72), lineHeight: rf(24), marginTop: rv(18), maxWidth: rs(300), textAlign: 'center', fontFamily: FONT},
   b: {color: T1, fontWeight: '700'},
 
   actions: {alignSelf: 'stretch'},
   primary: {height: rs(56), borderRadius: RADIUS.md, borderCurve: 'continuous', backgroundColor: withAlpha(T1, 0.1), alignItems: 'center', justifyContent: 'center'},
-  primaryTxt: {fontSize: rf(18), fontWeight: '700', color: T1, fontFamily: FONT},
+  primaryTxt: {fontSize: TYPE.heading.fontSize, fontWeight: '700', color: T1, fontFamily: FONT},
 });

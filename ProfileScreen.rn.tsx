@@ -12,7 +12,7 @@ import { rf, rs, ri, rv } from './lib/responsive';
 import { View, Text, ScrollView, Pressable, StyleSheet, TextInput, Image, Share, Alert, Linking } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { BG, CARD, CARD_DIM, CARD_HI, ACCENT, BRAND, GOOD, DANGER, WARN, T1, T2, T3, SEP, CARD_BORDER, FONT, DISPLAY, withAlpha, TIER_COLORS, TIER_LABEL, KAKAO_YELLOW, KAKAO_LABEL, NAVER_GREEN, NAVER_LABEL, RADIUS, HALL_GOLD } from './theme';
+import { BG, CARD, CARD_DIM, CARD_HI, ACCENT, BRAND, GOOD, DANGER, WARN, T1, T2, T3, SEP, CARD_BORDER, FONT, DISPLAY, withAlpha, TIER_COLORS, TIER_LABEL, KAKAO_YELLOW, KAKAO_LABEL, NAVER_GREEN, NAVER_LABEL, RADIUS, HALL_GOLD, TYPE } from './theme';
 // recap 토글 = SegmentedControl(accentSolid), 스탯 그리드들 = StatGrid 단일 프리미티브.
 import { TabBar, TABBAR_CLEARANCE, SectionTitle, Button, SegmentedControl, StatGrid, Stepper, AmbientBackdrop } from './primitives';
 import { Unit, unitKorean, displayNum } from './lib/units';
@@ -624,7 +624,7 @@ export default function ProfileScreen({
               <Text style={[s.cardTitle, { marginBottom: rv(0) }]}>러너 스펙</Text>
               <Pressable onPress={onShareSpec} testID="spec-share" accessibilityRole="button" accessibilityLabel="러너 스펙 공유" hitSlop={8} style={({ pressed }) => [{ flexDirection: 'row', alignItems: 'center', gap: rv(5) }, pressed && { opacity: 0.6 }]}>
                 <Ionicons name="share-outline" size={ri(16)} color={ACCENT} />
-                <Text style={{ color: ACCENT, fontFamily: FONT, fontSize: rf(14), fontWeight: '700' }}>공유</Text>
+                <Text style={{ color: ACCENT, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '700' }}>공유</Text>
               </Pressable>
             </View>
 
@@ -980,7 +980,7 @@ export default function ProfileScreen({
                     {(['male', 'female'] as const).map((sx) => (
                       <Pressable key={sx} onPress={() => onChangeSex?.(sx)} accessibilityRole="button" accessibilityLabel={sx === 'male' ? '남성' : '여성'} accessibilityState={{ selected: sex === sx }}
                         style={{ paddingVertical: rv(6), paddingHorizontal: rs(16), borderRadius: RADIUS.sm, backgroundColor: sex === sx ? ACCENT : CARD_HI }}>
-                        <Text style={{ color: sex === sx ? BG : T2, fontFamily: FONT, fontWeight: '700', fontSize: rf(14) }}>{sx === 'male' ? '남성' : '여성'}</Text>
+                        <Text style={{ color: sex === sx ? BG : T2, fontFamily: FONT, fontWeight: '700', fontSize: TYPE.label.fontSize }}>{sx === 'male' ? '남성' : '여성'}</Text>
                       </Pressable>
                     ))}
                   </View>
@@ -1134,7 +1134,7 @@ const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: BG },
   row: { flexDirection: 'row', alignItems: 'center', gap: rv(7) },
   card: { backgroundColor: CARD_DIM, borderRadius: RADIUS.lg, borderCurve: 'continuous', borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER },
-  cardTitle: { color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '600', marginBottom: rv(16) },
+  cardTitle: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600', marginBottom: rv(16) },
   // 러너 스펙 카드
   // 거리 PB 메달 타일 2×2(러너 스펙 메인) — 달성=CARD_HI + 골드, 미달성=흐린 판.
   pbGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: rv(10) },
@@ -1142,29 +1142,29 @@ const s = StyleSheet.create({
   pbTileOn: { backgroundColor: CARD_HI },
   pbTileOff: { backgroundColor: withAlpha(T1, 0.04) },
   pbHead: { flexDirection: 'row', alignItems: 'center', gap: rv(6) },
-  pbLabel: { fontFamily: FONT, fontSize: rf(13), fontWeight: '700', letterSpacing: 0.3 },
+  pbLabel: { fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '700', letterSpacing: 0.3 },
   pbVal: { fontFamily: DISPLAY, marginTop: rv(6), fontVariant: ['tabular-nums'] },
-  pbValOn: { color: T1, fontSize: rf(23), fontWeight: '700', letterSpacing: -0.4 },
-  pbValOff: { color: withAlpha(T1, 0.32), fontSize: rf(16), fontWeight: '600' },
+  pbValOn: { color: T1, fontSize: TYPE.title.fontSize, fontWeight: '700', letterSpacing: -0.4 },
+  pbValOff: { color: withAlpha(T1, 0.32), fontSize: TYPE.body.fontSize, fontWeight: '600' },
   // 서브 스탯 3열(누적·최장·1km 최고).
   specSubRow: { flexDirection: 'row', marginTop: rv(16), paddingTop: rv(16), borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: CARD_BORDER },
   specSub: { flex: 1, alignItems: 'center', gap: rv(3) },
   specSubDiv: { borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: CARD_BORDER },
-  specSubVal: { color: T1, fontFamily: DISPLAY, fontSize: rf(18), fontWeight: '600', letterSpacing: -0.3, fontVariant: ['tabular-nums'] },
-  specSubUnit: { color: T3, fontFamily: FONT, fontSize: rf(12), fontWeight: '600' },
-  specSubLabel: { color: T3, fontFamily: FONT, fontSize: rf(12), fontWeight: '500' },
+  specSubVal: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.heading.fontSize, fontWeight: '600', letterSpacing: -0.3, fontVariant: ['tabular-nums'] },
+  specSubUnit: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600' },
+  specSubLabel: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500' },
   // 심폐 체력(VO₂max) 강등 푸터 — 한 줄.
   specVo2Foot: { flexDirection: 'row', alignItems: 'center', gap: rv(7), marginTop: rv(16), paddingTop: rv(14), borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: CARD_BORDER },
-  specVo2FootText: { color: T3, fontFamily: FONT, fontSize: rf(13), fontWeight: '500' },
+  specVo2FootText: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500' },
   specVo2FootStrong: { color: T2, fontWeight: '700' },
-  sectionLabel: { color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '600', letterSpacing: 0.4, paddingHorizontal: rs(4) },
+  sectionLabel: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600', letterSpacing: 0.4, paddingHorizontal: rs(4) },
   progressRow: { flexDirection: 'row', alignItems: 'center', gap: rv(13), padding: rs(16) },
   progressIcon: { width: rs(38), height: rs(38), borderRadius: RADIUS.sm, backgroundColor: withAlpha(ACCENT, 0.12), alignItems: 'center', justifyContent: 'center' },
-  progressTitle: { color: T1, fontFamily: FONT, fontSize: rf(16), fontWeight: '700' },
-  progressSub: { color: T3, fontFamily: FONT, fontSize: rf(13), fontWeight: '500', marginTop: rv(3) },
+  progressTitle: { color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '700' },
+  progressSub: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500', marginTop: rv(3) },
 
   headerRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', paddingHorizontal: rs(4) },
-  title: { color: T1, fontFamily: FONT, fontSize: rf(32), fontWeight: '500', letterSpacing: -0.8 },
+  title: { color: T1, fontFamily: FONT, fontSize: TYPE.display.fontSize, fontWeight: '500', letterSpacing: -0.8 },
   iconBtn: { width: rs(38), height: rs(38), borderRadius: RADIUS.pill, backgroundColor: CARD_HI, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.12), alignItems: 'center', justifyContent: 'center' },
 
   identity: { flexDirection: 'row', alignItems: 'center', gap: rv(14), paddingHorizontal: rs(4), paddingTop: rv(4) },
@@ -1172,27 +1172,27 @@ const s = StyleSheet.create({
   avatarInner: { padding: 2.5, borderRadius: RADIUS.pill, backgroundColor: BG, alignItems: 'center', justifyContent: 'center' },
   avatarImg: { width: rs(50), height: rs(50), borderRadius: RADIUS.pill },
   avatarEdit: { position: 'absolute', right: -1, bottom: -1, width: rs(18), height: rs(18), borderRadius: RADIUS.pill, backgroundColor: T3, borderWidth: 2, borderColor: BG, alignItems: 'center', justifyContent: 'center' },
-  tierEyebrow: { fontFamily: DISPLAY, fontSize: rf(12), fontWeight: '600', letterSpacing: 3.5, textTransform: 'uppercase', marginBottom: rv(3) },
-  name: { color: T1, fontFamily: FONT, fontSize: rf(25), fontWeight: '600', letterSpacing: -0.5 },
+  tierEyebrow: { fontFamily: DISPLAY, fontSize: TYPE.caption.fontSize, fontWeight: '600', letterSpacing: 3.5, textTransform: 'uppercase', marginBottom: rv(3) },
+  name: { color: T1, fontFamily: FONT, fontSize: TYPE.title.fontSize, fontWeight: '600', letterSpacing: -0.5 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: rv(7) },
   nameEditRow: { flexDirection: 'row', alignItems: 'center', gap: rv(8) },
-  nameInput: { flex: 1, color: T1, fontFamily: FONT, fontSize: rf(23), fontWeight: '500', letterSpacing: -0.5, borderBottomWidth: 1, borderBottomColor: ACCENT, paddingVertical: rv(2), paddingHorizontal: rs(0) },
+  nameInput: { flex: 1, color: T1, fontFamily: FONT, fontSize: TYPE.title.fontSize, fontWeight: '500', letterSpacing: -0.5, borderBottomWidth: 1, borderBottomColor: ACCENT, paddingVertical: rv(2), paddingHorizontal: rs(0) },
   nameSaveBtn: { width: rs(34), height: rs(34), borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.1), alignItems: 'center', justifyContent: 'center' },
-  idStat: { fontFamily: FONT, color: T3, fontSize: rf(13), fontWeight: '600' },
-  idStatNum: { fontFamily: DISPLAY, color: T1, fontSize: rf(14), fontWeight: '700' },
-  since: { color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '600' },
+  idStat: { fontFamily: FONT, color: T3, fontSize: TYPE.caption.fontSize, fontWeight: '600' },
+  idStatNum: { fontFamily: DISPLAY, color: T1, fontSize: TYPE.label.fontSize, fontWeight: '700' },
+  since: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600' },
 
   // 이번 주 스트릭 카드
   streakCard: { padding: rs(16) },
   streakHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: rv(14) },
-  streakCount: { color: ACCENT, fontFamily: FONT, fontSize: rf(13), fontWeight: '700' },
+  streakCount: { color: ACCENT, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '700' },
   streakRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   streakDay: { alignItems: 'center', gap: rv(6) },
   streakDot: { width: rs(30), height: rs(30), borderRadius: RADIUS.pill, alignItems: 'center', justifyContent: 'center' },
   streakDotDone: { backgroundColor: BRAND },
   streakDotIdle: { backgroundColor: CARD_DIM },
   streakDotToday: { backgroundColor: CARD_DIM, borderWidth: 1.5, borderStyle: 'dashed', borderColor: T3 },
-  streakDayLabel: { color: T3, fontFamily: FONT, fontSize: rf(11), fontWeight: '600' },
+  streakDayLabel: { color: T3, fontFamily: FONT, fontSize: TYPE.micro.fontSize, fontWeight: '600' },
   streakDayLabelToday: { color: T2 },
 
   // 누적/개인 기록·리캡 요약 스탯 줄은 StatGrid 프리미티브로 이전(셀·값·라벨 토큰을
@@ -1200,46 +1200,46 @@ const s = StyleSheet.create({
 
   badge: { flex: 1, backgroundColor: CARD, borderRadius: RADIUS.lg, borderCurve: 'continuous', paddingVertical: rv(16), paddingHorizontal: rs(8), alignItems: 'center', gap: rv(8), borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER },
   badgeIcon: { width: rs(44), height: rs(44), borderRadius: RADIUS.pill, alignItems: 'center', justifyContent: 'center' },
-  badgeLabel: { fontFamily: FONT, fontSize: rf(12), fontWeight: '500', textAlign: 'center' },
+  badgeLabel: { fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500', textAlign: 'center' },
 
   settingRow: { flexDirection: 'row', alignItems: 'center', gap: rv(13), paddingVertical: rv(14), paddingHorizontal: rs(16) },
   settingBorder: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: SEP },
   settingIcon: { width: rs(30), height: rs(30), borderRadius: rs(9), backgroundColor: withAlpha(T1, 0.06), alignItems: 'center', justifyContent: 'center' },
-  settingLabel: { flex: 1, color: T1, fontFamily: FONT, fontSize: rf(16), fontWeight: '600' },
-  settingDetail: { color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '500' },
+  settingLabel: { flex: 1, color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600' },
+  settingDetail: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500' },
 
   // expandable panels
   panel: { paddingHorizontal: rs(18), paddingVertical: rv(16), gap: rv(14), backgroundColor: withAlpha(T1, 0.02) },
-  panelHint: { color: T3, fontFamily: FONT, fontSize: rf(14), lineHeight: rf(18) },
+  panelHint: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, lineHeight: rf(18) },
 
-  notifDenied: { color: WARN, fontFamily: FONT, fontSize: rf(14), lineHeight: rf(18) },
+  notifDenied: { color: WARN, fontFamily: FONT, fontSize: TYPE.label.fontSize, lineHeight: rf(18) },
 
   // ── 돌아보기(리캡) ───────────────────────────────────────────────────────────
   recapHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingBottom: rv(12), paddingHorizontal: rs(4) },
   // 주/월 토글은 SegmentedControl(accentSolid, block=false)로 이전(과거 recapToggle/
   // recapTab/recapTabOn/recapTabTxt/recapTabTxtOn 제거, 시각 동등).
   recapTopRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: rv(8) },
-  recapPeriod: { color: T2, fontFamily: FONT, fontSize: rf(15), fontWeight: '700' },
+  recapPeriod: { color: T2, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '700' },
   recapShareBtn: { flexDirection: 'row', alignItems: 'center', gap: rv(5), paddingHorizontal: rs(12), paddingVertical: rv(7), borderRadius: RADIUS.pill, backgroundColor: withAlpha(ACCENT, 0.12) },
-  recapShareTxt: { color: ACCENT, fontFamily: FONT, fontSize: rf(14), fontWeight: '700' },
+  recapShareTxt: { color: ACCENT, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '700' },
   recapEmpty: { alignItems: 'center', paddingVertical: rv(22) },
-  recapEmptyTxt: { color: T3, fontFamily: FONT, fontSize: rf(15), fontWeight: '600', lineHeight: rf(20), textAlign: 'center' },
+  recapEmptyTxt: { color: T3, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600', lineHeight: rf(20), textAlign: 'center' },
   recapMostWorn: { flexDirection: 'row', alignItems: 'center', gap: rv(7), marginTop: rv(16), paddingTop: rv(14), borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP },
-  recapMostWornTxt: { flex: 1, color: T2, fontFamily: FONT, fontSize: rf(14), fontWeight: '600' },
+  recapMostWornTxt: { flex: 1, color: T2, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600' },
   recapPrBox: { marginTop: rv(14), gap: rv(2) },
   recapPrRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: rv(7) },
-  recapPrLabel: { color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '600' },
-  recapPrValue: { color: T1, fontFamily: DISPLAY, fontSize: rf(18), fontWeight: '600', letterSpacing: -0.2 },
+  recapPrLabel: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600' },
+  recapPrValue: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.heading.fontSize, fontWeight: '600', letterSpacing: -0.2 },
   offscreen: { position: 'absolute', left: -10000, top: 0, opacity: 0 },
 
   toggle: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(8), height: rs(44), borderRadius: rs(14), borderCurve: 'continuous' },
   toggleOn: { backgroundColor: GOOD },
   toggleOff: { backgroundColor: CARD_HI },
-  toggleTxt: { fontFamily: FONT, fontSize: rf(16), fontWeight: '600' },
+  toggleTxt: { fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600' },
 
   acctRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: rv(14) },
-  acctK: { color: T3, fontFamily: FONT, fontSize: rf(15), fontWeight: '500' },
-  acctV: { flex: 1, textAlign: 'right', color: T2, fontFamily: FONT, fontSize: rf(15), fontWeight: '500' },
+  acctK: { color: T3, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '500' },
+  acctV: { flex: 1, textAlign: 'right', color: T2, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '500' },
 
   // 데이터 가져오기 패널 — dataInput/dataBtn/dataBtnTxt/dataMsg(사각 radius:14 ACCENT
   // 버튼 포함)은 미사용 dead 스타일이라 제거(버튼 radius 혼재 정리). 클라우드 메시지
@@ -1248,9 +1248,9 @@ const s = StyleSheet.create({
   dataMsgErr: { color: DANGER },
 
   // 계정 · 클라우드 동기
-  cloudSub: { color: T3, fontFamily: FONT, fontSize: rf(13), fontWeight: '600', marginTop: rv(2) },
+  cloudSub: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600', marginTop: rv(2) },
   cloudPad: { padding: rs(16), gap: rv(12) },
-  cloudIntro: { color: T3, fontFamily: FONT, fontSize: rf(14), lineHeight: rf(18) },
+  cloudIntro: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, lineHeight: rf(18) },
   // 브랜드 로그인 버튼(카카오/네이버/애플) 공용 박스 — 모서리는 Google(단일 Button=
   // RADIUS.btn)과 맞춰 통일. Google 은 단일 Button 프리미티브로 라우팅(아래 cloudBtnGoogle).
   cloudBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(8), height: rs(48), borderRadius: RADIUS.btn },
@@ -1259,7 +1259,7 @@ const s = StyleSheet.create({
   cloudBtnApple: { backgroundColor: CARD_HI },
   cloudBtnKakao: { backgroundColor: KAKAO_YELLOW },
   cloudBtnNaver: { backgroundColor: NAVER_GREEN },
-  brandMark: { fontFamily: DISPLAY, fontSize: rf(18), fontWeight: '700' },
-  cloudBtnTxt: { color: T1, fontFamily: FONT, fontSize: rf(16), fontWeight: '600' },
-  cloudMsg: { fontFamily: FONT, fontSize: rf(14), fontWeight: '600', lineHeight: rf(18), paddingHorizontal: rs(16), paddingBottom: rv(14) },
+  brandMark: { fontFamily: DISPLAY, fontSize: TYPE.heading.fontSize, fontWeight: '700' },
+  cloudBtnTxt: { color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600' },
+  cloudMsg: { fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600', lineHeight: rf(18), paddingHorizontal: rs(16), paddingBottom: rv(14) },
 });

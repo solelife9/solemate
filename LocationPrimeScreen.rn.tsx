@@ -11,7 +11,7 @@ import { rf, rs, ri, rv } from './lib/responsive';
 import {View, Text, Pressable, StyleSheet} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import {BG, CARD, ACCENT, GOOD, WARN, T1, T2, T3, FONT, RADIUS, SEP, withAlpha} from './theme';
+import {BG, CARD, ACCENT, GOOD, WARN, T1, T2, T3, FONT, RADIUS, SEP, withAlpha, TYPE} from './theme';
 
 function Row({icon, color, title, body}: {icon: string; color: string; title: string; body: string}) {
   return (
@@ -77,17 +77,17 @@ const s = StyleSheet.create({
   screen: {flex: 1, backgroundColor: BG, paddingHorizontal: rs(22)},
   body: {flex: 1, justifyContent: 'center'},
   hero: {alignSelf: 'center', width: rs(80), height: rs(80), borderRadius: rs(40), borderCurve: 'continuous', alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(ACCENT, 0.12), marginBottom: rv(18)},
-  title: {color: T1, fontFamily: FONT, fontSize: rf(25), fontWeight: '700', letterSpacing: -0.5, textAlign: 'center'},
-  lead: {color: T3, fontFamily: FONT, fontSize: rf(15), lineHeight: rf(20), textAlign: 'center', marginTop: rv(8), marginBottom: rv(22)},
+  title: {color: T1, fontFamily: FONT, fontSize: TYPE.title.fontSize, fontWeight: '700', letterSpacing: -0.5, textAlign: 'center'},
+  lead: {color: T3, fontFamily: FONT, fontSize: TYPE.body.fontSize, lineHeight: rf(20), textAlign: 'center', marginTop: rv(8), marginBottom: rv(22)},
   card: {backgroundColor: CARD, borderRadius: RADIUS.lg, borderCurve: 'continuous', borderWidth: StyleSheet.hairlineWidth, borderColor: SEP, paddingHorizontal: rs(16), paddingVertical: rv(4)},
   row: {flexDirection: 'row', alignItems: 'flex-start', gap: rv(13), paddingVertical: rv(15)},
   rowIcon: {width: rs(36), height: rs(36), borderRadius: rs(18), borderCurve: 'continuous', alignItems: 'center', justifyContent: 'center', marginTop: rv(1)},
-  rowTitle: {color: T1, fontFamily: FONT, fontSize: rf(16), fontWeight: '700', letterSpacing: -0.2},
-  rowBody: {color: T2, fontFamily: FONT, fontSize: rf(14), lineHeight: rf(18), marginTop: rv(3), fontWeight: '400'},
+  rowTitle: {color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '700', letterSpacing: -0.2},
+  rowBody: {color: T2, fontFamily: FONT, fontSize: TYPE.label.fontSize, lineHeight: rf(18), marginTop: rv(3), fontWeight: '400'},
   sep: {height: StyleSheet.hairlineWidth, backgroundColor: SEP, marginLeft: rs(49)},
   footer: {gap: rv(6)},
   primary: {height: rs(54), borderRadius: RADIUS.lg, borderCurve: 'continuous', backgroundColor: withAlpha(T1, 0.1), alignItems: 'center', justifyContent: 'center'},
-  primaryTxt: {color: T1, fontFamily: FONT, fontSize: rf(17), fontWeight: '700'},
+  primaryTxt: {color: T1, fontFamily: FONT, fontSize: TYPE.heading.fontSize, fontWeight: '700'},
   ghost: {height: rs(46), alignItems: 'center', justifyContent: 'center'},
-  ghostTxt: {color: T3, fontFamily: FONT, fontSize: rf(15), fontWeight: '600'},
+  ghostTxt: {color: T3, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600'},
 });

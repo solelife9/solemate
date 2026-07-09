@@ -204,6 +204,10 @@ export type TypePreset = {
 // 2026-07-08 전역 +1 상향(나이키 대비 작다는 피드백) — 이 스케일이 '살짝 키운' 새 기준.
 export const TYPE = {
   display: { fontSize: rf(33), fontWeight: '500', letterSpacing: -0.8 },
+  // title1(27) — 화면 인라인 타이틀·히어로 모델명 급(Apple Title1). 2026-07-09 타이포
+  // 수렴 스윕에서 추가: 실사용이 25~29 에 밀집하는데 title(23)↔display(33) 사이가
+  // 비어 있어 스케일 밖 하드코딩을 유발했다. 이 한 단계로 그 구간 전부를 수렴한다.
+  title1:  { fontSize: rf(27), fontWeight: '700', letterSpacing: -0.6 },
   title:   { fontSize: rf(23), fontWeight: '600', letterSpacing: -0.4 },
   heading: { fontSize: rf(18), fontWeight: '600', letterSpacing: -0.2 },
   body:    { fontSize: rf(16), fontWeight: '500', letterSpacing: -0.2 },

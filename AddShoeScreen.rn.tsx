@@ -5,12 +5,12 @@
 // 나머지(사진·교체 권장 거리·현재 누적 거리)는 그대로 유지한다.
 // ============================================================================
 import React, { useState } from 'react';
-import { rf, rs, ri, rv } from './lib/responsive';
+import { rs, ri, rv } from './lib/responsive';
 import { View, Text, TextInput, ScrollView, Pressable, Image, StyleSheet, KeyboardAvoidingView, Platform, Alert, Linking } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {
-  BG, CARD_DIM, CARD_HI, ACCENT, DANGER, T1, T2, T3, T4, FONT, DISPLAY, withAlpha, Shoe,
+  BG, CARD_DIM, CARD_HI, ACCENT, DANGER, T1, T2, T3, T4, FONT, DISPLAY, withAlpha, Shoe, TYPE,
 } from './theme';
 import { Pill, Button } from './primitives';
 // 러닝화 모델 카탈로그·권장수명은 data/shoeModels(단일 소스)에서 가져온다.
@@ -195,30 +195,30 @@ const s = StyleSheet.create({
 
   nav: { paddingTop: rv(12), paddingHorizontal: rs(18), paddingBottom: rv(6), flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   iconBtn: { width: rs(38), height: rs(38), borderRadius: 999, backgroundColor: CARD_HI, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.12), alignItems: 'center', justifyContent: 'center' },
-  navTitle: { color: T1, fontFamily: FONT, fontSize: rf(17), fontWeight: '500', letterSpacing: -0.2 },
+  navTitle: { color: T1, fontFamily: FONT, fontSize: TYPE.heading.fontSize, fontWeight: '500', letterSpacing: -0.2 },
 
   photo: { alignSelf: 'center', width: rs(120), height: rs(120), borderRadius: rs(26), borderCurve: 'continuous', borderWidth: 1, borderStyle: 'dashed', borderColor: withAlpha(T1, 0.14), backgroundColor: withAlpha(T1, 0.02), alignItems: 'center', justifyContent: 'center', gap: rv(7), marginBottom: rv(10), overflow: 'hidden' },
   photoImg: { width: '100%', height: '100%' },
-  photoText: { color: T3, fontFamily: FONT, fontSize: rf(13) },
-  photoErr: { color: T3, fontFamily: FONT, fontSize: rf(13), textAlign: 'center', marginBottom: rv(16), paddingHorizontal: rs(12) },
-  photoOpt: { color: T4, fontFamily: FONT, fontSize: rf(12), textAlign: 'center', marginBottom: rv(18) },
+  photoText: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize },
+  photoErr: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, textAlign: 'center', marginBottom: rv(16), paddingHorizontal: rs(12) },
+  photoOpt: { color: T4, fontFamily: FONT, fontSize: TYPE.caption.fontSize, textAlign: 'center', marginBottom: rv(18) },
 
-  label: { color: T2, fontFamily: FONT, fontSize: rf(14), fontWeight: '500', letterSpacing: 0.2, paddingHorizontal: rs(4), paddingBottom: rv(10) },
+  label: { color: T2, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500', letterSpacing: 0.2, paddingHorizontal: rs(4), paddingBottom: rv(10) },
 
   // 러닝화 선택 트리거(탭하면 2열 분할 피커). 입력칸처럼 보이되 누르면 모달이 열린다.
   selector: { backgroundColor: CARD_DIM, borderRadius: rs(16), borderCurve: 'continuous', borderWidth: 1, borderColor: withAlpha(T1, 0.07), flexDirection: 'row', alignItems: 'center', gap: rv(10), paddingHorizontal: rs(18), paddingVertical: rv(16) },
-  selectorText: { flex: 1, color: T1, fontFamily: FONT, fontSize: rf(17), fontWeight: '500', letterSpacing: -0.2 },
+  selectorText: { flex: 1, color: T1, fontFamily: FONT, fontSize: TYPE.heading.fontSize, fontWeight: '500', letterSpacing: -0.2 },
 
   maxHead: { marginTop: rv(22), flexDirection: 'row', alignItems: 'center', gap: rv(8), paddingHorizontal: rs(4), paddingBottom: rv(10) },
 
-  hint: { color: T3, fontFamily: FONT, fontSize: rf(13), paddingHorizontal: rs(4), paddingTop: rv(9) },
+  hint: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, paddingHorizontal: rs(4), paddingTop: rv(9) },
 
   usedRow: { backgroundColor: CARD_DIM, borderRadius: rs(16), borderCurve: 'continuous', borderWidth: 1, borderColor: withAlpha(T1, 0.07), flexDirection: 'row', alignItems: 'center', paddingHorizontal: rs(18) },
   // 검증 실패 시 입력칸 테두리를 빨강으로 강조하고 아래 인라인 헬퍼텍스트를 띄운다.
   usedRowErr: { borderColor: DANGER },
-  errText: { color: DANGER, fontFamily: FONT, fontSize: rf(13), fontWeight: '500', paddingHorizontal: rs(4), paddingTop: rv(8) },
-  usedInput: { flex: 1, color: T1, fontFamily: DISPLAY, fontSize: rf(25), paddingVertical: rv(12) },
-  usedUnit: { color: T3, fontFamily: FONT, fontSize: rf(16) },
+  errText: { color: DANGER, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500', paddingHorizontal: rs(4), paddingTop: rv(8) },
+  usedInput: { flex: 1, color: T1, fontFamily: DISPLAY, fontSize: TYPE.title.fontSize, paddingVertical: rv(12) },
+  usedUnit: { color: T3, fontFamily: FONT, fontSize: TYPE.body.fontSize },
 
   ctaWrap: { paddingHorizontal: rs(18), paddingTop: rv(6), paddingBottom: rv(34), backgroundColor: BG },
 });

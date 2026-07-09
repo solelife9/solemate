@@ -36,7 +36,7 @@ import {
   DISPLAY,
   SPACE,
   RADIUS,
-  withAlpha,
+  withAlpha, TYPE,
 } from './theme';
 import {Button} from './primitives';
 import {Unit} from './lib/units';
@@ -503,14 +503,14 @@ const s = StyleSheet.create({
   eyebrow: {
     color: ACCENT,
     fontFamily: FONT,
-    fontSize: rf(14),
+    fontSize: TYPE.label.fontSize,
     fontWeight: '700',
     letterSpacing: 1,
   },
   shoeName: {
     color: T1,
     fontFamily: DISPLAY,
-    fontSize: rf(34),
+    fontSize: TYPE.display.fontSize,
     fontWeight: '700',
     letterSpacing: -0.6,
     lineHeight: rf(40),
@@ -518,23 +518,23 @@ const s = StyleSheet.create({
   stepTitle: {
     color: T1,
     fontFamily: DISPLAY,
-    fontSize: rf(27),
+    fontSize: TYPE.title1.fontSize,
     fontWeight: '700',
     letterSpacing: -0.4,
   },
   lede: {
     color: T2,
     fontFamily: FONT,
-    fontSize: rf(18),
+    fontSize: TYPE.heading.fontSize,
     fontWeight: '500',
     lineHeight: rf(25),
   },
   ledeStrong: {color: T1, fontWeight: '700'},
-  dateRange: {color: T3, fontFamily: FONT, fontSize: rf(15), fontWeight: '500'},
+  dateRange: {color: T3, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '500'},
   note: {
     color: T3,
     fontFamily: FONT,
-    fontSize: rf(14),
+    fontSize: TYPE.label.fontSize,
     lineHeight: rf(20),
     marginTop: SPACE.xs,
   },
@@ -557,8 +557,8 @@ const s = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: SEP,
   },
-  basicLabel: {color: T3, fontFamily: FONT, fontSize: rf(15), fontWeight: '500'},
-  basicValue: {color: T1, fontFamily: DISPLAY, fontSize: rf(19), fontWeight: '700'},
+  basicLabel: {color: T3, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '500'},
+  basicValue: {color: T1, fontFamily: DISPLAY, fontSize: TYPE.heading.fontSize, fontWeight: '700'},
 
   grid: {
     flexDirection: 'row',
@@ -570,11 +570,11 @@ const s = StyleSheet.create({
   gridValue: {
     color: T1,
     fontFamily: DISPLAY,
-    fontSize: rf(23),
+    fontSize: TYPE.title.fontSize,
     fontWeight: '700',
     letterSpacing: 0.2,
   },
-  gridLabel: {color: T3, fontFamily: FONT, fontSize: rf(13), marginTop: rv(4)},
+  gridLabel: {color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, marginTop: rv(4)},
 
   gradeBadge: {
     alignSelf: 'flex-start',
@@ -583,7 +583,7 @@ const s = StyleSheet.create({
     paddingHorizontal: SPACE.md + 2,
     paddingVertical: SPACE.sm,
   },
-  gradeText: {fontFamily: FONT, fontSize: rf(15), fontWeight: '700'},
+  gradeText: {fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '700'},
 
   momentCard: {
     padding: SPACE.lg,
@@ -593,14 +593,14 @@ const s = StyleSheet.create({
   momentLabel: {
     color: ACCENT,
     fontFamily: FONT,
-    fontSize: rf(13),
+    fontSize: TYPE.caption.fontSize,
     fontWeight: '700',
     letterSpacing: 0.5,
   },
   momentValue: {
     color: T1,
     fontFamily: DISPLAY,
-    fontSize: rf(21),
+    fontSize: TYPE.title.fontSize,
     fontWeight: '700',
     letterSpacing: -0.2,
   },
@@ -616,7 +616,7 @@ const s = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: SEP,
   },
-  hlText: {color: T1, fontFamily: FONT, fontSize: rf(16), fontWeight: '600'},
+  hlText: {color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600'},
 
   formatRow: {flexDirection: 'row', gap: SPACE.sm},
   formatBtn: {
@@ -633,7 +633,7 @@ const s = StyleSheet.create({
     borderColor: withAlpha(ACCENT, 0.6),
     backgroundColor: withAlpha(ACCENT, 0.14),
   },
-  formatTxt: {color: T3, fontFamily: DISPLAY, fontSize: rf(17), fontWeight: '700'},
+  formatTxt: {color: T3, fontFamily: DISPLAY, fontSize: TYPE.heading.fontSize, fontWeight: '700'},
   formatTxtOn: {color: ACCENT},
 
   preview: {
@@ -668,7 +668,7 @@ const s = StyleSheet.create({
   // primary(다음/확정/완료)는 단일 Button 프리미티브로 라우팅 — 그라데이션/글로우/RADIUS.btn.
   // 여기선 박스 크기만(ghost 형제와 동일 flex/height 로 페어 정렬).
   btnPrimary: {flex: 1, height: rs(54)},
-  btnTxt: {fontFamily: FONT, fontSize: rf(17), fontWeight: '700'},
+  btnTxt: {fontFamily: FONT, fontSize: TYPE.heading.fontSize, fontWeight: '700'},
 });
 
 export default RetirementFlow;

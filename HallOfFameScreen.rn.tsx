@@ -342,7 +342,7 @@ const s = StyleSheet.create({
   monthLabel: {
     fontFamily: FONT,
     color: T3,
-    fontSize: rf(13),
+    fontSize: TYPE.caption.fontSize,
     fontWeight: '600',
     textAlign: 'center',
     marginTop: rv(-8),
@@ -359,7 +359,7 @@ const s = StyleSheet.create({
     paddingHorizontal: rs(13),
     paddingVertical: rv(8),
   },
-  catChipTxt: {fontFamily: FONT, color: T3, fontSize: rf(14), fontWeight: '700'},
+  catChipTxt: {fontFamily: FONT, color: T3, fontSize: TYPE.label.fontSize, fontWeight: '700'},
   // 내 순위 카드
   myCard: {
     flexDirection: 'row',
@@ -370,22 +370,22 @@ const s = StyleSheet.create({
     borderRadius: RADIUS.xl,
     padding: SPACE.xl,
   },
-  myLabel: {fontFamily: FONT, color: T3, fontSize: rf(13), fontWeight: '700'},
+  myLabel: {fontFamily: FONT, color: T3, fontSize: TYPE.caption.fontSize, fontWeight: '700'},
   myRank: {
     fontFamily: DISPLAY,
     color: T1,
-    fontSize: rf(30),
+    fontSize: TYPE.display.fontSize,
     fontWeight: '700',
     letterSpacing: -0.6,
     fontVariant: ['tabular-nums'],
     marginTop: rv(2),
   },
-  myTotal: {fontFamily: FONT, color: T3, fontSize: rf(15), fontWeight: '700'},
-  myPct: {fontFamily: FONT, color: ACCENT, fontSize: rf(14), fontWeight: '700', marginTop: rv(2)},
+  myTotal: {fontFamily: FONT, color: T3, fontSize: TYPE.body.fontSize, fontWeight: '700'},
+  myPct: {fontFamily: FONT, color: ACCENT, fontSize: TYPE.label.fontSize, fontWeight: '700', marginTop: rv(2)},
   myScore: {
     fontFamily: DISPLAY,
     color: T1,
-    fontSize: rf(19),
+    fontSize: TYPE.heading.fontSize,
     fontWeight: '700',
     letterSpacing: -0.3,
     fontVariant: ['tabular-nums'],
@@ -402,7 +402,7 @@ const s = StyleSheet.create({
     paddingHorizontal: SPACE.lg,
     paddingVertical: rv(13),
   },
-  hintTxt: {flex: 1, fontFamily: FONT, color: T2, fontSize: rf(14), fontWeight: '600'},
+  hintTxt: {flex: 1, fontFamily: FONT, color: T2, fontSize: TYPE.label.fontSize, fontWeight: '600'},
   // 리더보드 행
   row: {
     flexDirection: 'row',
@@ -419,12 +419,12 @@ const s = StyleSheet.create({
   rankNum: {
     fontFamily: DISPLAY,
     color: T2,
-    fontSize: rf(16),
+    fontSize: TYPE.body.fontSize,
     fontWeight: '700',
     fontVariant: ['tabular-nums'],
   },
   tierDot: {width: rs(8), height: rs(8), borderRadius: rs(4)},
-  rowName: {fontFamily: FONT, color: T1, fontSize: rf(15), fontWeight: '700'},
+  rowName: {fontFamily: FONT, color: T1, fontSize: TYPE.body.fontSize, fontWeight: '700'},
   titlePill: {
     flexDirection: 'row',
     alignSelf: 'flex-start',
@@ -435,11 +435,11 @@ const s = StyleSheet.create({
     marginTop: rv(4),
     maxWidth: '100%',
   },
-  titlePillTxt: {fontFamily: FONT, fontSize: rf(12), fontWeight: '700', flexShrink: 1},
+  titlePillTxt: {fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '700', flexShrink: 1},
   rowScore: {
     fontFamily: DISPLAY,
     color: T1,
-    fontSize: rf(16),
+    fontSize: TYPE.body.fontSize,
     fontWeight: '700',
     letterSpacing: -0.2,
     fontVariant: ['tabular-nums'],
@@ -447,6 +447,6 @@ const s = StyleSheet.create({
   // 상태
   center: {paddingVertical: rv(48), alignItems: 'center'},
   empty: {alignItems: 'center', gap: rv(8), paddingVertical: rv(40), paddingHorizontal: GUTTER},
-  emptyTitle: {fontFamily: DISPLAY, color: T1, fontSize: rf(17), fontWeight: '700', marginTop: rv(4)},
-  emptyTxt: {fontFamily: FONT, color: T3, fontSize: rf(14), fontWeight: '600', lineHeight: rf(18), textAlign: 'center'},
+  emptyTitle: {fontFamily: DISPLAY, color: T1, fontSize: TYPE.heading.fontSize, fontWeight: '700', marginTop: rv(4)},
+  emptyTxt: {fontFamily: FONT, color: T3, fontSize: TYPE.label.fontSize, fontWeight: '600', lineHeight: rf(18), textAlign: 'center'},
 });

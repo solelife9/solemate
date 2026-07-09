@@ -61,7 +61,7 @@ import {
   SEP,
   FONT,
   DISPLAY,
-  withAlpha,
+  withAlpha, TYPE,
 } from './theme';
 import {Button, KeegoWordmark, ShoeGlyph, WEAR_TONE_COLOR} from './primitives';
 // 러닝화 선택 모달(2열 분할 피커)은 메인 등록(AddShoeScreen)과 공유하는 단일 소스.
@@ -390,7 +390,7 @@ function Welcome({goNext, goLogin, insetTop, insetBottom}: {goNext: () => void; 
             style={{alignItems: 'center', marginTop: rv(14)}}
             accessibilityRole="button"
             accessibilityLabel="이미 계정이 있나요? 로그인">
-            <Text style={{fontFamily: FONT, fontSize: rf(15), color: T3, fontWeight: '500'}}>
+            <Text style={{fontFamily: FONT, fontSize: TYPE.body.fontSize, color: T3, fontWeight: '500'}}>
               이미 계정이 있나요? <Text style={{color: T1}}>로그인</Text>
             </Text>
           </Pressable>
@@ -461,11 +461,11 @@ function ShoeIntelligence({goNext, onSkip, insetTop, insetBottom}: ScreenProps) 
           <LinearGrad stops={[{color: ONBOARD_CARD_GRAD_TOP, offset: 0}, {color: ONBOARD_CARD_GRAD_BOT, offset: 1}]} radius={22} />
           <View style={{paddingHorizontal: rs(14), paddingTop: rv(14), paddingBottom: rv(14)}}>
             <View style={{flexDirection: 'row', justifyContent: 'space-between', marginBottom: rv(8)}}>
-              <Text style={{fontFamily: FONT, fontSize: rf(14), fontWeight: '600', color: T1, letterSpacing: -0.2}}>쿠셔닝 성능</Text>
-              <Text style={{fontFamily: FONT, fontSize: rf(13), color: T3, letterSpacing: 0.6}}>0 → {DEMO_SHOE.max} KM</Text>
+              <Text style={{fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600', color: T1, letterSpacing: -0.2}}>쿠셔닝 성능</Text>
+              <Text style={{fontFamily: FONT, fontSize: TYPE.caption.fontSize, color: T3, letterSpacing: 0.6}}>0 → {DEMO_SHOE.max} KM</Text>
             </View>
             <DegradeCurve />
-            <Text style={{fontFamily: FONT, fontSize: rf(11), fontWeight: '600', color: withAlpha(DANGER, 0.85), textAlign: 'right', marginTop: rv(6), letterSpacing: 0.4}}>
+            <Text style={{fontFamily: FONT, fontSize: TYPE.micro.fontSize, fontWeight: '600', color: withAlpha(DANGER, 0.85), textAlign: 'right', marginTop: rv(6), letterSpacing: 0.4}}>
               대부분의 러너가 이 구간을 놓쳐요
             </Text>
           </View>
@@ -478,16 +478,16 @@ function ShoeIntelligence({goNext, onSkip, insetTop, insetBottom}: ScreenProps) 
             <ShoeGlyph size={ri(26)} color={withAlpha(T1, 0.75)} />
           </View>
           <View style={{flex: 1, minWidth: 0}}>
-            <Text numberOfLines={1} style={{fontFamily: FONT, fontSize: rf(16), fontWeight: '600', color: T1, letterSpacing: -0.2}}>
+            <Text numberOfLines={1} style={{fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600', color: T1, letterSpacing: -0.2}}>
               {DEMO_SHOE.brand} {DEMO_SHOE.model}
             </Text>
-            <Text style={{fontFamily: FONT, fontSize: rf(13), color: T3, marginTop: rv(3), fontVariant: ['tabular-nums']}}>
+            <Text style={{fontFamily: FONT, fontSize: TYPE.caption.fontSize, color: T3, marginTop: rv(3), fontVariant: ['tabular-nums']}}>
               {DEMO_SHOE.km} / {DEMO_SHOE.max} km · 수명의 {pctUsed}%
             </Text>
           </View>
           <View style={[s.pill, {backgroundColor: withAlpha(tierColor, 0.14)}]}>
             <View style={{width: rs(6), height: rs(6), borderRadius: rs(3), backgroundColor: tierColor}} />
-            <Text style={{color: tierColor, fontFamily: FONT, fontSize: rf(13), fontWeight: '600'}}>{tier.label}</Text>
+            <Text style={{color: tierColor, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600'}}>{tier.label}</Text>
           </View>
         </View>
         </Rise>
@@ -495,7 +495,7 @@ function ShoeIntelligence({goNext, onSkip, insetTop, insetBottom}: ScreenProps) 
         {/* 알림 한 줄 — 박스 없이 조용히 */}
         <Rise delay={340} style={s.alertRow}>
           <BellIcon size={ri(16)} color={withAlpha(T1, 0.75)} />
-          <Text style={{flex: 1, fontFamily: FONT, fontSize: rf(14), color: T3, letterSpacing: -0.1}}>
+          <Text style={{flex: 1, fontFamily: FONT, fontSize: TYPE.label.fontSize, color: T3, letterSpacing: -0.1}}>
             교체 시점 <Text style={{color: T1, fontWeight: '600'}}>50 km 전</Text>, 미리 알려드려요
           </Text>
         </Rise>
@@ -537,8 +537,8 @@ function Performance({goNext, onSkip, insetTop, insetBottom}: ScreenProps) {
                 <f.Icon size={ri(18)} color={f.color} />
               </View>
               <View style={{flex: 1, minWidth: 0}}>
-                <Text style={{fontFamily: FONT, fontSize: rf(16), fontWeight: '600', color: T1, letterSpacing: -0.2}}>{f.title}</Text>
-                <Text style={{fontFamily: FONT, fontSize: rf(14), color: T3, marginTop: rv(3), lineHeight: rf(18)}}>{f.desc}</Text>
+                <Text style={{fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600', color: T1, letterSpacing: -0.2}}>{f.title}</Text>
+                <Text style={{fontFamily: FONT, fontSize: TYPE.label.fontSize, color: T3, marginTop: rv(3), lineHeight: rf(18)}}>{f.desc}</Text>
               </View>
             </View>
           ))}
@@ -560,9 +560,9 @@ function FieldLabel({n, label}: {n: string; label: string}) {
   return (
     <View style={{flexDirection: 'row', alignItems: 'center', gap: rv(9)}}>
       <View style={s.fieldBadge}>
-        <Text style={{fontFamily: FONT, fontSize: rf(13), fontWeight: '700', color: T3}}>{n}</Text>
+        <Text style={{fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '700', color: T3}}>{n}</Text>
       </View>
-      <Text style={{fontFamily: FONT, fontSize: rf(15), fontWeight: '600', color: T1}}>{label}</Text>
+      <Text style={{fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600', color: T1}}>{label}</Text>
     </View>
   );
 }
@@ -694,22 +694,22 @@ export default function OnboardingScreen({onDone}: {onDone: (registered: Registe
 const s = StyleSheet.create({
   screen: {flex: 1, backgroundColor: BG},
   flowHeader: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: rs(24), paddingBottom: rv(6)},
-  skip: {fontFamily: FONT, fontSize: rf(14), color: T4, fontWeight: '500'},
+  skip: {fontFamily: FONT, fontSize: TYPE.label.fontSize, color: T4, fontWeight: '500'},
   flex1: {flex: 1},
   bodyContent: {flexGrow: 1, paddingHorizontal: rs(24), paddingTop: rv(8)},
-  eyebrow: {fontFamily: FONT, fontSize: rf(13), fontWeight: '700', letterSpacing: 1.4, color: ACCENT, textTransform: 'uppercase', marginBottom: rv(6)},
-  title: {fontFamily: FONT, fontSize: rf(24), lineHeight: rf(29), fontWeight: '700', letterSpacing: -0.5, color: T1},
-  body: {fontFamily: FONT, fontSize: rf(15), lineHeight: rf(19), color: T3, marginTop: rv(8), maxWidth: rs(360)},
+  eyebrow: {fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '700', letterSpacing: 1.4, color: ACCENT, textTransform: 'uppercase', marginBottom: rv(6)},
+  title: {fontFamily: FONT, fontSize: TYPE.title.fontSize, lineHeight: rf(29), fontWeight: '700', letterSpacing: -0.5, color: T1},
+  body: {fontFamily: FONT, fontSize: TYPE.body.fontSize, lineHeight: rf(19), color: T3, marginTop: rv(8), maxWidth: rs(360)},
   bodyStrong: {color: T1, fontWeight: '600'},
 
   // Welcome — 헤드라인 88→64→48 재축소(사용자 확정 2026-07-07).
   heroHeadline: {fontFamily: DISPLAY, fontSize: rf(48), lineHeight: rf(52), letterSpacing: -1.5, fontWeight: '600', color: T1},
-  heroSub: {fontFamily: FONT, fontSize: rf(18), fontWeight: '600', color: T1, marginTop: rv(18)},
-  heroBody: {fontFamily: FONT, fontSize: rf(16), lineHeight: rf(22), color: 'rgba(246,246,248,0.66)', marginTop: rv(7)},
-  termsCaption: {fontFamily: FONT, fontSize: rf(12), color: T4, textAlign: 'center', lineHeight: rf(17), marginTop: rv(14)},
+  heroSub: {fontFamily: FONT, fontSize: TYPE.heading.fontSize, fontWeight: '600', color: T1, marginTop: rv(18)},
+  heroBody: {fontFamily: FONT, fontSize: TYPE.body.fontSize, lineHeight: rf(22), color: 'rgba(246,246,248,0.66)', marginTop: rv(7)},
+  termsCaption: {fontFamily: FONT, fontSize: TYPE.caption.fontSize, color: T4, textAlign: 'center', lineHeight: rf(17), marginTop: rv(14)},
 
   footer: {paddingHorizontal: rs(24), paddingTop: rv(8)},
-  ctaCaption: {fontFamily: FONT, fontSize: rf(13), color: T3, textAlign: 'center', marginTop: rv(10)},
+  ctaCaption: {fontFamily: FONT, fontSize: TYPE.caption.fontSize, color: T3, textAlign: 'center', marginTop: rv(10)},
 
   // 신발 인텔리전스
   heroCard: {marginTop: rv(16), borderRadius: rs(22), borderCurve: 'continuous', backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP},
@@ -749,9 +749,9 @@ const s = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: withAlpha(T1, 0.12),
   },
-  selectorText: {flex: 1, fontFamily: FONT, fontSize: rf(16), fontWeight: '600', color: T1, letterSpacing: -0.2},
-  fieldHint: {fontFamily: FONT, fontSize: rf(13), color: T3, marginTop: rv(8), lineHeight: rf(17)},
-  kmVal: {fontFamily: DISPLAY, fontSize: rf(23), fontWeight: '600', color: T1, letterSpacing: -0.5, fontVariant: ['tabular-nums']},
-  kmUnit: {fontFamily: FONT, fontSize: rf(13), fontWeight: '600', color: T3, letterSpacing: 0.5},
-  tick: {fontFamily: FONT, fontSize: rf(12), color: T4},
+  selectorText: {flex: 1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600', color: T1, letterSpacing: -0.2},
+  fieldHint: {fontFamily: FONT, fontSize: TYPE.caption.fontSize, color: T3, marginTop: rv(8), lineHeight: rf(17)},
+  kmVal: {fontFamily: DISPLAY, fontSize: TYPE.title.fontSize, fontWeight: '600', color: T1, letterSpacing: -0.5, fontVariant: ['tabular-nums']},
+  kmUnit: {fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600', color: T3, letterSpacing: 0.5},
+  tick: {fontFamily: FONT, fontSize: TYPE.caption.fontSize, color: T4},
 });

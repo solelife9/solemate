@@ -45,8 +45,10 @@
 
 - **Pretendard 단일 패밀리**(`FONT`=`DISPLAY`=PretendardVariable). 제2 디스플레이 폰트 금지.
 - **스케일은 `theme.TYPE` + `theme.HERO`가 유일한 권위** (과거 문서의 56/28/22/15/12.5
-  스케일은 폐기): `display 33 · title 23 · heading 18 · body 16 · label 14 · caption 13 ·
-  micro 11` + 대형 숫자 `HERO 40/56/76`. 정수만(반px 금지), 반응형은 `rf()` 경유.
+  스케일은 폐기): `display 33 · title1 27 · title 23 · heading 18 · body 16 · label 14 ·
+  caption 13 · micro 11` + 대형 숫자 `HERO 40/56/76`. 정수만(반px 금지), `rf()` 경유.
+  2026-07-09 수렴 스윕 완료 — 39종 하드코딩 504건을 이 스케일로 수렴(`TYPE.*.fontSize`
+  참조). 예외로 남긴 특수값: 차트 눈금 6~9, 러닝 초대형 숫자(37·42~52·68·96·104·150).
 - 숫자는 항상 `fontVariant: ['tabular-nums']`. 단위(km·spm)는 숫자보다 작게, baseline 정렬.
 - weight는 TYPE 프리셋 번들 사용. 화면에서 `fontSize: rf(임의숫자)` 신규 작성 금지 —
   스케일에 없는 크기가 필요하면 스케일을 고칠지부터 논의.

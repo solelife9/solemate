@@ -17,7 +17,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import {Button, GlassEdge, WORDMARK_FONT} from './primitives';
 import {
   BG, CARD_HI, ACCENT, DANGER, T1, T2, T3, FONT, DISPLAY, RADIUS, withAlpha,
-  KAKAO_YELLOW, KAKAO_LABEL, NAVER_GREEN, NAVER_LABEL,
+  KAKAO_YELLOW, KAKAO_LABEL, NAVER_GREEN, NAVER_LABEL, TYPE,
 } from './theme';
 import type {CloudPort, CloudProvider, CloudUser} from './lib/cloudPort';
 import {authErrorMessage} from './lib/authErrorMessage';
@@ -152,17 +152,17 @@ const st = StyleSheet.create({
   },
   logoK: {fontFamily: DISPLAY, fontSize: rf(48), fontWeight: '700', color: ACCENT, marginTop: rv(-2)},
   // 워드마크 = Helvetica Neue Medium 소문자 흰색(2026-07-04 B안 확정).
-  wordmark: {fontFamily: WORDMARK_FONT, fontWeight: '500', fontSize: rf(34), color: T1, letterSpacing: -0.3},
-  tagline: {fontFamily: FONT, fontSize: rf(16), color: T3},
+  wordmark: {fontFamily: WORDMARK_FONT, fontWeight: '500', fontSize: TYPE.display.fontSize, color: T1, letterSpacing: -0.3},
+  tagline: {fontFamily: FONT, fontSize: TYPE.body.fontSize, color: T3},
   actions: {gap: rv(12)},
-  lead: {fontFamily: FONT, fontSize: rf(15), fontWeight: '600', color: T2, textAlign: 'center', marginBottom: rv(4)},
+  lead: {fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600', color: T2, textAlign: 'center', marginBottom: rv(4)},
   btn: {flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(8), height: rs(50), borderRadius: RADIUS.btn, borderCurve: 'continuous'},
   btnGoogle: {height: rs(50)},
   btnApple: {backgroundColor: CARD_HI},
   btnKakao: {backgroundColor: KAKAO_YELLOW},
   btnNaver: {backgroundColor: NAVER_GREEN},
-  brandMark: {fontFamily: DISPLAY, fontSize: rf(18), fontWeight: '700'},
-  btnTxt: {color: T1, fontFamily: FONT, fontSize: rf(16), fontWeight: '600'},
-  error: {fontFamily: FONT, fontSize: rf(14), color: DANGER, textAlign: 'center', marginTop: rv(4)},
-  footnote: {fontFamily: FONT, fontSize: rf(13), lineHeight: rf(17), color: T3, textAlign: 'center', marginTop: rv(8)},
+  brandMark: {fontFamily: DISPLAY, fontSize: TYPE.heading.fontSize, fontWeight: '700'},
+  btnTxt: {color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600'},
+  error: {fontFamily: FONT, fontSize: TYPE.label.fontSize, color: DANGER, textAlign: 'center', marginTop: rv(4)},
+  footnote: {fontFamily: FONT, fontSize: TYPE.caption.fontSize, lineHeight: rf(17), color: T3, textAlign: 'center', marginTop: rv(8)},
 });

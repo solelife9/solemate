@@ -25,7 +25,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import {
   BG, CARD, ACCENT, GOOD, WARN, DANGER, T1, T2, T3, SEP,
-  FONT, withAlpha, Shoe,
+  FONT, withAlpha, Shoe, TYPE,
 } from './theme';
 import {Pill, TabBar, Button, ShoeGlyph} from './primitives';
 import {GhostShoeCard} from './screens/KeegoHome';
@@ -190,49 +190,49 @@ const s = StyleSheet.create({
 
   // ── 빈 상태(첫 러닝화 — design-reference/first-shoe) ──
   greetWrap: {paddingHorizontal: rs(20), paddingTop: rv(18), paddingBottom: rv(20)},
-  date: {color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '500'},
-  greeting: {marginTop: rv(6), color: T1, fontFamily: FONT, fontSize: rf(24), fontWeight: '700', letterSpacing: -0.4, lineHeight: rf(31)},
+  date: {color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500'},
+  greeting: {marginTop: rv(6), color: T1, fontFamily: FONT, fontSize: TYPE.title.fontSize, fontWeight: '700', letterSpacing: -0.4, lineHeight: rf(31)},
   // 스테이지 — 고스트 카드 + 철학 한 줄. 절대 탭 독에 가리지 않게 하단 여백 확보.
   stage: {flex: 1, justifyContent: 'center', gap: rv(26), paddingHorizontal: rs(20), paddingBottom: rv(96)},
-  philosophy: {textAlign: 'center', color: T3, fontFamily: FONT, fontSize: rf(16), lineHeight: rf(24)},
+  philosophy: {textAlign: 'center', color: T3, fontFamily: FONT, fontSize: TYPE.body.fontSize, lineHeight: rf(24)},
 
   // header
   header: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: rs(22), paddingTop: rv(8), paddingBottom: rv(4)},
-  h1: {color: T1, fontFamily: FONT, fontSize: rf(28), fontWeight: '700', letterSpacing: -0.6},
+  h1: {color: T1, fontFamily: FONT, fontSize: TYPE.title1.fontSize, fontWeight: '700', letterSpacing: -0.6},
   iconBtn: {width: rs(38), height: rs(38), borderRadius: 999, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.08), alignItems: 'center', justifyContent: 'center'},
 
   // empty
   emptyBody: {flex: 1, paddingHorizontal: rs(30)},
   hero: {flex: 1, alignItems: 'center', justifyContent: 'center'},
-  emptyTitle: {marginTop: rv(30), color: T1, fontFamily: FONT, fontSize: rf(30), fontWeight: '700', letterSpacing: -0.6, lineHeight: rf(34), textAlign: 'center'},
-  emptyDesc: {marginTop: rv(13), color: T3, fontFamily: FONT, fontSize: rf(15), lineHeight: rf(21), textAlign: 'center', maxWidth: rs(270)},
+  emptyTitle: {marginTop: rv(30), color: T1, fontFamily: FONT, fontSize: TYPE.display.fontSize, fontWeight: '700', letterSpacing: -0.6, lineHeight: rf(34), textAlign: 'center'},
+  emptyDesc: {marginTop: rv(13), color: T3, fontFamily: FONT, fontSize: TYPE.body.fontSize, lineHeight: rf(21), textAlign: 'center', maxWidth: rs(270)},
 
   benefits: {marginBottom: rv(8)},
   benefit: {flexDirection: 'row', alignItems: 'center', gap: rv(14), paddingVertical: rv(14)},
   benefitDivider: {borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.045)},
   benefitIcon: {width: rs(38), height: rs(38), borderRadius: rs(12), alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(ACCENT, 0.10), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.22)},
-  benefitTitle: {color: T1, fontFamily: FONT, fontSize: rf(15), fontWeight: '600', letterSpacing: -0.2},
-  benefitSub: {marginTop: rv(2), color: T3, fontFamily: FONT, fontSize: rf(13), lineHeight: rf(16)},
+  benefitTitle: {color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600', letterSpacing: -0.2},
+  benefitSub: {marginTop: rv(2), color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, lineHeight: rf(16)},
 
   ctaWrap: {paddingHorizontal: rs(22), paddingTop: rv(14), paddingBottom: rv(6)},
 
   // success
   checkBadge: {alignSelf: 'center', width: rs(64), height: rs(64), borderRadius: 999, alignItems: 'center', justifyContent: 'center', marginTop: rv(18), marginBottom: rv(18), backgroundColor: withAlpha(GOOD, 0.14), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(GOOD, 0.4)},
-  successTitle: {color: T1, fontFamily: FONT, fontSize: rf(27), fontWeight: '700', letterSpacing: -0.6, textAlign: 'center'},
-  successSub: {marginTop: rv(11), color: T3, fontFamily: FONT, fontSize: rf(15), lineHeight: rf(21), textAlign: 'center', alignSelf: 'center', maxWidth: rs(264)},
+  successTitle: {color: T1, fontFamily: FONT, fontSize: TYPE.title1.fontSize, fontWeight: '700', letterSpacing: -0.6, textAlign: 'center'},
+  successSub: {marginTop: rv(11), color: T3, fontFamily: FONT, fontSize: TYPE.body.fontSize, lineHeight: rf(21), textAlign: 'center', alignSelf: 'center', maxWidth: rs(264)},
 
   shoeCard: {marginTop: rv(26), backgroundColor: CARD, borderRadius: rs(22), borderCurve: 'continuous', borderWidth: 1, borderColor: SEP, padding: rs(20)},
   shoeRow: {flexDirection: 'row', alignItems: 'center', gap: rv(18)},
-  shoeBrand: {color: T3, fontFamily: FONT, fontSize: rf(12), fontWeight: '600', letterSpacing: 1.4},
-  shoeModel: {marginTop: rv(4), color: T1, fontFamily: FONT, fontSize: rf(23), fontWeight: '700', letterSpacing: -0.6},
+  shoeBrand: {color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600', letterSpacing: 1.4},
+  shoeModel: {marginTop: rv(4), color: T1, fontFamily: FONT, fontSize: TYPE.title.fontSize, fontWeight: '700', letterSpacing: -0.6},
 
   track: {height: rs(12), borderRadius: 999, overflow: 'hidden', backgroundColor: withAlpha(T1, 0.04)},
   trackFill: {position: 'absolute', left: 0, top: 0, bottom: 0, borderRadius: 999, backgroundColor: ACCENT},
   scaleRow: {flexDirection: 'row', justifyContent: 'space-between', marginTop: rv(9)},
-  scaleText: {color: T3, fontFamily: FONT, fontSize: rf(12), fontWeight: '500'},
+  scaleText: {color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500'},
 
   nextCard: {flexDirection: 'row', alignItems: 'center', gap: rv(13), marginTop: rv(14), borderRadius: rs(18), borderCurve: 'continuous', paddingHorizontal: rs(16), paddingVertical: rv(15), backgroundColor: withAlpha(ACCENT, 0.07), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.22)},
   nextIcon: {width: rs(38), height: rs(38), borderRadius: rs(12), alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(ACCENT, 0.14)},
-  nextTitle: {color: T1, fontFamily: FONT, fontSize: rf(15), fontWeight: '600', letterSpacing: -0.2},
-  nextSub: {marginTop: rv(2), color: T3, fontFamily: FONT, fontSize: rf(13)},
+  nextTitle: {color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600', letterSpacing: -0.2},
+  nextSub: {marginTop: rv(2), color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize},
 });

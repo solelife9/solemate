@@ -28,7 +28,7 @@ import { RunLiveMap } from './RunLiveMap';
 import {
   BG, CARD, ACCENT, ACCENT_2, RING_ACCENT, RING_ACCENT_HI, RING_ACCENT_LO,
   GOOD, WARN, DANGER, T1, T2, T3, T4, SEP,
-  FONT, DISPLAY, withAlpha, HR_ZONE_COLORS,
+  FONT, DISPLAY, withAlpha, HR_ZONE_COLORS, TYPE, HERO,
 } from './theme';
 import { estimateMaxHR, zoneOf, HR_ZONE_LABEL } from './lib/analytics/hrZones';
 import { fmtPaceSec } from './lib/pacePlan';
@@ -487,53 +487,53 @@ const r = StyleSheet.create({
   // 아이콘(포인트 컬러=강조 요소에만)이 담당한다.
   toast: { position: 'absolute', left: 18, right: 18, top: 50, zIndex: 20, flexDirection: 'row', alignItems: 'center', gap: rv(12), paddingVertical: rv(13), paddingHorizontal: rs(15), borderRadius: rs(16), borderCurve: 'continuous', backgroundColor: 'rgba(28,28,30,0.94)', borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.16) },
   toastTick: { width: rs(34), height: rs(34), borderRadius: 999, backgroundColor: withAlpha(ACCENT, 0.2), alignItems: 'center', justifyContent: 'center' },
-  toastA: { color: T1, fontFamily: FONT, fontSize: rf(16), fontWeight: '700', letterSpacing: -0.2 },
-  toastB: { color: withAlpha(T1, 0.88), fontFamily: FONT, fontSize: rf(13), fontWeight: '500', marginTop: rv(2) },
+  toastA: { color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '700', letterSpacing: -0.2 },
+  toastB: { color: withAlpha(T1, 0.88), fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500', marginTop: rv(2) },
 
   top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   live: { flexDirection: 'row', alignItems: 'center', gap: rv(7) },
   liveDot: { width: rs(8), height: rs(8), borderRadius: 999, backgroundColor: ACCENT },
-  liveText: { color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '500', letterSpacing: 0.2 },
+  liveText: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500', letterSpacing: 0.2 },
   shoeChip: { flexDirection: 'row', alignItems: 'center', gap: rv(7), backgroundColor: CARD, borderRadius: 999, paddingHorizontal: rs(12), height: rs(30), borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
-  shoeText: { color: T3, fontFamily: DISPLAY, fontSize: rf(14), fontWeight: '600' },
+  shoeText: { color: T3, fontFamily: DISPLAY, fontSize: TYPE.label.fontSize, fontWeight: '600' },
 
   gpsRow: { flexDirection: 'row', alignItems: 'center', gap: rv(8), marginTop: rv(14), justifyContent: 'center' },
-  gpsLabel: { fontFamily: FONT, fontSize: rf(14), fontWeight: '600' },
+  gpsLabel: { fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600' },
 
   permBanner: { flexDirection: 'row', alignItems: 'center', gap: rv(8), marginTop: rv(12), paddingVertical: rv(10), paddingHorizontal: rs(12), borderRadius: rs(12), borderWidth: StyleSheet.hairlineWidth, borderColor: DANGER, backgroundColor: withAlpha(DANGER, 0.14) },
-  permBannerText: { flex: 1, color: T1, fontFamily: FONT, fontSize: rf(14), fontWeight: '500', lineHeight: rf(17) },
+  permBannerText: { flex: 1, color: T1, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500', lineHeight: rf(17) },
 
   ringWrap: { alignItems: 'center', marginTop: rv(26) },
   // 일시정지: 링을 살짝 위로 당기고(marginTop↓) 아래 시각 여백을 조금 회수(marginBottom-)해
   // 서브 지표가 들어설 공간을 낸다. 스케일이 0.92로 완만하므로 마진도 완만하게(겹침 방지).
   ringWrapPaused: { marginTop: rv(8), marginBottom: rv(-14) },
-  goal: { color: withAlpha(T1, 0.62), fontFamily: FONT, fontSize: rf(16), fontWeight: '700', letterSpacing: 1.2, marginTop: rv(14) },
+  goal: { color: withAlpha(T1, 0.62), fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '700', letterSpacing: 1.2, marginTop: rv(14) },
   goalMet: { flexDirection: 'row', alignItems: 'center', gap: rv(5), marginTop: rv(14) },
-  goalMetText: { color: GOOD, fontFamily: FONT, fontSize: rf(16), fontWeight: '700', letterSpacing: 0.6 },
+  goalMetText: { color: GOOD, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '700', letterSpacing: 0.6 },
   bigDist: { color: T1, fontFamily: DISPLAY, fontSize: rf(104), fontWeight: '500', letterSpacing: -4, lineHeight: rf(106), includeFontPadding: false, fontVariant: ['tabular-nums'] },
-  bigUnit: { color: withAlpha(T1, 0.62), fontFamily: FONT, fontSize: rf(16), fontWeight: '600', letterSpacing: 0.8, marginTop: rv(16) },
+  bigUnit: { color: withAlpha(T1, 0.62), fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600', letterSpacing: 0.8, marginTop: rv(16) },
   // 일시정지 하단 헤드 — 링 없이 거리 히어로 + 목표를, 지도 위·하단 지표 위에 얹는다.
   pausedHead: { alignItems: 'center', marginBottom: rv(8) },
   pausedDistRow: { flexDirection: 'row', alignItems: 'flex-end' },
-  pausedDist: { color: T1, fontFamily: DISPLAY, fontSize: rf(56), fontWeight: '600', letterSpacing: -2, lineHeight: rf(58), includeFontPadding: false, fontVariant: ['tabular-nums'] },
-  pausedDistUnit: { color: withAlpha(T1, 0.55), fontFamily: FONT, fontSize: rf(16), fontWeight: '700', marginLeft: rs(6), marginBottom: rv(8) },
-  pausedGoal: { color: withAlpha(T1, 0.62), fontFamily: FONT, fontSize: rf(14), fontWeight: '700', letterSpacing: 0.8, marginTop: rv(8) },
+  pausedDist: { color: T1, fontFamily: DISPLAY, fontSize: HERO.heroLg, fontWeight: '600', letterSpacing: -2, lineHeight: rf(58), includeFontPadding: false, fontVariant: ['tabular-nums'] },
+  pausedDistUnit: { color: withAlpha(T1, 0.55), fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '700', marginLeft: rs(6), marginBottom: rv(8) },
+  pausedGoal: { color: withAlpha(T1, 0.62), fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '700', letterSpacing: 0.8, marginTop: rv(8) },
   // 트랙 링 센터 — 바퀴수 하나만 히어로, 그 밑 작은 '바퀴'.
   lapHero: { color: T1, fontFamily: DISPLAY, fontSize: rf(96), fontWeight: '700', letterSpacing: -3, lineHeight: rf(96), includeFontPadding: false, fontVariant: ['tabular-nums'] },
-  lapHeroUnit: { color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '500', letterSpacing: 0.6, marginTop: rv(6) },
+  lapHeroUnit: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500', letterSpacing: 0.6, marginTop: rv(6) },
   // 링 아래 회색 한 줄(거리 · 랩거리 · 보정) — 박스·색 없이 조용히.
-  trackUnder: { color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '500', textAlign: 'center', marginTop: rv(16), fontVariant: ['tabular-nums'] },
+  trackUnder: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500', textAlign: 'center', marginTop: rv(16), fontVariant: ['tabular-nums'] },
   trackUnderStrong: { color: T1, fontFamily: DISPLAY, fontWeight: '700' },
   trackUnderCk: { color: ACCENT_2, fontWeight: '600' },
   // 지난 랩 한 줄 — 라벨 회색 + 랩번호(T4)/구간시간(T2), 박스 없음.
   recent: { flexDirection: 'row', alignItems: 'center', gap: rv(14), marginTop: rv(16), paddingHorizontal: rs(2) },
-  recentK: { color: T3, fontFamily: FONT, fontSize: rf(12), fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase' },
-  recentV: { color: T2, fontFamily: DISPLAY, fontSize: rf(14), fontWeight: '600', fontVariant: ['tabular-nums'] },
+  recentK: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase' },
+  recentV: { color: T2, fontFamily: DISPLAY, fontSize: TYPE.label.fontSize, fontWeight: '600', fontVariant: ['tabular-nums'] },
   recentN: { color: T2, fontWeight: '700' },
   coach: { flexDirection: 'row', alignItems: 'center', alignSelf: 'center', gap: rv(8), marginTop: rv(18), paddingHorizontal: rs(14), height: rs(38), borderRadius: 999, borderWidth: 1 },
-  coachTarget: { color: T2, fontFamily: FONT, fontSize: rf(15), fontWeight: '600' },
+  coachTarget: { color: T2, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600' },
   coachDot: { width: rs(3), height: rs(3), borderRadius: rs(2), backgroundColor: T4 },
-  coachMsg: { fontFamily: FONT, fontSize: rf(15), fontWeight: '700' },
+  coachMsg: { fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '700' },
 
   // 달릴 땐 34(빈약하다는 피드백 → 30에서 확대), 일시정지 시 22로 줄어 서브에 자리를 내준다.
   // 프리미엄: 위 헤어라인만(아래 테두리 제거), 여백 크게, 가벼운 값 + 마이크로 라벨.
@@ -542,15 +542,15 @@ const r = StyleSheet.create({
   hm: { flex: 1, alignItems: 'center' },
   hmDivider: { borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: withAlpha(T1, 0.045) },
   hmV: { color: T1, fontFamily: DISPLAY, fontSize: rf(37), fontWeight: '500', letterSpacing: -0.8, fontVariant: ['tabular-nums'] },
-  hmVPaused: { fontSize: rf(28), letterSpacing: -0.5 },
-  hmL: { color: withAlpha(T1, 0.45), fontFamily: FONT, fontSize: rf(14), fontWeight: "600", letterSpacing: 0.4, marginTop: rv(9) },
+  hmVPaused: { fontSize: TYPE.title1.fontSize, letterSpacing: -0.5 },
+  hmL: { color: withAlpha(T1, 0.45), fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: "600", letterSpacing: 0.4, marginTop: rv(9) },
 
   // 일시정지 하단 3칸(케이던스·칼로리·고도) — 상단 히어로 행과 같은 3열 그리드(6칸처럼).
   subMetrics: { flexDirection: 'row', paddingTop: rv(14), paddingBottom: rv(6) },
   sm: { flex: 1, alignItems: 'center' },
-  smV: { color: T1, fontFamily: DISPLAY, fontSize: rf(28), fontWeight: '500', letterSpacing: -0.5, fontVariant: ['tabular-nums'] },
-  smU: { color: withAlpha(T1, 0.45), fontFamily: FONT, fontSize: rf(12) },
-  smL: { color: withAlpha(T1, 0.45), fontFamily: FONT, fontSize: rf(14), fontWeight: "600", letterSpacing: 0.4, marginTop: rv(9) },
+  smV: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.title1.fontSize, fontWeight: '500', letterSpacing: -0.5, fontVariant: ['tabular-nums'] },
+  smU: { color: withAlpha(T1, 0.45), fontFamily: FONT, fontSize: TYPE.caption.fontSize },
+  smL: { color: withAlpha(T1, 0.45), fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: "600", letterSpacing: 0.4, marginTop: rv(9) },
 
   mapWrap: {
     flex: 1,
@@ -579,8 +579,8 @@ const r = StyleSheet.create({
   // 랩 기록 = 주 동작(오렌지 유리 필, 넓게) + 우측 현재 바퀴수. 되돌리기(-1)는 작은 보조.
   lapBar: { flexDirection: 'row', alignItems: 'center', gap: rv(10), marginTop: rv(18) },
   lapBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(9), height: rs(58), borderRadius: rs(18), borderCurve: 'continuous', backgroundColor: withAlpha(ACCENT, 0.12), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.4) },
-  lapBtnText: { color: T1, fontFamily: DISPLAY, fontSize: rf(17), fontWeight: '700', letterSpacing: -0.2 },
-  lapBtnCount: { position: 'absolute', right: 18, color: ACCENT_2, fontFamily: DISPLAY, fontSize: rf(15), fontWeight: '700', fontVariant: ['tabular-nums'] },
+  lapBtnText: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.heading.fontSize, fontWeight: '700', letterSpacing: -0.2 },
+  lapBtnCount: { position: 'absolute', right: 18, color: ACCENT_2, fontFamily: DISPLAY, fontSize: TYPE.body.fontSize, fontWeight: '700', fontVariant: ['tabular-nums'] },
   lapUndo: { width: rs(52), height: rs(52), borderRadius: rs(16), borderCurve: 'continuous', alignItems: 'center', justifyContent: 'center', backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
 
   controls: { flexDirection: 'row', justifyContent: 'center', gap: rv(48), paddingBottom: rv(8) },
@@ -590,5 +590,5 @@ const r = StyleSheet.create({
   cResume: { width: rs(76), height: rs(76), borderRadius: 999, overflow: 'hidden', backgroundColor: withAlpha(T1, 0.1), alignItems: 'center', justifyContent: 'center' },
   cStopWrap: { width: rs(76), height: rs(76), alignItems: 'center', justifyContent: 'center' },
   cStop: { width: rs(76), height: rs(76), borderRadius: 999, backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(DANGER, 0.5), alignItems: 'center', justifyContent: 'center' },
-  ctrlHint: { color: T3, fontFamily: FONT, fontSize: rf(13), fontWeight: '500' },
+  ctrlHint: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500' },
 });
