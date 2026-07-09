@@ -10,7 +10,7 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {
   BG, CARD_HI, GLASS, ACCENT, DANGER, WARN, GOOD, BEST, T1, T2, T3, T4, SEP, CARD_BORDER, FONT, DISPLAY, withAlpha, RADIUS, Shoe, Run, SHOES, TYPE,
 } from './theme';
-import { TabBar, TABBAR_CLEARANCE, Pill, InjuryBanner, Button, SwipeBack, AmbientBackdrop } from './primitives';
+import { TabBar, TABBAR_CLEARANCE, Pill, InjuryBanner, Button, SwipeBack, AmbientBackdrop, Rise } from './primitives';
 import { RunCard, RunDetail } from './HistoryScreen.rn';
 import { FuelGauge } from './FuelGauge';
 import FirstShoeScreen from './FirstShoeScreen.rn';
@@ -618,6 +618,7 @@ export default function ShoesScreen({
           <Ionicons name="add" size={ri(15)} color={T1} />
         </Pressable>
       </View>
+      <Rise style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={{ paddingHorizontal: rs(18), paddingBottom: TABBAR_CLEARANCE, gap: rv(14), paddingTop: rv(12) }}>
         {/* 교체 임박 요약(#2) — 곧 교체할 신발 N켤레. 0이면 숨김. */}
         {soonCount > 0 && (
@@ -642,6 +643,7 @@ export default function ShoesScreen({
             '신발 추가'와 중복 진입점. 신발 0켤레는 FirstShoeScreen 빈 상태가 담당한다.
             명예의 전당 진입은 마이탭 소속(신발탭 이동안 철회). */}
       </ScrollView>
+      </Rise>
       <TabBar active={1} onTab={(i) => onTab?.(i)} />
     </View>
   );

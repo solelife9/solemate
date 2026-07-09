@@ -539,6 +539,23 @@ export function AmbientBackdrop() {
   );
 }
 
+// ── Rise — 진입 모션 표준(마운트 시 14px 아래→위 페이드인) ─────────────────────
+// 홈에서 확립된 유일한 화면 진입 모션(DESIGN.md §6)을 전역 프리미티브로 승격.
+// JS 드라이버 — 코드베이스 관례(react-test-renderer 호환). 420ms 단발이라 체감 차이 없음.
+export function Rise({delay = 0, children, style}: {delay?: number; children: React.ReactNode; style?: StyleProp<ViewStyle>}) {
+  const v = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const anim = Animated.timing(v, {toValue: 1, duration: 420, delay, easing: Easing.out(Easing.cubic), useNativeDriver: false});
+    anim.start();
+    return () => anim.stop(); // 언마운트 시 타이머 정리
+  }, [v, delay]);
+  return (
+    <Animated.View style={[{opacity: v, transform: [{translateY: v.interpolate({inputRange: [0, 1], outputRange: [14, 0]})}]}, style]}>
+      {children}
+    </Animated.View>
+  );
+}
+
 // ── 고스트 빈 상태 부품(앱 전역 표준 — 2026-07-09 사용자 확정) ──────────────────
 // 빈 화면은 '채워질 모습'을 실루엣으로 말한다(홈 GhostShoeCard 문법의 전역화).
 // 중앙 히어로·안내문 박스 폐지 — 상단 시작: EmptyGhostHeader(타이포) + 실카드와

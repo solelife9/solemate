@@ -14,7 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { BG, CARD, CARD_DIM, CARD_HI, ACCENT, BRAND, GOOD, DANGER, WARN, T1, T2, T3, SEP, CARD_BORDER, FONT, DISPLAY, withAlpha, TIER_COLORS, TIER_LABEL, KAKAO_YELLOW, KAKAO_LABEL, NAVER_GREEN, NAVER_LABEL, RADIUS, HALL_GOLD, TYPE, GLASS } from './theme';
 // recap 토글 = SegmentedControl(accentSolid), 스탯 그리드들 = StatGrid 단일 프리미티브.
-import { TabBar, TABBAR_CLEARANCE, SectionTitle, Button, SegmentedControl, StatGrid, Stepper, AmbientBackdrop } from './primitives';
+import { TabBar, TABBAR_CLEARANCE, SectionTitle, Button, SegmentedControl, StatGrid, Stepper, AmbientBackdrop, Rise } from './primitives';
 import { Unit, unitKorean, displayNum } from './lib/units';
 import { weeklyRecap, monthlyRecap, type RecapRun, type RecapShoe } from './lib/recap';
 import { hkAvailable, hkLinked, hkLink, hkRestingHR } from './lib/healthkit';
@@ -537,6 +537,7 @@ export default function ProfileScreen({
   return (
     <View style={s.screen}>
       <AmbientBackdrop />
+      <Rise style={{ flex: 1 }}>
       <ScrollView ref={scrollRef} contentContainerStyle={{ paddingTop: insets.top + 12, paddingHorizontal: rs(18), paddingBottom: TABBAR_CLEARANCE, gap: rv(16) }}>
         {/* header — 마이(프로필+기록) ↔ 설정 뷰 전환 */}
         {showSettings ? (
@@ -1120,6 +1121,7 @@ export default function ProfileScreen({
         </>)}
 
       </ScrollView>
+      </Rise>
       {/* 화면 밖에 마운트된 리캡 공유 카드 — ref.toDataURL()로 PNG 캡처(보이지 않음). */}
       <View style={s.offscreen} pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
         <RecapShareCard ref={recapCardRef} model={recapCardModel} />

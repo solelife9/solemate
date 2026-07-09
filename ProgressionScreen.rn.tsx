@@ -44,7 +44,7 @@ import {
   TIER_LABEL,
   withAlpha, GLASS,
 } from './theme';
-import {StatGrid, SwipeBack} from './primitives';
+import {StatGrid, SwipeBack, Rise} from './primitives';
 import {buildContext} from './lib/progression/context';
 import {
   getProgression,
@@ -203,6 +203,7 @@ export default function ProgressionScreen({
     // 엣지 스와이프 백 — 왼쪽 가장자리 우측 드래그로 복귀(iOS pop 제스처 대응).
     <SwipeBack onBack={onBack}>
     <View style={s.screen}>
+      <Rise style={{flex: 1}}>
       <ScrollView
         contentContainerStyle={{
           paddingTop: insets.top + 12,
@@ -355,6 +356,7 @@ export default function ProgressionScreen({
               않는다. 엔진은 그대로(티어 산정에 사용). */}
         </View>
       </ScrollView>
+      </Rise>
     </View>
     </SwipeBack>
   );

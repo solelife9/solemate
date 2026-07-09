@@ -12,7 +12,7 @@ import {
   BG, CARD, CARD_HI, GLASS, ACCENT, BRAND, DANGER, T1, T2, T3, T4, SEP, CARD_BORDER, FONT, DISPLAY, Shoe, Run, SHOES, withAlpha, RADIUS, GUTTER, HERO, SCRIM, HR_ZONE_COLORS, TYPE,
 } from './theme';
 // 기간 탭 스트립 = SegmentedControl(neutral), 러닝 상세 2×3 메트릭 = StatGrid 프리미티브.
-import { TabBar, TABBAR_CLEARANCE, Button, SegmentedControl, StatGrid, SwipeBack, Chip, AmbientBackdrop, EmptyGhostHeader, GhostStrong, GhostBar } from './primitives';
+import { TabBar, TABBAR_CLEARANCE, Button, SegmentedControl, StatGrid, SwipeBack, Chip, AmbientBackdrop, EmptyGhostHeader, GhostStrong, GhostBar, Rise } from './primitives';
 import { Unit, displayNum, displayToKm } from './lib/units';
 import { ymdLocal } from './lib/format';
 import { sumKm, summaryOf, monthBuckets, weekBuckets, yearBuckets } from './lib/stats';
@@ -997,6 +997,7 @@ export default function HistoryScreen({
           얹고, 빈 상태는 ListEmptyComponent 로 둔다. 당겨서 새로고침은 RN 내장 RefreshControl
           만 쓴다(새 네이티브 0) — onRefresh 가 있을 때만 단다. keyExtractor 는 안정 키(run.id,
           없으면 인덱스)로 리렌더 시 행 재사용을 보장한다. */}
+      <Rise style={{ flex: 1 }}>
       <FlatList
         data={displayRuns}
         keyExtractor={(r, i) => r.id || String(i)}
@@ -1091,6 +1092,7 @@ export default function HistoryScreen({
           )
         }
       />
+      </Rise>
 
       <Modal visible={showPicker} transparent animationType="slide" onRequestClose={() => setShowPicker(false)}>
         <Pressable style={{ flex: 1, backgroundColor: SCRIM }} onPress={() => setShowPicker(false)} />
