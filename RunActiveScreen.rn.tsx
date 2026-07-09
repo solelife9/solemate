@@ -508,7 +508,7 @@ const r = StyleSheet.create({
   // 일시정지: 링을 살짝 위로 당기고(marginTop↓) 아래 시각 여백을 조금 회수(marginBottom-)해
   // 서브 지표가 들어설 공간을 낸다. 스케일이 0.92로 완만하므로 마진도 완만하게(겹침 방지).
   ringWrapPaused: { marginTop: rv(8), marginBottom: rv(-14) },
-  goal: { color: withAlpha(T1, 0.72), fontFamily: FONT, fontSize: TYPE.title.fontSize, fontWeight: '700', letterSpacing: 1, marginTop: rv(18) },
+  goal: { color: withAlpha(T1, 0.72), fontFamily: FONT, fontSize: TYPE.title.fontSize, fontWeight: '700', letterSpacing: 1, marginTop: rv(8) },
   goalBelow: { position: 'absolute', top: '100%' },
   goalMet: { flexDirection: 'row', alignItems: 'center', gap: rv(4), marginTop: rv(14) },
   goalMetText: { color: GOOD, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '700', letterSpacing: 0.6 },
