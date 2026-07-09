@@ -495,7 +495,7 @@ const s = StyleSheet.create({
     borderRadius: RADIUS.pill,
     backgroundColor: withAlpha(T1, 0.16),
   },
-  dotOn: {backgroundColor: ACCENT, width: rs(20)},
+  dotOn: {backgroundColor: T2, width: rs(20)},
   dotDone: {backgroundColor: withAlpha(ACCENT, 0.5)},
 
   body: {flexGrow: 1, justifyContent: 'center', padding: SPACE.xl, paddingBottom: SPACE.xxl, gap: SPACE.lg},

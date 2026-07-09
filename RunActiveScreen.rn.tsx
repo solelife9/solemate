@@ -26,7 +26,8 @@ import { RunLiveMap } from './RunLiveMap';
 // red→DANGER · text→T1–T4 · sep→SEP. 폰트 UI/DP → FONT/DISPLAY.
 // (시각 동등: 다크+오렌지 유지)
 import {
-  BG, CARD, ACCENT, ACCENT_2, GRAD_BOT, GOOD, WARN, DANGER, T1, T2, T3, T4, SEP,
+  BG, CARD, ACCENT, ACCENT_2, RING_ACCENT, RING_ACCENT_HI, RING_ACCENT_LO,
+  GOOD, WARN, DANGER, T1, T2, T3, T4, SEP,
   FONT, DISPLAY, withAlpha, HR_ZONE_COLORS,
 } from './theme';
 import { estimateMaxHR, zoneOf, HR_ZONE_LABEL } from './lib/analytics/hrZones';
@@ -67,9 +68,9 @@ function Ring({ size, stroke, progress, children }: { size: number; stroke: numb
       <Svg width={size} height={size} style={{ position: 'absolute' }}>
         <Defs>
           <SvgLinear id="run-ring" x1="0" y1="0" x2="1" y2="1">
-            <Stop offset="0" stopColor={ACCENT_2} />
-            <Stop offset="0.55" stopColor={ACCENT} />
-            <Stop offset="1" stopColor={GRAD_BOT} />
+            <Stop offset="0" stopColor={RING_ACCENT_HI} />
+            <Stop offset="0.55" stopColor={RING_ACCENT} />
+            <Stop offset="1" stopColor={RING_ACCENT_LO} />
           </SvgLinear>
         </Defs>
         <Circle cx={cx} cy={cy} r={r} stroke={SEP} strokeWidth={stroke} fill="none" />
@@ -566,10 +567,10 @@ const r = StyleSheet.create({
     width: rs(16),
     height: rs(16),
     borderRadius: rs(8),
-    backgroundColor: ACCENT,
+    backgroundColor: T2,
     borderWidth: 3,
     borderColor: T1,
-    shadowColor: ACCENT,
+    shadowColor: BG,
     shadowOpacity: 0.8,
     shadowRadius: 6,
     elevation: 4,

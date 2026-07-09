@@ -12,7 +12,7 @@ import { rf, rs, ri, rv } from './lib/responsive';
 import {View, Text, Pressable, StyleSheet, Animated, Easing} from 'react-native';
 import Svg, {Defs, RadialGradient, LinearGradient, Stop, Circle, Ellipse, Path} from 'react-native-svg';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {BG, T1, T3, ACCENT, FONT, DISPLAY, RADIUS, HALL_GOLD, BLACK, CELEB_FACE_BG, CELEB_ICON_LEGENDARY, CELEB_ICON_DEFAULT, withAlpha} from './theme';
+import {BG, T1, T3, FONT, DISPLAY, RADIUS, HALL_GOLD, BLACK, CELEB_FACE_BG, CELEB_ICON_LEGENDARY, CELEB_ICON_DEFAULT, withAlpha} from './theme';
 import {success, impactHeavy} from './lib/haptics';
 
 export type CelebrationData =
@@ -163,11 +163,14 @@ export default function CelebrationScreen({data, onClose}: {data: CelebrationDat
   const anim = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     // 보상 순간의 촉각 피드백 — 등급 상승은 묵직한 단발, 그 외 업적은 성공 펄스.
-    // (큐로 다음 축하가 떠도 마운트마다 한 번씩 울린다. 설정 off 면 graceful no-op.)
+    // dep=data(객체 정체성): 큐에서 다음 축하로 바뀌면(같은 type 이어도) 새 객체라 재발화한다.
+    // (과거 [anim,data.type] 는 같은 type 연속 시 재실행 안 돼 두번째 축하가 무애니·무햅틱이었다.)
+    // anim 을 0 으로 리셋 후 재생해야 두번째도 실제로 애니된다(이미 1이면 timing 이 no-op).
     if (data.type === 'rankup') impactHeavy();
     else success();
+    anim.setValue(0);
     Animated.timing(anim, {toValue: 1, duration: 950, easing: Easing.out(Easing.cubic), useNativeDriver: true}).start();
-  }, [anim, data.type]);
+  }, [anim, data]);
 
   if (data.type === 'rankup') {
     const c = data.rankColor;
@@ -272,6 +275,6 @@ const st = StyleSheet.create({
   b: {color: T1, fontWeight: '700'},
 
   actions: {alignSelf: 'stretch'},
-  primary: {height: rs(56), borderRadius: RADIUS.md, borderCurve: 'continuous', backgroundColor: ACCENT, alignItems: 'center', justifyContent: 'center'},
+  primary: {height: rs(56), borderRadius: RADIUS.md, borderCurve: 'continuous', backgroundColor: withAlpha(T1, 0.1), alignItems: 'center', justifyContent: 'center'},
   primaryTxt: {fontSize: rf(18), fontWeight: '700', color: T1, fontFamily: FONT},
 });

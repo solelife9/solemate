@@ -87,7 +87,7 @@ describe('TIER_LABEL (d2-dedup: 홈·프로필·진척 복붙 → theme 단일�
 describe('색/폰트 토큰은 디자인 마무리 핸드오프(theme.js) 값', () => {
   test('핸드오프 정합: bg #0A0A0A · accent #FF6500 · text #FFF · Pretendard', () => {
     expect(BG).toBe('#0A0A0A');       // 핸드오프 bg(순흑 #000 아님)
-    expect(ACCENT).toBe('#8B5CF6'); // 브랜드 액센트 = 일렉트릭 바이올렛(2026-07-09 확정, 오렌지 폐지)
+    expect(ACCENT).toBe('#FFFFFF'); // 무채 강조 = 흰(모노크롬). 브랜드색은 러닝 링(RING_ACCENT*)에만 생존
     expect(T1).toBe('#FFFFFF');
     expect(FONT).toBe('PretendardVariable');
   });

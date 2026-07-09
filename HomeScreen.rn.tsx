@@ -662,7 +662,7 @@ const s = StyleSheet.create({
   // 오늘의 신발 캐러셀 — 페이지 도트 + 스와이프 힌트(목업 정합)
   pageDots: { flexDirection: 'row', justifyContent: 'center', gap: rv(6), marginTop: SPACE.md },
   pageDot: { width: rs(5), height: rs(5), borderRadius: rs(3), backgroundColor: withAlpha(T1, 0.22) },
-  pageDotOn: { width: rs(16), backgroundColor: ACCENT },
+  pageDotOn: { width: rs(16), backgroundColor: T2 },
 
   // 홈 챌린지 카드
   chalWrap: { marginHorizontal: SPACE.xl, marginTop: SPACE.lg, backgroundColor: CARD_DIM, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.07), padding: SPACE.lg },

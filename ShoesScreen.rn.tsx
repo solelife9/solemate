@@ -28,7 +28,7 @@ import type { ProgressionContext, RetiredShoeRecord } from './lib/progression/ty
 export type ShoeTotals = { totalRuns: number; totalTime: string; avgPace: string; lastWorn?: string };
 
 // 마모 4단계(사용률%) → 색/라벨. 톤→theme 토큰(raw hex 0). 최상🟢/좋음🟡/교체고려🟠/교체권장🔴.
-const TONE_COLOR: Record<WearTierTone, string> = { good: BEST, mid: GOOD, warn: ACCENT, danger: DANGER };
+const TONE_COLOR: Record<WearTierTone, string> = { good: BEST, mid: GOOD, warn: WARN, danger: DANGER };
 const condColor = (pct: number) => TONE_COLOR[wearTier(pct).tone];
 const ringColor = (pct: number) => TONE_COLOR[wearTier(pct).tone];
 // 상태 점(shoeCondDot)이 이미 색 동그라미라, 라벨의 이모지(🟢/🟡/🟠/🔴)는 중복이므로 뺀다.

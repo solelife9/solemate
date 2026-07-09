@@ -584,7 +584,7 @@ export default function ProfileScreen({
                   accessibilityLabel="이름 입력"
                 />
                 <Pressable onPress={saveName} accessibilityRole="button" accessibilityLabel="이름 저장" hitSlop={8} style={s.nameSaveBtn}>
-                  <Ionicons name="checkmark" size={ri(18)} color={BG} />
+                  <Ionicons name="checkmark" size={ri(18)} color={T1} />
                 </Pressable>
               </View>
             ) : (
@@ -692,7 +692,7 @@ export default function ProfileScreen({
                   accessible accessibilityLabel={`${d}요일 ${done ? '달림' : today ? '오늘' : '쉼'}`}>
                   {/* 달림 여부가 색·체크로만 전달되던 것을 라벨로 병기(2026-07-05 a11y — 색맹·스크린리더). */}
                   <View style={[s.streakDot, done ? s.streakDotDone : today ? s.streakDotToday : s.streakDotIdle]}>
-                    {done && <Ionicons name="checkmark" size={ri(14)} color={T1} />}
+                    {done && <Ionicons name="checkmark" size={ri(14)} color={BG} />}
                   </View>
                   <Text style={[s.streakDayLabel, today && s.streakDayLabelToday]}>{d}</Text>
                 </View>
@@ -1176,7 +1176,7 @@ const s = StyleSheet.create({
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: rv(7) },
   nameEditRow: { flexDirection: 'row', alignItems: 'center', gap: rv(8) },
   nameInput: { flex: 1, color: T1, fontFamily: FONT, fontSize: rf(23), fontWeight: '500', letterSpacing: -0.5, borderBottomWidth: 1, borderBottomColor: ACCENT, paddingVertical: rv(2), paddingHorizontal: rs(0) },
-  nameSaveBtn: { width: rs(34), height: rs(34), borderRadius: RADIUS.pill, backgroundColor: ACCENT, alignItems: 'center', justifyContent: 'center' },
+  nameSaveBtn: { width: rs(34), height: rs(34), borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.1), alignItems: 'center', justifyContent: 'center' },
   idStat: { fontFamily: FONT, color: T3, fontSize: rf(13), fontWeight: '600' },
   idStatNum: { fontFamily: DISPLAY, color: T1, fontSize: rf(14), fontWeight: '700' },
   since: { color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '600' },
@@ -1188,7 +1188,7 @@ const s = StyleSheet.create({
   streakRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   streakDay: { alignItems: 'center', gap: rv(6) },
   streakDot: { width: rs(30), height: rs(30), borderRadius: RADIUS.pill, alignItems: 'center', justifyContent: 'center' },
-  streakDotDone: { backgroundColor: ACCENT },
+  streakDotDone: { backgroundColor: T2 },
   streakDotIdle: { backgroundColor: CARD_DIM },
   streakDotToday: { backgroundColor: CARD_DIM, borderWidth: 1.5, borderStyle: 'dashed', borderColor: T3 },
   streakDayLabel: { color: T3, fontFamily: FONT, fontSize: rf(11), fontWeight: '600' },
@@ -1232,7 +1232,7 @@ const s = StyleSheet.create({
   offscreen: { position: 'absolute', left: -10000, top: 0, opacity: 0 },
 
   toggle: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(8), height: rs(44), borderRadius: rs(14), borderCurve: 'continuous' },
-  toggleOn: { backgroundColor: ACCENT },
+  toggleOn: { backgroundColor: GOOD },
   toggleOff: { backgroundColor: CARD_HI },
   toggleTxt: { fontFamily: FONT, fontSize: rf(16), fontWeight: '600' },
 

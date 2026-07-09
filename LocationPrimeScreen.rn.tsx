@@ -86,8 +86,8 @@ const s = StyleSheet.create({
   rowBody: {color: T2, fontFamily: FONT, fontSize: rf(14), lineHeight: rf(18), marginTop: rv(3), fontWeight: '400'},
   sep: {height: StyleSheet.hairlineWidth, backgroundColor: SEP, marginLeft: rs(49)},
   footer: {gap: rv(6)},
-  primary: {height: rs(54), borderRadius: RADIUS.lg, borderCurve: 'continuous', backgroundColor: ACCENT, alignItems: 'center', justifyContent: 'center'},
-  primaryTxt: {color: BG, fontFamily: FONT, fontSize: rf(17), fontWeight: '700'},
+  primary: {height: rs(54), borderRadius: RADIUS.lg, borderCurve: 'continuous', backgroundColor: withAlpha(T1, 0.1), alignItems: 'center', justifyContent: 'center'},
+  primaryTxt: {color: T1, fontFamily: FONT, fontSize: rf(17), fontWeight: '700'},
   ghost: {height: rs(46), alignItems: 'center', justifyContent: 'center'},
   ghostTxt: {color: T3, fontFamily: FONT, fontSize: rf(15), fontWeight: '600'},
 });

@@ -9,7 +9,7 @@ import React, {useState} from 'react';
 import { rf, rs, rv } from './lib/responsive';
 import {View, Text, StyleSheet, Platform, type LayoutChangeEvent} from 'react-native';
 import Svg, {Polyline, Circle} from 'react-native-svg';
-import {CARD, CARD_DIM, CARD_BORDER, ACCENT, T1, T3, FONT, RADIUS, SEP} from './theme';
+import {CARD, CARD_DIM, CARD_BORDER, ACCENT, T1, T2, T3, FONT, RADIUS, SEP} from './theme';
 import {DARK_MAP_STYLE} from './lib/mapStyle';
 import {projectRoute, type LatLon} from './lib/route';
 
@@ -125,7 +125,7 @@ const m = StyleSheet.create({
   card: {backgroundColor: CARD, borderRadius: RADIUS.lg, borderCurve: 'continuous', borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER, padding: rs(16)},
   label: {color: T3, fontFamily: FONT, fontSize: rf(13), fontWeight: '600', letterSpacing: 0.4},
   mapWell: {height: MAP_H, marginTop: rv(10), borderRadius: rs(14), borderCurve: 'continuous', overflow: 'hidden', backgroundColor: CARD_DIM, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP},
-  startDot: {width: rs(12), height: rs(12), borderRadius: rs(6), borderCurve: 'continuous', backgroundColor: ACCENT, borderWidth: 2, borderColor: T1},
+  startDot: {width: rs(12), height: rs(12), borderRadius: rs(6), borderCurve: 'continuous', backgroundColor: T2, borderWidth: 2, borderColor: T1},
   endDot: {width: rs(14), height: rs(14), borderRadius: rs(7), borderCurve: 'continuous', backgroundColor: T1, borderWidth: 3, borderColor: ACCENT},
 });
 

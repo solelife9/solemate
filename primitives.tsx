@@ -538,7 +538,7 @@ const SEG_VARIANTS: Record<
       gap: rv(2),
     },
     item: {paddingHorizontal: rs(14), paddingVertical: rv(6), borderRadius: RADIUS.pill},
-    itemOn: {backgroundColor: ACCENT},
+    itemOn: {backgroundColor: withAlpha(T1, 0.1)},
     textOff: {color: T3, fontSize: rf(14), fontWeight: '600'},
     textOn: {color: T1, fontSize: rf(14), fontWeight: '600'},
   },

@@ -10,7 +10,7 @@
 import React, {useRef, useState} from 'react';
 import { rf } from './lib/responsive';
 import {View, Text, Pressable, StyleSheet} from 'react-native';
-import {ACCENT, BG, T1, CARD_HI, RADIUS, SPACE, FONT} from './theme';
+import {T1, CARD_HI, RADIUS, SPACE, FONT, withAlpha} from './theme';
 
 export interface RetirementCardActionsProps {
   /** "이미지 저장" 누름 → 갤러리 저장 핸들러(비동기 가능). */
@@ -76,12 +76,12 @@ const s = StyleSheet.create({
     justifyContent: 'center',
   },
   save: {backgroundColor: CARD_HI},
-  share: {backgroundColor: ACCENT},
+  share: {backgroundColor: withAlpha(T1, 0.1)},
   pressed: {opacity: 0.7},
   busy: {opacity: 0.5},
   label: {fontFamily: FONT, fontSize: rf(16), fontWeight: '700'},
   saveLabel: {color: T1},
-  shareLabel: {color: BG},
+  shareLabel: {color: T1},
 });
 
 export default RetirementCardActions;

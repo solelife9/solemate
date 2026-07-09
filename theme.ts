@@ -23,13 +23,18 @@ export const CARD = '#1C1C1E';           // 기본 카드(상세·기록·마이
 export const CARD_HI = '#2C2C2E';        // raised surface (chips / pressed) — 애플헬스 tertiary
 export const CARD_DIM = '#1C1C1E';       // recessed card = CARD 와 통일
 export const HERO_BG = '#242426';        // selected/featured card surface (CARD 보다 한 단 위)
-// 브랜드 액센트 = 일렉트릭 바이올렛(2026-07-09 확정). 무채 글래스 베이스 + 액센트 절제
-// (Apple급 프리미엄). 오렌지(#FF6500)는 Strava 인접 + 무채 방향과 어긋나 폐지. 액센트는
-// 러닝 링·컨트롤 등 시그니처 순간에만; 나머지는 무채/의미색(조건색은 그대로).
-export const ACCENT = '#8B5CF6';
-export const ACCENT_2 = '#A374FF';       // gradient top stop (밝은 바이올렛)
-export const GRAD_TOP = '#A374FF';       // CTA/링 그라데이션 top
-export const GRAD_BOT = '#7C4DEC';       // CTA/링 그라데이션 bottom (딥 바이올렛)
+// 무채 글래스 베이스, 브랜드 색은 러닝 링(RING_ACCENT*)에만; 그 외 강조는 무채(흰/회).
+// 색은 의미에만(2026-07-09 재확정). 브랜드색이 앱 전역에 남발되면 시끄럽다는 피드백 →
+// Apple/WHOOP식(흰=강조, 색=의미)으로 회수. ACCENT/ACCENT_2/GRAD_* 는 이제 무채값이라
+// 기존 소비부(비-링)는 자동으로 흰/회로 내려앉는다. 브랜드색은 아래 RING_ACCENT* 셋으로만 생존.
+// 값 = McLaren 파파야(밝게 시작 → 진하게 마감 그라데이션).
+export const RING_ACCENT = '#FF8000';        // McLaren 파파야 (러닝 링 유일 브랜드 색)
+export const RING_ACCENT_HI = '#FFB458';     // 링 그라데이션 top(밝은 파파야)
+export const RING_ACCENT_LO = '#E56600';     // 링 그라데이션 bottom(진한 파파야)
+export const ACCENT = '#FFFFFF';         // 무채 강조 = 흰(모노크롬 시스템)
+export const ACCENT_2 = '#EBEBF5';       // gradient/보조 강조 top stop (밝은 무채)
+export const GRAD_TOP = '#EBEBF5';       // CTA/그라데이션 top (무채)
+export const GRAD_BOT = '#C7C7CC';       // CTA/그라데이션 bottom (무채 회색)
 // 상태색 — 디자인 마무리 핸드오프(theme.js) 값 그대로: good/warn/danger.
 export const WARN = '#E6A23C';
 export const DANGER = '#FF5A45';

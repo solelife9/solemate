@@ -11,7 +11,7 @@ import React, {useEffect, useRef, useState} from 'react';
 import { rs } from './lib/responsive';
 import {View, StyleSheet, Platform} from 'react-native';
 import * as Location from 'expo-location';
-import {ACCENT} from './theme';
+import {ACCENT, T2} from './theme';
 import {DARK_MAP_STYLE} from './lib/mapStyle';
 
 // 옵셔널 require — 미링크 빌드에서 top-level import 가 앱을 죽이지 않게 감싼다(CourseMap 동일).
@@ -143,7 +143,7 @@ const s = StyleSheet.create({
     width: rs(12),
     height: rs(12),
     borderRadius: rs(6),
-    backgroundColor: ACCENT,
+    backgroundColor: T2,
     borderWidth: 2,
     borderColor: '#fff',
   },

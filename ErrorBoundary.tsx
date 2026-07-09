@@ -1,7 +1,7 @@
 import React from 'react';
 import { rf, rs, rv } from './lib/responsive';
 import {View, Text, TouchableOpacity, StyleSheet} from 'react-native';
-import {BG, ACCENT, T1, T3, FONT as FP, DISPLAY as FH} from './theme';
+import {BG, T1, T3, FONT as FP, DISPLAY as FH, withAlpha} from './theme';
 import {recordError} from './lib/crashlytics';
 
 type Props = {
@@ -78,7 +78,7 @@ const styles = StyleSheet.create({
     marginBottom: rv(28),
   },
   btn: {
-    backgroundColor: ACCENT,
+    backgroundColor: withAlpha(T1, 0.1),
     borderRadius: rs(16), borderCurve: 'continuous',
     paddingVertical: rv(14),
     paddingHorizontal: rs(36),
