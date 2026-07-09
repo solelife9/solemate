@@ -14,6 +14,7 @@ import {CameraView, useCameraPermissions} from 'expo-camera';
 import {manipulateAsync, SaveFormat} from 'expo-image-manipulator';
 import {BG, HALL_GOLD, T1, T2, T3, withAlpha} from './theme';
 import {pickShoePhoto} from './lib/photo';
+import {medalCropRect} from './lib/medalCrop';
 
 export default function MedalCamera({onCapture, onCancel}: {onCapture: (uri: string) => void; onCancel: () => void}) {
   const insets = useSafeAreaInsets();
@@ -33,11 +34,11 @@ export default function MedalCamera({onCapture, onCancel}: {onCapture: (uri: str
     try {
       const photo = await camRef.current?.takePictureAsync({quality: 0.85});
       if (!photo?.uri) { setBusy(false); return; }
-      // 중앙 정사각형 크롭(원의 바운딩 박스) → 균일 원형 표시. 좌표는 이미지 픽셀 기준.
-      const size = Math.min(photo.width ?? 0, photo.height ?? 0);
+      // 화면상 원 가이드(cx,cy,r, pt)를 cover 역변환으로 사진 픽셀에 매핑해 '원 안'만 잘라낸다.
+      // (과거: 사진 정중앙 정사각형을 잘라, 원이 화면 상단(0.44h)이고 미리보기가 cover 라
+      //  엉뚱한 영역이 저장됐다.)
+      const {originX, originY, size} = medalCropRect(photo.width ?? 0, photo.height ?? 0, width, height, cx, cy, r);
       if (size > 0) {
-        const originX = Math.round(((photo.width ?? 0) - size) / 2);
-        const originY = Math.round(((photo.height ?? 0) - size) / 2);
         const out = await manipulateAsync(
           photo.uri,
           [{crop: {originX, originY, width: size, height: size}}, {resize: {width: rs(640), height: rs(640)}}],

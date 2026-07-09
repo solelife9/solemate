@@ -123,10 +123,12 @@ export function lapsToTrack(lapTimesSec: readonly number[], lapKm: number): DtPo
   if (!(lapKm > 0)) return out;
   const times = Array.isArray(lapTimesSec) ? lapTimesSec.filter(t => Number.isFinite(t) && t >= 0) : [];
   let prev = 0;
+  let n = 0; // 채택된(단조 증가) 랩 수 — 거리는 raw 인덱스가 아니라 이 카운터로 매긴다.
   for (let i = 0; i < times.length; i++) {
     const t = times[i];
-    if (t <= prev) continue; // 시간 비단조 방어
-    out.push({d: Math.round((i + 1) * lapKm * 1000) / 1000, t}); // 미터 정밀도(부동소수 정리)
+    if (t <= prev) continue; // 시간 비단조 방어 — 이 랩은 건너뛰고 거리도 안 올린다(과다적립 방지)
+    n++;
+    out.push({d: Math.round(n * lapKm * 1000) / 1000, t}); // 미터 정밀도(부동소수 정리)
     prev = t;
   }
   return out;

@@ -87,10 +87,14 @@ describe('lapsToTrack + lapDistanceKm — 시계열/거리', () => {
       {d: 1.2, t: 280},
     ]);
   });
-  test('시간 비단조 방어(뒤로 가는 값 스킵)', () => {
+  test('시간 비단조 방어(뒤로 가는 값 스킵) — 거리도 과다적립 안 함', () => {
     const tr = lapsToTrack([90, 80, 200], 0.4);
-    // 80<90 스킵 → 인덱스는 이어지지만 d 는 랩 순번 기반이라 두 유효점만.
-    expect(tr.map(p => p.t)).toEqual([0, 90, 200]);
+    // 80<90 스킵 → 유효 랩 2개. 거리는 채택 순번(raw 인덱스 아님)이라 0.4→0.8(1.2 아님).
+    expect(tr).toEqual([
+      {d: 0, t: 0},
+      {d: 0.4, t: 90},
+      {d: 0.8, t: 200},
+    ]);
   });
   test('총 거리 = 랩수 × 랩거리', () => {
     expect(lapDistanceKm(10, 0.4)).toBeCloseTo(4, 6); // 400m×10 = 4km
