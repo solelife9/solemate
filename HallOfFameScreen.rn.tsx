@@ -42,7 +42,7 @@ import {
   TYPE,
   GUTTER,
   TIER_COLORS,
-  withAlpha,
+  withAlpha, GLASS,
 } from './theme';
 import {ymLocal} from './lib/format';
 import {keegoFirestoreRankingProvider} from './lib/progression/firestoreRankingStore';
@@ -352,7 +352,7 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: rv(6),
-    backgroundColor: CARD,
+    backgroundColor: GLASS.fill,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: SEP,
     borderRadius: RADIUS.pill,
@@ -395,7 +395,7 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACE.sm,
-    backgroundColor: CARD,
+    backgroundColor: GLASS.fill,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: SEP,
     borderRadius: RADIUS.md,
@@ -408,7 +408,7 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: rv(10),
-    backgroundColor: CARD,
+    backgroundColor: GLASS.fill,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: SEP,
     borderRadius: RADIUS.md,

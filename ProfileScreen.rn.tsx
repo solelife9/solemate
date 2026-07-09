@@ -12,7 +12,7 @@ import { rf, rs, ri, rv } from './lib/responsive';
 import { View, Text, ScrollView, Pressable, StyleSheet, TextInput, Image, Share, Alert, Linking } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { BG, CARD, CARD_DIM, CARD_HI, ACCENT, BRAND, GOOD, DANGER, WARN, T1, T2, T3, SEP, CARD_BORDER, FONT, DISPLAY, withAlpha, TIER_COLORS, TIER_LABEL, KAKAO_YELLOW, KAKAO_LABEL, NAVER_GREEN, NAVER_LABEL, RADIUS, HALL_GOLD, TYPE } from './theme';
+import { BG, CARD, CARD_DIM, CARD_HI, ACCENT, BRAND, GOOD, DANGER, WARN, T1, T2, T3, SEP, CARD_BORDER, FONT, DISPLAY, withAlpha, TIER_COLORS, TIER_LABEL, KAKAO_YELLOW, KAKAO_LABEL, NAVER_GREEN, NAVER_LABEL, RADIUS, HALL_GOLD, TYPE, GLASS } from './theme';
 // recap 토글 = SegmentedControl(accentSolid), 스탯 그리드들 = StatGrid 단일 프리미티브.
 import { TabBar, TABBAR_CLEARANCE, SectionTitle, Button, SegmentedControl, StatGrid, Stepper, AmbientBackdrop } from './primitives';
 import { Unit, unitKorean, displayNum } from './lib/units';
@@ -1133,7 +1133,7 @@ export default function ProfileScreen({
 const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: BG },
   row: { flexDirection: 'row', alignItems: 'center', gap: rv(7) },
-  card: { backgroundColor: CARD_DIM, borderRadius: RADIUS.lg, borderCurve: 'continuous', borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER },
+  card: { backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderCurve: 'continuous', borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER },
   cardTitle: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600', marginBottom: rv(16) },
   // 러너 스펙 카드
   // 거리 PB 메달 타일 2×2(러너 스펙 메인) — 달성=CARD_HI + 골드, 미달성=흐린 판.
@@ -1198,7 +1198,7 @@ const s = StyleSheet.create({
   // 누적/개인 기록·리캡 요약 스탯 줄은 StatGrid 프리미티브로 이전(셀·값·라벨 토큰을
   // 그쪽이 단일 소스로 책임 — 과거 statRow/statCell/statDivider/statValue/Unit/Label 제거).
 
-  badge: { flex: 1, backgroundColor: CARD, borderRadius: RADIUS.lg, borderCurve: 'continuous', paddingVertical: rv(16), paddingHorizontal: rs(8), alignItems: 'center', gap: rv(8), borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER },
+  badge: { flex: 1, backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderCurve: 'continuous', paddingVertical: rv(16), paddingHorizontal: rs(8), alignItems: 'center', gap: rv(8), borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER },
   badgeIcon: { width: rs(44), height: rs(44), borderRadius: RADIUS.pill, alignItems: 'center', justifyContent: 'center' },
   badgeLabel: { fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500', textAlign: 'center' },
 

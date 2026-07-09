@@ -10,7 +10,7 @@ import { rf, rs, ri, rv } from './lib/responsive';
 import {View, Text, ScrollView, Pressable, TextInput, Image, StyleSheet, ActivityIndicator, Modal} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import {BG, CARD, CARD_HI, GOOD, WARN, HALL_GOLD, T1, T2, T3, T4, SEP, FONT, DISPLAY, withAlpha, TYPE} from './theme';
+import {BG, CARD_HI, GOOD, WARN, HALL_GOLD, T1, T2, T3, T4, SEP, FONT, DISPLAY, withAlpha, TYPE, GLASS} from './theme';
 import {Button, Chip} from './primitives';
 import {captureCertPhoto} from './lib/photo';
 import MedalCamera from './MedalCamera';
@@ -277,10 +277,10 @@ const s = StyleSheet.create({
   iconBtn: {width: rs(36), height: rs(36), borderRadius: 999, backgroundColor: CARD_HI, alignItems: 'center', justifyContent: 'center'},
   navTitle: {flex: 1, textAlign: 'center', color: T1, fontFamily: FONT, fontSize: TYPE.heading.fontSize, fontWeight: '600', letterSpacing: -0.2, marginHorizontal: rs(8)},
 
-  search: {flexDirection: 'row', alignItems: 'center', gap: rv(9), marginHorizontal: rs(18), marginTop: rv(4), marginBottom: rv(12), height: rs(46), paddingHorizontal: rs(14), borderRadius: rs(14), backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.1)},
+  search: {flexDirection: 'row', alignItems: 'center', gap: rv(9), marginHorizontal: rs(18), marginTop: rv(4), marginBottom: rv(12), height: rs(46), paddingHorizontal: rs(14), borderRadius: rs(14), backgroundColor: GLASS.fill, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.1)},
   searchInput: {flex: 1, color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '500', paddingVertical: rv(0)},
   section: {color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600', letterSpacing: 0.6, textTransform: 'uppercase', marginBottom: rv(8), marginTop: rv(4)},
-  raceRow: {flexDirection: 'row', alignItems: 'center', gap: rv(12), paddingVertical: rv(13), paddingHorizontal: rs(14), borderRadius: rs(14), backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP, marginBottom: rv(8)},
+  raceRow: {flexDirection: 'row', alignItems: 'center', gap: rv(12), paddingVertical: rv(13), paddingHorizontal: rs(14), borderRadius: rs(14), backgroundColor: GLASS.fill, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP, marginBottom: rv(8)},
   raceName: {color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600', letterSpacing: -0.2},
   raceMeta: {color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, marginTop: rv(2)},
   distPill: {backgroundColor: withAlpha(HALL_GOLD, 0.12), borderRadius: 999, paddingHorizontal: rs(9), paddingVertical: rv(4)},
@@ -288,7 +288,7 @@ const s = StyleSheet.create({
   noResult: {color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, marginTop: rv(4), marginBottom: rv(6)},
   customBox: {marginTop: rv(16), padding: rs(14), borderRadius: rs(16), borderWidth: 1, borderStyle: 'dashed', borderColor: withAlpha(T1, 0.16)},
   customLabel: {color: T2, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600', marginBottom: rv(10)},
-  customInput: {height: rs(46), paddingHorizontal: rs(14), borderRadius: rs(12), backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.1), color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize},
+  customInput: {height: rs(46), paddingHorizontal: rs(14), borderRadius: rs(12), backgroundColor: GLASS.fill, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.1), color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize},
 
   shotRow: {flexDirection: 'row', gap: rv(10), marginTop: rv(8)},
   shot: {flex: 1, height: rs(150), borderRadius: rs(20), borderWidth: 1.5, borderStyle: 'dashed', borderColor: withAlpha(T1, 0.16), backgroundColor: withAlpha(T1, 0.02), alignItems: 'center', justifyContent: 'center', gap: rv(7), overflow: 'hidden', paddingHorizontal: rs(10)},
@@ -306,7 +306,7 @@ const s = StyleSheet.create({
   tag: {backgroundColor: withAlpha(GOOD, 0.14), borderRadius: rs(6), paddingHorizontal: rs(6), paddingVertical: rv(2), marginTop: rv(20), marginBottom: rv(10)},
   tagT: {color: GOOD, fontFamily: FONT, fontSize: TYPE.micro.fontSize, fontWeight: '700', letterSpacing: 0.3},
   chipRow: {flexDirection: 'row', flexWrap: 'wrap', gap: rv(8)},
-  inputRow: {flexDirection: 'row', alignItems: 'center', height: rs(52), paddingHorizontal: rs(16), borderRadius: rs(14), backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.08)},
+  inputRow: {flexDirection: 'row', alignItems: 'center', height: rs(52), paddingHorizontal: rs(16), borderRadius: rs(14), backgroundColor: GLASS.fill, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.08)},
   input: {flex: 1, color: T1, fontFamily: DISPLAY, fontSize: TYPE.title.fontSize, fontVariant: ['tabular-nums'], paddingVertical: rv(0)},
   hint: {color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, marginTop: rv(8), paddingHorizontal: rs(2), lineHeight: rf(17)},
 

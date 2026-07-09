@@ -10,7 +10,7 @@ import { View, Text, TextInput, ScrollView, Pressable, Image, StyleSheet, Keyboa
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {
-  BG, CARD_DIM, CARD_HI, ACCENT, DANGER, T1, T2, T3, T4, FONT, DISPLAY, withAlpha, Shoe, TYPE,
+  BG, CARD_HI, ACCENT, DANGER, T1, T2, T3, T4, FONT, DISPLAY, withAlpha, Shoe, TYPE, GLASS,
 } from './theme';
 import { Pill, Button } from './primitives';
 // 러닝화 모델 카탈로그·권장수명은 data/shoeModels(단일 소스)에서 가져온다.
@@ -206,14 +206,14 @@ const s = StyleSheet.create({
   label: { color: T2, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500', letterSpacing: 0.2, paddingHorizontal: rs(4), paddingBottom: rv(10) },
 
   // 러닝화 선택 트리거(탭하면 2열 분할 피커). 입력칸처럼 보이되 누르면 모달이 열린다.
-  selector: { backgroundColor: CARD_DIM, borderRadius: rs(16), borderCurve: 'continuous', borderWidth: 1, borderColor: withAlpha(T1, 0.07), flexDirection: 'row', alignItems: 'center', gap: rv(10), paddingHorizontal: rs(18), paddingVertical: rv(16) },
+  selector: { backgroundColor: GLASS.fill, borderRadius: rs(16), borderCurve: 'continuous', borderWidth: 1, borderColor: withAlpha(T1, 0.07), flexDirection: 'row', alignItems: 'center', gap: rv(10), paddingHorizontal: rs(18), paddingVertical: rv(16) },
   selectorText: { flex: 1, color: T1, fontFamily: FONT, fontSize: TYPE.heading.fontSize, fontWeight: '500', letterSpacing: -0.2 },
 
   maxHead: { marginTop: rv(22), flexDirection: 'row', alignItems: 'center', gap: rv(8), paddingHorizontal: rs(4), paddingBottom: rv(10) },
 
   hint: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, paddingHorizontal: rs(4), paddingTop: rv(9) },
 
-  usedRow: { backgroundColor: CARD_DIM, borderRadius: rs(16), borderCurve: 'continuous', borderWidth: 1, borderColor: withAlpha(T1, 0.07), flexDirection: 'row', alignItems: 'center', paddingHorizontal: rs(18) },
+  usedRow: { backgroundColor: GLASS.fill, borderRadius: rs(16), borderCurve: 'continuous', borderWidth: 1, borderColor: withAlpha(T1, 0.07), flexDirection: 'row', alignItems: 'center', paddingHorizontal: rs(18) },
   // 검증 실패 시 입력칸 테두리를 빨강으로 강조하고 아래 인라인 헬퍼텍스트를 띄운다.
   usedRowErr: { borderColor: DANGER },
   errText: { color: DANGER, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500', paddingHorizontal: rs(4), paddingTop: rv(8) },

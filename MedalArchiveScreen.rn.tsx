@@ -248,7 +248,7 @@ const m = StyleSheet.create({
   sub: {color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, marginBottom: rv(8)},
 
   // 요약 스탯 헤더(상단정렬 시 공백 채움 + 아카이브 가치)
-  statStrip: {flexDirection: 'row', alignItems: 'center', backgroundColor: CARD, borderRadius: rs(18), borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER, paddingVertical: rv(16), marginTop: rv(2), marginBottom: rv(10)},
+  statStrip: {flexDirection: 'row', alignItems: 'center', backgroundColor: GLASS.fill, borderRadius: rs(18), borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER, paddingVertical: rv(16), marginTop: rv(2), marginBottom: rv(10)},
   stat: {flex: 1, alignItems: 'center', gap: rv(4)},
   statV: {color: T1, fontFamily: DISPLAY, fontSize: TYPE.title.fontSize, fontWeight: '800', letterSpacing: -0.5, fontVariant: ['tabular-nums']},
   statU: {color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '700'},
@@ -275,7 +275,7 @@ const m = StyleSheet.create({
   detailName: {color: T1, fontFamily: FONT, fontSize: TYPE.title.fontSize, fontWeight: '700', letterSpacing: -0.4, textAlign: 'center', marginTop: rv(20), textWrap: 'balance'} as any,
   detailTime: {color: HALL_GOLD, fontFamily: DISPLAY, fontSize: HERO.hero, fontWeight: '700', letterSpacing: -1, marginTop: rv(8), fontVariant: ['tabular-nums']},
   detailNote: {color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, marginTop: rv(6), textAlign: 'center'},
-  detailCard: {alignSelf: 'stretch', backgroundColor: CARD, borderRadius: rs(18), borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER, paddingHorizontal: rs(16), marginTop: rv(22)},
+  detailCard: {alignSelf: 'stretch', backgroundColor: GLASS.fill, borderRadius: rs(18), borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER, paddingHorizontal: rs(16), marginTop: rv(22)},
   detailRow: {flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: rv(14)},
   detailRowDiv: {borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP},
   detailRowL: {color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize},

@@ -9,7 +9,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {
-  BG, CARD, CARD_DIM, CARD_HI, GLASS, ACCENT, BRAND, DANGER, T1, T2, T3, T4, SEP, CARD_BORDER, FONT, DISPLAY, Shoe, Run, SHOES, withAlpha, RADIUS, GUTTER, HERO, SCRIM, HR_ZONE_COLORS, TYPE,
+  BG, CARD, CARD_HI, GLASS, ACCENT, BRAND, DANGER, T1, T2, T3, T4, SEP, CARD_BORDER, FONT, DISPLAY, Shoe, Run, SHOES, withAlpha, RADIUS, GUTTER, HERO, SCRIM, HR_ZONE_COLORS, TYPE,
 } from './theme';
 // 기간 탭 스트립 = SegmentedControl(neutral), 러닝 상세 2×3 메트릭 = StatGrid 프리미티브.
 import { TabBar, TABBAR_CLEARANCE, Button, SegmentedControl, StatGrid, SwipeBack, Chip, AmbientBackdrop, EmptyGhostHeader, GhostStrong, GhostBar } from './primitives';
@@ -1158,7 +1158,7 @@ const s = StyleSheet.create({
   runPhoto: { width: '100%', height: rs(200), borderRadius: rs(16), borderCurve: 'continuous', marginTop: rv(16) },
   runMemo: { color: T2, fontFamily: FONT, fontSize: TYPE.body.fontSize, lineHeight: rf(21), marginTop: rv(12), fontStyle: 'italic' },
   // 트랙 랩 표 — 랩번호 · 상대페이스 바 · km당 페이스 · 랩시간.
-  trackCard: { marginTop: rv(16), backgroundColor: CARD, borderRadius: RADIUS.lg, borderCurve: 'continuous', borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER, paddingHorizontal: rs(16), paddingVertical: rv(14) },
+  trackCard: { marginTop: rv(16), backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderCurve: 'continuous', borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER, paddingHorizontal: rs(16), paddingVertical: rv(14) },
   trackHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: rv(12) },
   trackTitle: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.body.fontSize, fontWeight: '700', letterSpacing: -0.2 },
   trackSub: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600' },
@@ -1232,7 +1232,7 @@ const s = StyleSheet.create({
   // 콤팩트: 요약 4칸(거리/횟수/페이스/시간)의 패딩·값 폰트·여백을 줄여 세로 높이를
   // 압축한다(정보는 그대로 유지 — 라벨/값/단위 모두 렌더). 리스트가 위로 올라온다.
   summaryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: rv(8) },
-  summaryCell: { width: '47.5%', flexGrow: 1, backgroundColor: CARD_DIM, borderRadius: RADIUS.md, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP, padding: rs(13) },
+  summaryCell: { width: '47.5%', flexGrow: 1, backgroundColor: GLASS.fill, borderRadius: RADIUS.md, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP, padding: rs(13) },
   // 4열 요약 행(Screens Refined) — 카드 없이 헤어라인 구분.
   sumRow: { flexDirection: 'row', marginTop: rv(6), marginBottom: rv(2) },
   sumCell: { flex: 1, paddingHorizontal: rs(2) },
@@ -1270,7 +1270,7 @@ const s = StyleSheet.create({
   formLabel: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600', marginBottom: rv(8), paddingHorizontal: rs(2) },
   formHint: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize },
   chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: rv(8) },
-  input: { backgroundColor: CARD, borderRadius: rs(14), paddingHorizontal: rs(16), paddingVertical: rv(14), color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
+  input: { backgroundColor: GLASS.fill, borderRadius: rs(14), paddingHorizontal: rs(16), paddingVertical: rv(14), color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP },
   // 검증 실패 시 입력칸 테두리를 빨강으로 강조하고, 아래에 인라인 헬퍼텍스트를 띄운다.
   inputErr: { borderColor: DANGER, borderWidth: 1 },
   errText: { color: DANGER, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500', marginTop: rv(7), paddingHorizontal: rs(2) },

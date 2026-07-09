@@ -24,7 +24,7 @@ import Svg, { Path } from 'react-native-svg';
 // (시각 동등: 다크+오렌지 유지)
 import {
   BG, CARD, HERO_BG, ACCENT, GOOD, WARN, DANGER, T1, T2, T3, T4, SEP, CARD_BORDER,
-  FONT, DISPLAY, RADIUS, SCRIM, withAlpha, type Shoe, TYPE, HERO,
+  FONT, DISPLAY, RADIUS, SCRIM, withAlpha, type Shoe, TYPE, HERO, GLASS,
 } from './theme';
 // lib/haptics 배선: '러닝 시작' CTA(런 시작) → tap.
 import { tap } from './lib/haptics';
@@ -470,7 +470,7 @@ const s = StyleSheet.create({
   freeSub: { color: T3, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '500', lineHeight: rf(21), textAlign: 'center', maxWidth: rs(250) },
 
   foot: { paddingHorizontal: rs(22), paddingTop: rv(4), paddingBottom: rv(30) },
-  shoeSel: { flexDirection: 'row', alignItems: 'center', gap: rv(13), padding: rs(13), borderRadius: RADIUS.lg, borderCurve: 'continuous', backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER },
+  shoeSel: { flexDirection: 'row', alignItems: 'center', gap: rv(13), padding: rs(13), borderRadius: RADIUS.lg, borderCurve: 'continuous', backgroundColor: GLASS.fill, borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER },
   // 신발 전환 시트(하단) — History 기간 피커와 같은 문법(SCRIM + 하단 카드).
   pickerSheet: { backgroundColor: CARD, borderTopLeftRadius: RADIUS.xl, borderTopRightRadius: RADIUS.xl, borderCurve: 'continuous', paddingHorizontal: rs(18), paddingTop: rv(18), paddingBottom: rv(34), gap: rv(10) },
   // 목표 직접 입력 키패드 — 시트 규약은 pickerSheet 재사용, 키만 추가.

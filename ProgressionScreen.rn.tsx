@@ -42,7 +42,7 @@ import {
   TYPE,
   TIER_COLORS,
   TIER_LABEL,
-  withAlpha,
+  withAlpha, GLASS,
 } from './theme';
 import {StatGrid, SwipeBack} from './primitives';
 import {buildContext} from './lib/progression/context';
@@ -496,7 +496,7 @@ const s = StyleSheet.create({
   xpForNext: {fontFamily: FONT, color: T3, fontSize: TYPE.caption.fontSize, fontWeight: '600'},
   // 스탯 카드
   statCard: {
-    backgroundColor: CARD,
+    backgroundColor: GLASS.fill,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: CARD_BORDER,
     borderRadius: RADIUS.lg,
@@ -509,7 +509,7 @@ const s = StyleSheet.create({
   groupCount: {fontFamily: FONT, color: T3, fontSize: TYPE.caption.fontSize, fontWeight: '700'},
   // 업적 카드
   ach: {
-    backgroundColor: CARD,
+    backgroundColor: GLASS.fill,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: CARD_BORDER,
     borderRadius: RADIUS.sm,
@@ -540,7 +540,7 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: CARD,
+    backgroundColor: GLASS.fill,
     borderWidth: StyleSheet.hairlineWidth,
     borderRadius: RADIUS.md,
     paddingHorizontal: rs(17),
