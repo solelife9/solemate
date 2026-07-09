@@ -30,7 +30,7 @@ import App from '../App';
 import {seedBootCache} from './helpers/bootSeed';
 import ShoesScreen from '../ShoesScreen.rn';
 import ShoeArchiveScreen from '../ShoeArchiveScreen.rn';
-import {DANGER, GOOD, BEST, ACCENT, Shoe} from '../theme';
+import {DANGER, GOOD, BEST, WARN, Shoe} from '../theme';
 
 type ApiShoe = {id: string; name: string; max_km: number; start_km: number; retired?: boolean};
 type ApiRun = {id: string; shoe_id: string; km: number; run_date: string; duration: number};
@@ -276,18 +276,18 @@ test('ShoesScreen renders 4단계 마모 컨디션을 사용률별 색으로', a
   const shoes: Shoe[] = [
     {id: 'a', brand: 'NIKE', model: 'Pegasus', used: 60, max: 600, condition: '양호'},   // 10% best→BEST(파랑)
     {id: 'b', brand: 'HOKA', model: 'Clifton', used: 390, max: 600, condition: '양호'},  // 65% good→GOOD(초록)
-    {id: 'c', brand: 'ASICS', model: 'Nimbus', used: 510, max: 600, condition: '주의'},  // 85% consider→ACCENT(주황, 80~90)
+    {id: 'c', brand: 'ASICS', model: 'Nimbus', used: 510, max: 600, condition: '주의'},  // 85% consider→WARN(앰버, 80~90)
     {id: 'd', brand: 'BROOKS', model: 'Ghost', used: 660, max: 600, condition: '교체'},  // 110% replace→DANGER(빨강)
   ];
   const root = await mountComponent(
     <ShoesScreen shoes={shoes} runs={[]} totals={{}} onTab={() => {}} onAddShoe={() => {}} />,
   );
 
-  // 4단계 색 계약(사용률%, TONE_COLOR={good:BEST, mid:GOOD, warn:ACCENT, danger:DANGER}):
-  // best→BEST / good→GOOD / consider→ACCENT / replace→DANGER.
+  // 4단계 색 계약(사용률%, TONE_COLOR={good:BEST, mid:GOOD, warn:WARN, danger:DANGER}):
+  // best→BEST / good→GOOD / consider→WARN / replace→DANGER.
   expect(dotColorsOf(root, 'best')).toContain(BEST);
   expect(dotColorsOf(root, 'good')).toContain(GOOD);
-  expect(dotColorsOf(root, 'consider')).toContain(ACCENT);
+  expect(dotColorsOf(root, 'consider')).toContain(WARN);
   expect(dotColorsOf(root, 'replace')).toContain(DANGER);
 });
 

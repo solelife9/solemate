@@ -17,7 +17,7 @@ import React from 'react';
 import {Text, View, StyleSheet} from 'react-native';
 import ReactTestRenderer from 'react-test-renderer';
 import {SegmentedControl, StatGrid, Stat} from '../primitives';
-import {ACCENT, T1, DISPLAY, SEP, withAlpha} from '../theme';
+import {T1, DISPLAY, SEP, withAlpha} from '../theme';
 
 function render(el: React.ReactElement): ReactTestRenderer.ReactTestRenderer {
   let r!: ReactTestRenderer.ReactTestRenderer;
@@ -83,11 +83,12 @@ describe('SegmentedControl — selection behaviour', () => {
     expect(pressableByLabel(root, '셋').props.accessibilityState).toEqual({selected: false});
   });
 
-  test('variant changes the selected surface: accentSolid fills ACCENT, neutral fills white-9%', () => {
+  test('variant changes the selected surface: accentSolid fills glass(white-10%), neutral fills white-9%', () => {
     const solid = render(
       <SegmentedControl items={ITEMS} value="a" onChange={() => {}} variant="accentSolid" />,
     ).root;
-    expect(flatStyle(pressableByLabel(solid, '하나')).backgroundColor).toBe(ACCENT);
+    // 모노크롬 회수: accentSolid 선택칩은 더 이상 solid 채움이 아니라 유리(withAlpha(T1,0.1)).
+    expect(flatStyle(pressableByLabel(solid, '하나')).backgroundColor).toBe(withAlpha(T1, 0.1));
 
     const neutral = render(
       <SegmentedControl items={ITEMS} value="a" onChange={() => {}} variant="neutral" />,
