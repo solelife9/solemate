@@ -301,7 +301,8 @@ export default function RunActiveScreen({
                   음성으로만 안내한다(나이키식, 사용자 요청). 링의 채워지는 호가 진행을 시각화.
                   스크린리더 라벨엔 목표/남음을 그대로 두어 접근성은 보존. */}
               <Text style={r.bigDist}>{distanceKm.toFixed(2)}</Text>
-              <Text style={r.goal}>km</Text>
+              {/* km 는 absolute — 센터 계산에서 제외해 '숫자'가 링의 정중앙에 온다. */}
+              <Text style={[r.goal, r.goalBelow]}>km</Text>
             </View>
           )}
         </Ring>
@@ -508,10 +509,10 @@ const r = StyleSheet.create({
   // 서브 지표가 들어설 공간을 낸다. 스케일이 0.92로 완만하므로 마진도 완만하게(겹침 방지).
   ringWrapPaused: { marginTop: rv(8), marginBottom: rv(-14) },
   goal: { color: withAlpha(T1, 0.72), fontFamily: FONT, fontSize: TYPE.title.fontSize, fontWeight: '700', letterSpacing: 1, marginTop: rv(18) },
+  goalBelow: { position: 'absolute', top: '100%' },
   goalMet: { flexDirection: 'row', alignItems: 'center', gap: rv(4), marginTop: rv(14) },
   goalMetText: { color: GOOD, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '700', letterSpacing: 0.6 },
-  // marginTop 14 = 광학 중앙 보정(km 라벨이 아래 붙으며 블록 무게중심이 위로 쏠린 것 상쇄).
-  bigDist: { color: T1, fontFamily: DISPLAY, fontSize: rf(104), fontWeight: '500', letterSpacing: -4, lineHeight: rf(106), includeFontPadding: false, fontVariant: ['tabular-nums'], marginTop: rv(14) },
+  bigDist: { color: T1, fontFamily: DISPLAY, fontSize: rf(104), fontWeight: '500', letterSpacing: -4, lineHeight: rf(106), includeFontPadding: false, fontVariant: ['tabular-nums'] },
   bigUnit: { color: withAlpha(T1, 0.62), fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600', letterSpacing: 0.8, marginTop: rv(16) },
   // 일시정지 하단 헤드 — 링 없이 거리 히어로 + 목표를, 지도 위·하단 지표 위에 얹는다.
   pausedHead: { alignItems: 'center', marginBottom: rv(8) },
