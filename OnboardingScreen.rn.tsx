@@ -416,7 +416,7 @@ function DegradeCurve() {
   const line = 'M6 18 C 70 22, 120 34, 180 70 S 300 120, 354 132';
   const area = 'M6 18 C 70 22, 120 34, 180 70 S 300 120, 354 132 L354 150 L6 150 Z';
   return (
-    <Svg viewBox="0 0 360 150" width="100%" height={92}>
+    <Svg viewBox="0 0 360 150" width="100%" height={112}>
       <Defs>
         {/* 면 채움도 가로 초록→빨강(라인과 동일 축) — 신품(좌)=초록, 마모(우)=빨강이 한눈에. */}
         <SvgGradient id="kg-dg" x1="0" y1="0" x2="1" y2="0">
@@ -704,10 +704,10 @@ const s = StyleSheet.create({
   flowHeader: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: rs(24), paddingBottom: rv(6)},
   skip: {fontFamily: FONT, fontSize: TYPE.label.fontSize, color: T4, fontWeight: '500'},
   flex1: {flex: 1},
-  bodyContent: {flexGrow: 1, paddingHorizontal: rs(24), paddingTop: rv(8)},
-  eyebrow: {fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '700', letterSpacing: 1.4, color: ACCENT, textTransform: 'uppercase', marginBottom: rv(6)},
+  bodyContent: {flexGrow: 1, paddingHorizontal: rs(24), paddingTop: rv(16)},
+  eyebrow: {fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '700', letterSpacing: 1.4, color: ACCENT, textTransform: 'uppercase', marginBottom: rv(12)},
   title: {fontFamily: FONT, fontSize: TYPE.title1.fontSize, lineHeight: rf(33), fontWeight: '700', letterSpacing: -0.6, color: T1},
-  body: {fontFamily: FONT, fontSize: TYPE.body.fontSize, lineHeight: rf(22), color: T3, marginTop: rv(10), maxWidth: rs(360)},
+  body: {fontFamily: FONT, fontSize: TYPE.body.fontSize, lineHeight: rf(23), color: T3, marginTop: rv(12), maxWidth: rs(360)},
   bodyStrong: {color: T1, fontWeight: '600'},
 
   // Welcome — 헤드라인 88→64→48 재축소(사용자 확정 2026-07-07).
@@ -720,13 +720,13 @@ const s = StyleSheet.create({
   ctaCaption: {fontFamily: FONT, fontSize: TYPE.caption.fontSize, color: T3, textAlign: 'center', marginTop: rv(10)},
 
   // 신발 인텔리전스
-  heroCard: {marginTop: rv(16), borderRadius: rs(22), borderCurve: 'continuous', backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP},
+  heroCard: {marginTop: rv(24), borderRadius: rs(22), borderCurve: 'continuous', backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP},
   shoeRowCard: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: rv(12),
-    marginTop: rv(12),
-    paddingVertical: rv(14),
+    marginTop: rv(14),
+    paddingVertical: rv(16),
     paddingHorizontal: rs(16),
     borderRadius: rs(22), borderCurve: 'continuous',
     backgroundColor: CARD,
@@ -735,10 +735,10 @@ const s = StyleSheet.create({
   },
   shoeThumb: {width: rs(44), height: rs(44), borderRadius: rs(12), borderCurve: 'continuous', backgroundColor: 'rgba(255,255,255,0.06)', alignItems: 'center', justifyContent: 'center'},
   pill: {flexDirection: 'row', alignItems: 'center', gap: rv(6), paddingVertical: rv(5), paddingHorizontal: rs(10), borderRadius: 100, alignSelf: 'center'},
-  alertRow: {flexDirection: 'row', alignItems: 'center', gap: rv(9), marginTop: rv(16), paddingHorizontal: rs(2)},
+  alertRow: {flexDirection: 'row', alignItems: 'center', gap: rv(9), marginTop: rv(22), paddingHorizontal: rs(2)},
 
   // 성능(기능 목록)
-  featCard: {marginTop: rv(20), paddingHorizontal: rs(18), paddingVertical: rv(4), borderRadius: rs(22), borderCurve: 'continuous', backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP},
+  featCard: {marginTop: rv(24), paddingHorizontal: rs(18), paddingVertical: rv(4), borderRadius: rs(22), borderCurve: 'continuous', backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: SEP},
   featRow: {flexDirection: 'row', alignItems: 'center', gap: rv(14), paddingVertical: rv(18)},
   featRowDivider: {borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP},
   featIc: {width: rs(38), height: rs(38), borderRadius: rs(11), borderCurve: 'continuous', alignItems: 'center', justifyContent: 'center'},
