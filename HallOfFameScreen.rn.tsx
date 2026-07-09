@@ -21,10 +21,10 @@ import {
   ScrollView,
   Pressable,
   StyleSheet,
-  ActivityIndicator,
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import {GhostBar, GhostThumb} from './primitives';
 import {
   BG,
   CARD,
@@ -296,8 +296,19 @@ export default function HallOfFameScreen({
 
         {/* 리더보드 본문 */}
         {loading ? (
-          <View style={s.center} testID="hof-loading">
-            <ActivityIndicator color={ACCENT} />
+          // 로딩 = 고스트 랭킹 행(스피너 폐지) — 빈 상태와 같은 실루엣 언어: '곧 채워질
+          // 자리'를 형태로 보여준다(2026-07-10 로딩 표준). 아래로 갈수록 잦아드는 페이드.
+          <View style={{gap: rv(8)}} testID="hof-loading">
+            {[1, 0.7, 0.45, 0.25, 0.12].map((o, i) => (
+              <View key={i} style={[s.row, {opacity: o}]}>
+                <GhostBar w={rs(18)} />
+                <GhostThumb size={34} />
+                <View style={{flex: 1, minWidth: 0}}>
+                  <GhostBar w={i % 2 ? '42%' : '56%'} />
+                </View>
+                <GhostBar w={rs(48)} dim style={{marginTop: 0}} />
+              </View>
+            ))}
           </View>
         ) : lbAvailable && entries.length > 0 ? (
           <View style={{gap: rv(8)}} testID="hof-leaderboard">

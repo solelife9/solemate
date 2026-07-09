@@ -726,7 +726,7 @@ export default function ProfileScreen({
             accessibilityRole="button"
             accessibilityLabel="진척 열기"
             style={({ pressed }) => [s.card, s.progressRow, pressed && { backgroundColor: CARD_HI }]}>
-            <View style={s.progressIcon}><Ionicons name="trophy-outline" size={ri(19)} color={ACCENT} /></View>
+            <View style={s.progressIcon}><Ionicons name="trophy-outline" size={ri(19)} color={BRAND} /></View>
             <View style={{ flex: 1, minWidth: 0 }}>
               <Text style={s.progressTitle}>진척</Text>
               <Text style={s.progressSub}>나의 여정 · 업적</Text>
@@ -744,7 +744,7 @@ export default function ProfileScreen({
             accessibilityRole="button"
             accessibilityLabel="러닝화 아카이브 열기"
             style={({ pressed }) => [s.card, s.progressRow, pressed && { backgroundColor: CARD_HI }]}>
-            <View style={s.progressIcon}><Ionicons name="ribbon-outline" size={ri(19)} color={ACCENT} /></View>
+            <View style={s.progressIcon}><Ionicons name="ribbon-outline" size={ri(19)} color={BRAND} /></View>
             <View style={{ flex: 1, minWidth: 0 }}>
               <Text style={s.progressTitle}>러닝화 아카이브</Text>
               <Text style={s.progressSub}>{retiredCount > 0 ? `은퇴한 신발 ${retiredCount}켤레` : '은퇴한 러닝화의 기록이 남는 곳'}</Text>
@@ -761,7 +761,7 @@ export default function ProfileScreen({
             accessibilityRole="button"
             accessibilityLabel="메달 아카이브 열기"
             style={({ pressed }) => [s.card, s.progressRow, pressed && { backgroundColor: CARD_HI }]}>
-            <View style={s.progressIcon}><Ionicons name="medal-outline" size={ri(19)} color={ACCENT} /></View>
+            <View style={s.progressIcon}><Ionicons name="medal-outline" size={ri(19)} color={BRAND} /></View>
             <View style={{ flex: 1, minWidth: 0 }}>
               <Text style={s.progressTitle}>메달 아카이브</Text>
               <Text style={s.progressSub}>{medalCount > 0 ? `완주 메달 ${medalCount}개` : '완주한 대회의 메달과 기록'}</Text>
@@ -780,7 +780,7 @@ export default function ProfileScreen({
             accessibilityLabel="Apple 건강 연동"
             accessibilityState={{disabled: hkOn}}
             style={({ pressed }) => [s.card, s.progressRow, pressed && !hkOn && { backgroundColor: CARD_HI }]}>
-            <View style={s.progressIcon}><Ionicons name="heart-outline" size={ri(19)} color={ACCENT} /></View>
+            <View style={s.progressIcon}><Ionicons name="heart-outline" size={ri(19)} color={BRAND} /></View>
             <View style={{ flex: 1, minWidth: 0 }}>
               <Text style={s.progressTitle}>Apple 건강</Text>
               <Text style={s.progressSub}>{hkOn ? '연동됨 — 심박·워크아웃 동기화 중' : '연동하면 워치 심박과 워크아웃이 이어져요'}</Text>
@@ -800,7 +800,7 @@ export default function ProfileScreen({
             accessibilityRole="button"
             accessibilityLabel="신발 보관함 열기"
             style={({ pressed }) => [s.card, s.progressRow, pressed && { backgroundColor: CARD_HI }]}>
-            <View style={s.progressIcon}><Ionicons name="archive-outline" size={ri(19)} color={ACCENT} /></View>
+            <View style={s.progressIcon}><Ionicons name="archive-outline" size={ri(19)} color={BRAND} /></View>
             <View style={{ flex: 1, minWidth: 0 }}>
               <Text style={s.progressTitle}>신발 보관함</Text>
               <Text style={s.progressSub}>{archivedCount > 0 ? `보관한 신발 ${archivedCount}켤레` : '러닝 목록에서 숨긴 신발'}</Text>
@@ -1161,7 +1161,8 @@ const s = StyleSheet.create({
   specVo2FootStrong: { color: T2, fontWeight: '700' },
   sectionLabel: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600', letterSpacing: 0.4, paddingHorizontal: rs(4) },
   progressRow: { flexDirection: 'row', alignItems: 'center', gap: rv(12), padding: rs(16) },
-  progressIcon: { width: rs(38), height: rs(38), borderRadius: RADIUS.sm, backgroundColor: withAlpha(ACCENT, 0.12), alignItems: 'center', justifyContent: 'center' },
+  // 진입 행 아이콘 = 브랜드 파파야 통일(2026-07-10 확정) — '탭 가능한 진입점' 단일 의미 + 서명.
+  progressIcon: { width: rs(38), height: rs(38), borderRadius: RADIUS.sm, backgroundColor: withAlpha(BRAND, 0.12), alignItems: 'center', justifyContent: 'center' },
   progressTitle: { color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '700' },
   progressSub: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500', marginTop: rv(3) },
 
