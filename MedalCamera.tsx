@@ -34,19 +34,23 @@ export default function MedalCamera({onCapture, onCancel}: {onCapture: (uri: str
     try {
       const photo = await camRef.current?.takePictureAsync({quality: 0.85});
       if (!photo?.uri) { setBusy(false); return; }
-      // 화면상 원 가이드(cx,cy,r, pt)를 cover 역변환으로 사진 픽셀에 매핑해 '원 안'만 잘라낸다.
-      // (과거: 사진 정중앙 정사각형을 잘라, 원이 화면 상단(0.44h)이고 미리보기가 cover 라
-      //  엉뚱한 영역이 저장됐다.)
-      const {originX, originY, size} = medalCropRect(photo.width ?? 0, photo.height ?? 0, width, height, cx, cy, r);
+      // ① EXIF 방향 정규화 — iOS 세로 사진은 픽셀이 가로(w>h)로 저장되고 회전은 메타데이터로만
+      //    걸리는 경우가 있다. 크롭 좌표는 '똑바로 선' 픽셀 기준이어야 하므로 빈 조작으로 방향을
+      //    픽셀에 굽고, 그 결과 치수로 계산한다. (기기 버그 2026-07-10: takePictureAsync 의
+      //    width/height 가 가로 기준으로 와서 cover 역변환이 어긋나 엉뚱한 영역이 저장됐다.)
+      const upright = await manipulateAsync(photo.uri, [], {compress: 1, format: SaveFormat.JPEG});
+      // ② 화면상 원 가이드(cx,cy,r, pt)를 cover 역변환으로 사진 픽셀에 매핑해 '원 안'만 잘라낸다.
+      const {originX, originY, size} = medalCropRect(upright.width ?? 0, upright.height ?? 0, width, height, cx, cy, r);
       if (size > 0) {
         const out = await manipulateAsync(
-          photo.uri,
-          [{crop: {originX, originY, width: size, height: size}}, {resize: {width: rs(640), height: rs(640)}}],
+          upright.uri,
+          // 저장 해상도는 기기 무관 고정 640px(rs 스케일 대상 아님 — 화면 크기와 무관한 자산).
+          [{crop: {originX, originY, width: size, height: size}}, {resize: {width: 640, height: 640}}],
           {compress: 0.85, format: SaveFormat.JPEG},
         );
         onCapture(out.uri);
       } else {
-        onCapture(photo.uri);
+        onCapture(upright.uri);
       }
     } catch {
       // 촬영 실패 — 조용히 닫지 않고 상태만 해제(사용자 재시도).

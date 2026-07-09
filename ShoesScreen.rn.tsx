@@ -576,9 +576,11 @@ export default function ShoesScreen({
     );
   }
 
-  // 신발 0개 → 풍부한 빈 상태(첫 러닝화 등록 유도). FirstShoeScreen 을 통째로 반환해
+  // 활성 신발 0켤레 → 풍부한 빈 상태(러닝화 등록 유도). FirstShoeScreen 을 통째로 반환해
   // 헤더·탭바 중복 없이 한 화면으로 대체한다. 등록 버튼은 AddShoe 오버레이(onAddShoe)로 열린다.
-  if (shoes.length === 0) {
+  // 기준은 '전체'가 아니라 '활성'(retired 제외) — 전부 보관 처리하면 전체>0 인데 락커
+  // 목록은 0장이 되는 사각지대(빈 화면)가 있었다(기기 발견 2026-07-10).
+  if (!shoes.some((sh) => !sh.retired)) {
     return <FirstShoeScreen onRegister={onAddShoe} onTab={onTab} userName={userName} />;
   }
 
