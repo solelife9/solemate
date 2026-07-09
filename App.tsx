@@ -103,6 +103,7 @@ import {hkSaveRunWorkout, hkBackfillHeartRate} from './lib/healthkit';
 import {currentTargetPace} from './lib/pacePlan';
 import {liveActivity} from './lib/liveActivity';
 import {watchSession} from './lib/watchSession';
+import {estimateMaxHR} from './lib/analytics/hrZones';
 import {assessTrainingLoad, loadRatioPhraseKo, LOAD_WORD, LoadLevel} from './lib/trainingLoad';
 import {
   getNotifSettings, setNotifSettings, dueNotifications,
@@ -1411,6 +1412,48 @@ function Main(){
   const shoesActiveIdx=Math.max(0,shoes.findIndex(s=>s.id===effectiveId));
   // 홈 picker(보관 제외) 인덱스 → 원본 신발 id로 선택 상태를 갱신한다.
   const selectHomeShoe=(i:number)=>{const e=homeShoes[i];if(e)setSelectedShoeId(e.raw.id);};
+
+  // ── Keego Watch 동기화(2026-07-10) ────────────────────────────────────────
+  // ① 활성 신발 목록(홈과 같은 최근착용순) + 심박존 파라미터(Tanaka 최대심박·안정시심박)
+  //    를 워치에 푸시한다. 워치 시작 화면이 이 목록을 좌우 스와이프로 넘기고, 남은 수명
+  //    %·컨디션 도트를 그린다. applicationContext 라 워치가 꺼져 있어도 다음 실행 때
+  //    도착·캐시된다. 직렬화 문자열을 dep 으로 써 내용이 실제로 바뀔 때만 전송한다.
+  const watchShoesJson=JSON.stringify({
+    shoes:homeShoes.map(x=>({
+      id:String(x.raw.id),brand:x.ui.brand,model:x.ui.model,
+      lifePct:Math.max(0,Math.min(100,Math.round((1-x.ui.used/Math.max(1,x.ui.max))*100))),
+      condition:x.ui.condition,
+    })),
+    hr:{max:estimateMaxHR(age),rest:restHR||0},
+  });
+  useEffect(()=>{
+    const p=JSON.parse(watchShoesJson);
+    watchSession.updateShoes(p.shoes,p.hr);
+  },[watchShoesJson]);
+  // ② 워치 단독 러닝 완주 수신 → addRun(로컬-퍼스트 저장 → 신발 거리 자동 차감 →
+  //    cloudSync 가 Firestore 로 push). 메시지+큐 이중 배달이 가능하므로 runId 를 영속
+  //    목록으로 중복 방어한다. 워치가 보낸 신발이 목록에 없으면(그 사이 삭제 등) 현재
+  //    선택 신발로 폴백. 구독은 1회, 최신 상태는 ref 로 읽는다(재구독 churn 방지).
+  const watchRunCtx=useRef({addRun,shoes,effectiveId});
+  watchRunCtx.current={addRun,shoes,effectiveId};
+  useEffect(()=>watchSession.onWatchRun(async p=>{
+    try{
+      const KEY='watch_runs_seen_v1';
+      const raw=await AsyncStorage.getItem(KEY);
+      const seen:string[]=raw?JSON.parse(raw):[];
+      if(seen.includes(p.runId))return;
+      await AsyncStorage.setItem(KEY,JSON.stringify([p.runId,...seen].slice(0,100)));
+      const ctx=watchRunCtx.current;
+      const shoeId=ctx.shoes.some(s=>String(s.id)===p.shoeId)?p.shoeId:(ctx.effectiveId??'');
+      // 귀속할 신발이 전혀 없으면(신발 0켤레) 자동 기록을 만들지 않는다 — 러닝 자체는
+      // 워치가 HealthKit 워크아웃(keego 메타데이터)으로 이미 남겼다(유실 아님).
+      if(!shoeId)return;
+      const d=new Date(p.startMs>0?p.startMs:Date.now());
+      const date=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      await ctx.addRun(shoeId,p.km,date,'','watch',Math.round(p.durationS),0,'','',Math.round(p.avgBpm),0,Math.round(p.kcal));
+      showToast({message:'워치 러닝을 가져왔어요'});
+    }catch(e){console.log('watch run sync error',e);}
+  }),[]);
 
   // ── 실효 마모/교체 예측 보정(Slice 6) ────────────────────────────────────────
   // 런별 노면 태그 조회(미태그 → road). 신발 상세(ShoesScreen)와 홈 히어로 예측이 같은

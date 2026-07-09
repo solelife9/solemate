@@ -11,4 +11,8 @@ RCT_EXTERN_METHOD(startWatchWorkout:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
 RCT_EXTERN_METHOD(stopWatchWorkout)
 
+// 폰 → 워치 활성 신발 목록·심박존 파라미터 푸시(applicationContext — 오프라인 캐시).
+// payload = { shoes: [{id,brand,model,lifePct,condition}], hrMax?, hrRest? }.
+RCT_EXTERN_METHOD(updateShoeContext:(NSDictionary *)payload)
+
 @end
