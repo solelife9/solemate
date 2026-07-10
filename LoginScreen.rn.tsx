@@ -14,7 +14,7 @@ import {View, Text, Pressable, StyleSheet, Platform, ActivityIndicator} from 're
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
-import {Button, GlassEdge, WORDMARK_FONT} from './primitives';
+import {Button, WORDMARK_FONT} from './primitives';
 import {
   BG, CARD_HI, ACCENT, DANGER, T1, T2, T3, FONT, DISPLAY, RADIUS, withAlpha,
   KAKAO_YELLOW, KAKAO_LABEL, NAVER_GREEN, NAVER_LABEL, TYPE,
@@ -60,8 +60,7 @@ export function LoginScreen({cloudPort, onSignedIn}: LoginScreenProps) {
       {/* 브랜드 히어로 — 로고 배지는 홈과 같은 유리 문법(반투명 표면 + 빛 받은 엣지) */}
       <View style={st.hero}>
         <View style={st.logoBadge}>
-          <GlassEdge glints={false} radius={22} />
-          <Text style={st.logoK}>K</Text>
+                    <Text style={st.logoK}>K</Text>
         </View>
         <Text style={st.wordmark}>keego</Text>
         <Text style={st.tagline}>러닝화의 수명을 기록하다</Text>

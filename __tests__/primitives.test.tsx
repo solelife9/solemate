@@ -13,6 +13,7 @@ import React from 'react';
 import {Text, View, StyleSheet} from 'react-native';
 import ReactTestRenderer from 'react-test-renderer';
 import {
+  GlassEdge,
   conditionColor,
   conditionTone,
   KeegoWordmark,
@@ -192,10 +193,10 @@ describe('Button — unified CTA surface (glass · matte · radius token)', () =
     // 코너 글린트 계약(2026-07-09 확정 — 'B 대각 밸런스'): 전 둘레 헤어라인(edgeBase) 위에
     // 코너 4점 방사형 글린트 — 좌상 주광(edgeTL) > 우하 반사(edgeBR) > 우상/좌하(edgeTR/BL).
     // 위치투영 대각선 모델(넓은 버튼에서 좌우 변이 꺼지는 붕괴)은 폐지.
-    const {root} = render(<Button label="시작" variant="cta" />);
+    // 히어로 유리 문법은 GlassEdge(기본 = 빛)를 직접 검증한다 — 버튼은 균일 헤어라인
+    // (fade=false)로 분리됐다(2026-07-11 확정: 페이드 비대칭이 버튼 이중선을 만듦).
+    const {root} = render(<View style={{width: 240, height: 54}}><GlassEdge radius={RADIUS.btn} /></View>);
     layoutGlassEdges(root);
-    // 코너 방사형 글린트 = 주광(좌상)·반사(우하) 2점만 — 우상/좌하는 글린트 없음
-    // (기기 피드백 2026-07-09: 빛에서 멀어질수록 자연 감쇠, 반대편 코너는 거의 안 보이게).
     // 베이스 헤어라인 2점(좌상·우하 방사 — 우상·좌하 코너 소멸) + 글린트 2점 = 4
     const radials = byName(root, 'RadialGradient');
     expect(radials.length).toBe(4);
@@ -229,11 +230,10 @@ describe('Button — unified CTA surface (glass · matte · radius token)', () =
   test('cta corners use the single RADIUS.btn token (surface + inset glass rects)', () => {
     const {root} = render(<Button label="시작" variant="cta" />);
     expect(pressableStyle(root).borderRadius).toBe(RADIUS.btn);
-    // GlassEdge 스트로크들은 자기 굵기의 절반만큼 안쪽으로 들어가 스스로 둥글린다 —
-    // rx 는 RADIUS.btn 이하(부모 모서리 밖으로 삐지지 않음), 0 초과여야 한다.
+    // 버튼 = 균일 헤어라인 1선(fade=false, 2026-07-11 확정) — 안쪽 1px 스트로크.
     layoutGlassEdges(root);
     const rects = byName(root, 'Rect');
-    expect(rects.length).toBeGreaterThanOrEqual(2); // 블룸 + 코어 (4면 균일 라인 제거)
+    expect(rects.length).toBeGreaterThanOrEqual(1);
     rects.forEach((r: any) => {
       expect(r.props.rx).toBeGreaterThan(0);
       expect(r.props.rx).toBeLessThanOrEqual(RADIUS.btn);

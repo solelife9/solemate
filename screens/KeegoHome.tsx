@@ -265,7 +265,7 @@ export function ShoeCard({
             onPress={() => onStartRun?.(shoe)}
             accessibilityRole="button" accessibilityLabel="러닝 시작"
           >
-            <GlassEdge glints={false} id={`edge-run-${i}`} radius={RADIUS.btn} />
+            <GlassEdge glints={false} fade={false} id={`edge-run-${i}`} radius={RADIUS.btn} />
             <Ionicons name="play" size={ri(15)} color={T1} style={{marginRight: rs(6)}} />
             <Text style={styles.runLabel}>러닝 시작</Text>
           </Pressable>
@@ -316,7 +316,7 @@ export function GhostShoeCard({width, onPress}: {width: number; onPress?: () => 
             onPress={onPress}
             accessibilityRole="button" accessibilityLabel="러닝화 등록"
           >
-            <GlassEdge glints={false} id="edge-run-ghost" radius={RADIUS.btn} />
+            <GlassEdge glints={false} fade={false} id="edge-run-ghost" radius={RADIUS.btn} />
             <Ionicons name="add" size={ri(16)} color={T1} style={{marginRight: rs(6)}} />
             <Text style={styles.runLabel}>러닝화 등록</Text>
           </Pressable>

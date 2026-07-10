@@ -260,8 +260,7 @@ export default function RunRecapScreen({
         {/* 신발 마모 델타(시그니처) — 이 런이 신발 수명에 미친 영향 */}
         {shoeWear && (
           <View style={s.shoeCard} testID="recap-shoe-wear">
-            <GlassEdge glints={false} radius={RADIUS.lg} />
-            <View style={s.shoeIcon}><Ionicons name="footsteps" size={ri(18)} color={ACCENT} /></View>
+              <View style={s.shoeIcon}><Ionicons name="footsteps" size={ri(18)} color={ACCENT} /></View>
             <View style={{flex: 1, minWidth: 0}}>
               <Text style={s.shoeName} numberOfLines={1}>{shoeName || '신발'}</Text>
               <Text style={s.shoeMeta}>
@@ -285,7 +284,6 @@ export default function RunRecapScreen({
 
         {/* 핵심 지표 그리드 */}
         <View style={s.grid}>
-          <GlassEdge glints={false} radius={RADIUS.lg} />
           <Stat label="시간" value={fmtDur(durationS)} />
           <Stat label="평균 페이스" value={fmtPace(km, durationS)} sub={`/${unit}`} />
           {calories > 0 && <Stat label="칼로리" value={`${Math.round(calories)}`} sub="kcal" />}
@@ -305,8 +303,7 @@ export default function RunRecapScreen({
           const dColor = (d: number) => (d <= -3 ? GOOD : d >= 3 ? WARN : T3);
           return (
             <View style={s.plan} testID="recap-pace-plan">
-              <GlassEdge glints={false} radius={RADIUS.lg} />
-              <View style={s.planHead}>
+                  <View style={s.planHead}>
                 <Text style={s.planTitle}>페이스 플랜 결과</Text>
                 <Text style={[s.planSummary, {color: avgDiff <= -3 ? GOOD : avgDiff >= 3 ? WARN : T2}]}>
                   목표 대비 {avgDiff <= -3 ? '빠름' : avgDiff >= 3 ? '느림' : '근접'} {fmtDelta(avgDiff)}
@@ -330,8 +327,7 @@ export default function RunRecapScreen({
             runId 없으면(비정상 경로) 섹션 자체를 숨긴다. 저장은 전부 비차단. */}
         {canMeta && (
           <View style={s.metaCard} testID="recap-meta">
-            <GlassEdge glints={false} radius={RADIUS.lg} />
-            {photoUri ? (
+              {photoUri ? (
               <View>
                 <Image source={{uri: photoUri}} style={s.metaPhoto} resizeMode="cover" accessible accessibilityLabel="러닝 사진" />
                 <Pressable onPress={removePhoto} accessibilityRole="button" accessibilityLabel="사진 제거" hitSlop={8}
@@ -373,13 +369,11 @@ export default function RunRecapScreen({
       <View style={[s.footer, s.footerRow, {paddingBottom: insets.bottom + 10}]}>
         <Pressable onPress={onShare} accessibilityRole="button" accessibilityLabel="러닝 공유" testID="recap-share"
           style={({pressed}) => [s.shareBtn, pressed && {opacity: 0.85}]}>
-          <GlassEdge glints={false} radius={RADIUS.lg} />
           <Ionicons name="share-outline" size={ri(17)} color={T1} style={{marginRight: rs(8)}} />
           <Text style={s.doneTxt}>공유</Text>
         </Pressable>
         <Pressable onPress={closeWithMeta} accessibilityRole="button" accessibilityLabel="완료" testID="recap-done"
           style={({pressed}) => [s.doneBtn, pressed && {opacity: 0.85}]}>
-          <GlassEdge glints={false} radius={RADIUS.lg} />
           <Text style={s.doneTxt}>완료</Text>
         </Pressable>
       </View>

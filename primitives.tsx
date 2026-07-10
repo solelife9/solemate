@@ -241,6 +241,7 @@ export function GlassEdge({
   intensity = 1,
   sheen = true,
   glints = true,
+  fade = true,
 }: {
   id?: string;
   radius: number;
@@ -248,15 +249,18 @@ export function GlassEdge({
   intensity?: number;
   sheen?: boolean;
   glints?: boolean;
+  /** false = 균일 헤어라인(버튼 전용 — 페이드 비대칭이 만드는 이중선 회피). */
+  fade?: boolean;
 }) {
   const autoId = useId().replace(/[^a-zA-Z0-9]/g, '');
   const gid = id ?? `glass-${autoId}`;
   const [s, setS] = useState({w: 0, h: 0});
   const onLayout = (e: LayoutChangeEvent) => {
     const {width, height} = e.nativeEvent.layout;
-    // 내림 처리 — 소수점 레이아웃 높이에서 SVG 캔버스가 뷰보다 커지면 아래 변 스트로크가
-    // overflow:hidden 에 반픽셀 잘려 사라졌다(기기 발견 2026-07-10: 러닝 시작 버튼 하변).
-    setS({w: Math.floor(width), h: Math.floor(height)});
+    // 정확한 레이아웃 치수 사용(내림 금지) — 내림하면 소수점 높이 카드(러닝기록 등)에서
+    // SVG 가 1px 짧아져 아래 라인이 바닥에서 떠 보였다(기기 발견 2026-07-11).
+    // 하변 클리핑은 스트로크를 1px 안쪽(edge 의 x/y=sw)에 그려 이미 방지된다.
+    setS({w: width, h: height});
   };
   // 스트로크는 1px 안쪽에 그린다 — 절반(0.5px) 들임은 기기 픽셀 그리드에서 경계 변이
   // 클립될 수 있다(위와 동일 원인). 1px 안쪽이면 어떤 배율에서도 네 변이 온전하다.
@@ -342,12 +346,16 @@ export function GlassEdge({
               fill={`url(#${gid}-sheen)`}
             />
           ) : null}
-          {/* 베이스 헤어라인 = 균일선이 아니라 좌상·우하에서 뻗다 우상·좌하 코너에서 완전
-              소멸하는 두 방사(2026-07-10 사용자 확정: "우상·좌하는 아예 라인 없게") —
-              빛(글린트)과 같은 서사로 코너까지 일관된다. */}
-          {baseCorners.map(c => (
-            <Rect key={`${c.key}-b`} {...edge(strokeWidth)} fill="none" stroke={`url(#${gid}-${c.key}-base)`} strokeWidth={strokeWidth} />
-          ))}
+          {/* 베이스: 히어로(glints)는 좌상 발원 페이드(빛과 같은 서사), 일반(quiet)은
+              '균일' 헤어라인 — 페이드 비대칭은 버튼 이중선·스택 카드 아래줄 어긋남을
+              만들었다(기기 반복 2026-07-11 확정: 균일이 자연스럽다). */}
+          {fade ? (
+            baseCorners.map(c => (
+              <Rect key={`${c.key}-b`} {...edge(strokeWidth)} fill="none" stroke={`url(#${gid}-${c.key}-base)`} strokeWidth={strokeWidth} />
+            ))
+          ) : (
+            <Rect {...edge(strokeWidth)} fill="none" stroke={T1} strokeOpacity={op(GLASS.edgeBase)} strokeWidth={strokeWidth} />
+          )}
           {corners.map(c => (
             <Rect key={c.key} {...edge(strokeWidth)} fill="none" stroke={`url(#${gid}-${c.key})`} strokeWidth={strokeWidth} />
           ))}
@@ -477,7 +485,7 @@ export function Button({
         pressed && !disabled && btn.pressed,
         style,
       ]}>
-      {filled ? <GlassEdge glints={false} radius={RADIUS.btn} /> : null}
+      {filled ? <GlassEdge glints={false} fade={false} radius={RADIUS.btn} /> : null}
       {iconNode ?? (icon ? <Ionicons name={icon} size={ri(20)} color={disabled ? T3 : T1} /> : null)}
       <Text style={[btn.label, disabled && btn.labelDim]}>{label}</Text>
     </Pressable>
