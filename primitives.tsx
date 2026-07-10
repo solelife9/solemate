@@ -477,7 +477,7 @@ export function Button({
         pressed && !disabled && btn.pressed,
         style,
       ]}>
-      {filled ? <GlassEdge radius={RADIUS.btn} /> : null}
+      {filled ? <GlassEdge glints={false} radius={RADIUS.btn} /> : null}
       {iconNode ?? (icon ? <Ionicons name={icon} size={ri(20)} color={disabled ? T3 : T1} /> : null)}
       <Text style={[btn.label, disabled && btn.labelDim]}>{label}</Text>
     </Pressable>

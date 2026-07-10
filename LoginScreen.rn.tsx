@@ -60,7 +60,7 @@ export function LoginScreen({cloudPort, onSignedIn}: LoginScreenProps) {
       {/* 브랜드 히어로 — 로고 배지는 홈과 같은 유리 문법(반투명 표면 + 빛 받은 엣지) */}
       <View style={st.hero}>
         <View style={st.logoBadge}>
-          <GlassEdge radius={22} />
+          <GlassEdge glints={false} radius={22} />
           <Text style={st.logoK}>K</Text>
         </View>
         <Text style={st.wordmark}>keego</Text>

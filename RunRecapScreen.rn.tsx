@@ -373,13 +373,13 @@ export default function RunRecapScreen({
       <View style={[s.footer, s.footerRow, {paddingBottom: insets.bottom + 10}]}>
         <Pressable onPress={onShare} accessibilityRole="button" accessibilityLabel="러닝 공유" testID="recap-share"
           style={({pressed}) => [s.shareBtn, pressed && {opacity: 0.85}]}>
-          <GlassEdge radius={RADIUS.lg} />
+          <GlassEdge glints={false} radius={RADIUS.lg} />
           <Ionicons name="share-outline" size={ri(17)} color={T1} style={{marginRight: rs(8)}} />
           <Text style={s.doneTxt}>공유</Text>
         </Pressable>
         <Pressable onPress={closeWithMeta} accessibilityRole="button" accessibilityLabel="완료" testID="recap-done"
           style={({pressed}) => [s.doneBtn, pressed && {opacity: 0.85}]}>
-          <GlassEdge radius={RADIUS.lg} />
+          <GlassEdge glints={false} radius={RADIUS.lg} />
           <Text style={s.doneTxt}>완료</Text>
         </Pressable>
       </View>
