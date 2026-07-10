@@ -190,7 +190,7 @@ export function ShoeCard({
         {/* 유리 재질(2026-07-09 확정): 반투명 표면(styles.card) + 코너 글린트 림 + 상단 광택.
             구 그라데이션 표면·컨디션색 글로우는 폐지 — 효과가 겹겹이 싸워 어색하다는 실기기
             피드백. 컨디션 색은 점·링에만(색은 의미, 질감은 무채). 히어로라 림을 한 단 올린다. */}
-        <GlassEdge id={`edge-card-${i}`} radius={CARD_RADIUS} intensity={GLASS.activeIntensity} />
+        <GlassEdge glints={false} id={`edge-card-${i}`} radius={CARD_RADIUS} />
 
         <View style={styles.cardInner}>
           {/* 정보영역(탭 → 상세). 러닝 시작 버튼은 이 Pressable '밖'의 형제라, 텍스트 기반
@@ -287,7 +287,7 @@ export function GhostShoeCard({width, onPress}: {width: number; onPress?: () => 
     <View style={{width, alignSelf: 'center'}}>
       <View style={styles.card}>
         {/* 실카드와 동일한 유리 재질(글로우 없음) — 고스트는 기본 림 세기. */}
-        <GlassEdge id="edge-card-ghost" radius={CARD_RADIUS} />
+        <GlassEdge glints={false} id="edge-card-ghost" radius={CARD_RADIUS} />
         <View style={styles.cardInner}>
           <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel="첫 러닝화 등록">
             {/* 빈 수명 링 — 트랙만 남긴 링 중앙에 신발 글리프(여기가 네 신발의 자리) */}

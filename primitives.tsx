@@ -237,7 +237,7 @@ export const TONE_BG: Record<Tone, string> = {
 export function GlassEdge({
   id,
   radius,
-  strokeWidth = 1,
+  strokeWidth = 0.75,
   intensity = 1,
   sheen = true,
   glints = true,
@@ -542,7 +542,7 @@ export function Card({
   return (
     <View style={[card.base, variant === 'hero' ? card.hero : card.quiet, padded && card.padded, style]}>
       {variant === 'hero' ? (
-        <GlassEdge radius={RADIUS.lg} intensity={GLASS.activeIntensity} />
+        <GlassEdge glints={false} radius={RADIUS.lg} />
       ) : (
         <GlassEdge glints={false} radius={RADIUS.lg} />
       )}
