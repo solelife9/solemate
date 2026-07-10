@@ -15,7 +15,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { rf, rs, ri, rv } from './lib/responsive';
-import { View, Text, Pressable, StyleSheet, Animated, Easing, StatusBar, LayoutAnimation, useWindowDimensions } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Animated, Easing, StatusBar, LayoutAnimation, useWindowDimensions, AccessibilityInfo } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Svg, { Circle, Defs, LinearGradient as SvgLinear, Stop } from 'react-native-svg';
@@ -42,6 +42,26 @@ import { tap, impactHeavy, warning } from './lib/haptics';
 // GPS 거리·페이스 기록은 지도와 무관하게 계속된다.
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+
+// jest 워커에서는 전환 애니메이션을 건너뛰고 최종 상태를 즉시 보여준다(reduce-motion 과
+// 동일 취급 — OnboardingScreen/RunRecap 관례). 테스트가 일시정지 요소를 동기 단언한다.
+const SKIP_ANIM = !!(typeof process !== 'undefined' && process.env && process.env.JEST_WORKER_ID);
+
+function useReduceMotion(): boolean {
+  const [rm, setRm] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    AccessibilityInfo.isReduceMotionEnabled().then(v => {
+      if (alive) setRm(v);
+    }).catch(() => {});
+    const sub = AccessibilityInfo.addEventListener('reduceMotionChanged', setRm);
+    return () => {
+      alive = false;
+      sub?.remove?.();
+    };
+  }, []);
+  return rm;
+}
 
 // ── Ring (부드럽게 미끄러지는 진행 호) ────────────────────────────────────────────
 // 구버전은 호를 64조각(Path)으로 쪼개 조각 단위(5.6°)로 '뚝뚝' 끊겨 보였고, GPS fix 마다
@@ -148,15 +168,36 @@ export default function RunActiveScreen({
   // 버그가 있었다(기기 피드백). 이제 t 하나로 스케일·상하 마진을 동시에 보간해 확실히 복귀.
   const t = useRef(new Animated.Value(paused ? 1 : 0)).current;
   const subIn = useRef(new Animated.Value(paused ? 1 : 0)).current;
+  // 일시정지 전환 오케스트레이션(2026-07-11 사용자: "슬라이드처럼 자연스럽게").
+  // 요소 마운트 타이밍은 그대로(테스트 동기 단언 보존) — opacity/transform 만 얹는다:
+  //   일시정지: 링 퇴장(LayoutAnimation 페이드) → 지도 위에서 페이드+슬라이드 인(120ms 뒤)
+  //             → 지표 행 정착 + 서브 지표 펼침(200ms 뒤). 재개: 역재생(링 스케일업 복귀).
+  // reduce-motion(또는 jest)이면 전부 즉시 최종 상태.
+  const reduceMotion = useReduceMotion();
+  const skipAnim = SKIP_ANIM || reduceMotion;
+  const mapIn = useRef(new Animated.Value(paused ? 1 : 0)).current;
+  const ringIn = useRef(new Animated.Value(1)).current;
   useEffect(() => {
     if (paused === uiPaused) return;
+    if (skipAnim) {
+      setUiPaused(paused);
+      t.setValue(paused ? 1 : 0);
+      subIn.setValue(paused ? 1 : 0);
+      mapIn.setValue(paused ? 1 : 0);
+      ringIn.setValue(1);
+      return;
+    }
     LayoutAnimation.configureNext(LayoutAnimation.create(260, LayoutAnimation.Types.easeInEaseOut, LayoutAnimation.Properties.opacity));
     setUiPaused(paused);
+    // 재개: 링이 스케일업+페이드로 되돌아온다(일시정지 시퀀스의 역재생 감각).
+    if (!paused) ringIn.setValue(0);
     Animated.parallel([
       Animated.timing(t, { toValue: paused ? 1 : 0, duration: 300, easing: Easing.inOut(Easing.cubic), useNativeDriver: true }),
-      Animated.timing(subIn, { toValue: paused ? 1 : 0, duration: paused ? 260 : 160, delay: paused ? 70 : 0, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+      Animated.timing(mapIn, { toValue: paused ? 1 : 0, duration: paused ? 340 : 160, delay: paused ? 120 : 0, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+      Animated.timing(subIn, { toValue: paused ? 1 : 0, duration: paused ? 300 : 160, delay: paused ? 200 : 0, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+      Animated.timing(ringIn, { toValue: 1, duration: 280, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
     ]).start();
-  }, [paused, uiPaused, t, subIn]);
+  }, [paused, uiPaused, t, subIn, mapIn, ringIn, skipAnim]);
   // 일시정지 지도 패널을 탭하면 전체화면 인터랙티브 지도로 확장한다. 재개(uiPaused=false)하면 닫는다.
   const [mapFull, setMapFull] = useState(false);
   useEffect(() => { if (!uiPaused) setMapFull(false); }, [uiPaused]);
@@ -271,24 +312,26 @@ export default function RunActiveScreen({
       {/* 일시정지 상단 지도 패널(위 절반) — 야외(경로 있음)에서만. 탭하면 전체화면 인터랙티브
           지도로 확장(mapFull). flex:1 로 상단을 채우고, 아래로 거리·지표(원래 6개)가 온다. */}
       {uiPaused && liveCoords.length > 0 && (
-        <Pressable
-          onPress={() => setMapFull(true)}
-          accessibilityRole="button"
-          accessibilityLabel="지도 전체화면으로 보기"
-          style={[r.mapPanel, { height: Math.round(winH * 0.32) }]}>
-          <RunLiveMap coords={liveCoords} />
-          {/* 지도 위 오버레이 — MapView 가 면을 채우므로 뒤(위)에 그린다. */}
-          <GlassEdge glints={false} radius={rs(20)} />
-          <View style={r.mapExpandBadge} pointerEvents="none">
-            <Ionicons name="expand" size={ri(15)} color={T1} />
-          </View>
-        </Pressable>
+        <Animated.View style={{ opacity: mapIn, transform: [{ translateY: mapIn.interpolate({ inputRange: [0, 1], outputRange: [-14, 0] }) }] }}>
+          <Pressable
+            onPress={() => setMapFull(true)}
+            accessibilityRole="button"
+            accessibilityLabel="지도 전체화면으로 보기"
+            style={[r.mapPanel, { height: Math.round(winH * 0.32) }]}>
+            <RunLiveMap coords={liveCoords} />
+            {/* 지도 위 오버레이 — MapView 가 면을 채우므로 뒤(위)에 그린다. */}
+            <GlassEdge glints={false} radius={rs(20)} />
+            <View style={r.mapExpandBadge} pointerEvents="none">
+              <Ionicons name="expand" size={ri(15)} color={T1} />
+            </View>
+          </Pressable>
+        </Animated.View>
       )}
 
       {/* ring — 러닝 중에만(사용자 설계: 달릴 땐 링, 일시정지엔 링 없이 지도+하단 지표).
           거리/자유 모드는 거리 히어로, 트랙 모드는 '바퀴 수' 히어로(링=현재 바퀴 진행). */}
       {!uiPaused && (
-      <Animated.View style={[r.ringWrap, { transform: [{ scale: ringScale }] }]}>
+      <Animated.View style={[r.ringWrap, { opacity: ringIn, transform: [{ scale: Animated.multiply(ringScale, ringIn.interpolate({ inputRange: [0, 1], outputRange: [0.9, 1] })) }] }]}>
         <Ring size={ri(280)} stroke={16} progress={track ? track.progress : pct}>
           {track ? (
             <View style={{ alignItems: 'center' }} accessibilityRole="text" accessibilityLiveRegion="polite"
@@ -313,12 +356,12 @@ export default function RunActiveScreen({
 
       {/* 일시정지 하단 헤드 — 링이 사라진 자리 대신 거리 히어로(목표 표기 없음, 음성 안내). */}
       {uiPaused && !track && (
-        <View style={r.pausedHead}>
+        <Animated.View style={[r.pausedHead, { opacity: subIn, transform: [{ translateY: subIn.interpolate({ inputRange: [0, 1], outputRange: [-10, 0] }) }] }]}>
           <View style={r.pausedDistRow}>
             <Text style={r.pausedDist}>{distanceKm.toFixed(2)}</Text>
             <Text style={r.pausedDistUnit}>km</Text>
           </View>
-        </View>
+        </Animated.View>
       )}
 
       {/* 트랙: 링 아래 회색 한 줄 — 거리 · 확정 랩거리 · 보정 상태(박스·색 없이 조용히) */}
@@ -372,14 +415,14 @@ export default function RunActiveScreen({
           동안은 숨겨 핵심 지표만 크게 보이게 한다(나이키런 방식: 흘끗 봐도 읽힘).
           등장은 위 히어로가 줄어든 뒤 살짝 늦게 올라오며 펼쳐진다(subIn). */}
       {uiPaused && (
-        <View style={r.subMetrics}>
+        <Animated.View style={[r.subMetrics, { opacity: subIn, transform: [{ translateY: subIn.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }] }]}>
           {sub.map((m, i) => (
             <View key={i} style={[r.sm, i > 0 && r.hmDivider]}>
               <Text style={r.smV}>{m.v}{m.u ? <Text style={r.smU}> {m.u}</Text> : null}</Text>
               <Text style={r.smL}>{m.l}</Text>
             </View>
           ))}
-        </View>
+        </Animated.View>
       )}
 
       {/* 트랙 모드 랩 기록 — 달리는 중에만. 자동랩(GPS 복귀)이 기본이고 이 버튼은 실내(GPS✗)
