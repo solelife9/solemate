@@ -287,7 +287,9 @@ export function GlassEdge({
   ).filter(c => c.peak > 0.005);
   const sheenOn = sheen && glints;
   // 베이스 헤어라인의 두 발원점(좌상·우하) — 반대 코너(우상·좌하)에 닿기 전에 0 으로 소멸.
-  const baseR = Math.max(s.w, s.h) * 0.82;
+  // 0.72 + 이른 감쇠(0.45부터): 발원 코너 주변만 또렷하고 변 중간부터 길게 사라진다
+  // (기기 피드백 2026-07-11: 0.82+0.55 플래토는 끝점에서만 소멸해 '라인이 다 있어' 보였다).
+  const baseR = Math.max(s.w, s.h) * 0.72;
   const baseCorners = [
     {key: 'tl', cx: rC, cy: rC},
     {key: 'br', cx: s.w - rC, cy: s.h - rC},
@@ -303,7 +305,7 @@ export function GlassEdge({
                 id={`${gid}-${c.key}-base`} gradientUnits="userSpaceOnUse"
                 cx={c.cx} cy={c.cy} fx={c.cx} fy={c.cy} rx={baseR} ry={baseR}>
                 <Stop offset="0" stopColor={T1} stopOpacity={op(GLASS.edgeBase)} />
-                <Stop offset="0.55" stopColor={T1} stopOpacity={op(GLASS.edgeBase)} />
+                <Stop offset="0.45" stopColor={T1} stopOpacity={op(GLASS.edgeBase * 0.85)} />
                 <Stop offset="1" stopColor={T1} stopOpacity={0} />
               </SvgRadialGradient>
             ))}
