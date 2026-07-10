@@ -191,11 +191,14 @@ export default function RunActiveScreen({
     setUiPaused(paused);
     // 재개: 링이 스케일업+페이드로 되돌아온다(일시정지 시퀀스의 역재생 감각).
     if (!paused) ringIn.setValue(0);
+    // JS 드라이버(코드베이스 관례) — t 는 레이아웃 속성(높이·폰트)도 구동하므로 네이티브
+    // 드라이버는 기기에서 throw → 병렬 전체가 죽어 지도/서브지표가 opacity 0 에 갇혔다
+    // (기기 회귀 2026-07-11 아침).
     Animated.parallel([
-      Animated.timing(t, { toValue: paused ? 1 : 0, duration: 300, easing: Easing.inOut(Easing.cubic), useNativeDriver: true }),
-      Animated.timing(mapIn, { toValue: paused ? 1 : 0, duration: paused ? 340 : 160, delay: paused ? 120 : 0, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
-      Animated.timing(subIn, { toValue: paused ? 1 : 0, duration: paused ? 300 : 160, delay: paused ? 200 : 0, easing: Easing.out(Easing.quad), useNativeDriver: true }),
-      Animated.timing(ringIn, { toValue: 1, duration: 280, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+      Animated.timing(t, { toValue: paused ? 1 : 0, duration: 300, easing: Easing.inOut(Easing.cubic), useNativeDriver: false }),
+      Animated.timing(mapIn, { toValue: paused ? 1 : 0, duration: paused ? 340 : 160, delay: paused ? 120 : 0, easing: Easing.out(Easing.cubic), useNativeDriver: false }),
+      Animated.timing(subIn, { toValue: paused ? 1 : 0, duration: paused ? 300 : 160, delay: paused ? 200 : 0, easing: Easing.out(Easing.quad), useNativeDriver: false }),
+      Animated.timing(ringIn, { toValue: 1, duration: 280, easing: Easing.out(Easing.cubic), useNativeDriver: false }),
     ]).start();
   }, [paused, uiPaused, t, subIn, mapIn, ringIn, skipAnim]);
   // 일시정지 지도 패널을 탭하면 전체화면 인터랙티브 지도로 확장한다. 재개(uiPaused=false)하면 닫는다.
