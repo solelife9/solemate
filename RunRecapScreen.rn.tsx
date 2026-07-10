@@ -5,9 +5,9 @@
 // 순수 프레젠테이션 — App 이 방금 저장한 런 데이터만 주입한다(데이터 생성 0).
 // 닫기(onClose)에서 App 이 기록 탭으로 이동한다.
 // ============================================================================
-import React, {useMemo, useRef, useState} from 'react';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
 import { rf, rs, ri, rv } from './lib/responsive';
-import {View, Text, ScrollView, Pressable, StyleSheet, Alert, TextInput, Image, Linking} from 'react-native';
+import {View, Text, ScrollView, Pressable, StyleSheet, Alert, TextInput, Image, Linking, Animated, Easing, AccessibilityInfo, type StyleProp, type ViewStyle} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {BG, CARD_HI, ACCENT, GOOD, WARN, DANGER, HALL_GOLD, T1, T2, T3, T4, FONT, DISPLAY, RADIUS, SEP, withAlpha, TYPE, GLASS} from './theme';
@@ -22,6 +22,69 @@ import {parseRoute} from './lib/route';
 import {CourseMap} from './CourseMap';
 import ShareCard from './ShareCard';
 import {buildShareCardModel, shareRunCard, saveCardToLibrary, type SvgCapturable} from './lib/shareCard';
+
+// ════════════════════════════════════════════════════════════════════════════
+// 진입 시그니처 모션(태스크 #10) — 완주 순간의 감정 시퀀스.
+// 체크 배지 스프링 팝 → '러닝 완료' 타이틀 Rise → 거리 카운트업(+스케일 정착) →
+// 이하 섹션 Rise 스태거(80ms). RN 내장 Animated(JS 드라이버 — 코드베이스 관례).
+// 접근성 '동작 줄이기'면 전부 생략하고 최종 상태 즉시 표시.
+// ════════════════════════════════════════════════════════════════════════════
+
+// jest 워커에서는 타이머 기반 애니메이션을 건너뛰고 최종 상태를 즉시 보여준다(reduce-motion
+// 과 동일 취급 — OnboardingScreen 관례). 실제 앱 런타임엔 JEST_WORKER_ID 가 없다.
+const SKIP_ANIM = !!(typeof process !== 'undefined' && process.env && process.env.JEST_WORKER_ID);
+
+function useReduceMotion(): boolean {
+  const [rm, setRm] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    AccessibilityInfo.isReduceMotionEnabled().then(v => {
+      if (alive) setRm(v);
+    }).catch(() => {});
+    const sub = AccessibilityInfo.addEventListener('reduceMotionChanged', setRm);
+    return () => {
+      alive = false;
+      sub?.remove?.();
+    };
+  }, []);
+  return rm;
+}
+
+/** 체크 배지 스프링 팝 — scale 0.6 → 1 오버슈트(성취의 '쿵' 순간). */
+function PopIn({skip, children, style}: {skip: boolean; children: React.ReactNode; style?: StyleProp<ViewStyle>}) {
+  const a = useRef(new Animated.Value(skip ? 1 : 0)).current;
+  useEffect(() => {
+    if (skip) { a.setValue(1); return; }
+    const anim = Animated.spring(a, {toValue: 1, friction: 5, tension: 120, useNativeDriver: false});
+    anim.start();
+    return () => anim.stop();
+  }, [a, skip]);
+  return (
+    <Animated.View
+      style={[style, {
+        opacity: a.interpolate({inputRange: [0, 0.35, 1], outputRange: [0, 1, 1]}),
+        transform: [{scale: a.interpolate({inputRange: [0, 1], outputRange: [0.6, 1]})}],
+      }]}>
+      {children}
+    </Animated.View>
+  );
+}
+
+/** 진입 Rise(로컬) — 아래 14px → 제자리 페이드인. delay 로 80ms 스태거. */
+function Enter({skip, delay = 0, children, style, testID}: {skip: boolean; delay?: number; children: React.ReactNode; style?: StyleProp<ViewStyle>; testID?: string}) {
+  const a = useRef(new Animated.Value(skip ? 1 : 0)).current;
+  useEffect(() => {
+    if (skip) { a.setValue(1); return; }
+    const anim = Animated.timing(a, {toValue: 1, duration: 420, delay, easing: Easing.out(Easing.cubic), useNativeDriver: false});
+    anim.start();
+    return () => anim.stop();
+  }, [a, delay, skip]);
+  return (
+    <Animated.View testID={testID} style={[style, {opacity: a, transform: [{translateY: a.interpolate({inputRange: [0, 1], outputRange: [14, 0]})}]}]}>
+      {children}
+    </Animated.View>
+  );
+}
 
 // 공유 카드 날짜 라벨 — "7월 3일 목요일"(표시 전용).
 const WEEKDAYS_KO = ['일', '월', '화', '수', '목', '금', '토'];
@@ -106,6 +169,20 @@ export default function RunRecapScreen({
 }) {
   const insets = useSafeAreaInsets();
   const goalHit = !!goalKm && goalKm > 0 && km >= goalKm;
+  // ── 진입 시그니처 모션 — reduce-motion(또는 jest)이면 전부 즉시 최종 상태.
+  const reduceMotion = useReduceMotion();
+  const skipAnim = SKIP_ANIM || reduceMotion;
+  const kmSafe = Number.isFinite(km) ? km : 0;
+  // 거리 히어로 카운트업(0 → 최종, ~900ms) + 살짝 스케일 정착(0.96 → 1).
+  const heroProg = useRef(new Animated.Value(skipAnim ? 1 : 0)).current;
+  const [heroShown, setHeroShown] = useState(skipAnim ? kmSafe : 0);
+  useEffect(() => {
+    if (skipAnim) { heroProg.setValue(1); setHeroShown(kmSafe); return; }
+    const id = heroProg.addListener(({value}) => setHeroShown(kmSafe * value));
+    const anim = Animated.timing(heroProg, {toValue: 1, duration: 900, delay: 320, easing: Easing.out(Easing.cubic), useNativeDriver: false});
+    anim.start(({finished}) => { if (finished) setHeroShown(kmSafe); });
+    return () => { heroProg.removeListener(id); anim.stop(); };
+  }, [heroProg, kmSafe, skipAnim]);
   // ── 오늘의 한 컷 + 한 줄 메모(2026-07-05) — 스트라바가 사랑받는 그 순간을 담는다.
   //    저장은 비차단: 사진은 고르는 즉시, 메모는 blur/닫기 시점에 onSaveMeta 로.
   const [photoUri, setPhotoUri] = useState<string | null>(null);
@@ -183,22 +260,30 @@ export default function RunRecapScreen({
   return (
     <View style={[s.screen, {paddingTop: insets.top}]} testID="run-recap-screen">
       <ScrollView contentContainerStyle={{paddingHorizontal: rs(18), paddingBottom: insets.bottom + 24, paddingTop: rv(8)}} showsVerticalScrollIndicator={false}>
-        {/* 축하 헤더 */}
+        {/* 축하 헤더 — ① 체크 배지 스프링 팝 → ② 타이틀 Rise */}
         <View style={s.celebrate}>
-          <View style={s.medal}><Ionicons name="checkmark-done" size={ri(26)} color={GOOD} /></View>
-          <Text style={s.title}>러닝 완료</Text>
-          {shoeName ? <Text style={s.shoe} numberOfLines={1}>{shoeName}</Text> : null}
+          <PopIn skip={skipAnim}>
+            <View style={s.medal}><Ionicons name="checkmark-done" size={ri(26)} color={GOOD} /></View>
+          </PopIn>
+          <Enter skip={skipAnim} delay={140} style={s.celebrateTxt}>
+            <Text style={s.title}>러닝 완료</Text>
+            {shoeName ? <Text style={s.shoe} numberOfLines={1}>{shoeName}</Text> : null}
+          </Enter>
         </View>
 
-        {/* 거리 히어로 */}
-        <View style={s.hero}>
-          <Text style={s.heroNum} testID="recap-distance">{(Number.isFinite(km) ? km : 0).toFixed(2)}</Text>
+        {/* 거리 히어로 — ③ 카운트업(0→최종) + 스케일 정착 */}
+        <Animated.View
+          style={[s.hero, {
+            opacity: heroProg.interpolate({inputRange: [0, 0.12, 1], outputRange: [0, 1, 1]}),
+            transform: [{scale: heroProg.interpolate({inputRange: [0, 1], outputRange: [0.96, 1]})}],
+          }]}>
+          <Text style={s.heroNum} testID="recap-distance">{heroShown.toFixed(2)}</Text>
           <Text style={s.heroUnit}>{unit}</Text>
-        </View>
+        </Animated.View>
 
-        {/* 배지 — 트랙 / 목표 달성 / 신기록 */}
+        {/* 배지 — 트랙 / 목표 달성 / 신기록 (④ 이하 섹션 Rise 스태거 80ms) */}
         {(!!track && track.laps > 0) || goalHit || prKinds.length > 0 ? (
-          <View style={s.badges}>
+          <Enter skip={skipAnim} delay={460} style={s.badges}>
             {!!track && track.laps > 0 && (
               <View style={[s.badge, {borderColor: withAlpha(ACCENT, 0.4), backgroundColor: withAlpha(ACCENT, 0.12)}]} testID="recap-track">
                 <Ionicons name="ellipse-outline" size={ri(13)} color={ACCENT} />
@@ -217,13 +302,13 @@ export default function RunRecapScreen({
                 <Text style={[s.badgeTxt, {color: GOOD}]}>신기록 · {PR_LABEL[k]}</Text>
               </View>
             ))}
-          </View>
+          </Enter>
         ) : null}
 
         {/* 대회 완주 감지 배너 — 위치+날짜로 특정 대회면 콕 집어, 아니면 하프/풀 완주면 일반.
             '대회 기록 남기기' → 메달 기록 흐름. '일반 러닝이에요'로 닫으면 재촉 안 함(절제). */}
         {raceMatch && onLogRace && !raceDismissed && (
-          <View style={s.raceBanner} testID="recap-race-banner">
+          <Enter skip={skipAnim} delay={540} style={s.raceBanner} testID="recap-race-banner">
             <View style={s.raceBannerHead}>
               <Ionicons name="medal" size={ri(16)} color={HALL_GOLD} />
               <Text style={s.raceBannerTitle}>
@@ -249,16 +334,18 @@ export default function RunRecapScreen({
                 <Text style={s.raceBannerGhostT}>일반 러닝이에요</Text>
               </Pressable>
             </View>
-          </View>
+          </Enter>
         )}
 
         {/* 오늘의 코스 — GPS 경로가 있으면 진짜 지도 위 경로(없으면 스스로 숨김).
             완주 직후가 러너가 코스를 가장 자랑하고 싶은 순간(공유 트리거). */}
-        <CourseMap points={routePoints} title="오늘의 코스" style={{marginTop: rv(14)}} />
+        <Enter skip={skipAnim} delay={620}>
+          <CourseMap points={routePoints} title="오늘의 코스" style={{marginTop: rv(14)}} />
+        </Enter>
 
         {/* 신발 마모 델타(시그니처) — 이 런이 신발 수명에 미친 영향 */}
         {shoeWear && (
-          <View style={s.shoeCard} testID="recap-shoe-wear">
+          <Enter skip={skipAnim} delay={700} style={s.shoeCard} testID="recap-shoe-wear">
               <View style={s.shoeIcon}><Ionicons name="footsteps" size={ri(18)} color={ACCENT} /></View>
             <View style={{flex: 1, minWidth: 0}}>
               <Text style={s.shoeName} numberOfLines={1}>{shoeName || '신발'}</Text>
@@ -267,28 +354,28 @@ export default function RunRecapScreen({
                 {shoeWear.deltaPct > 0 ? <Text style={s.shoeDelta}>  −{shoeWear.deltaPct}%p</Text> : null}
               </Text>
             </View>
-          </View>
+          </Enter>
         )}
 
         {/* 훈련 부하 영향(#5) — 이 런 포함 이번 주 부하. 부상예방 시그니처. */}
         {loadInfo && (() => {
           const c = loadInfo.level === 'high' ? DANGER : loadInfo.level === 'caution' ? WARN : GOOD;
           return (
-            <View style={s.load} testID="recap-load">
+            <Enter skip={skipAnim} delay={780} style={s.load} testID="recap-load">
               <View style={[s.loadDot, {backgroundColor: c}]} />
               <Text style={s.loadTxt}>이번 주 훈련 부하 <Text style={[s.loadStrong, {color: c}]}>{loadInfo.word}</Text> · {loadInfo.phrase}</Text>
-            </View>
+            </Enter>
           );
         })()}
 
         {/* 핵심 지표 그리드 */}
-        <View style={s.grid}>
+        <Enter skip={skipAnim} delay={860} style={s.grid}>
           <Stat label="시간" value={fmtDur(durationS)} />
           <Stat label="평균 페이스" value={fmtPace(km, durationS)} sub={`/${unit}`} />
           {calories > 0 && <Stat label="칼로리" value={`${Math.round(calories)}`} sub="kcal" />}
           {cadence > 0 && <Stat label="케이던스" value={`${Math.round(cadence)}`} sub="spm" />}
           {elevationM > 0 && <Stat label="누적 상승" value={`${Math.round(elevationM)}`} sub="m" />}
-        </View>
+        </Enter>
 
         {/* km 스플릿 막대(2구간↑일 때만 자체적으로 표시) */}
         {/* 스피드 모드 — km별 목표 대비 실제(플랜 적중 여부). 빠름=초록(−), 느림=주황(+). */}
@@ -301,7 +388,7 @@ export default function RunRecapScreen({
           const fmtDelta = (d: number) => (d > 0 ? `+${d}초` : d < 0 ? `−${Math.abs(d)}초` : '±0초');
           const dColor = (d: number) => (d <= -3 ? GOOD : d >= 3 ? WARN : T3);
           return (
-            <View style={s.plan} testID="recap-pace-plan">
+            <Enter skip={skipAnim} delay={940} style={s.plan} testID="recap-pace-plan">
                   <View style={s.planHead}>
                 <Text style={s.planTitle}>페이스 플랜 결과</Text>
                 <Text style={[s.planSummary, {color: avgDiff <= -3 ? GOOD : avgDiff >= 3 ? WARN : T2}]}>
@@ -316,16 +403,18 @@ export default function RunRecapScreen({
                   <Text style={[s.planDelta, {color: dColor(r.diff)}]}>{fmtDelta(r.diff)}</Text>
                 </View>
               ))}
-            </View>
+            </Enter>
           );
         })()}
 
-        <RunSplits splits={splits} />
+        <Enter skip={skipAnim} delay={1020}>
+          <RunSplits splits={splits} />
+        </Enter>
 
         {/* 오늘의 한 컷 + 한 줄 메모(2026-07-05) — 기록이 이야기가 되는 자리.
             runId 없으면(비정상 경로) 섹션 자체를 숨긴다. 저장은 전부 비차단. */}
         {canMeta && (
-          <View style={s.metaCard} testID="recap-meta">
+          <Enter skip={skipAnim} delay={1100} style={s.metaCard} testID="recap-meta">
               {photoUri ? (
               <View>
                 <Image source={{uri: photoUri}} style={s.metaPhoto} resizeMode="cover" accessible accessibilityLabel="러닝 사진" />
@@ -354,7 +443,7 @@ export default function RunRecapScreen({
               accessibilityLabel="러닝 메모"
               testID="recap-memo-input"
             />
-          </View>
+          </Enter>
         )}
       </ScrollView>
 
@@ -383,11 +472,13 @@ export default function RunRecapScreen({
 const s = StyleSheet.create({
   screen: {flex: 1, backgroundColor: BG},
   celebrate: {alignItems: 'center', gap: rv(6), marginTop: rv(12), marginBottom: rv(6)},
+  celebrateTxt: {alignItems: 'center', gap: rv(6)},
   medal: {width: rs(52), height: rs(52), borderRadius: rs(26), alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(GOOD, 0.14)},
   title: {color: T1, fontFamily: FONT, fontSize: TYPE.title.fontSize, fontWeight: '700', letterSpacing: -0.4},
   shoe: {color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600'},
   hero: {flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'center', gap: rv(6), marginTop: rv(8), marginBottom: rv(14)},
-  heroNum: {color: T1, fontFamily: DISPLAY, fontSize: rf(68), fontWeight: '700', letterSpacing: -2, lineHeight: rf(72)},
+  // tabular-nums — 카운트업 중 자릿수 폭이 튀지 않게(진입 시그니처 모션).
+  heroNum: {color: T1, fontFamily: DISPLAY, fontSize: rf(68), fontWeight: '700', letterSpacing: -2, lineHeight: rf(72), fontVariant: ['tabular-nums']},
   heroUnit: {color: T2, fontFamily: FONT, fontSize: TYPE.title.fontSize, fontWeight: '700', marginBottom: rv(10)},
   badges: {flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: rv(8), marginBottom: rv(16)},
   badge: {flexDirection: 'row', alignItems: 'center', gap: rv(4), paddingHorizontal: rs(12), height: rs(30), borderRadius: RADIUS.pill, borderWidth: 1},
