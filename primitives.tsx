@@ -276,11 +276,27 @@ export function GlassEdge({
     {key: 'br', cx: s.w - rC, cy: s.h - rC, peak: GLASS.edgeBR},
     {key: 'bl', cx: rC, cy: s.h - rC, peak: GLASS.edgeBL},
   ].filter(c => c.peak > 0.005);
+  // 베이스 헤어라인의 두 발원점(좌상·우하) — 반대 코너(우상·좌하)에 닿기 전에 0 으로 소멸.
+  const baseR = Math.max(s.w, s.h) * 0.82;
+  const baseCorners = [
+    {key: 'tl', cx: rC, cy: rC},
+    {key: 'br', cx: s.w - rC, cy: s.h - rC},
+  ];
   return (
     <View testID="glass-edge" pointerEvents="none" style={StyleSheet.absoluteFill} onLayout={onLayout}>
       {s.w > 1 ? (
         <Svg width={s.w} height={s.h}>
           <Defs>
+            {baseCorners.map(c => (
+              <SvgRadialGradient
+                key={`${c.key}-base`}
+                id={`${gid}-${c.key}-base`} gradientUnits="userSpaceOnUse"
+                cx={c.cx} cy={c.cy} fx={c.cx} fy={c.cy} rx={baseR} ry={baseR}>
+                <Stop offset="0" stopColor={T1} stopOpacity={op(GLASS.edgeBase)} />
+                <Stop offset="0.55" stopColor={T1} stopOpacity={op(GLASS.edgeBase)} />
+                <Stop offset="1" stopColor={T1} stopOpacity={0} />
+              </SvgRadialGradient>
+            ))}
             {corners.map(c => (
               <SvgRadialGradient
                 key={c.key}
@@ -302,7 +318,7 @@ export function GlassEdge({
               </SvgGradient>
             ) : null}
           </Defs>
-          {/* 상단 광택(면 채움) → 헤어라인(전 둘레) → 코너 글린트 4점 순으로 쌓는다. */}
+          {/* 상단 광택(면 채움) → 베이스 헤어라인 → 코너 글린트 순으로 쌓는다. */}
           {sheen ? (
             <Rect
               x={0} y={0} width={s.w} height={s.h}
@@ -310,7 +326,12 @@ export function GlassEdge({
               fill={`url(#${gid}-sheen)`}
             />
           ) : null}
-          <Rect {...edge(strokeWidth)} fill="none" stroke={T1} strokeOpacity={op(GLASS.edgeBase)} strokeWidth={strokeWidth} />
+          {/* 베이스 헤어라인 = 균일선이 아니라 좌상·우하에서 뻗다 우상·좌하 코너에서 완전
+              소멸하는 두 방사(2026-07-10 사용자 확정: "우상·좌하는 아예 라인 없게") —
+              빛(글린트)과 같은 서사로 코너까지 일관된다. */}
+          {baseCorners.map(c => (
+            <Rect key={`${c.key}-b`} {...edge(strokeWidth)} fill="none" stroke={`url(#${gid}-${c.key}-base)`} strokeWidth={strokeWidth} />
+          ))}
           {corners.map(c => (
             <Rect key={c.key} {...edge(strokeWidth)} fill="none" stroke={`url(#${gid}-${c.key})`} strokeWidth={strokeWidth} />
           ))}

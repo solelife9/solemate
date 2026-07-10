@@ -196,8 +196,9 @@ describe('Button — unified CTA surface (glass · matte · radius token)', () =
     layoutGlassEdges(root);
     // 코너 방사형 글린트 = 주광(좌상)·반사(우하) 2점만 — 우상/좌하는 글린트 없음
     // (기기 피드백 2026-07-09: 빛에서 멀어질수록 자연 감쇠, 반대편 코너는 거의 안 보이게).
+    // 베이스 헤어라인 2점(좌상·우하 방사 — 우상·좌하 코너 소멸) + 글린트 2점 = 4
     const radials = byName(root, 'RadialGradient');
-    expect(radials.length).toBe(2);
+    expect(radials.length).toBe(4);
     const peakOf = (suffix: string) => {
       const g = radials.find((r: any) => String(r.props.id).endsWith(`-${suffix}`))!;
       const stops = g.props.children.filter((c: any) => c?.props?.stopColor === T1);
@@ -208,12 +209,15 @@ describe('Button — unified CTA surface (glass · matte · radius token)', () =
     expect(peakOf('tl')).toBeGreaterThan(peakOf('br')); // 주광 > 반사
     expect(GLASS.edgeTR).toBe(0); // 우상/좌하 글린트 폐지 계약
     expect(GLASS.edgeBL).toBe(0);
-    // 전 둘레 헤어라인 — CARD_BORDER(7%)와 같은 시감으로 유리 요소를 또렷이 닫는다
-    // (2026-07-10 확정: "카드 전체를 제일 얇은 헤어라인으로").
-    const hairline = byName(root, 'Rect').find(
-      (r: any) => r.props.stroke === T1 && r.props.fill === 'none',
-    )!;
-    expect(Number(hairline.props.strokeOpacity)).toBeCloseTo(GLASS.edgeBase);
+    // 베이스 헤어라인 — 좌상·우하 방사가 CARD_BORDER 시감(0.07)으로 시작해
+    // 우상·좌하 코너에서 완전 소멸(2026-07-10 사용자 확정 "우상·좌하는 라인 없게").
+    const peakOfBase = (suffix: string) => {
+      const g = radials.find((r: any) => String(r.props.id).endsWith(`-${suffix}-base`))!;
+      const stops = g.props.children.filter((c: any) => c?.props?.stopColor === T1);
+      return Math.max(...stops.map((c: any) => Number(c.props.stopOpacity)));
+    };
+    expect(peakOfBase('tl')).toBeCloseTo(GLASS.edgeBase);
+    expect(peakOfBase('br')).toBeCloseTo(GLASS.edgeBase);
     expect(GLASS.edgeBase).toBeCloseTo(0.07);
   });
 
