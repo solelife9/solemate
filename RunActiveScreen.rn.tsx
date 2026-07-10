@@ -200,6 +200,16 @@ export default function RunActiveScreen({
       Animated.timing(subIn, { toValue: paused ? 1 : 0, duration: paused ? 300 : 160, delay: paused ? 200 : 0, easing: Easing.out(Easing.quad), useNativeDriver: false }),
       Animated.timing(ringIn, { toValue: 1, duration: 280, easing: Easing.out(Easing.cubic), useNativeDriver: false }),
     ]).start();
+    // 방어선(기기 회귀 2026-07-11): 어떤 이유로든 위 병렬이 완주하지 못하면 UI 가 중간
+    // 상태(지도/서브지표 opacity 0)에 갇힌다 — 시퀀스 최장 지연(540ms) 후 최종값을 강제
+    // 정착시킨다. 애니메이션이 정상 완료됐다면 동일값이라 시각 영향 0(멱등).
+    const settle = setTimeout(() => {
+      t.setValue(paused ? 1 : 0);
+      subIn.setValue(paused ? 1 : 0);
+      mapIn.setValue(paused ? 1 : 0);
+      ringIn.setValue(1);
+    }, 650);
+    return () => clearTimeout(settle);
   }, [paused, uiPaused, t, subIn, mapIn, ringIn, skipAnim]);
   // 일시정지 지도 패널을 탭하면 전체화면 인터랙티브 지도로 확장한다. 재개(uiPaused=false)하면 닫는다.
   const [mapFull, setMapFull] = useState(false);
