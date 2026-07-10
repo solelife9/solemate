@@ -30,7 +30,7 @@ import {
 import { tap } from './lib/haptics';
 // CTA 는 앱 전역 단일 Button 프리미티브(그라데이션 GRAD_TOP/BOT·글로우·radius 토큰).
 // 모드 탭 스트립은 SegmentedControl 단일 프리미티브(accentTint variant).
-import { Button, SegmentedControl, SwipeBack, SwipeBackExclude, ShoeGlyph } from './primitives';
+import { Button, SegmentedControl, SwipeBack, SwipeBackExclude, ShoeGlyph, GlassEdge } from './primitives';
 import { wearTier } from './lib/shoe';
 import { ringColor } from './lib/ringColor';
 import SpeedPlanPanel from './SpeedPlanPanel';
@@ -338,6 +338,7 @@ export default function RunGoalScreen({
           onPress={switchable ? () => setShoePickerOpen(true) : undefined}
           accessibilityRole="button"
           accessibilityLabel={`신발 선택: ${shoeBrand} ${shoeLabel}, 상태 ${condLabel}${remainKm != null ? `, 남은 수명 ${Math.round(remainKm)}킬로미터` : ''}${switchable ? ', 탭하면 다른 신발로 변경' : ''}`}>
+          <GlassEdge glints={false} radius={RADIUS.lg} />
           <View style={s.shoeThumb}><ShoeGlyph color={T2} size={ri(24)} /></View>
           <View style={{ flex: 1, minWidth: 0 }}>
             <Text style={s.shoeBrand}>{shoeBrand}</Text>
@@ -470,7 +471,8 @@ const s = StyleSheet.create({
   freeSub: { color: T3, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '500', lineHeight: rf(21), textAlign: 'center', maxWidth: rs(250) },
 
   foot: { paddingHorizontal: rs(22), paddingTop: rv(4), paddingBottom: rv(30) },
-  shoeSel: { flexDirection: 'row', alignItems: 'center', gap: rv(12), padding: rs(12), borderRadius: RADIUS.lg, borderCurve: 'continuous', backgroundColor: GLASS.fill, borderWidth: 1, borderColor: CARD_BORDER },
+  // 코너 페이드 헤어라인(GlassEdge glints=false) — 균일 RN 보더 폐지(2026-07-10 확정).
+  shoeSel: { flexDirection: 'row', alignItems: 'center', gap: rv(12), padding: rs(12), borderRadius: RADIUS.lg, borderCurve: 'continuous', overflow: 'hidden', backgroundColor: GLASS.fill },
   // 신발 전환 시트(하단) — History 기간 피커와 같은 문법(SCRIM + 하단 카드).
   pickerSheet: { backgroundColor: CARD, borderTopLeftRadius: RADIUS.xl, borderTopRightRadius: RADIUS.xl, borderCurve: 'continuous', paddingHorizontal: rs(18), paddingTop: rv(18), paddingBottom: rv(34), gap: rv(10) },
   // 목표 직접 입력 키패드 — 시트 규약은 pickerSheet 재사용, 키만 추가.

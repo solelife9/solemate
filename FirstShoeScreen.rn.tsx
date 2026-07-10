@@ -24,10 +24,10 @@ import Svg, {Defs, LinearGradient, Stop, Rect} from 'react-native-svg';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import {
-  BG, CARD, ACCENT, GOOD, WARN, DANGER, T1, T2, T3, SEP,
+  BG, CARD, ACCENT, GOOD, WARN, DANGER, T1, T2, T3,
   FONT, withAlpha, Shoe, TYPE, RADIUS,
 } from './theme';
-import {Pill, TabBar, Button, ShoeGlyph} from './primitives';
+import {Pill, TabBar, Button, ShoeGlyph, GlassEdge} from './primitives';
 import {GhostShoeCard} from './screens/KeegoHome';
 
 // ShoeGlyph 는 primitives 로 승격(고스트 카드가 화면 간 공유) — 기존 import 경로 호환 re-export.
@@ -129,6 +129,7 @@ function SuccessState({shoe, onStartRun, onDone, onSearch, onTab}: FirstShoeProp
 
         {/* 등록된 신발 카드 */}
         <View style={s.shoeCard}>
+          <GlassEdge glints={false} radius={rs(22)} />
           <View style={s.shoeRow}>
             <View style={{flex: 1}}>
               <Text style={s.shoeBrand}>{s0.brand.toUpperCase()}</Text>
@@ -222,7 +223,8 @@ const s = StyleSheet.create({
   successTitle: {color: T1, fontFamily: FONT, fontSize: TYPE.title1.fontSize, fontWeight: '700', letterSpacing: -0.6, textAlign: 'center'},
   successSub: {marginTop: rv(12), color: T3, fontFamily: FONT, fontSize: TYPE.body.fontSize, lineHeight: rf(21), textAlign: 'center', alignSelf: 'center', maxWidth: rs(264)},
 
-  shoeCard: {marginTop: rv(26), backgroundColor: CARD, borderRadius: rs(22), borderCurve: 'continuous', borderWidth: 1, borderColor: SEP, padding: rs(20)},
+  // 코너 페이드 헤어라인(GlassEdge glints=false) — 균일 RN 보더 폐지(2026-07-10 확정).
+  shoeCard: {marginTop: rv(26), backgroundColor: CARD, borderRadius: rs(22), borderCurve: 'continuous', overflow: 'hidden', padding: rs(20)},
   shoeRow: {flexDirection: 'row', alignItems: 'center', gap: rv(18)},
   shoeBrand: {color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600', letterSpacing: 1.4},
   shoeModel: {marginTop: rv(4), color: T1, fontFamily: FONT, fontSize: TYPE.title.fontSize, fontWeight: '700', letterSpacing: -0.6},

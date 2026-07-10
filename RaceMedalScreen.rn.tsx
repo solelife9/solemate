@@ -11,7 +11,7 @@ import {View, Text, ScrollView, Pressable, TextInput, Image, StyleSheet, Activit
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {BG, CARD_HI, GOOD, WARN, HALL_GOLD, T1, T2, T3, T4, SEP, FONT, DISPLAY, withAlpha, TYPE, GLASS, RADIUS} from './theme';
-import {Button, Chip} from './primitives';
+import {Button, Chip, GlassEdge} from './primitives';
 import {captureCertPhoto} from './lib/photo';
 import MedalCamera from './MedalCamera';
 import {fmtTime} from './lib/format';
@@ -161,6 +161,7 @@ export default function RaceMedalScreen({
             <Pressable key={r.id} onPress={() => { setRace(r); setDist(r.distances[0] ?? 'half'); setDateStr(r.date); setStep('record'); }}
               accessibilityRole="button" accessibilityLabel={`${r.name}, ${r.date}, ${r.region}`}
               style={({pressed}) => [s.raceRow, pressed && {opacity: 0.7}]}>
+              <GlassEdge glints={false} radius={rs(14)} />
               <View style={{flex: 1, minWidth: 0}}>
                 <Text style={s.raceName} numberOfLines={1}>{r.name}</Text>
                 <Text style={s.raceMeta}>{r.date} · {r.region}</Text>
@@ -280,7 +281,8 @@ const s = StyleSheet.create({
   search: {flexDirection: 'row', alignItems: 'center', gap: rv(8), marginHorizontal: rs(18), marginTop: rv(4), marginBottom: rv(12), height: rs(46), paddingHorizontal: rs(14), borderRadius: rs(14), backgroundColor: GLASS.fill, borderWidth: 1, borderColor: withAlpha(T1, 0.1)},
   searchInput: {flex: 1, color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '500', paddingVertical: rv(0)},
   section: {color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600', letterSpacing: 0.6, textTransform: 'uppercase', marginBottom: rv(8), marginTop: rv(4)},
-  raceRow: {flexDirection: 'row', alignItems: 'center', gap: rv(12), paddingVertical: rv(12), paddingHorizontal: rs(14), borderRadius: rs(14), backgroundColor: GLASS.fill, borderWidth: 1, borderColor: SEP, marginBottom: rv(8)},
+  // 코너 페이드 헤어라인(GlassEdge glints=false) — 균일 RN 보더 폐지(2026-07-10 확정).
+  raceRow: {flexDirection: 'row', alignItems: 'center', gap: rv(12), paddingVertical: rv(12), paddingHorizontal: rs(14), borderRadius: rs(14), borderCurve: 'continuous', overflow: 'hidden', backgroundColor: GLASS.fill, marginBottom: rv(8)},
   raceName: {color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600', letterSpacing: -0.2},
   raceMeta: {color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, marginTop: rv(2)},
   distPill: {backgroundColor: withAlpha(HALL_GOLD, 0.12), borderRadius: RADIUS.pill, paddingHorizontal: rs(8), paddingVertical: rv(4)},

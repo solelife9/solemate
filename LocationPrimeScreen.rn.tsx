@@ -12,6 +12,7 @@ import {View, Text, Pressable, StyleSheet} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {BG, CARD, ACCENT, GOOD, WARN, T1, T2, T3, FONT, RADIUS, SEP, withAlpha, TYPE} from './theme';
+import {GlassEdge} from './primitives';
 
 function Row({icon, color, title, body}: {icon: string; color: string; title: string; body: string}) {
   return (
@@ -45,6 +46,7 @@ export default function LocationPrimeScreen({
         <Text style={s.lead}>다음 화면에서 위치와 동작·피트니스 권한을 물어봐요. 잠깐만 읽어주세요.</Text>
 
         <View style={s.card}>
+          <GlassEdge glints={false} radius={RADIUS.lg} />
           <Row icon="walk" color={ACCENT} title="‘앱 사용 중에 허용’을 선택하세요"
             body="화면을 꺼도, 폰을 주머니에 넣어도 거리가 멈추지 않고 끝까지 기록돼요." />
           <View style={s.sep} />
@@ -79,7 +81,8 @@ const s = StyleSheet.create({
   hero: {alignSelf: 'center', width: rs(80), height: rs(80), borderRadius: rs(40), borderCurve: 'continuous', alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(ACCENT, 0.12), marginBottom: rv(18)},
   title: {color: T1, fontFamily: FONT, fontSize: TYPE.title.fontSize, fontWeight: '700', letterSpacing: -0.5, textAlign: 'center'},
   lead: {color: T3, fontFamily: FONT, fontSize: TYPE.body.fontSize, lineHeight: rf(20), textAlign: 'center', marginTop: rv(8), marginBottom: rv(22)},
-  card: {backgroundColor: CARD, borderRadius: RADIUS.lg, borderCurve: 'continuous', borderWidth: 1, borderColor: SEP, paddingHorizontal: rs(16), paddingVertical: rv(4)},
+  // 코너 페이드 헤어라인(GlassEdge glints=false) — 균일 RN 보더 폐지(2026-07-10 확정).
+  card: {backgroundColor: CARD, borderRadius: RADIUS.lg, borderCurve: 'continuous', overflow: 'hidden', paddingHorizontal: rs(16), paddingVertical: rv(4)},
   row: {flexDirection: 'row', alignItems: 'flex-start', gap: rv(12), paddingVertical: rv(16)},
   rowIcon: {width: rs(36), height: rs(36), borderRadius: rs(18), borderCurve: 'continuous', alignItems: 'center', justifyContent: 'center', marginTop: rv(1)},
   rowTitle: {color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '700', letterSpacing: -0.2},

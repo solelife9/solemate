@@ -38,7 +38,7 @@ import {
   RADIUS,
   withAlpha, TYPE,
 } from './theme';
-import {Button} from './primitives';
+import {Button, GlassEdge} from './primitives';
 import {Unit} from './lib/units';
 import {
   buildRetirementSummary,
@@ -292,6 +292,7 @@ function ConfirmStep({
         달렸어요.
       </Text>
       <View style={[s.card, s.basicCard]}>
+        <GlassEdge glints={false} radius={RADIUS.lg} />
         <BasicRow label="누적 거리" value={model.distanceLabel} />
         <BasicRow label="함께한 러닝" value={`${model.runCountLabel}회`} />
         <BasicRow label="사용 기간" value={period} last />
@@ -346,6 +347,7 @@ function JourneyStep({
       <Text style={s.stepTitle}>{model.shoeName}의 일대기</Text>
       {!!model.dateRange && <Text style={s.dateRange}>{model.dateRange}</Text>}
       <View style={[s.card, s.grid]}>
+        <GlassEdge glints={false} radius={RADIUS.lg} />
         {cells.map((c, i) => (
           <View key={c.l} style={s.gridCell} testID={`journey-cell-${i}`}>
             <Text style={s.gridValue}>{c.v}</Text>
@@ -387,6 +389,7 @@ function HighlightsStep({
       {/* Most Memorable Moment(있으면) — 단 하나의 가장 강렬한 실제 하이라이트 */}
       {!!model.mostMemorable && (
         <View style={[s.card, s.momentCard]} testID="most-memorable">
+          <GlassEdge glints={false} radius={RADIUS.lg} />
           <Text style={s.momentLabel}>Most Memorable Moment</Text>
           <Text style={s.momentValue}>{model.mostMemorable}</Text>
         </View>
@@ -395,6 +398,7 @@ function HighlightsStep({
       {/* 실제 달성한 하이라이트 목록(우선순위 순). 없으면 격려 카피(날조 금지). */}
       {hasHighlights ? (
         <View style={[s.card, s.hlCard]}>
+          <GlassEdge glints={false} radius={RADIUS.lg} />
           {model.highlights.map((h, i) => (
             <View
               key={h + i}
@@ -539,12 +543,12 @@ const s = StyleSheet.create({
     marginTop: SPACE.xs,
   },
 
+  // 코너 페이드 헤어라인(GlassEdge glints=false) — 균일 RN 보더 폐지(2026-07-10 확정).
   card: {
     backgroundColor: CARD_DIM,
     borderRadius: RADIUS.lg,
     borderCurve: 'continuous',
-    borderWidth: 1,
-    borderColor: withAlpha(T1, 0.07),
+    overflow: 'hidden',
   },
   basicCard: {paddingHorizontal: SPACE.lg, marginTop: SPACE.xs},
   basicRow: {

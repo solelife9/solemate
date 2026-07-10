@@ -15,10 +15,10 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {
   BG, CARD_HI, ACCENT, BRAND, GLASS, WARN, GOOD, T1, T2, T3, T4,
-  FONT, DISPLAY, SPACE, RADIUS, GUTTER, CARD_BORDER, withAlpha, Shoe, SHOES, TYPE,
+  FONT, DISPLAY, SPACE, RADIUS, GUTTER, withAlpha, Shoe, SHOES, TYPE,
 } from './theme';
 import type { RankTier } from './lib/progression/types';
-import { TabBar, TABBAR_CLEARANCE, KeegoWordmark, SectionTitle, AmbientBackdrop } from './primitives';
+import { TabBar, TABBAR_CLEARANCE, KeegoWordmark, SectionTitle, AmbientBackdrop, GlassEdge } from './primitives';
 import { Unit } from './lib/units';
 import { ShoeCard as KeegoShoeCard, GhostShoeCard } from './screens/KeegoHome';
 import type { LoadRun } from './lib/trainingLoad';
@@ -191,6 +191,7 @@ function WeekCard({ week, unit = 'km', weeklyGoalKm = 0, streakDays = 0 }: { wee
   if (runs === 0) {
     return (
       <View style={s.insightCard} testID="home-week">
+        <GlassEdge glints={false} radius={RADIUS.lg} />
         {weeklyGoalKm > 0 && (
           <View style={s.weekTop}>
             <View />
@@ -313,6 +314,7 @@ function RotationInsightPanel({ rotation, onPickShoe }: { rotation: RotationPick
     <View testID="home-rotation" style={s.rotaWrap}>
       <SectionTitle style={s.sectionLabel}>로테이션 인사이트</SectionTitle>
       <View style={s.rotaCard}>
+        <GlassEdge glints={false} radius={RADIUS.lg} />
         {rotation.map((p, i) => {
           const { badge, description, toneKey } = insightBadge(p, i, rotation.length);
           const tone = INSIGHT_TONE[toneKey] ?? INSIGHT_TONE.neutral;
@@ -570,7 +572,7 @@ const s = StyleSheet.create({
 
 
 
-  goalCard: { backgroundColor: GLASS.fill, borderRadius: rs(18), borderCurve: 'continuous', borderWidth: 1, borderColor: CARD_BORDER, padding: SPACE.md, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  // (goalCard 스타일 삭제 — 미사용 잔재. 카드 보더 통일 스윕 2026-07-10)
   goalInfo: { flex: 1, gap: rv(6), minWidth: 0 },
   goalSub: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500' },
   streakChip: { flexDirection: 'row', alignItems: 'center', gap: rv(4), alignSelf: 'flex-start', borderRadius: RADIUS.pill, paddingHorizontal: rs(8), paddingVertical: rv(4) },
@@ -585,7 +587,8 @@ const s = StyleSheet.create({
 
   // 현재 상태 인사이트 카드(사용거리 | 교체예상) — 활성 신발 반영
   weekEmptyTxt: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, lineHeight: rf(19) },
-  insightCard: { backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderCurve: 'continuous', borderWidth: 1, borderColor: CARD_BORDER, padding: SPACE.lg },
+  // 코너 페이드 헤어라인(GlassEdge glints=false) — 균일 RN 보더 폐지(2026-07-10 확정).
+  insightCard: { backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderCurve: 'continuous', overflow: 'hidden', padding: SPACE.lg },
   insightGrid: { flexDirection: 'row', alignItems: 'flex-start' },
   insightDivider: { width: StyleSheet.hairlineWidth, alignSelf: 'stretch', backgroundColor: withAlpha(T1, 0.08), marginHorizontal: SPACE.lg },
   insightLabel: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600', letterSpacing: -0.1 },
@@ -612,8 +615,7 @@ const s = StyleSheet.create({
   pageDot: { width: rs(5), height: rs(5), borderRadius: rs(3), backgroundColor: withAlpha(T1, 0.22) },
   pageDotOn: { width: rs(16), backgroundColor: T2 },
 
-  // 홈 챌린지 카드
-  chalWrap: { marginHorizontal: SPACE.xl, marginTop: SPACE.lg, backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: CARD_BORDER, padding: SPACE.lg },
+  // 홈 챌린지 카드 (chalWrap 스타일 삭제 — 미사용 잔재. 카드 보더 통일 스윕 2026-07-10)
   chalLabel: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600', letterSpacing: 0.6, textTransform: 'uppercase', flex: 1 },
   chalMore: { color: ACCENT, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600' },
   chalEmpty: { alignItems: 'center', paddingVertical: rv(8) },
@@ -628,7 +630,7 @@ const s = StyleSheet.create({
   chalPct: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, marginTop: rv(4) },
 
   rotaWrap: { marginTop: SPACE.lg },
-  rotaCard: { marginHorizontal: SPACE.xl, backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: CARD_BORDER, paddingHorizontal: SPACE.lg },
+  rotaCard: { marginHorizontal: SPACE.xl, backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderCurve: 'continuous', overflow: 'hidden', paddingHorizontal: SPACE.lg },
   rotaBrand: { color: T3, fontFamily: DISPLAY, fontSize: TYPE.caption.fontSize, fontWeight: '500', letterSpacing: 1.2 },
   rotaModel: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.body.fontSize, fontWeight: '600', letterSpacing: -0.1, marginTop: rv(4) },
   // 로테이션 인사이트 행

@@ -10,7 +10,7 @@ import { rf, rs, ri, rv } from './lib/responsive';
 import {View, Text, ScrollView, Pressable, StyleSheet, Alert, TextInput, Image, Linking} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import {BG, CARD_HI, ACCENT, GOOD, WARN, DANGER, HALL_GOLD, T1, T2, T3, T4, FONT, DISPLAY, RADIUS, SEP, withAlpha, TYPE, GLASS, CARD_BORDER} from './theme';
+import {BG, CARD_HI, ACCENT, GOOD, WARN, DANGER, HALL_GOLD, T1, T2, T3, T4, FONT, DISPLAY, RADIUS, SEP, withAlpha, TYPE, GLASS} from './theme';
 import {RACE_DISTANCE_LABEL, type RaceMatch} from './data/raceEvents';
 import {fmtPaceSec} from './lib/pacePlan';
 import {fmtPace} from './lib/format';
@@ -260,6 +260,7 @@ export default function RunRecapScreen({
         {/* 신발 마모 델타(시그니처) — 이 런이 신발 수명에 미친 영향 */}
         {shoeWear && (
           <View style={s.shoeCard} testID="recap-shoe-wear">
+            <GlassEdge glints={false} radius={RADIUS.lg} />
             <View style={s.shoeIcon}><Ionicons name="footsteps" size={ri(18)} color={ACCENT} /></View>
             <View style={{flex: 1, minWidth: 0}}>
               <Text style={s.shoeName} numberOfLines={1}>{shoeName || '신발'}</Text>
@@ -284,6 +285,7 @@ export default function RunRecapScreen({
 
         {/* 핵심 지표 그리드 */}
         <View style={s.grid}>
+          <GlassEdge glints={false} radius={RADIUS.lg} />
           <Stat label="시간" value={fmtDur(durationS)} />
           <Stat label="평균 페이스" value={fmtPace(km, durationS)} sub={`/${unit}`} />
           {calories > 0 && <Stat label="칼로리" value={`${Math.round(calories)}`} sub="kcal" />}
@@ -303,6 +305,7 @@ export default function RunRecapScreen({
           const dColor = (d: number) => (d <= -3 ? GOOD : d >= 3 ? WARN : T3);
           return (
             <View style={s.plan} testID="recap-pace-plan">
+              <GlassEdge glints={false} radius={RADIUS.lg} />
               <View style={s.planHead}>
                 <Text style={s.planTitle}>페이스 플랜 결과</Text>
                 <Text style={[s.planSummary, {color: avgDiff <= -3 ? GOOD : avgDiff >= 3 ? WARN : T2}]}>
@@ -327,6 +330,7 @@ export default function RunRecapScreen({
             runId 없으면(비정상 경로) 섹션 자체를 숨긴다. 저장은 전부 비차단. */}
         {canMeta && (
           <View style={s.metaCard} testID="recap-meta">
+            <GlassEdge glints={false} radius={RADIUS.lg} />
             {photoUri ? (
               <View>
                 <Image source={{uri: photoUri}} style={s.metaPhoto} resizeMode="cover" accessible accessibilityLabel="러닝 사진" />
@@ -406,12 +410,13 @@ const s = StyleSheet.create({
   raceBannerPrimaryT: {color: HALL_GOLD, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '700'},
   raceBannerGhost: {height: rs(42), paddingHorizontal: rs(14), alignItems: 'center', justifyContent: 'center'},
   raceBannerGhostT: {color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500'},
-  grid: {flexDirection: 'row', flexWrap: 'wrap', backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: SEP, paddingVertical: rv(6)},
+  // 코너 페이드 헤어라인(GlassEdge glints=false) — 균일 RN 보더 폐지(2026-07-10 확정).
+  grid: {flexDirection: 'row', flexWrap: 'wrap', backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderCurve: 'continuous', overflow: 'hidden', paddingVertical: rv(6)},
   stat: {width: '50%', paddingVertical: rv(14), paddingHorizontal: rs(18), alignItems: 'flex-start'},
   statValue: {color: T1, fontFamily: DISPLAY, fontSize: TYPE.title1.fontSize, fontWeight: '700', letterSpacing: -0.6},
   statLabel: {color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600', marginTop: rv(3)},
   statSub: {color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500'},
-  shoeCard: {flexDirection: 'row', alignItems: 'center', gap: rv(12), backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: SEP, paddingHorizontal: rs(14), paddingVertical: rv(12), marginBottom: rv(12)},
+  shoeCard: {flexDirection: 'row', alignItems: 'center', gap: rv(12), backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderCurve: 'continuous', overflow: 'hidden', paddingHorizontal: rs(14), paddingVertical: rv(12), marginBottom: rv(12)},
   shoeIcon: {width: rs(36), height: rs(36), borderRadius: rs(18), alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(ACCENT, 0.12)},
   shoeName: {color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '700', letterSpacing: -0.2},
   shoeMeta: {color: T2, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500', marginTop: rv(2)},
@@ -421,7 +426,7 @@ const s = StyleSheet.create({
   loadDot: {width: rs(8), height: rs(8), borderRadius: rs(4)},
   loadTxt: {flex: 1, color: T2, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500'},
   loadStrong: {fontWeight: '700'},
-  plan: {backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: SEP, paddingHorizontal: rs(16), paddingVertical: rv(12), marginTop: rv(12)},
+  plan: {backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderCurve: 'continuous', overflow: 'hidden', paddingHorizontal: rs(16), paddingVertical: rv(12), marginTop: rv(12)},
   planHead: {flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: rv(8)},
   planTitle: {color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '700'},
   planSummary: {fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '700'},
@@ -437,7 +442,7 @@ const s = StyleSheet.create({
   shareBtn: {flex: 1, height: rs(52), borderRadius: RADIUS.lg, borderCurve: 'continuous', overflow: 'hidden', backgroundColor: withAlpha(T1, 0.06), flexDirection: 'row', alignItems: 'center', justifyContent: 'center'},
   doneBtn: {flex: 1.6, height: rs(52), borderRadius: RADIUS.lg, borderCurve: 'continuous', overflow: 'hidden', backgroundColor: withAlpha(T1, 0.1), alignItems: 'center', justifyContent: 'center'},
   doneTxt: {color: T1, fontFamily: FONT, fontSize: TYPE.heading.fontSize, fontWeight: '700'},
-  metaCard: {backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderCurve: 'continuous', borderWidth: 1, borderColor: CARD_BORDER, padding: rs(14), marginTop: rv(12), gap: rv(12)},
+  metaCard: {backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderCurve: 'continuous', overflow: 'hidden', padding: rs(14), marginTop: rv(12), gap: rv(12)},
   metaPhoto: {width: '100%', height: rs(180), borderRadius: RADIUS.md, borderCurve: 'continuous'},
   metaPhotoRemove: {position: 'absolute', top: 8, right: 8, width: rs(26), height: rs(26), borderRadius: rs(13), backgroundColor: 'rgba(0,0,0,0.55)', alignItems: 'center', justifyContent: 'center'},
   metaPhotoAdd: {flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(8), borderRadius: RADIUS.md, borderCurve: 'continuous', borderWidth: 1, borderColor: SEP, paddingVertical: rv(14)},

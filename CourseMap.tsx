@@ -9,7 +9,8 @@ import React, {useState} from 'react';
 import { rf, rs, rv } from './lib/responsive';
 import {View, Text, StyleSheet, Platform, type LayoutChangeEvent} from 'react-native';
 import Svg, {Polyline, Circle} from 'react-native-svg';
-import {CARD, CARD_DIM, CARD_BORDER, BRAND, T1, T2, T3, FONT, RADIUS, SEP} from './theme';
+import {CARD, CARD_DIM, BRAND, T1, T2, T3, FONT, RADIUS} from './theme';
+import {GlassEdge} from './primitives';
 import {DARK_MAP_STYLE} from './lib/mapStyle';
 import {projectRoute, type LatLon} from './lib/route';
 
@@ -70,6 +71,8 @@ function SvgCourse({points}: {points: LatLon[]}) {
           {!!end && <Circle cx={end.x} cy={end.y} r={5} fill={T1} stroke={BRAND} strokeWidth={2} />}
         </Svg>
       )}
+      {/* 지도 위 오버레이라 마지막 자식(콘텐츠가 absoluteFill 이면 첫 자식은 덮인다). */}
+      <GlassEdge glints={false} radius={rs(14)} />
     </View>
   );
 }
@@ -85,6 +88,7 @@ export function CourseMap({points, title = '코스', style}: {
   const end = coords[coords.length - 1];
   return (
     <View style={[m.card, style]} testID="course-map">
+      <GlassEdge glints={false} radius={RADIUS.lg} />
       <Text style={m.label}>{title}</Text>
       {MAPS_AVAILABLE ? (
         <View style={[m.mapWell, {overflow: 'hidden'}]}>
@@ -113,6 +117,8 @@ export function CourseMap({points, title = '코스', style}: {
               <View style={m.endDot} />
             </MapMarker>
           </MapView>
+          {/* 지도 위 오버레이 — MapView 가 absoluteFill 이라 뒤(위)에 그린다. */}
+          <GlassEdge glints={false} radius={rs(14)} />
         </View>
       ) : (
         <SvgCourse points={points} />
@@ -122,9 +128,10 @@ export function CourseMap({points, title = '코스', style}: {
 }
 
 const m = StyleSheet.create({
-  card: {backgroundColor: CARD, borderRadius: RADIUS.lg, borderCurve: 'continuous', borderWidth: 1, borderColor: CARD_BORDER, padding: rs(16)},
+  // 코너 페이드 헤어라인(GlassEdge glints=false) — 균일 RN 보더 폐지(2026-07-10 확정).
+  card: {backgroundColor: CARD, borderRadius: RADIUS.lg, borderCurve: 'continuous', overflow: 'hidden', padding: rs(16)},
   label: {color: T3, fontFamily: FONT, fontSize: rf(13), fontWeight: '600', letterSpacing: 0.4},
-  mapWell: {height: MAP_H, marginTop: rv(10), borderRadius: rs(14), borderCurve: 'continuous', overflow: 'hidden', backgroundColor: CARD_DIM, borderWidth: 1, borderColor: SEP},
+  mapWell: {height: MAP_H, marginTop: rv(10), borderRadius: rs(14), borderCurve: 'continuous', overflow: 'hidden', backgroundColor: CARD_DIM},
   startDot: {width: rs(12), height: rs(12), borderRadius: rs(6), borderCurve: 'continuous', backgroundColor: T2, borderWidth: 2, borderColor: T1},
   endDot: {width: rs(14), height: rs(14), borderRadius: rs(7), borderCurve: 'continuous', backgroundColor: T1, borderWidth: 3, borderColor: BRAND},
 });

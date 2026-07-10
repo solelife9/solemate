@@ -12,7 +12,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import {
   BG, CARD_HI, ACCENT, DANGER, T1, T2, T3, T4, FONT, DISPLAY, withAlpha, Shoe, TYPE, GLASS, RADIUS,
 } from './theme';
-import { Pill, Button } from './primitives';
+import { Pill, Button, GlassEdge } from './primitives';
 // 러닝화 모델 카탈로그·권장수명은 data/shoeModels(단일 소스)에서 가져온다.
 import { getRecommendedLifespanKm } from './data/shoeModels';
 // 러닝화 선택은 온보딩과 공유하는 2열 분할 피커(단일 소스).
@@ -128,6 +128,7 @@ export default function AddShoeScreen({
         {/* 러닝화(브랜드+모델) — 탭하면 온보딩과 동일한 2열 분할 피커가 열린다 */}
         <Text style={s.label}>러닝화</Text>
         <Pressable onPress={() => setPickerOpen(true)} accessibilityRole="button" accessibilityLabel={picked ? `러닝화 ${picked.brand} ${picked.model}, 눌러서 변경` : '러닝화 선택'} testID="add-shoe-select" style={({ pressed }) => [s.selector, pressed && s.pressed]}>
+          <GlassEdge glints={false} radius={rs(16)} />
           <Ionicons name="search" size={ri(18)} color={T3} />
           <Text style={[s.selectorText, !picked && { color: T3 }]} numberOfLines={1}>
             {picked ? `${picked.brand ? `${picked.brand} · ` : ''}${picked.model}` : '브랜드·모델 선택'}
@@ -206,7 +207,8 @@ const s = StyleSheet.create({
   label: { color: T2, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500', letterSpacing: 0.2, paddingHorizontal: rs(4), paddingBottom: rv(10) },
 
   // 러닝화 선택 트리거(탭하면 2열 분할 피커). 입력칸처럼 보이되 누르면 모달이 열린다.
-  selector: { backgroundColor: GLASS.fill, borderRadius: rs(16), borderCurve: 'continuous', borderWidth: 1, borderColor: withAlpha(T1, 0.07), flexDirection: 'row', alignItems: 'center', gap: rv(10), paddingHorizontal: rs(18), paddingVertical: rv(16) },
+  // 코너 페이드 헤어라인(GlassEdge glints=false) — 균일 RN 보더 폐지(2026-07-10 확정).
+  selector: { backgroundColor: GLASS.fill, borderRadius: rs(16), borderCurve: 'continuous', overflow: 'hidden', flexDirection: 'row', alignItems: 'center', gap: rv(10), paddingHorizontal: rs(18), paddingVertical: rv(16) },
   selectorText: { flex: 1, color: T1, fontFamily: FONT, fontSize: TYPE.heading.fontSize, fontWeight: '500', letterSpacing: -0.2 },
 
   maxHead: { marginTop: rv(22), flexDirection: 'row', alignItems: 'center', gap: rv(8), paddingHorizontal: rs(4), paddingBottom: rv(10) },

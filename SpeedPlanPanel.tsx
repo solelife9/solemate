@@ -9,7 +9,7 @@ import React, {useEffect, useRef, useState} from 'react';
 import { rf, rs, ri, rv } from './lib/responsive';
 import {View, Text, Pressable, ScrollView, StyleSheet} from 'react-native';
 import {ACCENT, CARD, T1, T2, T3, T4, SEP, FONT, RADIUS, withAlpha} from './theme';
-import {SegmentedControl, SwipeBackExclude, Stepper} from './primitives';
+import {SegmentedControl, SwipeBackExclude, Stepper, GlassEdge} from './primitives';
 import {buildPacePlan, clampPace, fmtPaceSec, PaceStrategy} from './lib/pacePlan';
 
 const KM_MIN = 1, KM_MAX = 42;
@@ -116,6 +116,7 @@ export default function SpeedPlanPanel({
 
       {/* 선택 구간 미세조정 */}
       <View style={[s.row, s.tuneRow]}>
+        <GlassEdge glints={false} radius={RADIUS.lg} />
         <Text style={s.rowLabel}>{selIdx + 1}km 목표</Text>
         <PaceStepper
           value={`${fmtPaceSec(plan[selIdx])} /km`}
@@ -130,7 +131,8 @@ export default function SpeedPlanPanel({
 const s = StyleSheet.create({
   wrap: {width: '100%', gap: rv(12)},
   row: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'},
-  tuneRow: {backgroundColor: CARD, borderRadius: RADIUS.lg, borderCurve: 'continuous', borderWidth: 1, borderColor: SEP, paddingHorizontal: rs(16), paddingVertical: rv(12)},
+  // 코너 페이드 헤어라인(GlassEdge glints=false) — 균일 RN 보더 폐지(2026-07-10 확정).
+  tuneRow: {backgroundColor: CARD, borderRadius: RADIUS.lg, borderCurve: 'continuous', overflow: 'hidden', paddingHorizontal: rs(16), paddingVertical: rv(12)},
   rowLabel: {color: T2, fontFamily: FONT, fontSize: rf(15), fontWeight: '600'},
   stepVal: {color: T1, fontFamily: FONT, fontSize: rf(18), fontWeight: '700', minWidth: rs(92), textAlign: 'center'},
   seg: {marginTop: rv(2)},

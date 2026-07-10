@@ -24,7 +24,7 @@ import {
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import {GhostBar, GhostThumb} from './primitives';
+import {GhostBar, GhostThumb, GlassEdge} from './primitives';
 import {
   BG,
   CARD,
@@ -183,10 +183,13 @@ export default function HallOfFameScreen({
         style={[
           s.row,
           highlight && {
+            borderWidth: 1,
             borderColor: withAlpha(ACCENT, 0.55),
             backgroundColor: withAlpha(ACCENT, 0.08),
           },
         ]}>
+        {/* 일반 행 = 코너 페이드 헤어라인, 내 행(highlight) = 액센트 의미 보더(예외). */}
+        {!highlight && <GlassEdge glints={false} radius={RADIUS.md} />}
         <View style={s.rankCol}>
           <Text style={[s.rankNum, e.rank <= 3 && {color: tColor}]}>
             {MEDALS[e.rank] ?? e.rank}
@@ -271,6 +274,7 @@ export default function HallOfFameScreen({
         {/* 내 순위 카드 */}
         {myAvailable && myEntry ? (
           <View style={s.myCard} testID="hof-my-rank">
+            <GlassEdge glints={false} radius={RADIUS.xl} />
             <View style={{flex: 1}}>
               <Text style={s.myLabel}>내 순위</Text>
               <Text style={s.myRank}>
@@ -287,6 +291,7 @@ export default function HallOfFameScreen({
           </View>
         ) : (
           <View style={s.hint} testID="hof-my-unavailable">
+            <GlassEdge glints={false} radius={RADIUS.md} />
             <Ionicons name="person-circle-outline" size={ri(18)} color={T3} />
             <Text style={s.hintTxt}>
               로그인 후 동기화하면 내 순위가 표시돼요
@@ -301,6 +306,7 @@ export default function HallOfFameScreen({
           <View style={{gap: rv(8)}} testID="hof-loading">
             {[1, 0.7, 0.45, 0.25, 0.12].map((o, i) => (
               <View key={i} style={[s.row, {opacity: o}]}>
+                <GlassEdge glints={false} radius={RADIUS.md} />
                 <GhostBar w={rs(18)} />
                 <GhostThumb size={34} />
                 <View style={{flex: 1, minWidth: 0}}>
@@ -371,14 +377,14 @@ const s = StyleSheet.create({
     paddingVertical: rv(8),
   },
   catChipTxt: {fontFamily: FONT, color: T3, fontSize: TYPE.label.fontSize, fontWeight: '700'},
-  // 내 순위 카드
+  // 내 순위 카드 — 코너 페이드 헤어라인(GlassEdge glints=false, 2026-07-10 통일 스윕).
   myCard: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: HERO_BG,
-    borderWidth: 1,
-    borderColor: SEP,
     borderRadius: RADIUS.xl,
+    borderCurve: 'continuous',
+    overflow: 'hidden',
     padding: SPACE.xl,
   },
   myLabel: {fontFamily: FONT, color: T3, fontSize: TYPE.caption.fontSize, fontWeight: '700'},
@@ -407,22 +413,22 @@ const s = StyleSheet.create({
     alignItems: 'center',
     gap: SPACE.sm,
     backgroundColor: GLASS.fill,
-    borderWidth: 1,
-    borderColor: SEP,
     borderRadius: RADIUS.md,
+    borderCurve: 'continuous',
+    overflow: 'hidden',
     paddingHorizontal: SPACE.lg,
     paddingVertical: rv(12),
   },
   hintTxt: {flex: 1, fontFamily: FONT, color: T2, fontSize: TYPE.label.fontSize, fontWeight: '600'},
-  // 리더보드 행
+  // 리더보드 행 — 일반=코너 페이드 헤어라인, 내 행=액센트 보더(렌더에서 주입).
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: rv(10),
     backgroundColor: GLASS.fill,
-    borderWidth: 1,
-    borderColor: SEP,
     borderRadius: RADIUS.md,
+    borderCurve: 'continuous',
+    overflow: 'hidden',
     paddingHorizontal: rs(12),
     paddingVertical: rv(12),
   },

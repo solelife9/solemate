@@ -44,7 +44,7 @@ import {
   TIER_LABEL,
   withAlpha, GLASS,
 } from './theme';
-import {StatGrid, SwipeBack, Rise} from './primitives';
+import {StatGrid, SwipeBack, Rise, GlassEdge} from './primitives';
 import {buildContext} from './lib/progression/context';
 import {
   getProgression,
@@ -260,6 +260,7 @@ export default function ProgressionScreen({
             이름 위에 선다 — 상자 없이 글자가 곧 훈장. 여정 카드는 '가는 길'(방향),
             아이브로우는 '지금의 나'(정체성)로 역할이 다르다. */}
         <View style={s.hero} testID="rank-hero">
+          <GlassEdge glints={false} radius={RADIUS.xl} />
           <Text style={[s.tierEyebrow, {color: rankColor}]} testID="rank-eyebrow">
             {TIER_LABEL[view.rank.tier]}
           </Text>
@@ -310,10 +311,12 @@ export default function ProgressionScreen({
           </View>
         </View>
 
-        {/* 스탯 줄 */}
-        <StatGrid
+        {/* 스탯 줄 — StatGrid 는 자식 삽입이 안 되므로 카드 래퍼가 헤어라인을 소유한다. */}
+        <View style={s.statCard}>
+          <GlassEdge glints={false} radius={RADIUS.lg} />
+          <StatGrid
           testID="stat-row"
-          style={s.statCard}
+          style={s.statCardInner}
           divider
           valueSize={rf(20)}
           valueWeight="600"
@@ -329,7 +332,8 @@ export default function ProgressionScreen({
             {value: String(ctx.retiredShoeCount), unit: '켤레', label: '은퇴 신발'},
             {value: String(ctx.currentStreak), unit: '일', label: '현재 스트릭'},
           ]}
-        />
+          />
+        </View>
 
         {/* 업적 — 챌린지 탭은 마이 탭의 스마트 챌린지 카드로 이관됨(진척은 업적 전용). */}
         <View style={{gap: SPACE.lg}}>
@@ -374,8 +378,10 @@ function AchievementCard({a}: {a: AchievementView}) {
 
   return (
     <View
-      style={[s.ach, a.unlocked && {borderColor: withAlpha(aColor, 0.3)}]}
+      style={[s.ach, a.unlocked && {borderWidth: 1, borderColor: withAlpha(aColor, 0.3)}]}
       testID={`ach-${a.key}`}>
+      {/* 잠김 카드만 무채 헤어라인 — 달성 카드는 레어리티 색 보더가 외곽을 소유한다. */}
+      {!a.unlocked && <GlassEdge glints={false} radius={RADIUS.sm} />}
       <View style={s.achTop}>
         <View style={s.achNameRow}>
           {a.unlocked ? (
@@ -460,11 +466,12 @@ const s = StyleSheet.create({
   },
   bannerTxt: {flex: 1, color: T2, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600'},
   // 히어로
+  // 코너 페이드 헤어라인(GlassEdge glints=false) — 균일 RN 보더 폐지(2026-07-10 확정).
   hero: {
     backgroundColor: HERO_BG,
-    borderWidth: 1,
-    borderColor: CARD_BORDER,
     borderRadius: RADIUS.xl,
+    borderCurve: 'continuous',
+    overflow: 'hidden',
     padding: SPACE.xl,
     gap: SPACE.xs,
   },
@@ -496,25 +503,26 @@ const s = StyleSheet.create({
   nextFill: {height: '100%', borderRadius: RADIUS.pill},
   maxTier: {fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '700'},
   xpForNext: {fontFamily: FONT, color: T3, fontSize: TYPE.caption.fontSize, fontWeight: '600'},
-  // 스탯 카드
+  // 스탯 카드 — 래퍼(표면·헤어라인) + 이너(StatGrid 패딩) 분리.
   statCard: {
     backgroundColor: GLASS.fill,
-    borderWidth: 1,
-    borderColor: CARD_BORDER,
     borderRadius: RADIUS.lg,
     borderCurve: 'continuous',
+    overflow: 'hidden',
+  },
+  statCardInner: {
     paddingVertical: rv(16),
   },
   // 카테고리 헤더
   catHeader: {flexDirection: 'row', alignItems: 'center', gap: rv(6)},
   groupLabel: {flex: 1, fontFamily: FONT, color: T2, fontSize: TYPE.label.fontSize, fontWeight: '700'},
   groupCount: {fontFamily: FONT, color: T3, fontSize: TYPE.caption.fontSize, fontWeight: '700'},
-  // 업적 카드
+  // 업적 카드 — 잠김=코너 페이드 헤어라인(GlassEdge), 달성=레어리티 의미색 보더(예외 유지).
   ach: {
     backgroundColor: GLASS.fill,
-    borderWidth: 1,
-    borderColor: CARD_BORDER,
     borderRadius: RADIUS.sm,
+    borderCurve: 'continuous',
+    overflow: 'hidden',
     padding: rs(14),
     gap: SPACE.sm,
   },

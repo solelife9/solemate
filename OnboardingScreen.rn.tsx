@@ -63,7 +63,7 @@ import {
   DISPLAY,
   withAlpha, TYPE,
 } from './theme';
-import {Button, KeegoWordmark, ShoeGlyph, WEAR_TONE_COLOR} from './primitives';
+import {Button, KeegoWordmark, ShoeGlyph, WEAR_TONE_COLOR, GlassEdge} from './primitives';
 // 러닝화 선택 모달(2열 분할 피커)은 메인 등록(AddShoeScreen)과 공유하는 단일 소스.
 import {ShoePicker, type PickedShoe} from './ShoePicker';
 
@@ -459,6 +459,7 @@ function ShoeIntelligence({goNext, onSkip, insetTop, insetBottom}: ScreenProps) 
         {/* 마모 곡선 카드 — 축은 예시 신발의 실제 권장 수명(650km)과 일치 */}
         <Rise delay={130} style={[s.heroCard, {overflow: 'hidden'}]}>
           <LinearGrad stops={[{color: ONBOARD_CARD_GRAD_TOP, offset: 0}, {color: ONBOARD_CARD_GRAD_BOT, offset: 1}]} radius={22} />
+          <GlassEdge glints={false} radius={rs(22)} />
           <View style={{paddingHorizontal: rs(14), paddingTop: rv(14), paddingBottom: rv(14)}}>
             <View style={{flexDirection: 'row', justifyContent: 'space-between', marginBottom: rv(8)}}>
               <Text style={{fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600', color: T1, letterSpacing: -0.2}}>쿠셔닝 성능</Text>
@@ -474,6 +475,7 @@ function ShoeIntelligence({goNext, onSkip, insetTop, insetBottom}: ScreenProps) 
         {/* 신발 카드 — 앱 실제 카드 문법(글리프 + 누적/총 + wearTier 필) */}
         <Rise delay={240}>
         <View style={s.shoeRowCard} accessible accessibilityLabel={`${DEMO_SHOE.brand} ${DEMO_SHOE.model}, ${DEMO_SHOE.km} / ${DEMO_SHOE.max} 킬로미터, 수명의 ${pctUsed}퍼센트, 상태 ${tier.label}`}>
+          <GlassEdge glints={false} radius={rs(22)} />
           <View style={s.shoeThumb}>
             <ShoeGlyph size={ri(26)} color={withAlpha(T1, 0.75)} />
           </View>
@@ -531,6 +533,7 @@ function Performance({goNext, onSkip, insetTop, insetBottom}: ScreenProps) {
         </Rise>
 
         <Rise delay={130} style={s.featCard}>
+          <GlassEdge glints={false} radius={rs(22)} />
           {FEATURES.map((f, i) => (
             <View key={f.title} style={[s.featRow, i > 0 && s.featRowDivider]} accessible accessibilityLabel={`${f.title}: ${f.desc}`}>
               <View style={[s.featIc, {backgroundColor: withAlpha(f.color, 0.14)}]}>
@@ -615,6 +618,7 @@ function Register({onSkip, onComplete, insetTop, insetBottom}: Omit<ScreenProps,
             accessibilityRole="button"
             accessibilityLabel={picked ? `내 러닝화 ${picked.brand} ${picked.model}, 눌러서 변경` : '내 러닝화 선택'}
             style={({pressed}) => [s.selector, pressed && {opacity: 0.85}]}>
+            <GlassEdge glints={false} radius={rs(14)} />
             <SearchIcon />
             <Text numberOfLines={1} style={[s.selectorText, !picked && {color: T4, fontWeight: '500'}]}>
               {picked ? `${picked.brand ? `${picked.brand} · ` : ''}${picked.model}` : '브랜드·모델 선택'}
@@ -720,7 +724,8 @@ const s = StyleSheet.create({
   ctaCaption: {fontFamily: FONT, fontSize: TYPE.caption.fontSize, color: T3, textAlign: 'center', marginTop: rv(10)},
 
   // 신발 인텔리전스
-  heroCard: {marginTop: rv(24), borderRadius: rs(22), borderCurve: 'continuous', backgroundColor: CARD, borderWidth: 1, borderColor: SEP},
+  // 코너 페이드 헤어라인(GlassEdge glints=false) — 균일 RN 보더 폐지(2026-07-10 확정).
+  heroCard: {marginTop: rv(24), borderRadius: rs(22), borderCurve: 'continuous', backgroundColor: CARD},
   shoeRowCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -729,16 +734,15 @@ const s = StyleSheet.create({
     paddingVertical: rv(16),
     paddingHorizontal: rs(16),
     borderRadius: rs(22), borderCurve: 'continuous',
+    overflow: 'hidden',
     backgroundColor: CARD,
-    borderWidth: 1,
-    borderColor: SEP,
   },
   shoeThumb: {width: rs(44), height: rs(44), borderRadius: rs(12), borderCurve: 'continuous', backgroundColor: withAlpha(T1, 0.06), alignItems: 'center', justifyContent: 'center'},
   pill: {flexDirection: 'row', alignItems: 'center', gap: rv(6), paddingVertical: rv(4), paddingHorizontal: rs(10), borderRadius: 100, alignSelf: 'center'},
   alertRow: {flexDirection: 'row', alignItems: 'center', gap: rv(8), marginTop: rv(22), paddingHorizontal: rs(2)},
 
   // 성능(기능 목록)
-  featCard: {marginTop: rv(24), paddingHorizontal: rs(18), paddingVertical: rv(4), borderRadius: rs(22), borderCurve: 'continuous', backgroundColor: CARD, borderWidth: 1, borderColor: SEP},
+  featCard: {marginTop: rv(24), paddingHorizontal: rs(18), paddingVertical: rv(4), borderRadius: rs(22), borderCurve: 'continuous', overflow: 'hidden', backgroundColor: CARD},
   featRow: {flexDirection: 'row', alignItems: 'center', gap: rv(14), paddingVertical: rv(18)},
   featRowDivider: {borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP},
   featIc: {width: rs(38), height: rs(38), borderRadius: rs(11), borderCurve: 'continuous', alignItems: 'center', justifyContent: 'center'},
@@ -753,9 +757,8 @@ const s = StyleSheet.create({
     marginTop: rv(10),
     paddingHorizontal: rs(14),
     borderRadius: rs(14), borderCurve: 'continuous',
+    overflow: 'hidden',
     backgroundColor: CARD,
-    borderWidth: 1,
-    borderColor: withAlpha(T1, 0.12),
   },
   selectorText: {flex: 1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600', color: T1, letterSpacing: -0.2},
   fieldHint: {fontFamily: FONT, fontSize: TYPE.caption.fontSize, color: T3, marginTop: rv(8), lineHeight: rf(17)},

@@ -228,6 +228,10 @@ export const TONE_BG: Record<Tone, string> = {
 //     좌우 변이 완전히 꺼져 위아래 줄무늬만 남았다 — 종횡비 무관한 배광으로 근본 수정.)
 //   · sheen: 표면 상단 안쪽 광택(GLASS.sheen → 0, 42% 지점 소멸) — 유리 면의 빛맺힘.
 //   · intensity: 활성/히어로 강조 배율(GLASS.activeIntensity) — 굵은 활성 보더의 대체.
+//   · glints=false: 코너 글린트·sheen 을 끄고 베이스 방사 2점만 남긴 순수 '코너 페이드
+//     헤어라인'(2026-07-10 사용자 확정 — "모든 카드 얇은 헤어라인, 우상·좌하로 갈수록
+//     소멸"). 일반(콰이어트) 카드의 균일 RN 보더를 이것으로 대체한다. sheen 은 히어로
+//     전용 빛맺힘이라 glints 와 함께 꺼진다.
 // id 는 생략 가능(useId 자동 — 같은 화면 다중 인스턴스 안전). radius 는 부모 모서리와 동일값.
 
 export function GlassEdge({
@@ -236,12 +240,14 @@ export function GlassEdge({
   strokeWidth = 1,
   intensity = 1,
   sheen = true,
+  glints = true,
 }: {
   id?: string;
   radius: number;
   strokeWidth?: number;
   intensity?: number;
   sheen?: boolean;
+  glints?: boolean;
 }) {
   const autoId = useId().replace(/[^a-zA-Z0-9]/g, '');
   const gid = id ?? `glass-${autoId}`;
@@ -270,12 +276,16 @@ export function GlassEdge({
   // 밝기가 꺾여 보였다(기기 피드백 "뚝 끊김"). 아크 원 중심에 두면 아크 위 밝기가
   // 정확히 균일하고, 직선 구간 감쇠가 기울기 0에서 시작돼 전환이 매끄럽다.
   const rC = Math.max(0, Math.min(radius, s.w / 2, s.h / 2));
-  const corners = [
-    {key: 'tl', cx: rC, cy: rC, peak: GLASS.edgeTL},
-    {key: 'tr', cx: s.w - rC, cy: rC, peak: GLASS.edgeTR},
-    {key: 'br', cx: s.w - rC, cy: s.h - rC, peak: GLASS.edgeBR},
-    {key: 'bl', cx: rC, cy: s.h - rC, peak: GLASS.edgeBL},
-  ].filter(c => c.peak > 0.005);
+  const corners = (glints
+    ? [
+        {key: 'tl', cx: rC, cy: rC, peak: GLASS.edgeTL},
+        {key: 'tr', cx: s.w - rC, cy: rC, peak: GLASS.edgeTR},
+        {key: 'br', cx: s.w - rC, cy: s.h - rC, peak: GLASS.edgeBR},
+        {key: 'bl', cx: rC, cy: s.h - rC, peak: GLASS.edgeBL},
+      ]
+    : []
+  ).filter(c => c.peak > 0.005);
+  const sheenOn = sheen && glints;
   // 베이스 헤어라인의 두 발원점(좌상·우하) — 반대 코너(우상·좌하)에 닿기 전에 0 으로 소멸.
   const baseR = Math.max(s.w, s.h) * 0.82;
   const baseCorners = [
@@ -310,7 +320,7 @@ export function GlassEdge({
                 <Stop offset="1" stopColor={T1} stopOpacity={0} />
               </SvgRadialGradient>
             ))}
-            {sheen ? (
+            {sheenOn ? (
               <SvgGradient id={`${gid}-sheen`} x1="0" y1="0" x2="0" y2="1">
                 <Stop offset="0" stopColor={T1} stopOpacity={GLASS.sheen} />
                 <Stop offset="0.42" stopColor={T1} stopOpacity={0} />
@@ -319,7 +329,7 @@ export function GlassEdge({
             ) : null}
           </Defs>
           {/* 상단 광택(면 채움) → 베이스 헤어라인 → 코너 글린트 순으로 쌓는다. */}
-          {sheen ? (
+          {sheenOn ? (
             <Rect
               x={0} y={0} width={s.w} height={s.h}
               rx={Math.max(0, Math.min(radius, s.w / 2, s.h / 2))}
@@ -495,10 +505,12 @@ const btn = StyleSheet.create({
   labelDim: {color: T3},
 });
 
-// ── Card (CARD surface · SEP hairline border · radius) ────────────────────────
-// 유리 2위계(2026-07-09 사용자 확정): 모든 카드가 같은 재질을 공유하되,
-//   • quiet(기본) — 반투명 표면(GLASS.fill) + 헤어라인만. 콘텐츠 카드·리스트 아이템.
-//     글린트 SVG 가 없어 긴 FlatList 에도 부담 없다.
+// ── Card (GLASS surface · corner-fade hairline · radius) ──────────────────────
+// 유리 2위계(2026-07-09 사용자 확정, 2026-07-10 헤어라인 통일): 모든 카드가 같은 재질을
+// 공유하되,
+//   • quiet(기본) — 반투명 표면(GLASS.fill) + 코너 페이드 헤어라인(GlassEdge glints=false:
+//     좌상·우하 발원 베이스 방사가 우상·좌하 코너에서 소멸). 균일 RN 보더 폐지 —
+//     콘텐츠 카드·리스트 아이템.
 //   • hero — 활성 표면(GLASS.fillActive) + 코너 글린트 림(GlassEdge). 화면당 소수의
 //     주인공(히어로 카드·핵심 CTA 컨테이너)만. 전부 반짝이면 아무것도 반짝이지 않는다.
 // 화면은 변형만 고른다 — 배경/보더/radius 를 인라인으로 조립하는 것 금지(DESIGN.md §5).
@@ -515,7 +527,11 @@ export function Card({
 }) {
   return (
     <View style={[card.base, variant === 'hero' ? card.hero : card.quiet, padded && card.padded, style]}>
-      {variant === 'hero' ? <GlassEdge radius={RADIUS.lg} intensity={GLASS.activeIntensity} /> : null}
+      {variant === 'hero' ? (
+        <GlassEdge radius={RADIUS.lg} intensity={GLASS.activeIntensity} />
+      ) : (
+        <GlassEdge glints={false} radius={RADIUS.lg} />
+      )}
       {children}
     </View>
   );
@@ -529,8 +545,6 @@ const card = StyleSheet.create({
   },
   quiet: {
     backgroundColor: GLASS.fill,
-    borderWidth: 1,
-    borderColor: CARD_BORDER,
   },
   hero: {
     backgroundColor: GLASS.fillActive,

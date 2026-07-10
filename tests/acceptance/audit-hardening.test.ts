@@ -957,9 +957,10 @@ describe('Audit Hardening 수용', () => {
     });
 
     test('Card·SegmentedControl·StatGrid 프리미티브가 단일 보더 토큰 + 관찰 가능한 동작으로 렌더된다', () => {
-      // ① Card — 콰이어트 글라스(2026-07-09 확정): 반투명 표면(GLASS.fill) + 단일 보더
-      //    토큰(CARD_BORDER) + 단일 반경(RADIUS.lg). 화면마다 CARD/CARD_DIM/HERO_BG 로
-      //    갈라졌던 카드 표면이 한 재질로 모인다. 관찰: 호스트 style 의 표면/보더/반경.
+      // ① Card — 콰이어트 글라스(2026-07-10 헤어라인 통일): 반투명 표면(GLASS.fill) +
+      //    단일 반경(RADIUS.lg) + '코너 페이드 헤어라인'(GlassEdge glints=false —
+      //    좌상·우하 발원 베이스 방사가 우상·좌하 코너에서 소멸). 균일 RN 보더
+      //    (borderWidth/borderColor)는 폐지됐다. 관찰: 호스트 style + GlassEdge 렌더.
       const c = renderTree(el(Card, {children: el(Text, {children: '카드 본문'})}));
       const cardHosts = c.root.findAll((n: ReactTestRenderer.ReactTestInstance) => {
         const f = StyleSheet.flatten(n.props && n.props.style) as
@@ -969,10 +970,28 @@ describe('Audit Hardening 수용', () => {
       });
       expect(cardHosts.length).toBeGreaterThanOrEqual(1);
       cardHosts.forEach(n => {
-        const f = StyleSheet.flatten(n.props.style) as {borderColor?: string; borderWidth?: number};
-        expect(f.borderColor).toBe(CARD_BORDER);          // 단일 보더 토큰
-        expect(f.borderWidth).toBe(1); // 1px 헤어라인(2026-07-10 확정 — 0.33px 는 7% 알파에서 소멸)
+        const f = StyleSheet.flatten(n.props.style) as {borderWidth?: number; overflow?: string};
+        expect(f.borderWidth).toBeUndefined();            // 균일 RN 보더 폐지
+        expect(f.overflow).toBe('hidden');                // GlassEdge 코너 클립 보장
       });
+      // 콰이어트 카드의 외곽 = GlassEdge(glints=false). 레이아웃 발화 후 스트로크는
+      // 베이스 방사 2개뿐이어야 한다(sheen 면 채움·코너 글린트 0 — 순수 헤어라인).
+      const cardEdges = c.root.findAll(
+        (n: ReactTestRenderer.ReactTestInstance) => n.props?.testID === 'glass-edge',
+      );
+      expect(cardEdges.length).toBeGreaterThanOrEqual(1);
+      act(() => {
+        cardEdges.forEach(n =>
+          (n.props.onLayout as (e: unknown) => void)({
+            nativeEvent: {layout: {x: 0, y: 0, width: 320, height: 120}},
+          }),
+        );
+      });
+      const cardRects = c.root.findAll(
+        (n: ReactTestRenderer.ReactTestInstance) =>
+          !!n.type && (n.type as {displayName?: string}).displayName === 'Rect',
+      );
+      expect(cardRects.length).toBe(2); // 좌상·우하 베이스 방사 스트로크만
       expect(renderedText(c.root)).toContain('카드 본문');
       act(() => c.unmount());
 

@@ -14,7 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { BG, CARD, CARD_DIM, CARD_HI, ACCENT, BRAND, GOOD, DANGER, WARN, T1, T2, T3, SEP, CARD_BORDER, FONT, DISPLAY, withAlpha, TIER_COLORS, TIER_LABEL, KAKAO_YELLOW, KAKAO_LABEL, NAVER_GREEN, NAVER_LABEL, RADIUS, HALL_GOLD, TYPE, GLASS } from './theme';
 // recap 토글 = SegmentedControl(accentSolid), 스탯 그리드들 = StatGrid 단일 프리미티브.
-import { TabBar, TABBAR_CLEARANCE, SectionTitle, Button, SegmentedControl, StatGrid, Stepper, AmbientBackdrop, Rise } from './primitives';
+import { TabBar, TABBAR_CLEARANCE, SectionTitle, Button, SegmentedControl, StatGrid, Stepper, AmbientBackdrop, Rise, GlassEdge } from './primitives';
 import { Unit, unitKorean, displayNum } from './lib/units';
 import { weeklyRecap, monthlyRecap, type RecapRun, type RecapShoe } from './lib/recap';
 import { hkAvailable, hkLinked, hkLink, hkRestingHR } from './lib/healthkit';
@@ -621,6 +621,7 @@ export default function ProfileScreen({
             러너의 정체성 '스펙 시트'(사용자 방향 2026-07-05). 거리 PB 는 paceTrack 베스트에포트. */}
         {(records.length > 0 || vo2.vo2max > 0) && (
           <View style={[s.card, { padding: rs(22) }]} testID="runner-spec">
+            <GlassEdge glints={false} radius={RADIUS.lg} />
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: rv(16) }}>
               <Text style={[s.cardTitle, { marginBottom: rv(0) }]}>러너 스펙</Text>
               <Pressable onPress={onShareSpec} testID="spec-share" accessibilityRole="button" accessibilityLabel="러너 스펙 공유" hitSlop={8} style={({ pressed }) => [{ flexDirection: 'row', alignItems: 'center', gap: rv(4) }, pressed && { opacity: 0.6 }]}>
@@ -681,6 +682,7 @@ export default function ProfileScreen({
 
         {/* 이번 주 스트릭 — 월~일 달림 점 */}
         <View style={[s.card, s.streakCard]} testID="streak-card">
+          <GlassEdge glints={false} radius={RADIUS.lg} />
           <View style={s.streakHead}>
             <SectionTitle>이번 주 스트릭</SectionTitle>
             {streakDays > 0 && <Text style={s.streakCount}>🔥 {streakDays}일</Text>}
@@ -726,6 +728,7 @@ export default function ProfileScreen({
             accessibilityRole="button"
             accessibilityLabel="진척 열기"
             style={({ pressed }) => [s.card, s.progressRow, pressed && { backgroundColor: CARD_HI }]}>
+            <GlassEdge glints={false} radius={RADIUS.lg} />
             <View style={s.progressIcon}><Ionicons name="trophy-outline" size={ri(19)} color={BRAND} /></View>
             <View style={{ flex: 1, minWidth: 0 }}>
               <Text style={s.progressTitle}>진척</Text>
@@ -744,6 +747,7 @@ export default function ProfileScreen({
             accessibilityRole="button"
             accessibilityLabel="러닝화 아카이브 열기"
             style={({ pressed }) => [s.card, s.progressRow, pressed && { backgroundColor: CARD_HI }]}>
+            <GlassEdge glints={false} radius={RADIUS.lg} />
             <View style={s.progressIcon}><Ionicons name="ribbon-outline" size={ri(19)} color={BRAND} /></View>
             <View style={{ flex: 1, minWidth: 0 }}>
               <Text style={s.progressTitle}>러닝화 아카이브</Text>
@@ -761,6 +765,7 @@ export default function ProfileScreen({
             accessibilityRole="button"
             accessibilityLabel="메달 아카이브 열기"
             style={({ pressed }) => [s.card, s.progressRow, pressed && { backgroundColor: CARD_HI }]}>
+            <GlassEdge glints={false} radius={RADIUS.lg} />
             <View style={s.progressIcon}><Ionicons name="medal-outline" size={ri(19)} color={BRAND} /></View>
             <View style={{ flex: 1, minWidth: 0 }}>
               <Text style={s.progressTitle}>메달 아카이브</Text>
@@ -780,6 +785,7 @@ export default function ProfileScreen({
             accessibilityLabel="Apple 건강 연동"
             accessibilityState={{disabled: hkOn}}
             style={({ pressed }) => [s.card, s.progressRow, pressed && !hkOn && { backgroundColor: CARD_HI }]}>
+            <GlassEdge glints={false} radius={RADIUS.lg} />
             <View style={s.progressIcon}><Ionicons name="heart-outline" size={ri(19)} color={BRAND} /></View>
             <View style={{ flex: 1, minWidth: 0 }}>
               <Text style={s.progressTitle}>Apple 건강</Text>
@@ -800,6 +806,7 @@ export default function ProfileScreen({
             accessibilityRole="button"
             accessibilityLabel="신발 보관함 열기"
             style={({ pressed }) => [s.card, s.progressRow, pressed && { backgroundColor: CARD_HI }]}>
+            <GlassEdge glints={false} radius={RADIUS.lg} />
             <View style={s.progressIcon}><Ionicons name="archive-outline" size={ri(19)} color={BRAND} /></View>
             <View style={{ flex: 1, minWidth: 0 }}>
               <Text style={s.progressTitle}>신발 보관함</Text>
@@ -825,6 +832,7 @@ export default function ProfileScreen({
             />
           </View>
           <View style={[s.card, { padding: rs(20) }]} testID="recap-card">
+            <GlassEdge glints={false} radius={RADIUS.lg} />
             <View style={s.recapTopRow}>
               <Text style={s.recapPeriod} testID="recap-period">{recap.periodLabel}</Text>
               <Pressable
@@ -900,6 +908,7 @@ export default function ProfileScreen({
         <View>
           <Text style={[s.sectionLabel, { paddingBottom: rv(12) }]}>설정</Text>
           <View style={[s.card, { overflow: 'hidden' }]}>
+            <GlassEdge glints={false} radius={RADIUS.lg} />
             {/* 알림(단일화 2026-07-05, 노이즈 감사): 예전엔 인앱 '알림'(임계 %)과 '푸시
                 알림'이 별개 행이라 신발 교체 알림을 두 군데서 만났다 — 한 행으로 병합.
                 교체 임박 토글이 인앱 배지(alerts.enabled)와 푸시를 함께 다루고, 임계
@@ -1009,6 +1018,7 @@ export default function ProfileScreen({
         <View testID="cloud-section">
           <Text style={[s.sectionLabel, { paddingBottom: rv(12) }]}>계정 · 클라우드</Text>
           <View style={[s.card, { overflow: 'hidden' }]}>
+            <GlassEdge glints={false} radius={RADIUS.lg} />
             {signedIn ? (
               <>
                 {/* 계정 헤더 — 탭하면 아코디언(사용자 2026-07-05): 6행 → 1행 + 펼침.
@@ -1135,7 +1145,8 @@ export default function ProfileScreen({
 const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: BG },
   row: { flexDirection: 'row', alignItems: 'center', gap: rv(8) },
-  card: { backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderCurve: 'continuous', borderWidth: 1, borderColor: CARD_BORDER },
+  // 코너 페이드 헤어라인(GlassEdge glints=false) — 균일 RN 보더 폐지(2026-07-10 확정).
+  card: { backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderCurve: 'continuous', overflow: 'hidden' },
   cardTitle: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600', marginBottom: rv(16) },
   // 러너 스펙 카드
   // 거리 PB 메달 타일 2×2(러너 스펙 메인) — 달성=CARD_HI + 골드, 미달성=흐린 판.
@@ -1201,9 +1212,7 @@ const s = StyleSheet.create({
   // 누적/개인 기록·리캡 요약 스탯 줄은 StatGrid 프리미티브로 이전(셀·값·라벨 토큰을
   // 그쪽이 단일 소스로 책임 — 과거 statRow/statCell/statDivider/statValue/Unit/Label 제거).
 
-  badge: { flex: 1, backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderCurve: 'continuous', paddingVertical: rv(16), paddingHorizontal: rs(8), alignItems: 'center', gap: rv(8), borderWidth: 1, borderColor: CARD_BORDER },
-  badgeIcon: { width: rs(44), height: rs(44), borderRadius: RADIUS.pill, alignItems: 'center', justifyContent: 'center' },
-  badgeLabel: { fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500', textAlign: 'center' },
+  // (badge/badgeIcon/badgeLabel 스타일 삭제 — 미사용 잔재. 카드 보더 통일 스윕 2026-07-10)
 
   settingRow: { flexDirection: 'row', alignItems: 'center', gap: rv(12), paddingVertical: rv(14), paddingHorizontal: rs(16) },
   settingBorder: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: SEP },

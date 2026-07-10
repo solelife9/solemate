@@ -9,10 +9,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {
-  BG, CARD, CARD_HI, GLASS, ACCENT, BRAND, DANGER, T1, T2, T3, T4, SEP, CARD_BORDER, FONT, DISPLAY, Shoe, Run, SHOES, withAlpha, RADIUS, GUTTER, HERO, SCRIM, HR_ZONE_COLORS, TYPE,
+  BG, CARD, CARD_HI, GLASS, ACCENT, BRAND, DANGER, T1, T2, T3, T4, SEP, FONT, DISPLAY, Shoe, Run, SHOES, withAlpha, RADIUS, GUTTER, HERO, SCRIM, HR_ZONE_COLORS, TYPE,
 } from './theme';
 // 기간 탭 스트립 = SegmentedControl(neutral), 러닝 상세 2×3 메트릭 = StatGrid 프리미티브.
-import { TabBar, TABBAR_CLEARANCE, Button, SegmentedControl, StatGrid, SwipeBack, Chip, AmbientBackdrop, EmptyGhostHeader, GhostStrong, GhostBar, Rise } from './primitives';
+import { TabBar, TABBAR_CLEARANCE, Button, SegmentedControl, StatGrid, SwipeBack, Chip, AmbientBackdrop, EmptyGhostHeader, GhostStrong, GhostBar, Rise, GlassEdge } from './primitives';
 import { Unit, displayNum, displayToKm } from './lib/units';
 import { ymdLocal } from './lib/format';
 import { sumKm, summaryOf, monthBuckets, weekBuckets, yearBuckets } from './lib/stats';
@@ -552,26 +552,31 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'm
           <Text style={s.detailDist}>{displayNum(run.dist, unit, 2)}</Text>
           <Text style={s.detailDistU}>{unit}</Text>
         </View>
-        {/* 메트릭 한 카드(디자인 11): 2x3 그리드(값 위 · 라벨 아래, 좌측 정렬) — StatGrid */}
-        <StatGrid
-          style={[s.card, s.statGrid]}
-          columns={3}
-          align="left"
-          // 원본 statCell/Unit/Label 타이포 복원: unit 11.5/500, label 11.5/normal, 셀 세로패딩 6.
-          unitSize={rf(12)}
-          unitWeight="500"
-          labelSize={rf(12)}
-          labelWeight="normal"
-          labelMarginTop={4}
-          verticalPadding={6}
-          items={stats.map((x) => ({ value: x.v, unit: x.u ? ` ${x.u}` : undefined, label: x.l }))}
-        />
+        {/* 메트릭 한 카드(디자인 11): 2x3 그리드(값 위 · 라벨 아래, 좌측 정렬) — StatGrid.
+            StatGrid 는 자식 삽입이 안 되므로 카드 래퍼가 헤어라인(GlassEdge)을 소유한다. */}
+        <View style={[s.card, { marginTop: rv(16) }]}>
+          <GlassEdge glints={false} radius={RADIUS.lg} />
+          <StatGrid
+            style={s.statGrid}
+            columns={3}
+            align="left"
+            // 원본 statCell/Unit/Label 타이포 복원: unit 11.5/500, label 11.5/normal, 셀 세로패딩 6.
+            unitSize={rf(12)}
+            unitWeight="500"
+            labelSize={rf(12)}
+            labelWeight="normal"
+            labelMarginTop={4}
+            verticalPadding={6}
+            items={stats.map((x) => ({ value: x.v, unit: x.u ? ` ${x.u}` : undefined, label: x.l }))}
+          />
+        </View>
         {/* 트레이닝 부하(스트라바 Relative Effort) — 이 러닝이 얼마나 힘들었나. 심박 있으면
             TRIMP, 없으면 페이스 기반 rTSS. 타임·체력 정보가 없어 산출 불가면 숨김. */}
         {effort && (
           <View
             style={[s.card, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: rs(18), paddingVertical: rv(14), marginTop: rv(12) }]}
             accessible accessibilityLabel={`트레이닝 부하 ${effort.score}, ${effort.band}`}>
+            <GlassEdge glints={false} radius={RADIUS.lg} />
             <View style={{ flex: 1, paddingRight: rs(12) }}>
               <Text style={s.cardTitle}>트레이닝 부하</Text>
               <Text style={{ color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, marginTop: rv(3) }}>
@@ -598,6 +603,7 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'm
             <View
               style={[s.card, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: rs(18), paddingVertical: rv(14), marginTop: rv(12) }]}
               accessible accessibilityLabel={`경사 보정 페이스 GAP, 킬로미터당 ${fmtPace(gapSec)}`}>
+              <GlassEdge glints={false} radius={RADIUS.lg} />
               <View style={{ flex: 1, paddingRight: rs(12) }}>
                 <Text style={s.cardTitle}>경사 보정 페이스 (GAP)</Text>
                 <Text style={{ color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, marginTop: rv(3) }}>
@@ -617,6 +623,7 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'm
           return (
             <View
               style={[s.card, { paddingHorizontal: rs(18), paddingVertical: rv(16), marginTop: rv(12) }]}>
+              <GlassEdge glints={false} radius={RADIUS.lg} />
               {/* accessible 붕괴 제거(2026-07-05 a11y): 카드를 한 요소로 묶으면 Z1~Z5
                   존별 체류 시간이 낭독 안 됐다. 제목·평균/최대·각 존 행이 텍스트라
                   개별 낭독되게 둔다(존 색은 Z{n} 라벨·시간 텍스트로 병기됨). */}
@@ -666,6 +673,7 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'm
           const fastest = paces.length ? Math.min(...paces) : 0;
           return (
             <View style={s.trackCard} accessibilityLabel={`트랙 ${trackMeta.lapM}미터 ${trackMeta.laps}랩`}>
+              <GlassEdge glints={false} radius={RADIUS.lg} />
               <View style={s.trackHead}>
                 <Text style={s.trackTitle}>트랙 · {trackMeta.lapM}m × {trackMeta.laps}랩</Text>
                 <Text style={s.trackSub}>{(trackMeta.laps * trackMeta.lapM / 1000).toFixed(2)}km</Text>
@@ -776,6 +784,7 @@ export function RunCard({ run, shoes, onPress, unit, hideShoe }: { run: Run; sho
   const shoe = shoes[run.shoe];
   return (
     <Pressable onPress={onPress} disabled={!onPress} accessibilityRole="button" accessibilityLabel={`${run.date} ${shoe ? shoe.brand + ' ' + shoe.model : '삭제된 신발'} 기록`} style={({ pressed }) => [s.runCard, pressed && !!onPress && { opacity: 0.85 }]}>
+      <GlassEdge glints={false} radius={RADIUS.lg} />
       <View style={s.runCardTop}>
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={s.runCardBrand} numberOfLines={1}>{hideShoe ? `${run.day}요일` : (shoe ? shoe.brand : '삭제된 신발')}</Text>
@@ -1030,6 +1039,7 @@ export default function HistoryScreen({
               )
             }
             <View style={[s.card, { paddingHorizontal: rs(20), paddingTop: rv(12), paddingBottom: rv(24) }]}>
+              <GlassEdge glints={false} radius={RADIUS.lg} />
               <View style={[s.baselineRow, { marginTop: rv(0) }]}>
                 <Text style={s.sumBigKm}>{sum.km}</Text><Text style={s.sumBigU}>{unit}</Text>
               </View>
@@ -1060,6 +1070,7 @@ export default function HistoryScreen({
                 sub={<>가볍게 한 걸음부터 — 첫 러닝을 마치면 이 자리에 쌓여요.{'\n'}지난 러닝은 <GhostStrong>기록 추가</GhostStrong>로 직접 남길 수도 있어요.</>}
               />
               <View style={s.runCard}>
+                <GlassEdge glints={false} radius={RADIUS.lg} />
                 <GhostBar w="34%" />
                 <GhostBar w="58%" dim />
                 <View style={{ flexDirection: 'row', gap: rs(24), marginTop: rv(18) }}>
@@ -1069,6 +1080,7 @@ export default function HistoryScreen({
                 </View>
               </View>
               <View style={[s.runCard, { opacity: 0.45, marginTop: rv(10) }]}>
+                <GlassEdge glints={false} radius={RADIUS.lg} />
                 <GhostBar w="28%" />
                 <GhostBar w="50%" dim />
                 <View style={{ flexDirection: 'row', gap: rs(24), marginTop: rv(18) }}>
@@ -1087,6 +1099,7 @@ export default function HistoryScreen({
             </View>
           ) : (
             <View style={[s.card, { padding: rs(28), alignItems: 'center' }]}>
+              <GlassEdge glints={false} radius={RADIUS.lg} />
               <Text style={s.emptyHint}>이 기간엔 기록이 없어요</Text>
             </View>
           )
@@ -1160,7 +1173,7 @@ const s = StyleSheet.create({
   runPhoto: { width: '100%', height: rs(200), borderRadius: rs(16), borderCurve: 'continuous', marginTop: rv(16) },
   runMemo: { color: T2, fontFamily: FONT, fontSize: TYPE.body.fontSize, lineHeight: rf(21), marginTop: rv(12), fontStyle: 'italic' },
   // 트랙 랩 표 — 랩번호 · 상대페이스 바 · km당 페이스 · 랩시간.
-  trackCard: { marginTop: rv(16), backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderCurve: 'continuous', borderWidth: 1, borderColor: CARD_BORDER, paddingHorizontal: rs(16), paddingVertical: rv(14) },
+  trackCard: { marginTop: rv(16), backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderCurve: 'continuous', overflow: 'hidden', paddingHorizontal: rs(16), paddingVertical: rv(14) },
   trackHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: rv(12) },
   trackTitle: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.body.fontSize, fontWeight: '700', letterSpacing: -0.2 },
   trackSub: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600' },
@@ -1176,7 +1189,8 @@ const s = StyleSheet.create({
   gpxHint: { color: T4, fontFamily: FONT, fontSize: TYPE.caption.fontSize, marginLeft: 'auto' },
   offscreen: { position: 'absolute', left: -10000, top: 0, opacity: 0 },
   baselineRow: { flexDirection: 'row', alignItems: 'flex-end' },
-  card: { backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: CARD_BORDER },
+  // 코너 페이드 헤어라인(GlassEdge glints=false) — 균일 RN 보더 폐지(2026-07-10 확정).
+  card: { backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderCurve: 'continuous', overflow: 'hidden' },
   cardTitle: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600' },
   sectionLabel: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600', letterSpacing: 0.4, paddingHorizontal: rs(4) },
   // 요약 카드(큰 거리) — 목업 기록(10)
@@ -1196,7 +1210,7 @@ const s = StyleSheet.create({
   prU: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600', marginLeft: rs(3) },
   prL: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500', marginTop: rv(4) },
   // 런 카드 — 목업 기록(10): 신발+날짜 + 거리·평균페이스·시간
-  runCard: { backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: CARD_BORDER, padding: rs(18) },
+  runCard: { backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderCurve: 'continuous', overflow: 'hidden', padding: rs(18) },
   runCardTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: rv(10), marginBottom: rv(14) },
   runCardBrand: { color: T3, fontFamily: DISPLAY, fontSize: TYPE.caption.fontSize, fontWeight: '500', letterSpacing: 1.2 },
   runCardModel: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.heading.fontSize, fontWeight: '700', letterSpacing: -0.2, marginTop: rv(2) },
@@ -1234,7 +1248,6 @@ const s = StyleSheet.create({
   // 콤팩트: 요약 4칸(거리/횟수/페이스/시간)의 패딩·값 폰트·여백을 줄여 세로 높이를
   // 압축한다(정보는 그대로 유지 — 라벨/값/단위 모두 렌더). 리스트가 위로 올라온다.
   summaryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: rv(8) },
-  summaryCell: { width: '47.5%', flexGrow: 1, backgroundColor: GLASS.fill, borderRadius: RADIUS.md, borderWidth: 1, borderColor: SEP, padding: rs(12) },
   // 4열 요약 행(Screens Refined) — 카드 없이 헤어라인 구분.
   sumRow: { flexDirection: 'row', marginTop: rv(6), marginBottom: rv(2) },
   sumCell: { flex: 1, paddingHorizontal: rs(2) },
@@ -1286,5 +1299,6 @@ const s = StyleSheet.create({
   detailModel: { color: T1, fontFamily: FONT, fontSize: TYPE.title.fontSize, fontWeight: '700', letterSpacing: -0.4, marginTop: rv(4) },
   // 메트릭 한 카드(디자인 11) — 2x3 그리드. 칸 레이아웃·값/단위/라벨은 StatGrid
   // 프리미티브가 책임지고(columns=3·align=left), 여기선 카드 내부 여백만 얹는다.
-  statGrid: { paddingVertical: rv(16), paddingHorizontal: GUTTER, rowGap: rv(18), marginTop: rv(16) },
+  // marginTop 은 카드 래퍼(View[s.card])로 이동 — StatGrid 는 래퍼 안 내용물이 됐다.
+  statGrid: { paddingVertical: rv(16), paddingHorizontal: GUTTER, rowGap: rv(18) },
 });

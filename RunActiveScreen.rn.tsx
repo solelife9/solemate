@@ -277,6 +277,8 @@ export default function RunActiveScreen({
           accessibilityLabel="지도 전체화면으로 보기"
           style={[r.mapPanel, { height: Math.round(winH * 0.32) }]}>
           <RunLiveMap coords={liveCoords} />
+          {/* 지도 위 오버레이 — MapView 가 면을 채우므로 뒤(위)에 그린다. */}
+          <GlassEdge glints={false} radius={rs(20)} />
           <View style={r.mapExpandBadge} pointerEvents="none">
             <Ionicons name="expand" size={ri(15)} color={T1} />
           </View>
@@ -476,7 +478,8 @@ export default function RunActiveScreen({
 const r = StyleSheet.create({
   screen: { flex: 1, backgroundColor: BG, paddingHorizontal: rs(24) },
   // 일시정지 상단 지도 패널(위 절반) — 둥근 카드, 탭하면 전체화면. flex:1 로 상단을 채운다.
-  mapPanel: { borderRadius: rs(20), borderCurve: 'continuous', overflow: 'hidden', marginTop: rv(6), marginBottom: rv(14), backgroundColor: CARD, borderWidth: 1, borderColor: SEP },
+  // 코너 페이드 헤어라인(GlassEdge glints=false) — 균일 RN 보더 폐지(2026-07-10 확정).
+  mapPanel: { borderRadius: rs(20), borderCurve: 'continuous', overflow: 'hidden', marginTop: rv(6), marginBottom: rv(14), backgroundColor: CARD },
   // 패널 우하단 '전체화면' 힌트 배지.
   mapExpandBadge: { position: 'absolute', right: 12, bottom: 12, width: rs(32), height: rs(32), borderRadius: rs(16), backgroundColor: 'rgba(0,0,0,0.55)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: withAlpha(T1, 0.2) },
   // 전체화면 지도 하단 중앙 버튼 행 — 구석 대신 가운데, 위로 올려 잘 눌리게.
@@ -554,17 +557,7 @@ const r = StyleSheet.create({
   smU: { color: withAlpha(T1, 0.45), fontFamily: FONT, fontSize: TYPE.caption.fontSize },
   smL: { color: withAlpha(T1, 0.45), fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: "600", letterSpacing: 0.4, marginTop: rv(8) },
 
-  mapWrap: {
-    flex: 1,
-    minHeight: rs(130),
-    maxHeight: rs(180),
-    marginTop: rv(10),
-    marginBottom: rv(4),
-    borderRadius: rs(16), borderCurve: 'continuous',
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: SEP,
-  },
+  // (mapWrap 스타일 삭제 — 미사용 잔재. 카드 보더 통일 스윕 2026-07-10)
   positionDot: {
     width: rs(16),
     height: rs(16),

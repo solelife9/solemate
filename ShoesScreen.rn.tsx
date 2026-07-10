@@ -8,9 +8,9 @@ import { View, Text, ScrollView, Pressable, TextInput, Alert, StyleSheet } from 
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {
-  BG, CARD_HI, GLASS, ACCENT, DANGER, WARN, GOOD, BEST, T1, T2, T3, T4, SEP, CARD_BORDER, FONT, DISPLAY, withAlpha, RADIUS, Shoe, Run, SHOES, TYPE,
+  BG, CARD_HI, GLASS, ACCENT, DANGER, WARN, GOOD, BEST, T1, T2, T3, T4, SEP, FONT, DISPLAY, withAlpha, RADIUS, Shoe, Run, SHOES, TYPE,
 } from './theme';
-import { TabBar, TABBAR_CLEARANCE, Pill, InjuryBanner, Button, SwipeBack, AmbientBackdrop, Rise } from './primitives';
+import { TabBar, TABBAR_CLEARANCE, Pill, InjuryBanner, Button, SwipeBack, AmbientBackdrop, Rise, GlassEdge } from './primitives';
 import { RunCard, RunDetail } from './HistoryScreen.rn';
 import { FuelGauge } from './FuelGauge';
 import FirstShoeScreen from './FirstShoeScreen.rn';
@@ -211,6 +211,7 @@ function ShoeDetail({
       <ScrollView contentContainerStyle={{ padding: rs(18), paddingBottom: rv(28), gap: rv(16) }} keyboardShouldPersistTaps="handled">
         {editing ? (
           <View style={[s.card, { padding: rs(16), gap: rv(12) }]}>
+            <GlassEdge glints={false} radius={RADIUS.lg} />
             <Text style={s.dHeroLabel}>신발 이름</Text>
             <TextInput value={name} onChangeText={setName} style={s.editInput} placeholderTextColor={T3} accessibilityLabel="신발 이름" autoFocus />
             <View style={{ flexDirection: 'row', gap: rv(10) }}>
@@ -251,6 +252,7 @@ function ShoeDetail({
 
         {/* durability — 잔여 수명 카드(목업 09): 게이지 + 수명 조정 토글 */}
         <View style={[s.card, { padding: rs(18) }]}>
+          <GlassEdge glints={false} radius={RADIUS.lg} />
           <FuelGauge
             remainLabel={String(remain)}
             unit={unit}
@@ -325,6 +327,7 @@ function ShoeDetail({
         {/* totals — 3×2 그리드(2026-07-04 확장): 기존 4개 + 최장 런(이 신발의 베스트)
             + 주 평균(최근 4주 — 교체 예상의 근거). 아래에 점유율 한 줄(로테이션 인사이트). */}
         <View style={[s.card, { overflow: 'hidden' }]}>
+          <GlassEdge glints={false} radius={RADIUS.lg} />
           <View style={s.statGrid}>
             {[
               { v: String(usedDisp), u: unit, l: '누적 거리' },
@@ -351,6 +354,7 @@ function ShoeDetail({
             교체 예상이에요'. ok 예측에서만 노출(보관/예측없음/overdue 면 숨김). */}
         {!retired && detailReplaceWeeks != null && (
           <View style={[s.card, s.wearCard]}>
+            <GlassEdge glints={false} radius={RADIUS.lg} />
             <View style={s.wearLabelRow}>
               <Text style={s.wearLabel}>교체 예상</Text>
               <View style={[s.confChip, detailConfHigh ? s.confChipHi : s.confChipLo]}>
@@ -373,6 +377,7 @@ function ShoeDetail({
         </View>
         {shoeRuns.length === 0 ? (
           <View style={[s.card, { padding: rs(24), alignItems: 'center' }]}>
+            <GlassEdge glints={false} radius={RADIUS.lg} />
             <Text style={{ color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize }}>아직 기록이 없어요</Text>
           </View>
         ) : (
@@ -434,7 +439,10 @@ function ShoeCard({ shoe, featured, onPress, onPlay, unit, pace: _pace, forecast
       // iOS 표준 커스텀 동작으로 노출 — 로터/위아래 스와이프로 '달리기' 실행(레이아웃 무변경).
       accessibilityActions={!retired && onPlay ? [{ name: 'run', label: `${shoe.brand} ${shoe.model}로 달리기` }] : undefined}
       onAccessibilityAction={e => { if (e.nativeEvent.actionName === 'run') onPlay?.(); }}
-      style={({ pressed }) => [s.shoeCard, featured ? s.shoeCardFeatured : s.shoeCardIdle, retired && s.shoeCardRetired, pressed && s.pressed]}>
+      style={({ pressed }) => [s.shoeCard, retired && s.shoeCardRetired, pressed && s.pressed]}>
+      {/* 코너 페이드 헤어라인 — 사용중 카드는 구 20% 보더의 시감을 intensity 로 유지
+          (0.07×2.85≈0.2), 기본 8%≈×1.15, 보관 5%≈×0.7(사용자 애착 스펙 보존). */}
+      <GlassEdge glints={false} radius={RADIUS.lg} intensity={featured ? 2.85 : retired ? 0.7 : 1.15} />
       {/* 상단: 좌(브랜드·사용중·모델) ↔ 우(컨디션 위 · 화살표/▶ 아래) — 사진 정합 */}
       <View style={s.shoeTopSection}>
         <View style={{ flex: 1, minWidth: 0 }}>
@@ -654,7 +662,8 @@ const s = StyleSheet.create({
   pressed: { opacity: 0.85 },
   row: { flexDirection: 'row', alignItems: 'center', gap: rv(8) },
   baselineRow: { flexDirection: 'row', alignItems: 'flex-end' },
-  card: { backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: CARD_BORDER },
+  // 코너 페이드 헤어라인(GlassEdge glints=false) — 균일 RN 보더 폐지(2026-07-10 확정).
+  card: { backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderCurve: 'continuous', overflow: 'hidden' },
   sectionLabel: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600', letterSpacing: 0.4, paddingHorizontal: rs(4) },
   dot: { width: rs(7), height: rs(7), borderRadius: RADIUS.pill },
   condText: { fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500' },
@@ -671,10 +680,10 @@ const s = StyleSheet.create({
   // 재조정했다 — 같은 pct 를 두 번 그리던 중복을 없애 시선이 링에 모인다.
   // 목업 정합: 카드 배경을 near-black(CARD_DIM)에서 살짝 떠 보이는 회색(HERO_BG — 홈
   // 히어로 카드와 동일 톤)으로 올려 black-on-black 을 피한다.
-  shoeCard: { backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderCurve: 'continuous', borderWidth: 1, borderColor: CARD_BORDER, padding: rs(16) },
-  shoeCardFeatured: { borderWidth: 1, borderColor: withAlpha(T1, 0.2) },
-  shoeCardIdle: { borderWidth: 1, borderColor: withAlpha(T1, 0.08) },
-  shoeCardRetired: { opacity: 0.55, borderColor: withAlpha(T1, 0.05) },
+  // 보더 → 코너 페이드 헤어라인(GlassEdge glints=false, 2026-07-10 통일 스윕). 상태별
+  // 밝기(사용중 20% · 기본 8% · 보관 5%)는 GlassEdge intensity 로 재현(JSX 쪽).
+  shoeCard: { backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderCurve: 'continuous', overflow: 'hidden', padding: rs(16) },
+  shoeCardRetired: { opacity: 0.55 },
   // 상단: 좌(브랜드·모델) ↔ 우(컨디션 위 · ▶/화살표 아래) — 사진 정합
   shoeTopSection: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: rv(10) },
   shoeRightCol: { alignItems: 'flex-end', gap: rv(10), flexShrink: 0 },
@@ -740,7 +749,9 @@ const s = StyleSheet.create({
   retireLinkTxt: { flex: 1, color: T3, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600' },
   keepGoingText: { flex: 1, color: ACCENT, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600', letterSpacing: -0.1, lineHeight: rf(18) },
   // 은퇴 키프세이크 트리거 카드(수명 도달) — 자랑스러운 톤. accent 보더로 주목.
-  keepsakeCard: { padding: rs(18), gap: rv(6), borderColor: withAlpha(ACCENT, 0.3) },
+  // 키프세이크 = 액센트 의미 보더(성취 순간 강조) — 헤어라인 스윕 예외로 RN 보더 유지.
+  // (s.card 가 보더를 잃으면서 borderWidth 를 자체 소유해야 기존 시감이 보존된다.)
+  keepsakeCard: { padding: rs(18), gap: rv(6), borderWidth: 1, borderColor: withAlpha(ACCENT, 0.3) },
   keepsakeTitle: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.heading.fontSize, fontWeight: '700', letterSpacing: -0.2 },
   keepsakeSub: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, lineHeight: rf(19) },
   keepsakeBtns: { flexDirection: 'row', gap: rv(10), marginTop: rv(8) },

@@ -8,7 +8,8 @@
 import React, { useMemo } from 'react';
 import { rf, rs, rv } from './lib/responsive';
 import { View, Text, StyleSheet } from 'react-native';
-import { CARD, CARD_BORDER, ACCENT, T1, T3, T4, FONT, DISPLAY, RADIUS } from './theme';
+import { CARD, ACCENT, T1, T3, T4, FONT, DISPLAY, RADIUS } from './theme';
+import { GlassEdge } from './primitives';
 import { fitnessSummary } from './lib/analytics/fitness';
 
 export function FitnessCard({ runs = [], todayISO, style }: { runs?: any[]; todayISO: string; style?: any }) {
@@ -35,6 +36,7 @@ export function FitnessCard({ runs = [], todayISO, style }: { runs?: any[]; toda
       accessible
       accessibilityLabel={`심폐 체력. VO2max ${fitness.vo2max.toFixed(1)}, ${fitness.vo2maxLabel}`}
     >
+      <GlassEdge glints={false} radius={RADIUS.lg} />
       <Text style={st.title}>심폐 체력</Text>
       {/* VO2max — 최근 6주 최고 노력 기준(이지런 과소추정 보정). */}
       <View style={{ flexDirection: 'row', alignItems: 'flex-end', marginTop: rv(10) }}>
@@ -51,7 +53,8 @@ export function FitnessCard({ runs = [], todayISO, style }: { runs?: any[]; toda
 }
 
 const st = StyleSheet.create({
-  card: { backgroundColor: CARD, borderRadius: RADIUS.lg, borderCurve: 'continuous', borderWidth: 1, borderColor: CARD_BORDER, paddingHorizontal: rs(20), paddingTop: rv(14), paddingBottom: rv(18) },
+  // 코너 페이드 헤어라인(GlassEdge glints=false) — 균일 RN 보더 폐지(2026-07-10 확정).
+  card: { backgroundColor: CARD, borderRadius: RADIUS.lg, borderCurve: 'continuous', overflow: 'hidden', paddingHorizontal: rs(20), paddingTop: rv(14), paddingBottom: rv(18) },
   title: { color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '600' },
   caption: { color: T4, fontFamily: FONT, fontSize: rf(13), lineHeight: rf(18), marginTop: rv(12) },
 });
