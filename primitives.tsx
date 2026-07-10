@@ -268,9 +268,11 @@ export function GlassEdge({
     rx: Math.max(0, Math.min(radius - sw, (s.w - sw * 2) / 2)),
   });
   const op = (v: number) => Math.min(1, v * intensity);
-  // 글린트 반경 — 긴 변의 0.8: 빛이 인접 두 변을 따라 멀리 여행하며 반대편 코너 근처에서
-  // 거의 소멸한다(기기 피드백: "멀어질수록 자연스럽게 옅어지게").
-  const R = Math.max(s.w, s.h) * 0.8;
+  // 글린트 반경 — 타원(가로=폭·세로=높이 각 0.8): 빛이 인접 두 변을 따라 여행하다
+  // 반대편 코너 전에 소멸. 원형 반경은 납작한 버튼에서 우상·좌하 코너까지 빛이 닿아
+  // 사방 라인으로 보였다(기기 피드백 2026-07-11) — 베이스와 동일한 타원 정규화.
+  const glintRx = s.w * 0.8;
+  const glintRy = s.h * 0.8;
   // 글린트 중심 = 코너 '아크의 원 중심'(꼭짓점에서 radius 만큼 안쪽) — 꼭짓점 중심은
   // 아크 구간 내내 거의 등거리(균일 밝기)다가 직선 진입 순간 감쇠가 시작돼 접점에서
   // 밝기가 꺾여 보였다(기기 피드백 "뚝 끊김"). 아크 원 중심에 두면 아크 위 밝기가
@@ -315,7 +317,7 @@ export function GlassEdge({
               <SvgRadialGradient
                 key={c.key}
                 id={`${gid}-${c.key}`} gradientUnits="userSpaceOnUse"
-                cx={c.cx} cy={c.cy} fx={c.cx} fy={c.cy} rx={R} ry={R}>
+                cx={c.cx} cy={c.cy} fx={c.cx} fy={c.cy} rx={glintRx} ry={glintRy}>
                 <Stop offset="0" stopColor={T1} stopOpacity={op(c.peak)} />
                 {/* 초반 완만한 플래토 — 코너 부근 밝기 변화율을 낮춰 전환을 한층 부드럽게. */}
                 <Stop offset="0.14" stopColor={T1} stopOpacity={op(c.peak * 0.92)} />
