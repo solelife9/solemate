@@ -1,10 +1,11 @@
 /**
- * HallOfShoes(명예의 전당 — 은퇴 신발 박물관) 동작 테스트.
+ * HallOfShoes(러닝화 아카이브 — 은퇴 신발 기록) 동작 테스트.
+ * 2026-07-11 무채 통일: 골드 세리머니 룩 폐지 → 정본 글라스 + 골드 소액센트.
  *
  * 관찰 가능한 효과(props-driven):
  *   1) 은퇴 레코드를 km + 은퇴 연도 + 등급으로 명패처럼 렌더한다.
  *   2) 최근 은퇴 순으로 정렬한다(retiredAt 내림차순).
- *   3) 레코드 0개면 빈 상태(격려 카피)를 보여준다 — 날조 0.
+ *   3) 레코드 0개면 빈 상태(고스트 문법 + 격려 카피)를 보여준다 — 날조 0.
  *   4) 영속 라운드트립: persistRetiredShoe → loadProgression 으로 복원한 레코드를
  *      그대로 전시한다(리로드에도 사라지지 않음).
  *   5) onOpenRecord 가 있으면 명패 누름이 그 레코드로 콜백한다.
@@ -83,12 +84,12 @@ beforeEach(async () => {
 });
 
 describe('HallOfShoes — 은퇴 신발 전시', () => {
-  test('은퇴 레코드를 브랜드/모델 + km + 은퇴 연도로 렌더한다(골드 명패)', () => {
+  test('은퇴 레코드를 브랜드/모델 + km + 은퇴 연도로 렌더한다(글라스 명패)', () => {
     const txt = textOf(render(<HallOfShoes records={RECORDS} />).root);
     // 신발명(브랜드는 첫 단어로 분리되어 모델이 명패 제목)
     expect(txt).toContain('Pegasus 40');
     expect(txt).toContain('Vaporfly');
-    // km(명패 + 최근 헌액 포일 숫자)
+    // km(명패 + 최근 헌액 빅넘버)
     expect(txt).toContain('512');
     expect(txt).toContain('318');
     // 은퇴 연도

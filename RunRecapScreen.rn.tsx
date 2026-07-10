@@ -14,7 +14,6 @@ import {BG, CARD_HI, ACCENT, GOOD, WARN, DANGER, HALL_GOLD, T1, T2, T3, T4, FONT
 import {RACE_DISTANCE_LABEL, type RaceMatch} from './data/raceEvents';
 import {fmtPaceSec} from './lib/pacePlan';
 import {fmtPace} from './lib/format';
-import {GlassEdge} from './primitives';
 import {RunSplits, Split} from './RunSplits';
 import {PRKind, PR_LABEL} from './lib/records';
 import {pickPhotoWithPermission} from './lib/photo';
