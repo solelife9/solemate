@@ -214,7 +214,8 @@ private struct WaitingPage: View {
         .foregroundStyle(KeegoTheme.t2)
         .multilineTextAlignment(.center)
         .fixedSize(horizontal: false, vertical: true)
-      Text("신발을 가져와 바로 달릴 수 있어요")
+      // 행동(위) + 이유·안심(아래): 처음 한 번의 동기화만 필요함을 명시(사용자 확정).
+      Text("처음 한 번이면 러닝화가 동기화돼요")
         .font(.system(size: 10))
         .foregroundStyle(KeegoTheme.t3)
         .multilineTextAlignment(.center)
