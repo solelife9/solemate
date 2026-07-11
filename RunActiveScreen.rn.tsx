@@ -15,7 +15,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { rf, rs, ri, rv } from './lib/responsive';
-import { View, Text, Pressable, StyleSheet, Animated, Easing, StatusBar, LayoutAnimation, useWindowDimensions } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Animated, Easing, StatusBar, LayoutAnimation } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Svg, { Circle, Defs, LinearGradient as SvgLinear, RadialGradient as SvgRadial, Stop } from 'react-native-svg';
@@ -88,17 +88,6 @@ function Ring({ size, stroke, progress, children }: { size: number; stroke: numb
   );
 }
 
-
-function GpsBars({ level = 3 }: { level?: number }) {
-  const col = level >= 3 ? GOOD : level === 2 ? WARN : level <= 0 ? T4 : DANGER;
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 2.5, height: rs(18) }}>
-      {[10, 14, 18].map((h, i) => (
-        <View key={i} style={{ width: 3.5, height: h, borderRadius: rs(2), backgroundColor: i < level ? col : withAlpha(T1, 0.14) }} />
-      ))}
-    </View>
-  );
-}
 
 // jest 워커에서는 장식 모션(km 펄스·세리머니 등)을 건너뛴다 — RunRecapScreen 관례와 동일.
 const SKIP_ANIM = !!(typeof process !== 'undefined' && process.env && process.env.JEST_WORKER_ID);
@@ -217,7 +206,6 @@ export default function RunActiveScreen({
   onUndoLap?: () => void;  // 마지막 랩 되돌리기(-1)
 }) {
   const insets = useSafeAreaInsets();
-  const { height: winH } = useWindowDimensions();
   const [pausedState, setPausedState] = useState(false);
   const paused = pausedProp ?? pausedState;
 
@@ -326,8 +314,10 @@ export default function RunActiveScreen({
     ]).start();
   }, [distanceKm, paused, kmPulse]);
 
-  const gpsTextStr = gpsLevel >= 3 ? 'GPS 신호 좋음' : gpsLevel === 2 ? 'GPS 신호 보통' : gpsLevel <= 0 ? 'GPS 검색 중…' : 'GPS 신호 약함';
-  const gpsColor = gpsLevel >= 3 ? GOOD : gpsLevel === 2 ? WARN : gpsLevel <= 0 ? T3 : DANGER;
+  // GPS 상태는 문제가 있을 때만 말한다(2026-07-12 사용자 확정): '좋음/보통' 상시 표시는
+  // 사용자가 조치할 게 없는 소음이라 제거. 死구간/약함(level 1)일 때만 경고 — 거리계가
+  // 왜 멈췄는지 설명하는 신뢰 장치(audit#9)는 유지한다. 권한 회수는 별도 배너.
+  const gpsWeakNow = !permLost && gpsLevel === 1;
   // 일시정지 하단 3칸 — 평균 페이스는 상단 히어로(현재 페이스 자리)로 올라가므로 여기선 제외.
   const sub = useMemo(() => ([
     { v: cadence > 0 ? String(cadence) : '--', l: '케이던스', u: '' },
@@ -361,8 +351,13 @@ export default function RunActiveScreen({
         <View style={r.shoeChip} accessibilityRole="text" accessibilityLabel={`신고 있는 신발 ${shoeLabel}`}><ShoeGlyph color={T3} size={ri(15)} /><Text style={r.shoeText}>{shoeLabel}</Text></View>
       </View>
 
-      {/* gps */}
-      <View style={r.gpsRow} accessibilityRole="text" accessibilityLiveRegion="polite" accessibilityLabel={gpsTextStr}><GpsBars level={gpsLevel} /><Text style={[r.gpsLabel, { color: gpsColor }]}>{gpsTextStr}</Text></View>
+      {/* gps — 약할 때만 등장하는 경고(상시 상태 표시 폐지). 거리 기록이 멈출 수 있음을 설명. */}
+      {gpsWeakNow && (
+        <View style={r.gpsWeak} accessibilityRole="text" accessibilityLiveRegion="polite" accessibilityLabel="GPS 신호 약함, 거리 기록이 잠시 멈출 수 있어요">
+          <Ionicons name="cellular" size={ri(13)} color={WARN} />
+          <Text style={r.gpsWeakText}>GPS 신호 약함 — 거리 기록이 잠시 멈출 수 있어요</Text>
+        </View>
+      )}
 
       {/* 권한 회수 복구 배너 — 위치 권한이 꺼지면 탭해서 설정에서 다시 허용.
           assertive live-region: 스크린리더가 즉시 끼어들어 '거리 기록 멈춤'을 알린다. */}
@@ -378,17 +373,16 @@ export default function RunActiveScreen({
           상단을 차지하므로 이 스페이서를 뺀다. */}
       {(!uiPaused || liveCoords.length === 0) && <View style={{ flex: 1 }} />}
 
-      {/* 일시정지 상단 지도 패널(위 절반) — 야외(경로 있음)에서만. 탭하면 전체화면 인터랙티브
-          지도로 확장(mapFull). flex:1 로 상단을 채우고, 아래로 거리·지표(원래 6개)가 온다. */}
+      {/* 일시정지 상단 지도 — 야외(경로 있음)에서만. 카드가 아니라 좌우 풀블리드로 위 공간을
+          꽉 채운다(2026-07-12 사용자 확정: 카드 폐지, km 위까지 여백 없이). flex:1 이 상단을
+          전부 차지하고 km 히어로가 바로 아래 붙는다. 탭하면 전체화면 인터랙티브 지도(mapFull). */}
       {uiPaused && liveCoords.length > 0 && (
         <Pressable
           onPress={() => setMapFull(true)}
           accessibilityRole="button"
           accessibilityLabel="지도 전체화면으로 보기"
-          style={[r.mapPanel, { height: Math.round(winH * 0.32) }]}>
+          style={r.mapPanel}>
           <RunLiveMap coords={liveCoords} />
-          {/* 지도 위 오버레이 — MapView 가 면을 채우므로 뒤(위)에 그린다. */}
-          <GlassEdge glints={false} radius={rs(20)} />
           <View style={r.mapExpandBadge} pointerEvents="none">
             <Ionicons name="expand" size={ri(15)} color={T1} />
           </View>
@@ -516,7 +510,9 @@ export default function RunActiveScreen({
       {/* 하단 여백 — 러닝 중(상단 스페이서와 짝) 또는 일시정지-야외(지도 고정높이 아래 지표 뒤)
           엔 이 여백으로 컨트롤을 바닥에 고정한다. 일시정지-실내(지도 없음)엔 상단 스페이서가
           지표를 하단으로 밀므로 이 여백을 뺀다. */}
-      {(!uiPaused || liveCoords.length > 0) && <View style={{ flex: 1 }} />}
+      {/* 하단 스페이서 — 러닝 중에만(상단 스페이서와 짝). 일시정지-야외는 지도 flex:1 이
+          공간을 다 차지해 컨트롤이 자연히 바닥, 일시정지-실내는 상단 스페이서가 담당. */}
+      {!uiPaused && <View style={{ flex: 1 }} />}
 
       {/* controls */}
       <View style={r.controls}>
@@ -599,8 +595,10 @@ export default function RunActiveScreen({
 const r = StyleSheet.create({
   screen: { flex: 1, backgroundColor: BG, paddingHorizontal: rs(24) },
   // 일시정지 상단 지도 패널(위 절반) — 둥근 카드, 탭하면 전체화면. flex:1 로 상단을 채운다.
-  // 코너 페이드 헤어라인(GlassEdge glints=false) — 균일 RN 보더 폐지(2026-07-10 확정).
-  mapPanel: { borderRadius: rs(20), borderCurve: 'continuous', overflow: 'hidden', marginTop: rv(6), marginBottom: rv(14), backgroundColor: CARD },
+  // 풀블리드 지도(2026-07-12 사용자 확정): 카드(라운드·헤어라인·좌우 여백) 폐지 —
+  // screen 의 paddingHorizontal(24)을 음수 마진으로 상쇄해 화면 좌우 끝까지,
+  // flex:1 로 상단 여백 전부를 채우고 아래(km 히어로)와도 여백 없이 맞닿는다.
+  mapPanel: { flex: 1, marginHorizontal: -rs(24), marginTop: rv(10), marginBottom: 0, overflow: 'hidden', backgroundColor: CARD },
   // 패널 우하단 '전체화면' 힌트 배지.
   mapExpandBadge: { position: 'absolute', right: 12, bottom: 12, width: rs(32), height: rs(32), borderRadius: rs(16), backgroundColor: 'rgba(0,0,0,0.55)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: withAlpha(T1, 0.2) },
   // 전체화면 지도 하단 중앙 버튼 행 — 구석 대신 가운데, 위로 올려 잘 눌리게.
@@ -622,8 +620,9 @@ const r = StyleSheet.create({
   shoeChip: { flexDirection: 'row', alignItems: 'center', gap: rv(8), backgroundColor: CARD, borderRadius: RADIUS.pill, paddingHorizontal: rs(12), height: rs(30), borderWidth: 1, borderColor: SEP },
   shoeText: { color: T3, fontFamily: DISPLAY, fontSize: TYPE.label.fontSize, fontWeight: '600' },
 
-  gpsRow: { flexDirection: 'row', alignItems: 'center', gap: rv(8), marginTop: rv(14), justifyContent: 'center' },
-  gpsLabel: { fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600' },
+  // GPS 약함 경고(조건부) — 상시 상태 표시 폐지(2026-07-12), 문제 있을 때만 조용한 WARN.
+  gpsWeak: { flexDirection: 'row', alignItems: 'center', gap: rv(6), marginTop: rv(12), alignSelf: 'center', paddingHorizontal: rs(12), height: rs(30), borderRadius: RADIUS.pill, backgroundColor: withAlpha(WARN, 0.12) },
+  gpsWeakText: { color: WARN, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600' },
 
   permBanner: { flexDirection: 'row', alignItems: 'center', gap: rv(8), marginTop: rv(12), paddingVertical: rv(10), paddingHorizontal: rs(12), borderRadius: rs(12), borderWidth: StyleSheet.hairlineWidth, borderColor: DANGER, backgroundColor: withAlpha(DANGER, 0.14) },
   permBannerText: { flex: 1, color: T1, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500', lineHeight: rf(17) },
@@ -639,7 +638,9 @@ const r = StyleSheet.create({
   bigDist: { color: T1, fontFamily: DISPLAY, fontSize: rf(104), fontWeight: '500', letterSpacing: -4, lineHeight: rf(106), includeFontPadding: false, fontVariant: ['tabular-nums'] },
   bigUnit: { color: withAlpha(T1, 0.62), fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600', letterSpacing: 0.8, marginTop: rv(16) },
   // 일시정지 하단 헤드 — 링 없이 거리 히어로 + 목표를, 지도 위·하단 지표 위에 얹는다.
-  pausedHead: { alignItems: 'center', marginBottom: rv(8) },
+  // km 히어로(2026-07-12 사용자 확정): 지도가 위에 여백 없이 맞닿고, 숫자는 아래로 살짝
+  // 내려 앉아 아래 헤어라인과의 위 여백(16) = 라인 아래 여백(16)이 균등하다.
+  pausedHead: { alignItems: 'center', marginTop: rv(14), marginBottom: 0 },
   pausedDistRow: { flexDirection: 'row', alignItems: 'flex-end' },
   pausedDist: { color: T1, fontFamily: DISPLAY, fontSize: HERO.heroLg, fontWeight: '600', letterSpacing: -2, lineHeight: rf(58), includeFontPadding: false, fontVariant: ['tabular-nums'] },
   pausedDistUnit: { color: withAlpha(T1, 0.55), fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '700', marginLeft: rs(6), marginBottom: rv(8) },
@@ -664,6 +665,7 @@ const r = StyleSheet.create({
   // 달릴 땐 34(빈약하다는 피드백 → 30에서 확대), 일시정지 시 22로 줄어 서브에 자리를 내준다.
   // 프리미엄: 위 헤어라인만(아래 테두리 제거), 여백 크게, 가벼운 값 + 마이크로 라벨.
   heroMetrics: { flexDirection: 'row', marginTop: rv(30), paddingTop: rv(22), paddingBottom: rv(6), borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP },
+  // 일시정지: 헤어라인 위 여백(marginTop 16) = 아래 여백(paddingTop 16) — 균등(사용자 확정).
   heroMetricsPaused: { marginTop: rv(16), paddingTop: rv(16), paddingBottom: rv(4) },
   hm: { flex: 1, alignItems: 'center' },
   hmDivider: { borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: withAlpha(T1, 0.045) },
