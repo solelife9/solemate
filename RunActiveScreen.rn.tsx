@@ -228,6 +228,20 @@ export default function RunActiveScreen({
       Animated.timing(subIn, { toValue: paused ? 1 : 0, duration: paused ? 260 : 160, delay: paused ? 70 : 0, easing: Easing.out(Easing.quad), useNativeDriver: true }),
     ]).start();
   }, [paused, uiPaused, t, subIn]);
+  // 일시정지 지도 등장 모션(2026-07-12 사용자 확정 — 나이키 문법): 화면이 '띡' 바뀌는 대신
+  // 지도가 위에서 시트처럼 내려온다(-H→0, 420ms). 동시에 기존 LayoutAnimation(260ms)이
+  // 아래 지표들을 밀어 한 호흡의 전환이 된다. 재개는 즉시 복귀(달리기 재개의 긴박함 우선).
+  const mapSlide = useRef(new Animated.Value(SKIP_ANIM ? 1 : 0)).current;
+  const [mapH, setMapH] = useState(0);
+  const mapShown = uiPaused && liveCoords.length > 0;
+  useEffect(() => {
+    if (!mapShown || SKIP_ANIM) return;
+    mapSlide.setValue(0);
+    const a = Animated.timing(mapSlide, { toValue: 1, duration: 420, delay: 50, easing: Easing.out(Easing.cubic), useNativeDriver: true });
+    a.start();
+    return () => a.stop();
+  }, [mapShown, mapSlide]);
+
   // 일시정지 지도 패널을 탭하면 전체화면 인터랙티브 지도로 확장한다. 재개(uiPaused=false)하면 닫는다.
   const [mapFull, setMapFull] = useState(false);
   useEffect(() => { if (!uiPaused) setMapFull(false); }, [uiPaused]);
@@ -376,16 +390,21 @@ export default function RunActiveScreen({
       {/* 일시정지 상단 지도 — 야외(경로 있음)에서만. 카드가 아니라 좌우 풀블리드로 위 공간을
           꽉 채운다(2026-07-12 사용자 확정: 카드 폐지, km 위까지 여백 없이). flex:1 이 상단을
           전부 차지하고 km 히어로가 바로 아래 붙는다. 탭하면 전체화면 인터랙티브 지도(mapFull). */}
-      {uiPaused && liveCoords.length > 0 && (
+      {mapShown && (
         <Pressable
           onPress={() => setMapFull(true)}
           accessibilityRole="button"
           accessibilityLabel="지도 전체화면으로 보기"
-          style={r.mapPanel}>
-          <RunLiveMap coords={liveCoords} />
-          <View style={r.mapExpandBadge} pointerEvents="none">
-            <Ionicons name="expand" size={ri(15)} color={T1} />
-          </View>
+          style={r.mapPanel}
+          onLayout={e => setMapH(e.nativeEvent.layout.height)}>
+          {/* 시트 등장: 컨테이너(레이아웃)는 그대로, 내용물만 위(-H)에서 내려온다(overflow hidden). */}
+          <Animated.View
+            style={[StyleSheet.absoluteFill, { transform: [{ translateY: mapSlide.interpolate({ inputRange: [0, 1], outputRange: [-(mapH || 800), 0] }) }] }]}>
+            <RunLiveMap coords={liveCoords} />
+            <View style={r.mapExpandBadge} pointerEvents="none">
+              <Ionicons name="expand" size={ri(15)} color={T1} />
+            </View>
+          </Animated.View>
         </Pressable>
       )}
 
