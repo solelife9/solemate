@@ -53,6 +53,17 @@ enum KeegoTheme {
     }
   }
 
+  /// 마모 4단계 색 — 폰 홈 히어로 링과 동일(lib/shoe.wearTier × TONE_COLOR 미러,
+  /// 사용자 확정 2026-07-11): 사용률 <50 최상(BEST 파랑) / <80 양호(GOOD 초록) /
+  /// <90 교체 고려(WARN 주황) / ≥90 교체 권장(DANGER 빨강). 입력은 남은 수명 %.
+  static func wearColor(lifePct: Int) -> Color {
+    let used = 100.0 - Double(lifePct)
+    if used >= 90 { return danger }
+    if used >= 80 { return warn }
+    if used >= 50 { return good }
+    return best
+  }
+
   // ── 심박존 Z1–Z5 (theme.ts HR_ZONE_COLORS — 회복→유산소→템포→역치→무산소) ──
   static let hrZone: [Int: Color] = [
     1: best,                    // Z1 회복(파랑)

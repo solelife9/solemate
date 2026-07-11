@@ -92,7 +92,8 @@ private struct ShoeStartPage: View {
         NameRing(
           brand: shoe.brand,
           model: shoe.model.isEmpty ? shoe.displayName : shoe.model,
-          color: KeegoTheme.conditionColor(shoe.condition),
+          // 폰 홈 히어로와 동일한 4단계 마모색(최상 파랑…교체권장 빨강).
+          color: KeegoTheme.wearColor(lifePct: shoe.lifePct),
           progress: sweep ? Double(shoe.lifePct) / 100.0 : 0
         )
         .frame(width: geo.size.width * 0.62, height: geo.size.width * 0.62)
@@ -104,7 +105,7 @@ private struct ShoeStartPage: View {
           Spacer(minLength: 8)
           if shoe.maxKm > 0 {
             Text(shoe.remainKm > 0 ? "\(shoe.remainKm)km 남음" : "수명 초과")
-              .foregroundStyle(shoe.remainKm > 0 ? KeegoTheme.t1 : KeegoTheme.conditionColor(shoe.condition))
+              .foregroundStyle(shoe.remainKm > 0 ? KeegoTheme.t1 : KeegoTheme.wearColor(lifePct: shoe.lifePct))
           }
         }
         .font(.system(size: 15, weight: .semibold))
