@@ -411,7 +411,10 @@ export default function RunActiveScreen({
       <View style={r.controls}>
         {!paused ? (
           <View style={{ alignItems: 'center', gap: rv(8) }}>
-            <Pressable onPress={pauseRun} accessibilityRole="button" accessibilityLabel="일시정지" style={({ pressed }) => [r.cPrimary, pressed && { opacity: 0.85 }]}><Ionicons name="pause" size={ri(36)} color={T1} /></Pressable>
+            <Pressable onPress={pauseRun} accessibilityRole="button" accessibilityLabel="일시정지" style={({ pressed }) => [r.cPrimary, pressed && { opacity: 0.85 }]}>
+              <Ionicons name="pause" size={ri(36)} color={T1} />
+              <GlassEdge glints={false} fade={false} radius={rs(44)} />
+            </Pressable>
             <Text style={r.ctrlHint}>일시정지</Text>
           </View>
         ) : (
@@ -432,12 +435,16 @@ export default function RunActiveScreen({
                   accessibilityHint="0.6초 동안 길게 누르면 러닝을 종료합니다"
                   style={({ pressed }) => [r.cStop, pressed && { backgroundColor: withAlpha(DANGER, 0.18) }]}>
                   <Ionicons name="stop" size={ri(26)} color={DANGER} />
+                  <GlassEdge glints={false} fade={false} radius={rs(38)} />
                 </Pressable>
               </View>
               <Text style={r.ctrlHint}>길게 눌러 종료</Text>
             </View>
             <View style={{ alignItems: 'center', gap: rv(8) }}>
-              <Pressable onPress={resumeRun} accessibilityRole="button" accessibilityLabel="재개" style={({ pressed }) => [r.cResume, pressed && { opacity: 0.85 }]}><Ionicons name="play" size={ri(32)} color={T1} /></Pressable>
+              <Pressable onPress={resumeRun} accessibilityRole="button" accessibilityLabel="재개" style={({ pressed }) => [r.cResume, pressed && { opacity: 0.85 }]}>
+                <Ionicons name="play" size={ri(32)} color={T1} />
+                <GlassEdge glints={false} fade={false} radius={rs(38)} />
+              </Pressable>
               <Text style={r.ctrlHint}>재개</Text>
             </View>
           </>
@@ -581,9 +588,12 @@ const r = StyleSheet.create({
   controls: { flexDirection: 'row', justifyContent: 'center', gap: rv(48), paddingBottom: rv(8) },
   // 러닝 컨트롤 — 오렌지 필 대신 투명 유리(홈 CTA 와 같은 문법). 종료(cStop)만 DANGER
   // 색을 유지해 '위험한 동작'의 색 언어를 지킨다.
+  // 유리 원 + GlassEdge 균일 헤어라인 — 다른 카드/버튼과 동일 문법(RN 보더 폐지
+  // 확정의 러닝 컨트롤 적용, 2026-07-11 사용자 확정: 색은 글리프에만 — 종료의
+  // 빨간 테두리도 흰 유리 림으로). 홀드 링(DANGER)은 진행 표시로 유지.
   cPrimary: { width: rs(88), height: rs(88), borderRadius: RADIUS.pill, overflow: 'hidden', backgroundColor: withAlpha(T1, 0.1), alignItems: 'center', justifyContent: 'center' },
   cResume: { width: rs(76), height: rs(76), borderRadius: RADIUS.pill, overflow: 'hidden', backgroundColor: withAlpha(T1, 0.1), alignItems: 'center', justifyContent: 'center' },
   cStopWrap: { width: rs(76), height: rs(76), alignItems: 'center', justifyContent: 'center' },
-  cStop: { width: rs(76), height: rs(76), borderRadius: RADIUS.pill, backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(DANGER, 0.5), alignItems: 'center', justifyContent: 'center' },
+  cStop: { width: rs(76), height: rs(76), borderRadius: RADIUS.pill, overflow: 'hidden', backgroundColor: withAlpha(T1, 0.1), alignItems: 'center', justifyContent: 'center' },
   ctrlHint: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500' },
 });
