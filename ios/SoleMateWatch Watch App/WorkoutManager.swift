@@ -20,6 +20,7 @@ import Foundation
 import Combine
 import CoreLocation
 import HealthKit
+import WatchKit
 
 /// 러닝 화면 상태. ended 는 요약 화면(저장 대기)이다.
 enum RunPhase: Equatable {
@@ -67,6 +68,14 @@ final class WorkoutManager: NSObject, ObservableObject {
   var isActive: Bool { phase == .running || phase == .paused }
   /// 평균 페이스(초/km). 200m 미만은 통계 잡음이라 0(--'--") 처리.
   var avgPaceSecPerKm: Double { distanceKm > 0.2 ? elapsedS / distanceKm : 0 }
+  /// 현재 랩(진행 중인 km 구간) 거리 — '현재 랩' 뷰(Apple Split 뷰 문법).
+  var currentLapKm: Double { max(0, distanceKm - Double(splits.count)) }
+  /// 현재 랩 페이스(초/km). 100m 미만은 잡음이라 0(--'--") 처리.
+  var currentLapPaceSecPerKm: Double {
+    let d = currentLapKm
+    guard d > 0.1 else { return 0 }
+    return max(0, elapsedS - lastSplitElapsedS) / d
+  }
   /// 현재 심박존(1–5). 폰 lib/analytics/hrZones.zoneOf 미러 — hrMax 미설정이면 0(무채).
   var hrZone: Int { Self.zone(bpm: heartRate, maxHR: WatchLink.shared.hrMax, restHR: WatchLink.shared.hrRest) }
 
@@ -85,6 +94,15 @@ final class WorkoutManager: NSObject, ObservableObject {
   // 자동 일시정지 상태기계(lib/autoPause.ts 미러) — 지속시간 적산기.
   private var slowSec: Double = 0
   private var fastSec: Double = 0
+
+  /// 활성 런 컨텍스트 영속 키 — 러닝 중 앱 사망 → 세션 복구 시 runId(폰 중복 방어
+  /// 일관)·신발 귀속·완료 랩을 되살린다. reset() 에서 제거.
+  private enum RecoverKeys {
+    static let runId = "keego_active_run_id"
+    static let shoeId = "keego_active_shoe_id"
+    static let splits = "keego_active_splits"
+    static let lastSplitElapsedS = "keego_active_last_split_elapsed"
+  }
 
   // lib/engineConstants.ts 미러(단일 진실원은 폰 — 값 변경 시 함께 갱신).
   private static let autoPauseSpeedMps = 0.6
@@ -134,6 +152,12 @@ final class WorkoutManager: NSObject, ObservableObject {
       builder = b
       currentShoe = shoe
       runId = "watch-" + UUID().uuidString.lowercased()
+      // 복구 컨텍스트 영속 — 러닝 중 앱이 죽어도 신발 귀속·runId 를 잃지 않는다.
+      let d = UserDefaults.standard
+      d.set(runId, forKey: RecoverKeys.runId)
+      d.set(shoe.id, forKey: RecoverKeys.shoeId)
+      d.removeObject(forKey: RecoverKeys.splits)
+      d.set(0.0, forKey: RecoverKeys.lastSplitElapsedS)
       let now = Date()
       startDate = now
       heartRate = 0
@@ -204,7 +228,67 @@ final class WorkoutManager: NSObject, ObservableObject {
     lastLocation = nil
     splits = []
     lastSplitElapsedS = 0
+    let d = UserDefaults.standard
+    d.removeObject(forKey: RecoverKeys.runId)
+    d.removeObject(forKey: RecoverKeys.shoeId)
+    d.removeObject(forKey: RecoverKeys.splits)
+    d.removeObject(forKey: RecoverKeys.lastSplitElapsedS)
     phase = .idle
+  }
+
+  // ── 세션 복구 — 러닝 중 앱 사망 → watchOS 재실행(새 세션 아님, 유실 금지) ────
+  /// 살아 있는 HKWorkoutSession 을 되찾아 입양한다. 활성 세션이 없으면 no-op.
+  func recoverActiveSession() {
+    guard phase == .idle, session == nil else { return }
+    healthStore.recoverActiveWorkoutSession { [weak self] recovered, _ in
+      guard let recovered else { return }
+      Task { @MainActor in self?.adopt(recovered) }
+    }
+  }
+
+  private func adopt(_ s: HKWorkoutSession) {
+    guard phase == .idle, session == nil else { return }
+    // 죽어 있던 구간에도 세션·빌더는 시스템이 유지한다 — 재연결만 하면 이어진다.
+    let b = s.associatedWorkoutBuilder()
+    b.dataSource = HKLiveWorkoutDataSource(
+      healthStore: healthStore, workoutConfiguration: s.workoutConfiguration)
+    s.delegate = self
+    b.delegate = self
+    session = s
+    builder = b
+    // 죽기 전 컨텍스트 복원 — runId(폰 중복 방어 일관)·신발 귀속·완료 랩.
+    let d = UserDefaults.standard
+    let savedRunId = d.string(forKey: RecoverKeys.runId) ?? ""
+    runId = savedRunId.isEmpty ? "watch-" + UUID().uuidString.lowercased() : savedRunId
+    let shoeId = d.string(forKey: RecoverKeys.shoeId) ?? ""
+    currentShoe = WatchLink.shared.shoes.first { $0.id == shoeId } ?? WatchLink.shared.selectedShoe
+    splits = (d.array(forKey: RecoverKeys.splits) as? [Double]) ?? []
+    lastSplitElapsedS = d.double(forKey: RecoverKeys.lastSplitElapsedS)
+    startDate = s.startDate
+    // 표시 지표는 빌더 집계로 시드 — 죽어 있던 구간까지 포함된 진실원(유실 최소화).
+    let now = Date()
+    let e = b.elapsedTime(at: now)
+    if e.isFinite, e >= 0 { elapsedS = e }
+    if let dType = HKQuantityType.quantityType(forIdentifier: .distanceWalkingRunning),
+       let sum = b.statistics(for: dType)?.sumQuantity() {
+      let km = sum.doubleValue(for: .meter()) / 1000.0
+      if km.isFinite, km > distanceKm { distanceKm = km }
+    }
+    autoPaused = false
+    manualPause = s.state == .paused
+    slowSec = 0
+    fastSec = 0
+    lastLocation = nil
+    summary = nil
+    if s.state == .ended {
+      // 복구 시점에 이미 끝난 세션 — 요약 파이프라인으로 마감만 잇는다.
+      finish(at: now)
+      return
+    }
+    locationManager.allowsBackgroundLocationUpdates = true
+    locationManager.startUpdatingLocation()
+    phase = s.state == .paused ? .paused : .running
+    startTimer()
   }
 
   // ── 종료 파이프라인: 수집 종료 → keego 메타데이터 → HealthKit 저장 → 요약 ────
@@ -410,6 +494,13 @@ extension WorkoutManager: CLLocationManagerDelegate {
             while distanceKm >= Double(splits.count + 1) {
               splits.append(max(0, elapsedS - lastSplitElapsedS))
               lastSplitElapsedS = elapsedS
+              // 랩 영속 — 러닝 중 앱이 죽어도 완료 랩은 복구된다.
+              let d = UserDefaults.standard
+              d.set(splits, forKey: RecoverKeys.splits)
+              d.set(lastSplitElapsedS, forKey: RecoverKeys.lastSplitElapsedS)
+              // 랩 햅틱 — '화면 안 보는 러너'까지 닿는 유일한 인터페이스
+              // (Garmin/COROS 자동 랩 관용, 리서치 2026-07-11 최강 근거 기능).
+              WKInterfaceDevice.current().play(.notification)
             }
           }
           feedAutoPause(speedMps: sampleSpeed, dtSec: dt)

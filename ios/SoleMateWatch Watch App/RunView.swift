@@ -5,30 +5,62 @@
 // 라벨(아래 매달림 — 폰과 동일 문법) 한 점에만.
 //
 // 축 분리(2026-07-11 사용자 피드백 — Apple 운동 앱 문법): 세로(크라운) = 지표만,
-// 가로 스와이프 = 컨트롤(일시정지/종료 — 어느 지표 페이지에서든 한 동작, 지표 탐색이
-// 컨트롤을 지나치지 않아 오터치가 없다). 컨트롤은 큰 원형 버튼 2개, 종료=DANGER 만 색.
-// 세로 페이지는 실사용 근거가 있는 것만(MISSION §5 '딱 필요한 정보만'): 메인(핵심
-// 전부) → 심박존(존 트레이닝 실수요) → km 랩(첫 랩부터 — 방금 km 페이스 확인, Apple
-// 세그먼트/가민 랩 관용) → Now Playing(러닝 중 음악 제어 — Apple 운동 앱이 세로 맨
-// 아래에 두는 문법 그대로). 시간/평균페이스 단독 대형 페이지는 근거가 없어 삭제
-// (메인에 이미 있음 — 2026-07-11 사용자 확정).
+// 가로 스와이프 = 컨트롤·음악(어느 지표 페이지에서든 한 동작, 지표 탐색이 컨트롤을
+// 지나치지 않아 오터치가 없다). 컨트롤은 큰 원형 버튼 2개, 종료=DANGER 만 색.
+//
+// 페이지 구성(2026-07-11 경쟁앱 딥리서치 반영 — Apple 기본 상위 뷰와 동일 골격):
+//   세로 = 메인(핵심 전부) → 심박존(Zone2 실수요) → 현재 랩(Apple Split 뷰 문법 —
+//          '목록'은 러닝 중 근거 전무라 단일 구간만). 시간/평균페이스 단독 대형과
+//          스플릿 목록, 고도·케이던스는 근거 약해 제외(§5 딱 필요한 정보만).
+//   가로 = 지표 ↔ 컨트롤 ↔ Now Playing(음악은 세로 스택 금지 — Apple·NRC 관습).
+//   랩 이벤트 = km 마다 햅틱 + 직전 km 페이스 배너 3.5s(리서치 최강 근거 —
+//          '화면 안 보는 러너'까지 커버, Garmin/COROS 기본 동작).
 import SwiftUI
 import WatchKit
 
 struct RunView: View {
   @EnvironmentObject var workout: WorkoutManager
-  /// 가로: 0 = 지표(기본) · 1 = 컨트롤. 첫 페이지로 시작해야 한다 — watchOS .page
-  /// TabView 를 비-첫 페이지 selection 으로 생성하면 첫 레이아웃이 깨진다(StartView 실측).
+  /// 가로: 0 = 지표(기본) · 1 = 컨트롤 · 2 = Now Playing. 첫 페이지로 시작해야 한다 —
+  /// watchOS .page TabView 를 비-첫 페이지 selection 으로 생성하면 레이아웃이 깨진다(실측).
   @State private var hPage = 0
-  /// 세로(지표 안): 0 메인 · 1 심박존 · 2 km 랩(첫 랩 완료 후) · 3 Now Playing.
+  /// 세로(지표 안): 0 메인 · 1 심박존 · 2 현재 랩.
   @State private var vPage = 0
+  /// km 랩 배너 — 랩 마감 순간 직전 km 페이스(3.5s 뒤 자동 소멸).
+  @State private var lapBanner: String?
 
   var body: some View {
     TabView(selection: $hPage) {
       metricsPager.tag(0)
       controlsPage.tag(1)
+      // 음악은 가로 맨 끝 — Apple 운동 앱·NRC 모두 가로 별도 페이지 관습.
+      NowPlayingView().tag(2)
     }
     .tabViewStyle(.page)
+    // km 랩 배너 — 어느 페이지에 있든 위에 얹힌다(햅틱은 WorkoutManager 가 울림).
+    .overlay(alignment: .top) {
+      if let banner = lapBanner {
+        Text(banner)
+          .font(.system(size: 13, weight: .bold))
+          .monospacedDigit()
+          .foregroundStyle(KeegoTheme.t1)
+          .padding(.horizontal, 10)
+          .padding(.vertical, 4)
+          // 불투명 카드색 — 반투명이면 밑 히어로 숫자와 겹쳐 읽힌다(시뮬 실측).
+          .background(Color(keego: 0x2C2C2E))
+          .clipShape(Capsule())
+          .overlay(Capsule().strokeBorder(KeegoTheme.hairline, lineWidth: 1))
+          .transition(.move(edge: .top).combined(with: .opacity))
+      }
+    }
+    .onChange(of: workout.splits.count) { _, n in
+      guard n > 0, let last = workout.splits.last else { return }
+      withAnimation(.easeOut(duration: 0.25)) {
+        lapBanner = "\(n) km · \(KeegoFormat.pace(secPerKm: last))"
+      }
+      DispatchQueue.main.asyncAfter(deadline: .now() + 3.5) {
+        withAnimation(.easeIn(duration: 0.3)) { lapBanner = nil }
+      }
+    }
   }
 
   // ── 지표 페이저(세로) — 컨트롤이 지표 탐색 길을 막지 않는다 ──────────────────
@@ -36,12 +68,7 @@ struct RunView: View {
     TabView(selection: $vPage) {
       mainPage.tag(0)
       heartPage.tag(1)
-      // 랩 페이지는 첫 km 완주 후에만 — 빈 표를 보여줄 이유가 없다(§5).
-      if !workout.splits.isEmpty {
-        splitsPage.tag(2)
-      }
-      // Now Playing 은 세로 맨 아래(Apple 운동 앱 관용) — 시스템 뷰 그대로.
-      NowPlayingView().tag(3)
+      lapPage.tag(2)
     }
     .tabViewStyle(.verticalPage)
   }
@@ -67,9 +94,10 @@ struct RunView: View {
         .foregroundStyle(KeegoTheme.brand)
         .padding(.top, -2)
 
-      Spacer(minLength: 6)
+      Spacer(minLength: 4)
 
-      // 보조 지표 스택 — 라벨 T3 / 값 흰 세미볼드 tabular.
+      // 보조 지표 스택 — 라벨 T3 / 값 흰 세미볼드 tabular. 시간·페이스를 살짝
+      // 올리고 BPM 과 여백을 벌린다(2026-07-11 사용자 피드백 — 줄 사이 호흡).
       HStack(spacing: 0) {
         miniMetric(label: "시간", value: KeegoFormat.time(workout.elapsedS))
         miniMetric(label: "페이스", value: KeegoFormat.pace(secPerKm: workout.avgPaceSecPerKm))
@@ -86,7 +114,7 @@ struct RunView: View {
           .font(.system(size: 10))
           .foregroundStyle(KeegoTheme.t3)
       }
-      .padding(.top, 4)
+      .padding(.top, 10)
     }
     .padding(.horizontal, 6)
   }
@@ -123,34 +151,48 @@ struct RunView: View {
     .padding(.horizontal, 6)
   }
 
-  // ── 세로 2: km 랩 — 방금 지난 km 페이스(최신 위, 최근 4개) ───────────────────
-  private var splitsPage: some View {
-    VStack(spacing: 3) {
-      Text("km 랩")
-        .font(.system(size: 11, weight: .medium))
+  // ── 세로 2: 현재 랩(Apple Split 뷰 문법 — 진행 중인 구간 하나만) ──────────────
+  private var lapPage: some View {
+    VStack(spacing: 2) {
+      Text("랩 \(workout.splits.count + 1)")
+        .font(.system(size: 12, weight: .medium))
         .foregroundStyle(KeegoTheme.t3)
-      ForEach(Array(workout.splits.enumerated().suffix(4).reversed()), id: \.offset) { idx, lap in
-        HStack {
-          Text("\(idx + 1) km")
-            .foregroundStyle(idx == workout.splits.count - 1 ? KeegoTheme.t1 : KeegoTheme.t3)
-          Spacer()
-          Text(KeegoFormat.pace(secPerKm: lap))
-            .foregroundStyle(idx == workout.splits.count - 1 ? KeegoTheme.t1 : KeegoTheme.t3)
-        }
-        .font(.system(size: idx == workout.splits.count - 1 ? 18 : 14, weight: idx == workout.splits.count - 1 ? .bold : .medium))
+      Text(KeegoFormat.pace(secPerKm: workout.currentLapPaceSecPerKm))
+        .font(.system(size: 42, weight: .heavy))
         .monospacedDigit()
+        .foregroundStyle(KeegoTheme.t1)
+        .lineLimit(1)
+        .minimumScaleFactor(0.5)
+      HStack(spacing: 3) {
+        Text(String(format: "%.2f", workout.currentLapKm))
+          .font(.system(size: 13, weight: .semibold))
+          .monospacedDigit()
+          .foregroundStyle(KeegoTheme.t2)
+        Text("km")
+          .font(.system(size: 11))
+          .foregroundStyle(KeegoTheme.t3)
+        if let last = workout.splits.last {
+          Text("· 직전 \(KeegoFormat.pace(secPerKm: last))")
+            .font(.system(size: 11))
+            .monospacedDigit()
+            .foregroundStyle(KeegoTheme.t3)
+        }
       }
     }
-    .padding(.horizontal, 14)
+    .padding(.horizontal, 6)
   }
 
   // ── 가로 1: 컨트롤 — 큰 원형 버튼 2개(Apple 운동 앱 문법) ───────────────────
+  // 종료는 길게 누르기(0.6s) — 러닝을 되돌릴 수 없이 끝내는 유일한 행동이라
+  // 오터치 방지(Strava 인접 오터치 공개 사고 사례, 리서치 2026-07-11). 짧은 탭엔
+  // '길게 눌러 종료' 힌트. Garmin/COROS 홀드 관용이라 러너에게 익숙하다.
   private var controlsPage: some View {
     HStack(spacing: 14) {
       RoundControl(
         icon: "stop.fill",
         label: "종료",
-        iconColor: KeegoTheme.danger
+        iconColor: KeegoTheme.danger,
+        holdToActivate: true
       ) { workout.end() }
 
       RoundControl(
@@ -169,29 +211,47 @@ struct RunView: View {
 
 /// 원형 컨트롤 — 콰이어트 글라스 원(면 + 1pt 헤어라인) 안 글리프, 라벨은 아래 T3.
 /// 색은 의미에만: 종료 글리프만 DANGER, 나머지는 무채(넓은 면 금지 가드레일).
+/// holdToActivate = 길게 누르기(0.6s)로만 실행 — 짧은 탭엔 힌트 라벨.
 private struct RoundControl: View {
   let icon: String
   let label: String
   let iconColor: Color
+  var holdToActivate = false
   let action: () -> Void
+  /// 짧은 탭 힌트('길게 눌러 종료') 표시 중인가.
+  @State private var showHint = false
 
   var body: some View {
-    Button(action: action) {
-      VStack(spacing: 5) {
-        ZStack {
-          Circle().fill(KeegoTheme.glassFill)
-          Circle().strokeBorder(KeegoTheme.hairline, lineWidth: 1)
-          Image(systemName: icon)
-            .font(.system(size: 22, weight: .bold))
-            .foregroundStyle(iconColor)
-        }
-        .frame(width: 64, height: 64)
-        Text(label)
-          .font(.system(size: 12, weight: .medium))
-          .foregroundStyle(KeegoTheme.t2)
+    let content = VStack(spacing: 5) {
+      ZStack {
+        Circle().fill(KeegoTheme.glassFill)
+        Circle().strokeBorder(KeegoTheme.hairline, lineWidth: 1)
+        Image(systemName: icon)
+          .font(.system(size: 22, weight: .bold))
+          .foregroundStyle(iconColor)
       }
+      .frame(width: 64, height: 64)
+      Text(showHint ? "길게 눌러 \(label)" : label)
+        .font(.system(size: showHint ? 11 : 12, weight: .medium))
+        .foregroundStyle(showHint ? KeegoTheme.t1 : KeegoTheme.t2)
+        .lineLimit(1)
+        .minimumScaleFactor(0.8)
     }
-    .buttonStyle(.plain)
-    .accessibilityLabel(label)
+
+    if holdToActivate {
+      content
+        .onTapGesture {
+          withAnimation(.easeOut(duration: 0.15)) { showHint = true }
+          DispatchQueue.main.asyncAfter(deadline: .now() + 1.8) {
+            withAnimation(.easeIn(duration: 0.2)) { showHint = false }
+          }
+        }
+        .onLongPressGesture(minimumDuration: 0.6) { action() }
+        .accessibilityLabel("길게 눌러 \(label)")
+    } else {
+      Button(action: action) { content }
+        .buttonStyle(.plain)
+        .accessibilityLabel(label)
+    }
   }
 }

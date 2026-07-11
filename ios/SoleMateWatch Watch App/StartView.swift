@@ -1,9 +1,11 @@
 // StartView.swift — 시작 화면(shoe-first): 폰 홈 히어로 문법의 '한 카드' 워치 축소판
 // ----------------------------------------------------------------------------
 // 페이지 하나 = 신발 하나의 카드 전체(사용자 확정 2026-07-11): 상단 브랜드(대문자
-// 트래킹)+모델명(굵게) → 중앙 얇은 수명 링(트랙=컨디션색 16% 틴트, 아크=컨디션색,
-// 라운드 캡 — 폰 링 문법 미러) 중앙에 '남은 수명 %' → 사용/남음 한 줄 → 맨 아래
-// '러닝 시작' 버튼(유리 표면 + 파파야 포인트). 좌우 스와이프(가로 페이지+도트) 유지,
+// 트래킹)+모델명(굵게) 중앙 → 얇은 수명 링(트랙=컨디션색 16% 틴트, 아크=컨디션색,
+// 라운드 캡 — 폰 링 문법 미러) 중앙에 '남은 수명 %' → '남은 km' 한 줄 → 맨 아래
+// '러닝 시작' 버튼(유리 표면 + 파파야 포인트). 요소 다이어트(07-11 '조잡' 피드백):
+// keego 각인·사용/남음 삼중 표기 제거 — 카드당 메시지 하나씩만.
+// 좌우 스와이프(가로 페이지+도트) 유지,
 // 마지막 선택은 WatchLink 가 기억한다. 목록이 비면 안내 두 줄뿐 — 러닝 시작은
 // 신발 페이지에서만 한다(2026-07-11 사용자 확정: '신발 없이 시작' 폴백 제거.
 // 폰 앱을 먼저 설치하는 흐름이라 shoe-first 를 워치에서도 그대로 지킨다).
@@ -19,8 +21,8 @@ struct StartView: View {
   @State private var selection: String = WatchLink.shared.shoes.first?.id ?? ""
 
   var body: some View {
-    // 상단 워드마크 줄 없음 — 작은 화면은 전부 카드에. keego 는 카드 상단 오른쪽에
-    // 작게(ShoeStartPage 헤더 참조, 사용자 확정 2026-07-11).
+    // 워드마크 없음 — 작은 화면은 전부 카드에(2026-07-11 요소 다이어트로 keego
+    // 각인도 제거, 브랜딩은 대기 화면 카피와 앱 자체로).
     Group {
       if link.shoes.isEmpty {
         WaitingPage()
@@ -76,30 +78,23 @@ private struct ShoeStartPage: View {
       let ringD = min(geo.size.width * 0.56, geo.size.height * 0.44)
 
       VStack(spacing: 0) {
-        // 상단: 왼쪽 = 브랜드(대문자 트래킹)+모델명(굵게) 좌정렬, 오른쪽 = keego 각인
-        // (사용자 확정 2026-07-11 — 워드마크는 카드 안 빈 공간에 작게).
-        HStack(alignment: .top, spacing: 4) {
-          VStack(alignment: .leading, spacing: 1) {
-            if !shoe.brand.isEmpty {
-              Text(shoe.brand.uppercased())
-                .font(.system(size: 10, weight: .medium))
-                .kerning(1.1)
-                .foregroundStyle(KeegoTheme.t3)
-                .lineLimit(1)
-            }
-            Text(shoe.model.isEmpty ? shoe.displayName : shoe.model)
-              .font(.system(size: 15, weight: .bold))
-              .foregroundStyle(KeegoTheme.t1)
-              .lineLimit(1)
-              .minimumScaleFactor(0.7)
-          }
-          Spacer(minLength: 4)
-          Text("keego")
-            .font(.custom("HelveticaNeue-Medium", size: 9))
-            .foregroundStyle(KeegoTheme.t4)
+        // 상단: 브랜드(대문자 트래킹) + 모델명(굵게) 중앙 — 요소 다이어트(2026-07-11
+        // '조잡' 피드백): keego 각인 제거, 카드가 말하는 건 신발 하나뿐.
+        if !shoe.brand.isEmpty {
+          Text(shoe.brand.uppercased())
+            .font(.system(size: 10, weight: .medium))
+            .kerning(1.1)
+            .foregroundStyle(KeegoTheme.t3)
+            .lineLimit(1)
         }
+        Text(shoe.model.isEmpty ? shoe.displayName : shoe.model)
+          .font(.system(size: 15, weight: .bold))
+          .foregroundStyle(KeegoTheme.t1)
+          .lineLimit(1)
+          .minimumScaleFactor(0.7)
+          .padding(.top, 1)
 
-        Spacer(minLength: 3)
+        Spacer(minLength: 4)
 
         LifeRing(
           pct: shoe.lifePct,
@@ -108,20 +103,17 @@ private struct ShoeStartPage: View {
           progress: sweep ? Double(shoe.lifePct) / 100.0 : 0
         )
 
-        Spacer(minLength: 3)
+        Spacer(minLength: 4)
 
-        // 사용/남음 한 줄 — 폰 kmRow 미러. 구버전 폰(maxKm 미수신)이면 생략.
+        // 한 줄 하나만 — '남은 km'(행동에 필요한 숫자). 링 %·사용량과 삼중 중복이던
+        // 사용/남음 줄은 다이어트(2026-07-11 — 디테일은 폰에서). 구버전 폰이면 생략.
         if shoe.maxKm > 0 {
-          HStack(spacing: 3) {
-            Text("사용 \(shoe.usedKm)/\(shoe.maxKm)km")
-              .foregroundStyle(KeegoTheme.t3)
-            Text("·")
-              .foregroundStyle(KeegoTheme.t4)
+          Group {
             if shoe.remainKm > 0 {
               Text("\(shoe.remainKm)km 남음")
-                .foregroundStyle(KeegoTheme.t1)
+                .foregroundStyle(KeegoTheme.t2)
             } else {
-              // 수명 초과 — 폰과 동일하게 상태만 컨디션색으로(색은 의미에만).
+              // 수명 초과 — 상태만 컨디션색으로(색은 의미에만).
               Text("수명 초과")
                 .foregroundStyle(KeegoTheme.conditionColor(shoe.condition))
             }
@@ -129,14 +121,13 @@ private struct ShoeStartPage: View {
           .font(.system(size: 11, weight: .medium))
           .monospacedDigit()
           .lineLimit(1)
-          .minimumScaleFactor(0.8)
-          .padding(.bottom, 5)
+          .padding(.bottom, 6)
         }
 
         StartButton(label: "러닝 시작", action: onStart)
       }
-      .padding(.horizontal, 6)
-      .padding(.vertical, 7)
+      .padding(.horizontal, 8)
+      .padding(.vertical, 9)
       .frame(maxWidth: .infinity, maxHeight: .infinity)
       // 콰이어트 글라스 카드 — 면(흰 8%) + 1pt 헤어라인(흰 20%), 라운드 코너만.
       .background(KeegoTheme.glassFill)
@@ -220,19 +211,26 @@ private struct StartButton: View {
   }
 }
 
-/// 동기화 대기 — 행동 한 줄 + 안심 한 줄이 전부(사용자 확정 2026-07-11: 시작 버튼
-/// 없음. 워치 러닝은 신발 동기화 후 신발 페이지에서만 시작한다).
+/// 동기화 대기 — 신발 글리프(여기가 신발 자리라는 시각 신호) + 행동 한 줄 + 결과
+/// 한 줄(2026-07-11 카피 개선: '처음 한 번이면 돼요'(안심) → '신발을 가져와 바로
+/// 달릴 수 있어요'(보상) — 이 화면의 질문은 "열면 뭐가 되는데?"다). 시작 버튼 없음
+/// (사용자 확정: 워치 러닝은 신발 동기화 후 신발 페이지에서만).
 private struct WaitingPage: View {
   var body: some View {
-    VStack(spacing: 3) {
+    VStack(spacing: 4) {
+      Image(systemName: "shoe.2")
+        .font(.system(size: 17, weight: .medium))
+        .foregroundStyle(KeegoTheme.t3)
+        .padding(.bottom, 2)
       Text("아이폰에서 Keego를 열어주세요")
         .font(.system(size: 12, weight: .semibold))
         .foregroundStyle(KeegoTheme.t2)
         .multilineTextAlignment(.center)
         .fixedSize(horizontal: false, vertical: true)
-      Text("처음 한 번이면 돼요")
+      Text("신발을 가져와 바로 달릴 수 있어요")
         .font(.system(size: 10))
         .foregroundStyle(KeegoTheme.t3)
+        .multilineTextAlignment(.center)
     }
     .frame(maxWidth: .infinity)
     .padding(.vertical, 14)

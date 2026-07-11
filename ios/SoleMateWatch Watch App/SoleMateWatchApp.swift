@@ -22,6 +22,17 @@ final class WatchAppDelegate: NSObject, WKApplicationDelegate {
       }
     }
   }
+
+  // 러닝 중 앱이 죽으면 watchOS 가 앱을 되살리며 이 훅을 부른다 — 살아 있는
+  // HKWorkoutSession 을 다시 입양해 러닝을 잇는다(새 세션 시작 아님, 유실 금지).
+  func handleActiveWorkoutRecovery() {
+    Task { @MainActor in WorkoutManager.shared.recoverActiveSession() }
+  }
+
+  // 사용자가 직접 재실행한 경우도 복구 — 활성 세션이 없으면 조용히 no-op.
+  func applicationDidFinishLaunching() {
+    Task { @MainActor in WorkoutManager.shared.recoverActiveSession() }
+  }
 }
 
 @main

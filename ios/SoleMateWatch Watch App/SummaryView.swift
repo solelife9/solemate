@@ -44,16 +44,23 @@ struct SummaryView: View {
           .padding(8)
           .background(KeegoTheme.glassFill)
           .clipShape(RoundedRectangle(cornerRadius: 12))
-          .overlay(RoundedRectangle(cornerRadius: 12).stroke(KeegoTheme.cardBorder, lineWidth: 1))
+          .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(KeegoTheme.hairline, lineWidth: 1))
         }
 
+        // 저장 — 시작 버튼과 같은 콰이어트 글라스 캡슐(시스템 tint 버튼은 문법 밖).
         Button {
           workout.confirmSave()
         } label: {
           Text("저장")
-            .font(.system(size: 15, weight: .bold))
+            .font(.system(size: 14, weight: .bold))
+            .foregroundStyle(KeegoTheme.t1)
+            .frame(maxWidth: .infinity)
+            .frame(height: 36)
+            .background(KeegoTheme.glassFill)
+            .clipShape(Capsule())
+            .overlay(Capsule().strokeBorder(KeegoTheme.hairline, lineWidth: 1))
         }
-        .tint(.white)
+        .buttonStyle(.plain)
         .padding(.top, 4)
 
         Text("폰과 자동으로 동기화돼요")

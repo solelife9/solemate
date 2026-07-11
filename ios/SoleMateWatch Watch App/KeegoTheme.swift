@@ -32,8 +32,8 @@ enum KeegoTheme {
   static let brand = Color(keego: 0xFF8000)      // RING_ACCENT — McLaren 파파야
   static let brandHi = Color(keego: 0xFFB458)    // RING_ACCENT_HI (그라데이션 top)
   static let brandLo = Color(keego: 0xE56600)    // RING_ACCENT_LO (그라데이션 bottom)
-  /// 파파야 그라데이션(폰 러닝 링과 동일 스톱). 워치에선 '러닝 시작' 링 버튼 등
-  /// 러닝 도메인의 최소 포인트에만 쓴다(넓은 면 금지 가드레일).
+  /// 파파야 그라데이션(폰 러닝 링과 동일 스톱). 워치에선 러닝 도메인의 최소
+  /// 포인트에만 쓴다(넓은 면 금지 가드레일).
   static var brandGradient: LinearGradient {
     LinearGradient(colors: [brandHi, brandLo], startPoint: .top, endPoint: .bottom)
   }
