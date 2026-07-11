@@ -18,7 +18,7 @@ import { rf, rs, ri, rv } from './lib/responsive';
 import { View, Text, Pressable, StyleSheet, Animated, Easing, StatusBar, LayoutAnimation, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import Svg, { Circle, Defs, LinearGradient as SvgLinear, Stop } from 'react-native-svg';
+import Svg, { Circle, Defs, LinearGradient as SvgLinear, RadialGradient as SvgRadial, Stop } from 'react-native-svg';
 import { GlassEdge, ShoeGlyph } from './primitives';
 import { RunLiveMap } from './RunLiveMap';
 // 색·폰트는 전역 디자인 토큰(theme.ts)만 참조한다 — 사설 색객체(const C) 폐기.
@@ -99,6 +99,89 @@ function GpsBars({ level = 3 }: { level?: number }) {
     </View>
   );
 }
+
+// jest 워커에서는 장식 모션(km 펄스·세리머니 등)을 건너뛴다 — RunRecapScreen 관례와 동일.
+const SKIP_ANIM = !!(typeof process !== 'undefined' && process.env && process.env.JEST_WORKER_ID);
+
+// ════════════════════════════════════════════════════════════════════════════
+// 완주 세리머니(모션 #5, A안 '절제' — 사용자 확정 2026-07-12): 종료 홀드 확정 순간
+// 풀스크린 오버레이에서 파파야 링이 0→100% 로 차오르며(러닝의 마침표) 뒤로 은은한
+// 흰 빛이 번졌다 스러지고, 링 완성에 impactHeavy. 끝나면 onDone(=onStop → 리캡의
+// 체크 팝으로 이야기가 이어진다). 색·컨페티 없음 — Apple Fitness 링 완성의 결.
+// 입력 차단(pointerEvents box-only)·약 1.05s. SKIP_ANIM(jest)이면 애초에 안 뜬다.
+// ════════════════════════════════════════════════════════════════════════════
+function FinishCeremony({ distanceKm, onDone }: { distanceKm: number; onDone: () => void }) {
+  const SIZE = ri(240);
+  const STROKE = 14;
+  const R = (SIZE - STROKE) / 2;
+  const CIRC = 2 * Math.PI * R;
+  const fade = useRef(new Animated.Value(0)).current; // 오버레이 페이드인
+  const sweep = useRef(new Animated.Value(0)).current; // 링 0→1
+  const glow = useRef(new Animated.Value(0)).current; // 빛 번짐 0→1→0
+  useEffect(() => {
+    const seq = Animated.sequence([
+      Animated.timing(fade, { toValue: 1, duration: 150, easing: Easing.out(Easing.quad), useNativeDriver: false }),
+      Animated.parallel([
+        Animated.timing(sweep, { toValue: 1, duration: 650, easing: Easing.out(Easing.cubic), useNativeDriver: false }),
+        // 빛은 링 완성 직전 피크 → 부드럽게 스러짐(0→1→0 은 아래 interpolate 가 성형)
+        Animated.timing(glow, { toValue: 1, duration: 900, easing: Easing.inOut(Easing.quad), useNativeDriver: false }),
+      ]),
+    ]);
+    seq.start(() => {
+      impactHeavy(); // 링 완성 — 성취의 '쿵'(목표 달성과 같은 무게 언어)
+      setTimeout(onDone, 220);
+    });
+    return () => seq.stop();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const dash = sweep.interpolate({ inputRange: [0, 1], outputRange: [CIRC, 0] });
+  const glowO = glow.interpolate({ inputRange: [0, 0.55, 1], outputRange: [0, 0.16, 0] });
+  const glowS = glow.interpolate({ inputRange: [0, 1], outputRange: [0.9, 1.22] });
+  return (
+    <Animated.View pointerEvents="box-only" style={[StyleSheet.absoluteFill, cer.wrap, { opacity: fade }]} testID="finish-ceremony">
+      {/* 은은한 흰 빛 번짐 — 무채 언어(파파야는 링에만) */}
+      <Animated.View style={[cer.glow, { width: SIZE * 1.9, height: SIZE * 1.9, opacity: glowO, transform: [{ scale: glowS }] }]}>
+        <Svg width="100%" height="100%">
+          <Defs>
+            <SvgRadial id="cer-glow" cx="50%" cy="50%" rx="50%" ry="50%">
+              <Stop offset="0" stopColor={T1} stopOpacity={1} />
+              <Stop offset="0.6" stopColor={T1} stopOpacity={0.35} />
+              <Stop offset="1" stopColor={T1} stopOpacity={0} />
+            </SvgRadial>
+          </Defs>
+          <Circle cx="50%" cy="50%" r="50%" fill="url(#cer-glow)" />
+        </Svg>
+      </Animated.View>
+      <View style={{ width: SIZE, height: SIZE, alignItems: 'center', justifyContent: 'center' }}>
+        <Svg width={SIZE} height={SIZE} style={{ position: 'absolute' }}>
+          <Defs>
+            <SvgLinear id="cer-ring" x1="0" y1="0" x2="1" y2="1">
+              <Stop offset="0" stopColor={RING_ACCENT_HI} />
+              <Stop offset="0.55" stopColor={RING_ACCENT} />
+              <Stop offset="1" stopColor={RING_ACCENT_LO} />
+            </SvgLinear>
+          </Defs>
+          <Circle cx={SIZE / 2} cy={SIZE / 2} r={R} stroke={SEP} strokeWidth={STROKE} fill="none" />
+          <AnimatedCircle
+            cx={SIZE / 2} cy={SIZE / 2} r={R}
+            stroke="url(#cer-ring)" strokeWidth={STROKE} fill="none" strokeLinecap="round"
+            strokeDasharray={CIRC} strokeDashoffset={dash}
+            transform={`rotate(-90 ${SIZE / 2} ${SIZE / 2})`}
+          />
+        </Svg>
+        <Text style={cer.dist}>{distanceKm.toFixed(2)}</Text>
+        <Text style={cer.unit}>km</Text>
+      </View>
+    </Animated.View>
+  );
+}
+
+const cer = StyleSheet.create({
+  wrap: { backgroundColor: withAlpha(BG, 0.94), alignItems: 'center', justifyContent: 'center', zIndex: 40 },
+  glow: { position: 'absolute' },
+  dist: { color: T1, fontFamily: DISPLAY, fontSize: rf(56), fontWeight: '800', fontVariant: ['tabular-nums'], letterSpacing: -1 },
+  unit: { color: T3, fontFamily: FONT, fontSize: rf(15), fontWeight: '600', marginTop: rv(2) },
+});
 
 export default function RunActiveScreen({
   shoeLabel = 'Alphafly 3', distanceKm = 3.2, goalKm = 5,
@@ -189,7 +272,14 @@ export default function RunActiveScreen({
   const cancelHold = () => {
     Animated.timing(holdAnim, { toValue: 0, duration: 160, useNativeDriver: false }).start();
   };
-  const confirmStop = () => { warning(); onStop?.(); };
+  // 종료 확정 → 세리머니(A안) → onStop. 세리머니 ~1.05s 는 사용자가 그만큼 늦게 종료를
+  // 누른 것과 동일한 회계(엔진은 onStop 에서 멈춤 — 데이터 정확성 불변). jest 는 즉시 종료.
+  const [ceremony, setCeremony] = useState(false);
+  const confirmStop = () => {
+    warning();
+    if (SKIP_ANIM) { onStop?.(); return; }
+    setCeremony(true);
+  };
 
   const pct = goalKm > 0 ? Math.min(1, distanceKm / goalKm) : 0;
   const remain = goalKm ? Math.max(0, goalKm - distanceKm) : 0;
@@ -215,6 +305,26 @@ export default function RunActiveScreen({
     }, 3200);
     return () => clearTimeout(t);
   }, [met, celebrated, toastY, toastO]);
+
+  // ── km 달성 모멘트(모션 #4, 2026-07-12) — km 를 넘는 순간 링 안 거리 숫자가 한 번
+  // 숨 쉬듯 커졌다 정착한다(음성 km 안내와 같은 시점). 절제 원칙: 색·글로우 없이 스케일만,
+  // 햅틱은 가벼운 tap(묵직한 impactHeavy 는 목표 달성 전용 위계 유지). 일시정지 중엔 발동 안 함.
+  const kmPulse = useRef(new Animated.Value(1)).current;
+  const lastKmRef = useRef(Math.floor(distanceKm));
+  useEffect(() => {
+    const k = Math.floor(distanceKm);
+    if (k <= lastKmRef.current) {
+      if (k < lastKmRef.current) lastKmRef.current = k; // 새 런 재사용 방어(거리 리셋)
+      return;
+    }
+    lastKmRef.current = k;
+    if (paused || SKIP_ANIM) return;
+    tap();
+    Animated.sequence([
+      Animated.timing(kmPulse, { toValue: 1.07, duration: 160, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+      Animated.spring(kmPulse, { toValue: 1, friction: 5, tension: 120, useNativeDriver: true }),
+    ]).start();
+  }, [distanceKm, paused, kmPulse]);
 
   const gpsTextStr = gpsLevel >= 3 ? 'GPS 신호 좋음' : gpsLevel === 2 ? 'GPS 신호 보통' : gpsLevel <= 0 ? 'GPS 검색 중…' : 'GPS 신호 약함';
   const gpsColor = gpsLevel >= 3 ? GOOD : gpsLevel === 2 ? WARN : gpsLevel <= 0 ? T3 : DANGER;
@@ -297,15 +407,16 @@ export default function RunActiveScreen({
               <Text style={r.lapHeroUnit}>바퀴</Text>
             </View>
           ) : (
-            <View style={{ alignItems: 'center' }} accessibilityRole="text" accessibilityLiveRegion="polite"
+            <Animated.View style={{ alignItems: 'center', transform: [{ scale: kmPulse }] }} accessibilityRole="text" accessibilityLiveRegion="polite"
               accessibilityLabel={`달린 거리 ${distanceKm.toFixed(2)}킬로미터${goalKm ? (met ? `, 목표 ${goalKm}킬로미터 달성, ${over.toFixed(2)}킬로미터 초과` : `, 목표 ${goalKm}킬로미터까지 ${remain.toFixed(2)}킬로미터 남음`) : ''}`}>
               {/* 링 센터: 큰 거리 숫자 + 'km' 단위만. 목표·퍼센티지 표기는 화면에서 제거하고
                   음성으로만 안내한다(나이키식, 사용자 요청). 링의 채워지는 호가 진행을 시각화.
-                  스크린리더 라벨엔 목표/남음을 그대로 두어 접근성은 보존. */}
+                  스크린리더 라벨엔 목표/남음을 그대로 두어 접근성은 보존.
+                  km 통과 순간 kmPulse 가 숫자를 한 번 부풀렸다 정착시킨다(모션 #4). */}
               <Text style={r.bigDist}>{distanceKm.toFixed(2)}</Text>
               {/* km 는 absolute — 센터 계산에서 제외해 '숫자'가 링의 정중앙에 온다. */}
               <Text style={[r.goal, r.goalBelow]}>km</Text>
-            </View>
+            </Animated.View>
           )}
         </Ring>
       </Animated.View>
@@ -450,6 +561,9 @@ export default function RunActiveScreen({
           </>
         )}
       </View>
+
+      {/* 완주 세리머니(A안) — 종료 확정 후 링 완성 + 빛 번짐, 끝나면 실제 종료(onStop). */}
+      {ceremony && <FinishCeremony distanceKm={distanceKm} onDone={() => onStop?.()} />}
 
       {/* 전체화면 인터랙티브 지도 — 일시정지 지도 패널을 탭하면 열린다. 팬·줌 가능, 닫기 버튼.
           화면 좌우 패딩·상하 인셋을 상쇄해 진짜 전체화면. 재개하면 자동으로 닫힘(mapFull 리셋). */}
