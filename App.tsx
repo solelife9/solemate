@@ -2506,10 +2506,15 @@ function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],track=null,weightKg,age
         stepT0Ref.current=stepT0;
         let polling=false;
         stepSub.current=setInterval(async()=>{
-          if(polling||runTracker.pausedFlag())return;
+          if(polling)return;
           polling=true;
           try{
             const r=await Pedometer.getStepCountAsync(stepT0,new Date());
+            // 걸음 정지 게이트 공급 — 일시정지 중에도 계속 먹인다. 끊으면 오토포즈가
+            // 노이즈로 잠깐 풀리는 창에서 표본이 스테일해져 게이트가 꺼진 채 팬텀 거리가
+            // 새던 바로 그 구간을 놓친다(도심 신호대기 팬텀 차단, 2026-07-11).
+            runTracker.feedSteps(r?.steps??0,Date.now());
+            if(runTracker.pausedFlag())return; // 케이던스 표시 계산만 일시정지 중 생략(기존 동작)
             const c=feedStepCount(cadenceState.current,r?.steps??0,Date.now());
             cadenceState.current=c.state;
             if(c.spm!==cadRef.current){cadRef.current=c.spm;setCadence(c.spm);runTracker.setMeta({cadence:c.spm});}

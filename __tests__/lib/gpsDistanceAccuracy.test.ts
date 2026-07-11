@@ -20,6 +20,7 @@ import {
   sampleTruth,
   makeFixes,
   truthKm,
+  makeStepSamples,
   runEngine,
   NoiseProfile,
 } from '../helpers/gpsSynthetic';
@@ -85,6 +86,52 @@ describe('환경 극단 가드', () => {
     const e = meanErrPct('stopGo', NOISE_URBAN);
     expect(e).toBeGreaterThanOrEqual(-2);
     expect(e).toBeLessThanOrEqual(11);
+  });
+});
+
+describe('걸음 정지 게이트(2026-07-11) — 걸음수가 늘지 않으면 정지 팬텀 차단', () => {
+  const errWithSteps = (scenario: string, p: NoiseProfile, frozen = false): number => {
+    const samples = sampleTruth(SCENARIOS[scenario]);
+    const truth = truthKm(samples);
+    const steps = frozen
+      ? makeStepSamples(samples).map(s => ({t: s.t, steps: 0})) // 센서 동결(값 고정) 모사
+      : makeStepSamples(samples);
+    let s = 0;
+    for (const seed of [11, 22, 33]) {
+      s += ((runEngine(makeFixes(samples, p, seed), steps).distKm - truth) / truth) * 100;
+    }
+    return s / 3;
+  };
+
+  test('stopGo(보통): 정지 팬텀 +4.7% → ≤ +2.5% (걸음 게이트)', () => {
+    const e = errWithSteps('stopGo', NOISE_TYPICAL);
+    expect(e).toBeGreaterThanOrEqual(-2);
+    expect(e).toBeLessThanOrEqual(2.5);
+  });
+
+  test('stopGo(도심): +7~8% → ≤ +4.5%', () => {
+    const e = errWithSteps('stopGo', NOISE_URBAN);
+    expect(e).toBeGreaterThanOrEqual(-2);
+    expect(e).toBeLessThanOrEqual(4.5);
+  });
+
+  test('걷뛰: 걸음 공급이 걷기 거리를 깎지 않는다(무손실 — 게이트는 정지에만 반응)', () => {
+    const samples = sampleTruth(SCENARIOS.runWalk);
+    const steps = makeStepSamples(samples);
+    for (const seed of [11, 22]) {
+      const fixes = makeFixes(samples, NOISE_TYPICAL, seed);
+      const without = runEngine(fixes).distKm;
+      const withSteps = runEngine(fixes, steps).distKm;
+      // 걷기(105spm)는 폴링마다 걸음이 늘어 게이트가 한 번도 안 걸린다 → 거리 동일.
+      expect(withSteps).toBeCloseTo(without, 6);
+    }
+  });
+
+  test('안전선: 센서가 동결돼도(표본은 신선·걸음수 불변) 러닝 속도(≥2.5m/s)면 거리 유실 없음', () => {
+    // straight2k @6'00"(2.78m/s) 내내 걸음수 0 고정 — 칼만 속도 상한이 게이트를 풀어
+    // 거리가 정상 계상된다(자전거/센서 고장에서 거리계가 0 이 되는 사고 방지).
+    const e = errWithSteps('straight2k', NOISE_TYPICAL, true);
+    expect(e).toBeGreaterThanOrEqual(-2);
   });
 });
 

@@ -21,7 +21,7 @@
 import {KalmanFilter} from './kalman';
 import {DistanceSmoother} from './distanceSmoother';
 import {calcDist, acceptSegment, segmentSpeedMps} from './geo';
-import {WARMUP_FIXES, MAX_FIX_ACCURACY_M, MAX_SEG_DIST_KM, MAX_SEG_SPEED_MPS, CURRENT_PACE_WINDOW_MS, CURRENT_PACE_MIN_DIST_KM, CURRENT_PACE_MIN_SPEED_MPS, PACE_TRACK_MIN_STEP_KM} from './engineConstants';
+import {WARMUP_FIXES, MAX_FIX_ACCURACY_M, MAX_SEG_DIST_KM, MAX_SEG_SPEED_MPS, CURRENT_PACE_WINDOW_MS, CURRENT_PACE_MIN_DIST_KM, CURRENT_PACE_MIN_SPEED_MPS, PACE_TRACK_MIN_STEP_KM, STEP_SIGNAL_FRESH_MS, STEP_STILL_GATE_MS, STEP_GATE_MAX_SPEED_MPS} from './engineConstants';
 import {decideAutoPause, initAutoPauseState, AutoPauseState} from './autoPause';
 import {gpsStallStatus, GPS_STALL_THRESHOLD_MS} from './gpsHealth';
 import {saveSnapshot} from './runPersistence';
@@ -121,6 +121,11 @@ class RunTracker {
   private autoAnchorMs = 0;
   private autoPauseState: AutoPauseState = initAutoPauseState();
   private elev: ElevState = initElevState();
+  // 걸음 정지 게이트 상태(feedSteps 가 갱신) — 걸음수가 늘지 않는 동안 거리 적산을
+  // 동결해 도심 신호대기 팬텀을 차단한다. 표본이 안 오면(-1/0) 게이트는 꺼져 있다.
+  private lastStepCount = -1;
+  private lastStepIncreaseMs = 0;
+  private lastStepSampleMs = 0;
 
   private isPaused = false;
   private autoPausedFlag = false;
@@ -192,6 +197,9 @@ class RunTracker {
     this.autoAnchorMs = 0;
     this.autoPauseState = initAutoPauseState();
     this.elev = initElevState();
+    this.lastStepCount = -1;
+    this.lastStepIncreaseMs = 0;
+    this.lastStepSampleMs = 0;
     this.isPaused = false;
     this.autoPausedFlag = false;
     this.pausedMs = 0;
@@ -384,6 +392,15 @@ class RunTracker {
     this.accuracyM = Number.isFinite(acc) ? Math.round(acc) : null;
     const idx = this.fixIndex;
 
+    // 걸음 정지 게이트: 걸음 표본이 신선한데 걸음수 증가가 임계 이상 없으면 '서 있음' —
+    // 이 fix 는 거리로 계상하지 않는다(앵커 보존 = 재출발 시 이동분 합산, 무손실 유예).
+    // 칼만 속도 ≥ 상한이면 게이트 해제(자전거/센서 동결 시 거리 유실 방지 안전선).
+    const stillGated =
+      this.lastStepSampleMs > 0 &&
+      recvNow - this.lastStepSampleMs <= STEP_SIGNAL_FRESH_MS &&
+      recvNow - this.lastStepIncreaseMs >= STEP_STILL_GATE_MS &&
+      (this.kf.speedMps() ?? Infinity) < STEP_GATE_MAX_SPEED_MPS;
+
     // 死구간 시간 회계(#3): 이 fix 가 거리로 *채택*될지 미리 판정한다. 채택되면 그 공백 시간은
     // 실제 러닝 시간이므로 stall 로 빼지 않는다(거리·시간 일관). 채택 안 되는(死구간/노이즈/
     // 공백 re-anchor/일시정지) 임계 초과 공백만 stalledMs 로 적립해 getElapsed 에서 빼, '거리는
@@ -391,6 +408,7 @@ class RunTracker {
     // 보다 *앞*에 둬야 한다 — 이 fix 가 정지를 유발해도 직전 공백 시간은 빠져야 하기 때문(옛 동작).
     const willCount =
       !this.isPaused &&
+      !stillGated &&
       this.lastGood != null &&
       acceptSegment({
         distKm: calcDist(this.lastGood.lat, this.lastGood.lon, f.lat, f.lon),
@@ -436,7 +454,7 @@ class RunTracker {
     if (this.lastGood) {
       const d = calcDist(this.lastGood.lat, this.lastGood.lon, f.lat, f.lon);
       const dtSec = this.lastGoodMs ? Math.max((ts - this.lastGoodMs) / 1000, 0) : 0;
-      if (acceptSegment({distKm: d, dtSec, accuracyM: acc, fixIndex: idx})) {
+      if (!stillGated && acceptSegment({distKm: d, dtSec, accuracyM: acc, fixIndex: idx})) {
         this.smoothPush(f); // dist 는 평활 폴리라인 증분으로 늘어난다(직결 d 적산 금지)
         this.pts.push(f);
         this.lastGood = f;
@@ -588,6 +606,27 @@ class RunTracker {
   /** 곡선 전용 (누적거리 km, 경과시간 sec) 시계열. 완주 시 영속해 고운 페이스 곡선을 만든다. */
   getPaceTrack(): {d: number; t: number}[] {
     return this.paceTrack;
+  }
+
+  /**
+   * OS 걸음 센서의 '누적 걸음수' 표본을 먹인다(App 이 5s 폴링으로 호출 — 일시정지 중에도).
+   * 걸음수가 STEP_STILL_GATE_MS 이상 늘지 않으면(표본은 신선한데) '서 있음'으로 보고
+   * ingestFix 가 거리 적산을 동결한다 — 도심 신호대기 팬텀 차단(2026-07-11).
+   * 리셋(누적 감소)은 새 기준으로 재시작. 비정상 입력은 무시(게이트는 꺼진 채 유지).
+   */
+  feedSteps(cumulativeSteps: number, atMs?: number) {
+    if (!Number.isFinite(cumulativeSteps) || cumulativeSteps < 0) return;
+    const t = atMs ?? this.now();
+    if (this.lastStepCount < 0 || cumulativeSteps < this.lastStepCount) {
+      // 첫 표본/센서 리셋: 이 표본을 새 기준으로 — 증가 시각도 지금으로(시작 직후 오게이트 금지).
+      this.lastStepCount = cumulativeSteps;
+      this.lastStepIncreaseMs = t;
+      this.lastStepSampleMs = t;
+      return;
+    }
+    if (cumulativeSteps > this.lastStepCount) this.lastStepIncreaseMs = t;
+    this.lastStepCount = cumulativeSteps;
+    this.lastStepSampleMs = t;
   }
 
   /** 외부(워치/HealthKit)가 실시간 심박을 먹인다. 달리는 중(active·미정지)에만 ~3s 간격으로

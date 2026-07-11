@@ -200,16 +200,48 @@ export function makeFixes(
   });
 }
 
+// ── OS 걸음 센서 모사(걸음 정지 게이트 검증용) ──────────────────────────────
+/** 참 경로 속도로 누적 걸음수 표본(5s 폴링)을 만든다: 정지=증가 0, 걷기(<2m/s)=105spm,
+ *  러닝=170spm. App 의 Pedometer.getStepCountAsync 폴링과 동일한 형태(t초, 누적). */
+export function makeStepSamples(
+  samples: TruthSample[],
+  intervalS = 5,
+): {t: number; steps: number}[] {
+  const out: {t: number; steps: number}[] = [];
+  let cum = 0;
+  let lastEmit = -Infinity;
+  for (let i = 1; i < samples.length; i++) {
+    const v = Math.hypot(samples[i].x - samples[i - 1].x, samples[i].y - samples[i - 1].y);
+    const spm = v < 0.1 ? 0 : v < 2 ? 105 : 170;
+    cum += spm / 60; // 1Hz 샘플 → 초당 걸음
+    if (samples[i].t - lastEmit >= intervalS) {
+      out.push({t: samples[i].t, steps: Math.floor(cum)});
+      lastEmit = samples[i].t;
+    }
+  }
+  return out;
+}
+
 // ── 실제 엔진으로 주행 ─────────────────────────────────────────────────────
 /** RunTracker(실제 제품 엔진)에 fix 열을 먹이고 최종 누적 거리(km)를 돌려준다.
- *  시계는 fix 타임스탬프를 따라간다(1s ticker 와 동일한 시간 흐름). */
-export function runEngine(fixes: RawFix[]): {distKm: number} {
+ *  시계는 fix 타임스탬프를 따라간다(1s ticker 와 동일한 시간 흐름).
+ *  steps 를 주면 App 의 5s 폴링처럼 fix 사이사이에 feedSteps 로 공급한다. */
+export function runEngine(
+  fixes: RawFix[],
+  steps?: {t: number; steps: number}[],
+  t0Ms = 1_700_000_000_000,
+): {distKm: number} {
   const t = new RunTracker();
   let clock = fixes.length > 0 ? fixes[0].timestamp : 0;
   t.setNow(() => clock);
   t.start({goalKm: 10, shoe: {id: 'sim', name: 'sim'}, t0: clock});
+  let si = 0;
   for (const f of fixes) {
     clock = f.timestamp;
+    while (steps && si < steps.length && t0Ms + steps[si].t * 1000 <= f.timestamp) {
+      t.feedSteps(steps[si].steps, t0Ms + steps[si].t * 1000);
+      si++;
+    }
     t.ingestFix(f);
   }
   t.stop(); // 평활 꼬리 flush 포함 — 최종 거리는 stop() 후 읽는다(제품 handleStop 동일)

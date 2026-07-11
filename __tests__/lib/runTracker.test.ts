@@ -478,6 +478,104 @@ describe('recovery seed (이어 달리기)', () => {
 });
 
 // ── C1 팬텀 드리프트 억제(2026-07-03) — 정지 표류는 0, 저속 이동은 무손실 ──────────
+// ── 걸음 정지 게이트(2026-07-11) — 걸음수가 늘지 않으면 거리 동결 ────────────────
+describe('걸음 정지 게이트(feedSteps)', () => {
+  // 저속 표류 fix: 10m/5s(≈2m/s — 칼만 속도 상한 2.5 미만, 플로어 4m 는 통과)를 만들어
+  // 'GPS 만으론 걷기와 구분 불가한 정지 표류'를 모사한다.
+  const driftRun = (t: RunTracker, feed: (ts: number) => void) => {
+    let ts = 100000;
+    t.ingestFix(fix(37.5, LON, 5, ts));
+    t.ingestFix(fix(37.5, LON, 5, (ts += 2000)));
+    t.ingestFix(fix(37.5, LON, 5, (ts += 2000)));
+    for (let i = 0; i < 24; i++) {
+      ts += 5000;
+      feed(ts);
+      t.ingestFix(fix(37.5 + (i + 1) * 0.00009, LON, 5, ts)); // ~10m/5s 표류
+    }
+    return ts;
+  };
+
+  test('표본 신선 + 걸음수 불변 → 12s 후 거리 동결(게이트 ON)', () => {
+    const {t, set} = makeEngine();
+    t.start({goalKm: 5, shoe: {id: 's1', name: 'X'}, t0: 100000});
+    t.feedSteps(500, 100000); // 기준 표본
+    driftRun(t, ts => {
+      set(ts);
+      t.feedSteps(500, ts); // 걸음수 불변(서 있음) — 표본은 5s 마다 신선
+    });
+    t.stop();
+    // 게이트 성립(12s) 전 초반 표류 일부만 계상될 수 있다 — 이후는 전부 동결.
+    expect(t.getDistanceKm()).toBeLessThan(0.05); // 표류 총 ~240m 중 극히 일부만
+  });
+
+  test('걸음수가 계속 늘면(걷기) 게이트가 걸리지 않는다 — 저속 이동 무손실', () => {
+    const {t, set} = makeEngine();
+    t.start({goalKm: 5, shoe: {id: 's1', name: 'X'}, t0: 100000});
+    let steps = 500;
+    driftRun(t, ts => {
+      set(ts);
+      t.feedSteps((steps += 9), ts); // 5s 마다 +9걸음(~105spm 걷기)
+    });
+    t.stop();
+    expect(t.getDistanceKm()).toBeGreaterThan(0.2); // 표류 ~240m 대부분 계상
+  });
+
+  test('표본이 스테일하면(센서 중단) 게이트는 꺼진다 — 현행 동작 유지', () => {
+    const {t, set} = makeEngine();
+    t.start({goalKm: 5, shoe: {id: 's1', name: 'X'}, t0: 100000});
+    t.feedSteps(500, 100000); // 이후 표본 없음 → 15s 뒤 스테일
+    driftRun(t, ts => set(ts));
+    t.stop();
+    expect(t.getDistanceKm()).toBeGreaterThan(0.2); // 게이트 미작동(안전 기본값)
+  });
+
+  test('정지 후 걸음이 다시 늘면 게이트가 풀리고 거리도 다시 쌓인다', () => {
+    const {t, set} = makeEngine();
+    t.start({goalKm: 5, shoe: {id: 's1', name: 'X'}, t0: 100000});
+    let ts = 100000;
+    const F = (lat: number) => {
+      set(ts);
+      t.ingestFix(fix(lat, LON, 5, ts));
+    };
+    t.feedSteps(500, ts);
+    F(37.5);
+    ts += 2000; F(37.5);
+    ts += 2000; F(37.5);
+    // 정지 구간: 걸음수 불변 30s — 표류해도 동결.
+    for (let i = 0; i < 6; i++) {
+      ts += 5000;
+      t.feedSteps(500, ts);
+      F(37.5 + (i + 1) * 0.00009);
+    }
+    t.stop();
+    const frozen = t.getDistanceKm();
+    // 재출발: 걸음수 증가 재개 → 게이트 해제, 이동 계상.
+    // (stop() 후엔 새 엔진처럼 재시작해 검증 — 인제스트 재개 대신 신규 런으로 단순화.)
+    const {t: t2, set: set2} = makeEngine();
+    t2.start({goalKm: 5, shoe: {id: 's1', name: 'X'}, t0: 100000});
+    let ts2 = 100000;
+    let steps2 = 500;
+    t2.feedSteps(steps2, ts2);
+    t2.ingestFix(fix(37.5, LON, 5, ts2));
+    t2.ingestFix(fix(37.5, LON, 5, (ts2 += 2000)));
+    t2.ingestFix(fix(37.5, LON, 5, (ts2 += 2000)));
+    for (let i = 0; i < 6; i++) {
+      ts2 += 5000;
+      set2(ts2);
+      t2.feedSteps(steps2, ts2); // 정지
+      t2.ingestFix(fix(37.5 + (i + 1) * 0.00009, LON, 5, ts2));
+    }
+    for (let i = 0; i < 8; i++) {
+      ts2 += 5000;
+      set2(ts2);
+      t2.feedSteps((steps2 += 14), ts2); // 재출발(~170spm)
+      t2.ingestFix(fix(37.5 + 0.00054 + (i + 1) * 0.0001, LON, 5, ts2));
+    }
+    t2.stop();
+    expect(t2.getDistanceKm()).toBeGreaterThan(frozen + 0.05); // 재개 후 누적 재개
+  });
+});
+
 test('정지 중 GPS 표류(±2m 원형 wandering, acc 8m)는 거리를 쌓지 않는다 — C1', () => {
   const {t} = makeEngine();
   t.start({goalKm: 5, shoe: {id: 's1', name: 'X'}, t0: 100000});
