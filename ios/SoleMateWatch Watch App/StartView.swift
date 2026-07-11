@@ -171,29 +171,27 @@ private struct LifeBar: View {
   }
 }
 
-/// '러닝 시작' — 유리 표면 캡슐 + 파파야 포인트(플레이 글리프에만, 넓은 면 금지).
+/// '러닝 시작' — 유리 캡슐, 텍스트만(2026-07-11 사용자 확정: 플레이 글리프 제거,
+/// 전폭 대신 살짝 줄인 너비 — 히어로 아래 조용한 마침표).
 private struct StartButton: View {
   let label: String
   let action: () -> Void
 
   var body: some View {
     Button(action: action) {
-      HStack(spacing: 5) {
-        Image(systemName: "play.fill")
-          .font(.system(size: 11, weight: .bold))
-          .foregroundStyle(KeegoTheme.brand)
-        Text(label)
-          .font(.system(size: 14, weight: .bold))
-          .foregroundStyle(KeegoTheme.t1)
-      }
-      .frame(maxWidth: .infinity)
-      .frame(height: 36)
-      // 콰이어트 글라스 — 카드와 같은 재질(폰 runBtn 의 GlassEdge 림 미러).
-      .background(KeegoTheme.glassFill)
-      .clipShape(Capsule())
-      .overlay(Capsule().strokeBorder(KeegoTheme.hairline, lineWidth: 1))
+      Text(label)
+        .font(.system(size: 14, weight: .bold))
+        .foregroundStyle(KeegoTheme.t1)
+        .frame(maxWidth: .infinity)
+        .frame(height: 36)
+        // 콰이어트 글라스 — 카드와 같은 재질(폰 runBtn 의 GlassEdge 림 미러).
+        .background(KeegoTheme.glassFill)
+        .clipShape(Capsule())
+        .overlay(Capsule().strokeBorder(KeegoTheme.hairline, lineWidth: 1))
     }
     .buttonStyle(.plain)
+    // 전폭에서 좌우를 조금 들여 히어로보다 좁게 — 시각 위계(숫자 > 버튼).
+    .padding(.horizontal, 16)
     .accessibilityLabel(label)
   }
 }
