@@ -2,10 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<!-- Keego Watch 백그라운드 모드 — 손목을 내려도 HKWorkoutSession(러닝 세션)이 계속
-	     돈다(거리·심박 유실 금지, Iron Law). INFOPLIST_KEY_* 빌드 설정에는 WKBackgroundModes
-	     가 없어(배열 키 미지원) 이 부분 plist 를 GENERATE_INFOPLIST_FILE 과 병합한다
-	     (RunActivity 타깃의 Info.plist 병합 패턴과 동일). -->
+	<key>CFBundleIconName</key>
+	<string>AppIcon</string>
 	<key>WKBackgroundModes</key>
 	<array>
 		<string>workout-processing</string>
