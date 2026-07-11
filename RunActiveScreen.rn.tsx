@@ -179,27 +179,32 @@ export default function RunActiveScreen({
   const ringIn = useRef(new Animated.Value(1)).current;
   useEffect(() => {
     if (paused === uiPaused) return;
+    // 상태 전환 최우선(기기 회귀 최종 수정): 부가 효과(LayoutAnimation 등)가 어떤 이유로든
+    // throw 하면 uiPaused 가 영영 안 바뀌어 일시정지 UI 전체가 잠긴다 — 스위치 먼저, 효과 격리.
+    setUiPaused(paused);
     if (skipAnim) {
-      setUiPaused(paused);
       t.setValue(paused ? 1 : 0);
       subIn.setValue(paused ? 1 : 0);
       mapIn.setValue(paused ? 1 : 0);
       ringIn.setValue(1);
       return;
     }
-    LayoutAnimation.configureNext(LayoutAnimation.create(260, LayoutAnimation.Types.easeInEaseOut, LayoutAnimation.Properties.opacity));
-    setUiPaused(paused);
+    try {
+      LayoutAnimation.configureNext(LayoutAnimation.create(260, LayoutAnimation.Types.easeInEaseOut, LayoutAnimation.Properties.opacity));
+    } catch {}
     // 재개: 링이 스케일업+페이드로 되돌아온다(일시정지 시퀀스의 역재생 감각).
     if (!paused) ringIn.setValue(0);
     // JS 드라이버(코드베이스 관례) — t 는 레이아웃 속성(높이·폰트)도 구동하므로 네이티브
     // 드라이버는 기기에서 throw → 병렬 전체가 죽어 지도/서브지표가 opacity 0 에 갇혔다
     // (기기 회귀 2026-07-11 아침).
-    Animated.parallel([
-      Animated.timing(t, { toValue: paused ? 1 : 0, duration: 300, easing: Easing.inOut(Easing.cubic), useNativeDriver: false }),
-      Animated.timing(mapIn, { toValue: paused ? 1 : 0, duration: paused ? 340 : 160, delay: paused ? 120 : 0, easing: Easing.out(Easing.cubic), useNativeDriver: false }),
-      Animated.timing(subIn, { toValue: paused ? 1 : 0, duration: paused ? 300 : 160, delay: paused ? 200 : 0, easing: Easing.out(Easing.quad), useNativeDriver: false }),
-      Animated.timing(ringIn, { toValue: 1, duration: 280, easing: Easing.out(Easing.cubic), useNativeDriver: false }),
-    ]).start();
+    try {
+      Animated.parallel([
+        Animated.timing(t, { toValue: paused ? 1 : 0, duration: 300, easing: Easing.inOut(Easing.cubic), useNativeDriver: false }),
+        Animated.timing(mapIn, { toValue: paused ? 1 : 0, duration: paused ? 340 : 160, delay: paused ? 120 : 0, easing: Easing.out(Easing.cubic), useNativeDriver: false }),
+        Animated.timing(subIn, { toValue: paused ? 1 : 0, duration: paused ? 300 : 160, delay: paused ? 200 : 0, easing: Easing.out(Easing.quad), useNativeDriver: false }),
+        Animated.timing(ringIn, { toValue: 1, duration: 280, easing: Easing.out(Easing.cubic), useNativeDriver: false }),
+      ]).start();
+    } catch {}
     // 방어선(기기 회귀 2026-07-11): 어떤 이유로든 위 병렬이 완주하지 못하면 UI 가 중간
     // 상태(지도/서브지표 opacity 0)에 갇힌다 — 시퀀스 최장 지연(540ms) 후 최종값을 강제
     // 정착시킨다. 애니메이션이 정상 완료됐다면 동일값이라 시각 영향 0(멱등).
