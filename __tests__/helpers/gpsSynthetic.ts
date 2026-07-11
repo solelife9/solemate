@@ -1,0 +1,234 @@
+// ─── 합성 GPS 러닝 하네스 (테스트 전용) ─────────────────────────────────────
+// GPS 거리 정확도를 '숫자로' 측정하기 위한 결정론적 시뮬레이터.
+// 참(truth) 경로를 1Hz 로 샘플링하고, 실측 GPS 와 같은 성질의 잡음
+// (시간상관 Gauss-Markov 바이어스 + fix 간 백색 지터)을 시드 RNG 로 입혀
+// 실제 엔진(RunTracker: Kalman → acceptSegment → 거리 누적)에 먹인 뒤
+// 참 거리 대비 오차(%)를 잰다.
+//
+// 배경: 2026-07-11 실측 비교런(폰 Keego vs NRC 동시)에서 Keego +9% 과대 확정.
+// 이 하네스는 그 과대를 재현·수치화하고, 필터 파라미터 재튜닝의 근거와
+// 회귀 가드를 제공한다. Math.random 미사용(전 구간 시드 RNG) — CI 결정론.
+
+import {RunTracker, RawFix} from '../../lib/runTracker';
+
+// ── 시드 RNG (mulberry32) + 가우시안(Box-Muller) ────────────────────────────
+export function mulberry32(seed: number): () => number {
+  let a = seed >>> 0;
+  return () => {
+    a |= 0;
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+export function makeGaussian(rng: () => number): () => number {
+  // Box-Muller — 한 번에 2개 생성, 하나는 캐시.
+  let spare: number | null = null;
+  return () => {
+    if (spare != null) {
+      const v = spare;
+      spare = null;
+      return v;
+    }
+    let u = 0;
+    let v = 0;
+    // rng()가 정확히 0 이면 log(0) — 시드 RNG 라도 방어.
+    do {
+      u = rng();
+    } while (u <= 1e-12);
+    v = rng();
+    const mag = Math.sqrt(-2 * Math.log(u));
+    spare = mag * Math.sin(2 * Math.PI * v);
+    return mag * Math.cos(2 * Math.PI * v);
+  };
+}
+
+// ── 참 경로: 레그(지속초·속도·헤딩) 목록 → 1Hz 로컬미터 샘플 ────────────────
+export interface Leg {
+  durS: number;
+  speedMps: number;
+  /** 진행 방위(도). 0=북(+y), 90=동(+x). */
+  headingDeg: number;
+}
+
+export interface TruthSample {
+  t: number; // 초 (0부터 1Hz)
+  x: number; // 동쪽 미터
+  y: number; // 북쪽 미터
+}
+
+export function sampleTruth(legs: Leg[]): TruthSample[] {
+  const out: TruthSample[] = [{t: 0, x: 0, y: 0}];
+  let x = 0;
+  let y = 0;
+  let t = 0;
+  for (const leg of legs) {
+    const rad = (leg.headingDeg * Math.PI) / 180;
+    const vx = leg.speedMps * Math.sin(rad);
+    const vy = leg.speedMps * Math.cos(rad);
+    for (let i = 0; i < leg.durS; i++) {
+      x += vx;
+      y += vy;
+      t += 1;
+      out.push({t, x, y});
+    }
+  }
+  return out;
+}
+
+/** 참 경로 길이(km) — fromIdx 샘플부터 끝까지. 엔진은 워밍업 3fix 를 버리고
+ *  idx2 지점을 앵커로 idx3 부터 계상하므로, 공정 비교는 fromIdx=2 부터다. */
+export function truthKm(samples: TruthSample[], fromIdx = 2): number {
+  let m = 0;
+  for (let i = fromIdx + 1; i < samples.length; i++) {
+    m += Math.hypot(samples[i].x - samples[i - 1].x, samples[i].y - samples[i - 1].y);
+  }
+  return m / 1000;
+}
+
+// ── 시나리오 (사용자 확정 4종) ──────────────────────────────────────────────
+const PACE_6MIN_MPS = 1000 / 360; // 6'00"/km ≈ 2.778 m/s
+
+export const SCENARIOS: {[name: string]: Leg[]} = {
+  /** 직선 2km @ 6'00"/km — 기본 과대(지터 적산) 측정. */
+  straight2k: [{durS: 720, speedMps: PACE_6MIN_MPS, headingDeg: 0}],
+  /** 사각 루프 500m×4 — 코너에서 필터가 과하게 안쪽으로 깎으면 과소측정. */
+  squareLoop: [
+    {durS: 180, speedMps: PACE_6MIN_MPS, headingDeg: 0},
+    {durS: 180, speedMps: PACE_6MIN_MPS, headingDeg: 90},
+    {durS: 180, speedMps: PACE_6MIN_MPS, headingDeg: 180},
+    {durS: 180, speedMps: PACE_6MIN_MPS, headingDeg: 270},
+  ],
+  /** 인터벌 — 페이스 급변(4'00"↔8'20")을 필터가 따라가는지. */
+  intervals: Array.from({length: 6}, () => [
+    {durS: 60, speedMps: 1000 / 240, headingDeg: 0},
+    {durS: 60, speedMps: 2.0, headingDeg: 0},
+  ]).flat(),
+  /** 1km 주행 → 300s 정지(신호대기) → 1km 주행 — 정지 중 팬텀 드리프트 억제. */
+  stopGo: [
+    {durS: 360, speedMps: PACE_6MIN_MPS, headingDeg: 0},
+    {durS: 300, speedMps: 0, headingDeg: 0},
+    {durS: 360, speedMps: PACE_6MIN_MPS, headingDeg: 0},
+  ],
+  /** 반경 30m 원 8바퀴(≈1.5km) — 지속 곡선에서 평활/청킹의 과소측정(코너 깎기) 감시.
+   *  1초 단위 헤딩 회전으로 근사(참 거리도 같은 폴리라인 기준이라 공정). */
+  circle: (() => {
+    const r = 30;
+    const secPerLap = Math.round((2 * Math.PI * r) / PACE_6MIN_MPS); // ≈68s
+    const legs: Leg[] = [];
+    for (let lap = 0; lap < 8; lap++) {
+      for (let s = 0; s < secPerLap; s++) {
+        legs.push({durS: 1, speedMps: PACE_6MIN_MPS, headingDeg: (360 * s) / secPerLap});
+      }
+    }
+    return legs;
+  })(),
+  /** 왕복(아웃앤백) 500m + 180° 턴 — 필터 지연이 턴어라운드에서 유발하는 오버슛/깎임 감시. */
+  outback: [
+    {durS: 180, speedMps: PACE_6MIN_MPS, headingDeg: 0},
+    {durS: 180, speedMps: PACE_6MIN_MPS, headingDeg: 180},
+  ],
+  /** 걷뛰(run-walk): 러닝 → 걷기 1.0m/s 300m → 러닝. 걷기 거리 유실 금지 검증
+   *  (속도게이트/노이즈 플로어가 걷기를 '유예'는 해도 '삭제'하면 안 된다). */
+  runWalk: [
+    {durS: 360, speedMps: PACE_6MIN_MPS, headingDeg: 0},
+    {durS: 300, speedMps: 1.0, headingDeg: 0},
+    {durS: 360, speedMps: PACE_6MIN_MPS, headingDeg: 0},
+  ],
+  /** 느린 러너 8'30"/km 직선 3km — 저속에서 플로어 청킹/게이트가 과소측정 안 하는지. */
+  slowStraight: [{durS: 1530, speedMps: 1000 / 510, headingDeg: 0}],
+};
+
+// ── GPS 잡음 모델 ───────────────────────────────────────────────────────────
+// 실측 GPS 오차의 두 성분을 나눠 모사한다:
+//  • bias(σ, τ): 시간상관 Gauss-Markov — 멀티패스/전리층 등 수십 초 스케일의
+//    '치우침'. 상관돼 있어 fix 간 차분(=거리)에는 √(2(1-ρ)) 만큼만 샌다.
+//  • white(σw): fix 간 백색 지터 — 거리 과대 적산의 주범(매 fix 독립).
+// 보고 정확도(acc)는 σ 수준에서 약간 출렁이게 준다(iOS 관측과 유사).
+export interface NoiseProfile {
+  name: string;
+  sigmaM: number; // Gauss-Markov 정상 표준편차(m, 축별)
+  tauS: number; // 상관 시간(s)
+  whiteM: number; // 백색 지터 표준편차(m, 축별)
+  accM: number; // 보고 정확도 중심값(m)
+}
+
+/** 공원/도심 혼합(실측 비교런과 유사 환경 목표) — 현행 엔진이 +5~10% 과대를
+ *  재현하도록 실측(+9%)에 맞춰 보정한 기준 프로파일. */
+export const NOISE_TYPICAL: NoiseProfile = {name: 'typical', sigmaM: 5, tauS: 25, whiteM: 1.6, accM: 6};
+/** 탁 트인 하늘(강변/트랙) — 좋은 조건에서 과소측정으로 뒤집히지 않는지 가드. */
+export const NOISE_OPEN: NoiseProfile = {name: 'open', sigmaM: 3, tauS: 40, whiteM: 0.8, accM: 5};
+/** 빌딩 협곡/수풀 — 나쁜 조건 상한. */
+export const NOISE_URBAN: NoiseProfile = {name: 'urban', sigmaM: 8, tauS: 15, whiteM: 2.4, accM: 10};
+
+export const ORIGIN_LAT = 37.5;
+export const ORIGIN_LON = 127.0;
+const M_PER_DEG_LAT = 111320;
+
+/** 참 샘플에 잡음을 입혀 RawFix 열을 만든다(1Hz, ts는 t0Ms 기준 ms). */
+export function makeFixes(
+  samples: TruthSample[],
+  profile: NoiseProfile,
+  seed: number,
+  t0Ms = 1_700_000_000_000,
+): RawFix[] {
+  const rng = mulberry32(seed);
+  const gauss = makeGaussian(rng);
+  const rho = Math.exp(-1 / profile.tauS);
+  const c = Math.sqrt(1 - rho * rho) * profile.sigmaM;
+  let bx = gauss() * profile.sigmaM;
+  let by = gauss() * profile.sigmaM;
+  const mPerDegLon = M_PER_DEG_LAT * Math.cos((ORIGIN_LAT * Math.PI) / 180);
+  return samples.map(s => {
+    bx = rho * bx + c * gauss();
+    by = rho * by + c * gauss();
+    const ex = bx + gauss() * profile.whiteM;
+    const ey = by + gauss() * profile.whiteM;
+    const acc = Math.max(3, profile.accM + gauss() * 1.5);
+    return {
+      coords: {
+        latitude: ORIGIN_LAT + (s.y + ey) / M_PER_DEG_LAT,
+        longitude: ORIGIN_LON + (s.x + ex) / mPerDegLon,
+        accuracy: acc,
+        altitude: null,
+        speed: null,
+      },
+      timestamp: t0Ms + s.t * 1000,
+    };
+  });
+}
+
+// ── 실제 엔진으로 주행 ─────────────────────────────────────────────────────
+/** RunTracker(실제 제품 엔진)에 fix 열을 먹이고 최종 누적 거리(km)를 돌려준다.
+ *  시계는 fix 타임스탬프를 따라간다(1s ticker 와 동일한 시간 흐름). */
+export function runEngine(fixes: RawFix[]): {distKm: number} {
+  const t = new RunTracker();
+  let clock = fixes.length > 0 ? fixes[0].timestamp : 0;
+  t.setNow(() => clock);
+  t.start({goalKm: 10, shoe: {id: 'sim', name: 'sim'}, t0: clock});
+  for (const f of fixes) {
+    clock = f.timestamp;
+    t.ingestFix(f);
+  }
+  t.stop(); // 평활 꼬리 flush 포함 — 최종 거리는 stop() 후 읽는다(제품 handleStop 동일)
+  const distKm = t.getDistanceKm();
+  return {distKm};
+}
+
+/** 한 시나리오×프로파일을 여러 시드로 돌려 평균 오차(%)를 낸다. */
+export function measureError(
+  legs: Leg[],
+  profile: NoiseProfile,
+  seeds: number[],
+): {meanErrPct: number; errsPct: number[]; truthKm: number} {
+  const samples = sampleTruth(legs);
+  const truth = truthKm(samples);
+  const errsPct = seeds.map(seed => {
+    const {distKm} = runEngine(makeFixes(samples, profile, seed));
+    return ((distKm - truth) / truth) * 100;
+  });
+  const meanErrPct = errsPct.reduce((a, b) => a + b, 0) / errsPct.length;
+  return {meanErrPct, errsPct, truthKm: truth};
+}

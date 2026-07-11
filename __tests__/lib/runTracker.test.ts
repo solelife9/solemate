@@ -42,11 +42,18 @@ test('accumulates distance only after warmup, summing accepted segments', () => 
   clearWarmup(t);
   expect(t.getDistanceKm()).toBe(0); // first 3 fixes are warmup → no distance
 
-  t.ingestFix(fix(37.5003, LON, 5, 107000)); // ~33 m accepted
+  // 5점 중심 평활(2026-07-11): 거리는 채택 fix 2개째부터 확정된다(~2s 지연,
+  // 꼬리는 경계/stop() flush 가 계상 — 유실 아님).
+  t.ingestFix(fix(37.5003, LON, 5, 107000)); // ~33 m accepted — 아직 평활 버퍼
+  expect(t.getDistanceKm()).toBe(0);
+
+  t.ingestFix(fix(37.5006, LON, 5, 110000)); // another ~33 m → 첫 확정
   const d1 = t.getDistanceKm();
   expect(d1).toBeGreaterThan(0);
 
-  t.ingestFix(fix(37.5006, LON, 5, 110000)); // another ~33 m
+  // 5점 창이 완전히 차는 채택 4개째부터는 fix 마다 ~2 fix 지연으로 꾸준히 확정된다.
+  t.ingestFix(fix(37.5009, LON, 5, 113000));
+  t.ingestFix(fix(37.5012, LON, 5, 116000));
   expect(t.getDistanceKm()).toBeGreaterThan(d1); // summed, not overwritten
 });
 
@@ -71,10 +78,11 @@ test('manual pause freezes distance; resume lets it accumulate again', () => {
   t.start({goalKm: 5, shoe: {id: 's1', name: 'X'}, t0: 100000});
   clearWarmup(t);
   t.ingestFix(fix(37.5003, LON, 5, 107000));
+
+  // 일시정지 = 구간 경계: 평활 꼬리(직전 채택분)를 flush 로 계상한 값이 동결값.
+  t.togglePause();
   const dRunning = t.getDistanceKm();
   expect(dRunning).toBeGreaterThan(0);
-
-  t.togglePause();
   expect(t.getState().paused).toBe(true);
   t.ingestFix(fix(37.5006, LON, 5, 110000)); // moving fix while paused
   expect(t.getDistanceKm()).toBe(dRunning); // frozen
@@ -85,8 +93,9 @@ test('manual pause freezes distance; resume lets it accumulate again', () => {
   // 거리를 계상하지 않는다(일시정지 구간 이동은 거리 아님). 동결값 그대로.
   t.ingestFix(fix(37.5009, LON, 5, 113000));
   expect(t.getDistanceKm()).toBe(dRunning);
-  // 그다음 실제 이동분부터 다시 누적된다.
+  // 그다음 실제 이동분부터 다시 누적된다(평활 확정은 채택 2개째부터).
   t.ingestFix(fix(37.5012, LON, 5, 116000));
+  t.ingestFix(fix(37.5015, LON, 5, 119000));
   expect(t.getDistanceKm()).toBeGreaterThan(dRunning); // engine restarts
 });
 
@@ -95,11 +104,12 @@ test('C1: 일시정지 중 멀리 이동해도 재개 시 유령 거리를 합�
   t.start({goalKm: 5, shoe: {id: 's1', name: 'X'}, t0: 100000});
   clearWarmup(t);
   t.ingestFix(fix(37.5003, LON, 5, 107000)); // 러닝 중 ~33m
-  const dRunning = t.getDistanceKm();
-  expect(dRunning).toBeGreaterThan(0);
 
   // 일시정지 후 주자가 ~330m 떨어진 곳으로 이동(예: 화장실). 정지 중 fix 는 거리 미반영.
+  // (동결값은 pause flush 로 평활 꼬리까지 계상된 값.)
   t.togglePause();
+  const dRunning = t.getDistanceKm();
+  expect(dRunning).toBeGreaterThan(0);
   t.ingestFix(fix(37.5033, LON, 5, 140000));
   expect(t.getDistanceKm()).toBe(dRunning);
 
@@ -158,16 +168,17 @@ test('notifyPermissionRevoked stops accumulation and flags the state', () => {
   t.start({goalKm: 5, shoe: {id: 's1', name: 'X'}, t0: 100000});
   clearWarmup(t);
   t.ingestFix(fix(37.5003, LON, 5, 107000));
-  const d = t.getDistanceKm();
-  expect(d).toBeGreaterThan(0);
 
   t.notifyPermissionRevoked();
   expect(t.getState().permissionRevoked).toBe(true);
   expect(t.isActive()).toBe(false);
+  // 회수 시 평활 꼬리를 flush 해 지금까지 달린 거리(~33m)를 전부 계상한 값이 동결값.
+  const dFrozen = t.getDistanceKm();
+  expect(dFrozen).toBeGreaterThan(0);
 
   // Further fixes are ignored — no garbage distance after revocation.
   t.ingestFix(fix(37.5009, LON, 5, 110000));
-  expect(t.getDistanceKm()).toBe(d);
+  expect(t.getDistanceKm()).toBe(dFrozen);
 });
 
 test('notifyPermissionRevoked freezes elapsed time — clock keeps ticking but time does not', () => {
@@ -223,15 +234,20 @@ test('GPS 공백 후 큰 점프(>300m·정상속도)는 거리 미계상하되 �
   F(37.5, 102000);
   F(37.5, 104000); // warmup
   F(37.5003, 107000); // idx3 채택 ~33m
+  F(37.5006, 110000); // 채택 ~33m — 평활 확정 시작(dist > 0)
   const dBefore = t.getDistanceKm();
   expect(dBefore).toBeGreaterThan(0);
-  // 60s 공백 후 ~555m 점프(속도 ~9m/s 정상, 정확도 양호) → re-anchor: 거리 미계상 + 앵커 전진
+  // 57s 공백 후 ~522m 점프(속도 ~9m/s 정상, 정확도 양호) → re-anchor: 점프 거리 미계상 +
+  // 앵커 전진. 이때 직전 구간의 평활 꼬리(≤ ~35m)는 flush 로 계상된다(점프 555m 가
+  // 더해졌다면 +0.5km 이상이었을 것 — 아래 상한이 그걸 잡는다).
   F(37.5053, 167000);
-  expect(t.getDistanceKm()).toBeCloseTo(dBefore, 5); // 점프 거리는 안 더해짐
-  // 새 앵커(37.5053)에서 정상 이동(~42m/5s) → 다시 누적된다(동결됐다면 그대로였을 것).
-  // (옛 동작이면 lastGood 가 37.5003 에 묶여 이 fix 도 588m 점프로 거부 → dist 동결)
+  const dAfterJump = t.getDistanceKm();
+  expect(dAfterJump - dBefore).toBeLessThan(0.06); // 점프 거리는 안 더해짐(꼬리만)
+  // 새 앵커(37.5053)에서 정상 이동 → 다시 누적된다(동결됐다면 그대로였을 것).
+  // (옛 동작이면 lastGood 가 37.5006 에 묶여 이후 fix 도 점프로 거부 → dist 동결)
   F(37.5056, 172000);
-  expect(t.getDistanceKm()).toBeGreaterThan(dBefore);
+  F(37.5059, 177000);
+  expect(t.getDistanceKm()).toBeGreaterThan(dAfterJump);
 });
 
 test('현재(롤링) 페이스: 표본 충분하면 산출, 표본 부족·정지 시 null(#P0-1)', () => {
@@ -308,13 +324,13 @@ test('권한 회수 후 resumeFromPermissionRevoked: 거리 보존 + 재개 후 
   F(37.5, 104000);
   F(37.5003, 107000);
   F(37.5006, 110000);
-  const dBefore = t.getDistanceKm();
-  expect(dBefore).toBeGreaterThan(0);
   clock = 110000;
   const elapsedBefore = t.getElapsed();
 
-  // 주행 중 권한 회수 → active=false, elapsed 동결.
+  // 주행 중 권한 회수 → active=false, elapsed 동결. 거리는 평활 꼬리까지 flush 된 값.
   t.notifyPermissionRevoked();
+  const dBefore = t.getDistanceKm();
+  expect(dBefore).toBeGreaterThan(0);
   expect(t.isActive()).toBe(false);
   clock = 170000; // 설정 다녀온 60s
   expect(t.getElapsed()).toBe(elapsedBefore); // 동결(증가 안 함)
@@ -379,6 +395,7 @@ describe('GPS stall 시간 elapsed 제외', () => {
     F(37.5, 104000); // warmup(idx 0~2)
     F(37.5003, 107000); // idx3 채택 ~33m
     F(37.50165, 137000); // 30s 공백 후 ~150m(5m/s) 채택
+    t.stop(); // 평활(5점 중심) 꼬리 flush — 최종 거리는 stop() 후 읽는다(제품 handleStop 동일)
     expect(t.getDistanceKm()).toBeGreaterThan(0);
     expect(t.getElapsed()).toBe(37); // 채택 공백은 stall 제외 안 함(옛 동작이면 15s)
   });
@@ -421,9 +438,10 @@ describe('recovery seed (이어 달리기)', () => {
     t.ingestFix(fix(37.5, LON, 5, 203000));
     expect(t.getDistanceKm()).toBe(2.5); // 공백을 가로지른 허위 거리 없음
 
-    // 그 다음 실제 이동분만 누적된다.
+    // 그 다음 실제 이동분만 누적된다(평활 꼬리는 stop() 이 계상 — 유실 없음).
     set(206000);
     t.ingestFix(fix(37.5003, LON, 5, 206000));
+    t.stop();
     expect(t.getDistanceKm()).toBeGreaterThan(2.5);
   });
 
@@ -482,11 +500,13 @@ test('저속 이동(≈1.4m/s 걷기, acc 8m)은 앵커 합산으로 무손실 �
   clearWarmup(t);
 
   // 1Hz 로 위도 +0.0000126°(≈1.4m)씩 60초 = 실이동 ≈84m. 각 세그먼트(1.4m)는 하한
-  // (2.8m) 미만이라 개별 거부되지만, 앵커가 보존돼 2fix 마다 2.8m 로 합산 채택된다.
+  // (8m×0.8=6.4m) 미만이라 개별 거부되지만, 앵커가 보존돼 ~5fix 마다 7m 로 합산 채택된다
+  // (2026-07-11 하한 0.35→0.8: 유예 단위만 굵어질 뿐 무손실 불변). 평활 꼬리는 stop() 계상.
   for (let i = 1; i <= 60; i++) {
     t.ingestFix(fix(37.5 + i * 0.0000126, LON, 8, 106000 + i * 1000));
   }
+  t.stop();
   const d = t.getDistanceKm() * 1000; // m
-  expect(d).toBeGreaterThan(75); // 무손실(±기하 오차 허용)
+  expect(d).toBeGreaterThan(70); // 무손실(±기하 오차·마지막 하한 미만 유예분 허용)
   expect(d).toBeLessThan(95);
 });

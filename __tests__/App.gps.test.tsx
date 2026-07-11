@@ -132,20 +132,23 @@ test('non-warmup rejection does not desync the speed gate: a normal segment afte
   await emit(37.5, LON, 5, 104000);
   expect(km()).toBe(0);
 
-  // idx3: first real fix ~11 m north over 2 s → accepted, distance starts counting.
-  await emit(37.5001, LON, 5, 106000);
+  // idx3~4: 두 개의 실이동 fix — 5점 평활은 채택 2개째부터 거리를 확정한다.
+  await emit(37.5001, LON, 5, 106000); // ~11 m, 평활 버퍼
+  await emit(37.5003, LON, 5, 109000); // ~22 m → 첫 확정
   const afterAccept = km();
   expect(afterAccept).toBeGreaterThan(0);
 
-  // idx4: an inaccurate fix (35 m > 20 m gate) 5 s later, at the same spot.
+  // idx5: an inaccurate fix (35 m > 20 m gate) 5 s later, at the same spot.
   // Rejected on accuracy → must NOT advance last-good OR last-good-time.
-  await emit(37.5001, LON, 35, 111000);
+  await emit(37.5003, LON, 35, 114000);
   expect(km()).toBe(afterAccept);
 
-  // idx5: a normal ~44 m segment just 1 s after the rejected fix. dtSec must span
-  // last-good (t=106000) → now (t=112000) = 6 s, giving ~7 m/s (accepted). The old
+  // idx6: a normal ~44 m segment just 1 s after the rejected fix. dtSec must span
+  // last-good (t=109000) → now (t=115000) = 6 s, giving ~7 m/s (accepted). The old
   // code measured dtSec from the rejected fix (1 s) → ~44 m/s → false rejection.
-  await emit(37.5005, LON, 5, 112000);
+  // (평활 창을 채우는 후속 fix 까지 두 개를 보내 확정치 증가로 검증한다.)
+  await emit(37.5007, LON, 5, 115000);
+  await emit(37.5010, LON, 5, 118000);
   expect(km()).toBeGreaterThan(afterAccept);
 
   act(() => renderer.unmount());
@@ -160,11 +163,12 @@ test('warmup rejections advance the last-good anchor so the first post-warmup se
   await emit(37.5, LON, 5, 100000);
   await emit(37.50135, LON, 5, 103000); // warmup, ~150 m drift
   await emit(37.50135, LON, 5, 106000); // warmup, settling
-  await emit(37.50135, LON, 5, 109000); // idx3: first real fix, ~11 m from settled
+  await emit(37.50145, LON, 5, 109000); // idx3: first real fix, ~11 m from settled
+  await emit(37.50155, LON, 5, 112000); // idx4: ~11 m — 평활 확정 시작
 
   // If warmup had NOT advanced last-good, idx3 would measure ~150 m from P0 and
   // count ~0.15 km. Because it did advance, the counted distance is small (<0.1 km)
-  // yet non-zero (the genuine short post-warmup segment is counted).
+  // yet non-zero (the genuine short post-warmup segments are counted).
   const d = km();
   expect(d).toBeGreaterThan(0);
   expect(d).toBeLessThan(0.1);
@@ -180,14 +184,16 @@ test('cumulative distance sums multiple accepted segments (acceptSegment is wire
   await emit(37.5, LON, 5, 102000);
   await emit(37.5, LON, 5, 104000);
 
-  // Three accepted ~33 m segments (≈11 m/s over 3 s, under the 12 m/s gate). km
-  // must increase at each step and end well above a single segment's worth,
-  // proving the segments are summed, not overwritten.
+  // Five accepted ~33 m segments (≈11 m/s over 3 s, under the 12 m/s gate).
+  // 5점 평활은 채택 2개째부터 ~2 fix 지연으로 확정하므로, 확정치가 단조 증가하고
+  // 최종적으로 한 세그먼트(0.034km)를 훌쩍 넘는 것으로 '합산'을 증명한다.
   await emit(37.5003, LON, 5, 107000);
-  const k1 = km();
   await emit(37.5006, LON, 5, 110000);
-  const k2 = km();
+  const k1 = km();
   await emit(37.5009, LON, 5, 113000);
+  await emit(37.5012, LON, 5, 116000);
+  const k2 = km();
+  await emit(37.5015, LON, 5, 119000);
   const k3 = km();
 
   expect(k1).toBeGreaterThan(0);

@@ -22,7 +22,7 @@ import {
 } from '../../lib/engineConstants';
 import { calcDist, acceptSegment, segmentSpeedMps } from '../../lib/geo';
 import { decideAutoPause, initAutoPauseState } from '../../lib/autoPause';
-import { shoeHealth, isRetired } from '../../lib/shoe';
+import { shoeHealth, isRetired, wearTier } from '../../lib/shoe';
 import { fmtPace, fmtTime } from '../../lib/format';
 
 describe('Scenario 2: 정확도 낮은 GPS fix는 거리에 반영되지 않는다', () => {
@@ -59,12 +59,12 @@ describe('Anti-Scenario 1: GPS 점프(속도 이상치)는 거리에 가산되�
 });
 
 describe('audit#5+C1: 느린 구간 무손실 + 팬텀 드리프트 억제(정확도 비례 하한)', () => {
-  test('정확도가 좋으면(4m) 1.5m 저속 구간도 인정된다(audit#5 정신 유지)', () => {
-    expect(acceptSegment({ distKm: 0.0015, dtSec: 1, accuracyM: 4, fixIndex: 10 })).toBe(true);
+  test('정확도가 좋으면(4m) 하한 3.2m — 그 이상 저속 구간은 인정된다(audit#5 정신 유지)', () => {
+    expect(acceptSegment({ distKm: 0.0033, dtSec: 2, accuracyM: 4, fixIndex: 10 })).toBe(true);
   });
-  test('정확도 8m 에선 하한이 2.8m — 그 미만 변위는 노이즈(C1 팬텀 억제, 앵커 보존으로 무손실)', () => {
-    expect(acceptSegment({ distKm: 0.0015, dtSec: 1, accuracyM: 8, fixIndex: 10 })).toBe(false);
-    expect(acceptSegment({ distKm: 0.0029, dtSec: 1, accuracyM: 8, fixIndex: 10 })).toBe(true);
+  test('정확도 8m 에선 하한이 6.4m(×0.8, 2026-07-11 재튜닝) — 그 미만 변위는 노이즈(앵커 보존으로 무손실)', () => {
+    expect(acceptSegment({ distKm: 0.0063, dtSec: 2, accuracyM: 8, fixIndex: 10 })).toBe(false);
+    expect(acceptSegment({ distKm: 0.0065, dtSec: 2, accuracyM: 8, fixIndex: 10 })).toBe(true);
   });
   test('calcDist는 합리적 거리를 반환한다', () => {
     // 서울 인근 두 점, 대략 수십~수백 m
@@ -105,21 +105,22 @@ describe('Anti-Scenario 2: 자동 일시정지에서 시간이 음수/유실되�
 
 describe('Scenario 1 & 차별점: 신발 수명(shoeHealth) — 검증 카테고리 기반 비례 경고', () => {
   const dailyShoe = { id: 1, brand: 'NIKE', model: 'Pegasus 41', max: 700, start_km: 0 };
-  test('새 신발은 양호', () => {
+  test('새 신발은 최상 컨디션(wearTier 4단계)', () => {
     const h = shoeHealth(dailyShoe, []);
     expect(h.usedKm).toBe(0);
     expect(h.remainingKm).toBe(700);
-    expect(h.condition).toBe('양호');
+    expect(wearTier(h.percentUsed).key).toBe('best');
   });
   test('런 저장 시 거리가 누적되어 used가 증가한다(자동 차감)', () => {
     const runs = [{ shoe_id: 1, km: 5 }, { shoe_id: 1, km: 5 }, { shoe_id: 2, km: 99 }];
     const h = shoeHealth(dailyShoe, runs);
     expect(h.usedKm).toBeCloseTo(10, 5); // 다른 신발(99km)은 제외
   });
-  test('수명 비례 티어(4단계 wearTier 정렬): 80% 이상 주의, 90% 이상 교체', () => {
-    expect(shoeHealth(dailyShoe, [{ shoe_id: 1, km: 540 }]).condition).toBe('양호'); // ~77% (<80)
-    expect(shoeHealth(dailyShoe, [{ shoe_id: 1, km: 560 }]).condition).toBe('주의'); // 80%
-    expect(shoeHealth(dailyShoe, [{ shoe_id: 1, km: 640 }]).condition).toBe('교체'); // ~91%
+  test('수명 비례 티어(wearTier 4단계 단일화): 80% 이상 교체 고려, 90% 이상 교체 권장', () => {
+    const keyAt = (km: number) => wearTier(shoeHealth(dailyShoe, [{ shoe_id: 1, km }]).percentUsed).key;
+    expect(keyAt(540)).toBe('good');     // ~77% (<80)
+    expect(keyAt(560)).toBe('consider'); // 80%
+    expect(keyAt(640)).toBe('replace');  // ~91%
   });
 });
 

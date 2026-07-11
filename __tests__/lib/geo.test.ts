@@ -46,8 +46,9 @@ describe('acceptSegment', () => {
   test('rejects fixes less accurate than 20m', () => {
     expect(acceptSegment({...good, accuracyM: 21})).toBe(false);
     expect(acceptSegment({...good, accuracyM: 35})).toBe(false);
-    // exactly at the 20m boundary is still accepted (not > MAX)
-    expect(acceptSegment({...good, accuracyM: 20})).toBe(true);
+    // exactly at the 20m boundary is still accepted (not > MAX) —
+    // 20m acc 의 노이즈 하한은 16m(×0.8)이므로 그보다 긴 변위로 검사한다.
+    expect(acceptSegment({...good, distKm: 0.017, accuracyM: 20})).toBe(true);
   });
 
   test('rejects the first WARMUP_FIXES (3) fixes regardless of quality', () => {
@@ -63,14 +64,15 @@ describe('acceptSegment', () => {
     expect(acceptSegment({...good, distKm: 0.024, dtSec: 2})).toBe(true);
   });
 
-  test('노이즈 하한 = max(1m, 정확도×0.35) — C1 팬텀 드리프트 억제', () => {
-    // acc 8m → 하한 2.8m: 그 아래 변위는 통계적 노이즈로 거부(정지 표류 차단).
-    expect(acceptSegment({...good, distKm: 0.0015})).toBe(false); // 1.5m < 2.8m
-    expect(acceptSegment({...good, distKm: 0.0029})).toBe(true);  // 2.9m ≥ 2.8m
-    // 정확도가 좋으면(acc 4m → 하한 1.4m) 저속 세그먼트도 그대로 계상(audit#5 정신 유지).
-    expect(acceptSegment({...good, accuracyM: 4, distKm: 0.0015})).toBe(true);
-    expect(acceptSegment({...good, accuracyM: 4, distKm: 0.0005})).toBe(false); // 절대 1m 하한 아래... (0.5m < 1.4m)
-    // 앵커 보존(runTracker) 덕에 거부된 저속 변위는 다음 fix 에 합산돼 무손실이다.
+  test('노이즈 하한 = max(1m, 정확도×0.8) — C1 팬텀 드리프트 억제(2026-07-11 0.35→0.8)', () => {
+    // acc 8m → 하한 6.4m: 그 아래 변위는 통계적 노이즈로 거부(정지 표류 차단).
+    expect(acceptSegment({...good, distKm: 0.0063})).toBe(false); // 6.3m < 6.4m
+    expect(acceptSegment({...good, distKm: 0.0065})).toBe(true); // 6.5m ≥ 6.4m
+    // 정확도가 좋으면(acc 4m → 하한 3.2m) 그만큼 하한도 낮다.
+    expect(acceptSegment({...good, accuracyM: 4, distKm: 0.0033})).toBe(true);
+    expect(acceptSegment({...good, accuracyM: 4, distKm: 0.0015})).toBe(false); // 1.5m < 3.2m
+    // 하한 미달로 거부돼도 앵커 보존(runTracker) 덕에 변위는 다음 fix 에 합산돼
+    // 무손실이다(저속 러닝/걷기는 '유예'될 뿐 삭제되지 않는다 — audit#5 정신 유지).
   });
 
   test('rejects single-fix jumps over 300m', () => {
@@ -81,7 +83,7 @@ describe('acceptSegment', () => {
 
   test('적응 하한은 정확한 >= 경계다(하한 정확히 = 통과, 그 아래 = 거부)', () => {
     expect(MIN_SEG_DIST_KM).toBe(0.001);
-    const floorKm = (good.accuracyM * 0.35) / 1000; // acc 8m → 0.0028km
+    const floorKm = (good.accuracyM * 0.8) / 1000; // acc 8m → 0.0064km
     expect(acceptSegment({...good, distKm: floorKm})).toBe(true);
     expect(acceptSegment({...good, distKm: floorKm - 1e-7})).toBe(false);
   });

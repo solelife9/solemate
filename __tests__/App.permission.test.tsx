@@ -163,6 +163,7 @@ test('mid-run permission revocation stops tracking (no further distance) and gui
     await act(async () => onPos({coords: {latitude: 37.5, longitude: LON, accuracy: 5}, timestamp: (t += 2000)}));
     await act(async () => onPos({coords: {latitude: 37.5, longitude: LON, accuracy: 5}, timestamp: (t += 2000)}));
     await act(async () => onPos({coords: {latitude: 37.5003, longitude: LON, accuracy: 5}, timestamp: (t += 3000)}));
+    await act(async () => onPos({coords: {latitude: 37.5006, longitude: LON, accuracy: 5}, timestamp: (t += 3000)}));
     const kmBefore = readKm(root);
     expect(kmBefore).toBeGreaterThan(0);
 
@@ -181,8 +182,11 @@ test('mid-run permission revocation stops tracking (no further distance) and gui
     expect(Linking.openSettings).toHaveBeenCalled();
 
     // ...and tracking is stopped: a further fix must NOT add distance.
-    await act(async () => onPos({coords: {latitude: 37.5009, longitude: LON, accuracy: 5}, timestamp: (t += 3000)}));
-    expect(readKm(root)).toBe(kmBefore);
+    // (회수 시점에 평활 꼬리가 flush 로 계상되므로 동결값은 kmBefore 이상이다.)
+    const kmFrozen = readKm(root);
+    expect(kmFrozen).toBeGreaterThanOrEqual(kmBefore);
+    await act(async () => onPos({coords: {latitude: 37.5012, longitude: LON, accuracy: 5}, timestamp: (t += 3000)}));
+    expect(readKm(root)).toBe(kmFrozen);
 
     act(() => renderer.unmount());
   } finally {
@@ -212,11 +216,12 @@ test('권한 회수 후 설정 재허용 + 앱 복귀(AppState active)하면 트
     await act(async () => onPos({coords: {latitude: 37.5, longitude: LON, accuracy: 5}, timestamp: (t += 2000)}));
     await act(async () => onPos({coords: {latitude: 37.5, longitude: LON, accuracy: 5}, timestamp: (t += 2000)}));
     await act(async () => onPos({coords: {latitude: 37.5003, longitude: LON, accuracy: 5}, timestamp: (t += 3000)}));
+    await act(async () => onPos({coords: {latitude: 37.5006, longitude: LON, accuracy: 5}, timestamp: (t += 3000)}));
+
+    // 주행 중 권한 회수 → 배너 + 트래킹 정지. 동결값 = 평활 꼬리까지 flush 된 거리.
+    await act(async () => { onError('Location permission denied'); });
     const kmBefore = readKm(root);
     expect(kmBefore).toBeGreaterThan(0);
-
-    // 주행 중 권한 회수 → 배너 + 트래킹 정지.
-    await act(async () => { onError('Location permission denied'); });
     expect(textOf(root)).toContain('위치 권한이 꺼져');
     const watchCountAtRevoke = watchMock().mock.calls.length;
 
@@ -229,9 +234,11 @@ test('권한 회수 후 설정 재허용 + 앱 복귀(AppState active)하면 트
     expect(watchMock().mock.calls.length).toBeGreaterThan(watchCountAtRevoke);
 
     // 재개 후 새 fix 로 거리가 다시 누적된다(회수 전 값 보존 + 증가).
+    // (재개 첫 fix = 새 앵커, 5점 평활은 채택 2개째부터 확정 → 3개를 보낸다.)
     const onPos2 = watchMock().mock.calls[watchMock().mock.calls.length - 1][1] as (p: any) => void;
-    await act(async () => onPos2({coords: {latitude: 37.5006, longitude: LON, accuracy: 5}, timestamp: (t += 3000)}));
     await act(async () => onPos2({coords: {latitude: 37.5009, longitude: LON, accuracy: 5}, timestamp: (t += 3000)}));
+    await act(async () => onPos2({coords: {latitude: 37.5012, longitude: LON, accuracy: 5}, timestamp: (t += 3000)}));
+    await act(async () => onPos2({coords: {latitude: 37.5015, longitude: LON, accuracy: 5}, timestamp: (t += 3000)}));
     expect(readKm(root)).toBeGreaterThan(kmBefore);
 
     act(() => renderer.unmount());

@@ -273,22 +273,23 @@ test('displayed elapsed timer freezes while auto-paused — never advances, neve
 test('distance engine restarts after auto-resume — km climbs above the paused value (not just the label clearing)', async () => {
   const {renderer, root, emit, km} = await startRun();
 
-  // Warmup at P0, then an accepted ~22m/6s move so km > 0 before we pause.
+  // Warmup at P0, then an accepted ~22m/6s move(5점 평활 버퍼로 들어간다).
   let t = 100000;
   await emit(37.5, LON, 5, t);
   await emit(37.5, LON, 5, (t += 2000));
   await emit(37.5, LON, 5, (t += 2000));
   await emit(37.5002, LON, 5, (t += 6000)); // ~22m over 6s ≈ 3.7 m/s → accepted
-  const kmBeforePause = km();
-  expect(kmBeforePause).toBeGreaterThan(0);
 
-  // Stand still → auto-pause; distance must freeze at the pre-pause value.
+  // Stand still → auto-pause. 일시정지 = 구간 경계라 평활 꼬리(위 22m)가 flush 로
+  // 계상돼 km > 0, 정지 동안 그 값에 동결된다.
   for (let i = 0; i < 12; i++) {
     await emit(37.5002, LON, 5, (t += 3000));
   }
   expect(isAutoPaused(root)).toBe(true);
   const kmAtPause = km();
-  expect(kmAtPause).toBe(kmBeforePause);
+  expect(kmAtPause).toBeGreaterThan(0);
+  await emit(37.5002, LON, 5, (t += 3000)); // 정지 중 추가 fix — 여전히 동결
+  expect(km()).toBe(kmAtPause);
 
   // Two sustained fast fixes (>1.0 m/s for ≥1s) → auto-resume.
   await emit(37.50025, LON, 5, (t += 800)); // ~6m/0.8s fast, fastSec 0.8 < 1 → still paused
@@ -298,7 +299,13 @@ test('distance engine restarts after auto-resume — km climbs above the paused 
 
   // A further accepted move after resume must accumulate: if the engine were
   // frozen (label-only resume bug), km() would stay at kmAtPause forever.
-  await emit(37.5006, LON, 5, (t += 3000)); // ~33m/3s ≈ 11 m/s → accepted
+  // (5점 평활 + 정지 후 재가속은 칼만이 몇 fix 에 걸쳐 따라잡으므로, 실제 러닝
+  //  속도(~4.8 m/s — 11 m/s 같은 스프린트를 쓰면 따라잡기 구간 속도가 12 m/s
+  //  점프 컷을 스쳐 거부된다)로 연속 fix 를 보내 확정 증가를 검증한다.)
+  await emit(37.50043, LON, 5, (t += 3000)); // ~14.5m/3s ≈ 4.8 m/s
+  await emit(37.50056, LON, 5, (t += 3000));
+  await emit(37.50069, LON, 5, (t += 3000));
+  await emit(37.50082, LON, 5, (t += 3000));
   expect(km()).toBeGreaterThan(kmAtPause);
 
   act(() => renderer.unmount());

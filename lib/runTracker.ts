@@ -19,6 +19,7 @@
 // orchestration + persistence + a small subscribe() event bus the UI listens to.
 
 import {KalmanFilter} from './kalman';
+import {DistanceSmoother} from './distanceSmoother';
 import {calcDist, acceptSegment, segmentSpeedMps} from './geo';
 import {WARMUP_FIXES, MAX_FIX_ACCURACY_M, MAX_SEG_DIST_KM, MAX_SEG_SPEED_MPS, CURRENT_PACE_WINDOW_MS, CURRENT_PACE_MIN_DIST_KM, CURRENT_PACE_MIN_SPEED_MPS, PACE_TRACK_MIN_STEP_KM} from './engineConstants';
 import {decideAutoPause, initAutoPauseState, AutoPauseState} from './autoPause';
@@ -88,6 +89,11 @@ class RunTracker {
   // ── engine state (mirrors the refs RunActiveScreen used to own) ──
   private kf = new KalmanFilter();
   private dist = 0; // km
+  // 거리 적산용 5점 중심 평활기 — 채택 좌표의 지터 톱니가 거리로 적산되는 것을
+  // 소거한다(실측 +9% 과대 교정의 반쪽, 2026-07-11). dist 는 평활 폴리라인의
+  // 증분으로만 늘어난다(~2 fix 지연·구간 종료 시 flush 로 무손실). pts(경로)는
+  // 종전대로 원 채택 좌표 — 지도 표시는 평활 대상이 아니다.
+  private smoother = new DistanceSmoother();
   private pts: {lat: number; lon: number}[] = [];
   // 현재(롤링) 페이스용 샘플 — 채택된 fix 마다 {t: fix ts(ms), d: 누적거리(km)}. 슬라이딩
   // 윈도우(CURRENT_PACE_WINDOW_MS)로 최근 구간 페이스를 낸다. 일시정지/재개·권한복구 시 비움.
@@ -150,10 +156,26 @@ class RunTracker {
     this.now = fn;
   }
 
+  // ── 평활 거리 적산 심 ──────────────────────────────────────────────
+  // dist 는 반드시 이 두 헬퍼를 통해서만 늘어난다(평활기 증분 = 단일 소스).
+  private smoothPush(p: {lat: number; lon: number}) {
+    const before = this.smoother.distKm();
+    this.smoother.push(p);
+    this.dist += this.smoother.distKm() - before;
+  }
+
+  /** 구간 경계(일시정지·재앵커·종료·권한동결): 꼬리 거리를 계상하고 체인을 끊는다. */
+  private smoothFlush() {
+    const before = this.smoother.distKm();
+    this.smoother.flush();
+    this.dist += this.smoother.distKm() - before;
+  }
+
   /** Begin a fresh run, clearing all engine state. */
   start(config: RunTrackerConfig) {
     this.kf.reset();
     this.dist = 0;
+    this.smoother = new DistanceSmoother();
     this.pts = [];
     this.paceTrack = [];
     this.hrTrack = [];
@@ -205,6 +227,7 @@ class RunTracker {
 
   /** Stop accepting fixes (data is retained for save). Idempotent. */
   stop() {
+    if (this.active) this.smoothFlush(); // 평활 꼬리(마지막 ~2 fix) 거리 계상 — 유실 금지
     this.active = false;
   }
 
@@ -248,6 +271,9 @@ class RunTracker {
   // ── pause control ─────────────────────────────────────────────────
   private enterPause(auto: boolean) {
     if (this.isPaused) return;
+    // 일시정지 = 구간 종료: 평활 버퍼의 꼬리(직전 ~2 fix 거리)를 지금 계상한다.
+    // 재개 시 lastGood=null 규약과 짝 — 정지 전/후 구간은 잇지 않는다.
+    this.smoothFlush();
     this.isPaused = true;
     this.autoPausedFlag = auto;
     this.pauseStartMs = this.now();
@@ -295,6 +321,7 @@ class RunTracker {
     // getElapsed() returns it for the rest of the run so time stops growing —
     // distance already stops because `active` goes false and ingestFix() bails.
     this.frozenElapsed = this.getElapsed();
+    this.smoothFlush(); // 동결 전 평활 꼬리 거리 계상(재허용 재개 시 유실 방지)
     this.permissionRevoked = true;
     this.active = false; // stop accumulating garbage distance/time
     this.emit({type: 'permissionRevoked'});
@@ -410,7 +437,7 @@ class RunTracker {
       const d = calcDist(this.lastGood.lat, this.lastGood.lon, f.lat, f.lon);
       const dtSec = this.lastGoodMs ? Math.max((ts - this.lastGoodMs) / 1000, 0) : 0;
       if (acceptSegment({distKm: d, dtSec, accuracyM: acc, fixIndex: idx})) {
-        this.dist += d;
+        this.smoothPush(f); // dist 는 평활 폴리라인 증분으로 늘어난다(직결 d 적산 금지)
         this.pts.push(f);
         this.lastGood = f;
         this.lastGoodMs = ts;
@@ -441,6 +468,8 @@ class RunTracker {
       } else if (idx < WARMUP_FIXES) {
         // warmup: don't count, but advance last-good so the first post-warmup
         // segment isn't a giant settling jump.
+        this.smoothFlush(); // 워밍업 이동은 미계상 — 평활 체인도 새 앵커에서 시작
+        this.smoothPush(f);
         this.lastGood = f;
         this.lastGoodMs = ts;
       } else if (
@@ -454,6 +483,8 @@ class RunTracker {
         // 그 구간 거리는 신뢰 불가라 계상하지 않되, *앵커를 새 fix 로 전진*시킨다. 전진하지
         // 않으면(옛 동작) 멀어지는 주자에 대해 이후 모든 fix 가 영구히 cap 을 넘어 거부돼, 단
         // 한 번의 긴 공백 뒤 거리계가 런 끝까지 동결된다(5km→2km 식 과소계상).
+        this.smoothFlush(); // 공백 구간 미계상 — 평활 체인 리셋 후 새 앵커부터
+        this.smoothPush(f);
         this.lastGood = f;
         this.lastGoodMs = ts;
         this.pts.push(f);
@@ -462,6 +493,9 @@ class RunTracker {
       // 그 외 거부(정확도/노이즈/속도)는 last-good 보존 — 노이즈 fix 를 건너뛰고 다음 양호
       // fix 와 직접 잇기 위함(짧은 노이즈는 cap 미만이라 위 re-anchor 분기에 안 들어온다).
     } else {
+      // 새 앵커(런 시작·일시정지 해제·권한 재개): 이전 구간과 잇지 않는다.
+      this.smoothFlush();
+      this.smoothPush(f);
       this.lastGood = f;
       this.lastGoodMs = ts;
       this.pts.push(f);
