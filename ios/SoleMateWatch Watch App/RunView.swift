@@ -33,7 +33,10 @@ struct RunView: View {
       metricsPager.tag(0)
       controlsPage.tag(1)
       // 음악은 가로 맨 끝 — Apple 운동 앱·NRC 모두 가로 별도 페이지 관습.
-      NowPlayingView().tag(2)
+      // 하단 여백: 시스템 재생 컨트롤이 페이지 도트와 겹치지 않게(실기기 피드백).
+      NowPlayingView()
+        .padding(.bottom, 10)
+        .tag(2)
     }
     .tabViewStyle(.page)
     // km 랩 배너 — 어느 페이지에 있든 위에 얹힌다(햅틱은 WorkoutManager 가 울림).

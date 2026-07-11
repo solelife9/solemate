@@ -84,61 +84,43 @@ private struct ShoeStartPage: View {
       let minX = geo.frame(in: .global).minX
       let progress = min(1, abs(minX) / max(1, geo.size.width))
 
-      // 풀블리드 히어로(2026-07-11 재설계 — 상자 제거): 작은 화면에 카드 상자를
-      // 또 그리지 않는다(Apple 워치 주 화면 관용 — 화면이 곧 카드). 순수 블랙 위
-      // 이름 → % 히어로 → 수명 게이지 바(컨디션색, 연료계 은유) → 남은 km → 시작.
-      // 색은 게이지 바 한 곳에만 — 스와이프하며 바 색으로 신발 상태를 훑는다.
+      // 풀블리드 히어로 v2(사용자 확정 2026-07-11): 링 안 = 브랜드+러닝화명(메인 —
+      // shoe-first, "어떤 신발로 달리나"가 이 화면의 본질), 링 아크 = 수명 %(컨디션색,
+      // 0→현재% 스윕), 링 아래 좌우 = 수명 % · 남은 km, 맨 아래 = 러닝 시작.
+      // 상자 없음(Apple 워치 주 화면 관용), 색은 링 아크에만.
       VStack(spacing: 0) {
-        if !shoe.brand.isEmpty {
-          Text(shoe.brand.uppercased())
-            .font(.system(size: 10, weight: .medium))
-            .kerning(1.1)
-            .foregroundStyle(KeegoTheme.t3)
-            .lineLimit(1)
-        }
-        Text(shoe.model.isEmpty ? shoe.displayName : shoe.model)
-          .font(.system(size: 16, weight: .bold))
-          .foregroundStyle(KeegoTheme.t1)
-          .lineLimit(1)
-          .minimumScaleFactor(0.7)
-          .padding(.top, 1)
-
-        Spacer(minLength: 6)
-
-        // % 히어로 — 이 화면의 단 하나의 큰 숫자(수명 = keego 의 차별점).
-        HStack(alignment: .firstTextBaseline, spacing: 2) {
-          Text("\(shoe.lifePct)")
-            .font(.system(size: 54, weight: .heavy))
-            .monospacedDigit()
-            .foregroundStyle(KeegoTheme.t1)
-          Text("%")
-            .font(.system(size: 20, weight: .semibold))
-            .foregroundStyle(KeegoTheme.t3)
-        }
-        // 수명 게이지 — 얇은 바(트랙 흰 10% / 채움 컨디션색). 0 → 현재%로 차오른다.
-        LifeBar(
-          pct: shoe.lifePct,
+        NameRing(
+          brand: shoe.brand,
+          model: shoe.model.isEmpty ? shoe.displayName : shoe.model,
           color: KeegoTheme.conditionColor(shoe.condition),
           progress: sweep ? Double(shoe.lifePct) / 100.0 : 0
         )
-        .frame(width: geo.size.width * 0.52, height: 3)
-        .padding(.top, 7)
-        if shoe.maxKm > 0 {
-          Text(shoe.remainKm > 0 ? "\(shoe.remainKm)km 남음" : "수명 초과")
-            .font(.system(size: 11, weight: .medium))
-            .monospacedDigit()
-            .foregroundStyle(shoe.remainKm > 0 ? KeegoTheme.t3 : KeegoTheme.conditionColor(shoe.condition))
-            .padding(.top, 6)
-        }
+        .frame(width: geo.size.width * 0.62, height: geo.size.width * 0.62)
 
-        Spacer(minLength: 6)
+        // 링 아래 좌우 지표 — 왼쪽 수명 %, 오른쪽 남은 km(같은 위계, tabular).
+        HStack {
+          Text("\(shoe.lifePct)%")
+            .foregroundStyle(KeegoTheme.t1)
+          Spacer(minLength: 8)
+          if shoe.maxKm > 0 {
+            Text(shoe.remainKm > 0 ? "\(shoe.remainKm)km 남음" : "수명 초과")
+              .foregroundStyle(shoe.remainKm > 0 ? KeegoTheme.t1 : KeegoTheme.conditionColor(shoe.condition))
+          }
+        }
+        .font(.system(size: 15, weight: .semibold))
+        .monospacedDigit()
+        .lineLimit(1)
+        .padding(.horizontal, 14)
+        .padding(.top, 8)
 
         StartButton(label: "러닝 시작", action: onStart)
+          .padding(.top, 9)
+
+        // 남는 공간은 전부 아래로 — 버튼이 페이지 도트와 겹치지 않게 최소 16pt 확보.
+        Spacer(minLength: 16)
       }
       .padding(.horizontal, 10)
-      // 페이지 도트와 겹치지 않게 아래 여백.
-      .padding(.bottom, 14)
-      .frame(maxWidth: .infinity, maxHeight: .infinity)
+      .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
       // 중앙 강조: 이웃 페이지는 살짝 축소 + 딤(폰 캐러셀 0.93/0.5 감각의 워치판).
       .scaleEffect(1 - 0.07 * progress)
       .opacity(1 - 0.45 * progress)
@@ -147,6 +129,46 @@ private struct ShoeStartPage: View {
       sweep = false
       withAnimation(.easeOut(duration: 0.9)) { sweep = true }
     }
+  }
+}
+
+/// 이름 링 — 수명 아크(트랙 컨디션색 16% 틴트 / 아크 컨디션색·라운드 캡·-90° 시작)
+/// 안에 브랜드(대문자 트래킹)+러닝화명(굵게, 메인). 폰 히어로 링 문법의 워치판.
+private struct NameRing: View {
+  let brand: String
+  let model: String
+  let color: Color
+  let progress: Double
+
+  var body: some View {
+    ZStack {
+      Circle()
+        .stroke(color.opacity(0.16), style: StrokeStyle(lineWidth: 5, lineCap: .round))
+      Circle()
+        .trim(from: 0, to: CGFloat(max(0, min(1, progress))))
+        .stroke(color, style: StrokeStyle(lineWidth: 5, lineCap: .round))
+        .rotationEffect(.degrees(-90))
+      VStack(spacing: 1) {
+        if !brand.isEmpty {
+          Text(brand.uppercased())
+            .font(.system(size: 11, weight: .medium))
+            .kerning(1.1)
+            .foregroundStyle(KeegoTheme.t3)
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
+        }
+        Text(model)
+          .font(.system(size: 17, weight: .bold))
+          .foregroundStyle(KeegoTheme.t1)
+          .multilineTextAlignment(.center)
+          .lineLimit(2)
+          .minimumScaleFactor(0.6)
+      }
+      .padding(.horizontal, 16) // 링 안쪽 여백 — 텍스트가 아크에 닿지 않게.
+    }
+    .padding(3) // 라운드 캡 스트로크가 프레임 밖으로 잘리지 않게.
+    .accessibilityElement(children: .ignore)
+    .accessibilityLabel("\(brand) \(model)")
   }
 }
 
@@ -180,10 +202,10 @@ private struct StartButton: View {
   var body: some View {
     Button(action: action) {
       Text(label)
-        .font(.system(size: 14, weight: .bold))
+        .font(.system(size: 16, weight: .bold))
         .foregroundStyle(KeegoTheme.t1)
         .frame(maxWidth: .infinity)
-        .frame(height: 36)
+        .frame(height: 38)
         // 콰이어트 글라스 — 카드와 같은 재질(폰 runBtn 의 GlassEdge 림 미러).
         .background(KeegoTheme.glassFill)
         .clipShape(Capsule())
