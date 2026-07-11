@@ -24,6 +24,9 @@ enum KeegoTheme {
   static let t4 = Color(keego: 0x54545B)         // T4 가장 약한 캡션/단위
   static let glassFill = Color.white.opacity(0.08)   // GLASS.fill — 카드 표면
   static let cardBorder = Color.white.opacity(0.07)  // CARD_BORDER/SEP — 헤어라인
+  /// 콰이어트 글라스 카드 림 — 폰 GlassEdge 의 워치 미러(면+1pt 헤어라인만,
+  /// watchOS 에선 광택·글린트 같은 과한 효과 금지 — 사용자 확정 2026-07-11).
+  static let hairline = Color.white.opacity(0.20)
 
   // ── 브랜드: 러닝 전용 파파야 (theme.ts RING_ACCENT*) ───────────────────────
   static let brand = Color(keego: 0xFF8000)      // RING_ACCENT — McLaren 파파야

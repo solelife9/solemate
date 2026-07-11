@@ -23,6 +23,10 @@ export type WatchShoePayload = {
   lifePct: number;
   /** 컨디션 '양호'|'주의'|'교체' — 워치 도트 의미색 매핑. */
   condition: string;
+  /** 사용 거리 km(반올림 정수) — 워치 시작 카드 '사용/남음' 줄. */
+  usedKm: number;
+  /** 수명 한도 km(반올림 정수). 0 이면 워치가 사용/남음 줄을 생략. */
+  maxKm: number;
 };
 
 /** 워치 단독 러닝 완주 페이로드(워치 WatchLink.sendRun 과 동일 키). */

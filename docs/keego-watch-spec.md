@@ -5,7 +5,9 @@
 
 ## 1. v1 범위 (단독 러닝 경험의 최소 완성)
 
-1. **시작 화면**: 활성 신발 **전체 목록을 홈처럼 좌우 스와이프**(가로 페이지 + 도트)로 넘기고, 현재 페이지의 신발이 러닝 시작 대상. 마지막 선택 신발 기억(다음 실행 시 그 페이지에서 시작). 폰이 applicationContext 로 목록 푸시(오프라인 캐시) + 파파야 링 "러닝 시작" — shoe-first 유지. *(사용자 확정 2026-07-10 — '활성 신발 1켤레 고정'에서 변경)*
+1. **시작 화면**: 활성 신발 **전체 목록을 홈처럼 좌우 스와이프**(가로 페이지 + 도트)로 넘기고, 현재 페이지의 신발이 러닝 시작 대상. 마지막 선택 신발 기억(다음 실행 시 그 페이지에서 시작). 폰이 applicationContext 로 목록 푸시(오프라인 캐시). *(사용자 확정 2026-07-10 — '활성 신발 1켤레 고정'에서 변경)*
+   - **페이지 = 폰 홈 히어로의 '한 카드' 축소판** *(사용자 확정 2026-07-11)*: 콰이어트 글라스 카드(면+1pt 헤어라인) 안에 브랜드(대문자 트래킹)·모델(굵게) → 얇은 수명 링(트랙=컨디션색 16% 틴트·아크=컨디션색·라운드 캡, 지름 ~화면폭 56%, 중앙 '남은 수명 %') → 사용/남음 한 줄(usedKm/maxKm 계약 확장) → '러닝 시작' 버튼(유리 캡슐 + 파파야 플레이 글리프). 스와이프 시 이웃 카드 스케일 다운+딤(폰 캐러셀 미러).
+   - **러닝 시작은 신발과 함께만** *(사용자 확정 2026-07-11 — '신발 없이 시작' 폴백 제거)*: 폰 앱을 먼저 설치하는 흐름이라 워치 러닝은 신발 동기화 후에만. 목록이 비면 대기 안내 두 줄("아이폰에서 Keego를 열어주세요" + "처음 한 번이면 돼요")뿐, 시작 버튼 없음. 폰 원격 start·startWatchApp 경로도 신발 미동기화면 no-op.
 2. **러닝 중**: **링 없음 — km 메인 히어로 + 보조 지표 스택** *(사용자 확정 2026-07-10 — 워치 화면이 작아 진행 링 제거)*. 거리(대형, tabular-nums) + 그 아래 시간·페이스·심박(존 색). 파파야는 km 라벨 등 최소 포인트에만(넓은 면 금지 가드레일). 크라운/세로 스와이프로 심박·페이스·시간 대형 페이지 + 컨트롤 페이지 전환. 자동 일시정지.
 3. **종료**: 요약(거리·시간·페이스·심박) → 저장.
 4. **동기화**: HKWorkoutSession 으로 워크아웃 기록(워치 GPS+심박) → ① 폰 근처면 WatchConnectivity 로 즉시 전송 ② 아니면 HealthKit 경유로 폰 복귀 시 흡수(기존 `lib/healthkit.ts` 백필 경로 재사용) → 신발 거리 자동 차감.
@@ -43,8 +45,8 @@
   - `KeegoTheme.swift` — DESIGN.md/theme.ts 토큰 미러(무채+파파야+심박존 색) + 포맷터.
   - `WatchLink.swift` — 폰 계약 단일 창구(신발 목록/심박존 파라미터 수신·캐시, cmd 라우팅, bpm 스트림, 런 페이로드 전송 — 비도달 시 transferUserInfo 큐).
   - `WorkoutManager.swift` — HKWorkoutSession + HKLiveWorkoutBuilder(심박) + CLLocation(거리: 오차≤30m 게이트·스파이크 컷) + 자동 일시정지(lib/autoPause.ts 상태기계 미러 0.6/3s↔1.0/1s) + 종료 시 keego_shoe_id/keego_run_id 메타데이터 태깅 → HealthKit 저장 → 요약.
-  - `StartView`(신발 좌우 스와이프+도트+마지막 선택 기억+파파야 링 시작, 동기화 대기 폴백) · `RunView`(km 히어로+보조 스택, 크라운 세로 페이지: 심박존/페이스/시간/컨트롤) · `SummaryView`(거리·시간·평균 페이스·평균 심박 → 저장=폰 전송) · `ContentView`(phase 라우터).
-  - 타깃 설정: `Info.plist` 병합(WKBackgroundModes=workout-processing) + 위치 권한 문구 + WKRunsIndependentlyOfCompanionApp(단독 실행).
+  - `StartView`(신발 좌우 스와이프+도트+마지막 선택 기억 — 2026-07-11 재설계: 페이지=글라스 '한 카드'(수명 링+사용/남음+러닝 시작), 대기 화면=안내 두 줄·시작 버튼 없음) · `RunView`(km 히어로+보조 스택, 크라운 세로 페이지: 심박존/페이스/시간/컨트롤) · `SummaryView`(거리·시간·평균 페이스·평균 심박 → 저장=폰 전송) · `ContentView`(phase 라우터).
+  - 타깃 설정: `Info.plist` 병합(WKBackgroundModes=workout-processing **+ UIBackgroundModes=location** — 없으면 `allowsBackgroundLocationUpdates` 가 시작 즉시 NSException 크래시, 2026-07-11 TestFlight 크래시 원인이었음) + 위치 권한 문구 + WKRunsIndependentlyOfCompanionApp(단독 실행).
 - **폰 동기화** (M3): `WatchSessionModule.swift/.m` 확장(onWatchRun 이벤트·updateShoeContext·컨텍스트 병합 유지) + `lib/watchSession.ts`(onWatchRun/updateShoes + 타입) + `App.tsx` 배선(활성 신발/심박존 파라미터 푸시 · 완주 수신 → runId 중복 방어 → addRun 으로 신발 자동 차감) + 계약 테스트 9건.
 
 ### 실기기 검증 대기 (저녁 합동 세션 — M0 포함)

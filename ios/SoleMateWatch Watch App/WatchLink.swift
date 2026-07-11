@@ -2,8 +2,8 @@
 // ----------------------------------------------------------------------------
 // 폰 브리지(ios/SoleMate/WatchSessionModule.swift)와의 계약을 한 곳에서 소유한다:
 //   · 폰 → 워치 applicationContext:
-//       { "shoes": [{id, brand, model, lifePct, condition}] — 활성 신발 전체(홈과 같은
-//         최근착용순), "hrMax": Double, "hrRest": Double — 심박존(Karvonen) 파라미터,
+//       { "shoes": [{id, brand, model, lifePct, condition, usedKm, maxKm}] — 활성 신발
+//         전체(홈과 같은 최근착용순), "hrMax": Double, "hrRest": Double — 심박존 파라미터,
 //         "cmd": "stop" + "cmdAt" — 도달 불가 시 원격 종료 폴백 }
 //   · 폰 → 워치 message: { "cmd": "start" | "stop" } — 폰 러닝 시작/종료에 워치 연동.
 //   · 워치 → 폰 message/context: { "bpm": Double } — 실시간 심박(기존 계약 유지).
@@ -27,10 +27,32 @@ struct WatchShoe: Codable, Identifiable, Equatable {
   let lifePct: Int
   /// 컨디션 '양호'/'주의'/'교체' — 의미색(GOOD/WARN/DANGER) 매핑용.
   let condition: String
+  /// 사용 거리 km(폰이 반올림 정수로 푸시).
+  let usedKm: Int
+  /// 수명 한도 km. 0 = 미수신(구버전 폰 캐시) — 시작 화면이 사용/남음 줄을 생략한다.
+  let maxKm: Int
+
+  /// 남은 거리 km(음수 금지 — 수명 초과는 0).
+  var remainKm: Int { max(0, maxKm - usedKm) }
 
   var displayName: String {
     let name = [brand, model].filter { !$0.isEmpty }.joined(separator: " ")
     return name.isEmpty ? "신발" : name
+  }
+}
+
+extension WatchShoe {
+  /// 구버전 캐시(usedKm/maxKm 가 없던 JSON)도 그대로 열리도록 결측은 0 으로 채운다.
+  /// (본체가 아닌 extension 구현 — 멤버와이즈 이니셜라이저를 보존하기 위해.)
+  init(from decoder: Decoder) throws {
+    let c = try decoder.container(keyedBy: CodingKeys.self)
+    id = try c.decode(String.self, forKey: .id)
+    brand = try c.decodeIfPresent(String.self, forKey: .brand) ?? ""
+    model = try c.decodeIfPresent(String.self, forKey: .model) ?? ""
+    lifePct = try c.decodeIfPresent(Int.self, forKey: .lifePct) ?? 0
+    condition = try c.decodeIfPresent(String.self, forKey: .condition) ?? "양호"
+    usedKm = try c.decodeIfPresent(Int.self, forKey: .usedKm) ?? 0
+    maxKm = try c.decodeIfPresent(Int.self, forKey: .maxKm) ?? 0
   }
 }
 
@@ -90,7 +112,9 @@ final class WatchLink: NSObject, ObservableObject {
           brand: d["brand"] as? String ?? "",
           model: d["model"] as? String ?? "",
           lifePct: max(0, min(100, (d["lifePct"] as? NSNumber)?.intValue ?? 0)),
-          condition: d["condition"] as? String ?? "양호"
+          condition: d["condition"] as? String ?? "양호",
+          usedKm: max(0, (d["usedKm"] as? NSNumber)?.intValue ?? 0),
+          maxKm: max(0, (d["maxKm"] as? NSNumber)?.intValue ?? 0)
         )
       }
       shoes = parsed
@@ -111,7 +135,10 @@ final class WatchLink: NSObject, ObservableObject {
     switch cmd {
     case "start":
       // 폰에서 러닝 시작 — 보통 startWatchApp(handle:)로 이미 세션이 뜨므로 idempotent.
-      if !WorkoutManager.shared.isActive { WorkoutManager.shared.start(shoe: selectedShoe) }
+      // 신발 미동기화면 시작하지 않는다(2026-07-11 확정 — 러닝은 신발과 함께만).
+      if !WorkoutManager.shared.isActive, let shoe = selectedShoe {
+        WorkoutManager.shared.start(shoe: shoe)
+      }
     case "stop":
       WorkoutManager.shared.end()
     default:

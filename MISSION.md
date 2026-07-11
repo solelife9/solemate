@@ -63,3 +63,12 @@ Aim for **Apple-level quality — adopt Apple's design *philosophy*, don't imita
 Before shipping, ask *"Can this be simpler?"* and *"Can this feel more premium?"* — never *"Can this be more colorful?"*
 
 **Never make the interface more colorful. Make it more premium.**
+
+## 5. User-first — how it behaves
+
+**Design from the user's real moment, not from the mockup.** (Constitutionalized 2026-07-11 — 사용자 기준: 불필요한 행동 없이, 딱 필요한 정보만, 직관적으로.)
+
+- Show **exactly the information the user needs right now** — visible at a glance, nothing extra in the way.
+- **Zero unnecessary actions.** The most frequent action in a context is never more than one gesture away; scrutiny scales with how often and how urgently it's needed (mid-run > at home on the couch).
+- **Information paths never route through actions.** Browsing must never risk an accidental tap on pause/end/delete — separate the axes of *looking* and *doing*.
+- Judge every screen by simulating the user's actual state — sweaty hands, one glance at a wrist, sun glare — not by how it looks in a simulator at leisure.

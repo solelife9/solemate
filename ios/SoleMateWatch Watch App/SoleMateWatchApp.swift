@@ -15,8 +15,10 @@ import HealthKit
 final class WatchAppDelegate: NSObject, WKApplicationDelegate {
   func handle(_ workoutConfiguration: HKWorkoutConfiguration) {
     Task { @MainActor in
-      if !WorkoutManager.shared.isActive {
-        WorkoutManager.shared.start(shoe: WatchLink.shared.selectedShoe)
+      // 신발 미동기화면 시작하지 않는다(2026-07-11 확정 — 러닝은 신발과 함께만.
+      // 폰이 이 경로를 태울 땐 신발 컨텍스트도 이미 푸시된 상태가 정상).
+      if !WorkoutManager.shared.isActive, let shoe = WatchLink.shared.selectedShoe {
+        WorkoutManager.shared.start(shoe: shoe)
       }
     }
   }

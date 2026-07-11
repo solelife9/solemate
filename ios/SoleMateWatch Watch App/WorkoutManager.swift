@@ -56,8 +56,12 @@ final class WorkoutManager: NSObject, ObservableObject {
   @Published private(set) var elapsedS: Double = 0
   /// 자동 일시정지로 멈춘 상태인가(수동과 구분 — 자동만 자동 재개한다).
   @Published private(set) var autoPaused = false
+  /// 완료된 km 랩의 소요시간(초/km) — 러닝 화면 스플릿 페이지. 일시정지 제외
+  /// (elapsedS = 빌더 시간 기준 증분).
+  @Published private(set) var splits: [Double] = []
   @Published private(set) var summary: RunSummary?
-  /// 이번 런의 신발(시작 화면에서 선택). nil = 신발 미선택(단독 러닝 허용).
+  /// 이번 런의 신발(시작 화면에서 선택). 러닝은 항상 신발과 함께 시작한다
+  /// (2026-07-11 사용자 확정 — '신발 없이 시작' 제거). 옵셔널은 idle 상태 표현용.
   private(set) var currentShoe: WatchShoe?
 
   var isActive: Bool { phase == .running || phase == .paused }
@@ -76,6 +80,8 @@ final class WorkoutManager: NSObject, ObservableObject {
   private var runId = ""
   private var startDate: Date?
   private var manualPause = false
+  // km 스플릿 적산 — 직전 랩 마감 시점의 경과시간(빌더 시간, 일시정지 제외).
+  private var lastSplitElapsedS: Double = 0
   // 자동 일시정지 상태기계(lib/autoPause.ts 미러) — 지속시간 적산기.
   private var slowSec: Double = 0
   private var fastSec: Double = 0
@@ -111,8 +117,8 @@ final class WorkoutManager: NSObject, ObservableObject {
     }
   }
 
-  // ── 시작 ─────────────────────────────────────────────────────────────────
-  func start(shoe: WatchShoe?) {
+  // ── 시작 — 신발 필수(shoe-first, 신발 동기화 후에만 러닝) ────────────────────
+  func start(shoe: WatchShoe) {
     guard phase == .idle else { return }
     requestPermissions()
     let config = HKWorkoutConfiguration()
@@ -138,6 +144,8 @@ final class WorkoutManager: NSObject, ObservableObject {
       slowSec = 0
       fastSec = 0
       lastLocation = nil
+      splits = []
+      lastSplitElapsedS = 0
       summary = nil
       s.startActivity(with: now)
       b.beginCollection(withStart: now) { _, _ in }
@@ -194,6 +202,8 @@ final class WorkoutManager: NSObject, ObservableObject {
     autoPaused = false
     manualPause = false
     lastLocation = nil
+    splits = []
+    lastSplitElapsedS = 0
     phase = .idle
   }
 
@@ -396,6 +406,11 @@ extension WorkoutManager: CLLocationManagerDelegate {
           // 스파이크 컷: 순간이동 표본은 거리에 넣지 않는다(팬텀 거리 방지).
           if phase == .running, derived <= Self.maxSpeedMps, meters.isFinite, meters >= 0 {
             distanceKm += meters / 1000.0
+            // km 경계 통과 → 랩 마감(초/km, 빌더 시간 증분이라 일시정지 자동 제외).
+            while distanceKm >= Double(splits.count + 1) {
+              splits.append(max(0, elapsedS - lastSplitElapsedS))
+              lastSplitElapsedS = elapsedS
+            }
           }
           feedAutoPause(speedMps: sampleSpeed, dtSec: dt)
         }

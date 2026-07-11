@@ -1423,6 +1423,9 @@ function Main(){
       id:String(x.raw.id),brand:x.ui.brand,model:x.ui.model,
       lifePct:Math.max(0,Math.min(100,Math.round((1-x.ui.used/Math.max(1,x.ui.max))*100))),
       condition:x.ui.condition,
+      // 워치 시작 카드 '사용/남음' 줄(폰 히어로 kmRow 미러) — 반올림 정수 km.
+      usedKm:Math.max(0,Math.round(x.ui.used)),
+      maxKm:Math.max(0,Math.round(x.ui.max)),
     })),
     hr:{max:estimateMaxHR(age),rest:restHR||0},
   });

@@ -111,7 +111,9 @@ describe('onWatchRun — 워치 완주 페이로드 수신', () => {
 describe('updateShoes — 활성 신발/심박존 파라미터 푸시', () => {
   it('신발 목록과 hrMax/hrRest 를 네이티브에 넘긴다', () => {
     const ws = loadWatchSession();
-    const shoes = [{id: 's1', brand: 'Nike', model: 'Pegasus 41', lifePct: 62, condition: '양호'}];
+    const shoes = [
+      {id: 's1', brand: 'Nike', model: 'Pegasus 41', lifePct: 62, condition: '양호', usedKm: 190, maxKm: 500},
+    ];
     ws.updateShoes(shoes, {max: 187.4, rest: 52});
     expect(mockModule.updateShoeContext).toHaveBeenCalledWith({
       shoes,
@@ -155,7 +157,9 @@ describe('모듈 부재(안드로이드/미링크) — 전부 no-op', () => {
     const off = ws.onWatchRun(() => {});
     expect(typeof off).toBe('function');
     off();
-    expect(() => ws.updateShoes([{id: 'x', brand: '', model: '', lifePct: 50, condition: '양호'}])).not.toThrow();
+    expect(() =>
+      ws.updateShoes([{id: 'x', brand: '', model: '', lifePct: 50, condition: '양호', usedKm: 0, maxKm: 0}]),
+    ).not.toThrow();
     expect(mockModule.updateShoeContext).not.toHaveBeenCalled();
   });
 });
