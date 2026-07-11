@@ -5,7 +5,7 @@
  *   1) activeIdx={0} 하드코딩 제거 — 홈 히어로는 처음에 가장 최근에 신은 신발을
  *      기본으로 보여준다(추천 배지 없음, 선택 동작만 유지).
  *   2) 홈 picker에서 다른 신발을 고르면 히어로가 그 신발로 바뀐다(선택 반영).
- *   3) 선택은 App이 소유하므로 신발 탭의 '사용 중' 강조도 같은 신발을 가리킨다.
+ *   3) 신발 탭 락커엔 '사용 중' 라벨이 없다(2026-07-11 제거 — 카드 동일 취급).
  *   4) ShoeDetail에서 마지막 착용일이 런 기록에서 파생되어 보인다.
  *
  * @format
@@ -165,21 +165,16 @@ test('내 러닝화 picker는 가장 최근에 신은 순으로 정렬된다(등
   expect(textOf(cards[cards.length - 1])).toContain('Pegasus');
 });
 
-test('선택은 App이 소유 — 신발 탭의 사용 중 강조도 선택 신발을 가리킨다', async () => {
+test("신발 탭 락커엔 '사용 중' 라벨이 없다(2026-07-11 라벨 제거 — 카드 동일 취급)", async () => {
+  // 선택 소유는 홈 히어로 테스트(위 2건)가 계속 가드한다. 잠금장 '사용 중' 강조는
+  // 사용자 확정으로 제거됐으므로, 여기선 라벨이 다시 살아나지 않는 것만 고정한다.
   const {root} = await mount(SHOES, RUNS);
-  // 홈에서 Clifton 선택(기본=Pegasus와 다른 신발을 골라 '선택 반영'을 검증)
   await tap(pressBy(root, 'Clifton'));
-  // 신발 탭으로 이동(shoe-sneaker 아이콘 탭)
   await tap(pressBy(root, '신발'));
-
-  // 신발 잠금장에서 '사용 중' 칩이 달린 카드가 Clifton이어야 한다.
   const featured = root.findAll(
     (n: any) => n && n.props && typeof n.props.onPress === 'function' && textOf(n).includes('사용 중'),
   );
-  featured.sort((a, b) => textOf(a).length - textOf(b).length);
-  expect(featured.length).toBeGreaterThan(0);
-  expect(textOf(featured[0])).toContain('Clifton');
-  expect(textOf(featured[0])).not.toContain('Pegasus');
+  expect(featured.length).toBe(0);
 });
 
 test('ShoeDetail: 마지막 착용일이 런 기록에서 파생되어 표시된다', async () => {

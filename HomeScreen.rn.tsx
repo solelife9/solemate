@@ -26,6 +26,7 @@ import { RotationPick } from './lib/rotation';
 import { recommendNextShoes, buildShopLinks, categoryLabelKo, AFFILIATE_DISCLOSURE } from './lib/affiliate';
 import { type ReplacementForecast } from './lib/wearView';
 import { shouldRecommendNextShoe } from './lib/recommendTrigger';
+import { SHOE_REPLACE_PCT } from './lib/shoe';
 
 export type WeekStats = { km: string; runs: number; pace: string };
 
@@ -527,9 +528,12 @@ export default function HomeScreen({
           {/* 로테이션 인사이트(2켤레+에서만 채워짐, 비면 자동 숨김) */}
           <RotationInsightPanel rotation={rotation ?? []} onPickShoe={onPickShoe} />
           {/* 수익화 v1: 다음 러닝화 추천 노출 트리거 — Slice 6 교체 예측 기반(overdue/임박).
-              forecast가 주입되면 shouldRecommendNextShoe로 판정하고, 없으면 기존
-              condition==='교체' 폴백을 보존한다(회귀 방지). */}
-          {(forecast ? shouldRecommendNextShoe(forecast) : active.condition === '교체') && (
+              forecast가 주입되면 shouldRecommendNextShoe로 판정하고, 없으면 사용률 임계
+              (≥SHOE_REPLACE_PCT=90%) 폴백을 보존한다(구 3단계 condition==='교체' 비교를
+              숫자 임계로 강등 — 2026-07-11 4단계 단일화, 트리거 시점 동일). */}
+          {(forecast
+            ? shouldRecommendNextShoe(forecast)
+            : active.max > 0 && (active.used / active.max) * 100 >= SHOE_REPLACE_PCT) && (
             <NextShoeCard shoe={active} />
           )}
         </>

@@ -21,8 +21,8 @@ function textOf(node: any): string {
 const has = (root: any, id: string) => root.findAll((n: any) => typeof n.type === 'string' && n?.props?.testID === id).length > 0;
 
 const SHOES: Shoe[] = [
-  {id: 'a', brand: 'Nike', model: 'Pegasus 41', used: 300, max: 600, condition: '양호'},
-  {id: 'b', brand: 'Hoka', model: 'Clifton 10', used: 590, max: 600, condition: '교체'},
+  {id: 'a', brand: 'Nike', model: 'Pegasus 41', used: 300, max: 600},
+  {id: 'b', brand: 'Hoka', model: 'Clifton 10', used: 590, max: 600},
 ];
 const fc = (reason: 'ok' | 'overdue' | 'no_recent', weeks: number | null) => ({
   kmRemaining: 0, weeksRemaining: weeks,

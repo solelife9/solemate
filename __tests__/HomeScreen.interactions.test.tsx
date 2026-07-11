@@ -32,8 +32,8 @@ function pressByLabel(root: ReactTestRenderer.ReactTestInstance, label: string) 
 }
 
 const SHOES: Shoe[] = [
-  {id: 'a', brand: 'Nike', model: 'Pegasus 41', used: 100, max: 700, condition: '양호'},
-  {id: 'b', brand: 'Hoka', model: 'Clifton 10', used: 300, max: 700, condition: '주의'},
+  {id: 'a', brand: 'Nike', model: 'Pegasus 41', used: 100, max: 700},
+  {id: 'b', brand: 'Hoka', model: 'Clifton 10', used: 300, max: 700},
 ];
 
 describe('홈 히어로 신발 인터랙션', () => {
@@ -48,7 +48,7 @@ describe('홈 히어로 신발 인터랙션', () => {
 describe('홈 부상위험 시그널 제거(2026-07-05 애널리틱스 다이어트)', () => {
   const TODAY = '2026-06-23';
   const WORN_SHOES: Shoe[] = [
-    {id: 'w', brand: 'Nike', model: 'Pegasus 41', used: 650, max: 700, condition: '교체'},
+    {id: 'w', brand: 'Nike', model: 'Pegasus 41', used: 650, max: 700},
   ];
   test('마모가 위험 수준이어도 홈은 부상위험 카드를 더 이상 렌더하지 않는다(처방 계층 제거)', () => {
     const root = render(

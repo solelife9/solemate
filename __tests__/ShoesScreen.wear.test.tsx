@@ -57,7 +57,7 @@ const mkRun = (over: Partial<Run>): Run => ({
 describe('ShoesScreen 상세 — 실효 마모 + 교체 예측', () => {
   test('ok 분기: "약 N주 후 교체 예상" 추정 카피를 실데이터로 렌더(임박 ≤8주만 노출)', () => {
     // 교체 예상 카드는 임박(≤8주)일 때만 노출(2026-07-05) — 잔여 150km/주 23km ≈ 7주.
-    const shoe: Shoe = {id: 'a', brand: 'Nike', model: 'Pegasus 41', used: 550, max: 700, condition: '양호'};
+    const shoe: Shoe = {id: 'a', brand: 'Nike', model: 'Pegasus 41', used: 550, max: 700};
     const runs: Run[] = [
       // 실효 마모는 런 이력 합으로 계산되므로 과거 베이스 런으로 수명 근처까지 채우고
       // (28일 밖 — 최근 소모율에는 미반영), 최근 75km/4주 소모율로 잔여 ≈125km ≈ 7주
@@ -84,7 +84,7 @@ describe('ShoesScreen 상세 — 실효 마모 + 교체 예측', () => {
 
   test('overdue 분기: 고마모 신발 상세에 부상 배너(교체 안내)가 렌더된다', () => {
     // max(권장 수명) 100km인데 최근 큰 런들로 실효 마모가 이를 초과 → overdue.
-    const shoe: Shoe = {id: 'a', brand: 'Hoka', model: 'Clifton 10', used: 90, max: 100, condition: '교체'};
+    const shoe: Shoe = {id: 'a', brand: 'Hoka', model: 'Clifton 10', used: 90, max: 100};
     const runs: Run[] = [
       mkRun({id: 'r1', dist: 80, durationS: 24000, runDate: daysAgo(2)}),
       mkRun({id: 'r2', dist: 80, durationS: 24000, runDate: daysAgo(6)}),
@@ -99,7 +99,7 @@ describe('ShoesScreen 상세 — 실효 마모 + 교체 예측', () => {
   });
 
   test('no_recent 분기: 예측 불가(최근 28일 주행 없음)면 교체 예상 카드를 숨긴다(핸드오프 정합)', () => {
-    const shoe: Shoe = {id: 'a', brand: 'On', model: 'Cloudflow 5', used: 50, max: 700, condition: '양호'};
+    const shoe: Shoe = {id: 'a', brand: 'On', model: 'Cloudflow 5', used: 50, max: 700};
     const runs: Run[] = [
       mkRun({id: 'r1', dist: 25, durationS: 7500, runDate: daysAgo(40)}),
       mkRun({id: 'r2', dist: 25, durationS: 7500, runDate: daysAgo(55)}),
@@ -116,7 +116,7 @@ describe('ShoesScreen 상세 — 실효 마모 + 교체 예측', () => {
 
   test('체중이 교체 예측 보정에 반영된다(weightFactor — 무거울수록 실효 마모 큼)', () => {
     // 임박(≤8주) 게이트 통과 픽스처: 잔여 150km / 주 30km ≈ 5주.
-    const shoe: Shoe = {id: 'a', brand: 'Nike', model: 'Pegasus 41', used: 550, max: 700, condition: '양호'};
+    const shoe: Shoe = {id: 'a', brand: 'Nike', model: 'Pegasus 41', used: 550, max: 700};
     const runs: Run[] = [
       // 과거 베이스 런(28일 밖)으로 수명 근처 + 최근 80km/4주 → 두 체중 모두 ≤8주 노출.
       mkRun({id: 'r0', dist: 480, durationS: 144000, runDate: daysAgo(60)}),

@@ -22,7 +22,6 @@ const UI_SHOE: Shoe = {
   model: 'Pegasus 40',
   used: 590,
   max: 600,
-  condition: '교체', // 권장 수명 도달
 };
 const RAW_SHOE: BackendShoe = {id: 's1', name: 'Nike Pegasus 40', max_km: 600, total_km: 590};
 
@@ -136,7 +135,7 @@ describe('ShoesScreen — 은퇴 키프세이크 트리거(사용자 제어)', (
   });
 
   test('정상 수명 신발에는 키프세이크 트리거가 없다', () => {
-    const healthy: Shoe = {...UI_SHOE, used: 100, condition: '양호'};
+    const healthy: Shoe = {...UI_SHOE, used: 100};
     const r = render(
       <ShoesScreen
         shoes={[healthy]}

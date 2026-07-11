@@ -10,8 +10,9 @@ export type Shoe = {
   model: string;
   used: number;
   max: number;
-  // Proportional wear tier — see lib/shoe.ts shoeHealth (audit#7).
-  condition: '양호' | '주의' | '교체';
+  // 컨디션 필드 없음(2026-07-11 4단계 단일화): 라벨/색은 화면이 used/max 사용률로
+  // lib/shoe.wearTier(4단계)를 파생한다. 구 3단계 condition('양호'|'주의'|'교체')은
+  // 워치 구버전 계약(WatchShoePayload.condition)에만 남아 App 이 직접 파생한다.
   retired?: boolean;    // archived: hidden from run pickers, records preserved
   photoUri?: string;    // local image-picker URI (optional; absent = no photo)
 };

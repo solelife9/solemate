@@ -97,7 +97,6 @@ const SHOE: Shoe = {
   model: 'Pegasus 41',
   used: 0,
   max: 800,
-  condition: '양호',
 } as Shoe;
 
 function textOf(node: any): string {

@@ -124,7 +124,7 @@ async function setInput(root: ReactTestRenderer.ReactTestInstance, label: string
   await flush();
 }
 
-const SHOES: Shoe[] = [{id: 's1', brand: 'Nike', model: 'Pegasus', used: 100, max: 700, condition: '양호'}];
+const SHOES: Shoe[] = [{id: 's1', brand: 'Nike', model: 'Pegasus', used: 100, max: 700}];
 
 // 수동 추가 UI 진입점({mode:'add'} setForm)은 제거되었고, 공용 RunForm(초기값 null=추가)이
 // 추가 폼의 마스킹·검증·제출 동작을 그대로 보유한다. RunForm을 직접 렌더해 검증한다.

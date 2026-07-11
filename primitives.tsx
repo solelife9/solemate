@@ -1,6 +1,6 @@
 // ============================================================================
 // primitives.tsx — shared Keego UI primitives
-// Ring · TabBar · Button · Card · Pill/Badge(TierBadge) · Metric ·
+// Ring · TabBar · Button · Card · Pill · Metric ·
 // KeegoWordmark · SectionTitle · status-color helpers.
 // All colour/spacing/radius/type values come from theme tokens (no raw hex).
 // Deps: react-native-svg, react-native-vector-icons
@@ -59,19 +59,12 @@ import {
   withAlpha,
 } from './theme';
 import {tap as hapticTap} from './lib/haptics';
-import {tierBadge, ShoeCondition, type WearTierTone} from './lib/shoe';
+import {type WearTierTone} from './lib/shoe';
 import {InjuryLevel} from './lib/injury';
 
-// ── Status colour helpers (single mapping shoeHealth.condition → colour/tone) ──
-// shoeHealth 의 condition 을 화면 색/배지 톤으로 옮기는 단일 소스. 양호=GOOD,
-// 주의=WARN, 교체=DANGER. 화면은 raw hex 대신 이 helper(=theme 토큰)를 쓴다.
+// (구 conditionColor/conditionTone 3단계 매핑은 2026-07-11 제거 — 컨디션 색/톤은
+//  wearTier(4단계) tone → WEAR_TONE_COLOR 가 단일 소스다.)
 export type Tone = 'good' | 'warn' | 'danger' | 'accent' | 'dim';
-
-export function conditionColor(condition: ShoeCondition): string {
-  if (condition === '교체') return DANGER;
-  if (condition === '주의') return WARN;
-  return GOOD;
-}
 
 // 마모 4단계(wearTier) 톤 → theme 토큰. 최상🟢/양호🟡/교체고려🟠/교체권장🔴 —
 // 홈 히어로·신발 탭·러닝 목표가 같은 매핑을 쓴다(FuelGauge 와 동일 값, 공용 소스).
@@ -193,12 +186,6 @@ export function Chip({
       )}
     </Pressable>
   );
-}
-
-export function conditionTone(condition: ShoeCondition): Tone {
-  if (condition === '교체') return 'danger';
-  if (condition === '주의') return 'warn';
-  return 'good';
 }
 
 // 톤별 전경/반투명 배경. 배경은 theme 의 GOOD/WARN/DANGER/ACCENT 토큰에서
@@ -1024,29 +1011,8 @@ const pill = StyleSheet.create({
   label: {fontFamily: FONT, fontWeight: '700', letterSpacing: 0.2},
 });
 
-// ── Tier badge (앱내 교체 배지: 홈/신발 목록/상세 공용) ───────────────────────
-// shoeHealth 주의/교체 tier만 노출(양호 → null, 평상시 잡음 제거). Pill 위에 얹어
-// 상태 톤 + 경고 아이콘 + 한국어 라벨로 교체 동선을 끌어올린다. testID 는 기존 그대로
-// (tier-badge-주의|교체) 유지해 회귀 테스트 호환.
-export function TierBadge({
-  condition,
-  size = 'sm',
-}: {
-  condition: ShoeCondition;
-  size?: 'sm' | 'md';
-}) {
-  const badge = tierBadge(condition);
-  if (!badge) return null;
-  return (
-    <Pill
-      testID={`tier-badge-${badge.label}`}
-      tone={badge.tone === 'danger' ? 'danger' : 'warn'}
-      label={badge.label}
-      icon="warning"
-      size={size}
-    />
-  );
-}
+// (구 TierBadge 3단계 배지 컴포넌트는 2026-07-11 제거 — 모든 화면이 wearTier 4단계
+//  칩으로 통일돼 소비처가 사라졌다.)
 
 // ── Injury warning banner (부상예방 경고: 홈 히어로 · 신발 상세 공용) ──────────
 // assessInjuryRisk 의 caution/high 등급만 경고 배너로 노출한다(safe → null, 안전

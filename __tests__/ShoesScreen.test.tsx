@@ -65,8 +65,8 @@ function render(el: React.ReactElement) {
 }
 
 const SHOES: Shoe[] = [
-  {id: 's1', brand: 'Nike', model: 'Pegasus 41', used: 100, max: 500, condition: '양호'}, // 80%
-  {id: 's2', brand: 'Hoka', model: 'Clifton 9', used: 580, max: 600, condition: '교체'}, // 3% → 교체
+  {id: 's1', brand: 'Nike', model: 'Pegasus 41', used: 100, max: 500}, // 80%
+  {id: 's2', brand: 'Hoka', model: 'Clifton 9', used: 580, max: 600}, // 3% → 교체
 ];
 
 const RUNS: Run[] = [];
@@ -148,7 +148,7 @@ test('보관된 신발은 락커 목록·상세에서 제외된다(마이탭 보
   // 보관(retired) 신발은 ShoesScreen 락커에서 빠지고 마이탭 '신발 보관함'(ShoeArchiveScreen)
   // 에서만 복원할 수 있다(fd67d4b). 락커엔 안 떠 상세 진입·러닝 CTA 자체가 없다(기록은 보존).
   const retired: Shoe[] = [
-    {id: 'r1', brand: 'Asics', model: 'Nimbus 26', used: 200, max: 600, condition: '양호', retired: true},
+    {id: 'r1', brand: 'Asics', model: 'Nimbus 26', used: 200, max: 600, retired: true},
   ];
   const onStartRun = jest.fn();
   const root = render(<ShoesScreen shoes={retired} runs={RUNS} onStartRun={onStartRun} />).root;
@@ -158,14 +158,13 @@ test('보관된 신발은 락커 목록·상세에서 제외된다(마이탭 보
   expect(onStartRun).not.toHaveBeenCalled();
 });
 
-// ── 5) active(사용 중) shoe shows the '사용 중' status Pill in the locker ───────
-test('사용 중인(미보관·featured) 신발 카드에 사용 중 상태 Pill이 뜬다', () => {
-  // SHOES[0](Nike Pegasus, 양호, retired falsy)가 activeIdx 기본값 0 → featured.
+// ── 5) '사용 중' 라벨 제거(사용자 확정 2026-07-11) — 카드 간 구분 없이 동일 취급 ────
+test("락커 카드에 '사용 중' 라벨이 더는 뜨지 않는다(카드 동일 취급)", () => {
   const root = render(<ShoesScreen shoes={SHOES} runs={RUNS} />).root;
 
   const txt = textOf(root);
-  expect(txt).toContain('사용 중'); // featured 신발의 상태 Pill
-  // 보관 신발이 아니므로 '보관됨' Pill은 뜨지 않는다(상태 Pill 단일성).
+  expect(txt).not.toContain('사용 중'); // 구 featured 상태 Pill 제거
+  // 보관 신발이 아니므로 '보관됨' Pill도 뜨지 않는다.
   expect(txt).not.toContain('보관됨');
 });
 
@@ -187,7 +186,7 @@ test('보관된 교체 신발은 락커에서 제외 → keep-going 교체 배�
   // 닳아서 보관한 전형적 상태: retired + 교체 tier 동시. 락커에서 제외되므로 교체 배너가
   // 뜰 카드 자체가 없다(보관됨 상태와 모순 방지). 복원은 마이탭 보관함에서.
   const wornRetired: Shoe[] = [
-    {id: 'wr1', brand: 'Hoka', model: 'Bondi 8', used: 595, max: 600, condition: '교체', retired: true},
+    {id: 'wr1', brand: 'Hoka', model: 'Bondi 8', used: 595, max: 600, retired: true},
   ];
   const root = render(<ShoesScreen shoes={wornRetired} runs={RUNS} onSetMaxKm={jest.fn()} />).root;
 

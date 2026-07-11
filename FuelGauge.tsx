@@ -18,7 +18,6 @@ type Props = {
   unit: string;                 // 'km' | 'mi'
   fillPct: number;              // 0~1 — 마커/채움 위치(실효 마모 권장)
   replacePct?: number;          // 0~1 — 교체 임계 경계(기본 0.9). 목업 마커 예시는 0.75 위치
-  condition: '양호' | '주의' | '교체';
   usedLabel?: string;           // 사용 거리(바 좌측 라벨)
   maxLabel?: string;            // 총 수명(바 우측 라벨)
   replaceLabel?: string;        // 예 "교체 500km"
@@ -29,9 +28,9 @@ type Props = {
 const TONE_COLOR: Record<WearTierTone, string> = {good: GOOD, mid: WARN, warn: ACCENT, danger: DANGER};
 
 // usedLabel 은 배터리 방향 통일로 미사용(Props 호환 위해 타입엔 유지 — 호출부 무수정).
+// (구 condition 3단계 prop 은 2026-07-11 제거 — 색은 wearTier 4단계 단일 소스.)
 export function FuelGauge({remainLabel, unit, fillPct, maxLabel, replaceLabel, editSlot}: Props) {
   const p = Math.max(0, Math.min(1, fillPct));
-  // 색은 사용률(%) 기반 4단계 — condition(3단계)은 호환 위해 prop 으로 받되 색엔 안 씀.
   const tier = wearTier(p * 100);
   const cc = TONE_COLOR[tier.tone];
   return (

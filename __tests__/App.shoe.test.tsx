@@ -274,10 +274,10 @@ test('restore(복원) PATCHes retired=false and the shoe reappears in the home p
 // ── 4) ShoesScreen: 4단계 마모 컨디션(사용률%) + retire/restore from the locker ──
 test('ShoesScreen renders 4단계 마모 컨디션을 사용률별 색으로', async () => {
   const shoes: Shoe[] = [
-    {id: 'a', brand: 'NIKE', model: 'Pegasus', used: 60, max: 600, condition: '양호'},   // 10% best→BEST(파랑)
-    {id: 'b', brand: 'HOKA', model: 'Clifton', used: 390, max: 600, condition: '양호'},  // 65% good→GOOD(초록)
-    {id: 'c', brand: 'ASICS', model: 'Nimbus', used: 510, max: 600, condition: '주의'},  // 85% consider→WARN(앰버, 80~90)
-    {id: 'd', brand: 'BROOKS', model: 'Ghost', used: 660, max: 600, condition: '교체'},  // 110% replace→DANGER(빨강)
+    {id: 'a', brand: 'NIKE', model: 'Pegasus', used: 60, max: 600},   // 10% best→BEST(파랑)
+    {id: 'b', brand: 'HOKA', model: 'Clifton', used: 390, max: 600},  // 65% good→GOOD(초록)
+    {id: 'c', brand: 'ASICS', model: 'Nimbus', used: 510, max: 600},  // 85% consider→WARN(앰버, 80~90)
+    {id: 'd', brand: 'BROOKS', model: 'Ghost', used: 660, max: 600},  // 110% replace→DANGER(빨강)
   ];
   const root = await mountComponent(
     <ShoesScreen shoes={shoes} runs={[]} totals={{}} onTab={() => {}} onAddShoe={() => {}} />,
@@ -300,7 +300,7 @@ test('ShoesScreen 락커는 보관(retire)을, ShoeArchiveScreen 보관함은 �
 
   // active shoe (락커) → 보관: archive button confirms and retires (id, true).
   const locker = await mountComponent(
-    <ShoesScreen shoes={[{id: 'w', brand: 'NIKE', model: 'Pegasus', used: 560, max: 600, condition: '교체'}]}
+    <ShoesScreen shoes={[{id: 'w', brand: 'NIKE', model: 'Pegasus', used: 560, max: 600}]}
       runs={[]} totals={{}} onTab={() => {}} onAddShoe={() => {}} onRetire={onRetire} />,
   );
   await tap(pressBy(locker, 'Pegasus'));
@@ -310,7 +310,7 @@ test('ShoesScreen 락커는 보관(retire)을, ShoeArchiveScreen 보관함은 �
   // retired shoe (보관함) → 복원: undo button restores (id) via onRestore.
   const archive = await mountComponent(
     <ShoeArchiveScreen
-      shoes={[{id: 'g', brand: 'BROOKS', model: 'Ghost', used: 50, max: 600, condition: '양호', retired: true}]}
+      shoes={[{id: 'g', brand: 'BROOKS', model: 'Ghost', used: 50, max: 600, retired: true}]}
       onRestore={onRestore} />,
   );
   await tap(pressBy(archive, '복원'));

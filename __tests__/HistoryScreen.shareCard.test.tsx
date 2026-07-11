@@ -18,7 +18,7 @@ import {Share, Alert} from 'react-native';
 import * as MediaLibrary from 'expo-media-library/legacy';
 import HistoryScreen from '../HistoryScreen.rn';
 
-const SHOE = {brand: 'NIKE', model: 'Pegasus 41', used: 0, max: 800, condition: '양호'} as any;
+const SHOE = {brand: 'NIKE', model: 'Pegasus 41', used: 0, max: 800} as any;
 
 // 기본 기간 '월'(이번 달)이 런을 거르지 않도록 run_date를 이번 달로 둔다(Phase 5b 이후
 // 월 목록은 run_date startsWith(이번 달)로 필터된다). 표시값(date/day)은 그대로.

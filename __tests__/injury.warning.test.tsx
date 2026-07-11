@@ -64,8 +64,8 @@ function render(el: React.ReactElement) {
   return r;
 }
 
-const HIGH: Shoe = {id: 's-high', brand: 'Hoka', model: 'Clifton 9', used: 580, max: 600, condition: '교체'}; // 96.7% used → high
-const LOW: Shoe = {id: 's-low', brand: 'Nike', model: 'Pegasus 41', used: 100, max: 500, condition: '양호'}; // 20% used → safe
+const HIGH: Shoe = {id: 's-high', brand: 'Hoka', model: 'Clifton 9', used: 580, max: 600}; // 96.7% used → high
+const LOW: Shoe = {id: 's-low', brand: 'Nike', model: 'Pegasus 41', used: 100, max: 500}; // 20% used → safe
 const RUNS: Run[] = [];
 
 // ── 1) Home 신발 카드: 높은 마모 → 마모 링(빨강) + '교체 권장' 칩 ─────────────────
@@ -108,7 +108,7 @@ test('보관된 고마모 신발은 락커에서 제외되어 경고 배너를 �
   // 보관(retired) 신발은 ShoesScreen 락커에서 빠지고 마이탭 '신발 보관함'으로 이관된다(fd67d4b).
   // 따라서 마모가 높아도 상세 진입·경고 배너가 뜰 카드 자체가 없다(보관됨 상태와 모순 방지).
   const wornRetired: Shoe[] = [
-    {id: 'r1', brand: 'Hoka', model: 'Bondi 8', used: 595, max: 600, condition: '교체', retired: true},
+    {id: 'r1', brand: 'Hoka', model: 'Bondi 8', used: 595, max: 600, retired: true},
   ];
   const root = render(<ShoesScreen shoes={wornRetired} runs={RUNS} />).root;
 

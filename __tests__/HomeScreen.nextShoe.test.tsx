@@ -31,8 +31,8 @@ function render(el: React.ReactElement) {
 const byTestID = (root: ReactTestRenderer.ReactTestInstance, id: string) =>
   root.findAll((n: any) => n && n.props && n.props.testID === id);
 
-const WORN: Shoe = {brand: 'Nike', model: 'Pegasus 41', used: 690, max: 700, condition: '교체'};
-const HEALTHY: Shoe = {brand: 'Nike', model: 'Pegasus 41', used: 100, max: 700, condition: '양호'};
+const WORN: Shoe = {brand: 'Nike', model: 'Pegasus 41', used: 690, max: 700};
+const HEALTHY: Shoe = {brand: 'Nike', model: 'Pegasus 41', used: 100, max: 700};
 
 describe('NextShoeCard — 교체 시점 다음 러닝화 추천', () => {
   test('선택 신발이 교체 등급이면 추천 카드가 뜨고 쇼핑몰 버튼을 렌더한다', () => {

@@ -29,7 +29,7 @@ function render(el: React.ReactElement) {
   return r;
 }
 
-const SHOE: Shoe = {id: 'a', brand: 'Nike', model: 'Pegasus 41', used: 300, max: 700, condition: '양호'};
+const SHOE: Shoe = {id: 'a', brand: 'Nike', model: 'Pegasus 41', used: 300, max: 700};
 
 describe('HomeScreen 신발 카드(링 게이지)', () => {
   test('수명 링: 남은 수명(%)과 남은 거리를 보여준다 — 배터리 방향 통일', () => {

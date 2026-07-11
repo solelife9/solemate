@@ -33,7 +33,7 @@ function render(el: React.ReactElement) {
 const byTestID = (root: ReactTestRenderer.ReactTestInstance, id: string) =>
   root.findAll((n: any) => n && n.props && n.props.testID === id);
 
-const SHOE: Shoe = {id: 's1', brand: 'Nike', model: 'Pegasus 41', used: 100, max: 500, condition: '양호'};
+const SHOE: Shoe = {id: 's1', brand: 'Nike', model: 'Pegasus 41', used: 100, max: 500};
 
 describe('HomeScreen 이번 주 러닝 카드', () => {
   test('주입한 week(거리/횟수/평균 페이스)를 카드에 그대로 렌더한다', () => {

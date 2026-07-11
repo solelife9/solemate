@@ -58,7 +58,7 @@ function setInput(root: ReactTestRenderer.ReactTestInstance, label: string, valu
   act(() => { input[0].props.onChangeText(value); });
 }
 
-const SHOES: Shoe[] = [{id: 's1', brand: 'Nike', model: 'Pegasus', used: 100, max: 700, condition: '양호'}];
+const SHOES: Shoe[] = [{id: 's1', brand: 'Nike', model: 'Pegasus', used: 100, max: 700}];
 const RUN: Run = {
   id: 'r1', date: '6월 1일', day: '월', dateNum: '1', dist: 10, pace: "5'00\"", time: '50:00',
   shoe: 0, cal: 0, cadence: 0, bpm: 0, elev: 0, durationS: 3000, runDate: '2026-06-01',

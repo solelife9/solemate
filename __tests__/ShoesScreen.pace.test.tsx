@@ -36,8 +36,8 @@ function pressByLabel(root: ReactTestRenderer.ReactTestInstance, label: string) 
 }
 
 const SHOES: Shoe[] = [
-  {id: 'a', brand: 'Nike', model: 'Pegasus 41', used: 100, max: 700, condition: '양호'},
-  {id: 'b', brand: 'Hoka', model: 'Clifton 10', used: 200, max: 700, condition: '양호'},
+  {id: 'a', brand: 'Nike', model: 'Pegasus 41', used: 100, max: 700},
+  {id: 'b', brand: 'Hoka', model: 'Clifton 10', used: 200, max: 700},
 ];
 const TOTALS: Record<number, ShoeTotals> = {
   0: {totalRuns: 5, totalTime: '4h 10m', avgPace: "5'30\"", lastWorn: '5월 28일'},
@@ -66,7 +66,7 @@ describe('ShoesScreen — 신발별 평균 페이스 비교', () => {
   });
 
   test('기록 없는 신발(avgPace "--")은 목록에 페이스 줄을 숨긴다', () => {
-    const noRun: Shoe[] = [{id: 'c', brand: 'On', model: 'Cloudflow 5', used: 0, max: 700, condition: '양호'}];
+    const noRun: Shoe[] = [{id: 'c', brand: 'On', model: 'Cloudflow 5', used: 0, max: 700}];
     const totals: Record<number, ShoeTotals> = {0: {totalRuns: 0, totalTime: '--', avgPace: '--'}};
     const root = render(<ShoesScreen shoes={noRun} totals={totals} />).root;
     // 페이스 줄은 '평균 ... /km' 형태 — '--'면 노출하지 않으므로 '/km'가 없어야 한다.

@@ -22,7 +22,7 @@ const byTestID = (root: ReactTestRenderer.ReactTestInstance, id: string) =>
 
 // condition '양호' — condition 폴백으론 카드가 절대 안 뜨는 신발. 카드 노출은 오직
 // forecast 트리거에서만 나온다(분리 검증).
-const HEALTHY: Shoe = {id: 'a', brand: 'Nike', model: 'Pegasus 41', used: 300, max: 700, condition: '양호'};
+const HEALTHY: Shoe = {id: 'a', brand: 'Nike', model: 'Pegasus 41', used: 300, max: 700};
 
 const forecast = (over: Partial<ReplacementForecast>): ReplacementForecast => ({
   kmRemaining: 250, weeksRemaining: 6, etaISO: '2026-08-01T00:00:00.000Z',
@@ -54,8 +54,8 @@ describe('NextShoeCard 노출 트리거 — Slice 6 forecast 연결', () => {
     expect(byTestID(root, 'home-next-shoe').length).toBe(0);
   });
 
-  test('forecast가 없으면 condition==="교체" 폴백을 보존한다(회귀 방지)', () => {
-    const WORN: Shoe = {...HEALTHY, used: 690, condition: '교체'};
+  test('forecast가 없으면 사용률 ≥90%(SHOE_REPLACE_PCT) 폴백을 보존한다(회귀 방지)', () => {
+    const WORN: Shoe = {...HEALTHY, used: 690};
     const root = render(<HomeScreen shoes={[WORN]} activeIdx={0} onSelect={jest.fn()} />).root;
     expect(byTestID(root, 'home-next-shoe').length).toBeGreaterThanOrEqual(1);
   });

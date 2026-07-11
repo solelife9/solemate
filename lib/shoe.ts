@@ -37,13 +37,16 @@ export function parseShoeName(name: string): {brand: string; model: string} {
 // from the run log + the shoe's *category lifespan* (max_km, set at registration
 // from the recommended life), then mapped to a proportional condition tier.
 
+// ⚠️ 워치 구버전 호환 전용(2026-07-11 4단계 단일화). 사용자 노출 라벨/색은 전부
+// wearTier(4단계)로 통일됐다 — 이 3단계 타입/매핑은 App.tsx 의 watch push payload
+// (WatchShoePayload.condition — 구버전 워치가 도트 색을 이 문자열로 매핑)에만 남는다.
+// 새 코드에서 화면/알림/로직 트리거로 쓰지 말 것(로직은 percentUsed ≥ 임계 숫자 비교).
 export type ShoeCondition = '양호' | '주의' | '교체';
 
 export type ShoeHealth = {
   usedKm: number; // start_km + Σ km of runs logged against this shoe
   remainingKm: number; // max(0, max_km - usedKm)
   percentUsed: number; // usedKm / max_km * 100 (may exceed 100 once worn past life)
-  condition: ShoeCondition;
 };
 
 // Proportional tier thresholds — 4단계 wearTier 경계(80/90)에 정렬(P1 #3 단일 임계).
@@ -51,9 +54,11 @@ export type ShoeHealth = {
 export const SHOE_CAUTION_PCT = 80; // ≥80% → 주의 (= wearTier 교체 고려)
 export const SHOE_REPLACE_PCT = 90; // ≥90% → 교체 (= wearTier 교체 권장)
 
-// ─── 마모 상태 4단계(표시용 단일 출처) ──────────────────────────────────────────
-// 사용률(%)을 4단계 컨디션으로 매핑한다(화면 표시 전용 — 알림/교체 로직의 3단계
-// conditionForPercent 와 정렬). 0~50 최상 / 50~80 양호 / 80~90 교체 고려 / 90%+ 교체 권장.
+// ─── 마모 상태 4단계(사용자 노출 컨디션의 단일 출처) ─────────────────────────────
+// 사용률(%)을 4단계 컨디션으로 매핑한다. 2026-07-11 단일화: 화면 라벨/색은 전부 이
+// 4단계만 쓴다(3단계는 워치 구버전 계약 전용). 로직 트리거는 percentUsed ≥
+// SHOE_CAUTION_PCT/SHOE_REPLACE_PCT 숫자 비교 또는 wearTier(...).key 로 판정한다.
+// 0~50 최상 / 50~80 양호 / 80~90 교체 고려 / 90%+ 교체 권장.
 export type WearTierKey = 'best' | 'good' | 'consider' | 'replace';
 export type WearTierTone = 'good' | 'mid' | 'warn' | 'danger';
 export type WearTier = {
@@ -93,8 +98,8 @@ export type ShoeLike = {
 
 export type RunLike = {shoe_id?: string | number; km?: number | string};
 
-/** Map a consumed-percentage to a condition tier. Shared by every consumer so
- *  the threshold lives in exactly one place. */
+/** ⚠️ 워치 구버전 호환 전용 — 위 ShoeCondition 주석 참조. 임계(80/90)는 wearTier 와
+ *  동일하므로 워치 도트 의미는 4단계 consider/replace 경계와 계속 일치한다. */
 export function conditionForPercent(percentUsed: number): ShoeCondition {
   if (percentUsed >= SHOE_REPLACE_PCT) return '교체';
   if (percentUsed >= SHOE_CAUTION_PCT) return '주의';
@@ -127,7 +132,9 @@ export function shoeHealth(shoe: ShoeLike, runs: RunLike[] = []): ShoeHealth {
   }
   const remainingKm = Math.max(0, max - usedKm);
   const percentUsed = max > 0 ? (usedKm / max) * 100 : 0;
-  return {usedKm, remainingKm, percentUsed, condition: conditionForPercent(percentUsed)};
+  // condition(3단계)은 반환하지 않는다 — 컨디션은 wearTier(percentUsed) 4단계가 단일
+  // 출처(2026-07-11). 워치 계약만 conditionForPercent 를 직접 호출한다.
+  return {usedKm, remainingKm, percentUsed};
 }
 
 /** Retired (archived) shoes are hidden from run pickers but keep all records. */
@@ -149,21 +156,11 @@ export function clampMaxKm(km: number): number {
   return Math.max(MIN_SHOE_MAX_KM, Math.min(MAX_SHOE_MAX_KM, Math.round(km)));
 }
 
-// ─── Tier badge (앱내 배지: 홈/목록/상세 공용) ──────────────────────
-// shoeHealth의 condition을 화면 배지로 매핑한다. '양호'는 배지를 노출하지 않으므로
-// null(평상시 잡음 제거). 주의/교체만 색/문구를 띄워 교체 동선을 끌어올린다.
-export type BadgeTone = 'warn' | 'danger';
-export type TierBadge = {label: ShoeCondition; tone: BadgeTone};
+// (구 tierBadge/TierBadge 3단계 배지는 2026-07-11 제거 — 모든 화면이 wearTier 4단계
+//  칩으로 통일돼 소비처가 사라졌다. 배지가 다시 필요하면 wearTier 기반으로 만들 것.)
 
 // keep-going 카피: 교체를 '손실'이 아니라 '부상 없이 계속'의 조건으로 프레이밍한다.
 export const KEEP_GOING_REPLACE = '지금 교체하면 부상 없이 계속';
-
-/** condition → 배지({label,tone}) | null. '양호'면 null(배지 없음). */
-export function tierBadge(condition: ShoeCondition): TierBadge | null {
-  if (condition === '교체') return {label: '교체', tone: 'danger'};
-  if (condition === '주의') return {label: '주의', tone: 'warn'};
-  return null;
-}
 
 // ─── 신발 교체 알림 추적(중복 알림 방지) ───────────────────────────
 // 기존 '하루 1회' 전역 게이트의 문제: ① 같은 신발이 매일 다시 알린다(중복) ② 한 신발이

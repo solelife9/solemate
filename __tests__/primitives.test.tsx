@@ -14,8 +14,6 @@ import {Text, View, StyleSheet} from 'react-native';
 import ReactTestRenderer from 'react-test-renderer';
 import {
   GlassEdge,
-  conditionColor,
-  conditionTone,
   KeegoWordmark,
   Metric,
   Button,
@@ -74,21 +72,8 @@ const rgbaChannels = (rgba: string): [number, number, number] => {
   return [Number(m[1]), Number(m[2]), Number(m[3])];
 };
 
-// ── conditionColor / conditionTone follow theme tokens ───────────────────────
-describe('conditionColor / conditionTone map shoe condition → theme token', () => {
-  test('교체 → DANGER / danger', () => {
-    expect(conditionColor('교체')).toBe(DANGER);
-    expect(conditionTone('교체')).toBe('danger');
-  });
-  test('주의 → WARN / warn', () => {
-    expect(conditionColor('주의')).toBe(WARN);
-    expect(conditionTone('주의')).toBe('warn');
-  });
-  test('양호 (and default) → GOOD / good', () => {
-    expect(conditionColor('양호')).toBe(GOOD);
-    expect(conditionTone('양호')).toBe('good');
-  });
-});
+// (conditionColor/conditionTone 3단계 매핑 테스트 삭제 2026-07-11 — 컨디션 색/톤은
+//  wearTier 4단계 → WEAR_TONE_COLOR 단일 소스로 통일되어 primitives 에서 제거됨.)
 
 // ── KeegoWordmark — 소문자 'keego'·Helvetica Neue Medium·BRAND 파파야(2026-07-09 'B 서명+진행') ──
 describe('KeegoWordmark', () => {
@@ -210,8 +195,8 @@ describe('Button — unified CTA surface (glass · matte · radius token)', () =
     expect(peakOf('tl')).toBeGreaterThan(peakOf('br')); // 주광 > 반사
     expect(GLASS.edgeTR).toBe(0); // 우상/좌하 글린트 폐지 계약
     expect(GLASS.edgeBL).toBe(0);
-    // 베이스 헤어라인 — 좌상·우하 방사가 CARD_BORDER 시감(0.07)으로 시작해
-    // 우상·좌하 코너에서 완전 소멸(2026-07-10 사용자 확정 "우상·좌하는 라인 없게").
+    // 베이스 헤어라인 — 좌상·우하 방사가 0.2(구 신발탭 '사용중' 카드 시감 —
+    // 2026-07-11 전 카드 표준으로 승격)로 시작해 우상·좌하 코너에서 완전 소멸.
     const peakOfBase = (suffix: string) => {
       const g = radials.find((r: any) => String(r.props.id).endsWith(`-${suffix}-base`))!;
       const stops = g.props.children.filter((c: any) => c?.props?.stopColor === T1);
@@ -219,7 +204,7 @@ describe('Button — unified CTA surface (glass · matte · radius token)', () =
     };
     expect(peakOfBase('tl')).toBeCloseTo(GLASS.edgeBase);
     expect(peakOfBase('br')).toBeCloseTo(GLASS.edgeBase);
-    expect(GLASS.edgeBase).toBeCloseTo(0.07);
+    expect(GLASS.edgeBase).toBeCloseTo(0.2); // '사용중' 카드 시감(0.07×2.85) 승격 — 전 카드 단일 헤어라인
   });
 
   test('cta is matte — no glow shadow of any colour', () => {

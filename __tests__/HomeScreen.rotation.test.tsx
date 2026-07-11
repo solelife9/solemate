@@ -51,7 +51,6 @@ const uiShoe = (brand: string, model: string, id: string): Shoe => ({
   model,
   used: 100,
   max: 500,
-  condition: '양호',
 });
 
 describe('@slice-4 홈 신발 로테이션 추천 카드', () => {

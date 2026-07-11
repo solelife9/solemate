@@ -14,8 +14,8 @@
  *      style({pressed:false}).
  *   3) WCAG: the small-text token T3 clears AA contrast (≥4.5:1) on the body
  *      surfaces (CARD/BG), proven by a relative-luminance computation.
- *   4) non-colour cue: danger/warn TierBadge renders a real icon shape node, not
- *      colour alone (fails if the icon stops rendering).
+ *   4) (삭제 2026-07-11) non-colour cue: TierBadge 3단계 배지 폐지 — 컨디션은
+ *      wearTier 4단계 칩으로 통일, 라벨 텍스트 자체가 non-colour cue.
  *   5) keep-going voice in the LOADING (boot skeleton) and ERROR (retry card)
  *      states, asserted by rendering App in each boot state.
  *   6) 死deps: package.json carries no @react-navigation/* or react-native-screens,
@@ -29,7 +29,7 @@ import ReactTestRenderer, {act} from 'react-test-renderer';
 import {StyleSheet} from 'react-native';
 import HistoryScreen from '../HistoryScreen.rn';
 import AddShoeScreen from '../AddShoeScreen.rn';
-import {Button, TabBar, TierBadge} from '../primitives';
+import {Button, TabBar} from '../primitives';
 import {T3, CARD, BG, Shoe} from '../theme';
 import App from '../App';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -92,7 +92,7 @@ const has = (root: any, testID: string) =>
   root.findAll((n: any) => n.props && n.props.testID === testID).length > 0;
 
 const SHOES: Shoe[] = [
-  {id: 's1', brand: 'Nike', model: 'Pegasus 41', used: 100, max: 500, condition: '양호'},
+  {id: 's1', brand: 'Nike', model: 'Pegasus 41', used: 100, max: 500},
 ];
 
 // ── 1) 44pt touch targets ─────────────────────────────────────────────────────
@@ -214,21 +214,8 @@ describe('WCAG — T3 small-text token clears AA on body surfaces', () => {
 });
 
 // ── 4) non-colour cue on status badges ────────────────────────────────────────
-describe('TierBadge gives a non-colour shape cue (icon), not colour alone', () => {
-  test.each([['교체'], ['주의']])(
-    'TierBadge(%s) renders a real warning icon node',
-    cond => {
-      const root = render(<TierBadge condition={cond as Shoe['condition']} />).root;
-      const icons = root.findAll(
-        (n: any) => n.type && n.type.displayName === 'Ionicons',
-      );
-      expect(icons.length).toBeGreaterThan(0);
-      // The icon name is rendered as text by the test mock — if the badge stopped
-      // drawing the warning glyph (colour-only), this would fail.
-      expect(icons.some((i: any) => textOf(i) === 'warning')).toBe(true);
-    },
-  );
-});
+// (TierBadge 3단계 배지 삭제 2026-07-11 — 컨디션은 wearTier 4단계 칩(점+텍스트 라벨)로
+//  통일. 라벨 텍스트 자체가 non-colour cue 라 색맹 안전 계약은 유지된다.)
 
 // ── 5) keep-going voice in loading & error states ─────────────────────────────
 describe('loading state speaks the keep-going voice', () => {

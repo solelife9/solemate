@@ -57,7 +57,7 @@ async function changeInput(root: ReactTestRenderer.ReactTestInstance, label: str
   await flush();
 }
 
-const SHOES: Shoe[] = [{id: 's1', brand: 'Nike', model: 'Pegasus', used: 100, max: 700, condition: '양호'}];
+const SHOES: Shoe[] = [{id: 's1', brand: 'Nike', model: 'Pegasus', used: 100, max: 700}];
 function runWith(durationS: number): Run {
   return {
     id: 'r1', date: '6월 1일', day: '월', dateNum: '1', dist: 10, pace: "5'00\"", time: '50:00',

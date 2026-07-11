@@ -114,7 +114,7 @@ function FuelTrack({used, max}: {used: number; max: number}) {
 // ── 등록 완료 ─────────────────────────────────────────────────────────────────
 function SuccessState({shoe, onStartRun, onDone, onSearch, onTab}: FirstShoeProps) {
   const insets = useSafeAreaInsets();
-  const s0: Shoe = shoe ?? {brand: 'NIKE', model: 'Alphafly 3', used: 0, max: 500, condition: '양호'};
+  const s0: Shoe = shoe ?? {brand: 'NIKE', model: 'Alphafly 3', used: 0, max: 500};
   return (
     <View style={[s.screen, {paddingTop: insets.top}]}>
       <Header onSearch={onSearch} />

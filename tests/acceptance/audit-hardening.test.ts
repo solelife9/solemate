@@ -480,7 +480,7 @@ describe('Audit Hardening 수용', () => {
   });
 
   describe('C. 폼 + 피드백', () => {
-    const C_SHOE: Shoe = {id: 'a', brand: 'Nike', model: 'Pegasus 41', used: 100, max: 600, condition: '양호'};
+    const C_SHOE: Shoe = {id: 'a', brand: 'Nike', model: 'Pegasus 41', used: 100, max: 600};
     // 토스트는 전역 store + 실타이머를 쓰므로 각 테스트 후 닫아 다음 테스트로 새지 않게 한다.
     afterEach(() => dismissToast());
 
@@ -720,7 +720,7 @@ describe('Audit Hardening 수용', () => {
         pace: "5'02\"", time: '40:41', shoe: 0, cal: 0, cadence: 0, bpm: 0, elev: 0, ...over,
       });
       const runs = [mkRun({id: 'r1'}), mkRun({id: 'r2', date: '5월 29일'})];
-      const shoe: Shoe = {id: 'a', brand: 'Nike', model: 'Pegasus 41', used: 100, max: 600, condition: '양호'};
+      const shoe: Shoe = {id: 'a', brand: 'Nike', model: 'Pegasus 41', used: 100, max: 600};
       const r = renderTree(el(HistoryScreen, {shoes: [shoe], runs}));
       // 기본 기간은 '월'(날짜 필터) — 시드 런엔 run_date 가 없어 걸러진다. '전체' 로 전환하면
       // displayRuns === runs 가 되어 전체 배열 가상화/keyExtractor 계약을 그대로 검증할 수 있다.
@@ -860,7 +860,6 @@ describe('Audit Hardening 수용', () => {
         model: 'Pegasus 40',
         used: 590,
         max: 600,
-        condition: '교체',
       };
       const shoes = renderTree(
         el(ShoesScreen, {

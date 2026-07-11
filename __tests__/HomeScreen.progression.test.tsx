@@ -44,8 +44,8 @@ function textOf(node: ReactTestRenderer.ReactTestInstance): string {
 }
 
 const SHOES: Shoe[] = [
-  {id: 'a', brand: 'Nike', model: 'Pegasus 41', used: 100, max: 700, condition: '양호'},
-  {id: 'b', brand: 'Hoka', model: 'Clifton 10', used: 300, max: 700, condition: '주의'},
+  {id: 'a', brand: 'Nike', model: 'Pegasus 41', used: 100, max: 700},
+  {id: 'b', brand: 'Hoka', model: 'Clifton 10', used: 300, max: 700},
 ];
 
 const PROG: HomeProgression = {

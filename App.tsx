@@ -79,7 +79,7 @@ import {
   sumKm, avgPaceLabel, totalTimeLabel, durationLabel, summaryOf, maxDayStreak,
   weekBuckets, monthBuckets, yearBuckets,
 } from './lib/stats';
-import {parseShoeName, shoeHealth, isRetired, DEFAULT_MAX_KM, clampMaxKm, reconcileShoeAlerts} from './lib/shoe';
+import {parseShoeName, shoeHealth, isRetired, DEFAULT_MAX_KM, clampMaxKm, reconcileShoeAlerts, conditionForPercent} from './lib/shoe';
 import {setRunSurface, parseSurface, type Surface} from './lib/wearModel';
 import {forecastReplacement, type ReplacementForecast} from './lib/replacementForecast';
 import {mostRecentShoeId, lastWornDate} from './lib/shoeRecommend';
@@ -283,7 +283,7 @@ function Main(){
   // road로 동작(차단 아님). runs 변경 시 한 번에 읽어들이고, 손상/실패는 무시한다.
   const [runSurfaces,setRunSurfaces]=useState<Record<string,Surface>>({});
   // 홈/신발 화면이 공유하는 '선택 신발' id. null이면 휴식 로테이션 추천 신발로 폴백한다
-  // (activeIdx={0} 하드코딩 제거 — 선택/추천이 홈 히어로와 신발 '사용 중' 표시를 함께 몬다).
+  // (activeIdx={0} 하드코딩 제거 — 선택/추천이 홈 히어로를 몬다).
   const [selectedShoeId,setSelectedShoeId]=useState<string|null>(null);
   // 홈 카드 → 화면 이동: 히어로 신발 탭 시 그 신발 상세를 신발탭에서 열고, 주간목표 탭 시
   // 프로필의 목표 설정 패널을 펼친 채 진입한다(각각 한 번만 소비).
@@ -1359,8 +1359,9 @@ function Main(){
 
   // ── adapters: backend → presentational shapes ──────────────
   function toUiShoe(s:any):Shoe{
-    // 단일 소스(shoeHealth)에서 used/남은수명/condition을 도출 — 하드코딩 100km
-    // 임계·중복 used 계산 제거(audit#7).
+    // 단일 소스(shoeHealth)에서 used/남은수명을 도출 — 하드코딩 100km 임계·중복 used
+    // 계산 제거(audit#7). 컨디션 라벨/색은 화면이 used/max 로 wearTier(4단계)를 파생
+    // 한다(2026-07-11 단일화 — 3단계 condition 필드 폐지).
     const h=shoeHealth(s,runs);
     const {brand,model}=parseShoeName(s.name);
     return {
@@ -1369,7 +1370,6 @@ function Main(){
       model:model||(brand?'':s.name),
       used:Math.round(h.usedKm),
       max:s.max_km||DEFAULT_MAX_KM,
-      condition:h.condition,
       retired:isRetired(s),
     };
   }
@@ -1408,8 +1408,7 @@ function Main(){
     :(recentId&&homeShoes.some(x=>x.raw.id===recentId))?recentId
     :(homeShoes[0]?.raw.id??null);
   const homeActiveIdx=Math.max(0,homeShoes.findIndex(x=>x.raw.id===effectiveId));
-  // 신발화면(보관 포함 전체)에서 선택 신발의 인덱스 — '사용 중' 강조용.
-  const shoesActiveIdx=Math.max(0,shoes.findIndex(s=>s.id===effectiveId));
+  // (신발탭 '사용 중' 강조 인덱스는 2026-07-11 라벨 제거와 함께 폐지 — 카드 동일 취급.)
   // 홈 picker(보관 제외) 인덱스 → 원본 신발 id로 선택 상태를 갱신한다.
   const selectHomeShoe=(i:number)=>{const e=homeShoes[i];if(e)setSelectedShoeId(e.raw.id);};
 
@@ -1422,7 +1421,9 @@ function Main(){
     shoes:homeShoes.map(x=>({
       id:String(x.raw.id),brand:x.ui.brand,model:x.ui.model,
       lifePct:Math.max(0,Math.min(100,Math.round((1-x.ui.used/Math.max(1,x.ui.max))*100))),
-      condition:x.ui.condition,
+      // 워치 구버전 계약(WatchShoePayload.condition — 도트 의미색 매핑)용 3단계 문자열.
+      // 폰 UI 는 4단계 wearTier 로 이행했지만(2026-07-11) 값은 계속 보낸다(호환).
+      condition:conditionForPercent(x.ui.max>0?(x.ui.used/x.ui.max)*100:0),
       // 워치 시작 카드 '사용/남음' 줄(폰 히어로 kmRow 미러) — 반올림 정수 km.
       usedKm:Math.max(0,Math.round(x.ui.used)),
       maxKm:Math.max(0,Math.round(x.ui.max)),
@@ -1810,7 +1811,6 @@ function Main(){
       <RunGoalScreen
         shoeBrand={pendingShoe.ui.brand}
         shoeLabel={pendingShoe.ui.model||pendingShoe.ui.brand}
-        shoeCondition={pendingShoe.ui.condition}
         remainKm={Math.max(0,pendingShoe.ui.max-pendingShoe.ui.used)}
         // 신발 행 탭 → 여기서 바로 신발 전환(런 시작=선택 확정 지점의 마지막 교정 기회).
         // 활성(비보관) 신발만. 전환 시 홈 선택 신발도 함께 반영(사용 중 일관).
@@ -1994,7 +1994,7 @@ function Main(){
         )}
         {tab===1&&(
           <ShoesScreen
-            shoes={uiShoes} runs={uiRuns} totals={shoeTotals} activeIdx={shoesActiveIdx}
+            shoes={uiShoes} runs={uiRuns} totals={shoeTotals}
             unit={unit} weightKg={weightKg} surfaceOf={surfaceOf}
             onAddShoe={()=>setOverlay('add')} onTab={setTab}
             onRename={updateShoeName} onDelete={deleteShoe} onRetire={retireShoe}

@@ -21,7 +21,9 @@ export type WatchShoePayload = {
   model: string;
   /** 남은 수명 % (0–100). */
   lifePct: number;
-  /** 컨디션 '양호'|'주의'|'교체' — 워치 도트 의미색 매핑. */
+  /** 컨디션 '양호'|'주의'|'교체' — 워치 도트 의미색 매핑. 구버전 워치 호환 계약이라
+   *  폰 UI 가 4단계 wearTier 로 이행(2026-07-11)한 뒤에도 3단계 값을 계속 보낸다
+   *  (App 이 conditionForPercent 로 직접 파생 — 임계 80/90 은 4단계와 동일). */
   condition: string;
   /** 사용 거리 km(반올림 정수) — 워치 시작 카드 '사용/남음' 줄. */
   usedKm: number;

@@ -15,7 +15,7 @@ import { RunCard, RunDetail } from './HistoryScreen.rn';
 import { FuelGauge } from './FuelGauge';
 import FirstShoeScreen from './FirstShoeScreen.rn';
 import { Unit, displayNum } from './lib/units';
-import { wearTier, WearTierTone } from './lib/shoe';
+import { wearTier, WearTierTone, SHOE_REPLACE_PCT } from './lib/shoe';
 import { assessShoeInjuryRisk } from './lib/injury';
 import { buildWearView, forecastConfidenceKo, forecastLineKo, type ReplacementForecast, type Surface } from './lib/wearView';
 import { findShoeClass, typeLabel, purposeSentenceKo } from './data/shoeClass';
@@ -144,7 +144,9 @@ function ShoeDetail({
   // 트리거를 접는다(kept). 영속 데이터·런/신발은 건드리지 않는다.
   const [flowOpen, setFlowOpen] = useState(false);
   const [kept, setKept] = useState(false);
-  const atLifespan = shoe.condition === '교체';
+  // 수명 도달 판정 = 사용률 임계 숫자 비교(구 3단계 condition==='교체' 폐지, 2026-07-11).
+  // 임계 90%는 wearTier '교체 권장'·교체 알림과 동일(SHOE_REPLACE_PCT 단일 소스).
+  const atLifespan = detailWearPct >= SHOE_REPLACE_PCT;
   const keepsakeReady = !retired && !!rawShoe && !!progressionCtx;
 
   const saveName = () => {
@@ -257,7 +259,6 @@ function ShoeDetail({
             remainLabel={String(remain)}
             unit={unit}
             fillPct={shoe.max > 0 ? Math.min(1, shoe.used / shoe.max) : 0}
-            condition={shoe.condition}
             usedLabel={String(usedDisp)}
             maxLabel={String(maxDisp)}
           />
@@ -410,7 +411,7 @@ function ShoeDetail({
 }
 
 // ── locker ─────────────────────────────────────────────────────────────────
-function ShoeCard({ shoe, featured, onPress, onPlay, unit, pace: _pace, forecast }: { shoe: Shoe; featured: boolean; onPress: () => void; onPlay?: () => void; unit: Unit; pace?: string; forecast?: ReplacementForecast | null }) {
+function ShoeCard({ shoe, onPress, onPlay, unit, pace: _pace, forecast }: { shoe: Shoe; onPress: () => void; onPlay?: () => void; unit: Unit; pace?: string; forecast?: ReplacementForecast | null }) {
   // 교체 예측 한 줄(#2) — '약 N주 후 교체 예상' / 임박(overdue). ok·overdue 일 때만.
   // ok 예측은 8주 이내로 임박했을 때만(상세와 동일 — 등장이 곧 신호). overdue 는 항상.
   const fcNear = forecast?.reason === 'ok' && forecast.weeksRemaining != null && forecast.weeksRemaining <= 8;
@@ -440,17 +441,18 @@ function ShoeCard({ shoe, featured, onPress, onPlay, unit, pace: _pace, forecast
       accessibilityActions={!retired && onPlay ? [{ name: 'run', label: `${shoe.brand} ${shoe.model}로 달리기` }] : undefined}
       onAccessibilityAction={e => { if (e.nativeEvent.actionName === 'run') onPlay?.(); }}
       style={({ pressed }) => [s.shoeCard, retired && s.shoeCardRetired, pressed && s.pressed]}>
-      {/* 코너 페이드 헤어라인 — 사용중 카드는 구 20% 보더의 시감을 intensity 로 유지
-          (0.07×2.85≈0.2), 기본 8%≈×1.15, 보관 5%≈×0.7(사용자 애착 스펙 보존). */}
-      <GlassEdge glints={false} radius={RADIUS.lg} intensity={featured ? 2.85 : retired ? 0.7 : 1.15} />
-      {/* 상단: 좌(브랜드·사용중·모델) ↔ 우(컨디션 위 · 화살표/▶ 아래) — 사진 정합 */}
+      {/* 코너 페이드 헤어라인 — 전 카드 동일(2026-07-11 헤어라인 통일: 구 '사용중' 카드의
+          20% 시감을 theme.GLASS.edgeBase 로 승격, 카드별 intensity 차등 폐지). 보관 카드는
+          shoeCardRetired 의 카드 전체 opacity 로 함께 가라앉는다. */}
+      <GlassEdge glints={false} radius={RADIUS.lg} />
+      {/* 상단: 좌(브랜드·모델) ↔ 우(컨디션 위 · 화살표/▶ 아래) — 사진 정합 */}
       <View style={s.shoeTopSection}>
         <View style={{ flex: 1, minWidth: 0 }}>
           <View style={[s.row, { flexShrink: 1, minWidth: 0 }]}>
             <Text style={s.shoeBrand}>{shoe.brand}</Text>
             {!!cardType && <View style={s.cardTypeChip}><Text style={s.cardTypeChipText}>{cardType}</Text></View>}
-            {retired ? <Pill tone="dim" label="보관됨" />
-              : featured && <Text style={s.shoeUsing}>· 사용 중</Text>}
+            {/* '사용 중' 라벨 제거(사용자 확정 2026-07-11) — 카드 간 구분 없이 동일 취급. */}
+            {retired && <Pill tone="dim" label="보관됨" />}
           </View>
           <Text style={s.shoeModel} numberOfLines={2}>{shoe.model}</Text>
         </View>
@@ -501,7 +503,7 @@ function ShoeCard({ shoe, featured, onPress, onPlay, unit, pace: _pace, forecast
 
 
 export default function ShoesScreen({
-  shoes = SHOES, runs = [], totals = {}, activeIdx = 0, unit = 'km', weightKg, surfaceOf, onAddShoe, onTab, onRename, onDelete, onRetire, onSetMaxKm, onStartRun,
+  shoes = SHOES, runs = [], totals = {}, unit = 'km', weightKg, surfaceOf, onAddShoe, onTab, onRename, onDelete, onRetire, onSetMaxKm, onStartRun,
   detailShoeId, onConsumeDetail,
   rawShoes, rawRuns, progressionCtx, equippedTitle, onRetiredKeepsake, now, userName,
   forecasts,
@@ -513,7 +515,7 @@ export default function ShoesScreen({
   forecasts?: Record<string, ReplacementForecast | null>;
   runs?: Run[];
   totals?: Record<number, ShoeTotals>;
-  activeIdx?: number;
+  // (activeIdx '사용 중' 강조 prop 제거 2026-07-11 — 카드 간 구분 없이 동일 취급.)
   // 실효 마모/교체 예측 보정값(상세 화면 전달). 체중=settings.weightKg 재사용,
   // surfaceOf=런별 노면 태그 조회. 둘 다 선택(미제공 시 기준 1.0·road).
   weightKg?: number;
@@ -593,7 +595,7 @@ export default function ShoesScreen({
   }
 
   // 교체 예측 기반 정렬·요약(#2). 교체 임박(overdue → ≤3주)일수록 상단. i(원본 인덱스)는
-  // 정렬과 무관하게 보존되어 totals[i]/setDetail(i)/featured 가 그대로 맞다.
+  // 정렬과 무관하게 보존되어 totals[i]/setDetail(i)가 그대로 맞다.
   const fcOf = (sh: Shoe): ReplacementForecast | null => (sh.id ? forecasts?.[sh.id] ?? null : null);
   const isSoon = (fc: ReplacementForecast | null) =>
     !!fc && (fc.reason === 'overdue' || (fc.reason === 'ok' && fc.weeksRemaining != null && fc.weeksRemaining <= 3));
@@ -639,7 +641,6 @@ export default function ShoesScreen({
           <ShoeCard
             key={sh.id || i}
             shoe={sh}
-            featured={i === activeIdx}
             unit={unit}
             pace={totals[i]?.avgPace}
             forecast={fcOf(sh)}
@@ -680,15 +681,14 @@ const s = StyleSheet.create({
   // 재조정했다 — 같은 pct 를 두 번 그리던 중복을 없애 시선이 링에 모인다.
   // 목업 정합: 카드 배경을 near-black(CARD_DIM)에서 살짝 떠 보이는 회색(HERO_BG — 홈
   // 히어로 카드와 동일 톤)으로 올려 black-on-black 을 피한다.
-  // 보더 → 코너 페이드 헤어라인(GlassEdge glints=false, 2026-07-10 통일 스윕). 상태별
-  // 밝기(사용중 20% · 기본 8% · 보관 5%)는 GlassEdge intensity 로 재현(JSX 쪽).
+  // 보더 → 코너 페이드 헤어라인(GlassEdge glints=false, 2026-07-10 통일 스윕).
+  // 2026-07-11: 카드별 intensity 차등 폐지 — 전 카드 GLASS.edgeBase(0.2) 단일 시감.
   shoeCard: { backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderCurve: 'continuous', overflow: 'hidden', padding: rs(16) },
   shoeCardRetired: { opacity: 0.55 },
   // 상단: 좌(브랜드·모델) ↔ 우(컨디션 위 · ▶/화살표 아래) — 사진 정합
   shoeTopSection: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: rv(10) },
   shoeRightCol: { alignItems: 'flex-end', gap: rv(10), flexShrink: 0 },
   shoeBrand: { color: T3, fontFamily: DISPLAY, fontSize: TYPE.caption.fontSize, fontWeight: '500', letterSpacing: 1.3 },
-  shoeUsing: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500' },
   shoeModel: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.title.fontSize, fontWeight: '700', letterSpacing: -0.5, lineHeight: rf(27), marginTop: rv(4) },
   shoeCondRow: { flexDirection: 'row', alignItems: 'center', gap: rv(8) },
   // 종류 칩(카본 레이싱 등) — 브랜드 옆

@@ -264,7 +264,6 @@ test('addShoe 는 생성 신발 레코드에 updatedAt 을 찍는다(id/name/max
       model: 'Pegasus',
       max: 600,
       used: 50,
-      condition: '양호',
     });
   });
   await tick(5);

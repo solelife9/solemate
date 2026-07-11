@@ -89,7 +89,7 @@ async function toLiveRun() {
   // 홈에 '러닝 시작' CTA 가 뜨려면 REST 목이 아니라 부팅 캐시에 활성 신발을 시드해야 한다.
   mockBackendWithShoe();
   await seedBootCache(
-    [{id: 's1', brand: 'Nike', model: 'Pegasus', used: 50, max: 600, condition: '양호'}],
+    [{id: 's1', brand: 'Nike', model: 'Pegasus', used: 50, max: 600}],
     [],
   );
   let renderer!: ReactTestRenderer.ReactTestRenderer;
@@ -294,7 +294,7 @@ test('② 기간 세그먼트 항목은 접근성 터치 타깃(시각 높이 + 
 // ── ③ ShoesScreen 신발 카드: 중복 진행바 제거, 원형 링 유지 ────────────────────
 const SHOES: Shoe[] = [
   // used 100 / max 500 → 잔여 400km, 잔여율 80% → 옛 trackFill width '80%'.
-  {id: 's1', brand: 'Nike', model: 'Pegasus 41', used: 100, max: 500, condition: '양호'},
+  {id: 's1', brand: 'Nike', model: 'Pegasus 41', used: 100, max: 500},
 ];
 
 test('③ 신발 카드는 라벨바(사용/총 수명 km)를 렌더한다 — 목업 LifeBar(원형 링 대체)', () => {

@@ -64,7 +64,7 @@ function paddingTops(root: ReactTestRenderer.ReactTestInstance): number[] {
 }
 
 const SHOES: Shoe[] = [
-  {id: 's1', brand: 'Nike', model: 'Pegasus 41', used: 100, max: 500, condition: '양호'},
+  {id: 's1', brand: 'Nike', model: 'Pegasus 41', used: 100, max: 500},
 ];
 
 // ── 1) TabBar: accessible tab per item (role + label + selected) ──────────────

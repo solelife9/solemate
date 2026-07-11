@@ -1,6 +1,6 @@
 // ─── KeegoHome.tsx ───────────────────────────────────────────────
 // 홈 = 런처 + 가디언. 신발 카드 캐러셀(좌우 스와이프)에서 신은 신발을 고르고 한 탭으로
-// 러닝을 시작한다. 가디언은 고른 신발이 닳아 위험할 때(주의/교체)만 끼어든다.
+// 러닝을 시작한다. 가디언은 고른 신발이 닳아 위험할 때(교체 고려/교체 권장)만 끼어든다.
 //
 // 프리미엄 표면은 '블러'가 아니라 '구조'로 낸다(중요):
 //   · 카드 = SVG 세로 그라데이션 표면(위가 밝은 상승감) + 컨디션 색 상단 글로우
@@ -26,7 +26,8 @@ import {
   type Shoe,
 } from '../theme';
 import {GlassEdge, ShoeGlyph} from '../primitives';
-import {shoeHealth, wearTier, conditionForPercent, type RunLike, KEEP_GOING_REPLACE} from '../lib/shoe';
+import {shoeHealth, wearTier, type RunLike, KEEP_GOING_REPLACE} from '../lib/shoe';
+import {findShoeClass, typeLabel} from '../data/shoeClass';
 import {ringColor} from '../lib/ringColor';
 import {displayNum, type Unit} from '../lib/units';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -68,7 +69,9 @@ export default function KeegoHome({shoes, runs = [], onStartRun, onOpenShoe, onO
 
   const selected = shoes[index];
   const selHealth = selected ? shoeHealth(selected as any, runs) : null;
-  const selCond = selHealth ? conditionForPercent(selHealth.percentUsed) : '양호';
+  // 가디언 노출 판정 = wearTier 4단계(2026-07-11 단일화): consider(80%+)부터 개입,
+  // replace(90%+)면 danger 톤 — 구 3단계 주의/교체 경계(80/90)와 동일 시점.
+  const selTier = selHealth ? wearTier(selHealth.percentUsed) : null;
 
   return (
     <View style={styles.root}>
@@ -117,9 +120,9 @@ export default function KeegoHome({shoes, runs = [], onStartRun, onOpenShoe, onO
         ))}
       </View>
 
-      {/* GUARDIAN — 주의/교체일 때만 */}
-      {selHealth && selCond !== '양호' ? (
-        <Guardian danger={selCond === '교체'} pct={selHealth.percentUsed} />
+      {/* GUARDIAN — 교체 고려(80%+)/교체 권장(90%+)일 때만 */}
+      {selHealth && selTier && (selTier.key === 'consider' || selTier.key === 'replace') ? (
+        <Guardian danger={selTier.key === 'replace'} pct={selHealth.percentUsed} />
       ) : null}
     </View>
   );
@@ -152,6 +155,10 @@ export function ShoeCard({
   // 거리는 사용자 단위(km/mi)로 표시한다 — 저장은 km, 표기만 환산(displayNum).
   const usedText = `${displayNum(h.usedKm, unit)}/${displayNum(shoe.max, unit)}${unit}`;
   const remainText = h.remainingKm > 0 ? `${displayNum(h.remainingKm, unit)}${unit} 남음` : '수명 초과';
+  // 카테고리 라벨 = 시드 DB(data/shoeClass)의 실제 종류(카본 레이싱/데일리 등)만.
+  // 매칭 없으면 라벨 자체를 숨긴다 — 전부 러닝화인 앱에서 '러닝화' 플레이스홀더는
+  // 정보값 0(사용자 확정 2026-07-11, 신발탭 종류 칩과 동일 소스).
+  const cat = typeLabel(findShoeClass(shoe.brand, shoe.model)?.type);
 
   // 중앙 카드 강조: 이웃은 살짝 축소 + 흐리게.
   const inputRange = [(i - 1) * stride, i * stride, (i + 1) * stride];
@@ -199,7 +206,7 @@ export function ShoeCard({
           {/* 상단: 브랜드/모델(좌) · 컨디션(우) */}
           <View style={styles.cardTop}>
             <View style={{flexShrink: 1}}>
-              <Text style={styles.cardBrand}>{shoe.brand} · {catOf(shoe)}</Text>
+              <Text style={styles.cardBrand}>{shoe.brand}{cat ? ` · ${cat}` : ''}</Text>
               <Text style={styles.cardModel} numberOfLines={1}>{shoe.model}</Text>
             </View>
             {/* 컨디션 = 점 + 텍스트만(칩 박스 제거 — 배지보다 조용한 표기, 폴리싱 2026-07-02).
@@ -345,10 +352,8 @@ function Guardian({danger, pct}: {danger: boolean; pct: number}) {
 // 폐지 — 표면은 styles.card 의 반투명 채움, 빛은 primitives.GlassEdge(코너 글린트)가
 // 담당한다. 홈 카드·러닝 시작 버튼·전역 CTA(Button)가 같은 빛(theme.GLASS)을 공유한다.
 
-// 카테고리 라벨(카본/데일리 등)이 Shoe 에 없을 수 있어 안전 폴백.
-function catOf(shoe: any): string {
-  return shoe?.category ?? shoe?.cat ?? '러닝화';
-}
+// (구 catOf '러닝화' 플레이스홀더 폴백은 2026-07-11 제거 — 카테고리는 data/shoeClass
+//  매칭 시에만 표시하고, 없으면 라벨을 렌더하지 않는다.)
 
 const styles = StyleSheet.create({
   root: {flex: 1, backgroundColor: BG, paddingTop: rv(8)},

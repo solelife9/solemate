@@ -86,7 +86,6 @@ export default function AddShoeScreen({
       model: picked.model.trim(),
       max,
       used: Number(used) || 0,
-      condition: '양호',
       ...(photoUri ? { photoUri } : {}),
     });
   };

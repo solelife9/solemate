@@ -66,8 +66,8 @@ const hero = (root: ReactTestRenderer.ReactTestInstance) =>
   root.find((n: any) => n && n.props && n.props.testID === 'home-hero');
 
 const SHOES: Shoe[] = [
-  {brand: 'Nike', model: 'Pegasus 41', used: 100, max: 500, condition: '양호'}, // remain 400 → 80%
-  {brand: 'Hoka', model: 'Clifton 9', used: 400, max: 500, condition: '주의'}, // remain 100 → 20%
+  {brand: 'Nike', model: 'Pegasus 41', used: 100, max: 500}, // remain 400 → 80%
+  {brand: 'Hoka', model: 'Clifton 9', used: 400, max: 500}, // remain 100 → 20%
 ];
 
 // ── 1) CTA → Button wiring preserved: press → onStart(activeIdx) ──────────────
@@ -144,3 +144,26 @@ test("KeegoWordmark renders lowercase 'keego' within HomeScreen itself", () => {
   expect(textOf(root)).toContain('keego');
 });
 
+
+// ── 4) 히어로 카테고리 라벨 — 시드 DB 종류만, '러닝화' 플레이스홀더 금지(2026-07-11) ──
+describe('hero category label comes from the seed DB, never the 러닝화 placeholder', () => {
+  test('카탈로그 매칭 신발(Pegasus 41)은 브랜드 옆에 실제 종류(데일리)를 보여준다', () => {
+    const root = render(
+      <HomeScreen shoes={SHOES} activeIdx={0} onSelect={jest.fn()} />,
+    ).root;
+    const txt = textOf(hero(root));
+    expect(txt).toContain('데일리'); // data/shoeClass: Nike Pegasus 41 → 데일리
+    expect(txt).not.toContain('러닝화'); // 플레이스홀더 미노출
+  });
+
+  test('카탈로그 미매칭 신발은 카테고리 라벨 자체를 렌더하지 않는다(러닝화 폴백 금지)', () => {
+    const unknown: Shoe[] = [{brand: 'Zzz', model: 'Phantom X', used: 10, max: 500}];
+    const root = render(
+      <HomeScreen shoes={unknown} activeIdx={0} onSelect={jest.fn()} />,
+    ).root;
+    const txt = textOf(hero(root));
+    expect(txt).toContain('Zzz'); // 브랜드는 그대로
+    expect(txt).not.toContain('러닝화'); // 정보값 0 플레이스홀더는 사라져야 한다
+    expect(txt).not.toContain('· '); // 카테고리 구분자도 라벨과 함께 숨김 (주의: 브랜드 줄 한정이 아닌 카드 전체 텍스트 검사라, 다른 '· ' 사용이 생기면 이 단언을 조정할 것)
+  });
+});

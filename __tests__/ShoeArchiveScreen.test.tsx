@@ -33,8 +33,8 @@ function render(props: any) {
 }
 
 const ARCHIVED: Shoe[] = [
-  {id: 'a1', brand: 'Nike', model: 'Pegasus 41', used: 320, max: 600, condition: '양호', retired: true},
-  {id: 'a2', brand: 'Hoka', model: 'Clifton 9', used: 540, max: 600, condition: '교체', retired: true},
+  {id: 'a1', brand: 'Nike', model: 'Pegasus 41', used: 320, max: 600, retired: true},
+  {id: 'a2', brand: 'Hoka', model: 'Clifton 9', used: 540, max: 600, retired: true},
 ];
 
 describe('ShoeArchiveScreen 신발 보관함', () => {

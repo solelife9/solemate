@@ -23,7 +23,7 @@ import Svg, { Path } from 'react-native-svg';
 // · text→T1–T4 · hair→SEP · 그라데이션→GRAD_TOP/GRAD_BOT. 폰트 UI/DP → FONT/DISPLAY.
 // (시각 동등: 다크+오렌지 유지)
 import {
-  BG, CARD, HERO_BG, ACCENT, GOOD, WARN, DANGER, T1, T2, T3, T4, SEP, CARD_BORDER,
+  BG, CARD, HERO_BG, ACCENT, T1, T2, T3, T4, SEP, CARD_BORDER,
   FONT, DISPLAY, RADIUS, SCRIM, withAlpha, type Shoe, TYPE, HERO, GLASS,
 } from './theme';
 // lib/haptics 배선: '러닝 시작' CTA(런 시작) → tap.
@@ -64,11 +64,13 @@ const CFG: Record<'km' | 'min', { min: number; max: number; step: number; major:
 };
 
 export default function RunGoalScreen({
-  shoeBrand = 'NIKE', shoeLabel = 'Alphafly 3', shoeCondition = '양호', remainKm = 382,
+  shoeBrand = 'NIKE', shoeLabel = 'Alphafly 3', remainKm = 382,
   shoes, selectedShoeId, onChangeShoe,
   onBack, onStart,
 }: {
-  shoeBrand?: string; shoeLabel?: string; shoeCondition?: '양호' | '주의' | '교체'; remainKm?: number;
+  // (구 shoeCondition 3단계 prop 제거 2026-07-11 — 상태는 선택 신발의 used/max 로
+  //  wearTier 4단계를 파생한다. 신발 목록이 없으면 상태 표기를 숨긴다.)
+  shoeBrand?: string; shoeLabel?: string; remainKm?: number;
   /** 활성 신발 목록 — 주어지고 2켤레 이상이면 신발 행 탭으로 여기서 바로 바꿀 수 있다
       (런 시작 = 선택 확정 지점이므로 이 화면이 마지막 교정 기회). 미주입이면 표시 전용. */
   shoes?: Shoe[];
@@ -188,18 +190,15 @@ export default function RunGoalScreen({
     setKpOpen(false);
   };
   // 신발 상태 — 홈 히어로와 동일한 4단계 wearTier(사용률%)가 단일 진실원(2026-07-04).
-  // 이전엔 3단계 condition('양호'…)을 그대로 보여 홈은 '최상'인데 여기선 '양호'로
-  // 어긋났다. 선택 신발의 used/max 로 홈과 같은 라벨·색을 파생하고, 신발 목록이 없는
-  // standalone 렌더에서만 legacy condition 으로 폴백한다.
+  // 2026-07-11 단일화: 3단계 condition 폴백 폐지 — 선택 신발의 used/max 로만 라벨·색을
+  // 파생하고, 신발 목록이 없는 standalone 렌더에선 상태 표기를 숨긴다(플레이스홀더 금지).
   const selShoe = (shoes ?? []).find(sh => sh.id === selectedShoeId);
   const selPct = selShoe && selShoe.max > 0 ? (selShoe.used / selShoe.max) * 100 : null;
   const selTier = selPct != null ? wearTier(selPct) : null;
-  const condLabel = selTier ? selTier.label : shoeCondition;
+  const condLabel = selTier ? selTier.label : null;
   // 점 색 = 홈 히어로와 동일한 연속 색(ringColor.to — 새 신발일수록 파랑). 이산 톤
   // (GOOD 초록)을 쓰면 홈 '최상' 파란 점과 어긋난다(사용자 지적 2026-07-04).
-  const condColor = selPct != null
-    ? ringColor(selPct).to
-    : shoeCondition === '교체' ? DANGER : shoeCondition === '주의' ? WARN : GOOD;
+  const condColor = selPct != null ? ringColor(selPct).to : null;
   const half = vpW / 2;
   // 런 시작: 햅틱(tap) → onStart(RunGoal). 거리/시간/스피드(km별 페이스 플랜)로 분기.
   const startRun = () => {
@@ -337,15 +336,17 @@ export default function RunGoalScreen({
           style={s.shoeSel}
           onPress={switchable ? () => setShoePickerOpen(true) : undefined}
           accessibilityRole="button"
-          accessibilityLabel={`신발 선택: ${shoeBrand} ${shoeLabel}, 상태 ${condLabel}${remainKm != null ? `, 남은 수명 ${Math.round(remainKm)}킬로미터` : ''}${switchable ? ', 탭하면 다른 신발로 변경' : ''}`}>
+          accessibilityLabel={`신발 선택: ${shoeBrand} ${shoeLabel}${condLabel ? `, 상태 ${condLabel}` : ''}${remainKm != null ? `, 남은 수명 ${Math.round(remainKm)}킬로미터` : ''}${switchable ? ', 탭하면 다른 신발로 변경' : ''}`}>
           <GlassEdge glints={false} radius={RADIUS.lg} />
           <View style={s.shoeThumb}><ShoeGlyph color={T2} size={ri(24)} /></View>
           <View style={{ flex: 1, minWidth: 0 }}>
             <Text style={s.shoeBrand}>{shoeBrand}</Text>
             <Text style={s.shoeModel} numberOfLines={1}>{shoeLabel}</Text>
             <View style={s.shoeCond}>
-              <View style={[s.shoeDot, { backgroundColor: condColor }]} />
-              <Text style={s.shoeCondText}>{condLabel}{remainKm != null ? ` · 남은 수명 ${Math.round(remainKm)}km` : ''}</Text>
+              {condColor != null && <View style={[s.shoeDot, { backgroundColor: condColor }]} />}
+              <Text style={s.shoeCondText}>
+                {[condLabel, remainKm != null ? `남은 수명 ${Math.round(remainKm)}km` : null].filter(Boolean).join(' · ')}
+              </Text>
             </View>
           </View>
           {switchable && <Icon name="forward" size={ri(20)} color={T4} />}

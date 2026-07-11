@@ -5,7 +5,6 @@ import {
   isRetired,
   conditionForPercent,
   clampMaxKm,
-  tierBadge,
   wearTier,
   reconcileShoeAlerts,
   DEFAULT_MAX_KM,
@@ -62,12 +61,12 @@ describe('parseShoeName', () => {
 describe('shoeHealth — used = start_km + Σ(this shoe runs)', () => {
   const shoe = {id: 's1', max_km: 700, start_km: 0};
 
-  test('새 신발: usedKm 0, remaining 전체, percentUsed 0, 양호', () => {
+  test('새 신발: usedKm 0, remaining 전체, percentUsed 0 → wearTier 최상', () => {
     const h = shoeHealth(shoe, []);
     expect(h.usedKm).toBe(0);
     expect(h.remainingKm).toBe(700);
     expect(h.percentUsed).toBe(0);
-    expect(h.condition).toBe('양호');
+    expect(wearTier(h.percentUsed).key).toBe('best');
   });
 
   test('해당 shoe_id 런만 누적하고 다른 신발은 무시한다', () => {
@@ -96,7 +95,7 @@ describe('shoeHealth — used = start_km + Σ(this shoe runs)', () => {
     const h = shoeHealth(shoe, [{shoe_id: 's1', km: 800}]);
     expect(h.remainingKm).toBe(0);
     expect(h.percentUsed).toBeGreaterThan(100);
-    expect(h.condition).toBe('교체');
+    expect(wearTier(h.percentUsed).key).toBe('replace');
   });
 
   test('max_km가 없으면 기본 카테고리 수명을 쓴다', () => {
@@ -117,7 +116,7 @@ describe('shoeHealth — 서버 truth(total_km) 우선(audit#9/#10)', () => {
     expect(h.usedKm).toBe(540);
     expect(h.remainingKm).toBeCloseTo(160, 5);
     expect(h.percentUsed).toBeCloseTo(77.14, 1);
-    expect(h.condition).toBe('양호'); // 77.1% < 80%(주의 임계) → 양호(P1 #3 정렬)
+    expect(wearTier(h.percentUsed).key).toBe('good'); // 77.1% < 80%(교체 고려 임계)
   });
 
   test('서버 total_km은 로컬 런 합산을 덮어쓴다(이중 계산 방지)', () => {
@@ -147,13 +146,15 @@ describe('shoeHealth — 서버 truth(total_km) 우선(audit#9/#10)', () => {
       {shoe_id: 's1', km: 99}, // 미동기 로컬 런은 서버 truth로 무시
     ]);
     expect(h.usedKm).toBe(0);
-    expect(h.condition).toBe('양호');
+    expect(wearTier(h.percentUsed).key).toBe('best');
   });
 });
 
-describe('shoeHealth — 카테고리 수명 비례 condition 티어', () => {
+// conditionForPercent 는 워치 구버전 계약(WatchShoePayload.condition) 전용으로만
+// 남는다(2026-07-11 4단계 단일화) — 임계 80/90 이 wearTier 와 계속 정렬되는지 고정.
+describe('conditionForPercent — 워치 구버전 계약(3단계) 임계 보존', () => {
   const shoe = {id: 1, max_km: 700, start_km: 0};
-  const tierAt = (km: number) => shoeHealth(shoe, [{shoe_id: 1, km}]).condition;
+  const tierAt = (km: number) => conditionForPercent(shoeHealth(shoe, [{shoe_id: 1, km}]).percentUsed);
 
   test('80% 미만은 양호', () => {
     expect(tierAt(0)).toBe('양호');
@@ -172,6 +173,18 @@ describe('shoeHealth — 카테고리 수명 비례 condition 티어', () => {
     expect(conditionForPercent(SHOE_CAUTION_PCT)).toBe('주의');
     expect(conditionForPercent(SHOE_REPLACE_PCT - 0.01)).toBe('주의');
     expect(conditionForPercent(SHOE_REPLACE_PCT)).toBe('교체');
+  });
+
+  // 4단계 단일화의 핵심 불변식: 워치 3단계와 폰 4단계가 같은 임계(80/90)에서 꺾인다 —
+  // 워치 도트 색과 폰 라벨/알림 타이밍이 절대 어긋나지 않는다(안전 경고 시점 불변).
+  test('워치 3단계 ↔ 폰 wearTier 4단계 임계 정렬(80/90 동일)', () => {
+    for (const pct of [0, 49.9, 50, 79.9, 80, 89.9, 90, 110]) {
+      const three = conditionForPercent(pct);
+      const four = wearTier(pct).key;
+      expect(three === '교체').toBe(four === 'replace');
+      expect(three === '주의').toBe(four === 'consider');
+      expect(three === '양호').toBe(four === 'best' || four === 'good');
+    }
   });
 });
 
@@ -196,7 +209,7 @@ describe('shoeHealth — 삭제(tombstone) 런 제외 계약 (a2 집계-제외)'
     const h = shoeHealth(shoe, liveRecords(raw));
     expect(h.usedKm).toBeCloseTo(30, 5); // 삭제 런 100km 제외
     expect(h.remainingKm).toBeCloseTo(570, 5);
-    expect(h.condition).toBe('양호'); // 100km 가 새면 안 됐고, 수명 비례 티어도 그대로
+    expect(wearTier(h.percentUsed).key).toBe('best'); // 100km 가 새면 안 됐고, 수명 비례 티어도 그대로
   });
 
   test('한 신발의 모든 런이 삭제되면 거리/수명이 삭제분만큼 0으로 복귀', () => {
@@ -270,17 +283,8 @@ describe('clampMaxKm — 신발 수명 범위 보정', () => {
   });
 });
 
-describe('tierBadge — 앱내 배지 매핑', () => {
-  test('양호는 배지 없음(null)', () => {
-    expect(tierBadge('양호')).toBeNull();
-  });
-  test('주의 → warn 톤', () => {
-    expect(tierBadge('주의')).toEqual({label: '주의', tone: 'warn'});
-  });
-  test('교체 → danger 톤', () => {
-    expect(tierBadge('교체')).toEqual({label: '교체', tone: 'danger'});
-  });
-});
+// (tierBadge 3단계 배지 테스트 삭제 2026-07-11 — 배지 자체가 wearTier 4단계 칩으로
+//  대체되어 lib 에서 제거됨.)
 
 describe('wearTier — 마모 4단계(사용률%)', () => {
   test('0~50% → 최상(🟢/good)', () => {

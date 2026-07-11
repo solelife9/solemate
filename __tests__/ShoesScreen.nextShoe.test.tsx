@@ -44,13 +44,13 @@ function pressByLabel(root: ReactTestRenderer.ReactTestInstance, label: string) 
 // 교체임박(overdue): max(=수명) 100km 대비 실효 마모 200km → kmRemaining ≤ 0 →
 // forecast.reason 'overdue' → shouldRecommendNextShoe true. (created_at 미설정이라
 // age wear 0, duration 미설정이라 pace/surface 보정 1.0 — dist 가 그대로 실효 마모.)
-const WORN: Shoe = {id: 'a', brand: 'Nike', model: 'Pegasus 41', used: 690, max: 100, condition: '교체'};
+const WORN: Shoe = {id: 'a', brand: 'Nike', model: 'Pegasus 41', used: 690, max: 100};
 const WORN_RUNS: Run[] = [
   {id: 'r1', date: '5월 28일', day: '수', dateNum: '28', dist: 200, pace: "5'00\"", time: '40:00', shoe: 0, cal: 0, cadence: 0, bpm: 0, elev: 0},
 ];
 
 // 여유: 충분한 수명 + 런 기록 없음 → 실효 마모 0 → 추천 트리거 미충족(카드 미노출).
-const ROOMY: Shoe = {id: 'b', brand: 'Nike', model: 'Pegasus 41', used: 50, max: 700, condition: '양호'};
+const ROOMY: Shoe = {id: 'b', brand: 'Nike', model: 'Pegasus 41', used: 50, max: 700};
 
 const openDetail = (shoe: Shoe, runs: Run[] = []) => {
   const root = render(<ShoesScreen shoes={[shoe]} runs={runs} />).root;
