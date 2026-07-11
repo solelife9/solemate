@@ -10,9 +10,9 @@ import React, {useState} from 'react';
 import { rf, rs, ri, rv } from './lib/responsive';
 import {View, Text, Pressable, StyleSheet} from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import {CARD, CARD_HI, ACCENT, GOOD, T1, T2, T3, SEP, FONT, DISPLAY, RADIUS, withAlpha} from './theme';
+import {CARD, CARD_HI, ACCENT, GOOD, T1, T2, T3, SEP, FONT, DISPLAY, RADIUS, GLASS, withAlpha} from './theme';
 import {SPORT_VIOLET} from './theme';
-import {Ring, Pill, Stepper} from './primitives';
+import {Ring, Pill, Stepper, GlassEdge} from './primitives';
 import {ChallengeRun, ChallengeProgressResult} from './lib/challenges';
 import {
   ExtChallenge,
@@ -97,6 +97,9 @@ export function SmartChallengeCard({
   const step = (delta: number) => onEditTargetKm?.(Math.max(SMART_KM_MIN, target + delta));
   return (
     <View style={s.smartCard} testID="smart-challenge">
+      {/* 카드 테두리 = 전 화면 공통 유리 헤어라인(GlassEdge) — ACCENT RN 보더 폐지,
+          다른 카드와 동일 문법(사용자 지적 2026-07-11 밤: 이 카드만 튀었다). */}
+      <GlassEdge glints={false} radius={RADIUS.xl} />
       <View style={s.smartHead}>
         <Pill tone="accent" icon="sparkles" label="주간 목표" testID="smart-challenge-tag" />
         {p.completed && !editing && (
@@ -267,7 +270,8 @@ const s = StyleSheet.create({
   extWrap: {marginTop: rv(18), gap: rv(10)},
   extLabel: {paddingHorizontal: rs(4), paddingBottom: rv(2)},
   extProgress: {color: T1, fontFamily: DISPLAY, fontSize: rf(18), letterSpacing: 0.2, marginTop: rv(4)},
-  smartCard: {backgroundColor: CARD, borderRadius: RADIUS.xl, borderCurve: 'continuous', padding: rs(16), gap: rv(12), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.45)},
+  // 마이탭 공통 카드 문법(GLASS.fill + GlassEdge 헤어라인) — ACCENT RN 보더/솔리드 CARD 폐지.
+  smartCard: {backgroundColor: GLASS.fill, borderRadius: RADIUS.xl, borderCurve: 'continuous', padding: rs(16), gap: rv(12), overflow: 'hidden'},
   smartHead: {flexDirection: 'row', alignItems: 'center', gap: rv(8)},
   smartBody: {flexDirection: 'row', alignItems: 'center', gap: rv(16)},
   smartTitle: {color: T1, fontFamily: FONT, fontSize: rf(18), fontWeight: '700', letterSpacing: -0.2},

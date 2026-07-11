@@ -246,18 +246,24 @@ export function GlassEdge({
     const {width, height} = e.nativeEvent.layout;
     // 정확한 레이아웃 치수 사용(내림 금지) — 내림하면 소수점 높이 카드(러닝기록 등)에서
     // SVG 가 1px 짧아져 아래 라인이 바닥에서 떠 보였다(기기 발견 2026-07-11).
-    // 하변 클리핑은 스트로크를 1px 안쪽(edge 의 x/y=sw)에 그려 이미 방지된다.
+    // 경계 클리핑은 스트로크 '바깥 모서리'를 1px 안쪽에 그려 방지한다(아래 edge).
     setS({w: width, h: height});
   };
-  // 스트로크는 1px 안쪽에 그린다 — 절반(0.5px) 들임은 기기 픽셀 그리드에서 경계 변이
-  // 클립될 수 있다(위와 동일 원인). 1px 안쪽이면 어떤 배율에서도 네 변이 온전하다.
-  const edge = (sw: number) => ({
-    x: sw,
-    y: sw,
-    width: s.w - sw * 2,
-    height: s.h - sw * 2,
-    rx: Math.max(0, Math.min(radius - sw, (s.w - sw * 2) / 2)),
-  });
+  // 스트로크의 바깥 모서리가 정확히 1px 안쪽에 오도록 중심을 1+sw/2 들인다.
+  // 이전엔 중심을 sw(0.75)만 들여 바깥 모서리 여유가 0.375px 뿐이었다 — 뷰가 소수점
+  // 좌표에 놓여 픽셀 격자 반올림으로 우/하변이 최대 0.5px 잘리면 그 변의 헤어라인이
+  // 얇아지거나 통째로 사라졌다(기기 발견 2026-07-11 밤: 재개 버튼 우변·러닝 시작
+  // 버튼 하변). 1px 여유면 어떤 배율(2x/3x)·좌표에서도 네 변이 온전하다.
+  const edge = (sw: number) => {
+    const inset = 1 + sw / 2;
+    return {
+      x: inset,
+      y: inset,
+      width: s.w - inset * 2,
+      height: s.h - inset * 2,
+      rx: Math.max(0, Math.min(radius - inset, (s.w - inset * 2) / 2)),
+    };
+  };
   const op = (v: number) => Math.min(1, v * intensity);
   // 글린트 반경 — 타원(가로=폭·세로=높이 각 0.8): 빛이 인접 두 변을 따라 여행하다
   // 반대편 코너 전에 소멸. 원형 반경은 납작한 버튼에서 우상·좌하 코너까지 빛이 닿아
