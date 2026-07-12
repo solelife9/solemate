@@ -117,4 +117,16 @@ export const watchSession = {
       /* no-op */
     }
   },
+  /**
+   * 심박존 이탈 햅틱을 워치로 보낸다(#8). zoneCoach 가 음성 알림을 낼 때 짝으로 호출 —
+   * 'up'=목표보다 낮음(올려라), 'down'=높음(낮춰라)을 워치 방향 햅틱으로 전달한다.
+   * 워치 미도달·미페어링·구버전 네이티브면 조용히 no-op(진동은 실시간이라 큐잉 안 함).
+   */
+  zoneHaptic(dir: 'up' | 'down'): void {
+    try {
+      M?.sendZoneHaptic?.(dir);
+    } catch {
+      /* no-op — 햅틱 전송 실패가 러닝을 깨면 안 된다 */
+    }
+  },
 };

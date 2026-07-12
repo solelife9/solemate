@@ -17,6 +17,7 @@ const mockModule = {
   startWatchWorkout: jest.fn(async () => true),
   stopWatchWorkout: jest.fn(),
   updateShoeContext: jest.fn(),
+  sendZoneHaptic: jest.fn(),
 };
 
 function emit(event: string, payload: any) {
@@ -150,6 +151,24 @@ describe('onHeartRate — 기존 실시간 심박 계약 회귀 방지', () => {
   });
 });
 
+describe('zoneHaptic — 심박존 이탈 햅틱 전송(#8)', () => {
+  it('방향(up/down)을 네이티브에 그대로 넘긴다', () => {
+    const ws = loadWatchSession();
+    ws.zoneHaptic('up');
+    ws.zoneHaptic('down');
+    expect(mockModule.sendZoneHaptic).toHaveBeenNthCalledWith(1, 'up');
+    expect(mockModule.sendZoneHaptic).toHaveBeenNthCalledWith(2, 'down');
+  });
+
+  it('네이티브가 던져도 앱으로 전파하지 않는다(graceful)', () => {
+    const ws = loadWatchSession();
+    mockModule.sendZoneHaptic.mockImplementationOnce(() => {
+      throw new Error('bridge down');
+    });
+    expect(() => ws.zoneHaptic('up')).not.toThrow();
+  });
+});
+
 describe('모듈 부재(안드로이드/미링크) — 전부 no-op', () => {
   it('available=false, 구독은 해제 함수만, updateShoes 는 조용히 무시', () => {
     const ws = loadWatchSession(false);
@@ -161,5 +180,7 @@ describe('모듈 부재(안드로이드/미링크) — 전부 no-op', () => {
       ws.updateShoes([{id: 'x', brand: '', model: '', lifePct: 50, condition: '양호', usedKm: 0, maxKm: 0}]),
     ).not.toThrow();
     expect(mockModule.updateShoeContext).not.toHaveBeenCalled();
+    expect(() => ws.zoneHaptic('down')).not.toThrow();
+    expect(mockModule.sendZoneHaptic).not.toHaveBeenCalled();
   });
 });

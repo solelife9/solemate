@@ -2496,8 +2496,8 @@ function RunActiveScreen({shoe,insets,goalKm,goalMin=0,pacePlan=[],targetZone=0,
     const d=decideZoneCoach(zoneCoachRef.current,cur,targetZone,dt||1);
     zoneCoachRef.current=d.state;
     if(d.deviation!==zoneDeviation)setZoneDeviation(d.deviation);
-    if(d.announce==='down')runVoice.zoneDown(targetZone);
-    else if(d.announce==='up')runVoice.zoneUp(targetZone);
+    if(d.announce==='down'){runVoice.zoneDown(targetZone);watchSession.zoneHaptic('down');}
+    else if(d.announce==='up'){runVoice.zoneUp(targetZone);watchSession.zoneHaptic('up');}
     // eslint-disable-next-line react-hooks/exhaustive-deps
   },[elapsed]);
 

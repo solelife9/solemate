@@ -6,6 +6,9 @@
 //         전체(홈과 같은 최근착용순), "hrMax": Double, "hrRest": Double — 심박존 파라미터,
 //         "cmd": "stop" + "cmdAt" — 도달 불가 시 원격 종료 폴백 }
 //   · 폰 → 워치 message: { "cmd": "start" | "stop" } — 폰 러닝 시작/종료에 워치 연동.
+//   · 폰 → 워치 message: { "cmd": "zone_up" | "zone_down" } — 심박존 이탈 햅틱(#8).
+//       폰 zoneCoach 가 음성 알림을 낼 때 짝으로 전송 → 손목 방향 햅틱(올려/낮춰).
+//       실시간(진동은 지금 아니면 무의미)이라 큐잉 없이 도달 시에만 재생한다.
 //   · 워치 → 폰 message/context: { "bpm": Double } — 실시간 심박(기존 계약 유지).
 //   · 워치 → 폰 message/userInfo: { "type": "run", runId, shoeId, km, durationS,
 //       avgBpm, kcal, startMs, endMs } — 단독 러닝 완주 페이로드. reachable 이면
@@ -17,6 +20,7 @@
 import Foundation
 import Combine
 import WatchConnectivity
+import WatchKit
 
 /// 폰이 푸시하는 활성 신발(표시용 캐시). 폰 Shoe(brand/model/수명%)의 워치 미러.
 struct WatchShoe: Codable, Identifiable, Equatable {
@@ -141,6 +145,12 @@ final class WatchLink: NSObject, ObservableObject {
       }
     case "stop":
       WorkoutManager.shared.end()
+    case "zone_up":
+      // 목표존보다 낮음 → '올려라' 방향 햅틱. 러닝 중일 때만(무의미한 진동 방지).
+      if WorkoutManager.shared.isActive { WKInterfaceDevice.current().play(.directionUp) }
+    case "zone_down":
+      // 목표존보다 높음 → '낮춰라' 방향 햅틱.
+      if WorkoutManager.shared.isActive { WKInterfaceDevice.current().play(.directionDown) }
     default:
       break
     }

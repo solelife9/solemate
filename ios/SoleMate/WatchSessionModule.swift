@@ -135,6 +135,17 @@ class WatchSessionModule: RCTEventEmitter, WCSessionDelegate {
     }
   }
 
+  // 폰 → 워치: 심박존 이탈 햅틱(#8). zoneCoach 가 음성 알림을 낼 때 짝으로 호출된다.
+  // dir="up"(목표보다 낮음 → 올려라) / "down"(높음 → 낮춰라)을 워치 방향 햅틱으로 매핑.
+  // 진동은 '지금'이 아니면 무의미하므로 도달 가능할 때만 즉시 전송(큐잉/폴백 없음).
+  @objc(sendZoneHaptic:)
+  func sendZoneHaptic(_ dir: NSString) {
+    let cmd = (dir as String) == "up" ? "zone_up" : "zone_down"
+    let s = WCSession.default
+    guard s.activationState == .activated, s.isReachable else { return }
+    s.sendMessage(["cmd": cmd], replyHandler: nil, errorHandler: nil)
+  }
+
   // 폰 → 워치: 러닝 종료 시 워치 워크아웃도 종료(도달 가능하면 즉시, 아니면 컨텍스트 폴백).
   // cmdAt 을 함께 실어 직전 컨텍스트와 값이 달라지게 한다(동일 컨텍스트는 재전송 생략됨).
   @objc(stopWatchWorkout)
