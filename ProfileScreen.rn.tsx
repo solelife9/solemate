@@ -30,7 +30,7 @@ import {
 } from './lib/settings';
 import { NotifSettings, DEFAULT_NOTIF_SETTINGS } from './lib/notifications';
 import { requestPushPermission as defaultRequestPushPermission } from './lib/pushMessaging';
-import { BackupPayload, BackupV1 } from './lib/backup';
+import { BackupPayload } from './lib/backup';
 import ChallengesSection from './ChallengesSection';
 import { ExtRun, ExtShoe } from './lib/progression/challengesExt';
 import { mergeCloudData, nextAuthState, AuthState } from './lib/cloudSync';
@@ -140,7 +140,7 @@ export default function ProfileScreen({
   onChangeSex?: (v: 'male' | 'female') => void;
   restHR?: number;
   onChangeRestHR?: (v: number) => void;
-  initialOpen?: 'weight' | 'alerts' | 'notif' | 'account' | 'import' | null;
+  initialOpen?: 'weight' | 'alerts' | 'notif' | 'account' | null;
   onConsumeInitialOpen?: () => void;
   unit?: Unit;
   onChangeUnit?: (u: Unit) => void;
@@ -165,11 +165,9 @@ export default function ProfileScreen({
   recapRuns?: RecapRun[];
   recapShoes?: RecapShoe[];
   recapNow?: Date;
-  deviceId?: string;
   // 로컬 백업 대상(신발+런+설정). App이 소유한 상태를 모아 주입한다.
   backupData?: BackupPayload;
   // 가져오기: parseBackup 검증 성공 시에만 호출된다(실패 시 미호출 — 기존 데이터 보존).
-  onImport?: (data: BackupV1) => void;
   // ── 주간 목표 카드(마이 탭) ───────────────────────────────────────────────────
   // App 이 런/신발에서 파생한 확장 입력(extRuns/extShoes)을 주입하면 ChallengesSection 이
   // 주간 목표 카드를 상시 노출한다 — 목표 미설정이면 추천(평균×3)이 기본값.
@@ -211,8 +209,8 @@ export default function ProfileScreen({
   onDeleteAccount?: () => Promise<void>;
 }) {
   // 어떤 설정 행이 펼쳐졌는지(단위는 패널 없이 즉시 토글). 한 번에 하나만 펼친다.
-  const [open, setOpen] = useState<null | 'weight' | 'body' | 'alerts' | 'notif' | 'voice' | 'account' | 'import'>(null);
-  const toggleOpen = (k: 'weight' | 'body' | 'alerts' | 'notif' | 'voice' | 'account' | 'import') => setOpen((o) => (o === k ? null : k));
+  const [open, setOpen] = useState<null | 'weight' | 'body' | 'alerts' | 'notif' | 'voice' | 'account'>(null);
+  const toggleOpen = (k: 'weight' | 'body' | 'alerts' | 'notif' | 'voice' | 'account') => setOpen((o) => (o === k ? null : k));
 
   // ── 음성 코칭 설정(탑티어 패리티 #14) — 로컬 로드/저장, 다음 러닝부터 적용 ──────
   const [voice, setVoice] = useState<VoiceSettings>({...DEFAULT_VOICE});

@@ -113,7 +113,7 @@ import {
 import {presentDue, setupPushMessaging, type PushWiring} from './lib/pushMessaging';
 import {syncRunReminder, ensureForegroundHandler} from './lib/localReminder';
 import {weeklyProgress, currentStreak, personalRecords} from './lib/goals';
-import {serializeBackup, BackupV1, BackupPayload} from './lib/backup';
+import {BackupPayload} from './lib/backup';
 import {Challenge, ChallengeRun} from './lib/challenges';
 import {ExtChallenge, challengeExtProgress, type ExtRun, type ExtShoe} from './lib/progression/challengesExt';
 import {createFirebaseCloudPort} from './lib/firebaseCloudPort';
@@ -132,7 +132,6 @@ import {resolveNaverFirebaseToken} from './lib/naverAuth';
 import {pickPhotoWithPermission} from './lib/photo';
 
 // 로컬 백업 가져오기 시 원본을 보관하는 신규 AsyncStorage 키(기존 키 파괴 금지).
-const K_BACKUP_IMPORT = 'imported_backup_v1';
 // 개인 챌린지 목록을 영속하는 신규 AsyncStorage 키(개인 전용 — 계정/서버 불필요).
 const K_CHALLENGES = 'challenges_v1';
 // 프로필 이름/사진(로컬 전용 — 개인 식별, 서버 불필요). 신규 키라 기존 데이터와 격리.
@@ -289,7 +288,7 @@ function Main(){
   // 홈 카드 → 화면 이동: 히어로 신발 탭 시 그 신발 상세를 신발탭에서 열고, 주간목표 탭 시
   // 프로필의 목표 설정 패널을 펼친 채 진입한다(각각 한 번만 소비).
   const [shoesDetailId,setShoesDetailId]=useState<string|null>(null);
-  const [profileInitialOpen,setProfileInitialOpen]=useState<'weight'|'alerts'|'account'|'import'|null>(null);
+  const [profileInitialOpen,setProfileInitialOpen]=useState<'weight'|'alerts'|'account'|null>(null);
   // 진척(랭크·타이틀·업적) 전체화면 표시 여부. 프로필의 '진척' 버튼이 열고, 화면의
   // 뒤로 버튼이 닫는다. 기존 탭/온보딩 부트 흐름과 독립적인 오버레이형 게이트다.
   const [showProgression,setShowProgression]=useState(false);
@@ -353,7 +352,6 @@ function Main(){
   const [age,setAge]=useState(DEFAULT_SETTINGS.age);
   const [sex,setSex]=useState<Sex>(DEFAULT_SETTINGS.sex);
   const [restHR,setRestHR]=useState(DEFAULT_SETTINGS.restHR);
-  const [deviceId,setDeviceId]=useState<string>('');
   // 개인 챌린지 목록(거리·연속일). 신규 키(K_CHALLENGES)로 영속하며 런 기록에서
   // 진행률을 파생한다(lib/challenges). 기존 키와 분리돼 데이터 파괴 위험이 없다.
   const [challenges,setChallenges]=useState<Challenge[]>([]);
@@ -663,7 +661,6 @@ function Main(){
     try{
     let did=await AsyncStorage.getItem('device_id');
     if(!did){did='sl_'+Date.now()+'_'+Math.random().toString(36).substr(2,9);await AsyncStorage.setItem('device_id',did);}
-    setDeviceId(did);
     // audit a1: 로컬 스토리지 스키마 마이그레이션(1회). 이전 빌드의 캐시 신발/런 레코드엔
     // updatedAt 이 없어 클라우드 '최신 우선' 머지가 무력했다 — 부재 레코드에 updatedAt 을
     // 시드한다. 멱등·비파괴이며, 실패해도 내부에서 스킵+로그하므로 부팅을 막지 않는다.
@@ -1081,10 +1078,6 @@ function Main(){
     // 마라톤 메달도 클라우드 백업에 포함 — 재설치/기기변경에도 컬렉션 유지(동기 병합=mergeMedals).
     ...(medals.length?{medals}:{}),
   };
-  // 가져오기: ProfileScreen이 parseBackup으로 *검증에 성공한* BackupV1만 넘겨준다.
-  // 검증 실패 시엔 호출 자체가 없으므로 여기 도달하면 기존 데이터를 안전하게 교체한다.
-  // 신규 키(K_BACKUP_IMPORT)에 원본을 영속해 두어 추후 추적/롤백 근거를 남기고,
-  // 기존 키(settings_*)는 changeX(=saveX)가 정상 경로로만 갱신해 파괴를 막는다.
   // 백업 페이로드(신발+런+설정)를 현재 상태로 반영한다. 로컬 가져오기와 클라우드 동기
   // 병합 결과가 공유한다. 설정은 changeX(=saveX) 정상 경로로만 갱신해 기존 키 파괴를 막는다.
   // audit a2: 머지/백업 결과를 받을 때 묘비를 라이브에서 분리한다 — live(!deleted)는 화면
@@ -1149,11 +1142,6 @@ function Main(){
       });
     }
   };
-  const importBackup=(data:BackupV1)=>{
-    try{void AsyncStorage.setItem(K_BACKUP_IMPORT,serializeBackup({shoes:data.shoes,runs:data.runs,settings:data.settings}));}catch(e){console.log('backup persist error',e);}
-    applyBackupPayload({shoes:data.shoes,runs:data.runs,settings:data.settings},{preserveExtras:false});
-  };
-
   // 클라우드 머지(pull→mergeCloudData) 결과를 받는 콜백. Stage 3(Firestore 정본): 병합 결과를
   // applyBackupPayload 로 화면/묘비에 반영하기만 하면 된다(영속은 cloudSync 의 push). REST
   // 역등록(backRegisterMerged)은 제거됨 — Firestore 가 유일 백엔드이므로 정본 합류가 곧 push 다.
@@ -1977,12 +1965,10 @@ function Main(){
             onStart={startFromIdx} onAddShoe={()=>setOverlay('add')} onTab={setTab}
             rotation={rotationPicks} onPickShoe={setSelectedShoeId}
             forecast={homeForecast}
-            forecasts={homeForecasts}
             onOpenShoe={(id)=>{setSelectedShoeId(id);setShoesDetailId(id);setTab(1);}}
             progression={homeProgression}
             onRefresh={refreshData} lastSyncAt={lastSyncAt}
-            runs={runs}
-            weeklyGoalKm={goalWeeklyKm} streakDays={goalStreak} todayISO={today()}
+            weeklyGoalKm={goalWeeklyKm} streakDays={goalStreak}
           />
         )}
         {tab===2&&(
@@ -2021,8 +2007,7 @@ function Main(){
             alerts={alerts} onChangeAlerts={changeAlerts}
             notifSettings={notifSettings} onChangeNotifSettings={changeNotifSettings}
             recapRuns={runs} recapShoes={shoes}
-            deviceId={deviceId}
-            backupData={backupData} onImport={importBackup}
+            backupData={backupData}
             challengeExtRuns={challengeExt.extRuns} challengeExtShoes={challengeExt.extShoes}
             weeklyGoalKm={goalWeeklyKm} onEditSmartTarget={editSmartTarget}
             todayISO={today()}

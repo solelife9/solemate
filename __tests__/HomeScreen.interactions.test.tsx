@@ -52,7 +52,7 @@ describe('홈 부상위험 시그널 제거(2026-07-05 애널리틱스 다이어
   ];
   test('마모가 위험 수준이어도 홈은 부상위험 카드를 더 이상 렌더하지 않는다(처방 계층 제거)', () => {
     const root = render(
-      <HomeScreen shoes={WORN_SHOES} activeIdx={0} onSelect={jest.fn()} runs={[]} todayISO={TODAY} />,
+      <HomeScreen shoes={WORN_SHOES} activeIdx={0} onSelect={jest.fn()} />,
     ).root;
     const cards = root.findAll((n: any) => n?.props?.testID && String(n.props.testID).startsWith('injury-risk-card-'));
     expect(cards.length).toBe(0);

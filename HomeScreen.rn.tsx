@@ -415,14 +415,9 @@ export default function HomeScreen({
   // 이번 주 러닝 카드의 주간 목표(km)·연속 스트릭(일). 0이면 해당 표시 숨김(표시 전용).
   weeklyGoalKm?: number;
   streakDays?: number;
-  // 오늘 날짜(YYYY-MM-DD) — 부상위험 시그널의 부하(ACWR) 계산 기준. App 이 today() 주입.
-  todayISO?: string;
   // 선택(히어로) 신발의 교체 예측(App이 실효마모 모델로 계산해 내려준다). ok/overdue일 때
   // 히어로에 ETA 한 줄을 보강한다. 표시 전용(없으면 숨김).
   forecast?: ReplacementForecast | null;
-  // 신발 id별 교체 예측 맵 — 캐러셀 카드마다 자기 신발 예측을 바로 보여준다(스와이프
-  // 지연 제거). 미주입이면 active 카드만 forecast 로 폴백(테스트 호환).
-  forecasts?: Record<string, ReplacementForecast | null>;
   week?: WeekStats;
   dateLabel?: string;
   onStart?: (idx: number) => void;
@@ -450,11 +445,6 @@ export default function HomeScreen({
   // 마지막 동기화 성공 시각(epoch ms). 인사 영역 칩에 '방금 동기화'/'N분 전'으로 표시한다.
   // null/미주입이면 '동기화 안 됨' 칩(또는 미표시) — 표시 전용(lib/syncStatus 가 라벨 생성).
   lastSyncAt?: number | null;
-  // 부상위험 신호등(시그니처) — 전체 런(부하 ACWR 계산용). 활성 신발 마모와 융합.
-  // 미주입이면 빈 배열 → 부하 신호 없이 신발만으로 판정(하위호환).
-  runs?: LoadRun[];
-  // 신호등 카드 탭 → 부상위험 상세(App 의 InjuryRiskScreen 오버레이). 없으면 카드 비탭.
-  onOpenInjuryRisk?: () => void;
 }) {
   const [internalIdx, setInternalIdx] = useState(0);
   // 당겨서 새로고침 스피너 상태. onRefresh(서버 재fetch/pending flush)가 끝나면 내린다.
