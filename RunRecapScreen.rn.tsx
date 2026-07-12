@@ -122,6 +122,7 @@ export default function RunRecapScreen({
   prKinds = [],
   shoeName,
   goalKm,
+  goalMin = 0,
   pacePlan = [],
   shoeWear,
   loadInfo,
@@ -146,6 +147,8 @@ export default function RunRecapScreen({
   shoeName?: string;
   /** 목표 거리(km). km >= goalKm 이면 '목표 달성' 배지. 없으면 숨김. */
   goalKm?: number;
+  /** 시간 목표(분, #15). durationS >= goalMin*60 이면 '목표 달성' 배지(시간 문구). */
+  goalMin?: number;
   /** 스피드 모드의 km별 목표 페이스(초/km). 있으면 '목표 대비' 결과 섹션을 보여준다. */
   pacePlan?: number[];
   /** 신발 마모 델타(시그니처) — 이 런이 신발 수명에 미친 영향. 없으면 신발 카드 숨김. */
@@ -168,7 +171,9 @@ export default function RunRecapScreen({
   onClose?: () => void;
 }) {
   const insets = useSafeAreaInsets();
-  const goalHit = !!goalKm && goalKm > 0 && km >= goalKm;
+  // 목표 달성 배지 — 거리 목표(km)·시간 목표(분, #15 관통) 모두 판정.
+  const timeGoalHit = !!goalMin && goalMin > 0 && durationS >= goalMin * 60;
+  const goalHit = (!!goalKm && goalKm > 0 && km >= goalKm) || timeGoalHit;
   // ── 진입 시그니처 모션 — reduce-motion(또는 jest)이면 전부 즉시 최종 상태.
   const reduceMotion = useReduceMotion();
   const skipAnim = SKIP_ANIM || reduceMotion;
@@ -293,7 +298,7 @@ export default function RunRecapScreen({
             {goalHit && (
               <View style={[s.badge, {borderColor: withAlpha(ACCENT, 0.4), backgroundColor: withAlpha(ACCENT, 0.12)}]}>
                 <Ionicons name="flag" size={ri(13)} color={ACCENT} />
-                <Text style={[s.badgeTxt, {color: ACCENT}]}>목표 {goalKm}{unit} 달성</Text>
+                <Text style={[s.badgeTxt, {color: ACCENT}]}>{timeGoalHit ? `목표 ${goalMin}분 달성` : `목표 ${goalKm}${unit} 달성`}</Text>
               </View>
             )}
             {prKinds.map((k) => (

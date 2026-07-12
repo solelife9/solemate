@@ -907,6 +907,7 @@ export default function HistoryScreen({
     () => fitnessSummary(
       runs.map(r => ({ km: (r as any).km ?? r.dist, durationS: (r as any).duration ?? r.durationS, runDate: rd(r) })),
       todayIso,
+      { sex }, // 성별 TRIMP 계수 — 개별 런 상세(RunDetail)와 동일 기준(점검 #19 발견 수리)
     ),
     // runs 식별(길이+마지막 런 키)로 캐시 무효화 — 매 렌더 깊은 비교 회피.
     // eslint-disable-next-line react-hooks/exhaustive-deps
