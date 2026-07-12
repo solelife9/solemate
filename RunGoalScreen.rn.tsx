@@ -29,6 +29,7 @@ import {
 // lib/haptics 배선: '러닝 시작' CTA(런 시작) → tap.
 import { tap } from './lib/haptics';
 import { loadTargetZone, saveTargetZone, DEFAULT_TARGET_ZONE, type TargetZone } from './lib/settings';
+import { estimateMaxHR, zoneBoundaries } from './lib/analytics/hrZones';
 import { useEffect } from 'react';
 import { HR_ZONE_COLORS, GOOD } from './theme';
 // CTA 는 앱 전역 단일 Button 프리미티브(그라데이션 GRAD_TOP/BOT·글로우·radius 토큰).
@@ -69,7 +70,7 @@ const CFG: Record<'km' | 'min', { min: number; max: number; step: number; major:
 export default function RunGoalScreen({
   shoeBrand = 'NIKE', shoeLabel = 'Alphafly 3', remainKm = 382,
   shoes, selectedShoeId, onChangeShoe,
-  onBack, onStart,
+  onBack, onStart, age = 0, restHR = 0,
 }: {
   // (구 shoeCondition 3단계 prop 제거 2026-07-11 — 상태는 선택 신발의 used/max 로
   //  wearTier 4단계를 파생한다. 신발 목록이 없으면 상태 표기를 숨긴다.)
@@ -80,6 +81,8 @@ export default function RunGoalScreen({
   selectedShoeId?: string | null;
   onChangeShoe?: (id: string) => void;
   onBack?: () => void; onStart?: (goal: RunGoal) => void;
+  /** 심박 가이드 bpm 범위 표시용(#7). 0이면 범위 숨기고 존 이름만. */
+  age?: number; restHR?: number;
 }) {
   const [mode, setMode] = useState<Mode>('km');
   // 신발 전환 시트 — 신발 행(하단) 탭으로 연다.
@@ -357,6 +360,15 @@ export default function RunGoalScreen({
             );
           })}
         </View>
+        {targetZone >= 2 && (() => {
+          const b = zoneBoundaries(estimateMaxHR(age), restHR || undefined);
+          const hi = targetZone < 5 ? b[(targetZone + 1) as 3 | 4 | 5] - 1 : estimateMaxHR(age);
+          const lo = b[targetZone as 2 | 3 | 4];
+          const desc = targetZone === 2 ? '지방 연소·기초 지구력' : targetZone === 3 ? '유산소 능력 향상' : '젖산 역치·레이스 페이스';
+          return (
+            <Text style={s.zoneHint}>{lo > 0 ? `${lo}–${hi} bpm · ` : ''}{desc}{age <= 0 ? ' · 마이 탭에서 나이 설정 시 bpm 표시' : ''}</Text>
+          );
+        })()}
       </View>
 
       {/* footer — 신발 행: 2켤레 이상이면 탭해서 여기서 바로 신발을 바꾼다(마지막 교정 기회).
@@ -507,6 +519,7 @@ const s = StyleSheet.create({
   zoneChips: { flexDirection: 'row', gap: rv(8), flexWrap: 'wrap' },
   zoneChip: { paddingHorizontal: rs(14), paddingVertical: rv(8), borderRadius: RADIUS.pill, borderCurve: 'continuous', backgroundColor: withAlpha(T1, 0.06), borderWidth: 1, borderColor: 'transparent' },
   zoneChipTxt: { color: T3, fontFamily: FONT, fontSize: rf(13.5), fontWeight: '700' },
+  zoneHint: { color: T3, fontFamily: FONT, fontSize: rf(12), marginTop: rv(8), letterSpacing: 0.2 },
   foot: { paddingHorizontal: rs(22), paddingTop: rv(4), paddingBottom: rv(30) },
   // 코너 페이드 헤어라인(GlassEdge glints=false) — 균일 RN 보더 폐지(2026-07-10 확정).
   shoeSel: { flexDirection: 'row', alignItems: 'center', gap: rv(12), padding: rs(12), borderRadius: RADIUS.lg, borderCurve: 'continuous', overflow: 'hidden', backgroundColor: GLASS.fill },

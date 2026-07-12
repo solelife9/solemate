@@ -1807,6 +1807,8 @@ function Main(){
         shoes={uiShoes.filter(sh=>!sh.retired&&sh.id)}
         selectedShoeId={pendingShoe.id}
         onChangeShoe={(id)=>{const i=idxById[id];const raw=shoes[i];if(!raw)return;setSelectedShoeId(id);setPendingShoe({id:raw.id,name:raw.name,ui:uiShoes[i]});}}
+        age={age}
+        restHR={restHR}
         onBack={()=>{setOverlay('none');setPendingShoe(null);}}
         onStart={startActiveRun}
       />
