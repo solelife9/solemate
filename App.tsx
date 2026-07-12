@@ -94,6 +94,7 @@ import {
   AlertSettings, loadSettings, saveUnit, saveGoal, saveAlerts, saveWeight,
   saveAge, saveSex, saveRestHR, Sex,
   clampGoal, DEFAULT_SETTINGS,
+  VoiceSettings, loadVoiceSettings, DEFAULT_VOICE,
 } from './lib/settings';
 import {estimateCalories} from './lib/calories';
 import {detectPRs, PRKind} from './lib/records';
@@ -2234,6 +2235,10 @@ function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],track=null,weightKg,age
   const locationRef=useRef('');
   const locationFetched=useRef(false);
   const announcedKm=useRef(0);
+  // 반 km 안내(주기 0.5km 설정 전용) — 0.5 단위 인덱스(floor(km*2)). 정수 km 는 announcedKm 담당.
+  const announcedHalf=useRef(0);
+  // 음성 코칭 설정 — 런 시작 시 1회 로드(설정 변경은 다음 런부터 적용, 러닝 중 재로드 없음).
+  const voiceCfg=useRef<VoiceSettings>({...DEFAULT_VOICE});
   // 요청한 위치 권한 결과(포그라운드/백그라운드). '계속 달리기'(거리 짧음 재시작) 시
   // 동일 권한으로 다시 트래킹을 시작하기 위해 보관한다.
   const permRef=useRef<RunPermissions>({foreground:true,background:false});
@@ -2427,18 +2432,40 @@ function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],track=null,weightKg,age
 
   useEffect(()=>{
     if(trackMode)return; // 트랙: km 는 GPS 누적(트랙에선 무의미) — km 음성 코칭 억제(랩은 별도)
+    const vc=voiceCfg.current;
     const fullKm=Math.floor(km);
     if(fullKm>0&&fullKm>announcedKm.current){
       announcedKm.current=fullKm;
       const remaining=Math.max(0,goalKm-fullKm);
-      // 특별 구간
+      // 특별 구간(절반/마지막/목표)은 주기 설정과 무관하게 유지 — 목표런 UX 의 핵심 신호.
       const isHalf=goalKm>0&&fullKm===Math.floor(goalKm/2)&&goalKm>=2;
       const isLastKm=remaining===1;
-      // 음성 코칭(Hanabad 클립): km 도달 시 "N킬로미터, 페이스 M분 S초"(직전 1km 구간 페이스)
-      // + 절반/마지막 구간이면 이어서. 목표 도달 시 목표 달성. 평균이 아닌 구간 페이스로 안내.
-      const splitPaceSec=splitsRef.current[fullKm-1]?.paceSec ?? null;
-      if(remaining>0) runVoice.kmCue(fullKm, splitPaceSec, {half:isHalf, lastKm:isLastKm});
-      else runVoice.goal();
+      if(remaining<=0&&goalKm>0){runVoice.goal();}
+      else{
+        // 거리 안내(탑티어 패리티 #14): 주기(intervalKm)의 배수 km 에서만. 페이스는 설정
+        // 기준(구간=직전 1km 스플릿 / 평균=elapsed/km), 경과시간은 timeCue 설정 시 이어붙임.
+        const intervalHit=vc.intervalKm>0&&fullKm%Math.max(1,Math.round(vc.intervalKm))===0;
+        if(intervalHit){
+          const paceSec=!vc.paceCue?null
+            :vc.paceBasis==='avg'?(km>0.05&&elapsed>0?elapsed/km:null)
+            :(splitsRef.current[fullKm-1]?.paceSec ?? null);
+          runVoice.kmCue(fullKm,paceSec,{half:isHalf,lastKm:isLastKm,elapsedSec:vc.timeCue?elapsed:null,paceBasis:vc.paceBasis});
+        }else if(isHalf||isLastKm){
+          // 주기에 걸리지 않아도 절반/마지막은 단독으로 안내한다.
+          runVoice.play([...(isHalf?['half']:[]),...(isLastKm?['last_km']:[])]);
+        }
+      }
+    }
+    // 반 km 안내(주기 0.5km 전용) — X.5 지점(정수 km 는 위에서 처리). 목표 도달 후엔 침묵.
+    if(vc.intervalKm===0.5){
+      const halfIdx=Math.floor(km*2);
+      if(halfIdx>announcedHalf.current){
+        announcedHalf.current=halfIdx;
+        if(halfIdx%2===1&&!(goalKm>0&&km>=goalKm)){
+          const avgPace=vc.paceCue&&km>0.05&&elapsed>0?elapsed/km:null;
+          runVoice.halfKmCue(halfIdx/2,avgPace,vc.timeCue?elapsed:null);
+        }
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   },[km]);
@@ -2448,6 +2475,12 @@ function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],track=null,weightKg,age
   // 백그라운드 task)을 시작한다. 거리/시간/일시정지/死구간 판정은 모두 엔진이
   // 소유하고 subscribe로 화면에 반영된다(이 함수는 delivery/타이머만 띄운다).
   async function beginRun(){
+    // 음성 코칭 설정 로드(런당 1회) — 마스터 on/off·볼륨을 엔진에 주입(탑티어 패리티 #14).
+    try{
+      voiceCfg.current=await loadVoiceSettings();
+      runVoice.enabled=voiceCfg.current.enabled;
+      runVoice.setVolume(voiceCfg.current.volume);
+    }catch{/* 설정 로드 실패 → 기본값(전부 on) 유지 */}
     // 러닝 시작 — 화면 자동잠금 방지(글랜서빌리티). 실패해도 러닝엔 무관(best-effort).
     void activateKeepAwakeAsync(KEEP_AWAKE_TAG).catch(()=>{});
     // 페어링된 애플워치가 있으면 워크아웃을 자동 실행해 심박이 손목 조작 없이 흐르게 한다
@@ -2477,13 +2510,14 @@ function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],track=null,weightKg,age
       cadenceState.current=initStepCadence();cadRef.current=0;
       locationRef.current=seed.location;locationFetched.current=!!seed.location;
       announcedKm.current=Math.floor(seed.dist);
+      announcedHalf.current=Math.floor(seed.dist*2);
     }else{
     runTracker.start({goalKm,shoe:{id:shoe.id,name:shoe.name}});
     splitsRef.current=[];lastSplitRef.current={elapsed:0,elevM:0};
     setKm(0);setElapsed(0);setCadence(0);setAccuracyM(null);
     setGpsStalled(false);setPermLost(false);setGpsStatus('GPS 신호 찾는 중...');
     cadenceState.current=initStepCadence();cadRef.current=0;
-    locationRef.current='';locationFetched.current=false;announcedKm.current=0;
+    locationRef.current='';locationFetched.current=false;announcedKm.current=0;announcedHalf.current=0;
     // 트랙 fresh 시작: 랩 상태 초기화 + 초기 lapM 을 엔진에 실어 첫 랩 전 크래시도 트랙으로 복구.
     if(trackMode){
       lapTimesRef.current=[];lapLeftRef.current=false;lapStartRef.current=null;lapPtCountRef.current=0;lapLockedRef.current=false;

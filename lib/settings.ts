@@ -70,6 +70,73 @@ export const MIN_REST_HR = 30;
 export const MAX_REST_HR = 110;
 export const REST_HR_STEP = 1;
 
+// ── 음성 코칭 설정(2026-07-12, 탑티어 패리티 #14) ────────────────────────────
+// NRC/Strava/가민의 오디오 큐 설정성에 대응: 주기(0.5/1/2km/끄기), 항목(페이스·
+// 경과시간), 페이스 기준(구간/평균), 볼륨 3단. 저장 키 하나(JSON) — 손상 시 기본값.
+export type VoiceIntervalKm = 0 | 0.5 | 1 | 2;
+export type PaceBasis = 'split' | 'avg';
+
+export interface VoiceSettings {
+  /** 음성 코칭 전체 on/off (시작/일시정지/목표 등 이벤트 멘트 포함). */
+  enabled: boolean;
+  /** 거리 안내 주기(km). 0 = 거리 안내 끄기(이벤트 멘트는 유지). */
+  intervalKm: VoiceIntervalKm;
+  /** 거리 안내에 페이스 포함 여부. */
+  paceCue: boolean;
+  /** 페이스 기준 — 직전 구간(split) 또는 전체 평균(avg). */
+  paceBasis: PaceBasis;
+  /** 거리 안내에 총 경과 시간 포함 여부(NRC 스타일). */
+  timeCue: boolean;
+  /** 재생 볼륨(0~1). 3단 프리셋(0.7/0.85/1.0)만 UI 로 노출. */
+  volume: number;
+}
+
+export const K_VOICE = 'settings_voice';
+export const VOICE_VOLUME_STEPS = [0.7, 0.85, 1.0] as const;
+export const DEFAULT_VOICE: VoiceSettings = {
+  enabled: true,
+  intervalKm: 1,
+  paceCue: true,
+  paceBasis: 'split',
+  timeCue: true,
+  volume: 1.0,
+};
+
+/** 영속 JSON → VoiceSettings. 손상/누락/이상값은 필드 단위로 기본값 정규화. */
+export function parseVoiceSettings(raw: string | null | undefined): VoiceSettings {
+  const d = {...DEFAULT_VOICE};
+  if (!raw) return d;
+  try {
+    const v = JSON.parse(raw);
+    if (typeof v !== 'object' || v == null) return d;
+    if (typeof v.enabled === 'boolean') d.enabled = v.enabled;
+    if (v.intervalKm === 0 || v.intervalKm === 0.5 || v.intervalKm === 1 || v.intervalKm === 2) d.intervalKm = v.intervalKm;
+    if (typeof v.paceCue === 'boolean') d.paceCue = v.paceCue;
+    if (v.paceBasis === 'split' || v.paceBasis === 'avg') d.paceBasis = v.paceBasis;
+    if (typeof v.timeCue === 'boolean') d.timeCue = v.timeCue;
+    if (typeof v.volume === 'number' && v.volume >= 0.1 && v.volume <= 1) d.volume = v.volume;
+    return d;
+  } catch {
+    return d;
+  }
+}
+
+export async function loadVoiceSettings(): Promise<VoiceSettings> {
+  try {
+    return parseVoiceSettings(await AsyncStorage.getItem(K_VOICE));
+  } catch {
+    return {...DEFAULT_VOICE};
+  }
+}
+
+export async function saveVoiceSettings(v: VoiceSettings): Promise<void> {
+  try {
+    await AsyncStorage.setItem(K_VOICE, JSON.stringify(v));
+  } catch {
+    /* 저장 실패는 비치명적 — 다음 변경에서 재시도 */
+  }
+}
+
 export const DEFAULT_ALERTS: AlertSettings = {enabled: true, thresholdPct: 90};
 export const DEFAULT_SETTINGS: AppSettings = {
   unit: 'km',

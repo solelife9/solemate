@@ -26,6 +26,7 @@ import {
   MIN_THRESHOLD_PCT, MAX_THRESHOLD_PCT, DEFAULT_SETTINGS, DEFAULT_ALERTS,
   WEIGHT_STEP, MIN_WEIGHT_KG, MAX_WEIGHT_KG,
   AGE_STEP, MIN_AGE, MAX_AGE,
+  VoiceSettings, DEFAULT_VOICE, loadVoiceSettings, saveVoiceSettings, VOICE_VOLUME_STEPS,
 } from './lib/settings';
 import { NotifSettings, DEFAULT_NOTIF_SETTINGS } from './lib/notifications';
 import { requestPushPermission as defaultRequestPushPermission } from './lib/pushMessaging';
@@ -210,8 +211,19 @@ export default function ProfileScreen({
   onDeleteAccount?: () => Promise<void>;
 }) {
   // 어떤 설정 행이 펼쳐졌는지(단위는 패널 없이 즉시 토글). 한 번에 하나만 펼친다.
-  const [open, setOpen] = useState<null | 'weight' | 'body' | 'alerts' | 'notif' | 'account' | 'import'>(null);
-  const toggleOpen = (k: 'weight' | 'body' | 'alerts' | 'notif' | 'account' | 'import') => setOpen((o) => (o === k ? null : k));
+  const [open, setOpen] = useState<null | 'weight' | 'body' | 'alerts' | 'notif' | 'voice' | 'account' | 'import'>(null);
+  const toggleOpen = (k: 'weight' | 'body' | 'alerts' | 'notif' | 'voice' | 'account' | 'import') => setOpen((o) => (o === k ? null : k));
+
+  // ── 음성 코칭 설정(탑티어 패리티 #14) — 로컬 로드/저장, 다음 러닝부터 적용 ──────
+  const [voice, setVoice] = useState<VoiceSettings>({...DEFAULT_VOICE});
+  useEffect(() => { void loadVoiceSettings().then(setVoice); }, []);
+  const patchVoice = (patch: Partial<VoiceSettings>) => {
+    setVoice(prev => {
+      const next = {...prev, ...patch};
+      void saveVoiceSettings(next);
+      return next;
+    });
+  };
 
   // 마이탭 정리(설정 분리): 기본은 프로필+기록만 보이고, 헤더 ⚙️ 를 누르면 같은 화면이
   // 전체화면 '설정' 뷰로 전환된다(목표·알림·푸시·단위·체중·계정·클라우드를 한곳에 모음).
@@ -950,6 +962,54 @@ export default function ProfileScreen({
                     accessibilityLabel="알림 권한이 꺼져 있어요. 눌러서 설정 열기"
                     onPress={() => { Promise.resolve(Linking.openSettings()).catch(() => {}); }}>알림 권한이 꺼져 있어요 — 설정에서 허용하기 ›</Text>
                 )}
+              </View>
+            )}
+
+            {/* 음성 코칭(탑티어 패리티 #14) — 주기·항목·페이스 기준·볼륨. 다음 러닝부터 적용. */}
+            <Pressable onPress={() => toggleOpen('voice')} accessibilityRole="button" accessibilityLabel={`음성 코칭, ${voice.enabled ? '켜짐' : '꺼짐'}`} accessibilityState={{ expanded: open === 'voice' }} style={({ pressed }) => [s.settingRow, s.settingBorder, pressed && { backgroundColor: CARD_HI }]} testID="voice-row">
+              <View style={s.settingIcon}><Ionicons name="volume-medium-outline" size={ri(17)} color={ACCENT} /></View>
+              <Text style={s.settingLabel}>음성 코칭</Text>
+              <Text style={s.settingDetail} testID="voice-detail">{!voice.enabled ? '꺼짐' : voice.intervalKm === 0 ? '이벤트만' : `${voice.intervalKm}km 마다`}</Text>
+              <Ionicons name={open === 'voice' ? 'chevron-up' : 'chevron-forward'} size={ri(16)} color={T3} />
+            </Pressable>
+            {open === 'voice' && (
+              <View style={[s.panel, s.settingBorder]} testID="voice-panel">
+                <NotifToggle label="음성 코칭" value={voice.enabled} onToggle={() => patchVoice({ enabled: !voice.enabled })} testID="voice-toggle-enabled" />
+                {voice.enabled && (
+                  <>
+                    <Text style={s.panelHint}>거리 안내 주기</Text>
+                    <SegmentedControl
+                      variant="accentSolid"
+                      items={[{ key: '0.5', label: '0.5km' }, { key: '1', label: '1km' }, { key: '2', label: '2km' }, { key: '0', label: '끄기' }]}
+                      value={String(voice.intervalKm)}
+                      onChange={(k) => patchVoice({ intervalKm: Number(k) as VoiceSettings['intervalKm'] })}
+                      labelFor={(it) => `거리 안내 ${it.label}`}
+                      testIDFor={(it) => `voice-interval-${it.key}`}
+                    />
+                    <NotifToggle label="페이스 안내" value={voice.paceCue} onToggle={() => patchVoice({ paceCue: !voice.paceCue })} testID="voice-toggle-pace" />
+                    {voice.paceCue && (
+                      <SegmentedControl
+                        variant="accentSolid"
+                        items={[{ key: 'split', label: '구간 페이스' }, { key: 'avg', label: '평균 페이스' }]}
+                        value={voice.paceBasis}
+                        onChange={(k) => patchVoice({ paceBasis: k as VoiceSettings['paceBasis'] })}
+                        labelFor={(it) => `${it.label} 기준`}
+                        testIDFor={(it) => `voice-basis-${it.key}`}
+                      />
+                    )}
+                    <NotifToggle label="경과 시간 안내" value={voice.timeCue} onToggle={() => patchVoice({ timeCue: !voice.timeCue })} testID="voice-toggle-time" />
+                    <Text style={s.panelHint}>볼륨</Text>
+                    <SegmentedControl
+                      variant="accentSolid"
+                      items={[{ key: String(VOICE_VOLUME_STEPS[0]), label: '작게' }, { key: String(VOICE_VOLUME_STEPS[1]), label: '보통' }, { key: String(VOICE_VOLUME_STEPS[2]), label: '크게' }]}
+                      value={String(voice.volume)}
+                      onChange={(k) => patchVoice({ volume: Number(k) })}
+                      labelFor={(it) => `볼륨 ${it.label}`}
+                      testIDFor={(it) => `voice-volume-${it.key}`}
+                    />
+                  </>
+                )}
+                <Text style={s.panelHint}>변경은 다음 러닝부터 적용돼요</Text>
               </View>
             )}
 
