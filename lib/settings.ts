@@ -137,6 +137,32 @@ export async function saveVoiceSettings(v: VoiceSettings): Promise<void> {
   }
 }
 
+// ── 자동 일시정지 설정(#16, 가민/NRC 패리티) — 트레드밀·언덕 반복 러너는 끈다. ──
+export const K_AUTOPAUSE = 'settings_autopause';
+export const DEFAULT_AUTOPAUSE = true;
+
+/** 영속 문자열 → 자동 일시정지 on/off. '0'/'false' 만 끔, 그 외(누락/손상)는 기본 ON. */
+export function parseAutoPause(raw: string | null | undefined): boolean {
+  if (raw === '0' || raw === 'false') return false;
+  return DEFAULT_AUTOPAUSE;
+}
+
+export async function loadAutoPause(): Promise<boolean> {
+  try {
+    return parseAutoPause(await AsyncStorage.getItem(K_AUTOPAUSE));
+  } catch {
+    return DEFAULT_AUTOPAUSE;
+  }
+}
+
+export async function saveAutoPause(enabled: boolean): Promise<void> {
+  try {
+    await AsyncStorage.setItem(K_AUTOPAUSE, enabled ? '1' : '0');
+  } catch {
+    /* 저장 실패는 비치명적 */
+  }
+}
+
 export const DEFAULT_ALERTS: AlertSettings = {enabled: true, thresholdPct: 90};
 export const DEFAULT_SETTINGS: AppSettings = {
   unit: 'km',

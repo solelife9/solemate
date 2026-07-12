@@ -94,7 +94,7 @@ import {
   AlertSettings, loadSettings, saveUnit, saveGoal, saveAlerts, saveWeight,
   saveAge, saveSex, saveRestHR, Sex,
   clampGoal, DEFAULT_SETTINGS,
-  VoiceSettings, loadVoiceSettings, DEFAULT_VOICE,
+  VoiceSettings, loadVoiceSettings, DEFAULT_VOICE, loadAutoPause,
 } from './lib/settings';
 import {estimateCalories} from './lib/calories';
 import {detectPRs, PRKind} from './lib/records';
@@ -2481,10 +2481,12 @@ function RunActiveScreen({shoe,insets,goalKm,goalMin=0,pacePlan=[],track=null,we
   // 소유하고 subscribe로 화면에 반영된다(이 함수는 delivery/타이머만 띄운다).
   async function beginRun(){
     // 음성 코칭 설정 로드(런당 1회) — 마스터 on/off·볼륨을 엔진에 주입(탑티어 패리티 #14).
+    let autoPauseOn=true;
     try{
       voiceCfg.current=await loadVoiceSettings();
       runVoice.enabled=voiceCfg.current.enabled;
       runVoice.setVolume(voiceCfg.current.volume);
+      autoPauseOn=await loadAutoPause(); // 자동 일시정지 설정(#16) — 런당 1회 로드
     }catch{/* 설정 로드 실패 → 기본값(전부 on) 유지 */}
     // 러닝 시작 — 화면 자동잠금 방지(글랜서빌리티). 실패해도 러닝엔 무관(best-effort).
     void activateKeepAwakeAsync(KEEP_AWAKE_TAG).catch(()=>{});
@@ -2503,7 +2505,7 @@ function RunActiveScreen({shoe,insets,goalKm,goalMin=0,pacePlan=[],track=null,we
     const seed=isContinue&&resume&&!seededRef.current?resume:null;
     seededRef.current=true; // 시드는 마운트당 첫 beginRun 1회만 — '계속 달리기' 재시작은 0부터.
     if(seed){
-      runTracker.start({goalKm,goalMin,pacePlan,shoe:{id:shoe.id,name:shoe.name},
+      runTracker.start({goalKm,goalMin,pacePlan,autoPause:autoPauseOn,shoe:{id:shoe.id,name:shoe.name},
         t0:Date.now()-seed.elapsed*1000,seedDist:seed.dist,
         seedPts:seed.pts as any,seedLocation:seed.location});
       // 크래시 전 통과한 km 만큼 스플릿 슬롯을 채워, 재개 후의 km 경계부터 실측이 기록되게
@@ -2517,7 +2519,7 @@ function RunActiveScreen({shoe,insets,goalKm,goalMin=0,pacePlan=[],track=null,we
       announcedKm.current=Math.floor(seed.dist);
       announcedHalf.current=Math.floor(seed.dist*2);
     }else{
-    runTracker.start({goalKm,goalMin,pacePlan,shoe:{id:shoe.id,name:shoe.name}});
+    runTracker.start({goalKm,goalMin,pacePlan,autoPause:autoPauseOn,shoe:{id:shoe.id,name:shoe.name}});
     splitsRef.current=[];lastSplitRef.current={elapsed:0,elevM:0};
     setKm(0);setElapsed(0);setCadence(0);setAccuracyM(null);
     setGpsStalled(false);setPermLost(false);setGpsStatus('GPS 신호 찾는 중...');

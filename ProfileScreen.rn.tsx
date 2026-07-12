@@ -27,6 +27,7 @@ import {
   WEIGHT_STEP, MIN_WEIGHT_KG, MAX_WEIGHT_KG,
   AGE_STEP, MIN_AGE, MAX_AGE,
   VoiceSettings, DEFAULT_VOICE, loadVoiceSettings, saveVoiceSettings, VOICE_VOLUME_STEPS,
+  loadAutoPause, saveAutoPause, DEFAULT_AUTOPAUSE,
 } from './lib/settings';
 import { NotifSettings, DEFAULT_NOTIF_SETTINGS } from './lib/notifications';
 import { requestPushPermission as defaultRequestPushPermission } from './lib/pushMessaging';
@@ -219,6 +220,17 @@ export default function ProfileScreen({
     setVoice(prev => {
       const next = {...prev, ...patch};
       void saveVoiceSettings(next);
+      return next;
+    });
+  };
+
+  // ── 자동 일시정지(#16) — 즉시 토글, 다음 러닝부터 적용 ──────────────────────
+  const [autoPauseOn, setAutoPauseOn] = useState<boolean>(DEFAULT_AUTOPAUSE);
+  useEffect(() => { void loadAutoPause().then(setAutoPauseOn); }, []);
+  const toggleAutoPause = () => {
+    setAutoPauseOn(prev => {
+      const next = !prev;
+      void saveAutoPause(next);
       return next;
     });
   };
@@ -1010,6 +1022,15 @@ export default function ProfileScreen({
                 <Text style={s.panelHint}>변경은 다음 러닝부터 적용돼요</Text>
               </View>
             )}
+
+            {/* 자동 일시정지(#16, 가민/NRC 패리티) — 즉시 토글. 신호대기 자동 멈춤을 끄면
+                트레드밀/언덕 반복에서 오작동이 없다. 다음 러닝부터 적용. */}
+            <Pressable onPress={toggleAutoPause} accessibilityRole="button" accessibilityLabel={`자동 일시정지, 현재 ${autoPauseOn ? '켜짐' : '꺼짐'}. 눌러서 전환`} style={({ pressed }) => [s.settingRow, s.settingBorder, pressed && { backgroundColor: CARD_HI }]} testID="autopause-row">
+              <View style={s.settingIcon}><Ionicons name="pause-circle-outline" size={ri(17)} color={ACCENT} /></View>
+              <Text style={s.settingLabel}>자동 일시정지</Text>
+              <Text style={[s.settingDetail, autoPauseOn && { color: GOOD }]} testID="autopause-detail">{autoPauseOn ? '켜짐' : '꺼짐'}</Text>
+              <Ionicons name="swap-horizontal" size={ri(16)} color={T3} />
+            </Pressable>
 
             {/* 3) 단위 — 즉시 토글(전 화면 환산 반영) */}
             <Pressable onPress={() => onChangeUnit?.(unit === 'km' ? 'mi' : 'km')} accessibilityRole="button" accessibilityLabel={`단위, 현재 ${unitKorean(unit)}. 눌러서 전환`} style={({ pressed }) => [s.settingRow, s.settingBorder, pressed && { backgroundColor: CARD_HI }]}>

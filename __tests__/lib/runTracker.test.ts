@@ -608,3 +608,22 @@ test('저속 이동(≈1.4m/s 걷기, acc 8m)은 앵커 합산으로 무손실 �
   expect(d).toBeGreaterThan(70); // 무손실(±기하 오차·마지막 하한 미만 유예분 허용)
   expect(d).toBeLessThan(95);
 });
+
+// ── 자동 일시정지 설정(#16) — 끄면 정지해도 자동으로 멈추지 않는다 ────────────────
+test('autoPause:false 면 장시간 정지에도 자동 일시정지가 걸리지 않는다', () => {
+  const {t, set} = makeEngine();
+  t.start({goalKm: 5, autoPause: false, shoe: {id: 's1', name: 'X'}, t0: 100000});
+  let ts = 100000;
+  const F = (lat: number) => {
+    set(ts);
+    t.ingestFix(fix(lat, LON, 5, ts));
+  };
+  F(37.5); ts += 2000; F(37.5); ts += 2000; F(37.5); ts += 2000;
+  F(37.5003); // 실이동
+  for (let i = 0; i < 12; i++) { ts += 3000; F(37.5003); } // 36s 정지
+  expect(t.getState().autoPaused).toBe(false);
+  expect(t.getState().paused).toBe(false);
+  // 수동 일시정지는 여전히 동작한다.
+  t.togglePause();
+  expect(t.getState().paused).toBe(true);
+});

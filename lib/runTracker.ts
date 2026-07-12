@@ -62,6 +62,8 @@ type Listener = (ev: RunTrackerEvent) => void;
 
 export interface RunTrackerConfig {
   goalKm: number;
+  /** 자동 일시정지 on/off(#16, 기본 true). false 면 정지해도 시간·거리 회계는 수동 조작만. */
+  autoPause?: boolean;
   /** 시간 목표(분). 스냅샷에 실어 크래시 복구가 시간 목표를 보존하게 한다(#15). 기본 0. */
   goalMin?: number;
   /** 스피드 모드 km별 목표 페이스(초/km). 스냅샷 영속용(복구 시 코칭 유지). 기본 []. */
@@ -141,6 +143,7 @@ class RunTracker {
   private stalledMs = 0;
 
   private t0 = 0;
+  private autoPauseEnabled = true;
   private goalKm = 0;
   private goalMin = 0;
   private pacePlan: number[] = [];
@@ -212,6 +215,7 @@ class RunTracker {
     this.pauseStartMs = 0;
     this.stalledMs = config.stalledMs ?? 0;
     this.t0 = config.t0 ?? this.now();
+    this.autoPauseEnabled = config.autoPause ?? true;
     this.goalKm = config.goalKm;
     this.goalMin = config.goalMin ?? 0;
     this.pacePlan = (config.pacePlan ?? []).slice();
@@ -430,6 +434,7 @@ class RunTracker {
 
     // ── auto-pause / resume decision ──
     if (
+      this.autoPauseEnabled &&
       idx >= WARMUP_FIXES &&
       this.autoAnchor &&
       (!this.isPaused || this.autoPausedFlag)

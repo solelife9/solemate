@@ -50,3 +50,24 @@ describe('저장/로드 왕복', () => {
     expect(await loadVoiceSettings()).toEqual(DEFAULT_VOICE);
   });
 });
+
+// ── 자동 일시정지 설정(#16) ──────────────────────────────────────────────────
+import {parseAutoPause, loadAutoPause, saveAutoPause, K_AUTOPAUSE} from '../../lib/settings';
+
+describe('autoPause 설정', () => {
+  beforeEach(() => AsyncStorage.clear());
+  test("파서: '0'/'false' 만 끔, 누락/손상은 기본 ON", () => {
+    expect(parseAutoPause('0')).toBe(false);
+    expect(parseAutoPause('false')).toBe(false);
+    expect(parseAutoPause('1')).toBe(true);
+    expect(parseAutoPause(null)).toBe(true);
+    expect(parseAutoPause('garbage')).toBe(true);
+  });
+  test('저장/로드 왕복', async () => {
+    await saveAutoPause(false);
+    expect(await AsyncStorage.getItem(K_AUTOPAUSE)).toBe('0');
+    expect(await loadAutoPause()).toBe(false);
+    await saveAutoPause(true);
+    expect(await loadAutoPause()).toBe(true);
+  });
+});
