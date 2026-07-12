@@ -221,7 +221,15 @@ export default function RunActiveScreen({
   const subIn = useRef(new Animated.Value(paused ? 1 : 0)).current;
   useEffect(() => {
     if (paused === uiPaused) return;
-    LayoutAnimation.configureNext(LayoutAnimation.create(260, LayoutAnimation.Types.easeInEaseOut, LayoutAnimation.Properties.opacity));
+    // 한 호흡 전환(2026-07-12 실기기 피드백 2차): 레이아웃 이동·생성·소멸 전부를 지도
+    // 시트와 같은 420ms 커브로 동기화 — 화면 전체가 함께 내려와 바뀌는 것처럼 읽힌다.
+    // delete 에 opacity 를 줘 링이 '띡' 사라지지 않고 페이드아웃되게 한다.
+    LayoutAnimation.configureNext({
+      duration: 420,
+      create: { type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.opacity },
+      update: { type: LayoutAnimation.Types.easeInEaseOut },
+      delete: { type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.opacity },
+    });
     setUiPaused(paused);
     Animated.parallel([
       Animated.timing(t, { toValue: paused ? 1 : 0, duration: 300, easing: Easing.inOut(Easing.cubic), useNativeDriver: true }),
@@ -237,7 +245,7 @@ export default function RunActiveScreen({
   useEffect(() => {
     if (!mapShown || SKIP_ANIM) return;
     mapSlide.setValue(0);
-    const a = Animated.timing(mapSlide, { toValue: 1, duration: 420, delay: 50, easing: Easing.out(Easing.cubic), useNativeDriver: true });
+    const a = Animated.timing(mapSlide, { toValue: 1, duration: 420, easing: Easing.inOut(Easing.cubic), useNativeDriver: true });
     a.start();
     return () => a.stop();
   }, [mapShown, mapSlide]);
@@ -399,7 +407,7 @@ export default function RunActiveScreen({
           onLayout={e => setMapH(e.nativeEvent.layout.height)}>
           {/* 시트 등장: 컨테이너(레이아웃)는 그대로, 내용물만 위(-H)에서 내려온다(overflow hidden). */}
           <Animated.View
-            style={[StyleSheet.absoluteFill, { transform: [{ translateY: mapSlide.interpolate({ inputRange: [0, 1], outputRange: [-(mapH || 800), 0] }) }] }]}>
+            style={[StyleSheet.absoluteFill, { backgroundColor: CARD, transform: [{ translateY: mapSlide.interpolate({ inputRange: [0, 1], outputRange: [-(mapH || 800), 0] }) }] }]}>
             <RunLiveMap coords={liveCoords} />
             <View style={r.mapExpandBadge} pointerEvents="none">
               <Ionicons name="expand" size={ri(15)} color={T1} />
@@ -617,7 +625,9 @@ const r = StyleSheet.create({
   // 풀블리드 지도(2026-07-12 사용자 확정): 카드(라운드·헤어라인·좌우 여백) 폐지 —
   // screen 의 paddingHorizontal(24)을 음수 마진으로 상쇄해 화면 좌우 끝까지,
   // flex:1 로 상단 여백 전부를 채우고 아래(km 히어로)와도 여백 없이 맞닿는다.
-  mapPanel: { flex: 1, marginHorizontal: -rs(24), marginTop: rv(10), marginBottom: 0, overflow: 'hidden', backgroundColor: CARD },
+  // 컨테이너는 투명 — 회색(CARD)은 내려오는 시트(내용물)에 실어, 배경까지 지도와 함께
+  // 내려온다(2026-07-12 실기기 피드백: 회색이 먼저 '띡' 깔리면 전환이 둘로 쪼개져 보임).
+  mapPanel: { flex: 1, marginHorizontal: -rs(24), marginTop: rv(10), marginBottom: 0, overflow: 'hidden' },
   // 패널 우하단 '전체화면' 힌트 배지.
   mapExpandBadge: { position: 'absolute', right: 12, bottom: 12, width: rs(32), height: rs(32), borderRadius: rs(16), backgroundColor: 'rgba(0,0,0,0.55)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: withAlpha(T1, 0.2) },
   // 전체화면 지도 하단 중앙 버튼 행 — 구석 대신 가운데, 위로 올려 잘 눌리게.
