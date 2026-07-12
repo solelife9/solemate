@@ -15,7 +15,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { rf, rs, ri, rv } from './lib/responsive';
-import { View, Text, Pressable, StyleSheet, Animated, Easing, StatusBar, LayoutAnimation } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Animated, Easing, StatusBar, LayoutAnimation, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Svg, { Circle, Defs, LinearGradient as SvgLinear, RadialGradient as SvgRadial, Stop } from 'react-native-svg';
@@ -168,7 +168,7 @@ function FinishCeremony({ distanceKm, onDone }: { distanceKm: number; onDone: ()
 const cer = StyleSheet.create({
   wrap: { backgroundColor: withAlpha(BG, 0.94), alignItems: 'center', justifyContent: 'center', zIndex: 40 },
   glow: { position: 'absolute' },
-  dist: { color: T1, fontFamily: DISPLAY, fontSize: rf(56), fontWeight: '800', fontVariant: ['tabular-nums'], letterSpacing: -1 },
+  dist: { color: T1, fontFamily: DISPLAY, fontSize: rf(64), fontWeight: '800', fontVariant: ['tabular-nums'], letterSpacing: -1.5 },
   unit: { color: withAlpha(T1, 0.8), fontFamily: FONT, fontSize: rf(19), fontWeight: '700', letterSpacing: 0.6, marginTop: rv(4) },
 });
 
@@ -210,6 +210,7 @@ export default function RunActiveScreen({
   onUndoLap?: () => void;  // 마지막 랩 되돌리기(-1)
 }) {
   const insets = useSafeAreaInsets();
+  const { height: winH } = useWindowDimensions();
   const [pausedState, setPausedState] = useState(false);
   const paused = pausedProp ?? pausedState;
 
@@ -413,7 +414,7 @@ export default function RunActiveScreen({
           onPress={() => setMapFull(true)}
           accessibilityRole="button"
           accessibilityLabel="지도 전체화면으로 보기"
-          style={r.mapPanel}
+          style={[r.mapPanel, { height: Math.max(rs(200), Math.round(winH * 0.5) - insets.top - rs(56)) }]}
           onLayout={e => setMapH(e.nativeEvent.layout.height)}>
           {/* 시트 등장: 컨테이너(레이아웃)는 그대로, 내용물만 위(-H)에서 내려온다(overflow hidden). */}
           <Animated.View
@@ -486,7 +487,7 @@ export default function RunActiveScreen({
 
       {/* hero metrics — 순서: 시간 · 심박 · 페이스(사용자 지정). 프리미엄: 가벼운 값 + 마이크로
           라벨, 위 헤어라인만. 일시정지 시 22로 줄며 아래로 서브 지표가 펼쳐진다. */}
-      <View style={[r.heroMetrics, uiPaused && r.heroMetricsPaused]}>
+      <View style={[r.heroMetrics, uiPaused ? r.heroMetricsPaused : r.heroMetricsRun]}>
         <View style={r.hm} accessibilityRole="text" accessibilityLabel={uiPaused || timeGoal ? `거리 ${distanceKm.toFixed(2)}킬로미터` : `시간 ${timeLabel}`}><Text style={[r.hmV, uiPaused && r.hmVPaused]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72}>{uiPaused || timeGoal ? distanceKm.toFixed(2) : timeLabel}</Text><Text style={r.hmL}>{uiPaused || timeGoal ? '거리 km' : '시간'}</Text></View>
         <View style={[r.hm, r.hmDivider]} accessibilityRole="text" accessibilityLabel={uiPaused ? `시간 ${timeLabel}` : hrZone !== 0 ? `심박 ${bpm}, 존 ${hrZone} ${HR_ZONE_LABEL[hrZone]}` : bpm > 0 ? `심박 ${bpm}` : '심박 측정 안 됨'}><Text style={[r.hmV, uiPaused && r.hmVPaused, !uiPaused && hrZone !== 0 && { color: hrColor }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72}>{uiPaused ? timeLabel : bpm > 0 ? String(bpm) : '--'}</Text><Text style={[r.hmL, !uiPaused && hrZone !== 0 && { color: hrColor, fontWeight: '600' }]}>{uiPaused ? '시간' : hrZone !== 0 ? `Z${hrZone} ${HR_ZONE_LABEL[hrZone]}` : '심박'}</Text></View>
         <View style={[r.hm, r.hmDivider]} accessibilityRole="text" accessibilityLabel={`${uiPaused ? '평균 페이스' : (track ? '랩 페이스' : '현재 페이스')} ${uiPaused ? avgPaceLabel : paceLabel}`}><Text style={[r.hmV, uiPaused && r.hmVPaused]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72}>{uiPaused ? avgPaceLabel : paceLabel}</Text><Text style={r.hmL}>{uiPaused ? '평균 페이스' : (track ? '랩 페이스' : '현재 페이스')}</Text></View>
@@ -541,9 +542,9 @@ export default function RunActiveScreen({
       {/* 하단 여백 — 러닝 중(상단 스페이서와 짝) 또는 일시정지-야외(지도 고정높이 아래 지표 뒤)
           엔 이 여백으로 컨트롤을 바닥에 고정한다. 일시정지-실내(지도 없음)엔 상단 스페이서가
           지표를 하단으로 밀므로 이 여백을 뺀다. */}
-      {/* 하단 스페이서 — 러닝 중에만(상단 스페이서와 짝). 일시정지-야외는 지도 flex:1 이
-          공간을 다 차지해 컨트롤이 자연히 바닥, 일시정지-실내는 상단 스페이서가 담당. */}
-      {!uiPaused && <View style={{ flex: 1 }} />}
+      {/* 하단 스페이서 — 러닝 중 + 일시정지-야외(지도 반높이 아래 그리드를 위로 올리고
+          남는 공간을 여기서 흡수해 컨트롤을 바닥에 고정). 일시정지-실내는 상단 스페이서 담당. */}
+      {(!uiPaused || liveCoords.length > 0) && <View style={{ flex: 1 }} />}
 
       {/* controls */}
       <View style={r.controls}>
@@ -631,7 +632,8 @@ const r = StyleSheet.create({
   // flex:1 로 상단 여백 전부를 채우고 아래(km 히어로)와도 여백 없이 맞닿는다.
   // 컨테이너는 투명 — 회색(CARD)은 내려오는 시트(내용물)에 실어, 배경까지 지도와 함께
   // 내려온다(2026-07-12 실기기 피드백: 회색이 먼저 '띡' 깔리면 전환이 둘로 쪼개져 보임).
-  mapPanel: { flex: 1, marginHorizontal: -rs(24), marginTop: rv(10), marginBottom: 0, overflow: 'hidden' },
+  // 지도 높이 = 화면 절반까지(2026-07-12 사용자 확정: '사진은 반까지만') — 렌더에서 winH 로 계산.
+  mapPanel: { marginHorizontal: -rs(24), marginTop: rv(10), marginBottom: 0, overflow: 'hidden' },
   // 패널 우하단 '전체화면' 힌트 배지.
   mapExpandBadge: { position: 'absolute', right: 12, bottom: 12, width: rs(32), height: rs(32), borderRadius: rs(16), backgroundColor: 'rgba(0,0,0,0.55)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: withAlpha(T1, 0.2) },
   // 전체화면 지도 하단 중앙 버튼 행 — 구석 대신 가운데, 위로 올려 잘 눌리게.
@@ -692,7 +694,10 @@ const r = StyleSheet.create({
 
   // 달릴 땐 34(빈약하다는 피드백 → 30에서 확대), 일시정지 시 22로 줄어 서브에 자리를 내준다.
   // 프리미엄: 위 헤어라인만(아래 테두리 제거), 여백 크게, 가벼운 값 + 마이크로 라벨.
-  heroMetrics: { flexDirection: 'row', marginTop: rv(30), paddingTop: rv(22), paddingBottom: rv(6), borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP },
+  // 가로 라인 전부 제거(2026-07-12 사용자 확정: 러닝 중 중간 라인 + 일시정지 행 구분선) —
+  // 분리는 여백이 담당(미니멀). 셀 사이 세로 디바이더(hmDivider)만 유지.
+  heroMetrics: { flexDirection: 'row', marginTop: rv(30), paddingTop: rv(22), paddingBottom: rv(6) },
+  heroMetricsRun: {},
   // 일시정지: 헤어라인 위 여백(marginTop 16) = 아래 여백(paddingTop 16) — 균등(사용자 확정).
   heroMetricsPaused: { marginTop: rv(14), paddingTop: rv(20), paddingBottom: rv(8) },
   hm: { flex: 1, alignItems: 'center' },
