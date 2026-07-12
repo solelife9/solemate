@@ -53,6 +53,8 @@ const SNAP: RunSnapshot = {
   t0: 1_700_000_000_000,
   shoe: {id: 'shoe-1', name: 'Nike Pegasus'},
   goalKm: 5,
+  goalMin: 0,
+  pacePlan: [],
   cadence: 172,
   location: '서울',
   track: null,
@@ -419,5 +421,32 @@ describe('reconcilePendingWithServer — drop ONLY echo-confirmed runs (iron law
 
     expect(dropped.map(r => r.localId)).toEqual(['run_abc']);
     expect(stillPending.map(r => r.localId)).toEqual(['run_dupe']);
+  });
+});
+
+// ── 시간 목표·페이스 플랜 영속(#15 — 복구 시 자유런 둔갑 방지) ────────────────────
+describe('goalMin/pacePlan 스냅샷 보존', () => {
+  test('sanitize 왕복: 시간 목표와 플랜이 살아남는다', () => {
+    const s = sanitizeSnapshot({
+      dist: 1, elapsed: 600, pts: [], pausedMs: 0, t0: 1, shoe: {id: 's', name: 'x'},
+      goalKm: 0, goalMin: 30, pacePlan: [300, 305, 310], cadence: 0, location: '', savedAt: 2,
+    });
+    expect(s?.goalMin).toBe(30);
+    expect(s?.pacePlan).toEqual([300, 305, 310]);
+  });
+
+  test('구버전 스냅샷(필드 없음)·손상값은 0/[] 로 정규화 — 하위호환', () => {
+    const s = sanitizeSnapshot({
+      dist: 1, elapsed: 600, pts: [], pausedMs: 0, t0: 1, shoe: {id: 's', name: 'x'},
+      goalKm: 5, cadence: 0, location: '', savedAt: 2,
+    });
+    expect(s?.goalMin).toBe(0);
+    expect(s?.pacePlan).toEqual([]);
+    const bad = sanitizeSnapshot({
+      dist: 1, elapsed: 1, pts: [], pausedMs: 0, t0: 1, shoe: {id: 's', name: 'x'},
+      goalKm: 0, goalMin: -5, pacePlan: ['x', -1, 240, Infinity], cadence: 0, location: '', savedAt: 2,
+    });
+    expect(bad?.goalMin).toBe(0);
+    expect(bad?.pacePlan).toEqual([240]);
   });
 });

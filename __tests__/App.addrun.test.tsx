@@ -48,6 +48,8 @@ const SNAP: RunSnapshot = {
   t0: 1_700_000_000_000,
   shoe: {id: 's1', name: 'Nike Pegasus'},
   goalKm: 5,
+  goalMin: 0,
+  pacePlan: [],
   cadence: 172,
   location: '서울',
   savedAt: 1_700_000_900_000,

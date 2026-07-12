@@ -35,6 +35,11 @@ export interface RunSnapshot {
   t0: number; // epoch ms the run began
   shoe: {id: string; name: string};
   goalKm: number; // target distance (>= 0)
+  /** 시간 목표(분, >=0). 0=시간 목표 아님. 복구 시 링/음성/달성 판정을 시간 기준으로
+   *  잇는다(2026-07-12 #15 — 이전엔 하드코딩 0 으로 유실돼 자유런으로 둔갑했다). */
+  goalMin: number;
+  /** 스피드 모드 km별 목표 페이스(초/km) 플랜. []=비스피드. 복구 시 코칭을 잇는다. */
+  pacePlan: number[];
   cadence: number; // last spm reading (>= 0)
   location: string; // reverse-geocoded label, '' until resolved
   // 트랙 모드 랩 상태(비트랙이면 null/부재). lapM=확정 한바퀴(m), lapTimes=랩 완료 경과초,
@@ -102,6 +107,13 @@ export function sanitizeSnapshot(raw: unknown): RunSnapshot | null {
     t0: nonNeg(r.t0),
     shoe: {id: String(shoe.id), name: String(shoe.name ?? '')},
     goalKm: nonNeg(r.goalKm),
+    goalMin: Math.floor(nonNeg(r.goalMin)),
+    pacePlan: Array.isArray(r.pacePlan)
+      ? r.pacePlan
+          .map(v => (typeof v === 'number' ? v : parseFloat(String(v))))
+          .filter(v => Number.isFinite(v) && v > 0)
+          .slice(0, 100)
+      : [],
     cadence: Math.floor(nonNeg(r.cadence)),
     location: typeof r.location === 'string' ? r.location : '',
     track: sanitizeTrackMeta(r.track),

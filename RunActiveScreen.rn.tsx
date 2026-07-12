@@ -173,7 +173,7 @@ const cer = StyleSheet.create({
 });
 
 export default function RunActiveScreen({
-  shoeLabel = 'Alphafly 3', distanceKm = 3.2, goalKm = 5,
+  shoeLabel = 'Alphafly 3', distanceKm = 3.2, goalKm = 5, goalMin = 0, elapsedSec = 0,
   timeLabel = '16:04', paceLabel = "5'02\"", avgPaceLabel = "5'10\"",
   cadence = 174, calories = 205, elevationM = 46, gpsLevel = 3, bpm = 0,
   age = 0, restHR = 0,
@@ -184,6 +184,10 @@ export default function RunActiveScreen({
   track = null, onLap, onUndoLap,
 }: {
   shoeLabel?: string; distanceKm?: number; goalKm?: number;
+  /** 시간 목표(분, #15). >0 이고 goalKm=0 이면 링 진행·달성 판정이 경과시간 기준. */
+  goalMin?: number;
+  /** 경과 초 — 시간 목표 진행/판정용(timeLabel 은 표시 전용 문자열). */
+  elapsedSec?: number;
   timeLabel?: string; paceLabel?: string; avgPaceLabel?: string;
   // 스피드 모드 코칭: 현재(롤링) 페이스 vs 현재 km 목표 페이스(초/km). targetPaceSec=null 이면
   // 코칭 배너를 숨긴다(거리/시간 모드). 둘 다 있으면 빠름/적정/느림을 색·라벨로 보여준다.
@@ -291,10 +295,15 @@ export default function RunActiveScreen({
     setCeremony(true);
   };
 
-  const pct = goalKm > 0 ? Math.min(1, distanceKm / goalKm) : 0;
+  // 시간 목표(#15): goalMin>0(그리고 거리 목표 없음)이면 링 진행·달성 판정이 경과시간 기준.
+  // 링 센터 숫자는 시간 목표여도 거리 유지(달린 거리는 항상 1번 관심사 — NRC 동일).
+  const timeGoal = goalMin > 0 && !(goalKm > 0);
+  const pct = timeGoal
+    ? Math.min(1, elapsedSec / (goalMin * 60))
+    : goalKm > 0 ? Math.min(1, distanceKm / goalKm) : 0;
   const remain = goalKm ? Math.max(0, goalKm - distanceKm) : 0;
-  const met = goalKm > 0 && distanceKm >= goalKm;
-  const over = met ? distanceKm - goalKm : 0;
+  const met = timeGoal ? elapsedSec >= goalMin * 60 : goalKm > 0 && distanceKm >= goalKm;
+  const over = met && !timeGoal ? distanceKm - goalKm : 0;
 
   const [celebrated, setCelebrated] = useState(false);
   const toastY = useRef(new Animated.Value(-120)).current;
@@ -355,10 +364,10 @@ export default function RunActiveScreen({
 
       {/* 목표 달성 축하 토스트 */}
       {met && (
-        <Animated.View pointerEvents="none" style={[r.toast, { opacity: toastO, transform: [{ translateY: toastY }] }]} accessibilityLiveRegion="polite" accessibilityRole="text" accessibilityLabel={`목표 ${goalKm}킬로미터 달성! 계속 달려요`}>
+        <Animated.View pointerEvents="none" style={[r.toast, { opacity: toastO, transform: [{ translateY: toastY }] }]} accessibilityLiveRegion="polite" accessibilityRole="text" accessibilityLabel={timeGoal ? `목표 ${goalMin}분 달성! 계속 달려요` : `목표 ${goalKm}킬로미터 달성! 계속 달려요`}>
           <View style={r.toastTick}><Ionicons name="checkmark" size={ri(18)} color={ACCENT} /></View>
           <View style={{ flex: 1 }}>
-            <Text style={r.toastA}>목표 {goalKm}km 달성!</Text>
+            <Text style={r.toastA}>{timeGoal ? `목표 ${goalMin}분 달성!` : `목표 ${goalKm}km 달성!`}</Text>
             <Text style={r.toastB}>계속 달려요 — 기록은 신발에 쌓이는 중</Text>
           </View>
         </Animated.View>
@@ -429,7 +438,7 @@ export default function RunActiveScreen({
             </View>
           ) : (
             <Animated.View style={{ alignItems: 'center', transform: [{ scale: kmPulse }] }} accessibilityRole="text" accessibilityLiveRegion="polite"
-              accessibilityLabel={`달린 거리 ${distanceKm.toFixed(2)}킬로미터${goalKm ? (met ? `, 목표 ${goalKm}킬로미터 달성, ${over.toFixed(2)}킬로미터 초과` : `, 목표 ${goalKm}킬로미터까지 ${remain.toFixed(2)}킬로미터 남음`) : ''}`}>
+              accessibilityLabel={`달린 거리 ${distanceKm.toFixed(2)}킬로미터${timeGoal ? (met ? `, 목표 ${goalMin}분 달성` : `, 목표 ${goalMin}분 중 ${Math.floor(elapsedSec / 60)}분 경과`) : goalKm ? (met ? `, 목표 ${goalKm}킬로미터 달성, ${over.toFixed(2)}킬로미터 초과` : `, 목표 ${goalKm}킬로미터까지 ${remain.toFixed(2)}킬로미터 남음`) : ''}`}>
               {/* 링 센터: 큰 거리 숫자 + 'km' 단위만. 목표·퍼센티지 표기는 화면에서 제거하고
                   음성으로만 안내한다(나이키식, 사용자 요청). 링의 채워지는 호가 진행을 시각화.
                   스크린리더 라벨엔 목표/남음을 그대로 두어 접근성은 보존.

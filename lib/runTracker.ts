@@ -62,6 +62,10 @@ type Listener = (ev: RunTrackerEvent) => void;
 
 export interface RunTrackerConfig {
   goalKm: number;
+  /** 시간 목표(분). 스냅샷에 실어 크래시 복구가 시간 목표를 보존하게 한다(#15). 기본 0. */
+  goalMin?: number;
+  /** 스피드 모드 km별 목표 페이스(초/km). 스냅샷 영속용(복구 시 코칭 유지). 기본 []. */
+  pacePlan?: number[];
   shoe: {id: string; name: string};
   /** Epoch ms the run began; defaults to now(). Injectable for tests/recovery. */
   t0?: number;
@@ -138,6 +142,8 @@ class RunTracker {
 
   private t0 = 0;
   private goalKm = 0;
+  private goalMin = 0;
+  private pacePlan: number[] = [];
   private shoe: {id: string; name: string} = {id: '', name: ''};
   private cadence = 0;
   private location = '';
@@ -207,6 +213,8 @@ class RunTracker {
     this.stalledMs = config.stalledMs ?? 0;
     this.t0 = config.t0 ?? this.now();
     this.goalKm = config.goalKm;
+    this.goalMin = config.goalMin ?? 0;
+    this.pacePlan = (config.pacePlan ?? []).slice();
     this.shoe = config.shoe;
     this.cadence = 0;
     this.location = '';
@@ -664,6 +672,8 @@ class RunTracker {
       t0: this.t0,
       shoe: {id: this.shoe.id, name: this.shoe.name},
       goalKm: this.goalKm,
+      goalMin: this.goalMin,
+      pacePlan: this.pacePlan,
       cadence: this.cadence,
       location: this.location,
       track: this.trackMeta,

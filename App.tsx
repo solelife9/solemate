@@ -640,14 +640,14 @@ function Main(){
         [
           {text:'버리기',style:'destructive',onPress:()=>{void clearSnapshot();}},
           {text:'기록 저장',onPress:()=>{
-            setActiveRun({id:snap.shoe.id,name:snap.shoe.name,goalKm:snap.goalKm,goalMin:0,pacePlan:[],trackLapM});
+            setActiveRun({id:snap.shoe.id,name:snap.shoe.name,goalKm:snap.goalKm,goalMin:snap.goalMin??0,pacePlan:snap.pacePlan??[],trackLapM});
             setResumeMode('review');
             setResumeSnap(snap);
             setOverlay('run');
           }},
           {text:'이어 달리기',onPress:()=>{
             // GPS/센서를 다시 켜고 누적 거리·경과시간을 시드해 계속 달린다(엔진 seed*).
-            setActiveRun({id:snap.shoe.id,name:snap.shoe.name,goalKm:snap.goalKm,goalMin:0,pacePlan:[],trackLapM});
+            setActiveRun({id:snap.shoe.id,name:snap.shoe.name,goalKm:snap.goalKm,goalMin:snap.goalMin??0,pacePlan:snap.pacePlan??[],trackLapM});
             setResumeMode('continue');
             setResumeSnap(snap);
             setOverlay('run');
@@ -1839,6 +1839,7 @@ function Main(){
         shoe={activeRun}
         insets={insets}
         goalKm={activeRun.goalKm}
+        goalMin={activeRun.goalMin}
         pacePlan={activeRun.pacePlan}
         track={activeRun.trackLapM?{lapM:activeRun.trackLapM}:null}
         weightKg={weightKg}
@@ -2103,7 +2104,7 @@ const boot=StyleSheet.create({
 });
 
 // ─── Live run screen (GPS / sensors / TTS engine + handoff Ring UI) ─────────
-function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],track=null,weightKg,age=0,restHR=0,onSave,onDiscard,resume,resumeMode}:{shoe:{id:string;name:string};insets:any;goalKm:number;pacePlan?:number[];track?:{lapM:number}|null;weightKg:number;age?:number;restHR?:number;onSave:(km:number,dur:number,cad:number,memo:string,route:string,location:string,splits:{km:number;paceSec:number;elevM:number}[],elevM:number,cal:number,paceTrack:{d:number;t:number}[],hrTrack:{t:number;bpm:number}[],gapTrack:{d:number;t:number;e:number}[],trackMeta?:{lapM:number;laps:number;lapTimes:number[]}|null)=>Promise<void>;onDiscard:()=>void;resume?:RunSnapshot|null;resumeMode?:'review'|'continue'}){
+function RunActiveScreen({shoe,insets,goalKm,goalMin=0,pacePlan=[],track=null,weightKg,age=0,restHR=0,onSave,onDiscard,resume,resumeMode}:{shoe:{id:string;name:string};insets:any;goalKm:number;goalMin?:number;pacePlan?:number[];track?:{lapM:number}|null;weightKg:number;age?:number;restHR?:number;onSave:(km:number,dur:number,cad:number,memo:string,route:string,location:string,splits:{km:number;paceSec:number;elevM:number}[],elevM:number,cal:number,paceTrack:{d:number;t:number}[],hrTrack:{t:number;bpm:number}[],gapTrack:{d:number;t:number;e:number}[],trackMeta?:{lapM:number;laps:number;lapTimes:number[]}|null)=>Promise<void>;onDiscard:()=>void;resume?:RunSnapshot|null;resumeMode?:'review'|'continue'}){
   // 'continue' = 스냅샷에서 GPS 를 재가동해 이어 달린다(엔진 seed*). 'review'(기본) =
   // done 화면에서 검토·저장만. resume 가 없으면(일반 시작) 두 분기 모두 타지 않는다.
   const isContinue=!!resume&&resumeMode==='continue';
@@ -2470,6 +2471,25 @@ function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],track=null,weightKg,age
     // eslint-disable-next-line react-hooks/exhaustive-deps
   },[km]);
 
+  // ── 시간 목표(분) 절반/달성 음성(#15) — 시간 목표는 km 가 아니라 경과시간이 기준이다.
+  // 이전엔 goalMin 이 어디에서도 소비되지 않아 시간 목표 러닝이 자유런처럼 침묵했다.
+  // 절반은 10분 이상 목표에서만(짧은 런 소음 방지 — 거리 절반의 goalKm>=2 와 같은 정신).
+  // 달성 축하(토스트·햅틱·링)는 프레젠테이션(met)이 담당, 여기선 음성만.
+  const announcedTimeHalf=useRef(false);
+  const announcedTimeGoal=useRef(false);
+  useEffect(()=>{
+    if(!(goalMin>0)||goalKm>0)return; // 시간 목표 모드에서만(목표 유형은 상호배타)
+    if(!announcedTimeHalf.current&&goalMin>=10&&elapsed>=goalMin*30){
+      announcedTimeHalf.current=true;
+      runVoice.half();
+    }
+    if(!announcedTimeGoal.current&&elapsed>=goalMin*60){
+      announcedTimeGoal.current=true;
+      runVoice.goal();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[elapsed]);
+
   // 런 시작: 공유 엔진을 초기화하고, 케이던스 가속도계 + 1초 틱(경과/死구간) +
   // 3초 스냅샷 타이머를 띄운 뒤 expo-location 트래킹(포그라운드 watch + 가능 시
   // 백그라운드 task)을 시작한다. 거리/시간/일시정지/死구간 판정은 모두 엔진이
@@ -2498,7 +2518,7 @@ function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],track=null,weightKg,age
     const seed=isContinue&&resume&&!seededRef.current?resume:null;
     seededRef.current=true; // 시드는 마운트당 첫 beginRun 1회만 — '계속 달리기' 재시작은 0부터.
     if(seed){
-      runTracker.start({goalKm,shoe:{id:shoe.id,name:shoe.name},
+      runTracker.start({goalKm,goalMin,pacePlan,shoe:{id:shoe.id,name:shoe.name},
         t0:Date.now()-seed.elapsed*1000,seedDist:seed.dist,
         seedPts:seed.pts as any,seedLocation:seed.location});
       // 크래시 전 통과한 km 만큼 스플릿 슬롯을 채워, 재개 후의 km 경계부터 실측이 기록되게
@@ -2512,7 +2532,7 @@ function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],track=null,weightKg,age
       announcedKm.current=Math.floor(seed.dist);
       announcedHalf.current=Math.floor(seed.dist*2);
     }else{
-    runTracker.start({goalKm,shoe:{id:shoe.id,name:shoe.name}});
+    runTracker.start({goalKm,goalMin,pacePlan,shoe:{id:shoe.id,name:shoe.name}});
     splitsRef.current=[];lastSplitRef.current={elapsed:0,elevM:0};
     setKm(0);setElapsed(0);setCadence(0);setAccuracyM(null);
     setGpsStalled(false);setPermLost(false);setGpsStatus('GPS 신호 찾는 중...');
@@ -2783,6 +2803,8 @@ function RunActiveScreen({shoe,insets,goalKm,pacePlan=[],track=null,weightKg,age
       shoeLabel={ui.model||shoe.name}
       distanceKm={dispDist}
       goalKm={goalKm}
+      goalMin={goalMin}
+      elapsedSec={elapsed}
       timeLabel={fmtTime(elapsed)}
       paceLabel={trackMode?(lastLapPaceSec!=null?fmtPace(1,lastLapPaceSec):'--'):(currentPaceSec!=null?fmtPace(1,currentPaceSec):'--')}
       avgPaceLabel={fmtPace(dispDist,elapsed)}
