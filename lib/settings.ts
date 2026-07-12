@@ -137,6 +137,33 @@ export async function saveVoiceSettings(v: VoiceSettings): Promise<void> {
   }
 }
 
+// ── 심박존 가이드(#7) — 목표 존(2~4). 0=끄기. 거리/시간 목표와 직교로 조합. ──
+// 목표 화면의 '심박 가이드' 행이 설정한다. 런 시작 시 로드해 이탈 코칭에 쓴다.
+export const K_TARGET_ZONE = 'settings_target_zone';
+export type TargetZone = 0 | 2 | 3 | 4;
+export const DEFAULT_TARGET_ZONE: TargetZone = 0;
+
+/** 영속 문자열 → 목표 존. '2'/'3'/'4'만 유효, 그 외(끄기/손상)는 0. */
+export function parseTargetZone(raw: string | null | undefined): TargetZone {
+  return raw === '2' || raw === '3' || raw === '4' ? (Number(raw) as TargetZone) : 0;
+}
+
+export async function loadTargetZone(): Promise<TargetZone> {
+  try {
+    return parseTargetZone(await AsyncStorage.getItem(K_TARGET_ZONE));
+  } catch {
+    return DEFAULT_TARGET_ZONE;
+  }
+}
+
+export async function saveTargetZone(z: TargetZone): Promise<void> {
+  try {
+    await AsyncStorage.setItem(K_TARGET_ZONE, String(z));
+  } catch {
+    /* 비치명적 */
+  }
+}
+
 // ── 자동 일시정지 설정(#16, 가민/NRC 패리티) — 트레드밀·언덕 반복 러너는 끈다. ──
 export const K_AUTOPAUSE = 'settings_autopause';
 export const DEFAULT_AUTOPAUSE = true;

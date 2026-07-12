@@ -28,6 +28,9 @@ import {
 } from './theme';
 // lib/haptics 배선: '러닝 시작' CTA(런 시작) → tap.
 import { tap } from './lib/haptics';
+import { loadTargetZone, saveTargetZone, DEFAULT_TARGET_ZONE, type TargetZone } from './lib/settings';
+import { useEffect } from 'react';
+import { HR_ZONE_COLORS, GOOD } from './theme';
 // CTA 는 앱 전역 단일 Button 프리미티브(그라데이션 GRAD_TOP/BOT·글로우·radius 토큰).
 // 모드 탭 스트립은 SegmentedControl 단일 프리미티브(accentTint variant).
 import { Button, SegmentedControl, SwipeBack, SwipeBackExclude, ShoeGlyph, GlassEdge } from './primitives';
@@ -55,7 +58,7 @@ type Mode = 'km' | 'min' | 'speed' | 'track';
 /** 러닝 목표 — 거리(km)/시간(분)/스피드(km별 페이스 플랜)/트랙(운동장 랩). 0/빈배열/null은 미설정.
  *  track: 트랙 모드 = 한 바퀴 예상 거리(m)만 정한다. 실제 랩거리는 런 중 첫 랩 GPS로 자동 보정
  *  (snapLapDistance) — 이 값은 기본값·실내(GPS✗) 폴백. km/durationMin 은 트랙에선 0(자유). */
-export type RunGoal = { km: number; durationMin: number; pacePlan: number[]; track?: { lapM: number } | null };
+export type RunGoal = { km: number; durationMin: number; pacePlan: number[]; track?: { lapM: number } | null; targetZone?: number };
 /** 트랙 한 바퀴 예상 거리 선택지(m) — 야외 400(공인)·트랙 300·실내 200 + 커스텀. */
 const LAP_PRESETS = [200, 300, 400] as const;
 const CFG: Record<'km' | 'min', { min: number; max: number; step: number; major: number; minor: number; px: number; unit: string; def: number; presets: { label: string; v: number }[] }> = {
@@ -201,15 +204,23 @@ export default function RunGoalScreen({
   const condColor = selPct != null ? ringColor(selPct).to : null;
   const half = vpW / 2;
   // 런 시작: 햅틱(tap) → onStart(RunGoal). 거리/시간/스피드(km별 페이스 플랜)로 분기.
+  // 심박 가이드(#7) — 목표 존(0=끄기·2·3·4). 저장값 로드, 변경 시 저장(persist). 목표 유형과 직교.
+  const [targetZone, setTargetZone] = useState<TargetZone>(DEFAULT_TARGET_ZONE);
+  useEffect(() => { void loadTargetZone().then(setTargetZone); }, []);
+  const pickZone = (z: TargetZone) => { tap(); setTargetZone(z); void saveTargetZone(z); };
+
   const startRun = () => {
     tap();
-    const goal: RunGoal =
+    const base: RunGoal =
       mode === 'km' ? { km: val, durationMin: 0, pacePlan: [] }
         : mode === 'min' ? { km: 0, durationMin: val, pacePlan: [] }
           : mode === 'track' ? { km: 0, durationMin: 0, pacePlan: [], track: { lapM } }
             : { km: speedGoal.km, durationMin: 0, pacePlan: speedGoal.plan };
-    onStart?.(goal);
+    onStart?.({ ...base, targetZone });
   };
+  const ZONE_OPTS: { z: TargetZone; label: string }[] = [
+    { z: 0, label: '끄기' }, { z: 2, label: 'Z2 이지' }, { z: 3, label: 'Z3 템포' }, { z: 4, label: 'Z4 역치' },
+  ];
 
   return (
     // 엣지 스와이프 백 — 러닝 '전' 화면이라 잃을 입력이 없고 뒤로 버튼과 동일 동작.
@@ -327,6 +338,25 @@ export default function RunGoalScreen({
             </View>
           </>
         )}
+      </View>
+
+      {/* 심박 가이드(#7) — 거리/시간/스피드 목표와 직교로 조합하는 강도 레일(탭 아닌 행).
+          기본 끄기. 선택 시 러닝 중 목표 존 이탈을 색·화살표·음성으로 코칭한다. */}
+      <View style={s.zoneRow} accessibilityRole="radiogroup" accessibilityLabel="심박 가이드">
+        <Text style={s.zoneLabel}>심박 가이드</Text>
+        <View style={s.zoneChips}>
+          {ZONE_OPTS.map(o => {
+            const on = targetZone === o.z;
+            const col = o.z !== 0 ? HR_ZONE_COLORS[o.z as 2 | 3 | 4] : GOOD;
+            return (
+              <Pressable key={o.z} onPress={() => pickZone(o.z)} accessibilityRole="radio"
+                accessibilityState={{ selected: on }} accessibilityLabel={`심박 가이드 ${o.label}`}
+                style={[s.zoneChip, on && { backgroundColor: withAlpha(col, 0.16), borderColor: withAlpha(col, 0.5) }]}>
+                <Text style={[s.zoneChipTxt, on && { color: col }]}>{o.label}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
       </View>
 
       {/* footer — 신발 행: 2켤레 이상이면 탭해서 여기서 바로 신발을 바꾼다(마지막 교정 기회).
@@ -471,6 +501,12 @@ const s = StyleSheet.create({
   freeTitle: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.title.fontSize, fontWeight: '600', letterSpacing: -0.4, marginBottom: rv(10) },
   freeSub: { color: T3, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '500', lineHeight: rf(21), textAlign: 'center', maxWidth: rs(250) },
 
+  // 심박 가이드 행(#7) — 라벨 + 칩. 신발 행 위, 조용한 강도 레일.
+  zoneRow: { paddingHorizontal: rs(22), paddingTop: rv(2), paddingBottom: rv(10) },
+  zoneLabel: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600', letterSpacing: 0.3, marginBottom: rv(8) },
+  zoneChips: { flexDirection: 'row', gap: rv(8), flexWrap: 'wrap' },
+  zoneChip: { paddingHorizontal: rs(14), paddingVertical: rv(8), borderRadius: RADIUS.pill, borderCurve: 'continuous', backgroundColor: withAlpha(T1, 0.06), borderWidth: 1, borderColor: 'transparent' },
+  zoneChipTxt: { color: T3, fontFamily: FONT, fontSize: rf(13.5), fontWeight: '700' },
   foot: { paddingHorizontal: rs(22), paddingTop: rv(4), paddingBottom: rv(30) },
   // 코너 페이드 헤어라인(GlassEdge glints=false) — 균일 RN 보더 폐지(2026-07-10 확정).
   shoeSel: { flexDirection: 'row', alignItems: 'center', gap: rv(12), padding: rs(12), borderRadius: RADIUS.lg, borderCurve: 'continuous', overflow: 'hidden', backgroundColor: GLASS.fill },

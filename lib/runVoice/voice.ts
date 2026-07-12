@@ -151,6 +151,14 @@ export const runVoice = {
     if (!distId) return;
     this.play([distId, ...paceIds(avgPaceSec, 'avg'), ...timeIds(elapsedSec)]);
   },
+  /** 심박존 코칭(#7): 목표 존보다 높음 → "천천히, 존 N로 낮춰 보세요"(zone_down_N). */
+  zoneDown(targetZone: number) {
+    if (targetZone >= 2 && targetZone <= 4) this.play([`zone_down_${targetZone}`]);
+  },
+  /** 목표 존보다 낮음 → "조금만 올려요, 존 N 페이스로"(zone_up_N). */
+  zoneUp(targetZone: number) {
+    if (targetZone >= 2 && targetZone <= 4) this.play([`zone_up_${targetZone}`]);
+  },
   /** 설정 볼륨(0~1) 주입 — 다음 재생부터 적용. */
   setVolume(v: number) {
     if (Number.isFinite(v) && v > 0 && v <= 1) clipVolume = v;

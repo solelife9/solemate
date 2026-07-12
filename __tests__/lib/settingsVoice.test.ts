@@ -71,3 +71,21 @@ describe('autoPause 설정', () => {
     expect(await loadAutoPause()).toBe(true);
   });
 });
+
+// ── 심박존 가이드(#7) ────────────────────────────────────────────────────────
+import {parseTargetZone, loadTargetZone, saveTargetZone, K_TARGET_ZONE} from '../../lib/settings';
+describe('targetZone 설정', () => {
+  beforeEach(() => AsyncStorage.clear());
+  test("파서: 2/3/4만 유효, 그 외 0", () => {
+    expect(parseTargetZone('2')).toBe(2);
+    expect(parseTargetZone('4')).toBe(4);
+    expect(parseTargetZone('5')).toBe(0);
+    expect(parseTargetZone('0')).toBe(0);
+    expect(parseTargetZone(null)).toBe(0);
+  });
+  test('저장/로드 왕복', async () => {
+    await saveTargetZone(3);
+    expect(await AsyncStorage.getItem(K_TARGET_ZONE)).toBe('3');
+    expect(await loadTargetZone()).toBe(3);
+  });
+});

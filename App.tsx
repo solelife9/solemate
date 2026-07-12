@@ -104,7 +104,8 @@ import {hkSaveRunWorkout, hkBackfillHeartRate} from './lib/healthkit';
 import {currentTargetPace} from './lib/pacePlan';
 import {liveActivity} from './lib/liveActivity';
 import {watchSession} from './lib/watchSession';
-import {estimateMaxHR} from './lib/analytics/hrZones';
+import {estimateMaxHR, zoneOf} from './lib/analytics/hrZones';
+import {decideZoneCoach, initZoneCoachState} from './lib/zoneCoach';
 import {assessTrainingLoad, loadRatioPhraseKo, LOAD_WORD, LoadLevel} from './lib/trainingLoad';
 import {
   getNotifSettings, setNotifSettings, dueNotifications,
@@ -329,7 +330,7 @@ function Main(){
   const [previewOnboard,setPreviewOnboard]=useState(__DEV__&&!(typeof process!=='undefined'&&process.env&&process.env.JEST_WORKER_ID));
   const [overlay,setOverlay]=useState<'none'|'add'|'goal'|'countdown'|'run'>('none');
   const [pendingShoe,setPendingShoe]=useState<{id:string;name:string;ui:Shoe}|null>(null);
-  const [activeRun,setActiveRun]=useState<{id:string;name:string;goalKm:number;goalMin:number;pacePlan:number[];trackLapM?:number}|null>(null);
+  const [activeRun,setActiveRun]=useState<{id:string;name:string;goalKm:number;goalMin:number;pacePlan:number[];targetZone:number;trackLapM?:number}|null>(null);
   // audit#2: 앱 시작 시 감지된 미완료 런 스냅샷. 사용자가 '복구' 선택 시 done
   // 화면으로 시드되어 검토 후 저장/버리기를 결정한다(데이터 유실 금지).
   const [resumeSnap,setResumeSnap]=useState<RunSnapshot|null>(null);
@@ -638,14 +639,14 @@ function Main(){
         [
           {text:'버리기',style:'destructive',onPress:()=>{void clearSnapshot();}},
           {text:'기록 저장',onPress:()=>{
-            setActiveRun({id:snap.shoe.id,name:snap.shoe.name,goalKm:snap.goalKm,goalMin:snap.goalMin??0,pacePlan:snap.pacePlan??[],trackLapM});
+            setActiveRun({id:snap.shoe.id,name:snap.shoe.name,goalKm:snap.goalKm,goalMin:snap.goalMin??0,pacePlan:snap.pacePlan??[],targetZone:0,trackLapM});
             setResumeMode('review');
             setResumeSnap(snap);
             setOverlay('run');
           }},
           {text:'이어 달리기',onPress:()=>{
             // GPS/센서를 다시 켜고 누적 거리·경과시간을 시드해 계속 달린다(엔진 seed*).
-            setActiveRun({id:snap.shoe.id,name:snap.shoe.name,goalKm:snap.goalKm,goalMin:snap.goalMin??0,pacePlan:snap.pacePlan??[],trackLapM});
+            setActiveRun({id:snap.shoe.id,name:snap.shoe.name,goalKm:snap.goalKm,goalMin:snap.goalMin??0,pacePlan:snap.pacePlan??[],targetZone:0,trackLapM});
             setResumeMode('continue');
             setResumeSnap(snap);
             setOverlay('run');
@@ -1732,7 +1733,7 @@ function Main(){
     // 목표 설정 → 카운트다운(준비·GPS 워밍업·3·2·1·GO) → 라이브 런. 카운트다운의
     // onDone 이 실제 런(GPS 트래킹 시작) 화면으로 넘긴다. 미완료 런 복구 경로는
     // 카운트다운을 거치지 않고 곧장 'run'으로 간다(이미 끝난 런의 검토라서).
-    setActiveRun({id:pendingShoe!.id,name:pendingShoe!.name,goalKm:goal.km,goalMin:goal.durationMin,pacePlan:goal.pacePlan,trackLapM:goal.track?.lapM});
+    setActiveRun({id:pendingShoe!.id,name:pendingShoe!.name,goalKm:goal.km,goalMin:goal.durationMin,pacePlan:goal.pacePlan,targetZone:goal.targetZone??0,trackLapM:goal.track?.lapM});
     setOverlay('countdown');
   };
   const startActiveRun=(goal:RunGoal)=>{
@@ -1828,6 +1829,7 @@ function Main(){
         insets={insets}
         goalKm={activeRun.goalKm}
         goalMin={activeRun.goalMin}
+        targetZone={activeRun.targetZone}
         pacePlan={activeRun.pacePlan}
         track={activeRun.trackLapM?{lapM:activeRun.trackLapM}:null}
         weightKg={weightKg}
@@ -2089,7 +2091,7 @@ const boot=StyleSheet.create({
 });
 
 // ─── Live run screen (GPS / sensors / TTS engine + handoff Ring UI) ─────────
-function RunActiveScreen({shoe,insets,goalKm,goalMin=0,pacePlan=[],track=null,weightKg,age=0,restHR=0,onSave,onDiscard,resume,resumeMode}:{shoe:{id:string;name:string};insets:any;goalKm:number;goalMin?:number;pacePlan?:number[];track?:{lapM:number}|null;weightKg:number;age?:number;restHR?:number;onSave:(km:number,dur:number,cad:number,memo:string,route:string,location:string,splits:{km:number;paceSec:number;elevM:number}[],elevM:number,cal:number,paceTrack:{d:number;t:number}[],hrTrack:{t:number;bpm:number}[],gapTrack:{d:number;t:number;e:number}[],trackMeta?:{lapM:number;laps:number;lapTimes:number[]}|null)=>Promise<void>;onDiscard:()=>void;resume?:RunSnapshot|null;resumeMode?:'review'|'continue'}){
+function RunActiveScreen({shoe,insets,goalKm,goalMin=0,pacePlan=[],targetZone=0,track=null,weightKg,age=0,restHR=0,onSave,onDiscard,resume,resumeMode}:{shoe:{id:string;name:string};insets:any;goalKm:number;goalMin?:number;pacePlan?:number[];targetZone?:number;track?:{lapM:number}|null;weightKg:number;age?:number;restHR?:number;onSave:(km:number,dur:number,cad:number,memo:string,route:string,location:string,splits:{km:number;paceSec:number;elevM:number}[],elevM:number,cal:number,paceTrack:{d:number;t:number}[],hrTrack:{t:number;bpm:number}[],gapTrack:{d:number;t:number;e:number}[],trackMeta?:{lapM:number;laps:number;lapTimes:number[]}|null)=>Promise<void>;onDiscard:()=>void;resume?:RunSnapshot|null;resumeMode?:'review'|'continue'}){
   // 'continue' = 스냅샷에서 GPS 를 재가동해 이어 달린다(엔진 seed*). 'review'(기본) =
   // done 화면에서 검토·저장만. resume 가 없으면(일반 시작) 두 분기 모두 타지 않는다.
   const isContinue=!!resume&&resumeMode==='continue';
@@ -2475,6 +2477,28 @@ function RunActiveScreen({shoe,insets,goalKm,goalMin=0,pacePlan=[],track=null,we
     // eslint-disable-next-line react-hooks/exhaustive-deps
   },[elapsed]);
 
+  // ── 심박존 코칭(#7): 목표 존(targetZone) 이탈 시 색·화살표·음성. 1초 틱(elapsed)마다
+  // 현재 심박존 vs 목표를 판정한다. 순수 히스테리시스(zoneCoach)가 첫 15s·재알림 60s·복귀
+  // 침묵을 담당 — 과알림 방지. 심박 미측정(bpm 0)·가이드 꺼짐(0)·일시정지 시 비활성.
+  const zoneCoachRef=useRef(initZoneCoachState());
+  const [zoneDeviation,setZoneDeviation]=useState<'up'|'down'|null>(null);
+  const prevZoneTickRef=useRef(0);
+  useEffect(()=>{
+    if(!(targetZone>=2&&targetZone<=4)||paused){
+      if(zoneDeviation!==null)setZoneDeviation(null);
+      zoneCoachRef.current=initZoneCoachState();
+      return;
+    }
+    const cur=heartRate>0?zoneOf(heartRate,estimateMaxHR(age),restHR||undefined):0;
+    const dt=Math.max(0,elapsed-prevZoneTickRef.current); prevZoneTickRef.current=elapsed;
+    const d=decideZoneCoach(zoneCoachRef.current,cur,targetZone,dt||1);
+    zoneCoachRef.current=d.state;
+    if(d.deviation!==zoneDeviation)setZoneDeviation(d.deviation);
+    if(d.announce==='down')runVoice.zoneDown(targetZone);
+    else if(d.announce==='up')runVoice.zoneUp(targetZone);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[elapsed]);
+
   // 런 시작: 공유 엔진을 초기화하고, 케이던스 가속도계 + 1초 틱(경과/死구간) +
   // 3초 스냅샷 타이머를 띄운 뒤 expo-location 트래킹(포그라운드 watch + 가능 시
   // 백그라운드 task)을 시작한다. 거리/시간/일시정지/死구간 판정은 모두 엔진이
@@ -2801,6 +2825,8 @@ function RunActiveScreen({shoe,insets,goalKm,goalMin=0,pacePlan=[],track=null,we
       calories={liveCal}
       elevationM={elevGain}
       bpm={heartRate}
+      targetZone={targetZone}
+      zoneDeviation={zoneDeviation}
       age={age}
       restHR={restHR}
       gpsLevel={gpsLevel}

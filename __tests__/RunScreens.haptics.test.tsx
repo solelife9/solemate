@@ -110,7 +110,7 @@ describe('RunGoalScreen — 런 시작 햅틱과 onStart 핸들러', () => {
       pressableByLabel(root, '러닝 시작').props.onPress();
     });
     expect(haptics.tap).toHaveBeenCalledTimes(1);
-    expect(onStart).toHaveBeenCalledWith({ km: 5, durationMin: 0, pacePlan: [] });
+    expect(onStart).toHaveBeenCalledWith({ km: 5, durationMin: 0, pacePlan: [], targetZone: 0 });
   });
 
   test('시간 모드 선택 후 시작하면 onStart(시간 목표 분)', () => {
@@ -122,7 +122,7 @@ describe('RunGoalScreen — 런 시작 햅틱과 onStart 핸들러', () => {
     act(() => {
       pressableByLabel(root, '러닝 시작').props.onPress();
     });
-    expect(onStart).toHaveBeenCalledWith({ km: 0, durationMin: 30, pacePlan: [] });
+    expect(onStart).toHaveBeenCalledWith({ km: 0, durationMin: 30, pacePlan: [], targetZone: 0 });
   });
 
   test('스피드 모드 선택 후 시작하면 거리 + km별 페이스 플랜이 onStart 로 전달된다', () => {

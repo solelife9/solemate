@@ -8,6 +8,7 @@ import { View, Text, ScrollView, FlatList, Pressable, StyleSheet, TextInput, Ale
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import Svg, { Rect as SvgRect, Path as SvgPath } from 'react-native-svg';
 import {
   BG, CARD, CARD_HI, GLASS, ACCENT, BRAND, DANGER, T1, T2, T3, T4, SEP, FONT, DISPLAY, Shoe, Run, SHOES, withAlpha, RADIUS, GUTTER, HERO, SCRIM, HR_ZONE_COLORS, TYPE,
 } from './theme';
@@ -633,6 +634,38 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'm
                   평균 <Text style={{ color: T1, fontWeight: '700' }}>{hr.avg}</Text> · 최대 <Text style={{ color: T1, fontWeight: '700' }}>{hr.max}</Text> bpm
                 </Text>
               </View>
+              {/* 심박 곡선(#7) — 존 색 밴드 위 흰 라인. 페이스 곡선과 달리 밴드라는 절대
+                  기준이 배경에 깔려 '어느 존인가'가 색으로 즉답된다. hrTrack 2점 이상일 때만. */}
+              {hrTrack.length >= 2 && (() => {
+                const W = 300, H = 116, L = 4, R = 4, TOP = 6, BOT = 16;
+                const bpms = hrTrack.map(p => p.bpm).filter(b => b > 0);
+                if (bpms.length < 2) return null;
+                const tMax = Math.max(1, hrTrack[hrTrack.length - 1].t);
+                const yMin = Math.max(60, Math.min(...bpms) - 8);
+                const yMax = Math.max(...bpms) + 8;
+                const zb = hr.bounds; // {1..5} 하한 bpm
+                const zones = [
+                  { z: 5 as HRZone, lo: zb[5], hi: yMax }, { z: 4 as HRZone, lo: zb[4], hi: zb[5] },
+                  { z: 3 as HRZone, lo: zb[3], hi: zb[4] }, { z: 2 as HRZone, lo: zb[2], hi: zb[3] },
+                  { z: 1 as HRZone, lo: yMin, hi: zb[2] },
+                ];
+                const x = (t: number) => L + (t / tMax) * (W - L - R);
+                const y = (b: number) => TOP + (yMax - b) / (yMax - yMin) * (H - TOP - BOT);
+                const path = hrTrack.filter(p => p.bpm > 0)
+                  .map((p, i) => `${i ? 'L' : 'M'}${x(p.t).toFixed(1)},${y(p.bpm).toFixed(1)}`).join('');
+                return (
+                  <View style={{ marginTop: rv(12) }} accessibilityElementsHidden accessibilityLabel="심박 곡선">
+                    <Svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none">
+                      {zones.map(zn => {
+                        const lo = Math.max(yMin, zn.lo), hi = Math.min(yMax, zn.hi);
+                        if (hi <= yMin || lo >= yMax || hi <= lo) return null;
+                        return <SvgRect key={zn.z} x={0} y={y(hi)} width={W} height={Math.max(0, y(lo) - y(hi))} fill={HR_ZONE_COLORS[zn.z]} opacity={0.11} />;
+                      })}
+                      <SvgPath d={path} fill="none" stroke={T1} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+                    </Svg>
+                  </View>
+                );
+              })()}
               <View style={{ marginTop: rv(12), gap: rv(8) }}>
                 {([5, 4, 3, 2, 1] as HRZone[]).map((z) => {
                   const sec = hr.secs[z];

@@ -175,7 +175,7 @@ const cer = StyleSheet.create({
 export default function RunActiveScreen({
   shoeLabel = 'Alphafly 3', distanceKm = 3.2, goalKm = 5, goalMin = 0, elapsedSec = 0,
   timeLabel = '16:04', paceLabel = "5'02\"", avgPaceLabel = "5'10\"",
-  cadence = 174, calories = 205, elevationM = 46, gpsLevel = 3, bpm = 0,
+  cadence = 174, calories = 205, elevationM = 46, gpsLevel = 3, bpm = 0, targetZone = 0, zoneDeviation = null,
   age = 0, restHR = 0,
   paused: pausedProp, onPause, onStop,
   permLost = false, onOpenSettings, statusLabel,
@@ -194,6 +194,8 @@ export default function RunActiveScreen({
   currentPaceSec?: number | null; targetPaceSec?: number | null;
   // bpm: 심박(분당). 0이면 미측정('--' 표시). HealthKit/Apple Watch 연동 시 채워진다.
   cadence?: number; calories?: number; elevationM?: number; gpsLevel?: number; bpm?: number;
+  /** 심박존 가이드(#7): 목표 존(0=끄기·2·3·4)과 현재 이탈 방향(up=올려라/down=낮춰라/null). */
+  targetZone?: number; zoneDeviation?: 'up' | 'down' | null;
   // 라이브 심박 존 산출용(2026-07-05). age→estimateMaxHR, restHR→Karvonen 보정.
   // 심박이 흐를 때만(bpm>0) 존 색·라벨을 노출한다 — 없으면 기존 '--·심박' 그대로(조건부).
   age?: number; restHR?: number;
@@ -489,7 +491,7 @@ export default function RunActiveScreen({
           라벨, 위 헤어라인만. 일시정지 시 22로 줄며 아래로 서브 지표가 펼쳐진다. */}
       <View style={[r.heroMetrics, uiPaused ? r.heroMetricsPaused : r.heroMetricsRun]}>
         <View style={r.hm} accessibilityRole="text" accessibilityLabel={uiPaused || timeGoal ? `거리 ${distanceKm.toFixed(2)}킬로미터` : `시간 ${timeLabel}`}><Text style={[r.hmV, uiPaused && r.hmVPaused]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72}>{uiPaused || timeGoal ? distanceKm.toFixed(2) : timeLabel}</Text><Text style={r.hmL}>{uiPaused || timeGoal ? '거리 km' : '시간'}</Text></View>
-        <View style={[r.hm, r.hmDivider]} accessibilityRole="text" accessibilityLabel={uiPaused ? `시간 ${timeLabel}` : hrZone !== 0 ? `심박 ${bpm}, 존 ${hrZone} ${HR_ZONE_LABEL[hrZone]}` : bpm > 0 ? `심박 ${bpm}` : '심박 측정 안 됨'}><Text style={[r.hmV, uiPaused && r.hmVPaused, !uiPaused && hrZone !== 0 && { color: hrColor }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72}>{uiPaused ? timeLabel : bpm > 0 ? String(bpm) : '--'}</Text><Text style={[r.hmL, !uiPaused && hrZone !== 0 && { color: hrColor, fontWeight: '600' }]}>{uiPaused ? '시간' : hrZone !== 0 ? `Z${hrZone} ${HR_ZONE_LABEL[hrZone]}` : '심박'}</Text></View>
+        <View style={[r.hm, r.hmDivider]} accessibilityRole="text" accessibilityLabel={uiPaused ? `시간 ${timeLabel}` : hrZone !== 0 ? `심박 ${bpm}, 존 ${hrZone} ${HR_ZONE_LABEL[hrZone]}` : bpm > 0 ? `심박 ${bpm}` : '심박 측정 안 됨'}><Text style={[r.hmV, uiPaused && r.hmVPaused, !uiPaused && hrZone !== 0 && { color: hrColor }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72}>{uiPaused ? timeLabel : bpm > 0 ? String(bpm) : '--'}</Text><Text style={[r.hmL, !uiPaused && hrZone !== 0 && { color: hrColor, fontWeight: '600' }, !uiPaused && zoneDeviation && targetZone >= 2 && { color: zoneDeviation === 'down' ? WARN : ACCENT, fontWeight: '700' }]}>{uiPaused ? '시간' : (!uiPaused && zoneDeviation && targetZone >= 2) ? (zoneDeviation === 'down' ? `↓ 존 ${targetZone}로` : `↑ 존 ${targetZone}로`) : hrZone !== 0 ? `Z${hrZone} ${HR_ZONE_LABEL[hrZone]}` : '심박'}</Text></View>
         <View style={[r.hm, r.hmDivider]} accessibilityRole="text" accessibilityLabel={`${uiPaused ? '평균 페이스' : (track ? '랩 페이스' : '현재 페이스')} ${uiPaused ? avgPaceLabel : paceLabel}`}><Text style={[r.hmV, uiPaused && r.hmVPaused]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72}>{uiPaused ? avgPaceLabel : paceLabel}</Text><Text style={r.hmL}>{uiPaused ? '평균 페이스' : (track ? '랩 페이스' : '현재 페이스')}</Text></View>
       </View>
 
