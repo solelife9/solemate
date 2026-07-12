@@ -57,24 +57,24 @@ add('lbl_avg_pace', '평균 페이스');
 add('lbl_remaining', '남은 거리');
 add('lbl_shoe_life', '신발 남은 수명');
 // 거리 "{n}킬로미터" 1..42(마라톤).
-for (let n = 1; n <= 42; n++) add(`km_${n}`, `${koNum(n)} 킬로미터`);
+for (let n = 1; n <= 42; n++) add(`km_${n}`, `${n}킬로미터.`);
 // 페이스 분 "{m}분" 1..12.
-for (let m = 1; m <= 12; m++) add(`min_${m}`, `${koNum(m)} 분`);
+for (let m = 1; m <= 12; m++) add(`min_${m}`, `${m}분.`);
 // 페이스 초 "{s}초" 1..59 (정각은 분만 말함).
-for (let s = 1; s <= 59; s++) add(`sec_${s}`, `${koNum(s)} 초`);
+for (let s = 1; s <= 59; s++) add(`sec_${s}`, `${s}초.`);
 // 신발 남은 수명 "{p}퍼센트" 0..100 step5(반올림해 사용).
-for (let p = 0; p <= 100; p += 5) add(`pct_${p}`, `${koNum(p)} 퍼센트`);
+for (let p = 0; p <= 100; p += 5) add(`pct_${p}`, `${p} 퍼센트.`);
 
 // ── 음성 탑티어 패리티(2026-07-12) — 경과 시간 안내 + 0.5km 주기 ────────────────
 // 경과 시간: "경과 시간 (H시간) (M분) (S초)". 분은 페이스용 1..12 를 넘어 13..59 필요.
 // 시간 단위는 한국어 관례상 고유어 수사(한/두/세…) — 분·초의 한자어(일/이/삼)와 다르다.
 add('lbl_elapsed', '경과 시간');
-for (let m = 13; m <= 59; m++) add(`min_${m}`, `${koNum(m)} 분`);
+for (let m = 13; m <= 59; m++) add(`min_${m}`, `${m}분.`);
 const HR_KO = ['', '한', '두', '세', '네', '다섯', '여섯'];
 for (let h = 1; h <= 6; h++) add(`hr_${h}`, `${HR_KO[h]} 시간`);
 // 0.5km 주기(Strava급): 첫 반 km 는 "오백 미터", 이후 반 지점은 "N 점 오 킬로미터".
 add('m_500', '오백 미터');
-for (let n = 1; n <= 41; n++) add(`kmh_${n}`, `${koNum(n)} 점 오 킬로미터`);
+for (let n = 1; n <= 41; n++) add(`kmh_${n}`, `${n}.5 킬로미터.`);
 
 async function tts(text) {
   const res = await fetch(
