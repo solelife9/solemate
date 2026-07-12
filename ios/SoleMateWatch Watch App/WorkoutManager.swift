@@ -500,7 +500,8 @@ extension WorkoutManager: CLLocationManagerDelegate {
               d.set(lastSplitElapsedS, forKey: RecoverKeys.lastSplitElapsedS)
               // 랩 햅틱 — '화면 안 보는 러너'까지 닿는 유일한 인터페이스
               // (Garmin/COROS 자동 랩 관용, 리서치 2026-07-11 최강 근거 기능).
-              WKInterfaceDevice.current().play(.notification)
+              // 폰 햅틱 설정(hapticsOn)을 존중 — 진동을 끈 사용자에겐 조용히.
+              if WatchLink.shared.hapticsOn { WKInterfaceDevice.current().play(.notification) }
             }
           }
           feedAutoPause(speedMps: sampleSpeed, dtSec: dt)

@@ -28,7 +28,10 @@ import {
   AGE_STEP, MIN_AGE, MAX_AGE,
   VoiceSettings, DEFAULT_VOICE, loadVoiceSettings, saveVoiceSettings, VOICE_VOLUME_STEPS,
   loadAutoPause, saveAutoPause, DEFAULT_AUTOPAUSE,
+  loadHaptics, saveHaptics, DEFAULT_HAPTICS,
 } from './lib/settings';
+import { setHapticsEnabled } from './lib/haptics';
+import { watchSession } from './lib/watchSession';
 import { NotifSettings, DEFAULT_NOTIF_SETTINGS } from './lib/notifications';
 import { requestPushPermission as defaultRequestPushPermission } from './lib/pushMessaging';
 import { BackupPayload } from './lib/backup';
@@ -231,6 +234,20 @@ export default function ProfileScreen({
     setAutoPauseOn(prev => {
       const next = !prev;
       void saveAutoPause(next);
+      return next;
+    });
+  };
+
+  // ── 햅틱(진동) on/off — 즉시 적용. 폰 Vibration(lib/haptics) + 워치(자동 랩·존 이탈)를
+  //    한 스위치로. "화면 전환 진동이 거슬리는 사람"을 위한 단일 스위치(사용자 요청). ──
+  const [hapticsOn, setHapticsOn] = useState<boolean>(DEFAULT_HAPTICS);
+  useEffect(() => { void loadHaptics().then(v => { setHapticsOn(v); setHapticsEnabled(v); }); }, []);
+  const toggleHaptics = () => {
+    setHapticsOn(prev => {
+      const next = !prev;
+      setHapticsEnabled(next);      // 폰 진동 즉시 반영(전 화면 공통)
+      watchSession.setHaptics(next); // 워치 자동 랩·존 이탈 진동에도 전달
+      void saveHaptics(next);
       return next;
     });
   };
@@ -1029,6 +1046,15 @@ export default function ProfileScreen({
               <View style={s.settingIcon}><Ionicons name="pause-circle-outline" size={ri(17)} color={ACCENT} /></View>
               <Text style={s.settingLabel}>자동 일시정지</Text>
               <Text style={[s.settingDetail, autoPauseOn && { color: GOOD }]} testID="autopause-detail">{autoPauseOn ? '켜짐' : '꺼짐'}</Text>
+              <Ionicons name="swap-horizontal" size={ri(16)} color={T3} />
+            </Pressable>
+
+            {/* 햅틱(진동) — 즉시 토글. 화면 전환·버튼·존 이탈·워치 랩 진동을 한 번에 끈다.
+                진동이 거슬리는 사용자를 위한 단일 스위치(사용자 요청 2026-07-13). */}
+            <Pressable onPress={toggleHaptics} accessibilityRole="button" accessibilityLabel={`햅틱 진동, 현재 ${hapticsOn ? '켜짐' : '꺼짐'}. 눌러서 전환`} style={({ pressed }) => [s.settingRow, s.settingBorder, pressed && { backgroundColor: CARD_HI }]} testID="haptics-row">
+              <View style={s.settingIcon}><Ionicons name="phone-portrait-outline" size={ri(17)} color={ACCENT} /></View>
+              <Text style={s.settingLabel}>햅틱(진동)</Text>
+              <Text style={[s.settingDetail, hapticsOn && { color: GOOD }]} testID="haptics-detail">{hapticsOn ? '켜짐' : '꺼짐'}</Text>
               <Ionicons name="swap-horizontal" size={ri(16)} color={T3} />
             </Pressable>
 

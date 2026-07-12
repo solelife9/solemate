@@ -54,7 +54,7 @@ import {TIER_LABEL, RARITY_COLORS} from './theme';
 import CelebrationScreen, {CelebrationData} from './CelebrationScreen.rn';
 import {loadProgression, saveProgression} from './lib/progression/storage';
 import {mergeCelebBaseline} from './lib/celebrationBaseline';
-import {success as hapticSuccess} from './lib/haptics';
+import {success as hapticSuccess, setHapticsEnabled, isHapticsEnabled} from './lib/haptics';
 import type {ProgressionState, RetiredShoeRecord} from './lib/progression/types';
 import type {HomeProgression, HomeChallengeView} from './HomeScreen.rn';
 import {challengeProgress} from './lib/challenges';
@@ -94,7 +94,7 @@ import {
   AlertSettings, loadSettings, saveUnit, saveGoal, saveAlerts, saveWeight,
   saveAge, saveSex, saveRestHR, Sex,
   clampGoal, DEFAULT_SETTINGS,
-  VoiceSettings, loadVoiceSettings, DEFAULT_VOICE, loadAutoPause,
+  VoiceSettings, loadVoiceSettings, DEFAULT_VOICE, loadAutoPause, loadHaptics,
 } from './lib/settings';
 import {estimateCalories} from './lib/calories';
 import {detectPRs, PRKind} from './lib/records';
@@ -307,6 +307,9 @@ function Main(){
   // 대회 카탈로그 — 번들 시드로 시작, 부팅 시 Firestore 'races' 머지(서버 갱신 반영). 실패 시 시드 유지.
   const [races,setRaces]=useState<RaceEvent[]>(SEED_RACES);
   useEffect(()=>{void loadMedals().then(setMedals);void fetchRaces().then(setRaces).catch(()=>{});},[]);
+  // 햅틱(진동) 설정 부팅 복원 — 폰 Vibration(lib/haptics 싱글턴) 동기화 + 워치에도 전달.
+  // off 면 화면 전환·버튼·존 이탈·워치 랩 진동이 전부 조용해진다(사용자 요청 2026-07-13).
+  useEffect(()=>{void loadHaptics().then(v=>{setHapticsEnabled(v);watchSession.setHaptics(v);});},[]);
   // 부상위험 상세(시그니처) 전체화면 — 홈 신호등 카드 탭이 열고 뒤로가 닫는다(오버레이형).
   // 완주 리캡(P0-2) — 러닝 저장 직후 축하 풀스크린. '완료'로 닫으면 기록 탭으로 이동.
   const [runRecap,setRunRecap]=useState<{km:number;durationS:number;cadence:number;splits:any[];elevationM:number;calories:number;prKinds:PRKind[];shoeName?:string;goalKm?:number;goalMin?:number;pacePlan?:number[];shoeWear?:{addedKm:number;remainingPct:number;deltaPct:number}|null;loadInfo?:{phrase:string;word:string;level:LoadLevel}|null;route?:string|null;track?:{lapM:number;laps:number}|null;runId?:string}|null>(null);
@@ -2496,8 +2499,8 @@ function RunActiveScreen({shoe,insets,goalKm,goalMin=0,pacePlan=[],targetZone=0,
     const d=decideZoneCoach(zoneCoachRef.current,cur,targetZone,dt||1);
     zoneCoachRef.current=d.state;
     if(d.deviation!==zoneDeviation)setZoneDeviation(d.deviation);
-    if(d.announce==='down'){runVoice.zoneDown(targetZone);watchSession.zoneHaptic('down');}
-    else if(d.announce==='up'){runVoice.zoneUp(targetZone);watchSession.zoneHaptic('up');}
+    if(d.announce==='down'){runVoice.zoneDown(targetZone);if(isHapticsEnabled())watchSession.zoneHaptic('down');}
+    else if(d.announce==='up'){runVoice.zoneUp(targetZone);if(isHapticsEnabled())watchSession.zoneHaptic('up');}
     // eslint-disable-next-line react-hooks/exhaustive-deps
   },[elapsed]);
 

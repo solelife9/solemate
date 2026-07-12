@@ -118,6 +118,19 @@ export const watchSession = {
     }
   },
   /**
+   * 햅틱(진동) on/off 를 워치에 알린다 — 워치의 자동 랩 진동·존 이탈 햅틱이 이 플래그를
+   * 존중한다(applicationContext 병합, 오프라인이어도 다음 실행 때 도착). 폰 Vibration 은
+   * lib/haptics.setHapticsEnabled 가 따로 지배하므로, 이 메서드는 워치측 전달 전용이다.
+   * 네이티브 미지원/구버전이면 no-op(워치는 플래그 미수신 시 기본 ON — 기존 동작 유지).
+   */
+  setHaptics(enabled: boolean): void {
+    try {
+      M?.setWatchHaptics?.(!!enabled);
+    } catch {
+      /* no-op — 워치 동기화 실패가 앱을 깨면 안 된다 */
+    }
+  },
+  /**
    * 심박존 이탈 햅틱을 워치로 보낸다(#8). zoneCoach 가 음성 알림을 낼 때 짝으로 호출 —
    * 'up'=목표보다 낮음(올려라), 'down'=높음(낮춰라)을 워치 방향 햅틱으로 전달한다.
    * 워치 미도달·미페어링·구버전 네이티브면 조용히 no-op(진동은 실시간이라 큐잉 안 함).

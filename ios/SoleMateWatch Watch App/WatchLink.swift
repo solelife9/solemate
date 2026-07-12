@@ -73,6 +73,9 @@ final class WatchLink: NSObject, ObservableObject {
   /// 심박존 파라미터(폰 설정 미러 — Tanaka 최대심박·안정시심박). 0 = 미설정.
   private(set) var hrMax: Double = 0
   private(set) var hrRest: Double = 0
+  /// 햅틱(진동) on/off — 폰 설정 미러. 자동 랩 진동·존 이탈 햅틱이 존중한다.
+  /// 폰이 플래그를 안 보낸 구버전·초기 상태면 기본 ON(기존 동작 유지).
+  private(set) var hapticsOn: Bool = true
 
   private let defaults = UserDefaults.standard
   private enum Keys {
@@ -80,6 +83,7 @@ final class WatchLink: NSObject, ObservableObject {
     static let selectedShoe = "keego_selected_shoe_v1"
     static let hrMax = "keego_hr_max_v1"
     static let hrRest = "keego_hr_rest_v1"
+    static let hapticsOn = "keego_haptics_on_v1"
   }
 
   override init() {
@@ -92,6 +96,8 @@ final class WatchLink: NSObject, ObservableObject {
     selectedShoeId = defaults.string(forKey: Keys.selectedShoe)
     hrMax = defaults.double(forKey: Keys.hrMax)
     hrRest = defaults.double(forKey: Keys.hrRest)
+    // 캐시된 햅틱 설정 복원 — 키 부재(최초 실행)면 기본 ON.
+    hapticsOn = defaults.object(forKey: Keys.hapticsOn) == nil ? true : defaults.bool(forKey: Keys.hapticsOn)
     if WCSession.isSupported() {
       WCSession.default.delegate = self
       WCSession.default.activate()
@@ -132,6 +138,10 @@ final class WatchLink: NSObject, ObservableObject {
       hrRest = v
       defaults.set(v, forKey: Keys.hrRest)
     }
+    if let on = context["hapticsOn"] as? Bool {
+      hapticsOn = on
+      defaults.set(on, forKey: Keys.hapticsOn)
+    }
     if allowCmd, let cmd = context["cmd"] as? String { handle(cmd: cmd) }
   }
 
@@ -146,11 +156,11 @@ final class WatchLink: NSObject, ObservableObject {
     case "stop":
       WorkoutManager.shared.end()
     case "zone_up":
-      // 목표존보다 낮음 → '올려라' 방향 햅틱. 러닝 중일 때만(무의미한 진동 방지).
-      if WorkoutManager.shared.isActive { WKInterfaceDevice.current().play(.directionUp) }
+      // 목표존보다 낮음 → '올려라' 방향 햅틱. 러닝 중 + 햅틱 켜짐일 때만.
+      if hapticsOn, WorkoutManager.shared.isActive { WKInterfaceDevice.current().play(.directionUp) }
     case "zone_down":
       // 목표존보다 높음 → '낮춰라' 방향 햅틱.
-      if WorkoutManager.shared.isActive { WKInterfaceDevice.current().play(.directionDown) }
+      if hapticsOn, WorkoutManager.shared.isActive { WKInterfaceDevice.current().play(.directionDown) }
     default:
       break
     }

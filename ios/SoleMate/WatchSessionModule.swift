@@ -109,6 +109,14 @@ class WatchSessionModule: RCTEventEmitter, WCSessionDelegate {
     pushContext(patch)
   }
 
+  // 폰 → 워치: 햅틱(진동) on/off 플래그. 워치의 자동 랩 진동·존 이탈 햅틱이 이를 존중한다.
+  // applicationContext 병합이라 워치가 꺼져 있어도 다음 실행 때 도착한다(오프라인 캐시).
+  @objc(setWatchHaptics:)
+  func setWatchHaptics(_ enabled: Bool) {
+    guard WCSession.isSupported() else { return }
+    pushContext(["hapticsOn": enabled])
+  }
+
   // outboundContext 에 병합 후 전송 — cmd 폴백과 신발 목록이 서로를 지우지 않는다.
   private func pushContext(_ patch: [String: Any]) {
     for (k, v) in patch { outboundContext[k] = v }

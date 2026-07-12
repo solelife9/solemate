@@ -190,6 +190,35 @@ export async function saveAutoPause(enabled: boolean): Promise<void> {
   }
 }
 
+// ── 햅틱(진동) 설정 — 앱 전역 on/off. 화면 전환·버튼·존 이탈·워치 랩 진동을 한 번에. ──
+// "화면 바뀔 때 진동이 거슬리는 사람"을 위한 단일 스위치(사용자 요청 2026-07-13).
+// 폰 Vibration(lib/haptics)과 워치 햅틱(존 이탈·자동 랩)을 함께 지배한다 —
+// 폰은 setHapticsEnabled 로, 워치는 applicationContext 의 hapticsOn 플래그로 전달.
+export const K_HAPTICS = 'settings_haptics';
+export const DEFAULT_HAPTICS = true;
+
+/** 영속 문자열 → 햅틱 on/off. '0'/'false' 만 끔, 그 외(누락/손상)는 기본 ON. */
+export function parseHaptics(raw: string | null | undefined): boolean {
+  if (raw === '0' || raw === 'false') return false;
+  return DEFAULT_HAPTICS;
+}
+
+export async function loadHaptics(): Promise<boolean> {
+  try {
+    return parseHaptics(await AsyncStorage.getItem(K_HAPTICS));
+  } catch {
+    return DEFAULT_HAPTICS;
+  }
+}
+
+export async function saveHaptics(enabled: boolean): Promise<void> {
+  try {
+    await AsyncStorage.setItem(K_HAPTICS, enabled ? '1' : '0');
+  } catch {
+    /* 저장 실패는 비치명적 */
+  }
+}
+
 export const DEFAULT_ALERTS: AlertSettings = {enabled: true, thresholdPct: 90};
 export const DEFAULT_SETTINGS: AppSettings = {
   unit: 'km',

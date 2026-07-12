@@ -11,6 +11,7 @@ import {
   parseAge, clampAge, parseSex, parseRestHR, clampRestHR,
   saveAge, saveSex, saveRestHR, K_AGE, K_SEX, K_REST_HR,
   MIN_AGE, MAX_AGE, MIN_REST_HR, MAX_REST_HR,
+  parseHaptics, loadHaptics, saveHaptics, K_HAPTICS, DEFAULT_HAPTICS,
 } from '../../lib/settings';
 
 describe('settings parsers', () => {
@@ -145,5 +146,28 @@ describe('신체지표(심박존용) 파서·저장', () => {
     await saveRestHR(300);
     expect(await AsyncStorage.getItem(K_AGE)).toBe(String(MIN_AGE));
     expect(await AsyncStorage.getItem(K_REST_HR)).toBe(String(MAX_REST_HR));
+  });
+});
+
+describe('햅틱(진동) on/off 설정', () => {
+  test('parseHaptics: 누락/손상은 기본 ON, "0"·"false"만 OFF', () => {
+    expect(parseHaptics(null)).toBe(DEFAULT_HAPTICS);
+    expect(parseHaptics(undefined)).toBe(true);
+    expect(parseHaptics('garbage')).toBe(true);
+    expect(parseHaptics('1')).toBe(true);
+    expect(parseHaptics('0')).toBe(false);
+    expect(parseHaptics('false')).toBe(false);
+  });
+
+  test('save→load 라운드트립(off 저장 → off 로드, 키 "0")', async () => {
+    await AsyncStorage.clear();
+    // 미설정이면 기본 ON.
+    expect(await loadHaptics()).toBe(true);
+    await saveHaptics(false);
+    expect(await AsyncStorage.getItem(K_HAPTICS)).toBe('0');
+    expect(await loadHaptics()).toBe(false);
+    await saveHaptics(true);
+    expect(await AsyncStorage.getItem(K_HAPTICS)).toBe('1');
+    expect(await loadHaptics()).toBe(true);
   });
 });

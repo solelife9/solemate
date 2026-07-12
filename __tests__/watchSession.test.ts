@@ -18,6 +18,7 @@ const mockModule = {
   stopWatchWorkout: jest.fn(),
   updateShoeContext: jest.fn(),
   sendZoneHaptic: jest.fn(),
+  setWatchHaptics: jest.fn(),
 };
 
 function emit(event: string, payload: any) {
@@ -169,6 +170,24 @@ describe('zoneHaptic — 심박존 이탈 햅틱 전송(#8)', () => {
   });
 });
 
+describe('setHaptics — 워치 햅틱 on/off 플래그 전달', () => {
+  it('불리언을 네이티브에 그대로 넘긴다', () => {
+    const ws = loadWatchSession();
+    ws.setHaptics(false);
+    ws.setHaptics(true);
+    expect(mockModule.setWatchHaptics).toHaveBeenNthCalledWith(1, false);
+    expect(mockModule.setWatchHaptics).toHaveBeenNthCalledWith(2, true);
+  });
+
+  it('네이티브가 던져도 앱으로 전파하지 않는다(graceful)', () => {
+    const ws = loadWatchSession();
+    mockModule.setWatchHaptics.mockImplementationOnce(() => {
+      throw new Error('bridge down');
+    });
+    expect(() => ws.setHaptics(false)).not.toThrow();
+  });
+});
+
 describe('모듈 부재(안드로이드/미링크) — 전부 no-op', () => {
   it('available=false, 구독은 해제 함수만, updateShoes 는 조용히 무시', () => {
     const ws = loadWatchSession(false);
@@ -182,5 +201,7 @@ describe('모듈 부재(안드로이드/미링크) — 전부 no-op', () => {
     expect(mockModule.updateShoeContext).not.toHaveBeenCalled();
     expect(() => ws.zoneHaptic('down')).not.toThrow();
     expect(mockModule.sendZoneHaptic).not.toHaveBeenCalled();
+    expect(() => ws.setHaptics(false)).not.toThrow();
+    expect(mockModule.setWatchHaptics).not.toHaveBeenCalled();
   });
 });
