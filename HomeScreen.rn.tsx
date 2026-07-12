@@ -21,7 +21,6 @@ import type { RankTier } from './lib/progression/types';
 import { TabBar, TABBAR_CLEARANCE, KeegoWordmark, SectionTitle, AmbientBackdrop, GlassEdge } from './primitives';
 import { Unit } from './lib/units';
 import { ShoeCard as KeegoShoeCard, GhostShoeCard } from './screens/KeegoHome';
-import type { LoadRun } from './lib/trainingLoad';
 import { RotationPick } from './lib/rotation';
 import { recommendNextShoes, buildShopLinks, categoryLabelKo, AFFILIATE_DISCLOSURE } from './lib/affiliate';
 import { type ReplacementForecast } from './lib/wearView';

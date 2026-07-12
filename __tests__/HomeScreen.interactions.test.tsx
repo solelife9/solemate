@@ -46,7 +46,6 @@ describe('홈 히어로 신발 인터랙션', () => {
 });
 
 describe('홈 부상위험 시그널 제거(2026-07-05 애널리틱스 다이어트)', () => {
-  const TODAY = '2026-06-23';
   const WORN_SHOES: Shoe[] = [
     {id: 'w', brand: 'Nike', model: 'Pegasus 41', used: 650, max: 700},
   ];

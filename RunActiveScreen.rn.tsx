@@ -28,7 +28,7 @@ import { RunLiveMap } from './RunLiveMap';
 import {
   BG, CARD, ACCENT, ACCENT_2, RING_ACCENT, RING_ACCENT_HI, RING_ACCENT_LO,
   GOOD, WARN, DANGER, T1, T2, T3, T4, SEP,
-  FONT, DISPLAY, withAlpha, HR_ZONE_COLORS, TYPE, HERO, RADIUS,
+  FONT, DISPLAY, withAlpha, HR_ZONE_COLORS, TYPE, RADIUS,
 } from './theme';
 import { estimateMaxHR, zoneOf, HR_ZONE_LABEL } from './lib/analytics/hrZones';
 import { fmtPaceSec } from './lib/pacePlan';
@@ -175,7 +175,7 @@ const cer = StyleSheet.create({
 export default function RunActiveScreen({
   shoeLabel = 'Alphafly 3', distanceKm = 3.2, goalKm = 5, goalMin = 0, elapsedSec = 0,
   timeLabel = '16:04', paceLabel = "5'02\"", avgPaceLabel = "5'10\"",
-  cadence = 174, calories = 205, elevationM = 46, gpsLevel = 3, bpm = 0, targetZone = 0, zoneDeviation = null,
+  calories = 205, elevationM = 46, gpsLevel = 3, bpm = 0, targetZone = 0, zoneDeviation = null,
   age = 0, restHR = 0,
   paused: pausedProp, onPause, onStop,
   permLost = false, onOpenSettings, statusLabel,
