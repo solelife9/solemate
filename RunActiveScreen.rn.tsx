@@ -169,7 +169,7 @@ const cer = StyleSheet.create({
   wrap: { backgroundColor: withAlpha(BG, 0.94), alignItems: 'center', justifyContent: 'center', zIndex: 40 },
   glow: { position: 'absolute' },
   dist: { color: T1, fontFamily: DISPLAY, fontSize: rf(56), fontWeight: '800', fontVariant: ['tabular-nums'], letterSpacing: -1 },
-  unit: { color: T3, fontFamily: FONT, fontSize: rf(15), fontWeight: '600', marginTop: rv(2) },
+  unit: { color: withAlpha(T1, 0.8), fontFamily: FONT, fontSize: rf(19), fontWeight: '700', letterSpacing: 0.6, marginTop: rv(4) },
 });
 
 export default function RunActiveScreen({
@@ -350,11 +350,12 @@ export default function RunActiveScreen({
   // 왜 멈췄는지 설명하는 신뢰 장치(audit#9)는 유지한다. 권한 회수는 별도 배너.
   const gpsWeakNow = !permLost && gpsLevel === 1;
   // 일시정지 하단 3칸 — 평균 페이스는 상단 히어로(현재 페이스 자리)로 올라가므로 여기선 제외.
+  // 일시정지 6칸 하단(사용자 확정 2026-07-12): 심박·칼로리·고도. 케이던스는 완주 리캡 전용.
   const sub = useMemo(() => ([
-    { v: cadence > 0 ? String(cadence) : '--', l: '케이던스', u: '' },
+    { v: bpm > 0 ? String(bpm) : '--', l: hrZone !== 0 ? `Z${hrZone} ${HR_ZONE_LABEL[hrZone]}` : '심박', u: '', c: hrZone !== 0 ? hrColor : undefined },
     { v: calories > 0 ? String(calories) : '--', l: '칼로리', u: 'kcal' },
     { v: elevationM != null ? String(elevationM) : '--', l: '고도', u: 'm' },
-  ]), [cadence, calories, elevationM]);
+  ]), [bpm, hrZone, hrColor, calories, elevationM]);
   // 랩 구간시간(초) → m'ss" (트랙 '지난 랩' 표시용).
   const fmtLapSplit = (s: number) => `${Math.floor(s / 60)}'${String(Math.round(s % 60)).padStart(2, '0')}"`;
 
@@ -443,23 +444,17 @@ export default function RunActiveScreen({
                   음성으로만 안내한다(나이키식, 사용자 요청). 링의 채워지는 호가 진행을 시각화.
                   스크린리더 라벨엔 목표/남음을 그대로 두어 접근성은 보존.
                   km 통과 순간 kmPulse 가 숫자를 한 번 부풀렸다 정착시킨다(모션 #4). */}
-              <Text style={r.bigDist}>{distanceKm.toFixed(2)}</Text>
-              {/* km 는 absolute — 센터 계산에서 제외해 '숫자'가 링의 정중앙에 온다. */}
-              <Text style={[r.goal, r.goalBelow]}>km</Text>
+              {/* 시간 목표(#15-2, 사용자 확정): 링 센터의 주인공 = 경과 시간, 보조 = 목표.
+                  거리(km)는 아래 지표 행의 '시간' 자리와 스왑된다. 1시간+ 도 잘리지 않게 자동 축소. */}
+              <Text style={r.bigDist} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>
+                {timeGoal ? timeLabel : distanceKm.toFixed(2)}
+              </Text>
+              {/* 단위는 absolute — 센터 계산에서 제외해 '숫자'가 링의 정중앙에 온다. */}
+              <Text style={[r.goal, r.goalBelow]}>{timeGoal ? `목표 ${goalMin}분` : 'km'}</Text>
             </Animated.View>
           )}
         </Ring>
       </Animated.View>
-      )}
-
-      {/* 일시정지 하단 헤드 — 링이 사라진 자리 대신 거리 히어로(목표 표기 없음, 음성 안내). */}
-      {uiPaused && !track && (
-        <View style={r.pausedHead}>
-          <View style={r.pausedDistRow}>
-            <Text style={r.pausedDist}>{distanceKm.toFixed(2)}</Text>
-            <Text style={r.pausedDistUnit}>km</Text>
-          </View>
-        </View>
       )}
 
       {/* 트랙: 링 아래 회색 한 줄 — 거리 · 확정 랩거리 · 보정 상태(박스·색 없이 조용히) */}
@@ -492,8 +487,8 @@ export default function RunActiveScreen({
       {/* hero metrics — 순서: 시간 · 심박 · 페이스(사용자 지정). 프리미엄: 가벼운 값 + 마이크로
           라벨, 위 헤어라인만. 일시정지 시 22로 줄며 아래로 서브 지표가 펼쳐진다. */}
       <View style={[r.heroMetrics, uiPaused && r.heroMetricsPaused]}>
-        <View style={r.hm} accessibilityRole="text" accessibilityLabel={`시간 ${timeLabel}`}><Text style={[r.hmV, uiPaused && r.hmVPaused]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72}>{timeLabel}</Text><Text style={r.hmL}>시간</Text></View>
-        <View style={[r.hm, r.hmDivider]} accessibilityRole="text" accessibilityLabel={hrZone !== 0 ? `심박 ${bpm}, 존 ${hrZone} ${HR_ZONE_LABEL[hrZone]}` : bpm > 0 ? `심박 ${bpm}` : '심박 측정 안 됨'}><Text style={[r.hmV, uiPaused && r.hmVPaused, hrZone !== 0 && { color: hrColor }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72}>{bpm > 0 ? String(bpm) : '--'}</Text><Text style={[r.hmL, hrZone !== 0 && { color: hrColor, fontWeight: '600' }]}>{hrZone !== 0 ? `Z${hrZone} ${HR_ZONE_LABEL[hrZone]}` : '심박'}</Text></View>
+        <View style={r.hm} accessibilityRole="text" accessibilityLabel={uiPaused || timeGoal ? `거리 ${distanceKm.toFixed(2)}킬로미터` : `시간 ${timeLabel}`}><Text style={[r.hmV, uiPaused && r.hmVPaused]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72}>{uiPaused || timeGoal ? distanceKm.toFixed(2) : timeLabel}</Text><Text style={r.hmL}>{uiPaused || timeGoal ? '거리 km' : '시간'}</Text></View>
+        <View style={[r.hm, r.hmDivider]} accessibilityRole="text" accessibilityLabel={uiPaused ? `시간 ${timeLabel}` : hrZone !== 0 ? `심박 ${bpm}, 존 ${hrZone} ${HR_ZONE_LABEL[hrZone]}` : bpm > 0 ? `심박 ${bpm}` : '심박 측정 안 됨'}><Text style={[r.hmV, uiPaused && r.hmVPaused, !uiPaused && hrZone !== 0 && { color: hrColor }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72}>{uiPaused ? timeLabel : bpm > 0 ? String(bpm) : '--'}</Text><Text style={[r.hmL, !uiPaused && hrZone !== 0 && { color: hrColor, fontWeight: '600' }]}>{uiPaused ? '시간' : hrZone !== 0 ? `Z${hrZone} ${HR_ZONE_LABEL[hrZone]}` : '심박'}</Text></View>
         <View style={[r.hm, r.hmDivider]} accessibilityRole="text" accessibilityLabel={`${uiPaused ? '평균 페이스' : (track ? '랩 페이스' : '현재 페이스')} ${uiPaused ? avgPaceLabel : paceLabel}`}><Text style={[r.hmV, uiPaused && r.hmVPaused]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72}>{uiPaused ? avgPaceLabel : paceLabel}</Text><Text style={r.hmL}>{uiPaused ? '평균 페이스' : (track ? '랩 페이스' : '현재 페이스')}</Text></View>
       </View>
 
@@ -516,8 +511,8 @@ export default function RunActiveScreen({
         <View style={r.subMetrics}>
           {sub.map((m, i) => (
             <View key={i} style={[r.sm, i > 0 && r.hmDivider]}>
-              <Text style={r.smV}>{m.v}{m.u ? <Text style={r.smU}> {m.u}</Text> : null}</Text>
-              <Text style={r.smL}>{m.l}</Text>
+              <Text style={[r.smV, (m as any).c && { color: (m as any).c }]}>{m.v}{m.u ? <Text style={r.smU}> {m.u}</Text> : null}</Text>
+              <Text style={[r.smL, (m as any).c && { color: (m as any).c, fontWeight: '600' as const }]}>{m.l}</Text>
             </View>
           ))}
         </View>
@@ -669,19 +664,14 @@ const r = StyleSheet.create({
   // 일시정지: 링을 살짝 위로 당기고(marginTop↓) 아래 시각 여백을 조금 회수(marginBottom-)해
   // 서브 지표가 들어설 공간을 낸다. 스케일이 0.92로 완만하므로 마진도 완만하게(겹침 방지).
   ringWrapPaused: { marginTop: rv(8), marginBottom: rv(-14) },
-  goal: { color: withAlpha(T1, 0.72), fontFamily: FONT, fontSize: TYPE.title.fontSize, fontWeight: '700', letterSpacing: 1, marginTop: rv(8) },
+  // 링 센터 보조(단위 km/목표 N분) — 20pt(사용자 확대 확정 2026-07-12: 기존 title 은 옹졸).
+  goal: { color: withAlpha(T1, 0.8), fontFamily: FONT, fontSize: rf(20), fontWeight: '700', letterSpacing: 0.6, marginTop: rv(10) },
   goalBelow: { position: 'absolute', top: '100%' },
   goalMet: { flexDirection: 'row', alignItems: 'center', gap: rv(4), marginTop: rv(14) },
   goalMetText: { color: GOOD, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '700', letterSpacing: 0.6 },
   bigDist: { color: T1, fontFamily: DISPLAY, fontSize: rf(104), fontWeight: '500', letterSpacing: -4, lineHeight: rf(106), includeFontPadding: false, fontVariant: ['tabular-nums'] },
   bigUnit: { color: withAlpha(T1, 0.62), fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600', letterSpacing: 0.8, marginTop: rv(16) },
   // 일시정지 하단 헤드 — 링 없이 거리 히어로 + 목표를, 지도 위·하단 지표 위에 얹는다.
-  // km 히어로(2026-07-12 사용자 확정): 지도가 위에 여백 없이 맞닿고, 숫자는 아래로 살짝
-  // 내려 앉아 아래 헤어라인과의 위 여백(16) = 라인 아래 여백(16)이 균등하다.
-  pausedHead: { alignItems: 'center', marginTop: rv(14), marginBottom: 0 },
-  pausedDistRow: { flexDirection: 'row', alignItems: 'flex-end' },
-  pausedDist: { color: T1, fontFamily: DISPLAY, fontSize: HERO.heroLg, fontWeight: '600', letterSpacing: -2, lineHeight: rf(58), includeFontPadding: false, fontVariant: ['tabular-nums'] },
-  pausedDistUnit: { color: withAlpha(T1, 0.55), fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '700', marginLeft: rs(6), marginBottom: rv(8) },
   pausedGoal: { color: withAlpha(T1, 0.62), fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '700', letterSpacing: 0.8, marginTop: rv(8) },
   // 트랙 링 센터 — 바퀴수 하나만 히어로, 그 밑 작은 '바퀴'.
   lapHero: { color: T1, fontFamily: DISPLAY, fontSize: rf(96), fontWeight: '700', letterSpacing: -3, lineHeight: rf(96), includeFontPadding: false, fontVariant: ['tabular-nums'] },
@@ -704,17 +694,18 @@ const r = StyleSheet.create({
   // 프리미엄: 위 헤어라인만(아래 테두리 제거), 여백 크게, 가벼운 값 + 마이크로 라벨.
   heroMetrics: { flexDirection: 'row', marginTop: rv(30), paddingTop: rv(22), paddingBottom: rv(6), borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP },
   // 일시정지: 헤어라인 위 여백(marginTop 16) = 아래 여백(paddingTop 16) — 균등(사용자 확정).
-  heroMetricsPaused: { marginTop: rv(16), paddingTop: rv(16), paddingBottom: rv(4) },
+  heroMetricsPaused: { marginTop: rv(14), paddingTop: rv(20), paddingBottom: rv(8) },
   hm: { flex: 1, alignItems: 'center' },
   hmDivider: { borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: withAlpha(T1, 0.045) },
   hmV: { color: T1, fontFamily: DISPLAY, fontSize: rf(37), fontWeight: '500', letterSpacing: -0.8, fontVariant: ['tabular-nums'] },
-  hmVPaused: { fontSize: TYPE.title1.fontSize, letterSpacing: -0.5 },
+  // 일시정지 6칸(2026-07-12 사용자: '6개를 키우고 올려서 잘 보이게') — 값 30pt 균일.
+  hmVPaused: { fontSize: rf(30), letterSpacing: -0.7 },
   hmL: { color: withAlpha(T1, 0.45), fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: "600", letterSpacing: 0.4, marginTop: rv(8) },
 
   // 일시정지 하단 3칸(케이던스·칼로리·고도) — 상단 히어로 행과 같은 3열 그리드(6칸처럼).
-  subMetrics: { flexDirection: 'row', paddingTop: rv(14), paddingBottom: rv(6) },
+  subMetrics: { flexDirection: 'row', paddingTop: rv(20), paddingBottom: rv(16) },
   sm: { flex: 1, alignItems: 'center' },
-  smV: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.title1.fontSize, fontWeight: '500', letterSpacing: -0.5, fontVariant: ['tabular-nums'] },
+  smV: { color: T1, fontFamily: DISPLAY, fontSize: rf(30), fontWeight: '500', letterSpacing: -0.7, fontVariant: ['tabular-nums'] },
   smU: { color: withAlpha(T1, 0.45), fontFamily: FONT, fontSize: TYPE.caption.fontSize },
   smL: { color: withAlpha(T1, 0.45), fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: "600", letterSpacing: 0.4, marginTop: rv(8) },
 

@@ -41,3 +41,23 @@ test('거리 목표 달성 문구는 기존 km 그대로(회귀 가드)', () => 
   );
   expect(allText(root)).toContain('목표 5km 달성!');
 });
+
+test('시간 목표 러닝 중: 링 센터=시간·목표 N분, 지표 행=거리 km (스왑 확정 2026-07-12)', () => {
+  const root = render(
+    <RunActiveScreen goalKm={0} goalMin={30} elapsedSec={12 * 60} distanceKm={2.34} timeLabel="12:00" />,
+  );
+  const all = allText(root);
+  expect(all).toContain('목표 30분'); // 링 보조 라벨
+  expect(all).toContain('거리 km'); // 지표 행 첫 칸이 거리로 스왑
+  expect(all).toContain('2.34');
+});
+
+test('거리 목표 러닝 중: 링 센터=거리 km, 지표 행=시간 (기존 유지 회귀 가드)', () => {
+  const root = render(
+    <RunActiveScreen goalKm={5} goalMin={0} elapsedSec={12 * 60} distanceKm={2.34} timeLabel="12:00" />,
+  );
+  const all = allText(root);
+  expect(all).toContain('km');
+  expect(all).toContain('시간');
+  expect(all).not.toContain('거리 km');
+});

@@ -5,9 +5,10 @@
  * through the polled Pedometer.getStepCountAsync mock — the same end-to-end path
  * the device uses (2026-07-03: watchStepCount 스트림은 화면 잠금 시 네이티브가 끊어
  * 5초 폴링으로 교체): OS 걸음 이력 조회 → feedStepCount → setCadence → render.
- * Assertions are on the observable cadence metric ('--' placeholder vs a
- * rendered spm number), so this verifies the steps→setCadence→UI wiring, not
- * the pure lib in isolation (that lives in __tests__/lib/stepCadence.test.ts).
+ * 2026-07-12 계약 변경(사용자 확정): 케이던스는 러닝 중/일시정지 화면에서 제거되고
+ * '완주 리캡'에만 표시된다. 따라서 검증 관측점도 리캡의 케이던스 타일로 옮긴다 —
+ * 걸음 스트림 → setCadence → 종료 저장 → 리캡 렌더까지 파이프라인 끝단을 지킨다.
+ * (순수 spm 계산은 __tests__/lib/stepCadence.test.ts 가 검증.)
  *
  * The watch callback reads Date.now() per sample, so fake timers + setSystemTime
  * let us place cumulative step counts on a real ~170 spm cadence. We assert the
@@ -20,6 +21,7 @@
 import React from 'react';
 import ReactTestRenderer, {act} from 'react-test-renderer';
 import {Pedometer} from 'expo-sensors';
+import * as Location from 'expo-location';
 import App from '../App';
 import {seedBootCache} from './helpers/bootSeed';
 
@@ -76,16 +78,16 @@ function pressByA11y(root: ReactTestRenderer.ReactTestInstance, label: string) {
 }
 
 // Read the cadence metric value ('--' when no cadence, else the spm number).
-function readCadence(root: ReactTestRenderer.ReactTestInstance): string {
+function readCadence(root: ReactTestRenderer.ReactTestInstance): string | null {
   const metric = root
     .findAll(n => typeof n.type === 'string')
     .filter(n => {
       const t = textOf(n);
-      return t.includes('케이던스') && t.replace('케이던스', '').trim() !== '';
+      return t.includes('케이던스') && /\d/.test(t.replace('케이던스', '').replace('spm', ''));
     })
     .sort((a, b) => textOf(a).length - textOf(b).length)[0];
-  if (!metric) throw new Error('cadence metric not found');
-  return textOf(metric).replace('케이던스', '').trim();
+  if (!metric) return null;
+  return textOf(metric).replace('케이던스', '').replace('spm', '').trim();
 }
 
 async function startRun() {
@@ -127,31 +129,80 @@ async function startRun() {
     }
   };
 
-  return {renderer, root, setStepsAt, poll};
+  // GPS fix 주입 — 종료 시 최소 거리(finishRun 의 '너무 짧아요' 분기 회피)용.
+  const calls = (Location.watchPositionAsync as jest.Mock).mock.calls;
+  const onPos = calls[calls.length - 1][1] as (p: any) => void;
+  const emit = (lat: number, ts: number) =>
+    act(() => {
+      onPos({coords: {latitude: lat, longitude: 127.0, accuracy: 5}, timestamp: ts});
+    });
+
+  return {renderer, root, setStepsAt, poll, emit};
 }
 
 const BASE = 100000;
 const intervalMs = Math.round(60000 / 170); // 353ms → 170 spm
 
-// 케이던스 피드는 '러닝 중'(active)에만 동작한다(App: pausedFlag() 게이트). 케이던스는
-// 나이키식 재구성으로 active 화면엔 안 뜨고 '일시정지' 시 펼쳐지는 보조지표다. 따라서
-// active 상태로 스트림을 주입해 cadence 상태를 채운 뒤, 일시정지해 펼침 지표의 값을 읽는다.
-// (3s 최소창 '--' 보류는 순수 lib __tests__/lib/stepCadence.test.ts 가 검증.)
-test('Pedometer ~170spm 스트림이 일시정지 펼침 케이던스에 160-180 밴드로 렌더된다', async () => {
+// 러닝 종료(일시정지 → 종료 홀드 확정) → 리캡 진입. jest(SKIP_ANIM)는 세리머니 없이 즉시.
+// 전제: 이미 일시정지 상태(종료 버튼은 일시정지 화면에만 있다).
+// 종료 홀드 확정 → 리뷰 화면('저장하기') → 저장 → 리캡.
+async function stopToRecap(root: ReactTestRenderer.ReactTestInstance) {
+  const stopBtn = root.findAll(
+    n => typeof n.props.onLongPress === 'function' && n.props.accessibilityLabel === '길게 눌러 종료',
+  )[0];
+  if (!stopBtn) throw new Error('stop button not found');
+  await act(async () => {
+    stopBtn.props.onLongPress();
+    await Promise.resolve();
+    await Promise.resolve();
+  });
+  pressByText(root, '저장하기');
+  // 저장 비동기(로컬 큐→목 fetch) 플러시 — 리캡 렌더까지.
+  for (let i = 0; i < 4; i++) {
+    await act(async () => {
+      jest.advanceTimersByTime(50);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+  }
+}
+
+// 케이던스는 러닝 중/일시정지 화면에 없다(사용자 확정) — 값은 '완주 리캡'에서 검증한다.
+test('Pedometer ~170spm 스트림 → 일시정지 화면엔 케이던스 부재, 완주 리캡에 160-180 밴드', async () => {
   jest.useFakeTimers();
   jest.setSystemTime(BASE);
   try {
-    const {renderer, root, setStepsAt, poll} = await startRun();
+    const {renderer, root, setStepsAt, poll, emit} = await startRun();
+
+    // 최소 거리 확보(워밍업 3 + 이동 1 ≈ 33m) — 종료 시 '너무 짧아요' 분기 회피.
+    const g0 = Date.now();
+    emit(37.5, g0);
+    emit(37.5, g0 + 2000);
+    emit(37.5, g0 + 4000);
+    emit(37.5003, g0 + 7000);
+    emit(37.5006, g0 + 10000);
 
     // 러닝 시작 시점부터 170spm 로 걸음이 쌓인다(하드웨어 누적 이력 시뮬레이션).
     const t0 = Date.now();
     setStepsAt(now => Math.floor(Math.max(0, now - t0) / intervalMs));
     await poll(3); // 15s — 폴 표본 3개(5s 간격)로 롤링 윈도우 충족
 
-    // 일시정지 → 보조지표 펼침(케이던스 노출). 피드는 멈추지만 계산된 상태는 유지된다.
+    // 일시정지 화면: 케이던스 지표가 아예 없어야 한다(새 6그리드 계약).
     pressByA11y(root, '일시정지');
+    expect(readCadence(root)).toBeNull();
+
+    // 종료 → 리캡: 케이던스 타일이 160-180 밴드 값으로 렌더된다(파이프라인 끝단).
+    await stopToRecap(root);
+    // 첫 런 업적 축하 화면이 리캡 앞에 뜬다 — '확인'으로 통과.
+    if (textOf(root).includes('업적 획득')) {
+      pressByText(root, '확인');
+      await act(async () => {
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+    }
     const shown = readCadence(root);
-    expect(shown).not.toBe('--');
+    expect(shown).not.toBeNull();
     const spm = Number(shown);
     expect(Number.isInteger(spm)).toBe(true);
     expect(spm).toBeGreaterThanOrEqual(160);
@@ -163,24 +214,6 @@ test('Pedometer ~170spm 스트림이 일시정지 펼침 케이던스에 160-180
   }
 });
 
-// 첫 걸음 전 idle(GPS 워밍업/출발선 대기)이 표시 케이던스를 희석하면 안 된다.
-test('첫 걸음 전 idle 은 표시 케이던스를 낮추지 않는다', async () => {
-  jest.useFakeTimers();
-  jest.setSystemTime(BASE);
-  try {
-    const {renderer, root, setStepsAt, poll} = await startRun();
-
-    const firstAt = Date.now() + 30000; // 30s 공회전(출발선 대기) 후 진짜 170spm
-    setStepsAt(now => (now < firstAt ? 0 : Math.floor((now - firstAt) / intervalMs)));
-    await poll(6); // 30s 공회전 — '변화 0' 폴 표본은 앵커 슬라이드로 흡수돼야 한다
-    await poll(3); // 15s 의 진짜 170spm
-    pressByA11y(root, '일시정지'); // 펼침 지표로 케이던스 확인
-    const spm = Number(readCadence(root));
-    expect(spm).toBeGreaterThanOrEqual(160); // ~26 으로 끌려가지 않음
-    expect(spm).toBeLessThanOrEqual(180);
-
-    act(() => renderer.unmount());
-  } finally {
-    jest.useRealTimers();
-  }
-});
+// (제거됨 2026-07-12) '첫 걸음 전 idle 희석 방지'는 롤링 '표시' 계약이었다 — 케이던스
+// 표시가 리캡(전체 평균)으로 옮겨지며 관측점이 사라졌고, 공회전 앵커 슬라이드는
+// __tests__/lib/stepCadence.test.ts 가 순수 단위로 계속 가드한다.

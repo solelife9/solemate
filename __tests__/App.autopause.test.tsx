@@ -16,12 +16,9 @@
  *      climbs above the paused value (guards the "label clears but engine stays
  *      frozen" bug).
  *
- * Cadence is intentionally out of scope here: it is driven by the accelerometer
- * (step detection), not by the GPS speed that the auto-pause machine consumes,
- * and the test harness's accelerometer mock never emits — so cadence stays at
- * its no-data placeholder ('--') throughout. The freeze test asserts that the
- * GPS auto-pause path never fabricates a cadence value, which is the only
- * cadence behavior reachable from this code path.
+ * Cadence is intentionally out of scope here: 케이던스는 일시정지 그리드에서
+ * 제거됐다(2026-07-12 사용자 확정 — 완주 리캡 전용). 여기서는 자동일시정지 화면에
+ * 케이던스 지표가 등장하지 않는다는 '부재'만 가드한다(값 검증은 App.cadence.test).
  *
  * @format
  */
@@ -97,24 +94,6 @@ function readElapsedSec(root: ReactTestRenderer.ReactTestInstance): number {
   if (!node) throw new Error('elapsed readout not found');
   const [m, s] = (node.props.children as string).trim().split(':').map(Number);
   return m * 60 + s;
-}
-
-// Read the cadence metric value. The metric icons were removed (UI polish
-// slice-4), so the cadence metric View now renders as [<value>, '케이던스']. The
-// bare '케이던스' label Text also matches the needle, so keep only host nodes
-// whose text carries MORE than the label (i.e. the value), and take the smallest
-// — the metric View itself ('<value>케이던스'); ancestors are strictly longer.
-// Used to prove the GPS auto-pause path never fabricates a cadence value.
-function readCadence(root: ReactTestRenderer.ReactTestInstance): string {
-  const metric = root
-    .findAll(n => typeof n.type === 'string')
-    .filter(n => {
-      const t = textOf(n);
-      return t.includes('케이던스') && t.replace('케이던스', '').trim() !== '';
-    })
-    .sort((a, b) => textOf(a).length - textOf(b).length)[0];
-  if (!metric) throw new Error('cadence metric not found');
-  return textOf(metric).replace('케이던스', '');
 }
 
 const isAutoPaused = (root: ReactTestRenderer.ReactTestInstance) =>
@@ -259,10 +238,11 @@ test('displayed elapsed timer freezes while auto-paused — never advances, neve
     expect(elapsedWhilePaused).toBeGreaterThanOrEqual(0); // never negative
     expect(Number.isInteger(elapsedWhilePaused)).toBe(true); // not garbage/NaN
 
-    // Cadence is accelerometer-driven (out of the GPS auto-pause scope): the
-    // mock never emits, so the auto-pause path must leave it at the '--'
-    // placeholder rather than fabricating a value.
-    expect(readCadence(root)).toBe('--');
+    // 케이던스는 일시정지 그리드에서 제거됐다(2026-07-12 사용자 확정 — 완주 리캡 전용).
+    // 자동일시정지 화면에 케이던스 지표가 값을 날조해 등장하지 않는지(부재)를 가드한다.
+    expect(
+      root.findAll(n => typeof n.type === 'string').some(n => textOf(n) === '케이던스'),
+    ).toBe(false);
 
     act(() => renderer.unmount());
   } finally {
