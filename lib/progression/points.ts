@@ -7,7 +7,7 @@
 // POINTS_BY_RARITY: 구 시스템 값 유지(테스트/레거시 코드 참조용).
 // totalPoints: def.xp 우선, 없으면 def.points 폴백, 그래도 없으면 rarity 폴백.
 // ============================================================================
-import {AchievementDef, AchievementRarity, RankTier} from './types';
+import {AchievementDef, RankTier} from './types';
 
 /** 구 희귀도별 포인트(레거시 역호환). */
 export const POINTS_BY_RARITY: Readonly<Record<RankTier, number>> = {
@@ -18,14 +18,6 @@ export const POINTS_BY_RARITY: Readonly<Record<RankTier, number>> = {
   diamond: 250,
   master: 500,
   legend: 1000,
-};
-
-/** 새 희귀도(AchievementRarity) → 참고 포인트(표시용 기준치). */
-export const XP_BY_RARITY: Readonly<Record<AchievementRarity, number>> = {
-  common: 20,
-  rare: 50,
-  epic: 150,
-  legendary: 400,
 };
 
 /** rarity → 포인트(구 시스템 역호환). */
