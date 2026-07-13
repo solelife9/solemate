@@ -8,7 +8,7 @@ import { View, Text, ScrollView, FlatList, Pressable, StyleSheet, TextInput, Ale
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import Svg, { Rect as SvgRect, Path as SvgPath } from 'react-native-svg';
+import Svg, { Rect as SvgRect, Path as SvgPath, Line as SvgLine } from 'react-native-svg';
 import {
   BG, CARD, CARD_HI, GLASS, ACCENT, BRAND, DANGER, T1, T2, T3, T4, SEP, FONT, DISPLAY, Shoe, Run, SHOES, withAlpha, RADIUS, GUTTER, HERO, SCRIM, HR_ZONE_COLORS, TYPE,
 } from './theme';
@@ -641,8 +641,9 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'm
                 const bpms = hrTrack.map(p => p.bpm).filter(b => b > 0);
                 if (bpms.length < 2) return null;
                 const tMax = Math.max(1, hrTrack[hrTrack.length - 1].t);
-                const yMin = Math.max(60, Math.min(...bpms) - 8);
-                const yMax = Math.max(...bpms) + 8;
+                const realMax = Math.max(...bpms), realMin = Math.min(...bpms);
+                const yMin = Math.max(60, realMin - 8);
+                const yMax = realMax + 8;
                 const zb = hr.bounds; // {1..5} 하한 bpm
                 const zones = [
                   { z: 5 as HRZone, lo: zb[5], hi: yMax }, { z: 4 as HRZone, lo: zb[4], hi: zb[5] },
@@ -653,16 +654,44 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'm
                 const y = (b: number) => TOP + (yMax - b) / (yMax - yMin) * (H - TOP - BOT);
                 const path = hrTrack.filter(p => p.bpm > 0)
                   .map((p, i) => `${i ? 'L' : 'M'}${x(p.t).toFixed(1)},${y(p.bpm).toFixed(1)}`).join('');
+                // x축 km 눈금 — gapTrack(거리·시간)으로 각 km 통과 시각을 찾아 매핑. '몇 km에
+                // 심박 몇'을 읽게 세로 그리드라인 + km 라벨. gapTrack 없으면(옛 런/평지) 생략.
+                const totalKm = Math.floor(Number(run.dist) || 0);
+                const kmTicks: { km: number; t: number; xPct: number }[] = [];
+                if (gapTrack.length >= 2) {
+                  for (let k = 1; k <= totalKm; k++) {
+                    const pt = gapTrack.find(p => p.d >= k);
+                    if (pt && pt.t > 0 && pt.t <= tMax) kmTicks.push({ km: k, t: pt.t, xPct: (x(pt.t) / W) * 100 });
+                  }
+                }
                 return (
                   <View style={{ marginTop: rv(12) }} accessibilityElementsHidden accessibilityLabel="심박 곡선">
-                    <Svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none">
-                      {zones.map(zn => {
-                        const lo = Math.max(yMin, zn.lo), hi = Math.min(yMax, zn.hi);
-                        if (hi <= yMin || lo >= yMax || hi <= lo) return null;
-                        return <SvgRect key={zn.z} x={0} y={y(hi)} width={W} height={Math.max(0, y(lo) - y(hi))} fill={HR_ZONE_COLORS[zn.z]} opacity={0.11} />;
-                      })}
-                      <SvgPath d={path} fill="none" stroke={T1} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
-                    </Svg>
+                    <View style={{ position: 'relative', height: H }}>
+                      <Svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none">
+                        {zones.map(zn => {
+                          const lo = Math.max(yMin, zn.lo), hi = Math.min(yMax, zn.hi);
+                          if (hi <= yMin || lo >= yMax || hi <= lo) return null;
+                          return <SvgRect key={zn.z} x={0} y={y(hi)} width={W} height={Math.max(0, y(lo) - y(hi))} fill={HR_ZONE_COLORS[zn.z]} opacity={0.11} />;
+                        })}
+                        {kmTicks.map(tk => (
+                          <SvgLine key={tk.km} x1={x(tk.t)} y1={TOP} x2={x(tk.t)} y2={H - BOT} stroke={withAlpha(T1, 0.14)} strokeWidth={1} vectorEffect="non-scaling-stroke" />
+                        ))}
+                        <SvgPath d={path} fill="none" stroke={T1} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+                      </Svg>
+                      {/* y축 bpm — 실제 최대(위)·최소(아래). 곡선 위에서도 읽히게 살짝 딤 배경. */}
+                      {([[realMax, rv(1)], [realMin, y(realMin) - rv(7)]] as [number, number][]).map(([v, topPx], i) => (
+                        <Text key={i} style={{ position: 'absolute', left: rs(2), top: topPx, color: T2, fontFamily: DISPLAY, fontSize: rf(10), fontWeight: '700', fontVariant: ['tabular-nums'], backgroundColor: withAlpha(BG, 0.55), paddingHorizontal: rs(3), borderRadius: rs(3), overflow: 'hidden' }}>{v}</Text>
+                      ))}
+                    </View>
+                    {/* x축 km 라벨 — 그리드라인과 같은 위치. */}
+                    {kmTicks.length > 0 && (
+                      <View style={{ height: rv(14), marginTop: rv(2) }}>
+                        {kmTicks.map(tk => (
+                          <Text key={tk.km} style={{ position: 'absolute', left: `${tk.xPct}%`, marginLeft: rs(-4), color: T3, fontFamily: DISPLAY, fontSize: rf(10), fontVariant: ['tabular-nums'] }}>{tk.km}</Text>
+                        ))}
+                        <Text style={{ position: 'absolute', right: 0, color: withAlpha(T3, 0.7), fontFamily: FONT, fontSize: rf(10) }}>km</Text>
+                      </View>
+                    )}
                   </View>
                 );
               })()}

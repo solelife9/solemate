@@ -17,3 +17,19 @@ export function estimateCalories(distanceKm: number, weightKg: number): number {
   const w = Number.isFinite(weightKg) && weightKg > 0 ? weightKg : DEFAULT_WEIGHT_KG;
   return Math.round(w * distanceKm * KCAL_PER_KG_PER_KM);
 }
+
+/** 안정 대사율(1 MET ≈ kcal/kg/시). 러닝 시간 동안 '가만히 있어도 태울' 기초 소모. */
+export const REST_KCAL_PER_KG_PER_HR = 1.05;
+
+/**
+ * 총 소모 칼로리(kcal) = 활동(거리 기반) + 안정 대사(시간 기반). Garmin·Apple '총 칼로리'와
+ * 같은 총량 정의라 경쟁앱과 눈높이가 맞는다(거리만 쓰던 값은 애플 '활동 칼로리'급으로 낮았다).
+ * 심박·워치 없이 폰만으로도 동작한다(거리·시간·체중만 필요). durationS 누락/0이면 활동분만.
+ */
+export function estimateCaloriesTotal(distanceKm: number, durationS: number, weightKg: number): number {
+  const w = Number.isFinite(weightKg) && weightKg > 0 ? weightKg : DEFAULT_WEIGHT_KG;
+  const active = Number.isFinite(distanceKm) && distanceKm > 0 ? w * distanceKm * KCAL_PER_KG_PER_KM : 0;
+  const hours = Number.isFinite(durationS) && durationS > 0 ? durationS / 3600 : 0;
+  const resting = w * hours * REST_KCAL_PER_KG_PER_HR;
+  return Math.round(active + resting);
+}

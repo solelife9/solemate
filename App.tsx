@@ -96,7 +96,7 @@ import {
   clampGoal, DEFAULT_SETTINGS,
   VoiceSettings, loadVoiceSettings, DEFAULT_VOICE, loadAutoPause, loadHaptics,
 } from './lib/settings';
-import {estimateCalories} from './lib/calories';
+import {estimateCaloriesTotal} from './lib/calories';
 import {detectPRs, PRKind} from './lib/records';
 import {getDistancePBs, PB_CACHE_KEY} from './lib/distancePBStore';
 import type {RunBestEfforts} from './lib/bestEfforts';
@@ -2701,8 +2701,10 @@ function RunActiveScreen({shoe,insets,goalKm,goalMin=0,pacePlan=[],targetZone=0,
     runVoice.finish(); // 완주 음성("운동을 종료합니다. 수고하셨습니다") — 리뷰 화면 전환 전 재생
     const sampled=simplifyRoute(runTracker.getPoints() as any,200);
     setFinRoute(sampled.length>=2?JSON.stringify(sampled):'');
-    // 고도: 기압계가 잡혔으면 그 누적(정확), 아니면 GPS 고도 폴백.
-    const finElevTotal=baroAvail.current?Math.round(baroElev.current.gain):runTracker.getElevationGain();
+    // 고도: 기압계(정확)와 GPS 고도(백그라운드에서도 누적) 중 더 큰 값. 폰을 주머니에 넣어
+    // 화면이 꺼지면 기압계 JS 구독이 멈춰 고도를 놓치는데, GPS 는 백그라운드 위치추적으로
+    // 계속 잡히므로 폴백이 된다(둘 다 3m 임계로 노이즈 필터됨 → max 가 유실을 막는다).
+    const finElevTotal=Math.max(Math.round(baroElev.current.gain),runTracker.getElevationGain());
     // 마지막 정수 km 이후 남은 부분 구간(예: 5.6km 의 0.6km)을 스플릿에 한 줄 추가한다 —
     // 레코더는 정수 km 경계만 남겨 꼬리 구간이 통째 누락됐다. lastSplitRef 가 마지막 경계의
     // 경과초·누적고도를 들고 있어 그 차이로 구간 시간·고도를 per-km 페이스로 환산한다.
@@ -2758,7 +2760,7 @@ function RunActiveScreen({shoe,insets,goalKm,goalMin=0,pacePlan=[],targetZone=0,
           }
         }catch{}
       }
-      await onSave(Math.round(finKm*100)/100,finTime,finCad,memo,finRoute,loc,finSplits,finElev,estimateCalories(finKm,weightKg),finPaceTrack,finHrTrack,finGapTrack,
+      await onSave(Math.round(finKm*100)/100,finTime,finCad,memo,finRoute,loc,finSplits,finElev,estimateCaloriesTotal(finKm,finTime,weightKg),finPaceTrack,finHrTrack,finGapTrack,
         trackMode?{lapM:Math.round(lapMRef.current),laps:lapTimesRef.current.length,lapTimes:lapTimesRef.current.slice()}:null);
       hapticSuccess(); // 저장 성공 — 완주 보상 촉각(설정 off 면 graceful no-op).
     }catch{
@@ -2778,10 +2780,10 @@ function RunActiveScreen({shoe,insets,goalKm,goalMin=0,pacePlan=[],targetZone=0,
   }
 
   const pauseLabel=autoPaused?'자동 일시정지':paused?'일시정지':'러닝 중';
-  // 칼로리 추정(체중×거리×1.036) — 라이브(현재 거리)와 완주(finKm) 각각. 거리 0이면 0.
+  // 칼로리 추정(활동+안정=총소모) — 라이브(현재 거리·경과)와 완주(finKm·finTime) 각각.
   // 트랙 모드 라이브 거리는 랩수×확정랩거리(GPS 누적 아님).
-  const liveCal=estimateCalories(trackMode?(lapCount*lapM)/1000:km,weightKg);
-  const finCal=estimateCalories(finKm,weightKg);
+  const liveCal=estimateCaloriesTotal(trackMode?(lapCount*lapM)/1000:km,elapsed,weightKg);
+  const finCal=estimateCaloriesTotal(finKm,finTime,weightKg);
 
   if(phase==='done') return(
     <View style={[run.screen,{paddingTop:insets.top+24,paddingBottom:insets.bottom+28}]}>
