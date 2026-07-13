@@ -627,3 +627,28 @@ test('autoPause:false 면 장시간 정지에도 자동 일시정지가 걸리�
   t.togglePause();
   expect(t.getState().paused).toBe(true);
 });
+
+// 회귀(2026-07-14): 수동 일시정지 중 GPS 무신호였다가 재개하면, 재개 직후 새 fix 가
+// 오기 전까지 getElapsed 의 ongoingStallMs 가 '일시정지 창'을 진행 중 死구간으로 다시
+// 빼버려(pausedMs 로 이미 뺀 창을 이중 차감) 경과시간이 0 으로 붕괴하고, 그 순간 정지·
+// 저장하면 저장 시간까지 과소였다. exitPause 가 lastRecvMs=now 로 리셋해 막는다.
+test('수동 일시정지 중 GPS 무신호 후 재개해도 경과시간이 붕괴하지 않는다(이중 차감 방지)', () => {
+  const {t, set} = makeEngine();
+  t.start({goalKm: 5, shoe: {id: 's1', name: 'X'}, t0: 100000});
+  // 0~10초: 정상 수신(5초 간격 < 8초 임계 → stall 없음). lastRecvMs 가 계속 갱신된다.
+  set(100000); t.ingestFix(fix(37.5, LON, 5, 100000));
+  set(105000); t.ingestFix(fix(37.5, LON, 5, 105000));
+  set(110000); t.ingestFix(fix(37.5, LON, 5, 110000));
+  // 10초 지점에서 수동 일시정지.
+  set(110000); t.togglePause();
+  // 90초 동안 건물 안 — fix 0개(무신호). 그 사이 lastRecvMs 는 110000 에 머문다.
+  set(200000);
+  t.togglePause(); // 재개
+
+  // 재개 직후(새 fix 전) 경과시간 = 실제 러닝 시간 ~10초. 0 으로 붕괴하면 회귀.
+  const elapsed = t.getElapsed();
+  expect(elapsed).toBeGreaterThanOrEqual(9);
+  expect(elapsed).toBeLessThanOrEqual(11);
+  // 그 순간 정지·저장해도 동일(getElapsedFinal = getElapsed).
+  expect(t.getElapsedFinal()).toBe(elapsed);
+});
