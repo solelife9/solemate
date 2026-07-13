@@ -53,6 +53,24 @@ describe('recommendRotation — 정렬 규칙', () => {
     expect(picks[1].shoe.id).toBe('far');
   });
 
+  test('마모 분산 tie-break 는 등록거리(start_km)도 센다 — 이미 신던 신발로 몰아주지 않음', () => {
+    // 둘 다 같은 날 마지막 착용(휴식 동률). 'preworn' 은 등록 450km + 런 20km(오도미터 470),
+    // 'newish' 는 등록 0 + 런 60km(오도미터 60). 런 km 만 보면 preworn(20)<newish(60)라
+    // preworn 이 '덜 마모'로 먼저 추천되지만(과거 버그), 오도미터로는 newish 가 덜 마모 →
+    // newish 우선(더 마모된 preworn 에 몰아주는 역효과 차단).
+    const shoes: RotationShoe[] = [
+      {id: 'preworn', brand: 'Nike', model: 'Pegasus 41', start_km: 450},
+      {id: 'newish', brand: 'Adidas', model: 'Adizero SL2', start_km: 0},
+    ];
+    const runs: RotationRun[] = [
+      {shoeId: 'preworn', date: '2026-06-01', km: 20},
+      {shoeId: 'newish', date: '2026-06-01', km: 60},
+    ];
+    const picks = recommendRotation({shoes, runs, runType: 'easy', today: '2026-06-03'});
+    expect(picks[0].shoe.id).toBe('newish');
+    expect(picks[1].shoe.id).toBe('preworn');
+  });
+
   test('거리 tie-break는 런 수 대용이 아니다: 런 1회 30km > 런 3회 9km 로 마모 판정', () => {
     // 'big' 은 30km 1회(런 수 1, 거리 30), 'small' 은 3km 3회(런 수 3, 거리 9).
     // run count 로 정렬하면 'big'(1회)이 '덜 씀'이라 먼저 와 의도가 뒤집히지만,

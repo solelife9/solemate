@@ -23,6 +23,9 @@ export interface RotationShoe {
   brand: string;
   model: string;
   retired?: boolean;
+  /** 등록 시 이미 쌓여 있던 주행거리(km). 마모 분산 tie-break 의 baseline —
+   *  빠지면 이미 신던 신발이 '덜 마모됨'으로 오판돼 더 마모된 신발을 추천한다. */
+  start_km?: number;
 }
 
 export interface RotationRun {
@@ -202,11 +205,14 @@ export function recommendRotation(input: {
     const cat = categoryForShoe(shoe);
     const worn = lastWorn(shoe.id, runs);
     const own = (runs || []).filter((r) => r && r.shoeId === shoe.id);
-    // 누적거리 = 신발별 모든 런의 km 합. 음수/NaN/누락은 0으로 방어(데이터 안전).
+    // 마모 분산 기준 = 오도미터(등록거리 start_km + 신발별 런 km 합). 음수/NaN/누락은
+    // 0 으로 방어(데이터 안전). start_km 을 빼면 이미 신던 신발이 '덜 마모됨'으로 오판돼
+    // 오히려 더 마모된 신발로 몰아주는 역효과가 난다(부상 예방 목적과 반대).
+    const startKm = Math.max(0, Number(shoe.start_km) || 0);
     const totalKm = own.reduce((sum, r) => {
       const km = Number(r.km);
       return sum + (Number.isFinite(km) && km > 0 ? km : 0);
-    }, 0);
+    }, startKm);
     const matches = !!(preferred && cat && preferred.includes(cat));
     return {shoe, cat, lastWorn: worn, totalKm, runCount: own.length, matches};
   });
