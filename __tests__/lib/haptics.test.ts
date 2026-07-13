@@ -1,118 +1,123 @@
 /**
- * lib/haptics — 의미 햅틱 래퍼 행동/스파이 테스트.
+ * lib/haptics — 의미 햅틱 래퍼 행동 테스트.
  *
- * 관찰 가능한 결과를 단언한다: 각 의미 메서드가 RN 내장 Vibration.vibrate 를 자기
- * 패턴으로 정확히 호출하는가, 햅틱을 끄면(off) 단 한 번도 호출하지 않는가, 네이티브
- * 진동이 던져도 호출자에게 예외가 새지 않는가(graceful no-op).
+ * iOS 는 Taptic 네이티브(HapticModule)로 '짧고 가벼운 톡'을, 그 외/미탑재는 Vibration
+ * 으로 폴백한다(2026-07-13 사용자 확정 — Vibration 모터의 길고 강한 부르르 회피).
+ * 관찰 가능한 결과를 단언한다:
+ *   1) Taptic 있으면 → impact(style)/notify(type)로 라우팅, Vibration 은 호출 안 함.
+ *   2) Taptic 없으면(안드로이드·미탑재) → Vibration 폴백 패턴으로 호출.
+ *   3) off 면 어느 경로도 호출 안 함(순수 no-op).
+ *   4) Taptic 이 던지면 Vibration 으로 폴백, Vibration 도 던지면 조용히 삼킨다.
  *
  * @format
  */
 
-import {Vibration} from 'react-native';
-import {
-  tap,
-  success,
-  warning,
-  countdownBeat,
-  go,
-  impactHeavy,
-  setHapticsEnabled,
-  isHapticsEnabled,
-  HAPTIC_PATTERN,
-} from '../../lib/haptics';
+type Spies = {
+  h: typeof import('../../lib/haptics');
+  vibrate: jest.Mock;
+  impact: jest.Mock;
+  notify: jest.Mock;
+};
 
-let vibrateSpy: jest.SpyInstance;
+function load({taptic = true, os = 'ios'}: {taptic?: boolean; os?: string} = {}): Spies {
+  jest.resetModules();
+  const vibrate = jest.fn();
+  const impact = jest.fn();
+  const notify = jest.fn();
+  jest.doMock('react-native', () => ({
+    Platform: {OS: os},
+    Vibration: {vibrate},
+    NativeModules: taptic ? {HapticModule: {impact, notify}} : {},
+  }));
+  const h = require('../../lib/haptics') as typeof import('../../lib/haptics');
+  h.setHapticsEnabled(true);
+  return {h, vibrate, impact, notify};
+}
 
-beforeEach(() => {
-  // 진동은 실제로 울리지 않게 가로채고 호출만 관찰한다.
-  vibrateSpy = jest.spyOn(Vibration, 'vibrate').mockImplementation(() => {});
-  setHapticsEnabled(true); // 각 테스트는 기본 on 에서 시작
-});
-
-afterEach(() => {
-  vibrateSpy.mockRestore();
-  setHapticsEnabled(true); // 모듈 전역 상태 누수 방지
-});
-
-describe('의미 메서드 → Vibration.vibrate 패턴 매핑(on 상태)', () => {
-  const cases: Array<[string, () => void, number | number[]]> = [
-    ['tap', tap, HAPTIC_PATTERN.tap],
-    ['success', success, [...HAPTIC_PATTERN.success]],
-    ['warning', warning, [...HAPTIC_PATTERN.warning]],
-    ['countdownBeat', countdownBeat, HAPTIC_PATTERN.countdownBeat],
-    ['go', go, HAPTIC_PATTERN.go],
-    ['impactHeavy', impactHeavy, HAPTIC_PATTERN.impactHeavy],
-  ];
-
-  test.each(cases)('%s() 는 자기 패턴으로 vibrate 를 정확히 1회 호출한다', (_name, fn, pattern) => {
-    fn();
-    expect(vibrateSpy).toHaveBeenCalledTimes(1);
-    expect(vibrateSpy).toHaveBeenCalledWith(pattern);
+describe('iOS + Taptic 탑재 — 짧고 가벼운 톡으로 라우팅(Vibration 미사용)', () => {
+  it('임팩트 의미는 올바른 스타일로 impact 를 부른다(light/medium/heavy)', () => {
+    const {h, impact, vibrate} = load({taptic: true, os: 'ios'});
+    h.tap();
+    h.countdownBeat();
+    h.go();
+    h.impactHeavy();
+    expect(impact).toHaveBeenNthCalledWith(1, 'light');
+    expect(impact).toHaveBeenNthCalledWith(2, 'light');
+    expect(impact).toHaveBeenNthCalledWith(3, 'medium');
+    expect(impact).toHaveBeenNthCalledWith(4, 'heavy');
+    // Taptic 경로에서는 구형 진동 모터를 절대 쓰지 않는다.
+    expect(vibrate).not.toHaveBeenCalled();
   });
 
-  test('단발 의미(tap/countdownBeat/go/impactHeavy)는 단일 number ms 를 쓴다', () => {
-    tap();
-    expect(vibrateSpy.mock.calls[0][0]).toBe(10);
-    vibrateSpy.mockClear();
-    go();
-    expect(vibrateSpy.mock.calls[0][0]).toBe(200);
-  });
-
-  test('펄스 의미(success/warning)는 [대기,진동,…] 배열 패턴을 쓴다', () => {
-    success();
-    expect(Array.isArray(vibrateSpy.mock.calls[0][0])).toBe(true);
-    expect(vibrateSpy.mock.calls[0][0]).toEqual([0, 30, 80, 30]);
-    vibrateSpy.mockClear();
-    warning();
-    // warning 은 success 보다 펄스 수가 많다(더 강한 주의).
-    expect((vibrateSpy.mock.calls[0][0] as number[]).length).toBeGreaterThan(
-      [...HAPTIC_PATTERN.success].length,
-    );
+  it('알림 의미는 올바른 타입으로 notify 를 부른다(success/warning)', () => {
+    const {h, notify, vibrate} = load({taptic: true, os: 'ios'});
+    h.success();
+    h.warning();
+    expect(notify).toHaveBeenNthCalledWith(1, 'success');
+    expect(notify).toHaveBeenNthCalledWith(2, 'warning');
+    expect(vibrate).not.toHaveBeenCalled();
   });
 });
 
-describe('settings 토글(off)면 순수 no-op', () => {
-  test('off 상태에서는 어떤 메서드도 vibrate 를 호출하지 않는다', () => {
-    setHapticsEnabled(false);
-    tap();
-    success();
-    warning();
-    countdownBeat();
-    go();
-    impactHeavy();
-    expect(vibrateSpy).not.toHaveBeenCalled();
+describe('Taptic 미탑재(안드로이드/미링크) — Vibration 폴백', () => {
+  it('안드로이드는 각 의미가 자기 폴백 패턴으로 vibrate 를 부른다', () => {
+    const {h, vibrate, impact, notify} = load({taptic: false, os: 'android'});
+    h.tap();
+    expect(vibrate).toHaveBeenLastCalledWith(h.HAPTIC_PATTERN.tap);
+    h.go();
+    expect(vibrate).toHaveBeenLastCalledWith(h.HAPTIC_PATTERN.go);
+    h.success();
+    expect(vibrate).toHaveBeenLastCalledWith([...h.HAPTIC_PATTERN.success]);
+    // 네이티브 Taptic 은 존재하지 않으니 호출될 수 없다.
+    expect(impact).not.toHaveBeenCalled();
+    expect(notify).not.toHaveBeenCalled();
   });
 
-  test('off→on 으로 되돌리면 다시 호출된다(상태가 토글을 실제로 존중)', () => {
-    setHapticsEnabled(false);
-    tap();
-    expect(vibrateSpy).not.toHaveBeenCalled();
-    setHapticsEnabled(true);
-    tap();
-    expect(vibrateSpy).toHaveBeenCalledTimes(1);
-  });
-
-  test('isHapticsEnabled 가 현재 토글 상태를 반영한다', () => {
-    setHapticsEnabled(false);
-    expect(isHapticsEnabled()).toBe(false);
-    setHapticsEnabled(true);
-    expect(isHapticsEnabled()).toBe(true);
+  it('폴백 패턴은 짧다 — go 는 단발(구 200ms 부르르 폐기), warning 은 success 보다 펄스 많음', () => {
+    const {h} = load({taptic: false, os: 'android'});
+    expect(typeof h.HAPTIC_PATTERN.go).toBe('number');
+    expect(h.HAPTIC_PATTERN.go).toBeLessThanOrEqual(60);
+    expect(h.HAPTIC_PATTERN.warning.length).toBeGreaterThan(h.HAPTIC_PATTERN.success.length);
   });
 });
 
-describe('graceful no-op(미지원/네이티브 에러)', () => {
-  test('vibrate 가 던져도 의미 메서드는 예외를 전파하지 않는다', () => {
-    vibrateSpy.mockImplementation(() => {
-      throw new Error('no vibrator hardware');
-    });
-    // 모두 조용히 삼켜야 한다 — 던지면 이 단언들이 실패한다.
-    expect(() => tap()).not.toThrow();
-    expect(() => success()).not.toThrow();
-    expect(() => warning()).not.toThrow();
-    expect(() => countdownBeat()).not.toThrow();
-    expect(() => go()).not.toThrow();
-    expect(() => impactHeavy()).not.toThrow();
-    // 그래도 시도는 했다(에러를 삼킨 것이지 호출을 건너뛴 게 아니다).
-    expect(vibrateSpy).toHaveBeenCalledTimes(6);
+describe('settings 토글(off) — 순수 no-op(Taptic·Vibration 모두 미호출)', () => {
+  it('off 면 Taptic 도 Vibration 도 호출하지 않는다', () => {
+    const {h, vibrate, impact, notify} = load({taptic: true, os: 'ios'});
+    h.setHapticsEnabled(false);
+    h.tap(); h.success(); h.warning(); h.countdownBeat(); h.go(); h.impactHeavy();
+    expect(impact).not.toHaveBeenCalled();
+    expect(notify).not.toHaveBeenCalled();
+    expect(vibrate).not.toHaveBeenCalled();
+    // 되돌리면 다시 동작.
+    h.setHapticsEnabled(true);
+    h.tap();
+    expect(impact).toHaveBeenCalledTimes(1);
+  });
+
+  it('isHapticsEnabled 가 현재 토글 상태를 반영한다', () => {
+    const {h} = load();
+    h.setHapticsEnabled(false);
+    expect(h.isHapticsEnabled()).toBe(false);
+    h.setHapticsEnabled(true);
+    expect(h.isHapticsEnabled()).toBe(true);
+  });
+});
+
+describe('graceful — 네이티브 에러가 위로 새지 않는다', () => {
+  it('Taptic 이 던지면 Vibration 으로 폴백한다', () => {
+    const {h, impact, vibrate} = load({taptic: true, os: 'ios'});
+    impact.mockImplementation(() => { throw new Error('taptic missing'); });
+    expect(() => h.tap()).not.toThrow();
+    // 폴백으로 Vibration 이 시도됐다.
+    expect(vibrate).toHaveBeenCalledWith(h.HAPTIC_PATTERN.tap);
+  });
+
+  it('Vibration 도 던지면 조용히 삼킨다(예외 미전파)', () => {
+    const {h, vibrate} = load({taptic: false, os: 'android'});
+    vibrate.mockImplementation(() => { throw new Error('no vibrator'); });
+    expect(() => h.tap()).not.toThrow();
+    expect(() => h.warning()).not.toThrow();
+    expect(vibrate).toHaveBeenCalledTimes(2);
   });
 });

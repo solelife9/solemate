@@ -1,36 +1,42 @@
-// lib/haptics — React Native 내장 Vibration API 만 쓰는 의미(semantic) 햅틱 래퍼.
+// lib/haptics — 의미(semantic) 햅틱 래퍼. iOS 는 Taptic Engine, 그 외는 Vibration 폴백.
 //
 // 설계 원칙(iron law):
-//   1) 새 네이티브 의존성 금지 — react-native-haptic-feedback 같은 패키지를 절대
-//      설치하지 않는다. 오직 react-native 의 Vibration 만 사용한다. iOS 의 Vibration
-//      은 패턴 길이를 무시하고 표준 진동을 울리므로 '의미'는 호출 시점으로 표현하고,
-//      세기/패턴 차이는 Android 에서만 체감된다(그래도 둘 다 동작은 한다).
-//   2) graceful no-op — 미지원 환경/네이티브 에러로 vibrate 가 던져도 절대 위로
-//      전파하지 않는다(진동 실패가 러닝 플로우를 깨면 안 된다).
-//   3) settings 토글 존중 — 사용자가 햅틱을 끄면(setHapticsEnabled(false)) 모든
-//      의미 메서드가 Vibration 을 전혀 호출하지 않는 순수 no-op 이 된다. 앱은 설정
-//      로드/변경 시 setHapticsEnabled 로 이 모듈 상태를 동기화한다.
+//   1) 외부 네이티브 의존성 금지 — react-native-haptic-feedback 같은 패키지를 절대
+//      설치하지 않는다. iOS 정밀 햅틱은 우리가 만든 얇은 네이티브 모듈(HapticModule,
+//      Apple 내장 UIFeedbackGenerator 사용 — 외부 패키지 아님, 공급망·버전드리프트 0)을
+//      쓰고, 그 외/미탑재 환경은 react-native 내장 Vibration 으로 폴백한다.
+//   2) graceful no-op — 미지원 환경/네이티브 에러로 발동이 던져도 절대 위로 전파하지
+//      않는다(햅틱 실패가 러닝 플로우를 깨면 안 된다).
+//   3) settings 토글 존중 — 사용자가 햅틱을 끄면(setHapticsEnabled(false)) 모든 의미
+//      메서드가 순수 no-op 이 된다. 앱은 설정 로드/변경 시 setHapticsEnabled 로 동기화.
 //
-// 패턴 표준: Android 배열 패턴은 [대기, 진동, 대기, 진동, …] 의미다(첫 값은 시작
-// 전 대기). 단일 number 는 그 ms 만큼 한 번 진동. 아래 상수는 각 의미의 '느낌'을
-// 고정하고 테스트가 정확히 단언할 수 있게 export 한다.
+// 왜 Taptic 인가(2026-07-13 사용자 확정): iOS 의 Vibration API 는 길이 값을 무시하고
+// ~400ms 짜리 '강하고 긴 부르르'(구형 진동 모터)를 울린다 — 패턴을 겹치면 더 길어진다.
+// 나이키/Apple 의 '짧고 가벼운 톡'은 Taptic Engine(UIFeedbackGenerator)만 낼 수 있다.
+// 그래서 iOS 는 HapticModule.impact(.light 등)/notify 로 보내고, 세기는 '스타일'로 고른다.
+//
+// HAPTIC_PATTERN 은 Vibration 폴백(주로 Android — ms 를 존중)의 패턴이자 테스트 기준.
+// iOS 경로의 세기는 아래 각 메서드의 impact 스타일이 결정한다.
 
-import {Vibration} from 'react-native';
+import {Vibration, NativeModules, Platform} from 'react-native';
 
-/** 각 의미 햅틱의 Vibration 패턴(단일 ms 또는 [대기,진동,…] 배열). */
+/** iOS Taptic 네이티브 모듈(있으면 우선). 안드로이드·미탑재면 null → Vibration 폴백. */
+const Taptic: any = Platform.OS === 'ios' ? NativeModules?.HapticModule : null;
+
+/** Vibration 폴백 패턴(단일 ms 또는 [대기,진동,…]). iOS 는 Taptic 이 우선하므로 폴백용. */
 export const HAPTIC_PATTERN = {
-  /** 가벼운 단발 탭 — 버튼/토글 등 일반 상호작용 피드백. */
-  tap: 10,
-  /** 성공 — 짧은 두 번 펄스(완료·저장 성공). */
-  success: [0, 30, 80, 30],
-  /** 경고 — 또렷한 세 번 펄스(주의·되돌릴 수 없는 동작). */
-  warning: [0, 40, 80, 40, 80, 40],
-  /** 카운트다운 비트 — 3·2·1 각 박자에 짧은 단발. */
-  countdownBeat: 40,
-  /** 시작(GO) — 카운트다운 종료, 강하게 한 번. */
-  go: 200,
-  /** 강한 임팩트 — 기록 달성 등 무게감 있는 단발. */
-  impactHeavy: 90,
+  /** 가벼운 단발 탭. */
+  tap: 8,
+  /** 성공 — 짧은 두 번 펄스. */
+  success: [0, 16, 45, 16],
+  /** 경고 — 또렷한 세 번 펄스(주의·되돌릴 수 없는 동작). success 보다 펄스 많음. */
+  warning: [0, 20, 45, 20, 45, 20],
+  /** 카운트다운 비트 — 각 박자에 짧은 단발. */
+  countdownBeat: 16,
+  /** 시작(GO) — 짧은 단발(구 200ms 부르르 폐기). */
+  go: 45,
+  /** 강한 임팩트 단발(기록 달성 등). */
+  impactHeavy: 30,
 } as const;
 
 // 모듈 내 토글 상태. 기본 on. 앱이 settings 의 햅틱 on/off 를 여기에 반영한다.
@@ -47,44 +53,71 @@ export function isHapticsEnabled(): boolean {
 }
 
 /**
- * 실제 진동 트리거. off 면 호출 자체를 건너뛰고(=Vibration 미호출), 네이티브 에러는
- * 삼켜서 절대 던지지 않는다. 모든 의미 메서드는 이 함수를 거친다.
+ * 임팩트(단발 톡) 발동. iOS 는 Taptic(style: light|soft|medium|rigid|heavy)로 짧고
+ * 가벼운 톡을, 그 외/미탑재는 Vibration(fallback ms)으로. off 면 건너뛰고, 네이티브
+ * 에러는 삼킨다.
  */
-function fire(pattern: number | number[]): void {
+function impact(style: string, fallback: number | number[]): void {
   if (!_enabled) return;
+  if (Taptic?.impact) {
+    try {
+      Taptic.impact(style);
+      return;
+    } catch {
+      /* 네이티브 실패 → Vibration 폴백으로 내려간다 */
+    }
+  }
   try {
-    Vibration.vibrate(pattern);
+    Vibration.vibrate(fallback);
   } catch {
     /* 미지원/네이티브 실패는 무시 — 햅틱은 부가기능이라 graceful no-op */
   }
 }
 
-/** 가벼운 단발 탭(일반 상호작용). */
+/** 알림(성공/경고/오류) 발동. iOS 는 Taptic 알림 패턴(모터 아님), 그 외는 Vibration. */
+function notify(type: string, fallback: number | number[]): void {
+  if (!_enabled) return;
+  if (Taptic?.notify) {
+    try {
+      Taptic.notify(type);
+      return;
+    } catch {
+      /* 폴백 */
+    }
+  }
+  try {
+    Vibration.vibrate(fallback);
+  } catch {
+    /* graceful no-op */
+  }
+}
+
+/** 가벼운 단발 탭(일반 상호작용) — 짧고 약한 톡. */
 export function tap(): void {
-  fire(HAPTIC_PATTERN.tap);
+  impact('light', HAPTIC_PATTERN.tap);
 }
 
-/** 성공 피드백(짧은 두 번 펄스). */
+/** 성공 피드백(완료·저장) — Taptic 성공 알림. */
 export function success(): void {
-  fire([...HAPTIC_PATTERN.success]);
+  notify('success', [...HAPTIC_PATTERN.success]);
 }
 
-/** 경고 피드백(또렷한 세 번 펄스). */
+/** 경고 피드백(주의·되돌릴 수 없는 동작) — Taptic 경고 알림. */
 export function warning(): void {
-  fire([...HAPTIC_PATTERN.warning]);
+  notify('warning', [...HAPTIC_PATTERN.warning]);
 }
 
-/** 카운트다운 박자(3·2·1 각 비트). */
+/** 카운트다운 박자(3·2·1) — 가벼운 톡. */
 export function countdownBeat(): void {
-  fire(HAPTIC_PATTERN.countdownBeat);
+  impact('light', HAPTIC_PATTERN.countdownBeat);
 }
 
-/** 시작(GO) — 강한 단발. */
+/** 시작(GO) — 조금 더 또렷한 단발 톡. */
 export function go(): void {
-  fire(HAPTIC_PATTERN.go);
+  impact('medium', HAPTIC_PATTERN.go);
 }
 
-/** 강한 임팩트 단발(기록 달성 등). */
+/** 강한 임팩트 단발(목표 달성 등) — 묵직하지만 짧은 톡. */
 export function impactHeavy(): void {
-  fire(HAPTIC_PATTERN.impactHeavy);
+  impact('heavy', HAPTIC_PATTERN.impactHeavy);
 }
