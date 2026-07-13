@@ -77,13 +77,25 @@ describe('saveWatchHrTrack (A) — 시간창 매칭 저장', () => {
     expect(await loadPending()).toHaveLength(1);
   });
 
-  it('이미 hrTrack 이 있으면 덮어쓰지 않고 대기에서만 제거한다', async () => {
+  it('빈약한 기존 트랙(스트레이 1점)은 더 촘촘한 워치 기록으로 교정(덮어쓰기)한다', async () => {
     await registerRunForHr('run', NOW - 1800_000, NOW, NOW);
-    await AsyncStorage.setItem('hrTrack_run', JSON.stringify([{t: 0, bpm: 111}]));
+    // 스트레이 1점(배경 안정심박) — 평평한 가짜 직선의 원인.
+    await AsyncStorage.setItem('hrTrack_run', JSON.stringify([{t: 0, bpm: 81}]));
     const matched = await saveWatchHrTrack(NOW - 1800_000, NOW, [0, 60], [140, 150], NOW);
     expect(matched).toBe('run');
-    // 실측(라이브) 우선 — 덮어쓰지 않음.
-    expect(JSON.parse((await AsyncStorage.getItem('hrTrack_run'))!)).toEqual([{t: 0, bpm: 111}]);
+    // 워치 전체 기록(2점 ≥ 1점)이 더 촘촘 → 교정됨.
+    expect(JSON.parse((await AsyncStorage.getItem('hrTrack_run'))!)).toEqual([{t: 0, bpm: 140}, {t: 60, bpm: 150}]);
+    expect(await loadPending()).toHaveLength(0);
+  });
+
+  it('기존이 더 촘촘하면(라이브 풀 캡처) 실측 우선으로 보존한다', async () => {
+    await registerRunForHr('run', NOW - 1800_000, NOW, NOW);
+    const live = [{t: 0, bpm: 120}, {t: 30, bpm: 130}, {t: 60, bpm: 140}];
+    await AsyncStorage.setItem('hrTrack_run', JSON.stringify(live));
+    const matched = await saveWatchHrTrack(NOW - 1800_000, NOW, [0, 60], [140, 150], NOW);
+    expect(matched).toBe('run');
+    // 워치 직송(2점) < 기존 라이브(3점) → 보존.
+    expect(JSON.parse((await AsyncStorage.getItem('hrTrack_run'))!)).toEqual(live);
     expect(await loadPending()).toHaveLength(0);
   });
 });

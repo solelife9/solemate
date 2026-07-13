@@ -94,8 +94,6 @@ export async function hkBackfillHeartRate(
   if (!m || !runId || !(startMs < endMs)) return 0;
   if (!(await hkLinked())) return 0;
   try {
-    const existing = await AsyncStorage.getItem('hrTrack_' + runId);
-    if (existing) return 0;
     const samples = await m.queryQuantitySamples('HKQuantityTypeIdentifierHeartRate', {
       limit: 0, // 비양수 = 전체
       ascending: true,
@@ -109,6 +107,18 @@ export async function hkBackfillHeartRate(
       }))
       .filter(p => p.bpm > 30 && p.bpm < 240); // 명백한 노이즈 컷
     if (track.length < 2) return 0; // 표시 가치 없음(RunDetail 계약과 동일)
+    // richer-wins — 기존 트랙이 더 촘촘하면 보존(실측 우선), 빈약/가짜(스트레이 1~2점 →
+    // 평평한 가짜 직선)면 애플 건강 실측으로 교정한다. 저장 순간엔 워치→폰 HK 동기화가
+    // 덜 돼 스트레이만 잡혔다가, 복귀/재시도 때 완전한 시계열로 덮어써진다.
+    const existing = await AsyncStorage.getItem('hrTrack_' + runId);
+    if (existing) {
+      try {
+        const ex = JSON.parse(existing);
+        if (Array.isArray(ex) && ex.length >= track.length) return 0;
+      } catch {
+        /* 파싱 실패 → 덮어쓴다 */
+      }
+    }
     await AsyncStorage.setItem('hrTrack_' + runId, JSON.stringify(track));
     return track.length;
   } catch {

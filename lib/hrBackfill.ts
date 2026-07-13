@@ -107,13 +107,23 @@ export async function saveWatchHrTrack(
     }
   }
   if (!best) return null;
-  if (await hasHrTrack(best.runId)) {
-    // 이미 채워짐 — 대기에서만 제거.
-    await savePending(list.filter(e => e.runId !== best!.runId));
-    return best.runId;
-  }
   const track = buildHrTrack(best.startMs, wStart, samplesOffsetS, samplesBpm);
   if (track.length < 2) return null; // 표시 가치 없음 — 대기 유지(다음 기회/HK 폴백)
+  // 기존 트랙과 비교 — 워치 직송이 더 촘촘하면(센서 실측·완전) 덮어쓴다. 스트레이 1~2점
+  // HealthKit 백필이 먼저 만든 빈약한 트랙(예: 배경 안정심박 몇 점 → 평평한 가짜 직선)을
+  // 완전한 워치 기록으로 교정한다. 기존이 더 촘촘하면(라이브 풀 캡처) 실측 우선으로 보존.
+  try {
+    const existingRaw = await AsyncStorage.getItem('hrTrack_' + best.runId);
+    if (existingRaw) {
+      const existing = JSON.parse(existingRaw);
+      if (Array.isArray(existing) && existing.length >= track.length) {
+        await savePending(list.filter(e => e.runId !== best!.runId));
+        return best.runId; // 기존이 더 촘촘 — 보존, 대기만 제거
+      }
+    }
+  } catch {
+    /* 파싱 실패 → 워치 트랙으로 덮어쓴다(더 나쁠 게 없다) */
+  }
   try {
     await AsyncStorage.setItem('hrTrack_' + best.runId, JSON.stringify(track));
   } catch {

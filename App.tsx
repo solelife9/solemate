@@ -1458,10 +1458,29 @@ function Main(){
   useEffect(()=>watchSession.onWatchHrTrack(async p=>{
     try{await saveWatchHrTrack(p.startMs,p.endMs,p.offsetS,p.bpm,Date.now());}catch{/* 비치명적 */}
   }),[]);
-  // (B) HealthKit 백필 재시도 — 마운트 시 1회 + 앱 복귀('active')마다. 저장 순간엔 워치→폰
-  // HK 동기화가 덜 됐을 수 있어, 주머니에서 꺼내 앱을 열 때(동기화 완료 시점) 다시 채운다.
+  // (B) HealthKit 백필 재시도 + 최근 러닝 심박 복구 — 마운트 시 1회 + 앱 복귀('active')마다.
+  //   · retryPendingHr: 새 런의 대기 목록을 정확한 창으로 재백필(저장 직후 동기화 지연 보완).
+  //   · recoverRecentHr: 최근 48h 러닝을 창(updatedAt-duration)으로 재백필한다. HealthKit
+  //     백필이 richer-wins 라, 워치→폰 동기화가 늦어 저장 때 못 잡았거나 스트레이 1~2점만
+  //     잡혀 '평평한 가짜 심박'이 된 런도, 앱 복귀 시 애플 건강의 완전한 실측으로 교정된다.
+  const runsForHrRef=useRef<BackendRun[]>([]);
+  runsForHrRef.current=runs;
   useEffect(()=>{
-    const run=()=>{void retryPendingHr(Date.now(),hkBackfillHeartRate).catch(()=>{});};
+    const recoverRecentHr=async()=>{
+      try{
+        const now=Date.now();
+        const recent=(runsForHrRef.current||[]).filter(r=>{
+          const end=Number((r as {updatedAt?:number}).updatedAt)||0;
+          return end>0 && now-end<48*3600*1000 && (Number(r.duration)||0)>30;
+        }).slice(0,10);
+        for(const r of recent){
+          const end=Number((r as {updatedAt?:number}).updatedAt)||0;
+          const start=end-(Number(r.duration)||0)*1000;
+          await hkBackfillHeartRate(String(r.id),start,end);
+        }
+      }catch{/* 비치명적 */}
+    };
+    const run=()=>{void retryPendingHr(Date.now(),hkBackfillHeartRate).catch(()=>{});void recoverRecentHr();};
     run();
     const sub=AppState.addEventListener('change',n=>{if(n==='active')run();});
     return ()=>sub.remove();
