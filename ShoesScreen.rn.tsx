@@ -15,7 +15,7 @@ import { RunCard, RunDetail } from './HistoryScreen.rn';
 import { FuelGauge } from './FuelGauge';
 import FirstShoeScreen from './FirstShoeScreen.rn';
 import { Unit, displayNum } from './lib/units';
-import { wearTier, WearTierTone, SHOE_REPLACE_PCT } from './lib/shoe';
+import { wearTier, WearTierTone, SHOE_REPLACE_PCT, clampMaxKm } from './lib/shoe';
 import { assessShoeInjuryRisk } from './lib/injury';
 import { buildWearView, forecastConfidenceKo, forecastLineKo, type ReplacementForecast, type Surface } from './lib/wearView';
 import { findShoeClass, typeLabel, purposeSentenceKo } from './data/shoeClass';
@@ -36,7 +36,7 @@ const condLabel = (pct: number) => wearTier(pct).label;
 
 // ── shoe detail ───────────────────────────────────────────────────────────────
 function ShoeDetail({
-  shoe, idx, runs, totals, unit, weightKg, surfaceOf, onBack, onRename, onDelete, onRetire, onSetMaxKm: _onSetMaxKm,
+  shoe, idx, runs, totals, unit, weightKg, surfaceOf, onBack, onRename, onDelete, onRetire, onSetMaxKm,
   rawShoe, rawRuns, progressionCtx, equippedTitle, onRetiredKeepsake, now, allShoes,
 }: {
   shoe: Shoe;
@@ -102,6 +102,10 @@ function ShoeDetail({
 
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(`${shoe.brand} ${shoe.model}`.trim());
+  // 신발 수명(교체거리 max_km) 편집 — 등록 후에도 바꿀 수 있게(무거운 러너·트레일·모델
+  // 오선택 보정). ±50km 스텝을 clampMaxKm(100~2000)로 보정해 onSetMaxKm 로 즉시 반영.
+  const [maxEditOpen, setMaxEditOpen] = useState(false);
+  const stepMaxKm = (deltaKm: number) => { if (shoe.id) onSetMaxKm?.(String(shoe.id), clampMaxKm((Number(shoe.max) || 0) + deltaKm)); };
   // 런 상세 — 기록탭과 같은 RunDetail 재사용(읽기 전용: 삭제/편집은 기록탭 담당).
   const [selRun, setSelRun] = useState<Run | null>(null);
 
@@ -261,7 +265,19 @@ function ShoeDetail({
             fillPct={shoe.max > 0 ? Math.min(1, shoe.used / shoe.max) : 0}
             usedLabel={String(usedDisp)}
             maxLabel={String(maxDisp)}
+            editSlot={onSetMaxKm ? (
+              <Pressable onPress={() => setMaxEditOpen((o) => !o)} hitSlop={8} accessibilityRole="button" accessibilityLabel={`신발 수명 편집, 현재 ${maxDisp}${unit}`} style={s.maxEditToggle}>
+                <Ionicons name={maxEditOpen ? 'checkmark' : 'pencil'} size={ri(13)} color={T2} />
+              </Pressable>
+            ) : undefined}
           />
+          {maxEditOpen && onSetMaxKm && (
+            <View style={s.maxStepRow}>
+              <Pressable onPress={() => stepMaxKm(-50)} hitSlop={8} accessibilityRole="button" accessibilityLabel="수명 50 줄이기" style={s.maxEditToggle}><Ionicons name="remove" size={ri(16)} color={T1} /></Pressable>
+              <Text style={s.maxStepVal}>수명 {maxDisp}<Text style={s.maxStepUnitTxt}> {unit}</Text></Text>
+              <Pressable onPress={() => stepMaxKm(50)} hitSlop={8} accessibilityRole="button" accessibilityLabel="수명 50 늘리기" style={s.maxEditToggle}><Ionicons name="add" size={ri(16)} color={T1} /></Pressable>
+            </View>
+          )}
         </View>
 
         {/* 부상예방 경고 배너(주의/위험) — 마모도가 임계를 넘으면 keep-going 보이스로
@@ -789,6 +805,9 @@ const s = StyleSheet.create({
   dHeroLabel: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize },
   dHeroLabelRow: { flexDirection: 'row', alignItems: 'center', gap: rv(8) },
   maxEditToggle: { width: rs(26), height: rs(26), borderRadius: rs(8), backgroundColor: CARD_HI, alignItems: 'center', justifyContent: 'center' },
+  maxStepRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rs(20), marginTop: rv(14) },
+  maxStepVal: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.heading.fontSize, fontWeight: '600', fontVariant: ['tabular-nums'], minWidth: rs(96), textAlign: 'center' },
+  maxStepUnitTxt: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500' },
   dHeroRemain: { color: T1, fontFamily: DISPLAY, fontSize: rf(44), letterSpacing: 0.5 },
   dHeroRemainU: { color: T2, fontFamily: FONT, fontSize: TYPE.heading.fontSize, marginLeft: rs(4), marginBottom: rv(6) },
 
