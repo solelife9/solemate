@@ -263,3 +263,27 @@ describe('A6-2 엣지 — weeksRemaining 에 무NaN·무Infinity·무음수', ()
     expect(['ok', 'overdue', 'no_recent']).toContain(f.reason);
   });
 });
+
+describe('등록 마일리지(start_km) 반영 — 이미 신던 신발 교체예측(회귀)', () => {
+  const runs: ForecastRun[] = [
+    {id: 'r1', distance_km: 10, duration_s: 3000, date: daysAgoISO(3)},
+    {id: 'r2', distance_km: 10, duration_s: 3000, date: daysAgoISO(10)},
+    {id: 'r3', distance_km: 10, duration_s: 3000, date: daysAgoISO(17)},
+  ];
+  const shoe = (startKm: number): WearShoe =>
+    ({name: 's', target_km: 600, start_km: startKm} as WearShoe);
+
+  it('effectiveWearKm 이 start_km 을 baseline 으로 더한다', () => {
+    const worn550 = effectiveWearKm(shoe(550), runs, {now: NOW});
+    const worn0 = effectiveWearKm(shoe(0), runs, {now: NOW});
+    expect(worn550 - worn0).toBeCloseTo(550, 0); // 등록거리가 실제로 마모에 더해진다
+  });
+
+  it('550km 신던 신발(수명600) 등록 → 잔여 임박/초과, start_km 0 이면 여유(과거 버그)', () => {
+    const f550 = forecastReplacement(shoe(550), runs, {now: NOW});
+    const f0 = forecastReplacement(shoe(0), runs, {now: NOW});
+    // start_km 무시 시엔 잔여 ~570km(먼 미래)라 '교체 권장'이 안 떴다 — 이제 임박/초과.
+    expect(f550.kmRemaining).toBeLessThan(f0.kmRemaining);
+    expect(f550.kmRemaining).toBeLessThanOrEqual(30);
+  });
+});

@@ -27,6 +27,8 @@ export type WearViewShoe = {
   brand?: string;
   model?: string;
   max?: number;
+  /** 등록 시 이미 쌓여 있던 주행거리(km). 마모/교체예측 baseline — 빠지면 과소평가. */
+  start_km?: number;
   created_at?: string;
   purchase_date?: string;
 };
@@ -56,6 +58,7 @@ function toWearShoe(shoe: WearViewShoe): WearShoe {
   return {
     name: `${shoe?.brand ?? ''} ${shoe?.model ?? ''}`.trim(),
     target_km: shoe?.max,
+    start_km: shoe?.start_km,
     created_at: shoe?.created_at,
     purchase_date: shoe?.purchase_date,
   };

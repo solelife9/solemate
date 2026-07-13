@@ -189,7 +189,11 @@ export function effectiveWearKm(
 
   const weighted = runWear * weightFactorFor(opts?.weightKg);
   const age = ageWearKm(shoe, opts?.now);
-  const total = weighted + age;
+  // 등록 시 이미 쌓여 있던 주행거리(start_km) — 실효 마모의 baseline. 이미 일어난 실측
+  // 거리라 체중계수(장래 마모율)를 곱하지 않고 그대로 더한다. 이게 빠지면 이미 신던
+  // 신발을 등록했을 때 교체 예측이 과소평가돼 '교체 권장'이 안 뜬다(수명 링과 불일치).
+  const startKm = Math.max(0, Number((shoe as {start_km?: number})?.start_km ?? 0) || 0);
+  const total = weighted + age + startKm;
   return Number.isFinite(total) && total > 0 ? total : 0;
 }
 

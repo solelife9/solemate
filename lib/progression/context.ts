@@ -148,10 +148,14 @@ export function buildContext(
   // ── perShoe 시드 ─────────────────────────────────────────────────────────────
   const perShoe: Record<string, PerShoeStats> = {};
   let retiredShoeCount = 0;
+  // 등록 마일리지(start_km) — 런 합산 폴백에 더해 누적거리를 정확히 낸다(빠지면 은퇴
+  // 명패·키프세이크가 실제보다 적은 km 를 보여줘 수명 링과 모순, Truth-only 위반).
+  const perShoeStartKm: Record<string, number> = {};
   for (const s of shoeList) {
     if (!s || typeof s.id !== 'string' || !s.id) continue;
     const retired = s.retired === true;
     if (retired) retiredShoeCount += 1;
+    perShoeStartKm[s.id] = Math.max(0, Number((s as {start_km?: number}).start_km) || 0);
     const maxKm = Number(s.max_km);
     const serverKm = Number(s.total_km);
     perShoe[s.id] = {
@@ -241,9 +245,9 @@ export function buildContext(
     }
   }
 
-  // 신발 누적거리: 서버 truth 우선, 없으면 런 합산.
+  // 신발 누적거리: 서버 truth 우선, 없으면 등록거리(start_km) + 런 합산.
   for (const id of Object.keys(perShoe)) {
-    if (perShoe[id].km <= 0) perShoe[id].km = perShoeDerivedKm[id] ?? 0;
+    if (perShoe[id].km <= 0) perShoe[id].km = (perShoeDerivedKm[id] ?? 0) + (perShoeStartKm[id] ?? 0);
   }
 
   // ── 스트릭/공백/주간 ─────────────────────────────────────────────────────────

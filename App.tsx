@@ -744,7 +744,7 @@ function Main(){
     // 클라이언트 id + updatedAt 스탬프(머지 '최신 우선'). max_km/start_km/purchase_date 만
     // 채우고 나머지(total_km/run_time)는 런에서 파생(서버 truth 부재 시 폴백).
     const newShoe=stampUpdatedAt({
-      id:genShoeId(),name,max_km:maxKm,start_km:startKm,purchase_date:date,
+      id:genShoeId(),name,max_km:clampMaxKm(maxKm),start_km:startKm,purchase_date:date,
     } as BackendShoe);
     setShoes(prev=>[newShoe,...prev]);
   }
@@ -1497,7 +1497,7 @@ function Main(){
   const homeActiveRaw=shoes.find(s=>s.id===effectiveId)||null;
   // 한 신발의 교체 예측(상세와 동일 보정: target=max_km, 거리/시간/날짜, weightKg, surfaceOf).
   const forecastForRaw=(raw:BackendShoe|null):ReplacementForecast|null=>raw?forecastReplacement(
-    {name:raw.name,target_km:Number(raw.max_km)},
+    {name:raw.name,target_km:Number(raw.max_km),start_km:Number(raw.start_km)||0},
     runs.filter(r=>r.shoe_id===raw.id).map(r=>({
       id:r.id,distance_km:parseFloat(String(r.km))||0,duration_s:r.duration||0,date:String(r.run_date||''),
     })),

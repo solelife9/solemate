@@ -116,20 +116,19 @@ export function conditionForPercent(percentUsed: number): ShoeCondition {
  */
 export function shoeHealth(shoe: ShoeLike, runs: RunLike[] = []): ShoeHealth {
   const max = Number(shoe?.max_km ?? shoe?.max ?? DEFAULT_MAX_KM) || DEFAULT_MAX_KM;
-  // 서버 truth 우선: total_km 이 유한·음수아님이면 그것을 usedKm 으로 채택한다.
+  // 클라이언트 파생값 = 등록거리(start_km) + 이 신발의 런 합산(항상 계산).
+  const startKm = Number(shoe?.start_km ?? 0) || 0;
+  const ranKm = (runs || []).reduce((sum, r) => {
+    if (!r || r.shoe_id !== shoe?.id) return sum;
+    const km = typeof r.km === 'number' ? r.km : parseFloat(String(r.km));
+    return sum + (Number.isFinite(km) ? km : 0);
+  }, 0);
+  const clientKm = startKm + ranKm;
+  // 서버 truth(total_km)가 있으면 채택하되, 클라이언트 파생값과 max 를 취한다 — total_km 이
+  // 오래돼(스테일) 낮으면 새 런이 링을 못 올리고 멈추는 사고를 막는다(클라이언트가 바닥).
   const serverTotal = Number(shoe?.total_km);
-  let usedKm: number;
-  if (Number.isFinite(serverTotal) && serverTotal >= 0) {
-    usedKm = serverTotal;
-  } else {
-    const startKm = Number(shoe?.start_km ?? 0) || 0;
-    const ranKm = (runs || []).reduce((sum, r) => {
-      if (!r || r.shoe_id !== shoe?.id) return sum;
-      const km = typeof r.km === 'number' ? r.km : parseFloat(String(r.km));
-      return sum + (Number.isFinite(km) ? km : 0);
-    }, 0);
-    usedKm = startKm + ranKm;
-  }
+  const usedKm =
+    Number.isFinite(serverTotal) && serverTotal >= 0 ? Math.max(serverTotal, clientKm) : clientKm;
   const remainingKm = Math.max(0, max - usedKm);
   const percentUsed = max > 0 ? (usedKm / max) * 100 : 0;
   // condition(3단계)은 반환하지 않는다 — 컨디션은 wearTier(percentUsed) 4단계가 단일

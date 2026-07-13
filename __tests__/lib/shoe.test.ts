@@ -141,11 +141,16 @@ describe('shoeHealth — 서버 truth(total_km) 우선(audit#9/#10)', () => {
     expect(neg.usedKm).toBeCloseTo(10, 5);
   });
 
-  test('서버 total_km 0은 유효한 truth다(아직 안 달린 신발)', () => {
+  test('서버 total_km 은 바닥(floor) — 아직 안 달린 신발은 0, 미동기 로컬 런은 그 위로 누적', () => {
+    // 런이 없으면 total_km=0 그대로(아직 안 달린 신발).
+    const empty = shoeHealth({id: 's1', max_km: 700, start_km: 0, total_km: 0}, []);
+    expect(empty.usedKm).toBe(0);
+    // 방금 달린 미동기 런은 링을 올린다 — 스테일한 total_km 이 새 런을 막아 링이 멈추는
+    // 사고를 방지한다(max(total_km, start+Σrun) — total_km 은 override 가 아니라 바닥).
     const h = shoeHealth({id: 's1', max_km: 700, start_km: 0, total_km: 0}, [
-      {shoe_id: 's1', km: 99}, // 미동기 로컬 런은 서버 truth로 무시
+      {shoe_id: 's1', km: 99},
     ]);
-    expect(h.usedKm).toBe(0);
+    expect(h.usedKm).toBe(99);
     expect(wearTier(h.percentUsed).key).toBe('best');
   });
 });
