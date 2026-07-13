@@ -53,6 +53,7 @@ import {RANK_XP} from './lib/progression/rank';
 import {TIER_LABEL, RARITY_COLORS} from './theme';
 import CelebrationScreen, {CelebrationData} from './CelebrationScreen.rn';
 import {loadProgression, saveProgression} from './lib/progression/storage';
+import {mergeProgression} from './lib/progression/mergeProgression';
 import {mergeCelebBaseline} from './lib/celebrationBaseline';
 import {success as hapticSuccess, setHapticsEnabled, isHapticsEnabled} from './lib/haptics';
 import type {ProgressionState, RetiredShoeRecord, ContextChallengeInput} from './lib/progression/types';
@@ -1145,11 +1146,17 @@ function Main(){
       const th=Number(st.alerts.thresholdPct);
       changeAlerts({enabled:en,thresholdPct:Number.isFinite(th)?th:alerts.thresholdPct});
     }
-    // 진척 복원(은퇴 신발·랭크·업적 seen) — 머지 결과를 상태+영속(progression_v1)에 반영한다.
-    // 클라우드 머지(mergeCloudData)가 이미 local 진척과 union 한 값이라, 화면/저장 둘 다 안전.
+    // 진척 복원(은퇴 신발·랭크·업적 seen) — 동기 왕복(await) 중 만든 로컬 진척(은퇴·언락·
+    // 포인트)을 잃지 않게 함수형 updater 로 현재 상태(prev)와 재병합한다. 과거엔 blind replace
+    // (setProgState(data.progression))라, mergeCloudData 가 쓴 값이 **동기 시작 시점 스냅샷**
+    // 기반이라 그 사이 은퇴한 신발/획득 업적이 통째로 사라졌다(신발/러닝/메달과 달리 보존
+    // updater 가 빠져 있던 유일한 페이로드 — iron law: 은퇴 신발을 잃지 않는다).
     if(data.progression&&typeof data.progression==='object'){
-      setProgState(data.progression as ProgressionState);
-      void saveProgression(data.progression as ProgressionState);
+      setProgState(prev=>{
+        const merged=mergeProgression(prev??undefined,data.progression as ProgressionState)??(data.progression as ProgressionState);
+        void saveProgression(merged);
+        return merged;
+      });
     }
     // 메달 복원/병합 — 동기 왕복 중 로컬 추가분을 잃지 않게 함수형 updater 로 prev 와 union
     // (신발/러닝의 reconcileLivePreservingLocal 과 같은 취지). normalizeMedals 가 검증·정렬.
