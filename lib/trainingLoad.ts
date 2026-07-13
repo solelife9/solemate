@@ -109,10 +109,12 @@ function clamp(x: number, lo: number, hi: number): number {
   return x < lo ? lo : x > hi ? hi : x;
 }
 
-/** 중앙값(오름차순 정렬된 배열). 빈 배열이면 null. */
+/** 중앙값(오름차순 정렬된 배열). 짝수 길이는 가운데 두 값의 평균. 빈 배열이면 null. */
 function median(sorted: number[]): number | null {
-  if (!sorted.length) return null;
-  return sorted[Math.floor((sorted.length - 1) / 2)];
+  const n = sorted.length;
+  if (!n) return null;
+  const mid = n >> 1;
+  return n % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
 }
 
 /**
