@@ -1482,8 +1482,10 @@ function Main(){
     };
     const run=()=>{void retryPendingHr(Date.now(),hkBackfillHeartRate).catch(()=>{});void recoverRecentHr();};
     run();
+    // 콜드런치 대비 — 마운트 직후엔 runs 가 아직 로드 전이라 복구가 헛돈다. 로드된 뒤 재시도.
+    const t1=setTimeout(run,3000);const t2=setTimeout(run,12000);
     const sub=AppState.addEventListener('change',n=>{if(n==='active')run();});
-    return ()=>sub.remove();
+    return ()=>{clearTimeout(t1);clearTimeout(t2);sub.remove();};
   },[]);
 
   // ── 실효 마모/교체 예측 보정(Slice 6) ────────────────────────────────────────
