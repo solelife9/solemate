@@ -347,3 +347,36 @@ describe('buildRetiredShoeRecord', () => {
     expect(rec.km).toBe(s.totalKm);
   });
 });
+
+// 회귀(2026-07-14): 등록 주행거리(start_km)가 명패/등급(perShoe.km)엔 반영되는데
+// 은퇴 요약 totalKm·누적 하이라이트는 run-only 라, 이미 신던 신발을 은퇴시키면 카드
+// 헤드라인(오도미터)과 '누적 500km' 배지가 어긋났다. totalKm·하이라이트를 오도미터
+// (런 합산 + start_km)로 정합시키되, 평균 페이스만 실제 달린 run-only 로 유지한다.
+describe('오도미터(start_km 포함) 정합 — 하이라이트/표시 totalKm 이 명패와 어긋나지 않음', () => {
+  const runs: BackendRun[] = [
+    run({id: 'a', shoe_id: 's1', km: 30, duration: 9000, run_date: '2026-01-01'}),
+    run({id: 'b', shoe_id: 's1', km: 30, duration: 9000, run_date: '2026-02-01'}),
+    run({id: 'c', shoe_id: 's1', km: 30, duration: 9000, run_date: '2026-03-01'}),
+    run({id: 'd', shoe_id: 's1', km: 30, duration: 9000, run_date: '2026-03-15'}),
+    run({id: 'e', shoe_id: 's1', km: 30, duration: 9000, run_date: '2026-03-20'}),
+  ]; // run-only 150km, 45000s
+  const worn: BackendShoe = {id: 's1', name: 'Nike Pegasus 40', max_km: 600, start_km: 400};
+  const fresh: BackendShoe = {id: 's1', name: 'Nike Pegasus 40', max_km: 600, start_km: 0};
+  const sW = buildRetirementSummary(worn, runs, buildContext(runs, [worn], [], [], NOW), NOW);
+  const sF = buildRetirementSummary(fresh, runs, buildContext(runs, [fresh], [], [], NOW), NOW);
+
+  test('totalKm = 런 합산 + start_km(오도미터)', () => {
+    expect(sW.totalKm).toBe(550); // 150 + 400
+    expect(sF.totalKm).toBe(150);
+  });
+
+  test("누적 500km 하이라이트가 start_km 반영으로 뜬다(과거엔 run-only 150 이라 누락)", () => {
+    expect(sW.highlights).toContain(H.trustedPartner500);
+    expect(sF.highlights).not.toContain(H.trustedPartner500);
+  });
+
+  test('평균 페이스는 run-only(150km/45000s=300) — start_km 로 느려지지 않는다', () => {
+    expect(sW.avgPaceSec).toBe(300);
+    expect(sF.avgPaceSec).toBe(300);
+  });
+});

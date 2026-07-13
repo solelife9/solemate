@@ -254,28 +254,38 @@ export function buildRetirementSummary(
     }
   }
 
+  // 등록 시 이미 쌓여 있던 주행거리(start_km) — 오도미터의 baseline. 명패/등급이 쓰는
+  // perShoe.km 은 start_km 을 포함하므로(51e0c6a), 표시 totalKm·누적 하이라이트도 같은
+  // 오도미터(런 합산 + start_km)를 써야 '누적 500km/1000km' 배지가 명패와 어긋나지 않는다.
+  const startKm = Math.max(0, Number((shoe as {start_km?: number})?.start_km) || 0);
+  const odometerKm = totalKm + startKm;
+
   // 최장 런/최고 페이스/최장 시간 — lib/records 재사용(이 신발 런 부분집합).
   const pr = personalRecords(mine.map(toRun));
   const runCount = mine.length;
   const longestRunKm = pr.longestKm;
   const bestPaceSec = pr.fastestPaceSec;
+  // 평균 페이스는 '실제 달린' 거리/시간이라 run-only totalKm 을 쓴다(start_km 엔 시간
+  // 데이터가 없어 오도미터로 나누면 페이스가 거짓으로 느려진다).
   const avgPaceSec =
     totalKm > 0 && totalDurationS > 0 ? totalDurationS / totalKm : null;
   const usageDays = computeUsageDays(firstRunDate, lastRunDate, now);
 
-  const stats: ShoeStats = {totalKm, longestRunKm, bestPaceSec};
+  // 누적 마일스톤 하이라이트는 오도미터 기준(명패와 정합).
+  const stats: ShoeStats = {totalKm: odometerKm, longestRunKm, bestPaceSec};
   const highlights = computeHighlights(stats, ctx ?? ({} as ProgressionContext));
   const mostMemorable = mostMemorableMoment(highlights);
 
-  // 등급: closeness = usedKm / recommendedKm. usedKm 은 서버 truth(perShoe.km) 우선.
+  // 등급: closeness = usedKm / recommendedKm. usedKm 은 서버 truth(perShoe.km) 우선,
+  // 결측이면 오도미터(런 합산 + start_km)로 폴백.
   const recommendedKm = recommendedKmFor(shoe);
   const stat = ctx && ctx.perShoe ? ctx.perShoe[shoeId] : undefined;
-  const usedKm = stat && stat.km > 0 ? stat.km : totalKm;
+  const usedKm = stat && stat.km > 0 ? stat.km : odometerKm;
 
   const core: RetirementSummary = {
     shoeId,
     name,
-    totalKm,
+    totalKm: odometerKm,
     runCount,
     totalDurationS,
     avgPaceSec,
