@@ -57,6 +57,7 @@ import {
   GLASS,
   BRAND,
   withAlpha,
+  MOTION,
 } from './theme';
 import {tap as hapticTap} from './lib/haptics';
 import {type WearTierTone} from './lib/shoe';
@@ -590,12 +591,12 @@ export function AmbientBackdrop() {
 export function Rise({delay = 0, children, style}: {delay?: number; children: React.ReactNode; style?: StyleProp<ViewStyle>}) {
   const v = useRef(new Animated.Value(0)).current;
   useEffect(() => {
-    const anim = Animated.timing(v, {toValue: 1, duration: 420, delay, easing: Easing.out(Easing.cubic), useNativeDriver: false});
+    const anim = Animated.timing(v, {toValue: 1, duration: MOTION.rise.dur, delay, easing: MOTION.ease.out, useNativeDriver: false});
     anim.start();
     return () => anim.stop(); // 언마운트 시 타이머 정리
   }, [v, delay]);
   return (
-    <Animated.View style={[{opacity: v, transform: [{translateY: v.interpolate({inputRange: [0, 1], outputRange: [14, 0]})}]}, style]}>
+    <Animated.View style={[{opacity: v, transform: [{translateY: v.interpolate({inputRange: [0, 1], outputRange: [MOTION.rise.dy, 0]})}]}, style]}>
       {children}
     </Animated.View>
   );

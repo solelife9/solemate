@@ -5,6 +5,7 @@ import type {RankTier} from './lib/progression/types';
 // 반응형 스케일 — 폰트/hero 사이즈를 기기 폭에 비례해 스케일한다(기준 iPhone 15 Pro=원본).
 // jest 에선 항등(원본값)이라 크기 단언 테스트 불변. import { rf } from './lib/responsive'.
 import {rf} from './lib/responsive';
+import {Easing} from 'react-native';
 
 // ── 하위호환 재수출 (분리된 모듈을 theme 통해 계속 접근) ────────────────────────
 // 화면 전용 키프세이크 팔레트 → theme.palettes.ts, 도메인 타입/데이터 → appTypes.ts
@@ -240,3 +241,22 @@ export const GUTTER = 20;
 // 모달·바텀시트 뒤를 어둡게 까는 반투명 검정. 화면들이 각자 복제하던 rgba(0,0,0,0.6)
 // 리터럴을 이 단일 토큰으로 모은다(값 동일 → 시각 동등).
 export const SCRIM = 'rgba(0,0,0,0.6)';
+
+// ── 모션 (단일 진실원 — DESIGN §6) ─────────────────────────────────────────────
+// 화면마다 420/300/260/150/650 으로 흩어져 있던 전환 시간·커브·누름 피드백을 한 곳에
+// 모은다(#6 모션 전환 통일의 뿌리). 시그니처 = 사용자 확정 '나이키 문법' 일시정지 시트
+// (420ms · inOut-cubic). 값은 기존 최빈값이라 채택 화면의 감각이 픽셀·타이밍 그대로 유지된다.
+export const MOTION = {
+  /** 전환 시간(ms). */
+  dur: {fast: 150, base: 300, sheet: 420, sweep: 650, fill: 1400},
+  /** 이징 커브. */
+  ease: {
+    out: Easing.out(Easing.cubic), // 진입·링 — 도착을 부드럽게
+    inout: Easing.inOut(Easing.cubic), // 시트·전환 — 양끝 대칭(시그니처)
+    quad: Easing.out(Easing.quad), // 페이드·짧은 반응
+  },
+  /** 화면 진입 Rise — 아래에서 dy 만큼 떠오르며 페이드인. */
+  rise: {dy: 14, dur: 420},
+  /** 누름 표준(DESIGN §6 — scale 0.97 + 살짝 딤). 글로우/네온 금지. */
+  press: {scale: 0.97, opacity: 0.92},
+} as const;

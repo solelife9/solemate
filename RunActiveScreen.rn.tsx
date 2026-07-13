@@ -28,7 +28,7 @@ import { RunLiveMap } from './RunLiveMap';
 import {
   BG, CARD, ACCENT, ACCENT_2, RING_ACCENT, RING_ACCENT_HI, RING_ACCENT_LO,
   GOOD, WARN, DANGER, T1, T2, T3, T4, SEP,
-  FONT, DISPLAY, withAlpha, HR_ZONE_COLORS, TYPE, RADIUS,
+  FONT, DISPLAY, withAlpha, HR_ZONE_COLORS, TYPE, RADIUS, MOTION,
 } from './theme';
 import { estimateMaxHR, zoneOf, HR_ZONE_LABEL } from './lib/analytics/hrZones';
 import { fmtPaceSec } from './lib/pacePlan';
@@ -109,9 +109,9 @@ function FinishCeremony({ distanceKm, onDone }: { distanceKm: number; onDone: ()
   const glow = useRef(new Animated.Value(0)).current; // 빛 번짐 0→1→0
   useEffect(() => {
     const seq = Animated.sequence([
-      Animated.timing(fade, { toValue: 1, duration: 150, easing: Easing.out(Easing.quad), useNativeDriver: false }),
+      Animated.timing(fade, { toValue: 1, duration: MOTION.dur.fast, easing: MOTION.ease.quad, useNativeDriver: false }),
       Animated.parallel([
-        Animated.timing(sweep, { toValue: 1, duration: 650, easing: Easing.out(Easing.cubic), useNativeDriver: false }),
+        Animated.timing(sweep, { toValue: 1, duration: MOTION.dur.sweep, easing: MOTION.ease.out, useNativeDriver: false }),
         // 빛은 링 완성 직전 피크 → 부드럽게 스러짐(0→1→0 은 아래 interpolate 가 성형)
         Animated.timing(glow, { toValue: 1, duration: 900, easing: Easing.inOut(Easing.quad), useNativeDriver: false }),
       ]),
@@ -232,14 +232,14 @@ export default function RunActiveScreen({
     // 시트와 같은 420ms 커브로 동기화 — 화면 전체가 함께 내려와 바뀌는 것처럼 읽힌다.
     // delete 에 opacity 를 줘 링이 '띡' 사라지지 않고 페이드아웃되게 한다.
     LayoutAnimation.configureNext({
-      duration: 420,
+      duration: MOTION.dur.sheet,
       create: { type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.opacity },
       update: { type: LayoutAnimation.Types.easeInEaseOut },
       delete: { type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.opacity },
     });
     setUiPaused(paused);
     Animated.parallel([
-      Animated.timing(t, { toValue: paused ? 1 : 0, duration: 300, easing: Easing.inOut(Easing.cubic), useNativeDriver: true }),
+      Animated.timing(t, { toValue: paused ? 1 : 0, duration: MOTION.dur.base, easing: MOTION.ease.inout, useNativeDriver: true }),
       Animated.timing(subIn, { toValue: paused ? 1 : 0, duration: paused ? 260 : 160, delay: paused ? 70 : 0, easing: Easing.out(Easing.quad), useNativeDriver: true }),
     ]).start();
   }, [paused, uiPaused, t, subIn]);
@@ -252,7 +252,7 @@ export default function RunActiveScreen({
   useEffect(() => {
     if (!mapShown || SKIP_ANIM) return;
     mapSlide.setValue(0);
-    const a = Animated.timing(mapSlide, { toValue: 1, duration: 420, easing: Easing.inOut(Easing.cubic), useNativeDriver: true });
+    const a = Animated.timing(mapSlide, { toValue: 1, duration: MOTION.dur.sheet, easing: MOTION.ease.inout, useNativeDriver: true });
     a.start();
     return () => a.stop();
   }, [mapShown, mapSlide]);
