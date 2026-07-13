@@ -92,6 +92,9 @@ export function PeriodChartView({ data, labels, unit }: { data: number[]; labels
   for (let v = 0; v <= niceMax + 1e-6; v += step) ticks.push(v);
   const dense = data.length > 7;
   const fmtTick = (v: number) => (Number.isInteger(v) ? String(v) : v.toFixed(1));
+  // 평균(활동한 기간만) — Nike 식 점선 기준선. 빈 주/월은 평균을 끌어내리므로 제외한다.
+  const active = data.filter((v) => v > 0);
+  const avg = active.length ? active.reduce((a, b) => a + b, 0) / active.length : 0;
   const [sel, setSel] = useState<number | null>(null);
 
   return (
@@ -110,26 +113,26 @@ export function PeriodChartView({ data, labels, unit }: { data: number[]; labels
             const dim = sel != null && !on;
             return (
               <Pressable key={i} style={s.chartBarSlot} onPress={() => setSel(on ? null : i)} hitSlop={4} accessibilityRole="button" accessibilityLabel={`${labels[i]} ${fmtTick(v)}${unit}`}>
-                {/* 막대 ≤7개(주간 등)면 값을 상시 표기 — 0.6km 같은 작은 막대도 한눈에
-                    읽힌다(사용자 지적: 둥근 막대라 몇 km 인지 헷갈림). 촘촘한 기간은
-                    라벨이 겹치므로 기존 탭 툴팁 유지. */}
-                {!dense && v > 0 && (
+                {/* 값을 막대 위에 상시 표기 — 주·월·년 모두(년도 12칸도 표시). 둥근 막대라
+                    몇 km 인지 헷갈리던 지적 해소. 촘촘하면 폰트만 줄여 겹침을 최소화. */}
+                {v > 0 && (
                   <View style={[s.chartTipWrap, { bottom: bh + 3 }]} pointerEvents="none">
-                    <Text style={[s.chartBarVal, on && { color: T1 }]}>{fmtTick(v)}</Text>
+                    <Text style={[s.chartBarVal, dense && { fontSize: rf(9) }, on && { color: T1 }]}>{fmtTick(v)}</Text>
                   </View>
                 )}
-                {dense && on && (
-                  <View style={[s.chartTipWrap, { bottom: bh + 8 }]} pointerEvents="none">
-                    <View style={s.chartTip}>
-                      <Text style={s.chartTipVal}>{fmtTick(v)}<Text style={s.chartTipU}>{unit}</Text></Text>
-                    </View>
-                  </View>
-                )}
+                {/* 막대: 윗모서리만 라운드(직사각형 — 값 읽기 쉽게). 아래는 각지게. */}
                 <View style={[s.chartBar, { maxWidth: dense ? 12 : 18, height: bh, backgroundColor: dim ? withAlpha(BRAND, 0.28) : BRAND }]} />
               </Pressable>
             );
           })}
         </View>
+        {/* 평균 점선(Nike 식) — 활동 기간 평균 거리. 오른쪽에 값. */}
+        {avg > 0 && (
+          <View style={[s.chartAvgLine, { bottom: (avg / niceMax) * H }]} pointerEvents="none">
+            <View style={s.chartAvgDash} />
+            <Text style={s.chartAvgVal}>평균 {fmtTick(avg)}</Text>
+          </View>
+        )}
       </View>
       <View style={[s.chartLabels, { gap: dense ? 4 : 8 }]}>
         {labels.map((l, i) => (
@@ -892,6 +895,8 @@ export default function HistoryScreen({
   todayISO?: string;
 }) {
   const [period, setPeriod] = useState('월');
+  // 기록 리스트는 최근 5개만 먼저 — 카드가 수십 개 쏟아지지 않게. '모든 기록'으로 펼친다.
+  const [showAllRuns, setShowAllRuns] = useState(false);
   const now = new Date();
   // 월
   const [selYear, setSelYear] = useState(now.getFullYear());
@@ -995,6 +1000,10 @@ export default function HistoryScreen({
     : '전체 기간';
 
   const displayRuns = period === '주' ? selWeekRuns : period === '월' ? selMonthRuns : period === '년' ? selYearRuns : runs;
+  // 최근 5개만 노출(펼치기 전). 기간을 바꾸면 다시 접힌다(아래 세그먼트 onChange).
+  const RECENT_LIMIT = 5;
+  const shownRuns = showAllRuns ? displayRuns : displayRuns.slice(0, RECENT_LIMIT);
+  const hiddenCount = displayRuns.length - shownRuns.length;
 
   const MIN_YEAR = runs.length > 0
     ? Math.min(now.getFullYear(), ...runs.map(r => parseInt(rd(r).slice(0,4)) || now.getFullYear()))
@@ -1071,11 +1080,26 @@ export default function HistoryScreen({
           없으면 인덱스)로 리렌더 시 행 재사용을 보장한다. */}
       <Rise style={{ flex: 1 }}>
       <FlatList
-        data={displayRuns}
+        data={shownRuns}
         keyExtractor={(r, i) => r.id || String(i)}
         renderItem={({ item }) => (
           <RunCard run={item} shoes={shoes} onPress={() => setDetail(item)} unit={unit} />
         )}
+        ListFooterComponent={
+          hiddenCount > 0 ? (
+            <Pressable onPress={() => setShowAllRuns(true)} accessibilityRole="button" accessibilityLabel={`모든 기록 보기, ${displayRuns.length}개`}
+              style={({ pressed }) => [{ marginTop: rv(4), paddingVertical: rv(14), borderRadius: RADIUS.md, backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.08), flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(6) }, pressed && { backgroundColor: CARD_HI }]}>
+              <Text style={{ color: T1, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600' }}>모든 기록 {displayRuns.length}개 보기</Text>
+              <Ionicons name="chevron-down" size={ri(15)} color={T3} />
+            </Pressable>
+          ) : showAllRuns && displayRuns.length > RECENT_LIMIT ? (
+            <Pressable onPress={() => setShowAllRuns(false)} accessibilityRole="button" accessibilityLabel="접기"
+              style={{ marginTop: rv(4), paddingVertical: rv(12), flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(6) }}>
+              <Text style={{ color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600' }}>접기</Text>
+              <Ionicons name="chevron-up" size={ri(15)} color={T3} />
+            </Pressable>
+          ) : null
+        }
         contentContainerStyle={{ padding: rs(14), paddingBottom: TABBAR_CLEARANCE, gap: rv(10) }}
         refreshControl={onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={ACCENT} colors={[ACCENT]} /> : undefined}
         ListHeaderComponent={
@@ -1084,7 +1108,7 @@ export default function HistoryScreen({
               variant="neutral"
               items={PERIODS.map((p) => ({ key: p, label: p }))}
               value={period}
-              onChange={setPeriod}
+              onChange={(p) => { setPeriod(p); setShowAllRuns(false); }}
             />
             {period !== '전체'
               ? (
@@ -1296,7 +1320,10 @@ const s = StyleSheet.create({
   chartTick: { position: 'absolute', right: 0, width: rs(42), textAlign: 'right', color: T3, fontFamily: DISPLAY, fontSize: TYPE.caption.fontSize, marginBottom: rv(-7) },
   chartBars: { position: 'absolute', left: 0, right: 42, top: 0, bottom: 0, flexDirection: 'row', alignItems: 'flex-end' },
   chartBarSlot: { flex: 1, alignItems: 'center' },
-  chartBar: { width: '100%', borderRadius: RADIUS.pill, backgroundColor: BRAND },
+  chartBar: { width: '100%', borderTopLeftRadius: rs(4), borderTopRightRadius: rs(4), backgroundColor: BRAND },
+  chartAvgLine: { position: 'absolute', left: 0, right: 42, flexDirection: 'row', alignItems: 'center', gap: rs(4) },
+  chartAvgDash: { flex: 1, borderTopWidth: 1, borderStyle: 'dashed', borderColor: withAlpha(T1, 0.4) },
+  chartAvgVal: { color: T2, fontFamily: DISPLAY, fontSize: TYPE.caption.fontSize, fontWeight: '700', fontVariant: ['tabular-nums'] },
   chartLabels: { flexDirection: 'row', marginTop: rv(8), paddingRight: rs(42) },
   chartLabel: { flex: 1, textAlign: 'center', color: T3, fontFamily: FONT, fontWeight: '600' },
   chartTipWrap: { position: 'absolute', left: -26, right: -26, alignItems: 'center', zIndex: 5 },
