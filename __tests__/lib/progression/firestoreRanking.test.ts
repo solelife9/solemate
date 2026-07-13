@@ -164,6 +164,17 @@ describe('computeRankingStats', () => {
     expect(stats.shoeHealth).toBe(90.2);
   });
 
+  test('run_date 시간 접미사가 있어도 같은 날은 활동일수 1로 센다(consistency 정규화)', () => {
+    const runs = [
+      {shoe_id: 's1', km: 5, run_date: '2026-06-01T09:00:00'},
+      {shoe_id: 's1', km: 7, run_date: '2026-06-01T18:30:00'}, // 같은 날(다른 시각) → 1일
+      {shoe_id: 's1', km: 3, run_date: '2026-06-05'},
+    ];
+    const stats = computeRankingStats({runs, shoes: [{id: 's1', max_km: 600, start_km: 0}], yearMonth: '2026-06', progressPoints: 0});
+    expect(stats.consistency).toBe(2); // 06-01(중복 제거), 06-05
+    expect(stats.distance).toBe(15);
+  });
+
   test('max_km 0/누락 신발은 마모 평균에서 제외; 데이터 없으면 0', () => {
     const stats = computeRankingStats({runs: [], shoes: [{id: 's1', max_km: 0}], yearMonth: '2026-06', progressPoints: 0});
     expect(stats).toEqual({distance: 0, consistency: 0, shoeHealth: 0, collection: 1, progressPoints: 0});

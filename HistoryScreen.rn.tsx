@@ -922,7 +922,10 @@ export default function HistoryScreen({
   };
   const insets = useSafeAreaInsets();
 
-  const rd = (r: Run) => String((r as any).run_date || r.runDate || '');
+  // run_date 를 10자(YYYY-MM-DD)로 정규화한다 — 백엔드/Firestore 가 시간 접미사
+  // ('...T09:00:00')를 실으면 주간 범위 필터(d <= 일요일)가 그 날짜 런을 배제해(문자열
+  // 비교상 'T..' 가 더 큼) 주간 뷰에서 누락된다. 슬라이스로 월/년 startsWith 경로와 통일.
+  const rd = (r: Run) => String((r as any).run_date || r.runDate || '').slice(0, 10);
   // stats 함수는 { km, duration, run_date } 형태를 기대하지만
   // UI Run 객체는 { dist, durationS, runDate }를 쓴다. 두 필드를 모두 커버하도록 매핑.
   const toRow = (r: Run) => ({

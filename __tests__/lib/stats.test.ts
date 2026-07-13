@@ -131,6 +131,17 @@ describe('weekBuckets (local-date daily, Mon..Sun)', () => {
     expect(out[3]).toBeCloseTo(4, 5);
     expect(out[1]).toBe(0);
   });
+
+  test('run_date 에 시간 접미사가 있어도 그 요일 슬롯에 잡힌다(월/년 버킷과 정규화 통일)', () => {
+    const mon = new Date(2026, 0, 5); // Mon Jan 5 2026
+    const runs = [
+      {run_date: '2026-01-05T09:30:00', km: 3}, // Monday → index 0 (과거엔 === 실패로 누락)
+      {run_date: '2026-01-08T18:00:00.000Z', km: 4}, // Thursday → index 3
+    ];
+    const out = weekBuckets(runs, mon);
+    expect(out[0]).toBeCloseTo(3, 5);
+    expect(out[3]).toBeCloseTo(4, 5);
+  });
 });
 
 describe('monthBuckets (weekly buckets within a month)', () => {

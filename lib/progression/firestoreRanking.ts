@@ -185,7 +185,9 @@ export function computeRankingStats(input: RankingStatsInput): RankingStats {
   const {runs, shoes, yearMonth} = input;
   const monthRuns = runs.filter(r => ymOf(r.run_date) === yearMonth);
   const distance = monthRuns.reduce((a, r) => a + num(r.km), 0);
-  const days = new Set(monthRuns.map(r => String(r.run_date)).filter(Boolean));
+  // 활동 일수 = 서로 다른 '날짜'(YYYY-MM-DD) 수. run_date 에 시간 접미사가 실리면 같은
+  // 날 두 런이 다른 문자열로 잡혀 하루가 이틀로 셈돼 리더보드 consistency 가 부풀었다.
+  const days = new Set(monthRuns.map(r => String(r.run_date).slice(0, 10)).filter(Boolean));
   const consistency = days.size;
   const collection = shoes.length;
   // 신발별 사용 km = start_km + 그 신발의 전(全) 기간 런 km 합. 잔여수명% = (1 - used/max).

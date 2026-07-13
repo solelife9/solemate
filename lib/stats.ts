@@ -111,7 +111,11 @@ export function weekBuckets(runs: RunRow[], monday: Date): number[] {
   for (let i = 0; i < 7; i++) {
     const d = new Date(monday);
     d.setDate(monday.getDate() + i);
-    out.push(sumKm(safe.filter(r => r.run_date === ymdLocal(d))));
+    // run_date 를 10자(YYYY-MM-DD)로 정규화해 비교한다(month/year 버킷과 동일 규약).
+    // 백엔드/Firestore 가 시간 접미사('...T09:00:00')를 실으면 정확 === 매칭이 실패해
+    // 그 런이 주간 분포·주간 합계에서 통째로 누락됐다(월/년 뷰엔 보임 — 내부 불일치).
+    const target = ymdLocal(d);
+    out.push(sumKm(safe.filter(r => String(r.run_date).slice(0, 10) === target)));
   }
   return out;
 }
