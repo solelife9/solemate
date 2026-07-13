@@ -107,7 +107,7 @@ export async function saveWatchHrTrack(
     }
   }
   if (!best) return null;
-  const track = buildHrTrack(best.startMs, wStart, samplesOffsetS, samplesBpm);
+  const track = buildHrTrack(best.startMs, wStart, samplesOffsetS, samplesBpm, best.endMs);
   if (track.length < 2) return null; // 표시 가치 없음 — 대기 유지(다음 기회/HK 폴백)
   // 기존 트랙과 비교 — 워치 직송이 더 촘촘하면(센서 실측·완전) 덮어쓴다. 스트레이 1~2점
   // HealthKit 백필이 먼저 만든 빈약한 트랙(예: 배경 안정심박 몇 점 → 평평한 가짜 직선)을
@@ -136,21 +136,31 @@ export async function saveWatchHrTrack(
 /**
  * 워치 절대 타임스탬프(wStart + offsetS*1000)를 폰 런 시작(runStartMs) 기준 상대 초로
  * 환산해 hrTrack 점 배열을 만든다. 음수 t·노이즈 bpm 은 버리고, t 오름차순 정렬.
+ *
+ * runEndMs(선택): 폰 런 종료 절대시각. 주어지면 그 이후(런 밖)의 표본을 버린다.
+ * 워치 워크아웃이 폰 런보다 길게 기록되면(사용자가 워치를 늦게 멈춤/쿨다운 중 계속 측정)
+ * 회복기 고심박이 평균·최대·존 시간에 유입돼 과대 표시된다 — 상한 클램프로 차단한다
+ * (하한 t<0 은 이미 버림). 결측이면(구 호출부·라이브) 상한 없이 기존 동작 유지.
  */
 export function buildHrTrack(
   runStartMs: number,
   wStart: number,
   samplesOffsetS: number[],
   samplesBpm: number[],
+  runEndMs?: number,
 ): HrPoint[] {
   const n = Math.min(samplesOffsetS.length, samplesBpm.length);
+  const maxT =
+    Number.isFinite(runEndMs) && (runEndMs as number) > runStartMs
+      ? Math.round(((runEndMs as number) - runStartMs) / 1000)
+      : Infinity;
   const out: HrPoint[] = [];
   for (let i = 0; i < n; i++) {
     const bpm = Math.round(Number(samplesBpm[i]) || 0);
     if (!(bpm > MIN_BPM && bpm < MAX_BPM)) continue;
     const absMs = wStart + (Number(samplesOffsetS[i]) || 0) * 1000;
     const t = Math.round((absMs - runStartMs) / 1000);
-    if (t < 0) continue;
+    if (t < 0 || t > maxT) continue; // 런 밖(시작 전/종료 후) 표본 제외
     out.push({t, bpm});
   }
   out.sort((a, b) => a.t - b.t);

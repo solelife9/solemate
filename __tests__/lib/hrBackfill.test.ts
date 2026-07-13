@@ -50,6 +50,34 @@ describe('buildHrTrack — 워치 오프셋 → 폰 상대 초 환산', () => {
       {t: 12, bpm: 148},
     ]);
   });
+
+  it('runEndMs 상한: 폰 런 종료 이후(런 밖)의 워치 표본을 버린다 — 회복기 심박 유입 차단', () => {
+    const runStart = NOW;
+    const runEnd = NOW + 1200_000; // 20분 폰 런
+    const wStart = NOW;
+    // 워치는 26분 기록(폰 런보다 6분 김). offset 0/600/1200 = 런 안(t 0/600/1200),
+    // 1500/1560 = 런 밖(회복기, t 1500/1560 > maxT 1200) → 버려야 한다.
+    const track = buildHrTrack(
+      runStart,
+      wStart,
+      [0, 600, 1200, 1500, 1560],
+      [150, 160, 155, 110, 105], // 회복기 110/105 는 낮아 평균을 끌어내리고 최대엔 무해하나, 존시간을 오염시킨다
+      runEnd,
+    );
+    expect(track).toEqual([
+      {t: 0, bpm: 150},
+      {t: 600, bpm: 160},
+      {t: 1200, bpm: 155},
+    ]);
+  });
+
+  it('runEndMs 결측(구 호출부/라이브)이면 상한 없이 기존 동작 유지', () => {
+    const track = buildHrTrack(NOW, NOW, [0, 99999], [150, 152]);
+    expect(track).toEqual([
+      {t: 0, bpm: 150},
+      {t: 99999, bpm: 152},
+    ]);
+  });
 });
 
 describe('saveWatchHrTrack (A) — 시간창 매칭 저장', () => {
