@@ -83,6 +83,10 @@ private struct ShoeStartPage: View {
       // 페이지 오프셋(중앙=0, 이웃=±폭) → 진행도 0~1. 중앙 강조 스케일/딤의 입력.
       let minX = geo.frame(in: .global).minX
       let progress = min(1, abs(minX) / max(1, geo.size.width))
+      // 링 크기 — 폭 0.62 를 기본으로 하되 화면 '높이'로도 상한을 둔다. 작은 워치(짧은
+      // 세로)에서 링이 너무 커 링+지표+버튼이 넘쳐 '러닝 시작'이 페이지 도트 라인에 걸리던
+      // 문제 해결(실기기 피드백). 세로 여유가 있는 워치는 0.62 그대로.
+      let ringSize = min(geo.size.width * 0.62, geo.size.height * 0.44)
 
       // 풀블리드 히어로 v2(사용자 확정 2026-07-11): 링 안 = 브랜드+러닝화명(메인 —
       // shoe-first, "어떤 신발로 달리나"가 이 화면의 본질), 링 아크 = 수명 %(컨디션색,
@@ -96,7 +100,7 @@ private struct ShoeStartPage: View {
           color: KeegoTheme.wearColor(lifePct: shoe.lifePct),
           progress: sweep ? Double(shoe.lifePct) / 100.0 : 0
         )
-        .frame(width: geo.size.width * 0.62, height: geo.size.width * 0.62)
+        .frame(width: ringSize, height: ringSize)
 
         // 링 아래 좌우 지표 — 왼쪽 수명 %, 오른쪽 남은 km(같은 위계, tabular).
         HStack {
@@ -117,8 +121,8 @@ private struct ShoeStartPage: View {
         StartButton(label: "러닝 시작", action: onStart)
           .padding(.top, 9)
 
-        // 남는 공간은 전부 아래로 — 버튼이 페이지 도트와 겹치지 않게 최소 16pt 확보.
-        Spacer(minLength: 16)
+        // 남는 공간은 전부 아래로 — 버튼이 페이지 도트와 겹치지 않게 최소 20pt 확보.
+        Spacer(minLength: 20)
       }
       .padding(.horizontal, 10)
       .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
