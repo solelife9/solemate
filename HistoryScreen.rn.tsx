@@ -828,7 +828,7 @@ function DrumColumn({ items, selectedIndex, onChange }: {
           <Pressable onPress={() => select(index)}
             style={{ height: DRUM_ITEM_H, alignItems: 'center', justifyContent: 'center' }}>
             <Text style={{
-              fontFamily: FONT, fontSize: index === active ? 19 : 15,
+              fontFamily: FONT, fontSize: index === active ? TYPE.heading.fontSize : TYPE.label.fontSize,
               fontWeight: index === active ? '700' : '400',
               color: index === active ? T1 : T3,
             }}>{item}</Text>

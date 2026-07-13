@@ -17,7 +17,7 @@ import {fmtPace} from './lib/format';
 import {RunSplits, Split} from './RunSplits';
 import {PRKind, PR_LABEL} from './lib/records';
 import {pickPhotoWithPermission} from './lib/photo';
-import {Unit} from './lib/units';
+import {Unit, kmToDisplay, displayNum} from './lib/units';
 import {parseRoute} from './lib/route';
 import {CourseMap} from './CourseMap';
 import ShareCard from './ShareCard';
@@ -285,7 +285,7 @@ export default function RunRecapScreen({
             opacity: heroProg.interpolate({inputRange: [0, 0.12, 1], outputRange: [0, 1, 1]}),
             transform: [{scale: heroProg.interpolate({inputRange: [0, 1], outputRange: [0.96, 1]})}],
           }]}>
-          <Text style={s.heroNum} testID="recap-distance">{heroShown.toFixed(2)}</Text>
+          <Text style={s.heroNum} testID="recap-distance">{kmToDisplay(heroShown, unit).toFixed(2)}</Text>
           <Text style={s.heroUnit}>{unit}</Text>
         </Animated.View>
 
@@ -358,7 +358,7 @@ export default function RunRecapScreen({
             <View style={{flex: 1, minWidth: 0}}>
               <Text style={s.shoeName} numberOfLines={1}>{shoeName || '신발'}</Text>
               <Text style={s.shoeMeta}>
-                +{shoeWear.addedKm.toFixed(1)}{unit} · 남은 내구도 <Text style={s.shoeStrong}>{shoeWear.remainingPct}%</Text>
+                +{displayNum(shoeWear.addedKm, unit, 1)}{unit} · 남은 내구도 <Text style={s.shoeStrong}>{shoeWear.remainingPct}%</Text>
                 {shoeWear.deltaPct > 0 ? <Text style={s.shoeDelta}>  −{shoeWear.deltaPct}%p</Text> : null}
               </Text>
             </View>
@@ -379,7 +379,7 @@ export default function RunRecapScreen({
         {/* 핵심 지표 그리드 */}
         <Enter skip={skipAnim} delay={860} style={s.grid}>
           <Stat label="시간" value={fmtDur(durationS)} />
-          <Stat label="평균 페이스" value={fmtPace(km, durationS)} sub={`/${unit}`} />
+          <Stat label="평균 페이스" value={fmtPace(km, durationS)} sub="/km" />
           {bpm > 0 && <Stat label="평균 심박" value={`${bpm}`} sub="bpm" />}
           <Stat label="칼로리" value={`${Math.round(calories)}`} sub="kcal" />
           {cadence > 0 && <Stat label="케이던스" value={`${Math.round(cadence)}`} sub="spm" />}

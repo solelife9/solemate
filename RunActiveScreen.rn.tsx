@@ -28,7 +28,7 @@ import { RunLiveMap } from './RunLiveMap';
 import {
   BG, CARD, ACCENT, ACCENT_2, RING_ACCENT, RING_ACCENT_HI, RING_ACCENT_LO,
   GOOD, WARN, DANGER, T1, T2, T3, T4, SEP,
-  FONT, DISPLAY, withAlpha, HR_ZONE_COLORS, TYPE, RADIUS, MOTION,
+  FONT, DISPLAY, withAlpha, HR_ZONE_COLORS, TYPE, RADIUS, MOTION, BLACK,
 } from './theme';
 import { estimateMaxHR, zoneOf, HR_ZONE_LABEL } from './lib/analytics/hrZones';
 import { fmtPaceSec } from './lib/pacePlan';
@@ -641,15 +641,15 @@ const r = StyleSheet.create({
   // 지도 높이 = 화면 절반까지(2026-07-12 사용자 확정: '사진은 반까지만') — 렌더에서 winH 로 계산.
   mapPanel: { marginHorizontal: -rs(24), marginTop: rv(10), marginBottom: 0, overflow: 'hidden' },
   // 패널 우하단 '전체화면' 힌트 배지.
-  mapExpandBadge: { position: 'absolute', right: 12, bottom: 12, width: rs(32), height: rs(32), borderRadius: rs(16), backgroundColor: 'rgba(0,0,0,0.55)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: withAlpha(T1, 0.2) },
+  mapExpandBadge: { position: 'absolute', right: 12, bottom: 12, width: rs(32), height: rs(32), borderRadius: rs(16), backgroundColor: withAlpha(BLACK, 0.55), alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: withAlpha(T1, 0.2) },
   // 전체화면 지도 하단 중앙 버튼 행 — 구석 대신 가운데, 위로 올려 잘 눌리게.
   mapBtnRow: { position: 'absolute', left: 0, right: 0, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: rv(20), zIndex: 20, elevation: 8 },
   // 큰 원형 아이콘 버튼(라벨 없음). zIndex/elevation 으로 네이티브 지도 위에서 확실히 탭.
-  mapBtn: { width: rs(60), height: rs(60), borderRadius: rs(30), backgroundColor: 'rgba(0,0,0,0.65)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: withAlpha(T1, 0.3), zIndex: 20, elevation: 8 },
+  mapBtn: { width: rs(60), height: rs(60), borderRadius: rs(30), backgroundColor: withAlpha(BLACK, 0.65), alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: withAlpha(T1, 0.3), zIndex: 20, elevation: 8 },
 
   // 목표 달성 토스트 — 오렌지 판 대신 어두운 유리 막(투명 통일). 축하의 오렌지는 체크
   // 아이콘(포인트 컬러=강조 요소에만)이 담당한다.
-  toast: { position: 'absolute', left: 18, right: 18, top: 50, zIndex: 20, flexDirection: 'row', alignItems: 'center', gap: rv(12), paddingVertical: rv(12), paddingHorizontal: rs(16), borderRadius: rs(16), borderCurve: 'continuous', backgroundColor: 'rgba(28,28,30,0.94)', borderWidth: 1, borderColor: withAlpha(T1, 0.16) },
+  toast: { position: 'absolute', left: 18, right: 18, top: 50, zIndex: 20, flexDirection: 'row', alignItems: 'center', gap: rv(12), paddingVertical: rv(12), paddingHorizontal: rs(16), borderRadius: rs(16), borderCurve: 'continuous', backgroundColor: withAlpha(CARD, 0.94), borderWidth: 1, borderColor: withAlpha(T1, 0.16) },
   toastTick: { width: rs(34), height: rs(34), borderRadius: RADIUS.pill, backgroundColor: withAlpha(ACCENT, 0.2), alignItems: 'center', justifyContent: 'center' },
   toastA: { color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '700', letterSpacing: -0.2 },
   toastB: { color: withAlpha(T1, 0.88), fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500', marginTop: rv(2) },
