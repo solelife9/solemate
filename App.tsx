@@ -1365,6 +1365,11 @@ function Main(){
       used:Math.round(h.usedKm),
       max:s.max_km||DEFAULT_MAX_KM,
       retired:isRetired(s),
+      // 마모/교체예측 baseline 을 표시형 Shoe 에도 싣는다(2026-07-14). 상세화면이
+      // buildWearView 로 예측을 재계산할 때 start_km/age 가 빠지면 링(used, start_km 포함)과
+      // 모순돼 '교체 임박'이 안 뜬다(과소평가). raw 신발에 있는 값을 그대로 전달.
+      start_km:Number(s.start_km)||0,
+      purchase_date:s.purchase_date,
     };
   }
 
@@ -1497,7 +1502,7 @@ function Main(){
   const homeActiveRaw=shoes.find(s=>s.id===effectiveId)||null;
   // 한 신발의 교체 예측(상세와 동일 보정: target=max_km, 거리/시간/날짜, weightKg, surfaceOf).
   const forecastForRaw=(raw:BackendShoe|null):ReplacementForecast|null=>raw?forecastReplacement(
-    {name:raw.name,target_km:Number(raw.max_km),start_km:Number(raw.start_km)||0},
+    {name:raw.name,target_km:Number(raw.max_km),start_km:Number(raw.start_km)||0,purchase_date:raw.purchase_date},
     runs.filter(r=>r.shoe_id===raw.id).map(r=>({
       id:r.id,distance_km:parseFloat(String(r.km))||0,duration_s:r.duration||0,date:String(r.run_date||''),
     })),
@@ -1633,7 +1638,9 @@ function Main(){
     const shoesWithForecast:ShoeForecast[]=shoes.map(s=>({
       shoe:{id:s.id,name:s.name,target_km:Number(s.max_km)},
       forecast:forecastReplacement(
-        {name:s.name,target_km:Number(s.max_km)},
+        // 교체 예보 푸시도 홈 히어로(forecastForRaw)와 동일하게 start_km/age 를 반영한다 —
+        // 빠지면 이미 신던 신발이 '교체 권장' 푸시를 못 받아 홈 UI 와 알림이 어긋난다.
+        {name:s.name,target_km:Number(s.max_km),start_km:Number(s.start_km)||0,purchase_date:s.purchase_date},
         runs.filter(r=>r.shoe_id===s.id).map(r=>({
           id:r.id,distance_km:parseFloat(String(r.km))||0,duration_s:r.duration||0,date:String(r.run_date||''),
         })),

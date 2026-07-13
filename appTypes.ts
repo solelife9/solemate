@@ -15,6 +15,13 @@ export type Shoe = {
   // 워치 구버전 계약(WatchShoePayload.condition)에만 남아 App 이 직접 파생한다.
   retired?: boolean;    // archived: hidden from run pickers, records preserved
   photoUri?: string;    // local image-picker URI (optional; absent = no photo)
+  // 마모/교체예측 baseline(2026-07-14 정합): 등록 시 이미 쌓여 있던 주행거리(start_km)와
+  // 보유 시점(purchase_date/created_at). used(=shoeHealth) 는 이미 start_km 을 포함하는데,
+  // 상세화면·알림이 이 값 없이 예측을 재계산하면 링과 모순되므로(과소평가) 표시형 Shoe 에도
+  // 실어 buildWearView/forecast 가 같은 baseline 을 쓰게 한다. 결측이면 0/미보유로 안전.
+  start_km?: number;      // 등록 주행거리(km) — effectiveWearKm baseline
+  purchase_date?: string; // 구매/보유 시작('YYYY-MM-DD') — 시간 경과 열화 anchor
+  created_at?: string;    // 등록 시각(ISO) — purchase_date 결측 시 age 폴백
 };
 
 export type Run = {
