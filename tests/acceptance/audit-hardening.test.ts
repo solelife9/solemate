@@ -711,27 +711,36 @@ describe('Audit Hardening 수용', () => {
       expect(ymLocal(new Date(2026, 5, 18, 1, 30))).toBe(ymdLocal(new Date(2026, 5, 18, 1, 30)).slice(0, 7));
     });
 
-    test('가상화: HistoryScreen 런 리스트가 FlatList(안정 keyExtractor)로 렌더된다', () => {
+    test('가상화: HistoryScreen 런 리스트가 FlatList(최근 5개 캡 + 전체보기, 안정 keyExtractor)로 렌더된다', () => {
       // 런 행은 ScrollView+runs.map(전부 마운트) 가 아니라 FlatList(보이는 행만 마운트)로
-      // 가상화된다. 관찰 가능한 결과: 트리에 FlatList 가 정확히 1개 있고, 전체 런 배열을
-      // data 로 받으며, keyExtractor 가 안정 키(run.id)를 만든다(리렌더 시 행 재사용).
+      // 가상화된다. 관찰 가능한 계약: 트리에 FlatList 가 정확히 1개 있고, 기본은 최근
+      // RECENT_LIMIT(5)개만 data 로 받으며(원본 런 객체를 변환 없이 그대로 흘린다),
+      // keyExtractor 가 안정 키(run.id)를 만들고, '모든 기록 N개 보기' 를 누르면 전체
+      // 런 배열을 data 로 받는다(가상화 계약 유지). — dde7001 '기록 5개+전체보기' 회귀 가드.
       const mkRun = (over: Partial<Run> = {}): Run => ({
         id: 'r1', date: '5월 28일', day: '수', dateNum: '28', dist: 5,
         pace: "5'02\"", time: '40:41', shoe: 0, cal: 0, cadence: 0, bpm: 0, elev: 0, ...over,
       });
-      const runs = [mkRun({id: 'r1'}), mkRun({id: 'r2', date: '5월 29일'})];
+      // 6개 이상이라야 최근 5개 캡(전체보기 푸터)이 관찰된다.
+      const runs = Array.from({ length: 7 }, (_, i) =>
+        mkRun({ id: `r${i + 1}`, date: `5월 ${28 - i}일` }),
+      );
       const shoe: Shoe = {id: 'a', brand: 'Nike', model: 'Pegasus 41', used: 100, max: 600};
       const r = renderTree(el(HistoryScreen, {shoes: [shoe], runs}));
       // 기본 기간은 '월'(날짜 필터) — 시드 런엔 run_date 가 없어 걸러진다. '전체' 로 전환하면
-      // displayRuns === runs 가 되어 전체 배열 가상화/keyExtractor 계약을 그대로 검증할 수 있다.
+      // displayRuns === runs 가 되어 최근 캡/전체보기 계약을 그대로 검증할 수 있다.
       act(() => {
         pressableByText(r.root, '전체').props.onPress();
       });
 
-      const lists = r.root.findAllByType(FlatList);
+      let lists = r.root.findAllByType(FlatList);
       expect(lists.length).toBe(1);
-      const list = lists[0];
-      expect(list.props.data).toBe(runs); // 전체 런 배열을 data 로 받아 가상화
+      let list = lists[0];
+      // 기본 = 최근 5개만 data 로(수백 건이어도 리스트 상단이 무겁지 않다).
+      expect(list.props.data.length).toBe(5);
+      // 원본 런 객체를 변환 없이 그대로 흘린다(행 파생/복제로 참조가 끊기지 않는다).
+      expect(list.props.data[0]).toBe(runs[0]);
+      expect(list.props.data[4]).toBe(runs[4]);
       // 안정 키 — id 가 있으면 id, 없으면 인덱스. 같은 런이 같은 키를 받는다.
       expect(list.props.keyExtractor(runs[0], 0)).toBe('r1');
       expect(list.props.keyExtractor(runs[1], 1)).toBe('r2');
@@ -740,6 +749,14 @@ describe('Audit Hardening 수용', () => {
       const txt = renderedText(r.root);
       expect(txt).toContain('Nike');
       expect(txt).toContain('5월 28일');
+
+      // '모든 기록 7개 보기' → 전체 런 배열을 그대로 data 로 받는다(슬라이스 없이 원본 참조).
+      act(() => {
+        pressableByText(r.root, '모든 기록').props.onPress();
+      });
+      list = r.root.findAllByType(FlatList)[0];
+      expect(list.props.data).toBe(runs);
+
       // FlatList(VirtualizedList)가 셀 렌더용 타이머를 예약하므로 teardown 전에 언마운트해
       // act() 밖 setState 경고를 막는다.
       act(() => r.unmount());
