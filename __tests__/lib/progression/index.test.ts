@@ -346,3 +346,38 @@ describe('pickRecentAchievement: recency가 포인트를 이긴다', () => {
     expect(pickRecentAchievement(view, seen)?.key).toBe(last.key);
   });
 });
+
+// ============================================================================
+// 5) 챌린지 완료 신호 배선(2026-07-14 회귀) — getProgression 이 challenges 인자를
+//    받아 completedChallengeCount 를 반영해야 challenge_* 업적이 해금된다. 과거엔
+//    호출부가 5번째 인자를 안 넘겨 completedChallengeCount 가 늘 0 → 영구 잠김이었다.
+// ============================================================================
+describe('challenge 업적 배선: getProgression(challenges) → challenge_* 해금', () => {
+  const st = defaultProgressionState();
+
+  test('challenges 미전달(과거 버그) → challenge_starter 잠김', () => {
+    const view = getProgression(runs, shoes, st, NOW);
+    expect(collectUnlockedKeys(view)).not.toContain('challenge_starter');
+  });
+
+  test('완료 챌린지 3개 전달 → starter(≥1)·dedicated(≥3) 해금, master(≥10) 잠김', () => {
+    const done3 = [{completed: true}, {completed: true}, {completed: true}];
+    const view = getProgression(runs, shoes, st, NOW, done3);
+    const keys = collectUnlockedKeys(view);
+    expect(keys).toContain('challenge_starter');
+    expect(keys).toContain('challenge_dedicated');
+    expect(keys).not.toContain('challenge_master');
+  });
+
+  test('완료 10개 전달 → master 까지 해금', () => {
+    const done10 = Array.from({length: 10}, () => ({completed: true}));
+    const view = getProgression(runs, shoes, st, NOW, done10);
+    expect(collectUnlockedKeys(view)).toContain('challenge_master');
+  });
+
+  test('미완료 챌린지는 세지 않는다(completed:false → starter 잠김)', () => {
+    const pending = [{completed: false}, {completed: false}];
+    const view = getProgression(runs, shoes, st, NOW, pending);
+    expect(collectUnlockedKeys(view)).not.toContain('challenge_starter');
+  });
+});

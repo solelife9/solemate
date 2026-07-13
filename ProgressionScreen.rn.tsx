@@ -64,6 +64,7 @@ import type {
   AchievementCategory,
   AchievementRarity,
   ProgressionState,
+  ContextChallengeInput,
 } from './lib/progression/types';
 
 // 진행 숫자 표기 — 소수 꼬리(21.0975 등)는 한 자리로 다듬고, 정수는 천단위 콤마.
@@ -110,6 +111,10 @@ export interface ProgressionScreenProps {
   initialState?: ProgressionState;
   onBack?: () => void;
   onOpenHallOfFame?: () => void;
+  // 수락한 챌린지의 완료 신호(App 이 단일 소스로 계산해 주입). 없으면 null — 챌린지 업적은
+  // 잠긴 채 표시되지만(안전), App 경로에서는 항상 주입돼 challenge_starter/dedicated/master
+  // 가 실제 완료 수로 해금된다. 화면 단독 렌더(스토리북/테스트)에서만 결측이 자연스럽다.
+  challenges?: readonly ContextChallengeInput[] | null;
 }
 
 export default function ProgressionScreen({
@@ -120,6 +125,7 @@ export default function ProgressionScreen({
   initialState,
   onBack,
   onOpenHallOfFame,
+  challenges = null,
 }: ProgressionScreenProps) {
   const insets = useSafeAreaInsets();
 
@@ -144,7 +150,7 @@ export default function ProgressionScreen({
   const nowRef = useRef<number>(now ?? Date.now());
   const resolvedNow = now ?? nowRef.current;
 
-  const view: ProgressionView = getProgression(runs, shoes, state, resolvedNow);
+  const view: ProgressionView = getProgression(runs, shoes, state, resolvedNow, challenges);
 
   const ctx = useMemo(
     () =>
@@ -152,11 +158,11 @@ export default function ProgressionScreen({
         runs,
         shoes,
         state.earnedTitles,
-        null,
+        challenges,
         resolvedNow,
         state.retiredShoes,
       ),
-    [runs, shoes, state.earnedTitles, state.retiredShoes, resolvedNow],
+    [runs, shoes, state.earnedTitles, state.retiredShoes, resolvedNow, challenges],
   );
 
   // 키 → 표시명(언락 배너용)

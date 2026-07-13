@@ -55,7 +55,7 @@ import CelebrationScreen, {CelebrationData} from './CelebrationScreen.rn';
 import {loadProgression, saveProgression} from './lib/progression/storage';
 import {mergeCelebBaseline} from './lib/celebrationBaseline';
 import {success as hapticSuccess, setHapticsEnabled, isHapticsEnabled} from './lib/haptics';
-import type {ProgressionState, RetiredShoeRecord} from './lib/progression/types';
+import type {ProgressionState, RetiredShoeRecord, ContextChallengeInput} from './lib/progression/types';
 import type {HomeProgression, HomeChallengeView} from './HomeScreen.rn';
 import {challengeProgress} from './lib/challenges';
 
@@ -117,7 +117,7 @@ import {syncRunReminder, ensureForegroundHandler} from './lib/localReminder';
 import {weeklyProgress, currentStreak, personalRecords} from './lib/goals';
 import {BackupPayload} from './lib/backup';
 import {Challenge, ChallengeRun} from './lib/challenges';
-import {ExtChallenge, challengeExtProgress, type ExtRun, type ExtShoe} from './lib/progression/challengesExt';
+import {ExtChallenge, challengeExtProgress, extChallengesToContext, type ExtRun, type ExtShoe} from './lib/progression/challengesExt';
 import {createFirebaseCloudPort} from './lib/firebaseCloudPort';
 import {getAuth, onAuthStateChanged} from '@react-native-firebase/auth';
 import {LoginScreen} from './LoginScreen.rn';
@@ -363,6 +363,21 @@ function Main(){
   // 확장 챌린지(monthly/shoe/rotation, 스마트 추천 수락분). 기존 distance/streak 과 같은
   // 키(K_CHALLENGES)에 한 배열로 함께 영속하되, kind 로 분리해 서로를 건드리지 않는다.
   const [extChallenges,setExtChallenges]=useState<ExtChallenge[]>([]);
+  // 진척 컨텍스트용 챌린지 완료 신호(2026-07-14 정확성 수정). getProgression 이 challenges
+  // 인자를 받지 못해 completedChallengeCount 가 항상 0 → challenge_starter/dedicated/master
+  // 업적이 영원히 잠기고 130XP·랭크 상한이 도달 불가였다. 수락한 base(거리/연속)+ext
+  // (월간/신발/로테이션) 챌린지의 완료 여부를 buildContext 가 세는 것과 동일한 모양
+  // (ContextChallengeInput{completed})으로 변환해 모든 getProgression 호출에 흘린다.
+  // raw runs/shoes 를 받아 라이브 머지 경로(liveRuns)와 렌더 경로 모두 같은 함수로 쓴다.
+  const buildContextChallenges=useCallback((rawRuns:readonly BackendRun[],rawShoes:readonly BackendShoe[],nowISO:string):ContextChallengeInput[]=>{
+    const cRuns:ChallengeRun[]=rawRuns.map(r=>({date:String(r.run_date||'').slice(0,10),dist:Number(r.km)||0}));
+    const eRuns:ExtRun[]=rawRuns.map(r=>({date:String(r.run_date||'').slice(0,10),dist:Number(r.km)||0,shoeId:r.shoe_id,durationS:r.duration}));
+    const eShoes:ExtShoe[]=rawShoes.map(sh=>({id:sh.id,name:sh.name,retired:!!sh.retired,createdAt:sh.purchase_date,targetKm:sh.max_km}));
+    return [
+      ...challenges.map(c=>({completed:challengeProgress(c,cRuns).completed})),
+      ...extChallengesToContext(extChallenges,eRuns,eShoes,nowISO),
+    ];
+  },[challenges,extChallenges]);
   // 프로필 이름/사진(로컬 영속). 이름 기본은 '러너', 사진은 없으면 빈 문자열(아바타
   // 아이콘 폴백). 신규 키라 기존 신발/런 데이터와 격리돼 파괴 위험이 없다.
   const [profileName,setProfileName]=useState(DEFAULT_PROFILE_NAME);
@@ -424,7 +439,7 @@ function Main(){
   // 첫 실행(베이스라인 없음)은 현재를 시딩만 한다(기존 업적·현재 등급 소급 축하 금지).
   useEffect(()=>{
     if(!celebReady||!progState)return;
-    const view=getProgression(runs,shoes,progState??undefined);
+    const view=getProgression(runs,shoes,progState??undefined,undefined,buildContextChallenges(runs,shoes,today()));
     const currentAch=collectUnlockedKeys(view);
     const tier=String(view.rank.tier);
     const base=celebBaselineRef.current;
@@ -477,7 +492,7 @@ function Main(){
       }
     }
     persist({ach:currentAch,tier});
-  },[runs,shoes,progState,celebReady]);
+  },[runs,shoes,progState,celebReady,buildContextChallenges]);
 
   const closeCelebration=()=>setCelebration(celebQueueRef.current.shift()??null);
 
@@ -1183,7 +1198,7 @@ function Main(){
     try{
       const liveShoes=liveRecords(merged.shoes);
       const liveRuns=liveRecords(merged.runs);
-      const view=getProgression(liveRuns,liveShoes,progState??undefined);
+      const view=getProgression(liveRuns,liveShoes,progState??undefined,undefined,buildContextChallenges(liveRuns,liveShoes,today()));
       const equipped=view.titles.equipped
         ? (view.titles.unlocked.find(t=>t.key===view.titles.equipped)?.name??null)
         : null;
@@ -1515,12 +1530,15 @@ function Main(){
   for(const s of shoes){ if(s.id) homeForecasts[s.id]=forecastForRaw(s); }
 
   // ── 진척 홈 노출(Slice D) ───────────────────────────────────────────────────────
+  // 진척 계산에 넘길 챌린지 완료 신호(렌더 경로 단일 소스, 메모). 홈 띠·프로필 랭크·업적이
+  // 모두 이 값을 공유해 completedChallengeCount 가 실제 완료 수를 반영한다(챌린지 업적 잠김 해소).
+  const contextChallenges=useMemo(()=>buildContextChallenges(runs,shoes,today()),[buildContextChallenges,runs,shoes]);
   // getProgression(읽기 전용 — 런/신발/progression_v1 불변)으로 랭크·장착 타이틀·업적을
   // 읽고, 수락한 챌린지(base distance/streak + ext monthly/shoe/rotation) 중 활성 1개의
   // 진행을 골라 홈 띠로 내려준다. 데이터를 만들지 않고 표시 파생만 한다(getProgression
   // 내부 메모 + 작은 루프라 매 렌더 비용은 무시 가능). 미주입 progState 도 안전 기본값.
   const homeProgression:HomeProgression=useMemo(()=>{
-    const view=getProgression(runs,shoes,progState??undefined);
+    const view=getProgression(runs,shoes,progState??undefined,undefined,contextChallenges);
     const equipped=view.titles.equipped
       ? (view.titles.unlocked.find(t=>t.key===view.titles.equipped)?.name??null)
       : null;
@@ -1551,7 +1569,7 @@ function Main(){
       achievement:recentAch?{name:recentAch.name}:null,
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  },[runs,shoes,challenges,extChallenges,challengeRuns,progState]);
+  },[runs,shoes,challenges,extChallenges,challengeRuns,progState,contextChallenges]);
 
   // 마이 탭 스마트 챌린지 카드 입력 — 런/신발을 확장 챌린지 형태(extRuns/extShoes)로
   // 읽기 전용 파생한다(원본 불변). ProfileScreen 의 ChallengesSection 이 이 입력으로
@@ -1722,7 +1740,7 @@ function Main(){
   const streak=maxDayStreak(runs.map(r=>r.run_date).filter(Boolean));
   // 프로필 신원 블록(스펙): Rank·장착 타이틀 + 업적 수·은퇴 신발 수. getProgression 은
   // homeProgression 과 동일 참조라 메모 히트(재계산 없음). 은퇴 수는 영속 레코드 권위.
-  const profView=getProgression(runs,shoes,progState??undefined);
+  const profView=getProgression(runs,shoes,progState??undefined,undefined,contextChallenges);
   const achievementCount=profView.achievements.filter(a=>a.unlocked).length;
   const profile:Profile={
     name:profileName||DEFAULT_PROFILE_NAME, since, totalKm:displayNum(sumKm(runs),unit,0), totalRuns:runs.length,
@@ -1971,7 +1989,7 @@ function Main(){
     // 라이브 리더보드(HallOfFame) 진입은 MVP 에서 플래그 오프 — 유저 임계량 전의 빈
     // 리더보드는 죽은 공간이다. onOpenHallOfFame 미주입이면 진척 화면이 버튼을 숨긴다.
     // 재개봉 시 아래 한 줄만 복원: onOpenHallOfFame={()=>setShowHallOfFame(true)}
-    return <ProgressionScreen runs={runs} shoes={shoes} profileName={profileName}
+    return <ProgressionScreen runs={runs} shoes={shoes} profileName={profileName} challenges={contextChallenges}
       onBack={()=>setShowProgression(false)}/>;
   }
 
