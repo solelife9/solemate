@@ -45,6 +45,17 @@ export type WatchRunPayload = {
   endMs: number;
 };
 
+/** 워치가 러닝 끝에 직송하는 심박 기록(정본 경로 A). 오프셋·bpm 병렬 배열. */
+export type WatchHrTrackPayload = {
+  /** 워치 워크아웃 시작/종료(ms) — 폰 런과 시간창 매칭용. */
+  startMs: number;
+  endMs: number;
+  /** 워치 시작 기준 초 오프셋. */
+  offsetS: number[];
+  /** 각 오프셋의 심박(bpm). */
+  bpm: number[];
+};
+
 export const watchSession = {
   available,
   /** 실시간 심박(bpm, 양수) 구독. 해제 함수를 돌려준다. */
@@ -76,6 +87,23 @@ export const watchSession = {
         startMs: Math.max(0, Number(e?.startMs) || 0),
         endMs: Math.max(0, Number(e?.endMs) || 0),
       });
+    });
+    return () => sub.remove();
+  },
+  /**
+   * 워치가 러닝 끝에 직송하는 심박 기록 수신(정본 경로 A). transferUserInfo(배달 보장)라
+   * 폰이 내내 주머니에 있어도 앱이 깨는 순간 배달된다 — HealthKit 동기화 타이밍과 무관.
+   * 무효(창 뒤집힘·표본 2개 미만)는 거른다. 수신부가 시간창으로 폰 런과 매칭해 저장한다.
+   */
+  onWatchHrTrack(cb: (p: WatchHrTrackPayload) => void): () => void {
+    if (!emitter) return () => {};
+    const sub = emitter.addListener('onWatchHrTrack', (e: any) => {
+      const startMs = Math.max(0, Number(e?.startMs) || 0);
+      const endMs = Math.max(0, Number(e?.endMs) || 0);
+      const offsetS = Array.isArray(e?.offsetS) ? e.offsetS.map((x: any) => Number(x) || 0) : [];
+      const bpm = Array.isArray(e?.bpm) ? e.bpm.map((x: any) => Number(x) || 0) : [];
+      if (!(startMs < endMs) || bpm.length < 2) return; // 무효 — 조용히 무시
+      cb({startMs, endMs, offsetS, bpm});
     });
     return () => sub.remove();
   },

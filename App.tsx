@@ -101,6 +101,7 @@ import {detectPRs, PRKind} from './lib/records';
 import {getDistancePBs, PB_CACHE_KEY} from './lib/distancePBStore';
 import type {RunBestEfforts} from './lib/bestEfforts';
 import {hkSaveRunWorkout, hkBackfillHeartRate} from './lib/healthkit';
+import {registerRunForHr, saveWatchHrTrack, retryPendingHr} from './lib/hrBackfill';
 import {currentTargetPace} from './lib/pacePlan';
 import {liveActivity} from './lib/liveActivity';
 import {watchSession} from './lib/watchSession';
@@ -1452,6 +1453,20 @@ function Main(){
     }catch(e){console.log('watch run sync error',e);}
   }),[]);
 
+  // 심박 지연 보강 — 폰이 주머니에 있어(화면 꺼짐) 실시간 심박을 놓쳐도 hrTrack 이 채워지게.
+  // (A) 워치가 러닝 끝에 직송하는 심박 기록을 시간창으로 폰 런과 매칭해 저장(정본·HK 무관).
+  useEffect(()=>watchSession.onWatchHrTrack(async p=>{
+    try{await saveWatchHrTrack(p.startMs,p.endMs,p.offsetS,p.bpm,Date.now());}catch{/* 비치명적 */}
+  }),[]);
+  // (B) HealthKit 백필 재시도 — 마운트 시 1회 + 앱 복귀('active')마다. 저장 순간엔 워치→폰
+  // HK 동기화가 덜 됐을 수 있어, 주머니에서 꺼내 앱을 열 때(동기화 완료 시점) 다시 채운다.
+  useEffect(()=>{
+    const run=()=>{void retryPendingHr(Date.now(),hkBackfillHeartRate).catch(()=>{});};
+    run();
+    const sub=AppState.addEventListener('change',n=>{if(n==='active')run();});
+    return ()=>sub.remove();
+  },[]);
+
   // ── 실효 마모/교체 예측 보정(Slice 6) ────────────────────────────────────────
   // 런별 노면 태그 조회(미태그 → road). 신발 상세(ShoesScreen)와 홈 히어로 예측이 같은
   // 보정(체중·노면)을 공유하도록 한 곳에서 만든다. 표시 파생값이며 원본은 읽기만 한다.
@@ -1869,6 +1884,11 @@ function Main(){
             const hkEndMs=Date.now();const hkStartMs=hkEndMs-Math.max(1,dur)*1000;
             void hkSaveRunWorkout(km,hkStartMs,hkEndMs,cal).catch(()=>{});
             void hkBackfillHeartRate(newId,hkStartMs,hkEndMs).catch(()=>{});
+            // 심박 보강 대기 등록(경로 A 매칭·B 재시도 대상) + 지연 재시도. 워치→폰 HealthKit
+            // 동기화가 저장 순간엔 덜 됐을 수 있어, 앱 유지 중이면 15s·60s 뒤 다시 채운다.
+            void registerRunForHr(newId,hkStartMs,hkEndMs,Date.now()).catch(()=>{});
+            setTimeout(()=>{void retryPendingHr(Date.now(),hkBackfillHeartRate).catch(()=>{});},15000);
+            setTimeout(()=>{void retryPendingHr(Date.now(),hkBackfillHeartRate).catch(()=>{});},60000);
           }
           await clearSnapshot();
           // 완주 리캡(P0-2) — 기록 탭으로 바로 점프하던 대신 축하 풀스크린을 띄운다(러너가

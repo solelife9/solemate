@@ -88,6 +88,9 @@ final class WorkoutManager: NSObject, ObservableObject {
   private var timer: Timer?
   private var runId = ""
   private var startDate: Date?
+  // 심박 시계열(경로 A) — 워크아웃 시작 기준 초 오프셋 + bpm. 종료 시 폰에 직송해
+  // 폰이 주머니에 있어(실시간 스트림 놓침) hrTrack 이 비는 문제를 근본 해결한다.
+  private var hrSamples: [(offsetS: Double, bpm: Double)] = []
   private var manualPause = false
   // km 스플릿 적산 — 직전 랩 마감 시점의 경과시간(빌더 시간, 일시정지 제외).
   private var lastSplitElapsedS: Double = 0
@@ -168,6 +171,7 @@ final class WorkoutManager: NSObject, ObservableObject {
       slowSec = 0
       fastSec = 0
       lastLocation = nil
+      hrSamples = []
       splits = []
       lastSplitElapsedS = 0
       summary = nil
@@ -351,7 +355,25 @@ final class WorkoutManager: NSObject, ObservableObject {
       startMs: start.timeIntervalSince1970 * 1000,
       endMs: endDate.timeIntervalSince1970 * 1000
     )
+    // 심박 기록 직송(경로 A) — 수동 '저장'과 무관하게 종료 시 항상 보낸다. 폰이 주머니에
+    // 있어(실시간 스트림 놓침) 폰 런의 hrTrack 이 비는 문제를 근본 해결한다(배달 보장 큐).
+    if hrSamples.count >= 2 {
+      WatchLink.shared.sendHrTrack(
+        startMs: start.timeIntervalSince1970 * 1000,
+        endMs: endDate.timeIntervalSince1970 * 1000,
+        offsetsS: hrSamples.map { $0.offsetS },
+        bpms: hrSamples.map { $0.bpm }
+      )
+    }
     phase = .ended
+  }
+
+  /// 심박 시계열 누적(경로 A). 워크아웃 시작 기준 초 오프셋 + bpm. 노이즈·상한(6000)만 컷.
+  func recordHrSample(_ bpm: Double) {
+    guard bpm > 30, bpm < 240, let start = startDate else { return }
+    let offset = Date().timeIntervalSince(start)
+    guard offset >= 0, hrSamples.count < 6000 else { return }
+    hrSamples.append((offsetS: offset, bpm: bpm))
   }
 
   // ── 1초 시계 — 빌더 경과시간(일시정지 제외)을 화면에 흘린다 ─────────────────
@@ -462,7 +484,10 @@ extension WorkoutManager: HKLiveWorkoutBuilderDelegate {
           let q = stats.mostRecentQuantity() else { return }
     let bpm = q.doubleValue(for: HKUnit.count().unitDivided(by: .minute()))
     WatchLink.shared.sendHeartRate(bpm)
-    Task { @MainActor in WorkoutManager.shared.heartRate = bpm }
+    Task { @MainActor in
+      WorkoutManager.shared.heartRate = bpm
+      WorkoutManager.shared.recordHrSample(bpm) // 경로 A — 종료 시 폰 직송용 누적
+    }
   }
 }
 

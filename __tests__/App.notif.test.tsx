@@ -54,13 +54,15 @@ function mockBackend(shoes: ApiShoe[] = [], runs: ApiRun[] = []) {
 }
 
 // AppState 'change' 리스너를 가로채 핸들러를 캡처한다(실제 OS 전환 없이 포그라운드 진입 모사).
+// App 은 'change' 리스너를 여럿 단다(알림 표시·권한 배너·심박 보강 재시도 등) — 실제 OS 처럼
+// 모든 핸들러를 발화해야 알림 경로가 정상 트리거된다(하나만 잡으면 등록 순서에 따라 누락).
 function captureAppState() {
-  const ref: {handler: ((s: string) => void) | null} = {handler: null};
+  const handlers: Array<(s: string) => void> = [];
   jest.spyOn(AppState, 'addEventListener').mockImplementation((type: any, cb: any) => {
-    if (type === 'change') ref.handler = cb;
+    if (type === 'change') handlers.push(cb);
     return {remove: jest.fn()} as any;
   });
-  return ref;
+  return {handler: (s: string) => handlers.forEach(h => h(s))};
 }
 
 async function mountApp() {

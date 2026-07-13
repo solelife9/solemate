@@ -28,6 +28,9 @@ class WatchSessionModule: RCTEventEmitter, WCSessionDelegate {
   // RN 이 아직 구독하기 전에 올 수 있다. 심박(bpm)은 순간값이라 버리지만, 런 페이로드를
   // 떨어뜨리면 신발 차감이 유실되므로 리스너가 붙을 때까지 들고 있다가 재생한다.
   private var pendingRuns: [[String: Any]] = []
+  // JS 구독 전에 도착한 워치 심박 기록 버퍼(경로 A). 콜드런치 직후 배달될 수 있어 리스너가
+  // 붙을 때까지 들고 있다가 재생한다 — 심박 유실 방지(런 페이로드와 같은 이유).
+  private var pendingHrTracks: [[String: Any]] = []
 
   override init() {
     super.init()
@@ -40,15 +43,16 @@ class WatchSessionModule: RCTEventEmitter, WCSessionDelegate {
   }
 
   override static func requiresMainQueueSetup() -> Bool { return true }
-  override func supportedEvents() -> [String]! { return ["onHeartRate", "onWatchRun"] }
+  override func supportedEvents() -> [String]! { return ["onHeartRate", "onWatchRun", "onWatchHrTrack"] }
   override func startObserving() {
     hasListeners = true
-    // 구독 전에 도착해 버퍼된 런 재생(JS 가 runId 로 중복 방어하므로 재생은 안전).
+    // 구독 전에 도착해 버퍼된 런·심박기록 재생(JS 가 runId·시간창으로 중복 방어하므로 안전).
     DispatchQueue.main.async {
-      guard self.hasListeners, !self.pendingRuns.isEmpty else { return }
-      let queued = self.pendingRuns
-      self.pendingRuns = []
-      queued.forEach { self.sendEvent(withName: "onWatchRun", body: $0) }
+      guard self.hasListeners else { return }
+      let runs = self.pendingRuns; self.pendingRuns = []
+      runs.forEach { self.sendEvent(withName: "onWatchRun", body: $0) }
+      let hrs = self.pendingHrTracks; self.pendingHrTracks = []
+      hrs.forEach { self.sendEvent(withName: "onWatchHrTrack", body: $0) }
     }
   }
   override func stopObserving() { hasListeners = false }
@@ -58,6 +62,20 @@ class WatchSessionModule: RCTEventEmitter, WCSessionDelegate {
     if let bpm = payload["bpm"] as? Double {
       DispatchQueue.main.async {
         if self.hasListeners { self.sendEvent(withName: "onHeartRate", body: ["bpm": bpm]) }
+      }
+      return
+    }
+    if (payload["type"] as? String) == "hrtrack" {
+      // 워치 직송 심박 기록(경로 A). 오프셋·bpm 배열을 그대로 JS 로 넘긴다(매칭은 JS 가 시간창으로).
+      let body: [String: Any] = [
+        "startMs": (payload["startMs"] as? NSNumber)?.doubleValue ?? 0,
+        "endMs": (payload["endMs"] as? NSNumber)?.doubleValue ?? 0,
+        "offsetS": (payload["hrT"] as? [Any])?.compactMap { ($0 as? NSNumber)?.doubleValue } ?? [],
+        "bpm": (payload["hrBpm"] as? [Any])?.compactMap { ($0 as? NSNumber)?.doubleValue } ?? [],
+      ]
+      DispatchQueue.main.async {
+        if self.hasListeners { self.sendEvent(withName: "onWatchHrTrack", body: body) }
+        else { self.pendingHrTracks.append(body) } // 콜드런치 — 구독되면 startObserving 이 재생
       }
       return
     }

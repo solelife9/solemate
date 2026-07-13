@@ -179,6 +179,23 @@ final class WatchLink: NSObject, ObservableObject {
     }
   }
 
+  /// 심박 기록 전체를 폰으로 직송(경로 A). transferUserInfo = 배달 보장 큐라 폰이 주머니에
+  /// 있어(비도달) 실시간 스트림을 놓쳐도 폰이 깨는 순간 배달된다. 폰은 시간창으로 자기 런과
+  /// 매칭해 hrTrack 을 채운다 — HealthKit 동기화 타이밍과 무관한 정본 경로.
+  func sendHrTrack(startMs: Double, endMs: Double, offsetsS: [Double], bpms: [Double]) {
+    guard offsetsS.count == bpms.count, bpms.count >= 2 else { return }
+    let payload: [String: Any] = [
+      "type": "hrtrack",
+      "startMs": startMs,
+      "endMs": endMs,
+      "hrT": offsetsS,
+      "hrBpm": bpms,
+    ]
+    let s = WCSession.default
+    guard s.activationState == .activated else { return }
+    s.transferUserInfo(payload)
+  }
+
   /// 완주 런 페이로드 전송. 즉시(메시지) → 실패/비도달 시 큐(transferUserInfo).
   /// transferUserInfo 는 배달이 보장되므로 폰이 멀어도 복귀 시 신발 차감이 이뤄진다.
   func sendRun(_ summary: RunSummary) {
