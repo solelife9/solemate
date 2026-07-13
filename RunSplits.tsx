@@ -11,9 +11,9 @@
 // ============================================================================
 
 import React from 'react';
-import { rf, rs, rv } from './lib/responsive';
+import { rs, rv } from './lib/responsive';
 import {View, Text, StyleSheet} from 'react-native';
-import {BRAND, T1, T2, T3, FONT, DISPLAY, RADIUS, withAlpha} from './theme';
+import {BRAND, T1, T2, T3, FONT, DISPLAY, RADIUS, withAlpha, TYPE} from './theme';
 
 export type Split = {km: number; paceSec: number; elevM: number};
 
@@ -58,16 +58,16 @@ export function RunSplits({splits}: {splits: Split[]}) {
 
 const r = StyleSheet.create({
   wrap: {marginTop: rv(24)},
-  title: {color: T2, fontFamily: FONT, fontSize: rf(16), fontWeight: '600', letterSpacing: -0.2, paddingHorizontal: rs(2), marginBottom: rv(8)},
+  title: {color: T2, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600', letterSpacing: -0.2, paddingHorizontal: rs(2), marginBottom: rv(8)},
   head: {flexDirection: 'row', alignItems: 'center', gap: rv(12), paddingHorizontal: rs(2), paddingBottom: rv(8)},
-  hcell: {color: T3, fontFamily: FONT, fontSize: rf(12), fontWeight: '600', opacity: 0.8},
+  hcell: {color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600', opacity: 0.8},
   row: {flexDirection: 'row', alignItems: 'center', gap: rv(12), paddingVertical: rv(8), paddingHorizontal: rs(2)},
   rowSep: {borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.045)},
-  km: {width: rs(34), fontFamily: DISPLAY, fontSize: rf(18), fontWeight: '600', color: T1},
+  km: {width: rs(34), fontFamily: DISPLAY, fontSize: TYPE.heading.fontSize, fontWeight: '600', color: T1},
   barWrap: {flex: 1, height: rs(10), borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.04), overflow: 'hidden'},
   bar: {height: '100%', borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.30)},
   barBest: {backgroundColor: BRAND},
-  pace: {width: rs(60), textAlign: 'right', fontFamily: DISPLAY, fontSize: rf(15), fontWeight: '500', color: T1},
+  pace: {width: rs(60), textAlign: 'right', fontFamily: DISPLAY, fontSize: TYPE.label.fontSize, fontWeight: '500', color: T1},
   paceBest: {color: BRAND},
-  elev: {width: rs(46), textAlign: 'right', fontFamily: DISPLAY, fontSize: rf(14), fontWeight: '500', color: T3},
+  elev: {width: rs(46), textAlign: 'right', fontFamily: DISPLAY, fontSize: TYPE.label.fontSize, fontWeight: '500', color: T3},
 });

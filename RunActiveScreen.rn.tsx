@@ -357,7 +357,7 @@ export default function RunActiveScreen({
   const sub = useMemo(() => ([
     { v: bpm > 0 ? String(bpm) : '--', l: hrZone !== 0 ? `Z${hrZone} ${HR_ZONE_LABEL[hrZone]}` : '심박', u: '', c: hrZone !== 0 ? hrColor : undefined },
     { v: calories > 0 ? String(calories) : '--', l: '칼로리', u: 'kcal' },
-    { v: elevationM != null ? String(elevationM) : '--', l: '고도', u: 'm' },
+    { v: elevationM != null ? String(Math.round(elevationM)) : '--', l: '고도', u: 'm' },
   ]), [bpm, hrZone, hrColor, calories, elevationM]);
   // 랩 구간시간(초) → m'ss" (트랙 '지난 랩' 표시용).
   const fmtLapSplit = (s: number) => `${Math.floor(s / 60)}'${String(Math.round(s % 60)).padStart(2, '0')}"`;

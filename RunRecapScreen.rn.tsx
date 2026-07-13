@@ -116,6 +116,7 @@ export default function RunRecapScreen({
   km,
   durationS,
   cadence = 0,
+  bpm = 0,
   splits = [],
   elevationM = 0,
   calories = 0,
@@ -138,6 +139,8 @@ export default function RunRecapScreen({
   km: number;
   durationS: number;
   cadence?: number;
+  /** 평균 심박(bpm). 라이브 캡처된 hrTrack 산출. 0 = 미측정(타일 숨김). */
+  bpm?: number;
   splits?: Split[];
   elevationM?: number;
   calories?: number;
@@ -377,10 +380,14 @@ export default function RunRecapScreen({
         <Enter skip={skipAnim} delay={860} style={s.grid}>
           <Stat label="시간" value={fmtDur(durationS)} />
           <Stat label="평균 페이스" value={fmtPace(km, durationS)} sub={`/${unit}`} />
-          {calories > 0 && <Stat label="칼로리" value={`${Math.round(calories)}`} sub="kcal" />}
+          {bpm > 0 && <Stat label="평균 심박" value={`${bpm}`} sub="bpm" />}
+          <Stat label="칼로리" value={`${Math.round(calories)}`} sub="kcal" />
           {cadence > 0 && <Stat label="케이던스" value={`${Math.round(cadence)}`} sub="spm" />}
-          {elevationM > 0 && <Stat label="누적 상승" value={`${Math.round(elevationM)}`} sub="m" />}
+          <Stat label="누적 상승" value={`${Math.round(elevationM)}`} sub="m" />
         </Enter>
+        {bpm === 0 && cadence === 0 && (
+          <Text style={{color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, textAlign: 'center', marginTop: rv(10)}}>워치를 함께 쓰면 심박·심박존이 기록돼요</Text>
+        )}
 
         {/* km 스플릿 막대(2구간↑일 때만 자체적으로 표시) */}
         {/* 스피드 모드 — km별 목표 대비 실제(플랜 적중 여부). 빠름=초록(−), 느림=주황(+). */}

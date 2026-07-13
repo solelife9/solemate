@@ -313,7 +313,7 @@ function Main(){
   useEffect(()=>{void loadHaptics().then(v=>{setHapticsEnabled(v);watchSession.setHaptics(v);});},[]);
   // 부상위험 상세(시그니처) 전체화면 — 홈 신호등 카드 탭이 열고 뒤로가 닫는다(오버레이형).
   // 완주 리캡(P0-2) — 러닝 저장 직후 축하 풀스크린. '완료'로 닫으면 기록 탭으로 이동.
-  const [runRecap,setRunRecap]=useState<{km:number;durationS:number;cadence:number;splits:any[];elevationM:number;calories:number;prKinds:PRKind[];shoeName?:string;goalKm?:number;goalMin?:number;pacePlan?:number[];shoeWear?:{addedKm:number;remainingPct:number;deltaPct:number}|null;loadInfo?:{phrase:string;word:string;level:LoadLevel}|null;route?:string|null;track?:{lapM:number;laps:number}|null;runId?:string}|null>(null);
+  const [runRecap,setRunRecap]=useState<{km:number;durationS:number;cadence:number;bpm:number;splits:any[];elevationM:number;calories:number;prKinds:PRKind[];shoeName?:string;goalKm?:number;goalMin?:number;pacePlan?:number[];shoeWear?:{addedKm:number;remainingPct:number;deltaPct:number}|null;loadInfo?:{phrase:string;word:string;level:LoadLevel}|null;route?:string|null;track?:{lapM:number;laps:number}|null;runId?:string}|null>(null);
   // 위치 권한 설명(priming) 풀스크린 — 첫 GPS 런 직전 들고 있을 목표(RunGoal). null=미표시.
   // '계속'에서 권한 안내 완료 영속 + 런 진입, '나중에'면 닫고 시작 취소.
   const [locPrimeGoal,setLocPrimeGoal]=useState<RunGoal|null>(null);
@@ -1934,7 +1934,11 @@ function Main(){
           const rMatch=detectRace({date:today(),startLat:startPt?.lat,startLon:startPt?.lon,km},races);
           setRecapRace(rMatch?{match:rMatch,date:today(),runId:newId,appTimeSec:dur,appPaceSec:km>0?dur/km:undefined}:null);
           // route 원문도 리캡에 전달 — 완주 직후 '오늘의 코스' 지도 + 경로 포함 공유 카드.
-          setRunRecap({km,durationS:dur,cadence:cad||0,splits:splits||[],elevationM:elevM||0,calories:cal||0,prKinds,shoeName:shoeLabel,goalKm,goalMin:activeRun.goalMin,pacePlan:activeRun.pacePlan,shoeWear,loadInfo,route:route||null,track:trackMeta||null,runId:newId});
+          // 평균 심박 — 라이브 캡처된 hrTrack 에서 산출(워치 착용 시). 주머니 러닝은 저장 후
+          // 백필로 채워지므로 리캡 순간엔 0 → 타일 숨김(리캡은 즉시성, 상세는 복구본이 정본).
+          const recapHrPts=(hrTrack||[]).filter(p=>p.bpm>0);
+          const recapBpm=recapHrPts.length?Math.round(recapHrPts.reduce((sm,p)=>sm+p.bpm,0)/recapHrPts.length):0;
+          setRunRecap({km,durationS:dur,cadence:cad||0,bpm:recapBpm,splits:splits||[],elevationM:elevM||0,calories:cal||0,prKinds,shoeName:shoeLabel,goalKm,goalMin:activeRun.goalMin,pacePlan:activeRun.pacePlan,shoeWear,loadInfo,route:route||null,track:trackMeta||null,runId:newId});
         }}
         onDiscard={()=>{void clearSnapshot();setResumeSnap(null);setActiveRun(null);setOverlay('none');}}
       />
