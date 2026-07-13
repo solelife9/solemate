@@ -449,7 +449,11 @@ export default function RunActiveScreen({
                   km 통과 순간 kmPulse 가 숫자를 한 번 부풀렸다 정착시킨다(모션 #4). */}
               {/* 시간 목표(#15-2, 사용자 확정): 링 센터의 주인공 = 경과 시간, 보조 = 목표.
                   거리(km)는 아래 지표 행의 '시간' 자리와 스왑된다. 1시간+ 도 잘리지 않게 자동 축소. */}
-              <Text style={r.bigDist} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>
+              {/* 링 안전 너비 상한 — 링(ri280·stroke16)의 안쪽 현(弦) 안에 숫자가 들어오게
+                  maxWidth 를 준다. 짧은 '0.00'(≈197)은 그대로 최대 크기, 넓은 '00:00'(≈258)·
+                  긴 시간('1:02:33')·40km+ 거리('42.19')만 자동 축소돼 링에 닿지 않는다.
+                  (너비 상한이 없으면 adjustsFontSizeToFit 이 줄일 기준이 없어 꽉 차 링을 침범.) */}
+              <Text style={[r.bigDist, { maxWidth: ri(204) }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.5}>
                 {timeGoal ? timeLabel : distanceKm.toFixed(2)}
               </Text>
               {/* 단위는 absolute — 센터 계산에서 제외해 '숫자'가 링의 정중앙에 온다. */}
