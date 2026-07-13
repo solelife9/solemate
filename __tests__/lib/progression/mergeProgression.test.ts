@@ -32,6 +32,23 @@ test('은퇴 신발은 shoeId 합집합(어느 기기도 유실 없음)', () => 
   expect(m.retiredShoes.map(r => r.shoeId).sort()).toEqual(['a', 'b', 'c']);
 });
 
+test('같은 shoeId 는 더 최근 retiredAt(최신 스냅샷) 우선 — 스테일 레코드로 역행하지 않음', () => {
+  // local 은 예전 스냅샷(km 300, gold, 1월 은퇴), remote 는 재은퇴 최신(km 560, master, 3월).
+  const localStale = {shoeId: 'a', name: 's-a', km: 300, retiredAt: '2026-01-01T00:00:00.000Z', retireYear: 2026, grade: 'gold'} as any;
+  const remoteFresh = {shoeId: 'a', name: 's-a', km: 560, retiredAt: '2026-03-15T00:00:00.000Z', retireYear: 2026, grade: 'master'} as any;
+  const m = mergeProgression(base({retiredShoes: [localStale]}), base({retiredShoes: [remoteFresh]}))!;
+  expect(m.retiredShoes).toHaveLength(1);
+  expect(m.retiredShoes[0].km).toBe(560); // 최신 스냅샷 채택
+  expect(m.retiredShoes[0].grade).toBe('master');
+});
+
+test('retiredAt 동률/결측이면 local(먼저 들어온 쪽) 유지 — 순서·안정성 보존', () => {
+  const localA = {shoeId: 'a', name: 's-a', km: 100, retiredAt: '2026-01-01', retireYear: 2026, grade: 'gold'} as any;
+  const remoteA = {shoeId: 'a', name: 's-a', km: 999, retiredAt: '2026-01-01', retireYear: 2026, grade: 'master'} as any;
+  const m = mergeProgression(base({retiredShoes: [localA]}), base({retiredShoes: [remoteA]}))!;
+  expect(m.retiredShoes[0].km).toBe(100); // 동률 → local 유지
+});
+
 test('seenUnlocks·earnedTitles 합집합, points 는 max', () => {
   const local = base({
     seenUnlocks: ['x', 'y'],
