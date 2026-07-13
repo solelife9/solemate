@@ -28,7 +28,7 @@ import { RunLiveMap } from './RunLiveMap';
 import {
   BG, CARD, ACCENT, ACCENT_2, RING_ACCENT, RING_ACCENT_HI, RING_ACCENT_LO,
   GOOD, WARN, DANGER, T1, T2, T3, T4, SEP,
-  FONT, DISPLAY, withAlpha, HR_ZONE_COLORS, TYPE, RADIUS, MOTION, BLACK,
+  FONT, DISPLAY, withAlpha, HR_ZONE_COLORS, TYPE, RADIUS, MOTION, BLACK, NUM,
 } from './theme';
 import { estimateMaxHR, zoneOf, HR_ZONE_LABEL } from './lib/analytics/hrZones';
 import { fmtPaceSec } from './lib/pacePlan';
@@ -677,7 +677,7 @@ const r = StyleSheet.create({
   goalBelow: { position: 'absolute', top: '100%' },
   goalMet: { flexDirection: 'row', alignItems: 'center', gap: rv(4), marginTop: rv(14) },
   goalMetText: { color: GOOD, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '700', letterSpacing: 0.6 },
-  bigDist: { color: T1, fontFamily: DISPLAY, fontSize: rf(104), fontWeight: '500', letterSpacing: -4, lineHeight: rf(106), includeFontPadding: false, fontVariant: ['tabular-nums'] },
+  bigDist: { color: T1, fontFamily: NUM, fontSize: rf(104), fontWeight: '500', letterSpacing: -4, lineHeight: rf(106), includeFontPadding: false, fontVariant: ['tabular-nums'] },
   bigUnit: { color: withAlpha(T1, 0.62), fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600', letterSpacing: 0.8, marginTop: rv(16) },
   // 일시정지 하단 헤드 — 링 없이 거리 히어로 + 목표를, 지도 위·하단 지표 위에 얹는다.
   pausedGoal: { color: withAlpha(T1, 0.62), fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '700', letterSpacing: 0.8, marginTop: rv(8) },

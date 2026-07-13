@@ -10,7 +10,7 @@ import { rf, rs, ri, rv } from './lib/responsive';
 import {View, Text, ScrollView, Pressable, StyleSheet, Alert, TextInput, Image, Linking, Animated, Easing, AccessibilityInfo, type StyleProp, type ViewStyle} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import {BG, CARD_HI, ACCENT, GOOD, WARN, DANGER, HALL_GOLD, T1, T2, T3, T4, FONT, DISPLAY, RADIUS, SEP, withAlpha, TYPE, GLASS} from './theme';
+import {BG, CARD_HI, ACCENT, GOOD, WARN, DANGER, HALL_GOLD, T1, T2, T3, T4, FONT, DISPLAY, RADIUS, SEP, withAlpha, TYPE, GLASS, NUM} from './theme';
 import {RACE_DISTANCE_LABEL, type RaceMatch} from './data/raceEvents';
 import {fmtPaceSec} from './lib/pacePlan';
 import {fmtPace} from './lib/format';
@@ -490,7 +490,7 @@ const s = StyleSheet.create({
   shoe: {color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600'},
   hero: {flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'center', gap: rv(6), marginTop: rv(8), marginBottom: rv(14)},
   // tabular-nums — 카운트업 중 자릿수 폭이 튀지 않게(진입 시그니처 모션).
-  heroNum: {color: T1, fontFamily: DISPLAY, fontSize: rf(68), fontWeight: '700', letterSpacing: -2, lineHeight: rf(72), fontVariant: ['tabular-nums']},
+  heroNum: {color: T1, fontFamily: NUM, fontSize: rf(68), fontWeight: '700', letterSpacing: -2, lineHeight: rf(72), fontVariant: ['tabular-nums']},
   heroUnit: {color: T2, fontFamily: FONT, fontSize: TYPE.title.fontSize, fontWeight: '700', marginBottom: rv(10)},
   badges: {flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: rv(8), marginBottom: rv(16)},
   badge: {flexDirection: 'row', alignItems: 'center', gap: rv(4), paddingHorizontal: rs(12), height: rs(30), borderRadius: RADIUS.pill, borderWidth: 1},

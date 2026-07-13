@@ -184,6 +184,12 @@ export const FONT = 'PretendardVariable';  // body
 // 사용자 요청('큰 숫자도 사진이랑 통일')으로 철회. 토큰 하나로 앱 전역 디스플레이 폰트를 좌우.
 export const DISPLAY = 'PretendardVariable';
 
+// ── NUM face: 큰 숫자 전용 지오메트릭 디스플레이(Jost — Futura 계열, 2026-07-14 탐색) ──
+// 사용자 결정: 타이포 개성을 위해 '큰 숫자만' 별도 지오메트릭 폰트로. 본문·라벨·모델명은
+// DISPLAY(Pretendard) 유지. 러닝 링·리캡 히어로 등 초대형 숫자에만 NUM 을 쓴다.
+// (상용 Aveny-T 후보의 무료 대체 = Jost. 라이선스 OFL, assets/fonts/Jost.ttf 번들.)
+export const NUM = 'Jost';
+
 // ── spacing scale (dp) ───────────────────────────────────────────────────────
 export const SPACE = { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 32 } as const;
 export type SpaceKey = keyof typeof SPACE;

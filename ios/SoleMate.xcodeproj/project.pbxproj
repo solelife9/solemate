@@ -24,6 +24,7 @@
 		94D45B79FEFB4E08B5B336B3 /* Barlow-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = CB87CDEECCE3462588478950 /* Barlow-Regular.ttf */; };
 		9DB316122F10FE302E4457FC /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F1023D5EE8A6A5A16AC7F1B /* ExpoModulesProvider.swift */; };
 		A0F56BF89B4C46768352C306 /* PretendardVariable.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 0523DFC08B56481FAAB32589 /* PretendardVariable.ttf */; };
+		FA57F0000000000000A10002 /* Jost.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FA57F0000000000000A10001 /* Jost.ttf */; };
 		A99592C060E1B04239C26A0F /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = D241C27486D3F7BF2FBE79D2 /* GoogleService-Info.plist */; };
 		B24A7C1E80CD775F32E9DB1C /* LiveActivityModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 923265D40951BEF46E599242 /* LiveActivityModule.swift */; };
 		C4B62BCD3E4C24EBE468BC17 /* WatchSessionModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB119C642F2D1AD301E42631 /* WatchSessionModule.swift */; };
@@ -79,6 +80,7 @@
 
 /* Begin PBXFileReference section */
 		0523DFC08B56481FAAB32589 /* PretendardVariable.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = PretendardVariable.ttf; path = ../assets/fonts/PretendardVariable.ttf; sourceTree = "<group>"; };
+		FA57F0000000000000A10001 /* Jost.ttf */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = file; name = "Jost.ttf"; path = "../assets/fonts/Jost.ttf"; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* SoleMate.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SoleMate.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = SoleMate/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = SoleMate/Info.plist; sourceTree = "<group>"; };
@@ -243,6 +245,7 @@
 				CB87CDEECCE3462588478950 /* Barlow-Regular.ttf */,
 				29AE797F7024459CAA462CE1 /* BebasNeue-Regular.ttf */,
 				0523DFC08B56481FAAB32589 /* PretendardVariable.ttf */,
+				FA57F0000000000000A10001 /* Jost.ttf */,
 			);
 			name = Resources;
 			sourceTree = "<group>";
@@ -411,6 +414,7 @@
 				94D45B79FEFB4E08B5B336B3 /* Barlow-Regular.ttf in Resources */,
 				7D0F4CE76C2C49CF9061C003 /* BebasNeue-Regular.ttf in Resources */,
 				A0F56BF89B4C46768352C306 /* PretendardVariable.ttf in Resources */,
+				FA57F0000000000000A10002 /* Jost.ttf in Resources */,
 				93BE707AE292B6376205E24A /* PrivacyInfo.xcprivacy in Resources */,
 				A99592C060E1B04239C26A0F /* GoogleService-Info.plist in Resources */,
 				87EAF9B449BA234FF90117DB /* NanumMyeongjo-Regular.ttf in Resources */,
