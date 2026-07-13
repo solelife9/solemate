@@ -41,10 +41,10 @@ describe('iOS + Taptic 탑재 — 짧고 가벼운 톡으로 라우팅(Vibration
     h.countdownBeat();
     h.go();
     h.impactHeavy();
-    expect(impact).toHaveBeenNthCalledWith(1, 'light');
-    expect(impact).toHaveBeenNthCalledWith(2, 'light');
-    expect(impact).toHaveBeenNthCalledWith(3, 'medium');
-    expect(impact).toHaveBeenNthCalledWith(4, 'heavy');
+    expect(impact).toHaveBeenNthCalledWith(1, 'medium'); // tap
+    expect(impact).toHaveBeenNthCalledWith(2, 'medium'); // countdownBeat
+    expect(impact).toHaveBeenNthCalledWith(3, 'heavy');  // go
+    expect(impact).toHaveBeenNthCalledWith(4, 'heavy');  // impactHeavy
     // Taptic 경로에서는 구형 진동 모터를 절대 쓰지 않는다.
     expect(vibrate).not.toHaveBeenCalled();
   });

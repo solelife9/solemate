@@ -92,9 +92,9 @@ function notify(type: string, fallback: number | number[]): void {
   }
 }
 
-/** 가벼운 단발 탭(일반 상호작용) — 짧고 약한 톡. */
+/** 단발 탭(일반 상호작용) — 또렷한 톡(나이키/애플급 체감: light 는 약해서 medium). */
 export function tap(): void {
-  impact('light', HAPTIC_PATTERN.tap);
+  impact('medium', HAPTIC_PATTERN.tap);
 }
 
 /** 성공 피드백(완료·저장) — Taptic 성공 알림. */
@@ -107,14 +107,14 @@ export function warning(): void {
   notify('warning', [...HAPTIC_PATTERN.warning]);
 }
 
-/** 카운트다운 박자(3·2·1) — 가벼운 톡. */
+/** 카운트다운 박자(3·2·1) — 또렷한 톡(달리기 직전 확실히 느껴지게). */
 export function countdownBeat(): void {
-  impact('light', HAPTIC_PATTERN.countdownBeat);
+  impact('medium', HAPTIC_PATTERN.countdownBeat);
 }
 
-/** 시작(GO) — 조금 더 또렷한 단발 톡. */
+/** 시작(GO) — 묵직한 단발 톡(출발의 무게). */
 export function go(): void {
-  impact('medium', HAPTIC_PATTERN.go);
+  impact('heavy', HAPTIC_PATTERN.go);
 }
 
 /** 강한 임팩트 단발(목표 달성 등) — 묵직하지만 짧은 톡. */
