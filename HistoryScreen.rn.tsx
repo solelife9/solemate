@@ -130,13 +130,13 @@ export function PeriodChartView({ data, labels, unit }: { data: number[]; labels
         {avg > 0 && (
           <View style={[s.chartAvgLine, { bottom: (avg / niceMax) * H }]} pointerEvents="none">
             <View style={s.chartAvgDash} />
-            <Text style={s.chartAvgVal}>평균 {fmtTick(avg)}</Text>
+            <Text style={s.chartAvgVal}>{fmtTick(avg)}</Text>
           </View>
         )}
       </View>
       <View style={[s.chartLabels, { gap: dense ? 4 : 8 }]}>
         {labels.map((l, i) => (
-          <Text key={i} style={[s.chartLabel, { fontSize: dense ? 9 : 11, color: sel === i ? T1 : T3 }]}>{l}</Text>
+          <Text key={i} style={[s.chartLabel, { fontSize: dense ? 9 : 11, color: T1 }]}>{l}</Text>
         ))}
       </View>
     </View>
@@ -1141,7 +1141,7 @@ export default function HistoryScreen({
               </View>
               {ch && ch.data.length > 0 && (
                 <View style={{ marginTop: rv(20), paddingTop: rv(20), borderTopWidth: 1, borderTopColor: withAlpha(T1, 0.18) }}>
-                  <Text style={s.cardTitle}>{ch.title}</Text>
+                  <Text style={[s.cardTitle, { color: T1 }]}>{ch.title}</Text>
                   <View style={{ marginTop: rv(18) }}><PeriodChartView data={ch.data} labels={ch.labels} unit={unit} /></View>
                 </View>
               )}
@@ -1320,18 +1320,18 @@ const s = StyleSheet.create({
   // bar chart (right-side km gridlines · accent bars)
   chartGrid: { position: 'absolute', left: 0, right: 0 },
   chartGridLine: { position: 'absolute', left: 0, right: 42, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP },
-  chartTick: { position: 'absolute', right: 0, width: rs(42), textAlign: 'right', color: T3, fontFamily: DISPLAY, fontSize: TYPE.caption.fontSize, marginBottom: rv(-7) },
+  chartTick: { position: 'absolute', right: 0, width: rs(42), textAlign: 'right', color: T1, fontFamily: DISPLAY, fontSize: TYPE.caption.fontSize, marginBottom: rv(-7) },
   chartBars: { position: 'absolute', left: 0, right: 42, top: 0, bottom: 0, flexDirection: 'row', alignItems: 'flex-end' },
   chartBarSlot: { flex: 1, alignItems: 'center' },
   chartBar: { width: '100%', borderTopLeftRadius: rs(4), borderTopRightRadius: rs(4), backgroundColor: BRAND },
   chartAvgLine: { position: 'absolute', left: 0, right: 42, flexDirection: 'row', alignItems: 'center', gap: rs(4) },
   chartAvgDash: { flex: 1, borderTopWidth: 1, borderStyle: 'dashed', borderColor: withAlpha(T1, 0.4) },
-  chartAvgVal: { color: T2, fontFamily: DISPLAY, fontSize: TYPE.caption.fontSize, fontWeight: '700', fontVariant: ['tabular-nums'] },
+  chartAvgVal: { color: T3, fontFamily: DISPLAY, fontSize: TYPE.caption.fontSize, fontWeight: '700', fontVariant: ['tabular-nums'] },
   chartLabels: { flexDirection: 'row', marginTop: rv(8), paddingRight: rs(42) },
   chartLabel: { flex: 1, textAlign: 'center', color: T3, fontFamily: FONT, fontWeight: '600' },
   chartTipWrap: { position: 'absolute', left: -26, right: -26, alignItems: 'center', zIndex: 5 },
   chartTip: { backgroundColor: CARD_HI, borderRadius: rs(8), paddingHorizontal: rs(8), paddingVertical: rv(4), borderWidth: 1, borderColor: withAlpha(T1, 0.14) },
-  chartBarVal: { fontFamily: DISPLAY, fontSize: TYPE.micro.fontSize, fontWeight: '600', color: T3, fontVariant: ['tabular-nums'] },
+  chartBarVal: { fontFamily: DISPLAY, fontSize: TYPE.micro.fontSize, fontWeight: '600', color: T1, fontVariant: ['tabular-nums'] },
   chartTipVal: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.label.fontSize, fontWeight: '600', letterSpacing: 0.2 },
   chartTipU: { color: T3, fontFamily: FONT, fontSize: TYPE.micro.fontSize, fontWeight: '500' },
 
