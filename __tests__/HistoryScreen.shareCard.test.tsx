@@ -1,10 +1,11 @@
 /**
- * 런 상세 '카드 공유'(이미지) 버튼 통합 테스트.
+ * 런 상세 '카드 공유'(이미지) 통합 테스트 — 공유 카드 선택기(ShareCardPicker) 경유.
  *
  * 관찰 가능한 효과를 검증한다:
- *   1) 런 상세에서 카드 공유 버튼을 누르면, 화면 밖에 마운트된 ShareCard의 Svg
- *      ref.toDataURL()로 만든 PNG dataURL이 RN Share.share에 url로 전달된다.
- *   2) 기존 텍스트 공유 버튼('공유')은 그대로 유지되어 message로 공유한다(회귀 가드).
+ *   1) 상세의 공유 버튼을 누르면 선택기가 열리고, 선택기의 '공유'가 오프스크린 ShareCard의
+ *      Svg ref.toDataURL()로 만든 PNG dataURL을 RN Share.share에 url로 전달한다.
+ *   2) 선택기의 '저장'은 투명 PNG를 MediaLibrary(사진앱)에 저장한다.
+ *   3) 공유가 reject 돼도 예외가 표면화되지 않는다(텍스트 폴백, 조용히 무시).
  *
  * toDataURL은 jest.setup.js의 Svg 목이 흉내 내므로(고정 base64) 네이티브 캔버스 없이
  * dataURL 생성→공유 경로 전체를 검증한다. 새 네이티브 의존은 추가하지 않는다.
@@ -71,23 +72,19 @@ async function openDetail(root: ReactTestRenderer.ReactTestInstance, needle: str
   await flush();
 }
 
-function byLabel(root: ReactTestRenderer.ReactTestInstance, label: string) {
-  return root.find(
-    (n: any) => n && n.props && n.props.accessibilityLabel === label && typeof n.props.onPress === 'function',
-  );
+function byTestId(root: ReactTestRenderer.ReactTestInstance, id: string) {
+  const hits = root.findAll((n: any) => n && n.props && n.props.testID === id && typeof n.props.onPress === 'function');
+  if (!hits.length) throw new Error(`testID "${id}" 인 누를 수 있는 노드가 없음`);
+  return hits[0];
 }
 
-// '공유' 버튼은 액션시트(Alert)를 띄운다 — 사진앱에 저장 / 공유 시트로 / 취소.
-// 카드 PNG 공유(Share.share)는 '공유 시트로' 에서 일어난다.
-function tapAlert(alertSpy: jest.SpyInstance, label: string) {
-  const call = alertSpy.mock.calls[alertSpy.mock.calls.length - 1];
-  const buttons = (call[2] as any[]) || [];
-  const btn = buttons.find(b => b.text === label);
-  if (!btn) throw new Error(`공유 액션시트에 "${label}" 가 없음`);
-  return btn.onPress();
+// 상세의 공유 버튼(testID=detail-share)을 눌러 선택기를 연다.
+async function openPicker(root: ReactTestRenderer.ReactTestInstance) {
+  await act(async () => { byTestId(root, 'detail-share').props.onPress(); });
+  await flush();
 }
 
-describe('HistoryScreen 카드 공유(이미지) 버튼', () => {
+describe('HistoryScreen 카드 공유(이미지) — 선택기 경유', () => {
   let shareSpy: jest.SpyInstance;
   let alertSpy: jest.SpyInstance;
   beforeEach(() => {
@@ -99,7 +96,7 @@ describe('HistoryScreen 카드 공유(이미지) 버튼', () => {
     alertSpy.mockRestore();
   });
 
-  test('카드 공유를 누르면 toDataURL PNG dataURL이 Share.share에 url로 전달된다', async () => {
+  test('선택기의 공유 → toDataURL PNG dataURL이 Share.share에 url로 전달된다', async () => {
     let renderer!: ReactTestRenderer.ReactTestRenderer;
     await act(async () => {
       renderer = ReactTestRenderer.create(<HistoryScreen shoes={[SHOE]} runs={[RUN]} unit="km" />);
@@ -108,13 +105,9 @@ describe('HistoryScreen 카드 공유(이미지) 버튼', () => {
     const root = renderer.root;
 
     await openDetail(root, 'Pegasus 41');
+    await openPicker(root);
 
-    await act(async () => {
-      byLabel(root, '공유').props.onPress(); // 액션시트 표시
-    });
-    await act(async () => {
-      tapAlert(alertSpy, '공유 시트로'); // '사진 없이' → 캡처·공유
-    });
+    await act(async () => { byTestId(root, 'sharecard-share').props.onPress(); });
     await flush();
 
     expect(shareSpy).toHaveBeenCalledTimes(1);
@@ -123,11 +116,10 @@ describe('HistoryScreen 카드 공유(이미지) 버튼', () => {
     expect(arg.message).toBeUndefined();
     expect(typeof arg.url).toBe('string');
     expect(arg.url.startsWith('data:image/png;base64,')).toBe(true);
-    // jest.setup의 Svg 목이 내보내는 고정 base64가 그대로 dataURL에 담긴다.
     expect(arg.url).toBe('data:image/png;base64,MOCK_SHARE_CARD_PNG_BASE64');
   });
 
-  test("'사진앱에 저장' → 투명 PNG가 MediaLibrary 로 사진앱에 저장된다(인스타 스토리용)", async () => {
+  test("선택기의 저장 → 투명 PNG가 MediaLibrary 로 사진앱에 저장된다", async () => {
     const saveSpy = jest.spyOn(MediaLibrary, 'saveToLibraryAsync').mockResolvedValue(undefined as any);
     let renderer!: ReactTestRenderer.ReactTestRenderer;
     await act(async () => {
@@ -137,13 +129,9 @@ describe('HistoryScreen 카드 공유(이미지) 버튼', () => {
     const root = renderer.root;
 
     await openDetail(root, 'Pegasus 41');
+    await openPicker(root);
 
-    await act(async () => {
-      byLabel(root, '공유').props.onPress();
-    });
-    await act(async () => {
-      await tapAlert(alertSpy, '사진앱에 저장');
-    });
+    await act(async () => { byTestId(root, 'sharecard-save').props.onPress(); });
     await flush();
 
     expect(saveSpy).toHaveBeenCalledTimes(1);
@@ -152,7 +140,7 @@ describe('HistoryScreen 카드 공유(이미지) 버튼', () => {
     saveSpy.mockRestore();
   });
 
-  test('카드 공유가 reject 돼도 예외가 표면화되지 않는다(조용히 무시)', async () => {
+  test('공유가 reject 돼도 예외가 표면화되지 않는다(텍스트 폴백, 조용히 무시)', async () => {
     shareSpy.mockRejectedValue(new Error('user dismissed / native failure'));
     let renderer!: ReactTestRenderer.ReactTestRenderer;
     await act(async () => {
@@ -162,15 +150,11 @@ describe('HistoryScreen 카드 공유(이미지) 버튼', () => {
     const root = renderer.root;
 
     await openDetail(root, 'Pegasus 41');
+    await openPicker(root);
 
     await expect(
       (async () => {
-        await act(async () => {
-          byLabel(root, '공유').props.onPress();
-        });
-        await act(async () => {
-          tapAlert(alertSpy, '공유 시트로');
-        });
+        await act(async () => { byTestId(root, 'sharecard-share').props.onPress(); });
         await flush();
       })(),
     ).resolves.toBeUndefined();

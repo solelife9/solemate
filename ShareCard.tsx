@@ -49,6 +49,8 @@ export interface ShareCardProps {
   textScale?: number;
   /** 지도 크기 배율(사용자 조절). */
   mapScale?: number;
+  /** 표시 폭(미리보기용) — 지정 시 viewBox로 축소 렌더. 미지정=실제 캔버스(캡처용 고해상). */
+  displayWidth?: number;
 }
 
 const ShareCard = React.forwardRef<unknown, ShareCardProps>((props, ref) => {
@@ -61,9 +63,13 @@ const ShareCard = React.forwardRef<unknown, ShareCardProps>((props, ref) => {
     background = 'transparent',
     textScale = 1,
     mapScale = 1,
+    displayWidth,
   } = props;
 
   const {w: W, h: H} = runCardDimensions(format);
+  // 표시 크기 — 미리보기면 축소, 아니면 실제 캔버스(고해상 캡처). viewBox로 좌표 보존.
+  const dispW = displayWidth && displayWidth > 0 ? Math.round(displayWidth) : W;
+  const dispH = Math.round((dispW * H) / W);
   const el = runCardElements(template);
   const tScale = clampRunCardScale(textScale);
   const mScale = clampRunCardScale(mapScale);
@@ -135,7 +141,7 @@ const ShareCard = React.forwardRef<unknown, ShareCardProps>((props, ref) => {
   const wordmarkSize = Math.round(62 * tScale);
 
   return (
-    <Svg ref={ref as never} width={W} height={H}>
+    <Svg ref={ref as never} width={dispW} height={dispH} viewBox={`0 0 ${W} ${H}`}>
       <Defs>
         <RadialGradient id="kg-dark" cx="50%" cy="12%" r="95%">
           <Stop offset="0" stopColor="#17110B" />

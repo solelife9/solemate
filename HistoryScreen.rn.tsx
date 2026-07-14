@@ -26,10 +26,10 @@ import { parseRoute, LatLon } from './lib/route';
 import { CourseMap } from './CourseMap';
 import { RunSplits, Split } from './RunSplits';
 import { buildSplits } from './lib/splits';
-import { buildShareCardModel, shareRunCard, saveCardToLibrary, SvgCapturable } from './lib/shareCard';
+import { buildShareCardModel } from './lib/shareCard';
 import { exportGpx } from './lib/gpx';
 import { maskDuration, maskDate, validateRunForm, type RunFormErrors } from './lib/inputMask';
-import ShareCard from './ShareCard';
+import ShareCardPicker from './ShareCardPicker';
 
 // ── manual-run / edit form helpers ──────────────────────────────────────────
 // 소요 시간 입력은 'MM:SS'·'H:MM:SS'(또는 분 단위 숫자)를 초로 변환한다. 빈 값/파싱 불가 → 0.
@@ -460,20 +460,9 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'm
   };
   // 공유 카드는 배경 없는 투명 PNG(스트라바 방식) — 사진앱에 저장 후, 인스타 스토리에서
   // 사용자가 자기 사진 위에 스티커로 얹는다. '공유 시트로'는 RN Share 폴백(캡처 실패 시 텍스트).
-  const cardRef = useRef<SvgCapturable | null>(null);
   const cardModel = buildShareCardModel(shareInput);
-  const doShare = () => shareRunCard(cardRef, shareInput);
-  const saveCard = async () => {
-    const r = await saveCardToLibrary(cardRef);
-    if (r.ok) {
-      Alert.alert('사진앱에 저장됐어요', '인스타 스토리에서 내 사진을 고른 뒤, 사진/스티커로 이 카드를 올리면 돼요.');
-    } else if (r.reason === 'denied') {
-      Alert.alert('사진 접근 권한이 필요해요', '설정에서 사진 추가 권한을 허용해 주세요.');
-    } else {
-      console.log('card save error', r.reason);
-      Alert.alert('저장하지 못했어요', '잠시 후 다시 시도해 주세요.');
-    }
-  };
+  // 공유 = 선택기 시트(여러 템플릿·포맷·배경·크기). 저장/공유는 선택기가 담당한다.
+  const [shareOpen, setShareOpen] = useState(false);
   // GPX 내보내기(2026-07-05) — 경로가 있을 때만 옵션 노출. '내 데이터는 내 것'
   // (가민/스트라바 이관·아카이빙). exportGpx 는 no-throw — 사유만 안내한다.
   // GPX 내보내기(2026-07-05) — 감정적 공유(사진·완성본)와 데이터 이관은 서로 다른 의도라
@@ -486,14 +475,7 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'm
     if (!r.ok && r.reason === 'no_route') Alert.alert('내보낼 코스가 없어요', 'GPS로 기록된 러닝만 GPX로 내보낼 수 있어요.');
     else if (!r.ok) Alert.alert('내보내지 못했어요', '잠시 후 다시 시도해 주세요.');
   };
-  const onShareCard = () => {
-    const opts: any[] = [
-      { text: '사진앱에 저장', onPress: saveCard },
-      { text: '공유 시트로', onPress: doShare },
-    ];
-    opts.push({ text: '취소', style: 'cancel' });
-    Alert.alert('러닝 공유', '투명 카드는 인스타 스토리용, GPX는 다른 앱으로 코스를 옮길 때 써요.', opts);
-  };
+  const onShareCard = () => setShareOpen(true);
   // 삭제는 확인 Alert로 보호한다(파괴 방지). 삭제 시 신발 사용거리도 줄어듦을 안내한다.
   const confirmDelete = () => {
     Alert.alert(
@@ -527,7 +509,7 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'm
       <View style={[s.nav, s.navRow]}>
         <Pressable onPress={onBack} hitSlop={6} accessibilityRole="button" accessibilityLabel="뒤로" style={s.iconBtn}><Ionicons name="chevron-back" size={ri(20)} color={T1} /></Pressable>
         <View style={s.navActions}>
-          <Pressable onPress={onShareCard} hitSlop={6} style={s.iconBtn} accessibilityRole="button" accessibilityLabel="공유">
+          <Pressable onPress={onShareCard} hitSlop={6} style={s.iconBtn} accessibilityRole="button" accessibilityLabel="공유" testID="detail-share">
             <Ionicons name="share-outline" size={ri(18)} color={ACCENT} />
           </Pressable>
           {!!onDelete && (
@@ -776,11 +758,8 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'm
           </Pressable>
         )}
       </ScrollView>
-      {/* 공유 카드: 화면 밖(off-screen)에 마운트해 toDataURL 캡처 대상으로만 쓴다.
-          pointerEvents none + 음수 위치라 사용자에겐 보이지 않지만 레이아웃은 된다. */}
-      <View style={s.offscreen} pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-        <ShareCard ref={cardRef} model={cardModel} route={route} />
-      </View>
+      {/* 공유 카드 선택기 — 공유 버튼으로 열린다(여러 템플릿·포맷·배경·크기). */}
+      <ShareCardPicker visible={shareOpen} onClose={() => setShareOpen(false)} model={cardModel} route={route} shareInput={shareInput} />
     </View>
     </SwipeBack>
   );
