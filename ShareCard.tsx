@@ -1,37 +1,31 @@
 // ============================================================================
-// ShareCard.tsx — 런 기록 공유 카드(이미지) · 투명 오버레이(스트라바 방식)
+// ShareCard.tsx — 런 기록 공유 카드(이미지) · 템플릿 구동(선택기용)
 // ----------------------------------------------------------------------------
-// 배경 없이(투명) GPS 경로(START/피니시 깃발) + 가로 스탯 그리드(거리/페이스/시간) +
-// 하단 KEEGO 워드마크만 그린 세로형 카드. 사용자가 사진앱에 저장한 뒤 인스타 스토리에서
-// 자기 사진 위에 스티커로 얹는다(우리는 배경 사진을 다루지 않는다). react-native-svg
-// 만으로 그려 부모가 ref.toDataURL()로 투명 PNG 를 얻어 공유한다(lib/shareCard). 네이티브 0.
+// 사용자는 공유 시 여러 템플릿을 넘겨보며 고른다(lib/shareCard 의 registry가 단일 진실원).
+// 기본은 '투명 스티커'(배경 없음) — 러너가 인스타에 자기 사진을 올린 뒤 그 위에 이 카드를
+// 얹어 크기를 조절한다. background='dark' 면 다크+파파야 경로의 '완성본'(카톡 등 직접 공유용).
+// photoUri 가 오면(리캡 '오늘의 한 컷' 완성본) 사진을 배경으로 깐다.
 //
-// 색은 theme 토큰만 사용(raw hex 0) — 투명도는 *Opacity prop 으로 표현한다.
+// react-native-svg 만으로 그려 부모가 ref.toDataURL()로 PNG 를 얻어 공유한다(네이티브 0).
+// 색은 theme 토큰만(raw hex 0). 폰트는 카드 전용 CF(Helvetica Neue/시스템 산세).
 // ============================================================================
 import React from 'react';
-import { rs } from './lib/responsive';
-import Svg, {Rect, Path, Circle, Text as SvgText, G, Image as SvgImage} from 'react-native-svg';
-import {ACCENT, T1} from './theme';
-
-// [실험] 공유 카드 전용 폰트 — 레퍼런스(STEP STEP)의 깔끔한 네오-그로테스크 느낌.
-// iOS 내장 Helvetica Neue(번들 0). Android 는 미보유 → 시스템 산세(Roboto)로 폴백.
+import Svg, {Rect, Path, Circle, Text as SvgText, G, Image as SvgImage, Defs, RadialGradient, Stop, LinearGradient} from 'react-native-svg';
+import {ACCENT, T1, RING_ACCENT, BG} from './theme';
 import {WORDMARK_FONT} from './primitives';
 const CF = WORDMARK_FONT;
 import {projectRoute, LatLon, ScreenPoint} from './lib/route';
-import {ShareCardModel} from './lib/shareCard';
+import {
+  ShareCardModel,
+  runCardDimensions,
+  runCardElements,
+  clampRunCardScale,
+  type RunCardTemplate,
+  type RunCardFormat,
+  type RunCardBackground,
+} from './lib/shareCard';
 
-// 1080×1350 세로형 — 인스타 피드/스토리에 드라마틱하게 맞는 4:5 비율.
-export const CARD_W = 1080;
-export const CARD_H = 1350;
-
-// GPS 경로 히어로 박스(상단 중앙). projectRoute 가 [0,w]×[0,h]로 투영 → <G>로 평행이동.
-const ROUTE_BOX = 600;
-const ROUTE_X = (CARD_W - ROUTE_BOX) / 2;
-const ROUTE_Y = 130;
-export const ROUTE_BAND_BOTTOM = ROUTE_Y + ROUTE_BOX; // 730
-// 가로 스탯 그리드 y(라벨/값). 경로 밴드 아래.
-export const STATS_LABEL_Y = 942;
-const STATS_VALUE_Y = 1018;
+// 폭 1080 고정 — 높이는 포맷(피드 4:5 / 세로형 9:16)에 따라 registry(runCardDimensions)가 준다.
 
 function pointsToPath(points: ScreenPoint[]): string {
   if (points.length < 2) return '';
@@ -43,75 +37,157 @@ export interface ShareCardProps {
   model: ShareCardModel;
   /** 기록된 GPS 경로(없거나 2점 미만이면 경로 생략). */
   route?: LatLon[];
-  /** 오늘의 한 컷(2026-07-05) — 있으면 사진을 배경으로 깔고 스탯을 얹은 '완성본'
-      카드가 된다(스트라바 방식). 없으면 기존 투명 스티커 그대로. */
+  /** 완성본(리캡 '오늘의 한 컷') — 있으면 사진을 배경으로 깔고 스탯을 얹는다. */
   photoUri?: string | null;
+  /** 담을 요소(지도·지표·히어로). 기본 클래식(지도+D/P/T). */
+  template?: RunCardTemplate;
+  /** 피드(4:5) / 세로형 스토리(9:16). 기본 피드. */
+  format?: RunCardFormat;
+  /** 투명(기본, 사진 위 오버레이) / 다크(완성본). photoUri 있으면 무시. */
+  background?: RunCardBackground;
+  /** 글씨 크기 배율(사용자 조절). */
+  textScale?: number;
+  /** 지도 크기 배율(사용자 조절). */
+  mapScale?: number;
 }
 
-const ShareCard = React.forwardRef<unknown, ShareCardProps>(({model, route = [], photoUri = null}, ref) => {
-  const proj = projectRoute(route, {width: ROUTE_BOX, height: ROUTE_BOX, padding: rs(76)});
+const ShareCard = React.forwardRef<unknown, ShareCardProps>((props, ref) => {
+  const {
+    model,
+    route = [],
+    photoUri = null,
+    template = 'classic',
+    format = 'feed',
+    background = 'transparent',
+    textScale = 1,
+    mapScale = 1,
+  } = props;
+
+  const {w: W, h: H} = runCardDimensions(format);
+  const el = runCardElements(template);
+  const tScale = clampRunCardScale(textScale);
+  const mScale = clampRunCardScale(mapScale);
+
+  const isPhoto = !!photoUri;
+  const isDark = background === 'dark' && !isPhoto;
+  // 투명·사진 위에선 흰색이 어떤 배경에도 읽힌다. 다크 완성본에선 파파야 경로가 브랜드 서명.
+  const routeColor = isDark ? RING_ACCENT : ACCENT;
+  const wordmarkColor = isDark ? RING_ACCENT : T1;
+  const ink = T1;
+
+  const PADX = 72;
+
+  // ── 세로 배치(비율 기반 — 피드·세로형 모두 대응) ──────────────────────────
+  const shoeY = Math.round(H * 0.085);
+  const wordmarkY = Math.round(H - H * 0.07);
+  // 스탯 행: 라벨(위) + 값(아래), 워드마크 위에 앵커.
+  const statsValueY = Math.round(H - H * 0.115);
+  const statsLabelY = statsValueY - Math.round(70 * tScale);
+  // 히어로 거리(있으면): 지도가 있으면 상단, 없으면(미니멀) 중앙 근처.
+  const heroBaselineY = el.map ? Math.round(H * 0.30) : Math.round(H * 0.46);
+
+  // 지도 박스 — 히어로/스탯 유무에 따라 남는 세로 영역 중앙에 정사각으로.
+  const mapTop = el.heroDistance ? Math.round(H * 0.36) : Math.round(H * 0.15);
+  const mapBottom = el.statsRow ? statsLabelY - Math.round(H * 0.03) : wordmarkY - Math.round(H * 0.04);
+  const availH = Math.max(0, mapBottom - mapTop);
+  const boxBase = Math.min(W - PADX * 2, availH);
+  const box = Math.max(220, Math.round(boxBase * mScale));
+  const mapX = Math.round((W - box) / 2);
+  const mapY = Math.round(mapTop + (availH - box) / 2);
+
+  const proj = el.map ? projectRoute(route, {width: box, height: box, padding: Math.round(box * 0.13)}) : {points: [] as ScreenPoint[]};
   const pathD = pointsToPath(proj.points);
+  const hasMap = el.map && pathD !== '';
   const start = proj.points[0];
   const end = proj.points[proj.points.length - 1];
-  const hasMap = pathD !== '';
 
-  // 가로 스탯 그리드: 거리 + model.stats(페이스/시간). 균등 분할(중앙 정렬 칼럼).
-  const stats = [{label: 'DISTANCE', value: `${model.distance} ${model.unit}`}, ...model.stats];
-  // 가운데로 살짝 모음 — 전체 폭이 아니라 86%만 점유(양 끝 여백 ↑).
-  const span = CARD_W * 0.86;
-  const x0 = (CARD_W - span) / 2;
-  const slot = span / stats.length;
+  // 스탯 셀 — 히어로가 거리를 크게 보이면 거리 칸 제외(중복 방지).
+  const statCells = [
+    ...(el.statsIncludeDistance ? [{label: 'DISTANCE', value: `${model.distance} ${model.unit}`}] : []),
+    ...model.stats,
+  ];
+  const span = W * 0.86;
+  const x0 = (W - span) / 2;
+  const slot = statCells.length > 0 ? span / statCells.length : span;
 
-  // 도착 깃발 — 주황 체커보드(5열×3행 → 교차 칸이 행당 3·2·3 = '셋 둘 셋'). 빈 칸은 배경 비침.
+  // 도착 깃발 — 주황 체커(교차 칸). 빈 칸은 배경 비침.
   const finishFlag = (cx: number, cy: number) => {
-    const u = 8;
-    const cols = 5;
-    const rows = 3;
+    const u = Math.round(8 * (box / 600)); // 지도 크기에 비례
+    const cols = 5, rows = 3;
     const ox = cx - (cols * u) / 2;
     const oy = cy - (rows * u) / 2;
     const cells: React.ReactNode[] = [];
     for (let gy = 0; gy < rows; gy++) {
       for (let gx = 0; gx < cols; gx++) {
         if ((gx + gy) % 2 === 0) {
-          cells.push(<Rect key={`${gx}-${gy}`} x={ox + gx * u} y={oy + gy * u} width={u} height={u} fill={ACCENT} />);
+          cells.push(<Rect key={`${gx}-${gy}`} x={ox + gx * u} y={oy + gy * u} width={u} height={u} fill={routeColor} />);
         }
       }
     }
     return <G>{cells}</G>;
   };
 
+  const heroSize = Math.round((el.map ? 150 : 200) * tScale);
+  const heroUnitSize = Math.round(52 * tScale);
+  const shoeSize = Math.round(36 * tScale);
+  const statLabelSize = Math.round(31 * tScale);
+  const statValueSize = Math.round(64 * tScale);
+  const wordmarkSize = Math.round(62 * tScale);
+
   return (
-    <Svg ref={ref as never} width={CARD_W} height={CARD_H}>
-      {/* 기본은 배경 없음(투명 스티커 — 인스타에서 내 사진 위에). photoUri 가 있으면
-          한 컷을 cover 로 깔고 아래쪽 스크림으로 스탯 가독성을 지킨다(완성본 모드). */}
-      {!!photoUri && (
+    <Svg ref={ref as never} width={W} height={H}>
+      <Defs>
+        <RadialGradient id="kg-dark" cx="50%" cy="12%" r="95%">
+          <Stop offset="0" stopColor="#17110B" />
+          <Stop offset="0.55" stopColor="#0B0B0C" />
+          <Stop offset="1" stopColor="#070707" />
+        </RadialGradient>
+        <LinearGradient id="kg-route" x1="0" y1="1" x2="1" y2="0">
+          <Stop offset="0" stopColor="#FFB458" />
+          <Stop offset="1" stopColor="#E56600" />
+        </LinearGradient>
+      </Defs>
+
+      {/* 배경 — 다크 완성본이면 라디얼 다크, 사진이면 사진+스크림, 투명이면 없음. */}
+      {isDark && <Rect x={0} y={0} width={W} height={H} fill="url(#kg-dark)" />}
+      {isPhoto && (
         <G>
-          <SvgImage href={{uri: photoUri}} x={0} y={0} width={CARD_W} height={CARD_H} preserveAspectRatio="xMidYMid slice" />
-          <Rect x={0} y={0} width={CARD_W} height={220} fill="#000" fillOpacity={0.25} />
-          <Rect x={0} y={CARD_H - 560} width={CARD_W} height={560} fill="#000" fillOpacity={0.38} />
+          <SvgImage href={{uri: photoUri as string}} x={0} y={0} width={W} height={H} preserveAspectRatio="xMidYMid slice" />
+          <Rect x={0} y={0} width={W} height={Math.round(H * 0.16)} fill={BG} fillOpacity={0.25} />
+          <Rect x={0} y={H - Math.round(H * 0.42)} width={W} height={Math.round(H * 0.42)} fill={BG} fillOpacity={0.4} />
         </G>
       )}
 
-      {/* 좌상단: 달린 러닝화 이름(날짜는 표시하지 않음) */}
+      {/* 좌상단: 신발명(날짜는 표시 안 함) */}
       {!!model.shoe && (
-        <SvgText x={72} y={112} fill={T1} fillOpacity={0.92} fontFamily={CF} fontSize={36} fontWeight="700">
+        <SvgText x={PADX} y={shoeY} fill={ink} fillOpacity={0.92} fontFamily={CF} fontSize={shoeSize} fontWeight="700">
           {model.shoe}
         </SvgText>
       )}
 
-      {/* GPS 경로 히어로 — 빛나는 오렌지(글로우 레이어 + 샤프) + START/피니시 마커 */}
+      {/* 히어로 거리(미니멀·히어로) — 거대 숫자 + 단위 */}
+      {el.heroDistance && (
+        <G>
+          <SvgText x={PADX} y={heroBaselineY} fill={ink} fontFamily={CF} fontSize={heroSize} fontWeight="800" letterSpacing={-4}>
+            {model.distance}
+          </SvgText>
+          <SvgText x={PADX + 8} y={heroBaselineY + Math.round(heroUnitSize * 0.9)} fill={ink} fillOpacity={0.7} fontFamily={CF} fontSize={heroUnitSize} fontWeight="700">
+            {model.unit}
+          </SvgText>
+        </G>
+      )}
+
+      {/* GPS 경로 — 글로우 한 겹 + 샤프 + START/피니시 마커 */}
       {hasMap && (
-        <G transform={`translate(${ROUTE_X}, ${ROUTE_Y})`}>
-          {/* 은은한 글로우 한 겹 + 깔끔한 한 줄(과한 발광 제거) */}
-          <Path d={pathD} fill="none" stroke={ACCENT} strokeOpacity={0.12} strokeWidth={16} strokeLinecap="round" strokeLinejoin="round" />
-          <Path d={pathD} fill="none" stroke={ACCENT} strokeWidth={7} strokeLinecap="round" strokeLinejoin="round" />
-          {/* 도착점: 작은 주황 점 / 시작점: START 라벨 + 주황 체커 깃발 */}
-          {!!end && <Circle cx={end.x} cy={end.y} r={9} fill={ACCENT} />}
+        <G transform={`translate(${mapX}, ${mapY})`}>
+          <Path d={pathD} fill="none" stroke={routeColor} strokeOpacity={0.14} strokeWidth={Math.round(16 * (box / 600))} strokeLinecap="round" strokeLinejoin="round" />
+          <Path d={pathD} fill="none" stroke={isDark ? 'url(#kg-route)' : routeColor} strokeWidth={Math.round(7 * (box / 600))} strokeLinecap="round" strokeLinejoin="round" />
+          {!!end && <Circle cx={end.x} cy={end.y} r={Math.round(9 * (box / 600))} fill={routeColor} />}
           {!!start && (
             <G>
-              <Circle cx={start.x} cy={start.y} r={12} fill={T1} stroke={ACCENT} strokeWidth={5} />
-              {finishFlag(start.x + 42, start.y - 28)}
-              <SvgText x={start.x - 6} y={start.y - 24} fill={T1} fillOpacity={0.9} fontFamily={CF} fontSize={26} fontWeight="700" letterSpacing={3} textAnchor="end">
+              <Circle cx={start.x} cy={start.y} r={Math.round(12 * (box / 600))} fill={ink} stroke={routeColor} strokeWidth={Math.round(5 * (box / 600))} />
+              {finishFlag(start.x + Math.round(42 * (box / 600)), start.y - Math.round(28 * (box / 600)))}
+              <SvgText x={start.x - Math.round(6 * (box / 600))} y={start.y - Math.round(24 * (box / 600))} fill={ink} fillOpacity={0.9} fontFamily={CF} fontSize={Math.round(26 * (box / 600))} fontWeight="700" letterSpacing={3} textAnchor="end">
                 START
               </SvgText>
             </G>
@@ -119,24 +195,23 @@ const ShareCard = React.forwardRef<unknown, ShareCardProps>(({model, route = [],
         </G>
       )}
 
-      {/* 가로 스탯 그리드(DISTANCE / PACE / TIME) — 라벨 위·값 아래 */}
-      {stats.map((s, i) => {
+      {/* 가로 스탯 그리드 — 라벨(위)·값(아래) */}
+      {el.statsRow && statCells.map((s, i) => {
         const cx = x0 + slot * i + slot / 2;
         return (
           <G key={s.label}>
-            <SvgText x={cx} y={STATS_LABEL_Y} fill={T1} fillOpacity={0.85} fontFamily={CF} fontSize={31} fontWeight="700" letterSpacing={2} textAnchor="middle">
+            <SvgText x={cx} y={statsLabelY} fill={ink} fillOpacity={0.85} fontFamily={CF} fontSize={statLabelSize} fontWeight="700" letterSpacing={2} textAnchor="middle">
               {s.label.toUpperCase()}
             </SvgText>
-            <SvgText x={cx} y={STATS_VALUE_Y} fill={T1} fontFamily={CF} fontSize={64} fontWeight="800" letterSpacing={-0.5} textAnchor="middle">
+            <SvgText x={cx} y={statsValueY} fill={ink} fontFamily={CF} fontSize={statValueSize} fontWeight="800" letterSpacing={-0.5} textAnchor="middle">
               {s.value}
             </SvgText>
           </G>
         );
       })}
 
-      {/* 하단: keego 워드마크 — Helvetica Neue Medium 소문자 흰색(2026-07-04 B안 확정).
-          사진 위에 얹히는 카드라 스탯과 같은 흰색으로 통일해 서명처럼 찍힌다. */}
-      <SvgText x={CARD_W / 2} y={CARD_H - 96} fill={T1} fontFamily={CF} fontWeight="500" fontSize={62} letterSpacing={-0.5} textAnchor="middle">
+      {/* 하단: keego 워드마크 — 투명·사진 위엔 흰색, 다크 완성본엔 파파야. */}
+      <SvgText x={W / 2} y={wordmarkY} fill={wordmarkColor} fontFamily={CF} fontWeight="500" fontSize={wordmarkSize} letterSpacing={-0.5} textAnchor="middle">
         {model.brand.toLowerCase()}
       </SvgText>
     </Svg>

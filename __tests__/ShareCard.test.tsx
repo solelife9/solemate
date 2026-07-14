@@ -14,8 +14,8 @@
 
 import React from 'react';
 import ReactTestRenderer, {act} from 'react-test-renderer';
-import ShareCard, {ROUTE_BAND_BOTTOM} from '../ShareCard';
-import {buildShareCardModel} from '../lib/shareCard';
+import ShareCard from '../ShareCard';
+import {buildShareCardModel, runCardDimensions} from '../lib/shareCard';
 
 const ROUTE = [
   {lat: 37.5665, lon: 126.978},
@@ -82,10 +82,11 @@ describe('ShareCard render', () => {
     const statTexts = ['DISTANCE', 'PACE', 'TIME', "5'02\" /km", '40:41'];
     const statNodes = textNodesOf(renderer.root).filter(n => statTexts.includes(textOf(n)));
     expect(statNodes.length).toBeGreaterThanOrEqual(5);
+    // 클래식(피드 1350) — 스탯은 하단(지도 밴드 아래)에 앵커된다(겹치지 않음).
     for (const node of statNodes) {
       const y: number = node.props.y;
       expect(typeof y).toBe('number');
-      expect(y).toBeGreaterThan(ROUTE_BAND_BOTTOM); // 경로 밴드 아래(겹치지 않음)
+      expect(y).toBeGreaterThan(1000);
     }
   });
 
@@ -130,5 +131,73 @@ describe('ShareCard render', () => {
     });
     expect(ref.current).toBeTruthy();
     expect(typeof ref.current.toDataURL).toBe('function');
+  });
+});
+
+function svgOf(root: ReactTestRenderer.ReactTestInstance) {
+  return root.findAll((n: any) => n && n.type && n.type.displayName === 'Svg')[0];
+}
+function rectsOf(root: ReactTestRenderer.ReactTestInstance) {
+  return root.findAll((n: any) => n && n.type && n.type.displayName === 'Rect');
+}
+function render(props: any) {
+  let r!: ReactTestRenderer.ReactTestRenderer;
+  act(() => { r = ReactTestRenderer.create(<ShareCard model={MODEL} {...props} />); });
+  return r;
+}
+
+describe('ShareCard 템플릿·포맷·배경', () => {
+  test('미니멀 — 지도·스탯 없이 거대 거리만(경로 Path 없음, 스탯 라벨 없음)', () => {
+    const r = render({route: ROUTE, template: 'minimal'});
+    const txt = textOf(r.root);
+    expect(txt).toContain('5.20');       // 거대 거리
+    expect(txt).not.toContain('DISTANCE');
+    expect(txt).not.toContain('PACE');
+    expect(txt).not.toContain('START');  // 지도 없음
+    expect(pathsOf(r.root)).toHaveLength(0);
+  });
+
+  test('지도(route 템플릿) — 지도만, 지표(PACE/TIME) 없음', () => {
+    const r = render({route: ROUTE, template: 'route'});
+    const txt = textOf(r.root);
+    expect(pathsOf(r.root)).toHaveLength(2); // 지도 있음
+    expect(txt).toContain('START');
+    expect(txt).not.toContain('PACE');
+    expect(txt).not.toContain('DISTANCE');
+  });
+
+  test('스탯 템플릿 — 지도 없이 D/P/T', () => {
+    const r = render({route: ROUTE, template: 'stats'});
+    const txt = textOf(r.root);
+    expect(pathsOf(r.root)).toHaveLength(0); // 지도 off
+    expect(txt).toContain('DISTANCE');
+    expect(txt).toContain('PACE');
+    expect(txt).toContain('TIME');
+  });
+
+  test('히어로 — 거대 거리 + 지도, 스탯 행은 거리 제외(중복 방지)', () => {
+    const r = render({route: ROUTE, template: 'hero'});
+    const txt = textOf(r.root);
+    expect(txt).toContain('5.20');       // 히어로 거리
+    expect(pathsOf(r.root)).toHaveLength(2); // 지도
+    expect(txt).toContain('PACE');
+    expect(txt).toContain('TIME');
+    expect(txt).not.toContain('DISTANCE'); // 거리 라벨은 스탯 행에서 빠짐
+  });
+
+  test('세로형(story) — 캔버스 높이 9:16', () => {
+    const r = render({route: ROUTE, format: 'story'});
+    const svg = svgOf(r.root);
+    expect(svg.props.height).toBe(runCardDimensions('story').h); // 1920
+    expect(svg.props.width).toBe(1080);
+  });
+
+  test('다크 배경 — 배경 Rect(라디얼) 채움이 그려진다', () => {
+    const dark = rectsOf(render({route: ROUTE, background: 'dark'}).root)
+      .some((n: any) => n.props.fill === 'url(#kg-dark)');
+    const transparent = rectsOf(render({route: ROUTE, background: 'transparent'}).root)
+      .some((n: any) => n.props.fill === 'url(#kg-dark)');
+    expect(dark).toBe(true);        // 다크 = 배경 채움 있음
+    expect(transparent).toBe(false); // 투명 = 배경 없음
   });
 });
