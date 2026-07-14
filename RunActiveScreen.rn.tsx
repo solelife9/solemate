@@ -453,7 +453,7 @@ export default function RunActiveScreen({
                   maxWidth 를 준다. 짧은 '0.00'(≈197)은 그대로 최대 크기, 넓은 '00:00'(≈258)·
                   긴 시간('1:02:33')·40km+ 거리('42.19')만 자동 축소돼 링에 닿지 않는다.
                   (너비 상한이 없으면 adjustsFontSizeToFit 이 줄일 기준이 없어 꽉 차 링을 침범.) */}
-              <Text style={[r.bigDist, { maxWidth: ri(204) }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.5}>
+              <Text style={[r.bigDist, { maxWidth: ri(214) }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.5}>
                 {timeGoal ? timeLabel : distanceKm.toFixed(2)}
               </Text>
               {/* 단위는 absolute — 센터 계산에서 제외해 '숫자'가 링의 정중앙에 온다. */}
@@ -677,7 +677,10 @@ const r = StyleSheet.create({
   goalBelow: { position: 'absolute', top: '100%' },
   goalMet: { flexDirection: 'row', alignItems: 'center', gap: rv(4), marginTop: rv(14) },
   goalMetText: { color: GOOD, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '700', letterSpacing: 0.6 },
-  bigDist: { color: T1, fontFamily: NUM, fontSize: rf(104), fontWeight: '500', letterSpacing: -4, lineHeight: rf(106), includeFontPadding: false, fontVariant: ['tabular-nums'] },
+  // Jost(NUM)는 Pretendard 보다 세로 메트릭(어센더)이 커서 lineHeight 를 fontSize 에 붙이면
+  // 숫자 위가 라인박스에 잘린다 → lineHeight 를 넉넉히(≈1.22×) 줘 어센더를 담는다. 자간은
+  // Jost 기본 사이드베어링이 좁지 않아 -4 면 0 끼리 붙어 보인다 → -1 로 완화(숫자 사이 숨).
+  bigDist: { color: T1, fontFamily: NUM, fontSize: rf(104), fontWeight: '500', letterSpacing: -1, lineHeight: rf(127), includeFontPadding: false, fontVariant: ['tabular-nums'] },
   bigUnit: { color: withAlpha(T1, 0.62), fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600', letterSpacing: 0.8, marginTop: rv(16) },
   // 일시정지 하단 헤드 — 링 없이 거리 히어로 + 목표를, 지도 위·하단 지표 위에 얹는다.
   pausedGoal: { color: withAlpha(T1, 0.62), fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '700', letterSpacing: 0.8, marginTop: rv(8) },
