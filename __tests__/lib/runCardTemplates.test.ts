@@ -37,6 +37,7 @@ describe('RUN_CARD_TEMPLATES (순서·라벨)', () => {
     expect(RUN_CARD_FORMAT_LABEL.story).toBe('세로형');
     expect(RUN_CARD_BACKGROUND_LABEL.transparent).toBe('투명');
     expect(RUN_CARD_BACKGROUND_LABEL.dark).toBe('다크');
+    expect(RUN_CARD_BACKGROUND_LABEL.photo).toBe('사진');
   });
 });
 

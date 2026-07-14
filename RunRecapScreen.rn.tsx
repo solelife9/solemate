@@ -20,8 +20,8 @@ import {pickPhotoWithPermission} from './lib/photo';
 import {Unit, kmToDisplay, displayNum} from './lib/units';
 import {parseRoute} from './lib/route';
 import {CourseMap} from './CourseMap';
-import ShareCard from './ShareCard';
-import {buildShareCardModel, shareRunCard, saveCardToLibrary, type SvgCapturable} from './lib/shareCard';
+import ShareCardPicker from './ShareCardPicker';
+import {buildShareCardModel} from './lib/shareCard';
 
 // ════════════════════════════════════════════════════════════════════════════
 // 진입 시그니처 모션(태스크 #10) — 완주 순간의 감정 시퀀스.
@@ -224,9 +224,8 @@ export default function RunRecapScreen({
   };
   // 코스 지도 — 경로 blob 파싱(수동 기록/GPS 실패면 [] → 지도 스스로 숨김).
   const routePoints = useMemo(() => parseRoute(route), [route]);
-  // SNS 공유 — 상세(RunDetail)와 동일한 투명 러닝 카드(스트라바 방식) 파이프라인 재사용.
-  const cardRef = useRef<SvgCapturable | null>(null);
-  const photoCardRef = useRef<SvgCapturable | null>(null);
+  // SNS 공유 — 여러 템플릿·포맷·배경·크기를 고르는 선택기. 오늘의 한 컷이 있으면 '사진' 배경도.
+  const [shareOpen, setShareOpen] = useState(false);
   const shareInput = {
     distKm: km,
     unit,
@@ -238,32 +237,7 @@ export default function RunRecapScreen({
     track: track && track.laps > 0 ? track : null,
   };
   const cardModel = buildShareCardModel(shareInput);
-  const onShare = () => {
-    if (photoUri) {
-      // 한 컷이 있으면 완성본(사진+카드)이 기본 — 수동으로 얹을 필요가 없다(2026-07-05).
-      Alert.alert('러닝 카드 공유', '오늘의 한 컷 위에 기록이 얹힌 완성본으로 공유해요.', [
-        {text: '완성본 공유', onPress: () => void shareRunCard(photoCardRef, shareInput)},
-        {text: '투명 카드만 저장', onPress: async () => {
-          const r = await saveCardToLibrary(cardRef);
-          if (r.ok) Alert.alert('사진앱에 저장됐어요', '인스타 스토리에서 내 사진을 고른 뒤, 스티커로 이 카드를 올리면 돼요.');
-          else if (r.reason === 'denied') Alert.alert('사진 접근 권한이 필요해요', '설정에서 사진 추가 권한을 허용해 주세요.');
-          else { console.log('card save error', r.reason); Alert.alert('저장하지 못했어요', '잠시 후 다시 시도해 주세요.'); }
-        }},
-        {text: '취소', style: 'cancel'},
-      ]);
-      return;
-    }
-    Alert.alert('러닝 카드 공유', '투명 카드를 사진앱에 저장해, 인스타 스토리에서 내 사진 위에 올리세요.', [
-      {text: '사진앱에 저장', onPress: async () => {
-        const r = await saveCardToLibrary(cardRef);
-        if (r.ok) Alert.alert('사진앱에 저장됐어요', '인스타 스토리에서 내 사진을 고른 뒤, 스티커로 이 카드를 올리면 돼요.');
-        else if (r.reason === 'denied') Alert.alert('사진 접근 권한이 필요해요', '설정에서 사진 추가 권한을 허용해 주세요.');
-        else { console.log('card save error', r.reason); Alert.alert('저장하지 못했어요', '잠시 후 다시 시도해 주세요.'); }
-      }},
-      {text: '공유 시트로', onPress: () => void shareRunCard(cardRef, shareInput)},
-      {text: '취소', style: 'cancel'},
-    ]);
-  };
+  const onShare = () => setShareOpen(true);
   const closeWithMeta = () => { commitMemo(); onClose?.(); };
   return (
     <View style={[s.screen, {paddingTop: insets.top}]} testID="run-recap-screen">
@@ -459,12 +433,8 @@ export default function RunRecapScreen({
         )}
       </ScrollView>
 
-      {/* 공유 캡처용 오프스크린 러닝 카드(투명 PNG — 인스타 스토리 스티커 방식) */}
-      {/* (오늘의 한 컷/메모 섹션은 ScrollView 안에 렌더 — 아래 s.metaCard 참조) */}
-      <View style={s.offscreen} pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-        <ShareCard ref={cardRef as never} model={cardModel} route={routePoints} />
-        {!!photoUri && <ShareCard ref={photoCardRef as never} model={cardModel} route={routePoints} photoUri={photoUri} />}
-      </View>
+      {/* 공유 카드 선택기 — 공유 버튼으로 열린다. 오늘의 한 컷이 있으면 '사진' 배경도 제공. */}
+      <ShareCardPicker visible={shareOpen} onClose={() => setShareOpen(false)} model={cardModel} route={routePoints} shareInput={shareInput} photoUri={photoUri} />
 
       <View style={[s.footer, s.footerRow, {paddingBottom: insets.bottom + 10}]}>
         <Pressable onPress={onShare} accessibilityRole="button" accessibilityLabel="러닝 공유" testID="recap-share"
@@ -544,5 +514,4 @@ const s = StyleSheet.create({
   metaPhotoAdd: {flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(8), borderRadius: RADIUS.md, borderCurve: 'continuous', borderWidth: 1, borderColor: SEP, paddingVertical: rv(14)},
   metaPhotoAddTxt: {color: T2, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600'},
   metaInput: {color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, paddingVertical: rv(8), paddingHorizontal: rs(2), borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: SEP},
-  offscreen: {position: 'absolute', left: -10000, top: 0, opacity: 0},
 });

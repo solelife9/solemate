@@ -106,15 +106,17 @@ export const RUN_CARD_FORMAT_LABEL: Record<RunCardFormat, string> = {
   story: '세로형',
 };
 
-// 배경 — 두 공유 흐름을 모두 커버한다:
+// 배경 — 세 공유 흐름을 커버한다:
 //  · transparent(기본): 배경 없는 스티커. 인스타에 사진을 올리고 그 위에 얹는다(흰 글씨·경로).
 //  · dark(완성본): 다크 배경에 파파야 경로로 그 자체가 완성된 이미지. 인스타를 안 거치고
 //    카카오톡·문자 등으로 바로 공유하는 사람용.
-export type RunCardBackground = 'transparent' | 'dark';
+//  · photo(한 컷 완성본): 사용자가 방금 찍은 사진을 배경으로 카드를 합성. 사진이 있을 때만 노출.
+export type RunCardBackground = 'transparent' | 'dark' | 'photo';
 
 export const RUN_CARD_BACKGROUND_LABEL: Record<RunCardBackground, string> = {
   transparent: '투명',
   dark: '다크',
+  photo: '사진',
 };
 
 /** 캔버스 픽셀 크기(폭 1080 고정, 높이만 비율에 따라). feed=4:5, story=9:16. */

@@ -60,9 +60,11 @@ export interface ShareCardPickerProps {
   route?: LatLon[];
   /** 캡처 실패 시 텍스트 공유 폴백. */
   shareInput: RunShareInput;
+  /** 오늘의 한 컷(있으면 배경 옵션에 '사진'을 더해 완성본으로 합성). */
+  photoUri?: string | null;
 }
 
-export default function ShareCardPicker({visible, onClose, model, route = [], shareInput}: ShareCardPickerProps) {
+export default function ShareCardPicker({visible, onClose, model, route = [], shareInput, photoUri = null}: ShareCardPickerProps) {
   const insets = useSafeAreaInsets();
   const [prefs, setPrefs] = useState<Prefs>(DEFAULT_PREFS);
   const [busy, setBusy] = useState(false);
@@ -75,10 +77,12 @@ export default function ShareCardPicker({visible, onClose, model, route = [], sh
       if (!alive || !raw) return;
       try {
         const p = JSON.parse(raw) as Partial<Prefs>;
+        // 배경은 원문대로 복원 — 'photo'인데 사진이 없는 경우는 렌더에서 투명으로 폴백(effBg).
+        const bg: RunCardBackground = p.background === 'dark' ? 'dark' : p.background === 'photo' ? 'photo' : 'transparent';
         setPrefs({
           template: RUN_CARD_TEMPLATES.includes(p.template as RunCardTemplate) ? (p.template as RunCardTemplate) : 'classic',
           format: p.format === 'story' ? 'story' : 'feed',
-          background: p.background === 'dark' ? 'dark' : 'transparent',
+          background: bg,
           textScale: clampRunCardScale(Number(p.textScale)),
           mapScale: clampRunCardScale(Number(p.mapScale)),
         });
@@ -98,6 +102,11 @@ export default function ShareCardPicker({visible, onClose, model, route = [], sh
 
   const el = runCardElements(prefs.template);
   const mapEditable = el.map; // 지도 없는 템플릿은 '지도 크기' 비활성
+  // 배경 옵션 — 사진이 있으면 '사진'(완성본) 추가. 'photo' 선택 시에만 카드에 사진을 넣는다.
+  const bgKeys: RunCardBackground[] = photoUri ? ['transparent', 'dark', 'photo'] : ['transparent', 'dark'];
+  // 유효 배경 — 복원된 'photo'인데 사진이 없으면 투명으로 폴백. 렌더·토글·캡처가 모두 이 값을 쓴다.
+  const effBg: RunCardBackground = bgKeys.includes(prefs.background) ? prefs.background : 'transparent';
+  const cardPhoto = effBg === 'photo' ? photoUri : null;
 
   // 미리보기 폭 — 세로형(9:16)은 더 길어 폭을 줄여 높이를 맞춘다.
   const previewW = useMemo(() => (prefs.format === 'story' ? rs(206) : rs(268)), [prefs.format]);
@@ -140,9 +149,10 @@ export default function ShareCardPicker({visible, onClose, model, route = [], sh
             <ShareCard
               model={model}
               route={route}
+              photoUri={cardPhoto}
               template={prefs.template}
               format={prefs.format}
-              background={prefs.background}
+              background={effBg}
               textScale={prefs.textScale}
               mapScale={prefs.mapScale}
               displayWidth={previewW}
@@ -167,8 +177,8 @@ export default function ShareCardPicker({visible, onClose, model, route = [], sh
           <View style={s.toggleRow}>
             <Toggle label="포맷" options={(['feed', 'story'] as RunCardFormat[]).map(f => ({key: f, label: RUN_CARD_FORMAT_LABEL[f]}))}
               value={prefs.format} onChange={f => update({format: f as RunCardFormat})} />
-            <Toggle label="배경" options={(['transparent', 'dark'] as RunCardBackground[]).map(b => ({key: b, label: RUN_CARD_BACKGROUND_LABEL[b]}))}
-              value={prefs.background} onChange={b => update({background: b as RunCardBackground})} />
+            <Toggle label="배경" options={bgKeys.map(b => ({key: b, label: RUN_CARD_BACKGROUND_LABEL[b]}))}
+              value={effBg} onChange={b => update({background: b as RunCardBackground})} />
           </View>
 
           {/* 크기 조절 — 글씨 / 지도(지도 없는 템플릿은 비활성) */}
@@ -199,9 +209,10 @@ export default function ShareCardPicker({visible, onClose, model, route = [], sh
           ref={cardRef as never}
           model={model}
           route={route}
+          photoUri={cardPhoto}
           template={prefs.template}
           format={prefs.format}
-          background={prefs.background}
+          background={effBg}
           textScale={prefs.textScale}
           mapScale={prefs.mapScale}
         />
