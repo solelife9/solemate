@@ -117,6 +117,16 @@ describe('captureCardDataUrl (dataURL 생성 경로)', () => {
     };
     await expect(captureCardDataUrl(ref)).rejects.toThrow('native canvas exploded');
   });
+
+  test('toDataURL 콜백이 영영 안 오면 타임아웃으로 reject(무한 대기·공유 먹통 방지)', async () => {
+    const ref = {current: {toDataURL: () => {/* 콜백을 절대 부르지 않음 */}}};
+    await expect(captureCardDataUrl(ref, 10)).rejects.toThrow('timed out');
+  });
+
+  test('제때 온 콜백은 타임아웃 전에 정상 resolve(타이머 정리)', async () => {
+    const ref = {current: {toDataURL: (cb: (b: string) => void) => cb('OK')}};
+    await expect(captureCardDataUrl(ref, 10)).resolves.toBe('data:image/png;base64,OK');
+  });
 });
 
 describe('shareRunCard (캡처→공유, 실패 시 텍스트 폴백)', () => {

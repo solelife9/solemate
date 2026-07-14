@@ -134,8 +134,12 @@ export type SvgRefLike = {current: SvgCapturable | null} | null | undefined;
  * Svg ref의 toDataURL(callback) 콜백 계약을 Promise로 감싸 'data:image/png;base64,…'
  * 문자열로 해석한다. ref가 아직 마운트 전이거나 toDataURL이 없으면(=캔버스 미준비)
  * reject 하므로 호출자가 텍스트 공유로 폴백할 수 있다. 빈 base64도 실패로 본다.
+ *
+ * toDataURL 콜백이 영영 오지 않는 드문 네이티브 엣지에서도 무한 대기하지 않도록
+ * timeoutMs(기본 4s) 뒤 reject 한다 — 공유가 조용히 멈추는 대신 텍스트 공유로 폴백된다.
+ * 정착 시 타이머를 반드시 정리한다(오픈 핸들·중복 정착 방지).
  */
-export function captureCardDataUrl(ref: SvgRefLike): Promise<string> {
+export function captureCardDataUrl(ref: SvgRefLike, timeoutMs = 4000): Promise<string> {
   return new Promise<string>((resolve, reject) => {
     const node = ref && ref.current;
     if (!node || typeof node.toDataURL !== 'function') {
@@ -143,18 +147,27 @@ export function captureCardDataUrl(ref: SvgRefLike): Promise<string> {
       return;
     }
     let settled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    // 한 번만 정착 — 타임아웃과 콜백 중 먼저 온 쪽이 이기고 타이머를 정리한다.
+    const finish = (fn: () => void) => {
+      if (settled) return;
+      settled = true;
+      if (timer !== undefined) clearTimeout(timer);
+      fn();
+    };
+    timer = setTimeout(() => finish(() => reject(new Error('share card capture timed out'))), timeoutMs);
     try {
       node.toDataURL((base64: string) => {
-        if (settled) return;
-        settled = true;
-        if (!base64) {
-          reject(new Error('empty share card image'));
-          return;
-        }
-        resolve(`data:image/png;base64,${base64}`);
+        finish(() => {
+          if (!base64) {
+            reject(new Error('empty share card image'));
+            return;
+          }
+          resolve(`data:image/png;base64,${base64}`);
+        });
       });
     } catch (e) {
-      reject(e instanceof Error ? e : new Error(String(e)));
+      finish(() => reject(e instanceof Error ? e : new Error(String(e))));
     }
   });
 }
