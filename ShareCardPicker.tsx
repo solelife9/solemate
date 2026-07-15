@@ -75,6 +75,9 @@ export default function ShareCardPicker({visible, onClose, model, route = [], sh
   const bgKeys: RunCardBackground[] = photoUri ? ['transparent', 'dark', 'photo'] : ['transparent', 'dark'];
   const effBg: RunCardBackground = bgKeys.includes(prefs.background) ? prefs.background : 'transparent';
   const cardPhoto = effBg === 'photo' ? photoUri : null;
+  // '기록' 레이아웃은 성취(moment)가 있을 때만 맨 앞에 노출.
+  const layoutKeys: RunCardLayout[] = model.moment ? ['moment', ...RUN_CARD_LAYOUTS] : RUN_CARD_LAYOUTS;
+  const effLayout: RunCardLayout = layoutKeys.includes(prefs.layout) ? prefs.layout : 'vertical';
   const previewW = useMemo(() => rs(PREVIEW_W), []);
 
   const onSave = async () => {
@@ -98,7 +101,7 @@ export default function ShareCardPicker({visible, onClose, model, route = [], sh
     finally { setBusy(false); }
   };
 
-  const cardProps = {model, route, photoUri: cardPhoto, layout: prefs.layout, background: effBg};
+  const cardProps = {model, route, photoUri: cardPhoto, layout: effLayout, background: effBg};
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
@@ -111,8 +114,8 @@ export default function ShareCardPicker({visible, onClose, model, route = [], sh
             <ShareCard {...cardProps} displayWidth={previewW} />
           </View>
 
-          <Seg label="스타일" options={RUN_CARD_LAYOUTS.map(l => ({key: l, label: RUN_CARD_LAYOUT_LABEL[l]}))}
-            value={prefs.layout} onChange={l => update({layout: l as RunCardLayout})} />
+          <Seg label="스타일" options={layoutKeys.map(l => ({key: l, label: RUN_CARD_LAYOUT_LABEL[l]}))}
+            value={effLayout} onChange={l => update({layout: l as RunCardLayout})} />
           <Seg label="배경" options={bgKeys.map(b => ({key: b, label: RUN_CARD_BACKGROUND_LABEL[b]}))}
             value={effBg} onChange={b => update({background: b as RunCardBackground})} />
 

@@ -99,6 +99,30 @@ describe('layoutShareCard — 컴팩트 배치', () => {
   });
 });
 
+describe('기록 모먼트(moment) — 리본', () => {
+  test('moment 는 기본 레이아웃 목록엔 없고 라벨만 있다', () => {
+    expect(RUN_CARD_LAYOUTS).not.toContain('moment');
+    expect(RUN_CARD_LAYOUT_LABEL.moment).toBe('기록');
+  });
+  test('buildShareCardModel 이 moment 를 담는다', () => {
+    expect(buildShareCardModel({distKm: 10, moment: '네거티브 스플릿'}).moment).toBe('네거티브 스플릿');
+    expect(buildShareCardModel({distKm: 10}).moment).toBe('');
+  });
+  test('layout=moment → 리본 + 세로 지표', () => {
+    const m = buildShareCardModel({distKm: 10.42, pace: "5'01\"", time: '52:18', moment: '개인 최고 거리'});
+    const L = layoutShareCard(m, {layout: 'moment', showMap: true, showStats: true});
+    expect(L.ribbon).not.toBeNull();
+    expect(L.ribbon!.text).toBe('개인 최고 거리');
+    const labels = L.texts.map(t => t.value);
+    expect(labels).toContain('DISTANCE');
+    expect(labels).toContain('PACE');
+  });
+  test('다른 레이아웃엔 리본 없음(moment 있어도)', () => {
+    const m = buildShareCardModel({distKm: 10, moment: '개인 최고 거리'});
+    expect(layoutShareCard(m, {layout: 'vertical', showMap: true, showStats: true}).ribbon).toBeNull();
+  });
+});
+
 describe('clampRunCardScale', () => {
   test('범위·비유한 보정', () => {
     expect(clampRunCardScale(1.2)).toBe(1.2);

@@ -124,6 +124,19 @@ const ShareCard = React.forwardRef<unknown, ShareCardProps>((props, ref) => {
         </G>
       )}
 
+      {/* 성취 리본('기록' 카드) — 파파야 필 + ★ + 텍스트 */}
+      {L.ribbon && (() => {
+        const rb = L.ribbon;
+        const yMid = rb.y + rb.height / 2 + Math.round(rb.fontSize * 0.36);
+        return (
+          <G>
+            <Rect x={rb.x} y={rb.y} width={rb.width} height={rb.height} rx={Math.round(rb.height / 2)} fill={RING_ACCENT} fillOpacity={0.16} stroke={RING_ACCENT} strokeOpacity={0.5} strokeWidth={2.5} />
+            <SvgText x={rb.x + Math.round(rb.fontSize * 1.1)} y={yMid} fontFamily={CF} fontSize={rb.fontSize} fill={RING_ACCENT}>★</SvgText>
+            <SvgText x={W / 2 + Math.round(rb.fontSize * 0.65)} y={yMid} fontFamily={CF} fontSize={rb.fontSize} fontWeight="800" fill={RING_ACCENT} textAnchor="middle" letterSpacing={0.5}>{rb.text}</SvgText>
+          </G>
+        );
+      })()}
+
       {/* 지표·워드마크 — 흰색(파파야=워드마크), 그림자로 사진 위 가독성 */}
       {L.texts.map((t, i) => (
         <Txt key={i} t={t} fill={t.papaya ? RING_ACCENT : ink} />

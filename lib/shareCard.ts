@@ -47,6 +47,8 @@ export interface ShareCardInput {
   elevM?: number;
   /** 소모 칼로리(kcal). >0 이면 CALORIES 칸(폰 단독도 항상 있어 6지표를 채운다). */
   calories?: number;
+  /** 성취 한 줄(예: '개인 최고 거리', '네거티브 스플릿'). 있으면 '기록' 카드가 열린다. */
+  moment?: string;
 }
 
 /** 항상 6자리 HH:MM:SS(시 2자리 0패딩). 카드 TIME 전용 — fmtTime 은 시<1h 면 MM:SS 라 별도. */
@@ -78,6 +80,8 @@ export interface ShareCardModel {
   photoUri?: string;
   /** Keego 워드마크. */
   brand: string;
+  /** 성취 한 줄(신기록·특별한 순간) — 있으면 '기록' 카드 리본으로. 없으면 ''. */
+  moment: string;
   /** keep-going 응원 한 줄. */
   tagline: string;
   /** 해시태그 푸터. */
@@ -96,15 +100,17 @@ const HASHTAG = '#Keego #keepgoing';
 // 카드는 '컴팩트 투명 스티커' — 지도+지표+keego 가 딱 붙은 한 덩어리. 사진 전체가 아니라
 // 사진 일부에 얹어 크기 조절하므로 캔버스를 내용 높이에 맞춰 자른다(빈 공간 최소). 지도·로고는
 // 항상 파파야, 흰 지표엔 그림자(사진 위 가독성). background=dark/photo 는 완성본용.
-export type RunCardLayout = 'vertical' | 'classic' | 'grid';
+//  · moment  — 성취(신기록·특별한 순간) 리본 + 세로 지표. 기록이 있을 때만 picker 에 노출.
+export type RunCardLayout = 'vertical' | 'classic' | 'grid' | 'moment';
 
-/** picker 노출 순서 — 세로(스트라바 느낌)가 기본. */
+/** picker 기본 노출 순서 — 세로(스트라바 느낌)가 기본. 'moment' 는 기록이 있을 때만 추가. */
 export const RUN_CARD_LAYOUTS: RunCardLayout[] = ['vertical', 'classic', 'grid'];
 
 export const RUN_CARD_LAYOUT_LABEL: Record<RunCardLayout, string> = {
   vertical: '세로',
   classic: '가로',
   grid: '6지표',
+  moment: '기록',
 };
 
 /** 폭 고정(1080). 높이는 내용에 맞춰 컴팩트하게 계산된다(layoutShareCard). */
@@ -146,6 +152,8 @@ export interface CardLayout {
   w: number; h: number;
   /** 지도 박스(정사각 좌상단 x,y + 한 변). 없으면 null. */
   map: {x: number; y: number; size: number} | null;
+  /** 성취 리본(파파야 필 + ★ + 텍스트) — '기록' 레이아웃일 때만. */
+  ribbon: {x: number; y: number; width: number; height: number; fontSize: number; text: string} | null;
   texts: CardText[];
 }
 
@@ -164,6 +172,16 @@ export function layoutShareCard(model: ShareCardModel, cfg: RunCardConfig): Card
   const texts: CardText[] = [];
   let y = CARD_PAD;
 
+  // 성취 리본('기록' 카드) — 파파야 필 + ★ + 텍스트. 맨 위, 지도 위.
+  let ribbon: CardLayout['ribbon'] = null;
+  if (cfg.layout === 'moment' && model.moment) {
+    const fontSize = R(38 * t);
+    const h = R(84 * t);
+    const w = Math.min(CARD_W - 2 * CARD_PAD, R(model.moment.length * fontSize * 0.62 + 96 + 54));
+    ribbon = {x: R(cx - w / 2), y: R(y), width: w, height: h, fontSize, text: model.moment};
+    y += h + CARD_MAP_GAP;
+  }
+
   // 지도(작게, 가운데)
   let map: CardLayout['map'] = null;
   if (cfg.showMap) {
@@ -178,7 +196,7 @@ export function layoutShareCard(model: ShareCardModel, cfg: RunCardConfig): Card
     ? [dist, ...model.stats].slice(0, 6)
     : (cfg.showStats ? [dist, ...model.stats.slice(0, 2)] : [dist]);
 
-  if (cfg.layout === 'vertical') {
+  if (cfg.layout === 'vertical' || cfg.layout === 'moment') {
     const val = R(64 * t), lab = R(28 * t), group = R(150 * t);
     cells.forEach((c, i) => {
       const ly = y + i * group, vy = ly + val;
@@ -214,7 +232,7 @@ export function layoutShareCard(model: ShareCardModel, cfg: RunCardConfig): Card
   texts.push({x: cx, y, size: wmSize, weight: '500', anchor: 'middle', ls: -0.5, opacity: 1, value: model.brand.toLowerCase(), papaya: true});
   y += CARD_PAD;
 
-  return {w: CARD_W, h: R(y), map, texts};
+  return {w: CARD_W, h: R(y), map, ribbon, texts};
 }
 
 /** 글씨·지도 크기 배율 — 사용자가 앱에서 늘리고 줄일 수 있다. 안전 범위로 보정. */
@@ -268,6 +286,7 @@ export function buildShareCardModel(input: ShareCardInput): ShareCardModel {
     date: (input.date ?? '').trim(),
     ...(input.photoUri ? {photoUri: input.photoUri} : {}),
     brand: BRAND,
+    moment: (input.moment ?? '').trim(),
     tagline: TAGLINE,
     hashtag: HASHTAG,
   };

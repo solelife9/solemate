@@ -76,6 +76,16 @@ describe('ShareCard 레이아웃·배경', () => {
     expect(txt).toContain('TIME');
   });
 
+  test('기록 모먼트 = 성취 리본(★ + 텍스트) 렌더', () => {
+    const m = buildShareCardModel({distKm: 10.42, unit: 'km', pace: "5'01\"", time: '52:18', moment: '개인 최고 거리'});
+    let r!: ReactTestRenderer.ReactTestRenderer;
+    act(() => { r = ReactTestRenderer.create(<ShareCard model={m} route={ROUTE} layout="moment" />); });
+    const txt = textOf(r.root);
+    expect(txt).toContain('개인 최고 거리');
+    expect(txt).toContain('★');
+    expect(txt).toContain('DISTANCE');
+  });
+
   test('다크 배경 = 배경 Rect(라디얼), 투명 = 없음', () => {
     const dark = rectsOf(render({route: ROUTE, background: 'dark'}).root).some((n: any) => n.props.fill === 'url(#kg-dark)');
     const trans = rectsOf(render({route: ROUTE, background: 'transparent'}).root).some((n: any) => n.props.fill === 'url(#kg-dark)');

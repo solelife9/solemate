@@ -237,6 +237,10 @@ export default function RunRecapScreen({
     track: track && track.laps > 0 ? track : null,
     // 6지표 카드용 — 칼로리·케이던스·심박(워치)·고도.
     calories, cadence, bpm, elevM: elevationM,
+    // 기록 모먼트 카드 — 이 러닝이 세운 신기록(있으면 리본으로).
+    moment: prKinds.includes('longestDist') ? '개인 최고 거리'
+      : prKinds.includes('fastestPace') ? '개인 최고 페이스'
+      : prKinds.includes('longestTime') ? '개인 최장 시간' : undefined,
   };
   const cardModel = buildShareCardModel(shareInput);
   const onShare = () => setShareOpen(true);
