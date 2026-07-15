@@ -121,6 +121,7 @@ export default function RunRecapScreen({
   elevationM = 0,
   calories = 0,
   prKinds = [],
+  moment,
   shoeName,
   goalKm,
   goalMin = 0,
@@ -146,6 +147,8 @@ export default function RunRecapScreen({
   calories?: number;
   /** 방금 런이 세운 신기록 종류(있으면 배지로 축하). */
   prKinds?: PRKind[];
+  /** 기록 모먼트(공유 카드 리본) — App 이 신기록·인사이트로 계산해 전달. 없으면 미노출. */
+  moment?: string;
   /** 신발 이름(파싱된 모델 라벨 권장). 없으면 신발 줄 숨김. */
   shoeName?: string;
   /** 목표 거리(km). km >= goalKm 이면 '목표 달성' 배지. 없으면 숨김. */
@@ -237,10 +240,8 @@ export default function RunRecapScreen({
     track: track && track.laps > 0 ? track : null,
     // 6지표 카드용 — 칼로리·케이던스·심박(워치)·고도.
     calories, cadence, bpm, elevM: elevationM,
-    // 기록 모먼트 카드 — 이 러닝이 세운 신기록(있으면 리본으로).
-    moment: prKinds.includes('longestDist') ? '개인 최고 거리'
-      : prKinds.includes('fastestPace') ? '개인 최고 페이스'
-      : prKinds.includes('longestTime') ? '개인 최장 시간' : undefined,
+    // 기록 모먼트 카드 — App 이 신기록·인사이트로 계산해 전달(없으면 미노출).
+    moment,
   };
   const cardModel = buildShareCardModel(shareInput);
   const onShare = () => setShareOpen(true);
