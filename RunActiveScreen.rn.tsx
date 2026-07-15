@@ -723,19 +723,7 @@ const r = StyleSheet.create({
   smU: { color: withAlpha(T1, 0.45), fontFamily: FONT, fontSize: TYPE.caption.fontSize },
   smL: { color: withAlpha(T1, 0.45), fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: "600", letterSpacing: 0.4, marginTop: rv(8) },
 
-  // (mapWrap 스타일 삭제 — 미사용 잔재. 카드 보더 통일 스윕 2026-07-10)
-  positionDot: {
-    width: rs(16),
-    height: rs(16),
-    borderRadius: rs(8),
-    backgroundColor: T2,
-    borderWidth: 3,
-    borderColor: T1,
-    shadowColor: BG,
-    shadowOpacity: 0.8,
-    shadowRadius: 6,
-    elevation: 4,
-  },
+  // (mapWrap·positionDot 스타일 삭제 — 미사용 잔재. RunLiveMap 이 자체 마커 보유)
   // 트랙 랩 기록 바 — 큰 '랩 기록' 필 + 작은 되돌리기. 유리 문법(홈 CTA 계열).
   // 랩 기록 = 주 동작(오렌지 유리 필, 넓게) + 우측 현재 바퀴수. 되돌리기(-1)는 작은 보조.
   lapBar: { flexDirection: 'row', alignItems: 'center', gap: rv(10), marginTop: rv(18) },

@@ -2,7 +2,7 @@
 //
 // App 루트에 1회 마운트하고(<ToastHost/>), 앱 어디서든 lib/toast 의 showToast() 를 부르면
 // 이 호스트가 구독으로 받아 그린다. 새 라이브러리 0(react-native-toast-message 등 금지) —
-// Animated/View/Text/Pressable 만 사용한다. 다크(CARD_HI) 표면 + 오렌지(ACCENT) 액션 토큰.
+// Animated/View/Text/Pressable 만 사용한다. 다크(CARD_HI) 표면 + 흰(ACCENT) 액션 토큰.
 //
 // 동작: 토스트가 오면 아래에서 위로 슬라이드(+페이드 인), null 이 오면(자동/수동 dismiss)
 // 아래로 슬라이드(+페이드 아웃)한 뒤 트리에서 제거한다. undo 는 actionLabel='실행취소'
@@ -153,12 +153,14 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.sm, borderCurve: 'continuous',
   },
   actionPressed: {opacity: 0.6},
-  // 오렌지(ACCENT) 액션 라벨 — 다크 표면에서 또렷한 행동 유도.
+  // 액션 라벨 — ACCENT 가 흰이 된 뒤 메시지(T1)와 같은 색이라 굵기만으로는 '탭 가능'이
+  // 안 읽혔다. 밑줄로 행동 유도를 복원한다(무채 절제 유지 — 색 추가 없음, 2026-07-16).
   actionLabel: {
     color: ACCENT,
     fontFamily: FONT,
     fontSize: TYPE.body.fontSize,
     fontWeight: '700',
     letterSpacing: TYPE.label.letterSpacing,
+    textDecorationLine: 'underline',
   },
 });

@@ -11,7 +11,7 @@ import React, {useEffect, useRef, useState} from 'react';
 import { rs } from './lib/responsive';
 import {View, StyleSheet, Platform} from 'react-native';
 import * as Location from 'expo-location';
-import {ACCENT, T2} from './theme';
+import {BRAND, T1, T2, withAlpha} from './theme';
 import {DARK_MAP_STYLE} from './lib/mapStyle';
 
 // 옵셔널 require — 미링크 빌드에서 top-level import 가 앱을 죽이지 않게 감싼다(CourseMap 동일).
@@ -108,10 +108,12 @@ export function RunLiveMap({coords, interactive = false, recenterKey = 0}: {coor
         showsUserLocation={false}
         showsCompass={false}
         showsMyLocationButton={false}>
+        {/* 경로 = 파파야(코스맵 도메인) — 리캡 CourseMap 과 같은 색 언어(2026-07-16 통일:
+            일시정지에서 본 내 경로와 30초 뒤 리캡의 같은 경로가 다른 색이었다). */}
         {path.length >= 2 && (
           <MapPolyline
             coordinates={path}
-            strokeColor={ACCENT}
+            strokeColor={BRAND}
             strokeWidth={6}
             lineCap="round"
             lineJoin="round"
@@ -131,11 +133,13 @@ export function RunLiveMap({coords, interactive = false, recenterKey = 0}: {coor
 }
 
 const s = StyleSheet.create({
+  // 현위치 마커 — 무채(브랜드 요소 아님). 구 오렌지 rgba(255,122,45) 후광은 폐기된
+  // 팔레트의 잔재 + raw hex 위반이었다(2026-07-16 토큰화).
   posOuter: {
     width: rs(22),
     height: rs(22),
     borderRadius: rs(11),
-    backgroundColor: 'rgba(255,122,45,0.25)',
+    backgroundColor: withAlpha(T1, 0.25),
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -145,6 +149,6 @@ const s = StyleSheet.create({
     borderRadius: rs(6),
     backgroundColor: T2,
     borderWidth: 2,
-    borderColor: '#fff',
+    borderColor: T1,
   },
 });

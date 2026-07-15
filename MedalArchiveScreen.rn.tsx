@@ -264,7 +264,8 @@ const m = StyleSheet.create({
   cell: {width: '33.33%', alignItems: 'center', gap: rv(8), paddingVertical: rv(12), paddingHorizontal: rs(4)},
   disc: {
     borderWidth: 1, borderColor: withAlpha(HALL_GOLD, 0.35),
-    backgroundColor: '#1a160e', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
+    // 골드 틴트 원반 — raw hex(#1a160e) 대신 골드 파생(시각 등가, 토큰 동기 유지).
+    backgroundColor: withAlpha(HALL_GOLD, 0.08), alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
   },
   cellName: {color: T2, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600', letterSpacing: -0.2, textAlign: 'center', lineHeight: rf(14)},
   cellTime: {color: HALL_GOLD, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '700', fontVariant: ['tabular-nums']},

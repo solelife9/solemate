@@ -10,8 +10,7 @@ import React, {useState} from 'react';
 import { rf, rs, ri, rv } from './lib/responsive';
 import {View, Text, Pressable, StyleSheet} from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import {CARD, CARD_HI, ACCENT, GOOD, T1, T2, T3, SEP, FONT, DISPLAY, RADIUS, GLASS, withAlpha} from './theme';
-import {SPORT_VIOLET} from './theme';
+import {ACCENT, BRAND, T1, T2, T3, FONT, DISPLAY, RADIUS, GLASS, TYPE, withAlpha} from './theme';
 import {Ring, Pill, Stepper, GlassEdge} from './primitives';
 import {ChallengeRun, ChallengeProgressResult} from './lib/challenges';
 import {
@@ -99,7 +98,7 @@ export function SmartChallengeCard({
     <View style={s.smartCard} testID="smart-challenge">
       {/* 카드 테두리 = 전 화면 공통 유리 헤어라인(GlassEdge) — ACCENT RN 보더 폐지,
           다른 카드와 동일 문법(사용자 지적 2026-07-11 밤: 이 카드만 튀었다). */}
-      <GlassEdge glints={false} radius={RADIUS.xl} />
+      <GlassEdge glints={false} radius={RADIUS.lg} />
       <View style={s.smartHead}>
         <Pill tone="accent" icon="sparkles" label="주간 목표" testID="smart-challenge-tag" />
         {p.completed && !editing && (
@@ -135,7 +134,9 @@ export function SmartChallengeCard({
         </View>
       ) : (
         <View style={s.smartBody}>
-          <Ring size={ri(64)} stroke={7} progress={p.pct} color={SPORT_VIOLET}>
+          {/* 진행 링 = 파파야(진행 게이지 허용 도메인) — 홈 주간 목표 바와 같은 색 언어.
+              (폐지된 바이올렛 전역 액센트의 마지막 잔재였다 — 2026-07-16 통일.) */}
+          <Ring size={ri(64)} stroke={7} progress={p.pct} color={BRAND}>
             <Text style={s.ringPct} testID="smart-challenge-pct">
               {pctLabel}
             </Text>
@@ -230,57 +231,24 @@ function isoToday(): string {
   return `${n.getFullYear()}-${p(n.getMonth() + 1)}-${p(n.getDate())}`;
 }
 
+// 2026-07-16 청소: 구 개인 챌린지 UI(헤더/폼/세그/스테퍼/XP) 죽은 스타일 30종 삭제,
+// 생 rf() 폰트를 TYPE 토큰으로 수렴, 카드 radius 를 마이탭 형제 카드와 같은 lg 로 통일.
 const s = StyleSheet.create({
-  headerRow: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: rs(4), paddingBottom: rv(12)},
-  sectionLabel: {color: T2, fontFamily: FONT, fontSize: rf(15), fontWeight: '500', letterSpacing: 0.2},
-  addBtn: {flexDirection: 'row', alignItems: 'center', gap: rv(4), paddingHorizontal: rs(10), paddingVertical: rv(6), borderRadius: RADIUS.pill, borderCurve: 'continuous', backgroundColor: withAlpha(ACCENT, 0.14)},
-  addBtnTxt: {color: ACCENT, fontFamily: FONT, fontSize: rf(14), fontWeight: '700'},
+  empty: {color: T3, fontFamily: FONT, ...TYPE.label, lineHeight: rf(19), paddingHorizontal: rs(4)},
 
-  empty: {color: T3, fontFamily: FONT, fontSize: rf(14), lineHeight: rf(19), paddingHorizontal: rs(4)},
-
-  card: {flexDirection: 'row', alignItems: 'center', gap: rv(14), backgroundColor: CARD, borderRadius: RADIUS.xl, borderCurve: 'continuous', padding: rs(16)},
-  cardDone: {borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(GOOD, 0.5)},
-  ringPct: {color: T1, fontFamily: DISPLAY, fontSize: rf(15), letterSpacing: 0.2},
-  titleRow: {flexDirection: 'row', alignItems: 'center', gap: rv(8)},
-  title: {flex: 1, color: T1, fontFamily: FONT, fontSize: rf(17), fontWeight: '700', letterSpacing: -0.2},
-  progressTxt: {marginTop: rv(4)},
-  progressCur: {color: T1, fontFamily: DISPLAY, fontSize: rf(19), letterSpacing: 0.2},
-  progressTot: {color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '700'},
-  period: {color: T3, fontFamily: FONT, fontSize: rf(12), fontWeight: '500', marginTop: rv(4)},
-  del: {width: rs(28), height: rs(28), borderRadius: RADIUS.pill, borderCurve: 'continuous', alignItems: 'center', justifyContent: 'center', backgroundColor: CARD_HI},
-
-  form: {backgroundColor: CARD, borderRadius: RADIUS.xl, borderCurve: 'continuous', padding: rs(16), gap: rv(14), marginBottom: rv(12)},
-  segRow: {flexDirection: 'row', gap: rv(8)},
-  seg: {flex: 1, alignItems: 'center', paddingVertical: rv(10), borderRadius: RADIUS.md, borderCurve: 'continuous', backgroundColor: CARD_HI, borderWidth: 1, borderColor: SEP},
-  segOn: {backgroundColor: withAlpha(ACCENT, 0.16), borderColor: ACCENT},
-  segTxt: {color: T2, fontFamily: FONT, fontSize: rf(15), fontWeight: '600'},
-  segTxtOn: {color: ACCENT, fontWeight: '700'},
-  stepper: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: rv(14)},
-  stepBtn: {width: rs(44), height: rs(44), borderRadius: rs(14), borderCurve: 'continuous', backgroundColor: CARD_HI, alignItems: 'center', justifyContent: 'center'},
-  stepVal: {flex: 1, alignItems: 'center'},
-  stepNum: {color: T1, fontFamily: DISPLAY, fontSize: rf(27), letterSpacing: 0.3},
-  stepUnit: {color: T3, fontFamily: FONT, fontSize: rf(13), fontWeight: '600', marginTop: rv(2)},
-  // 단일 Button 프리미티브로 라우팅(그라데이션/글로우/RADIUS.btn). 여기선 높이만 얹는다.
-  createBtn: {height: rs(46)},
-  xpHint: {flexDirection: 'row', alignItems: 'center', gap: rv(6), marginTop: rv(10), justifyContent: 'center'},
-  xpHintTxt: {color: ACCENT, fontFamily: FONT, fontSize: rf(13), fontWeight: '600'},
-  xpEarned: {color: ACCENT, fontFamily: FONT, fontSize: rf(13), fontWeight: '700', marginTop: rv(2)},
-
-  // ── 확장 챌린지(Slice C) ──
-  extWrap: {marginTop: rv(18), gap: rv(10)},
-  extLabel: {paddingHorizontal: rs(4), paddingBottom: rv(2)},
-  extProgress: {color: T1, fontFamily: DISPLAY, fontSize: rf(18), letterSpacing: 0.2, marginTop: rv(4)},
+  ringPct: {color: T1, fontFamily: DISPLAY, ...TYPE.label, fontVariant: ['tabular-nums']},
+  extProgress: {color: T1, fontFamily: DISPLAY, ...TYPE.heading, fontVariant: ['tabular-nums'], marginTop: rv(4)},
   // 마이탭 공통 카드 문법(GLASS.fill + GlassEdge 헤어라인) — ACCENT RN 보더/솔리드 CARD 폐지.
-  smartCard: {backgroundColor: GLASS.fill, borderRadius: RADIUS.xl, borderCurve: 'continuous', padding: rs(16), gap: rv(12), overflow: 'hidden'},
+  smartCard: {backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderCurve: 'continuous', padding: rs(16), gap: rv(12), overflow: 'hidden'},
   smartHead: {flexDirection: 'row', alignItems: 'center', gap: rv(8)},
   smartBody: {flexDirection: 'row', alignItems: 'center', gap: rv(16)},
-  smartTitle: {color: T1, fontFamily: FONT, fontSize: rf(18), fontWeight: '700', letterSpacing: -0.2},
-  smartReason: {color: T2, fontFamily: FONT, fontSize: rf(14), fontWeight: '500', lineHeight: rf(18), marginTop: rv(4)},
+  smartTitle: {color: T1, fontFamily: FONT, ...TYPE.heading, fontWeight: '700'},
+  smartReason: {color: T2, fontFamily: FONT, ...TYPE.label, lineHeight: rf(18), marginTop: rv(4)},
   // 우상단 목표 거리 수정(연필/체크) 버튼 — 헤더 오른쪽 끝으로 민다.
-  smartEditBtn: {marginLeft: 'auto', width: rs(30), height: rs(30), borderRadius: rs(15), borderCurve: 'continuous', alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(ACCENT, 0.14)},
+  smartEditBtn: {marginLeft: 'auto', width: rs(30), height: rs(30), borderRadius: RADIUS.pill, borderCurve: 'continuous', alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(ACCENT, 0.14)},
   // 편집 모드: 목표 거리 ± 스테퍼.
   smartEditWrap: {gap: rv(10)},
-  smartEditLabel: {color: T2, fontFamily: FONT, fontSize: rf(14), fontWeight: '600', letterSpacing: 0.2},
-  smartStepVal: {color: T1, fontFamily: DISPLAY, fontSize: rf(25), letterSpacing: 0.2},
-  smartStepUnit: {color: T3, fontFamily: FONT, fontSize: rf(15), fontWeight: '600'},
+  smartEditLabel: {color: T2, fontFamily: FONT, ...TYPE.label, fontWeight: '600'},
+  smartStepVal: {color: T1, fontFamily: DISPLAY, ...TYPE.title1, fontWeight: '600', fontVariant: ['tabular-nums']},
+  smartStepUnit: {color: T3, fontFamily: FONT, ...TYPE.label, fontWeight: '600'},
 });

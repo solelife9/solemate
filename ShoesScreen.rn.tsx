@@ -819,18 +819,6 @@ const s = StyleSheet.create({
   statCell: { flex: 1, alignItems: 'center' },
   statDivider: { borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: SEP },
   // 2x2 통계 그리드(총거리/총횟수/총시간/평균페이스). 한 카드 안에 4칸을 넉넉히.
-  nextSectionLabel: { paddingHorizontal: rs(4) },
-  nextCard: { backgroundColor: GLASS.fill, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.3), padding: rs(16) },
-  nextSub: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, lineHeight: rf(18), marginBottom: rv(6) },
-  nextRow: { flexDirection: 'row', alignItems: 'center', gap: rv(12), paddingVertical: rv(12) },
-  nextRowSep: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.07) },
-  nextBrand: { color: T3, fontFamily: DISPLAY, fontSize: TYPE.micro.fontSize, fontWeight: '500', letterSpacing: 1.2 },
-  nextModel: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.body.fontSize, fontWeight: '600', letterSpacing: -0.1, marginTop: rv(3) },
-  nextCat: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, marginTop: rv(3) },
-  shopBtns: { flexDirection: 'row', flexWrap: 'wrap', gap: rv(6), justifyContent: 'flex-end', maxWidth: rs(132) },
-  shopBtn: { borderRadius: RADIUS.pill, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.4), backgroundColor: withAlpha(ACCENT, 0.1), paddingHorizontal: rs(12), paddingVertical: rv(6) },
-  shopBtnTxt: { color: ACCENT, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600' },
-  nextDisclosure: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, lineHeight: rf(15), marginTop: rv(12), opacity: 0.85 },
   // stats 2x2 — 사진(디자인 09)처럼 왼쪽 정렬. 글씨 비율에 맞게 패딩을 조여 카드가
   // 과하게 커지지 않게 한다(사용자 요청).
   statGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingVertical: rv(6), paddingHorizontal: rs(18) },
@@ -849,14 +837,4 @@ const s = StyleSheet.create({
   maxStepUnit: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, marginBottom: rv(3) },
   maxStepCaption: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600', marginTop: rv(3) },
   maxHint: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, lineHeight: rf(18) },
-
-  runRow: { flexDirection: 'row', alignItems: 'center', gap: rv(14), paddingVertical: rv(16), paddingHorizontal: rs(18) },
-  runRowBorder: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: SEP },
-  runDate: { width: rs(42), alignItems: 'center' },
-  runDay: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500' },
-  runDateNum: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.heading.fontSize },
-  runDivider: { width: StyleSheet.hairlineWidth, alignSelf: 'stretch', backgroundColor: SEP, marginVertical: rv(2) },
-  runDist: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.title.fontSize, letterSpacing: 0.3 },
-  runDistU: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, marginLeft: rs(4), marginBottom: rv(1) },
-  runSub: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, marginTop: rv(3) },
 });

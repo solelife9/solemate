@@ -14,9 +14,9 @@ import {View, Text, Pressable, StyleSheet, Platform, ActivityIndicator} from 're
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
-import {Button, WORDMARK_FONT} from './primitives';
+import {Button, KeegoWordmark} from './primitives';
 import {
-  BG, CARD_HI, ACCENT, DANGER, T1, T2, T3, FONT, DISPLAY, RADIUS, withAlpha,
+  BG, CARD_HI, DANGER, T1, T2, T3, FONT, DISPLAY, RADIUS,
   KAKAO_YELLOW, KAKAO_LABEL, NAVER_GREEN, NAVER_LABEL, TYPE,
 } from './theme';
 import type {CloudPort, CloudProvider, CloudUser} from './lib/cloudPort';
@@ -57,12 +57,10 @@ export function LoginScreen({cloudPort, onSignedIn}: LoginScreenProps) {
 
   return (
     <View style={[st.screen, {paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24}]}>
-      {/* 브랜드 히어로 — 로고 배지는 홈과 같은 유리 문법(반투명 표면 + 빛 받은 엣지) */}
+      {/* 브랜드 히어로 — 정본 KeegoWordmark(파파야) 하나만. 일회성 'K' 배지는 폐기
+          (앱 어디에도 없는 발명 자산이었고 워드마크도 흰색이라 첫 화면이 오프캐논이었다). */}
       <View style={st.hero}>
-        <View style={st.logoBadge}>
-                    <Text style={st.logoK}>K</Text>
-        </View>
-        <Text style={st.wordmark}>keego</Text>
+        <KeegoWordmark size={TYPE.display.fontSize} />
         <Text style={st.tagline}>러닝화의 수명을 기록하다</Text>
       </View>
 
@@ -144,14 +142,6 @@ export function LoginScreen({cloudPort, onSignedIn}: LoginScreenProps) {
 const st = StyleSheet.create({
   screen: {flex: 1, backgroundColor: BG, paddingHorizontal: rs(28), justifyContent: 'space-between'},
   hero: {flex: 1, alignItems: 'center', justifyContent: 'center', gap: rv(14)},
-  logoBadge: {
-    width: rs(84), height: rs(84), borderRadius: rs(22), borderCurve: 'continuous', overflow: 'hidden',
-    backgroundColor: withAlpha(T1, 0.06),
-    alignItems: 'center', justifyContent: 'center',
-  },
-  logoK: {fontFamily: DISPLAY, fontSize: rf(48), fontWeight: '700', color: ACCENT, marginTop: rv(-2)},
-  // 워드마크 = Helvetica Neue Medium 소문자 흰색(2026-07-04 B안 확정).
-  wordmark: {fontFamily: WORDMARK_FONT, fontWeight: '500', fontSize: TYPE.display.fontSize, color: T1, letterSpacing: -0.3},
   tagline: {fontFamily: FONT, fontSize: TYPE.body.fontSize, color: T3},
   actions: {gap: rv(12)},
   lead: {fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600', color: T2, textAlign: 'center', marginBottom: rv(4)},

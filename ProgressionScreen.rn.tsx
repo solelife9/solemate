@@ -30,7 +30,7 @@ import {
   CARD_HI,
   HERO_BG,
   ACCENT,
-  BRAND,
+  RARITY_COLORS,
   T1,
   T2,
   T3,
@@ -95,13 +95,10 @@ const ACH_CATEGORY_ORDER: AchievementCategory[] = [
   'keego',
 ];
 
-// ── 희귀도 색/라벨(AchievementRarity) ──────────────────────────────────────────
-const RARITY_COLOR: Record<AchievementRarity, string> = {
-  common: T3,                    // muted gray(토큰과 동일값)
-  rare: TIER_COLORS.diamond,     // blue — 티어 팔레트 재사용(단일 진실원)
-  epic: TIER_COLORS.master,      // purple
-  legendary: BRAND,              // 최고 난도(마라톤 완주 등) = 파파야 — 무채화 때 ACCENT(흰)로 빠졌던 것 복원
-};
+// ── 희귀도 색(AchievementRarity) — theme.RARITY_COLORS 단일 진실원 ───────────────
+// 로컬 재정의 폐지(2026-07-16): legendary 가 여기선 파파야, 셀러브레이션에선 골드로
+// 같은 업적이 화면마다 다른 색이었다. 성취 도메인=골드(파파야는 링/워드마크/진행 전용).
+const RARITY_COLOR: Record<AchievementRarity, string> = RARITY_COLORS;
 
 export interface ProgressionScreenProps {
   runs?: readonly BackendRun[] | null;

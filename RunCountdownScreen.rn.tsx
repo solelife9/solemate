@@ -132,9 +132,12 @@ export default function RunCountdownScreen({
           </View>
         </View>
 
-        {/* goal chips */}
+        {/* goal chips — 거리 목표가 있을 때만. 생 `${goalKm}.0` 이어붙이기는 하프 21.1 에서
+            "21.1.0 km", 시간·자유 러닝(0)에서 "0.0 km" 로 보이던 표기 버그(2026-07-16 수정). */}
         <View style={s.chips}>
-          <View style={s.chip} accessibilityRole="text" accessibilityLabel={`목표 ${goalKm}.0 킬로미터`}><Icon name="target" size={ri(14)} color={T3} /><Text style={s.chipText}>목표 <Text style={s.chipB}>{goalKm}.0 km</Text></Text></View>
+          {goalKm > 0 && (
+            <View style={s.chip} accessibilityRole="text" accessibilityLabel={`목표 ${goalKm.toFixed(1)} 킬로미터`}><Icon name="target" size={ri(14)} color={T3} /><Text style={s.chipText}>목표 <Text style={s.chipB}>{goalKm.toFixed(1)} km</Text></Text></View>
+          )}
           <View style={s.chip} accessibilityRole="text" accessibilityLabel={outdoor ? '야외 러닝' : '실내 러닝'}><Icon name="route" size={ri(14)} color={T3} /><Text style={s.chipText}>{outdoor ? '야외 러닝' : '실내 러닝'}</Text></View>
         </View>
       </View>

@@ -12,7 +12,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import Svg, {Defs, Mask, Rect, Circle} from 'react-native-svg';
 import {CameraView, useCameraPermissions} from 'expo-camera';
 import {manipulateAsync, SaveFormat} from 'expo-image-manipulator';
-import {BG, HALL_GOLD, T1, T2, T3, withAlpha, RADIUS} from './theme';
+import {BG, BLACK, HALL_GOLD, T1, T2, T3, FONT, withAlpha, RADIUS} from './theme';
 import {pickShoePhoto} from './lib/photo';
 import {medalCropRect} from './lib/medalCrop';
 
@@ -123,20 +123,21 @@ export default function MedalCamera({onCapture, onCancel}: {onCapture: (uri: str
   );
 }
 
+// 2026-07-16 토큰화: 'PretendardVariable' 생문자 → FONT, '#000'/rgba → BLACK/withAlpha.
 const c = StyleSheet.create({
-  screen: {flex: 1, backgroundColor: '#000'},
-  hint: {position: 'absolute', left: 0, right: 0, textAlign: 'center', color: T1, fontFamily: 'PretendardVariable', fontSize: rf(17), fontWeight: '600', letterSpacing: -0.2},
-  sub: {position: 'absolute', left: 0, right: 0, textAlign: 'center', color: withAlpha(T1, 0.7), fontFamily: 'PretendardVariable', fontSize: rf(13)},
-  close: {position: 'absolute', left: 18, width: rs(40), height: rs(40), borderRadius: RADIUS.pill, backgroundColor: 'rgba(0,0,0,0.35)', alignItems: 'center', justifyContent: 'center'},
+  screen: {flex: 1, backgroundColor: BLACK},
+  hint: {position: 'absolute', left: 0, right: 0, textAlign: 'center', color: T1, fontFamily: FONT, fontSize: rf(17), fontWeight: '600', letterSpacing: -0.2},
+  sub: {position: 'absolute', left: 0, right: 0, textAlign: 'center', color: withAlpha(T1, 0.7), fontFamily: FONT, fontSize: rf(13)},
+  close: {position: 'absolute', left: 18, width: rs(40), height: rs(40), borderRadius: RADIUS.pill, backgroundColor: withAlpha(BLACK, 0.35), alignItems: 'center', justifyContent: 'center'},
   controls: {position: 'absolute', left: 0, right: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: rs(40)},
-  libBtn: {width: rs(48), height: rs(48), borderRadius: RADIUS.pill, backgroundColor: 'rgba(0,0,0,0.35)', alignItems: 'center', justifyContent: 'center'},
+  libBtn: {width: rs(48), height: rs(48), borderRadius: RADIUS.pill, backgroundColor: withAlpha(BLACK, 0.35), alignItems: 'center', justifyContent: 'center'},
   shutterWrap: {width: rs(76), height: rs(76), borderRadius: RADIUS.pill, borderWidth: 4, borderColor: withAlpha(T1, 0.4), alignItems: 'center', justifyContent: 'center'},
   shutter: {width: rs(60), height: rs(60), borderRadius: RADIUS.pill, backgroundColor: T1, alignItems: 'center', justifyContent: 'center'},
   permBox: {flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: rs(40), gap: rv(10)},
-  permT: {color: T2, fontFamily: 'PretendardVariable', fontSize: rf(17), fontWeight: '600', marginTop: rv(8)},
-  permD: {color: T3, fontFamily: 'PretendardVariable', fontSize: rf(14), textAlign: 'center', lineHeight: rf(19), marginBottom: rv(8)},
-  permBtn: {marginTop: rv(6), paddingVertical: rv(12), paddingHorizontal: rs(24), borderRadius: rs(12), backgroundColor: withAlpha(HALL_GOLD, 0.16), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(HALL_GOLD, 0.4)},
-  permBtnT: {color: HALL_GOLD, fontFamily: 'PretendardVariable', fontSize: rf(15), fontWeight: '700'},
+  permT: {color: T2, fontFamily: FONT, fontSize: rf(17), fontWeight: '600', marginTop: rv(8)},
+  permD: {color: T3, fontFamily: FONT, fontSize: rf(14), textAlign: 'center', lineHeight: rf(19), marginBottom: rv(8)},
+  permBtn: {marginTop: rv(6), paddingVertical: rv(12), paddingHorizontal: rs(24), borderRadius: RADIUS.sm, backgroundColor: withAlpha(HALL_GOLD, 0.16), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(HALL_GOLD, 0.4)},
+  permBtnT: {color: HALL_GOLD, fontFamily: FONT, fontSize: rf(15), fontWeight: '700'},
   permGhost: {paddingVertical: rv(10)},
-  permGhostT: {color: T3, fontFamily: 'PretendardVariable', fontSize: rf(14)},
+  permGhostT: {color: T3, fontFamily: FONT, fontSize: rf(14)},
 });
