@@ -1,7 +1,7 @@
 // lib/progression/retirementCard + retirementShare — 은퇴 카드 뷰모델/저장·공유.
 //
 // 관찰 가능한 동작:
-//   · 요약 + 등급 → 표시 필드(거리/페이스/날짜/PB/하이라이트/등급 배지/Shoe Score)
+//   · 요약 + 등급 → 표시 필드(거리/페이스/날짜/PB/하이라이트/등급 배지)
 //     가 실제 집계에서 파생된다(날조 금지). 장착 타이틀은 모델에 실린다.
 //   · 결손(하이라이트 없음/페이스 null/0거리) 요약도 throw 없이 안전하게 비운다.
 //   · saveRetirementCardImage 는 캡처 dataURL 을 주입 저장기로 영속하고, 캡처 실패 시
@@ -14,6 +14,7 @@ import {
   highlightLabel,
   DEFAULT_RETIREMENT_CARD_FORMAT,
   RETIREMENT_CARD_FORMATS,
+  RETIREMENT_CARD_FORMAT_LABEL,
 } from '../../../lib/progression/retirementCard';
 import {
   saveRetirementCardImage,
@@ -48,14 +49,12 @@ describe('buildRetirementCardModel (필드 매핑)', () => {
     expect(m.shoeName).toBe('Alphafly 3');
     expect(m.distance).toBe('512');
     expect(m.distanceLabel).toBe('512km');
-    expect(m.togetherLine).toBe('512km 함께했습니다');
     expect(m.runCountLabel).toBe('42');
     expect(m.avgPace).toBe("4'58\"");
     expect(m.bestPace).toBe("4'21\"");
     expect(m.longestRun).toBe('32.1');
-    // PB 하이라이트 2개(pbLongestRun, pbFastestPace) → ×2 (날조 없는 실제 PB 수)
+    // PB 하이라이트 2개(pbLongestRun, pbFastestPace) — 날조 없는 실제 PB 수
     expect(m.pbCount).toBe(2);
-    expect(m.pbLabel).toBe('×2');
     expect(m.dateRange).toBe('2026.03.12 → 2026.08.22');
     expect(m.retireYear).toBe(2026);
     // 하이라이트 라벨이 우선순위 순으로 매핑된다
@@ -77,19 +76,10 @@ describe('buildRetirementCardModel (필드 매핑)', () => {
     expect(m.grade.color).toBe(TIER_COLORS[m.grade.tier]);
   });
 
-  test('Shoe Score 는 등급 + PB 수에서 결정론적으로 0..100 으로 환산된다', () => {
-    const m = buildRetirementCardModel(SAMPLE, 'hallOfFame');
-    // hallOfFame(99) + min(pbCount=2,3) = 101 → 100 으로 클램프
-    expect(m.shoeScore).toBe(100);
-    const std = buildRetirementCardModel({...SAMPLE, highlights: []}, 'standard');
-    expect(std.shoeScore).toBe(72); // standard 기준점, PB 0
-  });
-
-  test('mi 단위는 거리/최장 런을 환산하되 함께했습니다 카피 단위도 따라간다', () => {
+  test('mi 단위는 거리/최장 런을 표시 단위로 환산한다', () => {
     const m = buildRetirementCardModel(SAMPLE, 'perfect', {unit: 'mi'});
     expect(m.unit).toBe('mi');
     expect(m.distanceLabel.endsWith('mi')).toBe(true);
-    expect(m.togetherLine.endsWith('함께했습니다')).toBe(true);
   });
 
   test('결손 요약(하이라이트 없음/페이스 null/0거리/이름 없음)도 throw 없이 안전하게 비운다', () => {
@@ -115,7 +105,7 @@ describe('buildRetirementCardModel (필드 매핑)', () => {
     expect(m.avgPace).toBeNull();
     expect(m.bestPace).toBeNull();
     expect(m.longestRun).toBeNull();
-    expect(m.pbLabel).toBeNull();
+    expect(m.pbCount).toBe(0);
     expect(m.highlights).toEqual([]);
     expect(m.mostMemorable).toBeNull();
     expect(m.dateRange).toBe('');
@@ -130,16 +120,17 @@ describe('buildRetirementCardModel (필드 매핑)', () => {
     expect(m.grade.grade).toBe('standard');
   });
 
-  test('포맷 상수: 6개 포맷(S=9:16 스토리 추가) + 기본 E(Midnight)', () => {
-    expect(RETIREMENT_CARD_FORMATS).toEqual(['E', 'S', 'A', 'B', 'C', 'D']);
+  test('포맷 상수: 2개 포맷(E 정사각 / S 스토리) + 기본 E — 구 A~D 목업 포맷 폐기', () => {
+    expect(RETIREMENT_CARD_FORMATS).toEqual(['E', 'S']);
     expect(DEFAULT_RETIREMENT_CARD_FORMAT).toBe('E');
+    expect(RETIREMENT_CARD_FORMAT_LABEL).toEqual({E: '정사각', S: '스토리'});
   });
 
-  test('E(Midnight) 카피 필드: 거리 함께 · 기간 · 배웅 · 완주', () => {
+  test('카드 카피 필드: 라벨 · 기간 · 배웅 · 완주', () => {
     const m = buildRetirementCardModel(SAMPLE, 'perfect');
-    expect(m.togetherDistance).toBe(`${m.distanceLabel} 함께`);
     expect(m.retireLabel).toBe('Running Shoe Retirement');
     expect(m.completed).toBe('이 신발은 여정을 완주했습니다.');
+    expect(m.periodRange).toBe('2026.03 ~ 2026.08');
     expect(m.farewell).toMatch(/고마웠어\.$/);
   });
 });

@@ -14,12 +14,12 @@
 //   0 확인(確認)     — 신발명 · 누적 거리 · 러닝 횟수 · 사용 기간 (마지막 인사 준비)
 //   1 여정 요약      — 전체 일대기(거리/횟수/시간/페이스/최장 런/기간)
 //   2 하이라이트     — 실제 달성한 하이라이트 + Most Memorable Moment + 등급
-//   3 키프세이크 카드 — RetirementCard(포맷 E/A/B/C/D, 기본 E Midnight) + 이미지 저장 / 공유
+//   3 키프세이크 카드 — RetirementCard(정사각/스토리, 기본 정사각) + 이미지 저장 / 공유
 // 은퇴 확정은 스텝 2 → 3 전환에서 단 한 번 일어난다.
 // ============================================================================
 import React, {useMemo, useRef, useState} from 'react';
 import { rf, rs, ri, rv } from './lib/responsive';
-import {View, Text, ScrollView, Pressable, StyleSheet} from 'react-native';
+import {View, Text, ScrollView, Pressable, StyleSheet, useWindowDimensions} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {
@@ -48,6 +48,7 @@ import {persistRetiredShoe} from './lib/progression/retirementStore';
 import {
   buildRetirementCardModel,
   RETIREMENT_CARD_FORMATS,
+  RETIREMENT_CARD_FORMAT_LABEL,
   DEFAULT_RETIREMENT_CARD_FORMAT,
   type RetirementCardFormat,
 } from './lib/progression/retirementCard';
@@ -435,12 +436,16 @@ function CardStep({
   onSave: () => void | Promise<void>;
   onShare: () => void | Promise<void>;
 }) {
+  // 미리보기 폭 — 본문 패딩 제외. 스토리(9:16)는 세로가 길어 62%로 줄여 스텝 안에 담는다.
+  const win = useWindowDimensions();
+  const bodyW = Math.max(200, win.width - SPACE.xl * 2);
+  const previewW = format === 'S' ? Math.round(bodyW * 0.62) : bodyW;
   return (
     <View style={s.stepWrap}>
       <Text style={s.eyebrow}>키프세이크 카드</Text>
       <Text style={s.stepTitle}>훌륭한 여정이었어요</Text>
 
-      {/* 포맷 스위처 E/A/B/C/D(기본 E Midnight) */}
+      {/* 포맷 스위처 — 정사각(기본)/스토리 */}
       <View style={s.formatRow}>
         {RETIREMENT_CARD_FORMATS.map(f => {
           const on = f === format;
@@ -449,7 +454,7 @@ function CardStep({
               key={f}
               onPress={() => onFormat(f)}
               accessibilityRole="button"
-              accessibilityLabel={`카드 포맷 ${f}`}
+              accessibilityLabel={`카드 포맷 ${RETIREMENT_CARD_FORMAT_LABEL[f]}`}
               accessibilityState={{selected: on}}
               testID={`retire-card-format-${f}`}
               style={({pressed}) => [
@@ -457,15 +462,17 @@ function CardStep({
                 on && s.formatBtnOn,
                 pressed && s.pressed,
               ]}>
-              <Text style={[s.formatTxt, on && s.formatTxtOn]}>{f}</Text>
+              <Text style={[s.formatTxt, on && s.formatTxtOn]}>{RETIREMENT_CARD_FORMAT_LABEL[f]}</Text>
             </Pressable>
           );
         })}
       </View>
 
-      {/* 카드 미리보기 — RetirementCard(캡처용 순수 SVG). ref 로 PNG 캡처. */}
-      <View style={s.preview} testID="retire-card-preview">
-        <RetirementCard ref={cardRef} model={model} format={format} />
+      {/* 카드 미리보기 — RetirementCard(캡처용 순수 SVG, viewBox 축소 렌더). ref 로 PNG 캡처. */}
+      <View
+        style={[s.preview, format === 'S' && [s.previewStory, {width: previewW}]]}
+        testID="retire-card-preview">
+        <RetirementCard ref={cardRef} model={model} format={format} displayWidth={previewW} />
       </View>
 
       <RetirementCardActions onSave={onSave} onShare={onShare} />
@@ -646,6 +653,11 @@ const s = StyleSheet.create({
     borderCurve: 'continuous',
     overflow: 'hidden',
     backgroundColor: CARD,
+  },
+  // 스토리(1080×1920) 미리보기 — 9:16 비율, 중앙 정렬(폭은 런타임 계산).
+  previewStory: {
+    aspectRatio: 9 / 16,
+    alignSelf: 'center',
   },
 
   footer: {

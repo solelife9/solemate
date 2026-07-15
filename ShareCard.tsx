@@ -10,6 +10,7 @@
 import React from 'react';
 import Svg, {Rect, Path, Circle, Text as SvgText, G, Image as SvgImage, Defs, RadialGradient, LinearGradient, Stop} from 'react-native-svg';
 import {T1, RING_ACCENT, BG} from './theme';
+import {SHARE_DARK_STOPS, SHARE_TEXT_SHADOW} from './theme.palettes';
 import {WORDMARK_FONT} from './primitives';
 const CF = WORDMARK_FONT;
 import {projectRoute, LatLon, ScreenPoint} from './lib/route';
@@ -33,7 +34,7 @@ function Txt({t, fill}: {t: CardText; fill: string}) {
   const dy = Math.max(2, Math.round(t.size * 0.04));
   return (
     <>
-      <SvgText x={t.x + 2} y={t.y + dy} fill="#08090C" fillOpacity={0.45} fontFamily={CF} fontSize={t.size} fontWeight={t.weight} letterSpacing={t.ls} textAnchor={t.anchor}>{t.value}</SvgText>
+      <SvgText x={t.x + 2} y={t.y + dy} fill={SHARE_TEXT_SHADOW} fillOpacity={0.45} fontFamily={CF} fontSize={t.size} fontWeight={t.weight} letterSpacing={t.ls} textAnchor={t.anchor}>{t.value}</SvgText>
       <SvgText x={t.x} y={t.y} fill={fill} fillOpacity={t.opacity} fontFamily={CF} fontSize={t.size} fontWeight={t.weight} letterSpacing={t.ls} textAnchor={t.anchor}>{t.value}</SvgText>
     </>
   );
@@ -93,7 +94,7 @@ const ShareCard = React.forwardRef<unknown, ShareCardProps>((props, ref) => {
     <Svg ref={ref as never} width={dispW} height={dispH} viewBox={`0 0 ${W} ${H}`}>
       <Defs>
         <RadialGradient id="kg-dark" cx="50%" cy="18%" r="110%">
-          <Stop offset="0" stopColor="#17110B" /><Stop offset="0.55" stopColor="#0B0B0C" /><Stop offset="1" stopColor="#070707" />
+          <Stop offset="0" stopColor={SHARE_DARK_STOPS[0]} /><Stop offset="0.55" stopColor={SHARE_DARK_STOPS[1]} /><Stop offset="1" stopColor={SHARE_DARK_STOPS[2]} />
         </RadialGradient>
         <LinearGradient id="kg-route" x1="0" y1="1" x2="1" y2="0">
           <Stop offset="0" stopColor="#FFB458" /><Stop offset="1" stopColor="#E56600" />

@@ -1,14 +1,15 @@
 /**
  * RetirementCard(은퇴 키프세이크 카드 SVG) + RetirementCardActions 렌더 테스트.
  *
- * 관찰 가능한 효과:
- *   1) 4개 포맷(A/B/C/D) 모두 하나의 요약에서 카드를 렌더한다(거리/신발명/등급 배지).
- *   2) format 미지정 시 기본은 E(Midnight 배웅 키프세이크).
- *   3) Smart Retirement Grade 배지(이모지+라벨)가 모든 포맷에 보인다.
- *   4) 장착 타이틀이 KEEGO/Keep Going 워드마크 근처에 은은하게 렌더된다.
+ * 관찰 가능한 효과(2026-07-16 컴팩트 공유 카드 언어 통일 — E 정사각 / S 스토리):
+ *   1) 두 포맷 모두 하나의 요약에서 카드를 렌더한다(신발명/거리/배웅/keego).
+ *   2) format 미지정 시 기본은 E(정사각 1080²), S 는 스토리(1080×1920).
+ *   3) 감정 keepsake 정합 — 등급 배지·게임화 카피는 싣지 않는다.
+ *   4) MOST MEMORABLE 라벨은 이모지를 뗀 텍스트만(공유 카드 절제).
  *   5) 결손(하이라이트 없음) 요약도 크래시 없이 렌더된다.
  *   6) 액션 바의 [이미지 저장]/[공유하기] 누름이 핸들러를 호출한다.
  *   7) forwardRef 가 내부 Svg(toDataURL 보유)로 연결되어 캡처 가능.
+ *   8) displayWidth 지정 시 축소 렌더(미리보기), 미지정 시 실캔버스(고해상 캡처).
  *
  * SVG 프리미티브는 jest.setup.js 에서 View 로 목킹되며 displayName 은 보존된다.
  *
@@ -21,6 +22,7 @@ import RetirementCardActions from '../RetirementCardActions';
 import {
   buildRetirementCardModel,
   RetirementCardFormat,
+  RETIREMENT_CARD_FORMATS,
 } from '../lib/progression/retirementCard';
 import {RETIREMENT_HIGHLIGHT_KEYS as H} from '../lib/progression/retirement';
 import type {RetirementSummary} from '../lib/progression/types';
@@ -66,73 +68,68 @@ function render(el: React.ReactElement) {
 
 const MODEL = buildRetirementCardModel(SAMPLE, 'perfect', {equippedTitle: 'Marathon Mindset'});
 
-describe('RetirementCard 5개 포맷 렌더', () => {
-  // 등급 배지를 싣는 포맷(A~D). E(Midnight)는 감정 keepsake라 배지를 비운다(별도 검증).
-  const formats: RetirementCardFormat[] = ['A', 'B', 'C', 'D'];
-  const allFormats: RetirementCardFormat[] = ['E', 'A', 'B', 'C', 'D'];
+describe('RetirementCard 2개 포맷 렌더(컴팩트 공유 카드 언어)', () => {
+  test.each(RETIREMENT_CARD_FORMATS as RetirementCardFormat[])(
+    '포맷 %s 는 하나의 요약에서 라벨/신발명/거리/배웅/keego 를 렌더한다',
+    fmt => {
+      const txt = textOf(render(<RetirementCard model={MODEL} format={fmt} />).root);
+      expect(txt.toUpperCase()).toContain('RUNNING SHOE RETIREMENT');
+      expect(txt.toLowerCase()).toContain('alphafly 3'.toLowerCase());
+      expect(txt).toContain('512');
+      expect(txt).toContain('고마웠어'); // 배웅(사용 기간 기반)
+      expect(txt).toContain('keego'); // 파파야 워드마크(소문자)
+    },
+  );
 
-  test.each(formats)('포맷 %s 는 하나의 요약에서 거리/신발명/등급 배지를 렌더한다', fmt => {
-    const txt = textOf(render(<RetirementCard model={MODEL} format={fmt} />).root);
-    // 신발명·거리는 모든 포맷 공통(대문자 변형 가능 → 소문자 비교로 흡수)
-    expect(txt.toLowerCase()).toContain('alphafly 3'.toLowerCase());
-    expect(txt).toContain('512');
-    // Smart Retirement Grade 배지(이모지+라벨)
-    expect(txt).toContain('Perfect Retirement');
-    expect(txt).toContain(MODEL.grade.emoji);
-    // KEEGO 워드마크
-    expect(txt).toContain('KEEGO');
+  test('E(정사각): 지표 셀(RUNS/AVG PACE/LONGEST)과 함께 달린 거리 캡션, 1080×1080', () => {
+    const r = render(<RetirementCard model={MODEL} format="E" />);
+    const txt = textOf(r.root);
+    expect(txt).toContain('RUNS');
+    expect(txt).toContain('42');
+    expect(txt).toContain('AVG PACE');
+    expect(txt).toContain('LONGEST');
+    expect(txt).toContain('함께 달린 거리');
+    const svg = r.root.findAll(n => n.props?.width === 1080 && n.props?.height === 1080);
+    expect(svg.length).toBeGreaterThan(0);
   });
 
-  test("S(스토리 9:16): 선셋 바이올렛 키프세이크 — RUNNING SHOE RETIREMENT·함께 달린 거리·고마웠어·KEEGO, 1080×1920", () => {
+  test('S(스토리 9:16): 함께 달린 거리·MOST MEMORABLE(이모지 제거)·기간, 1080×1920', () => {
     const r = render(<RetirementCard model={MODEL} format="S" />);
     const txt = textOf(r.root);
-    expect(txt).toContain('RUNNING SHOE RETIREMENT');
     expect(txt).toContain('함께 달린 거리');
-    expect(txt).toContain('고마웠어');
-    expect(txt).toContain('KEEGO');
-    expect(txt).toContain('512');
-    expect(txt.toLowerCase()).toContain('alphafly 3'.toLowerCase());
-    // 루트 Svg 가 스토리 세로 규격이다.
+    expect(txt).toContain('MOST MEMORABLE');
+    expect(txt).toContain('풀코스 완주'); // 라벨 텍스트는 유지하되
+    expect(txt).not.toContain('🏁'); // 선두 이모지는 절제(공유 카드)
+    expect(txt).toContain('2026.03.12 → 2026.08.22');
     const svg = r.root.findAll(n => n.props?.width === 1080 && n.props?.height === 1920);
     expect(svg.length).toBeGreaterThan(0);
   });
 
-  test('포맷별 시그니처 카피가 각 레이아웃에 나타난다', () => {
-    expect(textOf(render(<RetirementCard model={MODEL} format="A" />).root)).toContain('MISSION COMPLETE');
-    expect(textOf(render(<RetirementCard model={MODEL} format="B" />).root)).toContain('Together');
-    expect(textOf(render(<RetirementCard model={MODEL} format="C" />).root)).toContain('함께했습니다');
-    const d = textOf(render(<RetirementCard model={MODEL} format="D" />).root);
-    expect(d).toContain('SHOE SCORE');
-    expect(d).toContain('CLASS OF');
-    expect(d).toContain('2026');
-  });
-
-  test('format 미지정 시 기본은 E(Midnight 배웅), A/C/D 시그니처는 없다', () => {
-    const txt = textOf(render(<RetirementCard model={MODEL} />).root);
-    expect(txt.toUpperCase()).toContain('RUNNING SHOE RETIREMENT'); // E 상단 라벨
-    expect(txt).toContain('512km 함께'); // E 거리 그라데이션
-    expect(txt).toContain('이 신발은 여정을 완주했습니다.'); // E 완주 한 줄
-    expect(txt).toContain('고마웠어.'); // E 배웅
-    expect(txt).toContain('KEEGO');
-    expect(txt).not.toContain('MISSION COMPLETE'); // A
-    expect(txt).not.toContain('함께했습니다'); // C
-    expect(txt).not.toContain('SHOE SCORE'); // D
-  });
-
-  test('E(Midnight)는 등급 배지 대신 배웅을 중심에 둔다', () => {
-    const txt = textOf(render(<RetirementCard model={MODEL} format="E" />).root);
+  test('format 미지정 시 기본은 E(정사각) — 스토리 규격이 아니다', () => {
+    const r = render(<RetirementCard model={MODEL} />);
+    const txt = textOf(r.root);
+    expect(txt.toUpperCase()).toContain('RUNNING SHOE RETIREMENT');
     expect(txt).toContain('고마웠어.');
-    expect(txt).not.toContain('Perfect Retirement'); // 배지 없음(디자인 정합)
+    const story = r.root.findAll(n => n.props?.height === 1920);
+    expect(story.length).toBe(0);
   });
 
-  test('장착 타이틀이 워드마크(Keep Going) 근처에 은은하게 렌더된다', () => {
-    const txt = textOf(render(<RetirementCard model={MODEL} format="C" />).root);
-    expect(txt).toContain('Keep Going · Marathon Mindset');
-    // 타이틀이 없으면 워드마크 보조줄은 'Keep Going'만
-    const noTitle = buildRetirementCardModel(SAMPLE, 'perfect');
-    const txt2 = textOf(render(<RetirementCard model={noTitle} format="C" />).root);
-    expect(txt2).toContain('Keep Going');
-    expect(txt2).not.toContain('Marathon Mindset');
+  test('감정 keepsake 정합 — 등급 배지·게임화 카피를 싣지 않는다', () => {
+    for (const fmt of RETIREMENT_CARD_FORMATS) {
+      const txt = textOf(render(<RetirementCard model={MODEL} format={fmt} />).root);
+      expect(txt).not.toContain('Perfect Retirement'); // 등급 배지 없음
+      expect(txt).not.toContain('MISSION COMPLETE'); // 구 A 카피
+      expect(txt).not.toContain('SHOE SCORE'); // 구 D 카피
+    }
+  });
+
+  test('displayWidth 지정 시 축소 렌더(viewBox 유지), 미지정 시 실캔버스', () => {
+    const preview = render(<RetirementCard model={MODEL} format="S" displayWidth={324} />);
+    // 324 × (1920/1080) = 576
+    const scaled = preview.root.findAll(n => n.props?.width === 324 && n.props?.height === 576);
+    expect(scaled.length).toBeGreaterThan(0);
+    const full = render(<RetirementCard model={MODEL} format="S" />);
+    expect(full.root.findAll(n => n.props?.width === 1080).length).toBeGreaterThan(0);
   });
 
   test('하이라이트 없는(결손) 요약도 크래시 없이 렌더된다', () => {
@@ -140,18 +137,21 @@ describe('RetirementCard 5개 포맷 렌더', () => {
       {...SAMPLE, highlights: [], mostMemorable: null, avgPaceSec: null, bestPaceSec: null, longestRunKm: 0},
       'standard',
     );
-    for (const fmt of allFormats) {
+    for (const fmt of RETIREMENT_CARD_FORMATS) {
       expect(() => render(<RetirementCard model={lean} format={fmt} />)).not.toThrow();
     }
-    // PB 0 → '×0' 폴백이 보이고 등급은 standard 배지
-    const txt = textOf(render(<RetirementCard model={lean} format="D" />).root);
-    expect(txt).toContain('Standard Retirement');
+    // 없는 지표 칸은 빠진다(AVG PACE/LONGEST 없음, RUNS 만).
+    const txt = textOf(render(<RetirementCard model={lean} format="E" />).root);
+    expect(txt).toContain('RUNS');
+    expect(txt).not.toContain('AVG PACE');
+    expect(txt).not.toContain('LONGEST');
+    expect(txt).not.toContain('MOST MEMORABLE');
   });
 
   test('forwardRef 가 내부 Svg(toDataURL 보유)로 연결되어 캡처 가능하다', () => {
     const ref = React.createRef<any>();
     act(() => {
-      ReactTestRenderer.create(<RetirementCard ref={ref} model={MODEL} format="C" />);
+      ReactTestRenderer.create(<RetirementCard ref={ref} model={MODEL} format="E" />);
     });
     expect(ref.current).toBeTruthy();
     expect(typeof ref.current.toDataURL).toBe('function');

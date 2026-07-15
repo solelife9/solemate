@@ -1,586 +1,181 @@
 // ============================================================================
-// RetirementCard.tsx — 은퇴 키프세이크 카드(이미지, 4 레이아웃)
+// RetirementCard.tsx — 은퇴 키프세이크 카드(이미지) · 컴팩트 공유 카드 언어
 // ----------------------------------------------------------------------------
 // 하나의 RetirementCardModel(lib/progression/retirementCard) 을 react-native-svg 만으로
-// 그린 정사각 1080×1080 카드. 부모가 넘긴 ref 가 내부 <Svg> 에 연결되어, 부모는
-// ref.current.toDataURL() 로 PNG dataURL 을 얻어 저장/공유한다(lib/progression
-// /retirementShare). 새 네이티브 의존 0 — 런/리캡 카드(ShareCard·RecapShareCard)와 동일
-// 패턴. 색은 theme 토큰 + 등급 티어색(model.grade.color = TIER_COLORS)만(raw hex 0).
+// 그린다. 부모가 넘긴 ref 가 내부 <Svg> 에 연결되어, 부모는 ref.current.toDataURL() 로
+// PNG dataURL 을 얻어 저장/공유한다(lib/progression/retirementShare). 새 네이티브 의존 0.
 //
-// `format` prop 으로 5개 레이아웃을 고른다(기본 'E'):
-//   E — Midnight + 배웅(기본, 디자인 마무리 핸드오프 키프세이크 · 보랏빛 글로우·그라데이션)
-//   A — Nike 캠페인(거대 타이포 · 오렌지 바 · MISSION COMPLETE)
-//   B — Modern premium(가는 굵기 · 디바이더 · '512 km Together')
-//   C — Apple/한국어 감성('512km 함께했습니다 / 훌륭한 여정이었습니다')
-//   D — Hall of Fame(인증서 프레임 · Shoe Score · Class of YYYY)
-// A~D 는 Smart Retirement Grade 배지 + KEEGO/Keep Going 워드마크를 싣고, E 는 감정적
-// keepsake 라 배지를 비우고 배웅 메시지를 중심에 둔다(디자인 정합).
+// 시각 언어 = 런/리캡 공유 카드와 동일(2026-07-16 통일): 다크 라디얼 배경(SHARE_DARK_STOPS)
+// · 흰 지표(caps 라벨 + 굵은 값, 그림자) · 거리 히어로만 파파야 그라데이션(성취) · 하단
+// keego 파파야 워드마크. 구 A/B/C/D 목업 포맷과 보랏빛 Midnight 팔레트는 폐기.
+//
+// `format` prop: E 정사각(1080², 기본) / S 스토리(1080×1920, 인스타 9:16).
+// 감정적 keepsake 정합 — 게임화 배지(등급)는 싣지 않고 배웅 문장을 중심에 둔다.
 // ============================================================================
 import React from 'react';
-import Svg, {
-  Rect,
-  Text as SvgText,
-  G,
-  Line,
-  Defs,
-  LinearGradient,
-  RadialGradient,
-  ClipPath,
-  Stop,
-} from 'react-native-svg';
-import {
-  BG,
-  CARD,
-  CARD_DIM,
-  ACCENT,
-  T1,
-  T2,
-  T3,
-  SEP,
-  FONT,
-  DISPLAY,
-  TIER_COLORS,
-  RETIRE_MIDNIGHT_BG,
-  RETIRE_MIDNIGHT_GLOW,
-  RETIRE_GRAD_STOPS,
-  HALL_GOLD,
-  withAlpha,
-} from './theme';
+import Svg, {Rect, Text as SvgText, G, Line, Defs, LinearGradient, RadialGradient, Stop} from 'react-native-svg';
+import {T1, RING_ACCENT, RING_ACCENT_HI, RING_ACCENT_LO, withAlpha} from './theme';
+import {SHARE_DARK_STOPS, SHARE_TEXT_SHADOW} from './theme.palettes';
+import {WORDMARK_FONT} from './primitives';
 import {
   RetirementCardModel,
   RetirementCardFormat,
   DEFAULT_RETIREMENT_CARD_FORMAT,
 } from './lib/progression/retirementCard';
 
-// 1080×1080 정사각 — 런/리캡 카드와 동일 출력 해상도(SNS 공유 호환).
+const CF = WORDMARK_FONT;
+
+// 1080×1080 정사각(E) — 런/리캡 카드와 동일 출력 해상도(SNS 공유 호환).
 export const CARD_W = 1080;
 export const CARD_H = 1080;
 /** 'S' 스토리 포맷(인스타 9:16). */
 export const STORY_H = 1920;
-const PAD = 88;
 const CX = CARD_W / 2;
+const PAD = 88;
 
 export interface RetirementCardProps {
   model: RetirementCardModel;
-  /** 레이아웃 포맷(기본 C). */
+  /** 레이아웃 포맷(기본 E 정사각). */
   format?: RetirementCardFormat;
+  /** 표시 폭(미리보기용) — 지정 시 축소 렌더(viewBox). 미지정=실제 캔버스(고해상 캡처). */
+  displayWidth?: number;
 }
 
-// ── 공통 조각 ──────────────────────────────────────────────────────────────────
-/** Smart Retirement Grade 배지(이모지 + 라벨, 티어색 보더/텍스트). */
-function GradeBadge({
-  model,
-  x,
-  y,
-  anchor = 'middle',
-}: {
-  model: RetirementCardModel;
-  x: number;
-  y: number;
-  anchor?: 'start' | 'middle';
+// 런 카드와 동일 문법의 텍스트 그림자(다크 배경에선 안 보여 무해).
+function Tx({x, y, size, weight, anchor = 'middle', ls = 0, opacity = 1, fill = T1, children}: {
+  x: number; y: number; size: number; weight: '500' | '600' | '700' | '800';
+  anchor?: 'start' | 'middle' | 'end'; ls?: number; opacity?: number; fill?: string;
+  children: string;
 }) {
-  const c = model.grade.color;
-  const text = `${model.grade.emoji} ${model.grade.label}`;
-  // 텍스트 폭 근사(정사각 캡션 기준) — 배지 알약 배경 크기.
-  const w = Math.max(220, text.length * 22 + 80);
-  const h = 64;
-  const rectX = anchor === 'middle' ? x - w / 2 : x;
+  const dy = Math.max(2, Math.round(size * 0.04));
   return (
-    <G>
-      <Rect
-        x={rectX}
-        y={y - h / 2}
-        width={w}
-        height={h}
-        rx={h / 2}
-        fill={withAlpha(c, 0.14)}
-        stroke={withAlpha(c, 0.5)}
-        strokeWidth={2}
-      />
-      <SvgText
-        x={x}
-        y={y + 11}
-        fill={c}
-        fontFamily={FONT}
-        fontSize={30}
-        fontWeight="700"
-        textAnchor={anchor}>
-        {text}
-      </SvgText>
-    </G>
+    <>
+      <SvgText x={x + 2} y={y + dy} fill={SHARE_TEXT_SHADOW} fillOpacity={0.45} fontFamily={CF} fontSize={size} fontWeight={weight} letterSpacing={ls} textAnchor={anchor}>{children}</SvgText>
+      <SvgText x={x} y={y} fill={fill} fillOpacity={opacity} fontFamily={CF} fontSize={size} fontWeight={weight} letterSpacing={ls} textAnchor={anchor}>{children}</SvgText>
+    </>
   );
 }
 
-/** KEEGO / Keep Going 워드마크 + 장착 타이틀(은은). */
-function Wordmark({
-  model,
-  x,
-  y,
-  anchor = 'middle',
-  color = T1,
-}: {
-  model: RetirementCardModel;
-  x: number;
-  y: number;
-  anchor?: 'start' | 'middle' | 'end';
-  color?: string;
-}) {
-  return (
-    <G>
-      <SvgText
-        x={x}
-        y={y}
-        fill={color}
-        fontFamily={DISPLAY}
-        fontSize={30}
-        fontWeight="800"
-        letterSpacing={10}
-        textAnchor={anchor}>
-        {model.brand}
-      </SvgText>
-      <SvgText
-        x={x}
-        y={y + 34}
-        fill={T3}
-        fontFamily={FONT}
-        fontSize={22}
-        textAnchor={anchor}>
-        {model.equippedTitle ? `${model.wordmark} · ${model.equippedTitle}` : model.wordmark}
-      </SvgText>
-    </G>
-  );
+/** 폭에 맞춰 폰트 크기를 줄인다(긴 신발명 오버플로 방지). */
+function fitSize(text: string, base: number, maxW: number): number {
+  const w = text.length * base * 0.56;
+  return w <= maxW ? base : Math.max(24, Math.floor(maxW / (text.length * 0.56)));
 }
 
-// ── A · Nike 캠페인 ─────────────────────────────────────────────────────────────
-function FormatA({model}: {model: RetirementCardModel}) {
-  const left = PAD + 28;
-  const stats: {v: string; k: string}[] = [
-    {v: model.runCountLabel, k: 'RUNS'},
-    {v: model.bestPace ?? '--', k: 'BEST PACE'},
-    {v: model.pbLabel ?? '×0', k: 'PB'},
-  ];
-  const slot = (CARD_W - left - PAD) / 3;
-  return (
-    <G>
-      {/* 좌측 오렌지 바 */}
-      <Rect x={0} y={0} width={20} height={CARD_H} fill={ACCENT} />
-      <SvgText x={left} y={150} fill={ACCENT} fontFamily={FONT} fontSize={30} fontWeight="800" letterSpacing={8}>
-        {model.tagA}
-      </SvgText>
-      {/* 모델명(대문자, 거대) */}
-      <SvgText
-        x={left}
-        y={440}
-        fill={T1}
-        fontFamily={DISPLAY}
-        fontSize={120}
-        fontWeight="800"
-        letterSpacing={-4}>
-        {model.shoeName.toUpperCase()}
-      </SvgText>
-      {/* 거리 히어로 */}
-      <SvgText x={left} y={620} fill={T1} fontFamily={DISPLAY} fontSize={230} fontWeight="800" letterSpacing={-12}>
-        {model.distance}
-        <SvgText fill={ACCENT} fontSize={84}>{` ${model.unit.toUpperCase()}`}</SvgText>
-      </SvgText>
-      {/* 통계 그리드 */}
-      {stats.map((st, i) => (
-        <G key={st.k}>
-          <SvgText x={left + slot * i} y={770} fill={T1} fontFamily={DISPLAY} fontSize={64} fontWeight="800">
-            {st.v}
-          </SvgText>
-          <SvgText x={left + slot * i} y={812} fill={T3} fontFamily={FONT} fontSize={26} fontWeight="700" letterSpacing={3}>
-            {st.k}
-          </SvgText>
-        </G>
-      ))}
-      <SvgText x={left} y={880} fill={T2} fontFamily={FONT} fontSize={30} fontWeight="700" letterSpacing={2}>
-        {model.dateRange}
-      </SvgText>
-      {/* 등급 배지(은은) */}
-      <GradeBadge model={model} x={left} y={935} anchor="start" />
-      {/* 푸터: MISSION COMPLETE + 워드마크 */}
-      <Line x1={left} y1={985} x2={CARD_W - PAD} y2={985} stroke={SEP} strokeWidth={2} />
-      <SvgText x={left} y={1035} fill={ACCENT} fontFamily={FONT} fontSize={36} fontWeight="800" letterSpacing={5}>
-        {model.missionA}
-      </SvgText>
-      <Wordmark model={model} x={CARD_W - PAD} y={1025} anchor="end" />
-    </G>
-  );
+/** 하이라이트 라벨의 선두 이모지 제거(공유 카드 절제 — 화면 내 라벨은 이모지 유지). */
+function stripEmoji(label: string): string {
+  const i = label.search(/[가-힣A-Za-z0-9]/);
+  return i > 0 ? label.slice(i) : label;
 }
 
-// ── B · Modern premium ──────────────────────────────────────────────────────────
-function FormatB({model}: {model: RetirementCardModel}) {
-  const cells: {v: string; k: string; acc?: boolean}[] = [
-    {v: model.runCountLabel, k: 'RUNS'},
-    {v: model.pbLabel ?? '×0', k: 'PERSONAL BEST', acc: true},
-    {v: model.longestRun ?? '--', k: 'LONGEST RUN'},
-  ];
-  const innerW = CARD_W - PAD * 2;
-  const slot = innerW / 3;
-  return (
-    <G>
-      <SvgText x={CX} y={250} fill={ACCENT} fontFamily={FONT} fontSize={28} fontWeight="700" letterSpacing={9} textAnchor="middle">
-        {model.eyebrowB.toUpperCase()}
-      </SvgText>
-      {/* 모델명(가는 굵기) */}
-      <SvgText x={CX} y={360} fill={T1} fontFamily={FONT} fontSize={80} fontWeight="400" textAnchor="middle">
-        {model.shoeName}
-      </SvgText>
-      <SvgText x={CX} y={420} fill={T3} fontFamily={FONT} fontSize={34} textAnchor="middle">
-        {model.togetherEn}
-      </SvgText>
-      <GradeBadge model={model} x={CX} y={500} />
-      <Line x1={PAD + 40} y1={580} x2={CARD_W - PAD - 40} y2={580} stroke={SEP} strokeWidth={2} />
-      {/* 3 셀 */}
-      {cells.map((c, i) => {
-        const cx = PAD + slot * i + slot / 2;
-        return (
-          <G key={c.k}>
-            <SvgText x={cx} y={700} fill={c.acc ? ACCENT : T1} fontFamily={DISPLAY} fontSize={62} fontWeight="600" textAnchor="middle">
-              {c.v}
-            </SvgText>
-            <SvgText x={cx} y={744} fill={T3} fontFamily={FONT} fontSize={24} letterSpacing={3} textAnchor="middle">
-              {c.k}
-            </SvgText>
-            {i > 0 && <Line x1={PAD + slot * i} y1={660} x2={PAD + slot * i} y2={750} stroke={SEP} strokeWidth={2} />}
-          </G>
-        );
-      })}
-      <Line x1={PAD + 40} y1={800} x2={CARD_W - PAD - 40} y2={800} stroke={SEP} strokeWidth={2} />
-      {/* 날짜(세로) */}
-      <SvgText x={CX} y={880} fill={T2} fontFamily={FONT} fontSize={38} fontWeight="500" textAnchor="middle">
-        {model.startMonth || model.startDate}
-      </SvgText>
-      <SvgText x={CX} y={925} fill={ACCENT} fontFamily={FONT} fontSize={34} textAnchor="middle">
-        ↓
-      </SvgText>
-      <SvgText x={CX} y={970} fill={T2} fontFamily={FONT} fontSize={38} fontWeight="500" textAnchor="middle">
-        {model.endMonth || model.endDate}
-      </SvgText>
-      <Wordmark model={model} x={CX} y={1030} />
-    </G>
-  );
+/** 지표 3셀(RUNS · AVG PACE · LONGEST) — 없는 값은 칸째 빠진다. */
+function statCells(model: RetirementCardModel): {label: string; value: string}[] {
+  const cells: {label: string; value: string}[] = [{label: 'RUNS', value: model.runCountLabel}];
+  if (model.avgPace) cells.push({label: 'AVG PACE', value: model.avgPace});
+  if (model.longestRun) cells.push({label: 'LONGEST', value: `${model.longestRun} ${model.unit}`});
+  return cells;
 }
 
-// ── C · Apple / 한국어 감성(기본) ────────────────────────────────────────────────
-function FormatC({model}: {model: RetirementCardModel}) {
-  const meta: string[] = [`${model.runCountLabel}회 러닝`];
-  if (model.avgPace) meta.push(`평균 페이스 ${model.avgPace}`);
-  if (model.dateRange) meta.push(model.dateRange);
-  return (
-    <G>
-      <GradeBadge model={model} x={CX} y={230} />
-      <SvgText x={CX} y={400} fill={T1} fontFamily={FONT} fontSize={68} fontWeight="600" textAnchor="middle">
-        {model.shoeName}
-      </SvgText>
-      <SvgText x={CX} y={480} fill={T2} fontFamily={FONT} fontSize={40} textAnchor="middle">
-        <SvgText fill={T1} fontWeight="700">{model.distanceLabel}</SvgText>
-        {' 함께했습니다'}
-      </SvgText>
-      {/* 메타(러닝 수 / 평균 페이스 / 기간) */}
-      {meta.map((line, i) => (
-        <SvgText key={line + i} x={CX} y={600 + i * 60} fill={T3} fontFamily={FONT} fontSize={32} textAnchor="middle">
-          {line}
-        </SvgText>
-      ))}
-      {/* Most Memorable Moment(있으면) */}
-      {!!model.mostMemorable && (
-        <SvgText x={CX} y={790} fill={T2} fontFamily={FONT} fontSize={30} textAnchor="middle">
-          {model.mostMemorable}
-        </SvgText>
-      )}
-      {/* 감성 클로징 */}
-      <SvgText x={CX} y={900} fill={T3} fontFamily={FONT} fontSize={32} textAnchor="middle">
-        {model.closingTop}
-      </SvgText>
-      <SvgText x={CX} y={952} fill={ACCENT} fontFamily={FONT} fontSize={44} fontWeight="600" textAnchor="middle">
-        {model.closingBottom}
-      </SvgText>
-      <Wordmark model={model} x={CX} y={1035} />
-    </G>
-  );
-}
-
-// ── D · Hall of Fame(인증서) ─────────────────────────────────────────────────────
-function FormatD({model}: {model: RetirementCardModel}) {
-  const gold = TIER_COLORS.gold;
-  const stats: {v: string; k: string; acc?: boolean}[] = [
-    {v: model.runCountLabel, k: 'RUNS'},
-    {v: model.pbLabel ?? '×0', k: 'PB', acc: true},
-    {v: model.longestRun ?? '--', k: `LONGEST ${model.unit.toUpperCase()}`},
-  ];
-  const slot = (CARD_W - PAD * 2) / 3;
-  return (
-    <G>
-      <Defs>
-        <LinearGradient id="hofKm" x1="0" y1="0" x2="1" y2="0">
-          <Stop offset="0" stopColor={gold} />
-          <Stop offset="1" stopColor={ACCENT} />
-        </LinearGradient>
-      </Defs>
-      {/* 인증서 이중 프레임 */}
-      <Rect x={40} y={40} width={CARD_W - 80} height={CARD_H - 80} rx={40} fill="none" stroke={withAlpha(gold, 0.5)} strokeWidth={3} />
-      <Rect x={58} y={58} width={CARD_W - 116} height={CARD_H - 116} rx={30} fill="none" stroke={withAlpha(ACCENT, 0.3)} strokeWidth={2} />
-      <SvgText x={CX} y={185} fill={gold} fontFamily={FONT} fontSize={40} fontWeight="800" letterSpacing={14} textAnchor="middle">
-        RETIRED
-      </SvgText>
-      <SvgText x={CX} y={245} fill={gold} fontFamily={FONT} fontSize={30} letterSpacing={10} textAnchor="middle">
-        🌿 ★ 🌿
-      </SvgText>
-      <SvgText x={CX} y={345} fill={T1} fontFamily={FONT} fontSize={80} textAnchor="middle">
-        👟
-      </SvgText>
-      <SvgText x={CX} y={425} fill={T1} fontFamily={FONT} fontSize={56} fontWeight="800" textAnchor="middle">
-        {model.shoeName}
-      </SvgText>
-      {/* 거리(골드→오렌지 그라데이션) */}
-      <SvgText x={CX} y={560} fill="url(#hofKm)" fontFamily={DISPLAY} fontSize={130} fontWeight="800" letterSpacing={-6} textAnchor="middle">
-        {model.distance}
-        <SvgText fontSize={56}>{model.unit}</SvgText>
-      </SvgText>
-      {/* 통계 */}
-      {stats.map((st, i) => {
-        const cx = PAD + slot * i + slot / 2;
-        return (
-          <G key={st.k}>
-            <SvgText x={cx} y={665} fill={st.acc ? gold : T1} fontFamily={DISPLAY} fontSize={52} fontWeight="800" textAnchor="middle">
-              {st.v}
-            </SvgText>
-            <SvgText x={cx} y={705} fill={T3} fontFamily={FONT} fontSize={24} letterSpacing={3} textAnchor="middle">
-              {st.k}
-            </SvgText>
-          </G>
-        );
-      })}
-      {/* Shoe Score 배지 */}
-      <Rect x={CX - 170} y={760} width={340} height={70} rx={35} fill={withAlpha(gold, 0.1)} stroke={withAlpha(gold, 0.45)} strokeWidth={2} />
-      <SvgText x={CX - 130} y={805} fill={gold} fontFamily={FONT} fontSize={26} fontWeight="700" letterSpacing={3}>
-        SHOE SCORE
-      </SvgText>
-      <SvgText x={CX + 130} y={808} fill={T1} fontFamily={DISPLAY} fontSize={48} fontWeight="800" textAnchor="end">
-        {model.shoeScore}
-      </SvgText>
-      {/* 등급 배지 */}
-      <GradeBadge model={model} x={CX} y={895} />
-      <SvgText x={CX} y={975} fill={T3} fontFamily={FONT} fontSize={30} fontWeight="800" letterSpacing={6} textAnchor="middle">
-        {`CLASS OF `}
-        <SvgText fill={gold}>{model.retireYear ? String(model.retireYear) : '—'}</SvgText>
-      </SvgText>
-      <Wordmark model={model} x={CX} y={1035} />
-    </G>
-  );
-}
-
-// ── E · Midnight + 배웅(디자인 마무리 핸드오프 키프세이크) ──────────────────────────
-// 보랏빛 미드나잇 배경 + 상단 radial 글로우 + 거리/배웅 그라데이션 텍스트. 감정적 keepsake라
-// 게임화 배지(등급)는 의도적으로 비운다(디자인 정합). 색은 RETIRE_* 토큰만(raw hex 0).
+// ── E · 정사각(1080²) ──────────────────────────────────────────────────────────
 function FormatE({model}: {model: RetirementCardModel}) {
-  const innerX = PAD / 2;
-  const innerW = CARD_W - PAD;
-  const innerH = CARD_H - PAD;
-  const ruleX1 = PAD + 20;
-  const ruleX2 = CARD_W - PAD - 20;
-  const hair = withAlpha(T1, 0.16);
-  const stopOff = ['0', '0.55', '1'];
-  const hasMoment = !!model.mostMemorable;
+  const hair = withAlpha(T1, 0.14);
+  const cells = statCells(model);
+  const span = CARD_W * 0.86;
+  const x0 = (CARD_W - span) / 2;
+  const slot = span / cells.length;
+  const nameSize = fitSize(model.shoeName, 78, CARD_W - PAD * 2);
+  const heroSize = fitSize(`${model.distance} ${model.unit}`, 170, CARD_W - PAD * 2);
+  const caption = model.periodRange ? `함께 달린 거리 · ${model.periodRange}` : '함께 달린 거리';
   return (
     <G>
-      <Defs>
-        <ClipPath id="eClip">
-          <Rect x={innerX} y={innerX} width={innerW} height={innerH} rx={56} />
-        </ClipPath>
-        <RadialGradient id="eGlow" cx="50%" cy="7%" rx="62%" ry="46%">
-          <Stop offset="0" stopColor={RETIRE_MIDNIGHT_GLOW} stopOpacity={1} />
-          <Stop offset="0.56" stopColor={RETIRE_MIDNIGHT_GLOW} stopOpacity={0} />
-        </RadialGradient>
-        <LinearGradient id="eGrad" x1="0" y1="0" x2="1" y2="0.16">
-          {RETIRE_GRAD_STOPS.map((c, i) => (
-            <Stop key={c} offset={stopOff[i]} stopColor={c} stopOpacity={1} />
-          ))}
-        </LinearGradient>
-      </Defs>
-      {/* 상단 radial 글로우(둥근 카드에 클립) */}
-      <G clipPath="url(#eClip)">
-        <Rect x={innerX} y={innerX} width={innerW} height={innerH} fill="url(#eGlow)" />
-      </G>
+      <Line x1={CX - 250} y1={150} x2={CX + 250} y2={150} stroke={hair} strokeWidth={2} />
+      <Tx x={CX} y={214} size={28} weight="700" ls={7} opacity={0.62}>{model.retireLabel.toUpperCase()}</Tx>
 
-      {/* 상단: 헤어라인 + 라벨 */}
-      <Line x1={ruleX1} y1={172} x2={ruleX2} y2={172} stroke={hair} strokeWidth={2} />
-      <SvgText x={CX} y={224} fill={withAlpha(T1, 0.62)} fontFamily={FONT} fontSize={26} fontWeight="800" letterSpacing={8} textAnchor="middle">
-        {model.retireLabel.toUpperCase()}
-      </SvgText>
+      {/* 주인공: 신발명 */}
+      <Tx x={CX} y={452} size={nameSize} weight="800" ls={-2}>{model.shoeName}</Tx>
 
-      {/* 중단: 브랜드 / 모델 / 거리(그라데이션) / 기간 */}
-      <SvgText x={CX} y={362} fill={withAlpha(T1, 0.5)} fontFamily={FONT} fontSize={28} fontWeight="800" letterSpacing={6} textAnchor="middle">
-        {model.brand.toUpperCase()}
-      </SvgText>
-      <SvgText x={CX} y={446} fill={T1} fontFamily={DISPLAY} fontSize={76} fontWeight="800" letterSpacing={-2} textAnchor="middle">
-        {model.shoeName}
-      </SvgText>
-      <SvgText x={CX} y={534} fill="url(#eGrad)" fontFamily={DISPLAY} fontSize={56} fontWeight="800" textAnchor="middle">
-        {model.togetherDistance}
-      </SvgText>
-      {!!model.periodRange && (
-        <SvgText x={CX} y={596} fill={withAlpha(T1, 0.6)} fontFamily={FONT} fontSize={30} fontWeight="600" textAnchor="middle">
-          {model.periodRange}
-        </SvgText>
-      )}
+      {/* 거리 히어로 — 파파야 그라데이션(성취) + 캡션 */}
+      <SvgText x={CX} y={646} fill="url(#retire-papaya)" fontFamily={CF} fontSize={heroSize} fontWeight="800" letterSpacing={-6} textAnchor="middle">{`${model.distance} ${model.unit}`}</SvgText>
+      <Tx x={CX} y={712} size={32} weight="500" opacity={0.6}>{caption}</Tx>
 
-      {/* 기억에 남는 순간(있으면) */}
-      {hasMoment && (
-        <G>
-          <SvgText x={CX} y={712} fill={withAlpha(T1, 0.56)} fontFamily={FONT} fontSize={24} fontWeight="800" letterSpacing={5} textAnchor="middle">
-            MOST MEMORABLE MOMENT
-          </SvgText>
-          <SvgText x={CX} y={770} fill={T1} fontFamily={FONT} fontSize={38} fontWeight="800" textAnchor="middle">
-            {model.mostMemorable}
-          </SvgText>
-        </G>
-      )}
+      {/* 지표 셀 */}
+      {cells.map((c, i) => {
+        const cx = x0 + slot * i + slot / 2;
+        return (
+          <G key={c.label}>
+            <Tx x={cx} y={800} size={26} weight="700" ls={2} opacity={0.8}>{c.label}</Tx>
+            <Tx x={cx} y={862} size={50} weight="800" ls={-0.5}>{c.value}</Tx>
+          </G>
+        );
+      })}
 
-      {/* 하단: 배웅(그라데이션) / 완주 / 헤어라인 / KEEGO */}
-      <SvgText x={CX} y={892} fill="url(#eGrad)" fontFamily={DISPLAY} fontSize={60} fontWeight="800" textAnchor="middle">
-        {model.farewell}
-      </SvgText>
-      <SvgText x={CX} y={950} fill={withAlpha(T1, 0.72)} fontFamily={FONT} fontSize={32} fontWeight="600" textAnchor="middle">
-        {model.completed}
-      </SvgText>
-      <Line x1={ruleX1} y1={1000} x2={ruleX2} y2={1000} stroke={hair} strokeWidth={2} />
-      <SvgText x={CX} y={1052} fill={T1} fontFamily={DISPLAY} fontSize={30} fontWeight="800" letterSpacing={11} textAnchor="middle">
-        {model.brand}
-      </SvgText>
+      {/* 배웅 + keego */}
+      <Tx x={CX} y={962} size={44} weight="700" opacity={0.92}>{model.farewell}</Tx>
+      <Tx x={CX} y={1018} size={54} weight="500" ls={-0.5} fill={RING_ACCENT}>{model.brand.toLowerCase()}</Tx>
     </G>
   );
 }
 
-// ── S · 스토리(1080×1920) — 명예의 전당 언어(샴페인 골드 + 절제) ─────────────────
-// 인스타 스토리 규격. 새 전당 인증서와 같은 문법: RETIRED 씰(얇은 골드 링) → 신발명 →
-// 거대 거리(HALL_GOLD) → KM TOGETHER 캡스 → 기간 → keego / KEEP GOING 푸터.
-// 선셋 바이올렛 키프세이크(사용자 확정 2026-07-05): 미드나잇 카드 + 상단 마젠타 글로우,
-// 3존(라벨 · 주인공 · 배웅). 거대 거리와 배웅 문장은 98° 선셋 바이올렛 그라데이션
-// (#FFB060 → #FF6C7E → #B57BFF). 인스타 스토리 규격(1080×1920) 유지.
-const SUNSET: {o: number; c: string}[] = [
-  {o: 0, c: RETIRE_GRAD_STOPS[0]}, {o: 0.52, c: RETIRE_GRAD_STOPS[1]}, {o: 1, c: RETIRE_GRAD_STOPS[2]},
-];
+// ── S · 스토리(1080×1920) ──────────────────────────────────────────────────────
 function FormatS({model}: {model: RetirementCardModel}) {
-  const hair = withAlpha(T1, 0.10);
-  const moment = typeof model.mostMemorable === 'string' ? model.mostMemorable.trim() : '';
-  // 거대 거리 — 숫자 + 작은 km, 하나의 SVG 안 연속 그라데이션(userSpaceOnUse).
-  const numSize = 260;
-  const unitSize = 96;
-  const numW = String(model.distance).length * numSize * 0.6;
-  const distW = numW + 20 + unitSize * 1.3;
-  const distX = CX - distW / 2;
+  const hair = withAlpha(T1, 0.12);
+  const moment = model.mostMemorable ? stripEmoji(model.mostMemorable) : '';
+  const nameSize = fitSize(model.shoeName, 84, CARD_W - PAD * 2);
+  const numSize = fitSize(model.distance, 240, CARD_W - PAD * 2);
   return (
     <G>
-      <Defs>
-        {/* 상단 마젠타 라디얼 글로우 */}
-        <RadialGradient id="s-glow" cx="50%" cy="2%" rx="52%" ry="30%">
-          <Stop offset="0" stopColor={RETIRE_MIDNIGHT_GLOW} stopOpacity={1} />
-          <Stop offset="0.6" stopColor={RETIRE_MIDNIGHT_GLOW} stopOpacity={0} />
-        </RadialGradient>
-        <LinearGradient id="s-dist" x1={distX} y1="0" x2={distX + distW} y2={numSize * 0.14} gradientUnits="userSpaceOnUse">
-          {SUNSET.map((s, i) => <Stop key={i} offset={s.o} stopColor={s.c} />)}
-        </LinearGradient>
-        <LinearGradient id="s-bye" x1="0" y1="0" x2="1" y2="0.16">
-          {SUNSET.map((s, i) => <Stop key={i} offset={s.o} stopColor={s.c} />)}
-        </LinearGradient>
-      </Defs>
-      <Rect x={0} y={0} width={CARD_W} height={STORY_H} fill="url(#s-glow)" />
+      <Line x1={CX - 250} y1={330} x2={CX + 250} y2={330} stroke={hair} strokeWidth={2} />
+      <Tx x={CX} y={398} size={32} weight="700" ls={8} opacity={0.6}>{model.retireLabel.toUpperCase()}</Tx>
 
-      {/* 존 1 · 라벨 */}
-      <Line x1={CX - 250} y1={300} x2={CX + 250} y2={300} stroke={hair} strokeWidth={2} />
-      <SvgText x={CX} y={360} fill="rgba(255,255,255,0.5)" fontFamily={FONT} fontSize={32} fontWeight="800" letterSpacing={9} textAnchor="middle">
-        RUNNING SHOE RETIREMENT
-      </SvgText>
+      {/* 주인공: 신발명 */}
+      <Tx x={CX} y={720} size={nameSize} weight="800" ls={-2}>{model.shoeName}</Tx>
 
-      {/* 존 2 · 주인공 */}
-      <SvgText x={CX} y={640} fill="rgba(255,255,255,0.48)" fontFamily={FONT} fontSize={34} fontWeight="700" letterSpacing={7} textAnchor="middle">
-        {model.brand.toUpperCase()}
-      </SvgText>
-      <SvgText x={CX} y={740} fill={T1} fontFamily={FONT} fontSize={78} fontWeight="800" letterSpacing={-2} textAnchor="middle">
-        {model.shoeName}
-      </SvgText>
+      {/* 거대 거리(파파야 그라데이션) + 단위 + 캡션 */}
+      <SvgText x={CX} y={1020} fill="url(#retire-papaya)" fontFamily={CF} fontSize={numSize} fontWeight="800" letterSpacing={-9} textAnchor="middle">{model.distance}</SvgText>
+      <SvgText x={CX} y={1118} fill="url(#retire-papaya)" fontFamily={CF} fontSize={72} fontWeight="800" textAnchor="middle">{model.unit}</SvgText>
+      <Tx x={CX} y={1208} size={38} weight="500" opacity={0.58}>함께 달린 거리</Tx>
 
-      {/* 거대 거리(선셋 그라데이션) + km */}
-      <SvgText x={distX} y={1020} fill="url(#s-dist)" fontFamily={DISPLAY} fontSize={numSize} fontWeight="800" letterSpacing={-numSize * 0.04} textAnchor="start">
-        {model.distance}
-      </SvgText>
-      <SvgText x={distX + numW + 20} y={1020} fill="url(#s-dist)" fontFamily={DISPLAY} fontSize={unitSize} fontWeight="800" textAnchor="start">
-        {model.unit}
-      </SvgText>
-      <SvgText x={CX} y={1110} fill="rgba(255,255,255,0.52)" fontFamily={FONT} fontSize={38} fontWeight="600" textAnchor="middle">
-        함께 달린 거리
-      </SvgText>
-
-      {/* 메타 — 기간 + 기억 칩 */}
+      {/* 메타 — 기간 + 기억에 남는 순간 */}
       {!!model.dateRange && (
-        <SvgText x={CX} y={1250} fill="rgba(255,255,255,0.56)" fontFamily={DISPLAY} fontSize={40} fontWeight="600" textAnchor="middle">
-          {model.dateRange}
-        </SvgText>
+        <Tx x={CX} y={1320} size={40} weight="600" opacity={0.62}>{model.dateRange}</Tx>
       )}
       {!!moment && (
-        <>
-          {/* 애플 절제: 🏆 이모지 제거 — 라벨 캡스 + 값으로 격을 올린다. */}
-          <SvgText x={CX} y={1330} fill="rgba(255,255,255,0.4)" fontFamily={FONT} fontSize={24} fontWeight="800" letterSpacing={4} textAnchor="middle">
-            MOST MEMORABLE
-          </SvgText>
-          <SvgText x={CX} y={1384} fill={T1} fontFamily={FONT} fontSize={40} fontWeight="700" textAnchor="middle">
-            {moment}
-          </SvgText>
-        </>
+        <G>
+          <Tx x={CX} y={1426} size={26} weight="700" ls={4} opacity={0.5}>MOST MEMORABLE</Tx>
+          <Tx x={CX} y={1486} size={42} weight="700" opacity={0.95}>{moment}</Tx>
+        </G>
       )}
 
-      {/* 존 3 · 배웅(선셋 그라데이션) + 푸터 */}
-      <SvgText x={CX} y={1620} fill="url(#s-bye)" fontFamily={FONT} fontSize={58} fontWeight="800" letterSpacing={-1} textAnchor="middle">
-        {model.farewell}
-      </SvgText>
-      <Line x1={CX - 250} y1={1720} x2={CX + 250} y2={1720} stroke={hair} strokeWidth={2} />
-      <SvgText x={CX} y={1790} fill="rgba(255,255,255,0.92)" fontFamily={FONT} fontSize={34} fontWeight="800" letterSpacing={11} textAnchor="middle">
-        KEEGO
-      </SvgText>
+      {/* 배웅 + keego */}
+      <Tx x={CX} y={1640} size={52} weight="700" opacity={0.95}>{model.farewell}</Tx>
+      <Line x1={CX - 250} y1={1730} x2={CX + 250} y2={1730} stroke={hair} strokeWidth={2} />
+      <Tx x={CX} y={1806} size={56} weight="500" ls={-0.5} fill={RING_ACCENT}>{model.brand.toLowerCase()}</Tx>
     </G>
   );
 }
 
-const LAYOUTS: Record<RetirementCardFormat, (p: {model: RetirementCardModel}) => React.JSX.Element> = {
-  E: FormatE,
-  S: FormatS,
-  A: FormatA,
-  B: FormatB,
-  C: FormatC,
-  D: FormatD,
-};
-
 const RetirementCard = React.forwardRef<unknown, RetirementCardProps>(
-  ({model, format = DEFAULT_RETIREMENT_CARD_FORMAT}, ref) => {
-    const fmt: RetirementCardFormat = LAYOUTS[format] ? format : DEFAULT_RETIREMENT_CARD_FORMAT;
-    const Layout = LAYOUTS[fmt];
-    // 포맷별 배경 — E 미드나잇, D 골드 음영, A 순흑, 그 외 카드 토큰.
-    const bgFill =
-      fmt === 'E' ? RETIRE_MIDNIGHT_BG : fmt === 'D' ? CARD_DIM : fmt === 'A' ? BG : CARD;
+  ({model, format = DEFAULT_RETIREMENT_CARD_FORMAT, displayWidth}, ref) => {
+    const fmt: RetirementCardFormat = format === 'S' ? 'S' : 'E';
     const cardH = fmt === 'S' ? STORY_H : CARD_H;
+    const dispW = displayWidth && displayWidth > 0 ? Math.round(displayWidth) : CARD_W;
+    const dispH = Math.round((dispW * cardH) / CARD_W);
     return (
-      <Svg ref={ref as never} width={CARD_W} height={cardH}>
-        <Rect x={0} y={0} width={CARD_W} height={cardH} fill={BG} />
-        {fmt === 'S' ? (
-          // 스토리 — 풀블리드 다크 + 얇은 골드 키라인 하나(전당 인증서 문법).
-          <Rect x={40} y={40} width={CARD_W - 80} height={cardH - 80} rx={48}
-            fill={BG} stroke={withAlpha(HALL_GOLD, 0.4)} strokeWidth={2} />
-        ) : (
-          <Rect
-            x={PAD / 2}
-            y={PAD / 2}
-            width={CARD_W - PAD}
-            height={CARD_H - PAD}
-            rx={56}
-            fill={bgFill}
-            stroke={SEP}
-            strokeWidth={2}
-          />
-        )}
-        <Layout model={model} />
+      <Svg ref={ref as never} width={dispW} height={dispH} viewBox={`0 0 ${CARD_W} ${cardH}`}>
+        <Defs>
+          <RadialGradient id="retire-dark" cx="50%" cy="18%" r="110%">
+            <Stop offset="0" stopColor={SHARE_DARK_STOPS[0]} />
+            <Stop offset="0.55" stopColor={SHARE_DARK_STOPS[1]} />
+            <Stop offset="1" stopColor={SHARE_DARK_STOPS[2]} />
+          </RadialGradient>
+          {/* 러닝 링과 동일한 파파야 그라데이션(HI→LO) — 거리 히어로 전용 */}
+          <LinearGradient id="retire-papaya" x1="0" y1="1" x2="1" y2="0">
+            <Stop offset="0" stopColor={RING_ACCENT_HI} />
+            <Stop offset="1" stopColor={RING_ACCENT_LO} />
+          </LinearGradient>
+        </Defs>
+        <Rect x={0} y={0} width={CARD_W} height={cardH} fill="url(#retire-dark)" />
+        {fmt === 'S' ? <FormatS model={model} /> : <FormatE model={model} />}
       </Svg>
     );
   },

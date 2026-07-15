@@ -399,8 +399,10 @@ export const RECAP_EMPTY_COPY =
 export type RecapKind = 'weekly' | 'monthly';
 
 export interface RecapShareCardModel {
-  /** 카드 제목('주간 리캡'|'월간 리캡'). */
+  /** 카드 제목('주간 리캡'|'월간 리캡') — 텍스트 폴백용. */
   title: string;
+  /** 카드 상단 caps 라벨('WEEKLY RECAP'|'MONTHLY RECAP') — 컴팩트 카드 에디토리얼 톤. */
+  titleEn: string;
   /** 기간 라벨(recap.periodLabel 그대로). */
   period: string;
   /** 총거리 숫자 문자열(표시 단위 환산, 소수 1자리). */
@@ -451,16 +453,18 @@ export function buildRecapShareCardModel(
   const unit = opts?.unit ?? 'km';
   const kind = opts?.kind ?? 'weekly';
 
-  const stats: ShareCardStat[] = [{label: '런 수', value: `${recap.runCount}회`}];
+  // 라벨은 영문 caps(런 카드 DISTANCE/PACE/TIME 과 동일 에디토리얼 톤).
+  const stats: ShareCardStat[] = [{label: 'RUNS', value: String(recap.runCount)}];
   if (recap.avgPaceLabel && recap.avgPaceLabel !== '--') {
-    stats.push({label: '평균 페이스', value: `${recap.avgPaceLabel} /km`});
+    stats.push({label: 'AVG PACE', value: `${recap.avgPaceLabel} /km`});
   }
   if (recap.mostWornShoe) {
-    stats.push({label: '최다 착용', value: recap.mostWornShoe.name});
+    stats.push({label: 'TOP SHOE', value: recap.mostWornShoe.name});
   }
 
   return {
     title: kind === 'monthly' ? '월간 리캡' : '주간 리캡',
+    titleEn: kind === 'monthly' ? 'MONTHLY RECAP' : 'WEEKLY RECAP',
     period: recap.periodLabel,
     distance: displayNum(recap.totalKm, unit, 1).toFixed(1),
     unit,

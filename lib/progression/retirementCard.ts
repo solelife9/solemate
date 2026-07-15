@@ -2,8 +2,8 @@
 // lib/progression/retirementCard.ts — 은퇴 카드 뷰모델 (Slice B, signature)
 // ============================================================================
 // RetirementSummary + RetirementGrade(+ 선택 장착 타이틀) → 은퇴 카드가 그릴 표시 필드
-// 묶음(순수함수, 네이티브 의존 0). 4개 레이아웃(A Nike / B Modern / C Apple[기본] / D
-// Hall of Fame)이 **하나의 요약**에서 같은 모델을 읽어 서로 다른 구도로 렌더한다.
+// 묶음(순수함수, 네이티브 의존 0). 두 포맷(E 정사각 / S 스토리)이 **하나의 요약**에서
+// 같은 모델을 읽어 컴팩트 공유 카드 언어(다크 라디얼·파파야 keego·흰 지표)로 렌더한다.
 //
 // 재사용(중복 정의 금지):
 //   · lib/format fmtPace/fmtTime — 페이스/시간 포맷(앱 전역과 동일 규칙).
@@ -23,14 +23,21 @@ import {PB_HIGHLIGHT_KEYS, RETIREMENT_HIGHLIGHT_KEYS as H} from './retirement';
 import type {RankTier, RetirementGrade, RetirementSummary} from './types';
 
 // ── 레이아웃 포맷 ──────────────────────────────────────────────────────────────
-/** 카드 레이아웃: E Midnight(기본) / A Nike / B Modern / C Apple / D Hall of Fame. */
-export type RetirementCardFormat = 'E' | 'S' | 'A' | 'B' | 'C' | 'D';
+/** 카드 레이아웃: E 정사각(1080², 기본) / S 스토리(1080×1920, 인스타 9:16).
+    (구 A Nike/B Modern/C Apple/D 인증서 목업 포맷은 2026-07-16 공유카드 통일로 폐기 —
+    두 포맷 모두 런 카드와 같은 컴팩트 언어: 다크 라디얼 + 파파야 keego + 흰 지표.) */
+export type RetirementCardFormat = 'E' | 'S';
 
-/** 선택 가능한 6개 포맷(렌더러/포맷 스위처가 소비). E(Midnight)를 먼저, S(9:16 스토리)를
-    다음에 노출 — 인스타 스토리 규격(1080×1920, 전당 골드 언어). */
-export const RETIREMENT_CARD_FORMATS: readonly RetirementCardFormat[] = ['E', 'S', 'A', 'B', 'C', 'D'];
+/** 선택 가능한 포맷(렌더러/포맷 스위처가 소비). */
+export const RETIREMENT_CARD_FORMATS: readonly RetirementCardFormat[] = ['E', 'S'];
 
-/** 기본 포맷 — E(Midnight + 배웅, 디자인 마무리 핸드오프 키프세이크). */
+/** 포맷 스위처 표시 라벨(사용자 노출 — 의미 없는 알파벳 대신). */
+export const RETIREMENT_CARD_FORMAT_LABEL: Readonly<Record<RetirementCardFormat, string>> = {
+  E: '정사각',
+  S: '스토리',
+};
+
+/** 기본 포맷 — E(정사각 키프세이크). */
 export const DEFAULT_RETIREMENT_CARD_FORMAT: RetirementCardFormat = 'E';
 
 // ── 브랜드/카피 상수 ───────────────────────────────────────────────────────────
@@ -55,9 +62,6 @@ function farewellLine(usageDays: number): string {
   }
   return '함께 달려줘서 고마웠어.';
 }
-/** 기본(C) 감성 클로징 — 강요 아닌, bittersweet-proud 톤(mockup verbatim). */
-const CLOSING_TOP = '수명을 다했습니다.';
-const CLOSING_BOTTOM = '훌륭한 여정이었습니다.';
 
 // ── 등급 배지(권위) ────────────────────────────────────────────────────────────
 /**
@@ -77,15 +81,6 @@ const GRADE_BADGES: Readonly<Record<RetirementGrade, GradeBadgeDef>> = {
   smart: {label: 'Smart Retirement', name: 'Smart', emoji: '✨', tier: 'diamond'},
   perfect: {label: 'Perfect Retirement', name: 'Perfect', emoji: '💎', tier: 'master'},
   hallOfFame: {label: 'Hall of Fame', name: 'Hall of Fame', emoji: '🏆', tier: 'gold'},
-};
-
-/** keepsake Shoe Score(D 인증서)의 등급별 기준점 — 권장 수명 적절성을 정수로 환산. */
-const GRADE_SCORE: Readonly<Record<RetirementGrade, number>> = {
-  standard: 72,
-  good: 84,
-  smart: 91,
-  perfect: 97,
-  hallOfFame: 99,
 };
 
 /** 카드가 노출하는 등급 배지(라벨 + 이모지 + 티어색). */
@@ -163,10 +158,6 @@ export interface RetirementCardModel {
   /** 거리 + 단위 한 덩어리 예: '512km'. */
   distanceLabel: string;
   unit: string;
-  /** 'C' 함께한 거리 한 줄: '512km 함께했습니다'. */
-  togetherLine: string;
-  /** 'B' 영문 한 줄: '512 km Together'. */
-  togetherEn: string;
   runCount: number;
   /** 러닝 수 라벨 '42'. */
   runCountLabel: string;
@@ -178,8 +169,6 @@ export interface RetirementCardModel {
   longestRun: string | null;
   /** 그 신발로 세운 PB 수(하이라이트 기준). */
   pbCount: number;
-  /** PB 배지 '×3'(0이면 null). */
-  pbLabel: string | null;
   /** 사용 기간(일). */
   usageDays: number;
   /** 총 러닝 시간 'H:MM:SS'(0이면 null). */
@@ -187,9 +176,6 @@ export interface RetirementCardModel {
   /** 첫/마지막 런 일자('YYYY.MM.DD', 없으면 ''). */
   startDate: string;
   endDate: string;
-  /** 'YYYY.MM' 짧은 표기(B). */
-  startMonth: string;
-  endMonth: string;
   /** '2026.03.12 → 2026.08.22'(한쪽만 있으면 그것만). */
   dateRange: string;
   /** 은퇴 연도(Class of YYYY). 없으면 0. */
@@ -200,33 +186,19 @@ export interface RetirementCardModel {
   mostMemorable: string | null;
   /** Smart Retirement Grade 배지. */
   grade: RetirementGradeBadge;
-  /** D 인증서용 keepsake Shoe Score(0..100, 결정론적). */
-  shoeScore: number;
   /** 장착 타이틀(워드마크 근처 은은하게). 없으면 null. */
   equippedTitle: string | null;
   /** 브랜드 워드마크. */
   brand: string;
   wordmark: string;
-  // 레이아웃별 카피 ───────────────────────────────────────────────
-  /** A: 'RETIREMENT · CLASS OF 2026'. */
-  tagA: string;
-  /** A: 'MISSION COMPLETE'. */
-  missionA: string;
-  /** B: 'A Journey Completed'. */
-  eyebrowB: string;
-  /** C: '수명을 다했습니다.' / '훌륭한 여정이었습니다.'. */
-  closingTop: string;
-  closingBottom: string;
-  // E(Midnight) 전용 카피 ─────────────────────────────────────────
-  /** E 상단 라벨: 'Running Shoe Retirement'. */
+  // 카드 카피 ─────────────────────────────────────────────────────
+  /** 상단 caps 라벨: 'Running Shoe Retirement'. */
   retireLabel: string;
-  /** E 거리 그라데이션: '512km 함께'. */
-  togetherDistance: string;
-  /** E 기간: '2024.01 ~ 2024.12'(한쪽만 있으면 그것만, 없으면 dateRange/''). */
+  /** 기간: '2024.01 ~ 2024.12'(한쪽만 있으면 그것만, 없으면 dateRange/''). */
   periodRange: string;
-  /** E 배웅 그라데이션: '함께한 1년, 고마웠어.'(사용 기간 기반). */
+  /** 배웅 한 줄: '함께한 1년, 고마웠어.'(사용 기간 기반, 날조 금지). */
   farewell: string;
-  /** E 완주 한 줄: '이 신발은 여정을 완주했습니다.'. */
+  /** 완주 한 줄: '이 신발은 여정을 완주했습니다.'. */
   completed: string;
 }
 
@@ -297,37 +269,25 @@ export function buildRetirementCardModel(
     distance,
     distanceLabel,
     unit,
-    togetherLine: `${distanceLabel} 함께했습니다`,
-    togetherEn: `${distance} ${unit} Together`,
     runCount,
     runCountLabel: String(runCount),
     avgPace: paceLabel(s.avgPaceSec),
     bestPace: paceLabel(s.bestPaceSec),
     longestRun,
     pbCount,
-    pbLabel: pbCount > 0 ? `×${pbCount}` : null,
     usageDays: Math.round(nonNeg(s.usageDays)),
     totalTime: totalSec > 0 ? fmtTime(totalSec) : null,
     startDate,
     endDate,
-    startMonth: shortDate(startDate),
-    endMonth: shortDate(endDate),
     dateRange,
     retireYear,
     highlights,
     mostMemorable,
     grade: badge,
-    shoeScore: Math.max(0, Math.min(100, GRADE_SCORE[badge.grade] + Math.min(pbCount, 3))),
     equippedTitle: (opts?.equippedTitle && String(opts.equippedTitle).trim()) || null,
     brand: BRAND,
     wordmark: WORDMARK,
-    tagA: retireYear ? `RETIREMENT · CLASS OF ${retireYear}` : 'RETIREMENT',
-    missionA: 'MISSION COMPLETE',
-    eyebrowB: 'A Journey Completed',
-    closingTop: CLOSING_TOP,
-    closingBottom: CLOSING_BOTTOM,
     retireLabel: RETIRE_LABEL_E,
-    togetherDistance: `${distanceLabel} 함께`,
     periodRange: (() => {
       const sm = shortDate(startDate);
       const em = shortDate(endDate);
