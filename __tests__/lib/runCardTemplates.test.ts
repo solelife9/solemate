@@ -1,94 +1,106 @@
 /**
- * lib/shareCard — 공유 카드 레이아웃·배경·크기 registry(순수) 검증.
- * 스트라바 방식: 레이아웃(가로/세로/히어로)만 고르고 지도·지표는 on/off 토글.
+ * lib/shareCard — 공유 카드 레이아웃 registry + 컴팩트 배치(layoutShareCard) 검증.
+ * 세로/가로/6지표, 지도·지표 토글, keego 를 지표 밑에 붙인 컴팩트 스티커(캔버스=내용 높이).
  * @format
  */
 import {
   RUN_CARD_LAYOUTS,
   RUN_CARD_LAYOUT_LABEL,
   RUN_CARD_BACKGROUND_LABEL,
-  runCardElements,
-  runCardDimensions,
+  buildShareCardModel,
+  layoutShareCard,
   clampRunCardScale,
   RUN_CARD_SCALE_MIN,
   RUN_CARD_SCALE_MAX,
 } from '../../lib/shareCard';
 
+const MODEL = buildShareCardModel({
+  distKm: 5.2, unit: 'km', pace: "5'02\"", time: '40:41', durationS: 2441,
+  bpm: 161, cadence: 172, elevM: 24,
+});
+const labelsOf = (cfg: any) => layoutShareCard(MODEL, cfg).texts.map(t => t.value);
+
 describe('RUN_CARD_LAYOUTS (순서·라벨)', () => {
-  test('가로(classic)가 맨 앞(기본)', () => {
-    expect(RUN_CARD_LAYOUTS[0]).toBe('classic');
-  });
-  test('3종 — 가로·세로·히어로', () => {
-    expect(RUN_CARD_LAYOUTS).toEqual(['classic', 'vertical', 'hero']);
-    expect(RUN_CARD_LAYOUT_LABEL.classic).toBe('가로');
+  test('세로가 맨 앞(기본), 3종', () => {
+    expect(RUN_CARD_LAYOUTS).toEqual(['vertical', 'classic', 'grid']);
     expect(RUN_CARD_LAYOUT_LABEL.vertical).toBe('세로');
-    expect(RUN_CARD_LAYOUT_LABEL.hero).toBe('히어로');
+    expect(RUN_CARD_LAYOUT_LABEL.classic).toBe('가로');
+    expect(RUN_CARD_LAYOUT_LABEL.grid).toBe('6지표');
   });
-  test('배경 라벨(투명/다크/사진)', () => {
+  test('배경 라벨', () => {
     expect(RUN_CARD_BACKGROUND_LABEL.transparent).toBe('투명');
     expect(RUN_CARD_BACKGROUND_LABEL.dark).toBe('다크');
     expect(RUN_CARD_BACKGROUND_LABEL.photo).toBe('사진');
   });
 });
 
-describe('runCardElements (레이아웃 + 지도/지표 토글)', () => {
-  test('가로 + 지도on + 지표on → 거리 포함 가로 행, 히어로 아님', () => {
-    expect(runCardElements('classic', true, true)).toEqual({
-      bigDistance: false, showStatsRow: true, statsVertical: false, includeDistanceInRow: true, map: true,
-    });
+describe('buildShareCardModel — 6지표 추가 지표', () => {
+  test('심박·케이던스·고도가 stats 에 붙는다(있을 때)', () => {
+    const labels = MODEL.stats.map(s => s.label);
+    expect(labels).toEqual(['PACE', 'TIME', 'HR', 'CADENCE', 'ELEV']);
+    expect(MODEL.stats.find(s => s.label === 'HR')!.value).toBe('161');
+    expect(MODEL.stats.find(s => s.label === 'ELEV')!.value).toBe('24 m');
   });
-
-  test('가로 + 지표off → 거리를 거대 히어로로(단독), 행 없음', () => {
-    const e = runCardElements('classic', true, false);
-    expect(e.bigDistance).toBe(true);
-    expect(e.showStatsRow).toBe(false);
-    expect(e.includeDistanceInRow).toBe(false);
-  });
-
-  test('지도 토글 → map 반영', () => {
-    expect(runCardElements('classic', false, true).map).toBe(false);
-    expect(runCardElements('classic', true, true).map).toBe(true);
-  });
-
-  test('세로 → 거대 거리 + 세로 스탯(거리 행 미포함)', () => {
-    expect(runCardElements('vertical', true, true)).toEqual({
-      bigDistance: true, showStatsRow: true, statsVertical: true, includeDistanceInRow: false, map: true,
-    });
-  });
-
-  test('히어로 → 거대 거리, 세로 아님', () => {
-    const e = runCardElements('hero', true, true);
-    expect(e.bigDistance).toBe(true);
-    expect(e.statsVertical).toBe(false);
-    expect(e.includeDistanceInRow).toBe(false);
-  });
-
-  test('세로·히어로는 지표 유무와 무관하게 항상 거대 거리', () => {
-    expect(runCardElements('vertical', true, false).bigDistance).toBe(true);
-    expect(runCardElements('hero', false, false).bigDistance).toBe(true);
-  });
-
-  test('includeDistanceInRow 는 가로+지표on 일 때만', () => {
-    expect(runCardElements('classic', true, true).includeDistanceInRow).toBe(true);
-    expect(runCardElements('classic', true, false).includeDistanceInRow).toBe(false);
-    expect(runCardElements('vertical', true, true).includeDistanceInRow).toBe(false);
-    expect(runCardElements('hero', true, true).includeDistanceInRow).toBe(false);
+  test('없으면 안 붙는다', () => {
+    const m = buildShareCardModel({distKm: 3, pace: "6'00\"", time: '18:00'});
+    expect(m.stats.map(s => s.label)).toEqual(['PACE', 'TIME']);
   });
 });
 
-describe('runCardDimensions (피드 4:5 고정)', () => {
-  test('1080×1350', () => {
-    expect(runCardDimensions()).toEqual({w: 1080, h: 1350});
-    expect(runCardDimensions('feed')).toEqual({w: 1080, h: 1350});
+describe('layoutShareCard — 컴팩트 배치', () => {
+  test('세로/가로 = 거리·페이스·시간 3지표(추가지표 제외)', () => {
+    for (const layout of ['vertical', 'classic'] as const) {
+      const v = labelsOf({layout, showMap: true, showStats: true});
+      expect(v).toContain('DISTANCE');
+      expect(v).toContain('5.20 km');
+      expect(v).toContain('PACE');
+      expect(v).toContain('TIME');
+      expect(v).not.toContain('HR');       // 6지표에서만
+      expect(v).toContain('keego');
+    }
+  });
+
+  test('6지표 = 거리+페이스+시간+심박+케이던스+고도(최대 6)', () => {
+    const v = labelsOf({layout: 'grid', showMap: true, showStats: true});
+    ['DISTANCE', 'PACE', 'TIME', 'HR', 'CADENCE', 'ELEV'].forEach(l => expect(v).toContain(l));
+  });
+
+  test('지표 off(세로/가로) → 거리만', () => {
+    const v = labelsOf({layout: 'vertical', showMap: true, showStats: false});
+    expect(v).toContain('DISTANCE');
+    expect(v).not.toContain('PACE');
+  });
+
+  test('지도 off → map null, 있으면 박스', () => {
+    expect(layoutShareCard(MODEL, {layout: 'vertical', showMap: false, showStats: true}).map).toBeNull();
+    const withMap = layoutShareCard(MODEL, {layout: 'vertical', showMap: true, showStats: true}).map;
+    expect(withMap).not.toBeNull();
+    expect(withMap!.size).toBeGreaterThan(0);
+  });
+
+  test('컴팩트 — 캔버스 폭 1080, 높이는 양수·내용 크기(1350 미만이면 컴팩트)', () => {
+    const L = layoutShareCard(MODEL, {layout: 'vertical', showMap: true, showStats: true});
+    expect(L.w).toBe(1080);
+    expect(L.h).toBeGreaterThan(400);
+    // keego 는 지표 밑에 붙어 캔버스 하단 근처(맨 아래 텍스트).
+    const wm = L.texts.find(t => t.papaya);
+    expect(wm).toBeTruthy();
+    expect(wm!.y).toBeGreaterThan(L.h - 200);
+  });
+
+  test('지도 크기 배율 → 지도 박스·캔버스 높이 반영', () => {
+    const small = layoutShareCard(MODEL, {layout: 'vertical', showMap: true, showStats: true, mapScale: 0.8});
+    const big = layoutShareCard(MODEL, {layout: 'vertical', showMap: true, showStats: true, mapScale: 1.3});
+    expect(big.map!.size).toBeGreaterThan(small.map!.size);
+    expect(big.h).toBeGreaterThan(small.h);
   });
 });
 
 describe('clampRunCardScale', () => {
-  test('범위 안은 그대로, 밖은 클램프, 비유한→1', () => {
+  test('범위·비유한 보정', () => {
     expect(clampRunCardScale(1.2)).toBe(1.2);
     expect(clampRunCardScale(9)).toBe(RUN_CARD_SCALE_MAX);
     expect(clampRunCardScale(0.1)).toBe(RUN_CARD_SCALE_MIN);
     expect(clampRunCardScale(NaN)).toBe(1);
-    expect(clampRunCardScale(Infinity)).toBe(1);
   });
 });

@@ -235,6 +235,8 @@ export default function RunRecapScreen({
     shoeModel: shoeName || '',
     date: todayLabelKo(),
     track: track && track.laps > 0 ? track : null,
+    // 6지표 카드용 — 심박(워치)·케이던스·고도.
+    bpm, cadence, elevM: elevationM,
   };
   const cardModel = buildShareCardModel(shareInput);
   const onShare = () => setShareOpen(true);

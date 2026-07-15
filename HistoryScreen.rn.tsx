@@ -457,6 +457,8 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'm
     // 신발 객체가 없으면(삭제된 신발) run.shoeName(묘비 포함)을 그대로 카드 신발명으로 쓴다.
     shoeModel: shoe ? shoe.model : (run.shoeName || ''),
     date: `${run.date} ${run.day}요일`,
+    // 6지표 카드용 — 심박(워치)·케이던스·고도.
+    bpm: run.bpm, cadence: run.cadence, elevM: run.elev,
   };
   // 공유 카드는 배경 없는 투명 PNG(스트라바 방식) — 사진앱에 저장 후, 인스타 스토리에서
   // 사용자가 자기 사진 위에 스티커로 얹는다. '공유 시트로'는 RN Share 폴백(캡처 실패 시 텍스트).

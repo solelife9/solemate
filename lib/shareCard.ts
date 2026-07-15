@@ -39,6 +39,12 @@ export interface ShareCardInput {
   durationS?: number;
   /** 트랙 세션이면 랩 정보(있으면 카드에 LAPS 칸 추가 — 거리=랩수×확정랩거리). */
   track?: {lapM: number; laps: number} | null;
+  /** 평균 심박(bpm). >0 이면 6지표 카드에 HR 칸(워치 있을 때). */
+  bpm?: number;
+  /** 케이던스(spm). >0 이면 CADENCE 칸. */
+  cadence?: number;
+  /** 누적 상승(m). >0 이면 ELEV 칸. */
+  elevM?: number;
 }
 
 /** 항상 6자리 HH:MM:SS(시 2자리 0패딩). 카드 TIME 전용 — fmtTime 은 시<1h 면 MM:SS 라 별도. */
@@ -81,25 +87,25 @@ const TAGLINE = '오늘도 한 걸음 더 — keep going';
 const HASHTAG = '#Keego #keepgoing';
 
 // ─── 공유 카드 레이아웃·배경·크기(순수 registry — picker/렌더 공용, 테스트 가능) ───────
-// 스트라바 방식: 지표를 어떻게 '배치'하느냐(레이아웃)만 고르고, 지도·지표 표시는 별도 on/off
-// 토글로 넣었다 뺐다 한다(별도 템플릿 나열 폐기 — 미니멀/스탯/지도는 이 토글 조합으로 나온다).
-//  · classic  — 거리·페이스·시간을 가로 한 줄(균등).
-//  · vertical — 거리를 크게 + 페이스·시간을 그 아래 세로로(스트라바 시그니처).
-//  · hero     — 거리를 거대하게, 페이스·시간은 작게.
-// 카드는 투명 스티커가 기본 — 러너가 인스타에 사진을 올리고 그 위에 얹으면 위치·크기는
-// 인스타가 처리한다. 다크/사진 배경은 인스타를 안 거치는 완성본용.
-export type RunCardLayout = 'classic' | 'vertical' | 'hero';
+// 스트라바 방식 + 컴팩트 스티커. 지표 배치(세로/가로/6지표)만 고르고, 지도·지표는 on/off 토글.
+//  · vertical — 지도(작게) 위 + 거리·페이스·시간 세로 스택(스트라바 시그니처, 기본).
+//  · classic  — 지도 위 + 거리·페이스·시간 가로 한 줄.
+//  · grid     — 지도 위 + 6지표(거리·페이스·시간·심박·케이던스·고도) 2×3 그리드.
+// 카드는 '컴팩트 투명 스티커' — 지도+지표+keego 가 딱 붙은 한 덩어리. 사진 전체가 아니라
+// 사진 일부에 얹어 크기 조절하므로 캔버스를 내용 높이에 맞춰 자른다(빈 공간 최소). 지도·로고는
+// 항상 파파야, 흰 지표엔 그림자(사진 위 가독성). background=dark/photo 는 완성본용.
+export type RunCardLayout = 'vertical' | 'classic' | 'grid';
 
-/** picker 노출 순서 — 클래식(가로)이 맨 앞(기본). */
-export const RUN_CARD_LAYOUTS: RunCardLayout[] = ['classic', 'vertical', 'hero'];
+/** picker 노출 순서 — 세로(스트라바 느낌)가 기본. */
+export const RUN_CARD_LAYOUTS: RunCardLayout[] = ['vertical', 'classic', 'grid'];
 
 export const RUN_CARD_LAYOUT_LABEL: Record<RunCardLayout, string> = {
-  classic: '가로',
   vertical: '세로',
-  hero: '히어로',
+  classic: '가로',
+  grid: '6지표',
 };
 
-/** 캔버스 비율 — 피드(4:5) 고정(스토리 포맷 토글은 폐기, 사용자 결정). */
+/** 폭 고정(1080). 높이는 내용에 맞춰 컴팩트하게 계산된다(layoutShareCard). */
 export type RunCardFormat = 'feed';
 
 // 배경 — 세 공유 흐름을 커버한다:
@@ -114,36 +120,99 @@ export const RUN_CARD_BACKGROUND_LABEL: Record<RunCardBackground, string> = {
   photo: '사진',
 };
 
-/** 캔버스 픽셀 크기 — 피드 4:5 고정(1080×1350). */
-export function runCardDimensions(_format: RunCardFormat = 'feed'): {w: number; h: number} {
-  return {w: 1080, h: 1350};
+/** 카드 설정(picker 선택). */
+export interface RunCardConfig {
+  layout: RunCardLayout;
+  showMap: boolean;
+  showStats: boolean;
+  textScale?: number;
+  mapScale?: number;
 }
 
-/** 레이아웃 + 지도/지표 토글 → 렌더가 그릴 요소들. 거리는 항상 표시하되,
- *  세로·히어로(또는 지표 off)면 거대 히어로로, 가로+지표on 이면 가로 행 안에 넣는다. */
-export interface RunCardElements {
-  /** 거대 히어로 거리 숫자를 위에 올리는가. */
-  bigDistance: boolean;
-  /** 페이스·시간(+랩) 스탯을 보이는가. */
-  showStatsRow: boolean;
-  /** 스탯을 세로로 쌓는가(스트라바 세로형). false=가로. */
-  statsVertical: boolean;
-  /** 가로 스탯 행에 DISTANCE 칸을 포함하는가(가로+지표on 일 때만). */
-  includeDistanceInRow: boolean;
-  /** 지도(경로)를 그리는가. */
-  map: boolean;
+/** 렌더가 그릴 텍스트 한 조각(그림자는 렌더가 붙인다). */
+export interface CardText {
+  x: number; y: number; size: number;
+  weight: '500' | '700' | '800';
+  anchor: 'start' | 'middle' | 'end';
+  ls: number; opacity: number; value: string;
+  /** 파파야색(워드마크). 기본 흰색. */
+  papaya?: boolean;
 }
 
-export function runCardElements(layout: RunCardLayout, showMap: boolean, showStats: boolean): RunCardElements {
-  // 가로(classic)+지표on 이면 거리는 행 안에, 그 외(세로·히어로·지표off)엔 거대 히어로로.
-  const bigDistance = layout !== 'classic' || !showStats;
-  return {
-    bigDistance,
-    showStatsRow: showStats,
-    statsVertical: layout === 'vertical',
-    includeDistanceInRow: layout === 'classic' && showStats,
-    map: showMap,
-  };
+/** 컴팩트 카드 배치 결과 — 캔버스 높이(h)는 내용에 맞춰 계산된다. */
+export interface CardLayout {
+  w: number; h: number;
+  /** 지도 박스(정사각 좌상단 x,y + 한 변). 없으면 null. */
+  map: {x: number; y: number; size: number} | null;
+  texts: CardText[];
+}
+
+const CARD_W = 1080, CARD_PAD = 72, CARD_MAP_GAP = 84, CARD_WM_GAP = 92;
+
+/**
+ * 컴팩트 스티커 배치(순수) — 지도(있으면) + 지표 + keego 를 위에서부터 딱 붙여 쌓고,
+ * 캔버스 높이를 내용에 맞춰 자른다. 사진 일부에 얹는 스티커라 빈 공간을 최소화한다.
+ * 세로=지표 세로 스택, 가로=한 줄, 6지표=2×3 그리드. 거리는 항상 첫 지표.
+ */
+export function layoutShareCard(model: ShareCardModel, cfg: RunCardConfig): CardLayout {
+  const t = clampRunCardScale(cfg.textScale ?? 1);
+  const m = clampRunCardScale(cfg.mapScale ?? 1);
+  const R = (n: number) => Math.round(n);
+  const cx = CARD_W / 2;
+  const texts: CardText[] = [];
+  let y = CARD_PAD;
+
+  // 지도(작게, 가운데)
+  let map: CardLayout['map'] = null;
+  if (cfg.showMap) {
+    const size = R(250 * m);
+    map = {x: R(cx - size / 2), y: R(y), size};
+    y += size + CARD_MAP_GAP;
+  }
+
+  // 지표 셀 — 거리 항상 첫 칸. 세로/가로는 거리·페이스·시간(3), 6지표는 최대 6.
+  const dist = {label: 'DISTANCE', value: `${model.distance} ${model.unit}`};
+  const cells = cfg.layout === 'grid'
+    ? [dist, ...model.stats].slice(0, 6)
+    : (cfg.showStats ? [dist, ...model.stats.slice(0, 2)] : [dist]);
+
+  if (cfg.layout === 'vertical') {
+    const val = R(64 * t), lab = R(28 * t), group = R(150 * t);
+    cells.forEach((c, i) => {
+      const ly = y + i * group, vy = ly + val;
+      texts.push({x: cx, y: ly, size: lab, weight: '700', anchor: 'middle', ls: 2, opacity: 0.8, value: c.label.toUpperCase()});
+      texts.push({x: cx, y: vy, size: val, weight: '800', anchor: 'middle', ls: -0.5, opacity: 1, value: c.value});
+    });
+    y += (cells.length - 1) * group + val;
+  } else if (cfg.layout === 'classic') {
+    const val = R(58 * t), lab = R(29 * t), gap = R(62 * t);
+    const span = CARD_W * 0.92, x0 = (CARD_W - span) / 2, slot = span / cells.length;
+    const labelY = y, valueY = y + gap;
+    cells.forEach((c, i) => {
+      const ccx = x0 + slot * i + slot / 2;
+      texts.push({x: ccx, y: labelY, size: lab, weight: '700', anchor: 'middle', ls: 2, opacity: 0.85, value: c.label.toUpperCase()});
+      texts.push({x: ccx, y: valueY, size: val, weight: '800', anchor: 'middle', ls: -0.5, opacity: 1, value: c.value});
+    });
+    y = valueY;
+  } else { // grid 2×3
+    const val = R(54 * t), lab = R(25 * t), rowH = R(150 * t);
+    const colX = [CARD_W * 0.30, CARD_W * 0.70];
+    const rows = Math.max(1, Math.ceil(cells.length / 2));
+    cells.forEach((c, i) => {
+      const gx = colX[i % 2], ry = y + Math.floor(i / 2) * rowH;
+      texts.push({x: gx, y: ry, size: lab, weight: '700', anchor: 'middle', ls: 2, opacity: 0.8, value: c.label.toUpperCase()});
+      texts.push({x: gx, y: ry + val, size: val, weight: '800', anchor: 'middle', ls: -0.5, opacity: 1, value: c.value});
+    });
+    y += (rows - 1) * rowH + val;
+  }
+
+  // keego 를 지표 바로 밑에 붙인다(한 덩어리 — 스티커 스케일용).
+  y += CARD_WM_GAP;
+  const wmSize = R(54 * t);
+  texts.push({x: cx, y, size: wmSize, weight: '500', anchor: 'middle', ls: -0.5, opacity: 1, value: model.brand.toLowerCase(), papaya: true});
+  y += CARD_PAD;
+
+  return {w: CARD_W, h: R(y), map, texts};
 }
 
 /** 글씨·지도 크기 배율 — 사용자가 앱에서 늘리고 줄일 수 있다. 안전 범위로 보정. */
@@ -183,6 +252,10 @@ export function buildShareCardModel(input: ShareCardInput): ShareCardModel {
   if (input.track && input.track.laps > 0) {
     stats.push({label: 'LAPS', value: `${input.track.laps}`});
   }
+  // 6지표 카드용 추가 지표(있을 때만). 심박은 워치 있을 때, 케이던스·고도는 폰 단독 가능.
+  if (input.bpm && input.bpm > 0) stats.push({label: 'HR', value: `${Math.round(input.bpm)}`});
+  if (input.cadence && input.cadence > 0) stats.push({label: 'CADENCE', value: `${Math.round(input.cadence)}`});
+  if (input.elevM != null && input.elevM > 0) stats.push({label: 'ELEV', value: `${Math.round(input.elevM)} m`});
 
   return {
     distance,

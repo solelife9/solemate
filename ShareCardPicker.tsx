@@ -44,7 +44,7 @@ interface Prefs {
   mapScale: number;
 }
 const DEFAULT_PREFS: Prefs = {
-  layout: 'classic', showMap: true, showStats: true, background: 'transparent', textScale: 1, mapScale: 1,
+  layout: 'vertical', showMap: true, showStats: true, background: 'transparent', textScale: 1, mapScale: 1,
 };
 
 export interface ShareCardPickerProps {
