@@ -80,37 +80,32 @@ const BRAND = 'Keego';
 const TAGLINE = '오늘도 한 걸음 더 — keep going';
 const HASHTAG = '#Keego #keepgoing';
 
-// ─── 공유 카드 템플릿·포맷·크기(순수 registry — picker/렌더 공용, 테스트 가능) ───────
-// 사용자는 공유 시 여러 템플릿을 넘겨보며 고른다. 기본(가장 많이 씀)=클래식이 1번.
-// 전부 '투명 스티커'(배경 없음, 피드·세로형 모두) — 러너는 자기 상황에 맞는 사진을 인스타에
-// 올린 뒤 그 위에 이 카드를 얹어 크기를 조절한다. 그래서 사진을 카드 안에 넣는 템플릿은 없다.
-// 템플릿은 '어떤 요소를 담느냐'만 다르다(지도·지표 on/off, 히어로 강조).
-export type RunCardTemplate = 'classic' | 'hero' | 'minimal' | 'stats' | 'route';
+// ─── 공유 카드 레이아웃·배경·크기(순수 registry — picker/렌더 공용, 테스트 가능) ───────
+// 스트라바 방식: 지표를 어떻게 '배치'하느냐(레이아웃)만 고르고, 지도·지표 표시는 별도 on/off
+// 토글로 넣었다 뺐다 한다(별도 템플릿 나열 폐기 — 미니멀/스탯/지도는 이 토글 조합으로 나온다).
+//  · classic  — 거리·페이스·시간을 가로 한 줄(균등).
+//  · vertical — 거리를 크게 + 페이스·시간을 그 아래 세로로(스트라바 시그니처).
+//  · hero     — 거리를 거대하게, 페이스·시간은 작게.
+// 카드는 투명 스티커가 기본 — 러너가 인스타에 사진을 올리고 그 위에 얹으면 위치·크기는
+// 인스타가 처리한다. 다크/사진 배경은 인스타를 안 거치는 완성본용.
+export type RunCardLayout = 'classic' | 'vertical' | 'hero';
 
-/** picker 노출 순서 — 클래식이 맨 앞(기본 선택, 가장 많이 씀). */
-export const RUN_CARD_TEMPLATES: RunCardTemplate[] = ['classic', 'hero', 'minimal', 'stats', 'route'];
+/** picker 노출 순서 — 클래식(가로)이 맨 앞(기본). */
+export const RUN_CARD_LAYOUTS: RunCardLayout[] = ['classic', 'vertical', 'hero'];
 
-export const RUN_CARD_TEMPLATE_LABEL: Record<RunCardTemplate, string> = {
-  classic: '클래식',
+export const RUN_CARD_LAYOUT_LABEL: Record<RunCardLayout, string> = {
+  classic: '가로',
+  vertical: '세로',
   hero: '히어로',
-  minimal: '미니멀',
-  stats: '스탯',
-  route: '지도',
 };
 
-/** 피드(4:5) / 세로형 스토리(9:16). 어느 템플릿에도 적용된다(둘 다 투명). */
-export type RunCardFormat = 'feed' | 'story';
-
-export const RUN_CARD_FORMAT_LABEL: Record<RunCardFormat, string> = {
-  feed: '피드',
-  story: '세로형',
-};
+/** 캔버스 비율 — 피드(4:5) 고정(스토리 포맷 토글은 폐기, 사용자 결정). */
+export type RunCardFormat = 'feed';
 
 // 배경 — 세 공유 흐름을 커버한다:
 //  · transparent(기본): 배경 없는 스티커. 인스타에 사진을 올리고 그 위에 얹는다(흰 글씨·경로).
-//  · dark(완성본): 다크 배경에 파파야 경로로 그 자체가 완성된 이미지. 인스타를 안 거치고
-//    카카오톡·문자 등으로 바로 공유하는 사람용.
-//  · photo(한 컷 완성본): 사용자가 방금 찍은 사진을 배경으로 카드를 합성. 사진이 있을 때만 노출.
+//  · dark(완성본): 다크 배경에 파파야 경로. 인스타 안 거치고 카톡·문자로 바로 공유용.
+//  · photo(한 컷 완성본): 사용자 사진을 배경으로 카드를 합성(하단 스크림). 사진 있을 때만.
 export type RunCardBackground = 'transparent' | 'dark' | 'photo';
 
 export const RUN_CARD_BACKGROUND_LABEL: Record<RunCardBackground, string> = {
@@ -119,36 +114,36 @@ export const RUN_CARD_BACKGROUND_LABEL: Record<RunCardBackground, string> = {
   photo: '사진',
 };
 
-/** 캔버스 픽셀 크기(폭 1080 고정, 높이만 비율에 따라). feed=4:5, story=9:16. */
-export function runCardDimensions(format: RunCardFormat): {w: number; h: number} {
-  return format === 'story' ? {w: 1080, h: 1920} : {w: 1080, h: 1350};
+/** 캔버스 픽셀 크기 — 피드 4:5 고정(1080×1350). */
+export function runCardDimensions(_format: RunCardFormat = 'feed'): {w: number; h: number} {
+  return {w: 1080, h: 1350};
 }
 
-/** 템플릿이 보여주는 요소들(렌더 분기·picker 썸네일 공용). heroDistance면 거대 거리 숫자를
- *  히어로로 올리고, 이때 스탯 행은 거리를 빼고 페이스·시간만 보인다(중복 방지). */
+/** 레이아웃 + 지도/지표 토글 → 렌더가 그릴 요소들. 거리는 항상 표시하되,
+ *  세로·히어로(또는 지표 off)면 거대 히어로로, 가로+지표on 이면 가로 행 안에 넣는다. */
 export interface RunCardElements {
+  /** 거대 히어로 거리 숫자를 위에 올리는가. */
+  bigDistance: boolean;
+  /** 페이스·시간(+랩) 스탯을 보이는가. */
+  showStatsRow: boolean;
+  /** 스탯을 세로로 쌓는가(스트라바 세로형). false=가로. */
+  statsVertical: boolean;
+  /** 가로 스탯 행에 DISTANCE 칸을 포함하는가(가로+지표on 일 때만). */
+  includeDistanceInRow: boolean;
+  /** 지도(경로)를 그리는가. */
   map: boolean;
-  statsRow: boolean;
-  heroDistance: boolean;
-  /** 스탯 행에 거리 칸을 포함하는가(히어로가 거리를 이미 크게 보이면 false). */
-  statsIncludeDistance: boolean;
 }
 
-export function runCardElements(template: RunCardTemplate): RunCardElements {
-  const base = (map: boolean, statsRow: boolean, heroDistance: boolean): RunCardElements => ({
-    map,
-    statsRow,
-    heroDistance,
-    statsIncludeDistance: statsRow && !heroDistance,
-  });
-  switch (template) {
-    case 'classic': return base(true, true, false);   // 지도 + D/P/T (현재 카드)
-    case 'hero': return base(true, true, true);        // 거대 거리 + 지도 + P/T
-    case 'minimal': return base(false, false, true);   // 거리 하나
-    case 'stats': return base(false, true, false);     // D/P/T (지도 off)
-    case 'route': return base(true, false, false);     // 지도만 (지표 off)
-    default: return base(true, true, false);
-  }
+export function runCardElements(layout: RunCardLayout, showMap: boolean, showStats: boolean): RunCardElements {
+  // 가로(classic)+지표on 이면 거리는 행 안에, 그 외(세로·히어로·지표off)엔 거대 히어로로.
+  const bigDistance = layout !== 'classic' || !showStats;
+  return {
+    bigDistance,
+    showStatsRow: showStats,
+    statsVertical: layout === 'vertical',
+    includeDistanceInRow: layout === 'classic' && showStats,
+    map: showMap,
+  };
 }
 
 /** 글씨·지도 크기 배율 — 사용자가 앱에서 늘리고 줄일 수 있다. 안전 범위로 보정. */

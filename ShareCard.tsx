@@ -1,17 +1,16 @@
 // ============================================================================
-// ShareCard.tsx — 런 기록 공유 카드(이미지) · 템플릿 구동(선택기·에디터 공용)
+// ShareCard.tsx — 런 기록 공유 카드(이미지) · 레이아웃+토글 구동(스트라바 방식)
 // ----------------------------------------------------------------------------
-// 사용자는 공유 시 여러 템플릿을 넘겨보며 고른다(lib/shareCard 의 registry가 단일 진실원).
-// 기본은 '투명 스티커'(배경 없음) — 러너가 인스타에 자기 사진을 올린 뒤 그 위에 이 카드를
-// 얹어 크기를 조절한다. background='dark' 면 다크+파파야 경로의 '완성본'(카톡 등 직접 공유용).
-// photoUri 가 오면(리캡 '오늘의 한 컷' 완성본) 사진을 배경으로 깐다.
+// 레이아웃(가로/세로/히어로)만 고르고, 지도·지표는 on/off 토글로 넣었다 뺐다 한다.
+// 기본은 '투명 스티커'(배경 없음) — 러너가 인스타에 자기 사진을 올리고 그 위에 얹으면
+// 위치·크기는 인스타가 처리한다. background='dark'=다크 완성본, 'photo'=사진 배경 합성.
+// 세로형은 스트라바처럼 하단에 지표를 세로로 통합(사진이면 스크림 위)한다.
 //
-// 카드 본문(ShareCardBody)은 Svg 래퍼 없이 SVG 요소만 반환 — 에디터(ShareCardEditor)가
-// 사진 위에 카드를 임의 위치·크기로 합성해 캡처할 때 <G transform> 안에 그대로 재사용한다.
+// 카드 본문(ShareCardBody)은 Svg 래퍼 없이 SVG 요소만 반환 — 필요 시 다른 합성에 재사용.
 // react-native-svg 만으로 그려 부모가 ref.toDataURL()로 PNG 를 얻어 공유한다(네이티브 0).
 // ============================================================================
 import React from 'react';
-import Svg, {Rect, Path, Circle, Text as SvgText, G, Image as SvgImage, Defs, RadialGradient, Stop, LinearGradient} from 'react-native-svg';
+import Svg, {Rect, Path, Circle, Text as SvgText, G, Image as SvgImage, Defs, RadialGradient, LinearGradient, Stop} from 'react-native-svg';
 import {ACCENT, T1, RING_ACCENT, BG} from './theme';
 import {WORDMARK_FONT} from './primitives';
 const CF = WORDMARK_FONT;
@@ -21,7 +20,7 @@ import {
   runCardDimensions,
   runCardElements,
   clampRunCardScale,
-  type RunCardTemplate,
+  type RunCardLayout,
   type RunCardFormat,
   type RunCardBackground,
 } from './lib/shareCard';
@@ -36,44 +35,40 @@ export interface ShareCardProps {
   model: ShareCardModel;
   /** 기록된 GPS 경로(없거나 2점 미만이면 경로 생략). */
   route?: LatLon[];
-  /** 완성본(리캡 '오늘의 한 컷') — 있으면 사진을 배경으로 깔고 스탯을 얹는다. */
+  /** 사진 배경(완성본) — 있으면 사진을 깔고 하단 스크림 위에 지표를 얹는다. */
   photoUri?: string | null;
-  /** 담을 요소(지도·지표·히어로). 기본 클래식(지도+D/P/T). */
-  template?: RunCardTemplate;
-  /** 피드(4:5) / 세로형 스토리(9:16). 기본 피드. */
+  /** 지표 배치: 가로(classic)/세로(vertical)/히어로. 기본 classic. */
+  layout?: RunCardLayout;
+  /** 지도(경로) 표시. 기본 true. */
+  showMap?: boolean;
+  /** 지표(페이스·시간) 표시. 기본 true. */
+  showStats?: boolean;
+  /** 피드(4:5) 고정. */
   format?: RunCardFormat;
-  /** 투명(기본, 사진 위 오버레이) / 다크(완성본) / 사진. photoUri 없으면 photo=투명 취급. */
+  /** 투명(기본, 사진 위 오버레이) / 다크(완성본) / 사진. */
   background?: RunCardBackground;
-  /** 글씨 크기 배율(사용자 조절). */
+  /** 글씨 크기 배율. */
   textScale?: number;
-  /** 지도 크기 배율(사용자 조절). */
+  /** 지도 크기 배율. */
   mapScale?: number;
-  /** 표시 폭(미리보기용) — 지정 시 viewBox로 축소 렌더. 미지정=실제 캔버스(캡처용 고해상). */
+  /** 표시 폭(미리보기용) — 지정 시 viewBox로 축소 렌더. */
   displayWidth?: number;
 }
 
-/** 카드 SVG 캔버스 크기(polyfill 편의). 에디터가 배치 계산에 쓴다. */
-export function shareCardCanvas(format: RunCardFormat = 'feed'): {w: number; h: number} {
-  return runCardDimensions(format);
-}
-
-/**
- * 카드 본문 — Svg 래퍼 없이 SVG 요소(Defs + 레이어)만 반환. ShareCard 는 이걸 <Svg>로 감싸고,
- * ShareCardEditor 는 <G transform> 안에 넣어 사진 위에 임의 위치·크기로 합성한다.
- * 배경(다크/사진)도 여기서 그린다 — 단, 에디터에서 카드를 '스티커'로 얹을 땐 투명으로 쓴다.
- */
 export function ShareCardBody({
   model,
   route = [],
   photoUri = null,
-  template = 'classic',
+  layout = 'classic',
+  showMap = true,
+  showStats = true,
   format = 'feed',
   background = 'transparent',
   textScale = 1,
   mapScale = 1,
 }: Omit<ShareCardProps, 'displayWidth'>) {
   const {w: W, h: H} = runCardDimensions(format);
-  const el = runCardElements(template);
+  const el = runCardElements(layout, showMap, showStats);
   const tScale = clampRunCardScale(textScale);
   const mScale = clampRunCardScale(mapScale);
 
@@ -82,70 +77,55 @@ export function ShareCardBody({
   const routeColor = isDark ? RING_ACCENT : ACCENT;
   const wordmarkColor = isDark ? RING_ACCENT : T1;
   const ink = T1;
-
   const PADX = 72;
-  const shoeY = Math.round(H * 0.085);
-  const wordmarkY = Math.round(H - H * 0.07);
-  const statsValueY = Math.round(H - H * 0.115);
-  const statsLabelY = statsValueY - Math.round(70 * tScale);
-  const heroBaselineY = el.map ? Math.round(H * 0.30) : Math.round(H * 0.46);
 
-  const mapTop = el.heroDistance ? Math.round(H * 0.36) : Math.round(H * 0.15);
-  const mapBottom = el.statsRow ? statsLabelY - Math.round(H * 0.03) : wordmarkY - Math.round(H * 0.04);
-  const availH = Math.max(0, mapBottom - mapTop);
-  const boxBase = Math.min(W - PADX * 2, availH);
-  const box = Math.max(220, Math.round(boxBase * mScale));
-  const mapX = Math.round((W - box) / 2);
-  const mapY = Math.round(mapTop + (availH - box) / 2);
+  // 스탯 셀(페이스·시간 등). 가로+지표on 이면 맨 앞에 DISTANCE 를 끼운다.
+  const statCells = [
+    ...(el.includeDistanceInRow ? [{label: 'DISTANCE', value: `${model.distance} ${model.unit}`}] : []),
+    ...(el.showStatsRow ? model.stats : []),
+  ];
 
-  const proj = el.map ? projectRoute(route, {width: box, height: box, padding: Math.round(box * 0.13)}) : {points: [] as ScreenPoint[]};
+  // 지도 박스 — 세로/히어로는 우상단 작은 경로, 가로는 중앙 큰 경로.
+  const mapForClassic = el.map && !el.bigDistance;
+  const mapCorner = el.map && el.bigDistance;
+  let mapBox = 0, mapX = 0, mapY = 0;
+  if (mapForClassic) {
+    // 가로: 상단~중앙 큰 정사각.
+    mapBox = Math.round(Math.min(W - PADX * 2, H * 0.42) * mScale);
+    mapX = Math.round((W - mapBox) / 2);
+    mapY = Math.round(H * 0.16);
+  } else if (mapCorner) {
+    // 세로/히어로: 우상단 작은 경로.
+    mapBox = Math.round(W * 0.30 * mScale);
+    mapX = Math.round(W - PADX - mapBox);
+    mapY = Math.round(H * 0.11);
+  }
+  const proj = el.map ? projectRoute(route, {width: Math.max(1, mapBox), height: Math.max(1, mapBox), padding: Math.round(mapBox * 0.14)}) : {points: [] as ScreenPoint[]};
   const pathD = pointsToPath(proj.points);
-  const hasMap = el.map && pathD !== '';
+  const hasMap = el.map && mapBox > 0 && pathD !== '';
   const start = proj.points[0];
   const end = proj.points[proj.points.length - 1];
+  const mk = (n: number) => Math.round(n * (mapBox / 600));
 
-  const statCells = [
-    ...(el.statsIncludeDistance ? [{label: 'DISTANCE', value: `${model.distance} ${model.unit}`}] : []),
-    ...model.stats,
-  ];
-  const span = W * 0.86;
-  const x0 = (W - span) / 2;
-  const slot = statCells.length > 0 ? span / statCells.length : span;
+  const shoeY = Math.round(H * 0.085);
+  const shoeSize = Math.round(34 * tScale);
+  const wordmarkSize = Math.round(58 * tScale);
 
-  const finishFlag = (cx: number, cy: number) => {
-    const u = Math.round(8 * (box / 600));
-    const cols = 5, rows = 3;
-    const ox = cx - (cols * u) / 2;
-    const oy = cy - (rows * u) / 2;
-    const cells: React.ReactNode[] = [];
-    for (let gy = 0; gy < rows; gy++) {
-      for (let gx = 0; gx < cols; gx++) {
-        if ((gx + gy) % 2 === 0) {
-          cells.push(<Rect key={`${gx}-${gy}`} x={ox + gx * u} y={oy + gy * u} width={u} height={u} fill={routeColor} />);
-        }
-      }
-    }
-    return <G>{cells}</G>;
-  };
-
-  const heroSize = Math.round((el.map ? 150 : 200) * tScale);
-  const heroUnitSize = Math.round(52 * tScale);
-  const shoeSize = Math.round(36 * tScale);
-  const statLabelSize = Math.round(31 * tScale);
-  const statValueSize = Math.round(64 * tScale);
-  const wordmarkSize = Math.round(62 * tScale);
+  // ── 하단 통합 로크업(세로·히어로): 아래에서 위로 쌓아 y 계산 ─────────────────
+  const bottomPad = Math.round(H * 0.075);        // 워드마크 아래 여백
+  const wordBaseline = H - bottomPad;
 
   return (
     <>
       <Defs>
         <RadialGradient id="kg-dark" cx="50%" cy="12%" r="95%">
-          <Stop offset="0" stopColor="#17110B" />
-          <Stop offset="0.55" stopColor="#0B0B0C" />
-          <Stop offset="1" stopColor="#070707" />
+          <Stop offset="0" stopColor="#17110B" /><Stop offset="0.55" stopColor="#0B0B0C" /><Stop offset="1" stopColor="#070707" />
         </RadialGradient>
         <LinearGradient id="kg-route" x1="0" y1="1" x2="1" y2="0">
-          <Stop offset="0" stopColor="#FFB458" />
-          <Stop offset="1" stopColor="#E56600" />
+          <Stop offset="0" stopColor="#FFB458" /><Stop offset="1" stopColor="#E56600" />
+        </LinearGradient>
+        <LinearGradient id="kg-scrim" x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0" stopColor="#08090C" stopOpacity="0" /><Stop offset="1" stopColor="#08090C" stopOpacity="0.86" />
         </LinearGradient>
       </Defs>
 
@@ -153,64 +133,101 @@ export function ShareCardBody({
       {isPhoto && (
         <G>
           <SvgImage href={{uri: photoUri as string}} x={0} y={0} width={W} height={H} preserveAspectRatio="xMidYMid slice" />
-          <Rect x={0} y={0} width={W} height={Math.round(H * 0.16)} fill={BG} fillOpacity={0.25} />
-          <Rect x={0} y={H - Math.round(H * 0.42)} width={W} height={Math.round(H * 0.42)} fill={BG} fillOpacity={0.4} />
+          <Rect x={0} y={0} width={W} height={Math.round(H * 0.2)} fill={BG} fillOpacity={0.28} />
+          <Rect x={0} y={Math.round(H * 0.42)} width={W} height={Math.round(H * 0.58)} fill="url(#kg-scrim)" />
         </G>
       )}
 
+      {/* 신발명 좌상단 */}
       {!!model.shoe && (
-        <SvgText x={PADX} y={shoeY} fill={ink} fillOpacity={0.92} fontFamily={CF} fontSize={shoeSize} fontWeight="700">
-          {model.shoe}
-        </SvgText>
+        <SvgText x={PADX} y={shoeY} fill={ink} fillOpacity={0.92} fontFamily={CF} fontSize={shoeSize} fontWeight="700">{model.shoe}</SvgText>
       )}
 
-      {el.heroDistance && (
-        <G>
-          <SvgText x={PADX} y={heroBaselineY} fill={ink} fontFamily={CF} fontSize={heroSize} fontWeight="800" letterSpacing={-4}>
-            {model.distance}
-          </SvgText>
-          <SvgText x={PADX + 8} y={heroBaselineY + Math.round(heroUnitSize * 0.9)} fill={ink} fillOpacity={0.7} fontFamily={CF} fontSize={heroUnitSize} fontWeight="700">
-            {model.unit}
-          </SvgText>
-        </G>
-      )}
-
+      {/* 지도(경로) */}
       {hasMap && (
         <G transform={`translate(${mapX}, ${mapY})`}>
-          <Path d={pathD} fill="none" stroke={routeColor} strokeOpacity={0.14} strokeWidth={Math.round(16 * (box / 600))} strokeLinecap="round" strokeLinejoin="round" />
-          <Path d={pathD} fill="none" stroke={isDark ? 'url(#kg-route)' : routeColor} strokeWidth={Math.round(7 * (box / 600))} strokeLinecap="round" strokeLinejoin="round" />
-          {!!end && <Circle cx={end.x} cy={end.y} r={Math.round(9 * (box / 600))} fill={routeColor} />}
-          {!!start && (
-            <G>
-              <Circle cx={start.x} cy={start.y} r={Math.round(12 * (box / 600))} fill={ink} stroke={routeColor} strokeWidth={Math.round(5 * (box / 600))} />
-              {finishFlag(start.x + Math.round(42 * (box / 600)), start.y - Math.round(28 * (box / 600)))}
-              <SvgText x={start.x - Math.round(6 * (box / 600))} y={start.y - Math.round(24 * (box / 600))} fill={ink} fillOpacity={0.9} fontFamily={CF} fontSize={Math.round(26 * (box / 600))} fontWeight="700" letterSpacing={3} textAnchor="end">
-                START
-              </SvgText>
-            </G>
-          )}
+          <Path d={pathD} fill="none" stroke={routeColor} strokeOpacity={0.14} strokeWidth={mk(16)} strokeLinecap="round" strokeLinejoin="round" />
+          <Path d={pathD} fill="none" stroke={isDark ? 'url(#kg-route)' : routeColor} strokeWidth={mk(7)} strokeLinecap="round" strokeLinejoin="round" />
+          {!!end && <Circle cx={end.x} cy={end.y} r={mk(9)} fill={routeColor} />}
+          {!!start && <Circle cx={start.x} cy={start.y} r={mk(12)} fill={ink} stroke={routeColor} strokeWidth={mk(5)} />}
         </G>
       )}
 
-      {el.statsRow && statCells.map((sc, i) => {
-        const cx = x0 + slot * i + slot / 2;
-        return (
-          <G key={sc.label}>
-            <SvgText x={cx} y={statsLabelY} fill={ink} fillOpacity={0.85} fontFamily={CF} fontSize={statLabelSize} fontWeight="700" letterSpacing={2} textAnchor="middle">
-              {sc.label.toUpperCase()}
-            </SvgText>
-            <SvgText x={cx} y={statsValueY} fill={ink} fontFamily={CF} fontSize={statValueSize} fontWeight="800" letterSpacing={-0.5} textAnchor="middle">
-              {sc.value}
-            </SvgText>
-          </G>
-        );
-      })}
+      {/* ── 가로(classic): 중앙 지도 + 하단 가로 스탯 행 ── */}
+      {!el.bigDistance && statCells.length > 0 && (() => {
+        const span = W * 0.86;
+        const x0 = (W - span) / 2;
+        const slot = span / statCells.length;
+        const valueY = Math.round(H - H * 0.155);
+        const labelY = valueY - Math.round(66 * tScale);
+        return statCells.map((sc, i) => {
+          const cx = x0 + slot * i + slot / 2;
+          return (
+            <G key={sc.label}>
+              <SvgText x={cx} y={labelY} fill={ink} fillOpacity={0.85} fontFamily={CF} fontSize={Math.round(31 * tScale)} fontWeight="700" letterSpacing={2} textAnchor="middle">{sc.label.toUpperCase()}</SvgText>
+              <SvgText x={cx} y={valueY} fill={ink} fontFamily={CF} fontSize={Math.round(62 * tScale)} fontWeight="800" letterSpacing={-0.5} textAnchor="middle">{sc.value}</SvgText>
+            </G>
+          );
+        });
+      })()}
 
-      <SvgText x={W / 2} y={wordmarkY} fill={wordmarkColor} fontFamily={CF} fontWeight="500" fontSize={wordmarkSize} letterSpacing={-0.5} textAnchor="middle">
-        {model.brand.toLowerCase()}
-      </SvgText>
+      {/* ── 세로(vertical)·히어로: 하단 좌측 로크업 — 파파야 라인 + 거대 거리 + 세로 스탯 ── */}
+      {el.bigDistance && (() => {
+        const heroSize = Math.round((layout === 'hero' ? 210 : 168) * tScale);
+        const heroUnit = Math.round(52 * tScale);
+        const statValSize = Math.round((el.statsVertical ? 58 : 52) * tScale);
+        const statLabSize = Math.round(26 * tScale);
+        const nStats = statCells.length;
+        // 아래에서 위로: 워드마크(우하단, 별도) → 스탯들 → 거리 → 파파야 라인.
+        const rowH = Math.round((statValSize + statLabSize + 22 * tScale));
+        const statsBottom = wordBaseline - Math.round(76 * tScale); // 워드마크 위
+        const statsTop = statsBottom - nStats * rowH;
+        const distBaseline = statsTop - Math.round(22 * tScale);
+        const distLabelY = distBaseline + Math.round(heroUnit * 0.72);
+        const accentY = distBaseline - heroSize - Math.round(18 * tScale);
+
+        const els: React.ReactNode[] = [];
+        // 파파야 액센트 라인
+        els.push(<Rect key="acc" x={PADX} y={accentY} width={Math.round(96 * tScale)} height={Math.round(9 * tScale)} rx={Math.round(4 * tScale)} fill={RING_ACCENT} />);
+        // 거대 거리 + 단위 + 라벨
+        els.push(<SvgText key="dv" x={PADX} y={distBaseline} fill={ink} fontFamily={CF} fontSize={heroSize} fontWeight="800" letterSpacing={-4}>{model.distance}</SvgText>);
+        els.push(<SvgText key="du" x={PADX + Math.round(heroSize * 0.02) + measureApprox(model.distance, heroSize)} y={distBaseline} fill={ink} fillOpacity={0.75} fontFamily={CF} fontSize={heroUnit} fontWeight="700">{` ${model.unit}`}</SvgText>);
+        els.push(<SvgText key="dl" x={PADX + 4} y={distLabelY} fill={ink} fillOpacity={0.7} fontFamily={CF} fontSize={statLabSize} fontWeight="700" letterSpacing={2}>DISTANCE</SvgText>);
+        // 세로 스탯(페이스·시간)
+        if (el.statsVertical) {
+          statCells.forEach((sc, i) => {
+            const vy = statsTop + i * rowH + statValSize;
+            els.push(<SvgText key={`sv${i}`} x={PADX} y={vy} fill={ink} fontFamily={CF} fontSize={statValSize} fontWeight="800" letterSpacing={-0.5}>{sc.value}</SvgText>);
+            els.push(<SvgText key={`sl${i}`} x={PADX + 4} y={vy + Math.round(statLabSize + 8 * tScale)} fill={ink} fillOpacity={0.7} fontFamily={CF} fontSize={statLabSize} fontWeight="700" letterSpacing={2}>{sc.label.toUpperCase()}</SvgText>);
+          });
+        } else if (nStats > 0) {
+          // 히어로: 스탯을 가로 한 줄로(작게) 거리 아래.
+          const rowY = statsTop + statValSize;
+          const gap = Math.round(W * 0.86 / Math.max(1, nStats));
+          statCells.forEach((sc, i) => {
+            const cx = PADX + i * gap;
+            els.push(<SvgText key={`hv${i}`} x={cx} y={rowY} fill={ink} fontFamily={CF} fontSize={statValSize} fontWeight="800" letterSpacing={-0.5}>{sc.value}</SvgText>);
+            els.push(<SvgText key={`hl${i}`} x={cx + 4} y={rowY + Math.round(statLabSize + 8 * tScale)} fill={ink} fillOpacity={0.7} fontFamily={CF} fontSize={statLabSize} fontWeight="700" letterSpacing={2}>{sc.label.toUpperCase()}</SvgText>);
+          });
+        }
+        return <G>{els}</G>;
+      })()}
+
+      {/* 워드마크 — 세로/히어로는 우하단, 가로는 하단 중앙. */}
+      {el.bigDistance ? (
+        <SvgText x={W - PADX} y={wordBaseline} fill={wordmarkColor} fontFamily={CF} fontWeight="500" fontSize={wordmarkSize} letterSpacing={-0.5} textAnchor="end">{model.brand.toLowerCase()}</SvgText>
+      ) : (
+        <SvgText x={W / 2} y={H - Math.round(H * 0.07)} fill={wordmarkColor} fontFamily={CF} fontWeight="500" fontSize={Math.round(62 * tScale)} letterSpacing={-0.5} textAnchor="middle">{model.brand.toLowerCase()}</SvgText>
+      )}
     </>
   );
+}
+
+// 숫자 폭 근사(단위 x 위치용) — Jost/HN 계열 대략 폭 0.56em·소수점 0.28em.
+function measureApprox(s: string, fontSize: number): number {
+  let w = 0;
+  for (const ch of String(s)) w += ch === '.' ? 0.3 : ch === ',' ? 0.3 : 0.58;
+  return Math.round(w * fontSize);
 }
 
 const ShareCard = React.forwardRef<unknown, ShareCardProps>((props, ref) => {

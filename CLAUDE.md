@@ -29,7 +29,7 @@ Keego(= keep going) — React Native 러닝/신발 관리 앱. 차별점 = **러
 - `App.tsx`의 `KalmanFilter` 클래스·`calcDist` — GPS 정확도 핵심. 변경 시 테스트/검증 필수.
 - `package-lock.json` — npm 통해서만(수동 편집 금지).
 - 권한 요청 로직(PermissionsAndroid / Geolocation) — 회귀 시 트래킹 전체 정지.
-- **네이티브 의존성 — 사전 승인제(2026-07-09 갱신).** 새 네이티브 모듈은 자율 검증이 어려우므로 **사용자 승인 후에만** 추가한다(무단 추가 금지). 현재 승인된 네이티브 의존성: `react-native-maps`(러닝 라이브 지도·코스맵), `@kingstinct/react-native-healthkit`(심박), `@react-native-firebase/*`(app·auth·firestore·messaging·crashlytics), `@react-native-google-signin`, `@react-native-seoul/kakao-login`·`naver-login`(소셜 로그인), `expo-location`·`expo-sensors`·`react-native-sensors`(GPS·센서), `react-native-svg`, `react-native-gesture-handler`·`react-native-reanimated`·`react-native-worklets`(2026-07-15 승인 — 공유 카드 핀치/드래그 에디터, 사용자 "최상으로" 요청). 햅틱=`lib/haptics`(RN Vibration), 토스트=`lib/toast`, 새로고침=내장 `RefreshControl`.
+- **네이티브 의존성 — 사전 승인제(2026-07-09 갱신).** 새 네이티브 모듈은 자율 검증이 어려우므로 **사용자 승인 후에만** 추가한다(무단 추가 금지). 현재 승인된 네이티브 의존성: `react-native-maps`(러닝 라이브 지도·코스맵), `@kingstinct/react-native-healthkit`(심박), `@react-native-firebase/*`(app·auth·firestore·messaging·crashlytics), `@react-native-google-signin`, `@react-native-seoul/kakao-login`·`naver-login`(소셜 로그인), `expo-location`·`expo-sensors`·`react-native-sensors`(GPS·센서), `react-native-svg`. 햅틱=`lib/haptics`(RN Vibration), 토스트=`lib/toast`, 새로고침=내장 `RefreshControl`.
 
 ## 아키텍처 규칙
 - 화면 컴포넌트 = `*.rn.tsx` 네이밍.
