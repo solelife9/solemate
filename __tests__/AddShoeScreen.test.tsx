@@ -20,13 +20,9 @@
 
 import React from 'react';
 import ReactTestRenderer, {act} from 'react-test-renderer';
-import {TextInput, Image} from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
+import {TextInput} from 'react-native';
 import AddShoeScreen from '../AddShoeScreen.rn';
 import {Shoe} from '../theme';
-
-const launchMock = ImagePicker.launchImageLibraryAsync as unknown as jest.Mock;
-const permMock = ImagePicker.requestMediaLibraryPermissionsAsync as unknown as jest.Mock;
 
 function textOf(node: ReactTestRenderer.ReactTestInstance): string {
   let out = '';
@@ -180,51 +176,10 @@ test('기타 브랜드를 골라 직접 입력하면 그 브랜드 + 커스텀 �
   expect(onSave.mock.calls[0][0]).toMatchObject({brand: 'Salomon', model: 'Speedcross 6'});
 });
 
-// ── 4) photo pick failure must NOT block saving ────────────────────────────────
-test('사진 선택이 실패해도 저장은 비차단 — 에러/재시도 표시 후 사진 없이 저장된다', async () => {
-  permMock.mockResolvedValueOnce({granted: true, status: 'granted'});
-  launchMock.mockRejectedValueOnce(new Error('picker exploded'));
+// (사진 등록 기능 제거됨 — 관련 테스트 삭제, 2026-07-16 사용자 요청. 신발 사진은 어디에도
+//  표시되지 않던 죽은 기능이었다.)
 
-  const onSave = jest.fn();
-  const root = await mountScreen(onSave);
-
-  await tap(pressBy(root, '신발 사진'));
-  expect(textOf(root)).toContain('다시 시도');
-  expect(textOf(root)).toContain('사진을 불러오지 못했어요');
-
-  await search(root, 'Pegasus');
-  await tap(pressBy(root, 'Pegasus 41'));
-  await tap(pressBy(root, '러닝화 등록'));
-
-  expect(onSave).toHaveBeenCalledTimes(1);
-  const saved = onSave.mock.calls[0][0];
-  expect(saved).toMatchObject({brand: 'Nike', model: 'Pegasus 41'});
-  expect(saved.photoUri).toBeUndefined();
-});
-
-// ── 5) photo pick success → preview + photoUri in onSave ───────────────────────
-test('사진 선택에 성공하면 미리보기가 뜨고 photoUri가 저장에 실린다', async () => {
-  permMock.mockResolvedValueOnce({granted: true, status: 'granted'});
-  launchMock.mockResolvedValueOnce({
-    canceled: false,
-    assets: [{uri: 'file:///shoe.jpg', width: 100, height: 100}],
-  });
-
-  const onSave = jest.fn();
-  const root = await mountScreen(onSave);
-
-  await tap(pressBy(root, '신발 사진'));
-  const imgs = root.findAll(n => n.type === Image && n.props.source && n.props.source.uri === 'file:///shoe.jpg');
-  expect(imgs.length).toBe(1);
-
-  await search(root, 'Pegasus');
-  await tap(pressBy(root, 'Pegasus 41'));
-  await tap(pressBy(root, '러닝화 등록'));
-
-  expect(onSave.mock.calls[0][0].photoUri).toBe('file:///shoe.jpg');
-});
-
-// ── 6) 피커를 열면 브랜드(Nike) 전체 모델이 알파벳순으로 뜬다 ─────────────────────────
+// ── 피커를 열면 브랜드(Nike) 전체 모델이 알파벳순으로 뜬다 ─────────────────────────
 test('피커를 열면 브랜드(Nike) 전체 모델이 알파벳순으로 뜬다', async () => {
   const onSave = jest.fn();
   const root = await mountScreen(onSave);

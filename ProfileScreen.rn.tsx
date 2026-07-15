@@ -814,27 +814,7 @@ export default function ProfileScreen({
           </Pressable>
         )}
 
-        {/* Apple 건강(HealthKit) 연동 — 심박 백필·워크아웃 기록·안정시심박 자동 채움.
-            기기가 HealthKit 을 지원할 때만 노출(안드로이드/시뮬 일부 숨김). */}
-        {hkAvailable() && (
-          <Pressable
-            onPress={linkHealth}
-            testID="link-health"
-            accessibilityRole="button"
-            accessibilityLabel="Apple 건강 연동"
-            accessibilityState={{disabled: hkOn}}
-            style={({ pressed }) => [s.card, s.progressRow, pressed && !hkOn && { backgroundColor: CARD_HI }]}>
-            <GlassEdge glints={false} radius={RADIUS.lg} />
-            <View style={s.progressIcon}><Ionicons name="heart-outline" size={ri(19)} color={BRAND} /></View>
-            <View style={{ flex: 1, minWidth: 0 }}>
-              <Text style={s.progressTitle}>Apple 건강</Text>
-              <Text style={s.progressSub}>{hkOn ? '연동됨 — 심박·워크아웃 동기화 중' : '연동하면 워치 심박과 워크아웃이 이어져요'}</Text>
-            </View>
-            {hkOn
-              ? <Ionicons name="checkmark-circle" size={ri(18)} color={GOOD} />
-              : <Ionicons name="chevron-forward" size={ri(18)} color={T3} />}
-          </Pressable>
-        )}
+        {/* Apple 건강 연동은 설정 섹션의 compact 행으로 이동(사용자 요청) — 아래 설정 목록 참조. */}
 
         {/* 신발 보관함 진입 — 보관(retired) 처리한 신발을 모아 복원할 수 있는 전체화면.
             명예의 전당(은퇴) 아래에 둔다. 복원 진입점이 없던 갭을 메운다. */}
@@ -1057,6 +1037,16 @@ export default function ProfileScreen({
               <Text style={[s.settingDetail, hapticsOn && { color: GOOD }]} testID="haptics-detail">{hapticsOn ? '켜짐' : '꺼짐'}</Text>
               <Ionicons name="swap-horizontal" size={ri(16)} color={T3} />
             </Pressable>
+
+            {/* Apple 건강(HealthKit) — 설정 안에 compact 행으로. 기기 지원 시만. */}
+            {hkAvailable() && (
+              <Pressable onPress={linkHealth} testID="link-health" accessibilityRole="button" accessibilityLabel="Apple 건강 연동" accessibilityState={{ disabled: hkOn }} style={({ pressed }) => [s.settingRow, s.settingBorder, pressed && !hkOn && { backgroundColor: CARD_HI }]}>
+                <View style={s.settingIcon}><Ionicons name="heart-outline" size={ri(17)} color={ACCENT} /></View>
+                <Text style={s.settingLabel}>Apple 건강</Text>
+                <Text style={[s.settingDetail, hkOn && { color: GOOD }]}>{hkOn ? '연동됨' : '연동'}</Text>
+                <Ionicons name={hkOn ? 'checkmark' : 'chevron-forward'} size={ri(16)} color={T3} />
+              </Pressable>
+            )}
 
             {/* 3) 단위 — 즉시 토글(전 화면 환산 반영) */}
             <Pressable onPress={() => onChangeUnit?.(unit === 'km' ? 'mi' : 'km')} accessibilityRole="button" accessibilityLabel={`단위, 현재 ${unitKorean(unit)}. 눌러서 전환`} style={({ pressed }) => [s.settingRow, s.settingBorder, pressed && { backgroundColor: CARD_HI }]}>

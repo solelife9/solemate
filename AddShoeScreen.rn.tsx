@@ -6,21 +6,19 @@
 // ============================================================================
 import React, { useState } from 'react';
 import { rs, ri, rv } from './lib/responsive';
-import { View, Text, TextInput, ScrollView, Pressable, Image, StyleSheet, KeyboardAvoidingView, Platform, Alert, Linking } from 'react-native';
+import { View, Text, TextInput, ScrollView, Pressable, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {
-  BG, CARD_HI, ACCENT, DANGER, T1, T2, T3, T4, FONT, DISPLAY, withAlpha, Shoe, TYPE, GLASS, RADIUS,
+  BG, CARD_HI, RING_ACCENT, DANGER, T1, T2, T3, FONT, DISPLAY, withAlpha, Shoe, TYPE, GLASS, RADIUS,
 } from './theme';
-import { Pill, Button, GlassEdge } from './primitives';
+import { Button, GlassEdge } from './primitives';
 // 러닝화 모델 카탈로그·권장수명은 data/shoeModels(단일 소스)에서 가져온다.
 import { getRecommendedLifespanKm } from './data/shoeModels';
 // 러닝화 선택은 온보딩과 공유하는 2열 분할 피커(단일 소스).
 import { ShoePicker, type PickedShoe } from './ShoePicker';
 // maxKm 0 같은 비정상값을 제출 시 인라인으로 차단(빨강 헬퍼텍스트).
 import { validateMaxKm } from './lib/inputMask';
-// 사진 첨부는 expo-image-picker 래퍼(lib/photo)를 통해 실제로 동작한다.
-import { pickPhotoWithPermission } from './lib/photo';
 
 export default function AddShoeScreen({
   onClose, onSave,
@@ -33,10 +31,6 @@ export default function AddShoeScreen({
   const [used, setUsed] = useState('0');
   // maxKm 0/비정상값 인라인 차단 — 제출 시 검증해 필드 아래 빨강 헬퍼텍스트로 표시한다.
   const [maxErr, setMaxErr] = useState<string | undefined>(undefined);
-  // 사진: 선택 성공 시 uri, 실패 시 에러 플래그(저장은 비차단 — 사진 없이 진행 가능).
-  const [photoUri, setPhotoUri] = useState<string | null>(null);
-  const [photoError, setPhotoError] = useState(false);
-  const [picking, setPicking] = useState(false);
 
   // 모델만 있으면 등록 가능 — 검색창 직접 추가는 브랜드가 비어 있을 수 있다(온보딩과 동일).
   // '기타' 레일 직접 입력은 브랜드명을 받으므로 그 경로는 브랜드가 채워진다.
@@ -53,28 +47,6 @@ export default function AddShoeScreen({
     setMaxErr(undefined);
   };
 
-  const onPickPhoto = async () => {
-    if (picking) return;
-    setPicking(true);
-    setPhotoError(false);
-    try {
-      const pickedPhoto = await pickPhotoWithPermission();
-      if (pickedPhoto.ok) setPhotoUri(pickedPhoto.uri);
-      else if (pickedPhoto.reason === 'denied') {
-        // 권한 거부 시 무반응이던 것 개선(2026-07-05) — 설정 안내(비차단).
-        Alert.alert('사진 접근 권한이 필요해요', '설정에서 사진 권한을 허용하면 신발 사진을 등록할 수 있어요.', [
-          {text: '설정 열기', onPress: () => { Promise.resolve(Linking.openSettings()).catch(() => {}); }},
-          {text: '나중에', style: 'cancel'},
-        ]);
-      }
-    } catch {
-      // 실패해도 저장을 막지 않는다 — 에러를 표시하고 재시도를 제안.
-      setPhotoError(true);
-    } finally {
-      setPicking(false);
-    }
-  };
-
   const save = () => {
     if (!valid || !picked) return;
     // maxKm 0 같은 비정상값을 인라인으로 차단한다(Alert 없이 필드 아래 빨강 헬퍼텍스트).
@@ -86,7 +58,6 @@ export default function AddShoeScreen({
       model: picked.model.trim(),
       max,
       used: Number(used) || 0,
-      ...(photoUri ? { photoUri } : {}),
     });
   };
 
@@ -106,24 +77,6 @@ export default function AddShoeScreen({
           (iOS=padding, Android는 adjustResize에 맡겨 undefined). */}
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={insets.top + 8}>
       <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: rs(18), paddingBottom: rv(20) }} keyboardShouldPersistTaps="handled">
-        {/* photo — tap to pick from library; non-blocking on failure */}
-        <Pressable onPress={onPickPhoto} disabled={picking} style={({ pressed }) => [s.photo, pressed && s.pressed]}>
-          {photoUri ? (
-            <Image source={{ uri: photoUri }} style={s.photoImg} resizeMode="cover" />
-          ) : (
-            <>
-              <Ionicons name={photoError ? 'refresh-outline' : 'camera-outline'} size={ri(26)} color={photoError ? ACCENT : T3} />
-              <Text style={[s.photoText, photoError && { color: ACCENT }]}>
-                {picking ? '불러오는 중…' : photoError ? '다시 시도' : '신발 사진'}
-              </Text>
-            </>
-          )}
-        </Pressable>
-        {photoError && (
-          <Text style={s.photoErr}>사진을 불러오지 못했어요. 사진 없이 등록하거나 다시 시도하세요.</Text>
-        )}
-        {!photoError && <Text style={s.photoOpt}>선택 — 사진 없이도 등록할 수 있어요</Text>}
-
         {/* 러닝화(브랜드+모델) — 탭하면 온보딩과 동일한 2열 분할 피커가 열린다 */}
         <Text style={s.label}>러닝화</Text>
         <Pressable onPress={() => setPickerOpen(true)} accessibilityRole="button" accessibilityLabel={picked ? `러닝화 ${picked.brand} ${picked.model}, 눌러서 변경` : '러닝화 선택'} testID="add-shoe-select" style={({ pressed }) => [s.selector, pressed && s.pressed]}>
@@ -138,7 +91,7 @@ export default function AddShoeScreen({
         {/* 권장 교체 거리 — 쿠셔닝(성능) 기준 가이드. 자동 입력·수정 가능, 미수정 시 '권장' 배지 */}
         <View style={s.maxHead}>
           <Text style={[s.label, { paddingBottom: rv(0) }]}>교체 권장 거리</Text>
-          {isRecommended && <Pill tone="accent" label="권장" icon="sparkles-outline" />}
+          {isRecommended && <Text style={s.recBadge}>권장</Text>}
         </View>
         <View style={[s.usedRow, !!maxErr && s.usedRowErr]}>
           <TextInput
@@ -197,11 +150,7 @@ const s = StyleSheet.create({
   iconBtn: { width: rs(38), height: rs(38), borderRadius: RADIUS.pill, backgroundColor: CARD_HI, borderWidth: 1, borderColor: withAlpha(T1, 0.12), alignItems: 'center', justifyContent: 'center' },
   navTitle: { color: T1, fontFamily: FONT, fontSize: TYPE.heading.fontSize, fontWeight: '500', letterSpacing: -0.2 },
 
-  photo: { alignSelf: 'center', width: rs(120), height: rs(120), borderRadius: rs(26), borderCurve: 'continuous', borderWidth: 1, borderStyle: 'dashed', borderColor: withAlpha(T1, 0.14), backgroundColor: withAlpha(T1, 0.02), alignItems: 'center', justifyContent: 'center', gap: rv(8), marginBottom: rv(10), overflow: 'hidden' },
-  photoImg: { width: '100%', height: '100%' },
-  photoText: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize },
-  photoErr: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, textAlign: 'center', marginBottom: rv(16), paddingHorizontal: rs(12) },
-  photoOpt: { color: T4, fontFamily: FONT, fontSize: TYPE.caption.fontSize, textAlign: 'center', marginBottom: rv(18) },
+  recBadge: { color: RING_ACCENT, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '700', letterSpacing: 0.2 },
 
   label: { color: T2, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500', letterSpacing: 0.2, paddingHorizontal: rs(4), paddingBottom: rv(10) },
 
