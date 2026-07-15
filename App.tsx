@@ -94,7 +94,8 @@ import {Unit, kmToDisplay, displayNum} from './lib/units';
 import {
   AlertSettings, loadSettings, saveUnit, saveGoal, saveAlerts, saveWeight,
   saveAge, saveSex, saveRestHR, Sex,
-  clampGoal, DEFAULT_SETTINGS,
+  loadSettingsUpdatedAt, saveSettingsUpdatedAt,
+  clampGoal, clampWeight, clampAge, clampRestHR, DEFAULT_SETTINGS,
   VoiceSettings, loadVoiceSettings, DEFAULT_VOICE, loadAutoPause, loadHaptics,
 } from './lib/settings';
 import {estimateCaloriesTotal} from './lib/calories';
@@ -359,6 +360,10 @@ function Main(){
   const [age,setAge]=useState(DEFAULT_SETTINGS.age);
   const [sex,setSex]=useState<Sex>(DEFAULT_SETTINGS.sex);
   const [restHR,setRestHR]=useState(DEFAULT_SETTINGS.restHR);
+  // 설정 블록 최종 수정 시각(epoch ms, 0=미수정) — 클라우드 병합 last-write-wins 판정.
+  // ref 미러는 동기 왕복(await) 중의 편집을 applyBackupPayload 가 즉시 보게 한다(클로버 가드).
+  const [settingsTs,setSettingsTs]=useState(0);
+  const settingsTsRef=useRef(0);
   // 개인 챌린지 목록(거리·연속일). 신규 키(K_CHALLENGES)로 영속하며 런 기록에서
   // 진행률을 파생한다(lib/challenges). 기존 키와 분리돼 데이터 파괴 위험이 없다.
   const [challenges,setChallenges]=useState<Challenge[]>([]);
@@ -701,6 +706,9 @@ function Main(){
     const st=await loadSettings();
     setUnit(st.unit);setGoalWeeklyKm(st.goalWeeklyKm);setAlerts(st.alerts);setWeightKg(st.weightKg);
     setAge(st.age);setSex(st.sex);setRestHR(st.restHR);
+    // 설정 수정 시각 복원 — 클라우드 병합 LWW 판정 기준(ref 는 동기 왕복 중에도 최신).
+    const stTs=await loadSettingsUpdatedAt();
+    settingsTsRef.current=stTs;setSettingsTs(stTs);
     // Stage 3(Firestore 정본 부팅): 로컬 캐시로 즉시 'ready'. 원격 복원은 runCloudSync
     // effect(authUser.uid)가 pull→merge→push 로 수행한다 — 재설치/기기변경 데이터 복구 포함.
     // REST 콜드대기/에러 카드가 사라진다(부팅은 로컬 캐시 로드라 실패하지 않는다). 첫 실행/
@@ -1066,13 +1074,19 @@ function Main(){
 
   // ── 설정 변경(영속 + 상태 갱신) — ProfileScreen 설정 행이 호출 ──────────────
   // 각 setter는 즉시 setState로 화면을 갱신하고 saveX로 AsyncStorage에 영속한다.
-  const changeUnit=(u:Unit)=>{setUnit(u);void saveUnit(u);};
-  const changeGoal=(km:number)=>{const v=clampGoal(km);setGoalWeeklyKm(v);void saveGoal(v);};
-  const changeAlerts=(a:AlertSettings)=>{setAlerts(a);void saveAlerts(a);};
-  const changeWeight=(kg:number)=>{setWeightKg(kg);void saveWeight(kg);};
-  const changeAge=(v:number)=>{setAge(v);void saveAge(v);};
-  const changeSex=(v:Sex)=>{setSex(v);void saveSex(v);};
-  const changeRestHR=(v:number)=>{setRestHR(v);void saveRestHR(v);};
+  // bumpSettingsTs: 사용자가 설정을 바꿀 때마다 수정 시각을 올린다 — 클라우드 병합
+  // last-write-wins + 동기 왕복 중 편집 클로버 가드(applyBackupPayload)의 판정 기준.
+  const bumpSettingsTs=()=>{
+    const ts=Date.now();
+    settingsTsRef.current=ts;setSettingsTs(ts);void saveSettingsUpdatedAt(ts);
+  };
+  const changeUnit=(u:Unit)=>{setUnit(u);void saveUnit(u);bumpSettingsTs();};
+  const changeGoal=(km:number)=>{const v=clampGoal(km);setGoalWeeklyKm(v);void saveGoal(v);bumpSettingsTs();};
+  const changeAlerts=(a:AlertSettings)=>{setAlerts(a);void saveAlerts(a);bumpSettingsTs();};
+  const changeWeight=(kg:number)=>{setWeightKg(kg);void saveWeight(kg);bumpSettingsTs();};
+  const changeAge=(v:number)=>{setAge(v);void saveAge(v);bumpSettingsTs();};
+  const changeSex=(v:Sex)=>{setSex(v);void saveSex(v);bumpSettingsTs();};
+  const changeRestHR=(v:number)=>{setRestHR(v);void saveRestHR(v);bumpSettingsTs();};
   // 푸시 알림 설정 변경: 즉시 상태 반영 + 신규 notif_settings 키에만 영속(기존 키 불변).
   const changeNotifSettings=(s:NotifSettings)=>{setNotifSettingsState(s);void setNotifSettings(s);};
   // 러닝 리마인더 OS 체인(7일 원샷) 동기 — 설정·오늘 런 여부가 바뀔 때마다 갱신한다
@@ -1094,7 +1108,9 @@ function Main(){
   const backupData={
     shoes:[...shoes,...tombstones.shoes],
     runs:[...runs,...tombstones.runs],
-    settings:{unit,goal_weekly_km:goalWeeklyKm,alerts},
+    // 신체지표(체중·나이·성별·안정시심박)도 포함 — 재설치·기기변경 시 심박존(Tanaka/
+    // Karvonen)·칼로리·TRIMP 가 틀어지지 않게(유실 0). updated_at 은 병합 LWW 판정 기준.
+    settings:{unit,goal_weekly_km:goalWeeklyKm,alerts,weight_kg:weightKg,age,sex,rest_hr:restHR,updated_at:settingsTs},
     // 진척(은퇴 신발·랭크·업적 seen)도 클라우드 백업에 포함 — 재설치/기기변경 복원(유실 0).
     ...(progState?{progression:progState}:{}),
     // 마라톤 메달도 클라우드 백업에 포함 — 재설치/기기변경에도 컬렉션 유지(동기 병합=mergeMedals).
@@ -1139,13 +1155,33 @@ function Main(){
         return next;
       });
     }
+    // 설정 복원(단위·목표·알림 + 체중·나이·성별·안정시심박) — LWW 클로버 가드(2026-07-16).
+    // 병합 결과의 updated_at 이 현재(ref, 동기 왕복 중 편집 포함)보다 오래됐으면 통째로
+    // 스킵한다 — 과거엔 stale 스냅샷을 무조건 change* 로 되돌려서, 동기 중 바꾼 단위가
+    // 원위치되는 클로버가 있었다. 명시적 가져오기(preserveExtras=false)는 사용자 의사가
+    // '백업으로 교체'이므로 가드 없이 적용하고 수정 시각을 지금으로 올린다(이후 동기에서 승리).
+    // 상태 반영은 change* 가 아니라 저수준 set+save 로 — change* 는 bumpSettingsTs 를 불러
+    // 복원을 '이 기기의 새 편집'으로 둔갑시키고, 그러면 다른 기기의 더 최신 편집을 이긴다.
     const st:any=data.settings||{};
-    if(st.unit==='km'||st.unit==='mi')changeUnit(st.unit);
-    if(typeof st.goal_weekly_km==='number')changeGoal(st.goal_weekly_km);
-    if(st.alerts&&typeof st.alerts==='object'){
-      const en=typeof st.alerts.enabled==='boolean'?st.alerts.enabled:alerts.enabled;
-      const th=Number(st.alerts.thresholdPct);
-      changeAlerts({enabled:en,thresholdPct:Number.isFinite(th)?th:alerts.thresholdPct});
+    const mergedTs=(()=>{const v=Number(st.updated_at);return Number.isFinite(v)&&v>0?v:0;})();
+    const forceSettings=!preserve; // 명시적 import 교체
+    if(forceSettings||mergedTs>=settingsTsRef.current){
+      if(st.unit==='km'||st.unit==='mi'){setUnit(st.unit);void saveUnit(st.unit);}
+      if(typeof st.goal_weekly_km==='number'){const v=clampGoal(st.goal_weekly_km);setGoalWeeklyKm(v);void saveGoal(v);}
+      if(st.alerts&&typeof st.alerts==='object'){
+        const en=typeof st.alerts.enabled==='boolean'?st.alerts.enabled:alerts.enabled;
+        const th=Number(st.alerts.thresholdPct);
+        const next={enabled:en,thresholdPct:Number.isFinite(th)?th:alerts.thresholdPct};
+        setAlerts(next);void saveAlerts(next);
+      }
+      if(typeof st.weight_kg==='number'&&st.weight_kg>0){const v=clampWeight(st.weight_kg);setWeightKg(v);void saveWeight(v);}
+      if(typeof st.age==='number'&&st.age>0){const v=clampAge(st.age);setAge(v);void saveAge(v);}
+      if(st.sex==='male'||st.sex==='female'){setSex(st.sex);void saveSex(st.sex);}
+      if(typeof st.rest_hr==='number'&&st.rest_hr>0){const v=clampRestHR(st.rest_hr);setRestHR(v);void saveRestHR(v);}
+      const nextTs=forceSettings?Date.now():Math.max(mergedTs,settingsTsRef.current);
+      if(nextTs>0&&nextTs!==settingsTsRef.current){
+        settingsTsRef.current=nextTs;setSettingsTs(nextTs);void saveSettingsUpdatedAt(nextTs);
+      }
     }
     // 진척 복원(은퇴 신발·랭크·업적 seen) — 동기 왕복(await) 중 만든 로컬 진척(은퇴·언락·
     // 포인트)을 잃지 않게 함수형 updater 로 현재 상태(prev)와 재병합한다. 과거엔 blind replace
@@ -1258,7 +1294,7 @@ function Main(){
   // (런 수백 건·route 블롭을 매 렌더 stringify 하지 않는다 — 비용이 데이터 크기에 무관).
   const cloudDataSig=(()=>{
     const maxU=(arr:any[])=>arr.reduce((m:number,x:any)=>{const u=x?.updatedAt;return typeof u==='number'&&u>m?u:m;},0);
-    return `${shoes.length}:${runs.length}:${Math.max(maxU(shoes),maxU(runs))}:${unit}:${goalWeeklyKm}:${JSON.stringify(alerts)}`;
+    return `${shoes.length}:${runs.length}:${Math.max(maxU(shoes),maxU(runs))}:${unit}:${goalWeeklyKm}:${JSON.stringify(alerts)}:${weightKg}:${age}:${sex}:${restHR}:${settingsTs}`;
   })();
   // 테스트(NODE_ENV==='test')에선 기본 우회 — 25개 App 스위트가 setTimeout 누수/네이티브
   // 호출 없이 그대로 통과한다. 전용 테스트는 __KEEGO_ENABLE_CLOUD_SYNC__ 로 켜서 검증한다.
@@ -2312,6 +2348,9 @@ function RunActiveScreen({shoe,insets,goalKm,goalMin=0,pacePlan=[],targetZone=0,
   const announcedKm=useRef(0);
   // 반 km 안내(주기 0.5km 설정 전용) — 0.5 단위 인덱스(floor(km*2)). 정수 km 는 announcedKm 담당.
   const announcedHalf=useRef(0);
+  // 거리 목표 달성 음성 1회 가드 — 정수 km 경계가 아니라 km>=goalKm 순간에 울린다.
+  // (과거엔 정수 경계에서 remaining<=0 판정이라 하프 21.1km 같은 소수 목표가 영영 침묵.)
+  const announcedGoal=useRef(false);
   // 음성 코칭 설정 — 런 시작 시 1회 로드(설정 변경은 다음 런부터 적용, 러닝 중 재로드 없음).
   const voiceCfg=useRef<VoiceSettings>({...DEFAULT_VOICE});
   // 요청한 위치 권한 결과(포그라운드/백그라운드). '계속 달리기'(거리 짧음 재시작) 시
@@ -2508,14 +2547,23 @@ function RunActiveScreen({shoe,insets,goalKm,goalMin=0,pacePlan=[],targetZone=0,
   useEffect(()=>{
     if(trackMode)return; // 트랙: km 는 GPS 누적(트랙에선 무의미) — km 음성 코칭 억제(랩은 별도)
     const vc=voiceCfg.current;
+    // 목표 달성 — km 가 goalKm 를 넘는 '순간'(정수 경계 아님)에 1회. 소수 목표(하프 21.1,
+    // 슬라이더 0.1 스텝)도 정확히 울린다. 과거 정수 경계 remaining<=0 판정은 비정수 목표에서
+    // 영영 침묵이었다(2026-07-16 근본수정).
+    if(goalKm>0&&!announcedGoal.current&&km>=goalKm){
+      announcedGoal.current=true;
+      runVoice.goal();
+    }
     const fullKm=Math.floor(km);
     if(fullKm>0&&fullKm>announcedKm.current){
       announcedKm.current=fullKm;
       const remaining=Math.max(0,goalKm-fullKm);
       // 특별 구간(절반/마지막/목표)은 주기 설정과 무관하게 유지 — 목표런 UX 의 핵심 신호.
       const isHalf=goalKm>0&&fullKm===Math.floor(goalKm/2)&&goalKm>=2;
-      const isLastKm=remaining===1;
-      if(remaining<=0&&goalKm>0){runVoice.goal();}
+      // '마지막 1km' — 남은 거리가 1km 대에 들어선 정수 경계(반올림 1). 정수 목표(5→4km 지점)는
+      // 기존과 동일, 소수 목표(21.1→20km 지점, 남은 1.1km)도 울린다.
+      const isLastKm=remaining>0&&Math.round(remaining)===1;
+      if(goalKm>0&&km>=goalKm){/* 목표 달성 직후 정수 경계 — 위에서 목표 음성이 담당, km 큐는 침묵 */}
       else{
         // 거리 안내(탑티어 패리티 #14): 주기(intervalKm)의 배수 km 에서만. 페이스는 설정
         // 기준(구간=직전 1km 스플릿 / 평균=elapsed/km), 경과시간은 timeCue 설정 시 이어붙임.
@@ -2636,6 +2684,9 @@ function RunActiveScreen({shoe,insets,goalKm,goalMin=0,pacePlan=[],targetZone=0,
     setGpsStalled(false);setPermLost(false);setGpsStatus('GPS 신호 찾는 중...');
     cadenceState.current=initStepCadence();cadRef.current=0;
     locationRef.current='';locationFetched.current=false;announcedKm.current=0;announcedHalf.current=0;
+    // 목표 음성 1회 가드 리셋 — 거리·시간 모두. (시간 목표 refs 는 리셋이 빠져 있어
+    // 같은 세션 두 번째 시간 목표 런부터 절반/달성 음성이 영영 침묵했다 — 2026-07-16 수정.)
+    announcedGoal.current=false;announcedTimeHalf.current=false;announcedTimeGoal.current=false;
     // 트랙 fresh 시작: 랩 상태 초기화 + 초기 lapM 을 엔진에 실어 첫 랩 전 크래시도 트랙으로 복구.
     if(trackMode){
       lapTimesRef.current=[];lapLeftRef.current=false;lapStartRef.current=null;lapPtCountRef.current=0;lapLockedRef.current=false;

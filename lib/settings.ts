@@ -195,6 +195,8 @@ export async function saveAutoPause(enabled: boolean): Promise<void> {
 // 폰 Vibration(lib/haptics)과 워치 햅틱(존 이탈·자동 랩)을 함께 지배한다 —
 // 폰은 setHapticsEnabled 로, 워치는 applicationContext 의 hapticsOn 플래그로 전달.
 export const K_HAPTICS = 'settings_haptics';
+/** 설정 블록 최종 수정 시각(epoch ms) — 클라우드 동기 last-write-wins 판정용. 0=미수정. */
+export const K_SETTINGS_TS = 'settings_updated_at';
 export const DEFAULT_HAPTICS = true;
 
 /** 영속 문자열 → 햅틱 on/off. '0'/'false' 만 끔, 그 외(누락/손상)는 기본 ON. */
@@ -216,6 +218,32 @@ export async function saveHaptics(enabled: boolean): Promise<void> {
     await AsyncStorage.setItem(K_HAPTICS, enabled ? '1' : '0');
   } catch {
     /* 저장 실패는 비치명적 */
+  }
+}
+
+// ── 설정 수정 시각(동기 LWW) ─────────────────────────────────────────────────
+// 설정 블록(단위·목표·알림·체중·나이·성별·안정시심박)이 이 기기에서 마지막으로 수정된
+// 시각. 클라우드 병합(mergeCloudData)이 이 값으로 최신 편집 기기를 가려낸다 — 과거의
+// local-무조건-우선 병합은 재설치 직후 기본값이 원격 설정을 덮어쓰는 유실 버그였다
+// (2026-07-16 근본수정). 0 = 이 기기에서 한 번도 수정 안 함(원격이 있으면 원격이 이긴다).
+export function parseSettingsUpdatedAt(raw: string | null | undefined): number {
+  const v = raw != null ? Number(raw) : NaN;
+  return Number.isFinite(v) && v > 0 ? v : 0;
+}
+
+export async function loadSettingsUpdatedAt(): Promise<number> {
+  try {
+    return parseSettingsUpdatedAt(await AsyncStorage.getItem(K_SETTINGS_TS));
+  } catch {
+    return 0;
+  }
+}
+
+export async function saveSettingsUpdatedAt(ms: number): Promise<void> {
+  try {
+    await AsyncStorage.setItem(K_SETTINGS_TS, String(Number.isFinite(ms) && ms > 0 ? Math.round(ms) : 0));
+  } catch {
+    /* 영속 실패는 삼킨다 */
   }
 }
 

@@ -76,8 +76,11 @@ async function playSequence(ids: string[]): Promise<void> {
 /** 페이스(초/km) → ['lbl_pace'|'lbl_avg_pace','min_M','sec_S']. 범위 밖이면 음성 생략(화면엔 보임). */
 function paceIds(secPerKm: number | null | undefined, basis: 'split' | 'avg' = 'split'): string[] {
   if (secPerKm == null || secPerKm <= 0) return [];
-  const m = Math.floor(secPerKm / 60);
-  const s = Math.round(secPerKm % 60);
+  // 총초를 먼저 반올림하고 분/초로 쪼갠다 — 초만 따로 반올림하면 59.7초가 60이 되어
+  // 분 올림 없이 버려졌다(평균 페이스 5:59.7 → "5분", 1분 가까이 빠른 오보. 2026-07-16 수정).
+  const total = Math.round(secPerKm);
+  const m = Math.floor(total / 60);
+  const s = total % 60;
   if (m < 1 || m > 12) return [];
   const out = [basis === 'avg' ? 'lbl_avg_pace' : 'lbl_pace', `min_${m}`];
   if (s >= 1 && s <= 59) out.push(`sec_${s}`);

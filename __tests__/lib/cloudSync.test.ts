@@ -156,13 +156,30 @@ describe('mergeCloudData', () => {
     expect((merged.runs[0] as any).v).toBe('local');
   });
 
-  test('settings 충돌 키는 양쪽 보존하되 local 우선', () => {
+  test('settings 충돌 키는 양쪽 보존하되, updated_at 없으면(레거시) local 우선', () => {
     const local = payload({ settings: { units: 'km', weightKg: 70 } });
     const remote = payload({ settings: { units: 'mi', theme: 'dark' } });
     const merged = mergeCloudData(local, remote);
     expect(merged.settings.weightKg).toBe(70);
     expect(merged.settings.theme).toBe('dark');
-    expect(merged.settings.units).toBe('km'); // 충돌 키는 local
+    expect(merged.settings.units).toBe('km'); // 동률(둘 다 0)은 local
+  });
+
+  test('settings LWW: updated_at 큰 쪽이 충돌 키를 이긴다(재설치 기본값이 원격을 덮지 않음)', () => {
+    // 재설치 직후: local=기본값(수정 이력 0), remote=사용자가 실제 편집한 설정.
+    const local = payload({ settings: { units: 'km', weight_kg: 65, updated_at: 0 } });
+    const remote = payload({ settings: { units: 'mi', weight_kg: 72, rest_hr: 52, updated_at: 1700000000000 } });
+    const merged = mergeCloudData(local, remote);
+    expect(merged.settings.units).toBe('mi'); // 원격(실편집)이 이긴다
+    expect(merged.settings.weight_kg).toBe(72);
+    expect(merged.settings.rest_hr).toBe(52); // 원격에만 있는 키도 보존
+    expect(merged.settings.updated_at).toBe(1700000000000);
+    // 반대: local 이 더 최신이면 local 이 이긴다.
+    const local2 = payload({ settings: { units: 'km', updated_at: 1800000000000 } });
+    const merged2 = mergeCloudData(local2, remote);
+    expect(merged2.settings.units).toBe('km');
+    expect(merged2.settings.updated_at).toBe(1800000000000);
+    expect(merged2.settings.rest_hr).toBe(52); // 진 쪽의 고유 키도 유실 없음
   });
 
   test('id 없는 레코드도 버리지 않고 전부 보존', () => {

@@ -33,6 +33,14 @@ describe('runVoice 큐 시퀀스', () => {
     expect(played[0]).toEqual(['km_2', 'lbl_avg_pace', 'min_6']);
   });
 
+  test('초 반올림 캐리: 5:59.7 은 "6분"으로 올린다(과거엔 60초가 버려져 "5분" 오보)', () => {
+    runVoice.kmCue(4, 359.7); // 5'59.7" → 반올림 6'00"
+    expect(played[0]).toEqual(['km_4', 'lbl_pace', 'min_6']);
+    // 59.4초는 그대로 59초(내림 아님 — 총초 반올림).
+    runVoice.kmCue(5, 359.4);
+    expect(played[1]).toEqual(['km_5', 'lbl_pace', 'min_5', 'sec_59']);
+  });
+
   test('페이스 null(설정 off)·경과시간 null(설정 off)이면 거리만', () => {
     runVoice.kmCue(7, null, {elapsedSec: null});
     expect(played[0]).toEqual(['km_7']);

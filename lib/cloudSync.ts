@@ -251,9 +251,11 @@ function mergeRecords(local: unknown[], remote: unknown[]): unknown[] {
  * 로컬 데이터와 원격(계정) 데이터를 병합한다.
  *   · shoes/runs : id 합집합으로 어느 쪽도 유실 없이 합치고, 같은 id 충돌 시 updatedAt
  *                  이 큰(최신) 레코드를 택한다(updatedAt 없으면 local 우선).
- *   · settings   : 얕은 병합으로 양쪽 키를 모두 유지한다. 충돌 키는 local(기기에서 막
- *                  바꾼 값)을 우선한다 — `{...remote, ...local}` 로 records 의 "동률이면
- *                  local 우선" 규칙과 일관되게 맞춘다.
+ *   · settings   : 얕은 병합으로 양쪽 키를 모두 유지하되, 충돌 키는 updated_at(설정 블록
+ *                  최종 수정 시각)이 큰 쪽이 이긴다(last-write-wins). 양쪽 다 없거나(레거시)
+ *                  동률이면 local 우선 — records 의 "동률이면 local 우선" 규칙과 일관.
+ *                  (과거 local-무조건-우선은 재설치 직후 기본값(updated_at 0)이 원격의
+ *                  실제 설정을 덮어쓰는 유실 버그였다 — 2026-07-16 근본수정.)
  * remote 가 null(원격 없음)이면 local 을 그대로 반환한다.
  * iron law: 어느 쪽 레코드도 절대 버리지 않는다(데이터 파괴 금지).
  */
@@ -265,10 +267,17 @@ export function mergeCloudData(local: BackupPayload, remote: BackupPayload | nul
   const progression = mergeProgression(local.progression, remote.progression);
   // 메달은 id 합집합 + createdAt 최신 우선(신발/러닝 머지와 독립 — 그쪽 무결성에 영향 0).
   const medals = mergeMedals(local.medals, remote.medals);
+  const settingsTs = (s: Record<string, unknown> | undefined): number => {
+    const v = Number((s as {updated_at?: unknown} | undefined)?.updated_at);
+    return Number.isFinite(v) && v > 0 ? v : 0;
+  };
+  const remoteSettingsWin = settingsTs(remote.settings) > settingsTs(local.settings);
   return {
     shoes: mergeRecords(local.shoes, remote.shoes),
     runs: mergeRecords(local.runs, remote.runs),
-    settings: { ...remote.settings, ...local.settings },
+    settings: remoteSettingsWin
+      ? { ...local.settings, ...remote.settings }
+      : { ...remote.settings, ...local.settings },
     ...(progression ? { progression } : {}),
     ...(medals.length ? { medals } : {}),
   };

@@ -209,6 +209,85 @@ test('부팅 동기는 클라우드에 없는 로컬-전용 런을 보존한다(
   }
 });
 
+// 회귀(설정 유실 근본수정 2026-07-16): 재설치(로컬=기본값·수정이력 0) 후 부팅 동기가
+// 원격의 실제 설정(단위 + 체중·나이·성별·안정시심박)을 복원해 AsyncStorage 까지 영속해야
+// 한다. 과거엔 (a) 신체지표 4필드가 backupData.settings 에 아예 없었고 (b) 병합이
+// local-무조건-우선이라 재설치 기본값이 원격 설정을 덮어썼다 — 심박존/칼로리/TRIMP 가
+// 조용히 틀어지는 유실. updated_at last-write-wins 로 고쳤다.
+test('재설치 부팅 동기가 원격 설정(단위+신체지표)을 복원·영속한다(기본값 클로버 금지)', async () => {
+  await AsyncStorage.clear();
+  (globalThis.fetch as jest.Mock).mockImplementation((url: any) => {
+    const u = String(url);
+    if (u.includes('/api/auth')) return Promise.resolve(ok({user_id: 'u1'}));
+    return Promise.resolve(ok([]));
+  });
+  // 원격: 사용자가 다른 기기에서 실제로 편집한 설정(updated_at > 0).
+  const remote = {
+    shoes: [],
+    runs: [],
+    settings: {unit: 'mi', goal_weekly_km: 42, alerts: {enabled: false, thresholdPct: 80},
+      weight_kg: 72, age: 35, sex: 'female', rest_hr: 52, updated_at: 1700000000000},
+  };
+  const pushed: any[] = [];
+  const port = {
+    signIn: jest.fn(() => Promise.resolve({uid: 'u-1', email: null, displayName: null})),
+    signOut: jest.fn(() => Promise.resolve()),
+    deleteAccount: jest.fn(() => Promise.resolve()),
+    pull: jest.fn(() => Promise.resolve(remote)),
+    push: jest.fn((d: any) => {
+      pushed.push(d);
+      return Promise.resolve();
+    }),
+  };
+  (globalThis as any).__KEEGO_CLOUD_PORT__ = port;
+  (globalThis as any).__KEEGO_AUTH_USER__ = {uid: 'test-uid'};
+  (globalThis as any).__KEEGO_ENABLE_CLOUD_SYNC__ = true;
+  (globalThis as any).__KEEGO_DEV_SEED__ = false;
+
+  try {
+    let renderer!: ReactTestRenderer.ReactTestRenderer;
+    jest.useFakeTimers();
+    await act(async () => {
+      renderer = ReactTestRenderer.create(<App />);
+    });
+    const settle = async () => {
+      await act(async () => {
+        jest.advanceTimersByTime(1500);
+      });
+      for (let i = 0; i < 14; i++) {
+        await act(async () => {
+          await Promise.resolve();
+        });
+      }
+    };
+    await settle();
+
+    // 1) 병합 push 가 원격 설정을 유지한다(재설치 기본값이 덮어쓰지 않음).
+    expect(pushed.length).toBeGreaterThan(0);
+    const last = pushed[pushed.length - 1];
+    expect(last.settings.unit).toBe('mi');
+    expect(last.settings.weight_kg).toBe(72);
+    expect(last.settings.rest_hr).toBe(52);
+    expect(last.settings.updated_at).toBe(1700000000000);
+
+    // 2) 복원이 상태를 거쳐 AsyncStorage 까지 영속됐다(applyBackupPayload → set+save).
+    expect(await AsyncStorage.getItem('settings_unit')).toBe('mi');
+    expect(await AsyncStorage.getItem('body_weight_kg')).toBe('72');
+    expect(await AsyncStorage.getItem('body_age')).toBe('35');
+    expect(await AsyncStorage.getItem('body_sex')).toBe('female');
+    expect(await AsyncStorage.getItem('body_rest_hr')).toBe('52');
+    expect(await AsyncStorage.getItem('settings_updated_at')).toBe('1700000000000');
+
+    act(() => renderer.unmount());
+  } finally {
+    jest.useRealTimers();
+    delete (globalThis as any).__KEEGO_CLOUD_PORT__;
+    delete (globalThis as any).__KEEGO_AUTH_USER__;
+    delete (globalThis as any).__KEEGO_ENABLE_CLOUD_SYNC__;
+    delete (globalThis as any).__KEEGO_DEV_SEED__;
+  }
+});
+
 // 빈틈 닫기: 앱 이탈(AppState 'background') 시 동기를 flush 한다. 런 저장 후 곧장 화면을 끄거나
 // 앱을 종료해 1.2s 디바운스 창을 놓쳐도, 이탈 직전 push 가 한 번 더 걸려 유실을 막는다.
 test('앱 백그라운드 전환 시 동기를 flush 한다(저장 직후 이탈 유실 방지)', async () => {
