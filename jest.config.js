@@ -14,6 +14,6 @@ module.exports = {
   // Let babel transform the async-storage package so its official ESM jest mock
   // parses; everything else keeps the React Native preset's defaults.
   transformIgnorePatterns: [
-    'node_modules/(?!((jest-)?react-native|@react-native(-community)?|@react-native-async-storage)/)',
+    'node_modules/(?!((jest-)?react-native|@react-native(-community)?|@react-native-async-storage|react-native-reanimated|react-native-worklets|react-native-gesture-handler)/)',
   ],
 };

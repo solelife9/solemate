@@ -14,6 +14,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import {rs, rv, ri} from './lib/responsive';
 import {BG, CARD_HI, ACCENT, T1, T2, T3, SEP, FONT, RADIUS, TYPE, withAlpha, GLASS} from './theme';
 import ShareCard from './ShareCard';
+import ShareCardEditor from './ShareCardEditor';
 import type {LatLon} from './lib/route';
 import {
   saveCardToLibrary,
@@ -68,6 +69,7 @@ export default function ShareCardPicker({visible, onClose, model, route = [], sh
   const insets = useSafeAreaInsets();
   const [prefs, setPrefs] = useState<Prefs>(DEFAULT_PREFS);
   const [busy, setBusy] = useState(false);
+  const [editorOpen, setEditorOpen] = useState(false);
   const cardRef = useRef<SvgCapturable | null>(null);
 
   // 마지막 선택 복원(비차단). 잘못된 값은 기본값으로 안전 보정.
@@ -187,6 +189,13 @@ export default function ShareCardPicker({visible, onClose, model, route = [], sh
             <Stepper label="지도" value={prefs.mapScale} disabled={!mapEditable} onDec={() => stepMap(-SCALE_STEP)} onInc={() => stepMap(SCALE_STEP)} />
           </View>
 
+          {/* 내 사진 위에 올려 꾸미기 — 핀치·드래그 에디터 진입점 */}
+          <Pressable onPress={() => setEditorOpen(true)} accessibilityRole="button" accessibilityLabel="내 사진 위에 올려 꾸미기"
+            style={({pressed}) => [s.decorate, pressed && s.pressed]}>
+            <Ionicons name="sparkles-outline" size={ri(16)} color={T1} style={s.btnIcon} />
+            <Text style={s.decorateTxt}>내 사진 위에 올려 꾸미기</Text>
+          </Pressable>
+
           {/* 액션 */}
           <View style={s.actions}>
             <Pressable onPress={onSave} disabled={busy} accessibilityRole="button" accessibilityLabel="사진앱에 저장" testID="sharecard-save"
@@ -217,6 +226,20 @@ export default function ShareCardPicker({visible, onClose, model, route = [], sh
           mapScale={prefs.mapScale}
         />
       </View>
+
+      {/* 사진 위 배치 에디터(핀치·드래그) — 현재 고른 스타일을 투명 스티커로 얹는다. */}
+      <ShareCardEditor
+        visible={editorOpen}
+        onClose={() => setEditorOpen(false)}
+        model={model}
+        route={route}
+        shareInput={shareInput}
+        initialPhotoUri={photoUri}
+        template={prefs.template}
+        format={prefs.format}
+        textScale={prefs.textScale}
+        mapScale={prefs.mapScale}
+      />
     </Modal>
   );
 }
@@ -290,7 +313,9 @@ const s = StyleSheet.create({
   stepLabel: {color: T2, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600', flex: 1},
   stepBtn: {width: rs(28), height: rs(28), borderRadius: rs(9), backgroundColor: CARD_HI, alignItems: 'center', justifyContent: 'center'},
   stepVal: {color: T1, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '700', minWidth: rs(40), textAlign: 'center', fontVariant: ['tabular-nums']},
-  actions: {flexDirection: 'row', gap: rv(10), marginTop: rv(16)},
+  decorate: {flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(4), height: rs(46), borderRadius: RADIUS.md, borderCurve: 'continuous', marginTop: rv(14), backgroundColor: withAlpha(ACCENT, 0.1), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.25)},
+  decorateTxt: {color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '700'},
+  actions: {flexDirection: 'row', gap: rv(10), marginTop: rv(14)},
   btn: {flex: 1, height: rs(52), borderRadius: RADIUS.lg, borderCurve: 'continuous', flexDirection: 'row', alignItems: 'center', justifyContent: 'center'},
   btnGhost: {backgroundColor: withAlpha(T1, 0.06)},
   btnPrimary: {flex: 1.4, backgroundColor: withAlpha(T1, 0.1)},

@@ -9,10 +9,31 @@
 /* eslint-env jest */
 
 // ── react-native-gesture-handler / reanimated (공유 카드 핀치·드래그 에디터) ────
-// 네이티브 모듈(RNGestureHandlerModule 등)이 없는 jest 환경용 공식 목. App.tsx 가
+// 네이티브 모듈(RNGestureHandlerModule 등)이 없는 jest 환경용 목. App.tsx 가
 // GestureHandlerRootView 를 최상위로 감싸므로, App 을 렌더하는 스위트 전체가 이 목을 탄다.
 require('react-native-gesture-handler/jestSetup');
-jest.mock('react-native-reanimated', () => require('react-native-reanimated/mock'));
+// reanimated v4 의 공식 /mock 은 실제 index 를 import 해 jest 에서 초기화가 깨진다.
+// 에디터가 실제로 쓰는 최소 API 만 스텁한다(렌더만 검증 — 애니메이션은 관심 밖).
+jest.mock('react-native-reanimated', () => {
+  const React = require('react');
+  const {View} = require('react-native');
+  const AnimatedView = React.forwardRef((props, ref) => React.createElement(View, {...props, ref}));
+  const shared = value => ({value});
+  const read = fn => { try { return fn(); } catch { return {}; } };
+  return {
+    __esModule: true,
+    default: {View: AnimatedView, createAnimatedComponent: c => c},
+    View: AnimatedView,
+    useSharedValue: shared,
+    useAnimatedStyle: read,
+    useDerivedValue: fn => ({value: (() => { try { return fn(); } catch { return undefined; } })()}),
+    runOnJS: fn => fn,
+    withTiming: v => v,
+    withSpring: v => v,
+    withDelay: (_d, v) => v,
+    Easing: {linear: () => 0, inOut: f => f, ease: () => 0},
+  };
+});
 
 // ── @react-native-async-storage/async-storage — official in-memory mock ──────
 // The package ships a maintained mock (an in-memory Map implementation) under

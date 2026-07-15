@@ -1,13 +1,14 @@
 // ============================================================================
-// ShareCard.tsx — 런 기록 공유 카드(이미지) · 템플릿 구동(선택기용)
+// ShareCard.tsx — 런 기록 공유 카드(이미지) · 템플릿 구동(선택기·에디터 공용)
 // ----------------------------------------------------------------------------
 // 사용자는 공유 시 여러 템플릿을 넘겨보며 고른다(lib/shareCard 의 registry가 단일 진실원).
 // 기본은 '투명 스티커'(배경 없음) — 러너가 인스타에 자기 사진을 올린 뒤 그 위에 이 카드를
 // 얹어 크기를 조절한다. background='dark' 면 다크+파파야 경로의 '완성본'(카톡 등 직접 공유용).
 // photoUri 가 오면(리캡 '오늘의 한 컷' 완성본) 사진을 배경으로 깐다.
 //
+// 카드 본문(ShareCardBody)은 Svg 래퍼 없이 SVG 요소만 반환 — 에디터(ShareCardEditor)가
+// 사진 위에 카드를 임의 위치·크기로 합성해 캡처할 때 <G transform> 안에 그대로 재사용한다.
 // react-native-svg 만으로 그려 부모가 ref.toDataURL()로 PNG 를 얻어 공유한다(네이티브 0).
-// 색은 theme 토큰만(raw hex 0). 폰트는 카드 전용 CF(Helvetica Neue/시스템 산세).
 // ============================================================================
 import React from 'react';
 import Svg, {Rect, Path, Circle, Text as SvgText, G, Image as SvgImage, Defs, RadialGradient, Stop, LinearGradient} from 'react-native-svg';
@@ -25,8 +26,6 @@ import {
   type RunCardBackground,
 } from './lib/shareCard';
 
-// 폭 1080 고정 — 높이는 포맷(피드 4:5 / 세로형 9:16)에 따라 registry(runCardDimensions)가 준다.
-
 function pointsToPath(points: ScreenPoint[]): string {
   if (points.length < 2) return '';
   const r = (n: number) => Math.round(n * 100) / 100;
@@ -43,7 +42,7 @@ export interface ShareCardProps {
   template?: RunCardTemplate;
   /** 피드(4:5) / 세로형 스토리(9:16). 기본 피드. */
   format?: RunCardFormat;
-  /** 투명(기본, 사진 위 오버레이) / 다크(완성본). photoUri 있으면 무시. */
+  /** 투명(기본, 사진 위 오버레이) / 다크(완성본) / 사진. photoUri 없으면 photo=투명 취급. */
   background?: RunCardBackground;
   /** 글씨 크기 배율(사용자 조절). */
   textScale?: number;
@@ -53,46 +52,44 @@ export interface ShareCardProps {
   displayWidth?: number;
 }
 
-const ShareCard = React.forwardRef<unknown, ShareCardProps>((props, ref) => {
-  const {
-    model,
-    route = [],
-    photoUri = null,
-    template = 'classic',
-    format = 'feed',
-    background = 'transparent',
-    textScale = 1,
-    mapScale = 1,
-    displayWidth,
-  } = props;
+/** 카드 SVG 캔버스 크기(polyfill 편의). 에디터가 배치 계산에 쓴다. */
+export function shareCardCanvas(format: RunCardFormat = 'feed'): {w: number; h: number} {
+  return runCardDimensions(format);
+}
 
+/**
+ * 카드 본문 — Svg 래퍼 없이 SVG 요소(Defs + 레이어)만 반환. ShareCard 는 이걸 <Svg>로 감싸고,
+ * ShareCardEditor 는 <G transform> 안에 넣어 사진 위에 임의 위치·크기로 합성한다.
+ * 배경(다크/사진)도 여기서 그린다 — 단, 에디터에서 카드를 '스티커'로 얹을 땐 투명으로 쓴다.
+ */
+export function ShareCardBody({
+  model,
+  route = [],
+  photoUri = null,
+  template = 'classic',
+  format = 'feed',
+  background = 'transparent',
+  textScale = 1,
+  mapScale = 1,
+}: Omit<ShareCardProps, 'displayWidth'>) {
   const {w: W, h: H} = runCardDimensions(format);
-  // 표시 크기 — 미리보기면 축소, 아니면 실제 캔버스(고해상 캡처). viewBox로 좌표 보존.
-  const dispW = displayWidth && displayWidth > 0 ? Math.round(displayWidth) : W;
-  const dispH = Math.round((dispW * H) / W);
   const el = runCardElements(template);
   const tScale = clampRunCardScale(textScale);
   const mScale = clampRunCardScale(mapScale);
 
   const isPhoto = !!photoUri;
   const isDark = background === 'dark' && !isPhoto;
-  // 투명·사진 위에선 흰색이 어떤 배경에도 읽힌다. 다크 완성본에선 파파야 경로가 브랜드 서명.
   const routeColor = isDark ? RING_ACCENT : ACCENT;
   const wordmarkColor = isDark ? RING_ACCENT : T1;
   const ink = T1;
 
   const PADX = 72;
-
-  // ── 세로 배치(비율 기반 — 피드·세로형 모두 대응) ──────────────────────────
   const shoeY = Math.round(H * 0.085);
   const wordmarkY = Math.round(H - H * 0.07);
-  // 스탯 행: 라벨(위) + 값(아래), 워드마크 위에 앵커.
   const statsValueY = Math.round(H - H * 0.115);
   const statsLabelY = statsValueY - Math.round(70 * tScale);
-  // 히어로 거리(있으면): 지도가 있으면 상단, 없으면(미니멀) 중앙 근처.
   const heroBaselineY = el.map ? Math.round(H * 0.30) : Math.round(H * 0.46);
 
-  // 지도 박스 — 히어로/스탯 유무에 따라 남는 세로 영역 중앙에 정사각으로.
   const mapTop = el.heroDistance ? Math.round(H * 0.36) : Math.round(H * 0.15);
   const mapBottom = el.statsRow ? statsLabelY - Math.round(H * 0.03) : wordmarkY - Math.round(H * 0.04);
   const availH = Math.max(0, mapBottom - mapTop);
@@ -107,7 +104,6 @@ const ShareCard = React.forwardRef<unknown, ShareCardProps>((props, ref) => {
   const start = proj.points[0];
   const end = proj.points[proj.points.length - 1];
 
-  // 스탯 셀 — 히어로가 거리를 크게 보이면 거리 칸 제외(중복 방지).
   const statCells = [
     ...(el.statsIncludeDistance ? [{label: 'DISTANCE', value: `${model.distance} ${model.unit}`}] : []),
     ...model.stats,
@@ -116,9 +112,8 @@ const ShareCard = React.forwardRef<unknown, ShareCardProps>((props, ref) => {
   const x0 = (W - span) / 2;
   const slot = statCells.length > 0 ? span / statCells.length : span;
 
-  // 도착 깃발 — 주황 체커(교차 칸). 빈 칸은 배경 비침.
   const finishFlag = (cx: number, cy: number) => {
-    const u = Math.round(8 * (box / 600)); // 지도 크기에 비례
+    const u = Math.round(8 * (box / 600));
     const cols = 5, rows = 3;
     const ox = cx - (cols * u) / 2;
     const oy = cy - (rows * u) / 2;
@@ -141,7 +136,7 @@ const ShareCard = React.forwardRef<unknown, ShareCardProps>((props, ref) => {
   const wordmarkSize = Math.round(62 * tScale);
 
   return (
-    <Svg ref={ref as never} width={dispW} height={dispH} viewBox={`0 0 ${W} ${H}`}>
+    <>
       <Defs>
         <RadialGradient id="kg-dark" cx="50%" cy="12%" r="95%">
           <Stop offset="0" stopColor="#17110B" />
@@ -154,7 +149,6 @@ const ShareCard = React.forwardRef<unknown, ShareCardProps>((props, ref) => {
         </LinearGradient>
       </Defs>
 
-      {/* 배경 — 다크 완성본이면 라디얼 다크, 사진이면 사진+스크림, 투명이면 없음. */}
       {isDark && <Rect x={0} y={0} width={W} height={H} fill="url(#kg-dark)" />}
       {isPhoto && (
         <G>
@@ -164,14 +158,12 @@ const ShareCard = React.forwardRef<unknown, ShareCardProps>((props, ref) => {
         </G>
       )}
 
-      {/* 좌상단: 신발명(날짜는 표시 안 함) */}
       {!!model.shoe && (
         <SvgText x={PADX} y={shoeY} fill={ink} fillOpacity={0.92} fontFamily={CF} fontSize={shoeSize} fontWeight="700">
           {model.shoe}
         </SvgText>
       )}
 
-      {/* 히어로 거리(미니멀·히어로) — 거대 숫자 + 단위 */}
       {el.heroDistance && (
         <G>
           <SvgText x={PADX} y={heroBaselineY} fill={ink} fontFamily={CF} fontSize={heroSize} fontWeight="800" letterSpacing={-4}>
@@ -183,7 +175,6 @@ const ShareCard = React.forwardRef<unknown, ShareCardProps>((props, ref) => {
         </G>
       )}
 
-      {/* GPS 경로 — 글로우 한 겹 + 샤프 + START/피니시 마커 */}
       {hasMap && (
         <G transform={`translate(${mapX}, ${mapY})`}>
           <Path d={pathD} fill="none" stroke={routeColor} strokeOpacity={0.14} strokeWidth={Math.round(16 * (box / 600))} strokeLinecap="round" strokeLinejoin="round" />
@@ -201,25 +192,35 @@ const ShareCard = React.forwardRef<unknown, ShareCardProps>((props, ref) => {
         </G>
       )}
 
-      {/* 가로 스탯 그리드 — 라벨(위)·값(아래) */}
-      {el.statsRow && statCells.map((s, i) => {
+      {el.statsRow && statCells.map((sc, i) => {
         const cx = x0 + slot * i + slot / 2;
         return (
-          <G key={s.label}>
+          <G key={sc.label}>
             <SvgText x={cx} y={statsLabelY} fill={ink} fillOpacity={0.85} fontFamily={CF} fontSize={statLabelSize} fontWeight="700" letterSpacing={2} textAnchor="middle">
-              {s.label.toUpperCase()}
+              {sc.label.toUpperCase()}
             </SvgText>
             <SvgText x={cx} y={statsValueY} fill={ink} fontFamily={CF} fontSize={statValueSize} fontWeight="800" letterSpacing={-0.5} textAnchor="middle">
-              {s.value}
+              {sc.value}
             </SvgText>
           </G>
         );
       })}
 
-      {/* 하단: keego 워드마크 — 투명·사진 위엔 흰색, 다크 완성본엔 파파야. */}
       <SvgText x={W / 2} y={wordmarkY} fill={wordmarkColor} fontFamily={CF} fontWeight="500" fontSize={wordmarkSize} letterSpacing={-0.5} textAnchor="middle">
         {model.brand.toLowerCase()}
       </SvgText>
+    </>
+  );
+}
+
+const ShareCard = React.forwardRef<unknown, ShareCardProps>((props, ref) => {
+  const {format = 'feed', displayWidth} = props;
+  const {w: W, h: H} = runCardDimensions(format);
+  const dispW = displayWidth && displayWidth > 0 ? Math.round(displayWidth) : W;
+  const dispH = Math.round((dispW * H) / W);
+  return (
+    <Svg ref={ref as never} width={dispW} height={dispH} viewBox={`0 0 ${W} ${H}`}>
+      <ShareCardBody {...props} />
     </Svg>
   );
 });
