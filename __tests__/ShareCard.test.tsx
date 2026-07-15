@@ -25,7 +25,7 @@ function pathsOf(root: ReactTestRenderer.ReactTestInstance) {
 function rectsOf(root: ReactTestRenderer.ReactTestInstance) {
   return root.findAll((n: any) => n && n.type && n.type.displayName === 'Rect');
 }
-const MODEL = buildShareCardModel({distKm: 5.2, unit: 'km', pace: "5'02\"", time: '40:41', bpm: 161, cadence: 172, elevM: 24});
+const MODEL = buildShareCardModel({distKm: 5.2, unit: 'km', pace: "5'02\"", time: '40:41', calories: 234, bpm: 161, cadence: 172, elevM: 24});
 function render(props: any = {}) {
   let r!: ReactTestRenderer.ReactTestRenderer;
   act(() => { r = ReactTestRenderer.create(<ShareCard model={MODEL} {...props} />); });
@@ -64,9 +64,9 @@ describe('ShareCard render (세로 기본)', () => {
 });
 
 describe('ShareCard 레이아웃·배경', () => {
-  test('6지표 = 심박·케이던스·고도까지', () => {
+  test('6지표 = 거리·페이스·시간·칼로리·케이던스·심박(최대 6)', () => {
     const txt = textOf(render({route: ROUTE, layout: 'grid'}).root);
-    ['DISTANCE', 'PACE', 'TIME', 'HR', 'CADENCE', 'ELEV'].forEach(l => expect(txt).toContain(l));
+    ['DISTANCE', 'PACE', 'TIME', 'CALORIES', 'CADENCE', 'HR'].forEach(l => expect(txt).toContain(l));
   });
 
   test('가로형도 거리·페이스·시간', () => {

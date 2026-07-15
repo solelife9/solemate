@@ -45,6 +45,8 @@ export interface ShareCardInput {
   cadence?: number;
   /** 누적 상승(m). >0 이면 ELEV 칸. */
   elevM?: number;
+  /** 소모 칼로리(kcal). >0 이면 CALORIES 칸(폰 단독도 항상 있어 6지표를 채운다). */
+  calories?: number;
 }
 
 /** 항상 6자리 HH:MM:SS(시 2자리 0패딩). 카드 TIME 전용 — fmtTime 은 시<1h 면 MM:SS 라 별도. */
@@ -253,8 +255,9 @@ export function buildShareCardModel(input: ShareCardInput): ShareCardModel {
     stats.push({label: 'LAPS', value: `${input.track.laps}`});
   }
   // 6지표 카드용 추가 지표(있을 때만). 심박은 워치 있을 때, 케이던스·고도는 폰 단독 가능.
-  if (input.bpm && input.bpm > 0) stats.push({label: 'HR', value: `${Math.round(input.bpm)}`});
+  if (input.calories && input.calories > 0) stats.push({label: 'CALORIES', value: `${Math.round(input.calories)}`});
   if (input.cadence && input.cadence > 0) stats.push({label: 'CADENCE', value: `${Math.round(input.cadence)}`});
+  if (input.bpm && input.bpm > 0) stats.push({label: 'HR', value: `${Math.round(input.bpm)}`});
   if (input.elevM != null && input.elevM > 0) stats.push({label: 'ELEV', value: `${Math.round(input.elevM)} m`});
 
   return {

@@ -78,6 +78,16 @@ const ShareCard = React.forwardRef<unknown, ShareCardProps>((props, ref) => {
   const start = proj.points[0];
   const end = proj.points[proj.points.length - 1];
   const mk = (n: number) => Math.max(1, Math.round(n * (box / 600)));
+  // 도착 체커 깃발(파파야) — 시작점 옆. 교차 칸만 채워 격자 느낌.
+  const finishFlag = (fx: number, fy: number) => {
+    const u = Math.max(3, mk(9)), cols = 5, rows = 3;
+    const ox = fx - (cols * u) / 2, oy = fy - (rows * u) / 2;
+    const cells: React.ReactNode[] = [];
+    for (let gy = 0; gy < rows; gy++) for (let gx = 0; gx < cols; gx++) {
+      if ((gx + gy) % 2 === 0) cells.push(<Rect key={`${gx}-${gy}`} x={ox + gx * u} y={oy + gy * u} width={u} height={u} fill={routeColor} />);
+    }
+    return <G>{cells}</G>;
+  };
 
   return (
     <Svg ref={ref as never} width={dispW} height={dispH} viewBox={`0 0 ${W} ${H}`}>
@@ -104,7 +114,13 @@ const ShareCard = React.forwardRef<unknown, ShareCardProps>((props, ref) => {
           <Path d={pathD} fill="none" stroke={routeColor} strokeOpacity={0.16} strokeWidth={mk(16)} strokeLinecap="round" strokeLinejoin="round" />
           <Path d={pathD} fill="none" stroke={isDark ? 'url(#kg-route)' : routeColor} strokeWidth={mk(7)} strokeLinecap="round" strokeLinejoin="round" />
           {!!end && <Circle cx={end.x} cy={end.y} r={mk(9)} fill={routeColor} />}
-          {!!start && <Circle cx={start.x} cy={start.y} r={mk(12)} fill={ink} stroke={routeColor} strokeWidth={mk(5)} />}
+          {!!start && (
+            <G>
+              <Circle cx={start.x} cy={start.y} r={mk(12)} fill={ink} stroke={routeColor} strokeWidth={mk(5)} />
+              {finishFlag(start.x + mk(40), start.y - mk(26))}
+              <SvgText x={start.x - mk(6)} y={start.y - mk(22)} fill={ink} fillOpacity={0.92} fontFamily={CF} fontSize={mk(26)} fontWeight="700" letterSpacing={mk(3)} textAnchor="end">START</SvgText>
+            </G>
+          )}
         </G>
       )}
 

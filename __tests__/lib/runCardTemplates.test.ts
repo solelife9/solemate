@@ -16,7 +16,7 @@ import {
 
 const MODEL = buildShareCardModel({
   distKm: 5.2, unit: 'km', pace: "5'02\"", time: '40:41', durationS: 2441,
-  bpm: 161, cadence: 172, elevM: 24,
+  calories: 234, bpm: 161, cadence: 172, elevM: 24,
 });
 const labelsOf = (cfg: any) => layoutShareCard(MODEL, cfg).texts.map(t => t.value);
 
@@ -35,10 +35,11 @@ describe('RUN_CARD_LAYOUTS (순서·라벨)', () => {
 });
 
 describe('buildShareCardModel — 6지표 추가 지표', () => {
-  test('심박·케이던스·고도가 stats 에 붙는다(있을 때)', () => {
+  test('칼로리·케이던스·심박·고도가 stats 에 붙는다(있을 때)', () => {
     const labels = MODEL.stats.map(s => s.label);
-    expect(labels).toEqual(['PACE', 'TIME', 'HR', 'CADENCE', 'ELEV']);
+    expect(labels).toEqual(['PACE', 'TIME', 'CALORIES', 'CADENCE', 'HR', 'ELEV']);
     expect(MODEL.stats.find(s => s.label === 'HR')!.value).toBe('161');
+    expect(MODEL.stats.find(s => s.label === 'CALORIES')!.value).toBe('234');
     expect(MODEL.stats.find(s => s.label === 'ELEV')!.value).toBe('24 m');
   });
   test('없으면 안 붙는다', () => {
@@ -60,9 +61,11 @@ describe('layoutShareCard — 컴팩트 배치', () => {
     }
   });
 
-  test('6지표 = 거리+페이스+시간+심박+케이던스+고도(최대 6)', () => {
+  test('6지표 = 거리+페이스+시간+칼로리+케이던스+심박(최대 6, 초과분 ELEV 는 밀림)', () => {
     const v = labelsOf({layout: 'grid', showMap: true, showStats: true});
-    ['DISTANCE', 'PACE', 'TIME', 'HR', 'CADENCE', 'ELEV'].forEach(l => expect(v).toContain(l));
+    ['DISTANCE', 'PACE', 'TIME', 'CALORIES', 'CADENCE', 'HR'].forEach(l => expect(v).toContain(l));
+    // 7번째(ELEV)는 6칸을 넘어 제외.
+    expect(v).not.toContain('ELEV');
   });
 
   test('지표 off(세로/가로) → 거리만', () => {
