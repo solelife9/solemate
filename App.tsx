@@ -5,6 +5,7 @@ import {
   Linking, AppState,
 } from 'react-native';
 import {SafeAreaProvider, useSafeAreaInsets} from 'react-native-safe-area-context';
+import {GestureHandlerRootView} from 'react-native-gesture-handler';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {Pedometer, Barometer} from 'expo-sensors';
 import {initElevState, feedAltitude, ElevState} from './lib/elevation';
@@ -244,16 +245,20 @@ installCrashHandler();
 
 export default function App(){
   return(
-    <SafeAreaProvider>
-      <StatusBar barStyle="light-content" backgroundColor={BG}/>
-      <ErrorBoundary>
-        <Main/>
-      </ErrorBoundary>
-      {/* 전역 스낵바 호스트 — 앱 어디서든 showToast()를 부르면 여기서 그린다(루트 1회 마운트). */}
-      <ToastHost/>
-    </SafeAreaProvider>
+    // 제스처(핀치·드래그) 루트 — react-native-gesture-handler 필수 최상위 래퍼.
+    <GestureHandlerRootView style={rootFlex}>
+      <SafeAreaProvider>
+        <StatusBar barStyle="light-content" backgroundColor={BG}/>
+        <ErrorBoundary>
+          <Main/>
+        </ErrorBoundary>
+        {/* 전역 스낵바 호스트 — 앱 어디서든 showToast()를 부르면 여기서 그린다(루트 1회 마운트). */}
+        <ToastHost/>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
+const rootFlex = {flex: 1} as const;
 
 function Main(){
   const [tab,setTab]=useState(0);                 // 0 home · 1 history · 2 shoes · 3 profile

@@ -10,8 +10,6 @@
 		0AF824035A8D71A60A80925E /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		1415864F5E793EAB9E0C8D4D /* WatchSessionModule.m in Sources */ = {isa = PBXBuildFile; fileRef = 173792C31B98E655CA6BB81E /* WatchSessionModule.m */; };
-		A1B2C3D4E5F60718293A4B5F /* HapticModule.m in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B5E /* HapticModule.m */; };
-		KEE60A11EE60A11EE60A0001 /* SoleMateWatch Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = CE19A1E72FF150740030FFF0 /* SoleMateWatch Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		1FD016C018929E07724A8819 /* Pods_SoleMate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 32DD5CD7322D8A8F57770E83 /* Pods_SoleMate.framework */; };
 		2BBCC3659AFF917CE5CD098F /* RunActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96FBF53A281B69B063512CE9 /* RunActivityAttributes.swift */; };
 		482D1634C3074355BD2B9DB7 /* Barlow-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 5D21423DEB5B4B84B0F354E6 /* Barlow-Medium.ttf */; };
@@ -24,16 +22,18 @@
 		94D45B79FEFB4E08B5B336B3 /* Barlow-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = CB87CDEECCE3462588478950 /* Barlow-Regular.ttf */; };
 		9DB316122F10FE302E4457FC /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F1023D5EE8A6A5A16AC7F1B /* ExpoModulesProvider.swift */; };
 		A0F56BF89B4C46768352C306 /* PretendardVariable.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 0523DFC08B56481FAAB32589 /* PretendardVariable.ttf */; };
-		FA57F0000000000000A10002 /* Jost.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FA57F0000000000000A10001 /* Jost.ttf */; };
+		A1B2C3D4E5F60718293A4B5D /* HapticModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B5C /* HapticModule.swift */; };
+		A1B2C3D4E5F60718293A4B5F /* HapticModule.m in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B5E /* HapticModule.m */; };
 		A99592C060E1B04239C26A0F /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = D241C27486D3F7BF2FBE79D2 /* GoogleService-Info.plist */; };
 		B24A7C1E80CD775F32E9DB1C /* LiveActivityModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 923265D40951BEF46E599242 /* LiveActivityModule.swift */; };
 		C4B62BCD3E4C24EBE468BC17 /* WatchSessionModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB119C642F2D1AD301E42631 /* WatchSessionModule.swift */; };
-		A1B2C3D4E5F60718293A4B5D /* HapticModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B5C /* HapticModule.swift */; };
 		CE4752102FEECEC400FCC92A /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CE47520F2FEECEC400FCC92A /* WidgetKit.framework */; };
 		CE4752122FEECEC400FCC92A /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CE4752112FEECEC400FCC92A /* SwiftUI.framework */; };
 		CE4752232FEECEC500FCC92A /* RunActivityExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = CE47520E2FEECEC400FCC92A /* RunActivityExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		EE9003BDDAEA8BA82670F87F /* RunActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96FBF53A281B69B063512CE9 /* RunActivityAttributes.swift */; };
+		FA57F0000000000000A10002 /* Jost.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FA57F0000000000000A10001 /* Jost.ttf */; };
 		FE30A99D1AD1D3D691B196A3 /* LiveActivityModule.m in Sources */ = {isa = PBXBuildFile; fileRef = C87CE683AB3104A6AB2E5968 /* LiveActivityModule.m */; };
+		KEE60A11EE60A11EE60A0001 /* SoleMateWatch Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = CE19A1E72FF150740030FFF0 /* SoleMateWatch Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -80,13 +80,11 @@
 
 /* Begin PBXFileReference section */
 		0523DFC08B56481FAAB32589 /* PretendardVariable.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = PretendardVariable.ttf; path = ../assets/fonts/PretendardVariable.ttf; sourceTree = "<group>"; };
-		FA57F0000000000000A10001 /* Jost.ttf */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = file; name = "Jost.ttf"; path = "../assets/fonts/Jost.ttf"; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* SoleMate.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SoleMate.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = SoleMate/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = SoleMate/Info.plist; sourceTree = "<group>"; };
 		13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = PrivacyInfo.xcprivacy; path = SoleMate/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		173792C31B98E655CA6BB81E /* WatchSessionModule.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = SoleMate/WatchSessionModule.m; sourceTree = "<group>"; };
-		A1B2C3D4E5F60718293A4B5E /* HapticModule.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = SoleMate/HapticModule.m; sourceTree = "<group>"; };
 		29AE797F7024459CAA462CE1 /* BebasNeue-Regular.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "BebasNeue-Regular.ttf"; path = "../assets/fonts/BebasNeue-Regular.ttf"; sourceTree = "<group>"; };
 		32DD5CD7322D8A8F57770E83 /* Pods_SoleMate.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_SoleMate.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		37F96DE3D716D45FB1629FAE /* NanumMyeongjo-Regular.ttf */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = file; name = "NanumMyeongjo-Regular.ttf"; path = "../assets/fonts/NanumMyeongjo-Regular.ttf"; sourceTree = "<group>"; };
@@ -100,8 +98,9 @@
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = SoleMate/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		923265D40951BEF46E599242 /* LiveActivityModule.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SoleMate/LiveActivityModule.swift; sourceTree = SOURCE_ROOT; };
 		96FBF53A281B69B063512CE9 /* RunActivityAttributes.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RunActivity/RunActivityAttributes.swift; sourceTree = SOURCE_ROOT; };
-		BB119C642F2D1AD301E42631 /* WatchSessionModule.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SoleMate/WatchSessionModule.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60718293A4B5C /* HapticModule.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SoleMate/HapticModule.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A4B5E /* HapticModule.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = SoleMate/HapticModule.m; sourceTree = "<group>"; };
+		BB119C642F2D1AD301E42631 /* WatchSessionModule.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SoleMate/WatchSessionModule.swift; sourceTree = "<group>"; };
 		C87CE683AB3104A6AB2E5968 /* LiveActivityModule.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = SoleMate/LiveActivityModule.m; sourceTree = SOURCE_ROOT; };
 		CB87CDEECCE3462588478950 /* Barlow-Regular.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Barlow-Regular.ttf"; path = "../assets/fonts/Barlow-Regular.ttf"; sourceTree = "<group>"; };
 		CE19A1E72FF150740030FFF0 /* SoleMateWatch Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "SoleMateWatch Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -111,22 +110,23 @@
 		D241C27486D3F7BF2FBE79D2 /* GoogleService-Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; name = "GoogleService-Info.plist"; path = "SoleMate/GoogleService-Info.plist"; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		F140792D3E517E002AEDD348 /* SoleMate.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = SoleMate.release.xcconfig; sourceTree = "<group>"; };
+		FA57F0000000000000A10001 /* Jost.ttf */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = file; name = Jost.ttf; path = ../assets/fonts/Jost.ttf; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		CE4752242FEECEC500FCC92A /* Exceptions for "RunActivity" folder in "RunActivityExtension" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Info.plist,
-			);
-			target = CE47520D2FEECEC400FCC92A /* RunActivityExtension */;
-		};
 		CE19A2AA2FF150740030FFF0 /* Exceptions for "SoleMateWatch Watch App" folder in "SoleMateWatch Watch App" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
 			);
 			target = CE19A1E62FF150740030FFF0 /* SoleMateWatch Watch App */;
+		};
+		CE4752242FEECEC500FCC92A /* Exceptions for "RunActivity" folder in "RunActivityExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = CE47520D2FEECEC400FCC92A /* RunActivityExtension */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 

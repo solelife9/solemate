@@ -8,6 +8,12 @@
 
 /* eslint-env jest */
 
+// ── react-native-gesture-handler / reanimated (공유 카드 핀치·드래그 에디터) ────
+// 네이티브 모듈(RNGestureHandlerModule 등)이 없는 jest 환경용 공식 목. App.tsx 가
+// GestureHandlerRootView 를 최상위로 감싸므로, App 을 렌더하는 스위트 전체가 이 목을 탄다.
+require('react-native-gesture-handler/jestSetup');
+jest.mock('react-native-reanimated', () => require('react-native-reanimated/mock'));
+
 // ── @react-native-async-storage/async-storage — official in-memory mock ──────
 // The package ships a maintained mock (an in-memory Map implementation) under
 // its "./jest" export. Using it keeps us in sync with the real API surface.
