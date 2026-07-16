@@ -169,8 +169,8 @@ export function ShoeCard({
   // 링이 타원·글자가 납작해지고 스와이프 중 젤리로 읽혀 폐기(2026-07-16 CD 판단, 사용자 승인).
   // 가라앉힘이 '물러나 있음'의 세로 인상을 대신 만든다.
   const inputRange = [(i - 1) * stride, i * stride, (i + 1) * stride];
-  const scale = scrollX.interpolate({inputRange, outputRange: [0.94, 1, 0.94], extrapolate: 'clamp'});
-  const sinkY = scrollX.interpolate({inputRange, outputRange: [rv(8), 0, rv(8)], extrapolate: 'clamp'});
+  const scale = scrollX.interpolate({inputRange, outputRange: [0.96, 1, 0.96], extrapolate: 'clamp'});
+  const sinkY = scrollX.interpolate({inputRange, outputRange: [rv(10), 0, rv(10)], extrapolate: 'clamp'});
   const opacity = scrollX.interpolate({inputRange, outputRange: [0.55, 1, 0.55], extrapolate: 'clamp'});
 
   // 링 아크 = 남은 수명(배터리): 새 신발 = 가득 찬 링, 닳을수록 비워진다.
