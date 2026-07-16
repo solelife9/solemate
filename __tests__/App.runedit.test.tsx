@@ -168,6 +168,6 @@ test('러너 스펙 카드: VO2max + 거리 PB 훈장 + 최고페이스/최장 �
   expect(txt).toContain('아직');
   // 최고페이스/최장 푸터.
   expect(txt).toContain('1km 최고');
-  expect(txt).toContain("5'00\"");   // 1km 최고 페이스
+  expect(txt).toContain('5:00');   // 1km 최고 기록(완주 시간 표기 통일 2026-07-16)
   expect(txt).toContain('21.1');      // 최장 거리
 });

@@ -80,23 +80,24 @@ const ALL_OFF: NotifSettings = {
 };
 
 describe('ProfileScreen 푸시 알림 설정행이 실제 notif_settings 를 반영', () => {
-  test('전부 켜진 설정 → 요약은 "3개 켜짐", 각 토글 라벨은 "켜짐"', () => {
+  // 2026-07-16 스위치 전환: 토글은 텍스트("켜짐/꺼짐") 대신 iOS 스위치(Toggle 프리미티브)
+  // 라 상태는 accessibilityState.checked 로 단언한다(스크린리더 계약과 동일).
+  test('전부 켜진 설정 → 요약은 "3개 켜짐", 각 토글 스위치는 checked', () => {
     const root = render({notifSettings: ALL_ON});
     expect(textOf(byTestId(root, 'notif-detail'))).toBe('3개 켜짐');
     openNotif(root);
-    expect(textOf(pressableByTestId(root, 'notif-toggle-shoeReplacement'))).toContain('켜짐');
-    expect(textOf(pressableByTestId(root, 'notif-toggle-weeklyGoal'))).toContain('켜짐');
-    expect(textOf(pressableByTestId(root, 'notif-toggle-runReminder'))).toContain('켜짐');
-    // 토글의 접근성 상태도 실제 값을 반영한다(checked=true).
+    expect(pressableByTestId(root, 'notif-toggle-shoeReplacement').props.accessibilityState.checked).toBe(true);
+    expect(pressableByTestId(root, 'notif-toggle-weeklyGoal').props.accessibilityState.checked).toBe(true);
     expect(pressableByTestId(root, 'notif-toggle-runReminder').props.accessibilityState.checked).toBe(true);
   });
 
-  test('전부 꺼진 설정 → 요약은 "꺼짐", 각 토글 라벨은 "꺼짐"', () => {
+  test('전부 꺼진 설정 → 요약은 "꺼짐", 각 토글 스위치는 unchecked', () => {
     const root = render({notifSettings: ALL_OFF});
     expect(textOf(byTestId(root, 'notif-detail'))).toBe('꺼짐');
     openNotif(root);
-    expect(textOf(pressableByTestId(root, 'notif-toggle-shoeReplacement'))).toContain('꺼짐');
     expect(pressableByTestId(root, 'notif-toggle-shoeReplacement').props.accessibilityState.checked).toBe(false);
+    expect(pressableByTestId(root, 'notif-toggle-weeklyGoal').props.accessibilityState.checked).toBe(false);
+    expect(pressableByTestId(root, 'notif-toggle-runReminder').props.accessibilityState.checked).toBe(false);
   });
 
   test('일부만 켜진 설정 → 요약은 켜진 개수를 보여준다', () => {

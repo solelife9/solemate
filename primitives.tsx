@@ -1021,6 +1021,50 @@ const pill = StyleSheet.create({
 // (구 TierBadge 3단계 배지 컴포넌트는 2026-07-11 제거 — 모든 화면이 wearTier 4단계
 //  칩으로 통일돼 소비처가 사라졌다.)
 
+// ── Toggle — iOS 스타일 스위치(작은 트랙 + 슬라이드 썸) ─────────────────────────
+// 설정 on/off 의 단일 프리미티브(2026-07-16 사용자 확정: "우측에 작게, 주황, 좌우로
+// 움직이게"). 풀폭 솔리드 바 토글을 대체한다 — 행은 무채, 색은 이 작은 트랙에만.
+// ON 트랙 = BRAND(파파야), OFF = 무채. 썸은 180ms 슬라이드(native driver).
+// 자체 Pressable 이 아니다 — 행 전체가 탭 영역이 되도록 부모 Pressable 안에 놓는다.
+const TOGGLE_W = 46;
+const TOGGLE_H = 28;
+const TOGGLE_PAD = 3;
+const TOGGLE_THUMB = TOGGLE_H - TOGGLE_PAD * 2;
+
+export function Toggle({on}: {on: boolean}) {
+  const v = useRef(new Animated.Value(on ? 1 : 0)).current;
+  useEffect(() => {
+    Animated.timing(v, {
+      toValue: on ? 1 : 0,
+      duration: 180,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
+  }, [on, v]);
+  const tx = v.interpolate({inputRange: [0, 1], outputRange: [0, rs(TOGGLE_W - TOGGLE_H)]});
+  return (
+    <View style={[toggle.track, {backgroundColor: on ? BRAND : withAlpha(T1, 0.14)}]}>
+      <Animated.View style={[toggle.thumb, {transform: [{translateX: tx}]}]} />
+    </View>
+  );
+}
+
+const toggle = StyleSheet.create({
+  track: {
+    width: rs(TOGGLE_W),
+    height: rs(TOGGLE_H),
+    borderRadius: RADIUS.pill,
+    padding: rs(TOGGLE_PAD),
+    justifyContent: 'center',
+  },
+  thumb: {
+    width: rs(TOGGLE_THUMB),
+    height: rs(TOGGLE_THUMB),
+    borderRadius: RADIUS.pill,
+    backgroundColor: T1,
+  },
+});
+
 // ── Injury warning banner (부상예방 경고: 홈 히어로 · 신발 상세 공용) ──────────
 // assessInjuryRisk 의 caution/high 등급만 경고 배너로 노출한다(safe → null, 안전
 // 등급은 경고 미노출). 색은 tier 톤과 정렬: caution=WARN, high=DANGER. 배경은 해당

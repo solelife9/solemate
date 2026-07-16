@@ -211,6 +211,7 @@ test('알림 행 토글 → settings_alerts(enabled=false) 영속 + 표기 갱�
   const raw = await AsyncStorage.getItem('settings_alerts');
   expect(raw).toBeTruthy();
   expect(JSON.parse(raw as string).enabled).toBe(false);
-  // 행 표기 '꺼짐'
-  expect(textOf(root)).toContain('꺼짐');
+  // 표기 갱신 — 토글은 iOS 스위치(텍스트 없음, 2026-07-16)라 접근성 상태로 단언한다.
+  const sw = root.find((n: any) => n.props?.testID === 'notif-toggle-shoeReplacement');
+  expect(sw.props.accessibilityState.checked).toBe(false);
 });

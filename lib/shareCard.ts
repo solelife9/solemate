@@ -14,7 +14,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import * as MediaLibrary from 'expo-media-library/legacy';
 import {Unit, displayNum} from './units';
 import {buildRunShareText, RunShareInput} from './share';
-import {fmtPace, fmtTime} from './format';
+import {fmtTime} from './format';
 import type {Recap} from './recap';
 import type {PersonalRecords} from './goals';
 
@@ -429,8 +429,11 @@ export interface RecapShareCardModel {
  */
 export function formatRecapPRs(prs: PersonalRecords, unit: Unit = 'km'): ShareCardStat[] {
   const rows: ShareCardStat[] = [];
+  // 거리 최고 = 그 거리 완주 시간(러닝 관례: 5K PB 26:12 처럼). 과거 1km 만 페이스(/km)로
+  // 표기해 5km(시간)와 문법이 섞였다 — 사용자 지적(2026-07-16)으로 시간 표기 통일.
+  // fastest1k 는 초/km 라 1km 완주 시간과 수치가 같다(표기만 페이스→시간).
   if (prs?.fastest1k != null) {
-    rows.push({label: '1km 최고', value: `${fmtPace(1, prs.fastest1k)} /km`});
+    rows.push({label: '1km 최고', value: fmtTime(Math.round(prs.fastest1k))});
   }
   if (prs?.fastest5k != null) {
     rows.push({label: '5km 최고', value: fmtTime(Math.round(prs.fastest5k))});

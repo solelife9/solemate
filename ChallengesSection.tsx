@@ -94,32 +94,29 @@ export function SmartChallengeCard({
   const p = challengeExtProgress(ch, runs, shoes, now);
   const pctLabel = `${Math.round(p.pct * 100)}%`;
   const step = (delta: number) => onEditTargetKm?.(Math.max(SMART_KM_MIN, target + delta));
+  // 수정(연필/체크) 버튼 — 보기/편집 모드 공용, 행 우측 끝.
+  const editBtn = !!onEditTargetKm && (
+    <Pressable
+      onPress={() => setEditing(e => !e)}
+      accessibilityRole="button"
+      accessibilityLabel={editing ? '목표 거리 수정 완료' : '목표 거리 수정'}
+      hitSlop={8}
+      testID="smart-challenge-edit"
+      style={({pressed}) => [s.smartEditBtn, pressed && {opacity: 0.6}]}>
+      <Ionicons name={editing ? 'checkmark' : 'pencil'} size={ri(15)} color={ACCENT} />
+    </Pressable>
+  );
   return (
     <View style={s.smartCard} testID="smart-challenge">
       {/* 카드 테두리 = 전 화면 공통 유리 헤어라인(GlassEdge) — ACCENT RN 보더 폐지,
           다른 카드와 동일 문법(사용자 지적 2026-07-11 밤: 이 카드만 튀었다). */}
       <GlassEdge glints={false} radius={RADIUS.lg} />
-      <View style={s.smartHead}>
-        {/* 라벨 = 일반 텍스트 — 필 배지+sparkles 는 과함(사용자 2026-07-16 "너무 화려해"). */}
-        <Text style={s.smartLabel} testID="smart-challenge-tag">주간 목표</Text>
-        {p.completed && !editing && (
-          <Pill tone="good" icon="trophy" label="달성!" testID="smart-challenge-badge" />
-        )}
-        {!!onEditTargetKm && (
-          <Pressable
-            onPress={() => setEditing(e => !e)}
-            accessibilityRole="button"
-            accessibilityLabel={editing ? '목표 거리 수정 완료' : '목표 거리 수정'}
-            hitSlop={8}
-            testID="smart-challenge-edit"
-            style={({pressed}) => [s.smartEditBtn, pressed && {opacity: 0.6}]}>
-            <Ionicons name={editing ? 'checkmark' : 'pencil'} size={ri(15)} color={ACCENT} />
-          </Pressable>
-        )}
-      </View>
       {editing ? (
         <View style={s.smartEditWrap}>
-          <Text style={s.smartEditLabel}>주간 목표 거리</Text>
+          <View style={s.smartLabelRow}>
+            <Text style={s.smartEditLabel}>주간 목표 거리</Text>
+            {editBtn}
+          </View>
           {/* 앱 공용 Stepper 프리미티브 — a11y 라벨·testID 계약 유지(2026-07-04 DS 통일). */}
           <Stepper
             size={ri(44)}
@@ -134,15 +131,21 @@ export function SmartChallengeCard({
           </Stepper>
         </View>
       ) : (
+        // 헤더 행 없이 한 행 구성(링 · 라벨+목표+진행 · 연필) — 여백 다이어트(사용자 2026-07-16).
         <View style={s.smartBody}>
-          {/* 진행 링 = 파파야(진행 게이지 허용 도메인) — 홈 주간 목표 바와 같은 색 언어.
-              (폐지된 바이올렛 전역 액센트의 마지막 잔재였다 — 2026-07-16 통일.) */}
-          <Ring size={ri(64)} stroke={7} progress={p.pct} color={BRAND}>
+          {/* 진행 링 = 파파야(진행 게이지 허용 도메인) — 홈 주간 목표 바와 같은 색 언어. */}
+          <Ring size={ri(56)} stroke={6} progress={p.pct} color={BRAND}>
             <Text style={s.ringPct} testID="smart-challenge-pct">
               {pctLabel}
             </Text>
           </Ring>
           <View style={{flex: 1, minWidth: 0}}>
+            <View style={s.smartLabelRow}>
+              <Text style={s.smartLabel} testID="smart-challenge-tag">주간 목표</Text>
+              {p.completed && (
+                <Pill tone="good" icon="trophy" label="달성!" testID="smart-challenge-badge" />
+              )}
+            </View>
             <Text style={s.smartTitle} numberOfLines={2}>
               {extChallengeLabel(ch, shoes)}
             </Text>
@@ -155,6 +158,7 @@ export function SmartChallengeCard({
               </Text>
             )}
           </View>
+          {editBtn}
         </View>
       )}
     </View>
@@ -240,13 +244,13 @@ const s = StyleSheet.create({
   ringPct: {color: T1, fontFamily: DISPLAY, ...TYPE.label, fontVariant: ['tabular-nums']},
   extProgress: {color: T1, fontFamily: DISPLAY, ...TYPE.heading, fontVariant: ['tabular-nums'], marginTop: rv(4)},
   // 마이탭 공통 카드 문법(GLASS.fill + GlassEdge 헤어라인) — ACCENT RN 보더/솔리드 CARD 폐지.
-  smartCard: {backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderCurve: 'continuous', padding: rs(16), gap: rv(12), overflow: 'hidden'},
-  smartHead: {flexDirection: 'row', alignItems: 'center', gap: rv(8)},
-  smartLabel: {color: T3, fontFamily: FONT, ...TYPE.label, fontWeight: '600'},
-  smartBody: {flexDirection: 'row', alignItems: 'center', gap: rv(16)},
-  smartTitle: {color: T1, fontFamily: FONT, ...TYPE.heading, fontWeight: '700'},
+  smartCard: {backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderCurve: 'continuous', padding: rs(14), overflow: 'hidden'},
+  smartLabelRow: {flexDirection: 'row', alignItems: 'center', gap: rv(8)},
+  smartLabel: {color: T3, fontFamily: FONT, ...TYPE.caption, fontWeight: '600'},
+  smartBody: {flexDirection: 'row', alignItems: 'center', gap: rv(14)},
+  smartTitle: {color: T1, fontFamily: FONT, ...TYPE.heading, fontWeight: '700', marginTop: rv(2)},
   smartReason: {color: T2, fontFamily: FONT, ...TYPE.label, lineHeight: rf(18), marginTop: rv(4)},
-  // 우상단 목표 거리 수정(연필/체크) 버튼 — 헤더 오른쪽 끝으로 민다.
+  // 목표 거리 수정(연필/체크) 버튼 — 행 오른쪽 끝.
   smartEditBtn: {marginLeft: 'auto', width: rs(30), height: rs(30), borderRadius: RADIUS.pill, borderCurve: 'continuous', alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(ACCENT, 0.14)},
   // 편집 모드: 목표 거리 ± 스테퍼.
   smartEditWrap: {gap: rv(10)},

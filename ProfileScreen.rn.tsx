@@ -14,7 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { BG, CARD, CARD_DIM, CARD_HI, ACCENT, BRAND, GOOD, DANGER, WARN, T1, T2, T3, SEP, CARD_BORDER, FONT, DISPLAY, withAlpha, TIER_COLORS, TIER_LABEL, KAKAO_YELLOW, KAKAO_LABEL, NAVER_GREEN, NAVER_LABEL, RADIUS, HALL_GOLD, TYPE, GLASS } from './theme';
 // recap 토글 = SegmentedControl(accentSolid), 스탯 그리드들 = StatGrid 단일 프리미티브.
-import { TabBar, TABBAR_CLEARANCE, SectionTitle, Button, SegmentedControl, StatGrid, Stepper, AmbientBackdrop, Rise, GlassEdge } from './primitives';
+import { TabBar, TABBAR_CLEARANCE, SectionTitle, Button, SegmentedControl, StatGrid, Stepper, AmbientBackdrop, Rise, GlassEdge, Toggle } from './primitives';
 import { Unit, unitKorean, displayNum } from './lib/units';
 import { weeklyRecap, monthlyRecap, type RecapRun, type RecapShoe } from './lib/recap';
 import { hkAvailable, hkLinked, hkLink, hkRestingHR } from './lib/healthkit';
@@ -81,8 +81,9 @@ function stepReminderTime(hhmm: string, dir: 1 | -1): string {
   return `${String(h).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
 }
 
-// 푸시 알림 종류별 on/off 스위치 행(기존 in-app 알림 토글과 동일한 토큰 스타일 재사용).
-// value 가 실제 notif_settings 를 반영하고, press 시 onToggle 로 상위에 변경을 올린다.
+// on/off 설정 행 — 라벨 좌측(무채) + 우측 작은 iOS 스위치(Toggle 프리미티브, ON=파파야).
+// 구 풀폭 솔리드 바(GOOD 배경 + 종 아이콘 + "켜짐/꺼짐" 텍스트)는 패널에 3~5장 쌓이면
+// 색 대면적이 시끄러워 폐지(사용자 2026-07-16 "보기 어렵다 → 우측에 작게, 좌우로").
 function NotifToggle({ label, value, onToggle, testID }: { label: string; value: boolean; onToggle: () => void; testID?: string }) {
   return (
     <Pressable
@@ -91,10 +92,10 @@ function NotifToggle({ label, value, onToggle, testID }: { label: string; value:
       accessibilityRole="switch"
       accessibilityLabel={label}
       accessibilityState={{ checked: value }}
-      style={[s.toggle, value ? s.toggleOn : s.toggleOff]}
+      style={s.toggleRow}
     >
-      <Ionicons name={value ? 'notifications' : 'notifications-off'} size={ri(16)} color={value ? T1 : T2} />
-      <Text style={[s.toggleTxt, { color: value ? T1 : T2 }]}>{`${label} ${value ? '켜짐' : '꺼짐'}`}</Text>
+      <Text style={s.toggleLabel}>{label}</Text>
+      <Toggle on={value} />
     </Pressable>
   );
 }
@@ -1339,10 +1340,9 @@ const s = StyleSheet.create({
   recapPrValue: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.heading.fontSize, fontWeight: '600', letterSpacing: -0.2 },
   offscreen: { position: 'absolute', left: -10000, top: 0, opacity: 0 },
 
-  toggle: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(8), height: rs(44), borderRadius: rs(14), borderCurve: 'continuous' },
-  toggleOn: { backgroundColor: GOOD },
-  toggleOff: { backgroundColor: CARD_HI },
-  toggleTxt: { fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600' },
+  // on/off 행 — 라벨 좌 + 우측 작은 스위치(Toggle 프리미티브). 구 풀폭 솔리드 바 폐지.
+  toggleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: rs(44) },
+  toggleLabel: { color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '500' },
 
   acctRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: rv(14) },
   acctK: { color: T3, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '500' },

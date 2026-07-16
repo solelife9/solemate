@@ -1801,13 +1801,13 @@ function Main(){
     {icon:'flash',label:'10회 달성',on:runs.length>=10},
     {icon:'map',label:'하프',on:runs.some(r=>parseFloat(String(r.km))>=21.1)},
   ];
-  // 개인 기록(PR) 프로필 카드: 1km 최고 페이스·5km 최고 기록·최장 거리. 거리·시간이
-  // 모두 양수인 런만 페이스 산정에 쓴다(personalRecords 순수함수). 거리는 표시 단위로
-  // 환산하고(페이스/시간은 단위 불변), 기록이 없는 항목은 '--'로 둔다.
+  // 개인 기록(PR) 프로필 카드: 1km/5km 최고 기록·최장 거리. 거리·시간이 모두 양수인
+  // 런만 산정에 쓴다(personalRecords 순수함수). 거리 최고는 전부 '완주 시간' 표기로 통일
+  // (러닝 관례 — 과거 1km 만 페이스 /km 라 5km 와 섞였다, 사용자 지적 2026-07-16).
   const prRuns=runs.map(r=>({run_date:String(r.run_date),km:parseFloat(String(r.km))||0,durationS:r.duration||0}));
   const pr=personalRecords(prRuns);
   const records:PersonalRecord[]=[
-    {icon:'flash-outline',label:'1km 최고 페이스',value:pr.fastest1k!=null?fmtPace(1,pr.fastest1k):'--',unit:pr.fastest1k!=null?'/km':''},
+    {icon:'flash-outline',label:'1km 최고 기록',value:pr.fastest1k!=null?fmtTime(Math.round(pr.fastest1k)):'--',unit:''},
     {icon:'timer-outline',label:'5km 최고 기록',value:pr.fastest5k!=null?fmtTime(Math.round(pr.fastest5k)):'--',unit:''},
     {icon:'trending-up-outline',label:'최장 거리',value:pr.longest!=null?String(displayNum(pr.longest,unit,2)):'--',unit:pr.longest!=null?unit:''},
   ];
