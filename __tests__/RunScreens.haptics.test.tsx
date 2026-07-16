@@ -32,7 +32,6 @@ jest.mock('../lib/haptics', () => ({
 import * as haptics from '../lib/haptics';
 import RunActiveScreen from '../RunActiveScreen.rn';
 import RunGoalScreen from '../RunGoalScreen.rn';
-import RunCountdownScreen from '../RunCountdownScreen.rn';
 
 function render(el: React.ReactElement) {
   let r!: ReactTestRenderer.ReactTestRenderer;
@@ -60,26 +59,30 @@ beforeEach(() => {
   jest.clearAllMocks();
 });
 
-// ── RunCountdownScreen: 카운트다운 비트 + GO 햅틱 ─────────────────────────────
-describe('RunCountdownScreen — 카운트다운 비트(3·2·1)와 GO 햅틱', () => {
-  test('3·2·1 비트마다 countdownBeat, 종료(GO)에서 go 가 호출된다', () => {
+// ── 카운트다운(RunActiveScreen countdown 모드): 비트 + GO 햅틱 ────────────────
+// 구 RunCountdownScreen(별도 화면)은 2026-07-16 러닝 화면 안으로 통합됐다 — 링이
+// 러닝 링 그 자리에서 3·2·1 을 돌고 GO 뒤 onDone 으로 엔진 인스턴스에 넘긴다.
+describe('RunActiveScreen countdown 모드 — 카운트다운 비트(3·2·1)와 GO 햅틱', () => {
+  test('3·2·1 비트마다 countdownBeat, GO 에서 go, 650ms 뒤 onDone 이 호출된다', () => {
     jest.useFakeTimers();
     let r!: ReactTestRenderer.ReactTestRenderer;
+    const onDone = jest.fn();
     try {
       act(() => {
         r = ReactTestRenderer.create(
-          <RunCountdownScreen goalKm={5} onDone={() => {}} onCancel={() => {}} />,
+          <RunActiveScreen goalKm={5} countdown={{ onDone, onCancel: () => {} }} />,
         );
       });
-      // GPS 락(1750ms) → 비트 3개(1750/2750/3750) → GO(4750). 넉넉히 진행.
+      // 비트 3개(0/1000/2000ms) → GO(3000) → onDone(3650). 넉넉히 진행.
       act(() => {
         jest.advanceTimersByTime(5000);
       });
       expect(haptics.countdownBeat).toHaveBeenCalledTimes(3);
       expect(haptics.go).toHaveBeenCalledTimes(1);
+      expect(onDone).toHaveBeenCalledTimes(1);
     } finally {
       // 남은 타이머/애니메이션 프레임이 환경 teardown 이후 발화하지 않도록
-      // 먼저 언마운트(컴포넌트 clearAll 발동)하고, 남은 setTimeout/RAF 를 한 번
+      // 먼저 언마운트(타이머 cleanup 발동)하고, 남은 setTimeout/RAF 를 한 번
       // 흘려보낸 뒤 전부 비우고 실시간 타이머로 복원한다.
       act(() => {
         r?.unmount();
@@ -92,12 +95,15 @@ describe('RunCountdownScreen — 카운트다운 비트(3·2·1)와 GO 햅틱', 
     }
   });
 
-  test('취소 버튼이 role=button + 접근성 라벨을 노출한다', () => {
+  test('취소 버튼이 role=button + 접근성 라벨, onCancel 을 부른다', () => {
+    const onCancel = jest.fn();
     const root = render(
-      <RunCountdownScreen goalKm={5} onCancel={() => {}} />,
+      <RunActiveScreen goalKm={5} countdown={{ onCancel }} />,
     ).root;
     const cancel = pressableByLabel(root, '카운트다운 취소');
     expect(cancel.props.accessibilityRole).toBe('button');
+    act(() => { cancel.props.onPress(); });
+    expect(onCancel).toHaveBeenCalledTimes(1);
   });
 });
 

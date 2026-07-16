@@ -31,7 +31,6 @@ import ProfileScreen, {Profile, Badge, PersonalRecord} from './ProfileScreen.rn'
 import AddShoeScreen from './AddShoeScreen.rn';
 import OnboardingScreen, {RegisteredShoe} from './OnboardingScreen.rn';
 import RunGoalScreen, {RunGoal} from './RunGoalScreen.rn';
-import RunCountdownScreen from './RunCountdownScreen.rn';
 import RunActiveScreenView from './RunActiveScreen.rn';
 import ProgressionScreen from './ProgressionScreen.rn';
 import HallOfShoes from './HallOfShoes.rn';
@@ -1923,12 +1922,18 @@ function Main(){
     );
   }
   if(overlay==='countdown'&&activeRun){
+    // 카운트다운 = 러닝 화면(뷰)의 countdown 모드(2026-07-16 통합, 사용자 확정 "한 링처럼").
+    // 엔진 없이 레이아웃만 실물과 동일하게 렌더 — 3·2·1 이 러닝 링 그 자리에서 돌고,
+    // onDone 에서 엔진 인스턴스(아래 'run' 분기)로 스왑해도 링 위치가 픽셀 그대로다.
+    // GPS/권한/타이머는 기존처럼 'run' 진입 때만 시작(데이터 회계 불변).
     return (
-      <RunCountdownScreen
-        goalKm={activeRun.goalKm}
+      <RunActiveScreenView
         shoeLabel={parseShoeName(activeRun.name).model||activeRun.name}
-        onCancel={()=>setOverlay('goal')}
-        onDone={()=>setOverlay('run')}
+        goalKm={activeRun.goalKm}
+        goalMin={activeRun.goalMin}
+        distanceKm={0} elapsedSec={0} timeLabel="0:00" paceLabel="--" avgPaceLabel="--"
+        calories={0} elevationM={0} bpm={0}
+        countdown={{onCancel:()=>setOverlay('goal'),onDone:()=>setOverlay('run')}}
       />
     );
   }

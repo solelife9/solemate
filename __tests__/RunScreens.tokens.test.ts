@@ -18,10 +18,10 @@ import fs from 'fs';
 import path from 'path';
 
 const ROOT = path.resolve(__dirname, '..');
+// RunCountdownScreen.rn.tsx 는 2026-07-16 RunActiveScreen countdown 모드로 통합·삭제됨.
 const SCREENS = [
   'RunActiveScreen.rn.tsx',
   'RunGoalScreen.rn.tsx',
-  'RunCountdownScreen.rn.tsx',
 ];
 
 const read = (f: string) => fs.readFileSync(path.join(ROOT, f), 'utf8');

@@ -70,7 +70,6 @@ import {buildContext} from '../../lib/progression/context';
 import OnboardingScreen from '../../OnboardingScreen.rn';
 import RunActiveScreen from '../../RunActiveScreen.rn';
 import RunGoalScreen from '../../RunGoalScreen.rn';
-import RunCountdownScreen from '../../RunCountdownScreen.rn';
 // ── C 묶음(폼 + 피드백) 도구 ─────────────────────────────────────────────────
 import HomeScreen from '../../HomeScreen.rn';
 import HistoryScreen, {RunForm} from '../../HistoryScreen.rn';
@@ -364,10 +363,10 @@ describe('Audit Hardening 수용', () => {
     });
 
     test('theme 수렴: Run*/Onboarding 소스에 사설 팔레트(const C/KG)·BebasNeue 0, theme import 존재', () => {
+      // RunCountdownScreen.rn.tsx 는 2026-07-16 RunActiveScreen countdown 모드로 통합·삭제됨.
       const files = [
         'RunActiveScreen.rn.tsx',
         'RunGoalScreen.rn.tsx',
-        'RunCountdownScreen.rn.tsx',
         'OnboardingScreen.rn.tsx',
       ];
       for (const f of files) {
@@ -419,11 +418,12 @@ describe('Audit Hardening 수용', () => {
       let r!: ReactTestRenderer.ReactTestRenderer;
       try {
         act(() => {
+          // 카운트다운 = RunActiveScreen countdown 모드(2026-07-16 통합).
           r = ReactTestRenderer.create(
-            el(RunCountdownScreen, {goalKm: 5, onDone: () => {}, onCancel: () => {}}),
+            el(RunActiveScreen, {goalKm: 5, countdown: {onDone: () => {}, onCancel: () => {}}}),
           );
         });
-        // GPS 락 → 비트 3개 → GO. 넉넉히 시간을 흘려 카운트다운을 끝까지 진행.
+        // 비트 3개(0/1000/2000) → GO(3000). 넉넉히 시간을 흘려 카운트다운을 끝까지 진행.
         act(() => {
           jest.advanceTimersByTime(5000);
         });

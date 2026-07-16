@@ -35,8 +35,9 @@ import {
 } from './theme';
 import { estimateMaxHR, zoneOf, HR_ZONE_LABEL } from './lib/analytics/hrZones';
 import { fmtPaceSec } from './lib/pacePlan';
-// lib/haptics 배선: 일시정지/재개 → tap · 목표 달성 → impactHeavy · 종료 확정 → warning.
-import { tap, impactHeavy, warning } from './lib/haptics';
+// lib/haptics 배선: 일시정지/재개 → tap · 목표 달성 → impactHeavy · 종료 확정 → warning ·
+// 카운트다운 3·2·1 비트 → countdownBeat · GO → go(카운트다운 통합, 2026-07-16).
+import { tap, impactHeavy, warning, countdownBeat, go as goHaptic } from './lib/haptics';
 
 // 지도 배치 규칙(2026-07-09 승인). 러닝 '중'(active)엔 지도를 두지 않고 링+지표만 둔다 —
 // 달리는 동안 화면 정보는 최소화. 지도는 '일시정지' 시 상단 패널로 등장하고(탭하면 전체화면
@@ -128,6 +129,7 @@ export default function RunActiveScreen({
   liveCoords = [],
   track = null, onLap, onUndoLap,
   handoff = false,
+  countdown = null,
 }: {
   shoeLabel?: string; distanceKm?: number; goalKm?: number;
   /** 시간 목표(분, #15). >0 이고 goalKm=0 이면 링 진행·달성 판정이 경과시간 기준. */
@@ -159,6 +161,11 @@ export default function RunActiveScreen({
   /** 카운트다운→러닝 링 핸드오프 인트로(가득 찬 링이 풀려나가는 드레인). 새 러닝 시작에만
       true — 크래시 복구(resume) 재진입은 이어 달리기라 인트로 없이 현재 진행으로 시작. */
   handoff?: boolean;
+  /** 카운트다운 모드(2026-07-16 통합, 사용자 확정 "링이 한 링처럼"): 있으면 이 인스턴스는
+      엔진 없이 러닝 화면과 '같은 레이아웃'으로 3·2·1→GO 를 링 그 자리에서 돌린다.
+      onDone 에서 App 이 엔진 인스턴스로 스왑 — 레이아웃이 같아 링은 픽셀 그대로 이어지고,
+      지표·컨트롤은 스왑 후 아래에서 떠오른다(uiIn). 구 RunCountdownScreen(별도 화면) 대체. */
+  countdown?: { outdoor?: boolean; onCancel?: () => void; onDone?: () => void } | null;
 }) {
   const insets = useSafeAreaInsets();
   const { height: winH } = useWindowDimensions();
@@ -221,6 +228,58 @@ export default function RunActiveScreen({
   const handoffArmed = useRef(handoff && !SKIP_ANIM);
   const handoffFrom = handoffArmed.current ? 1 : undefined;
   useEffect(() => { handoffArmed.current = false; }, []);
+
+  // ── 카운트다운 통합 드라이버 ─────────────────────────────────────────────────
+  // countdown 인스턴스에서만 돈다: 1초 간격 3·2·1 비트(햅틱+숫자 팝+링 1/3 채움) →
+  // GO(강햅틱+칩 페이드아웃) → 650ms 뒤 onDone(App 이 엔진 인스턴스로 스왑).
+  // 콜백은 ref 로 읽어 App 의 인라인 객체 재생성에 타이머가 리셋되지 않는다.
+  const cd = !!countdown;
+  const cdCb = useRef(countdown);
+  cdCb.current = countdown;
+  const [cdPhase, setCdPhase] = useState<'count' | 'go'>('count');
+  const [cdNum, setCdNum] = useState(3);
+  const [cdProgress, setCdProgress] = useState(0);
+  const cdNumScale = useRef(new Animated.Value(1)).current;
+  const cdNumOpacity = useRef(new Animated.Value(1)).current;
+  const cdGoScale = useRef(new Animated.Value(0.6)).current;
+  const cdChipFade = useRef(new Animated.Value(1)).current;
+  useEffect(() => {
+    if (!cd) return;
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    const at = (fn: () => void, ms: number) => { timers.push(setTimeout(fn, ms)); };
+    const beat = (n: number, i: number) => {
+      setCdNum(n);
+      countdownBeat();          // 3·2·1 각 박자마다 짧은 단발 진동
+      cdNumScale.setValue(1.5); cdNumOpacity.setValue(0);
+      Animated.parallel([
+        Animated.spring(cdNumScale, { toValue: 1, useNativeDriver: true, speed: 12, bounciness: 6 }),
+        Animated.timing(cdNumOpacity, { toValue: 1, duration: 180, useNativeDriver: true }),
+      ]).start();
+      setCdProgress((i + 1) / 3); // Ring(1초 linear)이 1/3 씩 채운다
+    };
+    [3, 2, 1].forEach((n, i) => at(() => beat(n, i), i * 1000));
+    at(() => {
+      setCdPhase('go');
+      goHaptic();               // GO — 카운트다운 종료, 강한 단발 진동
+      cdGoScale.setValue(0.6);
+      Animated.spring(cdGoScale, { toValue: 1, useNativeDriver: true, speed: 12, bounciness: 9 }).start();
+      Animated.timing(cdChipFade, { toValue: 0, duration: MOTION.dur.base, easing: MOTION.ease.quad, useNativeDriver: true }).start();
+    }, 3000);
+    at(() => cdCb.current?.onDone?.(), 3650);
+    return () => timers.forEach(clearTimeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cd]);
+
+  // 지표·컨트롤 라이즈('지표들이 날아온다') — 카운트다운 중엔 0(레이아웃은 그대로, 안 보임),
+  // GO 스왑 후 엔진 인스턴스가 아래에서 떠올린다. 복구(resume) 등 핸드오프 없는 진입은 즉시 1.
+  const uiIn = useRef(new Animated.Value(cd || (handoff && !SKIP_ANIM) ? 0 : 1)).current;
+  useEffect(() => {
+    if (cd) return;
+    const a = Animated.timing(uiIn, { toValue: 1, duration: 480, delay: 60, easing: MOTION.ease.out, useNativeDriver: true });
+    a.start();
+    return () => a.stop();
+  }, [cd, uiIn]);
+  const uiRise = uiIn.interpolate({ inputRange: [0, 1], outputRange: [rv(14), 0] });
   // 라이브 심박 존 — 심박이 흐를 때만 산출(bpm>0). 워치 미연동이면 0 → 존 미표시.
   const hrZone = bpm > 0 ? zoneOf(bpm, estimateMaxHR(age), restHR || undefined) : 0;
   const hrColor = hrZone !== 0 ? HR_ZONE_COLORS[hrZone] : T1;
@@ -331,12 +390,21 @@ export default function RunActiveScreen({
         </Animated.View>
       )}
 
-      {/* top */}
+      {/* top — 카운트다운 중엔 좌측이 '취소'(LIVE 상태는 아직 없음), 높이는 우측 신발칩(rs 30)
+          이 잡아 러닝 모드와 동일(스왑 시 링 위치 불변). */}
       <View style={r.top}>
-        <View style={r.live} accessibilityRole="text" accessibilityLiveRegion="polite" accessibilityLabel={`상태: ${statusLabel ?? (paused ? '일시정지' : '러닝 중')}`}>
-          <View style={[r.liveDot, met && { backgroundColor: GOOD }]} />
-          <Text style={[r.liveText, met && { color: GOOD }]}>{statusLabel ?? (paused ? '일시정지' : '러닝 중')}</Text>
-        </View>
+        {cd ? (
+          <Pressable onPress={() => cdCb.current?.onCancel?.()} hitSlop={8} accessibilityRole="button" accessibilityLabel="카운트다운 취소"
+            style={({ pressed }) => [r.cdCancel, pressed && { opacity: 0.8 }]}>
+            <Ionicons name="chevron-back" size={ri(16)} color={T2} />
+            <Text style={r.cdCancelText}>취소</Text>
+          </Pressable>
+        ) : (
+          <View style={r.live} accessibilityRole="text" accessibilityLiveRegion="polite" accessibilityLabel={`상태: ${statusLabel ?? (paused ? '일시정지' : '러닝 중')}`}>
+            <View style={[r.liveDot, met && { backgroundColor: GOOD }]} />
+            <Text style={[r.liveText, met && { color: GOOD }]}>{statusLabel ?? (paused ? '일시정지' : '러닝 중')}</Text>
+          </View>
+        )}
         <View style={r.shoeChip} accessibilityRole="text" accessibilityLabel={`신고 있는 신발 ${shoeLabel}`}><ShoeGlyph color={T3} size={ri(15)} /><Text style={r.shoeText}>{shoeLabel}</Text></View>
       </View>
 
@@ -387,14 +455,27 @@ export default function RunActiveScreen({
           거리/자유 모드는 거리 히어로, 트랙 모드는 '바퀴 수' 히어로(링=현재 바퀴 진행). */}
       {!uiPaused && (
       <Animated.View style={[r.ringWrap, { transform: [{ scale: ringScale }] }]}>
-        {/* 핸드오프 인트로(시그니처 연속, 2026-07-16 2단계): 카운트다운이 3초에 걸쳐
-            가득 채운 파파야 링이 러닝 화면에서 '가득 찬 채' 나타나 현재 진행(0)으로
-            풀려나간다(from=1 드레인) — 두 화면의 링이 하드컷 없이 한 링으로 읽힌다.
+        {/* 카운트다운 통합(2026-07-16 사용자 확정): 3·2·1 이 러닝 링 '그 자리'에서 돌아
+            (1초 linear 로 1/3 씩 채움) GO 와 함께 같은 자리에서 러닝이 시작된다.
+            핸드오프 인트로: 카운트다운이 채운 파파야 링이 엔진 인스턴스에서 가득 찬 채
+            나타나 현재 진행(0)으로 풀려나간다(from=1 드레인) — 한 링으로 읽힘.
             재개(resume)·일시정지 복귀 재마운트에는 인트로를 걸지 않는다. */}
         <Ring size={ri(RUN_RING_SIZE)} stroke={RUN_RING_STROKE} stops={RUN_RING_STOPS}
           animated from={handoffFrom}
-          progress={track ? track.progress : pct}>
-          {track ? (
+          duration={cd ? 1000 : 900} easing={cd ? Easing.linear : undefined}
+          progress={cd ? cdProgress : track ? track.progress : pct}>
+          {cd ? (
+            <View style={r.cdFace}>
+              {cdPhase === 'go' ? (
+                <Animated.Text style={[r.cdGo, { transform: [{ scale: cdGoScale }] }]} accessibilityLiveRegion="assertive" accessibilityLabel="시작">GO</Animated.Text>
+              ) : (
+                <>
+                  <Animated.Text style={[r.cdCount, { opacity: cdNumOpacity, transform: [{ scale: cdNumScale }] }]} accessibilityLiveRegion="assertive" accessibilityLabel={`${cdNum}초 후 시작`}>{cdNum}</Animated.Text>
+                  <Text style={r.cdCountLabel}>곧 시작합니다</Text>
+                </>
+              )}
+            </View>
+          ) : track ? (
             <View style={{ alignItems: 'center' }} accessibilityRole="text" accessibilityLiveRegion="polite"
               accessibilityLabel={`${track.lapCount}바퀴, ${track.lapDistKm.toFixed(2)}킬로미터, 한 바퀴 ${track.lapM}미터 ${track.calibrated ? 'GPS 보정됨' : '예상'}`}>
               <Text style={r.lapHero}>{track.lapCount}</Text>
@@ -421,6 +502,27 @@ export default function RunActiveScreen({
             </Animated.View>
           )}
         </Ring>
+        {/* 카운트다운 목표·야외 칩 — 링 '바로 아래' 절대 배치(레이아웃 높이 불변 → 스왑 시
+            링 위치 그대로). GO 순간 페이드아웃하며 지표들에게 자리를 넘긴다(사용자 확정). */}
+        {cd && (
+          <Animated.View pointerEvents="none" style={[r.cdChips, { opacity: cdChipFade }]}>
+            {goalKm > 0 ? (
+              <View style={r.cdChip} accessibilityRole="text" accessibilityLabel={`목표 ${goalKm.toFixed(1)} 킬로미터`}>
+                <Ionicons name="locate-outline" size={ri(14)} color={T3} />
+                <Text style={r.cdChipText}>목표 <Text style={r.cdChipB}>{goalKm.toFixed(1)} km</Text></Text>
+              </View>
+            ) : goalMin > 0 ? (
+              <View style={r.cdChip} accessibilityRole="text" accessibilityLabel={`목표 ${goalMin}분`}>
+                <Ionicons name="time-outline" size={ri(14)} color={T3} />
+                <Text style={r.cdChipText}>목표 <Text style={r.cdChipB}>{goalMin}분</Text></Text>
+              </View>
+            ) : null}
+            <View style={r.cdChip} accessibilityRole="text" accessibilityLabel={countdown?.outdoor === false ? '실내 러닝' : '야외 러닝'}>
+              <Ionicons name="navigate-outline" size={ri(14)} color={T3} />
+              <Text style={r.cdChipText}>{countdown?.outdoor === false ? '실내 러닝' : '야외 러닝'}</Text>
+            </View>
+          </Animated.View>
+        )}
       </Animated.View>
       )}
 
@@ -453,11 +555,12 @@ export default function RunActiveScreen({
 
       {/* hero metrics — 순서: 시간 · 심박 · 페이스(사용자 지정). 프리미엄: 가벼운 값 + 마이크로
           라벨, 위 헤어라인만. 일시정지 시 22로 줄며 아래로 서브 지표가 펼쳐진다. */}
-      <View style={[r.heroMetrics, uiPaused ? r.heroMetricsPaused : r.heroMetricsRun]}>
+      <Animated.View pointerEvents={cd ? 'none' : 'auto'}
+        style={[r.heroMetrics, uiPaused ? r.heroMetricsPaused : r.heroMetricsRun, { opacity: uiIn, transform: [{ translateY: uiRise }] }]}>
         <View style={r.hm} accessibilityRole="text" accessibilityLabel={uiPaused || timeGoal ? `거리 ${distanceKm.toFixed(2)}킬로미터` : `시간 ${timeLabel}`}><Text style={[r.hmV, uiPaused && r.hmVPaused]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72}>{uiPaused || timeGoal ? distanceKm.toFixed(2) : timeLabel}</Text><Text style={r.hmL}>{uiPaused || timeGoal ? '거리 km' : '시간'}</Text></View>
         <View style={[r.hm, r.hmDivider]} accessibilityRole="text" accessibilityLabel={uiPaused ? `시간 ${timeLabel}` : hrZone !== 0 ? `심박 ${bpm}, 존 ${hrZone} ${HR_ZONE_LABEL[hrZone]}` : bpm > 0 ? `심박 ${bpm}` : '심박 측정 안 됨'}><Text style={[r.hmV, uiPaused && r.hmVPaused, !uiPaused && hrZone !== 0 && { color: hrColor }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72}>{uiPaused ? timeLabel : bpm > 0 ? String(bpm) : '--'}</Text><Text style={[r.hmL, !uiPaused && hrZone !== 0 && { color: hrColor, fontWeight: '600' }, !uiPaused && zoneDeviation && targetZone >= 2 && { color: zoneDeviation === 'down' ? WARN : ACCENT, fontWeight: '700' }]}>{uiPaused ? '시간' : (!uiPaused && zoneDeviation && targetZone >= 2) ? (zoneDeviation === 'down' ? `↓ 존 ${targetZone}로` : `↑ 존 ${targetZone}로`) : hrZone !== 0 ? `Z${hrZone} ${HR_ZONE_LABEL[hrZone]}` : '심박'}</Text></View>
         <View style={[r.hm, r.hmDivider]} accessibilityRole="text" accessibilityLabel={`${uiPaused ? '평균 페이스' : (track ? '랩 페이스' : '현재 페이스')} ${uiPaused ? avgPaceLabel : paceLabel}`}><Text style={[r.hmV, uiPaused && r.hmVPaused]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72}>{uiPaused ? avgPaceLabel : paceLabel}</Text><Text style={r.hmL}>{uiPaused ? '평균 페이스' : (track ? '랩 페이스' : '현재 페이스')}</Text></View>
-      </View>
+      </Animated.View>
 
       {/* 트랙: 지난 랩(최근 3) — 박스 없는 한 줄, 라벨 회색 + 랩번호/구간시간(직전 랩을 즉시 확인). */}
       {track && track.recent.length > 0 && (
@@ -512,8 +615,9 @@ export default function RunActiveScreen({
           남는 공간을 여기서 흡수해 컨트롤을 바닥에 고정). 일시정지-실내는 상단 스페이서 담당. */}
       {(!uiPaused || liveCoords.length > 0) && <View style={{ flex: 1 }} />}
 
-      {/* controls */}
-      <View style={r.controls}>
+      {/* controls — 카운트다운 중엔 자리(높이)만 지키고 안 보임 → GO 스왑 후 지표와 함께 라이즈 */}
+      <Animated.View pointerEvents={cd ? 'none' : 'auto'}
+        style={[r.controls, { opacity: uiIn, transform: [{ translateY: uiRise }] }]}>
         {!paused ? (
           <View style={{ alignItems: 'center', gap: rv(8) }}>
             <Pressable onPress={pauseRun} accessibilityRole="button" accessibilityLabel="일시정지" style={({ pressed }) => [r.cPrimary, pressed && { opacity: 0.85 }]}>
@@ -554,7 +658,7 @@ export default function RunActiveScreen({
             </View>
           </>
         )}
-      </View>
+      </Animated.View>
 
       {/* 완주 세리머니(A안) — 종료 확정 후 링 완성 + 빛 번짐, 끝나면 실제 종료(onStop). */}
       {ceremony && <FinishCeremony distanceKm={distanceKm} onDone={() => onStop?.()} />}
@@ -629,6 +733,20 @@ const r = StyleSheet.create({
   permBannerText: { flex: 1, color: T1, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500', lineHeight: rf(17) },
 
   ringWrap: { alignItems: 'center', marginTop: rv(26) },
+  // ── 카운트다운 통합(2026-07-16) — 구 RunCountdownScreen 의 타이포·칩 문법 이식 ──
+  // 취소 필: 우측 신발칩과 같은 rs(30) 높이(상단 행 높이 불변 → 스왑 시 링 위치 그대로).
+  cdCancel: { flexDirection: 'row', alignItems: 'center', gap: rv(4), height: rs(30), paddingLeft: rs(8), paddingRight: rs(12), borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.05), borderWidth: 1, borderColor: SEP },
+  cdCancelText: { color: T2, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500' },
+  cdFace: { alignItems: 'center', justifyContent: 'center' },
+  // 카운트 숫자·GO = NUM(Jost), 러닝 링 거리 숫자와 동일 규율. lineHeight ≈ 1.22×(어센더).
+  cdCount: { color: T1, fontFamily: NUM, fontSize: rf(150), fontWeight: '500', letterSpacing: -2, lineHeight: rf(183), includeFontPadding: false, fontVariant: ['tabular-nums'] },
+  cdCountLabel: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500', marginTop: rv(2) },
+  cdGo: { color: ACCENT, fontFamily: NUM, fontSize: rf(104), fontWeight: '700', letterSpacing: -1, lineHeight: rf(127), includeFontPadding: false },
+  // 목표·야외 칩 — 링 아래 절대 배치(레이아웃 참여 X). 좌우로 링보다 넓게 펼쳐 중앙 정렬.
+  cdChips: { position: 'absolute', top: '100%', left: rs(-70), right: rs(-70), marginTop: rv(16), flexDirection: 'row', justifyContent: 'center', gap: rv(8) },
+  cdChip: { flexDirection: 'row', alignItems: 'center', gap: rv(8), height: rs(32), paddingHorizontal: rs(14), borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.04), borderWidth: 1, borderColor: SEP },
+  cdChipText: { color: T2, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500' },
+  cdChipB: { color: T1, fontFamily: DISPLAY, fontWeight: '600' },
   // 일시정지: 링을 살짝 위로 당기고(marginTop↓) 아래 시각 여백을 조금 회수(marginBottom-)해
   // 서브 지표가 들어설 공간을 낸다. 스케일이 0.92로 완만하므로 마진도 완만하게(겹침 방지).
   ringWrapPaused: { marginTop: rv(8), marginBottom: rv(-14) },
