@@ -311,10 +311,12 @@ function SlopeIcon({size = 18, color = T1}: {size?: number; color?: string}) {
     </Svg>
   );
 }
+// 업적 = 정식 5각 별 아웃라인 — 손그림 4각 스파클은 작은 크기에서 형태가 뭉개졌다
+// (실기기 "저게 뭐야", 2026-07-17 — 셀러브레이션 글리프 v2 때와 같은 교훈).
 function SparkIcon({size = 18, color = T1}: {size?: number; color?: string}) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path d="M12 4l1.7 4.8 4.8 1.7-4.8 1.7L12 17l-1.7-4.8L5.5 10.5l4.8-1.7L12 4z" stroke={color} strokeWidth={1.8} strokeLinejoin="round" />
+      <Path d="M12 3.5l2.47 5.01 5.53.8-4 3.9.94 5.51L12 16.1l-4.94 2.62.94-5.51-4-3.9 5.53-.8L12 3.5z" stroke={color} strokeWidth={1.8} strokeLinejoin="round" />
     </Svg>
   );
 }
@@ -539,12 +541,14 @@ function ShoeIntelligence({goNext, onSkip, insetTop, insetBottom}: ScreenProps) 
 // 온보딩 v2(2026-07-17 사용자 승인 목업): 서사 = '해주는 코칭'. 쌓이는 기록(PB 등)은
 // 성취 화면(LEGACY)으로 이동, 훈련 부하는 제거(실접점은 완주 리캡 경고 — "미리 알려줘요"
 // 는 과장이라 Truth only 위반이었다). NRC/스트라바 무료판에 없는 차별점 중심 4행 무스크롤.
-// 색은 의미에만: 파랑=컨디션(심폐)·레드=심박(하트 보편 관례)·무채=도구(경사·트랙).
+// 색은 의미로: 파랑=컨디션(심폐)·레드=심박(하트 보편 관례)·초록=지형(경사)·파파야=
+// 러닝 에너지(트랙 — 2026-07-09 브랜드 확장 가드레일 안, 아이콘 틴트만). 아래 두 줄만
+// 무채면 4행 리듬이 깨진다는 실기기 피드백(2026-07-17)로 채색.
 const FEATURES: {color: string; Icon: (p: {size?: number; color?: string}) => React.JSX.Element; title: string; desc: string}[] = [
   {color: BEST, Icon: PulseIcon, title: '심폐 체력', desc: '달린 페이스로 VO₂max를 추정 — 따로 측정할 필요 없어요'},
   {color: DANGER, Icon: HeartIcon, title: '심박존 코칭', desc: 'Apple Watch와 함께 — 목표 존을 벗어나면 바로 잡아줘요'},
-  {color: T1, Icon: SlopeIcon, title: '경사 보정 페이스', desc: '언덕에서 느려진 건 느려진 게 아니에요 — 진짜 페이스로 보정'},
-  {color: T1, Icon: TrackIcon, title: '트랙 모드', desc: '400m 트랙에서 랩을 자동으로 세어줘요'},
+  {color: GOOD, Icon: SlopeIcon, title: '경사 보정 페이스', desc: '언덕에서 느려진 건 느려진 게 아니에요 — 진짜 페이스로 보정'},
+  {color: BRAND, Icon: TrackIcon, title: '트랙 모드', desc: '400m 트랙에서 랩을 자동으로 세어줘요'},
 ];
 
 // 기능 목록 카드 한 장(성능·성취 공용 문법 — 사용자 확정 "카드는 한통으로").
