@@ -14,6 +14,7 @@ import Svg, {Defs, RadialGradient, LinearGradient, Stop, Circle, Ellipse, Path} 
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {BG, T1, T3, FONT, DISPLAY, RADIUS, HALL_GOLD, BLACK, CELEB_FACE_BG, CELEB_ICON_LEGENDARY, CELEB_ICON_DEFAULT, withAlpha, TYPE} from './theme';
 import {success, impactHeavy} from './lib/haptics';
+import {Button} from './primitives';
 
 export type CelebrationData =
   | {
@@ -212,9 +213,8 @@ export default function CelebrationScreen({data, onClose}: {data: CelebrationDat
           </Rise>
         </View>
         <Rise anim={anim} from={0.48} to={0.9} style={st.actions}>
-          <Pressable style={st.primary} onPress={onClose} accessibilityRole="button" accessibilityLabel="계속하기">
-            <Text style={st.primaryTxt}>계속하기</Text>
-          </Pressable>
+          {/* 수제 56px Pressable → 전역 Button size="hero"(검수 디밸롭 ⑤ 수렴). */}
+          <Button size="hero" label="계속하기" onPress={onClose} />
         </Rise>
       </View>
     );
@@ -249,9 +249,7 @@ export default function CelebrationScreen({data, onClose}: {data: CelebrationDat
         </Rise>
       </View>
       <Rise anim={anim} from={0.48} to={0.9} style={st.actions}>
-        <Pressable style={st.primary} onPress={onClose} accessibilityRole="button" accessibilityLabel="확인">
-          <Text style={st.primaryTxt}>확인</Text>
-        </Pressable>
+        <Button size="hero" label="확인" onPress={onClose} />
       </Rise>
     </View>
   );
@@ -275,6 +273,5 @@ const st = StyleSheet.create({
   b: {color: T1, fontWeight: '700'},
 
   actions: {alignSelf: 'stretch'},
-  primary: {height: rs(56), borderRadius: RADIUS.md, borderCurve: 'continuous', backgroundColor: withAlpha(T1, 0.1), alignItems: 'center', justifyContent: 'center'},
-  primaryTxt: {fontSize: TYPE.heading.fontSize, fontWeight: '700', color: T1, fontFamily: FONT},
+  // primary/primaryTxt 삭제 — 전역 Button size="hero" 로 수렴(2026-07-17).
 });

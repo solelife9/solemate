@@ -12,7 +12,7 @@ import {View, Text, Pressable, StyleSheet} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {BG, CARD, ACCENT, GOOD, WARN, T1, T2, T3, FONT, RADIUS, SEP, withAlpha, TYPE} from './theme';
-import {GlassEdge} from './primitives';
+import {Button, GlassEdge} from './primitives';
 
 function Row({icon, color, title, body}: {icon: string; color: string; title: string; body: string}) {
   return (
@@ -62,10 +62,9 @@ export default function LocationPrimeScreen({
       </View>
 
       <View style={s.footer}>
-        <Pressable onPress={onContinue} accessibilityRole="button" accessibilityLabel="계속" testID="location-prime-continue"
-          style={({pressed}) => [s.primary, pressed && {opacity: 0.85}]}>
-          <Text style={s.primaryTxt}>계속</Text>
-        </Pressable>
+        {/* 수제 54px Pressable(GlassEdge 조차 없던 민짜 표면) → 전역 Button size="hero"
+            (검수 디밸롭 ⑤ 수렴, 2026-07-17). */}
+        <Button size="hero" label="계속" onPress={onContinue} testID="location-prime-continue" />
         <Pressable onPress={onCancel} accessibilityRole="button" accessibilityLabel="나중에" testID="location-prime-cancel"
           style={s.ghost}>
           <Text style={s.ghostTxt}>나중에</Text>
@@ -89,8 +88,7 @@ const s = StyleSheet.create({
   rowBody: {color: T2, fontFamily: FONT, fontSize: TYPE.label.fontSize, lineHeight: rf(18), marginTop: rv(3), fontWeight: '400'},
   sep: {height: StyleSheet.hairlineWidth, backgroundColor: SEP, marginLeft: rs(49)},
   footer: {gap: rv(6)},
-  primary: {height: rs(54), borderRadius: RADIUS.lg, borderCurve: 'continuous', backgroundColor: withAlpha(T1, 0.1), alignItems: 'center', justifyContent: 'center'},
-  primaryTxt: {color: T1, fontFamily: FONT, fontSize: TYPE.heading.fontSize, fontWeight: '700'},
+  // primary/primaryTxt 삭제 — 전역 Button size="hero" 로 수렴(2026-07-17).
   ghost: {height: rs(46), alignItems: 'center', justifyContent: 'center'},
   ghostTxt: {color: T3, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600'},
 });

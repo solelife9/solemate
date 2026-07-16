@@ -506,6 +506,7 @@ export function Button({
   label,
   onPress,
   variant = 'cta',
+  size = 'md',
   icon,
   iconNode,
   disabled = false,
@@ -516,6 +517,10 @@ export function Button({
   label: string;
   onPress?: () => void;
   variant?: 'cta' | 'ghost';
+  /** hero = 풀폭 대형 CTA(높이 rs54·라벨 heading 700) — 화면 하단 단일 주행동
+      (LocationPrime '계속'·Celebration '계속하기' 등). 화면별 수제 54px Pressable 수렴
+      (검수 디밸롭 ⑤, 2026-07-17). */
+  size?: 'md' | 'hero';
   icon?: string;
   iconNode?: React.ReactNode;
   disabled?: boolean;
@@ -544,13 +549,14 @@ export function Button({
       accessibilityState={{disabled}}
       style={({pressed}) => [
         btn.base,
+        size === 'hero' && btn.hero,
         filled ? btn.glass : btn.flat,
         pressed && !disabled && btn.pressed,
         style,
       ]}>
       {filled ? <GlassEdge glints={false} fade={false} radius={RADIUS.btn} /> : null}
       {iconNode ?? (icon ? <Ionicons name={icon} size={ri(20)} color={disabled ? T3 : T1} /> : null)}
-      <Text style={[btn.label, disabled && btn.labelDim]}>{label}</Text>
+      <Text style={[btn.label, size === 'hero' && btn.labelHero, disabled && btn.labelDim]}>{label}</Text>
     </Pressable>
   );
 }
@@ -572,6 +578,9 @@ const btn = StyleSheet.create({
   // ghost / disabled 표면(올린 카드 톤). 그라데이션·글로우 없음.
   flat: {backgroundColor: CARD_HI},
   pressed: {opacity: 0.92, transform: [{scale: 0.97}]},
+  // hero — 화면 하단 단일 주행동 CTA: 고정 높이(수제 rs54 Pressable 들과 픽셀 동등)로
+  // 패딩 기반 높이 편차를 없앤다. 풀폭은 호출부 컨테이너가 결정.
+  hero: {height: rs(54), paddingVertical: 0, alignSelf: 'stretch'},
   label: {
     color: T1,
     fontFamily: FONT,
@@ -579,6 +588,7 @@ const btn = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 0.3,
   },
+  labelHero: {letterSpacing: -0.2}, // 큰 라벨은 자간을 살짝 좁혀(수제 CTA 들과 동일 시감)
   labelDim: {color: T3},
 });
 
