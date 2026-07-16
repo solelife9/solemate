@@ -40,9 +40,9 @@ type Props = {
   onOpenProfile?: () => void;
 };
 
-// 14→10→7(2026-07-16 사용자 미세조정 2라운드): 메인 카드를 키우면서 이웃 카드와의
-// 간격도 좁혀 캐러셀이 더 밀착해 보이게.
-const CARD_GAP = 7;
+// 캐러셀 정석 정착(2026-07-16, 여러 라운드 끝 확정): 옆 카드는 '콘텐츠'가 아니라
+// '더 있다'는 힌트 — 슬리버 ~11px 만 보인다(아래 CARD_W 0.88 과 세트). 간격 8.
+const CARD_GAP = 8;
 const CARD_RADIUS = 34;
 // 링 '기준' 치수(874pt 화면 기준) — 실제 크기는 ShoeCard 가 화면 높이에 비례해 계산한다.
 const RING = 172;
@@ -54,8 +54,8 @@ const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 export default function KeegoHome({shoes, runs = [], onStartRun, onOpenShoe, onOpenProfile}: Props) {
   const {width} = useWindowDimensions();
   // HomeScreen 캐러셀과 동일한 비율 규칙(화면 폭 82%, 380 상한) — 기기 간 동일 구도.
-  // 0.82→0.86(2026-07-16 사용자 미세조정): 메인 카드를 살짝 키워 히어로 존재감을 올린다.
-  const CARD_W = Math.min(Math.round(width * 0.86), 396);
+  // 0.82→0.88(2026-07-16 확정): 히어로 존재감 + 옆 카드는 슬리버 힌트만(Fitness+/NRC 문법).
+  const CARD_W = Math.min(Math.round(width * 0.88), 400);
   const SIDE = (width - CARD_W) / 2;
   const STRIDE = CARD_W + CARD_GAP;
 
@@ -164,14 +164,13 @@ export function ShoeCard({
   // 정보값 0(사용자 확정 2026-07-11, 신발탭 종류 칩과 동일 소스).
   const cat = typeLabel(findShoeClass(shoe.brand, shoe.model)?.type);
 
-  // 중앙 카드 강조: 이웃은 균등 축소(0.94) + 살짝 가라앉힘(translateY 8) + 흐리게 —
-  // Apple 문법(콘텐츠 비균등 스케일 금지). 세로만 누르던 scaleY 분리(0.90/0.96)는 옆 카드
-  // 링이 타원·글자가 납작해지고 스와이프 중 젤리로 읽혀 폐기(2026-07-16 CD 판단, 사용자 승인).
-  // 가라앉힘이 '물러나 있음'의 세로 인상을 대신 만든다.
+  // 중앙 카드 강조 — 정석(Fitness+/NRC 문법)으로 확정(2026-07-16 여러 라운드 끝):
+  // 이웃 = 균등 축소 0.95 + 흐림 0.5, 트릭 없음. 비균등 scaleY(타원 왜곡)·가라앉힘
+  // (어색하다는 사용자 피드백) 모두 폐기. 슬리버(~11px)만 보여 이웃 크기 자체가 인상에
+  // 남지 않는다 — '옆에 더 있음' 힌트가 전부.
   const inputRange = [(i - 1) * stride, i * stride, (i + 1) * stride];
-  const scale = scrollX.interpolate({inputRange, outputRange: [0.96, 1, 0.96], extrapolate: 'clamp'});
-  const sinkY = scrollX.interpolate({inputRange, outputRange: [rv(10), 0, rv(10)], extrapolate: 'clamp'});
-  const opacity = scrollX.interpolate({inputRange, outputRange: [0.55, 1, 0.55], extrapolate: 'clamp'});
+  const scale = scrollX.interpolate({inputRange, outputRange: [0.95, 1, 0.95], extrapolate: 'clamp'});
+  const opacity = scrollX.interpolate({inputRange, outputRange: [0.5, 1, 0.5], extrapolate: 'clamp'});
 
   // 링 아크 = 남은 수명(배터리): 새 신발 = 가득 찬 링, 닳을수록 비워진다.
   // 마운트 시 0→현재%로 차오르는 스윕 — 정적 게이지에 물리감을 준다. 1400ms 로 느긋하게
@@ -200,7 +199,7 @@ export function ShoeCard({
   }, [centerIn]);
 
   return (
-    <Animated.View style={{width, transform: [{scale}, {translateY: sinkY}], opacity}}>
+    <Animated.View style={{width, transform: [{scale}], opacity}}>
       <View style={styles.card}>
         {/* 유리 재질(2026-07-09 확정): 반투명 표면(styles.card) + 코너 글린트 림 + 상단 광택.
             구 그라데이션 표면·컨디션색 글로우는 폐지 — 효과가 겹겹이 싸워 어색하다는 실기기
@@ -391,7 +390,9 @@ const styles = StyleSheet.create({
     // 방향이 모순돼 재질이 싸웠다. 살짝 뜨는 정도만 남긴다.
     shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 14, shadowOffset: {width: 0, height: rs(8)}, elevation: 6,
   },
-  cardInner: {padding: rs(24)},
+  // 세로 리듬 압축(2026-07-16 "카드가 세로로 길다"): 링 196 상향으로 늘어난 높이를 링이
+  // 아니라 여백에서 회수 — 상하 패딩 24→20, 블록 간격 20→14/16 (아래 ringWrap·kmRow·runBtn).
+  cardInner: {paddingHorizontal: rs(24), paddingVertical: rs(20)},
   cardTop: {flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: rv(10)},
   cardBrand: {fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600', letterSpacing: 1.2, color: withAlpha(T1, 0.55)},
   cardModel: {fontFamily: FONT, fontSize: TYPE.title.fontSize, fontWeight: '700', letterSpacing: -0.6, color: T1, marginTop: rv(4)},
@@ -401,7 +402,7 @@ const styles = StyleSheet.create({
   condLabel: {fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600', color: T2},
 
   // width/height 는 렌더에서 화면 비례값(ring)으로 덮어쓴다.
-  ringWrap: {alignSelf: 'center', marginTop: rv(20), alignItems: 'center', justifyContent: 'center'},
+  ringWrap: {alignSelf: 'center', marginTop: rv(14), alignItems: 'center', justifyContent: 'center'},
   ringCenter: {position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center'},
   // 링 196 상향(2026-07-16)에 맞춰 중앙 타이포도 한 단 상향 + 여백 확장 — "가운데에
   // 몰려 붙어 보인다" 사용자 피드백. (구 52 는 172 링 시절 '꽉 참' 교정값.)
@@ -410,13 +411,13 @@ const styles = StyleSheet.create({
   ringPct: {fontFamily: DISPLAY, fontSize: rf(58), fontWeight: '700', letterSpacing: -2.6, lineHeight: rf(60), color: T1},
   ringPctUnit: {fontFamily: DISPLAY, fontSize: rf(21), fontWeight: '700', color: withAlpha(T1, 0.7), marginTop: rv(8), marginLeft: rs(2)},
 
-  kmRow: {flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(12), marginTop: rv(20)},
+  kmRow: {flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(12), marginTop: rv(16)},
   kmLabel: {fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600', color: T3},
   kmStrong: {color: T1},
   kmSep: {width: rs(3), height: rs(3), borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.28)},
 
   runBtn: {
-    height: rs(54), borderRadius: RADIUS.btn, borderCurve: 'continuous', marginTop: rv(20), overflow: 'hidden',
+    height: rs(54), borderRadius: RADIUS.btn, borderCurve: 'continuous', marginTop: rv(16), overflow: 'hidden',
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(8),
     // 사설 0.1 → GLASS.fillCta(0.12) — 전역 CTA(Button)와 표면 밝기 단일화(검수 MED, 2026-07-16).
     backgroundColor: GLASS.fillCta,
