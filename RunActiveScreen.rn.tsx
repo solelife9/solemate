@@ -760,7 +760,8 @@ const r = StyleSheet.create({
   cdNudge: { transform: [{ translateY: rv(8) }] },
   // 카운트 숫자·GO = NUM(Jost), 러닝 링 거리 숫자와 동일 규율. lineHeight ≈ 1.22×(어센더).
   cdCount: { color: T1, fontFamily: NUM, fontSize: rf(150), fontWeight: '500', letterSpacing: -2, lineHeight: rf(183), includeFontPadding: false, fontVariant: ['tabular-nums'] },
-  cdCountLabel: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500', marginTop: rv(2) },
+  // 라벨은 숫자 내림(cdNudge +8)과 반대로 살짝 올림(-6) — 숫자·라벨 간 호흡(사용자 미세조정).
+  cdCountLabel: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500', marginTop: rv(2), transform: [{ translateY: rv(-6) }] },
   cdGo: { color: ACCENT, fontFamily: NUM, fontSize: rf(104), fontWeight: '700', letterSpacing: -1, lineHeight: rf(127), includeFontPadding: false },
   // 목표·야외 칩 — 링 아래 절대 배치(레이아웃 참여 X). 좌우로 링보다 넓게 펼쳐 중앙 정렬.
   cdChips: { position: 'absolute', top: '100%', left: rs(-70), right: rs(-70), marginTop: rv(16), flexDirection: 'row', justifyContent: 'center', gap: rv(8) },
@@ -772,7 +773,8 @@ const r = StyleSheet.create({
   ringWrapPaused: { marginTop: rv(8), marginBottom: rv(-14) },
   // 링 센터 보조(단위 km/목표 N분) — 20pt(사용자 확대 확정 2026-07-12: 기존 title 은 옹졸).
   goal: { color: withAlpha(T1, 0.8), fontFamily: FONT, fontSize: rf(20), fontWeight: '700', letterSpacing: 0.6, marginTop: rv(10) },
-  goalBelow: { position: 'absolute', top: '100%' },
+  // 살짝 올림(-6) — 큰 숫자(Jost lineHeight 여유) 밑에서 단위가 처져 보이는 것 교정(사용자 미세조정).
+  goalBelow: { position: 'absolute', top: '100%', transform: [{ translateY: rv(-6) }] },
   goalMet: { flexDirection: 'row', alignItems: 'center', gap: rv(4), marginTop: rv(14) },
   goalMetText: { color: GOOD, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '700', letterSpacing: 0.6 },
   // Jost(NUM)는 Pretendard 보다 세로 메트릭(어센더)이 커서 lineHeight 를 fontSize 에 붙이면
@@ -807,7 +809,8 @@ const r = StyleSheet.create({
   heroMetrics: { flexDirection: 'row', marginTop: rv(30), paddingTop: rv(22), paddingBottom: rv(6) },
   heroMetricsRun: {},
   // 일시정지: 헤어라인 위 여백(marginTop 16) = 아래 여백(paddingTop 16) — 균등(사용자 확정).
-  heroMetricsPaused: { marginTop: rv(14), paddingTop: rv(20), paddingBottom: rv(8) },
+  // 일시정지 6지표(히어로 3+서브 3)를 살짝 아래로(14→22, 사용자 미세조정) — 지도와의 호흡.
+  heroMetricsPaused: { marginTop: rv(22), paddingTop: rv(20), paddingBottom: rv(8) },
   hm: { flex: 1, alignItems: 'center' },
   hmDivider: { borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: withAlpha(T1, 0.045) },
   hmV: { color: T1, fontFamily: DISPLAY, fontSize: rf(37), fontWeight: '500', letterSpacing: -0.8, fontVariant: ['tabular-nums'] },
