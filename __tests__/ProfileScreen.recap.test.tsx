@@ -47,11 +47,24 @@ function textOf(node: any): string {
   return out;
 }
 
+// 만든 렌더러를 추적해 각 테스트 뒤 언마운트+마이크로태스크 플러시. ProfileScreen 은
+// 마운트 시 비동기 로드(스토리지 등)를 여럿 걸어, 정리 없이 환경이 내려가면 지연
+// setState 가 티어다운 뒤 발화 → "import after teardown" → 워커 크래시(단독 실행에서
+// 재현되던 그 크래시, 2026-07-17 근본수정). 테스트 결과 자체는 불변.
+const liveRenderers: ReactTestRenderer.ReactTestRenderer[] = [];
+afterEach(async () => {
+  await ReactTestRenderer.act(async () => {
+    liveRenderers.splice(0).forEach(r => r.unmount());
+    await Promise.resolve(); // 남은 마이크로태스크(비동기 로드 체인) 소진
+  });
+});
+
 function render(props: any) {
   let renderer!: ReactTestRenderer.ReactTestRenderer;
   act(() => {
     renderer = ReactTestRenderer.create(<ProfileScreen {...props} />);
   });
+  liveRenderers.push(renderer);
   return renderer.root;
 }
 
