@@ -242,14 +242,16 @@ const s = StyleSheet.create({
   empty: {color: T3, fontFamily: FONT, ...TYPE.label, lineHeight: rf(19), paddingHorizontal: rs(4)},
 
   ringPct: {color: T1, fontFamily: DISPLAY, ...TYPE.label, fontVariant: ['tabular-nums']},
-  extProgress: {color: T1, fontFamily: DISPLAY, ...TYPE.heading, fontVariant: ['tabular-nums'], marginTop: rv(4)},
+  // 값(진행)만 heading 급 — 마이탭 이웃 카드(러너 스펙 specSubVal)와 동일 문법.
+  extProgress: {color: T1, fontFamily: DISPLAY, ...TYPE.heading, fontWeight: '600', fontVariant: ['tabular-nums'], marginTop: rv(3)},
   // 마이탭 공통 카드 문법(GLASS.fill + GlassEdge 헤어라인) — ACCENT RN 보더/솔리드 CARD 폐지.
   smartCard: {backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderCurve: 'continuous', padding: rs(14), overflow: 'hidden'},
   smartLabelRow: {flexDirection: 'row', alignItems: 'center', gap: rv(8)},
   smartLabel: {color: T3, fontFamily: FONT, ...TYPE.caption, fontWeight: '600'},
   smartBody: {flexDirection: 'row', alignItems: 'center', gap: rv(14)},
-  smartTitle: {color: T1, fontFamily: FONT, ...TYPE.heading, fontWeight: '700', marginTop: rv(2)},
-  smartReason: {color: T2, fontFamily: FONT, ...TYPE.label, lineHeight: rf(18), marginTop: rv(4)},
+  // 문장 제목은 body 급으로 — heading/700 두 줄이 이웃 카드 대비 과하게 컸다(사용자 2026-07-16).
+  smartTitle: {color: T2, fontFamily: FONT, ...TYPE.body, fontWeight: '600', marginTop: rv(2)},
+  smartReason: {color: T3, fontFamily: FONT, ...TYPE.caption, lineHeight: rf(17), marginTop: rv(4)},
   // 목표 거리 수정(연필/체크) 버튼 — 행 오른쪽 끝.
   smartEditBtn: {marginLeft: 'auto', width: rs(30), height: rs(30), borderRadius: RADIUS.pill, borderCurve: 'continuous', alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(ACCENT, 0.14)},
   // 편집 모드: 목표 거리 ± 스테퍼.
