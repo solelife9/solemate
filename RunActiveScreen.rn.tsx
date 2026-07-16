@@ -749,7 +749,10 @@ const r = StyleSheet.create({
   // 취소 필: 우측 신발칩과 같은 rs(30) 높이(상단 행 높이 불변 → 스왑 시 링 위치 그대로).
   cdCancel: { flexDirection: 'row', alignItems: 'center', gap: rv(4), height: rs(30), paddingLeft: rs(8), paddingRight: rs(12), borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.05), borderWidth: 1, borderColor: SEP },
   cdCancelText: { color: T2, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500' },
-  cdFace: { alignItems: 'center', justifyContent: 'center' },
+  // 살짝 아래로(rv 8) — Jost 어센더 보정(lineHeight 1.22×) 탓에 숫자가 링 중심보다
+  // 시각적으로 높게 앉는 것 교정(사용자 피드백 2026-07-16). GO 도 같은 슬롯이라 함께 내려
+  // 1초 간격 위치 점프가 없다.
+  cdFace: { alignItems: 'center', justifyContent: 'center', transform: [{ translateY: rv(8) }] },
   // 카운트 숫자·GO = NUM(Jost), 러닝 링 거리 숫자와 동일 규율. lineHeight ≈ 1.22×(어센더).
   cdCount: { color: T1, fontFamily: NUM, fontSize: rf(150), fontWeight: '500', letterSpacing: -2, lineHeight: rf(183), includeFontPadding: false, fontVariant: ['tabular-nums'] },
   cdCountLabel: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500', marginTop: rv(2) },
