@@ -17,6 +17,7 @@ import type {LatLon} from './lib/route';
 import {
   saveCardToLibrary,
   shareRunCard,
+  layoutShareCard,
   RUN_CARD_LAYOUTS,
   RUN_CARD_LAYOUT_LABEL,
   RUN_CARD_BACKGROUND_LABEL,
@@ -79,6 +80,20 @@ export default function ShareCardPicker({visible, onClose, model, route = [], sh
   const layoutKeys: RunCardLayout[] = model.moment ? ['moment', ...RUN_CARD_LAYOUTS] : RUN_CARD_LAYOUTS;
   const effLayout: RunCardLayout = layoutKeys.includes(prefs.layout) ? prefs.layout : 'vertical';
   const previewW = useMemo(() => rs(PREVIEW_W), []);
+  // 프리뷰 영역 높이 고정 — 카드 캔버스는 내용 높이라 레이아웃(세로/가로/6지표)마다 다르다.
+  // 그대로 두면 탭을 바꿀 때마다 시트 전체가 점프하므로, 선택 가능한 레이아웃 중 가장 큰
+  // 높이로 컨테이너를 고정하고 카드를 중앙 정렬한다(사용자 지적 2026-07-16).
+  const previewH = useMemo(() => {
+    const maxRatio = Math.max(
+      ...layoutKeys.map(l => {
+        const L = layoutShareCard(model, {layout: l, showMap: true, showStats: true});
+        return L.h / L.w;
+      }),
+    );
+    return Math.round(previewW * maxRatio);
+    // layoutKeys 는 model.moment 파생이라 model 의존성으로 충분하다.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [model, previewW]);
 
   const onSave = async () => {
     if (busy) return;
@@ -110,7 +125,7 @@ export default function ShareCardPicker({visible, onClose, model, route = [], sh
         <View style={[s.sheet, {paddingBottom: insets.bottom + rv(14)}]}>
           <View style={s.grab} />
 
-          <View style={s.previewWrap}>
+          <View style={[s.previewWrap, {height: previewH}]}>
             <ShareCard {...cardProps} displayWidth={previewW} />
           </View>
 

@@ -100,7 +100,8 @@ export function SmartChallengeCard({
           다른 카드와 동일 문법(사용자 지적 2026-07-11 밤: 이 카드만 튀었다). */}
       <GlassEdge glints={false} radius={RADIUS.lg} />
       <View style={s.smartHead}>
-        <Pill tone="accent" icon="sparkles" label="주간 목표" testID="smart-challenge-tag" />
+        {/* 라벨 = 일반 텍스트 — 필 배지+sparkles 는 과함(사용자 2026-07-16 "너무 화려해"). */}
+        <Text style={s.smartLabel} testID="smart-challenge-tag">주간 목표</Text>
         {p.completed && !editing && (
           <Pill tone="good" icon="trophy" label="달성!" testID="smart-challenge-badge" />
         )}
@@ -241,6 +242,7 @@ const s = StyleSheet.create({
   // 마이탭 공통 카드 문법(GLASS.fill + GlassEdge 헤어라인) — ACCENT RN 보더/솔리드 CARD 폐지.
   smartCard: {backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderCurve: 'continuous', padding: rs(16), gap: rv(12), overflow: 'hidden'},
   smartHead: {flexDirection: 'row', alignItems: 'center', gap: rv(8)},
+  smartLabel: {color: T3, fontFamily: FONT, ...TYPE.label, fontWeight: '600'},
   smartBody: {flexDirection: 'row', alignItems: 'center', gap: rv(16)},
   smartTitle: {color: T1, fontFamily: FONT, ...TYPE.heading, fontWeight: '700'},
   smartReason: {color: T2, fontFamily: FONT, ...TYPE.label, lineHeight: rf(18), marginTop: rv(4)},

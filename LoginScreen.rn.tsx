@@ -105,7 +105,13 @@ export function LoginScreen({cloudPort, onSignedIn}: LoginScreenProps) {
           label={busy === 'google' ? '로그인 중…' : 'Google로 계속'}
           onPress={() => signIn('google')}
           disabled={signingIn}
-          iconNode={<Ionicons name="logo-google" size={ri(17)} color={signingIn ? T3 : T1} />}
+          iconNode={
+            // 고정 박스 중앙 정렬 — 아이콘(Text 글리프)이 라인박스에 아래가 잘리던 것 방지
+            // (사용자 실기기 제보 2026-07-16: G 하단 클리핑).
+            <View style={st.googleIconBox}>
+              <Ionicons name="logo-google" size={ri(17)} color={signingIn ? T3 : T1} />
+            </View>
+          }
           style={st.btnGoogle}
         />
 
@@ -147,6 +153,7 @@ const st = StyleSheet.create({
   lead: {fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600', color: T2, textAlign: 'center', marginBottom: rv(4)},
   btn: {flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(8), height: rs(50), borderRadius: RADIUS.btn, borderCurve: 'continuous'},
   btnGoogle: {height: rs(50)},
+  googleIconBox: {width: ri(20), height: ri(24), alignItems: 'center', justifyContent: 'center'},
   btnApple: {backgroundColor: CARD_HI},
   btnKakao: {backgroundColor: KAKAO_YELLOW},
   btnNaver: {backgroundColor: NAVER_GREEN},

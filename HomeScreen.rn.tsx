@@ -9,7 +9,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { rf, rs, ri, rv } from './lib/responsive';
 import {
   View, Text, ScrollView, Pressable, StyleSheet, Linking, Dimensions,
-  RefreshControl, NativeSyntheticEvent, NativeScrollEvent, Animated, Easing, Image,
+  RefreshControl, NativeSyntheticEvent, NativeScrollEvent, Animated, Easing,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
@@ -464,9 +464,9 @@ export default function HomeScreen({
 
   return (
     <View style={[s.screen, { paddingTop: insets.top }]}>
-      {/* 무디 러닝 사진 배경(테스트) — 어두운 스크림 위에 글래스 UI 가 프로스티드 유리처럼 얹힌다. */}
-      <Image source={require('./assets/images/home-bg.jpg')} style={[s.bgPhoto, { top: -insets.top }]} resizeMode="cover" />
-      <View style={[s.bgScrim, { top: -insets.top }]} />
+      {/* 배경 = 무채 앰비언트만(형제 탭과 동일) — 사진 배경 실험은 실기기 확인 후 제거
+          (사용자 확정 2026-07-16: GLASS.fill 이 사진을 못 가려 프로스트가 아니라 반투명 판,
+          홈만 스킨이 달라 4탭 조명 문법이 분열됐다). */}
       <AmbientBackdrop />
       <TopBar onAddShoe={onAddShoe} />
       {/* 콘텐츠는 스크롤되고 TabBar는 화면 바닥에 고정된다(신발 많을 때 탭바가 밀려 사라지던 문제 해결) */}
@@ -541,8 +541,6 @@ export default function HomeScreen({
 
 const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: BG },
-  bgPhoto: { position: 'absolute', left: 0, right: 0, bottom: 0 },
-  bgScrim: { position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(10,10,10,0.55)' },
   scroll: { flex: 1 },
   // 탭 독이 콘텐츠 위에 떠 있으므로(absolute 유리 독) 마지막 카드가 가리지 않게 여백 확보.
   scrollContent: { paddingBottom: TABBAR_CLEARANCE },
