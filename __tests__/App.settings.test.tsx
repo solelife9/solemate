@@ -212,6 +212,9 @@ test('알림 행 토글 → settings_alerts(enabled=false) 영속 + 표기 갱�
   expect(raw).toBeTruthy();
   expect(JSON.parse(raw as string).enabled).toBe(false);
   // 표기 갱신 — 토글은 iOS 스위치(텍스트 없음, 2026-07-16)라 접근성 상태로 단언한다.
-  const sw = root.find((n: any) => n.props?.testID === 'notif-toggle-shoeReplacement');
+  // testID 는 컴포지트/호스트 양쪽에 찍히므로 accessibilityState 를 가진 노드로 좁힌다.
+  const sw = root.find(
+    (n: any) => n.props?.testID === 'notif-toggle-shoeReplacement' && n.props?.accessibilityState,
+  );
   expect(sw.props.accessibilityState.checked).toBe(false);
 });

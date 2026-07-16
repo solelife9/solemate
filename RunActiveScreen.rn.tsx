@@ -28,7 +28,7 @@ import { RunLiveMap } from './RunLiveMap';
 import {
   BG, CARD, ACCENT, ACCENT_2, RING_ACCENT, RING_ACCENT_HI, RING_ACCENT_LO,
   GOOD, WARN, DANGER, T1, T2, T3, T4, SEP,
-  FONT, DISPLAY, withAlpha, HR_ZONE_COLORS, TYPE, RADIUS, MOTION, BLACK, NUM,
+  FONT, DISPLAY, withAlpha, HR_ZONE_COLORS, TYPE, RADIUS, GUTTER, MOTION, BLACK, NUM,
 } from './theme';
 import { estimateMaxHR, zoneOf, HR_ZONE_LABEL } from './lib/analytics/hrZones';
 import { fmtPaceSec } from './lib/pacePlan';
@@ -168,7 +168,9 @@ function FinishCeremony({ distanceKm, onDone }: { distanceKm: number; onDone: ()
 const cer = StyleSheet.create({
   wrap: { backgroundColor: withAlpha(BG, 0.94), alignItems: 'center', justifyContent: 'center', zIndex: 40 },
   glow: { position: 'absolute' },
-  dist: { color: T1, fontFamily: DISPLAY, fontSize: rf(64), fontWeight: '800', fontVariant: ['tabular-nums'], letterSpacing: -1.5 },
+  // 세리머니 거리 = NUM(Jost) — 1초 뒤 리캡 히어로(NUM 68)로 넘겨받는 같은 숫자의
+  // 폰트 점프 해소(2026-07-16 통일). weight 도 리캡 heroNum(700)과 정렬.
+  dist: { color: T1, fontFamily: NUM, fontSize: rf(64), fontWeight: '700', fontVariant: ['tabular-nums'], letterSpacing: -1.5, lineHeight: rf(78), includeFontPadding: false },
   unit: { color: withAlpha(T1, 0.8), fontFamily: FONT, fontSize: rf(19), fontWeight: '700', letterSpacing: 0.6, marginTop: rv(4) },
 });
 
@@ -602,7 +604,7 @@ export default function RunActiveScreen({
       {/* 전체화면 인터랙티브 지도 — 일시정지 지도 패널을 탭하면 열린다. 팬·줌 가능, 닫기 버튼.
           화면 좌우 패딩·상하 인셋을 상쇄해 진짜 전체화면. 재개하면 자동으로 닫힘(mapFull 리셋). */}
       {mapFull && (
-        <View style={{ position: 'absolute', top: -(insets.top + 8), left: -24, right: -24, bottom: -(insets.bottom + 16), backgroundColor: BG }}>
+        <View style={{ position: 'absolute', top: -(insets.top + 8), left: -GUTTER, right: -GUTTER, bottom: -(insets.bottom + 16), backgroundColor: BG }}>
           <RunLiveMap coords={liveCoords} interactive recenterKey={recenter} />
           {/* 하단 중앙 버튼 행 — 구석이 아니라 가운데·크게·살짝 위로(잘 눌리게). 좌=내 위치로
               이동, 우=닫기(일시정지 화면 복귀). 라벨 병기로 무엇인지 바로 읽힘. */}
@@ -631,7 +633,7 @@ export default function RunActiveScreen({
 }
 
 const r = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: BG, paddingHorizontal: rs(24) },
+  screen: { flex: 1, backgroundColor: BG, paddingHorizontal: GUTTER },
   // 일시정지 상단 지도 패널(위 절반) — 둥근 카드, 탭하면 전체화면. flex:1 로 상단을 채운다.
   // 풀블리드 지도(2026-07-12 사용자 확정): 카드(라운드·헤어라인·좌우 여백) 폐지 —
   // screen 의 paddingHorizontal(24)을 음수 마진으로 상쇄해 화면 좌우 끝까지,
@@ -685,7 +687,8 @@ const r = StyleSheet.create({
   // 일시정지 하단 헤드 — 링 없이 거리 히어로 + 목표를, 지도 위·하단 지표 위에 얹는다.
   pausedGoal: { color: withAlpha(T1, 0.62), fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '700', letterSpacing: 0.8, marginTop: rv(8) },
   // 트랙 링 센터 — 바퀴수 하나만 히어로, 그 밑 작은 '바퀴'.
-  lapHero: { color: T1, fontFamily: DISPLAY, fontSize: rf(96), fontWeight: '700', letterSpacing: -3, lineHeight: rf(96), includeFontPadding: false, fontVariant: ['tabular-nums'] },
+  // 트랙 랩 히어로도 NUM — 같은 링 센터의 거리 히어로(bigDist)와 모드 전환 시 폰트 일치.
+  lapHero: { color: T1, fontFamily: NUM, fontSize: rf(96), fontWeight: '500', letterSpacing: -1, lineHeight: rf(117), includeFontPadding: false, fontVariant: ['tabular-nums'] },
   lapHeroUnit: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500', letterSpacing: 0.6, marginTop: rv(6) },
   // 링 아래 회색 한 줄(거리 · 랩거리 · 보정) — 박스·색 없이 조용히.
   trackUnder: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500', textAlign: 'center', marginTop: rv(16), fontVariant: ['tabular-nums'] },

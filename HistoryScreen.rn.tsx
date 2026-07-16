@@ -1084,7 +1084,7 @@ export default function HistoryScreen({
             </Pressable>
           ) : null
         }
-        contentContainerStyle={{ padding: rs(14), paddingBottom: TABBAR_CLEARANCE, gap: rv(10) }}
+        contentContainerStyle={{ padding: rs(14), paddingHorizontal: GUTTER, paddingBottom: TABBAR_CLEARANCE, gap: rv(10) }}
         refreshControl={onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={ACCENT} colors={[ACCENT]} /> : undefined}
         ListHeaderComponent={
           <View style={{ gap: rv(10) }}>
@@ -1291,7 +1291,7 @@ const s = StyleSheet.create({
   runCardMetrics: { flexDirection: 'row' },
   runCardMetric: { flex: 1 },
 
-  header: { paddingTop: rv(8), paddingHorizontal: rs(22), paddingBottom: rv(6) },
+  header: { paddingTop: rv(8), paddingHorizontal: GUTTER, paddingBottom: rv(6) },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   title: { color: T1, fontFamily: FONT, fontSize: TYPE.title1.fontSize, fontWeight: '800', letterSpacing: -0.9 },
 

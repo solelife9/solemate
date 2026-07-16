@@ -8,7 +8,7 @@ import { View, Text, ScrollView, Pressable, TextInput, Alert, StyleSheet } from 
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {
-  BG, CARD_HI, GLASS, ACCENT, DANGER, WARN, GOOD, BEST, T1, T2, T3, T4, SEP, FONT, DISPLAY, withAlpha, RADIUS, Shoe, Run, SHOES, TYPE,
+  BG, CARD_HI, GLASS, ACCENT, DANGER, WARN, GOOD, BEST, T1, T2, T3, T4, SEP, FONT, DISPLAY, withAlpha, RADIUS, GUTTER, Shoe, Run, SHOES, TYPE,
 } from './theme';
 import { TabBar, TABBAR_CLEARANCE, Pill, InjuryBanner, Button, SwipeBack, AmbientBackdrop, Rise, GlassEdge } from './primitives';
 import { RunCard, RunDetail } from './HistoryScreen.rn';
@@ -645,7 +645,7 @@ export default function ShoesScreen({
         </Pressable>
       </View>
       <Rise style={{ flex: 1 }}>
-      <ScrollView contentContainerStyle={{ paddingHorizontal: rs(18), paddingBottom: TABBAR_CLEARANCE, gap: rv(14), paddingTop: rv(12) }}>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: GUTTER, paddingBottom: TABBAR_CLEARANCE, gap: rv(14), paddingTop: rv(12) }}>
         {/* 교체 임박 요약(#2) — 곧 교체할 신발 N켤레. 0이면 숨김. */}
         {soonCount > 0 && (
           <View style={s.soonHeader} testID="shoes-soon-header">
@@ -687,7 +687,7 @@ const s = StyleSheet.create({
   condSub: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize },
 
   // 목업 정합: 제목 + '신발 추가' 버튼 한 줄(topbar)
-  topbar: { paddingTop: rv(8), paddingHorizontal: rs(22), paddingBottom: rv(8), flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  topbar: { paddingTop: rv(8), paddingHorizontal: GUTTER, paddingBottom: rv(8), flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   title: { color: T1, fontFamily: FONT, fontSize: TYPE.title1.fontSize, fontWeight: '800', letterSpacing: -0.9 },
   addPill: { height: rs(34), paddingHorizontal: rs(14), borderRadius: RADIUS.pill, borderWidth: 1, borderColor: withAlpha(T1, 0.2), backgroundColor: CARD_HI, flexDirection: 'row', alignItems: 'center', gap: rv(6) },
   addPillText: { color: T1, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600' },

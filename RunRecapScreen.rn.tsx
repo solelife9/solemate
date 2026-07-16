@@ -10,7 +10,8 @@ import { rf, rs, ri, rv } from './lib/responsive';
 import {View, Text, ScrollView, Pressable, StyleSheet, Alert, TextInput, Image, Linking, Animated, Easing, AccessibilityInfo, type StyleProp, type ViewStyle} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import {BG, CARD_HI, ACCENT, GOOD, WARN, DANGER, HALL_GOLD, T1, T2, T3, T4, FONT, DISPLAY, RADIUS, SEP, withAlpha, TYPE, GLASS, NUM} from './theme';
+import {BG, BLACK, CARD_HI, ACCENT, GOOD, WARN, DANGER, HALL_GOLD, T1, T2, T3, T4, FONT, DISPLAY, RADIUS, GUTTER, SEP, withAlpha, TYPE, GLASS, NUM, MOTION} from './theme';
+import {GlassEdge} from './primitives';
 import {RACE_DISTANCE_LABEL, type RaceMatch} from './data/raceEvents';
 import {fmtPaceSec} from './lib/pacePlan';
 import {fmtPace} from './lib/format';
@@ -70,17 +71,17 @@ function PopIn({skip, children, style}: {skip: boolean; children: React.ReactNod
   );
 }
 
-/** 진입 Rise(로컬) — 아래 14px → 제자리 페이드인. delay 로 80ms 스태거. */
+/** 진입 Rise(로컬 — skip 지원) — 파라미터는 전역 MOTION.rise 토큰만(하드코딩 복제 폐지). */
 function Enter({skip, delay = 0, children, style, testID}: {skip: boolean; delay?: number; children: React.ReactNode; style?: StyleProp<ViewStyle>; testID?: string}) {
   const a = useRef(new Animated.Value(skip ? 1 : 0)).current;
   useEffect(() => {
     if (skip) { a.setValue(1); return; }
-    const anim = Animated.timing(a, {toValue: 1, duration: 420, delay, easing: Easing.out(Easing.cubic), useNativeDriver: false});
+    const anim = Animated.timing(a, {toValue: 1, duration: MOTION.rise.dur, delay, easing: MOTION.ease.out, useNativeDriver: false});
     anim.start();
     return () => anim.stop();
   }, [a, delay, skip]);
   return (
-    <Animated.View testID={testID} style={[style, {opacity: a, transform: [{translateY: a.interpolate({inputRange: [0, 1], outputRange: [14, 0]})}]}]}>
+    <Animated.View testID={testID} style={[style, {opacity: a, transform: [{translateY: a.interpolate({inputRange: [0, 1], outputRange: [MOTION.rise.dy, 0]})}]}]}>
       {children}
     </Animated.View>
   );
@@ -248,7 +249,7 @@ export default function RunRecapScreen({
   const closeWithMeta = () => { commitMemo(); onClose?.(); };
   return (
     <View style={[s.screen, {paddingTop: insets.top}]} testID="run-recap-screen">
-      <ScrollView contentContainerStyle={{paddingHorizontal: rs(18), paddingBottom: insets.bottom + 24, paddingTop: rv(8)}} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={{paddingHorizontal: GUTTER, paddingBottom: insets.bottom + 24, paddingTop: rv(8)}} showsVerticalScrollIndicator={false}>
         {/* 축하 헤더 — ① 체크 배지 스프링 팝 → ② 타이틀 Rise */}
         <View style={s.celebrate}>
           <PopIn skip={skipAnim}>
@@ -335,6 +336,7 @@ export default function RunRecapScreen({
         {/* 신발 마모 델타(시그니처) — 이 런이 신발 수명에 미친 영향 */}
         {shoeWear && (
           <Enter skip={skipAnim} delay={700} style={s.shoeCard} testID="recap-shoe-wear">
+            <GlassEdge glints={false} radius={RADIUS.lg} />
               <View style={s.shoeIcon}><Ionicons name="footsteps" size={ri(18)} color={ACCENT} /></View>
             <View style={{flex: 1, minWidth: 0}}>
               <Text style={s.shoeName} numberOfLines={1}>{shoeName || '신발'}</Text>
@@ -359,6 +361,7 @@ export default function RunRecapScreen({
 
         {/* 핵심 지표 그리드 */}
         <Enter skip={skipAnim} delay={860} style={s.grid}>
+          <GlassEdge glints={false} radius={RADIUS.lg} />
           <Stat label="시간" value={fmtDur(durationS)} />
           <Stat label="평균 페이스" value={fmtPace(km, durationS)} sub="/km" />
           {bpm > 0 && <Stat label="평균 심박" value={`${bpm}`} sub="bpm" />}
@@ -382,6 +385,7 @@ export default function RunRecapScreen({
           const dColor = (d: number) => (d <= -3 ? GOOD : d >= 3 ? WARN : T3);
           return (
             <Enter skip={skipAnim} delay={940} style={s.plan} testID="recap-pace-plan">
+              <GlassEdge glints={false} radius={RADIUS.lg} />
                   <View style={s.planHead}>
                 <Text style={s.planTitle}>페이스 플랜 결과</Text>
                 <Text style={[s.planSummary, {color: avgDiff <= -3 ? GOOD : avgDiff >= 3 ? WARN : T2}]}>
@@ -408,6 +412,7 @@ export default function RunRecapScreen({
             runId 없으면(비정상 경로) 섹션 자체를 숨긴다. 저장은 전부 비차단. */}
         {canMeta && (
           <Enter skip={skipAnim} delay={1100} style={s.metaCard} testID="recap-meta">
+            <GlassEdge glints={false} radius={RADIUS.lg} />
               {photoUri ? (
               <View>
                 <Image source={{uri: photoUri}} style={s.metaPhoto} resizeMode="cover" accessible accessibilityLabel="러닝 사진" />
@@ -486,7 +491,7 @@ const s = StyleSheet.create({
   // 코너 페이드 헤어라인(GlassEdge glints=false) — 균일 RN 보더 폐지(2026-07-10 확정).
   grid: {flexDirection: 'row', flexWrap: 'wrap', backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderCurve: 'continuous', overflow: 'hidden', paddingVertical: rv(6)},
   stat: {width: '50%', paddingVertical: rv(14), paddingHorizontal: rs(18), alignItems: 'flex-start'},
-  statValue: {color: T1, fontFamily: DISPLAY, fontSize: TYPE.title1.fontSize, fontWeight: '700', letterSpacing: -0.6},
+  statValue: {color: T1, fontFamily: DISPLAY, fontSize: TYPE.title1.fontSize, fontWeight: '700', letterSpacing: -0.6, fontVariant: ['tabular-nums']},
   statLabel: {color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600', marginTop: rv(3)},
   statSub: {color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500'},
   shoeCard: {flexDirection: 'row', alignItems: 'center', gap: rv(12), backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderCurve: 'continuous', overflow: 'hidden', paddingHorizontal: rs(14), paddingVertical: rv(12), marginBottom: rv(12)},
@@ -508,7 +513,8 @@ const s = StyleSheet.create({
   planTgt: {color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500', flex: 1},
   planAct: {color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '700', width: rs(64), textAlign: 'right'},
   planDelta: {fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '700', width: rs(52), textAlign: 'right'},
-  footer: {paddingHorizontal: rs(18), paddingTop: rv(10), borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP, backgroundColor: CARD_HI},
+  // 푸터 = BG + 헤어라인(러닝 플로우 유일의 불투명 CARD_HI 바 폐지 — 2026-07-16).
+  footer: {paddingHorizontal: GUTTER, paddingTop: rv(10), borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP, backgroundColor: BG},
   // 투명 유리 CTA(홈 '러닝 시작'과 동일 문법) — 오렌지 필 폐지, 포인트 컬러는 지표에만.
   // 공유(보조)와 완료(주) — 같은 유리, 폭 비율로만 위계(공유 1 : 완료 1.6).
   footerRow: {flexDirection: 'row', gap: rv(10)},
@@ -517,7 +523,7 @@ const s = StyleSheet.create({
   doneTxt: {color: T1, fontFamily: FONT, fontSize: TYPE.heading.fontSize, fontWeight: '700'},
   metaCard: {backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderCurve: 'continuous', overflow: 'hidden', padding: rs(14), marginTop: rv(12), gap: rv(12)},
   metaPhoto: {width: '100%', height: rs(180), borderRadius: RADIUS.md, borderCurve: 'continuous'},
-  metaPhotoRemove: {position: 'absolute', top: 8, right: 8, width: rs(26), height: rs(26), borderRadius: rs(13), backgroundColor: 'rgba(0,0,0,0.55)', alignItems: 'center', justifyContent: 'center'},
+  metaPhotoRemove: {position: 'absolute', top: 8, right: 8, width: rs(26), height: rs(26), borderRadius: rs(13), backgroundColor: withAlpha(BLACK, 0.55), alignItems: 'center', justifyContent: 'center'},
   metaPhotoAdd: {flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(8), borderRadius: RADIUS.md, borderCurve: 'continuous', borderWidth: 1, borderColor: SEP, paddingVertical: rv(14)},
   metaPhotoAddTxt: {color: T2, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600'},
   metaInput: {color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, paddingVertical: rv(8), paddingHorizontal: rs(2), borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: SEP},

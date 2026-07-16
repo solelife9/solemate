@@ -25,7 +25,7 @@ import Svg, { Path, Circle } from 'react-native-svg';
 // 색·폰트는 전역 디자인 토큰(theme.ts)만 참조한다 — 사설 색객체(const C) 폐기.
 // 매핑: bg→BG · surface→CARD · accent→ACCENT · sage→GOOD · text→T1–T4 · hair→SEP.
 // 폰트 별칭 UI/DP → FONT/DISPLAY. (시각 동등: 다크+오렌지 유지)
-import { BG, CARD, ACCENT, T1, T2, T3, SEP, FONT, DISPLAY, withAlpha, TYPE, RADIUS } from './theme';
+import { BG, CARD, ACCENT, T1, T2, T3, SEP, FONT, DISPLAY, NUM, withAlpha, TYPE, RADIUS, GUTTER } from './theme';
 // lib/haptics 배선: 카운트다운 비트(3·2·1) → countdownBeat, 시작(GO) → go.
 import { countdownBeat, go as goHaptic } from './lib/haptics';
 
@@ -147,7 +147,7 @@ export default function RunCountdownScreen({
 
 const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: BG, paddingTop: rv(60), paddingBottom: rv(34) },
-  top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: rs(22) },
+  top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: GUTTER },
   cancel: { flexDirection: 'row', alignItems: 'center', gap: rv(6), height: rs(34), paddingLeft: rs(10), paddingRight: rs(14), borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.05), borderWidth: 1, borderColor: SEP },
   cancelText: { color: T2, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500' },
   shoeChip: { flexDirection: 'row', alignItems: 'center', gap: rv(8), height: rs(34), paddingHorizontal: rs(14), borderRadius: RADIUS.pill, backgroundColor: CARD, borderWidth: 1, borderColor: SEP },
@@ -156,9 +156,12 @@ const s = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: rv(76) },
   dial: { width: DIAL, height: DIAL, alignItems: 'center', justifyContent: 'center' },
   dialFace: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, alignItems: 'center', justifyContent: 'center' },
-  count: { color: T1, fontFamily: DISPLAY, fontSize: rf(150), fontWeight: '600', letterSpacing: -4, lineHeight: rf(156), includeFontPadding: false },
+  // 카운트다운 숫자 = NUM(Jost) — 러닝 링 거리 숫자와 동일 규율(2026-07-16 통일).
+  // Jost 어센더 보정: lineHeight ≈ fontSize×1.22.
+  count: { color: T1, fontFamily: NUM, fontSize: rf(150), fontWeight: '500', letterSpacing: -2, lineHeight: rf(183), includeFontPadding: false, fontVariant: ['tabular-nums'] },
   countLabel: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500', marginTop: rv(2) },
-  go: { color: ACCENT, fontFamily: DISPLAY, fontSize: rf(104), fontWeight: '700', letterSpacing: -1, includeFontPadding: false },
+  // 'GO' 도 NUM(Jost) — 카운트 숫자와 같은 슬롯이라 1초 간격 폰트 점프를 없앤다.
+  go: { color: ACCENT, fontFamily: NUM, fontSize: rf(104), fontWeight: '700', letterSpacing: -1, lineHeight: rf(127), includeFontPadding: false },
 
   chips: { flexDirection: 'row', gap: rv(8), marginTop: rv(14) },
   chip: { flexDirection: 'row', alignItems: 'center', gap: rv(8), height: rs(32), paddingHorizontal: rs(14), borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.04), borderWidth: 1, borderColor: SEP },

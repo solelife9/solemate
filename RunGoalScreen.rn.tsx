@@ -24,7 +24,7 @@ import Svg, { Path } from 'react-native-svg';
 // (시각 동등: 다크+오렌지 유지)
 import {
   BG, CARD, HERO_BG, ACCENT, T1, T2, T3, T4, SEP, CARD_BORDER,
-  FONT, DISPLAY, RADIUS, SCRIM, withAlpha, type Shoe, TYPE, HERO, GLASS,
+  FONT, DISPLAY, NUM, RADIUS, GUTTER, SCRIM, withAlpha, type Shoe, TYPE, HERO, GLASS,
 } from './theme';
 // lib/haptics 배선: '러닝 시작' CTA(런 시작) → tap.
 import { tap } from './lib/haptics';
@@ -479,9 +479,11 @@ const s = StyleSheet.create({
   // 화면 고유 레이아웃(좌우·상단 여백)만 남긴다(과거 segBtn/On·segText/On 제거).
   seg: { marginHorizontal: rs(22), marginTop: rv(14) },
 
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: rs(22) },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: GUTTER },
   bigRow: { flexDirection: 'row', alignItems: 'flex-end' },
-  bigVal: { color: T1, fontFamily: DISPLAY, fontSize: rf(104), fontWeight: '600', letterSpacing: -3, lineHeight: rf(104), includeFontPadding: false },
+  // 큰 숫자 = NUM(Jost) — 러닝 중 bigDist 와 동일 규율(2026-07-16 통일: 목표→러닝 전환 시
+  // 같은 숫자의 폰트 점프 해소). Jost 는 어센더가 커서 lineHeight 를 1.22 배로 띄운다.
+  bigVal: { color: T1, fontFamily: NUM, fontSize: rf(104), fontWeight: '500', letterSpacing: -1, lineHeight: rf(127), includeFontPadding: false, fontVariant: ['tabular-nums'] },
   bigUnit: { color: T2, fontFamily: FONT, fontSize: TYPE.title1.fontSize, fontWeight: '600', marginLeft: rs(8), marginBottom: rv(12) },
   estimate: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500', marginTop: rv(14) },
 
@@ -514,13 +516,13 @@ const s = StyleSheet.create({
   freeSub: { color: T3, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '500', lineHeight: rf(21), textAlign: 'center', maxWidth: rs(250) },
 
   // 심박 가이드 행(#7) — 라벨 + 칩. 신발 행 위, 조용한 강도 레일.
-  zoneRow: { paddingHorizontal: rs(22), paddingTop: rv(2), paddingBottom: rv(10) },
+  zoneRow: { paddingHorizontal: GUTTER, paddingTop: rv(2), paddingBottom: rv(10) },
   zoneLabel: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600', letterSpacing: 0.3, marginBottom: rv(8) },
   zoneChips: { flexDirection: 'row', gap: rv(8), flexWrap: 'wrap' },
   zoneChip: { paddingHorizontal: rs(14), paddingVertical: rv(8), borderRadius: RADIUS.pill, borderCurve: 'continuous', backgroundColor: withAlpha(T1, 0.06), borderWidth: 1, borderColor: 'transparent' },
   zoneChipTxt: { color: T3, fontFamily: FONT, fontSize: rf(13.5), fontWeight: '700' },
   zoneHint: { color: T3, fontFamily: FONT, fontSize: rf(12), marginTop: rv(8), letterSpacing: 0.2 },
-  foot: { paddingHorizontal: rs(22), paddingTop: rv(4), paddingBottom: rv(30) },
+  foot: { paddingHorizontal: GUTTER, paddingTop: rv(4), paddingBottom: rv(30) },
   // 코너 페이드 헤어라인(GlassEdge glints=false) — 균일 RN 보더 폐지(2026-07-10 확정).
   shoeSel: { flexDirection: 'row', alignItems: 'center', gap: rv(12), padding: rs(12), borderRadius: RADIUS.lg, borderCurve: 'continuous', overflow: 'hidden', backgroundColor: GLASS.fill },
   // 신발 전환 시트(하단) — History 기간 피커와 같은 문법(SCRIM + 하단 카드).
