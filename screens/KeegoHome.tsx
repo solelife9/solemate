@@ -164,12 +164,13 @@ export function ShoeCard({
   // 정보값 0(사용자 확정 2026-07-11, 신발탭 종류 칩과 동일 소스).
   const cat = typeLabel(findShoeClass(shoe.brand, shoe.model)?.type);
 
-  // 중앙 카드 강조: 이웃은 축소 + 흐리게. 가로 축소는 카드 중심 기준이라 이웃이 양옆으로
-  // 물러나며 시각 간격을 CARD_GAP 보다 크게 만든다 — 가로는 0.96 만 살짝(간격 밀착 유지),
-  // 세로는 0.90 으로 더 눌러 이웃이 납작하게 물러난다(2026-07-16 사용자 "세로만 줄여줘").
+  // 중앙 카드 강조: 이웃은 균등 축소(0.94) + 살짝 가라앉힘(translateY 8) + 흐리게 —
+  // Apple 문법(콘텐츠 비균등 스케일 금지). 세로만 누르던 scaleY 분리(0.90/0.96)는 옆 카드
+  // 링이 타원·글자가 납작해지고 스와이프 중 젤리로 읽혀 폐기(2026-07-16 CD 판단, 사용자 승인).
+  // 가라앉힘이 '물러나 있음'의 세로 인상을 대신 만든다.
   const inputRange = [(i - 1) * stride, i * stride, (i + 1) * stride];
-  const scaleX = scrollX.interpolate({inputRange, outputRange: [0.96, 1, 0.96], extrapolate: 'clamp'});
-  const scaleY = scrollX.interpolate({inputRange, outputRange: [0.9, 1, 0.9], extrapolate: 'clamp'});
+  const scale = scrollX.interpolate({inputRange, outputRange: [0.94, 1, 0.94], extrapolate: 'clamp'});
+  const sinkY = scrollX.interpolate({inputRange, outputRange: [rv(8), 0, rv(8)], extrapolate: 'clamp'});
   const opacity = scrollX.interpolate({inputRange, outputRange: [0.55, 1, 0.55], extrapolate: 'clamp'});
 
   // 링 아크 = 남은 수명(배터리): 새 신발 = 가득 찬 링, 닳을수록 비워진다.
@@ -199,7 +200,7 @@ export function ShoeCard({
   }, [centerIn]);
 
   return (
-    <Animated.View style={{width, transform: [{scaleX}, {scaleY}], opacity}}>
+    <Animated.View style={{width, transform: [{scale}, {translateY: sinkY}], opacity}}>
       <View style={styles.card}>
         {/* 유리 재질(2026-07-09 확정): 반투명 표면(styles.card) + 코너 글린트 림 + 상단 광택.
             구 그라데이션 표면·컨디션색 글로우는 폐지 — 효과가 겹겹이 싸워 어색하다는 실기기
