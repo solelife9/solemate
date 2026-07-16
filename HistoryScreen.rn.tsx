@@ -134,9 +134,11 @@ export function PeriodChartView({ data, labels, unit }: { data: number[]; labels
           </View>
         )}
       </View>
+      {/* 축 라벨은 T3(라벨·보조=회색 캔온) — 인라인 T1 승격이 값(막대·숫자)과 위계가
+          뭉개지던 것 회수(검수 MED, 2026-07-16). */}
       <View style={[s.chartLabels, { gap: dense ? 4 : 8 }]}>
         {labels.map((l, i) => (
-          <Text key={i} style={[s.chartLabel, { fontSize: dense ? 9 : 11, color: T1 }]}>{l}</Text>
+          <Text key={i} style={[s.chartLabel, { fontSize: dense ? 9 : 11 }]}>{l}</Text>
         ))}
       </View>
     </View>
@@ -1071,8 +1073,11 @@ export default function HistoryScreen({
         )}
         ListFooterComponent={
           hiddenCount > 0 ? (
+            /* 불투명 CARD+수동 보더 → 유리 표면(GLASS.fill+GlassEdge) — 형제 카드·CTA 와
+               같은 재질 문법으로 수렴(검수 MED, 2026-07-16). */
             <Pressable onPress={() => setShowAllRuns(true)} accessibilityRole="button" accessibilityLabel={`모든 기록 보기, ${displayRuns.length}개`}
-              style={({ pressed }) => [{ marginTop: rv(4), paddingVertical: rv(14), borderRadius: RADIUS.md, backgroundColor: CARD, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.08), flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(6) }, pressed && { backgroundColor: CARD_HI }]}>
+              style={({ pressed }) => [{ marginTop: rv(4), paddingVertical: rv(14), borderRadius: RADIUS.md, backgroundColor: GLASS.fill, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(6), overflow: 'hidden' }, pressed && { backgroundColor: GLASS.fillActive }]}>
+              <GlassEdge glints={false} radius={RADIUS.md} />
               <Text style={{ color: T1, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600' }}>모든 기록 {displayRuns.length}개 보기</Text>
               <Ionicons name="chevron-down" size={ri(15)} color={T3} />
             </Pressable>
@@ -1301,7 +1306,7 @@ const s = StyleSheet.create({
   // bar chart (right-side km gridlines · accent bars)
   chartGrid: { position: 'absolute', left: 0, right: 0 },
   chartGridLine: { position: 'absolute', left: 0, right: 42, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP },
-  chartTick: { position: 'absolute', right: 0, width: rs(42), textAlign: 'right', color: T1, fontFamily: DISPLAY, fontSize: TYPE.caption.fontSize, marginBottom: rv(-7) },
+  chartTick: { position: 'absolute', right: 0, width: rs(42), textAlign: 'right', color: T3, fontFamily: DISPLAY, fontSize: TYPE.caption.fontSize, marginBottom: rv(-7), fontVariant: ['tabular-nums'] },
   chartBars: { position: 'absolute', left: 0, right: 42, top: 0, bottom: 0, flexDirection: 'row', alignItems: 'flex-end' },
   chartBarSlot: { flex: 1, alignItems: 'center' },
   chartBar: { width: '100%', borderTopLeftRadius: rs(4), borderTopRightRadius: rs(4), backgroundColor: BRAND },

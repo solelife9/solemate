@@ -52,7 +52,7 @@ import {
   DANGER,
   BEST,
   HALL_GOLD,
-  SPORT_VIOLET_SOFT,
+  BRAND,
   ONBOARD_CARD_GRAD_TOP,
   ONBOARD_CARD_GRAD_BOT,
   T1,
@@ -369,7 +369,9 @@ function Welcome({goNext, goLogin, insetTop, insetBottom}: {goNext: () => void; 
       <View style={{flex: 1, justifyContent: 'flex-end', paddingHorizontal: rs(24), paddingBottom: Math.max(insetBottom, 24) + 8}}>
         <Rise delay={80}>
           <Text style={s.heroHeadline}>
-            KEEP{'\n'}GOING<Text style={{color: ACCENT}}>.</Text>
+            {/* 마침표 = 파파야 서명(keego 워드마크와 같은 문법). ACCENT 가 흰색으로 회수되며
+                흰 마침표로 서명이 소실됐던 것 복원(검수 HIGH, 2026-07-16). */}
+            KEEP{'\n'}GOING<Text style={{color: BRAND}}>.</Text>
           </Text>
         </Rise>
         <Rise delay={220}>
@@ -516,8 +518,9 @@ function ShoeIntelligence({goNext, onSkip, insetTop, insetBottom}: ScreenProps) 
 const FEATURES: {color: string; Icon: (p: {size?: number; color?: string}) => React.JSX.Element; title: string; desc: string}[] = [
   {color: HALL_GOLD, Icon: MedalIcon, title: '거리 PB', desc: '5K부터 풀코스까지, 최고 기록을 자동 갱신해요'},
   {color: BEST, Icon: PulseIcon, title: '심폐 체력', desc: '달린 페이스로 VO₂max를 추정 — 따로 측정할 필요 없어요'},
-  // SPORT_VIOLET 원색은 다크 14% 틴트 위에서 획이 묻혀 한 톤 밝힌 SPORT_VIOLET_SOFT 를 쓴다(목업 확정).
-  {color: SPORT_VIOLET_SOFT, Icon: TrackIcon, title: '트랙 모드', desc: '400m 트랙에서 랩을 자동으로 세어줘요'},
+  // 바이올렛 잔재 회수(검수, 2026-07-16): 골드=성취(PB)·파랑=컨디션(심폐)·앰버=경고(부하)는
+  // 의미색으로 남기고, 의미 없는 트랙 모드만 무채(색은 의미에만 — 캔온).
+  {color: T1, Icon: TrackIcon, title: '트랙 모드', desc: '400m 트랙에서 랩을 자동으로 세어줘요'},
   {color: WARN, Icon: GaugeIcon, title: '훈련 부하', desc: '과부하가 오기 전에 미리 알려줘요'},
 ];
 

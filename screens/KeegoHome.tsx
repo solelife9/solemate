@@ -409,7 +409,8 @@ const styles = StyleSheet.create({
   runBtn: {
     height: rs(54), borderRadius: RADIUS.btn, borderCurve: 'continuous', marginTop: rv(20), overflow: 'hidden',
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(8),
-    backgroundColor: withAlpha(T1, 0.1),
+    // 사설 0.1 → GLASS.fillCta(0.12) — 전역 CTA(Button)와 표면 밝기 단일화(검수 MED, 2026-07-16).
+    backgroundColor: GLASS.fillCta,
   },
   runGlyph: {fontFamily: FONT, color: T1, fontSize: TYPE.body.fontSize},
   runLabel: {fontFamily: FONT, fontSize: TYPE.heading.fontSize, fontWeight: '700', letterSpacing: -0.2, color: T1},

@@ -725,7 +725,14 @@ export default function ProfileScreen({
           <GlassEdge glints={false} radius={RADIUS.lg} />
           <View style={s.streakHead}>
             <SectionTitle>이번 주 스트릭</SectionTitle>
-            {streakDays > 0 && <Text style={s.streakCount}>🔥 {streakDays}일</Text>}
+            {/* 이모지 🔥 → Ionicons flame(홈 스트릭 칩과 같은 문법) — 이모지는 플랫폼
+                렌더라 톤이 튀고 크기도 못 맞춘다(검수 MED, 2026-07-16). */}
+            {streakDays > 0 && (
+              <View style={s.streakCountRow}>
+                <Ionicons name="flame" size={ri(13)} color={ACCENT} />
+                <Text style={s.streakCount}>{streakDays}일</Text>
+              </View>
+            )}
           </View>
           <View style={s.streakRow}>
             {DOW.map((d, i) => {
@@ -1080,16 +1087,17 @@ export default function ProfileScreen({
             {open === 'body' && (
               <View style={[s.panel, s.settingBorder]}>
                 <Stepper value={age > 0 ? age : '미설정'} suffix="나이(세)" onMinus={() => stepAge(-1)} onPlus={() => stepAge(1)} />
+                {/* 수제 흰 솔리드 칩 → SegmentedControl(neutral) — 앱 전역 선택 스트립과
+                    같은 문법(선택=흰 9% 유리, 흰 솔리드 강조 회수. 검수 MED, 2026-07-16). */}
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: rv(14) }}>
                   <Text style={s.settingLabel}>성별</Text>
-                  <View style={{ flexDirection: 'row', gap: rv(8) }}>
-                    {(['male', 'female'] as const).map((sx) => (
-                      <Pressable key={sx} onPress={() => onChangeSex?.(sx)} accessibilityRole="button" accessibilityLabel={sx === 'male' ? '남성' : '여성'} accessibilityState={{ selected: sex === sx }}
-                        style={{ paddingVertical: rv(6), paddingHorizontal: rs(16), borderRadius: RADIUS.sm, backgroundColor: sex === sx ? ACCENT : CARD_HI }}>
-                        <Text style={{ color: sex === sx ? BG : T2, fontFamily: FONT, fontWeight: '700', fontSize: TYPE.label.fontSize }}>{sx === 'male' ? '남성' : '여성'}</Text>
-                      </Pressable>
-                    ))}
-                  </View>
+                  <SegmentedControl
+                    items={[{ key: 'male', label: '남성' }, { key: 'female', label: '여성' }]}
+                    value={sex ?? ''}
+                    onChange={(k) => onChangeSex?.(k as 'male' | 'female')}
+                    block={false}
+                    style={{ minWidth: rs(150) }}
+                  />
                 </View>
                 {/* 안정시 심박 수동 입력 제거(2026-07-05): 보통 러너는 자기 안정시 심박을
                     몰라 — 대충 찍으면 오히려 부정확. Apple 건강에서 자동으로 채우고(워치),
@@ -1295,6 +1303,7 @@ const s = StyleSheet.create({
   // 이번 주 스트릭 카드
   streakCard: { padding: rs(16) },
   streakHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: rv(14) },
+  streakCountRow: { flexDirection: 'row', alignItems: 'center', gap: rs(4) },
   streakCount: { color: ACCENT, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '700' },
   streakRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   streakDay: { alignItems: 'center', gap: rv(6) },

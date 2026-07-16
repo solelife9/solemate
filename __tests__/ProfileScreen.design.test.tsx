@@ -56,7 +56,7 @@ describe('ProfileScreen 이번 주 스트릭', () => {
   test('스트릭 칩은 더 이상 없다 — 같은 숫자는 스트릭 카드 헤더가 담당(2026-07-05)', () => {
     const root = render({streakDays: 12});
     expect(root.findAll((n: any) => n.props?.testID === 'streak-pill').length).toBe(0);
-    // 카운트는 카드 헤더 🔥 표기로 노출된다.
+    // 카운트는 카드 헤더 flame 아이콘 + 'N일' 표기로 노출된다(이모지 🔥 폐지 2026-07-16).
     expect(textOf(root.find((n: any) => n.props?.testID === 'streak-card'))).toContain('12일');
   });
 
