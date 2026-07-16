@@ -45,7 +45,6 @@ import Svg, {
 } from 'react-native-svg';
 import {
   BG,
-  CARD,
   ACCENT,
   GOOD,
   WARN,
@@ -298,11 +297,33 @@ function TrackIcon({size = 18, color = T1}: {size?: number; color?: string}) {
     </Svg>
   );
 }
-function GaugeIcon({size = 18, color = T1}: {size?: number; color?: string}) {
+function HeartIcon({size = 18, color = T1}: {size?: number; color?: string}) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path d="M5 19a8 8 0 1 1 14 0" stroke={color} strokeWidth={1.8} strokeLinecap="round" />
-      <Path d="M12 14l3.5-3.5" stroke={color} strokeWidth={1.8} strokeLinecap="round" />
+      <Path d="M19.5 12.6 12 20l-7.5-7.4a5 5 0 1 1 7.5-6.6 5 5 0 1 1 7.5 6.6z" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
+  );
+}
+function SlopeIcon({size = 18, color = T1}: {size?: number; color?: string}) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M3 19 9.5 8l4 6 2.5-3.5L21 19H3z" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
+  );
+}
+function SparkIcon({size = 18, color = T1}: {size?: number; color?: string}) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M12 4l1.7 4.8 4.8 1.7-4.8 1.7L12 17l-1.7-4.8L5.5 10.5l4.8-1.7L12 4z" stroke={color} strokeWidth={1.8} strokeLinejoin="round" />
+    </Svg>
+  );
+}
+function TrophyIcon({size = 18, color = T1}: {size?: number; color?: string}) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M7.5 4h9v6a4.5 4.5 0 0 1-9 0V4z" stroke={color} strokeWidth={1.8} strokeLinejoin="round" />
+      <Path d="M7.5 6H4.5c0 2.5 1.4 4 3 4.2M16.5 6h3c0 2.5-1.4 4-3 4.2" stroke={color} strokeWidth={1.8} strokeLinecap="round" />
+      <Path d="M12 14.5V19M8.5 19.5h7" stroke={color} strokeWidth={1.8} strokeLinecap="round" />
     </Svg>
   );
 }
@@ -448,7 +469,7 @@ function ShoeIntelligence({goNext, onSkip, insetTop, insetBottom}: ScreenProps) 
   const tierColor = WEAR_TONE_COLOR[tier.tone];
   return (
     <View style={s.screen}>
-      <FlowHeader step={1} total={3} onSkip={onSkip} insetTop={insetTop} />
+      <FlowHeader step={1} total={4} onSkip={onSkip} insetTop={insetTop} />
       <ScrollView style={s.flex1} contentContainerStyle={s.bodyContent} showsVerticalScrollIndicator={false}>
         <Rise>
           <Eyebrow>Your shoes matter</Eyebrow>
@@ -515,46 +536,96 @@ function ShoeIntelligence({goNext, onSkip, insetTop, insetBottom}: ScreenProps) 
 // 2 · 성능 (신규) — 기능 목록형. 가짜 개인 숫자 금지(신규 유저 첫 실행은 '측정 전').
 // 심박 존은 Apple Watch 연동 전까지 실사용에서 안 보이므로 제외(정직 원칙).
 // ════════════════════════════════════════════════════════════════════════════
+// 온보딩 v2(2026-07-17 사용자 승인 목업): 서사 = '해주는 코칭'. 쌓이는 기록(PB 등)은
+// 성취 화면(LEGACY)으로 이동, 훈련 부하는 제거(실접점은 완주 리캡 경고 — "미리 알려줘요"
+// 는 과장이라 Truth only 위반이었다). NRC/스트라바 무료판에 없는 차별점 중심 4행 무스크롤.
+// 색은 의미에만: 파랑=컨디션(심폐)·레드=심박(하트 보편 관례)·무채=도구(경사·트랙).
 const FEATURES: {color: string; Icon: (p: {size?: number; color?: string}) => React.JSX.Element; title: string; desc: string}[] = [
-  {color: HALL_GOLD, Icon: MedalIcon, title: '거리 PB', desc: '5K부터 풀코스까지, 최고 기록을 자동 갱신해요'},
   {color: BEST, Icon: PulseIcon, title: '심폐 체력', desc: '달린 페이스로 VO₂max를 추정 — 따로 측정할 필요 없어요'},
-  // 바이올렛 잔재 회수(검수, 2026-07-16): 골드=성취(PB)·파랑=컨디션(심폐)·앰버=경고(부하)는
-  // 의미색으로 남기고, 의미 없는 트랙 모드만 무채(색은 의미에만 — 캔온).
+  {color: DANGER, Icon: HeartIcon, title: '심박존 코칭', desc: 'Apple Watch와 함께 — 목표 존을 벗어나면 바로 잡아줘요'},
+  {color: T1, Icon: SlopeIcon, title: '경사 보정 페이스', desc: '언덕에서 느려진 건 느려진 게 아니에요 — 진짜 페이스로 보정'},
   {color: T1, Icon: TrackIcon, title: '트랙 모드', desc: '400m 트랙에서 랩을 자동으로 세어줘요'},
-  {color: WARN, Icon: GaugeIcon, title: '훈련 부하', desc: '과부하가 오기 전에 미리 알려줘요'},
 ];
+
+// 기능 목록 카드 한 장(성능·성취 공용 문법 — 사용자 확정 "카드는 한통으로").
+function FeatureListCard({items, delay = 130}: {items: typeof FEATURES; delay?: number}) {
+  return (
+    <Rise delay={delay} style={s.featCard}>
+      <GlassEdge glints={false} radius={rs(22)} />
+      {items.map((f, i) => (
+        <View key={f.title} style={[s.featRow, i > 0 && s.featRowDivider]} accessible accessibilityLabel={`${f.title}: ${f.desc}`}>
+          <View style={[s.featIc, {backgroundColor: withAlpha(f.color, 0.14)}]}>
+            <f.Icon size={ri(18)} color={f.color} />
+          </View>
+          <View style={{flex: 1, minWidth: 0}}>
+            <Text style={{fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600', color: T1, letterSpacing: -0.2}}>{f.title}</Text>
+            <Text style={{fontFamily: FONT, fontSize: TYPE.label.fontSize, color: T3, marginTop: rv(3), lineHeight: rf(18)}}>{f.desc}</Text>
+          </View>
+        </View>
+      ))}
+    </Rise>
+  );
+}
 
 function Performance({goNext, onSkip, insetTop, insetBottom}: ScreenProps) {
   return (
     <View style={s.screen}>
-      <FlowHeader step={2} total={3} onSkip={onSkip} insetTop={insetTop} />
+      <FlowHeader step={2} total={4} onSkip={onSkip} insetTop={insetTop} />
       <ScrollView style={s.flex1} contentContainerStyle={s.bodyContent} showsVerticalScrollIndicator={false}>
         <Rise>
-          <Eyebrow>Run stronger</Eyebrow>
-          <Text style={s.title}>달릴수록 강해지는 기록</Text>
-          <Text style={s.body}>아이폰 하나로, 달릴 때마다 자동으로 쌓여요.</Text>
+          <Eyebrow>Run smarter</Eyebrow>
+          <Text style={s.title}>혼자 달려도, 코치와 함께</Text>
+          <Text style={s.body}>달리는 동안 재고, 잡아주고, 세어줘요 — 당신은 달리기만.</Text>
         </Rise>
 
-        <Rise delay={130} style={s.featCard}>
-          <GlassEdge glints={false} radius={rs(22)} />
-          {FEATURES.map((f, i) => (
-            <View key={f.title} style={[s.featRow, i > 0 && s.featRowDivider]} accessible accessibilityLabel={`${f.title}: ${f.desc}`}>
-              <View style={[s.featIc, {backgroundColor: withAlpha(f.color, 0.14)}]}>
-                <f.Icon size={ri(18)} color={f.color} />
-              </View>
-              <View style={{flex: 1, minWidth: 0}}>
-                <Text style={{fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600', color: T1, letterSpacing: -0.2}}>{f.title}</Text>
-                <Text style={{fontFamily: FONT, fontSize: TYPE.label.fontSize, color: T3, marginTop: rv(3), lineHeight: rf(18)}}>{f.desc}</Text>
-              </View>
-            </View>
-          ))}
-        </Rise>
+        <FeatureListCard items={FEATURES} />
 
-        {/* 하단 여백을 사실 한 줄로 채운다(기기 피드백) — HealthKit 워크아웃 쓰기는 실구현. */}
+        {/* 하단 여백을 사실 한 줄로 채운다 — HealthKit 워크아웃 쓰기는 실구현이되 연동(hkLinked)
+            시에만 저장되므로 '연동하면'을 명시한다(Truth only, 2026-07-17 교정). */}
         <Rise delay={260} style={s.alertRow}>
           <PulseIcon size={ri(16)} color={withAlpha(T1, 0.75)} />
           <Text style={{flex: 1, fontFamily: FONT, fontSize: TYPE.label.fontSize, color: T3, letterSpacing: -0.1}}>
-            달린 러닝은 <Text style={{color: T1, fontWeight: '600'}}>Apple 건강</Text>에도 자동으로 저장돼요
+            연동하면 달린 러닝이 <Text style={{color: T1, fontWeight: '600'}}>Apple 건강</Text>에도 자동으로 저장돼요
+          </Text>
+        </Rise>
+      </ScrollView>
+      <View style={[s.footer, {paddingBottom: Math.max(insetBottom, 18)}]}>
+        <PrimaryButton label="다음" onPress={goNext} />
+      </View>
+    </View>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// 3 · 성취 — '달린 만큼, 남아요' (2026-07-17 신설, 사용자 승인 목업)
+// keego 고유 자산 4기둥: 거리 PB(트로피) · 업적 · 신발 명예의 전당 · 메달 아카이브(대회
+// 자동 감지 실구현). 하단 사실 줄 = Truth only 를 브랜드 문장으로. 신규 유저에게 가짜
+// 진행도/숫자는 노출하지 않는다(전부 잠긴 채 시작 — 정직 원칙).
+// ════════════════════════════════════════════════════════════════════════════
+const LEGACY: typeof FEATURES = [
+  {color: HALL_GOLD, Icon: TrophyIcon, title: '거리 PB', desc: '5K부터 풀코스까지, 최고 기록이 자동으로 남아요'},
+  {color: T1, Icon: SparkIcon, title: '업적', desc: '첫 러닝부터 1,000km까지 — 달리다 보면 하나씩 열려요'},
+  {color: BRAND, Icon: ShoeGlyph, title: '신발 명예의 전당', desc: '수명을 다한 신발은 함께 달린 기록과 함께 기념돼요'},
+  {color: HALL_GOLD, Icon: MedalIcon, title: '메달 아카이브', desc: '마라톤 대회를 자동으로 알아보고, 메달을 모아드려요'},
+];
+
+function Legacy({goNext, onSkip, insetTop, insetBottom}: ScreenProps) {
+  return (
+    <View style={s.screen}>
+      <FlowHeader step={3} total={4} onSkip={onSkip} insetTop={insetTop} />
+      <ScrollView style={s.flex1} contentContainerStyle={s.bodyContent} showsVerticalScrollIndicator={false}>
+        <Rise>
+          <Eyebrow>Your running life</Eyebrow>
+          <Text style={s.title}>달린 만큼, 남아요</Text>
+          <Text style={s.body}>기록이 아니라 이야기가 쌓여요 — 신발에도, 당신에게도.</Text>
+        </Rise>
+
+        <FeatureListCard items={LEGACY} />
+
+        <Rise delay={260} style={s.alertRow}>
+          <SparkIcon size={ri(16)} color={withAlpha(T1, 0.75)} />
+          <Text style={{flex: 1, fontFamily: FONT, fontSize: TYPE.label.fontSize, color: T3, letterSpacing: -0.1}}>
+            모든 숫자는 <Text style={{color: T1, fontWeight: '600'}}>실제로 달린 기록</Text>에서만 — 가짜 성취는 없어요
           </Text>
         </Rise>
       </ScrollView>
@@ -604,7 +675,7 @@ function Register({onSkip, onComplete, insetTop, insetBottom}: Omit<ScreenProps,
 
   return (
     <View style={s.screen}>
-      <FlowHeader step={3} total={3} onSkip={onSkip} insetTop={insetTop} />
+      <FlowHeader step={4} total={4} onSkip={onSkip} insetTop={insetTop} />
       <ScrollView style={s.flex1} contentContainerStyle={s.bodyContent} showsVerticalScrollIndicator={false}>
         <Rise>
           <Eyebrow>Your first pair</Eyebrow>
@@ -683,7 +754,7 @@ export default function OnboardingScreen({onDone}: {onDone: (registered: Registe
   const insets = useSafeAreaInsets();
   const reduceMotion = useReduceMotion();
   const [index, setIndex] = useState(0);
-  const goNext = () => setIndex(i => Math.min(3, i + 1));
+  const goNext = () => setIndex(i => Math.min(4, i + 1));
   // 기존 계정 링크: 인증 게이트는 온보딩보다 먼저라 이미 로그인 상태 — 소개를 건너뛰고
   // 즉시 완료 처리한다(과거 Ready 인터스티셜 제거, 동일 종착지).
   const goLogin = () => onDone(null);
@@ -697,7 +768,8 @@ export default function OnboardingScreen({onDone}: {onDone: (registered: Registe
         {index === 0 && <Welcome goNext={goNext} goLogin={goLogin} insetTop={insets.top} insetBottom={insets.bottom} />}
         {index === 1 && <ShoeIntelligence {...common} />}
         {index === 2 && <Performance {...common} />}
-        {index === 3 && <Register insetTop={insets.top} insetBottom={insets.bottom} onSkip={onSkip} onComplete={onDone} />}
+        {index === 3 && <Legacy {...common} />}
+        {index === 4 && <Register insetTop={insets.top} insetBottom={insets.bottom} onSkip={onSkip} onComplete={onDone} />}
       </View>
     </ReduceMotionCtx.Provider>
   );

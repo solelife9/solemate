@@ -29,7 +29,6 @@ import {
   BG,
   CARD,
   CARD_HI,
-  HERO_BG,
   ACCENT,
   T1,
   T2,

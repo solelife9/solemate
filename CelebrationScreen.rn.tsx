@@ -12,7 +12,7 @@ import { rf, rs, ri, rv } from './lib/responsive';
 import {View, Text, Pressable, StyleSheet, Animated, Easing} from 'react-native';
 import Svg, {Defs, RadialGradient, LinearGradient, Stop, Circle, Ellipse, Path} from 'react-native-svg';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {BG, T1, T3, FONT, DISPLAY, RADIUS, HALL_GOLD, BLACK, CELEB_FACE_BG, CELEB_ICON_LEGENDARY, CELEB_ICON_DEFAULT, withAlpha, TYPE} from './theme';
+import {BG, T1, T3, FONT, DISPLAY, HALL_GOLD, BLACK, CELEB_FACE_BG, CELEB_ICON_LEGENDARY, CELEB_ICON_DEFAULT, withAlpha, TYPE} from './theme';
 import {success, impactHeavy} from './lib/haptics';
 import {Button} from './primitives';
 
