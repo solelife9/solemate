@@ -11,6 +11,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import Svg, { Rect as SvgRect, Path as SvgPath, Line as SvgLine } from 'react-native-svg';
 import {
   BG, CARD, CARD_HI, GLASS, ACCENT, BRAND, DANGER, T1, T2, T3, T4, SEP, FONT, DISPLAY, Shoe, Run, SHOES, withAlpha, RADIUS, GUTTER, HERO, SCRIM, HR_ZONE_COLORS, TYPE,
+  BAR,
 } from './theme';
 // 기간 탭 스트립 = SegmentedControl(neutral), 러닝 상세 2×3 메트릭 = StatGrid 프리미티브.
 import { TabBar, TABBAR_CLEARANCE, Button, SegmentedControl, StatGrid, SwipeBack, Chip, AmbientBackdrop, EmptyGhostHeader, GhostStrong, GhostBar, Rise, GlassEdge } from './primitives';
@@ -691,8 +692,8 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'm
                   return (
                     <View key={z} style={{ flexDirection: 'row', alignItems: 'center' }}>
                       <Text style={{ width: rs(60), color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600' }}>Z{z} {HR_ZONE_LABEL[z]}</Text>
-                      <View style={{ flex: 1, height: rs(8), backgroundColor: withAlpha(T1, 0.06), borderRadius: rs(4), overflow: 'hidden', marginHorizontal: rs(8) }}>
-                        <View style={{ width: `${Math.round(pct * 100)}%`, height: rs(8), backgroundColor: HR_ZONE_COLORS[z], borderRadius: rs(4) }} />
+                      <View style={{ flex: 1, height: rs(BAR.md), backgroundColor: withAlpha(T1, 0.06), borderRadius: RADIUS.pill, overflow: 'hidden', marginHorizontal: rs(8) }}>
+                        <View style={{ width: `${Math.round(pct * 100)}%`, height: rs(BAR.md), backgroundColor: HR_ZONE_COLORS[z], borderRadius: RADIUS.pill }} />
                       </View>
                       <Text style={{ width: rs(44), textAlign: 'right', color: T2, fontFamily: DISPLAY, fontSize: TYPE.caption.fontSize, fontWeight: '600' }}>{fmtT(sec)}</Text>
                     </View>
@@ -1255,8 +1256,8 @@ const s = StyleSheet.create({
   trackSub: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600' },
   lapRow: { flexDirection: 'row', alignItems: 'center', gap: rv(10), height: rs(34) },
   lapNum: { width: rs(22), color: T3, fontFamily: DISPLAY, fontSize: TYPE.label.fontSize, fontWeight: '700', textAlign: 'center' },
-  lapBarWrap: { flex: 1, height: rs(6), borderRadius: rs(3), backgroundColor: withAlpha(T1, 0.06), overflow: 'hidden' },
-  lapBarFill: { height: rs(6), borderRadius: rs(3), backgroundColor: ACCENT },
+  lapBarWrap: { flex: 1, height: rs(BAR.md), borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.06), overflow: 'hidden' },
+  lapBarFill: { height: rs(BAR.md), borderRadius: RADIUS.pill, backgroundColor: ACCENT },
   lapPace: { width: rs(78), textAlign: 'right', color: T1, fontFamily: DISPLAY, fontSize: TYPE.body.fontSize, fontWeight: '600', fontVariant: ['tabular-nums'] },
   lapPaceU: { color: T3, fontFamily: FONT, fontSize: TYPE.micro.fontSize, fontWeight: '500' },
   lapTime: { width: rs(46), textAlign: 'right', color: T3, fontFamily: DISPLAY, fontSize: TYPE.label.fontSize, fontWeight: '500', fontVariant: ['tabular-nums'] },

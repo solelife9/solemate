@@ -16,6 +16,7 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {
   BG, CARD_HI, ACCENT, BRAND, GLASS, WARN, GOOD, T1, T2, T3, T4,
   FONT, DISPLAY, SPACE, RADIUS, GUTTER, withAlpha, Shoe, SHOES, TYPE,
+  BAR,
 } from './theme';
 import type { RankTier } from './lib/progression/types';
 import { TabBar, TABBAR_CLEARANCE, KeegoWordmark, SectionTitle, AmbientBackdrop, GlassEdge } from './primitives';
@@ -598,7 +599,7 @@ const s = StyleSheet.create({
   insightTags: { flexDirection: 'row', flexWrap: 'wrap', gap: rv(6), marginTop: rv(12) },
   insightTag: { backgroundColor: CARD_HI, borderRadius: RADIUS.pill, paddingHorizontal: rs(12), paddingVertical: rv(4) },
   insightTagText: { color: T2, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600' },
-  gauge: { height: rs(4), borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.08), marginTop: rv(14), overflow: 'hidden' },
+  gauge: { height: rs(BAR.thin), borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.08), marginTop: rv(14), overflow: 'hidden' },
   gaugeFill: { height: '100%', borderRadius: RADIUS.pill },
 
   sectionLabel: { paddingHorizontal: SPACE.xl, paddingBottom: SPACE.sm },
@@ -621,7 +622,7 @@ const s = StyleSheet.create({
   chalItemSep: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.07) },
   chalItemTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: rv(6) },
   chalItemLabel: { color: T1, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500', flex: 1 },
-  chalBar: { height: rs(3), borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.07), overflow: 'hidden' },
+  chalBar: { height: rs(BAR.thin), borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.07), overflow: 'hidden' },
   chalBarFill: { height: '100%', borderRadius: RADIUS.pill },
   chalPct: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, marginTop: rv(4) },
 

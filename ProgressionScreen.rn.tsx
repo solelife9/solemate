@@ -43,6 +43,7 @@ import {
   TIER_COLORS,
   TIER_LABEL,
   withAlpha, GLASS,
+  BAR,
 } from './theme';
 import {StatGrid, SwipeBack, Rise, GlassEdge} from './primitives';
 import {buildContext} from './lib/progression/context';
@@ -499,7 +500,7 @@ const s = StyleSheet.create({
   nextTierTxt: {fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '700', letterSpacing: 0.2},
   nextTrack: {
     flex: 1,
-    height: rs(6),
+    height: rs(BAR.md),
     backgroundColor: CARD_HI,
     borderRadius: RADIUS.pill,
     overflow: 'hidden',
@@ -547,7 +548,7 @@ const s = StyleSheet.create({
     fontVariant: ['tabular-nums'],
   },
   xpChip: {fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '700'},
-  track: {height: rs(5), backgroundColor: CARD_HI, borderRadius: RADIUS.pill, overflow: 'hidden'},
+  track: {height: rs(BAR.md), backgroundColor: CARD_HI, borderRadius: RADIUS.pill, overflow: 'hidden'},
   fill: {height: '100%', borderRadius: RADIUS.pill},
   // 총 XP
   xpTotal: {

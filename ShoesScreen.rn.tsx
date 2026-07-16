@@ -9,6 +9,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {
   BG, CARD_HI, GLASS, ACCENT, DANGER, WARN, GOOD, BEST, T1, T2, T3, T4, SEP, FONT, DISPLAY, withAlpha, RADIUS, GUTTER, Shoe, Run, SHOES, TYPE,
+  BAR,
 } from './theme';
 import { TabBar, TABBAR_CLEARANCE, Pill, InjuryBanner, Button, SwipeBack, AmbientBackdrop, Rise, GlassEdge } from './primitives';
 import { RunCard, RunDetail } from './HistoryScreen.rn';
@@ -721,7 +722,7 @@ const s = StyleSheet.create({
   shoeUsedU: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500', marginLeft: rs(2) },
   shoeRemain: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500' },
   // 라벨바(목업 LifeBar): 사용/총 수명 양끝 라벨 + 가운데 평균 페이스
-  shoeBar: { height: rs(6), borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.1), overflow: 'hidden' },
+  shoeBar: { height: rs(BAR.md), borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.1), overflow: 'hidden' },
   shoeBarFill: { height: '100%', borderRadius: RADIUS.pill },
   shoeBarLabels: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: rv(8) },
   shoeBarLabel: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500' },

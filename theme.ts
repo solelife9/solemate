@@ -40,6 +40,12 @@ export const RING_ACCENT_LO = '#E56600';     // 링 그라데이션 bottom(진�
 export const RUN_RING_SIZE = 280;
 export const RUN_RING_STROKE = 16;
 export const RUN_RING_STOPS: readonly [string, string, string] = [RING_ACCENT_HI, RING_ACCENT, RING_ACCENT_LO];
+
+// ── 선형 진행바 두께(단일 진실원 — 검수 수렴 2026-07-17) ────────────────────────
+// 화면마다 3/4/5/6/8 로 흩어져 있던 바 두께를 세 단으로: thin=보조 미니바(카드 안 작은
+// 게이지) · md=표준 진행바(리스트·상세) · gauge=히어로 연료 게이지(FuelGauge 전용).
+// 소비처에서 rs() 적용. 슬라이더(입력 컨트롤) 트랙은 진행바가 아니라 제외.
+export const BAR = {thin: 4, md: 6, gauge: 14} as const;
 // ── 브랜드 액센트 확장(2026-07-09 사용자 확정 — 목업 'B 서명+진행') ─────────────
 // 파파야를 링 밖으로: ① 브랜드 서명(keego 워드마크) ② 러닝 에너지·진행 지표(주간
 // 목표 게이지 등)에 포인트로 쓴다. "스포츠앱인데 너무 조용하다" 피드백의 절제된 해답.

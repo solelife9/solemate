@@ -10,7 +10,7 @@
 import React from 'react';
 import { rf, rs, rv } from './lib/responsive';
 import {View, Text, StyleSheet} from 'react-native';
-import {ACCENT, GOOD, WARN, DANGER, T1, T2, T3, FONT, DISPLAY, withAlpha, RADIUS} from './theme';
+import {ACCENT, GOOD, WARN, DANGER, T1, T2, T3, FONT, DISPLAY, withAlpha, RADIUS, BAR} from './theme';
 import {wearTier, WearTierTone} from './lib/shoe';
 
 type Props = {
@@ -69,7 +69,7 @@ const g = StyleSheet.create({
   cond: {flexDirection: 'row', alignItems: 'center', gap: rv(8)},
   dot: {width: rs(7), height: rs(7), borderRadius: RADIUS.pill},
   condTxt: {color: T2, fontFamily: FONT, fontSize: rf(14), fontWeight: '500'},
-  track: {flexDirection: 'row', height: rs(14), borderRadius: RADIUS.pill, overflow: 'hidden', marginTop: rv(16), backgroundColor: withAlpha(T1, 0.04)},
+  track: {flexDirection: 'row', height: rs(BAR.gauge), borderRadius: RADIUS.pill, overflow: 'hidden', marginTop: rv(16), backgroundColor: withAlpha(T1, 0.04)},
   seg: {height: '100%'},
   fill: {position: 'absolute', left: 0, top: 0, bottom: 0, borderRadius: RADIUS.pill, backgroundColor: ACCENT},
   zone: {position: 'absolute', top: 0, bottom: 0, width: 1, backgroundColor: withAlpha(T1, 0.18)},
