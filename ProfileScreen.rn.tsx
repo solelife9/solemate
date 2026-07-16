@@ -660,8 +660,10 @@ export default function ProfileScreen({
         {/* 러너 스펙 — VO2max + 거리 PB 훈장(5K·10K·하프·풀, 미달성 잠금) + 최고페이스/최장.
             러너의 정체성 '스펙 시트'(사용자 방향 2026-07-05). 거리 PB 는 paceTrack 베스트에포트. */}
         {(records.length > 0 || vo2.vo2max > 0) && (
-          <View style={[s.card, { padding: rs(22) }]} testID="runner-spec">
-            <GlassEdge glints={false} radius={RADIUS.lg} />
+          <View style={[s.card, { padding: rs(22), backgroundColor: GLASS.fillActive }]} testID="runner-spec">
+            {/* 마이탭의 주인공 = hero(밝은 표면+글린트 림, DESIGN §2 부활 2026-07-16 B안).
+                나머지 카드는 콰이어트 헤어라인 유지 — 탭당 1장 원칙. */}
+            <GlassEdge radius={RADIUS.lg} />
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: rv(16) }}>
               <Text style={[s.cardTitle, { marginBottom: rv(0) }]}>러너 스펙</Text>
               <Pressable onPress={onShareSpec} testID="spec-share" accessibilityRole="button" accessibilityLabel="러너 스펙 공유" hitSlop={8} style={({ pressed }) => [{ flexDirection: 'row', alignItems: 'center', gap: rv(4) }, pressed && { opacity: 0.6 }]}>
