@@ -5,6 +5,7 @@
 import React from 'react';
 import ReactTestRenderer, {act} from 'react-test-renderer';
 import RunRecapScreen from '../RunRecapScreen.rn';
+import {setCeremonyNumRect, takeCeremonyNumRect} from '../lib/motionHandoff';
 
 function render(el: React.ReactElement) {
   let r!: ReactTestRenderer.ReactTestRenderer;
@@ -26,6 +27,23 @@ function byTestID(root: ReactTestRenderer.ReactTestInstance, prefix: string) {
   // 전달해 findAll 이 중복 매칭하므로 호스트 인스턴스만 센다.
   return root.findAll((n: any) => typeof n.type === 'string' && n?.props?.testID && String(n.props.testID).startsWith(prefix));
 }
+
+describe('RunRecapScreen — 세리머니→히어로 모프 좌표 핸드오프(lib/motionHandoff)', () => {
+  test('take 는 1회 소비 — 두 번째 읽기는 null(무관한 리캡 누수 방지)', () => {
+    setCeremonyNumRect({x: 100, y: 400, w: 160, h: 78, fs: 64});
+    expect(takeCeremonyNumRect()).toEqual({x: 100, y: 400, w: 160, h: 78, fs: 64});
+    expect(takeCeremonyNumRect()).toBeNull();
+  });
+
+  test('리캡 마운트가 세리머니 좌표를 소비한다(jest 는 모프 스킵, 저장소는 비워짐)', () => {
+    setCeremonyNumRect({x: 100, y: 400, w: 160, h: 78, fs: 64});
+    const root = render(<RunRecapScreen km={5.12} durationS={1856} />).root;
+    expect(takeCeremonyNumRect()).toBeNull();
+    // SKIP_ANIM(jest)에선 모프 없이 히어로가 즉시 최종 상태로 보인다.
+    expect(byTestID(root, 'recap-distance').length).toBe(1);
+    expect(textOf(root)).toContain('5.12');
+  });
+});
 
 describe('RunRecapScreen — 완주 리캡', () => {
   test('거리/시간/평균 페이스를 보여준다', () => {

@@ -23,6 +23,7 @@ import {parseRoute} from './lib/route';
 import {CourseMap} from './CourseMap';
 import ShareCardPicker from './ShareCardPicker';
 import {buildShareCardModel} from './lib/shareCard';
+import {takeCeremonyNumRect, type HandoffRect} from './lib/motionHandoff';
 
 // ════════════════════════════════════════════════════════════════════════════
 // 진입 시그니처 모션(태스크 #10) — 완주 순간의 감정 시퀀스.
@@ -185,16 +186,58 @@ export default function RunRecapScreen({
   const reduceMotion = useReduceMotion();
   const skipAnim = SKIP_ANIM || reduceMotion;
   const kmSafe = Number.isFinite(km) ? km : 0;
-  // 거리 히어로 카운트업(0 → 최종, ~900ms) + 살짝 스케일 정착(0.96 → 1).
-  const heroProg = useRef(new Animated.Value(skipAnim ? 1 : 0)).current;
-  const [heroShown, setHeroShown] = useState(skipAnim ? kmSafe : 0);
+  // ── 세리머니 → 히어로 모프(2026-07-16, 사용자 요청) ─────────────────────────
+  // 세리머니가 남긴 완주 숫자의 윈도 좌표를 1회 소비(마운트 시점 — 열람용 리캡은 null).
+  // 있으면 카운트업 대신, 같은 숫자가 세리머니 자리(화면 중앙)에서 히어로 슬롯으로
+  // 날아와 정착한다(위치+스케일 모프 520ms inout — 시트 전환과 같은 시그니처 커브).
+  const [morphSrc] = useState<HandoffRect | null>(takeCeremonyNumRect);
+  const morphActive = !!morphSrc && !SKIP_ANIM;
+  const [morphDone, setMorphDone] = useState(!morphActive);
+  const morphT = useRef(new Animated.Value(0)).current;
+  const [morphGeo, setMorphGeo] = useState<{left: number; top: number; dx: number; dy: number; s: number} | null>(null);
+  const heroNumRef = useRef<Text>(null);
+  const morphOverlayRef = useRef<View>(null);
+  const onHeroNumLayout = () => {
+    if (!morphActive || morphGeo || morphDone) return;
+    const heroNode: any = heroNumRef.current;
+    const overlayNode: any = morphOverlayRef.current;
+    if (!heroNode || !overlayNode || typeof heroNode.measureInWindow !== 'function' || typeof overlayNode.measureInWindow !== 'function') { setMorphDone(true); return; }
+    // 클론이 사는 오버레이(absoluteFill·패딩 0)를 함께 재서 left/top 을 '오버레이 상대'로
+    // 놓는다 — 루트 패딩·노치가 어느 좌표계로 잡히든 자기일관(윈도 좌표끼리의 차).
+    overlayNode.measureInWindow((rx: number, ry: number) => {
+      heroNode.measureInWindow((x: number, y: number, w: number, h: number) => {
+        if (!(w > 0 && h > 0) || !morphSrc) { setMorphDone(true); return; }
+        // 클론은 히어로 자리에 히어로 크기로 놓고, 시작 델타(세리머니 중심까지)에서 0 으로
+        // 온다. 시작 스케일 = 폰트 크기 비(세리머니 64 / 히어로 68) — 박스(lineHeight) 비는
+        // 폰트와 비율이 달라 실물보다 크게 시작한다.
+        setMorphGeo({
+          left: x - rx, top: y - ry,
+          dx: (morphSrc.x + morphSrc.w / 2) - (x + w / 2),
+          dy: (morphSrc.y + morphSrc.h / 2) - (y + h / 2),
+          s: morphSrc.fs / rf(68),
+        });
+      });
+    });
+  };
   useEffect(() => {
-    if (skipAnim) { heroProg.setValue(1); setHeroShown(kmSafe); return; }
+    if (!morphGeo) return;
+    if (reduceMotion) { setMorphDone(true); return; } // 동작 줄이기 — 모프 없이 즉시 정착
+    const a = Animated.timing(morphT, {toValue: 1, duration: 520, delay: 40, easing: MOTION.ease.inout, useNativeDriver: true});
+    a.start(({finished}) => { if (finished) setMorphDone(true); });
+    return () => a.stop();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [morphGeo]);
+  // 거리 히어로 카운트업(0 → 최종, ~900ms) + 살짝 스케일 정착(0.96 → 1).
+  // 모프 진입이면 카운트업 생략 — 숫자는 이미 '완성된 채' 세리머니에서 날아온다.
+  const heroProg = useRef(new Animated.Value(skipAnim || morphActive ? 1 : 0)).current;
+  const [heroShown, setHeroShown] = useState(skipAnim || morphActive ? kmSafe : 0);
+  useEffect(() => {
+    if (skipAnim || morphActive) { heroProg.setValue(1); setHeroShown(kmSafe); return; }
     const id = heroProg.addListener(({value}) => setHeroShown(kmSafe * value));
     const anim = Animated.timing(heroProg, {toValue: 1, duration: 900, delay: 320, easing: Easing.out(Easing.cubic), useNativeDriver: false});
     anim.start(({finished}) => { if (finished) setHeroShown(kmSafe); });
     return () => { heroProg.removeListener(id); anim.stop(); };
-  }, [heroProg, kmSafe, skipAnim]);
+  }, [heroProg, kmSafe, skipAnim, morphActive]);
   // ── 오늘의 한 컷 + 한 줄 메모(2026-07-05) — 스트라바가 사랑받는 그 순간을 담는다.
   //    저장은 비차단: 사진은 고르는 즉시, 메모는 blur/닫기 시점에 onSaveMeta 로.
   const [photoUri, setPhotoUri] = useState<string | null>(null);
@@ -261,13 +304,14 @@ export default function RunRecapScreen({
           </Enter>
         </View>
 
-        {/* 거리 히어로 — ③ 카운트업(0→최종) + 스케일 정착 */}
+        {/* 거리 히어로 — ③ 카운트업(0→최종) + 스케일 정착.
+            모프 진입(세리머니 직후)은 클론이 날아와 앉을 때까지 숨겼다가 그대로 노출. */}
         <Animated.View
           style={[s.hero, {
             opacity: heroProg.interpolate({inputRange: [0, 0.12, 1], outputRange: [0, 1, 1]}),
             transform: [{scale: heroProg.interpolate({inputRange: [0, 1], outputRange: [0.96, 1]})}],
-          }]}>
-          <Text style={s.heroNum} testID="recap-distance">{kmToDisplay(heroShown, unit).toFixed(2)}</Text>
+          }, morphActive && !morphDone && {opacity: 0}]}>
+          <Text ref={heroNumRef} onLayout={onHeroNumLayout} style={s.heroNum} testID="recap-distance">{kmToDisplay(heroShown, unit).toFixed(2)}</Text>
           <Text style={s.heroUnit}>{unit}</Text>
         </Animated.View>
 
@@ -459,6 +503,27 @@ export default function RunRecapScreen({
           <Text style={s.doneTxt}>완료</Text>
         </Pressable>
       </View>
+
+      {/* 세리머니 → 히어로 모프 클론 — 패딩 없는 absoluteFill 오버레이(좌표 기준점) 안에
+          히어로 자리·크기로 두고, 세리머니 중심(화면 중앙) 델타에서 0 으로 이동+스케일
+          정착. 도착 즉시 실제 히어로와 스왑. */}
+      {morphActive && !morphDone && (
+        <View ref={morphOverlayRef} style={StyleSheet.absoluteFill} pointerEvents="none">
+          {morphGeo && (
+            <Animated.Text
+              style={[s.heroNum, s.morphClone, {
+                left: morphGeo.left, top: morphGeo.top,
+                transform: [
+                  {translateX: morphT.interpolate({inputRange: [0, 1], outputRange: [morphGeo.dx, 0]})},
+                  {translateY: morphT.interpolate({inputRange: [0, 1], outputRange: [morphGeo.dy, 0]})},
+                  {scale: morphT.interpolate({inputRange: [0, 1], outputRange: [morphGeo.s, 1]})},
+                ],
+              }]}>
+              {kmToDisplay(kmSafe, unit).toFixed(2)}
+            </Animated.Text>
+          )}
+        </View>
+      )}
     </View>
   );
 }
@@ -473,6 +538,8 @@ const s = StyleSheet.create({
   hero: {flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'center', gap: rv(6), marginTop: rv(8), marginBottom: rv(14)},
   // tabular-nums — 카운트업 중 자릿수 폭이 튀지 않게(진입 시그니처 모션).
   heroNum: {color: T1, fontFamily: NUM, fontSize: rf(68), fontWeight: '700', letterSpacing: -2, lineHeight: rf(72), fontVariant: ['tabular-nums']},
+  // 모프 클론 — 윈도 좌표 절대 배치(리캡 루트=풀스크린이라 윈도 좌표 그대로 사용 가능).
+  morphClone: {position: 'absolute'},
   heroUnit: {color: T2, fontFamily: FONT, fontSize: TYPE.title.fontSize, fontWeight: '700', marginBottom: rv(10)},
   badges: {flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: rv(8), marginBottom: rv(16)},
   badge: {flexDirection: 'row', alignItems: 'center', gap: rv(4), paddingHorizontal: rs(12), height: rs(30), borderRadius: RADIUS.pill, borderWidth: 1},

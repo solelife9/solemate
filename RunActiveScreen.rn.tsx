@@ -34,6 +34,7 @@ import {
   RUN_RING_SIZE, RUN_RING_STROKE, RUN_RING_STOPS,
 } from './theme';
 import { estimateMaxHR, zoneOf, HR_ZONE_LABEL } from './lib/analytics/hrZones';
+import { setCeremonyNumRect } from './lib/motionHandoff';
 import { fmtPaceSec } from './lib/pacePlan';
 // lib/haptics 배선: 일시정지/재개 → tap · 목표 달성 → impactHeavy · 종료 확정 → warning ·
 // 카운트다운 3·2·1 비트 → countdownBeat · GO → go(카운트다운 통합, 2026-07-16).
@@ -63,6 +64,17 @@ function FinishCeremony({ distanceKm, onDone }: { distanceKm: number; onDone: ()
   // 마침표를 찍는다(구 240/14 는 러닝 링 280/16 과 미묘하게 달라 '다른 링'으로 읽혔다).
   const SIZE = ri(RUN_RING_SIZE);
   const STROKE = RUN_RING_STROKE;
+  // 완주 숫자의 윈도 좌표를 리캡에 넘긴다(세리머니→리캡 히어로 모프) — 레이아웃 확정 시
+  // 측정해 motionHandoff 에 남기면, 곧 마운트되는 RunRecapScreen 이 1회 소비한다.
+  const distRef = useRef<Text>(null);
+  const measureDist = () => {
+    const node: any = distRef.current;
+    if (node && typeof node.measureInWindow === 'function') {
+      node.measureInWindow((x: number, y: number, w: number, h: number) => {
+        if (w > 0 && h > 0) setCeremonyNumRect({ x, y, w, h, fs: rf(64) }); // fs = cer.dist fontSize
+      });
+    }
+  };
   const fade = useRef(new Animated.Value(0)).current; // 오버레이 페이드인
   const glow = useRef(new Animated.Value(0)).current; // 빛 번짐 0→1→0
   // 링 스윕은 primitives.Ring(animated) 이 맡는다: 페이드 완료 후(delay) 0→1 로 차오르고
@@ -102,7 +114,7 @@ function FinishCeremony({ distanceKm, onDone }: { distanceKm: number; onDone: ()
           impactHeavy(); // 링 완성 — 성취의 '쿵'(목표 달성과 같은 무게 언어)
           setTimeout(onDone, 220);
         }}>
-        <Text style={cer.dist}>{distanceKm.toFixed(2)}</Text>
+        <Text ref={distRef} onLayout={measureDist} style={cer.dist}>{distanceKm.toFixed(2)}</Text>
         <Text style={cer.unit}>km</Text>
       </Ring>
     </Animated.View>
