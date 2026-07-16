@@ -11,7 +11,8 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {rs, rv, ri} from './lib/responsive';
-import {BG, CARD_HI, ACCENT, T1, T3, SEP, FONT, RADIUS, TYPE, withAlpha} from './theme';
+import {BG, T1, T3, SEP, FONT, RADIUS, TYPE, SCRIM, withAlpha} from './theme';
+import {SegmentedControl} from './primitives';
 import ShareCard from './ShareCard';
 import type {LatLon} from './lib/route';
 import {
@@ -156,37 +157,30 @@ export default function ShareCardPicker({visible, onClose, model, route = [], sh
   );
 }
 
+// 로컬 세그 재구현 폐지(검수 MED, 2026-07-16) — 전역 SegmentedControl(neutral) 수렴.
+// 선택 강조도 캔온(흰 9% 유리)으로: 구 withAlpha(ACCENT,0.18) 사설 강조 회수.
 function Seg<T extends string>({label, options, value, onChange}: {label: string; options: {key: T; label: string}[]; value: T; onChange: (v: T) => void}) {
   return (
     <View style={s.segRow}>
       <Text style={s.segLabel}>{label}</Text>
-      <View style={s.seg}>
-        {options.map(o => {
-          const on = value === o.key;
-          return (
-            <Pressable key={o.key} onPress={() => onChange(o.key)} accessibilityRole="button" accessibilityState={{selected: on}} style={[s.segItem, on && s.segItemOn]}>
-              <Text style={[s.segTxt, on && s.segTxtOn]}>{o.label}</Text>
-            </Pressable>
-          );
-        })}
-      </View>
+      <SegmentedControl
+        items={options.map(o => ({key: o.key, label: o.label}))}
+        value={value}
+        onChange={k => onChange(k as T)}
+      />
     </View>
   );
 }
 
 const s = StyleSheet.create({
-  backdrop: {flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.55)'},
+  // 사설 rgba(0,0,0,0.55) → 전역 SCRIM 토큰(모달 배면 단일 진실원, 검수 MED 2026-07-16).
+  backdrop: {flex: 1, justifyContent: 'flex-end', backgroundColor: SCRIM},
   backdropTap: {flex: 1},
   sheet: {backgroundColor: BG, borderTopLeftRadius: rs(24), borderTopRightRadius: rs(24), borderCurve: 'continuous', paddingHorizontal: rs(18), paddingTop: rv(10), borderTopWidth: StyleSheet.hairlineWidth, borderColor: SEP},
   grab: {width: rs(38), height: rs(5), borderRadius: rs(3), backgroundColor: withAlpha(T1, 0.18), alignSelf: 'center', marginBottom: rv(16)},
   previewWrap: {alignItems: 'center', justifyContent: 'center', marginBottom: rv(18)},
   segRow: {marginTop: rv(12)},
   segLabel: {color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600', marginBottom: rv(7), marginLeft: rs(2)},
-  seg: {flexDirection: 'row', backgroundColor: CARD_HI, borderRadius: RADIUS.md, borderCurve: 'continuous', padding: rs(3), gap: rs(3)},
-  segItem: {flex: 1, height: rs(38), borderRadius: RADIUS.sm, alignItems: 'center', justifyContent: 'center'},
-  segItemOn: {backgroundColor: withAlpha(ACCENT, 0.18)},
-  segTxt: {color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600'},
-  segTxtOn: {color: T1, fontWeight: '700'},
   actions: {flexDirection: 'row', gap: rv(10), marginTop: rv(20)},
   btn: {flex: 1, height: rs(52), borderRadius: RADIUS.lg, borderCurve: 'continuous', flexDirection: 'row', alignItems: 'center', justifyContent: 'center'},
   btnGhost: {backgroundColor: withAlpha(T1, 0.06)},
