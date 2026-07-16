@@ -40,9 +40,9 @@ type Props = {
   onOpenProfile?: () => void;
 };
 
-// 14→10(2026-07-16 사용자 미세조정): 메인 카드를 키우면서 이웃 카드와의 간격도 좁혀
-// 캐러셀이 더 밀착해 보이게.
-const CARD_GAP = 10;
+// 14→10→7(2026-07-16 사용자 미세조정 2라운드): 메인 카드를 키우면서 이웃 카드와의
+// 간격도 좁혀 캐러셀이 더 밀착해 보이게.
+const CARD_GAP = 7;
 const CARD_RADIUS = 34;
 // 링 '기준' 치수(874pt 화면 기준) — 실제 크기는 ShoeCard 가 화면 높이에 비례해 계산한다.
 const RING = 172;
@@ -141,11 +141,11 @@ export function ShoeCard({
   unit?: Unit;
   onStartRun?: (s: Shoe) => void; onOpenShoe?: (s: Shoe) => void;
 }) {
-  // 링 크기 = 화면 높이 비례(기준 874pt 에서 184px — 2026-07-16 사용자 "좀 작다" 피드백으로
-  // 172→184 한 단 상향). 고정값은 SE/mini 같은 짧은 화면에서 러닝 시작 버튼을 폴드 밖으로
-  // 밀었으므로 클램프로 극단만 방지.
+  // 링 크기 = 화면 높이 비례(기준 874pt 에서 196px — 2026-07-16 사용자 "좀 작다" 피드백
+  // 2라운드: 172→184→196 상향). 고정값은 SE/mini 같은 짧은 화면에서 러닝 시작 버튼을
+  // 폴드 밖으로 밀었으므로 클램프로 극단만 방지.
   const {height: winH} = useWindowDimensions();
-  const ring = Math.max(152, Math.min(192, Math.round(winH * (184 / 874))));
+  const ring = Math.max(156, Math.min(204, Math.round(winH * (196 / 874))));
   const ringR = ring * (RING_R / RING);
   const ringC = 2 * Math.PI * ringR;
   const h = shoeHealth(shoe as any, runs);
