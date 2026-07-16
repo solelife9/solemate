@@ -32,6 +32,14 @@ export const HERO_BG = '#242426';        // selected/featured card surface (CARD
 export const RING_ACCENT = '#FF8000';        // McLaren 파파야 (러닝 링 유일 브랜드 색)
 export const RING_ACCENT_HI = '#FFB458';     // 링 그라데이션 top(밝은 파파야)
 export const RING_ACCENT_LO = '#E56600';     // 링 그라데이션 bottom(진한 파파야)
+
+// ── 러닝 링 지오메트리/그라데이션 단일 토큰(2026-07-16 사용자 지적 "링 4개가 색도
+// 크기도 제각각") — 카운트다운 → 러닝 중 → 완주 세리머니가 '같은 링 하나'로 읽히게
+// 세 화면이 이 토큰만 소비한다. size 는 소비처에서 ri() 적용. 홈 링은 신발 컨디션
+// 게이지(색=의미)라 제외 — 파파야로 바꾸면 상태 정보가 죽는다.
+export const RUN_RING_SIZE = 280;
+export const RUN_RING_STROKE = 16;
+export const RUN_RING_STOPS: readonly [string, string, string] = [RING_ACCENT_HI, RING_ACCENT, RING_ACCENT_LO];
 // ── 브랜드 액센트 확장(2026-07-09 사용자 확정 — 목업 'B 서명+진행') ─────────────
 // 파파야를 링 밖으로: ① 브랜드 서명(keego 워드마크) ② 러닝 에너지·진행 지표(주간
 // 목표 게이지 등)에 포인트로 쓴다. "스포츠앱인데 너무 조용하다" 피드백의 절제된 해답.

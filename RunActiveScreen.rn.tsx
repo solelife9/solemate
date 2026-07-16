@@ -26,9 +26,10 @@ import { RunLiveMap } from './RunLiveMap';
 // red→DANGER · text→T1–T4 · sep→SEP. 폰트 UI/DP → FONT/DISPLAY.
 // (시각 동등: 다크+오렌지 유지)
 import {
-  BG, CARD, ACCENT, ACCENT_2, RING_ACCENT, RING_ACCENT_HI, RING_ACCENT_LO,
+  BG, CARD, ACCENT, ACCENT_2,
   GOOD, WARN, DANGER, T1, T2, T3, T4, SEP,
   FONT, DISPLAY, withAlpha, HR_ZONE_COLORS, TYPE, RADIUS, GUTTER, MOTION, BLACK, NUM,
+  RUN_RING_SIZE, RUN_RING_STROKE, RUN_RING_STOPS,
 } from './theme';
 import { estimateMaxHR, zoneOf, HR_ZONE_LABEL } from './lib/analytics/hrZones';
 import { fmtPaceSec } from './lib/pacePlan';
@@ -68,9 +69,9 @@ function Ring({ size, stroke, progress, children }: { size: number; stroke: numb
       <Svg width={size} height={size} style={{ position: 'absolute' }}>
         <Defs>
           <SvgLinear id="run-ring" x1="0" y1="0" x2="1" y2="1">
-            <Stop offset="0" stopColor={RING_ACCENT_HI} />
-            <Stop offset="0.55" stopColor={RING_ACCENT} />
-            <Stop offset="1" stopColor={RING_ACCENT_LO} />
+            <Stop offset="0" stopColor={RUN_RING_STOPS[0]} />
+            <Stop offset="0.55" stopColor={RUN_RING_STOPS[1]} />
+            <Stop offset="1" stopColor={RUN_RING_STOPS[2]} />
           </SvgLinear>
         </Defs>
         <Circle cx={cx} cy={cy} r={r} stroke={SEP} strokeWidth={stroke} fill="none" />
@@ -100,8 +101,10 @@ const SKIP_ANIM = !!(typeof process !== 'undefined' && process.env && process.en
 // 입력 차단(pointerEvents box-only)·약 1.05s. SKIP_ANIM(jest)이면 애초에 안 뜬다.
 // ════════════════════════════════════════════════════════════════════════════
 function FinishCeremony({ distanceKm, onDone }: { distanceKm: number; onDone: () => void }) {
-  const SIZE = ri(240);
-  const STROKE = 14;
+  // 러닝 링과 같은 링(RUN_RING 토큰, 2026-07-16 링 통일) — 같은 자리·같은 크기에서
+  // 마침표를 찍는다(구 240/14 는 러닝 링 280/16 과 미묘하게 달라 '다른 링'으로 읽혔다).
+  const SIZE = ri(RUN_RING_SIZE);
+  const STROKE = RUN_RING_STROKE;
   const R = (SIZE - STROKE) / 2;
   const CIRC = 2 * Math.PI * R;
   const fade = useRef(new Animated.Value(0)).current; // 오버레이 페이드인
@@ -145,9 +148,9 @@ function FinishCeremony({ distanceKm, onDone }: { distanceKm: number; onDone: ()
         <Svg width={SIZE} height={SIZE} style={{ position: 'absolute' }}>
           <Defs>
             <SvgLinear id="cer-ring" x1="0" y1="0" x2="1" y2="1">
-              <Stop offset="0" stopColor={RING_ACCENT_HI} />
-              <Stop offset="0.55" stopColor={RING_ACCENT} />
-              <Stop offset="1" stopColor={RING_ACCENT_LO} />
+              <Stop offset="0" stopColor={RUN_RING_STOPS[0]} />
+              <Stop offset="0.55" stopColor={RUN_RING_STOPS[1]} />
+              <Stop offset="1" stopColor={RUN_RING_STOPS[2]} />
             </SvgLinear>
           </Defs>
           <Circle cx={SIZE / 2} cy={SIZE / 2} r={R} stroke={SEP} strokeWidth={STROKE} fill="none" />
@@ -435,7 +438,7 @@ export default function RunActiveScreen({
           거리/자유 모드는 거리 히어로, 트랙 모드는 '바퀴 수' 히어로(링=현재 바퀴 진행). */}
       {!uiPaused && (
       <Animated.View style={[r.ringWrap, { transform: [{ scale: ringScale }] }]}>
-        <Ring size={ri(280)} stroke={16} progress={track ? track.progress : pct}>
+        <Ring size={ri(RUN_RING_SIZE)} stroke={RUN_RING_STROKE} progress={track ? track.progress : pct}>
           {track ? (
             <View style={{ alignItems: 'center' }} accessibilityRole="text" accessibilityLiveRegion="polite"
               accessibilityLabel={`${track.lapCount}바퀴, ${track.lapDistKm.toFixed(2)}킬로미터, 한 바퀴 ${track.lapM}미터 ${track.calibrated ? 'GPS 보정됨' : '예상'}`}>

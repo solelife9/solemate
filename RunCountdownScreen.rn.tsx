@@ -21,11 +21,11 @@ import React, { useEffect, useRef, useState } from 'react';
 import { rf, rs, ri, rv } from './lib/responsive';
 import { View, Text, Pressable, StyleSheet, Animated, Easing, StatusBar } from 'react-native';
 import { ShoeGlyph } from './primitives';
-import Svg, { Path, Circle } from 'react-native-svg';
+import Svg, { Path, Circle, Defs, LinearGradient as SvgLinear, Stop } from 'react-native-svg';
 // 색·폰트는 전역 디자인 토큰(theme.ts)만 참조한다 — 사설 색객체(const C) 폐기.
 // 매핑: bg→BG · surface→CARD · accent→ACCENT · sage→GOOD · text→T1–T4 · hair→SEP.
 // 폰트 별칭 UI/DP → FONT/DISPLAY. (시각 동등: 다크+오렌지 유지)
-import { BG, CARD, ACCENT, T1, T2, T3, SEP, FONT, DISPLAY, NUM, withAlpha, TYPE, RADIUS, GUTTER } from './theme';
+import { BG, CARD, ACCENT, T1, T2, T3, SEP, FONT, DISPLAY, NUM, withAlpha, TYPE, RADIUS, GUTTER, RUN_RING_SIZE, RUN_RING_STROKE, RUN_RING_STOPS } from './theme';
 // lib/haptics 배선: 카운트다운 비트(3·2·1) → countdownBeat, 시작(GO) → go.
 import { countdownBeat, go as goHaptic } from './lib/haptics';
 
@@ -42,7 +42,10 @@ function Icon({ name, size = 22, color = T2 }: { name: string; size?: number; co
 }
 
 
-const R = 138, STROKE = 10, DASH = 2 * Math.PI * R, DIAL = 300;
+// 다이얼 = 러닝 링과 같은 링(RUN_RING 토큰, 2026-07-16 링 통일): 크기·두께·파파야
+// 그라데이션이 러닝 중 링과 동일 → 카운트다운이 차오른 그 링이 그대로 러닝 링이 된다.
+// ri() 반응형도 이때 함께 해결(구 300/138/10 raw 는 작은 기기에서 혼자 비대했다).
+const DIAL = ri(RUN_RING_SIZE), STROKE = RUN_RING_STROKE, R = (DIAL - STROKE) / 2, DASH = 2 * Math.PI * R;
 
 export default function RunCountdownScreen({
   goalKm = 5, shoeLabel = 'Alphafly 3', outdoor = true,
@@ -116,8 +119,17 @@ export default function RunCountdownScreen({
       <View style={s.center}>
         <View style={s.dial}>
           <Svg width={DIAL} height={DIAL} style={{ transform: [{ rotate: '-90deg' }] }}>
+            <Defs>
+              {/* 러닝 링과 동일한 파파야 그라데이션(RUN_RING_STOPS) — 흰 다이얼 폐지.
+                  차오른 이 링이 GO 직후 러닝 링으로 그대로 이어진다(시그니처 연속). */}
+              <SvgLinear id="cd-ring" x1="0" y1="0" x2="1" y2="1">
+                <Stop offset="0" stopColor={RUN_RING_STOPS[0]} />
+                <Stop offset="0.55" stopColor={RUN_RING_STOPS[1]} />
+                <Stop offset="1" stopColor={RUN_RING_STOPS[2]} />
+              </SvgLinear>
+            </Defs>
             <Circle cx={DIAL / 2} cy={DIAL / 2} r={R} stroke={SEP} strokeWidth={STROKE} fill="none" />
-            <AnimatedCircle cx={DIAL / 2} cy={DIAL / 2} r={R} stroke={ACCENT} strokeWidth={STROKE} fill="none"
+            <AnimatedCircle cx={DIAL / 2} cy={DIAL / 2} r={R} stroke="url(#cd-ring)" strokeWidth={STROKE} fill="none"
               strokeLinecap="round" strokeDasharray={DASH} strokeDashoffset={dialOffset} />
           </Svg>
           <View style={s.dialFace}>
