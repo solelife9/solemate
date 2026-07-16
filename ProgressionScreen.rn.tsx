@@ -470,8 +470,9 @@ const s = StyleSheet.create({
   bannerTxt: {flex: 1, color: T2, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600'},
   // 히어로
   // 코너 페이드 헤어라인(GlassEdge glints=false) — 균일 RN 보더 폐지(2026-07-10 확정).
+  // 불투명 HERO_BG 판 → 반투명 히어로 유리(GLASS.fillActive) — 재질 일치(검수 잔여, 2026-07-17).
   hero: {
-    backgroundColor: HERO_BG,
+    backgroundColor: GLASS.fillActive,
     borderRadius: RADIUS.xl,
     borderCurve: 'continuous',
     overflow: 'hidden',

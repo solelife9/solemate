@@ -14,8 +14,8 @@ import React from 'react';
 import { rf, rs, rv } from './lib/responsive';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import {
-  CARD, CARD_BORDER, GOOD, WARN, DANGER, T1, T2, T3, T4,
-  SPACE, RADIUS, TYPE, withAlpha,
+  CARD_BORDER, GOOD, WARN, DANGER, T1, T2, T3, T4,
+  SPACE, RADIUS, TYPE, GLASS, withAlpha,
 } from './theme';
 import {
   assessCombinedRisk, RiskLevel, RiskDriver, RISK_LABEL, RISK_DISCLAIMER,
@@ -144,7 +144,9 @@ export default function InjuryRiskCard({ runs, shoe, shoeName, todayISO, onPress
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: CARD,
+    // 불투명 CARD 판 → 반투명 유리(GLASS.fill) — 형제 카드들과 재질 일치(검수 잔여,
+    // 2026-07-17). 리스크 레벨 색 보더(의미색)는 유지.
+    backgroundColor: GLASS.fill,
     borderRadius: RADIUS.lg,
     borderCurve: 'continuous',
     borderWidth: 1,

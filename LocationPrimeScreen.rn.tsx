@@ -11,7 +11,7 @@ import { rf, rs, ri, rv } from './lib/responsive';
 import {View, Text, Pressable, StyleSheet} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import {BG, CARD, ACCENT, GOOD, WARN, T1, T2, T3, FONT, RADIUS, SEP, withAlpha, TYPE} from './theme';
+import {BG, ACCENT, GOOD, WARN, T1, T2, T3, FONT, RADIUS, SEP, GLASS, withAlpha, TYPE} from './theme';
 import {Button, GlassEdge} from './primitives';
 
 function Row({icon, color, title, body}: {icon: string; color: string; title: string; body: string}) {
@@ -81,7 +81,8 @@ const s = StyleSheet.create({
   title: {color: T1, fontFamily: FONT, fontSize: TYPE.title.fontSize, fontWeight: '700', letterSpacing: -0.5, textAlign: 'center'},
   lead: {color: T3, fontFamily: FONT, fontSize: TYPE.body.fontSize, lineHeight: rf(20), textAlign: 'center', marginTop: rv(8), marginBottom: rv(22)},
   // 코너 페이드 헤어라인(GlassEdge glints=false) — 균일 RN 보더 폐지(2026-07-10 확정).
-  card: {backgroundColor: CARD, borderRadius: RADIUS.lg, borderCurve: 'continuous', overflow: 'hidden', paddingHorizontal: rs(16), paddingVertical: rv(4)},
+  // 불투명 CARD 판 → 반투명 유리(GLASS.fill) — GlassEdge 와 재질 일치(검수 잔여, 2026-07-17).
+  card: {backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderCurve: 'continuous', overflow: 'hidden', paddingHorizontal: rs(16), paddingVertical: rv(4)},
   row: {flexDirection: 'row', alignItems: 'flex-start', gap: rv(12), paddingVertical: rv(16)},
   rowIcon: {width: rs(36), height: rs(36), borderRadius: rs(18), borderCurve: 'continuous', alignItems: 'center', justifyContent: 'center', marginTop: rv(1)},
   rowTitle: {color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '700', letterSpacing: -0.2},

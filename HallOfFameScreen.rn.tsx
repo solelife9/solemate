@@ -378,10 +378,11 @@ const s = StyleSheet.create({
   },
   catChipTxt: {fontFamily: FONT, color: T3, fontSize: TYPE.label.fontSize, fontWeight: '700'},
   // 내 순위 카드 — 코너 페이드 헤어라인(GlassEdge glints=false, 2026-07-10 통일 스윕).
+  // 불투명 HERO_BG 판 → 반투명 히어로 유리(GLASS.fillActive) — 재질 일치(검수 잔여, 2026-07-17).
   myCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: HERO_BG,
+    backgroundColor: GLASS.fillActive,
     borderRadius: RADIUS.xl,
     borderCurve: 'continuous',
     overflow: 'hidden',

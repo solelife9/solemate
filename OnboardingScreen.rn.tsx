@@ -61,7 +61,7 @@ import {
   SEP,
   FONT,
   DISPLAY,
-  withAlpha, TYPE,
+  withAlpha, TYPE, GLASS,
 } from './theme';
 import {Button, KeegoWordmark, ShoeGlyph, WEAR_TONE_COLOR, GlassEdge} from './primitives';
 // 러닝화 선택 모달(2열 분할 피커)은 메인 등록(AddShoeScreen)과 공유하는 단일 소스.
@@ -727,8 +727,9 @@ const s = StyleSheet.create({
   ctaCaption: {fontFamily: FONT, fontSize: TYPE.caption.fontSize, color: T3, textAlign: 'center', marginTop: rv(10)},
 
   // 신발 인텔리전스
-  // 코너 페이드 헤어라인(GlassEdge glints=false) — 균일 RN 보더 폐지(2026-07-10 확정).
-  heroCard: {marginTop: rv(24), borderRadius: rs(22), borderCurve: 'continuous', backgroundColor: CARD},
+  // 불투명 CARD 판 → 반투명 유리(GLASS.fill) — GlassEdge(유리 엣지)를 쓰면서 판만 불투명이던
+  // 본편 세대차 해소(검수 HIGH 잔여, 2026-07-17). 본편 4탭 카드와 같은 재질.
+  heroCard: {marginTop: rv(24), borderRadius: rs(22), borderCurve: 'continuous', backgroundColor: GLASS.fill},
   shoeRowCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -738,14 +739,14 @@ const s = StyleSheet.create({
     paddingHorizontal: rs(16),
     borderRadius: rs(22), borderCurve: 'continuous',
     overflow: 'hidden',
-    backgroundColor: CARD,
+    backgroundColor: GLASS.fill,
   },
   shoeThumb: {width: rs(44), height: rs(44), borderRadius: rs(12), borderCurve: 'continuous', backgroundColor: withAlpha(T1, 0.06), alignItems: 'center', justifyContent: 'center'},
   pill: {flexDirection: 'row', alignItems: 'center', gap: rv(6), paddingVertical: rv(4), paddingHorizontal: rs(10), borderRadius: 100, alignSelf: 'center'},
   alertRow: {flexDirection: 'row', alignItems: 'center', gap: rv(8), marginTop: rv(22), paddingHorizontal: rs(2)},
 
   // 성능(기능 목록)
-  featCard: {marginTop: rv(24), paddingHorizontal: rs(18), paddingVertical: rv(4), borderRadius: rs(22), borderCurve: 'continuous', overflow: 'hidden', backgroundColor: CARD},
+  featCard: {marginTop: rv(24), paddingHorizontal: rs(18), paddingVertical: rv(4), borderRadius: rs(22), borderCurve: 'continuous', overflow: 'hidden', backgroundColor: GLASS.fill},
   featRow: {flexDirection: 'row', alignItems: 'center', gap: rv(14), paddingVertical: rv(18)},
   featRowDivider: {borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP},
   featIc: {width: rs(38), height: rs(38), borderRadius: rs(11), borderCurve: 'continuous', alignItems: 'center', justifyContent: 'center'},
@@ -761,7 +762,7 @@ const s = StyleSheet.create({
     paddingHorizontal: rs(14),
     borderRadius: rs(14), borderCurve: 'continuous',
     overflow: 'hidden',
-    backgroundColor: CARD,
+    backgroundColor: GLASS.fill,
   },
   selectorText: {flex: 1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600', color: T1, letterSpacing: -0.2},
   fieldHint: {fontFamily: FONT, fontSize: TYPE.caption.fontSize, color: T3, marginTop: rv(8), lineHeight: rf(17)},
