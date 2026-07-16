@@ -399,11 +399,12 @@ const styles = StyleSheet.create({
   // width/height 는 렌더에서 화면 비례값(ring)으로 덮어쓴다.
   ringWrap: {alignSelf: 'center', marginTop: rv(20), alignItems: 'center', justifyContent: 'center'},
   ringCenter: {position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center'},
-  ringPctSub: {fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600', color: withAlpha(T1, 0.55)},
-  ringPctRow: {flexDirection: 'row', alignItems: 'flex-start', marginTop: rv(2)},
-  // 58 → 52: 링 안에서 숫자가 꽉 차 보인다는 피드백(2026-07-04) — 살짝 줄여 숨통.
-  ringPct: {fontFamily: DISPLAY, fontSize: rf(52), fontWeight: '700', letterSpacing: -2.6, lineHeight: rf(54), color: T1},
-  ringPctUnit: {fontFamily: DISPLAY, fontSize: TYPE.heading.fontSize, fontWeight: '700', color: withAlpha(T1, 0.7), marginTop: rv(6)},
+  // 링 196 상향(2026-07-16)에 맞춰 중앙 타이포도 한 단 상향 + 여백 확장 — "가운데에
+  // 몰려 붙어 보인다" 사용자 피드백. (구 52 는 172 링 시절 '꽉 참' 교정값.)
+  ringPctSub: {fontFamily: FONT, fontSize: rf(15), fontWeight: '600', color: withAlpha(T1, 0.55)},
+  ringPctRow: {flexDirection: 'row', alignItems: 'flex-start', marginTop: rv(8)},
+  ringPct: {fontFamily: DISPLAY, fontSize: rf(58), fontWeight: '700', letterSpacing: -2.6, lineHeight: rf(60), color: T1},
+  ringPctUnit: {fontFamily: DISPLAY, fontSize: rf(21), fontWeight: '700', color: withAlpha(T1, 0.7), marginTop: rv(8), marginLeft: rs(2)},
 
   kmRow: {flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(12), marginTop: rv(20)},
   kmLabel: {fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600', color: T3},
