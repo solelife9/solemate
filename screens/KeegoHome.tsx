@@ -164,10 +164,12 @@ export function ShoeCard({
   // 정보값 0(사용자 확정 2026-07-11, 신발탭 종류 칩과 동일 소스).
   const cat = typeLabel(findShoeClass(shoe.brand, shoe.model)?.type);
 
-  // 중앙 카드 강조: 이웃은 살짝 축소 + 흐리게.
+  // 중앙 카드 강조: 이웃은 살짝 축소 + 흐리게. 축소는 카드 중심 기준이라 이웃이 양옆으로
+  // 물러나며 시각 간격을 CARD_GAP 보다 크게 만든다 — 0.93→0.96 완화(2026-07-16 사용자
+  // "간격이 그대로": GAP 만 줄여선 이 축소 여백이 지배해 체감이 없었다).
   const inputRange = [(i - 1) * stride, i * stride, (i + 1) * stride];
-  const scale = scrollX.interpolate({inputRange, outputRange: [0.93, 1, 0.93], extrapolate: 'clamp'});
-  const opacity = scrollX.interpolate({inputRange, outputRange: [0.5, 1, 0.5], extrapolate: 'clamp'});
+  const scale = scrollX.interpolate({inputRange, outputRange: [0.96, 1, 0.96], extrapolate: 'clamp'});
+  const opacity = scrollX.interpolate({inputRange, outputRange: [0.55, 1, 0.55], extrapolate: 'clamp'});
 
   // 링 아크 = 남은 수명(배터리): 새 신발 = 가득 찬 링, 닳을수록 비워진다.
   // 마운트 시 0→현재%로 차오르는 스윕 — 정적 게이지에 물리감을 준다. 1400ms 로 느긋하게
