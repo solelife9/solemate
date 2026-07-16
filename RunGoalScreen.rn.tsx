@@ -18,6 +18,7 @@ import {
   LayoutChangeEvent, NativeSyntheticEvent, NativeScrollEvent, StatusBar,
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 // 색·폰트는 전역 디자인 토큰(theme.ts)만 참조한다 — 사설 색객체(const C) 폐기.
 // 매핑: bg→BG · surface→CARD · accent→ACCENT · sage→GOOD · amber→WARN · red→DANGER
 // · text→T1–T4 · hair→SEP · 그라데이션→GRAD_TOP/GRAD_BOT. 폰트 UI/DP → FONT/DISPLAY.
@@ -84,6 +85,9 @@ export default function RunGoalScreen({
   /** 심박 가이드 bpm 범위 표시용(#7). 0이면 범위 숨기고 존 이름만. */
   age?: number; restHR?: number;
 }) {
+  // safe-area 실측(검수 MED, 2026-07-16): 상단 rv(54)·하단 rv(30) 하드코딩은 노치/홈바
+  // 기기별 편차를 못 담는다(다이내믹 아일랜드 밑에 nav 가 살짝 파고들던 것) — insets 로.
+  const insets = useSafeAreaInsets();
   const [mode, setMode] = useState<Mode>('km');
   // 신발 전환 시트 — 신발 행(하단) 탭으로 연다.
   const [shoePickerOpen, setShoePickerOpen] = useState(false);
@@ -229,7 +233,7 @@ export default function RunGoalScreen({
     // 엣지 스와이프 백 — 러닝 '전' 화면이라 잃을 입력이 없고 뒤로 버튼과 동일 동작.
     // 가장자리 24pt 에서만 캡처하므로 중앙의 눈금 룰러 가로 드래그와 충돌하지 않는다.
     <SwipeBack onBack={onBack}>
-    <View style={s.screen}>
+    <View style={[s.screen, { paddingTop: insets.top + rv(8) }]}>
       <StatusBar barStyle="light-content" />
       {/* nav */}
       <View style={s.nav}>
@@ -373,7 +377,7 @@ export default function RunGoalScreen({
 
       {/* footer — 신발 행: 2켤레 이상이면 탭해서 여기서 바로 신발을 바꾼다(마지막 교정 기회).
           1켤레거나 미배선이면 표시 전용(화살표도 숨김 — 죽은 어포던스 금지). */}
-      <View style={s.foot}>
+      <View style={[s.foot, { paddingBottom: Math.max(insets.bottom, rv(14)) + rv(8) }]}>
         <Pressable
           style={s.shoeSel}
           onPress={switchable ? () => setShoePickerOpen(true) : undefined}
@@ -470,7 +474,7 @@ export default function RunGoalScreen({
 }
 
 const s = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: BG, paddingTop: rv(54) },
+  screen: { flex: 1, backgroundColor: BG }, // 상단 여백은 insets.top 실측(렌더에서 주입)
   nav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: rs(16), height: rs(44) },
   navIc: { width: rs(36), height: rs(36), alignItems: 'center', justifyContent: 'center' },
   navTitle: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.heading.fontSize, fontWeight: '600', letterSpacing: -0.2 },
@@ -522,7 +526,7 @@ const s = StyleSheet.create({
   zoneChip: { paddingHorizontal: rs(14), paddingVertical: rv(8), borderRadius: RADIUS.pill, borderCurve: 'continuous', backgroundColor: withAlpha(T1, 0.06), borderWidth: 1, borderColor: 'transparent' },
   zoneChipTxt: { color: T3, fontFamily: FONT, fontSize: rf(13.5), fontWeight: '700' },
   zoneHint: { color: T3, fontFamily: FONT, fontSize: rf(12), marginTop: rv(8), letterSpacing: 0.2 },
-  foot: { paddingHorizontal: GUTTER, paddingTop: rv(4), paddingBottom: rv(30) },
+  foot: { paddingHorizontal: GUTTER, paddingTop: rv(4) }, // 하단 여백은 insets.bottom 실측
   // 코너 페이드 헤어라인(GlassEdge glints=false) — 균일 RN 보더 폐지(2026-07-10 확정).
   shoeSel: { flexDirection: 'row', alignItems: 'center', gap: rv(12), padding: rs(12), borderRadius: RADIUS.lg, borderCurve: 'continuous', overflow: 'hidden', backgroundColor: GLASS.fill },
   // 신발 전환 시트(하단) — History 기간 피커와 같은 문법(SCRIM + 하단 카드).
