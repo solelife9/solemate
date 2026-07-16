@@ -1114,10 +1114,8 @@ export default function HistoryScreen({
                 </View>
               )
             }
-            {/* 기록탭의 주인공 = 기간 요약 hero(밝은 표면+글린트 림, DESIGN §2 부활
-                2026-07-16 B안). 나머지 카드는 콰이어트 헤어라인 — 탭당 1장 원칙. */}
-            <View style={[s.card, { paddingHorizontal: rs(20), paddingTop: rv(12), paddingBottom: rv(24), backgroundColor: GLASS.fillActive }]}>
-              <GlassEdge radius={RADIUS.lg} />
+            <View style={[s.card, { paddingHorizontal: rs(20), paddingTop: rv(12), paddingBottom: rv(24) }]}>
+              <GlassEdge glints={false} radius={RADIUS.lg} />
               <View style={[s.baselineRow, { marginTop: rv(0) }]}>
                 <Text style={s.sumBigKm}>{sum.km}</Text><Text style={s.sumBigU}>{unit}</Text>
               </View>

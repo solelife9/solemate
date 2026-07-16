@@ -604,10 +604,8 @@ export function Card({
 }) {
   return (
     <View style={[card.base, variant === 'hero' ? card.hero : card.quiet, padded && card.padded, style]}>
-      {/* hero=글린트 림+광택(DESIGN §2 정본) — 2026-07-16 사용자 B안 확정으로 죽은 분기 부활.
-          적용 원칙: 탭당 주인공 카드 1장만(홈 신발·마이 러너스펙·기록 기간요약). */}
       {variant === 'hero' ? (
-        <GlassEdge radius={RADIUS.lg} />
+        <GlassEdge glints={false} radius={RADIUS.lg} />
       ) : (
         <GlassEdge glints={false} radius={RADIUS.lg} />
       )}
