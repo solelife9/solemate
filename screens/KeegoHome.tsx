@@ -40,7 +40,9 @@ type Props = {
   onOpenProfile?: () => void;
 };
 
-const CARD_GAP = 14;
+// 14→10(2026-07-16 사용자 미세조정): 메인 카드를 키우면서 이웃 카드와의 간격도 좁혀
+// 캐러셀이 더 밀착해 보이게.
+const CARD_GAP = 10;
 const CARD_RADIUS = 34;
 // 링 '기준' 치수(874pt 화면 기준) — 실제 크기는 ShoeCard 가 화면 높이에 비례해 계산한다.
 const RING = 172;
@@ -52,7 +54,8 @@ const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 export default function KeegoHome({shoes, runs = [], onStartRun, onOpenShoe, onOpenProfile}: Props) {
   const {width} = useWindowDimensions();
   // HomeScreen 캐러셀과 동일한 비율 규칙(화면 폭 82%, 380 상한) — 기기 간 동일 구도.
-  const CARD_W = Math.min(Math.round(width * 0.82), 380);
+  // 0.82→0.86(2026-07-16 사용자 미세조정): 메인 카드를 살짝 키워 히어로 존재감을 올린다.
+  const CARD_W = Math.min(Math.round(width * 0.86), 396);
   const SIDE = (width - CARD_W) / 2;
   const STRIDE = CARD_W + CARD_GAP;
 
@@ -138,10 +141,11 @@ export function ShoeCard({
   unit?: Unit;
   onStartRun?: (s: Shoe) => void; onOpenShoe?: (s: Shoe) => void;
 }) {
-  // 링 크기 = 화면 높이 비례(기준 874pt 에서 172px — 현행과 동일). 고정 172px 은 SE/mini
-  // 같은 짧은 화면에서 러닝 시작 버튼을 폴드 밖으로 밀었다. 클램프로 극단만 방지.
+  // 링 크기 = 화면 높이 비례(기준 874pt 에서 184px — 2026-07-16 사용자 "좀 작다" 피드백으로
+  // 172→184 한 단 상향). 고정값은 SE/mini 같은 짧은 화면에서 러닝 시작 버튼을 폴드 밖으로
+  // 밀었으므로 클램프로 극단만 방지.
   const {height: winH} = useWindowDimensions();
-  const ring = Math.max(144, Math.min(180, Math.round(winH * (172 / 874))));
+  const ring = Math.max(152, Math.min(192, Math.round(winH * (184 / 874))));
   const ringR = ring * (RING_R / RING);
   const ringC = 2 * Math.PI * ringR;
   const h = shoeHealth(shoe as any, runs);
