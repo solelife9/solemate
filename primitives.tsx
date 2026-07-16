@@ -598,8 +598,10 @@ const btn = StyleSheet.create({
 //   • quiet(기본) — 반투명 표면(GLASS.fill) + 코너 페이드 헤어라인(GlassEdge glints=false:
 //     좌상·우하 발원 베이스 방사가 우상·좌하 코너에서 소멸). 균일 RN 보더 폐지 —
 //     콘텐츠 카드·리스트 아이템.
-//   • hero — 활성 표면(GLASS.fillActive) + 코너 글린트 림(GlassEdge). 화면당 소수의
-//     주인공(히어로 카드·핵심 CTA 컨테이너)만. 전부 반짝이면 아무것도 반짝이지 않는다.
+//   • hero — 활성 표면(GLASS.fillActive)만 한 단 밝음, 림은 quiet 와 같은 헤어라인.
+//     화면당 소수의 주인공(히어로 카드·핵심 CTA 컨테이너)만.
+//     '글린트 림' 차등은 목업 승인 후 실기기 3곳 적용에서 사용자 반려로 폐지
+//     (2026-07-17 DESIGN §2 갱신 — 순흑 위에선 헤어라인 하나가 더 프리미엄).
 // 화면은 변형만 고른다 — 배경/보더/radius 를 인라인으로 조립하는 것 금지(DESIGN.md §5).
 export function Card({
   children,
@@ -614,11 +616,7 @@ export function Card({
 }) {
   return (
     <View style={[card.base, variant === 'hero' ? card.hero : card.quiet, padded && card.padded, style]}>
-      {variant === 'hero' ? (
-        <GlassEdge glints={false} radius={RADIUS.lg} />
-      ) : (
-        <GlassEdge glints={false} radius={RADIUS.lg} />
-      )}
+      <GlassEdge glints={false} radius={RADIUS.lg} />
       {children}
     </View>
   );
