@@ -20,16 +20,14 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { rf, rs, ri, rv } from './lib/responsive';
 import { View, Text, Pressable, StyleSheet, Animated, Easing, StatusBar } from 'react-native';
-import { ShoeGlyph } from './primitives';
-import Svg, { Path, Circle, Defs, LinearGradient as SvgLinear, Stop } from 'react-native-svg';
+import { Ring, ShoeGlyph } from './primitives';
+import Svg, { Path, Circle } from 'react-native-svg';
 // 색·폰트는 전역 디자인 토큰(theme.ts)만 참조한다 — 사설 색객체(const C) 폐기.
 // 매핑: bg→BG · surface→CARD · accent→ACCENT · sage→GOOD · text→T1–T4 · hair→SEP.
 // 폰트 별칭 UI/DP → FONT/DISPLAY. (시각 동등: 다크+오렌지 유지)
 import { BG, CARD, ACCENT, T1, T2, T3, SEP, FONT, DISPLAY, NUM, withAlpha, TYPE, RADIUS, GUTTER, RUN_RING_SIZE, RUN_RING_STROKE, RUN_RING_STOPS } from './theme';
 // lib/haptics 배선: 카운트다운 비트(3·2·1) → countdownBeat, 시작(GO) → go.
 import { countdownBeat, go as goHaptic } from './lib/haptics';
-
-const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 function Icon({ name, size = 22, color = T2 }: { name: string; size?: number; color?: string }) {
   const g: Record<string, React.ReactNode> = {
@@ -42,10 +40,11 @@ function Icon({ name, size = 22, color = T2 }: { name: string; size?: number; co
 }
 
 
-// 다이얼 = 러닝 링과 같은 링(RUN_RING 토큰, 2026-07-16 링 통일): 크기·두께·파파야
-// 그라데이션이 러닝 중 링과 동일 → 카운트다운이 차오른 그 링이 그대로 러닝 링이 된다.
+// 다이얼 = 러닝 링과 같은 링(primitives.Ring v2 + RUN_RING 토큰, 2026-07-16 링 통일):
+// 크기·두께·파파야 그라데이션은 물론 구현까지 러닝 중 링과 한 벌 → 카운트다운이 차오른
+// 그 링이 그대로 러닝 링이 된다(러닝 화면의 from=1 드레인 인트로가 이어받는다).
 // ri() 반응형도 이때 함께 해결(구 300/138/10 raw 는 작은 기기에서 혼자 비대했다).
-const DIAL = ri(RUN_RING_SIZE), STROKE = RUN_RING_STROKE, R = (DIAL - STROKE) / 2, DASH = 2 * Math.PI * R;
+const DIAL = ri(RUN_RING_SIZE), STROKE = RUN_RING_STROKE;
 
 export default function RunCountdownScreen({
   goalKm = 5, shoeLabel = 'Alphafly 3', outdoor = true,
@@ -57,7 +56,7 @@ export default function RunCountdownScreen({
   const [phase, setPhase] = useState<'count' | 'go'>('count');
   const [num, setNum] = useState(3);
 
-  const dialOffset = useRef(new Animated.Value(DASH)).current;     // ring sweep
+  const [dialProgress, setDialProgress] = useState(0);            // ring sweep (Ring v2 슬라이드)
   const numScale = useRef(new Animated.Value(1)).current;          // beat pop
   const numOpacity = useRef(new Animated.Value(1)).current;
   const goScale = useRef(new Animated.Value(0.6)).current;
@@ -76,7 +75,7 @@ export default function RunCountdownScreen({
       Animated.spring(numScale, { toValue: 1, useNativeDriver: true, speed: 12, bounciness: 6 }),
       Animated.timing(numOpacity, { toValue: 1, duration: 180, useNativeDriver: true }),
     ]).start();
-    Animated.timing(dialOffset, { toValue: DASH * (1 - (i + 1) / 3), duration: 1000, easing: Easing.linear, useNativeDriver: false }).start();
+    setDialProgress((i + 1) / 3); // Ring v2 가 1초 linear 로 1/3 씩 채운다
   };
 
   const startCountdown = () => {
@@ -117,21 +116,10 @@ export default function RunCountdownScreen({
 
       {/* dial */}
       <View style={s.center}>
-        <View style={s.dial}>
-          <Svg width={DIAL} height={DIAL} style={{ transform: [{ rotate: '-90deg' }] }}>
-            <Defs>
-              {/* 러닝 링과 동일한 파파야 그라데이션(RUN_RING_STOPS) — 흰 다이얼 폐지.
-                  차오른 이 링이 GO 직후 러닝 링으로 그대로 이어진다(시그니처 연속). */}
-              <SvgLinear id="cd-ring" x1="0" y1="0" x2="1" y2="1">
-                <Stop offset="0" stopColor={RUN_RING_STOPS[0]} />
-                <Stop offset="0.55" stopColor={RUN_RING_STOPS[1]} />
-                <Stop offset="1" stopColor={RUN_RING_STOPS[2]} />
-              </SvgLinear>
-            </Defs>
-            <Circle cx={DIAL / 2} cy={DIAL / 2} r={R} stroke={SEP} strokeWidth={STROKE} fill="none" />
-            <AnimatedCircle cx={DIAL / 2} cy={DIAL / 2} r={R} stroke="url(#cd-ring)" strokeWidth={STROKE} fill="none"
-              strokeLinecap="round" strokeDasharray={DASH} strokeDashoffset={dialOffset} />
-          </Svg>
+        {/* 러닝 링과 동일한 파파야 그라데이션(RUN_RING_STOPS) — 흰 다이얼 폐지.
+            차오른 이 링이 GO 직후 러닝 링으로 그대로 이어진다(시그니처 연속). */}
+        <Ring size={DIAL} stroke={STROKE} stops={RUN_RING_STOPS}
+          animated duration={1000} easing={Easing.linear} progress={dialProgress}>
           <View style={s.dialFace}>
             {phase === 'go' ? (
               <Animated.Text style={[s.go, { transform: [{ scale: goScale }] }]} accessibilityLiveRegion="assertive" accessibilityLabel="시작">GO</Animated.Text>
@@ -142,7 +130,7 @@ export default function RunCountdownScreen({
               </>
             )}
           </View>
-        </View>
+        </Ring>
 
         {/* goal chips — 거리 목표가 있을 때만. 생 `${goalKm}.0` 이어붙이기는 하프 21.1 에서
             "21.1.0 km", 시간·자유 러닝(0)에서 "0.0 km" 로 보이던 표기 버그(2026-07-16 수정). */}
@@ -166,7 +154,6 @@ const s = StyleSheet.create({
   shoeText: { color: T2, fontFamily: DISPLAY, fontSize: TYPE.label.fontSize, fontWeight: '600' },
 
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: rv(76) },
-  dial: { width: DIAL, height: DIAL, alignItems: 'center', justifyContent: 'center' },
   dialFace: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, alignItems: 'center', justifyContent: 'center' },
   // 카운트다운 숫자 = NUM(Jost) — 러닝 링 거리 숫자와 동일 규율(2026-07-16 통일).
   // Jost 어센더 보정: lineHeight ≈ fontSize×1.22.

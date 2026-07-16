@@ -359,7 +359,18 @@ export function GlassEdge({
   );
 }
 
-// ── Ring (arc progress, gradient sweep) — unchanged behaviour ─────────────────
+// ── Ring v2 (arc progress, gradient sweep · optional animated slide) ──────────
+// 앱의 모든 원형 진행 링의 단일 진실원(2026-07-16 링 통일 2단계 — 구현도 한 벌).
+//  • 정적(기본): 홈 컨디션 게이지·챌린지 미니링 — 기존 동작 그대로(픽셀 동등).
+//  • stops: 3스톱 그라데이션(러닝 플로우 = RUN_RING_STOPS 파파야) — 주면 color/color2
+//    2스톱 대신 쓴다.
+//  • animated: progress 가 바뀔 때마다 strokeDashoffset 이 duration 으로 미끄러진다
+//    (구 RunActive 로컬 Ring 의 '흐르는 링' 문법을 프리미티브로 승격).
+//  • from: 마운트 시작 진행률 — 카운트다운→러닝 핸드오프(가득 찬 링이 풀려나며 현재
+//    진행으로 드레인)와 세리머니(0→1 차오름)의 시작점.
+//  • delay/onSweepEnd: 슬라이드 시작 지연·완료 콜백(세리머니 페이드 후 시작 + 완성 햅틱).
+const AnimatedRingCircle = Animated.createAnimatedComponent(Circle);
+
 export function Ring({
   size,
   stroke,
@@ -367,6 +378,14 @@ export function Ring({
   children,
   color = ACCENT,
   color2 = ACCENT_2,
+  stops,
+  animated = false,
+  duration = 900,
+  easing,
+  delay = 0,
+  from,
+  onSweepEnd,
+  trackColor = SEP,
 }: {
   size: number;
   stroke: number;
@@ -374,41 +393,91 @@ export function Ring({
   children?: React.ReactNode;
   color?: string;
   color2?: string;
+  /** 3스톱 그라데이션(0 → 0.55 → 1). 러닝 플로우 링은 RUN_RING_STOPS 를 준다. */
+  stops?: readonly [string, string, string];
+  /** progress 변경 시 부드러운 슬라이드(기본 900ms·quad-out — fix 간격과 맞물림). */
+  animated?: boolean;
+  duration?: number;
+  easing?: (v: number) => number;
+  /** 슬라이드 시작 지연(ms) — 세리머니가 페이드인 뒤 차오르게. */
+  delay?: number;
+  /** 마운트 시작 진행률(핸드오프 인트로). 생략 시 progress 에서 시작(마운트 모션 없음). */
+  from?: number;
+  /** 슬라이드 완료 콜백(중단 시엔 안 부른다) — 세리머니 완성 햅틱 타이밍. */
+  onSweepEnd?: () => void;
+  trackColor?: string;
 }) {
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
-  const id = useMemo(
-    () => `g${Math.round(progress * 1e6)}_${size}_${stroke}`,
-    [progress, size, stroke],
+  const pct = Math.max(0, Math.min(1, progress));
+  // 정적 링의 progress 기반 id 재생성은 기존 동작 유지(그라데이션 재등록 워크어라운드).
+  // 애니메이티드 링은 리렌더마다 id 가 바뀌면 안 되므로 인스턴스 고정 id 를 쓴다.
+  const autoId = useId().replace(/[^a-zA-Z0-9]/g, '');
+  const staticId = useMemo(
+    () => `g${Math.round(pct * 1e6)}_${size}_${stroke}`,
+    [pct, size, stroke],
   );
+  const id = animated ? `ring-${autoId}` : staticId;
+  const anim = useRef(new Animated.Value(Math.max(0, Math.min(1, from ?? pct)))).current;
+  const sweepEndRef = useRef(onSweepEnd);
+  sweepEndRef.current = onSweepEnd;
+  useEffect(() => {
+    if (!animated) return;
+    const a = Animated.timing(anim, {
+      toValue: pct,
+      duration,
+      delay,
+      easing: easing ?? MOTION.ease.quad,
+      useNativeDriver: false, // strokeDashoffset = JS 드라이버
+    });
+    a.start(({finished}) => {
+      if (finished) sweepEndRef.current?.();
+    });
+    return () => a.stop(); // 언마운트/값 교체 시 타이머 정리
+  }, [animated, anim, pct, duration, delay, easing]);
+  const arcProps = {
+    cx: size / 2,
+    cy: size / 2,
+    r,
+    stroke: `url(#${id})`,
+    strokeWidth: stroke,
+    fill: 'none',
+    strokeLinecap: 'round',
+    strokeDasharray: c,
+  } as const;
   return (
     <View style={[ring.box, {width: size, height: size}]}>
       <Svg width={size} height={size} style={ring.svg}>
         <Defs>
-          <SvgGradient id={id} x1="0" y1="0" x2="1" y2="1">
-            <Stop offset="0" stopColor={color2} />
-            <Stop offset="1" stopColor={color} />
-          </SvgGradient>
+          {stops ? (
+            <SvgGradient id={id} x1="0" y1="0" x2="1" y2="1">
+              <Stop offset="0" stopColor={stops[0]} />
+              <Stop offset="0.55" stopColor={stops[1]} />
+              <Stop offset="1" stopColor={stops[2]} />
+            </SvgGradient>
+          ) : (
+            <SvgGradient id={id} x1="0" y1="0" x2="1" y2="1">
+              <Stop offset="0" stopColor={color2} />
+              <Stop offset="1" stopColor={color} />
+            </SvgGradient>
+          )}
         </Defs>
         <Circle
           cx={size / 2}
           cy={size / 2}
           r={r}
-          stroke={SEP}
+          stroke={trackColor}
           strokeWidth={stroke}
           fill="none"
         />
-        <Circle
-          cx={size / 2}
-          cy={size / 2}
-          r={r}
-          stroke={`url(#${id})`}
-          strokeWidth={stroke}
-          fill="none"
-          strokeLinecap="round"
-          strokeDasharray={c}
-          strokeDashoffset={c * (1 - Math.max(0, Math.min(1, progress)))}
-        />
+        {animated ? (
+          <AnimatedRingCircle
+            {...arcProps}
+            strokeDashoffset={anim.interpolate({inputRange: [0, 1], outputRange: [c, 0]})}
+          />
+        ) : (
+          <Circle {...arcProps} strokeDashoffset={c * (1 - pct)} />
+        )}
       </Svg>
       {children}
     </View>

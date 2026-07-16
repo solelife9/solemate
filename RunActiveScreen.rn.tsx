@@ -18,8 +18,10 @@ import { rf, rs, ri, rv } from './lib/responsive';
 import { View, Text, Pressable, StyleSheet, Animated, Easing, StatusBar, LayoutAnimation, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import Svg, { Circle, Defs, LinearGradient as SvgLinear, RadialGradient as SvgRadial, Stop } from 'react-native-svg';
-import { GlassEdge, ShoeGlyph } from './primitives';
+import Svg, { Circle, Defs, RadialGradient as SvgRadial, Stop } from 'react-native-svg';
+
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+import { GlassEdge, Ring, ShoeGlyph } from './primitives';
 import { RunLiveMap } from './RunLiveMap';
 // 색·폰트는 전역 디자인 토큰(theme.ts)만 참조한다 — 사설 색객체(const C) 폐기.
 // 매핑: bg→BG · surface→CARD · accent→ACCENT · sage→GOOD · amber→WARN ·
@@ -42,53 +44,8 @@ import { tap, impactHeavy, warning } from './lib/haptics';
 // 옛 구글맵 타일 실패(흰 "Google" 화면이 컨트롤을 가려 저장조차 못 하던 사고)는 해소됨.
 // GPS 거리·페이스 기록은 지도와 무관하게 계속된다.
 
-const AnimatedCircle = Animated.createAnimatedComponent(Circle);
-
-// ── Ring (부드럽게 미끄러지는 진행 호) ────────────────────────────────────────────
-// 구버전은 호를 64조각(Path)으로 쪼개 조각 단위(5.6°)로 '뚝뚝' 끊겨 보였고, GPS fix 마다
-// 값이 점프해 애니메이션도 없었다(사용자 피드백). 홈 히어로 링과 동일 문법으로 교체:
-// 단일 원 스트로크 + SVG 그라데이션(앰버→딥 엠버) + Animated strokeDashoffset —
-// 새 진행률이 올 때마다 900ms 로 미끄러져 fix 간격(~1s)과 맞물려 항상 흐르는 느낌.
-function Ring({ size, stroke, progress, children }: { size: number; stroke: number; progress: number; children?: React.ReactNode }) {
-  const r = (size - stroke) / 2;
-  const cx = size / 2, cy = size / 2;
-  const CIRC = 2 * Math.PI * r;
-  const pct = Math.max(0, Math.min(1, progress));
-  const anim = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    const a = Animated.timing(anim, {
-      toValue: pct, duration: 900,
-      easing: Easing.out(Easing.quad), useNativeDriver: false, // strokeDashoffset = JS 드라이버
-    });
-    a.start();
-    return () => a.stop(); // 언마운트/값 교체 시 타이머 정리
-  }, [anim, pct]);
-  const dash = anim.interpolate({ inputRange: [0, 1], outputRange: [CIRC, 0] });
-  return (
-    <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
-      <Svg width={size} height={size} style={{ position: 'absolute' }}>
-        <Defs>
-          <SvgLinear id="run-ring" x1="0" y1="0" x2="1" y2="1">
-            <Stop offset="0" stopColor={RUN_RING_STOPS[0]} />
-            <Stop offset="0.55" stopColor={RUN_RING_STOPS[1]} />
-            <Stop offset="1" stopColor={RUN_RING_STOPS[2]} />
-          </SvgLinear>
-        </Defs>
-        <Circle cx={cx} cy={cy} r={r} stroke={SEP} strokeWidth={stroke} fill="none" />
-        <AnimatedCircle
-          cx={cx} cy={cy} r={r}
-          stroke="url(#run-ring)" strokeWidth={stroke} fill="none"
-          strokeLinecap="round"
-          strokeDasharray={CIRC}
-          strokeDashoffset={dash}
-          transform={`rotate(-90 ${cx} ${cy})`}
-        />
-      </Svg>
-      {children}
-    </View>
-  );
-}
-
+// 러닝 링 = primitives.Ring v2(animated) — 구 로컬 재구현(64조각 Path → 단일 스트로크
+// 슬라이드)을 프리미티브로 승격해 카운트다운·세리머니와 구현까지 한 벌(2026-07-16 2단계).
 
 // jest 워커에서는 장식 모션(km 펄스·세리머니 등)을 건너뛴다 — RunRecapScreen 관례와 동일.
 const SKIP_ANIM = !!(typeof process !== 'undefined' && process.env && process.env.JEST_WORKER_ID);
@@ -105,28 +62,20 @@ function FinishCeremony({ distanceKm, onDone }: { distanceKm: number; onDone: ()
   // 마침표를 찍는다(구 240/14 는 러닝 링 280/16 과 미묘하게 달라 '다른 링'으로 읽혔다).
   const SIZE = ri(RUN_RING_SIZE);
   const STROKE = RUN_RING_STROKE;
-  const R = (SIZE - STROKE) / 2;
-  const CIRC = 2 * Math.PI * R;
   const fade = useRef(new Animated.Value(0)).current; // 오버레이 페이드인
-  const sweep = useRef(new Animated.Value(0)).current; // 링 0→1
   const glow = useRef(new Animated.Value(0)).current; // 빛 번짐 0→1→0
+  // 링 스윕은 primitives.Ring(animated) 이 맡는다: 페이드 완료 후(delay) 0→1 로 차오르고
+  // onSweepEnd 에서 완성 햅틱 — 빛 번짐이 스러지는 것과 무관하게 링 완성 순간에 '쿵'.
   useEffect(() => {
     const seq = Animated.sequence([
       Animated.timing(fade, { toValue: 1, duration: MOTION.dur.fast, easing: MOTION.ease.quad, useNativeDriver: false }),
-      Animated.parallel([
-        Animated.timing(sweep, { toValue: 1, duration: MOTION.dur.sweep, easing: MOTION.ease.out, useNativeDriver: false }),
-        // 빛은 링 완성 직전 피크 → 부드럽게 스러짐(0→1→0 은 아래 interpolate 가 성형)
-        Animated.timing(glow, { toValue: 1, duration: 900, easing: Easing.inOut(Easing.quad), useNativeDriver: false }),
-      ]),
+      // 빛은 링 완성 직전 피크 → 부드럽게 스러짐(0→1→0 은 아래 interpolate 가 성형)
+      Animated.timing(glow, { toValue: 1, duration: 900, easing: Easing.inOut(Easing.quad), useNativeDriver: false }),
     ]);
-    seq.start(() => {
-      impactHeavy(); // 링 완성 — 성취의 '쿵'(목표 달성과 같은 무게 언어)
-      setTimeout(onDone, 220);
-    });
+    seq.start();
     return () => seq.stop();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  const dash = sweep.interpolate({ inputRange: [0, 1], outputRange: [CIRC, 0] });
   const glowO = glow.interpolate({ inputRange: [0, 0.55, 1], outputRange: [0, 0.16, 0] });
   const glowS = glow.interpolate({ inputRange: [0, 1], outputRange: [0.9, 1.22] });
   return (
@@ -144,26 +93,17 @@ function FinishCeremony({ distanceKm, onDone }: { distanceKm: number; onDone: ()
           <Circle cx="50%" cy="50%" r="50%" fill="url(#cer-glow)" />
         </Svg>
       </Animated.View>
-      <View style={{ width: SIZE, height: SIZE, alignItems: 'center', justifyContent: 'center' }}>
-        <Svg width={SIZE} height={SIZE} style={{ position: 'absolute' }}>
-          <Defs>
-            <SvgLinear id="cer-ring" x1="0" y1="0" x2="1" y2="1">
-              <Stop offset="0" stopColor={RUN_RING_STOPS[0]} />
-              <Stop offset="0.55" stopColor={RUN_RING_STOPS[1]} />
-              <Stop offset="1" stopColor={RUN_RING_STOPS[2]} />
-            </SvgLinear>
-          </Defs>
-          <Circle cx={SIZE / 2} cy={SIZE / 2} r={R} stroke={SEP} strokeWidth={STROKE} fill="none" />
-          <AnimatedCircle
-            cx={SIZE / 2} cy={SIZE / 2} r={R}
-            stroke="url(#cer-ring)" strokeWidth={STROKE} fill="none" strokeLinecap="round"
-            strokeDasharray={CIRC} strokeDashoffset={dash}
-            transform={`rotate(-90 ${SIZE / 2} ${SIZE / 2})`}
-          />
-        </Svg>
+      <Ring
+        size={SIZE} stroke={STROKE} stops={RUN_RING_STOPS}
+        animated from={0} progress={1}
+        duration={MOTION.dur.sweep} delay={MOTION.dur.fast} easing={MOTION.ease.out}
+        onSweepEnd={() => {
+          impactHeavy(); // 링 완성 — 성취의 '쿵'(목표 달성과 같은 무게 언어)
+          setTimeout(onDone, 220);
+        }}>
         <Text style={cer.dist}>{distanceKm.toFixed(2)}</Text>
         <Text style={cer.unit}>km</Text>
-      </View>
+      </Ring>
     </Animated.View>
   );
 }
@@ -187,6 +127,7 @@ export default function RunActiveScreen({
   currentPaceSec = null, targetPaceSec = null,
   liveCoords = [],
   track = null, onLap, onUndoLap,
+  handoff = false,
 }: {
   shoeLabel?: string; distanceKm?: number; goalKm?: number;
   /** 시간 목표(분, #15). >0 이고 goalKm=0 이면 링 진행·달성 판정이 경과시간 기준. */
@@ -215,6 +156,9 @@ export default function RunActiveScreen({
   track?: { lapCount: number; lapM: number; lapDistKm: number; calibrated: boolean; progress: number; recent: { lap: number; split: number }[] } | null;
   onLap?: () => void;      // 수동 랩 기록(+1)
   onUndoLap?: () => void;  // 마지막 랩 되돌리기(-1)
+  /** 카운트다운→러닝 링 핸드오프 인트로(가득 찬 링이 풀려나가는 드레인). 새 러닝 시작에만
+      true — 크래시 복구(resume) 재진입은 이어 달리기라 인트로 없이 현재 진행으로 시작. */
+  handoff?: boolean;
 }) {
   const insets = useSafeAreaInsets();
   const { height: winH } = useWindowDimensions();
@@ -272,6 +216,11 @@ export default function RunActiveScreen({
   // Animated 마진+LayoutAnimation 이 서로 다른 시스템으로 같은 뷰를 밀며 desync→복귀불능 버그).
   // 서브 지표가 들어설 세로 공간은 스케일이 아니라 ringWrapPaused 여백 축소(LayoutAnimation)가 만든다.
   const ringScale = t.interpolate({ inputRange: [0, 1], outputRange: [1, 0.92] });
+  // 핸드오프 인트로는 '첫 마운트 한 번'만 — 링은 일시정지 때 언마운트됐다 재개 시 다시
+  // 마운트되므로, prop 그대로 쓰면 재개마다 드레인이 재생된다. 첫 렌더에서 소비하고 끈다.
+  const handoffArmed = useRef(handoff && !SKIP_ANIM);
+  const handoffFrom = handoffArmed.current ? 1 : undefined;
+  useEffect(() => { handoffArmed.current = false; }, []);
   // 라이브 심박 존 — 심박이 흐를 때만 산출(bpm>0). 워치 미연동이면 0 → 존 미표시.
   const hrZone = bpm > 0 ? zoneOf(bpm, estimateMaxHR(age), restHR || undefined) : 0;
   const hrColor = hrZone !== 0 ? HR_ZONE_COLORS[hrZone] : T1;
@@ -438,7 +387,13 @@ export default function RunActiveScreen({
           거리/자유 모드는 거리 히어로, 트랙 모드는 '바퀴 수' 히어로(링=현재 바퀴 진행). */}
       {!uiPaused && (
       <Animated.View style={[r.ringWrap, { transform: [{ scale: ringScale }] }]}>
-        <Ring size={ri(RUN_RING_SIZE)} stroke={RUN_RING_STROKE} progress={track ? track.progress : pct}>
+        {/* 핸드오프 인트로(시그니처 연속, 2026-07-16 2단계): 카운트다운이 3초에 걸쳐
+            가득 채운 파파야 링이 러닝 화면에서 '가득 찬 채' 나타나 현재 진행(0)으로
+            풀려나간다(from=1 드레인) — 두 화면의 링이 하드컷 없이 한 링으로 읽힌다.
+            재개(resume)·일시정지 복귀 재마운트에는 인트로를 걸지 않는다. */}
+        <Ring size={ri(RUN_RING_SIZE)} stroke={RUN_RING_STROKE} stops={RUN_RING_STOPS}
+          animated from={handoffFrom}
+          progress={track ? track.progress : pct}>
           {track ? (
             <View style={{ alignItems: 'center' }} accessibilityRole="text" accessibilityLiveRegion="polite"
               accessibilityLabel={`${track.lapCount}바퀴, ${track.lapDistKm.toFixed(2)}킬로미터, 한 바퀴 ${track.lapM}미터 ${track.calibrated ? 'GPS 보정됨' : '예상'}`}>

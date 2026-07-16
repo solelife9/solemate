@@ -2980,6 +2980,7 @@ function RunActiveScreen({shoe,insets,goalKm,goalMin=0,pacePlan=[],targetZone=0,
       track={trackMode?{lapCount,lapM,lapDistKm:trackDistKm,calibrated:lapLockedRef.current,progress:lapProgress,recent:recentLaps}:null}
       onLap={()=>registerLap(elapsedRef.current,false)}
       onUndoLap={undoLap}
+      handoff={!resume}
     />
   );
 }
