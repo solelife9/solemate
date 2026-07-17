@@ -484,11 +484,14 @@ const s = StyleSheet.create({
   seg: { marginHorizontal: rs(22), marginTop: rv(14) },
 
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: GUTTER },
-  bigRow: { flexDirection: 'row', alignItems: 'flex-end' },
+  // baseline 정렬(2026-07-17 사용자 지적 "km·분·m 라인이 숫자보다 밑"): Jost 숫자의
+  // 줄상자(lineHeight 1.22×)가 글자보다 커서 flex-end+수동 마진은 단위가 밑선 아래로
+  // 처졌다 — 글자 밑선끼리 맞춘다(거리·시간·트랙 공용).
+  bigRow: { flexDirection: 'row', alignItems: 'baseline' },
   // 큰 숫자 = NUM(Jost) — 러닝 중 bigDist 와 동일 규율(2026-07-16 통일: 목표→러닝 전환 시
   // 같은 숫자의 폰트 점프 해소). Jost 는 어센더가 커서 lineHeight 를 1.22 배로 띄운다.
   bigVal: { color: T1, fontFamily: NUM, fontSize: rf(104), fontWeight: '500', letterSpacing: -1, lineHeight: rf(127), includeFontPadding: false, fontVariant: ['tabular-nums'] },
-  bigUnit: { color: T2, fontFamily: FONT, fontSize: TYPE.title1.fontSize, fontWeight: '600', marginLeft: rs(8), marginBottom: rv(12) },
+  bigUnit: { color: T2, fontFamily: FONT, fontSize: TYPE.title1.fontSize, fontWeight: '600', marginLeft: rs(8) },
   estimate: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500', marginTop: rv(14) },
 
   rulerWrap: { width: '100%', height: rs(78), marginTop: rv(30), position: 'relative' },
