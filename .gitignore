@@ -106,3 +106,4 @@ android/app/src/main/assets/index.android.bundle
 .elevenkey
 voice_samples/
 /android/app/src/main/res/**/assets_*
+.supertonekey
