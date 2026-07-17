@@ -638,12 +638,12 @@ describe('Audit Hardening 수용', () => {
         .map(l => l.replace(/\/\/.*$/, ''))
         .join('\n');
 
-    test('타입: lib/api.ts·lib/stats.ts·lib/runPersistence.ts 에 명시적 any 0(도메인/unknown 타입)', () => {
+    test('타입: lib/geocode.ts·lib/stats.ts·lib/runPersistence.ts 에 명시적 any 0(도메인/unknown 타입)', () => {
       const read = (rel: string) => fs.readFileSync(path.join(__dirname, '../../', rel), 'utf8');
       // 세 모듈 모두 명시적 any 토큰(`: any` · `any[]` · `as any` · `<any>` 등)이 한 번도
       // 나오지 않는다 — api/stats 는 도메인 타입, runPersistence sanitizer 는 unknown+런타임
       // 가드로 좁힌다. 주석을 제거한 코드에서 단어 'any' 가 0이면 명시적 any 도 0이다.
-      for (const rel of ['lib/net.ts', 'lib/stats.ts', 'lib/runPersistence.ts']) {
+      for (const rel of ['lib/geocode.ts', 'lib/stats.ts', 'lib/runPersistence.ts']) {
         const code = stripComments(read(rel));
         expect(code).not.toMatch(/\bany\b/);
       }

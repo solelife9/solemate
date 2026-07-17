@@ -21,7 +21,7 @@ import {Ring, Button} from './primitives';
 import ErrorBoundary from './ErrorBoundary';
 import ToastHost from './ToastHost';
 import {installCrashHandler, setCrashUser} from './lib/crashlytics';
-import {fetchWithTimeout} from './lib/net';
+import {reverseGeoLabelKo} from './lib/geocode';
 import {devSeedShoes, devSeedRuns} from './lib/devSeed';
 // BackendShoe / BackendRun 은 types.d.ts 의 전역 ambient 인터페이스(import 불필요).
 import HomeScreen, {WeekStats} from './HomeScreen.rn';
@@ -2431,15 +2431,14 @@ function RunActiveScreen({shoe,insets,goalKm,goalMin=0,pacePlan=[],targetZone=0,
         runVoice.resume();
       }else if(ev.type==='firstFix'){
         // 첫 fix 좌표로 1회 역지오코딩 → 위치 라벨. 엔진 메타에도 실어 스냅샷/저장에 반영.
+        // OS 내장 지오코더(lib/geocode — Nominatim 은퇴 2026-07-17, 외부 서버 의존 0).
         if(!locationFetched.current){
           locationFetched.current=true;
-          fetch(`https://nominatim.openstreetmap.org/reverse?lat=${ev.lat}&lon=${ev.lon}&format=json&accept-language=ko`,{headers:{'User-Agent':'Keego/1.0'}})
-            .then(r=>r.json()).then(d=>{
-              const addr=d.address||{};
-              const parts=[addr.suburb||addr.neighbourhood||addr.quarter||addr.city_district||addr.town,addr.city||addr.county||addr.state].filter(Boolean);
-              locationRef.current=parts.length>0?parts.join(', '):(d.display_name||'').split(',').slice(0,2).join(',').trim()||'';
-              runTracker.setMeta({location:locationRef.current});
-            }).catch(()=>{});
+          void reverseGeoLabelKo(ev.lat,ev.lon).then(label=>{
+            if(!label) return;
+            locationRef.current=label;
+            runTracker.setMeta({location:label});
+          });
         }
       }else if(ev.type==='permissionRevoked'){
         // 주행 중 권한 회수: 엔진이 트래킹(거리·시간)을 멈췄다. delivery 경로와
@@ -2814,14 +2813,12 @@ function RunActiveScreen({shoe,insets,goalKm,goalMin=0,pacePlan=[],targetZone=0,
     try{
       let loc=finLocation||locationRef.current;
       if(!loc&&finRoute){
+        // 저장 직전 폴백 역지오코딩 — OS 내장 지오코더(lib/geocode, Nominatim 은퇴).
         try{
           const pts2=JSON.parse(finRoute);
           if(pts2.length>0){
             const {lat,lon}=pts2[0];
-            const d=await fetchWithTimeout(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=ko`,{headers:{'User-Agent':'Keego/1.0'}},5000).then(r=>r.json());
-            const addr=d.address||{};
-            const parts=[addr.suburb||addr.neighbourhood||addr.quarter||addr.city_district||addr.town,addr.city||addr.county||addr.state].filter(Boolean);
-            loc=parts.length>0?parts.join(', '):(d.display_name||'').split(',').slice(0,2).join(',').trim()||'';
+            loc=await reverseGeoLabelKo(lat,lon);
           }
         }catch{}
       }

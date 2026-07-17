@@ -30,6 +30,8 @@ jest.mock('expo-location', () => ({
     Other: 1, AutomotiveNavigation: 2, Fitness: 3, OtherNavigation: 4, Airborne: 5,
   },
   watchPositionAsync: jest.fn(() => Promise.resolve({remove: jest.fn()})),
+  // 위치 라벨 역지오코딩(lib/geo) — 기본 무주소(라벨 '' 폴백 경로).
+  reverseGeocodeAsync: jest.fn(() => Promise.resolve([])),
   requestForegroundPermissionsAsync: jest.fn(() =>
     Promise.resolve({granted: true, status: 'granted'}),
   ),
