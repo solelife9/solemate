@@ -4,8 +4,9 @@
 > 🚫=블로커, 🟡=권장.
 
 ## 0. 공통 (출시 전 필수)
-- 🚫 **백엔드 Render 배포** — 미배포 시 신규 사용자가 부팅에서 막힘. → `docs/backend-deploy.md` 참고.
-  (완화책으로 로컬-퍼스트 부팅 폴백을 코드에 추가 중 — 그래도 랭킹/동기화엔 백엔드 필요.)
+- ✅ ~~백엔드 Render 배포~~ — **해소(2026-07-17)**: 정본=Firestore 로 완전 이전, Render 코드
+  완전 제거(lib/api.ts·일회성 이관 삭제). 랭킹/동기화 전부 Firestore. Render 서비스는
+  해지해도 된다(앱 무관). `docs/backend-deploy.md` 는 역사 문서.
 - 🚫 **개인정보 처리방침 공개 URL** — `docs/privacy-policy.md` 를 호스팅(GitHub Pages 등).
 - 🚫 **실기기 QA 1회전**: 실제 풀 러닝(GPS 거리/경로/케이던스/저장) + 화면 off 백그라운드 추적 + FCM 푸시 수신 + 신발 등록/은퇴/교체 알림.
 - 🟡 버전·빌드번호 정리(Android versionCode/Name, iOS MARKETING_VERSION/CURRENT_PROJECT_VERSION).

@@ -325,26 +325,8 @@ export function mergeMedals(local: unknown[] | undefined, remote: unknown[] | un
   return [...byId.values()].map((v) => v.rec);
 }
 
-/**
- * 클라우드 머지 결과 중 REST(정본)에 아직 없는 live 레코드만 가려낸다 — 역등록(apiAddShoe/
- * apiAddRun) 대상. REST 정본을 완전하게 만들기 위해, 다른 기기가 클라우드에만 올린 레코드를
- * 우리 REST 백엔드에도 합류시킨다.
- *   · knownIds  — 머지 *적용 전* 로컬 상태의 id 집합(= REST 정본 + 우리 pending). 여기 든 id 는
- *                 이미 우리 백엔드/큐에 있으므로 역등록하지 않는다(중복 POST 금지).
- *   · tombstone — 삭제 레코드는 제외한다. 역등록은 곧 부활이므로(iron law: 삭제 존중).
- *   · id 없는 레코드 — dedupe 불가하므로 보수적으로 제외(무한 재-POST 방지).
- * 멱등성: 역등록 성공 후 호출부가 서버 id 로 reconcile 하면 그 id 가 다음 머지의 knownIds 에
- * 들어와 다시 잡히지 않는다 → 재동기화 시 같은 레코드를 두 번 POST 하지 않는다.
- */
-export function recordsToBackRegister<T>(
-  merged: readonly T[],
-  knownIds: ReadonlySet<string>,
-): T[] {
-  return liveRecords(merged).filter((r) => {
-    const id = recordId(r);
-    return id !== null && !knownIds.has(id);
-  });
-}
+// (recordsToBackRegister — REST 역등록 선별은 2026-07-17 Render 은퇴와 함께 삭제.
+//  Firestore 단일 정본에선 역등록 개념 자체가 없다. 프로덕션 사용처 0 확인 후 제거.)
 
 /**
  * 최초 로그인 시 기기 로컬 데이터를 계정으로 무손실 이관한다. 원격(계정)이 없으면

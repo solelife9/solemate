@@ -20,7 +20,6 @@ import {
   isDeleted,
   liveRecords,
   partitionTombstones,
-  recordsToBackRegister,
   reconcileLivePreservingLocal,
   unionTombstones,
   type AuthState,
@@ -356,44 +355,6 @@ describe('migrateDeviceToAccount', () => {
   });
 });
 
-describe('recordsToBackRegister — 클라우드→REST 역등록 대상 선별(멱등성)', () => {
-  test('REST 정본(knownIds)에 없는 클라우드-only 레코드만 역등록 대상이 된다', () => {
-    // 머지 결과 = REST 에 이미 있던 L1 + 클라우드에서 새로 온 C1.
-    const merged = [{ id: 'L1' }, { id: 'C1' }];
-    const known = new Set(['L1']);
-    expect(recordsToBackRegister(merged, known).map((r: any) => r.id)).toEqual(['C1']);
-  });
-
-  test('knownIds 에 든 레코드(REST 정본 + 우리 pending)는 역등록하지 않는다 — 중복 POST 금지', () => {
-    const merged = [{ id: 'L1' }, { id: 'pending-local' }];
-    const known = new Set(['L1', 'pending-local']);
-    expect(recordsToBackRegister(merged, known)).toEqual([]);
-  });
-
-  test('tombstone(삭제) 레코드는 역등록 대상에서 제외한다 — 역등록은 부활이므로', () => {
-    const merged = [markDeleted({ id: 'C-deleted' }, 1000), { id: 'C-live' }];
-    const known = new Set<string>();
-    expect(recordsToBackRegister(merged, known).map((r: any) => r.id)).toEqual(['C-live']);
-  });
-
-  test('id 없는 레코드는 dedupe 불가하므로 제외(무한 재-POST 방지)', () => {
-    const merged = [{ km: 5 } as any, { id: 'C1' }];
-    expect(recordsToBackRegister(merged, new Set<string>()).map((r: any) => r.id)).toEqual(['C1']);
-  });
-
-  test('멱등성: 역등록 성공 후 서버 id 로 reconcile 하면 재호출에서 다시 잡히지 않는다', () => {
-    // 1차: 클라우드-only C1 이 잡힌다.
-    const firstMerged = [{ id: 'L1' }, { id: 'C1' }];
-    expect(recordsToBackRegister(firstMerged, new Set(['L1'])).map((r: any) => r.id)).toEqual(['C1']);
-    // C1 을 서버 id 'S99' 로 reconcile + 옛 id 'C1' 묘비. 다음 머지 = L1 + S99(live) + C1(묘비).
-    const reMerged = [{ id: 'L1' }, { id: 'S99' }, markDeleted({ id: 'C1' }, 2000)];
-    // knownIds 는 reconcile 후 로컬 상태 = {L1, S99}. → 새로 역등록할 것이 없다(중복 POST 0).
-    expect(recordsToBackRegister(reMerged, new Set(['L1', 'S99']))).toEqual([]);
-  });
-});
-
-// 동기 await 중 추가/편집 보존(#2): applyBackupPayload 가 setRuns/setShoes 의 함수형 updater 로
-// 호출하는 머지. 동기 왕복 도중 생긴 로컬 변경이 '전체 교체'로 사라지지 않게 보존한다.
 describe('reconcileLivePreservingLocal — 동기 결과 반영 시 로컬 변경 보존(#2)', () => {
   test('merged 에 없는 로컬-전용 신규 레코드는 보존된다(await 중 추가 유실 방지)', () => {
     // prev(현재 상태) = 동기 시작 후 추가된 R-new 포함. merged(동기 결과)엔 R-new 가 없다.

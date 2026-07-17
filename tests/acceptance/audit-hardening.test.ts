@@ -22,7 +22,6 @@ import {
   markDeleted,
   isDeleted,
   liveRecords,
-  recordsToBackRegister,
 } from '../../lib/cloudSync';
 import {
   migrateStorageSchema,
@@ -285,22 +284,7 @@ describe('Audit Hardening 수용', () => {
       expect((dup as {_pending?: boolean})._pending).toBeUndefined();
     });
 
-    test('클라우드→REST 역등록: REST에 없는 머지 레코드를 apiAdd*로 합류시킨다', () => {
-      // 머지 결과(클라우드 레코드 포함) 중 'REST 확정' 집합(known)에 없는 live 만 역등록 대상.
-      const merged = [
-        {id: 'rest-1'}, // 이미 REST 정본 → 제외(중복 POST 금지)
-        {id: 'cloud-2'}, // REST 미존재 live → 역등록 대상
-        markDeleted({id: 'cloud-3'}, 1), // 묘비 → 제외(역등록=부활 금지)
-        {km: 5}, // id 없음 → 제외(dedupe 불가, 무한 재POST 방지)
-      ];
-      const known = new Set(['rest-1']);
-      const toRegister = recordsToBackRegister(merged, known);
-      expect(toRegister.map((r: any) => r.id)).toEqual(['cloud-2']);
-
-      // 멱등성: 역등록 성공 후 그 id 가 known 에 들어오면 다음 머지에서 다시 잡히지 않는다.
-      const knownAfter = new Set(['rest-1', 'cloud-2']);
-      expect(recordsToBackRegister(merged, knownAfter)).toHaveLength(0);
-    });
+    // (역등록 테스트 삭제 — recordsToBackRegister 는 2026-07-17 Render 은퇴로 제거)
 
     test('마이그레이션: 기존 레코드에 updatedAt 시드, 기존 값 비파괴', async () => {
       // 순수 헬퍼: updatedAt 없는 레코드에만 시드하고, 이미 있으면(멱등) 손대지 않는다.
@@ -659,7 +643,7 @@ describe('Audit Hardening 수용', () => {
       // 세 모듈 모두 명시적 any 토큰(`: any` · `any[]` · `as any` · `<any>` 등)이 한 번도
       // 나오지 않는다 — api/stats 는 도메인 타입, runPersistence sanitizer 는 unknown+런타임
       // 가드로 좁힌다. 주석을 제거한 코드에서 단어 'any' 가 0이면 명시적 any 도 0이다.
-      for (const rel of ['lib/api.ts', 'lib/stats.ts', 'lib/runPersistence.ts']) {
+      for (const rel of ['lib/net.ts', 'lib/stats.ts', 'lib/runPersistence.ts']) {
         const code = stripComments(read(rel));
         expect(code).not.toMatch(/\bany\b/);
       }
