@@ -43,6 +43,6 @@
 6. 마이 — 러너 스펙(거리 PB) · "당신의 러닝 이력서"
 
 ## 기타
-- 개인정보 처리방침 URL: https://solelife9.github.io/solemate/privacy.html (⚠️ GitHub Pages 활성화 필요)
+- 개인정보 처리방침 URL: https://solelife9.github.io/keego-legal/privacy.html (✅ keego-legal Pages, 200 확인 2026-07-17)
 - App Privacy 표기: 위치(러닝 기록), 건강(HealthKit), 식별자(로그인), 사진(메달·신발 — 선택)
 - 연령 등급: 4+

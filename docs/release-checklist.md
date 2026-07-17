@@ -71,6 +71,6 @@ cd android && ./gradlew bundleRelease   # app/build/outputs/bundle/release/app-r
 ### 5.3 개인정보 처리방침 공개 URL
 - 정적 페이지: `docs/privacy.html`. 앱 내 링크는 `lib/legalLinks.ts`(온보딩 동의 문구 탭→열림).
 - **활성화(사용자)**: 저장소 → Settings → Pages → Source `main` / `/docs` → 저장.
-  → `https://solelife9.github.io/solemate/privacy.html` 열리는지 확인.
+  → `https://solelife9.github.io/keego-legal/privacy.html` 열리는지 확인.
 - 스토어 등록 정보(Play Data safety / App Privacy)에도 **같은 URL** 입력.
 - ⚠️ 방침 본문은 초안 — 법적 자문 후 최종본으로 갱신.
