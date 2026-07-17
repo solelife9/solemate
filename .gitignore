@@ -107,3 +107,4 @@ android/app/src/main/assets/index.android.bundle
 voice_samples/
 /android/app/src/main/res/**/assets_*
 .supertonekey
+scripts/.voicegen/
