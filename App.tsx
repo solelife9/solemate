@@ -1923,7 +1923,12 @@ function Main(){
         onSave={async(km,dur,cad,memo,route,location,splits,elevM,cal,paceTrack,hrTrack,gapTrack,trackMeta)=>{
           // 신기록(PR) 감지 — addRun 의 낙관적 setRuns 전이라 runs 는 '이전 런들'이다.
           const prKinds=detectPRs({dist:km,durationS:dur},runs.map(r=>({dist:Number(r.km)||0,durationS:r.duration||0,runDate:r.run_date})));
-          const newId=await addRun(activeRun.id,km,today(),memo||'','gps',dur,cad,route,location,undefined,elevM,cal);
+          // 평균 심박을 레코드에 함께 저장(2026-07-17 비교런 수정) — 여태 undefined 로 저장돼
+          // 상세 요약 카드가 '--'(심박존 카드는 hrTrack 사이드카라 정상)인 소스 불일치였다.
+          // 라이브 hrTrack 이 비면(주머니 러닝) undefined 유지 → HealthKit 백필이 채운다.
+          const liveHr=(hrTrack||[]).filter(p=>p.bpm>0);
+          const avgBpm=liveHr.length?Math.round(liveHr.reduce((sm,p)=>sm+p.bpm,0)/liveHr.length):undefined;
+          const newId=await addRun(activeRun.id,km,today(),memo||'','gps',dur,cad,route,location,avgBpm,elevM,cal);
           // 트랙 세션 마커 — RunDetail 이 track_<id> 로 읽어 '트랙 · 400m×12랩'을 표시한다.
           // 거리·페이스·PB 는 이미 랩 시계열(paceTrack=lapsToTrack)로 정본이라 별도 계산 불필요.
           if(trackMeta&&trackMeta.laps>0) await AsyncStorage.setItem('track_'+newId, JSON.stringify(trackMeta));
@@ -2765,10 +2770,12 @@ function RunActiveScreen({shoe,insets,goalKm,goalMin=0,pacePlan=[],targetZone=0,
     runVoice.finish(); // 완주 음성("운동을 종료합니다. 수고하셨습니다") — 리뷰 화면 전환 전 재생
     const sampled=simplifyRoute(runTracker.getPoints() as any,200);
     setFinRoute(sampled.length>=2?JSON.stringify(sampled):'');
-    // 고도: 기압계(정확)와 GPS 고도(백그라운드에서도 누적) 중 더 큰 값. 폰을 주머니에 넣어
-    // 화면이 꺼지면 기압계 JS 구독이 멈춰 고도를 놓치는데, GPS 는 백그라운드 위치추적으로
-    // 계속 잡히므로 폴백이 된다(둘 다 3m 임계로 노이즈 필터됨 → max 가 유실을 막는다).
-    const finElevTotal=Math.max(Math.round(baroElev.current.gain),runTracker.getElevationGain());
+    // 고도: **기압계 우선, GPS 는 기압계 부재 시 폴백만**(2026-07-17 비교런 근본수정).
+    // 구 max(기압계, GPS)는 도심 GPS 고도 반사 노이즈가 3m 임계를 뚫고 수천 m 를 쌓으면
+    // (실측: 3km 러닝에 GPS 3,262m vs 기압계 9m vs NRC 20m) 쓰레기가 이겼다 — 스플릿의
+    // '기압계 우선' 로직과도 모순돼 총합·마지막 구간이 오염됐다. 주머니 러닝의 기압계
+    // 구독 정지로 인한 소량 유실은 감수한다(작게 틀리는 쪽 — 정확성 우선).
+    const finElevTotal=baroAvail.current?Math.round(baroElev.current.gain):runTracker.getElevationGain();
     // 마지막 정수 km 이후 남은 부분 구간(예: 5.6km 의 0.6km)을 스플릿에 한 줄 추가한다 —
     // 레코더는 정수 km 경계만 남겨 꼬리 구간이 통째 누락됐다. lastSplitRef 가 마지막 경계의
     // 경과초·누적고도를 들고 있어 그 차이로 구간 시간·고도를 per-km 페이스로 환산한다.
