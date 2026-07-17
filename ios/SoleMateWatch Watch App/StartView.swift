@@ -14,6 +14,10 @@ import SwiftUI
 struct StartView: View {
   @EnvironmentObject var workout: WorkoutManager
   @ObservedObject private var link = WatchLink.shared
+  /// 스와이프 발견성(2026-07-17 사용자 지적 "좌우로 넘기는 걸 어떻게 알지"):
+  /// 신발이 2켤레 이상인데 아직 한 번도 스와이프한 적 없으면 하단에 힌트 한 줄.
+  /// 처음 페이지를 넘기는 순간 영구 소등(클러터 0) — 도트는 시스템 것 그대로.
+  @AppStorage("didSwipeShoePages") private var didSwipeShoePages = false
   /// 표시 페이지 배열 — 마지막 선택 신발을 맨 앞으로 회전(나머지는 폰 순서 유지).
   /// watchOS .page TabView 는 비-첫 selection 생성도, 마운트 후 프로그램 이동
   /// (단순 대입·withAnimation 모두)도 무시한다(시뮬 실측 2026-07-11) — 페이지를
@@ -49,6 +53,21 @@ struct StartView: View {
           }
         }
         .tabViewStyle(.page)
+        // 스와이프 힌트 — 2켤레+ & 미발견 사용자에게만, 도트 바로 위 한 줄. 첫 스와이프에 영구 소등.
+        .overlay(alignment: .bottom) {
+          if pages.count > 1 && !didSwipeShoePages {
+            HStack(spacing: 3) {
+              Image(systemName: "chevron.left")
+              Text("밀어서 다른 신발")
+              Image(systemName: "chevron.right")
+            }
+            .font(.system(size: 10, weight: .medium))
+            .foregroundStyle(KeegoTheme.t3)
+            .padding(.bottom, 14)
+            .allowsHitTesting(false)
+            .transition(.opacity)
+          }
+        }
       }
     }
     .padding(.horizontal, 2)
@@ -58,6 +77,8 @@ struct StartView: View {
     }
     .onChange(of: selection) { _, newValue in
       if !newValue.isEmpty { link.selectedShoeId = newValue }
+      // 페이지를 실제로 넘겼다 = 스와이프 발견 완료 → 힌트 영구 소등.
+      if !didSwipeShoePages { withAnimation { didSwipeShoePages = true } }
     }
     .onChange(of: link.shoes) { _, newShoes in
       // 동기화로 목록 갱신 — 재정렬은 이때만(스와이프 중 순서가 바뀌지 않게).
@@ -160,16 +181,16 @@ private struct NameRing: View {
             .kerning(1.1)
             .foregroundStyle(KeegoTheme.t3)
             .lineLimit(1)
-            .minimumScaleFactor(0.8)
+            .minimumScaleFactor(0.6) // '뉴발란스' 등 긴 브랜드 — 0.8 론 잘렸다(실기기 2026-07-17)
         }
         Text(model)
           .font(.system(size: 17, weight: .bold))
           .foregroundStyle(KeegoTheme.t1)
           .multilineTextAlignment(.center)
           .lineLimit(2)
-          .minimumScaleFactor(0.6)
+          .minimumScaleFactor(0.45) // 긴 모델명(1080 v13 등) 2줄 축소 한도 완화
       }
-      .padding(.horizontal, 16) // 링 안쪽 여백 — 텍스트가 아크에 닿지 않게.
+      .padding(.horizontal, 11) // 링 안쪽 여백 — 16 은 긴 이름의 가용 폭을 너무 깎았다
     }
     .padding(3) // 라운드 캡 스트로크가 프레임 밖으로 잘리지 않게.
     .accessibilityElement(children: .ignore)
