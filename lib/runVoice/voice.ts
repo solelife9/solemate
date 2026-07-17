@@ -27,11 +27,12 @@ async function ensureMode(): Promise<void> {
 // 재생 볼륨(0~1) — 설정(VoiceSettings.volume)이 runVoice.setVolume 으로 주입한다.
 let clipVolume = 1;
 
-/** 클립 하나를 끝까지 재생(끝 신호나 6s 안전타임아웃에 resolve). */
-function playClip(source: number): Promise<void> {
+type Player = ReturnType<typeof createAudioPlayer>;
+
+/** 미리 만들어 둔 플레이어를 끝까지 재생(끝 신호나 6s 안전타임아웃에 resolve, 항상 remove). */
+function playPrepared(player: Player): Promise<void> {
   return new Promise(resolve => {
     let done = false;
-    let player: ReturnType<typeof createAudioPlayer> | null = null;
     let sub: {remove: () => void} | null = null;
     let timer: ReturnType<typeof setTimeout> | null = null;
     const finish = () => {
@@ -42,12 +43,11 @@ function playClip(source: number): Promise<void> {
         sub?.remove();
       } catch {/* noop */}
       try {
-        player?.remove();
+        player.remove();
       } catch {/* noop */}
       resolve();
     };
     try {
-      player = createAudioPlayer(source);
       player.volume = clipVolume; // 설정 볼륨(3단) — 마스터링된 클립 기준 상대 감쇠
       sub = player.addListener('playbackStatusUpdate', (s: {didJustFinish?: boolean}) => {
         if (s?.didJustFinish) finish();
@@ -63,14 +63,34 @@ function playClip(source: number): Promise<void> {
 
 // 새 큐가 오면 이전 시퀀스를 취소하기 위한 토큰(겹치는 안내 방지).
 let token = 0;
+/** 큐를 이어 재생한다 — **다음 클립을 현재 재생 중에 미리 생성(룩어헤드)** 해 조각 사이
+ *  로드 지연(~100-300ms)을 제거한다(2026-07-18 "이어붙임이 끊기고 느리다" 근본수정 ①).
+ *  취소 시 미리 만든 플레이어도 반드시 remove(리소스 누수 방지). */
 async function playSequence(ids: string[]): Promise<void> {
   await ensureMode();
   const mine = ++token;
-  for (const id of ids) {
-    if (mine !== token) return; // 더 최신 큐가 들어옴 → 중단
-    const src = CLIPS[id];
-    if (src != null) await playClip(src);
+  const sources = ids.map(id => CLIPS[id]).filter((s): s is number => s != null);
+  if (!sources.length) return;
+  const create = (src: number): Player | null => {
+    try {
+      return createAudioPlayer(src);
+    } catch {
+      return null;
+    }
+  };
+  let next: Player | null = create(sources[0]);
+  for (let i = 0; i < sources.length; i++) {
+    const cur = next;
+    next = i + 1 < sources.length ? create(sources[i + 1]) : null; // 룩어헤드 프리로드
+    if (mine !== token) {
+      // 더 최신 큐가 들어옴 → 중단 + 준비물 정리.
+      try { cur?.remove(); } catch {/* noop */}
+      try { next?.remove(); } catch {/* noop */}
+      return;
+    }
+    if (cur) await playPrepared(cur);
   }
+  if (next) { try { next.remove(); } catch {/* noop */} }
 }
 
 /** 페이스(초/km) → ['lbl_pace'|'lbl_avg_pace','min_M','sec_S']. 범위 밖이면 음성 생략(화면엔 보임). */
