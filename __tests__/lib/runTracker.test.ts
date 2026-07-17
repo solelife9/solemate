@@ -652,3 +652,67 @@ test('수동 일시정지 중 GPS 무신호 후 재개해도 경과시간이 붕
   // 그 순간 정지·저장해도 동일(getElapsedFinal = getElapsed).
   expect(t.getElapsedFinal()).toBe(elapsed);
 });
+
+describe('오토포즈 소급 정산 + 걸음 보조(2026-07-18 비교런 근본수정)', () => {
+  // 신호대기 시나리오: 달리다가 멈추면 감지가 홀드/지터만큼 늦어도, 일시정지 시작이
+  // '마지막 확실한 이동' 시점으로 소급돼 감지 지연이 경과시간에 쌓이지 않는다.
+  test('감지 지연이 elapsed 에 쌓이지 않는다(마지막 이동 시점으로 소급)', () => {
+    const {t, set} = makeEngine();
+    t.start({goalKm: 5, shoe: {id: 's1', name: 'X'}, t0: 100000});
+    // 워밍업 소진 + 이동 확립(1.4m/s 급 — 재개 임계 이상 → lastDefiniteMove 갱신).
+    let ts = 100000;
+    let lat = 37.5;
+    for (let i = 0; i < 8; i++) {
+      set(ts); t.ingestFix(fix(lat, LON, 5, ts));
+      ts += 2000; lat += 0.000025; // ~2.8m / 2s ≈ 1.4 m/s
+    }
+    // 마지막 보폭의 '도착' fix(아래 정지 루프 첫 fix)까지가 이동 — 그 시각이 소급 앵커.
+    const lastMoveTs = ts;
+    // 정지: 같은 자리 fix 가 이어짐 — 지터 유령속도 없이 0m/s(간명 시나리오).
+    // 홀드 3s + 표본 간격 때문에 감지는 몇 초 뒤 tick 에서 떨어진다.
+    for (let i = 0; i < 4; i++) {
+      set(ts); t.ingestFix(fix(lat, LON, 5, ts)); ts += 2000;
+    }
+    expect(t.pausedFlag()).toBe(true); // 오토포즈 진입
+    // 소급 검증: 일시정지 8초 뒤 elapsed 는 '마지막 이동'까지의 러닝 시간과 같아야 한다
+    // (감지 지연 몇 초가 러닝 시간으로 계상되면 실패 — 비교런 +30s 재현 케이스).
+    set(ts + 8000);
+    const runningSec = Math.floor((lastMoveTs - 100000) / 1000);
+    expect(t.getElapsed()).toBeLessThanOrEqual(runningSec + 1); // 소급 성공(±1s 반올림)
+    expect(t.getElapsed()).toBeGreaterThanOrEqual(runningSec - 1);
+  });
+
+  test('걸음 정지가 GPS 지터 유령 속도를 눌러 감지가 리셋되지 않는다', () => {
+    const {t, set} = makeEngine();
+    t.start({goalKm: 5, shoe: {id: 's1', name: 'X'}, t0: 100000});
+    let ts = 100000;
+    let lat = 37.5;
+    for (let i = 0; i < 8; i++) {
+      set(ts); t.ingestFix(fix(lat, LON, 5, ts));
+      t.feedSteps(100 + i * 3, ts); // 달리는 동안 걸음 증가
+      ts += 2000; lat += 0.000025;
+    }
+    // 정지: 걸음수 동결 공급 + GPS 는 지터로 0.9m/s 유령 이동(임계 0.6 이상 — 원래는
+    // slowSec 리셋으로 영영 감지 못 하던 케이스).
+    const stopSteps = 100 + 7 * 3;
+    for (let i = 0; i < 6; i++) {
+      set(ts);
+      t.feedSteps(stopSteps, ts); // 걸음 안 늚
+      t.ingestFix(fix(lat, LON, 5, ts));
+      ts += 2000; lat += 0.0000162; // ~1.8m / 2s ≈ 0.9 m/s 유령
+    }
+    expect(t.pausedFlag()).toBe(true); // 걸음 보조 없인 불가능한 감지
+  });
+
+  test('수동 일시정지는 소급하지 않는다(누른 순간 그대로)', () => {
+    const {t, set} = makeEngine();
+    t.start({goalKm: 5, shoe: {id: 's1', name: 'X'}, t0: 100000});
+    let ts = 100000; let lat = 37.5;
+    for (let i = 0; i < 8; i++) { set(ts); t.ingestFix(fix(lat, LON, 5, ts)); ts += 2000; lat += 0.000025; }
+    set(ts);
+    const beforePause = t.getElapsed();
+    t.togglePause(); // 수동
+    set(ts + 10000);
+    expect(t.getElapsed()).toBe(beforePause); // 누른 시점에서 정지(소급 X)
+  });
+});

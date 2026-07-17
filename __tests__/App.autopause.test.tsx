@@ -224,7 +224,11 @@ test('displayed elapsed timer freezes while auto-paused — never advances, neve
     }
     expect(isAutoPaused(root)).toBe(true);
     const elapsedAtPause = readElapsedSec(root);
-    expect(elapsedAtPause).toBeGreaterThanOrEqual(elapsedRunning);
+    // 계약 진화(2026-07-18 소급 정산): 오토포즈 전환 '순간'에는 감지 지연분(상한 10s)만큼
+    // 타이머가 뒤로 정리될 수 있다 — 멈춘 시점부터 일시정지로 계상하는 정확 회계(비교런
+    // +30s 근본수정). 여전히 음수/쓰레기 금지·상한 밖 되감김 금지, 이후 동결은 불변.
+    expect(elapsedAtPause).toBeGreaterThanOrEqual(Math.max(0, elapsedRunning - 10));
+    expect(elapsedAtPause).toBeLessThanOrEqual(elapsedRunning);
     expect(Number.isInteger(elapsedAtPause)).toBe(true);
 
     // Now burn 30s of wall time WHILE PAUSED. The interval keeps firing but the

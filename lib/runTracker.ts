@@ -21,7 +21,7 @@
 import {KalmanFilter} from './kalman';
 import {DistanceSmoother} from './distanceSmoother';
 import {calcDist, acceptSegment, segmentSpeedMps} from './geo';
-import {WARMUP_FIXES, MAX_FIX_ACCURACY_M, MAX_SEG_DIST_KM, MAX_SEG_SPEED_MPS, CURRENT_PACE_WINDOW_MS, CURRENT_PACE_MIN_DIST_KM, CURRENT_PACE_MIN_SPEED_MPS, PACE_TRACK_MIN_STEP_KM, STEP_SIGNAL_FRESH_MS, STEP_STILL_GATE_MS, STEP_GATE_MAX_SPEED_MPS} from './engineConstants';
+import {WARMUP_FIXES, MAX_FIX_ACCURACY_M, MAX_SEG_DIST_KM, MAX_SEG_SPEED_MPS, CURRENT_PACE_WINDOW_MS, CURRENT_PACE_MIN_DIST_KM, CURRENT_PACE_MIN_SPEED_MPS, PACE_TRACK_MIN_STEP_KM, STEP_SIGNAL_FRESH_MS, STEP_STILL_GATE_MS, STEP_GATE_MAX_SPEED_MPS, AUTO_PAUSE_STEP_STALL_MS, AUTO_PAUSE_BACKDATE_CAP_MS, AUTO_PAUSE_STEP_MAX_KALMAN_MPS, AUTO_RESUME_SPEED_MPS} from './engineConstants';
 import {decideAutoPause, initAutoPauseState, AutoPauseState} from './autoPause';
 import {gpsStallStatus, GPS_STALL_THRESHOLD_MS} from './gpsHealth';
 import {saveSnapshot} from './runPersistence';
@@ -132,6 +132,9 @@ class RunTracker {
   private lastStepCount = -1;
   private lastStepIncreaseMs = 0;
   private lastStepSampleMs = 0;
+  // 마지막 '확실한 이동' 시각(ms) — GPS 재개 임계(1.0m/s) 이상 세그먼트 or 걸음수 증가.
+  // 오토포즈 소급 정산의 앵커: 감지가 늦어도 이 시점부터 일시정지로 계상한다.
+  private lastDefiniteMoveMs = 0;
 
   private isPaused = false;
   private autoPausedFlag = false;
@@ -297,6 +300,14 @@ class RunTracker {
     this.isPaused = true;
     this.autoPausedFlag = auto;
     this.pauseStartMs = this.now();
+    // 소급 정산(2026-07-18): 오토포즈는 감지가 판정 홀드+지터만큼 늦는다 — 일시정지 시작을
+    // '마지막 확실한 이동' 시점으로 되돌려 그 지연이 경과시간에 쌓이지 않게 한다(상한 10s —
+    // 스톨 차감·이전 구간과의 이중 차감 방지). 수동 일시정지는 누른 순간 그대로.
+    if (auto && this.lastDefiniteMoveMs > 0) {
+      const floorMs = this.pauseStartMs - AUTO_PAUSE_BACKDATE_CAP_MS;
+      const anchor = Math.max(floorMs, this.lastDefiniteMoveMs);
+      if (anchor < this.pauseStartMs) this.pauseStartMs = anchor;
+    }
     this.emit({type: 'paused', auto});
     this.emitState();
   }
@@ -326,6 +337,7 @@ class RunTracker {
     // 것을 막는다. 재개 후 새 샘플로 윈도우를 다시 채운다(그동안은 '--').
     this.paceSamples = [];
     this.lastSpeedMps = null;
+    this.lastDefiniteMoveMs = this.now(); // 재개 시점 = 새 이동 앵커(소급 하한)
     this.emit({type: 'resumed', auto});
     this.emitState();
   }
@@ -448,7 +460,22 @@ class RunTracker {
       const moved = calcDist(this.autoAnchor.lat, this.autoAnchor.lon, f.lat, f.lon);
       const dtA = Math.max((ts - this.autoAnchorMs) / 1000, 0);
       if (dtA > 0) {
-        const decision = decideAutoPause(this.autoPauseState, segmentSpeedMps(moved, dtA), dtA);
+        // 걸음 보조(2026-07-18 비교런 근본수정): 제자리 GPS 지터(0.6~1.5m/s 유령 속도)가
+        // slowSec 카운터를 리셋시켜 신호대기 감지가 5~6초씩 늦던 것 — 걸음수가
+        // AUTO_PAUSE_STEP_STALL_MS 이상 안 늘면(표본 신선) 속도 0 취급해 판정을 지터에서
+        // 분리한다. 걸음 표본이 없으면(권한 거부 등) 기존 GPS 판정 그대로.
+        const stepsFreshAP = this.lastStepSampleMs > 0 && ts - this.lastStepSampleMs <= STEP_SIGNAL_FRESH_MS;
+        const rawSpd = segmentSpeedMps(moved, dtA);
+        // 안전선(거리 게이트와 동일 원칙·동일 신호): **칼만 평활 속도**가 러닝급(≥
+        // STEP_GATE_MAX_SPEED_MPS)이면 걸음 보조를 끈다 — 걸음 센서가 동결된 채 진짜
+        // 달리는 러너를 오토포즈로 죽이는 사고 방지(하네스 안전선 테스트가 잡은 회귀).
+        // 원시 세그먼트 속도는 노이즈로 러닝 중에도 2.5 아래로 출렁여 안전선으로 못 쓴다.
+        const stepStalledAP = stepsFreshAP
+          && ts - this.lastStepIncreaseMs >= AUTO_PAUSE_STEP_STALL_MS
+          && (this.kf.speedMps() ?? Infinity) < AUTO_PAUSE_STEP_MAX_KALMAN_MPS;
+        const effSpd = stepStalledAP ? 0 : rawSpd;
+        if (effSpd >= AUTO_RESUME_SPEED_MPS) this.lastDefiniteMoveMs = ts;
+        const decision = decideAutoPause(this.autoPauseState, effSpd, dtA);
         this.autoPauseState = decision.state;
         if (decision.justPaused) this.enterPause(true);
         else if (decision.justResumed) this.exitPause(true);
@@ -643,7 +670,10 @@ class RunTracker {
       this.lastStepSampleMs = t;
       return;
     }
-    if (cumulativeSteps > this.lastStepCount) this.lastStepIncreaseMs = t;
+    if (cumulativeSteps > this.lastStepCount) {
+      this.lastStepIncreaseMs = t;
+      this.lastDefiniteMoveMs = Math.max(this.lastDefiniteMoveMs, t);
+    }
     this.lastStepCount = cumulativeSteps;
     this.lastStepSampleMs = t;
   }

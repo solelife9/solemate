@@ -2700,7 +2700,7 @@ function RunActiveScreen({shoe,insets,goalKm,goalMin=0,pacePlan=[],targetZone=0,
             if(c.spm!==cadRef.current){cadRef.current=c.spm;setCadence(c.spm);runTracker.setMeta({cadence:c.spm});}
           }catch{/* 일시 조회 실패 — 다음 폴에서 재시도 */}
           finally{polling=false;}
-        },5000);
+        },2500); // 5000→2500(2026-07-18): 오토포즈 걸음 보조의 반응성 — 정지 감지가 폴 주기에 묶인다.
       }
     }catch{/* 걸음 센서 미지원/권한 거부 — 케이던스만 비활성, 러닝은 계속 */}
     // 기압 고도계(iOS): relativeAltitude(구독 시작 이후 누적 고도변화, m)를 feedAltitude 로

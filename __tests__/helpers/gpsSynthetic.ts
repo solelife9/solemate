@@ -201,11 +201,12 @@ export function makeFixes(
 }
 
 // ── OS 걸음 센서 모사(걸음 정지 게이트 검증용) ──────────────────────────────
-/** 참 경로 속도로 누적 걸음수 표본(5s 폴링)을 만든다: 정지=증가 0, 걷기(<2m/s)=105spm,
- *  러닝=170spm. App 의 Pedometer.getStepCountAsync 폴링과 동일한 형태(t초, 누적). */
+/** 참 경로 속도로 누적 걸음수 표본(2.5s 폴링 — 앱과 정합, 2026-07-18 5s→2.5s)을 만든다:
+ *  정지=증가 0, 걷기(<2m/s)=105spm, 러닝=170spm.
+ *  App 의 Pedometer.getStepCountAsync 폴링과 동일한 형태(t초, 누적). */
 export function makeStepSamples(
   samples: TruthSample[],
-  intervalS = 5,
+  intervalS = 2.5,
 ): {t: number; steps: number}[] {
   const out: {t: number; steps: number}[] = [];
   let cum = 0;
