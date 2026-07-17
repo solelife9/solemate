@@ -104,48 +104,62 @@ private struct ShoeStartPage: View {
       // 페이지 오프셋(중앙=0, 이웃=±폭) → 진행도 0~1. 중앙 강조 스케일/딤의 입력.
       let minX = geo.frame(in: .global).minX
       let progress = min(1, abs(minX) / max(1, geo.size.width))
-      // 링 크기 — 폭 0.62 상한 + **아래 고정 요소들의 실제 합을 화면 높이에서 빼서** 계산.
-      // 구 '높이 0.44' 비율 상한은 근사치라 일부 워치에서 몇 pt 모자라 '러닝 시작'이
-      // 하단에 잘렸다(실기기 재발 2026-07-17). 지표행(~32)+버튼(9+38)+도트 여백(24)을
-      // 빼면 어떤 화면 높이에서도 버튼이 수학적으로 넘칠 수 없다. 하한 54 = 극단 방어.
-      let belowRing: CGFloat = 32 + 9 + 38 + 24
-      let ringSize = max(54, min(geo.size.width * 0.62, geo.size.height - belowRing))
+      // 히어로 v3(2026-07-17, 실기기 왕복 확정 방향): **이름은 링 밖 상단 풀폭**,
+      // 링 안은 수명 % 히어로(폰 홈 링 문법). v2(링 안 이름)는 구조적 한계였다 —
+      // 이름이 원의 내접 폭에 갇혀 긴 모델명(브룩스 칼데라 8 등)이 늘 잘리거나 뭉갰고,
+      // 버튼 안 잘리게 링을 줄이면 이름이 더 못 읽혔다. 이름을 빼면 링은 %만 담아
+      // 작아져도 또렷하다. 링 크기 = 높이 − (이름 34 + 남음 22 + 버튼 47 + 도트 14).
+      let belowAndAbove: CGFloat = 34 + 22 + 47 + 14
+      let ringSize = max(56, min(geo.size.width * 0.55, geo.size.height - belowAndAbove))
 
-      // 풀블리드 히어로 v2(사용자 확정 2026-07-11): 링 안 = 브랜드+러닝화명(메인 —
-      // shoe-first, "어떤 신발로 달리나"가 이 화면의 본질), 링 아크 = 수명 %(컨디션색,
-      // 0→현재% 스윕), 링 아래 좌우 = 수명 % · 남은 km, 맨 아래 = 러닝 시작.
-      // 상자 없음(Apple 워치 주 화면 관용), 색은 링 아크에만.
       VStack(spacing: 0) {
-        NameRing(
-          brand: shoe.brand,
-          model: shoe.model.isEmpty ? shoe.displayName : shoe.model,
+        // 이름 — 풀폭 두 줄(브랜드 캡스 + 모델명). 원 밖이라 잘림 걱정 없이 1줄 자동축소.
+        VStack(spacing: 0) {
+          if !shoe.brand.isEmpty {
+            Text(shoe.brand.uppercased())
+              .font(.system(size: 11, weight: .medium))
+              .kerning(1.1)
+              .foregroundStyle(KeegoTheme.t3)
+              .lineLimit(1)
+              .minimumScaleFactor(0.7)
+          }
+          Text(shoe.model.isEmpty ? shoe.displayName : shoe.model)
+            .font(.system(size: 16, weight: .bold))
+            .foregroundStyle(KeegoTheme.t1)
+            .lineLimit(1)
+            .minimumScaleFactor(0.55)
+        }
+        .padding(.horizontal, 8)
+        .frame(height: 34)
+
+        PctRing(
+          pct: shoe.lifePct,
           // 폰 홈 히어로와 동일한 4단계 마모색(최상 파랑…교체권장 빨강).
           color: KeegoTheme.wearColor(lifePct: shoe.lifePct),
           progress: sweep ? Double(shoe.lifePct) / 100.0 : 0
         )
         .frame(width: ringSize, height: ringSize)
+        .padding(.top, 2)
 
-        // 링 아래 좌우 지표 — 왼쪽 수명 %, 오른쪽 남은 km(같은 위계, tabular).
-        HStack {
-          Text("\(shoe.lifePct)%")
-            .foregroundStyle(KeegoTheme.t1)
-          Spacer(minLength: 8)
+        // 링 아래 — 남은 km 한 줄(%는 링 안으로 승격).
+        Group {
           if shoe.maxKm > 0 {
             Text(shoe.remainKm > 0 ? "\(shoe.remainKm)km 남음" : "수명 초과")
-              .foregroundStyle(shoe.remainKm > 0 ? KeegoTheme.t1 : KeegoTheme.wearColor(lifePct: shoe.lifePct))
+              .foregroundStyle(shoe.remainKm > 0 ? KeegoTheme.t2 : KeegoTheme.wearColor(lifePct: shoe.lifePct))
+          } else {
+            Text(" ")
           }
         }
-        .font(.system(size: 15, weight: .semibold))
+        .font(.system(size: 14, weight: .semibold))
         .monospacedDigit()
         .lineLimit(1)
-        .padding(.horizontal, 14)
-        .padding(.top, 8)
+        .frame(height: 22)
 
         StartButton(label: "러닝 시작", action: onStart)
-          .padding(.top, 9)
+          .padding(.top, 6)
 
-        // 남는 공간은 전부 아래로 — 버튼이 페이지 도트와 겹치지 않게 최소 20pt 확보.
-        Spacer(minLength: 20)
+        // 버튼이 페이지 도트와 겹치지 않게 최소 여백.
+        Spacer(minLength: 12)
       }
       .padding(.horizontal, 10)
       .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -160,11 +174,11 @@ private struct ShoeStartPage: View {
   }
 }
 
-/// 이름 링 — 수명 아크(트랙 컨디션색 16% 틴트 / 아크 컨디션색·라운드 캡·-90° 시작)
-/// 안에 브랜드(대문자 트래킹)+러닝화명(굵게, 메인). 폰 히어로 링 문법의 워치판.
-private struct NameRing: View {
-  let brand: String
-  let model: String
+/// % 링 — 수명 아크(트랙 컨디션색 16% 틴트 / 아크 컨디션색·라운드 캡·-90° 시작) 안에
+/// 수명 % 히어로(폰 홈 링 문법의 워치판). 이름은 링 밖 상단으로 이동(v3, 2026-07-17 —
+/// 링 안 이름은 원 내접 폭 한계로 긴 모델명이 항상 잘리거나 뭉갰다).
+private struct PctRing: View {
+  let pct: Int
   let color: Color
   let progress: Double
 
@@ -176,27 +190,22 @@ private struct NameRing: View {
         .trim(from: 0, to: CGFloat(max(0, min(1, progress))))
         .stroke(color, style: StrokeStyle(lineWidth: 5, lineCap: .round))
         .rotationEffect(.degrees(-90))
-      VStack(spacing: 1) {
-        if !brand.isEmpty {
-          Text(brand.uppercased())
-            .font(.system(size: 11, weight: .medium))
-            .kerning(1.1)
-            .foregroundStyle(KeegoTheme.t3)
-            .lineLimit(1)
-            .minimumScaleFactor(0.6) // '뉴발란스' 등 긴 브랜드 — 0.8 론 잘렸다(실기기 2026-07-17)
-        }
-        Text(model)
-          .font(.system(size: 17, weight: .bold))
+      HStack(alignment: .firstTextBaseline, spacing: 1) {
+        Text("\(pct)")
+          .font(.system(size: 24, weight: .bold))
           .foregroundStyle(KeegoTheme.t1)
-          .multilineTextAlignment(.center)
-          .lineLimit(2)
-          .minimumScaleFactor(0.45) // 긴 모델명(1080 v13 등) 2줄 축소 한도 완화
+          .monospacedDigit()
+        Text("%")
+          .font(.system(size: 13, weight: .semibold))
+          .foregroundStyle(KeegoTheme.t3)
       }
-      .padding(.horizontal, 11) // 링 안쪽 여백 — 16 은 긴 이름의 가용 폭을 너무 깎았다
+      .lineLimit(1)
+      .minimumScaleFactor(0.7)
+      .padding(.horizontal, 8)
     }
     .padding(3) // 라운드 캡 스트로크가 프레임 밖으로 잘리지 않게.
     .accessibilityElement(children: .ignore)
-    .accessibilityLabel("\(brand) \(model)")
+    .accessibilityLabel("남은 수명 \(pct)퍼센트")
   }
 }
 
