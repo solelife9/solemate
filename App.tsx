@@ -2645,6 +2645,7 @@ function RunActiveScreen({shoe,insets,goalKm,goalMin=0,pacePlan=[],targetZone=0,
   // 백그라운드 task)을 시작한다. 거리/시간/일시정지/死구간 판정은 모두 엔진이
   // 소유하고 subscribe로 화면에 반영된다(이 함수는 delivery/타이머만 띄운다).
   async function beginRun(){
+    runBeganMsRef.current=Date.now(); // 워치 정지 미러링의 스테일 판정 기준(이 시각 이전 정지는 무시)
     // 음성 코칭 설정 로드(런당 1회) — 마스터 on/off·볼륨을 엔진에 주입(탑티어 패리티 #14).
     let autoPauseOn=true;
     try{
@@ -2783,6 +2784,22 @@ function RunActiveScreen({shoe,insets,goalKm,goalMin=0,pacePlan=[],targetZone=0,
 
   // 런 종료(실제 stop) — RunActiveScreen 종료 버튼의 롱프레스로만 호출된다(롱프레스 자체가
   // 오작동 종료 가드라 별도 2단계 확인은 두지 않는다). 거리가 너무 짧으면 계속/나가기 선택.
+  // 워치 정지 미러링(2026-07-18) — 워치에서 종료를 누르면 폰 러닝도 같은 종료 플로우를
+  // 탄다(세리머니 없이 finishRun 직행 — 폰은 주머니/잠금일 확률이 높다). 배달 보장 큐로
+  // 늦게 온 스테일 정지가 다음 러닝을 죽이지 않게 '이번 러닝 시작 이후의 정지'만 존중
+  // (30s = 폰·워치 시계 오차 허용). watchStopRef 로 중복 배달(메시지+큐)도 1회만 처리.
+  const runBeganMsRef=useRef(0);
+  const finishRunRef=useRef<()=>void>(()=>{});
+  finishRunRef.current=finishRun;
+  const watchStopHandledRef=useRef(false);
+  useEffect(()=>watchSession.onWatchStop(cmdAtMs=>{
+    if(!runBeganMsRef.current||watchStopHandledRef.current)return;
+    if(cmdAtMs>0&&cmdAtMs<runBeganMsRef.current-30000)return; // 이전 러닝의 스테일 정지
+    watchStopHandledRef.current=true;
+    finishRunRef.current();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }),[]);
+
   function finishRun(){
     // 최종 거리/시간. 트랙 모드는 랩수×확정랩거리(GPS 누적 아님), 그 외는 엔진 누적거리.
     const ft=runTracker.getElapsedFinal();

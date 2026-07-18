@@ -196,7 +196,7 @@ struct RunView: View {
         label: "종료",
         iconColor: KeegoTheme.danger,
         holdToActivate: true
-      ) { workout.end() }
+      ) { workout.end(notifyPhone: true) } // 워치에서 직접 종료 — 폰 러닝도 미러 종료
 
       RoundControl(
         icon: workout.phase == .paused ? "play.fill" : "pause.fill",

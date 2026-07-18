@@ -154,7 +154,8 @@ final class WatchLink: NSObject, ObservableObject {
         WorkoutManager.shared.start(shoe: shoe)
       }
     case "stop":
-      WorkoutManager.shared.end()
+      // 폰이 보낸 종료 — 폰 러닝은 이미 끝났으므로 되울림(stop 재전송) 금지.
+      WorkoutManager.shared.end(notifyPhone: false)
     case "zone_up":
       // 목표존보다 낮음 → '올려라' 방향 햅틱. 러닝 중 + 햅틱 켜짐일 때만.
       if hapticsOn, WorkoutManager.shared.isActive { WKInterfaceDevice.current().play(.directionUp) }
@@ -194,6 +195,22 @@ final class WatchLink: NSObject, ObservableObject {
     let s = WCSession.default
     guard s.activationState == .activated else { return }
     s.transferUserInfo(payload)
+  }
+
+  /// 워치에서 러닝을 종료했을 때 폰 러닝도 함께 끝나게 stop 을 보낸다(정지 미러링,
+  /// 2026-07-18 실기기 갭: 워치 정지 → 폰 무반응). 도달 가능하면 즉시 메시지, 아니면
+  /// 배달 보장 큐 — 폰이 주머니/잠금이어도 복귀 시 배달돼 GPS 러닝이 계속 도는 것을 막는다.
+  /// cmdAt(초) 동봉 — 폰 JS 가 '지금 러닝 시작 이후에 눌린 정지'만 존중해(스테일 방어)
+  /// 늦게 배달된 옛 정지가 다음 러닝을 죽이지 않는다.
+  nonisolated func sendStopToPhone() {
+    let s = WCSession.default
+    guard s.activationState == .activated else { return }
+    let payload: [String: Any] = ["cmd": "stop", "cmdAt": Date().timeIntervalSince1970]
+    if s.isReachable {
+      s.sendMessage(payload, replyHandler: nil, errorHandler: { _ in s.transferUserInfo(payload) })
+    } else {
+      s.transferUserInfo(payload)
+    }
   }
 
   /// 완주 런 페이로드 전송. 즉시(메시지) → 실패/비도달 시 큐(transferUserInfo).

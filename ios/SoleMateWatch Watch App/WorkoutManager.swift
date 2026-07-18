@@ -204,8 +204,11 @@ final class WorkoutManager: NSObject, ObservableObject {
   }
 
   // ── 종료 → 요약 ───────────────────────────────────────────────────────────
-  func end() {
+  /// notifyPhone: 워치에서 사용자가 직접 종료한 경우에만 true — 폰 러닝도 함께 종료
+  /// (정지 미러링, 2026-07-18). 폰이 시킨 종료·세션 실패 폴백은 false(되울림/오발 금지).
+  func end(notifyPhone: Bool = false) {
     guard isActive else { return }
+    if notifyPhone { WatchLink.shared.sendStopToPhone() }
     locationManager.stopUpdatingLocation()
     locationManager.allowsBackgroundLocationUpdates = false
     stopTimer()

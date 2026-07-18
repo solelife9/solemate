@@ -31,6 +31,8 @@ class WatchSessionModule: RCTEventEmitter, WCSessionDelegate {
   // JS 구독 전에 도착한 워치 심박 기록 버퍼(경로 A). 콜드런치 직후 배달될 수 있어 리스너가
   // 붙을 때까지 들고 있다가 재생한다 — 심박 유실 방지(런 페이로드와 같은 이유).
   private var pendingHrTracks: [[String: Any]] = []
+  // JS 구독 전에 도착한 워치의 정지 명령 버퍼(정지 미러링). 스테일 판정은 JS 가 cmdAt 로.
+  private var pendingStops: [[String: Any]] = []
 
   override init() {
     super.init()
@@ -43,22 +45,34 @@ class WatchSessionModule: RCTEventEmitter, WCSessionDelegate {
   }
 
   override static func requiresMainQueueSetup() -> Bool { return true }
-  override func supportedEvents() -> [String]! { return ["onHeartRate", "onWatchRun", "onWatchHrTrack"] }
+  override func supportedEvents() -> [String]! { return ["onHeartRate", "onWatchRun", "onWatchHrTrack", "onWatchStop"] }
   override func startObserving() {
     hasListeners = true
-    // 구독 전에 도착해 버퍼된 런·심박기록 재생(JS 가 runId·시간창으로 중복 방어하므로 안전).
+    // 구독 전에 도착해 버퍼된 런·심박기록·정지 재생(JS 가 runId·시간창·cmdAt 으로 방어).
     DispatchQueue.main.async {
       guard self.hasListeners else { return }
       let runs = self.pendingRuns; self.pendingRuns = []
       runs.forEach { self.sendEvent(withName: "onWatchRun", body: $0) }
       let hrs = self.pendingHrTracks; self.pendingHrTracks = []
       hrs.forEach { self.sendEvent(withName: "onWatchHrTrack", body: $0) }
+      let stops = self.pendingStops; self.pendingStops = []
+      stops.forEach { self.sendEvent(withName: "onWatchStop", body: $0) }
     }
   }
   override func stopObserving() { hasListeners = false }
 
-  // 워치 → 폰 수신 공통 처리. { "bpm" } = 실시간 심박, { "type": "run" } = 완주 런.
+  // 워치 → 폰 수신 공통 처리. { "bpm" } = 실시간 심박, { "type": "run" } = 완주 런,
+  // { "cmd": "stop" } = 워치에서 러닝 종료(정지 미러링 — 폰 러닝도 함께 끝낸다).
   private func handleInbound(_ payload: [String: Any]) {
+    if (payload["cmd"] as? String) == "stop" {
+      // cmdAt(초) → ms. JS 가 '현재 러닝 시작 이후의 정지'만 존중한다(늦은 배달 스테일 방어).
+      let body: [String: Any] = ["cmdAtMs": ((payload["cmdAt"] as? NSNumber)?.doubleValue ?? 0) * 1000]
+      DispatchQueue.main.async {
+        if self.hasListeners { self.sendEvent(withName: "onWatchStop", body: body) }
+        else { self.pendingStops.append(body) } // 콜드런치 — 구독되면 startObserving 이 재생
+      }
+      return
+    }
     if let bpm = payload["bpm"] as? Double {
       DispatchQueue.main.async {
         if self.hasListeners { self.sendEvent(withName: "onHeartRate", body: ["bpm": bpm]) }

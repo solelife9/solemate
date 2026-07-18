@@ -108,6 +108,18 @@ export const watchSession = {
     return () => sub.remove();
   },
   /**
+   * 워치에서 사용자가 러닝을 종료했을 때(정지 미러링) 수신. cmdAtMs = 워치에서 정지를
+   * 누른 절대시각(ms). 배달 보장 큐로 늦게 올 수 있으므로, 수신부는 '현재 러닝 시작
+   * 이후의 정지'만 존중해야 한다(스테일 정지가 다음 러닝을 죽이지 않게).
+   */
+  onWatchStop(cb: (cmdAtMs: number) => void): () => void {
+    if (!emitter) return () => {};
+    const sub = emitter.addListener('onWatchStop', (e: any) => {
+      cb(Math.max(0, Number(e?.cmdAtMs) || 0));
+    });
+    return () => sub.remove();
+  },
+  /**
    * 활성 신발 목록(홈과 같은 최근착용순) + 심박존 파라미터를 워치에 푸시한다.
    * applicationContext 라 워치가 꺼져 있어도 다음 실행 때 도착·캐시된다(오프라인 폴백).
    * 네이티브 미지원/구버전이면 no-op.
