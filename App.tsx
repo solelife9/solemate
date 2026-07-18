@@ -1736,6 +1736,10 @@ function Main(){
     today:ymdLocal(now),
   });
 
+  // 훈련 부하(재노출 2026-07-18) — 홈 조건부 시그널용. BackendRun 은 run_date/km/duration
+  // 필드 그대로 LoadRun 을 만족한다(리캡 loadAfter 와 동일 경로).
+  const homeLoad=assessTrainingLoad(runs as any[],today());
+
   // ── history summary + chart per period ─────────────────────
   const monthRuns=runs.filter(r=>String(r.run_date).startsWith(ymdLocal(now).slice(0,7)));
   const yearRuns=runs.filter(r=>String(r.run_date).startsWith(String(now.getFullYear())));
@@ -2101,6 +2105,7 @@ function Main(){
             progression={homeProgression}
             onRefresh={refreshData} lastSyncAt={lastSyncAt}
             weeklyGoalKm={goalWeeklyKm} streakDays={goalStreak}
+            load={homeLoad}
           />
         )}
         {tab===2&&(

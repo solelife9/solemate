@@ -27,6 +27,8 @@ import { recommendNextShoes, buildShopLinks, categoryLabelKo, AFFILIATE_DISCLOSU
 import { type ReplacementForecast } from './lib/wearView';
 import { shouldRecommendNextShoe } from './lib/recommendTrigger';
 import { SHOE_REPLACE_PCT } from './lib/shoe';
+import { TrainingLoadSignal } from './TrainingLoadCard';
+import type { TrainingLoadAssessment } from './lib/trainingLoad';
 
 export type WeekStats = { km: string; runs: number; pace: string };
 
@@ -408,7 +410,7 @@ export default function HomeScreen({
   activeIdx: activeIdxProp, onSelect, unit = 'km', week, rotation, onPickShoe,
   onOpenShoe, forecast, progression,
   onRefresh, lastSyncAt: _lastSyncAt, userName,
-  weeklyGoalKm = 0, streakDays = 0,
+  weeklyGoalKm = 0, streakDays = 0, load,
 }: {
   shoes?: Shoe[];
   userName?: string;
@@ -438,6 +440,9 @@ export default function HomeScreen({
   // 진척 홈 노출 — 홈 다이어트 후 남은 표면은 인사 옆 장착 타이틀 pill 하나.
   // App 이 getProgression 파생값을 내려준다. 미주입이면 pill 숨김(표시 전용).
   progression?: HomeProgression | null;
+  // 훈련 부하(재노출 2026-07-18) — App 이 assessTrainingLoad 파생값을 내려준다.
+  // 홈 계약은 침묵 기본: confident + caution/high 에서만 한 줄 시그널(표시 전용).
+  load?: TrainingLoadAssessment | null;
   // 당겨서 새로고침 — 서버 재fetch + pending flush 재시도(App 의 initUser/sync 재진입).
   // RN 내장 RefreshControl 만 사용한다(새 네이티브 0). 미주입이면 RefreshControl 을 달지
   // 않아 기존 홈과 100% 하위호환(표시 전용). 동기/비동기 모두 허용(완료 시 스피너 정지).
@@ -512,8 +517,11 @@ export default function HomeScreen({
                 <Text style={s.sectionMore}>전체 보기 ›</Text>
               </Pressable>
             </View>
-            <View style={{ paddingHorizontal: SPACE.xl }}>
+            <View style={{ paddingHorizontal: SPACE.xl, gap: SPACE.sm }}>
               <WeekCard week={week} unit={unit} weeklyGoalKm={weeklyGoalKm} streakDays={streakDays} />
+              {/* 훈련 부하 시그널 — 경고할 게 있을 때만 나타난다(평소엔 이 자리 자체가 없음).
+                  자세히 = 기록 탭 인사이트(TrainingLoadCard)로. */}
+              <TrainingLoadSignal load={load} onPress={() => onTab?.(2)} />
             </View>
           </Rise>
           {/* (체력 트렌드 FitnessCard → 기록 탭 인사이트로 이동, 진척 띠 → 마이탭으로

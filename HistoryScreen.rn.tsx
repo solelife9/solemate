@@ -22,6 +22,8 @@ import { fitnessSummary, thresholdPaceSec } from './lib/analytics/fitness';
 import { gradeAdjustedPaceSec, smoothElevation, resampleByDistance } from './lib/analytics/gap';
 import { estimateMaxHR, timeInZones, hrSummary, zoneBoundaries, HR_ZONE_LABEL, type HRZone } from './lib/analytics/hrZones';
 import { trimp, paceLoad, effortBand } from './lib/analytics/load';
+import { assessTrainingLoad } from './lib/trainingLoad';
+import { TrainingLoadCard } from './TrainingLoadCard';
 import { getRunSurface, setRunSurface, type Surface } from './lib/wearModel';
 import { parseRoute, LatLon } from './lib/route';
 import { CourseMap } from './CourseMap';
@@ -979,6 +981,13 @@ export default function HistoryScreen({
   // 개인 임계페이스(초/km) — 체력(VDOT)에서 역산. per-run 트레이닝 부하(rTSS)의 강도 기준.
   // 타임 있는 노력 런이 없어 vo2max=0 이면 0(그땐 페이스 기반 부하 대신 HR 부하만 가능).
   const thresholdPace = thresholdPaceSec(fitness.vo2max);
+  // 훈련 부하(재노출 2026-07-18) — ACWR 인사이트 카드. 기간 토글과 무관한 '지금'
+  // 지표라 전체 런으로 산출한다(fitness 와 동일 캐시 무효화 규약).
+  const trainingLoad = useMemo(
+    () => assessTrainingLoad(runs.map(toRow), todayIso),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [runs.length, runs[runs.length - 1]?.id, todayIso],
+  );
 
   const sum = period === '주' ? selWeekSummary : period === '월' ? selMonthSummary : period === '년' ? selYearSummary : (summary['전체'] || EMPTY_SUMMARY);
   const ch = period === '주'
@@ -1144,6 +1153,9 @@ export default function HistoryScreen({
             </View>
             {/* 심폐 체력(VO2max)은 마이 탭 '러너 스펙' 카드로 이관(2026-07-05) — 러너 정체성
                 스펙(거리 PB·VO2max)을 한곳에 모은다. */}
+            {/* 훈련 부하 인사이트(재노출 2026-07-18, 시안 A) — 스윗스팟 게이지 + 7일/4주
+                분해. 최근 4주 런이 없으면 스스로 숨는다. 홈 시그널의 '자세히'가 여기로. */}
+            <TrainingLoadCard load={trainingLoad} unit={unit} />
             <Text style={s.sectionLabel}>러닝 기록</Text>
           </View>
         }
