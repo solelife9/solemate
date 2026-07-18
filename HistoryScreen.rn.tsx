@@ -666,12 +666,21 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'm
                         {kmTicks.map(tk => (
                           <SvgLine key={tk.km} x1={x(tk.t)} y1={TOP} x2={x(tk.t)} y2={H - BOT} stroke={withAlpha(T1, 0.14)} strokeWidth={1} vectorEffect="non-scaling-stroke" />
                         ))}
+                        {/* 평균 기준선 — 점선. 골짜기(신호 대기 등)가 축 확대 탓에 과장돼 읽히는 것을
+                            평균이라는 앵커로 눌러준다(2026-07-18 실기기 피드백). */}
+                        {hr.avg > yMin && hr.avg < yMax && (
+                          <SvgLine x1={L} y1={y(hr.avg)} x2={W - R} y2={y(hr.avg)} stroke={withAlpha(T1, 0.5)} strokeWidth={1} strokeDasharray="4 5" vectorEffect="non-scaling-stroke" />
+                        )}
                         <SvgPath d={path} fill="none" stroke={T1} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
                       </Svg>
                       {/* y축 bpm — 실제 최대(위)·최소(아래). 곡선 위에서도 읽히게 살짝 딤 배경. */}
                       {([[realMax, rv(1)], [realMin, y(realMin) - rv(7)]] as [number, number][]).map(([v, topPx], i) => (
                         <Text key={i} style={{ position: 'absolute', left: rs(2), top: topPx, color: T2, fontFamily: DISPLAY, fontSize: rf(10), fontWeight: '700', fontVariant: ['tabular-nums'], backgroundColor: withAlpha(BG, 0.55), paddingHorizontal: rs(3), borderRadius: rs(3), overflow: 'hidden' }}>{v}</Text>
                       ))}
+                      {/* 평균 라벨 — 점선 우측 끝 위. */}
+                      {hr.avg > yMin && hr.avg < yMax && (
+                        <Text style={{ position: 'absolute', right: rs(2), top: y(hr.avg) - rv(13), color: T2, fontFamily: DISPLAY, fontSize: rf(10), fontWeight: '700', fontVariant: ['tabular-nums'], backgroundColor: withAlpha(BG, 0.55), paddingHorizontal: rs(3), borderRadius: rs(3), overflow: 'hidden' }}>평균 {hr.avg}</Text>
+                      )}
                     </View>
                     {/* x축 km 라벨 — 그리드라인과 같은 위치. */}
                     {kmTicks.length > 0 && (

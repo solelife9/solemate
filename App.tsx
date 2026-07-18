@@ -103,7 +103,7 @@ import {runInsights} from './lib/runInsights';
 import {getDistancePBs, PB_CACHE_KEY} from './lib/distancePBStore';
 import type {RunBestEfforts} from './lib/bestEfforts';
 import {hkSaveRunWorkout, hkBackfillHeartRate} from './lib/healthkit';
-import {registerRunForHr, saveWatchHrTrack, retryPendingHr} from './lib/hrBackfill';
+import {registerRunForHr, saveWatchHrTrack, retryPendingHr, avgBpmFromTrack} from './lib/hrBackfill';
 import {currentTargetPace} from './lib/pacePlan';
 import {liveActivity} from './lib/liveActivity';
 import {watchSession} from './lib/watchSession';
@@ -1485,17 +1485,42 @@ function Main(){
   }),[]);
 
   // 심박 지연 보강 — 폰이 주머니에 있어(화면 꺼짐) 실시간 심박을 놓쳐도 hrTrack 이 채워지게.
+  const runsForHrRef=useRef<BackendRun[]>([]);
+  runsForHrRef.current=runs;
+  // 평균 심박 지연 보정 — hrTrack(그래프 사이드카)은 백필로 채워졌는데 레코드 heart_rate 가
+  // 0 인 런(워치가 타앱 세션에 잡혀 라이브 스트림이 없던 러닝 등)의 평균을 사이드카에서
+  // 산출해 레코드에 채운다. 상세 요약·공유 카드가 읽는 정본은 레코드 필드라 여기까지
+  // 채워야 '--'가 사라진다(2026-07-18 실기기: 그래프는 있는데 평균만 '--').
+  const repairAvgBpm=async(runId:string)=>{
+    const sid=String(runId);
+    const target=runsForHrRef.current.find(r=>String(r.id)===sid);
+    if(!target||(Number(target.heart_rate)||0)>0)return;
+    try{
+      const raw=await AsyncStorage.getItem('hrTrack_'+sid);
+      const avg=raw?avgBpmFromTrack(JSON.parse(raw)):null;
+      if(avg==null)return;
+      const editedAt=Date.now();
+      setRuns(prev=>prev.map(r=>String(r.id)===sid?stampUpdatedAt({...r,heart_rate:avg},editedAt):r));
+      await persistRunToCache(stampUpdatedAt({...target,heart_rate:avg},editedAt));
+    }catch{/* 비치명적 */}
+  };
+  // 백필 + 평균 보정 묶음 — retryPendingHr/recoverRecentHr 가 트랙을 채우는 모든 경로에서
+  // 레코드 평균까지 한 번에 따라온다.
+  const hkBackfillAndRepair=(id:string,s:number,e:number)=>
+    hkBackfillHeartRate(id,s,e).then(n=>{if(n>0)void repairAvgBpm(id);return n;});
   // (A) 워치가 러닝 끝에 직송하는 심박 기록을 시간창으로 폰 런과 매칭해 저장(정본·HK 무관).
   useEffect(()=>watchSession.onWatchHrTrack(async p=>{
-    try{await saveWatchHrTrack(p.startMs,p.endMs,p.offsetS,p.bpm,Date.now());}catch{/* 비치명적 */}
+    try{
+      const rid=await saveWatchHrTrack(p.startMs,p.endMs,p.offsetS,p.bpm,Date.now());
+      if(rid)void repairAvgBpm(rid);
+    }catch{/* 비치명적 */}
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }),[]);
   // (B) HealthKit 백필 재시도 + 최근 러닝 심박 복구 — 마운트 시 1회 + 앱 복귀('active')마다.
   //   · retryPendingHr: 새 런의 대기 목록을 정확한 창으로 재백필(저장 직후 동기화 지연 보완).
   //   · recoverRecentHr: 최근 48h 러닝을 창(updatedAt-duration)으로 재백필한다. HealthKit
   //     백필이 richer-wins 라, 워치→폰 동기화가 늦어 저장 때 못 잡았거나 스트레이 1~2점만
   //     잡혀 '평평한 가짜 심박'이 된 런도, 앱 복귀 시 애플 건강의 완전한 실측으로 교정된다.
-  const runsForHrRef=useRef<BackendRun[]>([]);
-  runsForHrRef.current=runs;
   useEffect(()=>{
     const recoverRecentHr=async()=>{
       try{
@@ -1508,15 +1533,19 @@ function Main(){
           const end=Number((r as {updatedAt?:number}).updatedAt)||0;
           const start=end-(Number(r.duration)||0)*1000;
           await hkBackfillHeartRate(String(r.id),start,end);
+          // 트랙은 있는데 레코드 평균이 빈 런(이전 버전에서 백필된 기록 포함) 소급 보정.
+          await repairAvgBpm(String(r.id));
         }
       }catch{/* 비치명적 */}
     };
-    const run=()=>{void retryPendingHr(Date.now(),hkBackfillHeartRate).catch(()=>{});void recoverRecentHr();};
+    const run=()=>{void retryPendingHr(Date.now(),hkBackfillAndRepair).catch(()=>{});void recoverRecentHr();};
     run();
     // 콜드런치 대비 — 마운트 직후엔 runs 가 아직 로드 전이라 복구가 헛돈다. 로드된 뒤 재시도.
     const t1=setTimeout(run,3000);const t2=setTimeout(run,12000);
     const sub=AppState.addEventListener('change',n=>{if(n==='active')run();});
     return ()=>{clearTimeout(t1);clearTimeout(t2);sub.remove();};
+  // repairAvgBpm/hkBackfillAndRepair 는 ref 기반이라 첫 렌더 인스턴스로 충분(재구독 불필요).
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   },[]);
 
   // ── 실효 마모/교체 예측 보정(Slice 6) ────────────────────────────────────────
@@ -1951,12 +1980,12 @@ function Main(){
           {
             const hkEndMs=Date.now();const hkStartMs=hkEndMs-Math.max(1,dur)*1000;
             void hkSaveRunWorkout(km,hkStartMs,hkEndMs,cal).catch(()=>{});
-            void hkBackfillHeartRate(newId,hkStartMs,hkEndMs).catch(()=>{});
+            void hkBackfillAndRepair(newId,hkStartMs,hkEndMs).catch(()=>{});
             // 심박 보강 대기 등록(경로 A 매칭·B 재시도 대상) + 지연 재시도. 워치→폰 HealthKit
             // 동기화가 저장 순간엔 덜 됐을 수 있어, 앱 유지 중이면 15s·60s 뒤 다시 채운다.
             void registerRunForHr(newId,hkStartMs,hkEndMs,Date.now()).catch(()=>{});
-            setTimeout(()=>{void retryPendingHr(Date.now(),hkBackfillHeartRate).catch(()=>{});},15000);
-            setTimeout(()=>{void retryPendingHr(Date.now(),hkBackfillHeartRate).catch(()=>{});},60000);
+            setTimeout(()=>{void retryPendingHr(Date.now(),hkBackfillAndRepair).catch(()=>{});},15000);
+            setTimeout(()=>{void retryPendingHr(Date.now(),hkBackfillAndRepair).catch(()=>{});},60000);
           }
           await clearSnapshot();
           // 완주 리캡(P0-2) — 기록 탭으로 바로 점프하던 대신 축하 풀스크린을 띄운다(러너가

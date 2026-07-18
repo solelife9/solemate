@@ -9,6 +9,7 @@ import {
   saveWatchHrTrack,
   buildHrTrack,
   retryPendingHr,
+  avgBpmFromTrack,
   HR_PENDING_MAX_AGE_MS,
 } from '../../lib/hrBackfill';
 
@@ -170,5 +171,23 @@ describe('hasHrTrack', () => {
     expect(await hasHrTrack('x')).toBe(false);
     await AsyncStorage.setItem('hrTrack_x', '[]');
     expect(await hasHrTrack('x')).toBe(true);
+  });
+});
+
+describe('avgBpmFromTrack — 백필 경로의 레코드 평균 심박 보정', () => {
+  it('유효 점들의 반올림 평균을 낸다', () => {
+    expect(avgBpmFromTrack([{t: 0, bpm: 150}, {t: 10, bpm: 160}, {t: 20, bpm: 171}])).toBe(160);
+  });
+
+  it('노이즈(범위 밖 bpm)는 평균에서 제외한다', () => {
+    expect(avgBpmFromTrack([{t: 0, bpm: 150}, {t: 10, bpm: 160}, {t: 20, bpm: 500}, {t: 30, bpm: 0}])).toBe(155);
+  });
+
+  it('유효 점 2개 미만이나 배열이 아니면 null(표시 가치 없음)', () => {
+    expect(avgBpmFromTrack([{t: 0, bpm: 150}])).toBeNull();
+    expect(avgBpmFromTrack([])).toBeNull();
+    expect(avgBpmFromTrack(null)).toBeNull();
+    expect(avgBpmFromTrack('junk')).toBeNull();
+    expect(avgBpmFromTrack([{t: 0, bpm: 10}, {t: 5, bpm: 300}])).toBeNull();
   });
 });

@@ -168,6 +168,19 @@ export function buildHrTrack(
 }
 
 /**
+ * hrTrack 평균 bpm(정수 반올림). 유효 점(30<bpm<240) 2개 미만이면 null(표시 가치 없음 —
+ * RunDetail·백필 계약과 동일). 레코드 heart_rate 가 비었을 때(백필 경로) 이 값으로 채운다.
+ */
+export function avgBpmFromTrack(track: unknown): number | null {
+  if (!Array.isArray(track)) return null;
+  const pts = track
+    .map(p => Math.round(Number((p as {bpm?: unknown})?.bpm) || 0))
+    .filter(b => b > MIN_BPM && b < MAX_BPM);
+  if (pts.length < 2) return null;
+  return Math.round(pts.reduce((s, b) => s + b, 0) / pts.length);
+}
+
+/**
  * (B) 대기 런들의 HealthKit 백필 재시도. 각 런에 대해: 이미 hrTrack 있으면 완료(제거),
  * 만료면 포기(제거), 아니면 hkBackfill 시도 — 채웠으면 제거, 아직이면 유지(다음 기회).
  * hkBackfill: (runId,startMs,endMs)=>Promise<채운 표본수>(0=못 채움).
