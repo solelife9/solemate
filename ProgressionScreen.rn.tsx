@@ -370,8 +370,11 @@ export default function ProgressionScreen({
 }
 
 // ── 업적 카드 컴포넌트 ─────────────────────────────────────────────────────────
+// 레어리티 발색은 **달성한 업적에만**(2026-07-18 톤 감사 확정): 잠긴 카드까지 색을 입히면
+// 화면이 게임 인벤토리처럼 읽히고 색이 흔해져 달성의 가치가 싸진다. 미달성=무채(T3),
+// 달성=레어리티 색 — 색이 '얻어낸 것'의 표식이 된다. 이름·색 체계(커먼~레전더리)는 유지.
 function AchievementCard({a}: {a: AchievementView}) {
-  const aColor = RARITY_COLOR[a.rarity];
+  const aColor = a.unlocked ? RARITY_COLOR[a.rarity] : T3;
   const ratio =
     a.progress.target > 0
       ? Math.max(0, Math.min(1, a.progress.current / a.progress.target))
@@ -404,7 +407,7 @@ function AchievementCard({a}: {a: AchievementView}) {
           )}
           {a.xp > 0 && (
             <Text
-              style={[s.achXp, {color: aColor, opacity: a.unlocked ? 1 : 0.7}]}
+              style={[s.achXp, {color: aColor}]}
               testID={`ach-xp-${a.key}`}>
               {a.xp.toLocaleString()} XP
             </Text>
@@ -427,7 +430,8 @@ function AchievementCard({a}: {a: AchievementView}) {
           testID={`ach-fill-${a.key}`}
           style={[
             s.fill,
-            {width: `${Math.round(ratio * 100)}%`, backgroundColor: aColor},
+            // 진행바: 미달성=흰색(앱 공통 게이지 문법), 달성=레어리티 색(꽉 찬 훈장 띠).
+            {width: `${Math.round(ratio * 100)}%`, backgroundColor: a.unlocked ? aColor : T1},
           ]}
         />
       </View>
