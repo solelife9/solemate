@@ -1,4 +1,4 @@
-import {estimateCalories, estimateCaloriesTotal, KCAL_PER_KG_PER_KM, REST_KCAL_PER_KG_PER_HR} from '../../lib/calories';
+import {estimateCalories, estimateCaloriesTotal, KCAL_PER_KG_PER_KM, KCAL_NET_PER_KG_PER_KM, REST_KCAL_PER_KG_PER_HR} from '../../lib/calories';
 import {DEFAULT_WEIGHT_KG} from '../../lib/settings';
 
 describe('estimateCalories', () => {
@@ -25,20 +25,25 @@ describe('estimateCalories', () => {
 });
 
 describe('estimateCaloriesTotal (활동 + 안정 = 총 소모)', () => {
-  it('활동(거리) + 안정(시간)을 합산한다 — 경쟁앱 총 칼로리 정의', () => {
-    // 65kg · 3.11km · 1088s(18:08)
-    const active = 65 * 3.11 * KCAL_PER_KG_PER_KM;
+  it('활동(net·거리) + 안정(시간)을 합산한다 — 경쟁앱 총 칼로리 정의', () => {
+    // 65kg · 3.11km · 1088s(18:08). 활동분은 net 계수 — gross(1.036)를 쓰면
+    // 안정 대사가 이중 계산돼 Garmin 대비 +18% 과대(2026-07-17 비교런 근본수정).
+    const active = 65 * 3.11 * KCAL_NET_PER_KG_PER_KM;
     const resting = 65 * (1088 / 3600) * REST_KCAL_PER_KG_PER_HR;
     expect(estimateCaloriesTotal(3.11, 1088, 65)).toBe(Math.round(active + resting));
   });
 
-  it('항상 활동분(거리만)보다 크거나 같다(안정 대사 추가)', () => {
-    expect(estimateCaloriesTotal(3.11, 1088, 65)).toBeGreaterThan(estimateCalories(3.11, 65));
+  it('net + 안정 총합은 gross 단독 추정(estimateCalories)과 근사한다 — 이중 계산 없음', () => {
+    // 30분/5km/65kg: gross 단독 337 vs net+안정 320 — 총합이 gross 를 크게 넘으면 이중 계산.
+    const total = estimateCaloriesTotal(5, 1800, 65);
+    const gross = estimateCalories(5, 65);
+    expect(total).toBeLessThanOrEqual(gross);
+    expect(total).toBeGreaterThan(gross * 0.85);
   });
 
   it('시간 0/누락이면 활동분만(안정 0)', () => {
-    expect(estimateCaloriesTotal(5, 0, 65)).toBe(estimateCalories(5, 65));
-    expect(estimateCaloriesTotal(5, NaN as any, 65)).toBe(estimateCalories(5, 65));
+    expect(estimateCaloriesTotal(5, 0, 65)).toBe(Math.round(65 * 5 * KCAL_NET_PER_KG_PER_KM));
+    expect(estimateCaloriesTotal(5, NaN as any, 65)).toBe(Math.round(65 * 5 * KCAL_NET_PER_KG_PER_KM));
   });
 
   it('거리 0 + 시간만 있어도 안정 대사분은 잡힌다(맨몸 시간)', () => {
