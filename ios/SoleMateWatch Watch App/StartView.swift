@@ -108,8 +108,11 @@ private struct ShoeStartPage: View {
       // 링 안은 수명 % 히어로(폰 홈 링 문법). v2(링 안 이름)는 구조적 한계였다 —
       // 이름이 원의 내접 폭에 갇혀 긴 모델명(브룩스 칼데라 8 등)이 늘 잘리거나 뭉갰고,
       // 버튼 안 잘리게 링을 줄이면 이름이 더 못 읽혔다. 이름을 빼면 링은 %만 담아
-      // 작아져도 또렷하다. 링 크기 = 높이 − (이름 34 + 남음 22 + 버튼 47 + 도트 14).
-      let belowAndAbove: CGFloat = 34 + 22 + 47 + 14
+      // 작아져도 또렷하다.
+      // v3.1(2026-07-18 목업 확정): 남은 km 를 링 안 캡션으로 승격(폰 홈 링의 값+캡션
+      // 문법 완성). 빠진 한 줄만큼 링이 자연 확대되되, 버튼과 붙지 않게 폭 0.55 캡 유지
+      // + 버튼 상단 여백을 예산에 포함. 링 크기 = 높이 − (이름 34 + 버튼 47 + 도트 14 + 여백 10).
+      let belowAndAbove: CGFloat = 34 + 47 + 14 + 10
       let ringSize = max(56, min(geo.size.width * 0.55, geo.size.height - belowAndAbove))
 
       VStack(spacing: 0) {
@@ -136,27 +139,16 @@ private struct ShoeStartPage: View {
           pct: shoe.lifePct,
           // 폰 홈 히어로와 동일한 4단계 마모색(최상 파랑…교체권장 빨강).
           color: KeegoTheme.wearColor(lifePct: shoe.lifePct),
-          progress: sweep ? Double(shoe.lifePct) / 100.0 : 0
+          progress: sweep ? Double(shoe.lifePct) / 100.0 : 0,
+          // 남은 km — 링 안 캡션(v3.1). maxKm 미수신(구버전 폰 캐시)이면 % 단독.
+          remainText: shoe.maxKm > 0 ? (shoe.remainKm > 0 ? "\(shoe.remainKm)km 남음" : "수명 초과") : nil,
+          remainColor: shoe.remainKm > 0 ? KeegoTheme.t3 : KeegoTheme.wearColor(lifePct: shoe.lifePct)
         )
         .frame(width: ringSize, height: ringSize)
         .padding(.top, 2)
 
-        // 링 아래 — 남은 km 한 줄(%는 링 안으로 승격).
-        Group {
-          if shoe.maxKm > 0 {
-            Text(shoe.remainKm > 0 ? "\(shoe.remainKm)km 남음" : "수명 초과")
-              .foregroundStyle(shoe.remainKm > 0 ? KeegoTheme.t2 : KeegoTheme.wearColor(lifePct: shoe.lifePct))
-          } else {
-            Text(" ")
-          }
-        }
-        .font(.system(size: 14, weight: .semibold))
-        .monospacedDigit()
-        .lineLimit(1)
-        .frame(height: 22)
-
         StartButton(label: "러닝 시작", action: onStart)
-          .padding(.top, 6)
+          .padding(.top, 10)
 
         // 버튼이 페이지 도트와 겹치지 않게 최소 여백.
         Spacer(minLength: 12)
@@ -175,12 +167,15 @@ private struct ShoeStartPage: View {
 }
 
 /// % 링 — 수명 아크(트랙 컨디션색 16% 틴트 / 아크 컨디션색·라운드 캡·-90° 시작) 안에
-/// 수명 % 히어로(폰 홈 링 문법의 워치판). 이름은 링 밖 상단으로 이동(v3, 2026-07-17 —
-/// 링 안 이름은 원 내접 폭 한계로 긴 모델명이 항상 잘리거나 뭉갰다).
+/// 수명 % 히어로 + 남은 km 캡션(v3.1 — 폰 홈 링의 값+캡션 문법). 이름은 링 밖 상단
+/// (v3, 2026-07-17 — 링 안 이름은 원 내접 폭 한계로 긴 모델명이 항상 잘리거나 뭉갰다).
 private struct PctRing: View {
   let pct: Int
   let color: Color
   let progress: Double
+  /// 링 안 보조 캡션(남은 km/수명 초과). nil 이면 % 단독(구버전 폰 캐시).
+  let remainText: String?
+  let remainColor: Color
 
   var body: some View {
     ZStack {
@@ -190,22 +185,32 @@ private struct PctRing: View {
         .trim(from: 0, to: CGFloat(max(0, min(1, progress))))
         .stroke(color, style: StrokeStyle(lineWidth: 5, lineCap: .round))
         .rotationEffect(.degrees(-90))
-      HStack(alignment: .firstTextBaseline, spacing: 1) {
-        Text("\(pct)")
-          .font(.system(size: 24, weight: .bold))
-          .foregroundStyle(KeegoTheme.t1)
-          .monospacedDigit()
-        Text("%")
-          .font(.system(size: 13, weight: .semibold))
-          .foregroundStyle(KeegoTheme.t3)
+      VStack(spacing: 0) {
+        HStack(alignment: .firstTextBaseline, spacing: 1) {
+          Text("\(pct)")
+            .font(.system(size: 24, weight: .bold))
+            .foregroundStyle(KeegoTheme.t1)
+            .monospacedDigit()
+          Text("%")
+            .font(.system(size: 13, weight: .semibold))
+            .foregroundStyle(KeegoTheme.t3)
+        }
+        .lineLimit(1)
+        .minimumScaleFactor(0.7)
+        if let remainText {
+          Text(remainText)
+            .font(.system(size: 10, weight: .semibold))
+            .foregroundStyle(remainColor)
+            .monospacedDigit()
+            .lineLimit(1)
+            .minimumScaleFactor(0.7)
+        }
       }
-      .lineLimit(1)
-      .minimumScaleFactor(0.7)
-      .padding(.horizontal, 8)
+      .padding(.horizontal, 10)
     }
     .padding(3) // 라운드 캡 스트로크가 프레임 밖으로 잘리지 않게.
     .accessibilityElement(children: .ignore)
-    .accessibilityLabel("남은 수명 \(pct)퍼센트")
+    .accessibilityLabel(remainText == nil ? "남은 수명 \(pct)퍼센트" : "남은 수명 \(pct)퍼센트, \(remainText!)")
   }
 }
 
