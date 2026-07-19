@@ -20,7 +20,7 @@ import {
 } from './theme';
 import { RISK_DISCLAIMER } from './lib/injuryRisk';
 import {
-  TrainingLoadAssessment, LoadLevel, LOAD_WORD, loadRatioPhraseKo,
+  TrainingLoadAssessment, LoadLevel, LOAD_WORD, loadRatioPhraseKo, loadSignalKo,
   ACWR_LOW_AT, ACWR_CAUTION_AT, ACWR_HIGH_AT,
 } from './lib/trainingLoad';
 import { Unit, displayNum } from './lib/units';
@@ -34,15 +34,6 @@ const LEVEL_COLOR: Record<LoadLevel, string> = {
 
 // ── 홈 조건부 시그널 ─────────────────────────────────────────────────────────
 
-/** 홈 한 줄 문구 — 카드(LOAD_MSG)보다 짧게. 배율이 서면 숫자로 말한다. */
-function signalMsg(load: TrainingLoadAssessment): string {
-  const phrase = loadRatioPhraseKo(load); // '평소의 1.8배' 등
-  if (load.level === 'high') {
-    return phrase.includes('배') ? `최근 운동량이 ${phrase}예요` : '최근 운동량이 급증했어요';
-  }
-  return '운동량이 평소보다 빠르게 늘고 있어요';
-}
-
 export function TrainingLoadSignal({
   load, onPress, style,
 }: { load?: TrainingLoadAssessment | null; onPress?: () => void; style?: any }) {
@@ -51,7 +42,7 @@ export function TrainingLoadSignal({
   if (load.level !== 'caution' && load.level !== 'high') return null;
 
   const color = LEVEL_COLOR[load.level];
-  const msg = signalMsg(load);
+  const msg = loadSignalKo(load);
   const Host: any = onPress ? Pressable : View;
   return (
     <Host
@@ -83,8 +74,8 @@ export function TrainingLoadCard({
   if (!load) return null;
   if (load.acuteKm <= 0 && load.chronicKm <= 0) return null;
 
-  const confident = load.confident && load.acwr != null;
-  const level = confident ? load.level : null;
+  // load.confident 는 acwr != null 을 함의한다(assessTrainingLoad: canACWR 조건).
+  const level = load.confident ? load.level : null;
   const color = level ? LEVEL_COLOR[level] : T3;
   const word = level ? LOAD_WORD[level] : '기록 쌓는 중';
   const phrase = loadRatioPhraseKo(load);
@@ -100,7 +91,7 @@ export function TrainingLoadCard({
 
       <Text style={s.msg}>{load.message}</Text>
 
-      {confident && (
+      {level && (
         <View style={s.gauge} testID="training-load-gauge">
           <View style={s.bar}>
             <View style={[s.seg, { flex: ACWR_LOW_AT, backgroundColor: withAlpha(T3, 0.35) }]} />

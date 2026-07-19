@@ -1738,7 +1738,11 @@ function Main(){
 
   // 훈련 부하(재노출 2026-07-18) — 홈 조건부 시그널용. BackendRun 은 run_date/km/duration
   // 필드 그대로 LoadRun 을 만족한다(리캡 loadAfter 와 동일 경로).
-  const homeLoad=assessTrainingLoad(runs as any[],today());
+  const homeLoad=useMemo(
+    ()=>assessTrainingLoad(runs as any[],today()),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [runs.length,(runs as any[])[runs.length-1]?.id,today()],
+  );
 
   // ── history summary + chart per period ─────────────────────
   const monthRuns=runs.filter(r=>String(r.run_date).startsWith(ymdLocal(now).slice(0,7)));

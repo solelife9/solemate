@@ -278,3 +278,13 @@ export function loadRatioPhraseKo(a: TrainingLoadAssessment): string {
   }
   return '기록 쌓는 중';
 }
+
+/**
+ * 홈 조건부 시그널 한 줄 — 카드 LOAD_MSG 보다 짧게. 부하 문구의 단일 소스(표시 계층에
+ * 복사 금지). caution/high 에서만 노출되는 계약이라 그 두 등급 문구만 의미가 있다.
+ * high 는 confident 하므로 loadRatioPhraseKo 가 항상 '평소의 N.N배'를 준다(배율로 말한다).
+ */
+export function loadSignalKo(a: TrainingLoadAssessment): string {
+  if (a.level === 'high') return `최근 운동량이 ${loadRatioPhraseKo(a)}예요`;
+  return '운동량이 평소보다 빠르게 늘고 있어요';
+}
