@@ -1,30 +1,42 @@
 // ─── ringColor.ts ────────────────────────────────────────────────
-// 수명 링 게이지의 '연속 색' 단일 출처. 앱의 4단계 컨디션 토큰(GOOD/WARN/DANGER)은
-// 배지·경고의 '이산' 상태를 말하고, 링은 소진율을 '연속'으로 물들여 인스타 스토리처럼
-// 선명하게 보여준다(디자인 승인값). 파랑→초록→노랑→빨강으로 hue 를 보간한다.
+// 수명 링 게이지 색 단일 출처. 앱 전역 4단계 컨디션색(최상=파랑·양호=초록·교체고려=노랑·
+// 교체권장=빨강)과 **동일한 이산색**을 쓴다(2026-07-19 통일 — 링 옆 '최상/양호' 라벨·
+// 신발 탭 바·상태 점과 색이 어긋나 혼란스러웠던 것을 근본 해소). 그라데이션의 선명함은
+// 같은 등급색의 밝기 차이(from 밝게 → to 등급색)로 유지한다.
 //
-// 화면 raw-hex 0 원칙 유지를 위해 링 색 계산은 전부 이 파일에 가둔다. 화면은
-// ringColor(percentUsed) 만 부르고, 반환된 {from,to,glow,solid} 를 SVG/뷰에 꽂는다.
+// 화면 raw-hex 0 원칙: 색 계산은 전부 이 파일에 가둔다. 등급→색 매핑은 신발 탭과 동일한
+// wearTier(pct).tone 규약을 쓴다(good→최상 파랑 … danger→빨강).
+
+import { BEST, GOOD, WARN, DANGER } from '../theme';
+import { wearTier } from './shoe';
 
 export type RingColor = {
   from: string;  // 그라데이션 시작(밝은 쪽)
-  to: string;    // 그라데이션 끝(진한 쪽) — 상태 점/글로우 기준색
+  to: string;    // 그라데이션 끝 = 등급색 — 상태 점/글로우 기준색(배지와 동일)
   glow: string;  // drop-shadow 근접 글로우
   bloom: string; // drop-shadow 확산 블룸
-  solid: string; // 단색이 필요할 때(칩 점 등)
+  solid: string; // 단색이 필요할 때(칩 점 등) = 등급색
 };
 
-// 소진율(%) → hue(deg). 0%=시안블루(202) → 33%=그린(145) → 66%=옐로(45) → 100%=레드(356).
-function hueAt(pct: number): number {
-  const stops: [number, number][] = [[0, 202], [33.33, 145], [66.66, 45], [100, -4]];
-  const p = Math.max(0, Math.min(100, pct));
-  for (let i = 1; i < stops.length; i++) {
-    if (p <= stops[i][0]) {
-      const t = (p - stops[i - 1][0]) / (stops[i][0] - stops[i - 1][0]);
-      return stops[i - 1][1] + (stops[i][1] - stops[i - 1][1]) * t;
-    }
+// wearTier tone → 4단계 컨디션색(신발 탭 TONE_COLOR 와 동일 매핑).
+const TIER_COLOR: Record<string, string> = { good: BEST, mid: GOOD, warn: WARN, danger: DANGER };
+
+/** hex → [h(deg), s(0..1), l(0..1)]. 등급색의 밝은 변주(from) 산출용. */
+function hexToHsl(hex: string): [number, number, number] {
+  const n = parseInt(hex.slice(1), 16);
+  const r = ((n >> 16) & 255) / 255, g = ((n >> 8) & 255) / 255, b = (n & 255) / 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  const d = max - min;
+  let h = 0, s = 0;
+  if (d !== 0) {
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    if (max === r) h = (g - b) / d + (g < b ? 6 : 0);
+    else if (max === g) h = (b - r) / d + 2;
+    else h = (r - g) / d + 4;
+    h *= 60;
   }
-  return -4;
+  return [h, s, l];
 }
 
 function hslToHex(h: number, s: number, l: number): string {
@@ -48,15 +60,17 @@ function rgba(hex: string, a: number): string {
   return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
 }
 
-/** 소진율(%) → 링 색 세트. 100% 초과는 100 으로 클램프(색은 완전 레드에서 멈춤). */
+/** 소진율(%) → 링 색 세트. 색은 4단계 등급색(최상 파랑 … 교체 빨강)에 고정한다. to·solid 는
+ *  배지·상태 점과 동일한 등급색이고, from 만 같은 색의 밝은 변주(그라데이션 깊이용). */
 export function ringColor(percentUsed: number): RingColor {
-  const hue = hueAt(percentUsed);
-  const solid = hslToHex(hue, 0.95, 0.56);
+  const base = TIER_COLOR[wearTier(percentUsed).tone] ?? BEST;
+  const [h, s, l] = hexToHsl(base);
+  const from = hslToHex(h, s, Math.min(1, l + 0.12)); // 등급색을 밝게 — 아크 상단 하이라이트
   return {
-    from: hslToHex(hue, 1, 0.66),
-    to: hslToHex(hue, 1, 0.47),
-    glow: rgba(solid, 0.9),
-    bloom: rgba(solid, 0.5),
-    solid,
+    from,
+    to: base,     // 등급색 그대로 — 상태 점(.to)이 배지와 정확히 일치
+    glow: rgba(base, 0.9),
+    bloom: rgba(base, 0.5),
+    solid: base,
   };
 }
