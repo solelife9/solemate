@@ -60,6 +60,12 @@ export const ACWR_LOW_AT = 0.8;       // < 0.8: 부하 가벼움(detraining 영�
 export const ACWR_CAUTION_AT = 1.3;   // 0.8~1.3: 스윗스팟(안전)
 export const ACWR_HIGH_AT = 1.5;      // > 1.5: 부상위험 급증
 
+// 의미 있는 주간 볼륨(km) — 최근 7일 실거리가 이보다 낮으면 ACWR/ramp 비율은 노이즈다
+// (2026-07-19 민우 리포트: 평소 3km/주 러너가 6.4km 뛰면 '평소의 1.8배 급증'으로 잘못 뜸).
+// 볼륨 스파이크 부상은 실제 부하가 어느 정도 쌓였을 때의 얘기(ACWR 전제) — 저볼륨이면
+// 비율이 크게 튀어도 부상위험이 아니므로 경보를 끄고 '가벼움'으로 둔다.
+export const MIN_MEANINGFUL_WEEKLY_KM = 10;
+
 // ── 주간 증가율(10% 룰 변형) 임계 ────────────────────────────────────────────
 // 고전 '10% 룰'은 보수적이라 v1에서는 체감 급증 구간만 경고로 띄운다(과경고 방지).
 export const RAMP_CAUTION_AT = 0.3;   // +30% 이상: 주의
@@ -201,13 +207,21 @@ export function assessTrainingLoad(
   // 더 적은 이력으로 되는 '주간 거리 증가율'(지난주 대비, 10% 룰)을 주 신호로 쓴다.
   const canACWR = weeksSpan >= 3 && chronicLoad > 0;
   const acwr = canACWR ? acuteLoad / chronicLoad : null;
-  const confident = canACWR;
+  // 절대 저볼륨 가드 — 최근 7일 실거리가 의미 있는 주간 볼륨 미만이면 비율(ACWR/ramp)이
+  // 노이즈라 부상 경보를 신뢰하지 않는다(gauge/배율 숨김 → '평소의 N배' 모순 방지).
+  // 단 실거리 0(런 없음/첫 주)은 제외 — 아래 '갓 시작' 카피 경로가 담당한다.
+  const lowVolume = acuteKm > 0 && acuteKm < MIN_MEANINGFUL_WEEKLY_KM;
+  const confident = canACWR && !lowVolume;
 
   // ── 등급 판정 ──────────────────────────────────────────────────────────────
   let level: LoadLevel;
   let message: string;
 
-  if (canACWR) {
+  if (lowVolume) {
+    // 저볼륨(주 6km 등): 비율이 아무리 커도 부상위험 아님 → '가벼움' + 격려(경보 없음).
+    level = 'low';
+    message = LOAD_MSG.low;
+  } else if (canACWR) {
     // 1차: ACWR. 2차: 주간 거리 급증(ramp)이 더 위험하면 한 단계 끌어올린다.
     if (acwr == null || acwr < ACWR_LOW_AT) level = 'low';
     else if (acwr < ACWR_CAUTION_AT) level = 'safe';

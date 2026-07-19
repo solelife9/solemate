@@ -115,12 +115,13 @@ describe('assessTrainingLoad — ACWR', () => {
   });
 
   it('주간 급증(ramp)이 ACWR보다 위험하면 등급을 끌어올린다', () => {
-    // 지난 주 4km → 이번 주 8km(+100%) : ramp high. 만성 이력도 충분.
+    // 지난 주 8km → 이번 주 16km(+100%) : ramp high. 만성 이력도 충분.
+    // 볼륨은 의미 있는 주간(≥10km)으로 — 저볼륨 가드(MIN_MEANINGFUL_WEEKLY_KM)에 걸리지 않게.
     const runs = [
-      {run_date: ago(25), km: 6},
-      {run_date: ago(18), km: 6},
-      {run_date: ago(10), km: 4}, // 지난 주
-      {run_date: ago(2), km: 8}, // 이번 주(+100%)
+      {run_date: ago(25), km: 12},
+      {run_date: ago(18), km: 12},
+      {run_date: ago(10), km: 8}, // 지난 주
+      {run_date: ago(2), km: 16}, // 이번 주(+100%)
     ];
     const a = assessTrainingLoad(runs, TODAY);
     expect(a.rampPct).not.toBeNull();
@@ -237,5 +238,21 @@ describe('ramp 가드 — ACWR 이 평소 미만이면 급증으로 끌어올리
     expect(a.level).not.toBe('high');
     expect(a.level).not.toBe('caution');
     expect(a.level).toBe('low');
+  });
+
+  it('저볼륨 러너(평소 3km/주·최근 6.4km): 비율은 높아도 부상위험 아님 → 가벼움·경보 없음', () => {
+    // 민우 리포트(2026-07-19): 평소 3km/주 러너가 6.4km 뛰면 ACWR 이 커져 '평소의 1.8배
+    // 급증'으로 잘못 떴다. 최근 7일 실거리 6.4km < 의미 있는 주간 볼륨(15km)이면 경보 해제.
+    const runs = [
+      {run_date: ago(2), km: 3.2}, {run_date: ago(5), km: 3.2}, // 최근 7일 6.4km
+      {run_date: ago(10), km: 2}, {run_date: ago(17), km: 2}, {run_date: ago(24), km: 2}, // 평소 저볼륨
+    ];
+    const a = assessTrainingLoad(runs, TODAY);
+    expect(a.acuteKm).toBeCloseTo(6.4, 1);
+    expect(a.chronicKm).toBeLessThan(15);          // 평소 주간 평균이 낮음(저볼륨)
+    expect(a.level).toBe('low');                    // 급증/주의 아님 — 가벼움
+    expect(a.level).not.toBe('high');
+    expect(a.level).not.toBe('caution');
+    expect(a.confident).toBe(false);                // 비율 신뢰 해제 → gauge/'평소의 N배' 숨김
   });
 });
