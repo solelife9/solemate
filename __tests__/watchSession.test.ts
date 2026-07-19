@@ -75,7 +75,26 @@ describe('onWatchRun — 워치 완주 페이로드 수신', () => {
       kcal: 320,
       startMs: 1720000000000,
       endMs: 1720001800000,
+      // 비트랙 런 — 트랙 메타는 0/0/[](부재 필드도 안전 폴백).
+      lapM: 0,
+      laps: 0,
+      lapTimes: [],
     });
+  });
+
+  it('트랙 런 — lapM·laps·lapTimes 를 정규화해 전달한다', () => {
+    const ws = loadWatchSession();
+    const got: any[] = [];
+    ws.onWatchRun(r => got.push(r));
+    emit('onWatchRun', {
+      runId: 'watch-trk', shoeId: 's1', km: 3.6, durationS: 1080,
+      avgBpm: 150, kcal: 240, startMs: 1720000000000, endMs: 1720001080000,
+      lapM: 400, laps: 9, lapTimes: [112, '109', 115, 110, 111, 108, 113, 110, 112],
+    });
+    expect(got).toHaveLength(1);
+    expect(got[0].lapM).toBe(400);
+    expect(got[0].laps).toBe(9);
+    expect(got[0].lapTimes).toEqual([112, 109, 115, 110, 111, 108, 113, 110, 112]);
   });
 
   it('무효 페이로드(runId 없음·km 0·음수)는 콜백을 부르지 않는다', () => {

@@ -1479,7 +1479,12 @@ function Main(){
       if(!shoeId)return;
       const d=new Date(p.startMs>0?p.startMs:Date.now());
       const date=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-      await ctx.addRun(shoeId,p.km,date,'','watch',Math.round(p.durationS),0,'','',Math.round(p.avgBpm),0,Math.round(p.kcal));
+      const newId=await ctx.addRun(shoeId,p.km,date,'','watch',Math.round(p.durationS),0,'','',Math.round(p.avgBpm),0,Math.round(p.kcal));
+      // 트랙 런이면 track_<id> 마커 저장 — 폰 RunDetail 이 '트랙·Nm×N랩' 표시(폰 트랙 런과
+      // 동일 계약). 거리(랩수×랩거리)·시간은 이미 레코드에 있으므로 메타만 얹는다.
+      if(newId&&p.laps>0&&p.lapM>0){
+        try{await AsyncStorage.setItem('track_'+newId,JSON.stringify({lapM:Math.round(p.lapM),laps:Math.round(p.laps),lapTimes:(p.lapTimes||[]).map(t=>Math.round(t))}));}catch{/* 비치명적 */}
+      }
       showToast({message:'워치 러닝을 가져왔어요'});
     }catch(e){console.log('watch run sync error',e);}
   }),[]);

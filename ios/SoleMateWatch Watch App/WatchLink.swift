@@ -226,6 +226,10 @@ final class WatchLink: NSObject, ObservableObject {
       "kcal": summary.kcal,
       "startMs": summary.startMs,
       "endMs": summary.endMs,
+      // 트랙 자동랩 메타(비트랙은 lapM 0·laps 0·빈 배열) — 폰 RunDetail 트랙 표기용.
+      "lapM": summary.lapM,
+      "laps": Double(summary.lapTimesS.count),
+      "lapTimes": summary.lapTimesS,
     ]
     let s = WCSession.default
     guard s.activationState == .activated else { return }

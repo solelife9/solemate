@@ -43,6 +43,10 @@ export type WatchRunPayload = {
   kcal: number;
   startMs: number;
   endMs: number;
+  /** 트랙 자동랩 메타 — 트랙 런만. 확정 랩거리(m)·랩 수·랩 시간(초). 비트랙은 0/0/[]. */
+  lapM: number;
+  laps: number;
+  lapTimes: number[];
 };
 
 /** 워치가 러닝 끝에 직송하는 심박 기록(정본 경로 A). 오프셋·bpm 병렬 배열. */
@@ -86,6 +90,9 @@ export const watchSession = {
         kcal: Math.max(0, Number(e?.kcal) || 0),
         startMs: Math.max(0, Number(e?.startMs) || 0),
         endMs: Math.max(0, Number(e?.endMs) || 0),
+        lapM: Math.max(0, Number(e?.lapM) || 0),
+        laps: Math.max(0, Number(e?.laps) || 0),
+        lapTimes: Array.isArray(e?.lapTimes) ? e.lapTimes.map((x: any) => Math.max(0, Number(x) || 0)) : [],
       });
     });
     return () => sub.remove();

@@ -63,6 +63,10 @@ struct RunSummary: Equatable {
   let kcal: Double
   let startMs: Double
   let endMs: Double
+  /// 트랙 자동랩 메타 — 폰 RunDetail 이 track_<id> 로 읽어 '트랙·Nm×N랩' 표시.
+  /// 비트랙 런은 lapM 0 · lapTimesS []. (laps 수 = lapTimesS.count)
+  let lapM: Double
+  let lapTimesS: [Double]
 
   var avgPaceSecPerKm: Double { km > 0.01 ? durationS / km : 0 }
 }
@@ -446,6 +450,7 @@ final class WorkoutManager: NSObject, ObservableObject {
       let e = b.elapsedTime(at: endDate)
       if e.isFinite, e >= 0 { elapsedS = e }
     }
+    let trackRun = goal.kind == .track && !lapTimes.isEmpty
     summary = RunSummary(
       runId: runId,
       shoeId: currentShoe?.id ?? "",
@@ -455,7 +460,9 @@ final class WorkoutManager: NSObject, ObservableObject {
       avgBpm: max(0, avgBpm),
       kcal: max(0, kcal),
       startMs: start.timeIntervalSince1970 * 1000,
-      endMs: endDate.timeIntervalSince1970 * 1000
+      endMs: endDate.timeIntervalSince1970 * 1000,
+      lapM: trackRun ? lapM : 0,
+      lapTimesS: trackRun ? lapTimes : []
     )
     // 심박 기록 직송(경로 A) — 수동 '저장'과 무관하게 종료 시 항상 보낸다. 폰이 주머니에
     // 있어(실시간 스트림 놓침) 폰 런의 hrTrack 이 비는 문제를 근본 해결한다(배달 보장 큐).
