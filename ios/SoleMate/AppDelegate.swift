@@ -53,6 +53,12 @@ class AppDelegate: ExpoAppDelegate {
       // 'Url' 접미사 제거 규칙) — 같은 셀렉터(handleOpenUrl:)라 동작 동일.
       return RNKakaoLogins.handleOpen(url)
     }
+    // 홈/잠금화면 위젯 딥링크(keego://start) — RN Linking 으로 라우팅해 JS(App.tsx)가
+    // 활성 신발로 러닝 시작. 네이버 콜백보다 먼저 가로채야 한다(네이버가 keego:// 전부를
+    // 삼키므로). host=start 만 위젯 링크, 그 외 keego:// 는 아래 네이버 SDK 로.
+    if url.scheme == "keego" && url.host == "start" {
+      return RCTLinkingManager.application(app, open: url, options: options)
+    }
     // 네이버 로그인 콜백(keego://) — 네이버 앱/웹 로그인 후 복귀를 SDK 로 처리.
     if url.scheme == "keego" {
       return NaverThirdPartyLoginConnection.getSharedInstance().application(app, open: url, options: options)

@@ -84,6 +84,7 @@ import {setRunSurface, parseSurface, type Surface} from './lib/wearModel';
 import {forecastReplacement, type ReplacementForecast} from './lib/replacementForecast';
 import {mostRecentShoeId, lastWornDate} from './lib/shoeRecommend';
 import {recommendRotation} from './lib/rotation';
+import {findShoeClass, typeLabel} from './data/shoeClass';
 import {
   loadSnapshot, clearSnapshot, isResumable,
   enqueuePendingRun, loadPendingRuns, overlayPendingRuns, removePendingRun,
@@ -1459,6 +1460,21 @@ function Main(){
     const p=JSON.parse(watchShoesJson);
     watchSession.updateShoes(p.shoes,p.hr);
   },[watchShoesJson]);
+  // ①' 홈/잠금화면 위젯(신발 수명 링) — 활성 신발(effectiveId=홈 히어로) 한 켤레를 App Group
+  //    공유 저장소에 기록(네이티브가 위젯 리로드). 카테고리는 홈 히어로와 동일 소스로.
+  //    워치와 무관한 폰 기능(available=iOS만). 내용이 실제 바뀔 때만 전송(직렬화 dep).
+  const widgetShoeJson=(()=>{
+    const e=homeShoes[homeActiveIdx]; if(!e) return '';
+    return JSON.stringify({
+      name:e.ui.model||e.ui.brand, brand:e.ui.brand,
+      category:typeLabel(findShoeClass(e.ui.brand,e.ui.model)?.type)||'',
+      usedKm:e.ui.used, maxKm:e.ui.max,
+    });
+  })();
+  useEffect(()=>{
+    if(!widgetShoeJson||(globalThis as any).__KEEGO_CAPTURE__) return;
+    watchSession.updateWidgetShoe(JSON.parse(widgetShoeJson));
+  },[widgetShoeJson]);
   // ② 워치 단독 러닝 완주 수신 → addRun(로컬-퍼스트 저장 → 신발 거리 자동 차감 →
   //    cloudSync 가 Firestore 로 push). 메시지+큐 이중 배달이 가능하므로 runId 를 영속
   //    목록으로 중복 방어한다. 워치가 보낸 신발이 목록에 없으면(그 사이 삭제 등) 현재
@@ -1840,6 +1856,29 @@ function Main(){
     addShoe(`${shoe.brand} ${shoe.model}`.trim(),shoe.max,shoe.used,today());
     setOverlay('none');
   };
+
+  // ── 위젯 딥링크(keego://start) — 홈/잠금화면 위젯 탭 → 활성 신발로 러닝 시작 플로우 ──
+  // 홈 히어로 '러닝 시작' CTA와 동일 경로(startFromShoeId → 목표 화면). AppDelegate 가
+  // keego://start(host=start)만 RN Linking 으로 라우팅(그 외 keego:// 는 네이버 로그인).
+  // 콜드스타트(getInitialURL)는 신발 로드 전 도착할 수 있어 → pending 플래그로 로드 후 처리.
+  const deepLinkCtx=useRef({effectiveId,startFromShoeId});
+  deepLinkCtx.current={effectiveId,startFromShoeId};
+  const pendingWidgetStart=useRef(false);
+  useEffect(()=>{
+    if((globalThis as any).__KEEGO_CAPTURE__) return;
+    const fire=()=>{
+      const {effectiveId,startFromShoeId}=deepLinkCtx.current;
+      if(effectiveId){pendingWidgetStart.current=false;startFromShoeId(effectiveId);}
+      else pendingWidgetStart.current=true; // 신발 로드 전 → 로드되면 아래 effect가 처리
+    };
+    const handle=(url:string|null)=>{if(url&&url.replace(/\/+$/,'')==='keego://start')fire();};
+    Linking.getInitialURL().then(handle).catch(()=>{});
+    const sub=Linking.addEventListener('url',e=>handle(e.url));
+    return ()=>sub.remove();
+  },[]);
+  useEffect(()=>{
+    if(pendingWidgetStart.current&&effectiveId){pendingWidgetStart.current=false;deepLinkCtx.current.startFromShoeId(effectiveId);}
+  },[effectiveId]);
 
   // ── 위치 권한 priming(audit#9/#10) ──────────────────────────────────────────
   // 라이브 런 진입 직전 관문. 권한을 처음 쓰는 사용자에겐 OS 다이얼로그 전에 '왜

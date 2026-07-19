@@ -144,6 +144,25 @@ export const watchSession = {
     }
   },
   /**
+   * 홈/잠금화면 위젯(신발 수명 링)에 표시할 활성 신발 한 켤레를 App Group 공유 저장소에
+   * 기록한다(네이티브가 위젯 타임라인도 리로드). 워치 페어링과 무관한 폰 기능 —
+   * available(iOS + 모듈)만 확인. 구버전 네이티브(메서드 부재)·안드로이드면 no-op.
+   */
+  updateWidgetShoe(shoe: {name: string; brand: string; category: string; usedKm: number; maxKm: number}): void {
+    if (!available || !M?.updateWidgetShoe) return;
+    try {
+      M.updateWidgetShoe({
+        name: shoe.name || '',
+        brand: shoe.brand || '',
+        category: shoe.category || '',
+        usedKm: Math.max(0, Math.round(shoe.usedKm || 0)),
+        maxKm: Math.max(0, Math.round(shoe.maxKm || 0)),
+      });
+    } catch {
+      /* no-op — 위젯 갱신 실패가 앱을 깨면 안 된다 */
+    }
+  },
+  /**
    * 러닝 시작 시 페어링된 애플워치의 워크아웃을 자동 실행한다(startWatchApp) → 손목을
    * 만지지 않아도 심박이 흐른다. 워치 미페어링/미설치·구버전 네이티브면 조용히 false.
    * 실패해도 앱은 그대로 동작(심박만 '--').

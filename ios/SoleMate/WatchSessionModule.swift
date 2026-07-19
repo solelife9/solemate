@@ -17,6 +17,7 @@ import Foundation
 import WatchConnectivity
 import HealthKit
 import React
+import WidgetKit
 
 @objc(WatchSessionModule)
 class WatchSessionModule: RCTEventEmitter, WCSessionDelegate {
@@ -143,6 +144,22 @@ class WatchSessionModule: RCTEventEmitter, WCSessionDelegate {
     if let hrRest = payload["hrRest"] as? NSNumber { patch["hrRest"] = hrRest.doubleValue }
     guard !patch.isEmpty else { return }
     pushContext(patch)
+  }
+
+  // 폰 → 홈/잠금화면 위젯(신발 수명 링): 활성 신발 5필드를 App Group 공유 UserDefaults 에
+  // 기록하고 위젯 타임라인을 즉시 리로드한다. JS(App.tsx)가 활성 신발이 바뀔 때마다 호출.
+  // 위젯측 읽기 계약 = RunActivity/RunActivityBundle.swift(KeegoWidgetShared 키와 동일).
+  // ⚠️ App Group(group.com.solemate.keego)이 앱·확장 양 타깃에 등록돼야 suite 가 열린다.
+  // 미등록이면 suite=nil → 조용히 no-op(위젯은 샘플 폴백, 빌드·미설정 안전).
+  @objc(updateWidgetShoe:)
+  func updateWidgetShoe(_ payload: NSDictionary) {
+    guard let d = UserDefaults(suiteName: "group.com.solemate.keego") else { return }
+    d.set(payload["name"] as? String ?? "", forKey: "widget_shoe_name")
+    d.set(payload["brand"] as? String ?? "", forKey: "widget_shoe_brand")
+    d.set(payload["category"] as? String ?? "", forKey: "widget_shoe_category")
+    d.set((payload["usedKm"] as? NSNumber)?.intValue ?? 0, forKey: "widget_shoe_used_km")
+    d.set((payload["maxKm"] as? NSNumber)?.intValue ?? 0, forKey: "widget_shoe_max_km")
+    WidgetCenter.shared.reloadAllTimelines()
   }
 
   // 폰 → 워치: 햅틱(진동) on/off 플래그. 워치의 자동 랩 진동·존 이탈 햅틱이 이를 존중한다.

@@ -21,4 +21,8 @@ RCT_EXTERN_METHOD(setWatchHaptics:(BOOL)enabled)
 // payload = { shoes: [{id,brand,model,lifePct,condition}], hrMax?, hrRest? }.
 RCT_EXTERN_METHOD(updateShoeContext:(NSDictionary *)payload)
 
+// 폰 → 홈/잠금화면 위젯(신발 수명 링) 데이터 공급. App Group 공유 UserDefaults 기록 +
+// 위젯 타임라인 리로드. payload = { name, brand, category, usedKm, maxKm }.
+RCT_EXTERN_METHOD(updateWidgetShoe:(NSDictionary *)payload)
+
 @end
