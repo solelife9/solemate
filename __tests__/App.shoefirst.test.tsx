@@ -134,9 +134,10 @@ test('락커 카드 play 어포던스 → 상세 없이 해당 신발로 목표 
   expect(playBtn).toBeTruthy();
   await tap(playBtn);
 
+  // 목표 화면 진입 확인. 신발명은 이 화면에 더 이상 표시하지 않는다(2026-07-19: 홈에서
+  // 이미 고른 신발로 진입 — 신발 행 제거로 화면 단순화). 선택 신발은 pendingShoe 상태로
+  // 넘어가 런에 쓰인다(표시가 아니라 상태 계약).
   const txt = textOf(root);
-  expect(txt).toContain('Clifton');
-  expect(txt).not.toContain('Pegasus');
   expect(txt).toContain('러닝 목표');
 });
 

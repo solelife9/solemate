@@ -1916,14 +1916,8 @@ function Main(){
   if(overlay==='goal'&&pendingShoe){
     return (
       <RunGoalScreen
-        shoeBrand={pendingShoe.ui.brand}
-        shoeLabel={pendingShoe.ui.model||pendingShoe.ui.brand}
-        remainKm={Math.max(0,pendingShoe.ui.max-pendingShoe.ui.used)}
-        // 신발 행 탭 → 여기서 바로 신발 전환(런 시작=선택 확정 지점의 마지막 교정 기회).
-        // 활성(비보관) 신발만. 전환 시 홈 선택 신발도 함께 반영(사용 중 일관).
-        shoes={uiShoes.filter(sh=>!sh.retired&&sh.id)}
-        selectedShoeId={pendingShoe.id}
-        onChangeShoe={(id)=>{const i=idxById[id];const raw=shoes[i];if(!raw)return;setSelectedShoeId(id);setPendingShoe({id:raw.id,name:raw.name,ui:uiShoes[i]});}}
+        // 신발은 홈 히어로에서 선택해 pendingShoe 로 넘어온다 — 이 화면은 목표만(신발 행 제거
+        // 2026-07-19 민우). 신발 바꾸려면 뒤로가기 → 홈에서 다시 선택.
         age={age}
         restHR={restHR}
         onBack={()=>{setOverlay('none');setPendingShoe(null);}}

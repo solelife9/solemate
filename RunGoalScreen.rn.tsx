@@ -24,8 +24,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 // · text→T1–T4 · hair→SEP · 그라데이션→GRAD_TOP/GRAD_BOT. 폰트 UI/DP → FONT/DISPLAY.
 // (시각 동등: 다크+오렌지 유지)
 import {
-  BG, CARD, HERO_BG, ACCENT, T1, T2, T3, T4, SEP, CARD_BORDER,
-  FONT, DISPLAY, NUM, RADIUS, GUTTER, SCRIM, withAlpha, type Shoe, TYPE, HERO, GLASS,
+  BG, CARD, ACCENT, T1, T2, T3, T4, SEP, CARD_BORDER,
+  FONT, DISPLAY, NUM, RADIUS, GUTTER, SCRIM, withAlpha, TYPE, HERO,
 } from './theme';
 // lib/haptics 배선: '러닝 시작' CTA(런 시작) → tap.
 import { tap } from './lib/haptics';
@@ -35,9 +35,7 @@ import { useEffect } from 'react';
 import { HR_ZONE_COLORS, GOOD } from './theme';
 // CTA 는 앱 전역 단일 Button 프리미티브(그라데이션 GRAD_TOP/BOT·글로우·radius 토큰).
 // 모드 탭 스트립은 SegmentedControl 단일 프리미티브(accentTint variant).
-import { Button, SegmentedControl, SwipeBack, SwipeBackExclude, ShoeGlyph, GlassEdge } from './primitives';
-import { wearTier } from './lib/shoe';
-import { ringColor } from './lib/ringColor';
+import { Button, SegmentedControl, SwipeBack, SwipeBackExclude } from './primitives';
 import SpeedPlanPanel from './SpeedPlanPanel';
 import { buildPacePlan } from './lib/pacePlan';
 
@@ -69,18 +67,11 @@ const CFG: Record<'km' | 'min', { min: number; max: number; step: number; major:
 };
 
 export default function RunGoalScreen({
-  shoeBrand = 'NIKE', shoeLabel = 'Alphafly 3', remainKm = 382,
-  shoes, selectedShoeId, onChangeShoe,
   onBack, onStart, age = 0, restHR = 0,
 }: {
-  // (구 shoeCondition 3단계 prop 제거 2026-07-11 — 상태는 선택 신발의 used/max 로
-  //  wearTier 4단계를 파생한다. 신발 목록이 없으면 상태 표기를 숨긴다.)
-  shoeBrand?: string; shoeLabel?: string; remainKm?: number;
-  /** 활성 신발 목록 — 주어지고 2켤레 이상이면 신발 행 탭으로 여기서 바로 바꿀 수 있다
-      (런 시작 = 선택 확정 지점이므로 이 화면이 마지막 교정 기회). 미주입이면 표시 전용. */
-  shoes?: Shoe[];
-  selectedShoeId?: string | null;
-  onChangeShoe?: (id: string) => void;
+  // 신발은 홈 히어로에서 이미 선택해 넘어온다 — 이 화면은 '목표'에만 집중한다(2026-07-19
+  // 민우: 홈에서 신발 고르고 러닝시작 눌렀는데 여기 또 신발 행이 있어 화면이 복잡했다.
+  // 마지막 교정은 뒤로가기로. 신발 관련 prop·행·전환 시트 제거).
   onBack?: () => void; onStart?: (goal: RunGoal) => void;
   /** 심박 가이드 bpm 범위 표시용(#7). 0이면 범위 숨기고 존 이름만. */
   age?: number; restHR?: number;
@@ -89,9 +80,6 @@ export default function RunGoalScreen({
   // 기기별 편차를 못 담는다(다이내믹 아일랜드 밑에 nav 가 살짝 파고들던 것) — insets 로.
   const insets = useSafeAreaInsets();
   const [mode, setMode] = useState<Mode>('km');
-  // 신발 전환 시트 — 신발 행(하단) 탭으로 연다.
-  const [shoePickerOpen, setShoePickerOpen] = useState(false);
-  const switchable = !!onChangeShoe && !!shoes && shoes.filter(sh => sh.id).length > 1;
   const [val, setVal] = useState<number>(CFG.km.def);
   const [vpW, setVpW] = useState(0);
   const rulerRef = useRef<ScrollView>(null);
@@ -199,16 +187,6 @@ export default function RunGoalScreen({
     }
     setKpOpen(false);
   };
-  // 신발 상태 — 홈 히어로와 동일한 4단계 wearTier(사용률%)가 단일 진실원(2026-07-04).
-  // 2026-07-11 단일화: 3단계 condition 폴백 폐지 — 선택 신발의 used/max 로만 라벨·색을
-  // 파생하고, 신발 목록이 없는 standalone 렌더에선 상태 표기를 숨긴다(플레이스홀더 금지).
-  const selShoe = (shoes ?? []).find(sh => sh.id === selectedShoeId);
-  const selPct = selShoe && selShoe.max > 0 ? (selShoe.used / selShoe.max) * 100 : null;
-  const selTier = selPct != null ? wearTier(selPct) : null;
-  const condLabel = selTier ? selTier.label : null;
-  // 점 색 = 홈 히어로와 동일한 연속 색(ringColor.to — 새 신발일수록 파랑). 이산 톤
-  // (GOOD 초록)을 쓰면 홈 '최상' 파란 점과 어긋난다(사용자 지적 2026-07-04).
-  const condColor = selPct != null ? ringColor(selPct).to : null;
   const half = vpW / 2;
   // 런 시작: 햅틱(tap) → onStart(RunGoal). 거리/시간/스피드(km별 페이스 플랜)로 분기.
   // 심박 가이드(#7) — 목표 존(0=끄기·2·3·4). 저장값 로드, 변경 시 저장(persist). 목표 유형과 직교.
@@ -375,30 +353,10 @@ export default function RunGoalScreen({
         })()}
       </View>
 
-      {/* footer — 신발 행: 2켤레 이상이면 탭해서 여기서 바로 신발을 바꾼다(마지막 교정 기회).
-          1켤레거나 미배선이면 표시 전용(화살표도 숨김 — 죽은 어포던스 금지). */}
+      {/* footer — 신발은 홈에서 선택해 넘어오므로 여기선 목표 입력(키패드)과 시작만.
+          신발 행/전환 시트는 제거(2026-07-19 민우 — 화면 단순화, 마지막 교정은 뒤로가기). */}
       <View style={[s.foot, { paddingBottom: Math.max(insets.bottom, rv(14)) + rv(8) }]}>
-        <Pressable
-          style={s.shoeSel}
-          onPress={switchable ? () => setShoePickerOpen(true) : undefined}
-          accessibilityRole="button"
-          accessibilityLabel={`신발 선택: ${shoeBrand} ${shoeLabel}${condLabel ? `, 상태 ${condLabel}` : ''}${remainKm != null ? `, 남은 수명 ${Math.round(remainKm)}킬로미터` : ''}${switchable ? ', 탭하면 다른 신발로 변경' : ''}`}>
-          <GlassEdge glints={false} radius={RADIUS.lg} />
-          <View style={s.shoeThumb}><ShoeGlyph color={T2} size={ri(24)} /></View>
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <Text style={s.shoeBrand}>{shoeBrand}</Text>
-            <Text style={s.shoeModel} numberOfLines={1}>{shoeLabel}</Text>
-            <View style={s.shoeCond}>
-              {condColor != null && <View style={[s.shoeDot, { backgroundColor: condColor }]} />}
-              <Text style={s.shoeCondText}>
-                {[condLabel, remainKm != null ? `남은 수명 ${Math.round(remainKm)}km` : null].filter(Boolean).join(' · ')}
-              </Text>
-            </View>
-          </View>
-          {switchable && <Icon name="forward" size={ri(20)} color={T4} />}
-        </Pressable>
-
-        {/* 목표 직접 입력 키패드(2026-07-04) — 큰 숫자 탭으로 연다. 신발 시트와 동일한
+        {/* 목표 직접 입력 키패드(2026-07-04) — 큰 숫자 탭으로 연다. 하단 시트
             하단 시트 규약(SCRIM 탭 = 닫기). 확인 시 cfg 범위로 클램프 + 룰러 동기. */}
         <Modal visible={kpOpen} transparent animationType="slide" onRequestClose={() => setKpOpen(false)}>
           <Pressable style={{ flex: 1, backgroundColor: SCRIM }} onPress={() => setKpOpen(false)} accessibilityRole="button" accessibilityLabel="입력 닫기" />
@@ -424,38 +382,6 @@ export default function RunGoalScreen({
               })}
             </View>
             <Button label="확인" onPress={kpConfirm} haptic={false} style={s.kpOk} testID="kp-ok" />
-          </View>
-        </Modal>
-
-        {/* 신발 전환 시트 */}
-        <Modal visible={shoePickerOpen} transparent animationType="slide" onRequestClose={() => setShoePickerOpen(false)}>
-          <Pressable style={{ flex: 1, backgroundColor: SCRIM }} onPress={() => setShoePickerOpen(false)} accessibilityRole="button" accessibilityLabel="신발 선택 닫기" />
-          <View style={s.pickerSheet}>
-            <Text style={s.pickerTitle}>오늘 신을 신발</Text>
-            {(shoes ?? []).filter(sh => sh.id).map(sh => {
-              const on = sh.id === selectedShoeId;
-              const remain = Math.max(0, sh.max - sh.used);
-              return (
-                <Pressable
-                  key={sh.id}
-                  onPress={() => { onChangeShoe?.(sh.id as string); setShoePickerOpen(false); }}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: on }}
-                  accessibilityLabel={`${sh.brand} ${sh.model}로 변경`}
-                  testID={`goal-shoe-${sh.id}`}
-                  style={({ pressed }) => [s.pickerRow, on && s.pickerRowOn, pressed && { opacity: 0.8 }]}>
-                  <View style={{ flex: 1, minWidth: 0 }}>
-                    <Text style={s.pickerBrand}>{sh.brand}</Text>
-                    <Text style={s.pickerModel} numberOfLines={1}>{sh.model}</Text>
-                  </View>
-                  <View style={s.pickerMeta}>
-                    <View style={[s.shoeDot, { backgroundColor: ringColor(sh.max > 0 ? (sh.used / sh.max) * 100 : 0).to }]} />
-                    <Text style={s.pickerRemain}>{Math.round(remain)}km 남음</Text>
-                  </View>
-                  {on ? <Text style={s.pickerCheck}>✓</Text> : null}
-                </Pressable>
-              );
-            })}
           </View>
         </Modal>
 
@@ -530,9 +456,7 @@ const s = StyleSheet.create({
   zoneChipTxt: { color: T3, fontFamily: FONT, fontSize: rf(13.5), fontWeight: '700' },
   zoneHint: { color: T3, fontFamily: FONT, fontSize: rf(12), marginTop: rv(8), letterSpacing: 0.2 },
   foot: { paddingHorizontal: GUTTER, paddingTop: rv(4) }, // 하단 여백은 insets.bottom 실측
-  // 코너 페이드 헤어라인(GlassEdge glints=false) — 균일 RN 보더 폐지(2026-07-10 확정).
-  shoeSel: { flexDirection: 'row', alignItems: 'center', gap: rv(12), padding: rs(12), borderRadius: RADIUS.lg, borderCurve: 'continuous', overflow: 'hidden', backgroundColor: GLASS.fill },
-  // 신발 전환 시트(하단) — History 기간 피커와 같은 문법(SCRIM + 하단 카드).
+  // 목표 직접 입력 키패드 시트(하단) — History 기간 피커와 같은 문법(SCRIM + 하단 카드).
   pickerSheet: { backgroundColor: CARD, borderTopLeftRadius: RADIUS.xl, borderTopRightRadius: RADIUS.xl, borderCurve: 'continuous', paddingHorizontal: rs(18), paddingTop: rv(18), paddingBottom: rv(34), gap: rv(10) },
   // 목표 직접 입력 키패드 — 시트 규약은 pickerSheet 재사용, 키만 추가.
   kpValRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', gap: rv(6), marginBottom: rv(6), minHeight: rs(44) },
@@ -543,20 +467,6 @@ const s = StyleSheet.create({
   kpKey: { width: '31.5%', flexGrow: 1, alignItems: 'center', paddingVertical: rv(12), borderRadius: RADIUS.md, borderCurve: 'continuous', backgroundColor: CARD_BORDER },
   kpKeyTxt: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.title.fontSize, fontWeight: '600' },
   kpOk: { marginTop: rv(6) },
-  pickerTitle: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600', letterSpacing: 0.2, marginBottom: rv(4) },
-  pickerRow: { flexDirection: 'row', alignItems: 'center', gap: rv(12), padding: rs(14), borderRadius: RADIUS.lg, borderCurve: 'continuous', backgroundColor: withAlpha(T1, 0.04), borderWidth: 1, borderColor: CARD_BORDER },
-  pickerRowOn: { backgroundColor: withAlpha(T1, 0.09), borderColor: withAlpha(T1, 0.2) },
-  pickerBrand: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600', letterSpacing: 0.6 },
-  pickerModel: { color: T1, fontFamily: FONT, fontSize: TYPE.heading.fontSize, fontWeight: '700', letterSpacing: -0.2, marginTop: rv(1) },
-  pickerMeta: { flexDirection: 'row', alignItems: 'center', gap: rv(6) },
-  pickerRemain: { color: T2, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500' },
-  pickerCheck: { color: T1, fontFamily: FONT, fontSize: TYPE.heading.fontSize, fontWeight: '700', marginLeft: rs(2) },
-  shoeThumb: { width: rs(46), height: rs(46), borderRadius: rs(13), alignItems: 'center', justifyContent: 'center', backgroundColor: HERO_BG, borderWidth: 1, borderColor: SEP },
-  shoeBrand: { color: T3, fontFamily: DISPLAY, fontSize: TYPE.micro.fontSize, fontWeight: '600', letterSpacing: 1.4 },
-  shoeModel: { color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600', letterSpacing: -0.2, marginTop: rv(2) },
-  shoeCond: { flexDirection: 'row', alignItems: 'center', gap: rv(4), marginTop: rv(4) },
-  shoeDot: { width: rs(6), height: rs(6), borderRadius: RADIUS.pill },
-  shoeCondText: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500' },
 
   // CTA 는 단일 Button 프리미티브(그라데이션·글로우·radius 토큰). 화면 고유 레이아웃
   // (상단 여백·높이)만 style 로 넘기고 모양/그라데이션/광택은 Button 이 책임진다.
