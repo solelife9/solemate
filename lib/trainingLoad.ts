@@ -60,10 +60,11 @@ export const ACWR_LOW_AT = 0.8;       // < 0.8: 부하 가벼움(detraining 영�
 export const ACWR_CAUTION_AT = 1.3;   // 0.8~1.3: 스윗스팟(안전)
 export const ACWR_HIGH_AT = 1.5;      // > 1.5: 부상위험 급증
 
-// 의미 있는 주간 볼륨(km) — 최근 7일 실거리가 이보다 낮으면 ACWR/ramp 비율은 노이즈다
-// (2026-07-19 민우 리포트: 평소 3km/주 러너가 6.4km 뛰면 '평소의 1.8배 급증'으로 잘못 뜸).
+// 의미 있는 주간 볼륨(km) — 최근 7일(급성) '또는' 평소 주간평균(4주 만성)이 이보다 낮으면
+// ACWR/ramp 비율은 노이즈다(2026-07-19 민우 리포트+제안: 평소 3km/주 러너가 6.4km 뛰면
+// '평소의 1.8배 급증'으로 잘못 뜸. 평소 기반이 얇으면 비율이 아무리 커도 부상위험이 아님).
 // 볼륨 스파이크 부상은 실제 부하가 어느 정도 쌓였을 때의 얘기(ACWR 전제) — 저볼륨이면
-// 비율이 크게 튀어도 부상위험이 아니므로 경보를 끄고 '가벼움'으로 둔다.
+// 경보를 끄고 '가벼움'으로 둔다. 급성·만성 둘 다에 같은 기준을 적용한다.
 export const MIN_MEANINGFUL_WEEKLY_KM = 10;
 
 // ── 주간 증가율(10% 룰 변형) 임계 ────────────────────────────────────────────
@@ -71,11 +72,14 @@ export const MIN_MEANINGFUL_WEEKLY_KM = 10;
 export const RAMP_CAUTION_AT = 0.3;   // +30% 이상: 주의
 export const RAMP_HIGH_AT = 0.6;      // +60% 이상: 위험
 
+// keep-going 보이스 + 러너 자율(2026-07-19 민우): '쉬어라' 같은 처방은 선 넘음 —
+// 뛸지 말지는 러너가 정한다. 앱은 '운동량이 늘었다'는 사실 + 가벼운 인지만 전한다
+// (명령·휴식 지시 금지). caution/high 도 판단은 러너에게 맡긴다.
 export const LOAD_MSG: Record<LoadLevel, string> = {
   low: '부하가 가벼워요 — 천천히 늘려도 부상 없이 킵고잉',
   safe: '훈련 부하가 안정적이에요 — 이대로 킵고잉',
-  caution: '최근 부하가 늘고 있어요 — 무리만 안 하면 부상 없이 킵고잉',
-  high: '갑자기 많이 뛰었어요 — 오늘은 쉬어가면 부상 없이 킵고잉',
+  caution: '최근 운동량이 빠르게 늘고 있어요 — 무리하지 않게 킵고잉',
+  high: '최근 운동량이 크게 늘었어요 — 몸 상태를 살피며 킵고잉',
 };
 export const LOAD_MSG_NEW = '이제 막 페이스를 쌓는 중이에요 — 천천히 늘리면 부상 없이 킵고잉';
 
@@ -207,10 +211,14 @@ export function assessTrainingLoad(
   // 더 적은 이력으로 되는 '주간 거리 증가율'(지난주 대비, 10% 룰)을 주 신호로 쓴다.
   const canACWR = weeksSpan >= 3 && chronicLoad > 0;
   const acwr = canACWR ? acuteLoad / chronicLoad : null;
-  // 절대 저볼륨 가드 — 최근 7일 실거리가 의미 있는 주간 볼륨 미만이면 비율(ACWR/ramp)이
-  // 노이즈라 부상 경보를 신뢰하지 않는다(gauge/배율 숨김 → '평소의 N배' 모순 방지).
-  // 단 실거리 0(런 없음/첫 주)은 제외 — 아래 '갓 시작' 카피 경로가 담당한다.
-  const lowVolume = acuteKm > 0 && acuteKm < MIN_MEANINGFUL_WEEKLY_KM;
+  // 절대 저볼륨 가드 — 최근 7일(급성) '또는' 평소 주간평균(4주 만성)이 의미 있는 주간
+  // 볼륨 미만이면 비율(ACWR/ramp)은 노이즈다. 특히 만성(평소)이 3km면 급성이 몇 km든
+  // 비율이 폭발한다(6km=2배, 12km=4배) → 만성 게이트가 근본(민우 지적 2026-07-19).
+  // 저볼륨이면 경보를 끄고 '가벼움'으로, gauge/배율도 숨겨 '평소의 N배' 모순을 막는다.
+  // 실거리 0(런 없음/첫 주)은 제외 — 아래 '갓 시작' 카피 경로가 담당한다.
+  const lowVolume =
+    (acuteKm > 0 && acuteKm < MIN_MEANINGFUL_WEEKLY_KM) ||
+    (chronicKm > 0 && chronicKm < MIN_MEANINGFUL_WEEKLY_KM);
   const confident = canACWR && !lowVolume;
 
   // ── 등급 판정 ──────────────────────────────────────────────────────────────

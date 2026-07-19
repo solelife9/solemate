@@ -73,10 +73,11 @@ describe('assessTrainingLoad — ACWR', () => {
   });
 
   it('콜드스타트(이력 2주): ACWR 대신 지난주 대비 거리 증가율로 판정', () => {
-    // 지난주 4km → 이번주 10km(+150%). 4주 이력 없음 → ramp 폴백이 잡아야 한다.
+    // 지난주 8km → 이번주 20km(+150%). 4주 이력 없음 → ramp 폴백이 잡아야 한다.
+    // 볼륨은 의미 있는 주간(≥10km)으로 — 저볼륨 가드(급성·만성)에 걸리지 않게.
     const runs = [
-      {run_date: ago(10), km: 4}, // 지난주
-      {run_date: ago(2), km: 10}, // 이번주 급증
+      {run_date: ago(10), km: 8}, // 지난주
+      {run_date: ago(2), km: 20}, // 이번주 급증
     ];
     const a = assessTrainingLoad(runs, TODAY);
     expect(a.confident).toBe(false); // ACWR은 신뢰 안 함
@@ -254,5 +255,20 @@ describe('ramp 가드 — ACWR 이 평소 미만이면 급증으로 끌어올리
     expect(a.level).not.toBe('high');
     expect(a.level).not.toBe('caution');
     expect(a.confident).toBe(false);                // 비율 신뢰 해제 → gauge/'평소의 N배' 숨김
+  });
+
+  it('얇은 기반(평소 3km/주) + 급성 높아도: 만성 게이트로 급증 아님', () => {
+    // 민우 지적(2026-07-19): 평소 3km면 급성이 몇 km든 비율이 폭발(12km=4배)한다 → 만성이
+    // 의미 있는 볼륨(10km) 미만이면 급성이 높아도 부상위험 아님. 만성 게이트가 근본.
+    const runs = [
+      {run_date: ago(2), km: 12},                    // 최근 7일 12km(급성은 충분히 높음)
+      {run_date: ago(10), km: 2}, {run_date: ago(17), km: 2}, {run_date: ago(24), km: 2}, // 평소 3km/주
+    ];
+    const a = assessTrainingLoad(runs, TODAY);
+    expect(a.acuteKm).toBeGreaterThanOrEqual(10);   // 급성은 임계 이상인데도
+    expect(a.chronicKm).toBeLessThan(10);            // 만성(평소)이 낮아서
+    expect(a.level).not.toBe('high');                // 급증 아님
+    expect(a.level).not.toBe('caution');
+    expect(a.confident).toBe(false);
   });
 });
