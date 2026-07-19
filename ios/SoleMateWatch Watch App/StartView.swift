@@ -18,6 +18,10 @@ struct StartView: View {
   /// 신발이 2켤레 이상인데 아직 한 번도 스와이프한 적 없으면 하단에 힌트 한 줄.
   /// 처음 페이지를 넘기는 순간 영구 소등(클러터 0) — 도트는 시스템 것 그대로.
   @AppStorage("didSwipeShoePages") private var didSwipeShoePages = false
+  /// 세로 페이지: 0 = 신발 히어로(기본) · 1 = 목표 패널(아래로 스와이프).
+  @State private var vPage = 0
+  /// 목표 패널 발견 힌트 — 한 번도 아래로 안 내렸으면 "↓ 목표" 한 줄. 첫 스와이프에 소등.
+  @AppStorage("didSwipeGoalPanel") private var didSwipeGoalPanel = false
   /// 표시 페이지 배열 — 마지막 선택 신발을 맨 앞으로 회전(나머지는 폰 순서 유지).
   /// watchOS .page TabView 는 비-첫 selection 생성도, 마운트 후 프로그램 이동
   /// (단순 대입·withAnimation 모두)도 무시한다(시뮬 실측 2026-07-11) — 페이지를
@@ -46,28 +50,16 @@ struct StartView: View {
       if pages.isEmpty {
         WaitingPage()
       } else {
-        TabView(selection: $selection) {
-          ForEach(pages) { shoe in
-            ShoeStartPage(shoe: shoe) { workout.start(shoe: shoe) }
-              .tag(shoe.id)
+        // 세로 축(RunView 축 분리 문법): 위=신발 히어로(가로=신발 스와이프), 아래=목표 패널.
+        // 신발 화면에서 바로 시작 = 자유런. 목표는 아래로 스와이프해야만 나온다(시작 화면 불변).
+        TabView(selection: $vPage) {
+          shoeCarousel.tag(0)
+          GoalPanel { goal in
+            if let shoe = selectedShoe { workout.start(shoe: shoe, goal: goal) }
           }
+          .tag(1)
         }
-        .tabViewStyle(.page)
-        // 스와이프 힌트 — 2켤레+ & 미발견 사용자에게만, 도트 바로 위 한 줄. 첫 스와이프에 영구 소등.
-        .overlay(alignment: .bottom) {
-          if pages.count > 1 && !didSwipeShoePages {
-            HStack(spacing: 3) {
-              Image(systemName: "chevron.left")
-              Text("밀어서 다른 신발")
-              Image(systemName: "chevron.right")
-            }
-            .font(.system(size: 10, weight: .medium))
-            .foregroundStyle(KeegoTheme.t3)
-            .padding(.bottom, 14)
-            .allowsHitTesting(false)
-            .transition(.opacity)
-          }
-        }
+        .tabViewStyle(.verticalPage)
       }
     }
     .padding(.horizontal, 2)
@@ -80,12 +72,55 @@ struct StartView: View {
       // 페이지를 실제로 넘겼다 = 스와이프 발견 완료 → 힌트 영구 소등.
       if !didSwipeShoePages { withAnimation { didSwipeShoePages = true } }
     }
+    .onChange(of: vPage) { _, p in
+      // 아래로 내려 목표 패널을 봤다 = 발견 완료 → 힌트 영구 소등.
+      if p == 1 && !didSwipeGoalPanel { withAnimation { didSwipeGoalPanel = true } }
+    }
     .onChange(of: link.shoes) { _, newShoes in
       // 동기화로 목록 갱신 — 재정렬은 이때만(스와이프 중 순서가 바뀌지 않게).
       pages = Self.ordered(newShoes, selectedId: link.selectedShoeId)
       if !pages.contains(where: { $0.id == selection }) {
         selection = pages.first?.id ?? ""
       }
+    }
+  }
+
+  /// 현재 선택된 신발(목표 패널 시작 시 귀속). selection 매칭 실패면 첫 신발 폴백.
+  private var selectedShoe: WatchShoe? {
+    pages.first { $0.id == selection } ?? pages.first
+  }
+
+  /// 신발 히어로 캐러셀(가로 스와이프) — 세로 위 페이지. 하단 힌트 두 줄(신발/목표).
+  private var shoeCarousel: some View {
+    TabView(selection: $selection) {
+      ForEach(pages) { shoe in
+        ShoeStartPage(shoe: shoe) { workout.start(shoe: shoe) }
+          .tag(shoe.id)
+      }
+    }
+    .tabViewStyle(.page)
+    // 발견 힌트 — 도트 위 한두 줄. 각자 첫 스와이프에 영구 소등(클러터 0).
+    .overlay(alignment: .bottom) {
+      VStack(spacing: 3) {
+        if pages.count > 1 && !didSwipeShoePages {
+          HStack(spacing: 3) {
+            Image(systemName: "chevron.left")
+            Text("밀어서 다른 신발")
+            Image(systemName: "chevron.right")
+          }
+        }
+        if !didSwipeGoalPanel {
+          HStack(spacing: 2) {
+            Image(systemName: "chevron.down")
+            Text("밀어서 목표")
+          }
+        }
+      }
+      .font(.system(size: 10, weight: .medium))
+      .foregroundStyle(KeegoTheme.t3)
+      .padding(.bottom, 12)
+      .allowsHitTesting(false)
+      .transition(.opacity)
     }
   }
 }
@@ -166,6 +201,131 @@ private struct ShoeStartPage: View {
   }
 }
 
+/// 목표 패널 — 아래로 스와이프하면 나온다(세로 페이지 1). 거리·시간·트랙 세그 + 값 + 시작.
+/// '자유'는 없다: 시작 화면에서 바로 시작 = 자유런. 여기서 목표 정하고 시작하면 그 목표로
+/// 바로 러닝(신발 화면 복귀·라벨 없음).
+/// 값 조절은 ±버튼(크라운 아님) — 세로 페이징 TabView 가 크라운을 페이지 이동에 쓰므로
+/// 충돌을 피한다. 세그·버튼은 고정 높이, 값 숫자가 유연 요소 → 작은 워치에서도 '시작' 안 잘림.
+private struct GoalPanel: View {
+  /// 확정한 목표를 실어 부모(StartView)가 workout.start(shoe:goal:) 를 부른다.
+  let onStart: (RunGoal) -> Void
+
+  @State private var kind: RunGoalKind = .distance   // 거리 기본(가장 흔한 러닝)
+  @State private var distanceKm: Double = 5.0
+  @State private var minutes: Double = 30
+  @State private var trackLapM: Double = 400
+  private static let trackPresets: [Double] = [200, 300, 400]
+
+  var body: some View {
+    VStack(spacing: 5) {
+      // 세그먼트 — 거리·시간·트랙(거리 기본). 고정 높이.
+      HStack(spacing: 4) {
+        seg("거리", .distance)
+        seg("시간", .time)
+        seg("트랙", .track)
+      }
+      Spacer(minLength: 2)
+      valueArea            // 유연 — 작은 워치에서 먼저 축소
+      Spacer(minLength: 2)
+      StartButton(label: "시작") {
+        onStart(RunGoal(kind: kind, distanceKm: distanceKm, minutes: minutes, trackLapM: trackLapM))
+      }
+    }
+    .padding(.horizontal, 6)
+    .padding(.vertical, 4)
+  }
+
+  @ViewBuilder private var valueArea: some View {
+    switch kind {
+    case .distance:
+      stepper(value: String(format: "%.1f", distanceKm), unit: "km",
+              dec: { distanceKm = max(0.5, distanceKm - 0.5) },
+              inc: { distanceKm = min(60, distanceKm + 0.5) })
+    case .time:
+      stepper(value: String(Int(minutes)), unit: "분",
+              dec: { minutes = max(5, minutes - 5) },
+              inc: { minutes = min(300, minutes + 5) })
+    case .track:
+      trackChooser
+    case .free:
+      EmptyView()
+    }
+  }
+
+  // ± 스테퍼 — 값(대형 유연) 양옆 원형 버튼.
+  private func stepper(value: String, unit: String,
+                       dec: @escaping () -> Void, inc: @escaping () -> Void) -> some View {
+    HStack(spacing: 6) {
+      roundStep("minus", dec)
+      VStack(spacing: 0) {
+        Text(value)
+          .font(.system(size: 34, weight: .heavy))
+          .monospacedDigit()
+          .foregroundStyle(KeegoTheme.t1)
+          .lineLimit(1)
+          .minimumScaleFactor(0.5)
+        Text(unit)
+          .font(.system(size: 11, weight: .semibold))
+          .foregroundStyle(KeegoTheme.t3)
+      }
+      .frame(maxWidth: .infinity)
+      roundStep("plus", inc)
+    }
+  }
+
+  private func roundStep(_ icon: String, _ action: @escaping () -> Void) -> some View {
+    Button(action: action) {
+      ZStack {
+        Circle().fill(KeegoTheme.glassFill)
+        Circle().strokeBorder(KeegoTheme.hairline, lineWidth: 1)
+        Image(systemName: icon)
+          .font(.system(size: 15, weight: .bold))
+          .foregroundStyle(KeegoTheme.t1)
+      }
+      .frame(width: 34, height: 34)
+    }
+    .buttonStyle(.plain)
+  }
+
+  // 트랙 랩거리 — 200·300·400 프리셋(첫 바퀴 GPS 보정).
+  private var trackChooser: some View {
+    VStack(spacing: 6) {
+      HStack(spacing: 5) {
+        ForEach(Self.trackPresets, id: \.self) { m in
+          let on = Int(trackLapM) == Int(m)
+          Button { trackLapM = m } label: {
+            Text(String(Int(m)))
+              .font(.system(size: 13, weight: on ? .heavy : .semibold))
+              .foregroundStyle(on ? Color.black : KeegoTheme.t2)
+              .frame(maxWidth: .infinity)
+              .padding(.vertical, 6)
+              .background(on ? KeegoTheme.brand : KeegoTheme.glassFill)
+              .clipShape(RoundedRectangle(cornerRadius: 8))
+          }
+          .buttonStyle(.plain)
+        }
+      }
+      Text("m · 첫 바퀴 GPS 자동 보정")
+        .font(.system(size: 9, weight: .medium))
+        .foregroundStyle(KeegoTheme.t4)
+    }
+  }
+
+  private func seg(_ label: String, _ k: RunGoalKind) -> some View {
+    let on = kind == k
+    return Button { kind = k } label: {
+      Text(label)
+        .font(.system(size: 12, weight: on ? .heavy : .medium))
+        .foregroundStyle(on ? Color.black : KeegoTheme.t3)
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 4)
+        .background(on ? KeegoTheme.brand : KeegoTheme.glassFill)
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+    }
+    .buttonStyle(.plain)
+  }
+}
+
 /// % 링 — 수명 아크(트랙 컨디션색 16% 틴트 / 아크 컨디션색·라운드 캡·-90° 시작) 안에
 /// 수명 % 히어로 + 남은 km 캡션(v3.1 — 폰 홈 링의 값+캡션 문법). 이름은 링 밖 상단
 /// (v3, 2026-07-17 — 링 안 이름은 원 내접 폭 한계로 긴 모델명이 항상 잘리거나 뭉갰다).
@@ -178,35 +338,41 @@ private struct PctRing: View {
   let remainColor: Color
 
   var body: some View {
-    ZStack {
-      Circle()
-        .stroke(color.opacity(0.16), style: StrokeStyle(lineWidth: 5, lineCap: .round))
-      Circle()
-        .trim(from: 0, to: CGFloat(max(0, min(1, progress))))
-        .stroke(color, style: StrokeStyle(lineWidth: 5, lineCap: .round))
-        .rotationEffect(.degrees(-90))
-      VStack(spacing: 0) {
-        HStack(alignment: .firstTextBaseline, spacing: 1) {
-          Text("\(pct)")
-            .font(.system(size: 24, weight: .bold))
-            .foregroundStyle(KeegoTheme.t1)
-            .monospacedDigit()
-          Text("%")
-            .font(.system(size: 13, weight: .semibold))
-            .foregroundStyle(KeegoTheme.t3)
+    // 링 안 글씨를 지름에 비례시킨다(2026-07-19): 폰트 고정이면 작은 워치(40mm)에서 링이
+    // 줄 때 캡션이 minimumScaleFactor 로만 눌려 빡빡했다. 지름 비례 → 어느 워치든 같은 비율.
+    GeometryReader { g in
+      let d = min(g.size.width, g.size.height)
+      ZStack {
+        Circle()
+          .stroke(color.opacity(0.16), style: StrokeStyle(lineWidth: 5, lineCap: .round))
+        Circle()
+          .trim(from: 0, to: CGFloat(max(0, min(1, progress))))
+          .stroke(color, style: StrokeStyle(lineWidth: 5, lineCap: .round))
+          .rotationEffect(.degrees(-90))
+        VStack(spacing: 0) {
+          HStack(alignment: .firstTextBaseline, spacing: 1) {
+            Text("\(pct)")
+              .font(.system(size: d * 0.27, weight: .bold))
+              .foregroundStyle(KeegoTheme.t1)
+              .monospacedDigit()
+            Text("%")
+              .font(.system(size: d * 0.15, weight: .semibold))
+              .foregroundStyle(KeegoTheme.t3)
+          }
+          .lineLimit(1)
+          .minimumScaleFactor(0.7)
+          if let remainText {
+            Text(remainText)
+              .font(.system(size: d * 0.115, weight: .semibold))
+              .foregroundStyle(remainColor)
+              .monospacedDigit()
+              .lineLimit(1)
+              .minimumScaleFactor(0.7)
+          }
         }
-        .lineLimit(1)
-        .minimumScaleFactor(0.7)
-        if let remainText {
-          Text(remainText)
-            .font(.system(size: 10, weight: .semibold))
-            .foregroundStyle(remainColor)
-            .monospacedDigit()
-            .lineLimit(1)
-            .minimumScaleFactor(0.7)
-        }
+        .padding(.horizontal, d * 0.1)
+        .frame(width: g.size.width, height: g.size.height)
       }
-      .padding(.horizontal, 10)
     }
     .padding(3) // 라운드 캡 스트로크가 프레임 밖으로 잘리지 않게.
     .accessibilityElement(children: .ignore)

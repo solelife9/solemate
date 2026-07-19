@@ -30,6 +30,28 @@ enum RunPhase: Equatable {
   case ended
 }
 
+/// 러닝 목표 종류. 자유(기본)·거리·시간·트랙. 값은 종류별로만 의미가 있다.
+/// 자유 = 목표 미선택(시작 화면에서 바로 시작). UI 에 '자유' 선택지는 없다.
+enum RunGoalKind: String, Equatable { case free, distance, time, track }
+
+/// 러닝 목표 — 시작 시점에 확정, 러닝 내내 불변(표시·달성 판정용).
+struct RunGoal: Equatable {
+  var kind: RunGoalKind = .free
+  var distanceKm: Double = 5.0    // .distance 목표 거리
+  var minutes: Double = 30        // .time 목표 시간(분)
+  var trackLapM: Double = 400     // .track 한 바퀴 예상 거리(m) — 첫 랩 GPS 보정
+  static let free = RunGoal()
+
+  /// 진행 바 분모 — 거리[km] / 시간[초]. 진행 바가 없는 종류(자유·트랙)는 0.
+  var progressTarget: Double {
+    switch kind {
+    case .distance: return distanceKm
+    case .time: return minutes * 60
+    default: return 0
+    }
+  }
+}
+
 /// 완주 요약 — 요약 화면 표시 + 폰 전송 페이로드의 원본.
 struct RunSummary: Equatable {
   let runId: String
@@ -61,9 +83,43 @@ final class WorkoutManager: NSObject, ObservableObject {
   /// (elapsedS = 빌더 시간 기준 증분).
   @Published private(set) var splits: [Double] = []
   @Published private(set) var summary: RunSummary?
+  /// 이번 런의 목표(시작 시점 확정, 불변). 자유(.free)면 진행 바 없음.
+  @Published private(set) var goal: RunGoal = .free
+  /// 목표(거리/시간) 달성 순간 true 로 전환 — 러닝 화면이 축하 배너를 띄운다.
+  /// 달성해도 러닝은 계속(강제 종료 안 함). 한 번만 전환한다(goalReachedFired).
+  @Published private(set) var goalReached = false
+  private var goalReachedFired = false
   /// 이번 런의 신발(시작 화면에서 선택). 러닝은 항상 신발과 함께 시작한다
   /// (2026-07-11 사용자 확정 — '신발 없이 시작' 제거). 옵셔널은 idle 상태 표현용.
   private(set) var currentShoe: WatchShoe?
+
+  /// 목표 진행도 0~1 — 거리/시간 목표만(자유·트랙은 0 → 진행 바 숨김).
+  var goalProgress: Double {
+    let t = goal.progressTarget
+    guard t > 0 else { return 0 }
+    let cur = goal.kind == .distance ? distanceKm : elapsedS
+    return min(1, max(0, cur / t))
+  }
+  /// 남은 양 한 줄("1.80km 남음" / "8:30 남음"). 진행 바 없는 종류는 nil.
+  var goalRemainingText: String? {
+    switch goal.kind {
+    case .distance:
+      return KeegoFormat.km(max(0, goal.distanceKm - distanceKm)) + "km 남음"
+    case .time:
+      return KeegoFormat.time(max(0, goal.minutes * 60 - elapsedS)) + " 남음"
+    default:
+      return nil
+    }
+  }
+  /// 목표 요약 라벨(러닝 화면 상단 — "거리 5.0km" / "시간 30분" / "트랙 400m"). 자유는 nil.
+  var goalHeaderText: String? {
+    switch goal.kind {
+    case .distance: return "거리 " + KeegoFormat.km(goal.distanceKm) + "km"
+    case .time: return "시간 " + String(Int(goal.minutes)) + "분"
+    case .track: return "트랙 " + String(Int(goal.trackLapM)) + "m"
+    case .free: return nil
+    }
+  }
 
   var isActive: Bool { phase == .running || phase == .paused }
   /// 평균 페이스(초/km). 200m 미만은 통계 잡음이라 0(--'--") 처리.
@@ -139,8 +195,12 @@ final class WorkoutManager: NSObject, ObservableObject {
   }
 
   // ── 시작 — 신발 필수(shoe-first, 신발 동기화 후에만 러닝) ────────────────────
-  func start(shoe: WatchShoe) {
+  // goal 미지정 = 자유런(신발 화면에서 바로 시작). 목표 패널은 goal 을 실어 호출한다.
+  func start(shoe: WatchShoe, goal: RunGoal = .free) {
     guard phase == .idle else { return }
+    self.goal = goal
+    goalReached = false
+    goalReachedFired = false
     requestPermissions()
     let config = HKWorkoutConfiguration()
     config.activityType = .running
@@ -235,6 +295,9 @@ final class WorkoutManager: NSObject, ObservableObject {
     lastLocation = nil
     splits = []
     lastSplitElapsedS = 0
+    goal = .free
+    goalReached = false
+    goalReachedFired = false
     let d = UserDefaults.standard
     d.removeObject(forKey: RecoverKeys.runId)
     d.removeObject(forKey: RecoverKeys.shoeId)
@@ -388,6 +451,8 @@ final class WorkoutManager: NSObject, ObservableObject {
         let e = b.elapsedTime(at: Date())
         // 단조 증가 보장 — 시계가 뒤로 가는 순간을 화면에 노출하지 않는다.
         if e.isFinite, e >= self.elapsedS { self.elapsedS = e }
+        // 목표 달성 판정(1초 granularity — 거리는 process(locations)에서 갱신된 뒤 흡수).
+        self.checkGoalReached()
       }
     }
     RunLoop.main.add(t, forMode: .common)
@@ -397,6 +462,19 @@ final class WorkoutManager: NSObject, ObservableObject {
   private func stopTimer() {
     timer?.invalidate()
     timer = nil
+  }
+
+  // ── 목표 달성 — 거리/시간 목표가 처음 도달한 순간 1회 배너+햅틱(강제 종료 안 함) ──
+  private func checkGoalReached() {
+    guard !goalReachedFired, phase == .running else { return }
+    let t = goal.progressTarget
+    guard t > 0 else { return }
+    let cur = goal.kind == .distance ? distanceKm : elapsedS
+    guard cur >= t else { return }
+    goalReachedFired = true
+    goalReached = true
+    // 목표 달성 햅틱 — 폰 햅틱 설정 존중(끈 사용자에겐 조용히).
+    if WatchLink.shared.hapticsOn { WKInterfaceDevice.current().play(.success) }
   }
 
   // ── 자동 일시정지 상태기계(lib/autoPause.ts 미러 — 히스테리시스) ─────────────

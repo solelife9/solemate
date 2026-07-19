@@ -27,6 +27,8 @@ struct RunView: View {
   @State private var vPage = 0
   /// km 랩 배너 — 랩 마감 순간 직전 km 페이스(3.5s 뒤 자동 소멸).
   @State private var lapBanner: String?
+  /// 목표 달성 배너 — goalReached 전환 시 4s 축하(러닝은 계속, 강제 종료 안 함).
+  @State private var showGoalBanner = false
 
   var body: some View {
     TabView(selection: $hPage) {
@@ -64,6 +66,33 @@ struct RunView: View {
         withAnimation(.easeIn(duration: 0.3)) { lapBanner = nil }
       }
     }
+    // 목표 달성 축하 — 4s 후 자동 소멸. 러닝은 계속(기록 이어짐).
+    .onChange(of: workout.goalReached) { _, reached in
+      guard reached else { return }
+      withAnimation(.easeOut(duration: 0.3)) { showGoalBanner = true }
+      DispatchQueue.main.asyncAfter(deadline: .now() + 4.0) {
+        withAnimation(.easeIn(duration: 0.3)) { showGoalBanner = false }
+      }
+    }
+    .overlay {
+      if showGoalBanner {
+        VStack(spacing: 4) {
+          Text("🎯").font(.system(size: 30))
+          Text("목표 달성")
+            .font(.system(size: 16, weight: .heavy))
+            .foregroundStyle(KeegoTheme.t1)
+          Text("계속 달려도 기록은 이어져요")
+            .font(.system(size: 10))
+            .foregroundStyle(KeegoTheme.t3)
+            .multilineTextAlignment(.center)
+        }
+        .padding(.horizontal, 14).padding(.vertical, 12)
+        .background(Color(keego: 0x1C1C1E))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(KeegoTheme.hairline, lineWidth: 1))
+        .transition(.scale.combined(with: .opacity))
+      }
+    }
   }
 
   // ── 지표 페이저(세로) — 컨트롤이 지표 탐색 길을 막지 않는다 ──────────────────
@@ -97,6 +126,14 @@ struct RunView: View {
         .foregroundStyle(KeegoTheme.brand)
         .padding(.top, -2)
 
+      // 목표 진행 — 거리/시간 목표면 얇은 바 + 남은 양(링 제거 결정과 정합).
+      // 자유·트랙은 progressTarget 0 → 숨김.
+      if workout.goal.progressTarget > 0 {
+        goalProgressBar
+          .padding(.horizontal, 12)
+          .padding(.top, 6)
+      }
+
       Spacer(minLength: 4)
 
       // 보조 지표 스택 — 라벨 T3 / 값 흰 세미볼드 tabular. 시간·페이스를 살짝
@@ -120,6 +157,29 @@ struct RunView: View {
       .padding(.top, 10)
     }
     .padding(.horizontal, 6)
+  }
+
+  // 목표 진행 바 — 얇은 캡슐(파파야 채움) + 남은 양 캡션. 거리/시간 목표 전용.
+  private var goalProgressBar: some View {
+    VStack(spacing: 3) {
+      GeometryReader { g in
+        ZStack(alignment: .leading) {
+          Capsule().fill(Color.white.opacity(0.12))
+          Capsule()
+            .fill(KeegoTheme.brand)
+            .frame(width: max(3, g.size.width * CGFloat(min(1, max(0, workout.goalProgress)))))
+        }
+      }
+      .frame(height: 5)
+      if let rem = workout.goalRemainingText {
+        Text(rem)
+          .font(.system(size: 10, weight: .semibold))
+          .monospacedDigit()
+          .foregroundStyle(KeegoTheme.t3)
+          .lineLimit(1)
+          .minimumScaleFactor(0.7)
+      }
+    }
   }
 
   private func miniMetric(label: String, value: String) -> some View {
