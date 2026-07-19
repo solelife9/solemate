@@ -29,6 +29,9 @@ struct RunView: View {
   @State private var lapBanner: String?
   /// 목표 달성 배너 — goalReached 전환 시 4s 축하(러닝은 계속, 강제 종료 안 함).
   @State private var showGoalBanner = false
+  /// 트랙 랩거리 자동 보정 토스트("약 400m 감지") — 3.5s 자동 소멸.
+  @State private var showCalibToast = false
+  @State private var calibText = ""
 
   var body: some View {
     TabView(selection: $hPage) {
@@ -66,6 +69,26 @@ struct RunView: View {
         withAnimation(.easeIn(duration: 0.3)) { lapBanner = nil }
       }
     }
+    // 트랙 랩 배너 — 자동랩 완료 순간 직전 랩 시간(km 배너와 같은 자리).
+    .onChange(of: workout.lapTimes.count) { _, n in
+      guard n > 0, let last = workout.lapTimes.last else { return }
+      withAnimation(.easeOut(duration: 0.25)) {
+        lapBanner = "\(n)랩 · \(KeegoFormat.time(last))"
+      }
+      DispatchQueue.main.asyncAfter(deadline: .now() + 3.5) {
+        withAnimation(.easeIn(duration: 0.3)) { lapBanner = nil }
+      }
+    }
+    // 트랙 랩거리 자동 보정 토스트 — "이 트랙, 약 Nm 감지".
+    .onChange(of: workout.lapJustCalibrated) { _, calibrated in
+      guard calibrated else { return }
+      calibText = "이 트랙, 약 \(Int(workout.lapM))m 감지"
+      withAnimation(.easeOut(duration: 0.3)) { showCalibToast = true }
+      workout.consumeLapCalibrated()
+      DispatchQueue.main.asyncAfter(deadline: .now() + 3.5) {
+        withAnimation(.easeIn(duration: 0.3)) { showCalibToast = false }
+      }
+    }
     // 목표 달성 축하 — 4s 후 자동 소멸. 러닝은 계속(기록 이어짐).
     .onChange(of: workout.goalReached) { _, reached in
       guard reached else { return }
@@ -91,6 +114,21 @@ struct RunView: View {
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(KeegoTheme.hairline, lineWidth: 1))
         .transition(.scale.combined(with: .opacity))
+      }
+    }
+    // 트랙 보정 토스트 — 중앙(상단의 km/트랙 랩 배너와 자리 분리).
+    .overlay(alignment: .center) {
+      if showCalibToast {
+        Text(calibText)
+          .font(.system(size: 12, weight: .bold))
+          .monospacedDigit()
+          .foregroundStyle(KeegoTheme.brand)
+          .multilineTextAlignment(.center)
+          .padding(.horizontal, 12).padding(.vertical, 8)
+          .background(Color(keego: 0x1C1C1E))
+          .clipShape(Capsule())
+          .overlay(Capsule().strokeBorder(KeegoTheme.hairline, lineWidth: 1))
+          .transition(.scale.combined(with: .opacity))
       }
     }
   }
@@ -132,6 +170,14 @@ struct RunView: View {
         goalProgressBar
           .padding(.horizontal, 12)
           .padding(.top, 6)
+      }
+      // 트랙 모드 — 거리 아래 랩수·확정 랩거리 한 줄(진행 바 대신).
+      if workout.isTrack {
+        Text("\(workout.lapTimes.count)랩 · 트랙 \(Int(workout.lapM))m")
+          .font(.system(size: 11, weight: .semibold))
+          .monospacedDigit()
+          .foregroundStyle(KeegoTheme.brand)
+          .padding(.top, 5)
       }
 
       Spacer(minLength: 4)
@@ -214,8 +260,17 @@ struct RunView: View {
     .padding(.horizontal, 6)
   }
 
-  // ── 세로 2: 현재 랩(Apple Split 뷰 문법 — 진행 중인 구간 하나만) ──────────────
-  private var lapPage: some View {
+  // ── 세로 2: 현재 랩 ── 트랙 모드면 트랙 랩 목록, 아니면 km 현재 랩(Apple Split) ──
+  @ViewBuilder private var lapPage: some View {
+    if workout.isTrack {
+      trackLapPage
+    } else {
+      kmLapPage
+    }
+  }
+
+  // km 현재 랩(Apple Split 뷰 문법 — 진행 중인 구간 하나만).
+  private var kmLapPage: some View {
     VStack(spacing: 2) {
       Text("랩 \(workout.splits.count + 1)")
         .font(.system(size: 12, weight: .medium))
@@ -243,6 +298,42 @@ struct RunView: View {
       }
     }
     .padding(.horizontal, 6)
+  }
+
+  // 트랙 랩 목록 — 진행 중 랩(대형·파파야) + 최근 완료 랩 2개(시간). 랩=시간(초/랩).
+  private var trackLapPage: some View {
+    VStack(spacing: 4) {
+      // 진행 중 랩
+      HStack(alignment: .firstTextBaseline, spacing: 4) {
+        Text("랩 \(workout.currentTrackLap)")
+          .font(.system(size: 12, weight: .medium))
+          .foregroundStyle(KeegoTheme.t3)
+        Text(KeegoFormat.time(workout.currentTrackLapElapsedS))
+          .font(.system(size: 30, weight: .heavy))
+          .monospacedDigit()
+          .foregroundStyle(KeegoTheme.brand)
+      }
+      // 최근 완료 랩 2개(가장 최근이 위).
+      let recent = Array(workout.lapTimes.enumerated().suffix(2).reversed())
+      ForEach(recent, id: \.offset) { idx, t in
+        HStack {
+          Text("랩 \(idx + 1)")
+            .font(.system(size: 11, weight: .medium))
+            .foregroundStyle(KeegoTheme.t3)
+          Spacer(minLength: 4)
+          Text(KeegoFormat.time(t))
+            .font(.system(size: 14, weight: .bold))
+            .monospacedDigit()
+            .foregroundStyle(KeegoTheme.t2)
+        }
+      }
+      if workout.lapTimes.isEmpty {
+        Text("출발점으로 돌아오면 1랩")
+          .font(.system(size: 10))
+          .foregroundStyle(KeegoTheme.t4)
+      }
+    }
+    .padding(.horizontal, 8)
   }
 
   // ── 가로 1: 컨트롤 — 큰 원형 버튼 2개(Apple 운동 앱 문법) ───────────────────

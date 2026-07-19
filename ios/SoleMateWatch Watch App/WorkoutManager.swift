@@ -135,6 +135,23 @@ final class WorkoutManager: NSObject, ObservableObject {
   /// 현재 심박존(1–5). 폰 lib/analytics/hrZones.zoneOf 미러 — hrMax 미설정이면 0(무채).
   var hrZone: Int { Self.zone(bpm: heartRate, maxHR: WatchLink.shared.hrMax, restHR: WatchLink.shared.hrRest) }
 
+  // ── 트랙 자동랩(goal.kind == .track) — 폰 lib/laps.ts 이식 ────────────────────
+  /// 완료된 랩의 소요시간(초/랩) — 트랙 랩 페이지. 거리는 랩수×확정 랩거리로 별도 산출.
+  @Published private(set) var lapTimes: [Double] = []
+  /// 확정 한 바퀴(m) — 시작 시 목표값, 첫 랩부터 GPS 로 보정(표준 스냅/비표준 채택).
+  @Published private(set) var lapM: Double = 400
+  /// 자동 보정이 방금 확정된 순간 true(1회) — 러닝 화면이 "약 Nm 감지" 토스트를 띄운다.
+  @Published private(set) var lapJustCalibrated = false
+  private var lapStart: CLLocation?      // 출발점(첫 채택 fix) — 복귀 감지 기준
+  private var lapLeftRadius = false      // 이번 랩에서 출발 반경을 벗어난 적 있나
+  private var lapLocked = false          // 랩거리 확정 후 재평가 안 함(거리 안 튐)
+  private var trackCumMeters = 0.0       // 트랙 GPS 누적(m) — 보정 분모(표시 거리 아님)
+
+  var isTrack: Bool { goal.kind == .track }
+  /// 진행 중 랩 번호(1-based)와 그 경과시간 — 트랙 랩 페이지 '진행' 표시.
+  var currentTrackLap: Int { lapTimes.count + 1 }
+  var currentTrackLapElapsedS: Double { max(0, elapsedS - lastSplitElapsedS) }
+
   // ── 내부 상태 ────────────────────────────────────────────────────────────
   private let healthStore = HKHealthStore()
   private var session: HKWorkoutSession?
@@ -171,6 +188,10 @@ final class WorkoutManager: NSObject, ObservableObject {
   /// GPS 표본 수용 한계 — 수평오차(m)·속도(m/s). 폰 엔진과 동일 상한(실기기 튜닝 대기).
   private static let maxAccuracyM = 30.0
   private static let maxSpeedMps = 12.5
+  /// 트랙 자동랩 — 출발점 복귀 판정 반경(m)·표준 랩거리·비표준 채택 랩수(폰 laps.ts 미러).
+  private static let lapRadiusM = 12.0
+  private static let standardLapM: [Double] = [200, 300, 400]
+  private static let nonstdAdoptLaps = 3
 
   override init() {
     super.init()
@@ -235,6 +256,14 @@ final class WorkoutManager: NSObject, ObservableObject {
       splits = []
       lastSplitElapsedS = 0
       summary = nil
+      // 트랙 자동랩 초기화 — 랩거리는 목표 선택값에서 시작(첫 랩 GPS 로 보정).
+      lapTimes = []
+      lapM = goal.kind == .track ? goal.trackLapM : 400
+      lapJustCalibrated = false
+      lapStart = nil
+      lapLeftRadius = false
+      lapLocked = false
+      trackCumMeters = 0
       s.startActivity(with: now)
       b.beginCollection(withStart: now) { _, _ in }
       // 워크아웃 세션 중 손목 다운/백그라운드에서도 위치가 계속 흐르게(SpeedySloth 관용).
@@ -298,6 +327,13 @@ final class WorkoutManager: NSObject, ObservableObject {
     goal = .free
     goalReached = false
     goalReachedFired = false
+    lapTimes = []
+    lapM = 400
+    lapJustCalibrated = false
+    lapStart = nil
+    lapLeftRadius = false
+    lapLocked = false
+    trackCumMeters = 0
     let d = UserDefaults.standard
     d.removeObject(forKey: RecoverKeys.runId)
     d.removeObject(forKey: RecoverKeys.shoeId)
@@ -506,6 +542,62 @@ final class WorkoutManager: NSObject, ObservableObject {
     }
   }
 
+  // ── 트랙 자동랩 — 출발점 복귀 감지 + 랩거리 보정(lib/laps.ts 이식) ────────────
+  /// 새 GPS 픽스마다 호출(트랙 모드). 출발 반경을 벗어났다가 다시 들어오는 순간 = 1랩.
+  private func detectTrackLap(at loc: CLLocation) {
+    guard let start = lapStart else { lapStart = loc; return }
+    let d = loc.distance(from: start)
+    if !lapLeftRadius {
+      if d > Self.lapRadiusM { lapLeftRadius = true }   // 반경 밖으로 나감
+    } else if d <= Self.lapRadiusM {
+      registerTrackLap()                                 // 복귀 = 랩 완료
+      lapLeftRadius = false
+    }
+  }
+
+  /// 랩 완료 — 소요시간 적산 + 랩거리 보정 + 거리(랩수×랩거리) 갱신 + 햅틱.
+  private func registerTrackLap() {
+    lapTimes.append(max(0, elapsedS - lastSplitElapsedS))
+    lastSplitElapsedS = elapsedS
+    let n = lapTimes.count
+    if !lapLocked {
+      let measuredM = trackCumMeters / Double(max(1, n))
+      let cal = Self.calibrateTrackLapM(measuredM: measuredM, lapsSoFar: n, currentLapM: lapM)
+      if cal.locked { lapLocked = true }
+      if cal.changed {
+        lapM = cal.lapM
+        lapJustCalibrated = true   // 러닝 화면이 소비 후 리셋(consumeLapCalibrated)
+      }
+    }
+    // 트랙 거리 = 랩수 × 확정 랩거리(GPS 누적 아님 — 폰 trackMode 와 동일).
+    distanceKm = Double(n) * lapM / 1000.0
+    // 랩 햅틱 — 화면 안 보는 러너까지 닿는 유일한 인터페이스(폰 햅틱 설정 존중).
+    if WatchLink.shared.hapticsOn { WKInterfaceDevice.current().play(.notification) }
+  }
+
+  /// 러닝 화면이 "약 Nm 감지" 토스트를 한 번 띄운 뒤 호출 — 플래그 소등.
+  func consumeLapCalibrated() { lapJustCalibrated = false }
+
+  /// 랩거리 보정(폰 lib/laps.ts calibrateLapM 미러). 표준(200/300/400) 6% 내 → 즉시 스냅+lock,
+  /// 비표준 → 3랩 평균 후 5m 반올림 채택+lock. 그 전엔 선택 유지·미lock.
+  static func calibrateTrackLapM(measuredM: Double, lapsSoFar: Int, currentLapM: Double)
+    -> (lapM: Double, changed: Bool, locked: Bool) {
+    guard measuredM.isFinite, measuredM > 0 else { return (currentLapM, false, false) }
+    var best: (std: Double, diff: Double)?
+    for std in standardLapM {
+      let diff = abs(measuredM - std) / std
+      if diff <= 0.06, best == nil || diff < best!.diff { best = (std, diff) }
+    }
+    if let b = best {
+      return (b.std, Int(b.std) != Int(currentLapM), true)   // 표준 스냅 → 1랩부터 lock
+    }
+    if lapsSoFar >= nonstdAdoptLaps {
+      let adopted = (measuredM / 5).rounded() * 5
+      return (adopted, Int(adopted) != Int(currentLapM), true)
+    }
+    return (currentLapM, false, false)                        // 비표준·표본 부족 → 유지
+  }
+
   // ── 심박존 분류(lib/analytics/hrZones.zoneOf 미러) ──────────────────────────
   // restHR 유효 시 여유심박(Karvonen), 아니면 %HRmax. 경계 Z1 50 … Z5 90%.
   static func zone(bpm: Double, maxHR: Double, restHR: Double) -> Int {
@@ -595,19 +687,25 @@ extension WorkoutManager: CLLocationManagerDelegate {
           if loc.speed < 0 { sampleSpeed = derived }
           // 스파이크 컷: 순간이동 표본은 거리에 넣지 않는다(팬텀 거리 방지).
           if phase == .running, derived <= Self.maxSpeedMps, meters.isFinite, meters >= 0 {
-            distanceKm += meters / 1000.0
-            // km 경계 통과 → 랩 마감(초/km, 빌더 시간 증분이라 일시정지 자동 제외).
-            while distanceKm >= Double(splits.count + 1) {
-              splits.append(max(0, elapsedS - lastSplitElapsedS))
-              lastSplitElapsedS = elapsedS
-              // 랩 영속 — 러닝 중 앱이 죽어도 완료 랩은 복구된다.
-              let d = UserDefaults.standard
-              d.set(splits, forKey: RecoverKeys.splits)
-              d.set(lastSplitElapsedS, forKey: RecoverKeys.lastSplitElapsedS)
-              // 랩 햅틱 — '화면 안 보는 러너'까지 닿는 유일한 인터페이스
-              // (Garmin/COROS 자동 랩 관용, 리서치 2026-07-11 최강 근거 기능).
-              // 폰 햅틱 설정(hapticsOn)을 존중 — 진동을 끈 사용자에겐 조용히.
-              if WatchLink.shared.hapticsOn { WKInterfaceDevice.current().play(.notification) }
+            if isTrack {
+              // 트랙 모드: GPS 누적은 보정용, 표시 거리는 랩수×랩거리. 출발점 복귀 = 랩.
+              trackCumMeters += meters
+              detectTrackLap(at: loc)
+            } else {
+              distanceKm += meters / 1000.0
+              // km 경계 통과 → 랩 마감(초/km, 빌더 시간 증분이라 일시정지 자동 제외).
+              while distanceKm >= Double(splits.count + 1) {
+                splits.append(max(0, elapsedS - lastSplitElapsedS))
+                lastSplitElapsedS = elapsedS
+                // 랩 영속 — 러닝 중 앱이 죽어도 완료 랩은 복구된다.
+                let d = UserDefaults.standard
+                d.set(splits, forKey: RecoverKeys.splits)
+                d.set(lastSplitElapsedS, forKey: RecoverKeys.lastSplitElapsedS)
+                // 랩 햅틱 — '화면 안 보는 러너'까지 닿는 유일한 인터페이스
+                // (Garmin/COROS 자동 랩 관용, 리서치 2026-07-11 최강 근거 기능).
+                // 폰 햅틱 설정(hapticsOn)을 존중 — 진동을 끈 사용자에겐 조용히.
+                if WatchLink.shared.hapticsOn { WKInterfaceDevice.current().play(.notification) }
+              }
             }
           }
           feedAutoPause(speedMps: sampleSpeed, dtSec: dt)
