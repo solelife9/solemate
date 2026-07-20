@@ -432,7 +432,9 @@ final class WorkoutManager: NSObject, ObservableObject {
       elapsedS = e
       // 라이브 타이머의 직접 회계와 정합되도록 일시정지 누적을 역산해 시드한다
       // (벽시계 − 빌더경과 = 그동안의 일시정지 총합). pauseStartDate 는 복구 후 새로 판정.
-      pausedAccumS = max(0, now.timeIntervalSince(s.startDate) - e)
+      if let sd = s.startDate {
+        pausedAccumS = max(0, now.timeIntervalSince(sd) - e)
+      }
       pauseStartDate = nil
     }
     if let dType = HKQuantityType.quantityType(forIdentifier: .distanceWalkingRunning),
