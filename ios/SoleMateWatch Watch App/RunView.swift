@@ -188,16 +188,17 @@ struct RunView: View {
         miniMetric(label: "시간", value: KeegoFormat.time(workout.elapsedS))
         miniMetric(label: "페이스", value: KeegoFormat.pace(secPerKm: workout.avgPaceSecPerKm))
       }
-      HStack(spacing: 4) {
+      HStack(spacing: 5) {
         Image(systemName: "heart.fill")
-          .font(.system(size: 11))
+          .font(.system(size: 14))
           .foregroundStyle(KeegoTheme.hrZoneColor(workout.hrZone))
+        // 심박도 16 → 25(시간·페이스와 동일 스케일 — 보조 지표 한 줄로 크게).
         Text(workout.heartRate > 0 ? "\(Int(workout.heartRate))" : "--")
-          .font(.system(size: 16, weight: .semibold))
+          .font(.system(size: 25, weight: .semibold))
           .monospacedDigit()
           .foregroundStyle(KeegoTheme.t1)
         Text("BPM")
-          .font(.system(size: 10))
+          .font(.system(size: 12))
           .foregroundStyle(KeegoTheme.t3)
       }
       .padding(.top, 10)
@@ -231,12 +232,17 @@ struct RunView: View {
   private func miniMetric(label: String, value: String) -> some View {
     VStack(spacing: 1) {
       Text(label)
-        .font(.system(size: 10))
+        // 라벨 10 → 12(러닝 중 흘끗에도 무엇인지 읽히게).
+        .font(.system(size: 12))
         .foregroundStyle(KeegoTheme.t3)
       Text(value)
-        .font(.system(size: 16, weight: .semibold))
+        // 값 16 → 25: 실기기 피드백 "km 빼곤 다 안 보여" — 보조 지표를 크게.
+        // 두 칼럼(반폭)이라 긴 시간값(h:mm:ss)은 축소로 안전하게 담는다.
+        .font(.system(size: 25, weight: .semibold))
         .monospacedDigit()
         .foregroundStyle(KeegoTheme.t1)
+        .lineLimit(1)
+        .minimumScaleFactor(0.6)
     }
     .frame(maxWidth: .infinity)
   }

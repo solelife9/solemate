@@ -329,7 +329,10 @@ final class WorkoutManager: NSObject, ObservableObject {
 
   /// 요약 화면 '저장' — 폰으로 런 페이로드 전송(HealthKit 저장은 이미 완료) 후 초기화.
   func confirmSave() {
-    if let s = summary { WatchLink.shared.sendRun(s) }
+    if let s = summary {
+      WatchLink.shared.sendRun(s)
+      RecentRuns.save(s)  // 워치 로컬 최근 기록(최대 10개, HistoryView) — 폰 전송이 정본
+    }
     reset()
   }
 

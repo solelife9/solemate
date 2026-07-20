@@ -20,6 +20,9 @@ struct StartView: View {
   @AppStorage("didSwipeShoePages") private var didSwipeShoePages = false
   /// 세로 페이지: 0 = 신발 히어로(기본) · 1 = 목표 패널(아래로 스와이프).
   @State private var vPage = 0
+  /// 기록(최근 러닝) 시트 — 신발 페이지 좌상단의 작은 '기록' 글리프로 연다.
+  /// 홈의 본분은 러닝 시작이라 조용한 진입점만(세로 페이징은 그대로).
+  @State private var showHistory = false
   /// 목표 패널 발견 힌트 — 한 번도 아래로 안 내렸으면 "↓ 목표" 한 줄. 첫 스와이프에 소등.
   @AppStorage("didSwipeGoalPanel") private var didSwipeGoalPanel = false
   /// 표시 페이지 배열 — 마지막 선택 신발을 맨 앞으로 회전(나머지는 폰 순서 유지).
@@ -83,6 +86,7 @@ struct StartView: View {
         selection = pages.first?.id ?? ""
       }
     }
+    .sheet(isPresented: $showHistory) { HistoryView() }
   }
 
   /// 현재 선택된 신발(목표 패널 시작 시 귀속). selection 매칭 실패면 첫 신발 폴백.
@@ -122,6 +126,20 @@ struct StartView: View {
       .allowsHitTesting(false)
       .transition(.opacity)
     }
+    // 기록 진입점 — 좌상단 작은 글리프(조용한 보조 동작). 신발 이름은 중앙 정렬이라
+    // 코너와 겹치지 않는다. 러닝 시작 위계는 그대로(히어로 % + 시작 버튼이 주).
+    .overlay(alignment: .topLeading) {
+      Button { showHistory = true } label: {
+        Image(systemName: "clock.arrow.circlepath")
+          .font(.system(size: 15, weight: .semibold))
+          .foregroundStyle(KeegoTheme.t3)
+          .frame(width: 30, height: 30)
+          .contentShape(Rectangle())
+      }
+      .buttonStyle(.plain)
+      .padding(.leading, 2)
+      .accessibilityLabel("기록")
+    }
   }
 }
 
@@ -147,8 +165,12 @@ private struct ShoeStartPage: View {
       // v3.1(2026-07-18 목업 확정): 남은 km 를 링 안 캡션으로 승격(폰 홈 링의 값+캡션
       // 문법 완성). 빠진 한 줄만큼 링이 자연 확대되되, 버튼과 붙지 않게 폭 0.55 캡 유지
       // + 버튼 상단 여백을 예산에 포함. 링 크기 = 높이 − (이름 34 + 버튼 47 + 도트 14 + 여백 10).
-      let belowAndAbove: CGFloat = 34 + 47 + 14 + 10
-      let ringSize = max(56, min(geo.size.width * 0.55, geo.size.height - belowAndAbove))
+      // 링 확대(2026-07-20 실기기 피드백 "링 안 글씨가 하나도 안 보여"): 링 안 글씨는
+      // 지름 비례라 지름을 키우는 게 곧 글씨 확대다. 폭 캡을 0.55 → 0.74 로 올리고
+      // 세로 예산을 조인다(도트 14→10, 여백 10→6). 세로가 빡빡한 작은 워치(40mm)에선
+      // height 항이, 큰 워치에선 폭 항이 바인딩 — 어느 쪽이든 예전보다 크다. 하한도 56→68.
+      let belowAndAbove: CGFloat = 34 + 47 + 10 + 6
+      let ringSize = max(68, min(geo.size.width * 0.74, geo.size.height - belowAndAbove))
 
       VStack(spacing: 0) {
         // 이름 — 풀폭 두 줄(브랜드 캡스 + 모델명). 원 밖이라 잘림 걱정 없이 1줄 자동축소.
@@ -352,18 +374,20 @@ private struct PctRing: View {
         VStack(spacing: 0) {
           HStack(alignment: .firstTextBaseline, spacing: 1) {
             Text("\(pct)")
-              .font(.system(size: d * 0.27, weight: .bold))
+              // 지름 비례 확대(0.27 → 0.34): 링을 키운 만큼 % 히어로도 또렷하게.
+              .font(.system(size: d * 0.34, weight: .bold))
               .foregroundStyle(KeegoTheme.t1)
               .monospacedDigit()
             Text("%")
-              .font(.system(size: d * 0.15, weight: .semibold))
+              .font(.system(size: d * 0.18, weight: .semibold))
               .foregroundStyle(KeegoTheme.t3)
           }
           .lineLimit(1)
           .minimumScaleFactor(0.7)
           if let remainText {
             Text(remainText)
-              .font(.system(size: d * 0.115, weight: .semibold))
+              // 캡션도 확대(0.115 → 0.14) — '남은 km'가 흘끗에 읽히게.
+              .font(.system(size: d * 0.14, weight: .semibold))
               .foregroundStyle(remainColor)
               .monospacedDigit()
               .lineLimit(1)
