@@ -187,6 +187,11 @@ final class WorkoutManager: NSObject, ObservableObject {
   // 자동 일시정지 상태기계(lib/autoPause.ts 미러) — 지속시간 적산기.
   private var slowSec: Double = 0
   private var fastSec: Double = 0
+  // 경과시간 = 시작 후 벽시계 - 일시정지 누적. builder.elapsedTime(at:)이 '진행 중'인
+  // 일시정지를 실시간으로 빼주지 않아(자동 일시정지 표시 중에도 시간이 흐르던 버그) 직접
+  // 회계한다(폰 runTracker 의 pausedMs 방식). pauseStartDate: 현재 진행 중 일시정지 시작.
+  private var pausedAccumS: Double = 0
+  private var pauseStartDate: Date?
 
   /// 활성 런 컨텍스트 영속 키 — 러닝 중 앱 사망 → 세션 복구 시 runId(폰 중복 방어
   /// 일관)·신발 귀속·완료 랩을 되살린다. reset() 에서 제거.
@@ -275,6 +280,8 @@ final class WorkoutManager: NSObject, ObservableObject {
       capturedAvgBpm = 0
       capturedKcal = 0
       capturedCadence = 0
+      pausedAccumS = 0
+      pauseStartDate = nil
       splits = []
       lastSplitElapsedS = 0
       summary = nil
@@ -298,11 +305,25 @@ final class WorkoutManager: NSObject, ObservableObject {
     }
   }
 
+  // ── 일시정지 시간 회계 — 진행 중 일시정지 구간을 직접 적산해 경과시간에서 뺀다 ──────
+  /// 일시정지 진입(수동·자동 공통) — 진행 중 일시정지 시작 시각을 찍는다(중복 방어).
+  private func beginPauseAccounting() {
+    if pauseStartDate == nil { pauseStartDate = Date() }
+  }
+  /// 일시정지 해제(수동·자동 공통) — 진행된 일시정지 구간을 누적에 더하고 진행 상태를 끈다.
+  private func endPauseAccounting() {
+    if let ps = pauseStartDate {
+      pausedAccumS += max(0, Date().timeIntervalSince(ps))
+      pauseStartDate = nil
+    }
+  }
+
   // ── 수동 일시정지/재개 ─────────────────────────────────────────────────────
   func pause() {
     guard phase == .running else { return }
     manualPause = true
     autoPaused = false
+    beginPauseAccounting()
     session?.pause()
   }
 
@@ -311,6 +332,7 @@ final class WorkoutManager: NSObject, ObservableObject {
     manualPause = false
     autoPaused = false
     fastSec = 0
+    endPauseAccounting()
     session?.resume()
   }
 
@@ -351,6 +373,8 @@ final class WorkoutManager: NSObject, ObservableObject {
     capturedAvgBpm = 0
     capturedKcal = 0
     capturedCadence = 0
+    pausedAccumS = 0
+    pauseStartDate = nil
     splits = []
     lastSplitElapsedS = 0
     goal = .free
@@ -403,7 +427,13 @@ final class WorkoutManager: NSObject, ObservableObject {
     // 표시 지표는 빌더 집계로 시드 — 죽어 있던 구간까지 포함된 진실원(유실 최소화).
     let now = Date()
     let e = b.elapsedTime(at: now)
-    if e.isFinite, e >= 0 { elapsedS = e }
+    if e.isFinite, e >= 0 {
+      elapsedS = e
+      // 라이브 타이머의 직접 회계와 정합되도록 일시정지 누적을 역산해 시드한다
+      // (벽시계 − 빌더경과 = 그동안의 일시정지 총합). pauseStartDate 는 복구 후 새로 판정.
+      pausedAccumS = max(0, now.timeIntervalSince(s.startDate) - e)
+      pauseStartDate = nil
+    }
     if let dType = HKQuantityType.quantityType(forIdentifier: .distanceWalkingRunning),
        let sum = b.statistics(for: dType)?.sumQuantity() {
       let km = sum.doubleValue(for: .meter()) / 1000.0
@@ -458,9 +488,13 @@ final class WorkoutManager: NSObject, ObservableObject {
   /// (무픽스 시)거리·시간을 이 한 곳에서 확정 — finishWorkout 이후 statistics 무효화 대비.
   private func captureFinalStats(endDate: Date) {
     guard let b = builder else { return }
-    // 시간(일시정지 자동 제외) — 케이던스 분모로도 쓰이므로 먼저 확정.
-    let e = b.elapsedTime(at: endDate)
-    if e.isFinite, e >= 0 { elapsedS = e }
+    // 시간(일시정지 제외) — 타이머와 동일한 직접 회계로 최종 확정. builder.elapsedTime 은
+    // 진행 중 일시정지를 안 빼므로 쓰지 않는다(케이던스 분모로도 쓰이므로 먼저 확정).
+    if let start = startDate {
+      let ongoing = pauseStartDate.map { max(0, endDate.timeIntervalSince($0)) } ?? 0
+      let e = endDate.timeIntervalSince(start) - pausedAccumS - ongoing
+      if e.isFinite, e >= 0 { elapsedS = e }
+    }
     // 거리: 표시값(HK 융합)이 비었을 때만(터널·실내 무픽스) 빌더 집계로 폴백 —
     // Truth only: 두 소스를 섞지 않고 유효한 한쪽만 쓴다.
     if distanceKm <= 0,
@@ -531,15 +565,21 @@ final class WorkoutManager: NSObject, ObservableObject {
     hrSamples.append((offsetS: offset, bpm: bpm))
   }
 
-  // ── 1초 시계 — 빌더 경과시간(일시정지 제외)을 화면에 흘린다 ─────────────────
+  // ── 1초 시계 — 경과시간(일시정지 제외)을 화면에 흘린다 ────────────────────────
   private func startTimer() {
     stopTimer()
     let t = Timer(timeInterval: 1, repeats: true) { [weak self] _ in
       Task { @MainActor in
         guard let self, self.isActive, let b = self.builder else { return }
-        let e = b.elapsedTime(at: Date())
-        // 단조 증가 보장 — 시계가 뒤로 가는 순간을 화면에 노출하지 않는다.
-        if e.isFinite, e >= self.elapsedS { self.elapsedS = e }
+        // 경과시간 = 시작 후 벽시계 − 일시정지 누적 − 진행 중 일시정지. builder.elapsedTime(at:)
+        // 은 '진행 중'인 일시정지를 실시간으로 빼주지 않아 자동 일시정지 표시 중에도 시간이
+        // 흐르던 버그의 근본수정 — 일시정지 시간을 직접 회계한다(폰 runTracker pausedMs 방식).
+        if let start = self.startDate {
+          let ongoing = self.pauseStartDate.map { max(0, Date().timeIntervalSince($0)) } ?? 0
+          let e = Date().timeIntervalSince(start) - self.pausedAccumS - ongoing
+          // 단조 증가 보장 — 시계가 뒤로 가는 순간을 화면에 노출하지 않는다(일시정지 중엔 동결).
+          if e.isFinite, e >= self.elapsedS { self.elapsedS = e }
+        }
         // 비트랙 거리 = 애플 HealthKit 융합거리(distanceWalkingRunning). raw GPS 점-점 누적보다
         // 정확(GPS+가속도계 센서융합 = 가민급). 러닝 중·단조 증가만 반영, km 경계는 즉시 랩 마감.
         // 트랙 모드는 랩기반(detectTrackLap)이 진실원이라 건드리지 않는다.
@@ -603,6 +643,7 @@ final class WorkoutManager: NSObject, ObservableObject {
           slowSec = 0
           fastSec = 0
           autoPaused = true
+          beginPauseAccounting()
           session?.pause()
         }
       } else {
@@ -614,6 +655,7 @@ final class WorkoutManager: NSObject, ObservableObject {
         if fastSec >= Self.autoResumeHoldS {
           fastSec = 0
           autoPaused = false
+          endPauseAccounting()
           session?.resume()
         }
       } else {
