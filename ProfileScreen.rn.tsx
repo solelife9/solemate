@@ -45,7 +45,7 @@ import { STANDARD_DISTANCES } from './lib/bestEfforts';
 import { fitnessSummary } from './lib/analytics/fitness';
 import { fmtTime } from './lib/format';
 import { authErrorMessage } from './lib/authErrorMessage';
-import { PRIVACY_URL, TERMS_URL } from './lib/legalLinks';
+import { PRIVACY_URL, TERMS_URL, SUPPORT_EMAIL } from './lib/legalLinks';
 import type { RankTier } from './lib/progression/types';
 
 // 신원 칩은 진척 시스템의 단일 Rank(티어)로 통일한다 — 옛 '러닝 레벨 N'(km/100) 개념 폐기.
@@ -552,15 +552,34 @@ export default function ProfileScreen({
   const DOW = ['월', '화', '수', '목', '금', '토', '일'];
 
   const insets = useSafeAreaInsets();
-  // 법적 문서(개인정보·이용약관) — 로그인 시엔 계정 아코디언 안에, 로그아웃 시엔 상시 노출.
+  // 문의/지원 — 앱스토어 심사(ASC)가 요구하는 지원 연락처. 메일 앱으로 프리필된 문의를 연다.
+  // 메일 앱이 없거나 실패하면 주소를 Alert 로 안내(막다른 길 방지).
+  const openSupport = () => {
+    const subject = encodeURIComponent('[Keego] 문의');
+    const body = encodeURIComponent('\n\n\n————————\n문의 내용을 위에 적어주세요. 앱 버전·기기 정보를 함께 주시면 더 빨리 도와드릴 수 있어요.');
+    Linking.openURL(`mailto:${SUPPORT_EMAIL}?subject=${subject}&body=${body}`).catch(() => {
+      Alert.alert('문의하기', `메일 앱을 열 수 없어요.\n${SUPPORT_EMAIL} 로 문의해 주세요.`);
+    });
+  };
+  // 법적 문서(개인정보·이용약관) + 문의 — 로그인 시엔 계정 아코디언 안에, 로그아웃 시엔 상시 노출.
   const legalRows = (
     <>
+      <Pressable
+        testID="support-contact"
+        onPress={openSupport}
+        accessibilityRole="button"
+        accessibilityLabel="문의하기"
+        style={({ pressed }) => [s.settingRow, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.07) }, pressed && { backgroundColor: CARD_HI }]}>
+        <View style={s.settingIcon}><Ionicons name="mail-outline" size={ri(16)} color={T2} /></View>
+        <Text style={s.settingLabel}>문의하기</Text>
+        <Ionicons name="chevron-forward" size={ri(15)} color={T3} />
+      </Pressable>
       <Pressable
         testID="legal-privacy"
         onPress={() => { Linking.openURL(PRIVACY_URL).catch(() => {}); }}
         accessibilityRole="link"
         accessibilityLabel="개인정보 처리방침 열기"
-        style={({ pressed }) => [s.settingRow, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.07) }, pressed && { backgroundColor: CARD_HI }]}>
+        style={({ pressed }) => [s.settingRow, pressed && { backgroundColor: CARD_HI }]}>
         <View style={s.settingIcon}><Ionicons name="shield-checkmark-outline" size={ri(16)} color={T2} /></View>
         <Text style={s.settingLabel}>개인정보 처리방침</Text>
         <Ionicons name="open-outline" size={ri(15)} color={T3} />

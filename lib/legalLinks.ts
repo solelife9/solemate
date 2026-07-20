@@ -14,3 +14,6 @@ export const PRIVACY_URL = 'https://solelife9.github.io/keego-legal/privacy.html
 
 /** 이용약관 URL(GitHub Pages — solelife9/keego-legal). */
 export const TERMS_URL = 'https://solelife9.github.io/keego-legal/terms.html';
+
+/** 지원(문의) 이메일 — 앱스토어 심사(ASC) 지원 연락처 + 앱 내 '문의하기'. */
+export const SUPPORT_EMAIL = 'kmw0236@gmail.com';
