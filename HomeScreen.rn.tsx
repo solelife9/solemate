@@ -14,7 +14,7 @@ import {
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {
-  BG, CARD_HI, ACCENT, BRAND, GLASS, WARN, GOOD, T1, T2, T3, T4,
+  BG, CARD_HI, ACCENT, BRAND, GLASS, WARN, GOOD, T1, T2, T3,
   FONT, DISPLAY, SPACE, RADIUS, GUTTER, withAlpha, Shoe, SHOES, TYPE,
   BAR,
 } from './theme';
@@ -92,7 +92,9 @@ function TopBar({ onAddShoe }: { onAddShoe?: () => void }) {
   return (
     <View style={s.topbar}>
       {/* 워드마크 = BRAND 파파야(primitives 기본값 — 2026-07-09 'B 서명+진행' 확정). */}
-      <KeegoWordmark size={ri(24)} />
+      {/* 워드마크(Helvetica)와 신발추가 버튼(Pretendard)의 폰트 메트릭 차이로 중심이 어긋나던 것 보정:
+          lineHeight=fontSize 로 디센더 예약 제거 + 미세 translateY(기기 확정 필요). */}
+      <KeegoWordmark size={ri(24)} style={{ lineHeight: ri(24), transform: [{ translateY: ri(1) }] }} />
       <Pressable
         onPress={onAddShoe}
         accessibilityRole="button"
@@ -349,9 +351,13 @@ function RotationInsightPanel({ rotation, onPickShoe }: { rotation: RotationPick
 // 추천한다(구매 의도 최고 시점의 contextual 추천 — 배너광고 아님). 쇼핑몰 검색 링크는
 // lib/affiliate(순수)에서 만들고 Linking.openURL로 외부에서 연다. 투명성 안내(제휴 가능성+
 // '러너 우선')를 하단에 명시한다. 시드 DB가 없거나 추천이 비면 통째로 숨는다.
+// 제휴/수익화(쇼핑 링크 + 제휴 고지) 보류 — 사용자 요청으로 프로덕션 숨김(2026-07-20).
+// 재활성화: 아래 렌더타임 게이트를 제거(또는 조건 반전). 로직·카피는 그대로 보존.
+// 테스트는 렌더 전 globalThis.__KEEGO_TEST_NEXTSHOP__=true 로 추천/쇼핑/고지 로직을 계속 검증한다.
 function NextShoeCard({ shoe }: { shoe: Shoe }) {
   const recs = recommendNextShoes({ brand: shoe.brand, model: shoe.model }, 3);
-  if (recs.length === 0) return null;
+  const hidden = (globalThis as any).__KEEGO_TEST_NEXTSHOP__ !== true; // 프로덕션 숨김(테스트만 노출)
+  if (hidden || recs.length === 0) return null;
   const open = (url: string) => { Promise.resolve(Linking.openURL(url)).catch(() => {}); };
   return (
     <View testID="home-next-shoe" style={s.nextWrap}>
@@ -559,10 +565,11 @@ const s = StyleSheet.create({
 
   topbar: { paddingTop: rv(8), paddingHorizontal: GUTTER, paddingBottom: SPACE.xs, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   addBtn: { height: rs(34), paddingHorizontal: rs(14), borderRadius: RADIUS.pill, borderWidth: 1, borderColor: withAlpha(T1, 0.2), backgroundColor: CARD_HI, flexDirection: 'row', alignItems: 'center', gap: rv(6) },
-  addBtnText: { color: T1, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600' },
+  addBtnText: { color: T1, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600', includeFontPadding: false },
 
   // paddingBottom 20: '오늘의 신발' 라벨 행을 걷어낸 뒤 인사말과 히어로 카드가 붙어
   // 보인다는 피드백 — 라벨이 차지하던 만큼 숨 쉴 여백을 직접 준다.
+  // 인사말 정렬은 미정(인사말↔카드 vs 인사말↔keego 상충) — 실제 화면 보고 결정. 지금은 gutter(20).
   greetWrap: { paddingHorizontal: GUTTER, paddingTop: rv(4), paddingBottom: rv(10) },
   date: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, letterSpacing: 0.2 },
   greet: { color: T1, fontFamily: FONT, fontSize: TYPE.title.fontSize, fontWeight: '700', letterSpacing: -0.5, marginTop: rv(3), lineHeight: rf(26) },
@@ -613,7 +620,8 @@ const s = StyleSheet.create({
   sectionLabel: { paddingHorizontal: SPACE.xl, paddingBottom: SPACE.sm },
   sectionRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', paddingHorizontal: SPACE.xl, paddingTop: SPACE.sm, paddingBottom: SPACE.sm },
   sectionLabelInline: { paddingHorizontal: rs(0), paddingBottom: rv(0) },
-  sectionMore: { color: T4, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500' },
+  // '전체 보기 ›' = 탭 가능한 링크 → T3(보조). T4는 비상호작용 회색이라 링크가 죽어 보였다.
+  sectionMore: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500' },
 
   // 오늘의 신발 캐러셀 — 페이지 도트 + 스와이프 힌트(목업 정합)
   pageDots: { flexDirection: 'row', justifyContent: 'center', gap: rv(6), marginTop: SPACE.md },

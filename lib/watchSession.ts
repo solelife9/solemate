@@ -41,6 +41,12 @@ export type WatchRunPayload = {
   durationS: number;
   avgBpm: number;
   kcal: number;
+  /** 평균 케이던스(spm). 0=미측정. */
+  cadence: number;
+  /** 누적 상승 고도(m). 0=미측정. */
+  elevGainM: number;
+  /** 구간 스플릿(초/km) — 폰 페이스 그래프·paceTrack 사이드카. 비트랙 런만, 없으면 []. */
+  splitsS: number[];
   startMs: number;
   endMs: number;
   /** 트랙 자동랩 메타 — 트랙 런만. 확정 랩거리(m)·랩 수·랩 시간(초). 비트랙은 0/0/[]. */
@@ -88,6 +94,9 @@ export const watchSession = {
         durationS: Math.max(0, Number(e?.durationS) || 0),
         avgBpm: Math.max(0, Number(e?.avgBpm) || 0),
         kcal: Math.max(0, Number(e?.kcal) || 0),
+        cadence: Math.max(0, Number(e?.cadence) || 0),
+        elevGainM: Math.max(0, Number(e?.elevGainM) || 0),
+        splitsS: Array.isArray(e?.splitsS) ? e.splitsS.map((x: any) => Math.max(0, Number(x) || 0)) : [],
         startMs: Math.max(0, Number(e?.startMs) || 0),
         endMs: Math.max(0, Number(e?.endMs) || 0),
         lapM: Math.max(0, Number(e?.lapM) || 0),

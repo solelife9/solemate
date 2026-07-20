@@ -106,7 +106,12 @@ function ShoeDetail({
   // 신발 수명(교체거리 max_km) 편집 — 등록 후에도 바꿀 수 있게(무거운 러너·트레일·모델
   // 오선택 보정). ±50km 스텝을 clampMaxKm(100~2000)로 보정해 onSetMaxKm 로 즉시 반영.
   const [maxEditOpen, setMaxEditOpen] = useState(false);
-  const stepMaxKm = (deltaKm: number) => { if (shoe.id) onSetMaxKm?.(String(shoe.id), clampMaxKm((Number(shoe.max) || 0) + deltaKm)); };
+  // 편집은 기저 수명(maxBase) 기준 — shoe.max 는 몸무게 반영된 유효값이라 그걸로 ±하면 오염된다.
+  const editBaseMax = Number(shoe.maxBase ?? shoe.max) || 0;
+  const editBaseDisp = displayNum(editBaseMax, unit);
+  // 몸무게 반영으로 유효 수명이 기저와 달라졌는가(반영 안내·기저 표기 노출 조건).
+  const weightAdjusted = shoe.maxBase != null && Math.round(Number(shoe.maxBase)) !== Math.round(Number(shoe.max));
+  const stepMaxKm = (deltaKm: number) => { if (shoe.id) onSetMaxKm?.(String(shoe.id), clampMaxKm(editBaseMax + deltaKm)); };
   // 런 상세 — 기록탭과 같은 RunDetail 재사용(읽기 전용: 삭제/편집은 기록탭 담당).
   const [selRun, setSelRun] = useState<Run | null>(null);
 
@@ -272,10 +277,15 @@ function ShoeDetail({
               </Pressable>
             ) : undefined}
           />
+          {/* 몸무게 반영 안내 — 게이지 수명(유효)이 기저와 다를 때만. 투명성(왜 650이 아닌지). */}
+          {weightAdjusted && (
+            <Text style={s.weightNote}>몸무게 반영 · 기저 {editBaseDisp}{unit}</Text>
+          )}
           {maxEditOpen && onSetMaxKm && (
             <View style={s.maxStepRow}>
               <Pressable onPress={() => stepMaxKm(-50)} hitSlop={8} accessibilityRole="button" accessibilityLabel="수명 50 줄이기" style={s.maxEditToggle}><Ionicons name="remove" size={ri(16)} color={T1} /></Pressable>
-              <Text style={s.maxStepVal}>수명 {maxDisp}<Text style={s.maxStepUnitTxt}> {unit}</Text></Text>
+              {/* 편집은 기저 수명(몸무게 반영 전) — 유효값 오염 방지. */}
+              <Text style={s.maxStepVal}>수명 {editBaseDisp}<Text style={s.maxStepUnitTxt}> {unit}</Text></Text>
               <Pressable onPress={() => stepMaxKm(50)} hitSlop={8} accessibilityRole="button" accessibilityLabel="수명 50 늘리기" style={s.maxEditToggle}><Ionicons name="add" size={ri(16)} color={T1} /></Pressable>
             </View>
           )}
@@ -638,7 +648,7 @@ export default function ShoesScreen({
       <AmbientBackdrop />
       <View style={s.topbar}>
         <View style={{ flex: 1, minWidth: 0 }}>
-          <Text style={s.title}>신발</Text>
+          <Text style={s.title}>러닝화</Text>
         </View>
         <Pressable onPress={onAddShoe} accessibilityRole="button" accessibilityLabel="신발 추가" hitSlop={8} style={({ pressed }) => [s.addPill, pressed && s.pressed]}>
           <Text style={s.addPillText}>신발 추가</Text>
@@ -809,6 +819,7 @@ const s = StyleSheet.create({
   maxStepRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rs(20), marginTop: rv(14) },
   maxStepVal: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.heading.fontSize, fontWeight: '600', fontVariant: ['tabular-nums'], minWidth: rs(96), textAlign: 'center' },
   maxStepUnitTxt: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500' },
+  weightNote: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500', textAlign: 'center', marginTop: rv(8) },
   dHeroRemain: { color: T1, fontFamily: DISPLAY, fontSize: rf(44), letterSpacing: 0.5 },
   dHeroRemainU: { color: T2, fontFamily: FONT, fontSize: TYPE.heading.fontSize, marginLeft: rs(4), marginBottom: rv(6) },
 

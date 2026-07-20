@@ -31,6 +31,8 @@ function render(el: React.ReactElement) {
 
 const SHOE: Shoe = {id: 'a', brand: 'Nike', model: 'Pegasus 41', used: 300, max: 700};
 
+;(globalThis as any).__KEEGO_TEST_NEXTSHOP__ = true; // 제휴 섹션(프로덕션 숨김)을 테스트에서만 노출해 추천 로직 검증
+
 describe('HomeScreen 신발 카드(링 게이지)', () => {
   test('수명 링: 남은 수명(%)과 남은 거리를 보여준다 — 배터리 방향 통일', () => {
     const txt = textOf(render(<HomeScreen shoes={[SHOE]} />).root);

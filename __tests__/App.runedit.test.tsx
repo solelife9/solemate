@@ -102,7 +102,7 @@ test('런 삭제 → 확인 Alert 후 신발 사용거리(km) 감소', async () 
   const {root} = await mount(SHOE, runs);
 
   // 삭제 전: 신발 카드에 누적 15km / 총 600km (라벨바 — 목업 카드 포맷).
-  await tap(pressBy(root, '신발'));
+  await tap(pressBy(root, '러닝화'));
   expect(textOf(root)).toContain('15km');
   expect(textOf(root)).toContain('600km'); // 총 내구도(분모) — 2026-07-05 복원
 
@@ -133,7 +133,7 @@ test('런 삭제 → 확인 Alert 후 신발 사용거리(km) 감소', async () 
   expect(delCall).toBeFalsy();
 
   // 신발 탭: 사용거리 15 → 10으로 감소(shoeHealth가 runs 파생). 카드 누적 km(큰 숫자) 확인.
-  await tap(pressBy(root, '신발'));
+  await tap(pressBy(root, '러닝화'));
   expect(textOf(root)).toContain('10km');
   expect(textOf(root)).not.toContain('15km');
 });

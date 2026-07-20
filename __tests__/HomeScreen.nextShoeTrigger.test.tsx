@@ -29,6 +29,8 @@ const forecast = (over: Partial<ReplacementForecast>): ReplacementForecast => ({
   confidence: 'high', reason: 'ok', ...over,
 });
 
+;(globalThis as any).__KEEGO_TEST_NEXTSHOP__ = true; // 제휴 섹션(프로덕션 숨김)을 테스트에서만 노출해 추천 로직 검증
+
 describe('NextShoeCard 노출 트리거 — Slice 6 forecast 연결', () => {
   test('forecast overdue면 추천 카드가 뜬다(양호 등급이라도)', () => {
     const f = forecast({reason: 'overdue', kmRemaining: -20, weeksRemaining: 0});

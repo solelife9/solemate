@@ -74,7 +74,7 @@ describe('RunRecapScreen — 완주 리캡', () => {
     const t = textOf(root);
     expect(t).toContain('페가수스 41');
     expect(t).toContain('64%');     // 남은 내구도
-    expect(t).toContain('0.9%p');   // 델타
+    expect(t).toContain('0.9%');   // 델타
   });
 
   test('훈련 부하 영향(loadInfo)이 있으면 부하 행을 보여준다(#5)', () => {

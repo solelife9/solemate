@@ -61,6 +61,12 @@ struct RunSummary: Equatable {
   let durationS: Double
   let avgBpm: Double
   let kcal: Double
+  /// 평균 케이던스(spm) — HK stepCount 합 / 경과분. 0 = 미측정.
+  let cadence: Double
+  /// 누적 상승 고도(m) — GPS 고도 양의 증분 적산(노이즈 게이트). 0 = 미측정.
+  let elevGainM: Double
+  /// 구간 스플릿(초/km) — 폰 RunDetail 페이스 그래프·paceTrack 사이드카. 비면 [].
+  let splitsS: [Double]
   let startMs: Double
   let endMs: Double
   /// 트랙 자동랩 메타 — 폰 RunDetail 이 track_<id> 로 읽어 '트랙·Nm×N랩' 표시.
@@ -168,6 +174,8 @@ final class WorkoutManager: NSObject, ObservableObject {
   // 심박 시계열(경로 A) — 워크아웃 시작 기준 초 오프셋 + bpm. 종료 시 폰에 직송해
   // 폰이 주머니에 있어(실시간 스트림 놓침) hrTrack 이 비는 문제를 근본 해결한다.
   private var hrSamples: [(offsetS: Double, bpm: Double)] = []
+  /// 누적 상승 고도(m) — process(locations) 가 GPS 고도 양의 증분으로 적산. 종료 시 요약에 실림.
+  private var elevGainM: Double = 0
   private var manualPause = false
   // km 스플릿 적산 — 직전 랩 마감 시점의 경과시간(빌더 시간, 일시정지 제외).
   private var lastSplitElapsedS: Double = 0
@@ -211,6 +219,7 @@ final class WorkoutManager: NSObject, ObservableObject {
       if let hr = HKObjectType.quantityType(forIdentifier: .heartRate) { read.insert(hr) }
       if let en = HKObjectType.quantityType(forIdentifier: .activeEnergyBurned) { read.insert(en) }
       if let di = HKObjectType.quantityType(forIdentifier: .distanceWalkingRunning) { read.insert(di) }
+      if let st = HKObjectType.quantityType(forIdentifier: .stepCount) { read.insert(st) }  // 평균 케이던스용
       let share: Set<HKSampleType> = [HKObjectType.workoutType()]
       healthStore.requestAuthorization(toShare: share, read: read) { _, _ in }
     }
@@ -257,6 +266,7 @@ final class WorkoutManager: NSObject, ObservableObject {
       fastSec = 0
       lastLocation = nil
       hrSamples = []
+      elevGainM = 0
       splits = []
       lastSplitElapsedS = 0
       summary = nil
@@ -326,6 +336,7 @@ final class WorkoutManager: NSObject, ObservableObject {
     autoPaused = false
     manualPause = false
     lastLocation = nil
+    elevGainM = 0
     splits = []
     lastSplitElapsedS = 0
     goal = .free
@@ -437,6 +448,7 @@ final class WorkoutManager: NSObject, ObservableObject {
     let start = startDate ?? endDate
     var avgBpm: Double = 0
     var kcal: Double = 0
+    var cadence: Double = 0
     if let b = builder {
       if let hrType = HKQuantityType.quantityType(forIdentifier: .heartRate),
          let avg = b.statistics(for: hrType)?.averageQuantity() {
@@ -445,6 +457,12 @@ final class WorkoutManager: NSObject, ObservableObject {
       if let enType = HKQuantityType.quantityType(forIdentifier: .activeEnergyBurned),
          let sum = b.statistics(for: enType)?.sumQuantity() {
         kcal = sum.doubleValue(for: .kilocalorie())
+      }
+      // 평균 케이던스(spm) = 총 걸음수 ÷ 경과분(빌더 시간, 일시정지 제외). 30초 미만·0분은 무시.
+      if let stType = HKQuantityType.quantityType(forIdentifier: .stepCount),
+         let steps = b.statistics(for: stType)?.sumQuantity()?.doubleValue(for: .count()),
+         elapsedS > 30 {
+        cadence = steps / (elapsedS / 60.0)
       }
       // 시간의 진실원은 빌더(일시정지 자동 제외). 실패 시 표시값 유지(유실 금지).
       let e = b.elapsedTime(at: endDate)
@@ -459,6 +477,10 @@ final class WorkoutManager: NSObject, ObservableObject {
       durationS: max(0, elapsedS),
       avgBpm: max(0, avgBpm),
       kcal: max(0, kcal),
+      cadence: max(0, cadence),
+      elevGainM: max(0, elevGainM),
+      // 비트랙 = km 스플릿(초/km). 트랙은 랩타임을 lapTimesS 로 별도 전송하므로 여기선 [].
+      splitsS: trackRun ? [] : splits,
       startMs: start.timeIntervalSince1970 * 1000,
       endMs: endDate.timeIntervalSince1970 * 1000,
       lapM: trackRun ? lapM : 0,
@@ -714,6 +736,12 @@ extension WorkoutManager: CLLocationManagerDelegate {
                 if WatchLink.shared.hapticsOn { WKInterfaceDevice.current().play(.notification) }
               }
             }
+          }
+          // 상승 고도(누적) — GPS 고도의 양의 증분만 적산. 수직정확도 게이트 + 0.5m 노이즈
+          // 임계(미세 지터 무시) + 30m 스파이크 컷. 거리 소스와 무관(고도는 GPS 유지).
+          if phase == .running, loc.verticalAccuracy > 0, loc.altitude.isFinite, last.altitude.isFinite {
+            let dAlt = loc.altitude - last.altitude
+            if dAlt > 0.5, dAlt < 30 { elevGainM += dAlt }
           }
           feedAutoPause(speedMps: sampleSpeed, dtSec: dt)
         }

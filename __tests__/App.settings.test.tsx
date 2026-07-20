@@ -152,7 +152,7 @@ test('신발 화면(전 화면 환산)도 토글 시 환산된 수치를 보여�
   const {root} = await mount(SHOES, RUNS);
 
   // 신발 탭(락커): 누적 5km + 총 600km(복원된 분모)가 km 로 표기된다.
-  await tap(pressBy(root, '신발'));
+  await tap(pressBy(root, '러닝화'));
   expect(textOf(root)).toContain('5km');
   expect(textOf(root)).toContain('600km');
 
@@ -162,7 +162,7 @@ test('신발 화면(전 화면 환산)도 토글 시 환산된 수치를 보여�
   expect(await AsyncStorage.getItem('settings_unit')).toBe('mi');
 
   // 신발 탭 복귀: used 5km → 3.1mi 환산 수치가 떠야 한다(라벨 mi)
-  await tap(pressBy(root, '신발'));
+  await tap(pressBy(root, '러닝화'));
   const shoes = textOf(root);
   expect(shoes).toContain('3mi'); // displayNum(5,'mi') → '3'(정수 반올림) + 단위
   expect(shoes).toContain('373'); // 총 600km → 373mi 환산(분모도 단위를 따른다)

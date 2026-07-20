@@ -105,7 +105,7 @@ const RUNS: ApiRun[] = [
 
 test('신발 상세 진입 — 모델 표시, 런 시작 CTA는 상세에서 제거됨(목업 09 정합)', async () => {
   const {root} = await mount(SHOES, RUNS);
-  await tap(pressBy(root, '신발')); // 신발 탭
+  await tap(pressBy(root, '러닝화')); // 신발 탭
   await tap(pressBy(root, 'Pegasus')); // Pegasus 상세
 
   const txt = textOf(root);
@@ -117,7 +117,7 @@ test('신발 상세 진입 — 모델 표시, 런 시작 CTA는 상세에서 제
 
 test('락커 카드 play 어포던스 → 상세 없이 해당 신발로 목표 설정 화면 진입', async () => {
   const {root} = await mount(SHOES, RUNS);
-  await tap(pressBy(root, '신발')); // 신발 탭
+  await tap(pressBy(root, '러닝화')); // 신발 탭
 
   // Clifton 카드를 먼저 찾고(모델명 + play 아이콘 포함하는 가장 작은 pressable=카드),
   // 그 안에서 텍스트가 정확히 'play'인 중첩 pressable(=play 버튼)을 누른다.
@@ -148,7 +148,7 @@ test('보관된 신발은 신발 탭 락커에서 제외된다 → 시작 동선
     {id: 's1', name: 'Nike Pegasus', max_km: 600, start_km: 0, retired: true},
   ];
   const {root} = await mount(retiredShoes, []);
-  await tap(pressBy(root, '신발')); // 신발 탭
+  await tap(pressBy(root, '러닝화')); // 신발 탭
 
   expect(() => pressBy(root, 'Pegasus')).toThrow(); // 락커 목록에 없음 → 상세 진입 불가
   expect(textOf(root)).not.toContain('이 신발로 달리기'); // 러닝 시작 CTA 미노출

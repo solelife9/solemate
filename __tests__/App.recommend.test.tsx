@@ -170,7 +170,7 @@ test("신발 탭 락커엔 '사용 중' 라벨이 없다(2026-07-11 라벨 제�
   // 사용자 확정으로 제거됐으므로, 여기선 라벨이 다시 살아나지 않는 것만 고정한다.
   const {root} = await mount(SHOES, RUNS);
   await tap(pressBy(root, 'Clifton'));
-  await tap(pressBy(root, '신발'));
+  await tap(pressBy(root, '러닝화'));
   const featured = root.findAll(
     (n: any) => n && n.props && typeof n.props.onPress === 'function' && textOf(n).includes('사용 중'),
   );
@@ -179,7 +179,7 @@ test("신발 탭 락커엔 '사용 중' 라벨이 없다(2026-07-11 라벨 제�
 
 test('ShoeDetail: 마지막 착용일이 런 기록에서 파생되어 표시된다', async () => {
   const {root} = await mount(SHOES, RUNS);
-  await tap(pressBy(root, '신발')); // 신발 탭
+  await tap(pressBy(root, '러닝화')); // 신발 탭
   await tap(pressBy(root, 'Pegasus')); // Pegasus 상세 (5km 사용)
 
   // 마지막 착용일(런에서 파생): 2026-05-31 → '5월 31일'

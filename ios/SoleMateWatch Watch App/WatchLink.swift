@@ -224,6 +224,10 @@ final class WatchLink: NSObject, ObservableObject {
       "durationS": summary.durationS,
       "avgBpm": summary.avgBpm,
       "kcal": summary.kcal,
+      // 케이던스(spm)·누적 상승 고도(m)·구간 스플릿(초/km) — 폰 상세 지표 유실 방지.
+      "cadence": summary.cadence,
+      "elevGainM": summary.elevGainM,
+      "splitsS": summary.splitsS,
       "startMs": summary.startMs,
       "endMs": summary.endMs,
       // 트랙 자동랩 메타(비트랙은 lapM 0·laps 0·빈 배열) — 폰 RunDetail 트랙 표기용.

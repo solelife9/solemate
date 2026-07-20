@@ -155,6 +155,26 @@ export function clampMaxKm(km: number): number {
   return Math.max(MIN_SHOE_MAX_KM, Math.min(MAX_SHOE_MAX_KM, Math.round(km)));
 }
 
+// ─── 몸무게별 내구도 계수(확정 2026-07-20, 보수적) ────────────────────────────
+// 근거: 착지 충격(지면반력 ~체중 2.5~3배) → 무거운 러너일수록 스텝마다 미드솔 압축 피로↑
+// → 유효 수명↓. 학계에 정확한 계수는 없어 과장 없이 완만하게: 0.3%/kg(10kg당 ~18km), ±10% 캡.
+// 기준 = 앱 기본 몸무게(DEFAULT_WEIGHT_KG=65) — 그래야 **몸무게 미설정(기본값) 사용자는 계수 1
+// = 변화 0**(데이터 안전: 기존 사용자 신발 % 무단 변동 없음). 몸무게 입력한 사람만 반영(사실상 옵트인).
+// 저장 max_km 은 불변, 계수는 유효수명 표시·판정에서만 곱한다(되돌림 가능).
+export const WEIGHT_DURABILITY_REF_KG = 65;
+export function weightDurabilityFactor(weightKg?: number | null): number {
+  const w = Number(weightKg) || 0;
+  if (w <= 0) return 1;
+  const f = 1 - (w - WEIGHT_DURABILITY_REF_KG) * 0.003;
+  return Math.max(0.9, Math.min(1.1, f));
+}
+
+/** 몸무게 반영 유효 수명(km) = 기저 권장수명 × 계수, 정수 반올림. 몸무게 없으면 기저 그대로. */
+export function effectiveMaxKm(baseMaxKm: number, weightKg?: number | null): number {
+  const base = Number(baseMaxKm) || DEFAULT_MAX_KM;
+  return Math.round(base * weightDurabilityFactor(weightKg));
+}
+
 // (구 tierBadge/TierBadge 3단계 배지는 2026-07-11 제거 — 모든 화면이 wearTier 4단계
 //  칩으로 통일돼 소비처가 사라졌다. 배지가 다시 필요하면 wearTier 기반으로 만들 것.)
 

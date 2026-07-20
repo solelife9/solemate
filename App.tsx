@@ -79,7 +79,7 @@ import {
   sumKm, avgPaceLabel, totalTimeLabel, durationLabel, summaryOf, maxDayStreak,
   weekBuckets, monthBuckets, yearBuckets,
 } from './lib/stats';
-import {parseShoeName, shoeHealth, isRetired, DEFAULT_MAX_KM, clampMaxKm, reconcileShoeAlerts, conditionForPercent} from './lib/shoe';
+import {parseShoeName, shoeHealth, isRetired, DEFAULT_MAX_KM, clampMaxKm, reconcileShoeAlerts, conditionForPercent, effectiveMaxKm} from './lib/shoe';
 import {setRunSurface, parseSurface, type Surface} from './lib/wearModel';
 import {forecastReplacement, type ReplacementForecast} from './lib/replacementForecast';
 import {mostRecentShoeId, lastWornDate} from './lib/shoeRecommend';
@@ -1390,7 +1390,10 @@ function Main(){
       brand:brand||s.name,
       model:model||(brand?'':s.name),
       used:Math.round(h.usedKm),
-      max:s.max_km||DEFAULT_MAX_KM,
+      // max = 몸무게 반영 유효 권장수명(링·%·교체판정 표시값). maxBase = 편집용 기저(오염 방지).
+      // 몸무게 미설정이면 계수 1 → 유효=기저(기존과 동일). start_km 은 유효 수명에 무관(주행거리).
+      max:effectiveMaxKm(s.max_km||DEFAULT_MAX_KM, weightKg),
+      maxBase:s.max_km||DEFAULT_MAX_KM,
       retired:isRetired(s),
       // 마모/교체예측 baseline 을 표시형 Shoe 에도 싣는다(2026-07-14). 상세화면이
       // buildWearView 로 예측을 재계산할 때 start_km/age 가 빠지면 링(used, start_km 포함)과
@@ -1495,11 +1498,17 @@ function Main(){
       if(!shoeId)return;
       const d=new Date(p.startMs>0?p.startMs:Date.now());
       const date=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-      const newId=await ctx.addRun(shoeId,p.km,date,'','watch',Math.round(p.durationS),0,'','',Math.round(p.avgBpm),0,Math.round(p.kcal));
+      // 케이던스·상승고도도 워치에서 받아 저장(구 버전은 0 → '--'였다). heart_rate·calories 는 기존.
+      const newId=await ctx.addRun(shoeId,p.km,date,'','watch',Math.round(p.durationS),Math.round(p.cadence),'','',Math.round(p.avgBpm),Math.round(p.elevGainM),Math.round(p.kcal));
       // 트랙 런이면 track_<id> 마커 저장 — 폰 RunDetail 이 '트랙·Nm×N랩' 표시(폰 트랙 런과
       // 동일 계약). 거리(랩수×랩거리)·시간은 이미 레코드에 있으므로 메타만 얹는다.
       if(newId&&p.laps>0&&p.lapM>0){
         try{await AsyncStorage.setItem('track_'+newId,JSON.stringify({lapM:Math.round(p.lapM),laps:Math.round(p.laps),lapTimes:(p.lapTimes||[]).map(t=>Math.round(t))}));}catch{/* 비치명적 */}
+      }
+      // 구간 스플릿(초/km) → splits_<id> 사이드카(폰 GPS 런과 동일 {km,paceSec,elevM} 포맷).
+      // 각 km 이 1km라 paceSec=그 구간 시간. 2구간 미만이면 표시 가치 없어 생략(폰과 동일).
+      if(newId&&Array.isArray(p.splitsS)&&p.splitsS.length>=2){
+        try{await AsyncStorage.setItem('splits_'+newId,JSON.stringify(p.splitsS.map((sec,i)=>({km:i+1,paceSec:Math.round(sec),elevM:0}))));}catch{/* 비치명적 */}
       }
       showToast({message:'워치 러닝을 가져왔어요'});
     }catch(e){console.log('watch run sync error',e);}
@@ -2197,6 +2206,7 @@ function Main(){
             onOpenMedalArchive={()=>setShowMedalArchive(true)} medalCount={liveMedals(medals).length}
             onOpenArchive={()=>setShowArchive(true)}
             archivedCount={archivedUiShoes.length}
+            onReplayOnboarding={()=>setPreviewOnboard(true)}
           />
         )}
       </View>

@@ -196,7 +196,7 @@ test('retire(보관) PATCHes retired=true, never DELETE, and keeps the shoe\'s r
     [{id: 'r1', shoe_id: 's1', km: 5, run_date: '2026-06-01', duration: 1800}],
   );
 
-  await tap(pressBy(root, '신발')); // → Shoes tab
+  await tap(pressBy(root, '러닝화')); // → Shoes tab
   await tap(pressBy(root, 'Pegasus')); // open shoe detail
   // sanity: the run is listed in the detail before we retire
   expect(textOf(root)).not.toContain('아직 기록이 없어요');
@@ -227,7 +227,7 @@ test('delete(삭제) DELETEs only the shoe; the run is preserved (no cascade)', 
     [{id: 'r1', shoe_id: 's1', km: 5, run_date: TODAY_ISO, duration: 1800}],
   );
 
-  await tap(pressBy(root, '신발')); // → Shoes tab
+  await tap(pressBy(root, '러닝화')); // → Shoes tab
   await tap(pressBy(root, 'Pegasus')); // open s1 shoe detail
   await tap(pressBy(root, 'trash-outline')); // 삭제 → Alert auto-confirm
 

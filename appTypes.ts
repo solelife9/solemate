@@ -9,7 +9,8 @@ export type Shoe = {
   brand: string;
   model: string;
   used: number;
-  max: number;
+  max: number;          // 몸무게 반영 유효 권장수명(km) — 링/%/교체판정에 쓰는 표시값.
+  maxBase?: number;     // 몸무게 반영 전 기저 권장수명(km). 수명 편집은 이 값 기준(유효값 오염 방지). 결측이면 max.
   // 컨디션 필드 없음(2026-07-11 4단계 단일화): 라벨/색은 화면이 used/max 사용률로
   // lib/shoe.wearTier(4단계)를 파생한다. 구 3단계 condition('양호'|'주의'|'교체')은
   // 워치 구버전 계약(WatchShoePayload.condition)에만 남아 App 이 직접 파생한다.

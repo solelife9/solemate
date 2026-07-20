@@ -1409,7 +1409,7 @@ export function ShoeGlyph({size = 46, color = withAlpha(T1, 0.32)}: {size?: numb
 
 const TABS: {icon: string; label: string; shoe?: boolean; flip?: boolean}[] = [
   {icon: 'home', label: '홈'},
-  {icon: 'shoe', label: '신발', shoe: true},
+  {icon: 'shoe', label: '러닝화', shoe: true},
   {icon: 'time', label: '기록'},
   {icon: 'person', label: '마이'},
 ];

@@ -29,7 +29,7 @@ test('홈 화면은 홈 탭을 활성으로 표시한다', () => {
 });
 
 test('신발 화면은 신발 탭을 활성으로 표시한다', () => {
-  expect(selectedTab(render(<ShoesScreen shoes={[]} runs={[]} />))).toBe('신발');
+  expect(selectedTab(render(<ShoesScreen shoes={[]} runs={[]} />))).toBe('러닝화');
 });
 
 test('기록 화면은 기록 탭을 활성으로 표시한다', () => {

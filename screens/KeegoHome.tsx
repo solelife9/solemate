@@ -407,9 +407,10 @@ const styles = StyleSheet.create({
   // 링 196 상향(2026-07-16)에 맞춰 중앙 타이포도 한 단 상향 + 여백 확장 — "가운데에
   // 몰려 붙어 보인다" 사용자 피드백. (구 52 는 172 링 시절 '꽉 참' 교정값.)
   ringPctSub: {fontFamily: FONT, fontSize: rf(15), fontWeight: '600', color: withAlpha(T1, 0.55)},
-  ringPctRow: {flexDirection: 'row', alignItems: 'flex-start', marginTop: rv(8)},
+  // % 는 숫자와 베이스라인 정렬(구 flex-start+marginTop=어중간한 중간 부유 → 세 자리(100%)에서 특히 어색).
+  ringPctRow: {flexDirection: 'row', alignItems: 'baseline', marginTop: rv(8)},
   ringPct: {fontFamily: DISPLAY, fontSize: rf(58), fontWeight: '700', letterSpacing: -2.6, lineHeight: rf(60), color: T1},
-  ringPctUnit: {fontFamily: DISPLAY, fontSize: rf(21), fontWeight: '700', color: withAlpha(T1, 0.7), marginTop: rv(8), marginLeft: rs(2)},
+  ringPctUnit: {fontFamily: DISPLAY, fontSize: rf(21), fontWeight: '700', color: withAlpha(T1, 0.7), marginLeft: rs(2)},
 
   kmRow: {flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(12), marginTop: rv(16)},
   kmLabel: {fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600', color: T3},

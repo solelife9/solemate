@@ -578,8 +578,8 @@ function Performance({goNext, onSkip, insetTop, insetBottom}: ScreenProps) {
       <ScrollView style={s.flex1} contentContainerStyle={s.bodyContent} showsVerticalScrollIndicator={false}>
         <Rise>
           <Eyebrow>Run smarter</Eyebrow>
-          <Text style={s.title}>혼자 달려도, 코치와 함께</Text>
-          <Text style={s.body}>달리는 동안 재고, 잡아주고, 세어줘요 — 당신은 달리기만.</Text>
+          <Text style={s.title}>혼자 달려도, 정밀하게</Text>
+          <Text style={s.body}>심폐 체력·심박·경사까지 달린 데이터로 분석해요 — 손목 없이, 폰만으로.</Text>
         </Rise>
 
         <FeatureListCard items={FEATURES} />
@@ -629,7 +629,7 @@ function Legacy({goNext, onSkip, insetTop, insetBottom}: ScreenProps) {
         <Rise delay={260} style={s.alertRow}>
           <SparkIcon size={ri(16)} color={withAlpha(T1, 0.75)} />
           <Text style={{flex: 1, fontFamily: FONT, fontSize: TYPE.label.fontSize, color: T3, letterSpacing: -0.1}}>
-            모든 숫자는 <Text style={{color: T1, fontWeight: '600'}}>실제로 달린 기록</Text>에서만 — 가짜 성취는 없어요
+            지금은 <Text style={{color: T1, fontWeight: '600'}}>전부 잠겨</Text> 있어요 — 달리기 시작하면 하나씩 열려요
           </Text>
         </Rise>
       </ScrollView>

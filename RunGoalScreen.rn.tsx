@@ -401,13 +401,13 @@ export default function RunGoalScreen({
 
 const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: BG }, // 상단 여백은 insets.top 실측(렌더에서 주입)
-  nav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: rs(16), height: rs(44) },
+  nav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: GUTTER, height: rs(44) },
   navIc: { width: rs(36), height: rs(36), alignItems: 'center', justifyContent: 'center' },
   navTitle: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.heading.fontSize, fontWeight: '600', letterSpacing: -0.2 },
 
   // 컨테이너 표면(배경/보더/반경/패딩)은 SegmentedControl accentTint variant 가 책임진다.
   // 화면 고유 레이아웃(좌우·상단 여백)만 남긴다(과거 segBtn/On·segText/On 제거).
-  seg: { marginHorizontal: rs(22), marginTop: rv(14) },
+  seg: { marginHorizontal: GUTTER, marginTop: rv(14) },
 
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: GUTTER },
   // baseline 정렬(2026-07-17 사용자 지적 "km·분·m 라인이 숫자보다 밑"): Jost 숫자의

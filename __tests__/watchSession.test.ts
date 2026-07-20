@@ -73,6 +73,10 @@ describe('onWatchRun — 워치 완주 페이로드 수신', () => {
       durationS: 1800,
       avgBpm: 152.4,
       kcal: 320,
+      // 케이던스·상승고도·스플릿(입력 페이로드에 없으면 0/[] 폴백).
+      cadence: 0,
+      elevGainM: 0,
+      splitsS: [],
       startMs: 1720000000000,
       endMs: 1720001800000,
       // 비트랙 런 — 트랙 메타는 0/0/[](부재 필드도 안전 폴백).

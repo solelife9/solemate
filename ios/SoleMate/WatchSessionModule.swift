@@ -100,12 +100,16 @@ class WatchSessionModule: RCTEventEmitter, WCSessionDelegate {
         "runId": payload["runId"] as? String ?? "",
         "shoeId": payload["shoeId"] as? String ?? "",
       ]
-      for key in ["km", "durationS", "avgBpm", "kcal", "startMs", "endMs", "lapM", "laps"] {
+      for key in ["km", "durationS", "avgBpm", "kcal", "cadence", "elevGainM", "startMs", "endMs", "lapM", "laps"] {
         body[key] = (payload[key] as? NSNumber)?.doubleValue ?? 0
       }
       // 트랙 랩 시계열(초/랩) — 있으면 그대로 전달(비트랙 런은 빈 배열/부재).
       if let lapTimes = payload["lapTimes"] as? [Any] {
         body["lapTimes"] = lapTimes.compactMap { ($0 as? NSNumber)?.doubleValue }
+      }
+      // 구간 스플릿(초/km) — 폰 RunDetail 페이스 그래프·paceTrack 사이드카.
+      if let splits = payload["splitsS"] as? [Any] {
+        body["splitsS"] = splits.compactMap { ($0 as? NSNumber)?.doubleValue }
       }
       DispatchQueue.main.async {
         if self.hasListeners {

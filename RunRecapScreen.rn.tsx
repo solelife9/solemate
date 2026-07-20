@@ -386,7 +386,7 @@ export default function RunRecapScreen({
               <Text style={s.shoeName} numberOfLines={1}>{shoeName || '신발'}</Text>
               <Text style={s.shoeMeta}>
                 +{displayNum(shoeWear.addedKm, unit, 1)}{unit} · 남은 내구도 <Text style={s.shoeStrong}>{shoeWear.remainingPct}%</Text>
-                {shoeWear.deltaPct > 0 ? <Text style={s.shoeDelta}>  −{shoeWear.deltaPct}%p</Text> : null}
+                {shoeWear.deltaPct > 0 ? <Text style={s.shoeDelta}>  −{shoeWear.deltaPct}%</Text> : null}
               </Text>
             </View>
           </Enter>
@@ -411,7 +411,7 @@ export default function RunRecapScreen({
           {bpm > 0 && <Stat label="평균 심박" value={`${bpm}`} sub="bpm" />}
           <Stat label="칼로리" value={`${Math.round(calories)}`} sub="kcal" />
           {cadence > 0 && <Stat label="케이던스" value={`${Math.round(cadence)}`} sub="spm" />}
-          <Stat label="누적 상승" value={`${Math.round(elevationM)}`} sub="m" />
+          <Stat label="상승 고도" value={`${Math.round(elevationM)}`} sub="m" />
         </Enter>
         {bpm === 0 && cadence === 0 && (
           <Text style={{color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, textAlign: 'center', marginTop: rv(10)}}>워치를 함께 쓰면 심박·심박존이 기록돼요</Text>

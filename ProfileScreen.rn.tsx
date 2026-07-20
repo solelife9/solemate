@@ -125,6 +125,7 @@ export default function ProfileScreen({
   onOpenArchive, archivedCount = 0,
   challengeExtRuns = [], challengeExtShoes = [], todayISO = '',
   weeklyGoalKm = 0, onEditSmartTarget,
+  onReplayOnboarding,
 }: {
   profile?: Profile;
   badges?: Badge[];
@@ -209,6 +210,8 @@ export default function ProfileScreen({
   onOpenArchive?: () => void;
   // 보관한 신발 수(보관함 진입 행 부제). 0이어도 진입 가능(빈 보관함 안내).
   archivedCount?: number;
+  // 온보딩 다시 보기 — 설정에서 온보딩 플로우를 비영속으로 재생(리뷰용). 없으면 행 미표시.
+  onReplayOnboarding?: () => void;
   // 회원 탈퇴(계정+클라우드+로컬 영구 삭제). App 이 cloudPort.deleteAccount + 로컬 초기화를
   // 수행한다. 없으면 탈퇴 행 미표시(안전한 no-op).
   onDeleteAccount?: () => Promise<void>;
@@ -724,7 +727,7 @@ export default function ProfileScreen({
         <View style={[s.card, s.streakCard]} testID="streak-card">
           <GlassEdge glints={false} radius={RADIUS.lg} />
           <View style={s.streakHead}>
-            <SectionTitle>이번 주 스트릭</SectionTitle>
+            <SectionTitle>이번 주 연속</SectionTitle>
             {/* 이모지 🔥 → Ionicons flame(홈 스트릭 칩과 같은 문법) — 이모지는 플랫폼
                 렌더라 톤이 튀고 크기도 못 맞춘다(검수 MED, 2026-07-16). */}
             {streakDays > 0 && (
@@ -984,7 +987,7 @@ export default function ProfileScreen({
             <Pressable onPress={() => toggleOpen('voice')} accessibilityRole="button" accessibilityLabel={`음성 코칭, ${voice.enabled ? '켜짐' : '꺼짐'}`} accessibilityState={{ expanded: open === 'voice' }} style={({ pressed }) => [s.settingRow, s.settingBorder, pressed && { backgroundColor: CARD_HI }]} testID="voice-row">
               <View style={s.settingIcon}><Ionicons name="volume-medium-outline" size={ri(17)} color={ACCENT} /></View>
               <Text style={s.settingLabel}>음성 코칭</Text>
-              <Text style={s.settingDetail} testID="voice-detail">{!voice.enabled ? '꺼짐' : voice.intervalKm === 0 ? '이벤트만' : `${voice.intervalKm}km 마다`}</Text>
+              <Text style={s.settingDetail} testID="voice-detail">{!voice.enabled ? '꺼짐' : voice.intervalKm === 0 ? '거리 안내 끔' : `${voice.intervalKm}km 마다`}</Text>
               <Ionicons name={open === 'voice' ? 'chevron-up' : 'chevron-forward'} size={ri(16)} color={T3} />
             </Pressable>
             {open === 'voice' && (
@@ -1163,7 +1166,7 @@ export default function ProfileScreen({
                     testID="cloud-sync-status">
                     <View style={s.settingIcon}><Ionicons name={syncing ? 'sync-outline' : syncFailed ? 'alert-circle-outline' : 'checkmark-circle-outline'} size={ri(16)} color={syncFailed ? DANGER : T3} /></View>
                     <Text style={[s.settingLabel, { fontWeight: '500', color: syncFailed ? DANGER : T2 }]}>
-                      {syncing ? '동기화 중…' : syncFailed ? '동기화 실패 · 다시 시도' : (lastSyncAt == null ? '클라우드 연결됨 · 자동 동기' : lastSyncLabel)}
+                      {syncing ? '동기화 중…' : syncFailed ? '동기화 실패 · 다시 시도' : (lastSyncAt == null ? '클라우드 연결됨 · 자동 동기화' : lastSyncLabel)}
                     </Text>
                     {syncFailed && !syncing && <Ionicons name="refresh" size={ri(15)} color={DANGER} />}
                   </Pressable>
@@ -1226,6 +1229,13 @@ export default function ProfileScreen({
             <View style={[s.panel, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.07) }]} testID="app-info">
               <View style={s.acctRow}><Text style={s.acctK}>가입</Text><Text style={s.acctV}>{profile.since || '기록 없음'}</Text></View>
               <View style={s.acctRow}><Text style={s.acctK}>버전</Text><Text style={s.acctV}>{APP_VERSION}</Text></View>
+              {!!onReplayOnboarding && (
+                <Pressable onPress={onReplayOnboarding} accessibilityRole="button" accessibilityLabel="온보딩 다시 보기"
+                  style={({ pressed }) => [s.acctRow, { minHeight: rs(44) }, pressed && { backgroundColor: CARD_HI }]}>
+                  <Text style={s.acctK}>온보딩 다시 보기</Text>
+                  <Ionicons name="chevron-forward" size={ri(16)} color={T3} />
+                </Pressable>
+              )}
             </View>
             {cloudMsg && (
               <Text testID="cloud-msg" style={[s.cloudMsg, cloudMsg.ok ? s.dataMsgOk : s.dataMsgErr]}>{cloudMsg.text}</Text>
@@ -1274,7 +1284,8 @@ const s = StyleSheet.create({
   specVo2Foot: { flexDirection: 'row', alignItems: 'center', gap: rv(8), marginTop: rv(16), paddingTop: rv(14), borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: CARD_BORDER },
   specVo2FootText: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500' },
   specVo2FootStrong: { color: T2, fontWeight: '700' },
-  sectionLabel: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600', letterSpacing: 0.4, paddingHorizontal: rs(4) },
+  // 섹션 헤더 = SectionTitle 프리미티브와 동일 스펙(700) — 화면 간 헤더 무게 통일(600 혼용 제거).
+  sectionLabel: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '700', letterSpacing: 0.4, paddingHorizontal: rs(4) },
   progressRow: { flexDirection: 'row', alignItems: 'center', gap: rv(12), padding: rs(16) },
   // 진입 행 아이콘 = 브랜드 파파야 통일(2026-07-10 확정) — '탭 가능한 진입점' 단일 의미 + 서명.
   progressIcon: { width: rs(38), height: rs(38), borderRadius: RADIUS.sm, backgroundColor: withAlpha(BRAND, 0.12), alignItems: 'center', justifyContent: 'center' },
@@ -1282,7 +1293,8 @@ const s = StyleSheet.create({
   progressSub: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500', marginTop: rv(3) },
 
   headerRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', paddingHorizontal: rs(4) },
-  title: { color: T1, fontFamily: FONT, fontSize: TYPE.display.fontSize, fontWeight: '800', letterSpacing: -1 },
+  // 화면 타이틀은 전 탭(신발·기록·마이) 동일 스케일(title1) — '마이'만 display 로 커서 튀던 것 통일.
+  title: { color: T1, fontFamily: FONT, fontSize: TYPE.title1.fontSize, fontWeight: '800', letterSpacing: -0.9 },
   iconBtn: { width: rs(38), height: rs(38), borderRadius: RADIUS.pill, backgroundColor: CARD_HI, borderWidth: 1, borderColor: withAlpha(T1, 0.12), alignItems: 'center', justifyContent: 'center' },
 
   identity: { flexDirection: 'row', alignItems: 'center', gap: rv(14), paddingHorizontal: rs(4), paddingTop: rv(4) },

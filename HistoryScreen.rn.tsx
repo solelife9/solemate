@@ -504,7 +504,7 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'm
     { l: '평균 페이스', v: run.pace, u: '/km' },
     { l: '칼로리', ...dash(run.cal, 'kcal') },
     { l: '케이던스', ...dash(run.cadence, 'spm') },
-    { l: '누적 고도', ...dash(run.elev, 'm') },
+    { l: '상승 고도', ...dash(run.elev, 'm') },
     { l: '평균 심박', ...dash(run.bpm, 'bpm') },
   ];
   const insets = useSafeAreaInsets();
@@ -1145,7 +1145,7 @@ export default function HistoryScreen({
                 <View style={s.sumMetric}><Text style={s.sumMetricV}>{sum.time}</Text><Text style={s.sumMetricL}>총 시간</Text></View>
               </View>
               {ch && ch.data.length > 0 && (
-                <View style={{ marginTop: rv(20), paddingTop: rv(20), borderTopWidth: 1, borderTopColor: withAlpha(T1, 0.18) }}>
+                <View style={{ marginTop: rv(20), paddingTop: rv(20), borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP }}>
                   <Text style={[s.cardTitle, { color: T1 }]}>{ch.title}</Text>
                   <View style={{ marginTop: rv(18) }}><PeriodChartView data={ch.data} labels={ch.labels} unit={unit} /></View>
                 </View>
@@ -1290,7 +1290,8 @@ const s = StyleSheet.create({
   // 코너 페이드 헤어라인(GlassEdge glints=false) — 균일 RN 보더 폐지(2026-07-10 확정).
   card: { backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderCurve: 'continuous', overflow: 'hidden' },
   cardTitle: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600' },
-  sectionLabel: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600', letterSpacing: 0.4, paddingHorizontal: rs(4) },
+  // 섹션 헤더 = SectionTitle 프리미티브와 동일 스펙(700) — 화면 간 헤더 무게 통일.
+  sectionLabel: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '700', letterSpacing: 0.4, paddingHorizontal: rs(4) },
   // 요약 카드(큰 거리) — 목업 기록(10)
   sumTitle: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600', letterSpacing: 0.2 },
   sumBigKm: { color: T1, fontFamily: DISPLAY, fontSize: rf(42), fontWeight: '700', letterSpacing: -1, fontVariant: ['tabular-nums'], marginLeft: rs(0) },
