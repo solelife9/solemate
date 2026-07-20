@@ -304,7 +304,7 @@ export function RunForm({
 }
 
 // ── run detail ────────────────────────────────────────────────────────────────
-export function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'male', restHR = 0, thresholdPaceSec = 0 }: { run: Run; shoe?: Shoe; onBack: () => void; unit: Unit; onDelete?: (id: string) => void; age?: number; sex?: 'male' | 'female'; restHR?: number; thresholdPaceSec?: number }) {
+export function RunDetail({ run, shoe, onBack, unit, onDelete, onEdit, age = 0, sex = 'male', restHR = 0, thresholdPaceSec = 0 }: { run: Run; shoe?: Shoe; onBack: () => void; unit: Unit; onDelete?: (id: string) => void; onEdit?: (run: Run) => void; age?: number; sex?: 'male' | 'female'; restHR?: number; thresholdPaceSec?: number }) {
   // Load the recorded route for this run once. Missing/invalid blob → [] → map
   // stays hidden (graceful). route_<id> is written by App.addRun on save.
   const [route, setRoute] = useState<LatLon[]>([]);
@@ -519,6 +519,11 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, age = 0, sex = 'm
           <Pressable onPress={onShareCard} hitSlop={6} style={s.iconBtn} accessibilityRole="button" accessibilityLabel="공유" testID="detail-share">
             <Ionicons name="share-outline" size={ri(18)} color={ACCENT} />
           </Pressable>
+          {!!onEdit && !!run.id && (
+            <Pressable onPress={() => onEdit(run)} hitSlop={6} style={s.iconBtn} accessibilityRole="button" accessibilityLabel="편집" testID="detail-edit">
+              <Ionicons name="create-outline" size={ri(18)} color={ACCENT} />
+            </Pressable>
+          )}
           {!!onDelete && (
             <Pressable onPress={confirmDelete} hitSlop={6} style={s.iconBtn} accessibilityRole="button" accessibilityLabel="삭제">
               <Ionicons name="trash-outline" size={ri(18)} color={DANGER} />
@@ -1058,6 +1063,8 @@ export default function HistoryScreen({
         onBack={() => setDetail(null)}
         unit={unit}
         onDelete={onDeleteRun}
+        // 편집(연필) → 상세를 닫고 프리필된 편집 폼으로. 영속 콜백(onEditRun)이 있을 때만 노출.
+        onEdit={onEditRun ? (r) => { setDetail(null); setForm({ mode: 'edit', run: r }); } : undefined}
         age={age}
         sex={sex}
         restHR={restHR}

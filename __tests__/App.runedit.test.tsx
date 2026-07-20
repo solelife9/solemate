@@ -146,9 +146,23 @@ test('런 삭제 → 확인 Alert 후 신발 사용거리(km) 감소', async () 
 // 흐름 테스트는 폐지된 기능을 검증하므로 제거한다. (런 추가 자체는 RunActiveScreen 의
 // 실측 러닝 종료 경로로 일원화됨.)
 
-// 런 편집(거리 수정) UI 흐름 테스트는 제거됨 — 런 상세의 편집(연필) 버튼이 사용자 요청으로
-// 제거되어(RunDetail), 편집 폼으로의 진입점이 없다. 수동 추가와 마찬가지로, 편집 또한
-// UI 흐름으로 도달 불가하므로 해당 통합 테스트를 폐지한다(폐지된 기능 검증 금지).
+test('런 상세 → 편집(연필) → 프리필된 편집 폼 진입(감사#2 죽은 폼 배선 복구)', async () => {
+  // 편집 폼(RunForm) 코드는 있으나 진입점이 없어 도달 불가한 죽은 코드였다(감사#2).
+  // 런 상세 헤더에 편집(연필, testID=detail-edit) 버튼을 재배선 — 누르면 '러닝 편집' 폼이
+  // 원래 값 프리필로 열린다. (거리 수정 영속은 editRun 콜백이 담당, 별도 검증됨.)
+  const runs: ApiRun[] = [
+    {id: 'r1', shoe_id: 's1', km: 5.25, run_date: '2026-05-21', duration: 1500},
+  ];
+  const {root} = await mount(SHOE, runs);
+
+  await tap(pressBy(root, '기록'));
+  await tap(pressBy(root, '전체'));
+  await tap(pressBy(root, '5.25')); // r1 상세 진입(5.25km)
+
+  // 편집(연필) 버튼이 존재하고, 누르면 '러닝 편집' 폼으로 전환된다.
+  await tap(pressBy(root, 'create-outline'));
+  expect(textOf(root)).toContain('러닝 편집');
+});
 
 test('러너 스펙 카드: VO2max + 거리 PB 훈장 + 최고페이스/최장 렌더', async () => {
   // 5km/1500s → 1km 5\'00". 21.1km → 최장 거리. (거리 PB 는 paceTrack 사이드카가 있어야
