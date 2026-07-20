@@ -108,6 +108,7 @@ import {registerRunForHr, saveWatchHrTrack, retryPendingHr, avgBpmFromTrack} fro
 import {currentTargetPace} from './lib/pacePlan';
 import {liveActivity} from './lib/liveActivity';
 import {watchSession} from './lib/watchSession';
+import {pedometerDistance} from './lib/pedometerDistance';
 import {estimateMaxHR, zoneOf} from './lib/analytics/hrZones';
 import {decideZoneCoach, initZoneCoachState} from './lib/zoneCoach';
 import {assessTrainingLoad, loadRatioPhraseKo, LOAD_WORD, LoadLevel} from './lib/trainingLoad';
@@ -2406,6 +2407,8 @@ function RunActiveScreen({shoe,insets,goalKm,goalMin=0,pacePlan=[],targetZone=0,
   const baroSub=useRef<any>(null);
   const baroElev=useRef<ElevState>(initElevState());
   const baroAvail=useRef(false);
+  // CMPedometer 누적거리 구독 해제 함수(#16 거리 융합) — GPS 死구간 보정. 종료 시 정리.
+  const pedDistUnsub=useRef<null|(()=>void)>(null);
   // 케이던스(spm) 순수 상태기계 — 가속도 피크검출+윈도우 정규화는 lib/cadence.ts.
   // 케이던스만 화면이 소유한다(가속도계 기반). 거리/시간/일시정지/死구간/권한 회수는
   // 모두 공유 GPS 엔진(runTracker)이 소유하고 subscribe로 화면에 흘려보낸다.
@@ -2811,6 +2814,13 @@ function RunActiveScreen({shoe,insets,goalKm,goalMin=0,pacePlan=[],targetZone=0,
         });
       }
     }catch{/* 기압계 미지원/실패 — GPS 고도로 폴백 */}
+    // CMPedometer 누적거리 융합(#16): GPS 가 정본이고, 이 누적거리는 runTracker 가
+    // **GPS 死구간에서만** 유실분 보정에 쓴다(死구간 한정·순수 가산 — 정상 구간 무해).
+    // 미지원/거부는 네이티브·래퍼가 조용히 no-op(available=false). 종료 시 정리.
+    try{
+      pedometerDistance.start();
+      pedDistUnsub.current=pedometerDistance.onDistance(m=>runTracker.feedPedometerDistance(m,Date.now()));
+    }catch{/* 네이티브 부재/예외 — 거리 정본은 GPS, 융합만 비활성 */}
     // 1초 틱: fix가 없어도 경과/死구간을 다시 계산해 화면을 갱신한다(엔진이 판정).
     timer.current=setInterval(()=>runTracker.tick(),1000);
     // 진행중 스냅샷: 3초마다 영속(audit#2). fix마다도 persist되지만, 무신호 구간에서
@@ -2829,6 +2839,9 @@ function RunActiveScreen({shoe,insets,goalKm,goalMin=0,pacePlan=[],targetZone=0,
   function stop(){
     if(stepSub.current){clearInterval(stepSub.current);stepSub.current=null;}
     if(baroSub.current){try{baroSub.current.remove();}catch{/* noop */}baroSub.current=null;}
+    if(pedDistUnsub.current){try{pedDistUnsub.current();}catch{/* noop */}pedDistUnsub.current=null;}
+    pedometerDistance.stop(); // CMPedometer 스트림 종료(#16 융합) — 배터리·프라이버시
+
     liveActivity.end(); // 잠금화면 위젯 닫기(종료/완주/취소/언마운트 모두 stop 경유)
     watchSession.stopWorkout(); // 워치 워크아웃도 종료(자동시작의 짝) — 종료/완주/취소 모두 경유
     clearInterval(timer.current);
