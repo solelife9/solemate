@@ -716,3 +716,67 @@ describe('오토포즈 소급 정산 + 걸음 보조(2026-07-18 비교런 근본
     expect(t.getElapsed()).toBe(beforePause); // 누른 시점에서 정지(소급 X)
   });
 });
+
+// ── #16 CMPedometer 死구간 융합 ─────────────────────────────────────────────
+// 코어 원칙: GPS 가 정본, CMPedometer 는 GPS 死구간(stall)에서만 유실분을 메운다.
+// 순수 가산 + 死구간 한정이라 이중계산 불가·GPS 경로 회귀 0. Iron Law: 단조 증가.
+describe('feedPedometerDistance — CMPedometer 死구간 융합(#16)', () => {
+  test('GPS 死구간에서만 보행거리로 메운다(첫 표본=기준, 이후 델타 가산)', () => {
+    const {t} = makeEngine();
+    t.start({goalKm: 5, shoe: {id: 's1', name: 'X'}, t0: 100000});
+    clearWarmup(t); // lastRecvMs=100000, firstFixEmitted=true, dist=0
+    const d0 = t.getDistanceKm();
+    t.feedPedometerDistance(1000, 100000); // 첫 표본 = 기준(가산 없음)
+    expect(t.getDistanceKm()).toBe(d0);
+    expect(t.getPedometerFillKm()).toBe(0);
+    t.feedPedometerDistance(1050, 109000); // gap 9000>8000 → 死구간, +50m 채움
+    expect(t.getPedometerFillKm()).toBeCloseTo(0.05, 6);
+    expect(t.getDistanceKm()).toBeCloseTo(d0 + 0.05, 6);
+  });
+
+  test('GPS 정상(비stall) 구간에선 더하지 않는다(이중계산 방지)', () => {
+    const {t} = makeEngine();
+    t.start({goalKm: 5, shoe: {id: 's1', name: 'X'}, t0: 100000});
+    clearWarmup(t);
+    t.feedPedometerDistance(1000, 100000); // 기준
+    t.feedPedometerDistance(1200, 103000); // gap 3000<8000 → GPS 적산 중이라 무시
+    expect(t.getPedometerFillKm()).toBe(0);
+  });
+
+  test('첫 GPS fix 이전엔 융합하지 않는다(콜드스타트 대체 금지)', () => {
+    const {t} = makeEngine();
+    t.start({goalKm: 5, shoe: {id: 's1', name: 'X'}, t0: 100000});
+    t.feedPedometerDistance(1000, 100000);
+    t.feedPedometerDistance(2000, 200000); // 시간이 흘러도 fix 없으면 무시
+    expect(t.getDistanceKm()).toBe(0);
+    expect(t.getPedometerFillKm()).toBe(0);
+  });
+
+  test('일시정지 중엔 융합하지 않고, 재개 시 catch-up 점프도 없다', () => {
+    const {t} = makeEngine();
+    t.start({goalKm: 5, shoe: {id: 's1', name: 'X'}, t0: 100000});
+    clearWarmup(t);
+    t.feedPedometerDistance(1000, 100000); // 기준
+    t.togglePause();
+    t.feedPedometerDistance(1300, 110000); // 死구간이지만 일시정지 → 무시(기준만 흡수)
+    expect(t.getPedometerFillKm()).toBe(0);
+    t.togglePause();
+    t.feedPedometerDistance(1320, 120000); // 재개 후 +20m 만 메운다(1300→1320)
+    expect(t.getPedometerFillKm()).toBeCloseTo(0.02, 6);
+  });
+
+  test('센서 리셋(감소)·음수·NaN 은 안전하게 무시(단조 증가·throw 없음)', () => {
+    const {t} = makeEngine();
+    t.start({goalKm: 5, shoe: {id: 's1', name: 'X'}, t0: 100000});
+    clearWarmup(t);
+    t.feedPedometerDistance(1000, 100000);
+    const before = t.getDistanceKm();
+    t.feedPedometerDistance(-5, 109000);   // 음수 무시
+    t.feedPedometerDistance(NaN, 109000);  // NaN 무시
+    t.feedPedometerDistance(500, 109000);  // 리셋(감소) → 기준만 갱신, 가산 없음
+    expect(t.getDistanceKm()).toBe(before);
+    expect(t.getPedometerFillKm()).toBe(0);
+    t.feedPedometerDistance(560, 110000);  // 새 기준(500)에서 +60m
+    expect(t.getPedometerFillKm()).toBeCloseTo(0.06, 6);
+  });
+});

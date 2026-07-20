@@ -135,6 +135,11 @@ class RunTracker {
   // 마지막 '확실한 이동' 시각(ms) — GPS 재개 임계(1.0m/s) 이상 세그먼트 or 걸음수 증가.
   // 오토포즈 소급 정산의 앵커: 감지가 늦어도 이 시점부터 일시정지로 계상한다.
   private lastDefiniteMoveMs = 0;
+  // CMPedometer 거리 융합 — GPS 死구간(stall)에서만 보행거리로 유실분을 메운다(feedPedometerDistance).
+  // 엔진은 stall 후 재앵커 시 공백 거리를 버리므로(팬텀 방지) 그 구간 실제 이동이 유실되는데,
+  // 그 유실분만 보탠다. GPS 정상 구간엔 절대 관여하지 않아 이중계산 불가 + 순수 가산(회귀 0).
+  private pedLastCumM = -1;    // 마지막 CMPedometer 누적거리(m); -1=미수신/리셋 대기
+  private pedFillKm = 0;       // 융합으로 메운 누적 거리(km) — 스냅샷/검증용
 
   private isPaused = false;
   private autoPausedFlag = false;
@@ -212,6 +217,8 @@ class RunTracker {
     this.lastStepCount = -1;
     this.lastStepIncreaseMs = 0;
     this.lastStepSampleMs = 0;
+    this.pedLastCumM = -1;
+    this.pedFillKm = 0;
     this.isPaused = false;
     this.autoPausedFlag = false;
     this.pausedMs = 0;
@@ -676,6 +683,41 @@ class RunTracker {
     }
     this.lastStepCount = cumulativeSteps;
     this.lastStepSampleMs = t;
+  }
+
+  /**
+   * CMPedometer 의 '누적 이동거리(m)' 표본을 먹인다(App 이 러닝 중 구독 — GPS 와 병행).
+   * 코어 원칙: **GPS 가 정본**이고, CMPedometer 는 GPS 死구간(stall)에서만 거리를 보탠다.
+   * 엔진은 stall 후 재앵커 시 공백 구간 거리를 버리므로(팬텀 방지) 그 구간의 실제 이동은
+   * 현재 유실된다 — 그 유실분만 보행거리로 메운다. GPS 가 살아있는 구간엔 절대 더하지
+   * 않아 이중계산이 원천 불가능하고, 순수 가산이라 GPS 경로 회귀가 0이다.
+   * 관여하지 않는 경우(전부 무시): 첫 GPS fix 이전 · 정지/일시정지 · GPS 정상(비stall) ·
+   * 첫 표본/센서 리셋(기준만 갱신). Iron Law: dist 는 단조 증가만(음수·유실 없음).
+   */
+  feedPedometerDistance(cumulativeMeters: number, atMs?: number) {
+    if (!Number.isFinite(cumulativeMeters) || cumulativeMeters < 0) return;
+    const now = atMs ?? this.now();
+    // 첫 표본/센서 리셋(누적 감소): 기준만 잡고 이번엔 더하지 않는다.
+    if (this.pedLastCumM < 0 || cumulativeMeters < this.pedLastCumM) {
+      this.pedLastCumM = cumulativeMeters;
+      return;
+    }
+    const deltaM = cumulativeMeters - this.pedLastCumM;
+    this.pedLastCumM = cumulativeMeters; // 정지 중 델타도 흡수(재개 시 catch-up 점프 방지)
+    if (deltaM <= 0) return;
+    // 첫 GPS fix 이전엔 융합하지 않는다(콜드스타트 대체가 아니라 死구간 갭 필러).
+    if (!this.firstFixEmitted || !this.active || this.pausedFlag()) return;
+    // GPS 死구간일 때만 보탠다 — 정상 구간은 GPS(스무더)가 이미 적산 중이라 손대면 이중계산.
+    const gpsStalled = now - this.lastRecvMs > GPS_STALL_THRESHOLD_MS;
+    if (!gpsStalled) return;
+    const addKm = deltaM / 1000;
+    this.dist += addKm;
+    this.pedFillKm += addKm;
+  }
+
+  /** 융합(死구간 보행거리)으로 메운 누적 거리(km) — 검증·디버그용(총 거리 중 CMP 기여분). */
+  getPedometerFillKm(): number {
+    return this.pedFillKm;
   }
 
   /** 외부(워치/HealthKit)가 실시간 심박을 먹인다. 달리는 중(active·미정지)에만 ~3s 간격으로
