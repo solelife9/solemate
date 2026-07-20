@@ -47,11 +47,12 @@ struct SummaryView: View {
           .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(KeegoTheme.hairline, lineWidth: 1))
         }
 
-        // 저장 — 시작 버튼과 같은 콰이어트 글라스 캡슐(시스템 tint 버튼은 문법 밖).
+        // 완료 — 런은 정지 순간 이미 자동 저장됐다(buildSummary). 이 버튼은 요약을 닫고
+        // 홈으로 돌아가는 확인용(안 눌러도 유실 없음). 시작 버튼과 같은 콰이어트 글라스 캡슐.
         Button {
           workout.confirmSave()
         } label: {
-          Text("저장")
+          Text("완료")
             .font(.system(size: 14, weight: .bold))
             .foregroundStyle(KeegoTheme.t1)
             .frame(maxWidth: .infinity)

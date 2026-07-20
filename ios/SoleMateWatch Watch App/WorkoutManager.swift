@@ -349,11 +349,12 @@ final class WorkoutManager: NSObject, ObservableObject {
     session?.end()
   }
 
-  /// 요약 화면 '저장' — 폰으로 런 페이로드 전송(HealthKit 저장은 이미 완료) 후 초기화.
+  /// 요약 화면 '완료' — 홈으로 초기화. 런 전송·로컬 저장은 정지 순간(buildSummary)에 이미
+  /// 됐고, 여기선 안전을 위해 한 번 더 보낸다(폰 runId·RecentRuns 중복 제거 → 무해).
   func confirmSave() {
     if let s = summary {
       WatchLink.shared.sendRun(s)
-      RecentRuns.save(s)  // 워치 로컬 최근 기록(최대 10개, HistoryView) — 폰 전송이 정본
+      RecentRuns.save(s)
     }
     reset()
   }
@@ -527,7 +528,7 @@ final class WorkoutManager: NSObject, ObservableObject {
     let kcal = capturedKcal
     let cadence = capturedCadence
     let trackRun = goal.kind == .track && !lapTimes.isEmpty
-    summary = RunSummary(
+    let s = RunSummary(
       runId: runId,
       shoeId: currentShoe?.id ?? "",
       shoeName: currentShoe?.displayName ?? "",
@@ -544,6 +545,13 @@ final class WorkoutManager: NSObject, ObservableObject {
       lapM: trackRun ? lapM : 0,
       lapTimesS: trackRun ? lapTimes : []
     )
+    summary = s
+    // 완주 런 자동 전송(애플 피트니스 방식) — 정지 순간 바로 저장. 수동 '저장' 버튼을 안
+    // 눌러도(요약 화면을 그냥 닫거나 워치가 잠겨도) 폰 기록·신발 차감이 유실되지 않는다.
+    // 폰은 runId 로, 워치 로컬 기록은 RecentRuns 가 중복 제거하므로 '저장' 재전송도 안전.
+    // km 0(무효 런)은 폰이 거른다(onWatchRun 계약) — 여기선 항상 보낸다(유실 금지 우선).
+    WatchLink.shared.sendRun(s)
+    RecentRuns.save(s)
     // 심박 기록 직송(경로 A) — 수동 '저장'과 무관하게 종료 시 항상 보낸다. 폰이 주머니에
     // 있어(실시간 스트림 놓침) 폰 런의 hrTrack 이 비는 문제를 근본 해결한다(배달 보장 큐).
     if hrSamples.count >= 2 {
