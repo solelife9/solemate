@@ -15,8 +15,18 @@
  */
 import React from 'react';
 import ReactTestRenderer, {act} from 'react-test-renderer';
+import {Alert} from 'react-native';
 import ProfileScreen from '../ProfileScreen.rn';
 import {DEFAULT_NOTIF_SETTINGS, type NotifSettings} from '../lib/notifications';
+
+// 알림 첫 켜기 = OS 권한 다이얼로그 앞에 프라이밍 Alert 가 뜬다(애플 권장). 테스트에선
+// 자동 응답한다: accept=true → '알림 받기'(진행), false → '나중에'(중단).
+function mockPrime(accept: boolean) {
+  return jest.spyOn(Alert, 'alert').mockImplementation(((_t: any, _m: any, buttons: any) => {
+    const b = (buttons || []).find((x: any) => x.text === (accept ? '알림 받기' : '나중에'));
+    b?.onPress?.();
+  }) as any);
+}
 
 function textOf(node: any): string {
   let out = '';
@@ -113,6 +123,7 @@ describe('ProfileScreen 푸시 알림 토글 press → onChangeNotifSettings 올
   test('교체 임박 토글(꺼짐→켜짐): shoeReplacement 만 true 로 뒤집힌 설정으로 콜백', async () => {
     const onChangeNotifSettings = jest.fn();
     const onRequestPushPermission = jest.fn(() => Promise.resolve(true));
+    const prime = mockPrime(true); // 프라이밍 '알림 받기' 자동 응답 → OS 요청 진행.
     const root = render({notifSettings: ALL_OFF, onChangeNotifSettings, onRequestPushPermission});
     openNotif(root);
     await pressAsync(pressableByTestId(root, 'notif-toggle-shoeReplacement'));
@@ -123,8 +134,9 @@ describe('ProfileScreen 푸시 알림 토글 press → onChangeNotifSettings 올
       runReminder: false,
       reminderTime: '19:00',
     });
-    // 켜는 동작에선 기기 권한을 1회 요청한다.
+    // 켜는 동작에선 프라이밍 후 기기 권한을 1회 요청한다.
     expect(onRequestPushPermission).toHaveBeenCalledTimes(1);
+    prime.mockRestore();
   });
 
   test('주간 목표 토글(켜짐→꺼짐): weeklyGoal 만 false 로, 권한 요청은 하지 않는다', () => {
@@ -165,6 +177,7 @@ describe('ProfileScreen 푸시 권한 거부는 비차단(S8-3)', () => {
   test('권한 거부(false)에도 설정은 저장되고 graceful 안내가 뜨며 크래시가 없다', async () => {
     const onChangeNotifSettings = jest.fn();
     const onRequestPushPermission = jest.fn(() => Promise.resolve(false));
+    const prime = mockPrime(true); // 프라이밍 통과 → 실제 OS 요청까지 도달(여기선 거부됨).
     const root = render({notifSettings: ALL_OFF, onChangeNotifSettings, onRequestPushPermission});
     openNotif(root);
     // 거부 전에는 안내가 없다.
@@ -178,11 +191,13 @@ describe('ProfileScreen 푸시 권한 거부는 비차단(S8-3)', () => {
     expect(hasId(root, 'notif-perm-denied')).toBe(true);
     // 3) 권한 요청은 실제로 시도됐다.
     expect(onRequestPushPermission).toHaveBeenCalledTimes(1);
+    prime.mockRestore();
   });
 
   test('권한 요청이 throw 해도(방어) 크래시 없이 설정은 저장된다', async () => {
     const onChangeNotifSettings = jest.fn();
     const onRequestPushPermission = jest.fn(() => Promise.reject(new Error('native missing')));
+    const prime = mockPrime(true);
     const root = render({notifSettings: ALL_OFF, onChangeNotifSettings, onRequestPushPermission});
     openNotif(root);
     await pressAsync(pressableByTestId(root, 'notif-toggle-shoeReplacement'));
@@ -191,6 +206,29 @@ describe('ProfileScreen 푸시 권한 거부는 비차단(S8-3)', () => {
     );
     // throw 경로도 graceful 안내로 수렴(비차단).
     expect(hasId(root, 'notif-perm-denied')).toBe(true);
+    prime.mockRestore();
+  });
+
+  test('프라이밍(감사#4): 첫 켜기 → OS 다이얼로그 전에 설명 Alert, "나중에"면 OS 요청 안 함', async () => {
+    // OS 권한 다이얼로그는 되돌릴 수 없다 — 그 앞에 이유를 먼저 설명(pre-permission).
+    const onChangeNotifSettings = jest.fn();
+    const onRequestPushPermission = jest.fn(() => Promise.resolve(true));
+    const prime = mockPrime(false); // 프라이밍에서 '나중에' 선택.
+    const root = render({notifSettings: ALL_OFF, onChangeNotifSettings, onRequestPushPermission});
+    openNotif(root);
+    await pressAsync(pressableByTestId(root, 'notif-toggle-shoeReplacement'));
+    // 1) 프라이밍 Alert 가 떴다(이유 설명 카피 포함).
+    expect(prime).toHaveBeenCalledTimes(1);
+    expect(String(prime.mock.calls[0][1])).toContain('러닝화 교체 시기');
+    // 2) 설정은 정직하게 켜진다(사용자가 토글을 눌렀으므로 — 비차단).
+    expect(onChangeNotifSettings).toHaveBeenCalledWith(
+      expect.objectContaining({shoeReplacement: true}),
+    );
+    // 3) '나중에'면 OS 권한 다이얼로그는 띄우지 않는다(핵심 — 콜드 다이얼로그 방지).
+    expect(onRequestPushPermission).not.toHaveBeenCalled();
+    // 4) 비차단 안내(권한 미허용)로 수렴.
+    expect(hasId(root, 'notif-perm-denied')).toBe(true);
+    prime.mockRestore();
   });
 });
 

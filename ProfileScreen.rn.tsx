@@ -469,8 +469,28 @@ export default function ProfileScreen({
   // '켜는' 순간 1회 요청하고, ref 로 허용 여부를 기억해 매 토글마다 다시 묻지 않는다.
   const [pushDenied, setPushDenied] = useState(false);
   const pushGrantedRef = useRef(false);
+  // 프라이밍 1회 표시 여부 — OS 권한 다이얼로그는 되돌릴 수 없으므로(거부 후 앱 재요청 불가),
+  // 그 앞에 '왜 필요한지'를 먼저 설명한다(애플 권장 pre-permission 패턴, 위치 프라이밍과 일관).
+  const pushPrimedRef = useRef(false);
   const ensurePushPermission = async () => {
     if (pushGrantedRef.current) return;
+    // 첫 요청 전: OS 다이얼로그가 뜨는 이유를 한국어로 먼저 설명한다(프라이밍).
+    if (!pushPrimedRef.current) {
+      pushPrimedRef.current = true;
+      const proceed = await new Promise<boolean>((resolve) => {
+        Alert.alert(
+          '알림을 켤까요?',
+          '러닝화 교체 시기, 주간 목표 달성, 러닝 리마인더를 딱 필요한 때에만 알려드려요. 광고성 알림은 보내지 않아요.',
+          [
+            { text: '나중에', style: 'cancel', onPress: () => resolve(false) },
+            { text: '알림 받기', onPress: () => resolve(true) },
+          ],
+          { cancelable: false },
+        );
+      });
+      // '나중에' — OS 다이얼로그를 띄우지 않는다(설정은 켠 채 유지, 비차단 안내만).
+      if (!proceed) { setPushDenied(true); return; }
+    }
     try {
       // requestPushPermission 은 거부/오류에도 throw 하지 않고 false 를 돌려준다(S8-3).
       const granted = await onRequestPushPermission?.();
