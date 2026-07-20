@@ -1911,9 +1911,11 @@ function Main(){
   // 온보딩 완료: 1회성 플래그 영속 + 화면에서 치운다. 온보딩의 등록 단계에서 고른
   // 신발(있으면)은 실제 백엔드 신발로 만들어 홈에 바로 반영한다(없으면 빈 홈으로).
   // setOnboarded(true)가 먼저라 addShoe의 비동기 shoes 갱신이 흐름을 끊지 않는다.
-  const completeOnboarding=(registered:RegisteredShoe|null)=>{
+  const completeOnboarding=(registered:RegisteredShoe|null,weightKg?:number)=>{
     setOnboarded(true);
     void AsyncStorage.setItem(ONBOARD_KEY,'1');
+    // 온보딩에서 몸무게를 입력했으면 설정에 반영(칼로리+내구도 공용). 미입력이면 기본값 유지.
+    if(typeof weightKg==='number'&&weightKg>0){changeWeight(clampWeight(weightKg));}
     if(registered&&authUser?.uid){
       addShoe(`${registered.brand} ${registered.model}`.trim(),registered.max||DEFAULT_MAX_KM,Math.round(registered.km),today());
     }

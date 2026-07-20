@@ -461,6 +461,20 @@ describe('Audit Hardening 수용', () => {
       // 날조 금지: 등록한 신발 없이 나가는 경로이므로 등록 정보는 null 이어야 한다.
       expect(onDone).toHaveBeenCalledWith(null);
     });
+
+    test('온보딩 등록 화면 — 몸무게(선택) 입력 필드가 노출된다(내구도 정확도)', () => {
+      // 무거운 러너일수록 러닝화가 빨리 닳는다 — 온보딩에서 선택 입력받아 수명 계산을
+      // day1 부터 정확히. 미입력(미설정)이면 계수 1 로 기존과 동일(설정 기본값 보존).
+      const root = renderTree(el(OnboardingScreen, {onDone: jest.fn()})).root;
+      // Welcome → 신발 인텔리전스 → 성능 → 레거시 → 등록(4단계 전진).
+      act(() => { pressableByLabel(root, '시작하기').props.onPress(); });
+      act(() => { pressableByLabel(root, '다음').props.onPress(); });
+      act(() => { pressableByLabel(root, '다음').props.onPress(); });
+      act(() => { pressableByLabel(root, '다음').props.onPress(); });
+      const txt = renderedText(root);
+      expect(txt).toContain('몸무게 · 선택');
+      expect(txt).toContain('러닝화 수명을 더 정확히 계산');
+    });
   });
 
   describe('C. 폼 + 피드백', () => {

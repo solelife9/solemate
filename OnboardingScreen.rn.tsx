@@ -656,9 +656,11 @@ function FieldLabel({n, label}: {n: string; label: string}) {
   );
 }
 
-function Register({onSkip, onComplete, insetTop, insetBottom}: Omit<ScreenProps, 'goNext'> & {onComplete: (r: RegisteredShoe) => void}) {
+function Register({onSkip, onComplete, insetTop, insetBottom}: Omit<ScreenProps, 'goNext'> & {onComplete: (r: RegisteredShoe, weightKg?: number) => void}) {
   const [picked, setPicked] = useState<PickedShoe | null>(null);
   const [km, setKm] = useState(0);
+  // 몸무게(선택) — null = 미설정(내구도 계수 1, 기존과 동일). 슬라이더를 건드리면 실제값이 잡힌다.
+  const [weight, setWeight] = useState<number | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const ready = !!picked;
   // 권장 수명은 카탈로그 기준(모델 미확정이면 브랜드/기본값) — AddShoe 화면과 동일 소스.
@@ -674,7 +676,8 @@ function Register({onSkip, onComplete, insetTop, insetBottom}: Omit<ScreenProps,
   const submit = () => {
     if (!picked) return;
     // 등록 완료 → Ready/축하 화면 없이 바로 홈(승인 스펙). 신발 생성은 App.completeOnboarding.
-    onComplete({brand: picked.brand, model: picked.model, km, max});
+    // 몸무게는 미설정(null)이면 넘기지 않는다 — 설정 기본값을 덮어쓰지 않도록(선택 존중).
+    onComplete({brand: picked.brand, model: picked.model, km, max}, weight ?? undefined);
   };
 
   return (
@@ -726,6 +729,26 @@ function Register({onSkip, onComplete, insetTop, insetBottom}: Omit<ScreenProps,
           </View>
           <Text style={[s.fieldHint, {marginTop: rv(10)}]}>새 신발이면 0으로 두세요.</Text>
         </Rise>
+
+        {/* 3 몸무게(선택) — 러너 체중을 반영하면 수명 계산이 더 정확해진다(무거울수록 빨리 닳음).
+            미설정이면 넘기지 않아 기존과 동일(계수 1). 나중에 설정에서 조정 가능. */}
+        <Rise delay={340} style={{marginTop: rv(22)}}>
+          <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
+            <FieldLabel n="3" label="몸무게 · 선택" />
+            <Text style={s.kmVal}>
+              {weight != null ? weight : '—'}<Text style={s.kmUnit}> KG</Text>
+            </Text>
+          </View>
+          <View style={{marginTop: rv(14)}}>
+            <KmSlider value={weight ?? 65} min={40} max={120} step={1} onChange={setWeight} />
+            <View style={{flexDirection: 'row', justifyContent: 'space-between', marginTop: rv(6)}}>
+              <Text style={s.tick}>40</Text>
+              <Text style={s.tick}>80</Text>
+              <Text style={s.tick}>120 kg</Text>
+            </View>
+          </View>
+          <Text style={[s.fieldHint, {marginTop: rv(10)}]}>몸무게를 입력하면 러닝화 수명을 더 정확히 계산해요.</Text>
+        </Rise>
       </ScrollView>
 
       <View style={[s.footer, {paddingBottom: Math.max(insetBottom, 18)}]}>
@@ -754,7 +777,7 @@ type ScreenProps = {
   insetBottom: number;
 };
 
-export default function OnboardingScreen({onDone}: {onDone: (registered: RegisteredShoe | null) => void}) {
+export default function OnboardingScreen({onDone}: {onDone: (registered: RegisteredShoe | null, weightKg?: number) => void}) {
   const insets = useSafeAreaInsets();
   const reduceMotion = useReduceMotion();
   const [index, setIndex] = useState(0);
