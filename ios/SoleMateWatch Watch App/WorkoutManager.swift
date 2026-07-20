@@ -176,6 +176,11 @@ final class WorkoutManager: NSObject, ObservableObject {
   private var hrSamples: [(offsetS: Double, bpm: Double)] = []
   /// 누적 상승 고도(m) — process(locations) 가 GPS 고도 양의 증분으로 적산. 종료 시 요약에 실림.
   private var elevGainM: Double = 0
+  // 종료 통계 스냅샷 — finishWorkout 호출 전에 확정한다. finishWorkout 이후엔 빌더의
+  // statistics(for:) 가 nil 을 뱉어 심박·칼로리가 0(→ '--')이 되던 버그의 근본 수정.
+  private var capturedAvgBpm: Double = 0
+  private var capturedKcal: Double = 0
+  private var capturedCadence: Double = 0
   private var manualPause = false
   // km 스플릿 적산 — 직전 랩 마감 시점의 경과시간(빌더 시간, 일시정지 제외).
   private var lastSplitElapsedS: Double = 0
@@ -267,6 +272,9 @@ final class WorkoutManager: NSObject, ObservableObject {
       lastLocation = nil
       hrSamples = []
       elevGainM = 0
+      capturedAvgBpm = 0
+      capturedKcal = 0
+      capturedCadence = 0
       splits = []
       lastSplitElapsedS = 0
       summary = nil
@@ -337,6 +345,9 @@ final class WorkoutManager: NSObject, ObservableObject {
     manualPause = false
     lastLocation = nil
     elevGainM = 0
+    capturedAvgBpm = 0
+    capturedKcal = 0
+    capturedCadence = 0
     splits = []
     lastSplitElapsedS = 0
     goal = .free
@@ -428,14 +439,10 @@ final class WorkoutManager: NSObject, ObservableObject {
     b.endCollection(withEnd: endDate) { [weak self] _, _ in
       guard let self else { return }
       Task { @MainActor in
-        // 표시 거리(GPS)가 비었으면(터널·실내 등 무픽스) 빌더 집계 거리로 폴백 —
-        // Truth only: 두 소스를 섞지 않고 유효한 한쪽만 쓴다.
-        if self.distanceKm <= 0, let b = self.builder,
-           let dType = HKQuantityType.quantityType(forIdentifier: .distanceWalkingRunning),
-           let sum = b.statistics(for: dType)?.sumQuantity() {
-          let km = sum.doubleValue(for: .meter()) / 1000.0
-          if km.isFinite, km > 0 { self.distanceKm = km }
-        }
+        // 통계 스냅샷은 반드시 finishWorkout '전'에 — 이후엔 statistics(for:) 가 nil 을
+        // 반환해 심박·칼로리가 0(→ '--')이 되는 근본 원인이었다. 거리·시간·심박·칼로리·
+        // 케이던스를 이 시점에 한 번에 확정한다(단일 진실 시점).
+        self.captureFinalStats(endDate: endDate)
         self.builder?.finishWorkout { [weak self] _, _ in
           guard let self else { return }
           Task { @MainActor in self.buildSummary(endDate: endDate) }
@@ -444,30 +451,44 @@ final class WorkoutManager: NSObject, ObservableObject {
     }
   }
 
+  /// finishWorkout 직전, 빌더 통계를 전부 스냅샷한다. 종료 요약의 심박·칼로리·케이던스·
+  /// (무픽스 시)거리·시간을 이 한 곳에서 확정 — finishWorkout 이후 statistics 무효화 대비.
+  private func captureFinalStats(endDate: Date) {
+    guard let b = builder else { return }
+    // 시간(일시정지 자동 제외) — 케이던스 분모로도 쓰이므로 먼저 확정.
+    let e = b.elapsedTime(at: endDate)
+    if e.isFinite, e >= 0 { elapsedS = e }
+    // 거리: 표시값(HK 융합)이 비었을 때만(터널·실내 무픽스) 빌더 집계로 폴백 —
+    // Truth only: 두 소스를 섞지 않고 유효한 한쪽만 쓴다.
+    if distanceKm <= 0,
+       let dType = HKQuantityType.quantityType(forIdentifier: .distanceWalkingRunning),
+       let sum = b.statistics(for: dType)?.sumQuantity() {
+      let km = sum.doubleValue(for: .meter()) / 1000.0
+      if km.isFinite, km > 0 { distanceKm = km }
+    }
+    if let hrType = HKQuantityType.quantityType(forIdentifier: .heartRate),
+       let avg = b.statistics(for: hrType)?.averageQuantity() {
+      capturedAvgBpm = avg.doubleValue(for: HKUnit.count().unitDivided(by: .minute()))
+    }
+    if let enType = HKQuantityType.quantityType(forIdentifier: .activeEnergyBurned),
+       let sum = b.statistics(for: enType)?.sumQuantity() {
+      capturedKcal = sum.doubleValue(for: .kilocalorie())
+    }
+    // 평균 케이던스(spm) = 총 걸음수 ÷ 경과분(빌더 시간, 일시정지 제외). 30초 미만·0분은 무시.
+    if let stType = HKQuantityType.quantityType(forIdentifier: .stepCount),
+       let steps = b.statistics(for: stType)?.sumQuantity()?.doubleValue(for: .count()),
+       elapsedS > 30 {
+      capturedCadence = steps / (elapsedS / 60.0)
+    }
+  }
+
   private func buildSummary(endDate: Date) {
     let start = startDate ?? endDate
-    var avgBpm: Double = 0
-    var kcal: Double = 0
-    var cadence: Double = 0
-    if let b = builder {
-      if let hrType = HKQuantityType.quantityType(forIdentifier: .heartRate),
-         let avg = b.statistics(for: hrType)?.averageQuantity() {
-        avgBpm = avg.doubleValue(for: HKUnit.count().unitDivided(by: .minute()))
-      }
-      if let enType = HKQuantityType.quantityType(forIdentifier: .activeEnergyBurned),
-         let sum = b.statistics(for: enType)?.sumQuantity() {
-        kcal = sum.doubleValue(for: .kilocalorie())
-      }
-      // 평균 케이던스(spm) = 총 걸음수 ÷ 경과분(빌더 시간, 일시정지 제외). 30초 미만·0분은 무시.
-      if let stType = HKQuantityType.quantityType(forIdentifier: .stepCount),
-         let steps = b.statistics(for: stType)?.sumQuantity()?.doubleValue(for: .count()),
-         elapsedS > 30 {
-        cadence = steps / (elapsedS / 60.0)
-      }
-      // 시간의 진실원은 빌더(일시정지 자동 제외). 실패 시 표시값 유지(유실 금지).
-      let e = b.elapsedTime(at: endDate)
-      if e.isFinite, e >= 0 { elapsedS = e }
-    }
+    // 심박·칼로리·케이던스·시간·거리는 captureFinalStats(finishWorkout 전)에서 이미 확정됐다.
+    // 여기서 빌더 통계를 다시 읽지 않는다 — finishWorkout 이후엔 nil 이라 0(→ '--')이 되기 때문.
+    let avgBpm = capturedAvgBpm
+    let kcal = capturedKcal
+    let cadence = capturedCadence
     let trackRun = goal.kind == .track && !lapTimes.isEmpty
     summary = RunSummary(
       runId: runId,
@@ -516,12 +537,39 @@ final class WorkoutManager: NSObject, ObservableObject {
         let e = b.elapsedTime(at: Date())
         // 단조 증가 보장 — 시계가 뒤로 가는 순간을 화면에 노출하지 않는다.
         if e.isFinite, e >= self.elapsedS { self.elapsedS = e }
-        // 목표 달성 판정(1초 granularity — 거리는 process(locations)에서 갱신된 뒤 흡수).
+        // 비트랙 거리 = 애플 HealthKit 융합거리(distanceWalkingRunning). raw GPS 점-점 누적보다
+        // 정확(GPS+가속도계 센서융합 = 가민급). 러닝 중·단조 증가만 반영, km 경계는 즉시 랩 마감.
+        // 트랙 모드는 랩기반(detectTrackLap)이 진실원이라 건드리지 않는다.
+        if self.phase == .running, !self.isTrack,
+           let dType = HKQuantityType.quantityType(forIdentifier: .distanceWalkingRunning),
+           let m = b.statistics(for: dType)?.sumQuantity()?.doubleValue(for: .meter()),
+           m.isFinite, m >= 0 {
+          let km = m / 1000.0
+          if km > self.distanceKm {
+            self.distanceKm = km
+            self.advanceKmSplits()
+          }
+        }
+        // 목표 달성 판정(1초 granularity — 위 거리 갱신 후라 최신 거리를 흡수).
         self.checkGoalReached()
       }
     }
     RunLoop.main.add(t, forMode: .common)
     timer = t
+  }
+
+  /// km 경계 통과분을 랩으로 마감한다(초/km, 빌더 시간 증분이라 일시정지 자동 제외).
+  /// HK 융합거리가 갱신된 직후 호출 — 완료 랩 영속(죽어도 복구) + 랩 햅틱(폰 설정 존중).
+  private func advanceKmSplits() {
+    while distanceKm >= Double(splits.count + 1) {
+      splits.append(max(0, elapsedS - lastSplitElapsedS))
+      lastSplitElapsedS = elapsedS
+      let d = UserDefaults.standard
+      d.set(splits, forKey: RecoverKeys.splits)
+      d.set(lastSplitElapsedS, forKey: RecoverKeys.lastSplitElapsedS)
+      // 랩 햅틱 — '화면 안 보는 러너'까지 닿는 유일한 인터페이스(Garmin/COROS 자동랩 관용).
+      if WatchLink.shared.hapticsOn { WKInterfaceDevice.current().play(.notification) }
+    }
   }
 
   private func stopTimer() {
@@ -717,25 +765,13 @@ extension WorkoutManager: CLLocationManagerDelegate {
           // 스파이크 컷: 순간이동 표본은 거리에 넣지 않는다(팬텀 거리 방지).
           if phase == .running, derived <= Self.maxSpeedMps, meters.isFinite, meters >= 0 {
             if isTrack {
-              // 트랙 모드: GPS 누적은 보정용, 표시 거리는 랩수×랩거리. 출발점 복귀 = 랩.
+              // 트랙 모드: GPS 누적은 랩거리 보정용(표시 거리는 랩수×랩거리). 출발점 복귀 = 랩.
               trackCumMeters += meters
               detectTrackLap(at: loc)
-            } else {
-              distanceKm += meters / 1000.0
-              // km 경계 통과 → 랩 마감(초/km, 빌더 시간 증분이라 일시정지 자동 제외).
-              while distanceKm >= Double(splits.count + 1) {
-                splits.append(max(0, elapsedS - lastSplitElapsedS))
-                lastSplitElapsedS = elapsedS
-                // 랩 영속 — 러닝 중 앱이 죽어도 완료 랩은 복구된다.
-                let d = UserDefaults.standard
-                d.set(splits, forKey: RecoverKeys.splits)
-                d.set(lastSplitElapsedS, forKey: RecoverKeys.lastSplitElapsedS)
-                // 랩 햅틱 — '화면 안 보는 러너'까지 닿는 유일한 인터페이스
-                // (Garmin/COROS 자동 랩 관용, 리서치 2026-07-11 최강 근거 기능).
-                // 폰 햅틱 설정(hapticsOn)을 존중 — 진동을 끈 사용자에겐 조용히.
-                if WatchLink.shared.hapticsOn { WKInterfaceDevice.current().play(.notification) }
-              }
             }
+            // 비트랙 거리는 애플 HealthKit 융합(distanceWalkingRunning)로 타이머에서 갱신한다
+            // (updateDistanceFromHK). raw GPS 점-점 누적은 폐지 — 가민 대비 과소측정의 뿌리였다.
+            // GPS 는 오토포즈·상승고도·트랙 랩 감지 용도로만 남긴다(최상급 거리 = 애플 센서융합).
           }
           // 상승 고도(누적) — GPS 고도의 양의 증분만 적산. 수직정확도 게이트 + 0.5m 노이즈
           // 임계(미세 지터 무시) + 30m 스파이크 컷. 거리 소스와 무관(고도는 GPS 유지).
