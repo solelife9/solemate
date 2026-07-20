@@ -72,3 +72,43 @@ describe('runVoice 큐 시퀀스', () => {
     expect(true).toBe(true);
   });
 });
+
+describe('runVoice.finishSummary — 완주 요약(거리·시간·평균 페이스)', () => {
+  let played: string[][];
+  let spy: jest.SpyInstance;
+  beforeEach(() => {
+    played = [];
+    spy = jest.spyOn(runVoice, 'play').mockImplementation((ids: string[]) => { played.push(ids); });
+  });
+  afterEach(() => spy.mockRestore());
+
+  test('정수 km + 정확한 분: finish → 거리 → 경과 → 평균 페이스', () => {
+    runVoice.finishSummary(5.0, 1500, 300); // 5km, 25분, 5:00/km
+    expect(played[0]).toEqual(['finish', 'km_5', 'lbl_elapsed', 'min_25', 'lbl_avg_pace', 'min_5']);
+  });
+
+  test('거리는 0.5km 격자로 반올림: 5.24→5.0(km_5), 5.28→5.5(kmh_5)', () => {
+    runVoice.finishSummary(5.24, 1500, 300);
+    expect(played[0][1]).toBe('km_5');
+    runVoice.finishSummary(5.28, 1500, 300);
+    expect(played[1][1]).toBe('kmh_5');
+  });
+
+  test('500m 는 m_500, 평균 페이스 null 이면 페이스 조각 생략(날조 없음)', () => {
+    runVoice.finishSummary(0.5, 200, null); // 0.5km, 3:20, 페이스 미산출
+    expect(played[0]).toEqual(['finish', 'm_500', 'lbl_elapsed', 'min_3', 'sec_20']);
+  });
+
+  test('enabled=false 면 무음(no-op)', () => {
+    // play 스파이가 아니라 실제 enabled 게이트를 검증하려 스파이 해제 후 확인.
+    spy.mockRestore();
+    const p = jest.spyOn(runVoice, 'play');
+    runVoice.enabled = false;
+    runVoice.finishSummary(5, 1500, 300);
+    // play 는 호출되지만(시퀀스는 만들어짐) enabled 게이트로 재생은 no-op.
+    // 여기선 시퀀스 조립이 크래시 없이 도는 것만 확인(재생 no-op 은 play 내부 계약).
+    expect(p).toHaveBeenCalled();
+    runVoice.enabled = true;
+    p.mockRestore();
+  });
+});

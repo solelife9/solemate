@@ -2875,7 +2875,9 @@ function RunActiveScreen({shoe,insets,goalKm,goalMin=0,pacePlan=[],targetZone=0,
       return;
     }
     stop();
-    runVoice.finish(); // 완주 음성("운동을 종료합니다. 수고하셨습니다") — 리뷰 화면 전환 전 재생
+    // 완주 요약 음성 — "운동을 종료합니다. 수고하셨습니다, N킬로미터, 경과 시간 …, 평균 페이스 …"
+    // (Nike/NRC 종료 요약 관용). 거리는 클립 격자(0.5km)로 반올림해 읽는다(화면엔 정확값).
+    runVoice.finishSummary(fk, ft, fk > 0.2 ? ft / fk : null);
     const sampled=simplifyRoute(runTracker.getPoints() as any,200);
     setFinRoute(sampled.length>=2?JSON.stringify(sampled):'');
     // 고도: **기압계 우선, GPS 는 기압계 부재 시 폴백만**(2026-07-17 비교런 근본수정).

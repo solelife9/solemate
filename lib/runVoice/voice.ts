@@ -123,6 +123,18 @@ function timeIds(elapsedSec: number | null | undefined): string[] {
   return out.length > 1 ? out : [];
 }
 
+/** 거리(km) → 완주 요약용 거리 클립. 클립 격자가 0.5km(정수 km_N + X.5 kmh_N + 0.5=m_500)
+ *  라 그 격자로 반올림해 읽는다(임의 소수 클립 없음 — 화면엔 정확값이 보인다). 범위 밖은 생략. */
+function distIds(km: number | null | undefined): string[] {
+  if (km == null || !Number.isFinite(km) || km <= 0) return [];
+  const half = Math.round(km * 2) / 2; // 0.5km 격자 반올림
+  if (half < 0.5) return [];
+  if (half === 0.5) return ['m_500'];
+  const whole = Math.floor(half);
+  if (whole < 1 || whole > 42) return [];
+  return [half - whole === 0.5 ? `kmh_${whole}` : `km_${whole}`];
+}
+
 /** 음성 코칭 공개 API. App 의 런 화면이 이벤트마다 호출한다. enabled=false 면 전부 no-op. */
 export const runVoice = {
   enabled: true,
@@ -149,6 +161,13 @@ export const runVoice = {
   },
   finish() {
     this.play(['finish']);
+  },
+  /** 완주 요약 — 종료 시 "[운동을 종료합니다. 수고하셨습니다], N킬로미터, 경과 시간 …,
+   *  평균 페이스 M분 S초" 를 한 시퀀스로 읽어준다(Nike/NRC 종료 요약 관용, 사용자 요청).
+   *  거리는 0.5km 격자로 반올림해 읽고(임의 소수 클립 부재 — 화면엔 정확값), 표현 불가한
+   *  항목은 조용히 생략한다(날조 없음). enabled=false 면 no-op. */
+  finishSummary(km: number, elapsedSec: number, avgPaceSec: number | null) {
+    this.play(['finish', ...distIds(km), ...timeIds(elapsedSec), ...paceIds(avgPaceSec, 'avg')]);
   },
   gpsWeak() {
     this.play(['gps_weak']);
