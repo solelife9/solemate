@@ -2291,9 +2291,9 @@ function RunActiveScreen({shoe,insets,goalKm,goalMin=0,pacePlan=[],targetZone=0,
   const [elapsed,setElapsed]=useState(resume?resume.elapsed:0);
   // 현재(롤링) 페이스(초/km, null=표본부족/정지). 라이브 화면 히어로 페이스 — 평균은 보조.
   const [currentPaceSec,setCurrentPaceSec]=useState<number|null>(null);
-  // GPS 신호 획득 상태 — 러닝 시작~첫 fix 전까지 '찾는 중'(거리 0.00 이 고장처럼 보이던 것 해소,
-  // 감사#1). firstFix 이벤트에서 비운다. 러닝 화면 라이브 라벨이 이 값을 우선 표시(비일시정지 시).
-  const [gpsStatus,setGpsStatus]=useState('GPS 신호 찾는 중...');
+  // GPS 신호 상태값 — 권한/정확도/무신호 판정에만 쓰이고 러닝 화면엔 '찾는 중' 문구를
+  // 띄우지 않는다(나이키 등 관용 — 시작 시 거리 0.00 은 정상, 문구는 오히려 노이즈).
+  const [,setGpsStatus]=useState('GPS 신호 찾는 중...');
   // GPS 死구간(audit#9): 마지막 fix 수신 후 무신호가 지속되면 거리는 멈춘 채 시간만
   // 누적된다. 순수 판정(gpsStallStatus)으로 감지해 한국어 배너를 띄운다.
   const [gpsStalled,setGpsStalled]=useState(false);
@@ -2523,7 +2523,7 @@ function RunActiveScreen({shoe,insets,goalKm,goalMin=0,pacePlan=[],targetZone=0,
       }else if(ev.type==='resumed'){
         runVoice.resume();
       }else if(ev.type==='firstFix'){
-        setGpsStatus(''); // 첫 GPS fix 도달 → '찾는 중' 해제(이후 라이브 라벨은 러닝 중/일시정지).
+        setGpsStatus(''); // 첫 GPS fix 도달 → 상태값 클리어(무신호 판정 리셋).
         // 첫 fix 좌표로 1회 역지오코딩 → 위치 라벨. 엔진 메타에도 실어 스냅샷/저장에 반영.
         // OS 내장 지오코더(lib/geocode — Nominatim 은퇴 2026-07-17, 외부 서버 의존 0).
         if(!locationFetched.current){
@@ -2955,8 +2955,6 @@ function RunActiveScreen({shoe,insets,goalKm,goalMin=0,pacePlan=[],targetZone=0,
   }
 
   const pauseLabel=autoPaused?'자동 일시정지':paused?'일시정지':'러닝 중';
-  // 러닝 시작~첫 GPS fix 전(달리는 중이지만 거리 0.00): '찾는 중' 우선(고장 오인 방지). 일시정지는 그대로.
-  const liveStatus=(!paused&&!autoPaused&&!!gpsStatus)?gpsStatus:pauseLabel;
   // 칼로리 추정(활동+안정=총소모) — 라이브(현재 거리·경과)와 완주(finKm·finTime) 각각.
   // 트랙 모드 라이브 거리는 랩수×확정랩거리(GPS 누적 아님).
   const liveCal=estimateCaloriesTotal(trackMode?(lapCount*lapM)/1000:km,elapsed,weightKg);
@@ -3056,7 +3054,7 @@ function RunActiveScreen({shoe,insets,goalKm,goalMin=0,pacePlan=[],targetZone=0,
       restHR={restHR}
       gpsLevel={gpsLevel}
       paused={paused}
-      statusLabel={liveStatus}
+      statusLabel={pauseLabel}
       onPause={handlePause}
       onStop={finishRun}
       permLost={permLost}
