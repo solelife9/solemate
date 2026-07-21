@@ -2482,6 +2482,17 @@ function RunActiveScreen({shoe,insets,goalKm,goalMin=0,pacePlan=[],targetZone=0,
   const announcedGoal=useRef(false);
   // 음성 코칭 설정 — 런 시작 시 1회 로드(설정 변경은 다음 런부터 적용, 러닝 중 재로드 없음).
   const voiceCfg=useRef<VoiceSettings>({...DEFAULT_VOICE});
+  // 러닝 중 음성 온/오프(심사 #10) — 이 런에만 적용되는 오버라이드(설정 미변경). 초기값은
+  // beginRun 에서 설정 로드 후 동기화. 끄면 진행 중 TTS 도 즉시 멈춘다.
+  const [voiceMuted,setVoiceMuted]=useState(false);
+  const toggleVoice=()=>{
+    setVoiceMuted(m=>{
+      const next=!m;
+      runVoice.enabled=!next;
+      if(next){try{Tts.stop();}catch{/* no-op */}}
+      return next;
+    });
+  };
   // 요청한 위치 권한 결과(포그라운드/백그라운드). '계속 달리기'(거리 짧음 재시작) 시
   // 동일 권한으로 다시 트래킹을 시작하기 위해 보관한다.
   const permRef=useRef<RunPermissions>({foreground:true,background:false});
@@ -2775,6 +2786,7 @@ function RunActiveScreen({shoe,insets,goalKm,goalMin=0,pacePlan=[],targetZone=0,
       voiceCfg.current=await loadVoiceSettings();
       runVoice.enabled=voiceCfg.current.enabled;
       runVoice.setVolume(voiceCfg.current.volume);
+      setVoiceMuted(!voiceCfg.current.enabled); // 일시정지 화면 토글(심사 #10) 초기 동기화
       autoPauseOn=await loadAutoPause(); // 자동 일시정지 설정(#16) — 런당 1회 로드
     }catch{/* 설정 로드 실패 → 기본값(전부 on) 유지 */}
     // 러닝 시작 — 화면 자동잠금 방지(글랜서빌리티). 실패해도 러닝엔 무관(best-effort).
@@ -3139,6 +3151,8 @@ function RunActiveScreen({shoe,insets,goalKm,goalMin=0,pacePlan=[],targetZone=0,
       onLap={()=>registerLap(elapsedRef.current,false)}
       onUndoLap={undoLap}
       handoff={!resume}
+      voiceMuted={voiceMuted}
+      onToggleVoice={toggleVoice}
     />
   );
 }

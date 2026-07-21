@@ -161,6 +161,21 @@ describe('RunGoalScreen — 런 시작 햅틱과 onStart 핸들러', () => {
 
 // ── RunActiveScreen: 일시정지/재개/목표달성/종료 햅틱 + 접근성 ────────────────
 describe('RunActiveScreen — 런 컨트롤 햅틱과 핸들러', () => {
+  test('일시정지 화면 음성 토글(심사 #10) — 라벨과 onToggleVoice 호출', () => {
+    const onToggleVoice = jest.fn();
+    const root = render(
+      <RunActiveScreen distanceKm={2} goalKm={5} paused onToggleVoice={onToggleVoice} />,
+    ).root;
+    const btn = pressableByLabel(root, '음성 안내 끄기'); // voiceMuted=false 기본
+    act(() => { btn.props.onPress(); });
+    expect(onToggleVoice).toHaveBeenCalledTimes(1);
+    // 음소거 상태면 라벨이 '켜기'로 뒤집힌다.
+    const muted = render(
+      <RunActiveScreen distanceKm={2} goalKm={5} paused voiceMuted onToggleVoice={jest.fn()} />,
+    ).root;
+    expect(pressableByLabel(muted, '음성 안내 켜기')).toBeTruthy();
+  });
+
   test('일시정지 → tap, 이어 재개 → tap (둘 다 가벼운 햅틱)', () => {
     const root = render(
       <RunActiveScreen distanceKm={2} goalKm={5} />,

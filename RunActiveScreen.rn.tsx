@@ -142,6 +142,7 @@ export default function RunActiveScreen({
   track = null, onLap, onUndoLap,
   handoff = false,
   countdown = null,
+  voiceMuted = false, onToggleVoice,
 }: {
   shoeLabel?: string; distanceKm?: number; goalKm?: number;
   /** 시간 목표(분, #15). >0 이고 goalKm=0 이면 링 진행·달성 판정이 경과시간 기준. */
@@ -178,6 +179,10 @@ export default function RunActiveScreen({
       onDone 에서 App 이 엔진 인스턴스로 스왑 — 레이아웃이 같아 링은 픽셀 그대로 이어지고,
       지표·컨트롤은 스왑 후 아래에서 떠오른다(uiIn). 구 RunCountdownScreen(별도 화면) 대체. */
   countdown?: { onCancel?: () => void; onDone?: () => void } | null;
+  /** 러닝 중 음성 안내 온/오프(심사 #10) — 일시정지 화면의 스피커 토글. 설정은 다음 런부터라
+      러닝 중 끌 방법이 없던 갭을 메운다(이 런에만 적용, 설정 미변경). */
+  voiceMuted?: boolean;
+  onToggleVoice?: () => void;
 }) {
   const insets = useSafeAreaInsets();
   const { height: winH } = useWindowDimensions();
@@ -298,7 +303,35 @@ export default function RunActiveScreen({
   const togglePause = () => (onPause ? onPause() : setPausedState(p => !p));
   // 일시정지·재개는 가벼운 tap 햅틱으로 동작을 확인시킨다.
   const pauseRun = () => { tap(); togglePause(); };
-  const resumeRun = () => { tap(); togglePause(); };
+  // 수동 재개 3·2·1 카운트다운(심사 #11, NRC 문법) — 정지 자세에서 바로 달리기로 돌아갈
+  // 준비 시간을 준다. 엔진은 카운트 동안 일시정지 유지(시간 회계 불변), 탭하면 취소.
+  // 자동 일시정지의 자동 재개는 이 경로를 타지 않는다(움직임이 곧 재개 신호라 지연이 오답).
+  const [resumeCd, setResumeCd] = useState(0); // 0=꺼짐, 3→2→1 카운트 중
+  const resumeTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const clearResumeCd = () => {
+    if (resumeTimer.current) { clearInterval(resumeTimer.current); resumeTimer.current = null; }
+    setResumeCd(0);
+  };
+  const resumeRun = () => {
+    tap();
+    if (SKIP_ANIM) { togglePause(); return; }
+    setResumeCd(3); countdownBeat();
+    resumeTimer.current = setInterval(() => {
+      setResumeCd(n => {
+        if (n <= 1) {
+          if (resumeTimer.current) { clearInterval(resumeTimer.current); resumeTimer.current = null; }
+          goHaptic();
+          togglePause();
+          return 0;
+        }
+        countdownBeat();
+        return n - 1;
+      });
+    }, 1000);
+  };
+  // 외부 재개(워치 미러링·자동 재개)나 언마운트 시 카운트다운 잔여 타이머 정리.
+  useEffect(() => { if (!paused) clearResumeCd(); }, [paused]);
+  useEffect(() => () => { if (resumeTimer.current) clearInterval(resumeTimer.current); }, []);
 
   // 길게 눌러 종료: 600ms 홀드 진행을 시각(링)으로 보여주고, 확정 시 warning 햅틱.
   // 되돌릴 수 없는 동작이라 또렷한 경고 진동을 쓴다(실수 종료 방지 + 확정 피드백).
@@ -417,7 +450,21 @@ export default function RunActiveScreen({
             <Text style={[r.liveText, met && { color: GOOD }]}>{statusLabel ?? (paused ? '일시정지' : '러닝 중')}</Text>
           </View>
         )}
-        <View style={r.shoeChip} accessibilityRole="text" accessibilityLabel={`신고 있는 신발 ${shoeLabel}`}><ShoeGlyph color={T3} size={ri(15)} /><Text style={r.shoeText}>{shoeLabel}</Text></View>
+        <View style={r.topRight}>
+          {/* 음성 토글(심사 #10) — 일시정지 화면에만 나타나는 조용한 스피커 아이콘.
+              설정은 '다음 런부터'라 러닝 중 끌 방법이 없던 갭을 이 런 한정으로 메운다. */}
+          {uiPaused && !cd && !!onToggleVoice && (
+            <Pressable onPress={() => { tap(); onToggleVoice(); }} hitSlop={10}
+              accessibilityRole="button"
+              accessibilityLabel={voiceMuted ? '음성 안내 켜기' : '음성 안내 끄기'}
+              accessibilityState={{ selected: !voiceMuted }}
+              style={({ pressed }) => [r.voiceBtn, pressed && { opacity: 0.8 }]}
+              testID="voice-toggle">
+              <Ionicons name={voiceMuted ? 'volume-mute-outline' : 'volume-high-outline'} size={ri(16)} color={voiceMuted ? T3 : T1} />
+            </Pressable>
+          )}
+          <View style={r.shoeChip} accessibilityRole="text" accessibilityLabel={`신고 있는 신발 ${shoeLabel}`}><ShoeGlyph color={T3} size={ri(15)} /><Text style={r.shoeText}>{shoeLabel}</Text></View>
+        </View>
       </View>
 
       {/* gps — 약할 때만 등장하는 경고(상시 상태 표시 폐지). 거리 기록이 멈출 수 있음을 설명. */}
@@ -677,6 +724,16 @@ export default function RunActiveScreen({
       {/* 완주 세리머니(A안) — 종료 확정 후 링 완성 + 빛 번짐, 끝나면 실제 종료(onStop). */}
       {ceremony && <FinishCeremony distanceKm={distanceKm} onDone={() => onStop?.()} />}
 
+      {/* 수동 재개 3·2·1 카운트다운(심사 #11) — 딤 스크림 위 큰 숫자, 탭하면 취소(일시정지 유지). */}
+      {resumeCd > 0 && (
+        <Pressable style={r.resumeCdWrap} onPress={() => { tap(); clearResumeCd(); }}
+          accessibilityRole="button" accessibilityLabel={`${resumeCd}초 후 재개, 탭하면 취소`}
+          testID="resume-countdown">
+          <Text style={r.resumeCdNum} accessibilityLiveRegion="assertive">{resumeCd}</Text>
+          <Text style={r.resumeCdHint}>곧 다시 달려요 — 탭하면 취소</Text>
+        </Pressable>
+      )}
+
       {/* 전체화면 인터랙티브 지도 — 일시정지 지도 패널을 탭하면 열린다. 팬·줌 가능, 닫기 버튼.
           화면 좌우 패딩·상하 인셋을 상쇄해 진짜 전체화면. 재개하면 자동으로 닫힘(mapFull 리셋). */}
       {mapFull && (
@@ -737,6 +794,13 @@ const r = StyleSheet.create({
   liveDot: { width: rs(8), height: rs(8), borderRadius: RADIUS.pill, backgroundColor: ACCENT },
   liveText: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500', letterSpacing: 0.2 },
   shoeChip: { flexDirection: 'row', alignItems: 'center', gap: rv(8), backgroundColor: CARD, borderRadius: RADIUS.pill, paddingHorizontal: rs(12), height: rs(30), borderWidth: 1, borderColor: SEP },
+  topRight: { flexDirection: 'row', alignItems: 'center', gap: rv(8) },
+  // 음성 토글(심사 #10) — 신발 칩과 같은 문법의 작은 원형 유리 버튼.
+  voiceBtn: { width: rs(30), height: rs(30), borderRadius: RADIUS.pill, alignItems: 'center', justifyContent: 'center', backgroundColor: CARD, borderWidth: 1, borderColor: SEP },
+  // 수동 재개 카운트다운(심사 #11) — 풀스크린 딤 + 큰 숫자(시작 카운트다운과 같은 NUM 문법).
+  resumeCdWrap: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: withAlpha(BG, 0.88), alignItems: 'center', justifyContent: 'center', zIndex: 30, gap: rv(10) },
+  resumeCdNum: { color: T1, fontFamily: NUM, fontSize: rf(96), fontWeight: '600', fontVariant: ['tabular-nums'], includeFontPadding: false },
+  resumeCdHint: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500' },
   shoeText: { color: T3, fontFamily: DISPLAY, fontSize: TYPE.label.fontSize, fontWeight: '600' },
 
   // GPS 약함 경고(조건부) — 상시 상태 표시 폐지(2026-07-12), 문제 있을 때만 조용한 WARN.
