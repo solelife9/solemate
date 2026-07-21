@@ -103,29 +103,8 @@ struct StartView: View {
       }
     }
     .tabViewStyle(.page)
-    // 발견 힌트 — 도트 위 한두 줄. 각자 첫 스와이프에 영구 소등(클러터 0).
-    .overlay(alignment: .bottom) {
-      VStack(spacing: 3) {
-        if pages.count > 1 && !didSwipeShoePages {
-          HStack(spacing: 3) {
-            Image(systemName: "chevron.left")
-            Text("밀어서 다른 신발")
-            Image(systemName: "chevron.right")
-          }
-        }
-        if !didSwipeGoalPanel {
-          HStack(spacing: 2) {
-            Image(systemName: "chevron.down")
-            Text("밀어서 목표")
-          }
-        }
-      }
-      .font(.system(size: 10, weight: .medium))
-      .foregroundStyle(KeegoTheme.t3)
-      .padding(.bottom, 12)
-      .allowsHitTesting(false)
-      .transition(.opacity)
-    }
+    // 발견 힌트('밀어서 목표'/'밀어서 다른 신발')는 제거(사용자 확정 2026-07-21) — 버튼·
+    // 글씨와 겹쳐 화면을 어지럽혔다. 스와이프(가로=신발, 세로=목표)는 그대로 동작한다.
     // 기록 진입점 — 좌상단 작은 글리프(조용한 보조 동작). 신발 이름은 중앙 정렬이라
     // 코너와 겹치지 않는다. 러닝 시작 위계는 그대로(히어로 % + 시작 버튼이 주).
     .overlay(alignment: .topLeading) {
@@ -157,40 +136,40 @@ private struct ShoeStartPage: View {
       // 페이지 오프셋(중앙=0, 이웃=±폭) → 진행도 0~1. 중앙 강조 스케일/딤의 입력.
       let minX = geo.frame(in: .global).minX
       let progress = min(1, abs(minX) / max(1, geo.size.width))
-      // 히어로 v3(2026-07-17, 실기기 왕복 확정 방향): **이름은 링 밖 상단 풀폭**,
-      // 링 안은 수명 % 히어로(폰 홈 링 문법). v2(링 안 이름)는 구조적 한계였다 —
-      // 이름이 원의 내접 폭에 갇혀 긴 모델명(브룩스 칼데라 8 등)이 늘 잘리거나 뭉갰고,
-      // 버튼 안 잘리게 링을 줄이면 이름이 더 못 읽혔다. 이름을 빼면 링은 %만 담아
-      // 작아져도 또렷하다.
-      // v3.1(2026-07-18 목업 확정): 남은 km 를 링 안 캡션으로 승격(폰 홈 링의 값+캡션
-      // 문법 완성). 빠진 한 줄만큼 링이 자연 확대되되, 버튼과 붙지 않게 폭 0.55 캡 유지
-      // + 버튼 상단 여백을 예산에 포함. 링 크기 = 높이 − (이름 34 + 버튼 47 + 도트 14 + 여백 10).
-      // 링 확대(2026-07-20 실기기 피드백 "링 안 글씨가 하나도 안 보여"): 링 안 글씨는
-      // 지름 비례라 지름을 키우는 게 곧 글씨 확대다. 폭 캡을 0.55 → 0.74 로 올리고
-      // 세로 예산을 조인다(도트 14→10, 여백 10→6). 세로가 빡빡한 작은 워치(40mm)에선
-      // height 항이, 큰 워치에선 폭 항이 바인딩 — 어느 쪽이든 예전보다 크다. 하한도 56→68.
-      let belowAndAbove: CGFloat = 34 + 47 + 10 + 6
-      let ringSize = max(68, min(geo.size.width * 0.74, geo.size.height - belowAndAbove))
+      // 반응형 레이아웃(2026-07-21): 이름·링·버튼·간격을 **전부 화면 높이(h)·폭(w) 비례**로
+      // 잡는다. 과거처럼 고정 pt(이름 13/21, 버튼 38)와 고정 여백 예산(px)을 섞으면 워치
+      // 크기(41~49mm)마다 비율이 틀어졌다 — 큰 워치는 글씨가 상대적으로 작고 위아래가 텅 빔.
+      // 모두 h 비례로 통일하면 어느 워치에서든 같은 비율로 보인다. 링은 폭·높이 양쪽 비례
+      // (작은 축 바인딩, 워치 종횡비 ~1.19 라 항상 h 항이 바인딩)로 화면을 같은 비율로 채운다.
+      // 링 안 % 히어로는 PctRing 내부에서 이미 지름 비례(d×0.42)라 링과 함께 커진다.
+      let h = geo.size.height
+      let w = geo.size.width
+      // 링 크기(폭·높이 비례, 작은 축 바인딩). 이름·링·버튼을 화면 위→아래로 균등 분배하고
+      // 남는 세로는 요소 '사이' 유연 여백으로만 흡수 → 위 정보부터 아래 버튼까지 꽉 차되
+      // 간격만 적당(2026-07-21 실기기 피드백 "위에 붙이지 말고 꽉차게, 사이 간격만").
+      let ringSize = min(w * 0.90, h * 0.55)
 
       VStack(spacing: 0) {
-        // 이름 — 풀폭 두 줄(브랜드 캡스 + 모델명). 원 밖이라 잘림 걱정 없이 1줄 자동축소.
-        VStack(spacing: 0) {
+        // 이름 — 브랜드 캡스 + 모델명(원 밖 풀폭, 1줄 자동축소). h 비례 타이포.
+        VStack(spacing: h * 0.004) {
           if !shoe.brand.isEmpty {
             Text(shoe.brand.uppercased())
-              .font(.system(size: 11, weight: .medium))
-              .kerning(1.1)
+              .font(.system(size: h * 0.058, weight: .semibold))
+              .kerning(1.2)
               .foregroundStyle(KeegoTheme.t3)
               .lineLimit(1)
               .minimumScaleFactor(0.7)
           }
           Text(shoe.model.isEmpty ? shoe.displayName : shoe.model)
-            .font(.system(size: 16, weight: .bold))
+            .font(.system(size: h * 0.105, weight: .bold))
             .foregroundStyle(KeegoTheme.t1)
             .lineLimit(1)
             .minimumScaleFactor(0.55)
         }
         .padding(.horizontal, 8)
-        .frame(height: 34)
+
+        // 이름 ↔ 링 사이 — 유연 여백(남는 세로를 균등 흡수, 최소 간격 보장).
+        Spacer(minLength: h * 0.02)
 
         PctRing(
           pct: shoe.lifePct,
@@ -202,15 +181,15 @@ private struct ShoeStartPage: View {
           remainColor: shoe.remainKm > 0 ? KeegoTheme.t3 : KeegoTheme.wearColor(lifePct: shoe.lifePct)
         )
         .frame(width: ringSize, height: ringSize)
-        .padding(.top, 2)
 
-        StartButton(label: "러닝 시작", action: onStart)
-          .padding(.top, 10)
+        // 링 ↔ 버튼 사이 — 유연 여백(위와 동일 비율로 벌어져 균등 분배).
+        Spacer(minLength: h * 0.02)
 
-        // 버튼이 페이지 도트와 겹치지 않게 최소 여백.
-        Spacer(minLength: 12)
+        StartButton(label: "러닝 시작", fontSize: h * 0.090, height: h * 0.175, action: onStart)
       }
-      .padding(.horizontal, 10)
+      .padding(.horizontal, 8)
+      // 버튼이 화면 맨 아래 페이지 도트에 붙지 않게 최소 하단 여백(비례).
+      .padding(.bottom, h * 0.02)
       .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
       // 중앙 강조: 이웃 페이지는 살짝 축소 + 딤(폰 캐러셀 0.93/0.5 감각의 워치판).
       .scaleEffect(1 - 0.07 * progress)
@@ -374,20 +353,20 @@ private struct PctRing: View {
         VStack(spacing: 0) {
           HStack(alignment: .firstTextBaseline, spacing: 1) {
             Text("\(pct)")
-              // 지름 비례 확대(0.27 → 0.34): 링을 키운 만큼 % 히어로도 또렷하게.
-              .font(.system(size: d * 0.34, weight: .bold))
+              // 지름 비례 확대(0.34 → 0.42): 링 안 % 히어로를 흘끗에 읽히게(실기기 피드백).
+              .font(.system(size: d * 0.42, weight: .bold))
               .foregroundStyle(KeegoTheme.t1)
               .monospacedDigit()
             Text("%")
-              .font(.system(size: d * 0.18, weight: .semibold))
+              .font(.system(size: d * 0.21, weight: .semibold))
               .foregroundStyle(KeegoTheme.t3)
           }
           .lineLimit(1)
           .minimumScaleFactor(0.7)
           if let remainText {
             Text(remainText)
-              // 캡션도 확대(0.115 → 0.14) — '남은 km'가 흘끗에 읽히게.
-              .font(.system(size: d * 0.14, weight: .semibold))
+              // 캡션 — '남은 km'가 흘끗에 읽히되 링 폭을 안 넘게(0.15).
+              .font(.system(size: d * 0.15, weight: .semibold))
               .foregroundStyle(remainColor)
               .monospacedDigit()
               .lineLimit(1)
@@ -429,15 +408,18 @@ private struct LifeBar: View {
 /// 전폭 대신 살짝 줄인 너비 — 히어로 아래 조용한 마침표).
 private struct StartButton: View {
   let label: String
+  // 반응형 — 호출부가 화면 높이 비례로 폰트·높이를 준다(기본값은 폴백).
+  var fontSize: CGFloat = 16
+  var height: CGFloat = 38
   let action: () -> Void
 
   var body: some View {
     Button(action: action) {
       Text(label)
-        .font(.system(size: 16, weight: .bold))
+        .font(.system(size: fontSize, weight: .bold))
         .foregroundStyle(KeegoTheme.t1)
         .frame(maxWidth: .infinity)
-        .frame(height: 38)
+        .frame(height: height)
         // 콰이어트 글라스 — 카드와 같은 재질(폰 runBtn 의 GlassEdge 림 미러).
         .background(KeegoTheme.glassFill)
         .clipShape(Capsule())

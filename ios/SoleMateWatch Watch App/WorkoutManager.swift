@@ -181,6 +181,14 @@ final class WorkoutManager: NSObject, ObservableObject {
   private var capturedAvgBpm: Double = 0
   private var capturedKcal: Double = 0
   private var capturedCadence: Double = 0
+  // 거리 소스 — HK 융합거리(distanceWalkingRunning)가 정본(애플 방식, 일관·정확). GPS 누적은
+  // HK 가 아직/전혀 값을 안 줄 때만 받치는 안전장치(0 방지). 섞지 않는다: hkAlive 가 된 뒤로는
+  // 항상 HK 만 써서 같은 코스가 같은 거리로 나온다(하이브리드 금지 — 사용자 확정 2026-07-21).
+  private var hkDistanceKm: Double = 0    // HK 융합 누적 거리(콜백에서 갱신)
+  private var gpsDistanceKm: Double = 0   // GPS 증분 누적(HK 죽었을 때만 표시에 사용)
+  /// HK 가 한 번이라도 유효 거리를 준 뒤 true — 이후 거리는 HK 정본. 러닝 화면에 소스
+  /// 표시(HK/GPS)로도 노출해, 실기기에서 HK 융합거리가 실제로 살아있는지 눈으로 확인한다.
+  @Published private(set) var hkAlive = false
   private var manualPause = false
   // km 스플릿 적산 — 직전 랩 마감 시점의 경과시간(빌더 시간, 일시정지 제외).
   private var lastSplitElapsedS: Double = 0
@@ -280,6 +288,9 @@ final class WorkoutManager: NSObject, ObservableObject {
       capturedAvgBpm = 0
       capturedKcal = 0
       capturedCadence = 0
+      hkDistanceKm = 0
+      gpsDistanceKm = 0
+      hkAlive = false
       pausedAccumS = 0
       pauseStartDate = nil
       splits = []
@@ -374,6 +385,9 @@ final class WorkoutManager: NSObject, ObservableObject {
     capturedAvgBpm = 0
     capturedKcal = 0
     capturedCadence = 0
+    hkDistanceKm = 0
+    gpsDistanceKm = 0
+    hkAlive = false
     pausedAccumS = 0
     pauseStartDate = nil
     splits = []
@@ -440,6 +454,8 @@ final class WorkoutManager: NSObject, ObservableObject {
     if let dType = HKQuantityType.quantityType(forIdentifier: .distanceWalkingRunning),
        let sum = b.statistics(for: dType)?.sumQuantity() {
       let km = sum.doubleValue(for: .meter()) / 1000.0
+      // 복구 후에도 HK 정본 유지 — hkDistanceKm/hkAlive 를 시드해 이후 콜백과 정합.
+      if km.isFinite, km > 0 { hkDistanceKm = km; hkAlive = true; gpsDistanceKm = km }
       if km.isFinite, km > distanceKm { distanceKm = km }
     }
     autoPaused = false
@@ -580,7 +596,7 @@ final class WorkoutManager: NSObject, ObservableObject {
     stopTimer()
     let t = Timer(timeInterval: 1, repeats: true) { [weak self] _ in
       Task { @MainActor in
-        guard let self, self.isActive, let b = self.builder else { return }
+        guard let self, self.isActive, self.builder != nil else { return }
         // 경과시간 = 시작 후 벽시계 − 일시정지 누적 − 진행 중 일시정지. builder.elapsedTime(at:)
         // 은 '진행 중'인 일시정지를 실시간으로 빼주지 않아 자동 일시정지 표시 중에도 시간이
         // 흐르던 버그의 근본수정 — 일시정지 시간을 직접 회계한다(폰 runTracker pausedMs 방식).
@@ -590,20 +606,8 @@ final class WorkoutManager: NSObject, ObservableObject {
           // 단조 증가 보장 — 시계가 뒤로 가는 순간을 화면에 노출하지 않는다(일시정지 중엔 동결).
           if e.isFinite, e >= self.elapsedS { self.elapsedS = e }
         }
-        // 비트랙 거리 = 애플 HealthKit 융합거리(distanceWalkingRunning). raw GPS 점-점 누적보다
-        // 정확(GPS+가속도계 센서융합 = 가민급). 러닝 중·단조 증가만 반영, km 경계는 즉시 랩 마감.
-        // 트랙 모드는 랩기반(detectTrackLap)이 진실원이라 건드리지 않는다.
-        if self.phase == .running, !self.isTrack,
-           let dType = HKQuantityType.quantityType(forIdentifier: .distanceWalkingRunning),
-           let m = b.statistics(for: dType)?.sumQuantity()?.doubleValue(for: .meter()),
-           m.isFinite, m >= 0 {
-          let km = m / 1000.0
-          if km > self.distanceKm {
-            self.distanceKm = km
-            self.advanceKmSplits()
-          }
-        }
-        // 목표 달성 판정(1초 granularity — 위 거리 갱신 후라 최신 거리를 흡수).
+        // 거리는 process(locations)의 GPS 증분 누적이 정본(HK 융합거리 실기기 회귀로 복귀).
+        // 목표 달성 판정(1초 granularity — GPS 갱신된 최신 거리를 흡수).
         self.checkGoalReached()
       }
     }
@@ -611,8 +615,8 @@ final class WorkoutManager: NSObject, ObservableObject {
     timer = t
   }
 
-  /// km 경계 통과분을 랩으로 마감한다(초/km, 빌더 시간 증분이라 일시정지 자동 제외).
-  /// HK 융합거리가 갱신된 직후 호출 — 완료 랩 영속(죽어도 복구) + 랩 햅틱(폰 설정 존중).
+  /// km 경계 통과분을 랩으로 마감한다(초/km, 경과시간 증분이라 일시정지 자동 제외).
+  /// GPS 거리 누적 직후 호출 — 완료 랩 영속(죽어도 복구) + 랩 햅틱(폰 설정 존중).
   private func advanceKmSplits() {
     while distanceKm >= Double(splits.count + 1) {
       splits.append(max(0, elapsedS - lastSplitElapsedS))
@@ -622,6 +626,17 @@ final class WorkoutManager: NSObject, ObservableObject {
       d.set(lastSplitElapsedS, forKey: RecoverKeys.lastSplitElapsedS)
       // 랩 햅틱 — '화면 안 보는 러너'까지 닿는 유일한 인터페이스(Garmin/COROS 자동랩 관용).
       if WatchLink.shared.hapticsOn { WKInterfaceDevice.current().play(.notification) }
+    }
+  }
+
+  /// 표시 거리 재계산 — HK 가 살아있으면(hkAlive) HK 융합거리(정본), 아니면 GPS(폴백).
+  /// 단조 증가만 반영하고, 새 km 경계를 넘겼으면 랩을 마감한다. process(GPS)·didCollectDataOf
+  /// (HK) 양쪽에서 호출 — 두 소스가 같은 distanceKm 에 안전하게 수렴한다(@MainActor 직렬).
+  private func recomputeDistance() {
+    let d = hkAlive ? hkDistanceKm : gpsDistanceKm
+    if d.isFinite, d > distanceKm {
+      distanceKm = d
+      advanceKmSplits()
     }
   }
 
@@ -783,15 +798,30 @@ extension WorkoutManager: HKLiveWorkoutBuilderDelegate {
     _ workoutBuilder: HKLiveWorkoutBuilder,
     didCollectDataOf collectedTypes: Set<HKSampleType>
   ) {
-    guard let hrType = HKObjectType.quantityType(forIdentifier: .heartRate),
-          collectedTypes.contains(hrType),
-          let stats = workoutBuilder.statistics(for: hrType),
-          let q = stats.mostRecentQuantity() else { return }
-    let bpm = q.doubleValue(for: HKUnit.count().unitDivided(by: .minute()))
-    WatchLink.shared.sendHeartRate(bpm)
-    Task { @MainActor in
-      WorkoutManager.shared.heartRate = bpm
-      WorkoutManager.shared.recordHrSample(bpm) // 경로 A — 종료 시 폰 직송용 누적
+    // 심박 — 화면 + 폰 스트림(기존 계약). 거리와 독립 처리(예전엔 HR 없으면 거리도 스킵됐다).
+    if let hrType = HKObjectType.quantityType(forIdentifier: .heartRate),
+       collectedTypes.contains(hrType),
+       let q = workoutBuilder.statistics(for: hrType)?.mostRecentQuantity() {
+      let bpm = q.doubleValue(for: HKUnit.count().unitDivided(by: .minute()))
+      WatchLink.shared.sendHeartRate(bpm)
+      Task { @MainActor in
+        WorkoutManager.shared.heartRate = bpm
+        WorkoutManager.shared.recordHrSample(bpm) // 경로 A — 종료 시 폰 직송용 누적
+      }
+    }
+    // 거리(HK 융합거리) — 애플 표준: 1초 폴링이 아니라 '컬렉션 콜백'에서 읽는다. 실기기에서
+    // 거리가 0 에 멈추던 회귀의 근본 수정 시도(폴링 타이밍이 컬렉션과 안 맞아 nil→0 이던 것).
+    // 유효 값이 오면 HK 를 정본으로 승격(hkAlive) → 그 뒤로 GPS 는 표시에 안 쓴다(일관성).
+    if let dType = HKObjectType.quantityType(forIdentifier: .distanceWalkingRunning),
+       collectedTypes.contains(dType),
+       let sum = workoutBuilder.statistics(for: dType)?.sumQuantity() {
+      let km = sum.doubleValue(for: .meter()) / 1000.0
+      Task { @MainActor in
+        guard km.isFinite, km > 0 else { return }
+        WorkoutManager.shared.hkDistanceKm = km
+        WorkoutManager.shared.hkAlive = true
+        WorkoutManager.shared.recomputeDistance()
+      }
     }
   }
 }
@@ -823,10 +853,13 @@ extension WorkoutManager: CLLocationManagerDelegate {
               // 트랙 모드: GPS 누적은 랩거리 보정용(표시 거리는 랩수×랩거리). 출발점 복귀 = 랩.
               trackCumMeters += meters
               detectTrackLap(at: loc)
+            } else {
+              // 비트랙 GPS 누적은 '폴백' 소스(HK 죽었을 때만 표시). 정본은 HK 융합거리로,
+              // 컬렉션 콜백(didCollectDataOf)에서 갱신한다. 표시 거리는 recomputeDistance 가
+              // HK 우선으로 고른다 — HK 살아있으면 GPS 는 표시에 안 쓰인다(일관성).
+              gpsDistanceKm += meters / 1000.0
+              recomputeDistance()
             }
-            // 비트랙 거리는 애플 HealthKit 융합(distanceWalkingRunning)로 타이머에서 갱신한다
-            // (updateDistanceFromHK). raw GPS 점-점 누적은 폐지 — 가민 대비 과소측정의 뿌리였다.
-            // GPS 는 오토포즈·상승고도·트랙 랩 감지 용도로만 남긴다(최상급 거리 = 애플 센서융합).
           }
           // 상승 고도(누적) — GPS 고도의 양의 증분만 적산. 수직정확도 게이트 + 0.5m 노이즈
           // 임계(미세 지터 무시) + 30m 스파이크 컷. 거리 소스와 무관(고도는 GPS 유지).

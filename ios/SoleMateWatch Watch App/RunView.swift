@@ -158,11 +158,17 @@ struct RunView: View {
         .foregroundStyle(KeegoTheme.t1)
         .lineLimit(1)
         .minimumScaleFactor(0.6)
-      // km 라벨 아래 매달림 — 파파야 최소 포인트(러닝 도메인 표식).
-      Text("km")
-        .font(.system(size: 13, weight: .semibold))
-        .foregroundStyle(KeegoTheme.brand)
-        .padding(.top, -2)
+      // km 라벨 + 거리 소스 진단 태그(HK 융합 살아있으면 'HK', 폴백이면 'GPS').
+      // 실기기에서 HK 융합거리가 실제로 동작하는지 눈으로 확인용(원인 확정 뒤 제거 예정).
+      HStack(spacing: 4) {
+        Text("km")
+          .font(.system(size: 13, weight: .semibold))
+          .foregroundStyle(KeegoTheme.brand)
+        Text(workout.hkAlive ? "HK" : "GPS")
+          .font(.system(size: 9, weight: .bold))
+          .foregroundStyle(workout.hkAlive ? KeegoTheme.good : KeegoTheme.t3)
+      }
+      .padding(.top, -2)
 
       // 목표 진행 — 거리/시간 목표면 얇은 바 + 남은 양(링 제거 결정과 정합).
       // 자유·트랙은 progressTarget 0 → 숨김.
