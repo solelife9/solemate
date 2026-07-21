@@ -15,6 +15,8 @@ import { TabBar, TABBAR_CLEARANCE, Pill, InjuryBanner, Button, SwipeBack, Ambien
 import { RunCard, RunDetail } from './HistoryScreen.rn';
 import { FuelGauge } from './FuelGauge';
 import FirstShoeScreen from './FirstShoeScreen.rn';
+import RotationInsightPanel from './RotationInsightPanel';
+import { RotationPick } from './lib/rotation';
 import { Unit, displayNum } from './lib/units';
 import { wearTier, WearTierTone, SHOE_REPLACE_PCT, clampMaxKm } from './lib/shoe';
 import { assessShoeInjuryRisk } from './lib/injury';
@@ -533,13 +535,16 @@ export default function ShoesScreen({
   shoes = SHOES, runs = [], totals = {}, unit = 'km', weightKg, surfaceOf, onAddShoe, onTab, onRename, onDelete, onRetire, onSetMaxKm, onStartRun,
   detailShoeId, onConsumeDetail,
   rawShoes, rawRuns, progressionCtx, equippedTitle, onRetiredKeepsake, now, userName,
-  forecasts,
+  forecasts, rotation,
 }: {
   userName?: string;
   shoes?: Shoe[];
   // 신발 id별 교체 예측(App 이 실효마모 모델로 계산). 락커 목록에 '약 N주 후 교체' 한 줄 +
   // 교체 임박 신발 상단 정렬 + '곧 교체할 신발 N켤레' 요약에 쓴다(표시 전용, 미주입 시 폴백).
   forecasts?: Record<string, ReplacementForecast | null>;
+  // 로테이션 인사이트(홈에서 이관 — 심사 #13, 2026-07-22). 활성 2켤레+ 에서만 채워지고
+  // 비면 패널이 숨는다. 행 탭 = 그 신발 상세로.
+  rotation?: RotationPick[];
   runs?: Run[];
   totals?: Record<number, ShoeTotals>;
   // (activeIdx '사용 중' 강조 prop 제거 2026-07-11 — 카드 간 구분 없이 동일 취급.)
@@ -678,6 +683,12 @@ export default function ShoesScreen({
         {/* 하단 '러닝화 등록하기' 점선 카드는 제거(사용자 결정 2026-07-02) — 상단 헤더
             '신발 추가'와 중복 진입점. 신발 0켤레는 FirstShoeScreen 빈 상태가 담당한다.
             명예의 전당 진입은 마이탭 소속(신발탭 이동안 철회). */}
+        {/* 로테이션 인사이트(홈에서 이관 — 심사 #13) — 목록 아래 보조 정보. 행 탭=상세. */}
+        <RotationInsightPanel
+          flush
+          rotation={rotation ?? []}
+          onPickShoe={(id) => { const i = shoes.findIndex((sh) => sh.id === id); if (i >= 0) setDetail(i); }}
+        />
       </ScrollView>
       </Rise>
       <TabBar active={1} onTab={(i) => onTab?.(i)} />

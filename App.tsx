@@ -293,7 +293,7 @@ function Main(){
   // 홈 카드 → 화면 이동: 히어로 신발 탭 시 그 신발 상세를 신발탭에서 열고, 주간목표 탭 시
   // 프로필의 목표 설정 패널을 펼친 채 진입한다(각각 한 번만 소비).
   const [shoesDetailId,setShoesDetailId]=useState<string|null>(null);
-  const [profileInitialOpen,setProfileInitialOpen]=useState<'weight'|'alerts'|'account'|null>(null);
+  const [profileInitialOpen,setProfileInitialOpen]=useState<'body'|'alerts'|'account'|null>(null);
   // 진척(랭크·타이틀·업적) 전체화면 표시 여부. 프로필의 '진척' 버튼이 열고, 화면의
   // 뒤로 버튼이 닫는다. 기존 탭/온보딩 부트 흐름과 독립적인 오버레이형 게이트다.
   const [showProgression,setShowProgression]=useState(false);
@@ -2212,7 +2212,6 @@ function Main(){
             shoes={homeUiShoes} week={week} dateLabel={dateLabel} unit={unit} userName={profileName}
             activeIdx={homeActiveIdx} onSelect={selectHomeShoe}
             onStart={startFromIdx} onAddShoe={()=>setOverlay('add')} onTab={setTab}
-            rotation={rotationPicks} onPickShoe={setSelectedShoeId}
             forecast={homeForecast}
             onOpenShoe={(id)=>{setSelectedShoeId(id);setShoesDetailId(id);setTab(1);}}
             progression={homeProgression}
@@ -2240,6 +2239,7 @@ function Main(){
             detailShoeId={shoesDetailId} onConsumeDetail={()=>setShoesDetailId(null)}
             rawShoes={shoes} rawRuns={runs} progressionCtx={progressionCtx} userName={profileName}
             onRetiredKeepsake={onRetiredKeepsake} forecasts={homeForecasts}
+            rotation={rotationPicks}
           />
         )}
         {tab===3&&(

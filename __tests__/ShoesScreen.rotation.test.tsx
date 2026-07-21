@@ -1,21 +1,19 @@
 /**
- * HomeScreen.rn.tsx — behavioural tests for the Slice-4 신발 로테이션 추천 card.
+ * 로테이션 인사이트 패널 — 신발 탭 이관(심사 #13, 2026-07-22) 행동 테스트.
+ * (구 HomeScreen.rotation.test — 패널이 RotationInsightPanel 로 추출되고 신발 탭에
+ * 마운트되면서 관측 대상을 ShoesScreen 으로 옮겼다. 계약은 동일.)
  *
- * Drives the REAL HomeScreen with rotation picks produced by the REAL
- * recommendRotation(lib/rotation) and asserts OBSERVABLE output — what the home
- * screen actually renders and which shoe id a press reports:
- *
- *   1) 2켤레+ → 로테이션 카드가 렌더되고, 더 오래 쉰 신발이 맨 위(pick-0)에 정렬된다.
- *   2) 보관(retired) 신발은 추천 카드에 나타나지 않는다.
- *   3) 1켤레면 추천이 비어(=recommendRotation []) 카드가 숨는다(home-rotation 없음).
- *   4) 추천 항목을 누르면 onPickShoe 가 그 신발 id로 호출된다(선택 동선).
+ *   1) 2켤레+ → 패널이 렌더되고, 더 오래 쉰 신발이 맨 위(pick-0)에 정렬된다.
+ *   2) 보관(retired) 신발은 패널에 나타나지 않는다.
+ *   3) 1켤레면 추천이 비어(=recommendRotation []) 패널이 숨는다(rotation-insight 없음).
+ *   4) 행을 누르면 그 신발의 상세가 열린다(신발 탭 동선).
  *
  * @format
  */
 
 import React from 'react';
 import ReactTestRenderer, {act} from 'react-test-renderer';
-import HomeScreen from '../HomeScreen.rn';
+import ShoesScreen from '../ShoesScreen.rn';
 import {Shoe} from '../theme';
 import {recommendRotation, RotationShoe, RotationRun} from '../lib/rotation';
 
@@ -44,7 +42,7 @@ function render(el: React.ReactElement) {
 const byTestID = (root: ReactTestRenderer.ReactTestInstance, id: string) =>
   root.findAll((n: any) => n && n.props && n.props.testID === id);
 
-// UI 신발(히어로/피커용). 로테이션 카드는 rotation prop 으로 따로 구동된다.
+// UI 신발(락커 목록용). 로테이션 패널은 rotation prop 으로 따로 구동된다.
 const uiShoe = (brand: string, model: string, id: string): Shoe => ({
   id,
   brand,
@@ -69,16 +67,14 @@ describe('@slice-4 홈 신발 로테이션 추천 카드', () => {
     expect(rotation.length).toBe(2);
 
     const root = render(
-      <HomeScreen
+      <ShoesScreen
         shoes={[uiShoe('Nike', 'Pegasus 41', 'a'), uiShoe('Adidas', 'Adizero SL2', 'c')]}
-        activeIdx={0}
-        onSelect={jest.fn()}
         rotation={rotation}
       />,
     ).root;
 
     // 카드가 보인다.
-    expect(byTestID(root, 'home-rotation').length).toBeGreaterThan(0);
+    expect(byTestID(root, 'rotation-insight').length).toBeGreaterThan(0);
     // 정렬: pick-0 = 더 오래 쉰 c(Adizero SL2), pick-1 = a(Pegasus 41).
     expect(textOf(byTestID(root, 'rotation-pick-0')[0])).toContain('Adizero SL2');
     expect(textOf(byTestID(root, 'rotation-pick-1')[0])).toContain('Pegasus 41');
@@ -98,15 +94,13 @@ describe('@slice-4 홈 신발 로테이션 추천 카드', () => {
     const rotation = recommendRotation({shoes, runs: [], today: '2026-06-03'});
 
     const root = render(
-      <HomeScreen
+      <ShoesScreen
         shoes={[uiShoe('Nike', 'Pegasus 41', 'a'), uiShoe('Adidas', 'Adizero SL2', 'c')]}
-        activeIdx={0}
-        onSelect={jest.fn()}
         rotation={rotation}
       />,
     ).root;
 
-    const cardText = textOf(byTestID(root, 'home-rotation')[0]);
+    const cardText = textOf(byTestID(root, 'rotation-insight')[0]);
     expect(cardText).not.toContain('Bondi 9');
     expect(cardText).toContain('Pegasus 41');
     expect(cardText).toContain('Adizero SL2');
@@ -121,19 +115,17 @@ describe('@slice-4 홈 신발 로테이션 추천 카드', () => {
     expect(rotation).toEqual([]);
 
     const root = render(
-      <HomeScreen
+      <ShoesScreen
         shoes={[uiShoe('Nike', 'Pegasus 41', 'a')]}
-        activeIdx={0}
-        onSelect={jest.fn()}
         rotation={rotation}
       />,
     ).root;
 
-    expect(byTestID(root, 'home-rotation').length).toBe(0);
+    expect(byTestID(root, 'rotation-insight').length).toBe(0);
   });
 
-  // ── 추천 항목 누르면 onPickShoe(id) 호출 ──────────────────────────────────────
-  test('추천 항목을 누르면 그 신발 id로 onPickShoe 가 호출된다', () => {
+  // ── 행을 누르면 그 신발 상세가 열린다(신발 탭 동선) ──────────────────────────
+  test('인사이트 행을 누르면 그 신발의 상세가 열린다', () => {
     const shoes: RotationShoe[] = [
       {id: 'a', brand: 'Nike', model: 'Pegasus 41'},
       {id: 'c', brand: 'Adidas', model: 'Adizero SL2'},
@@ -143,22 +135,19 @@ describe('@slice-4 홈 신발 로테이션 추천 카드', () => {
       {shoeId: 'c', date: '2026-05-26'},
     ];
     const rotation = recommendRotation({shoes, runs, today: '2026-06-03'});
-    const onPickShoe = jest.fn();
 
     const root = render(
-      <HomeScreen
+      <ShoesScreen
         shoes={[uiShoe('Nike', 'Pegasus 41', 'a'), uiShoe('Adidas', 'Adizero SL2', 'c')]}
-        activeIdx={0}
-        onSelect={jest.fn()}
         rotation={rotation}
-        onPickShoe={onPickShoe}
       />,
     ).root;
 
     act(() => {
       byTestID(root, 'rotation-pick-0')[0].props.onPress();
     });
-    // pick-0 = c → onPickShoe('c')
-    expect(onPickShoe).toHaveBeenCalledWith('c');
+    // pick-0 = c(더 오래 쉼) → 그 신발 상세가 열린다(모델명이 상세 헤더에 크게).
+    expect(textOf(root)).toContain('Adizero SL2');
+    expect(byTestID(root, 'rotation-insight').length).toBe(0); // 목록을 떠나 상세로 전환됨
   });
 });

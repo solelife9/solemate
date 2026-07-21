@@ -148,7 +148,7 @@ export default function ProfileScreen({
   onChangeSex?: (v: 'male' | 'female') => void;
   restHR?: number;
   onChangeRestHR?: (v: number) => void;
-  initialOpen?: 'weight' | 'alerts' | 'notif' | 'account' | null;
+  initialOpen?: 'body' | 'alerts' | 'notif' | 'account' | null;
   onConsumeInitialOpen?: () => void;
   unit?: Unit;
   onChangeUnit?: (u: Unit) => void;
@@ -219,8 +219,9 @@ export default function ProfileScreen({
   onDeleteAccount?: () => Promise<void>;
 }) {
   // 어떤 설정 행이 펼쳐졌는지(단위는 패널 없이 즉시 토글). 한 번에 하나만 펼친다.
-  const [open, setOpen] = useState<null | 'weight' | 'body' | 'alerts' | 'notif' | 'voice' | 'account'>(null);
-  const toggleOpen = (k: 'weight' | 'body' | 'alerts' | 'notif' | 'voice' | 'account') => setOpen((o) => (o === k ? null : k));
+  // 'weight' 아코디언은 '신체 정보'(body)로 병합(심사 #21, 2026-07-22).
+  const [open, setOpen] = useState<null | 'body' | 'alerts' | 'notif' | 'voice' | 'account'>(null);
+  const toggleOpen = (k: 'body' | 'alerts' | 'notif' | 'voice' | 'account') => setOpen((o) => (o === k ? null : k));
 
   // ── 음성 코칭 설정(탑티어 패리티 #14) — 로컬 로드/저장, 다음 러닝부터 적용 ──────
   const [voice, setVoice] = useState<VoiceSettings>({...DEFAULT_VOICE});
@@ -1116,29 +1117,21 @@ export default function ProfileScreen({
               <Ionicons name="swap-horizontal" size={ri(16)} color={T3} />
             </Pressable>
 
-            {/* 3.5) 체중 — 칼로리 추정용 */}
-            <Pressable onPress={() => toggleOpen('weight')} accessibilityRole="button" accessibilityLabel={`체중, ${weightKg}kg`} accessibilityState={{ expanded: open === 'weight' }} style={({ pressed }) => [s.settingRow, s.settingBorder, pressed && { backgroundColor: CARD_HI }]}>
+            {/* 신체 정보 — 체중(칼로리)·나이/성별(심박존)·안정심박을 한 행으로 병합
+                (심사 #21, 2026-07-22 — 두 아코디언이 모두 '내 몸' 입력이라 Hick 축소). */}
+            <Pressable onPress={() => toggleOpen('body')} accessibilityRole="button" accessibilityLabel="신체 정보 설정" accessibilityState={{ expanded: open === 'body' }} style={({ pressed }) => [s.settingRow, pressed && { backgroundColor: CARD_HI }]}>
               <View style={s.settingIcon}><Ionicons name="body-outline" size={ri(17)} color={ACCENT} /></View>
-              <Text style={s.settingLabel}>체중</Text>
-              <Text style={s.settingDetail}>{weightKg}kg</Text>
-              <Ionicons name={open === 'weight' ? 'chevron-up' : 'chevron-forward'} size={ri(16)} color={T3} />
-            </Pressable>
-            {open === 'weight' && (
-              <View style={[s.panel, s.settingBorder]}>
-                <Stepper value={weightKg} suffix="kg" onMinus={() => stepWeight(-1)} onPlus={() => stepWeight(1)} />
-                <Text style={s.panelHint}>러닝 칼로리 추정에 사용돼요</Text>
-              </View>
-            )}
-            {/* 심박·신체 — 심박존/트레이닝효과 정확도용(나이·성별·안정심박). 선택 입력. */}
-            <Pressable onPress={() => toggleOpen('body')} accessibilityRole="button" accessibilityLabel="심박 · 신체 설정" accessibilityState={{ expanded: open === 'body' }} style={({ pressed }) => [s.settingRow, pressed && { backgroundColor: CARD_HI }]}>
-              <View style={s.settingIcon}><Ionicons name="heart-outline" size={ri(17)} color={ACCENT} /></View>
-              <Text style={s.settingLabel}>심박 · 신체</Text>
-              <Text style={s.settingDetail}>{age > 0 ? `${age}세` : '미설정'}</Text>
+              <Text style={s.settingLabel}>신체 정보</Text>
+              <Text style={s.settingDetail}>{`${weightKg}kg${age > 0 ? ` · ${age}세` : ''}`}</Text>
               <Ionicons name={open === 'body' ? 'chevron-up' : 'chevron-forward'} size={ri(16)} color={T3} />
             </Pressable>
             {open === 'body' && (
               <View style={[s.panel, s.settingBorder]}>
-                <Stepper value={age > 0 ? age : '미설정'} suffix="나이(세)" onMinus={() => stepAge(-1)} onPlus={() => stepAge(1)} />
+                <Stepper value={weightKg} suffix="kg" onMinus={() => stepWeight(-1)} onPlus={() => stepWeight(1)} />
+                <Text style={s.panelHint}>러닝 칼로리·신발 수명 계산에 사용돼요</Text>
+                <View style={{ marginTop: rv(14) }}>
+                  <Stepper value={age > 0 ? age : '미설정'} suffix="나이(세)" onMinus={() => stepAge(-1)} onPlus={() => stepAge(1)} />
+                </View>
                 {/* 수제 흰 솔리드 칩 → SegmentedControl(neutral) — 앱 전역 선택 스트립과
                     같은 문법(선택=흰 9% 유리, 흰 솔리드 강조 회수. 검수 MED, 2026-07-16). */}
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: rv(14) }}>

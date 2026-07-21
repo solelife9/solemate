@@ -22,7 +22,6 @@ import type { RankTier } from './lib/progression/types';
 import { TabBar, TABBAR_CLEARANCE, KeegoWordmark, SectionTitle, AmbientBackdrop, GlassEdge } from './primitives';
 import { Unit } from './lib/units';
 import { ShoeCard as KeegoShoeCard, GhostShoeCard } from './screens/KeegoHome';
-import { RotationPick } from './lib/rotation';
 import { recommendNextShoes, buildShopLinks, categoryLabelKo, AFFILIATE_DISCLOSURE } from './lib/affiliate';
 import { type ReplacementForecast } from './lib/wearView';
 import { shouldRecommendNextShoe } from './lib/recommendTrigger';
@@ -264,88 +263,7 @@ function WeekCard({ week, unit = 'km', weeklyGoalKm = 0, streakDays = 0 }: { wee
   );
 }
 
-// 인사이트 배지 색 토큰 — 추천 언어 없이 데이터 기반으로만 표시.
-const INSIGHT_TONE: Record<string, { bg: string; text: string }> = {
-  neutral: { bg: CARD_HI,                         text: T3     },
-  warn:    { bg: withAlpha(WARN,   0.12),          text: WARN   },
-  good:    { bg: withAlpha(GOOD,   0.12),          text: GOOD   },
-  accent:  { bg: withAlpha(ACCENT, 0.12),          text: ACCENT },
-};
-
-// RotationPick 의 reason 문자열(lib/rotation 생성)에서 UI 인사이트를 파생한다.
-// 추천 언어('오늘 추천' 등) 없이 실제 사용 데이터(휴식 일수·빈도)만 표시.
-function insightBadge(
-  pick: RotationPick,
-  index: number,
-  total: number,
-): { badge: string; description: string; toneKey: string } {
-  const r = pick.reason;
-  const daysMatch = r.match(/(\d+)일 휴식/);
-  const days      = daysMatch ? parseInt(daysMatch[1], 10) : null;
-  const neverWorn = r.includes('아직 안 신은');
-  const usedToday = r.includes('오늘 신은');
-  const isCarbon  = r.includes('카본화');
-  const isFirst   = index === 0;
-  const isLast    = total > 1 && index === total - 1;
-
-  if (neverWorn)
-    return { badge: '미착용',       description: '아직 한 번도 신지 않은 신발이에요.',      toneKey: 'neutral' };
-  if (usedToday && isLast)
-    return { badge: '사용 빈도 높음', description: '요즘 가장 많이 신는 신발이에요.',    toneKey: 'accent'  };
-  if (usedToday)
-    return { badge: '오늘 사용',     description: '오늘 신은 신발이에요.',                   toneKey: 'good'    };
-  if (isCarbon) {
-    const dText = days != null ? `${days}일 미사용` : '휴식중';
-    return { badge: dText,           description: '레이스를 위해 아껴두는 신발이에요.',              toneKey: 'neutral' };
-  }
-  if (isLast)
-    return { badge: '사용 빈도 높음', description: '요즘 가장 많이 신는 신발이에요.',    toneKey: 'accent'  };
-  if (isFirst && days != null && days > 6)
-    return { badge: `${days}일 미사용`, description: '최근 가장 오래 쉬고 있는 신발이에요.', toneKey: days > 14 ? 'warn' : 'neutral' };
-  if (days != null && days > 14)
-    return { badge: '장기 휴식중',   description: '로테이션에 포함해보세요.',                toneKey: 'warn'    };
-  if (days != null && days > 0)
-    return { badge: `${days}일 미사용`, description: '로테이션에 포함해보세요.',             toneKey: 'neutral' };
-  return   { badge: '로테이션 필요', description: '균형 잡힌 로테이션을 위해 활용해보세요.', toneKey: 'neutral' };
-}
-
-// 로테이션 인사이트 — 신발별 실제 사용 데이터를 기반으로 로테이션 현황을 표시한다.
-// 추천(어떤 신발을 신어라)이 아닌 인사이트(사용 패턴이 어떻다)를 제공한다.
-// 행 탭은 그 신발을 홈 히어로로 포커스한다(추천이 아닌 선택 보조). 표시 전용 배지.
-// 활성 2켤레+ 일 때만 rotation 이 채워지므로, 비었으면 통째로 숨긴다.
-function RotationInsightPanel({ rotation, onPickShoe }: { rotation: RotationPick[]; onPickShoe?: (shoeId: string) => void }) {
-  if (!rotation || rotation.length === 0) return null;
-  return (
-    <View testID="home-rotation" style={s.rotaWrap}>
-      <SectionTitle style={s.sectionLabel}>로테이션 인사이트</SectionTitle>
-      <View style={s.rotaCard}>
-        <GlassEdge glints={false} radius={RADIUS.lg} />
-        {rotation.map((p, i) => {
-          const { badge, description, toneKey } = insightBadge(p, i, rotation.length);
-          const tone = INSIGHT_TONE[toneKey] ?? INSIGHT_TONE.neutral;
-          return (
-            <Pressable
-              key={p.shoe.id ?? i}
-              testID={`rotation-pick-${i}`}
-              onPress={onPickShoe ? () => onPickShoe(p.shoe.id) : undefined}
-              accessibilityRole="button"
-              accessibilityLabel={`${p.shoe.brand} ${p.shoe.model}`}
-              style={({ pressed }) => [s.insightRow, i > 0 && s.insightRowSep, pressed && onPickShoe ? s.pressed : null]}>
-              <View style={s.insightRowTop}>
-                <Text style={s.rotaBrand} numberOfLines={1}>{p.shoe.brand}</Text>
-                <View style={[s.insightBadgeChip, { backgroundColor: tone.bg }]}>
-                  <Text style={[s.insightBadgeText, { color: tone.text }]}>{badge}</Text>
-                </View>
-              </View>
-              <Text style={s.rotaModel} numberOfLines={1}>{p.shoe.model}</Text>
-              <Text style={s.insightDesc} numberOfLines={2}>{description}</Text>
-            </Pressable>
-          );
-        })}
-      </View>
-    </View>
-  );
-}
+// (로테이션 인사이트 패널 → RotationInsightPanel.tsx 로 이관 — 심사 #13, 2026-07-22.)
 
 // 수익화 v1(차별점 정합): 선택 신발이 '교체' 등급이면 같은 카테고리의 다음 러닝화를
 // 추천한다(구매 의도 최고 시점의 contextual 추천 — 배너광고 아님). 쇼핑몰 검색 링크는
@@ -413,7 +331,7 @@ function EmptyHome({ onAddShoe }: { onAddShoe?: () => void }) {
 
 export default function HomeScreen({
   shoes = SHOES, onStart, onAddShoe, onTab,
-  activeIdx: activeIdxProp, onSelect, unit = 'km', week, rotation, onPickShoe,
+  activeIdx: activeIdxProp, onSelect, unit = 'km', week,
   onOpenShoe, forecast, progression,
   onRefresh, lastSyncAt: _lastSyncAt, userName,
   weeklyGoalKm = 0, streakDays = 0, load,
@@ -431,12 +349,7 @@ export default function HomeScreen({
   onStart?: (idx: number) => void;
   onAddShoe?: () => void;
   onTab?: (i: number) => void;
-  // 신발 로테이션 추천(App이 신발+런으로 recommendRotation 계산해 내려준다). 활성
-  // 2켤레+ 에서만 채워지고, 비면 카드가 숨는다(1켤레/추천 없음). 표시 전용.
-  rotation?: RotationPick[];
-  // 추천 신발을 누르면 그 신발을 홈 히어로로 선택한다(shoe.id 기준 — picker 순서와
-  // 다른 추천 순서를 id로 매핑해 잘못된 신발 선택을 막는다).
-  onPickShoe?: (shoeId: string) => void;
+  // (로테이션 인사이트는 신발 탭으로 이관 — 심사 #13, 2026-07-22. rotation/onPickShoe prop 제거.)
   // 선택 신발을 App이 소유(제어 모드): activeIdx+onSelect가 함께 오면 외부 상태를
   // 따른다. 둘 다 없으면 기존처럼 내부 상태로 동작(하위호환).
   activeIdx?: number;
@@ -531,9 +444,8 @@ export default function HomeScreen({
             </View>
           </Rise>
           {/* (체력 트렌드 FitnessCard → 기록 탭 인사이트로 이동, 진척 띠 → 마이탭으로
-              일원화 — MVP 홈 다이어트. 홈은 '오늘 신발 고르고 뛴다' 저니에 집중한다.) */}
-          {/* 로테이션 인사이트(2켤레+에서만 채워짐, 비면 자동 숨김) */}
-          <RotationInsightPanel rotation={rotation ?? []} onPickShoe={onPickShoe} />
+              일원화 — MVP 홈 다이어트. 홈은 '오늘 신발 고르고 뛴다' 저니에 집중한다.
+              로테이션 인사이트도 신발 탭으로 이관 — 심사 #13, 2026-07-22.) */}
           {/* 수익화 v1: 다음 러닝화 추천 노출 트리거 — Slice 6 교체 예측 기반(overdue/임박).
               forecast가 주입되면 shouldRecommendNextShoe로 판정하고, 없으면 사용률 임계
               (≥SHOE_REPLACE_PCT=90%) 폴백을 보존한다(구 3단계 condition==='교체' 비교를
@@ -642,17 +554,7 @@ const s = StyleSheet.create({
   chalBarFill: { height: '100%', borderRadius: RADIUS.pill },
   chalPct: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, marginTop: rv(4) },
 
-  rotaWrap: { marginTop: SPACE.lg },
-  rotaCard: { marginHorizontal: SPACE.xl, backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderCurve: 'continuous', overflow: 'hidden', paddingHorizontal: SPACE.lg },
-  rotaBrand: { color: T3, fontFamily: DISPLAY, fontSize: TYPE.caption.fontSize, fontWeight: '500', letterSpacing: 1.2 },
-  rotaModel: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.body.fontSize, fontWeight: '600', letterSpacing: -0.1, marginTop: rv(4) },
   // 로테이션 인사이트 행
-  insightRow: { paddingVertical: rv(14) },
-  insightRowSep: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.07) },
-  insightRowTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: rv(8) },
-  insightBadgeChip: { borderRadius: RADIUS.pill, paddingHorizontal: rs(10), paddingVertical: rv(4), flexShrink: 0 },
-  insightBadgeText: { fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600', letterSpacing: -0.1 },
-  insightDesc: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, letterSpacing: -0.1, marginTop: rv(4), lineHeight: rf(18) },
 
   // 수익화 v1: 교체 시점 '다음 러닝화' 추천 카드(오렌지 절제 — 테두리만 액센트)
   nextWrap: { marginTop: SPACE.lg },

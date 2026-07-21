@@ -102,6 +102,18 @@ function heroText(root: ReactTestRenderer.ReactTestInstance): string {
   return heroes.length ? textOf(heroes[0]) : '';
 }
 
+
+// 캐러셀 스냅으로 히어로를 선택한다(구 로테이션 행 탭 경로는 신발 탭으로 이관 — 심사 #13).
+// onMomentumScrollEnd 에 스냅 offset(i×HERO_SNAP=카드폭+간격)을 흘리면 onSelect(i)가 불린다.
+async function selectHeroByIndex(root: ReactTestRenderer.ReactTestInstance, index: number) {
+  const sv = root.findAll((n: any) => n && n.props && typeof n.props.onMomentumScrollEnd === 'function' && n.props.horizontal === true)[0];
+  if (!sv) throw new Error('no hero carousel');
+  await act(async () => {
+    sv.props.onMomentumScrollEnd({nativeEvent: {contentOffset: {x: index * 10000}}}); // 큰 x → clamp(마지막)
+  });
+  await flush();
+}
+
 beforeEach(async () => {
   // prices 등 로컬 키 누수 방지(메모리: clearAllMockStorages 누수 → clear() 직접 호출).
   await AsyncStorage.clear();
@@ -125,13 +137,13 @@ test('홈 히어로는 처음에 가장 최근에 신은 신발을 기본으로 
   expect(hero).not.toContain('Clifton');
 });
 
-test('홈 picker에서 다른 신발을 고르면 히어로가 그 신발로 바뀐다(선택 반영)', async () => {
+test('홈 캐러셀에서 다른 신발로 스냅하면 히어로가 그 신발로 바뀐다(선택 반영)', async () => {
   const {root} = await mount(SHOES, RUNS);
   // 처음엔 기본(가장 최근 신은 Pegasus)이 히어로
   expect(heroText(root)).toContain('Pegasus');
 
-  // picker에서 Clifton 선택 → 히어로가 Clifton으로 전환
-  await tap(pressBy(root, 'Clifton'));
+  // 캐러셀 스냅으로 마지막 카드(Clifton) 선택 → 히어로가 Clifton으로 전환
+  await selectHeroByIndex(root, 1);
   const hero = heroText(root);
   expect(hero).toContain('Clifton');
   expect(hero).not.toContain('Pegasus');
@@ -169,7 +181,7 @@ test("신발 탭 락커엔 '사용 중' 라벨이 없다(2026-07-11 라벨 제�
   // 선택 소유는 홈 히어로 테스트(위 2건)가 계속 가드한다. 잠금장 '사용 중' 강조는
   // 사용자 확정으로 제거됐으므로, 여기선 라벨이 다시 살아나지 않는 것만 고정한다.
   const {root} = await mount(SHOES, RUNS);
-  await tap(pressBy(root, 'Clifton'));
+  await selectHeroByIndex(root, 1);
   await tap(pressBy(root, '러닝화'));
   const featured = root.findAll(
     (n: any) => n && n.props && typeof n.props.onPress === 'function' && textOf(n).includes('사용 중'),
@@ -188,9 +200,10 @@ test('ShoeDetail: 마지막 착용일이 런 기록에서 파생되어 표시된
 });
 
 // ── slice-4 로테이션: App 배선 회귀 방지 ─────────────────────────────────────
-test('활성 2켤레면 홈에 로테이션 추천 카드(home-rotation)가 렌더된다', async () => {
+test('활성 2켤레면 신발 탭에 로테이션 인사이트가 렌더된다(홈→신발 탭 이관, 심사 #13)', async () => {
   const {root} = await mount(SHOES, RUNS);
-  const card = byTestID(root, 'home-rotation');
+  await tap(pressBy(root, '러닝화'));
+  const card = byTestID(root, 'rotation-insight');
   expect(card.length).toBeGreaterThan(0);
   const cardText = textOf(card[0]);
   // recommendRotation 결과로 두 활성 신발이 모두 카드에 나타난다(App→HomeScreen 배선).
@@ -223,9 +236,10 @@ test('휴식 동일·거리만 다르면 홈 로테이션 pick-0는 Σkm 적은 
     {id: 'r4', shoe_id: 's2', km: 3, run_date: '2026-05-31', duration: 600},
   ];
   const {root} = await mount(shoes, runs);
+  await tap(pressBy(root, '러닝화')); // 패널은 신발 탭 소속(심사 #13)
 
   // 두 활성 신발이 카드에 모두 나타난다(배선 자체는 살아 있음).
-  const card = byTestID(root, 'home-rotation');
+  const card = byTestID(root, 'rotation-insight');
   expect(card.length).toBeGreaterThan(0);
   const cardText = textOf(card[0]);
   expect(cardText).toContain('Pegasus');
@@ -251,6 +265,7 @@ test('정확히 2켤레 중 1켤레 보관 → 활성 1켤레 → 로테이션 �
     {id: 'r1', shoe_id: 's1', km: 5, run_date: '2026-05-31', duration: 1800},
   ];
   const {root} = await mount(shoes, runs);
-  // 활성이 1켤레뿐 → recommendRotation [] → 카드가 렌더되지 않는다.
-  expect(byTestID(root, 'home-rotation').length).toBe(0);
+  await tap(pressBy(root, '러닝화'));
+  // 활성이 1켤레뿐 → recommendRotation [] → 패널이 렌더되지 않는다(신발 탭에서도).
+  expect(byTestID(root, 'rotation-insight').length).toBe(0);
 });
