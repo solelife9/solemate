@@ -37,6 +37,11 @@ struct SummaryView: View {
             row(label: "시간", value: KeegoFormat.time(s.durationS))
             row(label: "평균 페이스", value: KeegoFormat.pace(secPerKm: s.avgPaceSecPerKm))
             row(label: "평균 심박", value: s.avgBpm > 0 ? "\(Int(s.avgBpm.rounded())) BPM" : "--")
+            // 케이던스·칼로리·상승고도 — 이미 집계·전송하던 값을 요약에도 노출(데이터는 있는데
+            // 워치 요약이 빈약하던 것 보강). 미측정(0)이면 줄을 숨겨 '--' 나열을 피한다.
+            if s.cadence > 0 { row(label: "케이던스", value: "\(Int(s.cadence.rounded())) spm") }
+            if s.kcal > 0 { row(label: "칼로리", value: "\(Int(s.kcal.rounded())) kcal") }
+            if s.elevGainM > 0 { row(label: "상승 고도", value: "\(Int(s.elevGainM.rounded())) m") }
             if !s.shoeName.isEmpty {
               row(label: "신발", value: s.shoeName)
             }

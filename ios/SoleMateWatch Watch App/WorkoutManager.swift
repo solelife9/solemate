@@ -311,6 +311,7 @@ final class WorkoutManager: NSObject, ObservableObject {
       locationManager.startUpdatingLocation()
       phase = .running
       startTimer()
+      WatchVoice.shared.start() // 러닝 시작 음성(워치 단독+에어팟)
     } catch {
       phase = .idle
     }
@@ -570,6 +571,8 @@ final class WorkoutManager: NSObject, ObservableObject {
     // km 0(무효 런)은 폰이 거른다(onWatchRun 계약) — 여기선 항상 보낸다(유실 금지 우선).
     WatchLink.shared.sendRun(s)
     RecentRuns.save(s)
+    // 완주 요약 음성(워치 단독+에어팟) — "운동을 종료합니다…, N킬로미터, 경과 …, 평균 페이스 …".
+    WatchVoice.shared.finishSummary(km: s.km, elapsedSec: s.durationS, avgPaceSec: s.avgPaceSecPerKm > 0 ? s.avgPaceSecPerKm : nil)
     // 심박 기록 직송(경로 A) — 수동 '저장'과 무관하게 종료 시 항상 보낸다. 폰이 주머니에
     // 있어(실시간 스트림 놓침) 폰 런의 hrTrack 이 비는 문제를 근본 해결한다(배달 보장 큐).
     if hrSamples.count >= 2 {
@@ -626,6 +629,8 @@ final class WorkoutManager: NSObject, ObservableObject {
       d.set(lastSplitElapsedS, forKey: RecoverKeys.lastSplitElapsedS)
       // 랩 햅틱 — '화면 안 보는 러너'까지 닿는 유일한 인터페이스(Garmin/COROS 자동랩 관용).
       if WatchLink.shared.hapticsOn { WKInterfaceDevice.current().play(.notification) }
+      // km 음성 안내(워치 단독+에어팟) — "N킬로미터, 페이스 …, 경과 …". 폰 없이도 안내.
+      WatchVoice.shared.kmCue(splits.count, paceSec: splits.last, elapsedSec: elapsedS, lastKm: false)
     }
   }
 
@@ -656,6 +661,7 @@ final class WorkoutManager: NSObject, ObservableObject {
     goalReached = true
     // 목표 달성 햅틱 — 폰 햅틱 설정 존중(끈 사용자에겐 조용히).
     if WatchLink.shared.hapticsOn { WKInterfaceDevice.current().play(.success) }
+    WatchVoice.shared.goal() // 목표 달성 음성
   }
 
   // ── 자동 일시정지 상태기계(lib/autoPause.ts 미러 — 히스테리시스) ─────────────
