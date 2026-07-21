@@ -1276,6 +1276,12 @@ export default function ProfileScreen({
                 </Pressable>
               )}
             </View>
+            {/* 메이커 노트 — 진정성·판정 독립 선언(BRAND.md §0·§2). 과장 없이 한 문단만. */}
+            <Text testID="maker-note" style={s.makerNote}>
+              keego는 러너 한 사람이 직접 달리며 만들어요. 모든 숫자는 실제 기록이고,
+              교체 예측은 어떤 제휴와도 무관하게 달린 데이터로만 계산해요.
+              부상 없이, 계속 달리도록 — keep going.
+            </Text>
             {cloudMsg && (
               <Text testID="cloud-msg" style={[s.cloudMsg, cloudMsg.ok ? s.dataMsgOk : s.dataMsgErr]}>{cloudMsg.text}</Text>
             )}
@@ -1429,4 +1435,5 @@ const s = StyleSheet.create({
   brandMark: { fontFamily: DISPLAY, fontSize: TYPE.heading.fontSize, fontWeight: '700' },
   cloudBtnTxt: { color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600' },
   cloudMsg: { fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600', lineHeight: rf(18), paddingHorizontal: rs(16), paddingBottom: rv(14) },
+  makerNote: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '400', lineHeight: rf(19), paddingHorizontal: rs(16), paddingTop: rv(4), paddingBottom: rv(14) },
 });

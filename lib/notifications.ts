@@ -222,7 +222,7 @@ export function dueNotifications(state: NotifState, now: Date): NotificationInte
       intents.push({
         type: 'weekly_goal',
         title: '이번 주 목표',
-        body: `이번 주 목표의 ${pct}%를 달렸어요. 주말에 조금만 더 달리면 채울 수 있어요!`,
+        body: `이번 주 목표의 ${pct}%를 달렸어요. 주말에 조금만 더 달리면 채울 수 있어요.`,
         key: `weekly_goal:${today}`,
       });
     }
