@@ -28,8 +28,8 @@ export const HERO_BG = '#242426';        // selected/featured card surface (CARD
 // 색은 의미에만(2026-07-09 재확정). 브랜드색이 앱 전역에 남발되면 시끄럽다는 피드백 →
 // Apple/WHOOP식(흰=강조, 색=의미)으로 회수. ACCENT/ACCENT_2/GRAD_* 는 이제 무채값이라
 // 기존 소비부(비-링)는 자동으로 흰/회로 내려앉는다. 브랜드색은 아래 RING_ACCENT* 셋으로만 생존.
-// 값 = McLaren 파파야(밝게 시작 → 진하게 마감 그라데이션).
-export const RING_ACCENT = '#FF8000';        // McLaren 파파야 (러닝 링 유일 브랜드 색)
+// 값 = Keego Ember(밝게 시작 → 진하게 마감 그라데이션 — BRAND.md §4).
+export const RING_ACCENT = '#FF8000';        // Keego Ember (러닝 링 유일 브랜드 색)
 export const RING_ACCENT_HI = '#FFB458';     // 링 그라데이션 top(밝은 파파야)
 export const RING_ACCENT_LO = '#E56600';     // 링 그라데이션 bottom(진한 파파야)
 
