@@ -116,7 +116,7 @@ import {
   getNotifSettings, setNotifSettings, dueNotifications,
   DEFAULT_NOTIF_SETTINGS, type NotifSettings, type NotifState, type ShoeForecast,
 } from './lib/notifications';
-import {presentDue, setupPushMessaging, type PushWiring} from './lib/pushMessaging';
+import {presentDue, setupPushMessaging, shouldPrimePushPermission, markPushPrimed, primePushPermission, type PushWiring} from './lib/pushMessaging';
 import {syncRunReminder, ensureForegroundHandler} from './lib/localReminder';
 import {weeklyProgress, currentStreak, personalRecords} from './lib/goals';
 import {BackupPayload} from './lib/backup';
@@ -607,18 +607,18 @@ function Main(){
     return ()=>sub.remove();
   },[]);
 
-  // audit a4: 앱측 FCM 배선(부팅 직후 1회). setupPushMessaging 가 권한→토큰 취득→
-  // 'fcm_token_pending' 영속+등록(백엔드 등록 API 미존재 → graceful no-op 큐잉)→포그라운드
-  // 메시지/onTokenRefresh 핸들러를 한 번에 처리한다. 내부가 전 과정을 try/catch 로 감싸므로
-  // 권한 거부·토큰 실패·네이티브 부재 등 어떤 실패도 throw 하지 않는다 — 토큰 배선이 부팅을
-  // 막지 않는다(iron law: 비차단). 포그라운드 FCM 수신 시 dueNotifications 표시를 트리거하고,
-  // 언마운트 시 두 핸들러를 해제한다. mount 1회만 배선한다(중복 등록 방지).
+  // audit a4: 앱측 FCM 배선(부팅 직후 1회). silent:true(심사 #3, 2026-07-22) — 부팅에서는
+  // OS 권한 다이얼로그를 절대 띄우지 않고, 이미 허용된 경우에만 토큰을 취득한다. 실제 권한
+  // 요청은 '첫 러닝 리캡을 닫는 순간'의 프라이밍(아래 maybePrimePush)으로 이연 — 가치를 본
+  // 뒤에 묻는다(온보딩 첫 60초에 시스템 다이얼로그 난입 금지). 나머지 규약은 기존과 동일:
+  // 전 과정 try/catch 비차단, 포그라운드 FCM 수신 시 dueNotifications 표시, 언마운트 해제.
   useEffect(()=>{
     let wiring:PushWiring|null=null;
     let cancelled=false;
     void (async()=>{
       try{
         const w=await setupPushMessaging({
+          silent:true,
           onForegroundMessage:()=>{presentDueRef.current?.();},
         });
         if(cancelled){w.unsubscribeForeground();w.unsubscribeTokenRefresh();}
@@ -629,6 +629,26 @@ function Main(){
       cancelled=true;
       try{wiring?.unsubscribeForeground();wiring?.unsubscribeTokenRefresh();}catch{/* no-op */}
     };
+  },[]);
+
+  // 알림 권한 프라이밍(심사 #3) — 첫 러닝 리캡을 '닫는 순간' 1회. 가치를 본 직후가 가장
+  // 설득력 있는 타이밍이다. shouldPrime 이 NOT_DETERMINED + 미프라이밍일 때만 true 라
+  // 사실상 최초 1회만 뜨고, '나중에'를 골라도 마킹해 다시 조르지 않는다(설정 토글 경로 유지).
+  const maybePrimePush=useCallback(()=>{
+    void (async()=>{
+      try{
+        if(!(await shouldPrimePushPermission()))return;
+        await markPushPrimed();
+        Alert.alert(
+          '알림을 켤까요?',
+          '러닝화 교체 시기, 주간 목표 달성, 러닝 리마인더를 딱 필요한 때에만 알려드려요. 광고성 알림은 보내지 않아요.',
+          [
+            {text:'나중에',style:'cancel'},
+            {text:'알림 받기',onPress:()=>{void primePushPermission();}},
+          ],
+        );
+      }catch{/* 비차단 — 프라이밍 실패가 리캡 닫힘을 막지 않는다 */}
+    })();
   },[]);
 
   // 런별 노면 태그(surface_<runId>) 일괄 로드 → 실효 마모/예측 보정에 반영. runs가 바뀔
@@ -2167,7 +2187,7 @@ function Main(){
         setMedalFlow({date:rc.date,runId:rc.runId,appTimeSec:rc.appTimeSec,appPaceSec:rc.appPaceSec,
           presetRaceId:rc.match.kind==='geo'?rc.match.race?.id:undefined,presetDistance:rc.match.distance});
       }:undefined}
-      onClose={()=>{setRunRecap(null);setRecapRace(null);setTab(2);}}/>;
+      onClose={()=>{setRunRecap(null);setRecapRace(null);setTab(2);maybePrimePush();}}/>;
   }
   return(
     <View style={{flex:1,backgroundColor:BG}}>

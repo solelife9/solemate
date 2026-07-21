@@ -17,6 +17,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   getMessaging,
   requestPermission,
+  hasPermission,
   getToken,
   onMessage,
   onTokenRefresh,
@@ -55,6 +56,19 @@ export async function requestPushPermission(): Promise<boolean> {
   } catch {
     // 권한 거부·미설정·네이티브 부재 — 비차단. 호출부는 false 로 graceful 안내.
     return false;
+  }
+}
+
+/**
+ * 현재 알림 권한 상태를 *묻지 않고* 조회한다(OS 다이얼로그 0회). 실패는 DENIED 로
+ * 폴백해 호출부가 비차단으로 진행한다. 부팅 무프롬프트 배선(silent)과 프라이밍
+ * 판단(shouldPrimePushPermission)이 쓴다.
+ */
+export async function getPushAuthStatus(): Promise<number> {
+  try {
+    return await hasPermission(getMessaging());
+  } catch {
+    return AuthorizationStatus.DENIED;
   }
 }
 
@@ -131,8 +145,12 @@ export interface PushMessagingSetup {
  */
 export async function initPushMessaging(opts?: {
   onForegroundMessage?: (message: unknown) => void;
+  /** true 면 권한을 *요청하지 않고* 현재 상태만 본다(OS 다이얼로그 0회) — 부팅 경로용(심사 #3). */
+  silent?: boolean;
 }): Promise<PushMessagingSetup> {
-  const granted = await requestPushPermission();
+  const granted = opts?.silent
+    ? isAuthorizedStatus(await getPushAuthStatus())
+    : await requestPushPermission();
   const token = granted ? await getPushToken() : null;
   const unsubscribe = opts?.onForegroundMessage
     ? registerForegroundMessageHandler(opts.onForegroundMessage)
@@ -241,6 +259,8 @@ export async function setupPushMessaging(opts?: {
   userId?: string | null;
   onForegroundMessage?: (message: unknown) => void;
   endpoint?: string;
+  /** true 면 부팅 무프롬프트 배선 — 권한을 요청하지 않고 이미 허용된 경우에만 토큰을 취득한다(심사 #3). */
+  silent?: boolean;
 }): Promise<PushWiring> {
   const noop: PushWiring = {
     unsubscribeForeground: () => {},
@@ -249,6 +269,7 @@ export async function setupPushMessaging(opts?: {
   try {
     const setup = await initPushMessaging({
       onForegroundMessage: opts?.onForegroundMessage,
+      silent: opts?.silent,
     });
     await registerPushToken(setup.token, {
       userId: opts?.userId,
@@ -268,5 +289,52 @@ export async function setupPushMessaging(opts?: {
   } catch {
     // 어떤 실패도 비차단 — 부팅을 막지 않는다(no-op 해제 함수 반환).
     return noop;
+  }
+}
+
+// ── 권한 프라이밍(심사 #3, 2026-07-22) ───────────────────────────────────────
+// OS 알림 다이얼로그는 부팅이 아니라 '첫 러닝을 마친 순간'(첫 리캡 닫힘)에 띄운다 —
+// 가치를 본 뒤에 묻는다. 한 번 물었으면(수락/거절 무관) 다시 묻지 않는다. iOS 는
+// 어차피 OS 가 재프롬프트를 막으므로 NOT_DETERMINED 일 때만 의미가 있다.
+
+/** 프라이밍 1회 기록 키 — '나중에'를 골라도 마킹해 반복 조르기를 막는다(설정 경로는 유지). */
+export const PUSH_PRIME_KEY = 'push_prime_done';
+
+/** 지금 프라이밍을 띄워야 하는가 — 아직 안 물었고(NOT_DETERMINED) 프라이밍 이력도 없을 때만. */
+export async function shouldPrimePushPermission(): Promise<boolean> {
+  try {
+    if (await AsyncStorage.getItem(PUSH_PRIME_KEY)) return false;
+    return (await getPushAuthStatus()) === AuthorizationStatus.NOT_DETERMINED;
+  } catch {
+    return false;
+  }
+}
+
+/** 프라이밍을 띄웠음을 영속한다(수락/거절 무관 1회만 묻는다). 실패는 삼킨다. */
+export async function markPushPrimed(): Promise<void> {
+  try {
+    await AsyncStorage.setItem(PUSH_PRIME_KEY, '1');
+  } catch {
+    // 영속 실패 시 다음에 한 번 더 물을 수 있을 뿐 — 비차단.
+  }
+}
+
+/**
+ * 프라이밍 수락 후의 실제 권한 요청 + 토큰 등록. 부팅 배선이 silent 로 건너뛴 토큰
+ * 경로를 여기서 마저 잇는다. 어떤 실패도 throw 하지 않는다.
+ */
+export async function primePushPermission(opts?: {
+  userId?: string | null;
+  endpoint?: string;
+}): Promise<boolean> {
+  try {
+    const granted = await requestPushPermission();
+    if (granted) {
+      const token = await getPushToken();
+      await registerPushToken(token, opts);
+    }
+    return granted;
+  } catch {
+    return false;
   }
 }

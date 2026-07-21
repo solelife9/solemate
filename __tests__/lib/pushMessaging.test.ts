@@ -297,3 +297,75 @@ describe('setupPushMessaging (a4 부팅 배선 — 비차단)', () => {
     }).not.toThrow();
   });
 });
+
+// ── 심사 #3(2026-07-22): 부팅 무프롬프트(silent) + 첫 러닝 뒤 프라이밍 ────────────
+describe('silent 부팅 배선 — OS 다이얼로그 0회', () => {
+  const hasPermMock = require('@react-native-firebase/messaging').hasPermission as jest.Mock;
+
+  test('silent: 권한을 요청하지 않고(hasPermission만), 미허용이면 토큰도 안 가져온다', async () => {
+    hasPermMock.mockResolvedValueOnce(AuthorizationStatus.NOT_DETERMINED);
+    const setup = await initPushMessaging({silent: true});
+    expect(reqMock).not.toHaveBeenCalled(); // 핵심 — OS 프롬프트 금지
+    expect(setup.granted).toBe(false);
+    expect(setup.token).toBeNull();
+  });
+
+  test('silent: 이미 허용된 기기는 토큰까지 취득한다', async () => {
+    hasPermMock.mockResolvedValueOnce(AuthorizationStatus.AUTHORIZED);
+    // 앞 테스트가 큐에 남긴 미소비 mockRejectedValueOnce 를 리셋으로 비운다(Once 큐가 우선이라 필수).
+    tokenMock.mockReset();
+    tokenMock.mockResolvedValue('mock-fcm-token');
+    const setup = await initPushMessaging({silent: true});
+    expect(reqMock).not.toHaveBeenCalled();
+    expect(setup.granted).toBe(true);
+    expect(setup.token).toBe('mock-fcm-token');
+  });
+
+  test('setupPushMessaging({silent:true}) 도 권한을 요청하지 않는다(부팅 경로 규약)', async () => {
+    hasPermMock.mockResolvedValueOnce(AuthorizationStatus.NOT_DETERMINED);
+    await setupPushMessaging({silent: true, onForegroundMessage: jest.fn()});
+    expect(reqMock).not.toHaveBeenCalled();
+  });
+});
+
+describe('알림 프라이밍 — 첫 러닝 뒤 1회', () => {
+  const {shouldPrimePushPermission, markPushPrimed, primePushPermission, PUSH_PRIME_KEY} =
+    require('../../lib/pushMessaging');
+  const hasPermMock = require('@react-native-firebase/messaging').hasPermission as jest.Mock;
+
+  beforeEach(async () => {
+    await AsyncStorage.removeItem(PUSH_PRIME_KEY);
+  });
+
+  test('아직 안 물어봤고(NOT_DETERMINED) 프라이밍 이력이 없으면 true', async () => {
+    hasPermMock.mockResolvedValueOnce(AuthorizationStatus.NOT_DETERMINED);
+    await expect(shouldPrimePushPermission()).resolves.toBe(true);
+  });
+
+  test('이미 허용/거절된 기기(NOT_DETERMINED 아님)면 false — 다시 묻지 않는다', async () => {
+    hasPermMock.mockResolvedValueOnce(AuthorizationStatus.AUTHORIZED);
+    await expect(shouldPrimePushPermission()).resolves.toBe(false);
+    hasPermMock.mockResolvedValueOnce(AuthorizationStatus.DENIED);
+    await expect(shouldPrimePushPermission()).resolves.toBe(false);
+  });
+
+  test('markPushPrimed 후에는 상태와 무관하게 false — 1회만 조른다', async () => {
+    await markPushPrimed();
+    hasPermMock.mockResolvedValueOnce(AuthorizationStatus.NOT_DETERMINED);
+    await expect(shouldPrimePushPermission()).resolves.toBe(false);
+  });
+
+  test('primePushPermission: 수락 시 권한 요청→토큰 취득→pending 영속까지 잇는다', async () => {
+    await AsyncStorage.removeItem(FCM_TOKEN_PENDING_KEY);
+    reqMock.mockResolvedValueOnce(AuthorizationStatus.AUTHORIZED);
+    await expect(primePushPermission()).resolves.toBe(true);
+    await expect(AsyncStorage.getItem(FCM_TOKEN_PENDING_KEY)).resolves.toBe('mock-fcm-token');
+  });
+
+  test('primePushPermission: 거절 시 false, 토큰 경로는 건드리지 않는다(비차단)', async () => {
+    await AsyncStorage.removeItem(FCM_TOKEN_PENDING_KEY);
+    reqMock.mockResolvedValueOnce(AuthorizationStatus.DENIED);
+    await expect(primePushPermission()).resolves.toBe(false);
+    await expect(AsyncStorage.getItem(FCM_TOKEN_PENDING_KEY)).resolves.toBeNull();
+  });
+});

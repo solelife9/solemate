@@ -532,6 +532,8 @@ jest.mock('@react-native-firebase/messaging', () => {
     AuthorizationStatus,
     getMessaging: jest.fn(() => messagingInstance),
     requestPermission: jest.fn(() => Promise.resolve(AuthorizationStatus.AUTHORIZED)),
+    // 무프롬프트 상태 조회(심사 #3) — 기본은 '아직 안 물어봄'. 테스트가 per-case 재정의.
+    hasPermission: jest.fn(() => Promise.resolve(AuthorizationStatus.NOT_DETERMINED)),
     getToken: jest.fn(() => Promise.resolve('mock-fcm-token')),
     // onMessage / onTokenRefresh each return the unsubscribe fn, like the real
     // subscriber contract. Tests override per-case to capture the registered
