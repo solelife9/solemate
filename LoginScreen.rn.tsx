@@ -62,6 +62,20 @@ export function LoginScreen({cloudPort, onSignedIn}: LoginScreenProps) {
       <View style={st.hero}>
         <KeegoWordmark size={TYPE.display.fontSize} />
         <Text style={st.tagline}>러닝화의 수명을 기록하다</Text>
+        {/* 가치 3행(심사 #9, 2026-07-22) — 하드 게이트가 태그라인 한 줄로만 서 있던 것 보강.
+            왜 로그인해야 하는지(무엇을 얻는지)를 게이트 화면이 스스로 판다. 무채·조용히. */}
+        <View style={st.valueRows}>
+          {([
+            {icon: 'footsteps-outline', text: '러닝화 수명을 추적해 교체 시점을 미리 알려드려요'},
+            {icon: 'analytics-outline', text: '거리·페이스·심박 — 폰만으로 정밀하게 기록해요'},
+            {icon: 'cloud-done-outline', text: '기록은 클라우드에 안전하게, 기기를 바꿔도 그대로'},
+          ] as const).map(row => (
+            <View key={row.icon} style={st.valueRow} accessible accessibilityLabel={row.text}>
+              <Ionicons name={row.icon} size={ri(15)} color={T3} />
+              <Text style={st.valueText}>{row.text}</Text>
+            </View>
+          ))}
+        </View>
       </View>
 
       {/* 로그인 버튼 */}
@@ -149,6 +163,10 @@ const st = StyleSheet.create({
   screen: {flex: 1, backgroundColor: BG, paddingHorizontal: rs(28), justifyContent: 'space-between'},
   hero: {flex: 1, alignItems: 'center', justifyContent: 'center', gap: rv(14)},
   tagline: {fontFamily: FONT, fontSize: TYPE.body.fontSize, color: T3},
+  // 가치 3행(심사 #9) — 태그라인 아래 좌정렬 스택. 게이트의 설득은 조용하게(무채 T3).
+  valueRows: {gap: rv(10), marginTop: rv(18), alignSelf: 'center'},
+  valueRow: {flexDirection: 'row', alignItems: 'center', gap: rv(8)},
+  valueText: {fontFamily: FONT, fontSize: TYPE.label.fontSize, color: T3, letterSpacing: -0.1},
   actions: {gap: rv(12)},
   lead: {fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600', color: T2, textAlign: 'center', marginBottom: rv(4)},
   btn: {flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(8), height: rs(50), borderRadius: RADIUS.btn, borderCurve: 'continuous'},

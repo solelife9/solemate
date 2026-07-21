@@ -14,7 +14,7 @@ import {
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {
-  BG, CARD_HI, ACCENT, BRAND, GLASS, WARN, GOOD, T1, T2, T3,
+  BG, CARD_HI, ACCENT, BRAND, GLASS, T1, T2, T3,
   FONT, DISPLAY, SPACE, RADIUS, GUTTER, withAlpha, Shoe, SHOES, TYPE,
   BAR,
 } from './theme';
