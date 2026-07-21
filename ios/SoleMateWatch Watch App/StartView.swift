@@ -58,7 +58,7 @@ struct StartView: View {
         TabView(selection: $vPage) {
           shoeCarousel.tag(0)
           GoalPanel { goal in
-            if let shoe = selectedShoe { workout.start(shoe: shoe, goal: goal) }
+            if let shoe = selectedShoe { workout.beginCountdown(shoe: shoe, goal: goal) }
           }
           .tag(1)
         }
@@ -98,7 +98,7 @@ struct StartView: View {
   private var shoeCarousel: some View {
     TabView(selection: $selection) {
       ForEach(pages) { shoe in
-        ShoeStartPage(shoe: shoe) { workout.start(shoe: shoe) }
+        ShoeStartPage(shoe: shoe) { workout.beginCountdown(shoe: shoe) }
           .tag(shoe.id)
       }
     }

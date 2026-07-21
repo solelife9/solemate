@@ -84,6 +84,8 @@ final class WorkoutManager: NSObject, ObservableObject {
 
   // ── 라이브 지표(러닝 화면 구독) ─────────────────────────────────────────────
   @Published private(set) var phase: RunPhase = .idle
+  /// 러닝 시작 전 3-2-1 카운트다운(3,2,1 → nil). nil 이 아니면 카운트다운 화면(ContentView).
+  @Published private(set) var countdownValue: Int?
   @Published private(set) var heartRate: Double = 0
   @Published private(set) var distanceKm: Double = 0
   @Published private(set) var elapsedS: Double = 0
@@ -169,6 +171,8 @@ final class WorkoutManager: NSObject, ObservableObject {
   private let locationManager = CLLocationManager()
   private var lastLocation: CLLocation?
   private var timer: Timer?
+  private var countdownTimer: Timer?
+  private var pendingStart: (shoe: WatchShoe, goal: RunGoal)?
   private var runId = ""
   private var startDate: Date?
   // 심박 시계열(경로 A) — 워크아웃 시작 기준 초 오프셋 + bpm. 종료 시 폰에 직송해
@@ -244,6 +248,41 @@ final class WorkoutManager: NSObject, ObservableObject {
     if locationManager.authorizationStatus == .notDetermined {
       locationManager.requestWhenInUseAuthorization()
     }
+  }
+
+  // ── 3-2-1 카운트다운 → 시작 ────────────────────────────────────────────────
+  /// 시작 버튼이 부른다 — 바로 세션을 열지 않고 3초 카운트다운 후 start(). 손목 준비 시간
+  /// (애플 운동·나이키 관용). GPS-준비 표시는 없음(사용자 확정) — 순수 3-2-1.
+  func beginCountdown(shoe: WatchShoe, goal: RunGoal = .free) {
+    guard phase == .idle, countdownValue == nil else { return }
+    pendingStart = (shoe, goal)
+    countdownValue = 3
+    if WatchLink.shared.hapticsOn { WKInterfaceDevice.current().play(.start) }
+    countdownTimer?.invalidate()
+    let t = Timer(timeInterval: 1, repeats: true) { [weak self] _ in
+      Task { @MainActor in self?.tickCountdown() }
+    }
+    RunLoop.main.add(t, forMode: .common)
+    countdownTimer = t
+  }
+
+  private func tickCountdown() {
+    guard let v = countdownValue else { return }
+    if v > 1 {
+      countdownValue = v - 1
+      if WatchLink.shared.hapticsOn { WKInterfaceDevice.current().play(.click) }
+    } else {
+      countdownTimer?.invalidate(); countdownTimer = nil
+      countdownValue = nil
+      if let p = pendingStart { pendingStart = nil; start(shoe: p.shoe, goal: p.goal) }
+    }
+  }
+
+  /// 카운트다운 취소(화면 탭) — 세션 시작 전이라 그냥 시작 화면으로 되돌린다.
+  func cancelCountdown() {
+    countdownTimer?.invalidate(); countdownTimer = nil
+    countdownValue = nil
+    pendingStart = nil
   }
 
   // ── 시작 — 신발 필수(shoe-first, 신발 동기화 후에만 러닝) ────────────────────
@@ -361,6 +400,17 @@ final class WorkoutManager: NSObject, ObservableObject {
     session?.end()
   }
 
+  /// 세션 실패 폴백 — 델리게이트(.ended)를 못 받을 수 있어(이미 실패한 세션) 요약 파이프라인이
+  /// 멈춘 채 phase 가 .running 에 갇히던 회귀(감사) 수정. finish 를 직접 불러 지금까지의
+  /// 데이터로 요약을 만든다(유실 최소화). 정상 종료는 end()→.ended 델리게이트 경로 유지.
+  func failToSummary(at date: Date) {
+    guard isActive else { return }
+    locationManager.stopUpdatingLocation()
+    locationManager.allowsBackgroundLocationUpdates = false
+    stopTimer()
+    finish(at: date)
+  }
+
   /// 요약 화면 '완료' — 홈으로 초기화. 런 전송·로컬 저장은 정지 순간(buildSummary)에 이미
   /// 됐고, 여기선 안전을 위해 한 번 더 보낸다(폰 runId·RecentRuns 중복 제거 → 무해).
   func confirmSave() {
@@ -372,6 +422,9 @@ final class WorkoutManager: NSObject, ObservableObject {
   }
 
   private func reset() {
+    countdownTimer?.invalidate(); countdownTimer = nil
+    countdownValue = nil
+    pendingStart = nil
     session = nil
     builder = nil
     summary = nil
@@ -515,9 +568,14 @@ final class WorkoutManager: NSObject, ObservableObject {
       let e = endDate.timeIntervalSince(start) - pausedAccumS - ongoing
       if e.isFinite, e >= 0 { elapsedS = e }
     }
-    // 거리: 표시값(HK 융합)이 비었을 때만(터널·실내 무픽스) 빌더 집계로 폴백 —
+    // 트랙 미완주(랩 0) 폴백 — 표시 거리(랩수×랩거리)가 0 이면 GPS 누적(trackCumMeters)으로
+    // 라도 기록해 무효 런(거리 0)으로 유실되는 것 방지(감사). 트랙은 여기서만 폴백.
+    if isTrack, lapTimes.isEmpty, distanceKm <= 0, trackCumMeters > 0 {
+      distanceKm = trackCumMeters / 1000.0
+    }
+    // 비트랙 거리: 표시값(GPS/HK)이 비었을 때만(터널·실내 무픽스) 빌더 집계로 폴백 —
     // Truth only: 두 소스를 섞지 않고 유효한 한쪽만 쓴다.
-    if distanceKm <= 0,
+    if !isTrack, distanceKm <= 0,
        let dType = HKQuantityType.quantityType(forIdentifier: .distanceWalkingRunning),
        let sum = b.statistics(for: dType)?.sumQuantity() {
       let km = sum.doubleValue(for: .meter()) / 1000.0
@@ -788,11 +846,9 @@ extension WorkoutManager: HKWorkoutSessionDelegate {
   }
 
   nonisolated func workoutSession(_ workoutSession: HKWorkoutSession, didFailWithError error: Error) {
-    // 세션 실패 — 지금까지의 데이터로 요약을 시도한다(유실 최소화).
-    Task { @MainActor in
-      guard WorkoutManager.shared.isActive else { return }
-      WorkoutManager.shared.end()
-    }
+    // 세션 실패 — end()(session.end→.ended 델리게이트 의존)가 아니라 finish 를 직접 불러
+    // 요약을 만든다. 실패한 세션은 .ended 델리게이트가 안 올 수 있어 요약이 멈추던 회귀 수정.
+    Task { @MainActor in WorkoutManager.shared.failToSummary(at: Date()) }
   }
 }
 
