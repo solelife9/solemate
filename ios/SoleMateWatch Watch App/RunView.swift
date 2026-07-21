@@ -192,8 +192,15 @@ struct RunView: View {
       // 올리고 BPM 과 여백을 벌린다(2026-07-11 사용자 피드백 — 줄 사이 호흡).
       HStack(spacing: 0) {
         miniMetric(label: "시간", value: KeegoFormat.time(workout.elapsedS))
-        miniMetric(label: "페이스", value: KeegoFormat.pace(secPerKm: workout.avgPaceSecPerKm))
+        // 메인 페이스 = 현재(순간·롤링) — 러너가 가장 자주 보는 실시간 지표(#3).
+        miniMetric(label: "페이스", value: KeegoFormat.pace(secPerKm: workout.currentPaceSecPerKm))
       }
+      // 평균 페이스는 보조로 작게(러닝 전체 페이싱 참고).
+      Text("평균 " + KeegoFormat.pace(secPerKm: workout.avgPaceSecPerKm))
+        .font(.system(size: 10, weight: .medium))
+        .monospacedDigit()
+        .foregroundStyle(KeegoTheme.t3)
+        .padding(.top, 2)
       HStack(spacing: 5) {
         Image(systemName: "heart.fill")
           .font(.system(size: 14))

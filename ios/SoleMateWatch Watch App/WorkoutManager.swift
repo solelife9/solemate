@@ -89,6 +89,8 @@ final class WorkoutManager: NSObject, ObservableObject {
   @Published private(set) var heartRate: Double = 0
   @Published private(set) var distanceKm: Double = 0
   @Published private(set) var elapsedS: Double = 0
+  /// 현재(순간·롤링) 페이스(초/km, 0 = 표본부족/정지 → "--"). 러닝 화면 메인 페이스.
+  @Published private(set) var currentPaceSecPerKm: Double = 0
   /// 자동 일시정지로 멈춘 상태인가(수동과 구분 — 자동만 자동 재개한다).
   @Published private(set) var autoPaused = false
   /// 완료된 km 랩의 소요시간(초/km) — 러닝 화면 스플릿 페이지. 일시정지 제외
@@ -180,6 +182,9 @@ final class WorkoutManager: NSObject, ObservableObject {
   private var hrSamples: [(offsetS: Double, bpm: Double)] = []
   /// 누적 상승 고도(m) — process(locations) 가 GPS 고도 양의 증분으로 적산. 종료 시 요약에 실림.
   private var elevGainM: Double = 0
+  /// 현재(롤링) 페이스용 (경과초, 거리km) 샘플 — 최근 ~20s 창으로 순간 페이스 산출. 러너가
+  /// 가장 자주 보는 실시간 지표(평균 페이스는 보조). 시작/리셋 시 비움.
+  private var pacePoints: [(t: Double, d: Double)] = []
   // 종료 통계 스냅샷 — finishWorkout 호출 전에 확정한다. finishWorkout 이후엔 빌더의
   // statistics(for:) 가 nil 을 뱉어 심박·칼로리가 0(→ '--')이 되던 버그의 근본 수정.
   private var capturedAvgBpm: Double = 0
@@ -330,6 +335,8 @@ final class WorkoutManager: NSObject, ObservableObject {
       hkDistanceKm = 0
       gpsDistanceKm = 0
       hkAlive = false
+      pacePoints = []
+      currentPaceSecPerKm = 0
       pausedAccumS = 0
       pauseStartDate = nil
       splits = []
@@ -442,6 +449,8 @@ final class WorkoutManager: NSObject, ObservableObject {
     hkDistanceKm = 0
     gpsDistanceKm = 0
     hkAlive = false
+    pacePoints = []
+    currentPaceSecPerKm = 0
     pausedAccumS = 0
     pauseStartDate = nil
     splits = []
@@ -667,8 +676,8 @@ final class WorkoutManager: NSObject, ObservableObject {
           // 단조 증가 보장 — 시계가 뒤로 가는 순간을 화면에 노출하지 않는다(일시정지 중엔 동결).
           if e.isFinite, e >= self.elapsedS { self.elapsedS = e }
         }
-        // 거리는 process(locations)의 GPS 증분 누적이 정본(HK 융합거리 실기기 회귀로 복귀).
-        // 목표 달성 판정(1초 granularity — GPS 갱신된 최신 거리를 흡수).
+        // 현재(롤링) 페이스 갱신 + 목표 달성 판정(1초 granularity, 최신 거리 흡수).
+        self.updateCurrentPace()
         self.checkGoalReached()
       }
     }
@@ -695,6 +704,19 @@ final class WorkoutManager: NSObject, ObservableObject {
   /// 표시 거리 재계산 — HK 가 살아있으면(hkAlive) HK 융합거리(정본), 아니면 GPS(폴백).
   /// 단조 증가만 반영하고, 새 km 경계를 넘겼으면 랩을 마감한다. process(GPS)·didCollectDataOf
   /// (HK) 양쪽에서 호출 — 두 소스가 같은 distanceKm 에 안전하게 수렴한다(@MainActor 직렬).
+  /// 현재(순간) 페이스 — 최근 ~20s 창의 거리/시간. 창이 짧거나(<5s) 이동이 적으면(<20m)
+  /// 0(→"--", 정지·초반 표본부족). 러닝 중에만 갱신, 일시정지엔 마지막 값 유지 후 정지 시 0.
+  private func updateCurrentPace() {
+    guard phase == .running else { return }
+    pacePoints.append((t: elapsedS, d: distanceKm))
+    while let first = pacePoints.first, elapsedS - first.t > 20 { pacePoints.removeFirst() }
+    if let first = pacePoints.first {
+      let dt = elapsedS - first.t
+      let dd = distanceKm - first.d
+      currentPaceSecPerKm = (dt >= 5 && dd > 0.02) ? dt / dd : 0
+    }
+  }
+
   private func recomputeDistance() {
     let d = hkAlive ? hkDistanceKm : gpsDistanceKm
     if d.isFinite, d > distanceKm {
