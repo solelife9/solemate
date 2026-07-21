@@ -1464,6 +1464,30 @@ function Main(){
     const p=JSON.parse(watchShoesJson);
     watchSession.updateShoes(p.shoes,p.hr);
   },[watchShoesJson]);
+  // ①'' 폰 최근 러닝 → 워치 기록(HistoryView) 동기화. 워치가 폰 런 + 워치 런을 합쳐 최신순으로
+  //    보여준다(runId 중복 제거는 워치 RecentRuns). 최근 10개만, 내용이 실제 바뀔 때만 전송.
+  const watchRecentRunsJson=(()=>{
+    const nm=(sid:any)=>shoes.find(s=>String(s.id)===String(sid))?.name||'';
+    const ts=(r:any)=>{const u=Number(r.updated_at);return Number.isFinite(u)&&u>0?u:(Date.parse(String(r.run_date||''))||0);};
+    const list=[...runs]
+      .sort((a,b)=>ts(b)-ts(a))
+      .slice(0,10)
+      .map(r=>{
+        const km=Number(r.km)||0;const durationS=Number(r.duration)||0;
+        return {
+          id:String(r.id||''),endMs:ts(r),km,durationS,
+          avgPaceSecPerKm:km>0.2?durationS/km:0,
+          avgBpm:Number(r.heart_rate)||0,cadence:Number(r.cadence)||0,
+          kcal:Number(r.calories)||0,elevGainM:Number(r.elevation_m)||0,
+          shoeName:nm(r.shoe_id),
+        };
+      })
+      .filter(r=>r.id&&r.km>0);
+    return JSON.stringify(list);
+  })();
+  useEffect(()=>{
+    watchSession.updateRecentRuns(JSON.parse(watchRecentRunsJson));
+  },[watchRecentRunsJson]);
   // ①' 홈/잠금화면 위젯(신발 수명 링) — 활성 신발(effectiveId=홈 히어로) 한 켤레를 App Group
   //    공유 저장소에 기록(네이티브가 위젯 리로드). 카테고리는 홈 히어로와 동일 소스로.
   //    워치와 무관한 폰 기능(available=iOS만). 내용이 실제 바뀔 때만 전송(직렬화 dep).

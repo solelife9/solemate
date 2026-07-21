@@ -93,3 +93,5 @@ describe('모듈 부재(안드로이드/미링크) — 전부 no-op', () => {
     expect(mockModule.startPedometerUpdates).not.toHaveBeenCalled();
   });
 });
+
+export {};

@@ -31,6 +31,20 @@ export type WatchShoePayload = {
   maxKm: number;
 };
 
+/** 폰→워치 최근 러닝 동기화 한 건(워치 RecentRun 필드와 일치). */
+export type WatchRecentRunPayload = {
+  id: string;
+  endMs: number;
+  km: number;
+  durationS: number;
+  avgPaceSecPerKm: number;
+  avgBpm: number;
+  cadence: number;
+  kcal: number;
+  elevGainM: number;
+  shoeName: string;
+};
+
 /** 워치 단독 러닝 완주 페이로드(워치 WatchLink.sendRun 과 동일 키). */
 export type WatchRunPayload = {
   /** 워치가 발급한 중복 방어 키(watch-<uuid>). */
@@ -150,6 +164,19 @@ export const watchSession = {
       });
     } catch {
       /* no-op — 워치 동기화 실패가 앱을 깨면 안 된다 */
+    }
+  },
+  /**
+   * 폰의 최근 러닝을 워치 기록(HistoryView)에 동기화한다 — 워치는 폰 런 + 워치 런을 합쳐
+   * 보여준다(runId 중복 제거는 워치가). applicationContext 오프라인 캐시라 워치가 꺼져 있어도
+   * 다음 실행 때 도착. 미지원/구버전이면 no-op.
+   */
+  updateRecentRuns(runs: WatchRecentRunPayload[]): void {
+    if (!available || !M?.updateRecentRuns) return;
+    try {
+      M.updateRecentRuns({runs});
+    } catch {
+      /* no-op */
     }
   },
   /**

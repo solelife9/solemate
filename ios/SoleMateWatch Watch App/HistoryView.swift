@@ -19,7 +19,8 @@ struct HistoryView: View {
           ScrollView {
             VStack(spacing: 6) {
               ForEach(runs) { run in
-                RecentRunRow(run: run)
+                NavigationLink { RecentRunDetail(run: run) } label: { RecentRunRow(run: run) }
+                  .buttonStyle(.plain)
               }
             }
             .padding(.horizontal, 4)
@@ -124,4 +125,59 @@ private struct RecentRunRow: View {
     f.setLocalizedDateFormatFromTemplate("jm")
     return f
   }()
+}
+
+/// 최근 러닝 상세 — 행 탭 시. 거리 히어로 + 전 지표(시간·페이스·심박·케이던스·칼로리·고도)
+/// + 신발 + 소스 배지(워치/폰). 측정 안 된 값은 '--'(Truth only — 숨겨서 마스킹하지 않음).
+private struct RecentRunDetail: View {
+  let run: RecentRun
+
+  var body: some View {
+    ScrollView {
+      VStack(spacing: 8) {
+        // 날짜 + 소스 배지.
+        HStack(spacing: 6) {
+          Text(RecentRunRow.dateText(run.date))
+            .font(.system(size: 12, weight: .medium))
+            .foregroundStyle(KeegoTheme.t3)
+          Text(run.source == "phone" ? "폰" : "워치")
+            .font(.system(size: 9, weight: .bold))
+            .foregroundStyle(KeegoTheme.t3)
+            .padding(.horizontal, 5).padding(.vertical, 1)
+            .overlay(Capsule().strokeBorder(KeegoTheme.hairline, lineWidth: 1))
+        }
+        // 거리 히어로.
+        HStack(alignment: .firstTextBaseline, spacing: 2) {
+          Text(KeegoFormat.km(run.km))
+            .font(.system(size: 34, weight: .heavy)).monospacedDigit()
+            .foregroundStyle(KeegoTheme.t1)
+          Text("km").font(.system(size: 12, weight: .semibold)).foregroundStyle(KeegoTheme.brand)
+        }
+        VStack(spacing: 4) {
+          row("시간", KeegoFormat.time(run.durationS))
+          row("평균 페이스", KeegoFormat.pace(secPerKm: run.avgPaceSecPerKm))
+          row("평균 심박", run.avgBpm > 0 ? "\(Int(run.avgBpm.rounded())) BPM" : "--")
+          row("케이던스", run.cadence > 0 ? "\(Int(run.cadence.rounded())) spm" : "--")
+          row("칼로리", run.kcal > 0 ? "\(Int(run.kcal.rounded())) kcal" : "--")
+          row("상승 고도", run.elevGainM > 0 ? "\(Int(run.elevGainM.rounded())) m" : "0 m")
+          if !run.shoeName.isEmpty { row("신발", run.shoeName) }
+        }
+        .padding(8)
+        .background(KeegoTheme.glassFill)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(KeegoTheme.hairline, lineWidth: 1))
+      }
+      .padding(.horizontal, 6).padding(.bottom, 8)
+    }
+    .navigationTitle("러닝 상세")
+  }
+
+  private func row(_ label: String, _ value: String) -> some View {
+    HStack {
+      Text(label).font(.system(size: 12)).foregroundStyle(KeegoTheme.t3)
+      Spacer(minLength: 4)
+      Text(value).font(.system(size: 13, weight: .semibold)).monospacedDigit()
+        .foregroundStyle(KeegoTheme.t1).lineLimit(1).minimumScaleFactor(0.7)
+    }
+  }
 }

@@ -150,6 +150,16 @@ class WatchSessionModule: RCTEventEmitter, WCSessionDelegate {
     pushContext(patch)
   }
 
+  // 폰 → 워치: 최근 러닝 목록(워치 HistoryView 가 폰 런 + 워치 런을 합쳐 보여준다).
+  // applicationContext 병합이라 워치가 꺼져 있어도 다음 실행 때 도착(오프라인 캐시).
+  @objc(updateRecentRuns:)
+  func updateRecentRuns(_ payload: NSDictionary) {
+    guard WCSession.isSupported() else { return }
+    if let runs = payload["runs"] as? [[String: Any]] {
+      pushContext(["recentRuns": runs])
+    }
+  }
+
   // 폰 → 홈/잠금화면 위젯(신발 수명 링): 활성 신발 5필드를 App Group 공유 UserDefaults 에
   // 기록하고 위젯 타임라인을 즉시 리로드한다. JS(App.tsx)가 활성 신발이 바뀔 때마다 호출.
   // 위젯측 읽기 계약 = RunActivity/RunActivityBundle.swift(KeegoWidgetShared 키와 동일).

@@ -142,6 +142,26 @@ final class WatchLink: NSObject, ObservableObject {
       hapticsOn = on
       defaults.set(on, forKey: Keys.hapticsOn)
     }
+    // 폰 최근 러닝 동기화 → 워치 기록에 병합(runId 중복 제거는 RecentRuns 가). 폰 런은 source
+    // "phone" 으로 표시. 워치 런과 합쳐 HistoryView 가 최신순으로 보여준다.
+    if let rawRuns = context["recentRuns"] as? [[String: Any]] {
+      let runs: [RecentRun] = rawRuns.compactMap { d in
+        guard let id = d["id"] as? String, !id.isEmpty,
+              let endMs = (d["endMs"] as? NSNumber)?.doubleValue else { return nil }
+        return RecentRun(
+          id: id, endMs: endMs,
+          km: (d["km"] as? NSNumber)?.doubleValue ?? 0,
+          durationS: (d["durationS"] as? NSNumber)?.doubleValue ?? 0,
+          avgPaceSecPerKm: (d["avgPaceSecPerKm"] as? NSNumber)?.doubleValue ?? 0,
+          avgBpm: (d["avgBpm"] as? NSNumber)?.doubleValue ?? 0,
+          cadence: (d["cadence"] as? NSNumber)?.doubleValue ?? 0,
+          kcal: (d["kcal"] as? NSNumber)?.doubleValue ?? 0,
+          elevGainM: (d["elevGainM"] as? NSNumber)?.doubleValue ?? 0,
+          shoeName: d["shoeName"] as? String ?? "", source: "phone"
+        )
+      }
+      RecentRuns.mergePhoneRuns(runs)
+    }
     if allowCmd, let cmd = context["cmd"] as? String { handle(cmd: cmd) }
   }
 
