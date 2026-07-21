@@ -920,7 +920,7 @@
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "SoleMateWatch Watch App/Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = SoleMateWatch;
+				INFOPLIST_KEY_CFBundleDisplayName = Keego;
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "러닝 중 실시간 심박을 표시하기 위해 사용합니다.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "러닝 운동을 건강 앱에 기록하기 위해 사용합니다.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "러닝 중 거리와 경로를 측정하기 위해 위치를 사용합니다.";
@@ -976,7 +976,7 @@
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "SoleMateWatch Watch App/Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = SoleMateWatch;
+				INFOPLIST_KEY_CFBundleDisplayName = Keego;
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "러닝 중 실시간 심박을 표시하기 위해 사용합니다.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "러닝 운동을 건강 앱에 기록하기 위해 사용합니다.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "러닝 중 거리와 경로를 측정하기 위해 위치를 사용합니다.";
