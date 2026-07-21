@@ -138,6 +138,7 @@ export default function RunRecapScreen({
   raceMatch = null,
   onLogRace,
   onClose,
+  onDelete,
 }: {
   km: number;
   durationS: number;
@@ -177,6 +178,9 @@ export default function RunRecapScreen({
   /** '대회 기록 남기기' — App 이 메달 기록 흐름을 연다. 없으면 배너 미표시. */
   onLogRace?: () => void;
   onClose?: () => void;
+  /** 방금 저장된 기록 삭제(심사 #1) — 자동 저장 전환으로 '버리기'가 리캡 상단 휴지통으로
+      이동했다. App 이 확인 다이얼로그 + deleteRun 을 담당한다. 없으면 버튼 숨김. */
+  onDelete?: () => void;
 }) {
   const insets = useSafeAreaInsets();
   // 목표 달성 배지 — 거리 목표(km)·시간 목표(분, #15 관통) 모두 판정.
@@ -292,6 +296,19 @@ export default function RunRecapScreen({
   const closeWithMeta = () => { commitMemo(); onClose?.(); };
   return (
     <View style={[s.screen, {paddingTop: insets.top}]} testID="run-recap-screen">
+      {/* 기록 삭제(심사 #1) — 자동 저장 전환으로 '버리기'가 여기로 왔다. 축하 위계를 해치지
+          않게 우상단의 조용한 휴지통 하나(확인 다이얼로그는 App 담당). */}
+      {!!onDelete && (
+        <Pressable
+          onPress={onDelete}
+          hitSlop={10}
+          accessibilityRole="button"
+          accessibilityLabel="기록 삭제"
+          testID="recap-delete"
+          style={({pressed}) => [s.deleteBtn, {top: insets.top + rv(6)}, pressed && {opacity: 0.7}]}>
+          <Ionicons name="trash-outline" size={ri(17)} color={T3} />
+        </Pressable>
+      )}
       <ScrollView contentContainerStyle={{paddingHorizontal: GUTTER, paddingBottom: insets.bottom + 24, paddingTop: rv(8)}} showsVerticalScrollIndicator={false}>
         {/* 축하 헤더 — ① 체크 배지 스프링 팝 → ② 타이틀 Rise */}
         <View style={s.celebrate}>
@@ -530,6 +547,8 @@ export default function RunRecapScreen({
 
 const s = StyleSheet.create({
   screen: {flex: 1, backgroundColor: BG},
+  // 기록 삭제(심사 #1) — 우상단 조용한 휴지통(축하 위계 침범 최소).
+  deleteBtn: {position: 'absolute', right: GUTTER, zIndex: 10, width: rs(36), height: rs(36), alignItems: 'center', justifyContent: 'center'},
   celebrate: {alignItems: 'center', gap: rv(6), marginTop: rv(12), marginBottom: rv(6)},
   celebrateTxt: {alignItems: 'center', gap: rv(6)},
   medal: {width: rs(52), height: rs(52), borderRadius: rs(26), alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(GOOD, 0.14)},

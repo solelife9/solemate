@@ -2202,6 +2202,15 @@ function Main(){
         setMedalFlow({date:rc.date,runId:rc.runId,appTimeSec:rc.appTimeSec,appPaceSec:rc.appPaceSec,
           presetRaceId:rc.match.kind==='geo'?rc.match.race?.id:undefined,presetDistance:rc.match.distance});
       }:undefined}
+      onDelete={runRecap.runId?()=>{
+        // 자동 저장(심사 #1) 이후의 '버리기' — 이미 저장된 기록의 삭제라 확인 1겹 + 기존
+        // deleteRun 경로(실행취소 스낵바 포함)를 그대로 탄다.
+        const rid=String(runRecap.runId);
+        Alert.alert('기록 삭제',`방금 저장한 ${runRecap.km.toFixed(2)}km 기록을 삭제할까요?`,[
+          {text:'취소',style:'cancel'},
+          {text:'삭제',style:'destructive',onPress:()=>{setRunRecap(null);setRecapRace(null);void deleteRun(rid);setTab(2);}},
+        ]);
+      }:undefined}
       onClose={()=>{setRunRecap(null);setRecapRace(null);setTab(2);maybePrimePush();}}/>;
   }
   return(
@@ -2945,7 +2954,7 @@ function RunActiveScreen({shoe,insets,goalKm,goalMin=0,pacePlan=[],targetZone=0,
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }),[]);
 
-  function finishRun(){
+  async function finishRun(){
     // 최종 거리/시간. 트랙 모드는 랩수×확정랩거리(GPS 누적 아님), 그 외는 엔진 누적거리.
     const ft=runTracker.getElapsedFinal();
     const fk=trackMode?(lapTimesRef.current.length*lapMRef.current)/1000:runTracker.getDistanceKm();
@@ -2962,7 +2971,8 @@ function RunActiveScreen({shoe,insets,goalKm,goalMin=0,pacePlan=[],targetZone=0,
     // (Nike/NRC 종료 요약 관용). 거리는 클립 격자(0.5km)로 반올림해 읽는다(화면엔 정확값).
     runVoice.finishSummary(fk, ft, fk > 0.2 ? ft / fk : null);
     const sampled=simplifyRoute(runTracker.getPoints() as any,200);
-    setFinRoute(sampled.length>=2?JSON.stringify(sampled):'');
+    const routeFin=sampled.length>=2?JSON.stringify(sampled):'';
+    setFinRoute(routeFin);
     // 고도: **기압계 우선, GPS 는 기압계 부재 시 폴백만**(2026-07-17 비교런 근본수정).
     // 구 max(기압계, GPS)는 도심 GPS 고도 반사 노이즈가 3m 임계를 뚫고 수천 m 를 쌓으면
     // (실측: 3km 러닝에 GPS 3,262m vs 기압계 9m vs NRC 20m) 쓰레기가 이겼다 — 스플릿의
@@ -2975,28 +2985,56 @@ function RunActiveScreen({shoe,insets,goalKm,goalMin=0,pacePlan=[],targetZone=0,
     // 트랙: per-km GPS 스플릿은 안 만든다(GPS 거리 미사용) — 페이스 곡선/PB 는 랩 시계열이 정본.
     // paceTrack = lapsToTrack(랩시각들, 확정랩거리 km) → 저장 시 paceTrack_<id>로 영속돼
     // 거리 PB(bestEfforts) 파이프라인이 그대로 먹는다(엔진 통합 테스트로 못박음).
-    setFinSplits(trackMode?[]:appendFinalSplit(splitsRef.current,fk,ft,lastSplitRef.current.elapsed,finElevTotal,lastSplitRef.current.elevM));
-    setFinPaceTrack(trackMode?lapsToTrack(lapTimesRef.current,lapMRef.current/1000):runTracker.getPaceTrack().slice());
-    setFinHrTrack(runTracker.getHrTrack().slice());
-    setFinGapTrack(runTracker.getGapTrack().slice());
+    const splitsFin=trackMode?[]:appendFinalSplit(splitsRef.current,fk,ft,lastSplitRef.current.elapsed,finElevTotal,lastSplitRef.current.elevM);
+    const paceTrackFin=trackMode?lapsToTrack(lapTimesRef.current,lapMRef.current/1000):runTracker.getPaceTrack().slice();
+    const hrTrackFin=runTracker.getHrTrack().slice();
+    const gapTrackFin=runTracker.getGapTrack().slice();
+    setFinSplits(splitsFin);
+    setFinPaceTrack(paceTrackFin);
+    setFinHrTrack(hrTrackFin);
+    setFinGapTrack(gapTrackFin);
     setFinLocation(locationRef.current);
     // 케이던스 기록은 업계 표준인 '러닝 전체 평균'(총 걸음수 ÷ 이동 시간) — 정지 직전
     // 롤링 값은 마지막 30~60초만 반영해 걷기 마무리 시 기록 전체가 왜곡된다. 보조칩
     // 이력에서 총 걸음수를 조회하고, 조회 실패 시에만 롤링 값으로 폴백. 걸음은 이동 중에만
-    // 쌓이므로 분모는 일시정지 제외 이동 시간(ft)이 맞다.
-    setFinKm(fk);setFinTime(ft);setFinCad(cadRef.current);
+    // 쌓이므로 분모는 일시정지 제외 이동 시간(ft)이 맞다. 자동 저장이 이 값을 기다린다
+    // (구 fire-and-forget 은 검토 화면 체류 시간에 기대던 암묵 대기 — 이제 명시 await).
+    setFinKm(fk);setFinTime(ft);
+    let cadFin=cadRef.current;
     if(stepT0Ref.current&&ft>0){
-      const t0=stepT0Ref.current;
-      void (async()=>{
-        try{
-          const r=await Pedometer.getStepCountAsync(t0,new Date());
-          const avg=averageSpm(r?.steps??0,ft);
-          if(avg>0)setFinCad(avg);
-        }catch{/* 조회 실패 — 롤링 폴백 유지 */}
-      })();
+      try{
+        const r=await Pedometer.getStepCountAsync(stepT0Ref.current,new Date());
+        const avg=averageSpm(r?.steps??0,ft);
+        if(avg>0)cadFin=avg;
+      }catch{/* 조회 실패 — 롤링 폴백 유지 */}
     }
+    setFinCad(cadFin);
     setFinElev(finElevTotal);
-    setPhase('done');
+    // ── 자동 저장(심사 #1, 2026-07-22 — Peak-End 복원) ─────────────────────────
+    // 세리머니→리캡 직결: 감정의 정점(완주) 직후에 '저장/버리기' 행정 화면을 두지 않는다
+    // (NRC·Strava·Apple Fitness 문법). 저장하기 탭 누락 = 기록 유실 경로도 함께 제거.
+    // 메모는 리캡 입력('오늘의 러닝, 한 줄로')으로 단일화(구 검토 화면과 2중 입력 해소).
+    // 실패 시에만 검토 화면(phase 'done')으로 폴백해 '저장하기' 재시도를 제공한다.
+    // 버리기는 리캡 상단 휴지통(확인 다이얼로그)으로 이동 — 저장 후 삭제라 되돌리기도 가능.
+    try{
+      let loc=locationRef.current;
+      if(!loc&&routeFin){
+        // 저장 직전 폴백 역지오코딩 — OS 내장 지오코더(lib/geocode, Nominatim 은퇴).
+        try{
+          const pts2=JSON.parse(routeFin);
+          if(pts2.length>0){
+            const {lat,lon}=pts2[0];
+            loc=await reverseGeoLabelKo(lat,lon);
+          }
+        }catch{}
+      }
+      await onSave(Math.round(fk*100)/100,ft,cadFin,'',routeFin,loc,splitsFin,finElevTotal,estimateCaloriesTotal(fk,ft,weightKg),paceTrackFin,hrTrackFin,gapTrackFin,
+        trackMode?{lapM:Math.round(lapMRef.current),laps:lapTimesRef.current.length,lapTimes:lapTimesRef.current.slice()}:null);
+      hapticSuccess(); // 저장 성공 — 완주 보상 촉각(설정 off 면 graceful no-op).
+    }catch{
+      setPhase('done');
+      Alert.alert('저장하지 못했어요','기록은 안전하게 남아 있어요 — 잠시 후 저장하기를 다시 눌러 주세요.');
+    }
   }
 
   async function handleSave(){
@@ -3047,6 +3085,9 @@ function RunActiveScreen({shoe,insets,goalKm,goalMin=0,pacePlan=[],targetZone=0,
   const liveCal=estimateCaloriesTotal(trackMode?(lapCount*lapM)/1000:km,elapsed,weightKg);
   const finCal=estimateCaloriesTotal(finKm,finTime,weightKg);
 
+  // 검토 화면 — 자동 저장(심사 #1) 이후 정상 경로에선 안 보인다. 남은 진입은 두 갈래:
+  // ① 자동 저장 실패 폴백('저장하기' 재시도), ② 크래시 복구 'review' 모드(스냅샷 검토 후
+  // 저장/버리기 — 이건 사용자 결정이 필요한 지점이라 검토 화면이 정답).
   if(phase==='done') return(
     <View style={[run.screen,{paddingTop:insets.top+24,paddingBottom:insets.bottom+28}]}>
       <View style={run.top}>

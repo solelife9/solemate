@@ -156,8 +156,8 @@ async function stopToRecap(root: ReactTestRenderer.ReactTestInstance) {
     await Promise.resolve();
     await Promise.resolve();
   });
-  pressByText(root, '저장하기');
-  // 저장 비동기(로컬 큐→목 fetch) 플러시 — 리캡 렌더까지.
+  // 자동 저장(심사 #1, 2026-07-22): 종료 확정 즉시 저장 → 리캡 직행('저장하기' 탭 소멸).
+  // 저장 비동기(케이던스 조회→로컬 큐→목 fetch) 플러시 — 리캡 렌더까지.
   for (let i = 0; i < 4; i++) {
     await act(async () => {
       jest.advanceTimersByTime(50);

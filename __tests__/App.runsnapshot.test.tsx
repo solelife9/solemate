@@ -180,12 +180,9 @@ test('saving the run clears the snapshot (no stale resume offer afterwards)', as
 
   // 안전 컨트롤: 달리는 중엔 종료 버튼이 숨겨져 있어, 먼저 일시정지해야 종료가 보인다.
   pressByText(root, 'pause');
-  // 종료는 롱프레스(직접 stop → 리뷰 화면). 롱프레스 자체가 오작동 종료 가드.
+  // 종료는 롱프레스(직접 stop). 자동 저장(심사 #1) — '저장하기' 탭 없이 저장→리캡 직행.
   longPressByText(root, 'stop');
   await flushMicrotasks();
-  await act(async () => {
-    pressByText(root, '저장하기');
-  });
   await flushMicrotasks();
   await flushMicrotasks();
 
@@ -203,12 +200,29 @@ test('discarding the run clears the snapshot', async () => {
   // 안전 컨트롤: 종료 전 일시정지(달리는 중엔 종료 숨김), 종료는 롱프레스(직접 stop).
   pressByText(root, 'pause');
   longPressByText(root, 'stop');
-  await flushMicrotasks();
-  // '버리기'는 이제 확인 다이얼로그를 띄운다(오탭 유실 방지) — destructive 버튼을 눌러 확정.
+  // 자동 저장(심사 #1) → 리캡 직행. '버리기'는 리캡 우상단 휴지통(기록 삭제)으로 이동 —
+  // 이미 저장된 기록의 삭제라 확인 다이얼로그 destructive 버튼으로 확정한다.
+  // 저장 비동기(지오코딩 폴백→로컬 큐→목 fetch)를 타이머와 함께 흘려 리캡 렌더까지 플러시.
+  for (let i = 0; i < 4; i++) {
+    await act(async () => {
+      jest.advanceTimersByTime(50);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+  }
   const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation((_t, _m, buttons) => {
     (buttons || []).find(b => b.style === 'destructive')?.onPress?.();
   });
-  pressByText(root, '버리기');
+  // 자동 저장이 '첫 걸음' 업적 축하(CelebrationScreen)를 먼저 띄운다 — 확인으로 닫고 리캡으로.
+  const okBtn = root
+    .findAll(n => typeof n.props.onPress === 'function')
+    .find(n => textOf(n).includes('확인'));
+  if (okBtn) { await act(async () => { okBtn.props.onPress(); }); await flushMicrotasks(); }
+  const delBtn = root.findAll(
+    (n: any) => n.props?.accessibilityLabel === '기록 삭제' && typeof n.props?.onPress === 'function',
+  )[0];
+  if (!delBtn) throw new Error('recap delete button not found');
+  await act(async () => { delBtn.props.onPress(); });
   await flushMicrotasks();
 
   expect(await readSnapshot()).toBeNull();
