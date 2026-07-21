@@ -405,18 +405,18 @@ function Welcome({goNext, goLogin, insetTop, insetBottom}: {goNext: () => void; 
         </Rise>
         <Rise delay={440} style={{marginTop: rv(26)}}>
           <PrimaryButton testID="onboarding-start" label="시작하기" onPress={goNext} />
-          {/* 기존 계정 사용자: 온보딩 소개를 건너뛰고 바로 완료 — 인증 게이트(LoginScreen)는
-              온보딩보다 먼저이므로 여기 도달한 시점엔 이미 로그인돼 있고, 동기화된 신발이
-              있으면 온보딩 자체가 안 뜬다. 이 링크는 '소개 스킵' 의미로 유지한다. */}
+          {/* 소개 스킵 — 인증 게이트(LoginScreen)는 온보딩보다 먼저이므로 여기 도달한
+              시점엔 이미 로그인돼 있다. 구 카피 "이미 계정이 있나요? 로그인"은 실제 동작
+              (온보딩 완료→홈)과 달라 기대 위반이라 정직한 라벨로 교체(심사 #2, 2026-07-22). */}
           <Pressable
-            testID="onboarding-login"
+            testID="onboarding-skip-intro"
             onPress={goLogin}
             hitSlop={8}
             style={{alignItems: 'center', marginTop: rv(14)}}
             accessibilityRole="button"
-            accessibilityLabel="이미 계정이 있나요? 로그인">
+            accessibilityLabel="건너뛰고 시작하기">
             <Text style={{fontFamily: FONT, fontSize: TYPE.body.fontSize, color: T3, fontWeight: '500'}}>
-              이미 계정이 있나요? <Text style={{color: T1}}>로그인</Text>
+              건너뛰고 <Text style={{color: T1}}>시작하기</Text>
             </Text>
           </Pressable>
           {/* 약관 고지 — Ready 화면 제거(2026-07-07 재설계)로 첫 CTA 아래로 이전. */}

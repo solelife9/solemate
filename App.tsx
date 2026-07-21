@@ -258,7 +258,7 @@ export default function App(){
 }
 
 function Main(){
-  const [tab,setTab]=useState(0);                 // 0 home · 1 history · 2 shoes · 3 profile
+  const [tab,setTab]=useState(0);                 // 0 home · 1 shoes · 2 history · 3 profile (primitives TABS 순서와 동일)
   const [shoes,setShoes]=useState<BackendShoe[]>([]);
   const [runs,setRuns]=useState<BackendRun[]>([]);
   // 거리 PB(러너 스펙) — paceTrack 베스트에포트 집계. 캐시·마이그레이션·삭제복구는 store 담당.

@@ -355,7 +355,9 @@ describe('ProfileScreen 자동 동기 (로그인/변경 시 pull→merge→push,
 });
 
 describe('ProfileScreen 로그아웃', () => {
-  test('로그아웃을 누르면 port.signOut 이 호출되고 로그인 버튼이 다시 노출된다', async () => {
+  test('로그아웃은 확인 다이얼로그를 거쳐 port.signOut 이 호출되고 로그인 버튼이 다시 노출된다', async () => {
+    const {Alert} = require('react-native');
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
     const port = mockPort();
     const root = render({cloudPort: port, backupData: LOCAL});
     await press(byTestId(root, 'cloud-signin-google'));
@@ -368,10 +370,18 @@ describe('ProfileScreen 로그아웃', () => {
     );
     await press(signOutBtn);
 
+    // 확인 다이얼로그(심사 #15, 2026-07-22): 탭 즉시 로그아웃되지 않는다.
+    expect(port.signOut).not.toHaveBeenCalled();
+    const call = alertSpy.mock.calls.find(c => String(c[0]).includes('로그아웃'));
+    expect(call).toBeTruthy();
+    const confirm = (call![2] as any[]).find(b => b.text === '로그아웃');
+    await act(async () => { confirm.onPress(); });
+
     expect(port.signOut).toHaveBeenCalledTimes(1);
     // signedOut 반영: 로그인 버튼 재노출, 동기 행 사라짐.
     expect(hasId(root, 'cloud-signin-google')).toBe(true);
     expect(hasId(root, 'cloud-account')).toBe(false);
+    alertSpy.mockRestore();
   });
 });
 

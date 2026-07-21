@@ -56,25 +56,16 @@ export function FuelGauge({remainLabel, unit, fillPct, maxLabel, replaceLabel, e
   );
 }
 
+// 구 마커/존/큰숫자 디자인의 잔여 스타일(top·remRow·rem·remU·cond·dot·condTxt·seg·zone·marker)은
+// 렌더에서 안 쓰여 삭제(심사 #18, 2026-07-22).
 const g = StyleSheet.create({
   wrap: {marginTop: rv(0)},
-  top: {flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between'},
   labelRow: {flexDirection: 'row', alignItems: 'center', gap: rv(8)},
   label: {color: T3, fontFamily: FONT, fontSize: rf(14), fontWeight: '600', letterSpacing: 0.2},
   lead: {color: T2, fontFamily: FONT, fontSize: rf(17), fontWeight: '500', letterSpacing: -0.2, marginTop: rv(8), lineHeight: rf(23)},
   leadBold: {color: T1, fontFamily: DISPLAY, fontWeight: '700'},
-  remRow: {flexDirection: 'row', alignItems: 'flex-end', marginTop: rv(4)},
-  rem: {color: T1, fontFamily: DISPLAY, fontSize: rf(40), fontWeight: '600', letterSpacing: -1.4, lineHeight: rf(38)},
-  remU: {color: T2, fontFamily: FONT, fontSize: rf(17), fontWeight: '500', marginLeft: rs(3), marginBottom: rv(4)},
-  cond: {flexDirection: 'row', alignItems: 'center', gap: rv(8)},
-  dot: {width: rs(7), height: rs(7), borderRadius: RADIUS.pill},
-  condTxt: {color: T2, fontFamily: FONT, fontSize: rf(14), fontWeight: '500'},
   track: {flexDirection: 'row', height: rs(BAR.gauge), borderRadius: RADIUS.pill, overflow: 'hidden', marginTop: rv(16), backgroundColor: withAlpha(T1, 0.04)},
-  seg: {height: '100%'},
   fill: {position: 'absolute', left: 0, top: 0, bottom: 0, borderRadius: RADIUS.pill, backgroundColor: ACCENT},
-  zone: {position: 'absolute', top: 0, bottom: 0, width: 1, backgroundColor: withAlpha(T1, 0.18)},
-  marker: {position: 'absolute', top: '50%', width: rs(18), height: rs(18), borderRadius: RADIUS.pill, backgroundColor: T1,
-    borderWidth: 3, borderColor: ACCENT, marginTop: rv(-9), marginLeft: rs(-9)},
   scale: {flexDirection: 'row', justifyContent: 'space-between', marginTop: rv(10)},
   scaleTxt: {color: T3, fontFamily: DISPLAY, fontSize: rf(12), opacity: 0.8},
 });

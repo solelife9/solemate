@@ -177,7 +177,7 @@ export default function RunActiveScreen({
       엔진 없이 러닝 화면과 '같은 레이아웃'으로 3·2·1→GO 를 링 그 자리에서 돌린다.
       onDone 에서 App 이 엔진 인스턴스로 스왑 — 레이아웃이 같아 링은 픽셀 그대로 이어지고,
       지표·컨트롤은 스왑 후 아래에서 떠오른다(uiIn). 구 RunCountdownScreen(별도 화면) 대체. */
-  countdown?: { outdoor?: boolean; onCancel?: () => void; onDone?: () => void } | null;
+  countdown?: { onCancel?: () => void; onDone?: () => void } | null;
 }) {
   const insets = useSafeAreaInsets();
   const { height: winH } = useWindowDimensions();
@@ -533,10 +533,8 @@ export default function RunActiveScreen({
                 <Text style={r.cdChipText}>목표 <Text style={r.cdChipB}>{goalMin}분</Text></Text>
               </View>
             ) : null}
-            <View style={r.cdChip} accessibilityRole="text" accessibilityLabel={countdown?.outdoor === false ? '실내 러닝' : '야외 러닝'}>
-              <Ionicons name="navigate-outline" size={ri(14)} color={T3} />
-              <Text style={r.cdChipText}>{countdown?.outdoor === false ? '실내 러닝' : '야외 러닝'}</Text>
-            </View>
+            {/* 야외/실내 칩 제거(심사 #12, 2026-07-22) — outdoor prop 이 미배선이라 트랙·실내에서도
+                항상 '야외 러닝'으로 표기되던 오표기. 실내 모드가 생기기 전까지 칩 자체를 없앤다. */}
           </Animated.View>
         )}
       </Animated.View>

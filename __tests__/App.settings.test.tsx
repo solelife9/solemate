@@ -179,7 +179,7 @@ test('앱·기기 정보 — 가입/버전은 보이고 기기 ID는 상시 노�
   const txt = textOf(root);
   expect(txt).not.toContain('기기 ID'); // 노이즈 감사 — 유저가 행동할 일 없는 불투명 값
   expect(txt).toContain('버전');
-  expect(txt).toContain('0.0.1'); // APP_VERSION 값
+  expect(txt).toContain(require('../package.json').version); // APP_VERSION = package.json 단일 소스(심사 #16)
 });
 
 test('단위 선택은 영속되어 재마운트(앱 재실행) 후에도 복원된다', async () => {

@@ -57,7 +57,9 @@ export type Badge = { icon: string; label: string; on: boolean };
 export type PersonalRecord = { icon: string; label: string; value: string; unit: string };
 
 const DEFAULT_PROFILE: Profile = { name: '러너', since: '', totalKm: 0, totalRuns: 0, totalTime: '0', rankTier: 'bronze' };
-const APP_VERSION = '0.0.1';
+// 버전 단일 소스 = package.json(심사 #16, 2026-07-22) — 릴리스 때 package.json 만 올리면 된다.
+// (네이티브 MARKETING_VERSION 직접 읽기는 신규 네이티브 의존이 필요해 보류 — 승인제.)
+const APP_VERSION: string = require('./package.json').version;
 
 // 마지막 동기 시각을 HH:MM 로 짧게 포맷한다(상세 행 detail 용). null 이면 호출부가
 // '아직 동기화 안 됨' 카피로 분기한다.
@@ -348,7 +350,9 @@ export default function ProfileScreen({
   };
 
   // 로그아웃: 어디서든 signedOut 으로. 로컬 데이터는 건드리지 않는다(데이터 파괴 금지).
-  const handleSignOut = async () => {
+  // 확인 다이얼로그 1겹(심사 #15, 2026-07-22) — 탈퇴엔 있는데 로그아웃엔 없던 관습 위반 보정.
+  // 카피가 "기록은 안전"을 함께 말해 데이터 불안도 해소한다.
+  const doSignOut = async () => {
     if (!cloudPort) return;
     try {
       await cloudPort.signOut();
@@ -361,6 +365,12 @@ export default function ProfileScreen({
     setLastSyncAt(null);
     setCloudMsg(null);
     setAuthState((s) => nextAuthState(s, 'signOut'));
+  };
+  const handleSignOut = () => {
+    Alert.alert('로그아웃', '로그아웃할까요? 기록은 이 기기와 클라우드에 안전하게 남아요.', [
+      { text: '취소', style: 'cancel' },
+      { text: '로그아웃', style: 'destructive', onPress: () => { void doSignOut(); } },
+    ]);
   };
 
   // 회원 탈퇴: 되돌릴 수 없는 영구 삭제이므로 확인 다이얼로그를 거친다. 확인 시 App 의
