@@ -487,7 +487,7 @@ export default function RunActiveScreen({
                   <View style={r.cdNudge}>
                     <Animated.Text style={[r.cdCount, { opacity: cdNumOpacity, transform: [{ scale: cdNumScale }] }]} accessibilityLiveRegion="assertive" accessibilityLabel={`${cdNum}초 후 시작`}>{cdNum}</Animated.Text>
                   </View>
-                  <Text style={r.cdCountLabel}>곧 시작합니다</Text>
+                  <Text style={r.cdCountLabel}>곧 시작해요</Text>
                 </>
               )}
             </View>

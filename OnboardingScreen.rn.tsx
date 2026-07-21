@@ -401,7 +401,7 @@ function Welcome({goNext, goLogin, insetTop, insetBottom}: {goNext: () => void; 
           <Text style={s.heroSub}>멈추지 않는 발걸음을 위해</Text>
         </Rise>
         <Rise delay={320}>
-          <Text style={s.heroBody}>keego가 러닝화 수명을 추적해,{'\n'}부상 없이 러닝 라이프를 이어갈 수 있도록 도와요.</Text>
+          <Text style={s.heroBody}>keego가 러닝화 수명을 추적해,{'\n'}부상 없이 평생 달리도록 도와요.</Text>
         </Rise>
         <Rise delay={440} style={{marginTop: rv(26)}}>
           <PrimaryButton testID="onboarding-start" label="시작하기" onPress={goNext} />
