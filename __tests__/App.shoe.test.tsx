@@ -255,9 +255,10 @@ test('restore(복원) PATCHes retired=false and the shoe reappears in the home p
   // before restore: archived shoe is not on the home picker.
   expect(textOf(root)).not.toContain('Clifton');
 
-  // 복원 진입점은 마이탭 '신발 보관함'(ShoeArchiveScreen)이다(fd67d4b — 락커엔 retired 미노출).
-  await tap(pressBy(root, '마이')); // → 마이(프로필) 탭
-  await tap(pressBy(root, '신발 보관함')); // → 보관함 진입
+  // 복원 진입점은 신발 탭 하단 '보관된 신발 N켤레' 행(심사 #7, 2026-07-22 — 보관 행동과
+  // 복원 동선을 한 지붕에. 구 마이탭 행은 제거).
+  await tap(pressBy(root, '러닝화')); // → 신발 탭
+  await tap(pressBy(root, '보관된 신발')); // → 보관함 진입
   await tap(pressBy(root, '복원')); // 복원 (no Alert on restore)
 
   // Stage 2: 복원도 로컬 상태(retired=false) 토글 — REST 신발 쓰기 없음.

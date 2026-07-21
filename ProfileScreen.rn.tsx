@@ -124,7 +124,6 @@ export default function ProfileScreen({
   onOpenProgression,
   onOpenHallOfShoes, retiredCount = 0,
   onOpenMedalArchive, medalCount = 0,
-  onOpenArchive, archivedCount = 0,
   challengeExtRuns = [], challengeExtShoes = [], todayISO = '',
   weeklyGoalKm = 0, onEditSmartTarget,
   onReplayOnboarding,
@@ -208,10 +207,7 @@ export default function ProfileScreen({
   medalCount?: number;
   // 은퇴한 신발 수(전당 진입 행의 부제에 표시). 0이어도 진입은 가능(빈 전당 안내).
   retiredCount?: number;
-  // 신발 보관함(보관 처리한 신발 복원) 진입. 없으면 행 미표시(안전한 no-op).
-  onOpenArchive?: () => void;
-  // 보관한 신발 수(보관함 진입 행 부제). 0이어도 진입 가능(빈 보관함 안내).
-  archivedCount?: number;
+  // (신발 보관함 진입은 신발 탭 하단으로 이관 — 심사 #7, 2026-07-22.)
   // 온보딩 다시 보기 — 설정에서 온보딩 플로우를 비영속으로 재생(리뷰용). 없으면 행 미표시.
   onReplayOnboarding?: () => void;
   // 회원 탈퇴(계정+클라우드+로컬 영구 삭제). App 이 cloudPort.deleteAccount + 로컬 초기화를
@@ -877,24 +873,9 @@ export default function ProfileScreen({
 
         {/* Apple 건강 연동은 설정 섹션의 compact 행으로 이동(사용자 요청) — 아래 설정 목록 참조. */}
 
-        {/* 신발 보관함 진입 — 보관(retired) 처리한 신발을 모아 복원할 수 있는 전체화면.
-            명예의 전당(은퇴) 아래에 둔다. 복원 진입점이 없던 갭을 메운다. */}
-        {onOpenArchive && (
-          <Pressable
-            onPress={onOpenArchive}
-            testID="open-shoe-archive"
-            accessibilityRole="button"
-            accessibilityLabel="신발 보관함 열기"
-            style={({ pressed }) => [s.card, s.progressRow, pressed && { backgroundColor: CARD_HI }]}>
-            <GlassEdge glints={false} radius={RADIUS.lg} />
-            <View style={s.progressIcon}><Ionicons name="archive-outline" size={ri(19)} color={BRAND} /></View>
-            <View style={{ flex: 1, minWidth: 0 }}>
-              <Text style={s.progressTitle}>신발 보관함</Text>
-              <Text style={s.progressSub}>{archivedCount > 0 ? `보관한 신발 ${archivedCount}켤레` : '러닝 목록에서 숨긴 신발'}</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={ri(18)} color={T3} />
-          </Pressable>
-        )}
+        {/* 신발 보관함 진입은 신발 탭 하단으로 이관(심사 #7, 2026-07-22) — '보관 처리' 행동이
+            있는 신발 탭에 복원 동선도 함께 둔다. 마이탭은 성취 계열(진척·러닝화 아카이브·
+            메달 아카이브)만 남아 '아카이브 vs 보관함' 이름 충돌이 해소된다. */}
 
 
         {/* 돌아보기(리캡) — 주간/월간 토글 + 요약 + 카드 공유(slice-8-recap-ui) */}

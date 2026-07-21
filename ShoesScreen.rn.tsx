@@ -535,7 +535,7 @@ export default function ShoesScreen({
   shoes = SHOES, runs = [], totals = {}, unit = 'km', weightKg, surfaceOf, onAddShoe, onTab, onRename, onDelete, onRetire, onSetMaxKm, onStartRun,
   detailShoeId, onConsumeDetail,
   rawShoes, rawRuns, progressionCtx, equippedTitle, onRetiredKeepsake, now, userName,
-  forecasts, rotation,
+  forecasts, rotation, onOpenArchive, archivedCount = 0,
 }: {
   userName?: string;
   shoes?: Shoe[];
@@ -545,6 +545,10 @@ export default function ShoesScreen({
   // 로테이션 인사이트(홈에서 이관 — 심사 #13, 2026-07-22). 활성 2켤레+ 에서만 채워지고
   // 비면 패널이 숨는다. 행 탭 = 그 신발 상세로.
   rotation?: RotationPick[];
+  // 신발 보관함 진입(마이탭에서 이관 — 심사 #7, 2026-07-22): '보관 처리' 행동이 있는
+  // 이 탭에 복원 동선도 함께 둔다. 보관 신발 0켤레면 행 숨김.
+  onOpenArchive?: () => void;
+  archivedCount?: number;
   runs?: Run[];
   totals?: Record<number, ShoeTotals>;
   // (activeIdx '사용 중' 강조 prop 제거 2026-07-11 — 카드 간 구분 없이 동일 취급.)
@@ -689,6 +693,20 @@ export default function ShoesScreen({
           rotation={rotation ?? []}
           onPickShoe={(id) => { const i = shoes.findIndex((sh) => sh.id === id); if (i >= 0) setDetail(i); }}
         />
+        {/* 신발 보관함(마이탭에서 이관 — 심사 #7) — 보관 처리와 복원을 한 지붕에.
+            조용한 하단 행: 보관 신발이 있을 때만 나타난다. */}
+        {!!onOpenArchive && archivedCount > 0 && (
+          <Pressable
+            onPress={onOpenArchive}
+            testID="open-shoe-archive"
+            accessibilityRole="button"
+            accessibilityLabel={`신발 보관함 열기, 보관된 신발 ${archivedCount}켤레`}
+            style={({ pressed }) => [s.archiveRow, pressed && s.pressed]}>
+            <Ionicons name="archive-outline" size={ri(16)} color={T3} />
+            <Text style={s.archiveRowText}>보관된 신발 <Text style={s.archiveRowStrong}>{archivedCount}켤레</Text></Text>
+            <Ionicons name="chevron-forward" size={ri(15)} color={T3} />
+          </Pressable>
+        )}
       </ScrollView>
       </Rise>
       <TabBar active={1} onTab={(i) => onTab?.(i)} />
@@ -750,6 +768,10 @@ const s = StyleSheet.create({
   fcRow: { flexDirection: 'row', alignItems: 'center', gap: rv(4), marginTop: rv(8) },
   fcText: { flex: 1, color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500' },
   soonHeader: { flexDirection: 'row', alignItems: 'center', gap: rv(8), backgroundColor: withAlpha(WARN, 0.1), borderRadius: RADIUS.md, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(WARN, 0.35), paddingHorizontal: rs(12), paddingVertical: rv(10) },
+  // 보관함 진입(심사 #7) — 무채 조용한 행(경고 배너와 달리 배경 없이 절제).
+  archiveRow: { flexDirection: 'row', alignItems: 'center', gap: rv(8), paddingHorizontal: rs(12), paddingVertical: rv(12), marginTop: rv(2) },
+  archiveRowText: { flex: 1, color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500' },
+  archiveRowStrong: { color: T2, fontWeight: '600' },
   soonText: { color: T2, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500' },
   soonStrong: { color: WARN, fontWeight: '700' },
   shoePaceVal: { color: T3, fontFamily: DISPLAY, fontSize: TYPE.caption.fontSize },

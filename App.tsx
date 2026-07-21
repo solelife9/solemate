@@ -2240,6 +2240,7 @@ function Main(){
             rawShoes={shoes} rawRuns={runs} progressionCtx={progressionCtx} userName={profileName}
             onRetiredKeepsake={onRetiredKeepsake} forecasts={homeForecasts}
             rotation={rotationPicks}
+            onOpenArchive={()=>setShowArchive(true)} archivedCount={archivedUiShoes.length}
           />
         )}
         {tab===3&&(
@@ -2266,8 +2267,6 @@ function Main(){
             onOpenProgression={()=>setShowProgression(true)}
             onOpenHallOfShoes={()=>setShowHallOfShoes(true)} retiredCount={retiredRecords.length}
             onOpenMedalArchive={()=>setShowMedalArchive(true)} medalCount={liveMedals(medals).length}
-            onOpenArchive={()=>setShowArchive(true)}
-            archivedCount={archivedUiShoes.length}
             onReplayOnboarding={()=>setPreviewOnboard(true)}
           />
         )}

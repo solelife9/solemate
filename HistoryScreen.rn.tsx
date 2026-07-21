@@ -80,6 +80,8 @@ export type PeriodChart = { title: string; data: number[]; labels: string[] };
 
 const PERIODS = ['주', '월', '년', '전체'];
 const EMPTY_SUMMARY: PeriodSummary = { km: '0', runs: 0, pace: '--', time: '--' };
+// 심박 곡선 접이식 선택 영속 키(심사 #19, 2026-07-22).
+const HR_CURVE_OPEN_KEY = 'hr_curve_open_v1';
 
 // ── bar chart with right-side km gridlines ────────────────────────────────────
 export function PeriodChartView({ data, labels, unit }: { data: number[]; labels: string[]; unit: Unit }) {
@@ -414,6 +416,15 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, onEdit, age = 0, 
   // 심박 시계열(hrTrack_<id>, App.onSave 가 워치 HR 을 영속). 있으면 HR존 분포·평균/최대·
   // 트레이닝효과(TRIMP)를 산출한다. 워치 미연동이면 빈값 → 카드 자동 숨김.
   const [hrTrack, setHrTrack] = useState<{ t: number; bpm: number }[]>([]);
+  // 심박 곡선 접이식(심사 #19) — 기본 펼침, 사용자의 마지막 선택을 영속.
+  const [hrCurveOpen, setHrCurveOpen] = useState(true);
+  useEffect(() => {
+    let alive = true;
+    AsyncStorage.getItem(HR_CURVE_OPEN_KEY)
+      .then(v => { if (alive && v === '0') setHrCurveOpen(false); })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, []);
   useEffect(() => {
     let alive = true;
     if (!run.id) { setHrTrack([]); return; }
@@ -625,15 +636,28 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, onEdit, age = 0, 
               {/* accessible 붕괴 제거(2026-07-05 a11y): 카드를 한 요소로 묶으면 Z1~Z5
                   존별 체류 시간이 낭독 안 됐다. 제목·평균/최대·각 존 행이 텍스트라
                   개별 낭독되게 둔다(존 색은 Z{n} 라벨·시간 텍스트로 병기됨). */}
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                <Text style={s.cardTitle}>심박 존</Text>
+              {/* 헤더 탭 = 곡선 접기/펼치기(심사 #19, 2026-07-22) — 곡선과 존 막대가 한
+                  데이터의 이중 표현이라, 밀도를 스스로 고를 수 있게 곡선을 접이식으로.
+                  기본 펼침 + 선택 영속(다음 상세에서도 내 선택 유지). 존 막대는 항상 표시. */}
+              <Pressable
+                onPress={() => { const v = !hrCurveOpen; setHrCurveOpen(v); void AsyncStorage.setItem(HR_CURVE_OPEN_KEY, v ? '1' : '0').catch(() => {}); }}
+                accessibilityRole="button"
+                accessibilityLabel={hrCurveOpen ? '심박 그래프 접기' : '심박 그래프 펼치기'}
+                accessibilityState={{ expanded: hrCurveOpen }}
+                style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: rs(4) }}>
+                  <Text style={s.cardTitle}>심박 존</Text>
+                  {hrTrack.length >= 2 && (
+                    <Ionicons name={hrCurveOpen ? 'chevron-up' : 'chevron-down'} size={ri(13)} color={T3} />
+                  )}
+                </View>
                 <Text style={{ color: T2, fontFamily: FONT, fontSize: TYPE.label.fontSize }}>
                   평균 <Text style={{ color: T1, fontWeight: '700' }}>{hr.avg}</Text> · 최대 <Text style={{ color: T1, fontWeight: '700' }}>{hr.max}</Text> bpm
                 </Text>
-              </View>
+              </Pressable>
               {/* 심박 곡선(#7) — 존 색 밴드 위 흰 라인. 페이스 곡선과 달리 밴드라는 절대
                   기준이 배경에 깔려 '어느 존인가'가 색으로 즉답된다. hrTrack 2점 이상일 때만. */}
-              {hrTrack.length >= 2 && (() => {
+              {hrCurveOpen && hrTrack.length >= 2 && (() => {
                 const W = 300, H = 116, L = 4, R = 4, TOP = 6, BOT = 16;
                 const bpms = hrTrack.map(p => p.bpm).filter(b => b > 0);
                 if (bpms.length < 2) return null;
@@ -1151,7 +1175,9 @@ export default function HistoryScreen({
                 <View style={[s.sumMetric, { marginLeft: rs(16) }]}><Text style={s.sumMetricV}>{sum.pace}</Text><Text style={s.sumMetricL}>평균 페이스</Text></View>
                 <View style={s.sumMetric}><Text style={s.sumMetricV}>{sum.time}</Text><Text style={s.sumMetricL}>총 시간</Text></View>
               </View>
-              {ch && ch.data.length > 0 && (
+              {/* '전체' 뷰의 연도 막대는 비교할 연도가 2개 이상일 때만(심사 #20, 2026-07-22)
+                  — 데이터가 1년치뿐이면 막대 1개는 비교 정보가 0이라 합계 요약만 남긴다. */}
+              {ch && ch.data.length > 0 && !(period === '전체' && ch.data.length < 2) && (
                 <View style={{ marginTop: rv(20), paddingTop: rv(20), borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP }}>
                   <Text style={[s.cardTitle, { color: T1 }]}>{ch.title}</Text>
                   <View style={{ marginTop: rv(18) }}><PeriodChartView data={ch.data} labels={ch.labels} unit={unit} /></View>
