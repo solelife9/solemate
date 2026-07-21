@@ -14,5 +14,10 @@
 	<array>
 		<string>workout-processing</string>
 	</array>
+	<!-- Always-On Display 지원 — 러닝 중 손목 내려도 앱이 화면에 머물고(딤), 손목 들면
+	     바로 앱으로 깬다(터치 불필요). 이 키가 없어 손목 들어도 앱이 안 켜지던 문제 수정
+	     (2026-07-21 사용자 실기기). 애플·나이키·가민 러닝앱 표준. -->
+	<key>WKSupportsAlwaysOnDisplay</key>
+	<true/>
 </dict>
 </plist>
