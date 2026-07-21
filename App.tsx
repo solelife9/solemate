@@ -1555,6 +1555,19 @@ function Main(){
       if(newId&&Array.isArray(p.splitsS)&&p.splitsS.length>=2){
         try{await AsyncStorage.setItem('splits_'+newId,JSON.stringify(p.splitsS.map((sec,i)=>({km:i+1,paceSec:Math.round(sec),elevM:0}))));}catch{/* 비치명적 */}
       }
+      // 심박 사이드카 안전망(버그픽스 2026-07-22 — 상세에 심박 존 카드가 영영 안 뜨던 회귀):
+      // 워치 런도 폰 런 저장 경로와 동일하게 '실제 러닝 시간창'으로 HR 보강 대기에 등록한다.
+      // 등록이 없으면 ① 워치 직송 심박(onWatchHrTrack)이 매칭 상대를 못 찾아 버려지고
+      // ② HK 백필 재시도도 대상이 없어, hrTrack_<id> 가 영영 비었다(복구 루프의 updatedAt
+      // 역산 창은 늦게 가져온 워치 런에선 실제 러닝 시각과 어긋나 못 채운다).
+      if(newId){
+        const durMs=Math.max(1,Math.round(p.durationS))*1000;
+        const wStart=p.startMs>0?p.startMs:Date.now()-durMs;
+        void registerRunForHr(newId,wStart,wStart+durMs,Date.now()).catch(()=>{});
+        // 워치→폰 HK 동기화 지연 대비 — 폰 런 저장과 동일한 15s·60s 재백필.
+        setTimeout(()=>{void retryPendingHr(Date.now(),hkBackfillAndRepair).catch(()=>{});},15000);
+        setTimeout(()=>{void retryPendingHr(Date.now(),hkBackfillAndRepair).catch(()=>{});},60000);
+      }
       showToast({message:'워치 러닝을 가져왔어요'});
     }catch(e){console.log('watch run sync error',e);}
   }),[]);
