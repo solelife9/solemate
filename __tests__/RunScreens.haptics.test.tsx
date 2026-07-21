@@ -109,13 +109,26 @@ describe('RunActiveScreen countdown 모드 — 카운트다운 비트(3·2·1)�
 
 // ── RunGoalScreen: 런 시작 CTA 햅틱 + onStart ────────────────────────────────
 describe('RunGoalScreen — 런 시작 햅틱과 onStart 핸들러', () => {
-  test("'러닝 시작' CTA 가 tap 햅틱 + onStart(기본 5km) 를 부른다", () => {
+  test("'러닝 시작' CTA 가 tap 햅틱 + onStart(기본 자유런 = 목표 없음) 를 부른다", () => {
+    // 심사 #4(2026-07-22): 기본 탭 = 자유런 — '그냥 뛰기'가 CTA 한 번.
     const onStart = jest.fn();
     const root = render(<RunGoalScreen onStart={onStart} />).root;
     act(() => {
       pressableByLabel(root, '러닝 시작').props.onPress();
     });
     expect(haptics.tap).toHaveBeenCalledTimes(1);
+    expect(onStart).toHaveBeenCalledWith({ km: 0, durationMin: 0, pacePlan: [], targetZone: 0 });
+  });
+
+  test('거리 모드 선택 후 시작하면 onStart(기본 5km)', () => {
+    const onStart = jest.fn();
+    const root = render(<RunGoalScreen onStart={onStart} />).root;
+    act(() => {
+      pressableByLabel(root, '거리 목표').props.onPress();
+    });
+    act(() => {
+      pressableByLabel(root, '러닝 시작').props.onPress();
+    });
     expect(onStart).toHaveBeenCalledWith({ km: 5, durationMin: 0, pacePlan: [], targetZone: 0 });
   });
 
@@ -131,27 +144,17 @@ describe('RunGoalScreen — 런 시작 햅틱과 onStart 핸들러', () => {
     expect(onStart).toHaveBeenCalledWith({ km: 0, durationMin: 30, pacePlan: [], targetZone: 0 });
   });
 
-  test('스피드 모드 선택 후 시작하면 거리 + km별 페이스 플랜이 onStart 로 전달된다', () => {
-    const onStart = jest.fn();
-    const root = render(<RunGoalScreen onStart={onStart} />).root;
-    act(() => {
-      pressableByLabel(root, '스피드 목표').props.onPress();
-    });
-    act(() => {
-      pressableByLabel(root, '러닝 시작').props.onPress();
-    });
-    expect(onStart).toHaveBeenCalledWith(expect.objectContaining({ km: 5, durationMin: 0 }));
-    const arg = onStart.mock.calls[0][0];
-    expect(Array.isArray(arg.pacePlan)).toBe(true);
-    expect(arg.pacePlan.length).toBe(5); // 5km → km별 5칸
-  });
+  // (스피드 모드 테스트 제거 — 탭 자체가 삭제됨. 심사 #4, 민우님 확정 2026-07-22.)
 
   test('세그먼트/프리셋 버튼이 role=button + selected 상태를 노출한다', () => {
     const root = render(<RunGoalScreen />).root;
-    const seg = pressableByLabel(root, '거리 목표'); // 기본 km 모드 = 선택됨
+    const seg = pressableByLabel(root, '자유런 목표'); // 기본 자유런 모드 = 선택됨
     expect(seg.props.accessibilityRole).toBe('button');
     expect(seg.props.accessibilityState.selected).toBe(true);
-    const preset = pressableByLabel(root, '5km 목표 선택'); // 기본 5km = 선택됨
+    act(() => {
+      pressableByLabel(root, '거리 목표').props.onPress();
+    });
+    const preset = pressableByLabel(root, '5km 목표 선택'); // 거리 기본 5km = 선택됨
     expect(preset.props.accessibilityState.selected).toBe(true);
   });
 });

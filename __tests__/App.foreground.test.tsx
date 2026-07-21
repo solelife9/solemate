@@ -75,6 +75,7 @@ async function startRun() {
   });
   const root = renderer.root;
   pressByText(root, '러닝 시작'); // Home → goal keypad
+  pressByText(root, '거리'); // 기본 탭=자유런(심사 #4) — 목표 노출 검증용 5km 거리 목표 선택
   // Goal → 카운트다운 → live run. 카운트다운 onDone 타이머를 제어하려면 카운트다운이
   // fake 타이머 하에서 mount/advance 돼야 한다(real/fake 양쪽에서 불리므로 임시 보장).
   const fakeAlready = typeof (setTimeout as any).clock === 'object';

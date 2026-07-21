@@ -14,7 +14,11 @@ import RunGoalScreen from '../RunGoalScreen.rn';
 function render(el: React.ReactElement) {
   let r!: ReactTestRenderer.ReactTestRenderer;
   act(() => { r = ReactTestRenderer.create(el); });
-  return r.root;
+  // 기본 탭이 자유런(심사 #4)이라 큰 숫자·키패드가 없다 — 거리 탭으로 전환 후 검증.
+  const root = r.root;
+  const seg = root.findAll(n => n.props?.accessibilityLabel === '거리 목표' && typeof n.props?.onPress === 'function')[0];
+  act(() => { seg.props.onPress(); });
+  return root;
 }
 const byId = (root: ReactTestRenderer.ReactTestInstance, id: string) =>
   root.findAll((n: any) => n?.props?.testID === id && typeof n.type === 'string');

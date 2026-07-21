@@ -1570,6 +1570,8 @@ function Main(){
       }
       showToast({message:'워치 러닝을 가져왔어요'});
     }catch(e){console.log('watch run sync error',e);}
+  // hkBackfillAndRepair 는 ref 기반(runsForHrRef)이라 첫 렌더 인스턴스로 충분 — 재구독 불필요.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }),[]);
 
   // 심박 지연 보강 — 폰이 주머니에 있어(화면 꺼짐) 실시간 심박을 놓쳐도 hrTrack 이 채워지게.

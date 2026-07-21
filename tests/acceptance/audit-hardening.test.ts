@@ -436,23 +436,23 @@ describe('Audit Hardening 수용', () => {
       const active = renderTree(el(RunActiveScreen, {distanceKm: 2, goalKm: 5})).root;
       expect(pressableByLabel(active, '일시정지').props.accessibilityRole).toBe('button');
 
-      // 온보딩 Welcome: 시작/로그인 링크 모두 role=button + 라벨
+      // 온보딩 Welcome: 시작/스킵 링크 모두 role=button + 라벨(심사 #2 — 정직한 카피로 개명)
       const onb = renderTree(el(OnboardingScreen, {onDone: jest.fn()})).root;
-      const login = pressableByLabel(onb, '이미 계정이 있나요? 로그인');
+      const login = pressableByLabel(onb, '건너뛰고 시작하기');
       expect(login.props.accessibilityRole).toBe('button');
       expect(pressableByLabel(onb, '시작하기').props.accessibilityRole).toBe('button');
     });
 
-    test('온보딩 로그인 링크는 소개를 건너뛰고 즉시 완료한다(goNext 아님, Ready 인터스티셜 없음)', () => {
+    test('온보딩 스킵 링크는 소개를 건너뛰고 즉시 완료한다(goNext 아님, Ready 인터스티셜 없음)', () => {
       // 2026-07-07 재설계: 인증 게이트(LoginScreen)는 온보딩보다 먼저라 이 링크가 눌리는
       // 시점엔 이미 로그인 상태다. 과거엔 Ready(index 5) 인터스티셜('다시 오신 걸')로
       // 점프했지만, Ready 화면 제거로 링크는 곧장 onDone(null) — 같은 종착지(홈), 화면 하나 덜.
       const onDone = jest.fn();
       const root = renderTree(el(OnboardingScreen, {onDone})).root;
 
-      // '이미 계정이 있나요? 로그인' 을 누른다.
+      // '건너뛰고 시작하기'(구 '이미 계정이 있나요? 로그인' — 심사 #2 개명)를 누른다.
       act(() => {
-        pressableByLabel(root, '이미 계정이 있나요? 로그인').props.onPress();
+        pressableByLabel(root, '건너뛰고 시작하기').props.onPress();
       });
 
       // 과거 버그였다면 goNext 로 다음 소개 화면('다음' CTA)이 떴을 것 — 대신 즉시 완료.

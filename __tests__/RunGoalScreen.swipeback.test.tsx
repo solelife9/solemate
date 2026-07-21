@@ -13,7 +13,11 @@ import {SwipeBackExclude} from '../primitives';
 function render(el: React.ReactElement) {
   let r!: ReactTestRenderer.ReactTestRenderer;
   act(() => { r = ReactTestRenderer.create(el); });
-  return r.root;
+  // 기본 탭이 자유런(심사 #4)이라 룰러가 없다 — 룰러 계약 검증을 위해 거리 탭으로 전환.
+  const root = r.root;
+  const seg = root.findAll(n => n.props?.accessibilityLabel === '거리 목표' && typeof n.props?.onPress === 'function')[0];
+  act(() => { seg.props.onPress(); });
+  return root;
 }
 
 test('거리 룰러(가로 ScrollView)는 SwipeBackExclude 안에 있다', () => {

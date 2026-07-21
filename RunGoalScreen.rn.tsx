@@ -36,8 +36,8 @@ import { HR_ZONE_COLORS, GOOD } from './theme';
 // CTA 는 앱 전역 단일 Button 프리미티브(그라데이션 GRAD_TOP/BOT·글로우·radius 토큰).
 // 모드 탭 스트립은 SegmentedControl 단일 프리미티브(accentTint variant).
 import { Button, SegmentedControl, SwipeBack, SwipeBackExclude } from './primitives';
-import SpeedPlanPanel from './SpeedPlanPanel';
-import { buildPacePlan } from './lib/pacePlan';
+// 스피드(km별 페이스 플랜) 탭은 제거(민우님 확정 2026-07-22 — 탭 4개: 자유런·거리·시간·트랙).
+// SpeedPlanPanel/buildPacePlan 의존도 함께 내렸다. lib/pacePlan(순수)은 유지.
 
 // ── SVG 아이콘(자체 그림 — vector-icons 의존 제거) ───────────────────────────
 function Icon({ name, size = 22, color = T2, fill }: { name: string; size?: number; color?: string; fill?: string }) {
@@ -54,8 +54,8 @@ function Icon({ name, size = 22, color = T2, fill }: { name: string; size?: numb
 }
 
 
-type Mode = 'km' | 'min' | 'speed' | 'track';
-/** 러닝 목표 — 거리(km)/시간(분)/스피드(km별 페이스 플랜)/트랙(운동장 랩). 0/빈배열/null은 미설정.
+type Mode = 'free' | 'km' | 'min' | 'track';
+/** 러닝 목표 — 자유런/거리(km)/시간(분)/트랙(운동장 랩). 0/빈배열/null은 미설정.
  *  track: 트랙 모드 = 한 바퀴 예상 거리(m)만 정한다. 실제 랩거리는 런 중 첫 랩 GPS로 자동 보정
  *  (snapLapDistance) — 이 값은 기본값·실내(GPS✗) 폴백. km/durationMin 은 트랙에선 0(자유). */
 export type RunGoal = { km: number; durationMin: number; pacePlan: number[]; track?: { lapM: number } | null; targetZone?: number };
@@ -79,14 +79,14 @@ export default function RunGoalScreen({
   // safe-area 실측(검수 MED, 2026-07-16): 상단 rv(54)·하단 rv(30) 하드코딩은 노치/홈바
   // 기기별 편차를 못 담는다(다이내믹 아일랜드 밑에 nav 가 살짝 파고들던 것) — insets 로.
   const insets = useSafeAreaInsets();
-  const [mode, setMode] = useState<Mode>('km');
+  // 기본 탭 = 자유런(심사 #4, 민우님 확정 2026-07-22) — 러너의 최빈 행동은 '그냥 뛰기'.
+  // NRC 퀵스타트·Strava 기록 문법: 목표 없이 CTA 한 번이면 바로 시작한다.
+  const [mode, setMode] = useState<Mode>('free');
   const [val, setVal] = useState<number>(CFG.km.def);
   const [vpW, setVpW] = useState(0);
   const rulerRef = useRef<ScrollView>(null);
   const programmatic = useRef(false);
   const cfg = mode === 'km' || mode === 'min' ? CFG[mode] : null;
-  // 스피드 모드의 현재 목표(거리 km + km별 페이스 플랜) — SpeedPlanPanel 이 onChange 로 올린다.
-  const [speedGoal, setSpeedGoal] = useState<{ km: number; plan: number[] }>(() => ({ km: 5, plan: buildPacePlan(5, 360, 'negative') }));
   // 트랙 모드: 한 바퀴 예상 거리(m). 기본 400(야외 공인). 커스텀은 하단 키패드로 입력.
   // 이 값은 '가정'일 뿐 — 야외선 첫 랩 GPS 가 실제 랩거리로 자동 보정한다(실내 폴백값).
   const [lapM, setLapM] = useState<number>(400);
@@ -105,7 +105,7 @@ export default function RunGoalScreen({
 
   const fmt = (v: number) => (mode === 'km' ? v.toFixed(1) : String(Math.round(v)));
   const estimate = useMemo(() => {
-    if (!cfg) return ''; // 스피드 모드는 SpeedPlanPanel 이 자체 표시 — estimate 미사용
+    if (!cfg) return ''; // 자유런·트랙은 estimate 미사용(각자 고정 카피)
     if (val <= 0) return '목표를 정해주세요';
     return mode === 'km'
       ? `예상 시간 약 ${Math.round(val * 5)}분 · 약 ${Math.round(val * 64)} kcal`
@@ -136,7 +136,7 @@ export default function RunGoalScreen({
     setMode(m);
     // 거리/시간 모드만 룰러를 쓴다. 대상 모드의 cfg(px)로 직접 스크롤한다 — scrollToVal 은
     // 클로저의 '이전' mode/cfg 를 보므로(setMode 비동기) px 가 어긋나 룰러가 엉뚱한 위치
-    // (예: 30분인데 180)로 클램프됐다. 스피드 모드는 룰러 대신 SpeedPlanPanel 을 쓴다.
+    // (예: 30분인데 180)로 클램프됐다. 자유런·트랙은 룰러를 쓰지 않는다.
     if (m === 'km' || m === 'min') {
       const c = CFG[m]; const d = c.def;
       setVal(d);
@@ -200,7 +200,7 @@ export default function RunGoalScreen({
       mode === 'km' ? { km: val, durationMin: 0, pacePlan: [] }
         : mode === 'min' ? { km: 0, durationMin: val, pacePlan: [] }
           : mode === 'track' ? { km: 0, durationMin: 0, pacePlan: [], track: { lapM } }
-            : { km: speedGoal.km, durationMin: 0, pacePlan: speedGoal.plan };
+            : { km: 0, durationMin: 0, pacePlan: [] }; // 자유런 — 목표 없음(링은 km 순환 진행)
     onStart?.({ ...base, targetZone });
   };
   const ZONE_OPTS: { z: TargetZone; label: string }[] = [
@@ -220,11 +220,12 @@ export default function RunGoalScreen({
         <View style={s.navIc} />
       </View>
 
-      {/* segmented — 모드 탭 스트립(SegmentedControl accentTint) */}
+      {/* segmented — 모드 탭 스트립(SegmentedControl accentTint). 자유런이 첫 탭이자 기본
+          (심사 #4) — '그냥 뛰기'가 1급 시민. 스피드 탭은 제거(민우님 확정 2026-07-22). */}
       <SegmentedControl
         style={s.seg}
         variant="accentTint"
-        items={[{ key: 'km', label: '거리' }, { key: 'min', label: '시간' }, { key: 'speed', label: '스피드' }, { key: 'track', label: '트랙' }]}
+        items={[{ key: 'free', label: '자유런' }, { key: 'km', label: '거리' }, { key: 'min', label: '시간' }, { key: 'track', label: '트랙' }]}
         value={mode}
         onChange={(k) => pickMode(k as Mode)}
         labelFor={(it) => `${it.label} 목표`}
@@ -264,8 +265,13 @@ export default function RunGoalScreen({
               </Pressable>
             </View>
           </View>
-        ) : mode === 'speed' ? (
-          <SpeedPlanPanel onChange={(km, plan) => setSpeedGoal({ km, plan })} />
+        ) : mode === 'free' ? (
+          // 자유런 — 컨트롤 0개. 목표라는 층 자체를 건너뛴다(설명 두 줄이 전부).
+          <View style={s.free} accessibilityRole="text" accessibilityLabel="자유런, 목표 없이 달려요. 거리·시간·페이스 기록은 전부 남아요.">
+            <View style={s.freeGlyph}><Icon name="infinite" size={ri(38)} color={ACCENT} /></View>
+            <Text style={s.freeTitle}>목표 없이, 그냥 달려요</Text>
+            <Text style={s.freeSub}>거리·시간·페이스 기록은 전부 남아요.{'\n'}음성 안내도 그대로 함께해요.</Text>
+          </View>
         ) : (
           <>
             <Pressable
