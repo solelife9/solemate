@@ -142,7 +142,7 @@ export default function RunActiveScreen({
   track = null, onLap, onUndoLap,
   handoff = false,
   countdown = null,
-  voiceMuted = false, onToggleVoice,
+  voiceMuted = false, onToggleVoice, pausedMoveNudge = false,
 }: {
   shoeLabel?: string; distanceKm?: number; goalKm?: number;
   /** 시간 목표(분, #15). >0 이고 goalKm=0 이면 링 진행·달성 판정이 경과시간 기준. */
@@ -183,6 +183,9 @@ export default function RunActiveScreen({
       러닝 중 끌 방법이 없던 갭을 메운다(이 런에만 적용, 설정 미변경). */
   voiceMuted?: boolean;
   onToggleVoice?: () => void;
+  /** 일시정지 이동 감지 넛지(#11 잔여) — 수동 일시정지 중 걸음이 계속 쌓이면 App 이 true 로.
+      배너 1줄로 '기록이 멈춰 있음'을 알려만 준다(자동 재개 없음 — Apple 재개 미리 알림 문법). */
+  pausedMoveNudge?: boolean;
 }) {
   const insets = useSafeAreaInsets();
   const { height: winH } = useWindowDimensions();
@@ -482,6 +485,16 @@ export default function RunActiveScreen({
           <Ionicons name="alert-circle" size={ri(15)} color={DANGER} />
           <Text style={r.permBannerText}>위치 권한이 꺼져 거리 기록을 멈췄어요. 눌러서 다시 허용하세요.</Text>
         </Pressable>
+      )}
+
+      {/* 일시정지 이동 감지 넛지(#11 잔여, 민우님 승인 2026-07-24) — 수동 일시정지 상태로
+          걸음이 계속 쌓일 때 1줄. 진동은 App 이 1회만, 배너는 재개까지 상태를 계속 말한다.
+          gpsWeak 와 같은 WARN 필 문법(러닝 중 화면 불가침 — 상태 한 줄 원칙). */}
+      {uiPaused && pausedMoveNudge && !cd && (
+        <View style={r.gpsWeak} testID="pause-move-nudge" accessibilityRole="text" accessibilityLiveRegion="assertive" accessibilityLabel="일시정지 중이에요. 지금 움직임은 기록되지 않아요. 재개를 눌러 이어서 달리세요.">
+          <Ionicons name="pause-circle" size={ri(13)} color={WARN} />
+          <Text style={r.gpsWeakText}>일시정지 중이에요 — 지금 움직임은 기록되지 않아요</Text>
+        </View>
       )}
 
       {/* 상단 스페이서 — 러닝 중(그리고 일시정지·실내처럼 지도가 없을 때)엔 아래 컨트롤 앞

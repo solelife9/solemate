@@ -54,7 +54,8 @@ import CelebrationScreen, {CelebrationData} from './CelebrationScreen.rn';
 import {loadProgression, saveProgression} from './lib/progression/storage';
 import {mergeProgression} from './lib/progression/mergeProgression';
 import {mergeCelebBaseline} from './lib/celebrationBaseline';
-import {success as hapticSuccess, setHapticsEnabled, isHapticsEnabled} from './lib/haptics';
+import {success as hapticSuccess, warning as hapticWarning, setHapticsEnabled, isHapticsEnabled} from './lib/haptics';
+import {PAUSE_MOVE_NUDGE_STEPS, PAUSE_MOVE_NUDGE_POLL_MS} from './lib/engineConstants';
 import type {ProgressionState, RetiredShoeRecord, ContextChallengeInput} from './lib/progression/types';
 import type {HomeProgression, HomeChallengeView} from './HomeScreen.rn';
 import {challengeProgress} from './lib/challenges';
@@ -2381,6 +2382,32 @@ function RunActiveScreen({shoe,insets,goalKm,goalMin=0,pacePlan=[],targetZone=0,
   const [heartRate,setHeartRate]=useState(0);
   const [paused,setPaused]=useState(false);
   const [autoPaused,setAutoPaused]=useState(false);
+  // 일시정지 이동 감지 넛지(심사 #11 잔여, 민우님 승인 2026-07-24 — Apple '재개 미리 알림'
+  // 문법): '수동' 일시정지 중 걸음이 계속 쌓이면(재개 버튼을 깜빡한 채 달리기 재개) 진동
+  // 1회 + 배너로 알려만 준다. 자동 재개는 하지 않는다 — 스트레칭·신호 대기 도보 이동일 수
+  // 있어서(오판 시 자동 재개는 시간 오염, 배너는 무해). 자동 일시정지는 대상 아님(엔진의
+  // 자동 재개가 담당). 신호는 Pedometer 걸음수만 — GPS 엔진(칼만/거리)은 불가침.
+  const [pauseMoveNudge,setPauseMoveNudge]=useState(false);
+  useEffect(()=>{
+    const manualPause=paused&&!autoPaused;
+    if(!manualPause){setPauseMoveNudge(false);return;}
+    const t0=new Date();
+    let fired=false;
+    let alive=true;
+    const iv=setInterval(()=>{
+      void (async()=>{
+        try{
+          const r=await Pedometer.getStepCountAsync(t0,new Date());
+          if(alive&&!fired&&(r?.steps??0)>=PAUSE_MOVE_NUDGE_STEPS){
+            fired=true;
+            hapticWarning(); // 주의 환기 1회 — 이후엔 배너가 상태를 계속 말한다(반복 진동 금지)
+            setPauseMoveNudge(true);
+          }
+        }catch{/* 걸음 조회 불가(권한·시뮬) — 넛지 조용히 생략(비차단) */}
+      })();
+    },PAUSE_MOVE_NUDGE_POLL_MS);
+    return()=>{alive=false;clearInterval(iv);};
+  },[paused,autoPaused]);
   const [finKm,setFinKm]=useState(resume?resume.dist:0);
   const [finTime,setFinTime]=useState(resume?resume.elapsed:0);
   const [finCad,setFinCad]=useState(resume?resume.cadence:0);
@@ -3194,6 +3221,7 @@ function RunActiveScreen({shoe,insets,goalKm,goalMin=0,pacePlan=[],targetZone=0,
       handoff={!resume}
       voiceMuted={voiceMuted}
       onToggleVoice={toggleVoice}
+      pausedMoveNudge={pauseMoveNudge}
     />
   );
 }
