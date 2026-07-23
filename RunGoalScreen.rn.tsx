@@ -46,7 +46,9 @@ function Icon({ name, size = 22, color = T2, fill }: { name: string; size?: numb
     back: <Path d="M15 18l-6-6 6-6" stroke={color} strokeWidth={sw} fill="none" strokeLinecap="round" strokeLinejoin="round" />,
     forward: <Path d="M9 6l6 6-6 6" stroke={color} strokeWidth={sw} fill="none" strokeLinecap="round" strokeLinejoin="round" />,
     play: <Path d="M7 5v14l11-7z" fill={fill || color} />,
-    infinite: <Path d="M6 12c0-2.2 1.6-4 3.7-4 1.6 0 2.6 1 3.3 2 .7 1 1.7 2 3.3 2 2.1 0 3.7-1.8 3.7-4s-1.6-4-3.7-4c-1.6 0-2.6 1-3.3 2-.7 1-1.7 2-3.3 2-2.1 0-3.7-1.8-3.7-4" stroke={color} strokeWidth={sw} fill="none" strokeLinecap="round" strokeLinejoin="round" />,
+    // 인피니티(자유런) — 구 손그림 패스는 확대 시 모양이 무너져(2026-07-23 실기기 제보)
+    // 검증된 레머니스케이트 패스(Tabler infinity)로 교체.
+    infinite: <Path d="M9.828 9.172a4 4 0 1 0 0 5.656A10 10 0 0 0 12 12a10 10 0 0 1 2.172-2.828a4 4 0 1 1 0 5.656A10 10 0 0 1 12 12a10 10 0 0 0-2.172 2.828" stroke={color} strokeWidth={sw} fill="none" strokeLinecap="round" strokeLinejoin="round" />,
     // 트랙(운동장) — 스타디움 형태의 이중 타원(바깥 트랙 + 안쪽 레인).
     track: <><Path d="M8 6h8a6 6 0 0 1 0 12H8a6 6 0 0 1 0-12z" stroke={color} strokeWidth={sw} fill="none" /><Path d="M9 9h7a3 3 0 0 1 0 6H9a3 3 0 0 1 0-6z" stroke={color} strokeWidth={sw - 0.4} fill="none" opacity={0.5} /></>,
   };
