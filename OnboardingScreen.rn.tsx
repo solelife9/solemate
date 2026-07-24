@@ -17,7 +17,6 @@ import React, {useContext, useEffect, useId, useMemo, useRef, useState} from 're
 import { rf, rs, ri, rv } from './lib/responsive';
 import {
   View,
-  Text,
   StyleSheet,
   Pressable,
   ScrollView,
@@ -30,6 +29,7 @@ import {
   StyleProp,
   ViewStyle,
 } from 'react-native';
+import {Text} from './lib/text';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {PRIVACY_URL, TERMS_URL} from './lib/legalLinks';
 // 신발 브랜드/모델·권장수명은 data/shoeModels(단일 소스)에서 — 메인 AddShoe 화면과 동일.

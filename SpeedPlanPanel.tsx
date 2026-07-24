@@ -7,7 +7,8 @@
 // ============================================================================
 import React, {useEffect, useRef, useState} from 'react';
 import { rf, rs, ri, rv } from './lib/responsive';
-import {View, Text, Pressable, ScrollView, StyleSheet} from 'react-native';
+import {View, Pressable, ScrollView, StyleSheet} from 'react-native';
+import {Text} from './lib/text';
 import {ACCENT, CARD, T1, T2, T3, T4, SEP, FONT, RADIUS, GLASS, withAlpha} from './theme';
 import {SegmentedControl, SwipeBackExclude, Stepper, GlassEdge} from './primitives';
 import {buildPacePlan, clampPace, fmtPaceSec, PaceStrategy} from './lib/pacePlan';

@@ -12,7 +12,8 @@
 
 import React from 'react';
 import { rs, rv } from './lib/responsive';
-import {View, Text, StyleSheet} from 'react-native';
+import {View, StyleSheet} from 'react-native';
+import {Text} from './lib/text';
 import {BRAND, T1, T2, T3, FONT, DISPLAY, RADIUS, withAlpha, TYPE} from './theme';
 
 export type Split = {km: number; paceSec: number; elevM: number};

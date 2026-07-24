@@ -15,7 +15,8 @@
 
 import React, {useMemo, useRef, useState} from 'react';
 import { rf, rs, ri, rv } from './lib/responsive';
-import {View, Text, ScrollView, Pressable, Modal, StyleSheet} from 'react-native';
+import {View, ScrollView, Pressable, Modal, StyleSheet} from 'react-native';
+import {Text} from './lib/text';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {Unit, displayNum} from './lib/units';

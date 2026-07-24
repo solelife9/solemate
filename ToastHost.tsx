@@ -10,7 +10,8 @@
 
 import React, {useEffect, useRef, useState} from 'react';
 import { rs } from './lib/responsive';
-import {AccessibilityInfo, Animated, Platform, StyleSheet, Text, Pressable, Easing} from 'react-native';
+import {AccessibilityInfo, Animated, Platform, StyleSheet, Pressable, Easing} from 'react-native';
+import {Text} from './lib/text';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {BLACK, CARD_HI, ACCENT, T1, SEP, FONT, RADIUS, SPACE, TYPE} from './theme';
 import {

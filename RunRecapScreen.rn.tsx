@@ -7,7 +7,9 @@
 // ============================================================================
 import React, {useEffect, useMemo, useRef, useState} from 'react';
 import { rf, rs, ri, rv } from './lib/responsive';
-import {View, Text, ScrollView, Pressable, StyleSheet, Alert, TextInput, Image, Linking, Animated, Easing, AccessibilityInfo, type StyleProp, type ViewStyle} from 'react-native';
+import {View, ScrollView, Pressable, StyleSheet, Alert, Image, Linking, Animated, Easing, AccessibilityInfo, type StyleProp, type ViewStyle} from 'react-native';
+import {Text, TextInput} from './lib/text';
+import type {Text as RNText} from 'react-native'; // ref 인스턴스 타입 전용
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {BG, BLACK, CARD_HI, ACCENT, GOOD, WARN, DANGER, HALL_GOLD, T1, T2, T3, T4, FONT, DISPLAY, RADIUS, GUTTER, SEP, withAlpha, TYPE, GLASS, NUM, MOTION} from './theme';
@@ -199,7 +201,7 @@ export default function RunRecapScreen({
   const [morphDone, setMorphDone] = useState(!morphActive);
   const morphT = useRef(new Animated.Value(0)).current;
   const [morphGeo, setMorphGeo] = useState<{left: number; top: number; dx: number; dy: number; s: number} | null>(null);
-  const heroNumRef = useRef<Text>(null);
+  const heroNumRef = useRef<RNText>(null);
   const morphOverlayRef = useRef<View>(null);
   const onHeroNumLayout = () => {
     if (!morphActive || morphGeo || morphDone) return;

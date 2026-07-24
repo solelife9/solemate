@@ -14,9 +14,10 @@
 import React, {useRef, useState, useCallback, useEffect} from 'react';
 import { rf, rs, ri, rv } from '../lib/responsive';
 import {
-  View, Text, Pressable, StyleSheet, Animated, Easing, useWindowDimensions,
+  View, Pressable, StyleSheet, Animated, Easing, useWindowDimensions,
   type NativeSyntheticEvent, type NativeScrollEvent,
 } from 'react-native';
+import {Text} from '../lib/text';
 import Svg, {
   Circle, Defs, Stop,
   LinearGradient as SvgLinear,

@@ -7,7 +7,8 @@
 // ============================================================================
 import React, {useState} from 'react';
 import { rf, rs, rv } from './lib/responsive';
-import {View, Text, StyleSheet, Platform, type LayoutChangeEvent} from 'react-native';
+import {View, StyleSheet, Platform, type LayoutChangeEvent} from 'react-native';
+import {Text} from './lib/text';
 import Svg, {Polyline, Circle} from 'react-native-svg';
 import {CARD, CARD_DIM, BRAND, T1, T2, T3, FONT, RADIUS} from './theme';
 import {GlassEdge} from './primitives';

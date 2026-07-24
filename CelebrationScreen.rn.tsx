@@ -9,7 +9,8 @@
 // ============================================================================
 import React, {useEffect, useRef} from 'react';
 import { rf, rs, ri, rv } from './lib/responsive';
-import {View, Text, Pressable, StyleSheet, Animated, Easing} from 'react-native';
+import {View, Pressable, StyleSheet, Animated, Easing} from 'react-native';
+import {Text} from './lib/text';
 import Svg, {Defs, RadialGradient, LinearGradient, Stop, Circle, Ellipse, Path} from 'react-native-svg';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {BG, T1, T3, FONT, DISPLAY, HALL_GOLD, BLACK, CELEB_FACE_BG, CELEB_ICON_LEGENDARY, CELEB_ICON_DEFAULT, withAlpha, TYPE} from './theme';

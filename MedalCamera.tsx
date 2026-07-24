@@ -6,7 +6,8 @@
 // ============================================================================
 import React, {useRef, useState} from 'react';
 import { rf, rs, ri, rv } from './lib/responsive';
-import {View, Text, Pressable, StyleSheet, useWindowDimensions, ActivityIndicator} from 'react-native';
+import {View, Pressable, StyleSheet, useWindowDimensions, ActivityIndicator} from 'react-native';
+import {Text} from './lib/text';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Svg, {Defs, Mask, Rect, Circle} from 'react-native-svg';

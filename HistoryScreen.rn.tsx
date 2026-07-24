@@ -4,7 +4,8 @@
 // ============================================================================
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { rf, rs, ri, rv } from './lib/responsive';
-import { View, Text, ScrollView, FlatList, Pressable, StyleSheet, TextInput, Alert, KeyboardAvoidingView, Platform, RefreshControl, Modal , Image} from 'react-native';
+import { View, ScrollView, FlatList, Pressable, StyleSheet, Alert, KeyboardAvoidingView, Platform, RefreshControl, Modal, Image } from 'react-native';
+import {Text, TextInput} from './lib/text';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';

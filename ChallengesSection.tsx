@@ -8,7 +8,8 @@
 // ============================================================================
 import React, {useState} from 'react';
 import { rf, rs, ri, rv } from './lib/responsive';
-import {View, Text, Pressable, StyleSheet} from 'react-native';
+import {View, Pressable, StyleSheet} from 'react-native';
+import {Text} from './lib/text';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {ACCENT, BRAND, T1, T2, T3, FONT, DISPLAY, RADIUS, GLASS, TYPE, withAlpha} from './theme';
 import {Ring, Pill, Stepper, GlassEdge} from './primitives';

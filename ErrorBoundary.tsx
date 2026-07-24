@@ -1,6 +1,7 @@
 import React from 'react';
 import { rf, rs, rv } from './lib/responsive';
-import {View, Text, TouchableOpacity, StyleSheet} from 'react-native';
+import {View, TouchableOpacity, StyleSheet} from 'react-native';
+import {Text} from './lib/text';
 import {BG, T1, T3, FONT as FP, DISPLAY as FH, withAlpha} from './theme';
 import {recordError} from './lib/crashlytics';
 

@@ -1,9 +1,9 @@
 import React, {useState, useEffect, useRef, useMemo, useCallback} from 'react';
 import { rf, rs, ri, rv } from './lib/responsive';
 import {
-  View, Text, StyleSheet, TouchableOpacity, TextInput, Alert, StatusBar,
-  Linking, AppState,
+  View, StyleSheet, TouchableOpacity, Alert, StatusBar, Linking, AppState,
 } from 'react-native';
+import {Text, TextInput} from './lib/text';
 import {SafeAreaProvider, useSafeAreaInsets} from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {Pedometer, Barometer} from 'expo-sensors';

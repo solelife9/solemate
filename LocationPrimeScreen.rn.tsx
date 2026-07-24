@@ -8,7 +8,8 @@
 // ============================================================================
 import React from 'react';
 import { rf, rs, ri, rv } from './lib/responsive';
-import {View, Text, Pressable, StyleSheet} from 'react-native';
+import {View, Pressable, StyleSheet} from 'react-native';
+import {Text} from './lib/text';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {BG, ACCENT, GOOD, WARN, T1, T2, T3, FONT, RADIUS, SEP, GLASS, withAlpha, TYPE} from './theme';

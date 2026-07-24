@@ -9,7 +9,6 @@ import React, {useId, useMemo, useRef, useState, useEffect, useContext} from 're
 import { rf, rs, ri, rv } from './lib/responsive';
 import {
   View,
-  Text,
   Image,
   Pressable,
   Animated,
@@ -23,6 +22,7 @@ import {
   LayoutChangeEvent,
   useWindowDimensions,
 } from 'react-native';
+import {Text} from './lib/text';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {BlurView} from '@react-native-community/blur';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';

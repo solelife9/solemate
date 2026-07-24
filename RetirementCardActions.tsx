@@ -9,7 +9,8 @@
 // ============================================================================
 import React, {useRef, useState} from 'react';
 import { rf } from './lib/responsive';
-import {View, Text, Pressable, StyleSheet} from 'react-native';
+import {View, Pressable, StyleSheet} from 'react-native';
+import {Text} from './lib/text';
 import {T1, CARD_HI, RADIUS, SPACE, FONT, withAlpha} from './theme';
 
 export interface RetirementCardActionsProps {

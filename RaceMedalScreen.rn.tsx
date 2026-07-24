@@ -7,7 +7,8 @@
 // ============================================================================
 import React, {useMemo, useState} from 'react';
 import { rf, rs, ri, rv } from './lib/responsive';
-import {View, Text, ScrollView, Pressable, TextInput, Image, StyleSheet, ActivityIndicator, Modal} from 'react-native';
+import {View, ScrollView, Pressable, Image, StyleSheet, ActivityIndicator, Modal} from 'react-native';
+import {Text, TextInput} from './lib/text';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {BG, CARD_HI, GOOD, WARN, HALL_GOLD, T1, T2, T3, T4, SEP, FONT, DISPLAY, withAlpha, TYPE, GLASS, RADIUS} from './theme';

@@ -6,7 +6,8 @@
 // 다 해줌). 마지막 선택 기억. 캡처는 오프스크린 고해상 ShareCard(ref.toDataURL) — 네이티브 0.
 // ============================================================================
 import React, {useEffect, useMemo, useRef, useState} from 'react';
-import {View, Text, Pressable, Modal, StyleSheet, Alert, Linking} from 'react-native';
+import {View, Pressable, Modal, StyleSheet, Alert, Linking} from 'react-native';
+import {Text} from './lib/text';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Ionicons from 'react-native-vector-icons/Ionicons';

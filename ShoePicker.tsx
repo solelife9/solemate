@@ -11,7 +11,8 @@
 // ============================================================================
 import React, {useMemo, useState} from 'react';
 import { rf, rs, rv } from './lib/responsive';
-import {View, Text, StyleSheet, Pressable, ScrollView, Modal, TextInput} from 'react-native';
+import {View, StyleSheet, Pressable, ScrollView, Modal} from 'react-native';
+import {Text, TextInput} from './lib/text';
 import Svg, {Circle, Path} from 'react-native-svg';
 import {BRANDS, SHOE_MODELS, findShoeModel, getRecommendedLifespanKm} from './data/shoeModels';
 import {categoryLabelKo} from './lib/affiliate';

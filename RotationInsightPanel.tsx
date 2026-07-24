@@ -7,7 +7,8 @@
 // 비었으면 통째로 숨긴다. 행 탭은 그 신발로 포커스(호출부가 의미 결정 — 신발 탭=상세).
 // ============================================================================
 import React from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Pressable, StyleSheet } from 'react-native';
+import {Text} from './lib/text';
 import { rf, rs, rv } from './lib/responsive';
 import {
   ACCENT, GOOD, WARN, T1, T3, CARD_HI, FONT, DISPLAY, TYPE, RADIUS, GLASS, SPACE, withAlpha,

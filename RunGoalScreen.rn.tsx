@@ -14,9 +14,10 @@
 import React, { useMemo, useRef, useState, useCallback } from 'react';
 import { rf, rs, ri, rv } from './lib/responsive';
 import {
-  View, Text, Pressable, ScrollView, StyleSheet, Modal,
-  LayoutChangeEvent, NativeSyntheticEvent, NativeScrollEvent, StatusBar,
+  View, Pressable, ScrollView, StyleSheet, Modal, LayoutChangeEvent,
+  NativeSyntheticEvent, NativeScrollEvent, StatusBar,
 } from 'react-native';
+import {Text} from './lib/text';
 import Svg, { Path } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 // 색·폰트는 전역 디자인 토큰(theme.ts)만 참조한다 — 사설 색객체(const C) 폐기.

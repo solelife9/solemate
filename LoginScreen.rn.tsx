@@ -10,7 +10,8 @@
 // ============================================================================
 import React, {useState} from 'react';
 import { rf, rs, ri, rv } from './lib/responsive';
-import {View, Text, Pressable, StyleSheet, Platform, ActivityIndicator} from 'react-native';
+import {View, Pressable, StyleSheet, Platform, ActivityIndicator} from 'react-native';
+import {Text} from './lib/text';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 

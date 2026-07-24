@@ -9,7 +9,8 @@
 // ============================================================================
 import React from 'react';
 import { rf, rs, rv } from './lib/responsive';
-import {View, Text, StyleSheet} from 'react-native';
+import {View, StyleSheet} from 'react-native';
+import {Text} from './lib/text';
 import {T1, T2, T3, FONT, DISPLAY, withAlpha, RADIUS, BAR} from './theme';
 import {wearTier} from './lib/shoe';
 import {WEAR_TONE_COLOR} from './primitives';

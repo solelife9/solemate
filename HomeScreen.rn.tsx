@@ -8,9 +8,10 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { rf, rs, ri, rv } from './lib/responsive';
 import {
-  View, Text, ScrollView, Pressable, StyleSheet, Linking, Dimensions,
+  View, ScrollView, Pressable, StyleSheet, Linking, Dimensions,
   RefreshControl, NativeSyntheticEvent, NativeScrollEvent, Animated, Easing,
 } from 'react-native';
+import {Text} from './lib/text';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {

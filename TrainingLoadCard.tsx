@@ -13,7 +13,8 @@
 // ============================================================================
 import React from 'react';
 import { rs, rv } from './lib/responsive';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Pressable, StyleSheet } from 'react-native';
+import {Text} from './lib/text';
 import {
   CARD_BORDER, GOOD, WARN, DANGER, T1, T2, T3, T4,
   SPACE, RADIUS, TYPE, GLASS, withAlpha,

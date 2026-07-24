@@ -15,7 +15,9 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { rf, rs, ri, rv } from './lib/responsive';
-import { View, Text, Pressable, StyleSheet, Animated, Easing, StatusBar, LayoutAnimation, useWindowDimensions } from 'react-native';
+import { View, Pressable, StyleSheet, Animated, Easing, StatusBar, LayoutAnimation, useWindowDimensions } from 'react-native';
+import {Text} from './lib/text';
+import type {Text as RNText} from 'react-native'; // ref 인스턴스 타입 전용
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Svg, { Circle, Defs, RadialGradient as SvgRadial, Stop } from 'react-native-svg';
@@ -66,7 +68,7 @@ function FinishCeremony({ distanceKm, onDone }: { distanceKm: number; onDone: ()
   const STROKE = RUN_RING_STROKE;
   // 완주 숫자의 윈도 좌표를 리캡에 넘긴다(세리머니→리캡 히어로 모프) — 레이아웃 확정 시
   // 측정해 motionHandoff 에 남기면, 곧 마운트되는 RunRecapScreen 이 1회 소비한다.
-  const distRef = useRef<Text>(null);
+  const distRef = useRef<RNText>(null);
   const measureDist = () => {
     const node: any = distRef.current;
     if (node && typeof node.measureInWindow === 'function') {

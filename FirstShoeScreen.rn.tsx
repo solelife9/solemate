@@ -14,7 +14,8 @@
 // ============================================================================
 import React from 'react';
 import { rf, rs, rv } from './lib/responsive';
-import {View, Text, StyleSheet, useWindowDimensions} from 'react-native';
+import {View, StyleSheet, useWindowDimensions} from 'react-native';
+import {Text} from './lib/text';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {BG, T1, T3, FONT, TYPE} from './theme';
 import {TabBar, ShoeGlyph} from './primitives';
