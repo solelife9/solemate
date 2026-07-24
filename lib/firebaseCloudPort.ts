@@ -23,6 +23,8 @@ import {
   setDoc,
   deleteDoc,
   runTransaction,
+  collection,
+  getDocs,
 } from '@react-native-firebase/firestore';
 
 import type { BackupPayload } from './backup';
@@ -136,6 +138,9 @@ export function createFirebaseCloudPort(
   };
 
   const backupRef = (uid: string) => doc(getFirestore(), BACKUPS_COLLECTION, uid);
+  // 런 상세 사이드카 — 단일 백업 문서(1MB 상한)에 못 싣는 시계열을 런별 하위 문서로.
+  const runDetailRef = (uid: string, runId: string) =>
+    doc(getFirestore(), BACKUPS_COLLECTION, uid, 'runDetails', runId);
 
   return {
     async signIn(provider: CloudProvider): Promise<CloudUser> {
@@ -177,6 +182,14 @@ export function createFirebaseCloudPort(
       // 1) 클라우드 백업 문서를 먼저 지운다(계정 삭제 후엔 권한이 사라져 못 지움).
       //    백업이 없을 수도 있으므로 실패는 삼키고 계정 삭제로 진행한다.
       try {
+        // 하위 컬렉션(runDetails)은 부모 문서 삭제로 지워지지 않는다 — 탈퇴 완전삭제 요건상
+        // 명시적으로 순회 삭제(실패해도 계속 — 계정/백업 본체 삭제가 우선).
+        try {
+          const details = await getDocs(collection(getFirestore(), BACKUPS_COLLECTION, user.uid, 'runDetails'));
+          for (const d of details.docs ?? []) {
+            try { await deleteDoc(runDetailRef(user.uid, d.id)); } catch { /* 개별 실패 무시 */ }
+          }
+        } catch { /* 목록 실패 — 본체 삭제 계속 */ }
         await deleteDoc(backupRef(user.uid));
       } catch {
         // 백업 문서 부재/일시 오류 — 계정 삭제를 막지 않는다.
@@ -206,6 +219,18 @@ export function createFirebaseCloudPort(
       return normalizePayload(data as Record<string, unknown>);
     },
 
+    async pushRunDetail(runId: string, detail: Record<string, unknown>): Promise<void> {
+      const uid = requireUid();
+      if (!runId) return;
+      await setDoc(runDetailRef(uid, runId), detail);
+    },
+    async pullRunDetail(runId: string): Promise<Record<string, unknown> | null> {
+      const uid = requireUid();
+      if (!runId) return null;
+      const snap = await getDoc(runDetailRef(uid, runId));
+      if (!snap.exists()) return null;
+      return (snap.data() as Record<string, unknown>) ?? null;
+    },
     async push(data: BackupPayload): Promise<void> {
       const uid = requireUid();
       await setDoc(backupRef(uid), payloadToDoc(data));

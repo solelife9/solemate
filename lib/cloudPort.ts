@@ -55,6 +55,11 @@ export interface CloudPort {
   pull(): Promise<BackupPayload | null>;
   /** 백업 페이로드를 계정에 기록(전체 덮어쓰기 — 병합은 호출부가 cloudSync 로 끝낸 뒤). */
   push(data: BackupPayload): Promise<void>;
+  /** 런 상세 사이드카(스플릿·페이스/심박/경사 시계열·트랙 메타) 백업 — 런별 하위 문서
+   *  (2026-07-24, 재설치로 로컬 상세가 통째로 유실되던 사고 재발 방지). 옵셔널 —
+   *  미구현 포트(테스트 목 등)는 생략 가능하고 호출부는 존재할 때만 쓴다. */
+  pushRunDetail?(runId: string, detail: Record<string, unknown>): Promise<void>;
+  pullRunDetail?(runId: string): Promise<Record<string, unknown> | null>;
   /**
    * pull→merge→push 를 단일 트랜잭션으로 원자 실행한다(동시-기기 클로버 방지).
    * 비원자 pull/push 의 경합 창(A 가 stale 원격을 읽는 사이 B 가 쓰고, A 가 그 위에

@@ -106,6 +106,7 @@ import {getDistancePBs, PB_CACHE_KEY} from './lib/distancePBStore';
 import type {RunBestEfforts} from './lib/bestEfforts';
 import {hkSaveRunWorkout, hkBackfillHeartRate, hkEnsureLinked, hkFindRunWorkoutWindow} from './lib/healthkit';
 import {registerRunForHr, saveWatchHrTrack, retryPendingHr, avgBpmFromTrack, hasHrTrack} from './lib/hrBackfill';
+import {syncRunDetails} from './lib/runDetailSync';
 import {currentTargetPace} from './lib/pacePlan';
 import {liveActivity} from './lib/liveActivity';
 import {watchSession} from './lib/watchSession';
@@ -1674,6 +1675,27 @@ function Main(){
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[]);
 
+  // 런 상세 사이드카 클라우드 동기(2026-07-24 — 재설치 유실 재발 방지): 하루 1회, 최근
+  // 30개 런의 상세를 양방향 동기한다(로컬 有→push · 로컬 無→pull 복원, runDetailSync).
+  // 심박 스윕(위, 8s)이 먼저 hrTrack 을 채운 뒤 돌도록 15s 지연. 미로그인·포트 미구현은
+  // syncRunDetails 가 조용히 생략(전 과정 비차단).
+  useEffect(()=>{
+    let alive=true;
+    const DETAIL_SWEEP_AT_KEY='detail_sync_sweep_at_v1';
+    const sweep=async()=>{
+      try{
+        if(!alive||!authUser?.uid)return;
+        const last=Number(await AsyncStorage.getItem(DETAIL_SWEEP_AT_KEY))||0;
+        if(Date.now()-last<24*3600*1000)return;
+        await syncRunDetails((runsForHrRef.current||[]) as {id:string|number}[],cloudPortRef.current,{max:30});
+        await AsyncStorage.setItem(DETAIL_SWEEP_AT_KEY,String(Date.now()));
+      }catch{/* 비차단 — 다음 기회 */}
+    };
+    const t=setTimeout(()=>{void sweep();},15000);
+    return()=>{alive=false;clearTimeout(t);};
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[authUser?.uid]);
+
   // ── 실효 마모/교체 예측 보정(Slice 6) ────────────────────────────────────────
   // 런별 노면 태그 조회(미태그 → road). 신발 상세(ShoesScreen)와 홈 히어로 예측이 같은
   // 보정(체중·노면)을 공유하도록 한 곳에서 만든다. 표시 파생값이며 원본은 읽기만 한다.
@@ -2140,6 +2162,8 @@ function Main(){
             setTimeout(()=>{void retryPendingHr(Date.now(),hkBackfillAndRepair).catch(()=>{});},15000);
             setTimeout(()=>{void retryPendingHr(Date.now(),hkBackfillAndRepair).catch(()=>{});},60000);
           }
+          // 상세 즉시 백업(2026-07-24) — 방금 쓴 사이드카를 런별 하위 문서로 push(비차단).
+          void syncRunDetails([{id:newId}],cloudPortRef.current,{max:1});
           await clearSnapshot();
           // 완주 리캡(P0-2) — 기록 탭으로 바로 점프하던 대신 축하 풀스크린을 띄운다(러너가
           // 가장 자랑스러운 순간 — 리텐션·공유 트리거). 신기록(PR)은 토스트 대신 리캡 배지로.

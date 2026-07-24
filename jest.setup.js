@@ -440,8 +440,9 @@ jest.mock('@react-native-firebase/firestore', () => {
   return {
     __esModule: true,
     getFirestore: jest.fn(() => ({__db: true})),
-    doc: jest.fn((_db, collection, id) => ({__path: `${collection}/${id}`})),
-    collection: jest.fn((_db, path) => ({__collection: path})),
+    // 하위 컬렉션 지원(런 상세 백업 — userBackups/{uid}/runDetails/{runId}): 세그먼트 가변.
+    doc: jest.fn((_db, ...segs) => ({__path: segs.join('/')})),
+    collection: jest.fn((_db, ...segs) => ({__collection: segs.join('/')})),
     query: jest.fn((col, ...constraints) => ({
       __collection: col.__collection,
       __constraints: constraints,
