@@ -26,7 +26,8 @@ describe('RADIUS scale', () => {
   test('exposes the corner-radius ramp with a pill sentinel', () => {
     // btn(18) is the single CTA-button corner token (Button primitive), sitting
     // between md(16) and lg(20) — it unifies the old 14/16/18/999 button mix.
-    expect(RADIUS).toEqual({sm: 12, input: 14, md: 16, btn: 18, lg: 20, xl: 24, pill: 999});
+    // hero(34): 홈 히어로 카드 전용 최대 라운드 — 리터럴 34 를 토큰으로 승격(2026-07-25 확정).
+    expect(RADIUS).toEqual({sm: 12, input: 14, md: 16, btn: 18, lg: 20, xl: 24, hero: 34, pill: 999});
   });
   test('pill is large enough to fully round any reasonable control', () => {
     expect(RADIUS.pill).toBeGreaterThanOrEqual(999);

@@ -213,7 +213,9 @@ export type SpaceKey = keyof typeof SPACE;
 // 있던 버튼 radius 를 이 한 토큰(18)으로 통일한다(시각: 다크+오렌지 동등 유지).
 // input(14): 입력/소형 컨트롤(스텝퍼 버튼·필드) — 전 화면에서 raw 14 로 반복되던
 // 사실상의 표준을 토큰으로 승격(2026-07-04 디자인 시스템 감사).
-export const RADIUS = { sm: 12, input: 14, md: 16, btn: 18, lg: 20, xl: 24, pill: 999 } as const;
+// hero(34): 홈 히어로 카드 전용 최대 라운드 — 화면 리터럴 34가 스케일 밖에 살던 것을
+// 정식 단계로 승격(2026-07-25 민우님 확정). 히어로급 대형 카드 외 사용 금지.
+export const RADIUS = { sm: 12, input: 14, md: 16, btn: 18, lg: 20, xl: 24, hero: 34, pill: 999 } as const;
 export type RadiusKey = keyof typeof RADIUS;
 
 // ── type scale ───────────────────────────────────────────────────────────────

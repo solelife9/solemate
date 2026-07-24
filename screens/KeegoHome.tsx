@@ -44,7 +44,7 @@ type Props = {
 // 캐러셀 정석 정착(2026-07-16, 여러 라운드 끝 확정): 옆 카드는 '콘텐츠'가 아니라
 // '더 있다'는 힌트 — 슬리버 ~11px 만 보인다(아래 CARD_W 0.88 과 세트). 간격 8.
 const CARD_GAP = 8;
-const CARD_RADIUS = 34;
+const CARD_RADIUS = RADIUS.hero; // 히어로 카드 라운드 — 토큰 승격(2026-07-25), 리터럴 34 폐지
 // 링 '기준' 치수(874pt 화면 기준) — 실제 크기는 ShoeCard 가 화면 높이에 비례해 계산한다.
 const RING = 172;
 const RING_R = 76;

@@ -1526,9 +1526,17 @@ export function TabBar({active, onTab}: {active: number; onTab: (i: number) => v
                 {tab.shoe ? (
                   <ShoeIcon color={color} filled={on} />
                 ) : (
-                  <Ionicons name={on ? tab.icon : `${tab.icon}-outline`} size={ri(24)} color={color} />
+                  <Ionicons name={on ? tab.icon : `${tab.icon}-outline`} size={ri(22)} color={color} />
                 )}
               </View>
+              {/* 탭 라벨 복원(HIG 권고, 2026-07-25 민우님 확정) — 아이콘 온리에서 전환.
+                  독 안이라 배율 상한은 1.2(레이아웃 보존). 활성=700 으로 오벌과 함께 이중 신호. */}
+              <Text
+                style={[t.label, {color, fontWeight: on ? '700' : '500'}]}
+                numberOfLines={1}
+                maxFontSizeMultiplier={1.2}>
+                {tab.label}
+              </Text>
             </Pressable>
           );
         })}
@@ -1573,6 +1581,6 @@ const t = StyleSheet.create({
     // 활성 하이라이트 강화(0.15→0.24) — 비활성 아이콘이 밝아진 만큼 활성 탭을 또렷이.
     backgroundColor: withAlpha(T1, 0.24),
   },
-  item: {flex: 1, height: rs(62), alignItems: 'center', justifyContent: 'center'},
+  item: {flex: 1, height: rs(62), alignItems: 'center', justifyContent: 'center', gap: rv(2)},
   label: {fontFamily: FONT, fontSize: rf(11), letterSpacing: 0.1},
 });
