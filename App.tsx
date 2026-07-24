@@ -15,7 +15,7 @@ import {runVoice} from './lib/runVoice/voice';
 
 import {
   BG, CARD, CARD_HI as SURFACE, ACCENT, WARN, DANGER, T1, T2, T3,
-  FONT as FP, DISPLAY as FH, SEP, RADIUS, GUTTER, MOTION, Shoe, Run, withAlpha,
+  FONT as FP, DISPLAY as FH, NUM, SEP, RADIUS, GUTTER, MOTION, Shoe, Run, withAlpha,
 } from './theme';
 import {Ring, Button, Skeleton, Input} from './primitives';
 import ErrorBoundary from './ErrorBoundary';
@@ -3325,7 +3325,9 @@ const run=StyleSheet.create({
   bannerText:{flex:1,color:T1,fontFamily:FP,fontSize: rf(14),fontWeight:'500',lineHeight: rf(17)},
   body:{flex:1,alignItems:'center',justifyContent:'center'},
   goalText:{color:T3,fontFamily:FP,fontSize: rf(13),fontWeight:'500',letterSpacing:1},
-  bigDist:{color:T1,fontFamily:FH,fontSize: rf(84),letterSpacing:1,marginTop: rv(6),fontVariant:['tabular-nums']},
+  // 검토 화면 거리 = 러닝 화면과 '같은 숫자' — NUM(Jost) 램프 정렬(심사 #27: 구 Pretendard
+  // +자간 +1 로 홀로 표류). 대형 숫자 자간은 음수가 규칙.
+  bigDist:{color:T1,fontFamily:NUM,fontSize: rf(84),fontWeight:'500',letterSpacing:-1,lineHeight: rf(102),includeFontPadding:false,marginTop: rv(6),fontVariant:['tabular-nums']},
   bigUnit:{color:T3,fontFamily:FP,fontSize: rf(15),fontWeight:'600',marginTop: rv(2)},
   metrics:{flexDirection:'row',marginHorizontal: rs(-4),paddingVertical: rv(14),paddingBottom: rv(24),borderTopWidth:StyleSheet.hairlineWidth,borderTopColor:SEP},
   metric:{flex:1,alignItems:'center',gap: rv(4)},
@@ -3333,7 +3335,7 @@ const run=StyleSheet.create({
   metricsGrid:{flexDirection:'row',flexWrap:'wrap',paddingTop: rv(14),paddingBottom: rv(20),borderTopWidth:StyleSheet.hairlineWidth,borderTopColor:SEP},
   metricCell:{width:'33.33%',alignItems:'center',gap: rv(4),paddingVertical: rv(8)},
   metricVRow:{flexDirection:'row',alignItems:'flex-end'},
-  metricV:{color:T1,fontFamily:FH,fontSize: rf(26),letterSpacing:0.3,fontVariant:['tabular-nums']},
+  metricV:{color:T1,fontFamily:FH,fontSize: rf(26),letterSpacing:-0.4,fontVariant:['tabular-nums']},
   metricU:{color:T3,fontFamily:FP,fontSize: rf(12),marginBottom: rv(3)},
   metricL:{color:T3,fontFamily:FP,fontSize: rf(13),fontWeight:'600'},
   // 러닝 중 메트릭 위계 — 시간·페이스 hero(큰) + 케이던스·칼로리·고도 sub(작은).

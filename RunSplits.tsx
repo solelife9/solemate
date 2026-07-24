@@ -42,8 +42,12 @@ export function RunSplits({splits}: {splits: Split[]}) {
       {splits.map((sp, i) => {
         const best = sp.paceSec === fast;
         const ev = sp.elevM > 0 ? `+${sp.elevM}m` : `${sp.elevM}m`;
+        // VoiceOver: 행을 한 요소로 묶어 표시값 그대로 읽어준다(셀 단위 파편화 방지).
+        const paceA11y = `${Math.floor(sp.paceSec / 60)}분 ${String(Math.round(sp.paceSec % 60)).padStart(2, '0')}초`;
+        const elevA11y = sp.elevM > 0 ? `+${sp.elevM}미터` : `${sp.elevM}미터`;
+        const rowLabel = `${sp.km}킬로미터 구간, 페이스 ${paceA11y}, 고도 ${elevA11y}${best ? ', 최고 구간' : ''}`;
         return (
-          <View key={i} style={[r.row, i > 0 && r.rowSep]}>
+          <View key={i} style={[r.row, i > 0 && r.rowSep]} accessible accessibilityLabel={rowLabel}>
             <Text style={r.km}>{sp.km}</Text>
             <View style={r.barWrap}>
               <View style={[r.bar, best && r.barBest, {width: `${widthOf(sp.paceSec)}%`}]} />

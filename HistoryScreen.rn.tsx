@@ -836,7 +836,20 @@ function DrumColumn({ items, selectedIndex, onChange }: {
     ref.current?.scrollToOffset({ offset: i * DRUM_ITEM_H, animated: true });
   };
   return (
-    <View style={{ flex: 1, height: DRUM_H }}>
+    // VoiceOver: 드럼을 adjustable 하나로 묶어 위/아래 스와이프로 값을 조절한다
+    // (스크롤 제스처는 VoiceOver 에서 사실상 불가 — increment/decrement 가 유일 경로).
+    <View
+      style={{ flex: 1, height: DRUM_H }}
+      accessible
+      accessibilityRole="adjustable"
+      accessibilityValue={{ text: items[active] }}
+      accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
+      onAccessibilityAction={(e) => {
+        const dir = e.nativeEvent.actionName === 'increment' ? 1 : e.nativeEvent.actionName === 'decrement' ? -1 : 0;
+        if (dir === 0) return;
+        const next = Math.max(0, Math.min(items.length - 1, active + dir));
+        if (next !== active) select(next);
+      }}>
       <View pointerEvents="none" style={{
         position: 'absolute', top: DRUM_ITEM_H * 2, left: 10, right: 10,
         height: DRUM_ITEM_H, backgroundColor: CARD_HI, borderRadius: RADIUS.sm,
@@ -1311,7 +1324,6 @@ const s = StyleSheet.create({
   gpxRow: { flexDirection: 'row', alignItems: 'center', gap: rv(8), marginTop: rv(24), paddingVertical: rv(12), paddingHorizontal: rs(2), borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP },
   gpxTxt: { color: T2, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600' },
   gpxHint: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, marginLeft: 'auto' },
-  offscreen: { position: 'absolute', left: -10000, top: 0, opacity: 0 },
   baselineRow: { flexDirection: 'row', alignItems: 'flex-end' },
   // 코너 페이드 헤어라인(GlassEdge glints=false) — 균일 RN 보더 폐지(2026-07-10 확정).
   card: { backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderCurve: 'continuous', overflow: 'hidden' },
@@ -1319,21 +1331,14 @@ const s = StyleSheet.create({
   // 섹션 헤더 = SectionTitle 프리미티브와 동일 스펙(700) — 화면 간 헤더 무게 통일.
   sectionLabel: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '700', letterSpacing: 0.4, paddingHorizontal: rs(4) },
   // 요약 카드(큰 거리) — 목업 기록(10)
-  sumTitle: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600', letterSpacing: 0.2 },
   sumBigKm: { color: T1, fontFamily: DISPLAY, fontSize: rf(42), fontWeight: '700', letterSpacing: -1, fontVariant: ['tabular-nums'], marginLeft: rs(0) },
   sumBigU: { color: T3, fontFamily: FONT, fontSize: TYPE.heading.fontSize, fontWeight: '500', marginLeft: rs(4), paddingBottom: rv(6) },
-  sumSub: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500', marginTop: rv(2) },
   sumMetricRow: { flexDirection: 'row', justifyContent: 'flex-start', gap: rv(28), marginTop: rv(14), paddingLeft: rs(2) },
   sumMetric: {},
   sumMetricV: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.heading.fontSize, fontWeight: '700', letterSpacing: -0.2, fontVariant: ['tabular-nums'] },
   sumMetricU: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600' },
   sumMetricL: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500', marginTop: rv(4), marginLeft: rs(1) },
   // 개인 기록(PR, 1-3) — 2x2 그리드(최장거리/최고페이스/최장시간/최장스트릭).
-  prGrid: { flexDirection: 'row', flexWrap: 'wrap', marginTop: rv(16), rowGap: rv(18) },
-  prCell: { width: '50%' },
-  prV: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.title.fontSize, fontWeight: '700', letterSpacing: -0.4 },
-  prU: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600', marginLeft: rs(3) },
-  prL: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500', marginTop: rv(4) },
   // 런 카드 — 목업 기록(10): 신발+날짜 + 거리·평균페이스·시간
   runCard: { backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderCurve: 'continuous', overflow: 'hidden', padding: rs(16) },
   runCardTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: rv(10), marginBottom: rv(14) },
@@ -1347,7 +1352,7 @@ const s = StyleSheet.create({
 
   header: { paddingTop: rv(8), paddingHorizontal: GUTTER, paddingBottom: rv(6) },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  title: { color: T1, fontFamily: FONT, fontSize: TYPE.title1.fontSize, fontWeight: '800', letterSpacing: -0.9 },
+  title: { color: T1, fontFamily: FONT, ...TYPE.screenTitle },
 
   // 기간 세그먼트는 SegmentedControl(neutral) 프리미티브로 이전 — 컨테이너/항목/선택칩
   // 토큰을 그쪽이 책임진다(과거 segment/segItem/segItemOn/segText 제거, 시각 동등).
@@ -1365,37 +1370,15 @@ const s = StyleSheet.create({
   chartLabels: { flexDirection: 'row', marginTop: rv(8), paddingRight: rs(42) },
   chartLabel: { flex: 1, textAlign: 'center', color: T3, fontFamily: FONT, fontWeight: '600' },
   chartTipWrap: { position: 'absolute', left: -26, right: -26, alignItems: 'center', zIndex: 5 },
-  chartTip: { backgroundColor: CARD_HI, borderRadius: rs(8), paddingHorizontal: rs(8), paddingVertical: rv(4), borderWidth: 1, borderColor: withAlpha(T1, 0.14) },
   chartBarVal: { fontFamily: DISPLAY, fontSize: TYPE.micro.fontSize, fontWeight: '600', color: T1, fontVariant: ['tabular-nums'] },
-  chartTipVal: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.label.fontSize, fontWeight: '600', letterSpacing: 0.2 },
-  chartTipU: { color: T3, fontFamily: FONT, fontSize: TYPE.micro.fontSize, fontWeight: '500' },
 
   // course map (recessed well, svg polyline)
   emptyHint: { color: T3, fontFamily: FONT, fontSize: TYPE.body.fontSize, textAlign: 'center' },
 
   // 콤팩트: 요약 4칸(거리/횟수/페이스/시간)의 패딩·값 폰트·여백을 줄여 세로 높이를
   // 압축한다(정보는 그대로 유지 — 라벨/값/단위 모두 렌더). 리스트가 위로 올라온다.
-  summaryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: rv(8) },
   // 4열 요약 행(Screens Refined) — 카드 없이 헤어라인 구분.
-  sumRow: { flexDirection: 'row', marginTop: rv(6), marginBottom: rv(2) },
-  sumCell: { flex: 1, paddingHorizontal: rs(2) },
-  sumCellDiv: { borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: withAlpha(T1, 0.045), paddingLeft: rs(12) },
-  sumValue: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.title.fontSize, fontWeight: '500', letterSpacing: -0.4, fontVariant: ['tabular-nums'] },
-  sumUnit: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500' },
-  sumLabel: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500', marginTop: rv(4) },
-  summaryLabel: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600', letterSpacing: 0.2 },
-  summaryValue: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.title.fontSize, letterSpacing: 0.3, marginTop: rv(2) },
-  summaryUnit: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, marginTop: rv(1) },
 
-  runRow: { flexDirection: 'row', alignItems: 'center', gap: rv(14), paddingVertical: rv(16), paddingHorizontal: rs(18) },
-  runRowBorder: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: SEP },
-  runDate: { width: rs(42), alignItems: 'center' },
-  runDay: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500' },
-  runDateNum: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.heading.fontSize },
-  runDivider: { width: StyleSheet.hairlineWidth, alignSelf: 'stretch', backgroundColor: SEP, marginVertical: rv(2) },
-  runBrand: { color: T3, fontFamily: FONT, fontSize: TYPE.micro.fontSize, fontWeight: '500', letterSpacing: 1.3 },
-  runModel: { color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '500', marginTop: rv(1) },
-  runMetrics: { flexDirection: 'row', gap: rv(18), marginTop: rv(10) },
   runV: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.title.fontSize, fontWeight: '700', letterSpacing: 0.2, fontVariant: ['tabular-nums'] },
   runU: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, marginLeft: rs(3), marginBottom: rv(1) },
   // marginLeft 1 — 옵티컬 정렬: 타뷸러 숫자는 좌측 사이드베어링이 있고 한글 라벨은 꽉 차서,

@@ -1329,7 +1329,7 @@ const s = StyleSheet.create({
 
   headerRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', paddingHorizontal: rs(4) },
   // 화면 타이틀은 전 탭(신발·기록·마이) 동일 스케일(title1) — '마이'만 display 로 커서 튀던 것 통일.
-  title: { color: T1, fontFamily: FONT, fontSize: TYPE.title1.fontSize, fontWeight: '800', letterSpacing: -0.9 },
+  title: { color: T1, fontFamily: FONT, ...TYPE.screenTitle },
   iconBtn: { width: rs(38), height: rs(38), borderRadius: RADIUS.pill, backgroundColor: CARD_HI, borderWidth: 1, borderColor: withAlpha(T1, 0.12), alignItems: 'center', justifyContent: 'center' },
 
   identity: { flexDirection: 'row', alignItems: 'center', gap: rv(14), paddingHorizontal: rs(4), paddingTop: rv(4) },

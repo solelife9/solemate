@@ -238,6 +238,9 @@ export const TYPE = {
   // 수렴 스윕에서 추가: 실사용이 25~29 에 밀집하는데 title(23)↔display(33) 사이가
   // 비어 있어 스케일 밖 하드코딩을 유발했다. 이 한 단계로 그 구간 전부를 수렴한다.
   title1:  { fontSize: rf(27), fontWeight: '700', letterSpacing: -0.6 },
+  // screenTitle(27/800/-0.9) — 탭 루트 화면 타이틀(신발·기록·프로필) 전용. DESIGN "800
+  // 헤딩"의 정식 토큰: 3화면이 같은 리터럴 묶음을 3중복하던 것을 프리셋으로 수렴(2026-07-25).
+  screenTitle: { fontSize: rf(27), fontWeight: '800', letterSpacing: -0.9 },
   title:   { fontSize: rf(23), fontWeight: '600', letterSpacing: -0.4 },
   heading: { fontSize: rf(18), fontWeight: '600', letterSpacing: -0.2 },
   body:    { fontSize: rf(16), fontWeight: '500', letterSpacing: -0.2 },

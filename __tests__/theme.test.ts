@@ -44,7 +44,8 @@ describe('TYPE presets', () => {
     for (const key of Object.keys(TYPE) as (keyof typeof TYPE)[]) {
       const preset = TYPE[key];
       expect(typeof preset.fontSize).toBe('number');
-      expect(['400', '500', '600', '700']).toContain(preset.fontWeight);
+      // '800' 포함(2026-07-25): 탭 타이틀 급 screenTitle 프리셋 승격(DESIGN "800 헤딩").
+      expect(['400', '500', '600', '700', '800']).toContain(preset.fontWeight);
       expect(typeof preset.letterSpacing).toBe('number');
     }
   });
@@ -52,6 +53,11 @@ describe('TYPE presets', () => {
     const sizes = Object.values(TYPE).map(p => p.fontSize);
     expect(TYPE.display.fontSize).toBe(Math.max(...sizes));
     expect(TYPE.micro.fontSize).toBe(Math.min(...sizes));
+  });
+  test('screenTitle: 탭 루트 타이틀 정본(title1 크기 + 800 + -0.9) — 3화면 리터럴 수렴 계약', () => {
+    expect(TYPE.screenTitle.fontSize).toBe(TYPE.title1.fontSize);
+    expect(TYPE.screenTitle.fontWeight).toBe('800');
+    expect(TYPE.screenTitle.letterSpacing).toBe(-0.9);
   });
   test('a preset spreads cleanly into a Text style alongside the font family', () => {
     const style = {fontFamily: FONT, ...TYPE.body};

@@ -26,7 +26,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 // (시각 동등: 다크+오렌지 유지)
 import {
   BG, ACCENT, T1, T2, T3, T4, SEP, CARD_BORDER,
-  FONT, DISPLAY, NUM, RADIUS, GUTTER, withAlpha, TYPE, HERO,
+  FONT, DISPLAY, NUM, RADIUS, GUTTER, withAlpha, TYPE, HERO, LEADING,
 } from './theme';
 // lib/haptics 배선: '러닝 시작' CTA(런 시작) → tap.
 import { tap } from './lib/haptics';
@@ -484,7 +484,9 @@ const s = StyleSheet.create({
   pickerSheet: { paddingHorizontal: rs(18), paddingTop: rv(18), gap: rv(10) },
   // 목표 직접 입력 키패드 — 시트 규약은 pickerSheet 재사용, 키만 추가.
   kpValRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', gap: rv(6), marginBottom: rv(6), minHeight: rs(44) },
-  kpVal: { color: T1, fontFamily: DISPLAY, fontSize: HERO.hero, fontWeight: '600', letterSpacing: -1 },
+  // 방금 탭한 Jost 히어로(bigVal)와 같은 값이 시트에서 Pretendard 로 폰트가 바뀌고
+  // 타이핑 중 자릿수 폭이 흔들리던 분열 해소(심사 #27) — NUM+tabular, weight 도 500 정렬.
+  kpVal: { color: T1, fontFamily: NUM, fontSize: HERO.hero, fontWeight: '500', letterSpacing: -1, lineHeight: Math.round(HERO.hero * LEADING.display), includeFontPadding: false, fontVariant: ['tabular-nums'] },
   kpValGhost: { color: T4 },
   kpUnit: { color: T3, fontFamily: FONT, fontSize: TYPE.heading.fontSize, fontWeight: '600' },
   kpGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: rv(8) },

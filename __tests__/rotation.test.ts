@@ -103,6 +103,48 @@ describe('recommendRotation — 정렬 규칙', () => {
     expect(picks.map(p => p.shoe.id).sort()).toEqual(['custom', 'known']);
   });
 
+  test('구조화 필드(reasonKind·restDays) — UI 가 reason 문자열을 파싱하지 않아도 되는 계약', () => {
+    const shoes: RotationShoe[] = [
+      {id: 'daily', brand: 'Nike', model: 'Pegasus 41'},
+      {id: 'carbon', brand: 'Nike', model: 'Vaporfly 4'},
+      {id: 'unworn', brand: 'Adidas', model: 'Adizero SL2'},
+    ];
+    const runs: RotationRun[] = [
+      {shoeId: 'daily', date: '2026-06-01'}, // 2일 휴식
+      {shoeId: 'carbon', date: '2026-05-28'}, // 6일 휴식(카본)
+    ];
+    const picks = recommendRotation({shoes, runs, today: '2026-06-03'});
+    const byId = Object.fromEntries(picks.map(p => [p.shoe.id, p]));
+
+    expect(byId.unworn.reasonKind).toBe('unworn');
+    expect(byId.unworn.restDays).toBeUndefined();
+
+    // 카본화는 '아껴두기' 분류 + 휴식 일수 병기.
+    expect(byId.carbon.reasonKind).toBe('carbon');
+    expect(byId.carbon.restDays).toBe(6);
+
+    // 비카본 신발은 reason 에 '카본화는 쉬게'가 들어가도 rest 분류다
+    // (구 정규식 파싱이 이 문구를 카본으로 오판하던 회귀 방지).
+    expect(byId.daily.reason).toContain('카본화는 쉬게');
+    expect(byId.daily.reasonKind).toBe('rest');
+    expect(byId.daily.restDays).toBe(2);
+  });
+
+  test('오늘 신은 신발은 reasonKind=today (카본화여도 today 유지)', () => {
+    const shoes: RotationShoe[] = [
+      {id: 'daily', brand: 'Nike', model: 'Pegasus 41'},
+      {id: 'carbon', brand: 'Nike', model: 'Vaporfly 4'},
+    ];
+    const runs: RotationRun[] = [
+      {shoeId: 'daily', date: '2026-06-01'},
+      {shoeId: 'carbon', date: '2026-06-03'}, // 오늘
+    ];
+    const picks = recommendRotation({shoes, runs, today: '2026-06-03'});
+    const byId = Object.fromEntries(picks.map(p => [p.shoe.id, p]));
+    expect(byId.carbon.reasonKind).toBe('today');
+    expect(byId.carbon.restDays).toBeUndefined();
+  });
+
   test('score 는 우선순위 내림차순(pick-0 가 최고점)', () => {
     const shoes: RotationShoe[] = [
       {id: 'a', brand: 'Nike', model: 'Pegasus 41'},

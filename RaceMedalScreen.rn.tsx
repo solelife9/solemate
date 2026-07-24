@@ -11,7 +11,7 @@ import {View, ScrollView, Pressable, Image, StyleSheet, ActivityIndicator, Modal
 import {Text, TextInput} from './lib/text';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import {BG, CARD_HI, GOOD, WARN, HALL_GOLD, T1, T2, T3, SEP, FONT, DISPLAY, withAlpha, TYPE, GLASS, RADIUS, GUTTER, MOTION} from './theme';
+import {BG, CARD_BORDER, CARD_HI, GOOD, WARN, HALL_GOLD, T1, T2, T3, SEP, FONT, DISPLAY, withAlpha, TYPE, GLASS, RADIUS, GUTTER, MOTION} from './theme';
 import {Button, Chip, GlassEdge, Input} from './primitives';
 import {captureCertPhoto} from './lib/photo';
 import MedalCamera from './MedalCamera';
@@ -276,7 +276,8 @@ const s = StyleSheet.create({
   iconBtn: {width: rs(36), height: rs(36), borderRadius: RADIUS.pill, backgroundColor: CARD_HI, alignItems: 'center', justifyContent: 'center'},
   navTitle: {flex: 1, textAlign: 'center', color: T1, fontFamily: FONT, fontSize: TYPE.heading.fontSize, fontWeight: '600', letterSpacing: -0.2, marginHorizontal: rs(8)},
 
-  search: {flexDirection: 'row', alignItems: 'center', gap: rv(8), marginHorizontal: GUTTER, marginTop: rv(4), marginBottom: rv(12), height: rs(46), paddingHorizontal: rs(14), borderRadius: rs(14), backgroundColor: GLASS.fill, borderWidth: 1, borderColor: withAlpha(T1, 0.1)},
+  // 필드 표면 = primitives.Input 문법(hairline + CARD_BORDER) — 사설 1px·0.10 보더 폐지.
+  search: {flexDirection: 'row', alignItems: 'center', gap: rv(8), marginHorizontal: GUTTER, marginTop: rv(4), marginBottom: rv(12), height: rs(46), paddingHorizontal: rs(14), borderRadius: rs(14), borderCurve: 'continuous', backgroundColor: GLASS.fill, borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER},
   searchInput: {flex: 1, color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '500', paddingVertical: rv(0)},
   section: {color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600', letterSpacing: 0.6, textTransform: 'uppercase', marginBottom: rv(8), marginTop: rv(4)},
   // 코너 페이드 헤어라인(GlassEdge glints=false) — 균일 RN 보더 폐지(2026-07-10 확정).

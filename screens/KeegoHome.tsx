@@ -390,7 +390,6 @@ const styles = StyleSheet.create({
     width: rs(36), height: rs(36), borderRadius: RADIUS.pill, alignItems: 'center', justifyContent: 'center',
     backgroundColor: withAlpha(T1, 0.08), borderWidth: 1, borderColor: withAlpha(T1, 0.12),
   },
-  avatarGlyph: {fontFamily: FONT, color: withAlpha(T1, 0.9), fontSize: TYPE.heading.fontSize},
 
   titleWrap: {paddingHorizontal: GUTTER, paddingTop: rv(16), paddingBottom: rv(10)},
   eyebrow: {fontFamily: FONT, ...TYPE.label, color: T3},
@@ -438,7 +437,6 @@ const styles = StyleSheet.create({
     // 사설 0.1 → GLASS.fillCta(0.12) — 전역 CTA(Button)와 표면 밝기 단일화(검수 MED, 2026-07-16).
     backgroundColor: GLASS.fillCta,
   },
-  runGlyph: {fontFamily: FONT, color: T1, fontSize: TYPE.body.fontSize},
   runLabel: {fontFamily: FONT, fontSize: TYPE.heading.fontSize, fontWeight: '700', letterSpacing: -0.2, color: T1},
 
   // 고스트 카드(빈 상태) 전용 — 힌트/가치 라인은 실카드 kmRow 자리의 유령.

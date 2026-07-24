@@ -34,10 +34,18 @@ export interface RotationRun {
   km?: number; // 이 런의 거리(마모 분산 tie-break 용). 없으면 0으로 취급.
 }
 
+/** reason 문구의 구조화 분류 — UI 가 한국어 문자열을 정규식 파싱하지 않게 하는 계약.
+ *  unworn=아직 안 신음 · today=기준일에 신음 · rest=N일 휴식(restDays) ·
+ *  carbon=카본화 아껴두기(비매칭 시) · default=휴식 정보 없음(기준일 부재). */
+export type RotationReasonKind = 'unworn' | 'today' | 'rest' | 'carbon' | 'default';
+
 export interface RotationPick {
   shoe: RotationShoe;
   score: number;
   reason: string;
+  reasonKind: RotationReasonKind;
+  /** 마지막 착용 후 경과 일수(기준일 대비, 1 이상일 때만). carbon 픽에도 채워진다. */
+  restDays?: number;
 }
 
 // runType → 선호 카테고리(우선 매칭). 비슷한 자극·완충을 주는 카테고리를 함께 묶어,
@@ -149,15 +157,25 @@ function reasonFor(
   runType: RunType | undefined,
   refDate: string | null,
   hasCarbon: boolean,
-): string {
+): {reason: string; reasonKind: RotationReasonKind; restDays?: number} {
   const parts: string[] = [];
+  let reasonKind: RotationReasonKind = 'default';
+  let restDays: number | undefined;
 
-  // ① 휴식 정보
+  // ① 휴식 정보 (+ 구조화 분류 — 표시 카피는 기존 그대로)
   if (e.lastWorn === null) {
     parts.push('아직 안 신은 신발');
+    reasonKind = 'unworn';
   } else if (refDate) {
     const d = daysBetween(e.lastWorn, refDate);
-    parts.push(d <= 0 ? '오늘 신은 신발' : `${d}일 휴식`);
+    if (d <= 0) {
+      parts.push('오늘 신은 신발');
+      reasonKind = 'today';
+    } else {
+      parts.push(`${d}일 휴식`);
+      reasonKind = 'rest';
+      restDays = d;
+    }
   } else {
     parts.push('충분히 쉰 신발');
   }
@@ -167,6 +185,9 @@ function reasonFor(
     parts.push(`${RUNTYPE_LABEL[runType]}엔 ${CATEGORY_LABEL[e.cat]}`);
   } else if (e.cat === 'carbon_racing') {
     parts.push('카본화 · 레이스용으로 아껴요');
+    // '아껴두는 카본화'는 휴식보다 강한 서사 — 단 미착용/오늘 착용 분류는 유지한다.
+    // (구 정규식 파싱은 비카본 신발의 '카본화는 쉬게' 문구까지 카본으로 오판했다.)
+    if (reasonKind === 'rest' || reasonKind === 'default') reasonKind = 'carbon';
   } else if (!runType && hasCarbon) {
     // 휴식·분산 기본 추천: 카본화를 쉬게 하고 데일리/쿠션으로 마모를 분산.
     parts.push('카본화는 쉬게');
@@ -174,7 +195,7 @@ function reasonFor(
     parts.push('마모 분산');
   }
 
-  return parts.join(' · ');
+  return {reason: parts.join(' · '), reasonKind, restDays};
 }
 
 /**
@@ -244,6 +265,6 @@ export function recommendRotation(input: {
   return enriched.map((e, i) => ({
     shoe: e.shoe,
     score: enriched.length - i, // 클수록 우선(1위가 최고점)
-    reason: reasonFor(e, runType, refDate, hasCarbon),
+    ...reasonFor(e, runType, refDate, hasCarbon),
   }));
 }

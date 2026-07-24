@@ -544,7 +544,9 @@ const s = StyleSheet.create({
   shoe: {color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600'},
   hero: {flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'center', gap: rv(6), marginTop: rv(8), marginBottom: rv(14)},
   // tabular-nums — 카운트업 중 자릿수 폭이 튀지 않게(진입 시그니처 모션).
-  heroNum: {color: T1, fontFamily: NUM, fontSize: rf(68), fontWeight: '700', letterSpacing: -2, lineHeight: rf(72), fontVariant: ['tabular-nums']},
+  // 세리머니 cer.dist(-1.5)와 '같은 숫자' 모프 — 자간 정합 + Jost 행간 규율 1.22×
+  // (구 lineHeight 72=1.06×는 어센더 잘림 리스크, 2026-07-25 심사 #27).
+  heroNum: {color: T1, fontFamily: NUM, fontSize: rf(68), fontWeight: '700', letterSpacing: -1.5, lineHeight: rf(83), includeFontPadding: false, fontVariant: ['tabular-nums']},
   // 모프 클론 — 윈도 좌표 절대 배치(리캡 루트=풀스크린이라 윈도 좌표 그대로 사용 가능).
   morphClone: {position: 'absolute'},
   heroUnit: {color: T2, fontFamily: FONT, fontSize: TYPE.title.fontSize, fontWeight: '700', marginBottom: rv(10)},

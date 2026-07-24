@@ -24,18 +24,17 @@ const INSIGHT_TONE: Record<string, { bg: string; text: string }> = {
   accent:  { bg: withAlpha(ACCENT, 0.12), text: ACCENT },
 };
 
-// RotationPick 의 reason 문자열(lib/rotation 생성)에서 UI 인사이트를 파생한다.
+// RotationPick 의 구조화 필드(reasonKind·restDays — lib/rotation 계약)에서 UI 인사이트를
+// 파생한다. (구 정규식 파싱은 비카본 신발의 '카본화는 쉬게' 문구까지 카본으로 오판 — 폐지.)
 export function insightBadge(
   pick: RotationPick,
   index: number,
   total: number,
 ): { badge: string; description: string; toneKey: string } {
-  const r = pick.reason;
-  const daysMatch = r.match(/(\d+)일 휴식/);
-  const days      = daysMatch ? parseInt(daysMatch[1], 10) : null;
-  const neverWorn = r.includes('아직 안 신은');
-  const usedToday = r.includes('오늘 신은');
-  const isCarbon  = r.includes('카본화');
+  const days      = pick.restDays ?? null;
+  const neverWorn = pick.reasonKind === 'unworn';
+  const usedToday = pick.reasonKind === 'today';
+  const isCarbon  = pick.reasonKind === 'carbon';
   const isFirst   = index === 0;
   const isLast    = total > 1 && index === total - 1;
 

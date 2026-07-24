@@ -243,7 +243,6 @@ export default function RunActiveScreen({
   // 일시정지 시 링을 '아주 살짝'만 축소(0.92) — 링 안 거리 숫자가 항상 크게 읽히도록. 스케일은
   // 네이티브 드라이버(transform)만 쓰므로 재개 시 반드시 원래 크기로 복귀한다(예전엔 스케일+
   // Animated 마진+LayoutAnimation 이 서로 다른 시스템으로 같은 뷰를 밀며 desync→복귀불능 버그).
-  // 서브 지표가 들어설 세로 공간은 스케일이 아니라 ringWrapPaused 여백 축소(LayoutAnimation)가 만든다.
   const ringScale = t.interpolate({ inputRange: [0, 1], outputRange: [1, 0.92] });
   // 핸드오프 인트로는 '첫 마운트 한 번'만 — 링은 일시정지 때 언마운트됐다 재개 시 다시
   // 마운트되므로, prop 그대로 쓰면 재개마다 드레인이 재생된다. 첫 렌더에서 소비하고 끈다.
@@ -830,7 +829,9 @@ const r = StyleSheet.create({
   voiceBtn: { width: rs(30), height: rs(30), borderRadius: RADIUS.pill, alignItems: 'center', justifyContent: 'center', backgroundColor: CARD, borderWidth: 1, borderColor: SEP },
   // 수동 재개 카운트다운(심사 #11) — 풀스크린 딤 + 큰 숫자(시작 카운트다운과 같은 NUM 문법).
   resumeCdWrap: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: withAlpha(BG, 0.88), alignItems: 'center', justifyContent: 'center', zIndex: 30, gap: rv(10) },
-  resumeCdNum: { color: T1, fontFamily: NUM, fontSize: rf(96), fontWeight: '600', fontVariant: ['tabular-nums'], includeFontPadding: false },
+  // 96 급(lapHero)과 동일 램프 — 자간/행간 미지정으로 홀로 표류하던 것 정렬(심사 #27).
+  // weight 500 = '진행 중 숫자' 규칙(cdCount 3·2·1 과 동일 무게).
+  resumeCdNum: { color: T1, fontFamily: NUM, fontSize: rf(96), fontWeight: '500', letterSpacing: -1, lineHeight: rf(117), fontVariant: ['tabular-nums'], includeFontPadding: false },
   resumeCdHint: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500' },
   shoeText: { color: T3, fontFamily: DISPLAY, fontSize: TYPE.label.fontSize, fontWeight: '600' },
 
@@ -864,22 +865,15 @@ const r = StyleSheet.create({
   cdChip: { flexDirection: 'row', alignItems: 'center', gap: rv(8), height: rs(32), paddingHorizontal: rs(14), borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.04), borderWidth: 1, borderColor: SEP },
   cdChipText: { color: T2, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500' },
   cdChipB: { color: T1, fontFamily: DISPLAY, fontWeight: '600' },
-  // 일시정지: 링을 살짝 위로 당기고(marginTop↓) 아래 시각 여백을 조금 회수(marginBottom-)해
-  // 서브 지표가 들어설 공간을 낸다. 스케일이 0.92로 완만하므로 마진도 완만하게(겹침 방지).
-  ringWrapPaused: { marginTop: rv(8), marginBottom: rv(-14) },
   // 링 센터 보조(단위 km/목표 N분) — 20pt(사용자 확대 확정 2026-07-12: 기존 title 은 옹졸).
   goal: { color: withAlpha(T1, 0.8), fontFamily: FONT, fontSize: rf(20), fontWeight: '700', letterSpacing: 0.6, marginTop: rv(10) },
   // 살짝 올림(-6) — 큰 숫자(Jost lineHeight 여유) 밑에서 단위가 처져 보이는 것 교정(사용자 미세조정).
   goalBelow: { position: 'absolute', top: '100%', transform: [{ translateY: rv(-6) }] },
-  goalMet: { flexDirection: 'row', alignItems: 'center', gap: rv(4), marginTop: rv(14) },
-  goalMetText: { color: GOOD, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '700', letterSpacing: 0.6 },
   // Jost(NUM)는 Pretendard 보다 세로 메트릭(어센더)이 커서 lineHeight 를 fontSize 에 붙이면
   // 숫자 위가 라인박스에 잘린다 → lineHeight 를 넉넉히(≈1.22×) 줘 어센더를 담는다. 자간은
   // Jost 기본 사이드베어링이 좁지 않아 -4 면 0 끼리 붙어 보인다 → -1 로 완화(숫자 사이 숨).
   bigDist: { color: T1, fontFamily: NUM, fontSize: rf(104), fontWeight: '500', letterSpacing: -1, lineHeight: rf(127), includeFontPadding: false, fontVariant: ['tabular-nums'] },
-  bigUnit: { color: withAlpha(T1, 0.62), fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600', letterSpacing: 0.8, marginTop: rv(16) },
   // 일시정지 하단 헤드 — 링 없이 거리 히어로 + 목표를, 지도 위·하단 지표 위에 얹는다.
-  pausedGoal: { color: withAlpha(T1, 0.62), fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '700', letterSpacing: 0.8, marginTop: rv(8) },
   // 트랙 링 센터 — 바퀴수 하나만 히어로, 그 밑 작은 '바퀴'.
   // 트랙 랩 히어로도 NUM — 같은 링 센터의 거리 히어로(bigDist)와 모드 전환 시 폰트 일치.
   lapHero: { color: T1, fontFamily: NUM, fontSize: rf(96), fontWeight: '500', letterSpacing: -1, lineHeight: rf(117), includeFontPadding: false, fontVariant: ['tabular-nums'] },

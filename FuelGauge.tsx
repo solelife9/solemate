@@ -35,6 +35,8 @@ export function FuelGauge({remainLabel, unit, fillPct, maxLabel, replaceLabel, e
   // …교체권장=빨강). 과거 이 파일의 사본은 램프가 한 단계 밀려 '교체고려'가 흰색
   // (='최상'과 동일)으로 그려지는 P0 사고가 있었다(2026-07-24 심사). 사본 금지.
   const cc = WEAR_TONE_COLOR[tier.tone];
+  // VoiceOver: 게이지를 progressbar 하나로 읽어준다(잔여 % + 교체까지 거리).
+  const remainPct = Math.round((1 - p) * 100);
   return (
     <View style={g.wrap}>
       <View style={g.labelRow}>
@@ -46,13 +48,18 @@ export function FuelGauge({remainLabel, unit, fillPct, maxLabel, replaceLabel, e
       {/* 수명 바 = 남은 수명 게이지(배터리 방향 — 홈 링·락커 바와 통일, 사용자 결정).
           새 신발 = 가득 참, 닳을수록 비워진다. 색은 4단계 컨디션색(최상=파랑…교체권장=빨강)
           — 홈 링·신발 탭 점과 같은 램프(구 '최상=흰' 특례 폐지: 색통일 c139934 정합). */}
-      <View style={[g.track, {marginTop: rv(14)}]}>
+      <View
+        style={[g.track, {marginTop: rv(14)}]}
+        accessible
+        accessibilityRole="progressbar"
+        accessibilityLabel={`잔여 수명 ${remainPct}%, 교체까지 약 ${remainLabel}${unit}`}
+        accessibilityValue={{min: 0, max: 100, now: remainPct}}>
         <View style={[g.fill, {width: `${(1 - p) * 100}%`, backgroundColor: cc}]} />
       </View>
       {/* 남은 수명 % 복원(2026-07-05 사용자 결정) — 락커 카드와 같은 라벨 한 벌
           ('남은 수명 % · 총 Nkm')로 두 화면의 문법을 통일한다. */}
       <View style={g.scale}>
-        <Text style={g.scaleTxt}>남은 수명 {Math.round((1 - p) * 100)}%</Text>
+        <Text style={g.scaleTxt}>남은 수명 {remainPct}%</Text>
         <Text style={g.scaleTxt}>총 {maxLabel ?? replaceLabel ?? ''}{maxLabel ? unit : ''}</Text>
       </View>
     </View>
