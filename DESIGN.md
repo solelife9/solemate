@@ -19,6 +19,10 @@
   "남발돼 튄다" 실기기 피드백으로 폐지(같은 실수를 파파야로 반복하지 않는다).
 - **색은 의미에만**: 컨디션 GOOD/WARN/DANGER/BEST, 토글 ON=GOOD, 티어색, 심박존.
   장식 목적의 유채색 금지. HoF/Legend 골드는 성취 도메인 전용.
+  마모 4단계 램프 = `primitives.WEAR_TONE_COLOR` 단일 소스(최상=BEST 파랑·양호=GOOD·
+  교체고려=WARN·교체권장=DANGER — 2026-07-19 색통일). **사본 금지.**
+  `SPORT_VIOLET` 은 주간목표 '도전' 난이도 **전용 예외**로 존치(전역 액센트 부활 금지
+  — 2026-07-24 명문화).
 - 워드마크: Helvetica Neue Medium 소문자 `keego` **BRAND 파파야**(`KeegoWordmark` 단일 소스).
 
 ## 2. 글라스 재질 (2026-07-09 사용자 확정 — 목업 'B 대각 밸런스')
@@ -56,15 +60,21 @@
 
 ## 3. 타이포그래피
 
-- **Pretendard 단일 패밀리**(`FONT`=`DISPLAY`=PretendardVariable). 제2 디스플레이 폰트 금지.
+- **Pretendard 단일 패밀리**(`FONT`=`DISPLAY`=PretendardVariable) + **단 하나의 예외:
+  초대형 숫자 전용 `NUM`=Jost**(2026-07-14 사용자 결정 — 러닝 링·리캡 히어로 등
+  대형 숫자에만. 본문·라벨·모델명·한글엔 절대 금지). 그 외 제2 폰트 금지.
+  Jost 규율: lineHeight ≥ 1.22×(미만이면 어센더 잘림), 항상 tabular-nums.
 - **스케일은 `theme.TYPE` + `theme.HERO`가 유일한 권위** (과거 문서의 56/28/22/15/12.5
   스케일은 폐기): `display 33 · title1 27 · title 23 · heading 18 · body 16 · label 14 ·
   caption 13 · micro 11` + 대형 숫자 `HERO 40/56/76`. 정수만(반px 금지), `rf()` 경유.
   2026-07-09 수렴 스윕 완료 — 39종 하드코딩 504건을 이 스케일로 수렴(`TYPE.*.fontSize`
   참조). 예외로 남긴 특수값: 차트 눈금 6~9, 러닝 초대형 숫자(37·42~52·68·96·104·150).
 - 숫자는 항상 `fontVariant: ['tabular-nums']`. 단위(km·spm)는 숫자보다 작게, baseline 정렬.
-- weight는 TYPE 프리셋 번들 사용. 화면에서 `fontSize: rf(임의숫자)` 신규 작성 금지 —
+- weight는 TYPE 프리셋 번들 사용(상한 **800** — 2026-07-24 승격: 탭 타이틀 급 헤딩용.
+  화면 리터럴 '800' 금지, 프리셋 경유). 화면에서 `fontSize: rf(임의숫자)` 신규 작성 금지 —
   스케일에 없는 크기가 필요하면 스케일을 고칠지부터 논의.
+- **행간 = `theme.LEADING`** (display 1.22 · ui 1.3 · body 1.45 — 2026-07-24 신설).
+  화면에서 lineHeight 임의 발명 금지 — `fontSize × LEADING.*` 로만.
 
 ## 4. 간격 · 모서리 · 레이아웃
 
@@ -120,6 +130,21 @@
 - **작아질수록 무채가 늘고 Ember는 남는다.** 최소 표면(컴플리케이션·잠금 위젯)은
   무채 + Ember 포인트 1개만 — 조건색(GOOD/WARN)은 폰 화면부터.
 - 워치·위젯 타이포도 tabular-nums, 폰과 같은 위계 언어(큰 숫자 + 작은 단위).
+
+## 6.7 접근성 (2026-07-24 신설 — Apple 은 접근성으로 Featured 를 가른다)
+
+- **Dynamic Type**: 끄지 않는다. 상한 = 본문 1.5× · 초대형 숫자 1.2×. 전 Text/TextInput 은
+  `lib/text` 래퍼 경유(RN 직수입 금지 — ESLint 강제). 텍스트 담는 고정 `height` 대신
+  `minHeight`(스케일 시 클리핑 방지).
+- **터치 타깃**: 실효 44×44pt(`theme.TOUCH_TARGET`) 미만 금지 — 크기+2×hitSlop 로 보정.
+- **대비**: T4(#54545b)는 disabled/순수 장식 전용 — 정보성 텍스트 최소 T3(6.3:1).
+  인터랙티브 라벨은 항상 ≥4.5:1. 러닝 중 화면은 AAA(7:1) 목표(야외 직사광).
+- **Reduce Motion**: 장식 모션(Rise·링 스윕·무한 loop)은 시스템 설정 존중 —
+  공용 `useReduceMotion` 훅 경유(무한 loop 는 특히 전정장애 리젝 사유).
+- **VoiceOver**: 차트/게이지/링 등 시각 전용 정보는 `accessible` + 수치 요약 라벨 필수.
+  토스트는 iOS announce(+Android liveRegion). 모든 인터랙티브 요소에 role+label.
+- **다크 전용 선언**: `UIUserInterfaceStyle=Dark` + `keyboardAppearance='dark'`(래퍼 내장)
+  — 시스템 표면(Alert·공유시트·키보드)까지 다크.
 
 ## 7. 톤 · 진실성
 

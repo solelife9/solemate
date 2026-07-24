@@ -222,7 +222,9 @@ export type RadiusKey = keyof typeof RADIUS;
 // are RN fontWeight string literals so they stay assignable to TextStyle.
 export type TypePreset = {
   fontSize: number;
-  fontWeight: '400' | '500' | '600' | '700';
+  // '800' 승격(2026-07-24 정본 결정): DESIGN "800 헤딩"이 토큰으로 표현 불가해 화면
+  // 7곳이 리터럴 '800' 유령 위계를 만들던 모순 해소 — 탭 타이틀 급이 정식으로 쓴다.
+  fontWeight: '400' | '500' | '600' | '700' | '800';
   letterSpacing: number;
 };
 // 본문 위계 타입 스케일(≤ display 33). 모든 사이즈는 정수 — 화면들이 흩어 쓰던 반px
@@ -250,6 +252,29 @@ export type TypeKey = keyof typeof TYPE;
 // display=max(TYPE) 계약). 화면은 이 토큰을 참조해 대형 숫자를 단일 소스로 둔다.
 export const HERO = { hero: rf(40), heroLg: rf(56), mega: rf(76) } as const;
 export type HeroKey = keyof typeof HERO;
+
+// ── 터치 타깃 (HIG 44pt — 협상 불가) ──────────────────────────────────────────
+// 인터랙티브 요소의 최소 실효 크기(크기 + 2×hitSlop ≥ 44). 화면들이 각자 26/34/38pt
+// 로 미달하던 것을 이 상수 기준으로 보정한다(2026-07-24 접근성 심사 정본 승격).
+export const TOUCH_TARGET = 44;
+
+// ── 행간(leading) 램프 ────────────────────────────────────────────────────────
+// lineHeight = fontSize × 배수. TYPE 에 행간이 없어 화면 75곳이 각자 발명하던 것의
+// 단일 진실원(2026-07-24 정본 승격). display=큰 숫자/타이틀(빽빽하게 — Jost 어센더
+// 잘림 하한 1.22 겸용), ui=라벨/버튼, body=본문 문단(다크 위 판독성).
+export const LEADING = {display: 1.22, ui: 1.3, body: 1.45} as const;
+
+// ── 그림자 스케일 ─────────────────────────────────────────────────────────────
+// "살짝 뜨는 정도까지만"(DESIGN §2)의 세 단. 화면 수제 그림자 3벌(홈 히어로·토스트·
+// 탭바 독)을 승인값 그대로 토큰화(2026-07-24) — 신규 그림자는 이 셋 중에서만 고른다.
+export const SHADOW = {
+  /** 카드 부양(홈 히어로 승인값) — 유리 카드가 배경에서 살짝 뜨는 정도. */
+  float: {shadowColor: BLACK, shadowOpacity: 0.3, shadowRadius: 14, shadowOffset: {width: 0, height: 6}, elevation: 6},
+  /** 오버레이(토스트 등) — 콘텐츠 위에 떠 있음을 알리는 한 단 깊은 그림자. */
+  overlay: {shadowColor: BLACK, shadowOpacity: 0.4, shadowRadius: 12, shadowOffset: {width: 0, height: 4}, elevation: 6},
+  /** 하단 독(탭바 승인값) — 화면 가장 깊은 부양. BG 색 그림자로 유리 톤 유지. */
+  dock: {shadowColor: BG, shadowOpacity: 0.7, shadowRadius: 20, shadowOffset: {width: 0, height: 14}, elevation: 14},
+} as const;
 
 // ── screen gutter (화면 좌우 거터 단일 토큰) ───────────────────────────────────
 // 화면마다 14/18/20/22 로 흩어져 있던 좌우 거터(스크린 가장자리 패딩)를 단일 토큰으로
