@@ -128,6 +128,33 @@ describe('HistoryScreen course map', () => {
     }
   });
 
+  test('사이드카가 없어도 레코드 route(클라우드 동기)로 지도를 그린다 — 재설치 폴백(2026-07-24 버그픽스)', async () => {
+    // route_ 사이드카 없음(재설치로 초기화된 상황). 런 객체에 레코드 route 만 실어 준다 —
+    // toUiRun 이 이 필드를 떨어뜨려 폴백이 죽어 있던 회귀를 고정한다.
+    const run = {...RUN('r9'), route: JSON.stringify(ROUTE)};
+    let renderer!: ReactTestRenderer.ReactTestRenderer;
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <HistoryScreen shoes={[SHOE]} runs={[run]} unit="km" />,
+      );
+    });
+    await flush();
+    const root = renderer.root;
+
+    await openDetail(root, 'Pegasus 41');
+    layoutMap(root, 300);
+    await flush();
+
+    const lines = polylines(root);
+    expect(lines.length).toBe(1);
+    const p = lines[0].props as {points?: string; coordinates?: unknown[]};
+    if (p.points != null) {
+      expect(p.points.split(' ')).toHaveLength(ROUTE.length);
+    } else {
+      expect(p.coordinates).toHaveLength(ROUTE.length);
+    }
+  });
+
   test('a run WITHOUT a stored route renders no polyline (map hidden gracefully)', async () => {
     // no route_r2 written.
     let renderer!: ReactTestRenderer.ReactTestRenderer;

@@ -1650,7 +1650,7 @@ function Main(){
   // 엉뚱한 창 백필이 '없음'보다 나쁘다). 전 과정 비차단.
   useEffect(()=>{
     let alive=true;
-    const HR_SWEEP_AT_KEY='hr_recover_sweep_at_v1';
+    const HR_SWEEP_AT_KEY='hr_recover_sweep_at_v2'; // v2: route 픽스와 함께 1회 강제 재스윕(v1 빈 스탬프 무효화)
     const sweep=async()=>{
       try{
         // 자가 복구 포함(재설치로 연동 플래그가 지워져도 OS 권한이 있으면 복원 후 진행).
@@ -1814,6 +1814,9 @@ function Main(){
       // 편집 폼 프리필용 원본값(날짜·시간 초). 거리/신발은 위 dist/shoe로 충분.
       runDate:String(run.run_date??''), durationS:dur,
       memo:typeof run.memo==='string'&&run.memo.trim()?run.memo:undefined,
+      // 레코드 route 통과(2026-07-24 버그픽스) — RunDetail 지도 폴백('레코드 안의 route 로
+      // 어느 기기에서든 코스가 보인다', 2026-07-04 설계)이 이 매핑에서 끊겨 있었다.
+      route:typeof run.route==='string'&&run.route?run.route:undefined,
     };
   }
   const uiRuns:Run[]=sortedRaw.map(toUiRun);

@@ -44,6 +44,10 @@ export type Run = {
   runDate?: string;  // 'YYYY-MM-DD' (run_date 원본)
   durationS?: number; // 소요 시간(초, duration 원본)
   memo?: string;      // 러닝 한 줄 메모(리캡에서 입력, 레코드 동기 — 2026-07-05)
+  // GPS 경로 원문(레코드 route — 클라우드 동기). RunDetail 이 route_ 사이드카 결측 시
+  // 이 값으로 지도를 그린다(2026-07-24 버그픽스: toUiRun 이 이 필드를 떨어뜨려 폴백이
+  // 처음부터 죽어 있었다 — 재설치로 사이드카가 지워지자 지도 전멸).
+  route?: string;
   // per-km 구간 스플릿(레코더가 1km 통과 시각으로 기록). 없으면 RunSplits 자동 숨김.
   splits?: { km: number; paceSec: number; elevM: number }[];
 };
