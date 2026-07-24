@@ -23,7 +23,6 @@ import {
   ImageBackground,
   PanResponder,
   Animated,
-  AccessibilityInfo,
   Linking,
   StyleProp,
   ViewStyle,
@@ -62,7 +61,7 @@ import {
   withAlpha, TYPE, GLASS,
   GUTTER, RADIUS, MOTION,
 } from './theme';
-import {Button, KeegoWordmark, GlassEdge} from './primitives';
+import {Button, KeegoWordmark, GlassEdge, useReduceMotion} from './primitives';
 // 러닝화 선택 모달(2열 분할 피커)은 메인 등록(AddShoeScreen)과 공유하는 단일 소스.
 import {ShoePicker, type PickedShoe} from './ShoePicker';
 
@@ -78,21 +77,8 @@ const SKIP_ANIM = !!(typeof process !== 'undefined' && process.env && process.en
 
 const ReduceMotionCtx = React.createContext(false);
 
-function useReduceMotion(): boolean {
-  const [rm, setRm] = useState(false);
-  useEffect(() => {
-    let alive = true;
-    AccessibilityInfo.isReduceMotionEnabled().then(v => {
-      if (alive) setRm(v);
-    });
-    const sub = AccessibilityInfo.addEventListener('reduceMotionChanged', setRm);
-    return () => {
-      alive = false;
-      sub?.remove?.();
-    };
-  }, []);
-  return rm;
-}
+// useReduceMotion 은 primitives 공용 훅을 소비한다(로컬 복붙 삭제, 2026-07-25).
+// ReduceMotionCtx 공급/소비 구조는 그대로 — 훅 소스만 교체.
 
 // 진입 애니메이션: fade + 약간 떠오르기(translateY). delay로 stagger.
 function Rise({delay = 0, children, style}: {delay?: number; children: React.ReactNode; style?: StyleProp<ViewStyle>}) {

@@ -12,7 +12,7 @@ import {Text, TextInput} from './lib/text';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {BG, CARD_HI, GOOD, WARN, HALL_GOLD, T1, T2, T3, SEP, FONT, DISPLAY, withAlpha, TYPE, GLASS, RADIUS, GUTTER, MOTION} from './theme';
-import {Button, Chip, GlassEdge} from './primitives';
+import {Button, Chip, GlassEdge, Input} from './primitives';
 import {captureCertPhoto} from './lib/photo';
 import MedalCamera from './MedalCamera';
 import {fmtTime} from './lib/format';
@@ -175,7 +175,7 @@ export default function RaceMedalScreen({
           {/* 직접 입력 */}
           <View style={s.customBox}>
             <Text style={s.customLabel}>찾는 대회가 없나요?</Text>
-            <TextInput value={customName} onChangeText={setCustomName} placeholder="대회 이름 직접 입력" placeholderTextColor={T3} style={s.customInput} autoCorrect={false} testID="race-custom" />
+            <Input value={customName} onChangeText={setCustomName} placeholder="대회 이름 직접 입력" autoCorrect={false} testID="race-custom" />
             <View style={{marginTop: rv(10)}}>
               <Button label="이 대회로" disabled={!customName.trim()} onPress={() => { setRace(null); setStep('record'); }} />
             </View>
@@ -208,18 +208,15 @@ export default function RaceMedalScreen({
 
         {/* 대회 날짜 — 과거 대회 메달도 정확히 (기본: 대회일 또는 오늘, 편집 가능) */}
         <Text style={s.fieldLabel}>대회 날짜</Text>
-        <View style={s.inputRow}>
-          <TextInput
-            value={dateStr}
-            onChangeText={(v) => setDateStr(maskDate(v))}
-            placeholder="2019-11-03"
-            placeholderTextColor={T3}
-            style={[s.input, {fontSize: TYPE.heading.fontSize}]}
-            keyboardType="number-pad"
-            accessibilityLabel="대회 날짜"
-            testID="race-date"
-          />
-        </View>
+        <Input
+          value={dateStr}
+          onChangeText={(v) => setDateStr(maskDate(v))}
+          placeholder="2019-11-03"
+          style={[s.input, {fontSize: TYPE.heading.fontSize}]}
+          keyboardType="number-pad"
+          accessibilityLabel="대회 날짜"
+          testID="race-date"
+        />
         <Text style={s.hint}>예전에 뛴 대회 메달도 날짜만 바꿔 그대로 넣을 수 있어요.</Text>
 
         {/* 종목 */}
@@ -233,9 +230,7 @@ export default function RaceMedalScreen({
           <Text style={s.fieldLabel}>공식 기록 (칩 타임)</Text>
           {ocrDone && !!officialStr && <View style={s.tag}><Text style={s.tagT}>인식됨</Text></View>}
         </View>
-        <View style={s.inputRow}>
-          <TextInput value={officialStr} onChangeText={setOfficialStr} placeholder="1:20:32" placeholderTextColor={T3} style={s.input} keyboardType="numbers-and-punctuation" accessibilityLabel="공식 기록" testID="official-input" />
-        </View>
+        <Input value={officialStr} onChangeText={setOfficialStr} placeholder="1:20:32" style={s.input} keyboardType="numbers-and-punctuation" accessibilityLabel="공식 기록" testID="official-input" />
         {appTimeSec && officialSec && Math.abs(appTimeSec - officialSec) >= 2 && (
           <Text style={s.hint}>앱 측정 {fmtTime(appTimeSec)} — 기록증의 공식 기록이 정본으로 저장돼요.</Text>
         )}
@@ -246,11 +241,11 @@ export default function RaceMedalScreen({
           <Text style={s.fieldLabel}>평균 페이스 (/km)</Text>
           {ocrDone && !!paceStr && <View style={s.tag}><Text style={s.tagT}>인식됨</Text></View>}
         </View>
-        <View style={s.inputRow}><TextInput value={paceStr} onChangeText={setPaceStr} placeholder="5:36" placeholderTextColor={T3} style={s.input} keyboardType="numbers-and-punctuation" accessibilityLabel="평균 페이스" /></View>
+        <Input value={paceStr} onChangeText={setPaceStr} placeholder="5:36" style={s.input} keyboardType="numbers-and-punctuation" accessibilityLabel="평균 페이스" />
 
         {/* BIB — 개인용(재조회 키). 비공개 저장, 공유 카드엔 절대 안 실림. */}
         <Text style={s.fieldLabel}>배번호 (선택 · 나만 보기)</Text>
-        <View style={s.inputRow}><TextInput value={bib} onChangeText={setBib} placeholder="5224" placeholderTextColor={T3} style={s.input} keyboardType="number-pad" accessibilityLabel="배번호" /></View>
+        <Input value={bib} onChangeText={setBib} placeholder="5224" style={s.input} keyboardType="number-pad" accessibilityLabel="배번호" />
         <Text style={s.hint}>공식 기록 재조회용이에요. 내 아카이브에만 저장되고 공유엔 포함되지 않아요.</Text>
       </ScrollView>
 
@@ -293,7 +288,6 @@ const s = StyleSheet.create({
   noResult: {color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, marginTop: rv(4), marginBottom: rv(6)},
   customBox: {marginTop: rv(16), padding: rs(14), borderRadius: rs(16), borderWidth: 1, borderStyle: 'dashed', borderColor: withAlpha(T1, 0.16)},
   customLabel: {color: T2, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600', marginBottom: rv(10)},
-  customInput: {height: rs(46), paddingHorizontal: rs(14), borderRadius: rs(12), backgroundColor: GLASS.fill, borderWidth: 1, borderColor: withAlpha(T1, 0.1), color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize},
 
   shotRow: {flexDirection: 'row', gap: rv(10), marginTop: rv(8)},
   shot: {flex: 1, height: rs(150), borderRadius: rs(20), borderWidth: 1.5, borderStyle: 'dashed', borderColor: withAlpha(T1, 0.16), backgroundColor: withAlpha(T1, 0.02), alignItems: 'center', justifyContent: 'center', gap: rv(8), overflow: 'hidden', paddingHorizontal: rs(10)},
@@ -311,8 +305,8 @@ const s = StyleSheet.create({
   tag: {backgroundColor: withAlpha(GOOD, 0.14), borderRadius: rs(6), paddingHorizontal: rs(6), paddingVertical: rv(2), marginTop: rv(20), marginBottom: rv(10)},
   tagT: {color: GOOD, fontFamily: FONT, fontSize: TYPE.micro.fontSize, fontWeight: '700', letterSpacing: 0.3},
   chipRow: {flexDirection: 'row', flexWrap: 'wrap', gap: rv(8)},
-  inputRow: {flexDirection: 'row', alignItems: 'center', height: rs(52), paddingHorizontal: rs(16), borderRadius: rs(14), backgroundColor: GLASS.fill, borderWidth: 1, borderColor: withAlpha(T1, 0.08)},
-  input: {flex: 1, color: T1, fontFamily: DISPLAY, fontSize: TYPE.title.fontSize, fontVariant: ['tabular-nums'], paddingVertical: rv(0)},
+  // 표면(GLASS·RADIUS.input·보더)은 Input 프리미티브가 책임진다 — 숫자 필드 고유 타이포만 남긴다.
+  input: {fontFamily: DISPLAY, fontSize: TYPE.title.fontSize, fontVariant: ['tabular-nums'], height: rs(52), paddingVertical: rv(0), paddingHorizontal: rs(16)},
   hint: {color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, marginTop: rv(8), paddingHorizontal: rs(2), lineHeight: rf(17)},
 
   footer: {paddingHorizontal: GUTTER, paddingTop: rv(8), paddingBottom: rv(30), backgroundColor: BG, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP},

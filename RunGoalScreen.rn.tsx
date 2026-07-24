@@ -14,7 +14,7 @@
 import React, { useMemo, useRef, useState, useCallback } from 'react';
 import { rf, rs, ri, rv } from './lib/responsive';
 import {
-  View, Pressable, ScrollView, StyleSheet, Modal, LayoutChangeEvent,
+  View, Pressable, ScrollView, StyleSheet, LayoutChangeEvent,
   NativeSyntheticEvent, NativeScrollEvent, StatusBar,
 } from 'react-native';
 import {Text} from './lib/text';
@@ -25,8 +25,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 // · text→T1–T4 · hair→SEP · 그라데이션→GRAD_TOP/GRAD_BOT. 폰트 UI/DP → FONT/DISPLAY.
 // (시각 동등: 다크+오렌지 유지)
 import {
-  BG, CARD, ACCENT, T1, T2, T3, T4, SEP, CARD_BORDER,
-  FONT, DISPLAY, NUM, RADIUS, GUTTER, SCRIM, withAlpha, TYPE, HERO,
+  BG, ACCENT, T1, T2, T3, T4, SEP, CARD_BORDER,
+  FONT, DISPLAY, NUM, RADIUS, GUTTER, withAlpha, TYPE, HERO,
 } from './theme';
 // lib/haptics 배선: '러닝 시작' CTA(런 시작) → tap.
 import { tap } from './lib/haptics';
@@ -36,7 +36,7 @@ import { useEffect } from 'react';
 import { HR_ZONE_COLORS, GOOD } from './theme';
 // CTA 는 앱 전역 단일 Button 프리미티브(그라데이션 GRAD_TOP/BOT·글로우·radius 토큰).
 // 모드 탭 스트립은 SegmentedControl 단일 프리미티브(accentTint variant).
-import { Button, SegmentedControl, SwipeBack, SwipeBackExclude } from './primitives';
+import { Button, SegmentedControl, SwipeBack, SwipeBackExclude, BottomSheet } from './primitives';
 // 탭 구성 재확정(민우님 2026-07-24): 거리·시간·스피드·트랙 4탭 복원 + '자유'는 거리 탭의
 // 첫 프리셋(val=0)으로. 자유런 전용 탭(2026-07-22안)은 하루 써보고 철회 — 자유는 목표
 // 모드가 아니라 '거리 목표 없음'이라 거리 탭 안이 문법상 맞다.
@@ -383,8 +383,7 @@ export default function RunGoalScreen({
       <View style={[s.foot, { paddingBottom: Math.max(insets.bottom, rv(14)) + rv(8) }]}>
         {/* 목표 직접 입력 키패드(2026-07-04) — 큰 숫자 탭으로 연다. 하단 시트
             하단 시트 규약(SCRIM 탭 = 닫기). 확인 시 cfg 범위로 클램프 + 룰러 동기. */}
-        <Modal visible={kpOpen} transparent animationType="slide" onRequestClose={() => setKpOpen(false)}>
-          <Pressable style={{ flex: 1, backgroundColor: SCRIM }} onPress={() => setKpOpen(false)} accessibilityRole="button" accessibilityLabel="입력 닫기" />
+        <BottomSheet visible={kpOpen} onClose={() => setKpOpen(false)}>
           <View style={s.pickerSheet}>
             <View style={s.kpValRow} accessibilityRole="text" accessibilityLiveRegion="polite"
               accessibilityLabel={`입력 ${kpBuf || (mode === 'track' ? String(lapM) : fmt(val))} ${mode === 'track' ? '미터' : (cfg?.unit ?? 'km')}`}>
@@ -408,7 +407,7 @@ export default function RunGoalScreen({
             </View>
             <Button label="확인" onPress={kpConfirm} haptic={false} style={s.kpOk} testID="kp-ok" />
           </View>
-        </Modal>
+        </BottomSheet>
 
         <Button
           label="러닝 시작"
@@ -481,7 +480,8 @@ const s = StyleSheet.create({
   zoneHint: { color: T3, fontFamily: FONT, fontSize: rf(12), marginTop: rv(8), letterSpacing: 0.2 },
   foot: { paddingHorizontal: GUTTER, paddingTop: rv(4) }, // 하단 여백은 insets.bottom 실측
   // 목표 직접 입력 키패드 시트(하단) — History 기간 피커와 같은 문법(SCRIM + 하단 카드).
-  pickerSheet: { backgroundColor: CARD, borderTopLeftRadius: RADIUS.xl, borderTopRightRadius: RADIUS.xl, borderCurve: 'continuous', paddingHorizontal: rs(18), paddingTop: rv(18), paddingBottom: rv(34), gap: rv(10) },
+  // 시트 표면(CARD·상단 RADIUS.xl·하단 인셋)은 BottomSheet 프리미티브가 책임진다 — 내용 여백만 남긴다.
+  pickerSheet: { paddingHorizontal: rs(18), paddingTop: rv(18), gap: rv(10) },
   // 목표 직접 입력 키패드 — 시트 규약은 pickerSheet 재사용, 키만 추가.
   kpValRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', gap: rv(6), marginBottom: rv(6), minHeight: rs(44) },
   kpVal: { color: T1, fontFamily: DISPLAY, fontSize: HERO.hero, fontWeight: '600', letterSpacing: -1 },

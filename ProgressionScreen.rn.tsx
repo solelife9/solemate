@@ -26,7 +26,6 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {
   BG,
-  CARD,
   CARD_HI,
   ACCENT,
   RARITY_COLORS,
@@ -44,8 +43,9 @@ import {
   withAlpha, GLASS,
   BAR,
   GUTTER,
+  MOTION,
 } from './theme';
-import {StatGrid, SwipeBack, Rise, GlassEdge} from './primitives';
+import {StatGrid, SwipeBack, Rise, GlassEdge, ScreenHeader} from './primitives';
 import {buildContext} from './lib/progression/context';
 import {
   getProgression,
@@ -215,36 +215,27 @@ export default function ProgressionScreen({
           paddingBottom: insets.bottom + 28,
           gap: SPACE.lg,
         }}>
-        {/* header */}
-        <View style={s.headerRow}>
-          {onBack ? (
-            <Pressable
-              onPress={onBack}
-              testID="progression-back"
-              accessibilityRole="button"
-              accessibilityLabel="뒤로"
-              hitSlop={6}
-              style={({pressed}) => [s.iconBtn, pressed && {backgroundColor: CARD}]}>
-              <Ionicons name="chevron-back" size={ri(20)} color={T2} />
-            </Pressable>
-          ) : (
-            <View style={{width: rs(38)}} />
-          )}
-          <Text style={s.title}>진척</Text>
-          {onOpenHallOfFame ? (
+        {/* header — 표준 내비 헤더(primitives.ScreenHeader), 수제 조립 폐지(2026-07-25).
+            거터는 ScrollView 컨테이너가 이미 주므로 패딩 0. 우측 랭킹 트로피는 right
+            슬롯(testID·라벨 보존). (구 back 버튼 testID progression-back 은 헤더 행으로
+            이동 — 참조 테스트 없음 확인.) */}
+        <ScreenHeader
+          title="진척"
+          onBack={onBack}
+          testID="progression-back"
+          style={s.header}
+          right={onOpenHallOfFame ? (
             <Pressable
               onPress={onOpenHallOfFame}
               testID="open-hall-of-fame"
               accessibilityRole="button"
               accessibilityLabel="랭킹"
               hitSlop={6}
-              style={({pressed}) => [s.iconBtn, pressed && {backgroundColor: CARD}]}>
+              style={({pressed}) => [s.iconBtn, pressed && {transform: [{scale: MOTION.press.scale}], opacity: MOTION.press.opacity}]}>
               <Ionicons name="trophy" size={ri(19)} color={ACCENT} />
             </Pressable>
-          ) : (
-            <View style={{width: rs(38)}} />
-          )}
-        </View>
+          ) : undefined}
+        />
 
         {/* 언락 배너 */}
         {banner && banner.length > 0 ? (
@@ -444,24 +435,19 @@ function AchievementCard({a}: {a: AchievementView}) {
 
 const s = StyleSheet.create({
   screen: {flex: 1, backgroundColor: BG},
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
+  // ScreenHeader 는 자체 GUTTER·상하 패딩을 갖는다 — 이 화면은 ScrollView 컨테이너가
+  // 거터·gap 을 이미 주므로 0 으로 상쇄한다(시각 동등).
+  header: {paddingHorizontal: 0, paddingVertical: 0},
+  // right 슬롯 트로피 버튼 — ScreenHeader back 필과 같은 캐논(38 pill·CARD_HI·흰 12% 보더).
   iconBtn: {
     width: rs(38),
     height: rs(38),
     borderRadius: RADIUS.pill,
+    backgroundColor: CARD_HI,
+    borderWidth: 1,
+    borderColor: withAlpha(T1, 0.12),
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  title: {
-    fontFamily: DISPLAY,
-    color: T1,
-    fontSize: TYPE.title.fontSize,
-    fontWeight: '700',
-    letterSpacing: TYPE.title.letterSpacing,
   },
   // 배너
   banner: {

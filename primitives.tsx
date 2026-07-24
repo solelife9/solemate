@@ -13,6 +13,8 @@ import {
   Pressable,
   Animated,
   Easing,
+  Modal,
+  AccessibilityInfo,
   PanResponder,
   Platform,
   StyleSheet,
@@ -23,6 +25,8 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import {Text} from './lib/text';
+import type {TextInputProps} from 'react-native';
+import {TextInput} from './lib/text';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {BlurView} from '@react-native-community/blur';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
@@ -61,6 +65,8 @@ import {
   withAlpha,
   MOTION,
   LEADING,
+  GUTTER,
+  SCRIM,
 } from './theme';
 import {tap as hapticTap} from './lib/haptics';
 import {setToastClearance} from './lib/toast';
@@ -428,8 +434,15 @@ export function Ring({
   const anim = useRef(new Animated.Value(Math.max(0, Math.min(1, from ?? pct)))).current;
   const sweepEndRef = useRef(onSweepEnd);
   sweepEndRef.current = onSweepEnd;
+  const rm = useReduceMotion();
   useEffect(() => {
     if (!animated) return;
+    // 동작 줄이기(DESIGN §6.7): 스윕 생략, 최종 진행도로 점프(완료 콜백은 유지).
+    if (rm) {
+      anim.setValue(pct);
+      sweepEndRef.current?.();
+      return;
+    }
     const a = Animated.timing(anim, {
       toValue: pct,
       duration,
@@ -441,7 +454,7 @@ export function Ring({
       if (finished) sweepEndRef.current?.();
     });
     return () => a.stop(); // 언마운트/값 교체 시 타이머 정리
-  }, [animated, anim, pct, duration, delay, easing]);
+  }, [animated, anim, pct, duration, delay, easing, rm]);
   const arcProps = {
     cx: size / 2,
     cy: size / 2,
@@ -675,11 +688,14 @@ export function AmbientBackdrop() {
 // JS 드라이버 — 코드베이스 관례(react-test-renderer 호환). 420ms 단발이라 체감 차이 없음.
 export function Rise({delay = 0, children, style}: {delay?: number; children: React.ReactNode; style?: StyleProp<ViewStyle>}) {
   const v = useRef(new Animated.Value(0)).current;
+  const rm = useReduceMotion();
   useEffect(() => {
+    // 동작 줄이기(DESIGN §6.7): 장식 진입 모션은 생략하고 최종 상태로 점프.
+    if (rm) { v.setValue(1); return; }
     const anim = Animated.timing(v, {toValue: 1, duration: MOTION.rise.dur, delay, easing: MOTION.ease.out, useNativeDriver: false});
     anim.start();
     return () => anim.stop(); // 언마운트 시 타이머 정리
-  }, [v, delay]);
+  }, [v, delay, rm]);
   return (
     <Animated.View style={[{opacity: v, transform: [{translateY: v.interpolate({inputRange: [0, 1], outputRange: [MOTION.rise.dy, 0]})}]}, style]}>
       {children}
@@ -1587,4 +1603,184 @@ const t = StyleSheet.create({
   },
   item: {flex: 1, height: rs(62), alignItems: 'center', justifyContent: 'center', gap: rv(2)},
   label: {fontFamily: FONT, fontSize: rf(11), letterSpacing: 0.1},
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 2026-07-25 프리미티브 신설(HIG 심사 4차) — 화면들이 각자 재발명하던 5가지를 승격.
+// 전부 '기존 승인된 look 의 통합'이며 새 비주얼 언어가 아니다(자율 범위).
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ── useReduceMotion — 시스템 '동작 줄이기' 존중(DESIGN §6.7) ─────────────────
+// Onboarding/RunRecap 에 2벌 복붙돼 있던 훅의 공용 승격. 장식 모션(Rise·링 스윕·
+// 무한 loop)은 이 훅을 존중한다 — 전정장애 사용자에게 무한 반복은 리젝 사유.
+export function useReduceMotion(): boolean {
+  const [rm, setRm] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    AccessibilityInfo.isReduceMotionEnabled().then(v => {
+      if (alive) setRm(v);
+    }).catch(() => {});
+    const sub = AccessibilityInfo.addEventListener('reduceMotionChanged', setRm);
+    return () => {
+      alive = false;
+      sub?.remove?.();
+    };
+  }, []);
+  return rm;
+}
+
+// ── Skeleton — 고스트 로딩 블록(스피너 폐지 정본의 단위 부품) ───────────────────
+// App.tsx 안에 사유화돼 있던 SkelBlock 의 공용 승격 — 모든 화면이 같은 로딩 실루엣
+// 언어를 쓰게 한다. 표면 = CARD_HI(부팅 스켈레톤과 동일 시각).
+export function Skeleton({h, w, radius = RADIUS.sm, style}: {
+  h: number; w?: number | `${number}%`; radius?: number; style?: StyleProp<ViewStyle>;
+}) {
+  return (
+    <View
+      accessible={false}
+      importantForAccessibility="no"
+      style={[{height: h, width: w ?? '100%', borderRadius: radius, borderCurve: 'continuous', backgroundColor: CARD_HI}, style]}
+    />
+  );
+}
+
+// ── Input — 표준 텍스트 입력(8개 화면 인라인 재조립의 통합) ─────────────────────
+// lib/text.TextInput(배율 상한+다크 키보드) 위에 유리 표면·RADIUS.input(14)·
+// placeholder T3·44pt 최소 높이를 묶는다. 화면은 style 로 여백만 더한다.
+export function Input({style, ...props}: TextInputProps) {
+  return (
+    <TextInput
+      placeholderTextColor={T3}
+      {...props}
+      style={[inputS.base, style]}
+    />
+  );
+}
+const inputS = StyleSheet.create({
+  base: {
+    backgroundColor: GLASS.fill,
+    borderRadius: RADIUS.input, borderCurve: 'continuous',
+    borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER,
+    color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize,
+    paddingHorizontal: rs(14), paddingVertical: rv(12),
+    minHeight: rs(TOUCH_TARGET),
+  },
+});
+
+// ── ScreenHeader — back-chevron 내비 헤더(10개 화면 수제 조립의 통합) ───────────
+// 기존 시각(iconBtn 38 pill · CARD_HI · 흰 12% 보더) 그대로. 타이틀 중앙, 좌우
+// 슬롯 균형(spacer)으로 어느 화면에서도 타이틀이 같은 자리에 선다. 터치 44pt 보정.
+export function ScreenHeader({title, onBack, backLabel = '뒤로', right, testID, style}: {
+  title?: string;
+  onBack?: () => void;
+  backLabel?: string;
+  right?: React.ReactNode;
+  testID?: string;
+  style?: StyleProp<ViewStyle>;
+}) {
+  return (
+    <View style={[hdrS.row, style]} testID={testID}>
+      {onBack ? (
+        <Pressable
+          onPress={onBack}
+          hitSlop={6}
+          accessibilityRole="button"
+          accessibilityLabel={backLabel}
+          style={({pressed}) => [hdrS.iconBtn, pressed && {transform: [{scale: MOTION.press.scale}], opacity: MOTION.press.opacity}]}>
+          <Ionicons name="chevron-back" size={ri(20)} color={T1} />
+        </Pressable>
+      ) : <View style={hdrS.spacer} />}
+      {title != null ? <Text style={hdrS.title} numberOfLines={1}>{title}</Text> : <View style={{flex: 1}} />}
+      {right ?? <View style={hdrS.spacer} />}
+    </View>
+  );
+}
+const hdrS = StyleSheet.create({
+  row: {flexDirection: 'row', alignItems: 'center', paddingHorizontal: GUTTER, paddingVertical: rv(8), gap: rv(8)},
+  iconBtn: {width: rs(38), height: rs(38), borderRadius: RADIUS.pill, backgroundColor: CARD_HI, borderWidth: 1, borderColor: withAlpha(T1, 0.12), alignItems: 'center', justifyContent: 'center'},
+  spacer: {width: rs(38)},
+  title: {flex: 1, textAlign: 'center', color: T1, fontFamily: FONT, fontSize: TYPE.heading.fontSize, fontWeight: '600', letterSpacing: TYPE.heading.letterSpacing},
+});
+
+// ── BottomSheet — 시그니처 420ms 시트(수제 Modal 6벌의 통합) ────────────────────
+// 정본 모션(MOTION.dur.sheet · inOut-cubic — '나이키 문법' 일시정지 시트와 동일
+// 시그니처)이 드디어 모든 시트에 적용된다. 구 수제 시트들은 네이티브 slide 고정이라
+// 자기 시그니처를 자기 시트가 안 썼다(2026-07-24 심사 P1 #18). 표면 = CARD +
+// 상단 RADIUS.xl(HistoryScreen 승인 문법). 헤더는 취소/타이틀/확인 3슬롯(선택).
+// reduce-motion·jest 에선 무전환 점프. 드래그 dismiss 는 미구현 — 그래버를 그리지
+// 않는다(거짓 어포던스 금지).
+const SHEET_TEST = !!(typeof process !== 'undefined' && process.env && process.env.JEST_WORKER_ID);
+export function BottomSheet({visible, onClose, title, cancelLabel = '취소', confirmLabel, onConfirm, children, testID}: {
+  visible: boolean;
+  onClose: () => void;
+  title?: string;
+  cancelLabel?: string;
+  confirmLabel?: string;
+  onConfirm?: () => void;
+  children?: React.ReactNode;
+  testID?: string;
+}) {
+  const insets = useSafeAreaInsets();
+  const rm = useReduceMotion();
+  const [shown, setShown] = useState(visible);
+  const [sheetH, setSheetH] = useState(0);
+  const v = useRef(new Animated.Value(0)).current;
+  const skip = rm || SHEET_TEST;
+
+  useEffect(() => {
+    if (visible) {
+      setShown(true);
+      if (skip) { v.setValue(1); return; }
+      Animated.timing(v, {toValue: 1, duration: MOTION.dur.sheet, easing: MOTION.ease.inout, useNativeDriver: true}).start();
+    } else {
+      if (skip) { v.setValue(0); setShown(false); return; }
+      Animated.timing(v, {toValue: 0, duration: MOTION.dur.sheet, easing: MOTION.ease.inout, useNativeDriver: true}).start(({finished}) => {
+        if (finished) setShown(false);
+      });
+    }
+    // v 는 ref — deps 불필요. skip 변화는 다음 토글에 반영되면 충분.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible]);
+
+  if (!shown) return null;
+  const slide = v.interpolate({inputRange: [0, 1], outputRange: [Math.max(sheetH, 120), 0]});
+  const hasHeader = !!(title || confirmLabel);
+  return (
+    <Modal visible transparent animationType="none" onRequestClose={onClose} testID={testID}>
+      <Animated.View style={[StyleSheet.absoluteFill, {backgroundColor: SCRIM, opacity: v}]}>
+        <Pressable style={{flex: 1}} onPress={onClose} accessibilityRole="button" accessibilityLabel="닫기" />
+      </Animated.View>
+      <View style={sheetS.host} pointerEvents="box-none">
+        <Animated.View
+          onLayout={e => setSheetH(e.nativeEvent.layout.height)}
+          style={[sheetS.sheet, {paddingBottom: insets.bottom + rv(16), transform: [{translateY: slide}]}]}>
+          {hasHeader && (
+            <View style={sheetS.header}>
+              <Pressable onPress={onClose} hitSlop={12} accessibilityRole="button">
+                <Text style={sheetS.cancel}>{cancelLabel}</Text>
+              </Pressable>
+              <Text style={sheetS.title} numberOfLines={1}>{title}</Text>
+              {confirmLabel ? (
+                <Pressable onPress={onConfirm} hitSlop={12} accessibilityRole="button">
+                  <Text style={sheetS.confirm}>{confirmLabel}</Text>
+                </Pressable>
+              ) : <View style={{width: rs(32)}} />}
+            </View>
+          )}
+          {children}
+        </Animated.View>
+      </View>
+    </Modal>
+  );
+}
+const sheetS = StyleSheet.create({
+  host: {position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, justifyContent: 'flex-end'},
+  sheet: {
+    backgroundColor: CARD,
+    borderTopLeftRadius: RADIUS.xl, borderTopRightRadius: RADIUS.xl, borderCurve: 'continuous',
+  },
+  header: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: GUTTER, paddingVertical: rv(16)},
+  cancel: {color: T3, fontFamily: FONT, fontSize: TYPE.body.fontSize},
+  title: {flex: 1, textAlign: 'center', color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600'},
+  confirm: {color: ACCENT, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '700'},
 });

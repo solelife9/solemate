@@ -5,14 +5,14 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { rf, rs, ri, rv } from './lib/responsive';
 import { View, ScrollView, Pressable, Alert, StyleSheet } from 'react-native';
-import {Text, TextInput} from './lib/text';
+import {Text} from './lib/text';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {
   BG, CARD_HI, GLASS, ACCENT, DANGER, WARN, GOOD, T1, T2, T3, T4, SEP, FONT, DISPLAY, withAlpha, RADIUS, GUTTER, MOTION, Shoe, Run, SHOES, TYPE,
   BAR,
 } from './theme';
-import { TabBar, TABBAR_CLEARANCE, Pill, InjuryBanner, Button, SwipeBack, AmbientBackdrop, Rise, GlassEdge, WEAR_TONE_COLOR } from './primitives';
+import { TabBar, TABBAR_CLEARANCE, Pill, InjuryBanner, Button, SwipeBack, AmbientBackdrop, Rise, GlassEdge, WEAR_TONE_COLOR, ScreenHeader, Input } from './primitives';
 import { RunCard, RunDetail } from './HistoryScreen.rn';
 import { FuelGauge } from './FuelGauge';
 import FirstShoeScreen from './FirstShoeScreen.rn';
@@ -216,19 +216,23 @@ function ShoeDetail({
     <SwipeBack onBack={onBack}>
     <View style={[s.screen, { paddingTop: insets.top }]}>
       <AmbientBackdrop />
-      <View style={s.detailNav}>
-        <Pressable onPress={onBack} hitSlop={6} accessibilityRole="button" accessibilityLabel="뒤로" style={s.iconBtn}><Ionicons name="chevron-back" size={ri(20)} color={T1} /></Pressable>
-        <View style={{ flexDirection: 'row', gap: rv(10) }}>
-          <Pressable onPress={() => setEditing((e) => !e)} hitSlop={6} accessibilityRole="button" accessibilityLabel="이름 편집" style={s.iconBtn}><Ionicons name="pencil" size={ri(16)} color={T2} /></Pressable>
-          <Pressable onPress={confirmDelete} hitSlop={6} accessibilityRole="button" accessibilityLabel="신발 삭제" style={s.iconBtn}><Ionicons name="trash-outline" size={ri(16)} color={DANGER} /></Pressable>
-        </View>
-      </View>
+      {/* 표준 내비 헤더(primitives.ScreenHeader) — 편집/삭제 버튼은 right 슬롯(라벨 보존). */}
+      <ScreenHeader
+        onBack={onBack}
+        style={s.header}
+        right={
+          <View style={{ flexDirection: 'row', gap: rv(10) }}>
+            <Pressable onPress={() => setEditing((e) => !e)} hitSlop={6} accessibilityRole="button" accessibilityLabel="이름 편집" style={s.iconBtn}><Ionicons name="pencil" size={ri(16)} color={T2} /></Pressable>
+            <Pressable onPress={confirmDelete} hitSlop={6} accessibilityRole="button" accessibilityLabel="신발 삭제" style={s.iconBtn}><Ionicons name="trash-outline" size={ri(16)} color={DANGER} /></Pressable>
+          </View>
+        }
+      />
       <ScrollView contentContainerStyle={{ paddingHorizontal: GUTTER, paddingTop: rs(18), paddingBottom: rv(28), gap: rv(16) }} keyboardShouldPersistTaps="handled">
         {editing ? (
           <View style={[s.card, { padding: rs(16), gap: rv(12) }]}>
             <GlassEdge glints={false} radius={RADIUS.lg} />
             <Text style={s.dHeroLabel}>신발 이름</Text>
-            <TextInput value={name} onChangeText={setName} style={s.editInput} placeholderTextColor={T3} accessibilityLabel="신발 이름" autoFocus />
+            <Input value={name} onChangeText={setName} style={s.editInput} accessibilityLabel="신발 이름" autoFocus />
             <View style={{ flexDirection: 'row', gap: rv(10) }}>
               <Pressable onPress={() => setEditing(false)} style={[s.editBtn, { backgroundColor: CARD_HI }]}><Text style={[s.editBtnTxt, { color: T2 }]}>취소</Text></Pressable>
               <Button label="저장" onPress={saveName} style={s.editBtn} />
@@ -785,7 +789,7 @@ const s = StyleSheet.create({
 
 
   // detail
-  detailNav: { paddingTop: rv(12), paddingHorizontal: GUTTER, paddingBottom: rv(6), flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  header: { paddingTop: rv(12), paddingBottom: rv(6) },
   iconBtn: { width: rs(38), height: rs(38), borderRadius: RADIUS.pill, backgroundColor: CARD_HI, borderWidth: 1, borderColor: withAlpha(T1, 0.12), alignItems: 'center', justifyContent: 'center' },
   // 상태 칩(목업 09) — 회색 알약 + 흰 글씨 + 점(녹색 아님)
   statusPill: { flexDirection: 'row', alignItems: 'center', gap: rv(8), backgroundColor: CARD_HI, borderRadius: RADIUS.pill, paddingHorizontal: rs(12), paddingVertical: rv(8), alignSelf: 'flex-start' },
@@ -858,7 +862,8 @@ const s = StyleSheet.create({
   dHeroRemain: { color: T1, fontFamily: DISPLAY, fontSize: rf(44), letterSpacing: 0.5 },
   dHeroRemainU: { color: T2, fontFamily: FONT, fontSize: TYPE.heading.fontSize, marginLeft: rs(4), marginBottom: rv(6) },
 
-  editInput: { backgroundColor: CARD_HI, borderRadius: rs(14), color: T1, fontFamily: FONT, fontSize: TYPE.heading.fontSize, fontWeight: '500', paddingHorizontal: rs(16), paddingVertical: rv(12) },
+  // primitives.Input 표준(유리 표면·RADIUS.input) 위에 이름 편집 전용 타이포만 얹는다.
+  editInput: { fontSize: TYPE.heading.fontSize, fontWeight: '500' },
   editBtn: { flex: 1, height: rs(46), borderRadius: RADIUS.btn, alignItems: 'center', justifyContent: 'center' },
   editBtnTxt: { fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600' },
 

@@ -4,18 +4,18 @@
 // ============================================================================
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { rf, rs, ri, rv } from './lib/responsive';
-import { View, ScrollView, FlatList, Pressable, StyleSheet, Alert, KeyboardAvoidingView, Platform, RefreshControl, Modal, Image } from 'react-native';
-import {Text, TextInput} from './lib/text';
+import { View, ScrollView, FlatList, Pressable, StyleSheet, Alert, KeyboardAvoidingView, Platform, RefreshControl, Image } from 'react-native';
+import {Text} from './lib/text';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Svg, { Rect as SvgRect, Path as SvgPath, Line as SvgLine } from 'react-native-svg';
 import {
-  BG, CARD, CARD_HI, GLASS, ACCENT, BRAND, DANGER, T1, T2, T3, SEP, FONT, DISPLAY, Shoe, Run, SHOES, withAlpha, RADIUS, GUTTER, MOTION, HERO, SCRIM, HR_ZONE_COLORS, TYPE,
+  BG, CARD_HI, GLASS, ACCENT, BRAND, DANGER, T1, T2, T3, SEP, FONT, DISPLAY, Shoe, Run, SHOES, withAlpha, RADIUS, GUTTER, MOTION, HERO, HR_ZONE_COLORS, TYPE,
   BAR,
 } from './theme';
 // 기간 탭 스트립 = SegmentedControl(neutral), 러닝 상세 2×3 메트릭 = StatGrid 프리미티브.
-import { TabBar, TABBAR_CLEARANCE, Button, SegmentedControl, StatGrid, SwipeBack, Chip, AmbientBackdrop, EmptyGhostHeader, GhostStrong, GhostBar, Rise, GlassEdge } from './primitives';
+import { TabBar, TABBAR_CLEARANCE, Button, SegmentedControl, StatGrid, SwipeBack, Chip, AmbientBackdrop, EmptyGhostHeader, GhostStrong, GhostBar, Rise, GlassEdge, BottomSheet, Input } from './primitives';
 import { Unit, displayNum, displayToKm } from './lib/units';
 import { ymdLocal } from './lib/format';
 import { sumKm, summaryOf, monthBuckets, weekBuckets, yearBuckets } from './lib/stats';
@@ -243,13 +243,12 @@ export function RunForm({
         {/* 거리 */}
         <View>
           <Text style={s.formLabel}>거리 ({unit})</Text>
-          <TextInput
+          <Input
             value={dist}
             onChangeText={(t) => { setDist(t); clearError('dist'); }}
             keyboardType="decimal-pad"
             placeholder={`예: 5.0`}
-            placeholderTextColor={T3}
-            style={[s.input, !!errors.dist && s.inputErr]}
+            style={!!errors.dist && s.inputErr}
             accessibilityLabel="거리"
           />
           {!!errors.dist && <Text style={s.errText} accessibilityLabel="거리 오류">{errors.dist}</Text>}
@@ -257,26 +256,23 @@ export function RunForm({
         {/* 시간 — 숫자만 받아 MM:SS로 자동 마스킹(JS-only, 네이티브 피커 없음). */}
         <View>
           <Text style={s.formLabel}>시간 (MM:SS)</Text>
-          <TextInput
+          <Input
             value={dur}
             onChangeText={(t) => setDur(maskDuration(t))}
             keyboardType="number-pad"
             placeholder="예: 30:00 (선택)"
-            placeholderTextColor={T3}
-            style={s.input}
             accessibilityLabel="시간"
           />
         </View>
         {/* 날짜 — 숫자만 받아 YYYY-MM-DD로 자동 하이픈 삽입(JS-only, 네이티브 피커 없음). */}
         <View>
           <Text style={s.formLabel}>날짜 (YYYY-MM-DD)</Text>
-          <TextInput
+          <Input
             value={date}
             onChangeText={(t) => { setDate(maskDate(t)); clearError('date'); }}
             keyboardType="number-pad"
             placeholder="2026-06-01"
-            placeholderTextColor={T3}
-            style={[s.input, !!errors.date && s.inputErr]}
+            style={!!errors.date && s.inputErr}
             accessibilityLabel="날짜"
           />
           {!!errors.date && <Text style={s.errText} accessibilityLabel="날짜 오류">{errors.date}</Text>}
@@ -1246,21 +1242,12 @@ export default function HistoryScreen({
       />
       </Rise>
 
-      <Modal visible={showPicker} transparent animationType="slide" onRequestClose={() => setShowPicker(false)}>
-        <Pressable style={{ flex: 1, backgroundColor: SCRIM }} onPress={() => setShowPicker(false)} />
-        <View style={{ backgroundColor: CARD, borderTopLeftRadius: RADIUS.xl, borderTopRightRadius: RADIUS.xl, paddingBottom: insets.bottom + 16 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: rs(20), paddingVertical: rv(16) }}>
-            <Pressable onPress={() => setShowPicker(false)} hitSlop={12}>
-              <Text style={{ color: T3, fontFamily: FONT, fontSize: TYPE.body.fontSize }}>취소</Text>
-            </Pressable>
-            <Text style={{ color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600' }}>
-              {period === '주' ? '주 선택' : period === '월' ? '월 선택' : '연도 선택'}
-            </Text>
-            <Pressable onPress={confirmPicker} hitSlop={12}>
-              <Text style={{ color: ACCENT, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '700' }}>확인</Text>
-            </Pressable>
-          </View>
-
+      <BottomSheet
+        visible={showPicker}
+        onClose={() => setShowPicker(false)}
+        title={period === '주' ? '주 선택' : period === '월' ? '월 선택' : '연도 선택'}
+        confirmLabel="확인"
+        onConfirm={confirmPicker}>
           {period === '주' && (
             <View style={{ paddingHorizontal: rs(12), paddingBottom: rv(8), height: DRUM_H }}>
               <DrumColumn
@@ -1297,9 +1284,7 @@ export default function HistoryScreen({
               />
             </View>
           )}
-
-        </View>
-      </Modal>
+      </BottomSheet>
 
       <TabBar active={2} onTab={(i) => onTab?.(i)} />
     </View>
@@ -1428,7 +1413,6 @@ const s = StyleSheet.create({
   formLabel: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600', marginBottom: rv(8), paddingHorizontal: rs(2) },
   formHint: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize },
   chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: rv(8) },
-  input: { backgroundColor: GLASS.fill, borderRadius: rs(14), paddingHorizontal: rs(16), paddingVertical: rv(14), color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, borderWidth: 1, borderColor: SEP },
   // 검증 실패 시 입력칸 테두리를 빨강으로 강조하고, 아래에 인라인 헬퍼텍스트를 띄운다.
   inputErr: { borderColor: DANGER, borderWidth: 1 },
   errText: { color: DANGER, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500', marginTop: rv(8), paddingHorizontal: rs(2) },

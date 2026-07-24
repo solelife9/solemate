@@ -17,7 +17,7 @@ import Svg, {Circle, Path} from 'react-native-svg';
 import {BRANDS, SHOE_MODELS, findShoeModel, getRecommendedLifespanKm} from './data/shoeModels';
 import {categoryLabelKo} from './lib/affiliate';
 import {BG, CARD, T1, T3, T4, SEP, FONT, withAlpha, GUTTER, MOTION} from './theme';
-import {Button} from './primitives';
+import {Button, Input} from './primitives';
 
 export type PickedShoe = {brand: string; model: string};
 
@@ -174,21 +174,18 @@ export function ShoePicker({visible, onClose, onPick, insetTop, insetBottom}: {
           ) : (
             // 기타 — 브랜드명 + 모델명 직접 입력
             <ScrollView style={s.flex1} contentContainerStyle={{paddingHorizontal: rs(18), paddingTop: rv(12), paddingBottom: Math.max(insetBottom, 16)}} keyboardShouldPersistTaps="handled">
-              <TextInput
+              <Input
                 value={customBrand}
                 onChangeText={setCustomBrand}
                 placeholder="브랜드명을 입력하세요"
-                placeholderTextColor={T4}
-                style={s.pkFormInput}
                 autoCorrect={false}
                 accessibilityLabel="브랜드명 입력"
               />
-              <TextInput
+              <Input
                 value={customModel}
                 onChangeText={setCustomModel}
                 placeholder="모델명을 입력하세요"
-                placeholderTextColor={T4}
-                style={[s.pkFormInput, {marginTop: rv(8)}]}
+                style={{marginTop: rv(8)}}
                 autoCorrect={false}
                 accessibilityLabel="모델명 입력"
               />
@@ -251,17 +248,6 @@ const s = StyleSheet.create({
     borderStyle: 'dashed',
     borderColor: withAlpha(T1, 0.16),
     alignItems: 'center',
-  },
-  pkFormInput: {
-    height: rs(48),
-    paddingHorizontal: rs(14),
-    borderRadius: rs(14), borderCurve: 'continuous',
-    backgroundColor: CARD,
-    borderWidth: 1,
-    borderColor: withAlpha(T1, 0.12),
-    fontFamily: FONT,
-    fontSize: rf(16),
-    color: T1,
   },
 });
 

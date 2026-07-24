@@ -24,10 +24,9 @@ import {
 import {Text} from './lib/text';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import {EmptyGhostHeader, GhostBar, GhostThumb, GlassEdge} from './primitives';
+import {ScreenHeader, EmptyGhostHeader, GhostBar, GhostThumb, GlassEdge} from './primitives';
 import {
   BG,
-  CARD,
   CARD_HI,
   ACCENT,
   T1,
@@ -251,24 +250,10 @@ export default function HallOfFameScreen({
           paddingBottom: insets.bottom + 28,
           gap: SPACE.lg,
         }}>
-        {/* header */}
-        <View style={s.headerRow}>
-          {onBack ? (
-            <Pressable
-              onPress={onBack}
-              testID="hof-back"
-              accessibilityRole="button"
-              accessibilityLabel="뒤로"
-              hitSlop={6}
-              style={({pressed}) => [s.iconBtn, pressed && {backgroundColor: CARD}]}>
-              <Ionicons name="chevron-back" size={ri(20)} color={T2} />
-            </Pressable>
-          ) : (
-            <View style={{width: rs(38)}} />
-          )}
-          <Text style={s.title}>랭킹</Text>
-          <View style={{width: rs(38)}} />
-        </View>
+        {/* header — 표준 내비 헤더(primitives.ScreenHeader), 수제 조립 폐지(2026-07-25).
+            거터는 ScrollView 컨테이너가 이미 주므로 패딩 0. (구 back 버튼 testID
+            hof-back 은 헤더 행으로 이동 — 참조 테스트 없음 확인.) */}
+        <ScreenHeader title="랭킹" onBack={onBack} testID="hof-back" style={s.header} />
         <Text style={s.monthLabel}>{yearMonth} · 이번 달 랭킹</Text>
 
         {/* 카테고리 선택 칩(가로 스크롤) */}
@@ -363,25 +348,9 @@ export default function HallOfFameScreen({
 
 const s = StyleSheet.create({
   screen: {flex: 1, backgroundColor: BG},
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  iconBtn: {
-    width: rs(38),
-    height: rs(38),
-    borderRadius: RADIUS.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: {
-    fontFamily: DISPLAY,
-    color: T1,
-    fontSize: TYPE.title.fontSize,
-    fontWeight: '700',
-    letterSpacing: TYPE.title.letterSpacing,
-  },
+  // ScreenHeader 는 자체 GUTTER·상하 패딩을 갖는다 — 이 화면은 ScrollView 컨테이너가
+  // 거터·gap 을 이미 주므로 0 으로 상쇄한다(시각 동등).
+  header: {paddingHorizontal: 0, paddingVertical: 0},
   monthLabel: {
     fontFamily: FONT,
     color: T3,

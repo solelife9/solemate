@@ -13,7 +13,7 @@ import {Text} from './lib/text';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {BG, GLASS, ACCENT, T1, T2, T3, SEP, FONT, DISPLAY, RADIUS, withAlpha, Shoe, TYPE, GUTTER, MOTION} from './theme';
-import {SwipeBack, EmptyGhostHeader, GhostStrong, GhostBar, GhostThumb, GhostPill, ShoeGlyph, GlassEdge} from './primitives';
+import {SwipeBack, ScreenHeader, EmptyGhostHeader, GhostStrong, GhostBar, GhostThumb, GhostPill, ShoeGlyph, GlassEdge} from './primitives';
 import {Unit} from './lib/units';
 
 export default function ShoeArchiveScreen({
@@ -35,13 +35,8 @@ export default function ShoeArchiveScreen({
     // 엣지 스와이프 백 — 왼쪽 가장자리 우측 드래그로 복귀(iOS pop 제스처 대응).
     <SwipeBack onBack={onBack}>
     <View style={[s.screen, {paddingTop: insets.top}]} testID="shoe-archive-screen">
-      <View style={s.nav}>
-        <Pressable onPress={onBack} hitSlop={8} accessibilityRole="button" accessibilityLabel="뒤로" style={s.iconBtn}>
-          <Ionicons name="chevron-back" size={ri(20)} color={T1} />
-        </Pressable>
-        <Text style={s.title}>보관함</Text>
-        <View style={{width: rs(36)}} />
-      </View>
+      {/* 표준 내비 헤더(primitives.ScreenHeader) — 수제 back-chevron 조립 폐지(2026-07-25). */}
+      <ScreenHeader title="보관함" onBack={onBack} style={s.header} />
       <ScrollView
         contentContainerStyle={{paddingHorizontal: GUTTER, paddingBottom: rv(28), gap: rv(12), paddingTop: rv(6)}}
         showsVerticalScrollIndicator={false}>
@@ -117,9 +112,7 @@ const s = StyleSheet.create({
   screen: {flex: 1, backgroundColor: BG},
   // 누름 표준(MOTION.press) — 사설 opacity 0.7 폐지.
   pressed: {opacity: MOTION.press.opacity, transform: [{scale: MOTION.press.scale}]},
-  nav: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: GUTTER, paddingTop: rv(6), paddingBottom: rv(10)},
-  iconBtn: {width: rs(36), height: rs(36), borderRadius: rs(18), alignItems: 'center', justifyContent: 'center'},
-  title: {color: T1, fontFamily: FONT, fontSize: TYPE.heading.fontSize, fontWeight: '700', letterSpacing: -0.3},
+  header: {paddingTop: rv(6), paddingBottom: rv(10)},
   sub: {color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, lineHeight: rf(18), paddingHorizontal: rs(4), marginBottom: rv(2)},
 
   // 요약 스탯 헤더(상단정렬 시 공백 채움)

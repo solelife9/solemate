@@ -11,7 +11,7 @@ import {Text} from './lib/text';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {BG, CARD, CARD_HI, ACCENT, HALL_GOLD, T1, T2, T3, T4, SEP, FONT, DISPLAY, withAlpha, TYPE, HERO, GLASS, RADIUS, GUTTER, MOTION} from './theme';
-import {SwipeBack, EmptyGhostHeader, GhostStrong, GhostBar, GlassEdge} from './primitives';
+import {SwipeBack, ScreenHeader, EmptyGhostHeader, GhostStrong, GhostBar, GlassEdge} from './primitives';
 import {fmtTime} from './lib/format';
 import {RACE_DISTANCE_LABEL} from './data/raceEvents';
 import {medalTimeSec, medalArchiveStats, type Medal} from './lib/medals';
@@ -53,17 +53,18 @@ export default function MedalArchiveScreen({
   return (
     <SwipeBack onBack={onBack}>
       <View style={[m.screen, {paddingTop: insets.top}]} testID="medal-archive-screen">
-        <View style={m.nav}>
-          <Pressable onPress={onBack} hitSlop={8} accessibilityRole="button" accessibilityLabel="뒤로" style={m.iconBtn}>
-            <Ionicons name="chevron-back" size={ri(20)} color={T1} />
-          </Pressable>
-          <Text style={m.navTitle}>메달 아카이브</Text>
-          {onAddMedal ? (
+        {/* 표준 내비 헤더(primitives.ScreenHeader) — 수제 back-chevron 조립 폐지(2026-07-25).
+            우측 메달 추가 버튼은 right 슬롯(testID·라벨 보존). */}
+        <ScreenHeader
+          title="메달 아카이브"
+          onBack={onBack}
+          style={m.header}
+          right={onAddMedal ? (
             <Pressable onPress={onAddMedal} hitSlop={8} accessibilityRole="button" accessibilityLabel="메달 추가" testID="medal-add" style={m.iconBtn}>
               <Ionicons name="add" size={ri(24)} color={ACCENT} />
             </Pressable>
-          ) : <View style={{width: rs(36)}} />}
-        </View>
+          ) : undefined}
+        />
 
         <ScrollView
           contentContainerStyle={{paddingHorizontal: GUTTER, paddingTop: rv(18), paddingBottom: insets.bottom + 28}}
@@ -259,9 +260,9 @@ const m = StyleSheet.create({
   screen: {flex: 1, backgroundColor: BG},
   // 누름 표준(MOTION.press) — 사설 opacity 0.85/0.7 폐지.
   pressed: {opacity: MOTION.press.opacity, transform: [{scale: MOTION.press.scale}]},
-  nav: {paddingTop: rv(12), paddingHorizontal: GUTTER, paddingBottom: rv(6), flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'},
+  header: {paddingTop: rv(12), paddingBottom: rv(6)},
+  // 상세 오버레이 닫기/공유/삭제 + 목록 헤더 right 슬롯 공용 아이콘 필.
   iconBtn: {width: rs(36), height: rs(36), borderRadius: RADIUS.pill, backgroundColor: CARD_HI, alignItems: 'center', justifyContent: 'center'},
-  navTitle: {color: T1, fontFamily: FONT, fontSize: TYPE.heading.fontSize, fontWeight: '600', letterSpacing: -0.2},
 
   head: {flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: rv(4)},
   h: {color: T1, fontFamily: DISPLAY, fontSize: TYPE.title.fontSize, fontWeight: '700', letterSpacing: -0.5},

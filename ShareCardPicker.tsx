@@ -6,15 +6,14 @@
 // 다 해줌). 마지막 선택 기억. 캡처는 오프스크린 고해상 ShareCard(ref.toDataURL) — 네이티브 0.
 // ============================================================================
 import React, {useEffect, useMemo, useRef, useState} from 'react';
-import {View, Pressable, Modal, StyleSheet, Alert, Linking} from 'react-native';
+import {View, Pressable, StyleSheet, Alert, Linking} from 'react-native';
 import {Text} from './lib/text';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {rs, rv, ri} from './lib/responsive';
-import {BG, T1, T3, SEP, FONT, RADIUS, TYPE, SCRIM, MOTION, withAlpha} from './theme';
+import {T1, T3, FONT, RADIUS, TYPE, MOTION, withAlpha} from './theme';
 import {showToast} from './lib/toast';
-import {SegmentedControl} from './primitives';
+import {SegmentedControl, BottomSheet} from './primitives';
 import ShareCard from './ShareCard';
 import type {LatLon} from './lib/route';
 import {
@@ -48,7 +47,6 @@ export interface ShareCardPickerProps {
 }
 
 export default function ShareCardPicker({visible, onClose, model, route = [], shareInput, photoUri = null}: ShareCardPickerProps) {
-  const insets = useSafeAreaInsets();
   const [prefs, setPrefs] = useState<Prefs>(DEFAULT_PREFS);
   // busy = 진행 중인 액션(저장/공유). 라벨·딤으로 진행 상태를 보여준다(무반응 금지).
   const [busy, setBusy] = useState<null | 'save' | 'share'>(null);
@@ -124,39 +122,36 @@ export default function ShareCardPicker({visible, onClose, model, route = [], sh
   const cardProps = {model, route, photoUri: cardPhoto, layout: effLayout, background: effBg};
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={s.backdrop}>
-        <Pressable style={s.backdropTap} onPress={onClose} accessibilityRole="button" accessibilityLabel="닫기" />
-        <View style={[s.sheet, {paddingBottom: insets.bottom + rv(14)}]}>
-          {/* grab 핸들 제거(HIG): 드래그 미구현 시트에 핸들은 거짓 어포던스. 닫기=배경 탭/스와이프 백. */}
-          <View style={[s.previewWrap, {height: previewH}]}>
-            <ShareCard {...cardProps} displayWidth={previewW} />
-          </View>
+    <BottomSheet visible={visible} onClose={onClose}>
+      <View style={s.body}>
+        {/* grab 핸들 제거(HIG): 드래그 미구현 시트에 핸들은 거짓 어포던스. 닫기=배경 탭/스와이프 백. */}
+        <View style={[s.previewWrap, {height: previewH}]}>
+          <ShareCard {...cardProps} displayWidth={previewW} />
+        </View>
 
-          <Seg label="스타일" options={layoutKeys.map(l => ({key: l, label: RUN_CARD_LAYOUT_LABEL[l]}))}
-            value={effLayout} onChange={l => update({layout: l as RunCardLayout})} />
-          <Seg label="배경" options={bgKeys.map(b => ({key: b, label: RUN_CARD_BACKGROUND_LABEL[b]}))}
-            value={effBg} onChange={b => update({background: b as RunCardBackground})} />
+        <Seg label="스타일" options={layoutKeys.map(l => ({key: l, label: RUN_CARD_LAYOUT_LABEL[l]}))}
+          value={effLayout} onChange={l => update({layout: l as RunCardLayout})} />
+        <Seg label="배경" options={bgKeys.map(b => ({key: b, label: RUN_CARD_BACKGROUND_LABEL[b]}))}
+          value={effBg} onChange={b => update({background: b as RunCardBackground})} />
 
-          <View style={s.actions}>
-            <Pressable onPress={onSave} disabled={!!busy} accessibilityRole="button" accessibilityLabel="사진앱에 저장" testID="sharecard-save"
-              style={({pressed}) => [s.btn, s.btnGhost, pressed && s.pressed, busy && s.btnBusy]}>
-              <Ionicons name="download-outline" size={ri(16)} color={T1} style={s.btnIcon} />
-              <Text style={s.btnTxt}>{busy === 'save' ? '저장 중…' : '저장'}</Text>
-            </Pressable>
-            <Pressable onPress={onShare} disabled={!!busy} accessibilityRole="button" accessibilityLabel="공유" testID="sharecard-share"
-              style={({pressed}) => [s.btn, s.btnPrimary, pressed && s.pressed, busy && s.btnBusy]}>
-              <Ionicons name="share-outline" size={ri(16)} color={T1} style={s.btnIcon} />
-              <Text style={s.btnTxt}>{busy === 'share' ? '공유 중…' : '공유'}</Text>
-            </Pressable>
-          </View>
+        <View style={s.actions}>
+          <Pressable onPress={onSave} disabled={!!busy} accessibilityRole="button" accessibilityLabel="사진앱에 저장" testID="sharecard-save"
+            style={({pressed}) => [s.btn, s.btnGhost, pressed && s.pressed, busy && s.btnBusy]}>
+            <Ionicons name="download-outline" size={ri(16)} color={T1} style={s.btnIcon} />
+            <Text style={s.btnTxt}>{busy === 'save' ? '저장 중…' : '저장'}</Text>
+          </Pressable>
+          <Pressable onPress={onShare} disabled={!!busy} accessibilityRole="button" accessibilityLabel="공유" testID="sharecard-share"
+            style={({pressed}) => [s.btn, s.btnPrimary, pressed && s.pressed, busy && s.btnBusy]}>
+            <Ionicons name="share-outline" size={ri(16)} color={T1} style={s.btnIcon} />
+            <Text style={s.btnTxt}>{busy === 'share' ? '공유 중…' : '공유'}</Text>
+          </Pressable>
         </View>
       </View>
 
       <View style={s.offscreen} pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
         <ShareCard ref={cardRef as never} {...cardProps} />
       </View>
-    </Modal>
+    </BottomSheet>
   );
 }
 
@@ -176,10 +171,8 @@ function Seg<T extends string>({label, options, value, onChange}: {label: string
 }
 
 const s = StyleSheet.create({
-  // 사설 rgba(0,0,0,0.55) → 전역 SCRIM 토큰(모달 배면 단일 진실원, 검수 MED 2026-07-16).
-  backdrop: {flex: 1, justifyContent: 'flex-end', backgroundColor: SCRIM},
-  backdropTap: {flex: 1},
-  sheet: {backgroundColor: BG, borderTopLeftRadius: RADIUS.xl, borderTopRightRadius: RADIUS.xl, borderCurve: 'continuous', paddingHorizontal: rs(18), paddingTop: rv(20), borderTopWidth: StyleSheet.hairlineWidth, borderColor: SEP},
+  // 시트 표면(SCRIM·CARD·상단 RADIUS.xl·하단 인셋)은 BottomSheet 프리미티브가 책임진다.
+  body: {paddingHorizontal: rs(18), paddingTop: rv(20)},
   previewWrap: {alignItems: 'center', justifyContent: 'center', marginBottom: rv(18)},
   segRow: {marginTop: rv(12)},
   segLabel: {color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600', marginBottom: rv(7), marginLeft: rs(2)},

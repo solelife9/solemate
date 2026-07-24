@@ -7,13 +7,13 @@
 // ============================================================================
 import React, {useEffect, useMemo, useRef, useState} from 'react';
 import { rf, rs, ri, rv } from './lib/responsive';
-import {View, ScrollView, Pressable, StyleSheet, Alert, Image, Linking, Animated, AccessibilityInfo, type StyleProp, type ViewStyle} from 'react-native';
+import {View, ScrollView, Pressable, StyleSheet, Alert, Image, Linking, Animated, type StyleProp, type ViewStyle} from 'react-native';
 import {Text, TextInput} from './lib/text';
 import type {Text as RNText} from 'react-native'; // ref 인스턴스 타입 전용
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {BG, BLACK, CARD_HI, ACCENT, GOOD, WARN, DANGER, HALL_GOLD, T1, T2, T3, T4, FONT, DISPLAY, RADIUS, GUTTER, SEP, withAlpha, TYPE, GLASS, NUM, MOTION} from './theme';
-import {GlassEdge} from './primitives';
+import {GlassEdge, useReduceMotion} from './primitives';
 import {RACE_DISTANCE_LABEL, type RaceMatch} from './data/raceEvents';
 import {fmtPaceSec} from './lib/pacePlan';
 import {fmtPace} from './lib/format';
@@ -38,21 +38,7 @@ import {takeCeremonyNumRect, type HandoffRect} from './lib/motionHandoff';
 // 과 동일 취급 — OnboardingScreen 관례). 실제 앱 런타임엔 JEST_WORKER_ID 가 없다.
 const SKIP_ANIM = !!(typeof process !== 'undefined' && process.env && process.env.JEST_WORKER_ID);
 
-function useReduceMotion(): boolean {
-  const [rm, setRm] = useState(false);
-  useEffect(() => {
-    let alive = true;
-    AccessibilityInfo.isReduceMotionEnabled().then(v => {
-      if (alive) setRm(v);
-    }).catch(() => {});
-    const sub = AccessibilityInfo.addEventListener('reduceMotionChanged', setRm);
-    return () => {
-      alive = false;
-      sub?.remove?.();
-    };
-  }, []);
-  return rm;
-}
+// useReduceMotion 은 primitives 공용 훅을 소비한다(로컬 복붙 삭제, 2026-07-25).
 
 /** 체크 배지 스프링 팝 — scale 0.6 → 1 오버슈트(성취의 '쿵' 순간). */
 function PopIn({skip, children, style}: {skip: boolean; children: React.ReactNode; style?: StyleProp<ViewStyle>}) {

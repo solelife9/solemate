@@ -7,14 +7,14 @@
 import React, { useState } from 'react';
 import { rs, ri, rv } from './lib/responsive';
 import { View, ScrollView, Pressable, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
-import {Text, TextInput} from './lib/text';
+import {Text} from './lib/text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {
   BG, CARD_HI, RING_ACCENT, DANGER, T1, T2, T3, FONT, DISPLAY, withAlpha, Shoe, TYPE, GLASS, RADIUS,
   GUTTER, MOTION,
 } from './theme';
-import { Button, GlassEdge } from './primitives';
+import { Button, GlassEdge, Input } from './primitives';
 // 러닝화 모델 카탈로그·권장수명은 data/shoeModels(단일 소스)에서 가져온다.
 import { getRecommendedLifespanKm } from './data/shoeModels';
 // 러닝화 선택은 온보딩과 공유하는 2열 분할 피커(단일 소스).
@@ -96,15 +96,16 @@ export default function AddShoeScreen({
           <Text style={[s.label, { paddingBottom: rv(0) }]}>교체 권장 거리</Text>
           {isRecommended && <Text style={s.recBadge}>권장</Text>}
         </View>
-        <View style={[s.usedRow, !!maxErr && s.usedRowErr]}>
-          <TextInput
+        {/* primitives.Input 표준 표면 + 필드 안 우측 km 단위 오버레이(터치 통과). */}
+        <View>
+          <Input
             value={max ? String(max) : ''}
             onChangeText={(v) => { setMax(Number(v.replace(/[^0-9]/g, '')) || 0); setMaxErr(undefined); }}
             keyboardType="number-pad"
-            style={s.usedInput}
+            style={[s.numInput, !!maxErr && s.numInputErr]}
             accessibilityLabel="교체 권장 거리"
           />
-          <Text style={s.usedUnit}>km</Text>
+          <View style={s.unitWrap} pointerEvents="none"><Text style={s.usedUnit}>km</Text></View>
         </View>
         {!!maxErr && <Text style={s.errText} accessibilityLabel="권장 거리 오류">{maxErr}</Text>}
         <Text style={s.hint}>
@@ -114,15 +115,15 @@ export default function AddShoeScreen({
 
         {/* current mileage */}
         <Text style={[s.label, { marginTop: rv(22) }]}>현재 누적 거리</Text>
-        <View style={s.usedRow}>
-          <TextInput
+        <View>
+          <Input
             value={used}
             onChangeText={(v) => setUsed(v.replace(/[^0-9.]/g, ''))}
             keyboardType="decimal-pad"
             accessibilityLabel="현재 누적 거리"
-            style={s.usedInput}
+            style={s.numInput}
           />
-          <Text style={s.usedUnit}>km</Text>
+          <View style={s.unitWrap} pointerEvents="none"><Text style={s.usedUnit}>km</Text></View>
         </View>
         <Text style={s.hint}>새 신발이면 0으로 두세요.</Text>
       </ScrollView>
@@ -167,11 +168,12 @@ const s = StyleSheet.create({
 
   hint: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, paddingHorizontal: rs(4), paddingTop: rv(8) },
 
-  usedRow: { backgroundColor: GLASS.fill, borderRadius: rs(16), borderCurve: 'continuous', borderWidth: 1, borderColor: withAlpha(T1, 0.07), flexDirection: 'row', alignItems: 'center', paddingHorizontal: rs(18) },
-  // 검증 실패 시 입력칸 테두리를 빨강으로 강조하고 아래 인라인 헬퍼텍스트를 띄운다.
-  usedRowErr: { borderColor: DANGER },
   errText: { color: DANGER, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500', paddingHorizontal: rs(4), paddingTop: rv(8) },
-  usedInput: { flex: 1, color: T1, fontFamily: DISPLAY, fontSize: TYPE.title.fontSize, paddingVertical: rv(12) },
+  // primitives.Input 표준(유리 표면·RADIUS.input) 위에 큰 숫자 타이포 + 단위 오버레이 여백만.
+  numInput: { fontFamily: DISPLAY, fontSize: TYPE.title.fontSize, paddingRight: rs(48) },
+  // 검증 실패 시 입력칸 테두리를 빨강으로 강조하고 아래 인라인 헬퍼텍스트를 띄운다.
+  numInputErr: { borderWidth: 1, borderColor: DANGER },
+  unitWrap: { position: 'absolute', right: rs(14), top: 0, bottom: 0, justifyContent: 'center' },
   usedUnit: { color: T3, fontFamily: FONT, fontSize: TYPE.body.fontSize },
 
   ctaWrap: { paddingHorizontal: GUTTER, paddingTop: rv(6), paddingBottom: rv(34), backgroundColor: BG },

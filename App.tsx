@@ -3,7 +3,7 @@ import { rf, rs, ri, rv } from './lib/responsive';
 import {
   View, StyleSheet, Pressable, Alert, StatusBar, Linking, AppState,
 } from 'react-native';
-import {Text, TextInput} from './lib/text';
+import {Text} from './lib/text';
 import {SafeAreaProvider, useSafeAreaInsets} from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {Pedometer, Barometer} from 'expo-sensors';
@@ -17,7 +17,7 @@ import {
   BG, CARD, CARD_HI as SURFACE, ACCENT, WARN, DANGER, T1, T2, T3,
   FONT as FP, DISPLAY as FH, SEP, RADIUS, GUTTER, MOTION, Shoe, Run, withAlpha,
 } from './theme';
-import {Ring, Button} from './primitives';
+import {Ring, Button, Skeleton, Input} from './primitives';
 import ErrorBoundary from './ErrorBoundary';
 import ToastHost from './ToastHost';
 import {installCrashHandler, setCrashUser, recordError} from './lib/crashlytics';
@@ -2371,10 +2371,8 @@ function Main(){
 // ─── 콜드 백엔드 스켈레톤(audit#9/#10) ──────────────────────────────────────
 // 스피너가 아니라 스켈레톤: 실제 콘텐츠(히어로 카드 + 주간 통계 3칸 + 신발 줄)의
 // 자리표시 형태를 회색 블록으로 미리 보여줘 '레이아웃이 곧 채워진다'는 신호를 준다.
-// testID로 통합테스트가 로딩 상태를 식별한다.
-function SkelBlock({h,w,style}:{h:number;w?:number|string;style?:any}){
-  return <View style={[{height:h,width:(w as any)??'100%',borderRadius:RADIUS.sm,backgroundColor:SURFACE},style]}/>;
-}
+// testID로 통합테스트가 로딩 상태를 식별한다. 고스트 블록은 primitives.Skeleton
+// 공용 소비(로컬 SkelBlock 삭제 — 표면 CARD_HI 동일이라 시각 불변, 2026-07-25).
 function BootSkeleton(){
   const insets=useSafeAreaInsets();
   return (
@@ -2382,22 +2380,22 @@ function BootSkeleton(){
       <View style={{height: rs(24)}}/>
       <Text testID="boot-loading-copy" style={boot.loadingCaption}>{KEEP_GOING_LOADING}</Text>
       <View style={{height: rs(14)}}/>
-      <SkelBlock h={14} w={120}/>
+      <Skeleton h={14} w={120}/>
       <View style={{height: rs(18)}}/>
       {/* 히어로 카드 자리 */}
-      <SkelBlock h={150} style={{borderRadius: RADIUS.lg, borderCurve: 'continuous'}}/>
+      <Skeleton h={150} radius={RADIUS.lg}/>
       <View style={{height: rs(16)}}/>
       {/* 주간 통계 3칸 */}
       <View style={{flexDirection:'row',gap: rv(10)}}>
-        <SkelBlock h={64} w={'31%'as any}/>
-        <SkelBlock h={64} w={'31%'as any}/>
-        <SkelBlock h={64} w={'31%'as any}/>
+        <Skeleton h={64} w={'31%'}/>
+        <Skeleton h={64} w={'31%'}/>
+        <Skeleton h={64} w={'31%'}/>
       </View>
       <View style={{height: rs(16)}}/>
       {/* 신발 줄 자리 */}
-      <SkelBlock h={84} style={{borderRadius: RADIUS.md, borderCurve: 'continuous'}}/>
+      <Skeleton h={84} radius={RADIUS.md}/>
       <View style={{height: rs(10)}}/>
-      <SkelBlock h={84} style={{borderRadius: RADIUS.md, borderCurve: 'continuous'}}/>
+      <Skeleton h={84} radius={RADIUS.md}/>
     </View>
   );
 }
@@ -3231,7 +3229,8 @@ function RunActiveScreen({shoe,insets,goalKm,goalMin=0,pacePlan=[],targetZone=0,
           </View>
         ))}
       </View>
-      <TextInput style={run.memo} value={memo} onChangeText={setMemo} placeholder="메모 (선택)" placeholderTextColor={T3} autoCorrect={false} autoCapitalize="none" accessibilityLabel="러닝 메모" keyboardAppearance="dark"/>
+      {/* primitives.Input 표준(유리 표면·placeholder T3·다크 키보드 내장) — 구 SURFACE 수제 입력 폐지. */}
+      <Input style={run.memo} value={memo} onChangeText={setMemo} placeholder="메모 (선택)" autoCorrect={false} autoCapitalize="none" accessibilityLabel="러닝 메모"/>
       <View style={run.actionRow}>
         <Pressable style={({pressed})=>[run.discardBtn,pressed&&{opacity:MOTION.press.opacity,transform:[{scale:MOTION.press.scale}]}]} onPress={confirmDiscard} accessibilityRole="button" accessibilityLabel="버리기"><Text style={run.discardTxt}>버리기</Text></Pressable>
         <Button style={run.saveBtn} label={saving?'저장 중...':'저장하기'} onPress={handleSave} disabled={saving}/>
@@ -3347,7 +3346,8 @@ const run=StyleSheet.create({
   smL:{color:T3,fontFamily:FP,fontSize: rf(11),fontWeight:'500',marginTop: rv(3),textAlign:'center'},
   controls:{flexDirection:'row',alignItems:'flex-start',justifyContent:'center',gap: rv(40),paddingTop: rv(4),paddingBottom: rv(8)},
   ctrlHint:{color:T3,fontFamily:FP,fontSize: rf(12),letterSpacing:0.5,textAlign:'center'},
-  memo:{backgroundColor:SURFACE,borderRadius:RADIUS.input,padding: rs(14),color:T1,fontSize: rf(16),fontFamily:FP,marginBottom: rv(16)},
+  // primitives.Input 표준 위에 배치 여백만(표면·타이포는 Input 소유).
+  memo:{marginBottom: rv(16)},
   actionRow:{flexDirection:'row',gap: rv(12)},
   // 버리기는 SURFACE flat 보조 버튼 — 모서리는 saveBtn(단일 Button=RADIUS.btn)과 맞춰 통일.
   discardBtn:{flex:1,backgroundColor:SURFACE,borderRadius:RADIUS.btn,padding: rs(16),alignItems:'center'},
