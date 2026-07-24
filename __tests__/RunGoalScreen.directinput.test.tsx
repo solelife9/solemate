@@ -38,12 +38,13 @@ test('큰 숫자 탭 → 키패드 → 21.1 입력·확인 → 목표가 21.1로
   expect(textOf(pressable(root, 'goal-bignum'))).toContain('21.1');
 });
 
-test('범위 밖(99) 입력은 km 최대 42로 클램프', () => {
+test('범위 밖(99) 입력은 km 최대 42.2(풀코스)로 클램프', () => {
   const root = render(<RunGoalScreen />);
   act(() => pressable(root, 'goal-bignum').props.onPress());
   for (const k of ['9', '9']) act(() => pressable(root, `kp-${k}`).props.onPress());
   act(() => pressable(root, 'kp-ok').props.onPress());
-  expect(textOf(pressable(root, 'goal-bignum'))).toContain('42.0');
+  // 상한 42.2 — 풀코스(42.195)가 42 에 막히던 문제 수정(2026-07-24).
+  expect(textOf(pressable(root, 'goal-bignum'))).toContain('42.2');
 });
 
 test('지우기(⌫)가 마지막 자리를 지운다', () => {

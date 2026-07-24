@@ -36,8 +36,11 @@ import { HR_ZONE_COLORS, GOOD } from './theme';
 // CTA 는 앱 전역 단일 Button 프리미티브(그라데이션 GRAD_TOP/BOT·글로우·radius 토큰).
 // 모드 탭 스트립은 SegmentedControl 단일 프리미티브(accentTint variant).
 import { Button, SegmentedControl, SwipeBack, SwipeBackExclude } from './primitives';
-// 스피드(km별 페이스 플랜) 탭은 제거(민우님 확정 2026-07-22 — 탭 4개: 자유런·거리·시간·트랙).
-// SpeedPlanPanel/buildPacePlan 의존도 함께 내렸다. lib/pacePlan(순수)은 유지.
+// 탭 구성 재확정(민우님 2026-07-24): 거리·시간·스피드·트랙 4탭 복원 + '자유'는 거리 탭의
+// 첫 프리셋(val=0)으로. 자유런 전용 탭(2026-07-22안)은 하루 써보고 철회 — 자유는 목표
+// 모드가 아니라 '거리 목표 없음'이라 거리 탭 안이 문법상 맞다.
+import SpeedPlanPanel from './SpeedPlanPanel';
+import { buildPacePlan } from './lib/pacePlan';
 
 // ── SVG 아이콘(자체 그림 — vector-icons 의존 제거) ───────────────────────────
 function Icon({ name, size = 22, color = T2, fill }: { name: string; size?: number; color?: string; fill?: string }) {
@@ -56,15 +59,17 @@ function Icon({ name, size = 22, color = T2, fill }: { name: string; size?: numb
 }
 
 
-type Mode = 'free' | 'km' | 'min' | 'track';
-/** 러닝 목표 — 자유런/거리(km)/시간(분)/트랙(운동장 랩). 0/빈배열/null은 미설정.
+type Mode = 'km' | 'min' | 'speed' | 'track';
+/** 러닝 목표 — 거리(km, 0=자유)/시간(분)/스피드(km별 페이스 플랜)/트랙(운동장 랩). 0/빈배열/null은 미설정.
  *  track: 트랙 모드 = 한 바퀴 예상 거리(m)만 정한다. 실제 랩거리는 런 중 첫 랩 GPS로 자동 보정
  *  (snapLapDistance) — 이 값은 기본값·실내(GPS✗) 폴백. km/durationMin 은 트랙에선 0(자유). */
 export type RunGoal = { km: number; durationMin: number; pacePlan: number[]; track?: { lapM: number } | null; targetZone?: number };
 /** 트랙 한 바퀴 예상 거리 선택지(m) — 야외 400(공인)·트랙 300·실내 200 + 커스텀. */
 const LAP_PRESETS = [200, 300, 400] as const;
 const CFG: Record<'km' | 'min', { min: number; max: number; step: number; major: number; minor: number; px: number; unit: string; def: number; presets: { label: string; v: number }[] }> = {
-  km:  { min: 0, max: 42, step: 0.1, major: 1, minor: 0.2, px: 64, unit: 'km', def: 5,  presets: [{ label: '3km', v: 3 }, { label: '5km', v: 5 }, { label: '10km', v: 10 }, { label: '하프', v: 21.1 }] },
+  // max 42.2: 풀코스(42.195km)가 42 상한에 막히던 문제(민우님 2026-07-24). 하프=21.1 과
+  // 같은 0.1 그리드 반올림 규약으로 풀=42.2 — 링/음성 목표용 오차 +5m 는 무시 가능.
+  km:  { min: 0, max: 42.2, step: 0.1, major: 1, minor: 0.2, px: 64, unit: 'km', def: 5,  presets: [{ label: '자유', v: 0 }, { label: '3km', v: 3 }, { label: '5km', v: 5 }, { label: '10km', v: 10 }, { label: '하프', v: 21.1 }, { label: '풀', v: 42.2 }] },
   min: { min: 0, max: 180, step: 1, major: 10, minor: 1, px: 6.2, unit: '분', def: 30, presets: [{ label: '20분', v: 20 }, { label: '30분', v: 30 }, { label: '45분', v: 45 }, { label: '60분', v: 60 }] },
 };
 
@@ -81,14 +86,16 @@ export default function RunGoalScreen({
   // safe-area 실측(검수 MED, 2026-07-16): 상단 rv(54)·하단 rv(30) 하드코딩은 노치/홈바
   // 기기별 편차를 못 담는다(다이내믹 아일랜드 밑에 nav 가 살짝 파고들던 것) — insets 로.
   const insets = useSafeAreaInsets();
-  // 기본 탭 = 자유런(심사 #4, 민우님 확정 2026-07-22) — 러너의 최빈 행동은 '그냥 뛰기'.
-  // NRC 퀵스타트·Strava 기록 문법: 목표 없이 CTA 한 번이면 바로 시작한다.
-  const [mode, setMode] = useState<Mode>('free');
-  const [val, setVal] = useState<number>(CFG.km.def);
+  // 기본 = 거리 탭 · '자유'(val=0) 프리셋(민우님 2026-07-24) — 열자마자 CTA 한 번이면
+  // 자유 러닝(퀵스타트 유지), 거리 목표는 칩 한 번(3/5/10/하프) 또는 룰러로.
+  const [mode, setMode] = useState<Mode>('km');
+  const [val, setVal] = useState<number>(0);
   const [vpW, setVpW] = useState(0);
   const rulerRef = useRef<ScrollView>(null);
   const programmatic = useRef(false);
   const cfg = mode === 'km' || mode === 'min' ? CFG[mode] : null;
+  // 스피드 모드의 현재 목표(거리 km + km별 페이스 플랜) — SpeedPlanPanel 이 onChange 로 올린다.
+  const [speedGoal, setSpeedGoal] = useState<{ km: number; plan: number[] }>(() => ({ km: 5, plan: buildPacePlan(5, 360, 'negative') }));
   // 트랙 모드: 한 바퀴 예상 거리(m). 기본 400(야외 공인). 커스텀은 하단 키패드로 입력.
   // 이 값은 '가정'일 뿐 — 야외선 첫 랩 GPS 가 실제 랩거리로 자동 보정한다(실내 폴백값).
   const [lapM, setLapM] = useState<number>(400);
@@ -107,8 +114,8 @@ export default function RunGoalScreen({
 
   const fmt = (v: number) => (mode === 'km' ? v.toFixed(1) : String(Math.round(v)));
   const estimate = useMemo(() => {
-    if (!cfg) return ''; // 자유런·트랙은 estimate 미사용(각자 고정 카피)
-    if (val <= 0) return '목표를 정해주세요';
+    if (!cfg) return ''; // 스피드·트랙은 자체 표시 — estimate 미사용
+    if (val <= 0) return mode === 'km' ? '목표 없이 달려요 — 기록은 전부 남아요' : '목표를 정해주세요';
     return mode === 'km'
       ? `예상 시간 약 ${Math.round(val * 5)}분 · 약 ${Math.round(val * 64)} kcal`
       : `예상 거리 약 ${(val / 5).toFixed(1)}km · 약 ${Math.round(val * 12.8)} kcal`;
@@ -138,9 +145,10 @@ export default function RunGoalScreen({
     setMode(m);
     // 거리/시간 모드만 룰러를 쓴다. 대상 모드의 cfg(px)로 직접 스크롤한다 — scrollToVal 은
     // 클로저의 '이전' mode/cfg 를 보므로(setMode 비동기) px 가 어긋나 룰러가 엉뚱한 위치
-    // (예: 30분인데 180)로 클램프됐다. 자유런·트랙은 룰러를 쓰지 않는다.
+    // (예: 30분인데 180)로 클램프됐다. 스피드는 SpeedPlanPanel, 트랙은 칩을 쓴다.
     if (m === 'km' || m === 'min') {
-      const c = CFG[m]; const d = c.def;
+      // 거리 탭 재진입 기본은 '자유'(0) — 첫 진입과 동일한 퀵스타트 문법. 시간은 기존 30분.
+      const c = CFG[m]; const d = m === 'km' ? 0 : c.def;
       setVal(d);
       programmatic.current = true;
       requestAnimationFrame(() => {
@@ -199,10 +207,10 @@ export default function RunGoalScreen({
   const startRun = () => {
     tap();
     const base: RunGoal =
-      mode === 'km' ? { km: val, durationMin: 0, pacePlan: [] }
+      mode === 'km' ? { km: val, durationMin: 0, pacePlan: [] } // val 0 = 자유 러닝
         : mode === 'min' ? { km: 0, durationMin: val, pacePlan: [] }
           : mode === 'track' ? { km: 0, durationMin: 0, pacePlan: [], track: { lapM } }
-            : { km: 0, durationMin: 0, pacePlan: [] }; // 자유런 — 목표 없음(링은 km 순환 진행)
+            : { km: speedGoal.km, durationMin: 0, pacePlan: speedGoal.plan };
     onStart?.({ ...base, targetZone });
   };
   const ZONE_OPTS: { z: TargetZone; label: string }[] = [
@@ -222,12 +230,12 @@ export default function RunGoalScreen({
         <View style={s.navIc} />
       </View>
 
-      {/* segmented — 모드 탭 스트립(SegmentedControl accentTint). 자유런이 첫 탭이자 기본
-          (심사 #4) — '그냥 뛰기'가 1급 시민. 스피드 탭은 제거(민우님 확정 2026-07-22). */}
+      {/* segmented — 모드 탭 스트립(SegmentedControl accentTint). 거리·시간·스피드·트랙
+          (민우님 2026-07-24 재확정). '자유'는 거리 탭의 첫 프리셋(기본 선택)이 담당한다. */}
       <SegmentedControl
         style={s.seg}
         variant="accentTint"
-        items={[{ key: 'free', label: '자유런' }, { key: 'km', label: '거리' }, { key: 'min', label: '시간' }, { key: 'track', label: '트랙' }]}
+        items={[{ key: 'km', label: '거리' }, { key: 'min', label: '시간' }, { key: 'speed', label: '스피드' }, { key: 'track', label: '트랙' }]}
         value={mode}
         onChange={(k) => pickMode(k as Mode)}
         labelFor={(it) => `${it.label} 목표`}
@@ -267,13 +275,8 @@ export default function RunGoalScreen({
               </Pressable>
             </View>
           </View>
-        ) : mode === 'free' ? (
-          // 자유런 — 컨트롤 0개. 목표라는 층 자체를 건너뛴다(설명 두 줄이 전부).
-          <View style={s.free} accessibilityRole="text" accessibilityLabel="자유런, 목표 없이 달려요. 거리·시간·페이스 기록은 전부 남아요.">
-            <View style={s.freeGlyph}><Icon name="infinite" size={ri(38)} color={ACCENT} /></View>
-            <Text style={s.freeTitle}>목표 없이, 그냥 달려요</Text>
-            <Text style={s.freeSub}>거리·시간·페이스 기록은 전부 남아요.{'\n'}음성 안내도 그대로 함께해요.</Text>
-          </View>
+        ) : mode === 'speed' ? (
+          <SpeedPlanPanel onChange={(km, plan) => setSpeedGoal({ km, plan })} />
         ) : (
           <>
             <Pressable
@@ -282,7 +285,7 @@ export default function RunGoalScreen({
               testID="goal-bignum"
               accessibilityRole="adjustable"
               accessibilityLiveRegion="polite"
-              accessibilityLabel={`목표 ${fmt(val)} ${cfg!.unit}`}
+              accessibilityLabel={mode === 'km' && val === 0 ? '자유 러닝, 목표 없음' : `목표 ${fmt(val)} ${cfg!.unit}`}
               accessibilityHint="눌러서 직접 입력"
               accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
               onAccessibilityAction={(e) => {
@@ -291,8 +294,16 @@ export default function RunGoalScreen({
                 const v = clampToCfg(m, val + d);
                 setVal(v); scrollToVal(v, false);
               }}>
-              <Text style={s.bigVal}>{fmt(val)}</Text>
-              <Text style={s.bigUnit}>{cfg!.unit}</Text>
+              {mode === 'km' && val === 0 ? (
+                // '자유' 상태 — 숫자 대신 낱말(0.0km 는 고장처럼 읽힌다). 탭·룰러·칩으로
+                // 거리를 잡는 순간 숫자 히어로로 복귀한다.
+                <Text style={s.bigFree}>자유</Text>
+              ) : (
+                <>
+                  <Text style={s.bigVal}>{fmt(val)}</Text>
+                  <Text style={s.bigUnit}>{cfg!.unit}</Text>
+                </>
+              )}
             </Pressable>
             <Text style={s.estimate}>{estimate}</Text>
 
@@ -323,7 +334,7 @@ export default function RunGoalScreen({
               {cfg!.presets.map(p => {
                 const on = Math.abs(p.v - val) < (mode === 'km' ? 0.05 : 0.5);
                 return (
-                  <Pressable key={p.label} onPress={() => pickPreset(p.v)} style={[s.preset, on && s.presetOn]} accessibilityRole="button" accessibilityState={{ selected: on }} accessibilityLabel={`${p.label} 목표 선택`}>
+                  <Pressable key={p.label} onPress={() => pickPreset(p.v)} style={[s.preset, on && s.presetOn]} accessibilityRole="button" accessibilityState={{ selected: on }} accessibilityLabel={p.v === 0 ? '자유 러닝 선택' : `${p.label} 목표 선택`}>
                     <Text style={[s.presetText, on && s.presetTextOn]}>{p.label}</Text>
                   </Pressable>
                 );
@@ -451,10 +462,8 @@ const s = StyleSheet.create({
   lapChipValOn: { color: ACCENT },
   lapChipUnit: { color: T4, fontFamily: FONT, fontSize: TYPE.micro.fontSize, fontWeight: '600', marginTop: rv(1) },
 
-  free: { alignItems: 'center', paddingHorizontal: rs(14) },
-  freeGlyph: { width: rs(88), height: rs(88), borderRadius: RADIUS.pill, alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(ACCENT, 0.1), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.26), marginBottom: rv(22) },
-  freeTitle: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.title.fontSize, fontWeight: '600', letterSpacing: -0.4, marginBottom: rv(10) },
-  freeSub: { color: T3, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '500', lineHeight: rf(21), textAlign: 'center', maxWidth: rs(250) },
+  // '자유' 상태 히어로 — 숫자(bigVal 104) 자리에 낱말. 높이 점프가 없게 lineHeight 동일.
+  bigFree: { color: T1, fontFamily: DISPLAY, fontSize: rf(64), fontWeight: '700', letterSpacing: -1.5, lineHeight: rf(127), includeFontPadding: false },
 
   // 심박 가이드 행(#7) — 라벨 + 칩. 신발 행 위, 조용한 강도 레일.
   zoneRow: { paddingHorizontal: GUTTER, paddingTop: rv(2), paddingBottom: rv(10) },

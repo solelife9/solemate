@@ -116,8 +116,8 @@ async function startRunWithDistance() {
   await flushMicrotasks();
   const root = renderer.root;
   pressByText(root, '러닝 시작'); // home → goal
-  // 기본 탭이 자유런(심사 #4)이라 '선택한 목표(5km)' 캡처를 검증하려면 거리 탭으로 전환.
-  pressByText(root, '거리');
+  // 기본 = 거리 탭 '자유'(0km) 프리셋(2026-07-24 재확정) — '선택한 목표(5km)' 캡처 검증용 탭.
+  pressByText(root, '5km');
   await act(async () => {
     pressByText(root, '러닝 시작'); // goal → 카운트다운
   });
