@@ -182,3 +182,44 @@ export async function hkRestingHR(): Promise<number> {
     return 0;
   }
 }
+
+/**
+ * 러닝 상세 복구용 — 그 날짜의 HK 워크아웃 중 러닝 시간과 가장 근접한 것의 '실제 시간창'.
+ * (2026-07-24, 실기기: 재설치로 로컬 사이드카(hrTrack_)가 초기화된 예전 기록의 심박 소급
+ * 복구. 러닝 저장 시 hkSaveRunWorkout/워치가 남긴 워크아웃이 정확한 시각의 정본이다.)
+ * 허용 오차(tolS) 안의 최적 매치가 없으면 null — 엉뚱한 창 백필(가짜 심박)이 '없음'보다
+ * 나쁘므로 보수적으로 매치한다. 같은 날 비슷한 길이 런이 여럿이면 가장 근접한 것 하나.
+ */
+export async function hkFindRunWorkoutWindow(
+  dateISO: string,
+  durationS: number,
+  tolS = 120,
+): Promise<{startMs: number; endMs: number} | null> {
+  const m = mod();
+  if (!m || !dateISO || !(durationS > 0)) return null;
+  if (!(await hkLinked())) return null;
+  try {
+    const dayStart = new Date(`${dateISO}T00:00:00`);
+    if (isNaN(dayStart.getTime())) return null;
+    const dayEnd = new Date(dayStart.getTime() + 24 * 3600 * 1000);
+    const ws = await m.queryWorkoutSamples({
+      limit: 0, // 비양수 = 전체(그 날 워크아웃 수는 소수)
+      filter: {date: {startDate: dayStart, endDate: dayEnd}},
+    });
+    let best: {startMs: number; endMs: number} | null = null;
+    let bestDiff = tolS + 1;
+    for (const w of ws ?? []) {
+      const s = new Date(w.startDate as unknown as string | Date).getTime();
+      const e = new Date(w.endDate as unknown as string | Date).getTime();
+      if (!(s < e)) continue;
+      const diff = Math.abs((e - s) / 1000 - durationS);
+      if (diff <= tolS && diff < bestDiff) {
+        best = {startMs: s, endMs: e};
+        bestDiff = diff;
+      }
+    }
+    return best;
+  } catch {
+    return null;
+  }
+}

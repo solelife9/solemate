@@ -104,8 +104,8 @@ import {detectPRs, PRKind} from './lib/records';
 import {runInsights} from './lib/runInsights';
 import {getDistancePBs, PB_CACHE_KEY} from './lib/distancePBStore';
 import type {RunBestEfforts} from './lib/bestEfforts';
-import {hkSaveRunWorkout, hkBackfillHeartRate} from './lib/healthkit';
-import {registerRunForHr, saveWatchHrTrack, retryPendingHr, avgBpmFromTrack} from './lib/hrBackfill';
+import {hkSaveRunWorkout, hkBackfillHeartRate, hkLinked, hkFindRunWorkoutWindow} from './lib/healthkit';
+import {registerRunForHr, saveWatchHrTrack, retryPendingHr, avgBpmFromTrack, hasHrTrack} from './lib/hrBackfill';
 import {currentTargetPace} from './lib/pacePlan';
 import {liveActivity} from './lib/liveActivity';
 import {watchSession} from './lib/watchSession';
@@ -1636,6 +1636,37 @@ function Main(){
     const sub=AppState.addEventListener('change',n=>{if(n==='active')run();});
     return ()=>{clearTimeout(t1);clearTimeout(t2);sub.remove();};
   // repairAvgBpm/hkBackfillAndRepair 는 ref 기반이라 첫 렌더 인스턴스로 충분(재구독 불필요).
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[]);
+
+  // 심박 상세 복구 스윕(2026-07-24, 실기기: 재설치로 로컬 사이드카가 초기화돼 예전 기록의
+  // 심박 그래프가 실종) — 하루 1회, hrTrack 없는 최근 런(30개)을 'HK 워크아웃의 실제
+  // 시간창'으로 정밀 재백필한다. recoverRecentHr(48h·updatedAt 근사)와 달리 저장 당시
+  // 워크아웃 시각이 정본이라 오래된 기록도 안전하다(±120s 매치 실패 시 건드리지 않음 —
+  // 엉뚱한 창 백필이 '없음'보다 나쁘다). 전 과정 비차단.
+  useEffect(()=>{
+    let alive=true;
+    const HR_SWEEP_AT_KEY='hr_recover_sweep_at_v1';
+    const sweep=async()=>{
+      try{
+        if(!(await hkLinked()))return;
+        const last=Number(await AsyncStorage.getItem(HR_SWEEP_AT_KEY))||0;
+        if(Date.now()-last<24*3600*1000)return;
+        const candidates=(runsForHrRef.current||[]).filter(r=>(Number(r.duration)||0)>300).slice(0,30);
+        for(const r of candidates){
+          if(!alive)return;
+          const id=String(r.id);
+          if(await hasHrTrack(id))continue;
+          const win=await hkFindRunWorkoutWindow(String(r.run_date||''),Number(r.duration)||0);
+          if(!win)continue;
+          await hkBackfillAndRepair(id,win.startMs,win.endMs);
+        }
+        await AsyncStorage.setItem(HR_SWEEP_AT_KEY,String(Date.now()));
+      }catch{/* 비차단 — 다음 기회에 재시도 */}
+    };
+    const t=setTimeout(()=>{void sweep();},8000); // 부팅 러시(캐시 로드·동기화) 지난 뒤 조용히
+    return()=>{alive=false;clearTimeout(t);};
+  // hkBackfillAndRepair 는 ref 기반이라 첫 렌더 인스턴스로 충분(재구독 불필요).
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[]);
 
