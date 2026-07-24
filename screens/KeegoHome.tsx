@@ -14,7 +14,7 @@
 import React, {useRef, useState, useCallback, useEffect} from 'react';
 import { rf, rs, ri, rv } from '../lib/responsive';
 import {
-  View, Pressable, StyleSheet, Animated, Easing, useWindowDimensions,
+  View, Pressable, StyleSheet, Animated, useWindowDimensions,
   type NativeSyntheticEvent, type NativeScrollEvent,
 } from 'react-native';
 import {Text} from '../lib/text';
@@ -23,7 +23,7 @@ import Svg, {
   LinearGradient as SvgLinear,
 } from 'react-native-svg';
 import {
-  BG, T1, T2, T3, WARN, DANGER, FONT, DISPLAY, TYPE, RADIUS, GUTTER, GLASS, MOTION, withAlpha,
+  BG, T1, T2, T3, WARN, DANGER, FONT, DISPLAY, TYPE, RADIUS, GUTTER, GLASS, MOTION, SHADOW, withAlpha,
   type Shoe,
 } from '../theme';
 import {GlassEdge, ShoeGlyph} from '../primitives';
@@ -185,8 +185,8 @@ export function ShoeCard({
   const sweep = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     const anim = Animated.timing(sweep, {
-      toValue: Math.min(remainPct, 100), duration: 1400,
-      easing: Easing.out(Easing.cubic), useNativeDriver: false,
+      toValue: Math.min(remainPct, 100), duration: MOTION.dur.fill,
+      easing: MOTION.ease.out, useNativeDriver: false,
     });
     anim.start();
     return () => anim.stop(); // 언마운트 시 타이머 정리(테스트/화면전환 누수 방지)
@@ -198,7 +198,7 @@ export function ShoeCard({
     const anim = Animated.timing(centerIn, {
       toValue: 1, duration: 500, delay: 150,
       // JS 드라이버 — 링 스윕과 동일(테스트 렌더러 호환 + 코드베이스 관례).
-      easing: Easing.out(Easing.cubic), useNativeDriver: false,
+      easing: MOTION.ease.out, useNativeDriver: false,
     });
     anim.start();
     return () => anim.stop();
@@ -281,7 +281,7 @@ export function ShoeCard({
 
           {/* 러닝 시작 — 정보 Pressable 의 형제(중첩 아님). */}
           <Pressable
-            style={({pressed}) => [styles.runBtn, pressed && {transform: [{scale: 0.98}]}]}
+            style={({pressed}) => [styles.runBtn, pressed && {transform: [{scale: MOTION.press.scale}], opacity: MOTION.press.opacity}]}
             onPress={() => onStartRun?.(shoe)}
             accessibilityRole="button" accessibilityLabel="러닝 시작"
           >
@@ -332,7 +332,7 @@ export function GhostShoeCard({width, onPress}: {width: number; onPress?: () => 
             </View>
           </Pressable>
           <Pressable
-            style={({pressed}) => [styles.runBtn, pressed && {transform: [{scale: 0.98}]}]}
+            style={({pressed}) => [styles.runBtn, pressed && {transform: [{scale: MOTION.press.scale}], opacity: MOTION.press.opacity}]}
             onPress={onPress}
             accessibilityRole="button" accessibilityLabel="러닝화 등록"
           >
@@ -384,7 +384,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: GUTTER, paddingTop: rv(6),
   },
   brandRow: {flexDirection: 'row', alignItems: 'center', gap: rv(8)},
-  brandDot: {width: rs(9), height: rs(9), borderRadius: RADIUS.pill, backgroundColor: WARN},
+  brandDot: {width: rs(9), height: rs(9), borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.9)},
   wordmark: {fontFamily: DISPLAY, fontSize: TYPE.heading.fontSize, fontWeight: '700', letterSpacing: -0.5, color: T1},
   avatar: {
     width: rs(36), height: rs(36), borderRadius: RADIUS.pill, alignItems: 'center', justifyContent: 'center',
@@ -402,9 +402,8 @@ const styles = StyleSheet.create({
     // 무시(원호)해 애초에 정합이라 괜찮았다. 원호로 통일하면 하이라이트가 코너에서 매끈히 이어진다.
     // 표면 = 반투명 유리(GLASS.fillActive — 히어로라 활성 채움). 불투명 CARD 판 폐지.
     borderRadius: CARD_RADIUS, overflow: 'hidden', backgroundColor: GLASS.fillActive,
-    // 그림자는 절제 — 구 값(불투명 0.5·radius 24·offset 18)은 유리의 빛(코너 글린트)과
-    // 방향이 모순돼 재질이 싸웠다. 살짝 뜨는 정도만 남긴다.
-    shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 14, shadowOffset: {width: 0, height: rs(8)}, elevation: 6,
+    // 그림자는 절제 — 살짝 뜨는 정도만(SHADOW.float 토큰, 승인값 0.3/14 동일).
+    ...SHADOW.float,
   },
   // 세로 리듬 압축(2026-07-16 "카드가 세로로 길다"): 링 196 상향으로 늘어난 높이를 링이
   // 아니라 여백에서 회수 — 상하 패딩 24→20, 블록 간격 20→14/16 (아래 ringWrap·kmRow·runBtn).
@@ -425,11 +424,11 @@ const styles = StyleSheet.create({
   ringPctSub: {fontFamily: FONT, fontSize: rf(15), fontWeight: '600', color: withAlpha(T1, 0.55)},
   // % 는 숫자와 베이스라인 정렬(구 flex-start+marginTop=어중간한 중간 부유 → 세 자리(100%)에서 특히 어색).
   ringPctRow: {flexDirection: 'row', alignItems: 'baseline', marginTop: rv(8)},
-  ringPct: {fontFamily: DISPLAY, fontSize: rf(58), fontWeight: '700', letterSpacing: -2.6, lineHeight: rf(60), color: T1},
+  ringPct: {fontFamily: DISPLAY, fontSize: rf(58), fontWeight: '700', letterSpacing: -2.6, lineHeight: rf(60), color: T1, fontVariant: ['tabular-nums']},
   ringPctUnit: {fontFamily: DISPLAY, fontSize: rf(21), fontWeight: '700', color: withAlpha(T1, 0.7), marginLeft: rs(2)},
 
   kmRow: {flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(12), marginTop: rv(16)},
-  kmLabel: {fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600', color: T3},
+  kmLabel: {fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600', color: T3, fontVariant: ['tabular-nums']},
   kmStrong: {color: T1},
   kmSep: {width: rs(3), height: rs(3), borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.28)},
 
@@ -445,11 +444,11 @@ const styles = StyleSheet.create({
   // 고스트 카드(빈 상태) 전용 — 힌트/가치 라인은 실카드 kmRow 자리의 유령.
   ghostHint: {textAlign: 'center', color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500', letterSpacing: -0.2, marginTop: rv(20)},
   ghostValues: {flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(12), marginTop: rv(12)},
-  ghostValTxt: {color: withAlpha(T1, 0.35), fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500'},
+  ghostValTxt: {color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500'},
 
   dots: {flexDirection: 'row', justifyContent: 'center', gap: rv(8), marginTop: rv(16)},
   dot: {height: rs(6), borderRadius: RADIUS.pill},
-  dotActive: {width: rs(20), backgroundColor: WARN},
+  dotActive: {width: rs(20), backgroundColor: T1},
   dotIdle: {width: rs(6), backgroundColor: withAlpha(T1, 0.22)},
 
   guardian: {

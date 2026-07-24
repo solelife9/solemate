@@ -16,7 +16,7 @@ import {Text, TextInput} from './lib/text';
 import Svg, {Circle, Path} from 'react-native-svg';
 import {BRANDS, SHOE_MODELS, findShoeModel, getRecommendedLifespanKm} from './data/shoeModels';
 import {categoryLabelKo} from './lib/affiliate';
-import {BG, CARD, T1, T3, T4, SEP, FONT, withAlpha} from './theme';
+import {BG, CARD, T1, T3, T4, SEP, FONT, withAlpha, GUTTER, MOTION} from './theme';
 import {Button} from './primitives';
 
 export type PickedShoe = {brand: string; model: string};
@@ -87,7 +87,7 @@ export function ShoePicker({visible, onClose, onPick, insetTop, insetBottom}: {
       onPress={() => pick(brand, model)}
       accessibilityRole="button"
       accessibilityLabel={`${brand} ${model}, ${sub}`}
-      style={({pressed}) => [s.pkRow, pressed && {opacity: 0.7}]}>
+      style={({pressed}) => [s.pkRow, pressed && s.pressed]}>
       <Text numberOfLines={1} style={s.pkRowName}>{model}</Text>
       <Text style={s.pkRowSub}>{sub}</Text>
     </Pressable>
@@ -98,7 +98,12 @@ export function ShoePicker({visible, onClose, onPick, insetTop, insetBottom}: {
       <View style={[s.screen, {paddingTop: insetTop + 10}]}>
         <View style={s.pkTopBar}>
           <Text style={s.pkTitle}>러닝화 선택</Text>
-          <Pressable onPress={close} hitSlop={8} accessibilityRole="button" accessibilityLabel="닫기">
+          <Pressable
+            onPress={close}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="닫기"
+            style={({pressed}) => pressed && s.pressed}>
             <Text style={s.pkCancel}>취소</Text>
           </Pressable>
         </View>
@@ -115,7 +120,7 @@ export function ShoePicker({visible, onClose, onPick, insetTop, insetBottom}: {
                   accessibilityRole="tab"
                   accessibilityState={{selected: on}}
                   accessibilityLabel={`브랜드 ${b}`}
-                  style={({pressed}) => [s.pkRailItem, on && s.pkRailItemOn, pressed && !on && {opacity: 0.7}]}>
+                  style={({pressed}) => [s.pkRailItem, on && s.pkRailItemOn, pressed && !on && s.pressed]}>
                   {on && <View style={s.pkRailBar} />}
                   <Text style={[s.pkRailText, on && s.pkRailTextOn]} numberOfLines={1}>{b}</Text>
                 </Pressable>
@@ -140,7 +145,8 @@ export function ShoePicker({visible, onClose, onPick, insetTop, insetBottom}: {
                   testID="picker-search"
                 />
                 {query.length > 0 && (
-                  <Pressable onPress={() => setQuery('')} hitSlop={8} accessibilityRole="button" accessibilityLabel="검색 지우기">
+                  // hitSlop 12 — 글리프 한 자짜리 타깃을 실효 44pt 로 확보.
+                  <Pressable onPress={() => setQuery('')} hitSlop={12} accessibilityRole="button" accessibilityLabel="검색 지우기">
                     <Text style={s.pkClear}>✕</Text>
                   </Pressable>
                 )}
@@ -157,7 +163,7 @@ export function ShoePicker({visible, onClose, onPick, insetTop, insetBottom}: {
                     onPress={() => pick(selBrand, query.trim())}
                     accessibilityRole="button"
                     accessibilityLabel={`${query.trim()} 직접 추가`}
-                    style={({pressed}) => [s.pkAddRow, pressed && {opacity: 0.7}]}>
+                    style={({pressed}) => [s.pkAddRow, pressed && s.pressed]}>
                     <Text style={{fontFamily: FONT, fontSize: rf(15), color: T3}}>
                       “<Text style={{color: T1, fontWeight: '600'}}>{query.trim()}</Text>” 직접 추가
                     </Text>
@@ -204,7 +210,9 @@ export function ShoePicker({visible, onClose, onPick, insetTop, insetBottom}: {
 const s = StyleSheet.create({
   screen: {flex: 1, backgroundColor: BG},
   flex1: {flex: 1},
-  pkTopBar: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: rs(24), paddingBottom: rv(12)},
+  // 누름 표준(MOTION.press) — 사설 opacity 0.7 폐지.
+  pressed: {opacity: MOTION.press.opacity, transform: [{scale: MOTION.press.scale}]},
+  pkTopBar: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: GUTTER, paddingBottom: rv(12)},
   pkTitle: {fontFamily: FONT, fontSize: rf(17), fontWeight: '600', color: T1, letterSpacing: -0.2},
   pkInput: {flex: 1, fontFamily: FONT, fontSize: rf(16), fontWeight: '500', color: T1, paddingVertical: rv(0)},
   pkClear: {color: T3, fontSize: rf(16), fontWeight: '600'},

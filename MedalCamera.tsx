@@ -13,7 +13,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import Svg, {Defs, Mask, Rect, Circle} from 'react-native-svg';
 import {CameraView, useCameraPermissions} from 'expo-camera';
 import {manipulateAsync, SaveFormat} from 'expo-image-manipulator';
-import {BG, BLACK, HALL_GOLD, T1, T2, T3, FONT, withAlpha, RADIUS} from './theme';
+import {BG, BLACK, GLASS, HALL_GOLD, SCRIM, T1, T2, T3, FONT, withAlpha, RADIUS} from './theme';
 import {pickShoePhoto} from './lib/photo';
 import {medalCropRect} from './lib/medalCrop';
 
@@ -80,8 +80,9 @@ export default function MedalCamera({onCapture, onCancel}: {onCapture: (uri: str
           <Text style={c.permT}>카메라 권한이 필요해요</Text>
           <Text style={c.permD}>메달을 촬영하려면 카메라를 허용해주세요. 앨범에서 고를 수도 있어요.</Text>
           <Pressable onPress={() => void requestPerm()} style={c.permBtn}><Text style={c.permBtnT}>카메라 허용</Text></Pressable>
-          <Pressable onPress={fromLibrary} style={c.permGhost}><Text style={c.permGhostT}>앨범에서 선택</Text></Pressable>
-          <Pressable onPress={onCancel} style={c.permGhost}><Text style={c.permGhostT}>취소</Text></Pressable>
+          {/* 보조 고스트: 세로 ~34pt → hitSlop 8 로 실효 44pt(HIG 터치 타깃) 확보. */}
+          <Pressable onPress={fromLibrary} hitSlop={8} style={c.permGhost}><Text style={c.permGhostT}>앨범에서 선택</Text></Pressable>
+          <Pressable onPress={onCancel} hitSlop={8} style={c.permGhost}><Text style={c.permGhostT}>취소</Text></Pressable>
         </View>
       </View>
     );
@@ -98,7 +99,7 @@ export default function MedalCamera({onCapture, onCancel}: {onCapture: (uri: str
             <Circle cx={cx} cy={cy} r={r} fill="black" />
           </Mask>
         </Defs>
-        <Rect x="0" y="0" width={width} height={height} fill="rgba(0,0,0,0.55)" mask="url(#medalHole)" />
+        <Rect x="0" y="0" width={width} height={height} fill={SCRIM} mask="url(#medalHole)" />
         <Circle cx={cx} cy={cy} r={r} stroke={withAlpha(HALL_GOLD, 0.95)} strokeWidth={2.5} fill="none" />
       </Svg>
 
@@ -129,7 +130,7 @@ const c = StyleSheet.create({
   screen: {flex: 1, backgroundColor: BLACK},
   hint: {position: 'absolute', left: 0, right: 0, textAlign: 'center', color: T1, fontFamily: FONT, fontSize: rf(17), fontWeight: '600', letterSpacing: -0.2},
   sub: {position: 'absolute', left: 0, right: 0, textAlign: 'center', color: withAlpha(T1, 0.7), fontFamily: FONT, fontSize: rf(13)},
-  close: {position: 'absolute', left: 18, width: rs(40), height: rs(40), borderRadius: RADIUS.pill, backgroundColor: withAlpha(BLACK, 0.35), alignItems: 'center', justifyContent: 'center'},
+  close: {position: 'absolute', left: rs(18), width: rs(40), height: rs(40), borderRadius: RADIUS.pill, backgroundColor: withAlpha(BLACK, 0.35), alignItems: 'center', justifyContent: 'center'},
   controls: {position: 'absolute', left: 0, right: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: rs(40)},
   libBtn: {width: rs(48), height: rs(48), borderRadius: RADIUS.pill, backgroundColor: withAlpha(BLACK, 0.35), alignItems: 'center', justifyContent: 'center'},
   shutterWrap: {width: rs(76), height: rs(76), borderRadius: RADIUS.pill, borderWidth: 4, borderColor: withAlpha(T1, 0.4), alignItems: 'center', justifyContent: 'center'},
@@ -137,8 +138,9 @@ const c = StyleSheet.create({
   permBox: {flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: rs(40), gap: rv(10)},
   permT: {color: T2, fontFamily: FONT, fontSize: rf(17), fontWeight: '600', marginTop: rv(8)},
   permD: {color: T3, fontFamily: FONT, fontSize: rf(14), textAlign: 'center', lineHeight: rf(19), marginBottom: rv(8)},
-  permBtn: {marginTop: rv(6), paddingVertical: rv(12), paddingHorizontal: rs(24), borderRadius: RADIUS.sm, backgroundColor: withAlpha(HALL_GOLD, 0.16), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(HALL_GOLD, 0.4)},
-  permBtnT: {color: HALL_GOLD, fontFamily: FONT, fontSize: rf(15), fontWeight: '700'},
+  // 주행동 위계: 골드 틴트(성취 도메인 색 오용) → 글래스 CTA 채움(무채 시스템, 보조=고스트 유지).
+  permBtn: {marginTop: rv(6), paddingVertical: rv(12), paddingHorizontal: rs(24), borderRadius: RADIUS.btn, borderCurve: 'continuous', backgroundColor: GLASS.fillCta},
+  permBtnT: {color: T1, fontFamily: FONT, fontSize: rf(15), fontWeight: '700'},
   permGhost: {paddingVertical: rv(10)},
   permGhostT: {color: T3, fontFamily: FONT, fontSize: rf(14)},
 });

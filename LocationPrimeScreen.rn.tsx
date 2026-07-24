@@ -12,7 +12,7 @@ import {View, Pressable, StyleSheet} from 'react-native';
 import {Text} from './lib/text';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import {BG, ACCENT, GOOD, WARN, T1, T2, T3, FONT, RADIUS, SEP, GLASS, withAlpha, TYPE} from './theme';
+import {BG, ACCENT, GOOD, T1, T2, T3, FONT, RADIUS, SEP, GLASS, GUTTER, withAlpha, TYPE} from './theme';
 import {Button, GlassEdge} from './primitives';
 
 function Row({icon, color, title, body}: {icon: string; color: string; title: string; body: string}) {
@@ -54,7 +54,8 @@ export default function LocationPrimeScreen({
           <Row icon="speedometer" color={GOOD} title="거리·페이스·코스를 정확히"
             body="GPS로 실제 달린 경로와 구간 페이스를 측정해요." />
           <View style={s.sep} />
-          <Row icon="pulse" color={WARN} title="케이던스·고도도 함께 (동작·피트니스)"
+          {/* 안내 아이콘 — 경고 의미가 없는 장식이라 WARN(조건색) 금지 → 무채 T3. */}
+          <Row icon="pulse" color={T3} title="케이던스·고도도 함께 (동작·피트니스)"
             body="분당 걸음 수와 고도 변화를 정확히 측정해요. ‘허용’을 한 번 누르면 매번 자동으로 동작해요." />
           <View style={s.sep} />
           <Row icon="lock-closed" color={T2} title="데이터는 내 러닝 기록에만"
@@ -76,7 +77,7 @@ export default function LocationPrimeScreen({
 }
 
 const s = StyleSheet.create({
-  screen: {flex: 1, backgroundColor: BG, paddingHorizontal: rs(22)},
+  screen: {flex: 1, backgroundColor: BG, paddingHorizontal: GUTTER},
   body: {flex: 1, justifyContent: 'center'},
   hero: {alignSelf: 'center', width: rs(80), height: rs(80), borderRadius: rs(40), borderCurve: 'continuous', alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(ACCENT, 0.12), marginBottom: rv(18)},
   title: {color: T1, fontFamily: FONT, fontSize: TYPE.title.fontSize, fontWeight: '700', letterSpacing: -0.5, textAlign: 'center'},

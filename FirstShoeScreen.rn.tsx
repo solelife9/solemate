@@ -13,11 +13,11 @@
 //   <FirstShoeScreen onRegister={() => nav('AddShoe')} onTab={(i) => setTab(i)} />
 // ============================================================================
 import React from 'react';
-import { rf, rs, rv } from './lib/responsive';
+import { rf, rv } from './lib/responsive';
 import {View, StyleSheet, useWindowDimensions} from 'react-native';
 import {Text} from './lib/text';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {BG, T1, T3, FONT, TYPE} from './theme';
+import {BG, T1, T3, FONT, TYPE, GUTTER} from './theme';
 import {TabBar, ShoeGlyph} from './primitives';
 import {GhostShoeCard} from './screens/KeegoHome';
 
@@ -65,11 +65,11 @@ export default function FirstShoeScreen({onRegister, onTab, userName}: FirstShoe
 const s = StyleSheet.create({
   screen: {flex: 1, backgroundColor: BG},
 
-  greetWrap: {paddingHorizontal: rs(20), paddingTop: rv(18), paddingBottom: rv(20)},
+  greetWrap: {paddingHorizontal: GUTTER, paddingTop: rv(18), paddingBottom: rv(20)},
   date: {color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500'},
   greeting: {marginTop: rv(6), color: T1, fontFamily: FONT, fontSize: TYPE.title.fontSize, fontWeight: '700', letterSpacing: -0.4, lineHeight: rf(31)},
   // 스테이지 — 고스트 카드 + 철학 한 줄. 절대 탭 독에 가리지 않게 하단 여백 확보.
   // 히어로형 화면 — 고스트 카드 하나 + 여백이 비율(홈과 동일 결, 스택 없음 — 사용자 확정 07-10).
-  stage: {flex: 1, gap: rv(24), paddingHorizontal: rs(20), paddingTop: rv(6), paddingBottom: rv(96), alignItems: 'center'},
+  stage: {flex: 1, gap: rv(24), paddingHorizontal: GUTTER, paddingTop: rv(6), paddingBottom: rv(96), alignItems: 'center'},
   philosophy: {textAlign: 'center', color: T3, fontFamily: FONT, fontSize: TYPE.body.fontSize, lineHeight: rf(24)},
 });

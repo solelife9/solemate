@@ -9,7 +9,7 @@ import React, {useEffect, useRef, useState} from 'react';
 import { rf, rs, ri, rv } from './lib/responsive';
 import {View, Pressable, ScrollView, StyleSheet} from 'react-native';
 import {Text} from './lib/text';
-import {ACCENT, CARD, T1, T2, T3, T4, SEP, FONT, RADIUS, GLASS, withAlpha} from './theme';
+import {ACCENT, T1, T2, T3, T4, SEP, FONT, RADIUS, GLASS, withAlpha} from './theme';
 import {SegmentedControl, SwipeBackExclude, Stepper, GlassEdge} from './primitives';
 import {buildPacePlan, clampPace, fmtPaceSec, PaceStrategy} from './lib/pacePlan';
 
@@ -136,14 +136,16 @@ const s = StyleSheet.create({
   // 불투명 CARD 판 → 반투명 유리(GLASS.fill) — GlassEdge 와 재질 일치(검수 잔여, 2026-07-17).
   tuneRow: {backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderCurve: 'continuous', overflow: 'hidden', paddingHorizontal: rs(16), paddingVertical: rv(12)},
   rowLabel: {color: T2, fontFamily: FONT, fontSize: rf(15), fontWeight: '600'},
-  stepVal: {color: T1, fontFamily: FONT, fontSize: rf(18), fontWeight: '700', minWidth: rs(92), textAlign: 'center'},
+  stepVal: {color: T1, fontFamily: FONT, fontSize: rf(18), fontWeight: '700', minWidth: rs(92), textAlign: 'center', fontVariant: ['tabular-nums']},
   seg: {marginTop: rv(2)},
   hint: {color: T3, fontFamily: FONT, fontSize: rf(13), lineHeight: rf(17), marginTop: rv(-4)},
   chips: {gap: rv(8), paddingVertical: rv(2), paddingRight: rs(4)},
-  kmChip: {minWidth: rs(58), alignItems: 'center', paddingVertical: rv(8), paddingHorizontal: rs(12), borderRadius: RADIUS.md, borderCurve: 'continuous', backgroundColor: CARD, borderWidth: 1, borderColor: SEP},
-  kmChipOn: {backgroundColor: withAlpha(ACCENT, 0.14), borderColor: withAlpha(ACCENT, 0.5)},
+  // 선택 칩 한 벌(감사 #56): 유리 문법 — 불투명 CARD 베이스 폐지, 투명 위 흰 알파 채움.
+  // 채움 withAlpha(T1,0.14) · 보더 withAlpha(T1,0.4) — RunGoal 프리셋/랩 칩과 동일.
+  kmChip: {minWidth: rs(58), alignItems: 'center', paddingVertical: rv(8), paddingHorizontal: rs(12), borderRadius: RADIUS.md, borderCurve: 'continuous', backgroundColor: withAlpha(T1, 0.04), borderWidth: 1, borderColor: SEP},
+  kmChipOn: {backgroundColor: withAlpha(T1, 0.14), borderColor: withAlpha(T1, 0.4)},
   kmChipNum: {color: T4, fontFamily: FONT, fontSize: rf(12), fontWeight: '700'},
   kmChipNumOn: {color: ACCENT},
-  kmChipPace: {color: T1, fontFamily: FONT, fontSize: rf(15), fontWeight: '700', marginTop: rv(2)},
+  kmChipPace: {color: T1, fontFamily: FONT, fontSize: rf(15), fontWeight: '700', marginTop: rv(2), fontVariant: ['tabular-nums']},
   kmChipPaceOn: {color: ACCENT},
 });

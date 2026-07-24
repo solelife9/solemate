@@ -12,7 +12,8 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {rs, rv, ri} from './lib/responsive';
-import {BG, T1, T3, SEP, FONT, RADIUS, TYPE, SCRIM, withAlpha} from './theme';
+import {BG, T1, T3, SEP, FONT, RADIUS, TYPE, SCRIM, MOTION, withAlpha} from './theme';
+import {showToast} from './lib/toast';
 import {SegmentedControl} from './primitives';
 import ShareCard from './ShareCard';
 import type {LatLon} from './lib/route';
@@ -49,7 +50,8 @@ export interface ShareCardPickerProps {
 export default function ShareCardPicker({visible, onClose, model, route = [], shareInput, photoUri = null}: ShareCardPickerProps) {
   const insets = useSafeAreaInsets();
   const [prefs, setPrefs] = useState<Prefs>(DEFAULT_PREFS);
-  const [busy, setBusy] = useState(false);
+  // busy = 진행 중인 액션(저장/공유). 라벨·딤으로 진행 상태를 보여준다(무반응 금지).
+  const [busy, setBusy] = useState<null | 'save' | 'share'>(null);
   const cardRef = useRef<SvgCapturable | null>(null);
 
   useEffect(() => {
@@ -99,23 +101,24 @@ export default function ShareCardPicker({visible, onClose, model, route = [], sh
 
   const onSave = async () => {
     if (busy) return;
-    setBusy(true);
+    setBusy('save');
     try {
       const r = await saveCardToLibrary(cardRef);
-      if (r.ok) Alert.alert('사진앱에 저장됐어요', effBg === 'transparent' ? '인스타 스토리에서 내 사진 위에 올린 뒤 크기·위치를 조절하세요.' : '완성된 이미지가 사진앱에 저장됐어요.');
+      // 성공은 비차단 토스트(확인 탭 강요 금지) — 실패/권한만 결정이 필요해 Alert 유지.
+      if (r.ok) showToast({message: '앨범에 저장했어요'});
       else if (r.reason === 'denied') {
         Alert.alert('사진 접근 권한이 필요해요', '설정에서 사진 추가 권한을 허용해 주세요.', [
           {text: '설정 열기', onPress: () => { Promise.resolve(Linking.openSettings()).catch(() => {}); }},
           {text: '나중에', style: 'cancel'},
         ]);
       } else Alert.alert('저장하지 못했어요', '잠시 후 다시 시도해 주세요.');
-    } finally { setBusy(false); }
+    } finally { setBusy(null); }
   };
   const onShare = async () => {
     if (busy) return;
-    setBusy(true);
+    setBusy('share');
     try { await shareRunCard(cardRef, shareInput); }
-    finally { setBusy(false); }
+    finally { setBusy(null); }
   };
 
   const cardProps = {model, route, photoUri: cardPhoto, layout: effLayout, background: effBg};
@@ -125,8 +128,7 @@ export default function ShareCardPicker({visible, onClose, model, route = [], sh
       <View style={s.backdrop}>
         <Pressable style={s.backdropTap} onPress={onClose} accessibilityRole="button" accessibilityLabel="닫기" />
         <View style={[s.sheet, {paddingBottom: insets.bottom + rv(14)}]}>
-          <View style={s.grab} />
-
+          {/* grab 핸들 제거(HIG): 드래그 미구현 시트에 핸들은 거짓 어포던스. 닫기=배경 탭/스와이프 백. */}
           <View style={[s.previewWrap, {height: previewH}]}>
             <ShareCard {...cardProps} displayWidth={previewW} />
           </View>
@@ -137,15 +139,15 @@ export default function ShareCardPicker({visible, onClose, model, route = [], sh
             value={effBg} onChange={b => update({background: b as RunCardBackground})} />
 
           <View style={s.actions}>
-            <Pressable onPress={onSave} disabled={busy} accessibilityRole="button" accessibilityLabel="사진앱에 저장" testID="sharecard-save"
-              style={({pressed}) => [s.btn, s.btnGhost, pressed && s.pressed]}>
+            <Pressable onPress={onSave} disabled={!!busy} accessibilityRole="button" accessibilityLabel="사진앱에 저장" testID="sharecard-save"
+              style={({pressed}) => [s.btn, s.btnGhost, pressed && s.pressed, busy && s.btnBusy]}>
               <Ionicons name="download-outline" size={ri(16)} color={T1} style={s.btnIcon} />
-              <Text style={s.btnTxt}>저장</Text>
+              <Text style={s.btnTxt}>{busy === 'save' ? '저장 중…' : '저장'}</Text>
             </Pressable>
-            <Pressable onPress={onShare} disabled={busy} accessibilityRole="button" accessibilityLabel="공유" testID="sharecard-share"
-              style={({pressed}) => [s.btn, s.btnPrimary, pressed && s.pressed]}>
+            <Pressable onPress={onShare} disabled={!!busy} accessibilityRole="button" accessibilityLabel="공유" testID="sharecard-share"
+              style={({pressed}) => [s.btn, s.btnPrimary, pressed && s.pressed, busy && s.btnBusy]}>
               <Ionicons name="share-outline" size={ri(16)} color={T1} style={s.btnIcon} />
-              <Text style={s.btnTxt}>공유</Text>
+              <Text style={s.btnTxt}>{busy === 'share' ? '공유 중…' : '공유'}</Text>
             </Pressable>
           </View>
         </View>
@@ -177,8 +179,7 @@ const s = StyleSheet.create({
   // 사설 rgba(0,0,0,0.55) → 전역 SCRIM 토큰(모달 배면 단일 진실원, 검수 MED 2026-07-16).
   backdrop: {flex: 1, justifyContent: 'flex-end', backgroundColor: SCRIM},
   backdropTap: {flex: 1},
-  sheet: {backgroundColor: BG, borderTopLeftRadius: rs(24), borderTopRightRadius: rs(24), borderCurve: 'continuous', paddingHorizontal: rs(18), paddingTop: rv(10), borderTopWidth: StyleSheet.hairlineWidth, borderColor: SEP},
-  grab: {width: rs(38), height: rs(5), borderRadius: rs(3), backgroundColor: withAlpha(T1, 0.18), alignSelf: 'center', marginBottom: rv(16)},
+  sheet: {backgroundColor: BG, borderTopLeftRadius: RADIUS.xl, borderTopRightRadius: RADIUS.xl, borderCurve: 'continuous', paddingHorizontal: rs(18), paddingTop: rv(20), borderTopWidth: StyleSheet.hairlineWidth, borderColor: SEP},
   previewWrap: {alignItems: 'center', justifyContent: 'center', marginBottom: rv(18)},
   segRow: {marginTop: rv(12)},
   segLabel: {color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600', marginBottom: rv(7), marginLeft: rs(2)},
@@ -189,5 +190,8 @@ const s = StyleSheet.create({
   btnIcon: {marginRight: rs(6)},
   btnTxt: {color: T1, fontFamily: FONT, fontSize: TYPE.heading.fontSize, fontWeight: '700'},
   offscreen: {position: 'absolute', left: -10000, top: 0, opacity: 0},
-  pressed: {opacity: 0.85},
+  // 누름 표준(MOTION.press) — 사설 0.85 딤 회수.
+  pressed: {opacity: MOTION.press.opacity, transform: [{scale: MOTION.press.scale}]},
+  // busy 진행 중 딤 — disabled 시각 상태(라벨 '저장 중…'과 함께 진행을 알린다).
+  btnBusy: {opacity: 0.5},
 });

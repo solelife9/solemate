@@ -12,7 +12,7 @@ import {View, ScrollView, Pressable, StyleSheet} from 'react-native';
 import {Text} from './lib/text';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import {BG, GLASS, ACCENT, T1, T2, T3, SEP, FONT, DISPLAY, RADIUS, withAlpha, Shoe, TYPE} from './theme';
+import {BG, GLASS, ACCENT, T1, T2, T3, SEP, FONT, DISPLAY, RADIUS, withAlpha, Shoe, TYPE, GUTTER, MOTION} from './theme';
 import {SwipeBack, EmptyGhostHeader, GhostStrong, GhostBar, GhostThumb, GhostPill, ShoeGlyph, GlassEdge} from './primitives';
 import {Unit} from './lib/units';
 
@@ -43,7 +43,7 @@ export default function ShoeArchiveScreen({
         <View style={{width: rs(36)}} />
       </View>
       <ScrollView
-        contentContainerStyle={{paddingHorizontal: rs(18), paddingBottom: rv(28), gap: rv(12), paddingTop: rv(6)}}
+        contentContainerStyle={{paddingHorizontal: GUTTER, paddingBottom: rv(28), gap: rv(12), paddingTop: rv(6)}}
         showsVerticalScrollIndicator={false}>
         {shoes.length === 0 ? (
           // 빈 상태 = 고스트 카드(사용자 확정 2026-07-09) — 홈 GhostShoeCard 와 같은
@@ -99,7 +99,7 @@ export default function ShoeArchiveScreen({
                 accessibilityLabel={`${sh.brand} ${sh.model} 복원`}
                 hitSlop={6}
                 testID={`archive-restore-${sh.id}`}
-                style={({pressed}) => [s.restoreBtn, pressed && {opacity: 0.7}]}>
+                style={({pressed}) => [s.restoreBtn, pressed && s.pressed]}>
                 <Ionicons name="arrow-undo-outline" size={ri(15)} color={ACCENT} />
                 <Text style={s.restoreText}>복원</Text>
               </Pressable>
@@ -115,7 +115,9 @@ export default function ShoeArchiveScreen({
 
 const s = StyleSheet.create({
   screen: {flex: 1, backgroundColor: BG},
-  nav: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: rs(14), paddingTop: rv(6), paddingBottom: rv(10)},
+  // 누름 표준(MOTION.press) — 사설 opacity 0.7 폐지.
+  pressed: {opacity: MOTION.press.opacity, transform: [{scale: MOTION.press.scale}]},
+  nav: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: GUTTER, paddingTop: rv(6), paddingBottom: rv(10)},
   iconBtn: {width: rs(36), height: rs(36), borderRadius: rs(18), alignItems: 'center', justifyContent: 'center'},
   title: {color: T1, fontFamily: FONT, fontSize: TYPE.heading.fontSize, fontWeight: '700', letterSpacing: -0.3},
   sub: {color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, lineHeight: rf(18), paddingHorizontal: rs(4), marginBottom: rv(2)},

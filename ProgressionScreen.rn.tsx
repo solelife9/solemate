@@ -43,6 +43,7 @@ import {
   TIER_LABEL,
   withAlpha, GLASS,
   BAR,
+  GUTTER,
 } from './theme';
 import {StatGrid, SwipeBack, Rise, GlassEdge} from './primitives';
 import {buildContext} from './lib/progression/context';
@@ -210,7 +211,7 @@ export default function ProgressionScreen({
       <ScrollView
         contentContainerStyle={{
           paddingTop: insets.top + 12,
-          paddingHorizontal: rs(18),
+          paddingHorizontal: GUTTER,
           paddingBottom: insets.bottom + 28,
           gap: SPACE.lg,
         }}>
@@ -222,6 +223,7 @@ export default function ProgressionScreen({
               testID="progression-back"
               accessibilityRole="button"
               accessibilityLabel="뒤로"
+              hitSlop={6}
               style={({pressed}) => [s.iconBtn, pressed && {backgroundColor: CARD}]}>
               <Ionicons name="chevron-back" size={ri(20)} color={T2} />
             </Pressable>
@@ -235,6 +237,7 @@ export default function ProgressionScreen({
               testID="open-hall-of-fame"
               accessibilityRole="button"
               accessibilityLabel="랭킹"
+              hitSlop={6}
               style={({pressed}) => [s.iconBtn, pressed && {backgroundColor: CARD}]}>
               <Ionicons name="trophy" size={ri(19)} color={ACCENT} />
             </Pressable>

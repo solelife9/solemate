@@ -9,7 +9,7 @@
 // ============================================================================
 import React from 'react';
 import Svg, {Rect, Path, Circle, Text as SvgText, G, Image as SvgImage, Defs, RadialGradient, LinearGradient, Stop} from 'react-native-svg';
-import {T1, RING_ACCENT, BG} from './theme';
+import {T1, RING_ACCENT, RING_ACCENT_HI, RING_ACCENT_LO, BG} from './theme';
 import {SHARE_DARK_STOPS, SHARE_TEXT_SHADOW} from './theme.palettes';
 import {WORDMARK_FONT} from './primitives';
 const CF = WORDMARK_FONT;
@@ -79,7 +79,8 @@ const ShareCard = React.forwardRef<unknown, ShareCardProps>((props, ref) => {
   const start = proj.points[0];
   const end = proj.points[proj.points.length - 1];
   const mk = (n: number) => Math.max(1, Math.round(n * (box / 600)));
-  // 도착 체커 깃발(파파야) — 시작점 옆. 교차 칸만 채워 격자 느낌.
+  // 도착 체커 깃발(파파야) — 경로 마지막 좌표(피니시) 옆. 교차 칸만 채워 격자 느낌.
+  // (감사 #57: 체커 깃발=도착 기호인데 START 마커 옆에 그려져 의미가 뒤집혀 있었다.)
   const finishFlag = (fx: number, fy: number) => {
     const u = Math.max(3, mk(9)), cols = 5, rows = 3;
     const ox = fx - (cols * u) / 2, oy = fy - (rows * u) / 2;
@@ -97,7 +98,7 @@ const ShareCard = React.forwardRef<unknown, ShareCardProps>((props, ref) => {
           <Stop offset="0" stopColor={SHARE_DARK_STOPS[0]} /><Stop offset="0.55" stopColor={SHARE_DARK_STOPS[1]} /><Stop offset="1" stopColor={SHARE_DARK_STOPS[2]} />
         </RadialGradient>
         <LinearGradient id="kg-route" x1="0" y1="1" x2="1" y2="0">
-          <Stop offset="0" stopColor="#FFB458" /><Stop offset="1" stopColor="#E56600" />
+          <Stop offset="0" stopColor={RING_ACCENT_HI} /><Stop offset="1" stopColor={RING_ACCENT_LO} />
         </LinearGradient>
       </Defs>
 
@@ -114,11 +115,15 @@ const ShareCard = React.forwardRef<unknown, ShareCardProps>((props, ref) => {
         <G transform={`translate(${L.map.x}, ${L.map.y})`}>
           <Path d={pathD} fill="none" stroke={routeColor} strokeOpacity={0.16} strokeWidth={mk(16)} strokeLinecap="round" strokeLinejoin="round" />
           <Path d={pathD} fill="none" stroke={isDark ? 'url(#kg-route)' : routeColor} strokeWidth={mk(7)} strokeLinecap="round" strokeLinejoin="round" />
-          {!!end && <Circle cx={end.x} cy={end.y} r={mk(9)} fill={routeColor} />}
+          {!!end && (
+            <G>
+              <Circle cx={end.x} cy={end.y} r={mk(9)} fill={routeColor} />
+              {finishFlag(end.x + mk(40), end.y - mk(26))}
+            </G>
+          )}
           {!!start && (
             <G>
               <Circle cx={start.x} cy={start.y} r={mk(12)} fill={ink} stroke={routeColor} strokeWidth={mk(5)} />
-              {finishFlag(start.x + mk(40), start.y - mk(26))}
               <SvgText x={start.x - mk(6)} y={start.y - mk(22)} fill={ink} fillOpacity={0.92} fontFamily={CF} fontSize={mk(26)} fontWeight="700" letterSpacing={mk(3)} textAnchor="end">START</SvgText>
             </G>
           )}

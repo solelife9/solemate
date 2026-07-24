@@ -11,7 +11,7 @@ import {View, ScrollView, Pressable, Image, StyleSheet, ActivityIndicator, Modal
 import {Text, TextInput} from './lib/text';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import {BG, CARD_HI, GOOD, WARN, HALL_GOLD, T1, T2, T3, T4, SEP, FONT, DISPLAY, withAlpha, TYPE, GLASS, RADIUS} from './theme';
+import {BG, CARD_HI, GOOD, WARN, HALL_GOLD, T1, T2, T3, SEP, FONT, DISPLAY, withAlpha, TYPE, GLASS, RADIUS, GUTTER, MOTION} from './theme';
 import {Button, Chip, GlassEdge} from './primitives';
 import {captureCertPhoto} from './lib/photo';
 import MedalCamera from './MedalCamera';
@@ -154,14 +154,14 @@ export default function RaceMedalScreen({
         </View>
         <View style={s.search}>
           <Ionicons name="search" size={ri(16)} color={T3} />
-          <TextInput value={query} onChangeText={setQuery} placeholder="대회 이름 검색" placeholderTextColor={T4} style={s.searchInput} autoCorrect={false} testID="race-search" />
+          <TextInput value={query} onChangeText={setQuery} placeholder="대회 이름 검색" placeholderTextColor={T3} style={s.searchInput} autoCorrect={false} testID="race-search" />
         </View>
-        <ScrollView contentContainerStyle={{paddingHorizontal: rs(18), paddingBottom: insets.bottom + 20}} keyboardShouldPersistTaps="handled">
+        <ScrollView contentContainerStyle={{paddingHorizontal: GUTTER, paddingBottom: insets.bottom + 20}} keyboardShouldPersistTaps="handled">
           <Text style={s.section}>{query.trim() ? '검색 결과' : '러닝 날짜 근처 대회'}</Text>
           {results.map((r) => (
             <Pressable key={r.id} onPress={() => { setRace(r); setDist(r.distances[0] ?? 'half'); setDateStr(r.date); setStep('record'); }}
               accessibilityRole="button" accessibilityLabel={`${r.name}, ${r.date}, ${r.region}`}
-              style={({pressed}) => [s.raceRow, pressed && {opacity: 0.7}]}>
+              style={({pressed}) => [s.raceRow, pressed && s.pressed]}>
               <GlassEdge glints={false} radius={rs(14)} />
               <View style={{flex: 1, minWidth: 0}}>
                 <Text style={s.raceName} numberOfLines={1}>{r.name}</Text>
@@ -175,7 +175,7 @@ export default function RaceMedalScreen({
           {/* 직접 입력 */}
           <View style={s.customBox}>
             <Text style={s.customLabel}>찾는 대회가 없나요?</Text>
-            <TextInput value={customName} onChangeText={setCustomName} placeholder="대회 이름 직접 입력" placeholderTextColor={T4} style={s.customInput} autoCorrect={false} testID="race-custom" />
+            <TextInput value={customName} onChangeText={setCustomName} placeholder="대회 이름 직접 입력" placeholderTextColor={T3} style={s.customInput} autoCorrect={false} testID="race-custom" />
             <View style={{marginTop: rv(10)}}>
               <Button label="이 대회로" disabled={!customName.trim()} onPress={() => { setRace(null); setStep('record'); }} />
             </View>
@@ -196,10 +196,10 @@ export default function RaceMedalScreen({
       <ScrollView contentContainerStyle={{paddingHorizontal: rs(18), paddingBottom: insets.bottom + 20}} keyboardShouldPersistTaps="handled">
         {/* 촬영 2슬롯 — 메달은 원형 가이드 카메라, 기록증은 즉시 촬영 → OCR */}
         <View style={s.shotRow}>
-          <Pressable onPress={() => setCameraOpen(true)} accessibilityRole="button" accessibilityLabel="메달 촬영" style={({pressed}) => [s.shot, s.shotMedal, medalUri && s.shotDone, pressed && {opacity: 0.85}]}>
+          <Pressable onPress={() => setCameraOpen(true)} accessibilityRole="button" accessibilityLabel="메달 촬영" style={({pressed}) => [s.shot, s.shotMedal, medalUri && s.shotDone, pressed && s.pressed]}>
             {medalUri ? <Image source={{uri: medalUri}} style={s.shotImgRound} resizeMode="cover" /> : <><Ionicons name="medal-outline" size={ri(26)} color={HALL_GOLD} /><Text style={[s.shotT, {color: HALL_GOLD}]}>메달 촬영</Text><Text style={s.shotS}>원 안에 맞춰 찍어요</Text></>}
           </Pressable>
-          <Pressable onPress={shotCert} accessibilityRole="button" accessibilityLabel="기록증 사진 찍기" style={({pressed}) => [s.shot, ocrDone && s.shotDoneGood, ocrEmpty && s.shotDoneWarn, pressed && {opacity: 0.85}]}>
+          <Pressable onPress={shotCert} accessibilityRole="button" accessibilityLabel="기록증 사진 찍기" style={({pressed}) => [s.shot, ocrDone && s.shotDoneGood, ocrEmpty && s.shotDoneWarn, pressed && s.pressed]}>
             {ocrBusy ? <ActivityIndicator color={T2} /> : ocrDone ? <><Ionicons name="checkmark-circle" size={ri(26)} color={GOOD} /><Text style={[s.shotT, {color: GOOD}]}>기록증 인식됨</Text><Text style={s.shotS}>다시 찍기</Text></> : ocrEmpty ? <><Ionicons name="alert-circle-outline" size={ri(26)} color={WARN} /><Text style={[s.shotT, {color: WARN}]}>기록을 못 읽었어요</Text><Text style={s.shotS}>다시 찍거나 직접 입력</Text></> : certUri ? <><Ionicons name="document-text" size={ri(26)} color={T2} /><Text style={s.shotT}>기록증 저장됨</Text><Text style={s.shotS}>값은 아래 입력</Text></> : <><Ionicons name="document-text-outline" size={ri(26)} color={T3} /><Text style={s.shotT}>기록증 촬영</Text><Text style={s.shotS}>공식 기록 자동 인식</Text></>}
           </Pressable>
         </View>
@@ -213,7 +213,7 @@ export default function RaceMedalScreen({
             value={dateStr}
             onChangeText={(v) => setDateStr(maskDate(v))}
             placeholder="2019-11-03"
-            placeholderTextColor={T4}
+            placeholderTextColor={T3}
             style={[s.input, {fontSize: TYPE.heading.fontSize}]}
             keyboardType="number-pad"
             accessibilityLabel="대회 날짜"
@@ -234,7 +234,7 @@ export default function RaceMedalScreen({
           {ocrDone && !!officialStr && <View style={s.tag}><Text style={s.tagT}>인식됨</Text></View>}
         </View>
         <View style={s.inputRow}>
-          <TextInput value={officialStr} onChangeText={setOfficialStr} placeholder="1:20:32" placeholderTextColor={T4} style={s.input} keyboardType="numbers-and-punctuation" accessibilityLabel="공식 기록" testID="official-input" />
+          <TextInput value={officialStr} onChangeText={setOfficialStr} placeholder="1:20:32" placeholderTextColor={T3} style={s.input} keyboardType="numbers-and-punctuation" accessibilityLabel="공식 기록" testID="official-input" />
         </View>
         {appTimeSec && officialSec && Math.abs(appTimeSec - officialSec) >= 2 && (
           <Text style={s.hint}>앱 측정 {fmtTime(appTimeSec)} — 기록증의 공식 기록이 정본으로 저장돼요.</Text>
@@ -246,11 +246,11 @@ export default function RaceMedalScreen({
           <Text style={s.fieldLabel}>평균 페이스 (/km)</Text>
           {ocrDone && !!paceStr && <View style={s.tag}><Text style={s.tagT}>인식됨</Text></View>}
         </View>
-        <View style={s.inputRow}><TextInput value={paceStr} onChangeText={setPaceStr} placeholder="5:36" placeholderTextColor={T4} style={s.input} keyboardType="numbers-and-punctuation" accessibilityLabel="평균 페이스" /></View>
+        <View style={s.inputRow}><TextInput value={paceStr} onChangeText={setPaceStr} placeholder="5:36" placeholderTextColor={T3} style={s.input} keyboardType="numbers-and-punctuation" accessibilityLabel="평균 페이스" /></View>
 
         {/* BIB — 개인용(재조회 키). 비공개 저장, 공유 카드엔 절대 안 실림. */}
         <Text style={s.fieldLabel}>배번호 (선택 · 나만 보기)</Text>
-        <View style={s.inputRow}><TextInput value={bib} onChangeText={setBib} placeholder="5224" placeholderTextColor={T4} style={s.input} keyboardType="number-pad" accessibilityLabel="배번호" /></View>
+        <View style={s.inputRow}><TextInput value={bib} onChangeText={setBib} placeholder="5224" placeholderTextColor={T3} style={s.input} keyboardType="number-pad" accessibilityLabel="배번호" /></View>
         <Text style={s.hint}>공식 기록 재조회용이에요. 내 아카이브에만 저장되고 공유엔 포함되지 않아요.</Text>
       </ScrollView>
 
@@ -275,11 +275,13 @@ export default function RaceMedalScreen({
 
 const s = StyleSheet.create({
   screen: {flex: 1, backgroundColor: BG},
-  nav: {paddingTop: rv(12), paddingHorizontal: rs(14), paddingBottom: rv(6), flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'},
+  // 누름 표준(MOTION.press) — 사설 opacity 0.7/0.85 폐지.
+  pressed: {opacity: MOTION.press.opacity, transform: [{scale: MOTION.press.scale}]},
+  nav: {paddingTop: rv(12), paddingHorizontal: GUTTER, paddingBottom: rv(6), flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'},
   iconBtn: {width: rs(36), height: rs(36), borderRadius: RADIUS.pill, backgroundColor: CARD_HI, alignItems: 'center', justifyContent: 'center'},
   navTitle: {flex: 1, textAlign: 'center', color: T1, fontFamily: FONT, fontSize: TYPE.heading.fontSize, fontWeight: '600', letterSpacing: -0.2, marginHorizontal: rs(8)},
 
-  search: {flexDirection: 'row', alignItems: 'center', gap: rv(8), marginHorizontal: rs(18), marginTop: rv(4), marginBottom: rv(12), height: rs(46), paddingHorizontal: rs(14), borderRadius: rs(14), backgroundColor: GLASS.fill, borderWidth: 1, borderColor: withAlpha(T1, 0.1)},
+  search: {flexDirection: 'row', alignItems: 'center', gap: rv(8), marginHorizontal: GUTTER, marginTop: rv(4), marginBottom: rv(12), height: rs(46), paddingHorizontal: rs(14), borderRadius: rs(14), backgroundColor: GLASS.fill, borderWidth: 1, borderColor: withAlpha(T1, 0.1)},
   searchInput: {flex: 1, color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '500', paddingVertical: rv(0)},
   section: {color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600', letterSpacing: 0.6, textTransform: 'uppercase', marginBottom: rv(8), marginTop: rv(4)},
   // 코너 페이드 헤어라인(GlassEdge glints=false) — 균일 RN 보더 폐지(2026-07-10 확정).
@@ -313,5 +315,5 @@ const s = StyleSheet.create({
   input: {flex: 1, color: T1, fontFamily: DISPLAY, fontSize: TYPE.title.fontSize, fontVariant: ['tabular-nums'], paddingVertical: rv(0)},
   hint: {color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, marginTop: rv(8), paddingHorizontal: rs(2), lineHeight: rf(17)},
 
-  footer: {paddingHorizontal: rs(18), paddingTop: rv(8), paddingBottom: rv(30), backgroundColor: BG, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP},
+  footer: {paddingHorizontal: GUTTER, paddingTop: rv(8), paddingBottom: rv(30), backgroundColor: BG, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP},
 });

@@ -31,7 +31,7 @@ import { RunLiveMap } from './RunLiveMap';
 // (시각 동등: 다크+오렌지 유지)
 import {
   BG, CARD, ACCENT, ACCENT_2,
-  GOOD, WARN, DANGER, T1, T2, T3, T4, SEP,
+  GOOD, WARN, DANGER, T1, T2, T3, T4, SEP, CARD_BORDER,
   FONT, DISPLAY, withAlpha, HR_ZONE_COLORS, TYPE, RADIUS, GUTTER, MOTION, BLACK, NUM,
   RUN_RING_SIZE, RUN_RING_STROKE, RUN_RING_STOPS,
 } from './theme';
@@ -218,7 +218,7 @@ export default function RunActiveScreen({
     setUiPaused(paused);
     Animated.parallel([
       Animated.timing(t, { toValue: paused ? 1 : 0, duration: MOTION.dur.base, easing: MOTION.ease.inout, useNativeDriver: true }),
-      Animated.timing(subIn, { toValue: paused ? 1 : 0, duration: paused ? 260 : 160, delay: paused ? 70 : 0, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+      Animated.timing(subIn, { toValue: paused ? 1 : 0, duration: paused ? 260 : MOTION.dur.fast, delay: paused ? 70 : 0, easing: MOTION.ease.quad, useNativeDriver: true }),
     ]).start();
   }, [paused, uiPaused, t, subIn]);
   // 일시정지 지도 등장 모션(2026-07-12 사용자 확정 — 나이키 문법): 화면이 '띡' 바뀌는 대신
@@ -341,7 +341,11 @@ export default function RunActiveScreen({
   // 길게 눌러 종료: 600ms 홀드 진행을 시각(링)으로 보여주고, 확정 시 warning 햅틱.
   // 되돌릴 수 없는 동작이라 또렷한 경고 진동을 쓴다(실수 종료 방지 + 확정 피드백).
   const HOLD_MS = 600;
-  const STOP_R = 35;
+  // 홀드 링 지오메트리 — 종료 버튼(cStop rs76)과 같은 rs 스케일로 정렬(감사 #3:
+  // Svg 만 raw 76 이라 작은 기기에서 링이 버튼과 어긋났다). 반지름 = 버튼 반경 − 스트로크 여유.
+  const STOP_D = rs(76);
+  const STOP_STROKE = rs(3);
+  const STOP_R = STOP_D / 2 - STOP_STROKE;
   const STOP_CIRC = 2 * Math.PI * STOP_R;
   const holdAnim = useRef(new Animated.Value(0)).current;
   const holdOffset = holdAnim.interpolate({ inputRange: [0, 1], outputRange: [STOP_CIRC, 0] });
@@ -350,7 +354,7 @@ export default function RunActiveScreen({
     Animated.timing(holdAnim, { toValue: 1, duration: HOLD_MS, easing: Easing.linear, useNativeDriver: false }).start();
   };
   const cancelHold = () => {
-    Animated.timing(holdAnim, { toValue: 0, duration: 160, useNativeDriver: false }).start();
+    Animated.timing(holdAnim, { toValue: 0, duration: MOTION.dur.fast, useNativeDriver: false }).start();
   };
   // 종료 확정 → 세리머니(A안) → onStop. 세리머니 ~1.05s 는 사용자가 그만큼 늦게 종료를
   // 누른 것과 동일한 회계(엔진은 onStop 에서 멈춤 — 데이터 정확성 불변). jest 는 즉시 종료.
@@ -380,11 +384,11 @@ export default function RunActiveScreen({
     impactHeavy();  // 목표 달성 — 무게감 있는 단발 진동으로 성취를 알린다.
     Animated.parallel([
       Animated.spring(toastY, { toValue: 0, useNativeDriver: true, speed: 14, bounciness: 8 }),
-      Animated.timing(toastO, { toValue: 1, duration: 320, useNativeDriver: true }),
+      Animated.timing(toastO, { toValue: 1, duration: MOTION.dur.base, useNativeDriver: true }),
     ]).start();
     const t = setTimeout(() => {
       Animated.parallel([
-        Animated.timing(toastY, { toValue: -120, duration: 320, useNativeDriver: true }),
+        Animated.timing(toastY, { toValue: -120, duration: MOTION.dur.base, useNativeDriver: true }),
         Animated.timing(toastO, { toValue: 0, duration: 280, useNativeDriver: true }),
       ]).start();
     }, 3200);
@@ -406,7 +410,7 @@ export default function RunActiveScreen({
     if (paused || SKIP_ANIM) return;
     tap();
     Animated.sequence([
-      Animated.timing(kmPulse, { toValue: 1.07, duration: 160, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+      Animated.timing(kmPulse, { toValue: 1.07, duration: MOTION.dur.fast, easing: MOTION.ease.quad, useNativeDriver: true }),
       Animated.spring(kmPulse, { toValue: 1, friction: 5, tension: 120, useNativeDriver: true }),
     ]).start();
   }, [distanceKm, paused, kmPulse]);
@@ -415,6 +419,9 @@ export default function RunActiveScreen({
   // 사용자가 조치할 게 없는 소음이라 제거. 死구간/약함(level 1)일 때만 경고 — 거리계가
   // 왜 멈췄는지 설명하는 신뢰 장치(audit#9)는 유지한다. 권한 회수는 별도 배너.
   const gpsWeakNow = !permLost && gpsLevel === 1;
+  // GPS '검색 중'(P1 #49) — fix 이전(level 0)엔 거리가 0인 채 침묵해 고장처럼 보였다.
+  // '신호 약함'과 같은 한 줄 필 문법이되, 문제(WARN)가 아니라 준비 상태라 무채로 말한다.
+  const gpsSearching = !permLost && gpsLevel === 0;
   // 일시정지 하단 3칸 — 평균 페이스는 상단 히어로(현재 페이스 자리)로 올라가므로 여기선 제외.
   // 일시정지 6칸 하단(사용자 확정 2026-07-12): 심박·칼로리·고도. 케이던스는 완주 리캡 전용.
   const sub = useMemo(() => ([
@@ -477,6 +484,15 @@ export default function RunActiveScreen({
         <View style={r.gpsWeak} accessibilityRole="text" accessibilityLiveRegion="polite" accessibilityLabel="GPS 신호 약함, 거리 기록이 잠시 멈출 수 있어요">
           <Ionicons name="cellular" size={ri(13)} color={WARN} />
           <Text style={r.gpsWeakText}>GPS 신호 약함 — 거리 기록이 잠시 멈출 수 있어요</Text>
+        </View>
+      )}
+
+      {/* gps 검색 중(P1 #49) — 첫 fix 이전(level 0). 시작 직후 거리 0의 침묵을 설명하는
+          신뢰 장치. gpsWeak 와 같은 한 줄 필, 색만 무채(문제 아님 — 준비 상태). */}
+      {gpsSearching && (
+        <View style={[r.gpsWeak, r.gpsSearch]} testID="gps-searching" accessibilityRole="text" accessibilityLiveRegion="polite" accessibilityLabel="GPS 찾는 중, 신호를 잡으면 거리 기록이 시작돼요">
+          <Ionicons name="cellular" size={ri(13)} color={T3} />
+          <Text style={[r.gpsWeakText, r.gpsSearchText]}>GPS 찾는 중 — 신호를 잡으면 거리를 기록해요</Text>
         </View>
       )}
 
@@ -708,10 +724,10 @@ export default function RunActiveScreen({
               {/* 홀드 진행 링: 길게 누르는 동안 DANGER 호가 채워져 '얼마나 더 눌러야
                   종료되는지'를 시각으로 보여준다(실수 종료 방지). */}
               <View style={r.cStopWrap}>
-                <Svg width={76} height={76} style={StyleSheet.absoluteFill} pointerEvents="none">
-                  <AnimatedCircle cx={38} cy={38} r={STOP_R} stroke={DANGER} strokeWidth={3} fill="none"
+                <Svg width={STOP_D} height={STOP_D} style={StyleSheet.absoluteFill} pointerEvents="none">
+                  <AnimatedCircle cx={STOP_D / 2} cy={STOP_D / 2} r={STOP_R} stroke={DANGER} strokeWidth={STOP_STROKE} fill="none"
                     strokeLinecap="round" strokeDasharray={STOP_CIRC} strokeDashoffset={holdOffset}
-                    transform="rotate(-90 38 38)" />
+                    transform={`rotate(-90 ${STOP_D / 2} ${STOP_D / 2})`} />
                 </Svg>
                 <Pressable
                   onPressIn={startHold} onPressOut={cancelHold}
@@ -784,12 +800,12 @@ const r = StyleSheet.create({
   screen: { flex: 1, backgroundColor: BG, paddingHorizontal: GUTTER },
   // 일시정지 상단 지도 패널(위 절반) — 둥근 카드, 탭하면 전체화면. flex:1 로 상단을 채운다.
   // 풀블리드 지도(2026-07-12 사용자 확정): 카드(라운드·헤어라인·좌우 여백) 폐지 —
-  // screen 의 paddingHorizontal(24)을 음수 마진으로 상쇄해 화면 좌우 끝까지,
+  // screen 의 paddingHorizontal(GUTTER 20)을 같은 값의 음수 마진으로 상쇄해 화면 좌우 끝까지,
   // flex:1 로 상단 여백 전부를 채우고 아래(km 히어로)와도 여백 없이 맞닿는다.
   // 컨테이너는 투명 — 회색(CARD)은 내려오는 시트(내용물)에 실어, 배경까지 지도와 함께
   // 내려온다(2026-07-12 실기기 피드백: 회색이 먼저 '띡' 깔리면 전환이 둘로 쪼개져 보임).
   // 지도 높이 = 화면 절반까지(2026-07-12 사용자 확정: '사진은 반까지만') — 렌더에서 winH 로 계산.
-  mapPanel: { marginHorizontal: -rs(24), marginTop: rv(10), marginBottom: 0, overflow: 'hidden' },
+  mapPanel: { marginHorizontal: -GUTTER, marginTop: rv(10), marginBottom: 0, overflow: 'hidden' },
   // 패널 우하단 '전체화면' 힌트 배지.
   mapExpandBadge: { position: 'absolute', right: 12, bottom: 12, width: rs(32), height: rs(32), borderRadius: rs(16), backgroundColor: withAlpha(BLACK, 0.55), alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: withAlpha(T1, 0.2) },
   // 전체화면 지도 하단 중앙 버튼 행 — 구석 대신 가운데, 위로 올려 잘 눌리게.
@@ -821,6 +837,9 @@ const r = StyleSheet.create({
   // GPS 약함 경고(조건부) — 상시 상태 표시 폐지(2026-07-12), 문제 있을 때만 조용한 WARN.
   gpsWeak: { flexDirection: 'row', alignItems: 'center', gap: rv(6), marginTop: rv(12), alignSelf: 'center', paddingHorizontal: rs(12), height: rs(30), borderRadius: RADIUS.pill, backgroundColor: withAlpha(WARN, 0.12) },
   gpsWeakText: { color: WARN, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600' },
+  // '검색 중' 변주(P1 #49) — 같은 필 문법, 색만 무채(WARN 은 문제 전용 위계 유지).
+  gpsSearch: { backgroundColor: withAlpha(T1, 0.08) },
+  gpsSearchText: { color: T3 },
 
   permBanner: { flexDirection: 'row', alignItems: 'center', gap: rv(8), marginTop: rv(12), paddingVertical: rv(10), paddingHorizontal: rs(12), borderRadius: rs(12), borderWidth: StyleSheet.hairlineWidth, borderColor: DANGER, backgroundColor: withAlpha(DANGER, 0.14) },
   permBannerText: { flex: 1, color: T1, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500', lineHeight: rf(17) },
@@ -889,7 +908,7 @@ const r = StyleSheet.create({
   // 일시정지 6지표(히어로 3+서브 3)를 살짝 아래로(14→22, 사용자 미세조정) — 지도와의 호흡.
   heroMetricsPaused: { marginTop: rv(22), paddingTop: rv(20), paddingBottom: rv(8) },
   hm: { flex: 1, alignItems: 'center' },
-  hmDivider: { borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: withAlpha(T1, 0.045) },
+  hmDivider: { borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: CARD_BORDER },
   hmV: { color: T1, fontFamily: DISPLAY, fontSize: rf(37), fontWeight: '500', letterSpacing: -0.8, fontVariant: ['tabular-nums'] },
   // 일시정지 6칸(2026-07-12 사용자: '6개를 키우고 올려서 잘 보이게') — 값 30pt 균일.
   hmVPaused: { fontSize: rf(30), letterSpacing: -0.7 },
@@ -906,7 +925,8 @@ const r = StyleSheet.create({
   // 트랙 랩 기록 바 — 큰 '랩 기록' 필 + 작은 되돌리기. 유리 문법(홈 CTA 계열).
   // 랩 기록 = 주 동작(오렌지 유리 필, 넓게) + 우측 현재 바퀴수. 되돌리기(-1)는 작은 보조.
   lapBar: { flexDirection: 'row', alignItems: 'center', gap: rv(10), marginTop: rv(18) },
-  lapBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(8), height: rs(58), borderRadius: rs(18), borderCurve: 'continuous', backgroundColor: withAlpha(ACCENT, 0.12), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.4) },
+  // 선택/강조 칩 한 벌(감사 #56): 채움 withAlpha(T1,0.14) · 보더 withAlpha(T1,0.4).
+  lapBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(8), height: rs(58), borderRadius: rs(18), borderCurve: 'continuous', backgroundColor: withAlpha(T1, 0.14), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.4) },
   lapBtnText: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.heading.fontSize, fontWeight: '700', letterSpacing: -0.2 },
   lapBtnCount: { position: 'absolute', right: 18, color: ACCENT_2, fontFamily: DISPLAY, fontSize: TYPE.body.fontSize, fontWeight: '700', fontVariant: ['tabular-nums'] },
   lapUndo: { width: rs(52), height: rs(52), borderRadius: rs(16), borderCurve: 'continuous', alignItems: 'center', justifyContent: 'center', backgroundColor: CARD, borderWidth: 1, borderColor: SEP },

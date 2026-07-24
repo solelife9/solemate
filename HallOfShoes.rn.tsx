@@ -35,6 +35,8 @@ import {
   TYPE,
   HERO,
   RADIUS,
+  GUTTER,
+  MOTION,
 } from './theme';
 import {
   SwipeBack,
@@ -123,7 +125,7 @@ function HallOfShoes({records = [], unit = 'km', onBack, userName, onGoShoes}: H
         <View style={{width: rs(36)}} />
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{paddingHorizontal: rs(18), paddingTop: rv(6), paddingBottom: insets.bottom + 30}}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{paddingHorizontal: GUTTER, paddingTop: rv(6), paddingBottom: insets.bottom + 30}}>
         {count === 0 ? (
           <Rise>
             <EmptyHall onRegister={onGoShoes ?? onBack} />
@@ -158,7 +160,7 @@ function HallOfShoes({records = [], unit = 'km', onBack, userName, onGoShoes}: H
                 <Text style={st.secT}>최근 헌액</Text>
               </View>
               <Pressable
-                style={({pressed}) => [st.featured, pressed && {opacity: 0.92}]}
+                style={({pressed}) => [st.featured, pressed && st.pressed]}
                 onPress={() => setSel(latest)}
                 accessibilityRole="button"
                 accessibilityLabel={`${latest.name} 인증서`}>
@@ -200,7 +202,7 @@ function HallOfShoes({records = [], unit = 'km', onBack, userName, onGoShoes}: H
                   return (
                     <Pressable
                       key={r.shoeId}
-                      style={({pressed}) => [st.plaque, pressed && {opacity: 0.92}]}
+                      style={({pressed}) => [st.plaque, pressed && st.pressed]}
                       onPress={() => setSel(r)}
                       accessibilityRole="button"
                       accessibilityLabel={`${r.name} 인증서`}
@@ -352,7 +354,9 @@ function EmptyHall({onRegister}: {onRegister?: () => void}) {
 
 const st = StyleSheet.create({
   screen: {flex: 1, backgroundColor: BG},
-  nav: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: rs(14), paddingTop: rv(6), paddingBottom: rv(10)},
+  // 누름 표준(MOTION.press) — 사설 opacity 0.92 폐지.
+  pressed: {opacity: MOTION.press.opacity, transform: [{scale: MOTION.press.scale}]},
+  nav: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: GUTTER, paddingTop: rv(6), paddingBottom: rv(10)},
   iconBtn: {width: rs(36), height: rs(36), borderRadius: rs(18), alignItems: 'center', justifyContent: 'center'},
   navTitle: {color: T1, fontFamily: FONT, fontSize: TYPE.heading.fontSize, fontWeight: '700', letterSpacing: -0.3},
   sub: {color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, lineHeight: rf(18), paddingHorizontal: rs(4), marginTop: rv(12), marginBottom: rv(20)},
@@ -392,11 +396,12 @@ const st = StyleSheet.create({
   pfoot: {marginTop: 'auto', paddingTop: rv(12), flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP},
   pkm: {fontFamily: DISPLAY, fontSize: TYPE.heading.fontSize, fontWeight: '700', color: T1, letterSpacing: -0.3, fontVariant: ['tabular-nums']},
   pkmU: {fontFamily: DISPLAY, fontSize: TYPE.micro.fontSize, fontWeight: '700', color: T3},
-  pyear: {fontFamily: DISPLAY, fontSize: TYPE.caption.fontSize, fontWeight: '600', color: T4, fontVariant: ['tabular-nums']},
+  // 은퇴 연도 — 판독 대상 정보라 T4→T3 승격(T4 는 장식/disabled 전용).
+  pyear: {fontFamily: DISPLAY, fontSize: TYPE.caption.fontSize, fontWeight: '600', color: T3, fontVariant: ['tabular-nums']},
 
   // ── 인증서(정본 무채 + 골드 소액센트) ──
   certScreen: {flex: 1, backgroundColor: BG},
-  certContent: {alignItems: 'center', paddingHorizontal: rs(28)},
+  certContent: {alignItems: 'center', paddingHorizontal: GUTTER},
   certX: {position: 'absolute', width: rs(34), height: rs(34), borderRadius: rs(17), backgroundColor: GLASS.fill, alignItems: 'center', justifyContent: 'center', zIndex: 2, overflow: 'hidden'},
   coMast: {flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', alignSelf: 'stretch', marginBottom: rv(28)},
   coRunner: {alignItems: 'flex-start', gap: rv(4)},

@@ -7,7 +7,7 @@
 // ============================================================================
 import React, {useEffect, useMemo, useRef, useState} from 'react';
 import { rf, rs, ri, rv } from './lib/responsive';
-import {View, ScrollView, Pressable, StyleSheet, Alert, Image, Linking, Animated, Easing, AccessibilityInfo, type StyleProp, type ViewStyle} from 'react-native';
+import {View, ScrollView, Pressable, StyleSheet, Alert, Image, Linking, Animated, AccessibilityInfo, type StyleProp, type ViewStyle} from 'react-native';
 import {Text, TextInput} from './lib/text';
 import type {Text as RNText} from 'react-native'; // ref 인스턴스 타입 전용
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
@@ -195,7 +195,7 @@ export default function RunRecapScreen({
   // ── 세리머니 → 히어로 모프(2026-07-16, 사용자 요청) ─────────────────────────
   // 세리머니가 남긴 완주 숫자의 윈도 좌표를 1회 소비(마운트 시점 — 열람용 리캡은 null).
   // 있으면 카운트업 대신, 같은 숫자가 세리머니 자리(화면 중앙)에서 히어로 슬롯으로
-  // 날아와 정착한다(위치+스케일 모프 520ms inout — 시트 전환과 같은 시그니처 커브).
+  // 날아와 정착한다(위치+스케일 모프 MOTION.dur.sheet·inout — 시트 전환과 같은 시그니처 커브).
   const [morphSrc] = useState<HandoffRect | null>(takeCeremonyNumRect);
   const morphActive = !!morphSrc && !SKIP_ANIM;
   const [morphDone, setMorphDone] = useState(!morphActive);
@@ -228,7 +228,7 @@ export default function RunRecapScreen({
   useEffect(() => {
     if (!morphGeo) return;
     if (reduceMotion) { setMorphDone(true); return; } // 동작 줄이기 — 모프 없이 즉시 정착
-    const a = Animated.timing(morphT, {toValue: 1, duration: 520, delay: 40, easing: MOTION.ease.inout, useNativeDriver: true});
+    const a = Animated.timing(morphT, {toValue: 1, duration: MOTION.dur.sheet, delay: 40, easing: MOTION.ease.inout, useNativeDriver: true});
     a.start(({finished}) => { if (finished) setMorphDone(true); });
     return () => a.stop();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -240,7 +240,7 @@ export default function RunRecapScreen({
   useEffect(() => {
     if (skipAnim || morphActive) { heroProg.setValue(1); setHeroShown(kmSafe); return; }
     const id = heroProg.addListener(({value}) => setHeroShown(kmSafe * value));
-    const anim = Animated.timing(heroProg, {toValue: 1, duration: 900, delay: 320, easing: Easing.out(Easing.cubic), useNativeDriver: false});
+    const anim = Animated.timing(heroProg, {toValue: 1, duration: 900, delay: 320, easing: MOTION.ease.out, useNativeDriver: false});
     anim.start(({finished}) => { if (finished) setHeroShown(kmSafe); });
     return () => { heroProg.removeListener(id); anim.stop(); };
   }, [heroProg, kmSafe, skipAnim, morphActive]);
@@ -479,7 +479,7 @@ export default function RunRecapScreen({
               {photoUri ? (
               <View>
                 <Image source={{uri: photoUri}} style={s.metaPhoto} resizeMode="cover" accessible accessibilityLabel="러닝 사진" />
-                <Pressable onPress={removePhoto} accessibilityRole="button" accessibilityLabel="사진 제거" hitSlop={8}
+                <Pressable onPress={removePhoto} accessibilityRole="button" accessibilityLabel="사진 제거" hitSlop={10}
                   style={({pressed}) => [s.metaPhotoRemove, pressed && {opacity: 0.8}]}>
                   <Ionicons name="close" size={ri(14)} color={T1} />
                 </Pressable>
@@ -598,9 +598,9 @@ const s = StyleSheet.create({
   planSummary: {fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '700'},
   planRow: {flexDirection: 'row', alignItems: 'center', paddingVertical: rv(8), borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP},
   planKm: {color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '700', width: rs(42)},
-  planTgt: {color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500', flex: 1},
-  planAct: {color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '700', width: rs(64), textAlign: 'right'},
-  planDelta: {fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '700', width: rs(52), textAlign: 'right'},
+  planTgt: {color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500', flex: 1, fontVariant: ['tabular-nums']},
+  planAct: {color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '700', width: rs(64), textAlign: 'right', fontVariant: ['tabular-nums']},
+  planDelta: {fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '700', width: rs(52), textAlign: 'right', fontVariant: ['tabular-nums']},
   // 푸터 = BG + 헤어라인(러닝 플로우 유일의 불투명 CARD_HI 바 폐지 — 2026-07-16).
   footer: {paddingHorizontal: GUTTER, paddingTop: rv(10), borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP, backgroundColor: BG},
   // 투명 유리 CTA(홈 '러닝 시작'과 동일 문법) — 오렌지 필 폐지, 포인트 컬러는 지표에만.

@@ -11,7 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Svg, { Rect as SvgRect, Path as SvgPath, Line as SvgLine } from 'react-native-svg';
 import {
-  BG, CARD, CARD_HI, GLASS, ACCENT, BRAND, DANGER, T1, T2, T3, T4, SEP, FONT, DISPLAY, Shoe, Run, SHOES, withAlpha, RADIUS, GUTTER, HERO, SCRIM, HR_ZONE_COLORS, TYPE,
+  BG, CARD, CARD_HI, GLASS, ACCENT, BRAND, DANGER, T1, T2, T3, SEP, FONT, DISPLAY, Shoe, Run, SHOES, withAlpha, RADIUS, GUTTER, MOTION, HERO, SCRIM, HR_ZONE_COLORS, TYPE,
   BAR,
 } from './theme';
 // 기간 탭 스트립 = SegmentedControl(neutral), 러닝 상세 2×3 메트릭 = StatGrid 프리미티브.
@@ -217,7 +217,7 @@ export function RunForm({
       {/* 키보드가 입력칸·저장 버튼을 가리지 않게 폼 전체를 KeyboardAvoidingView로 감싼다
           (iOS=padding, Android는 windowSoftInputMode adjustResize에 맡겨 undefined). */}
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={insets.top + 8}>
-      <ScrollView contentContainerStyle={{ padding: rs(18), paddingBottom: rv(40), gap: rv(18) }} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={{ paddingHorizontal: GUTTER, paddingTop: rs(18), paddingBottom: rv(40), gap: rv(18) }} keyboardShouldPersistTaps="handled">
         {/* 신발 선택 */}
         <View>
           <Text style={s.formLabel}>신발</Text>
@@ -543,7 +543,7 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, onEdit, age = 0, 
           )}
         </View>
       </View>
-      <ScrollView contentContainerStyle={{ padding: rs(18), paddingBottom: rv(28) }}>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: GUTTER, paddingTop: rs(18), paddingBottom: rv(28) }}>
         {/* 신발(브랜드+모델)을 카드 없이 맨 위에 — 이 런의 '제목'처럼(사용자 요청). */}
         {shoe ? (
           <View style={{ marginBottom: rv(14) }}>
@@ -584,7 +584,7 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, onEdit, age = 0, 
             TRIMP, 없으면 페이스 기반 rTSS. 타임·체력 정보가 없어 산출 불가면 숨김. */}
         {effort && (
           <View
-            style={[s.card, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: rs(18), paddingVertical: rv(14), marginTop: rv(12) }]}
+            style={[s.card, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: rs(16), paddingVertical: rv(14), marginTop: rv(12) }]}
             accessible accessibilityLabel={`트레이닝 부하 ${effort.score}, ${effort.band}`}>
             <GlassEdge glints={false} radius={RADIUS.lg} />
             <View style={{ flex: 1, paddingRight: rs(12) }}>
@@ -611,7 +611,7 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, onEdit, age = 0, 
           };
           return (
             <View
-              style={[s.card, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: rs(18), paddingVertical: rv(14), marginTop: rv(12) }]}
+              style={[s.card, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: rs(16), paddingVertical: rv(14), marginTop: rv(12) }]}
               accessible accessibilityLabel={`경사 보정 페이스 GAP, 킬로미터당 ${fmtPace(gapSec)}`}>
               <GlassEdge glints={false} radius={RADIUS.lg} />
               <View style={{ flex: 1, paddingRight: rs(12) }}>
@@ -632,7 +632,7 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, onEdit, age = 0, 
           const fmtT = (sec: number) => { const m = Math.floor(sec / 60); const ss = Math.round(sec % 60); return `${m}:${String(ss).padStart(2, '0')}`; };
           return (
             <View
-              style={[s.card, { paddingHorizontal: rs(18), paddingVertical: rv(16), marginTop: rv(12) }]}>
+              style={[s.card, { paddingHorizontal: rs(16), paddingVertical: rv(16), marginTop: rv(12) }]}>
               <GlassEdge glints={false} radius={RADIUS.lg} />
               {/* accessible 붕괴 제거(2026-07-05 a11y): 카드를 한 요소로 묶으면 Z1~Z5
                   존별 체류 시간이 낭독 안 됐다. 제목·평균/최대·각 존 행이 텍스트라
@@ -804,7 +804,7 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, onEdit, age = 0, 
             onPress={exportRouteGpx}
             accessibilityRole="button"
             accessibilityLabel="GPX 파일로 내보내기, 다른 앱으로 코스 옮기기"
-            style={({ pressed }) => [s.gpxRow, pressed && { opacity: 0.6 }]}>
+            style={({ pressed }) => [s.gpxRow, pressed && { transform: [{ scale: MOTION.press.scale }], opacity: MOTION.press.opacity }]}>
             <Ionicons name="download-outline" size={ri(15)} color={T3} />
             <Text style={s.gpxTxt}>GPX 파일로 내보내기</Text>
             <Text style={s.gpxHint}>다른 앱으로 코스 옮기기</Text>
@@ -880,7 +880,7 @@ function DrumColumn({ items, selectedIndex, onChange }: {
 export function RunCard({ run, shoes, onPress, unit, hideShoe }: { run: Run; shoes: Shoe[]; onPress?: () => void; unit: Unit; /** 신발 상세용 — 신발명 대신 날짜를 제목 자리에(반복 노이즈 제거). */ hideShoe?: boolean }) {
   const shoe = shoes[run.shoe];
   return (
-    <Pressable onPress={onPress} disabled={!onPress} accessibilityRole="button" accessibilityLabel={`${run.date} ${shoe ? shoe.brand + ' ' + shoe.model : '삭제된 신발'} 기록`} style={({ pressed }) => [s.runCard, pressed && !!onPress && { opacity: 0.85 }]}>
+    <Pressable onPress={onPress} disabled={!onPress} accessibilityRole="button" accessibilityLabel={`${run.date} ${shoe ? shoe.brand + ' ' + shoe.model : '삭제된 신발'} 기록`} style={({ pressed }) => [s.runCard, pressed && !!onPress && { transform: [{ scale: MOTION.press.scale }], opacity: MOTION.press.opacity }]}>
       <GlassEdge glints={false} radius={RADIUS.lg} />
       <View style={s.runCardTop}>
         <View style={{ flex: 1, minWidth: 0 }}>
@@ -1172,7 +1172,7 @@ export default function HistoryScreen({
                 </View>
               )
             }
-            <View style={[s.card, { paddingHorizontal: rs(20), paddingTop: rv(12), paddingBottom: rv(24) }]}>
+            <View style={[s.card, { paddingHorizontal: rs(16), paddingTop: rv(12), paddingBottom: rv(24) }]}>
               <GlassEdge glints={false} radius={RADIUS.lg} />
               <View style={[s.baselineRow, { marginTop: rv(0) }]}>
                 <Text style={s.sumBigKm}>{sum.km}</Text><Text style={s.sumBigU}>{unit}</Text>
@@ -1229,8 +1229,8 @@ export default function HistoryScreen({
                 </View>
               </View>
               {!!onAddRun && (
-                <Pressable onPress={() => setForm({ mode: 'add' })} accessibilityRole="button" accessibilityLabel="기록 직접 추가"
-                  style={({ pressed }) => [{ marginTop: rv(16), alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: rv(4), paddingVertical: rv(8), paddingHorizontal: rs(16), borderRadius: RADIUS.pill, backgroundColor: CARD_HI }, pressed && { opacity: 0.7 }]}>
+                <Pressable onPress={() => setForm({ mode: 'add' })} accessibilityRole="button" accessibilityLabel="기록 직접 추가" hitSlop={6}
+                  style={({ pressed }) => [{ marginTop: rv(16), alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: rv(4), paddingVertical: rv(8), paddingHorizontal: rs(16), borderRadius: RADIUS.pill, backgroundColor: CARD_HI }, pressed && { transform: [{ scale: MOTION.press.scale }], opacity: MOTION.press.opacity }]}>
                   <Ionicons name="add" size={ri(16)} color={ACCENT} />
                   <Text style={{ color: T1, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600' }}>기록 추가</Text>
                 </Pressable>
@@ -1250,13 +1250,13 @@ export default function HistoryScreen({
         <Pressable style={{ flex: 1, backgroundColor: SCRIM }} onPress={() => setShowPicker(false)} />
         <View style={{ backgroundColor: CARD, borderTopLeftRadius: RADIUS.xl, borderTopRightRadius: RADIUS.xl, paddingBottom: insets.bottom + 16 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: rs(20), paddingVertical: rv(16) }}>
-            <Pressable onPress={() => setShowPicker(false)} hitSlop={8}>
+            <Pressable onPress={() => setShowPicker(false)} hitSlop={12}>
               <Text style={{ color: T3, fontFamily: FONT, fontSize: TYPE.body.fontSize }}>취소</Text>
             </Pressable>
             <Text style={{ color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600' }}>
               {period === '주' ? '주 선택' : period === '월' ? '월 선택' : '연도 선택'}
             </Text>
-            <Pressable onPress={confirmPicker} hitSlop={8}>
+            <Pressable onPress={confirmPicker} hitSlop={12}>
               <Text style={{ color: ACCENT, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '700' }}>확인</Text>
             </Pressable>
           </View>
@@ -1325,7 +1325,7 @@ const s = StyleSheet.create({
   lapTime: { width: rs(46), textAlign: 'right', color: T3, fontFamily: DISPLAY, fontSize: TYPE.label.fontSize, fontWeight: '500', fontVariant: ['tabular-nums'] },
   gpxRow: { flexDirection: 'row', alignItems: 'center', gap: rv(8), marginTop: rv(24), paddingVertical: rv(12), paddingHorizontal: rs(2), borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP },
   gpxTxt: { color: T2, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600' },
-  gpxHint: { color: T4, fontFamily: FONT, fontSize: TYPE.caption.fontSize, marginLeft: 'auto' },
+  gpxHint: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, marginLeft: 'auto' },
   offscreen: { position: 'absolute', left: -10000, top: 0, opacity: 0 },
   baselineRow: { flexDirection: 'row', alignItems: 'flex-end' },
   // 코너 페이드 헤어라인(GlassEdge glints=false) — 균일 RN 보더 폐지(2026-07-10 확정).
@@ -1340,7 +1340,7 @@ const s = StyleSheet.create({
   sumSub: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500', marginTop: rv(2) },
   sumMetricRow: { flexDirection: 'row', justifyContent: 'flex-start', gap: rv(28), marginTop: rv(14), paddingLeft: rs(2) },
   sumMetric: {},
-  sumMetricV: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.heading.fontSize, fontWeight: '700', letterSpacing: -0.2 },
+  sumMetricV: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.heading.fontSize, fontWeight: '700', letterSpacing: -0.2, fontVariant: ['tabular-nums'] },
   sumMetricU: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600' },
   sumMetricL: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500', marginTop: rv(4), marginLeft: rs(1) },
   // 개인 기록(PR, 1-3) — 2x2 그리드(최장거리/최고페이스/최장시간/최장스트릭).
@@ -1350,7 +1350,7 @@ const s = StyleSheet.create({
   prU: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600', marginLeft: rs(3) },
   prL: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500', marginTop: rv(4) },
   // 런 카드 — 목업 기록(10): 신발+날짜 + 거리·평균페이스·시간
-  runCard: { backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderCurve: 'continuous', overflow: 'hidden', padding: rs(18) },
+  runCard: { backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderCurve: 'continuous', overflow: 'hidden', padding: rs(16) },
   runCardTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: rv(10), marginBottom: rv(14) },
   runCardBrand: { color: T3, fontFamily: DISPLAY, fontSize: TYPE.caption.fontSize, fontWeight: '500', letterSpacing: 1.2 },
   runCardModel: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.heading.fontSize, fontWeight: '700', letterSpacing: -0.2, marginTop: rv(2) },
@@ -1418,7 +1418,7 @@ const s = StyleSheet.create({
   runML: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500', marginTop: rv(3), marginLeft: rs(1) },
 
   // detail
-  nav: { paddingTop: rv(12), paddingHorizontal: rs(16), paddingBottom: rv(6) },
+  nav: { paddingTop: rv(12), paddingHorizontal: GUTTER, paddingBottom: rv(6) },
   navRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   navActions: { flexDirection: 'row', alignItems: 'center', gap: rv(8) },
   iconBtn: { width: rs(38), height: rs(38), borderRadius: RADIUS.pill, backgroundColor: CARD_HI, borderWidth: 1, borderColor: withAlpha(T1, 0.12), alignItems: 'center', justifyContent: 'center' },

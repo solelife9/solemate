@@ -39,6 +39,7 @@ import {
   CARD,
   CARD_DIM,
   CARD_HI,
+  TOUCH_TARGET,
   ACCENT,
   ACCENT_2,
   WARN,
@@ -59,6 +60,7 @@ import {
   BRAND,
   withAlpha,
   MOTION,
+  LEADING,
 } from './theme';
 import {tap as hapticTap} from './lib/haptics';
 import {setToastClearance} from './lib/toast';
@@ -119,7 +121,7 @@ export function Stepper({
       </Pressable>
       {children ?? (
         <View style={{flex: 1, alignItems: 'center'}} accessible accessibilityLabel={`${value} ${suffix}`}>
-          <Text style={{color: T1, fontFamily: DISPLAY, fontSize: rf(30), letterSpacing: 0.3}}>{value}</Text>
+          <Text style={{color: T1, fontFamily: DISPLAY, fontSize: rf(30), letterSpacing: -0.5, fontVariant: ['tabular-nums']}}>{value}</Text>
           {!!suffix && <Text style={{color: T3, fontFamily: FONT, fontSize: rf(13), fontWeight: '600', marginTop: rv(2)}}>{suffix}</Text>}
         </View>
       )}
@@ -157,9 +159,10 @@ export function Chip({
   style?: StyleProp<ViewStyle>;
   children?: React.ReactNode;
 }) {
-  const h = size === 'sm' ? 32 : 40;
-  // 시각 높이는 유지하되 hitSlop 으로 44pt 터치 타깃 확보(HIG) — sm +6/+6, md +2/+2.
-  const slop = Math.max(0, Math.ceil((44 - h) / 2));
+  // 반응형 스케일 적용(2026-07-25 심사 — 주변은 rs 인데 Chip 만 고정이라 비기준 기기에서
+  // 행 안 비율이 깨졌다). 터치 타깃은 렌더 높이 기준으로 TOUCH_TARGET(44pt) 보정.
+  const h = rs(size === 'sm' ? 32 : 40);
+  const slop = Math.max(0, Math.ceil((TOUCH_TARGET - h) / 2));
   return (
     <Pressable
       onPress={onPress}
@@ -171,20 +174,20 @@ export function Chip({
       testID={testID}
       style={({pressed}) => [
         {
-          height: h, paddingHorizontal: size === 'sm' ? 12 : 15,
+          height: h, paddingHorizontal: rs(size === 'sm' ? SPACE.md : SPACE.lg),
           borderRadius: RADIUS.pill, borderCurve: 'continuous',
           alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: rv(6),
           backgroundColor: selected ? withAlpha(ACCENT, 0.16) : CARD_HI,
           borderWidth: StyleSheet.hairlineWidth,
           borderColor: selected ? withAlpha(ACCENT, 0.55) : 'transparent',
         },
-        pressed && {opacity: 0.8},
+        pressed && {transform: [{scale: MOTION.press.scale}], opacity: MOTION.press.opacity},
         disabled && {opacity: 0.4},
         style,
       ]}>
       {children ?? (
         <Text style={{
-          fontFamily: FONT, fontSize: size === 'sm' ? 13 : 14,
+          fontFamily: FONT, fontSize: size === 'sm' ? TYPE.caption.fontSize : TYPE.label.fontSize,
           fontWeight: selected ? '700' : '600',
           color: selected ? ACCENT : T2,
         }}>{label}</Text>
@@ -384,7 +387,7 @@ export function Ring({
   color2 = ACCENT_2,
   stops,
   animated = false,
-  duration = 900,
+  duration = MOTION.dur.ring,
   easing,
   delay = 0,
   from,
@@ -590,7 +593,8 @@ const btn = StyleSheet.create({
     fontFamily: FONT,
     fontSize: TYPE.heading.fontSize,
     fontWeight: '700',
-    letterSpacing: 0.3,
+    // 자간 규칙(≥16pt=음수) 정합 — 구 +0.3 은 heading(18) 프리셋과 어긋난 사설값.
+    letterSpacing: TYPE.heading.letterSpacing,
   },
   labelHero: {letterSpacing: -0.2}, // 큰 라벨은 자간을 살짝 좁혀(수제 CTA 들과 동일 시감)
   labelDim: {color: T3},
@@ -720,7 +724,7 @@ const ghostS = StyleSheet.create({
   // 에디토리얼 스케일(2026-07-10 사용자 확정 — '에디토리얼 타이포 + 고스트 1~2장'):
   // 타이포가 빈 화면의 주인공, 고스트는 1~2장만 받쳐준다.
   head: {paddingHorizontal: rs(4), marginBottom: SPACE.xl},
-  title: {color: T1, fontFamily: FONT, fontSize: TYPE.title.fontSize, fontWeight: '700', letterSpacing: -0.5, lineHeight: rf(30), marginTop: SPACE.xs},
+  title: {color: T1, fontFamily: FONT, fontSize: TYPE.title.fontSize, fontWeight: '700', letterSpacing: TYPE.title.letterSpacing, lineHeight: Math.round(TYPE.title.fontSize * LEADING.ui), marginTop: SPACE.xs},
   sub: {color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, lineHeight: rf(22), marginTop: SPACE.md},
   strong: {color: T2, fontWeight: '700'},
   bar: {height: rs(9), borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.1)},
@@ -1117,8 +1121,8 @@ export function Toggle({on}: {on: boolean}) {
   useEffect(() => {
     Animated.timing(v, {
       toValue: on ? 1 : 0,
-      duration: 180,
-      easing: Easing.out(Easing.cubic),
+      duration: MOTION.dur.fast,
+      easing: MOTION.ease.out,
       useNativeDriver: true,
     }).start();
   }, [on, v]);
@@ -1301,7 +1305,7 @@ const section = StyleSheet.create({
     color: T3,
     fontSize: TYPE.label.fontSize,
     fontWeight: '700',
-    letterSpacing: 0.4,
+    letterSpacing: TYPE.label.letterSpacing, // 사설 +0.4 → label 프리셋 정합(자간 단일 규칙)
   },
 });
 
@@ -1576,7 +1580,7 @@ const t = StyleSheet.create({
     position: 'absolute',
     top: '50%',
     height: rs(50),
-    marginTop: rv(-25),            // 세로 정중앙(translateY(-50%) 대응)
+    marginTop: -rs(50) / 2,        // 세로 정중앙 — height rs(50)과 같은 축(rs)으로(구 rv 축 불일치 수정)
     borderRadius: RADIUS.pill,
     // 활성 하이라이트 강화(0.15→0.24) — 비활성 아이콘이 밝아진 만큼 활성 탭을 또렷이.
     backgroundColor: withAlpha(T1, 0.24),

@@ -13,7 +13,7 @@ import { View, ScrollView, Pressable, StyleSheet, Image, Share, Alert, Linking }
 import {Text, TextInput} from './lib/text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { BG, CARD, CARD_DIM, CARD_HI, ACCENT, BRAND, GOOD, DANGER, WARN, T1, T2, T3, SEP, CARD_BORDER, FONT, DISPLAY, withAlpha, TIER_COLORS, TIER_LABEL, KAKAO_YELLOW, KAKAO_LABEL, NAVER_GREEN, NAVER_LABEL, RADIUS, GUTTER, HALL_GOLD, TYPE, GLASS } from './theme';
+import { BG, CARD, CARD_DIM, CARD_HI, ACCENT, BRAND, GOOD, DANGER, WARN, T1, T2, T3, SEP, CARD_BORDER, FONT, DISPLAY, withAlpha, TIER_COLORS, TIER_LABEL, KAKAO_YELLOW, KAKAO_LABEL, NAVER_GREEN, NAVER_LABEL, RADIUS, GUTTER, MOTION, HALL_GOLD, TYPE, GLASS } from './theme';
 // recap 토글 = SegmentedControl(accentSolid), 스탯 그리드들 = StatGrid 단일 프리미티브.
 import { TabBar, TABBAR_CLEARANCE, SectionTitle, Button, SegmentedControl, StatGrid, Stepper, AmbientBackdrop, Rise, GlassEdge, Toggle } from './primitives';
 import { Unit, unitKorean, displayNum } from './lib/units';
@@ -710,11 +710,11 @@ export default function ProfileScreen({
         {/* 러너 스펙 — VO2max + 거리 PB 훈장(5K·10K·하프·풀, 미달성 잠금) + 최고페이스/최장.
             러너의 정체성 '스펙 시트'(사용자 방향 2026-07-05). 거리 PB 는 paceTrack 베스트에포트. */}
         {(records.length > 0 || vo2.vo2max > 0) && (
-          <View style={[s.card, { padding: rs(22) }]} testID="runner-spec">
+          <View style={[s.card, { padding: rs(16) }]} testID="runner-spec">
             <GlassEdge glints={false} radius={RADIUS.lg} />
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: rv(16) }}>
               <Text style={[s.cardTitle, { marginBottom: rv(0) }]}>러너 스펙</Text>
-              <Pressable onPress={onShareSpec} testID="spec-share" accessibilityRole="button" accessibilityLabel="러너 스펙 공유" hitSlop={8} style={({ pressed }) => [{ flexDirection: 'row', alignItems: 'center', gap: rv(4) }, pressed && { opacity: 0.6 }]}>
+              <Pressable onPress={onShareSpec} testID="spec-share" accessibilityRole="button" accessibilityLabel="러너 스펙 공유" hitSlop={8} style={({ pressed }) => [{ flexDirection: 'row', alignItems: 'center', gap: rv(4) }, pressed && { transform: [{ scale: MOTION.press.scale }], opacity: MOTION.press.opacity }]}>
                 <Ionicons name="share-outline" size={ri(16)} color={ACCENT} />
                 <Text style={{ color: ACCENT, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '700' }}>공유</Text>
               </Pressable>
@@ -826,7 +826,7 @@ export default function ProfileScreen({
             accessibilityLabel="진척 열기"
             style={({ pressed }) => [s.card, s.progressRow, pressed && { backgroundColor: CARD_HI }]}>
             <GlassEdge glints={false} radius={RADIUS.lg} />
-            <View style={s.progressIcon}><Ionicons name="trophy-outline" size={ri(19)} color={BRAND} /></View>
+            <View style={s.progressIcon}><Ionicons name="trophy-outline" size={ri(19)} color={T2} /></View>
             <View style={{ flex: 1, minWidth: 0 }}>
               <Text style={s.progressTitle}>진척</Text>
               <Text style={s.progressSub}>나의 여정 · 업적</Text>
@@ -845,7 +845,7 @@ export default function ProfileScreen({
             accessibilityLabel="러닝화 아카이브 열기"
             style={({ pressed }) => [s.card, s.progressRow, pressed && { backgroundColor: CARD_HI }]}>
             <GlassEdge glints={false} radius={RADIUS.lg} />
-            <View style={s.progressIcon}><Ionicons name="ribbon-outline" size={ri(19)} color={BRAND} /></View>
+            <View style={s.progressIcon}><Ionicons name="ribbon-outline" size={ri(19)} color={T2} /></View>
             <View style={{ flex: 1, minWidth: 0 }}>
               <Text style={s.progressTitle}>러닝화 아카이브</Text>
               <Text style={s.progressSub}>{retiredCount > 0 ? `은퇴한 신발 ${retiredCount}켤레` : '은퇴한 러닝화의 기록이 남는 곳'}</Text>
@@ -863,7 +863,7 @@ export default function ProfileScreen({
             accessibilityLabel="메달 아카이브 열기"
             style={({ pressed }) => [s.card, s.progressRow, pressed && { backgroundColor: CARD_HI }]}>
             <GlassEdge glints={false} radius={RADIUS.lg} />
-            <View style={s.progressIcon}><Ionicons name="medal-outline" size={ri(19)} color={BRAND} /></View>
+            <View style={s.progressIcon}><Ionicons name="medal-outline" size={ri(19)} color={T2} /></View>
             <View style={{ flex: 1, minWidth: 0 }}>
               <Text style={s.progressTitle}>메달 아카이브</Text>
               <Text style={s.progressSub}>{medalCount > 0 ? `완주 메달 ${medalCount}개` : '완주한 대회의 메달과 기록'}</Text>
@@ -893,7 +893,7 @@ export default function ProfileScreen({
               testIDFor={(it) => `recap-toggle-${it.key}`}
             />
           </View>
-          <View style={[s.card, { padding: rs(20) }]} testID="recap-card">
+          <View style={[s.card, { padding: rs(16) }]} testID="recap-card">
             <GlassEdge glints={false} radius={RADIUS.lg} />
             <View style={s.recapTopRow}>
               <Text style={s.recapPeriod} testID="recap-period">{recap.periodLabel}</Text>
@@ -1005,12 +1005,16 @@ export default function ProfileScreen({
                 <NotifToggle label="러닝 리마인더" value={notifSettings.runReminder} onToggle={() => toggleNotif('runReminder')} testID="notif-toggle-runReminder" />
                 <Stepper value={notifSettings.reminderTime} suffix="리마인더 시각" onMinus={() => stepReminder(-1)} onPlus={() => stepReminder(1)} />
                 {pushDenied && (
-                  <Text
-                    style={s.notifDenied}
+                  /* Text onPress → Pressable + hitSlop 12: 텍스트 한 줄(~18pt)은 44pt 터치
+                     타깃 미달이었다(2026-07-25 접근성 스윕). */
+                  <Pressable
                     testID="notif-perm-denied"
                     accessibilityRole="button"
                     accessibilityLabel="알림 권한이 꺼져 있어요. 눌러서 설정 열기"
-                    onPress={() => { Promise.resolve(Linking.openSettings()).catch(() => {}); }}>알림 권한이 꺼져 있어요 — 설정에서 허용하기 ›</Text>
+                    hitSlop={12}
+                    onPress={() => { Promise.resolve(Linking.openSettings()).catch(() => {}); }}>
+                    <Text style={s.notifDenied}>알림 권한이 꺼져 있어요 — 설정에서 허용하기 ›</Text>
+                  </Pressable>
                 )}
               </View>
             )}
@@ -1224,11 +1228,11 @@ export default function ProfileScreen({
             ) : (
               <View style={s.cloudPad}>
                 <Text style={s.cloudIntro}>로그인하면 신발·러닝 기록·설정이 안전하게 보관되고, 기기를 바꿔도 그대로 이어져요.</Text>
-                <Pressable testID="cloud-signin-kakao" onPress={() => handleSignIn('kakao')} disabled={signingIn} accessibilityRole="button" accessibilityLabel="카카오로 로그인" accessibilityState={{ disabled: signingIn }} style={({ pressed }) => [s.cloudBtn, s.cloudBtnKakao, pressed && { opacity: 0.85 }]}>
+                <Pressable testID="cloud-signin-kakao" onPress={() => handleSignIn('kakao')} disabled={signingIn} accessibilityRole="button" accessibilityLabel="카카오로 로그인" accessibilityState={{ disabled: signingIn }} style={({ pressed }) => [s.cloudBtn, s.cloudBtnKakao, pressed && { transform: [{ scale: MOTION.press.scale }], opacity: MOTION.press.opacity }]}>
                   <Text style={[s.brandMark, { color: KAKAO_LABEL }]}>K</Text>
                   <Text style={[s.cloudBtnTxt, { color: KAKAO_LABEL }]}>{signingIn ? '로그인 중…' : '카카오로 계속'}</Text>
                 </Pressable>
-                <Pressable testID="cloud-signin-naver" onPress={() => handleSignIn('naver')} disabled={signingIn} accessibilityRole="button" accessibilityLabel="네이버로 로그인" accessibilityState={{ disabled: signingIn }} style={({ pressed }) => [s.cloudBtn, s.cloudBtnNaver, pressed && { opacity: 0.85 }]}>
+                <Pressable testID="cloud-signin-naver" onPress={() => handleSignIn('naver')} disabled={signingIn} accessibilityRole="button" accessibilityLabel="네이버로 로그인" accessibilityState={{ disabled: signingIn }} style={({ pressed }) => [s.cloudBtn, s.cloudBtnNaver, pressed && { transform: [{ scale: MOTION.press.scale }], opacity: MOTION.press.opacity }]}>
                   <Text style={[s.brandMark, { color: NAVER_LABEL }]}>N</Text>
                   <Text style={[s.cloudBtnTxt, { color: NAVER_LABEL }]}>{signingIn ? '로그인 중…' : '네이버로 계속'}</Text>
                 </Pressable>
@@ -1240,7 +1244,7 @@ export default function ProfileScreen({
                   iconNode={<Ionicons name="logo-google" size={ri(17)} color={signingIn ? T3 : T1} />}
                   style={s.cloudBtnGoogle}
                 />
-                <Pressable testID="cloud-signin-apple" onPress={() => handleSignIn('apple')} disabled={signingIn} accessibilityRole="button" accessibilityLabel="Apple로 로그인" accessibilityState={{ disabled: signingIn }} style={({ pressed }) => [s.cloudBtn, s.cloudBtnApple, pressed && { opacity: 0.85 }]}>
+                <Pressable testID="cloud-signin-apple" onPress={() => handleSignIn('apple')} disabled={signingIn} accessibilityRole="button" accessibilityLabel="Apple로 로그인" accessibilityState={{ disabled: signingIn }} style={({ pressed }) => [s.cloudBtn, s.cloudBtnApple, pressed && { transform: [{ scale: MOTION.press.scale }], opacity: MOTION.press.opacity }]}>
                   <Ionicons name="logo-apple" size={ri(18)} color={T1} />
                   <Text style={s.cloudBtnTxt}>{signingIn ? '로그인 중…' : 'Apple로 계속'}</Text>
                 </Pressable>
@@ -1302,7 +1306,7 @@ const s = StyleSheet.create({
   pbLabel: { fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '700', letterSpacing: 0.3 },
   pbVal: { fontFamily: DISPLAY, marginTop: rv(6), fontVariant: ['tabular-nums'] },
   pbValOn: { color: T1, fontSize: TYPE.title.fontSize, fontWeight: '700', letterSpacing: -0.4 },
-  pbValOff: { color: withAlpha(T1, 0.32), fontSize: TYPE.body.fontSize, fontWeight: '600' },
+  pbValOff: { color: T3, fontSize: TYPE.body.fontSize, fontWeight: '600' },
   // 서브 스탯 3열(누적·최장·1km 최고).
   specSubRow: { flexDirection: 'row', marginTop: rv(16), paddingTop: rv(16), borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: CARD_BORDER },
   specSub: { flex: 1, alignItems: 'center', gap: rv(3) },
@@ -1317,8 +1321,9 @@ const s = StyleSheet.create({
   // 섹션 헤더 = SectionTitle 프리미티브와 동일 스펙(700) — 화면 간 헤더 무게 통일(600 혼용 제거).
   sectionLabel: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '700', letterSpacing: 0.4, paddingHorizontal: rs(4) },
   progressRow: { flexDirection: 'row', alignItems: 'center', gap: rv(12), padding: rs(16) },
-  // 진입 행 아이콘 = 브랜드 파파야 통일(2026-07-10 확정) — '탭 가능한 진입점' 단일 의미 + 서명.
-  progressIcon: { width: rs(38), height: rs(38), borderRadius: RADIUS.sm, backgroundColor: withAlpha(BRAND, 0.12), alignItems: 'center', justifyContent: 'center' },
+  // 진입 행 아이콘: 브랜드 파파야 → 무채(2026-07-25 색의미 스윕 P1 #34 — 브랜드색은 러닝
+  // 링 전용, 그 외 강조는 무채). 스트릭 점(진행 지표)만 BRAND 유지.
+  progressIcon: { width: rs(38), height: rs(38), borderRadius: RADIUS.sm, backgroundColor: withAlpha(T1, 0.06), alignItems: 'center', justifyContent: 'center' },
   progressTitle: { color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '700' },
   progressSub: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500', marginTop: rv(3) },
 
@@ -1339,14 +1344,14 @@ const s = StyleSheet.create({
   nameInput: { flex: 1, color: T1, fontFamily: FONT, fontSize: TYPE.title.fontSize, fontWeight: '500', letterSpacing: -0.5, borderBottomWidth: 1, borderBottomColor: ACCENT, paddingVertical: rv(2), paddingHorizontal: rs(0) },
   nameSaveBtn: { width: rs(34), height: rs(34), borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.1), alignItems: 'center', justifyContent: 'center' },
   idStat: { fontFamily: FONT, color: T3, fontSize: TYPE.caption.fontSize, fontWeight: '600' },
-  idStatNum: { fontFamily: DISPLAY, color: T1, fontSize: TYPE.label.fontSize, fontWeight: '700' },
+  idStatNum: { fontFamily: DISPLAY, color: T1, fontSize: TYPE.label.fontSize, fontWeight: '700', fontVariant: ['tabular-nums'] },
   since: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600' },
 
   // 이번 주 스트릭 카드
   streakCard: { padding: rs(16) },
   streakHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: rv(14) },
   streakCountRow: { flexDirection: 'row', alignItems: 'center', gap: rs(4) },
-  streakCount: { color: ACCENT, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '700' },
+  streakCount: { color: ACCENT, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '700', fontVariant: ['tabular-nums'] },
   streakRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   streakDay: { alignItems: 'center', gap: rv(6) },
   streakDot: { width: rs(30), height: rs(30), borderRadius: RADIUS.pill, alignItems: 'center', justifyContent: 'center' },
@@ -1368,7 +1373,7 @@ const s = StyleSheet.create({
   settingDetail: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500' },
 
   // expandable panels
-  panel: { paddingHorizontal: rs(18), paddingVertical: rv(16), gap: rv(14), backgroundColor: withAlpha(T1, 0.02) },
+  panel: { paddingHorizontal: rs(16), paddingVertical: rv(16), gap: rv(14), backgroundColor: withAlpha(T1, 0.02) },
   panelHint: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, lineHeight: rf(18) },
 
   notifDenied: { color: WARN, fontFamily: FONT, fontSize: TYPE.label.fontSize, lineHeight: rf(18) },
@@ -1388,7 +1393,7 @@ const s = StyleSheet.create({
   recapPrBox: { marginTop: rv(14), gap: rv(2) },
   recapPrRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: rv(8) },
   recapPrLabel: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600' },
-  recapPrValue: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.heading.fontSize, fontWeight: '600', letterSpacing: -0.2 },
+  recapPrValue: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.heading.fontSize, fontWeight: '600', letterSpacing: -0.2, fontVariant: ['tabular-nums'] },
   offscreen: { position: 'absolute', left: -10000, top: 0, opacity: 0 },
 
   // on/off 행 — 라벨 좌 + 우측 작은 스위치(Toggle 프리미티브). 구 풀폭 솔리드 바 폐지.

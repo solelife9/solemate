@@ -340,7 +340,7 @@ export default function RunGoalScreen({
               {cfg!.presets.map(p => {
                 const on = Math.abs(p.v - val) < (mode === 'km' ? 0.05 : 0.5);
                 return (
-                  <Pressable key={p.label} onPress={() => pickPreset(p.v)} style={[s.preset, on && s.presetOn]} accessibilityRole="button" accessibilityState={{ selected: on }} accessibilityLabel={p.v === 0 ? '자유 러닝 선택' : `${p.label} 목표 선택`}>
+                  <Pressable key={p.label} onPress={() => pickPreset(p.v)} hitSlop={6} style={[s.preset, on && s.presetOn]} accessibilityRole="button" accessibilityState={{ selected: on }} accessibilityLabel={p.v === 0 ? '자유 러닝 선택' : `${p.label} 목표 선택`}>
                     <Text style={[s.presetText, on && s.presetTextOn]}>{p.label}</Text>
                   </Pressable>
                 );
@@ -359,7 +359,7 @@ export default function RunGoalScreen({
             const on = targetZone === o.z;
             const col = o.z !== 0 ? HR_ZONE_COLORS[o.z as 2 | 3 | 4] : GOOD;
             return (
-              <Pressable key={o.z} onPress={() => pickZone(o.z)} accessibilityRole="radio"
+              <Pressable key={o.z} onPress={() => pickZone(o.z)} accessibilityRole="radio" hitSlop={6}
                 accessibilityState={{ selected: on }} accessibilityLabel={`심박 가이드 ${o.label}`}
                 style={[s.zoneChip, on && { backgroundColor: withAlpha(col, 0.16), borderColor: withAlpha(col, 0.5) }]}>
                 <Text style={[s.zoneChipTxt, on && { color: col }]}>{o.label}</Text>
@@ -449,12 +449,13 @@ const s = StyleSheet.create({
   tick: { position: 'absolute', bottom: 26, width: 2, borderRadius: rs(2) },
   tickMinor: { height: rs(14), backgroundColor: withAlpha(T1, 0.18) },
   tickMajor: { height: rs(26), backgroundColor: withAlpha(T1, 0.38) },
-  tickLabel: { position: 'absolute', bottom: 2, width: rs(28), textAlign: 'center', color: T3, fontFamily: DISPLAY, fontSize: TYPE.caption.fontSize, fontWeight: '500' },
+  tickLabel: { position: 'absolute', bottom: 2, width: rs(28), textAlign: 'center', color: T3, fontFamily: DISPLAY, fontSize: TYPE.caption.fontSize, fontWeight: '500', fontVariant: ['tabular-nums'] },
   pointer: { position: 'absolute', left: '50%', marginLeft: -1.5, top: 2, bottom: 24, width: rs(3), borderRadius: rs(3), backgroundColor: ACCENT },
 
   presets: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: rv(8), marginTop: rv(26) },
   preset: { height: rs(36), paddingHorizontal: rs(16), borderRadius: RADIUS.pill, alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(T1, 0.04), borderWidth: 1, borderColor: SEP },
-  presetOn: { backgroundColor: withAlpha(ACCENT, 0.14), borderColor: withAlpha(ACCENT, 0.4) },
+  // 선택 칩 한 벌(감사 #56): 채움 withAlpha(T1,0.14) · 보더 withAlpha(T1,0.4) — 앱 공통.
+  presetOn: { backgroundColor: withAlpha(T1, 0.14), borderColor: withAlpha(T1, 0.4) },
   presetText: { color: T2, fontFamily: DISPLAY, fontSize: TYPE.label.fontSize, fontWeight: '600' },
   presetTextOn: { color: ACCENT },
 
@@ -462,8 +463,8 @@ const s = StyleSheet.create({
   trackWrap: { alignItems: 'center', paddingHorizontal: rs(14) },
   trackLbl: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', marginBottom: rv(4) },
   lapChips: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: rv(8), marginTop: rv(36) },
-  lapChip: { minWidth: rs(60), height: rs(50), paddingHorizontal: rs(16), borderRadius: rs(15), borderCurve: 'continuous', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(T1, 0.03), borderWidth: 1, borderColor: SEP },
-  lapChipOn: { backgroundColor: withAlpha(ACCENT, 0.13), borderColor: withAlpha(ACCENT, 0.45) },
+  lapChip: { minWidth: rs(60), height: rs(50), paddingHorizontal: rs(16), borderRadius: RADIUS.md, borderCurve: 'continuous', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(T1, 0.03), borderWidth: 1, borderColor: SEP },
+  lapChipOn: { backgroundColor: withAlpha(T1, 0.14), borderColor: withAlpha(T1, 0.4) },
   lapChipVal: { color: T3, fontFamily: DISPLAY, fontSize: TYPE.heading.fontSize, fontWeight: '700', letterSpacing: -0.4 },
   lapChipValOn: { color: ACCENT },
   lapChipUnit: { color: T4, fontFamily: FONT, fontSize: TYPE.micro.fontSize, fontWeight: '600', marginTop: rv(1) },
@@ -476,7 +477,7 @@ const s = StyleSheet.create({
   zoneLabel: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600', letterSpacing: 0.3, marginBottom: rv(8) },
   zoneChips: { flexDirection: 'row', gap: rv(8), flexWrap: 'wrap' },
   zoneChip: { paddingHorizontal: rs(14), paddingVertical: rv(8), borderRadius: RADIUS.pill, borderCurve: 'continuous', backgroundColor: withAlpha(T1, 0.06), borderWidth: 1, borderColor: 'transparent' },
-  zoneChipTxt: { color: T3, fontFamily: FONT, fontSize: rf(13.5), fontWeight: '700' },
+  zoneChipTxt: { color: T3, fontFamily: FONT, fontSize: rf(13), fontWeight: '700' },
   zoneHint: { color: T3, fontFamily: FONT, fontSize: rf(12), marginTop: rv(8), letterSpacing: 0.2 },
   foot: { paddingHorizontal: GUTTER, paddingTop: rv(4) }, // 하단 여백은 insets.bottom 실측
   // 목표 직접 입력 키패드 시트(하단) — History 기간 피커와 같은 문법(SCRIM + 하단 카드).

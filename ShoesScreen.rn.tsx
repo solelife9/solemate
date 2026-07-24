@@ -9,7 +9,7 @@ import {Text, TextInput} from './lib/text';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {
-  BG, CARD_HI, GLASS, ACCENT, DANGER, WARN, GOOD, T1, T2, T3, T4, SEP, FONT, DISPLAY, withAlpha, RADIUS, GUTTER, Shoe, Run, SHOES, TYPE,
+  BG, CARD_HI, GLASS, ACCENT, DANGER, WARN, GOOD, T1, T2, T3, T4, SEP, FONT, DISPLAY, withAlpha, RADIUS, GUTTER, MOTION, Shoe, Run, SHOES, TYPE,
   BAR,
 } from './theme';
 import { TabBar, TABBAR_CLEARANCE, Pill, InjuryBanner, Button, SwipeBack, AmbientBackdrop, Rise, GlassEdge, WEAR_TONE_COLOR } from './primitives';
@@ -223,7 +223,7 @@ function ShoeDetail({
           <Pressable onPress={confirmDelete} hitSlop={6} accessibilityRole="button" accessibilityLabel="신발 삭제" style={s.iconBtn}><Ionicons name="trash-outline" size={ri(16)} color={DANGER} /></Pressable>
         </View>
       </View>
-      <ScrollView contentContainerStyle={{ padding: rs(18), paddingBottom: rv(28), gap: rv(16) }} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={{ paddingHorizontal: GUTTER, paddingTop: rs(18), paddingBottom: rv(28), gap: rv(16) }} keyboardShouldPersistTaps="handled">
         {editing ? (
           <View style={[s.card, { padding: rs(16), gap: rv(12) }]}>
             <GlassEdge glints={false} radius={RADIUS.lg} />
@@ -266,7 +266,7 @@ function ShoeDetail({
         )}
 
         {/* durability — 잔여 수명 카드(목업 09): 게이지 + 수명 조정 토글 */}
-        <View style={[s.card, { padding: rs(18) }]}>
+        <View style={[s.card, { padding: rs(16) }]}>
           <GlassEdge glints={false} radius={RADIUS.lg} />
           <FuelGauge
             remainLabel={String(remain)}
@@ -275,7 +275,7 @@ function ShoeDetail({
             usedLabel={String(usedDisp)}
             maxLabel={String(maxDisp)}
             editSlot={onSetMaxKm ? (
-              <Pressable onPress={() => setMaxEditOpen((o) => !o)} hitSlop={8} accessibilityRole="button" accessibilityLabel={`신발 수명 편집, 현재 ${maxDisp}${unit}`} style={s.maxEditToggle}>
+              <Pressable onPress={() => setMaxEditOpen((o) => !o)} hitSlop={10} accessibilityRole="button" accessibilityLabel={`신발 수명 편집, 현재 ${maxDisp}${unit}`} style={s.maxEditToggle}>
                 <Ionicons name={maxEditOpen ? 'checkmark' : 'pencil'} size={ri(13)} color={T2} />
               </Pressable>
             ) : undefined}
@@ -286,10 +286,10 @@ function ShoeDetail({
           )}
           {maxEditOpen && onSetMaxKm && (
             <View style={s.maxStepRow}>
-              <Pressable onPress={() => stepMaxKm(-50)} hitSlop={8} accessibilityRole="button" accessibilityLabel="수명 50 줄이기" style={s.maxEditToggle}><Ionicons name="remove" size={ri(16)} color={T1} /></Pressable>
+              <Pressable onPress={() => stepMaxKm(-50)} hitSlop={10} accessibilityRole="button" accessibilityLabel="수명 50 줄이기" style={s.maxEditToggle}><Ionicons name="remove" size={ri(16)} color={T1} /></Pressable>
               {/* 편집은 기저 수명(몸무게 반영 전) — 유효값 오염 방지. */}
               <Text style={s.maxStepVal}>수명 {editBaseDisp}<Text style={s.maxStepUnitTxt}> {unit}</Text></Text>
-              <Pressable onPress={() => stepMaxKm(50)} hitSlop={8} accessibilityRole="button" accessibilityLabel="수명 50 늘리기" style={s.maxEditToggle}><Ionicons name="add" size={ri(16)} color={T1} /></Pressable>
+              <Pressable onPress={() => stepMaxKm(50)} hitSlop={10} accessibilityRole="button" accessibilityLabel="수명 50 늘리기" style={s.maxEditToggle}><Ionicons name="add" size={ri(16)} color={T1} /></Pressable>
             </View>
           )}
         </View>
@@ -407,7 +407,7 @@ function ShoeDetail({
           )}
         </View>
         {shoeRuns.length === 0 ? (
-          <View style={[s.card, { padding: rs(24), alignItems: 'center' }]}>
+          <View style={[s.card, { padding: rs(16), alignItems: 'center' }]}>
             <GlassEdge glints={false} radius={RADIUS.lg} />
             <Text style={{ color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize }}>아직 기록이 없어요</Text>
           </View>
@@ -717,7 +717,8 @@ export default function ShoesScreen({
 
 const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: BG },
-  pressed: { opacity: 0.85 },
+  // 누름 표준(DESIGN §6) — 사설 opacity 0.85 폐지, MOTION.press 토큰으로 통일(2026-07-25).
+  pressed: { transform: [{ scale: MOTION.press.scale }], opacity: MOTION.press.opacity },
   row: { flexDirection: 'row', alignItems: 'center', gap: rv(8) },
   baselineRow: { flexDirection: 'row', alignItems: 'flex-end' },
   // 코너 페이드 헤어라인(GlassEdge glints=false) — 균일 RN 보더 폐지(2026-07-10 확정).
@@ -758,14 +759,14 @@ const s = StyleSheet.create({
   shoeCondText: { color: T2, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500' },
   // 누적 거리(큰 숫자) + 교체까지 남은 거리 — 목업 lifeRow 정합
   shoeLifeRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginTop: rv(14), marginBottom: rv(10) },
-  shoeUsedNum: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.title1.fontSize, fontWeight: '700', letterSpacing: -0.6 },
+  shoeUsedNum: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.title1.fontSize, fontWeight: '700', letterSpacing: -0.6, fontVariant: ['tabular-nums'] },
   shoeUsedU: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500', marginLeft: rs(2) },
   shoeRemain: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500' },
   // 라벨바(목업 LifeBar): 사용/총 수명 양끝 라벨 + 가운데 평균 페이스
   shoeBar: { height: rs(BAR.md), borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.1), overflow: 'hidden' },
   shoeBarFill: { height: '100%', borderRadius: RADIUS.pill },
   shoeBarLabels: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: rv(8) },
-  shoeBarLabel: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500' },
+  shoeBarLabel: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500', fontVariant: ['tabular-nums'] },
   fcRow: { flexDirection: 'row', alignItems: 'center', gap: rv(4), marginTop: rv(8) },
   fcText: { flex: 1, color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500' },
   soonHeader: { flexDirection: 'row', alignItems: 'center', gap: rv(8), backgroundColor: withAlpha(WARN, 0.1), borderRadius: RADIUS.md, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(WARN, 0.35), paddingHorizontal: rs(12), paddingVertical: rv(10) },
@@ -784,7 +785,7 @@ const s = StyleSheet.create({
 
 
   // detail
-  detailNav: { paddingTop: rv(12), paddingHorizontal: rs(16), paddingBottom: rv(6), flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  detailNav: { paddingTop: rv(12), paddingHorizontal: GUTTER, paddingBottom: rv(6), flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   iconBtn: { width: rs(38), height: rs(38), borderRadius: RADIUS.pill, backgroundColor: CARD_HI, borderWidth: 1, borderColor: withAlpha(T1, 0.12), alignItems: 'center', justifyContent: 'center' },
   // 상태 칩(목업 09) — 회색 알약 + 흰 글씨 + 점(녹색 아님)
   statusPill: { flexDirection: 'row', alignItems: 'center', gap: rv(8), backgroundColor: CARD_HI, borderRadius: RADIUS.pill, paddingHorizontal: rs(12), paddingVertical: rv(8), alignSelf: 'flex-start' },
@@ -812,7 +813,7 @@ const s = StyleSheet.create({
   // 은퇴 키프세이크 트리거 카드(수명 도달) — 자랑스러운 톤. accent 보더로 주목.
   // 키프세이크 = 액센트 의미 보더(성취 순간 강조) — 헤어라인 스윕 예외로 RN 보더 유지.
   // (s.card 가 보더를 잃으면서 borderWidth 를 자체 소유해야 기존 시감이 보존된다.)
-  keepsakeCard: { padding: rs(18), gap: rv(6), borderWidth: 1, borderColor: withAlpha(ACCENT, 0.3) },
+  keepsakeCard: { padding: rs(16), gap: rv(6), borderWidth: 1, borderColor: withAlpha(ACCENT, 0.3) },
   keepsakeTitle: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.heading.fontSize, fontWeight: '700', letterSpacing: -0.2 },
   keepsakeSub: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, lineHeight: rf(19) },
   keepsakeBtns: { flexDirection: 'row', gap: rv(10), marginTop: rv(8) },
@@ -823,7 +824,7 @@ const s = StyleSheet.create({
   retireFlowBtn: { flex: 1, height: rs(50) },
   keepsakeBtnTxt: { fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '700' },
   // 실효 마모 + 교체 예측 카드(차별점) — 본문 카드 톤에 accent 절제(라벨 아이콘/예측 라인만).
-  wearCard: { padding: rs(18), gap: rv(2) },
+  wearCard: { padding: rs(16), gap: rv(2) },
   wearLabel: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600', letterSpacing: 0.2 },
   wearValue: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.display.fontSize, fontWeight: '700', letterSpacing: 0.3 },
   wearUnit: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, marginLeft: rs(4), marginBottom: rv(4) },
@@ -867,11 +868,11 @@ const s = StyleSheet.create({
   // 2x2 통계 그리드(총거리/총횟수/총시간/평균페이스). 한 카드 안에 4칸을 넉넉히.
   // stats 2x2 — 사진(디자인 09)처럼 왼쪽 정렬. 글씨 비율에 맞게 패딩을 조여 카드가
   // 과하게 커지지 않게 한다(사용자 요청).
-  statGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingVertical: rv(6), paddingHorizontal: rs(18) },
+  statGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingVertical: rv(6), paddingHorizontal: rs(16) },
   statGridCell: { width: '50%', paddingVertical: rv(10) },
   statGridCell3: { width: '33.3%', paddingVertical: rv(10) },
-  shareLine: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, paddingHorizontal: rs(18), paddingBottom: rv(14), marginTop: rv(-2) },
-  statValue: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.title.fontSize, letterSpacing: 0.3 },
+  shareLine: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, paddingHorizontal: rs(16), paddingBottom: rv(14), marginTop: rv(-2), fontVariant: ['tabular-nums'] },
+  statValue: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.title.fontSize, letterSpacing: 0.3, fontVariant: ['tabular-nums'] },
   statUnit: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize },
   statLabel: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, marginTop: rv(4) },
 

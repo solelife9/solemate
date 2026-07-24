@@ -11,7 +11,7 @@ import { rf, rs, ri, rv } from './lib/responsive';
 import {View, Pressable, StyleSheet} from 'react-native';
 import {Text} from './lib/text';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import {ACCENT, BRAND, T1, T2, T3, FONT, DISPLAY, RADIUS, GLASS, TYPE, withAlpha} from './theme';
+import {ACCENT, BRAND, T1, T2, T3, FONT, DISPLAY, RADIUS, GLASS, TYPE, MOTION, withAlpha} from './theme';
 import {Ring, Pill, Stepper, GlassEdge} from './primitives';
 import {ChallengeRun, ChallengeProgressResult} from './lib/challenges';
 import {
@@ -103,7 +103,7 @@ export function SmartChallengeCard({
       accessibilityLabel={editing ? '목표 거리 수정 완료' : '목표 거리 수정'}
       hitSlop={8}
       testID="smart-challenge-edit"
-      style={({pressed}) => [s.smartEditBtn, pressed && {opacity: 0.6}]}>
+      style={({pressed}) => [s.smartEditBtn, pressed && s.pressed]}>
       <Ionicons name={editing ? 'checkmark' : 'pencil'} size={ri(15)} color={ACCENT} />
     </Pressable>
   );
@@ -241,6 +241,8 @@ function isoToday(): string {
 // 생 rf() 폰트를 TYPE 토큰으로 수렴, 카드 radius 를 마이탭 형제 카드와 같은 lg 로 통일.
 const s = StyleSheet.create({
   empty: {color: T3, fontFamily: FONT, ...TYPE.label, lineHeight: rf(19), paddingHorizontal: rs(4)},
+  // 누름 표준(MOTION.press) — 사설 opacity 0.6 폐지.
+  pressed: {opacity: MOTION.press.opacity, transform: [{scale: MOTION.press.scale}]},
 
   ringPct: {color: T1, fontFamily: DISPLAY, ...TYPE.label, fontVariant: ['tabular-nums']},
   // 값(진행)만 heading 급 — 마이탭 이웃 카드(러너 스펙 specSubVal)와 동일 문법.

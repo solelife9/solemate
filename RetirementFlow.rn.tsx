@@ -25,8 +25,6 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {
   BG,
-  CARD,
-  CARD_DIM,
   CARD_HI,
   ACCENT,
   T1,
@@ -38,6 +36,7 @@ import {
   SPACE,
   RADIUS,
   withAlpha, TYPE,
+  GLASS, MOTION,
 } from './theme';
 import {Button, GlassEdge} from './primitives';
 import {Unit} from './lib/units';
@@ -180,7 +179,10 @@ function RetirementFlow({
           style={s.iconBtn}>
           <Ionicons name="close" size={ri(20)} color={T2} />
         </Pressable>
-        <View style={s.dots}>
+        <View
+          style={s.dots}
+          accessible
+          accessibilityLabel={`4단계 중 ${step + 1}`}>
           {[0, 1, 2, 3].map(i => (
             <View
               key={i}
@@ -383,8 +385,9 @@ function HighlightsStep({
             backgroundColor: withAlpha(badge.color, 0.12),
           },
         ]}>
+        {/* 배지 이모지 제거 — 공유 카드(RetirementCard stripEmoji)와 같은 절제 문법. */}
         <Text style={[s.gradeText, {color: badge.color}]}>
-          {badge.emoji} {badge.label}
+          {badge.label}
         </Text>
       </View>
 
@@ -463,6 +466,8 @@ function CardStep({
                 on && s.formatBtnOn,
                 pressed && s.pressed,
               ]}>
+              {/* 비활성=유리 헤어라인, 활성=ACCENT 의미 보더(형제 화면 칩 문법). */}
+              {!on && <GlassEdge glints={false} radius={RADIUS.sm} />}
               <Text style={[s.formatTxt, on && s.formatTxtOn]}>{RETIREMENT_CARD_FORMAT_LABEL[f]}</Text>
             </Pressable>
           );
@@ -474,6 +479,7 @@ function CardStep({
         style={[s.preview, format === 'S' && [s.previewStory, {width: previewW}]]}
         testID="retire-card-preview">
         <RetirementCard ref={cardRef} model={model} format={format} displayWidth={previewW} />
+        <GlassEdge glints={false} radius={RADIUS.lg} />
       </View>
 
       <RetirementCardActions onSave={onSave} onShare={onShare} />
@@ -483,7 +489,8 @@ function CardStep({
 
 const s = StyleSheet.create({
   screen: {flex: 1, backgroundColor: BG},
-  pressed: {opacity: 0.85},
+  // 누름 표준(MOTION.press) — 사설 opacity 0.85 폐지.
+  pressed: {opacity: MOTION.press.opacity, transform: [{scale: MOTION.press.scale}]},
   nav: {
     paddingTop: SPACE.md,
     paddingHorizontal: SPACE.md,
@@ -510,7 +517,8 @@ const s = StyleSheet.create({
   dotOn: {backgroundColor: T2, width: rs(20)},
   dotDone: {backgroundColor: withAlpha(ACCENT, 0.5)},
 
-  body: {flexGrow: 1, justifyContent: 'center', padding: SPACE.xl, paddingBottom: SPACE.xxl, gap: SPACE.lg},
+  // 상단 시작(정본 — 콘텐츠 상단 정렬): 구 justifyContent center 폐지.
+  body: {flexGrow: 1, padding: SPACE.xl, paddingBottom: SPACE.xxl, gap: SPACE.lg},
   stepWrap: {gap: SPACE.md},
   eyebrow: {
     color: ACCENT,
@@ -552,8 +560,9 @@ const s = StyleSheet.create({
   },
 
   // 코너 페이드 헤어라인(GlassEdge glints=false) — 균일 RN 보더 폐지(2026-07-10 확정).
+  // 표면도 불투명 CARD_DIM → 반투명 유리(GLASS.fill) — 다른 화면 카드 재질과 통일.
   card: {
-    backgroundColor: CARD_DIM,
+    backgroundColor: GLASS.fill,
     borderRadius: RADIUS.lg,
     borderCurve: 'continuous',
     overflow: 'hidden',
@@ -563,7 +572,7 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: SPACE.md + 2,
+    paddingVertical: SPACE.md, // 구 SPACE.md+2 산수 폐지 — 스케일 값으로 수렴
   },
   basicRowBorder: {
     borderBottomWidth: StyleSheet.hairlineWidth,
@@ -592,7 +601,7 @@ const s = StyleSheet.create({
     alignSelf: 'flex-start',
     borderRadius: RADIUS.pill,
     borderWidth: 1,
-    paddingHorizontal: SPACE.md + 2,
+    paddingHorizontal: SPACE.md, // 구 SPACE.md+2 산수 폐지
     paddingVertical: SPACE.sm,
   },
   gradeText: {fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '700'},
@@ -622,7 +631,7 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACE.md,
-    paddingVertical: SPACE.md + 1,
+    paddingVertical: SPACE.md, // 구 SPACE.md+1 산수 폐지
   },
   hlRowBorder: {
     borderBottomWidth: StyleSheet.hairlineWidth,
@@ -631,11 +640,14 @@ const s = StyleSheet.create({
   hlText: {color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600'},
 
   formatRow: {flexDirection: 'row', gap: SPACE.sm},
+  // 불투명 CARD_HI → 유리(GLASS.fill + GlassEdge 헤어라인) — 형제 세그먼트 문법.
   formatBtn: {
     flex: 1,
     height: rs(42),
     borderRadius: RADIUS.sm,
-    backgroundColor: CARD_HI,
+    borderCurve: 'continuous',
+    backgroundColor: GLASS.fill,
+    overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
@@ -648,12 +660,14 @@ const s = StyleSheet.create({
   formatTxt: {color: T3, fontFamily: DISPLAY, fontSize: TYPE.heading.fontSize, fontWeight: '700'},
   formatTxtOn: {color: ACCENT},
 
+  // 불투명 CARD → 유리(GLASS.fill + GlassEdge) — 카드 재질 통일. SVG 카드가 면을 다
+  // 덮으므로 표면은 로딩 순간의 배경 역할만 한다.
   preview: {
     aspectRatio: 1,
     borderRadius: RADIUS.lg,
     borderCurve: 'continuous',
     overflow: 'hidden',
-    backgroundColor: CARD,
+    backgroundColor: GLASS.fill,
   },
   // 스토리(1080×1920) 미리보기 — 9:16 비율, 중앙 정렬(폭은 런타임 계산).
   previewStory: {

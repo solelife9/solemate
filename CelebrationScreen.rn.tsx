@@ -9,11 +9,11 @@
 // ============================================================================
 import React, {useEffect, useRef} from 'react';
 import { rf, rs, ri, rv } from './lib/responsive';
-import {View, Pressable, StyleSheet, Animated, Easing} from 'react-native';
+import {View, Pressable, StyleSheet, Animated} from 'react-native';
 import {Text} from './lib/text';
 import Svg, {Defs, RadialGradient, LinearGradient, Stop, Circle, Ellipse, Path} from 'react-native-svg';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {BG, T1, T3, FONT, DISPLAY, HALL_GOLD, BLACK, CELEB_FACE_BG, CELEB_ICON_LEGENDARY, CELEB_ICON_DEFAULT, withAlpha, TYPE} from './theme';
+import {BG, T1, T3, FONT, DISPLAY, HALL_GOLD, BLACK, CELEB_FACE_BG, CELEB_ICON_LEGENDARY, CELEB_ICON_DEFAULT, withAlpha, TYPE, MOTION} from './theme';
 import {success, impactHeavy} from './lib/haptics';
 import {Button} from './primitives';
 
@@ -81,7 +81,9 @@ function Medal({color, legendary, icon}: {color: string; legendary?: boolean; ic
   const uid = icon; // 화면당 1개 마운트 — id 충돌 없음
   return (
     <View style={{width: rs(148), height: rs(148), alignItems: 'center', justifyContent: 'center'}}>
-      <Svg width={148} height={148}>
+      {/* Svg 렌더 치수를 컨테이너와 같은 rs 스케일로 정렬(감사 #42) — 내부 좌표는
+          viewBox(148 기준)로 유지해 지오메트리 수치는 그대로, 기기 폭에 비례해 그려진다. */}
+      <Svg width={rs(148)} height={rs(148)} viewBox="0 0 148 148">
         <Defs>
           <LinearGradient id={`rim-${uid}`} x1="0" y1="0" x2="0" y2="1">
             <Stop offset="0" stopColor={T1} stopOpacity={0.55} />
@@ -116,7 +118,7 @@ function Medal({color, legendary, icon}: {color: string; legendary?: boolean; ic
 // 큰 메달/크레스트 글로우(radial)
 function Glow({color}: {color: string}) {
   return (
-    <Svg width={380} height={380} style={st.glow} pointerEvents="none">
+    <Svg width={rs(380)} height={rs(380)} viewBox="0 0 380 380" style={st.glow} pointerEvents="none">
       <Defs>
         <RadialGradient id="cel-glow" cx="50%" cy="50%" rx="50%" ry="50%">
           <Stop offset="0" stopColor={color} stopOpacity={0.16} />
@@ -133,7 +135,7 @@ function PingRing({color, delay = 0}: {color: string; delay?: number}) {
   const v = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     const loop = Animated.loop(
-      Animated.timing(v, {toValue: 1, duration: 2800, delay, easing: Easing.out(Easing.cubic), useNativeDriver: true}),
+      Animated.timing(v, {toValue: 1, duration: 2800, delay, easing: MOTION.ease.out, useNativeDriver: true}),
     );
     loop.start();
     return () => loop.stop();
@@ -171,7 +173,7 @@ export default function CelebrationScreen({data, onClose}: {data: CelebrationDat
     if (data.type === 'rankup') impactHeavy();
     else success();
     anim.setValue(0);
-    Animated.timing(anim, {toValue: 1, duration: 950, easing: Easing.out(Easing.cubic), useNativeDriver: true}).start();
+    Animated.timing(anim, {toValue: 1, duration: 950, easing: MOTION.ease.out, useNativeDriver: true}).start();
   }, [anim, data]);
 
   if (data.type === 'rankup') {
@@ -265,7 +267,9 @@ const st = StyleSheet.create({
 
   eyebrow: {fontSize: TYPE.caption.fontSize, fontWeight: '700', letterSpacing: 2.6, marginBottom: rv(32), textTransform: 'uppercase', fontFamily: FONT},
   medalwrap: {width: rs(124), height: rs(124), marginBottom: rv(30), alignItems: 'center', justifyContent: 'center'},
-  ring: {position: 'absolute', width: rs(124), height: rs(124), borderRadius: 62, borderCurve: 'continuous', borderWidth: 1},
+  // borderRadius 를 width 와 같은 rs 스케일로(감사 #42) — raw 62 는 큰 기기(rs>1)에서
+  // rs(124)/2 에 못 미쳐 원이 둥근 사각형으로 깨진다. 항상 지름의 절반 = 진짜 원.
+  ring: {position: 'absolute', width: rs(124), height: rs(124), borderRadius: rs(124) / 2, borderCurve: 'continuous', borderWidth: 1},
 
   rankfrom: {fontSize: TYPE.body.fontSize, fontWeight: '500', color: T3, marginBottom: rv(2), fontFamily: FONT, textAlign: 'center'},
   name: {fontSize: TYPE.display.fontSize, fontWeight: '700', color: T1, letterSpacing: -0.6, lineHeight: rf(38), textAlign: 'center', fontFamily: DISPLAY},

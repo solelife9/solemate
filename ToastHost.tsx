@@ -10,17 +10,18 @@
 
 import React, {useEffect, useRef, useState} from 'react';
 import { rs } from './lib/responsive';
-import {AccessibilityInfo, Animated, Platform, StyleSheet, Pressable, Easing} from 'react-native';
+import {AccessibilityInfo, Animated, Platform, StyleSheet, Pressable} from 'react-native';
 import {Text} from './lib/text';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {BLACK, CARD_HI, ACCENT, T1, SEP, FONT, RADIUS, SPACE, TYPE} from './theme';
+import {CARD_HI, ACCENT, T1, SEP, FONT, RADIUS, SPACE, TYPE, MOTION, SHADOW} from './theme';
 import {
   subscribeToast, runToastAction, getCurrentToast, ToastEntry,
   subscribeToastClearance, getToastClearance,
 } from './lib/toast';
 
-const ENTER_MS = 220;
-const EXIT_MS = 180;
+// 모션 = MOTION 토큰(2026-07-25 — 구 사설 220/180ms 폐지, 코어가 자기 토큰을 지킨다).
+const ENTER_MS = MOTION.dur.fast;
+const EXIT_MS = MOTION.dur.fast;
 const SLIDE_DP = 80; // 시작/종료 시 아래로 내려가 있는 거리(px)
 
 export default function ToastHost() {
@@ -54,7 +55,7 @@ export default function ToastHost() {
           Animated.timing(translateY, {
             toValue: 0,
             duration: ENTER_MS,
-            easing: Easing.out(Easing.cubic),
+            easing: MOTION.ease.out,
             useNativeDriver: true,
           }),
           Animated.timing(opacity, {
@@ -73,7 +74,7 @@ export default function ToastHost() {
           Animated.timing(translateY, {
             toValue: SLIDE_DP,
             duration: EXIT_MS,
-            easing: Easing.in(Easing.cubic),
+            easing: MOTION.ease.in,
             useNativeDriver: true,
           }),
           Animated.timing(opacity, {
@@ -148,12 +149,8 @@ const styles = StyleSheet.create({
     borderColor: SEP,
     paddingVertical: SPACE.md,
     paddingHorizontal: SPACE.lg,
-    // 다크 위에 떠 보이도록 약한 그림자(Android elevation 포함).
-    shadowColor: BLACK,
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    shadowOffset: {width: 0, height: rs(4)},
-    elevation: 6,
+    // 다크 위에 떠 보이도록 약한 그림자 — SHADOW.overlay 토큰(수제 그림자 폐지).
+    ...SHADOW.overlay,
   },
   message: {
     flex: 1,

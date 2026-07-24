@@ -8,8 +8,9 @@
 // 색은 theme 토큰만. 큰 숫자는 포스터 관례상 800(인앱 700 규칙과 별개 — 대형 그래픽).
 // ============================================================================
 import React from 'react';
-import Svg, {Rect, Text as SvgText, G, Circle} from 'react-native-svg';
-import {BG, CARD, CARD_HI, ACCENT, HALL_GOLD, T1, T2, T3, FONT, DISPLAY, CARD_BORDER} from './theme';
+import Svg, {Rect, Text as SvgText, G, Circle, Defs, RadialGradient, Stop} from 'react-native-svg';
+import {CARD, CARD_HI, ACCENT, HALL_GOLD, RING_ACCENT, T1, T2, T3, FONT, DISPLAY, CARD_BORDER} from './theme';
+import {SHARE_DARK_STOPS} from './theme.palettes';
 import {WORDMARK_FONT} from './primitives';
 
 export const CARD_W = 1080;
@@ -52,14 +53,23 @@ const RunnerSpecShareCard = React.forwardRef<unknown, {model: RunnerSpecShareMod
 
   return (
     <Svg ref={ref as never} width={CARD_W} height={CARD_H}>
-      <Rect x={0} y={0} width={CARD_W} height={CARD_H} fill={BG} />
+      {/* 배경 — 공유카드 공통 다크 라디얼(SHARE_DARK_STOPS). flat BG 는 4종 중 이 카드만
+          달라 통일(감사 #57). */}
+      <Defs>
+        <RadialGradient id="spec-dark" cx="50%" cy="18%" r="110%">
+          <Stop offset="0" stopColor={SHARE_DARK_STOPS[0]} />
+          <Stop offset="0.55" stopColor={SHARE_DARK_STOPS[1]} />
+          <Stop offset="1" stopColor={SHARE_DARK_STOPS[2]} />
+        </RadialGradient>
+      </Defs>
+      <Rect x={0} y={0} width={CARD_W} height={CARD_H} fill="url(#spec-dark)" />
       <Rect x={PAD / 2} y={PAD / 2} width={CARD_W - PAD} height={CARD_H - PAD} rx={40} fill="none" stroke={CARD_BORDER} strokeWidth={2} />
 
-      {/* 헤더 — 워드마크 + 러너 스펙 + 이름 */}
-      <SvgText x={PAD} y={168} fill={T1} fontFamily={WORDMARK_FONT} fontWeight="500" fontSize={58} letterSpacing={-0.5}>
+      {/* 헤더 — 워드마크(4종 통일: 파파야·54·좌상) + 러너 스펙 + 이름 */}
+      <SvgText x={PAD} y={168} fill={RING_ACCENT} fontFamily={WORDMARK_FONT} fontWeight="500" fontSize={54} letterSpacing={-0.5}>
         {model.brand.toLowerCase()}
       </SvgText>
-      <SvgText x={CARD_W - PAD} y={168} fill={ACCENT} fontFamily={FONT} fontWeight="800" fontSize={30} letterSpacing={4} textAnchor="end">
+      <SvgText x={CARD_W - PAD} y={168} fill={ACCENT} fontFamily={FONT} fontWeight="800" fontSize={28} letterSpacing={4} textAnchor="end">
         RUNNER SPEC
       </SvgText>
       <SvgText x={PAD} y={310} fill={T1} fontFamily={DISPLAY} fontWeight="800" fontSize={72} letterSpacing={-1.5}>

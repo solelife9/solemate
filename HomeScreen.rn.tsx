@@ -9,14 +9,14 @@ import React, { useRef, useState, useEffect } from 'react';
 import { rf, rs, ri, rv } from './lib/responsive';
 import {
   View, ScrollView, Pressable, StyleSheet, Linking, Dimensions,
-  RefreshControl, NativeSyntheticEvent, NativeScrollEvent, Animated, Easing,
+  RefreshControl, NativeSyntheticEvent, NativeScrollEvent, Animated,
 } from 'react-native';
 import {Text} from './lib/text';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {
   BG, CARD_HI, ACCENT, BRAND, GLASS, T1, T2, T3,
-  FONT, DISPLAY, SPACE, RADIUS, GUTTER, withAlpha, Shoe, SHOES, TYPE,
+  FONT, DISPLAY, SPACE, RADIUS, GUTTER, MOTION, withAlpha, Shoe, SHOES, TYPE,
   BAR,
 } from './theme';
 import type { RankTier } from './lib/progression/types';
@@ -77,7 +77,7 @@ export type HomeProgression = {
 function Rise({ delay = 0, children }: { delay?: number; children: React.ReactNode }) {
   const v = useRef(new Animated.Value(0)).current;
   useEffect(() => {
-    const anim = Animated.timing(v, { toValue: 1, duration: 420, delay, easing: Easing.out(Easing.cubic), useNativeDriver: false });
+    const anim = Animated.timing(v, { toValue: 1, duration: MOTION.dur.sheet, delay, easing: MOTION.ease.out, useNativeDriver: false });
     anim.start();
     return () => anim.stop(); // 언마운트 시 타이머 정리(테스트/화면전환 누수 방지)
   }, [v, delay]);
@@ -433,11 +433,11 @@ export default function HomeScreen({
           <Rise delay={120}>
             <View style={[s.sectionRow, { marginTop: rv(4) }]}>
               <SectionTitle style={s.sectionLabelInline}>이번 주 러닝</SectionTitle>
-              <Pressable onPress={() => onTab?.(2)} hitSlop={8} accessibilityRole="button" accessibilityLabel="기록 전체 보기">
+              <Pressable onPress={() => onTab?.(2)} hitSlop={12} accessibilityRole="button" accessibilityLabel="기록 전체 보기">
                 <Text style={s.sectionMore}>전체 보기 ›</Text>
               </Pressable>
             </View>
-            <View style={{ paddingHorizontal: SPACE.xl, gap: SPACE.sm }}>
+            <View style={{ paddingHorizontal: GUTTER, gap: SPACE.sm }}>
               <WeekCard week={week} unit={unit} weeklyGoalKm={weeklyGoalKm} streakDays={streakDays} />
               {/* 훈련 부하 시그널 — 경고할 게 있을 때만 나타난다(평소엔 이 자리 자체가 없음).
                   자세히 = 기록 탭 인사이트(TrainingLoadCard)로. */}
@@ -472,7 +472,8 @@ const s = StyleSheet.create({
   scroll: { flex: 1 },
   // 탭 독이 콘텐츠 위에 떠 있으므로(absolute 유리 독) 마지막 카드가 가리지 않게 여백 확보.
   scrollContent: { paddingBottom: TABBAR_CLEARANCE },
-  pressed: { opacity: 0.85, transform: [{ scale: 0.98 }] },
+  // 누름 표준(DESIGN §6) — 사설 0.85/0.98 폐지, MOTION.press 토큰으로 통일(2026-07-25).
+  pressed: { transform: [{ scale: MOTION.press.scale }], opacity: MOTION.press.opacity },
   row: { flexDirection: 'row', alignItems: 'center', gap: rv(8) },
   baselineRow: { flexDirection: 'row', alignItems: 'flex-end' },
 
@@ -517,7 +518,7 @@ const s = StyleSheet.create({
   insightGrid: { flexDirection: 'row', alignItems: 'flex-start' },
   insightDivider: { width: StyleSheet.hairlineWidth, alignSelf: 'stretch', backgroundColor: withAlpha(T1, 0.08), marginHorizontal: SPACE.lg },
   insightLabel: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600', letterSpacing: -0.1 },
-  insightNum: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.title.fontSize, fontWeight: '700', letterSpacing: -0.4 },
+  insightNum: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.title.fontSize, fontWeight: '700', letterSpacing: -0.4, fontVariant: ['tabular-nums'] },
   insightUnit: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500', marginLeft: rs(2) },
   insightWeeks: { fontFamily: DISPLAY, fontSize: TYPE.title.fontSize, fontWeight: '700', letterSpacing: -0.4, marginTop: rv(6) },
   insightSub: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500', marginTop: rv(3) },
@@ -530,8 +531,8 @@ const s = StyleSheet.create({
   gauge: { height: rs(BAR.thin), borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.08), marginTop: rv(14), overflow: 'hidden' },
   gaugeFill: { height: '100%', borderRadius: RADIUS.pill },
 
-  sectionLabel: { paddingHorizontal: SPACE.xl, paddingBottom: SPACE.sm },
-  sectionRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', paddingHorizontal: SPACE.xl, paddingTop: SPACE.sm, paddingBottom: SPACE.sm },
+  sectionLabel: { paddingHorizontal: GUTTER, paddingBottom: SPACE.sm },
+  sectionRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', paddingHorizontal: GUTTER, paddingTop: SPACE.sm, paddingBottom: SPACE.sm },
   sectionLabelInline: { paddingHorizontal: rs(0), paddingBottom: rv(0) },
   // '전체 보기 ›' = 탭 가능한 링크 → T3(보조). T4는 비상호작용 회색이라 링크가 죽어 보였다.
   sectionMore: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500' },
@@ -559,7 +560,7 @@ const s = StyleSheet.create({
 
   // 수익화 v1: 교체 시점 '다음 러닝화' 추천 카드(오렌지 절제 — 테두리만 액센트)
   nextWrap: { marginTop: SPACE.lg },
-  nextCard: { marginHorizontal: SPACE.xl, backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.3), padding: SPACE.lg },
+  nextCard: { marginHorizontal: GUTTER, backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.3), padding: SPACE.lg },
   nextSub: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, lineHeight: rf(18), marginBottom: SPACE.sm },
   nextRow: { flexDirection: 'row', alignItems: 'center', gap: SPACE.md, paddingVertical: rv(12) },
   nextRowSep: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.07) },

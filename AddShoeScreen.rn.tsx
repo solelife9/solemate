@@ -12,6 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {
   BG, CARD_HI, RING_ACCENT, DANGER, T1, T2, T3, FONT, DISPLAY, withAlpha, Shoe, TYPE, GLASS, RADIUS,
+  GUTTER, MOTION,
 } from './theme';
 import { Button, GlassEdge } from './primitives';
 // 러닝화 모델 카탈로그·권장수명은 data/shoeModels(단일 소스)에서 가져온다.
@@ -77,7 +78,8 @@ export default function AddShoeScreen({
       {/* 키보드가 입력칸·등록 버튼을 가리지 않게 폼+CTA를 KeyboardAvoidingView로 감싼다
           (iOS=padding, Android는 adjustResize에 맡겨 undefined). */}
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={insets.top + 8}>
-      <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: rs(18), paddingBottom: rv(20) }} keyboardShouldPersistTaps="handled">
+      {/* 상단 시작(정본 — 콘텐츠 상단 정렬): 구 justifyContent center 폐지. */}
+      <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: GUTTER, paddingTop: rv(18), paddingBottom: rv(20) }} keyboardShouldPersistTaps="handled">
         {/* 러닝화(브랜드+모델) — 탭하면 온보딩과 동일한 2열 분할 피커가 열린다 */}
         <Text style={s.label}>러닝화</Text>
         <Pressable onPress={() => setPickerOpen(true)} accessibilityRole="button" accessibilityLabel={picked ? `러닝화 ${picked.brand} ${picked.model}, 눌러서 변경` : '러닝화 선택'} testID="add-shoe-select" style={({ pressed }) => [s.selector, pressed && s.pressed]}>
@@ -145,9 +147,10 @@ export default function AddShoeScreen({
 
 const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: BG },
-  pressed: { opacity: 0.85, transform: [{ scale: 0.98 }] },
+  // 누름 표준(MOTION.press) — 사설 0.85/0.98 폐지.
+  pressed: { opacity: MOTION.press.opacity, transform: [{ scale: MOTION.press.scale }] },
 
-  nav: { paddingTop: rv(12), paddingHorizontal: rs(18), paddingBottom: rv(6), flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  nav: { paddingTop: rv(12), paddingHorizontal: GUTTER, paddingBottom: rv(6), flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   iconBtn: { width: rs(38), height: rs(38), borderRadius: RADIUS.pill, backgroundColor: CARD_HI, borderWidth: 1, borderColor: withAlpha(T1, 0.12), alignItems: 'center', justifyContent: 'center' },
   navTitle: { color: T1, fontFamily: FONT, fontSize: TYPE.heading.fontSize, fontWeight: '500', letterSpacing: -0.2 },
 
@@ -171,5 +174,5 @@ const s = StyleSheet.create({
   usedInput: { flex: 1, color: T1, fontFamily: DISPLAY, fontSize: TYPE.title.fontSize, paddingVertical: rv(12) },
   usedUnit: { color: T3, fontFamily: FONT, fontSize: TYPE.body.fontSize },
 
-  ctaWrap: { paddingHorizontal: rs(18), paddingTop: rv(6), paddingBottom: rv(34), backgroundColor: BG },
+  ctaWrap: { paddingHorizontal: GUTTER, paddingTop: rv(6), paddingBottom: rv(34), backgroundColor: BG },
 });

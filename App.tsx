@@ -1,7 +1,7 @@
 import React, {useState, useEffect, useRef, useMemo, useCallback} from 'react';
 import { rf, rs, ri, rv } from './lib/responsive';
 import {
-  View, StyleSheet, TouchableOpacity, Alert, StatusBar, Linking, AppState,
+  View, StyleSheet, Pressable, Alert, StatusBar, Linking, AppState,
 } from 'react-native';
 import {Text, TextInput} from './lib/text';
 import {SafeAreaProvider, useSafeAreaInsets} from 'react-native-safe-area-context';
@@ -15,12 +15,12 @@ import {runVoice} from './lib/runVoice/voice';
 
 import {
   BG, CARD, CARD_HI as SURFACE, ACCENT, WARN, DANGER, T1, T2, T3,
-  FONT as FP, DISPLAY as FH, SEP, RADIUS, Shoe, Run, withAlpha,
+  FONT as FP, DISPLAY as FH, SEP, RADIUS, GUTTER, MOTION, Shoe, Run, withAlpha,
 } from './theme';
 import {Ring, Button} from './primitives';
 import ErrorBoundary from './ErrorBoundary';
 import ToastHost from './ToastHost';
-import {installCrashHandler, setCrashUser} from './lib/crashlytics';
+import {installCrashHandler, setCrashUser, recordError} from './lib/crashlytics';
 import {reverseGeoLabelKo} from './lib/geocode';
 import {devSeedShoes, devSeedRuns} from './lib/devSeed';
 // BackendShoe / BackendRun 은 types.d.ts 의 전역 ambient 인터페이스(import 불필요).
@@ -738,7 +738,9 @@ function Main(){
     // (다음 cloudSync 가 Firestore 로 올린다).
     const bootCache=await loadBootCache();
     let pending:any[]=[];
-    try{pending=await loadPendingRuns();}catch{}
+    // 침묵 catch 금지(감사 #50 인접): 펜딩 런 로드 실패는 데이터 유실 신호일 수 있어
+    // Crashlytics 비치명으로 남긴다(recordError 는 graceful — 부팅은 계속 진행).
+    try{pending=await loadPendingRuns();}catch(e){recordError(e,'boot loadPendingRuns 실패 — 펜딩 큐 없이 진행');}
     let liveShoes:any[]=bootCache?bootCache.shoes:[];
     let liveRuns:any[]=overlayPendingRuns(bootCache?bootCache.runs:[],pending);
     // 개발 전용 데모 시드(디자인/에뮬 검증용 로컬 목). 운영 안전 3중 게이트:
@@ -1089,7 +1091,9 @@ function Main(){
       await AsyncStorage.setItem('shoe_alert_notified',JSON.stringify(notified));
       if(toNotify.length>0){
         const names=critical.filter((s:any)=>toNotify.some((id:any)=>String(id)===String(s.id))).map((s:any)=>s.name);
-        Alert.alert('신발 교체 알림',names.join(', ')+`\n\n수명의 ${alertCfg.thresholdPct}% 이상을 신었어요.\n이제 다음 러닝화를 준비해볼까요?`,[{text:'확인'}]);
+        // keep-going 카피는 브랜드 보이스 결정(BRAND.md — 테스트 계약 App.shoebadge)이라 유지.
+        // 감사 #75 의 '얼럿 최소화'는 이중 개행 정리까지만 적용(HIG 와 브랜드 보이스의 절충).
+        Alert.alert('신발 교체 알림',names.join(', ')+`\n수명의 ${alertCfg.thresholdPct}% 이상을 신었어요. 이제 다음 러닝화를 준비해볼까요?`,[{text:'확인'}]);
       }
     }catch(e){console.log('checkShoeAlerts error',e);}
   }
@@ -2369,7 +2373,7 @@ function Main(){
 // 자리표시 형태를 회색 블록으로 미리 보여줘 '레이아웃이 곧 채워진다'는 신호를 준다.
 // testID로 통합테스트가 로딩 상태를 식별한다.
 function SkelBlock({h,w,style}:{h:number;w?:number|string;style?:any}){
-  return <View style={[{height:h,width:(w as any)??'100%',borderRadius: rs(10),backgroundColor:SURFACE},style]}/>;
+  return <View style={[{height:h,width:(w as any)??'100%',borderRadius:RADIUS.sm,backgroundColor:SURFACE},style]}/>;
 }
 function BootSkeleton(){
   const insets=useSafeAreaInsets();
@@ -2381,7 +2385,7 @@ function BootSkeleton(){
       <SkelBlock h={14} w={120}/>
       <View style={{height: rs(18)}}/>
       {/* 히어로 카드 자리 */}
-      <SkelBlock h={150} style={{borderRadius: rs(20), borderCurve: 'continuous'}}/>
+      <SkelBlock h={150} style={{borderRadius: RADIUS.lg, borderCurve: 'continuous'}}/>
       <View style={{height: rs(16)}}/>
       {/* 주간 통계 3칸 */}
       <View style={{flexDirection:'row',gap: rv(10)}}>
@@ -2391,9 +2395,9 @@ function BootSkeleton(){
       </View>
       <View style={{height: rs(16)}}/>
       {/* 신발 줄 자리 */}
-      <SkelBlock h={84} style={{borderRadius: rs(16), borderCurve: 'continuous'}}/>
+      <SkelBlock h={84} style={{borderRadius: RADIUS.md, borderCurve: 'continuous'}}/>
       <View style={{height: rs(10)}}/>
-      <SkelBlock h={84} style={{borderRadius: rs(16), borderCurve: 'continuous'}}/>
+      <SkelBlock h={84} style={{borderRadius: RADIUS.md, borderCurve: 'continuous'}}/>
     </View>
   );
 }
@@ -2416,8 +2420,8 @@ function BootError({onRetry}:{onRetry:()=>void}){
 }
 
 const boot=StyleSheet.create({
-  screen:{flex:1,backgroundColor:BG,paddingHorizontal: rs(18),paddingTop: rv(12)},
-  card:{backgroundColor:CARD,borderRadius: rs(20), borderCurve: 'continuous',padding: rs(24),alignItems:'center',gap: rv(12),
+  screen:{flex:1,backgroundColor:BG,paddingHorizontal:GUTTER,paddingTop: rv(12)},
+  card:{backgroundColor:CARD,borderRadius:RADIUS.lg, borderCurve: 'continuous',padding: rs(24),alignItems:'center',gap: rv(12),
     borderWidth:StyleSheet.hairlineWidth,borderColor:SEP},
   cardTitle:{color:T1,fontFamily:FP,fontSize: rf(19),fontWeight:'700',marginTop: rv(4)},
   cardBody:{color:T3,fontFamily:FP,fontSize: rf(15),lineHeight: rf(20),textAlign:'center'},
@@ -3229,7 +3233,7 @@ function RunActiveScreen({shoe,insets,goalKm,goalMin=0,pacePlan=[],targetZone=0,
       </View>
       <TextInput style={run.memo} value={memo} onChangeText={setMemo} placeholder="메모 (선택)" placeholderTextColor={T3} autoCorrect={false} autoCapitalize="none" accessibilityLabel="러닝 메모" keyboardAppearance="dark"/>
       <View style={run.actionRow}>
-        <TouchableOpacity style={run.discardBtn} onPress={confirmDiscard} accessibilityRole="button" accessibilityLabel="버리기"><Text style={run.discardTxt}>버리기</Text></TouchableOpacity>
+        <Pressable style={({pressed})=>[run.discardBtn,pressed&&{opacity:MOTION.press.opacity,transform:[{scale:MOTION.press.scale}]}]} onPress={confirmDiscard} accessibilityRole="button" accessibilityLabel="버리기"><Text style={run.discardTxt}>버리기</Text></Pressable>
         <Button style={run.saveBtn} label={saving?'저장 중...':'저장하기'} onPress={handleSave} disabled={saving}/>
       </View>
     </View>
@@ -3307,16 +3311,16 @@ function RunActiveScreen({shoe,insets,goalKm,goalMin=0,pacePlan=[],targetZone=0,
 }
 
 const run=StyleSheet.create({
-  screen:{flex:1,backgroundColor:BG,paddingHorizontal: rs(22)},
+  screen:{flex:1,backgroundColor:BG,paddingHorizontal:GUTTER},
   top:{flexDirection:'row',alignItems:'center',justifyContent:'space-between'},
   liveRow:{flexDirection:'row',alignItems:'center',gap: rv(8)},
-  liveDot:{width: rs(8),height: rs(8),borderRadius:999},
+  liveDot:{width: rs(8),height: rs(8),borderRadius:RADIUS.pill},
   liveText:{fontFamily:FP,fontSize: rf(15),fontWeight:'500',letterSpacing:0.3},
-  shoeChip:{flexDirection:'row',alignItems:'center',gap: rv(8),height: rs(30),paddingHorizontal: rs(12),borderRadius:999,backgroundColor:SURFACE},
+  shoeChip:{flexDirection:'row',alignItems:'center',gap: rv(8),height: rs(30),paddingHorizontal: rs(12),borderRadius:RADIUS.pill,backgroundColor:SURFACE},
   shoeChipText:{color:T3,fontFamily:FH,fontSize: rf(14),fontWeight:'600'},
   gpsRow:{flexDirection:'row',alignItems:'center',marginTop: rv(8)},
   gpsText:{color:T3,fontFamily:FP,fontSize: rf(14),fontWeight:'600'},
-  banner:{flexDirection:'row',alignItems:'center',gap: rv(8),marginTop: rv(10),paddingVertical: rv(10),paddingHorizontal: rs(12),borderRadius: rs(12),borderWidth:StyleSheet.hairlineWidth},
+  banner:{flexDirection:'row',alignItems:'center',gap: rv(8),marginTop: rv(10),paddingVertical: rv(10),paddingHorizontal: rs(12),borderRadius:RADIUS.sm,borderWidth:StyleSheet.hairlineWidth},
   bannerWarn:{backgroundColor:withAlpha(WARN,0.12),borderColor:WARN},
   bannerDanger:{backgroundColor:withAlpha(DANGER,0.14),borderColor:DANGER},
   bannerText:{flex:1,color:T1,fontFamily:FP,fontSize: rf(14),fontWeight:'500',lineHeight: rf(17)},
@@ -3343,7 +3347,7 @@ const run=StyleSheet.create({
   smL:{color:T3,fontFamily:FP,fontSize: rf(11),fontWeight:'500',marginTop: rv(3),textAlign:'center'},
   controls:{flexDirection:'row',alignItems:'flex-start',justifyContent:'center',gap: rv(40),paddingTop: rv(4),paddingBottom: rv(8)},
   ctrlHint:{color:T3,fontFamily:FP,fontSize: rf(12),letterSpacing:0.5,textAlign:'center'},
-  memo:{backgroundColor:SURFACE,borderRadius: rs(14),padding: rs(14),color:T1,fontSize: rf(16),fontFamily:FP,marginBottom: rv(16)},
+  memo:{backgroundColor:SURFACE,borderRadius:RADIUS.input,padding: rs(14),color:T1,fontSize: rf(16),fontFamily:FP,marginBottom: rv(16)},
   actionRow:{flexDirection:'row',gap: rv(12)},
   // 버리기는 SURFACE flat 보조 버튼 — 모서리는 saveBtn(단일 Button=RADIUS.btn)과 맞춰 통일.
   discardBtn:{flex:1,backgroundColor:SURFACE,borderRadius:RADIUS.btn,padding: rs(16),alignItems:'center'},

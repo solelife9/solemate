@@ -16,9 +16,10 @@ import { rs, rv } from './lib/responsive';
 import { View, Pressable, StyleSheet } from 'react-native';
 import {Text} from './lib/text';
 import {
-  CARD_BORDER, GOOD, WARN, DANGER, T1, T2, T3, T4,
-  SPACE, RADIUS, TYPE, GLASS, withAlpha,
+  CARD_BORDER, GOOD, WARN, DANGER, T1, T2, T3,
+  SPACE, RADIUS, TYPE, GLASS, LEADING, withAlpha,
 } from './theme';
+import { GlassEdge } from './primitives';
 import { RISK_DISCLAIMER } from './lib/injuryRisk';
 import {
   TrainingLoadAssessment, LoadLevel, LOAD_WORD, loadRatioPhraseKo, loadSignalKo,
@@ -84,6 +85,8 @@ export function TrainingLoadCard({
 
   return (
     <View style={[s.card, style]} testID={`training-load-card-${level ?? 'new'}`} accessibilityRole="summary">
+      {/* 균일 RN 보더 폐지 → 전 화면 카드 공통 코너 페이드 헤어라인(GlassEdge). */}
+      <GlassEdge glints={false} radius={RADIUS.lg} />
       <View style={s.head}>
         <View style={[s.dot, { backgroundColor: color }]} />
         <Text style={s.title}>훈련 부하 — <Text style={{ color }}>{word}</Text></Text>
@@ -138,17 +141,18 @@ const s = StyleSheet.create({
   signalMore: { ...TYPE.caption, color: T3 },
   dot: { width: rs(9), height: rs(9), borderRadius: rs(5) },
 
-  // 카드 — 기록 탭 형제 카드와 같은 유리 재질
+  // 카드 — 기록 탭 형제 카드와 같은 유리 재질(외곽선은 GlassEdge 헤어라인이 소유).
   card: {
     backgroundColor: GLASS.fill,
     borderRadius: RADIUS.lg, borderCurve: 'continuous',
-    borderWidth: 1, borderColor: CARD_BORDER,
+    overflow: 'hidden',
     padding: SPACE.lg, gap: SPACE.md,
   },
   head: { flexDirection: 'row', alignItems: 'center', gap: SPACE.sm },
   title: { ...TYPE.label, fontWeight: '700', color: T1, flex: 1 },
   phrase: { ...TYPE.caption, color: T3, fontVariant: ['tabular-nums'] },
-  msg: { ...TYPE.caption, color: T2, lineHeight: rv(19) },
+  // 행간 = LEADING 램프(body — 본문 문단) × 폰트 크기: 세로 rv 스케일 유령값 폐지.
+  msg: { ...TYPE.caption, color: T2, lineHeight: Math.round(TYPE.caption.fontSize * LEADING.body) },
 
   gauge: { marginTop: rv(2), marginBottom: rv(12) },
   bar: { flexDirection: 'row', height: rv(6), borderRadius: rv(3), overflow: 'visible' },
@@ -158,8 +162,9 @@ const s = StyleSheet.create({
     borderRadius: rs(2), backgroundColor: T1, marginLeft: rs(-1),
   },
   ticks: { height: rv(14), marginTop: rv(6) },
+  // 축 라벨 — 게이지 판독용 정보라 T4→T3 승격(T4 는 장식/disabled 전용).
   tick: {
-    position: 'absolute', ...TYPE.micro, fontWeight: '600', color: T4,
+    position: 'absolute', ...TYPE.micro, fontWeight: '600', color: T3,
     fontVariant: ['tabular-nums'], marginLeft: rs(-8),
   },
   tickSweet: { color: withAlpha(GOOD, 0.8), marginLeft: rs(-18) },
@@ -170,9 +175,9 @@ const s = StyleSheet.create({
     borderRadius: RADIUS.sm, borderCurve: 'continuous',
     paddingVertical: rv(9), paddingHorizontal: rs(12), gap: rv(2),
   },
-  chipLb: { ...TYPE.micro, color: T4 },
+  chipLb: { ...TYPE.micro, color: T3 }, // 칩 라벨 — 정보성 T4→T3 승격
   chipV: { ...TYPE.label, fontWeight: '800', color: T1, fontVariant: ['tabular-nums'] },
   chipU: { ...TYPE.micro, color: T3, fontWeight: '600' },
   chipS: { ...TYPE.micro, color: T3, fontWeight: '500', letterSpacing: 0.2 },
-  disc: { ...TYPE.micro, fontWeight: '500', color: T4, letterSpacing: 0.2 },
+  disc: { ...TYPE.micro, fontWeight: '500', color: T3, letterSpacing: 0.2 }, // 면책 — 읽혀야 하는 문구라 T3
 });

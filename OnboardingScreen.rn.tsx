@@ -23,7 +23,6 @@ import {
   ImageBackground,
   PanResponder,
   Animated,
-  Easing,
   AccessibilityInfo,
   Linking,
   StyleProp,
@@ -54,12 +53,14 @@ import {
   ONBOARD_CARD_GRAD_TOP,
   ONBOARD_CARD_GRAD_BOT,
   T1,
+  T2,
   T3,
   T4,
   SEP,
   FONT,
   DISPLAY,
   withAlpha, TYPE, GLASS,
+  GUTTER, RADIUS, MOTION,
 } from './theme';
 import {Button, KeegoWordmark, GlassEdge} from './primitives';
 // 러닝화 선택 모달(2열 분할 피커)은 메인 등록(AddShoeScreen)과 공유하는 단일 소스.
@@ -103,7 +104,8 @@ function Rise({delay = 0, children, style}: {delay?: number; children: React.Rea
       return;
     }
     // JS 드라이버: 단발 진입이라 성능 영향 미미 + jest 에 NativeAnimated 모듈이 없다.
-    const anim = Animated.timing(a, {toValue: 1, duration: 460, delay, easing: Easing.out(Easing.cubic), useNativeDriver: false});
+    // 시간·커브는 전역 Rise 표준(MOTION.rise)과 동일 — 로컬 구현은 reduce-motion 대응 때문에만 유지.
+    const anim = Animated.timing(a, {toValue: 1, duration: MOTION.rise.dur, delay, easing: MOTION.ease.out, useNativeDriver: false});
     anim.start();
     return () => anim.stop();
   }, [a, delay, rm]);
@@ -175,7 +177,10 @@ function LinearGrad({
 // 상단 진행 세그먼트 바(현재=24px 흰 알약, 나머지=7px 점).
 function TopProgress({step, total}: {step: number; total: number}) {
   return (
-    <View style={{flexDirection: 'row', alignItems: 'center', gap: rv(4)}}>
+    <View
+      accessible
+      accessibilityLabel={`${total}단계 중 ${step}`}
+      style={{flexDirection: 'row', alignItems: 'center', gap: rv(4)}}>
       {Array.from({length: total}).map((_, i) => {
         const cur = i === step - 1;
         return (
@@ -245,6 +250,8 @@ function KmSlider({value, min, max, step, onChange}: {value: number; min: number
         else if (e.nativeEvent.actionName === 'decrement') adjust(-1);
       }}
       accessibilityActions={[{name: 'increment'}, {name: 'decrement'}]}
+      // 트랙 실높이 rs(26) < 44pt — hitSlop 으로 실효 터치 타깃을 TOUCH_TARGET 이상 확보.
+      hitSlop={12}
       style={{height: rs(26), justifyContent: 'center'}}>
       <View style={{position: 'absolute', left: 0, right: 0, height: rs(8), borderRadius: rs(8), backgroundColor: withAlpha(T1, 0.09)}} />
       <View style={{position: 'absolute', left: 0, width: pct * w, height: rs(8), borderRadius: rs(8), backgroundColor: ACCENT}} />
@@ -348,10 +355,10 @@ function Welcome({goNext, goLogin, insetTop, insetBottom}: {goNext: () => void; 
       </ImageBackground>
 
       {/* 워드마크 — 홈과 동일한 공용 소문자 'keego'(KeegoWordmark). */}
-      <KeegoWordmark size={ri(26)} style={{position: 'absolute', left: 24, top: insetTop + 18}} />
+      <KeegoWordmark size={ri(26)} style={{position: 'absolute', left: GUTTER, top: insetTop + 18}} />
 
       {/* 하단 콘텐츠 — staggered 진입 */}
-      <View style={{flex: 1, justifyContent: 'flex-end', paddingHorizontal: rs(24), paddingBottom: Math.max(insetBottom, 24) + 8}}>
+      <View style={{flex: 1, justifyContent: 'flex-end', paddingHorizontal: GUTTER, paddingBottom: Math.max(insetBottom, 24) + 8}}>
         <Rise delay={80}>
           <Text style={s.heroHeadline}>
             {/* 마침표 = 파파야 서명(keego 워드마크와 같은 문법). ACCENT 가 흰색으로 회수되며
@@ -381,10 +388,30 @@ function Welcome({goNext, goLogin, insetTop, insetBottom}: {goNext: () => void; 
               건너뛰고 <Text style={{color: T1}}>시작하기</Text>
             </Text>
           </Pressable>
-          {/* 약관 고지 — Ready 화면 제거(2026-07-07 재설계)로 첫 CTA 아래로 이전. */}
-          <Text style={s.termsCaption}>
-            계속 진행하면 keego의 <Text style={{textDecorationLine: 'underline'}} accessibilityRole="link" accessibilityLabel="이용약관 열기" onPress={() => { Linking.openURL(TERMS_URL).catch(() => {}); }}>이용약관</Text>과 <Text style={{textDecorationLine: 'underline'}} accessibilityRole="link" accessibilityLabel="개인정보 처리방침 열기" onPress={() => { Linking.openURL(PRIVACY_URL).catch(() => {}); }}>개인정보 처리방침</Text>에 동의하는 것으로 간주돼요.
-          </Text>
+          {/* 약관 고지 — Ready 화면 제거(2026-07-07 재설계)로 첫 CTA 아래로 이전.
+              링크는 인라인 Text onPress(터치 = 글줄 높이뿐, hitSlop 불가) 대신 Pressable 로 —
+              paddingVertical + hitSlop 12 로 실효 44pt 터치 타깃 확보(HIG). */}
+          <View style={s.termsRow}>
+            <Text style={s.termsCaption}>계속 진행하면 keego의 </Text>
+            <Pressable
+              hitSlop={12}
+              accessibilityRole="link"
+              accessibilityLabel="이용약관 열기"
+              onPress={() => { Linking.openURL(TERMS_URL).catch(() => {}); }}
+              style={({pressed}) => [s.termsLink, pressed && s.pressed]}>
+              <Text style={[s.termsCaption, s.termsLinkTxt]}>이용약관</Text>
+            </Pressable>
+            <Text style={s.termsCaption}>과 </Text>
+            <Pressable
+              hitSlop={12}
+              accessibilityRole="link"
+              accessibilityLabel="개인정보 처리방침 열기"
+              onPress={() => { Linking.openURL(PRIVACY_URL).catch(() => {}); }}
+              style={({pressed}) => [s.termsLink, pressed && s.pressed]}>
+              <Text style={[s.termsCaption, s.termsLinkTxt]}>개인정보 처리방침</Text>
+            </Pressable>
+            <Text style={s.termsCaption}>에 동의하는 것으로 간주돼요.</Text>
+          </View>
         </Rise>
       </View>
     </View>
@@ -417,8 +444,9 @@ function DegradeCurve() {
           <Stop offset="1" stopColor={DANGER} />
         </SvgGradient>
       </Defs>
-      <Rect x="270" y="0" width="90" height="150" fill="rgba(255,77,77,0.08)" />
-      <Path d="M270 0 L270 150" stroke="rgba(255,77,77,0.3)" strokeWidth={1} strokeDasharray="3 4" />
+      {/* 위험 구간 틴트/기준선 — DANGER 토큰 파생(구 rgba(255,77,77) 는 토큰과 어긋난 사본). */}
+      <Rect x="270" y="0" width="90" height="150" fill={withAlpha(DANGER, 0.08)} />
+      <Path d="M270 0 L270 150" stroke={withAlpha(DANGER, 0.3)} strokeWidth={1} strokeDasharray="3 4" />
       <Path d={area} fill="url(#kg-dg)" />
       <Path d={line} fill="none" stroke="url(#kg-dl)" strokeWidth={3} strokeLinecap="round" />
       <Circle cx="354" cy="132" r="5.5" fill={DANGER} />
@@ -441,8 +469,8 @@ function ShoeIntelligence({goNext, onSkip, insetTop, insetBottom}: ScreenProps) 
 
         {/* 마모 곡선 카드 — 축은 예시 신발의 실제 권장 수명(650km)과 일치 */}
         <Rise delay={130} style={[s.heroCard, {overflow: 'hidden'}]}>
-          <LinearGrad stops={[{color: ONBOARD_CARD_GRAD_TOP, offset: 0}, {color: ONBOARD_CARD_GRAD_BOT, offset: 1}]} radius={22} />
-          <GlassEdge glints={false} radius={rs(22)} />
+          <LinearGrad stops={[{color: ONBOARD_CARD_GRAD_TOP, offset: 0}, {color: ONBOARD_CARD_GRAD_BOT, offset: 1}]} radius={RADIUS.lg} />
+          <GlassEdge glints={false} radius={RADIUS.lg} />
           <View style={{paddingHorizontal: rs(14), paddingTop: rv(14), paddingBottom: rv(14)}}>
             <View style={{flexDirection: 'row', justifyContent: 'space-between', marginBottom: rv(8)}}>
               <Text style={{fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600', color: T1, letterSpacing: -0.2}}>쿠셔닝 성능</Text>
@@ -472,7 +500,8 @@ function ShoeIntelligence({goNext, onSkip, insetTop, insetBottom}: ScreenProps) 
 // ════════════════════════════════════════════════════════════════════════════
 type FeatureRow = {color: string; Icon: (p: {size?: number; color?: string}) => React.JSX.Element; title: string; desc: string};
 const VALUE_ROWS: FeatureRow[] = [
-  {color: BRAND, Icon: BellIcon, title: '교체 알림', desc: '교체 시점 50km 전, 미리 알려드려요'},
+  // 기능 아이콘은 Ember 가드레일 밖(브랜드색은 서명·진행 지표 전용) — 무채 T2 로.
+  {color: T2, Icon: BellIcon, title: '교체 알림', desc: '교체 시점 50km 전, 미리 알려드려요'},
   {color: BEST, Icon: PulseIcon, title: '정밀 측정', desc: '심폐 체력·경사 보정 페이스·트랙 모드 — 폰만으로'},
   {color: HALL_GOLD, Icon: TrophyIcon, title: '쌓이는 기록', desc: '거리 PB·업적·메달 아카이브 — 달리다 보면 하나씩 열려요'},
 ];
@@ -481,7 +510,7 @@ const VALUE_ROWS: FeatureRow[] = [
 function FeatureListCard({items, delay = 130}: {items: FeatureRow[]; delay?: number}) {
   return (
     <Rise delay={delay} style={s.featCard}>
-      <GlassEdge glints={false} radius={rs(22)} />
+      <GlassEdge glints={false} radius={RADIUS.lg} />
       {items.map((f, i) => (
         <View key={f.title} style={[s.featRow, i > 0 && s.featRowDivider]} accessible accessibilityLabel={`${f.title}: ${f.desc}`}>
           <View style={[s.featIc, {backgroundColor: withAlpha(f.color, 0.14)}]}>
@@ -556,7 +585,7 @@ function Register({onSkip, onComplete, insetTop, insetBottom}: Omit<ScreenProps,
             onPress={() => setPickerOpen(true)}
             accessibilityRole="button"
             accessibilityLabel={picked ? `내 러닝화 ${picked.brand} ${picked.model}, 눌러서 변경` : '내 러닝화 선택'}
-            style={({pressed}) => [s.selector, pressed && {opacity: 0.85}]}>
+            style={({pressed}) => [s.selector, pressed && s.pressed]}>
             <GlassEdge glints={false} radius={rs(14)} />
             <SearchIcon />
             <Text numberOfLines={1} style={[s.selectorText, !picked && {color: T4, fontWeight: '500'}]}>
@@ -663,10 +692,13 @@ export default function OnboardingScreen({onDone}: {onDone: (registered: Registe
 // ════════════════════════════════════════════════════════════════════════════
 const s = StyleSheet.create({
   screen: {flex: 1, backgroundColor: BG},
-  flowHeader: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: rs(24), paddingBottom: rv(6)},
-  skip: {fontFamily: FONT, fontSize: TYPE.label.fontSize, color: T4, fontWeight: '500'},
+  // 누름 표준(MOTION.press) — 사설 opacity 값 폐지.
+  pressed: {opacity: MOTION.press.opacity, transform: [{scale: MOTION.press.scale}]},
+  flowHeader: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: GUTTER, paddingBottom: rv(6)},
+  // 인터랙티브 텍스트는 T4(장식/disabled 전용) 금지 — 정보성 최저 톤 T3.
+  skip: {fontFamily: FONT, fontSize: TYPE.label.fontSize, color: T3, fontWeight: '500'},
   flex1: {flex: 1},
-  bodyContent: {flexGrow: 1, paddingHorizontal: rs(24), paddingTop: rv(16)},
+  bodyContent: {flexGrow: 1, paddingHorizontal: GUTTER, paddingTop: rv(16)},
   eyebrow: {fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '700', letterSpacing: 1.4, color: ACCENT, textTransform: 'uppercase', marginBottom: rv(12)},
   title: {fontFamily: FONT, fontSize: TYPE.title1.fontSize, lineHeight: rf(33), fontWeight: '700', letterSpacing: -0.6, color: T1},
   body: {fontFamily: FONT, fontSize: TYPE.body.fontSize, lineHeight: rf(23), color: T3, marginTop: rv(12), maxWidth: rs(360)},
@@ -676,15 +708,19 @@ const s = StyleSheet.create({
   heroHeadline: {fontFamily: DISPLAY, fontSize: rf(48), lineHeight: rf(52), letterSpacing: -1.5, fontWeight: '600', color: T1},
   heroSub: {fontFamily: FONT, fontSize: TYPE.heading.fontSize, fontWeight: '600', color: T1, marginTop: rv(18)},
   heroBody: {fontFamily: FONT, fontSize: TYPE.body.fontSize, lineHeight: rf(22), color: 'rgba(246,246,248,0.66)', marginTop: rv(8)},
-  termsCaption: {fontFamily: FONT, fontSize: TYPE.caption.fontSize, color: T4, textAlign: 'center', lineHeight: rf(17), marginTop: rv(14)},
+  // 약관 고지 — 정보성(법적 안내)이라 T4→T3 승격. 링크는 Pressable(44pt 확보) 조각으로 배열.
+  termsRow: {flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', marginTop: rv(10)},
+  termsCaption: {fontFamily: FONT, fontSize: TYPE.caption.fontSize, color: T3, lineHeight: rf(17)},
+  termsLink: {paddingVertical: rv(6)},
+  termsLinkTxt: {textDecorationLine: 'underline'},
 
-  footer: {paddingHorizontal: rs(24), paddingTop: rv(8)},
+  footer: {paddingHorizontal: GUTTER, paddingTop: rv(8)},
   ctaCaption: {fontFamily: FONT, fontSize: TYPE.caption.fontSize, color: T3, textAlign: 'center', marginTop: rv(10)},
 
   // 신발 인텔리전스
   // 불투명 CARD 판 → 반투명 유리(GLASS.fill) — GlassEdge(유리 엣지)를 쓰면서 판만 불투명이던
   // 본편 세대차 해소(검수 HIGH 잔여, 2026-07-17). 본편 4탭 카드와 같은 재질.
-  heroCard: {marginTop: rv(24), borderRadius: rs(22), borderCurve: 'continuous', backgroundColor: GLASS.fill},
+  heroCard: {marginTop: rv(24), borderRadius: RADIUS.lg, borderCurve: 'continuous', backgroundColor: GLASS.fill},
   shoeRowCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -692,19 +728,19 @@ const s = StyleSheet.create({
     marginTop: rv(14),
     paddingVertical: rv(16),
     paddingHorizontal: rs(16),
-    borderRadius: rs(22), borderCurve: 'continuous',
+    borderRadius: RADIUS.lg, borderCurve: 'continuous',
     overflow: 'hidden',
     backgroundColor: GLASS.fill,
   },
   shoeThumb: {width: rs(44), height: rs(44), borderRadius: rs(12), borderCurve: 'continuous', backgroundColor: withAlpha(T1, 0.06), alignItems: 'center', justifyContent: 'center'},
-  pill: {flexDirection: 'row', alignItems: 'center', gap: rv(6), paddingVertical: rv(4), paddingHorizontal: rs(10), borderRadius: 100, alignSelf: 'center'},
+  pill: {flexDirection: 'row', alignItems: 'center', gap: rv(6), paddingVertical: rv(4), paddingHorizontal: rs(10), borderRadius: RADIUS.pill, alignSelf: 'center'},
   alertRow: {flexDirection: 'row', alignItems: 'center', gap: rv(8), marginTop: rv(22), paddingHorizontal: rs(2)},
 
   // 성능(기능 목록)
-  featCard: {marginTop: rv(24), paddingHorizontal: rs(18), paddingVertical: rv(4), borderRadius: rs(22), borderCurve: 'continuous', overflow: 'hidden', backgroundColor: GLASS.fill},
+  featCard: {marginTop: rv(24), paddingHorizontal: rs(18), paddingVertical: rv(4), borderRadius: RADIUS.lg, borderCurve: 'continuous', overflow: 'hidden', backgroundColor: GLASS.fill},
   featRow: {flexDirection: 'row', alignItems: 'center', gap: rv(14), paddingVertical: rv(18)},
   featRowDivider: {borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP},
-  featIc: {width: rs(38), height: rs(38), borderRadius: rs(11), borderCurve: 'continuous', alignItems: 'center', justifyContent: 'center'},
+  featIc: {width: rs(38), height: rs(38), borderRadius: RADIUS.sm, borderCurve: 'continuous', alignItems: 'center', justifyContent: 'center'},
 
   // 등록
   fieldBadge: {width: rs(20), height: rs(20), borderRadius: rs(6), backgroundColor: withAlpha(T1, 0.08), alignItems: 'center', justifyContent: 'center'},
@@ -723,5 +759,6 @@ const s = StyleSheet.create({
   fieldHint: {fontFamily: FONT, fontSize: TYPE.caption.fontSize, color: T3, marginTop: rv(8), lineHeight: rf(17)},
   kmVal: {fontFamily: DISPLAY, fontSize: TYPE.title.fontSize, fontWeight: '600', color: T1, letterSpacing: -0.5, fontVariant: ['tabular-nums']},
   kmUnit: {fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600', color: T3, letterSpacing: 0.5},
-  tick: {fontFamily: FONT, fontSize: TYPE.caption.fontSize, color: T4},
+  // 슬라이더 눈금 — 값 판독에 쓰이는 정보성 라벨이라 T4→T3 승격.
+  tick: {fontFamily: FONT, fontSize: TYPE.caption.fontSize, color: T3},
 });

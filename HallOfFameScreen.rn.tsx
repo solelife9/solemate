@@ -14,7 +14,7 @@
 // 토큰만 사용(theme.ts) — 색/폰트/간격 하드코딩 0. 티어 색은 TIER_COLORS 권위.
 // ============================================================================
 import React, {useEffect, useState} from 'react';
-import { rf, rs, ri, rv } from './lib/responsive';
+import { rs, ri, rv } from './lib/responsive';
 import {
   View,
   ScrollView,
@@ -24,7 +24,7 @@ import {
 import {Text} from './lib/text';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import {GhostBar, GhostThumb, GlassEdge} from './primitives';
+import {EmptyGhostHeader, GhostBar, GhostThumb, GlassEdge} from './primitives';
 import {
   BG,
   CARD,
@@ -39,9 +39,9 @@ import {
   SPACE,
   RADIUS,
   TYPE,
-  GUTTER,
   TIER_COLORS,
   withAlpha, GLASS,
+  GUTTER, MOTION,
 } from './theme';
 import {ymLocal} from './lib/format';
 import {keegoFirestoreRankingProvider} from './lib/progression/firestoreRankingStore';
@@ -68,7 +68,13 @@ const CATEGORIES: ReadonlyArray<{key: Category; label: string; icon: string}> = 
   {key: 'progressPoints', label: '진척 포인트', icon: 'sparkles'},
 ];
 
-const MEDALS: Record<number, string> = {1: '🥇', 2: '🥈', 3: '🥉'};
+// 1·2·3위 표기 — 이모지 메달(🥇🥈🥉) 폐지(감사 #62, 밈 톤 금지): 티어 색 숫자로.
+// 색은 TIER_COLORS 권위(gold/silver/bronze) — 순위 색이지 그 유저의 rankTier 색이 아니다.
+const RANK_TINT: Record<number, string> = {
+  1: TIER_COLORS.gold,
+  2: TIER_COLORS.silver,
+  3: TIER_COLORS.bronze,
+};
 
 /** 'YYYY-MM'(로컬 달, lib/format.ymLocal 단일화). 테스트는 now 주입으로 결정성 확보. */
 function yearMonthOf(now: number): string {
@@ -92,6 +98,22 @@ function formatScore(category: Category, score: number): string {
     default:
       return String(Math.round(n));
   }
+}
+
+// 고스트 랭킹 행 — 로딩·빈 상태가 같은 실루엣을 공유한다(2장, 둘째 45% 딤).
+const GHOST_ROW_OPACITY = [1, 0.45] as const;
+function GhostRankRow({opacity, alt}: {opacity: number; alt?: boolean}) {
+  return (
+    <View style={[s.row, {opacity}]}>
+      <GlassEdge glints={false} radius={RADIUS.md} />
+      <GhostBar w={rs(18)} />
+      <GhostThumb size={34} />
+      <View style={{flex: 1, minWidth: 0}}>
+        <GhostBar w={alt ? '42%' : '56%'} />
+      </View>
+      <GhostBar w={rs(48)} dim style={{marginTop: 0}} />
+    </View>
+  );
 }
 
 /** 타이틀 키 → 표시명(없으면 빈 문자열 → 칩 미표시). */
@@ -190,8 +212,8 @@ export default function HallOfFameScreen({
         {/* 일반 행 = 코너 페이드 헤어라인, 내 행(highlight) = 액센트 의미 보더(예외). */}
         {!highlight && <GlassEdge glints={false} radius={RADIUS.md} />}
         <View style={s.rankCol}>
-          <Text style={[s.rankNum, e.rank <= 3 && {color: tColor}]}>
-            {MEDALS[e.rank] ?? e.rank}
+          <Text style={[s.rankNum, RANK_TINT[e.rank] ? {color: RANK_TINT[e.rank]} : null]}>
+            {e.rank}
           </Text>
         </View>
         <View style={[s.tierDot, {backgroundColor: tColor}]} />
@@ -225,7 +247,7 @@ export default function HallOfFameScreen({
       <ScrollView
         contentContainerStyle={{
           paddingTop: insets.top + 12,
-          paddingHorizontal: rs(18),
+          paddingHorizontal: GUTTER,
           paddingBottom: insets.bottom + 28,
           gap: SPACE.lg,
         }}>
@@ -237,6 +259,7 @@ export default function HallOfFameScreen({
               testID="hof-back"
               accessibilityRole="button"
               accessibilityLabel="뒤로"
+              hitSlop={6}
               style={({pressed}) => [s.iconBtn, pressed && {backgroundColor: CARD}]}>
               <Ionicons name="chevron-back" size={ri(20)} color={T2} />
             </Pressable>
@@ -262,7 +285,13 @@ export default function HallOfFameScreen({
                 onPress={() => setCategory(c.key)}
                 accessibilityRole="tab"
                 accessibilityState={{selected: active}}
-                style={[s.catChip, active && {backgroundColor: CARD_HI, borderColor: withAlpha(ACCENT, 0.5)}]}>
+                // 칩 높이 ~34pt — hitSlop 으로 실효 44pt 확보 + 누름 표준(MOTION.press).
+                hitSlop={6}
+                style={({pressed}) => [
+                  s.catChip,
+                  active && {backgroundColor: CARD_HI, borderColor: withAlpha(ACCENT, 0.5)},
+                  pressed && s.pressed,
+                ]}>
                 <Ionicons name={c.icon} size={ri(13)} color={active ? ACCENT : T3} />
                 <Text style={[s.catChipTxt, active && {color: T1}]}>{c.label}</Text>
               </Pressable>
@@ -301,18 +330,11 @@ export default function HallOfFameScreen({
         {/* 리더보드 본문 */}
         {loading ? (
           // 로딩 = 고스트 랭킹 행(스피너 폐지) — 빈 상태와 같은 실루엣 언어: '곧 채워질
-          // 자리'를 형태로 보여준다(2026-07-10 로딩 표준). 아래로 갈수록 잦아드는 페이드.
+          // 자리'를 형태로 보여준다(2026-07-10 로딩 표준). 에디토리얼 스케일에 맞춰
+          // 2장만(둘째 45% 딤) — 형제 화면(보관함·아카이브) 고스트 문법과 통일(감사 #31).
           <View style={{gap: rv(8)}} testID="hof-loading">
-            {[1, 0.7, 0.45, 0.25, 0.12].map((o, i) => (
-              <View key={i} style={[s.row, {opacity: o}]}>
-                <GlassEdge glints={false} radius={RADIUS.md} />
-                <GhostBar w={rs(18)} />
-                <GhostThumb size={34} />
-                <View style={{flex: 1, minWidth: 0}}>
-                  <GhostBar w={i % 2 ? '42%' : '56%'} />
-                </View>
-                <GhostBar w={rs(48)} dim style={{marginTop: 0}} />
-              </View>
+            {GHOST_ROW_OPACITY.map((o, i) => (
+              <GhostRankRow key={i} opacity={o} alt={i % 2 === 1} />
             ))}
           </View>
         ) : lbAvailable && entries.length > 0 ? (
@@ -320,13 +342,18 @@ export default function HallOfFameScreen({
             {entries.map(e => renderRow(e, e.uid === myUid))}
           </View>
         ) : (
-          <View style={s.empty} testID="hof-empty">
-            <Ionicons name="trophy-outline" size={ri(26)} color={T3} />
-            <Text style={s.emptyTitle}>랭킹이 곧 열려요</Text>
-            <Text style={s.emptyTxt}>
-              친구들과 거리·꾸준함·신발 관리로 경쟁해 보세요.{'\n'}
-              로그인하고 러닝을 기록하면 이 달의 순위에 등장합니다.
-            </Text>
+          // 빈 상태 — 중앙 아이콘+텍스트 폐지 → 전역 표준 EmptyGhostHeader + 고스트 행
+          // (형제 화면 ShoeArchive/HallOfShoes 와 같은 문법, 감사 #54).
+          <View testID="hof-empty">
+            <EmptyGhostHeader
+              title={'랭킹이 곧 열려요'}
+              sub={<>친구들과 거리·꾸준함·신발 관리로 경쟁해 보세요.{'\n'}로그인하고 러닝을 기록하면 이 달의 순위에 등장합니다.</>}
+            />
+            <View style={{gap: rv(8)}}>
+              {GHOST_ROW_OPACITY.map((o, i) => (
+                <GhostRankRow key={i} opacity={o} alt={i % 2 === 1} />
+              ))}
+            </View>
           </View>
         )}
       </ScrollView>
@@ -461,9 +488,8 @@ const s = StyleSheet.create({
     letterSpacing: -0.2,
     fontVariant: ['tabular-nums'],
   },
-  // 상태
+  // 누름 표준(MOTION.press).
+  pressed: {opacity: MOTION.press.opacity, transform: [{scale: MOTION.press.scale}]},
+  // 상태(빈/로딩) — EmptyGhostHeader + 고스트 행 문법으로 전환, 구 중앙 empty 스타일 삭제.
   center: {paddingVertical: rv(48), alignItems: 'center'},
-  empty: {alignItems: 'center', gap: rv(8), paddingVertical: rv(40), paddingHorizontal: GUTTER},
-  emptyTitle: {fontFamily: DISPLAY, color: T1, fontSize: TYPE.heading.fontSize, fontWeight: '700', marginTop: rv(4)},
-  emptyTxt: {fontFamily: FONT, color: T3, fontSize: TYPE.label.fontSize, fontWeight: '600', lineHeight: rf(18), textAlign: 'center'},
 });

@@ -11,7 +11,7 @@ import { View, Pressable, StyleSheet } from 'react-native';
 import {Text} from './lib/text';
 import { rf, rs, rv } from './lib/responsive';
 import {
-  ACCENT, GOOD, WARN, T1, T3, CARD_HI, FONT, DISPLAY, TYPE, RADIUS, GLASS, SPACE, withAlpha,
+  ACCENT, GOOD, WARN, T1, T3, CARD_HI, FONT, DISPLAY, TYPE, RADIUS, GLASS, SPACE, MOTION, withAlpha,
 } from './theme';
 import { GlassEdge, SectionTitle } from './primitives';
 import { RotationPick } from './lib/rotation';
@@ -111,5 +111,6 @@ const p = StyleSheet.create({
   desc: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, letterSpacing: -0.1, marginTop: rv(4), lineHeight: rf(18) },
   badgeChip: { borderRadius: RADIUS.pill, paddingHorizontal: rs(10), paddingVertical: rv(4), flexShrink: 0 },
   badgeText: { fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600', letterSpacing: -0.1 },
-  pressed: { opacity: 0.85, transform: [{ scale: 0.98 }] },
+  // 누름 표준(MOTION.press) — 사설 0.85/0.98 폐지.
+  pressed: { opacity: MOTION.press.opacity, transform: [{ scale: MOTION.press.scale }] },
 });

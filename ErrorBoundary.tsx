@@ -1,8 +1,9 @@
 import React from 'react';
 import { rf, rs, rv } from './lib/responsive';
-import {View, TouchableOpacity, StyleSheet} from 'react-native';
+import {View, StyleSheet} from 'react-native';
 import {Text} from './lib/text';
-import {BG, T1, T3, FONT as FP, DISPLAY as FH, withAlpha} from './theme';
+import {BG, T1, T3, FONT as FP, DISPLAY as FH, TYPE} from './theme';
+import {Button} from './primitives';
 import {recordError} from './lib/crashlytics';
 
 type Props = {
@@ -47,13 +48,8 @@ export default class ErrorBoundary extends React.Component<Props, State> {
           <Text style={styles.body}>
             앱에 일시적인 오류가 생겼어요.{'\n'}잠시 후 다시 시도해 주세요.
           </Text>
-          <TouchableOpacity
-            style={styles.btn}
-            onPress={this.handleRetry}
-            accessibilityRole="button"
-            testID="error-retry">
-            <Text style={styles.btnText}>다시 시도</Text>
-          </TouchableOpacity>
+          {/* 수제 버튼 회수 → 단일 Button 프리미티브(글래스 CTA·RADIUS.btn·누름 표준). */}
+          <Button label="다시 시도" onPress={this.handleRetry} testID="error-retry" />
         </View>
       );
     }
@@ -69,7 +65,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: rs(32),
   },
-  title: {color: T1, fontFamily: FH, fontSize: rf(25), marginBottom: rv(12), letterSpacing: 0.3},
+  // 스케일 밖 rf(25) → TYPE.title1(27) 수렴(타이포 단일 진실원).
+  title: {color: T1, fontFamily: FH, ...TYPE.title1, marginBottom: rv(12)},
   body: {
     color: T3,
     fontFamily: FP,
@@ -78,11 +75,4 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: rv(28),
   },
-  btn: {
-    backgroundColor: withAlpha(T1, 0.1),
-    borderRadius: rs(16), borderCurve: 'continuous',
-    paddingVertical: rv(14),
-    paddingHorizontal: rs(36),
-  },
-  btnText: {color: T1, fontFamily: FP, fontSize: rf(17), fontWeight: '600'},
 });

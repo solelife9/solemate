@@ -11,7 +11,7 @@ import React, {useRef, useState} from 'react';
 import { rf } from './lib/responsive';
 import {View, Pressable, StyleSheet} from 'react-native';
 import {Text} from './lib/text';
-import {T1, CARD_HI, RADIUS, SPACE, FONT, withAlpha} from './theme';
+import {T1, CARD_HI, RADIUS, SPACE, FONT, MOTION, withAlpha} from './theme';
 
 export interface RetirementCardActionsProps {
   /** "이미지 저장" 누름 → 갤러리 저장 핸들러(비동기 가능). */
@@ -71,14 +71,15 @@ const s = StyleSheet.create({
   row: {flexDirection: 'row', gap: SPACE.md},
   btn: {
     flex: 1,
-    paddingVertical: SPACE.md + 2,
+    paddingVertical: SPACE.md, // 구 SPACE.md+2 산수 폐지 — 스케일 값으로 수렴
     borderRadius: RADIUS.sm,
     alignItems: 'center',
     justifyContent: 'center',
   },
   save: {backgroundColor: CARD_HI},
   share: {backgroundColor: withAlpha(T1, 0.1)},
-  pressed: {opacity: 0.7},
+  // 누름 표준(MOTION.press) — 사설 opacity 0.7 폐지.
+  pressed: {opacity: MOTION.press.opacity, transform: [{scale: MOTION.press.scale}]},
   busy: {opacity: 0.5},
   label: {fontFamily: FONT, fontSize: rf(16), fontWeight: '700'},
   saveLabel: {color: T1},

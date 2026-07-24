@@ -19,6 +19,7 @@ import {Button, KeegoWordmark} from './primitives';
 import {
   BG, ACCENT, BLACK, DANGER, T1, T2, T3, FONT, DISPLAY, RADIUS,
   KAKAO_YELLOW, KAKAO_LABEL, NAVER_GREEN, NAVER_LABEL, TYPE,
+  GUTTER, MOTION,
 } from './theme';
 import type {CloudPort, CloudProvider, CloudUser} from './lib/cloudPort';
 import {authErrorMessage} from './lib/authErrorMessage';
@@ -90,7 +91,7 @@ export function LoginScreen({cloudPort, onSignedIn}: LoginScreenProps) {
           accessibilityRole="button"
           accessibilityLabel="카카오로 로그인"
           accessibilityState={{disabled: signingIn}}
-          style={({pressed}) => [st.btn, st.btnKakao, pressed && {opacity: 0.85}]}>
+          style={({pressed}) => [st.btn, st.btnKakao, pressed && st.pressed]}>
           {busy === 'kakao'
             ? <ActivityIndicator color={KAKAO_LABEL} />
             : <>
@@ -106,7 +107,7 @@ export function LoginScreen({cloudPort, onSignedIn}: LoginScreenProps) {
           accessibilityRole="button"
           accessibilityLabel="네이버로 로그인"
           accessibilityState={{disabled: signingIn}}
-          style={({pressed}) => [st.btn, st.btnNaver, pressed && {opacity: 0.85}]}>
+          style={({pressed}) => [st.btn, st.btnNaver, pressed && st.pressed]}>
           {busy === 'naver'
             ? <ActivityIndicator color={NAVER_LABEL} />
             : <>
@@ -138,7 +139,7 @@ export function LoginScreen({cloudPort, onSignedIn}: LoginScreenProps) {
             accessibilityRole="button"
             accessibilityLabel="Apple로 로그인"
             accessibilityState={{disabled: signingIn}}
-            style={({pressed}) => [st.btn, st.btnApple, pressed && {opacity: 0.85}]}>
+            style={({pressed}) => [st.btn, st.btnApple, pressed && st.pressed]}>
             {/* Sign in with Apple 공식 스펙(HIG·심사 4.8): 다크 배경 위 = 흰 버튼 +
                 검정 로고/라벨, 문구는 공식 한국어 "Apple로 계속하기". 커스텀 회색 버튼은
                 리젝 리스크(2026-07-24 심사 P0 #9). */}
@@ -164,7 +165,10 @@ export function LoginScreen({cloudPort, onSignedIn}: LoginScreenProps) {
 }
 
 const st = StyleSheet.create({
-  screen: {flex: 1, backgroundColor: BG, paddingHorizontal: rs(28), justifyContent: 'space-between'},
+  // 루트 거터만 GUTTER 로 토큰화(중앙 정렬 히어로 등 내부 정렬은 유지).
+  screen: {flex: 1, backgroundColor: BG, paddingHorizontal: GUTTER, justifyContent: 'space-between'},
+  // 누름 표준(MOTION.press) — 사설 opacity 0.85 폐지, 전역 Button 프리미티브와 동일 감각.
+  pressed: {opacity: MOTION.press.opacity, transform: [{scale: MOTION.press.scale}]},
   hero: {flex: 1, alignItems: 'center', justifyContent: 'center', gap: rv(14)},
   tagline: {fontFamily: FONT, fontSize: TYPE.body.fontSize, color: T3},
   // 가치 3행(심사 #9) — 태그라인 아래 좌정렬 스택. 게이트의 설득은 조용하게(무채 T3).

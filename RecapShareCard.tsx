@@ -10,7 +10,7 @@
 // ============================================================================
 import React from 'react';
 import Svg, {Rect, Text as SvgText, Defs, RadialGradient, Stop, G} from 'react-native-svg';
-import {T1, RING_ACCENT} from './theme';
+import {FONT, T1, RING_ACCENT} from './theme';
 import {SHARE_DARK_STOPS, SHARE_TEXT_SHADOW} from './theme.palettes';
 import {WORDMARK_FONT} from './primitives';
 import {RecapShareCardModel} from './lib/shareCard';
@@ -24,16 +24,18 @@ const PAD = 88;
 const CX = CARD_W / 2;
 
 // 사진 없는 다크 완성본이지만 런 카드와 동일 문법 유지 — 어두운 복사본 그림자(무해).
-function Tx({x, y, size, weight, anchor = 'middle', ls = 0, opacity = 1, fill = T1, children}: {
+// 본문 폰트=FONT(Pretendard) — 한글(기간·빈 리캡 카피)에 WORDMARK_FONT(Helvetica)가
+// 걸리던 것 회수(감사 #57). 라틴 로고타입만 font=CF 로 덮는다.
+function Tx({x, y, size, weight, anchor = 'middle', ls = 0, opacity = 1, fill = T1, font = FONT, children}: {
   x: number; y: number; size: number; weight: '500' | '600' | '700' | '800';
-  anchor?: 'start' | 'middle' | 'end'; ls?: number; opacity?: number; fill?: string;
+  anchor?: 'start' | 'middle' | 'end'; ls?: number; opacity?: number; fill?: string; font?: string;
   children: string;
 }) {
   const dy = Math.max(2, Math.round(size * 0.04));
   return (
     <>
-      <SvgText x={x + 2} y={y + dy} fill={SHARE_TEXT_SHADOW} fillOpacity={0.45} fontFamily={CF} fontSize={size} fontWeight={weight} letterSpacing={ls} textAnchor={anchor}>{children}</SvgText>
-      <SvgText x={x} y={y} fill={fill} fillOpacity={opacity} fontFamily={CF} fontSize={size} fontWeight={weight} letterSpacing={ls} textAnchor={anchor}>{children}</SvgText>
+      <SvgText x={x + 2} y={y + dy} fill={SHARE_TEXT_SHADOW} fillOpacity={0.45} fontFamily={font} fontSize={size} fontWeight={weight} letterSpacing={ls} textAnchor={anchor}>{children}</SvgText>
+      <SvgText x={x} y={y} fill={fill} fillOpacity={opacity} fontFamily={font} fontSize={size} fontWeight={weight} letterSpacing={ls} textAnchor={anchor}>{children}</SvgText>
     </>
   );
 }
@@ -72,6 +74,9 @@ const RecapShareCard = React.forwardRef<unknown, RecapShareCardProps>(({model}, 
       </Defs>
       <Rect x={0} y={0} width={CARD_W} height={CARD_H} fill="url(#recap-dark)" />
 
+      {/* keego 워드마크(파파야) — 4종 통일: 54px·좌상 코너(구 하단 중앙에서 이동, 감사 #57) */}
+      <Tx x={PAD} y={168} size={54} weight="500" ls={-0.5} anchor="start" fill={RING_ACCENT} font={CF}>{model.brand.toLowerCase()}</Tx>
+
       {/* 상단: caps 타이틀 + 기간 */}
       <Tx x={CX} y={200} size={34} weight="700" ls={6} opacity={0.85}>{model.titleEn}</Tx>
       <Tx x={CX} y={262} size={36} weight="500" opacity={0.62}>{model.period}</Tx>
@@ -107,9 +112,6 @@ const RecapShareCard = React.forwardRef<unknown, RecapShareCardProps>(({model}, 
           )}
         </G>
       )}
-
-      {/* 하단: keego 워드마크(파파야) */}
-      <Tx x={CX} y={1010} size={54} weight="500" ls={-0.5} fill={RING_ACCENT}>{model.brand.toLowerCase()}</Tx>
     </Svg>
   );
 });

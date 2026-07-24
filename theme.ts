@@ -4,7 +4,7 @@
 import type {RankTier} from './lib/progression/types';
 // 반응형 스케일 — 폰트/hero 사이즈를 기기 폭에 비례해 스케일한다(기준 iPhone 15 Pro=원본).
 // jest 에선 항등(원본값)이라 크기 단언 테스트 불변. import { rf } from './lib/responsive'.
-import {rf} from './lib/responsive';
+import {rf, rs} from './lib/responsive';
 import {Easing} from 'react-native';
 
 // ── 하위호환 재수출 (분리된 모듈을 theme 통해 계속 접근) ────────────────────────
@@ -282,7 +282,9 @@ export const SHADOW = {
 // 화면마다 14/18/20/22 로 흩어져 있던 좌우 거터(스크린 가장자리 패딩)를 단일 토큰으로
 // 모은다. 값 20 = 기존 최빈 거터라 대표 화면들의 가장자리 패딩이 픽셀 그대로 유지된다
 // (시각 동등). 토큰 하나를 바꾸면 채택한 화면 거터가 함께 따라간다(단일 진실원).
-export const GUTTER = 20;
+// rs() 내장(2026-07-25): 카드 내부는 스케일되는데 가장자리만 20 고정이라 작은 기기에서
+// 비율이 역전되던 것 수정 — 소비처는 계속 GUTTER 그대로 쓴다(jest 에선 항등=20).
+export const GUTTER = rs(20);
 
 // ── scrim (모달/시트 뒤 배경 딤) ───────────────────────────────────────────────
 // 모달·바텀시트 뒤를 어둡게 까는 반투명 검정. 화면들이 각자 복제하던 rgba(0,0,0,0.6)
@@ -294,11 +296,12 @@ export const SCRIM = 'rgba(0,0,0,0.6)';
 // 모은다(#6 모션 전환 통일의 뿌리). 시그니처 = 사용자 확정 '나이키 문법' 일시정지 시트
 // (420ms · inOut-cubic). 값은 기존 최빈값이라 채택 화면의 감각이 픽셀·타이밍 그대로 유지된다.
 export const MOTION = {
-  /** 전환 시간(ms). */
-  dur: {fast: 150, base: 300, sheet: 420, sweep: 650, fill: 1400},
+  /** 전환 시간(ms). ring(900) = 러닝/상세 링 스윕 전용(홈 링 fill 1400 과 별개 — 2026-07-25 토큰화). */
+  dur: {fast: 150, base: 300, sheet: 420, sweep: 650, ring: 900, fill: 1400},
   /** 이징 커브. */
   ease: {
     out: Easing.out(Easing.cubic), // 진입·링 — 도착을 부드럽게
+    in: Easing.in(Easing.cubic), // 퇴장 — 가속하며 사라짐(토스트 등)
     inout: Easing.inOut(Easing.cubic), // 시트·전환 — 양끝 대칭(시그니처)
     quad: Easing.out(Easing.quad), // 페이드·짧은 반응
   },

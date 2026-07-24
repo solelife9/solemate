@@ -10,7 +10,7 @@
 // ============================================================================
 import React from 'react';
 import Svg, {Rect, Text as SvgText, G, Circle, Image as SvgImage, Line, Defs, ClipPath, RadialGradient, Stop} from 'react-native-svg';
-import {CARD, HALL_GOLD, T1, RING_ACCENT, DISPLAY, withAlpha} from './theme';
+import {CARD, CARD_BORDER, FONT, HALL_GOLD, T1, RING_ACCENT, DISPLAY} from './theme';
 import {SHARE_DARK_STOPS, SHARE_TEXT_SHADOW} from './theme.palettes';
 import {WORDMARK_FONT} from './primitives';
 
@@ -30,17 +30,18 @@ export interface MedalShareModel {
   medalPhotoUri?: string; // 원형 메달 사진(선택)
 }
 
-// 런/리캡/은퇴 카드와 동일 문법의 텍스트 그림자.
-function Tx({x, y, size, weight, anchor = 'middle', ls = 0, opacity = 1, fill = T1, children}: {
+// 런/리캡/은퇴 카드와 동일 문법의 텍스트 그림자. 본문 폰트=FONT(Pretendard) — 한글에
+// WORDMARK_FONT(Helvetica)가 걸리던 것 회수(감사 #57). 라틴 로고타입만 font=CF 로 덮는다.
+function Tx({x, y, size, weight, anchor = 'middle', ls = 0, opacity = 1, fill = T1, font = FONT, children}: {
   x: number; y: number; size: number; weight: '500' | '600' | '700' | '800';
-  anchor?: 'start' | 'middle' | 'end'; ls?: number; opacity?: number; fill?: string;
+  anchor?: 'start' | 'middle' | 'end'; ls?: number; opacity?: number; fill?: string; font?: string;
   children: string;
 }) {
   const dy = Math.max(2, Math.round(size * 0.04));
   return (
     <>
-      <SvgText x={x + 2} y={y + dy} fill={SHARE_TEXT_SHADOW} fillOpacity={0.45} fontFamily={CF} fontSize={size} fontWeight={weight} letterSpacing={ls} textAnchor={anchor}>{children}</SvgText>
-      <SvgText x={x} y={y} fill={fill} fillOpacity={opacity} fontFamily={CF} fontSize={size} fontWeight={weight} letterSpacing={ls} textAnchor={anchor}>{children}</SvgText>
+      <SvgText x={x + 2} y={y + dy} fill={SHARE_TEXT_SHADOW} fillOpacity={0.45} fontFamily={font} fontSize={size} fontWeight={weight} letterSpacing={ls} textAnchor={anchor}>{children}</SvgText>
+      <SvgText x={x} y={y} fill={fill} fillOpacity={opacity} fontFamily={font} fontSize={size} fontWeight={weight} letterSpacing={ls} textAnchor={anchor}>{children}</SvgText>
     </>
   );
 }
@@ -49,7 +50,8 @@ const MedalShareCard = React.forwardRef<unknown, {model: MedalShareModel}>(({mod
   const cx = CARD_W / 2;
   const cy = 470;
   const r = 240;
-  const hair = withAlpha(T1, 0.14);
+  // 헤어라인 = 전역 CARD_BORDER(흰 7%) — 사설 0.14 를 RunnerSpec 과 통일(감사 #57).
+  const hair = CARD_BORDER;
 
   return (
     <Svg ref={ref as never} width={CARD_W} height={CARD_H}>
@@ -65,9 +67,10 @@ const MedalShareCard = React.forwardRef<unknown, {model: MedalShareModel}>(({mod
       </Defs>
       <Rect x={0} y={0} width={CARD_W} height={CARD_H} fill="url(#medal-dark)" />
 
-      {/* 헤더 — keego 파파야 워드마크 + FINISHER(골드=성취) */}
-      <Tx x={PAD} y={158} size={54} weight="500" ls={-0.5} anchor="start" fill={RING_ACCENT}>{model.brand.toLowerCase()}</Tx>
-      <SvgText x={CARD_W - PAD} y={152} fill={HALL_GOLD} fontFamily={CF} fontWeight="800" fontSize={28} letterSpacing={4} textAnchor="end">
+      {/* 헤더 — keego 파파야 워드마크(4종 통일: 파파야·54·좌상) + FINISHER(골드=성취).
+          caps 코너 라벨은 28px·y168 — RunnerSpec 헤더 기준선과 픽셀 통일(감사 #57). */}
+      <Tx x={PAD} y={168} size={54} weight="500" ls={-0.5} anchor="start" fill={RING_ACCENT} font={CF}>{model.brand.toLowerCase()}</Tx>
+      <SvgText x={CARD_W - PAD} y={168} fill={HALL_GOLD} fontFamily={FONT} fontWeight="800" fontSize={28} letterSpacing={4} textAnchor="end">
         RACE FINISHER
       </SvgText>
 
@@ -97,8 +100,8 @@ const MedalShareCard = React.forwardRef<unknown, {model: MedalShareModel}>(({mod
       {/* 대회명 */}
       <Tx x={cx} y={cy + r + 96} size={46} weight="700" ls={-0.8}>{model.raceName}</Tx>
 
-      {/* 공식 기록(정본) — 히어로(골드=성취) */}
-      <SvgText x={cx} y={cy + r + 230} fill={HALL_GOLD} fontFamily={CF} fontWeight="800" fontSize={132} letterSpacing={-3} textAnchor="middle">
+      {/* 공식 기록(정본) — 히어로(골드=성취). 폰트=DISPLAY(RunnerSpec 히어로 숫자와 통일). */}
+      <SvgText x={cx} y={cy + r + 230} fill={HALL_GOLD} fontFamily={DISPLAY} fontWeight="800" fontSize={132} letterSpacing={-3} textAnchor="middle">
         {model.officialTime}
       </SvgText>
 

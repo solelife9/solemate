@@ -14,7 +14,7 @@ import React from 'react';
 import { rs, rv } from './lib/responsive';
 import {View, StyleSheet} from 'react-native';
 import {Text} from './lib/text';
-import {BRAND, T1, T2, T3, FONT, DISPLAY, RADIUS, withAlpha, TYPE} from './theme';
+import {BRAND, T1, T2, T3, FONT, DISPLAY, RADIUS, withAlpha, TYPE, CARD_BORDER} from './theme';
 
 export type Split = {km: number; paceSec: number; elevM: number};
 
@@ -63,12 +63,12 @@ const r = StyleSheet.create({
   head: {flexDirection: 'row', alignItems: 'center', gap: rv(12), paddingHorizontal: rs(2), paddingBottom: rv(8)},
   hcell: {color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600', opacity: 0.8},
   row: {flexDirection: 'row', alignItems: 'center', gap: rv(12), paddingVertical: rv(8), paddingHorizontal: rs(2)},
-  rowSep: {borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.045)},
-  km: {width: rs(34), fontFamily: DISPLAY, fontSize: TYPE.heading.fontSize, fontWeight: '600', color: T1},
+  rowSep: {borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: CARD_BORDER},
+  km: {width: rs(34), fontFamily: DISPLAY, fontSize: TYPE.heading.fontSize, fontWeight: '600', color: T1, fontVariant: ['tabular-nums']},
   barWrap: {flex: 1, height: rs(10), borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.04), overflow: 'hidden'},
   bar: {height: '100%', borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.30)},
   barBest: {backgroundColor: BRAND},
-  pace: {width: rs(60), textAlign: 'right', fontFamily: DISPLAY, fontSize: TYPE.label.fontSize, fontWeight: '500', color: T1},
+  pace: {width: rs(60), textAlign: 'right', fontFamily: DISPLAY, fontSize: TYPE.label.fontSize, fontWeight: '500', color: T1, fontVariant: ['tabular-nums']},
   paceBest: {color: BRAND},
-  elev: {width: rs(46), textAlign: 'right', fontFamily: DISPLAY, fontSize: TYPE.label.fontSize, fontWeight: '500', color: T3},
+  elev: {width: rs(46), textAlign: 'right', fontFamily: DISPLAY, fontSize: TYPE.label.fontSize, fontWeight: '500', color: T3, fontVariant: ['tabular-nums']},
 });
