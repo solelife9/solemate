@@ -66,6 +66,9 @@ type Mode = 'km' | 'min' | 'speed' | 'track';
 export type RunGoal = { km: number; durationMin: number; pacePlan: number[]; track?: { lapM: number } | null; targetZone?: number };
 /** 트랙 한 바퀴 예상 거리 선택지(m) — 야외 400(공인)·트랙 300·실내 200 + 커스텀. */
 const LAP_PRESETS = [200, 300, 400] as const;
+/** 거리 키패드 입력 상한(km) — 울트라 대응(민우님 2026-07-24): 50K·100K·100마일(161km)을
+ *  덮는 200. 룰러는 풀(42.2)까지만(200km 룰러는 스크롤 불가 수준) — 그 이상은 키패드 전용. */
+const KM_INPUT_MAX = 200;
 const CFG: Record<'km' | 'min', { min: number; max: number; step: number; major: number; minor: number; px: number; unit: string; def: number; presets: { label: string; v: number }[] }> = {
   // max 42.2: 풀코스(42.195km)가 42 상한에 막히던 문제(민우님 2026-07-24). 하프=21.1 과
   // 같은 0.1 그리드 반올림 규약으로 풀=42.2 — 링/음성 목표용 오차 +5m 는 무시 가능.
@@ -167,7 +170,9 @@ export default function RunGoalScreen({
   const [kpBuf, setKpBuf] = useState('');
   const clampToCfg = (m: 'km' | 'min', v: number) => {
     const c = CFG[m];
-    const clamped = Math.max(c.min, Math.min(c.max, v));
+    // 거리는 키패드 상한(울트라 200km)까지 — 룰러 상한(42.2)과 분리. 시간은 기존 그대로.
+    const hi = m === 'km' ? KM_INPUT_MAX : c.max;
+    const clamped = Math.max(c.min, Math.min(hi, v));
     const stepped = Math.round(clamped / c.step) * c.step;
     return +stepped.toFixed(c.step < 1 ? 1 : 0);
   };

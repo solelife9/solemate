@@ -38,13 +38,18 @@ test('큰 숫자 탭 → 키패드 → 21.1 입력·확인 → 목표가 21.1로
   expect(textOf(pressable(root, 'goal-bignum'))).toContain('21.1');
 });
 
-test('범위 밖(99) 입력은 km 최대 42.2(풀코스)로 클램프', () => {
+test('울트라 거리(99km)는 키패드로 그대로 입력되고, 상한 밖(999)은 200km 로 클램프', () => {
   const root = render(<RunGoalScreen />);
   act(() => pressable(root, 'goal-bignum').props.onPress());
   for (const k of ['9', '9']) act(() => pressable(root, `kp-${k}`).props.onPress());
   act(() => pressable(root, 'kp-ok').props.onPress());
-  // 상한 42.2 — 풀코스(42.195)가 42 에 막히던 문제 수정(2026-07-24).
-  expect(textOf(pressable(root, 'goal-bignum'))).toContain('42.2');
+  // 키패드 상한 200km(울트라 100마일=161km 커버, 2026-07-24) — 99 는 유효 입력.
+  expect(textOf(pressable(root, 'goal-bignum'))).toContain('99.0');
+  // 상한 밖(999)은 200 으로 클램프.
+  act(() => pressable(root, 'goal-bignum').props.onPress());
+  for (const k of ['9', '9', '9']) act(() => pressable(root, `kp-${k}`).props.onPress());
+  act(() => pressable(root, 'kp-ok').props.onPress());
+  expect(textOf(pressable(root, 'goal-bignum'))).toContain('200.0');
 });
 
 test('지우기(⌫)가 마지막 자리를 지운다', () => {
