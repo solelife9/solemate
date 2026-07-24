@@ -13,8 +13,13 @@
 // 사용자가 '실행취소' 를 탭하면 onAction 이 호출되고 토스트는 즉시 닫힌다. 탭하지 않으면
 // durationMs(기본 TOAST_DEFAULT_DURATION_MS) 후 자동으로 닫힌다.
 
-/** 자동 dismiss 기본 시간(ms). undo 액션이 있어도 동일하게 적용된다. */
+/** 자동 dismiss 기본 시간(ms) — 액션 없는 정보 토스트. */
 export const TOAST_DEFAULT_DURATION_MS = 3200;
+
+/** 액션(실행취소 등) 토스트의 자동 dismiss 기본 시간(ms). 파괴적 액션의 유일한 복구
+ *  경로가 3.2초 만에 사라지는 것은 도달 불가에 가깝다(VoiceOver 사용자는 특히) —
+ *  HIG 스낵바 관용(액션 있는 토스트는 더 오래)에 맞춰 6초(2026-07-24 심사 P0). */
+export const TOAST_ACTION_DURATION_MS = 6000;
 
 /** undo(실행취소) 토스트의 표준 액션 라벨 — 호출부가 통일해서 쓰도록 export. */
 export const TOAST_UNDO_LABEL = '실행취소';
@@ -91,7 +96,10 @@ export function showToast(config: ToastConfig): number {
   current = {...config, message, id};
   emit();
 
-  const duration = config?.durationMs == null ? TOAST_DEFAULT_DURATION_MS : config.durationMs;
+  const hasAction = !!(config?.actionLabel && String(config.actionLabel).trim());
+  const duration = config?.durationMs == null
+    ? (hasAction ? TOAST_ACTION_DURATION_MS : TOAST_DEFAULT_DURATION_MS)
+    : config.durationMs;
   if (duration > 0) {
     timer = setTimeout(() => {
       dismissToast(id);
@@ -110,6 +118,40 @@ export function dismissToast(id?: number): void {
   if (current == null) return;
   current = null;
   emit();
+}
+
+// ── 하단 클리어런스(탭바 회피) ────────────────────────────────────────────────
+// 플로팅 탭바 독이 떠 있는 동안 토스트가 그 '위'에 그려지도록, 독(TabBar)이 마운트 중
+// 자기 높이를 여기 알린다. ToastHost 는 이 값을 구독해 bottom 오프셋에 더한다.
+// (2026-07-24 심사 P0 #3 — 토스트가 탭바를 3.2초 가리고 실행취소가 탭 터치와 충돌.)
+let clearance = 0;
+let clearanceListeners: Array<(px: number) => void> = [];
+
+/** 토스트 하단 클리어런스(px)를 설정한다. TabBar 가 마운트 시 독 높이, 언마운트 시 0. */
+export function setToastClearance(px: number): void {
+  const v = Math.max(0, px || 0);
+  if (clearance === v) return;
+  clearance = v;
+  for (const l of [...clearanceListeners]) {
+    try {
+      l(clearance);
+    } catch {
+      /* 리스너 에러는 다른 리스너 통지를 막지 않는다 */
+    }
+  }
+}
+
+/** 현재 클리어런스(px). ToastHost 초기값/테스트용. */
+export function getToastClearance(): number {
+  return clearance;
+}
+
+/** 클리어런스 변경 구독(ToastHost). 반환값은 구독 해제 함수. */
+export function subscribeToastClearance(listener: (px: number) => void): () => void {
+  clearanceListeners.push(listener);
+  return () => {
+    clearanceListeners = clearanceListeners.filter(l => l !== listener);
+  };
 }
 
 /**

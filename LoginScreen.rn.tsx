@@ -16,7 +16,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 
 import {Button, KeegoWordmark} from './primitives';
 import {
-  BG, CARD_HI, DANGER, T1, T2, T3, FONT, DISPLAY, RADIUS,
+  BG, ACCENT, BLACK, DANGER, T1, T2, T3, FONT, DISPLAY, RADIUS,
   KAKAO_YELLOW, KAKAO_LABEL, NAVER_GREEN, NAVER_LABEL, TYPE,
 } from './theme';
 import type {CloudPort, CloudProvider, CloudUser} from './lib/cloudPort';
@@ -138,11 +138,14 @@ export function LoginScreen({cloudPort, onSignedIn}: LoginScreenProps) {
             accessibilityLabel="Apple로 로그인"
             accessibilityState={{disabled: signingIn}}
             style={({pressed}) => [st.btn, st.btnApple, pressed && {opacity: 0.85}]}>
+            {/* Sign in with Apple 공식 스펙(HIG·심사 4.8): 다크 배경 위 = 흰 버튼 +
+                검정 로고/라벨, 문구는 공식 한국어 "Apple로 계속하기". 커스텀 회색 버튼은
+                리젝 리스크(2026-07-24 심사 P0 #9). */}
             {busy === 'apple'
-              ? <ActivityIndicator color={T1} />
+              ? <ActivityIndicator color={BLACK} />
               : <>
-                  <Ionicons name="logo-apple" size={ri(18)} color={T1} />
-                  <Text style={st.btnTxt}>Apple로 계속</Text>
+                  <Ionicons name="logo-apple" size={ri(18)} color={BLACK} />
+                  <Text style={[st.btnTxt, {color: BLACK}]}>Apple로 계속하기</Text>
                 </>}
           </Pressable>
         )}
@@ -172,7 +175,8 @@ const st = StyleSheet.create({
   btn: {flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(8), height: rs(50), borderRadius: RADIUS.btn, borderCurve: 'continuous'},
   btnGoogle: {height: rs(50)},
   googleIconBox: {width: ri(20), height: ri(24), alignItems: 'center', justifyContent: 'center'},
-  btnApple: {backgroundColor: CARD_HI},
+  // Apple 공식: 다크 UI 위에서는 흰 버튼(검정 로고/라벨)이 스펙 — 회색 커스텀 폐지.
+  btnApple: {backgroundColor: ACCENT},
   btnKakao: {backgroundColor: KAKAO_YELLOW},
   btnNaver: {backgroundColor: NAVER_GREEN},
   brandMark: {fontFamily: DISPLAY, fontSize: TYPE.heading.fontSize, fontWeight: '700'},

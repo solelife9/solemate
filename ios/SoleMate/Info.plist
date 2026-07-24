@@ -113,6 +113,10 @@
 	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
+	<!-- 앱은 #0A0A0A 다크 전용 — 시스템 라이트모드에서 Alert/공유시트/키보드가 흰색으로
+	     뜨지 않게 다크를 강제한다(2026-07-24 HIG 심사 P0 #2, 민우님 승인). -->
+	<key>UIUserInterfaceStyle</key>
+	<string>Dark</string>
 	<key>UIRequiredDeviceCapabilities</key>
 	<array>
 		<string>arm64</string>

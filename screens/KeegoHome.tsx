@@ -22,7 +22,7 @@ import Svg, {
   LinearGradient as SvgLinear,
 } from 'react-native-svg';
 import {
-  BG, T1, T2, T3, WARN, DANGER, FONT, DISPLAY, TYPE, RADIUS, GUTTER, GLASS, withAlpha,
+  BG, T1, T2, T3, WARN, DANGER, FONT, DISPLAY, TYPE, RADIUS, GUTTER, GLASS, MOTION, withAlpha,
   type Shoe,
 } from '../theme';
 import {GlassEdge, ShoeGlyph} from '../primitives';
@@ -123,9 +123,14 @@ export default function KeegoHome({shoes, runs = [], onStartRun, onOpenShoe, onO
         ))}
       </View>
 
-      {/* GUARDIAN — 교체 고려(80%+)/교체 권장(90%+)일 때만 */}
+      {/* GUARDIAN — 교체 고려(80%+)/교체 권장(90%+)일 때만. 탭하면 해당 신발 상세로 —
+          '대안' 이 버튼처럼 그려지는데 View 라 탭이 안 먹던 가짜 어포던스 수리(심사 P0 #10). */}
       {selHealth && selTier && (selTier.key === 'consider' || selTier.key === 'replace') ? (
-        <Guardian danger={selTier.key === 'replace'} pct={selHealth.percentUsed} />
+        <Guardian
+          danger={selTier.key === 'replace'}
+          pct={selHealth.percentUsed}
+          onPress={shoes[index] ? () => onOpenShoe?.(shoes[index]) : undefined}
+        />
       ) : null}
     </View>
   );
@@ -340,16 +345,26 @@ export function GhostShoeCard({width, onPress}: {width: number; onPress?: () => 
 }
 
 // ─── 가디언 ────────────────────────────────────────────────────────
-function Guardian({danger, pct}: {danger: boolean; pct: number}) {
+function Guardian({danger, pct, onPress}: {danger: boolean; pct: number; onPress?: () => void}) {
   const color = danger ? DANGER : WARN;
   // pct 는 마모(percentUsed) — 사용자 노출은 '남은 수명' 방향으로 환산(표기 통일).
   const label = danger ? KEEP_GOING_REPLACE : `남은 수명 ${Math.max(0, 100 - Math.round(pct))}% · 슬슬 교체를 준비할 때`;
   return (
-    <View style={[styles.guardian, {backgroundColor: withAlpha(color, 0.12), borderColor: withAlpha(color, 0.4)}]}>
+    <Pressable
+      onPress={onPress}
+      disabled={!onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`${label}${danger ? ', 대안 보기' : ''}, 신발 상세 열기`}
+      hitSlop={8}
+      style={({pressed}) => [
+        styles.guardian,
+        {backgroundColor: withAlpha(color, 0.12), borderColor: withAlpha(color, 0.4)},
+        pressed && {transform: [{scale: MOTION.press.scale}], opacity: MOTION.press.opacity},
+      ]}>
       <View style={[styles.guardDot, {backgroundColor: color}]} />
       <Text style={styles.guardText} numberOfLines={1}>{label}</Text>
       {danger ? <Text style={[styles.guardCta, {color}]}>대안</Text> : null}
-    </View>
+    </Pressable>
   );
 }
 

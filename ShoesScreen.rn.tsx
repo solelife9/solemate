@@ -8,17 +8,17 @@ import { View, Text, ScrollView, Pressable, TextInput, Alert, StyleSheet } from 
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {
-  BG, CARD_HI, GLASS, ACCENT, DANGER, WARN, GOOD, BEST, T1, T2, T3, T4, SEP, FONT, DISPLAY, withAlpha, RADIUS, GUTTER, Shoe, Run, SHOES, TYPE,
+  BG, CARD_HI, GLASS, ACCENT, DANGER, WARN, GOOD, T1, T2, T3, T4, SEP, FONT, DISPLAY, withAlpha, RADIUS, GUTTER, Shoe, Run, SHOES, TYPE,
   BAR,
 } from './theme';
-import { TabBar, TABBAR_CLEARANCE, Pill, InjuryBanner, Button, SwipeBack, AmbientBackdrop, Rise, GlassEdge } from './primitives';
+import { TabBar, TABBAR_CLEARANCE, Pill, InjuryBanner, Button, SwipeBack, AmbientBackdrop, Rise, GlassEdge, WEAR_TONE_COLOR } from './primitives';
 import { RunCard, RunDetail } from './HistoryScreen.rn';
 import { FuelGauge } from './FuelGauge';
 import FirstShoeScreen from './FirstShoeScreen.rn';
 import RotationInsightPanel from './RotationInsightPanel';
 import { RotationPick } from './lib/rotation';
 import { Unit, displayNum } from './lib/units';
-import { wearTier, WearTierTone, SHOE_REPLACE_PCT, clampMaxKm } from './lib/shoe';
+import { wearTier, SHOE_REPLACE_PCT, clampMaxKm } from './lib/shoe';
 import { assessShoeInjuryRisk } from './lib/injury';
 import { buildWearView, forecastConfidenceKo, forecastLineKo, type ReplacementForecast, type Surface } from './lib/wearView';
 import { findShoeClass, typeLabel, purposeSentenceKo } from './data/shoeClass';
@@ -30,10 +30,10 @@ import type { ProgressionContext, RetiredShoeRecord } from './lib/progression/ty
 // 페이스를 비교할 수 있게 상세·목록 카드에 함께 노출한다.
 export type ShoeTotals = { totalRuns: number; totalTime: string; avgPace: string; lastWorn?: string };
 
-// 마모 4단계(사용률%) → 색/라벨. 톤→theme 토큰(raw hex 0). 최상🟢/좋음🟡/교체고려🟠/교체권장🔴.
-const TONE_COLOR: Record<WearTierTone, string> = { good: BEST, mid: GOOD, warn: WARN, danger: DANGER };
-const condColor = (pct: number) => TONE_COLOR[wearTier(pct).tone];
-const ringColor = (pct: number) => TONE_COLOR[wearTier(pct).tone];
+// 마모 4단계(사용률%) → 색/라벨. 매핑은 primitives.WEAR_TONE_COLOR 단일 소스
+// (2026-07-19 색통일 램프 — 사본 금지, 2026-07-24 심사에서 사본 간 램프 어긋남 발견).
+const condColor = (pct: number) => WEAR_TONE_COLOR[wearTier(pct).tone];
+const ringColor = (pct: number) => WEAR_TONE_COLOR[wearTier(pct).tone];
 // 상태 점(shoeCondDot)이 이미 색 동그라미라, 라벨의 이모지(🟢/🟡/🟠/🔴)는 중복이므로 뺀다.
 const condLabel = (pct: number) => wearTier(pct).label;
 

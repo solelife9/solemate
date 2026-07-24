@@ -2254,7 +2254,24 @@ function Main(){
     return <MedalArchiveScreen medals={liveMedals(medals)}
       onBack={()=>setShowMedalArchive(false)}
       onAddMedal={()=>setMedalFlow({date:today()})}
-      onDelete={(id)=>{const now=Date.now();setMedals(cur=>cur.map(m=>m.id===id?{...m,deleted:true,updatedAt:now}:m));void removeMedalStore(id,now);}}/>;
+      onDelete={(id)=>{
+        // 키프세이크(메달)는 오터치 한 번에 사라지면 안 된다 — 확인 1겹 + 실행취소 토스트
+        // (HIG Destructive actions, 2026-07-24 심사 P0 #8). 삭제 자체는 기존 soft-delete.
+        const doomed=medals.find(m=>m.id===id);
+        Alert.alert('메달 삭제',`${doomed?.raceName??'이 메달'} 기록을 아카이브에서 삭제할까요?`,[
+          {text:'취소',style:'cancel'},
+          {text:'삭제',style:'destructive',onPress:()=>{
+            const now=Date.now();
+            setMedals(cur=>cur.map(m=>m.id===id?{...m,deleted:true,updatedAt:now}:m));
+            void removeMedalStore(id,now);
+            showToast({message:'메달 삭제됨',actionLabel:TOAST_UNDO_LABEL,onAction:()=>{
+              const back=Date.now();
+              setMedals(cur=>sortMedals(cur.map(m=>m.id===id?{...m,deleted:false,updatedAt:back}:m)));
+              if(doomed)void addMedalStore({...doomed,deleted:false,updatedAt:back});
+            }});
+          }},
+        ]);
+      }}/>;
   }
   if(runRecap){
     return <RunRecapScreen {...runRecap} unit={unit}
@@ -3185,7 +3202,8 @@ function RunActiveScreen({shoe,insets,goalKm,goalMin=0,pacePlan=[],targetZone=0,
       </View>
       <View style={run.body}>
         <Ring size={ri(272)} stroke={16} progress={1} color={ACCENT}>
-          <View style={{alignItems:'center'}}>
+          {/* VoiceOver: 링 안 3줄을 한 요소로 묶어 완주 결과를 한 번에 낭독(심사 P0 #5). */}
+          <View style={{alignItems:'center'}} accessible accessibilityLabel={`${trackMode?`트랙 ${Math.round(lapMRef.current)}미터 ${lapTimesRef.current.length}랩`:`목표 ${goalKm}킬로미터 완료`}, ${finKm.toFixed(2)} 킬로미터`}>
             <Text style={run.goalText}>{trackMode?`트랙 · ${Math.round(lapMRef.current)}m × ${lapTimesRef.current.length}랩`:`목표 ${goalKm}km 완료`}</Text>
             <Text style={run.bigDist}>{finKm.toFixed(2)}</Text>
             <Text style={run.bigUnit}>킬로미터</Text>
@@ -3200,7 +3218,7 @@ function RunActiveScreen({shoe,insets,goalKm,goalMin=0,pacePlan=[],targetZone=0,
           {v:finCal>0?String(finCal):'--', l:'칼로리', u:'kcal'},
           {v:String(finElev), l:'고도 상승', u:'m'},
         ].map((m,i)=>(
-          <View key={i} style={run.metricCell}>
+          <View key={i} style={run.metricCell} accessible accessibilityLabel={`${m.l} ${m.v}${m.u?` ${m.u}`:''}`}>
             <View style={run.metricVRow}>
               <Text style={run.metricV}>{m.v}</Text>
               {m.u?<Text style={run.metricU}> {m.u}</Text>:null}
@@ -3209,7 +3227,7 @@ function RunActiveScreen({shoe,insets,goalKm,goalMin=0,pacePlan=[],targetZone=0,
           </View>
         ))}
       </View>
-      <TextInput style={run.memo} value={memo} onChangeText={setMemo} placeholder="메모 (선택)" placeholderTextColor={T3} autoCorrect={false} autoCapitalize="none"/>
+      <TextInput style={run.memo} value={memo} onChangeText={setMemo} placeholder="메모 (선택)" placeholderTextColor={T3} autoCorrect={false} autoCapitalize="none" accessibilityLabel="러닝 메모" keyboardAppearance="dark"/>
       <View style={run.actionRow}>
         <TouchableOpacity style={run.discardBtn} onPress={confirmDiscard} accessibilityRole="button" accessibilityLabel="버리기"><Text style={run.discardTxt}>버리기</Text></TouchableOpacity>
         <Button style={run.saveBtn} label={saving?'저장 중...':'저장하기'} onPress={handleSave} disabled={saving}/>
@@ -3304,7 +3322,7 @@ const run=StyleSheet.create({
   bannerText:{flex:1,color:T1,fontFamily:FP,fontSize: rf(14),fontWeight:'500',lineHeight: rf(17)},
   body:{flex:1,alignItems:'center',justifyContent:'center'},
   goalText:{color:T3,fontFamily:FP,fontSize: rf(13),fontWeight:'500',letterSpacing:1},
-  bigDist:{color:T1,fontFamily:FH,fontSize: rf(84),letterSpacing:1,marginTop: rv(6)},
+  bigDist:{color:T1,fontFamily:FH,fontSize: rf(84),letterSpacing:1,marginTop: rv(6),fontVariant:['tabular-nums']},
   bigUnit:{color:T3,fontFamily:FP,fontSize: rf(15),fontWeight:'600',marginTop: rv(2)},
   metrics:{flexDirection:'row',marginHorizontal: rs(-4),paddingVertical: rv(14),paddingBottom: rv(24),borderTopWidth:StyleSheet.hairlineWidth,borderTopColor:SEP},
   metric:{flex:1,alignItems:'center',gap: rv(4)},
@@ -3312,16 +3330,16 @@ const run=StyleSheet.create({
   metricsGrid:{flexDirection:'row',flexWrap:'wrap',paddingTop: rv(14),paddingBottom: rv(20),borderTopWidth:StyleSheet.hairlineWidth,borderTopColor:SEP},
   metricCell:{width:'33.33%',alignItems:'center',gap: rv(4),paddingVertical: rv(8)},
   metricVRow:{flexDirection:'row',alignItems:'flex-end'},
-  metricV:{color:T1,fontFamily:FH,fontSize: rf(26),letterSpacing:0.3},
+  metricV:{color:T1,fontFamily:FH,fontSize: rf(26),letterSpacing:0.3,fontVariant:['tabular-nums']},
   metricU:{color:T3,fontFamily:FP,fontSize: rf(12),marginBottom: rv(3)},
   metricL:{color:T3,fontFamily:FP,fontSize: rf(13),fontWeight:'600'},
   // 러닝 중 메트릭 위계 — 시간·페이스 hero(큰) + 케이던스·칼로리·고도 sub(작은).
   heroMetrics:{flexDirection:'row',paddingVertical: rv(16),borderTopWidth:StyleSheet.hairlineWidth,borderTopColor:SEP},
   hm:{flex:1,alignItems:'center'},
-  hmV:{fontFamily:FH,fontSize: rf(34),fontWeight:'600',color:T1,letterSpacing:-1},
+  hmV:{fontFamily:FH,fontSize: rf(34),fontWeight:'600',color:T1,letterSpacing:-1,fontVariant:['tabular-nums']},
   hmL:{color:T3,fontFamily:FP,fontSize: rf(13),fontWeight:'500',marginTop: rv(4)},
   subMetrics:{flexDirection:'row',justifyContent:'space-around',paddingVertical: rv(12)},
-  smV:{fontFamily:FH,fontSize: rf(16),fontWeight:'500',color:T2,textAlign:'center'},
+  smV:{fontFamily:FH,fontSize: rf(16),fontWeight:'500',color:T2,textAlign:'center',fontVariant:['tabular-nums']},
   smL:{color:T3,fontFamily:FP,fontSize: rf(11),fontWeight:'500',marginTop: rv(3),textAlign:'center'},
   controls:{flexDirection:'row',alignItems:'flex-start',justifyContent:'center',gap: rv(40),paddingTop: rv(4),paddingBottom: rv(8)},
   ctrlHint:{color:T3,fontFamily:FP,fontSize: rf(12),letterSpacing:0.5,textAlign:'center'},

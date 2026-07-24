@@ -685,8 +685,15 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, onEdit, age = 0, 
                     if (pt && pt.t > 0 && pt.t <= tMax) kmTicks.push({ km: k, t: pt.t, xPct: (x(pt.t) / W) * 100 });
                   }
                 }
+                // accessible 로 곡선 전체를 한 요소로 묶고 수치 요약을 낭독한다 —
+                // 구 accessibilityElementsHidden 은 자식만 숨기고 자신은 요소가 아니라
+                // 라벨이 영원히 안 읽혔다(심박 데이터 0% 전달, 2026-07-24 심사 P0 #6).
                 return (
-                  <View style={{ marginTop: rv(12) }} accessibilityElementsHidden accessibilityLabel="심박 곡선">
+                  <View
+                    style={{ marginTop: rv(12) }}
+                    accessible
+                    accessibilityRole="image"
+                    accessibilityLabel={`심박 곡선 그래프 — 평균 ${hr.avg}, 최고 ${hr.max} bpm`}>
                     <View style={{ position: 'relative', height: H }}>
                       <Svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none">
                         {zones.map(zn => {

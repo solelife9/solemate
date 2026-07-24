@@ -26,20 +26,41 @@ const BASE_H = 852;
 // jest 워커에선 스케일을 끄고 원본값을 그대로 돌려준다(테스트·스냅샷 불변).
 const TEST = !!(typeof process !== 'undefined' && process.env && process.env.JEST_WORKER_ID);
 
-const win = Dimensions.get('window');
-const W = win.width || BASE_W;
-const H = win.height || BASE_H;
-// 회전/가로세로 무관하게 '짧은 변'을 폭 기준으로 삼는다(세로 폰 기준 = width).
-const shortSide = Math.min(W, H);
-const longSide = Math.max(W, H);
-
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 
-// 폭 스케일 계수 — 간격·패딩·마진·라운드·카드폭 등 '가로 비례' 요소. 폰 범위(SE~ProMax)에서
-// 대략 0.85~1.12. 아주 작은/큰 기기에서 과한 축소·확대를 막는다.
-const KW = TEST ? 1 : clamp(shortSide / BASE_W, 0.85, 1.12);
-// 세로 스케일 계수 — 세로 여백 전용. 세로로 긴 화면에서 살짝 더 허용(0.85~1.2).
-const KH = TEST ? 1 : clamp(longSide / BASE_H, 0.85, 1.2);
+// 치수/계수는 let — 과거 모듈 로드 시 1회 동결이라 iPad Split View·Stage Manager·
+// Display Zoom 변경에서 앱 전역 스케일이 스테일했다(2026-07-24 심사 P0 #11). 아래
+// Dimensions 'change' 리스너가 갱신한다. 한계(정직 고지): StyleSheet.create 로 모듈
+// 로드 시 계산된 값은 그대로다 — 리스너의 수혜는 이후 마운트·인라인 스타일·screen 분기.
+let W = BASE_W;
+let H = BASE_H;
+let KW = 1;
+let KH = 1;
+
+function recompute(w: number, h: number): void {
+  W = w || BASE_W;
+  H = h || BASE_H;
+  // 회전/가로세로 무관하게 '짧은 변'을 폭 기준으로 삼는다(세로 폰 기준 = width).
+  const shortSide = Math.min(W, H);
+  const longSide = Math.max(W, H);
+  // 폭 스케일 계수 — 간격·패딩·마진·라운드·카드폭 등 '가로 비례' 요소. 폰 범위(SE~ProMax)
+  // 에서 대략 0.85~1.12. 아주 작은/큰 기기에서 과한 축소·확대를 막는다.
+  KW = TEST ? 1 : clamp(shortSide / BASE_W, 0.85, 1.12);
+  // 세로 스케일 계수 — 세로 여백 전용. 세로로 긴 화면에서 살짝 더 허용(0.85~1.2).
+  KH = TEST ? 1 : clamp(longSide / BASE_H, 0.85, 1.2);
+  // screen 은 export 된 단일 객체 — 필드를 제자리 갱신해 소비처가 항상 현재값을 읽게 한다.
+  screen.width = W;
+  screen.height = H;
+  screen.isSmall = shortSide < 360;
+  screen.isLarge = shortSide >= 414;
+  screen.wScale = KW;
+  screen.hScale = KH;
+}
+
+const win = Dimensions.get('window');
+if (!TEST) {
+  Dimensions.addEventListener('change', ({window}) => recompute(window.width, window.height));
+}
 
 /** 가로 비례 스케일(간격·패딩·마진·라운드·카드폭·고정 크기). 기준기기에서 원본값. */
 export const rs = (size: number): number => (TEST ? size : Math.round(size * KW));
@@ -61,13 +82,17 @@ export const rf = (size: number): number =>
 /** 반응형 아이콘 크기 — 폰트와 동일 절제 스케일. */
 export const ri = (size: number): number => rf(size);
 
-/** 화면 정보(경계 분기용). isSmall=작은 폰(SE급), isLarge=큰 폰(Pro Max급). */
+/** 화면 정보(경계 분기용). isSmall=작은 폰(SE급), isLarge=큰 폰(Pro Max급).
+ *  필드는 Dimensions 변경 시 제자리 갱신된다 — 구조분해로 떠 두지 말고 매번 읽을 것. */
 export const screen = {
-  width: W,
-  height: H,
-  isSmall: shortSide < 360,
-  isLarge: shortSide >= 414,
+  width: BASE_W,
+  height: BASE_H,
+  isSmall: false,
+  isLarge: false,
   /** 기준 대비 폭 스케일 계수(디버그/특수 계산용). */
-  wScale: KW,
-  hScale: KH,
+  wScale: 1,
+  hScale: 1,
 };
+
+// 초기 1회 계산(모듈 로드 시점의 실제 창 크기 반영 — 기존 동작과 동일한 초기값).
+recompute(win.width, win.height);

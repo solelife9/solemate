@@ -10,10 +10,13 @@
 
 import React, {useEffect, useRef, useState} from 'react';
 import { rs } from './lib/responsive';
-import {Animated, StyleSheet, Text, Pressable, Easing} from 'react-native';
+import {AccessibilityInfo, Animated, Platform, StyleSheet, Text, Pressable, Easing} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {CARD_HI, ACCENT, T1, SEP, FONT, RADIUS, SPACE, TYPE} from './theme';
-import {subscribeToast, runToastAction, getCurrentToast, ToastEntry} from './lib/toast';
+import {BLACK, CARD_HI, ACCENT, T1, SEP, FONT, RADIUS, SPACE, TYPE} from './theme';
+import {
+  subscribeToast, runToastAction, getCurrentToast, ToastEntry,
+  subscribeToastClearance, getToastClearance,
+} from './lib/toast';
 
 const ENTER_MS = 220;
 const EXIT_MS = 180;
@@ -23,14 +26,27 @@ export default function ToastHost() {
   const insets = useSafeAreaInsets();
   // 표시 중(또는 퇴장 애니 중)인 토스트. store 가 null 을 주면 퇴장 애니 후 비운다.
   const [toast, setToast] = useState<ToastEntry | null>(null);
+  // 하단 클리어런스 — 플로팅 탭바 독이 떠 있으면 그 높이만큼 위에 그린다(P0 심사 #3).
+  const [clearance, setClearance] = useState(getToastClearance());
   const translateY = useRef(new Animated.Value(SLIDE_DP)).current;
   const opacity = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => subscribeToastClearance(setClearance), []);
 
   useEffect(() => {
     const unsub = subscribeToast(next => {
       if (next) {
         // 입장: 먼저 트리에 올린 뒤(메시지 즉시 렌더) 슬라이드업+페이드인.
         setToast(next);
+        // iOS VoiceOver 공지 — accessibilityLiveRegion 은 Android 전용 prop 이라
+        // iOS 는 명시적으로 announce 해야 들린다(P0 심사 #4). Android 는 liveRegion 이
+        // 이미 읽어 주므로 중복 공지하지 않는다.
+        if (Platform.OS === 'ios') {
+          const announce = next.actionLabel && next.actionLabel.trim()
+            ? `${next.message}. ${next.actionLabel} 버튼이 있어요.`
+            : next.message;
+          AccessibilityInfo.announceForAccessibility(announce);
+        }
         translateY.setValue(SLIDE_DP);
         opacity.setValue(0);
         Animated.parallel([
@@ -83,7 +99,7 @@ export default function ToastHost() {
       pointerEvents="box-none"
       style={[
         styles.wrap,
-        {bottom: (insets.bottom || 0) + SPACE.lg},
+        {bottom: (insets.bottom || 0) + SPACE.lg + clearance},
       ]}>
       <Animated.View
         style={[
@@ -132,7 +148,7 @@ const styles = StyleSheet.create({
     paddingVertical: SPACE.md,
     paddingHorizontal: SPACE.lg,
     // 다크 위에 떠 보이도록 약한 그림자(Android elevation 포함).
-    shadowColor: '#000',
+    shadowColor: BLACK,
     shadowOpacity: 0.4,
     shadowRadius: 12,
     shadowOffset: {width: 0, height: rs(4)},

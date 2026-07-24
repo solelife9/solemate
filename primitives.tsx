@@ -44,6 +44,7 @@ import {
   WARN,
   DANGER,
   GOOD,
+  BEST,
   T1,
   T2,
   T3,
@@ -60,6 +61,7 @@ import {
   MOTION,
 } from './theme';
 import {tap as hapticTap} from './lib/haptics';
+import {setToastClearance} from './lib/toast';
 import {type WearTierTone} from './lib/shoe';
 import {InjuryLevel} from './lib/injury';
 
@@ -67,10 +69,12 @@ import {InjuryLevel} from './lib/injury';
 //  wearTier(4단계) tone → WEAR_TONE_COLOR 가 단일 소스다.)
 export type Tone = 'good' | 'warn' | 'danger' | 'accent' | 'dim';
 
-// 마모 4단계(wearTier) 톤 → theme 토큰. 최상🟢/양호🟡/교체고려🟠/교체권장🔴 —
-// 홈 히어로·신발 탭·러닝 목표가 같은 매핑을 쓴다(FuelGauge 와 동일 값, 공용 소스).
+// 마모 4단계(wearTier) 톤 → theme 토큰. 최상=BEST 파랑·양호=GOOD·교체고려=WARN·
+// 교체권장=DANGER — 2026-07-19 수명 링 색통일(c139934, 민우님 확정)과 동일 램프.
+// FuelGauge·신발 탭이 이 export 를 직접 소비한다(사본 금지 — 과거 사본이 한 단계
+// 밀린 램프 + '교체고려'=흰(ACCENT) 으로 어긋나 '최상'과 같은 색이 되는 사고가 있었다).
 export const WEAR_TONE_COLOR: Record<WearTierTone, string> = {
-  good: GOOD, mid: WARN, warn: ACCENT, danger: DANGER,
+  good: BEST, mid: GOOD, warn: WARN, danger: DANGER,
 };
 
 // ── Stepper — ± 조정 컨트롤 단일 프리미티브(2026-07-04 DS 감사) ─────────────────
@@ -1436,6 +1440,13 @@ export const TABBAR_CLEARANCE = 118;
 
 export function TabBar({active, onTab}: {active: number; onTab: (i: number) => void}) {
   const insets = useSafeAreaInsets();
+  // 독이 떠 있는 동안 전역 토스트에 하단 클리어런스를 알린다 — 토스트가 독을 가리고
+  // '실행취소'가 탭 터치와 충돌하던 P0(2026-07-24 심사 #3). 값 = 독 62 + wrap 상단 6.
+  // 탭 전환 시 이전 화면 TabBar 정리(0) → 새 TabBar 설정 순서라 최종값이 항상 남는다.
+  useEffect(() => {
+    setToastClearance(rs(62) + rv(6));
+    return () => setToastClearance(0);
+  }, []);
   // 각 탭의 x중심/폭을 onLayout 으로 측정해 하이라이트를 정확히 정렬한다. 초기값은 모듈 캐시
   // (직전 마운트가 측정해 둔 동일 레이아웃) — 마운트 즉시 직전 탭→현재 탭 슬라이드를 시작할 수 있다.
   const [slots, setSlots] = useState<{x: number; w: number}[]>(() => tabCachedSlots.slice());
