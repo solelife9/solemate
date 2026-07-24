@@ -60,6 +60,7 @@ test('워치 런 인제스트 시 HR 보강 대기에 실제 러닝 시간창으
       cadence: 172, avgBpm: 151, elevGainM: 12, kcal: 400,
       startMs, laps: 0, lapM: 0, lapTimes: [],
       splitsS: [360, 360, 360, 360, 360],
+      route: [{lat: 37.5, lon: 127.0}, {lat: 37.51, lon: 127.01}], // 워치 GPS 경로(지도)
     });
   });
   await flush(renderer);
@@ -73,6 +74,11 @@ test('워치 런 인제스트 시 HR 보강 대기에 실제 러닝 시간창으
   const splitsRaw = await AsyncStorage.getItem('splits_' + savedRun.id);
   expect(splitsRaw).toBeTruthy();
   expect(JSON.parse(splitsRaw!)).toHaveLength(5);
+
+  // ②b 경로(민우님 2026-07-24 "워치 런도 지도") — 레코드 route(클라우드 동기) + 사이드카.
+  expect(String(savedRun.route || '')).toContain('37.51');
+  const routeSide = await AsyncStorage.getItem('route_' + savedRun.id);
+  expect(routeSide).toBeTruthy();
 
   // ③ 핵심 — HR 보강 대기 레지스트리에 '워치가 보낸 실제 시간창'으로 등록됐다.
   //    (updatedAt 역산이 아니라 startMs 기준 — 늦게 가져온 워치 런도 창이 정확하다.)

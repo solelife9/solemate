@@ -73,6 +73,9 @@ struct RunSummary: Equatable {
   /// 비트랙 런은 lapM 0 · lapTimesS []. (laps 수 = lapTimesS.count)
   let lapM: Double
   let lapTimesS: [Double]
+  /// GPS 경로 — [lat,lon,lat,lon,…] 플랫 배열(WCSession plist 친화, ≤200점 다운샘플).
+  /// 폰이 route_<id> 사이드카 + 레코드 route(클라우드 동기)로 저장해 지도를 그린다.
+  let routeFlat: [Double]
 
   var avgPaceSecPerKm: Double { km > 0.01 ? durationS / km : 0 }
 }
@@ -172,6 +175,11 @@ final class WorkoutManager: NSObject, ObservableObject {
   private var builder: HKLiveWorkoutBuilder?
   private let locationManager = CLLocationManager()
   private var lastLocation: CLLocation?
+  /// GPS 경로(폰 지도용 — 민우님 2026-07-24 "워치 런도 지도 나오게"): 채택 픽스를 10m
+  /// 간격으로 씨닝해 모은다. 메모리 상한 2000점(울트라 대비) — 초과 시 절반 데시메이션,
+  /// 전송 시 200점 균등 다운샘플(폰 simplifyRoute 규약과 동일).
+  private var routePoints: [CLLocationCoordinate2D] = []
+  private var lastRoutePoint: CLLocation?
   private var timer: Timer?
   private var countdownTimer: Timer?
   private var pendingStart: (shoe: WatchShoe, goal: RunGoal)?
@@ -335,6 +343,8 @@ final class WorkoutManager: NSObject, ObservableObject {
       hkDistanceKm = 0
       gpsDistanceKm = 0
       hkAlive = false
+      routePoints = []
+      lastRoutePoint = nil
       pacePoints = []
       currentPaceSecPerKm = 0
       pausedAccumS = 0
@@ -449,6 +459,8 @@ final class WorkoutManager: NSObject, ObservableObject {
     hkDistanceKm = 0
     gpsDistanceKm = 0
     hkAlive = false
+    routePoints = []
+    lastRoutePoint = nil
     pacePoints = []
     currentPaceSecPerKm = 0
     pausedAccumS = 0
@@ -606,6 +618,12 @@ final class WorkoutManager: NSObject, ObservableObject {
     }
   }
 
+  /// 균등 스트라이드 다운샘플(폰 lib/geo.simplifyRoute 와 동일 규약).
+  private func downsampleRoute(_ pts: [CLLocationCoordinate2D], maxCount: Int) -> [CLLocationCoordinate2D] {
+    guard pts.count > maxCount, maxCount >= 2 else { return pts }
+    return (0..<maxCount).map { pts[Swift.min(($0 * (pts.count - 1)) / (maxCount - 1), pts.count - 1)] }
+  }
+
   private func buildSummary(endDate: Date) {
     let start = startDate ?? endDate
     // 심박·칼로리·케이던스·시간·거리는 captureFinalStats(finishWorkout 전)에서 이미 확정됐다.
@@ -614,6 +632,8 @@ final class WorkoutManager: NSObject, ObservableObject {
     let kcal = capturedKcal
     let cadence = capturedCadence
     let trackRun = goal.kind == .track && !lapTimes.isEmpty
+    // 경로 다운샘플(≤200점) → 플랫 배열. 2점 미만(실내·GPS 부재)은 빈 배열 — 폰이 지도 생략.
+    let dsRoute = downsampleRoute(routePoints, maxCount: 200)
     let s = RunSummary(
       runId: runId,
       shoeId: currentShoe?.id ?? "",
@@ -629,7 +649,8 @@ final class WorkoutManager: NSObject, ObservableObject {
       startMs: start.timeIntervalSince1970 * 1000,
       endMs: endDate.timeIntervalSince1970 * 1000,
       lapM: trackRun ? lapM : 0,
-      lapTimesS: trackRun ? lapTimes : []
+      lapTimesS: trackRun ? lapTimes : [],
+      routeFlat: dsRoute.count >= 2 ? dsRoute.flatMap { [$0.latitude, $0.longitude] } : []
     )
     summary = s
     // 완주 런 자동 전송(애플 피트니스 방식) — 정지 순간 바로 저장. 수동 '저장' 버튼을 안
@@ -952,6 +973,16 @@ extension WorkoutManager: CLLocationManagerDelegate {
             if dAlt > 0.5, dAlt < 30 { elevGainM += dAlt }
           }
           feedAutoPause(speedMps: sampleSpeed, dtSec: dt)
+        }
+      }
+      // 경로 수집(폰 지도) — 러닝 중 채택 픽스만, 10m 씨닝 + 2000점 상한(초과 시 데시메이션).
+      if phase == .running {
+        if lastRoutePoint == nil || loc.distance(from: lastRoutePoint!) >= 10 {
+          routePoints.append(loc.coordinate)
+          lastRoutePoint = loc
+          if routePoints.count > 2000 {
+            routePoints = stride(from: 0, to: routePoints.count, by: 2).map { routePoints[$0] }
+          }
         }
       }
       lastLocation = loc

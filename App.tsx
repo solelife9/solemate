@@ -1545,7 +1545,10 @@ function Main(){
       const d=new Date(p.startMs>0?p.startMs:Date.now());
       const date=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
       // 케이던스·상승고도도 워치에서 받아 저장(구 버전은 0 → '--'였다). heart_rate·calories 는 기존.
-      const newId=await ctx.addRun(shoeId,p.km,date,'','watch',Math.round(p.durationS),Math.round(p.cadence),'','',Math.round(p.avgBpm),Math.round(p.elevGainM),Math.round(p.kcal));
+      // GPS 경로(민우님 2026-07-24 "워치 런도 지도"): 워치가 보낸 경로를 레코드 route(클라우드
+      // 동기 — 재설치·기기변경에도 지도 보존) + route_<id> 사이드카(addRun 내부)로 저장한다.
+      const routeStr=Array.isArray(p.route)&&p.route.length>=2?JSON.stringify(p.route):'';
+      const newId=await ctx.addRun(shoeId,p.km,date,'','watch',Math.round(p.durationS),Math.round(p.cadence),routeStr,'',Math.round(p.avgBpm),Math.round(p.elevGainM),Math.round(p.kcal));
       // 트랙 런이면 track_<id> 마커 저장 — 폰 RunDetail 이 '트랙·Nm×N랩' 표시(폰 트랙 런과
       // 동일 계약). 거리(랩수×랩거리)·시간은 이미 레코드에 있으므로 메타만 얹는다.
       if(newId&&p.laps>0&&p.lapM>0){

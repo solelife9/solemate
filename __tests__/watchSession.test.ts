@@ -79,6 +79,8 @@ describe('onWatchRun — 워치 완주 페이로드 수신', () => {
       splitsS: [],
       startMs: 1720000000000,
       endMs: 1720001800000,
+      // 경로 결측 → [](구버전 워치 호환 — 2026-07-24 지도 필드).
+      route: [],
       // 비트랙 런 — 트랙 메타는 0/0/[](부재 필드도 안전 폴백).
       lapM: 0,
       laps: 0,
@@ -130,6 +132,31 @@ describe('onWatchRun — 워치 완주 페이로드 수신', () => {
     off();
     emit('onWatchRun', {runId: 'watch-b', km: 2});
     expect(got).toHaveLength(0);
+  });
+});
+
+describe('onWatchRun — GPS 경로 파싱(워치 런 지도, 2026-07-24)', () => {
+  test('[lat,lon,…] 플랫 배열을 {lat,lon}[] 로 파싱하고 비유한값 페어는 버린다', () => {
+    const ws = loadWatchSession();
+    const got: any[] = [];
+    ws.onWatchRun((r: any) => got.push(r));
+    emit('onWatchRun', {
+      runId: 'watch-r', km: 5, durationS: 1800,
+      route: [37.5, 127.0, 37.5003, 127.0004, NaN, 127.1, 37.6, 'x'],
+    });
+    expect(got).toHaveLength(1);
+    expect(got[0].route).toEqual([
+      {lat: 37.5, lon: 127.0},
+      {lat: 37.5003, lon: 127.0004},
+    ]);
+  });
+
+  test('route 결측/비배열은 빈 배열(구버전 워치 호환)', () => {
+    const ws = loadWatchSession();
+    const got: any[] = [];
+    ws.onWatchRun((r: any) => got.push(r));
+    emit('onWatchRun', {runId: 'watch-nr', km: 3, durationS: 900});
+    expect(got[0].route).toEqual([]);
   });
 });
 

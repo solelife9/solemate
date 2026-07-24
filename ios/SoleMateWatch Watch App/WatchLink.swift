@@ -254,6 +254,8 @@ final class WatchLink: NSObject, ObservableObject {
       "lapM": summary.lapM,
       "laps": Double(summary.lapTimesS.count),
       "lapTimes": summary.lapTimesS,
+      // GPS 경로([lat,lon,…] 플랫, ≤200점) — 폰 지도(민우님 2026-07-24 "워치 런도 지도").
+      "route": summary.routeFlat,
     ]
     let s = WCSession.default
     guard s.activationState == .activated else { return }

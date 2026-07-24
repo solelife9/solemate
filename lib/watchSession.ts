@@ -67,6 +67,9 @@ export type WatchRunPayload = {
   lapM: number;
   laps: number;
   lapTimes: number[];
+  /** GPS 경로 — 워치가 [lat,lon,…] 플랫 배열로 보낸 것을 {lat,lon}[] 로 파싱(≤200점).
+   *  빈 배열 = 실내/GPS 부재 → 폰이 지도 생략. (민우님 2026-07-24 "워치 런도 지도") */
+  route: {lat: number; lon: number}[];
 };
 
 /** 워치가 러닝 끝에 직송하는 심박 기록(정본 경로 A). 오프셋·bpm 병렬 배열. */
@@ -116,6 +119,17 @@ export const watchSession = {
         lapM: Math.max(0, Number(e?.lapM) || 0),
         laps: Math.max(0, Number(e?.laps) || 0),
         lapTimes: Array.isArray(e?.lapTimes) ? e.lapTimes.map((x: any) => Math.max(0, Number(x) || 0)) : [],
+        route: (() => {
+          // [lat,lon,…] 플랫 페어 파싱 — 비유한값 페어는 폐기, 상한 400점(방어).
+          const f = Array.isArray(e?.route) ? e.route : [];
+          const out: {lat: number; lon: number}[] = [];
+          for (let i = 0; i + 1 < f.length && out.length < 400; i += 2) {
+            const lat = Number(f[i]);
+            const lon = Number(f[i + 1]);
+            if (Number.isFinite(lat) && Number.isFinite(lon)) out.push({lat, lon});
+          }
+          return out;
+        })(),
       });
     });
     return () => sub.remove();
