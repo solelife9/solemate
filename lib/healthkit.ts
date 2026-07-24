@@ -223,3 +223,32 @@ export async function hkFindRunWorkoutWindow(
     return null;
   }
 }
+
+/**
+ * 연동 플래그 자가 복구(2026-07-24, 실기기: 재설치로 AsyncStorage 의 hk_linked 플래그가
+ * 지워져 심박 백필/복구 전 경로가 '미연동'으로 조기 종료 — OS 권한은 살아 있었다).
+ * iOS 는 읽기 승인 여부를 앱에 직접 알려주지 않으므로, 최근 30일 심박 1건을 조용히
+ * 조회해(프롬프트 0) 데이터가 읽히면 승인으로 판정하고 플래그를 복원한다.
+ * 미승인·부재·조회실패는 false — 기존처럼 설정의 '연동' 행이 정식 경로.
+ */
+export async function hkEnsureLinked(): Promise<boolean> {
+  if (await hkLinked()) return true;
+  const m = mod();
+  if (!m) return false;
+  try {
+    const now = Date.now();
+    const samples = await m.queryQuantitySamples('HKQuantityTypeIdentifierHeartRate', {
+      limit: 1,
+      ascending: false,
+      unit: 'count/min',
+      filter: {date: {startDate: new Date(now - 30 * 24 * 3600 * 1000), endDate: new Date(now)}},
+    });
+    if ((samples ?? []).length > 0) {
+      await AsyncStorage.setItem(LINKED_KEY, '1');
+      return true;
+    }
+  } catch {
+    /* 미승인/모듈 부재 — false (정식 연동 경로 유지) */
+  }
+  return false;
+}

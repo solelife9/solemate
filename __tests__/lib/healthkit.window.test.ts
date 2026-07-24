@@ -50,3 +50,33 @@ test('워크아웃 없음·조회 실패는 null (graceful)', async () => {
   (hk.queryWorkoutSamples as jest.Mock).mockRejectedValue(new Error('no perm'));
   await expect(hkFindRunWorkoutWindow(day, 1800)).resolves.toBeNull();
 });
+
+// ── hkEnsureLinked — 연동 플래그 자가 복구(2026-07-24) ────────────────────────
+describe('hkEnsureLinked', () => {
+  test('플래그가 지워졌어도 심박이 읽히면(권한 생존) 플래그를 복원하고 true', async () => {
+    await AsyncStorage.removeItem('hk_linked_v1'); // 재설치로 플래그 유실 상황
+    (hk.queryQuantitySamples as jest.Mock).mockResolvedValueOnce([
+      {startDate: new Date().toISOString(), quantity: 62},
+    ]);
+    const {hkEnsureLinked} = require('../../lib/healthkit');
+    await expect(hkEnsureLinked()).resolves.toBe(true);
+    await expect(AsyncStorage.getItem('hk_linked_v1')).resolves.toBe('1');
+  });
+
+  test('데이터가 안 읽히면(미승인) false — 플래그 미복원, 프롬프트 없음', async () => {
+    await AsyncStorage.removeItem('hk_linked_v1');
+    (hk.queryQuantitySamples as jest.Mock).mockResolvedValueOnce([]);
+    const {hkEnsureLinked} = require('../../lib/healthkit');
+    await expect(hkEnsureLinked()).resolves.toBe(false);
+    await expect(AsyncStorage.getItem('hk_linked_v1')).resolves.toBeNull();
+    expect(hk.requestAuthorization).not.toHaveBeenCalled(); // 조용한 감지 — 권한 요청 금지
+  });
+
+  test('이미 연동이면 조회 없이 즉시 true', async () => {
+    await AsyncStorage.setItem('hk_linked_v1', '1');
+    (hk.queryQuantitySamples as jest.Mock).mockClear();
+    const {hkEnsureLinked} = require('../../lib/healthkit');
+    await expect(hkEnsureLinked()).resolves.toBe(true);
+    expect(hk.queryQuantitySamples).not.toHaveBeenCalled();
+  });
+});

@@ -104,7 +104,7 @@ import {detectPRs, PRKind} from './lib/records';
 import {runInsights} from './lib/runInsights';
 import {getDistancePBs, PB_CACHE_KEY} from './lib/distancePBStore';
 import type {RunBestEfforts} from './lib/bestEfforts';
-import {hkSaveRunWorkout, hkBackfillHeartRate, hkLinked, hkFindRunWorkoutWindow} from './lib/healthkit';
+import {hkSaveRunWorkout, hkBackfillHeartRate, hkEnsureLinked, hkFindRunWorkoutWindow} from './lib/healthkit';
 import {registerRunForHr, saveWatchHrTrack, retryPendingHr, avgBpmFromTrack, hasHrTrack} from './lib/hrBackfill';
 import {currentTargetPace} from './lib/pacePlan';
 import {liveActivity} from './lib/liveActivity';
@@ -1652,7 +1652,8 @@ function Main(){
     const HR_SWEEP_AT_KEY='hr_recover_sweep_at_v1';
     const sweep=async()=>{
       try{
-        if(!(await hkLinked()))return;
+        // 자가 복구 포함(재설치로 연동 플래그가 지워져도 OS 권한이 있으면 복원 후 진행).
+        if(!(await hkEnsureLinked()))return;
         const last=Number(await AsyncStorage.getItem(HR_SWEEP_AT_KEY))||0;
         if(Date.now()-last<24*3600*1000)return;
         const candidates=(runsForHrRef.current||[]).filter(r=>(Number(r.duration)||0)>300).slice(0,30);
