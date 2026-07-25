@@ -6,6 +6,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { rf, rs, ri, rv } from './lib/responsive';
 import { View, ScrollView, FlatList, Pressable, StyleSheet, KeyboardAvoidingView, Platform, RefreshControl, Image } from 'react-native';
 import { showDialog } from './lib/dialog';
+import { showToast } from './lib/toast';
 import {Text, FONT_SCALE_CAP_HERO} from './lib/text';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -959,7 +960,9 @@ export default function HistoryScreen({
   const handleRefresh = async () => {
     if (!onRefresh || refreshing) return;
     setRefreshing(true);
-    try { await onRefresh(); } catch {}
+    // 침묵 실패 금지(심사 #50): 오프라인이면 "새 데이터 없음"과 "실패"를 구별 못 하던 것 —
+    // 한 줄 토스트로 정직하게. 기록 자체는 로컬-퍼스트라 그대로 보인다.
+    try { await onRefresh(); } catch { showToast({message: '오프라인이에요 — 저장된 기록을 보여드려요'}); }
     finally { setRefreshing(false); }
   };
   const insets = useSafeAreaInsets();

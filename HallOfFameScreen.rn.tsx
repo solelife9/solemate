@@ -143,6 +143,9 @@ export default function HallOfFameScreen({
   const [yearMonth] = useState(() => yearMonthOf(now ?? Date.now()));
   const [category, setCategory] = useState<Category>('distance');
   const [loading, setLoading] = useState(true);
+  // 로드 실패(오프라인/Firestore) 여부 — 빈 상태 카피를 "랭킹이 곧 열려요"(오해 유발)
+  // 대신 정직한 오프라인 안내로 바꾼다(심사 잔여 '오프라인 표시' 최소안, 2026-07-25).
+  const [loadFailed, setLoadFailed] = useState(false);
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [lbAvailable, setLbAvailable] = useState(false);
   const [myAvailable, setMyAvailable] = useState(false);
@@ -159,6 +162,7 @@ export default function HallOfFameScreen({
         const lb = await provider.getLeaderboard(category, yearMonth);
         const mine = await provider.getMyRanking(category, yearMonth);
         if (!alive) return;
+        setLoadFailed(false);
         setEntries(Array.isArray(lb.entries) ? lb.entries : []);
         setLbAvailable(lb.kind === 'remote' && lb.available === true);
         if (mine.kind === 'remote') {
@@ -176,6 +180,7 @@ export default function HallOfFameScreen({
         // 로드 실패(네트워크·Firestore) 시 빈 상태로 폴백 — catch 가 없으면 setLoading(false)
         // 에 못 가 스피너에 영구 고착되던 버그(감사 발견). available=false → 빈 상태 렌더.
         if (!alive) return;
+        setLoadFailed(true);
         setEntries([]);
         setLbAvailable(false);
         setMyAvailable(false);
@@ -330,9 +335,12 @@ export default function HallOfFameScreen({
           // 빈 상태 — 중앙 아이콘+텍스트 폐지 → 전역 표준 EmptyGhostHeader + 고스트 행
           // (형제 화면 ShoeArchive/HallOfShoes 와 같은 문법, 감사 #54).
           <View testID="hof-empty">
+            {/* 실패(오프라인)와 진짜 빈 상태를 구분 — "곧 열려요"는 오프라인에선 거짓말이 된다. */}
             <EmptyGhostHeader
-              title={'랭킹이 곧 열려요'}
-              sub={<>친구들과 거리·꾸준함·신발 관리로 경쟁해 보세요.{'\n'}로그인하고 러닝을 기록하면 이 달의 순위에 등장합니다.</>}
+              title={loadFailed ? '지금은 오프라인이에요' : '랭킹이 곧 열려요'}
+              sub={loadFailed
+                ? <>랭킹은 연결되면 다시 불러올게요.{'\n'}러닝 기록은 폰에 그대로 — 달리는 데는 지장 없어요.</>
+                : <>친구들과 거리·꾸준함·신발 관리로 경쟁해 보세요.{'\n'}로그인하고 러닝을 기록하면 이 달의 순위에 등장합니다.</>}
             />
             <View style={{gap: rv(8)}}>
               {GHOST_ROW_OPACITY.map((o, i) => (
