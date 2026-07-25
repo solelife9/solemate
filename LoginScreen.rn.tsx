@@ -15,9 +15,9 @@ import {Text} from './lib/text';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
-import {Button, KeegoWordmark} from './primitives';
+import {Button, KeegoWordmark, KakaoMark, NaverMark} from './primitives';
 import {
-  BG, ACCENT, BLACK, DANGER, T1, T2, T3, FONT, DISPLAY, RADIUS,
+  BG, ACCENT, BLACK, DANGER, T1, T2, T3, FONT, RADIUS,
   KAKAO_YELLOW, KAKAO_LABEL, NAVER_GREEN, NAVER_LABEL, TYPE,
   GUTTER, MOTION,
 } from './theme';
@@ -95,7 +95,7 @@ export function LoginScreen({cloudPort, onSignedIn}: LoginScreenProps) {
           {busy === 'kakao'
             ? <ActivityIndicator color={KAKAO_LABEL} />
             : <>
-                <Text style={[st.brandMark, {color: KAKAO_LABEL}]}>K</Text>
+                <KakaoMark size={ri(18)} color={KAKAO_LABEL} />
                 <Text style={[st.btnTxt, {color: KAKAO_LABEL}]}>카카오로 계속</Text>
               </>}
         </Pressable>
@@ -111,7 +111,7 @@ export function LoginScreen({cloudPort, onSignedIn}: LoginScreenProps) {
           {busy === 'naver'
             ? <ActivityIndicator color={NAVER_LABEL} />
             : <>
-                <Text style={[st.brandMark, {color: NAVER_LABEL}]}>N</Text>
+                <NaverMark size={ri(14)} color={NAVER_LABEL} />
                 <Text style={[st.btnTxt, {color: NAVER_LABEL}]}>네이버로 계속</Text>
               </>}
         </Pressable>
@@ -177,14 +177,13 @@ const st = StyleSheet.create({
   valueText: {fontFamily: FONT, fontSize: TYPE.label.fontSize, color: T3, letterSpacing: -0.1},
   actions: {gap: rv(12)},
   lead: {fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600', color: T2, textAlign: 'center', marginBottom: rv(4)},
-  btn: {flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(8), height: rs(50), borderRadius: RADIUS.btn, borderCurve: 'continuous'},
-  btnGoogle: {height: rs(50)},
+  btn: {flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(8), minHeight: rs(50), borderRadius: RADIUS.btn, borderCurve: 'continuous'},
+  btnGoogle: {minHeight: rs(50)},
   googleIconBox: {width: ri(20), height: ri(24), alignItems: 'center', justifyContent: 'center'},
   // Apple 공식: 다크 UI 위에서는 흰 버튼(검정 로고/라벨)이 스펙 — 회색 커스텀 폐지.
   btnApple: {backgroundColor: ACCENT},
   btnKakao: {backgroundColor: KAKAO_YELLOW},
   btnNaver: {backgroundColor: NAVER_GREEN},
-  brandMark: {fontFamily: DISPLAY, fontSize: TYPE.heading.fontSize, fontWeight: '700'},
   btnTxt: {color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600'},
   error: {fontFamily: FONT, fontSize: TYPE.label.fontSize, color: DANGER, textAlign: 'center', marginTop: rv(4)},
   footnote: {fontFamily: FONT, fontSize: TYPE.caption.fontSize, lineHeight: rf(17), color: T3, textAlign: 'center', marginTop: rv(8)},

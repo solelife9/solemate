@@ -277,7 +277,7 @@ const s = StyleSheet.create({
   navTitle: {flex: 1, textAlign: 'center', color: T1, fontFamily: FONT, fontSize: TYPE.heading.fontSize, fontWeight: '600', letterSpacing: -0.2, marginHorizontal: rs(8)},
 
   // 필드 표면 = primitives.Input 문법(hairline + CARD_BORDER) — 사설 1px·0.10 보더 폐지.
-  search: {flexDirection: 'row', alignItems: 'center', gap: rv(8), marginHorizontal: GUTTER, marginTop: rv(4), marginBottom: rv(12), height: rs(46), paddingHorizontal: rs(14), borderRadius: rs(14), borderCurve: 'continuous', backgroundColor: GLASS.fill, borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER},
+  search: {flexDirection: 'row', alignItems: 'center', gap: rv(8), marginHorizontal: GUTTER, marginTop: rv(4), marginBottom: rv(12), minHeight: rs(46), paddingHorizontal: rs(14), borderRadius: rs(14), borderCurve: 'continuous', backgroundColor: GLASS.fill, borderWidth: StyleSheet.hairlineWidth, borderColor: CARD_BORDER},
   searchInput: {flex: 1, color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '500', paddingVertical: rv(0)},
   section: {color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600', letterSpacing: 0.6, textTransform: 'uppercase', marginBottom: rv(8), marginTop: rv(4)},
   // 코너 페이드 헤어라인(GlassEdge glints=false) — 균일 RN 보더 폐지(2026-07-10 확정).
@@ -291,7 +291,7 @@ const s = StyleSheet.create({
   customLabel: {color: T2, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600', marginBottom: rv(10)},
 
   shotRow: {flexDirection: 'row', gap: rv(10), marginTop: rv(8)},
-  shot: {flex: 1, height: rs(150), borderRadius: rs(20), borderWidth: 1.5, borderStyle: 'dashed', borderColor: withAlpha(T1, 0.16), backgroundColor: withAlpha(T1, 0.02), alignItems: 'center', justifyContent: 'center', gap: rv(8), overflow: 'hidden', paddingHorizontal: rs(10)},
+  shot: {flex: 1, minHeight: rs(150), borderRadius: rs(20), borderWidth: 1.5, borderStyle: 'dashed', borderColor: withAlpha(T1, 0.16), backgroundColor: withAlpha(T1, 0.02), alignItems: 'center', justifyContent: 'center', gap: rv(8), overflow: 'hidden', paddingHorizontal: rs(10)},
   shotMedal: {borderColor: withAlpha(HALL_GOLD, 0.45), backgroundColor: withAlpha(HALL_GOLD, 0.05)},
   shotDone: {borderStyle: 'solid', borderColor: withAlpha(HALL_GOLD, 0.5)},
   shotDoneGood: {borderStyle: 'solid', borderColor: withAlpha(GOOD, 0.5), backgroundColor: withAlpha(GOOD, 0.06)},
@@ -307,7 +307,7 @@ const s = StyleSheet.create({
   tagT: {color: GOOD, fontFamily: FONT, fontSize: TYPE.micro.fontSize, fontWeight: '700', letterSpacing: 0.3},
   chipRow: {flexDirection: 'row', flexWrap: 'wrap', gap: rv(8)},
   // 표면(GLASS·RADIUS.input·보더)은 Input 프리미티브가 책임진다 — 숫자 필드 고유 타이포만 남긴다.
-  input: {fontFamily: DISPLAY, fontSize: TYPE.title.fontSize, fontVariant: ['tabular-nums'], height: rs(52), paddingVertical: rv(0), paddingHorizontal: rs(16)},
+  input: {fontFamily: DISPLAY, fontSize: TYPE.title.fontSize, fontVariant: ['tabular-nums'], minHeight: rs(52), paddingVertical: rv(0), paddingHorizontal: rs(16)},
   hint: {color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, marginTop: rv(8), paddingHorizontal: rs(2), lineHeight: rf(17)},
 
   footer: {paddingHorizontal: GUTTER, paddingTop: rv(8), paddingBottom: rv(30), backgroundColor: BG, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP},

@@ -220,7 +220,7 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: rv(8),
-    height: rs(42),
+    minHeight: rs(42),
     marginHorizontal: rs(14),
     marginTop: rv(8),
     marginBottom: rv(2),

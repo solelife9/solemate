@@ -28,7 +28,7 @@
  */
 
 import React from 'react';
-import {Alert} from 'react-native';
+import * as dialogLib from '../lib/dialog';
 import ReactTestRenderer, {act} from 'react-test-renderer';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Location from 'expo-location';
@@ -217,7 +217,7 @@ test('first-time runner is shown a location-permission rationale BEFORE the OS d
     if (u.includes('/api/shoes')) return Promise.resolve(ok([{id: 's1', name: 'Nike Pegasus', max_km: 600, start_km: 0}]));
     return Promise.resolve(ok([]));
   });
-  const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+  const alertSpy = jest.spyOn(dialogLib, 'showDialog').mockImplementation(() => 0);
 
   try {
     let renderer!: ReactTestRenderer.ReactTestRenderer;

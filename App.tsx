@@ -1,9 +1,10 @@
 import React, {useState, useEffect, useRef, useMemo, useCallback} from 'react';
 import { rf, rs, ri, rv } from './lib/responsive';
 import {
-  View, StyleSheet, Pressable, Alert, StatusBar, Linking, AppState,
+  View, StyleSheet, Pressable, StatusBar, Linking, AppState,
 } from 'react-native';
-import {Text} from './lib/text';
+import {showDialog} from './lib/dialog';
+import {Text, FONT_SCALE_CAP_HERO} from './lib/text';
 import {SafeAreaProvider, useSafeAreaInsets} from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {Pedometer, Barometer} from 'expo-sensors';
@@ -20,6 +21,7 @@ import {
 import {Ring, Button, Skeleton, Input} from './primitives';
 import ErrorBoundary from './ErrorBoundary';
 import ToastHost from './ToastHost';
+import DialogHost from './DialogHost';
 import {installCrashHandler, setCrashUser, recordError} from './lib/crashlytics';
 import {reverseGeoLabelKo} from './lib/geocode';
 import {devSeedShoes, devSeedRuns} from './lib/devSeed';
@@ -236,7 +238,7 @@ function extChallengeUnit(c:ExtChallenge):string{
 // 되돌릴 수 없으므로 OS 설정 화면으로 보내 사용자가 다시 허용하게 한다. openSettings
 // 실패(미지원 환경 등)는 삼켜서 크래시를 막는다(트래킹 차단이 목적, 크래시 금지).
 function openLocationSettingsAlert(message:string){
-  Alert.alert('위치 권한 필요',message,[
+  showDialog('위치 권한 필요',message,[
     {text:'닫기',style:'cancel'},
     {text:'설정 열기',onPress:()=>{Promise.resolve(Linking.openSettings()).catch(()=>{});}},
   ]);
@@ -255,6 +257,8 @@ export default function App(){
       </ErrorBoundary>
       {/* 전역 스낵바 호스트 — 앱 어디서든 showToast()를 부르면 여기서 그린다(루트 1회 마운트). */}
       <ToastHost/>
+      {/* 전역 다이얼로그 호스트(A안 '시스템 정합', 2026-07-25 민우님 확정) — showDialog(). */}
+      <DialogHost/>
     </SafeAreaProvider>
   );
 }
@@ -641,7 +645,7 @@ function Main(){
       try{
         if(!(await shouldPrimePushPermission()))return;
         await markPushPrimed();
-        Alert.alert(
+        showDialog(
           '알림을 켤까요?',
           '러닝화 교체 시기, 주간 목표 달성, 러닝 리마인더를 딱 필요한 때에만 알려드려요. 광고성 알림은 보내지 않아요.',
           [
@@ -681,7 +685,7 @@ function Main(){
       // 트랙 런이면 거리는 랩수×확정랩거리(GPS 누적 아님) — 안내·복구에 이 값을 쓴다.
       const dispKm=snap.track?(snap.track.lapTimes.length*snap.track.lapM)/1000:snap.dist;
       const trackLapM=snap.track?.lapM;
-      Alert.alert(
+      showDialog(
         '완료하지 않은 러닝이 있어요',
         `${dispKm.toFixed(2)}km${snap.track?` · ${snap.track.lapTimes.length}랩`:''} · ${fmtTime(snap.elapsed)} 기록이 남아 있어요.\n이어서 달릴까요, 여기까지 저장할까요?`,
         [
@@ -787,7 +791,7 @@ function Main(){
     // 로컬 생성(로컬-퍼스트) — 서버 왕복 없이 바로 화면 반영. 영속은 부팅캐시 + cloudSync
     // (디바운스 push)가 담당한다(REST 의존 제거). 로그인 게이트가 이미 막지만 방어적 가드 유지.
     if(!authUser?.uid){
-      Alert.alert('로그인이 필요해요','신발을 추가하려면 먼저 로그인해 주세요.');
+      showDialog('로그인이 필요해요','신발을 추가하려면 먼저 로그인해 주세요.');
       return;
     }
     // 클라이언트 id + updatedAt 스탬프(머지 '최신 우선'). max_km/start_km/purchase_date 만
@@ -1093,7 +1097,7 @@ function Main(){
         const names=critical.filter((s:any)=>toNotify.some((id:any)=>String(id)===String(s.id))).map((s:any)=>s.name);
         // keep-going 카피는 브랜드 보이스 결정(BRAND.md — 테스트 계약 App.shoebadge)이라 유지.
         // 감사 #75 의 '얼럿 최소화'는 이중 개행 정리까지만 적용(HIG 와 브랜드 보이스의 절충).
-        Alert.alert('신발 교체 알림',names.join(', ')+`\n수명의 ${alertCfg.thresholdPct}% 이상을 신었어요. 이제 다음 러닝화를 준비해볼까요?`,[{text:'확인'}]);
+        showDialog('신발 교체 알림',names.join(', ')+`\n수명의 ${alertCfg.thresholdPct}% 이상을 신었어요. 이제 다음 러닝화를 준비해볼까요?`,[{text:'확인'}]);
       }
     }catch(e){console.log('checkShoeAlerts error',e);}
   }
@@ -1391,7 +1395,7 @@ function Main(){
       const picked=await pickPhotoWithPermission();
       if(!picked.ok){
         // 권한 거부 시 무반응이던 것 개선(2026-07-05) — 설정 안내(취소는 조용히).
-        if(picked.reason==='denied')Alert.alert('사진 접근 권한이 필요해요','설정에서 사진 권한을 허용하면 프로필 사진을 바꿀 수 있어요.',[
+        if(picked.reason==='denied')showDialog('사진 접근 권한이 필요해요','설정에서 사진 권한을 허용하면 프로필 사진을 바꿀 수 있어요.',[
           {text:'설정 열기',onPress:()=>{Promise.resolve(Linking.openSettings()).catch(()=>{});}},
           {text:'나중에',style:'cancel'},
         ]);
@@ -2095,6 +2099,7 @@ function Main(){
         // 2026-07-19 민우). 신발 바꾸려면 뒤로가기 → 홈에서 다시 선택.
         age={age}
         restHR={restHR}
+        runs={runs}
         onBack={()=>{setOverlay('none');setPendingShoe(null);}}
         onStart={startActiveRun}
       />
@@ -2262,7 +2267,7 @@ function Main(){
         // 키프세이크(메달)는 오터치 한 번에 사라지면 안 된다 — 확인 1겹 + 실행취소 토스트
         // (HIG Destructive actions, 2026-07-24 심사 P0 #8). 삭제 자체는 기존 soft-delete.
         const doomed=medals.find(m=>m.id===id);
-        Alert.alert('메달 삭제',`${doomed?.raceName??'이 메달'} 기록을 아카이브에서 삭제할까요?`,[
+        showDialog('메달 삭제',`${doomed?.raceName??'이 메달'} 기록을 아카이브에서 삭제할까요?`,[
           {text:'취소',style:'cancel'},
           {text:'삭제',style:'destructive',onPress:()=>{
             const now=Date.now();
@@ -2290,7 +2295,7 @@ function Main(){
         // 자동 저장(심사 #1) 이후의 '버리기' — 이미 저장된 기록의 삭제라 확인 1겹 + 기존
         // deleteRun 경로(실행취소 스낵바 포함)를 그대로 탄다.
         const rid=String(runRecap.runId);
-        Alert.alert('기록 삭제',`방금 저장한 ${runRecap.km.toFixed(2)}km 기록을 삭제할까요?`,[
+        showDialog('기록 삭제',`방금 저장한 ${runRecap.km.toFixed(2)}km 기록을 삭제할까요?`,[
           {text:'취소',style:'cancel'},
           {text:'삭제',style:'destructive',onPress:()=>{setRunRecap(null);setRecapRace(null);void deleteRun(rid);setTab(2);}},
         ]);
@@ -3068,7 +3073,7 @@ function RunActiveScreen({shoe,insets,goalKm,goalMin=0,pacePlan=[],targetZone=0,
     const fk=trackMode?(lapTimesRef.current.length*lapMRef.current)/1000:runTracker.getDistanceKm();
     if(fk<0.01){
       stop();
-      Alert.alert('거리가 너무 짧아요','조금 더 달릴까요, 아니면 여기서 마칠까요?',[
+      showDialog('거리가 너무 짧아요','조금 더 달릴까요, 아니면 여기서 마칠까요?',[
         {text:'계속 달리기',onPress:()=>{setKm(0);setElapsed(0);setCadence(0);setGpsStatus('GPS 신호 찾는 중...');setPaused(false);setAutoPaused(false);void beginRun();}},
         {text:'나가기',style:'destructive',onPress:onDiscard},
       ]);
@@ -3141,7 +3146,7 @@ function RunActiveScreen({shoe,insets,goalKm,goalMin=0,pacePlan=[],targetZone=0,
       hapticSuccess(); // 저장 성공 — 완주 보상 촉각(설정 off 면 graceful no-op).
     }catch{
       setPhase('done');
-      Alert.alert('저장하지 못했어요','기록은 안전하게 남아 있어요 — 잠시 후 저장하기를 다시 눌러 주세요.');
+      showDialog('저장하지 못했어요','기록은 안전하게 남아 있어요 — 잠시 후 저장하기를 다시 눌러 주세요.');
     }
   }
 
@@ -3150,7 +3155,7 @@ function RunActiveScreen({shoe,insets,goalKm,goalMin=0,pacePlan=[],targetZone=0,
     // 0.00km 좀비 스냅샷(거리 fix 0 + 경과시간만)이 그대로 저장되던 버그가 있었다.
     // 거리 없는 런은 저장 가치가 없다 — 스냅샷만 정리하고 닫는다.
     if(finKm<0.01){
-      Alert.alert('거리가 기록되지 않았어요','저장할 거리가 없어 이 기록은 닫을게요.',[
+      showDialog('거리가 기록되지 않았어요','저장할 거리가 없어 이 기록은 닫을게요.',[
         {text:'확인',onPress:()=>{void clearSnapshot();onDiscard();}},
       ]);
       return;
@@ -3174,14 +3179,14 @@ function RunActiveScreen({shoe,insets,goalKm,goalMin=0,pacePlan=[],targetZone=0,
     }catch{
       // 저장 실패 — 예전엔 catch 가 없어 버튼만 조용히 다시 활성화되고 사용자는 이유를
       // 몰랐다. 화면·상태를 그대로 두어(스냅샷 보존) 다시 저장을 누를 수 있게 안내한다.
-      Alert.alert('저장하지 못했어요','방금 달린 기록은 아직 남아 있어요 — 잠시 후 저장을 다시 눌러 주세요.');
+      showDialog('저장하지 못했어요','방금 달린 기록은 아직 남아 있어요 — 잠시 후 저장을 다시 눌러 주세요.');
     }finally{setSaving(false);}
   }
 
   // 완주 검토 화면의 '버리기'는 되돌릴 수 없는 파괴적 동작(방금 완주한 기록 영구 소실)이라
   // 확인을 받는다 — 저장된 기록 삭제(HistoryScreen)와 동일한 보호. 오탭 한 번으로 유실 금지.
   function confirmDiscard(){
-    Alert.alert('이 기록을 버릴까요?',`방금 달린 ${finKm.toFixed(2)}km 기록이 사라지고 되돌릴 수 없어요.`,[
+    showDialog('이 기록을 버릴까요?',`방금 달린 ${finKm.toFixed(2)}km 기록이 사라지고 되돌릴 수 없어요.`,[
       {text:'취소',style:'cancel'},
       {text:'버리기',style:'destructive',onPress:onDiscard},
     ]);
@@ -3207,7 +3212,7 @@ function RunActiveScreen({shoe,insets,goalKm,goalMin=0,pacePlan=[],targetZone=0,
           {/* VoiceOver: 링 안 3줄을 한 요소로 묶어 완주 결과를 한 번에 낭독(심사 P0 #5). */}
           <View style={{alignItems:'center'}} accessible accessibilityLabel={`${trackMode?`트랙 ${Math.round(lapMRef.current)}미터 ${lapTimesRef.current.length}랩`:`목표 ${goalKm}킬로미터 완료`}, ${finKm.toFixed(2)} 킬로미터`}>
             <Text style={run.goalText}>{trackMode?`트랙 · ${Math.round(lapMRef.current)}m × ${lapTimesRef.current.length}랩`:`목표 ${goalKm}km 완료`}</Text>
-            <Text style={run.bigDist}>{finKm.toFixed(2)}</Text>
+            <Text maxFontSizeMultiplier={FONT_SCALE_CAP_HERO} style={run.bigDist}>{finKm.toFixed(2)}</Text>
             <Text style={run.bigUnit}>킬로미터</Text>
           </View>
         </Ring>
@@ -3315,7 +3320,7 @@ const run=StyleSheet.create({
   liveRow:{flexDirection:'row',alignItems:'center',gap: rv(8)},
   liveDot:{width: rs(8),height: rs(8),borderRadius:RADIUS.pill},
   liveText:{fontFamily:FP,fontSize: rf(15),fontWeight:'500',letterSpacing:0.3},
-  shoeChip:{flexDirection:'row',alignItems:'center',gap: rv(8),height: rs(30),paddingHorizontal: rs(12),borderRadius:RADIUS.pill,backgroundColor:SURFACE},
+  shoeChip:{flexDirection:'row',alignItems:'center',gap: rv(8),minHeight: rs(30),paddingHorizontal: rs(12),borderRadius:RADIUS.pill,backgroundColor:SURFACE},
   shoeChipText:{color:T3,fontFamily:FH,fontSize: rf(14),fontWeight:'600'},
   gpsRow:{flexDirection:'row',alignItems:'center',marginTop: rv(8)},
   gpsText:{color:T3,fontFamily:FP,fontSize: rf(14),fontWeight:'600'},

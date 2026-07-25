@@ -10,7 +10,7 @@
 import React, {useEffect, useRef} from 'react';
 import { rf, rs, ri, rv } from './lib/responsive';
 import {View, Pressable, StyleSheet, Animated} from 'react-native';
-import {Text} from './lib/text';
+import {Text, FONT_SCALE_CAP_HERO} from './lib/text';
 import Svg, {Defs, RadialGradient, LinearGradient, Stop, Circle, Ellipse, Path} from 'react-native-svg';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {BG, T1, T3, FONT, DISPLAY, HALL_GOLD, BLACK, CELEB_FACE_BG, CELEB_ICON_LEGENDARY, CELEB_ICON_DEFAULT, withAlpha, TYPE, MOTION} from './theme';
@@ -196,7 +196,7 @@ export default function CelebrationScreen({data, onClose}: {data: CelebrationDat
             </Rise>
           )}
           <Rise anim={anim} from={0.2} to={0.6}>
-            <Text style={[st.name, {color: c}]}>{data.rankKo}</Text>
+            <Text maxFontSizeMultiplier={FONT_SCALE_CAP_HERO} style={[st.name, {color: c}]}>{data.rankKo}</Text>
           </Rise>
           <Rise anim={anim} from={0.26} to={0.66}>
             <Text style={st.meta}>{data.rankName}</Text>
@@ -241,7 +241,7 @@ export default function CelebrationScreen({data, onClose}: {data: CelebrationDat
           <Medal color={c} legendary={data.legendary} icon={data.icon ?? 'medal'} />
         </Rise>
         <Rise anim={anim} from={0.2} to={0.6}>
-          <Text style={st.name}>{data.nameKo}</Text>
+          <Text maxFontSizeMultiplier={FONT_SCALE_CAP_HERO} style={st.name}>{data.nameKo}</Text>
         </Rise>
         <Rise anim={anim} from={0.26} to={0.66}>
           {/* 레어리티 단어·+XP 는 표면에 세우지 않는다('러닝의 옷') — 색과 메달이 말한다. */}

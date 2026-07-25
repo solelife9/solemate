@@ -7,7 +7,7 @@
 import React, {useEffect, useRef, useState} from 'react';
 import { rf, rs, ri, rv } from './lib/responsive';
 import {View, ScrollView, Pressable, Image, StyleSheet, Animated} from 'react-native';
-import {Text} from './lib/text';
+import {Text, FONT_SCALE_CAP_HERO} from './lib/text';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {BG, CARD, CARD_HI, ACCENT, HALL_GOLD, T1, T2, T3, T4, SEP, FONT, DISPLAY, withAlpha, TYPE, HERO, GLASS, RADIUS, GUTTER, MOTION} from './theme';
@@ -222,8 +222,8 @@ function MedalDetail({medal, insetTop, insetBottom, onClose, onOpenRun, onDelete
       <ScrollView contentContainerStyle={{alignItems: 'center', paddingHorizontal: GUTTER, paddingBottom: insetBottom + 24}} showsVerticalScrollIndicator={false}>
         <MedalDisc photoUri={medal.medalPhotoUri} size={ri(168)} />
         <Text style={m.detailName}>{medal.raceName}</Text>
-        {official && <Text style={m.detailTime}>{fmtTime(official)}</Text>}
-        {!official && app && <Text style={m.detailTime}>{fmtTime(app)}</Text>}
+        {official && <Text maxFontSizeMultiplier={FONT_SCALE_CAP_HERO} style={m.detailTime}>{fmtTime(official)}</Text>}
+        {!official && app && <Text maxFontSizeMultiplier={FONT_SCALE_CAP_HERO} style={m.detailTime}>{fmtTime(app)}</Text>}
         {official && app && Math.abs(app - official) >= 2 && (
           <Text style={m.detailNote}>앱 측정 {fmtTime(app)} · 공식 기록(칩 타임)이 정본</Text>
         )}

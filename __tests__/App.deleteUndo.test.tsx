@@ -18,7 +18,7 @@
 
 import React from 'react';
 import ReactTestRenderer, {act} from 'react-test-renderer';
-import {Alert} from 'react-native';
+import * as dialogLib from '../lib/dialog';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import App from '../App';
 import {seedBootCache} from './helpers/bootSeed';
@@ -100,7 +100,7 @@ function mockBackend() {
 }
 
 async function mountApp() {
-  jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+  jest.spyOn(dialogLib, 'showDialog').mockImplementation(() => 0);
   // Firestore 정본·로컬-퍼스트 부팅: 신발/런은 REST GET 이 아니라 부팅 캐시에서 읽힌다.
   // mockBackend 와 동일한 시드(s1·s2 + r1)를 캐시에 깔아 화면에 올린다.
   await seedBootCache(
@@ -240,7 +240,7 @@ test('펜딩(미동기) 런 삭제: 큐(pending_runs)에서도 제거돼 다음 
        duration: 1200, cadence: 0, route: '', location: '', heart_rate: 0, run_time: '08:00', queuedAt: 1_700_000_000_000},
     ]),
   );
-  jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+  jest.spyOn(dialogLib, 'showDialog').mockImplementation(() => 0);
   let renderer!: ReactTestRenderer.ReactTestRenderer;
   await act(async () => {
     renderer = ReactTestRenderer.create(<App />);

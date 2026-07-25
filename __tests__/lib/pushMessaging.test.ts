@@ -9,7 +9,7 @@
  * @format
  */
 
-import {Alert} from 'react-native';
+import * as dialogLib from '../../lib/dialog';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   requestPermission,
@@ -135,8 +135,8 @@ describe('presentDue', () => {
     expect(present).toHaveBeenNthCalledWith(2, intents[1]);
   });
 
-  test('기본 presenter 는 react-native Alert 로 제목·본문을 표시한다', async () => {
-    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+  test('기본 presenter 는 커스텀 다이얼로그(showDialog)로 제목·본문을 표시한다', async () => {
+    const alertSpy = jest.spyOn(dialogLib, 'showDialog').mockImplementation(() => 0);
     await presentDue([intent({title: 'T', body: 'B'})]);
     expect(alertSpy).toHaveBeenCalledWith('T', 'B');
     alertSpy.mockRestore();

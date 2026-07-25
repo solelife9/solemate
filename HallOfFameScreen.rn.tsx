@@ -21,7 +21,7 @@ import {
   Pressable,
   StyleSheet,
 } from 'react-native';
-import {Text} from './lib/text';
+import {Text, FONT_SCALE_CAP_HERO} from './lib/text';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {ScreenHeader, EmptyGhostHeader, GhostBar, GhostThumb, GlassEdge} from './primitives';
@@ -290,7 +290,7 @@ export default function HallOfFameScreen({
             <GlassEdge glints={false} radius={RADIUS.xl} />
             <View style={{flex: 1}}>
               <Text style={s.myLabel}>내 순위</Text>
-              <Text style={s.myRank}>
+              <Text maxFontSizeMultiplier={FONT_SCALE_CAP_HERO} style={s.myRank}>
                 #{myEntry.rank}
                 <Text style={s.myTotal}> / {total.toLocaleString()}</Text>
               </Text>

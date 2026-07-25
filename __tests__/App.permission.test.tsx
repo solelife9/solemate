@@ -18,7 +18,8 @@
  */
 
 import React from 'react';
-import {Alert, Linking, AppState} from 'react-native';
+import {Linking, AppState} from 'react-native';
+import * as dialogLib from '../lib/dialog';
 import ReactTestRenderer, {act} from 'react-test-renderer';
 import * as Location from 'expo-location';
 import App from '../App';
@@ -121,7 +122,7 @@ test('a denied foreground permission blocks the GPS watch and offers a Settings 
     granted: false,
     status: 'denied',
   });
-  const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+  const alertSpy = jest.spyOn(dialogLib, 'showDialog').mockImplementation(() => 0);
   try {
     const {renderer, root} = await startRun();
 
@@ -147,7 +148,7 @@ test('a denied foreground permission blocks the GPS watch and offers a Settings 
 
 // ── mid-run permission revocation ────────────────────────────────────────────
 test('mid-run permission revocation stops tracking (no further distance) and guides to Settings', async () => {
-  const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+  const alertSpy = jest.spyOn(dialogLib, 'showDialog').mockImplementation(() => 0);
   try {
     const {renderer, root} = await startRun();
 
@@ -196,7 +197,7 @@ test('mid-run permission revocation stops tracking (no further distance) and gui
 
 // ── 권한 회수 후 재허용+복귀 시 재개(#6) ─────────────────────────────────────────
 test('권한 회수 후 설정 재허용 + 앱 복귀(AppState active)하면 트래킹이 재개된다(#6)', async () => {
-  const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+  const alertSpy = jest.spyOn(dialogLib, 'showDialog').mockImplementation(() => 0);
   const handlers: ((s: string) => void)[] = [];
   jest.spyOn(AppState, 'addEventListener').mockImplementation((type: any, cb: any) => {
     if (type === 'change') handlers.push(cb);

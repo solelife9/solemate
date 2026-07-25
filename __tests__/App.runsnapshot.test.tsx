@@ -13,7 +13,7 @@
  */
 
 import React from 'react';
-import {Alert} from 'react-native';
+import * as dialogLib from '../lib/dialog';
 import ReactTestRenderer, {act} from 'react-test-renderer';
 import * as Location from 'expo-location';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -210,8 +210,9 @@ test('discarding the run clears the snapshot', async () => {
       await Promise.resolve();
     });
   }
-  const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation((_t, _m, buttons) => {
+  const alertSpy = jest.spyOn(dialogLib, 'showDialog').mockImplementation((_t, _m, buttons) => {
     (buttons || []).find(b => b.style === 'destructive')?.onPress?.();
+    return 0;
   });
   // 자동 저장이 '첫 걸음' 업적 축하(CelebrationScreen)를 먼저 띄운다 — 확인으로 닫고 리캡으로.
   const okBtn = root

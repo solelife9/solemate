@@ -27,7 +27,7 @@ import {
   StyleProp,
   ViewStyle,
 } from 'react-native';
-import {Text} from './lib/text';
+import {Text, FONT_SCALE_CAP_HERO} from './lib/text';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {PRIVACY_URL, TERMS_URL} from './lib/legalLinks';
 // 신발 브랜드/모델·권장수명은 data/shoeModels(단일 소스)에서 — 메인 AddShoe 화면과 동일.
@@ -346,7 +346,7 @@ function Welcome({goNext, goLogin, insetTop, insetBottom}: {goNext: () => void; 
       {/* 하단 콘텐츠 — staggered 진입 */}
       <View style={{flex: 1, justifyContent: 'flex-end', paddingHorizontal: GUTTER, paddingBottom: Math.max(insetBottom, 24) + 8}}>
         <Rise delay={80}>
-          <Text style={s.heroHeadline}>
+          <Text maxFontSizeMultiplier={FONT_SCALE_CAP_HERO} style={s.heroHeadline}>
             {/* 마침표 = 파파야 서명(keego 워드마크와 같은 문법). ACCENT 가 흰색으로 회수되며
                 흰 마침표로 서명이 소실됐던 것 복원(검수 HIGH, 2026-07-16). */}
             KEEP{'\n'}GOING<Text style={{color: BRAND}}>.</Text>
@@ -734,7 +734,7 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: rv(10),
-    height: rs(48),
+    minHeight: rs(48),
     marginTop: rv(10),
     paddingHorizontal: rs(14),
     borderRadius: rs(14), borderCurve: 'continuous',

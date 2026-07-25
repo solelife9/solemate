@@ -356,8 +356,8 @@ describe('ProfileScreen 자동 동기 (로그인/변경 시 pull→merge→push,
 
 describe('ProfileScreen 로그아웃', () => {
   test('로그아웃은 확인 다이얼로그를 거쳐 port.signOut 이 호출되고 로그인 버튼이 다시 노출된다', async () => {
-    const {Alert} = require('react-native');
-    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    const dialogLib = require('../lib/dialog');
+    const alertSpy = jest.spyOn(dialogLib, 'showDialog').mockImplementation(() => 0);
     const port = mockPort();
     const root = render({cloudPort: port, backupData: LOCAL});
     await press(byTestId(root, 'cloud-signin-google'));

@@ -16,7 +16,7 @@
 
 import React from 'react';
 import ReactTestRenderer, {act} from 'react-test-renderer';
-import {Alert} from 'react-native';
+import * as dialogLib from '../lib/dialog';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import App from '../App';
 import {seedBootCache} from './helpers/bootSeed';
@@ -116,7 +116,7 @@ test('addRun 은 완주 런에 updatedAt(epoch ms)을 찍어 부팅 캐시에 du
   });
 
   await AsyncStorage.setItem(SNAPSHOT_KEY, JSON.stringify(SNAP));
-  const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+  const alertSpy = jest.spyOn(dialogLib, 'showDialog').mockImplementation(() => 0);
   let renderer!: ReactTestRenderer.ReactTestRenderer;
   await act(async () => {
     renderer = ReactTestRenderer.create(<App />);
@@ -164,7 +164,7 @@ function mockShoeBackend() {
 }
 
 async function mountToShoesTab() {
-  jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+  jest.spyOn(dialogLib, 'showDialog').mockImplementation(() => 0);
   // Firestore 정본·로컬-퍼스트 부팅: 신발은 REST GET 이 아니라 부팅 캐시에서 읽힌다.
   // 신발 s1 을 시드해 화면(rawShoes)에 올린다(REST 목의 /api/shoes GET 은 무시됨).
   await seedBootCache([{id: 's1', name: 'Nike Pegasus', max_km: 600, start_km: 0}], []);
@@ -248,7 +248,7 @@ function mockAddShoeBackend() {
 
 test('addShoe 는 생성 신발 레코드에 updatedAt 을 찍는다(id/name/max_km/start_km 보존)', async () => {
   mockAddShoeBackend();
-  jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+  jest.spyOn(dialogLib, 'showDialog').mockImplementation(() => 0);
   let renderer!: ReactTestRenderer.ReactTestRenderer;
   await act(async () => {
     renderer = ReactTestRenderer.create(<App />);
@@ -327,7 +327,7 @@ function mockEditRunBackend() {
 
 test('editRun 은 편집 런 레코드에 updatedAt 을 찍는다(km/duration 반영)', async () => {
   mockEditRunBackend();
-  jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+  jest.spyOn(dialogLib, 'showDialog').mockImplementation(() => 0);
   // 로컬-퍼스트 부팅: 편집 대상 런(r1)은 REST GET 이 아니라 부팅 캐시에서 읽힌다. 시드한다.
   await seedBootCache(
     [{id: 's1', name: 'Nike Pegasus', max_km: 600, start_km: 0}],

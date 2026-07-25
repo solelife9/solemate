@@ -16,7 +16,7 @@
 
 import React from 'react';
 import ReactTestRenderer, {act} from 'react-test-renderer';
-import {Alert} from 'react-native';
+import * as dialogLib from '../lib/dialog';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import App from '../App';
 import {SNAPSHOT_KEY, RunSnapshot} from '../lib/runPersistence';
@@ -113,7 +113,7 @@ async function tick(n = 6) {
 // screen with a known distance + route. Returns the renderer/root.
 async function recoverToReview() {
   await AsyncStorage.setItem(SNAPSHOT_KEY, JSON.stringify(SNAP));
-  const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+  const alertSpy = jest.spyOn(dialogLib, 'showDialog').mockImplementation(() => 0);
   let renderer!: ReactTestRenderer.ReactTestRenderer;
   await act(async () => {
     renderer = ReactTestRenderer.create(<App />);

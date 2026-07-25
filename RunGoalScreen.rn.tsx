@@ -17,7 +17,7 @@ import {
   View, Pressable, ScrollView, StyleSheet, LayoutChangeEvent,
   NativeSyntheticEvent, NativeScrollEvent, StatusBar,
 } from 'react-native';
-import {Text} from './lib/text';
+import {Text, FONT_SCALE_CAP_HERO} from './lib/text';
 import Svg, { Path } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 // 색·폰트는 전역 디자인 토큰(theme.ts)만 참조한다 — 사설 색객체(const C) 폐기.
@@ -42,6 +42,13 @@ import { Button, SegmentedControl, SwipeBack, SwipeBackExclude, BottomSheet } fr
 // 모드가 아니라 '거리 목표 없음'이라 거리 탭 안이 문법상 맞다.
 import SpeedPlanPanel from './SpeedPlanPanel';
 import { buildPacePlan } from './lib/pacePlan';
+// 추정치 개인화(심사 P2 #74, Truth only) — 일률 5분/km·64kcal/km 대신 최근 이력의
+// 거리가중 평균 페이스·km당 칼로리로 예상. 이력 없으면 기존 기본값 폴백(회귀 0).
+import { estimateForGoal, estimateForDuration, type EstimateRunLike } from './lib/goalEstimate';
+
+// runs 기본값 — 렌더마다 새 []를 만들면 useMemo 의존이 매번 갈려 추정이 재계산되므로
+// 모듈 상수 한 개로 고정한다(미배선 시에도 참조 동일성 유지).
+const NO_RUNS: EstimateRunLike[] = [];
 
 // ── SVG 아이콘(자체 그림 — vector-icons 의존 제거) ───────────────────────────
 function Icon({ name, size = 22, color = T2, fill }: { name: string; size?: number; color?: string; fill?: string }) {
@@ -78,7 +85,7 @@ const CFG: Record<'km' | 'min', { min: number; max: number; step: number; major:
 };
 
 export default function RunGoalScreen({
-  onBack, onStart, age = 0, restHR = 0,
+  onBack, onStart, age = 0, restHR = 0, runs = NO_RUNS,
 }: {
   // 신발은 홈 히어로에서 이미 선택해 넘어온다 — 이 화면은 '목표'에만 집중한다(2026-07-19
   // 민우: 홈에서 신발 고르고 러닝시작 눌렀는데 여기 또 신발 행이 있어 화면이 복잡했다.
@@ -86,6 +93,8 @@ export default function RunGoalScreen({
   onBack?: () => void; onStart?: (goal: RunGoal) => void;
   /** 심박 가이드 bpm 범위 표시용(#7). 0이면 범위 숨기고 존 이름만. */
   age?: number; restHR?: number;
+  /** 러닝 이력(추정치 개인화용, 심사 #74). 미전달 = 기본값(5분/km·64kcal/km) 추정. */
+  runs?: EstimateRunLike[];
 }) {
   // safe-area 실측(검수 MED, 2026-07-16): 상단 rv(54)·하단 rv(30) 하드코딩은 노치/홈바
   // 기기별 편차를 못 담는다(다이내믹 아일랜드 밑에 nav 가 살짝 파고들던 것) — insets 로.
@@ -120,10 +129,15 @@ export default function RunGoalScreen({
   const estimate = useMemo(() => {
     if (!cfg) return ''; // 스피드·트랙은 자체 표시 — estimate 미사용
     if (val <= 0) return mode === 'km' ? '목표 없이 달려요 — 기록은 전부 남아요' : '목표를 정해주세요';
-    return mode === 'km'
-      ? `예상 시간 약 ${Math.round(val * 5)}분 · 약 ${Math.round(val * 64)} kcal`
-      : `예상 거리 약 ${(val / 5).toFixed(1)}km · 약 ${Math.round(val * 12.8)} kcal`;
-  }, [mode, val, cfg]);
+    // 개인 이력 기반 추정(심사 #74) — 최근 10회 거리가중 평균 페이스·km당 칼로리.
+    // 이력 없으면 lib/goalEstimate 가 기존 기본값(5분/km·64kcal/km)으로 폴백한다.
+    if (mode === 'km') {
+      const e = estimateForGoal(runs, val);
+      return `예상 시간 약 ${e.minutes}분 · 약 ${e.kcal} kcal`;
+    }
+    const e = estimateForDuration(runs, val);
+    return `예상 거리 약 ${e.km.toFixed(1)}km · 약 ${e.kcal} kcal`;
+  }, [mode, val, cfg, runs]);
 
   const scrollToVal = useCallback((v: number, animated: boolean) => {
     if (!cfg) return;
@@ -255,7 +269,7 @@ export default function RunGoalScreen({
           <View style={s.trackWrap}>
             <Text style={s.trackLbl}>한 바퀴</Text>
             <View style={s.bigRow}>
-              <Text style={s.bigVal}>{lapM}</Text>
+              <Text style={s.bigVal} maxFontSizeMultiplier={FONT_SCALE_CAP_HERO}>{lapM}</Text>
               <Text style={s.bigUnit}>m</Text>
             </View>
             <Text style={s.estimate}>야외에선 첫 바퀴를 GPS로 자동 보정해요</Text>
@@ -303,10 +317,10 @@ export default function RunGoalScreen({
               {mode === 'km' && val === 0 ? (
                 // '자유' 상태 — 숫자 대신 낱말(0.0km 는 고장처럼 읽힌다). 탭·룰러·칩으로
                 // 거리를 잡는 순간 숫자 히어로로 복귀한다.
-                <Text style={s.bigFree}>자유</Text>
+                <Text style={s.bigFree} maxFontSizeMultiplier={FONT_SCALE_CAP_HERO}>자유</Text>
               ) : (
                 <>
-                  <Text style={s.bigVal}>{fmt(val)}</Text>
+                  <Text style={s.bigVal} maxFontSizeMultiplier={FONT_SCALE_CAP_HERO}>{fmt(val)}</Text>
                   <Text style={s.bigUnit}>{cfg!.unit}</Text>
                 </>
               )}
@@ -387,7 +401,7 @@ export default function RunGoalScreen({
           <View style={s.pickerSheet}>
             <View style={s.kpValRow} accessibilityRole="text" accessibilityLiveRegion="polite"
               accessibilityLabel={`입력 ${kpBuf || (mode === 'track' ? String(lapM) : fmt(val))} ${mode === 'track' ? '미터' : (cfg?.unit ?? 'km')}`}>
-              <Text style={[s.kpVal, !kpBuf && s.kpValGhost]} testID="kp-value">{kpBuf || (mode === 'track' ? String(lapM) : fmt(val))}</Text>
+              <Text style={[s.kpVal, !kpBuf && s.kpValGhost]} maxFontSizeMultiplier={FONT_SCALE_CAP_HERO} testID="kp-value">{kpBuf || (mode === 'track' ? String(lapM) : fmt(val))}</Text>
               <Text style={s.kpUnit}>{mode === 'track' ? 'm' : (cfg?.unit ?? 'km')}</Text>
             </View>
             <View style={s.kpGrid}>
@@ -452,7 +466,7 @@ const s = StyleSheet.create({
   pointer: { position: 'absolute', left: '50%', marginLeft: -1.5, top: 2, bottom: 24, width: rs(3), borderRadius: rs(3), backgroundColor: ACCENT },
 
   presets: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: rv(8), marginTop: rv(26) },
-  preset: { height: rs(36), paddingHorizontal: rs(16), borderRadius: RADIUS.pill, alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(T1, 0.04), borderWidth: 1, borderColor: SEP },
+  preset: { minHeight: rs(36), paddingHorizontal: rs(16), borderRadius: RADIUS.pill, alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(T1, 0.04), borderWidth: 1, borderColor: SEP },
   // 선택 칩 한 벌(감사 #56): 채움 withAlpha(T1,0.14) · 보더 withAlpha(T1,0.4) — 앱 공통.
   presetOn: { backgroundColor: withAlpha(T1, 0.14), borderColor: withAlpha(T1, 0.4) },
   presetText: { color: T2, fontFamily: DISPLAY, fontSize: TYPE.label.fontSize, fontWeight: '600' },
@@ -462,7 +476,7 @@ const s = StyleSheet.create({
   trackWrap: { alignItems: 'center', paddingHorizontal: rs(14) },
   trackLbl: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', marginBottom: rv(4) },
   lapChips: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: rv(8), marginTop: rv(36) },
-  lapChip: { minWidth: rs(60), height: rs(50), paddingHorizontal: rs(16), borderRadius: RADIUS.md, borderCurve: 'continuous', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(T1, 0.03), borderWidth: 1, borderColor: SEP },
+  lapChip: { minWidth: rs(60), minHeight: rs(50), paddingHorizontal: rs(16), borderRadius: RADIUS.md, borderCurve: 'continuous', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(T1, 0.03), borderWidth: 1, borderColor: SEP },
   lapChipOn: { backgroundColor: withAlpha(T1, 0.14), borderColor: withAlpha(T1, 0.4) },
   lapChipVal: { color: T3, fontFamily: DISPLAY, fontSize: TYPE.heading.fontSize, fontWeight: '700', letterSpacing: -0.4 },
   lapChipValOn: { color: ACCENT },

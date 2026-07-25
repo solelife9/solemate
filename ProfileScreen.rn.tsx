@@ -9,13 +9,14 @@
 // ============================================================================
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { rf, rs, ri, rv } from './lib/responsive';
-import { View, ScrollView, Pressable, StyleSheet, Image, Share, Alert, Linking } from 'react-native';
-import {Text, TextInput} from './lib/text';
+import { View, ScrollView, Pressable, StyleSheet, Image, Share, Linking } from 'react-native';
+import { showDialog } from './lib/dialog';
+import {Text} from './lib/text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { BG, CARD, CARD_DIM, CARD_HI, ACCENT, BRAND, GOOD, DANGER, WARN, T1, T2, T3, SEP, CARD_BORDER, FONT, DISPLAY, withAlpha, TIER_COLORS, TIER_LABEL, KAKAO_YELLOW, KAKAO_LABEL, NAVER_GREEN, NAVER_LABEL, RADIUS, GUTTER, MOTION, HALL_GOLD, TYPE, GLASS } from './theme';
 // recap 토글 = SegmentedControl(accentSolid), 스탯 그리드들 = StatGrid 단일 프리미티브.
-import { TabBar, TABBAR_CLEARANCE, SectionTitle, Button, SegmentedControl, StatGrid, Stepper, AmbientBackdrop, Rise, GlassEdge, Toggle } from './primitives';
+import { TabBar, TABBAR_CLEARANCE, SectionTitle, Button, SegmentedControl, StatGrid, Stepper, AmbientBackdrop, Rise, GlassEdge, Toggle, KakaoMark, NaverMark, Input } from './primitives';
 import { Unit, unitKorean, displayNum } from './lib/units';
 import { weeklyRecap, monthlyRecap, type RecapRun, type RecapShoe } from './lib/recap';
 import { hkAvailable, hkLinked, hkLink, hkRestingHR } from './lib/healthkit';
@@ -365,7 +366,7 @@ export default function ProfileScreen({
     setAuthState((s) => nextAuthState(s, 'signOut'));
   };
   const handleSignOut = () => {
-    Alert.alert('로그아웃', '로그아웃할까요? 기록은 이 기기와 클라우드에 안전하게 남아요.', [
+    showDialog('로그아웃', '로그아웃할까요? 기록은 이 기기와 클라우드에 안전하게 남아요.', [
       { text: '취소', style: 'cancel' },
       { text: '로그아웃', style: 'destructive', onPress: () => { void doSignOut(); } },
     ]);
@@ -376,7 +377,7 @@ export default function ProfileScreen({
   // 성공하면 화면도 signedOut 으로 떨군다. 실패(재인증 필요 등)는 정직한 메시지로 안내.
   const handleDeleteAccount = () => {
     if (!onDeleteAccount) return;
-    Alert.alert(
+    showDialog(
       '회원 탈퇴',
       '계정과 모든 데이터(신발·러닝 기록·설정)가 영구 삭제되며 복구할 수 없어요. 정말 탈퇴할까요?',
       [
@@ -486,14 +487,14 @@ export default function ProfileScreen({
     if (!pushPrimedRef.current) {
       pushPrimedRef.current = true;
       const proceed = await new Promise<boolean>((resolve) => {
-        Alert.alert(
+        showDialog(
           '알림을 켤까요?',
           '러닝화 교체 시기, 주간 목표 달성, 러닝 리마인더를 딱 필요한 때에만 알려드려요. 광고성 알림은 보내지 않아요.',
           [
             { text: '나중에', style: 'cancel', onPress: () => resolve(false) },
             { text: '알림 받기', onPress: () => resolve(true) },
           ],
-          { cancelable: false },
+          // (구 Alert 의 {cancelable:false} 는 제거 — 커스텀 다이얼로그는 스크림 탭으로 닫히지 않아 동일 시맨틱.)
         );
       });
       // '나중에' — OS 다이얼로그를 띄우지 않는다(설정은 켠 채 유지, 비차단 안내만).
@@ -586,7 +587,7 @@ export default function ProfileScreen({
     const subject = encodeURIComponent('[Keego] 문의');
     const body = encodeURIComponent('\n\n\n————————\n문의 내용을 위에 적어주세요. 앱 버전·기기 정보를 함께 주시면 더 빨리 도와드릴 수 있어요.');
     Linking.openURL(`mailto:${SUPPORT_EMAIL}?subject=${subject}&body=${body}`).catch(() => {
-      Alert.alert('문의하기', `메일 앱을 열 수 없어요.\n${SUPPORT_EMAIL} 로 문의해 주세요.`);
+      showDialog('문의하기', `메일 앱을 열 수 없어요.\n${SUPPORT_EMAIL} 로 문의해 주세요.`);
     });
   };
   // 법적 문서(개인정보·이용약관) + 문의 — 로그인 시엔 계정 아코디언 안에, 로그아웃 시엔 상시 노출.
@@ -662,7 +663,8 @@ export default function ProfileScreen({
           <View style={{ flex: 1, minWidth: 0 }}>
             {editingName ? (
               <View style={s.nameEditRow}>
-                <TextInput
+                <Input
+                  variant="inline"
                   testID="profile-name-input"
                   value={nameDraft}
                   onChangeText={setNameDraft}
@@ -671,7 +673,6 @@ export default function ProfileScreen({
                   returnKeyType="done"
                   onSubmitEditing={saveName}
                   placeholder="이름"
-                  placeholderTextColor={T3}
                   style={s.nameInput}
                   accessibilityLabel="이름 입력"
                 />
@@ -1229,11 +1230,11 @@ export default function ProfileScreen({
               <View style={s.cloudPad}>
                 <Text style={s.cloudIntro}>로그인하면 신발·러닝 기록·설정이 안전하게 보관되고, 기기를 바꿔도 그대로 이어져요.</Text>
                 <Pressable testID="cloud-signin-kakao" onPress={() => handleSignIn('kakao')} disabled={signingIn} accessibilityRole="button" accessibilityLabel="카카오로 로그인" accessibilityState={{ disabled: signingIn }} style={({ pressed }) => [s.cloudBtn, s.cloudBtnKakao, pressed && { transform: [{ scale: MOTION.press.scale }], opacity: MOTION.press.opacity }]}>
-                  <Text style={[s.brandMark, { color: KAKAO_LABEL }]}>K</Text>
+                  <KakaoMark size={ri(16)} color={KAKAO_LABEL} />
                   <Text style={[s.cloudBtnTxt, { color: KAKAO_LABEL }]}>{signingIn ? '로그인 중…' : '카카오로 계속'}</Text>
                 </Pressable>
                 <Pressable testID="cloud-signin-naver" onPress={() => handleSignIn('naver')} disabled={signingIn} accessibilityRole="button" accessibilityLabel="네이버로 로그인" accessibilityState={{ disabled: signingIn }} style={({ pressed }) => [s.cloudBtn, s.cloudBtnNaver, pressed && { transform: [{ scale: MOTION.press.scale }], opacity: MOTION.press.opacity }]}>
-                  <Text style={[s.brandMark, { color: NAVER_LABEL }]}>N</Text>
+                  <NaverMark size={ri(13)} color={NAVER_LABEL} />
                   <Text style={[s.cloudBtnTxt, { color: NAVER_LABEL }]}>{signingIn ? '로그인 중…' : '네이버로 계속'}</Text>
                 </Pressable>
                 <Button
@@ -1341,7 +1342,8 @@ const s = StyleSheet.create({
   name: { color: T1, fontFamily: FONT, fontSize: TYPE.title.fontSize, fontWeight: '600', letterSpacing: -0.5 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: rv(8) },
   nameEditRow: { flexDirection: 'row', alignItems: 'center', gap: rv(8) },
-  nameInput: { flex: 1, color: T1, fontFamily: FONT, fontSize: TYPE.title.fontSize, fontWeight: '500', letterSpacing: -0.5, borderBottomWidth: 1, borderBottomColor: ACCENT, paddingVertical: rv(2), paddingHorizontal: rs(0) },
+  // Input variant="inline" 채택(2026-07-25) — 편집 활성 밑줄(ACCENT)과 타이틀급 타이포만 소유.
+  nameInput: { flex: 1, fontSize: TYPE.title.fontSize, fontWeight: '500', letterSpacing: TYPE.title.letterSpacing, borderBottomWidth: 1, borderBottomColor: ACCENT, paddingVertical: rv(2) },
   nameSaveBtn: { width: rs(34), height: rs(34), borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.1), alignItems: 'center', justifyContent: 'center' },
   idStat: { fontFamily: FONT, color: T3, fontSize: TYPE.caption.fontSize, fontWeight: '600' },
   idStatNum: { fontFamily: DISPLAY, color: T1, fontSize: TYPE.label.fontSize, fontWeight: '700', fontVariant: ['tabular-nums'] },
@@ -1397,7 +1399,7 @@ const s = StyleSheet.create({
   offscreen: { position: 'absolute', left: -10000, top: 0, opacity: 0 },
 
   // on/off 행 — 라벨 좌 + 우측 작은 스위치(Toggle 프리미티브). 구 풀폭 솔리드 바 폐지.
-  toggleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: rs(44) },
+  toggleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: rs(44) },
   toggleLabel: { color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '500' },
 
   acctRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: rv(14) },
@@ -1416,7 +1418,7 @@ const s = StyleSheet.create({
   cloudIntro: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, lineHeight: rf(18) },
   // 브랜드 로그인 버튼(카카오/네이버/애플) 공용 박스 — 모서리는 Google(단일 Button=
   // RADIUS.btn)과 맞춰 통일. Google 은 단일 Button 프리미티브로 라우팅(아래 cloudBtnGoogle).
-  cloudBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(8), height: rs(48), borderRadius: RADIUS.btn },
+  cloudBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(8), minHeight: rs(48), borderRadius: RADIUS.btn },
   // Google = 앱 accent CTA → 단일 Button(그라데이션/글로우/RADIUS.btn). 여기선 높이만.
   cloudBtnGoogle: { height: rs(48) },
   cloudBtnApple: { backgroundColor: CARD_HI },

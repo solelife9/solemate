@@ -19,7 +19,7 @@
 
 import React from 'react';
 import ReactTestRenderer, {act} from 'react-test-renderer';
-import {Alert} from 'react-native';
+import * as dialogLib from '../lib/dialog';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import App from '../App';
 import {SNAPSHOT_KEY, RunSnapshot} from '../lib/runPersistence';
@@ -130,7 +130,7 @@ beforeEach(async () => {
 
 test('a persisted in-progress snapshot surfaces a recover/discard prompt on launch', async () => {
   await AsyncStorage.setItem(SNAPSHOT_KEY, JSON.stringify(SNAP));
-  const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+  const alertSpy = jest.spyOn(dialogLib, 'showDialog').mockImplementation(() => 0);
   mockBackend();
 
   await mountAndSettle();
@@ -142,7 +142,7 @@ test('a persisted in-progress snapshot surfaces a recover/discard prompt on laun
 
 test('기록 저장 restores the run (distance/time/goal/cadence) and saving persists the restored distance + route to cache (no REST POST)', async () => {
   await AsyncStorage.setItem(SNAPSHOT_KEY, JSON.stringify(SNAP));
-  const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+  const alertSpy = jest.spyOn(dialogLib, 'showDialog').mockImplementation(() => 0);
   const calls = mockBackend();
 
   const renderer = await mountAndSettle();
@@ -189,7 +189,7 @@ test('기록 저장 restores the run (distance/time/goal/cadence) and saving per
 
 test('버리기 clears the persisted snapshot so it cannot spuriously resume', async () => {
   await AsyncStorage.setItem(SNAPSHOT_KEY, JSON.stringify(SNAP));
-  const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+  const alertSpy = jest.spyOn(dialogLib, 'showDialog').mockImplementation(() => 0);
   mockBackend();
 
   await mountAndSettle();
@@ -208,7 +208,7 @@ test('버리기 clears the persisted snapshot so it cannot spuriously resume', a
 
 test('이어 달리기 mounts the live (running) screen — not the done review — and keeps the snapshot for continued recording (P1-6)', async () => {
   await AsyncStorage.setItem(SNAPSHOT_KEY, JSON.stringify(SNAP));
-  const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+  const alertSpy = jest.spyOn(dialogLib, 'showDialog').mockImplementation(() => 0);
   mockBackend();
 
   const renderer = await mountAndSettle();

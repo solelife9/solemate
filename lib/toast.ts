@@ -8,6 +8,11 @@
 //      를 부르면 그 호스트가 받아 그린다(전역 pub/sub). 한 번에 하나의 토스트만 보이며,
 //      새 토스트가 오면 이전 것을 즉시 대체한다(자동 dismiss 타이머도 새로 시작).
 //   3) graceful — onAction 콜백이 던져도 위로 전파하지 않는다(토스트 액션이 앱을 깨면 안 됨).
+//   4) undo 보존(2026-07-24 HIG 심사 P1 #52) — 액션(actionLabel) 토스트가 표시 중일 때
+//      '액션 없는' 정보 토스트가 오면 즉시 대체하지 않고 큐(최근 1건)에 대기시켰다가,
+//      액션 토스트가 끝나면(자동 소멸/탭/명시 dismiss) 표시한다. 파괴적 액션의 유일한
+//      복구 경로(실행취소)가 뒤이은 "저장됐어요" 류에 소리 없이 증발하는 것을 막는다.
+//      단, 새 '액션' 토스트는 기존 액션 토스트를 즉시 대체한다 — 최신 복구 경로가 우선.
 //
 // undo 패턴: showToast({message:'삭제됨', actionLabel:'실행취소', onAction:()=>restore()}).
 // 사용자가 '실행취소' 를 탭하면 onAction 이 호출되고 토스트는 즉시 닫힌다. 탭하지 않으면
@@ -43,8 +48,36 @@ type Listener = (toast: ToastEntry | null) => void;
 
 let listeners: Listener[] = [];
 let current: ToastEntry | null = null;
+// undo 보존 큐 — 액션 토스트가 표시 중일 때 대기하는 '액션 없는' 정보 토스트(최근 1건만,
+// 스낵바 폭주 방지 — 더 오래된 정보 토스트는 버린다). 표시 전이므로 타이머는 없다.
+let pending: ToastEntry | null = null;
 let seq = 0;
 let timer: ReturnType<typeof setTimeout> | null = null;
+
+/** 액션 버튼이 있는 토스트인가(= undo 류, 보존 대상). */
+function hasToastAction(config: ToastConfig): boolean {
+  return !!(config?.actionLabel && String(config.actionLabel).trim());
+}
+
+/** 자동 dismiss 시간(ms) 해석 — 미지정 시 액션 유무에 따른 기본값. */
+function resolveDuration(config: ToastConfig): number {
+  return config?.durationMs == null
+    ? (hasToastAction(config) ? TOAST_ACTION_DURATION_MS : TOAST_DEFAULT_DURATION_MS)
+    : config.durationMs;
+}
+
+/** 토스트를 실제로 표시한다: current 교체 + 통지 + 자동 dismiss 타이머 시작. */
+function present(entry: ToastEntry): void {
+  clearTimer();
+  current = entry;
+  emit();
+  const duration = resolveDuration(entry);
+  if (duration > 0) {
+    timer = setTimeout(() => {
+      dismissToast(entry.id);
+    }, duration);
+  }
+}
 
 function emit(): void {
   // 스냅샷을 돌며 호출(리스너가 구독 해제해도 안전).
@@ -85,38 +118,56 @@ export function getCurrentToast(): ToastEntry | null {
  * 토스트를 띄운다(앱 어디서든 호출). 한 번에 하나만 보이므로 기존 토스트는 즉시 대체하고
  * 자동 dismiss 타이머도 새로 건다. message 가 비면 아무것도 하지 않고 -1 을 돌려준다.
  * 반환값은 이 토스트의 id(dismissToast/runToastAction 의 타깃 지정에 쓸 수 있음).
+ *
+ * 예외(undo 보존): 액션 토스트가 표시 중일 때 '액션 없는' 토스트는 즉시 대체하지 않고
+ * 큐(최근 1건)에 대기했다가 액션 토스트가 끝나면 표시된다. 이때도 id 는 즉시 반환되며,
+ * 그 id 로 dismissToast 하면 대기 중에도 조용히 제거된다. 새 '액션' 토스트는 기존 액션
+ * 토스트를 즉시 대체한다(최신 복구 경로 우선).
  */
 export function showToast(config: ToastConfig): number {
   const message = String(config?.message ?? '').trim();
   if (!message) return -1;
 
-  clearTimer();
   seq += 1;
   const id = seq;
-  current = {...config, message, id};
-  emit();
+  const entry: ToastEntry = {...config, message, id};
 
-  const hasAction = !!(config?.actionLabel && String(config.actionLabel).trim());
-  const duration = config?.durationMs == null
-    ? (hasAction ? TOAST_ACTION_DURATION_MS : TOAST_DEFAULT_DURATION_MS)
-    : config.durationMs;
-  if (duration > 0) {
-    timer = setTimeout(() => {
-      dismissToast(id);
-    }, duration);
+  // undo 보존: 액션 토스트 표시 중 + 새 토스트에 액션 없음 → 대기(최근 1건만 유지).
+  if (current != null && hasToastAction(current) && !hasToastAction(entry)) {
+    pending = entry; // 이미 대기 중이던 더 오래된 정보 토스트는 버린다.
+    return id;
   }
+
+  present(entry);
   return id;
 }
 
 /**
  * 토스트를 닫는다. id 를 주면 현재 토스트가 그 id 일 때만 닫는다(이미 다른 토스트로 대체된
  * 뒤 늦게 도착한 타이머가 새 토스트를 잘못 닫는 것을 막는다). id 미지정이면 무조건 닫는다.
+ * id 가 큐 대기 중인 토스트를 가리키면 표시 없이 조용히 큐에서 제거한다.
+ * 액션 토스트가 닫히면(어떤 경로든) 대기 중이던 정보 토스트를 이어서 표시한다(큐 방출).
  */
 export function dismissToast(id?: number): void {
+  // 큐 대기 중인 토스트를 타깃한 dismiss — 아직 표시 전이므로 통지 없이 제거만 한다.
+  if (id != null && pending != null && pending.id === id) {
+    pending = null;
+    return;
+  }
   if (id != null && (current == null || current.id !== id)) return;
   clearTimer();
-  if (current == null) return;
+  if (current == null) {
+    if (id == null) pending = null; // 전체 닫기 — 대기분도 함께 정리(방어적).
+    return;
+  }
   current = null;
+  // 큐 방출: 액션 토스트가 끝났으니 대기하던 정보 토스트를 표시(자기 타이머는 지금 시작).
+  if (pending != null) {
+    const next = pending;
+    pending = null;
+    present(next); // null 깜빡임 없이 곧장 다음 토스트로 교체 통지.
+    return;
+  }
   emit();
 }
 

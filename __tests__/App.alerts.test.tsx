@@ -13,7 +13,7 @@
 
 import React from 'react';
 import ReactTestRenderer, {act} from 'react-test-renderer';
-import {Alert} from 'react-native';
+import * as dialogLib from '../lib/dialog';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import App from '../App';
 import {seedBootCache} from './helpers/bootSeed';
@@ -102,7 +102,7 @@ let alertSpy: jest.SpyInstance;
 
 beforeEach(async () => {
   await AsyncStorage.clear();
-  alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+  alertSpy = jest.spyOn(dialogLib, 'showDialog').mockImplementation(() => 0);
 });
 
 afterEach(() => {

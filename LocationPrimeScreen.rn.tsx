@@ -92,6 +92,6 @@ const s = StyleSheet.create({
   sep: {height: StyleSheet.hairlineWidth, backgroundColor: SEP, marginLeft: rs(49)},
   footer: {gap: rv(6)},
   // primary/primaryTxt 삭제 — 전역 Button size="hero" 로 수렴(2026-07-17).
-  ghost: {height: rs(46), alignItems: 'center', justifyContent: 'center'},
+  ghost: {minHeight: rs(46), alignItems: 'center', justifyContent: 'center'},
   ghostTxt: {color: T3, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600'},
 });

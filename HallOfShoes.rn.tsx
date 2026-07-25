@@ -16,7 +16,7 @@
 import React, {useMemo, useRef, useState} from 'react';
 import { rf, rs, ri, rv } from './lib/responsive';
 import {View, ScrollView, Pressable, Modal, StyleSheet} from 'react-native';
-import {Text} from './lib/text';
+import {Text, FONT_SCALE_CAP_HERO} from './lib/text';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {Unit, displayNum} from './lib/units';
@@ -182,7 +182,7 @@ function HallOfShoes({records = [], unit = 'km', onBack, userName, onGoShoes}: H
                   </View>
                   <View style={st.featDist}>
                     {/* 큰 누적 km 숫자 — 골드 소액센트 ② */}
-                    <Text style={st.featNum}>{displayNum(latest.km, unit, 0)}</Text>
+                    <Text maxFontSizeMultiplier={FONT_SCALE_CAP_HERO} style={st.featNum}>{displayNum(latest.km, unit, 0)}</Text>
                     <Text style={st.featKm}>{unit}</Text>
                   </View>
                 </View>
@@ -284,7 +284,7 @@ function Certificate({shoe, unit, userName, onClose}: {shoe: RetiredShoeRecord; 
         {!!nm.brand && <Text style={st.coBrand}>{nm.brand}</Text>}
         <Text style={st.coModel}>{nm.model}</Text>
         {/* 빅넘버 — 골드 소액센트(성취 도메인). 포일 SVG 폐지, 타이포로 말한다. */}
-        <Text style={st.coNum}>{d}</Text>
+        <Text maxFontSizeMultiplier={FONT_SCALE_CAP_HERO} style={st.coNum}>{d}</Text>
         <Text style={st.coUnit}>함께 달린 거리 · {unit}</Text>
         <Text style={st.coQuote}>{d}{unit}의 여정, 고마웠어.</Text>
 

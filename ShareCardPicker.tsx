@@ -6,7 +6,8 @@
 // 다 해줌). 마지막 선택 기억. 캡처는 오프스크린 고해상 ShareCard(ref.toDataURL) — 네이티브 0.
 // ============================================================================
 import React, {useEffect, useMemo, useRef, useState} from 'react';
-import {View, Pressable, StyleSheet, Alert, Linking} from 'react-native';
+import {View, Pressable, StyleSheet, Linking} from 'react-native';
+import {showDialog} from './lib/dialog';
 import {Text} from './lib/text';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -105,11 +106,11 @@ export default function ShareCardPicker({visible, onClose, model, route = [], sh
       // 성공은 비차단 토스트(확인 탭 강요 금지) — 실패/권한만 결정이 필요해 Alert 유지.
       if (r.ok) showToast({message: '앨범에 저장했어요'});
       else if (r.reason === 'denied') {
-        Alert.alert('사진 접근 권한이 필요해요', '설정에서 사진 추가 권한을 허용해 주세요.', [
+        showDialog('사진 접근 권한이 필요해요', '설정에서 사진 추가 권한을 허용해 주세요.', [
           {text: '설정 열기', onPress: () => { Promise.resolve(Linking.openSettings()).catch(() => {}); }},
           {text: '나중에', style: 'cancel'},
         ]);
-      } else Alert.alert('저장하지 못했어요', '잠시 후 다시 시도해 주세요.');
+      } else showDialog('저장하지 못했어요', '잠시 후 다시 시도해 주세요.');
     } finally { setBusy(null); }
   };
   const onShare = async () => {
@@ -177,7 +178,7 @@ const s = StyleSheet.create({
   segRow: {marginTop: rv(12)},
   segLabel: {color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600', marginBottom: rv(7), marginLeft: rs(2)},
   actions: {flexDirection: 'row', gap: rv(10), marginTop: rv(20)},
-  btn: {flex: 1, height: rs(52), borderRadius: RADIUS.lg, borderCurve: 'continuous', flexDirection: 'row', alignItems: 'center', justifyContent: 'center'},
+  btn: {flex: 1, minHeight: rs(52), borderRadius: RADIUS.lg, borderCurve: 'continuous', flexDirection: 'row', alignItems: 'center', justifyContent: 'center'},
   btnGhost: {backgroundColor: withAlpha(T1, 0.06)},
   btnPrimary: {flex: 1.4, backgroundColor: withAlpha(T1, 0.1)},
   btnIcon: {marginRight: rs(6)},

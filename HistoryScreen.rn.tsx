@@ -4,8 +4,9 @@
 // ============================================================================
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { rf, rs, ri, rv } from './lib/responsive';
-import { View, ScrollView, FlatList, Pressable, StyleSheet, Alert, KeyboardAvoidingView, Platform, RefreshControl, Image } from 'react-native';
-import {Text} from './lib/text';
+import { View, ScrollView, FlatList, Pressable, StyleSheet, KeyboardAvoidingView, Platform, RefreshControl, Image } from 'react-native';
+import { showDialog } from './lib/dialog';
+import {Text, FONT_SCALE_CAP_HERO} from './lib/text';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -487,13 +488,13 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, onEdit, age = 0, 
     if (!run.id) return;
     const label = shoe ? `${shoe.brand} ${shoe.model}` : run.shoeName || 'Keego Run';
     const r = await exportGpx(run.id, route, { name: `${run.date} · ${label}`, timeISO: run.runDate || undefined });
-    if (!r.ok && r.reason === 'no_route') Alert.alert('내보낼 코스가 없어요', 'GPS로 기록된 러닝만 GPX로 내보낼 수 있어요.');
-    else if (!r.ok) Alert.alert('내보내지 못했어요', '잠시 후 다시 시도해 주세요.');
+    if (!r.ok && r.reason === 'no_route') showDialog('내보낼 코스가 없어요', 'GPS로 기록된 러닝만 GPX로 내보낼 수 있어요.');
+    else if (!r.ok) showDialog('내보내지 못했어요', '잠시 후 다시 시도해 주세요.');
   };
   const onShareCard = () => setShareOpen(true);
   // 삭제는 확인 Alert로 보호한다(파괴 방지). 삭제 시 신발 사용거리도 줄어듦을 안내한다.
   const confirmDelete = () => {
-    Alert.alert(
+    showDialog(
       '러닝 기록 삭제',
       `${run.date} ${displayNum(run.dist, unit, 2)}${unit} 기록을 삭제할까요?\n삭제하면 신발 사용 거리도 함께 줄어들어요.`,
       [
@@ -555,7 +556,7 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, onEdit, age = 0, 
         ) : null)}
         <Text style={[s.detailDate, { marginLeft: rs(8) }]}>{run.date} {run.day}요일</Text>
         <View style={[s.baselineRow, { marginTop: rv(8), marginLeft: rs(3) }]}>
-          <Text style={s.detailDist}>{displayNum(run.dist, unit, 2)}</Text>
+          <Text maxFontSizeMultiplier={FONT_SCALE_CAP_HERO} style={s.detailDist}>{displayNum(run.dist, unit, 2)}</Text>
           <Text style={s.detailDistU}>{unit}</Text>
         </View>
         {/* 메트릭 한 카드(디자인 11): 2x3 그리드(값 위 · 라벨 아래, 좌측 정렬) — StatGrid.
@@ -1184,7 +1185,7 @@ export default function HistoryScreen({
             <View style={[s.card, { paddingHorizontal: rs(16), paddingTop: rv(12), paddingBottom: rv(24) }]}>
               <GlassEdge glints={false} radius={RADIUS.lg} />
               <View style={[s.baselineRow, { marginTop: rv(0) }]}>
-                <Text style={s.sumBigKm}>{sum.km}</Text><Text style={s.sumBigU}>{unit}</Text>
+                <Text maxFontSizeMultiplier={FONT_SCALE_CAP_HERO} style={s.sumBigKm}>{sum.km}</Text><Text style={s.sumBigU}>{unit}</Text>
               </View>
 
               <View style={s.sumMetricRow}>
@@ -1314,7 +1315,7 @@ const s = StyleSheet.create({
   trackHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: rv(12) },
   trackTitle: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.body.fontSize, fontWeight: '700', letterSpacing: -0.2 },
   trackSub: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600' },
-  lapRow: { flexDirection: 'row', alignItems: 'center', gap: rv(10), height: rs(34) },
+  lapRow: { flexDirection: 'row', alignItems: 'center', gap: rv(10), minHeight: rs(34) },
   lapNum: { width: rs(22), color: T3, fontFamily: DISPLAY, fontSize: TYPE.label.fontSize, fontWeight: '700', textAlign: 'center' },
   lapBarWrap: { flex: 1, height: rs(BAR.md), borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.06), overflow: 'hidden' },
   lapBarFill: { height: rs(BAR.md), borderRadius: RADIUS.pill, backgroundColor: ACCENT },

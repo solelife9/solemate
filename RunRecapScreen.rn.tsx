@@ -7,13 +7,14 @@
 // ============================================================================
 import React, {useEffect, useMemo, useRef, useState} from 'react';
 import { rf, rs, ri, rv } from './lib/responsive';
-import {View, ScrollView, Pressable, StyleSheet, Alert, Image, Linking, Animated, type StyleProp, type ViewStyle} from 'react-native';
-import {Text, TextInput} from './lib/text';
+import {View, ScrollView, Pressable, StyleSheet, Image, Linking, Animated, type StyleProp, type ViewStyle} from 'react-native';
+import {showDialog} from './lib/dialog';
+import {Text, FONT_SCALE_CAP_HERO} from './lib/text';
 import type {Text as RNText} from 'react-native'; // ref 인스턴스 타입 전용
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import {BG, BLACK, CARD_HI, ACCENT, GOOD, WARN, DANGER, HALL_GOLD, T1, T2, T3, T4, FONT, DISPLAY, RADIUS, GUTTER, SEP, withAlpha, TYPE, GLASS, NUM, MOTION} from './theme';
-import {GlassEdge, useReduceMotion} from './primitives';
+import {BG, BLACK, CARD_HI, ACCENT, GOOD, WARN, DANGER, HALL_GOLD, T1, T2, T3, FONT, DISPLAY, RADIUS, GUTTER, SEP, withAlpha, TYPE, GLASS, NUM, MOTION} from './theme';
+import {GlassEdge, useReduceMotion, Input} from './primitives';
 import {RACE_DISTANCE_LABEL, type RaceMatch} from './data/raceEvents';
 import {fmtPaceSec} from './lib/pacePlan';
 import {fmtPace} from './lib/format';
@@ -245,13 +246,13 @@ export default function RunRecapScreen({
       if (p.ok) { setPhotoUri(p.uri); onSaveMeta!(runId!, {photoUri: p.uri}); }
       else if (p.reason === 'denied') {
         // 권한 영구 거부 시 버튼이 고장 난 듯 무반응이던 것 개선(2026-07-05) — 설정 안내.
-        Alert.alert('사진 접근 권한이 필요해요', '설정에서 사진 권한을 허용하면 오늘의 한 컷을 남길 수 있어요.', [
+        showDialog('사진 접근 권한이 필요해요', '설정에서 사진 권한을 허용하면 오늘의 한 컷을 남길 수 있어요.', [
           {text: '설정 열기', onPress: () => { Promise.resolve(Linking.openSettings()).catch(() => {}); }},
           {text: '나중에', style: 'cancel'},
         ]);
       }
       // cancelled 는 조용히 넘어간다(사용자가 스스로 닫음).
-    } catch { Alert.alert('사진을 불러오지 못했어요', '잠시 후 다시 시도해 주세요.'); }
+    } catch { showDialog('사진을 불러오지 못했어요', '잠시 후 다시 시도해 주세요.'); }
   };
   const removePhoto = () => { setPhotoUri(null); if (canMeta) onSaveMeta!(runId!, {photoUri: null}); };
   const commitMemo = () => {
@@ -316,7 +317,7 @@ export default function RunRecapScreen({
             opacity: heroProg.interpolate({inputRange: [0, 0.12, 1], outputRange: [0, 1, 1]}),
             transform: [{scale: heroProg.interpolate({inputRange: [0, 1], outputRange: [0.96, 1]})}],
           }, morphActive && !morphDone && {opacity: 0}]}>
-          <Text ref={heroNumRef} onLayout={onHeroNumLayout} style={s.heroNum} testID="recap-distance">{kmToDisplay(heroShown, unit).toFixed(2)}</Text>
+          <Text ref={heroNumRef} onLayout={onHeroNumLayout} style={s.heroNum} maxFontSizeMultiplier={FONT_SCALE_CAP_HERO} testID="recap-distance">{kmToDisplay(heroShown, unit).toFixed(2)}</Text>
           <Text style={s.heroUnit}>{unit}</Text>
         </Animated.View>
 
@@ -477,13 +478,13 @@ export default function RunRecapScreen({
                 <Text style={s.metaPhotoAddTxt}>오늘의 한 컷 남기기</Text>
               </Pressable>
             )}
-            <TextInput
+            <Input
+              variant="inline"
               value={memo}
               onChangeText={setMemo}
               onBlur={commitMemo}
               onSubmitEditing={commitMemo}
               placeholder="오늘의 러닝, 한 줄로"
-              placeholderTextColor={T4}
               returnKeyType="done"
               maxLength={80}
               style={s.metaInput}
@@ -551,7 +552,7 @@ const s = StyleSheet.create({
   morphClone: {position: 'absolute'},
   heroUnit: {color: T2, fontFamily: FONT, fontSize: TYPE.title.fontSize, fontWeight: '700', marginBottom: rv(10)},
   badges: {flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: rv(8), marginBottom: rv(16)},
-  badge: {flexDirection: 'row', alignItems: 'center', gap: rv(4), paddingHorizontal: rs(12), height: rs(30), borderRadius: RADIUS.pill, borderWidth: 1},
+  badge: {flexDirection: 'row', alignItems: 'center', gap: rv(4), paddingHorizontal: rs(12), minHeight: rs(30), borderRadius: RADIUS.pill, borderWidth: 1},
   badgeTxt: {fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '700'},
 
   // 대회 완주 감지 배너(골드) — 완주 직후 러너가 메달을 남기고 싶은 순간.
@@ -594,13 +595,15 @@ const s = StyleSheet.create({
   // 투명 유리 CTA(홈 '러닝 시작'과 동일 문법) — 오렌지 필 폐지, 포인트 컬러는 지표에만.
   // 공유(보조)와 완료(주) — 같은 유리, 폭 비율로만 위계(공유 1 : 완료 1.6).
   footerRow: {flexDirection: 'row', gap: rv(10)},
-  shareBtn: {flex: 1, height: rs(52), borderRadius: RADIUS.lg, borderCurve: 'continuous', overflow: 'hidden', backgroundColor: withAlpha(T1, 0.06), flexDirection: 'row', alignItems: 'center', justifyContent: 'center'},
-  doneBtn: {flex: 1.6, height: rs(52), borderRadius: RADIUS.lg, borderCurve: 'continuous', overflow: 'hidden', backgroundColor: withAlpha(T1, 0.1), alignItems: 'center', justifyContent: 'center'},
+  shareBtn: {flex: 1, minHeight: rs(52), borderRadius: RADIUS.lg, borderCurve: 'continuous', overflow: 'hidden', backgroundColor: withAlpha(T1, 0.06), flexDirection: 'row', alignItems: 'center', justifyContent: 'center'},
+  doneBtn: {flex: 1.6, minHeight: rs(52), borderRadius: RADIUS.lg, borderCurve: 'continuous', overflow: 'hidden', backgroundColor: withAlpha(T1, 0.1), alignItems: 'center', justifyContent: 'center'},
   doneTxt: {color: T1, fontFamily: FONT, fontSize: TYPE.heading.fontSize, fontWeight: '700'},
   metaCard: {backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderCurve: 'continuous', overflow: 'hidden', padding: rs(14), marginTop: rv(12), gap: rv(12)},
   metaPhoto: {width: '100%', height: rs(180), borderRadius: RADIUS.md, borderCurve: 'continuous'},
   metaPhotoRemove: {position: 'absolute', top: 8, right: 8, width: rs(26), height: rs(26), borderRadius: rs(13), backgroundColor: withAlpha(BLACK, 0.55), alignItems: 'center', justifyContent: 'center'},
   metaPhotoAdd: {flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(8), borderRadius: RADIUS.md, borderCurve: 'continuous', borderWidth: 1, borderColor: SEP, paddingVertical: rv(14)},
   metaPhotoAddTxt: {color: T2, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600'},
-  metaInput: {color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, paddingVertical: rv(8), paddingHorizontal: rs(2), borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: SEP},
+  // Input variant="inline" 채택(2026-07-25) — 표면·타이포는 프리미티브 소관, 여기선
+  // 카드 안 밑줄 톤(SEP)과 여백만 조정.
+  metaInput: {paddingVertical: rv(8), paddingHorizontal: rs(2), borderBottomColor: SEP},
 });

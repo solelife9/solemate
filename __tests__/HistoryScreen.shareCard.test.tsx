@@ -15,7 +15,8 @@
 
 import React from 'react';
 import ReactTestRenderer, {act} from 'react-test-renderer';
-import {Share, Alert} from 'react-native';
+import {Share} from 'react-native';
+import * as dialogLib from '../lib/dialog';
 import * as MediaLibrary from 'expo-media-library/legacy';
 import HistoryScreen from '../HistoryScreen.rn';
 
@@ -89,7 +90,7 @@ describe('HistoryScreen 카드 공유(이미지) — 선택기 경유', () => {
   let alertSpy: jest.SpyInstance;
   beforeEach(() => {
     shareSpy = jest.spyOn(Share, 'share').mockResolvedValue({action: 'sharedAction'} as any);
-    alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    alertSpy = jest.spyOn(dialogLib, 'showDialog').mockImplementation(() => 0);
   });
   afterEach(() => {
     shareSpy.mockRestore();

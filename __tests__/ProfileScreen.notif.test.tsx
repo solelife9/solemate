@@ -15,14 +15,14 @@
  */
 import React from 'react';
 import ReactTestRenderer, {act} from 'react-test-renderer';
-import {Alert} from 'react-native';
+import * as dialogLib from '../lib/dialog';
 import ProfileScreen from '../ProfileScreen.rn';
 import {DEFAULT_NOTIF_SETTINGS, type NotifSettings} from '../lib/notifications';
 
 // 알림 첫 켜기 = OS 권한 다이얼로그 앞에 프라이밍 Alert 가 뜬다(애플 권장). 테스트에선
 // 자동 응답한다: accept=true → '알림 받기'(진행), false → '나중에'(중단).
 function mockPrime(accept: boolean) {
-  return jest.spyOn(Alert, 'alert').mockImplementation(((_t: any, _m: any, buttons: any) => {
+  return jest.spyOn(dialogLib, 'showDialog').mockImplementation(((_t: any, _m: any, buttons: any) => {
     const b = (buttons || []).find((x: any) => x.text === (accept ? '알림 받기' : '나중에'));
     b?.onPress?.();
   }) as any);

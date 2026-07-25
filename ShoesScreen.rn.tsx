@@ -4,7 +4,8 @@
 // ============================================================================
 import React, { useEffect, useMemo, useState } from 'react';
 import { rf, rs, ri, rv } from './lib/responsive';
-import { View, ScrollView, Pressable, Alert, StyleSheet } from 'react-native';
+import { View, ScrollView, Pressable, StyleSheet } from 'react-native';
+import { showDialog } from './lib/dialog';
 import {Text} from './lib/text';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
@@ -171,13 +172,13 @@ function ShoeDetail({
   const toggleRetire = () => {
     if (!shoe.id) return;
     if (retired) { onRetire?.(shoe.id, false); return; }
-    Alert.alert('신발 보관', `${shoe.brand} ${shoe.model}을(를) 보관할까요?\n러닝 기록은 그대로 남고, 러닝 시작 목록에서만 숨겨져요.`, [
+    showDialog('신발 보관', `${shoe.brand} ${shoe.model}을(를) 보관할까요?\n러닝 기록은 그대로 남고, 러닝 시작 목록에서만 숨겨져요.`, [
       { text: '취소', style: 'cancel' },
       { text: '보관', onPress: () => onRetire?.(shoe.id!, true) },
     ]);
   };
   const confirmDelete = () => {
-    Alert.alert('신발 삭제', `${shoe.brand} ${shoe.model}을(를) 삭제할까요?\n러닝 기록은 그대로 남아요. 신발만 락커에서 사라져요.`, [
+    showDialog('신발 삭제', `${shoe.brand} ${shoe.model}을(를) 삭제할까요?\n러닝 기록은 그대로 남아요. 신발만 락커에서 사라져요.`, [
       { text: '취소', style: 'cancel' },
       { text: '삭제', style: 'destructive', onPress: () => { if (shoe.id) onDelete?.(shoe.id); onBack(); } },
     ]);
@@ -732,7 +733,7 @@ const s = StyleSheet.create({
   // 목업 정합: 제목 + '신발 추가' 버튼 한 줄(topbar)
   topbar: { paddingTop: rv(8), paddingHorizontal: GUTTER, paddingBottom: rv(8), flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   title: { color: T1, fontFamily: FONT, ...TYPE.screenTitle },
-  addPill: { height: rs(34), paddingHorizontal: rs(14), borderRadius: RADIUS.pill, borderWidth: 1, borderColor: withAlpha(T1, 0.2), backgroundColor: CARD_HI, flexDirection: 'row', alignItems: 'center', gap: rv(6) },
+  addPill: { minHeight: rs(34), paddingHorizontal: rs(14), borderRadius: RADIUS.pill, borderWidth: 1, borderColor: withAlpha(T1, 0.2), backgroundColor: CARD_HI, flexDirection: 'row', alignItems: 'center', gap: rv(6) },
   addPillText: { color: T1, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600' },
 
   // 카드 하단 중복 진행바(track/trackFill)를 제거하고 원형 Ring 만 유지한다. 바가
@@ -776,8 +777,8 @@ const s = StyleSheet.create({
   archiveRowStrong: { color: T2, fontWeight: '600' },
   soonText: { color: T2, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500' },
   soonStrong: { color: WARN, fontWeight: '700' },
-  retireBtn: { height: rs(54), borderRadius: RADIUS.md, marginTop: rv(22), flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(8), backgroundColor: withAlpha(DANGER, 0.06), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(DANGER, 0.45) },
-  restoreBtn: { height: rs(54), borderRadius: RADIUS.md, marginTop: rv(22), flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(8), backgroundColor: 'transparent', borderWidth: 1, borderColor: withAlpha(T1, 0.14) },
+  retireBtn: { minHeight: rs(54), borderRadius: RADIUS.md, marginTop: rv(22), flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(8), backgroundColor: withAlpha(DANGER, 0.06), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(DANGER, 0.45) },
+  restoreBtn: { minHeight: rs(54), borderRadius: RADIUS.md, marginTop: rv(22), flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(8), backgroundColor: 'transparent', borderWidth: 1, borderColor: withAlpha(T1, 0.14) },
   retireBtnText: { fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600', letterSpacing: -0.2 },
 
   // detail
@@ -806,10 +807,10 @@ const s = StyleSheet.create({
   keepsakeSub: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, lineHeight: rf(19) },
   keepsakeBtns: { flexDirection: 'row', gap: rv(10), marginTop: rv(8) },
   // 계속 사용(CARD_HI flat) — 모서리는 은퇴(단일 Button=RADIUS.btn)와 맞춰 통일.
-  keepsakeBtn: { flex: 1, height: rs(50), borderRadius: RADIUS.btn, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(8) },
+  keepsakeBtn: { flex: 1, minHeight: rs(50), borderRadius: RADIUS.btn, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(8) },
   keepUsingBtn: { backgroundColor: CARD_HI },
   // 은퇴는 단일 Button 프리미티브로 라우팅(그라데이션/글로우/RADIUS.btn). 여기선 박스 크기만.
-  retireFlowBtn: { flex: 1, height: rs(50) },
+  retireFlowBtn: { flex: 1, minHeight: rs(50) },
   keepsakeBtnTxt: { fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '700' },
   // 실효 마모 + 교체 예측 카드(차별점) — 본문 카드 톤에 accent 절제(라벨 아이콘/예측 라인만).
   wearCard: { padding: rs(16), gap: rv(2) },
@@ -834,7 +835,7 @@ const s = StyleSheet.create({
 
   // primitives.Input 표준(유리 표면·RADIUS.input) 위에 이름 편집 전용 타이포만 얹는다.
   editInput: { fontSize: TYPE.heading.fontSize, fontWeight: '500' },
-  editBtn: { flex: 1, height: rs(46), borderRadius: RADIUS.btn, alignItems: 'center', justifyContent: 'center' },
+  editBtn: { flex: 1, minHeight: rs(46), borderRadius: RADIUS.btn, alignItems: 'center', justifyContent: 'center' },
   editBtnTxt: { fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600' },
 
   // 2x2 통계 그리드(총거리/총횟수/총시간/평균페이스). 한 카드 안에 4칸을 넉넉히.

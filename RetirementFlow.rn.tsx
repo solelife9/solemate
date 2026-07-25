@@ -643,7 +643,7 @@ const s = StyleSheet.create({
   // 불투명 CARD_HI → 유리(GLASS.fill + GlassEdge 헤어라인) — 형제 세그먼트 문법.
   formatBtn: {
     flex: 1,
-    height: rs(42),
+    minHeight: rs(42),
     borderRadius: RADIUS.sm,
     borderCurve: 'continuous',
     backgroundColor: GLASS.fill,
@@ -685,7 +685,7 @@ const s = StyleSheet.create({
   // 보조(취소/이전) ghost 버튼 박스 — 모서리는 primary(단일 Button=RADIUS.btn)와 통일.
   btn: {
     flex: 1,
-    height: rs(54),
+    minHeight: rs(54),
     borderRadius: RADIUS.btn,
     alignItems: 'center',
     justifyContent: 'center',
@@ -698,7 +698,7 @@ const s = StyleSheet.create({
   },
   // primary(다음/확정/완료)는 단일 Button 프리미티브로 라우팅 — 그라데이션/글로우/RADIUS.btn.
   // 여기선 박스 크기만(ghost 형제와 동일 flex/height 로 페어 정렬).
-  btnPrimary: {flex: 1, height: rs(54)},
+  btnPrimary: {flex: 1, minHeight: rs(54)},
   btnTxt: {fontFamily: FONT, fontSize: TYPE.heading.fontSize, fontWeight: '700'},
 });
 

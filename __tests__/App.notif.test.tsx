@@ -17,7 +17,8 @@
  * @format
  */
 import React from 'react';
-import {Alert, AppState} from 'react-native';
+import {AppState} from 'react-native';
+import * as dialogLib from '../lib/dialog';
 import ReactTestRenderer, {act} from 'react-test-renderer';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {ymdLocal} from '../lib/format';
@@ -128,7 +129,7 @@ describe('App 포그라운드 진입 시 dueNotifications → presentDue 표시'
       JSON.stringify({shoeReplacement: false, weeklyGoal: false, runReminder: true, reminderTime: '00:00'}),
     );
     const appState = captureAppState();
-    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    const alertSpy = jest.spyOn(dialogLib, 'showDialog').mockImplementation(() => 0);
 
     const renderer = await mountApp();
     // 최초 마운트(이미 active)에는 표시하지 않는다 — 'change' 이벤트가 오지 않았으므로.
@@ -158,7 +159,7 @@ describe('App 포그라운드 진입 시 dueNotifications → presentDue 표시'
       JSON.stringify({shoeReplacement: false, weeklyGoal: false, runReminder: true, reminderTime: '00:00'}),
     );
     const appState = captureAppState();
-    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    const alertSpy = jest.spyOn(dialogLib, 'showDialog').mockImplementation(() => 0);
 
     const renderer = await mountApp();
     // 초기 마운트에는 리마인더 Alert 가 없다(중복 표시 0) — 지우기 전에 단언.
@@ -190,7 +191,7 @@ describe('App 포그라운드 진입 시 dueNotifications → presentDue 표시'
       JSON.stringify({shoeReplacement: false, weeklyGoal: false, runReminder: false, reminderTime: '00:00'}),
     );
     const appState = captureAppState();
-    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    const alertSpy = jest.spyOn(dialogLib, 'showDialog').mockImplementation(() => 0);
 
     const renderer = await mountApp();
     // 초기 마운트에도 리마인더 Alert 가 없다(끄기 설정 + 첫 마운트 독립).
@@ -252,7 +253,7 @@ describe('App 당일 중복방지는 재시작(remount)을 넘어 유지된다(A
 
     // ── 1차 실행 — 포그라운드 진입에 리마인더 1회 표시.
     const appState1 = captureAppState();
-    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    const alertSpy = jest.spyOn(dialogLib, 'showDialog').mockImplementation(() => 0);
     const r1 = await mountApp();
     alertSpy.mockClear();
     await act(async () => {
@@ -299,7 +300,7 @@ describe('App 이 forecast/weekly 입력을 조립해 다른 종류의 표시 �
       JSON.stringify({shoeReplacement: true, weeklyGoal: false, runReminder: false, reminderTime: '23:59'}),
     );
     const appState = captureAppState();
-    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    const alertSpy = jest.spyOn(dialogLib, 'showDialog').mockImplementation(() => 0);
 
     const renderer = await mountApp();
     alertSpy.mockClear();
@@ -332,7 +333,7 @@ describe('App 이 forecast/weekly 입력을 조립해 다른 종류의 표시 �
         JSON.stringify({shoeReplacement: false, weeklyGoal: true, runReminder: false, reminderTime: '23:59'}),
       );
       const appState = captureAppState();
-      const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+      const alertSpy = jest.spyOn(dialogLib, 'showDialog').mockImplementation(() => 0);
 
       const renderer = await mountApp();
       alertSpy.mockClear();

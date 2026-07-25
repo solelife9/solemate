@@ -16,7 +16,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { rf, rs, ri, rv } from './lib/responsive';
 import { View, Pressable, StyleSheet, Animated, Easing, StatusBar, LayoutAnimation, useWindowDimensions } from 'react-native';
-import {Text} from './lib/text';
+import {Text, FONT_SCALE_CAP_HERO} from './lib/text';
 import type {Text as RNText} from 'react-native'; // ref 인스턴스 타입 전용
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -116,7 +116,7 @@ function FinishCeremony({ distanceKm, onDone }: { distanceKm: number; onDone: ()
           impactHeavy(); // 링 완성 — 성취의 '쿵'(목표 달성과 같은 무게 언어)
           setTimeout(onDone, 220);
         }}>
-        <Text ref={distRef} onLayout={measureDist} style={cer.dist}>{distanceKm.toFixed(2)}</Text>
+        <Text ref={distRef} onLayout={measureDist} maxFontSizeMultiplier={FONT_SCALE_CAP_HERO} style={cer.dist}>{distanceKm.toFixed(2)}</Text>
         <Text style={cer.unit}>km</Text>
       </Ring>
     </Animated.View>
@@ -557,12 +557,12 @@ export default function RunActiveScreen({
             <View style={r.cdFace}>
               {cdPhase === 'go' ? (
                 <View style={r.cdNudge}>
-                  <Animated.Text style={[r.cdGo, { transform: [{ scale: cdGoScale }] }]} accessibilityLiveRegion="assertive" accessibilityLabel="시작">GO</Animated.Text>
+                  <Animated.Text maxFontSizeMultiplier={FONT_SCALE_CAP_HERO} style={[r.cdGo, { transform: [{ scale: cdGoScale }] }]} accessibilityLiveRegion="assertive" accessibilityLabel="시작">GO</Animated.Text>
                 </View>
               ) : (
                 <>
                   <View style={r.cdNudge}>
-                    <Animated.Text style={[r.cdCount, { opacity: cdNumOpacity, transform: [{ scale: cdNumScale }] }]} accessibilityLiveRegion="assertive" accessibilityLabel={`${cdNum}초 후 시작`}>{cdNum}</Animated.Text>
+                    <Animated.Text maxFontSizeMultiplier={FONT_SCALE_CAP_HERO} style={[r.cdCount, { opacity: cdNumOpacity, transform: [{ scale: cdNumScale }] }]} accessibilityLiveRegion="assertive" accessibilityLabel={`${cdNum}초 후 시작`}>{cdNum}</Animated.Text>
                   </View>
                   <Text style={r.cdCountLabel}>곧 시작해요</Text>
                 </>
@@ -571,7 +571,7 @@ export default function RunActiveScreen({
           ) : track ? (
             <View style={{ alignItems: 'center' }} accessibilityRole="text" accessibilityLiveRegion="polite"
               accessibilityLabel={`${track.lapCount}바퀴, ${track.lapDistKm.toFixed(2)}킬로미터, 한 바퀴 ${track.lapM}미터 ${track.calibrated ? 'GPS 보정됨' : '예상'}`}>
-              <Text style={r.lapHero}>{track.lapCount}</Text>
+              <Text maxFontSizeMultiplier={FONT_SCALE_CAP_HERO} style={r.lapHero}>{track.lapCount}</Text>
               <Text style={r.lapHeroUnit}>바퀴</Text>
             </View>
           ) : (
@@ -587,7 +587,7 @@ export default function RunActiveScreen({
                   maxWidth 를 준다. 짧은 '0.00'(≈197)은 그대로 최대 크기, 넓은 '00:00'(≈258)·
                   긴 시간('1:02:33')·40km+ 거리('42.19')만 자동 축소돼 링에 닿지 않는다.
                   (너비 상한이 없으면 adjustsFontSizeToFit 이 줄일 기준이 없어 꽉 차 링을 침범.) */}
-              <Text style={[r.bigDist, { maxWidth: ri(214) }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.5}>
+              <Text maxFontSizeMultiplier={FONT_SCALE_CAP_HERO} style={[r.bigDist, { maxWidth: ri(214) }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.5}>
                 {timeGoal ? timeLabel : distanceKm.toFixed(2)}
               </Text>
               {/* 단위는 absolute — 센터 계산에서 제외해 '숫자'가 링의 정중앙에 온다. */}
@@ -648,9 +648,9 @@ export default function RunActiveScreen({
           라벨, 위 헤어라인만. 일시정지 시 22로 줄며 아래로 서브 지표가 펼쳐진다. */}
       <Animated.View pointerEvents={cd ? 'none' : 'auto'}
         style={[r.heroMetrics, uiPaused ? r.heroMetricsPaused : r.heroMetricsRun, { opacity: uiIn, transform: [{ translateY: uiRise }] }]}>
-        <View style={r.hm} accessibilityRole="text" accessibilityLabel={uiPaused || timeGoal ? `거리 ${distanceKm.toFixed(2)}킬로미터` : `시간 ${timeLabel}`}><Text style={[r.hmV, uiPaused && r.hmVPaused]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72}>{uiPaused || timeGoal ? distanceKm.toFixed(2) : timeLabel}</Text><Text style={r.hmL}>{uiPaused || timeGoal ? '거리 km' : '시간'}</Text></View>
-        <View style={[r.hm, r.hmDivider]} accessibilityRole="text" accessibilityLabel={uiPaused ? `시간 ${timeLabel}` : hrZone !== 0 ? `심박 ${bpm}, 존 ${hrZone} ${HR_ZONE_LABEL[hrZone]}` : bpm > 0 ? `심박 ${bpm}` : '심박 측정 안 됨'}><Text style={[r.hmV, uiPaused && r.hmVPaused, !uiPaused && hrZone !== 0 && { color: hrColor }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72}>{uiPaused ? timeLabel : bpm > 0 ? String(bpm) : '--'}</Text><Text style={[r.hmL, !uiPaused && hrZone !== 0 && { color: hrColor, fontWeight: '600' }, !uiPaused && zoneDeviation && targetZone >= 2 && { color: zoneDeviation === 'down' ? WARN : ACCENT, fontWeight: '700' }]}>{uiPaused ? '시간' : (!uiPaused && zoneDeviation && targetZone >= 2) ? (zoneDeviation === 'down' ? `↓ 존 ${targetZone}로` : `↑ 존 ${targetZone}로`) : hrZone !== 0 ? `Z${hrZone} ${HR_ZONE_LABEL[hrZone]}` : '심박'}</Text></View>
-        <View style={[r.hm, r.hmDivider]} accessibilityRole="text" accessibilityLabel={`${uiPaused ? '평균 페이스' : (track ? '랩 페이스' : '현재 페이스')} ${uiPaused ? avgPaceLabel : paceLabel}`}><Text style={[r.hmV, uiPaused && r.hmVPaused]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72}>{uiPaused ? avgPaceLabel : paceLabel}</Text><Text style={r.hmL}>{uiPaused ? '평균 페이스' : (track ? '랩 페이스' : '현재 페이스')}</Text></View>
+        <View style={r.hm} accessibilityRole="text" accessibilityLabel={uiPaused || timeGoal ? `거리 ${distanceKm.toFixed(2)}킬로미터` : `시간 ${timeLabel}`}><Text maxFontSizeMultiplier={FONT_SCALE_CAP_HERO} style={[r.hmV, uiPaused && r.hmVPaused]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72}>{uiPaused || timeGoal ? distanceKm.toFixed(2) : timeLabel}</Text><Text style={r.hmL}>{uiPaused || timeGoal ? '거리 km' : '시간'}</Text></View>
+        <View style={[r.hm, r.hmDivider]} accessibilityRole="text" accessibilityLabel={uiPaused ? `시간 ${timeLabel}` : hrZone !== 0 ? `심박 ${bpm}, 존 ${hrZone} ${HR_ZONE_LABEL[hrZone]}` : bpm > 0 ? `심박 ${bpm}` : '심박 측정 안 됨'}><Text maxFontSizeMultiplier={FONT_SCALE_CAP_HERO} style={[r.hmV, uiPaused && r.hmVPaused, !uiPaused && hrZone !== 0 && { color: hrColor }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72}>{uiPaused ? timeLabel : bpm > 0 ? String(bpm) : '--'}</Text><Text style={[r.hmL, !uiPaused && hrZone !== 0 && { color: hrColor, fontWeight: '600' }, !uiPaused && zoneDeviation && targetZone >= 2 && { color: zoneDeviation === 'down' ? WARN : ACCENT, fontWeight: '700' }]}>{uiPaused ? '시간' : (!uiPaused && zoneDeviation && targetZone >= 2) ? (zoneDeviation === 'down' ? `↓ 존 ${targetZone}로` : `↑ 존 ${targetZone}로`) : hrZone !== 0 ? `Z${hrZone} ${HR_ZONE_LABEL[hrZone]}` : '심박'}</Text></View>
+        <View style={[r.hm, r.hmDivider]} accessibilityRole="text" accessibilityLabel={`${uiPaused ? '평균 페이스' : (track ? '랩 페이스' : '현재 페이스')} ${uiPaused ? avgPaceLabel : paceLabel}`}><Text maxFontSizeMultiplier={FONT_SCALE_CAP_HERO} style={[r.hmV, uiPaused && r.hmVPaused]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72}>{uiPaused ? avgPaceLabel : paceLabel}</Text><Text style={r.hmL}>{uiPaused ? '평균 페이스' : (track ? '랩 페이스' : '현재 페이스')}</Text></View>
       </Animated.View>
 
       {/* 트랙: 지난 랩(최근 3) — 박스 없는 한 줄, 라벨 회색 + 랩번호/구간시간(직전 랩을 즉시 확인). */}
@@ -759,7 +759,7 @@ export default function RunActiveScreen({
         <Pressable style={r.resumeCdWrap} onPress={() => { tap(); clearResumeCd(); }}
           accessibilityRole="button" accessibilityLabel={`${resumeCd}초 후 재개, 탭하면 취소`}
           testID="resume-countdown">
-          <Text style={r.resumeCdNum} accessibilityLiveRegion="assertive">{resumeCd}</Text>
+          <Text maxFontSizeMultiplier={FONT_SCALE_CAP_HERO} style={r.resumeCdNum} accessibilityLiveRegion="assertive">{resumeCd}</Text>
           <Text style={r.resumeCdHint}>곧 다시 달려요 — 탭하면 취소</Text>
         </Pressable>
       )}
@@ -823,7 +823,7 @@ const r = StyleSheet.create({
   live: { flexDirection: 'row', alignItems: 'center', gap: rv(8) },
   liveDot: { width: rs(8), height: rs(8), borderRadius: RADIUS.pill, backgroundColor: ACCENT },
   liveText: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500', letterSpacing: 0.2 },
-  shoeChip: { flexDirection: 'row', alignItems: 'center', gap: rv(8), backgroundColor: CARD, borderRadius: RADIUS.pill, paddingHorizontal: rs(12), height: rs(30), borderWidth: 1, borderColor: SEP },
+  shoeChip: { flexDirection: 'row', alignItems: 'center', gap: rv(8), backgroundColor: CARD, borderRadius: RADIUS.pill, paddingHorizontal: rs(12), minHeight: rs(30), borderWidth: 1, borderColor: SEP },
   topRight: { flexDirection: 'row', alignItems: 'center', gap: rv(8) },
   // 음성 토글(심사 #10) — 신발 칩과 같은 문법의 작은 원형 유리 버튼.
   voiceBtn: { width: rs(30), height: rs(30), borderRadius: RADIUS.pill, alignItems: 'center', justifyContent: 'center', backgroundColor: CARD, borderWidth: 1, borderColor: SEP },
@@ -836,7 +836,7 @@ const r = StyleSheet.create({
   shoeText: { color: T3, fontFamily: DISPLAY, fontSize: TYPE.label.fontSize, fontWeight: '600' },
 
   // GPS 약함 경고(조건부) — 상시 상태 표시 폐지(2026-07-12), 문제 있을 때만 조용한 WARN.
-  gpsWeak: { flexDirection: 'row', alignItems: 'center', gap: rv(6), marginTop: rv(12), alignSelf: 'center', paddingHorizontal: rs(12), height: rs(30), borderRadius: RADIUS.pill, backgroundColor: withAlpha(WARN, 0.12) },
+  gpsWeak: { flexDirection: 'row', alignItems: 'center', gap: rv(6), marginTop: rv(12), alignSelf: 'center', paddingHorizontal: rs(12), minHeight: rs(30), borderRadius: RADIUS.pill, backgroundColor: withAlpha(WARN, 0.12) },
   gpsWeakText: { color: WARN, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600' },
   // '검색 중' 변주(P1 #49) — 같은 필 문법, 색만 무채(WARN 은 문제 전용 위계 유지).
   gpsSearch: { backgroundColor: withAlpha(T1, 0.08) },
@@ -848,7 +848,7 @@ const r = StyleSheet.create({
   ringWrap: { alignItems: 'center', marginTop: rv(26) },
   // ── 카운트다운 통합(2026-07-16) — 구 RunCountdownScreen 의 타이포·칩 문법 이식 ──
   // 취소 필: 우측 신발칩과 같은 rs(30) 높이(상단 행 높이 불변 → 스왑 시 링 위치 그대로).
-  cdCancel: { flexDirection: 'row', alignItems: 'center', gap: rv(4), height: rs(30), paddingLeft: rs(8), paddingRight: rs(12), borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.05), borderWidth: 1, borderColor: SEP },
+  cdCancel: { flexDirection: 'row', alignItems: 'center', gap: rv(4), minHeight: rs(30), paddingLeft: rs(8), paddingRight: rs(12), borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.05), borderWidth: 1, borderColor: SEP },
   cdCancelText: { color: T2, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500' },
   cdFace: { alignItems: 'center', justifyContent: 'center' },
   // 숫자만 살짝 아래로(rv 8) — Jost 어센더 보정(lineHeight 1.22×) 탓에 링 중심보다 높게
@@ -862,7 +862,7 @@ const r = StyleSheet.create({
   cdGo: { color: ACCENT, fontFamily: NUM, fontSize: rf(104), fontWeight: '700', letterSpacing: -1, lineHeight: rf(127), includeFontPadding: false },
   // 목표·야외 칩 — 링 아래 절대 배치(레이아웃 참여 X). 좌우로 링보다 넓게 펼쳐 중앙 정렬.
   cdChips: { position: 'absolute', top: '100%', left: rs(-70), right: rs(-70), marginTop: rv(16), flexDirection: 'row', justifyContent: 'center', gap: rv(8) },
-  cdChip: { flexDirection: 'row', alignItems: 'center', gap: rv(8), height: rs(32), paddingHorizontal: rs(14), borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.04), borderWidth: 1, borderColor: SEP },
+  cdChip: { flexDirection: 'row', alignItems: 'center', gap: rv(8), minHeight: rs(32), paddingHorizontal: rs(14), borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.04), borderWidth: 1, borderColor: SEP },
   cdChipText: { color: T2, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500' },
   cdChipB: { color: T1, fontFamily: DISPLAY, fontWeight: '600' },
   // 링 센터 보조(단위 km/목표 N분) — 20pt(사용자 확대 확정 2026-07-12: 기존 title 은 옹졸).
@@ -887,7 +887,7 @@ const r = StyleSheet.create({
   recentK: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase' },
   recentV: { color: T2, fontFamily: DISPLAY, fontSize: TYPE.label.fontSize, fontWeight: '600', fontVariant: ['tabular-nums'] },
   recentN: { color: T2, fontWeight: '700' },
-  coach: { flexDirection: 'row', alignItems: 'center', alignSelf: 'center', gap: rv(8), marginTop: rv(18), paddingHorizontal: rs(14), height: rs(38), borderRadius: RADIUS.pill, borderWidth: 1 },
+  coach: { flexDirection: 'row', alignItems: 'center', alignSelf: 'center', gap: rv(8), marginTop: rv(18), paddingHorizontal: rs(14), minHeight: rs(38), borderRadius: RADIUS.pill, borderWidth: 1 },
   coachTarget: { color: T2, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600' },
   coachDot: { width: rs(3), height: rs(3), borderRadius: rs(2), backgroundColor: T4 },
   coachMsg: { fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '700' },
@@ -920,7 +920,7 @@ const r = StyleSheet.create({
   // 랩 기록 = 주 동작(오렌지 유리 필, 넓게) + 우측 현재 바퀴수. 되돌리기(-1)는 작은 보조.
   lapBar: { flexDirection: 'row', alignItems: 'center', gap: rv(10), marginTop: rv(18) },
   // 선택/강조 칩 한 벌(감사 #56): 채움 withAlpha(T1,0.14) · 보더 withAlpha(T1,0.4).
-  lapBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(8), height: rs(58), borderRadius: rs(18), borderCurve: 'continuous', backgroundColor: withAlpha(T1, 0.14), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.4) },
+  lapBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(8), minHeight: rs(58), borderRadius: rs(18), borderCurve: 'continuous', backgroundColor: withAlpha(T1, 0.14), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.4) },
   lapBtnText: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.heading.fontSize, fontWeight: '700', letterSpacing: -0.2 },
   lapBtnCount: { position: 'absolute', right: 18, color: ACCENT_2, fontFamily: DISPLAY, fontSize: TYPE.body.fontSize, fontWeight: '700', fontVariant: ['tabular-nums'] },
   lapUndo: { width: rs(52), height: rs(52), borderRadius: rs(16), borderCurve: 'continuous', alignItems: 'center', justifyContent: 'center', backgroundColor: CARD, borderWidth: 1, borderColor: SEP },

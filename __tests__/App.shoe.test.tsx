@@ -24,7 +24,8 @@
 
 import React from 'react';
 import ReactTestRenderer, {act} from 'react-test-renderer';
-import {Alert, StyleSheet} from 'react-native';
+import {StyleSheet} from 'react-native';
+import * as dialogLib from '../lib/dialog';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import App from '../App';
 import {seedBootCache} from './helpers/bootSeed';
@@ -139,9 +140,10 @@ async function tap(node: ReactTestRenderer.ReactTestInstance) {
 
 // Auto-confirm RN Alert dialogs by pressing the first non-cancel button (보관/삭제).
 function autoConfirmAlerts() {
-  jest.spyOn(Alert, 'alert').mockImplementation((_t?: any, _m?: any, buttons?: any) => {
+  jest.spyOn(dialogLib, 'showDialog').mockImplementation((_t?: any, _m?: any, buttons?: any) => {
     const btn = (buttons || []).find((b: any) => b && b.style !== 'cancel' && typeof b.onPress === 'function');
     if (btn) btn.onPress();
+    return 0;
   });
 }
 

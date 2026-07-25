@@ -17,7 +17,8 @@
 
 import React from 'react';
 import ReactTestRenderer, {act} from 'react-test-renderer';
-import {StyleSheet, Alert} from 'react-native';
+import {StyleSheet} from 'react-native';
+import * as dialogLib from '../lib/dialog';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import App from '../App';
 import HistoryScreen from '../HistoryScreen.rn';
@@ -186,7 +187,7 @@ async function tick(n = 6) {
 async function recoverToSummary() {
   mockBackendEmpty();
   await AsyncStorage.setItem(SNAPSHOT_KEY, JSON.stringify(RESUME));
-  const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+  const alertSpy = jest.spyOn(dialogLib, 'showDialog').mockImplementation(() => 0);
   let renderer!: ReactTestRenderer.ReactTestRenderer;
   await act(async () => {
     renderer = ReactTestRenderer.create(<App />);

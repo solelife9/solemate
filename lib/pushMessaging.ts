@@ -9,10 +9,9 @@
 //   - 권한 거부는 graceful — requestPushPermission 은 절대 throw 하지 않고 false 를
 //     돌려준다(비차단, S8-3). 토큰/핸들러 취득 실패도 삼켜 null/no-op 으로 폴백한다.
 //   - OS 타이머 기반 정밀 스케줄(notifee 등) 새 네이티브 의존은 추가하지 않는다.
-//     포그라운드 진입 시점의 로컬 표시(presentDue)는 react-native 내장 Alert(주입 가능)
-//     로만 처리한다 — dueNotifications 가 "무엇을" 정하고, 여기서 "지금" 띄운다.
+//     포그라운드 진입 시점의 로컬 표시(presentDue)는 커스텀 다이얼로그(lib/dialog, 주입
+//     가능)로만 처리한다 — dueNotifications 가 "무엇을" 정하고, 여기서 "지금" 띄운다.
 
-import {Alert} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   getMessaging,
@@ -25,6 +24,7 @@ import {
 } from '@react-native-firebase/messaging';
 
 import {type NotificationIntent} from './notifications';
+import {showDialog} from './dialog';
 
 /** 한 알림 의도를 사용자에게 표시하는 함수(주입 가능 — 테스트/대체 표시 경로). */
 export type IntentPresenter = (intent: NotificationIntent) => void;
@@ -101,15 +101,15 @@ export function registerForegroundMessageHandler(
   }
 }
 
-/** 기본 표시 경로 — react-native 내장 Alert(새 네이티브 의존 0). */
+/** 기본 표시 경로 — 커스텀 다이얼로그(lib/dialog, 새 네이티브 의존 0). */
 const defaultPresenter: IntentPresenter = intent => {
-  Alert.alert(intent.title, intent.body);
+  showDialog(intent.title, intent.body);
 };
 
 /**
  * dueNotifications(slice-8-notif-logic) 가 정한 알림 의도들을 포그라운드에서 표시한다.
  * 앱이 포그라운드로 진입할 때 호출되는 로컬 표시 경로다. 표시 자체는 주입 가능한
- * presenter(기본: Alert)로 위임해 네이티브 호출을 격리하고 테스트를 결정적으로 만든다.
+ * presenter(기본: showDialog)로 위임해 표시 경로를 격리하고 테스트를 결정적으로 만든다.
  * 빈 목록은 아무것도 표시하지 않고, 개별 표시 중 예외가 나도 나머지를 계속 표시한다
  * (한 건의 실패가 전체를 막지 않음 — graceful).
  */

@@ -37,6 +37,7 @@ import Svg, {
   RadialGradient as SvgRadialGradient,
   Stop,
   Rect,
+  Path as SvgPath,
 } from 'react-native-svg';
 import {
   BG,
@@ -235,7 +236,7 @@ export const TONE_BG: Record<Tone, string> = {
 //     전용 빛맺힘이라 glints 와 함께 꺼진다.
 // id 는 생략 가능(useId 자동 — 같은 화면 다중 인스턴스 안전). radius 는 부모 모서리와 동일값.
 
-export function GlassEdge({
+function GlassEdgeBase({
   id,
   radius,
   strokeWidth = 0.75,
@@ -600,7 +601,7 @@ const btn = StyleSheet.create({
   pressed: {opacity: 0.92, transform: [{scale: 0.97}]},
   // hero — 화면 하단 단일 주행동 CTA: 고정 높이(수제 rs54 Pressable 들과 픽셀 동등)로
   // 패딩 기반 높이 편차를 없앤다. 풀폭은 호출부 컨테이너가 결정.
-  hero: {height: rs(54), paddingVertical: 0, alignSelf: 'stretch'},
+  hero: {minHeight: rs(54), paddingVertical: 0, alignSelf: 'stretch'},
   label: {
     color: T1,
     fontFamily: FONT,
@@ -1573,7 +1574,7 @@ const t = StyleSheet.create({
   dock: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: rs(62),
+    minHeight: rs(62),
     // 좌우 안쪽 패딩 9 — 끝 탭 하이라이트가 독 가장자리에서 6dp 뜨게 해(끝 pill left
     // = paddingLeft - HL_PAD/2 = 9 - 3 = 6) 상하 여백(=(62-50)/2=6)과 정확히 일치시킨다.
     paddingHorizontal: rs(9),
@@ -1601,7 +1602,7 @@ const t = StyleSheet.create({
     // 활성 하이라이트 강화(0.15→0.24) — 비활성 아이콘이 밝아진 만큼 활성 탭을 또렷이.
     backgroundColor: withAlpha(T1, 0.24),
   },
-  item: {flex: 1, height: rs(62), alignItems: 'center', justifyContent: 'center', gap: rv(2)},
+  item: {flex: 1, minHeight: rs(62), alignItems: 'center', justifyContent: 'center', gap: rv(2)},
   label: {fontFamily: FONT, fontSize: rf(11), letterSpacing: 0.1},
 });
 
@@ -1609,6 +1610,32 @@ const t = StyleSheet.create({
 // 2026-07-25 프리미티브 신설(HIG 심사 4차) — 화면들이 각자 재발명하던 5가지를 승격.
 // 전부 '기존 승인된 look 의 통합'이며 새 비주얼 언어가 아니다(자율 범위).
 // ═══════════════════════════════════════════════════════════════════════════
+
+// GlassEdge memo 승격(2026-07-25 심사 P2 #68): 카드마다 방사 그라데이션 2~4개짜리
+// SVG 를 들고 리스트를 스크롤하므로, props 불변이면 리렌더를 건너뛴다(순수 표시 컴포넌트).
+export const GlassEdge = React.memo(GlassEdgeBase);
+
+// ── 소셜 로그인 브랜드 심벌(공식 로고 지오메트리) ────────────────────────────────
+// 카카오 말풍선·네이버 N 을 공식 심벌 패스로 렌더한다 — 구 Pretendard 글자 "K"/"N"
+// 렌더는 양사 브랜드 가이드(공식 심벌 필수) 위반 + 위조 로고로 보였음(2026-07-24 심사).
+// 색은 소비처가 theme 브랜드 토큰(KAKAO_LABEL/NAVER_LABEL)으로 지정한다.
+export function KakaoMark({size, color}: {size: number; color: string}) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" accessibilityElementsHidden>
+      <SvgPath
+        fill={color}
+        d="M12 3C6.48 3 2 6.54 2 10.9c0 2.77 1.79 5.2 4.49 6.6-.15.52-.96 3.33-.99 3.55 0 0-.02.17.09.24.11.07.24.02.24.02.32-.04 3.7-2.42 4.28-2.83.61.09 1.24.13 1.89.13 5.52 0 10-3.54 10-7.91C22 6.54 17.52 3 12 3z"
+      />
+    </Svg>
+  );
+}
+export function NaverMark({size, color}: {size: number; color: string}) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" accessibilityElementsHidden>
+      <SvgPath fill={color} d="M16.273 12.845 7.376 0H0v24h7.727V11.155L16.624 24H24V0h-7.727z" />
+    </Svg>
+  );
+}
 
 // ── useReduceMotion — 시스템 '동작 줄이기' 존중(DESIGN §6.7) ─────────────────
 // Onboarding/RunRecap 에 2벌 복붙돼 있던 훅의 공용 승격. 장식 모션(Rise·링 스윕·
@@ -1647,12 +1674,12 @@ export function Skeleton({h, w, radius = RADIUS.sm, style}: {
 // ── Input — 표준 텍스트 입력(8개 화면 인라인 재조립의 통합) ─────────────────────
 // lib/text.TextInput(배율 상한+다크 키보드) 위에 유리 표면·RADIUS.input(14)·
 // placeholder T3·44pt 최소 높이를 묶는다. 화면은 style 로 여백만 더한다.
-export function Input({style, ...props}: TextInputProps) {
+export function Input({style, variant = 'box', ...props}: TextInputProps & {variant?: 'box' | 'inline'}) {
   return (
     <TextInput
       placeholderTextColor={T3}
       {...props}
-      style={[inputS.base, style]}
+      style={[variant === 'inline' ? inputS.inline : inputS.base, style]}
     />
   );
 }
@@ -1664,6 +1691,15 @@ const inputS = StyleSheet.create({
     color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize,
     paddingHorizontal: rs(14), paddingVertical: rv(12),
     minHeight: rs(TOUCH_TARGET),
+  },
+  // inline: 밑줄형 인라인 에디터(프로필 이름·리캡 메모 문법) — 유리 카드 '안'이나
+  // 아이덴티티 행처럼 박스가 이중이 되는 자리 전용. 밑줄 색은 소비처가 style 로
+  // (편집 활성 = ACCENT 등 상태 표현).
+  inline: {
+    color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize,
+    paddingHorizontal: 0, paddingVertical: rv(6),
+    borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: withAlpha(T1, 0.3),
+    minHeight: rs(36),
   },
 });
 

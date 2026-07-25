@@ -13,7 +13,7 @@
 
 import React from 'react';
 import ReactTestRenderer, {act} from 'react-test-renderer';
-import {Alert} from 'react-native';
+import * as dialogLib from '../lib/dialog';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import App from '../App';
 import {seedBootCache} from './helpers/bootSeed';
@@ -61,7 +61,7 @@ beforeEach(async () => {
   (global.fetch as jest.Mock).mockImplementation(() =>
     Promise.resolve({ok: true, status: 200, json: () => Promise.resolve({}), text: () => Promise.resolve('{}')}),
   );
-  jest.spyOn(Alert, 'alert').mockImplementation((() => {}) as never);
+  jest.spyOn(dialogLib, 'showDialog').mockImplementation(() => 0);
 });
 
 afterEach(() => {

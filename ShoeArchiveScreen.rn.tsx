@@ -127,7 +127,7 @@ const s = StyleSheet.create({
   brand: {color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600', letterSpacing: 0.4},
   model: {color: T1, fontFamily: FONT, fontSize: TYPE.heading.fontSize, fontWeight: '700', letterSpacing: -0.2, marginTop: rv(1)},
   meta: {color: T2, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500', marginTop: rv(4)},
-  restoreBtn: {flexDirection: 'row', alignItems: 'center', gap: rv(4), paddingHorizontal: rs(14), height: rs(36), borderRadius: RADIUS.pill, backgroundColor: withAlpha(ACCENT, 0.14)},
+  restoreBtn: {flexDirection: 'row', alignItems: 'center', gap: rv(4), paddingHorizontal: rs(14), minHeight: rs(36), borderRadius: RADIUS.pill, backgroundColor: withAlpha(ACCENT, 0.14)},
   restoreText: {color: ACCENT, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '700'},
   // 빈 상태 = 프리미티브(EmptyGhostHeader/GhostBar 등) — 페이드 스택은 인라인 opacity.
 });

@@ -17,7 +17,7 @@ import {
   View, Pressable, StyleSheet, Animated, useWindowDimensions,
   type NativeSyntheticEvent, type NativeScrollEvent,
 } from 'react-native';
-import {Text} from '../lib/text';
+import {Text, FONT_SCALE_CAP_HERO} from '../lib/text';
 import Svg, {
   Circle, Defs, Stop,
   LinearGradient as SvgLinear,
@@ -263,7 +263,7 @@ export function ShoeCard({
             }]}>
               <Text style={styles.ringPctSub}>남은 수명</Text>
               <View style={styles.ringPctRow}>
-                <Text style={styles.ringPct}>{remainPct}</Text>
+                <Text maxFontSizeMultiplier={FONT_SCALE_CAP_HERO} style={styles.ringPct}>{remainPct}</Text>
                 <Text style={styles.ringPctUnit}>%</Text>
               </View>
             </Animated.View>
@@ -432,7 +432,7 @@ const styles = StyleSheet.create({
   kmSep: {width: rs(3), height: rs(3), borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.28)},
 
   runBtn: {
-    height: rs(54), borderRadius: RADIUS.btn, borderCurve: 'continuous', marginTop: rv(16), overflow: 'hidden',
+    minHeight: rs(54), borderRadius: RADIUS.btn, borderCurve: 'continuous', marginTop: rv(16), overflow: 'hidden',
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(8),
     // 사설 0.1 → GLASS.fillCta(0.12) — 전역 CTA(Button)와 표면 밝기 단일화(검수 MED, 2026-07-16).
     backgroundColor: GLASS.fillCta,
