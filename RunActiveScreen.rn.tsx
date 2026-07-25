@@ -418,9 +418,8 @@ export default function RunActiveScreen({
   // 사용자가 조치할 게 없는 소음이라 제거. 死구간/약함(level 1)일 때만 경고 — 거리계가
   // 왜 멈췄는지 설명하는 신뢰 장치(audit#9)는 유지한다. 권한 회수는 별도 배너.
   const gpsWeakNow = !permLost && gpsLevel === 1;
-  // GPS '검색 중'(P1 #49) — fix 이전(level 0)엔 거리가 0인 채 침묵해 고장처럼 보였다.
-  // '신호 약함'과 같은 한 줄 필 문법이되, 문제(WARN)가 아니라 준비 상태라 무채로 말한다.
-  const gpsSearching = !permLost && gpsLevel === 0;
+  // (구 GPS '검색 중' 필은 2026-07-25 민우님 지시로 제거 — 매 시작마다 나타났다 사라지며
+  //  카운트다운→링 전환 레이아웃을 밀어 '튕김'을 만들었다. 시작 침묵은 소음보다 낫다.)
   // 일시정지 하단 3칸 — 평균 페이스는 상단 히어로(현재 페이스 자리)로 올라가므로 여기선 제외.
   // 일시정지 6칸 하단(사용자 확정 2026-07-12): 심박·칼로리·고도. 케이던스는 완주 리캡 전용.
   const sub = useMemo(() => ([
@@ -483,15 +482,6 @@ export default function RunActiveScreen({
         <View style={r.gpsWeak} accessibilityRole="text" accessibilityLiveRegion="polite" accessibilityLabel="GPS 신호 약함, 거리 기록이 잠시 멈출 수 있어요">
           <Ionicons name="cellular" size={ri(13)} color={WARN} />
           <Text style={r.gpsWeakText}>GPS 신호 약함 — 거리 기록이 잠시 멈출 수 있어요</Text>
-        </View>
-      )}
-
-      {/* gps 검색 중(P1 #49) — 첫 fix 이전(level 0). 시작 직후 거리 0의 침묵을 설명하는
-          신뢰 장치. gpsWeak 와 같은 한 줄 필, 색만 무채(문제 아님 — 준비 상태). */}
-      {gpsSearching && (
-        <View style={[r.gpsWeak, r.gpsSearch]} testID="gps-searching" accessibilityRole="text" accessibilityLiveRegion="polite" accessibilityLabel="GPS 찾는 중, 신호를 잡으면 거리 기록이 시작돼요">
-          <Ionicons name="cellular" size={ri(13)} color={T3} />
-          <Text style={[r.gpsWeakText, r.gpsSearchText]}>GPS 찾는 중 — 신호를 잡으면 거리를 기록해요</Text>
         </View>
       )}
 
@@ -839,8 +829,6 @@ const r = StyleSheet.create({
   gpsWeak: { flexDirection: 'row', alignItems: 'center', gap: rv(6), marginTop: rv(12), alignSelf: 'center', paddingHorizontal: rs(12), minHeight: rs(30), borderRadius: RADIUS.pill, backgroundColor: withAlpha(WARN, 0.12) },
   gpsWeakText: { color: WARN, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600' },
   // '검색 중' 변주(P1 #49) — 같은 필 문법, 색만 무채(WARN 은 문제 전용 위계 유지).
-  gpsSearch: { backgroundColor: withAlpha(T1, 0.08) },
-  gpsSearchText: { color: T3 },
 
   permBanner: { flexDirection: 'row', alignItems: 'center', gap: rv(8), marginTop: rv(12), paddingVertical: rv(10), paddingHorizontal: rs(12), borderRadius: rs(12), borderWidth: StyleSheet.hairlineWidth, borderColor: DANGER, backgroundColor: withAlpha(DANGER, 0.14) },
   permBannerText: { flex: 1, color: T1, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500', lineHeight: rf(17) },

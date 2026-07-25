@@ -172,13 +172,15 @@ function ShoeDetail({
   const toggleRetire = () => {
     if (!shoe.id) return;
     if (retired) { onRetire?.(shoe.id, false); return; }
-    showDialog('신발 보관', `${shoe.brand} ${shoe.model}을(를) 보관할까요?\n러닝 기록은 그대로 남고, 러닝 시작 목록에서만 숨겨져요.`, [
+    // 신발명은 바로 뒤 화면 타이틀에 이미 크게 있다 — 다이얼로그에서 반복하면 긴 모델명이
+    // 4줄로 감기고 '을(를)' 조사 처리도 지저분(2026-07-25 민우님 실기기 피드백). 핵심 한 줄만.
+    showDialog('신발 보관', '러닝 기록은 그대로 남고, 보관함에서 언제든 복원할 수 있어요.', [
       { text: '취소', style: 'cancel' },
       { text: '보관', onPress: () => onRetire?.(shoe.id!, true) },
     ]);
   };
   const confirmDelete = () => {
-    showDialog('신발 삭제', `${shoe.brand} ${shoe.model}을(를) 삭제할까요?\n러닝 기록은 그대로 남아요. 신발만 락커에서 사라져요.`, [
+    showDialog('신발 삭제', '러닝 기록은 그대로 남아요.', [
       { text: '취소', style: 'cancel' },
       { text: '삭제', style: 'destructive', onPress: () => { if (shoe.id) onDelete?.(shoe.id); onBack(); } },
     ]);

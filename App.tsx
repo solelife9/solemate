@@ -2267,7 +2267,9 @@ function Main(){
         // 키프세이크(메달)는 오터치 한 번에 사라지면 안 된다 — 확인 1겹 + 실행취소 토스트
         // (HIG Destructive actions, 2026-07-24 심사 P0 #8). 삭제 자체는 기존 soft-delete.
         const doomed=medals.find(m=>m.id===id);
-        showDialog('메달 삭제',`${doomed?.raceName??'이 메달'} 기록을 아카이브에서 삭제할까요?`,[
+        // 대회명은 상세 화면에 이미 크게 있다 — 반복하면 긴 이름이 줄바꿈으로 감김(신발
+        // 삭제 카피와 같은 원칙, 2026-07-25). 삭제 후 실행취소 6초 가능.
+        showDialog('메달 삭제','아카이브에서 사라져요. 잠시 실행취소할 수 있어요.',[
           {text:'취소',style:'cancel'},
           {text:'삭제',style:'destructive',onPress:()=>{
             const now=Date.now();
