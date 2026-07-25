@@ -3,6 +3,7 @@
 // JS(lib/liveActivity.ts)가 NativeModules.LiveActivityModule 로 호출한다.
 import Foundation
 import ActivityKit
+import React
 
 @objc(LiveActivityModule)
 class LiveActivityModule: NSObject {
@@ -50,6 +51,17 @@ class LiveActivityModule: NSObject {
 
   @objc func end() {
     endInternal()
+  }
+
+  // 시스템 설정에서 Live Activities 가 꺼져 있는지 JS 가 알 수 있게(2026-07-25 진단 —
+  // 꺼져 있으면 start 가 소리 없이 포기해 "위젯이 안 뜬다"의 원인을 사용자가 알 수 없었다).
+  @objc(areEnabled:rejecter:)
+  func areEnabled(_ resolve: @escaping RCTPromiseResolveBlock, rejecter reject: @escaping RCTPromiseRejectBlock) {
+    if #available(iOS 16.1, *) {
+      resolve(ActivityAuthorizationInfo().areActivitiesEnabled)
+    } else {
+      resolve(false)
+    }
   }
 
   // 고아 정리(2026-07-25 민우님 실기기 버그 — 앱 강제 종료 후 위젯이 계속 떠 있음):

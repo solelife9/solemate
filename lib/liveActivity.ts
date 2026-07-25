@@ -26,4 +26,9 @@ export const liveActivity = {
     if (!available) return;
     try { M.end(); } catch { /* noop */ }
   },
+  /** 시스템 설정의 Live Activities 허용 여부. 미지원/모듈 부재 = false. */
+  async areEnabled(): Promise<boolean> {
+    if (!available || typeof M.areEnabled !== 'function') return false;
+    try { return !!(await M.areEnabled()); } catch { return false; }
+  },
 };

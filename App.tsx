@@ -2855,6 +2855,11 @@ function RunActiveScreen({shoe,insets,goalKm,goalMin=0,pacePlan=[],targetZone=0,
     baroElev.current=initElevState();baroAvail.current=false;
     // 잠금화면 Live Activity 시작(iOS 위젯 타깃 있을 때만 동작 — 없으면 no-op).
     liveActivity.start(ui.model||shoe.name,goalKm,0,0,'--','--');
+    // 위젯 미표시 자기 진단(2026-07-25): 시스템 설정에서 실시간 현황이 꺼져 있으면 start 가
+    // 소리 없이 포기한다 — 왜 안 뜨는지 사용자가 알 수 있게 한 줄로 알린다(러닝당 1회).
+    void liveActivity.areEnabled().then(ok=>{
+      if(!ok&&liveActivity.available)showToast({message:'잠금화면 위젯이 꺼져 있어요 — 설정 > Keego > 실시간 현황'});
+    });
     liveActRef.current=0;
     // 이어 달리기(첫 진입에 한함): 스냅샷의 누적 거리·경로·경과시간을 엔진/화면에 시드한다.
     // t0=now−elapsed 로 경과를 잇고, 死구간을 가로지르는 허위 거리를 막기 위해 거리는

@@ -22,4 +22,7 @@ RCT_EXTERN_METHOD(update:(double)distanceKm
 
 RCT_EXTERN_METHOD(end)
 
+RCT_EXTERN_METHOD(areEnabled:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+
 @end
