@@ -1,11 +1,12 @@
 /**
- * TrainingLoadCard — 훈련 부하(홈 상주, 안 A 개편 2026-07-25).
+ * TrainingLoadCard — 훈련 부하 상세(홈 '이번 주 러닝' 원카드 인라인 확장, B안 2026-07-25).
  *
  * 판정 산식은 lib/trainingLoad 단위 테스트가 담당 — 여기선 표시 계약만 본다:
  *   · 최근 4주 런 없으면 숨김, 확신 시 게이지, 콜드스타트는 게이지 없이
  *   · 약어(ACWR) 없이 평어("평소의 1.4배")만 노출
- *   · compact(홈): 접힘 = 헤더+게이지만, 탭 = 상세(메시지·분해·면책) 확장
- *   (구 TrainingLoadSignal 조건부 한 줄은 안 A 로 폐지 — 계약 삭제)
+ *   · embedded: 표면(유리 헤어라인) 없이 내용만 — 부모 카드 이중 표면 금지
+ *   (구 compact 접힘/펼침 변형은 폐지 — 홈 카드의 부하 셀이 그 역할을 맡는다.
+ *    구 TrainingLoadSignal 조건부 한 줄도 폐지 — 계약 삭제)
  *
  * @format
  */
@@ -40,39 +41,27 @@ function mk(over: Partial<TrainingLoadAssessment> = {}): TrainingLoadAssessment 
   };
 }
 
-describe('TrainingLoadCard compact (홈 상주 — 안 A)', () => {
-  test('접힘 기본: 헤더(워드·배율)+게이지만, 메시지·분해·면책은 숨김', () => {
-    const load = mk({level: 'caution', acwr: 1.4, acuteKm: 24.2, chronicKm: 17.3, message: LOAD_MSG.caution});
-    const r = render(<TrainingLoadCard load={load} compact />);
-    const txt = textOf(r.toJSON());
-    expect(txt).toContain('늘어남');
-    expect(txt).toContain('평소의 1.4배');
-    expect(txt).not.toContain(LOAD_MSG.caution); // 상세 메시지는 접힘
-    expect(txt).not.toContain('최근 7일'); // 주간 분해도 접힘
-    expect(r.root.findAllByProps({testID: 'training-load-gauge'}).length).toBeGreaterThan(0);
+describe('TrainingLoadCard embedded (홈 원카드 인라인 확장)', () => {
+  test('embedded 는 유리 헤어라인(GlassEdge) 없이 내용만 — 부모 카드가 표면을 소유', () => {
+    const load = mk({level: 'caution', acwr: 1.4, message: LOAD_MSG.caution});
+    const plain = render(<TrainingLoadCard load={load} embedded />);
+    const carded = render(<TrainingLoadCard load={load} />);
+    const edges = (r: ReactTestRenderer.ReactTestRenderer) =>
+      r.root.findAll((n: any) => n?.props?.testID === 'glass-edge').length;
+    expect(edges(plain)).toBe(0);
+    expect(edges(carded)).toBeGreaterThan(0);
   });
 
-  test('탭 → 상세 확장(메시지·7일/4주 분해), 다시 탭 → 접힘', () => {
+  test('embedded 도 상세 전량(메시지·7일/4주 분해·면책)을 편다 — 접힘 상태는 없다', () => {
     const load = mk({level: 'high', acwr: 1.8, acuteKm: 30, chronicKm: 16, message: LOAD_MSG.high});
-    const r = render(<TrainingLoadCard load={load} compact />);
-    const host = r.root.findByProps({testID: 'training-load-card-high'});
-    act(() => host.props.onPress());
-    let txt = textOf(r.toJSON());
+    const txt = textOf(render(<TrainingLoadCard load={load} embedded />).toJSON());
     expect(txt).toContain(LOAD_MSG.high);
     expect(txt).toContain('최근 7일');
-    act(() => host.props.onPress());
-    txt = textOf(r.toJSON());
-    expect(txt).not.toContain('최근 7일');
-  });
-
-  test('안전(safe)이어도 상시 노출 — 구 조건부 침묵 계약 폐지', () => {
-    const r = render(<TrainingLoadCard load={mk()} compact />);
-    expect(r.toJSON()).not.toBeNull();
-    expect(textOf(r.toJSON())).toContain('훈련 부하');
+    expect(txt).toContain('평소 주간 평균');
   });
 });
 
-describe('TrainingLoadCard (상세 — compact 아님)', () => {
+describe('TrainingLoadCard (단독 카드)', () => {
   test('최근 4주 런 없음 → 숨김(빈 게이지 날조 금지)', () => {
     const load = mk({acuteKm: 0, chronicKm: 0, acuteLoad: 0, chronicLoad: 0, acwr: null, confident: false});
     expect(render(<TrainingLoadCard load={load} />).toJSON()).toBeNull();

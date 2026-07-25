@@ -90,8 +90,8 @@ import {recommendRotation} from './lib/rotation';
 import {findShoeClass, typeLabel} from './data/shoeClass';
 import {
   loadSnapshot, clearSnapshot, isResumable,
-  enqueuePendingRun, loadPendingRuns, overlayPendingRuns, removePendingRun,
-  RunSnapshot, PendingRun,
+  loadPendingRuns, overlayPendingRuns, removePendingRun,
+  RunSnapshot,
 } from './lib/runPersistence';
 import {Unit, kmToDisplay, displayNum} from './lib/units';
 import {
@@ -122,7 +122,7 @@ import {
 } from './lib/notifications';
 import {presentDue, setupPushMessaging, shouldPrimePushPermission, markPushPrimed, primePushPermission, type PushWiring} from './lib/pushMessaging';
 import {syncRunReminder, ensureForegroundHandler} from './lib/localReminder';
-import {weeklyProgress, currentStreak, personalRecords} from './lib/goals';
+import {weeklyProgress, personalRecords} from './lib/goals';
 import {BackupPayload} from './lib/backup';
 import {Challenge, ChallengeRun} from './lib/challenges';
 import {ExtChallenge, challengeExtProgress, extChallengesToContext, type ExtRun, type ExtShoe} from './lib/progression/challengesExt';
@@ -1314,9 +1314,14 @@ function Main(){
     setOnboarded(false);
   };
 
-  // 스마트 챌린지 목표 수정 = 주간 목표 설정 수정(단일 진실원, 2026-07-04) — 마이 탭
-  // 카드에서 목표를 고치면 홈 '주간 목표' 바도 같은 값으로 즉시 갱신된다(clampGoal 적용).
-  const editSmartTarget=(_id:string,km:number)=>{changeGoal(km);};
+  // 주간 목표 수정 = 홈 '이번 주 러닝' 히어로 탭 → 스테퍼 시트(B안, 2026-07-25 — 구 마이탭
+  // 카드 폐지). 값은 changeGoal(단일 진실원)으로 위임해 전 화면이 즉시 같은 숫자를 말한다.
+  // 0(목표 없음)은 상태로만 반영 — lib/settings clampGoal 하한 1km 라 0 영속은 불가
+  // (재시작 시 마지막 양수 목표 복원. 0 영속은 lib/settings 개정 필요 — 이번 스코프 밖).
+  const changeWeeklyGoal=(km:number)=>{
+    if(km<=0){setGoalWeeklyKm(0);return;}
+    changeGoal(km);
+  };
 
   // ── 프로필 이름/사진(영속 + 상태) ───────────────────────────────────────────
   // 이름은 공백이면 기본값('러너')으로 보정해 빈 이름을 막고, 사진은 expo-image-picker로
@@ -1703,15 +1708,8 @@ function Main(){
     // eslint-disable-next-line react-hooks/exhaustive-deps
   },[runs,shoes,challenges,extChallenges,challengeRuns,progState,contextChallenges]);
 
-  // 마이 탭 스마트 챌린지 카드 입력 — 런/신발을 확장 챌린지 형태(extRuns/extShoes)로
-  // 읽기 전용 파생한다(원본 불변). ProfileScreen 의 ChallengesSection 이 이 입력으로
-  // 스마트 추천을 결정적으로 생성하고 수락 카드 진행률을 그린다. 챌린지 탭이 진척에서
-  // 마이로 이관되며 추가됨.
-  const challengeExt=useMemo(()=>{
-    const extRuns:ExtRun[]=runs.map(r=>({date:String(r.run_date||'').slice(0,10),dist:Number(r.km)||0,shoeId:r.shoe_id,durationS:r.duration}));
-    const extShoes:ExtShoe[]=shoes.map(sh=>({id:sh.id,name:sh.name,retired:!!sh.retired,createdAt:sh.purchase_date,targetKm:sh.max_km}));
-    return {extRuns,extShoes};
-  },[runs,shoes]);
+  // (마이 탭 스마트 챌린지 카드 입력 challengeExt 파생 제거 — 주간 목표가 홈 시트로
+  //  이관되며 소비처가 사라짐, 2026-07-25. 스마트 추천 산식은 lib 에 그대로 보존.)
 
   // ── 은퇴 키프세이크 컨텍스트(Slice B) ────────────────────────────────────────
   // 영속된 은퇴 레코드(Hall of Shoes 소스) + 진척 컨텍스트(요약/등급 판정용). buildContext
@@ -1777,9 +1775,7 @@ function Main(){
   // 퍼센트만 화면에 쓴다(단위 환산과 무관 — 비율은 단위 불변).
   const goalRuns=runs.map(r=>({run_date:String(r.run_date),km:parseFloat(String(r.km))||0}));
   const goalProgress=weeklyProgress(goalRuns, goalWeeklyKm, ymdLocal(mon));
-  // 연속 러닝 스트릭(keep-going 동기): 오늘까지 끊김 없이 이어진 달림 일수. 비율과
-  // 무관한 절대 일수이므로 단위 환산 없이 그대로 표시한다(0km/비런 날은 끊김 처리).
-  const goalStreak=currentStreak(goalRuns, ymdLocal(now));
+  // ('N일 연속' 스트릭 카운트 표시 폐지 — 홈 원카드 점 7칸(weekBuckets)이 대체, 2026-07-25.)
 
   // ── 푸시 알림 표시 배선(slice-8-notif-ui) ────────────────────────────────────
   // dueNotifications(순수) 의 입력 상태를 기존 lib 산출물에서 조립한다(중복 계산 0):
@@ -2246,7 +2242,9 @@ function Main(){
             onOpenShoe={(id)=>{setSelectedShoeId(id);setShoesDetailId(id);setTab(1);}}
             progression={homeProgression}
             onRefresh={refreshData} lastSyncAt={lastSyncAt}
-            weeklyGoalKm={goalWeeklyKm} streakDays={goalStreak}
+            weeklyGoalKm={goalWeeklyKm} onChangeWeeklyGoal={changeWeeklyGoal}
+            weekDays={weekBuckets(runs, mon).map(v => v > 0)}
+            weekTodayIdx={(now.getDay() + 6) % 7}
             load={homeLoad}
           />
         )}
@@ -2283,15 +2281,10 @@ function Main(){
             restHR={restHR} onChangeRestHR={changeRestHR}
             initialOpen={profileInitialOpen} onConsumeInitialOpen={()=>setProfileInitialOpen(null)}
             unit={unit} onChangeUnit={changeUnit}
-            streakDays={goalStreak}
-            weekDays={weekBuckets(runs, mon).map(v => v > 0)}
-            weekTodayIdx={(now.getDay() + 6) % 7}
             alerts={alerts} onChangeAlerts={changeAlerts}
             notifSettings={notifSettings} onChangeNotifSettings={changeNotifSettings}
             recapRuns={runs} recapShoes={shoes}
             backupData={backupData}
-            challengeExtRuns={challengeExt.extRuns} challengeExtShoes={challengeExt.extShoes}
-            weeklyGoalKm={goalWeeklyKm} onEditSmartTarget={editSmartTarget}
             todayISO={today()}
             cloudPort={cloudPortRef.current} onCloudMerged={onCloudMerged}
             onDeleteAccount={handleDeleteAccount}

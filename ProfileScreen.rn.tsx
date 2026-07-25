@@ -1,7 +1,8 @@
 // ============================================================================
 // ProfileScreen.rn.tsx — 프로필: identity, lifetime stats, achievements, settings
 // 설정 행은 실제로 구동된다(하드코딩 '주5회'/'켜짐'/'킬로미터' 제거):
-//   · 주간 목표 — 설정 행이 아니라 위의 주간 목표 카드 스테퍼가 유일한 수정 경로
+//   · 주간 목표 — 홈 '이번 주 러닝' 카드 히어로 탭 → 스테퍼 시트가 유일한 수정 경로
+//     (마이탭 주간 목표 카드·스트릭 카드는 홈 원카드로 이관 — IA 정리 2026-07-25)
 //   · 알림     — 신발 교체 알림 on/off + 임계값(수명 사용률 %)
 //   · 단위     — km ↔ mi 토글(전 화면 즉시 환산 반영)
 //   · 계정 설정 — 기기/가입/버전 정보
@@ -14,9 +15,9 @@ import { showDialog } from './lib/dialog';
 import {Text} from './lib/text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { BG, CARD, CARD_DIM, CARD_HI, ACCENT, BRAND, GOOD, DANGER, WARN, T1, T2, T3, SEP, CARD_BORDER, FONT, DISPLAY, withAlpha, TIER_COLORS, TIER_LABEL, KAKAO_YELLOW, KAKAO_LABEL, NAVER_GREEN, NAVER_LABEL, RADIUS, GUTTER, MOTION, HALL_GOLD, TYPE, GLASS } from './theme';
+import { BG, CARD, CARD_HI, ACCENT, GOOD, DANGER, WARN, T1, T2, T3, SEP, CARD_BORDER, FONT, DISPLAY, withAlpha, TIER_COLORS, TIER_LABEL, KAKAO_YELLOW, KAKAO_LABEL, NAVER_GREEN, NAVER_LABEL, RADIUS, GUTTER, MOTION, HALL_GOLD, TYPE, GLASS } from './theme';
 // recap 토글 = SegmentedControl(sm), 스탯 그리드들 = StatGrid 단일 프리미티브.
-import { TabBar, TABBAR_CLEARANCE, SectionTitle, Button, SegmentedControl, StatGrid, Stepper, AmbientBackdrop, Rise, GlassEdge, Toggle, KakaoMark, NaverMark, Input } from './primitives';
+import { TabBar, TABBAR_CLEARANCE, Button, SegmentedControl, StatGrid, Stepper, AmbientBackdrop, Rise, GlassEdge, Toggle, KakaoMark, NaverMark, Input } from './primitives';
 import { Unit, unitKorean, displayNum } from './lib/units';
 import { weeklyRecap, monthlyRecap, type RecapRun, type RecapShoe } from './lib/recap';
 import { hkAvailable, hkLinked, hkLink, hkRestingHR } from './lib/healthkit';
@@ -37,8 +38,6 @@ import { watchSession } from './lib/watchSession';
 import { NotifSettings, DEFAULT_NOTIF_SETTINGS } from './lib/notifications';
 import { requestPushPermission as defaultRequestPushPermission } from './lib/pushMessaging';
 import { BackupPayload } from './lib/backup';
-import ChallengesSection from './ChallengesSection';
-import { ExtRun, ExtShoe } from './lib/progression/challengesExt';
 import { mergeCloudData, nextAuthState, AuthState } from './lib/cloudSync';
 import type { CloudPort, CloudProvider, CloudUser } from './lib/cloudPort';
 import { loadCloudAccount, saveCloudAccount, clearCloudAccount, CLOUD_PROVIDER_LABEL } from './lib/cloudAccount';
@@ -116,7 +115,6 @@ export default function ProfileScreen({
   restHR = DEFAULT_SETTINGS.restHR, onChangeRestHR,
   initialOpen = null, onConsumeInitialOpen,
   unit = 'km', onChangeUnit,
-  streakDays = 0, weekDays = [], weekTodayIdx = -1,
   alerts = { ...DEFAULT_ALERTS }, onChangeAlerts,
   notifSettings = DEFAULT_NOTIF_SETTINGS, onChangeNotifSettings,
   onRequestPushPermission = defaultRequestPushPermission,
@@ -126,8 +124,7 @@ export default function ProfileScreen({
   onOpenProgression,
   onOpenHallOfShoes, retiredCount = 0,
   onOpenMedalArchive, medalCount = 0,
-  challengeExtRuns = [], challengeExtShoes = [], todayISO = '',
-  weeklyGoalKm = 0, onEditSmartTarget,
+  todayISO = '',
   onReplayOnboarding,
 }: {
   profile?: Profile;
@@ -153,11 +150,8 @@ export default function ProfileScreen({
   onConsumeInitialOpen?: () => void;
   unit?: Unit;
   onChangeUnit?: (u: Unit) => void;
-  // 오늘까지 이어진 연속 달림 일수(keep-going 동기). 0이면 스트릭 칩/카운트 숨김.
-  streakDays?: number;
-  // 이번 주 월~일(7칸) 달림 여부. weekTodayIdx는 오늘 칸(0=월..6=일, 없으면 -1).
-  weekDays?: boolean[];
-  weekTodayIdx?: number;
+  // (스트릭 주간 점·주간 목표 카드는 홈 '이번 주 러닝' 원카드로 이관 — IA 정리 2026-07-25.
+  //  streakDays/weekDays/weekTodayIdx/challengeExt*/weeklyGoalKm/onEditSmartTarget prop 폐지.)
   alerts?: AlertSettings;
   onChangeAlerts?: (a: AlertSettings) => void;
   // 푸시 알림 설정(신규 notif_settings 키). 기존 in-app 배지 알림(AlertSettings)과 별개·공존.
@@ -177,18 +171,8 @@ export default function ProfileScreen({
   // 로컬 백업 대상(신발+런+설정). App이 소유한 상태를 모아 주입한다.
   backupData?: BackupPayload;
   // 가져오기: parseBackup 검증 성공 시에만 호출된다(실패 시 미호출 — 기존 데이터 보존).
-  // ── 주간 목표 카드(마이 탭) ───────────────────────────────────────────────────
-  // App 이 런/신발에서 파생한 확장 입력(extRuns/extShoes)을 주입하면 ChallengesSection 이
-  // 주간 목표 카드를 상시 노출한다 — 목표 미설정이면 추천(평균×3)이 기본값.
-  // 진척 탭에서 마이 탭으로 이관됨. 옛 이름 '스마트 챌린지'는 폐지(주간 목표와 개념 통일).
-  challengeExtRuns?: ExtRun[];
-  challengeExtShoes?: ExtShoe[];
+  // 기준일('YYYY-MM-DD') — 심폐 체력(VO₂max) 최근성 판정용. 테스트 결정성 주입.
   todayISO?: string;
-  /** 스마트 챌린지 id별 사용자 지정 목표 거리(km). App 이 영속·주입한다. */
-  /** 홈과 공유하는 주간 목표(km) — 챌린지 목표의 단일 진실원. */
-  weeklyGoalKm?: number;
-  /** 목표 거리(km) 변경 위임 — (챌린지 id, km). App 이 영속한다. */
-  onEditSmartTarget?: (id: string, km: number) => void;
   // ── 계정·클라우드 동기 ───────────────────────────────────────────────────────
   // 백엔드 포트(주입). App 은 firebaseCloudPort 를, 테스트는 메모리 목 포트를 넣는다.
   // 없으면 계정 섹션의 버튼은 동작하지 않는다(안전한 no-op).
@@ -576,10 +560,6 @@ export default function ProfileScreen({
     shareRecapCard(recapCardRef, recap, { unit, kind: recapMode });
   };
 
-  // 이번 주 스트릭 점: weekDays(월~일)를 항상 7칸으로 정규화(미주입/부족분은 false).
-  const week7 = Array.from({ length: 7 }, (_, i) => !!weekDays[i]);
-  const DOW = ['월', '화', '수', '목', '금', '토', '일'];
-
   const insets = useSafeAreaInsets();
   // 문의/지원 — 앱스토어 심사(ASC)가 요구하는 지원 연락처. 메일 앱으로 프리필된 문의를 연다.
   // 메일 앱이 없거나 실패하면 주소를 Alert 로 안내(막다른 길 방지).
@@ -771,52 +751,12 @@ export default function ProfileScreen({
           </View>
         )}
 
-        {/* 이번 주 스트릭 — 월~일 달림 점 */}
-        <View style={[s.card, s.streakCard]} testID="streak-card">
-          <GlassEdge glints={false} radius={RADIUS.lg} />
-          <View style={s.streakHead}>
-            <SectionTitle>이번 주 연속</SectionTitle>
-            {/* 이모지 🔥 → Ionicons flame(홈 스트릭 칩과 같은 문법) — 이모지는 플랫폼
-                렌더라 톤이 튀고 크기도 못 맞춘다(검수 MED, 2026-07-16). */}
-            {streakDays > 0 && (
-              <View style={s.streakCountRow}>
-                <Ionicons name="flame" size={ri(13)} color={ACCENT} />
-                <Text style={s.streakCount}>{streakDays}일</Text>
-              </View>
-            )}
-          </View>
-          <View style={s.streakRow}>
-            {DOW.map((d, i) => {
-              const done = week7[i];
-              const today = i === weekTodayIdx;
-              return (
-                <View key={i} style={s.streakDay} testID={`streak-day-${i}`}
-                  accessible accessibilityLabel={`${d}요일 ${done ? '달림' : today ? '오늘' : '쉼'}`}>
-                  {/* 달림 여부가 색·체크로만 전달되던 것을 라벨로 병기(2026-07-05 a11y — 색맹·스크린리더). */}
-                  <View style={[s.streakDot, done ? s.streakDotDone : today ? s.streakDotToday : s.streakDotIdle]}>
-                    {done && <Ionicons name="checkmark" size={ri(14)} color={BG} />}
-                  </View>
-                  <Text style={[s.streakDayLabel, today && s.streakDayLabelToday]}>{d}</Text>
-                </View>
-              );
-            })}
-          </View>
-        </View>
+        {/* (이번 주 스트릭 카드·주간 목표 카드 제거 — 홈 '이번 주 러닝' 원카드로 이관,
+            IA 정리 2026-07-25: 스트릭=히어로 점 7칸, 주간 목표=히어로 탭 스테퍼 시트.
+            같은 정보의 두 번째 집을 없애 마이탭은 정체성·진척·기록(PR)·리캡에 집중한다.) */}
 
         {/* 누적 기록 카드 제거 — 기록(History) 탭에서 주/월/년/전체 기간별로 볼 수 있어
-            마이 탭과 중복(사용자 요청). 정체성·스트릭·주간 목표·진척·기록(PR)·리캡만 남긴다. */}
-
-        {/* 주간 목표 카드 — 홈 '주간 목표' 바와 단일 진실원(settings.goalWeeklyKm).
-            목표 미설정이면 추천이 기본값, 런이 없으면 빈 안내를 노출한다. */}
-        <View testID="smart-challenge-section">
-          <ChallengesSection
-            extRuns={challengeExtRuns}
-            shoes={challengeExtShoes}
-            now={todayISO}
-            weeklyGoalKm={weeklyGoalKm}
-            onEditSmartTarget={onEditSmartTarget}
-          />
-        </View>
+            마이 탭과 중복(사용자 요청). 정체성·진척·기록(PR)·리캡만 남긴다. */}
 
         {/* 진척(나의 여정·업적) 진입 — 전체화면 ProgressionScreen 으로 전환 */}
         {onOpenProgression && (
@@ -1348,19 +1288,7 @@ const s = StyleSheet.create({
   idStatNum: { fontFamily: DISPLAY, color: T1, fontSize: TYPE.label.fontSize, fontWeight: '700', fontVariant: ['tabular-nums'] },
   since: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600' },
 
-  // 이번 주 스트릭 카드
-  streakCard: { padding: rs(16) },
-  streakHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: rv(14) },
-  streakCountRow: { flexDirection: 'row', alignItems: 'center', gap: rs(4) },
-  streakCount: { color: ACCENT, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '700', fontVariant: ['tabular-nums'] },
-  streakRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  streakDay: { alignItems: 'center', gap: rv(6) },
-  streakDot: { width: rs(30), height: rs(30), borderRadius: RADIUS.pill, alignItems: 'center', justifyContent: 'center' },
-  streakDotDone: { backgroundColor: BRAND },
-  streakDotIdle: { backgroundColor: CARD_DIM },
-  streakDotToday: { backgroundColor: CARD_DIM, borderWidth: 1.5, borderStyle: 'dashed', borderColor: T3 },
-  streakDayLabel: { color: T3, fontFamily: FONT, fontSize: TYPE.micro.fontSize, fontWeight: '600' },
-  streakDayLabelToday: { color: T2 },
+  // (이번 주 스트릭 카드 스타일 삭제 — 홈 원카드 이관, 2026-07-25)
 
   // 누적/개인 기록·리캡 요약 스탯 줄은 StatGrid 프리미티브로 이전(셀·값·라벨 토큰을
   // 그쪽이 단일 소스로 책임 — 과거 statRow/statCell/statDivider/statValue/Unit/Label 제거).

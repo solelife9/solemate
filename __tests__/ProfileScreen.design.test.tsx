@@ -38,33 +38,9 @@ function pressableWith(root: ReactTestRenderer.ReactTestInstance, needle: string
   return hits[0];
 }
 
-function iconNames(node: ReactTestRenderer.ReactTestInstance): string[] {
-  return node.findAll((n: any) => n && n.props && typeof n.props.name === 'string').map((n: any) => n.props.name);
-}
-
-describe('ProfileScreen 이번 주 스트릭', () => {
-  test('달림 날 수만큼 체크 점이 찍히고, 오늘 칸은 체크 없이 표시된다', () => {
-    const week = [true, true, false, true, false, true, false]; // 4일 달림
-    const root = render({weekDays: week, weekTodayIdx: 2, streakDays: 12});
-    const card = root.find((n: any) => n.props?.testID === 'streak-card');
-    const checks = card.findAll((n: any) => n && n.props && n.props.name === 'checkmark');
-    expect(checks.length).toBe(4);
-    const today = root.find((n: any) => n.props?.testID === 'streak-day-2');
-    expect(iconNames(today)).not.toContain('checkmark');
-  });
-
-  test('스트릭 칩은 더 이상 없다 — 같은 숫자는 스트릭 카드 헤더가 담당(2026-07-05)', () => {
-    const root = render({streakDays: 12});
-    expect(root.findAll((n: any) => n.props?.testID === 'streak-pill').length).toBe(0);
-    // 카운트는 카드 헤더 flame 아이콘 + 'N일' 표기로 노출된다(이모지 🔥 폐지 2026-07-16).
-    expect(textOf(root.find((n: any) => n.props?.testID === 'streak-card'))).toContain('12일');
-  });
-
-  test('streakDays=0이면 스트릭 칩을 숨긴다', () => {
-    const root = render({streakDays: 0});
-    expect(root.findAll((n: any) => n.props?.testID === 'streak-pill').length).toBe(0);
-  });
-});
+// (이번 주 스트릭 계약은 홈 '이번 주 러닝' 원카드로 이관 — 2026-07-25 B안.
+//  점 7칸·오늘 표시는 HomeScreen.week.test.tsx 가, '마이 탭에 없음' 회귀 가드는
+//  ProfileScreen.challenge.test.tsx 가 담당한다.)
 
 describe('ProfileScreen 설정 행 구동 보존', () => {
   test('단위 행을 누르면 onChangeUnit이 반대 단위로 호출된다', () => {

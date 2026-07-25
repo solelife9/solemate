@@ -17,10 +17,10 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {
   BG, CARD_HI, ACCENT, BRAND, GLASS, T1, T2, T3,
   FONT, DISPLAY, SPACE, RADIUS, GUTTER, MOTION, withAlpha, Shoe, SHOES, TYPE,
-  BAR,
+  NUMERIC,
 } from './theme';
 import type { RankTier } from './lib/progression/types';
-import { TabBar, TABBAR_CLEARANCE, KeegoWordmark, SectionTitle, AmbientBackdrop, GlassEdge } from './primitives';
+import { TabBar, TABBAR_CLEARANCE, KeegoWordmark, SectionTitle, AmbientBackdrop, GlassEdge, BottomSheet } from './primitives';
 import { Unit } from './lib/units';
 import { ShoeCard as KeegoShoeCard, GhostShoeCard, Guardian } from './screens/KeegoHome';
 import { shoeHealth, wearTier } from './lib/shoe';
@@ -28,8 +28,9 @@ import { recommendNextShoes, buildShopLinks, categoryLabelKo, AFFILIATE_DISCLOSU
 import { type ReplacementForecast } from './lib/wearView';
 import { shouldRecommendNextShoe } from './lib/recommendTrigger';
 import { SHOE_REPLACE_PCT } from './lib/shoe';
-import { TrainingLoadCard } from './TrainingLoadCard';
-import type { TrainingLoadAssessment } from './lib/trainingLoad';
+import { TrainingLoadCard, LEVEL_COLOR } from './TrainingLoadCard';
+import { LOAD_WORD, type TrainingLoadAssessment } from './lib/trainingLoad';
+import { WeeklyGoalStepper } from './ChallengesSection';
 
 export type WeekStats = { km: string; runs: number; pace: string };
 
@@ -185,82 +186,121 @@ function ShoeCarousel({ shoes, activeIdx, onSelect, unit, onOpenShoe, onStart }:
   );
 }
 
-// 이번 주 러닝 — 내 활동 요약(거리·횟수·평균 페이스). week(WeekStats)는 App 이 이번 주
-// (월~일) 런에서 파생해 주입한다. 신발 마모(히어로)와 분리된 '내 노력' 지표. 표시 전용.
-function WeekCard({ week, unit = 'km', weeklyGoalKm = 0, streakDays = 0 }: { week?: WeekStats; unit?: Unit; weeklyGoalKm?: number; streakDays?: number }) {
+// 이번 주 러닝 — 원카드(B안, 2026-07-25 민우님 목업 확정). 한 장의 유리 카드에:
+//   · 히어로 줄: 거리·목표 한 숫자축('7.0 / 95 km') + 스트릭 월~일 점 7칸.
+//     히어로 탭 = 주간 목표 스테퍼 시트(onPressGoal). 구 주황 진행 바·'주간 목표 N km'
+//     텍스트·'N일 연속' 칩은 폐지 — 숫자축·점 7칸이 같은 정보를 더 조용히 말한다.
+//   · 하단 3열: 횟수 · 평균 페이스 · 훈련 부하(상태 워드 + 레벨 점 + ⌄).
+//     부하 셀 탭 = 카드 안 인라인 상세(TrainingLoadCard embedded) 펼침/접힘.
+// week(WeekStats)·weekDays(월~일 달림)·load 는 App 이 파생해 주입한다. 표시 전용.
+function WeekCard({ week, unit = 'km', weeklyGoalKm = 0, weekDays = [], weekTodayIdx = -1, load, onPressGoal }: {
+  week?: WeekStats; unit?: Unit; weeklyGoalKm?: number;
+  weekDays?: boolean[]; weekTodayIdx?: number;
+  load?: TrainingLoadAssessment | null;
+  onPressGoal?: () => void;
+}) {
+  // 부하 상세 펼침 — 카드 안 인라인 확장(별도 카드 아님).
+  const [loadOpen, setLoadOpen] = useState(false);
   const km = week?.km ?? '0.0';
   const runs = week?.runs ?? 0;
   const pace = week?.pace && week.pace !== '--' ? week.pace : '--'; // 앱 전역 '데이터 없음' 표기 통일(--)
-  const goalPct = weeklyGoalKm > 0 ? Math.min(100, Math.round(((parseFloat(km) || 0) / weeklyGoalKm) * 100)) : 0;
-  // 이번 주 런 0 이면 0의 그리드 대신 초대 한 줄(노이즈 감사 2026-07-05 — '0.0km ·
-  // 0회 · --'는 행동을 못 이끈다). 주간 목표 바는 설정돼 있으면 유지(목표가 곧 초대).
+  // 스트릭 점 7칸 — 월~일 정규화(미주입/부족분은 false).
+  const days7 = Array.from({ length: 7 }, (_, i) => !!weekDays[i]);
+  const doneCount = days7.filter(Boolean).length;
+  // 훈련 부하 셀 — 워드·색은 TrainingLoadCard 와 같은 권위(LOAD_WORD/LEVEL_COLOR) 소비.
+  const hasLoad = !!load && (load.acuteKm > 0 || load.chronicKm > 0);
+  const loadLevel = hasLoad && load!.confident ? load!.level : null;
+  const loadWord = loadLevel ? LOAD_WORD[loadLevel] : '기록 쌓는 중';
+  const loadColor = loadLevel ? LEVEL_COLOR[loadLevel] : T3;
+
+  // 히어로 줄 — 좌: 거리/목표 숫자축(전체 탭 = 목표 시트), 우: 월~일 점 7칸.
+  const hero = (
+    <Pressable
+      testID="home-week-goal"
+      onPress={onPressGoal}
+      disabled={!onPressGoal}
+      accessibilityRole="button"
+      accessibilityLabel={weeklyGoalKm > 0 ? `이번 주 ${km}${unit}, 목표 ${weeklyGoalKm}${unit}` : `이번 주 ${km}${unit}`}
+      accessibilityHint={onPressGoal ? '주간 목표 설정' : undefined}
+      style={({ pressed }) => [s.weekHero, pressed && !!onPressGoal && s.pressed]}>
+      <View style={s.weekHeroLeft}>
+        <Text style={s.weekKm} testID="home-week-km">{km}</Text>
+        {weeklyGoalKm > 0 ? (
+          <Text style={s.weekGoalAxis} testID="home-week-goal-target"> / {weeklyGoalKm} {unit}</Text>
+        ) : (
+          <>
+            <Text style={s.weekGoalAxis}> {unit}</Text>
+            {!!onPressGoal && <Text style={s.weekGoalSet} testID="home-week-goal-set">목표 정하기 ›</Text>}
+          </>
+        )}
+      </View>
+      <View
+        style={s.weekDays}
+        testID="home-week-days"
+        accessible
+        accessibilityLabel={`이번 주 ${doneCount}일 달림`}>
+        {days7.map((done, i) => (
+          <View
+            key={i}
+            testID={`home-week-day-${i}`}
+            style={[s.weekDot, done ? s.weekDotOn : s.weekDotOff, i === weekTodayIdx && s.weekDotToday]}
+          />
+        ))}
+      </View>
+    </Pressable>
+  );
+
+  // 이번 주 런 0 이면 0의 그리드 대신 초대 한 줄(노이즈 감사 2026-07-05) — 새 카드
+  // 골격(히어로 숫자축·점 7칸) 안에서. 목표축이 곧 초대라 히어로는 유지한다.
   if (runs === 0) {
     return (
       <View style={s.insightCard} testID="home-week">
         <GlassEdge glints={false} radius={RADIUS.lg} />
-        {weeklyGoalKm > 0 && (
-          <View style={s.weekTop}>
-            <View />
-            <Text style={s.weekGoalTxt} testID="home-week-goal">주간 목표 {weeklyGoalKm}{unit}</Text>
-          </View>
-        )}
-        {weeklyGoalKm > 0 && (
-          <View style={[s.gauge, { marginTop: rv(8), marginBottom: rv(10) }]}>
-            <View testID="home-week-goal-bar" style={[s.gaugeFill, { width: '0%', backgroundColor: BRAND }]} />
-          </View>
-        )}
-        <Text style={s.weekEmptyTxt} testID="home-week-empty">이번 주 첫 러닝을 시작해보세요</Text>
+        {hero}
+        <Text style={[s.weekEmptyTxt, { marginTop: SPACE.md }]} testID="home-week-empty">이번 주 첫 러닝을 시작해보세요</Text>
       </View>
     );
   }
   return (
     <View style={s.insightCard} testID="home-week">
-      {/* 주간 목표 진행 + 연속 스트릭(있을 때만) — lib/goals 배선. */}
-      {(streakDays > 0 || weeklyGoalKm > 0) && (
-        <View style={s.weekTop}>
-          {streakDays > 0 ? (
-            <View style={[s.streakChip, s.streakChipOn]} testID="home-week-streak" accessibilityRole="text" accessibilityLabel={`${streakDays}일 연속 러닝`}>
-              <Ionicons name="flame" size={ri(12)} color={ACCENT} />
-              <Text style={s.weekStreakTxt}>{streakDays}일 연속</Text>
-            </View>
-          ) : <View />}
-          {weeklyGoalKm > 0 ? (
-            // % 텍스트는 제거 — 아래 진행 바가 %를 시각으로 말한다(숫자 중복 제거, 폴리싱).
-            <Text style={s.weekGoalTxt} testID="home-week-goal">주간 목표 {weeklyGoalKm}{unit}</Text>
-          ) : null}
-        </View>
-      )}
-      {weeklyGoalKm > 0 && (
-        <View style={[s.gauge, { marginTop: rv(8), marginBottom: rv(4) }]}>
-          <View testID="home-week-goal-bar" style={[s.gaugeFill, { width: `${goalPct}%`, backgroundColor: BRAND }]} />
-        </View>
-      )}
-      <View style={s.insightGrid}>
-        <View style={{ flex: 1 }}>
-          <Text style={s.insightLabel}>거리</Text>
-          <View style={[s.baselineRow, { marginTop: rv(6) }]}>
-            <Text style={s.insightNum} testID="home-week-km">{km}</Text><Text style={s.insightUnit}>{unit}</Text>
-          </View>
-        </View>
-        <View style={s.insightDivider} />
+      <GlassEdge glints={false} radius={RADIUS.lg} />
+      {hero}
+      <View style={[s.insightGrid, { marginTop: SPACE.lg }]}>
         <View style={{ flex: 1 }}>
           <Text style={s.insightLabel}>횟수</Text>
           <View style={[s.baselineRow, { marginTop: rv(6) }]}>
             <Text style={s.insightNum} testID="home-week-runs">{runs}</Text><Text style={s.insightUnit}>회</Text>
           </View>
         </View>
-        {pace !== '--' && (
-          <>
-            <View style={s.insightDivider} />
-            <View style={{ flex: 1 }}>
-              <Text style={s.insightLabel}>평균 페이스</Text>
-              <View style={[s.baselineRow, { marginTop: rv(6) }]}>
-                <Text style={s.insightNum} testID="home-week-pace">{pace}</Text>
-              </View>
-            </View>
-          </>
-        )}
+        <View style={s.insightDivider} />
+        <View style={{ flex: 1 }}>
+          <Text style={s.insightLabel}>평균 페이스</Text>
+          <View style={[s.baselineRow, { marginTop: rv(6) }]}>
+            <Text style={s.insightNum} testID="home-week-pace">{pace}</Text>
+          </View>
+        </View>
+        <View style={s.insightDivider} />
+        <Pressable
+          style={{ flex: 1 }}
+          testID="home-week-load"
+          disabled={!hasLoad}
+          onPress={() => setLoadOpen(v => !v)}
+          accessibilityRole="button"
+          accessibilityLabel={`훈련 부하 ${loadWord}`}
+          accessibilityHint={hasLoad ? (loadOpen ? '접기' : '자세히 보기') : undefined}>
+          <Text style={s.insightLabel}>훈련 부하</Text>
+          <View style={[s.loadRow, { marginTop: rv(6) }]}>
+            <View style={[s.loadDot, { backgroundColor: loadColor }]} />
+            <Text style={s.loadWord} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{loadWord}</Text>
+            {hasLoad && <Ionicons name={loadOpen ? 'chevron-up' : 'chevron-down'} size={ri(12)} color={T3} />}
+          </View>
+        </Pressable>
       </View>
+      {loadOpen && hasLoad && (
+        <View style={s.loadDetail} testID="home-week-load-detail">
+          <TrainingLoadCard load={load} unit={unit} embedded />
+        </View>
+      )}
     </View>
   );
 }
@@ -336,13 +376,19 @@ export default function HomeScreen({
   activeIdx: activeIdxProp, onSelect, unit = 'km', week,
   onOpenShoe, forecast, progression,
   onRefresh, lastSyncAt: _lastSyncAt, userName,
-  weeklyGoalKm = 0, streakDays = 0, load,
+  weeklyGoalKm = 0, weekDays = [], weekTodayIdx = -1, onChangeWeeklyGoal, load,
 }: {
   shoes?: Shoe[];
   userName?: string;
-  // 이번 주 러닝 카드의 주간 목표(km)·연속 스트릭(일). 0이면 해당 표시 숨김(표시 전용).
+  // 이번 주 러닝 카드의 주간 목표(km). 0 = 목표 없음(히어로에 '목표 정하기' 초대).
   weeklyGoalKm?: number;
-  streakDays?: number;
+  // 이번 주 월~일(7칸) 달림 여부 + 오늘 칸(0=월..6=일, 없으면 -1) — 히어로 스트릭 점.
+  // 마이탭 스트릭 카드가 쓰던 요일 배열과 같은 소스(App: weekBuckets)를 주입한다.
+  weekDays?: boolean[];
+  weekTodayIdx?: number;
+  // 주간 목표 변경 위임 — App 의 changeGoal(단일 진실원)로 배선. 있으면 히어로 탭이
+  // 주간 목표 스테퍼 바텀시트를 연다(없으면 히어로는 표시 전용).
+  onChangeWeeklyGoal?: (km: number) => void;
   // 선택(히어로) 신발의 교체 예측(App이 실효마모 모델로 계산해 내려준다). ok/overdue일 때
   // 히어로에 ETA 한 줄을 보강한다. 표시 전용(없으면 숨김).
   forecast?: ReplacementForecast | null;
@@ -373,6 +419,8 @@ export default function HomeScreen({
   lastSyncAt?: number | null;
 }) {
   const [internalIdx, setInternalIdx] = useState(0);
+  // 주간 목표 스테퍼 시트 — WeekCard 히어로 탭이 연다(값 변경은 onChangeWeeklyGoal 위임).
+  const [goalSheet, setGoalSheet] = useState(false);
   // 당겨서 새로고침 스피너 상태. onRefresh(서버 재fetch/pending flush)가 끝나면 내린다.
   // onRefresh 가 던져도 finally 로 스피너를 반드시 내려 멈춤 상태로 끼지 않게 한다.
   const [refreshing, setRefreshing] = useState(false);
@@ -455,12 +503,13 @@ export default function HomeScreen({
                 <Text style={s.sectionMore}>전체 보기 ›</Text>
               </Pressable>
             </View>
-            <View style={{ paddingHorizontal: GUTTER, gap: SPACE.sm }}>
-              <WeekCard week={week} unit={unit} weeklyGoalKm={weeklyGoalKm} streakDays={streakDays} />
-              {/* 훈련 부하 — 홈 상주(안 A, 2026-07-25 민우님 확정): 소비 시점이 '러닝 전'
-                  이라 홈이 맞다. 평소엔 헤더+게이지 한 장(안전=조용한 무채/GOOD), 탭하면
-                  상세 확장. 구 조건부 Signal(위험시에만)·기록 탭 카드는 폐지. */}
-              <TrainingLoadCard load={load} unit={unit} compact />
+            <View style={{ paddingHorizontal: GUTTER }}>
+              {/* 원카드(B안) — 훈련 부하는 카드 3열째 셀로 흡수(구 별도 compact 카드 폐지). */}
+              <WeekCard
+                week={week} unit={unit} weeklyGoalKm={weeklyGoalKm}
+                weekDays={weekDays} weekTodayIdx={weekTodayIdx} load={load}
+                onPressGoal={onChangeWeeklyGoal ? () => setGoalSheet(true) : undefined}
+              />
             </View>
           </Rise>
           {/* (체력 트렌드 FitnessCard → 기록 탭 인사이트로 이동, 진척 띠 → 마이탭으로
@@ -481,7 +530,13 @@ export default function HomeScreen({
       )}
       </ScrollView>
       <TabBar active={0} onTab={(i) => onTab?.(i)} />
-
+      {/* 주간 목표 스테퍼 시트 — 시그니처 420ms BottomSheet + 마이탭 카드가 쓰던 스테퍼
+          재사용. 값은 App changeGoal(단일 진실원)으로 즉시 위임(홈·전 화면 동시 갱신). */}
+      <BottomSheet visible={goalSheet} onClose={() => setGoalSheet(false)} title="주간 목표" testID="home-goal-sheet">
+        <View style={{ paddingHorizontal: GUTTER, paddingBottom: rv(8) }}>
+          <WeeklyGoalStepper valueKm={weeklyGoalKm} unit={unit} onChange={(km) => onChangeWeeklyGoal?.(km)} />
+        </View>
+      </BottomSheet>
     </View>
   );
 }
@@ -517,18 +572,30 @@ const s = StyleSheet.create({
 
 
 
-  // (goalCard 스타일 삭제 — 미사용 잔재. 카드 보더 통일 스윕 2026-07-10)
-  goalInfo: { flex: 1, gap: rv(6), minWidth: 0 },
-  goalSub: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500' },
-  streakChip: { flexDirection: 'row', alignItems: 'center', gap: rv(4), alignSelf: 'flex-start', borderRadius: RADIUS.pill, paddingHorizontal: rs(8), paddingVertical: rv(4) },
-  weekTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  weekStreakTxt: { color: ACCENT, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '700' },
-  weekGoalTxt: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500' },
-  streakChipOn: { backgroundColor: withAlpha(ACCENT, 0.14), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(ACCENT, 0.4) },
-  streakChipOff: { backgroundColor: CARD_HI },
-  streakText: { fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600', letterSpacing: 0.1 },
-  goalRingPct: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.heading.fontSize, letterSpacing: 0.2 },
-  goalRingU: { color: T3, fontFamily: FONT, fontSize: TYPE.micro.fontSize },
+  // (goalCard·streakChip·weekTop·gauge 스타일 삭제 — B안 원카드 개편으로 진행 바·
+  //  '주간 목표 N km' 텍스트·'N일 연속' 칩 폐지, 2026-07-25)
+
+  // 이번 주 원카드 히어로 — 좌: 거리/목표 숫자축, 우: 월~일 스트릭 점 7칸.
+  weekHero: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: SPACE.md },
+  weekHeroLeft: { flexDirection: 'row', alignItems: 'flex-end', flexShrink: 1, minWidth: 0 },
+  // 거리 = NUMERIC.lg(숫자 단일 램프) · Jost · tabular-nums — 카드의 한 숫자축.
+  weekKm: { color: T1, fontFamily: DISPLAY, ...NUMERIC.lg, fontVariant: ['tabular-nums'] },
+  // ' / 95 km' 목표축 — T3 · 16급 600(목표는 조용한 분모, 진행 바 없이 축이 진행을 말한다).
+  weekGoalAxis: { color: T3, fontFamily: DISPLAY, fontSize: TYPE.body.fontSize, fontWeight: '600', letterSpacing: -0.2, fontVariant: ['tabular-nums'], marginBottom: rv(3) },
+  // 목표 미설정 초대 — 조용한 T3 라벨(히어로 전체가 탭 타깃).
+  weekGoalSet: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500', marginLeft: rs(8), marginBottom: rv(4) },
+  // 스트릭 점 7칸 — 달림=BRAND, 쉼=T1 16%, 오늘=흰 50% 아웃라인 링.
+  weekDays: { flexDirection: 'row', alignItems: 'center', gap: rs(5) },
+  weekDot: { width: rs(8), height: rs(8), borderRadius: RADIUS.pill },
+  weekDotOn: { backgroundColor: BRAND },
+  weekDotOff: { backgroundColor: withAlpha(T1, 0.16) },
+  weekDotToday: { borderWidth: rs(1.5), borderColor: withAlpha(ACCENT, 0.5) },
+  // 훈련 부하 셀 — 상태 워드(FONT — Jost 는 숫자 전용) + 레벨 점 + ⌄.
+  loadRow: { flexDirection: 'row', alignItems: 'center', gap: rs(5) },
+  loadDot: { width: rs(7), height: rs(7), borderRadius: RADIUS.pill },
+  loadWord: { color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '700', letterSpacing: -0.2, flexShrink: 1 },
+  // 부하 인라인 상세 — 그리드 아래 헤어라인으로 구획(카드 이중 표면 금지 — embedded).
+  loadDetail: { marginTop: SPACE.lg, paddingTop: SPACE.lg, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.07) },
 
   // 현재 상태 인사이트 카드(사용거리 | 교체예상) — 활성 신발 반영
   weekEmptyTxt: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, lineHeight: rf(19) },
@@ -547,8 +614,6 @@ const s = StyleSheet.create({
   insightTags: { flexDirection: 'row', flexWrap: 'wrap', gap: rv(6), marginTop: rv(12) },
   insightTag: { backgroundColor: CARD_HI, borderRadius: RADIUS.pill, paddingHorizontal: rs(12), paddingVertical: rv(4) },
   insightTagText: { color: T2, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600' },
-  gauge: { height: rs(BAR.thin), borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.08), marginTop: rv(14), overflow: 'hidden' },
-  gaugeFill: { height: '100%', borderRadius: RADIUS.pill },
 
   sectionLabel: { paddingHorizontal: GUTTER, paddingBottom: SPACE.sm },
   sectionRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', paddingHorizontal: GUTTER, paddingTop: SPACE.sm, paddingBottom: SPACE.sm },
@@ -561,19 +626,7 @@ const s = StyleSheet.create({
   pageDot: { width: rs(5), height: rs(5), borderRadius: rs(3), backgroundColor: withAlpha(T1, 0.22) },
   pageDotOn: { width: rs(16), backgroundColor: T2 },
 
-  // 홈 챌린지 카드 (chalWrap 스타일 삭제 — 미사용 잔재. 카드 보더 통일 스윕 2026-07-10)
-  chalLabel: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600', letterSpacing: 0.6, textTransform: 'uppercase', flex: 1 },
-  chalMore: { color: ACCENT, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600' },
-  chalEmpty: { alignItems: 'center', paddingVertical: rv(8) },
-  chalEmptyTxt: { color: T2, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '500' },
-  chalEmptyHint: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, marginTop: rv(4) },
-  chalItem: { paddingVertical: rv(8) },
-  chalItemSep: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.07) },
-  chalItemTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: rv(6) },
-  chalItemLabel: { color: T1, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500', flex: 1 },
-  chalBar: { height: rs(BAR.thin), borderRadius: RADIUS.pill, backgroundColor: withAlpha(T1, 0.07), overflow: 'hidden' },
-  chalBarFill: { height: '100%', borderRadius: RADIUS.pill },
-  chalPct: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, marginTop: rv(4) },
+  // (홈 챌린지 카드 chal* 스타일 삭제 — 소비처가 사라진 죽은 스타일 13종, 2026-07-25)
 
   // 로테이션 인사이트 행
 
