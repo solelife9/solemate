@@ -10,13 +10,15 @@ RCT_EXTERN_METHOD(start:(NSString *)shoeName
                   elapsedSec:(double)elapsedSec
                   paceLabel:(NSString *)paceLabel
                   avgPaceLabel:(NSString *)avgPaceLabel
-                  cadenceSpm:(double)cadenceSpm)
+                  cadenceSpm:(double)cadenceSpm
+                  bpm:(double)bpm)
 
 RCT_EXTERN_METHOD(update:(double)distanceKm
                   elapsedSec:(double)elapsedSec
                   paceLabel:(NSString *)paceLabel
                   avgPaceLabel:(NSString *)avgPaceLabel
-                  cadenceSpm:(double)cadenceSpm)
+                  cadenceSpm:(double)cadenceSpm
+                  bpm:(double)bpm)
 
 RCT_EXTERN_METHOD(end)
 

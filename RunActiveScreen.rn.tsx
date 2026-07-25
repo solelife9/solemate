@@ -654,7 +654,7 @@ export default function RunActiveScreen({
           <Text style={r.recentK}>지난 랩</Text>
           {track.recent.map(rl => (
             <Text key={rl.lap} style={r.recentV} accessibilityLabel={`${rl.lap}랩 ${fmtLapSplit(rl.split)}`}>
-              <Text style={r.recentN}>{rl.lap} </Text>{fmtLapSplit(rl.split)}
+              <Text style={r.recentN}>{rl.lap}랩 </Text>{fmtLapSplit(rl.split)}
             </Text>
           ))}
         </View>
@@ -680,7 +680,7 @@ export default function RunActiveScreen({
           <Text style={r.recentK}>지난 랩</Text>
           {track.recent.map(rl => (
             <Text key={rl.lap} style={r.recentV} accessibilityLabel={`${rl.lap}랩 ${fmtLapSplit(rl.split)}`}>
-              <Text style={r.recentN}>{rl.lap} </Text>{fmtLapSplit(rl.split)}
+              <Text style={r.recentN}>{rl.lap}랩 </Text>{fmtLapSplit(rl.split)}
             </Text>
           ))}
         </View>
