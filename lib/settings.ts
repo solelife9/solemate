@@ -263,16 +263,20 @@ export function parseUnit(raw: string | null | undefined): Unit {
   return raw === 'mi' ? 'mi' : 'km';
 }
 
-/** 영속된 목표 문자열 → 양수 km. 비정상값은 기본값. */
+/** 영속된 목표 문자열 → 양수 km, 또는 0(목표 없음). 비정상값·누락은 기본값.
+ *  0 은 사용자가 명시적으로 고른 '목표 없음'이라 그대로 살린다(홈 시트에서 선택 가능 —
+ *  2026-07-25). 손상값(음수·NaN·빈 문자열)과는 구분해야 하므로 정확히 0 일 때만. */
 export function parseGoal(raw: string | null | undefined): number {
+  if (raw != null && raw.trim() !== '' && Number(raw) === 0) return 0;
   const v = raw != null ? Number(raw) : NaN;
   if (!Number.isFinite(v) || v <= 0) return DEFAULT_SETTINGS.goalWeeklyKm;
   return clampGoal(v);
 }
 
-/** 목표 거리를 허용 범위(km)로 클램프 + 정수 반올림. */
+/** 목표 거리를 허용 범위(km)로 클램프 + 정수 반올림. 0 = 목표 없음(하한 예외). */
 export function clampGoal(km: number): number {
   if (!Number.isFinite(km)) return DEFAULT_SETTINGS.goalWeeklyKm;
+  if (km <= 0) return 0;
   return Math.max(MIN_GOAL_KM, Math.min(MAX_GOAL_KM, Math.round(km)));
 }
 

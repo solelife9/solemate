@@ -1315,13 +1315,9 @@ function Main(){
   };
 
   // 주간 목표 수정 = 홈 '이번 주 러닝' 히어로 탭 → 스테퍼 시트(B안, 2026-07-25 — 구 마이탭
-  // 카드 폐지). 값은 changeGoal(단일 진실원)으로 위임해 전 화면이 즉시 같은 숫자를 말한다.
-  // 0(목표 없음)은 상태로만 반영 — lib/settings clampGoal 하한 1km 라 0 영속은 불가
-  // (재시작 시 마지막 양수 목표 복원. 0 영속은 lib/settings 개정 필요 — 이번 스코프 밖).
-  const changeWeeklyGoal=(km:number)=>{
-    if(km<=0){setGoalWeeklyKm(0);return;}
-    changeGoal(km);
-  };
+  // 카드 폐지). 0(목표 없음) 포함해 changeGoal(단일 진실원)으로 위임한다 — lib/settings 가
+  // 0 을 '사용자가 고른 목표 없음'으로 영속·복원하므로 재시작해도 되살아나지 않는다.
+  const changeWeeklyGoal=changeGoal;
 
   // ── 프로필 이름/사진(영속 + 상태) ───────────────────────────────────────────
   // 이름은 공백이면 기본값('러너')으로 보정해 빈 이름을 막고, 사진은 expo-image-picker로

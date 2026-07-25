@@ -22,18 +22,21 @@ describe('settings parsers', () => {
     expect(parseUnit('garbage')).toBe('km');
   });
 
-  test('parseGoal: 양수만 채택, 비정상은 기본값, 범위는 클램프', () => {
+  test('parseGoal: 양수 채택 + 0=목표 없음 보존, 손상값만 기본값', () => {
     expect(parseGoal('30')).toBe(30);
     expect(parseGoal(null)).toBe(DEFAULT_SETTINGS.goalWeeklyKm);
-    expect(parseGoal('0')).toBe(DEFAULT_SETTINGS.goalWeeklyKm);
+    // 0 은 사용자가 홈 시트에서 고른 '목표 없음' — 되살리지 않는다(2026-07-25).
+    expect(parseGoal('0')).toBe(0);
+    expect(parseGoal('')).toBe(DEFAULT_SETTINGS.goalWeeklyKm); // 빈 값은 손상 취급
     expect(parseGoal('-5')).toBe(DEFAULT_SETTINGS.goalWeeklyKm);
     expect(parseGoal('abc')).toBe(DEFAULT_SETTINGS.goalWeeklyKm);
     expect(parseGoal('99999')).toBe(500); // MAX_GOAL_KM 클램프
   });
 
-  test('clampGoal: 1..500 정수', () => {
+  test('clampGoal: 1..500 정수 + 0=목표 없음(하한 예외)', () => {
     expect(clampGoal(30)).toBe(30);
-    expect(clampGoal(0)).toBe(1);
+    expect(clampGoal(0)).toBe(0);
+    expect(clampGoal(-5)).toBe(0);
     expect(clampGoal(10000)).toBe(500);
     expect(clampGoal(29.6)).toBe(30);
   });
@@ -90,9 +93,15 @@ describe('settings 영속(AsyncStorage 라운드트립)', () => {
     expect(st.alerts).toEqual({enabled: false, thresholdPct: 80});
   });
 
-  test('saveGoal은 저장 전에 클램프한다(0 → 1)', async () => {
+  test('saveGoal은 저장 전에 클램프한다(상한 500)', async () => {
+    await saveGoal(10000);
+    expect(await AsyncStorage.getItem(K_GOAL)).toBe('500');
+  });
+
+  test("'목표 없음'(0)은 그대로 저장·복원된다 — 재시작에 되살아나지 않는다", async () => {
     await saveGoal(0);
-    expect(await AsyncStorage.getItem(K_GOAL)).toBe('1');
+    expect(await AsyncStorage.getItem(K_GOAL)).toBe('0');
+    expect((await loadSettings()).goalWeeklyKm).toBe(0);
   });
 
   test('saveAlerts는 임계값을 클램프해 저장(5 → 50)', async () => {
