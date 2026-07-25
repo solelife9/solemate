@@ -26,7 +26,9 @@ struct RunLockScreenView: View {
         Text("러닝 중").font(.caption).fontWeight(.bold).foregroundColor(kAccent)
         Spacer()
         if !context.attributes.shoeName.isEmpty {
-          Text(context.attributes.shoeName).font(.caption2).foregroundColor(.secondary).lineLimit(1)
+          // 신발명 가시성 상향(2026-07-25 민우님) — caption2/secondary 는 틴트 배경에서 묻혔다.
+          Text(context.attributes.shoeName).font(.subheadline).fontWeight(.semibold)
+            .foregroundColor(.white.opacity(0.85)).lineLimit(1)
         }
       }
       // 거리(히어로) — 자체 행. 32→40: 잠금화면은 팔 뻗어 흘끗 보는 거리라 전체 한 단
@@ -57,9 +59,11 @@ struct RunLockScreenView: View {
     }
   }
   private func metric(value: String, label: String) -> some View {
+    // 지표 3열 가시성 상향(2026-07-25 민우님 2차) — 값 20→24, 라벨 secondary→흰 65%
+    // (틴트 배경 위 system secondary 가 너무 어두웠다).
     VStack(alignment: .leading, spacing: 2) {
-      Text(value).font(.system(size: 20, weight: .bold, design: .rounded)).foregroundColor(.white).monospacedDigit()
-      Text(label).font(.caption).foregroundColor(.secondary)
+      Text(value).font(.system(size: 24, weight: .bold, design: .rounded)).foregroundColor(.white).monospacedDigit()
+      Text(label).font(.footnote).foregroundColor(.white.opacity(0.65))
     }
     .frame(maxWidth: .infinity, alignment: .leading)
   }
