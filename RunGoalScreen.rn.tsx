@@ -11,11 +11,10 @@
 //       없으면 시스템 폰트로 폴백 — 레이아웃은 동일).
 // ============================================================================
 
-import React, { useMemo, useRef, useState, useCallback } from 'react';
+import React, { useMemo, useState } from 'react';
 import { rf, rs, ri, rv } from './lib/responsive';
 import {
-  View, Pressable, ScrollView, StyleSheet, LayoutChangeEvent,
-  NativeSyntheticEvent, NativeScrollEvent, StatusBar,
+  View, Pressable, StyleSheet, StatusBar, LayoutAnimation,
 } from 'react-native';
 import {Text, FONT_SCALE_CAP_HERO} from './lib/text';
 import Svg, { Path } from 'react-native-svg';
@@ -26,7 +25,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 // (시각 동등: 다크+오렌지 유지)
 import {
   BG, ACCENT, T1, T2, T3, T4, SEP, CARD_BORDER,
-  FONT, DISPLAY, NUM, RADIUS, GUTTER, withAlpha, TYPE, HERO, LEADING,
+  FONT, DISPLAY, NUM, RADIUS, GUTTER, withAlpha, TYPE, HERO, LEADING, MOTION, TOUCH_TARGET,
 } from './theme';
 // lib/haptics 배선: '러닝 시작' CTA(런 시작) → tap.
 import { tap } from './lib/haptics';
@@ -36,7 +35,7 @@ import { useEffect } from 'react';
 import { HR_ZONE_COLORS, GOOD } from './theme';
 // CTA 는 앱 전역 단일 Button 프리미티브(그라데이션 GRAD_TOP/BOT·글로우·radius 토큰).
 // 모드 탭 스트립은 SegmentedControl 단일 프리미티브(md — 주 탭).
-import { Button, SegmentedControl, SwipeBack, SwipeBackExclude, BottomSheet } from './primitives';
+import { Button, SegmentedControl, SwipeBack, BottomSheet, useReduceMotion } from './primitives';
 // 탭 구성 재확정(민우님 2026-07-24): 거리·시간·스피드·트랙 4탭 복원 + '자유'는 거리 탭의
 // 첫 프리셋(val=0)으로. 자유런 전용 탭(2026-07-22안)은 하루 써보고 철회 — 자유는 목표
 // 모드가 아니라 '거리 목표 없음'이라 거리 탭 안이 문법상 맞다.
@@ -75,13 +74,16 @@ export type RunGoal = { km: number; durationMin: number; pacePlan: number[]; tra
 /** 트랙 한 바퀴 예상 거리 선택지(m) — 야외 400(공인)·트랙 300·실내 200 + 커스텀. */
 const LAP_PRESETS = [200, 300, 400] as const;
 /** 거리 키패드 입력 상한(km) — 울트라 대응(민우님 2026-07-24): 50K·100K·100마일(161km)을
- *  덮는 200. 룰러는 풀(42.2)까지만(200km 룰러는 스크롤 불가 수준) — 그 이상은 키패드 전용. */
+ *  덮는 200. 프리셋 칩 밖의 값은 전부 키패드 전용(빠른 선택=칩, 정밀=히어로 탭 키패드). */
 const KM_INPUT_MAX = 200;
-const CFG: Record<'km' | 'min', { min: number; max: number; step: number; major: number; minor: number; px: number; unit: string; def: number; presets: { label: string; v: number }[] }> = {
+// 눈금 룰러 폐기(재구성 2026-07-25 민우님 목업 확정): 같은 값(거리)을 받는 세 번째 중복
+// 입력이었다 — 빠른 선택은 칩, 정밀 입력은 히어로 탭 키패드가 담당(기능 손실 0).
+// CFG 의 룰러 전용 필드(major/minor/px)도 함께 폐기.
+const CFG: Record<'km' | 'min', { min: number; max: number; step: number; unit: string; def: number; presets: { label: string; v: number }[] }> = {
   // max 42.2: 풀코스(42.195km)가 42 상한에 막히던 문제(민우님 2026-07-24). 하프=21.1 과
   // 같은 0.1 그리드 반올림 규약으로 풀=42.2 — 링/음성 목표용 오차 +5m 는 무시 가능.
-  km:  { min: 0, max: 42.2, step: 0.1, major: 1, minor: 0.2, px: 64, unit: 'km', def: 5,  presets: [{ label: '자유', v: 0 }, { label: '3km', v: 3 }, { label: '5km', v: 5 }, { label: '10km', v: 10 }, { label: '하프', v: 21.1 }, { label: '풀', v: 42.2 }] },
-  min: { min: 0, max: 180, step: 1, major: 10, minor: 1, px: 6.2, unit: '분', def: 30, presets: [{ label: '20분', v: 20 }, { label: '30분', v: 30 }, { label: '45분', v: 45 }, { label: '60분', v: 60 }] },
+  km:  { min: 0, max: 42.2, step: 0.1, unit: 'km', def: 5,  presets: [{ label: '자유', v: 0 }, { label: '3km', v: 3 }, { label: '5km', v: 5 }, { label: '10km', v: 10 }, { label: '하프', v: 21.1 }, { label: '풀', v: 42.2 }] },
+  min: { min: 0, max: 180, step: 1, unit: '분', def: 30, presets: [{ label: '20분', v: 20 }, { label: '30분', v: 30 }, { label: '45분', v: 45 }, { label: '60분', v: 60 }] },
 };
 
 export default function RunGoalScreen({
@@ -100,12 +102,9 @@ export default function RunGoalScreen({
   // 기기별 편차를 못 담는다(다이내믹 아일랜드 밑에 nav 가 살짝 파고들던 것) — insets 로.
   const insets = useSafeAreaInsets();
   // 기본 = 거리 탭 · '자유'(val=0) 프리셋(민우님 2026-07-24) — 열자마자 CTA 한 번이면
-  // 자유 러닝(퀵스타트 유지), 거리 목표는 칩 한 번(3/5/10/하프) 또는 룰러로.
+  // 자유 러닝(퀵스타트 유지), 거리 목표는 칩 한 번(3/5/10/하프) 또는 히어로 탭 키패드로.
   const [mode, setMode] = useState<Mode>('km');
   const [val, setVal] = useState<number>(0);
-  const [vpW, setVpW] = useState(0);
-  const rulerRef = useRef<ScrollView>(null);
-  const programmatic = useRef(false);
   const cfg = mode === 'km' || mode === 'min' ? CFG[mode] : null;
   // 스피드 모드의 현재 목표(거리 km + km별 페이스 플랜) — SpeedPlanPanel 이 onChange 로 올린다.
   const [speedGoal, setSpeedGoal] = useState<{ km: number; plan: number[] }>(() => ({ km: 5, plan: buildPacePlan(5, 360, 'negative') }));
@@ -114,21 +113,11 @@ export default function RunGoalScreen({
   const [lapM, setLapM] = useState<number>(400);
   const [lapCustom, setLapCustom] = useState(false); // 커스텀 칩 선택 여부(표준 3개 밖의 값)
 
-  const ticks = useMemo(() => {
-    if (!cfg) return [] as { v: number; major: boolean }[];
-    const out: { v: number; major: boolean }[] = [];
-    const steps = Math.round((cfg.max - cfg.min) / cfg.minor);
-    for (let i = 0; i <= steps; i++) {
-      const v = +(cfg.min + i * cfg.minor).toFixed(4);
-      out.push({ v, major: Math.abs(v % cfg.major) < 1e-6 });
-    }
-    return out;
-  }, [cfg]);
-
   const fmt = (v: number) => (mode === 'km' ? v.toFixed(1) : String(Math.round(v)));
   const estimate = useMemo(() => {
     if (!cfg) return ''; // 스피드·트랙은 자체 표시 — estimate 미사용
-    if (val <= 0) return mode === 'km' ? '목표 없이 달려요 — 기록은 전부 남아요' : '목표를 정해주세요';
+    // 자유(목표 0) 캡션 — 룰러가 빠진 자리의 안내(정밀 입력 진입점 = 히어로 탭)를 겸한다.
+    if (val <= 0) return mode === 'km' ? '목표 없이 달려요 · 숫자를 탭하면 직접 입력' : '목표를 정해주세요';
     // 개인 이력 기반 추정(심사 #74) — 최근 10회 거리가중 평균 페이스·km당 칼로리.
     // 이력 없으면 lib/goalEstimate 가 기존 기본값(5분/km·64kcal/km)으로 폴백한다.
     if (mode === 'km') {
@@ -139,48 +128,18 @@ export default function RunGoalScreen({
     return `예상 거리 약 ${e.km.toFixed(1)}km · 약 ${e.kcal} kcal`;
   }, [mode, val, cfg, runs]);
 
-  const scrollToVal = useCallback((v: number, animated: boolean) => {
-    if (!cfg) return;
-    programmatic.current = true;
-    rulerRef.current?.scrollTo({ x: v * cfg.px, animated });
-    setTimeout(() => { programmatic.current = false; }, animated ? 380 : 60);
-  }, [cfg]);
-
-  const onScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    if (programmatic.current || !cfg) return;
-    let v = e.nativeEvent.contentOffset.x / cfg.px;
-    v = Math.max(cfg.min, Math.min(cfg.max, v));
-    v = Math.round(v / cfg.step) * cfg.step;
-    v = +v.toFixed(cfg.step < 1 ? 1 : 0);
-    setVal(prev => (Math.abs(prev - v) > 1e-9 ? v : prev));
-  }, [cfg]);
-
-  const onRulerLayout = (e: LayoutChangeEvent) => {
-    const w = e.nativeEvent.layout.width;
-    if (w && w !== vpW) { setVpW(w); requestAnimationFrame(() => scrollToVal(val, false)); }
-  };
   const pickMode = (m: Mode) => {
     setMode(m);
-    // 거리/시간 모드만 룰러를 쓴다. 대상 모드의 cfg(px)로 직접 스크롤한다 — scrollToVal 은
-    // 클로저의 '이전' mode/cfg 를 보므로(setMode 비동기) px 가 어긋나 룰러가 엉뚱한 위치
-    // (예: 30분인데 180)로 클램프됐다. 스피드는 SpeedPlanPanel, 트랙은 칩을 쓴다.
     if (m === 'km' || m === 'min') {
       // 거리 탭 재진입 기본은 '자유'(0) — 첫 진입과 동일한 퀵스타트 문법. 시간은 기존 30분.
-      const c = CFG[m]; const d = m === 'km' ? 0 : c.def;
-      setVal(d);
-      programmatic.current = true;
-      requestAnimationFrame(() => {
-        rulerRef.current?.scrollTo({ x: d * c.px, animated: false });
-        setTimeout(() => { programmatic.current = false; }, 60);
-      });
+      setVal(m === 'km' ? 0 : CFG[m].def);
     }
   };
-  const pickPreset = (v: number) => { setVal(v); scrollToVal(v, true); };
+  const pickPreset = (v: number) => setVal(v);
 
   // ── 큰 숫자 직접 입력(2026-07-04) — 탭 → 키패드만(사용자 확정) ──────────────
   // 큰 숫자를 탭하면 하단 키패드 시트로 하프(21.1) 같은 정확한 값을 입력한다.
-  // 룰러와 같은 값(val)에 물려 확인 즉시 룰러가 따라온다. 세로 스와이프·햅틱 틱은
-  // 사용자 결정으로 제거(좌우 룰러 + 탭 입력이면 충분).
+  // 재구성(2026-07-25) 후 정밀 입력의 유일한 진입점 — 빠른 선택은 프리셋 칩.
   const [kpOpen, setKpOpen] = useState(false);
   const [kpBuf, setKpBuf] = useState('');
   const clampToCfg = (m: 'km' | 'min', v: number) => {
@@ -212,17 +171,28 @@ export default function RunGoalScreen({
     }
     if (kpBuf) {
       const m = mode === 'min' ? 'min' : 'km';
-      const v = clampToCfg(m, parseFloat(kpBuf) || 0);
-      setVal(v); scrollToVal(v, true);
+      setVal(clampToCfg(m, parseFloat(kpBuf) || 0));
     }
     setKpOpen(false);
   };
-  const half = vpW / 2;
   // 런 시작: 햅틱(tap) → onStart(RunGoal). 거리/시간/스피드(km별 페이스 플랜)로 분기.
   // 심박 가이드(#7) — 목표 존(0=끄기·2·3·4). 저장값 로드, 변경 시 저장(persist). 목표 유형과 직교.
   const [targetZone, setTargetZone] = useState<TargetZone>(DEFAULT_TARGET_ZONE);
   useEffect(() => { void loadTargetZone().then(setTargetZone); }, []);
   const pickZone = (z: TargetZone) => { tap(); setTargetZone(z); void saveTargetZone(z); };
+  // 심박 가이드 접힘(재구성 2026-07-25): 상시 4칩+힌트(겹 2)가 접힌 한 줄 요약으로.
+  // 설정값은 접혀 있어도 유지·적용된다(targetZone 은 startRun 에 항상 실린다).
+  const [zoneOpen, setZoneOpen] = useState(false);
+  const reduceMotion = useReduceMotion();
+  const toggleZoneOpen = () => {
+    // 접힘/펼침은 레이아웃 전환 — 시스템 '동작 줄이기' 존중(DESIGN §6.7).
+    if (!reduceMotion) {
+      LayoutAnimation.configureNext(
+        LayoutAnimation.create(MOTION.dur.base, LayoutAnimation.Types.easeInEaseOut, LayoutAnimation.Properties.opacity),
+      );
+    }
+    setZoneOpen(o => !o);
+  };
 
   const startRun = () => {
     tap();
@@ -239,7 +209,7 @@ export default function RunGoalScreen({
 
   return (
     // 엣지 스와이프 백 — 러닝 '전' 화면이라 잃을 입력이 없고 뒤로 버튼과 동일 동작.
-    // 가장자리 24pt 에서만 캡처하므로 중앙의 눈금 룰러 가로 드래그와 충돌하지 않는다.
+    // (스피드 탭의 km별 칩 가로 스크롤은 SpeedPlanPanel 이 SwipeBackExclude 로 양보시킨다.)
     <SwipeBack onBack={onBack}>
     <View style={[s.screen, { paddingTop: insets.top + rv(8) }]}>
       <StatusBar barStyle="light-content" />
@@ -310,8 +280,7 @@ export default function RunGoalScreen({
               onAccessibilityAction={(e) => {
                 const m = mode === 'min' ? 'min' : 'km';
                 const d = e.nativeEvent.actionName === 'increment' ? CFG[m].step : -CFG[m].step;
-                const v = clampToCfg(m, val + d);
-                setVal(v); scrollToVal(v, false);
+                setVal(clampToCfg(m, val + d));
               }}>
               {mode === 'km' && val === 0 ? (
                 // '자유' 상태 — 숫자 대신 낱말(0.0km 는 고장처럼 읽힌다). 탭·룰러·칩으로
@@ -326,29 +295,8 @@ export default function RunGoalScreen({
             </Pressable>
             <Text style={s.estimate}>{estimate}</Text>
 
-            {/* SwipeBackExclude: 룰러가 전폭이라 왼쪽 엣지 존(24pt)과 겹친다 — km 를
-                줄이려고 룰러 왼쪽을 잡고 오른쪽으로 밀면 엣지 스와이프 백으로 오인돼
-                화면이 뒤로 튕기던 버그 방지(룰러 위 터치 동안 SwipeBack 양보). */}
-            <SwipeBackExclude>
-            <View style={s.rulerWrap} onLayout={onRulerLayout}>
-              <ScrollView
-                ref={rulerRef} horizontal showsHorizontalScrollIndicator={false}
-                scrollEventThrottle={16} onScroll={onScroll} decelerationRate="fast"
-                snapToInterval={cfg!.step * cfg!.px}
-                contentContainerStyle={{ paddingHorizontal: half }}>
-                <View style={{ width: cfg!.max * cfg!.px, height: rs(78) }}>
-                  {ticks.map((t, i) => (
-                    <View key={i} pointerEvents="none" style={[s.tick, t.major ? s.tickMajor : s.tickMinor, { left: t.v * cfg!.px - 1 }]} />
-                  ))}
-                  {ticks.filter(t => t.major).map((t, i) => (
-                    <Text key={`l${i}`} pointerEvents="none" style={[s.tickLabel, { left: t.v * cfg!.px - 14 }]}>{Math.round(t.v)}</Text>
-                  ))}
-                </View>
-              </ScrollView>
-              <View pointerEvents="none" style={s.pointer} />
-            </View>
-            </SwipeBackExclude>
-
+            {/* 눈금 룰러는 폐기(재구성 2026-07-25) — 같은 값(거리/시간)의 세 번째 중복
+                입력이었다. 빠른 선택=아래 칩, 정밀=위 히어로 탭 키패드(기능 손실 0). */}
             <View style={s.presets}>
               {cfg!.presets.map(p => {
                 const on = Math.abs(p.v - val) < (mode === 'km' ? 0.05 : 0.5);
@@ -363,32 +311,50 @@ export default function RunGoalScreen({
         )}
       </View>
 
-      {/* 심박 가이드(#7) — 거리/시간/스피드 목표와 직교로 조합하는 강도 레일(탭 아닌 행).
-          기본 끄기. 선택 시 러닝 중 목표 존 이탈을 색·화살표·음성으로 코칭한다. */}
-      <View style={s.zoneRow} accessibilityRole="radiogroup" accessibilityLabel="심박 가이드">
-        <Text style={s.zoneLabel}>심박 가이드</Text>
-        <View style={s.zoneChips}>
-          {ZONE_OPTS.map(o => {
-            const on = targetZone === o.z;
-            const col = o.z !== 0 ? HR_ZONE_COLORS[o.z as 2 | 3 | 4] : GOOD;
-            return (
-              <Pressable key={o.z} onPress={() => pickZone(o.z)} accessibilityRole="radio" hitSlop={6}
-                accessibilityState={{ selected: on }} accessibilityLabel={`심박 가이드 ${o.label}`}
-                style={[s.zoneChip, on && { backgroundColor: withAlpha(col, 0.16), borderColor: withAlpha(col, 0.5) }]}>
-                <Text style={[s.zoneChipTxt, on && { color: col }]}>{o.label}</Text>
-              </Pressable>
-            );
-          })}
-        </View>
-        {targetZone >= 2 && (() => {
-          const b = zoneBoundaries(estimateMaxHR(age), restHR || undefined);
-          const hi = targetZone < 5 ? b[(targetZone + 1) as 3 | 4 | 5] - 1 : estimateMaxHR(age);
-          const lo = b[targetZone as 2 | 3 | 4];
-          const desc = targetZone === 2 ? '지방 연소·기초 지구력' : targetZone === 3 ? '유산소 능력 향상' : '젖산 역치·레이스 페이스';
-          return (
-            <Text style={s.zoneHint}>{lo > 0 ? `${lo}–${hi} bpm · ` : ''}{desc}{age <= 0 ? ' · 마이 탭에서 나이 설정 시 bpm 표시' : ''}</Text>
-          );
-        })()}
+      {/* 심박 가이드(#7) — 거리/시간/스피드 목표와 직교로 조합하는 강도 레일.
+          재구성(2026-07-25): 상시 4칩+힌트 → 접힌 한 줄 요약("심박 가이드 · 현재값 ›").
+          탭하면 기존 4칩+힌트가 펼쳐진다. 설정값은 접혀 있어도 유지·적용. */}
+      <View style={s.zoneRow}>
+        <Pressable
+          testID="goal-hr-row"
+          onPress={toggleZoneOpen}
+          style={s.zoneHead}
+          accessibilityRole="button"
+          accessibilityState={{ expanded: zoneOpen }}
+          accessibilityLabel={`심박 가이드, 현재 ${ZONE_OPTS.find(o => o.z === targetZone)?.label ?? '끄기'}`}
+          accessibilityHint="눌러서 설정 펼치기 또는 접기">
+          <Text style={s.zoneLabel}>
+            {'심박 가이드 · '}
+            <Text style={s.zoneSummaryVal}>{ZONE_OPTS.find(o => o.z === targetZone)?.label ?? '끄기'}</Text>
+          </Text>
+          <Text style={[s.zoneChevron, zoneOpen && s.zoneChevronOpen]}>›</Text>
+        </Pressable>
+        {zoneOpen && (
+          <View accessibilityRole="radiogroup" accessibilityLabel="심박 가이드">
+            <View style={s.zoneChips}>
+              {ZONE_OPTS.map(o => {
+                const on = targetZone === o.z;
+                const col = o.z !== 0 ? HR_ZONE_COLORS[o.z as 2 | 3 | 4] : GOOD;
+                return (
+                  <Pressable key={o.z} onPress={() => pickZone(o.z)} accessibilityRole="radio" hitSlop={6}
+                    accessibilityState={{ selected: on }} accessibilityLabel={`심박 가이드 ${o.label}`}
+                    style={[s.zoneChip, on && { backgroundColor: withAlpha(col, 0.16), borderColor: withAlpha(col, 0.5) }]}>
+                    <Text style={[s.zoneChipTxt, on && { color: col }]}>{o.label}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+            {targetZone >= 2 && (() => {
+              const b = zoneBoundaries(estimateMaxHR(age), restHR || undefined);
+              const hi = targetZone < 5 ? b[(targetZone + 1) as 3 | 4 | 5] - 1 : estimateMaxHR(age);
+              const lo = b[targetZone as 2 | 3 | 4];
+              const desc = targetZone === 2 ? '지방 연소·기초 지구력' : targetZone === 3 ? '유산소 능력 향상' : '젖산 역치·레이스 페이스';
+              return (
+                <Text style={s.zoneHint}>{lo > 0 ? `${lo}–${hi} bpm · ` : ''}{desc}{age <= 0 ? ' · 마이 탭에서 나이 설정 시 bpm 표시' : ''}</Text>
+              );
+            })()}
+          </View>
+        )}
       </View>
 
       {/* footer — 신발은 홈에서 선택해 넘어오므로 여기선 목표 입력(키패드)과 시작만.
@@ -457,14 +423,8 @@ const s = StyleSheet.create({
   bigUnit: { color: T2, fontFamily: FONT, fontSize: TYPE.title1.fontSize, fontWeight: '600', marginLeft: rs(8) },
   estimate: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500', marginTop: rv(14) },
 
-  rulerWrap: { width: '100%', height: rs(78), marginTop: rv(30), position: 'relative' },
-  tick: { position: 'absolute', bottom: 26, width: 2, borderRadius: rs(2) },
-  tickMinor: { height: rs(14), backgroundColor: withAlpha(T1, 0.18) },
-  tickMajor: { height: rs(26), backgroundColor: withAlpha(T1, 0.38) },
-  tickLabel: { position: 'absolute', bottom: 2, width: rs(28), textAlign: 'center', color: T3, fontFamily: DISPLAY, fontSize: TYPE.caption.fontSize, fontWeight: '500', fontVariant: ['tabular-nums'] },
-  pointer: { position: 'absolute', left: '50%', marginLeft: -1.5, top: 2, bottom: 24, width: rs(3), borderRadius: rs(3), backgroundColor: ACCENT },
-
-  presets: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: rv(8), marginTop: rv(26) },
+  // 룰러 폐기(2026-07-25) 후 히어로가 숨 쉬도록 칩 행 간격을 한 단 키운다(30+26 자리).
+  presets: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: rv(8), marginTop: rv(36) },
   preset: { minHeight: rs(36), paddingHorizontal: rs(16), borderRadius: RADIUS.pill, alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(T1, 0.04), borderWidth: 1, borderColor: SEP },
   // 선택 칩 한 벌(감사 #56): 채움 withAlpha(T1,0.14) · 보더 withAlpha(T1,0.4) — 앱 공통.
   presetOn: { backgroundColor: withAlpha(T1, 0.14), borderColor: withAlpha(T1, 0.4) },
@@ -484,10 +444,15 @@ const s = StyleSheet.create({
   // '자유' 상태 히어로 — 숫자(bigVal 104) 자리에 낱말. 높이 점프가 없게 lineHeight 동일.
   bigFree: { color: T1, fontFamily: DISPLAY, fontSize: rf(64), fontWeight: '700', letterSpacing: -1.5, lineHeight: rf(127), includeFontPadding: false },
 
-  // 심박 가이드 행(#7) — 라벨 + 칩. 신발 행 위, 조용한 강도 레일.
+  // 심박 가이드(#7) — 접힌 한 줄(요약+›) 기본, 탭하면 칩+힌트 펼침(2026-07-25 재구성).
   zoneRow: { paddingHorizontal: GUTTER, paddingTop: rv(2), paddingBottom: rv(10) },
-  zoneLabel: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600', letterSpacing: 0.3, marginBottom: rv(8) },
-  zoneChips: { flexDirection: 'row', gap: rv(8), flexWrap: 'wrap' },
+  // 접힘 행 — 터치 타깃 44pt(HIG) 확보. 라벨 좌 · 셰브론 우.
+  zoneHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: rs(TOUCH_TARGET) },
+  zoneLabel: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600', letterSpacing: 0.3 },
+  zoneSummaryVal: { color: T1 },
+  zoneChevron: { color: T3, fontFamily: FONT, fontSize: TYPE.heading.fontSize, fontWeight: '600' },
+  zoneChevronOpen: { transform: [{ rotate: '90deg' }] },
+  zoneChips: { flexDirection: 'row', gap: rv(8), flexWrap: 'wrap', marginTop: rv(2) },
   zoneChip: { paddingHorizontal: rs(14), paddingVertical: rv(8), borderRadius: RADIUS.pill, borderCurve: 'continuous', backgroundColor: withAlpha(T1, 0.06), borderWidth: 1, borderColor: 'transparent' },
   zoneChipTxt: { color: T3, fontFamily: FONT, fontSize: rf(13), fontWeight: '700' },
   zoneHint: { color: T3, fontFamily: FONT, fontSize: rf(12), marginTop: rv(8), letterSpacing: 0.2 },
