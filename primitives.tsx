@@ -42,7 +42,6 @@ import Svg, {
 import {
   BG,
   CARD,
-  CARD_DIM,
   CARD_HI,
   TOUCH_TARGET,
   ACCENT,
@@ -61,6 +60,8 @@ import {
   SPACE,
   RADIUS,
   TYPE,
+  NUMERIC,
+  type NumericSize,
   GLASS,
   BRAND,
   withAlpha,
@@ -128,7 +129,8 @@ export function Stepper({
       </Pressable>
       {children ?? (
         <View style={{flex: 1, alignItems: 'center'}} accessible accessibilityLabel={`${value} ${suffix}`}>
-          <Text style={{color: T1, fontFamily: DISPLAY, fontSize: rf(30), letterSpacing: -0.5, fontVariant: ['tabular-nums']}}>{value}</Text>
+          {/* 값 타이포 = NUMERIC.lg — 숫자 표기 3벌(Stat·Metric·Stepper) 단일 램프 수렴(2026-07-25). */}
+          <Text style={{color: T1, fontFamily: DISPLAY, ...NUMERIC.lg, fontVariant: ['tabular-nums']}}>{value}</Text>
           {!!suffix && <Text style={{color: T3, fontFamily: FONT, fontSize: rf(13), fontWeight: '600', marginTop: rv(2)}}>{suffix}</Text>}
         </View>
       )}
@@ -752,100 +754,28 @@ const ghostS = StyleSheet.create({
 });
 
 // ── SegmentedControl (탭 스트립 단일 프리미티브) ───────────────────────────────
-// 앱 전역에 흩어져 있던 4개 탭 스트립(History 기간 · Profile recap · Progression 섹션 ·
-// RunGoal 모드)을 하나로 통합한다. 선택 상태·접근성(role/selected/label)·press 동작을
-// 이 컴포넌트가 책임지고, 표면(컨테이너 배경/보더/반경 + 선택칩 색)은 variant 토큰으로
-// 고정해 각 사용처의 기존 모양을 1:1 재현한다(시각 동등). variant 4종은 현재 4개 스트립의
-// 외형을 그대로 옮긴 것:
-//   • neutral    — 흰색 3.5% 컨테이너 + 흰색 9% 선택칩(History 기간)
-//   • raised     — CARD 컨테이너(pill) + CARD_HI 선택칩(Progression 섹션)
-//   • accentTint — CARD 컨테이너 + 주황 16% 틴트 선택칩(RunGoal 모드)
-//   • accentSolid— CARD_DIM 컨테이너(pill, hug) + 주황 채움 선택칩(Profile recap)
+// 앱 전역 탭 스트립의 단일 '필' 문법(2026-07-25 민우님 목업 확정 — 4 variant 폐지).
+// 과거 neutral/raised/accentTint/accentSolid 가 사용처별 원본 외형을 1:1 복원하던 것을
+// 회수하고 표면을 하나로 고정한다:
+//   컨테이너 = CARD + CARD_BORDER 헤어라인(SEP 급) + pill · padding 3 · gap 4
+//   선택 칩  = 흰 12% 유리 + 흰 22% 헤어라인(pill)
+// 남은 축은 크기뿐: md(주 탭 — 높이 38 · 글자 15) · sm(설정/보조 — 32 · 14).
+// off = T3·500, on = T1·700. 시각 높이 < 44pt 는 세로 hitSlop 으로 실효 터치 타깃
+// 44pt 를 보장한다(HIG — md 38+3·2, sm 32+6·2).
 // block=false 면 항목이 내용폭(hug)으로 줄고(profile recap 처럼 인라인), 기본은 flex 균등.
 export type SegmentItem = {key: string; label: string};
-type SegVariant = 'neutral' | 'raised' | 'accentTint' | 'accentSolid';
+export type SegSize = 'md' | 'sm';
 
-const SEG_VARIANTS: Record<
-  SegVariant,
-  {
-    container: ViewStyle;
-    item: ViewStyle;
-    itemOn: ViewStyle;
-    textOff: TextStyle;
-    textOn: TextStyle;
-  }
-> = {
-  neutral: {
-    container: {
-      backgroundColor: withAlpha(T1, 0.035),
-      borderWidth: 1,
-      borderColor: CARD_BORDER,
-      borderRadius: rs(13),
-      padding: rs(3),
-      gap: rv(3),
-    },
-    // 44→38: 기간 스트립이 위아래로 뚱뚱하다는 사용자 피드백(2026-07-07). 시각 높이만
-    // 줄이고 실효 터치 타깃은 item hitSlop(아래 SEG_VSLOP)으로 44pt 를 유지한다(HIG).
-    item: {minHeight: rs(38), paddingVertical: rv(5), borderRadius: rs(10)},
-    itemOn: {backgroundColor: withAlpha(T1, 0.09)},
-    textOff: {color: T3, fontSize: rf(15), fontWeight: '500'},
-    textOn: {color: T1, fontSize: rf(15), fontWeight: '700'},
-  },
-  raised: {
-    container: {
-      backgroundColor: CARD,
-      borderWidth: 1,
-      borderColor: CARD_BORDER,
-      borderRadius: RADIUS.pill,
-      padding: rs(4),
-      gap: rv(6),
-    },
-    item: {paddingVertical: rv(9), borderRadius: RADIUS.pill},
-    itemOn: {backgroundColor: CARD_HI},
-    textOff: {color: T3, fontSize: rf(14), fontWeight: '700'},
-    textOn: {color: T1, fontSize: rf(14), fontWeight: '700'},
-  },
-  accentTint: {
-    container: {
-      backgroundColor: CARD,
-      borderWidth: 1,
-      borderColor: CARD_BORDER,
-      borderRadius: rs(14),
-      padding: rs(4),
-      gap: rv(4),
-    },
-    item: {height: rs(38), borderRadius: rs(10)},
-    itemOn: {
-      backgroundColor: withAlpha(ACCENT, 0.16),
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: withAlpha(ACCENT, 0.28),
-    },
-    textOff: {color: T3, fontSize: rf(15), fontWeight: '600'},
-    textOn: {color: ACCENT, fontSize: rf(15), fontWeight: '600'},
-  },
-  accentSolid: {
-    container: {
-      backgroundColor: CARD_DIM,
-      borderRadius: RADIUS.pill,
-      padding: rs(3),
-      gap: rv(2),
-    },
-    item: {paddingHorizontal: rs(14), paddingVertical: rv(6), borderRadius: RADIUS.pill},
-    itemOn: {backgroundColor: withAlpha(T1, 0.1)},
-    textOff: {color: T3, fontSize: rf(14), fontWeight: '600'},
-    textOn: {color: T1, fontSize: rf(14), fontWeight: '600'},
-  },
+const SEG_SIZES: Record<SegSize, {item: ViewStyle; text: TextStyle; vslop: number}> = {
+  md: {item: {height: rs(38)}, text: {fontSize: rf(15)}, vslop: 3},
+  sm: {item: {height: rs(32)}, text: {fontSize: rf(14)}, vslop: 6},
 };
-
-// 시각 높이 < 44pt 인 variant 의 세로 hitSlop — 실효 터치 타깃을 44pt 로 끌어올린다.
-// (neutral 항목 38 + 3·2 = 44. 나머지 variant 는 자체 높이로 충분해 0.)
-const SEG_VSLOP: Record<SegVariant, number> = {neutral: 3, raised: 0, accentTint: 3, accentSolid: 0};
 
 export function SegmentedControl({
   items,
   value,
   onChange,
-  variant = 'neutral',
+  size = 'md',
   block = true,
   role = 'button',
   labelFor,
@@ -855,16 +785,16 @@ export function SegmentedControl({
   items: SegmentItem[];
   value: string;
   onChange: (key: string) => void;
-  variant?: SegVariant;
+  size?: SegSize;
   block?: boolean;
   role?: 'button' | 'tab';
   labelFor?: (item: SegmentItem, selected: boolean) => string;
   testIDFor?: (item: SegmentItem) => string;
   style?: StyleProp<ViewStyle>;
 }) {
-  const v = SEG_VARIANTS[variant];
+  const sz = SEG_SIZES[size];
   return (
-    <View style={[seg.row, v.container, style]}>
+    <View style={[seg.row, style]}>
       {items.map(item => {
         const on = item.key === value;
         return (
@@ -872,18 +802,18 @@ export function SegmentedControl({
             key={item.key}
             testID={testIDFor ? testIDFor(item) : undefined}
             onPress={() => onChange(item.key)}
-            hitSlop={SEG_VSLOP[variant] ? {top: SEG_VSLOP[variant], bottom: SEG_VSLOP[variant]} : undefined}
+            hitSlop={{top: sz.vslop, bottom: sz.vslop}}
             accessibilityRole={role}
             accessibilityState={{selected: on}}
             accessibilityLabel={labelFor ? labelFor(item, on) : item.label}
             style={({pressed}) => [
               seg.item,
-              block && seg.block,
-              v.item,
-              on && v.itemOn,
+              block ? seg.block : seg.hug,
+              sz.item,
+              on && seg.itemOn,
               pressed && !on && {opacity: 0.7},
             ]}>
-            <Text style={[seg.label, on ? v.textOn : v.textOff]}>{item.label}</Text>
+            <Text style={[seg.label, sz.text, on ? seg.textOn : seg.textOff]}>{item.label}</Text>
           </Pressable>
         );
       })}
@@ -892,18 +822,38 @@ export function SegmentedControl({
 }
 
 const seg = StyleSheet.create({
-  row: {flexDirection: 'row'},
-  item: {alignItems: 'center', justifyContent: 'center'},
+  row: {
+    flexDirection: 'row',
+    backgroundColor: CARD,
+    borderWidth: 1,
+    borderColor: CARD_BORDER,
+    borderRadius: RADIUS.pill,
+    borderCurve: 'continuous',
+    padding: rs(3),
+    gap: rs(4),
+  },
+  item: {alignItems: 'center', justifyContent: 'center', borderRadius: RADIUS.pill},
   block: {flex: 1},
+  // hug(인라인) 항목은 내용폭 + 좌우 패딩으로 칩을 만든다(block 은 flex 균등이라 불필요).
+  hug: {paddingHorizontal: rs(14)},
+  itemOn: {
+    backgroundColor: withAlpha(T1, 0.12),
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: withAlpha(T1, 0.22),
+  },
   label: {fontFamily: FONT},
+  textOff: {color: T3, fontWeight: '500'},
+  textOn: {color: T1, fontWeight: '700'},
 });
 
 // ── Stat / StatGrid (스탯 셀 + 그리드 단일 프리미티브) ─────────────────────────
 // 화면마다 손으로 짜던 스탯 그리드(누적 기록 · 개인 기록 · 리캡 요약 · 진척 스탯줄 ·
 // 러닝 상세 2×3)를 하나로 통합한다. 한 셀 = 큰 값(DISPLAY·tabular-nums) + 위첨자 단위
-// (T3) + 라벨(T3). 색/폰트패밀리/tabular/구조는 토큰으로 고정(단일 진실원)하고, 크기·
-// 굵기·자간만 사용처 타입스케일로 받는다(시각 동등). align='center' 는 카드 안 균등 줄,
-// 'left' 는 2×3 좌측 정렬 그리드. divided 면 좌측 헤어라인 구분선(첫 칸 제외).
+// (T3) + 라벨(T3). 타이포는 NUMERIC 램프 한 벌로 고정(2026-07-25 민우님 목업 확정 —
+// 과거 valueSize/unitSize/… 사이트별 픽셀 복원 탈출구 prop 10개 회수): 값 = NUMERIC[size]
+// (700 고정·음수 자간·tabular), 단위 = 13 T3(값 Text 안 중첩 = baseline), 라벨 = caption T3.
+// align='center' 는 카드 안 균등 줄, 'left' 는 2×3 좌측 정렬 그리드. divided 면 좌측
+// 헤어라인 구분선(첫 칸 제외).
 export type StatItem = {
   value: string | number;
   unit?: string;
@@ -918,15 +868,7 @@ export function Stat({
   label,
   top,
   align = 'center',
-  valueSize = rf(22),
-  valueWeight = '700',
-  valueLS = 0.2,
-  unitSize = rf(13),
-  unitWeight = '600',
-  labelSize = rf(13),
-  labelWeight = '600',
-  labelMarginTop = 4,
-  verticalPadding = 0,
+  size = 'md',
   divided = false,
   style,
   testID,
@@ -936,18 +878,8 @@ export function Stat({
   label?: string;
   top?: React.ReactNode;
   align?: 'center' | 'left';
-  valueSize?: number;
-  valueWeight?: TextStyle['fontWeight'];
-  valueLS?: number;
-  // unit/label 타이포는 사이트마다 원본이 다르다(Profile 12/600·11.5/600 vs 러닝상세
-  // 11.5/500·11.5/normal vs 진척 11/700·11/600). 색/패밀리는 토큰 고정, 크기·굵기·라벨
-  // 마진·셀 세로패딩만 prop 으로 노출해 각 사이트가 픽셀 단위 원본을 복원한다.
-  unitSize?: number;
-  unitWeight?: TextStyle['fontWeight'];
-  labelSize?: number;
-  labelWeight?: TextStyle['fontWeight'];
-  labelMarginTop?: number;
-  verticalPadding?: number;
+  /** NUMERIC 램프 단계 — sm(보조 그리드) · md(기본) · lg(히어로 급). */
+  size?: NumericSize;
   divided?: boolean;
   style?: StyleProp<ViewStyle>;
   testID?: string;
@@ -958,32 +890,15 @@ export function Stat({
       style={[
         statS.cell,
         align === 'center' ? statS.center : statS.left,
-        verticalPadding ? {paddingVertical: verticalPadding} : null,
         divided && statS.divided,
         style,
       ]}>
       {top}
-      <Text
-        style={[
-          statS.value,
-          {fontSize: valueSize, fontWeight: valueWeight, letterSpacing: valueLS},
-        ]}>
+      <Text style={[statS.value, NUMERIC[size]]}>
         {value}
-        {unit ? (
-          <Text style={[statS.unit, {fontSize: unitSize, fontWeight: unitWeight}]}>
-            {unit}
-          </Text>
-        ) : null}
+        {unit ? <Text style={statS.unit}>{unit}</Text> : null}
       </Text>
-      {label != null ? (
-        <Text
-          style={[
-            statS.label,
-            {fontSize: labelSize, fontWeight: labelWeight, marginTop: labelMarginTop},
-          ]}>
-          {label}
-        </Text>
-      ) : null}
+      {label != null ? <Text style={statS.label}>{label}</Text> : null}
     </View>
   );
 }
@@ -993,15 +908,7 @@ export function StatGrid({
   align = 'center',
   divider = false,
   columns,
-  valueSize = rf(22),
-  valueWeight = '700',
-  valueLS = 0.2,
-  unitSize = rf(13),
-  unitWeight = '600',
-  labelSize = rf(13),
-  labelWeight = '600',
-  labelMarginTop = 4,
-  verticalPadding = 0,
+  size = 'md',
   style,
   testID,
 }: {
@@ -1010,15 +917,7 @@ export function StatGrid({
   divider?: boolean;
   // columns 지정 시 wrap 그리드(각 칸 100/columns% 폭, 예 2×3=3). 미지정이면 flex 균등 줄.
   columns?: number;
-  valueSize?: number;
-  valueWeight?: TextStyle['fontWeight'];
-  valueLS?: number;
-  unitSize?: number;
-  unitWeight?: TextStyle['fontWeight'];
-  labelSize?: number;
-  labelWeight?: TextStyle['fontWeight'];
-  labelMarginTop?: number;
-  verticalPadding?: number;
+  size?: NumericSize;
   style?: StyleProp<ViewStyle>;
   testID?: string;
 }) {
@@ -1036,15 +935,7 @@ export function StatGrid({
           top={it.top}
           testID={it.testID}
           align={align}
-          valueSize={valueSize}
-          valueWeight={valueWeight}
-          valueLS={valueLS}
-          unitSize={unitSize}
-          unitWeight={unitWeight}
-          labelSize={labelSize}
-          labelWeight={labelWeight}
-          labelMarginTop={labelMarginTop}
-          verticalPadding={verticalPadding}
+          size={size}
           divided={divider && i > 0}
           style={wrap ? {width: `${100 / columns!}%`} : undefined}
         />
@@ -1066,9 +957,16 @@ const statS = StyleSheet.create({
     fontVariant: ['tabular-nums'],
     includeFontPadding: false,
   },
-  // 크기·굵기·마진은 prop 으로 받는다(사이트별 원본 복원). 여기선 색·패밀리만 토큰 고정.
-  unit: {color: T3, fontFamily: FONT},
-  label: {color: T3, fontFamily: FONT},
+  // 단위/라벨은 NUMERIC 규칙으로 고정: 단위 13(T3, 값 Text 중첩 = baseline) · 라벨 caption(T3).
+  unit: {color: T3, fontFamily: FONT, fontSize: rf(13), fontWeight: '600'},
+  label: {
+    color: T3,
+    fontFamily: FONT,
+    fontSize: TYPE.caption.fontSize,
+    fontWeight: TYPE.caption.fontWeight,
+    letterSpacing: TYPE.caption.letterSpacing,
+    marginTop: 4,
+  },
 });
 
 // ── Pill / Badge (상태색 톤 + 반투명 배경) ────────────────────────────────────
@@ -1226,35 +1124,28 @@ const injury = StyleSheet.create({
 
 // ── Metric (value + unit, baseline 정렬 · tabular-nums) ────────────────────────
 // 큰 숫자(value)와 단위(unit)를 baseline 정렬 + gap 으로 분리해 '0.0km' 같이 붙어
-// 보이던 cramping 을 해소한다. 숫자는 DISPLAY(이제 Pretendard) + tabular-nums 로
-// 자리수 흔들림을 막는다.
+// 보이던 cramping 을 해소한다. 숫자는 DISPLAY + tabular-nums 로 자리수 흔들림을 막는다.
+// 타이포는 NUMERIC 램프 한 벌(2026-07-25 수렴): 값 = NUMERIC[size], 단위 = 13 고정
+// (과거 Math.max(11, size*0.42) 매직 비율 폐지).
 export function Metric({
   value,
   unit,
-  size = 24,
+  size = 'md',
   color = T1,
   align = 'left',
   style,
 }: {
   value: string | number;
   unit?: string;
-  size?: number;
+  size?: NumericSize;
   color?: string;
   align?: 'left' | 'center';
   style?: StyleProp<ViewStyle>;
 }) {
   return (
     <View style={[metric.row, align === 'center' && metric.center, style]}>
-      <Text style={[metric.value, {fontSize: size, color}]}>{value}</Text>
-      {unit ? (
-        <Text
-          style={[
-            metric.unit,
-            {fontSize: Math.max(11, Math.round(size * 0.42)), color},
-          ]}>
-          {unit}
-        </Text>
-      ) : null}
+      <Text style={[metric.value, NUMERIC[size], {color}]}>{value}</Text>
+      {unit ? <Text style={[metric.unit, {color}]}>{unit}</Text> : null}
     </View>
   );
 }
@@ -1264,13 +1155,12 @@ const metric = StyleSheet.create({
   center: {justifyContent: 'center'},
   value: {
     fontFamily: DISPLAY,
-    fontWeight: '700',
-    letterSpacing: -0.5,
     fontVariant: ['tabular-nums'],
     includeFontPadding: false,
   },
   unit: {
     fontFamily: FONT,
+    fontSize: rf(13),
     fontWeight: '700',
     letterSpacing: 0,
     opacity: 0.7,

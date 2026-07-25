@@ -315,14 +315,8 @@ export default function ProgressionScreen({
           testID="stat-row"
           style={s.statCardInner}
           divider
-          valueSize={rf(20)}
-          valueWeight="600"
-          valueLS={-0.4}
-          unitSize={rf(11)}
-          unitWeight="600"
-          labelSize={rf(11)}
-          labelWeight="600"
-          labelMarginTop={5}
+          // 4칸 보조 스탯 줄 → NUMERIC sm(사이트별 타이포 복원 prop 회수, 2026-07-25).
+          size="sm"
           items={[
             {value: Math.round(ctx.cumulativeKm).toLocaleString(), unit: 'km', label: '총 거리'},
             {value: String(ctx.registeredShoeCount), unit: '켤레', label: '등록 신발'},

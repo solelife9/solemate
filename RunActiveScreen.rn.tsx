@@ -607,15 +607,18 @@ export default function RunActiveScreen({
       </Animated.View>
       )}
 
-      {/* 트랙: 링 아래 회색 한 줄 — 거리 · 확정 랩거리 · 보정 상태(박스·색 없이 조용히) */}
-      {track && (
+      {/* 트랙: 링 아래 회색 한 줄 — 거리 · 확정 랩거리 · 보정 상태(박스·색 없이 조용히).
+          일시정지엔 숨김(링이 사라진 자리에 홀로 떠 어색 + 거리는 히어로 1칸에 이미 큼,
+          2026-07-25 민우님 실기기 검사). */}
+      {track && !uiPaused && (
         <Text style={r.trackUnder} accessibilityLabel={`${track.lapDistKm.toFixed(2)}킬로미터, 한 바퀴 ${track.lapM}미터${track.calibrated ? ', GPS 보정됨' : ''}`}>
           <Text style={r.trackUnderStrong}>{track.lapDistKm.toFixed(2)}</Text> km · {track.lapM} m 랩{track.calibrated ? <Text style={r.trackUnderCk}> · 보정됨</Text> : ''}
         </Text>
       )}
 
-      {/* 스피드 코칭 — 현재 km 목표 페이스 대비 빠름/적정/느림(targetPaceSec 있을 때만) */}
-      {targetPaceSec != null && (() => {
+      {/* 스피드 코칭 — 현재 km 목표 페이스 대비 빠름/적정/느림(targetPaceSec 있을 때만).
+          일시정지엔 숨김 — 멈춰 있는 사람에게 '속도를 올려요'는 넌센스(2026-07-25). */}
+      {targetPaceSec != null && !uiPaused && (() => {
         const BUF = 8; // ±8초/km 허용 오차(GPS 출렁임 흡수)
         const diff = currentPaceSec != null ? currentPaceSec - targetPaceSec : null;
         const state = diff == null ? 'wait' : diff <= -BUF ? 'fast' : diff >= BUF ? 'slow' : 'on';
@@ -643,8 +646,10 @@ export default function RunActiveScreen({
         <View style={[r.hm, r.hmDivider]} accessibilityRole="text" accessibilityLabel={`${uiPaused ? '평균 페이스' : (track ? '랩 페이스' : '현재 페이스')} ${uiPaused ? avgPaceLabel : paceLabel}`}><Text maxFontSizeMultiplier={FONT_SCALE_CAP_HERO} style={[r.hmV, uiPaused && r.hmVPaused]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72}>{uiPaused ? avgPaceLabel : paceLabel}</Text><Text style={r.hmL}>{uiPaused ? '평균 페이스' : (track ? '랩 페이스' : '현재 페이스')}</Text></View>
       </Animated.View>
 
-      {/* 트랙: 지난 랩(최근 3) — 박스 없는 한 줄, 라벨 회색 + 랩번호/구간시간(직전 랩을 즉시 확인). */}
-      {track && track.recent.length > 0 && (
+      {/* 트랙: 지난 랩(최근 3) — 박스 없는 한 줄. 러닝 중엔 히어로 바로 아래(직전 랩 즉시
+          확인), 일시정지엔 지표 블록을 끊지 않게 서브 지표 '아래'로 내린다(2026-07-25
+          민우님 실기기 검사 — "지표 중간에 랩기록이 떠서 보기 불편"). */}
+      {track && track.recent.length > 0 && !uiPaused && (
         <View style={r.recent}>
           <Text style={r.recentK}>지난 랩</Text>
           {track.recent.map(rl => (
@@ -665,6 +670,18 @@ export default function RunActiveScreen({
               <Text style={[r.smV, (m as any).c && { color: (m as any).c }]}>{m.v}{m.u ? <Text style={r.smU}> {m.u}</Text> : null}</Text>
               <Text style={[r.smL, (m as any).c && { color: (m as any).c, fontWeight: '600' as const }]}>{m.l}</Text>
             </View>
+          ))}
+        </View>
+      )}
+
+      {/* 트랙 일시정지: 지난 랩은 지표 블록이 끝난 뒤 한 줄 — 히어로·서브 사이를 끊지 않는다. */}
+      {track && track.recent.length > 0 && uiPaused && (
+        <View style={r.recent}>
+          <Text style={r.recentK}>지난 랩</Text>
+          {track.recent.map(rl => (
+            <Text key={rl.lap} style={r.recentV} accessibilityLabel={`${rl.lap}랩 ${fmtLapSplit(rl.split)}`}>
+              <Text style={r.recentN}>{rl.lap} </Text>{fmtLapSplit(rl.split)}
+            </Text>
           ))}
         </View>
       )}

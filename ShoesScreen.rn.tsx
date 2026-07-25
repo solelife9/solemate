@@ -11,7 +11,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {
   BG, CARD_HI, GLASS, ACCENT, DANGER, WARN, GOOD, T1, T2, T3, T4, FONT, DISPLAY, withAlpha, RADIUS, GUTTER, MOTION, Shoe, Run, SHOES, TYPE,
-  BAR,
+  BAR, NUMERIC,
 } from './theme';
 import { TabBar, TABBAR_CLEARANCE, Pill, InjuryBanner, Button, SwipeBack, AmbientBackdrop, Rise, GlassEdge, WEAR_TONE_COLOR, ScreenHeader, Input } from './primitives';
 import { RunCard, RunDetail } from './HistoryScreen.rn';
@@ -43,6 +43,7 @@ const condLabel = (pct: number) => wearTier(pct).label;
 function ShoeDetail({
   shoe, idx, runs, totals, unit, weightKg, surfaceOf, onBack, onRename, onDelete, onRetire, onSetMaxKm,
   rawShoe, rawRuns, progressionCtx, equippedTitle, onRetiredKeepsake, now, allShoes,
+  age = 0, sex = 'male', restHR = 0,
 }: {
   shoe: Shoe;
   idx: number;
@@ -69,6 +70,9 @@ function ShoeDetail({
   equippedTitle?: string | null;
   onRetiredKeepsake?: (record: RetiredShoeRecord) => void;
   now?: number;
+  /** 신체 파라미터(2026-07-25 IA 심사 HIGH #1) — 미주입 시 RunDetail 심박존이 폴백
+   *  (max HR 190)으로 계산돼 기록탭 진입과 같은 런의 숫자가 달라졌다(Truth only 위반). */
+  age?: number; sex?: 'male' | 'female'; restHR?: number;
 }) {
   // 비율은 km 절대값, 표시 숫자만 표시 단위로 환산한다.
   const remainKm = Math.max(0, shoe.max - shoe.used);
@@ -210,7 +214,7 @@ function ShoeDetail({
   // 런 상세(기록탭 RunDetail 재사용) — 카드 탭으로 진입, 뒤로가면 신발 상세 복귀.
   if (selRun) {
     return (
-      <RunDetail run={selRun} shoe={allShoes[selRun.shoe]} unit={unit} onBack={() => setSelRun(null)} />
+      <RunDetail run={selRun} shoe={allShoes[selRun.shoe]} unit={unit} onBack={() => setSelRun(null)} age={age} sex={sex} restHR={restHR} />
     );
   }
 
@@ -544,8 +548,11 @@ export default function ShoesScreen({
   detailShoeId, onConsumeDetail,
   rawShoes, rawRuns, progressionCtx, equippedTitle, onRetiredKeepsake, now, userName,
   forecasts, rotation, onOpenArchive, archivedCount = 0,
+  age = 0, sex = 'male', restHR = 0,
 }: {
   userName?: string;
+  /** 신체 파라미터 — 상세→런 상세(RunDetail) 심박존/부하 계산용(기록탭 경로와 동일 숫자 보장). */
+  age?: number; sex?: 'male' | 'female'; restHR?: number;
   shoes?: Shoe[];
   // 신발 id별 교체 예측(App 이 실효마모 모델로 계산). 락커 목록에 '약 N주 후 교체' 한 줄 +
   // 교체 임박 신발 상단 정렬 + '곧 교체할 신발 N켤레' 요약에 쓴다(표시 전용, 미주입 시 폴백).
@@ -626,6 +633,7 @@ export default function ShoesScreen({
         equippedTitle={equippedTitle}
         onRetiredKeepsake={onRetiredKeepsake}
         now={now}
+        age={age} sex={sex} restHR={restHR}
       />
     );
   }
@@ -846,7 +854,8 @@ const s = StyleSheet.create({
   statGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingVertical: rv(6), paddingHorizontal: rs(16) },
   statGridCell3: { width: '33.3%', paddingVertical: rv(10) },
   shareLine: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, paddingHorizontal: rs(16), paddingBottom: rv(14), marginTop: rv(-2), fontVariant: ['tabular-nums'] },
-  statValue: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.title.fontSize, letterSpacing: 0.3, fontVariant: ['tabular-nums'] },
+  // 값 타이포 = NUMERIC.md — 숫자 표기 단일 램프 수렴(2026-07-25, 구 title 23/400/0.3 회수).
+  statValue: { color: T1, fontFamily: DISPLAY, ...NUMERIC.md, fontVariant: ['tabular-nums'] },
   statUnit: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize },
   statLabel: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, marginTop: rv(4) },
 

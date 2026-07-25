@@ -15,7 +15,7 @@ import {Text} from './lib/text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { BG, CARD, CARD_DIM, CARD_HI, ACCENT, BRAND, GOOD, DANGER, WARN, T1, T2, T3, SEP, CARD_BORDER, FONT, DISPLAY, withAlpha, TIER_COLORS, TIER_LABEL, KAKAO_YELLOW, KAKAO_LABEL, NAVER_GREEN, NAVER_LABEL, RADIUS, GUTTER, MOTION, HALL_GOLD, TYPE, GLASS } from './theme';
-// recap 토글 = SegmentedControl(accentSolid), 스탯 그리드들 = StatGrid 단일 프리미티브.
+// recap 토글 = SegmentedControl(sm), 스탯 그리드들 = StatGrid 단일 프리미티브.
 import { TabBar, TABBAR_CLEARANCE, SectionTitle, Button, SegmentedControl, StatGrid, Stepper, AmbientBackdrop, Rise, GlassEdge, Toggle, KakaoMark, NaverMark, Input } from './primitives';
 import { Unit, unitKorean, displayNum } from './lib/units';
 import { weeklyRecap, monthlyRecap, type RecapRun, type RecapShoe } from './lib/recap';
@@ -885,7 +885,7 @@ export default function ProfileScreen({
           <View style={s.recapHead}>
             <Text style={s.sectionLabel}>돌아보기</Text>
             <SegmentedControl
-              variant="accentSolid"
+              size="sm"
               block={false}
               items={[{ key: 'weekly', label: '주간' }, { key: 'monthly', label: '월간' }]}
               value={recapMode}
@@ -925,9 +925,7 @@ export default function ProfileScreen({
                 <StatGrid
                   style={{ marginTop: rv(6) }}
                   divider
-                  valueSize={rf(26)}
-                  valueWeight="400"
-                  valueLS={0.3}
+                  size="md"
                   items={[
                     { value: recapTotalDisplay, unit: unit, label: '총 거리', testID: 'recap-total' },
                     { value: recap.runCount, unit: '회', label: '러닝 수', testID: 'recap-runcount' },
@@ -1034,7 +1032,7 @@ export default function ProfileScreen({
                   <>
                     <Text style={s.panelHint}>거리 안내 주기</Text>
                     <SegmentedControl
-                      variant="accentSolid"
+                      size="sm"
                       items={[{ key: '0.5', label: '0.5km' }, { key: '1', label: '1km' }, { key: '2', label: '2km' }, { key: '0', label: '끄기' }]}
                       value={String(voice.intervalKm)}
                       onChange={(k) => patchVoice({ intervalKm: Number(k) as VoiceSettings['intervalKm'] })}
@@ -1044,7 +1042,7 @@ export default function ProfileScreen({
                     <NotifToggle label="페이스 안내" value={voice.paceCue} onToggle={() => patchVoice({ paceCue: !voice.paceCue })} testID="voice-toggle-pace" />
                     {voice.paceCue && (
                       <SegmentedControl
-                        variant="accentSolid"
+                        size="sm"
                         items={[{ key: 'split', label: '구간 페이스' }, { key: 'avg', label: '평균 페이스' }]}
                         value={voice.paceBasis}
                         onChange={(k) => patchVoice({ paceBasis: k as VoiceSettings['paceBasis'] })}
@@ -1055,7 +1053,7 @@ export default function ProfileScreen({
                     <NotifToggle label="경과 시간 안내" value={voice.timeCue} onToggle={() => patchVoice({ timeCue: !voice.timeCue })} testID="voice-toggle-time" />
                     <Text style={s.panelHint}>볼륨</Text>
                     <SegmentedControl
-                      variant="accentSolid"
+                      size="sm"
                       items={[{ key: String(VOICE_VOLUME_STEPS[0]), label: '작게' }, { key: String(VOICE_VOLUME_STEPS[1]), label: '보통' }, { key: String(VOICE_VOLUME_STEPS[2]), label: '크게' }]}
                       value={String(voice.volume)}
                       onChange={(k) => patchVoice({ volume: Number(k) })}
@@ -1119,11 +1117,12 @@ export default function ProfileScreen({
                 <View style={{ marginTop: rv(14) }}>
                   <Stepper value={age > 0 ? age : '미설정'} suffix="나이(세)" onMinus={() => stepAge(-1)} onPlus={() => stepAge(1)} />
                 </View>
-                {/* 수제 흰 솔리드 칩 → SegmentedControl(neutral) — 앱 전역 선택 스트립과
-                    같은 문법(선택=흰 9% 유리, 흰 솔리드 강조 회수. 검수 MED, 2026-07-16). */}
+                {/* 수제 흰 솔리드 칩 → SegmentedControl — 앱 전역 선택 스트립과 같은
+                    필 문법(설정 인라인 = sm. 검수 MED 2026-07-16 → 필 수렴 2026-07-25). */}
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: rv(14) }}>
                   <Text style={s.settingLabel}>성별</Text>
                   <SegmentedControl
+                    size="sm"
                     items={[{ key: 'male', label: '남성' }, { key: 'female', label: '여성' }]}
                     value={sex ?? ''}
                     onChange={(k) => onChangeSex?.(k as 'male' | 'female')}
@@ -1382,8 +1381,8 @@ const s = StyleSheet.create({
 
   // ── 돌아보기(리캡) ───────────────────────────────────────────────────────────
   recapHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingBottom: rv(12), paddingHorizontal: rs(4) },
-  // 주/월 토글은 SegmentedControl(accentSolid, block=false)로 이전(과거 recapToggle/
-  // recapTab/recapTabOn/recapTabTxt/recapTabTxtOn 제거, 시각 동등).
+  // 주/월 토글은 SegmentedControl(sm, block=false)로 이전(과거 recapToggle/
+  // recapTab/recapTabOn/recapTabTxt/recapTabTxtOn 제거).
   recapTopRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: rv(8) },
   recapPeriod: { color: T2, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '700' },
   recapShareBtn: { flexDirection: 'row', alignItems: 'center', gap: rv(4), paddingHorizontal: rs(12), paddingVertical: rv(8), borderRadius: RADIUS.pill, backgroundColor: withAlpha(ACCENT, 0.12) },

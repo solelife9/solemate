@@ -258,6 +258,15 @@ export type TypeKey = keyof typeof TYPE;
 export const HERO = { hero: rf(40), heroLg: rf(56), mega: rf(76) } as const;
 export type HeroKey = keyof typeof HERO;
 
+// 중간 크기 숫자(값+단위+라벨) 단일 램프 — Stat/Metric/Stepper 3벌 수렴(2026-07-25 민우님 목업 확정).
+// 규칙: 값 700 고정 · 자간 음수 램프 · tabular-nums 필수 · 단위 = 13(T3, baseline 정렬) 고정.
+export const NUMERIC = {
+  sm: {fontSize: rf(20), fontWeight: '700', letterSpacing: -0.4},
+  md: {fontSize: rf(24), fontWeight: '700', letterSpacing: -0.5},
+  lg: {fontSize: rf(30), fontWeight: '700', letterSpacing: -0.5},
+} as const;
+export type NumericSize = keyof typeof NUMERIC;
+
 // ── 터치 타깃 (HIG 44pt — 협상 불가) ──────────────────────────────────────────
 // 인터랙티브 요소의 최소 실효 크기(크기 + 2×hitSlop ≥ 44). 화면들이 각자 26/34/38pt
 // 로 미달하던 것을 이 상수 기준으로 보정한다(2026-07-24 접근성 심사 정본 승격).

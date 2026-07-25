@@ -346,7 +346,10 @@ export function GhostShoeCard({width, onPress}: {width: number; onPress?: () => 
 }
 
 // ─── 가디언 ────────────────────────────────────────────────────────
-function Guardian({danger, pct, onPress}: {danger: boolean; pct: number; onPress?: () => void}) {
+// export(2026-07-25 IA 심사): 이 파일의 기본 export 화면은 미마운트 상태라 가디언이
+// 라이브 홈(HomeScreen.rn)에서 죽어 있었다 — 내구도 개입이 신발 고르는 결정 시점에
+// 침묵하던 회귀. HomeScreen 이 이 컴포넌트를 직접 소비한다(ShoeCard 와 같은 방식).
+export function Guardian({danger, pct, onPress}: {danger: boolean; pct: number; onPress?: () => void}) {
   const color = danger ? DANGER : WARN;
   // pct 는 마모(percentUsed) — 사용자 노출은 '남은 수명' 방향으로 환산(표기 통일).
   const label = danger ? KEEP_GOING_REPLACE : `남은 수명 ${Math.max(0, 100 - Math.round(pct))}% · 슬슬 교체를 준비할 때`;

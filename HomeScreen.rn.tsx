@@ -22,12 +22,13 @@ import {
 import type { RankTier } from './lib/progression/types';
 import { TabBar, TABBAR_CLEARANCE, KeegoWordmark, SectionTitle, AmbientBackdrop, GlassEdge } from './primitives';
 import { Unit } from './lib/units';
-import { ShoeCard as KeegoShoeCard, GhostShoeCard } from './screens/KeegoHome';
+import { ShoeCard as KeegoShoeCard, GhostShoeCard, Guardian } from './screens/KeegoHome';
+import { shoeHealth, wearTier } from './lib/shoe';
 import { recommendNextShoes, buildShopLinks, categoryLabelKo, AFFILIATE_DISCLOSURE } from './lib/affiliate';
 import { type ReplacementForecast } from './lib/wearView';
 import { shouldRecommendNextShoe } from './lib/recommendTrigger';
 import { SHOE_REPLACE_PCT } from './lib/shoe';
-import { TrainingLoadSignal } from './TrainingLoadCard';
+import { TrainingLoadCard } from './TrainingLoadCard';
 import type { TrainingLoadAssessment } from './lib/trainingLoad';
 
 export type WeekStats = { km: string; runs: number; pace: string };
@@ -424,6 +425,23 @@ export default function HomeScreen({
           <Rise>
             <ShoeCarousel shoes={shoes} activeIdx={idx} onSelect={select} unit={unit} onOpenShoe={onOpenShoe} onStart={onStart} />
           </Rise>
+          {/* 가디언 — 교체 고려(80%+)/권장(90%+) 신발을 골랐을 때만 개입(부활, 2026-07-25
+              IA 심사): 구 KeegoHome 화면 교체 때 유실돼 내구도 경고가 결정 시점에 점 색
+              하나로만 말하던 회귀. 탭 = 해당 신발 상세. */}
+          {(() => {
+            const h = shoeHealth({ ...(active as any), total_km: (active as any).used } as any, []);
+            const tier = wearTier(h.percentUsed);
+            if (tier.key !== 'consider' && tier.key !== 'replace') return null;
+            return (
+              <Rise delay={60}>
+                <Guardian
+                  danger={tier.key === 'replace'}
+                  pct={h.percentUsed}
+                  onPress={onOpenShoe && active?.id ? () => onOpenShoe(String(active.id)) : undefined}
+                />
+              </Rise>
+            );
+          })()}
           {/* 부상위험 시그널 제거(2026-07-05 애널리틱스 다이어트): 아이폰 단독의 얇은
               데이터로 '오늘 쉬어라'를 처방하는 건 러너의 자율을 침범하고(선 넘음), TSB
               '오늘 컨디션'과도 중복이었다. 신발 마모 경고(구체·측정가능)는 신발 카드/상세의
@@ -439,9 +457,10 @@ export default function HomeScreen({
             </View>
             <View style={{ paddingHorizontal: GUTTER, gap: SPACE.sm }}>
               <WeekCard week={week} unit={unit} weeklyGoalKm={weeklyGoalKm} streakDays={streakDays} />
-              {/* 훈련 부하 시그널 — 경고할 게 있을 때만 나타난다(평소엔 이 자리 자체가 없음).
-                  자세히 = 기록 탭 인사이트(TrainingLoadCard)로. */}
-              <TrainingLoadSignal load={load} onPress={() => onTab?.(2)} />
+              {/* 훈련 부하 — 홈 상주(안 A, 2026-07-25 민우님 확정): 소비 시점이 '러닝 전'
+                  이라 홈이 맞다. 평소엔 헤더+게이지 한 장(안전=조용한 무채/GOOD), 탭하면
+                  상세 확장. 구 조건부 Signal(위험시에만)·기록 탭 카드는 폐지. */}
+              <TrainingLoadCard load={load} unit={unit} compact />
             </View>
           </Rise>
           {/* (체력 트렌드 FitnessCard → 기록 탭 인사이트로 이동, 진척 띠 → 마이탭으로

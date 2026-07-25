@@ -1,19 +1,15 @@
 // ============================================================================
 // TrainingLoadCard.tsx — 오늘의 훈련 부하 (재노출 2026-07-18, 시안 A 승인)
 //
-// 07-05 애널리틱스 다이어트에서 걷어냈던 훈련 부하를 두 표면으로 되살린다:
-//   · TrainingLoadSignal — 홈 조건부 한 줄. 침묵이 기본 — confident 하고 부하가
-//     '늘어남(caution)' 이상일 때만 나타난다(매일 처방하던 옛 실수 반복 금지).
-//     탭하면 기록 탭 인사이트로(보기 축은 기록 탭, 홈은 신호만).
-//   · TrainingLoadCard — 기록 탭 인사이트 상세. 스윗스팟 게이지(ACWR 위치) +
-//     최근 7일 / 평소 주간 평균 분해. 약어(ACWR) 없이 평어만.
-//
-// 판정·문구는 lib/trainingLoad(assessTrainingLoad)가 단일 소스 — 이 파일은 표시
-// 전용이다(assessment 를 주입받는다). 색은 조건색 토큰(GOOD/WARN/DANGER)만 쓴다.
+// 배치 개편(2026-07-25 민우님 안 A 확정): 훈련 부하의 소비 시점은 '러닝 전' — 홈으로
+// 이동한다. 홈 = TrainingLoadCard compact(헤더+게이지 상시, 탭하면 상세 확장),
+// 기록 탭 카드·구 조건부 Signal 은 폐지. ACWR 판정·문구는 lib/trainingLoad
+// (assessTrainingLoad)가 단일 소스 — 이 파일은 표시 전용. 색은 조건색 토큰만.
 // ============================================================================
-import React from 'react';
-import { rs, rv } from './lib/responsive';
+import React, { useState } from 'react';
+import { rs, rv, ri } from './lib/responsive';
 import { View, Pressable, StyleSheet } from 'react-native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import {Text} from './lib/text';
 import {
   CARD_BORDER, GOOD, WARN, DANGER, T1, T2, T3,
@@ -22,7 +18,7 @@ import {
 import { GlassEdge } from './primitives';
 import { RISK_DISCLAIMER } from './lib/injuryRisk';
 import {
-  TrainingLoadAssessment, LoadLevel, LOAD_WORD, loadRatioPhraseKo, loadSignalKo,
+  TrainingLoadAssessment, LoadLevel, LOAD_WORD, loadRatioPhraseKo,
   ACWR_LOW_AT, ACWR_CAUTION_AT, ACWR_HIGH_AT,
 } from './lib/trainingLoad';
 import { Unit, displayNum } from './lib/units';
@@ -34,35 +30,10 @@ const LEVEL_COLOR: Record<LoadLevel, string> = {
   high: DANGER,
 };
 
-// ── 홈 조건부 시그널 ─────────────────────────────────────────────────────────
+// (구 TrainingLoadSignal — 홈 조건부 한 줄 — 은 안 A 로 폐지: 컴팩트 카드가 상시
+//  담당한다. "평소에 안 보이면 지표를 신뢰/학습할 기회가 없다"는 단점도 함께 해소.)
 
-export function TrainingLoadSignal({
-  load, onPress, style,
-}: { load?: TrainingLoadAssessment | null; onPress?: () => void; style?: any }) {
-  // 침묵 계약: 표본 부족(미확신)이거나 안정/가벼움이면 홈에 아무것도 띄우지 않는다.
-  if (!load || !load.confident) return null;
-  if (load.level !== 'caution' && load.level !== 'high') return null;
-
-  const color = LEVEL_COLOR[load.level];
-  const msg = loadSignalKo(load);
-  const Host: any = onPress ? Pressable : View;
-  return (
-    <Host
-      style={[s.signal, { backgroundColor: withAlpha(color, 0.1), borderColor: withAlpha(color, 0.35) }, style]}
-      testID={`training-load-signal-${load.level}`}
-      accessibilityLabel={`훈련 부하 ${LOAD_WORD[load.level]}. ${msg}`}
-      {...(onPress
-        ? { onPress, accessibilityRole: 'button' as const, accessibilityHint: '기록 탭에서 훈련 부하 자세히 보기' }
-        : { accessibilityRole: 'summary' as const })}
-    >
-      <View style={[s.dot, { backgroundColor: color }]} />
-      <Text style={s.signalMsg} numberOfLines={1}>{msg}</Text>
-      {onPress ? <Text style={s.signalMore}>자세히 ›</Text> : null}
-    </Host>
-  );
-}
-
-// ── 기록 탭 인사이트 카드 ────────────────────────────────────────────────────
+// ── 훈련 부하 카드(홈 상주) ──────────────────────────────────────────────────
 
 // 게이지 눈금 — ACWR 0~GAUGE_MAX 를 가로 100% 에 선형 매핑. 2.0 캡이면 스윗스팟
 // (0.8~1.3)이 화면 가운데 40~65% 에 놓여 '내가 어디쯤인지'가 한눈에 읽힌다.
@@ -70,8 +41,13 @@ const GAUGE_MAX = 2.0;
 const pct = (v: number): `${number}%` => `${Math.min(97, Math.max(2, (v / GAUGE_MAX) * 100))}%`;
 
 export function TrainingLoadCard({
-  load, unit = 'km', style,
-}: { load?: TrainingLoadAssessment | null; unit?: Unit; style?: any }) {
+  load, unit = 'km', style, compact = false,
+}: { load?: TrainingLoadAssessment | null; unit?: Unit; style?: any;
+  /** 홈 배치용(안 A) — 헤더+게이지만 상시, 탭하면 상세(메시지·주간 분해·면책) 확장. */
+  compact?: boolean;
+}) {
+  // compact 확장 상태 — 훅은 이른 반환보다 위(훅 규칙).
+  const [open, setOpen] = useState(false);
   // 최근 4주에 런이 하나도 없으면 숨김(빈 게이지 날조 금지 — Truth only).
   if (!load) return null;
   if (load.acuteKm <= 0 && load.chronicKm <= 0) return null;
@@ -82,18 +58,28 @@ export function TrainingLoadCard({
   const word = level ? LOAD_WORD[level] : '기록 쌓는 중';
   const phrase = loadRatioPhraseKo(load);
   const acuteOn = level === 'caution' || level === 'high';
+  const expanded = !compact || open;
+  const Host: any = compact ? Pressable : View;
 
   return (
-    <View style={[s.card, style]} testID={`training-load-card-${level ?? 'new'}`} accessibilityRole="summary">
+    <Host
+      style={[s.card, style]}
+      testID={`training-load-card-${level ?? 'new'}`}
+      {...(compact
+        ? {onPress: () => setOpen(v => !v), accessibilityRole: 'button' as const,
+           accessibilityLabel: `훈련 부하 ${word}. ${load.message}`,
+           accessibilityHint: open ? '접기' : '자세히 보기'}
+        : {accessibilityRole: 'summary' as const})}>
       {/* 균일 RN 보더 폐지 → 전 화면 카드 공통 코너 페이드 헤어라인(GlassEdge). */}
       <GlassEdge glints={false} radius={RADIUS.lg} />
       <View style={s.head}>
         <View style={[s.dot, { backgroundColor: color }]} />
         <Text style={s.title}>훈련 부하 — <Text style={{ color }}>{word}</Text></Text>
         <Text style={s.phrase}>{phrase}</Text>
+        {compact && <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={ri(13)} color={T3} />}
       </View>
 
-      <Text style={s.msg}>{load.message}</Text>
+      {expanded && <Text style={s.msg}>{load.message}</Text>}
 
       {level && (
         <View style={s.gauge} testID="training-load-gauge">
@@ -113,32 +99,26 @@ export function TrainingLoadCard({
         </View>
       )}
 
-      <View style={s.split}>
-        <View style={[s.chip, acuteOn && { borderColor: withAlpha(WARN, 0.4), backgroundColor: withAlpha(WARN, 0.07) }]}>
-          <Text style={s.chipLb}>최근 7일</Text>
-          <Text style={s.chipV}>{displayNum(load.acuteKm, unit, 1)}<Text style={s.chipU}>{unit}</Text></Text>
+      {expanded && (
+        <View style={s.split}>
+          <View style={[s.chip, acuteOn && { borderColor: withAlpha(WARN, 0.4), backgroundColor: withAlpha(WARN, 0.07) }]}>
+            <Text style={s.chipLb}>최근 7일</Text>
+            <Text style={s.chipV}>{displayNum(load.acuteKm, unit, 1)}<Text style={s.chipU}>{unit}</Text></Text>
+          </View>
+          <View style={s.chip}>
+            <Text style={s.chipLb}>평소 주간 평균</Text>
+            <Text style={s.chipV}>{displayNum(load.chronicKm, unit, 1)}<Text style={s.chipU}>{unit}</Text></Text>
+            <Text style={s.chipS}>최근 4주</Text>
+          </View>
         </View>
-        <View style={s.chip}>
-          <Text style={s.chipLb}>평소 주간 평균</Text>
-          <Text style={s.chipV}>{displayNum(load.chronicKm, unit, 1)}<Text style={s.chipU}>{unit}</Text></Text>
-          <Text style={s.chipS}>최근 4주</Text>
-        </View>
-      </View>
+      )}
 
-      <Text style={s.disc}>{RISK_DISCLAIMER}</Text>
-    </View>
+      {expanded && <Text style={s.disc}>{RISK_DISCLAIMER}</Text>}
+    </Host>
   );
 }
 
 const s = StyleSheet.create({
-  // 시그널 — InjuryRiskCard signal 과 동일 문법(점 + 한 줄 + 자세히)
-  signal: {
-    flexDirection: 'row', alignItems: 'center', gap: SPACE.sm,
-    borderRadius: RADIUS.md, borderCurve: 'continuous', borderWidth: 1,
-    paddingVertical: rv(11), paddingHorizontal: rs(14),
-  },
-  signalMsg: { ...TYPE.caption, color: T2, flex: 1 },
-  signalMore: { ...TYPE.caption, color: T3 },
   dot: { width: rs(9), height: rs(9), borderRadius: rs(5) },
 
   // 카드 — 기록 탭 형제 카드와 같은 유리 재질(외곽선은 GlassEdge 헤어라인이 소유).

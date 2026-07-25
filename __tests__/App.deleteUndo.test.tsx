@@ -1,17 +1,11 @@
 /**
- * App.tsx 삭제 undo(실행취소) 통합 테스트 — 런/신발 삭제 후 '삭제됨 · 실행취소' 토스트로
- * *완전복원*이 되는가.
+ * App.tsx 삭제 확정 통합 테스트 — '실행취소' 액션 전면 폐지(2026-07-25 민우님 확정).
  *
- * 회귀 방어 핵심(anti-test: 부분복원 금지):
- *   삭제는 묘비(soft-delete)일 뿐이라 '실행취소'로 되돌릴 수 있어야 한다. '완전복원'은 라이브
- *   레코드만 살아나는 게 아니라 — 런의 사이드키(route_/time_/surface_/splits_)까지 *원래 값
- *   그대로* 돌아오고, 묘비가 되돌려져야(tombstones store 에서 빠지고, 라이브가 deleted:false +
- *   updatedAt 갱신으로 복원) 한다. 여기서는 그 관측 가능한 결과를 모두 한 흐름으로 단언한다:
- *     1) 삭제 시 '삭제됨' 메시지 + '실행취소' 액션 토스트가 뜬다.
- *     2) 삭제 후: live 집계에서 빠지고({deleted:true} 묘비 영속), 사이드키도 지워진다.
- *     3) '실행취소' 후: 런이 live 로 복귀(used 회복) + 사이드키 4종 전부 원복 + 묘비 제거 +
- *        복원 레코드는 deleted 아님 & updatedAt 이 묘비보다 새것(머지 un-delete 우선).
- *   사이드키 4종을 *전부* 단언해 '런만 살고 사이드키 유실'(부분복원)을 거부한다.
+ * 새 계약:
+ *   보호막은 삭제 전 확인 다이얼로그 1겹(showDialog)로 단일화한다. 삭제 후 토스트는
+ *   메시지("삭제됨")만 — actionLabel/onAction 이 *없어야* 한다(액션이 다시 붙으면 회귀).
+ *   삭제는 여전히 묘비(soft-delete): live 집계 제외 + {deleted:true} 묘비 영속 +
+ *   사이드키(route_/time_/…) 전부 정리(고아 누수 금지).
  *
  * @format
  */
@@ -22,7 +16,7 @@ import * as dialogLib from '../lib/dialog';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import App from '../App';
 import {seedBootCache} from './helpers/bootSeed';
-import {getCurrentToast, runToastAction, dismissToast, TOAST_UNDO_LABEL} from '../lib/toast';
+import {getCurrentToast, dismissToast} from '../lib/toast';
 
 const K_TOMBSTONES = 'tombstones_v1';
 
@@ -135,7 +129,7 @@ function tombstoneRun(store: any, id: string) {
   return store && Array.isArray(store.runs) ? store.runs.find((r: any) => String(r.id) === id) : undefined;
 }
 
-test('런 삭제→실행취소: 사이드키 4종 포함 완전복원 + 묘비 되돌림(부분복원 거부)', async () => {
+test('런 삭제 확정: 메시지 전용 토스트(액션 없음) + 묘비 영속 + 사이드키 전부 정리', async () => {
   mockBackend();
   // 런 r1 의 사이드키를 미리 깔아둔다(완주 저장이 남긴 것과 동형).
   await AsyncStorage.setItem('route_r1', ORIG.route);
@@ -165,12 +159,12 @@ test('런 삭제→실행취소: 사이드키 4종 포함 완전복원 + 묘비 
   });
   await tick(5);
 
-  // 1) 토스트: '삭제됨' 메시지 + '실행취소' 액션.
+  // 1) 토스트: '삭제됨' 메시지만 — 실행취소 액션이 없어야 한다(폐지 계약).
   const toast = getCurrentToast();
   expect(toast).toBeTruthy();
   expect(toast!.message).toContain('삭제됨');
-  expect(toast!.actionLabel).toBe(TOAST_UNDO_LABEL);
-  expect(typeof toast!.onAction).toBe('function');
+  expect(toast!.actionLabel).toBeUndefined();
+  expect(toast!.onAction).toBeUndefined();
 
   // 2) 삭제 후: live 집계 제외(used 0) + 묘비 영속 + 사이드키 제거.
   await act(async () => {
@@ -194,37 +188,9 @@ test('런 삭제→실행취소: 사이드키 4종 포함 완전복원 + 묘비 
   expect(await AsyncStorage.getItem('hrTrack_r1')).toBeNull();
   expect(await AsyncStorage.getItem('gapTrack_r1')).toBeNull();
 
-  // ── 실행취소 ──
-  await act(async () => {
-    runToastAction(); // '실행취소' 버튼 탭과 동일 경로
-  });
-  await tick(6);
-
-  // 3a) 사이드키 4종 전부 원복(부분복원 거부 — 런만 살고 사이드키 유실 금지).
-  expect(await AsyncStorage.getItem('route_r1')).toBe(ORIG.route);
-  expect(await AsyncStorage.getItem('time_r1')).toBe(ORIG.time);
-  expect(await AsyncStorage.getItem('surface_r1')).toBe(ORIG.surface);
-  expect(await AsyncStorage.getItem('splits_r1')).toBe(ORIG.splits);
-  expect(await AsyncStorage.getItem('paceTrack_r1')).toBe(ORIG.paceTrack);
-  expect(await AsyncStorage.getItem('hrTrack_r1')).toBe(ORIG.hrTrack);
-  expect(await AsyncStorage.getItem('gapTrack_r1')).toBe(ORIG.gapTrack);
-
-  // 3b) live 복귀: s1 used 가 50 으로 회복.
-  await act(async () => {
-    findByProp(renderer.root, 'onTab').props.onTab(1);
-  });
-  await tick(3);
-  expect(usedKmOf(renderer.root, 's1')).toBe(50);
-
-  // 3c) 복원 레코드: deleted 아님 + updatedAt 이 묘비보다 새것(머지 un-delete 우선).
-  const restored = rawRun(renderer.root, 'r1');
-  expect(restored).toBeTruthy();
-  expect(restored.deleted).toBeFalsy();
-  expect(restored.updatedAt).toBeGreaterThan(tombUpdatedAt);
-
-  // 3d) 묘비 되돌림: tombstones store 에서 r1 제거.
-  const afterUndoStore = JSON.parse((await AsyncStorage.getItem(K_TOMBSTONES)) as string);
-  expect(tombstoneRun(afterUndoStore, 'r1')).toBeUndefined();
+  // 3) 삭제는 확정 — 라이브에 r1 이 없고(deleted 레코드 미노출) 묘비가 그대로 남는다.
+  expect(rawRun(renderer.root, 'r1')).toBeUndefined();
+  expect(typeof tombUpdatedAt).toBe('number');
 
   await flushAnim();
   act(() => renderer.unmount());
@@ -264,7 +230,7 @@ test('펜딩(미동기) 런 삭제: 큐(pending_runs)에서도 제거돼 다음 
   act(() => renderer.unmount());
 });
 
-test('신발 삭제→실행취소: 신발 라이브 복귀 + 묘비 되돌림(updatedAt 갱신)', async () => {
+test('신발 삭제 확정: 메시지 전용 토스트(액션 없음) + 묘비 영속', async () => {
   mockBackend();
   const renderer = await mountApp();
 
@@ -286,37 +252,16 @@ test('신발 삭제→실행취소: 신발 라이브 복귀 + 묘비 되돌림(u
   const toast = getCurrentToast();
   expect(toast).toBeTruthy();
   expect(toast!.message).toContain('삭제됨');
-  expect(toast!.actionLabel).toBe(TOAST_UNDO_LABEL);
+  expect(toast!.actionLabel).toBeUndefined();
+  expect(toast!.onAction).toBeUndefined();
 
-  // 삭제 후: uiShoes 에서 빠지고 묘비 영속.
+  // 삭제 후: uiShoes 에서 빠지고 묘비 영속 — 되돌림 경로 없음(확정).
   const afterShoes = findByProp(renderer.root, 'onSetMaxKm').props.shoes as any[];
   expect(afterShoes.some(s => String(s.id) === 's2')).toBe(false);
   const afterDelStore = JSON.parse((await AsyncStorage.getItem(K_TOMBSTONES)) as string);
   const tomb = (afterDelStore.shoes as any[]).find(s => String(s.id) === 's2');
   expect(tomb).toBeTruthy();
   expect(tomb.deleted).toBe(true);
-  const tombUpdatedAt = tomb.updatedAt as number;
-
-  // ── 실행취소 ──
-  await act(async () => {
-    runToastAction();
-  });
-  await tick(6);
-
-  // 신발 라이브 복귀.
-  const restoredShoes = findByProp(renderer.root, 'onSetMaxKm').props.shoes as any[];
-  expect(restoredShoes.some(s => String(s.id) === 's2')).toBe(true);
-
-  // 복원 레코드(rawShoes): deleted 아님 + updatedAt 이 묘비보다 새것.
-  const rawShoes = findByProp(renderer.root, 'onSetMaxKm').props.rawShoes as any[];
-  const restored = rawShoes.find(s => String(s.id) === 's2');
-  expect(restored).toBeTruthy();
-  expect(restored.deleted).toBeFalsy();
-  expect(restored.updatedAt).toBeGreaterThan(tombUpdatedAt);
-
-  // 묘비 되돌림: store 에서 s2 제거.
-  const afterUndoStore = JSON.parse((await AsyncStorage.getItem(K_TOMBSTONES)) as string);
-  expect((afterUndoStore.shoes as any[]).find(s => String(s.id) === 's2')).toBeUndefined();
 
   await flushAnim();
   act(() => renderer.unmount());

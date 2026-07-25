@@ -72,13 +72,13 @@ import RunGoalScreen from '../../RunGoalScreen.rn';
 // ── C 묶음(폼 + 피드백) 도구 ─────────────────────────────────────────────────
 import HomeScreen from '../../HomeScreen.rn';
 import HistoryScreen, {RunForm} from '../../HistoryScreen.rn';
-import {runToastAction, getCurrentToast, dismissToast, TOAST_UNDO_LABEL} from '../../lib/toast';
+import {getCurrentToast, dismissToast} from '../../lib/toast';
 import {maskDuration, maskDate, validateRunForm} from '../../lib/inputMask';
 import {syncLabel} from '../../lib/syncStatus';
 import type {Shoe, Run} from '../../theme';
 import {
   TIER_LABEL, RADIUS,
-  TYPE, HERO, GUTTER, SCRIM, CARD_BORDER, GLASS, DISPLAY,
+  TYPE, HERO, NUMERIC, GUTTER, SCRIM, CARD_BORDER, GLASS, DISPLAY,
 } from '../../theme';
 import {ymLocal, ymdLocal} from '../../lib/format';
 
@@ -480,12 +480,10 @@ describe('Audit Hardening 수용', () => {
     // 토스트는 전역 store + 실타이머를 쓰므로 각 테스트 후 닫아 다음 테스트로 새지 않게 한다.
     afterEach(() => dismissToast());
 
-    test('토스트: 삭제 시 undo 스낵바가 뜨고 undo가 production restoreRun 으로 사이드키까지 완전복원', async () => {
-      // tautology 금지(이전 버전 결함): 로컬 클로저를 직접 변형하는 게 아니라 실제 <App/> 를
-      // 마운트해 production 의 onDeleteRun → offerRunUndo(토스트) → runToastAction → restoreRun
-      // 경로를 그대로 태운다. 관측 가능한 결과만 단언한다 — ShoesScreen 의 shoes.used(사이드키=
-      // 신발 사용거리), rawRuns 의 deleted 플래그, route_/time_ 로컬키 원복. 복원이 깨지면(런만
-      // 살고 사이드키 유실, 또는 집계 미회복) 이 단언들이 실패한다. (참고: __tests__/App.deleteUndo)
+    test('토스트: 삭제 확정 — 메시지 전용(실행취소 폐지) + 사이드키 정리 + 집계 제외', async () => {
+      // 실제 <App/> 마운트로 production onDeleteRun 경로를 태운다. 2026-07-25 민우님 확정:
+      // 실행취소 액션 전면 폐지 — 관측 계약은 '액션 없는 토스트 + 삭제 확정'이다.
+      // (참고: __tests__/App.deleteUndo — 동일 계약의 상세판)
       // 백엔드: 신발 s1(600km) + s1 로 달린 동기 런 r1(50km).
       (global.fetch as jest.Mock).mockImplementation((url: unknown, init?: {method?: string}) => {
         const u = String(url);
@@ -540,13 +538,15 @@ describe('Audit Hardening 수용', () => {
       });
       await tickAsync(5);
 
-      // 토스트: '삭제됨' 메시지 + '실행취소' 액션(offerRunUndo 가 띄운 것).
+      // 토스트: '삭제됨' 메시지만 — 실행취소 액션 폐지(2026-07-25 민우님 확정, 보호막은
+      // 삭제 전 확인 다이얼로그 1겹). 액션이 다시 붙으면 이 단언이 회귀를 잡는다.
       const toast = getCurrentToast();
       expect(toast).toBeTruthy();
       expect(toast!.message).toContain('삭제됨');
-      expect(toast!.actionLabel).toBe(TOAST_UNDO_LABEL);
+      expect(toast!.actionLabel).toBeUndefined();
+      expect(toast!.onAction).toBeUndefined();
 
-      // 삭제 후: 사이드키 제거 + live 집계 제외(used 0).
+      // 삭제 확정: 사이드키 제거(고아 누수 금지) + live 집계 제외(used 0) + 런 미노출.
       expect(await AsyncStorage.getItem('route_r1')).toBeNull();
       expect(await AsyncStorage.getItem('time_r1')).toBeNull();
       await act(async () => {
@@ -554,25 +554,7 @@ describe('Audit Hardening 수용', () => {
       });
       await tickAsync(3);
       expect(usedKmOf(renderer.root, 's1')).toBe(0);
-
-      // ── 실행취소: 토스트의 onAction(runToastAction) = production restoreRun ──
-      await act(async () => {
-        runToastAction(toast!.id);
-      });
-      await tickAsync(6);
-
-      // 완전복원(부분복원 거부): 사이드키 2종 바이트 원복 + used 50 회복 + 레코드 deleted 아님 + 토스트 닫힘.
-      expect(await AsyncStorage.getItem('route_r1')).toBe('RT');
-      expect(await AsyncStorage.getItem('time_r1')).toBe('08:30');
-      await act(async () => {
-        findByProp(renderer.root, 'onTab').props.onTab(1);
-      });
-      await tickAsync(3);
-      expect(usedKmOf(renderer.root, 's1')).toBe(50);
-      const restored = rawRunOf(renderer.root, 'r1');
-      expect(restored).toBeTruthy();
-      expect(restored!.deleted).toBeFalsy();
-      expect(getCurrentToast()).toBeNull();
+      expect(rawRunOf(renderer.root, 'r1')).toBeUndefined();
 
       await flushAnim();
       act(() => renderer.unmount());
@@ -1008,12 +990,13 @@ describe('Audit Hardening 수용', () => {
       act(() => c.unmount());
 
       // ② SegmentedControl — 선택 상태가 accessibilityState.selected 로 관찰되고, press 시
-      //    onChange 가 그 키로 호출된다(앱 전역 4개 탭 스트립을 대체한 단일 프리미티브).
-      //    컨테이너 보더 = 단일 CARD_BORDER 토큰(neutral variant).
+      //    onChange 가 그 키로 호출된다(앱 전역 탭 스트립을 대체한 단일 프리미티브 —
+      //    2026-07-25 필 수렴으로 variant 4종 폐지, 크기 md/sm 만 남음).
+      //    컨테이너 보더 = 단일 CARD_BORDER 토큰.
       let segVal = 'a';
       const items = [{key: 'a', label: '주간'}, {key: 'b', label: '월간'}];
       const sc = renderTree(
-        el(SegmentedControl, {items, value: 'a', onChange: (k: string) => {segVal = k;}, variant: 'neutral'}),
+        el(SegmentedControl, {items, value: 'a', onChange: (k: string) => {segVal = k;}}),
       );
       const selA = pressableByLabel(sc.root, '주간');
       const selB = pressableByLabel(sc.root, '월간');
@@ -1109,11 +1092,13 @@ describe('Audit Hardening 수용', () => {
       );
       expect(rawAccent).toEqual([]);
 
-      // ⑦ hero 사이즈가 실제 렌더 산출물에 반영된다(관찰): Stat 값 Text 의 fontSize === HERO.heroLg.
-      const h = renderTree(el(Stat, {value: '42', unit: 'km', valueSize: HERO.heroLg, testID: 'hero'}));
+      // ⑦ NUMERIC 램프가 실제 렌더 산출물에 반영된다(관찰): Stat 값 Text 의 fontSize ===
+      //    NUMERIC.lg.fontSize + 700 고정. (구 valueSize 탈출구 prop 은 2026-07-25 램프
+      //    수렴으로 회수 — hero 급 raw 사이즈 주입 경로 자체가 사라졌다.)
+      const h = renderTree(el(Stat, {value: '42', unit: 'km', size: 'lg', testID: 'hero'}));
       const heroVal = h.root.findAll((n: ReactTestRenderer.ReactTestInstance) => {
-        const f = StyleSheet.flatten(n.props && n.props.style) as {fontSize?: number; fontFamily?: string} | undefined;
-        return !!f && f.fontSize === HERO.heroLg && f.fontFamily === DISPLAY;
+        const f = StyleSheet.flatten(n.props && n.props.style) as {fontSize?: number; fontFamily?: string; fontWeight?: string} | undefined;
+        return !!f && f.fontSize === NUMERIC.lg.fontSize && f.fontFamily === DISPLAY && f.fontWeight === '700';
       });
       expect(heroVal.length).toBeGreaterThanOrEqual(1);
       act(() => h.unmount());

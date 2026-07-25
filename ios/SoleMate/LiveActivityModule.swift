@@ -11,16 +11,16 @@ class LiveActivityModule: NSObject {
 
   @objc static func requiresMainQueueSetup() -> Bool { return true }
 
-  @objc(start:goalKm:distanceKm:elapsedSec:paceLabel:avgPaceLabel:cadenceSpm:)
+  @objc(start:goalKm:distanceKm:elapsedSec:paceLabel:avgPaceLabel:cadenceSpm:bpm:)
   func start(_ shoeName: String, goalKm: Double, distanceKm: Double,
-             elapsedSec: Double, paceLabel: String, avgPaceLabel: String, cadenceSpm: Double) {
+             elapsedSec: Double, paceLabel: String, avgPaceLabel: String, cadenceSpm: Double, bpm: Double) {
     if #available(iOS 16.1, *) {
       guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
       endInternal() // 혹시 남아있는 이전 활동 정리
       let attrs = RunActivityAttributes(shoeName: shoeName, goalKm: goalKm)
       let state = RunActivityAttributes.ContentState(
         distanceKm: distanceKm, elapsedSec: Int(elapsedSec),
-        paceLabel: paceLabel, avgPaceLabel: avgPaceLabel, cadenceSpm: Int(cadenceSpm))
+        paceLabel: paceLabel, avgPaceLabel: avgPaceLabel, cadenceSpm: Int(cadenceSpm), bpm: Int(bpm))
       do {
         let act = try Activity<RunActivityAttributes>.request(
           attributes: attrs, contentState: state, pushType: nil)
@@ -31,13 +31,13 @@ class LiveActivityModule: NSObject {
     }
   }
 
-  @objc(update:elapsedSec:paceLabel:avgPaceLabel:cadenceSpm:)
-  func update(_ distanceKm: Double, elapsedSec: Double, paceLabel: String, avgPaceLabel: String, cadenceSpm: Double) {
+  @objc(update:elapsedSec:paceLabel:avgPaceLabel:cadenceSpm:bpm:)
+  func update(_ distanceKm: Double, elapsedSec: Double, paceLabel: String, avgPaceLabel: String, cadenceSpm: Double, bpm: Double) {
     if #available(iOS 16.1, *) {
       guard let act = activityAny as? Activity<RunActivityAttributes> else { return }
       let state = RunActivityAttributes.ContentState(
         distanceKm: distanceKm, elapsedSec: Int(elapsedSec),
-        paceLabel: paceLabel, avgPaceLabel: avgPaceLabel, cadenceSpm: Int(cadenceSpm))
+        paceLabel: paceLabel, avgPaceLabel: avgPaceLabel, cadenceSpm: Int(cadenceSpm), bpm: Int(bpm))
       Task { await act.update(using: state) }
     }
   }

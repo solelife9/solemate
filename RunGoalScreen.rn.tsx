@@ -35,7 +35,7 @@ import { estimateMaxHR, zoneBoundaries } from './lib/analytics/hrZones';
 import { useEffect } from 'react';
 import { HR_ZONE_COLORS, GOOD } from './theme';
 // CTA 는 앱 전역 단일 Button 프리미티브(그라데이션 GRAD_TOP/BOT·글로우·radius 토큰).
-// 모드 탭 스트립은 SegmentedControl 단일 프리미티브(accentTint variant).
+// 모드 탭 스트립은 SegmentedControl 단일 프리미티브(md — 주 탭).
 import { Button, SegmentedControl, SwipeBack, SwipeBackExclude, BottomSheet } from './primitives';
 // 탭 구성 재확정(민우님 2026-07-24): 거리·시간·스피드·트랙 4탭 복원 + '자유'는 거리 탭의
 // 첫 프리셋(val=0)으로. 자유런 전용 탭(2026-07-22안)은 하루 써보고 철회 — 자유는 목표
@@ -250,11 +250,10 @@ export default function RunGoalScreen({
         <View style={s.navIc} />
       </View>
 
-      {/* segmented — 모드 탭 스트립(SegmentedControl accentTint). 거리·시간·스피드·트랙
+      {/* segmented — 모드 탭 스트립(SegmentedControl md). 거리·시간·스피드·트랙
           (민우님 2026-07-24 재확정). '자유'는 거리 탭의 첫 프리셋(기본 선택)이 담당한다. */}
       <SegmentedControl
         style={s.seg}
-        variant="accentTint"
         items={[{ key: 'km', label: '거리' }, { key: 'min', label: '시간' }, { key: 'speed', label: '스피드' }, { key: 'track', label: '트랙' }]}
         value={mode}
         onChange={(k) => pickMode(k as Mode)}
@@ -443,7 +442,7 @@ const s = StyleSheet.create({
   navIc: { width: rs(36), height: rs(36), alignItems: 'center', justifyContent: 'center' },
   navTitle: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.heading.fontSize, fontWeight: '600', letterSpacing: -0.2 },
 
-  // 컨테이너 표면(배경/보더/반경/패딩)은 SegmentedControl accentTint variant 가 책임진다.
+  // 컨테이너 표면(배경/보더/반경/패딩)은 SegmentedControl(필 단일 문법)이 책임진다.
   // 화면 고유 레이아웃(좌우·상단 여백)만 남긴다(과거 segBtn/On·segText/On 제거).
   seg: { marginHorizontal: GUTTER, marginTop: rv(14) },
 

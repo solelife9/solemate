@@ -156,13 +156,14 @@ export default function ShareCardPicker({visible, onClose, model, route = [], sh
   );
 }
 
-// 로컬 세그 재구현 폐지(검수 MED, 2026-07-16) — 전역 SegmentedControl(neutral) 수렴.
-// 선택 강조도 캔온(흰 9% 유리)으로: 구 withAlpha(ACCENT,0.18) 사설 강조 회수.
+// 로컬 세그 재구현 폐지(검수 MED, 2026-07-16) — 전역 SegmentedControl 수렴.
+// 시트 안 카드 옵션 = 보조 설정 → sm(필 단일 문법, 2026-07-25).
 function Seg<T extends string>({label, options, value, onChange}: {label: string; options: {key: T; label: string}[]; value: T; onChange: (v: T) => void}) {
   return (
     <View style={s.segRow}>
       <Text style={s.segLabel}>{label}</Text>
       <SegmentedControl
+        size="sm"
         items={options.map(o => ({key: o.key, label: o.label}))}
         value={value}
         onChange={k => onChange(k as T)}

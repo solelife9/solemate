@@ -86,9 +86,11 @@ export default function SpeedPlanPanel({
         />
       </View>
       {/* 전략 */}
+      {/* 전략 = 목표 화면 안의 하위 설정(모드 주 탭보다 한 단계 아래 위계) → sm.
+          긴 라벨('네거티브(점점 빠르게)')도 sm 글자(14)가 안전하다(필 수렴 2026-07-25). */}
       <SegmentedControl
         style={s.seg}
-        variant="accentTint"
+        size="sm"
         items={[{key: 'even', label: '일정'}, {key: 'negative', label: '네거티브(점점 빠르게)'}]}
         value={segValue as any}
         onChange={(k) => setStrategy(k as PaceStrategy)}

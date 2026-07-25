@@ -5,19 +5,21 @@
  * These assert OBSERVABLE render output (real react-test-renderer trees), not
  * source strings:
  *   • SegmentedControl renders one Pressable per item, drives onChange with the
- *     pressed item's key, marks exactly the selected item, and its variant
- *     selects a distinct selection surface (the four tab-strips it replaced map
- *     1:1 onto the four variants). block toggles flex(hug) vs flex:1(equal).
+ *     pressed item's key, marks exactly the selected item, and renders the single
+ *     pill grammar (2026-07-25 필 수렴 — variant 4종 폐지): selected chip =
+ *     white-12% glass + white-22% hairline, sizes md/sm keep an effective 44pt
+ *     touch target via vertical hitSlop. block toggles flex(hug) vs flex:1(equal).
  *   • Stat lays value/unit/label out as separate nodes (unit nested in the value
- *     Text, never a single concatenated string), uses DISPLAY + tabular-nums for
- *     the value, and StatGrid applies dividers (all but first) and column widths.
+ *     Text, never a single concatenated string), uses DISPLAY + tabular-nums +
+ *     the NUMERIC ramp for the value, and StatGrid applies dividers (all but
+ *     first) and column widths.
  * @format
  */
 import React from 'react';
 import {Text, View, StyleSheet} from 'react-native';
 import ReactTestRenderer from 'react-test-renderer';
 import {SegmentedControl, StatGrid, Stat} from '../primitives';
-import {T1, DISPLAY, SEP, withAlpha} from '../theme';
+import {T1, T3, DISPLAY, SEP, withAlpha, NUMERIC, TYPE, CARD, CARD_BORDER, RADIUS} from '../theme';
 
 function render(el: React.ReactElement): ReactTestRenderer.ReactTestRenderer {
   let r!: ReactTestRenderer.ReactTestRenderer;
@@ -83,21 +85,70 @@ describe('SegmentedControl — selection behaviour', () => {
     expect(pressableByLabel(root, '셋').props.accessibilityState).toEqual({selected: false});
   });
 
-  test('variant changes the selected surface: accentSolid fills glass(white-10%), neutral fills white-9%', () => {
-    const solid = render(
-      <SegmentedControl items={ITEMS} value="a" onChange={() => {}} variant="accentSolid" />,
-    ).root;
-    // 모노크롬 회수: accentSolid 선택칩은 더 이상 solid 채움이 아니라 유리(withAlpha(T1,0.1)).
-    expect(flatStyle(pressableByLabel(solid, '하나')).backgroundColor).toBe(withAlpha(T1, 0.1));
-
-    const neutral = render(
-      <SegmentedControl items={ITEMS} value="a" onChange={() => {}} variant="neutral" />,
-    ).root;
-    expect(flatStyle(pressableByLabel(neutral, '하나')).backgroundColor).toBe(
-      withAlpha(T1, 0.09),
+  test('pill grammar: selected chip = white-12% glass + white-22% hairline, container = CARD pill + CARD_BORDER', () => {
+    const {root} = render(
+      <SegmentedControl items={ITEMS} value="a" onChange={() => {}} />,
     );
-    // A non-selected neutral item has no selection fill.
-    expect(flatStyle(pressableByLabel(neutral, '둘')).backgroundColor).toBeUndefined();
+    // 선택 칩 — 필 단일 문법(2026-07-25 수렴, variant 4종 폐지).
+    const on = flatStyle(pressableByLabel(root, '하나'));
+    expect(on.backgroundColor).toBe(withAlpha(T1, 0.12));
+    expect(on.borderWidth).toBe(StyleSheet.hairlineWidth);
+    expect(on.borderColor).toBe(withAlpha(T1, 0.22));
+    expect(on.borderRadius).toBe(RADIUS.pill);
+    // 비선택 항목은 채움/보더 없음.
+    const off = flatStyle(pressableByLabel(root, '둘'));
+    expect(off.backgroundColor).toBeUndefined();
+    expect(off.borderWidth).toBeUndefined();
+    // 컨테이너 = CARD 필 + CARD_BORDER 헤어라인(1px).
+    const container = root.findAll((n: any) => {
+      const f = StyleSheet.flatten(n.props?.style) as any;
+      return !!f && f.flexDirection === 'row' && f.backgroundColor === CARD;
+    })[0];
+    const cf = StyleSheet.flatten(container.props.style) as any;
+    expect(cf.borderColor).toBe(CARD_BORDER);
+    expect(cf.borderWidth).toBe(1);
+    expect(cf.borderRadius).toBe(RADIUS.pill);
+  });
+
+  test('sizes keep an effective 44pt touch target: md 38 + 3·2 hitSlop, sm 32 + 6·2 hitSlop', () => {
+    const md = render(
+      <SegmentedControl items={ITEMS} value="a" onChange={() => {}} />,
+    ).root;
+    const mdItem = pressableByLabel(md, '하나');
+    expect(flatStyle(mdItem).height).toBe(38);
+    expect(flatStyle(mdItem).fontSize).toBeUndefined();
+    expect(mdItem.props.hitSlop).toEqual({top: 3, bottom: 3});
+    expect(38 + 3 * 2).toBeGreaterThanOrEqual(44);
+
+    const sm = render(
+      <SegmentedControl items={ITEMS} value="a" onChange={() => {}} size="sm" />,
+    ).root;
+    const smItem = pressableByLabel(sm, '하나');
+    expect(flatStyle(smItem).height).toBe(32);
+    expect(smItem.props.hitSlop).toEqual({top: 6, bottom: 6});
+    expect(32 + 6 * 2).toBeGreaterThanOrEqual(44);
+  });
+
+  test('label type ramps with size (md 15 / sm 14); off = T3·500, on = T1·700', () => {
+    const textStyleOf = (root: ReactTestRenderer.ReactTestInstance, label: string) =>
+      StyleSheet.flatten(
+        root.findAllByType(Text).find(t => t.props.children === label)!.props.style,
+      ) as any;
+    const md = render(
+      <SegmentedControl items={ITEMS} value="a" onChange={() => {}} />,
+    ).root;
+    const mdOn = textStyleOf(md, '하나');
+    const mdOff = textStyleOf(md, '둘');
+    expect(mdOn.fontSize).toBe(15);
+    expect(mdOn.color).toBe(T1);
+    expect(mdOn.fontWeight).toBe('700');
+    expect(mdOff.color).toBe(T3);
+    expect(mdOff.fontWeight).toBe('500');
+
+    const sm = render(
+      <SegmentedControl items={ITEMS} value="a" onChange={() => {}} size="sm" />,
+    ).root;
+    expect(textStyleOf(sm, '하나').fontSize).toBe(14);
   });
 
   test('block=true items stretch (flex:1); block=false items hug (no flex)', () => {
@@ -142,8 +193,8 @@ describe('Stat / StatGrid — stat cell composition', () => {
     expect(texts).not.toContain('12km');
   });
 
-  test("the value uses the DISPLAY face + tabular-nums at the requested size", () => {
-    const {root} = render(<Stat value="12" unit="km" label="거리" valueSize={26} />);
+  test("the value uses the DISPLAY face + tabular-nums at the NUMERIC ramp step", () => {
+    const {root} = render(<Stat value="12" unit="km" label="거리" size="md" />);
     const valueNode = root
       .findAllByType(Text)
       .find(t => {
@@ -152,7 +203,9 @@ describe('Stat / StatGrid — stat cell composition', () => {
       })!;
     const st = StyleSheet.flatten(valueNode.props.style) as any;
     expect(st.fontVariant).toEqual(['tabular-nums']);
-    expect(st.fontSize).toBe(26);
+    expect(st.fontSize).toBe(NUMERIC.md.fontSize);
+    expect(st.fontWeight).toBe('700');
+    expect(st.letterSpacing).toBe(NUMERIC.md.letterSpacing);
   });
 
   test('label is omitted entirely when not provided', () => {
@@ -220,12 +273,11 @@ describe('Stat / StatGrid — stat cell composition', () => {
   });
 });
 
-// ── Per-site unit/label typography fidelity (시각 동등 회귀 가드) ───────────────
-// StatGrid 초기 통합은 value 타입만 파라미터화하고 unit/label 을 Profile 값(12/600,
-// 12/600)으로 하드코딩해 다른 두 사이트(러닝 상세·진척)에서 픽셀이 어긋났다.
-// 아래 테스트는 각 사이트가 호출부에 넘기는 unit/label fontSize·fontWeight·marginTop·
-// 셀 paddingVertical 이 마이그레이션 전 원본 StyleSheet 값과 정확히 일치함을 단언한다.
-describe('Stat / StatGrid — per-site unit & label typography', () => {
+// ── NUMERIC 단일 램프 계약 (2026-07-25 수렴 — 탈출구 prop 회수 회귀 가드) ────────
+// 과거 valueSize/valueWeight/valueLS/unitSize/… prop 10개가 사이트별 픽셀 복원을
+// 허용해 표기 3벌이 사실상 유지되던 것을 회수했다. 이제 값 = NUMERIC[size](700 고정·
+// 음수 자간), 단위 = 13/600 T3 고정, 라벨 = TYPE.caption T3 mt4 고정을 단언한다.
+describe('Stat / StatGrid — NUMERIC ramp contract', () => {
   // unit Text 는 value Text 안에 중첩되며 children 이 단일 문자열(단위 텍스트).
   // label Text 는 셀 최상위에서 children 이 라벨 문자열.
   const textByString = (root: ReactTestRenderer.ReactTestInstance, s: string) =>
@@ -233,71 +285,69 @@ describe('Stat / StatGrid — per-site unit & label typography', () => {
       root.findAllByType(Text).find(t => t.props.children === s)!.props.style,
     ) as any;
 
-  const cellHostStyle = (root: ReactTestRenderer.ReactTestInstance, id: string) => {
-    const hosts = root.findAll(
-      (n: any) => n.props?.testID === id && typeof n.type === 'string',
-    );
-    return StyleSheet.flatten(hosts[hosts.length - 1].props.style) as any;
+  // FONT===DISPLAY(단일 패밀리)라 값 노드는 tabular-nums(값 전용)로 식별한다.
+  const valueStyle = (root: ReactTestRenderer.ReactTestInstance) => {
+    const node = root.findAllByType(Text).find(t => {
+      const st = StyleSheet.flatten(t.props.style) as any;
+      return st && Array.isArray(st.fontVariant) && st.fontVariant.includes('tabular-nums');
+    })!;
+    return StyleSheet.flatten(node.props.style) as any;
   };
 
-  test('Profile (defaults): unit 13/600, label 13/600 mt4, no extra cell padding', () => {
-    const {root} = render(
-      <Stat value="42" unit="km" label="총 거리" valueSize={26} testID="p" />,
-    );
-    const unit = textByString(root, 'km');
-    expect(unit.fontSize).toBe(13);
-    expect(unit.fontWeight).toBe('600');
-    const label = textByString(root, '총 거리');
-    expect(label.fontSize).toBe(13);
-    expect(label.fontWeight).toBe('600');
-    expect(label.marginTop).toBe(4);
-    expect(cellHostStyle(root, 'p').paddingVertical).toBeFalsy();
+  test('value follows the NUMERIC ramp: sm 20/-0.4, md 24/-0.5, lg 30/-0.5 — weight 700 everywhere', () => {
+    (['sm', 'md', 'lg'] as const).forEach(size => {
+      const {root} = render(<Stat value="42" unit="km" label="총 거리" size={size} />);
+      const st = valueStyle(root);
+      expect(st.fontSize).toBe(NUMERIC[size].fontSize);
+      expect(st.fontWeight).toBe('700');
+      expect(st.letterSpacing).toBe(NUMERIC[size].letterSpacing);
+      expect(st.fontVariant).toEqual(['tabular-nums']);
+    });
+    expect(NUMERIC.sm.fontSize).toBe(20);
+    expect(NUMERIC.md.fontSize).toBe(24);
+    expect(NUMERIC.lg.fontSize).toBe(30);
   });
 
-  test('History RunDetail 2×3: unit 12/500, label 12/normal mt4, cell paddingVertical 6', () => {
-    const {root} = render(
-      <StatGrid
-        columns={3}
-        align="left"
-        unitSize={12}
-        unitWeight="500"
-        labelSize={12}
-        labelWeight="normal"
-        labelMarginTop={4}
-        verticalPadding={6}
-        items={[{value: '8', unit: ' km', label: '거리', testID: 'h0'}]}
-      />,
-    );
-    const unit = textByString(root, ' km');
-    expect(unit.fontSize).toBe(12);
-    expect(unit.fontWeight).toBe('500');
-    const label = textByString(root, '거리');
-    expect(label.fontSize).toBe(12);
-    expect(label.fontWeight).toBe('normal');
-    expect(label.marginTop).toBe(4);
-    expect(cellHostStyle(root, 'h0').paddingVertical).toBe(6);
+  test('unit is fixed at 13/600 T3 regardless of size (no per-site escape hatch)', () => {
+    (['sm', 'lg'] as const).forEach(size => {
+      const {root} = render(<Stat value="42" unit="km" label="총 거리" size={size} />);
+      const unit = textByString(root, 'km');
+      expect(unit.fontSize).toBe(13);
+      expect(unit.fontWeight).toBe('600');
+      expect(unit.color).toBe(T3);
+    });
   });
 
-  test('Progression stat-row: unit 11/700, label 11/600 mt5', () => {
+  test('label is fixed at TYPE.caption T3 with mt4', () => {
+    const {root} = render(
+      <StatGrid size="md" items={[{value: '120', unit: 'km', label: '총 거리', testID: 'pr0'}]} />,
+    );
+    const label = textByString(root, '총 거리');
+    expect(label.fontSize).toBe(TYPE.caption.fontSize);
+    expect(label.fontWeight).toBe(TYPE.caption.fontWeight);
+    expect(label.color).toBe(T3);
+    expect(label.marginTop).toBe(4);
+  });
+
+  test('StatGrid passes its size down to every cell', () => {
     const {root} = render(
       <StatGrid
-        valueSize={19}
-        valueWeight="800"
-        valueLS={-0.4}
-        unitSize={11}
-        unitWeight="700"
-        labelSize={11}
-        labelWeight="600"
-        labelMarginTop={5}
-        items={[{value: '120', unit: 'km', label: '총 거리', testID: 'pr0'}]}
+        size="sm"
+        items={[
+          {value: '1', label: 'a', testID: 's0'},
+          {value: '2', label: 'b', testID: 's1'},
+        ]}
       />,
     );
-    const unit = textByString(root, 'km');
-    expect(unit.fontSize).toBe(11);
-    expect(unit.fontWeight).toBe('700');
-    const label = textByString(root, '총 거리');
-    expect(label.fontSize).toBe(11);
-    expect(label.fontWeight).toBe('600');
-    expect(label.marginTop).toBe(5);
+    // FONT===DISPLAY(단일 패밀리)라 폰트로는 값/라벨 구분 불가 — 값 전용 tabular-nums 로 거른다.
+    const values = root.findAllByType(Text).filter(t => {
+      const st = StyleSheet.flatten(t.props.style) as any;
+      return st && Array.isArray(st.fontVariant) && st.fontVariant.includes('tabular-nums');
+    });
+    // lib/text 래퍼 때문에 composite+host 노드가 함께 잡힌다(셀 2개 ≥ 노드 2개).
+    expect(values.length).toBeGreaterThanOrEqual(2);
+    values.forEach(v => {
+      expect((StyleSheet.flatten(v.props.style) as any).fontSize).toBe(NUMERIC.sm.fontSize);
+    });
   });
 });

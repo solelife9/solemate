@@ -16,7 +16,7 @@ import {
   BG, CARD_HI, GLASS, ACCENT, BRAND, DANGER, T1, T2, T3, SEP, FONT, DISPLAY, Shoe, Run, SHOES, withAlpha, RADIUS, GUTTER, MOTION, HERO, HR_ZONE_COLORS, TYPE,
   BAR,
 } from './theme';
-// 기간 탭 스트립 = SegmentedControl(neutral), 러닝 상세 2×3 메트릭 = StatGrid 프리미티브.
+// 기간 탭 스트립 = SegmentedControl(md), 러닝 상세 2×3 메트릭 = StatGrid(sm) 프리미티브.
 import { TabBar, TABBAR_CLEARANCE, Button, SegmentedControl, StatGrid, SwipeBack, Chip, AmbientBackdrop, EmptyGhostHeader, GhostStrong, GhostBar, Rise, GlassEdge, BottomSheet, Input } from './primitives';
 import { Unit, displayNum, displayToKm } from './lib/units';
 import { ymdLocal } from './lib/format';
@@ -25,8 +25,6 @@ import { fitnessSummary, thresholdPaceSec } from './lib/analytics/fitness';
 import { gradeAdjustedPaceSec, smoothElevation, resampleByDistance } from './lib/analytics/gap';
 import { estimateMaxHR, timeInZones, hrSummary, zoneBoundaries, HR_ZONE_LABEL, type HRZone } from './lib/analytics/hrZones';
 import { trimp, paceLoad, effortBand } from './lib/analytics/load';
-import { assessTrainingLoad } from './lib/trainingLoad';
-import { TrainingLoadCard } from './TrainingLoadCard';
 import { getRunSurface, setRunSurface, type Surface } from './lib/wearModel';
 import { parseRoute, LatLon } from './lib/route';
 import { CourseMap } from './CourseMap';
@@ -134,10 +132,15 @@ export function PeriodChartView({ data, labels, unit }: { data: number[]; labels
             );
           })}
         </View>
-        {/* 평균 점선(Nike 식) — 활동 기간 평균 거리. 오른쪽에 값. */}
+        {/* 평균 점선(Nike 식) — 활동 기간 평균 거리. 오른쪽에 값.
+            구현은 Svg strokeDasharray(심박 그래프 평균선과 동일 문법) — 구 View 한 변
+            dashed 보더는 iOS 에서 기간별로 실선/점선이 오락가락했다(2026-07-25 민우님
+            실기기 제보: 주·월 실선 vs 년 점선). */}
         {avg > 0 && (
           <View style={[s.chartAvgLine, { bottom: (avg / niceMax) * H }]} pointerEvents="none">
-            <View style={s.chartAvgDash} />
+            <Svg style={{ flex: 1 }} height={2}>
+              <SvgLine x1={0} y1={1} x2="100%" y2={1} stroke={withAlpha(T1, 0.4)} strokeWidth={1} strokeDasharray="4 5" />
+            </Svg>
             <Text style={s.chartAvgVal}>{fmtTick(avg)}</Text>
           </View>
         )}
@@ -568,13 +571,8 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, onEdit, age = 0, 
             style={s.statGrid}
             columns={3}
             align="left"
-            // 원본 statCell/Unit/Label 타이포 복원: unit 11.5/500, label 11.5/normal, 셀 세로패딩 6.
-            unitSize={rf(12)}
-            unitWeight="500"
-            labelSize={rf(12)}
-            labelWeight="normal"
-            labelMarginTop={4}
-            verticalPadding={6}
+            // 히어로 거리 아래 보조 그리드 → NUMERIC sm(사이트별 타이포 복원 prop 회수, 2026-07-25).
+            size="sm"
             items={stats.map((x) => ({ value: x.v, unit: x.u ? ` ${x.u}` : undefined, label: x.l }))}
           />
         </View>
@@ -1031,14 +1029,6 @@ export default function HistoryScreen({
   // 개인 임계페이스(초/km) — 체력(VDOT)에서 역산. per-run 트레이닝 부하(rTSS)의 강도 기준.
   // 타임 있는 노력 런이 없어 vo2max=0 이면 0(그땐 페이스 기반 부하 대신 HR 부하만 가능).
   const thresholdPace = thresholdPaceSec(fitness.vo2max);
-  // 훈련 부하(재노출 2026-07-18) — ACWR 인사이트 카드. 기간 토글과 무관한 '지금'
-  // 지표라 전체 런으로 산출한다(fitness 와 동일 캐시 무효화 규약).
-  const trainingLoad = useMemo(
-    () => assessTrainingLoad(runs.map(toRow), todayIso),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [runs.length, runs[runs.length - 1]?.id, todayIso],
-  );
-
   const sum = period === '주' ? selWeekSummary : period === '월' ? selMonthSummary : period === '년' ? selYearSummary : (summary['전체'] || EMPTY_SUMMARY);
   const ch = period === '주'
     ? (selWeekBuckets.some(v => v > 0) ? { title: '일별 거리', data: selWeekBuckets.map(v => displayNum(v, unit, 1)), labels: WEEKDAY_LABELS } : chart['주'])
@@ -1165,7 +1155,6 @@ export default function HistoryScreen({
         ListHeaderComponent={
           <View style={{ gap: rv(10) }}>
             <SegmentedControl
-              variant="neutral"
               items={PERIODS.map((p) => ({ key: p, label: p }))}
               value={period}
               onChange={(p) => { setPeriod(p); setShowAllRuns(false); }}
@@ -1207,9 +1196,8 @@ export default function HistoryScreen({
             </View>
             {/* 심폐 체력(VO2max)은 마이 탭 '러너 스펙' 카드로 이관(2026-07-05) — 러너 정체성
                 스펙(거리 PB·VO2max)을 한곳에 모은다. */}
-            {/* 훈련 부하 인사이트(재노출 2026-07-18, 시안 A) — 스윗스팟 게이지 + 7일/4주
-                분해. 최근 4주 런이 없으면 스스로 숨는다. 홈 시그널의 '자세히'가 여기로. */}
-            <TrainingLoadCard load={trainingLoad} unit={unit} />
+            {/* 훈련 부하는 홈으로 이관(안 A, 2026-07-25 민우님 확정) — 소비 시점이 '러닝 전'
+                이라 기록탭(사후 회고)이 아니라 홈이 맞다. HomeScreen 컴팩트 카드가 담당. */}
             <Text style={s.sectionLabel}>러닝 기록</Text>
           </View>
         }
@@ -1358,8 +1346,8 @@ const s = StyleSheet.create({
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   title: { color: T1, fontFamily: FONT, ...TYPE.screenTitle },
 
-  // 기간 세그먼트는 SegmentedControl(neutral) 프리미티브로 이전 — 컨테이너/항목/선택칩
-  // 토큰을 그쪽이 책임진다(과거 segment/segItem/segItemOn/segText 제거, 시각 동등).
+  // 기간 세그먼트는 SegmentedControl(md 기본) 프리미티브로 이전 — 컨테이너/항목/선택칩
+  // 토큰을 그쪽이 책임진다(과거 segment/segItem/segItemOn/segText 제거).
 
   // bar chart (right-side km gridlines · accent bars)
   chartGrid: { position: 'absolute', left: 0, right: 0 },
@@ -1369,7 +1357,6 @@ const s = StyleSheet.create({
   chartBarSlot: { flex: 1, alignItems: 'center' },
   chartBar: { width: '100%', borderTopLeftRadius: rs(4), borderTopRightRadius: rs(4), backgroundColor: BRAND },
   chartAvgLine: { position: 'absolute', left: 0, right: 42, flexDirection: 'row', alignItems: 'center', gap: rs(4) },
-  chartAvgDash: { flex: 1, borderTopWidth: 1, borderStyle: 'dashed', borderColor: withAlpha(T1, 0.4) },
   chartAvgVal: { color: T3, fontFamily: DISPLAY, fontSize: TYPE.caption.fontSize, fontWeight: '700', fontVariant: ['tabular-nums'] },
   chartLabels: { flexDirection: 'row', marginTop: rv(8), paddingRight: rs(42) },
   chartLabel: { flex: 1, textAlign: 'center', color: T3, fontFamily: FONT, fontWeight: '600' },

@@ -132,7 +132,7 @@ import {LoginScreen} from './LoginScreen.rn';
 import {stampUpdatedAt, markDeleted, partitionTombstones, mergeCloudData, mergeMedals, liveRecords, reconcileLivePreservingLocal, unionTombstones} from './lib/cloudSync';
 import {publishMyRanking} from './lib/progression/firestoreRankingStore';
 import {genRunId, genShoeId} from './lib/genId';
-import {showToast, TOAST_UNDO_LABEL} from './lib/toast';
+import {showToast} from './lib/toast';
 import {migrateStorageSchema} from './lib/storageMigration';
 import {resolveGoogleCredential} from './lib/googleAuth';
 import {resolveAppleCredential} from './lib/appleAuth';
@@ -839,62 +839,10 @@ function Main(){
     });
   };
 
-  // ── 삭제 undo(실행취소) ────────────────────────────────────────────────────────
-  // 삭제는 묘비(soft-delete)일 뿐 데이터 파괴가 아니므로 '실행취소'로 *완전복원*할 수 있다.
-  // 완전복원의 의미(부분복원 금지): 라이브 레코드 + 사이드키(런의 route_/time_/surface_/
-  // splits_)까지 전부 되살리고, 묘비를 되돌린다. 묘비 되돌림은 (a) tombstones store 에서 해당
-  // id 를 빼고 (b) 라이브 레코드를 deleted:false + updatedAt 갱신으로 다시 넣는 것 — updatedAt 을
-  // 새로 찍어야 머지 '최신 우선'이 (다른 기기/클라우드 백업에 남은) 옛 묘비보다 un-delete 를
-  // 최신 사실로 보고 부활(삭제 재적용)을 막는다.
-
-  // 삭제 직전 런 스냅샷: 레코드 + 사이드키 + (미동기였다면)큐 항목. 사이드키를 지우기 전에
-  // 읽어 담아야 유실 없이 되살릴 수 있다(부분복원=런만 살고 사이드키 유실 방지).
-  type RunUndo={
-    record:BackendRun;
-    sidecars:{route:string|null;time:string|null;surface:string|null;splits:string|null;paceTrack:string|null;hrTrack:string|null;gapTrack:string|null;photo:string|null};
-    pending:PendingRun|null;
-  };
-  const restoreRun=async(undo:RunUndo)=>{
-    const sid=String(undo.record.id);
-    const sc=undo.sidecars;
-    // 1) 사이드키 복원 — 원래 값이 있던 키만 되쓴다(없던 키를 새로 만들지 않음).
-    if(sc.route!=null)await AsyncStorage.setItem('route_'+sid,sc.route);
-    if(sc.time!=null)await AsyncStorage.setItem('time_'+sid,sc.time);
-    if(sc.surface!=null)await AsyncStorage.setItem('surface_'+sid,sc.surface);
-    if(sc.splits!=null)await AsyncStorage.setItem('splits_'+sid,sc.splits);
-    if(sc.paceTrack!=null)await AsyncStorage.setItem('paceTrack_'+sid,sc.paceTrack);
-    if(sc.hrTrack!=null)await AsyncStorage.setItem('hrTrack_'+sid,sc.hrTrack);
-    if(sc.gapTrack!=null)await AsyncStorage.setItem('gapTrack_'+sid,sc.gapTrack);
-    if(sc.photo!=null)await AsyncStorage.setItem('runphoto_'+sid,sc.photo);
-    // 2) 묘비 되돌림 — store 에서 해당 id 제거(삭제 전파 취소).
-    setTombstones(prev=>{
-      const next={...prev,runs:prev.runs.filter(r=>String(r.id)!==sid)};
-      persistTombstones(next);
-      return next;
-    });
-    // 3) 라이브 복원 — deleted:false + updatedAt 갱신(un-delete 가 머지에서 이기게).
-    const restored=stampUpdatedAt({...undo.record,deleted:false});
-    setRuns(prev=>prev.some(r=>String(r.id)===sid)?prev:[restored,...prev]);
-    // 4) 미동기였던 런이면 큐도 되살려 다음 flush 가 다시 POST 하게 한다.
-    if(undo.pending){try{await enqueuePendingRun(undo.pending);}catch{/* 큐 복원 실패는 라이브 복원을 막지 않는다 */}}
-  };
-  const offerRunUndo=(undo:RunUndo)=>{
-    showToast({message:'러닝 기록 삭제됨',actionLabel:TOAST_UNDO_LABEL,onAction:()=>{void restoreRun(undo);}});
-  };
-
-  const restoreShoe=(record:BackendShoe)=>{
-    const sid=String(record.id);
-    setTombstones(prev=>{
-      const next={...prev,shoes:prev.shoes.filter(s=>String(s.id)!==sid)};
-      persistTombstones(next);
-      return next;
-    });
-    const restored=stampUpdatedAt({...record,deleted:false});
-    setShoes(prev=>prev.some(s=>String(s.id)===sid)?prev:[restored,...prev]);
-  };
-  const offerShoeUndo=(record:BackendShoe)=>{
-    showToast({message:'신발 삭제됨',actionLabel:TOAST_UNDO_LABEL,onAction:()=>{restoreShoe(record);}});
-  };
+  // ── 삭제 확인 정책(2026-07-25 민우님 확정) ──────────────────────────────────────
+  // '실행취소' 토스트 액션은 전면 폐지 — 보호막은 삭제 전 확인 다이얼로그 1겹으로 단일화.
+  // 삭제는 여전히 묘비(soft-delete)라 데이터 파괴는 아니다(사고 시 개발자 복구 여지 유지).
+  // 구 완전복원 기계(RunUndo 스냅샷·restoreRun/restoreShoe)는 소비처가 사라져 함께 제거.
 
   // 신발 삭제는 더 이상 런 기록을 동반삭제하지 않는다(iron law: 데이터 파괴 금지).
   // 런은 보존되어 기록/통계에 남고, 신발만 잠금장(locker)에서 제거된다. 신발을
@@ -907,8 +855,7 @@ function Main(){
     const target=shoes.find(s=>s.id===id);
     setShoes(prev=>prev.filter(s=>s.id!==id));
     addShoeTombstone(target??({id} as BackendShoe));
-    // 삭제됨 · 실행취소: 신발만 잠금장에서 빠졌을 뿐이므로 완전복원할 수 있다.
-    if(target)offerShoeUndo(target);
+    if(target)showToast({message:'신발 삭제됨'});
   }
 
   // 보관(retire/archive): 신발을 선택목록·홈 picker에서 숨기되 신발과 런 기록은
@@ -1033,28 +980,12 @@ function Main(){
   async function deleteRun(id:string){
     const sid=String(id);
     const target=runs.find(r=>String(r.id)===sid);
-    // undo 스냅샷: 사이드키를 *지우기 전에* 읽어 담는다 — '실행취소' 시 런만 살고
-    // route_/time_/surface_/splits_ 가 유실되는 부분복원을 막는다(완전복원 보장).
-    const [route,time,surface,splits,paceTrack,hrTrack,gapTrack,photo]=await Promise.all([
-      AsyncStorage.getItem('route_'+sid),
-      AsyncStorage.getItem('time_'+sid),
-      AsyncStorage.getItem('surface_'+sid),
-      AsyncStorage.getItem('splits_'+sid),
-      AsyncStorage.getItem('paceTrack_'+sid),
-      AsyncStorage.getItem('hrTrack_'+sid),
-      AsyncStorage.getItem('gapTrack_'+sid),
-      AsyncStorage.getItem('runphoto_'+sid),
-    ]);
     // 레거시 미동기 큐(pending)에 같은 런이 남아 있으면 큐에서도 제거한다(#5). 안 그러면 다음
     // 부팅 overlayPendingRuns 로 되살아난다(묘비 필터가 표시를 막아도 큐 항목이 영구 누수).
-    // 큐 항목은 undo 에 담아 실행취소 시 restoreRun 이 다시 enqueue 하게 한다(완전복원).
-    let pendingUndo:PendingRun|null=null;
     try{
       const q=await loadPendingRuns();
-      pendingUndo=q.find(p=>String(p.localId)===sid)??null;
-      if(pendingUndo) await removePendingRun(sid);
+      if(q.some(p=>String(p.localId)===sid)) await removePendingRun(sid);
     }catch{/* 큐 접근 실패는 삭제를 막지 않는다 */}
-    const undo:RunUndo|null=target?{record:target,sidecars:{route,time,surface,splits,paceTrack,hrTrack,gapTrack,photo},pending:pendingUndo}:null;
     // 로컬-퍼스트 삭제: 라이브 제거 + 묘비(cloudSync 전파) + 사이드키 정리. 영속은 cloudSync 담당.
     setRuns(prev=>prev.filter(r=>String(r.id)!==sid));
     if(target)addRunTombstone(target);
@@ -1070,7 +1001,7 @@ function Main(){
     await AsyncStorage.removeItem('gapTrack_'+sid);
     // 오늘의 한 컷 사이드카(2026-07-05 추가)도 정리 — 없으면 삭제된 런의 사진 URI 가 영구 고아.
     await AsyncStorage.removeItem('runphoto_'+sid);
-    if(undo)offerRunUndo(undo);
+    if(target)showToast({message:'러닝 기록 삭제됨'});
   }
 
   // 신발 교체 알림: 설정(on/off · 임계값)을 따른다. 비활성이면 아예 묻지 않고,
@@ -2264,22 +2195,16 @@ function Main(){
       onBack={()=>setShowMedalArchive(false)}
       onAddMedal={()=>setMedalFlow({date:today()})}
       onDelete={(id)=>{
-        // 키프세이크(메달)는 오터치 한 번에 사라지면 안 된다 — 확인 1겹 + 실행취소 토스트
-        // (HIG Destructive actions, 2026-07-24 심사 P0 #8). 삭제 자체는 기존 soft-delete.
-        const doomed=medals.find(m=>m.id===id);
-        // 대회명은 상세 화면에 이미 크게 있다 — 반복하면 긴 이름이 줄바꿈으로 감김(신발
-        // 삭제 카피와 같은 원칙, 2026-07-25). 삭제 후 실행취소 6초 가능.
-        showDialog('메달 삭제','아카이브에서 사라져요. 잠시 실행취소할 수 있어요.',[
+        // 키프세이크(메달) 보호 = 확인 다이얼로그 1겹(2026-07-25 민우님 확정 — 실행취소
+        // 액션 전면 폐지). 삭제 자체는 soft-delete 라 데이터 파괴는 아니다. 대회명은 상세
+        // 화면에 이미 크게 있어 카피에서 반복하지 않는다.
+        showDialog('메달 삭제','아카이브에서 사라져요.',[
           {text:'취소',style:'cancel'},
           {text:'삭제',style:'destructive',onPress:()=>{
             const now=Date.now();
             setMedals(cur=>cur.map(m=>m.id===id?{...m,deleted:true,updatedAt:now}:m));
             void removeMedalStore(id,now);
-            showToast({message:'메달 삭제됨',actionLabel:TOAST_UNDO_LABEL,onAction:()=>{
-              const back=Date.now();
-              setMedals(cur=>sortMedals(cur.map(m=>m.id===id?{...m,deleted:false,updatedAt:back}:m)));
-              if(doomed)void addMedalStore({...doomed,deleted:false,updatedAt:back});
-            }});
+            showToast({message:'메달 삭제됨'});
           }},
         ]);
       }}/>;
@@ -2339,6 +2264,7 @@ function Main(){
             detailShoeId={shoesDetailId} onConsumeDetail={()=>setShoesDetailId(null)}
             rawShoes={shoes} rawRuns={runs} progressionCtx={progressionCtx} userName={profileName}
             onRetiredKeepsake={onRetiredKeepsake} forecasts={homeForecasts}
+            age={age} sex={sex} restHR={restHR}
             rotation={rotationPicks}
             onOpenArchive={()=>setShowArchive(true)} archivedCount={archivedUiShoes.length}
           />
@@ -2468,6 +2394,8 @@ function RunActiveScreen({shoe,insets,goalKm,goalMin=0,pacePlan=[],targetZone=0,
   // 심박(bpm). 아이폰 단독은 미측정 → 0('--'). Apple Watch 컴패니언(watchSession)이
   // WatchConnectivity로 보내는 실시간 심박을 구독해 채운다(워치 없으면 0 유지).
   const [heartRate,setHeartRate]=useState(0);
+  // 잠금화면 위젯용 심박 미러(ref) — 레코더 인터벌 클로저가 stale state 를 읽지 않게.
+  const hrLiveRef=useRef(0);
   const [paused,setPaused]=useState(false);
   const [autoPaused,setAutoPaused]=useState(false);
   // 일시정지 이동 감지 넛지(심사 #11 잔여, 민우님 승인 2026-07-24 — Apple '재개 미리 알림'
@@ -2634,7 +2562,7 @@ function RunActiveScreen({shoe,insets,goalKm,goalMin=0,pacePlan=[],targetZone=0,
   // Apple Watch 컴패니언이 보내는 실시간 심박(bpm) 구독. 워치 없으면 콜백이 안 와 0 유지.
   // 화면 표시(setHeartRate)와 함께 엔진(runTracker.feedHeartRate)에 먹여 HR 시계열을 적립한다
   // — 완주 시 hrTrack_<id>로 영속해 HR존·트레이닝효과 분석에 쓴다(워치 등록 시 자동 작동).
-  useEffect(()=>watchSession.onHeartRate(bpm=>{setHeartRate(bpm);runTracker.feedHeartRate(bpm);}),[]);
+  useEffect(()=>watchSession.onHeartRate(bpm=>{setHeartRate(bpm);hrLiveRef.current=bpm;runTracker.feedHeartRate(bpm);}),[]);
 
   useEffect(()=>{
     // 'review' 복구는 이미 끝난 런을 검토만 한다 — GPS/센서/권한/TTS를 켜지 않는다.
@@ -2684,7 +2612,7 @@ function RunActiveScreen({shoe,insets,goalKm,goalMin=0,pacePlan=[],targetZone=0,
           const showDist=trackMode?(lapTimesRef.current.length*lapMRef.current)/1000:s.dist;
           liveActivity.update(showDist,Math.round(s.elapsed),
             s.currentPaceSecPerKm!=null?fmtPace(1,s.currentPaceSecPerKm):'--',
-            fmtPace(showDist,s.elapsed),cadRef.current);
+            fmtPace(showDist,s.elapsed),cadRef.current,hrLiveRef.current);
         }
         // per-km 스플릿: dist가 정수 km 경계를 새로 넘으면 그 1km의 소요시간(초)·고도상승(m)을
         // 기록한다. 경로에 타임스탬프가 없어 못 했던 '실제' 구간 페이스를 레코더가 직접 남긴다.

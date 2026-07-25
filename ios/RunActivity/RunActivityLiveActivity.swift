@@ -5,8 +5,8 @@ import ActivityKit
 import WidgetKit
 import SwiftUI
 
-// SoleMate 브랜드 액센트(주황). theme.ts 의 ACCENT 와 맞춘다.
-private let kAccent = Color(red: 1.0, green: 0.40, blue: 0.0)
+// Keego Ember(브랜드) — theme.ts RING_ACCENT #FF8000 정합(구 #FF6600 스테일 교정).
+private let kAccent = Color(red: 1.0, green: 0.502, blue: 0.0)
 
 private func fmtDist(_ km: Double) -> String { String(format: "%.2f", max(0, km)) }
 private func fmtTime(_ sec: Int) -> String {
@@ -29,17 +29,18 @@ struct RunLockScreenView: View {
           Text(context.attributes.shoeName).font(.caption2).foregroundColor(.secondary).lineLimit(1)
         }
       }
-      // 거리(히어로) — 자체 행
-      HStack(alignment: .firstTextBaseline, spacing: 3) {
-        Text(fmtDist(st.distanceKm)).font(.system(size: 32, weight: .heavy, design: .rounded))
+      // 거리(히어로) — 자체 행. 32→40: 잠금화면은 팔 뻗어 흘끗 보는 거리라 전체 한 단
+      // 상향(2026-07-25 민우님 실기기 피드백 "글씨들이 너무 작다").
+      HStack(alignment: .firstTextBaseline, spacing: 4) {
+        Text(fmtDist(st.distanceKm)).font(.system(size: 40, weight: .heavy, design: .rounded))
           .foregroundColor(.white).monospacedDigit()
-        Text("km").font(.headline).foregroundColor(.secondary)
+        Text("km").font(.title3).fontWeight(.semibold).foregroundColor(.secondary)
       }
-      // 시간 · 페이스 · 케이던스 — 거리 아래 한 줄, 균등 분배
+      // 시간 · 페이스 · 심박 — 거리 아래 한 줄, 균등 분배(케이던스 → 심박 교체, 민우님 지시).
       HStack(alignment: .top, spacing: 0) {
         metric(value: fmtTime(st.elapsedSec), label: "시간")
         metric(value: st.paceLabel, label: "페이스")
-        metric(value: st.cadenceSpm > 0 ? "\(st.cadenceSpm)" : "--", label: "케이던스")
+        metric(value: st.bpm > 0 ? "\(st.bpm)" : "--", label: "심박")
       }
       if goal > 0 {
         let pct = min(1.0, max(0.0, st.distanceKm / goal))
@@ -51,14 +52,14 @@ struct RunLockScreenView: View {
               Capsule().fill(kAccent).frame(width: geo.size.width * pct)
             }
           }
-        Text("목표 \(fmtDist(goal))km · \(Int(pct * 100))%").font(.caption2).foregroundColor(.secondary)
+        Text("목표 \(fmtDist(goal))km · \(Int(pct * 100))%").font(.caption).foregroundColor(.secondary)
       }
     }
   }
   private func metric(value: String, label: String) -> some View {
-    VStack(alignment: .leading, spacing: 1) {
-      Text(value).font(.system(size: 16, weight: .bold, design: .rounded)).foregroundColor(.white).monospacedDigit()
-      Text(label).font(.caption2).foregroundColor(.secondary)
+    VStack(alignment: .leading, spacing: 2) {
+      Text(value).font(.system(size: 20, weight: .bold, design: .rounded)).foregroundColor(.white).monospacedDigit()
+      Text(label).font(.caption).foregroundColor(.secondary)
     }
     .frame(maxWidth: .infinity, alignment: .leading)
   }
