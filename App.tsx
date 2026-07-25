@@ -249,6 +249,11 @@ function openLocationSettingsAlert(message:string){
 installCrashHandler();
 
 export default function App(){
+  // 라이브 액티비티 고아 청소(2026-07-25 실기기 버그): 앱이 강제 종료되면 러닝 종료
+  // 경로의 liveActivity.end() 가 못 돌아 잠금화면/다이내믹 아일랜드 위젯이 최대 8시간
+  // 떠 있었다. 부팅 즉시 우리 타입의 잔존 액티비티를 전부 닫는다(네이티브가 전체 목록
+  // 순회 — 러닝 재개 흐름은 이후 start() 가 새로 띄우므로 충돌 없음).
+  useEffect(()=>{liveActivity.end();},[]);
   return(
     <SafeAreaProvider>
       <StatusBar barStyle="light-content" backgroundColor={BG}/>

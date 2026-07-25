@@ -38,7 +38,13 @@ class LiveActivityModule: NSObject {
       let state = RunActivityAttributes.ContentState(
         distanceKm: distanceKm, elapsedSec: Int(elapsedSec),
         paceLabel: paceLabel, avgPaceLabel: avgPaceLabel, cadenceSpm: Int(cadenceSpm), bpm: Int(bpm))
-      Task { await act.update(using: state) }
+      if #available(iOS 16.2, *) {
+        // staleDate: 앱이 죽어 갱신이 끊기면 90초 뒤 시스템이 위젯을 '흐림' 처리 —
+        // 고아가 살아있는 척 못 하게(부팅 청소와 이중 안전망).
+        Task { await act.update(ActivityContent(state: state, staleDate: Date().addingTimeInterval(90))) }
+      } else {
+        Task { await act.update(using: state) }
+      }
     }
   }
 
@@ -46,11 +52,16 @@ class LiveActivityModule: NSObject {
     endInternal()
   }
 
+  // 고아 정리(2026-07-25 민우님 실기기 버그 — 앱 강제 종료 후 위젯이 계속 떠 있음):
+  // 프로세스가 죽으면 activityAny 핸들이 사라져 이전 액티비티를 영영 못 닫는다.
+  // 그래서 종료는 항상 '핸들 하나'가 아니라 우리 타입의 *전체 목록*을 순회해 끝낸다.
+  // JS 부팅(lib/liveActivity.end)이 이걸 불러 이전 세션의 고아를 청소한다.
   private func endInternal() {
     if #available(iOS 16.1, *) {
-      guard let act = activityAny as? Activity<RunActivityAttributes> else { return }
       activityAny = nil
-      Task { await act.end(dismissalPolicy: .immediate) }
+      for act in Activity<RunActivityAttributes>.activities {
+        Task { await act.end(dismissalPolicy: .immediate) }
+      }
     }
   }
 }
