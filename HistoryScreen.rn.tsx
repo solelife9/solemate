@@ -576,49 +576,58 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, onEdit, age = 0, 
             items={stats.map((x) => ({ value: x.v, unit: x.u ? ` ${x.u}` : undefined, label: x.l }))}
           />
         </View>
-        {/* 트레이닝 부하(스트라바 Relative Effort) — 이 러닝이 얼마나 힘들었나. 심박 있으면
-            TRIMP, 없으면 페이스 기반 rTSS. 타임·체력 정보가 없어 산출 불가면 숨김. */}
-        {effort && (
-          <View
-            style={[s.card, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: rs(16), paddingVertical: rv(14), marginTop: rv(12) }]}
-            accessible accessibilityLabel={`트레이닝 부하 ${effort.score}, ${effort.band}`}>
-            <GlassEdge glints={false} radius={RADIUS.lg} />
-            <View style={{ flex: 1, paddingRight: rs(12) }}>
-              <Text style={s.cardTitle}>트레이닝 부하</Text>
-              <Text style={{ color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, marginTop: rv(3) }}>
-                {effort.method === 'HR' ? '심박 기반 — 이 러닝의 체감 강도' : '페이스 기반 — 체력 대비 이 러닝의 강도'}
-              </Text>
-            </View>
-            <View style={{ alignItems: 'flex-end' }}>
-              <Text style={{ color: T1, fontFamily: DISPLAY, fontSize: TYPE.title.fontSize, fontWeight: '700' }}>{effort.score}</Text>
-              <Text style={{ color: ACCENT, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '700' }}>{effort.band}</Text>
-            </View>
-          </View>
-        )}
-        {/* 경사 보정 페이스(GAP, Strava식) — 오르내림을 평지 등가로 환산. 고도 시계열이 있고
-            평지와 유의미하게 다를 때만 노출(평지면 실제 페이스와 같아 중복이라 숨김). */}
-        {gapSec != null && (() => {
+        {/* 이 러닝의 성격 — 트레이닝 부하 + 경사 보정 페이스를 한 카드 2행으로(간결화 A1,
+            2026-07-26). 둘 다 '제목+설명 / 우측 큰 숫자'라는 같은 골격이라, 같은 모양의
+            카드가 연달아 오면 위계가 아니라 반복으로 읽혔다. 각 행은 데이터가 있을 때만
+            렌더하고(둘 다 없으면 카드 자체가 안 뜬다), 둘 다 있을 때만 헤어라인으로 나눈다. */}
+        {(effort || gapSec != null) && (() => {
           const actual = (run.durationS || 0) > 0 && run.dist > 0 ? (run.durationS || 0) / run.dist : 0;
-          const harder = actual > 0 && gapSec < actual; // GAP 가 더 빠름 = 평지보다 힘든(오르막) 코스
+          const harder = gapSec != null && actual > 0 && gapSec < actual; // GAP 가 더 빠름 = 오르막 코스
           const fmtPace = (sec: number) => {
             let s = Math.round(sec % 60), m = Math.floor(sec / 60);
             if (s === 60) { s = 0; m += 1; }  // 자리올림 — 안 하면 "5'60\"" 표기(gapSec 는 소수)
             return `${m}'${String(s).padStart(2, '0')}"`;
           };
           return (
-            <View
-              style={[s.card, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: rs(16), paddingVertical: rv(14), marginTop: rv(12) }]}
-              accessible accessibilityLabel={`경사 보정 페이스 GAP, 킬로미터당 ${fmtPace(gapSec)}`}>
+            <View style={[s.card, { paddingHorizontal: rs(16), paddingVertical: rv(14), marginTop: rv(12) }]}>
               <GlassEdge glints={false} radius={RADIUS.lg} />
-              <View style={{ flex: 1, paddingRight: rs(12) }}>
-                <Text style={s.cardTitle}>경사 보정 페이스 (GAP)</Text>
-                <Text style={{ color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, marginTop: rv(3) }}>
-                  {harder ? '오르막 코스 — 평지였다면 이 페이스' : '내리막 이득을 평지 기준으로 환산'}
-                </Text>
-              </View>
-              <Text style={{ color: T1, fontFamily: DISPLAY, fontSize: TYPE.title.fontSize, fontWeight: '700' }}>
-                {fmtPace(gapSec)}<Text style={{ fontSize: TYPE.caption.fontSize, color: T3, fontWeight: '500' }}> /km</Text>
-              </Text>
+              {/* 트레이닝 부하(스트라바 Relative Effort) — 이 러닝이 얼마나 힘들었나. 심박 있으면
+                  TRIMP, 없으면 페이스 기반 rTSS. 타임·체력 정보가 없어 산출 불가면 숨김. */}
+              {effort && (
+                <View
+                  style={s.effortRow}
+                  accessible accessibilityLabel={`트레이닝 부하 ${effort.score}, ${effort.band}`}>
+                  <View style={{ flex: 1, paddingRight: rs(12) }}>
+                    <Text style={s.cardTitle}>트레이닝 부하</Text>
+                    <Text style={{ color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, marginTop: rv(3) }}>
+                      {effort.method === 'HR' ? '심박 기반 — 이 러닝의 체감 강도' : '페이스 기반 — 체력 대비 이 러닝의 강도'}
+                    </Text>
+                  </View>
+                  <View style={{ alignItems: 'flex-end' }}>
+                    <Text style={{ color: T1, fontFamily: DISPLAY, fontSize: TYPE.title.fontSize, fontWeight: '700' }}>{effort.score}</Text>
+                    <Text style={{ color: ACCENT, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '700' }}>{effort.band}</Text>
+                  </View>
+                </View>
+              )}
+              {effort && gapSec != null && <View style={s.effortDivider} />}
+              {/* 경사 보정 페이스(GAP, Strava식) — 오르내림을 평지 등가로 환산. 고도 시계열이 있고
+                  평지와 유의미하게 다를 때만 노출(평지면 실제 페이스와 같아 중복이라 숨김).
+                  제목의 '(GAP)' 괄호는 뗐다 — 바로 아래 설명 줄이 이미 뜻을 말한다. */}
+              {gapSec != null && (
+                <View
+                  style={s.effortRow}
+                  accessible accessibilityLabel={`경사 보정 페이스 GAP, 킬로미터당 ${fmtPace(gapSec)}`}>
+                  <View style={{ flex: 1, paddingRight: rs(12) }}>
+                    <Text style={s.cardTitle}>경사 보정 페이스</Text>
+                    <Text style={{ color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, marginTop: rv(3) }}>
+                      {harder ? '오르막 코스 — 평지였다면 이 페이스' : '내리막 이득을 평지 기준으로 환산'}
+                    </Text>
+                  </View>
+                  <Text style={{ color: T1, fontFamily: DISPLAY, fontSize: TYPE.title.fontSize, fontWeight: '700' }}>
+                    {fmtPace(gapSec)}<Text style={{ fontSize: TYPE.caption.fontSize, color: T3, fontWeight: '500' }}> /km</Text>
+                  </Text>
+                </View>
+              )}
             </View>
           );
         })()}
@@ -1320,6 +1329,10 @@ const s = StyleSheet.create({
   // 코너 페이드 헤어라인(GlassEdge glints=false) — 균일 RN 보더 폐지(2026-07-10 확정).
   card: { backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderCurve: 'continuous', overflow: 'hidden' },
   cardTitle: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600' },
+  // 성과 카드(부하·GAP) 한 행 — 좌 제목/설명, 우 큰 숫자. 두 행이 같은 골격을 공유한다.
+  effortRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  // 두 행 사이 구획 — 카드를 나누는 대신 헤어라인 하나로(표면 이중화 금지).
+  effortDivider: { height: StyleSheet.hairlineWidth, backgroundColor: SEP, marginVertical: rv(14) },
   // 섹션 헤더 = SectionTitle 프리미티브와 동일 스펙(700) — 화면 간 헤더 무게 통일.
   sectionLabel: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '700', letterSpacing: 0.4, paddingHorizontal: rs(4) },
   // 요약 카드(큰 거리) — 목업 기록(10)

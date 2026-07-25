@@ -274,10 +274,10 @@ export default function ProgressionScreen({
           <View style={s.guideInner} testID="rank-guide">
             {guide.nextTier ? (
               <>
+              {/* 진행바 = '다음까지' 전용(간결화 F1, 2026-07-26). 좌측의 현재 티어 라벨은
+                  바로 위 아이브로우와 같은 글자라 지웠다 — 아이브로우가 '지금의 나', 진행바는
+                  '가는 길'로 역할이 갈린다. */}
               <View style={s.nextRow} testID="rank-next">
-                <Text style={[s.nextTierTxt, {color: rankColor}]}>
-                  {TIER_LABEL[guide.tier]}
-                </Text>
                 <View style={s.nextTrack}>
                   <View
                     style={[
@@ -294,9 +294,11 @@ export default function ProgressionScreen({
                   {TIER_LABEL[guide.nextTier]}
                 </Text>
               </View>
+              {/* 진행바가 이미 비율을 그리므로, 숫자는 '얼마나 더'를 말한다(간결화 F1) —
+                  구 '1,240 / 2,000 XP' 는 바와 같은 정보의 숫자 버전이었다. */}
               {guide.xpForNext > 0 && (
                 <Text style={s.toNext} testID="rank-to-next">
-                  {xpInBand.toLocaleString()} / {bandTotal.toLocaleString()} XP
+                  {TIER_LABEL[guide.nextTier]}까지 {Math.max(0, bandTotal - xpInBand).toLocaleString()} XP
                 </Text>
               )}
               </>

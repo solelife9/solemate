@@ -163,7 +163,8 @@ export function ShoeCard({
   const rc = ringColor(h.percentUsed);
   const tier = wearTier(h.percentUsed);
   // 거리는 사용자 단위(km/mi)로 표시한다 — 저장은 km, 표기만 환산(displayNum).
-  const usedText = `${displayNum(h.usedKm, unit)}/${displayNum(shoe.max, unit)}${unit}`;
+  // 숫자축 표기(홈 '이번 주 러닝' 히어로의 '7.0 / 95 km' 와 같은 문법으로 통일, 2026-07-26).
+  const usedText = `${displayNum(h.usedKm, unit)} / ${displayNum(shoe.max, unit)} ${unit}`;
   const remainText = h.remainingKm > 0 ? `${displayNum(h.remainingKm, unit)}${unit} 남음` : '수명 초과';
   // 카테고리 라벨 = 시드 DB(data/shoeClass)의 실제 종류(카본 레이싱/데일리 등)만.
   // 매칭 없으면 라벨 자체를 숨긴다 — 전부 러닝화인 앱에서 '러닝화' 플레이스홀더는
@@ -269,13 +270,17 @@ export function ShoeCard({
             </Animated.View>
           </View>
 
-          {/* 사용 / 남은 거리 */}
+          {/* 누적 / 총 수명 한 줄 — 링이 비율(남은 수명 %)을 말하므로 이 줄은 절대값만
+              담당한다(간결화 D1, 2026-07-26). 구 'N km 남음'은 링 중앙 %와 같은 말이라 폐지.
+              수명을 넘긴 신발은 초과 사실이 %로는 안 보이므로 그때만 '수명 초과'를 덧붙인다. */}
           <View style={styles.kmRow}>
-            <Text style={styles.kmLabel}>사용 <Text style={styles.kmStrong}>{usedText}</Text></Text>
-            <View style={styles.kmSep} />
-            <Text style={styles.kmLabel}>
-              <Text style={{color: h.remainingKm > 0 ? T1 : rc.solid}}>{remainText}</Text>
-            </Text>
+            <Text style={styles.kmLabel}>{usedText}</Text>
+            {h.remainingKm <= 0 && (
+              <>
+                <View style={styles.kmSep} />
+                <Text style={[styles.kmLabel, {color: rc.solid}]}>{remainText}</Text>
+              </>
+            )}
           </View>
           </Pressable>
 
@@ -349,10 +354,13 @@ export function GhostShoeCard({width, onPress}: {width: number; onPress?: () => 
 // export(2026-07-25 IA 심사): 이 파일의 기본 export 화면은 미마운트 상태라 가디언이
 // 라이브 홈(HomeScreen.rn)에서 죽어 있었다 — 내구도 개입이 신발 고르는 결정 시점에
 // 침묵하던 회귀. HomeScreen 이 이 컴포넌트를 직접 소비한다(ShoeCard 와 같은 방식).
-export function Guardian({danger, pct, onPress}: {danger: boolean; pct: number; onPress?: () => void}) {
+export function Guardian({danger, pct: _pct, onPress}: {danger: boolean; pct: number; onPress?: () => void}) {
   const color = danger ? DANGER : WARN;
-  // pct 는 마모(percentUsed) — 사용자 노출은 '남은 수명' 방향으로 환산(표기 통일).
-  const label = danger ? KEEP_GOING_REPLACE : `남은 수명 ${Math.max(0, 100 - Math.round(pct))}% · 슬슬 교체를 준비할 때`;
+  // 배너는 '판단'만 말한다(간결화 D2, 2026-07-26) — 숫자는 바로 위 카드 링이 '남은 수명 N%'
+  // 로 이미 크게 말하고 있어, 앞머리에 같은 %를 또 붙이면 세 번째 반복이었다. 문장이 짧아져
+  // 긴 모델명 화면에서도 한 줄에 온전히 들어간다. (pct 는 노출값이 사라져 미사용 — 호출부
+  // 시그니처는 유지해 소비처 변경 0.)
+  const label = danger ? KEEP_GOING_REPLACE : '슬슬 교체를 준비할 때예요';
   return (
     <Pressable
       onPress={onPress}

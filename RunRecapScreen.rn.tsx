@@ -13,8 +13,8 @@ import {Text, FONT_SCALE_CAP_HERO} from './lib/text';
 import type {Text as RNText} from 'react-native'; // ref 인스턴스 타입 전용
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import {BG, BLACK, CARD_HI, ACCENT, GOOD, WARN, DANGER, HALL_GOLD, T1, T2, T3, FONT, DISPLAY, RADIUS, GUTTER, SEP, withAlpha, TYPE, GLASS, NUM, MOTION} from './theme';
-import {GlassEdge, useReduceMotion, Input} from './primitives';
+import {BG, BLACK, CARD_HI, ACCENT, GOOD, WARN, DANGER, HALL_GOLD, T1, T2, T3, FONT, RADIUS, GUTTER, SEP, withAlpha, TYPE, GLASS, NUM, MOTION} from './theme';
+import {GlassEdge, StatGrid, useReduceMotion, Input} from './primitives';
 import {RACE_DISTANCE_LABEL, type RaceMatch} from './data/raceEvents';
 import {fmtPaceSec} from './lib/pacePlan';
 import {fmtPace} from './lib/format';
@@ -94,14 +94,7 @@ function fmtDur(s: number): string {
   return h > 0 ? `${h}:${pad(m)}:${pad(sec)}` : `${m}:${pad(sec)}`;
 }
 
-function Stat({label, value, sub}: {label: string; value: string; sub?: string}) {
-  return (
-    <View style={s.stat}>
-      <Text style={s.statValue} numberOfLines={1} adjustsFontSizeToFit>{value}</Text>
-      <Text style={s.statLabel}>{label}{sub ? <Text style={s.statSub}> {sub}</Text> : null}</Text>
-    </View>
-  );
-}
+// (지역 Stat 복제본 삭제 — primitives.StatGrid 로 수렴, 부품 통일 K2 2026-07-26.)
 
 export default function RunRecapScreen({
   km,
@@ -391,7 +384,7 @@ export default function RunRecapScreen({
             <View style={{flex: 1, minWidth: 0}}>
               <Text style={s.shoeName} numberOfLines={1}>{shoeName || '신발'}</Text>
               <Text style={s.shoeMeta}>
-                +{displayNum(shoeWear.addedKm, unit, 1)}{unit} · 남은 내구도 <Text style={s.shoeStrong}>{shoeWear.remainingPct}%</Text>
+                +{displayNum(shoeWear.addedKm, unit, 1)}{unit} · 남은 수명 <Text style={s.shoeStrong}>{shoeWear.remainingPct}%</Text>
                 {shoeWear.deltaPct > 0 ? <Text style={s.shoeDelta}>  −{shoeWear.deltaPct}%</Text> : null}
               </Text>
             </View>
@@ -409,15 +402,25 @@ export default function RunRecapScreen({
           );
         })()}
 
-        {/* 핵심 지표 그리드 */}
+        {/* 핵심 지표 그리드 — 앱 공용 StatGrid(부품 통일 K2, 2026-07-26). 이 화면만 자체 Stat
+            복제본을 써서 단위가 '값 아래 라벨 옆'(평균 페이스 /km)에 붙어, 런 상세의 표준
+            표기(값 뒤 13pt — NUMERIC 규약)와 달랐다. 이제 두 화면이 같은 부품·같은 규약을 쓴다. */}
         <Enter skip={skipAnim} delay={860} style={s.grid}>
           <GlassEdge glints={false} radius={RADIUS.lg} />
-          <Stat label="시간" value={fmtDur(durationS)} />
-          <Stat label="평균 페이스" value={fmtPace(km, durationS)} sub="/km" />
-          {bpm > 0 && <Stat label="평균 심박" value={`${bpm}`} sub="bpm" />}
-          <Stat label="칼로리" value={`${Math.round(calories)}`} sub="kcal" />
-          {cadence > 0 && <Stat label="케이던스" value={`${Math.round(cadence)}`} sub="spm" />}
-          <Stat label="상승 고도" value={`${Math.round(elevationM)}`} sub="m" />
+          <StatGrid
+            style={s.gridInner}
+            columns={2}
+            align="left"
+            size="md"
+            items={[
+              {value: fmtDur(durationS), label: '시간'},
+              {value: fmtPace(km, durationS), unit: ' /km', label: '평균 페이스'},
+              ...(bpm > 0 ? [{value: String(bpm), unit: ' bpm', label: '평균 심박'}] : []),
+              {value: String(Math.round(calories)), unit: ' kcal', label: '칼로리'},
+              ...(cadence > 0 ? [{value: String(Math.round(cadence)), unit: ' spm', label: '케이던스'}] : []),
+              {value: String(Math.round(elevationM)), unit: ' m', label: '상승 고도'},
+            ]}
+          />
         </Enter>
         {bpm === 0 && cadence === 0 && (
           <Text style={{color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, textAlign: 'center', marginTop: rv(10)}}>워치를 함께 쓰면 심박·심박존이 기록돼요</Text>
@@ -566,11 +569,10 @@ const s = StyleSheet.create({
   raceBannerGhost: {height: rs(42), paddingHorizontal: rs(14), alignItems: 'center', justifyContent: 'center'},
   raceBannerGhostT: {color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500'},
   // 코너 페이드 헤어라인(GlassEdge glints=false) — 균일 RN 보더 폐지(2026-07-10 확정).
-  grid: {flexDirection: 'row', flexWrap: 'wrap', backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderCurve: 'continuous', overflow: 'hidden', paddingVertical: rv(6)},
-  stat: {width: '50%', paddingVertical: rv(14), paddingHorizontal: rs(18), alignItems: 'flex-start'},
-  statValue: {color: T1, fontFamily: DISPLAY, fontSize: TYPE.title1.fontSize, fontWeight: '700', letterSpacing: -0.6, fontVariant: ['tabular-nums']},
-  statLabel: {color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600', marginTop: rv(3)},
-  statSub: {color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500'},
+  // 카드 표면만 소유 — 칸 배치는 StatGrid(columns=2)가 한다.
+  grid: {backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderCurve: 'continuous', overflow: 'hidden'},
+  // 그리드 안쪽 여백 — 런 상세(StatGrid 3열)와 같은 방식(컨테이너 패딩 + 행 간격).
+  gridInner: {paddingVertical: rv(18), paddingHorizontal: rs(18), rowGap: rv(18)},
   shoeCard: {flexDirection: 'row', alignItems: 'center', gap: rv(12), backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderCurve: 'continuous', overflow: 'hidden', paddingHorizontal: rs(14), paddingVertical: rv(12), marginBottom: rv(12)},
   shoeIcon: {width: rs(36), height: rs(36), borderRadius: rs(18), alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(ACCENT, 0.12)},
   shoeName: {color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '700', letterSpacing: -0.2},

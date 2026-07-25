@@ -51,7 +51,7 @@ import HallOfFameScreen from './HallOfFameScreen.rn';
 import {buildContext} from './lib/progression/context';
 import {getProgression, pickRecentAchievement, collectUnlockedKeys} from './lib/progression';
 import {RANK_XP} from './lib/progression/rank';
-import {TIER_LABEL, RARITY_COLORS} from './theme';
+import {RARITY_COLORS} from './theme';
 import CelebrationScreen, {CelebrationData} from './CelebrationScreen.rn';
 import {loadProgression, saveProgression} from './lib/progression/storage';
 import {mergeProgression} from './lib/progression/mergeProgression';
@@ -481,7 +481,6 @@ function Main(){
         q.push({
           type:'rankup',
           rankKo:CELEB_RANK_KO[tier]??tier,
-          rankName:(TIER_LABEL as Record<string,string>)[tier]??tier,
           rankColor:view.rank.color,
           prevKo:CELEB_RANK_KO[base.tier]??base.tier,
           nextKo:view.rank.nextTier?(CELEB_RANK_KO[String(view.rank.nextTier)]??String(view.rank.nextTier)):null,
@@ -1033,7 +1032,8 @@ function Main(){
         const names=critical.filter((s:any)=>toNotify.some((id:any)=>String(id)===String(s.id))).map((s:any)=>s.name);
         // keep-going 카피는 브랜드 보이스 결정(BRAND.md — 테스트 계약 App.shoebadge)이라 유지.
         // 감사 #75 의 '얼럿 최소화'는 이중 개행 정리까지만 적용(HIG 와 브랜드 보이스의 절충).
-        showDialog('신발 교체 알림',names.join(', ')+`\n수명의 ${alertCfg.thresholdPct}% 이상을 신었어요. 이제 다음 러닝화를 준비해볼까요?`,[{text:'확인'}]);
+        // % 는 '남은 수명' 방향으로 말한다(표기 통일 2026-07-26) — 임계값 자체는 사용률 그대로.
+        showDialog('신발 교체 알림',names.join(', ')+`\n수명이 ${Math.max(0,100-alertCfg.thresholdPct)}% 남았어요. 이제 다음 러닝화를 준비해볼까요?`,[{text:'확인'}]);
       }
     }catch(e){console.log('checkShoeAlerts error',e);}
   }

@@ -203,7 +203,9 @@ export default function RaceMedalScreen({
             {ocrBusy ? <ActivityIndicator color={T2} /> : ocrDone ? <><Ionicons name="checkmark-circle" size={ri(26)} color={GOOD} /><Text style={[s.shotT, {color: GOOD}]}>기록증 인식됨</Text><Text style={s.shotS}>다시 찍기</Text></> : ocrEmpty ? <><Ionicons name="alert-circle-outline" size={ri(26)} color={WARN} /><Text style={[s.shotT, {color: WARN}]}>기록을 못 읽었어요</Text><Text style={s.shotS}>다시 찍거나 직접 입력</Text></> : certUri ? <><Ionicons name="document-text" size={ri(26)} color={T2} /><Text style={s.shotT}>기록증 저장됨</Text><Text style={s.shotS}>값은 아래 입력</Text></> : <><Ionicons name="document-text-outline" size={ri(26)} color={T3} /><Text style={s.shotT}>기록증 촬영</Text><Text style={s.shotS}>공식 기록 자동 인식</Text></>}
           </Pressable>
         </View>
-        {ocrDone && <Text style={s.ocrNote}>기록증에서 자동으로 읽었어요 — 확인하고 저장하세요.</Text>}
+        {/* 성공 안내 문장 제거(간결화 H1, 2026-07-26) — 슬롯의 '기록증 인식됨' + 아래 필드의
+            '자동 입력' 태그가 같은 사실을 이미 두 번 말했다. 실패(ocrEmpty)는 사용자가 조치해야
+            하는 상태라 문장을 그대로 둔다(반복이 아니라 안내). */}
         {ocrEmpty && <Text style={[s.ocrNote, {color: WARN}]}>기록을 못 읽었어요. 기록증을 또렷하게 다시 찍거나, 아래에 직접 입력하세요.</Text>}
 
         {/* 대회 날짜 — 과거 대회 메달도 정확히 (기본: 대회일 또는 오늘, 편집 가능) */}
@@ -228,7 +230,7 @@ export default function RaceMedalScreen({
         {/* 공식 기록 */}
         <View style={s.fieldHead}>
           <Text style={s.fieldLabel}>공식 기록 (칩 타임)</Text>
-          {ocrDone && !!officialStr && <View style={s.tag}><Text style={s.tagT}>인식됨</Text></View>}
+          {ocrDone && !!officialStr && <View style={s.tag}><Text style={s.tagT}>자동 입력</Text></View>}
         </View>
         <Input value={officialStr} onChangeText={setOfficialStr} placeholder="1:20:32" style={s.input} keyboardType="numbers-and-punctuation" accessibilityLabel="공식 기록" testID="official-input" />
         {appTimeSec && officialSec && Math.abs(appTimeSec - officialSec) >= 2 && (
@@ -239,7 +241,7 @@ export default function RaceMedalScreen({
         {/* 평균 페이스 */}
         <View style={s.fieldHead}>
           <Text style={s.fieldLabel}>평균 페이스 (/km)</Text>
-          {ocrDone && !!paceStr && <View style={s.tag}><Text style={s.tagT}>인식됨</Text></View>}
+          {ocrDone && !!paceStr && <View style={s.tag}><Text style={s.tagT}>자동 입력</Text></View>}
         </View>
         <Input value={paceStr} onChangeText={setPaceStr} placeholder="5:36" style={s.input} keyboardType="numbers-and-punctuation" accessibilityLabel="평균 페이스" />
 

@@ -168,10 +168,11 @@ function MedalDetail({medal, insetTop, insetBottom, onClose, onOpenRun, onDelete
   };
   const official = typeof medal.officialTimeSec === 'number' && medal.officialTimeSec > 0 ? medal.officialTimeSec : undefined;
   const app = medal.appTimeSec;
+  // 기록·종목 행은 표에서 뺀다(간결화 I1, 2026-07-26) — 완주 시간은 바로 위 골드 히어로가
+  // 이 화면에서 가장 큰 글자로 말하고 있어 표의 '공식 기록' 행은 같은 값의 반복이었다.
+  // 대신 히어로 아래 한 줄에 '출처 · 종목'(공식 기록 / 앱 측정)을 붙여 맥락만 남긴다.
+  const heroMeta = `${official ? '공식 기록' : '앱 측정'} · ${RACE_DISTANCE_LABEL[medal.distance]}`;
   const rows: {l: string; v: string}[] = [];
-  rows.push({l: '종목', v: RACE_DISTANCE_LABEL[medal.distance]});
-  if (official) rows.push({l: '공식 기록', v: fmtTime(official)});
-  else if (app) rows.push({l: '기록', v: fmtTime(app)});
   if (typeof medal.paceSec === 'number') rows.push({l: '평균 페이스', v: `${Math.floor(medal.paceSec / 60)}'${String(Math.round(medal.paceSec % 60)).padStart(2, '0')}" /km`});
   if (medal.region) rows.push({l: '장소', v: medal.region});
   rows.push({l: '날짜', v: medal.date});
@@ -224,6 +225,7 @@ function MedalDetail({medal, insetTop, insetBottom, onClose, onOpenRun, onDelete
         <Text style={m.detailName}>{medal.raceName}</Text>
         {official && <Text maxFontSizeMultiplier={FONT_SCALE_CAP_HERO} style={m.detailTime}>{fmtTime(official)}</Text>}
         {!official && app && <Text maxFontSizeMultiplier={FONT_SCALE_CAP_HERO} style={m.detailTime}>{fmtTime(app)}</Text>}
+        {(official || app) && <Text style={m.detailHeroMeta}>{heroMeta}</Text>}
         {official && app && Math.abs(app - official) >= 2 && (
           <Text style={m.detailNote}>앱 측정 {fmtTime(app)} · 공식 기록(칩 타임)이 정본</Text>
         )}
@@ -299,6 +301,8 @@ const m = StyleSheet.create({
   detailName: {color: T1, fontFamily: FONT, fontSize: TYPE.title.fontSize, fontWeight: '700', letterSpacing: -0.4, textAlign: 'center', marginTop: rv(20), textWrap: 'balance'} as any,
   detailTime: {color: HALL_GOLD, fontFamily: DISPLAY, fontSize: HERO.hero, fontWeight: '700', letterSpacing: -1, marginTop: rv(8), fontVariant: ['tabular-nums']},
   detailNote: {color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, marginTop: rv(6), textAlign: 'center'},
+  // 히어로 아래 '출처 · 종목' 한 줄 — 표에서 걷어낸 맥락을 숫자 곁에 붙인다(간결화 I1).
+  detailHeroMeta: {color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600', marginTop: rv(6), textAlign: 'center'},
   detailCard: {alignSelf: 'stretch', backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderCurve: 'continuous', overflow: 'hidden', paddingHorizontal: rs(16), marginTop: rv(22)},
   detailRow: {flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: rv(14)},
   detailRowDiv: {borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP},

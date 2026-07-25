@@ -41,11 +41,13 @@ describe('buildInjuryGuidance', () => {
     expect(g.items[0].title).toContain('그대로');
   });
 
-  it('신발만 닳음 → 교체 코칭(마모% 포함) · 약자 없음', () => {
+  it('신발만 닳음 → 교체 코칭(남은 수명% 포함) · 약자 없음', () => {
     const g = guidanceFor(steadyRuns(), { used: 580, max: 600 });
     expect(titles(g)).toContain('신발 교체가 필요해요');
     const body = g.items.map((i) => i.body).join(' ');
-    expect(body).toContain('97%');
+    // 표기 통일(2026-07-26): 사용자 노출 % 는 앱 전역과 같은 '남은 수명' 방향(마모 97% → 3%).
+    expect(body).toContain('남은 수명 3%');
+    expect(body).not.toContain('마모');
     expect(body).not.toContain('ACWR');
   });
 

@@ -37,7 +37,9 @@ const REST_AT_DAYS = 4; // 나흘 연속 달리면 휴식 권고
 export function buildInjuryGuidance(risk: CombinedInjuryRisk): InjuryGuidance {
   const { load, shoe } = risk;
   const items: GuidanceItem[] = [];
-  const wearPct = Math.round((shoe.percentUsed || 0) * 100);
+  // 사용자에게 보이는 % 는 앱 전역과 같은 '남은 수명' 방향으로 말한다(표기 통일 2026-07-26).
+  // 판정 입력(shoe.percentUsed)은 마모율 그대로 — 임계는 lib/injury 가 소유한다.
+  const remainPct = Math.max(0, 100 - Math.round((shoe.percentUsed || 0) * 100));
 
   // ── 신발 신호 ────────────────────────────────────────────────────────────────
   if (shoe.level === 'high') {
@@ -45,14 +47,14 @@ export function buildInjuryGuidance(risk: CombinedInjuryRisk): InjuryGuidance {
       tone: 'high',
       icon: 'footsteps',
       title: '신발 교체가 필요해요',
-      body: `마모 ${wearPct}% — 닳은 밑창은 충격 흡수가 떨어져 무릎·정강이 부담이 커져요. 다음 신발을 준비하세요.`,
+      body: `남은 수명 ${remainPct}% — 닳은 밑창은 충격 흡수가 떨어져 무릎·정강이 부담이 커져요. 다음 신발을 준비하세요.`,
     });
   } else if (shoe.level === 'caution') {
     items.push({
       tone: 'caution',
       icon: 'footsteps',
       title: '슬슬 다음 신발을 준비하세요',
-      body: `마모 ${wearPct}% — 교체 시점(90%) 전에 새 신발을 미리 길들이면 갑작스런 교체로 인한 부상을 막아요.`,
+      body: `남은 수명 ${remainPct}% — 다 쓰기 전에 새 신발을 미리 길들이면 갑작스런 교체로 인한 부상을 막아요.`,
     });
   }
 

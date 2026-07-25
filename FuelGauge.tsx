@@ -52,7 +52,7 @@ export function FuelGauge({remainLabel, unit, fillPct, maxLabel, replaceLabel, e
         style={[g.track, {marginTop: rv(14)}]}
         accessible
         accessibilityRole="progressbar"
-        accessibilityLabel={`잔여 수명 ${remainPct}%, 교체까지 약 ${remainLabel}${unit}`}
+        accessibilityLabel={`남은 수명 ${remainPct}%, 교체까지 약 ${remainLabel}${unit}`}
         accessibilityValue={{min: 0, max: 100, now: remainPct}}>
         <View style={[g.fill, {width: `${(1 - p) * 100}%`, backgroundColor: cc}]} />
       </View>

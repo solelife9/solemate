@@ -20,9 +20,8 @@ import {Button} from './primitives';
 export type CelebrationData =
   | {
       type: 'rankup';
-      /** 도달한 등급(한글/영문/색). */
+      /** 도달한 등급(한글/색). 영문 티어명(rankName)은 메타 줄 폐지로 소비처가 사라져 제거(2026-07-26). */
       rankKo: string;
-      rankName: string;
       rankColor: string;
       /** 직전 등급(한글) — 있으면 "실버 →". */
       prevKo?: string | null;
@@ -198,14 +197,14 @@ export default function CelebrationScreen({data, onClose}: {data: CelebrationDat
           <Rise anim={anim} from={0.2} to={0.6}>
             <Text maxFontSizeMultiplier={FONT_SCALE_CAP_HERO} style={[st.name, {color: c}]}>{data.rankKo}</Text>
           </Rise>
-          <Rise anim={anim} from={0.26} to={0.66}>
-            <Text style={st.meta}>{data.rankName}</Text>
-          </Rise>
+          {/* 영문 티어명 메타 줄 제거(간결화 M1, 2026-07-26) — 바로 위 큰 글자와 아래 설명
+              문장이 이미 새 등급을 말해 세 번째 반복이었다. 1.5초 지나가는 화면이라 특히
+              군더더기. 설명도 '이제 …예요'를 빼고 다음 목적지만 남긴다. */}
           <Rise anim={anim} from={0.32} to={0.72}>
             <Text style={st.desc}>
               {data.nextKo ? (
                 <>
-                  이제 <Text style={st.b}>{data.rankKo}</Text>예요. 다음 여정은 <Text style={st.b}>{data.nextKo}</Text>.
+                  다음 여정은 <Text style={st.b}>{data.nextKo}</Text>.
                 </>
               ) : (
                 <>

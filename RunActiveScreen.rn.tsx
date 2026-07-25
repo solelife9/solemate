@@ -693,9 +693,11 @@ export default function RunActiveScreen({
           <Pressable onPress={() => onLap?.()} accessibilityRole="button"
             accessibilityLabel={`랩 기록, 현재 ${track.lapCount}바퀴`}
             style={({ pressed }) => [r.lapBtn, pressed && { opacity: 0.85 }]}>
+            {/* 버튼 우측 카운트 제거(간결화 J1, 2026-07-26) — 링 한가운데 큰 숫자가 이미
+                바퀴 수다. 달리며 흘끗 보는 화면에서 같은 숫자가 두 크기로 있으면 '뭐가 맞지'
+                가 생긴다. 버튼은 행동만, 숫자는 링만. (음성 라벨엔 현재 바퀴 수 유지.) */}
             <Ionicons name="flag-outline" size={ri(19)} color={T1} />
             <Text style={r.lapBtnText}>랩 기록</Text>
-            <Text style={r.lapBtnCount}>{track.lapCount}</Text>
           </Pressable>
           {track.lapCount > 0 && (
             <Pressable onPress={onUndoLap} accessibilityRole="button" accessibilityLabel="마지막 랩 되돌리기"
@@ -927,7 +929,7 @@ const r = StyleSheet.create({
   // 선택/강조 칩 한 벌(감사 #56): 채움 withAlpha(T1,0.14) · 보더 withAlpha(T1,0.4).
   lapBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(8), minHeight: rs(58), borderRadius: rs(18), borderCurve: 'continuous', backgroundColor: withAlpha(T1, 0.14), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.4) },
   lapBtnText: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.heading.fontSize, fontWeight: '700', letterSpacing: -0.2 },
-  lapBtnCount: { position: 'absolute', right: 18, color: ACCENT_2, fontFamily: DISPLAY, fontSize: TYPE.body.fontSize, fontWeight: '700', fontVariant: ['tabular-nums'] },
+  // (lapBtnCount 삭제 — 랩 버튼 우측 카운트 폐지로 소비처가 사라졌다, 간결화 J1 2026-07-26)
   lapUndo: { width: rs(52), height: rs(52), borderRadius: rs(16), borderCurve: 'continuous', alignItems: 'center', justifyContent: 'center', backgroundColor: CARD, borderWidth: 1, borderColor: SEP },
 
   controls: { flexDirection: 'row', justifyContent: 'center', gap: rv(48), paddingBottom: rv(8) },

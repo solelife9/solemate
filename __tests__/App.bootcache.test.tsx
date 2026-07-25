@@ -97,8 +97,8 @@ test('offline boot: 묘비(tombstones_v1)에 든 런은 캐시에 남아 있어�
   await flush();
   const home = textOf(renderer.root);
   // 신발 히어로 사용거리 = r1(5)만. r-del 이 부활했다면 8 이었을 것.
-  expect(home).toContain('사용 5/600km');
-  expect(home).not.toContain('사용 8/600km');
+  expect(home).toContain('5 / 600 km');
+  expect(home).not.toContain('8 / 600 km');
 
   act(() => renderer.unmount());
 });
@@ -144,11 +144,11 @@ test('offline boot: 캐시 런 위에 미동기(pending) 런을 오버레이해 
   // prop 은 더 이상 렌더되지 않음). 오버레이 합산은 이제 신발 히어로의 사용/잔여 거리에서
   // 관측한다: 캐시 런(5) + 미동기 런(4.2) = 9.2 → 사용 '9', 잔여 600-9.2≈'591'. 오버레이가
   // 없었다면 사용 '5'·잔여 '595' 였을 것이다.
+  // (간결화 D1, 2026-07-26: 히어로 아래 줄이 '사용 N/총km · N km 남음' → 숫자축 'N / 총 km'
+  //  한 줄로 바뀌었다. 'N km 남음'은 링 중앙 %와 같은 말이라 폐지 — 관측은 숫자축으로.)
   const home = textOf(root);
-  expect(home).toContain('사용 9/600km');
-  expect(home).toContain('591km 남음');
-  expect(home).not.toContain('사용 5/600km');
-  expect(home).not.toContain('595km 남음');
+  expect(home).toContain('9 / 600 km');
+  expect(home).not.toContain('5 / 600 km');
 
   act(() => renderer.unmount());
 });
@@ -187,10 +187,8 @@ test('offline boot: 이미 캐시에 든 런(localId==id)은 큐 오버레이로
   // [관측 위치 변경] 홈 주간거리 행 제거 → 신발 히어로 사용/잔여로 관측. 캐시 런과 큐의
   // localId 가 같아 한 번만 집계: 사용 '6'·잔여 '594'(600-6). 중복됐다면 사용 '12'·잔여 '588'.
   const home = textOf(root);
-  expect(home).toContain('사용 6/600km');
-  expect(home).toContain('594km 남음');
-  expect(home).not.toContain('사용 12/600km');
-  expect(home).not.toContain('588km 남음');
+  expect(home).toContain('6 / 600 km');
+  expect(home).not.toContain('12 / 600 km');
 
   act(() => renderer.unmount());
 });

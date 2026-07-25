@@ -62,11 +62,19 @@ export function TrainingLoadCard({
       accessibilityRole="summary">
       {/* embedded 는 부모 카드가 표면을 소유 — 유리 헤어라인 중복 금지. */}
       {!embedded && <GlassEdge glints={false} radius={RADIUS.lg} />}
-      <View style={s.head}>
-        <View style={[s.dot, { backgroundColor: color }]} />
-        <Text style={s.title}>훈련 부하 — <Text style={{ color }}>{word}</Text></Text>
+      {/* 헤더(점 + '훈련 부하 — 주의')는 embedded 에선 생략(간결화 G1, 2026-07-26): 홈 원카드의
+          부하 셀이 바로 위에서 같은 점+워드를 이미 보여주고, 그 셀을 눌러 펼친 결과가 같은 줄로
+          시작하면 반복으로 읽혔다. 비율 문구(phrase)는 게이지보다 빨리 읽히는 정보라 유지하되,
+          헤더가 사라진 embedded 에선 설명 문장 옆에 붙여 자리를 지킨다. 단독 카드는 종전대로. */}
+      {embedded ? (
         <Text style={s.phrase}>{phrase}</Text>
-      </View>
+      ) : (
+        <View style={s.head}>
+          <View style={[s.dot, { backgroundColor: color }]} />
+          <Text style={s.title}>훈련 부하 — <Text style={{ color }}>{word}</Text></Text>
+          <Text style={s.phrase}>{phrase}</Text>
+        </View>
+      )}
 
       <Text style={s.msg}>{load.message}</Text>
 

@@ -19,7 +19,7 @@ import { BG, CARD, CARD_HI, ACCENT, GOOD, DANGER, WARN, T1, T2, T3, SEP, CARD_BO
 // recap 토글 = SegmentedControl(sm), 스탯 그리드들 = StatGrid 단일 프리미티브.
 import { TabBar, TABBAR_CLEARANCE, Button, SegmentedControl, StatGrid, Stepper, AmbientBackdrop, Rise, GlassEdge, Toggle, KakaoMark, NaverMark, Input } from './primitives';
 import { Unit, unitKorean, displayNum } from './lib/units';
-import { weeklyRecap, monthlyRecap, type RecapRun, type RecapShoe } from './lib/recap';
+import { monthlyRecap, type RecapRun, type RecapShoe } from './lib/recap';
 import { hkAvailable, hkLinked, hkLink, hkRestingHR } from './lib/healthkit';
 import { buildRecapShareCardModel, shareRecapCard, shareRunnerSpecCard, formatRecapPRs, type RecapKind, type SvgCapturable } from './lib/shareCard';
 import RecapShareCard from './RecapShareCard';
@@ -509,18 +509,19 @@ export default function ProfileScreen({
     (notifSettings.weeklyGoal ? 1 : 0) +
     (notifSettings.runReminder ? 1 : 0);
 
-  // ── 기간 리캡(돌아보기) ──────────────────────────────────────────────────────
-  // 주간/월간 토글로 lib/recap 의 순수 요약을 만든다(원본 불변). recapNow 미주입 시
-  // 현재 시각 — useMemo 가 매 렌더 새 Date 를 만들지 않도록 한 번만 고정한다.
-  const [recapMode, setRecapMode] = useState<RecapKind>('weekly');
+  // ── 기간 리캡(돌아보기) — 월간 전용 ──────────────────────────────────────────
+  // 주간 모드 폐지(간결화 E2, 2026-07-26): weeklyRecap 은 '최근 월요일~일요일' 로 홈
+  // '이번 주 러닝' 원카드와 **완전히 같은 창·같은 3지표**(거리·횟수·평균 페이스)였다.
+  // B안에서 스트릭·주간 목표를 홈으로 모은 것과 같은 이유로 주간의 집은 홈, 마이 탭은
+  // 주보다 긴 호흡(월간)을 맡는다. lib/recap.weeklyRecap 은 공유 카드·다른 소비처를 위해
+  // 그대로 남는다(제거한 건 이 화면의 토글뿐). recapNow 미주입 시 현재 시각 — useMemo 가
+  // 매 렌더 새 Date 를 만들지 않도록 한 번만 고정한다.
+  const recapMode: RecapKind = 'monthly';
   const nowRef = useRef<Date>(recapNow ?? new Date());
   const recapBase = recapNow ?? nowRef.current;
   const recap = useMemo(
-    () =>
-      recapMode === 'monthly'
-        ? monthlyRecap(recapRuns, recapShoes, { now: recapBase })
-        : weeklyRecap(recapRuns, recapShoes, { now: recapBase }),
-    [recapMode, recapRuns, recapShoes, recapBase],
+    () => monthlyRecap(recapRuns, recapShoes, { now: recapBase }),
+    [recapRuns, recapShoes, recapBase],
   );
   // 화면 표시용 PR 행(카드와 동일 포맷 재사용). 표시 단위 환산은 빌더가 처리.
   const recapPRs = formatRecapPRs(recap.prs, unit);
@@ -758,60 +759,51 @@ export default function ProfileScreen({
         {/* 누적 기록 카드 제거 — 기록(History) 탭에서 주/월/년/전체 기간별로 볼 수 있어
             마이 탭과 중복(사용자 요청). 정체성·진척·기록(PR)·리캡만 남긴다. */}
 
-        {/* 진척(나의 여정·업적) 진입 — 전체화면 ProgressionScreen 으로 전환 */}
-        {onOpenProgression && (
-          <Pressable
-            onPress={onOpenProgression}
-            testID="open-progression"
-            accessibilityRole="button"
-            accessibilityLabel="진척 열기"
-            style={({ pressed }) => [s.card, s.progressRow, pressed && { backgroundColor: CARD_HI }]}>
-            <GlassEdge glints={false} radius={RADIUS.lg} />
-            <View style={s.progressIcon}><Ionicons name="trophy-outline" size={ri(19)} color={T2} /></View>
-            <View style={{ flex: 1, minWidth: 0 }}>
-              <Text style={s.progressTitle}>진척</Text>
-              <Text style={s.progressSub}>나의 여정 · 업적</Text>
+        {/* 성취 컬렉션 진입 — 진척 · 러닝화 아카이브 · 메달 아카이브를 한 카드 3행으로
+            (간결화 E1, 2026-07-26). 셋 다 '아이콘 + 제목 + 부제 + ›' 로 완전히 같은 골격이라
+            카드 표면 3장은 정보를 나누지 못하고 여백만 먹었다(애플 설정앱식 그룹 목록으로).
+            행 사이만 헤어라인으로 나누고, 표면·유리 헤어라인은 카드 하나가 소유한다. */}
+        {(onOpenProgression || onOpenHallOfShoes || onOpenMedalArchive) && (() => {
+          const entries = [
+            onOpenProgression && {
+              key: 'progression', testID: 'open-progression', icon: 'trophy-outline' as const,
+              title: '진척', sub: '나의 여정 · 업적', a11y: '진척 열기', onPress: onOpenProgression,
+            },
+            onOpenHallOfShoes && {
+              key: 'hall-of-shoes', testID: 'open-hall-of-shoes', icon: 'ribbon-outline' as const,
+              title: '러닝화 아카이브',
+              sub: retiredCount > 0 ? `은퇴한 신발 ${retiredCount}켤레` : '은퇴한 러닝화의 기록이 남는 곳',
+              a11y: '러닝화 아카이브 열기', onPress: onOpenHallOfShoes,
+            },
+            onOpenMedalArchive && {
+              key: 'medal-archive', testID: 'open-medal-archive', icon: 'medal-outline' as const,
+              title: '메달 아카이브',
+              sub: medalCount > 0 ? `완주 메달 ${medalCount}개` : '완주한 대회의 메달과 기록',
+              a11y: '메달 아카이브 열기', onPress: onOpenMedalArchive,
+            },
+          ].filter(Boolean) as { key: string; testID: string; icon: string; title: string; sub: string; a11y: string; onPress: () => void }[];
+          return (
+            <View style={s.card} testID="archive-group">
+              <GlassEdge glints={false} radius={RADIUS.lg} />
+              {entries.map((e, i) => (
+                <Pressable
+                  key={e.key}
+                  onPress={e.onPress}
+                  testID={e.testID}
+                  accessibilityRole="button"
+                  accessibilityLabel={e.a11y}
+                  style={({ pressed }) => [s.progressRow, i > 0 && s.progressRowDiv, pressed && { backgroundColor: CARD_HI }]}>
+                  <View style={s.progressIcon}><Ionicons name={e.icon} size={ri(19)} color={T2} /></View>
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <Text style={s.progressTitle}>{e.title}</Text>
+                    <Text style={s.progressSub}>{e.sub}</Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={ri(18)} color={T3} />
+                </Pressable>
+              ))}
             </View>
-            <Ionicons name="chevron-forward" size={ri(18)} color={T3} />
-          </Pressable>
-        )}
-
-        {/* 러닝화 아카이브(은퇴 신발 — 구명 명예의 전당) 진입 — 전체화면 HallOfShoes 로 전환.
-            (신발탭 이동을 검토했으나 사용자 결정으로 마이탭 유지 — 2026-07-02.) */}
-        {onOpenHallOfShoes && (
-          <Pressable
-            onPress={onOpenHallOfShoes}
-            testID="open-hall-of-shoes"
-            accessibilityRole="button"
-            accessibilityLabel="러닝화 아카이브 열기"
-            style={({ pressed }) => [s.card, s.progressRow, pressed && { backgroundColor: CARD_HI }]}>
-            <GlassEdge glints={false} radius={RADIUS.lg} />
-            <View style={s.progressIcon}><Ionicons name="ribbon-outline" size={ri(19)} color={T2} /></View>
-            <View style={{ flex: 1, minWidth: 0 }}>
-              <Text style={s.progressTitle}>러닝화 아카이브</Text>
-              <Text style={s.progressSub}>{retiredCount > 0 ? `은퇴한 신발 ${retiredCount}켤레` : '은퇴한 러닝화의 기록이 남는 곳'}</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={ri(18)} color={T3} />
-          </Pressable>
-        )}
-
-        {/* 메달 아카이브(마라톤 완주 메달·기록) — 러닝화 아카이브와 짝을 이루는 형제 컬렉션. */}
-        {onOpenMedalArchive && (
-          <Pressable
-            onPress={onOpenMedalArchive}
-            testID="open-medal-archive"
-            accessibilityRole="button"
-            accessibilityLabel="메달 아카이브 열기"
-            style={({ pressed }) => [s.card, s.progressRow, pressed && { backgroundColor: CARD_HI }]}>
-            <GlassEdge glints={false} radius={RADIUS.lg} />
-            <View style={s.progressIcon}><Ionicons name="medal-outline" size={ri(19)} color={T2} /></View>
-            <View style={{ flex: 1, minWidth: 0 }}>
-              <Text style={s.progressTitle}>메달 아카이브</Text>
-              <Text style={s.progressSub}>{medalCount > 0 ? `완주 메달 ${medalCount}개` : '완주한 대회의 메달과 기록'}</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={ri(18)} color={T3} />
-          </Pressable>
-        )}
+          );
+        })()}
 
         {/* Apple 건강 연동은 설정 섹션의 compact 행으로 이동(사용자 요청) — 아래 설정 목록 참조. */}
 
@@ -820,19 +812,10 @@ export default function ProfileScreen({
             메달 아카이브)만 남아 '아카이브 vs 보관함' 이름 충돌이 해소된다. */}
 
 
-        {/* 돌아보기(리캡) — 주간/월간 토글 + 요약 + 카드 공유(slice-8-recap-ui) */}
+        {/* 돌아보기(리캡) — 이번 달 요약 + 카드 공유. 주간/월간 토글은 폐지(간결화 E2). */}
         <View testID="recap-section">
           <View style={s.recapHead}>
-            <Text style={s.sectionLabel}>돌아보기</Text>
-            <SegmentedControl
-              size="sm"
-              block={false}
-              items={[{ key: 'weekly', label: '주간' }, { key: 'monthly', label: '월간' }]}
-              value={recapMode}
-              onChange={(k) => setRecapMode(k as RecapKind)}
-              labelFor={(it) => `${it.label} 리캡`}
-              testIDFor={(it) => `recap-toggle-${it.key}`}
-            />
+            <Text style={s.sectionLabel}>이번 달 돌아보기</Text>
           </View>
           <View style={[s.card, { padding: rs(16) }]} testID="recap-card">
             <GlassEdge glints={false} radius={RADIUS.lg} />
@@ -854,9 +837,7 @@ export default function ProfileScreen({
               <View style={s.recapEmpty} testID="recap-empty">
                 <Ionicons name="footsteps-outline" size={ri(26)} color={ACCENT} style={{ marginBottom: rv(8) }} />
                 <Text style={s.recapEmptyTxt}>
-                  {recapMode === 'monthly'
-                    ? '이번 달은 아직 기록이 없어요.\n가볍게 한 걸음부터 — Keep Going'
-                    : '이번 주는 아직 기록이 없어요.\n가볍게 한 걸음부터 — Keep Going'}
+                  이번 달은 아직 기록이 없어요.{'\n'}가볍게 한 걸음부터 — Keep Going
                 </Text>
               </View>
             ) : (
@@ -936,8 +917,12 @@ export default function ProfileScreen({
                 />
                 {notifSettings.shoeReplacement && (
                   <>
-                    <Stepper value={alerts.thresholdPct} suffix="% 사용 시" onMinus={() => stepThreshold(-1)} onPlus={() => stepThreshold(1)} />
-                    <Text style={s.panelHint}>신발 수명의 <Text style={{ color: ACCENT }}>{alerts.thresholdPct}%</Text>를 쓰면 알려드려요</Text>
+                    {/* 표기 방향 통일(2026-07-26): 앱의 모든 수명 %는 '남은 수명'인데 이 설정만
+                        '사용률'이라 같은 화면에서 방향이 반대로 읽혔다. 저장값(thresholdPct)은
+                        사용률 그대로 두고(알림 임계·워치 호환 불변) 표시만 100−값으로 뒤집는다.
+                        [+]가 '남은 %'를 올리려면 사용률은 내려가야 하므로 ± 도 서로 바꾼다. */}
+                    <Stepper value={100 - alerts.thresholdPct} suffix="% 남았을 때" onMinus={() => stepThreshold(1)} onPlus={() => stepThreshold(-1)} />
+                    <Text style={s.panelHint}>신발 수명이 <Text style={{ color: ACCENT }}>{100 - alerts.thresholdPct}%</Text> 남으면 알려드려요</Text>
                   </>
                 )}
                 <NotifToggle label="주간 목표 알림" value={notifSettings.weeklyGoal} onToggle={() => toggleNotif('weeklyGoal')} testID="notif-toggle-weeklyGoal" />
@@ -1261,6 +1246,8 @@ const s = StyleSheet.create({
   // 섹션 헤더 = SectionTitle 프리미티브와 동일 스펙(700) — 화면 간 헤더 무게 통일(600 혼용 제거).
   sectionLabel: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '700', letterSpacing: 0.4, paddingHorizontal: rs(4) },
   progressRow: { flexDirection: 'row', alignItems: 'center', gap: rv(12), padding: rs(16) },
+  // 그룹 카드 안 행 구분(첫 행 제외) — 카드 표면을 나누는 대신 헤어라인 하나로.
+  progressRowDiv: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.07) },
   // 진입 행 아이콘: 브랜드 파파야 → 무채(2026-07-25 색의미 스윕 P1 #34 — 브랜드색은 러닝
   // 링 전용, 그 외 강조는 무채). 스트릭 점(진행 지표)만 BRAND 유지.
   progressIcon: { width: rs(38), height: rs(38), borderRadius: RADIUS.sm, backgroundColor: withAlpha(T1, 0.06), alignItems: 'center', justifyContent: 'center' },

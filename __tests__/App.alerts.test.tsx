@@ -129,7 +129,8 @@ test('enabled=true + 임계 초과 → 교체 알림 발생(신발 이름 포함
   const calls = replaceAlertCalls(alertSpy);
   expect(calls).toHaveLength(1);
   expect(calls[0].message).toContain('Hoka Clifton');
-  expect(calls[0].message).toContain('90%');
+  // 표기 통일(2026-07-26): 사용자에게 보이는 % 는 '남은 수명' 방향(임계 90% 사용 → 10% 남음).
+  expect(calls[0].message).toContain('10% 남았어요');
 });
 
 test('새 임계값(75%)에서 발화 — 기본값 90%였다면 조용했을 80% 신발', async () => {
@@ -145,20 +146,22 @@ test('새 임계값(75%)에서 발화 — 기본값 90%였다면 조용했을 80
   await mount(SHOE80, RUNS80);
   const calls = replaceAlertCalls(alertSpy);
   expect(calls).toHaveLength(1); // 80% ≥ 75% → 새 임계값에서 발화
-  expect(calls[0].message).toContain('75%'); // 기본 90%가 아니라 사용자 임계값 75%
+  expect(calls[0].message).toContain('25% 남았어요'); // 기본 90%(10% 남음)가 아니라 사용자 임계 75%
 });
 
-test('알림 패널에서 임계값 +스텝 → settings_alerts.thresholdPct 영속', async () => {
+// 스테퍼 표기가 '사용률' → '남은 수명'으로 뒤집혔다(표기 통일 2026-07-26). 저장값
+// (thresholdPct)은 사용률 그대로라, 표시 '남은 %'를 늘리면 저장값은 한 스텝 내려간다.
+test('알림 패널에서 남은 수명 +스텝 → settings_alerts.thresholdPct 는 한 스텝 내려간다', async () => {
   const {root} = await mount(SHOE80, RUNS80);
   await tap(pressBy(root, '마이'));
   // 설정 행은 마이탭 헤더 ⚙️ 뒤의 '설정' 뷰로 분리됐다 — 먼저 연다.
   await tap(root.findAll((n: any) => n.props?.accessibilityLabel === '설정 열기')[0]);
   await tap(pressBy(root, '알림')); // 병합된 알림 행 펼치기(2026-07-05 — 교체 임박 아래 임계 스텝퍼)
 
-  // 교체 임박 알림 아래 임계값 스테퍼 '+'로 90 → 95
-  await tap(pressBy(root, '% 사용 시 늘리기'));
+  // 임계값 스테퍼 '+' = 남은 수명 10% → 15% (저장되는 사용률은 90 → 85)
+  await tap(pressBy(root, '% 남았을 때 늘리기'));
 
   const raw = await AsyncStorage.getItem('settings_alerts');
   expect(raw).toBeTruthy();
-  expect(JSON.parse(raw as string).thresholdPct).toBe(95);
+  expect(JSON.parse(raw as string).thresholdPct).toBe(85);
 });

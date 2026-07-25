@@ -77,11 +77,7 @@ function pressableByTestId(root: ReactTestRenderer.ReactTestInstance, id: string
 function hasId(root: ReactTestRenderer.ReactTestInstance, id: string): boolean {
   return root.findAll((n: any) => n.props?.testID === id).length > 0;
 }
-function press(node: ReactTestRenderer.ReactTestInstance) {
-  act(() => {
-    node.props.onPress();
-  });
-}
+// (press 헬퍼 제거 — 주간/월간 토글 폐지로 이 파일에 누를 대상이 없다, 간결화 E2 2026-07-26)
 async function flush() {
   await act(async () => {
     await Promise.resolve();
@@ -91,29 +87,25 @@ async function flush() {
 }
 
 describe('ProfileScreen 리캡이 실데이터로 렌더(주/월 분기)', () => {
-  test('주간 토글(기본): 이번 주 합 20km·3회·주간 기간 라벨을 보여 준다', () => {
+  // 주간 모드 폐지(간결화 E2, 2026-07-26): weeklyRecap 은 홈 '이번 주 러닝' 원카드와 같은
+  // 창·같은 3지표라 마이 탭에서 중복이었다. 리캡은 이제 월간 전용(토글 없음).
+  test('월간 전용: 이번 달 합 25km·4회·월간 기간 라벨을 보여 준다', () => {
     const root = render({recapRuns: ALL_RUNS, recapShoes: SHOES, recapNow: NOW, unit: 'km'});
     // 빈 리캡이 아니다(실데이터 칸이 뜬다).
     expect(hasId(root, 'recap-empty')).toBe(false);
-    expect(textOf(byTestId(root, 'recap-period'))).toBe('6.8–6.14');
-    expect(textOf(byTestId(root, 'recap-total'))).toContain('20');
-    expect(textOf(byTestId(root, 'recap-runcount'))).toContain('3');
+    expect(textOf(byTestId(root, 'recap-period'))).toBe('2026년 6월');
+    expect(textOf(byTestId(root, 'recap-total'))).toContain('25');
+    expect(textOf(byTestId(root, 'recap-runcount'))).toContain('4');
     // 평균 페이스가 산출된다(무런 '--' 아님).
     expect(textOf(byTestId(root, 'recap-pace'))).not.toContain('--');
     // 최다 착용 신발이 노출된다.
     expect(hasId(root, 'recap-most-worn')).toBe(true);
   });
 
-  test('월간 토글: 이번 달 합 25km·4회·월간 기간 라벨로 분기가 바뀐다', () => {
+  test('주간/월간 토글은 더 이상 렌더하지 않는다(홈 원카드와 중복 제거)', () => {
     const root = render({recapRuns: ALL_RUNS, recapShoes: SHOES, recapNow: NOW, unit: 'km'});
-    press(pressableByTestId(root, 'recap-toggle-monthly'));
-    expect(textOf(byTestId(root, 'recap-period'))).toBe('2026년 6월');
-    expect(textOf(byTestId(root, 'recap-total'))).toContain('25');
-    expect(textOf(byTestId(root, 'recap-runcount'))).toContain('4');
-    // 다시 주간으로 돌아오면 주간 합으로 복귀(분기 전환이 양방향).
-    press(pressableByTestId(root, 'recap-toggle-weekly'));
-    expect(textOf(byTestId(root, 'recap-period'))).toBe('6.8–6.14');
-    expect(textOf(byTestId(root, 'recap-total'))).toContain('20');
+    expect(hasId(root, 'recap-toggle-weekly')).toBe(false);
+    expect(hasId(root, 'recap-toggle-monthly')).toBe(false);
   });
 
   test('PR(개인 기록)이 실데이터로 렌더된다', () => {
@@ -167,9 +159,8 @@ describe('ProfileScreen 리캡 빈 데이터 graceful(A8-5)', () => {
     expect(hasId(root, 'recap-prs')).toBe(false);
   });
 
-  test('월간도 빈 데이터면 월간 keep-going 카피로 graceful', () => {
+  test('빈 데이터 카피는 월간 기준으로 말한다', () => {
     const root = render({recapRuns: [], recapShoes: SHOES, recapNow: NOW, unit: 'km'});
-    press(pressableByTestId(root, 'recap-toggle-monthly'));
     expect(hasId(root, 'recap-empty')).toBe(true);
     expect(textOf(byTestId(root, 'recap-empty'))).toContain('이번 달');
   });
