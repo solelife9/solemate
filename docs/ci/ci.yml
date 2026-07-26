@@ -1,0 +1,83 @@
+# ============================================================================
+# Keego CI — Iron Law 게이트 자동화 (2026-07-27, 출시 심사 앞당김 #49)
+# ----------------------------------------------------------------------------
+# 왜: 혼자 개발 + PR 리뷰 없음 = **게이트가 유일한 심판**인데 지금까지 수동이었다.
+# 실제로 2026-07-27 에 tsc 가 실패한 커밋이 그대로 푸시된 적이 있다(`&&` 체인 오용).
+# 사람이 매번 기억할 일이 아니라 기계가 막을 일이다.
+#
+# CLAUDE.md Iron Law: 머지 전 `tsc` · `lint` · `test` 전부 통과 + 커버리지 ≥ 60%.
+# 규칙(firestore.rules)은 앱 테스트가 목으로 대체해 검증하지 못하므로 별도 잡에서
+# 에뮬레이터로 돌린다(2026-07-26 심사 B-01 이 그래서 살아남았다).
+# ============================================================================
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  # 같은 브랜치에 연속 푸시하면 앞 실행을 취소한다(러너 시간 절약).
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gates:
+    name: 타입·린트·테스트·커버리지
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          # package.json engines: >= 22.11.0
+          node-version: '22'
+          cache: npm
+
+      # postinstall 의 patch-package 까지 그대로 태운다(로컬과 같은 트리).
+      - name: 의존성 설치
+        run: npm ci
+
+      - name: 타입 검사
+        run: npx tsc --noEmit
+
+      # --max-warnings 래칫이 걸려 있어 경고가 늘면 여기서 실패한다.
+      - name: 린트
+        run: npm run lint
+
+      - name: 테스트
+        run: npm test -- --ci
+
+      # lib/ 비즈니스 로직 커버리지 임계(jest.coverage.config.js).
+      - name: 커버리지 게이트
+        run: npm run test:coverage
+
+  rules:
+    name: Firestore 보안 규칙
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      # firebase-tools 15+ 의 에뮬레이터는 JDK 21+ 를 요구한다.
+      # 로컬에서는 scripts/jdk21-home.sh 가 brew keg 를 찾지만(안드로이드 Gradle 이 JDK17 에
+      # 묶여 전역 전환 금지), CI 에는 JDK 가 하나뿐이므로 JAVA21_HOME 로 직접 알려준다.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: 의존성 설치
+        run: npm ci
+
+      - name: 규칙 계약 테스트
+        env:
+          JAVA21_HOME: ${{ env.JAVA_HOME }}
+        run: npm run test:rules
