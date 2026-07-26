@@ -45,6 +45,7 @@ import {estimateCaloriesTotal} from '../lib/calories';
 import {currentTargetPace} from '../lib/pacePlan';
 import {liveActivity} from '../lib/liveActivity';
 import {watchSession} from '../lib/watchSession';
+import {reportIssue} from '../lib/crashlytics';
 import {pedometerDistance} from '../lib/pedometerDistance';
 import {estimateMaxHR, zoneOf} from '../lib/analytics/hrZones';
 import {decideZoneCoach, initZoneCoachState} from '../lib/zoneCoach';
@@ -78,6 +79,8 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
   // GPS 死구간(audit#9): 마지막 fix 수신 후 무신호가 지속되면 거리는 멈춘 채 시간만
   // 누적된다. 순수 판정(gpsStallStatus)으로 감지해 한국어 배너를 띄운다.
   const [gpsStalled,setGpsStalled]=useState(false);
+  // 스냅샷 저장 연속 실패 — 화면이 '백업 안 됨' 한 줄로 알린다(생명주기 감사 2026-07-26).
+  const [snapshotFailing,setSnapshotFailing]=useState(false);
   // 주행 중 위치 권한 회수: 트래킹을 멈추고(가비지 거리 금지) 영구 배너 + 설정 안내.
   const [permLost,setPermLost]=useState(false);
   const [cadence,setCadence]=useState(resume?resume.cadence:0);
@@ -279,7 +282,7 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
         setKm(s.dist);setElapsed(s.elapsed);setCurrentPaceSec(s.currentPaceSecPerKm);
         elapsedRef.current=s.elapsed;
         setPaused(s.paused);setAutoPaused(s.autoPaused);
-        setGpsStalled(s.stalled);setPermLost(s.permissionRevoked);
+        setGpsStalled(s.stalled);setPermLost(s.permissionRevoked);setSnapshotFailing(s.snapshotFailing);
         if(!baroAvail.current)setElevGain(s.elevGainM); // 기압계 가용 시 GPS 고도 양보(baro 권위)
         setAccuracyM(s.accuracyM);
         // 지도는 일시정지에서만 렌더된다(mapShown = uiPaused && …) — 그때만 경로 스냅샷을
@@ -542,10 +545,15 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
       autoPauseOn=await loadAutoPause(); // 자동 일시정지 설정(#16) — 런당 1회 로드
     }catch{/* 설정 로드 실패 → 기본값(전부 on) 유지 */}
     // 러닝 시작 — 화면 자동잠금 방지(글랜서빌리티). 실패해도 러닝엔 무관(best-effort).
-    void activateKeepAwakeAsync(KEEP_AWAKE_TAG).catch(()=>{});
+    // 화면 잠금 방지 실패는 무해하다(화면이 꺼져도 백그라운드 추적은 계속된다) — 다만
+    // '러닝 중 화면이 꺼진다'는 CS 의 유일한 단서라 흔적은 남긴다.
+    void activateKeepAwakeAsync(KEEP_AWAKE_TAG).catch(e=>reportIssue('run: keep-awake activate',e));
     // 페어링된 애플워치가 있으면 워크아웃을 자동 실행해 심박이 손목 조작 없이 흐르게 한다
     // (startWatchApp). 워치 없으면 조용히 no-op — 심박만 '--'. best-effort.
-    void watchSession.startWorkout().catch(()=>{});
+    // 워치 워크아웃 시작 실패 = 그 런의 심박·워치 미러링이 통째로 없다는 뜻이다. 앱을 깨서는
+    // 안 되지만(워치는 선택 기능) 무음이어서도 안 된다 — 과거 '워치 런 심박 실종' 계열의
+    // CS 는 이 지점의 흔적이 없어 원인 추적이 불가능했다.
+    void watchSession.startWorkout().catch(e=>reportIssue('watch: startWorkout',e));
     // 기압 고도계 누적 상태 리셋(이어 달리기/재시작 대비) — 구독은 아래에서 새로 건다.
     baroElev.current=initElevState();baroAvail.current=false;
     // 잠금화면 Live Activity 시작(iOS 위젯 타깃 있을 때만 동작 — 없으면 no-op).
@@ -950,6 +958,7 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
       onPause={handlePause}
       onStop={finishRun}
       permLost={permLost}
+      snapshotFailing={snapshotFailing}
       onOpenSettings={()=>{Promise.resolve(Linking.openSettings()).catch(()=>{});}}
       liveCoords={liveCoords}
       track={trackProp}

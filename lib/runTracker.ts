@@ -32,6 +32,9 @@ import {initElevState, feedAltitude, ElevState} from './elevation';
 // 3000: 구 인터벌과 같은 주기(복구 정확도 불변). 15000: 경로 모양의 최대 손실 구간 —
 // 거리·시간은 스칼라가 3초 주기로 지키므로 이 값이 커져도 기록의 정확도는 그대로다.
 const STATE_WRITE_MS = 3000;
+// 스냅샷 저장 연속 실패가 이 횟수를 넘으면 '백업 안 됨'을 사용자에게 알린다. 1~2회는
+// 일시적일 수 있어 즉시 경고하지 않는다(3회 ≈ 9초 이상 지속 실패).
+const SNAPSHOT_FAIL_ALERT_AT = 3;
 const ROUTE_WRITE_MS = 15000;
 
 /** A raw GPS fix — the shape both expo-location's LocationObject and the old
@@ -56,6 +59,12 @@ export interface RunTrackerState {
   stalled: boolean; // GPS dead-zone (no fresh fix past threshold) while running
   permissionRevoked: boolean;
   elevGainM: number; // cumulative elevation gain (m, >= 0) from GPS altitude
+  /**
+   * 스냅샷 저장이 연속 실패 중인가(저장 공간 부족이 대표 원인).
+   * true = **크래시 복구 불가 상태로 달리는 중** — 폰이 꺼지면 이 러닝은 사라진다.
+   * 한 번의 실패는 일시적일 수 있어 연속 SNAPSHOT_FAIL_ALERT_AT 회부터 참이 된다.
+   */
+  snapshotFailing: boolean;
 }
 
 export type RunTrackerEvent =
@@ -110,6 +119,7 @@ class RunTracker {
   private pts: {lat: number; lon: number}[] = [];
   // 스냅샷 쓰기 스로틀 타임스탬프(persist() 주석 참조). 0 = 아직 안 씀 → 첫 호출은 통과.
   private stateWrittenAt = 0;
+  private snapshotFails = 0; // 연속 저장 실패 횟수(성공 시 0으로)
   private routeWrittenAt = 0;
   // 현재(롤링) 페이스용 샘플 — 채택된 fix 마다 {t: fix ts(ms), d: 누적거리(km)}. 슬라이딩
   // 윈도우(CURRENT_PACE_WINDOW_MS)로 최근 구간 페이스를 낸다. 일시정지/재개·권한복구 시 비움.
@@ -210,6 +220,7 @@ class RunTracker {
     this.smoother = new DistanceSmoother();
     this.pts = [];
     this.stateWrittenAt = 0;   // 새 런 = 첫 저장 즉시(스로틀 리셋)
+    this.snapshotFails = 0;
     this.routeWrittenAt = 0;
     this.paceTrack = [];
     this.hrTrack = [];
@@ -654,6 +665,7 @@ class RunTracker {
       dist: Math.round(this.dist * 100) / 100,
       elapsed: this.getElapsed(),
       currentPaceSecPerKm: this.computeCurrentPace(),
+      snapshotFailing: this.snapshotFails >= SNAPSHOT_FAIL_ALERT_AT,
       paused: this.isPaused,
       autoPaused: this.autoPausedFlag,
       accuracyM: this.accuracyM,
@@ -830,11 +842,17 @@ class RunTracker {
       location: this.location,
       track: this.trackMeta,
       savedAt: now,
-    }, {route: withRoute}).catch(err => {
+    }, {route: withRoute}).then(() => {
+      // 한 번이라도 성공하면 경고를 내린다(일시적 실패에서 회복).
+      if (this.snapshotFails > 0) { this.snapshotFails = 0; this.emitState(); }
+    }).catch(err => {
       // 스냅샷 쓰기 실패 = 크래시 복구 불가 상태로 달리고 있다는 뜻이다. 무음으로 넘기면
       // '러닝이 통째로 사라졌다'는 CS 의 원인을 영영 추적할 수 없다(저장 공간 부족이 대표).
-      // 관측성 실패가 러닝을 막아선 안 되므로 여기서도 throw 하지 않는다.
+      // 관측성 실패가 러닝을 막아선 안 되므로 여기서도 throw 하지 않는다 — 대신 연속 실패를
+      // 세어 화면이 한 줄로 알리게 한다(사용자가 지금 위험을 알아야 조치할 수 있다).
       recordError(err, 'storage: run snapshot write');
+      this.snapshotFails += 1;
+      if (this.snapshotFails === SNAPSHOT_FAIL_ALERT_AT) this.emitState();
     });
   }
 }

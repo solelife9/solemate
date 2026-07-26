@@ -7,9 +7,13 @@
 //      t0, shoe, goal) is sanitized and written every few seconds while running.
 //      On app start `loadSnapshot()` surfaces an unfinished run so the UI can
 //      offer recover/save instead of silently dropping it.
-//   2) Pending-sync queue — a finished run is enqueued LOCALLY first, then the
-//      server POST is attempted by an injected sync function. A POST failure
-//      leaves the run queued for `flushPendingRuns()` to retry; it is never lost.
+//   2) Pending-sync queue — **레거시(2026-07-26 확인).** REST 백엔드 시절의 오프라인
+//      큐다. Firestore 단일 백엔드로 이관되면서(2026-07-17 Render 은퇴) 넣는 쪽
+//      (enqueuePendingRun)의 프로덕션 호출부가 사라졌고, 지금 오프라인 내구성은
+//      **부팅 캐시(로컬 정본) + Firestore 오프라인 영속(네이티브 기본 ON)** 이 담당한다.
+//      App 은 여전히 loadPendingRuns/overlayPendingRuns/removePendingRun 을 부르는데,
+//      이는 **구 버전에서 업그레이드한 기기의 큐를 비워 주기 위한 이관 경로**다(새 설치는
+//      항상 빈 큐). 큐를 채우는 API 는 남겨 두되 신규 사용 금지 — 아래 @deprecated 참조.
 //
 // Every value that reaches storage is clamped non-negative and NaN-stripped, so
 // a corrupted/partial write can never reintroduce negative distance or time.
@@ -310,6 +314,8 @@ async function writePendingRuns(queue: PendingRun[]): Promise<void> {
  * storage write — call it BEFORE attempting the network POST so a crash or a
  * dropped connection between the two can never lose the run.
  */
+/** @deprecated 레거시 REST 오프라인 큐. 신규 코드는 쓰지 않는다(파일 헤더 참조).
+ *  남겨 둔 이유: 구 버전에서 넘어온 기기의 큐를 테스트로 계속 검증하기 위해서다. */
 export async function enqueuePendingRun(run: PendingRun): Promise<PendingRun[]> {
   const clean = sanitizePendingRun(run);
   if (!clean) return loadPendingRuns();
@@ -327,6 +333,7 @@ export async function enqueuePendingRun(run: PendingRun): Promise<PendingRun[]> 
  * km, run_date, duration, ...). Sanitized before write (iron law: non-negative,
  * NaN-stripped). No-op if no queued run matches. Returns the new queue.
  */
+/** @deprecated 레거시 REST 오프라인 큐 수정. 프로덕션 호출부 없음(파일 헤더 참조). */
 export async function updatePendingRun(
   localId: string,
   patch: Partial<PendingRun>,
@@ -456,6 +463,7 @@ export async function reconcilePendingWithServer(serverRuns: unknown[]): Promise
  * from the queue only after its syncFn resolves; a rejection leaves it queued
  * for the next flush. Returns how many synced and how many remain.
  */
+/** @deprecated 레거시 REST 오프라인 큐 전송. 프로덕션 호출부 없음(파일 헤더 참조). */
 export async function flushPendingRuns(
   syncFn: (run: PendingRun) => Promise<unknown>,
 ): Promise<{synced: number; remaining: number}> {

@@ -935,3 +935,54 @@ describe('스냅샷 쓰기 실패', () => {
     spy.mockRestore();
   });
 });
+
+// ── 백업 실패 경고(2026-07-26 생명주기 감사) ──────────────────────────────────
+// 저장이 실패해도 러닝은 계속돼야 한다(앱이 죽는 것보다 낫다). 하지만 그건 **크래시 복구가
+// 불가능한 상태로 달리는 중**이라는 뜻이고, 폰이 꺼지면 그 러닝은 사라진다. 사용자가
+// 알아야 조치(저장 공간 정리)할 수 있으므로 화면에 한 줄로 알린다.
+// 한 번의 실패는 일시적일 수 있어 즉시 경고하지 않는다(연속 3회부터).
+describe('스냅샷 저장 연속 실패 경고', () => {
+  const flush = () => new Promise(r => setImmediate(r));
+
+  test('실패해도 러닝은 계속된다(거리 누적 불변)', async () => {
+    const spy = jest.spyOn(AsyncStorage, 'setMany').mockRejectedValue(new Error('SQLITE_FULL'));
+    const {t} = makeEngine();
+    t.start({goalKm: 5, shoe: {id: 's1', name: 'X'}, t0: 100000});
+    clearWarmup(t);
+    t.persist();
+    await flush();
+    expect(t.isActive()).toBe(true);
+    spy.mockRestore();
+  });
+
+  test('1~2회 실패는 경고하지 않고, 3회째부터 snapshotFailing 이 참이다', async () => {
+    const spy = jest.spyOn(AsyncStorage, 'setMany').mockRejectedValue(new Error('SQLITE_FULL'));
+    const {t, set} = makeEngine();
+    t.start({goalKm: 5, shoe: {id: 's1', name: 'X'}, t0: 100000});
+
+    t.persist(); await flush();
+    expect(t.getState().snapshotFailing).toBe(false);
+    set(104000); t.persist(); await flush();
+    expect(t.getState().snapshotFailing).toBe(false);
+    set(108000); t.persist(); await flush();
+    expect(t.getState().snapshotFailing).toBe(true);
+
+    spy.mockRestore();
+  });
+
+  test('한 번이라도 저장에 성공하면 경고가 내려간다(일시적 실패에서 회복)', async () => {
+    const spy = jest.spyOn(AsyncStorage, 'setMany').mockRejectedValue(new Error('SQLITE_FULL'));
+    const {t, set} = makeEngine();
+    t.start({goalKm: 5, shoe: {id: 's1', name: 'X'}, t0: 100000});
+    for (const at of [100000, 104000, 108000]) {
+      set(at); t.persist();
+      // eslint-disable-next-line no-await-in-loop
+      await flush();
+    }
+    expect(t.getState().snapshotFailing).toBe(true);
+
+    spy.mockRestore(); // 저장 공간 확보됨
+    set(112000); t.persist(); await flush();
+    expect(t.getState().snapshotFailing).toBe(false);
+  });
+});

@@ -145,7 +145,7 @@ export default function RunActiveScreen({
   calories = 205, elevationM = 46, gpsLevel = 3, bpm = 0, targetZone = 0, zoneDeviation = null,
   age = 0, restHR = 0,
   paused: pausedProp, onPause, onStop,
-  permLost = false, onOpenSettings, statusLabel,
+  permLost = false, onOpenSettings, statusLabel, snapshotFailing = false,
   currentPaceSec = null, targetPaceSec = null,
   liveCoords = [],
   track = null, onLap, onUndoLap,
@@ -171,6 +171,8 @@ export default function RunActiveScreen({
   age?: number; restHR?: number;
   paused?: boolean; onPause?: () => void; onStop?: () => void;
   permLost?: boolean;
+  /** 스냅샷 저장이 연속 실패 중 — 지금 폰이 꺼지면 이 러닝이 사라진다(저장 공간 부족 등). */
+  snapshotFailing?: boolean;
   onOpenSettings?: () => void;
   statusLabel?: string;
   liveCoords?: { lat: number; lon: number }[];
@@ -542,6 +544,17 @@ export default function RunActiveScreen({
           <Ionicons name="alert-circle" size={ri(ICON.inline)} color={DANGER} />
           <Text style={r.permBannerText}>위치 권한이 꺼져 거리 기록을 멈췄어요. 눌러서 다시 허용하세요.</Text>
         </Pressable>
+      )}
+
+      {/* 백업 실패 경고(2026-07-26 생명주기 감사) — 스냅샷 저장이 연속 실패하면 러닝은
+          계속되지만 **크래시 복구가 불가능한 상태**다(폰이 꺼지면 이 러닝은 사라진다).
+          사용자가 알아야 조치할 수 있으므로(저장 공간 정리) 알린다. 러닝 화면 불가침
+          원칙에 맞춰 컨트롤 없는 '상태 한 줄' — permLost·gpsWeak 와 같은 문법. */}
+      {snapshotFailing && !cd && (
+        <View style={r.permBanner} testID="snapshot-failing" accessibilityRole="text" accessibilityLiveRegion="assertive" accessibilityLabel="저장 공간이 부족해 러닝이 백업되지 않고 있어요. 지금 앱이 꺼지면 이 기록을 잃을 수 있어요.">
+          <Ionicons name="cloud-offline" size={ri(ICON.inline)} color={DANGER} />
+          <Text style={r.permBannerText}>저장 공간이 부족해 백업이 안 되고 있어요 — 지금 앱이 꺼지면 이 기록을 잃을 수 있어요</Text>
+        </View>
       )}
 
       {/* 일시정지 이동 감지 넛지(#11 잔여, 민우님 승인 2026-07-24) — 수동 일시정지 상태로
