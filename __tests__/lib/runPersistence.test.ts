@@ -15,6 +15,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   SNAPSHOT_KEY,
+  ROUTE_KEY,
   PENDING_RUNS_KEY,
   RunSnapshot,
   PendingRun,
@@ -127,16 +128,50 @@ describe('iron law — no negative / NaN reaches storage', () => {
 
 // ── active-run snapshot I/O ──────────────────────────────────────
 describe('active-run snapshot persistence', () => {
-  test('saveSnapshot writes a JSON blob to AsyncStorage under SNAPSHOT_KEY', async () => {
+  // 저장 구조(2026-07-26 성능 분리): 스칼라는 SNAPSHOT_KEY, 경로는 ROUTE_KEY.
+  // 러닝이 길어질수록 커지는 건 경로뿐이라, 자주 쓰는 스칼라와 같은 키에 두면 스칼라를
+  // 쓸 때마다 경로 전체를 다시 직렬화해야 했다.
+  test('saveSnapshot 은 스칼라를 SNAPSHOT_KEY, 경로를 ROUTE_KEY 로 나눠 쓴다', async () => {
     await saveSnapshot(SNAP);
 
-    // Assert the snapshot is OBSERVABLY in storage (not just that no error threw).
     const raw = await AsyncStorage.getItem(SNAPSHOT_KEY);
     expect(raw).not.toBeNull();
     const parsed = JSON.parse(raw as string);
     expect(parsed.dist).toBe(2.34);
     expect(parsed.shoe.id).toBe('shoe-1');
-    expect(parsed.pts).toHaveLength(2);
+    expect(parsed.pts).toBeUndefined(); // 경로는 이 키에 없다
+
+    const rawRoute = await AsyncStorage.getItem(ROUTE_KEY);
+    expect(JSON.parse(rawRoute as string)).toHaveLength(2);
+  });
+
+  test('route:false 면 경로 키는 건드리지 않고 스칼라만 갱신한다', async () => {
+    await saveSnapshot(SNAP);                       // 1) 경로 포함 저장
+    await saveSnapshot({...SNAP, dist: 9.99, pts: []}, {route: false}); // 2) 스칼라만
+
+    // 스칼라는 갱신됐다.
+    const parsed = JSON.parse((await AsyncStorage.getItem(SNAPSHOT_KEY)) as string);
+    expect(parsed.dist).toBe(9.99);
+    // 경로는 1)의 값이 그대로 남아 있다 — 스칼라만 쓰는 주기에 경로가 지워지면 안 된다.
+    expect(JSON.parse((await AsyncStorage.getItem(ROUTE_KEY)) as string)).toHaveLength(2);
+    // 합쳐 읽으면 최신 스칼라 + 마지막 경로.
+    const loaded = await loadSnapshot();
+    expect(loaded?.dist).toBe(9.99);
+    expect(loaded?.pts).toHaveLength(2);
+  });
+
+  // 하위호환: 러닝 도중 앱을 업데이트하면 구 빌드가 남긴 스냅샷엔 pts 가 안에 들어 있다.
+  test('경로 키가 없으면 구 빌드가 스냅샷에 심어둔 pts 로 폴백한다', async () => {
+    await AsyncStorage.setItem(SNAPSHOT_KEY, JSON.stringify(SNAP)); // 구 형식(pts 내장)
+    const loaded = await loadSnapshot();
+    expect(loaded?.pts).toHaveLength(2);
+    expect(loaded?.dist).toBe(2.34);
+  });
+
+  test('clearSnapshot 은 경로 키까지 함께 지운다', async () => {
+    await saveSnapshot(SNAP);
+    await clearSnapshot();
+    expect(await AsyncStorage.getItem(ROUTE_KEY)).toBeNull();
   });
 
   test('loadSnapshot round-trips what saveSnapshot wrote', async () => {

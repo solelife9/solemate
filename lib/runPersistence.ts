@@ -18,6 +18,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // ── storage keys ─────────────────────────────────────────────────
 export const SNAPSHOT_KEY = 'active_run_snapshot';
+// 경로 전용 키(2026-07-26 성능) — 스냅샷에서 pts 를 분리했다. 스칼라 상태(거리·경과·
+// 일시정지·목표)는 작고 자주 바뀌어 3초마다 써야 하지만, 경로는 러닝이 길어질수록
+// 무한히 커지는 유일한 필드다. 한 키에 같이 두면 스칼라를 쓸 때마다 경로 전체를 다시
+// 직렬화·기록해야 했다(런 길이에 비례하는 비용이 초당 1회 이상 발생).
+export const ROUTE_KEY = 'active_run_route';
 export const PENDING_RUNS_KEY = 'pending_runs';
 
 // ── shapes ───────────────────────────────────────────────────────
@@ -94,6 +99,17 @@ export function sanitizePoints(pts: unknown): RoutePoint[] {
  * startup recovery can simply skip it.
  */
 export function sanitizeSnapshot(raw: unknown): RunSnapshot | null {
+  const state = sanitizeRunState(raw);
+  if (!state) return null;
+  return {...state, pts: sanitizePoints((raw as Record<string, unknown>).pts)};
+}
+
+/**
+ * 스냅샷의 '경로를 뺀' 부분만 살균한다(2026-07-26 성능 분리).
+ * 경로는 러닝 길이에 비례해 커지는 유일한 필드라, 3초마다 쓰는 스칼라 상태 경로에서는
+ * 아예 건드리지 않는다 — sanitizePoints 가 전체를 순회·복제하던 비용이 사라진다.
+ */
+export function sanitizeRunState(raw: unknown): Omit<RunSnapshot, 'pts'> | null {
   if (!raw || typeof raw !== 'object') return null;
   const r = raw as Record<string, unknown>;
   const shoe =
@@ -102,7 +118,6 @@ export function sanitizeSnapshot(raw: unknown): RunSnapshot | null {
   return {
     dist: nonNeg(r.dist),
     elapsed: Math.floor(nonNeg(r.elapsed)),
-    pts: sanitizePoints(r.pts),
     pausedMs: nonNeg(r.pausedMs),
     t0: nonNeg(r.t0),
     shoe: {id: String(shoe.id), name: String(shoe.name ?? '')},
@@ -167,26 +182,51 @@ export function sanitizePendingRun(raw: unknown): PendingRun | null {
 
 // ── active-run snapshot I/O (storage only — NEVER inside a network try) ──
 /** Persist the live run state. Sanitizes first so storage is always clean. */
-export async function saveSnapshot(snap: RunSnapshot): Promise<void> {
-  const clean = sanitizeSnapshot(snap);
-  if (!clean) return; // nothing identifiable to persist
-  await AsyncStorage.setItem(SNAPSHOT_KEY, JSON.stringify(clean));
+export async function saveSnapshot(
+  snap: RunSnapshot,
+  opts?: {route?: boolean},
+): Promise<void> {
+  const state = sanitizeRunState(snap);
+  if (!state) return; // nothing identifiable to persist
+  // 경로는 기본 포함(기존 호출자·테스트 호환). route:false 면 스칼라만 갱신한다 —
+  // 러닝 엔진이 경로를 더 긴 주기로 쓰기 위해 쓰는 경로다.
+  const writeRoute = opts?.route !== false;
+  const entries: Record<string, string> = {[SNAPSHOT_KEY]: JSON.stringify(state)};
+  if (writeRoute) entries[ROUTE_KEY] = JSON.stringify(sanitizePoints(snap.pts));
+  // setMany — 두 키를 한 번의 브리지 왕복으로(스칼라만 쓸 땐 어차피 1건).
+  await AsyncStorage.setMany(entries);
 }
 
-/** Read the persisted run snapshot, or null if none / unparseable. */
+/**
+ * Read the persisted run snapshot, or null if none / unparseable.
+ * 경로는 별도 키(ROUTE_KEY)에서 합류시킨다. 그 키가 없으면 **구 빌드가 스냅샷 안에
+ * 심어둔 pts** 를 그대로 쓴다 — 러닝 도중 앱을 업데이트한 사용자의 경로가 유실되지
+ * 않게 하는 하위호환 경로다(스칼라만 있고 경로가 없어도 거리·시간은 온전하다).
+ */
 export async function loadSnapshot(): Promise<RunSnapshot | null> {
   try {
-    const raw = await AsyncStorage.getItem(SNAPSHOT_KEY);
-    if (!raw) return null;
-    return sanitizeSnapshot(JSON.parse(raw));
+    const got = await AsyncStorage.getMany([SNAPSHOT_KEY, ROUTE_KEY]);
+    const rawState = got[SNAPSHOT_KEY];
+    const rawRoute = got[ROUTE_KEY];
+    if (!rawState) return null;
+    const parsed = JSON.parse(rawState) as Record<string, unknown>;
+    if (rawRoute) {
+      // 경로 키가 정본. 파싱 실패는 조용히 무시하고 스냅샷 내장 pts(구 빌드) 로 폴백한다.
+      try {
+        parsed.pts = JSON.parse(rawRoute);
+      } catch {
+        /* 손상된 경로 blob — 스냅샷의 pts(있으면)로 폴백 */
+      }
+    }
+    return sanitizeSnapshot(parsed);
   } catch {
     return null;
   }
 }
 
-/** Drop the snapshot — call when a run is saved or discarded. */
+/** Drop the snapshot — call when a run is saved or discarded. 경로 키도 함께 지운다. */
 export async function clearSnapshot(): Promise<void> {
-  await AsyncStorage.removeItem(SNAPSHOT_KEY);
+  await AsyncStorage.removeMany([SNAPSHOT_KEY, ROUTE_KEY]);
 }
 
 /**

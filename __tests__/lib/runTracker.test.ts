@@ -13,6 +13,8 @@
  */
 
 import {RunTracker, RawFix, RunTrackerEvent} from '../../lib/runTracker';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {SNAPSHOT_KEY, ROUTE_KEY} from '../../lib/runPersistence';
 
 const LON = 127.0;
 
@@ -778,5 +780,82 @@ describe('feedPedometerDistance — CMPedometer 死구간 융합(#16)', () => {
     expect(t.getPedometerFillKm()).toBe(0);
     t.feedPedometerDistance(560, 110000);  // 새 기준(500)에서 +60m
     expect(t.getPedometerFillKm()).toBeCloseTo(0.06, 6);
+  });
+});
+
+// ── 스냅샷 쓰기 스로틀(2026-07-26 성능) ────────────────────────────────────────
+// persist() 는 ingestFix(≈1Hz)와 3초 인터벌 양쪽에서 불린다. 이전엔 부를 때마다 무조건
+// 경로 전체를 복제·직렬화·기록해, 비용이 러닝 길이에 비례해 커지며 JS 스레드를 막았다.
+// 지금은 스칼라 3초 · 경로 15초로 스스로 조절한다. 아래는 그 계약을 관측 가능한 결과
+// (AsyncStorage 에 실제로 쓰인 키/값)로 고정한다.
+describe('스냅샷 쓰기 스로틀', () => {
+  const flush = () => new Promise(r => setImmediate(r));
+  const readState = async () => {
+    const raw = await AsyncStorage.getItem(SNAPSHOT_KEY);
+    return raw ? JSON.parse(raw) : null;
+  };
+  const readRoute = async () => {
+    const raw = await AsyncStorage.getItem(ROUTE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  };
+
+  beforeEach(async () => { await AsyncStorage.clear(); });
+
+  test('러닝 시작 직후 첫 저장은 스로틀되지 않는다(시작 직후 크래시가 가장 위험)', async () => {
+    const {t} = makeEngine();
+    t.start({goalKm: 5, shoe: {id: 's1', name: 'X'}, t0: 100000});
+    t.persist();
+    await flush();
+    expect(await readState()).not.toBeNull();
+  });
+
+  test('스칼라는 3초 주기로만 실제 기록된다(그 사이 호출은 무시)', async () => {
+    const {t, set} = makeEngine();
+    t.start({goalKm: 5, shoe: {id: 's1', name: 'X'}, t0: 100000});
+    t.persist();                    // 첫 저장(dist 0)
+    await flush();
+
+    set(101000);                    // +1초 — 스로틀 구간
+    t.persist();
+    await flush();
+    const at1s = await readState();
+
+    set(104000);                    // +4초 — 주기 경과
+    t.persist();
+    await flush();
+    const at4s = await readState();
+
+    // 1초 시점 호출은 기록을 갱신하지 않았고(savedAt 동일), 4초 시점엔 갱신됐다.
+    expect(at1s.savedAt).toBe(100000);
+    expect(at4s.savedAt).toBe(104000);
+  });
+
+  test('경로는 15초 주기 — 그 사이 스칼라만 갱신돼도 경로 키는 유지된다', async () => {
+    const {t, set} = makeEngine();
+    t.start({goalKm: 5, shoe: {id: 's1', name: 'X'}, t0: 100000});
+    clearWarmup(t);
+    t.persist();
+    await flush();
+    const first = await readRoute();
+    expect(Array.isArray(first)).toBe(true);
+
+    // +5초: 스칼라 주기는 지났지만 경로 주기(15초)는 아직 — 경로는 그대로 남아 있어야 한다.
+    set(105000);
+    t.persist();
+    await flush();
+    expect(await readRoute()).toEqual(first);
+    expect((await readState()).savedAt).toBe(105000); // 스칼라는 갱신됨
+  });
+
+  test('일시정지·정지는 스로틀을 무시하고 즉시 확정한다', async () => {
+    const {t, set} = makeEngine();
+    t.start({goalKm: 5, shoe: {id: 's1', name: 'X'}, t0: 100000});
+    t.persist();
+    await flush();
+
+    set(100500);      // 스로틀 한참 안쪽(0.5초)
+    t.togglePause();   // 사용자가 앱을 내릴 확률이 가장 높은 순간 → force 저장
+    await flush();
+    expect((await readState()).savedAt).toBe(100500);
   });
 });

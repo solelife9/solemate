@@ -27,6 +27,12 @@ import {gpsStallStatus, GPS_STALL_THRESHOLD_MS} from './gpsHealth';
 import {saveSnapshot} from './runPersistence';
 import {initElevState, feedAltitude, ElevState} from './elevation';
 
+// 스냅샷 쓰기 주기(ms) — persist() 주석 참조. 스칼라는 자주, 경로는 드물게.
+// 3000: 구 인터벌과 같은 주기(복구 정확도 불변). 15000: 경로 모양의 최대 손실 구간 —
+// 거리·시간은 스칼라가 3초 주기로 지키므로 이 값이 커져도 기록의 정확도는 그대로다.
+const STATE_WRITE_MS = 3000;
+const ROUTE_WRITE_MS = 15000;
+
 /** A raw GPS fix — the shape both expo-location's LocationObject and the old
  *  geolocation-service position share, so callers forward fixes verbatim.
  *  altitude(m) is optional — used for elevation-gain accumulation; absent/null
@@ -101,6 +107,9 @@ class RunTracker {
   // 종전대로 원 채택 좌표 — 지도 표시는 평활 대상이 아니다.
   private smoother = new DistanceSmoother();
   private pts: {lat: number; lon: number}[] = [];
+  // 스냅샷 쓰기 스로틀 타임스탬프(persist() 주석 참조). 0 = 아직 안 씀 → 첫 호출은 통과.
+  private stateWrittenAt = 0;
+  private routeWrittenAt = 0;
   // 현재(롤링) 페이스용 샘플 — 채택된 fix 마다 {t: fix ts(ms), d: 누적거리(km)}. 슬라이딩
   // 윈도우(CURRENT_PACE_WINDOW_MS)로 최근 구간 페이스를 낸다. 일시정지/재개·권한복구 시 비움.
   private paceSamples: {t: number; d: number}[] = [];
@@ -199,6 +208,8 @@ class RunTracker {
     this.dist = 0;
     this.smoother = new DistanceSmoother();
     this.pts = [];
+    this.stateWrittenAt = 0;   // 새 런 = 첫 저장 즉시(스로틀 리셋)
+    this.routeWrittenAt = 0;
     this.paceTrack = [];
     this.hrTrack = [];
     this.lastHrPushSec = -999;
@@ -257,7 +268,12 @@ class RunTracker {
 
   /** Stop accepting fixes (data is retained for save). Idempotent. */
   stop() {
-    if (this.active) this.smoothFlush(); // 평활 꼬리(마지막 ~2 fix) 거리 계상 — 유실 금지
+    if (this.active) {
+      this.smoothFlush(); // 평활 꼬리(마지막 ~2 fix) 거리 계상 — 유실 금지
+      // 정지 = 분기점: 스로틀을 무시하고 경로까지 즉시 확정한다. 여기서 안 쓰면 마지막
+      // 최대 15초 구간의 경로 모양이 크래시 시 유실될 수 있다(거리·시간은 무관).
+      this.persist({force: true});
+    }
     this.active = false;
   }
 
@@ -315,6 +331,9 @@ class RunTracker {
       const anchor = Math.max(floorMs, this.lastDefiniteMoveMs);
       if (anchor < this.pauseStartMs) this.pauseStartMs = anchor;
     }
+    // 일시정지 = 분기점(사용자가 앱을 내리거나 종료할 확률이 가장 높은 순간) —
+    // 스로틀을 무시하고 경로까지 즉시 확정한다.
+    this.persist({force: true});
     this.emit({type: 'paused', auto});
     this.emitState();
   }
@@ -746,11 +765,36 @@ class RunTracker {
   }
 
   // ── persistence ───────────────────────────────────────────────────
-  persist() {
+  /**
+   * 크래시 복구용 스냅샷 저장. **호출은 잦지만 실제 쓰기는 스스로 조절한다.**
+   *
+   * 이전: ingestFix() 끝(≈1Hz)과 3초 인터벌이 각각 무조건 전량 저장을 트리거해, 초당
+   * 1회 이상 `pts` 전체를 복제(map) → 다시 복제(sanitizePoints) → JSON 직렬화 → 디스크
+   * 기록했다. 비용이 러닝 길이에 비례해 커져(60분이면 한 번에 수천 개 할당) JS 스레드에
+   * 주기적 스톨을 만들었다 — 같은 스레드가 1초 타이머·GPS 콜백·지도·롱프레스 타이머를
+   * 돌린다.
+   *
+   * 지금: 두 축으로 나눈다.
+   *   · 스칼라(거리·경과·일시정지·목표·랩) = 작고 상수 크기 → STATE_MS 마다.
+   *   · 경로(pts) = 길이에 비례해 커짐 → ROUTE_MS 마다, 또는 force.
+   * 크래시 시 최대 손실은 **경로 모양 15초분**뿐이고 거리·시간은 스칼라가 지킨다.
+   * 정지·일시정지 같은 분기점에서는 force 로 즉시 확정한다.
+   */
+  persist(opts?: {force?: boolean}) {
+    const force = !!opts?.force;
+    const now = this.now();
+    // 스칼라 쓰기 스로틀 — 1Hz fix 와 3초 인터벌이 겹쳐 들어와도 실제 기록은 이 주기.
+    // 첫 저장(stateWrittenAt===0)은 스로틀하지 않는다 — 러닝이 시작되자마자 복구 가능한
+    // 스냅샷이 존재해야 한다(시작 직후 크래시가 가장 위험한 구간이다).
+    if (!force && this.stateWrittenAt > 0 && now - this.stateWrittenAt < STATE_WRITE_MS) return;
+    const withRoute = force || now - this.routeWrittenAt >= ROUTE_WRITE_MS;
+    this.stateWrittenAt = now;
+    if (withRoute) this.routeWrittenAt = now;
     void saveSnapshot({
       dist: this.dist,
       elapsed: this.getElapsed(),
-      pts: this.pts.map(p => ({lat: p.lat, lon: p.lon})),
+      // 복제하지 않는다 — saveSnapshot 이 경로를 실제로 쓸 때만 한 번 살균 복사한다.
+      pts: this.pts,
       pausedMs: this.pausedMs,
       t0: this.t0,
       shoe: {id: this.shoe.id, name: this.shoe.name},
@@ -760,8 +804,8 @@ class RunTracker {
       cadence: this.cadence,
       location: this.location,
       track: this.trackMeta,
-      savedAt: this.now(),
-    }).catch(() => {});
+      savedAt: now,
+    }, {route: withRoute}).catch(() => {});
   }
 }
 
