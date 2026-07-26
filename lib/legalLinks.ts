@@ -12,8 +12,16 @@
 /** 공개 개인정보 처리방침 URL(GitHub Pages — solelife9/keego-legal). */
 export const PRIVACY_URL = 'https://solelife9.github.io/keego-legal/privacy.html';
 
-/** 이용약관 URL(GitHub Pages — solelife9/keego-legal). */
+/** 이용약관 + 제2부 위치기반서비스 이용약관 URL(GitHub Pages — solelife9/keego-legal). */
 export const TERMS_URL = 'https://solelife9.github.io/keego-legal/terms.html';
+
+/**
+ * 계정·데이터 삭제 안내 URL. Play 는 **앱 밖에서도** 삭제를 요청할 수 있는 공개 경로를
+ * 요구한다(앱을 이미 지운 사용자도 요청할 수 있어야 한다 — 2026-07-26 출시 심사 TOP30 #24).
+ * 앱 내 탈퇴 경로(마이 → 설정 → 회원 탈퇴)와 이메일 요청 절차, 삭제 범위를 함께 안내한다.
+ * 스토어 등록 정보의 '데이터 삭제 요청 URL' 에 같은 주소를 넣는다.
+ */
+export const DELETE_ACCOUNT_URL = 'https://solelife9.github.io/keego-legal/delete-account.html';
 
 /** 지원(문의) 이메일 — 앱스토어 심사(ASC) 지원 연락처 + 앱 내 '문의하기'. */
 export const SUPPORT_EMAIL = 'kmw0236@gmail.com';

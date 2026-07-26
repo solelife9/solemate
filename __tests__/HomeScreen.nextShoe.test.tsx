@@ -68,3 +68,18 @@ describe('NextShoeCard — 교체 시점 다음 러닝화 추천', () => {
     spy.mockRestore();
   });
 });
+
+// ── 제휴 대가관계 표기(2026-07-26 출시 심사 TOP30 #26) ────────────────────────
+// 표시·광고 규제(추천·보증 심사지침)는 대가를 받는 추천에 그 사실을 명확히 밝히도록 요구한다.
+// 지금 이 섹션은 프로덕션에서 숨겨져 있지만(민우님 2026-07-20 보류), **다시 켜는 순간**
+// 고지 없이 노출되는 사고를 막기 위해 카드와 고지를 한 계약으로 묶는다.
+test('추천 카드가 뜨면 제휴 고지도 함께 뜬다(고지 없는 추천 금지)', () => {
+  const root = render(<HomeScreen shoes={[WORN]} activeIdx={0} onSelect={jest.fn()} />).root;
+  const card = byTestID(root, 'home-next-shoe');
+  expect(card.length).toBeGreaterThanOrEqual(1);
+  const txt = textOf(card[0]);
+  // 대가관계와 '판정 독립'을 둘 다 밝힌다 — 추천이 커미션으로 왜곡되지 않음을 말해야
+  // 고지가 제 역할을 한다(BRAND.md §2).
+  expect(txt).toContain('제휴 링크가 포함될 수 있어요');
+  expect(txt).toContain('커미션과 무관하게');
+});

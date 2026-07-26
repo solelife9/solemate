@@ -383,7 +383,7 @@ function Welcome({goNext, goLogin, insetTop, insetBottom}: {goNext: () => void; 
               일반 이용약관과 구분되는 별도 동의가 필요하다(2026-07-26 출시 심사 B-04).
               문서는 terms.html 한 벌이고 제2부가 위치기반서비스 약관이라 링크는 하나로 둔다. */}
           <View style={s.termsRow}>
-            <Text style={s.termsCaption}>계속 진행하면 keego의 </Text>
+            <Text style={s.termsCaption}>계속 진행하면 만 14세 이상이며 keego의 </Text>
             <Pressable
               hitSlop={12}
               accessibilityRole="link"

@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Keego 계정·데이터 삭제</title>
+<meta name="robots" content="index,follow" />
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: #0A0A0C; color: #EDEDED;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
+    line-height: 1.7; -webkit-text-size-adjust: 100%;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 28px 20px 64px; }
+  header { border-bottom: 1px solid #232327; padding-bottom: 16px; margin-bottom: 8px; }
+  .brand { color: #FF8000; font-weight: 800; letter-spacing: -0.5px; font-size: 22px; }
+  h1 { font-size: 24px; margin: 14px 0 6px; letter-spacing: -0.5px; }
+  h2 { font-size: 17px; margin: 28px 0 8px; color: #FFB458; }
+  .meta { color: #9C9CA3; font-size: 13px; }
+  .scroll { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 14px; min-width: 420px; }
+  th, td { text-align: left; padding: 9px 10px; border: 1px solid #232327; vertical-align: top; }
+  th { background: #141417; color: #cfcfd3; font-weight: 600; }
+  ol, ul { padding-left: 20px; }
+  li { margin: 6px 0; }
+  a { color: #FFB458; }
+  .callout { border-left: 3px solid #FF8000; background: rgba(255,128,0,.08); padding: 12px 14px; margin: 12px 0; border-radius: 0 8px 8px 0; }
+  .note { color: #9C9CA3; font-size: 13px; border-top: 1px solid #232327; margin-top: 32px; padding-top: 16px; }
+  strong { color: #fff; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">Keego</div>
+    <h1>계정·데이터 삭제</h1>
+    <div class="meta">앱 이름: Keego · 개발자: 김민우 · 문의: <a href="mailto:kmw0236@gmail.com">kmw0236@gmail.com</a></div>
+  </header>
+
+  <p>Keego 계정과 저장된 데이터는 언제든 삭제할 수 있습니다. 앱에서 직접 하는 방법과,
+  앱을 이미 지웠거나 접근할 수 없을 때 요청하는 방법을 안내합니다.</p>
+
+  <h2>1. 앱에서 직접 삭제하기 (가장 빠름)</h2>
+  <ol>
+    <li>Keego 앱을 엽니다.</li>
+    <li><strong>마이</strong> 탭 → 오른쪽 위 <strong>설정</strong>을 엽니다.</li>
+    <li><strong>계정 · 클라우드</strong> 항목을 펼칩니다.</li>
+    <li><strong>회원 탈퇴</strong>를 누르고 안내에 따라 확인합니다.</li>
+  </ol>
+  <p>탈퇴를 실행하면 클라우드에 저장된 백업 문서와 러닝 상세 데이터, 인증 계정이 함께 삭제되고,
+  기기에 남아 있던 데이터도 초기화됩니다.</p>
+
+  <div class="callout">
+    보안을 위해 마지막 로그인이 오래된 경우 <strong>다시 로그인한 뒤</strong> 탈퇴를 진행하도록 안내될 수 있습니다.
+  </div>
+
+  <h2>2. 앱 없이 삭제 요청하기</h2>
+  <p>앱을 이미 삭제했거나 기기에 접근할 수 없다면 아래로 요청해 주세요.</p>
+  <ul>
+    <li>받는 사람: <a href="mailto:kmw0236@gmail.com?subject=Keego%20%EA%B3%84%EC%A0%95%20%EC%82%AD%EC%A0%9C%20%EC%9A%94%EC%B2%AD">kmw0236@gmail.com</a></li>
+    <li>제목: <strong>Keego 계정 삭제 요청</strong></li>
+    <li>본문에 <strong>가입에 사용한 로그인 수단</strong>(카카오·네이버·Google·Apple 중 하나)과
+      <strong>해당 계정의 이메일 또는 닉네임</strong>을 적어 주세요. 본인 확인에만 사용하고 처리 후 폐기합니다.</li>
+  </ul>
+  <p>영업일 기준 <strong>7일 이내</strong>에 처리하고 결과를 회신합니다.</p>
+
+  <h2>3. 무엇이 삭제되나요</h2>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>데이터</th><th>처리</th></tr></thead>
+    <tbody>
+      <tr><td>계정(로그인 정보·식별자)</td><td>삭제</td></tr>
+      <tr><td>러닝 기록(거리·시간·페이스·경로)</td><td>삭제</td></tr>
+      <tr><td>러닝 상세(구간 기록·페이스/심박/경사 시계열)</td><td>삭제</td></tr>
+      <tr><td>러닝화·메달·진척·설정</td><td>삭제</td></tr>
+      <tr><td>푸시 토큰</td><td>삭제</td></tr>
+      <tr><td>사진(러닝화·메달)</td><td>기기에만 저장됩니다 — 앱 삭제 시 함께 사라집니다</td></tr>
+      <tr><td>위치정보 이용·제공사실 확인자료</td><td>「위치정보의 보호 및 이용 등에 관한 법률」 제16조에 따라 <strong>6개월</strong> 보관 후 파기</td></tr>
+      <tr><td>오류·크래시 로그</td><td>계정과 연결되지 않으며 최대 90일 후 자동 삭제</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h2>4. 삭제 대신 잠시 멈추고 싶다면</h2>
+  <ul>
+    <li><strong>로그아웃</strong>만 하면 계정과 클라우드 데이터는 그대로 보존됩니다(앱 설정 → 로그아웃).</li>
+    <li>알림만 끄고 싶다면 기기 설정에서 Keego 알림을 꺼 주세요.</li>
+  </ul>
+
+  <div class="note">
+    관련 문서: <a href="./privacy.html">개인정보 처리방침</a> ·
+    <a href="./terms.html">이용약관 및 위치기반서비스 이용약관</a>
+  </div>
+</div>
+</body>
+</html>
