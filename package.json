@@ -5,9 +5,10 @@
   "scripts": {
     "android": "react-native run-android",
     "ios": "react-native run-ios",
-    "lint": "eslint .",
+    "lint": "eslint . --max-warnings 338",
     "start": "react-native start",
     "test": "jest",
+    "test:coverage": "jest --config jest.coverage.config.js",
     "test:rules": "JDK21=\"$(scripts/jdk21-home.sh)\" && JAVA_HOME=\"$JDK21\" PATH=\"$JDK21/bin:$PATH\" firebase emulators:exec --only firestore --project keego-rules-test \"jest --config jest.rules.config.js\"",
     "postinstall": "patch-package",
     "bundle:android": "react-native bundle --platform android --dev false --entry-file index.js --bundle-output android/app/src/main/assets/index.android.bundle --assets-dest android/app/src/main/res",

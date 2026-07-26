@@ -142,7 +142,7 @@ const cer = StyleSheet.create({
 export default function RunActiveScreen({
   shoeLabel = 'Alphafly 3', distanceKm = 3.2, goalKm = 5, goalMin = 0, elapsedSec = 0,
   timeLabel = '16:04', paceLabel = "5'02\"", avgPaceLabel = "5'10\"",
-  calories = 205, elevationM = 46, gpsLevel = 3, bpm = 0, targetZone = 0, zoneDeviation = null,
+  calories = 205, elevationM = 46, gpsLevel = 3, noGpsFix = false, bpm = 0, targetZone = 0, zoneDeviation = null,
   age = 0, restHR = 0,
   paused: pausedProp, onPause, onStop,
   permLost = false, onOpenSettings, statusLabel, snapshotFailing = false,
@@ -163,7 +163,7 @@ export default function RunActiveScreen({
   // 코칭 배너를 숨긴다(거리/시간 모드). 둘 다 있으면 빠름/적정/느림을 색·라벨로 보여준다.
   currentPaceSec?: number | null; targetPaceSec?: number | null;
   // bpm: 심박(분당). 0이면 미측정('--' 표시). HealthKit/Apple Watch 연동 시 채워진다.
-  cadence?: number; calories?: number; elevationM?: number; gpsLevel?: number; bpm?: number;
+  cadence?: number; calories?: number; elevationM?: number; gpsLevel?: number; noGpsFix?: boolean; bpm?: number;
   /** 심박존 가이드(#7): 목표 존(0=끄기·2·3·4)과 현재 이탈 방향(up=올려라/down=낮춰라/null). */
   targetZone?: number; zoneDeviation?: 'up' | 'down' | null;
   // 라이브 심박 존 산출용(2026-07-05). age→estimateMaxHR, restHR→Karvonen 보정.
@@ -529,8 +529,18 @@ export default function RunActiveScreen({
         </View>
       </View>
 
+      {/* 무신호 지속(실내·지하) — 지금까지 이 구간은 화면이 아무 말도 하지 않아서, 거리가
+          왜 0 인지 모른 채 달리게 됐다(심사 B-13). 실내 러닝 모드가 생기기 전까지는
+          정직하게 알린다. 약함 배너와 같은 '상태 한 줄' 문법(러닝 중 화면 불가침). */}
+      {noGpsFix && !permLost && (
+        <View style={r.gpsWeak} testID="no-gps-fix" accessibilityRole="text" accessibilityLiveRegion="polite" accessibilityLabel="GPS를 찾지 못했어요. 실내 러닝은 거리가 기록되지 않아요.">
+          <Ionicons name="cellular-outline" size={ri(ICON.tag)} color={WARN} />
+          <Text style={r.gpsWeakText}>GPS를 못 찾았어요 — 실내 러닝은 거리가 기록되지 않아요</Text>
+        </View>
+      )}
+
       {/* gps — 약할 때만 등장하는 경고(상시 상태 표시 폐지). 거리 기록이 멈출 수 있음을 설명. */}
-      {gpsWeakNow && (
+      {gpsWeakNow && !noGpsFix && (
         <View style={r.gpsWeak} accessibilityRole="text" accessibilityLiveRegion="polite" accessibilityLabel="GPS 신호 약함, 거리 기록이 잠시 멈출 수 있어요">
           <Ionicons name="cellular" size={ri(ICON.tag)} color={WARN} />
           <Text style={r.gpsWeakText}>GPS 신호 약함 — 거리 기록이 잠시 멈출 수 있어요</Text>

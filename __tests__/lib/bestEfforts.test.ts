@@ -115,7 +115,7 @@ describe('집계 — 거리 PB + 삭제 안전', () => {
     const eff = runBestEfforts(t);
     expect(eff['5k']).toBeCloseTo(1500, 3);
     expect(eff['10k']).toBeUndefined();
-    expect(eff['half']).toBeUndefined();
+    expect(eff.half).toBeUndefined();
   });
 
   test('aggregateDistancePBs: 런별 최소 = PB, PB 런 제거 시 자동 복구', () => {

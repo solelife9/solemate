@@ -234,7 +234,7 @@ describe('ProfileScreen 푸시 권한 거부는 비차단(S8-3)', () => {
 
 describe('문의하기(지원) — ASC 지원 연락처(감사#3)', () => {
   test('설정의 문의 행 press → mailto:kmw0236 로 메일 앱을 연다', async () => {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
+
     const {Linking} = require('react-native');
     const spy = jest.spyOn(Linking, 'openURL').mockResolvedValue(true);
     const root = render({}); // 로그아웃 상태 → 법적·문의 행이 설정에 상시 노출.

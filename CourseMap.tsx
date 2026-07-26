@@ -24,7 +24,7 @@ let MapPolyline: any = null;
 let MapMarker: any = null;
 let MAP_PROVIDER_GOOGLE: any;
 try {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
+
   const maps = require('react-native-maps');
   MapView = maps.default ?? maps.MapView;
   MapPolyline = maps.Polyline;

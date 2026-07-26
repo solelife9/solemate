@@ -55,7 +55,7 @@ type Scheduler = {
 
 function loadScheduler(): Scheduler | null {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
+
     return require('expo-notifications') as Scheduler;
   } catch {
     return null;

@@ -26,7 +26,7 @@ function findByProp(root: ReactTestRenderer.ReactTestInstance, prop: string) {
 
 async function tick(n = 8) {
   for (let i = 0; i < n; i++) {
-    // eslint-disable-next-line no-await-in-loop
+
     await act(async () => {
       await Promise.resolve();
     });

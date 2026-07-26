@@ -164,7 +164,7 @@ function rawRunOf(root: ReactTestRenderer.ReactTestInstance, id: string): {delet
 // 마운트 직후/액션 사이의 pending microtask(부팅 fetch·setState)를 여러 번 흘려보낸다.
 async function tickAsync(n = 6) {
   for (let i = 0; i < n; i++) {
-    // eslint-disable-next-line no-await-in-loop
+
     await act(async () => {
       await Promise.resolve();
     });

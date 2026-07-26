@@ -42,7 +42,7 @@ function loadWatchSession(withModule = true) {
       }
     },
   }));
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
+
   return require('../lib/watchSession').watchSession as typeof import('../lib/watchSession').watchSession;
 }
 

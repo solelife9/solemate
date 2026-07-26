@@ -27,7 +27,7 @@ describe('getDistancePBs — 마이그레이션/캐시', () => {
     const pb = await getDistancePBs(['r1', 'r2'], deps);
     expect(pb['5k']).toBeCloseTo(1400, 0);           // min(r1 1500, r2 1400) — r2 가 더 빠름
     expect(pb['10k']).toBeCloseTo(2800, 0);          // r2 만 10K 완주(280s/km)
-    expect(pb['half']).toBeUndefined();              // 아무도 21km 못 뜀
+    expect(pb.half).toBeUndefined();              // 아무도 21km 못 뜀
     expect(loadCalls.sort()).toEqual(['r1', 'r2']);
   });
 

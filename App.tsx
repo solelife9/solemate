@@ -60,8 +60,8 @@ import {challengeProgress} from './lib/challenges';
 
 // 트랙 모드 순수 엔진 — 복귀감지(haversineM)·첫 랩 GPS 보정(calibrateLapM)·랩→시계열(lapsToTrack).
 import {
-  
-  
+
+
 } from './lib/locationService';
 
 // 러닝 중 화면이 OS 자동잠금으로 꺼지지 않게 하는 태그(손에 들고/암밴드로 지표를 흘끗 보는
@@ -1686,7 +1686,7 @@ function Main(){
     };
     const t=setTimeout(()=>{void sweep();},15000);
     return()=>{alive=false;clearTimeout(t);};
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+
   },[authUser?.uid]);
 
   // ── 실효 마모/교체 예측 보정(Slice 6) ────────────────────────────────────────
@@ -1749,7 +1749,7 @@ function Main(){
       challenges:activeChallenges,
       achievement:recentAch?{name:recentAch.name}:null,
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   },[runs,shoes,challenges,extChallenges,challengeRuns,progState,contextChallenges]);
 
   // (마이 탭 스마트 챌린지 카드 입력 challengeExt 파생 제거 — 주간 목표가 홈 시트로

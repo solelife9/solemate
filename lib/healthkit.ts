@@ -32,7 +32,7 @@ function mod(): HKModule | null {
     return cached;
   }
   try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
+
     cached = require('@kingstinct/react-native-healthkit') as HKModule;
   } catch {
     cached = null;

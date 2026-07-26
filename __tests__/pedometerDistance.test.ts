@@ -34,7 +34,7 @@ function load(withModule = true) {
       }
     },
   }));
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
+
   return require('../lib/pedometerDistance').pedometerDistance as typeof import('../lib/pedometerDistance').pedometerDistance;
 }
 

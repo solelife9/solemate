@@ -659,7 +659,7 @@ test('부팅 후 클라우드 push 페이로드에 경로가 살아 있다 — �
     // 자동 동기 디바운스(1s) 경과 → pull→merge→push.
     await act(async () => { jest.advanceTimersByTime(1300); });
     for (let i = 0; i < 12; i++) {
-      // eslint-disable-next-line no-await-in-loop
+
       await act(async () => { await Promise.resolve(); });
     }
     jest.useRealTimers();

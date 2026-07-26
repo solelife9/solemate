@@ -976,7 +976,7 @@ describe('스냅샷 저장 연속 실패 경고', () => {
     t.start({goalKm: 5, shoe: {id: 's1', name: 'X'}, t0: 100000});
     for (const at of [100000, 104000, 108000]) {
       set(at); t.persist();
-      // eslint-disable-next-line no-await-in-loop
+
       await flush();
     }
     expect(t.getState().snapshotFailing).toBe(true);

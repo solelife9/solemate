@@ -45,7 +45,7 @@ export function mergeRaces(seed: RaceEvent[], remote: RaceEvent[]): RaceEvent[] 
  */
 export async function fetchRaces(): Promise<RaceEvent[]> {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
+
     const fs = require('@react-native-firebase/firestore');
     const getFirestore = fs.getFirestore;
     const collection = fs.collection;

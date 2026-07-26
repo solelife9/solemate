@@ -10,7 +10,7 @@ import type {TextRecognizer} from './ocr';
 
 let recognizer: TextRecognizer | null = null;
 try {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
+
   const mod = require('@react-native-ml-kit/text-recognition');
   const TextRecognition = mod.default ?? mod;
   const KOREAN = mod.TextRecognitionScript?.KOREAN;

@@ -29,7 +29,7 @@ import {Ring, Button, Input} from '../primitives';
 import {reverseGeoLabelKo} from '../lib/geocode';
 import RunActiveScreenView from '../RunActiveScreen.rn';
 import {success as hapticSuccess, warning as hapticWarning, isHapticsEnabled} from '../lib/haptics';
-import {PAUSE_MOVE_NUDGE_STEPS, PAUSE_MOVE_NUDGE_POLL_MS} from '../lib/engineConstants';
+import {PAUSE_MOVE_NUDGE_STEPS, PAUSE_MOVE_NUDGE_POLL_MS, NO_FIX_WARN_SEC} from '../lib/engineConstants';
 import {simplifyRoute} from '../lib/geo';
 import {appendFinalSplit} from '../lib/splits';
 import {runTracker} from '../lib/runTracker';
@@ -714,7 +714,7 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
     if(cmdAtMs>0&&cmdAtMs<runBeganMsRef.current-30000)return; // 이전 러닝의 스테일 정지
     watchStopHandledRef.current=true;
     finishRunRef.current();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }),[]);
 
   async function finishRun(){
@@ -919,6 +919,15 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
     : accuracyM<=12 ? 3
     : accuracyM<=30 ? 2
     : 1;
+  // 실내(트레드밀)·지하 무신호 — **한 번도 fix 를 못 받은 채** 시간만 흐르는 상태.
+  // 이 구간은 지금까지 화면이 아무 말도 하지 않았다(약함 배너는 gpsLevel===1 에서만 뜨고,
+  // fix 이전은 0 이라 조건에서 빠졌다). 사용자는 거리가 왜 0 인지 모른 채 달린다 —
+  // 게다가 그 km 는 신발 마모에도 안 잡힌다(2026-07-26 출시 심사 B-13).
+  // 실내 모드가 생기기 전까지는 **정직하게 알리는 것**이 최선이다.
+  //  · NO_FIX_WARN_SEC 만큼 기다린 뒤에만 띄운다 — 시작 직후 전이 구간에 상태 UI 를
+  //    끼워넣지 않는다(구 'GPS 찾는 중' 필이 레이아웃을 밀어 제거된 이력, 2026-07-25).
+  //  · 트랙 모드는 제외 — 거리를 랩×랩거리로 세므로 GPS 가 없어도 정확히 기록된다.
+  const noGpsFix = !permLost && !trackMode && accuracyM==null && elapsed>=NO_FIX_WARN_SEC;
   // 트랙 표시값: 거리=랩수×확정랩거리, '현재 페이스'=직전 랩 페이스(GPS 롤링 대신 — 트랙 드리프트
   // 회피), 평균=트랙거리/경과. 자유/거리 모드는 기존 GPS 신호 그대로.
   const trackDistKm=(lapCount*lapM)/1000;
@@ -963,6 +972,7 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
       age={age}
       restHR={restHR}
       gpsLevel={gpsLevel}
+      noGpsFix={noGpsFix}
       paused={paused}
       statusLabel={pauseLabel}
       onPause={handlePause}
