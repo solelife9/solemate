@@ -377,16 +377,19 @@ function Welcome({goNext, goLogin, insetTop, insetBottom}: {goNext: () => void; 
           </Pressable>
           {/* 약관 고지 — Ready 화면 제거(2026-07-07 재설계)로 첫 CTA 아래로 이전.
               링크는 인라인 Text onPress(터치 = 글줄 높이뿐, hitSlop 불가) 대신 Pressable 로 —
-              paddingVertical + hitSlop 12 로 실효 44pt 터치 타깃 확보(HIG). */}
+              paddingVertical + hitSlop 12 로 실효 44pt 터치 타깃 확보(HIG).
+              '위치기반서비스 약관'을 이름으로 밝힌다 — 위치정보법상 개인위치정보 처리에는
+              일반 이용약관과 구분되는 별도 동의가 필요하다(2026-07-26 출시 심사 B-04).
+              문서는 terms.html 한 벌이고 제2부가 위치기반서비스 약관이라 링크는 하나로 둔다. */}
           <View style={s.termsRow}>
             <Text style={s.termsCaption}>계속 진행하면 keego의 </Text>
             <Pressable
               hitSlop={12}
               accessibilityRole="link"
-              accessibilityLabel="이용약관 열기"
+              accessibilityLabel="이용약관 및 위치기반서비스 약관 열기"
               onPress={() => { Linking.openURL(TERMS_URL).catch(() => {}); }}
               style={({pressed}) => [s.termsLink, pressed && s.pressed]}>
-              <Text style={[s.termsCaption, s.termsLinkTxt]}>이용약관</Text>
+              <Text style={[s.termsCaption, s.termsLinkTxt]}>이용약관·위치기반서비스 약관</Text>
             </Pressable>
             <Text style={s.termsCaption}>과 </Text>
             <Pressable
