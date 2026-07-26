@@ -22,6 +22,12 @@ import { getRecommendedLifespanKm } from './data/shoeModels';
 import { ShoePicker, type PickedShoe } from './ShoePicker';
 // maxKm 0 같은 비정상값을 제출 시 인라인으로 차단(빨강 헬퍼텍스트).
 import { validateMaxKm } from './lib/inputMask';
+// 영수증·박스 라벨 사진 → 브랜드/모델 자동 채우기(앞당김 #17). 인식기는 대회 기록증 OCR 과
+// 같은 네이티브 모듈을 재사용한다 — 새 의존성 0. 인식기가 없으면 이 진입점은 아예 숨는다.
+import { nativeRecognizer } from './lib/ocrNative';
+import { extractShoeFromImage } from './lib/shoeReceipt';
+import { pickPhotoFrom } from './lib/photo';
+import { showToast } from './lib/toast';
 
 export default function AddShoeScreen({
   onClose, onSave,
@@ -34,6 +40,8 @@ export default function AddShoeScreen({
   const [used, setUsed] = useState('0');
   // maxKm 0/비정상값 인라인 차단 — 제출 시 검증해 필드 아래 빨강 헬퍼텍스트로 표시한다.
   const [maxErr, setMaxErr] = useState<string | undefined>(undefined);
+  // 영수증 스캔 진행 상태(중복 실행 방지 + 버튼 문구).
+  const [scanning, setScanning] = useState(false);
 
   // 모델만 있으면 등록 가능 — 검색창 직접 추가는 브랜드가 비어 있을 수 있다(온보딩과 동일).
   // '기타' 레일 직접 입력은 브랜드명을 받으므로 그 경로는 브랜드가 채워진다.
@@ -48,6 +56,31 @@ export default function AddShoeScreen({
     setPicked(p);
     setMax(getRecommendedLifespanKm({ brand: p.brand, model: p.model }));
     setMaxErr(undefined);
+  };
+
+  /**
+   * 영수증·박스 라벨을 찍어 브랜드·모델·권장수명을 채운다.
+   * 실패해도 폼은 그대로다 — 자동 채우기는 지름길일 뿐, 손으로 등록하는 길을 막지 않는다.
+   * 못 찾았을 때 조용히 아무 일도 안 하면 고장으로 읽히므로 반드시 결과를 말한다.
+   */
+  const scanReceipt = async () => {
+    if (scanning || !nativeRecognizer) return;
+    setScanning(true);
+    try {
+      const photo = await pickPhotoFrom('camera');
+      if (!photo?.uri) return;
+      const found = await extractShoeFromImage(nativeRecognizer, photo.uri);
+      if (found.model) {
+        onPick({ brand: found.brand, model: found.model });
+        showToast({ message: `${found.brand ? found.brand + ' ' : ''}${found.model} 로 채웠어요` });
+      } else {
+        showToast({ message: '러닝화를 못 찾았어요 — 직접 골라주세요' });
+      }
+    } catch {
+      showToast({ message: '사진을 읽지 못했어요 — 직접 골라주세요' });
+    } finally {
+      setScanning(false);
+    }
   };
 
   const save = () => {
@@ -91,6 +124,23 @@ export default function AddShoeScreen({
           </Text>
           <Ionicons name="chevron-down" size={ri(ICON.action)} color={T3} />
         </Pressable>
+
+        {/* 영수증 스캔 — 피커 아래 보조 액션 한 줄(새 화면·새 언어 없이 지름길만 추가).
+            OCR 네이티브가 없는 빌드에선 렌더하지 않는다 — 눌러도 안 되는 버튼은 두지 않는다. */}
+        {!!nativeRecognizer && (
+          <Pressable
+            onPress={scanReceipt}
+            disabled={scanning}
+            accessibilityRole="button"
+            accessibilityLabel="영수증이나 박스 사진으로 자동 입력"
+            accessibilityState={{ disabled: scanning }}
+            testID="add-shoe-scan"
+            hitSlop={8}
+            style={({ pressed }) => [s.scanRow, pressed && s.pressed]}>
+            <Ionicons name="scan-outline" size={ri(ICON.inline)} color={T3} />
+            <Text style={s.scanText}>{scanning ? '읽는 중…' : '영수증·박스 사진으로 자동 입력'}</Text>
+          </Pressable>
+        )}
 
         {/* 권장 교체 거리 — 쿠셔닝(성능) 기준 가이드. 자동 입력·수정 가능, 미수정 시 '권장' 배지 */}
         <View style={s.maxHead}>
@@ -167,6 +217,8 @@ const s = StyleSheet.create({
 
   maxHead: { marginTop: rv(22), flexDirection: 'row', alignItems: 'center', gap: rv(8), paddingHorizontal: rs(4), paddingBottom: rv(10) },
 
+  scanRow: { flexDirection: 'row', alignItems: 'center', gap: rv(6), alignSelf: 'flex-start', paddingHorizontal: rs(4), paddingTop: rv(10), minHeight: rs(28) },
+  scanText: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500' },
   hint: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, paddingHorizontal: rs(4), paddingTop: rv(8) },
 
   errText: { color: DANGER, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500', paddingHorizontal: rs(4), paddingTop: rv(8) },
