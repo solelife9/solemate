@@ -25,6 +25,7 @@ import {WARMUP_FIXES, MAX_FIX_ACCURACY_M, MAX_SEG_DIST_KM, MAX_SEG_SPEED_MPS, CU
 import {decideAutoPause, initAutoPauseState, AutoPauseState} from './autoPause';
 import {gpsStallStatus, GPS_STALL_THRESHOLD_MS} from './gpsHealth';
 import {saveSnapshot} from './runPersistence';
+import {recordError} from './crashlytics';
 import {initElevState, feedAltitude, ElevState} from './elevation';
 
 // 스냅샷 쓰기 주기(ms) — persist() 주석 참조. 스칼라는 자주, 경로는 드물게.
@@ -829,7 +830,12 @@ class RunTracker {
       location: this.location,
       track: this.trackMeta,
       savedAt: now,
-    }, {route: withRoute}).catch(() => {});
+    }, {route: withRoute}).catch(err => {
+      // 스냅샷 쓰기 실패 = 크래시 복구 불가 상태로 달리고 있다는 뜻이다. 무음으로 넘기면
+      // '러닝이 통째로 사라졌다'는 CS 의 원인을 영영 추적할 수 없다(저장 공간 부족이 대표).
+      // 관측성 실패가 러닝을 막아선 안 되므로 여기서도 throw 하지 않는다.
+      recordError(err, 'storage: run snapshot write');
+    });
   }
 }
 

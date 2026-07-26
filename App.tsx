@@ -277,7 +277,7 @@ function Main(){
   const pbDeps=useMemo(()=>({
     loadTrack:async(id:string)=>{try{const raw=await AsyncStorage.getItem('paceTrack_'+id);return raw?JSON.parse(raw):null;}catch{return null;}},
     getCache:async()=>{try{const raw=await AsyncStorage.getItem(PB_CACHE_KEY);return raw?JSON.parse(raw):null;}catch{return null;}},
-    setCache:async(c:any)=>{try{await AsyncStorage.setItem(PB_CACHE_KEY,JSON.stringify(c));}catch{}},
+    setCache:async(c:any)=>{try{await AsyncStorage.setItem(PB_CACHE_KEY,JSON.stringify(c));}catch(e){recordError(e,'storage: distance PB cache write');}},
   }),[]);
   const [distancePBs,setDistancePBs]=useState<RunBestEfforts>({});
   const runIdSig=runs.map(r=>String((r as any).id)).filter(Boolean).join(',');
@@ -470,7 +470,8 @@ function Main(){
     const persist=(next:{ach:string[];tier:string})=>{
       const merged=mergeCelebBaseline(celebBaselineRef.current,next,RANK_XP as Record<string,number>);
       celebBaselineRef.current=merged;
-      try{void AsyncStorage.setItem(CELEB_SEEN_KEY,JSON.stringify(merged));}catch{}
+      // 축하 중복 방지 마커 — 실패해도 최악은 축하가 한 번 더 뜨는 것뿐(데이터 무해).
+      try{void AsyncStorage.setItem(CELEB_SEEN_KEY,JSON.stringify(merged));}catch{/* 무해: 축하 1회 중복 */}
     };
     if(base===null){persist({ach:currentAch,tier});return;}
     const seen=new Set(base.ach);
@@ -598,7 +599,11 @@ function Main(){
         try{
           await AsyncStorage.setItem(CACHE_SHOES_KEY,JSON.stringify(shoes));
           await AsyncStorage.setItem(CACHE_RUNS_KEY,JSON.stringify(runs));
-        }catch{/* 캐시 쓰기 실패는 삼킨다(다음 mutation 에서 재시도) */}
+        }catch(e){
+          // 다음 mutation 에서 재시도되지만, 저장 공간 부족이면 계속 실패해 캐시가 조용히
+          // 낡는다 — 오프라인으로 열었을 때 며칠 전 상태가 '현재'로 보이는 원인. 원격 계측 필수.
+          recordError(e,'storage: boot cache write (debounced)');
+        }
       })();
     },800);
     return ()=>clearTimeout(t);
@@ -756,7 +761,8 @@ function Main(){
     //   ① __DEV__  ② NODE_ENV!=='test'  ③ 빈 신발(실데이터 안 덮음).
     if(__DEV__ && process.env.NODE_ENV!=='test' && liveShoes.length===0 && (globalThis as any).__KEEGO_DEV_SEED__!==false){
       liveShoes=devSeedShoes();liveRuns=devSeedRuns();
-      try{await AsyncStorage.setItem(CACHE_SHOES_KEY,JSON.stringify(liveShoes));await AsyncStorage.setItem(CACHE_RUNS_KEY,JSON.stringify(liveRuns));}catch{}
+      // setMany — 두 키를 한 번의 브리지 왕복으로. 실패는 계측한다(무음 금지).
+      try{await AsyncStorage.setMany({[CACHE_SHOES_KEY]:JSON.stringify(liveShoes),[CACHE_RUNS_KEY]:JSON.stringify(liveRuns)});}catch(e){recordError(e,'storage: cache write after sync');}
     }
     // 묘비(삭제) 필터(#4): 부팅캐시는 800ms 디바운스라, 삭제 직후 강제종료/크래시되면 캐시엔
     // 아직 삭제된 레코드가 남아 있을 수 있다. 삭제 시 *동기적으로* 영속되는 묘비(tombstones_v1)로
@@ -882,7 +888,7 @@ function Main(){
       const list=Array.isArray(arr)?arr:[];
       const next=[run,...list.filter((r:any)=>String(r?.id)!==String(run.id))];
       await AsyncStorage.setItem(CACHE_RUNS_KEY,JSON.stringify(next));
-    }catch(e){console.log('persistRunToCache error',e);}
+    }catch(e){recordError(e,'storage: run cache write');}
   };
 
   // 런 한 건을 부팅 캐시에서 즉시 durable 하게 제거한다(삭제 크래시-세이프티). 800ms 디바운스
@@ -894,7 +900,7 @@ function Main(){
       const arr=JSON.parse(raw);
       if(!Array.isArray(arr)) return;
       await AsyncStorage.setItem(CACHE_RUNS_KEY,JSON.stringify(arr.filter((r:any)=>String(r?.id)!==String(id))));
-    }catch(e){console.log('persistRunCacheRemove error',e);}
+    }catch(e){recordError(e,'storage: run cache remove');}
   };
 
   // 완주 런 저장(Stage 2b · Firestore 정본): 로컬 우선 + cloudSync push. REST POST/큐 제거.
@@ -1307,7 +1313,8 @@ function Main(){
   // '데이터 파괴 금지' 불변식의 정당한 예외다(되돌릴 수 없음을 화면에서 분명히 고지).
   const handleDeleteAccount=async()=>{
     await cloudPortRef.current.deleteAccount();
-    try{await AsyncStorage.clear();}catch{}
+    // 초기화 실패는 이전 계정 데이터가 남는다는 뜻 — 조용히 넘기면 안 된다.
+    try{await AsyncStorage.clear();}catch(e){recordError(e,'storage: clear all (reset)');}
     setShoes([]);setRuns([]);
     setTombstones({shoes:[],runs:[]});
     setChallenges([]);
@@ -1514,7 +1521,7 @@ function Main(){
       if(newId){
         const durMs=Math.max(1,Math.round(p.durationS))*1000;
         const wStart=p.startMs>0?p.startMs:Date.now()-durMs;
-        void registerRunForHr(newId,wStart,wStart+durMs,Date.now()).catch(()=>{});
+        void registerRunForHr(newId,wStart,wStart+durMs,Date.now()).catch(e=>recordError(e,'healthkit: register watch run for HR backfill'));
         // 워치→폰 HK 동기화 지연 대비 — 폰 런 저장과 동일한 15s·60s 재백필.
         setTimeout(()=>{void retryPendingHr(Date.now(),hkBackfillAndRepair).catch(()=>{});},15000);
         setTimeout(()=>{void retryPendingHr(Date.now(),hkBackfillAndRepair).catch(()=>{});},60000);
@@ -2095,11 +2102,13 @@ function Main(){
           // 건너뜀 — 실측 우선). 실패는 조용히 무시(러닝 저장에 영향 0).
           {
             const hkEndMs=Date.now();const hkStartMs=hkEndMs-Math.max(1,dur)*1000;
-            void hkSaveRunWorkout(km,hkStartMs,hkEndMs,cal).catch(()=>{});
-            void hkBackfillAndRepair(newId,hkStartMs,hkEndMs).catch(()=>{});
+            // 건강 앱에 워크아웃이 안 들어가면 사용자는 '기록이 없다'고 인식한다 — 무음 금지.
+            void hkSaveRunWorkout(km,hkStartMs,hkEndMs,cal).catch(e=>recordError(e,'healthkit: save workout'));
+            void hkBackfillAndRepair(newId,hkStartMs,hkEndMs).catch(e=>recordError(e,'healthkit: backfill HR'));
             // 심박 보강 대기 등록(경로 A 매칭·B 재시도 대상) + 지연 재시도. 워치→폰 HealthKit
             // 동기화가 저장 순간엔 덜 됐을 수 있어, 앱 유지 중이면 15s·60s 뒤 다시 채운다.
-            void registerRunForHr(newId,hkStartMs,hkEndMs,Date.now()).catch(()=>{});
+            // 이 등록이 실패하면 지연 재시도 대상에서 빠져 그 런의 심박이 영영 비어 있게 된다.
+            void registerRunForHr(newId,hkStartMs,hkEndMs,Date.now()).catch(e=>recordError(e,'healthkit: register run for HR backfill'));
             setTimeout(()=>{void retryPendingHr(Date.now(),hkBackfillAndRepair).catch(()=>{});},15000);
             setTimeout(()=>{void retryPendingHr(Date.now(),hkBackfillAndRepair).catch(()=>{});},60000);
           }
@@ -2644,7 +2653,7 @@ function RunActiveScreen({shoe,insets,goalKm,goalMin=0,pacePlan=[],targetZone=0,
           }
         }
       }else if(ev.type==='paused'){
-        try{Tts.stop();}catch{}runVoice.autoPause();
+        try{Tts.stop();}catch{/* 무해: 이미 멈춘 TTS */}runVoice.autoPause();
       }else if(ev.type==='resumed'){
         runVoice.resume();
       }else if(ev.type==='firstFix'){
@@ -2680,7 +2689,7 @@ function RunActiveScreen({shoe,insets,goalKm,goalMin=0,pacePlan=[],targetZone=0,
           (v.name?.toLowerCase().includes('female')||v.name?.toLowerCase().includes('여성')||(v.quality&&v.quality>=400))
         );
         if(femaleVoice) Tts.setDefaultVoice(femaleVoice.id);
-      }catch{}
+      }catch{/* 무해: 한국어 여성 보이스 부재 → 기본 보이스로 폴백 */}
     })();
     const voiceTimer=setTimeout(()=>{if(!cancelled)runVoice.start();},800);
     (async()=>{
@@ -2699,7 +2708,7 @@ function RunActiveScreen({shoe,insets,goalKm,goalMin=0,pacePlan=[],targetZone=0,
       if(cancelled) return;
       await beginRun();
     })();
-    return()=>{cancelled=true;clearTimeout(voiceTimer);stop();unsub();try{Tts.stop();}catch{}runVoice.stop();};
+    return()=>{cancelled=true;clearTimeout(voiceTimer);stop();unsub();try{Tts.stop();}catch{/* 무해: 이미 멈춘 TTS */}runVoice.stop();};
     // eslint-disable-next-line react-hooks/exhaustive-deps
   },[]);
 
@@ -2975,7 +2984,7 @@ function RunActiveScreen({shoe,insets,goalKm,goalMin=0,pacePlan=[],targetZone=0,
     void stopTracking();
     runTracker.stop();
     // 화면 자동잠금 방지 해제 — 종료/완주/취소/언마운트(effect cleanup)가 모두 stop()을 경유.
-    try{deactivateKeepAwake(KEEP_AWAKE_TAG);}catch{}
+    try{deactivateKeepAwake(KEEP_AWAKE_TAG);}catch{/* 무해: 이미 해제됨 */}
   }
 
   function handlePause(){
@@ -3073,7 +3082,7 @@ function RunActiveScreen({shoe,insets,goalKm,goalMin=0,pacePlan=[],targetZone=0,
             const {lat,lon}=pts2[0];
             loc=await reverseGeoLabelKo(lat,lon);
           }
-        }catch{}
+        }catch{/* 무해: 역지오코딩 실패 → 위치 라벨 없이 저장 */}
       }
       await onSave(Math.round(fk*100)/100,ft,cadFin,'',routeFin,loc,splitsFin,finElevTotal,estimateCaloriesTotal(fk,ft,weightKg),paceTrackFin,hrTrackFin,gapTrackFin,
         trackMode?{lapM:Math.round(lapMRef.current),laps:lapTimesRef.current.length,lapTimes:lapTimesRef.current.slice()}:null);
@@ -3105,7 +3114,7 @@ function RunActiveScreen({shoe,insets,goalKm,goalMin=0,pacePlan=[],targetZone=0,
             const {lat,lon}=pts2[0];
             loc=await reverseGeoLabelKo(lat,lon);
           }
-        }catch{}
+        }catch{/* 무해: 역지오코딩 실패 → 위치 라벨 없이 저장 */}
       }
       await onSave(Math.round(finKm*100)/100,finTime,finCad,memo,finRoute,loc,finSplits,finElev,estimateCaloriesTotal(finKm,finTime,weightKg),finPaceTrack,finHrTrack,finGapTrack,
         trackMode?{lapM:Math.round(lapMRef.current),laps:lapTimesRef.current.length,lapTimes:lapTimesRef.current.slice()}:null);

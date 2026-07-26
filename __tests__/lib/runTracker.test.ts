@@ -909,3 +909,29 @@ describe('경로 접근자', () => {
     expect(t.getLastPoint()).toBeNull();
   });
 });
+
+// ── 스냅샷 쓰기 실패 계측(2026-07-26 F-04) ───────────────────────────────────
+// 저장이 실패하면 '크래시 복구 불가 상태로 달리고 있다'는 뜻이다. 이전엔 .catch(()=>{})
+// 로 흔적 없이 사라져, "러닝이 통째로 없어졌다"는 CS 의 원인을 추적할 수 없었다.
+// 동시에 관측성 코드가 러닝을 막아서도 안 된다(throw 금지).
+describe('스냅샷 쓰기 실패', () => {
+  test('저장이 실패하면 원격 계측에 남고, 엔진은 계속 달린다', async () => {
+    const {recordError: fbRecordError} = require('@react-native-firebase/crashlytics');
+    (fbRecordError as jest.Mock).mockClear();
+    const spy = jest
+      .spyOn(AsyncStorage, 'setMany')
+      .mockRejectedValueOnce(new Error('storage full'));
+
+    const {t} = makeEngine();
+    t.start({goalKm: 5, shoe: {id: 's1', name: 'X'}, t0: 100000});
+    t.persist();
+    await new Promise(r => setImmediate(r));
+
+    expect(fbRecordError).toHaveBeenCalled();
+    // 실패해도 엔진은 살아 있다(거리 누적 계속).
+    clearWarmup(t);
+    expect(t.isActive()).toBe(true);
+
+    spy.mockRestore();
+  });
+});
