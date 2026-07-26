@@ -431,9 +431,14 @@ const styles = StyleSheet.create({
   ringPctSub: {fontFamily: FONT, fontSize: rf(15), fontWeight: '600', color: withAlpha(T1, 0.55)},
   // % 는 숫자와 베이스라인 정렬(구 flex-start+marginTop=어중간한 중간 부유 → 세 자리(100%)에서 특히 어색).
   ringPctRow: {flexDirection: 'row', alignItems: 'baseline', marginTop: rv(8)},
-  // 자간 −2.6 → −1(민우님 2026-07-26 "거슬려"): 58pt·700 에 −2.6 은 앱에서 가장 강한 음수라
-  // 숫자끼리 붙어 '00'·'100' 이 한 덩어리로 뭉쳤다(러닝 링에서 지적된 것과 같은 조건).
-  ringPct: {fontFamily: DISPLAY, fontSize: rf(58), fontWeight: '700', letterSpacing: -1, lineHeight: rf(60), color: T1, fontVariant: ['tabular-nums']},
+  // 고정폭 해제 + 자간 −2.6 → −0.5(민우님 2026-07-26, 실기기 '100%' 스크린샷).
+  // 고정폭(tabular-nums)은 모든 숫자에 같은 폭의 상자를 준다 — 글자가 좁은 '1' 은 상자
+  // 안에서 가운데 놓여 양옆이 휑하고, 상자를 꽉 채우는 '0' 끼리는 붙어 보인다. 여기에
+  // 음수 자간까지 겹쳐 '100' 이 "1  00" 으로 읽혔다.
+  // 이 숫자는 신발을 고를 때 한 번 정해지는 **정적 값**이라 폭이 흔들릴 일이 없다 →
+  // 고정폭의 이득(자릿수 변해도 안 떨림)이 없고 손해만 있었다. 매초 바뀌는 러닝 지표·
+  // 카운트업 거리는 종전대로 고정폭을 유지한다(거기선 떨림 방지가 실익).
+  ringPct: {fontFamily: DISPLAY, fontSize: rf(58), fontWeight: '700', letterSpacing: -0.5, lineHeight: rf(60), color: T1},
   ringPctUnit: {fontFamily: DISPLAY, fontSize: rf(21), fontWeight: '700', color: withAlpha(T1, 0.7), marginLeft: rs(2)},
 
   kmRow: {flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(12), marginTop: rv(16)},

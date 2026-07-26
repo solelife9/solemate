@@ -132,7 +132,10 @@ const cer = StyleSheet.create({
   // 두께 700 → 500(민우님 2026-07-26): Jost 는 기하학 폰트라 굵어지면 0 의 속공간이 좁아져
   // '00' 이 한 덩어리로 뭉친다. GO 를 뺀 모든 Jost 숫자를 500 으로 통일한다 — 카운트다운
   // (500) → 세리머니 → 리캡으로 이어지는 같은 숫자의 굵기 점프도 함께 사라진다.
-  dist: { color: T1, fontFamily: NUM, fontSize: rf(64), fontWeight: '500', fontVariant: ['tabular-nums'], letterSpacing: -1.5, lineHeight: rf(78), includeFontPadding: false },
+  // 자간 −1.5 → −0.4(민우님 2026-07-26 "주황 링 화면 숫자가 너무 붙었다"): 고정폭 숫자는
+  // 좌우 여백이 설계에 포함돼 있어 음수 자간이 그 여백을 깎는다. 카운트업하는 숫자라
+  // 고정폭 자체는 유지(자릿수 바뀔 때 떨림 방지) — 자간만 푼다.
+  dist: { color: T1, fontFamily: NUM, fontSize: rf(64), fontWeight: '500', fontVariant: ['tabular-nums'], letterSpacing: -0.4, lineHeight: rf(78), includeFontPadding: false },
   unit: { color: withAlpha(T1, 0.8), fontFamily: FONT, fontSize: rf(19), fontWeight: '700', letterSpacing: 0.6, marginTop: rv(4) },
 });
 
@@ -683,7 +686,9 @@ export default function RunActiveScreen({
         const mv1 = uiPaused || timeGoal ? distanceKm.toFixed(2) : timeLabel;
         const mv2 = uiPaused ? timeLabel : bpm > 0 ? String(bpm) : '--';
         const mv3 = uiPaused ? avgPaceLabel : paceLabel;
-        const mFs = { fontSize: metricFontSize([mv1, mv2, mv3], uiPaused ? 30 : 37) };
+        // 기준 크기는 위 hmV/hmVPaused 와 같은 값(34 / 28)을 쓴다 — 여기서 계산한 공통
+        // 크기가 그 스타일을 덮으므로 둘이 어긋나면 스타일 쪽이 죽은 값이 된다.
+        const mFs = { fontSize: metricFontSize([mv1, mv2, mv3], uiPaused ? 34 : 42) };
         return (
       <Animated.View pointerEvents={cd ? 'none' : 'auto'}
         style={[r.heroMetrics, uiPaused ? r.heroMetricsPaused : r.heroMetricsRun, { opacity: uiIn, transform: [{ translateY: uiRise }] }]}>
@@ -963,17 +968,26 @@ const r = StyleSheet.create({
   // 두께 500 → 700(민우님 2026-07-26 "러닝중 숫자가 얇고 약하다"): 이 화면만 앱 숫자 규약
   // (NUMERIC '값 700 고정') 밖에서 500으로 살아, 37pt 로 가장 큰데도 20pt 런 상세 지표보다
   // 약하게 읽혔다. 크고 얇으면 야외 햇빛·흔들림에서 오히려 더 흐려진다.
-  hmV: { color: T1, fontFamily: DISPLAY, fontSize: rf(37), fontWeight: '700', letterSpacing: -0.8, fontVariant: ['tabular-nums'] },
+  // 자간 −0.8 → −0.2(민우님 2026-07-26): 두께를 700 으로 올리자 음수 자간이 굵은 획끼리
+  // 붙여 '00:05' 가 뭉쳤다. 크기는 37 유지 — 한 번 34 로 줄였다가 "키워줘"로 되돌렸다.
+  // 크기는 34 → 37 → 42 로 두 번 키웠다(민우님 요청) — 러닝 화면은 전역 '작고 절제된'
+  // 기준의 명시적 예외다. 긴 값(1:02:05 등)은 metricFontSize 가 자동으로 한 단 낮춘다.
+  hmV: { color: T1, fontFamily: DISPLAY, fontSize: rf(42), fontWeight: '700', letterSpacing: -0.2, fontVariant: ['tabular-nums'] },
   // 일시정지 6칸(2026-07-12 사용자: '6개를 키우고 올려서 잘 보이게') — 값 30pt 균일.
-  hmVPaused: { fontSize: rf(30), letterSpacing: -0.7 },
-  hmL: { color: withAlpha(T1, 0.45), fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: "600", letterSpacing: 0.4, marginTop: rv(8) },
+  hmVPaused: { fontSize: rf(34), letterSpacing: -0.2 },
+  // 라벨 판독성(민우님 2026-07-26 "밑에 써있는 글씨들도 잘 안 보여"): 흰 45% 는 검은 배경
+  // 에서 거의 회색으로 묻혔다. 러닝 화면은 **다른 화면의 '작고 절제된 프리미엄' 기준을
+  // 따르지 않는다** — 달리며 흘끗 보는 자리라 밝기(75%)·크기(body 16)를 한 단씩 올린다.
+  // 두께는 600 유지(민우님 "라벨 두께는 안 키워도 될 것 같아") — 값이 주인공이고 라벨은 안내다.
+  hmL: { color: withAlpha(T1, 0.75), fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600', letterSpacing: 0.2, marginTop: rv(8) },
 
   // 일시정지 하단 3칸(케이던스·칼로리·고도) — 상단 히어로 행과 같은 3열 그리드(6칸처럼).
   subMetrics: { flexDirection: 'row', paddingTop: rv(20), paddingBottom: rv(16) },
   sm: { flex: 1, alignItems: 'center' },
-  smV: { color: T1, fontFamily: DISPLAY, fontSize: rf(30), fontWeight: '500', letterSpacing: -0.7, fontVariant: ['tabular-nums'] },
-  smU: { color: withAlpha(T1, 0.45), fontFamily: FONT, fontSize: TYPE.caption.fontSize },
-  smL: { color: withAlpha(T1, 0.45), fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: "600", letterSpacing: 0.4, marginTop: rv(8) },
+  // 서브 3칸도 같은 규율 — 두께 500 → 700, 음수 자간 완화, 라벨·단위 밝기 상향.
+  smV: { color: T1, fontFamily: DISPLAY, fontSize: rf(34), fontWeight: '700', letterSpacing: -0.2, fontVariant: ['tabular-nums'] },
+  smU: { color: withAlpha(T1, 0.7), fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600' },
+  smL: { color: withAlpha(T1, 0.75), fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600', letterSpacing: 0.2, marginTop: rv(8) },
 
   // (mapWrap·positionDot 스타일 삭제 — 미사용 잔재. RunLiveMap 이 자체 마커 보유)
   // 트랙 랩 기록 바 — 큰 '랩 기록' 필 + 작은 되돌리기. 유리 문법(홈 CTA 계열).

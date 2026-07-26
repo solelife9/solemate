@@ -556,7 +556,9 @@ const s = StyleSheet.create({
   // (구 lineHeight 72=1.06×는 어센더 잘림 리스크, 2026-07-25 심사 #27).
   // 두께 700 → 500(민우님 2026-07-26): GO 를 뺀 모든 Jost 숫자를 500 으로 통일 —
   // 세리머니(500)에서 이 히어로로 모프될 때 굵기가 튀던 것도 함께 해소된다.
-  heroNum: {color: T1, fontFamily: NUM, fontSize: rf(68), fontWeight: '500', letterSpacing: -1.5, lineHeight: rf(83), includeFontPadding: false, fontVariant: ['tabular-nums']},
+  // 자간 −1.5 → −0.4(2026-07-26) — 세리머니 거리(dist)와 같은 규율. 모프로 이어지는
+  // 같은 숫자라 자간이 다르면 넘어오는 순간 글자 간격이 튄다.
+  heroNum: {color: T1, fontFamily: NUM, fontSize: rf(68), fontWeight: '500', letterSpacing: -0.4, lineHeight: rf(83), includeFontPadding: false, fontVariant: ['tabular-nums']},
   // 모프 클론 — 윈도 좌표 절대 배치(리캡 루트=풀스크린이라 윈도 좌표 그대로 사용 가능).
   morphClone: {position: 'absolute'},
   heroUnit: {color: T2, fontFamily: FONT, fontSize: TYPE.title.fontSize, fontWeight: '700', marginBottom: rv(10)},

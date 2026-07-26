@@ -386,7 +386,9 @@ const st = StyleSheet.create({
   featModel: {fontFamily: FONT, fontSize: TYPE.title.fontSize, fontWeight: '700', letterSpacing: -0.4, color: T1, marginTop: rv(8)},
   featQuote: {fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600', color: T3, marginTop: rv(8)},
   featDist: {flexDirection: 'row', alignItems: 'baseline', gap: rv(4), marginBottom: rv(4)},
-  featNum: {fontFamily: DISPLAY, fontSize: rf(44), fontWeight: '800', color: HALL_GOLD, letterSpacing: -1.5, fontVariant: ['tabular-nums']},
+  // 자간 −1.5 → −0.4(2026-07-26): 고정폭 숫자는 좌우 여백이 이미 설계에 포함돼 있어
+  // 음수 자간이 그 여백을 깎아 숫자끼리 붙는다(−3.4% 로 앱 최악이었다).
+  featNum: {fontFamily: DISPLAY, fontSize: rf(44), fontWeight: '800', color: HALL_GOLD, letterSpacing: -0.4, fontVariant: ['tabular-nums']},
   featKm: {fontFamily: DISPLAY, fontSize: TYPE.body.fontSize, fontWeight: '700', color: withAlpha(HALL_GOLD, 0.7)},
 
   // 전당 컬렉션 — 2열 콰이어트 글라스 명패
@@ -416,7 +418,8 @@ const st = StyleSheet.create({
   coDoctypeKr: {fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500', color: T3, letterSpacing: 0.3, marginTop: rv(8)},
   coBrand: {fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '700', letterSpacing: 2.2, color: T3, marginTop: rv(32)},
   coModel: {fontFamily: FONT, fontSize: TYPE.title1.fontSize, fontWeight: '700', letterSpacing: -0.6, color: T1, marginTop: rv(8), textAlign: 'center'},
-  coNum: {fontFamily: DISPLAY, fontSize: HERO.mega, fontWeight: '800', color: HALL_GOLD, letterSpacing: -2, fontVariant: ['tabular-nums'], marginTop: rv(20)},
+  // 자간 −2 → −0.6(2026-07-26): 800 두께 + 고정폭 + 76pt 에서 숫자가 한 덩어리로 뭉쳤다.
+  coNum: {fontFamily: DISPLAY, fontSize: HERO.mega, fontWeight: '800', color: HALL_GOLD, letterSpacing: -0.6, fontVariant: ['tabular-nums'], marginTop: rv(20)},
   coUnit: {fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '700', letterSpacing: 1.2, color: T3, marginTop: rv(8)},
   coQuote: {fontFamily: FONT, fontSize: TYPE.heading.fontSize, fontWeight: '700', color: T1, marginTop: rv(20), textAlign: 'center'},
   coMeta: {flexDirection: 'row', alignSelf: 'stretch', marginTop: rv(28)},

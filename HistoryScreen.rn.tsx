@@ -1337,7 +1337,8 @@ const s = StyleSheet.create({
   // 섹션 헤더 = SectionTitle 프리미티브와 동일 스펙(700) — 화면 간 헤더 무게 통일.
   sectionLabel: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '700', letterSpacing: 0.4, paddingHorizontal: rs(4) },
   // 요약 카드(큰 거리) — 목업 기록(10)
-  sumBigKm: { color: T1, fontFamily: DISPLAY, fontSize: rf(42), fontWeight: '700', letterSpacing: -1, fontVariant: ['tabular-nums'], marginLeft: rs(0) },
+  // 자간 −1 → −0.3(2026-07-26 고정폭 숫자 자간 정리).
+  sumBigKm: { color: T1, fontFamily: DISPLAY, fontSize: rf(42), fontWeight: '700', letterSpacing: -0.3, fontVariant: ['tabular-nums'], marginLeft: rs(0) },
   sumBigU: { color: T3, fontFamily: FONT, fontSize: TYPE.heading.fontSize, fontWeight: '500', marginLeft: rs(4), paddingBottom: rv(6) },
   sumMetricRow: { flexDirection: 'row', justifyContent: 'flex-start', gap: rv(28), marginTop: rv(14), paddingLeft: rs(2) },
   sumMetric: {},
