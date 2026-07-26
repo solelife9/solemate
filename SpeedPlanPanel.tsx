@@ -17,6 +17,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import {
   ACCENT, T1, T2, T3, T4, SEP, CARD, CARD_HI, FONT, NUM, RADIUS, GLASS, TYPE, HERO,
   LEADING, MOTION, TOUCH_TARGET, withAlpha,
+  ICON,
 } from './theme';
 import {SegmentedControl, SwipeBackExclude, Stepper, GlassEdge, useReduceMotion} from './primitives';
 import {buildPacePlan, clampPace, fmtPaceSec, PaceStrategy} from './lib/pacePlan';
@@ -43,7 +44,7 @@ function PaceStepper({value, onDec, onInc, decLabel, incLabel}: {
   value: string; onDec: () => void; onInc: () => void; decLabel: string; incLabel: string;
 }) {
   return (
-    <Stepper size={ri(38)} onMinus={onDec} onPlus={onInc} minusLabel={decLabel} plusLabel={incLabel} style={{gap: rv(0)}}>
+    <Stepper size={ri(ICON.hero)} onMinus={onDec} onPlus={onInc} minusLabel={decLabel} plusLabel={incLabel} style={{gap: rv(0)}}>
       <Text style={s.stepVal}>{value}</Text>
     </Stepper>
   );
@@ -131,7 +132,7 @@ export default function SpeedPlanPanel({
           testID="goal-pace-minus" onPress={() => bumpAvg(-5)} hitSlop={8}
           accessibilityRole="button" accessibilityLabel="평균 페이스 5초 빠르게"
           style={({pressed}) => [s.heroBtn, pressed && s.heroBtnPressed]}>
-          <Ionicons name="remove" size={ri(22)} color={T1} />
+          <Ionicons name="remove" size={ri(ICON.nav)} color={T1} />
         </Pressable>
         <View style={s.heroVal} accessible accessibilityLiveRegion="polite"
           accessibilityLabel={`평균 페이스 ${fmtPaceSec(avgSec)} 매 킬로미터`}>
@@ -142,7 +143,7 @@ export default function SpeedPlanPanel({
           testID="goal-pace-plus" onPress={() => bumpAvg(+5)} hitSlop={8}
           accessibilityRole="button" accessibilityLabel="평균 페이스 5초 느리게"
           style={({pressed}) => [s.heroBtn, pressed && s.heroBtnPressed]}>
-          <Ionicons name="add" size={ri(22)} color={T1} />
+          <Ionicons name="add" size={ri(ICON.nav)} color={T1} />
         </Pressable>
       </View>
       {/* 자동 요약 — 거리 × 평균 페이스. */}

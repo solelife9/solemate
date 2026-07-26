@@ -11,7 +11,7 @@ import {View, ScrollView, Pressable, Image, StyleSheet, ActivityIndicator, Modal
 import {Text, TextInput} from './lib/text';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import {BG, CARD_BORDER, CARD_HI, GOOD, WARN, HALL_GOLD, T1, T2, T3, SEP, FONT, DISPLAY, withAlpha, TYPE, GLASS, RADIUS, GUTTER, MOTION} from './theme';
+import {BG, CARD_BORDER, CARD_HI, GOOD, WARN, HALL_GOLD, T1, T2, T3, SEP, FONT, DISPLAY, withAlpha, TYPE, GLASS, RADIUS, GUTTER, MOTION, ICON} from './theme';
 import {Button, Chip, GlassEdge, Input} from './primitives';
 import {captureCertPhoto} from './lib/photo';
 import MedalCamera from './MedalCamera';
@@ -148,12 +148,12 @@ export default function RaceMedalScreen({
     return (
       <View style={[s.screen, {paddingTop: insets.top}]} testID="race-medal-select">
         <View style={s.nav}>
-          <Pressable onPress={onClose} hitSlop={8} accessibilityRole="button" accessibilityLabel="닫기" style={s.iconBtn}><Ionicons name="close" size={ri(18)} color={T2} /></Pressable>
+          <Pressable onPress={onClose} hitSlop={8} accessibilityRole="button" accessibilityLabel="닫기" style={s.iconBtn}><Ionicons name="close" size={ri(ICON.action)} color={T2} /></Pressable>
           <Text style={s.navTitle}>어떤 대회였나요?</Text>
           <View style={{width: rs(36)}} />
         </View>
         <View style={s.search}>
-          <Ionicons name="search" size={ri(16)} color={T3} />
+          <Ionicons name="search" size={ri(ICON.inline)} color={T3} />
           <TextInput value={query} onChangeText={setQuery} placeholder="대회 이름 검색" placeholderTextColor={T3} style={s.searchInput} autoCorrect={false} testID="race-search" />
         </View>
         <ScrollView contentContainerStyle={{paddingHorizontal: GUTTER, paddingBottom: insets.bottom + 20}} keyboardShouldPersistTaps="handled">
@@ -197,10 +197,10 @@ export default function RaceMedalScreen({
         {/* 촬영 2슬롯 — 메달은 원형 가이드 카메라, 기록증은 즉시 촬영 → OCR */}
         <View style={s.shotRow}>
           <Pressable onPress={() => setCameraOpen(true)} accessibilityRole="button" accessibilityLabel="메달 촬영" style={({pressed}) => [s.shot, s.shotMedal, medalUri && s.shotDone, pressed && s.pressed]}>
-            {medalUri ? <Image source={{uri: medalUri}} style={s.shotImgRound} resizeMode="cover" /> : <><Ionicons name="medal-outline" size={ri(26)} color={HALL_GOLD} /><Text style={[s.shotT, {color: HALL_GOLD}]}>메달 촬영</Text><Text style={s.shotS}>원 안에 맞춰 찍어요</Text></>}
+            {medalUri ? <Image source={{uri: medalUri}} style={s.shotImgRound} resizeMode="cover" /> : <><Ionicons name="medal-outline" size={ri(ICON.feature)} color={HALL_GOLD} /><Text style={[s.shotT, {color: HALL_GOLD}]}>메달 촬영</Text><Text style={s.shotS}>원 안에 맞춰 찍어요</Text></>}
           </Pressable>
           <Pressable onPress={shotCert} accessibilityRole="button" accessibilityLabel="기록증 사진 찍기" style={({pressed}) => [s.shot, ocrDone && s.shotDoneGood, ocrEmpty && s.shotDoneWarn, pressed && s.pressed]}>
-            {ocrBusy ? <ActivityIndicator color={T2} /> : ocrDone ? <><Ionicons name="checkmark-circle" size={ri(26)} color={GOOD} /><Text style={[s.shotT, {color: GOOD}]}>기록증 인식됨</Text><Text style={s.shotS}>다시 찍기</Text></> : ocrEmpty ? <><Ionicons name="alert-circle-outline" size={ri(26)} color={WARN} /><Text style={[s.shotT, {color: WARN}]}>기록을 못 읽었어요</Text><Text style={s.shotS}>다시 찍거나 직접 입력</Text></> : certUri ? <><Ionicons name="document-text" size={ri(26)} color={T2} /><Text style={s.shotT}>기록증 저장됨</Text><Text style={s.shotS}>값은 아래 입력</Text></> : <><Ionicons name="document-text-outline" size={ri(26)} color={T3} /><Text style={s.shotT}>기록증 촬영</Text><Text style={s.shotS}>공식 기록 자동 인식</Text></>}
+            {ocrBusy ? <ActivityIndicator color={T2} /> : ocrDone ? <><Ionicons name="checkmark-circle" size={ri(ICON.feature)} color={GOOD} /><Text style={[s.shotT, {color: GOOD}]}>기록증 인식됨</Text><Text style={s.shotS}>다시 찍기</Text></> : ocrEmpty ? <><Ionicons name="alert-circle-outline" size={ri(ICON.feature)} color={WARN} /><Text style={[s.shotT, {color: WARN}]}>기록을 못 읽었어요</Text><Text style={s.shotS}>다시 찍거나 직접 입력</Text></> : certUri ? <><Ionicons name="document-text" size={ri(ICON.feature)} color={T2} /><Text style={s.shotT}>기록증 저장됨</Text><Text style={s.shotS}>값은 아래 입력</Text></> : <><Ionicons name="document-text-outline" size={ri(ICON.feature)} color={T3} /><Text style={s.shotT}>기록증 촬영</Text><Text style={s.shotS}>공식 기록 자동 인식</Text></>}
           </Pressable>
         </View>
         {/* 성공 안내 문장 제거(간결화 H1, 2026-07-26) — 슬롯의 '기록증 인식됨' + 아래 필드의

@@ -13,7 +13,7 @@ import {Text, FONT_SCALE_CAP_HERO} from './lib/text';
 import type {Text as RNText} from 'react-native'; // ref 인스턴스 타입 전용
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import {BG, BLACK, CARD_HI, ACCENT, GOOD, WARN, DANGER, HALL_GOLD, T1, T2, T3, FONT, RADIUS, GUTTER, SEP, withAlpha, TYPE, GLASS, NUM, MOTION} from './theme';
+import {BG, BLACK, CARD_HI, ACCENT, GOOD, WARN, DANGER, HALL_GOLD, T1, T2, T3, FONT, RADIUS, GUTTER, SEP, withAlpha, TYPE, GLASS, NUM, MOTION, ICON} from './theme';
 import {GlassEdge, StatGrid, useReduceMotion, Input} from './primitives';
 import {RACE_DISTANCE_LABEL, type RaceMatch} from './data/raceEvents';
 import {fmtPaceSec} from './lib/pacePlan';
@@ -288,14 +288,14 @@ export default function RunRecapScreen({
           accessibilityLabel="기록 삭제"
           testID="recap-delete"
           style={({pressed}) => [s.deleteBtn, {top: insets.top + rv(6)}, pressed && {opacity: 0.7}]}>
-          <Ionicons name="trash-outline" size={ri(17)} color={T3} />
+          <Ionicons name="trash-outline" size={ri(ICON.inline)} color={T3} />
         </Pressable>
       )}
       <ScrollView contentContainerStyle={{paddingHorizontal: GUTTER, paddingBottom: insets.bottom + 24, paddingTop: rv(8)}} showsVerticalScrollIndicator={false}>
         {/* 축하 헤더 — ① 체크 배지 스프링 팝 → ② 타이틀 Rise */}
         <View style={s.celebrate}>
           <PopIn skip={skipAnim}>
-            <View style={s.medal}><Ionicons name="checkmark-done" size={ri(26)} color={GOOD} /></View>
+            <View style={s.medal}><Ionicons name="checkmark-done" size={ri(ICON.feature)} color={GOOD} /></View>
           </PopIn>
           <Enter skip={skipAnim} delay={140} style={s.celebrateTxt}>
             <Text style={s.title}>러닝 완료</Text>
@@ -319,19 +319,19 @@ export default function RunRecapScreen({
           <Enter skip={skipAnim} delay={460} style={s.badges}>
             {!!track && track.laps > 0 && (
               <View style={[s.badge, {borderColor: withAlpha(ACCENT, 0.4), backgroundColor: withAlpha(ACCENT, 0.12)}]} testID="recap-track">
-                <Ionicons name="ellipse-outline" size={ri(13)} color={ACCENT} />
+                <Ionicons name="ellipse-outline" size={ri(ICON.tag)} color={ACCENT} />
                 <Text style={[s.badgeTxt, {color: ACCENT}]}>트랙 · {track.lapM}m × {track.laps}랩</Text>
               </View>
             )}
             {goalHit && (
               <View style={[s.badge, {borderColor: withAlpha(ACCENT, 0.4), backgroundColor: withAlpha(ACCENT, 0.12)}]}>
-                <Ionicons name="flag" size={ri(13)} color={ACCENT} />
+                <Ionicons name="flag" size={ri(ICON.tag)} color={ACCENT} />
                 <Text style={[s.badgeTxt, {color: ACCENT}]}>{timeGoalHit ? `목표 ${goalMin}분 달성` : `목표 ${goalKm}${unit} 달성`}</Text>
               </View>
             )}
             {prKinds.map((k) => (
               <View key={k} testID={`recap-pr-${k}`} style={[s.badge, {borderColor: withAlpha(GOOD, 0.4), backgroundColor: withAlpha(GOOD, 0.12)}]}>
-                <Ionicons name="trophy" size={ri(13)} color={GOOD} />
+                <Ionicons name="trophy" size={ri(ICON.tag)} color={GOOD} />
                 <Text style={[s.badgeTxt, {color: GOOD}]}>신기록 · {PR_LABEL[k]}</Text>
               </View>
             ))}
@@ -343,7 +343,7 @@ export default function RunRecapScreen({
         {raceMatch && onLogRace && !raceDismissed && (
           <Enter skip={skipAnim} delay={540} style={s.raceBanner} testID="recap-race-banner">
             <View style={s.raceBannerHead}>
-              <Ionicons name="medal" size={ri(16)} color={HALL_GOLD} />
+              <Ionicons name="medal" size={ri(ICON.inline)} color={HALL_GOLD} />
               <Text style={s.raceBannerTitle}>
                 {raceMatch.kind === 'geo' && raceMatch.race
                   ? `${raceMatch.race.name} 달리셨나요?`
@@ -380,7 +380,7 @@ export default function RunRecapScreen({
         {shoeWear && (
           <Enter skip={skipAnim} delay={700} style={s.shoeCard} testID="recap-shoe-wear">
             <GlassEdge glints={false} radius={RADIUS.lg} />
-              <View style={s.shoeIcon}><Ionicons name="footsteps" size={ri(18)} color={ACCENT} /></View>
+              <View style={s.shoeIcon}><Ionicons name="footsteps" size={ri(ICON.action)} color={ACCENT} /></View>
             <View style={{flex: 1, minWidth: 0}}>
               <Text style={s.shoeName} numberOfLines={1}>{shoeName || '신발'}</Text>
               <Text style={s.shoeMeta}>
@@ -408,7 +408,7 @@ export default function RunRecapScreen({
         <Enter skip={skipAnim} delay={860} style={s.grid}>
           <GlassEdge glints={false} radius={RADIUS.lg} />
           <StatGrid
-            style={s.gridInner}
+            inset="card"
             // 3열(민우님 2026-07-26) — 6칸이 2행으로 앉아 카드가 낮아지고, 런 상세 지표
             // 그리드(3열)와 같은 격자가 된다.
             columns={3}
@@ -475,13 +475,13 @@ export default function RunRecapScreen({
                 <Image source={{uri: photoUri}} style={s.metaPhoto} resizeMode="cover" accessible accessibilityLabel="러닝 사진" />
                 <Pressable onPress={removePhoto} accessibilityRole="button" accessibilityLabel="사진 제거" hitSlop={10}
                   style={({pressed}) => [s.metaPhotoRemove, pressed && {opacity: 0.8}]}>
-                  <Ionicons name="close" size={ri(14)} color={T1} />
+                  <Ionicons name="close" size={ri(ICON.tag)} color={T1} />
                 </Pressable>
               </View>
             ) : (
               <Pressable onPress={attachPhoto} accessibilityRole="button" accessibilityLabel="사진 추가" testID="recap-add-photo"
                 style={({pressed}) => [s.metaPhotoAdd, pressed && {backgroundColor: CARD_HI}]}>
-                <Ionicons name="camera-outline" size={ri(18)} color={T2} />
+                <Ionicons name="camera-outline" size={ri(ICON.action)} color={T2} />
                 <Text style={s.metaPhotoAddTxt}>오늘의 한 컷 남기기</Text>
               </Pressable>
             )}
@@ -508,7 +508,7 @@ export default function RunRecapScreen({
       <View style={[s.footer, s.footerRow, {paddingBottom: insets.bottom + 10}]}>
         <Pressable onPress={onShare} accessibilityRole="button" accessibilityLabel="러닝 공유" testID="recap-share"
           style={({pressed}) => [s.shareBtn, pressed && {opacity: 0.85}]}>
-          <Ionicons name="share-outline" size={ri(17)} color={T1} style={{marginRight: rs(8)}} />
+          <Ionicons name="share-outline" size={ri(ICON.inline)} color={T1} style={{marginRight: rs(8)}} />
           <Text style={s.doneTxt}>공유</Text>
         </Pressable>
         <Pressable onPress={closeWithMeta} accessibilityRole="button" accessibilityLabel="완료" testID="recap-done"
@@ -578,7 +578,7 @@ const s = StyleSheet.create({
   // 카드 표면만 소유 — 칸 배치는 StatGrid(columns=2)가 한다.
   grid: {backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderCurve: 'continuous', overflow: 'hidden'},
   // 그리드 안쪽 여백 — 런 상세(StatGrid 3열)와 같은 방식(컨테이너 패딩 + 행 간격).
-  gridInner: {paddingVertical: rv(18), paddingHorizontal: rs(18), rowGap: rv(18)},
+  // (gridInner 삭제 — primitives.StatGrid inset="card" 로 수렴, 2026-07-26)
   shoeCard: {flexDirection: 'row', alignItems: 'center', gap: rv(12), backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderCurve: 'continuous', overflow: 'hidden', paddingHorizontal: rs(14), paddingVertical: rv(12), marginBottom: rv(12)},
   shoeIcon: {width: rs(36), height: rs(36), borderRadius: rs(18), alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(ACCENT, 0.12)},
   shoeName: {color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '700', letterSpacing: -0.2},

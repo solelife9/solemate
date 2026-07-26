@@ -17,6 +17,7 @@ import {runVoice} from './lib/runVoice/voice';
 import {
   BG, CARD, CARD_HI as SURFACE, ACCENT, WARN, DANGER, T1, T2, T3,
   FONT as FP, DISPLAY as FH, NUM, SEP, RADIUS, GUTTER, MOTION, Shoe, Run, withAlpha,
+  ICON,
 } from './theme';
 import {Ring, Button, Skeleton, Input} from './primitives';
 import ErrorBoundary from './ErrorBoundary';
@@ -2335,7 +2336,7 @@ function BootError({onRetry}:{onRetry:()=>void}){
   return (
     <View testID="boot-error" style={[boot.screen,{justifyContent:'center',paddingTop:insets.top+12}]}>
       <View style={boot.card}>
-        <Ionicons name="cloud-offline-outline" size={ri(40)} color={WARN}/>
+        <Ionicons name="cloud-offline-outline" size={ri(ICON.hero)} color={WARN}/>
         <Text style={boot.cardTitle}>연결이 잠시 끊겼어요</Text>
         <Text style={boot.cardBody}>{KEEP_GOING_RETRY}</Text>
         <Button testID="boot-retry" label="다시 시도" onPress={onRetry} icon="refresh" style={boot.retryBtn}/>
@@ -3134,7 +3135,7 @@ function RunActiveScreen({shoe,insets,goalKm,goalMin=0,pacePlan=[],targetZone=0,
     <View style={[run.screen,{paddingTop:insets.top+24,paddingBottom:insets.bottom+28}]}>
       <View style={run.top}>
         <View style={run.liveRow}><Text style={[run.liveText,{color:ACCENT}]}>완료</Text></View>
-        <View style={run.shoeChip}><MaterialCommunityIcons name="shoe-sneaker" size={ri(15)} color={T3}/><Text style={run.shoeChipText}>{ui.model||shoe.name}</Text></View>
+        <View style={run.shoeChip}><MaterialCommunityIcons name="shoe-sneaker" size={ri(ICON.inline)} color={T3}/><Text style={run.shoeChipText}>{ui.model||shoe.name}</Text></View>
       </View>
       <View style={run.body}>
         <Ring size={ri(272)} stroke={16} progress={1} color={ACCENT}>

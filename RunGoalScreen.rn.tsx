@@ -26,6 +26,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   BG, ACCENT, T1, T2, T3, T4, SEP, CARD_BORDER,
   FONT, DISPLAY, NUM, RADIUS, GUTTER, withAlpha, TYPE, HERO, LEADING, MOTION, TOUCH_TARGET,
+  ICON,
 } from './theme';
 // lib/haptics 배선: '러닝 시작' CTA(런 시작) → tap.
 import { tap } from './lib/haptics';
@@ -43,7 +44,7 @@ import SpeedPlanPanel from './SpeedPlanPanel';
 import { buildPacePlan } from './lib/pacePlan';
 // 추정치 개인화(심사 P2 #74, Truth only) — 일률 5분/km·64kcal/km 대신 최근 이력의
 // 거리가중 평균 페이스·km당 칼로리로 예상. 이력 없으면 기존 기본값 폴백(회귀 0).
-import { estimateForGoal, estimateForDuration, type EstimateRunLike } from './lib/goalEstimate';
+import { estimateForGoal, estimateForDuration, buildPaceProfile, type EstimateRunLike } from './lib/goalEstimate';
 
 // runs 기본값 — 렌더마다 새 []를 만들면 useMemo 의존이 매번 갈려 추정이 재계산되므로
 // 모듈 상수 한 개로 고정한다(미배선 시에도 참조 동일성 유지).
@@ -106,8 +107,18 @@ export default function RunGoalScreen({
   const [mode, setMode] = useState<Mode>('km');
   const [val, setVal] = useState<number>(0);
   const cfg = mode === 'km' || mode === 'min' ? CFG[mode] : null;
+  // 스피드 탭 기본 평균 페이스 개인화(2026-07-26) — 거리·시간 탭의 '예상 시간'은 이미
+  // lib/goalEstimate 로 개인화돼 있는데, 스피드 탭만 6'00" 고정이라 러너마다 첫 화면부터
+  // 손봐야 했다. 최근 이력의 거리가중 평균 페이스를 기본값으로 준다.
+  // 이력이 없으면(personalized=false) 종전 기본값 6'00" 을 그대로 쓴다 — goalEstimate 의
+  // 폴백(5'00")을 쓰면 신규 사용자의 기본이 조용히 빨라져 버린다.
+  const SPEED_DEFAULT_SEC = 360;
+  const speedInitialAvgSec = useMemo(() => {
+    const p = buildPaceProfile(runs);
+    return p.personalized ? Math.round(p.paceSecPerKm) : SPEED_DEFAULT_SEC;
+  }, [runs]);
   // 스피드 모드의 현재 목표(거리 km + km별 페이스 플랜) — SpeedPlanPanel 이 onChange 로 올린다.
-  const [speedGoal, setSpeedGoal] = useState<{ km: number; plan: number[] }>(() => ({ km: 5, plan: buildPacePlan(5, 360, 'negative') }));
+  const [speedGoal, setSpeedGoal] = useState<{ km: number; plan: number[] }>(() => ({ km: 5, plan: buildPacePlan(5, SPEED_DEFAULT_SEC, 'negative') }));
   // 트랙 모드: 한 바퀴 예상 거리(m). 기본 400(야외 공인). 커스텀은 하단 키패드로 입력.
   // 이 값은 '가정'일 뿐 — 야외선 첫 랩 GPS 가 실제 랩거리로 자동 보정한다(실내 폴백값).
   const [lapM, setLapM] = useState<number>(400);
@@ -215,7 +226,7 @@ export default function RunGoalScreen({
       <StatusBar barStyle="light-content" />
       {/* nav */}
       <View style={s.nav}>
-        <Pressable onPress={onBack} hitSlop={8} style={s.navIc} accessibilityRole="button" accessibilityLabel="뒤로"><Icon name="back" size={ri(24)} color={T2} /></Pressable>
+        <Pressable onPress={onBack} hitSlop={8} style={s.navIc} accessibilityRole="button" accessibilityLabel="뒤로"><Icon name="back" size={ri(ICON.nav)} color={T2} /></Pressable>
         <Text style={s.navTitle}>러닝 목표</Text>
         <View style={s.navIc} />
       </View>
@@ -265,7 +276,7 @@ export default function RunGoalScreen({
             </View>
           </View>
         ) : mode === 'speed' ? (
-          <SpeedPlanPanel onChange={(km, plan) => setSpeedGoal({ km, plan })} />
+          <SpeedPlanPanel initialAvgSec={speedInitialAvgSec} onChange={(km, plan) => setSpeedGoal({ km, plan })} />
         ) : (
           <>
             <Pressable
@@ -393,7 +404,7 @@ export default function RunGoalScreen({
           onPress={startRun}
           // startRun 이 직접 tap() 을 울리므로 공용 버튼 햅틱은 끈다(중복 방지).
           haptic={false}
-          iconNode={<Icon name="play" size={ri(22)} color={T1} fill={T1} />}
+          iconNode={<Icon name="play" size={ri(ICON.nav)} color={T1} fill={T1} />}
           style={s.cta}
         />
       </View>

@@ -37,6 +37,7 @@ import {
   RADIUS,
   GUTTER,
   MOTION,
+  ICON,
 } from './theme';
 import {
   SwipeBack,
@@ -119,7 +120,7 @@ function HallOfShoes({records = [], unit = 'km', onBack, userName, onGoShoes}: H
       <AmbientBackdrop />
       <View style={st.nav}>
         <Pressable style={st.iconBtn} onPress={onBack} hitSlop={10} accessibilityRole="button" accessibilityLabel="뒤로" testID="hall-back">
-          <Ionicons name="chevron-back" size={ri(20)} color={T1} />
+          <Ionicons name="chevron-back" size={ri(ICON.action)} color={T1} />
         </Pressable>
         <Text style={st.navTitle}>러닝화 아카이브</Text>
         <View style={{width: rs(36)}} />
@@ -208,7 +209,7 @@ function HallOfShoes({records = [], unit = 'km', onBack, userName, onGoShoes}: H
                       accessibilityLabel={`${r.name} 인증서`}
                       testID={`hall-plaque-${r.shoeId}`}>
                       <GlassEdge glints={false} radius={RADIUS.md} />
-                      <ShoeGlyph size={ri(26)} color={withAlpha(T1, 0.4)} />
+                      <ShoeGlyph size={ri(ICON.feature)} color={withAlpha(T1, 0.4)} />
                       {!!nm.brand && <Text style={st.pbrand}>{nm.brand}</Text>}
                       <Text style={st.pmodel} numberOfLines={2}>{nm.model}</Text>
                       <View style={st.pfoot}>
@@ -260,10 +261,10 @@ function Certificate({shoe, unit, userName, onClose}: {shoe: RetiredShoeRecord; 
     <View style={st.certScreen}>
       <AmbientBackdrop />
       <Pressable style={[st.certX, {left: 20, top: insets.top + 6}]} onPress={onClose} hitSlop={10} accessibilityRole="button" accessibilityLabel="닫기">
-        <Ionicons name="close" size={ri(16)} color={T2} />
+        <Ionicons name="close" size={ri(ICON.inline)} color={T2} />
       </Pressable>
       <Pressable style={[st.certX, {right: 20, top: insets.top + 6}]} onPress={onShare} hitSlop={10} accessibilityRole="button" accessibilityLabel="인증서 공유" testID="cert-share">
-        <Ionicons name="share-outline" size={ri(15)} color={T1} />
+        <Ionicons name="share-outline" size={ri(ICON.inline)} color={T1} />
       </Pressable>
 
       <ScrollView contentContainerStyle={[st.certContent, {paddingTop: insets.top + 56, paddingBottom: insets.bottom + 40}]} showsVerticalScrollIndicator={false}>
@@ -333,7 +334,7 @@ function EmptyHall({onRegister}: {onRegister?: () => void}) {
       <View style={st.ghostRow}>
         <View style={st.ghostPlaque}>
           <GlassEdge glints={false} radius={RADIUS.md} />
-          <GhostThumb size={40}><ShoeGlyph size={ri(22)} color={withAlpha(T1, 0.35)} /></GhostThumb>
+          <GhostThumb size={40}><ShoeGlyph size={ri(ICON.nav)} color={withAlpha(T1, 0.35)} /></GhostThumb>
           <GhostBar w="70%" style={{marginTop: rv(14)}} />
           <GhostBar w="44%" dim />
         </View>

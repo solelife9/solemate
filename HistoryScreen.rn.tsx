@@ -15,6 +15,7 @@ import Svg, { Rect as SvgRect, Path as SvgPath, Line as SvgLine } from 'react-na
 import {
   BG, CARD_HI, GLASS, ACCENT, BRAND, DANGER, T1, T2, T3, SEP, FONT, DISPLAY, Shoe, Run, SHOES, withAlpha, RADIUS, GUTTER, MOTION, HERO, HR_ZONE_COLORS, TYPE,
   BAR,
+  ICON,
 } from './theme';
 // 기간 탭 스트립 = SegmentedControl(md), 러닝 상세 2×3 메트릭 = StatGrid(sm) 프리미티브.
 import { TabBar, TABBAR_CLEARANCE, Button, SegmentedControl, StatGrid, SwipeBack, Chip, AmbientBackdrop, EmptyGhostHeader, GhostStrong, GhostBar, Rise, GlassEdge, BottomSheet, Input } from './primitives';
@@ -215,7 +216,7 @@ export function RunForm({
     <View style={[s.screen, { paddingTop: insets.top }]}>
       <AmbientBackdrop />
       <View style={[s.nav, s.navRow]}>
-        <Pressable onPress={onCancel} hitSlop={6} accessibilityRole="button" accessibilityLabel="뒤로" style={s.iconBtn}><Ionicons name="chevron-back" size={ri(20)} color={T1} /></Pressable>
+        <Pressable onPress={onCancel} hitSlop={6} accessibilityRole="button" accessibilityLabel="뒤로" style={s.iconBtn}><Ionicons name="chevron-back" size={ri(ICON.action)} color={T1} /></Pressable>
         <Text style={s.formTitle}>{editing ? '러닝 편집' : '수동 기록 추가'}</Text>
         <View style={s.iconBtn} />
       </View>
@@ -527,19 +528,19 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, onEdit, age = 0, 
     <View style={[s.screen, { paddingTop: insets.top }]}>
       <AmbientBackdrop />
       <View style={[s.nav, s.navRow]}>
-        <Pressable onPress={onBack} hitSlop={6} accessibilityRole="button" accessibilityLabel="뒤로" style={s.iconBtn}><Ionicons name="chevron-back" size={ri(20)} color={T1} /></Pressable>
+        <Pressable onPress={onBack} hitSlop={6} accessibilityRole="button" accessibilityLabel="뒤로" style={s.iconBtn}><Ionicons name="chevron-back" size={ri(ICON.action)} color={T1} /></Pressable>
         <View style={s.navActions}>
           <Pressable onPress={onShareCard} hitSlop={6} style={s.iconBtn} accessibilityRole="button" accessibilityLabel="공유" testID="detail-share">
-            <Ionicons name="share-outline" size={ri(18)} color={ACCENT} />
+            <Ionicons name="share-outline" size={ri(ICON.action)} color={ACCENT} />
           </Pressable>
           {!!onEdit && !!run.id && (
             <Pressable onPress={() => onEdit(run)} hitSlop={6} style={s.iconBtn} accessibilityRole="button" accessibilityLabel="편집" testID="detail-edit">
-              <Ionicons name="create-outline" size={ri(18)} color={ACCENT} />
+              <Ionicons name="create-outline" size={ri(ICON.action)} color={ACCENT} />
             </Pressable>
           )}
           {!!onDelete && (
             <Pressable onPress={confirmDelete} hitSlop={6} style={s.iconBtn} accessibilityRole="button" accessibilityLabel="삭제">
-              <Ionicons name="trash-outline" size={ri(18)} color={DANGER} />
+              <Ionicons name="trash-outline" size={ri(ICON.action)} color={DANGER} />
             </Pressable>
           )}
         </View>
@@ -568,7 +569,7 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, onEdit, age = 0, 
         <View style={[s.card, { marginTop: rv(16) }]}>
           <GlassEdge glints={false} radius={RADIUS.lg} />
           <StatGrid
-            style={s.statGrid}
+            inset="card"
             columns={3}
             align="left"
             // 히어로 거리 아래 보조 그리드 → NUMERIC sm(사이트별 타이포 복원 prop 회수, 2026-07-25).
@@ -654,7 +655,7 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, onEdit, age = 0, 
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: rs(4) }}>
                   <Text style={s.cardTitle}>심박 존</Text>
                   {hrTrack.length >= 2 && (
-                    <Ionicons name={hrCurveOpen ? 'chevron-up' : 'chevron-down'} size={ri(13)} color={T3} />
+                    <Ionicons name={hrCurveOpen ? 'chevron-up' : 'chevron-down'} size={ri(ICON.tag)} color={T3} />
                   )}
                 </View>
                 <Text style={{ color: T2, fontFamily: FONT, fontSize: TYPE.label.fontSize }}>
@@ -810,7 +811,7 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, onEdit, age = 0, 
             accessibilityRole="button"
             accessibilityLabel="GPX 파일로 내보내기, 다른 앱으로 코스 옮기기"
             style={({ pressed }) => [s.gpxRow, pressed && { transform: [{ scale: MOTION.press.scale }], opacity: MOTION.press.opacity }]}>
-            <Ionicons name="download-outline" size={ri(15)} color={T3} />
+            <Ionicons name="download-outline" size={ri(ICON.inline)} color={T3} />
             <Text style={s.gpxTxt}>GPX 파일로 내보내기</Text>
             <Text style={s.gpxHint}>다른 앱으로 코스 옮기기</Text>
           </Pressable>
@@ -1125,7 +1126,7 @@ export default function HistoryScreen({
         {/* 수동 기록 추가 — 앱 없이/기록 못한 러닝을 직접 넣는 진입점(라이브 GPS 외 보조 경로). */}
         {!!onAddRun && (
           <Pressable onPress={() => setForm({ mode: 'add' })} hitSlop={8} accessibilityRole="button" accessibilityLabel="기록 직접 추가" style={s.iconBtn}>
-            <Ionicons name="add" size={ri(24)} color={ACCENT} />
+            <Ionicons name="add" size={ri(ICON.nav)} color={ACCENT} />
           </Pressable>
         )}
       </View>
@@ -1149,13 +1150,13 @@ export default function HistoryScreen({
               style={({ pressed }) => [{ marginTop: rv(4), paddingVertical: rv(14), borderRadius: RADIUS.md, backgroundColor: GLASS.fill, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(6), overflow: 'hidden' }, pressed && { backgroundColor: GLASS.fillActive }]}>
               <GlassEdge glints={false} radius={RADIUS.md} />
               <Text style={{ color: T1, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600' }}>모든 기록 {displayRuns.length}개 보기</Text>
-              <Ionicons name="chevron-down" size={ri(15)} color={T3} />
+              <Ionicons name="chevron-down" size={ri(ICON.inline)} color={T3} />
             </Pressable>
           ) : showAllRuns && displayRuns.length > RECENT_LIMIT ? (
             <Pressable onPress={() => setShowAllRuns(false)} accessibilityRole="button" accessibilityLabel="접기"
               style={{ marginTop: rv(4), paddingVertical: rv(12), flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(6) }}>
               <Text style={{ color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600' }}>접기</Text>
-              <Ionicons name="chevron-up" size={ri(15)} color={T3} />
+              <Ionicons name="chevron-up" size={ri(ICON.inline)} color={T3} />
             </Pressable>
           ) : null
         }
@@ -1173,7 +1174,7 @@ export default function HistoryScreen({
                 <Pressable onPress={openPicker} accessibilityRole="button"
                   style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', gap: rv(4), paddingVertical: rv(4), paddingHorizontal: rs(10) }}>
                   <Text style={{ color: T1, fontFamily: DISPLAY, fontSize: TYPE.heading.fontSize, fontWeight: '700' }}>{periodTitle}</Text>
-                  <Ionicons name="chevron-down" size={ri(14)} color={T3} />
+                  <Ionicons name="chevron-down" size={ri(ICON.tag)} color={T3} />
                 </Pressable>
               ) : (
                 <View style={{ paddingVertical: rv(4), paddingHorizontal: rs(10) }}>
@@ -1241,7 +1242,7 @@ export default function HistoryScreen({
               {!!onAddRun && (
                 <Pressable onPress={() => setForm({ mode: 'add' })} accessibilityRole="button" accessibilityLabel="기록 직접 추가" hitSlop={6}
                   style={({ pressed }) => [{ marginTop: rv(16), alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: rv(4), paddingVertical: rv(8), paddingHorizontal: rs(16), borderRadius: RADIUS.pill, backgroundColor: CARD_HI }, pressed && { transform: [{ scale: MOTION.press.scale }], opacity: MOTION.press.opacity }]}>
-                  <Ionicons name="add" size={ri(16)} color={ACCENT} />
+                  <Ionicons name="add" size={ri(ICON.inline)} color={ACCENT} />
                   <Text style={{ color: T1, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600' }}>기록 추가</Text>
                 </Pressable>
               )}
@@ -1414,5 +1415,5 @@ const s = StyleSheet.create({
   // 메트릭 한 카드(디자인 11) — 2x3 그리드. 칸 레이아웃·값/단위/라벨은 StatGrid
   // 프리미티브가 책임지고(columns=3·align=left), 여기선 카드 내부 여백만 얹는다.
   // marginTop 은 카드 래퍼(View[s.card])로 이동 — StatGrid 는 래퍼 안 내용물이 됐다.
-  statGrid: { paddingVertical: rv(16), paddingHorizontal: GUTTER, rowGap: rv(18) },
+  // (statGrid 삭제 — primitives.StatGrid inset="card" 로 수렴, 2026-07-26)
 });

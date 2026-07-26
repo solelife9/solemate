@@ -13,6 +13,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import {
   BG, CARD_HI, RING_ACCENT, DANGER, T1, T2, T3, FONT, DISPLAY, withAlpha, Shoe, TYPE, GLASS, RADIUS,
   GUTTER, MOTION,
+  ICON,
 } from './theme';
 import { Button, GlassEdge, Input } from './primitives';
 // 러닝화 모델 카탈로그·권장수명은 data/shoeModels(단일 소스)에서 가져온다.
@@ -69,7 +70,7 @@ export default function AddShoeScreen({
       {/* nav */}
       <View style={s.nav}>
         <Pressable onPress={onClose} hitSlop={10} accessibilityRole="button" accessibilityLabel="닫기" style={({ pressed }) => [s.iconBtn, pressed && s.pressed]}>
-          <Ionicons name="close" size={ri(18)} color={T2} />
+          <Ionicons name="close" size={ri(ICON.action)} color={T2} />
         </Pressable>
         <Text style={s.navTitle}>러닝화 등록</Text>
         <View style={{ width: rs(38) }} />
@@ -84,11 +85,11 @@ export default function AddShoeScreen({
         <Text style={s.label}>러닝화</Text>
         <Pressable onPress={() => setPickerOpen(true)} accessibilityRole="button" accessibilityLabel={picked ? `러닝화 ${picked.brand} ${picked.model}, 눌러서 변경` : '러닝화 선택'} testID="add-shoe-select" style={({ pressed }) => [s.selector, pressed && s.pressed]}>
           <GlassEdge glints={false} radius={rs(16)} />
-          <Ionicons name="search" size={ri(18)} color={T3} />
+          <Ionicons name="search" size={ri(ICON.action)} color={T3} />
           <Text style={[s.selectorText, !picked && { color: T3 }]} numberOfLines={1}>
             {picked ? `${picked.brand ? `${picked.brand} · ` : ''}${picked.model}` : '브랜드·모델 선택'}
           </Text>
-          <Ionicons name="chevron-down" size={ri(18)} color={T3} />
+          <Ionicons name="chevron-down" size={ri(ICON.action)} color={T3} />
         </Pressable>
 
         {/* 권장 교체 거리 — 쿠셔닝(성능) 기준 가이드. 자동 입력·수정 가능, 미수정 시 '권장' 배지 */}

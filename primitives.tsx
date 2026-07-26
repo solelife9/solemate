@@ -69,6 +69,7 @@ import {
   LEADING,
   GUTTER,
   SCRIM,
+  ICON,
 } from './theme';
 import {tap as hapticTap} from './lib/haptics';
 import {setToastClearance} from './lib/toast';
@@ -125,7 +126,7 @@ export function Stepper({
     <View style={[{flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: rv(14)}, style]}>
       <Pressable onPress={onMinus} hitSlop={8} accessibilityRole="button"
         accessibilityLabel={minusLabel ?? `${suffix} 줄이기`} style={({pressed}) => btn(pressed)}>
-        <Ionicons name="remove" size={ri(20)} color={T1} />
+        <Ionicons name="remove" size={ri(ICON.action)} color={T1} />
       </Pressable>
       {children ?? (
         <View style={{flex: 1, alignItems: 'center'}} accessible accessibilityLabel={`${value} ${suffix}`}>
@@ -136,7 +137,7 @@ export function Stepper({
       )}
       <Pressable onPress={onPlus} hitSlop={8} accessibilityRole="button"
         accessibilityLabel={plusLabel ?? `${suffix} 늘리기`} style={({pressed}) => btn(pressed)}>
-        <Ionicons name="add" size={ri(20)} color={T1} />
+        <Ionicons name="add" size={ri(ICON.action)} color={T1} />
       </Pressable>
     </View>
   );
@@ -370,7 +371,24 @@ function GlassEdgeBase({
             <Rect key={c.key} {...edge(strokeWidth)} fill="none" stroke={`url(#${gid}-${c.key})`} strokeWidth={strokeWidth} />
           ))}
         </Svg>
-      ) : null}
+      ) : (
+        // 측정 전 폴백(2026-07-26) — SVG 는 실측 폭·높이가 있어야 그릴 수 있는데 onLayout
+        // 은 첫 페인트 '다음' 프레임에 온다. 그동안 여기가 null 이라 카드 테두리가 통째로
+        // 비었다가 한 프레임 뒤에 켜졌다(마운트·화면 전환마다 유리 엣지가 늦게 들어오는 팝).
+        // 같은 색·같은 반경의 균일 헤어라인으로 그 한 프레임을 메운다 — 측정되는 순간
+        // SVG(코너 감쇠 포함)가 자리를 대체하므로 최종 시각은 불변이다.
+        <View
+          style={[
+            StyleSheet.absoluteFill,
+            {
+              borderRadius: radius,
+              borderCurve: 'continuous',
+              borderWidth: strokeWidth,
+              borderColor: withAlpha(T1, Math.min(1, GLASS.edgeBase * intensity)),
+            },
+          ]}
+        />
+      )}
     </View>
   );
 }
@@ -578,7 +596,7 @@ export function Button({
         style,
       ]}>
       {filled ? <GlassEdge glints={false} fade={false} radius={RADIUS.btn} /> : null}
-      {iconNode ?? (icon ? <Ionicons name={icon} size={ri(20)} color={disabled ? T3 : T1} /> : null)}
+      {iconNode ?? (icon ? <Ionicons name={icon} size={ri(ICON.action)} color={disabled ? T3 : T1} /> : null)}
       <Text style={[btn.label, size === 'hero' && btn.labelHero, disabled && btn.labelDim]}>{label}</Text>
     </Pressable>
   );
@@ -909,6 +927,7 @@ export function StatGrid({
   divider = false,
   columns,
   size = 'md',
+  inset = 'none',
   style,
   testID,
 }: {
@@ -918,6 +937,15 @@ export function StatGrid({
   // columns 지정 시 wrap 그리드(각 칸 100/columns% 폭, 예 2×3=3). 미지정이면 flex 균등 줄.
   columns?: number;
   size?: NumericSize;
+  /**
+   * 카드 안쪽 여백 — 소비처가 style 로 각자 패딩을 발명하던 탈출구를 이름 있는 변형으로
+   * 수렴한다(2026-07-26). 네 화면이 16/18/20 + rowGap 을 제각각 쓰고 있었다.
+   *  · none — 여백 없음(부모가 소유). 기본값이라 기존 무패딩 소비처는 불변.
+   *  · card — 카드 안 그리드: 상하좌우 여백 + 행 간격(2행 이상 격자용).
+   *  · band — 카드 안 한 줄 띠: 상하 여백만(좌우는 칸 divider 가 리듬을 잡는다).
+   */
+  inset?: 'none' | 'card' | 'band';
+  /** 바깥 여백·정렬 전용(부모 레이아웃 몫). 안쪽 패딩은 inset 으로 준다. */
   style?: StyleProp<ViewStyle>;
   testID?: string;
 }) {
@@ -925,7 +953,12 @@ export function StatGrid({
   return (
     <View
       testID={testID}
-      style={[wrap ? statS.gridWrap : statS.gridRow, style]}>
+      style={[
+        wrap ? statS.gridWrap : statS.gridRow,
+        inset === 'card' && statS.insetCard,
+        inset === 'band' && statS.insetBand,
+        style,
+      ]}>
       {items.map((it, i) => (
         <Stat
           key={it.testID ?? `${it.label ?? ''}-${i}`}
@@ -947,6 +980,11 @@ export function StatGrid({
 const statS = StyleSheet.create({
   gridRow: {flexDirection: 'row'},
   gridWrap: {flexDirection: 'row', flexWrap: 'wrap'},
+  // 카드 안 그리드 표준 — 좌우 16 은 앱 전역 카드 패딩(padding: rs(16))과 같은 값이라
+  // 그리드가 든 카드와 형제 카드의 안쪽 여백이 맞는다.
+  insetCard: {paddingVertical: rv(16), paddingHorizontal: rs(16), rowGap: rv(18)},
+  // 한 줄 띠 — 좌우 여백 없이 상하만. 칸 사이 divider 가 가로 리듬을 소유한다.
+  insetBand: {paddingVertical: rv(16)},
   cell: {},
   center: {flex: 1, alignItems: 'center'},
   left: {},
@@ -1094,7 +1132,7 @@ export function InjuryBanner({
       ]}>
       <Ionicons
         name={level === 'high' ? 'alert-circle' : 'warning'}
-        size={ri(17)}
+        size={ri(ICON.inline)}
         color={fg}
       />
       <Text style={[injury.text, {color: fg}]}>{message}</Text>
@@ -1437,7 +1475,7 @@ export function TabBar({active, onTab}: {active: number; onTab: (i: number) => v
                 {tab.shoe ? (
                   <ShoeIcon color={color} filled={on} />
                 ) : (
-                  <Ionicons name={on ? tab.icon : `${tab.icon}-outline`} size={ri(22)} color={color} />
+                  <Ionicons name={on ? tab.icon : `${tab.icon}-outline`} size={ri(ICON.nav)} color={color} />
                 )}
               </View>
               {/* 탭 라벨 복원(HIG 권고, 2026-07-25 민우님 확정) — 아이콘 온리에서 전환.
@@ -1613,7 +1651,7 @@ export function ScreenHeader({title, onBack, backLabel = '뒤로', right, testID
           accessibilityRole="button"
           accessibilityLabel={backLabel}
           style={({pressed}) => [hdrS.iconBtn, pressed && {transform: [{scale: MOTION.press.scale}], opacity: MOTION.press.opacity}]}>
-          <Ionicons name="chevron-back" size={ri(20)} color={T1} />
+          <Ionicons name="chevron-back" size={ri(ICON.action)} color={T1} />
         </Pressable>
       ) : <View style={hdrS.spacer} />}
       {title != null ? <Text style={hdrS.title} numberOfLines={1}>{title}</Text> : <View style={{flex: 1}} />}

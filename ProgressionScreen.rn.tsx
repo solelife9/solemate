@@ -43,6 +43,7 @@ import {
   BAR,
   GUTTER,
   MOTION,
+  ICON,
 } from './theme';
 import {StatGrid, SwipeBack, Rise, GlassEdge, ScreenHeader} from './primitives';
 import {buildContext} from './lib/progression/context';
@@ -231,7 +232,7 @@ export default function ProgressionScreen({
               accessibilityLabel="랭킹"
               hitSlop={6}
               style={({pressed}) => [s.iconBtn, pressed && {transform: [{scale: MOTION.press.scale}], opacity: MOTION.press.opacity}]}>
-              <Ionicons name="trophy" size={ri(19)} color={ACCENT} />
+              <Ionicons name="trophy" size={ri(ICON.action)} color={ACCENT} />
             </Pressable>
           ) : undefined}
         />
@@ -243,7 +244,7 @@ export default function ProgressionScreen({
             testID="unlock-banner"
             accessible
             accessibilityLabel={`새로 해제: ${bannerNames}`}>
-            <Ionicons name="sparkles" size={ri(16)} color={ACCENT} />
+            <Ionicons name="sparkles" size={ri(ICON.inline)} color={ACCENT} />
             <Text style={s.bannerTxt} numberOfLines={2}>
               업적 달성 ·{' '}
               <Text style={{color: T1, fontWeight: '700'}}>{bannerNames}</Text>
@@ -322,7 +323,7 @@ export default function ProgressionScreen({
           <GlassEdge glints={false} radius={RADIUS.lg} />
           <StatGrid
           testID="stat-row"
-          style={s.statCardInner}
+          inset="band"
           divider
           // 4칸 보조 스탯 줄 → NUMERIC sm(사이트별 타이포 복원 prop 회수, 2026-07-25).
           size="sm"
@@ -345,7 +346,7 @@ export default function ProgressionScreen({
             return (
               <View key={cat} style={{gap: SPACE.sm}}>
                 <View style={s.catHeader}>
-                  <Ionicons name={meta.icon as any} size={ri(14)} color={T3} />
+                  <Ionicons name={meta.icon as any} size={ri(ICON.tag)} color={T3} />
                   <Text style={s.groupLabel}>{meta.label}</Text>
                   <Text style={s.groupCount}>{done}/{items.length}</Text>
                 </View>
@@ -388,9 +389,9 @@ function AchievementCard({a}: {a: AchievementView}) {
       <View style={s.achTop}>
         <View style={s.achNameRow}>
           {a.unlocked ? (
-            <Ionicons name="checkmark-circle" size={ri(14)} color={aColor} />
+            <Ionicons name="checkmark-circle" size={ri(ICON.tag)} color={aColor} />
           ) : a.signature ? (
-            <Ionicons name="star" size={ri(14)} color={T3} />
+            <Ionicons name="star" size={ri(ICON.tag)} color={T3} />
           ) : null}
           <Text style={[s.achName, a.unlocked && {color: T1}]} numberOfLines={1}>
             {a.name}
@@ -518,9 +519,7 @@ const s = StyleSheet.create({
     borderCurve: 'continuous',
     overflow: 'hidden',
   },
-  statCardInner: {
-    paddingVertical: rv(16),
-  },
+  // (statCardInner 삭제 — primitives.StatGrid inset="band" 로 수렴, 2026-07-26)
   // 카테고리 헤더
   catHeader: {flexDirection: 'row', alignItems: 'center', gap: rv(6)},
   groupLabel: {flex: 1, fontFamily: FONT, color: T2, fontSize: TYPE.label.fontSize, fontWeight: '700'},

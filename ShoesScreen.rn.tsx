@@ -12,6 +12,7 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {
   BG, CARD_HI, GLASS, ACCENT, DANGER, WARN, GOOD, T1, T2, T3, T4, FONT, DISPLAY, withAlpha, RADIUS, GUTTER, MOTION, Shoe, Run, SHOES, TYPE,
   BAR, NUMERIC,
+  ICON,
 } from './theme';
 import { TabBar, TABBAR_CLEARANCE, Pill, InjuryBanner, Button, SwipeBack, AmbientBackdrop, Rise, GlassEdge, WEAR_TONE_COLOR, ScreenHeader, Input } from './primitives';
 import { RunCard, RunDetail } from './HistoryScreen.rn';
@@ -227,8 +228,8 @@ function ShoeDetail({
         style={s.header}
         right={
           <View style={{ flexDirection: 'row', gap: rv(10) }}>
-            <Pressable onPress={() => setEditing((e) => !e)} hitSlop={6} accessibilityRole="button" accessibilityLabel="이름 편집" style={s.iconBtn}><Ionicons name="pencil" size={ri(16)} color={T2} /></Pressable>
-            <Pressable onPress={confirmDelete} hitSlop={6} accessibilityRole="button" accessibilityLabel="신발 삭제" style={s.iconBtn}><Ionicons name="trash-outline" size={ri(16)} color={DANGER} /></Pressable>
+            <Pressable onPress={() => setEditing((e) => !e)} hitSlop={6} accessibilityRole="button" accessibilityLabel="이름 편집" style={s.iconBtn}><Ionicons name="pencil" size={ri(ICON.inline)} color={T2} /></Pressable>
+            <Pressable onPress={confirmDelete} hitSlop={6} accessibilityRole="button" accessibilityLabel="신발 삭제" style={s.iconBtn}><Ionicons name="trash-outline" size={ri(ICON.inline)} color={DANGER} /></Pressable>
           </View>
         }
       />
@@ -285,7 +286,7 @@ function ShoeDetail({
             maxLabel={String(maxDisp)}
             editSlot={onSetMaxKm ? (
               <Pressable onPress={() => setMaxEditOpen((o) => !o)} hitSlop={10} accessibilityRole="button" accessibilityLabel={`신발 수명 편집, 현재 ${maxDisp}${unit}`} style={s.maxEditToggle}>
-                <Ionicons name={maxEditOpen ? 'checkmark' : 'pencil'} size={ri(13)} color={T2} />
+                <Ionicons name={maxEditOpen ? 'checkmark' : 'pencil'} size={ri(ICON.tag)} color={T2} />
               </Pressable>
             ) : undefined}
           />
@@ -295,10 +296,10 @@ function ShoeDetail({
           )}
           {maxEditOpen && onSetMaxKm && (
             <View style={s.maxStepRow}>
-              <Pressable onPress={() => stepMaxKm(-50)} hitSlop={10} accessibilityRole="button" accessibilityLabel="수명 50 줄이기" style={s.maxEditToggle}><Ionicons name="remove" size={ri(16)} color={T1} /></Pressable>
+              <Pressable onPress={() => stepMaxKm(-50)} hitSlop={10} accessibilityRole="button" accessibilityLabel="수명 50 줄이기" style={s.maxEditToggle}><Ionicons name="remove" size={ri(ICON.inline)} color={T1} /></Pressable>
               {/* 편집은 기저 수명(몸무게 반영 전) — 유효값 오염 방지. */}
               <Text style={s.maxStepVal}>수명 {editBaseDisp}<Text style={s.maxStepUnitTxt}> {unit}</Text></Text>
-              <Pressable onPress={() => stepMaxKm(50)} hitSlop={10} accessibilityRole="button" accessibilityLabel="수명 50 늘리기" style={s.maxEditToggle}><Ionicons name="add" size={ri(16)} color={T1} /></Pressable>
+              <Pressable onPress={() => stepMaxKm(50)} hitSlop={10} accessibilityRole="button" accessibilityLabel="수명 50 늘리기" style={s.maxEditToggle}><Ionicons name="add" size={ri(ICON.inline)} color={T1} /></Pressable>
             </View>
           )}
         </View>
@@ -354,9 +355,9 @@ function ShoeDetail({
             accessibilityLabel="이 신발 은퇴시키기"
             testID="retire-open-flow"
             style={({ pressed }) => [s.retireLink, pressed && s.pressed]}>
-            <Ionicons name="ribbon-outline" size={ri(15)} color={T3} />
+            <Ionicons name="ribbon-outline" size={ri(ICON.inline)} color={T3} />
             <Text style={s.retireLinkTxt}>이 신발 은퇴시키기</Text>
-            <Ionicons name="chevron-forward" size={ri(14)} color={T4} />
+            <Ionicons name="chevron-forward" size={ri(ICON.tag)} color={T4} />
           </Pressable>
         )}
 
@@ -439,7 +440,7 @@ function ShoeDetail({
             accessibilityRole="button"
             accessibilityLabel={retired ? '복원' : '보관 처리'}
             style={({ pressed }) => [retired ? s.restoreBtn : s.retireBtn, pressed && s.pressed]}>
-            <Ionicons name={retired ? 'arrow-undo-outline' : 'archive-outline'} size={ri(16)} color={retired ? T2 : DANGER} />
+            <Ionicons name={retired ? 'arrow-undo-outline' : 'archive-outline'} size={ri(ICON.inline)} color={retired ? T2 : DANGER} />
             <Text style={[s.retireBtnText, { color: retired ? T2 : DANGER }]}>{retired ? '복원' : '보관 처리'}</Text>
           </Pressable>
         )}
@@ -502,10 +503,10 @@ function ShoeCard({ shoe, onPress, onPlay, unit, pace: _pace, forecast }: { shoe
           </View>
           {!retired && onPlay ? (
             <Pressable onPress={onPlay} hitSlop={10} accessibilityRole="button" accessibilityLabel={`${shoe.brand} ${shoe.model}로 달리기`} style={({ pressed }) => [s.cardPlay, pressed && s.pressed]} testID={shoe.id ? `shoe-play-${shoe.id}` : undefined}>
-              <Ionicons name="play" size={ri(14)} color={T2} />
+              <Ionicons name="play" size={ri(ICON.tag)} color={T2} />
             </Pressable>
           ) : (
-            <Ionicons name="chevron-forward" size={ri(18)} color={T3} />
+            <Ionicons name="chevron-forward" size={ri(ICON.action)} color={T3} />
           )}
         </View>
       </View>
@@ -532,7 +533,7 @@ function ShoeCard({ shoe, onPress, onPlay, unit, pace: _pace, forecast }: { shoe
       {/* 교체 예측 한 줄(#2) — 실효마모 모델 전면화. ok/overdue 일 때만. */}
       {fcLine && !retired && (
         <View style={s.fcRow} testID={shoe.id ? `shoe-forecast-${shoe.id}` : undefined}>
-          <Ionicons name={fcOverdue ? 'alert-circle' : 'time-outline'} size={ri(13)} color={fcOverdue ? WARN : T3} />
+          <Ionicons name={fcOverdue ? 'alert-circle' : 'time-outline'} size={ri(ICON.tag)} color={fcOverdue ? WARN : T3} />
           <Text style={[s.fcText, fcOverdue && { color: WARN, fontWeight: '600' }]} numberOfLines={1}>{fcLine}</Text>
         </View>
       )}
@@ -674,7 +675,7 @@ export default function ShoesScreen({
         </View>
         <Pressable onPress={onAddShoe} accessibilityRole="button" accessibilityLabel="신발 추가" hitSlop={8} style={({ pressed }) => [s.addPill, pressed && s.pressed]}>
           <Text style={s.addPillText}>신발 추가</Text>
-          <Ionicons name="add" size={ri(15)} color={T1} />
+          <Ionicons name="add" size={ri(ICON.inline)} color={T1} />
         </Pressable>
       </View>
       <Rise style={{ flex: 1 }}>
@@ -682,7 +683,7 @@ export default function ShoesScreen({
         {/* 교체 임박 요약(#2) — 곧 교체할 신발 N켤레. 0이면 숨김. */}
         {soonCount > 0 && (
           <View style={s.soonHeader} testID="shoes-soon-header">
-            <Ionicons name="alert-circle" size={ri(16)} color={WARN} />
+            <Ionicons name="alert-circle" size={ri(ICON.inline)} color={WARN} />
             <Text style={s.soonText}>곧 교체할 신발 <Text style={s.soonStrong}>{soonCount}켤레</Text></Text>
           </View>
         )}
@@ -711,9 +712,9 @@ export default function ShoesScreen({
             accessibilityRole="button"
             accessibilityLabel={`신발 보관함 열기, 보관된 신발 ${archivedCount}켤레`}
             style={({ pressed }) => [s.archiveRow, pressed && s.pressed]}>
-            <Ionicons name="archive-outline" size={ri(16)} color={T3} />
+            <Ionicons name="archive-outline" size={ri(ICON.inline)} color={T3} />
             <Text style={s.archiveRowText}>보관된 신발 <Text style={s.archiveRowStrong}>{archivedCount}켤레</Text></Text>
-            <Ionicons name="chevron-forward" size={ri(15)} color={T3} />
+            <Ionicons name="chevron-forward" size={ri(ICON.inline)} color={T3} />
           </Pressable>
         )}
       </ScrollView>

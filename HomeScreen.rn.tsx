@@ -18,6 +18,7 @@ import {
   BG, CARD_HI, ACCENT, BRAND, GLASS, T1, T2, T3,
   FONT, DISPLAY, SPACE, RADIUS, GUTTER, MOTION, withAlpha, Shoe, SHOES, TYPE,
   NUMERIC,
+  ICON,
 } from './theme';
 import type { RankTier } from './lib/progression/types';
 import { TabBar, TABBAR_CLEARANCE, KeegoWordmark, SectionTitle, AmbientBackdrop, GlassEdge, BottomSheet } from './primitives';
@@ -98,7 +99,7 @@ function TopBar({ onAddShoe }: { onAddShoe?: () => void }) {
       {/* 워드마크 = BRAND 파파야(primitives 기본값 — 2026-07-09 'B 서명+진행' 확정). */}
       {/* 워드마크(Helvetica)와 신발추가 버튼(Pretendard)의 폰트 메트릭 차이로 중심이 어긋나던 것 보정:
           lineHeight=fontSize 로 디센더 예약 제거 + 미세 translateY(기기 확정 필요). */}
-      <KeegoWordmark size={ri(24)} style={{ lineHeight: ri(24), transform: [{ translateY: ri(1) }] }} />
+      <KeegoWordmark size={ri(ICON.nav)} style={{ lineHeight: ri(24), transform: [{ translateY: ri(1) }] }} />
       <Pressable
         onPress={onAddShoe}
         accessibilityRole="button"
@@ -106,7 +107,7 @@ function TopBar({ onAddShoe }: { onAddShoe?: () => void }) {
         hitSlop={8}
         style={({ pressed }) => [s.addBtn, pressed && s.pressed]}>
         <Text style={s.addBtnText}>신발 추가</Text>
-        <Ionicons name="add" size={ri(15)} color={T1} />
+        <Ionicons name="add" size={ri(ICON.inline)} color={T1} />
       </Pressable>
     </View>
   );
@@ -294,7 +295,7 @@ function WeekCard({ week, unit = 'km', weeklyGoalKm = 0, weekDays = [], weekToda
           <View style={[s.loadRow, { marginTop: rv(6) }]}>
             <View style={[s.loadDot, { backgroundColor: loadColor }]} />
             <Text style={s.loadWord} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{loadWord}</Text>
-            {hasLoad && <Ionicons name={loadOpen ? 'chevron-up' : 'chevron-down'} size={ri(12)} color={T3} />}
+            {hasLoad && <Ionicons name={loadOpen ? 'chevron-up' : 'chevron-down'} size={ri(ICON.tag)} color={T3} />}
           </View>
         </Pressable>
       </View>
@@ -466,7 +467,7 @@ export default function HomeScreen({
         {/* 장착 타이틀 — 인사(닉네임) 옆/아래 한 줄. 진척 띠 색과 분리해 절제(T2 회색). */}
         {progression?.equippedTitle ? (
           <View testID="home-equipped-title" style={s.equipPill}>
-            <Ionicons name="bookmark" size={ri(11)} color={ACCENT} />
+            <Ionicons name="bookmark" size={ri(ICON.tag)} color={ACCENT} />
             <Text style={s.equipPillTxt} numberOfLines={1}>{progression.equippedTitle}</Text>
           </View>
         ) : null}

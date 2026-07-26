@@ -60,6 +60,7 @@ import {
   DISPLAY,
   withAlpha, TYPE, GLASS,
   GUTTER, RADIUS, MOTION,
+  ICON,
 } from './theme';
 import {Button, KeegoWordmark, GlassEdge, useReduceMotion} from './primitives';
 // 러닝화 선택 모달(2열 분할 피커)은 메인 등록(AddShoeScreen)과 공유하는 단일 소스.
@@ -341,7 +342,7 @@ function Welcome({goNext, goLogin, insetTop, insetBottom}: {goNext: () => void; 
       </ImageBackground>
 
       {/* 워드마크 — 홈과 동일한 공용 소문자 'keego'(KeegoWordmark). */}
-      <KeegoWordmark size={ri(26)} style={{position: 'absolute', left: GUTTER, top: insetTop + 18}} />
+      <KeegoWordmark size={ri(ICON.feature)} style={{position: 'absolute', left: GUTTER, top: insetTop + 18}} />
 
       {/* 하단 콘텐츠 — staggered 진입 */}
       <View style={{flex: 1, justifyContent: 'flex-end', paddingHorizontal: GUTTER, paddingBottom: Math.max(insetBottom, 24) + 8}}>
@@ -500,7 +501,7 @@ function FeatureListCard({items, delay = 130}: {items: FeatureRow[]; delay?: num
       {items.map((f, i) => (
         <View key={f.title} style={[s.featRow, i > 0 && s.featRowDivider]} accessible accessibilityLabel={`${f.title}: ${f.desc}`}>
           <View style={[s.featIc, {backgroundColor: withAlpha(f.color, 0.14)}]}>
-            <f.Icon size={ri(18)} color={f.color} />
+            <f.Icon size={ri(ICON.action)} color={f.color} />
           </View>
           <View style={{flex: 1, minWidth: 0}}>
             <Text style={{fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600', color: T1, letterSpacing: -0.2}}>{f.title}</Text>

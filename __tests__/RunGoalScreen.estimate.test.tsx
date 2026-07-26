@@ -54,3 +54,23 @@ test('시간 모드도 개인 프로필: 30분 기본 → 예상 거리 5.0km·3
   expect(txt).toContain('예상 거리 약 5.0km');
   expect(txt).toContain('약 350 kcal');
 });
+
+// ── 스피드 탭 기본 평균 페이스 개인화(2026-07-26) ───────────────────────────────
+// 거리·시간 탭만 개인화돼 있고 스피드 탭은 6'00" 고정이라, 러너마다 첫 화면부터 손봐야
+// 했다. 이력이 있으면 그 페이스로 시작하고, 없으면 종전 기본값을 유지한다(신규 사용자의
+// 기본이 조용히 빨라지지 않게 — goalEstimate 폴백 5'00" 을 쓰지 않는다).
+test('스피드 탭: runs 미전달이면 기본 평균 페이스 6:00 유지', () => {
+  const root = render(<RunGoalScreen />);
+  act(() => tab(root, '스피드 목표').props.onPress());
+  expect(textAll(root)).toContain("6'00\"");
+});
+
+test('스피드 탭: runs 전달이면 최근 이력 페이스로 시작한다', () => {
+  // 최근 이력 = 10km/50분 → 300s/km = 5'00"/km. 기본값(6'00")이 아니어야 한다.
+  const fast: EstimateRunLike[] = [{km: 10, duration: 3000, run_date: '2026-07-20'}];
+  const root = render(<RunGoalScreen runs={fast} />);
+  act(() => tab(root, '스피드 목표').props.onPress());
+  const txt = textAll(root);
+  expect(txt).toContain("5'00\"");
+  expect(txt).not.toContain("6'00\"");
+});

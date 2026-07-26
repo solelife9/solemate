@@ -23,7 +23,7 @@ import Svg, {
   LinearGradient as SvgLinear,
 } from 'react-native-svg';
 import {
-  BG, T1, T2, T3, WARN, DANGER, FONT, DISPLAY, TYPE, RADIUS, GUTTER, GLASS, MOTION, SHADOW, withAlpha,
+  BG, T1, T2, T3, WARN, DANGER, FONT, DISPLAY, TYPE, RADIUS, GUTTER, GLASS, MOTION, SHADOW, ICON, withAlpha,
   type Shoe,
 } from '../theme';
 import {GlassEdge, ShoeGlyph} from '../primitives';
@@ -86,7 +86,7 @@ export default function KeegoHome({shoes, runs = [], onStartRun, onOpenShoe, onO
           <Text style={styles.wordmark}>Keego</Text>
         </View>
         <Pressable style={styles.avatar} onPress={onOpenProfile} hitSlop={8}>
-          <Ionicons name="person" size={ri(16)} color={withAlpha(T1, 0.9)} />
+          <Ionicons name="person" size={ri(ICON.inline)} color={withAlpha(T1, 0.9)} />
         </Pressable>
       </View>
 
@@ -289,7 +289,7 @@ export function ShoeCard({
             accessibilityRole="button" accessibilityLabel="러닝 시작"
           >
             <GlassEdge glints={false} fade={false} id={`edge-run-${i}`} radius={RADIUS.btn} />
-            <Ionicons name="play" size={ri(15)} color={T1} style={{marginRight: rs(6)}} />
+            <Ionicons name="play" size={ri(ICON.inline)} color={T1} style={{marginRight: rs(6)}} />
             <Text style={styles.runLabel}>러닝 시작</Text>
           </Pressable>
         </View>
@@ -322,7 +322,7 @@ export function GhostShoeCard({width, onPress}: {width: number; onPress?: () => 
                 />
               </Svg>
               <View style={styles.ringCenter}>
-                <ShoeGlyph size={ri(46)} />
+                <ShoeGlyph size={ri(ICON.hero)} />
               </View>
             </View>
             <Text style={styles.ghostHint}>등록하면 이 링이 신발 수명을 지켜봐요</Text>

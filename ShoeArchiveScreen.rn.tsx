@@ -12,7 +12,7 @@ import {View, ScrollView, Pressable, StyleSheet} from 'react-native';
 import {Text} from './lib/text';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import {BG, GLASS, ACCENT, T1, T2, T3, SEP, FONT, DISPLAY, RADIUS, withAlpha, Shoe, TYPE, GUTTER, MOTION} from './theme';
+import {BG, GLASS, ACCENT, T1, T2, T3, SEP, FONT, DISPLAY, RADIUS, withAlpha, Shoe, TYPE, GUTTER, MOTION, ICON} from './theme';
 import {SwipeBack, ScreenHeader, EmptyGhostHeader, GhostStrong, GhostBar, GhostThumb, GhostPill, ShoeGlyph, GlassEdge} from './primitives';
 import {Unit} from './lib/units';
 
@@ -53,7 +53,7 @@ export default function ShoeArchiveScreen({
                 화면 세로를 채운다(기기 피드백: 두 장으론 하단이 빈다). */}
             <View style={s.card}>
               <GlassEdge glints={false} radius={RADIUS.lg} />
-              <GhostThumb><ShoeGlyph size={ri(24)} color={withAlpha(T1, 0.35)} /></GhostThumb>
+              <GhostThumb><ShoeGlyph size={ri(ICON.nav)} color={withAlpha(T1, 0.35)} /></GhostThumb>
               <View style={{flex: 1, minWidth: 0}}>
                 <GhostBar w="38%" />
                 <GhostBar w="62%" dim />
@@ -95,7 +95,7 @@ export default function ShoeArchiveScreen({
                 hitSlop={6}
                 testID={`archive-restore-${sh.id}`}
                 style={({pressed}) => [s.restoreBtn, pressed && s.pressed]}>
-                <Ionicons name="arrow-undo-outline" size={ri(15)} color={ACCENT} />
+                <Ionicons name="arrow-undo-outline" size={ri(ICON.inline)} color={ACCENT} />
                 <Text style={s.restoreText}>복원</Text>
               </Pressable>
             </View>

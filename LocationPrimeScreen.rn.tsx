@@ -12,14 +12,14 @@ import {View, Pressable, StyleSheet} from 'react-native';
 import {Text} from './lib/text';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import {BG, ACCENT, GOOD, T1, T2, T3, FONT, RADIUS, SEP, GLASS, GUTTER, withAlpha, TYPE} from './theme';
+import {BG, ACCENT, GOOD, T1, T2, T3, FONT, RADIUS, SEP, GLASS, GUTTER, withAlpha, TYPE, ICON} from './theme';
 import {Button, GlassEdge} from './primitives';
 
 function Row({icon, color, title, body}: {icon: string; color: string; title: string; body: string}) {
   return (
     <View style={s.row}>
       <View style={[s.rowIcon, {backgroundColor: withAlpha(color, 0.14)}]}>
-        <Ionicons name={icon} size={ri(18)} color={color} />
+        <Ionicons name={icon} size={ri(ICON.action)} color={color} />
       </View>
       <View style={{flex: 1}}>
         <Text style={s.rowTitle}>{title}</Text>

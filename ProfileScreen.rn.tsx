@@ -15,7 +15,7 @@ import { showDialog } from './lib/dialog';
 import {Text} from './lib/text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { BG, CARD, CARD_HI, ACCENT, GOOD, DANGER, WARN, T1, T2, T3, SEP, CARD_BORDER, FONT, DISPLAY, withAlpha, TIER_COLORS, TIER_LABEL, KAKAO_YELLOW, KAKAO_LABEL, NAVER_GREEN, NAVER_LABEL, RADIUS, GUTTER, MOTION, HALL_GOLD, TYPE, GLASS } from './theme';
+import { BG, CARD, CARD_HI, ACCENT, GOOD, DANGER, WARN, T1, T2, T3, SEP, CARD_BORDER, FONT, DISPLAY, withAlpha, TIER_COLORS, TIER_LABEL, KAKAO_YELLOW, KAKAO_LABEL, NAVER_GREEN, NAVER_LABEL, RADIUS, GUTTER, MOTION, HALL_GOLD, TYPE, GLASS, ICON} from './theme';
 // recap 토글 = SegmentedControl(sm), 스탯 그리드들 = StatGrid 단일 프리미티브.
 import { TabBar, TABBAR_CLEARANCE, Button, SegmentedControl, StatGrid, Stepper, AmbientBackdrop, Rise, GlassEdge, Toggle, KakaoMark, NaverMark, Input } from './primitives';
 import { Unit, unitKorean, displayNum } from './lib/units';
@@ -580,9 +580,9 @@ export default function ProfileScreen({
         accessibilityRole="button"
         accessibilityLabel="문의하기"
         style={({ pressed }) => [s.settingRow, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.07) }, pressed && { backgroundColor: CARD_HI }]}>
-        <View style={s.settingIcon}><Ionicons name="mail-outline" size={ri(16)} color={T2} /></View>
+        <View style={s.settingIcon}><Ionicons name="mail-outline" size={ri(ICON.inline)} color={T2} /></View>
         <Text style={s.settingLabel}>문의하기</Text>
-        <Ionicons name="chevron-forward" size={ri(15)} color={T3} />
+        <Ionicons name="chevron-forward" size={ri(ICON.inline)} color={T3} />
       </Pressable>
       <Pressable
         testID="legal-privacy"
@@ -590,9 +590,9 @@ export default function ProfileScreen({
         accessibilityRole="link"
         accessibilityLabel="개인정보 처리방침 열기"
         style={({ pressed }) => [s.settingRow, pressed && { backgroundColor: CARD_HI }]}>
-        <View style={s.settingIcon}><Ionicons name="shield-checkmark-outline" size={ri(16)} color={T2} /></View>
+        <View style={s.settingIcon}><Ionicons name="shield-checkmark-outline" size={ri(ICON.inline)} color={T2} /></View>
         <Text style={s.settingLabel}>개인정보 처리방침</Text>
-        <Ionicons name="open-outline" size={ri(15)} color={T3} />
+        <Ionicons name="open-outline" size={ri(ICON.inline)} color={T3} />
       </Pressable>
       <Pressable
         testID="legal-terms"
@@ -600,9 +600,9 @@ export default function ProfileScreen({
         accessibilityRole="link"
         accessibilityLabel="이용약관 열기"
         style={({ pressed }) => [s.settingRow, pressed && { backgroundColor: CARD_HI }]}>
-        <View style={s.settingIcon}><Ionicons name="document-text-outline" size={ri(16)} color={T2} /></View>
+        <View style={s.settingIcon}><Ionicons name="document-text-outline" size={ri(ICON.inline)} color={T2} /></View>
         <Text style={s.settingLabel}>이용약관</Text>
-        <Ionicons name="open-outline" size={ri(15)} color={T3} />
+        <Ionicons name="open-outline" size={ri(ICON.inline)} color={T3} />
       </Pressable>
     </>
   );
@@ -614,7 +614,7 @@ export default function ProfileScreen({
         {/* header — 마이(프로필+기록) ↔ 설정 뷰 전환 */}
         {showSettings ? (
           <View style={s.headerRow}>
-            <Pressable onPress={() => setShowSettings(false)} accessibilityRole="button" accessibilityLabel="뒤로" hitSlop={8} style={({ pressed }) => [s.iconBtn, pressed && { backgroundColor: CARD }]}><Ionicons name="chevron-back" size={ri(20)} color={T2} /></Pressable>
+            <Pressable onPress={() => setShowSettings(false)} accessibilityRole="button" accessibilityLabel="뒤로" hitSlop={8} style={({ pressed }) => [s.iconBtn, pressed && { backgroundColor: CARD }]}><Ionicons name="chevron-back" size={ri(ICON.action)} color={T2} /></Pressable>
             <Text style={s.title}>설정</Text>
             <View style={{ width: rs(38) }} />
           </View>
@@ -622,8 +622,8 @@ export default function ProfileScreen({
           <View style={s.headerRow}>
             <Text style={s.title}>마이</Text>
             <View style={{ flexDirection: 'row', gap: rv(8) }}>
-              <Pressable onPress={() => { Share.share({ message: 'Keego에서 내 러닝화 수명을 관리하고 있어요 🏃' }).catch(() => {}); }} accessibilityRole="button" accessibilityLabel="기록 공유" hitSlop={8} style={({ pressed }) => [s.iconBtn, pressed && { backgroundColor: CARD }]}><Ionicons name="share-outline" size={ri(18)} color={T2} /></Pressable>
-            <Pressable onPress={() => setShowSettings(true)} accessibilityRole="button" accessibilityLabel="설정 열기" hitSlop={8} style={({ pressed }) => [s.iconBtn, pressed && { backgroundColor: CARD }]}><Ionicons name="settings-outline" size={ri(19)} color={T2} /></Pressable>
+              <Pressable onPress={() => { Share.share({ message: 'Keego에서 내 러닝화 수명을 관리하고 있어요 🏃' }).catch(() => {}); }} accessibilityRole="button" accessibilityLabel="기록 공유" hitSlop={8} style={({ pressed }) => [s.iconBtn, pressed && { backgroundColor: CARD }]}><Ionicons name="share-outline" size={ri(ICON.action)} color={T2} /></Pressable>
+            <Pressable onPress={() => setShowSettings(true)} accessibilityRole="button" accessibilityLabel="설정 열기" hitSlop={8} style={({ pressed }) => [s.iconBtn, pressed && { backgroundColor: CARD }]}><Ionicons name="settings-outline" size={ri(ICON.action)} color={T2} /></Pressable>
             </View>
           </View>
         )}
@@ -639,7 +639,7 @@ export default function ProfileScreen({
                 <Ionicons name="person" size={ri(30)} color={T3} />
               )}
             </View>
-            <View style={s.avatarEdit}><Ionicons name="camera" size={ri(11)} color={BG} /></View>
+            <View style={s.avatarEdit}><Ionicons name="camera" size={ri(ICON.tag)} color={BG} /></View>
           </Pressable>
           <View style={{ flex: 1, minWidth: 0 }}>
             {editingName ? (
@@ -658,7 +658,7 @@ export default function ProfileScreen({
                   accessibilityLabel="이름 입력"
                 />
                 <Pressable onPress={saveName} accessibilityRole="button" accessibilityLabel="이름 저장" hitSlop={8} style={s.nameSaveBtn}>
-                  <Ionicons name="checkmark" size={ri(18)} color={T1} />
+                  <Ionicons name="checkmark" size={ri(ICON.action)} color={T1} />
                 </Pressable>
               </View>
             ) : (
@@ -668,7 +668,7 @@ export default function ProfileScreen({
                 </Text>
                 <Pressable onPress={startEditName} accessibilityRole="button" accessibilityLabel="이름 편집" style={s.nameRow} testID="profile-name">
                   <Text style={s.name} numberOfLines={1}>{profile.name}</Text>
-                  <Ionicons name="pencil" size={ri(13)} color={T3} />
+                  <Ionicons name="pencil" size={ri(ICON.tag)} color={T3} />
                 </Pressable>
               </>
             )}
@@ -697,7 +697,7 @@ export default function ProfileScreen({
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: rv(16) }}>
               <Text style={[s.cardTitle, { marginBottom: rv(0) }]}>러너 스펙</Text>
               <Pressable onPress={onShareSpec} testID="spec-share" accessibilityRole="button" accessibilityLabel="러너 스펙 공유" hitSlop={8} style={({ pressed }) => [{ flexDirection: 'row', alignItems: 'center', gap: rv(4) }, pressed && { transform: [{ scale: MOTION.press.scale }], opacity: MOTION.press.opacity }]}>
-                <Ionicons name="share-outline" size={ri(16)} color={ACCENT} />
+                <Ionicons name="share-outline" size={ri(ICON.inline)} color={ACCENT} />
                 <Text style={{ color: ACCENT, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '700' }}>공유</Text>
               </Pressable>
             </View>
@@ -712,7 +712,7 @@ export default function ProfileScreen({
                   <View key={d.key} style={[s.pbTile, earned ? s.pbTileOn : s.pbTileOff]} testID={`pb-${d.key}`}
                     accessible accessibilityLabel={`${d.label} ${earned ? `최고 기록 ${fmtTime(Math.round(sec))}` : '아직 기록 없음'}`}>
                     <View style={s.pbHead}>
-                      <Ionicons name={earned ? 'medal' : 'lock-closed'} size={ri(14)} color={earned ? HALL_GOLD : T3} />
+                      <Ionicons name={earned ? 'medal' : 'lock-closed'} size={ri(ICON.tag)} color={earned ? HALL_GOLD : T3} />
                       <Text style={[s.pbLabel, { color: earned ? T1 : T3 }]}>{d.label}</Text>
                     </View>
                     <Text style={[s.pbVal, earned ? s.pbValOn : s.pbValOff]}>
@@ -745,7 +745,7 @@ export default function ProfileScreen({
             {/* 심폐 체력(VO₂max) — 낯설고 앱마다 값이 다른 지표라 보조로 강등(푸터 한 줄, 사용자 지시). */}
             {vo2.vo2max > 0 && (
               <View style={s.specVo2Foot} accessible accessibilityLabel={`심폐 체력 ${vo2.vo2max.toFixed(1)} VO2max, ${vo2.vo2maxLabel}`}>
-                <Ionicons name="pulse-outline" size={ri(14)} color={T3} />
+                <Ionicons name="pulse-outline" size={ri(ICON.tag)} color={T3} />
                 <Text style={s.specVo2FootText}>심폐 체력 <Text style={s.specVo2FootStrong}>{vo2.vo2max.toFixed(1)} VO₂max</Text> · {vo2.vo2maxLabel}</Text>
               </View>
             )}
@@ -793,12 +793,12 @@ export default function ProfileScreen({
                   accessibilityRole="button"
                   accessibilityLabel={e.a11y}
                   style={({ pressed }) => [s.progressRow, i > 0 && s.progressRowDiv, pressed && { backgroundColor: CARD_HI }]}>
-                  <View style={s.progressIcon}><Ionicons name={e.icon} size={ri(19)} color={T2} /></View>
+                  <View style={s.progressIcon}><Ionicons name={e.icon} size={ri(ICON.action)} color={T2} /></View>
                   <View style={{ flex: 1, minWidth: 0 }}>
                     <Text style={s.progressTitle}>{e.title}</Text>
                     <Text style={s.progressSub}>{e.sub}</Text>
                   </View>
-                  <Ionicons name="chevron-forward" size={ri(18)} color={T3} />
+                  <Ionicons name="chevron-forward" size={ri(ICON.action)} color={T3} />
                 </Pressable>
               ))}
             </View>
@@ -827,7 +827,7 @@ export default function ProfileScreen({
                 accessibilityRole="button"
                 accessibilityLabel="리캡 카드 공유"
                 style={({ pressed }) => [s.recapShareBtn, pressed && { backgroundColor: CARD_HI }]}>
-                <Ionicons name="share-outline" size={ri(16)} color={ACCENT} />
+                <Ionicons name="share-outline" size={ri(ICON.inline)} color={ACCENT} />
                 <Text style={s.recapShareTxt}>공유</Text>
               </Pressable>
             </View>
@@ -835,7 +835,7 @@ export default function ProfileScreen({
             {recap.isEmpty ? (
               // 빈 데이터 graceful — keep-going 보이스(A8-5). 수치 대신 응원 한 줄.
               <View style={s.recapEmpty} testID="recap-empty">
-                <Ionicons name="footsteps-outline" size={ri(26)} color={ACCENT} style={{ marginBottom: rv(8) }} />
+                <Ionicons name="footsteps-outline" size={ri(ICON.feature)} color={ACCENT} style={{ marginBottom: rv(8) }} />
                 <Text style={s.recapEmptyTxt}>
                   이번 달은 아직 기록이 없어요.{'\n'}가볍게 한 걸음부터 — Keep Going
                 </Text>
@@ -857,7 +857,7 @@ export default function ProfileScreen({
                 {/* 최다 착용 신발 */}
                 {recap.mostWornShoe && (
                   <View style={s.recapMostWorn} testID="recap-most-worn">
-                    <Ionicons name="footsteps" size={ri(15)} color={ACCENT} />
+                    <Ionicons name="footsteps" size={ri(ICON.inline)} color={ACCENT} />
                     <Text style={s.recapMostWornTxt} numberOfLines={1}>
                       최다 착용 · <Text style={{ color: T1, fontWeight: '700' }}>{recap.mostWornShoe.name}</Text>
                       <Text style={{ color: T3 }}>{`  ${recap.mostWornShoe.km}km`}</Text>
@@ -896,10 +896,10 @@ export default function ProfileScreen({
                 교체 임박 토글이 인앱 배지(alerts.enabled)와 푸시를 함께 다루고, 임계
                 스텝퍼는 그 아래에 산다. */}
             <Pressable onPress={() => toggleOpen('notif')} accessibilityRole="button" accessibilityLabel={`알림, ${notifOnCount}개 켜짐`} accessibilityState={{ expanded: open === 'notif' }} style={({ pressed }) => [s.settingRow, s.settingBorder, pressed && { backgroundColor: CARD_HI }]} testID="notif-row">
-              <View style={s.settingIcon}><Ionicons name="notifications-outline" size={ri(17)} color={ACCENT} /></View>
+              <View style={s.settingIcon}><Ionicons name="notifications-outline" size={ri(ICON.inline)} color={ACCENT} /></View>
               <Text style={s.settingLabel}>알림</Text>
               <Text style={s.settingDetail} testID="notif-detail">{notifOnCount > 0 ? `${notifOnCount}개 켜짐` : '꺼짐'}</Text>
-              <Ionicons name={open === 'notif' ? 'chevron-up' : 'chevron-forward'} size={ri(16)} color={T3} />
+              <Ionicons name={open === 'notif' ? 'chevron-up' : 'chevron-forward'} size={ri(ICON.inline)} color={T3} />
             </Pressable>
             {open === 'notif' && (
               <View style={[s.panel, s.settingBorder]} testID="notif-panel">
@@ -945,10 +945,10 @@ export default function ProfileScreen({
 
             {/* 음성 코칭(탑티어 패리티 #14) — 주기·항목·페이스 기준·볼륨. 다음 러닝부터 적용. */}
             <Pressable onPress={() => toggleOpen('voice')} accessibilityRole="button" accessibilityLabel={`음성 코칭, ${voice.enabled ? '켜짐' : '꺼짐'}`} accessibilityState={{ expanded: open === 'voice' }} style={({ pressed }) => [s.settingRow, s.settingBorder, pressed && { backgroundColor: CARD_HI }]} testID="voice-row">
-              <View style={s.settingIcon}><Ionicons name="volume-medium-outline" size={ri(17)} color={ACCENT} /></View>
+              <View style={s.settingIcon}><Ionicons name="volume-medium-outline" size={ri(ICON.inline)} color={ACCENT} /></View>
               <Text style={s.settingLabel}>음성 코칭</Text>
               <Text style={s.settingDetail} testID="voice-detail">{!voice.enabled ? '꺼짐' : voice.intervalKm === 0 ? '거리 안내 끔' : `${voice.intervalKm}km 마다`}</Text>
-              <Ionicons name={open === 'voice' ? 'chevron-up' : 'chevron-forward'} size={ri(16)} color={T3} />
+              <Ionicons name={open === 'voice' ? 'chevron-up' : 'chevron-forward'} size={ri(ICON.inline)} color={T3} />
             </Pressable>
             {open === 'voice' && (
               <View style={[s.panel, s.settingBorder]} testID="voice-panel">
@@ -994,46 +994,46 @@ export default function ProfileScreen({
             {/* 자동 일시정지(#16, 가민/NRC 패리티) — 즉시 토글. 신호대기 자동 멈춤을 끄면
                 트레드밀/언덕 반복에서 오작동이 없다. 다음 러닝부터 적용. */}
             <Pressable onPress={toggleAutoPause} accessibilityRole="button" accessibilityLabel={`자동 일시정지, 현재 ${autoPauseOn ? '켜짐' : '꺼짐'}. 눌러서 전환`} style={({ pressed }) => [s.settingRow, s.settingBorder, pressed && { backgroundColor: CARD_HI }]} testID="autopause-row">
-              <View style={s.settingIcon}><Ionicons name="pause-circle-outline" size={ri(17)} color={ACCENT} /></View>
+              <View style={s.settingIcon}><Ionicons name="pause-circle-outline" size={ri(ICON.inline)} color={ACCENT} /></View>
               <Text style={s.settingLabel}>자동 일시정지</Text>
               <Text style={[s.settingDetail, autoPauseOn && { color: GOOD }]} testID="autopause-detail">{autoPauseOn ? '켜짐' : '꺼짐'}</Text>
-              <Ionicons name="swap-horizontal" size={ri(16)} color={T3} />
+              <Ionicons name="swap-horizontal" size={ri(ICON.inline)} color={T3} />
             </Pressable>
 
             {/* 햅틱(진동) — 즉시 토글. 화면 전환·버튼·존 이탈·워치 랩 진동을 한 번에 끈다.
                 진동이 거슬리는 사용자를 위한 단일 스위치(사용자 요청 2026-07-13). */}
             <Pressable onPress={toggleHaptics} accessibilityRole="button" accessibilityLabel={`햅틱 진동, 현재 ${hapticsOn ? '켜짐' : '꺼짐'}. 눌러서 전환`} style={({ pressed }) => [s.settingRow, s.settingBorder, pressed && { backgroundColor: CARD_HI }]} testID="haptics-row">
-              <View style={s.settingIcon}><Ionicons name="phone-portrait-outline" size={ri(17)} color={ACCENT} /></View>
+              <View style={s.settingIcon}><Ionicons name="phone-portrait-outline" size={ri(ICON.inline)} color={ACCENT} /></View>
               <Text style={s.settingLabel}>햅틱(진동)</Text>
               <Text style={[s.settingDetail, hapticsOn && { color: GOOD }]} testID="haptics-detail">{hapticsOn ? '켜짐' : '꺼짐'}</Text>
-              <Ionicons name="swap-horizontal" size={ri(16)} color={T3} />
+              <Ionicons name="swap-horizontal" size={ri(ICON.inline)} color={T3} />
             </Pressable>
 
             {/* Apple 건강(HealthKit) — 설정 안에 compact 행으로. 기기 지원 시만. */}
             {hkAvailable() && (
               <Pressable onPress={linkHealth} testID="link-health" accessibilityRole="button" accessibilityLabel="Apple 건강 연동" accessibilityState={{ disabled: hkOn }} style={({ pressed }) => [s.settingRow, s.settingBorder, pressed && !hkOn && { backgroundColor: CARD_HI }]}>
-                <View style={s.settingIcon}><Ionicons name="heart-outline" size={ri(17)} color={ACCENT} /></View>
+                <View style={s.settingIcon}><Ionicons name="heart-outline" size={ri(ICON.inline)} color={ACCENT} /></View>
                 <Text style={s.settingLabel}>Apple 건강</Text>
                 <Text style={[s.settingDetail, hkOn && { color: GOOD }]}>{hkOn ? '연동됨' : '연동'}</Text>
-                <Ionicons name={hkOn ? 'checkmark' : 'chevron-forward'} size={ri(16)} color={T3} />
+                <Ionicons name={hkOn ? 'checkmark' : 'chevron-forward'} size={ri(ICON.inline)} color={T3} />
               </Pressable>
             )}
 
             {/* 3) 단위 — 즉시 토글(전 화면 환산 반영) */}
             <Pressable onPress={() => onChangeUnit?.(unit === 'km' ? 'mi' : 'km')} accessibilityRole="button" accessibilityLabel={`단위, 현재 ${unitKorean(unit)}. 눌러서 전환`} style={({ pressed }) => [s.settingRow, s.settingBorder, pressed && { backgroundColor: CARD_HI }]}>
-              <View style={s.settingIcon}><Ionicons name="speedometer-outline" size={ri(17)} color={ACCENT} /></View>
+              <View style={s.settingIcon}><Ionicons name="speedometer-outline" size={ri(ICON.inline)} color={ACCENT} /></View>
               <Text style={s.settingLabel}>단위</Text>
               <Text style={s.settingDetail}>{unitKorean(unit)}</Text>
-              <Ionicons name="swap-horizontal" size={ri(16)} color={T3} />
+              <Ionicons name="swap-horizontal" size={ri(ICON.inline)} color={T3} />
             </Pressable>
 
             {/* 신체 정보 — 체중(칼로리)·나이/성별(심박존)·안정심박을 한 행으로 병합
                 (심사 #21, 2026-07-22 — 두 아코디언이 모두 '내 몸' 입력이라 Hick 축소). */}
             <Pressable onPress={() => toggleOpen('body')} accessibilityRole="button" accessibilityLabel="신체 정보 설정" accessibilityState={{ expanded: open === 'body' }} style={({ pressed }) => [s.settingRow, pressed && { backgroundColor: CARD_HI }]}>
-              <View style={s.settingIcon}><Ionicons name="body-outline" size={ri(17)} color={ACCENT} /></View>
+              <View style={s.settingIcon}><Ionicons name="body-outline" size={ri(ICON.inline)} color={ACCENT} /></View>
               <Text style={s.settingLabel}>신체 정보</Text>
               <Text style={s.settingDetail}>{`${weightKg}kg${age > 0 ? ` · ${age}세` : ''}`}</Text>
-              <Ionicons name={open === 'body' ? 'chevron-up' : 'chevron-forward'} size={ri(16)} color={T3} />
+              <Ionicons name={open === 'body' ? 'chevron-up' : 'chevron-forward'} size={ri(ICON.inline)} color={T3} />
             </Pressable>
             {open === 'body' && (
               <View style={[s.panel, s.settingBorder]}>
@@ -1090,7 +1090,7 @@ export default function ProfileScreen({
                   accessibilityState={{ expanded: acctOpen }}
                   style={({ pressed }) => [s.settingRow, s.settingBorder, pressed && { backgroundColor: CARD_HI }]}
                   testID="cloud-account">
-                  <View style={s.settingIcon}><Ionicons name="person-circle-outline" size={ri(17)} color={ACCENT} /></View>
+                  <View style={s.settingIcon}><Ionicons name="person-circle-outline" size={ri(ICON.inline)} color={ACCENT} /></View>
                   <View style={{ flex: 1, minWidth: 0 }}>
                     {/* 어떤 provider 로 로그인했는지 표시(2026-07-05) — '카카오 계정' + 이메일. */}
                     <Text style={s.settingLabel} numberOfLines={1} testID="cloud-provider">
@@ -1102,10 +1102,10 @@ export default function ProfileScreen({
                   </View>
                   <Ionicons
                     name={syncing ? 'sync-outline' : syncFailed ? 'cloud-offline-outline' : 'cloud-done-outline'}
-                    size={ri(17)}
+                    size={ri(ICON.inline)}
                     color={syncFailed ? DANGER : GOOD}
                   />
-                  <Ionicons name={acctOpen ? 'chevron-up' : 'chevron-down'} size={ri(16)} color={T3} />
+                  <Ionicons name={acctOpen ? 'chevron-up' : 'chevron-down'} size={ri(ICON.inline)} color={T3} />
                 </Pressable>
 
                 {/* 동기화 상태 줄 — 실패 시엔 접혀 있어도 항상 노출(조치 가능). 그 외엔 펼침 시. */}
@@ -1117,11 +1117,11 @@ export default function ProfileScreen({
                     accessibilityLabel={syncing ? '동기화 중' : syncFailed ? '동기화 실패, 눌러서 다시 시도' : lastSyncAt == null ? '클라우드 연결됨' : `${lastSyncLabel}`}
                     style={({ pressed }) => [s.settingRow, s.settingBorder, pressed && syncFailed && { backgroundColor: CARD_HI }]}
                     testID="cloud-sync-status">
-                    <View style={s.settingIcon}><Ionicons name={syncing ? 'sync-outline' : syncFailed ? 'alert-circle-outline' : 'checkmark-circle-outline'} size={ri(16)} color={syncFailed ? DANGER : T3} /></View>
+                    <View style={s.settingIcon}><Ionicons name={syncing ? 'sync-outline' : syncFailed ? 'alert-circle-outline' : 'checkmark-circle-outline'} size={ri(ICON.inline)} color={syncFailed ? DANGER : T3} /></View>
                     <Text style={[s.settingLabel, { fontWeight: '500', color: syncFailed ? DANGER : T2 }]}>
                       {syncing ? '동기화 중…' : syncFailed ? '동기화 실패 · 다시 시도' : (lastSyncAt == null ? '클라우드 연결됨 · 자동 동기화' : lastSyncLabel)}
                     </Text>
-                    {syncFailed && !syncing && <Ionicons name="refresh" size={ri(15)} color={DANGER} />}
+                    {syncFailed && !syncing && <Ionicons name="refresh" size={ri(ICON.inline)} color={DANGER} />}
                   </Pressable>
                 )}
 
@@ -1129,20 +1129,20 @@ export default function ProfileScreen({
                   <>
                     {/* 로그아웃 */}
                     <Pressable onPress={handleSignOut} accessibilityRole="button" accessibilityLabel="로그아웃" style={({ pressed }) => [s.settingRow, pressed && { backgroundColor: CARD_HI }]}>
-                      <View style={s.settingIcon}><Ionicons name="log-out-outline" size={ri(17)} color={DANGER} /></View>
+                      <View style={s.settingIcon}><Ionicons name="log-out-outline" size={ri(ICON.inline)} color={DANGER} /></View>
                       <Text style={[s.settingLabel, { color: DANGER }]}>로그아웃</Text>
-                      <Ionicons name="chevron-forward" size={ri(16)} color={T3} />
+                      <Ionicons name="chevron-forward" size={ri(ICON.inline)} color={T3} />
                     </Pressable>
 
                     {/* 회원 탈퇴(영구 삭제) — 앱스토어 인앱 탈퇴 요건 */}
                     {onDeleteAccount && (
                       <Pressable testID="account-delete" onPress={handleDeleteAccount} accessibilityRole="button" accessibilityLabel="회원 탈퇴" style={({ pressed }) => [s.settingRow, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.07) }, pressed && { backgroundColor: CARD_HI }]}>
-                        <View style={s.settingIcon}><Ionicons name="trash-outline" size={ri(16)} color={DANGER} /></View>
+                        <View style={s.settingIcon}><Ionicons name="trash-outline" size={ri(ICON.inline)} color={DANGER} /></View>
                         <View style={{ flex: 1, minWidth: 0 }}>
                           <Text style={[s.settingLabel, { color: DANGER }]}>회원 탈퇴</Text>
                           <Text style={s.cloudSub}>계정·데이터 영구 삭제(복구 불가)</Text>
                         </View>
-                        <Ionicons name="chevron-forward" size={ri(16)} color={T3} />
+                        <Ionicons name="chevron-forward" size={ri(ICON.inline)} color={T3} />
                       </Pressable>
                     )}
 
@@ -1154,11 +1154,11 @@ export default function ProfileScreen({
               <View style={s.cloudPad}>
                 <Text style={s.cloudIntro}>로그인하면 신발·러닝 기록·설정이 안전하게 보관되고, 기기를 바꿔도 그대로 이어져요.</Text>
                 <Pressable testID="cloud-signin-kakao" onPress={() => handleSignIn('kakao')} disabled={signingIn} accessibilityRole="button" accessibilityLabel="카카오로 로그인" accessibilityState={{ disabled: signingIn }} style={({ pressed }) => [s.cloudBtn, s.cloudBtnKakao, pressed && { transform: [{ scale: MOTION.press.scale }], opacity: MOTION.press.opacity }]}>
-                  <KakaoMark size={ri(16)} color={KAKAO_LABEL} />
+                  <KakaoMark size={ri(ICON.inline)} color={KAKAO_LABEL} />
                   <Text style={[s.cloudBtnTxt, { color: KAKAO_LABEL }]}>{signingIn ? '로그인 중…' : '카카오로 계속'}</Text>
                 </Pressable>
                 <Pressable testID="cloud-signin-naver" onPress={() => handleSignIn('naver')} disabled={signingIn} accessibilityRole="button" accessibilityLabel="네이버로 로그인" accessibilityState={{ disabled: signingIn }} style={({ pressed }) => [s.cloudBtn, s.cloudBtnNaver, pressed && { transform: [{ scale: MOTION.press.scale }], opacity: MOTION.press.opacity }]}>
-                  <NaverMark size={ri(13)} color={NAVER_LABEL} />
+                  <NaverMark size={ri(ICON.tag)} color={NAVER_LABEL} />
                   <Text style={[s.cloudBtnTxt, { color: NAVER_LABEL }]}>{signingIn ? '로그인 중…' : '네이버로 계속'}</Text>
                 </Pressable>
                 <Button
@@ -1166,11 +1166,11 @@ export default function ProfileScreen({
                   label={signingIn ? '로그인 중…' : 'Google로 계속'}
                   onPress={() => handleSignIn('google')}
                   disabled={signingIn}
-                  iconNode={<Ionicons name="logo-google" size={ri(17)} color={signingIn ? T3 : T1} />}
+                  iconNode={<Ionicons name="logo-google" size={ri(ICON.inline)} color={signingIn ? T3 : T1} />}
                   style={s.cloudBtnGoogle}
                 />
                 <Pressable testID="cloud-signin-apple" onPress={() => handleSignIn('apple')} disabled={signingIn} accessibilityRole="button" accessibilityLabel="Apple로 로그인" accessibilityState={{ disabled: signingIn }} style={({ pressed }) => [s.cloudBtn, s.cloudBtnApple, pressed && { transform: [{ scale: MOTION.press.scale }], opacity: MOTION.press.opacity }]}>
-                  <Ionicons name="logo-apple" size={ri(18)} color={T1} />
+                  <Ionicons name="logo-apple" size={ri(ICON.action)} color={T1} />
                   <Text style={s.cloudBtnTxt}>{signingIn ? '로그인 중…' : 'Apple로 계속'}</Text>
                 </Pressable>
               </View>
@@ -1186,7 +1186,7 @@ export default function ProfileScreen({
                 <Pressable onPress={onReplayOnboarding} accessibilityRole="button" accessibilityLabel="온보딩 다시 보기"
                   style={({ pressed }) => [s.acctRow, { minHeight: rs(44) }, pressed && { backgroundColor: CARD_HI }]}>
                   <Text style={s.acctK}>온보딩 다시 보기</Text>
-                  <Ionicons name="chevron-forward" size={ri(16)} color={T3} />
+                  <Ionicons name="chevron-forward" size={ri(ICON.inline)} color={T3} />
                 </Pressable>
               )}
             </View>

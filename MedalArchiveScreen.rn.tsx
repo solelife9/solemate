@@ -10,7 +10,7 @@ import {View, ScrollView, Pressable, Image, StyleSheet, Animated} from 'react-na
 import {Text, FONT_SCALE_CAP_HERO} from './lib/text';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import {BG, CARD, CARD_HI, ACCENT, HALL_GOLD, T1, T2, T3, T4, SEP, FONT, DISPLAY, withAlpha, TYPE, HERO, GLASS, RADIUS, GUTTER, MOTION} from './theme';
+import {BG, CARD, CARD_HI, ACCENT, HALL_GOLD, T1, T2, T3, T4, SEP, FONT, DISPLAY, withAlpha, TYPE, HERO, GLASS, RADIUS, GUTTER, MOTION, ICON} from './theme';
 import {SwipeBack, ScreenHeader, EmptyGhostHeader, GhostStrong, GhostBar, GlassEdge} from './primitives';
 import {fmtTime} from './lib/format';
 import {RACE_DISTANCE_LABEL} from './data/raceEvents';
@@ -61,7 +61,7 @@ export default function MedalArchiveScreen({
           style={m.header}
           right={onAddMedal ? (
             <Pressable onPress={onAddMedal} hitSlop={8} accessibilityRole="button" accessibilityLabel="메달 추가" testID="medal-add" style={m.iconBtn}>
-              <Ionicons name="add" size={ri(24)} color={ACCENT} />
+              <Ionicons name="add" size={ri(ICON.nav)} color={ACCENT} />
             </Pressable>
           ) : undefined}
         />
@@ -80,7 +80,7 @@ export default function MedalArchiveScreen({
                 <View style={m.ghostTile}>
                   <GlassEdge glints={false} radius={RADIUS.lg} />
                   <View style={[m.disc, {width: rs(64), height: rs(64), borderRadius: rs(32)}]}>
-                    <Ionicons name="medal-outline" size={ri(26)} color={T4} />
+                    <Ionicons name="medal-outline" size={ri(ICON.feature)} color={T4} />
                   </View>
                   <GhostBar w="72%" style={{marginTop: rv(14)}} />
                   <GhostBar w="46%" dim />
@@ -94,7 +94,7 @@ export default function MedalArchiveScreen({
               </View>
               {onAddMedal && (
                 <Pressable onPress={onAddMedal} accessibilityRole="button" accessibilityLabel="메달 추가하기" style={({pressed}) => [m.emptyCta, pressed && m.pressed]}>
-                  <Ionicons name="add" size={ri(18)} color={HALL_GOLD} />
+                  <Ionicons name="add" size={ri(ICON.action)} color={HALL_GOLD} />
                   <Text style={m.emptyCtaT}>메달 추가하기</Text>
                 </Pressable>
               )}
@@ -203,15 +203,15 @@ function MedalDetail({medal, insetTop, insetBottom, onClose, onOpenRun, onDelete
       testID="medal-detail">
       <View style={[m.detailNav, {paddingTop: insetTop + 6}]}>
         <Pressable onPress={close} hitSlop={8} accessibilityRole="button" accessibilityLabel="닫기" style={m.iconBtn}>
-          <Ionicons name="chevron-down" size={ri(22)} color={T1} />
+          <Ionicons name="chevron-down" size={ri(ICON.nav)} color={T1} />
         </Pressable>
         <View style={{flexDirection: 'row', gap: rv(8)}}>
           <Pressable onPress={onShare} hitSlop={8} accessibilityRole="button" accessibilityLabel="메달 공유" testID="medal-share" style={m.iconBtn}>
-            <Ionicons name="share-outline" size={ri(18)} color={HALL_GOLD} />
+            <Ionicons name="share-outline" size={ri(ICON.action)} color={HALL_GOLD} />
           </Pressable>
           {onDelete && (
             <Pressable onPress={onDelete} hitSlop={8} accessibilityRole="button" accessibilityLabel="메달 삭제" style={m.iconBtn}>
-              <Ionicons name="trash-outline" size={ri(18)} color={T3} />
+              <Ionicons name="trash-outline" size={ri(ICON.action)} color={T3} />
             </Pressable>
           )}
         </View>
@@ -249,7 +249,7 @@ function MedalDetail({medal, insetTop, insetBottom, onClose, onOpenRun, onDelete
 
         {!!medal.runId && onOpenRun && (
           <Pressable onPress={() => onOpenRun(medal.runId!)} accessibilityRole="button" accessibilityLabel="이 대회 러닝 기록 보기" style={({pressed}) => [m.runLink, pressed && m.pressed]}>
-            <Ionicons name="footsteps-outline" size={ri(16)} color={ACCENT} />
+            <Ionicons name="footsteps-outline" size={ri(ICON.inline)} color={ACCENT} />
             <Text style={m.runLinkT}>이 대회 러닝 기록 보기</Text>
           </Pressable>
         )}

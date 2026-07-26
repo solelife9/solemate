@@ -37,6 +37,7 @@ import {
   RADIUS,
   withAlpha, TYPE,
   GLASS, MOTION,
+  ICON,
 } from './theme';
 import {Button, GlassEdge} from './primitives';
 import {Unit} from './lib/units';
@@ -177,7 +178,7 @@ function RetirementFlow({
           accessibilityLabel="닫기"
           testID="retire-flow-close"
           style={s.iconBtn}>
-          <Ionicons name="close" size={ri(20)} color={T2} />
+          <Ionicons name="close" size={ri(ICON.action)} color={T2} />
         </Pressable>
         <View
           style={s.dots}
@@ -409,7 +410,7 @@ function HighlightsStep({
               key={h + i}
               style={[s.hlRow, i < model.highlights.length - 1 && s.hlRowBorder]}
               testID={`highlight-${i}`}>
-              <Ionicons name="ribbon-outline" size={ri(16)} color={ACCENT} />
+              <Ionicons name="ribbon-outline" size={ri(ICON.inline)} color={ACCENT} />
               <Text style={s.hlText}>{h}</Text>
             </View>
           ))}

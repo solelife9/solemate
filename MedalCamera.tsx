@@ -13,7 +13,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import Svg, {Defs, Mask, Rect, Circle} from 'react-native-svg';
 import {CameraView, useCameraPermissions} from 'expo-camera';
 import {manipulateAsync, SaveFormat} from 'expo-image-manipulator';
-import {BG, BLACK, GLASS, HALL_GOLD, SCRIM, T1, T2, T3, FONT, withAlpha, RADIUS} from './theme';
+import {BG, BLACK, GLASS, HALL_GOLD, SCRIM, T1, T2, T3, FONT, withAlpha, RADIUS, ICON} from './theme';
 import {pickShoePhoto} from './lib/photo';
 import {medalCropRect} from './lib/medalCrop';
 
@@ -76,7 +76,7 @@ export default function MedalCamera({onCapture, onCancel}: {onCapture: (uri: str
     return (
       <View style={[c.screen, {paddingTop: insets.top}]}>
         <View style={c.permBox}>
-          <Ionicons name="camera-outline" size={ri(40)} color={T3} />
+          <Ionicons name="camera-outline" size={ri(ICON.hero)} color={T3} />
           <Text style={c.permT}>카메라 권한이 필요해요</Text>
           <Text style={c.permD}>메달을 촬영하려면 카메라를 허용해주세요. 앨범에서 고를 수도 있어요.</Text>
           <Pressable onPress={() => void requestPerm()} style={c.permBtn}><Text style={c.permBtnT}>카메라 허용</Text></Pressable>
@@ -108,13 +108,13 @@ export default function MedalCamera({onCapture, onCancel}: {onCapture: (uri: str
 
       {/* 상단 취소 */}
       <Pressable onPress={onCancel} hitSlop={10} style={[c.close, {top: insets.top + 8}]} accessibilityRole="button" accessibilityLabel="닫기">
-        <Ionicons name="close" size={ri(26)} color={T1} />
+        <Ionicons name="close" size={ri(ICON.feature)} color={T1} />
       </Pressable>
 
       {/* 하단 컨트롤: 앨범 · 셔터 */}
       <View style={[c.controls, {bottom: insets.bottom + 30}]}>
         <Pressable onPress={fromLibrary} hitSlop={8} style={c.libBtn} accessibilityRole="button" accessibilityLabel="앨범에서 선택">
-          <Ionicons name="images-outline" size={ri(24)} color={T1} />
+          <Ionicons name="images-outline" size={ri(ICON.nav)} color={T1} />
         </Pressable>
         <Pressable onPress={shoot} disabled={busy} accessibilityRole="button" accessibilityLabel="촬영" style={c.shutterWrap}>
           <View style={c.shutter}>{busy ? <ActivityIndicator color={BG} /> : null}</View>

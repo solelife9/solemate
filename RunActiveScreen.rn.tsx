@@ -34,6 +34,7 @@ import {
   GOOD, WARN, DANGER, T1, T2, T3, T4, SEP, CARD_BORDER,
   FONT, DISPLAY, withAlpha, HR_ZONE_COLORS, TYPE, RADIUS, GUTTER, MOTION, BLACK, NUM,
   RUN_RING_SIZE, RUN_RING_STROKE, RUN_RING_STOPS,
+  ICON,
 } from './theme';
 import { estimateMaxHR, zoneOf, HR_ZONE_LABEL } from './lib/analytics/hrZones';
 import { setCeremonyNumRect } from './lib/motionHandoff';
@@ -470,7 +471,7 @@ export default function RunActiveScreen({
       {/* 목표 달성 축하 토스트 */}
       {met && (
         <Animated.View pointerEvents="none" style={[r.toast, { opacity: toastO, transform: [{ translateY: toastY }] }]} accessibilityLiveRegion="polite" accessibilityRole="text" accessibilityLabel={timeGoal ? `목표 ${goalMin}분 달성! 계속 달려요` : `목표 ${goalKm}킬로미터 달성! 계속 달려요`}>
-          <View style={r.toastTick}><Ionicons name="checkmark" size={ri(18)} color={ACCENT} /></View>
+          <View style={r.toastTick}><Ionicons name="checkmark" size={ri(ICON.action)} color={ACCENT} /></View>
           <View style={{ flex: 1 }}>
             <Text style={r.toastA}>{timeGoal ? `목표 ${goalMin}분 달성!` : `목표 ${goalKm}km 달성!`}</Text>
             <Text style={r.toastB}>계속 달려요 — 기록은 신발에 쌓이는 중</Text>
@@ -484,7 +485,7 @@ export default function RunActiveScreen({
         {cd ? (
           <Pressable onPress={() => cdCb.current?.onCancel?.()} hitSlop={8} accessibilityRole="button" accessibilityLabel="카운트다운 취소"
             style={({ pressed }) => [r.cdCancel, pressed && { opacity: 0.8 }]}>
-            <Ionicons name="chevron-back" size={ri(16)} color={T2} />
+            <Ionicons name="chevron-back" size={ri(ICON.inline)} color={T2} />
             <Text style={r.cdCancelText}>취소</Text>
           </Pressable>
         ) : (
@@ -503,17 +504,17 @@ export default function RunActiveScreen({
               accessibilityState={{ selected: !voiceMuted }}
               style={({ pressed }) => [r.voiceBtn, pressed && { opacity: 0.8 }]}
               testID="voice-toggle">
-              <Ionicons name={voiceMuted ? 'volume-mute-outline' : 'volume-high-outline'} size={ri(16)} color={voiceMuted ? T3 : T1} />
+              <Ionicons name={voiceMuted ? 'volume-mute-outline' : 'volume-high-outline'} size={ri(ICON.inline)} color={voiceMuted ? T3 : T1} />
             </Pressable>
           )}
-          <View style={r.shoeChip} accessibilityRole="text" accessibilityLabel={`신고 있는 신발 ${shoeLabel}`}><ShoeGlyph color={T3} size={ri(15)} /><Text style={r.shoeText}>{shoeLabel}</Text></View>
+          <View style={r.shoeChip} accessibilityRole="text" accessibilityLabel={`신고 있는 신발 ${shoeLabel}`}><ShoeGlyph color={T3} size={ri(ICON.inline)} /><Text style={r.shoeText}>{shoeLabel}</Text></View>
         </View>
       </View>
 
       {/* gps — 약할 때만 등장하는 경고(상시 상태 표시 폐지). 거리 기록이 멈출 수 있음을 설명. */}
       {gpsWeakNow && (
         <View style={r.gpsWeak} accessibilityRole="text" accessibilityLiveRegion="polite" accessibilityLabel="GPS 신호 약함, 거리 기록이 잠시 멈출 수 있어요">
-          <Ionicons name="cellular" size={ri(13)} color={WARN} />
+          <Ionicons name="cellular" size={ri(ICON.tag)} color={WARN} />
           <Text style={r.gpsWeakText}>GPS 신호 약함 — 거리 기록이 잠시 멈출 수 있어요</Text>
         </View>
       )}
@@ -522,7 +523,7 @@ export default function RunActiveScreen({
           assertive live-region: 스크린리더가 즉시 끼어들어 '거리 기록 멈춤'을 알린다. */}
       {permLost && (
         <Pressable onPress={onOpenSettings} accessibilityRole="button" accessibilityLiveRegion="assertive" accessibilityLabel="위치 권한이 꺼져 거리 기록을 멈췄어요. 눌러서 다시 허용하세요." style={r.permBanner}>
-          <Ionicons name="alert-circle" size={ri(15)} color={DANGER} />
+          <Ionicons name="alert-circle" size={ri(ICON.inline)} color={DANGER} />
           <Text style={r.permBannerText}>위치 권한이 꺼져 거리 기록을 멈췄어요. 눌러서 다시 허용하세요.</Text>
         </Pressable>
       )}
@@ -532,7 +533,7 @@ export default function RunActiveScreen({
           gpsWeak 와 같은 WARN 필 문법(러닝 중 화면 불가침 — 상태 한 줄 원칙). */}
       {uiPaused && pausedMoveNudge && !cd && (
         <View style={r.gpsWeak} testID="pause-move-nudge" accessibilityRole="text" accessibilityLiveRegion="assertive" accessibilityLabel="일시정지 중이에요. 지금 움직임은 기록되지 않아요. 재개를 눌러 이어서 달리세요.">
-          <Ionicons name="pause-circle" size={ri(13)} color={WARN} />
+          <Ionicons name="pause-circle" size={ri(ICON.tag)} color={WARN} />
           <Text style={r.gpsWeakText}>일시정지 중이에요 — 지금 움직임은 기록되지 않아요</Text>
         </View>
       )}
@@ -557,7 +558,7 @@ export default function RunActiveScreen({
             style={[StyleSheet.absoluteFill, { backgroundColor: CARD, transform: [{ translateY: mapSlide.interpolate({ inputRange: [0, 1], outputRange: [-(mapH || 800), 0] }) }] }]}>
             <RunLiveMap coords={liveCoords} />
             <View style={r.mapExpandBadge} pointerEvents="none">
-              <Ionicons name="expand" size={ri(15)} color={T1} />
+              <Ionicons name="expand" size={ri(ICON.inline)} color={T1} />
             </View>
           </Animated.View>
         </Pressable>
@@ -624,12 +625,12 @@ export default function RunActiveScreen({
           <Animated.View pointerEvents="none" style={[r.cdChips, { opacity: cdChipFade }]}>
             {goalKm > 0 ? (
               <View style={r.cdChip} accessibilityRole="text" accessibilityLabel={`목표 ${goalKm.toFixed(1)} 킬로미터`}>
-                <Ionicons name="locate-outline" size={ri(14)} color={T3} />
+                <Ionicons name="locate-outline" size={ri(ICON.tag)} color={T3} />
                 <Text style={r.cdChipText}>목표 <Text style={r.cdChipB}>{goalKm.toFixed(1)} km</Text></Text>
               </View>
             ) : goalMin > 0 ? (
               <View style={r.cdChip} accessibilityRole="text" accessibilityLabel={`목표 ${goalMin}분`}>
-                <Ionicons name="time-outline" size={ri(14)} color={T3} />
+                <Ionicons name="time-outline" size={ri(ICON.tag)} color={T3} />
                 <Text style={r.cdChipText}>목표 <Text style={r.cdChipB}>{goalMin}분</Text></Text>
               </View>
             ) : null}
@@ -662,7 +663,7 @@ export default function RunActiveScreen({
           <View style={[r.coach, { borderColor: withAlpha(color, 0.4), backgroundColor: withAlpha(color, 0.1) }]}
             accessibilityRole="text" accessibilityLiveRegion="polite"
             accessibilityLabel={`목표 페이스 ${fmtPaceSec(targetPaceSec)}, ${msg}`}>
-            <Ionicons name={icon} size={ri(15)} color={color} />
+            <Ionicons name={icon} size={ri(ICON.inline)} color={color} />
             <Text style={r.coachTarget}>목표 <Text style={{ color }}>{fmtPaceSec(targetPaceSec)}</Text></Text>
             <View style={r.coachDot} />
             <Text style={[r.coachMsg, { color }]}>{msg}</Text>
@@ -743,13 +744,13 @@ export default function RunActiveScreen({
             {/* 버튼 우측 카운트 제거(간결화 J1, 2026-07-26) — 링 한가운데 큰 숫자가 이미
                 바퀴 수다. 달리며 흘끗 보는 화면에서 같은 숫자가 두 크기로 있으면 '뭐가 맞지'
                 가 생긴다. 버튼은 행동만, 숫자는 링만. (음성 라벨엔 현재 바퀴 수 유지.) */}
-            <Ionicons name="flag-outline" size={ri(19)} color={T1} />
+            <Ionicons name="flag-outline" size={ri(ICON.action)} color={T1} />
             <Text style={r.lapBtnText}>랩 기록</Text>
           </Pressable>
           {track.lapCount > 0 && (
             <Pressable onPress={onUndoLap} accessibilityRole="button" accessibilityLabel="마지막 랩 되돌리기"
               hitSlop={8} style={({ pressed }) => [r.lapUndo, pressed && { opacity: 0.7 }]}>
-              <Ionicons name="arrow-undo" size={ri(17)} color={T3} />
+              <Ionicons name="arrow-undo" size={ri(ICON.inline)} color={T3} />
             </Pressable>
           )}
         </View>
@@ -768,7 +769,7 @@ export default function RunActiveScreen({
         {!paused ? (
           <View style={{ alignItems: 'center', gap: rv(8) }}>
             <Pressable onPress={pauseRun} accessibilityRole="button" accessibilityLabel="일시정지" style={({ pressed }) => [r.cPrimary, pressed && { opacity: 0.85 }]}>
-              <Ionicons name="pause" size={ri(36)} color={T1} />
+              <Ionicons name="pause" size={ri(ICON.hero)} color={T1} />
               <GlassEdge glints={false} fade={false} radius={rs(44)} />
             </Pressable>
             <Text style={r.ctrlHint}>일시정지</Text>
@@ -792,7 +793,7 @@ export default function RunActiveScreen({
                   accessibilityRole="button" accessibilityLabel="길게 눌러 종료"
                   accessibilityHint="0.6초 동안 길게 누르면 러닝을 종료합니다"
                   style={({ pressed }) => [r.cStop, pressed && { backgroundColor: withAlpha(DANGER, 0.18) }]}>
-                  <Ionicons name="stop" size={ri(26)} color={DANGER} />
+                  <Ionicons name="stop" size={ri(ICON.feature)} color={DANGER} />
                   <GlassEdge glints={false} fade={false} radius={rs(38)} />
                 </Pressable>
               </View>
@@ -836,7 +837,7 @@ export default function RunActiveScreen({
               accessibilityLabel="내 위치로 이동"
               hitSlop={12}
               style={({ pressed }) => [r.mapBtn, pressed && { opacity: 0.8 }]}>
-              <Ionicons name="locate" size={ri(26)} color={T1} />
+              <Ionicons name="locate" size={ri(ICON.feature)} color={T1} />
             </Pressable>
             <Pressable
               onPress={() => setMapFull(false)}
@@ -844,7 +845,7 @@ export default function RunActiveScreen({
               accessibilityLabel="지도 닫기"
               hitSlop={12}
               style={({ pressed }) => [r.mapBtn, pressed && { opacity: 0.8 }]}>
-              <Ionicons name="close" size={ri(28)} color={T1} />
+              <Ionicons name="close" size={ri(ICON.feature)} color={T1} />
             </Pressable>
           </View>
         </View>

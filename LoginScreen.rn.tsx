@@ -20,6 +20,7 @@ import {
   BG, ACCENT, BLACK, DANGER, T1, T2, T3, FONT, RADIUS,
   KAKAO_YELLOW, KAKAO_LABEL, NAVER_GREEN, NAVER_LABEL, TYPE,
   GUTTER, MOTION,
+  ICON,
 } from './theme';
 import type {CloudPort, CloudProvider, CloudUser} from './lib/cloudPort';
 import {authErrorMessage} from './lib/authErrorMessage';
@@ -73,7 +74,7 @@ export function LoginScreen({cloudPort, onSignedIn}: LoginScreenProps) {
             {icon: 'cloud-done-outline', text: '기록은 클라우드에 안전하게, 기기를 바꿔도 그대로'},
           ] as const).map(row => (
             <View key={row.icon} style={st.valueRow} accessible accessibilityLabel={row.text}>
-              <Ionicons name={row.icon} size={ri(15)} color={T3} />
+              <Ionicons name={row.icon} size={ri(ICON.inline)} color={T3} />
               <Text style={st.valueText}>{row.text}</Text>
             </View>
           ))}
@@ -95,7 +96,7 @@ export function LoginScreen({cloudPort, onSignedIn}: LoginScreenProps) {
           {busy === 'kakao'
             ? <ActivityIndicator color={KAKAO_LABEL} />
             : <>
-                <KakaoMark size={ri(18)} color={KAKAO_LABEL} />
+                <KakaoMark size={ri(ICON.action)} color={KAKAO_LABEL} />
                 <Text style={[st.btnTxt, {color: KAKAO_LABEL}]}>카카오로 계속</Text>
               </>}
         </Pressable>
@@ -111,7 +112,7 @@ export function LoginScreen({cloudPort, onSignedIn}: LoginScreenProps) {
           {busy === 'naver'
             ? <ActivityIndicator color={NAVER_LABEL} />
             : <>
-                <NaverMark size={ri(14)} color={NAVER_LABEL} />
+                <NaverMark size={ri(ICON.tag)} color={NAVER_LABEL} />
                 <Text style={[st.btnTxt, {color: NAVER_LABEL}]}>네이버로 계속</Text>
               </>}
         </Pressable>
@@ -125,7 +126,7 @@ export function LoginScreen({cloudPort, onSignedIn}: LoginScreenProps) {
             // 고정 박스 중앙 정렬 — 아이콘(Text 글리프)이 라인박스에 아래가 잘리던 것 방지
             // (사용자 실기기 제보 2026-07-16: G 하단 클리핑).
             <View style={st.googleIconBox}>
-              <Ionicons name="logo-google" size={ri(17)} color={signingIn ? T3 : T1} />
+              <Ionicons name="logo-google" size={ri(ICON.inline)} color={signingIn ? T3 : T1} />
             </View>
           }
           style={st.btnGoogle}
@@ -146,7 +147,7 @@ export function LoginScreen({cloudPort, onSignedIn}: LoginScreenProps) {
             {busy === 'apple'
               ? <ActivityIndicator color={BLACK} />
               : <>
-                  <Ionicons name="logo-apple" size={ri(18)} color={BLACK} />
+                  <Ionicons name="logo-apple" size={ri(ICON.action)} color={BLACK} />
                   <Text style={[st.btnTxt, {color: BLACK}]}>Apple로 계속하기</Text>
                 </>}
           </Pressable>

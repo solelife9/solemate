@@ -41,6 +41,7 @@ import {
   TIER_COLORS,
   withAlpha, GLASS,
   GUTTER, MOTION,
+  ICON,
 } from './theme';
 import {ymLocal} from './lib/format';
 import {keegoFirestoreRankingProvider} from './lib/progression/firestoreRankingStore';
@@ -282,7 +283,7 @@ export default function HallOfFameScreen({
                   active && {backgroundColor: CARD_HI, borderColor: withAlpha(ACCENT, 0.5)},
                   pressed && s.pressed,
                 ]}>
-                <Ionicons name={c.icon} size={ri(13)} color={active ? ACCENT : T3} />
+                <Ionicons name={c.icon} size={ri(ICON.tag)} color={active ? ACCENT : T3} />
                 <Text style={[s.catChipTxt, active && {color: T1}]}>{c.label}</Text>
               </Pressable>
             );
@@ -310,7 +311,7 @@ export default function HallOfFameScreen({
         ) : (
           <View style={s.hint} testID="hof-my-unavailable">
             <GlassEdge glints={false} radius={RADIUS.md} />
-            <Ionicons name="person-circle-outline" size={ri(18)} color={T3} />
+            <Ionicons name="person-circle-outline" size={ri(ICON.action)} color={T3} />
             <Text style={s.hintTxt}>
               로그인 후 동기화하면 내 순위가 표시돼요
             </Text>

@@ -12,7 +12,7 @@ import {Text} from './lib/text';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {rs, rv, ri} from './lib/responsive';
-import {T1, T3, FONT, RADIUS, TYPE, MOTION, withAlpha} from './theme';
+import {T1, T3, FONT, RADIUS, TYPE, MOTION, withAlpha, ICON} from './theme';
 import {showToast} from './lib/toast';
 import {SegmentedControl, BottomSheet} from './primitives';
 import ShareCard from './ShareCard';
@@ -138,12 +138,12 @@ export default function ShareCardPicker({visible, onClose, model, route = [], sh
         <View style={s.actions}>
           <Pressable onPress={onSave} disabled={!!busy} accessibilityRole="button" accessibilityLabel="사진앱에 저장" testID="sharecard-save"
             style={({pressed}) => [s.btn, s.btnGhost, pressed && s.pressed, busy && s.btnBusy]}>
-            <Ionicons name="download-outline" size={ri(16)} color={T1} style={s.btnIcon} />
+            <Ionicons name="download-outline" size={ri(ICON.inline)} color={T1} style={s.btnIcon} />
             <Text style={s.btnTxt}>{busy === 'save' ? '저장 중…' : '저장'}</Text>
           </Pressable>
           <Pressable onPress={onShare} disabled={!!busy} accessibilityRole="button" accessibilityLabel="공유" testID="sharecard-share"
             style={({pressed}) => [s.btn, s.btnPrimary, pressed && s.pressed, busy && s.btnBusy]}>
-            <Ionicons name="share-outline" size={ri(16)} color={T1} style={s.btnIcon} />
+            <Ionicons name="share-outline" size={ri(ICON.inline)} color={T1} style={s.btnIcon} />
             <Text style={s.btnTxt}>{busy === 'share' ? '공유 중…' : '공유'}</Text>
           </Pressable>
         </View>
