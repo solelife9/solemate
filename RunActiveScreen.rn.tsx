@@ -364,13 +364,26 @@ export default function RunActiveScreen({
   // 눌림을 취소해 onLongPress 는 영영 안 온다 → 종료 안 됨. 둘의 duration 이 똑같아 여유가 0.
   // 해결: **링 애니메이션 완료 자체를 확정 신호로** 쓴다(보이는 것 = 동작의 단일 진실원).
   // onLongPress 도 남겨 두되(접근성·기존 계약) 먼저 온 쪽만 1회 발화하도록 가드한다.
-  // 히어로 3지표 — 값 문자열과 '공통' 폰트 크기(위 렌더 주석 참조). 가장 긴 값에 맞춰
-  // 한 배율을 정하고 셋이 함께 쓴다. 폭 기준: 한 칸 ≈ 화면폭/3, 숫자는 tabular 라 글자
-  // 수에 선형 비례한다. 5자 이하는 기준 크기 그대로(대부분의 러닝 구간).
+  // 히어로 3지표 — 값 문자열과 '공통' 폰트 크기(위 렌더 주석 참조).
+  // 글자 수만으로 배율을 추측했더니 42pt·5자('00:00')에서 칸을 넘겨 '00:…' 로 잘렸다
+  // (민우님 실기기 2026-07-26). 추측 대신 **실측 칸 너비**로 상한을 건다: 지표 줄의 폭을
+  // onLayout 으로 재고, 한 칸(=폭/3)에 가장 긴 값이 들어가는 최대 크기를 계산한다.
+  // 셋 모두 그 한 크기를 쓰므로 칸끼리 크기가 갈리지 않는다(자동 축소 없음 = 잘림 없음).
+  const [metricRowW, setMetricRowW] = useState(0);
   const metricFontSize = (vals: string[], base: number) => {
     const n = Math.max(1, ...vals.map(v => String(v ?? '').length));
-    const scale = n <= 5 ? 1 : n === 6 ? 0.86 : n === 7 ? 0.76 : 0.68;
-    return rf(Math.round(base * scale));
+    if (metricRowW <= 0) {
+      // 측정 전 첫 프레임 — 보수적으로 글자 수 기반 폴백(넘치는 쪽보다 작은 쪽이 안전).
+      const scale = n <= 4 ? 1 : n === 5 ? 0.86 : n === 6 ? 0.74 : n === 7 ? 0.64 : 0.56;
+      return rf(Math.round(base * scale));
+    }
+    // 한 칸 폭에서 좌우 숨구멍 10 을 뺀 값 안에 n 글자가 들어가야 한다.
+    // GLYPH_EM = 글자 하나가 차지하는 폭 비율(Pretendard tabular 숫자 기준, 구두점 포함
+    // 평균으로 넉넉히 잡는다 — 넘치면 잘리지만 작으면 그냥 조금 작을 뿐이라 보수적으로).
+    const GLYPH_EM = 0.66;
+    const usable = Math.max(0, metricRowW / 3 - rs(10));
+    const fit = usable / (n * GLYPH_EM);
+    return rf(Math.round(Math.min(base, fit)));
   };
   const holdFired = useRef(false);
   const holdRun = useRef<Animated.CompositeAnimation | null>(null);
@@ -686,11 +699,13 @@ export default function RunActiveScreen({
         const mv1 = uiPaused || timeGoal ? distanceKm.toFixed(2) : timeLabel;
         const mv2 = uiPaused ? timeLabel : bpm > 0 ? String(bpm) : '--';
         const mv3 = uiPaused ? avgPaceLabel : paceLabel;
-        // 기준 크기는 위 hmV/hmVPaused 와 같은 값(34 / 28)을 쓴다 — 여기서 계산한 공통
-        // 크기가 그 스타일을 덮으므로 둘이 어긋나면 스타일 쪽이 죽은 값이 된다.
-        const mFs = { fontSize: metricFontSize([mv1, mv2, mv3], uiPaused ? 34 : 42) };
+        // 기준 크기 = '상한'이다(실측 칸 폭이 더 좁으면 그쪽이 이긴다). 위 hmV/hmVPaused
+        // 스타일의 fontSize 와 같은 값을 둬야 한다 — 여기 계산이 그 스타일을 덮으므로
+        // 어긋나면 스타일 쪽이 죽은 값이 된다. 러닝 중 40 · 일시정지 34(민우님 확정).
+        const mFs = { fontSize: metricFontSize([mv1, mv2, mv3], uiPaused ? 34 : 40) };
         return (
       <Animated.View pointerEvents={cd ? 'none' : 'auto'}
+        onLayout={e => setMetricRowW(e.nativeEvent.layout.width)}
         style={[r.heroMetrics, uiPaused ? r.heroMetricsPaused : r.heroMetricsRun, { opacity: uiIn, transform: [{ translateY: uiRise }] }]}>
         <View style={r.hm} accessibilityRole="text" accessibilityLabel={uiPaused || timeGoal ? `거리 ${distanceKm.toFixed(2)}킬로미터` : `시간 ${timeLabel}`}><Text maxFontSizeMultiplier={FONT_SCALE_CAP_HERO} style={[r.hmV, uiPaused && r.hmVPaused, mFs]} numberOfLines={1}>{mv1}</Text><Text style={r.hmL}>{uiPaused || timeGoal ? '거리 km' : '시간'}</Text></View>
         <View style={[r.hm, r.hmDivider]} accessibilityRole="text" accessibilityLabel={uiPaused ? `시간 ${timeLabel}` : hrZone !== 0 ? `심박 ${bpm}, 존 ${hrZone} ${HR_ZONE_LABEL[hrZone]}` : bpm > 0 ? `심박 ${bpm}` : '심박 측정 안 됨'}><Text maxFontSizeMultiplier={FONT_SCALE_CAP_HERO} style={[r.hmV, uiPaused && r.hmVPaused, mFs, !uiPaused && hrZone !== 0 && { color: hrColor }]} numberOfLines={1}>{mv2}</Text><Text style={[r.hmL, !uiPaused && hrZone !== 0 && { color: hrColor, fontWeight: '600' }, !uiPaused && zoneDeviation && targetZone >= 2 && { color: zoneDeviation === 'down' ? WARN : ACCENT, fontWeight: '700' }]}>{uiPaused ? '시간' : (!uiPaused && zoneDeviation && targetZone >= 2) ? (zoneDeviation === 'down' ? `↓ 존 ${targetZone}로` : `↑ 존 ${targetZone}로`) : hrZone !== 0 ? `Z${hrZone} ${HR_ZONE_LABEL[hrZone]}` : '심박'}</Text></View>
@@ -965,14 +980,14 @@ const r = StyleSheet.create({
   heroMetricsPaused: { marginTop: rv(22), paddingTop: rv(20), paddingBottom: rv(8) },
   hm: { flex: 1, alignItems: 'center' },
   hmDivider: { borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: CARD_BORDER },
-  // 두께 500 → 700(민우님 2026-07-26 "러닝중 숫자가 얇고 약하다"): 이 화면만 앱 숫자 규약
+  // 두께 500 → 700 → 600(민우님 2026-07-26: 얇다 → 700 → "좀 줄여보자" → 600): 이 화면만 앱 숫자 규약
   // (NUMERIC '값 700 고정') 밖에서 500으로 살아, 37pt 로 가장 큰데도 20pt 런 상세 지표보다
   // 약하게 읽혔다. 크고 얇으면 야외 햇빛·흔들림에서 오히려 더 흐려진다.
   // 자간 −0.8 → −0.2(민우님 2026-07-26): 두께를 700 으로 올리자 음수 자간이 굵은 획끼리
   // 붙여 '00:05' 가 뭉쳤다. 크기는 37 유지 — 한 번 34 로 줄였다가 "키워줘"로 되돌렸다.
-  // 크기는 34 → 37 → 42 로 두 번 키웠다(민우님 요청) — 러닝 화면은 전역 '작고 절제된'
+  // 크기는 34 → 37 → 42 → 40 으로 조정했다(민우님 확정 40) — 러닝 화면은 전역 '작고 절제된'
   // 기준의 명시적 예외다. 긴 값(1:02:05 등)은 metricFontSize 가 자동으로 한 단 낮춘다.
-  hmV: { color: T1, fontFamily: DISPLAY, fontSize: rf(42), fontWeight: '700', letterSpacing: -0.2, fontVariant: ['tabular-nums'] },
+  hmV: { color: T1, fontFamily: DISPLAY, fontSize: rf(40), fontWeight: '600', letterSpacing: -0.2, fontVariant: ['tabular-nums'] },
   // 일시정지 6칸(2026-07-12 사용자: '6개를 키우고 올려서 잘 보이게') — 값 30pt 균일.
   hmVPaused: { fontSize: rf(34), letterSpacing: -0.2 },
   // 라벨 판독성(민우님 2026-07-26 "밑에 써있는 글씨들도 잘 안 보여"): 흰 45% 는 검은 배경
@@ -984,8 +999,8 @@ const r = StyleSheet.create({
   // 일시정지 하단 3칸(케이던스·칼로리·고도) — 상단 히어로 행과 같은 3열 그리드(6칸처럼).
   subMetrics: { flexDirection: 'row', paddingTop: rv(20), paddingBottom: rv(16) },
   sm: { flex: 1, alignItems: 'center' },
-  // 서브 3칸도 같은 규율 — 두께 500 → 700, 음수 자간 완화, 라벨·단위 밝기 상향.
-  smV: { color: T1, fontFamily: DISPLAY, fontSize: rf(34), fontWeight: '700', letterSpacing: -0.2, fontVariant: ['tabular-nums'] },
+  // 서브 3칸도 같은 규율 — 두께는 히어로 3칸과 항상 동일(600), 음수 자간 완화, 라벨 밝기 상향.
+  smV: { color: T1, fontFamily: DISPLAY, fontSize: rf(34), fontWeight: '600', letterSpacing: -0.2, fontVariant: ['tabular-nums'] },
   smU: { color: withAlpha(T1, 0.7), fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600' },
   smL: { color: withAlpha(T1, 0.75), fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600', letterSpacing: 0.2, marginTop: rv(8) },
 
