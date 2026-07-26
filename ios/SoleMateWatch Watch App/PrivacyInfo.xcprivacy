@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Keego 워치 앱 개인정보 매니페스트 (2026-07-26 출시 심사 B-11 — 워치 타깃에 매니페스트가
+  아예 없었다). 워치 앱은 별도 바이너리이므로 자체 매니페스트가 필요하다.
+
+  이 폴더는 Xcode 동기화 폴더(PBXFileSystemSynchronizedRootGroup)라 파일을 두면 타깃에
+  자동 포함된다(예외는 Info.plist 뿐 — project.pbxproj 참조).
+
+  수집 항목: 워치가 측정한 심박·거리·경로는 WCSession 으로 폰에 전달되고, 폰이 로그인
+  상태면 클라우드로 백업된다(최종적으로 개발자가 접근 가능 → '수집'으로 선언).
+  회귀 가드: __tests__/nativePermissions.test.ts
+-->
+<plist version="1.0">
+<dict>
+	<key>NSPrivacyTracking</key>
+	<false/>
+	<key>NSPrivacyTrackingDomains</key>
+	<array/>
+
+	<key>NSPrivacyCollectedDataTypes</key>
+	<array>
+		<!-- 단독 러닝 시 워치 GPS 로 측정하는 경로. -->
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypePreciseLocation</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<true/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+			</array>
+		</dict>
+		<!-- 워크아웃 세션의 심박(HealthKit). -->
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypeHealth</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<true/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+			</array>
+		</dict>
+		<!-- 거리·페이스·랩 등 운동 데이터. -->
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypeFitness</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<true/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+			</array>
+		</dict>
+	</array>
+
+	<!-- 사유 필요 API — 워치 앱은 UserDefaults 로 신발 목록·최근 런·러닝 상태를 캐시한다
+	     (WatchLink.swift · RecentRuns.swift · WorkoutManager.swift). 같은 앱 안에서만 쓴다. -->
+	<key>NSPrivacyAccessedAPITypes</key>
+	<array>
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>CA92.1</string>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>

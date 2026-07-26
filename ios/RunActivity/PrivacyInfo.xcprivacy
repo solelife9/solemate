@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Keego Live Activity(잠금화면·다이내믹 아일랜드) 확장 개인정보 매니페스트.
+  확장도 별도 바이너리라 자체 매니페스트가 필요하다(2026-07-26 출시 심사 B-11).
+
+  이 확장은 러닝 진행 상태를 '표시'만 한다 — 데이터를 앱 밖으로 보내지 않으므로
+  수집 항목은 없다. App Group 공유 UserDefaults 로 앱이 써둔 활성 신발을 읽는다
+  (RunActivityBundle.swift) → 사유 필요 API 로 UserDefaults 만 선언한다.
+
+  이 폴더는 Xcode 동기화 폴더라 파일을 두면 타깃에 자동 포함된다(예외는 Info.plist 뿐).
+  회귀 가드: __tests__/nativePermissions.test.ts
+-->
+<plist version="1.0">
+<dict>
+	<key>NSPrivacyTracking</key>
+	<false/>
+	<key>NSPrivacyTrackingDomains</key>
+	<array/>
+	<key>NSPrivacyCollectedDataTypes</key>
+	<array/>
+	<key>NSPrivacyAccessedAPITypes</key>
+	<array>
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>1C8F.1</string>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>

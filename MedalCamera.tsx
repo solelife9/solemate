@@ -90,7 +90,10 @@ export default function MedalCamera({onCapture, onCancel}: {onCapture: (uri: str
 
   return (
     <View style={c.screen}>
-      <CameraView ref={camRef} style={StyleSheet.absoluteFill} facing="back" />
+      {/* mode="picture" 는 기본값이지만 명시한다 — video 로 바뀌는 순간 expo-camera 가
+          오디오 입력을 세션에 추가해 마이크 권한이 필요해진다(Info.plist 에는 의도적으로
+          마이크 사용 설명이 없다, 심사 B-10). 의도를 코드에 못박아 사고를 막는다. */}
+      <CameraView ref={camRef} style={StyleSheet.absoluteFill} facing="back" mode="picture" />
       {/* 어두운 스크림 + 동그라미 구멍 + 흰 링 */}
       <Svg style={StyleSheet.absoluteFill} pointerEvents="none">
         <Defs>
