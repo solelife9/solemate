@@ -158,3 +158,54 @@ describe('recommendRotation — 정렬 규칙', () => {
     expect(picks[0].score).toBeGreaterThan(picks[1].score);
   });
 });
+
+// ── 마모 분산 기준 = 사용률(2026-07-26 출시 심사 B-14) ───────────────────────
+// 절대 누적 km 로 비교하면 수명이 짧은 신발이 과대평가돼 '더 닳은 신발'을 먼저 권한다.
+describe('마모 분산은 수명 대비 사용률로 판단한다', () => {
+  const base = (id: string, brand: string, model: string, max_km: number, start_km: number) =>
+    ({id, brand, model, max_km, start_km});
+
+  test('누적거리가 더 적어도 사용률이 높으면 뒤로 밀린다', () => {
+    // 카본화: 400/500 = 80% 소모 · 데일리화: 450/800 = 56% 소모
+    // 절대 km 로는 카본화(400)가 앞서지만, 사용률로는 데일리화가 먼저 와야 한다.
+    const shoes = [
+      base('carbon', 'Nike', 'Alphafly 3', 500, 400),
+      base('daily', 'Nike', 'Pegasus 41', 800, 450),
+    ];
+    const picks = recommendRotation({shoes, runs: []});
+    expect(picks[0].shoe.id).toBe('daily');
+    expect(picks[1].shoe.id).toBe('carbon');
+  });
+
+  test('수명이 같으면 예전처럼 누적거리 적은 쪽이 먼저다', () => {
+    const shoes = [
+      base('more', 'Nike', 'Pegasus 41', 600, 300),
+      base('less', 'Nike', 'Pegasus 41', 600, 100),
+    ];
+    const picks = recommendRotation({shoes, runs: []});
+    expect(picks[0].shoe.id).toBe('less');
+  });
+
+  test('max_km 이 전부 없으면 결과가 절대 거리 순과 같다(하위호환)', () => {
+    const shoes = [
+      {id: 'a', brand: 'Nike', model: 'Pegasus 41', start_km: 300},
+      {id: 'b', brand: 'Nike', model: 'Pegasus 41', start_km: 100},
+    ];
+    const picks = recommendRotation({shoes, runs: []});
+    expect(picks.map(p => p.shoe.id)).toEqual(['b', 'a']);
+  });
+
+  test('런 거리도 사용률에 반영된다(등록거리 + 런 합)', () => {
+    const shoes = [
+      base('short', 'Nike', 'Alphafly 3', 400, 0),
+      base('long', 'Nike', 'Pegasus 41', 1000, 0),
+    ];
+    // 같은 날 같은 거리를 달렸다면 수명이 짧은 쪽 사용률이 더 높다.
+    const runs = [
+      {shoeId: 'short', date: '2026-07-01', km: 200},
+      {shoeId: 'long', date: '2026-07-01', km: 200},
+    ];
+    const picks = recommendRotation({shoes, runs, today: '2026-07-10'});
+    expect(picks[0].shoe.id).toBe('long'); // 20% < 50%
+  });
+});

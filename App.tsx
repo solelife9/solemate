@@ -1862,7 +1862,11 @@ function Main(){
   // 일 때만 picks 가 채워지고, runType 미선택이라 '휴식·마모 분산' 기본 추천이 된다.
   // 카테고리는 brand+model(parseShoeName) 로 data/shoeModels 조회 — 커스텀은 브랜드 폴백.
   const rotationPicks=recommendRotation({
-    shoes:shoes.map(s=>{const {brand,model}=parseShoeName(s.name);return {id:s.id,brand:brand||s.name,model:model||(brand?'':s.name),retired:isRetired(s),start_km:Number(s.start_km)||0};}),
+    // max_km 은 화면의 수명 링·교체 판정과 **같은 유효값**(몸무게 반영)을 넘긴다 —
+    // 추천이 절대 누적 km 로 마모를 비교하면 수명이 짧은 신발이 과대평가돼 더 닳은
+    // 신발을 먼저 권하게 된다(2026-07-26 출시 심사 B-14). 분모가 표시와 달라도 같은
+    // 종류의 어긋남이 생기므로 effectiveMaxKm 을 그대로 쓴다.
+    shoes:shoes.map(s=>{const {brand,model}=parseShoeName(s.name);return {id:s.id,brand:brand||s.name,model:model||(brand?'':s.name),retired:isRetired(s),start_km:Number(s.start_km)||0,max_km:effectiveMaxKm(s.max_km||DEFAULT_MAX_KM,weightKg)};}),
     runs:runs.map(r=>({shoeId:String(r.shoe_id),date:String(r.run_date),km:parseFloat(String(r.km))||0})),
     today:ymdLocal(now),
   });

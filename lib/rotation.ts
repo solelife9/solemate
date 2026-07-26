@@ -10,8 +10,9 @@
 //   - runType(easy/tempo/long/recovery/race)이 있으면 해당 카테고리 매칭 우선
 //     (카테고리는 data/shoeModels 의 brand+model 조회, 커스텀/미매칭은 브랜드 폴백)
 //   - 같은 조건이면 더 오래 쉰(마지막 착용일이 더 이른) 신발 우선(폼 회복)
-//   - 그다음 누적거리(Σ km) 적은 신발 우선(마모 분산) — 런 수가 아니라 실제 마모량
-//   - 거리까지 같으면 마지막으로 런 수 적은 신발 우선(보조 tie-break)
+//   - 그다음 사용률(누적거리 / 권장수명) 낮은 신발 우선(마모 분산) — 절대 거리가 아니라
+//     수명 대비 소모율. 수명이 짧은 신발이 과대평가되지 않게 한다.
+//   - 사용률까지 같으면 마지막으로 런 수 적은 신발 우선(보조 tie-break)
 //   - 각 pick 에 한국어 reason 문구('3일 휴식 · 카본화는 쉬게' 류)
 // ============================================================================
 import {findShoeModel, ShoeCategory, SHOE_MODELS} from '../data/shoeModels';
@@ -26,7 +27,21 @@ export interface RotationShoe {
   /** 등록 시 이미 쌓여 있던 주행거리(km). 마모 분산 tie-break 의 baseline —
    *  빠지면 이미 신던 신발이 '덜 마모됨'으로 오판돼 더 마모된 신발을 추천한다. */
   start_km?: number;
+  /**
+   * 이 신발의 권장수명(km) — 마모 분산의 **분모**. 화면의 수명 링·교체 판정과 같은
+   * 값(몸무게 반영 유효 max)을 넘겨야 추천과 표시가 어긋나지 않는다.
+   * 결측/0 이면 DEFAULT_ROTATION_MAX_KM 으로 본다.
+   */
+  max_km?: number;
 }
+
+/**
+ * max_km 결측 시 가정하는 권장수명(km). lib/shoe.DEFAULT_MAX_KM 과 같은 값이지만
+ * rotation 은 순수 모듈이라 상수를 따로 둔다(의존 방향 유지).
+ * 전원 결측이면 모두 같은 분모가 되어 결과가 '절대 누적거리 순'과 동일해진다
+ * — 즉 예전 동작이 새 규칙의 특수한 경우가 되고, 순서가 뒤섞이지 않는다.
+ */
+export const DEFAULT_ROTATION_MAX_KM = 600;
 
 export interface RotationRun {
   shoeId: string;
@@ -147,8 +162,9 @@ interface Enriched {
   shoe: RotationShoe;
   cat: ShoeCategory | undefined;
   lastWorn: string | null;
-  totalKm: number; // 신발별 누적거리 합(Σ km) — 마모 분산 3차 tie-break
-  runCount: number; // 런 횟수 — 거리 동률 시 4차 보조 tie-break
+  totalKm: number; // 신발별 누적거리 합(Σ km) — 사용률 계산의 분자
+  wearRatio: number; // 사용률 = totalKm / max_km — 마모 분산 3차 정렬 기준
+  runCount: number; // 런 횟수 — 사용률 동률 시 4차 보조 tie-break
   matches: boolean;
 }
 
@@ -203,8 +219,8 @@ function reasonFor(
  * 그렇지 않으면 모든 활성 신발을 우선순위대로 정렬해 RotationPick[] 로 돌려준다:
  *   1) (runType 있을 때) 해당 카테고리 매칭 신발 우선
  *   2) 더 오래 쉰(마지막 착용일이 더 이른; 미착용=최우선) 신발 — 폼 회복
- *   3) 누적거리(Σ km) 적은 신발 — 마모 분산(런 수가 아니라 실제 마모량)
- *   4) 거리 동률이면 런 수 적은 신발 — 보조 tie-break
+ *   3) 사용률(누적거리 / 권장수명) 낮은 신발 — 수명 대비 마모 분산
+ *   4) 사용률 동률이면 런 수 적은 신발 — 보조 tie-break
  * score 는 정렬 결과를 반영한 점수(클수록 우선). 동률은 입력 순서 유지(stable sort).
  *
  * today 가 주어지면 reason 의 휴식 일수를 그 기준으로 계산한다(미지정 시 런 기록 중
@@ -234,8 +250,14 @@ export function recommendRotation(input: {
       const km = Number(r.km);
       return sum + (Number.isFinite(km) && km > 0 ? km : 0);
     }, startKm);
+    // 마모 분산은 '얼마나 달렸나'가 아니라 '수명을 얼마나 썼나'로 판단한다
+    // (2026-07-26 출시 심사 B-14). 절대 km 로 비교하면 수명 500 카본화(400km=80% 소모)가
+    // 수명 800 데일리화(450km=56%)보다 덜 마모된 것으로 오판돼, 더 닳은 신발을 먼저
+    // 추천하게 된다 — 부상 예방 서사와 정반대다.
+    const maxKm = Math.max(0, Number(shoe.max_km) || 0) || DEFAULT_ROTATION_MAX_KM;
+    const wearRatio = totalKm / maxKm;
     const matches = !!(preferred && cat && preferred.includes(cat));
-    return {shoe, cat, lastWorn: worn, totalKm, runCount: own.length, matches};
+    return {shoe, cat, lastWorn: worn, totalKm, wearRatio, runCount: own.length, matches};
   });
 
   enriched.sort((a, b) => {
@@ -244,10 +266,11 @@ export function recommendRotation(input: {
     // ② 더 오래 쉰 신발 우선(폼 회복)
     const rest = compareRest(a.lastWorn, b.lastWorn);
     if (rest !== 0) return rest;
-    // ③ 누적거리(Σ km) 적은 신발 우선 — 실제 마모량 분산(run 수 대용 아님:
-    //    30km 1회 > 9km 3회를 올바르게 '더 마모됨'으로 판정).
-    if (a.totalKm !== b.totalKm) return a.totalKm - b.totalKm;
-    // ④ 거리까지 같으면 런 수 적은 신발 우선(보조 tie-break)
+    // ③ 사용률(누적거리 / 권장수명) 낮은 신발 우선 — 수명 대비 마모 분산.
+    //    거리(분자)만 보면 수명이 짧은 신발이 과대평가된다. 런 수 대용도 아니다:
+    //    30km 1회 > 9km 3회를 올바르게 '더 마모됨'으로 판정한다.
+    if (a.wearRatio !== b.wearRatio) return a.wearRatio - b.wearRatio;
+    // ④ 사용률까지 같으면 런 수 적은 신발 우선(보조 tie-break)
     if (a.runCount !== b.runCount) return a.runCount - b.runCount;
     return 0; // 동률 → 입력 순서 유지
   });

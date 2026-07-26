@@ -401,3 +401,17 @@ test('저장된 계정이 있으면 재마운트 시 로그인 상태·제공자
   // 어떤 provider 로 로그인했는지 표시된다.
   expect(textOf(byTestId(root, 'cloud-provider'))).toContain('카카오 계정');
 });
+
+// ── 동기화 범위 고지(2026-07-26 출시 심사 B-05) ───────────────────────────────
+// 왜: '클라우드 연결됨 · 자동 동기화'만 보이면 사진까지 지켜진다고 믿게 된다. 사진은
+// 기기에만 있으므로(클라우드 백업 미구현) 오해가 생기는 바로 그 자리에서 밝혀야 한다.
+test('동기화 상태 줄이 사진은 백업되지 않음을 함께 알린다', async () => {
+  await AsyncStorage.clear();
+  const port = mockPort(null);
+  const root = render({cloudPort: port, backupData: LOCAL});
+  await press(byTestId(root, 'cloud-signin-google'));
+  await press(byTestId(root, 'cloud-account')); // 계정 아코디언 펼치기
+
+  expect(hasId(root, 'cloud-sync-scope')).toBe(true);
+  expect(textOf(byTestId(root, 'cloud-sync-status'))).toContain('사진은 기기에만 저장돼요');
+});

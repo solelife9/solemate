@@ -1119,9 +1119,18 @@ export default function ProfileScreen({
                     style={({ pressed }) => [s.settingRow, s.settingBorder, pressed && syncFailed && { backgroundColor: CARD_HI }]}
                     testID="cloud-sync-status">
                     <View style={s.settingIcon}><Ionicons name={syncing ? 'sync-outline' : syncFailed ? 'alert-circle-outline' : 'checkmark-circle-outline'} size={ri(ICON.inline)} color={syncFailed ? DANGER : T3} /></View>
-                    <Text style={[s.settingLabel, { fontWeight: '500', color: syncFailed ? DANGER : T2 }]}>
-                      {syncing ? '동기화 중…' : syncFailed ? '동기화 실패 · 다시 시도' : (lastSyncAt == null ? '클라우드 연결됨 · 자동 동기화' : lastSyncLabel)}
-                    </Text>
+                    <View style={{ flex: 1, minWidth: 0 }}>
+                      <Text style={[s.settingLabel, { fontWeight: '500', color: syncFailed ? DANGER : T2 }]}>
+                        {syncing ? '동기화 중…' : syncFailed ? '동기화 실패 · 다시 시도' : (lastSyncAt == null ? '클라우드 연결됨 · 자동 동기화' : lastSyncLabel)}
+                      </Text>
+                      {/* 동기화 범위 고지(2026-07-26 출시 심사 B-05). '동기화됨'만 보이면 사진까지
+                          지켜진다고 믿게 된다 — 실제로 사진은 기기에만 있다(클라우드 백업 미구현).
+                          별도 화면·배너 대신 오해가 생기는 바로 그 자리에 한 줄로 적는다.
+                          실패/진행 중에는 그 상태가 우선이므로 숨긴다. */}
+                      {!syncing && !syncFailed && (
+                        <Text style={s.cloudSub} testID="cloud-sync-scope">사진은 기기에만 저장돼요 · 앱을 지우면 복구할 수 없어요</Text>
+                      )}
+                    </View>
                     {syncFailed && !syncing && <Ionicons name="refresh" size={ri(ICON.inline)} color={DANGER} />}
                   </Pressable>
                 )}
