@@ -76,6 +76,7 @@ import {setRunSurface, parseSurface, type Surface} from './lib/wearModel';
 import {forecastReplacement, type ReplacementForecast} from './lib/replacementForecast';
 import {mostRecentShoeId, lastWornDate} from './lib/shoeRecommend';
 import {recommendRotation} from './lib/rotation';
+import {cacheableRun, cacheEntryForSave} from './lib/runCache';
 import {trackFirstShoeAdded} from './lib/productAnalytics';
 import {findShoeClass, typeLabel} from './data/shoeClass';
 import {
@@ -177,14 +178,6 @@ const CELEB_RARITY: Record<string, {ko: string; color: string}> = {common: {ko: 
 // (재설치·기기변경에도 지도가 남는 이유). 되채우지 않으면 재부팅 후 빈 route 가 push 되어
 // 클라우드의 경로를 지운다 — 데이터 유실. 그래서 '빼기'와 '되채우기'는 한 쌍이어야 한다.
 // 순비용: O(n) 읽기가 '저장할 때마다' → '부팅 1회'로 옮겨간다.
-
-/** 캐시에 넣을 런 레코드 — 경로만 제거한 사본(원본 불변). */
-function cacheableRun(r: any) {
-  if (!r || typeof r !== 'object' || !r.route) return r;
-  const {route: _dropped, ...rest} = r;
-  void _dropped;
-  return rest;
-}
 
 /** 레코드가 route 를 들고 있는데 사이드키가 없으면 채운다(클라우드 pull 유래 대비). */
 async function ensureRouteSidecars(list: any[]): Promise<void> {
@@ -920,13 +913,16 @@ function Main(){
   // 런 한 건을 부팅 캐시(CACHE_RUNS_KEY)에 즉시 durable 하게 prepend 한다(크래시-세이프티).
   // 같은 id 가 이미 있으면 교체(멱등). 800ms 디바운스 캐시 효과가 전체 상태로 덮어쓰기 전에
   // 크래시가 나도 이 동기 기록 덕에 런이 살아남는다(audit#3 미동기 큐의 역할을 대체). 비차단.
-  const persistRunToCache=async(run:BackendRun)=>{
+  //  keepRoute: 사이드키 쓰기가 실패했을 때만 true — 그 경우엔 경로를 캐시에 남기는 것이
+  //  로컬의 유일한 사본이다(2026-07-27 F-08 후속: 사이드키 실패를 삼키던 구멍).
+  const persistRunToCache=async(run:BackendRun,opts?:{keepRoute?:boolean})=>{
     try{
       const raw=await AsyncStorage.getItem(CACHE_RUNS_KEY);
       const arr=raw?JSON.parse(raw):[];
       const list=Array.isArray(arr)?arr:[];
       // 경로는 호출 직전 addRun 이 사이드키(route_<id>)에 이미 durable 하게 썼다(F-08).
-      const next=[cacheableRun(run),...list.filter((r:any)=>String(r?.id)!==String(run.id))];
+      const entry=cacheEntryForSave(run,!opts?.keepRoute);
+      const next=[entry,...list.filter((r:any)=>String(r?.id)!==String(run.id))];
       await AsyncStorage.setItem(CACHE_RUNS_KEY,JSON.stringify(next));
     }catch(e){recordError(e,'storage: run cache write');}
   };
@@ -963,11 +959,19 @@ function Main(){
     // 사이드키(route/time)는 보조 데이터다 — setItem 이 실패해도 삼켜서 런 자체(캐시+상태)는
     // 반드시 남긴다(예전엔 여기서 throw 하면 persistRunToCache·setRuns 에 못 가 완주 기록이
     // 통째로 유실되고 저장 화면엔 아무 안내도 없었다 — 감사 발견).
+    // 사이드키 실패를 **삼키기만 하면 경로가 로컬에서 통째로 사라진다**(F-08 이후 캐시는
+    // 경로를 빼고 저장하므로, 사이드키가 없으면 남는 사본이 없다 — 디스크 만석 등에서 실재).
+    // 실패를 관측해 그때만 캐시에 경로를 남긴다(무거워지지만 유실보다 낫다).
+    // 다음 디바운스 캐시 쓰기의 ensureRouteSidecars 가 사이드키를 다시 시도해 정상화한다.
+    let routeSidecarOk=true;
     try{
       if(route) await AsyncStorage.setItem('route_'+localId, route);
       await AsyncStorage.setItem('time_'+localId, timeStr);
-    }catch{/* 사이드키 영속 실패는 무시 — 아래 캐시/상태가 런의 진실원 */}
-    await persistRunToCache(record);
+    }catch(e){
+      routeSidecarOk=false;
+      recordError(e,'storage: run sidecar write');
+    }
+    await persistRunToCache(record,{keepRoute:!!route&&!routeSidecarOk});
     // ── 2) 낙관적 상태 반영(영속은 cloudSync 가 Firestore 로 push) ──
     setRuns(prev=>[record,...prev]);
     // 노면 태그(선택)는 호출부가 localId로 영속하므로 생성된 localId를 돌려준다.
