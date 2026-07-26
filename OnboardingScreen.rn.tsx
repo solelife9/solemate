@@ -30,6 +30,7 @@ import {
 import {Text, FONT_SCALE_CAP_HERO} from './lib/text';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {PRIVACY_URL, TERMS_URL} from './lib/legalLinks';
+import {trackOnboardingStep} from './lib/productAnalytics';
 // 신발 브랜드/모델·권장수명은 data/shoeModels(단일 소스)에서 — 메인 AddShoe 화면과 동일.
 import {getRecommendedLifespanKm} from './data/shoeModels';
 import Svg, {
@@ -658,6 +659,11 @@ export default function OnboardingScreen({onDone}: {onDone: (registered: Registe
   const insets = useSafeAreaInsets();
   const reduceMotion = useReduceMotion();
   const [index, setIndex] = useState(0);
+  // 어느 단계에서 빠지는지가 첫 화면 개선의 유일한 근거다(심사 B-12). 단계 '도달'을
+  // 남긴다 — 이탈은 (도달 N) - (도달 N+1) 로 읽는다.
+  useEffect(() => {
+    trackOnboardingStep(index);
+  }, [index]);
   const goNext = () => setIndex(i => Math.min(2, i + 1));
   // 기존 계정 링크: 인증 게이트는 온보딩보다 먼저라 이미 로그인 상태 — 소개를 건너뛰고
   // 즉시 완료 처리한다(과거 Ready 인터스티셜 제거, 동일 종착지).

@@ -50,6 +50,7 @@ import {pedometerDistance} from '../lib/pedometerDistance';
 import {estimateMaxHR, zoneOf} from '../lib/analytics/hrZones';
 import {decideZoneCoach, initZoneCoachState} from '../lib/zoneCoach';
 import {showToast} from '../lib/toast';
+import {trackRunStart, trackRunSave} from '../lib/productAnalytics';
 
 const KEEP_AWAKE_TAG = 'keego-run';
 
@@ -535,6 +536,12 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
   // 소유하고 subscribe로 화면에 반영된다(이 함수는 delivery/타이머만 띄운다).
   async function beginRun(){
     runBeganMsRef.current=Date.now(); // 워치 정지 미러링의 스테일 판정 기준(이 시각 이전 정지는 무시)
+    // 코어 루프 계측(심사 B-12) — 어떤 목표로 시작하는지. 신발 유무는 활성화 지표와 잇는다.
+    trackRunStart({
+      goalType:trackMode?'track':goalKm>0?'distance':goalMin>0?'time':pacePlan.length>0?'speed':'free',
+      device:'phone',
+      hasShoe:!!shoe?.id,
+    });
     // 음성 코칭 설정 로드(런당 1회) — 마스터 on/off·볼륨을 엔진에 주입(탑티어 패리티 #14).
     let autoPauseOn=true;
     try{
@@ -723,6 +730,9 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
       return;
     }
     stop();
+    // 저장으로 이어지는 완주만 계측한다(위 거리 가드에서 버려진 런은 제외). 거리·시간은
+    // 버킷으로만 나간다(심사 B-12 최소 수집).
+    trackRunSave({km:fk,durationSec:ft,device:'phone',hadGps:runTracker.getPointCount()>1});
     // 완주 요약 음성 — "운동을 종료합니다. 수고하셨습니다, N킬로미터, 경과 시간 …, 평균 페이스 …"
     // (Nike/NRC 종료 요약 관용). 거리는 클립 격자(0.5km)로 반올림해 읽는다(화면엔 정확값).
     runVoice.finishSummary(fk, ft, fk > 0.2 ? ft / fk : null);

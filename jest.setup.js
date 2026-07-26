@@ -560,6 +560,35 @@ jest.mock('@react-native-firebase/crashlytics', () => {
   };
 });
 
+// ── @react-native-firebase/app-check (modular) ───────────────────────────────
+// App Check 는 부팅 시 1회 활성화만 한다 — 목은 호출 기록용 스텁이면 충분하다.
+// Provider 는 configure() 를 받아 두는 클래스여야 래퍼가 그대로 동작한다.
+jest.mock('@react-native-firebase/app-check', () => {
+  class ReactNativeFirebaseAppCheckProvider {
+    configure(options) {
+      this.providerOptions = options;
+    }
+  }
+  return {
+    __esModule: true,
+    ReactNativeFirebaseAppCheckProvider,
+    initializeAppCheck: jest.fn(() => Promise.resolve({__appCheck: true})),
+    getToken: jest.fn(() => Promise.resolve({token: 'test-token'})),
+  };
+});
+
+// ── @react-native-firebase/analytics (modular) ───────────────────────────────
+// 제품 계측 스텁 — logEvent 호출(이름·파라미터)을 단언할 수 있게 jest.fn 으로 둔다.
+jest.mock('@react-native-firebase/analytics', () => {
+  const instance = {__analytics: true};
+  return {
+    __esModule: true,
+    getAnalytics: jest.fn(() => instance),
+    logEvent: jest.fn(() => Promise.resolve()),
+    setAnalyticsCollectionEnabled: jest.fn(() => Promise.resolve()),
+  };
+});
+
 // ── expo-apple-authentication (네이티브 목) ──────────────────────────────────
 // 기본 해피패스: isAvailableAsync → true, signInAsync → identityToken 보유 자격증명.
 // 취소/토큰없음 분기는 테스트에서 per-case 로 override 한다.

@@ -20,6 +20,14 @@ prepare_react_native_project!
 # 올바로 격리된다. use_modular_headers! 방식은 모놀리식 Firebase 엄브렐러가 전역 헤더를
 # 통해 FirebaseAuth-Swift.h 를 강제 include 해 "file not found" 로 실패하므로 사용하지 않는다.
 $RNFirebaseAsStaticFramework = true
+
+# Firebase Analytics 는 기본이 IDFA(광고 식별자)를 링크하는 변형
+# (FirebaseAnalytics/IdentitySupport → GoogleAppMeasurement/IdentitySupport → AdSupport)이다.
+# keego 는 광고를 하지 않고 추적하지 않는다(PrivacyInfo 의 NSPrivacyTracking=false).
+# IDFA 를 링크하면 심사에서 '추적하는 앱'으로 취급되고 ATT 프롬프트 요건까지 따라붙는다
+# → 광고 식별자 없는 변형(FirebaseAnalytics/Core)으로 고정한다. (2026-07-27 심사 B-12 후속)
+$RNFirebaseAnalyticsWithoutAdIdSupport = true
+
 use_frameworks! :linkage => :static
 
 target 'SoleMate' do

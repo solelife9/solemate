@@ -48,6 +48,7 @@ import { fitnessSummary } from './lib/analytics/fitness';
 import { fmtTime } from './lib/format';
 import { authErrorMessage } from './lib/authErrorMessage';
 import { PRIVACY_URL, TERMS_URL, SUPPORT_EMAIL } from './lib/legalLinks';
+import { trackLogin } from './lib/productAnalytics';
 import type { RankTier } from './lib/progression/types';
 
 // 신원 칩은 진척 시스템의 단일 Rank(티어)로 통일한다 — 옛 '러닝 레벨 N'(km/100) 개념 폐기.
@@ -323,6 +324,8 @@ export default function ProfileScreen({
       setCloudProvider(provider);
       void saveCloudAccount(provider, user);
       setAuthState((s) => nextAuthState(s, 'signInSuccess'));
+      // 제공자별 성공만 남긴다 — 계정 식별자는 남기지 않는다(심사 B-12 최소 수집).
+      trackLogin(provider as any);
       // 동기는 아래 자동 동기 effect 가 (signedIn 전환 + 데이터 변경 시) 처리한다.
     } catch (e: any) {
       setAuthState((s) => nextAuthState(s, 'signInError'));

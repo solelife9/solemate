@@ -11,6 +11,10 @@
  * 이 테스트는 파일을 텍스트로 읽어 검증한다(빌드·시뮬레이터 불필요).
  * 권한이 새로 늘어나면 WHITELIST 를 의도적으로 고쳐야 하므로 '권한 증식'도 함께 막는다.
  *
+ * ⚠️ ios/SoleMate/PrivacyInfo.xcprivacy 에는 설명 주석을 달아도 남지 않는다 — `pod install`
+ *    의 [Privacy Manifest Aggregation] 단계가 파일을 정규화해 다시 쓰면서 주석을 버린다
+ *    (내용 자체는 보존된다). 그래서 '왜 이 항목인가'의 근거는 이 테스트에 적어 둔다.
+ *
  * @format
  */
 import {readFileSync, existsSync} from 'fs';
@@ -125,6 +129,8 @@ describe('PrivacyInfo.xcprivacy', () => {
       'NSPrivacyCollectedDataTypeHealth',
       'NSPrivacyCollectedDataTypeFitness',
       'NSPrivacyCollectedDataTypeUserID',
+      // 제품 계측(lib/productAnalytics) — 선언 없이 수집하면 App Privacy 표기와 어긋난다.
+      'NSPrivacyCollectedDataTypeProductInteraction',
     ]) {
       expect(types).toContain(t);
     }

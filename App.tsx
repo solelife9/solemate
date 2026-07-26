@@ -76,6 +76,7 @@ import {setRunSurface, parseSurface, type Surface} from './lib/wearModel';
 import {forecastReplacement, type ReplacementForecast} from './lib/replacementForecast';
 import {mostRecentShoeId, lastWornDate} from './lib/shoeRecommend';
 import {recommendRotation} from './lib/rotation';
+import {trackFirstShoeAdded} from './lib/productAnalytics';
 import {findShoeClass, typeLabel} from './data/shoeClass';
 import {
   loadSnapshot, clearSnapshot, isResumable,
@@ -840,6 +841,9 @@ function Main(){
       showDialog('로그인이 필요해요','신발을 추가하려면 먼저 로그인해 주세요.');
       return;
     }
+    // 첫 신발 등록 = 활성화 지표(심사 B-12). 리텐션의 분기점이라 '첫 켤레'만 남긴다.
+    // (등록 경로 구분은 아직 없다 — 온보딩·메인 모두 이 함수를 지난다.)
+    if(shoes.filter(sh=>!isRetired(sh)).length===0){trackFirstShoeAdded('picker');}
     // 클라이언트 id + updatedAt 스탬프(머지 '최신 우선'). max_km/start_km/purchase_date 만
     // 채우고 나머지(total_km/run_time)는 런에서 파생(서버 truth 부재 시 폴백).
     const newShoe=stampUpdatedAt({
