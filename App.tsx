@@ -23,7 +23,7 @@ import {Ring, Button, Skeleton, Input} from './primitives';
 import ErrorBoundary from './ErrorBoundary';
 import ToastHost from './ToastHost';
 import DialogHost from './DialogHost';
-import {installCrashHandler, setCrashUser, recordError} from './lib/crashlytics';
+import {installCrashHandler, setCrashUser, recordError, reportIssue} from './lib/crashlytics';
 import {reverseGeoLabelKo} from './lib/geocode';
 import {devSeedShoes, devSeedRuns} from './lib/devSeed';
 // BackendShoe / BackendRun 은 types.d.ts 의 전역 ambient 인터페이스(import 불필요).
@@ -528,7 +528,7 @@ function Main(){
         // kind 로 분리: distance/streak → 기존 개인 챌린지, monthly/shoe/rotation → 확장.
         setChallenges(valid.filter((c:any)=>c.kind==='distance'||c.kind==='streak'));
         setExtChallenges(valid.filter((c:any)=>c.kind==='weekly'||c.kind==='shoe'||c.kind==='rotation'));
-      }catch(e){console.log('challenges load error',e);}
+      }catch(e){reportIssue('challenges load',e);}
     })();
   },[]);
 
@@ -543,7 +543,7 @@ function Main(){
         ]);
         if(nm&&nm.trim())setProfileName(nm);
         if(ph)setProfilePhoto(ph);
-      }catch(e){console.log('profile load error',e);}
+      }catch(e){reportIssue('profile load',e);}
     })();
   },[]);
 
@@ -551,7 +551,7 @@ function Main(){
   // 기본값으로 graceful 폴백하므로 별도 방어가 필요 없다(기존 settings_alerts 불변).
   useEffect(()=>{
     (async()=>{
-      try{setNotifSettingsState(await getNotifSettings());}catch(e){console.log('notif settings load error',e);}
+      try{setNotifSettingsState(await getNotifSettings());}catch(e){reportIssue('notif settings load',e);}
     })();
   },[]);
 
@@ -639,7 +639,7 @@ function Main(){
         });
         if(cancelled){w.unsubscribeForeground();w.unsubscribeTokenRefresh();}
         else wiring=w;
-      }catch(e){console.log('push wiring error',e);} // 비차단(이중 방어)
+      }catch(e){reportIssue('push wiring',e);} // 비차단(이중 방어)
     })();
     return ()=>{
       cancelled=true;
@@ -785,7 +785,7 @@ function Main(){
       // 부팅 초기화 실패(스토리지 손상/네이티브 결측 등) — 무한 스켈레톤 대신 재시도
       // 카드로 보낸다(2026-07-05: setBootState('error')가 한 번도 안 불려 BootError 가
       // 죽은 코드였고, throw 시 'loading'에 영구 고착됐다). 재시도는 initUser 재진입.
-      console.log('initUser boot error',e);
+      reportIssue('initUser boot',e);
       setBootState('error');
     }
   }
@@ -830,7 +830,7 @@ function Main(){
 
   // audit a2: 묘비 저장소 영속(비차단). 실패해도 메모리 상태는 갱신돼 동기로 전파된다.
   const persistTombstones=(t:{shoes:BackendShoe[];runs:BackendRun[]})=>{
-    try{void AsyncStorage.setItem(K_TOMBSTONES,JSON.stringify(t));}catch(e){console.log('tombstone persist error',e);}
+    try{void AsyncStorage.setItem(K_TOMBSTONES,JSON.stringify(t));}catch(e){reportIssue('storage: tombstone persist',e);}
   };
   // 한 레코드를 묘비(markDeleted: deleted+updatedAt)로 만들어 해당 묶음 저장소에 더한다.
   // 같은 id 의 옛 묘비는 교체해(중복 방지) 최신 updatedAt 만 남긴다. 라이브 배열에선 이미
@@ -966,7 +966,7 @@ function Main(){
       try{
         if(meta.photoUri)await AsyncStorage.setItem('runphoto_'+sid,meta.photoUri);
         else await AsyncStorage.removeItem('runphoto_'+sid);
-      }catch(e){console.log('run photo persist error',e);}
+      }catch(e){reportIssue('storage: run photo persist',e);}
     }
     if(meta.memo!==undefined){
       const memo=meta.memo.trim();
@@ -1042,7 +1042,7 @@ function Main(){
         // % 는 '남은 수명' 방향으로 말한다(표기 통일 2026-07-26) — 임계값 자체는 사용률 그대로.
         showDialog('신발 교체 알림',names.join(', ')+`\n수명이 ${Math.max(0,100-alertCfg.thresholdPct)}% 남았어요. 이제 다음 러닝화를 준비해볼까요?`,[{text:'확인'}]);
       }
-    }catch(e){console.log('checkShoeAlerts error',e);}
+    }catch(e){reportIssue('shoe replacement alerts',e);}
   }
 
   // ── 설정 변경(영속 + 상태 갱신) — ProfileScreen 설정 행이 호출 ──────────────
@@ -1229,7 +1229,7 @@ function Main(){
         progressPoints:view.rank.xp,
         nowMs:Date.now(),
       });
-    }catch(e){console.log('publish ranking error',e);}
+    }catch(e){reportIssue('publish ranking',e);}
   };
   const runCloudSync=async()=>{
     // 부팅 캐시(로컬 신발/런)가 hydrate 되기 전에는 절대 동기하지 않는다(데이터 유실 가드).
@@ -1257,7 +1257,7 @@ function Main(){
       // 점수는 머지된 live 레코드로 클라이언트가 계산하고, 표시정보(닉네임/랭크/타이틀)는
       // 현재 progression 에서 파생한다. 실패해도 동기 흐름·데이터엔 영향 없음(throw 흡수).
       void publishMyRankingNow(merged);
-    }catch(e){console.log('cloud sync error',e);}
+    }catch(e){reportIssue('cloud sync',e);}
     finally{cloudSyncBusyRef.current=false;}
   };
   // 항상 최신 클로저를 가리키는 ref — effect 가 stale backupData/applyBackupPayload 를 잡지 않게.
@@ -1333,7 +1333,7 @@ function Main(){
   const changeProfileName=(name:string)=>{
     const v=(name||'').trim()||DEFAULT_PROFILE_NAME;
     setProfileName(v);
-    try{void AsyncStorage.setItem(K_PROFILE_NAME,v);}catch(e){console.log('profile name save error',e);}
+    try{void AsyncStorage.setItem(K_PROFILE_NAME,v);}catch(e){reportIssue('storage: profile name save',e);}
   };
   const pickProfilePhoto=async()=>{
     try{
@@ -1347,8 +1347,8 @@ function Main(){
         return;
       }
       setProfilePhoto(picked.uri);
-      try{await AsyncStorage.setItem(K_PROFILE_PHOTO,picked.uri);}catch(e){console.log('profile photo save error',e);}
-    }catch(e){console.log('profile photo pick error',e);}
+      try{await AsyncStorage.setItem(K_PROFILE_PHOTO,picked.uri);}catch(e){reportIssue('storage: profile photo save',e);}
+    }catch(e){reportIssue('profile photo pick',e);}
   };
   // 챌린지 진행률용 런 매핑: 런 기록 → {date,dist}. km 은 백엔드가 문자열로도 보내므로
   // Number 로 강제하고, 음수/NaN 은 lib(challengeProgress)에서 0 으로 방어한다.
@@ -1527,7 +1527,7 @@ function Main(){
         setTimeout(()=>{void retryPendingHr(Date.now(),hkBackfillAndRepair).catch(()=>{});},60000);
       }
       showToast({message:'워치 러닝을 가져왔어요'});
-    }catch(e){console.log('watch run sync error',e);}
+    }catch(e){reportIssue('watch run sync',e);}
   // hkBackfillAndRepair 는 ref 기반(runsForHrRef)이라 첫 렌더 인스턴스로 충분 — 재구독 불필요.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }),[]);
@@ -1819,7 +1819,7 @@ function Main(){
       const kept=[...presentedNotifKeys.current].filter(k=>k.includes(todayY));
       presentedNotifKeys.current=new Set(kept);
       try{void AsyncStorage.setItem(K_NOTIF_PRESENTED,JSON.stringify(kept));}catch{/* 영속 실패는 삼킴 */}
-    }catch(e){console.log('notif present error',e);}
+    }catch(e){reportIssue('notification present',e);}
   };
 
   // 신발 로테이션 추천(차별점): 보유 신발+런 기록에서만 파생(새 상태 없음). 활성 2켤레+

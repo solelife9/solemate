@@ -90,3 +90,22 @@ export function installCrashHandler(): void {
     /* no-op */
   }
 }
+
+/**
+ * 진단 보고 — 원격 기록 + 개발 중 콘솔, 한 번에.
+ *
+ * 왜 필요한가(2026-07-26 감사 F-05): 릴리스 번들은 babel(transform-remove-console)이
+ * console.log 를 걷어낸다. 그래서 `catch(e){console.log('...', e)}` 만 있는 진단은
+ * **개발에선 보이고 릴리스에선 완전히 사라진다** — 정작 원인을 알아야 하는 건 사용자
+ * 기기에서 일어난 실패인데, 거기서만 흔적이 없다.
+ * 이 함수를 쓰면 '개발에선 콘솔, 릴리스에선 원격'이 한 줄로 보장된다.
+ */
+export function reportIssue(context: string, error: unknown): void {
+  recordError(error, context);
+  // __DEV__ 는 RN 전역 — 정의되지 않은 환경(순수 node 테스트)도 방어한다.
+  if (typeof __DEV__ !== 'undefined' && __DEV__) {
+    // 이 파일이 진단 콘솔의 유일한 창구다(호출부는 reportIssue 만 쓴다).
+    // eslint-disable-next-line no-console
+    console.log(context, error);
+  }
+}

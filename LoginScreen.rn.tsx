@@ -16,6 +16,7 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
 import {Button, KeegoWordmark, KakaoMark, NaverMark} from './primitives';
+import {reportIssue} from './lib/crashlytics';
 import {
   BG, ACCENT, BLACK, DANGER, T1, T2, T3, FONT, RADIUS,
   KAKAO_YELLOW, KAKAO_LABEL, NAVER_GREEN, NAVER_LABEL, TYPE,
@@ -49,7 +50,7 @@ export function LoginScreen({cloudPort, onSignedIn}: LoginScreenProps) {
       onSignedIn(user);
     } catch (e: any) {
       // 원문(서버 응답·SDK 코드)은 진단용 로그로만 — 화면엔 사용자 언어만(출시 감사).
-      console.log('login error', provider, e?.message || e);
+      reportIssue(`auth: login (${provider})`, e);
       const msg = authErrorMessage(e);
       if (msg) setError(msg); // null = 사용자 취소 — 조용히 복귀
       setBusy(null);

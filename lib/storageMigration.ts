@@ -15,6 +15,7 @@
 // ============================================================================
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import {reportIssue} from './crashlytics';
 
 /** 로컬 스토리지 스키마 버전을 보관하는 AsyncStorage 키. */
 export const STORAGE_SCHEMA_VERSION_KEY = 'storage_schema_version';
@@ -91,7 +92,7 @@ export async function migrateStorageSchema(
     return { migrated: true, from, to: CURRENT_STORAGE_SCHEMA_VERSION };
   } catch (e) {
     // 비차단: 마이그레이션만 스킵하고 버전을 올리지 않는다(데이터 불변, 다음 부팅 재시도).
-    console.log('migrateStorageSchema skipped', e);
+    reportIssue('storage: schema migration skipped', e);
     return { migrated: false, from, to: from, skipped: true };
   }
 }

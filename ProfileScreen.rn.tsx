@@ -20,6 +20,7 @@ import { BG, CARD, CARD_HI, ACCENT, GOOD, DANGER, WARN, T1, T2, T3, SEP, CARD_BO
 import { TabBar, TABBAR_CLEARANCE, Button, SegmentedControl, StatGrid, Stepper, AmbientBackdrop, Rise, GlassEdge, Toggle, KakaoMark, NaverMark, Input } from './primitives';
 import { Unit, unitKorean, displayNum } from './lib/units';
 import { monthlyRecap, type RecapRun, type RecapShoe } from './lib/recap';
+import { reportIssue } from './lib/crashlytics';
 import { hkAvailable, hkLinked, hkLink, hkRestingHR } from './lib/healthkit';
 import { buildRecapShareCardModel, shareRecapCard, shareRunnerSpecCard, formatRecapPRs, type RecapKind, type SvgCapturable } from './lib/shareCard';
 import RecapShareCard from './RecapShareCard';
@@ -326,7 +327,7 @@ export default function ProfileScreen({
     } catch (e: any) {
       setAuthState((s) => nextAuthState(s, 'signInError'));
       // 원문은 로그로만 — 화면엔 사용자 언어(LoginScreen 과 동일 매퍼, 출시 감사).
-      console.log('profile signin error', e?.message || e);
+      reportIssue('auth: profile sign-in', e);
       const msg = authErrorMessage(e);
       if (msg) setCloudMsg({ ok: false, text: msg });
     }
@@ -378,7 +379,7 @@ export default function ProfileScreen({
               setCloudMsg({ ok: true, text: '계정이 삭제됐어요.' });
             } catch (e: any) {
               // raw 에러(영문 Firebase 코드)를 화면에 노출하지 않는다 — 콘솔에만.
-              console.log('account delete error', e);
+              reportIssue('auth: account delete', e);
               const reauth = /requires-recent-login|recent login|re-authenticate/i.test(String(e?.code ?? e?.message ?? ''));
               setCloudMsg({ ok: false, text: reauth ? '보안을 위해 다시 로그인한 뒤 탈퇴해 주세요.' : '계정을 삭제하지 못했어요. 잠시 후 다시 시도해 주세요.' });
             }
@@ -409,7 +410,7 @@ export default function ProfileScreen({
       if (!silent) setCloudMsg({ ok: true, text: '모든 기록이 안전하게 보관됐어요.' });
     } catch (e: any) {
       // 원문(Firestore 에러 등)은 로그로만 — 화면엔 사용자 언어(출시 감사).
-      console.log('sync error', e?.message || e);
+      reportIssue('cloud sync (profile)', e);
       setSyncFailed(true); // 계정 카드에 '동기화 실패 · 다시 시도' 표시(조용한 실패 방지).
       if (!silent) setCloudMsg({ ok: false, text: '지금은 연결이 원활하지 않아요. 기록은 이 기기에 그대로 있어요.' });
     } finally {

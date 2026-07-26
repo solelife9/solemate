@@ -4,7 +4,7 @@ import {View, StyleSheet} from 'react-native';
 import {Text} from './lib/text';
 import {BG, T1, T3, FONT as FP, DISPLAY as FH, TYPE} from './theme';
 import {Button} from './primitives';
-import {recordError} from './lib/crashlytics';
+import {reportIssue} from './lib/crashlytics';
 
 type Props = {
   children: React.ReactNode;
@@ -28,10 +28,8 @@ export default class ErrorBoundary extends React.Component<Props, State> {
     // 크래시 대신 폴백을 띄우고, 그 예외를 Crashlytics 에 비치명으로 기록한다(원격
     // 관측성). recordError 는 graceful — 네이티브 부재/오류에서도 throw 하지 않는다.
     const stack = info?.componentStack ? `: ${info.componentStack.slice(0, 500)}` : '';
-    recordError(error, `React render error${stack}`);
-    if (__DEV__) {
-      console.log('ErrorBoundary caught', error, info?.componentStack);
-    }
+    // reportIssue = 원격 기록 + 개발 콘솔(릴리스에선 콘솔이 걷혀도 원격엔 남는다).
+    reportIssue(`React render error${stack}`, error);
   }
 
   handleRetry = () => {

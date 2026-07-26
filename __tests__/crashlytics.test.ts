@@ -92,3 +92,25 @@ describe('lib/crashlytics 래퍼', () => {
     delete (globalThis as any).__keegoCrashHandlerInstalled;
   });
 });
+
+// ── reportIssue — 릴리스에서 사라지지 않는 진단 창구(2026-07-26 F-05) ──────────
+// 릴리스 번들은 babel 이 console.log 를 걷어낸다. console 로만 남긴 진단은 정작 사용자
+// 기기에서만 무음이 되므로, 진단은 이 창구를 거쳐 원격에도 반드시 남아야 한다.
+describe('reportIssue', () => {
+  test('원격 기록으로 넘기고 context 를 함께 남긴다', () => {
+    const {reportIssue} = require('../lib/crashlytics');
+    const err = new Error('boom');
+    reportIssue('storage: something failed', err);
+
+    expect(fbRecordError).toHaveBeenCalled();
+    expect(fbLog).toHaveBeenCalledWith(expect.anything(), 'storage: something failed');
+  });
+
+  test('네이티브가 없거나 throw 해도 호출부를 막지 않는다', () => {
+    const {reportIssue} = require('../lib/crashlytics');
+    (fbRecordError as jest.Mock).mockImplementationOnce(() => {
+      throw new Error('native missing');
+    });
+    expect(() => reportIssue('ctx', new Error('x'))).not.toThrow();
+  });
+});

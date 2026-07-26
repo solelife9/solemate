@@ -7,6 +7,11 @@ module.exports = {
     // 흔적이 0이라, 오프라인에서 낡은 데이터가 '현재'로 보이는 CS 를 추적할 수 없었다.
     // 정말 무시해도 되는 실패는 catch { /* 사유 */ } 로 **사유를 남기면** 통과한다.
     'no-empty': ['error', {allowEmptyCatch: false}],
+    // console 금지(2026-07-26 감사 F-05). 릴리스 번들은 babel 이 console.log 를 걷어내므로
+    // console 로만 남긴 진단은 **정작 사용자 기기에서만 사라진다** — 원인을 알아야 하는
+    // 바로 그곳에서 무음이 된다. 진단은 lib/crashlytics 의 reportIssue 로 남긴다
+    // (개발=콘솔 · 릴리스=원격, 한 줄로 보장). warn/error 는 RN 내부 경고용으로 허용.
+    'no-console': ['error', {allow: ['warn', 'error']}],
     // Dynamic Type 정책(DESIGN.md §6.7): Text/TextInput 은 lib/text 래퍼 경유 강제 —
     // RN 직수입은 시스템 글꼴 배율 무제한(레이아웃 파괴) + 라이트 키보드 회귀를 만든다.
     // TS 변형을 쓰는 이유: ref 인스턴스 타입 등 `import type` 은 허용해야 해서.
@@ -30,6 +35,11 @@ module.exports = {
       // 래퍼 자신과 테스트는 RN 원본 접근 허용.
       files: ['lib/text.tsx', '__tests__/**', 'tests/**'],
       rules: {'@typescript-eslint/no-restricted-imports': 'off'},
+    },
+    {
+      // 빌드 스크립트는 콘솔이 곧 출력 수단이다(앱 번들에 포함되지 않는다).
+      files: ['scripts/**'],
+      rules: {'no-console': 'off'},
     },
   ],
 };
