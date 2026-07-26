@@ -77,6 +77,7 @@ import {forecastReplacement, type ReplacementForecast} from './lib/replacementFo
 import {mostRecentShoeId, lastWornDate} from './lib/shoeRecommend';
 import {recommendRotation} from './lib/rotation';
 import {cacheableRun, cacheEntryForSave} from './lib/runCache';
+import {reportStorageResult} from './lib/storageAlert';
 import {trackFirstShoeAdded} from './lib/productAnalytics';
 import {findShoeClass, typeLabel} from './data/shoeClass';
 import {
@@ -628,7 +629,9 @@ function Main(){
             [CACHE_SHOES_KEY]:JSON.stringify(shoes),
             [CACHE_RUNS_KEY]:JSON.stringify((runs as any[]).map(cacheableRun)),
           });
+          reportStorageResult(true);
         }catch(e){
+          reportStorageResult(false);
           // 다음 mutation 에서 재시도되지만, 저장 공간 부족이면 계속 실패해 캐시가 조용히
           // 낡는다 — 오프라인으로 열었을 때 며칠 전 상태가 '현재'로 보이는 원인. 원격 계측 필수.
           recordError(e,'storage: boot cache write (debounced)');
@@ -791,7 +794,7 @@ function Main(){
     if(__DEV__ && process.env.NODE_ENV!=='test' && liveShoes.length===0 && (globalThis as any).__KEEGO_DEV_SEED__!==false){
       liveShoes=devSeedShoes();liveRuns=devSeedRuns();
       // setMany — 두 키를 한 번의 브리지 왕복으로. 실패는 계측한다(무음 금지).
-      try{await AsyncStorage.setMany({[CACHE_SHOES_KEY]:JSON.stringify(liveShoes),[CACHE_RUNS_KEY]:JSON.stringify(liveRuns)});}catch(e){recordError(e,'storage: cache write after sync');}
+      try{await AsyncStorage.setMany({[CACHE_SHOES_KEY]:JSON.stringify(liveShoes),[CACHE_RUNS_KEY]:JSON.stringify(liveRuns)});reportStorageResult(true);}catch(e){recordError(e,'storage: cache write after sync');reportStorageResult(false);}
     }
     // 묘비(삭제) 필터(#4): 부팅캐시는 800ms 디바운스라, 삭제 직후 강제종료/크래시되면 캐시엔
     // 아직 삭제된 레코드가 남아 있을 수 있다. 삭제 시 *동기적으로* 영속되는 묘비(tombstones_v1)로
@@ -924,7 +927,8 @@ function Main(){
       const entry=cacheEntryForSave(run,!opts?.keepRoute);
       const next=[entry,...list.filter((r:any)=>String(r?.id)!==String(run.id))];
       await AsyncStorage.setItem(CACHE_RUNS_KEY,JSON.stringify(next));
-    }catch(e){recordError(e,'storage: run cache write');}
+      reportStorageResult(true);
+    }catch(e){recordError(e,'storage: run cache write');reportStorageResult(false);}
   };
 
   // 런 한 건을 부팅 캐시에서 즉시 durable 하게 제거한다(삭제 크래시-세이프티). 800ms 디바운스
