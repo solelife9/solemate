@@ -163,8 +163,7 @@ export function ShoeCard({
   const rc = ringColor(h.percentUsed);
   const tier = wearTier(h.percentUsed);
   // 거리는 사용자 단위(km/mi)로 표시한다 — 저장은 km, 표기만 환산(displayNum).
-  // 숫자축 표기(홈 '이번 주 러닝' 히어로의 '7.0 / 95 km' 와 같은 문법으로 통일, 2026-07-26).
-  const usedText = `${displayNum(h.usedKm, unit)} / ${displayNum(shoe.max, unit)} ${unit}`;
+  const usedText = `${displayNum(h.usedKm, unit)}/${displayNum(shoe.max, unit)}${unit}`;
   const remainText = h.remainingKm > 0 ? `${displayNum(h.remainingKm, unit)}${unit} 남음` : '수명 초과';
   // 카테고리 라벨 = 시드 DB(data/shoeClass)의 실제 종류(카본 레이싱/데일리 등)만.
   // 매칭 없으면 라벨 자체를 숨긴다 — 전부 러닝화인 앱에서 '러닝화' 플레이스홀더는
@@ -270,17 +269,16 @@ export function ShoeCard({
             </Animated.View>
           </View>
 
-          {/* 누적 / 총 수명 한 줄 — 링이 비율(남은 수명 %)을 말하므로 이 줄은 절대값만
-              담당한다(간결화 D1, 2026-07-26). 구 'N km 남음'은 링 중앙 %와 같은 말이라 폐지.
-              수명을 넘긴 신발은 초과 사실이 %로는 안 보이므로 그때만 '수명 초과'를 덧붙인다. */}
+          {/* 사용 / 남은 거리 */}
+          {/* (간결화 D1 '남은 거리 제거'는 2026-07-26 민우님 판단으로 되돌렸다 — 링의 %와
+              중복이긴 하나, 남은 '거리'가 사라지면 "얼마나 더 신을 수 있나"를 km 로 가늠하던
+              감각이 없어져 오히려 헷갈린다. %(비율)와 km(절대값)는 러너에게 다른 정보다.) */}
           <View style={styles.kmRow}>
-            <Text style={styles.kmLabel}>{usedText}</Text>
-            {h.remainingKm <= 0 && (
-              <>
-                <View style={styles.kmSep} />
-                <Text style={[styles.kmLabel, {color: rc.solid}]}>{remainText}</Text>
-              </>
-            )}
+            <Text style={styles.kmLabel}>사용 <Text style={styles.kmStrong}>{usedText}</Text></Text>
+            <View style={styles.kmSep} />
+            <Text style={styles.kmLabel}>
+              <Text style={{color: h.remainingKm > 0 ? T1 : rc.solid}}>{remainText}</Text>
+            </Text>
           </View>
           </Pressable>
 
@@ -354,13 +352,12 @@ export function GhostShoeCard({width, onPress}: {width: number; onPress?: () => 
 // export(2026-07-25 IA 심사): 이 파일의 기본 export 화면은 미마운트 상태라 가디언이
 // 라이브 홈(HomeScreen.rn)에서 죽어 있었다 — 내구도 개입이 신발 고르는 결정 시점에
 // 침묵하던 회귀. HomeScreen 이 이 컴포넌트를 직접 소비한다(ShoeCard 와 같은 방식).
-export function Guardian({danger, pct: _pct, onPress}: {danger: boolean; pct: number; onPress?: () => void}) {
+export function Guardian({danger, pct, onPress}: {danger: boolean; pct: number; onPress?: () => void}) {
   const color = danger ? DANGER : WARN;
-  // 배너는 '판단'만 말한다(간결화 D2, 2026-07-26) — 숫자는 바로 위 카드 링이 '남은 수명 N%'
-  // 로 이미 크게 말하고 있어, 앞머리에 같은 %를 또 붙이면 세 번째 반복이었다. 문장이 짧아져
-  // 긴 모델명 화면에서도 한 줄에 온전히 들어간다. (pct 는 노출값이 사라져 미사용 — 호출부
-  // 시그니처는 유지해 소비처 변경 0.)
-  const label = danger ? KEEP_GOING_REPLACE : '슬슬 교체를 준비할 때예요';
+  // pct 는 마모(percentUsed) — 사용자 노출은 '남은 수명' 방향으로 환산(표기 통일).
+  // (간결화 D2 '앞머리 % 제거'는 2026-07-26 민우님 판단으로 되돌렸다 — 홈 신발 카드와
+  //  같은 이유: 링의 %와 겹쳐도 배너만 따로 볼 때 상태를 숫자로 확인할 수 있어야 한다.)
+  const label = danger ? KEEP_GOING_REPLACE : `남은 수명 ${Math.max(0, 100 - Math.round(pct))}% · 슬슬 교체를 준비할 때`;
   return (
     <Pressable
       onPress={onPress}
@@ -434,7 +431,9 @@ const styles = StyleSheet.create({
   ringPctSub: {fontFamily: FONT, fontSize: rf(15), fontWeight: '600', color: withAlpha(T1, 0.55)},
   // % 는 숫자와 베이스라인 정렬(구 flex-start+marginTop=어중간한 중간 부유 → 세 자리(100%)에서 특히 어색).
   ringPctRow: {flexDirection: 'row', alignItems: 'baseline', marginTop: rv(8)},
-  ringPct: {fontFamily: DISPLAY, fontSize: rf(58), fontWeight: '700', letterSpacing: -2.6, lineHeight: rf(60), color: T1, fontVariant: ['tabular-nums']},
+  // 자간 −2.6 → −1(민우님 2026-07-26 "거슬려"): 58pt·700 에 −2.6 은 앱에서 가장 강한 음수라
+  // 숫자끼리 붙어 '00'·'100' 이 한 덩어리로 뭉쳤다(러닝 링에서 지적된 것과 같은 조건).
+  ringPct: {fontFamily: DISPLAY, fontSize: rf(58), fontWeight: '700', letterSpacing: -1, lineHeight: rf(60), color: T1, fontVariant: ['tabular-nums']},
   ringPctUnit: {fontFamily: DISPLAY, fontSize: rf(21), fontWeight: '700', color: withAlpha(T1, 0.7), marginLeft: rs(2)},
 
   kmRow: {flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(12), marginTop: rv(16)},

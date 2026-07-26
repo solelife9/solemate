@@ -32,7 +32,6 @@ import {
   T1,
   T2,
   T3,
-  CARD_BORDER,
   FONT,
   DISPLAY,
   SPACE,
@@ -252,25 +251,27 @@ export default function ProgressionScreen({
           </View>
         ) : null}
 
-        {/* 히어로 — 티어는 정체성이라 이름 곁에(사용자 결정 2026-07-04 v2). 단, 칩
-            (알약 상자) 대신 Satisfy식 타이포그래피: 트래킹 잡은 캡스가 티어 색으로
-            이름 위에 선다 — 상자 없이 글자가 곧 훈장. 여정 카드는 '가는 길'(방향),
-            아이브로우는 '지금의 나'(정체성)로 역할이 다르다. */}
+        {/* 히어로 — 티어는 정체성이라 이름 곁에(사용자 결정 2026-07-04 v2). 칩(알약 상자)
+            대신 Satisfy식 타이포그래피: 트래킹 잡은 캡스가 티어 색으로 선다 — 상자 없이
+            글자가 곧 훈장.
+            재구성(민우님 C안 확정 2026-07-26): 티어를 이름 '위'에서 **바로 옆**으로 붙이고,
+            구분선과 '업적 N개 달성' 단독 줄을 걷어 카드를 6단 → 3단으로 압축한다. 업적 수는
+            진행바 아래 한 줄의 왼쪽 끝(XP 와 짝)으로 내려간다. */}
         <View style={s.hero} testID="rank-hero">
           <GlassEdge glints={false} radius={RADIUS.xl} />
-          <Text style={[s.tierEyebrow, {color: rankColor}]} testID="rank-eyebrow">
-            {TIER_LABEL[view.rank.tier]}
-          </Text>
-          <Text style={s.nick} numberOfLines={1} testID="progression-nick">
-            {profileName}
-          </Text>
-          <Text style={s.heroSub} testID="progression-xp">
-            업적 {achievementCount}개 달성
-          </Text>
+          <View style={s.nameRow}>
+            <Text style={s.nick} numberOfLines={1} testID="progression-nick">
+              {profileName}
+            </Text>
+            <Text style={[s.tierEyebrow, {color: rankColor}]} testID="rank-eyebrow">
+              {TIER_LABEL[view.rank.tier]}
+            </Text>
+          </View>
 
           {/* 티어 진행바 — 별도 '나의 여정' 카드를 정체성 밑으로 통합(사용자 2026-07-05).
               한 카드에서 '지금의 나'(티어·이름) 아래 '가는 길'(다음 티어)을 잇는다.
-              얇은 구분선으로 두 역할을 나눈다. */}
+              구분선은 폐지(C안 2026-07-26) — 이름 줄이 한 줄로 짧아져 두 역할이 이미
+              시각적으로 갈린다. 선 하나만큼 카드도 낮아진다. */}
           <View style={s.guideInner} testID="rank-guide">
             {guide.nextTier ? (
               <>
@@ -294,19 +295,25 @@ export default function ProgressionScreen({
                   {TIER_LABEL[guide.nextTier]}
                 </Text>
               </View>
-              {/* 진행바가 이미 비율을 그리므로, 숫자는 '얼마나 더'를 말한다(간결화 F1) —
-                  구 '1,240 / 2,000 XP' 는 바와 같은 정보의 숫자 버전이었다. */}
-              {guide.xpForNext > 0 && (
-                <Text style={s.toNext} testID="rank-to-next">
-                  {TIER_LABEL[guide.nextTier]}까지 {Math.max(0, bandTotal - xpInBand).toLocaleString()} XP
-                </Text>
-              )}
               </>
             ) : (
               <Text style={[s.maxTier, {color: rankColor}]} testID="rank-max">
                 가장 높은 곳 — 최고 등급
               </Text>
             )}
+            {/* 발치 한 줄 — 좌: 업적 수(구 이름 밑 단독 줄에서 이동), 우: 다음 티어까지 남은 XP.
+                진행바가 이미 비율을 그리므로 숫자는 '얼마나 더'만 말한다(간결화 F1) —
+                구 '1,240 / 2,000 XP' 는 바와 같은 정보의 숫자 버전이었다. */}
+            <View style={s.heroFoot}>
+              <Text style={s.heroSub} testID="progression-xp">
+                업적 {achievementCount}개
+              </Text>
+              {!!guide.nextTier && guide.xpForNext > 0 && (
+                <Text style={s.toNext} testID="rank-to-next">
+                  {TIER_LABEL[guide.nextTier]}까지 {Math.max(0, bandTotal - xpInBand).toLocaleString()} XP
+                </Text>
+              )}
+            </View>
           </View>
         </View>
 
@@ -465,10 +472,15 @@ const s = StyleSheet.create({
     borderRadius: RADIUS.xl,
     borderCurve: 'continuous',
     overflow: 'hidden',
-    padding: SPACE.xl,
+    // 20 → 16(SPACE.lg, 2026-07-26): 아래 스탯 카드 패딩(16)과 어긋나 히어로만 헐렁했다.
+    padding: SPACE.lg,
     gap: SPACE.xs,
   },
-  tierEyebrow: {fontFamily: DISPLAY, fontSize: TYPE.label.fontSize, fontWeight: '600', letterSpacing: 4, textTransform: 'uppercase'},
+  // 이름 + 티어 한 줄 — 티어는 이름 바로 옆에 붙는다(민우님 2026-07-26). baseline 정렬이라
+  // 크기가 다른 두 글자의 밑선이 맞는다.
+  nameRow: {flexDirection: 'row', alignItems: 'baseline', gap: rs(10), flexWrap: 'wrap'},
+  // 자간 4 → 2.5: 이름 옆으로 오면 4는 너무 벌어져 이름과 한 덩어리로 안 읽힌다.
+  tierEyebrow: {fontFamily: DISPLAY, fontSize: TYPE.label.fontSize, fontWeight: '600', letterSpacing: 2.5, textTransform: 'uppercase'},
   nick: {
     fontFamily: DISPLAY,
     color: T1,
@@ -478,9 +490,12 @@ const s = StyleSheet.create({
   },
   heroSub: {fontFamily: FONT, color: T3, fontSize: TYPE.label.fontSize, fontWeight: '600'},
   // 티어 진행바 — 히어로 카드에 통합, 정체성과 얇은 구분선으로 분리
-  guideInner: {alignSelf: 'stretch', marginTop: SPACE.md, paddingTop: SPACE.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: CARD_BORDER},
-  // 승급까지 남은 XP — 게임 히어로가 아니라 속삭임(작고 뮤트, 우측 정렬)
-  toNext: {fontFamily: FONT, color: T3, fontSize: TYPE.caption.fontSize, fontWeight: '600', letterSpacing: 0.1, textAlign: 'right', marginTop: rv(10), fontVariant: ['tabular-nums']},
+  // 구분선·상단 패딩 폐지(C안 2026-07-26) — 이름 줄이 한 줄로 짧아져 선 없이도 역할이 갈린다.
+  guideInner: {alignSelf: 'stretch', marginTop: SPACE.md},
+  // 발치 한 줄 — 좌 업적 수 · 우 남은 XP. 둘 다 속삭임(작고 뮤트).
+  heroFoot: {flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: rs(10), marginTop: rv(10)},
+  // 승급까지 남은 XP — 게임 히어로가 아니라 속삭임(작고 뮤트)
+  toNext: {fontFamily: FONT, color: T3, fontSize: TYPE.caption.fontSize, fontWeight: '600', letterSpacing: 0.1, fontVariant: ['tabular-nums']},
   xpRow: {flexDirection: 'row', alignItems: 'baseline', gap: rv(0)},
   xpNum: {fontFamily: DISPLAY, fontSize: TYPE.display.fontSize, fontWeight: '700', letterSpacing: -0.8, fontVariant: ['tabular-nums']},
   xpUnit: {fontFamily: FONT, color: T3, fontSize: TYPE.body.fontSize, fontWeight: '600'},

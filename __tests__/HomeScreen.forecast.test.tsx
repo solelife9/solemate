@@ -39,9 +39,7 @@ describe('HomeScreen 신발 카드(링 게이지)', () => {
     expect(txt).toContain('남은 수명');
     expect(txt).not.toContain('소진율'); // 소진(↑) 표기는 사용자 노출에서 폐지
     expect(txt).toContain('57');        // 300/700 사용 → 남은 수명 57%
-    // 간결화 D1(2026-07-26): 'N km 남음'은 링 %와 같은 말이라 폐지 — 아래 줄은 숫자축만.
-    expect(txt).toContain('300 / 700 km');
-    expect(txt).not.toContain('남음');
+    expect(txt).toContain('400km 남음'); // remaining
     expect(txt).toContain('러닝 시작');
   });
 

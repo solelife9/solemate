@@ -31,6 +31,8 @@ import { SHOE_REPLACE_PCT } from './lib/shoe';
 import { TrainingLoadCard, LEVEL_COLOR } from './TrainingLoadCard';
 import { LOAD_WORD, type TrainingLoadAssessment } from './lib/trainingLoad';
 import { WeeklyGoalStepper } from './ChallengesSection';
+import RotationInsightPanel from './RotationInsightPanel';
+import type { RotationPick } from './lib/rotation';
 
 export type WeekStats = { km: string; runs: number; pace: string };
 
@@ -305,7 +307,9 @@ function WeekCard({ week, unit = 'km', weeklyGoalKm = 0, weekDays = [], weekToda
   );
 }
 
-// (로테이션 인사이트 패널 → RotationInsightPanel.tsx 로 이관 — 심사 #13, 2026-07-22.)
+// (로테이션 인사이트 패널 = RotationInsightPanel.tsx. 2026-07-22 에 신발 탭으로 옮겼다가
+//  2026-07-26 민우님 지시로 홈으로 복귀 — '오늘 어떤 신발로 달릴까'를 정하는 자리가 홈이라,
+//  로테이션 정보도 그 결정 곁에 있어야 한다. 신발 탭에서는 제거(집은 하나).)
 
 // 수익화 v1(차별점 정합): 선택 신발이 '교체' 등급이면 같은 카테고리의 다음 러닝화를
 // 추천한다(구매 의도 최고 시점의 contextual 추천 — 배너광고 아님). 쇼핑몰 검색 링크는
@@ -376,8 +380,11 @@ export default function HomeScreen({
   activeIdx: activeIdxProp, onSelect, unit = 'km', week,
   onOpenShoe, forecast, progression,
   onRefresh, lastSyncAt: _lastSyncAt, userName,
-  weeklyGoalKm = 0, weekDays = [], weekTodayIdx = -1, onChangeWeeklyGoal, load,
+  weeklyGoalKm = 0, weekDays = [], weekTodayIdx = -1, onChangeWeeklyGoal, load, rotation,
 }: {
+  // 로테이션 인사이트(신발 탭 → 홈 복귀, 2026-07-26) — App 이 recommendRotation 파생값을
+  // 주입한다. 표시 전용이고, 활성 2켤레 미만이면 패널이 스스로 숨는다.
+  rotation?: RotationPick[];
   shoes?: Shoe[];
   userName?: string;
   // 이번 주 러닝 카드의 주간 목표(km). 0 = 목표 없음(히어로에 '목표 정하기' 초대).
@@ -512,9 +519,19 @@ export default function HomeScreen({
               />
             </View>
           </Rise>
+          {/* 로테이션 인사이트 — '오늘 어떤 신발로 달릴까'를 정하는 자리가 홈이므로
+              신발 탭에서 되돌렸다(민우님 2026-07-26). 행 탭 = 그 신발 상세.
+              활성 2켤레 미만이면 패널이 스스로 null 을 반환해 통째로 숨는다. */}
+          {!!rotation && rotation.length > 0 && (
+            <Rise delay={160}>
+              <RotationInsightPanel
+                rotation={rotation}
+                onPickShoe={onOpenShoe ? (id) => onOpenShoe(String(id)) : undefined}
+              />
+            </Rise>
+          )}
           {/* (체력 트렌드 FitnessCard → 기록 탭 인사이트로 이동, 진척 띠 → 마이탭으로
-              일원화 — MVP 홈 다이어트. 홈은 '오늘 신발 고르고 뛴다' 저니에 집중한다.
-              로테이션 인사이트도 신발 탭으로 이관 — 심사 #13, 2026-07-22.) */}
+              일원화 — MVP 홈 다이어트. 홈은 '오늘 신발 고르고 뛴다' 저니에 집중한다.) */}
           {/* 수익화 v1: 다음 러닝화 추천 노출 트리거 — Slice 6 교체 예측 기반(overdue/임박).
               forecast가 주입되면 shouldRecommendNextShoe로 판정하고, 없으면 사용률 임계
               (≥SHOE_REPLACE_PCT=90%) 폴백을 보존한다(구 3단계 condition==='교체' 비교를

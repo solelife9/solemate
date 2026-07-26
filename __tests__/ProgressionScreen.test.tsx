@@ -100,7 +100,7 @@ describe('ProgressionScreen — 진척 표면', () => {
     const sub = byTestID(root, 'progression-xp')[0];
     expect(textOf(sub)).not.toContain('XP');
     expect(textOf(sub)).toContain('업적');
-    expect(textOf(sub)).toContain(`업적 ${achievementCount}개 달성`);
+    expect(textOf(sub)).toContain(`업적 ${achievementCount}개`);
 
     // 타이틀 시스템 폐지 회귀 가드: 더 이상 장착 타이틀 표시가 없다.
     expect(byTestID(root, 'equipped-title').length).toBe(0);

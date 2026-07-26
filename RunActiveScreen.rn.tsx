@@ -128,7 +128,10 @@ const cer = StyleSheet.create({
   glow: { position: 'absolute' },
   // 세리머니 거리 = NUM(Jost) — 1초 뒤 리캡 히어로(NUM 68)로 넘겨받는 같은 숫자의
   // 폰트 점프 해소(2026-07-16 통일). weight 도 리캡 heroNum(700)과 정렬.
-  dist: { color: T1, fontFamily: NUM, fontSize: rf(64), fontWeight: '700', fontVariant: ['tabular-nums'], letterSpacing: -1.5, lineHeight: rf(78), includeFontPadding: false },
+  // 두께 700 → 500(민우님 2026-07-26): Jost 는 기하학 폰트라 굵어지면 0 의 속공간이 좁아져
+  // '00' 이 한 덩어리로 뭉친다. GO 를 뺀 모든 Jost 숫자를 500 으로 통일한다 — 카운트다운
+  // (500) → 세리머니 → 리캡으로 이어지는 같은 숫자의 굵기 점프도 함께 사라진다.
+  dist: { color: T1, fontFamily: NUM, fontSize: rf(64), fontWeight: '500', fontVariant: ['tabular-nums'], letterSpacing: -1.5, lineHeight: rf(78), includeFontPadding: false },
   unit: { color: withAlpha(T1, 0.8), fontFamily: FONT, fontSize: rf(19), fontWeight: '700', letterSpacing: 0.6, marginTop: rv(4) },
 });
 
@@ -348,11 +351,41 @@ export default function RunActiveScreen({
   const STOP_CIRC = 2 * Math.PI * STOP_R;
   const holdAnim = useRef(new Animated.Value(0)).current;
   const holdOffset = holdAnim.interpolate({ inputRange: [0, 1], outputRange: [STOP_CIRC, 0] });
+  // ── '가끔 종료가 안 먹는' 버그 근본 수정(2026-07-26 민우님 제보) ────────────────
+  // 원인: 확정 시점이 **두 개의 서로 다른 시계**로 굴러갔다.
+  //   ① 홀드 링 = Animated.timing(600ms) — 경과 '시각' 기준이라 프레임이 밀려도 제때 100% 가 된다.
+  //   ② onLongPress = RN 내부 JS setTimeout(600ms) — JS 스레드가 막히면 **늦게** 발화한다.
+  // 러닝 중엔 GPS 콜백·1초 틱·라이브 지도로 JS 스레드가 늘 붐빈다. 그래서 링은 이미 꽉 찼는데
+  // 롱프레스 타이머는 아직 안 울린 구간이 생기고, 사용자가 '다 찼으니' 손을 떼면 onPressOut 이
+  // 눌림을 취소해 onLongPress 는 영영 안 온다 → 종료 안 됨. 둘의 duration 이 똑같아 여유가 0.
+  // 해결: **링 애니메이션 완료 자체를 확정 신호로** 쓴다(보이는 것 = 동작의 단일 진실원).
+  // onLongPress 도 남겨 두되(접근성·기존 계약) 먼저 온 쪽만 1회 발화하도록 가드한다.
+  // 히어로 3지표 — 값 문자열과 '공통' 폰트 크기(위 렌더 주석 참조). 가장 긴 값에 맞춰
+  // 한 배율을 정하고 셋이 함께 쓴다. 폭 기준: 한 칸 ≈ 화면폭/3, 숫자는 tabular 라 글자
+  // 수에 선형 비례한다. 5자 이하는 기준 크기 그대로(대부분의 러닝 구간).
+  const metricFontSize = (vals: string[], base: number) => {
+    const n = Math.max(1, ...vals.map(v => String(v ?? '').length));
+    const scale = n <= 5 ? 1 : n === 6 ? 0.86 : n === 7 ? 0.76 : 0.68;
+    return rf(Math.round(base * scale));
+  };
+  const holdFired = useRef(false);
+  const holdRun = useRef<Animated.CompositeAnimation | null>(null);
+  const fireStopOnce = () => {
+    if (holdFired.current) return;
+    holdFired.current = true;
+    confirmStop();
+  };
   const startHold = () => {
+    holdFired.current = false;
     holdAnim.setValue(0);
-    Animated.timing(holdAnim, { toValue: 1, duration: HOLD_MS, easing: Easing.linear, useNativeDriver: false }).start();
+    const a = Animated.timing(holdAnim, { toValue: 1, duration: HOLD_MS, easing: Easing.linear, useNativeDriver: false });
+    holdRun.current = a;
+    // finished=false = 손을 떼 중간에 멈춘 것(취소) → 발화하지 않는다.
+    a.start(({ finished }) => { if (finished) fireStopOnce(); });
   };
   const cancelHold = () => {
+    holdRun.current?.stop();
+    holdRun.current = null;
     Animated.timing(holdAnim, { toValue: 0, duration: MOTION.dur.fast, useNativeDriver: false }).start();
   };
   // 종료 확정 → 세리머니(A안) → onStop. 세리머니 ~1.05s 는 사용자가 그만큼 늦게 종료를
@@ -639,12 +672,26 @@ export default function RunActiveScreen({
 
       {/* hero metrics — 순서: 시간 · 심박 · 페이스(사용자 지정). 프리미엄: 가벼운 값 + 마이크로
           라벨, 위 헤어라인만. 일시정지 시 22로 줄며 아래로 서브 지표가 펼쳐진다. */}
+      {/* ── 세 칸 '같은 크기' 보장(민우님 2026-07-26 "숫자들이 제각각") ────────────────
+          구: 칸마다 adjustsFontSizeToFit + minimumFontScale 0.72 를 따로 걸어, 글자 수가
+          많은 칸('00:00' 5자)만 혼자 최대 72% 로 줄고 '0.00'·'--' 는 그대로라 한 줄 안에서
+          크기가 제각각으로 보였다(실기기 스크린샷 확인).
+          신: 세 값 문자열을 먼저 뽑아 **가장 긴 것 하나**로 배율을 정하고 셋 모두에 같은
+          크기를 준다. 어떤 값이 와도 세 칸의 크기가 항상 같다(자동 축소는 제거). */}
+      {(() => {
+        const mv1 = uiPaused || timeGoal ? distanceKm.toFixed(2) : timeLabel;
+        const mv2 = uiPaused ? timeLabel : bpm > 0 ? String(bpm) : '--';
+        const mv3 = uiPaused ? avgPaceLabel : paceLabel;
+        const mFs = { fontSize: metricFontSize([mv1, mv2, mv3], uiPaused ? 30 : 37) };
+        return (
       <Animated.View pointerEvents={cd ? 'none' : 'auto'}
         style={[r.heroMetrics, uiPaused ? r.heroMetricsPaused : r.heroMetricsRun, { opacity: uiIn, transform: [{ translateY: uiRise }] }]}>
-        <View style={r.hm} accessibilityRole="text" accessibilityLabel={uiPaused || timeGoal ? `거리 ${distanceKm.toFixed(2)}킬로미터` : `시간 ${timeLabel}`}><Text maxFontSizeMultiplier={FONT_SCALE_CAP_HERO} style={[r.hmV, uiPaused && r.hmVPaused]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72}>{uiPaused || timeGoal ? distanceKm.toFixed(2) : timeLabel}</Text><Text style={r.hmL}>{uiPaused || timeGoal ? '거리 km' : '시간'}</Text></View>
-        <View style={[r.hm, r.hmDivider]} accessibilityRole="text" accessibilityLabel={uiPaused ? `시간 ${timeLabel}` : hrZone !== 0 ? `심박 ${bpm}, 존 ${hrZone} ${HR_ZONE_LABEL[hrZone]}` : bpm > 0 ? `심박 ${bpm}` : '심박 측정 안 됨'}><Text maxFontSizeMultiplier={FONT_SCALE_CAP_HERO} style={[r.hmV, uiPaused && r.hmVPaused, !uiPaused && hrZone !== 0 && { color: hrColor }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72}>{uiPaused ? timeLabel : bpm > 0 ? String(bpm) : '--'}</Text><Text style={[r.hmL, !uiPaused && hrZone !== 0 && { color: hrColor, fontWeight: '600' }, !uiPaused && zoneDeviation && targetZone >= 2 && { color: zoneDeviation === 'down' ? WARN : ACCENT, fontWeight: '700' }]}>{uiPaused ? '시간' : (!uiPaused && zoneDeviation && targetZone >= 2) ? (zoneDeviation === 'down' ? `↓ 존 ${targetZone}로` : `↑ 존 ${targetZone}로`) : hrZone !== 0 ? `Z${hrZone} ${HR_ZONE_LABEL[hrZone]}` : '심박'}</Text></View>
-        <View style={[r.hm, r.hmDivider]} accessibilityRole="text" accessibilityLabel={`${uiPaused ? '평균 페이스' : (track ? '랩 페이스' : '현재 페이스')} ${uiPaused ? avgPaceLabel : paceLabel}`}><Text maxFontSizeMultiplier={FONT_SCALE_CAP_HERO} style={[r.hmV, uiPaused && r.hmVPaused]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72}>{uiPaused ? avgPaceLabel : paceLabel}</Text><Text style={r.hmL}>{uiPaused ? '평균 페이스' : (track ? '랩 페이스' : '현재 페이스')}</Text></View>
+        <View style={r.hm} accessibilityRole="text" accessibilityLabel={uiPaused || timeGoal ? `거리 ${distanceKm.toFixed(2)}킬로미터` : `시간 ${timeLabel}`}><Text maxFontSizeMultiplier={FONT_SCALE_CAP_HERO} style={[r.hmV, uiPaused && r.hmVPaused, mFs]} numberOfLines={1}>{mv1}</Text><Text style={r.hmL}>{uiPaused || timeGoal ? '거리 km' : '시간'}</Text></View>
+        <View style={[r.hm, r.hmDivider]} accessibilityRole="text" accessibilityLabel={uiPaused ? `시간 ${timeLabel}` : hrZone !== 0 ? `심박 ${bpm}, 존 ${hrZone} ${HR_ZONE_LABEL[hrZone]}` : bpm > 0 ? `심박 ${bpm}` : '심박 측정 안 됨'}><Text maxFontSizeMultiplier={FONT_SCALE_CAP_HERO} style={[r.hmV, uiPaused && r.hmVPaused, mFs, !uiPaused && hrZone !== 0 && { color: hrColor }]} numberOfLines={1}>{mv2}</Text><Text style={[r.hmL, !uiPaused && hrZone !== 0 && { color: hrColor, fontWeight: '600' }, !uiPaused && zoneDeviation && targetZone >= 2 && { color: zoneDeviation === 'down' ? WARN : ACCENT, fontWeight: '700' }]}>{uiPaused ? '시간' : (!uiPaused && zoneDeviation && targetZone >= 2) ? (zoneDeviation === 'down' ? `↓ 존 ${targetZone}로` : `↑ 존 ${targetZone}로`) : hrZone !== 0 ? `Z${hrZone} ${HR_ZONE_LABEL[hrZone]}` : '심박'}</Text></View>
+        <View style={[r.hm, r.hmDivider]} accessibilityRole="text" accessibilityLabel={`${uiPaused ? '평균 페이스' : (track ? '랩 페이스' : '현재 페이스')} ${uiPaused ? avgPaceLabel : paceLabel}`}><Text maxFontSizeMultiplier={FONT_SCALE_CAP_HERO} style={[r.hmV, uiPaused && r.hmVPaused, mFs]} numberOfLines={1}>{mv3}</Text><Text style={r.hmL}>{uiPaused ? '평균 페이스' : (track ? '랩 페이스' : '현재 페이스')}</Text></View>
       </Animated.View>
+        );
+      })()}
 
       {/* 트랙: 지난 랩(최근 3) — 박스 없는 한 줄. 러닝 중엔 히어로 바로 아래(직전 랩 즉시
           확인), 일시정지엔 지표 블록을 끊지 않게 서브 지표 '아래'로 내린다(2026-07-25
@@ -739,7 +786,9 @@ export default function RunActiveScreen({
                 </Svg>
                 <Pressable
                   onPressIn={startHold} onPressOut={cancelHold}
-                  onLongPress={confirmStop} delayLongPress={HOLD_MS}
+                  // 확정은 홀드 링 완료가 담당한다(위 주석). onLongPress 는 백업 경로 —
+                  // 먼저 온 쪽만 1회 발화(fireStopOnce 가드).
+                  onLongPress={fireStopOnce} delayLongPress={HOLD_MS}
                   accessibilityRole="button" accessibilityLabel="길게 눌러 종료"
                   accessibilityHint="0.6초 동안 길게 누르면 러닝을 종료합니다"
                   style={({ pressed }) => [r.cStop, pressed && { backgroundColor: withAlpha(DANGER, 0.18) }]}>
@@ -910,7 +959,10 @@ const r = StyleSheet.create({
   heroMetricsPaused: { marginTop: rv(22), paddingTop: rv(20), paddingBottom: rv(8) },
   hm: { flex: 1, alignItems: 'center' },
   hmDivider: { borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: CARD_BORDER },
-  hmV: { color: T1, fontFamily: DISPLAY, fontSize: rf(37), fontWeight: '500', letterSpacing: -0.8, fontVariant: ['tabular-nums'] },
+  // 두께 500 → 700(민우님 2026-07-26 "러닝중 숫자가 얇고 약하다"): 이 화면만 앱 숫자 규약
+  // (NUMERIC '값 700 고정') 밖에서 500으로 살아, 37pt 로 가장 큰데도 20pt 런 상세 지표보다
+  // 약하게 읽혔다. 크고 얇으면 야외 햇빛·흔들림에서 오히려 더 흐려진다.
+  hmV: { color: T1, fontFamily: DISPLAY, fontSize: rf(37), fontWeight: '700', letterSpacing: -0.8, fontVariant: ['tabular-nums'] },
   // 일시정지 6칸(2026-07-12 사용자: '6개를 키우고 올려서 잘 보이게') — 값 30pt 균일.
   hmVPaused: { fontSize: rf(30), letterSpacing: -0.7 },
   hmL: { color: withAlpha(T1, 0.45), fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: "600", letterSpacing: 0.4, marginTop: rv(8) },

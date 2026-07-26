@@ -200,9 +200,9 @@ test('ShoeDetail: 마지막 착용일이 런 기록에서 파생되어 표시된
 });
 
 // ── slice-4 로테이션: App 배선 회귀 방지 ─────────────────────────────────────
-test('활성 2켤레면 신발 탭에 로테이션 인사이트가 렌더된다(홈→신발 탭 이관, 심사 #13)', async () => {
+test('활성 2켤레면 홈에 로테이션 인사이트가 렌더된다(신발 탭 → 홈 복귀, 2026-07-26)', async () => {
   const {root} = await mount(SHOES, RUNS);
-  await tap(pressBy(root, '러닝화'));
+  // 패널은 홈 소속(기본 탭) — '오늘 어떤 신발로 달릴까' 결정 곁에 둔다.
   const card = byTestID(root, 'rotation-insight');
   expect(card.length).toBeGreaterThan(0);
   const cardText = textOf(card[0]);
@@ -236,7 +236,7 @@ test('휴식 동일·거리만 다르면 홈 로테이션 pick-0는 Σkm 적은 
     {id: 'r4', shoe_id: 's2', km: 3, run_date: '2026-05-31', duration: 600},
   ];
   const {root} = await mount(shoes, runs);
-  await tap(pressBy(root, '러닝화')); // 패널은 신발 탭 소속(심사 #13)
+  // 패널은 홈 소속(기본 탭, 2026-07-26 복귀) — 탭 이동 없이 바로 관측한다.
 
   // 두 활성 신발이 카드에 모두 나타난다(배선 자체는 살아 있음).
   const card = byTestID(root, 'rotation-insight');
@@ -265,7 +265,6 @@ test('정확히 2켤레 중 1켤레 보관 → 활성 1켤레 → 로테이션 �
     {id: 'r1', shoe_id: 's1', km: 5, run_date: '2026-05-31', duration: 1800},
   ];
   const {root} = await mount(shoes, runs);
-  await tap(pressBy(root, '러닝화'));
-  // 활성이 1켤레뿐 → recommendRotation [] → 패널이 렌더되지 않는다(신발 탭에서도).
+  // 활성이 1켤레뿐 → recommendRotation [] → 패널이 렌더되지 않는다(홈에서도).
   expect(byTestID(root, 'rotation-insight').length).toBe(0);
 });

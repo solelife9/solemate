@@ -2242,6 +2242,7 @@ function Main(){
             weekDays={weekBuckets(runs, mon).map(v => v > 0)}
             weekTodayIdx={(now.getDay() + 6) % 7}
             load={homeLoad}
+            rotation={rotationPicks}
           />
         )}
         {tab===2&&(
@@ -2264,7 +2265,6 @@ function Main(){
             rawShoes={shoes} rawRuns={runs} progressionCtx={progressionCtx} userName={profileName}
             onRetiredKeepsake={onRetiredKeepsake} forecasts={homeForecasts}
             age={age} sex={sex} restHR={restHR}
-            rotation={rotationPicks}
             onOpenArchive={()=>setShowArchive(true)} archivedCount={archivedUiShoes.length}
           />
         )}

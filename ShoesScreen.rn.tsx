@@ -17,8 +17,6 @@ import { TabBar, TABBAR_CLEARANCE, Pill, InjuryBanner, Button, SwipeBack, Ambien
 import { RunCard, RunDetail } from './HistoryScreen.rn';
 import { FuelGauge } from './FuelGauge';
 import FirstShoeScreen from './FirstShoeScreen.rn';
-import RotationInsightPanel from './RotationInsightPanel';
-import { RotationPick } from './lib/rotation';
 import { Unit, displayNum } from './lib/units';
 import { wearTier, SHOE_REPLACE_PCT, clampMaxKm } from './lib/shoe';
 import { assessShoeInjuryRisk } from './lib/injury';
@@ -547,7 +545,7 @@ export default function ShoesScreen({
   shoes = SHOES, runs = [], totals = {}, unit = 'km', weightKg, surfaceOf, onAddShoe, onTab, onRename, onDelete, onRetire, onSetMaxKm, onStartRun,
   detailShoeId, onConsumeDetail,
   rawShoes, rawRuns, progressionCtx, equippedTitle, onRetiredKeepsake, now, userName,
-  forecasts, rotation, onOpenArchive, archivedCount = 0,
+  forecasts, onOpenArchive, archivedCount = 0,
   age = 0, sex = 'male', restHR = 0,
 }: {
   userName?: string;
@@ -559,7 +557,6 @@ export default function ShoesScreen({
   forecasts?: Record<string, ReplacementForecast | null>;
   // 로테이션 인사이트(홈에서 이관 — 심사 #13, 2026-07-22). 활성 2켤레+ 에서만 채워지고
   // 비면 패널이 숨는다. 행 탭 = 그 신발 상세로.
-  rotation?: RotationPick[];
   // 신발 보관함 진입(마이탭에서 이관 — 심사 #7, 2026-07-22): '보관 처리' 행동이 있는
   // 이 탭에 복원 동선도 함께 둔다. 보관 신발 0켤레면 행 숨김.
   onOpenArchive?: () => void;
@@ -703,12 +700,8 @@ export default function ShoesScreen({
         {/* 하단 '러닝화 등록하기' 점선 카드는 제거(사용자 결정 2026-07-02) — 상단 헤더
             '신발 추가'와 중복 진입점. 신발 0켤레는 FirstShoeScreen 빈 상태가 담당한다.
             명예의 전당 진입은 마이탭 소속(신발탭 이동안 철회). */}
-        {/* 로테이션 인사이트(홈에서 이관 — 심사 #13) — 목록 아래 보조 정보. 행 탭=상세. */}
-        <RotationInsightPanel
-          flush
-          rotation={rotation ?? []}
-          onPickShoe={(id) => { const i = shoes.findIndex((sh) => sh.id === id); if (i >= 0) setDetail(i); }}
-        />
+        {/* (로테이션 인사이트 → 홈으로 복귀, 2026-07-26 민우님 지시. '오늘 어떤 신발로
+            달릴까'를 정하는 자리가 홈이라 로테이션 정보도 그 결정 곁으로 갔다. 집은 하나.) */}
         {/* 신발 보관함(마이탭에서 이관 — 심사 #7) — 보관 처리와 복원을 한 지붕에.
             조용한 하단 행: 보관 신발이 있을 때만 나타난다. */}
         {!!onOpenArchive && archivedCount > 0 && (

@@ -409,9 +409,13 @@ export default function RunRecapScreen({
           <GlassEdge glints={false} radius={RADIUS.lg} />
           <StatGrid
             style={s.gridInner}
-            columns={2}
+            // 3열(민우님 2026-07-26) — 6칸이 2행으로 앉아 카드가 낮아지고, 런 상세 지표
+            // 그리드(3열)와 같은 격자가 된다.
+            columns={3}
             align="left"
-            size="md"
+            // lg(30) — 완주 직후는 숨차고 땀나고 화면이 흔들리는 상태라 지표 숫자를 줄이면
+            // 안 된다(민우님 2026-07-26: "러닝앱 특수성"). 구 27pt 보다도 한 단 키운다.
+            size="lg"
             items={[
               {value: fmtDur(durationS), label: '시간'},
               {value: fmtPace(km, durationS), unit: ' /km', label: '평균 페이스'},
@@ -550,7 +554,9 @@ const s = StyleSheet.create({
   // tabular-nums — 카운트업 중 자릿수 폭이 튀지 않게(진입 시그니처 모션).
   // 세리머니 cer.dist(-1.5)와 '같은 숫자' 모프 — 자간 정합 + Jost 행간 규율 1.22×
   // (구 lineHeight 72=1.06×는 어센더 잘림 리스크, 2026-07-25 심사 #27).
-  heroNum: {color: T1, fontFamily: NUM, fontSize: rf(68), fontWeight: '700', letterSpacing: -1.5, lineHeight: rf(83), includeFontPadding: false, fontVariant: ['tabular-nums']},
+  // 두께 700 → 500(민우님 2026-07-26): GO 를 뺀 모든 Jost 숫자를 500 으로 통일 —
+  // 세리머니(500)에서 이 히어로로 모프될 때 굵기가 튀던 것도 함께 해소된다.
+  heroNum: {color: T1, fontFamily: NUM, fontSize: rf(68), fontWeight: '500', letterSpacing: -1.5, lineHeight: rf(83), includeFontPadding: false, fontVariant: ['tabular-nums']},
   // 모프 클론 — 윈도 좌표 절대 배치(리캡 루트=풀스크린이라 윈도 좌표 그대로 사용 가능).
   morphClone: {position: 'absolute'},
   heroUnit: {color: T2, fontFamily: FONT, fontSize: TYPE.title.fontSize, fontWeight: '700', marginBottom: rv(10)},

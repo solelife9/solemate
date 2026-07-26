@@ -125,22 +125,24 @@ test('단위 행 토글 → settings_unit 영속 + 전 화면 즉시 환산 반�
   expect(textOf(root)).toContain('마일');
   expect(textOf(root)).not.toContain('킬로미터');
 
-  // (c) 다른 화면(홈)도 즉시 환산 단위로. [카피 변경 2026-07-26 — 간결화 D1] 히어로 아래
-  //     줄이 '사용 N/총km · N km 남음' → 숫자축 'N / 총 단위' 한 줄로 바뀌었다.
+  // (c) 다른 화면(홈)도 즉시 환산 단위로: 'mi 남음'(km 아님)
   await tap(pressBy(root, '홈'));
   const home = textOf(root);
-  // (d) 라벨뿐 아니라 환산된 *숫자값*도 반영: 사용 5km→3mi, 총 600km→373mi.
-  //     km 원숫자(600)는 사라지고 환산값이 떠야 한다(표시만 환산, 라벨만 X).
-  expect(home).toContain('3 / 373 mi');
-  expect(home).not.toContain('600');
+  expect(home).toContain('mi 남음');
+  expect(home).not.toContain('km 남음');
+  // (d) 라벨뿐 아니라 환산된 *숫자값*도 반영: 남은 수명 595km → 약 370mi.
+  //     km 원숫자(595)는 사라지고 환산값(370)이 떠야 한다(표시만 환산, 라벨만 X).
+  expect(home).toContain('370'); // displayNum(595,'mi')=370
+  expect(home).not.toContain('595');
 });
 
-test('홈은 토글 전 km 원숫자를 보여준다(환산 기준점)', async () => {
+test('홈은 토글 전 km 원숫자(595)를 보여준다(환산 기준점)', async () => {
   const {root} = await mount(SHOES, RUNS);
   await tap(pressBy(root, '홈'));
   const home = textOf(root);
-  // 기본 단위 km: 사용 5 / 총 600 km 숫자축(간결화 D1 이후 표기).
-  expect(home).toContain('5 / 600 km');
+  // 기본 단위 km: 남은 수명 600-5 = 595km.
+  expect(home).toContain('595');
+  expect(home).toContain('km 남음');
 });
 
 test('신발 화면(전 화면 환산)도 토글 시 환산된 수치를 보여준다', async () => {
