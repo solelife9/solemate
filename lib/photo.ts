@@ -9,6 +9,7 @@
 //    (이렇게 분리해야 "실패 시 사진 없이 저장 비차단·재시도" 흐름을 화면에서 구현할 수 있다.)
 
 import * as ImagePicker from 'expo-image-picker';
+import {manipulateAsync, SaveFormat} from 'expo-image-manipulator';
 
 /** 선택된 신발 사진(로컬 URI). */
 export interface PickedPhoto {
@@ -20,6 +21,35 @@ export interface PickedPhoto {
 export type PhotoPick =
   | {ok: true; uri: string}
   | {ok: false; reason: 'cancelled' | 'denied'};
+
+
+// ── 저장 전 축소(2026-07-26 감사 F-09) ───────────────────────────────────────
+// quality 옵션은 JPEG 압축률일 뿐 **해상도를 줄이지 않는다** — 최근 아이폰 사진은 12MP
+// (4032×3024)라 RN <Image> 가 디코딩하면 픽셀만 약 48MB 를 메모리에 올린다. 메달
+// 아카이브처럼 여러 장이 한 화면에 있으면 위험하고, 원본 해상도는 앱 어디서도 쓰지 않는다
+// (가장 큰 소비처가 화면 폭짜리 이미지다).
+// 긴 변을 MAX_EDGE 로 맞춰 저장한다. 이미 작은 사진은 건드리지 않는다(업스케일 금지).
+const MAX_EDGE = 1600;
+
+async function downscale(uri: string): Promise<string> {
+  try {
+    // 빈 조작으로 방향을 픽셀에 굽고 실제 치수를 얻는다(EXIF 회전 보정 — MedalCamera 와 동일 규약).
+    const upright = await manipulateAsync(uri, [], {compress: 1, format: SaveFormat.JPEG});
+    const w = upright.width ?? 0;
+    const h = upright.height ?? 0;
+    const longEdge = Math.max(w, h);
+    if (!longEdge || longEdge <= MAX_EDGE) return upright.uri || uri;
+    const out = await manipulateAsync(
+      upright.uri,
+      [w >= h ? {resize: {width: MAX_EDGE}} : {resize: {height: MAX_EDGE}}],
+      {compress: 0.85, format: SaveFormat.JPEG},
+    );
+    return out.uri || uri;
+  } catch {
+    // 축소 실패는 치명적이지 않다 — 원본으로 진행한다(사진이 없는 것보다 큰 사진이 낫다).
+    return uri;
+  }
+}
 
 /**
  * 사진 라이브러리에서 한 장을 고른다. 권한 거부/취소를 구분해 돌려준다.
@@ -38,7 +68,7 @@ export async function pickPhotoWithPermission(): Promise<PhotoPick> {
 
   if (res.canceled) return {ok: false, reason: 'cancelled'};
   const asset = res.assets && res.assets[0];
-  return asset ? {ok: true, uri: asset.uri} : {ok: false, reason: 'cancelled'};
+  return asset ? {ok: true, uri: await downscale(asset.uri)} : {ok: false, reason: 'cancelled'};
 }
 
 /**
@@ -55,6 +85,10 @@ export async function pickShoePhoto(): Promise<PickedPhoto | null> {
 /**
  * 기록증 촬영 — 카메라로 바로 찍어 반환(편집/크롭 단계 없이 즉시). OCR 원본이라 자르면 안
  * 되고, '자르기 눌러야 저장' 혼란도 없앤다. 권한 거부·취소 → null(조용히).
+ *
+ * ⚠️ **여기만 downscale 을 걸지 않는다**(2026-07-26 F-09): 이 사진은 화면에 크게 띄우기
+ * 위한 게 아니라 기록증의 작은 숫자를 읽기 위한 OCR 입력이다. 긴 변을 1600 으로 줄이면
+ * 완주 시간·페이스 글자가 뭉개져 인식률이 떨어진다 — 메모리보다 정확도가 우선인 유일한 경로.
  */
 export async function captureCertPhoto(): Promise<PickedPhoto | null> {
   const perm = await ImagePicker.requestCameraPermissionsAsync();
@@ -78,7 +112,7 @@ export async function pickPhotoFrom(source: 'camera' | 'library'): Promise<Picke
     const res = await ImagePicker.launchCameraAsync({mediaTypes: ['images'], allowsEditing: true, quality: 0.7});
     if (res.canceled) return null;
     const a = res.assets && res.assets[0];
-    return a ? {uri: a.uri} : null;
+    return a ? {uri: await downscale(a.uri)} : null;
   }
   return pickShoePhoto();
 }

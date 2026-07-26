@@ -33,7 +33,13 @@ const MAPS_AVAILABLE = !!MapView;
 
 type LL = {lat: number; lon: number};
 
-export function RunLiveMap({coords, interactive = false, recenterKey = 0}: {coords: LL[]; interactive?: boolean; recenterKey?: number}) {
+// React.memo — 러닝 화면은 1초 틱으로 부모가 계속 리렌더되지만, 이 지도는 **일시정지에서만**
+// 마운트되고 그동안 좌표가 늘지 않는다(엔진의 pause 가드). 즉 props 가 실제로 그대로다.
+// 지도 리렌더는 네이티브 뷰 갱신이라 비싸므로 여기서 끊는다.
+// ⚠️ 전제: coords 가 '변할 때만 새 참조'여야 한다 — 엔진 내부 배열을 그대로 넘기던 시절엔
+// (2026-07-26 F-02 이전) 참조가 늘 같아 이 memo 를 붙이는 순간 지도가 영영 멈췄다.
+// 지금은 runTracker.getPoints() 가 스냅샷을 반환하므로 안전하다.
+function RunLiveMapBase({coords, interactive = false, recenterKey = 0}: {coords: LL[]; interactive?: boolean; recenterKey?: number}) {
   const mapRef = useRef<any>(null);
   const [preview, setPreview] = useState<LL | null>(null);
   const list = Array.isArray(coords) ? coords : [];
@@ -152,3 +158,5 @@ const s = StyleSheet.create({
     borderColor: T1,
   },
 });
+
+export const RunLiveMap = React.memo(RunLiveMapBase);

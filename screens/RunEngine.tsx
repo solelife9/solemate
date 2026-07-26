@@ -14,7 +14,7 @@
 // 완주 저장 흐름. 화면 표현은 RunActiveScreen(.rn) 이, 거리 계산은 lib/runTracker 가 한다.
 // ============================================================================
 
-import {useState, useEffect, useRef, useCallback} from 'react';
+import {useState, useEffect, useRef, useCallback, useMemo} from 'react';
 import {rf, rs, ri, rv} from '../lib/responsive';
 import {View, StyleSheet, Pressable, Linking, AppState} from 'react-native';
 import {showDialog} from '../lib/dialog';
@@ -836,6 +836,20 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
   // 검토 화면 — 자동 저장(심사 #1) 이후 정상 경로에선 안 보인다. 남은 진입은 두 갈래:
   // ① 자동 저장 실패 폴백('저장하기' 재시도), ② 크래시 복구 'review' 모드(스냅샷 검토 후
   // 저장/버리기 — 이건 사용자 결정이 필요한 지점이라 검토 화면이 정답).
+  // 지난 랩(최근 3개) — 각 랩의 구간시간(초). 러닝 화면 '지난 랩' 한 줄에 표시.
+  // useMemo: 이 화면은 1초 틱으로 매초 리렌더되는데 랩은 몇 분에 한 번만 늘어난다. 매 렌더
+  // 새 배열을 만들면 아래 track 객체까지 매번 새로 나가 하위 memo 가 전부 무력화된다.
+  // ⚠️ 훅은 조건부 return(아래 phase==='done') **위**에 있어야 한다 — 순서가 갈리면 React 가
+  //    훅 상태를 잘못 매칭한다(lint react-hooks/rules-of-hooks 가 잡아준 자리).
+  // 의존성의 lapCount 는 랩 배열(ref) 변화의 대리 신호다 — ref 자체는 의존성이 될 수 없다.
+  const recentLaps=useMemo(()=>{
+    if(!trackMode)return [] as {lap:number;split:number}[];
+    const lt=lapTimesRef.current;const out:{lap:number;split:number}[]=[];
+    for(let i=lt.length-1;i>=0&&out.length<3;i--)out.push({lap:i+1,split:Math.max(0,lt[i]-(i>0?lt[i-1]:0))});
+    return out;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[trackMode,lapCount]);
+
   if(phase==='done') return(
     <View style={[run.screen,{paddingTop:insets.top+24,paddingBottom:insets.bottom+28}]}>
       <View style={run.top}>
@@ -904,12 +918,12 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
     const expected=lastDur>0?lastDur:(lapM>0?lapM*0.3:120);
     return expected>0?Math.max(0,Math.min(1,(elapsed-lastAt)/expected)):0;
   })():0;
-  // 지난 랩(최근 3개) — 각 랩의 구간시간(초). 러닝 화면 '지난 랩' 한 줄에 표시.
-  const recentLaps=trackMode?(()=>{
-    const lt=lapTimesRef.current;const out:{lap:number;split:number}[]=[];
-    for(let i=lt.length-1;i>=0&&out.length<3;i--)out.push({lap:i+1,split:Math.max(0,lt[i]-(i>0?lt[i-1]:0))});
-    return out;
-  })():[];
+  // 트랙 상태 묶음. useMemo 를 쓰지 않는 이유: 이 값이 의존하는 lapProgress·trackDistKm 이
+  // 위 조건부 return 아래에서 계산되어 훅을 그 위로 올릴 수 없고(Rules of Hooks), 소비처인
+  // RunActiveScreenView 는 memo 대상이 아니다(지표 40여 개가 매초 바뀌어 shallow 비교가
+  // 항상 실패 — memo 를 붙여도 이득이 없다). 참조 안정화가 실제 이득을 내려면 그 화면을
+  // 지표 단위로 쪼개야 하는데, 그건 이 사이클의 범위가 아니다.
+  const trackProp=trackMode?{lapCount,lapM,lapDistKm:trackDistKm,calibrated:lapLockedRef.current,progress:lapProgress,recent:recentLaps}:null;
   return (
     <RunActiveScreenView
       shoeLabel={ui.model||shoe.name}
@@ -938,7 +952,7 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
       permLost={permLost}
       onOpenSettings={()=>{Promise.resolve(Linking.openSettings()).catch(()=>{});}}
       liveCoords={liveCoords}
-      track={trackMode?{lapCount,lapM,lapDistKm:trackDistKm,calibrated:lapLockedRef.current,progress:lapProgress,recent:recentLaps}:null}
+      track={trackProp}
       onLap={()=>registerLap(elapsedRef.current,false)}
       onUndoLap={undoLap}
       handoff={!resume}

@@ -575,8 +575,12 @@ function Main(){
     const t=setTimeout(()=>{
       (async()=>{
         try{
-          await AsyncStorage.setItem(CACHE_SHOES_KEY,JSON.stringify(shoes));
-          await AsyncStorage.setItem(CACHE_RUNS_KEY,JSON.stringify(runs));
+          // setMany — 두 키를 한 번의 브리지 왕복으로.
+          // (경로를 캐시에서 빼는 최적화는 보류 — 아래 F-08 주석 참조.)
+          await AsyncStorage.setMany({
+            [CACHE_SHOES_KEY]:JSON.stringify(shoes),
+            [CACHE_RUNS_KEY]:JSON.stringify(runs),
+          });
         }catch(e){
           // 다음 mutation 에서 재시도되지만, 저장 공간 부족이면 계속 실패해 캐시가 조용히
           // 낡는다 — 오프라인으로 열었을 때 며칠 전 상태가 '현재'로 보이는 원인. 원격 계측 필수.
@@ -859,6 +863,14 @@ function Main(){
   // 런 한 건을 부팅 캐시(CACHE_RUNS_KEY)에 즉시 durable 하게 prepend 한다(크래시-세이프티).
   // 같은 id 가 이미 있으면 교체(멱등). 800ms 디바운스 캐시 효과가 전체 상태로 덮어쓰기 전에
   // 크래시가 나도 이 동기 기록 덕에 런이 살아남는다(audit#3 미동기 큐의 역할을 대체). 비차단.
+  // ⚠️ F-08(2026-07-26 감사) 보류 기록 — 다시 파헤치지 않도록 남긴다.
+  // 부팅 캐시 배열은 런 레코드를 통째로 담고, 그 안엔 GPS 경로(route, 런당 수 KB)가 들어
+  // 있다. 경로는 사이드키 route_<id> 에도 저장되므로 **같은 데이터가 두 벌**이고, 캐시가
+  // '런 수 × 경로 크기'로 커져 런 한 건을 저장·삭제할 때마다 그 전체를 파싱·재직렬화한다.
+  // 고치려면 경로의 집을 사이드키 하나로 모아야 하는데, 워치 인제스트·클라우드 pull 등
+  // 사이드키를 만들지 않는 유입 경로가 있어 그것부터 정리해야 한다(안 하면 오프라인에서
+  // 지도가 사라진다 — 기존 계약 테스트 3건이 정확히 그걸 지키고 있다).
+  // 데이터 유실 위험이 있는 변경이라 P2 정리에 끼워 넣지 않고 별도 작업으로 남긴다.
   const persistRunToCache=async(run:BackendRun)=>{
     try{
       const raw=await AsyncStorage.getItem(CACHE_RUNS_KEY);

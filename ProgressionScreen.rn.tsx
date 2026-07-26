@@ -17,7 +17,7 @@ import React, {useEffect, useMemo, useRef, useState} from 'react';
 import { rf, rs, ri, rv } from './lib/responsive';
 import {
   View,
-  ScrollView,
+  SectionList,
   Pressable,
   StyleSheet,
 } from 'react-native';
@@ -199,6 +199,19 @@ export default function ProgressionScreen({
   const bandTotal = Math.max(0, guide.nextXp - bandStart);
 
   const achievementCount = view.achievements.filter(a => a.unlocked).length;
+  // 업적 섹션 — 카테고리별로 묶어 SectionList 에 넘긴다(가상화, 2026-07-26 F-07).
+  // 구: ScrollView + map 으로 **전량을 한 번에 마운트**했다. 지금은 39개라 견디지만 업적은
+  // 계속 늘어나는 데이터라 100개를 넘기면 화면 진입이 눈에 띄게 느려진다. 기록 탭은 이미
+  // FlatList 로 가상화돼 있어 같은 앱 안에서 기준이 갈려 있기도 했다.
+  const achSections = useMemo(
+    () =>
+      ACH_CATEGORY_ORDER.map(cat => ({
+        cat,
+        meta: ACH_CATEGORY_META[cat],
+        data: view.achievements.filter(a => a.category === cat),
+      })).filter(sec => sec.data.length > 0),
+    [view.achievements],
+  );
   const bannerNames = banner
     ? banner.map(k => nameByKey[k] ?? k).join(', ')
     : '';
@@ -208,13 +221,29 @@ export default function ProgressionScreen({
     <SwipeBack onBack={onBack}>
     <View style={s.screen}>
       <Rise style={{flex: 1}}>
-      <ScrollView
+      <SectionList
+        sections={achSections}
+        keyExtractor={a => a.key}
+        stickySectionHeadersEnabled={false}
         contentContainerStyle={{
           paddingTop: insets.top + 12,
           paddingHorizontal: GUTTER,
           paddingBottom: insets.bottom + 28,
-          gap: SPACE.lg,
-        }}>
+        }}
+        // 간격: 구 ScrollView 의 gap(SPACE.lg 블록 사이 · SPACE.sm 카드 사이)을 그대로 재현한다.
+        ItemSeparatorComponent={() => <View style={{height: SPACE.sm}} />}
+        renderSectionHeader={({section}) => (
+          <View style={[s.catHeader, {marginTop: SPACE.lg, marginBottom: SPACE.sm}]}>
+            <Ionicons name={section.meta.icon as any} size={ri(ICON.tag)} color={T3} />
+            <Text style={s.groupLabel}>{section.meta.label}</Text>
+            <Text style={s.groupCount}>
+              {section.data.filter(a => a.unlocked).length}/{section.data.length}
+            </Text>
+          </View>
+        )}
+        renderItem={({item}) => <AchievementCard a={item} />}
+        ListHeaderComponent={
+          <View style={{gap: SPACE.lg}}>
         {/* header — 표준 내비 헤더(primitives.ScreenHeader), 수제 조립 폐지(2026-07-25).
             거터는 ScrollView 컨테이너가 이미 주므로 패딩 0. 우측 랭킹 트로피는 right
             슬롯(testID·라벨 보존). (구 back 버튼 testID progression-back 은 헤더 행으로
@@ -336,31 +365,12 @@ export default function ProgressionScreen({
           />
         </View>
 
-        {/* 업적 — 챌린지 탭은 마이 탭의 스마트 챌린지 카드로 이관됨(진척은 업적 전용). */}
-        <View style={{gap: SPACE.lg}}>
-          {ACH_CATEGORY_ORDER.map(cat => {
-            const items = view.achievements.filter(a => a.category === cat);
-            if (items.length === 0) return null;
-            const done = items.filter(a => a.unlocked).length;
-            const meta = ACH_CATEGORY_META[cat];
-            return (
-              <View key={cat} style={{gap: SPACE.sm}}>
-                <View style={s.catHeader}>
-                  <Ionicons name={meta.icon as any} size={ri(ICON.tag)} color={T3} />
-                  <Text style={s.groupLabel}>{meta.label}</Text>
-                  <Text style={s.groupCount}>{done}/{items.length}</Text>
-                </View>
-                {items.map(a => (
-                  <AchievementCard key={a.key} a={a} />
-                ))}
-              </View>
-            );
-          })}
-
-          {/* 총 XP 카드 제거('러닝의 옷' 2026-07-04) — 메타 화폐를 상주 노출하지
+          {/* 업적 목록은 SectionList 가 렌더한다(카테고리=섹션) — 위는 헤더 블록까지다.
+              총 XP 카드는 제거됨('러닝의 옷' 2026-07-04): 메타 화폐를 상주 노출하지
               않는다. 엔진은 그대로(티어 산정에 사용). */}
-        </View>
-      </ScrollView>
+          </View>
+        }
+      />
       </Rise>
     </View>
     </SwipeBack>

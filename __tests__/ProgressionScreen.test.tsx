@@ -280,3 +280,20 @@ describe('ProgressionScreen — 프로덕션 마운트 데이터 보존', () => 
     expect(byTestID(root, 'unlock-banner').length).toBe(0);
   });
 });
+
+// ── 업적 목록 가상화(2026-07-26 F-07) ─────────────────────────────────────────
+// 구: ScrollView + map 으로 업적 전량을 한 번에 마운트했다. 업적은 계속 늘어나는 데이터라
+// 100개를 넘기면 화면 진입이 눈에 띄게 느려진다(기록 탭은 이미 FlatList 로 가상화돼 있어
+// 같은 앱 안에서 기준이 갈려 있기도 했다). 지금은 SectionList — 카테고리가 섹션이다.
+test('업적 목록은 가상화 리스트로 렌더된다(카테고리=섹션)', async () => {
+  const {SectionList} = require('react-native');
+  const r = await render(
+    <ProgressionScreen runs={RUNS} shoes={SHOES} profileName="민우" now={NOW} />,
+  );
+  const lists = r.root.findAllByType(SectionList);
+  expect(lists.length).toBe(1);
+  // 섹션은 '업적이 있는 카테고리'만 — 빈 카테고리는 헤더조차 렌더하지 않는다.
+  const sections = lists[0].props.sections;
+  expect(sections.length).toBeGreaterThan(0);
+  expect(sections.every((s: any) => s.data.length > 0)).toBe(true);
+});
