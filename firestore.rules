@@ -3,10 +3,15 @@ rules_version = '2';
 // ============================================================================
 // Keego Firestore 보안 규칙
 // ----------------------------------------------------------------------------
-// 컬렉션 두 개만 노출한다(그 외 전부 deny):
-//   1) userBackups/{uid}              — 클라우드 동기 정본(Phase 2). 본인만 읽기/쓰기.
+// 아래 세 갈래만 노출한다(그 외 전부 deny):
+//   1) userBackups/{uid}/**           — 클라우드 동기 정본(Phase 2). 본인만 읽기/쓰기.
+//      하위 컬렉션(runDetails)까지 포함 — 규칙은 상속되지 않으므로 명시했다(아래 주석 참고).
 //   2) leaderboards/{ym}/entries/{uid} — 명예의 전당 월간 랭킹(Phase 3). 로그인 사용자는
 //      모두 읽기(리더보드 공개), 쓰기는 '자기 uid 문서'만 + 점수 필드 형태 검증(날조 완화).
+//   3) races/{raceId}                 — 대회 카탈로그. 읽기 전용(쓰기는 admin SDK 만).
+//
+// 규칙 회귀는 `npm run test:rules`(에뮬레이터 + @firebase/rules-unit-testing)로 막는다.
+// 앱 테스트는 firestore 를 목으로 대체하므로 규칙을 검증하지 못한다 — 반드시 따로 돌린다.
 //
 // 점수 자체는 클라이언트가 계산하므로 규칙만으로 위조를 100% 막을 수는 없다(서버 재계산이
 // 필요하면 Cloud Function 후속). 여기서는 (a) 남의 엔트리 변조 불가, (b) 엔트리 형태 강제로
@@ -38,9 +43,21 @@ service cloud.firestore {
         && d.updatedAt is number;
     }
 
-    // ── 클라우드 동기 백업: 본인 문서만 ──────────────────────────────────────
+    // ── 클라우드 동기 백업: 본인 서브트리만 ──────────────────────────────────
+    // ⚠️ Firestore 규칙은 하위 컬렉션에 상속되지 않는다. `match /userBackups/{uid}` 는
+    //    그 *문서 하나*만 허용하므로, 런 상세 사이드카(userBackups/{uid}/runDetails/{runId},
+    //    lib/firebaseCloudPort.ts)는 매칭 규칙이 없어 전량 PERMISSION_DENIED 였다
+    //    (2026-07-26 출시 심사 B-01 — 재설치 유실 방지 기능이 프로덕션에서 죽어 있었다.
+    //    테스트는 firestore 를 목으로 대체하므로 잡히지 않았다 → tests/rules 신설).
+    // 하위 경로는 재귀 와일드카드로 한 번에 덮는다. 최소권한은 uid 일치로 이미 보장되고
+    // (서브트리 전체가 그 사용자 자신의 데이터), 새 사이드카 컬렉션이 추가돼도 같은
+    // 함정에 다시 빠지지 않는다.
     match /userBackups/{uid} {
       allow read, write: if signedIn() && request.auth.uid == uid;
+
+      match /{document=**} {
+        allow read, write: if signedIn() && request.auth.uid == uid;
+      }
     }
 
     // ── 월간 리더보드: 읽기=로그인 사용자 전체, 쓰기=자기 엔트리만(형태 검증) ──
