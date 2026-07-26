@@ -578,3 +578,101 @@ test('initUser 가 스토리지 예외로 실패하면 boot-error 재시도 카�
     act(() => renderer?.unmount());
   }
 });
+
+// ── 경로 단일 소스화 안전 계약(2026-07-26 감사 F-08) ─────────────────────────
+// 캐시 배열에서 GPS 경로를 뺐다(런당 수 KB × 런 수 만큼 커져 저장·삭제마다 전량
+// 재직렬화됐다). 경로의 집은 사이드키 route_<id> 하나다.
+// 그런데 '빼기'만 하면 데이터가 유실된다: 메모리 레코드의 route 는 **클라우드 동기의
+// 정본**이라(재설치·기기변경에도 지도가 남는 이유), 재부팅 후 빈 route 가 push 되면
+// 클라우드의 경로를 덮어 지운다. 그래서 부팅 시 사이드키에서 반드시 되채워야 한다.
+test('부팅: 캐시엔 경로가 없어도 사이드키에서 되채워 메모리 레코드가 완전해진다(F-08)', async () => {
+  await AsyncStorage.clear();
+  const day = todayYmd();
+  await AsyncStorage.setItem(
+    'cache_shoes_v1',
+    JSON.stringify([{id: 's1', name: 'Nike Pegasus', max_km: 600, start_km: 0}]),
+  );
+  // 캐시엔 경로가 없는 경량 레코드(새 형식).
+  await AsyncStorage.setItem(
+    'cache_runs_v1',
+    JSON.stringify([{id: 'r1', shoe_id: 's1', km: 5, run_date: day, duration: 1800}]),
+  );
+  // 경로는 사이드키에만 있다.
+  await AsyncStorage.setItem('route_r1', JSON.stringify([{lat: 37.5, lon: 127.0}, {lat: 37.51, lon: 127.0}]));
+  (globalThis.fetch as jest.Mock).mockImplementation(() => Promise.reject(new Error('cold backend')));
+
+  let renderer!: ReactTestRenderer.ReactTestRenderer;
+  await act(async () => {
+    renderer = ReactTestRenderer.create(<App />);
+  });
+  await flush();
+
+  const side = await AsyncStorage.getItem('route_r1');
+  expect(String(side || '')).toContain('37.51');
+
+  act(() => renderer.unmount());
+});
+
+// 위 테스트는 사이드키 보존만 본다. **진짜 위험**은 재부팅 후 클라우드로 나가는 페이로드에
+// 경로가 빠지는 것이다(빈 route 가 원격의 경로를 덮어 지운다). push 페이로드로 직접 검증한다.
+test('부팅 후 클라우드 push 페이로드에 경로가 살아 있다 — 빈 route 가 원격을 덮지 않는다(F-08)', async () => {
+  await AsyncStorage.clear();
+  await AsyncStorage.setItem('onboarded', '1');
+  const day = todayYmd();
+  await AsyncStorage.setItem(
+    'cache_shoes_v1',
+    JSON.stringify([{id: 's1', name: 'Nike Pegasus', max_km: 600, start_km: 0, updatedAt: 1000}]),
+  );
+  // 캐시는 경량(경로 없음) — 새 형식.
+  await AsyncStorage.setItem(
+    'cache_runs_v1',
+    JSON.stringify([{id: 'r1', shoe_id: 's1', km: 5, run_date: day, duration: 1800, updatedAt: 1000}]),
+  );
+  await AsyncStorage.setItem('route_r1', JSON.stringify([{lat: 37.5, lon: 127.0}, {lat: 37.51, lon: 127.0}]));
+
+  (globalThis.fetch as jest.Mock).mockImplementation(() => Promise.resolve(ok([])));
+  const pushed: any[] = [];
+  const port = {
+    signIn: jest.fn(() => Promise.resolve({uid: 'u-1', email: 'runner@keego.app'})),
+    signOut: jest.fn(() => Promise.resolve()),
+    pull: jest.fn(() => Promise.resolve({shoes: [], runs: [], settings: {}})),
+    push: jest.fn((data: any) => { pushed.push(data); return Promise.resolve(); }),
+  };
+  (globalThis as any).__KEEGO_CLOUD_PORT__ = port;
+
+  try {
+    let renderer!: ReactTestRenderer.ReactTestRenderer;
+    await act(async () => {
+      renderer = ReactTestRenderer.create(<App />);
+    });
+    await flush();
+    const root = renderer.root;
+
+    pressByLabel(root, '마이');
+    await flush();
+    pressByLabel(root, '설정 열기');
+    await flush();
+    jest.useFakeTimers();
+    await act(async () => {
+      pressTestID(root, 'cloud-signin-google');
+    });
+    // 자동 동기 디바운스(1s) 경과 → pull→merge→push.
+    await act(async () => { jest.advanceTimersByTime(1300); });
+    for (let i = 0; i < 12; i++) {
+      // eslint-disable-next-line no-await-in-loop
+      await act(async () => { await Promise.resolve(); });
+    }
+    jest.useRealTimers();
+
+    const payload = pushed[pushed.length - 1];
+    expect(payload).toBeDefined();
+    const r1 = (payload.runs || []).find((r: any) => String(r.id) === 'r1');
+    expect(r1).toBeDefined();
+    // 되채우기가 없으면 여기가 '' 가 되어 원격의 경로를 지운다.
+    expect(String(r1.route || '')).toContain('37.51');
+
+    act(() => renderer.unmount());
+  } finally {
+    delete (globalThis as any).__KEEGO_CLOUD_PORT__;
+  }
+});

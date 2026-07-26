@@ -167,6 +167,50 @@ const CELEB_ICON: Record<string, 'medal'|'trophy'|'flag'|'route'|'run'|'star'|'s
 };
 const CELEB_RARITY: Record<string, {ko: string; color: string}> = {common: {ko: '커먼', color: RARITY_COLORS.common}, rare: {ko: '레어', color: RARITY_COLORS.rare}, epic: {ko: '에픽', color: RARITY_COLORS.epic}, legendary: {ko: '레전더리', color: RARITY_COLORS.legendary}};
 /** 부팅 폴백 캐시 로드 — 신발 배열이 있으면 {shoes,runs}, 없으면(미존재/손상) null. */
+// ── GPS 경로의 집은 사이드키 하나다(2026-07-26 감사 F-08) ────────────────────
+// 이전엔 같은 경로가 두 벌 있었다: 사이드키 route_<id> 와, 부팅 캐시 배열 안의 레코드.
+// 경로는 런당 수 KB 라 캐시 배열이 '런 수 × 경로 크기'로 커졌고, 런을 한 건 저장하거나
+// 지울 때마다 그 배열 **전체**를 파싱·재직렬화했다(런이 쌓일수록 악화 — 3년 주4회면 600건).
+// 지금은 캐시엔 경로를 빼고(경량 미러), 부팅 때 사이드키에서 되채운다.
+// 왜 '캐시에서 빼기만' 하면 안 되나: 메모리 레코드의 route 는 **클라우드 동기의 정본**이다
+// (재설치·기기변경에도 지도가 남는 이유). 되채우지 않으면 재부팅 후 빈 route 가 push 되어
+// 클라우드의 경로를 지운다 — 데이터 유실. 그래서 '빼기'와 '되채우기'는 한 쌍이어야 한다.
+// 순비용: O(n) 읽기가 '저장할 때마다' → '부팅 1회'로 옮겨간다.
+
+/** 캐시에 넣을 런 레코드 — 경로만 제거한 사본(원본 불변). */
+function cacheableRun(r: any) {
+  if (!r || typeof r !== 'object' || !r.route) return r;
+  const {route: _dropped, ...rest} = r;
+  void _dropped;
+  return rest;
+}
+
+/** 레코드가 route 를 들고 있는데 사이드키가 없으면 채운다(클라우드 pull 유래 대비). */
+async function ensureRouteSidecars(list: any[]): Promise<void> {
+  const withRoute = list.filter(r => r && r.id && r.route);
+  if (withRoute.length === 0) return;
+  const keys = withRoute.map(r => 'route_' + String(r.id));
+  const existing = await AsyncStorage.getMany(keys);
+  const missing: Record<string, string> = {};
+  for (const r of withRoute) {
+    const k = 'route_' + String(r.id);
+    if (!existing[k]) missing[k] = String(r.route);
+  }
+  if (Object.keys(missing).length) await AsyncStorage.setMany(missing);
+}
+
+/** 캐시에서 읽은 런에 사이드키의 경로를 되채운다(메모리 레코드는 항상 완전해야 한다). */
+async function hydrateRoutes(runs: any[]): Promise<any[]> {
+  const need = runs.filter(r => r && r.id && !r.route);
+  if (need.length === 0) return runs;
+  const got = await AsyncStorage.getMany(need.map(r => 'route_' + String(r.id)));
+  return runs.map(r => {
+    if (!r || !r.id || r.route) return r;
+    const side = got['route_' + String(r.id)];
+    return side ? {...r, route: side} : r;
+  });
+}
+
 async function loadBootCache(): Promise<{shoes: any[]; runs: any[]} | null> {
   try {
     const [s, r] = await Promise.all([
@@ -176,7 +220,15 @@ async function loadBootCache(): Promise<{shoes: any[]; runs: any[]} | null> {
     const shoes = JSON.parse(s || 'null');
     if (!Array.isArray(shoes)) return null;
     const runs = JSON.parse(r || 'null');
-    return {shoes, runs: Array.isArray(runs) ? runs : []};
+    const list = Array.isArray(runs) ? runs : [];
+    // 경로 되채우기 — 실패해도 부팅은 계속한다(지도만 비고 거리·시간은 온전).
+    let hydrated = list;
+    try {
+      hydrated = await hydrateRoutes(list);
+    } catch (e) {
+      reportIssue('storage: route hydrate on boot', e);
+    }
+    return {shoes, runs: hydrated};
   } catch {
     return null;
   }
@@ -575,11 +627,12 @@ function Main(){
     const t=setTimeout(()=>{
       (async()=>{
         try{
-          // setMany — 두 키를 한 번의 브리지 왕복으로.
-          // (경로를 캐시에서 빼는 최적화는 보류 — 아래 F-08 주석 참조.)
+          // 경로는 사이드키가 소유한다(F-08). 클라우드 pull 유래처럼 사이드키가 없는
+          // 레코드는 여기서 먼저 채운 뒤, 캐시엔 경로를 뺀 경량 레코드만 쓴다.
+          await ensureRouteSidecars(runs as any[]);
           await AsyncStorage.setMany({
             [CACHE_SHOES_KEY]:JSON.stringify(shoes),
-            [CACHE_RUNS_KEY]:JSON.stringify(runs),
+            [CACHE_RUNS_KEY]:JSON.stringify((runs as any[]).map(cacheableRun)),
           });
         }catch(e){
           // 다음 mutation 에서 재시도되지만, 저장 공간 부족이면 계속 실패해 캐시가 조용히
@@ -863,20 +916,13 @@ function Main(){
   // 런 한 건을 부팅 캐시(CACHE_RUNS_KEY)에 즉시 durable 하게 prepend 한다(크래시-세이프티).
   // 같은 id 가 이미 있으면 교체(멱등). 800ms 디바운스 캐시 효과가 전체 상태로 덮어쓰기 전에
   // 크래시가 나도 이 동기 기록 덕에 런이 살아남는다(audit#3 미동기 큐의 역할을 대체). 비차단.
-  // ⚠️ F-08(2026-07-26 감사) 보류 기록 — 다시 파헤치지 않도록 남긴다.
-  // 부팅 캐시 배열은 런 레코드를 통째로 담고, 그 안엔 GPS 경로(route, 런당 수 KB)가 들어
-  // 있다. 경로는 사이드키 route_<id> 에도 저장되므로 **같은 데이터가 두 벌**이고, 캐시가
-  // '런 수 × 경로 크기'로 커져 런 한 건을 저장·삭제할 때마다 그 전체를 파싱·재직렬화한다.
-  // 고치려면 경로의 집을 사이드키 하나로 모아야 하는데, 워치 인제스트·클라우드 pull 등
-  // 사이드키를 만들지 않는 유입 경로가 있어 그것부터 정리해야 한다(안 하면 오프라인에서
-  // 지도가 사라진다 — 기존 계약 테스트 3건이 정확히 그걸 지키고 있다).
-  // 데이터 유실 위험이 있는 변경이라 P2 정리에 끼워 넣지 않고 별도 작업으로 남긴다.
   const persistRunToCache=async(run:BackendRun)=>{
     try{
       const raw=await AsyncStorage.getItem(CACHE_RUNS_KEY);
       const arr=raw?JSON.parse(raw):[];
       const list=Array.isArray(arr)?arr:[];
-      const next=[run,...list.filter((r:any)=>String(r?.id)!==String(run.id))];
+      // 경로는 호출 직전 addRun 이 사이드키(route_<id>)에 이미 durable 하게 썼다(F-08).
+      const next=[cacheableRun(run),...list.filter((r:any)=>String(r?.id)!==String(run.id))];
       await AsyncStorage.setItem(CACHE_RUNS_KEY,JSON.stringify(next));
     }catch(e){recordError(e,'storage: run cache write');}
   };

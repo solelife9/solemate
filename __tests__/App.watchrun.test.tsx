@@ -75,10 +75,12 @@ test('워치 런 인제스트 시 HR 보강 대기에 실제 러닝 시간창으
   expect(splitsRaw).toBeTruthy();
   expect(JSON.parse(splitsRaw!)).toHaveLength(5);
 
-  // ②b 경로(민우님 2026-07-24 "워치 런도 지도") — 레코드 route(클라우드 동기) + 사이드카.
-  expect(String(savedRun.route || '')).toContain('37.51');
+  // ②b 경로(민우님 2026-07-24 "워치 런도 지도") — 사이드카가 경로의 단일 소스다(F-08).
+  // 캐시는 경량 미러라 route 를 담지 않고, 클라우드 동기용 route 는 메모리 레코드가 갖는다
+  // (부팅 시 loadBootCache 가 사이드카에서 되채운다 — 빈 route 가 클라우드를 덮지 않게).
+  expect(savedRun.route).toBeUndefined();
   const routeSide = await AsyncStorage.getItem('route_' + savedRun.id);
-  expect(routeSide).toBeTruthy();
+  expect(String(routeSide || '')).toContain('37.51');
 
   // ③ 핵심 — HR 보강 대기 레지스트리에 '워치가 보낸 실제 시간창'으로 등록됐다.
   //    (updatedAt 역산이 아니라 startMs 기준 — 늦게 가져온 워치 런도 창이 정확하다.)

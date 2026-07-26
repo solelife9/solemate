@@ -180,7 +180,8 @@ test('기록 저장 restores the run (distance/time/goal/cadence) and saving per
   const saved = cache[0];
   expect(saved).toBeDefined();
   expect(saved.km).toBe(3.2);
-  expect(saved.route).toContain('37.5'); // route rebuilt from restored pts
+  // 복구된 pts 로 재구성한 경로가 durable 하게 남는다 — 사이드키에서 확인(F-08).
+  expect(await AsyncStorage.getItem('route_' + saved.id)).toContain('37.5');
   expect(saved.duration).toBe(900); // restored elapsed → run duration
   expect(saved.shoe_id).toBe('s1'); // restored shoe identity (not a default/wrong shoe)
 

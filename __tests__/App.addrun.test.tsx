@@ -146,7 +146,11 @@ test('크래시-세이프티: 저장 즉시 부팅 캐시에 durable 기록 + RE
   const cache = await cacheRuns();
   expect(cache).toHaveLength(1);
   expect(cache[0].km).toBe(3.2);
-  expect(cache[0].route).toContain('37.5');
+  // 경로의 집은 사이드키 하나다(2026-07-26 F-08) — 캐시는 경량 미러라 route 를 담지 않는다.
+  // 지키려는 계약은 그대로다: **저장 즉시 경로가 durable 하게 남는다.** 위치만 옮겼다.
+  // (캐시에 넣으면 배열이 '런 수 × 경로 크기'로 커져 저장·삭제마다 전량 재직렬화됐다.)
+  expect(cache[0].route).toBeUndefined();
+  expect(await AsyncStorage.getItem('route_' + cache[0].id)).toContain('37.5');
   expect(String(cache[0].id).startsWith('run_')).toBe(true); // 영구 클라 id
   // Firestore 정본 — REST 런 POST 는 일어나지 않는다.
   expect(runPosts()).toHaveLength(0);
@@ -187,7 +191,8 @@ test('데이터 유실 0: 백엔드가 죽어 있어도 런과 route 가 영속�
   const cache = await cacheRuns();
   expect(cache).toHaveLength(1);
   expect(cache[0].km).toBe(3.2);
-  expect(cache[0].route).toContain('37.5'); // route never dropped
+  // route never dropped — 캐시가 아니라 사이드키에서(F-08).
+  expect(await AsyncStorage.getItem('route_' + cache[0].id)).toContain('37.5');
 
   act(() => renderer.unmount());
 });
