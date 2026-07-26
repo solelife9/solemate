@@ -671,8 +671,32 @@ class RunTracker {
     return Math.round(this.elev.gain);
   }
 
+  /**
+   * 경로 스냅샷(**복사본**). 내부 배열을 그대로 주면 소비자가 변화를 관측하지 못한다 —
+   * 엔진은 push 로 제자리 변형하므로 참조가 늘 같고, React 는 `Object.is` 로 같다고 보아
+   * 리렌더를 건너뛴다(그 상태로 memo 를 붙이면 지도가 영영 멈춘다).
+   * 복사 비용이 있으니 **매 fix 마다 부르지 말 것** — 경로가 실제로 화면에 필요한 순간
+   * (일시정지 지도·완주 저장)에만 호출한다. 러닝 중 진행 표시는 거리/시간 스칼라로 충분하다.
+   */
   getPoints(): {lat: number; lon: number}[] {
-    return this.pts;
+    return this.pts.slice();
+  }
+
+  /** 경로점 개수 — 배열 복사 없이 '새 점이 생겼나'만 알고 싶을 때(트랙 자동랩 등). */
+  getPointCount(): number {
+    return this.pts.length;
+  }
+
+  /** 경로 첫 점 사본(없으면 null) — 트랙 자동랩의 출발 앵커. */
+  getFirstPoint(): {lat: number; lon: number} | null {
+    const p = this.pts[0];
+    return p ? {lat: p.lat, lon: p.lon} : null;
+  }
+
+  /** 경로 마지막 점 사본(없으면 null) — '지금 출발점 반경 안인가' 판정용. */
+  getLastPoint(): {lat: number; lon: number} | null {
+    const p = this.pts[this.pts.length - 1];
+    return p ? {lat: p.lat, lon: p.lon} : null;
   }
 
   /** 곡선 전용 (누적거리 km, 경과시간 sec) 시계열. 완주 시 영속해 고운 페이스 곡선을 만든다. */

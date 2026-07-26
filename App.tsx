@@ -2581,19 +2581,23 @@ function RunActiveScreen({shoe,insets,goalKm,goalMin=0,pacePlan=[],targetZone=0,
         setGpsStalled(s.stalled);setPermLost(s.permissionRevoked);
         if(!baroAvail.current)setElevGain(s.elevGainM); // 기압계 가용 시 GPS 고도 양보(baro 권위)
         setAccuracyM(s.accuracyM);
-        setLiveCoords(runTracker.getPoints());
+        // 지도는 일시정지에서만 렌더된다(mapShown = uiPaused && …) — 그때만 경로 스냅샷을
+        // 만든다. 매 fix 마다 부르면 경로 전체를 1Hz 로 복사하게 된다(러닝이 길수록 커짐).
+        // 일시정지 중엔 엔진이 pts 를 늘리지 않으므로(ingestFix 의 pause 가드) 한 번이면 충분하다.
+        if(s.paused)setLiveCoords(runTracker.getPoints());
         // 트랙 모드 자동랩(출발점 복귀 감지) — 신규 경로점이 생겼을 때만 판정한다. 출발반경을
         // 벗어났다가(left) 다시 반경 안으로 들어오는 순간을 1랩으로. GPS 는 '복귀 판정'에만 쓰고
         // 거리는 registerLap 이 확정 랩거리로 낸다(누적 GPS 미사용). 실내(GPS✗)선 점이 안 생겨
         // 자동랩이 안 울리고 수동 랩 버튼이 주력이 된다.
         if(trackMode&&!s.paused){
-          const pts=runTracker.getPoints();
-          if(pts.length>lapPtCountRef.current){
-            lapPtCountRef.current=pts.length;
-            if(!lapStartRef.current&&pts.length>0)lapStartRef.current=pts[0];
+          // 개수·첫점·끝점만 필요하다 — 경로 배열을 통째로 복사하지 않는다(1Hz 경로).
+          const nPts=runTracker.getPointCount();
+          if(nPts>lapPtCountRef.current){
+            lapPtCountRef.current=nPts;
+            if(!lapStartRef.current&&nPts>0)lapStartRef.current=runTracker.getFirstPoint();
             const st=lapStartRef.current;
-            if(st){
-              const latest=pts[pts.length-1];
+            const latest=runTracker.getLastPoint();
+            if(st&&latest){
               const dFromStart=haversineM(st.lat,st.lon,latest.lat,latest.lon);
               if(!lapLeftRef.current){if(dFromStart>LAP_RADIUS_M)lapLeftRef.current=true;}
               else if(dFromStart<=LAP_RADIUS_M)registerLap(s.elapsed,true);

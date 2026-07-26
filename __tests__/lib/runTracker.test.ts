@@ -859,3 +859,53 @@ describe('스냅샷 쓰기 스로틀', () => {
     expect((await readState()).savedAt).toBe(100500);
   });
 });
+
+// ── 경로 접근자 계약(2026-07-26 F-02) ─────────────────────────────────────────
+// getPoints() 가 내부 배열을 그대로 돌려주던 시절엔 소비자가 변화를 관측할 수 없었다 —
+// 엔진은 push 로 제자리 변형하므로 참조가 늘 같고, React 는 Object.is 로 '안 바뀜'으로
+// 판단해 리렌더를 건너뛴다(그 상태에서 memo 를 붙이면 지도가 영영 멈춘다).
+// 대신 복사는 비싸므로, 개수·양끝만 필요한 소비자(트랙 자동랩)용 접근자를 따로 둔다.
+describe('경로 접근자', () => {
+  test('getPoints 는 복사본이라 소비자가 엔진 내부를 오염시킬 수 없다', () => {
+    const {t} = makeEngine();
+    t.start({goalKm: 5, shoe: {id: 's1', name: 'X'}, t0: 100000});
+    clearWarmup(t);
+
+    const a = t.getPoints();
+    expect(a.length).toBeGreaterThan(0);
+    a.push({lat: 0, lon: 0}); // 소비자가 반환값을 건드려도
+    expect(t.getPointCount()).toBe(a.length - 1); // 엔진은 영향받지 않는다
+  });
+
+  test('새 fix 가 들어오면 getPoints 는 이전과 다른 참조를 준다(리렌더가 걸린다)', () => {
+    const {t} = makeEngine();
+    t.start({goalKm: 5, shoe: {id: 's1', name: 'X'}, t0: 100000});
+    clearWarmup(t);
+
+    const before = t.getPoints();
+    t.ingestFix(fix(37.5009, LON, 5, 106000));
+    const after = t.getPoints();
+    expect(after).not.toBe(before); // 참조가 다르다 = React 가 변화를 본다
+    expect(after.length).toBeGreaterThan(before.length);
+  });
+
+  test('개수·첫점·끝점 접근자는 배열 복사 없이 같은 값을 준다', () => {
+    const {t} = makeEngine();
+    t.start({goalKm: 5, shoe: {id: 's1', name: 'X'}, t0: 100000});
+    clearWarmup(t);
+    t.ingestFix(fix(37.5009, LON, 5, 106000));
+
+    const pts = t.getPoints();
+    expect(t.getPointCount()).toBe(pts.length);
+    expect(t.getFirstPoint()).toEqual(pts[0]);
+    expect(t.getLastPoint()).toEqual(pts[pts.length - 1]);
+  });
+
+  test('경로가 비면 첫점·끝점은 null(호출부가 옵셔널 체이닝 없이 분기할 수 있게)', () => {
+    const {t} = makeEngine();
+    t.start({goalKm: 5, shoe: {id: 's1', name: 'X'}, t0: 100000});
+    expect(t.getPointCount()).toBe(0);
+    expect(t.getFirstPoint()).toBeNull();
+    expect(t.getLastPoint()).toBeNull();
+  });
+});
