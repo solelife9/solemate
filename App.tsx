@@ -1555,6 +1555,9 @@ function Main(){
       // 동일 계약). 거리(랩수×랩거리)·시간은 이미 레코드에 있으므로 메타만 얹는다.
       if(newId&&p.laps>0&&p.lapM>0){
         try{await AsyncStorage.setItem('track_'+newId,JSON.stringify({lapM:Math.round(p.lapM),laps:Math.round(p.laps),lapTimes:(p.lapTimes||[]).map(t=>Math.round(t))}));}catch{/* 비치명적 */}
+        // 폰 트랙 런과 같은 규칙으로 노면을 태깅한다(2026-07-27) — 유입 경로가 달라도
+        // 같은 러닝이면 마모 계산이 같아야 한다.
+        try{await setRunSurface(newId,'track');}catch{/* 비치명적 */}
       }
       // 구간 스플릿(초/km) → splits_<id> 사이드카(폰 GPS 런과 동일 {km,paceSec,elevM} 포맷).
       // 각 km 이 1km라 paceSec=그 구간 시간. 2구간 미만이면 표시 가치 없어 생략(폰과 동일).
@@ -2135,7 +2138,15 @@ function Main(){
           const newId=await addRun(activeRun.id,km,today(),memo||'','gps',dur,cad,route,location,avgBpm,elevM,cal);
           // 트랙 세션 마커 — RunDetail 이 track_<id> 로 읽어 '트랙 · 400m×12랩'을 표시한다.
           // 거리·페이스·PB 는 이미 랩 시계열(paceTrack=lapsToTrack)로 정본이라 별도 계산 불필요.
-          if(trackMeta&&trackMeta.laps>0) await AsyncStorage.setItem('track_'+newId, JSON.stringify(trackMeta));
+          if(trackMeta&&trackMeta.laps>0){
+            await AsyncStorage.setItem('track_'+newId, JSON.stringify(trackMeta));
+            // 노면 자동 태깅(2026-07-27): 트랙에서 달린 것이 **확정 정보**이므로 추측이 아니다.
+            // 여태 마모 모델(SURFACE_FACTOR)은 완성돼 있는데 노면을 넣어주는 곳이 수동 런
+            // 추가/편집 폼 하나뿐이라, 실제로 달린 GPS 런은 전부 road(1.0)로 계산됐다 —
+            // 차별점의 정확도 장치가 실사용에서 죽어 있었다. 트랙은 우레탄이라 아스팔트보다
+            // 덜 닳는다(계수 0.9).
+            await setRunSurface(newId,'track');
+          }
           // per-km 스플릿(레코더가 1km 통과 시각으로 남긴 실측 구간)을 localId로 영속한다.
           // route_/surface_ 와 동일 패턴(로컬 전용·동기 시 serverId로 재키잉). RunDetail이
           // splits_<id> 로 읽어 표시한다. 2구간 미만이면 표시 가치가 없어 저장 생략.
