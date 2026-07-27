@@ -117,7 +117,7 @@ describe('RunGoalScreen — 런 시작 햅틱과 onStart 핸들러', () => {
       pressableByLabel(root, '러닝 시작').props.onPress();
     });
     expect(haptics.tap).toHaveBeenCalledTimes(1);
-    expect(onStart).toHaveBeenCalledWith({ km: 0, durationMin: 0, pacePlan: [], targetZone: 0 });
+    expect(onStart).toHaveBeenCalledWith({ km: 0, durationMin: 0, pacePlan: [], targetZone: 0, indoor: false });
   });
 
   test("거리 탭에서 5km 프리셋 선택 후 시작하면 onStart(5km)", () => {
@@ -129,7 +129,7 @@ describe('RunGoalScreen — 런 시작 햅틱과 onStart 핸들러', () => {
     act(() => {
       pressableByLabel(root, '러닝 시작').props.onPress();
     });
-    expect(onStart).toHaveBeenCalledWith({ km: 5, durationMin: 0, pacePlan: [], targetZone: 0 });
+    expect(onStart).toHaveBeenCalledWith({ km: 5, durationMin: 0, pacePlan: [], targetZone: 0, indoor: false });
   });
 
   test('스피드 모드 선택 후 시작하면 거리 + km별 페이스 플랜이 onStart 로 전달된다', () => {
@@ -156,7 +156,7 @@ describe('RunGoalScreen — 런 시작 햅틱과 onStart 핸들러', () => {
     act(() => {
       pressableByLabel(root, '러닝 시작').props.onPress();
     });
-    expect(onStart).toHaveBeenCalledWith({ km: 0, durationMin: 30, pacePlan: [], targetZone: 0 });
+    expect(onStart).toHaveBeenCalledWith({ km: 0, durationMin: 30, pacePlan: [], targetZone: 0, indoor: false });
   });
 
   test('세그먼트/프리셋 버튼이 role=button + selected 상태를 노출한다', () => {

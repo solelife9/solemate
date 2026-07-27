@@ -374,7 +374,7 @@ function Main(){
   const [previewOnboard,setPreviewOnboard]=useState(__DEV__&&!(typeof process!=='undefined'&&process.env&&process.env.JEST_WORKER_ID));
   const [overlay,setOverlay]=useState<'none'|'add'|'goal'|'countdown'|'run'>('none');
   const [pendingShoe,setPendingShoe]=useState<{id:string;name:string;ui:Shoe}|null>(null);
-  const [activeRun,setActiveRun]=useState<{id:string;name:string;goalKm:number;goalMin:number;pacePlan:number[];targetZone:number;trackLapM?:number}|null>(null);
+  const [activeRun,setActiveRun]=useState<{id:string;name:string;goalKm:number;goalMin:number;pacePlan:number[];targetZone:number;trackLapM?:number;indoor?:boolean}|null>(null);
   // audit#2: 앱 시작 시 감지된 미완료 런 스냅샷. 사용자가 '복구' 선택 시 done
   // 화면으로 시드되어 검토 후 저장/버리기를 결정한다(데이터 유실 금지).
   const [resumeSnap,setResumeSnap]=useState<RunSnapshot|null>(null);
@@ -2018,7 +2018,7 @@ function Main(){
     // 목표 설정 → 카운트다운(준비·GPS 워밍업·3·2·1·GO) → 라이브 런. 카운트다운의
     // onDone 이 실제 런(GPS 트래킹 시작) 화면으로 넘긴다. 미완료 런 복구 경로는
     // 카운트다운을 거치지 않고 곧장 'run'으로 간다(이미 끝난 런의 검토라서).
-    setActiveRun({id:pendingShoe!.id,name:pendingShoe!.name,goalKm:goal.km,goalMin:goal.durationMin,pacePlan:goal.pacePlan,targetZone:goal.targetZone??0,trackLapM:goal.track?.lapM});
+    setActiveRun({id:pendingShoe!.id,name:pendingShoe!.name,goalKm:goal.km,goalMin:goal.durationMin,pacePlan:goal.pacePlan,targetZone:goal.targetZone??0,trackLapM:goal.track?.lapM,indoor:!!goal.indoor});
     setOverlay('countdown');
   };
   const startActiveRun=(goal:RunGoal)=>{
@@ -2122,6 +2122,7 @@ function Main(){
         targetZone={activeRun.targetZone}
         pacePlan={activeRun.pacePlan}
         track={activeRun.trackLapM?{lapM:activeRun.trackLapM}:null}
+        indoor={!!activeRun.indoor}
         weightKg={weightKg}
         age={age}
         restHR={restHR}
@@ -2138,6 +2139,10 @@ function Main(){
           const newId=await addRun(activeRun.id,km,today(),memo||'','gps',dur,cad,route,location,avgBpm,elevM,cal);
           // 트랙 세션 마커 — RunDetail 이 track_<id> 로 읽어 '트랙 · 400m×12랩'을 표시한다.
           // 거리·페이스·PB 는 이미 랩 시계열(paceTrack=lapsToTrack)로 정본이라 별도 계산 불필요.
+          // 실내 러닝은 트레드밀 노면으로 자동 태깅한다(2026-07-27) — 사용자가 '실내'를
+          // 직접 골랐으므로 확정 정보다. 트레드밀은 쿠션·균일해서 아스팔트보다 덜 닳는다
+          // (SURFACE_FACTOR 0.85). 이 태깅이 없으면 실내 km 가 로드로 계산돼 수명이 과소평가된다.
+          if(activeRun.indoor) await setRunSurface(newId,'treadmill');
           if(trackMeta&&trackMeta.laps>0){
             await AsyncStorage.setItem('track_'+newId, JSON.stringify(trackMeta));
             // 노면 자동 태깅(2026-07-27): 트랙에서 달린 것이 **확정 정보**이므로 추측이 아니다.

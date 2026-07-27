@@ -71,7 +71,19 @@ type Mode = 'km' | 'min' | 'speed' | 'track';
 /** 러닝 목표 — 거리(km, 0=자유)/시간(분)/스피드(km별 페이스 플랜)/트랙(운동장 랩). 0/빈배열/null은 미설정.
  *  track: 트랙 모드 = 한 바퀴 예상 거리(m)만 정한다. 실제 랩거리는 런 중 첫 랩 GPS로 자동 보정
  *  (snapLapDistance) — 이 값은 기본값·실내(GPS✗) 폴백. km/durationMin 은 트랙에선 0(자유). */
-export type RunGoal = { km: number; durationMin: number; pacePlan: number[]; track?: { lapM: number } | null; targetZone?: number };
+export type RunGoal = {
+  km: number;
+  durationMin: number;
+  pacePlan: number[];
+  track?: { lapM: number } | null;
+  targetZone?: number;
+  /**
+   * 실내(트레드밀) 여부. 목표(무엇을)와 환경(어디서)은 서로 다른 축이라 탭이 아니라
+   * 별도 전환으로 둔다(2026-07-27 민우님 B안 확정). true 면 GPS 를 켜지 않고
+   * 만보계 거리를 정본으로 쓴다.
+   */
+  indoor?: boolean;
+};
 /** 트랙 한 바퀴 예상 거리 선택지(m) — 야외 400(공인)·트랙 300·실내 200 + 커스텀. */
 const LAP_PRESETS = [200, 300, 400] as const;
 /** 거리 키패드 입력 상한(km) — 울트라 대응(민우님 2026-07-24): 50K·100K·100마일(161km)을
@@ -105,6 +117,8 @@ export default function RunGoalScreen({
   // 기본 = 거리 탭 · '자유'(val=0) 프리셋(민우님 2026-07-24) — 열자마자 CTA 한 번이면
   // 자유 러닝(퀵스타트 유지), 거리 목표는 칩 한 번(3/5/10/하프) 또는 히어로 탭 키패드로.
   const [mode, setMode] = useState<Mode>('km');
+  // 야외/실내 — 기본은 야외라 지금까지 쓰던 사람에겐 아무것도 달라지지 않는다.
+  const [indoor, setIndoor] = useState(false);
   const [val, setVal] = useState<number>(0);
   const cfg = mode === 'km' || mode === 'min' ? CFG[mode] : null;
   // 스피드 탭 기본 평균 페이스 개인화(2026-07-26) — 거리·시간 탭의 '예상 시간'은 이미
@@ -208,10 +222,10 @@ export default function RunGoalScreen({
   const startRun = () => {
     tap();
     const base: RunGoal =
-      mode === 'km' ? { km: val, durationMin: 0, pacePlan: [] } // val 0 = 자유 러닝
-        : mode === 'min' ? { km: 0, durationMin: val, pacePlan: [] }
+      mode === 'km' ? { km: val, durationMin: 0, pacePlan: [], indoor } // val 0 = 자유 러닝
+        : mode === 'min' ? { km: 0, durationMin: val, pacePlan: [], indoor }
           : mode === 'track' ? { km: 0, durationMin: 0, pacePlan: [], track: { lapM } }
-            : { km: speedGoal.km, durationMin: 0, pacePlan: speedGoal.plan };
+            : { km: speedGoal.km, durationMin: 0, pacePlan: speedGoal.plan, indoor };
     onStart?.({ ...base, targetZone });
   };
   const ZONE_OPTS: { z: TargetZone; label: string }[] = [
@@ -240,6 +254,26 @@ export default function RunGoalScreen({
         onChange={(k) => pickMode(k as Mode)}
         labelFor={(it) => `${it.label} 목표`}
       />
+
+      {/* 야외 / 실내 — 목표(무엇을)와 환경(어디서)은 축이 다르므로 탭이 아니라 별도 줄이다
+          (2026-07-27 B안). 덕분에 '실내에서 5km' 같은 조합이 자연스럽게 표현된다.
+          트랙 탭에서는 숨긴다 — 거기엔 이미 '실내 200m' 랩 선택지가 같은 역할을 한다. */}
+      {mode !== 'track' && (
+        <SegmentedControl
+          style={s.envSeg}
+          size="sm"
+          items={[{ key: 'outdoor', label: '야외' }, { key: 'indoor', label: '실내' }]}
+          value={indoor ? 'indoor' : 'outdoor'}
+          onChange={(k) => setIndoor(k === 'indoor')}
+          labelFor={(it) => (it.key === 'indoor' ? '실내 러닝 — 걸음으로 거리 측정' : '야외 러닝 — GPS로 거리 측정')}
+          testIDFor={(it) => `goal-env-${it.key}`}
+        />
+      )}
+      {mode !== 'track' && indoor && (
+        <Text style={s.envHint} testID="goal-indoor-hint">
+          걸음으로 거리를 세요 · 지도는 기록되지 않아요
+        </Text>
+      )}
 
       {/* center */}
       <View style={s.center}>
@@ -422,6 +456,9 @@ const s = StyleSheet.create({
   // 컨테이너 표면(배경/보더/반경/패딩)은 SegmentedControl(필 단일 문법)이 책임진다.
   // 화면 고유 레이아웃(좌우·상단 여백)만 남긴다(과거 segBtn/On·segText/On 제거).
   seg: { marginHorizontal: GUTTER, marginTop: rv(14) },
+  // 환경 전환(야외/실내) — 모드 탭보다 한 단 아래 위계라 간격을 좁게 둔다.
+  envSeg: { marginHorizontal: GUTTER, marginTop: rv(8) },
+  envHint: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, textAlign: 'center', marginTop: rv(6), paddingHorizontal: GUTTER },
 
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: GUTTER },
   // baseline 정렬(2026-07-17 사용자 지적 "km·분·m 라인이 숫자보다 밑"): Jost 숫자의

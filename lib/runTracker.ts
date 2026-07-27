@@ -84,6 +84,13 @@ export interface RunTrackerConfig {
   goalMin?: number;
   /** 스피드 모드 km별 목표 페이스(초/km). 스냅샷 영속용(복구 시 코칭 유지). 기본 []. */
   pacePlan?: number[];
+  /**
+   * 실내(트레드밀) 모드 — GPS 를 아예 쓰지 않고 **CMPedometer 거리를 정본**으로 삼는다.
+   * 기본 false(야외). 야외에서 만보계는 GPS 死구간 갭 필러일 뿐이지만, 실내에서는 fix 가
+   * 영영 오지 않으므로 그 게이트를 통과하지 못해 거리가 0 으로 멈춰 있었다
+   * (2026-07-27 출시 심사 B-13 근본 해결).
+   */
+  indoor?: boolean;
   shoe: {id: string; name: string};
   /** Epoch ms the run began; defaults to now(). Injectable for tests/recovery. */
   t0?: number;
@@ -160,6 +167,8 @@ class RunTracker {
   // 그 유실분만 보탠다. GPS 정상 구간엔 절대 관여하지 않아 이중계산 불가 + 순수 가산(회귀 0).
   private pedLastCumM = -1;    // 마지막 CMPedometer 누적거리(m); -1=미수신/리셋 대기
   private pedFillKm = 0;       // 융합으로 메운 누적 거리(km) — 스냅샷/검증용
+  // 실내 모드: 만보계가 갭 필러가 아니라 **거리 정본**이다(GPS 미사용).
+  private indoorMode = false;
 
   private isPaused = false;
   private autoPausedFlag = false;
@@ -247,6 +256,7 @@ class RunTracker {
     this.pausedMs = 0;
     this.pauseStartMs = 0;
     this.stalledMs = config.stalledMs ?? 0;
+    this.indoorMode = !!config.indoor;
     this.t0 = config.t0 ?? this.now();
     this.autoPauseEnabled = config.autoPause ?? true;
     this.goalKm = config.goalKm;
@@ -621,14 +631,17 @@ class RunTracker {
         : this.pausedMs;
     // 진행 중인 死구간의 초과분(임계 넘은 부분)도 실시간으로 빼, 무신호 동안 타이머가 거리
     // 없이 늘지 않게 한다. 임계 이내(정상 간격)면 0 — 타이머가 매끄럽게 흐른다(역행 없음).
+    // 실내에는 GPS 가 없으므로 死구간 개념도 없다 — 시간이 그대로 흘러야 한다.
+    // (실내에선 lastRecvMs 가 0 이라 아래 식도 0 이 되지만, 의도를 코드로 못 박는다.)
     const ongoingStallMs =
-      !this.isPaused && this.lastRecvMs > 0
+      !this.indoorMode && !this.isPaused && this.lastRecvMs > 0
         ? Math.max(0, now - this.lastRecvMs - GPS_STALL_THRESHOLD_MS)
         : 0;
     return Math.max(0, Math.floor((now - this.t0 - curPausedMs - this.stalledMs - ongoingStallMs) / 1000));
   }
 
   isStalled(): boolean {
+    if (this.indoorMode) return false; // 실내엔 GPS 가 없다 — 死구간 경고를 띄우면 안 된다
     if (this.isPaused) return false; // fixes legitimately stop while paused
     return gpsStallStatus(this.lastRecvMs, this.now()).stalled;
   }
@@ -761,6 +774,16 @@ class RunTracker {
     const deltaM = cumulativeMeters - this.pedLastCumM;
     this.pedLastCumM = cumulativeMeters; // 정지 중 델타도 흡수(재개 시 catch-up 점프 방지)
     if (deltaM <= 0) return;
+    // ── 실내(트레드밀): 만보계가 거리 정본 ────────────────────────────────────
+    // GPS 를 켜지 않으므로 firstFix 도 死구간 판정도 존재하지 않는다. 델타를 그대로 쌓는다.
+    // 이중계산 위험도 없다 — 실내에선 GPS 적산 경로 자체가 돌지 않는다.
+    if (this.indoorMode) {
+      if (!this.active || this.pausedFlag()) return;
+      const addKmIndoor = deltaM / 1000;
+      this.dist += addKmIndoor;
+      this.pedFillKm += addKmIndoor;
+      return;
+    }
     // 첫 GPS fix 이전엔 융합하지 않는다(콜드스타트 대체가 아니라 死구간 갭 필러).
     if (!this.firstFixEmitted || !this.active || this.pausedFlag()) return;
     // GPS 死구간일 때만 보탠다 — 정상 구간은 GPS(스무더)가 이미 적산 중이라 손대면 이중계산.

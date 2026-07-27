@@ -85,7 +85,14 @@ export default function KeegoHome({shoes, runs = [], onStartRun, onOpenShoe, onO
           <View style={styles.brandDot} />
           <Text style={styles.wordmark}>Keego</Text>
         </View>
-        <Pressable style={styles.avatar} onPress={onOpenProfile} hitSlop={8}>
+        {/* 아이콘만 있는 버튼이라 라벨이 없으면 보이스오버가 아무것도 읽지 못한다
+            (2026-07-27 접근성 점검에서 앱 전체 중 유일하게 남아 있던 곳). */}
+        <Pressable
+          style={styles.avatar}
+          onPress={onOpenProfile}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel="내 프로필 열기">
           <Ionicons name="person" size={ri(ICON.inline)} color={withAlpha(T1, 0.9)} />
         </Pressable>
       </View>

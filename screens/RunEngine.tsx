@@ -62,7 +62,7 @@ function openLocationSettingsAlert(message:string){
   ]);
 }
 
-export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targetZone=0,track=null,weightKg,age=0,restHR=0,onSave,onDiscard,resume,resumeMode}:{shoe:{id:string;name:string};insets:any;goalKm:number;goalMin?:number;pacePlan?:number[];targetZone?:number;track?:{lapM:number}|null;weightKg:number;age?:number;restHR?:number;onSave:(km:number,dur:number,cad:number,memo:string,route:string,location:string,splits:{km:number;paceSec:number;elevM:number}[],elevM:number,cal:number,paceTrack:{d:number;t:number}[],hrTrack:{t:number;bpm:number}[],gapTrack:{d:number;t:number;e:number}[],trackMeta?:{lapM:number;laps:number;lapTimes:number[]}|null)=>Promise<void>;onDiscard:()=>void;resume?:RunSnapshot|null;resumeMode?:'review'|'continue'}){
+export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targetZone=0,track=null,indoor=false,weightKg,age=0,restHR=0,onSave,onDiscard,resume,resumeMode}:{shoe:{id:string;name:string};insets:any;goalKm:number;goalMin?:number;pacePlan?:number[];targetZone?:number;track?:{lapM:number}|null;indoor?:boolean;weightKg:number;age?:number;restHR?:number;onSave:(km:number,dur:number,cad:number,memo:string,route:string,location:string,splits:{km:number;paceSec:number;elevM:number}[],elevM:number,cal:number,paceTrack:{d:number;t:number}[],hrTrack:{t:number;bpm:number}[],gapTrack:{d:number;t:number;e:number}[],trackMeta?:{lapM:number;laps:number;lapTimes:number[]}|null)=>Promise<void>;onDiscard:()=>void;resume?:RunSnapshot|null;resumeMode?:'review'|'continue'}){
   // 'continue' = 스냅샷에서 GPS 를 재가동해 이어 달린다(엔진 seed*). 'review'(기본) =
   // done 화면에서 검토·저장만. resume 가 없으면(일반 시작) 두 분기 모두 타지 않는다.
   const isContinue=!!resume&&resumeMode==='continue';
@@ -583,7 +583,7 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
     const seed=isContinue&&resume&&!seededRef.current?resume:null;
     seededRef.current=true; // 시드는 마운트당 첫 beginRun 1회만 — '계속 달리기' 재시작은 0부터.
     if(seed){
-      runTracker.start({goalKm,goalMin,pacePlan,autoPause:autoPauseOn,shoe:{id:shoe.id,name:shoe.name},
+      runTracker.start({goalKm,goalMin,pacePlan,indoor,autoPause:autoPauseOn,shoe:{id:shoe.id,name:shoe.name},
         t0:Date.now()-seed.elapsed*1000,seedDist:seed.dist,
         seedPts:seed.pts as any,seedLocation:seed.location});
       // 크래시 전 통과한 km 만큼 스플릿 슬롯을 채워, 재개 후의 km 경계부터 실측이 기록되게
@@ -597,7 +597,7 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
       announcedKm.current=Math.floor(seed.dist);
       announcedHalf.current=Math.floor(seed.dist*2);
     }else{
-    runTracker.start({goalKm,goalMin,pacePlan,autoPause:autoPauseOn,shoe:{id:shoe.id,name:shoe.name}});
+    runTracker.start({goalKm,goalMin,pacePlan,indoor,autoPause:autoPauseOn,shoe:{id:shoe.id,name:shoe.name}});
     splitsRef.current=[];lastSplitRef.current={elapsed:0,elevM:0};
     setKm(0);setElapsed(0);setCadence(0);setAccuracyM(null);
     setGpsStalled(false);setPermLost(false);setGpsStatus('GPS 신호 찾는 중...');
@@ -673,6 +673,9 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
     // 진행중 스냅샷: 3초마다 영속(audit#2). fix마다도 persist되지만, 무신호 구간에서
     // 시간만 흐를 때의 복구 정확도를 위해 주기 저장도 둔다. 크래시 시 복구 지점.
     snapTimer.current=setInterval(()=>runTracker.persist(),3000);
+    // 실내(트레드밀)에서는 GPS 를 켜지 않는다 — 잡히지도 않고, 켜두면 배터리만 먹으며
+    // 실내 반사 신호가 팬텀 거리를 만들 수 있다. 거리는 만보계가 정본이다(2026-07-27 B-13).
+    if(indoor) return;
     await startTracking(goalKm,{
       onError:reason=>{
         // 권한 회수성 에러면 엔진을 멈춰 가비지 거리/시간 누적을 막는다(subscribe의
@@ -932,7 +935,8 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
   //  · NO_FIX_WARN_SEC 만큼 기다린 뒤에만 띄운다 — 시작 직후 전이 구간에 상태 UI 를
   //    끼워넣지 않는다(구 'GPS 찾는 중' 필이 레이아웃을 밀어 제거된 이력, 2026-07-25).
   //  · 트랙 모드는 제외 — 거리를 랩×랩거리로 세므로 GPS 가 없어도 정확히 기록된다.
-  const noGpsFix = !permLost && !trackMode && accuracyM==null && elapsed>=NO_FIX_WARN_SEC;
+  // 실내 모드에선 띄우지 않는다 — 사용자가 이미 실내를 골랐으므로 알려줄 새 정보가 없다.
+  const noGpsFix = !permLost && !trackMode && !indoor && accuracyM==null && elapsed>=NO_FIX_WARN_SEC;
   // 트랙 표시값: 거리=랩수×확정랩거리, '현재 페이스'=직전 랩 페이스(GPS 롤링 대신 — 트랙 드리프트
   // 회피), 평균=트랙거리/경과. 자유/거리 모드는 기존 GPS 신호 그대로.
   const trackDistKm=(lapCount*lapM)/1000;
@@ -985,7 +989,7 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
       permLost={permLost}
       snapshotFailing={snapshotFailing}
       onOpenSettings={()=>{Promise.resolve(Linking.openSettings()).catch(()=>{});}}
-      liveCoords={liveCoords}
+      liveCoords={indoor?[]:liveCoords}
       track={trackProp}
       onLap={()=>registerLap(elapsedRef.current,false)}
       onUndoLap={undoLap}
