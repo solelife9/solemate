@@ -137,6 +137,54 @@ app.post('/auth/naver', rateLimit, async (req, res) => {
   }
 });
 
+// ── 러닝화 현재가 조회 프록시 ──────────────────────────────────────────────────
+// 앱이 네이버 검색 API 를 직접 부르면 클라이언트 번들에 API 시크릿이 실린다(공개 레포).
+// 그래서 서버가 대신 부르고 결과만 전달한다. 정가를 DB에 박지 않고 조회 시점 가격을
+// 쓰는 설계라(유지보수 부채 0 + 사용자가 실제로 낼 금액), 이 엔드포인트가 그 통로다.
+//
+// 공식 스토어 필터링은 **클라이언트**(lib/shoePrice.pickOfficialQuote)가 한다 — 판정
+// 규칙이 앱의 신뢰 정책(lib/shoeStore)과 한 파일에 있어야 어긋나지 않기 때문이다.
+// 서버는 그대로 전달만 한다.
+//
+// 환경변수: NAVER_SEARCH_CLIENT_ID / NAVER_SEARCH_CLIENT_SECRET
+//   (소셜 로그인용 NAVER_CLIENT_ID 와 별개 — 검색 API 는 개발자센터 애플리케이션 키다.)
+app.get('/shop/price', rateLimit, async (req, res) => {
+  try {
+    const q = String((req.query && req.query.q) || '').trim();
+    if (!q) return res.status(400).json({error: '검색어 필요'});
+    if (q.length > 100) return res.status(400).json({error: '검색어가 너무 길어요'});
+
+    // 키가 없으면 조용히 '가격 없음'으로 답한다(503). 로그인처럼 계정 위험이 있는
+    // 경로가 아니라 표시용 부가 정보라, 앱은 이 응답을 받으면 가격 칸만 비운다.
+    const id = process.env.NAVER_SEARCH_CLIENT_ID;
+    const secret = process.env.NAVER_SEARCH_CLIENT_SECRET;
+    if (!id || !secret) {
+      return res.status(503).json({error: '가격 조회가 아직 설정되지 않았어요.', items: []});
+    }
+
+    const url = `https://openapi.naver.com/v1/search/shop.json?query=${encodeURIComponent(q)}&display=20&sort=asc`;
+    const r = await fetch(url, {
+      headers: {'X-Naver-Client-Id': id, 'X-Naver-Client-Secret': secret},
+    });
+    if (!r.ok) return res.status(502).json({error: '가격 조회 실패', items: []});
+    const body = await r.json();
+    const items = Array.isArray(body && body.items) ? body.items : [];
+    // 앱이 쓰는 필드만 추려 전달한다(응답 크기 + 불필요한 개인화 필드 전파 방지).
+    res.json({
+      items: items.map((it) => ({
+        title: it.title,
+        lprice: it.lprice,
+        mallName: it.mallName,
+        link: it.link,
+        brand: it.brand,
+        maker: it.maker,
+      })),
+    });
+  } catch (e) {
+    res.status(500).json({error: String((e && e.message) || e), items: []});
+  }
+});
+
 // 헬스체크(배포 확인용).
 app.get('/health', (_req, res) => res.json({ok: true}));
 
