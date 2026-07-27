@@ -11,6 +11,7 @@
 import {
   SHOE_MODELS, ShoeModel, ShoeCategory, findShoeModel,
 } from '../data/shoeModels';
+import {visibleChannels} from './shoeStore';
 
 /** 카테고리 → 한국어 표기(추천 카드 라벨용). */
 export const categoryLabelKo: Record<ShoeCategory, string> = {
@@ -78,21 +79,33 @@ export function recommendNextShoes(current: NextShoeInput, limit = 3): ShoeModel
   return sorted.slice(0, Math.max(0, limit));
 }
 
+/** 채널 id → 제휴 태그 키(태그가 있으면 URL 에 부착). 없으면 순수 검색 URL. */
+const TAG_PARAM: Record<string, {key: keyof typeof AFFILIATE; param: string}> = {
+  musinsa: {key: 'musinsa', param: 'affiliate'},
+  '29cm': {key: 'twentyninecm', param: 'affiliate'},
+  naver: {key: 'naver', param: 'NaPm'},
+};
+
 /**
- * 한국 쇼핑몰 검색 링크를 만든다(쿠팡 · 네이버쇼핑 · 무신사 · 29CM). 모두 검색 결과
- * 페이지로 직행하는 안정적 엔드포인트. AFFILIATE 태그가 채워지면 그때 쿼리에 부착한다
- * (기본은 순수 검색 URL — 시크릿 0).
+ * 한국 쇼핑몰 검색 링크를 만든다 — **정품 보증 채널만**(lib/shoeStore 정책).
+ *
+ * 쿠팡은 오픈마켓 셀러 혼재로 제외한다(shoeStore.EXCLUDED_CHANNELS). 네이버쇼핑도
+ * '검색 결과 페이지 통째로' 보내는 링크는 뺀다 — 그 페이지에 병행수입 셀러가 섞이므로
+ * 한 클릭 뒤로 미룰 뿐 신뢰 문제는 그대로다. 네이버는 가격 조회에서 **판매처가 공식
+ * 스토어로 확인된 개별 상품**일 때만 등장한다(shoeStore.isOfficialNaverMall).
+ *
+ * AFFILIATE 태그가 채워지면 그때 쿼리에 부착한다(기본은 순수 검색 URL — 시크릿 0).
+ * 태그 유무는 **순서에 영향을 주지 않는다**(불가침 ② — 정렬은 정품 등급만 본다).
  */
 export function buildShopLinks(m: { brand: string; model: string }): ShopLink[] {
   const q = encodeURIComponent(`${m.brand} ${m.model}`.trim());
-  const coupangBase = `https://www.coupang.com/np/search?q=${q}`;
-  const naverBase = `https://search.shopping.naver.com/search/all?query=${q}`;
-  const musinsaBase = `https://www.musinsa.com/search/musinsa/integration?q=${q}`;
-  const twentyninecmBase = `https://www.29cm.co.kr/search?keyword=${q}`;
-  return [
-    { shop: '쿠팡', url: AFFILIATE.coupang ? `${coupangBase}&channel=${encodeURIComponent(AFFILIATE.coupang)}` : coupangBase },
-    { shop: '네이버쇼핑', url: AFFILIATE.naver ? `${naverBase}&NaPm=${encodeURIComponent(AFFILIATE.naver)}` : naverBase },
-    { shop: '무신사', url: AFFILIATE.musinsa ? `${musinsaBase}&affiliate=${encodeURIComponent(AFFILIATE.musinsa)}` : musinsaBase },
-    { shop: '29CM', url: AFFILIATE.twentyninecm ? `${twentyninecmBase}&affiliate=${encodeURIComponent(AFFILIATE.twentyninecm)}` : twentyninecmBase },
-  ];
+  return visibleChannels().map((c) => {
+    const base = c.searchUrl(q);
+    const tag = TAG_PARAM[c.id];
+    const value = tag ? AFFILIATE[tag.key] : '';
+    return {
+      shop: c.name,
+      url: value ? `${base}&${tag!.param}=${encodeURIComponent(value)}` : base,
+    };
+  });
 }

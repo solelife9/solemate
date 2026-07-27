@@ -50,14 +50,15 @@ describe('recommendNextShoes', () => {
 });
 
 describe('buildShopLinks', () => {
-  it('builds coupang + naver + musinsa + 29cm search links with the encoded query', () => {
+  it('정품 보증 채널만 링크한다 — 쿠팡·네이버 검색페이지는 제외(신뢰 정책)', () => {
     const links = buildShopLinks({ brand: 'Hoka', model: 'Clifton 10' });
     const shops = links.map((l) => l.shop);
-    expect(shops).toContain('쿠팡');
-    expect(shops).toContain('네이버쇼핑');
+    // 쿠팡: 오픈마켓 셀러 혼재. 네이버 검색결과 페이지: 병행수입 셀러 혼재.
+    expect(shops).not.toContain('쿠팡');
+    expect(shops).not.toContain('네이버쇼핑');
     expect(shops).toContain('무신사');
     expect(shops).toContain('29CM');
-    expect(links.length).toBe(4);
+    expect(links.length).toBe(2);
     for (const l of links) {
       expect(l.url).toContain(encodeURIComponent('Hoka Clifton 10'));
       expect(l.url.startsWith('https://')).toBe(true);
@@ -82,8 +83,6 @@ describe('buildShopLinks', () => {
     expect(AFFILIATE.musinsa).toBe('');
     expect(AFFILIATE.twentyninecm).toBe('');
     const links = buildShopLinks({ brand: 'Nike', model: 'Vaporfly 4' });
-    expect(links.find((l) => l.shop === '쿠팡')!.url).not.toContain('channel=');
-    expect(links.find((l) => l.shop === '네이버쇼핑')!.url).not.toContain('NaPm=');
     expect(links.find((l) => l.shop === '무신사')!.url).not.toContain('affiliate=');
     expect(links.find((l) => l.shop === '29CM')!.url).not.toContain('affiliate=');
   });

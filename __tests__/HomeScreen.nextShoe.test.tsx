@@ -44,8 +44,10 @@ describe('NextShoeCard — 교체 시점 다음 러닝화 추천', () => {
     const txt = textOf(card[0]);
     // 같은 카테고리(데일리 트레이너) 추천 + 투명성 안내 + 쇼핑몰 버튼
     expect(txt).toContain('데일리 트레이너');
-    expect(txt).toContain('쿠팡');
-    expect(txt).toContain('네이버쇼핑');
+    // 정품 보증 채널만 노출한다(lib/shoeStore) — 쿠팡·네이버 검색페이지는 제외.
+    expect(txt).toContain('무신사');
+    expect(txt).toContain('29CM');
+    expect(txt).not.toContain('쿠팡');
     expect(txt).toContain('러너'); // disclosure: 러너 우선
   });
 
@@ -57,14 +59,14 @@ describe('NextShoeCard — 교체 시점 다음 러닝화 추천', () => {
   test('쇼핑몰 버튼을 누르면 Linking.openURL 로 검색 URL 을 연다', () => {
     const spy = jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined as any);
     const root = render(<HomeScreen shoes={[WORN]} activeIdx={0} onSelect={jest.fn()} />).root;
-    // '쿠팡' 텍스트를 가진 가장 구체적인 Pressable
+    // '무신사' 텍스트를 가진 가장 구체적인 Pressable
     const hits = root.findAll(
-      (n: any) => n && n.props && typeof n.props.onPress === 'function' && textOf(n) === '쿠팡',
+      (n: any) => n && n.props && typeof n.props.onPress === 'function' && textOf(n) === '무신사',
     );
     expect(hits.length).toBeGreaterThan(0);
     act(() => { hits[0].props.onPress(); });
     expect(spy).toHaveBeenCalledTimes(1);
-    expect(String(spy.mock.calls[0][0])).toContain('coupang.com');
+    expect(String(spy.mock.calls[0][0])).toContain('musinsa.com');
     spy.mockRestore();
   });
 });
