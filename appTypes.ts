@@ -22,6 +22,8 @@ export type Shoe = {
   // 실어 buildWearView/forecast 가 같은 baseline 을 쓰게 한다. 결측이면 0/미보유로 안전.
   start_km?: number;      // 등록 주행거리(km) — effectiveWearKm baseline
   purchase_date?: string; // 구매/보유 시작('YYYY-MM-DD') — 시간 경과 열화 anchor
+  // 구매가(원, 선택) — 원/km 계산의 분자. 결측이면 원/km를 표시하지 않는다(추측 금지).
+  priceKrw?: number;
   created_at?: string;    // 등록 시각(ISO) — purchase_date 결측 시 age 폴백
 };
 

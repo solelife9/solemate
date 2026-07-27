@@ -829,7 +829,7 @@ function Main(){
     try{await runCloudSyncRef.current();}catch{/* 오프라인/실패 — 화면 데이터 유지(비차단) */}
   }
 
-  async function addShoe(name:string,maxKm:number,startKm:number,date:string){
+  async function addShoe(name:string,maxKm:number,startKm:number,date:string,priceKrw?:number){
     // Stage 2: 신발 생성은 Firestore 정본. 로그인(authUser)만 있으면 클라이언트 id 로 즉시
     // 로컬 생성(로컬-퍼스트) — 서버 왕복 없이 바로 화면 반영. 영속은 부팅캐시 + cloudSync
     // (디바운스 push)가 담당한다(REST 의존 제거). 로그인 게이트가 이미 막지만 방어적 가드 유지.
@@ -842,8 +842,12 @@ function Main(){
     if(shoes.filter(sh=>!isRetired(sh)).length===0){trackFirstShoeAdded('picker');}
     // 클라이언트 id + updatedAt 스탬프(머지 '최신 우선'). max_km/start_km/purchase_date 만
     // 채우고 나머지(total_km/run_time)는 런에서 파생(서버 truth 부재 시 폴백).
+    // price_krw 는 입력했을 때만 싣는다(0/NaN 을 '0원에 샀다'로 오해하지 않게 — 결측과
+    // 0원은 다르다). 원/km 는 값이 있을 때만 계산된다.
+    const priceOk=typeof priceKrw==='number'&&isFinite(priceKrw)&&priceKrw>0;
     const newShoe=stampUpdatedAt({
       id:genShoeId(),name,max_km:clampMaxKm(maxKm),start_km:startKm,purchase_date:date,
+      ...(priceOk?{price_krw:Math.round(priceKrw as number)}:{}),
     } as BackendShoe);
     setShoes(prev=>[newShoe,...prev]);
   }
@@ -1424,6 +1428,8 @@ function Main(){
       // 모순돼 '교체 임박'이 안 뜬다(과소평가). raw 신발에 있는 값을 그대로 전달.
       start_km:Number(s.start_km)||0,
       purchase_date:s.purchase_date,
+      // 구매가 — 원/km 표시용. 양수일 때만 싣는다(결측/0 은 '모름'으로 다룬다).
+      ...(Number(s.price_krw)>0?{priceKrw:Number(s.price_krw)}:{}),
     };
   }
 
@@ -1982,7 +1988,7 @@ function Main(){
     setOverlay('goal');
   };
   const onAddSaved=(shoe:Shoe)=>{
-    addShoe(`${shoe.brand} ${shoe.model}`.trim(),shoe.max,shoe.used,today());
+    addShoe(`${shoe.brand} ${shoe.model}`.trim(),shoe.max,shoe.used,today(),shoe.priceKrw);
     setOverlay('none');
   };
 

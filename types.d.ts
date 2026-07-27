@@ -21,6 +21,10 @@ interface BackendShoe {
   max_km?: number;        // 카테고리 권장 수명(km)
   start_km?: number;      // 등록 시 이미 쌓인 주행거리
   purchase_date?: string; // YYYY-MM-DD
+  // 구매가(원) — 원/km(비용 효율) 계산의 분자. 선택 입력이며, 없으면 원/km를 계산하지
+  // 않는다(정가를 추측해 채우지 않는다 — Truth only). 정가가 아니라 '내가 실제로 낸 값'
+  // 이라, 내 지난 신발의 원/km는 100% 실측이 된다.
+  price_krw?: number;
   retired?: boolean;      // 보관(아카이브): picker에서 숨김, 기록은 보존
   // ── 서버 truth(audit#9/#10) ───────────────────────────────────────────────
   // 신발 누적 주행거리/시간을 서버가 영속한다. 기존엔 클라이언트가 런 로그를 합산해
