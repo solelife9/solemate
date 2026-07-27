@@ -82,11 +82,21 @@ export interface RetirementFlowProps {
   onRetire?: (id: string, retired: boolean) => void;
   /** 은퇴 확정 후 영속된 레코드를 부모에 알린다(Hall of Shoes 즉시 갱신용). */
   onRetired?: (record: RetiredShoeRecord) => void;
+  /**
+   * '다음 신발 찾아보기' — 보관 완료 화면에서만 호출된다.
+   *
+   * 미지정이면 그 버튼을 아예 렌더하지 않는다(눌러도 안 되는 버튼은 두지 않는다).
+   * 이 초대는 **은퇴식이 끝난 뒤에만** 나온다 — 작별 화면에 쇼핑 버튼을 같이 두지
+   * 않는 것이 이 플로우의 설계다(감정과 커머스를 시간으로 분리).
+   */
+  onFindNextShoe?: () => void;
   /** 플로우 닫기(취소/완료). */
   onClose: () => void;
 }
 
-type Step = 0 | 1 | 2 | 3;
+// 0 확인 · 1 여정 · 2 하이라이트 · 3 키프세이크 카드 · 4 보관 완료.
+type Step = 0 | 1 | 2 | 3 | 4;
+const STEP_COUNT = 5;
 
 /** 사용 기간(일)을 한국어로 — 슬프지 않고 함께한 시간을 기린다. */
 function usagePeriodKo(days: number): string {
@@ -106,6 +116,7 @@ function RetirementFlow({
   equippedTitle = null,
   onRetire,
   onRetired,
+  onFindNextShoe,
   onClose,
 }: RetirementFlowProps) {
   const insets = useSafeAreaInsets();
@@ -183,8 +194,8 @@ function RetirementFlow({
         <View
           style={s.dots}
           accessible
-          accessibilityLabel={`4단계 중 ${step + 1}`}>
-          {[0, 1, 2, 3].map(i => (
+          accessibilityLabel={`${STEP_COUNT}단계 중 ${step + 1}`}>
+          {Array.from({length: STEP_COUNT}, (_, i) => i).map(i => (
             <View
               key={i}
               style={[s.dot, i === step ? s.dotOn : i < step && s.dotDone]}
@@ -212,6 +223,7 @@ function RetirementFlow({
             onShare={onShare}
           />
         )}
+        {step === 4 && <ArchivedStep model={model} />}
       </ScrollView>
 
       {/* 하단 액션 — 스텝별. 자동 은퇴 없음: 확정은 명시적 누름으로만. */}
@@ -270,10 +282,39 @@ function RetirementFlow({
         {step === 3 && (
           <Button
             label="완료"
-            onPress={onClose}
+            onPress={() => setStep(4)}
             testID="retire-flow-done"
             style={[s.btnPrimary, s.btnFull]}
           />
+        )}
+        {/* 보관 완료 — 여기서**만** 다음 신발 이야기를 꺼낸다. 작별(0~2)과 카드(3)에는
+            쇼핑 동선이 없다. 초대를 거절하는 길('홈으로')이 항상 같은 크기로 있다. */}
+        {step === 4 && (
+          onFindNextShoe ? (
+            <View style={s.footRow}>
+              <Pressable
+                onPress={onClose}
+                accessibilityRole="button"
+                accessibilityLabel="홈으로"
+                testID="retire-flow-home"
+                style={({pressed}) => [s.btn, s.btnGhost, pressed && s.pressed]}>
+                <Text style={[s.btnTxt, {color: T2}]}>홈으로</Text>
+              </Pressable>
+              <Button
+                label="다음 신발 찾아보기"
+                onPress={onFindNextShoe}
+                testID="retire-flow-next-shoe"
+                style={s.btnPrimary}
+              />
+            </View>
+          ) : (
+            <Button
+              label="홈으로"
+              onPress={onClose}
+              testID="retire-flow-home"
+              style={[s.btnPrimary, s.btnFull]}
+            />
+          )
         )}
       </View>
     </View>
@@ -484,6 +525,27 @@ function CardStep({
       </View>
 
       <RetirementCardActions onSave={onSave} onShare={onShare} />
+    </View>
+  );
+}
+
+// ── 스텝 4 · 보관 완료 ──────────────────────────────────────────────────────────
+// 작별이 끝났다는 걸 조용히 확인해 주는 화면. 여기까지 와서야 '다음 신발' 이야기를
+// 꺼낸다 — 은퇴식 화면에 쇼핑 버튼을 같이 두면 작별이 판매의 미끼가 된다.
+// 화면 자체는 짧게 둔다(확인 한 줄 + 어디서 다시 볼 수 있는지).
+function ArchivedStep({
+  model,
+}: {
+  model: ReturnType<typeof buildRetirementCardModel>;
+}) {
+  return (
+    <View style={s.stepWrap} testID="retire-flow-archived">
+      <Text style={s.eyebrow}>보관 완료</Text>
+      <Text style={s.stepTitle}>{model.shoeName}, 잘 보관했어요</Text>
+      <Text style={s.lede}>
+        함께 달린 기록은 하나도 사라지지 않았어요. 러닝화 아카이브에서 언제든 다시 볼 수
+        있어요.
+      </Text>
     </View>
   );
 }
