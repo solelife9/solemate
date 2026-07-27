@@ -10,6 +10,9 @@
 //   · 카카오: access_token_info 의 app_id 가 우리 앱(KAKAO_APP_ID)과 일치하는지 확인한다.
 //     이 검증이 없으면 *다른 앱*에서 발급된 유효한 카카오 토큰으로도 우리 사용자 계정을
 //     만들 수 있다(임의 계정 탈취). 불일치 시 401.
+//     ⚠️ fail-closed: KAKAO_APP_ID 가 주입되지 않은 배포에서는 검증을 건너뛰지 않고
+//     로그인 자체를 거부한다(503). 설정 누락이 조용히 '검증 없음'으로 퇴화하면
+//     그 순간부터 누구의 카카오 토큰으로든 계정을 열 수 있기 때문이다.
 //   · 네이버: 공개 API 에 토큰→발급앱(client_id) introspection 이 없다. 진짜 audience
 //     바인딩은 서버측 OAuth code 교환(NAVER_CLIENT_ID/SECRET)이 필요 — 후속(아래 NOTE).
 //     지금은 토큰 유효성 + rate limit 으로 남용을 제한한다.
@@ -73,14 +76,20 @@ app.post('/auth/kakao', rateLimit, async (req, res) => {
     if (!accessToken) return res.status(400).json({error: 'accessToken 필요'});
 
     // (1) audience 검증: 이 토큰이 *우리 앱*에서 발급됐는지 app_id 로 확인.
+    // 설정이 없으면 검증 불가 → 통과가 아니라 거부(fail-closed). 카카오 API 를 부르기
+    // 전에 끊어 오설정 배포가 조용히 계정을 열어주는 창을 아예 만들지 않는다.
     const expectedAppId = process.env.KAKAO_APP_ID;
+    if (!expectedAppId) {
+      console.error('[auth/kakao] KAKAO_APP_ID 미설정 — audience 검증 불가로 로그인 거부');
+      return res.status(503).json({error: '카카오 로그인이 일시적으로 불가능해요. 다른 방법으로 로그인해 주세요.'});
+    }
     const infoRes = await fetch('https://kapi.kakao.com/v1/user/access_token_info', {
       headers: {Authorization: `Bearer ${accessToken}`},
     });
     if (!infoRes.ok) return res.status(401).json({error: '카카오 토큰 검증 실패'});
     const info = await infoRes.json();
     if (info == null || info.id == null) return res.status(401).json({error: '카카오 토큰 정보 없음'});
-    if (expectedAppId && String(info.app_id) !== String(expectedAppId)) {
+    if (String(info.app_id) !== String(expectedAppId)) {
       // 다른 앱에서 발급된 토큰 — 계정 탈취 시도로 보고 거부.
       return res.status(401).json({error: '허용되지 않은 카카오 앱 토큰입니다.'});
     }
