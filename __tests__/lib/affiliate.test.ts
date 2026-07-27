@@ -89,8 +89,20 @@ describe('buildShopLinks', () => {
 });
 
 describe('disclosure + labels', () => {
-  it('exposes a transparency disclosure mentioning runner-first', () => {
-    expect(AFFILIATE_DISCLOSURE).toContain('러너');
+  it('고지는 수수료를 받는다는 사실을 숨기지 않는다(자화자찬 금지)', () => {
+    expect(AFFILIATE_DISCLOSURE).toContain('수수료');
+    // "어떤 대가도 받지 않아요" 류는 커미션을 받는 순간 거짓이 된다 — Truth only.
+    expect(AFFILIATE_DISCLOSURE).not.toContain('대가도 받지');
+  });
+
+  it('고지는 커미션이 순서를 못 바꾼다는 걸 함께 말한다', () => {
+    expect(AFFILIATE_DISCLOSURE).toContain('주행 데이터');
+    expect(AFFILIATE_DISCLOSURE).toContain('순위엔 영향 없어요');
+  });
+
+  it('브랜드명은 소문자 keego 표기다(BRAND.md)', () => {
+    expect(AFFILIATE_DISCLOSURE).toContain('keego');
+    expect(AFFILIATE_DISCLOSURE).not.toContain('Keego');
   });
   it('has a Korean label for every category', () => {
     expect(categoryLabelKo.daily_trainer).toBe('데일리 트레이너');

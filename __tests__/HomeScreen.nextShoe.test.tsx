@@ -48,7 +48,7 @@ describe('NextShoeCard — 교체 시점 다음 러닝화 추천', () => {
     expect(txt).toContain('무신사');
     expect(txt).toContain('29CM');
     expect(txt).not.toContain('쿠팡');
-    expect(txt).toContain('러너'); // disclosure: 러너 우선
+    expect(txt).toContain('주행 데이터'); // disclosure: 데이터로만 고른다
   });
 
   test('양호 등급이면 추천 카드는 뜨지 않는다', () => {
@@ -81,7 +81,8 @@ test('추천 카드가 뜨면 제휴 고지도 함께 뜬다(고지 없는 추�
   expect(card.length).toBeGreaterThanOrEqual(1);
   const txt = textOf(card[0]);
   // 대가관계와 '판정 독립'을 둘 다 밝힌다 — 추천이 커미션으로 왜곡되지 않음을 말해야
-  // 고지가 제 역할을 한다(BRAND.md §2).
-  expect(txt).toContain('제휴 링크가 포함될 수 있어요');
-  expect(txt).toContain('커미션과 무관하게');
+  // 고지가 제 역할을 한다(BRAND.md §2). 문구는 lib/affiliate 의 단일 소스를 그대로 쓴다.
+  expect(txt).toContain('수수료');          // 대가관계를 숨기지 않는다
+  expect(txt).toContain('주행 데이터');      // 추천 근거
+  expect(txt).toContain('순위엔 영향 없어요'); // 판정 독립
 });
