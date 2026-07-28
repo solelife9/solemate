@@ -18,6 +18,7 @@
 /** 러닝화 카테고리 (스펙 §카테고리 매핑 표 참조) */
 // 통합 단일 소스: data/shoes.json — 카탈로그(여기)와 분류(shoeClass)가 같은 파일을 읽는다.
 import shoesData from './shoes.json';
+import catalogData from './shoeCatalog.json';
 
 export type ShoeCategory =
   | 'daily_trainer'
@@ -76,7 +77,7 @@ export const DEFAULT_LIFESPAN_KM = categoryLifespanKm.daily_trainer; // 650
 // 시드 데이터 (164 모델)
 // ────────────────────────────────────────────────────────────
 
-export const SHOE_MODELS: ShoeModel[] = (
+const SEED_MODELS: ShoeModel[] = (
   shoesData.shoes as Array<{brand: string; model: string; category: ShoeCategory; recommendedKm?: number; year?: number}>
 ).map((s) => ({
   brand: s.brand,
@@ -87,6 +88,60 @@ export const SHOE_MODELS: ShoeModel[] = (
     : (categoryLifespanKm[s.category] ?? DEFAULT_LIFESPAN_KM),
   year: s.year ?? 0,
 }));
+
+/**
+ * 새 카탈로그(data/shoeCatalog.json, docs/shoes-spec.md 스키마) → 이 파일의 레거시 형태.
+ *
+ * 카탈로그를 화면이 직접 읽게 갈아엎지 않는 이유: 용도 태그(추천 러닝)는 여전히
+ * shoes.json 이 단일 소스고(data/shoeClass.ts), 그쪽을 같이 옮기지 않으면 태그가 통째로
+ * 빈다. 그래서 **모델 목록만** 합친다 — 카탈로그에만 있는 신발이 등록 화면에 뜨는 게
+ * 목적이고, 그건 이 한 겹으로 충분하다.
+ */
+const NEW_TO_LEGACY_CATEGORY: Readonly<Record<string, ShoeCategory>> = {
+  daily: 'daily_trainer',
+  tempo: 'super_trainer',
+  racing: 'carbon_racing',
+  trail: 'trail',
+  stability: 'stability',
+  recovery: 'max_cushion',
+};
+
+const CATALOG_MODELS: ShoeModel[] = (
+  catalogData as Array<{
+    brand: string; model: string; version: string | null; variant: string | null;
+    collabWith: string | null; category: string; defaultLifespanKm: number; releaseYear: number | null;
+  }>
+).map((s) => {
+  const base = [s.model, s.version, s.variant].filter(Boolean).join(' ');
+  const category = NEW_TO_LEGACY_CATEGORY[s.category] ?? 'daily_trainer';
+  return {
+    brand: s.brand,
+    // 협업 표기를 모델명에 남긴다 — 사용자는 "새티스파이"로 찾는다.
+    model: s.collabWith ? `${base} ×${s.collabWith}` : base,
+    category,
+    recommendedKm: Number.isFinite(s.defaultLifespanKm)
+      ? s.defaultLifespanKm
+      : (categoryLifespanKm[category] ?? DEFAULT_LIFESPAN_KM),
+    year: s.releaseYear ?? 0,
+  };
+});
+
+/**
+ * 시드 + 카탈로그. **시드가 이긴다** — 시드에는 사람이 손본 용도 태그·수명 오버라이드가
+ * 붙어 있어서 카탈로그가 덮으면 그게 사라진다. 카탈로그는 없는 것만 채운다.
+ */
+export const SHOE_MODELS: ShoeModel[] = (() => {
+  const out = [...SEED_MODELS];
+  const key = (b: string, m: string) => `${normalize(b)}|${normalize(m)}`;
+  const seen = new Set(out.map((m) => key(m.brand, m.model)));
+  for (const m of CATALOG_MODELS) {
+    const k = key(m.brand, m.model);
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push(m);
+  }
+  return out;
+})();
 
 // ────────────────────────────────────────────────────────────
 // 파생 데이터
