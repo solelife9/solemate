@@ -1,79 +1,5 @@
 [
   {
-    "id": "adidas-adios-pro-3",
-    "brand": "Adidas",
-    "model": "Adios Pro",
-    "version": "3",
-    "variant": null,
-    "collabWith": null,
-    "category": "racing",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "stackHeight": null,
-    "releaseYear": null,
-    "defaultLifespanKm": 450,
-    "discontinued": false,
-    "searchAliases": [
-      "아디다스",
-      "아디오스프로",
-      "아디오스프로 3",
-      "아디오스",
-      "아디오스 3"
-    ],
-    "verified": false
-  },
-  {
-    "id": "adidas-adios-pro-4",
-    "brand": "Adidas",
-    "model": "Adios Pro",
-    "version": "4",
-    "variant": null,
-    "collabWith": null,
-    "category": "racing",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "stackHeight": null,
-    "releaseYear": null,
-    "defaultLifespanKm": 450,
-    "discontinued": false,
-    "searchAliases": [
-      "아디다스",
-      "아디오스프로",
-      "아디오스프로 4",
-      "아디오스",
-      "아디오스 4"
-    ],
-    "verified": false
-  },
-  {
-    "id": "adidas-adios-pro-evo-1",
-    "brand": "Adidas",
-    "model": "Adios Pro Evo",
-    "version": "1",
-    "variant": null,
-    "collabWith": null,
-    "category": "racing",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "stackHeight": null,
-    "releaseYear": null,
-    "defaultLifespanKm": 450,
-    "discontinued": false,
-    "searchAliases": [
-      "아디다스",
-      "아디오스프로",
-      "아디오스프로 1",
-      "아디오스",
-      "아디오스 1",
-      "에보",
-      "에보 1"
-    ],
-    "verified": false
-  },
-  {
     "id": "adidas-adistar-3",
     "brand": "Adidas",
     "model": "Adistar",
@@ -100,20 +26,47 @@
     "version": "9",
     "variant": null,
     "collabWith": null,
-    "category": "tempo",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "stackHeight": null,
+    "category": "racing",
+    "weight": 176,
+    "weightBasis": "US9",
+    "drop": 7,
+    "stackHeight": {
+      "heel": 28,
+      "forefoot": 21
+    },
     "releaseYear": 2025,
-    "defaultLifespanKm": 650,
+    "defaultLifespanKm": 450,
     "discontinued": false,
     "searchAliases": [
       "아디다스",
       "아디제로",
-      "아디제로 9"
+      "아디오스",
+      "아디오스 9"
     ],
-    "verified": false
+    "verified": true
+  },
+  {
+    "version": "3",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "아디다스",
+      "아디제로",
+      "아디오스프로",
+      "아디오스 프로 3"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 450,
+    "id": "adidas-adizero-adios-pro-3",
+    "brand": "Adidas",
+    "model": "Adizero Adios Pro",
+    "category": "racing"
   },
   {
     "id": "adidas-adizero-adios-pro-4",
@@ -123,7 +76,7 @@
     "variant": null,
     "collabWith": null,
     "category": "racing",
-    "weight": 202,
+    "weight": 201,
     "weightBasis": "US9",
     "drop": 6,
     "stackHeight": {
@@ -136,11 +89,8 @@
     "searchAliases": [
       "아디다스",
       "아디제로",
-      "아디제로 4",
       "아디오스프로",
-      "아디오스프로 4",
-      "아디오스",
-      "아디오스 4"
+      "아디오스 프로 4"
     ],
     "verified": true
   },
@@ -201,6 +151,78 @@
     "verified": false
   },
   {
+    "version": "3",
+    "variant": null,
+    "collabWith": null,
+    "weight": 96,
+    "weightBasis": "US9",
+    "drop": 3,
+    "stackHeight": {
+      "heel": 39,
+      "forefoot": 36
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "아디다스",
+      "아디제로",
+      "아디오스 프로 에보",
+      "에보 3"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 450,
+    "id": "adidas-adizero-adios-pro-evo-3",
+    "brand": "Adidas",
+    "model": "Adizero Adios Pro Evo",
+    "category": "racing"
+  },
+  {
+    "version": "11",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "아디다스",
+      "아디제로",
+      "보스턴",
+      "보스턴 11"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "adidas-adizero-boston-11",
+    "brand": "Adidas",
+    "model": "Adizero Boston",
+    "category": "tempo"
+  },
+  {
+    "version": "12",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "아디다스",
+      "아디제로",
+      "보스턴",
+      "보스턴 12"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "adidas-adizero-boston-12",
+    "brand": "Adidas",
+    "model": "Adizero Boston",
+    "category": "tempo"
+  },
+  {
     "id": "adidas-adizero-boston-13",
     "brand": "Adidas",
     "model": "Adizero Boston",
@@ -221,7 +243,6 @@
     "searchAliases": [
       "아디다스",
       "아디제로",
-      "아디제로 13",
       "보스턴",
       "보스턴 13"
     ],
@@ -235,19 +256,124 @@
     "variant": null,
     "collabWith": null,
     "category": "tempo",
-    "weight": null,
+    "weight": 230,
     "weightBasis": null,
-    "drop": null,
-    "stackHeight": null,
+    "drop": 7,
+    "stackHeight": {
+      "heel": 37,
+      "forefoot": 30
+    },
     "releaseYear": 2025,
     "defaultLifespanKm": 650,
     "discontinued": false,
     "searchAliases": [
       "아디다스",
       "아디제로",
-      "에보"
+      "에보에스엘",
+      "에보 SL"
     ],
-    "verified": false
+    "verified": true
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": 235,
+    "weightBasis": "US9",
+    "drop": 7,
+    "stackHeight": {
+      "heel": 37,
+      "forefoot": 30
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "아디다스",
+      "아디제로",
+      "에보 SL EXO",
+      "엑소"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 650,
+    "id": "adidas-adizero-evo-sl-exo",
+    "brand": "Adidas",
+    "model": "Adizero Evo SL EXO",
+    "category": "tempo"
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "아디다스",
+      "아디제로",
+      "프라임엑스",
+      "프라임 X 2"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "adidas-adizero-prime-x-2-strung",
+    "brand": "Adidas",
+    "model": "Adizero Prime X 2 Strung",
+    "category": "tempo"
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": 153,
+    "weightBasis": "M5.0/W6.0",
+    "drop": 6,
+    "stackHeight": {
+      "heel": 50,
+      "forefoot": 44
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "아디다스",
+      "아디제로",
+      "프라임엑스",
+      "프라임 X 에보"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 450,
+    "id": "adidas-adizero-prime-x-evo",
+    "brand": "Adidas",
+    "model": "Adizero Prime X Evo",
+    "category": "racing"
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": 286,
+    "weightBasis": "US9",
+    "drop": 7,
+    "stackHeight": {
+      "heel": 48,
+      "forefoot": 41
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "아디다스",
+      "아디제로",
+      "프라임엑스",
+      "프라임 X3"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 650,
+    "id": "adidas-adizero-prime-x3-strung",
+    "brand": "Adidas",
+    "model": "Adizero Prime X3 Strung",
+    "category": "tempo"
   },
   {
     "id": "adidas-adizero-sl",
@@ -298,89 +424,24 @@
     "version": "11",
     "variant": null,
     "collabWith": null,
-    "category": "tempo",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "stackHeight": null,
+    "category": "racing",
+    "weight": 184,
+    "weightBasis": "US9",
+    "drop": 7,
+    "stackHeight": {
+      "heel": 32,
+      "forefoot": 25
+    },
     "releaseYear": 2025,
-    "defaultLifespanKm": 650,
+    "defaultLifespanKm": 450,
     "discontinued": false,
     "searchAliases": [
       "아디다스",
       "아디제로",
-      "아디제로 11"
-    ],
-    "verified": false
-  },
-  {
-    "id": "adidas-boston-11",
-    "brand": "Adidas",
-    "model": "Boston",
-    "version": "11",
-    "variant": null,
-    "collabWith": null,
-    "category": "tempo",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "stackHeight": null,
-    "releaseYear": null,
-    "defaultLifespanKm": 650,
-    "discontinued": false,
-    "searchAliases": [
-      "아디다스",
-      "보스턴",
-      "보스턴 11"
-    ],
-    "verified": false
-  },
-  {
-    "id": "adidas-boston-12",
-    "brand": "Adidas",
-    "model": "Boston",
-    "version": "12",
-    "variant": null,
-    "collabWith": null,
-    "category": "tempo",
-    "weight": 261,
-    "weightBasis": "US9",
-    "drop": 7,
-    "stackHeight": {
-      "heel": 37.5,
-      "forefoot": 30.5
-    },
-    "releaseYear": null,
-    "defaultLifespanKm": 650,
-    "discontinued": false,
-    "searchAliases": [
-      "아디다스",
-      "보스턴",
-      "보스턴 12"
+      "타쿠미센",
+      "타쿠미 센 11"
     ],
     "verified": true
-  },
-  {
-    "id": "adidas-boston-13",
-    "brand": "Adidas",
-    "model": "Boston",
-    "version": "13",
-    "variant": null,
-    "collabWith": null,
-    "category": "tempo",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "stackHeight": null,
-    "releaseYear": null,
-    "defaultLifespanKm": 650,
-    "discontinued": false,
-    "searchAliases": [
-      "아디다스",
-      "보스턴",
-      "보스턴 13"
-    ],
-    "verified": false
   },
   {
     "id": "adidas-duramo-sl",
@@ -423,26 +484,6 @@
     "verified": false
   },
   {
-    "id": "adidas-prime-x-2-strung",
-    "brand": "Adidas",
-    "model": "Prime X 2 Strung",
-    "version": null,
-    "variant": null,
-    "collabWith": null,
-    "category": "tempo",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "stackHeight": null,
-    "releaseYear": null,
-    "defaultLifespanKm": 650,
-    "discontinued": false,
-    "searchAliases": [
-      "아디다스"
-    ],
-    "verified": false
-  },
-  {
     "id": "adidas-solarboost-5",
     "brand": "Adidas",
     "model": "Solarboost",
@@ -461,6 +502,32 @@
       "아디다스"
     ],
     "verified": false
+  },
+  {
+    "version": "2",
+    "variant": null,
+    "collabWith": null,
+    "weight": 278,
+    "weightBasis": "US9",
+    "drop": 8,
+    "stackHeight": {
+      "heel": 37,
+      "forefoot": 29
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "아디다스",
+      "수퍼노바",
+      "슈퍼노바",
+      "수퍼노바 프리마 2"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 650,
+    "id": "adidas-supernova-prima-2",
+    "brand": "Adidas",
+    "model": "Supernova Prima",
+    "category": "daily"
   },
   {
     "id": "adidas-supernova-rise",
@@ -532,9 +599,8 @@
     "searchAliases": [
       "아디다스",
       "수퍼노바",
-      "수퍼노바 3",
       "슈퍼노바",
-      "슈퍼노바 3"
+      "수퍼노바 라이즈 3"
     ],
     "verified": true
   },
@@ -973,6 +1039,31 @@
     "verified": false
   },
   {
+    "version": "6",
+    "variant": null,
+    "collabWith": null,
+    "weight": 275,
+    "weightBasis": "US9",
+    "drop": 8,
+    "stackHeight": {
+      "heel": 41,
+      "forefoot": 33
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "아식스",
+      "다이나블라스트",
+      "다이나블"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 650,
+    "id": "asics-dynablast-6",
+    "brand": "ASICS",
+    "model": "Dynablast",
+    "category": "daily"
+  },
+  {
     "id": "asics-fuji-lite-5",
     "brand": "ASICS",
     "model": "Fuji Lite",
@@ -1071,17 +1162,19 @@
     "variant": null,
     "collabWith": null,
     "category": "daily",
-    "weight": 270,
-    "weightBasis": "US9.5",
-    "drop": null,
-    "stackHeight": null,
+    "weight": 261,
+    "weightBasis": "US9",
+    "drop": 8,
+    "stackHeight": {
+      "heel": 41,
+      "forefoot": 33
+    },
     "releaseYear": 2025,
     "defaultLifespanKm": 650,
     "discontinued": false,
     "searchAliases": [
       "아식스",
       "젤큐뮬러스",
-      "젤큐뮬러스 27",
       "큐뮬러스",
       "큐뮬러스 27"
     ],
@@ -1095,21 +1188,23 @@
     "variant": null,
     "collabWith": null,
     "category": "daily",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "stackHeight": null,
+    "weight": 255,
+    "weightBasis": "US9",
+    "drop": 8,
+    "stackHeight": {
+      "heel": 42,
+      "forefoot": 34
+    },
     "releaseYear": 2026,
     "defaultLifespanKm": 650,
     "discontinued": false,
     "searchAliases": [
       "아식스",
       "젤큐뮬러스",
-      "젤큐뮬러스 28",
       "큐뮬러스",
       "큐뮬러스 28"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "asics-gel-ds-trainer-28",
@@ -1234,8 +1329,8 @@
     "variant": null,
     "collabWith": null,
     "category": "stability",
-    "weight": 304,
-    "weightBasis": "US9.5",
+    "weight": 298,
+    "weightBasis": "US9",
     "drop": 8,
     "stackHeight": {
       "heel": 40,
@@ -1247,7 +1342,6 @@
     "searchAliases": [
       "아식스",
       "젤카야노",
-      "젤카야노 32",
       "카야노",
       "카야노 32"
     ],
@@ -1261,21 +1355,23 @@
     "variant": null,
     "collabWith": null,
     "category": "stability",
-    "weight": null,
+    "weight": 295,
     "weightBasis": null,
-    "drop": null,
-    "stackHeight": null,
+    "drop": 8,
+    "stackHeight": {
+      "heel": 41,
+      "forefoot": 33
+    },
     "releaseYear": 2026,
     "defaultLifespanKm": 700,
     "discontinued": false,
     "searchAliases": [
       "아식스",
       "젤카야노",
-      "젤카야노 33",
       "카야노",
       "카야노 33"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "asics-gel-nimbus-25",
@@ -1360,21 +1456,23 @@
     "variant": null,
     "collabWith": null,
     "category": "recovery",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "stackHeight": null,
+    "weight": 272,
+    "weightBasis": "US9",
+    "drop": 8,
+    "stackHeight": {
+      "heel": 42,
+      "forefoot": 34
+    },
     "releaseYear": 2026,
     "defaultLifespanKm": 700,
     "discontinued": false,
     "searchAliases": [
       "아식스",
       "젤님버스",
-      "젤님버스 28",
       "님버스",
       "님버스 28"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "asics-gel-nimbus-lite-4",
@@ -1501,6 +1599,31 @@
     "verified": false
   },
   {
+    "version": "2",
+    "variant": null,
+    "collabWith": null,
+    "weight": 261,
+    "weightBasis": "US9",
+    "drop": 6,
+    "stackHeight": {
+      "heel": 46,
+      "forefoot": 40
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "아식스",
+      "글라이드라이드",
+      "글라이드라이드 맥스"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 700,
+    "id": "asics-glideride-max-2",
+    "brand": "ASICS",
+    "model": "GlideRide Max",
+    "category": "recovery"
+  },
+  {
     "id": "asics-gt-1000-12",
     "brand": "ASICS",
     "model": "GT-1000",
@@ -1521,6 +1644,32 @@
       "지티1000 12"
     ],
     "verified": false
+  },
+  {
+    "version": "15",
+    "variant": null,
+    "collabWith": null,
+    "weight": 269,
+    "weightBasis": "US9",
+    "drop": 8,
+    "stackHeight": {
+      "heel": 36,
+      "forefoot": 28
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "아식스",
+      "지티1000",
+      "GT1000",
+      "지티 1000 15"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 700,
+    "id": "asics-gt-1000-15",
+    "brand": "ASICS",
+    "model": "GT-1000",
+    "category": "stability"
   },
   {
     "id": "asics-gt-2000-12",
@@ -1574,19 +1723,49 @@
     "variant": null,
     "collabWith": null,
     "category": "stability",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "stackHeight": null,
+    "weight": 266,
+    "weightBasis": "US9",
+    "drop": 8,
+    "stackHeight": {
+      "heel": 36,
+      "forefoot": 28
+    },
     "releaseYear": 2025,
     "defaultLifespanKm": 700,
     "discontinued": false,
     "searchAliases": [
       "아식스",
       "지티2000",
-      "지티2000 14"
+      "GT2000",
+      "지티 2000 14"
     ],
-    "verified": false
+    "verified": true
+  },
+  {
+    "version": "15",
+    "variant": null,
+    "collabWith": null,
+    "weight": 258,
+    "weightBasis": "US9",
+    "drop": 8,
+    "stackHeight": {
+      "heel": 40,
+      "forefoot": 32
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "아식스",
+      "지티2000",
+      "GT2000",
+      "지티 2000 15"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 700,
+    "id": "asics-gt-2000-15",
+    "brand": "ASICS",
+    "model": "GT-2000",
+    "category": "stability"
   },
   {
     "id": "asics-magic-speed-4",
@@ -1618,10 +1797,13 @@
     "variant": null,
     "collabWith": null,
     "category": "tempo",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "stackHeight": null,
+    "weight": 201,
+    "weightBasis": "US9",
+    "drop": 7,
+    "stackHeight": {
+      "heel": 36,
+      "forefoot": 29
+    },
     "releaseYear": 2026,
     "defaultLifespanKm": 650,
     "discontinued": false,
@@ -1630,7 +1812,7 @@
       "매직스피드",
       "매직스피드 5"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "asics-megablast",
@@ -1640,12 +1822,12 @@
     "variant": null,
     "collabWith": null,
     "category": "tempo",
-    "weight": 230,
-    "weightBasis": "unisex",
+    "weight": 221,
+    "weightBasis": "유니섹스(사이즈 미표기)",
     "drop": 8,
     "stackHeight": {
-      "heel": 46,
-      "forefoot": 38
+      "heel": 45,
+      "forefoot": 37
     },
     "releaseYear": 2026,
     "defaultLifespanKm": 650,
@@ -1700,6 +1882,58 @@
     "verified": false
   },
   {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": 159,
+    "weightBasis": "US9",
+    "drop": 5,
+    "stackHeight": {
+      "heel": 40,
+      "forefoot": 35
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "아식스",
+      "메타스피드",
+      "메타스피드 엣지",
+      "엣지 도쿄"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 450,
+    "id": "asics-metaspeed-edge-tokyo",
+    "brand": "ASICS",
+    "model": "Metaspeed Edge Tokyo",
+    "category": "racing"
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": 130,
+    "weightBasis": "US9",
+    "drop": 5,
+    "stackHeight": {
+      "heel": 43,
+      "forefoot": 38
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "아식스",
+      "메타스피드",
+      "메타스피드 레이",
+      "레이"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 450,
+    "id": "asics-metaspeed-ray",
+    "brand": "ASICS",
+    "model": "Metaspeed Ray",
+    "category": "racing"
+  },
+  {
     "id": "asics-metaspeed-sky",
     "brand": "ASICS",
     "model": "Metaspeed Sky+",
@@ -1740,6 +1974,32 @@
       "메타스피드"
     ],
     "verified": false
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": 159,
+    "weightBasis": "US9",
+    "drop": 5,
+    "stackHeight": {
+      "heel": 40,
+      "forefoot": 35
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "아식스",
+      "메타스피드",
+      "메타스피드 스카이",
+      "스카이 도쿄"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 450,
+    "id": "asics-metaspeed-sky-tokyo",
+    "brand": "ASICS",
+    "model": "Metaspeed Sky Tokyo",
+    "category": "racing"
   },
   {
     "id": "asics-noosa-tri-16",
@@ -1819,7 +2079,7 @@
     "version": "5",
     "variant": null,
     "collabWith": null,
-    "category": "tempo",
+    "category": "daily",
     "weight": 255,
     "weightBasis": "US9",
     "drop": 8,
@@ -1833,9 +2093,8 @@
     "searchAliases": [
       "아식스",
       "노바블라스트",
-      "노바블라스트 5",
       "노바",
-      "노바 5"
+      "노바블라스트 5"
     ],
     "verified": true
   },
@@ -1846,13 +2105,13 @@
     "version": "6",
     "variant": null,
     "collabWith": null,
-    "category": "tempo",
-    "weight": 258,
-    "weightBasis": "US9.5",
+    "category": "daily",
+    "weight": 249,
+    "weightBasis": "US9",
     "drop": 8,
     "stackHeight": {
-      "heel": 46.5,
-      "forefoot": 38.5
+      "heel": 42,
+      "forefoot": 34
     },
     "releaseYear": 2026,
     "defaultLifespanKm": 650,
@@ -1860,9 +2119,8 @@
     "searchAliases": [
       "아식스",
       "노바블라스트",
-      "노바블라스트 6",
       "노바",
-      "노바 6"
+      "노바블라스트 6"
     ],
     "verified": true
   },
@@ -1874,18 +2132,20 @@
     "variant": null,
     "collabWith": null,
     "category": "tempo",
-    "weight": 256,
+    "weight": 255,
     "weightBasis": "US9",
     "drop": 8,
     "stackHeight": {
-      "heel": 46,
-      "forefoot": 38
+      "heel": 45,
+      "forefoot": 37
     },
     "releaseYear": 2026,
     "defaultLifespanKm": 650,
     "discontinued": false,
     "searchAliases": [
-      "아식스"
+      "아식스",
+      "소닉블라스트",
+      "소닉블"
     ],
     "verified": true
   },
@@ -1924,12 +2184,12 @@
     "variant": null,
     "collabWith": null,
     "category": "tempo",
-    "weight": 236,
-    "weightBasis": "US9.5",
+    "weight": 230,
+    "weightBasis": "US9",
     "drop": 8,
     "stackHeight": {
-      "heel": 46.5,
-      "forefoot": 38.5
+      "heel": 46,
+      "forefoot": 38
     },
     "releaseYear": 2026,
     "defaultLifespanKm": 650,
@@ -1937,9 +2197,8 @@
     "searchAliases": [
       "아식스",
       "슈퍼블라스트",
-      "슈퍼블라스트 3",
       "슈블",
-      "슈블 3"
+      "슈퍼블라스트 3"
     ],
     "verified": true
   },
@@ -2749,10 +3008,13 @@
     "variant": null,
     "collabWith": null,
     "category": "stability",
-    "weight": null,
+    "weight": 264,
     "weightBasis": null,
-    "drop": null,
-    "stackHeight": null,
+    "drop": 8,
+    "stackHeight": {
+      "heel": 41,
+      "forefoot": 33
+    },
     "releaseYear": null,
     "defaultLifespanKm": 700,
     "discontinued": false,
@@ -2761,7 +3023,7 @@
       "아라히",
       "아라히 8"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "hoka-bondi-8",
@@ -2796,12 +3058,12 @@
     "variant": null,
     "collabWith": null,
     "category": "recovery",
-    "weight": 297,
+    "weight": 306,
     "weightBasis": "US9",
     "drop": 5,
     "stackHeight": {
-      "heel": 43,
-      "forefoot": 38
+      "heel": 44,
+      "forefoot": 39
     },
     "releaseYear": 2025,
     "defaultLifespanKm": 700,
@@ -2875,6 +3137,28 @@
     "verified": false
   },
   {
+    "version": "8",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "호카",
+      "챌린저",
+      "챌린저 8"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "hoka-challenger-8",
+    "brand": "Hoka",
+    "model": "Challenger",
+    "category": "trail"
+  },
+  {
     "id": "hoka-cielo-x1",
     "brand": "Hoka",
     "model": "Cielo X1",
@@ -2918,6 +3202,31 @@
     "verified": false
   },
   {
+    "version": "3.0",
+    "variant": null,
+    "collabWith": null,
+    "weight": 198,
+    "weightBasis": "유니섹스(사이즈 미표기)",
+    "drop": 7,
+    "stackHeight": {
+      "heel": 48,
+      "forefoot": 41
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "호카",
+      "시엘로",
+      "시엘로 X1"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 450,
+    "id": "hoka-cielo-x1-3-0",
+    "brand": "Hoka",
+    "model": "Cielo X1",
+    "category": "racing"
+  },
+  {
     "id": "hoka-clifton-10",
     "brand": "Hoka",
     "model": "Clifton",
@@ -2941,6 +3250,31 @@
       "클리프톤 10"
     ],
     "verified": true
+  },
+  {
+    "version": "11",
+    "variant": null,
+    "collabWith": null,
+    "weight": 261,
+    "weightBasis": "US9",
+    "drop": 8,
+    "stackHeight": {
+      "heel": 43,
+      "forefoot": 35
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "호카",
+      "클리프톤",
+      "클리프톤 11"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 650,
+    "id": "hoka-clifton-11",
+    "brand": "Hoka",
+    "model": "Clifton",
+    "category": "daily"
   },
   {
     "id": "hoka-clifton-8",
@@ -2990,6 +3324,31 @@
     "verified": true
   },
   {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": 266,
+    "weightBasis": "US9",
+    "drop": 8,
+    "stackHeight": {
+      "heel": 46,
+      "forefoot": 38
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "호카",
+      "클리프톤",
+      "클리프톤 프로"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 650,
+    "id": "hoka-clifton-pro",
+    "brand": "Hoka",
+    "model": "Clifton PRO",
+    "category": "daily"
+  },
+  {
     "id": "hoka-evo-speedgoat",
     "brand": "Hoka",
     "model": "EVO Speedgoat",
@@ -3033,6 +3392,31 @@
       "호카"
     ],
     "verified": true
+  },
+  {
+    "version": "6",
+    "variant": null,
+    "collabWith": null,
+    "weight": 283,
+    "weightBasis": "US9",
+    "drop": 6,
+    "stackHeight": {
+      "heel": 39,
+      "forefoot": 33
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "호카",
+      "가비오타",
+      "가비오타 6"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 700,
+    "id": "hoka-gaviota-6",
+    "brand": "Hoka",
+    "model": "Gaviota",
+    "category": "stability"
   },
   {
     "id": "hoka-kawana-2",
@@ -3129,10 +3513,13 @@
     "variant": null,
     "collabWith": null,
     "category": "tempo",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "stackHeight": null,
+    "weight": 241,
+    "weightBasis": "US9",
+    "drop": 5,
+    "stackHeight": {
+      "heel": 37,
+      "forefoot": 32
+    },
     "releaseYear": 2026,
     "defaultLifespanKm": 650,
     "discontinued": false,
@@ -3141,7 +3528,7 @@
       "마하",
       "마하 7"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "hoka-mach-x",
@@ -3187,6 +3574,53 @@
     "verified": false
   },
   {
+    "version": "3",
+    "variant": null,
+    "collabWith": null,
+    "weight": 266,
+    "weightBasis": "US9",
+    "drop": 5,
+    "stackHeight": {
+      "heel": 46,
+      "forefoot": 41
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "호카",
+      "마하엑스",
+      "마하 X 3"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 650,
+    "id": "hoka-mach-x-3",
+    "brand": "Hoka",
+    "model": "Mach X",
+    "category": "tempo"
+  },
+  {
+    "version": "5",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "호카",
+      "마파테",
+      "마파테 5"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "hoka-mafate-5",
+    "brand": "Hoka",
+    "model": "Mafate",
+    "category": "trail"
+  },
+  {
     "id": "hoka-mafate-speed-4",
     "brand": "Hoka",
     "model": "Mafate Speed",
@@ -3207,6 +3641,28 @@
       "마파테 4"
     ],
     "verified": false
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "호카",
+      "마파테",
+      "마파테 X"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "hoka-mafate-x",
+    "brand": "Hoka",
+    "model": "Mafate X",
+    "category": "trail"
   },
   {
     "id": "hoka-rincon-3",
@@ -3280,6 +3736,53 @@
     "verified": false
   },
   {
+    "version": "3",
+    "variant": null,
+    "collabWith": null,
+    "weight": 210,
+    "weightBasis": null,
+    "drop": 7,
+    "stackHeight": {
+      "heel": 40,
+      "forefoot": 33
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "호카",
+      "로켓엑스",
+      "로켓 X 3"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 450,
+    "id": "hoka-rocket-x-3",
+    "brand": "Hoka",
+    "model": "Rocket X",
+    "category": "racing"
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "호카",
+      "로켓엑스",
+      "로켓 X 트레일"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "hoka-rocket-x-trail",
+    "brand": "Hoka",
+    "model": "Rocket X Trail",
+    "category": "trail"
+  },
+  {
     "id": "hoka-skyflow",
     "brand": "Hoka",
     "model": "Skyflow",
@@ -3298,7 +3801,8 @@
     "defaultLifespanKm": 650,
     "discontinued": false,
     "searchAliases": [
-      "호카"
+      "호카",
+      "스카이플로우"
     ],
     "verified": true
   },
@@ -3322,6 +3826,31 @@
       "스카이워드"
     ],
     "verified": false
+  },
+  {
+    "version": "2",
+    "variant": null,
+    "collabWith": null,
+    "weight": 283,
+    "weightBasis": "US9",
+    "drop": 5,
+    "stackHeight": {
+      "heel": 49,
+      "forefoot": 44
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "호카",
+      "스카이워드",
+      "스카이워드 X 2"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 650,
+    "id": "hoka-skyward-x-2",
+    "brand": "Hoka",
+    "model": "Skyward X",
+    "category": "tempo"
   },
   {
     "id": "hoka-speedgoat-5",
@@ -3375,10 +3904,13 @@
     "variant": null,
     "collabWith": null,
     "category": "trail",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "stackHeight": null,
+    "weight": 272,
+    "weightBasis": "US9",
+    "drop": 5,
+    "stackHeight": {
+      "heel": 38,
+      "forefoot": 33
+    },
     "releaseYear": null,
     "defaultLifespanKm": 650,
     "discontinued": false,
@@ -3387,7 +3919,7 @@
       "스피드고트",
       "스피드고트 7"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "hoka-stinson-7",
@@ -3408,6 +3940,28 @@
       "호카"
     ],
     "verified": false
+  },
+  {
+    "version": "3",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "호카",
+      "텍톤엑스",
+      "텍톤 X 3"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "hoka-tecton-x-3",
+    "brand": "Hoka",
+    "model": "Tecton X",
+    "category": "trail"
   },
   {
     "id": "hoka-torrent-3",
@@ -3448,6 +4002,72 @@
       "호카"
     ],
     "verified": false
+  },
+  {
+    "version": "5",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "호카",
+      "토렌트",
+      "토렌트 5"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "hoka-torrent-5",
+    "brand": "Hoka",
+    "model": "Torrent",
+    "category": "trail"
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "호카",
+      "트랜스포트",
+      "트랜스포트 X"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "hoka-transport-x",
+    "brand": "Hoka",
+    "model": "Transport X",
+    "category": "daily"
+  },
+  {
+    "version": "3",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "호카",
+      "지날",
+      "지날 3"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "hoka-zinal-3",
+    "brand": "Hoka",
+    "model": "Zinal",
+    "category": "trail"
   },
   {
     "id": "inov-8-mudclaw-g-260-2",
@@ -4236,6 +4856,31 @@
     "verified": false
   },
   {
+    "version": "1",
+    "variant": null,
+    "collabWith": null,
+    "weight": 261,
+    "weightBasis": "US9",
+    "drop": 8,
+    "stackHeight": {
+      "heel": 37,
+      "forefoot": 29
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "뉴발란스",
+      "뉴발",
+      "엘립스"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 650,
+    "id": "new-balance-ellipse-1",
+    "brand": "New Balance",
+    "model": "Ellipse",
+    "category": "daily"
+  },
+  {
     "id": "new-balance-fresh-foam-x-1080-13",
     "brand": "New Balance",
     "model": "Fresh Foam X 1080",
@@ -4259,51 +4904,54 @@
     "verified": false
   },
   {
-    "id": "new-balance-fresh-foam-x-1080v14",
-    "brand": "New Balance",
-    "model": "Fresh Foam X 1080v14",
-    "version": null,
+    "version": "14",
     "variant": null,
     "collabWith": null,
-    "category": "daily",
-    "weight": 298,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "뉴발란스",
+      "뉴발",
+      "1080",
+      "텐에이티"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "new-balance-fresh-foam-x-1080-14",
+    "brand": "New Balance",
+    "model": "Fresh Foam X 1080",
+    "category": "daily"
+  },
+  {
+    "version": "15",
+    "variant": null,
+    "collabWith": null,
+    "weight": 258,
     "weightBasis": "US9",
     "drop": 6,
     "stackHeight": {
       "heel": 38,
       "forefoot": 32
     },
-    "releaseYear": 2024,
-    "defaultLifespanKm": 650,
+    "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
       "뉴발란스",
       "뉴발",
-      "프레시폼"
+      "1080",
+      "텐에이티",
+      "1080 v15"
     ],
-    "verified": true
-  },
-  {
-    "id": "new-balance-fresh-foam-x-1080v15",
+    "verified": true,
+    "defaultLifespanKm": 650,
+    "id": "new-balance-fresh-foam-x-1080-15",
     "brand": "New Balance",
-    "model": "Fresh Foam X 1080v15",
-    "version": null,
-    "variant": null,
-    "collabWith": null,
-    "category": "daily",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "stackHeight": null,
-    "releaseYear": 2025,
-    "defaultLifespanKm": 650,
-    "discontinued": false,
-    "searchAliases": [
-      "뉴발란스",
-      "뉴발",
-      "프레시폼"
-    ],
-    "verified": false
+    "model": "Fresh Foam X 1080",
+    "category": "daily"
   },
   {
     "id": "new-balance-fresh-foam-x-840-2",
@@ -4359,20 +5007,22 @@
     "variant": null,
     "collabWith": null,
     "category": "stability",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "stackHeight": null,
+    "weight": 335,
+    "weightBasis": "US9",
+    "drop": 8,
+    "stackHeight": {
+      "heel": 43,
+      "forefoot": 35
+    },
     "releaseYear": null,
     "defaultLifespanKm": 700,
     "discontinued": false,
     "searchAliases": [
       "뉴발란스",
       "뉴발",
-      "프레시폼",
-      "프레시폼 15"
+      "860"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "new-balance-fresh-foam-x-880-14",
@@ -4398,48 +5048,73 @@
     "verified": false
   },
   {
-    "id": "new-balance-fresh-foam-x-880v15",
-    "brand": "New Balance",
-    "model": "Fresh Foam X 880v15",
-    "version": null,
+    "version": "15",
     "variant": null,
     "collabWith": null,
-    "category": "daily",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "stackHeight": null,
-    "releaseYear": 2024,
-    "defaultLifespanKm": 650,
+    "weight": 281,
+    "weightBasis": "US9",
+    "drop": 6,
+    "stackHeight": {
+      "heel": 38,
+      "forefoot": 32
+    },
+    "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
       "뉴발란스",
       "뉴발",
-      "프레시폼"
+      "880"
     ],
-    "verified": false
+    "verified": true,
+    "defaultLifespanKm": 650,
+    "id": "new-balance-fresh-foam-x-880-15",
+    "brand": "New Balance",
+    "model": "Fresh Foam X 880",
+    "category": "daily"
   },
   {
-    "id": "new-balance-fresh-foam-x-880v16",
-    "brand": "New Balance",
-    "model": "Fresh Foam X 880v16",
-    "version": null,
+    "version": "16",
     "variant": null,
     "collabWith": null,
-    "category": "daily",
     "weight": null,
     "weightBasis": null,
     "drop": null,
     "stackHeight": null,
-    "releaseYear": 2026,
-    "defaultLifespanKm": 650,
+    "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
       "뉴발란스",
       "뉴발",
-      "프레시폼"
+      "880"
     ],
-    "verified": false
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "new-balance-fresh-foam-x-880-16",
+    "brand": "New Balance",
+    "model": "Fresh Foam X 880",
+    "category": "daily"
+  },
+  {
+    "version": "8",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "뉴발란스",
+      "뉴발",
+      "히에로"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "new-balance-fresh-foam-x-hierro-8",
+    "brand": "New Balance",
+    "model": "Fresh Foam X Hierro",
+    "category": "trail"
   },
   {
     "id": "new-balance-fresh-foam-x-hierro-9",
@@ -4449,22 +5124,45 @@
     "variant": null,
     "collabWith": null,
     "category": "trail",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "stackHeight": null,
+    "weight": 306,
+    "weightBasis": "US9",
+    "drop": 4,
+    "stackHeight": {
+      "heel": 42,
+      "forefoot": 38
+    },
     "releaseYear": 2025,
     "defaultLifespanKm": 650,
     "discontinued": false,
     "searchAliases": [
       "뉴발란스",
       "뉴발",
-      "프레시폼",
-      "프레시폼 9",
       "히에로",
-      "히에로 9"
+      "히에로 v9"
     ],
-    "verified": false
+    "verified": true
+  },
+  {
+    "version": "4",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "뉴발란스",
+      "뉴발",
+      "모어"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 700,
+    "id": "new-balance-fresh-foam-x-more-4",
+    "brand": "New Balance",
+    "model": "Fresh Foam X More",
+    "category": "recovery"
   },
   {
     "id": "new-balance-fresh-foam-x-more-5",
@@ -4491,6 +5189,32 @@
       "프레시폼 5"
     ],
     "verified": true
+  },
+  {
+    "version": "6",
+    "variant": null,
+    "collabWith": null,
+    "weight": 312,
+    "weightBasis": "US9",
+    "drop": 4,
+    "stackHeight": {
+      "heel": 42,
+      "forefoot": 38
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "뉴발란스",
+      "뉴발",
+      "모어",
+      "모어 v6"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 700,
+    "id": "new-balance-fresh-foam-x-more-6",
+    "brand": "New Balance",
+    "model": "Fresh Foam X More",
+    "category": "recovery"
   },
   {
     "id": "new-balance-fresh-foam-x-vongo-6",
@@ -4571,95 +5295,68 @@
     "variant": null,
     "collabWith": null,
     "category": "tempo",
-    "weight": null,
+    "weight": 224,
     "weightBasis": null,
-    "drop": null,
-    "stackHeight": null,
+    "drop": 6,
+    "stackHeight": {
+      "heel": 38,
+      "forefoot": 32
+    },
     "releaseYear": 2025,
     "defaultLifespanKm": 650,
     "discontinued": false,
     "searchAliases": [
       "뉴발란스",
       "뉴발",
-      "퓨얼셀",
-      "퓨얼셀 5",
       "리벨",
-      "리벨 5"
+      "퓨얼셀 리벨 5"
     ],
-    "verified": false
+    "verified": true
   },
   {
-    "id": "new-balance-fuelcell-sc-elite-4",
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "뉴발란스",
+      "뉴발",
+      "리벨 트레일"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "new-balance-fuelcell-rebel-trail",
     "brand": "New Balance",
-    "model": "FuelCell SC Elite",
+    "model": "FuelCell Rebel Trail",
+    "category": "trail"
+  },
+  {
     "version": "4",
     "variant": null,
     "collabWith": null,
-    "category": "racing",
     "weight": null,
     "weightBasis": null,
     "drop": null,
     "stackHeight": null,
     "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "뉴발란스",
+      "뉴발",
+      "슈퍼컴프",
+      "SC엘리트"
+    ],
+    "verified": false,
     "defaultLifespanKm": 450,
-    "discontinued": false,
-    "searchAliases": [
-      "뉴발란스",
-      "뉴발",
-      "퓨얼셀",
-      "퓨얼셀 4",
-      "엘리트",
-      "엘리트 4"
-    ],
-    "verified": false
-  },
-  {
-    "id": "new-balance-fuelcell-sc-elite-5",
+    "id": "new-balance-fuelcell-supercomp-elite-4",
     "brand": "New Balance",
-    "model": "FuelCell SC Elite",
-    "version": "5",
-    "variant": null,
-    "collabWith": null,
-    "category": "racing",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "stackHeight": null,
-    "releaseYear": null,
-    "defaultLifespanKm": 450,
-    "discontinued": false,
-    "searchAliases": [
-      "뉴발란스",
-      "뉴발",
-      "퓨얼셀",
-      "퓨얼셀 5",
-      "엘리트",
-      "엘리트 5"
-    ],
-    "verified": false
-  },
-  {
-    "id": "new-balance-fuelcell-sc-trainer-2",
-    "brand": "New Balance",
-    "model": "FuelCell SC Trainer",
-    "version": "2",
-    "variant": null,
-    "collabWith": null,
-    "category": "tempo",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "stackHeight": null,
-    "releaseYear": null,
-    "defaultLifespanKm": 650,
-    "discontinued": false,
-    "searchAliases": [
-      "뉴발란스",
-      "뉴발",
-      "퓨얼셀",
-      "퓨얼셀 2"
-    ],
-    "verified": false
+    "model": "FuelCell SuperComp Elite",
+    "category": "racing"
   },
   {
     "id": "new-balance-fuelcell-supercomp-elite-5",
@@ -4689,6 +5386,33 @@
     "verified": false
   },
   {
+    "version": "6",
+    "variant": null,
+    "collabWith": null,
+    "weight": 184,
+    "weightBasis": "US9",
+    "drop": 8,
+    "stackHeight": {
+      "heel": 39,
+      "forefoot": 31
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "뉴발란스",
+      "뉴발",
+      "슈퍼컴프",
+      "SC엘리트",
+      "엘리트 v6"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 450,
+    "id": "new-balance-fuelcell-supercomp-elite-6",
+    "brand": "New Balance",
+    "model": "FuelCell SuperComp Elite",
+    "category": "racing"
+  },
+  {
     "id": "new-balance-fuelcell-supercomp-pacer",
     "brand": "New Balance",
     "model": "FuelCell SuperComp Pacer",
@@ -4712,6 +5436,77 @@
     "verified": false
   },
   {
+    "version": "2",
+    "variant": null,
+    "collabWith": null,
+    "weight": 210,
+    "weightBasis": "US9",
+    "drop": 8,
+    "stackHeight": {
+      "heel": 35,
+      "forefoot": 27
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "뉴발란스",
+      "뉴발",
+      "슈퍼컴프",
+      "페이서"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 450,
+    "id": "new-balance-fuelcell-supercomp-pacer-2",
+    "brand": "New Balance",
+    "model": "FuelCell SuperComp Pacer",
+    "category": "racing"
+  },
+  {
+    "version": "2",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "뉴발란스",
+      "뉴발",
+      "슈퍼컴프 트레일"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "new-balance-fuelcell-supercomp-trail-2",
+    "brand": "New Balance",
+    "model": "FuelCell SuperComp Trail",
+    "category": "trail"
+  },
+  {
+    "version": "2",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "뉴발란스",
+      "뉴발",
+      "슈퍼컴프",
+      "SC트레이너"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "new-balance-fuelcell-supercomp-trainer-2",
+    "brand": "New Balance",
+    "model": "FuelCell SuperComp Trainer",
+    "category": "tempo"
+  },
+  {
     "id": "new-balance-fuelcell-supercomp-trainer-3",
     "brand": "New Balance",
     "model": "FuelCell SuperComp Trainer",
@@ -4719,66 +5514,45 @@
     "variant": null,
     "collabWith": null,
     "category": "tempo",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "stackHeight": null,
+    "weight": 278,
+    "weightBasis": "US9",
+    "drop": 6,
+    "stackHeight": {
+      "heel": 41,
+      "forefoot": 35
+    },
     "releaseYear": 2024,
     "defaultLifespanKm": 650,
     "discontinued": false,
     "searchAliases": [
       "뉴발란스",
       "뉴발",
-      "퓨얼셀",
-      "퓨얼셀 3",
       "슈퍼컴프",
-      "슈퍼컴프 3"
+      "SC트레이너"
     ],
-    "verified": false
+    "verified": true
   },
   {
-    "id": "new-balance-hierro-8",
-    "brand": "New Balance",
-    "model": "Hierro",
-    "version": "8",
+    "version": "1",
     "variant": null,
     "collabWith": null,
-    "category": "trail",
     "weight": null,
     "weightBasis": null,
-    "drop": null,
+    "drop": 4,
     "stackHeight": null,
     "releaseYear": null,
-    "defaultLifespanKm": 650,
     "discontinued": false,
     "searchAliases": [
       "뉴발란스",
       "뉴발",
-      "히에로",
-      "히에로 8"
+      "슈퍼컴프 리벨"
     ],
-    "verified": false
-  },
-  {
-    "id": "new-balance-more-4",
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "new-balance-supercomp-rebel-1",
     "brand": "New Balance",
-    "model": "More",
-    "version": "4",
-    "variant": null,
-    "collabWith": null,
-    "category": "recovery",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "stackHeight": null,
-    "releaseYear": null,
-    "defaultLifespanKm": 700,
-    "discontinued": false,
-    "searchAliases": [
-      "뉴발란스",
-      "뉴발"
-    ],
-    "verified": false
+    "model": "SuperComp Rebel",
+    "category": "tempo"
   },
   {
     "id": "new-balance-trail-410-8",
