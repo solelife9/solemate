@@ -276,7 +276,17 @@ final class WorkoutManager: NSObject, ObservableObject {
       if let di = HKObjectType.quantityType(forIdentifier: .distanceWalkingRunning) { read.insert(di) }
       if let st = HKObjectType.quantityType(forIdentifier: .stepCount) { read.insert(st) }  // 평균 케이던스용
       let share: Set<HKSampleType> = [HKObjectType.workoutType()]
-      healthStore.requestAuthorization(toShare: share, read: read) { _, _ in }
+      healthStore.requestAuthorization(toShare: share, read: read) { ok, err in
+        // 실패를 삼키지 않는다(2026-07-28 근본수정). 종전엔 `{ _, _ in }` 이라 권한이
+        // 거부돼도 아무 흔적이 없었고, 그 결과 **HealthKit 에서 읽는 값이 전부 0** 이었다
+        // — 심박·칼로리·케이던스가 한꺼번에 0 이던 실측 증상의 정체가 이것이다.
+        // (직접 원인은 워치 Info.plist 에 NSHealthShareUsageDescription 이 없던 것.
+        //  그 키가 없으면 requestAuthorization 이 실패하는데 여기서 조용히 묻혔다.)
+        if !ok || err != nil {
+          NSLog("[keego] HealthKit 권한 실패 — 심박·칼로리·케이던스가 기록되지 않는다: %@",
+                err?.localizedDescription ?? "authorization denied")
+        }
+      }
     }
     if locationManager.authorizationStatus == .notDetermined {
       locationManager.requestWhenInUseAuthorization()
