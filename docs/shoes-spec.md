@@ -55,6 +55,9 @@
 - **플레이트는 카테고리로 유추하지 않는다.** tempo 인데 카본인 신발이 흔하고(Zoom Fly 6·
   Mach X 3·Hyperion Max 4), racing 인데 카본이 아닌 신발도 있다(Adizero Adios 9 = 나일론 샹크).
   유리섬유·TPU 플레이트를 `carbon` 으로 적으면 없는 사실을 만드는 것이라 `other` 로 나눈다.
+  **'카본 인퓨즈드 나일론'은 `other`다**(Mizuno WAVE PLATE = Rilsan 나일론 + 카본 섬유).
+  나일론 베이스를 `carbon` 이라 적으면 카본 플레이트 레이서와 같은 것으로 읽힌다.
+  **근거는 제품 설명이어야 한다** — 고객 리뷰에 적힌 플레이트 언급은 쓰지 않는다.
 - **`stackHeight`의 forefoot 은 `heel - drop` 으로 채워도 된다.** 드롭의 정의가 그것이라
   이건 추측이 아니라 산수다. 셋 중 둘을 알면 나머지는 확정된다.
 

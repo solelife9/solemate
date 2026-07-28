@@ -266,7 +266,7 @@
     "weight": 255,
     "weightBasis": "US9",
     "drop": 7,
-    "plate": null,
+    "plate": "other",
     "stackHeight": {
       "heel": 37,
       "forefoot": 30
@@ -293,7 +293,7 @@
     "weight": 230,
     "weightBasis": null,
     "drop": 7,
-    "plate": null,
+    "plate": "other",
     "stackHeight": {
       "heel": 37,
       "forefoot": 30
@@ -1529,7 +1529,7 @@
     "weight": 215,
     "weightBasis": null,
     "drop": 0,
-    "plate": null,
+    "plate": "carbon",
     "stackHeight": {
       "heel": 34,
       "forefoot": 34
@@ -2708,7 +2708,7 @@
     "weight": 255,
     "weightBasis": "US9",
     "drop": 8,
-    "plate": null,
+    "plate": "other",
     "stackHeight": {
       "heel": 45,
       "forefoot": 37
@@ -3752,11 +3752,14 @@
     "version": "5",
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 201,
+    "weightBasis": "US9",
+    "drop": 8,
+    "plate": "carbon",
+    "stackHeight": {
+      "heel": 38,
+      "forefoot": 30
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
@@ -3764,7 +3767,7 @@
       "하이페리온 엘리트",
       "엘리트 5"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 450,
     "id": "brooks-hyperion-elite-5",
     "brand": "Brooks",
@@ -3847,7 +3850,7 @@
     "weight": 295,
     "weightBasis": "US9",
     "drop": 8,
-    "plate": null,
+    "plate": "other",
     "stackHeight": {
       "heel": 46,
       "forefoot": 38
@@ -4271,7 +4274,7 @@
     "weight": 198,
     "weightBasis": "유니섹스(사이즈 미표기)",
     "drop": 7,
-    "plate": null,
+    "plate": "carbon",
     "stackHeight": {
       "heel": 48,
       "forefoot": 41
@@ -5101,7 +5104,7 @@
     "weight": 275,
     "weightBasis": "US9",
     "drop": 5,
-    "plate": null,
+    "plate": "carbon",
     "stackHeight": {
       "heel": 40,
       "forefoot": 35
@@ -6158,7 +6161,7 @@
     "weight": 218,
     "weightBasis": "US9",
     "drop": 4,
-    "plate": null,
+    "plate": "other",
     "stackHeight": {
       "heel": 61,
       "forefoot": 57
@@ -7239,7 +7242,7 @@
     "weight": 198,
     "weightBasis": "US9",
     "drop": 8,
-    "plate": null,
+    "plate": "carbon",
     "stackHeight": {
       "heel": 40,
       "forefoot": 32
@@ -7733,7 +7736,7 @@
     "weight": 128,
     "weightBasis": "US9(유니섹스)",
     "drop": 4,
-    "plate": null,
+    "plate": "carbon",
     "stackHeight": {
       "heel": 26,
       "forefoot": 22
@@ -7931,7 +7934,7 @@
     "weight": 167,
     "weightBasis": "US9",
     "drop": 6,
-    "plate": null,
+    "plate": "carbon",
     "stackHeight": {
       "heel": 36,
       "forefoot": 30
@@ -8217,7 +8220,7 @@
     "weight": 244,
     "weightBasis": "US9",
     "drop": 8,
-    "plate": null,
+    "plate": "carbon",
     "stackHeight": {
       "heel": 40,
       "forefoot": 32
@@ -8702,7 +8705,7 @@
     "weight": 272,
     "weightBasis": null,
     "drop": 6,
-    "plate": null,
+    "plate": "other",
     "stackHeight": {
       "heel": 37,
       "forefoot": 31
@@ -9283,7 +9286,7 @@
     "weight": 241,
     "weightBasis": "US9",
     "drop": 8,
-    "plate": null,
+    "plate": "carbon",
     "stackHeight": {
       "heel": 35,
       "forefoot": 27
@@ -9450,7 +9453,7 @@
     "weight": 170,
     "weightBasis": "US9",
     "drop": 8,
-    "plate": null,
+    "plate": "carbon",
     "stackHeight": {
       "heel": 39,
       "forefoot": 31
@@ -10568,7 +10571,7 @@
     "weight": 210,
     "weightBasis": "US9",
     "drop": 8,
-    "plate": null,
+    "plate": "carbon",
     "stackHeight": {
       "heel": 40,
       "forefoot": 32
@@ -10749,7 +10752,7 @@
     "weight": 238,
     "weightBasis": "US9",
     "drop": 8,
-    "plate": null,
+    "plate": "other",
     "stackHeight": {
       "heel": 37,
       "forefoot": 29
