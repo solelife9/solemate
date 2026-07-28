@@ -63,11 +63,6 @@ struct RunSummary: Equatable {
   let kcal: Double
   /// 평균 케이던스(spm) — HK stepCount 합 / 경과분. 0 = 미측정.
   let cadence: Double
-  /// 경로 점과 1:1 짝인 고도 원자료(m). 측정 불가 지점은 .nan.
-  /// ⚠️ 워치는 상승고도를 **계산하지 않는다**(2026-07-28) — 폰 lib/elevation.ts 가
-  /// 기준고도 히스테리시스(±3m)로 한 벌만 계산한다. 종전 워치 자체 누적은 0.5m 증분을
-  /// 다 더해 평지에서도 부풀었다(실측 274m vs 폰 33m).
-  let routeAltFlat: [Double]
   /// 구간 스플릿(초/km) — 폰 RunDetail 페이스 그래프·paceTrack 사이드카. 비면 [].
   let splitsS: [Double]
   let startMs: Double
@@ -79,6 +74,11 @@ struct RunSummary: Equatable {
   /// GPS 경로 — [lat,lon,lat,lon,…] 플랫 배열(WCSession plist 친화, ≤200점 다운샘플).
   /// 폰이 route_<id> 사이드카 + 레코드 route(클라우드 동기)로 저장해 지도를 그린다.
   let routeFlat: [Double]
+  /// 경로 점과 1:1 짝인 고도 원자료(m). 측정 불가 지점은 .nan.
+  /// ⚠️ 워치는 상승고도를 **계산하지 않는다**(2026-07-28) — 폰 lib/elevation.ts 가
+  /// 기준고도 히스테리시스(±3m)로 한 벌만 계산한다. 종전 워치 자체 누적은 0.5m 증분을
+  /// 다 더해 평지에서도 부풀었다(실측 274m vs 폰 33m).
+  let routeAltFlat: [Double]
 
   var avgPaceSecPerKm: Double { km > 0.01 ? durationS / km : 0 }
 }
