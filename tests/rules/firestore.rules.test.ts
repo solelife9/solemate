@@ -208,6 +208,77 @@ describe('races/{raceId}', () => {
   });
 });
 
+// ── 사용자 신호(검색 0건·등록 요청) ──────────────────────────────────────────
+// 적재 전용 컬렉션이다. 쓰기만 열고 읽기를 닫는 게 핵심 — 남이 무엇을 검색했는지
+// 열람할 수 있으면 관측 데이터가 곧 사생활 유출이 된다(docs/shoes-spec.md §6).
+describe('search_misses/{docId}', () => {
+  const miss = {query: 'Nike Pegasus 99', userId: ME, createdAt: 1750000000000};
+
+  it('로그인 사용자는 적재할 수 있다', async () => {
+    await assertSucceeds(setDoc(doc(asMe(), 'search_misses', 'm1'), miss));
+  });
+
+  it('비로그인은 적재하지 못한다', async () => {
+    await assertFails(setDoc(doc(asGuest(), 'search_misses', 'm1'), miss));
+  });
+
+  it('아무도 읽지 못한다(남의 검색어 열람 차단)', async () => {
+    await seed(['search_misses', 'm1'], miss);
+    await assertFails(getDoc(doc(asMe(), 'search_misses', 'm1')));
+    await assertFails(getDocs(collection(asMe(), 'search_misses')));
+  });
+
+  it('수정·삭제는 불가(적재 전용)', async () => {
+    await seed(['search_misses', 'm1'], miss);
+    await assertFails(setDoc(doc(asMe(), 'search_misses', 'm1'), {...miss, query: '조작'}));
+    await assertFails(deleteDoc(doc(asMe(), 'search_misses', 'm1')));
+  });
+
+  it('빈 질의·과대 질의·모르는 필드는 거부(잡음 차단)', async () => {
+    await assertFails(setDoc(doc(asMe(), 'search_misses', 'm2'), {...miss, query: ''}));
+    await assertFails(setDoc(doc(asMe(), 'search_misses', 'm3'), {...miss, query: 'x'.repeat(101)}));
+    await assertFails(setDoc(doc(asMe(), 'search_misses', 'm4'), {...miss, junk: 1}));
+  });
+});
+
+describe('shoe_requests/{docId}', () => {
+  const req = {brand: 'Nike', model: 'Pegasus 99', userId: ME, createdAt: 1750000000000};
+
+  it('버튼 요청(not_found)을 적재한다', async () => {
+    await assertSucceeds(setDoc(doc(asMe(), 'shoe_requests', 'r1'), {...req, source: 'not_found'}));
+  });
+
+  it('직접 추가(manual_add)를 적재한다 — 구멍의 진짜 크기가 여기 있다', async () => {
+    await assertSucceeds(setDoc(doc(asMe(), 'shoe_requests', 'r2'), {...req, source: 'manual_add'}));
+  });
+
+  it('source 가 없어도 받는다(구버전 앱 호환 — 필드를 나중에 넣었다)', async () => {
+    await assertSucceeds(setDoc(doc(asMe(), 'shoe_requests', 'r3'), req));
+  });
+
+  it('모르는 source 는 거부(자유 문자열이면 집계가 무의미해진다)', async () => {
+    await assertFails(setDoc(doc(asMe(), 'shoe_requests', 'r4'), {...req, source: 'whatever'}));
+    await assertFails(setDoc(doc(asMe(), 'shoe_requests', 'r5'), {...req, source: 7}));
+  });
+
+  it('비로그인은 적재하지 못한다', async () => {
+    await assertFails(setDoc(doc(asGuest(), 'shoe_requests', 'r6'), {...req, source: 'not_found'}));
+  });
+
+  it('아무도 읽지 못하고, 수정·삭제도 불가', async () => {
+    await seed(['shoe_requests', 'r7'], {...req, source: 'not_found'});
+    await assertFails(getDoc(doc(asMe(), 'shoe_requests', 'r7')));
+    await assertFails(getDocs(collection(asMe(), 'shoe_requests')));
+    await assertFails(setDoc(doc(asMe(), 'shoe_requests', 'r7'), {...req, source: 'manual_add'}));
+    await assertFails(deleteDoc(doc(asMe(), 'shoe_requests', 'r7')));
+  });
+
+  it('과대 문자열·모르는 필드는 거부', async () => {
+    await assertFails(setDoc(doc(asMe(), 'shoe_requests', 'r8'), {...req, model: 'x'.repeat(61)}));
+    await assertFails(setDoc(doc(asMe(), 'shoe_requests', 'r9'), {...req, junk: 1}));
+  });
+});
+
 // ── 그 외 전부 거부 ─────────────────────────────────────────────────────────
 describe('미정의 경로', () => {
   it('임의 컬렉션은 로그인해도 거부', async () => {

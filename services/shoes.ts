@@ -114,13 +114,24 @@ export async function logSearchMiss(query: string, userId: string | null): Promi
 }
 
 /**
- * '내 신발이 없어요' 요청 기록. 성공 여부를 돌려준다 — 이건 사용자가 누른 행동이라
- * 화면이 결과를 알려야 한다(조용히 실패하면 눌러도 아무 일이 없는 버튼이 된다).
+ * 신발 요청이 어디서 왔는가.
+ *
+ * 둘은 신호의 세기가 다르다. `not_found` 는 "없어서 요청했다"(사용자가 버튼을 눌렀다),
+ * `manual_add` 는 "없어서 그냥 손으로 넣고 달리러 갔다"(버튼은 안 눌렀다). 후자가 훨씬
+ * 흔하고, 카탈로그 구멍의 진짜 크기는 후자에 있다. 섞어 담으면 그 차이가 사라진다.
+ */
+export type ShoeRequestSource = 'not_found' | 'manual_add';
+
+/**
+ * 신발 등록 요청 기록. 성공 여부를 돌려준다 — '내 신발이 없어요'는 사용자가 누른
+ * 행동이라 화면이 결과를 알려야 한다(조용히 실패하면 눌러도 아무 일이 없는 버튼이 된다).
+ * 직접 추가 경로는 관측이라 호출부가 결과를 무시해도 된다.
  */
 export async function requestShoe(
   brand: string,
   model: string,
   userId: string | null,
+  source: ShoeRequestSource = 'not_found',
 ): Promise<boolean> {
   const b = String(brand ?? '').trim();
   const m = String(model ?? '').trim();
@@ -128,7 +139,7 @@ export async function requestShoe(
   try {
     await setDoc(
       doc(collection(db(), SHOE_REQUESTS_COLLECTION)),
-      {brand: b, model: m, userId: userId ?? null, createdAt: serverTimestamp()},
+      {brand: b, model: m, userId: userId ?? null, createdAt: serverTimestamp(), source},
     );
     return true;
   } catch {

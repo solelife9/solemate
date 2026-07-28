@@ -62,6 +62,21 @@ export function ShoePicker({visible, onClose, onPick, insetTop, insetBottom}: {
     close();
   };
 
+  /**
+   * 카탈로그에 없어 **손으로 넣은** 경우. 등록은 그대로 진행하고, 무엇이 빠졌는지만
+   * 신호로 남긴다(source: 'manual_add').
+   *
+   * '내 신발이 없어요' 버튼과 달리 토스트도 대기도 없다 — 사용자의 행동은 '등록'이지
+   * '요청'이 아니다. 관측 때문에 등록이 한 박자라도 늦으면 본말전도다. 그래서 결과를
+   * 기다리지 않고 실패는 삼킨다.
+   */
+  const pickManual = (brand: string, model: string) => {
+    getFirebaseUid()
+      .then(uid => requestShoe(brand, model, uid, 'manual_add'))
+      .catch(() => {});
+    pick(brand, model);
+  };
+
   const q = norm(query);
   const isOther = selBrand === OTHER;
 
@@ -106,7 +121,7 @@ export function ShoePicker({visible, onClose, onPick, insetTop, insetBottom}: {
   const askForShoe = async () => {
     const model = query.trim();
     const uid = await getFirebaseUid().catch(() => null);
-    const ok = await requestShoe(selBrand, model, uid);
+    const ok = await requestShoe(selBrand, model, uid, 'not_found');
     setRequested(ok);
     showToast({
       message: ok
@@ -199,9 +214,10 @@ export function ShoePicker({visible, onClose, onPick, insetTop, insetBottom}: {
                 )}
                 {q.length > 0 && !exactExists && (
                   <Pressable
-                    onPress={() => pick(selBrand, query.trim())}
+                    onPress={() => pickManual(selBrand, query.trim())}
                     accessibilityRole="button"
                     accessibilityLabel={`${query.trim()} 직접 추가`}
+                    testID="picker-add-custom"
                     style={({pressed}) => [s.pkAddRow, pressed && s.pressed]}>
                     <Text style={{fontFamily: FONT, fontSize: rf(15), color: T3}}>
                       “<Text style={{color: T1, fontWeight: '600'}}>{query.trim()}</Text>” 직접 추가
@@ -254,7 +270,8 @@ export function ShoePicker({visible, onClose, onPick, insetTop, insetBottom}: {
                 <Button
                   label="추가"
                   disabled={!customModel.trim() || !customBrand.trim()}
-                  onPress={() => pick(customBrand.trim(), customModel.trim())}
+                  testID="picker-add-other"
+                  onPress={() => pickManual(customBrand.trim(), customModel.trim())}
                 />
               </View>
             </ScrollView>

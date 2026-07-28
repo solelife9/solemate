@@ -104,11 +104,15 @@ service cloud.firestore {
     match /shoe_requests/{docId} {
       allow read, update, delete: if false;
       allow create: if signedIn()
-        && request.resource.data.keys().hasOnly(['brand', 'model', 'userId', 'createdAt'])
+        && request.resource.data.keys().hasOnly(['brand', 'model', 'userId', 'createdAt', 'source'])
         && request.resource.data.brand is string
         && request.resource.data.model is string
         && request.resource.data.brand.size() <= 60
-        && request.resource.data.model.size() <= 60;
+        && request.resource.data.model.size() <= 60
+        // source 는 신호의 출처다(버튼을 눌렀나, 그냥 손으로 넣었나). 자유 문자열로
+        // 열어두면 집계가 무의미해지므로 아는 값만 받는다.
+        && (!('source' in request.resource.data.keys())
+            || request.resource.data.source in ['not_found', 'manual_add']);
     }
 
     // ── 그 외 전부 거부 ──────────────────────────────────────────────────────

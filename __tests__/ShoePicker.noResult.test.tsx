@@ -145,4 +145,71 @@ describe('검색 0건', () => {
     expect(textOf(r.root)).toContain('내 신발이 없어요'); // 여전히 누를 수 있다
     expect(showToast).toHaveBeenCalled();
   });
+
+  test('버튼으로 온 요청은 source 가 not_found 다', async () => {
+    const r = await mount();
+    await searchNonsense(r.root);
+    const btn = byTestID(r.root, 'picker-request-shoe').find((n: any) => typeof n.props.onPress === 'function')!;
+    await act(async () => { await btn.props.onPress(); });
+    await flush();
+    expect(requestShoe.mock.calls[0][3]).toBe('not_found');
+  });
+});
+
+/**
+ * 직접 추가 — 카탈로그 구멍의 **진짜 크기**는 여기 있다.
+ * 대부분의 사용자는 버튼을 누르지 않고 그냥 손으로 넣고 달리러 간다.
+ */
+describe('직접 추가', () => {
+  test('브랜드 안에서 직접 추가하면 manual_add 로 남는다', async () => {
+    const onPick = jest.fn();
+    let r!: ReactTestRenderer.ReactTestRenderer;
+    await act(async () => {
+      r = ReactTestRenderer.create(
+        <ShoePicker visible onClose={jest.fn()} onPick={onPick} insetTop={0} insetBottom={0} />,
+      );
+    });
+    await flush();
+    await searchNonsense(r.root, '없는모델xyz');
+    const add = byTestID(r.root, 'picker-add-custom').find((n: any) => typeof n.props.onPress === 'function')!;
+    await act(async () => { add.props.onPress(); });
+    await flush();
+    expect(requestShoe).toHaveBeenCalledTimes(1);
+    const [brand, model, uid, source] = requestShoe.mock.calls[0];
+    expect(typeof brand).toBe('string');
+    expect(model).toBe('없는모델xyz');
+    expect(uid).toBe('uid-1');
+    expect(source).toBe('manual_add');
+    // 관측 때문에 등록이 늦어지면 안 된다 — 기록을 기다리지 않고 바로 선택된다.
+    expect(onPick).toHaveBeenCalledWith({brand, model: '없는모델xyz'});
+  });
+
+  test('기록이 실패해도 등록은 그대로 된다', async () => {
+    requestShoe.mockRejectedValueOnce(new Error('네트워크 없음'));
+    const onPick = jest.fn();
+    let r!: ReactTestRenderer.ReactTestRenderer;
+    await act(async () => {
+      r = ReactTestRenderer.create(
+        <ShoePicker visible onClose={jest.fn()} onPick={onPick} insetTop={0} insetBottom={0} />,
+      );
+    });
+    await flush();
+    await searchNonsense(r.root, '없는모델xyz');
+    const add = byTestID(r.root, 'picker-add-custom').find((n: any) => typeof n.props.onPress === 'function')!;
+    await act(async () => { add.props.onPress(); });
+    await flush();
+    expect(onPick).toHaveBeenCalled();
+  });
+
+  test('목록에서 고른 신발은 요청으로 남지 않는다(구멍이 아니다)', async () => {
+    const r = await mount();
+    // 검색 없이 첫 브랜드의 모델 행을 그대로 고른다.
+    const rows = r.root.findAll(
+      (n: any) => n.props?.accessibilityRole === 'button' && /권장/.test(String(n.props?.accessibilityLabel ?? '')),
+    );
+    expect(rows.length).toBeGreaterThan(0);
+    await act(async () => { rows[0].props.onPress(); });
+    await flush();
+    expect(requestShoe).not.toHaveBeenCalled();
+  });
 });
