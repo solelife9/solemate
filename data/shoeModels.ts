@@ -106,42 +106,72 @@ const NEW_TO_LEGACY_CATEGORY: Readonly<Record<string, ShoeCategory>> = {
   recovery: 'max_cushion',
 };
 
-const CATALOG_MODELS: ShoeModel[] = (
-  catalogData as Array<{
-    brand: string; model: string; version: string | null; variant: string | null;
-    collabWith: string | null; category: string; defaultLifespanKm: number; releaseYear: number | null;
-  }>
-).map((s) => {
-  const base = [s.model, s.version, s.variant].filter(Boolean).join(' ');
-  const category = NEW_TO_LEGACY_CATEGORY[s.category] ?? 'daily_trainer';
+/** 카탈로그 문서에서 이 파일이 쓰는 최소 형태(원격 문서도 같은 스키마다). */
+export interface ShoeDocLike {
+  brand: string;
+  model: string;
+  version?: string | null;
+  variant?: string | null;
+  collabWith?: string | null;
+  category?: string;
+  defaultLifespanKm?: number;
+  releaseYear?: number | null;
+}
+
+/**
+ * 카탈로그 문서 → 레거시 모델. **깨진 문서는 null 을 돌려준다.**
+ *
+ * 원격(Firestore)에서 온 것도 이 함수를 통과한다. 서버가 이상한 걸 주더라도 목록이
+ * 깨지지 않아야 한다 — 등록 화면은 앱의 핵심 동선이고, 카탈로그 갱신은 부가 기능이다.
+ */
+export function shoeDocToModel(s: ShoeDocLike | null | undefined): ShoeModel | null {
+  if (!s || typeof s.brand !== 'string' || typeof s.model !== 'string') return null;
+  const brand = s.brand.trim();
+  const base = [s.model, s.version, s.variant]
+    .filter((v): v is string => typeof v === 'string' && v.trim().length > 0)
+    .join(' ')
+    .trim();
+  if (!brand || !base) return null;
+  const category = NEW_TO_LEGACY_CATEGORY[String(s.category)] ?? 'daily_trainer';
   return {
-    brand: s.brand,
+    brand,
     // 협업 표기를 모델명에 남긴다 — 사용자는 "새티스파이"로 찾는다.
     model: s.collabWith ? `${base} ×${s.collabWith}` : base,
     category,
     recommendedKm: Number.isFinite(s.defaultLifespanKm)
-      ? s.defaultLifespanKm
+      ? (s.defaultLifespanKm as number)
       : (categoryLifespanKm[category] ?? DEFAULT_LIFESPAN_KM),
-    year: s.releaseYear ?? 0,
+    year: Number.isFinite(s.releaseYear as number) ? (s.releaseYear as number) : 0,
   };
-});
+}
 
 /**
- * 시드 + 카탈로그. **시드가 이긴다** — 시드에는 사람이 손본 용도 태그·수명 오버라이드가
- * 붙어 있어서 카탈로그가 덮으면 그게 사라진다. 카탈로그는 없는 것만 채운다.
+ * 목록 합치기 — **앞선 것이 이긴다.** 뒤에 오는 목록은 없는 모델만 채운다.
+ *
+ * 이 방향이 중요하다. 시드에는 사람이 손본 용도 태그·수명 오버라이드가 붙어 있고,
+ * 원격 카탈로그는 서버가 언제든 바꿀 수 있다. 뒤가 이기게 하면 서버의 실수 한 번이
+ * 사용자가 쓰던 분류를 덮어쓴다. 그래서 나중 소스는 **추가만** 할 수 있다.
  */
-export const SHOE_MODELS: ShoeModel[] = (() => {
-  const out = [...SEED_MODELS];
-  const key = (b: string, m: string) => `${normalize(b)}|${normalize(m)}`;
-  const seen = new Set(out.map((m) => key(m.brand, m.model)));
-  for (const m of CATALOG_MODELS) {
-    const k = key(m.brand, m.model);
-    if (seen.has(k)) continue;
-    seen.add(k);
-    out.push(m);
+export function mergeShoeModels(...lists: readonly ShoeModel[][]): ShoeModel[] {
+  const out: ShoeModel[] = [];
+  const seen = new Set<string>();
+  for (const list of lists) {
+    for (const m of list) {
+      const k = `${normalize(m.brand)}|${normalize(m.model)}`;
+      if (seen.has(k)) continue;
+      seen.add(k);
+      out.push(m);
+    }
   }
   return out;
-})();
+}
+
+const CATALOG_MODELS: ShoeModel[] = (catalogData as ShoeDocLike[])
+  .map(shoeDocToModel)
+  .filter((m): m is ShoeModel => m !== null);
+
+/** 번들에 들어 있는 목록(시드 + 번들 카탈로그). 원격은 여기에 더해진다. */
+export const SHOE_MODELS: ShoeModel[] = mergeShoeModels(SEED_MODELS, CATALOG_MODELS);
 
 // ────────────────────────────────────────────────────────────
 // 파생 데이터
@@ -163,10 +193,14 @@ const brandRank = (b: string): number => {
 };
 // 대소문자만 다른 같은 브랜드('ASICS' vs 'Asics')는 한 번만 노출한다(중복 칩 방지) —
 // 비교는 normalize(소문자·여백 무시)로, 표기는 첫 등장값 유지. 시드가 흔들려도 UI 안 깨짐.
-export const BRANDS: string[] = SHOE_MODELS.reduce<string[]>((acc, m) => {
-  if (!acc.some((b) => normalize(b) === normalize(m.brand))) acc.push(m.brand);
-  return acc;
-}, []).sort((a, b) => brandRank(a) - brandRank(b) || a.localeCompare(b));
+export function brandsFrom(models: readonly ShoeModel[]): string[] {
+  return models.reduce<string[]>((acc, m) => {
+    if (!acc.some((b) => normalize(b) === normalize(m.brand))) acc.push(m.brand);
+    return acc;
+  }, []).sort((a, b) => brandRank(a) - brandRank(b) || a.localeCompare(b));
+}
+
+export const BRANDS: string[] = brandsFrom(SHOE_MODELS);
 
 // ────────────────────────────────────────────────────────────
 // 매칭 헬퍼

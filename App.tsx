@@ -120,6 +120,8 @@ import {Challenge, ChallengeRun} from './lib/challenges';
 import {ExtChallenge, challengeExtProgress, extChallengesToContext, type ExtRun, type ExtShoe} from './lib/progression/challengesExt';
 import {createFirebaseCloudPort} from './lib/firebaseCloudPort';
 import {getAuth, onAuthStateChanged} from '@react-native-firebase/auth';
+import {syncRemoteCatalog} from './lib/shoeCatalogRemote';
+import {setRemoteShoeDocs} from './lib/shoeCatalogStore';
 import {LoginScreen} from './LoginScreen.rn';
 import {stampUpdatedAt, markDeleted, partitionTombstones, mergeCloudData, mergeMedals, liveRecords, reconcileLivePreservingLocal, unionTombstones} from './lib/cloudSync';
 import {publishMyRanking} from './lib/progression/firestoreRankingStore';
@@ -468,6 +470,17 @@ function Main(){
   // 진척 영속 상태(progression_v1) 복원 — Hall of Shoes 레코드 + 은퇴 컨텍스트의 소스.
   // 손상/누락은 storage 가 안전 기본값으로 복구한다(절대 throw 없음). 1회 로드.
   useEffect(()=>{let alive=true;loadProgression().then(s=>{if(alive)setProgState(s);});return()=>{alive=false;};},[]);
+
+  // 원격 신발 카탈로그 동기화 — 새 러닝화가 앱 업데이트 없이 등록 화면에 뜨게 한다.
+  // 로그인 뒤에 돈다(규칙상 shoes 읽기는 로그인 필요). 실패는 조용히 삼키고 번들 목록으로
+  // 그대로 간다 — 카탈로그 갱신은 부가 기능이고, 등록은 오프라인에서도 돼야 한다.
+  useEffect(()=>{
+    if(process.env.NODE_ENV==='test') return;
+    if(!authUser) return;
+    let alive=true;
+    syncRemoteCatalog().then(docs=>{if(alive&&docs.length)setRemoteShoeDocs(docs);}).catch(()=>{});
+    return()=>{alive=false;};
+  },[authUser]);
 
   // 셀러브레이션 베이스라인('이미 본' 업적 + 등급) 로드 — 1회. 없으면 null(첫 감지 때 시딩).
   useEffect(()=>{

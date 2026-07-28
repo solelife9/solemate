@@ -14,7 +14,9 @@ import { rf, rs, rv } from './lib/responsive';
 import {View, StyleSheet, Pressable, ScrollView, Modal} from 'react-native';
 import {Text, TextInput} from './lib/text';
 import Svg, {Circle, Path} from 'react-native-svg';
-import {BRANDS, SHOE_MODELS, findShoeModel, getRecommendedLifespanKm} from './data/shoeModels';
+import {findShoeModel, getRecommendedLifespanKm} from './data/shoeModels';
+// 번들 + 원격 카탈로그. 원격이 늦게 도착해도 이 훅이 알아서 다시 그린다(lib/shoeCatalogStore).
+import {useShoeModels, useShoeBrands} from './lib/shoeCatalogStore';
 import {categoryLabelKo} from './lib/affiliate';
 import {BG, CARD, T1, T3, T4, SEP, FONT, withAlpha, GUTTER, MOTION} from './theme';
 import {Button, Input} from './primitives';
@@ -45,6 +47,8 @@ export function ShoePicker({visible, onClose, onPick, insetTop, insetBottom}: {
   insetTop: number;
   insetBottom: number;
 }) {
+  const SHOE_MODELS = useShoeModels();
+  const BRANDS = useShoeBrands();
   const [query, setQuery] = useState('');
   const [selBrand, setSelBrand] = useState<string>(BRANDS[0]);
   const [customModel, setCustomModel] = useState('');
@@ -91,7 +95,7 @@ export function ShoePicker({visible, onClose, onPick, insetTop, insetBottom}: {
       const rb = q && norm(b.model).startsWith(q) ? 0 : 1;
       return ra - rb || a.model.localeCompare(b.model);
     });
-  }, [selBrand, q]);
+  }, [SHOE_MODELS, selBrand, q]);
 
   // 검색어와 정확히 일치하는 모델이 없으면 '직접 추가'(그 브랜드에 커스텀 모델).
   const exactExists = brandModels.some(m => norm(m.model) === q);

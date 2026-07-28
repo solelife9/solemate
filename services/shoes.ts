@@ -19,6 +19,8 @@ import {
   getDoc,
   getDocs,
   collection,
+  query,
+  where,
   serverTimestamp,
 } from '@react-native-firebase/firestore';
 import type {ShoeDoc} from '../types/shoe';
@@ -92,6 +94,33 @@ export async function listShoes(): Promise<ShoeDoc[]> {
   return snap.docs.map((d) => ({...(d.data() as ShoeDoc), id: d.id}));
 }
 
+/**
+ * **바뀐 것만** 조회한다. 앱이 켜질 때마다 500켤레를 통째로 읽으면 사용자 한 명당
+ * 하루 500 읽기다 — 사용자가 늘면 그대로 요금이 된다. 실제로 바뀌는 건 새 모델이
+ * 들어올 때뿐이라, 마지막으로 본 시각 이후만 받는다(보통 0건).
+ *
+ * 돌려주는 `maxUpdatedAtMs` 는 **서버가 찍은 값 중 최대**다. 클라이언트 시계를 쓰면
+ * 기기 시간이 앞서 있을 때 그 사이에 올라온 문서를 영영 못 받는다.
+ */
+export async function listShoesUpdatedAfter(
+  afterMs: number | null,
+): Promise<{docs: ShoeDoc[]; maxUpdatedAtMs: number}> {
+  const col = collection(db(), SHOES_COLLECTION);
+  const snap = afterMs && afterMs > 0
+    ? await getDocs(query(col, where('updatedAt', '>', new Date(afterMs))))
+    : await getDocs(col);
+
+  const docs: ShoeDoc[] = [];
+  let maxMs = afterMs ?? 0;
+  for (const d of snap.docs) {
+    const data = d.data() as ShoeDoc & {updatedAt?: {toMillis?: () => number}};
+    const ms = typeof data.updatedAt?.toMillis === 'function' ? data.updatedAt.toMillis() : 0;
+    if (ms > maxMs) maxMs = ms;
+    docs.push({...(data as ShoeDoc), id: d.id});
+  }
+  return {docs, maxUpdatedAtMs: maxMs};
+}
+
 // ── 사용자 신호(0건 검색·등록 요청) ────────────────────────────────────────────
 // 카탈로그가 낡는 문제에 대한 구조적 답이다 — 사람이 눈치채기를 기다리지 않고,
 // "사용자가 찾았는데 없던 것"을 데이터로 남긴다(docs/shoes-spec.md §6).
@@ -100,8 +129,8 @@ export async function listShoes(): Promise<ShoeDoc[]> {
  * 검색 0건 기록. 실패해도 **절대 throw 하지 않는다** — 관측 목적이지 기능이 아니다.
  * 이것 때문에 검색 화면이 깨지면 본말전도다.
  */
-export async function logSearchMiss(query: string, userId: string | null): Promise<void> {
-  const q = String(query ?? '').trim();
+export async function logSearchMiss(searchText: string, userId: string | null): Promise<void> {
+  const q = String(searchText ?? '').trim();
   if (!q) return;
   try {
     await setDoc(
