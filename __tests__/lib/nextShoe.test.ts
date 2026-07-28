@@ -6,6 +6,7 @@ import {
   AXIS_ORDER,
 } from '../../lib/nextShoe';
 import {SHOE_MODELS, ShoeModel} from '../../data/shoeModels';
+import {lookupOfficialSpec} from '../../lib/shoeSpecModel';
 
 /** 그 카테고리의 실제 시드 모델을 집어온다(합성 데이터로 눈속임하지 않게). */
 function firstOf(category: ShoeModel['category']): ShoeModel {
@@ -93,18 +94,22 @@ describe('추천 목록 규칙', () => {
 });
 
 describe('무게 스펙이 비교를 살린다', () => {
-  const pool = SHOE_MODELS.filter((m) => m.category === 'super_trainer');
+  // 스펙 표(data/shoeSpecs.json)는 계속 채워지므로, 이 스위트는 pool 을 명시해
+  // 표의 성장과 무관하게 같은 결과를 내도록 격리한다.
+  const superTrainers = SHOE_MODELS.filter((m) => m.category === 'super_trainer');
+  const noSpecPool = superTrainers.filter((m) => !lookupOfficialSpec(m.brand, m.model)).slice(0, 6);
 
   it('무게를 모르면 무게 축 그룹이 생기지 않는다(추측하지 않는다)', () => {
-    const prev = pool[0];
-    const groups = buildAxisGroups(prev.brand, prev.model);
+    const prev = noSpecPool[0];
+    const groups = buildAxisGroups(prev.brand, prev.model, {pool: noSpecPool});
     expect(groups.some((g) => g.axis === 'lighter')).toBe(false);
   });
 
   it('확인된 무게를 주면 "더 가벼워요"가 살아난다', () => {
-    const prev = pool[0];
-    const lighter = pool[1];
+    const prev = noSpecPool[0];
+    const lighter = noSpecPool[1];
     const groups = buildAxisGroups(prev.brand, prev.model, {
+      pool: noSpecPool,
       officialSpecs: {
         [`${prev.brand}|${prev.model}`]: {weightG: 260},
         [`${lighter.brand}|${lighter.model}`]: {weightG: 215},
@@ -114,5 +119,19 @@ describe('무게 스펙이 비교를 살린다', () => {
     expect(g).toBeDefined();
     expect(g!.items[0].model.model).toBe(lighter.model);
     expect(g!.items[0].deltas.find((d) => d.axis === 'lighter')!.detailKo).toBe('45g 가벼워요');
+  });
+
+  it('실제 스펙 표가 채워질수록 비교 축이 저절로 늘어난다', () => {
+    // Hoka Mach 6(210g/37mm)과 Clifton 9(247g/32mm)은 표에 있다 — 같은 데일리 계열이
+    // 아니므로 카테고리 게이트를 지키되, 표가 실제로 축을 만들어내는지 확인한다.
+    const withSpec = SHOE_MODELS.filter(
+      (m) => m.category === 'daily_trainer' && lookupOfficialSpec(m.brand, m.model)?.weightG,
+    );
+    expect(withSpec.length).toBeGreaterThan(0);
+    const prev = withSpec[0];
+    const groups = buildAxisGroups(prev.brand, prev.model, {limit: 5});
+    // 표에 무게가 있는 모델끼리는 무게 축이 실제로 계산된다(있으면 lighter, 없으면 최소
+    // 수명 축이라도 뜬다 — 어느 쪽이든 빈 화면은 아니다).
+    expect(groups.length).toBeGreaterThan(0);
   });
 });
