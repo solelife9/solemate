@@ -65,6 +65,7 @@
     "Nike|Structure 26": {"weightG": 236, "stackHeelMm": 40, "dropMm": 8, "basis": "US8.5"},
     "Nike|Pegasus Plus": {"stackHeelMm": 35},
 
+    "ASICS|Novablast 6": {"weightG": 258, "stackHeelMm": 46.5, "dropMm": 8, "basis": "US9.5"},
     "ASICS|Superblast 3": {"weightG": 236, "stackHeelMm": 46.5, "dropMm": 8, "basis": "US9.5"},
     "ASICS|Gel-Kayano 32": {"weightG": 304, "stackHeelMm": 40, "dropMm": 8, "basis": "US9.5"},
     "ASICS|Gel-Cumulus 27": {"weightG": 270, "basis": "US9.5"}

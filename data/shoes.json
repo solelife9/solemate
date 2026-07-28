@@ -1,6 +1,6 @@
 {
   "source": "사용자 분류(러닝화 타입 · 추천 러닝)",
-  "updated": "2026-06-18-merged",
+  "updated": "2026-07-28-novablast6",
   "brands": [
     "Adidas",
     "ASICS",
@@ -47,7 +47,7 @@
     "회복",
     "트레일"
   ],
-  "count": 336,
+  "count": 333,
   "brandsInferred": [
     "Saucony",
     "Puma",
@@ -943,6 +943,19 @@
       "category": "super_trainer",
       "recommendedKm": 700,
       "year": 2025
+    },
+    {
+      "brand": "ASICS",
+      "model": "Novablast 6",
+      "type": "슈퍼트레이너",
+      "recommended": [
+        "데일리",
+        "장거리",
+        "템포"
+      ],
+      "category": "super_trainer",
+      "recommendedKm": 700,
+      "year": 2026
     },
     {
       "brand": "ASICS",
