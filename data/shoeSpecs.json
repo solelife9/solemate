@@ -6,7 +6,18 @@
     "ASICS|Superblast 2": {"weightG": 251, "stackHeelMm": 45, "dropMm": 8, "basis": "US9.5"},
     "ASICS|Gel-Nimbus 27": {"weightG": 307, "stackHeelMm": 43.5, "dropMm": 8, "basis": "US9"},
     "Hoka|Clifton 10": {"weightG": 278, "stackHeelMm": 42, "dropMm": 8, "basis": "US9"},
+    "Hoka|Clifton 9": {"weightG": 247, "stackHeelMm": 32, "dropMm": 5, "basis": "US9"},
     "Hoka|Bondi 9": {"weightG": 297, "stackHeelMm": 43, "dropMm": 5, "basis": "US9"},
-    "Nike|Pegasus 41": {"weightG": 281, "stackHeelMm": 37, "dropMm": 10, "basis": "US9"}
+    "Hoka|Bondi 8": {"weightG": 306, "stackHeelMm": 39, "dropMm": 5, "basis": "US9"},
+    "Hoka|Mach 6": {"weightG": 210, "stackHeelMm": 37, "dropMm": 5, "basis": "US9"},
+    "Hoka|Rincon 4": {"stackHeelMm": 36, "dropMm": 5},
+    "Nike|Pegasus 41": {"weightG": 281, "stackHeelMm": 37, "dropMm": 10, "basis": "US9"},
+    "Nike|Pegasus 42": {"weightG": 286, "stackHeelMm": 37, "dropMm": 10, "basis": "US9"},
+    "Nike|Vomero 18": {"stackHeelMm": 42.5, "dropMm": 10},
+    "Brooks|Ghost 16": {"weightG": 269, "stackHeelMm": 34.5, "dropMm": 12, "basis": "EU44"},
+    "Brooks|Glycerin 21": {"stackHeelMm": 38, "dropMm": 10},
+    "Brooks|Adrenaline GTS 24": {"stackHeelMm": 35, "dropMm": 12},
+    "Saucony|Endorphin Speed 4": {"weightG": 245, "stackHeelMm": 36, "dropMm": 8, "basis": "US9.5"},
+    "Saucony|Ride 18": {"stackHeelMm": 35, "dropMm": 8}
   }
 }
