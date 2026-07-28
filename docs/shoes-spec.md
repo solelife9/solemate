@@ -32,7 +32,8 @@
 | `variant` | string \| null | ✅ | 특별판 표기 (`LITE`, `GTX`, `Wide`). 없으면 `null` |
 | `collabWith` | string \| null | ✅ | 협업 상대 (`Satisfy`). 없으면 `null` |
 | `category` | Category | ✅ | 아래 §2 |
-| `weight` | number \| null | ✅ | 무게(g). 남성 US9 기준 |
+| `weight` | number \| null | ✅ | 무게(g). **공표된 값 그대로** |
+| `weightBasis` | string \| null | ✅ | 그 무게를 잰 사이즈 (`US9`·`US9.5`·`US10`). 모르면 `null` |
 | `drop` | number \| null | ✅ | 드롭(mm) |
 | `stackHeight` | `{heel, forefoot}` \| null | ✅ | 스택(mm) |
 | `releaseYear` | number \| null | ✅ | 출시연도 |
@@ -47,7 +48,11 @@
   키가 없는 것과 "확인했는데 없음"은 다르고, 후자를 표현할 방법이 있어야 한다.
 - **모르면 비운다.** 추측·보간 금지. "비슷한 모델이니 비슷할 것"은 사실이 아니다(Truth only).
 - **모델을 넣을 땐 스펙도 같이 넣는다.** 스펙 없는 모델은 비교에서 침묵한다.
-- **무게 기준 사이즈가 US9가 아니면 그대로 적지 말고 확인된 값만 넣는다.** 환산은 추측이다.
+- **무게는 환산하지 않는다.** US9.5에서 잰 값을 US9로 고쳐 적는 순간 그건 측정이 아니라
+  추정이다. 대신 `weightBasis`에 잰 사이즈를 적어 **비교하는 쪽이 판단**하게 한다
+  (기준이 다른 두 신발의 무게 차이는 그만큼 덜 믿을 만하다).
+- **`stackHeight`의 forefoot 은 `heel - drop` 으로 채워도 된다.** 드롭의 정의가 그것이라
+  이건 추측이 아니라 산수다. 셋 중 둘을 알면 나머지는 확정된다.
 
 ---
 

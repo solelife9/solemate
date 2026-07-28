@@ -42,7 +42,7 @@ export interface ValidateResult {
 /** ShoeDoc 의 필수 키 목록 — 값이 아니라 키의 존재를 본다. */
 const REQUIRED_KEYS: readonly (keyof ShoeDoc)[] = [
   'id', 'brand', 'model', 'version', 'variant', 'collabWith', 'category',
-  'weight', 'drop', 'stackHeight', 'releaseYear', 'defaultLifespanKm',
+  'weight', 'weightBasis', 'drop', 'stackHeight', 'releaseYear', 'defaultLifespanKm',
   'discontinued', 'searchAliases', 'verified',
 ];
 
@@ -176,8 +176,14 @@ async function main(): Promise<void> {
   let shoes: ShoeDoc[] = [];
   let source = '(없음)';
   try {
-    // 정본 데이터 파일이 생기면 여기에 놓인다. 아직은 없어도 정상이다.
-    const mod = require('../data/shoeCatalog.json');
+    // 컴파일 출력이 node_modules/.cache 아래 놓이므로 __dirname 기준으로 찾으면 어긋난다.
+    // npm run 은 항상 프로젝트 루트에서 도니 실행 위치를 기준으로 삼는다.
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const {readFileSync} = require('fs') as typeof import('fs');
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const {resolve} = require('path') as typeof import('path');
+    const file = resolve(process.cwd(), 'data/shoeCatalog.json');
+    const mod = JSON.parse(readFileSync(file, 'utf8'));
     shoes = Array.isArray(mod) ? mod : (mod?.shoes ?? []);
     source = 'data/shoeCatalog.json';
   } catch {

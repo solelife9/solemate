@@ -89,8 +89,15 @@ export interface ShoeDoc {
   /** 협업 상대(`Satisfy`). 없으면 null. 검색 대상이다. */
   collabWith: string | null;
   category: ShoeCategory;
-  /** 무게(g) — 남성 US9 기준. 모르면 null(환산해 넣지 않는다). */
+  /** 무게(g) — **공표된 값 그대로**. 모르면 null. */
   weight: number | null;
+  /**
+   * 그 무게를 잰 사이즈(`US9`·`US9.5`·`US10`). 모르면 null.
+   *
+   * 환산하지 않는 대신 기준을 남긴다. US9.5에서 잰 값을 US9로 고쳐 적으면 그건 측정이
+   * 아니라 추정이고, 그렇게 만든 숫자로 두 신발을 비교하면 없는 차이가 생긴다.
+   */
+  weightBasis: string | null;
   /** 드롭(mm). 모르면 null. */
   drop: number | null;
   /** 스택 높이(mm). 모르면 null. */
@@ -117,6 +124,7 @@ export function emptyShoeDoc(id: string, brand: string, model: string, category:
     collabWith: null,
     category,
     weight: null,
+    weightBasis: null,
     drop: null,
     stackHeight: null,
     releaseYear: null,
