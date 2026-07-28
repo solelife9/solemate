@@ -3,7 +3,9 @@
  *
  * 출처: .tenet/spec/shoe-database-2026-05-31.md (web-verified, 2026-05-31)
  *       + 2026-06-16 최신 모델 보강(web-verified): 슈퍼블래스트3 등 30개 추가, Altra·Topo 신규.
- * 7개 카테고리 · 13개 브랜드 · 164개 모델.
+ * 6개 카테고리 · 19개 브랜드 · **332개 모델**(정본은 data/shoes.json — 이 주석이 아니라
+ * `SHOE_MODELS.length` 를 믿을 것. 2026-07-28: 낡은 '164개' 표기가 외부 문서·투자자
+ * 자료에 그대로 옮겨 적히는 사고가 있어 실측값으로 정정).
  *
  * 이 모듈은 화면(AddShoeScreen 등)의 인라인 MODELS/BRANDS와 App.tsx의
  * parseShoeName 브랜드 목록을 대체하는 데이터·로직 단일 소스다.
