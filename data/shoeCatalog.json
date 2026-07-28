@@ -2223,6 +2223,28 @@
     "verified": false
   },
   {
+    "version": "15",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "브룩스",
+      "어딕션",
+      "어딕션 GTS"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 700,
+    "id": "brooks-addiction-gts-15",
+    "brand": "Brooks",
+    "model": "Addiction GTS",
+    "category": "stability"
+  },
+  {
     "id": "brooks-adrenaline-gts-23",
     "brand": "Brooks",
     "model": "Adrenaline GTS",
@@ -2277,19 +2299,22 @@
     "variant": null,
     "collabWith": null,
     "category": "stability",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "stackHeight": null,
+    "weight": 301,
+    "weightBasis": "US9",
+    "drop": 10,
+    "stackHeight": {
+      "heel": 39,
+      "forefoot": 29
+    },
     "releaseYear": 2025,
     "defaultLifespanKm": 700,
     "discontinued": false,
     "searchAliases": [
       "브룩스",
       "아드레날린",
-      "아드레날린 25"
+      "아드레날린 GTS 25"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "brooks-aurora-bl",
@@ -2311,6 +2336,28 @@
       "오로라"
     ],
     "verified": false
+  },
+  {
+    "version": "26",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "브룩스",
+      "비스트",
+      "비스트 GTS"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 700,
+    "id": "brooks-beast-gts-26",
+    "brand": "Brooks",
+    "model": "Beast GTS",
+    "category": "stability"
   },
   {
     "id": "brooks-caldera-7",
@@ -2395,6 +2442,93 @@
       "브룩스"
     ],
     "verified": false
+  },
+  {
+    "version": "19",
+    "variant": "GTX",
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "브룩스",
+      "캐스캐디아",
+      "고어텍스"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "brooks-cascadia-19-gtx",
+    "brand": "Brooks",
+    "model": "Cascadia",
+    "category": "trail"
+  },
+  {
+    "version": "20",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "브룩스",
+      "캐스캐디아",
+      "캐스케이디아"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "brooks-cascadia-20",
+    "brand": "Brooks",
+    "model": "Cascadia",
+    "category": "trail"
+  },
+  {
+    "version": "20",
+    "variant": "GTX",
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "브룩스",
+      "캐스캐디아",
+      "고어텍스"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "brooks-cascadia-20-gtx",
+    "brand": "Brooks",
+    "model": "Cascadia",
+    "category": "trail"
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "브룩스",
+      "캐스캐디아 엘리트"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "brooks-cascadia-elite",
+    "brand": "Brooks",
+    "model": "Cascadia Elite",
+    "category": "trail"
   },
   {
     "id": "brooks-catamount-4",
@@ -2540,12 +2674,12 @@
     "variant": null,
     "collabWith": null,
     "category": "daily",
-    "weight": 289,
+    "weight": 283,
     "weightBasis": "US9",
     "drop": 10,
     "stackHeight": {
-      "heel": 36.5,
-      "forefoot": 26.5
+      "heel": 36,
+      "forefoot": 26
     },
     "releaseYear": 2026,
     "defaultLifespanKm": 650,
@@ -2556,6 +2690,28 @@
       "고스트 18"
     ],
     "verified": true
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "브룩스",
+      "고스트",
+      "고스트 앰프"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "brooks-ghost-amp",
+    "brand": "Brooks",
+    "model": "Ghost AMP",
+    "category": "daily"
   },
   {
     "id": "brooks-ghost-max-2",
@@ -2578,6 +2734,72 @@
       "고스트 2"
     ],
     "verified": false
+  },
+  {
+    "version": "3",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "브룩스",
+      "고스트맥스",
+      "고스트 맥스 3"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 700,
+    "id": "brooks-ghost-max-3",
+    "brand": "Brooks",
+    "model": "Ghost Max",
+    "category": "recovery"
+  },
+  {
+    "version": "4",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": 6,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "브룩스",
+      "고스트맥스",
+      "고스트 맥스 4"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 700,
+    "id": "brooks-ghost-max-4",
+    "brand": "Brooks",
+    "model": "Ghost Max",
+    "category": "recovery"
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "브룩스",
+      "고스트",
+      "고스트 트레일"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "brooks-ghost-trail",
+    "brand": "Brooks",
+    "model": "Ghost Trail",
+    "category": "trail"
   },
   {
     "id": "brooks-glycerin-20",
@@ -2647,6 +2869,31 @@
       "글리세린 22"
     ],
     "verified": true
+  },
+  {
+    "version": "23",
+    "variant": null,
+    "collabWith": null,
+    "weight": 309,
+    "weightBasis": "US9",
+    "drop": 8,
+    "stackHeight": {
+      "heel": 39,
+      "forefoot": 31
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "브룩스",
+      "글리세린",
+      "글리세린 23"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 700,
+    "id": "brooks-glycerin-23",
+    "brand": "Brooks",
+    "model": "Glycerin",
+    "category": "recovery"
   },
   {
     "id": "brooks-glycerin-flex",
@@ -2735,6 +2982,27 @@
     "verified": false
   },
   {
+    "version": "2",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "브룩스",
+      "글리세린 맥스"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 700,
+    "id": "brooks-glycerin-max-2",
+    "brand": "Brooks",
+    "model": "Glycerin Max",
+    "category": "recovery"
+  },
+  {
     "id": "brooks-hyperion-2",
     "brand": "Brooks",
     "model": "Hyperion",
@@ -2755,6 +3023,28 @@
       "하이페리온 2"
     ],
     "verified": false
+  },
+  {
+    "version": "3",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "브룩스",
+      "하이페리온",
+      "하이페리온 3"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "brooks-hyperion-3",
+    "brand": "Brooks",
+    "model": "Hyperion",
+    "category": "tempo"
   },
   {
     "id": "brooks-hyperion-elite-3",
@@ -2827,6 +3117,50 @@
     "verified": false
   },
   {
+    "version": "5",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "브룩스",
+      "하이페리온 엘리트",
+      "엘리트 5"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 450,
+    "id": "brooks-hyperion-elite-5",
+    "brand": "Brooks",
+    "model": "Hyperion Elite",
+    "category": "racing"
+  },
+  {
+    "version": "6",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": 8,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "브룩스",
+      "하이페리온 엘리트",
+      "엘리트 6"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 450,
+    "id": "brooks-hyperion-elite-6",
+    "brand": "Brooks",
+    "model": "Hyperion Elite",
+    "category": "racing"
+  },
+  {
     "id": "brooks-hyperion-max-2",
     "brand": "Brooks",
     "model": "Hyperion Max",
@@ -2847,6 +3181,53 @@
       "하이페리온 2"
     ],
     "verified": false
+  },
+  {
+    "version": "3",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "브룩스",
+      "하이페리온",
+      "하이페리온 맥스 3"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "brooks-hyperion-max-3",
+    "brand": "Brooks",
+    "model": "Hyperion Max",
+    "category": "tempo"
+  },
+  {
+    "version": "4",
+    "variant": null,
+    "collabWith": null,
+    "weight": 295,
+    "weightBasis": "US9",
+    "drop": 8,
+    "stackHeight": {
+      "heel": 46,
+      "forefoot": 38
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "브룩스",
+      "하이페리온",
+      "하이페리온 맥스 4"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 650,
+    "id": "brooks-hyperion-max-4",
+    "brand": "Brooks",
+    "model": "Hyperion Max",
+    "category": "tempo"
   },
   {
     "id": "brooks-launch-10",
@@ -2891,6 +3272,28 @@
       "런치 11"
     ],
     "verified": false
+  },
+  {
+    "version": "12",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "브룩스",
+      "런치",
+      "런치 12"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "brooks-launch-12",
+    "brand": "Brooks",
+    "model": "Launch",
+    "category": "daily"
   },
   {
     "id": "brooks-levitate-7",
@@ -4298,6 +4701,92 @@
     "verified": true
   },
   {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "미즈노",
+      "하이퍼워프",
+      "하이퍼워프 엘리트"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 450,
+    "id": "mizuno-hyperwarp-elite",
+    "brand": "Mizuno",
+    "model": "Hyperwarp Elite",
+    "category": "racing"
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "미즈노",
+      "하이퍼워프",
+      "하이퍼워프 프로"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "mizuno-hyperwarp-pro",
+    "brand": "Mizuno",
+    "model": "Hyperwarp Pro",
+    "category": "tempo"
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "미즈노",
+      "하이퍼워프"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "mizuno-hyperwarp-pure",
+    "brand": "Mizuno",
+    "model": "Hyperwarp Pure",
+    "category": "daily"
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "미즈노",
+      "네오아세라"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "mizuno-neo-accera",
+    "brand": "Mizuno",
+    "model": "Neo Accera",
+    "category": "tempo"
+  },
+  {
     "id": "mizuno-neo-vista",
     "brand": "Mizuno",
     "model": "Neo Vista",
@@ -4339,6 +4828,74 @@
       "네오 2"
     ],
     "verified": false
+  },
+  {
+    "version": "3",
+    "variant": null,
+    "collabWith": null,
+    "weight": 272,
+    "weightBasis": "US9",
+    "drop": 8,
+    "stackHeight": {
+      "heel": 50,
+      "forefoot": 42
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "미즈노",
+      "네오비스타",
+      "네오 비스타 3"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 650,
+    "id": "mizuno-neo-vista-3",
+    "brand": "Mizuno",
+    "model": "Neo Vista",
+    "category": "tempo"
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "미즈노",
+      "네오젠"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "mizuno-neo-zen",
+    "brand": "Mizuno",
+    "model": "Neo Zen",
+    "category": "tempo"
+  },
+  {
+    "version": "2",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "미즈노",
+      "네오젠",
+      "네오 젠 2"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "mizuno-neo-zen-2",
+    "brand": "Mizuno",
+    "model": "Neo Zen",
+    "category": "tempo"
   },
   {
     "id": "mizuno-wave-creation-21",
@@ -4421,6 +4978,31 @@
     "verified": false
   },
   {
+    "version": "9",
+    "variant": null,
+    "collabWith": null,
+    "weight": 309,
+    "weightBasis": "US9",
+    "drop": 8,
+    "stackHeight": {
+      "heel": 42,
+      "forefoot": 34
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "미즈노",
+      "웨이브호라이즌",
+      "호라이즌 9"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 700,
+    "id": "mizuno-wave-horizon-9",
+    "brand": "Mizuno",
+    "model": "Wave Horizon",
+    "category": "stability"
+  },
+  {
     "id": "mizuno-wave-inspire-20",
     "brand": "Mizuno",
     "model": "Wave Inspire",
@@ -4472,19 +5054,22 @@
     "variant": null,
     "collabWith": null,
     "category": "stability",
-    "weight": null,
+    "weight": 281,
     "weightBasis": null,
-    "drop": null,
-    "stackHeight": null,
+    "drop": 10,
+    "stackHeight": {
+      "heel": 37,
+      "forefoot": 27
+    },
     "releaseYear": 2025,
     "defaultLifespanKm": 700,
     "discontinued": false,
     "searchAliases": [
       "미즈노",
       "웨이브인스파이어",
-      "웨이브인스파이어 22"
+      "인스파이어 22"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "mizuno-wave-mujin-10",
@@ -4602,21 +5187,22 @@
     "variant": null,
     "collabWith": null,
     "category": "tempo",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "stackHeight": null,
+    "weight": 244,
+    "weightBasis": "US9",
+    "drop": 3,
+    "stackHeight": {
+      "heel": 51,
+      "forefoot": 48
+    },
     "releaseYear": 2025,
     "defaultLifespanKm": 650,
     "discontinued": false,
     "searchAliases": [
       "미즈노",
       "웨이브리벨리온",
-      "웨이브리벨리온 3",
-      "리벨",
-      "리벨 3"
+      "리벨리온 플래시 3"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "mizuno-wave-rebellion-pro-2",
@@ -4653,16 +5239,17 @@
     "weight": 218,
     "weightBasis": "US9",
     "drop": 4,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 61,
+      "forefoot": 57
+    },
     "releaseYear": 2024,
     "defaultLifespanKm": 450,
     "discontinued": false,
     "searchAliases": [
       "미즈노",
       "웨이브리벨리온",
-      "웨이브리벨리온 3",
-      "리벨",
-      "리벨 3"
+      "리벨리온 프로 3"
     ],
     "verified": true
   },
@@ -4773,21 +5360,22 @@
     "variant": null,
     "collabWith": null,
     "category": "daily",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "stackHeight": null,
+    "weight": 264,
+    "weightBasis": "유니섹스 M7.0/W8.5",
+    "drop": 8,
+    "stackHeight": {
+      "heel": 44,
+      "forefoot": 36
+    },
     "releaseYear": 2026,
     "defaultLifespanKm": 650,
     "discontinued": false,
     "searchAliases": [
       "미즈노",
-      "라이드",
-      "라이드 30",
       "웨이브라이더",
-      "웨이브라이더 30"
+      "라이더 30"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "mizuno-wave-sky-7",
@@ -4841,19 +5429,22 @@
     "variant": null,
     "collabWith": null,
     "category": "recovery",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "stackHeight": null,
+    "weight": 292,
+    "weightBasis": "US9",
+    "drop": 6,
+    "stackHeight": {
+      "heel": 44,
+      "forefoot": 38
+    },
     "releaseYear": 2025,
     "defaultLifespanKm": 700,
     "discontinued": false,
     "searchAliases": [
       "미즈노",
       "웨이브스카이",
-      "웨이브스카이 9"
+      "스카이 9"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "version": "1",
@@ -6788,6 +7379,29 @@
     "verified": false
   },
   {
+    "version": "5",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "온",
+      "온러닝",
+      "클라우드엑스",
+      "클라우드 X 5"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "on-cloud-x-5",
+    "brand": "On",
+    "model": "Cloud X",
+    "category": "daily"
+  },
+  {
     "id": "on-cloudboom-echo-3",
     "brand": "On",
     "model": "Cloudboom Echo",
@@ -6818,19 +7432,45 @@
     "variant": null,
     "collabWith": null,
     "category": "racing",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "stackHeight": null,
+    "weight": 213,
+    "weightBasis": "US9",
+    "drop": 4,
+    "stackHeight": {
+      "heel": 43,
+      "forefoot": 39
+    },
     "releaseYear": 2024,
     "defaultLifespanKm": 450,
     "discontinued": false,
     "searchAliases": [
       "온",
       "온러닝",
-      "클라우드붐"
+      "클라우드붐",
+      "클라우드붐 스트라이크"
     ],
-    "verified": false
+    "verified": true
+  },
+  {
+    "version": "2",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "온",
+      "온러닝",
+      "클라우드붐 스트라이크 LS"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 450,
+    "id": "on-cloudboom-strike-2-ls",
+    "brand": "On",
+    "model": "Cloudboom Strike LS",
+    "category": "racing"
   },
   {
     "id": "on-cloudboom-strike-ls",
@@ -6853,6 +7493,28 @@
       "클라우드붐"
     ],
     "verified": false
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "온",
+      "온러닝",
+      "클라우드붐 볼트"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 450,
+    "id": "on-cloudboom-volt",
+    "brand": "On",
+    "model": "Cloudboom Volt",
+    "category": "racing"
   },
   {
     "id": "on-cloudeclipse",
@@ -6909,11 +7571,14 @@
     "version": "5",
     "variant": null,
     "collabWith": null,
-    "category": "daily",
-    "weight": null,
+    "category": "tempo",
+    "weight": 272,
     "weightBasis": null,
-    "drop": null,
-    "stackHeight": null,
+    "drop": 6,
+    "stackHeight": {
+      "heel": 37,
+      "forefoot": 31
+    },
     "releaseYear": 2025,
     "defaultLifespanKm": 650,
     "discontinued": false,
@@ -6921,9 +7586,9 @@
       "온",
       "온러닝",
       "클라우드플로우",
-      "클라우드플로우 5"
+      "클플"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "on-cloudflyer-5",
@@ -7031,8 +7696,8 @@
     "weightBasis": "US9",
     "drop": 6,
     "stackHeight": {
-      "heel": 35,
-      "forefoot": 29
+      "heel": 40,
+      "forefoot": 34
     },
     "releaseYear": 2026,
     "defaultLifespanKm": 700,
@@ -7041,11 +7706,33 @@
       "온",
       "온러닝",
       "클라우드몬스터",
-      "클라우드몬스터 3",
       "클몬",
       "클몬 3"
     ],
     "verified": true
+  },
+  {
+    "version": "3",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "온",
+      "온러닝",
+      "클라우드몬스터 하이퍼",
+      "클몬 하이퍼"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "on-cloudmonster-3-hyper",
+    "brand": "On",
+    "model": "Cloudmonster Hyper",
+    "category": "tempo"
   },
   {
     "id": "on-cloudmonster-hyper",
@@ -7138,6 +7825,32 @@
     "verified": false
   },
   {
+    "version": "2",
+    "variant": null,
+    "collabWith": null,
+    "weight": 255,
+    "weightBasis": null,
+    "drop": 9,
+    "stackHeight": {
+      "heel": 37,
+      "forefoot": 28
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "온",
+      "온러닝",
+      "클라우드서퍼",
+      "클서퍼"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 650,
+    "id": "on-cloudsurfer-2",
+    "brand": "On",
+    "model": "Cloudsurfer",
+    "category": "daily"
+  },
+  {
     "id": "on-cloudsurfer-3",
     "brand": "On",
     "model": "Cloudsurfer",
@@ -7194,19 +7907,22 @@
     "variant": null,
     "collabWith": null,
     "category": "recovery",
-    "weight": null,
+    "weight": 292,
     "weightBasis": null,
-    "drop": null,
-    "stackHeight": null,
+    "drop": 6,
+    "stackHeight": {
+      "heel": 37,
+      "forefoot": 31
+    },
     "releaseYear": 2025,
     "defaultLifespanKm": 700,
     "discontinued": false,
     "searchAliases": [
       "온",
       "온러닝",
-      "클라우드서퍼"
+      "클라우드서퍼 맥스"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "on-cloudsurfer-next",
@@ -7304,6 +8020,28 @@
       "울트라 3"
     ],
     "verified": false
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "온",
+      "온러닝",
+      "클라우드울트라 프로"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "on-cloudultra-pro",
+    "brand": "On",
+    "model": "Cloudultra Pro",
+    "category": "trail"
   },
   {
     "id": "on-cloudvista",
@@ -8020,6 +8758,29 @@
     "verified": false
   },
   {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "소코니",
+      "써코니",
+      "엔돌핀",
+      "아주라"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "saucony-endorphin-azura",
+    "brand": "Saucony",
+    "model": "Endorphin Azura",
+    "category": "tempo"
+  },
+  {
     "id": "saucony-endorphin-elite-2",
     "brand": "Saucony",
     "model": "Endorphin Elite",
@@ -8043,6 +8804,29 @@
       "엘리트 2"
     ],
     "verified": false
+  },
+  {
+    "version": "3",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "소코니",
+      "써코니",
+      "엔돌핀",
+      "엔돌핀 엘리트 3"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 450,
+    "id": "saucony-endorphin-elite-3",
+    "brand": "Saucony",
+    "model": "Endorphin Elite",
+    "category": "racing"
   },
   {
     "id": "saucony-endorphin-pro-3",
@@ -8089,6 +8873,32 @@
       "엔돌핀 4"
     ],
     "verified": false
+  },
+  {
+    "version": "5",
+    "variant": null,
+    "collabWith": null,
+    "weight": 215,
+    "weightBasis": "US9",
+    "drop": 8,
+    "stackHeight": {
+      "heel": 39,
+      "forefoot": 31
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "소코니",
+      "써코니",
+      "엔돌핀",
+      "엔돌핀 프로 5"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 450,
+    "id": "saucony-endorphin-pro-5",
+    "brand": "Saucony",
+    "model": "Endorphin Pro",
+    "category": "racing"
   },
   {
     "id": "saucony-endorphin-shift-3",
@@ -8170,10 +8980,13 @@
     "variant": null,
     "collabWith": null,
     "category": "tempo",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "stackHeight": null,
+    "weight": 238,
+    "weightBasis": "US9",
+    "drop": 8,
+    "stackHeight": {
+      "heel": 37,
+      "forefoot": 29
+    },
     "releaseYear": 2025,
     "defaultLifespanKm": 650,
     "discontinued": false,
@@ -8181,9 +8994,32 @@
       "소코니",
       "써코니",
       "엔돌핀",
-      "엔돌핀 5"
+      "엔돌핀 스피드 5"
     ],
-    "verified": false
+    "verified": true
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "소코니",
+      "써코니",
+      "엔돌핀",
+      "엔돌핀 트레이너"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "saucony-endorphin-trainer",
+    "brand": "Saucony",
+    "model": "Endorphin Trainer",
+    "category": "tempo"
   },
   {
     "id": "saucony-guide-17",
@@ -8239,10 +9075,13 @@
     "variant": null,
     "collabWith": null,
     "category": "stability",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "stackHeight": null,
+    "weight": 292,
+    "weightBasis": "US9",
+    "drop": 6,
+    "stackHeight": {
+      "heel": 37,
+      "forefoot": 31
+    },
     "releaseYear": 2026,
     "defaultLifespanKm": 700,
     "discontinued": false,
@@ -8252,7 +9091,7 @@
       "가이드",
       "가이드 19"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "saucony-hurricane-25",
@@ -8274,6 +9113,29 @@
       "써코니"
     ],
     "verified": false
+  },
+  {
+    "version": "26",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "소코니",
+      "써코니",
+      "허리케인",
+      "허리케인 26"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 700,
+    "id": "saucony-hurricane-26",
+    "brand": "Saucony",
+    "model": "Hurricane",
+    "category": "stability"
   },
   {
     "id": "saucony-kinvara-14",
@@ -8367,6 +9229,52 @@
     "verified": false
   },
   {
+    "version": "23",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "소코니",
+      "써코니",
+      "옴니",
+      "옴니 ST"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 700,
+    "id": "saucony-omni-st-23",
+    "brand": "Saucony",
+    "model": "Omni ST",
+    "category": "stability"
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "소코니",
+      "써코니",
+      "파라마운트",
+      "파라마운트 맥스"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 700,
+    "id": "saucony-paramount-max",
+    "brand": "Saucony",
+    "model": "Paramount Max",
+    "category": "recovery"
+  },
+  {
     "id": "saucony-peregrine-14",
     "brand": "Saucony",
     "model": "Peregrine",
@@ -8420,10 +9328,13 @@
     "variant": null,
     "collabWith": null,
     "category": "trail",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "stackHeight": null,
+    "weight": 283,
+    "weightBasis": "US9",
+    "drop": 4,
+    "stackHeight": {
+      "heel": 33,
+      "forefoot": 29
+    },
     "releaseYear": 2026,
     "defaultLifespanKm": 650,
     "discontinued": false,
@@ -8433,7 +9344,7 @@
       "페레그린",
       "페레그린 16"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "saucony-ride-16",
@@ -8518,10 +9429,13 @@
     "variant": null,
     "collabWith": null,
     "category": "daily",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "stackHeight": null,
+    "weight": 255,
+    "weightBasis": "US9",
+    "drop": 8,
+    "stackHeight": {
+      "heel": 38,
+      "forefoot": 30
+    },
     "releaseYear": 2026,
     "defaultLifespanKm": 650,
     "discontinued": false,
@@ -8531,7 +9445,29 @@
       "라이드",
       "라이드 19"
     ],
-    "verified": false
+    "verified": true
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "소코니",
+      "써코니",
+      "라이드 TR"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "saucony-ride-tr",
+    "brand": "Saucony",
+    "model": "Ride TR",
+    "category": "trail"
   },
   {
     "id": "saucony-tempus-2",
@@ -8636,7 +9572,7 @@
     "category": "recovery",
     "weight": null,
     "weightBasis": null,
-    "drop": null,
+    "drop": 10,
     "stackHeight": null,
     "releaseYear": 2026,
     "defaultLifespanKm": 700,

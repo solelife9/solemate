@@ -20,10 +20,10 @@
 | Asics | 50 | 2026-07-29 |
 | Hoka | 48 | 2026-07-29 |
 | New Balance | 30 | 2026-07-29 |
-| Brooks | | |
-| Saucony | | |
-| On | | |
-| Mizuno | | |
+| Brooks | 51 | 2026-07-29 |
+| Saucony | 37 | 2026-07-29 |
+| On | 32 | 2026-07-29 |
+| Mizuno | 33 | 2026-07-29 |
 | Puma | | |
 | Salomon | | |
 | Kiprun | | |
