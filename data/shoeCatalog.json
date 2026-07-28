@@ -159,11 +159,14 @@
     "variant": null,
     "collabWith": null,
     "category": "racing",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 130,
+    "weightBasis": "US9",
+    "drop": 3,
+    "plate": "other",
+    "stackHeight": {
+      "heel": 39,
+      "forefoot": 36
+    },
     "releaseYear": 2025,
     "defaultLifespanKm": 450,
     "discontinued": false,
@@ -178,7 +181,7 @@
       "에보",
       "에보 2"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "version": "3",
@@ -334,6 +337,32 @@
     "id": "adidas-adizero-evo-sl-exo",
     "brand": "Adidas",
     "model": "Adizero Evo SL EXO",
+    "category": "tempo"
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": 235,
+    "weightBasis": "US9",
+    "drop": 7,
+    "plate": "other",
+    "stackHeight": {
+      "heel": 37,
+      "forefoot": 30
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "아디다스",
+      "아디제로",
+      "에보 SL 우븐"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 650,
+    "id": "adidas-adizero-evo-sl-woven",
+    "brand": "Adidas",
+    "model": "Adizero Evo SL WOVEN",
     "category": "tempo"
   },
   {
@@ -514,18 +543,21 @@
     "variant": null,
     "collabWith": null,
     "category": "tempo",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
+    "weight": 247,
+    "weightBasis": "US9",
+    "drop": 6,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 44,
+      "forefoot": 38
+    },
     "releaseYear": 2026,
     "defaultLifespanKm": 650,
     "discontinued": false,
     "searchAliases": [
       "아디다스"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "adidas-solarboost-5",
@@ -4392,13 +4424,13 @@
     "variant": null,
     "collabWith": null,
     "category": "daily",
-    "weight": 278,
+    "weight": 258,
     "weightBasis": "US9",
     "drop": 8,
     "plate": null,
     "stackHeight": {
-      "heel": 42,
-      "forefoot": 34
+      "heel": 43,
+      "forefoot": 35
     },
     "releaseYear": 2025,
     "defaultLifespanKm": 650,
@@ -6973,11 +7005,14 @@
     "version": null,
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
+    "weight": 289,
+    "weightBasis": "US9",
+    "drop": 6,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 33,
+      "forefoot": 27
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
@@ -6985,7 +7020,7 @@
       "뉴발",
       "리벨 트레일"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "new-balance-fuelcell-rebel-trail",
     "brand": "New Balance",
@@ -7127,11 +7162,14 @@
     "version": "2",
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 278,
+    "weightBasis": "US9",
+    "drop": 8,
+    "plate": "carbon",
+    "stackHeight": {
+      "heel": 39,
+      "forefoot": 31
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
@@ -7139,7 +7177,7 @@
       "뉴발",
       "슈퍼컴프 트레일"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "new-balance-fuelcell-supercomp-trail-2",
     "brand": "New Balance",
@@ -8469,18 +8507,21 @@
     "version": null,
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
+    "weight": 298,
+    "weightBasis": "US9",
+    "drop": 5,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 39,
+      "forefoot": 34
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
       "노다",
       "노다 001A"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "norda-001a",
     "brand": "norda",
@@ -9906,11 +9947,14 @@
     "version": "3",
     "variant": "GRVL",
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
+    "weight": 247,
+    "weightBasis": "US9",
+    "drop": 8,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 40,
+      "forefoot": 32
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
@@ -9918,7 +9962,7 @@
       "에어로블레이즈",
       "그래블"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "salomon-aero-blaze-3-grvl",
     "brand": "Salomon",
@@ -10390,11 +10434,14 @@
     "version": null,
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
+    "weight": 335,
+    "weightBasis": "M8.5/W9.5",
+    "drop": 6,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 41,
+      "forefoot": 35
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
@@ -10402,7 +10449,7 @@
       "에스랩",
       "울트라 더스트"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "salomon-s-lab-ultra-dust",
     "brand": "Salomon",
@@ -10911,11 +10958,14 @@
     "version": null,
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 278,
+    "weightBasis": "US9",
+    "drop": 8,
+    "plate": "carbon",
+    "stackHeight": {
+      "heel": 43,
+      "forefoot": 35
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
@@ -10924,7 +10974,7 @@
       "엔돌핀",
       "엔돌핀 트레이너"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "saucony-endorphin-trainer",
     "brand": "Saucony",
@@ -11411,6 +11461,32 @@
     "category": "trail"
   },
   {
+    "version": "2",
+    "variant": null,
+    "collabWith": null,
+    "weight": 301,
+    "weightBasis": "US9",
+    "drop": 8,
+    "plate": null,
+    "stackHeight": {
+      "heel": 35,
+      "forefoot": 27
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "소코니",
+      "써코니",
+      "라이드 TR"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 650,
+    "id": "saucony-ride-tr-2",
+    "brand": "Saucony",
+    "model": "Ride TR",
+    "category": "trail"
+  },
+  {
     "id": "saucony-tempus-2",
     "brand": "Saucony",
     "model": "Tempus",
@@ -11568,11 +11644,14 @@
     "variant": null,
     "collabWith": null,
     "category": "trail",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
+    "weight": 323,
+    "weightBasis": "US9",
+    "drop": 6,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 38,
+      "forefoot": 32
+    },
     "releaseYear": 2025,
     "defaultLifespanKm": 650,
     "discontinued": false,
@@ -11584,7 +11663,7 @@
       "울트라",
       "울트라 4"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "version": "2",
