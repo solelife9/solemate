@@ -153,14 +153,28 @@ struct RunView: View {
   // ── 세로 0: 핵심이 다 보이는 메인(거리 히어로 + 보조 스택) ──────────────────
   private var mainPage: some View {
     VStack(spacing: 0) {
+      // 경과시간 — 화면 맨 위에 계속 흐른다(2026-07-28 민우님: "시간 제일 위에 흐르게").
+      // TimelineView 라 AOD(손목 내림)에서도 watchOS 가 갱신을 보장한다.
+      TimelineView(.periodic(from: .now, by: dimmed ? 60 : 1)) { _ in
+        Text(KeegoFormat.time(workout.liveElapsedS))
+          .font(.system(size: 22, weight: .semibold))
+          .monospacedDigit()
+          .foregroundStyle(KeegoTheme.t2)
+          .lineLimit(1)
+          .minimumScaleFactor(0.8)
+      }
       if workout.phase == .paused {
         Text(workout.autoPaused ? "자동 일시정지" : "일시정지")
           .font(.system(size: 11, weight: .semibold))
           .foregroundStyle(KeegoTheme.warn)
       }
       // 거리 히어로 — 800급 + tabular-nums(폰 러닝 화면과 동일 문법).
+      // 46 → 48(2026-07-28 민우님: "km 는 얼추 보였으니까 조금만").
+      // 크게 못 올리는 이유가 있다 — 41mm 워치에서 세로가 넘치면 **아래 지표가 잘려
+      // 사라진다**. 민우님이 "3개만 뜬다"고 한 게 그 증상이었다(심박·평균이 화면 밖).
+      // 넷이 다 보이는 게 우선이라 히어로는 절제한다.
       Text(KeegoFormat.km(workout.distanceKm))
-        .font(.system(size: 46, weight: .heavy))
+        .font(.system(size: 48, weight: .heavy))
         .monospacedDigit()
         .foregroundStyle(KeegoTheme.t1)
         .lineLimit(1)
@@ -190,17 +204,15 @@ struct RunView: View {
 
       Spacer(minLength: 4)
 
-      // 보조 지표 — 시간·페이스 둘만 크게(2026-07-28 실기기: "거리는 얼추 보이는데 밑에
-      // 글씨들이 안 보여"). 원인은 크기가 아니라 **한 화면에 너무 많이 넣은 것**이었다.
-      // 평균 페이스(10pt)와 심박 줄을 걷어내 그만큼을 시간·페이스에 준다.
-      // 심박은 세로 스와이프 전용 페이지에 42pt 로 이미 크게 있다 — 여기 25pt 로 또 넣으면
-      // 셋 다 작아질 뿐이라 중복을 없앤다. 평균 페이스는 완주 요약에서 본다.
+      // 심박 · 페이스 — 거리 히어로 바로 아래 한 줄(2026-07-28 민우님 배치 확정).
+      // 시간은 맨 위로 올렸다(아래 참조) — 러닝 중 계속 흐르는 값이라 시선이 자주 가고,
+      // 히어로 아래는 '지금 어떻게 뛰고 있나'(심박·페이스)가 차지하는 게 맞다.
       HStack(spacing: 0) {
-        // 경과시간은 TimelineView 로 그린다 — AOD(손목 내림)에서도 watchOS 가 갱신을
-        // 보장한다. 러닝 중엔 1초, 어두워지면 분당(watchOS 가 알아서 낮춘다).
-        TimelineView(.periodic(from: .now, by: dimmed ? 60 : 1)) { _ in
-          miniMetric(label: "시간", value: KeegoFormat.time(workout.liveElapsedS))
-        }
+        miniMetric(
+          label: "심박",
+          value: workout.heartRate > 0 ? "\(Int(workout.heartRate))" : "--",
+          color: KeegoTheme.hrZoneColor(workout.hrZone)
+        )
         // 메인 페이스 = 현재(순간·롤링) — 러너가 가장 자주 보는 실시간 지표(#3).
         miniMetric(label: "페이스", value: KeegoFormat.pace(secPerKm: workout.currentPaceSecPerKm))
       }
@@ -232,21 +244,22 @@ struct RunView: View {
     }
   }
 
-  private func miniMetric(label: String, value: String) -> some View {
-    VStack(spacing: 2) {
+  /// 보조 지표 한 칸. `color` 는 심박 존 색 전용(그 외는 흰색).
+  private func miniMetric(label: String, value: String, color: Color = KeegoTheme.t1) -> some View {
+    VStack(spacing: 1) {
       Text(label)
-        .font(.system(size: 13, weight: .medium))
+        .font(.system(size: 11, weight: .medium))
         .foregroundStyle(KeegoTheme.t3)
       Text(value)
-        // 25 → 34(2026-07-28 실기기 3차 피드백). 같은 지적이 세 번 반복됐다는 건 조금씩
-        // 키우는 걸로는 안 된다는 뜻이라, 화면에서 두 줄(평균 페이스·심박)을 걷어내고
-        // 그 공간을 여기에 몰아줬다.
-        .font(.system(size: 34, weight: .bold))
+        // 2026-07-28 실기기 3차 피드백("밑에 글씨들이 안 보여") — 16 → 25 → 28.
+        // 조금씩 키우는 걸로는 안 됐던 이유는 세로로 쌓느라 자리가 없었기 때문이라,
+        // 2×2 배치로 바꿔 가로 여유를 만들고 그만큼 키웠다.
+        .font(.system(size: 30, weight: .bold))
         .monospacedDigit()
-        .foregroundStyle(KeegoTheme.t1)
+        .foregroundStyle(color)
         .lineLimit(1)
-        // 0.6 → 0.8: 반폭이라 긴 값(1:02:33)은 줄여야 하지만, 0.6 은 20pt 까지 쪼그라들어
-        // "안 보인다"의 진짜 원인이었다. 하한을 올려 최악에도 27pt 를 지킨다.
+        // 0.6 → 0.8: 반폭이라 긴 값(1:02:33)은 줄여야 하지만, 0.6 은 17pt 까지 쪼그라들어
+        // "안 보인다"의 진짜 원인이었다. 하한을 올려 최악에도 22pt 를 지킨다.
         .minimumScaleFactor(0.8)
     }
     .frame(maxWidth: .infinity)

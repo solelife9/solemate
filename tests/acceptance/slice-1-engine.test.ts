@@ -21,6 +21,7 @@ import {
   MAX_SEG_SPEED_MPS,
 } from '../../lib/engineConstants';
 import { calcDist, acceptSegment, segmentSpeedMps } from '../../lib/geo';
+import { PHANTOM_ACC_FLOOR_FACTOR } from '../../lib/engineConstants';
 import { decideAutoPause, initAutoPauseState } from '../../lib/autoPause';
 import { shoeHealth, isRetired, wearTier } from '../../lib/shoe';
 import { fmtPace, fmtTime } from '../../lib/format';
@@ -59,12 +60,19 @@ describe('Anti-Scenario 1: GPS 점프(속도 이상치)는 거리에 가산되�
 });
 
 describe('audit#5+C1: 느린 구간 무손실 + 팬텀 드리프트 억제(정확도 비례 하한)', () => {
-  test('정확도가 좋으면(4m) 하한 3.2m — 그 이상 저속 구간은 인정된다(audit#5 정신 유지)', () => {
-    expect(acceptSegment({ distKm: 0.0033, dtSec: 2, accuracyM: 4, fixIndex: 10 })).toBe(true);
+  test('정확도가 좋으면 하한도 낮다 — 저속 구간이 인정된다(audit#5 정신 유지)', () => {
+    const f4 = (4 * PHANTOM_ACC_FLOOR_FACTOR) / 1000;
+    expect(acceptSegment({ distKm: f4, dtSec: 2, accuracyM: 4, fixIndex: 10 })).toBe(true);
   });
-  test('정확도 8m 에선 하한이 6.4m(×0.8, 2026-07-11 재튜닝) — 그 미만 변위는 노이즈(앵커 보존으로 무손실)', () => {
-    expect(acceptSegment({ distKm: 0.0063, dtSec: 2, accuracyM: 8, fixIndex: 10 })).toBe(false);
-    expect(acceptSegment({ distKm: 0.0065, dtSec: 2, accuracyM: 8, fixIndex: 10 })).toBe(true);
+  test('하한은 정확도에 비례한다 — 그 미만 변위는 노이즈(앵커 보존으로 무손실)', () => {
+    // 계수 이력: 0.35 → 0.8(2026-07-11 과대 교정) → 0.6(2026-07-28 실측 -5.3% 과소 교정).
+    // 리터럴을 박으면 계수를 고칠 때마다 여기가 깨진다 — 상수에서 뽑아 '비례 규칙'만 검사한다.
+    const floor = (accM: number) => (accM * PHANTOM_ACC_FLOOR_FACTOR) / 1000;
+    const f8 = floor(8);
+    expect(acceptSegment({ distKm: f8 - 0.0002, dtSec: 2, accuracyM: 8, fixIndex: 10 })).toBe(false);
+    expect(acceptSegment({ distKm: f8, dtSec: 2, accuracyM: 8, fixIndex: 10 })).toBe(true);
+    // 정확도가 나쁠수록 하한이 높다(비례).
+    expect(floor(16)).toBeGreaterThan(f8);
   });
   test('calcDist는 합리적 거리를 반환한다', () => {
     // 서울 인근 두 점, 대략 수십~수백 m

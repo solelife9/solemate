@@ -1,5 +1,5 @@
 import {calcDist, acceptSegment, segmentSpeedMps, simplifyRoute} from '../../lib/geo';
-import {MIN_SEG_DIST_KM} from '../../lib/engineConstants';
+import {MIN_SEG_DIST_KM, PHANTOM_ACC_FLOOR_FACTOR} from '../../lib/engineConstants';
 
 describe('calcDist', () => {
   test('zero distance for identical points', () => {
@@ -64,13 +64,20 @@ describe('acceptSegment', () => {
     expect(acceptSegment({...good, distKm: 0.024, dtSec: 2})).toBe(true);
   });
 
-  test('노이즈 하한 = max(1m, 정확도×0.8) — C1 팬텀 드리프트 억제(2026-07-11 0.35→0.8)', () => {
-    // acc 8m → 하한 6.4m: 그 아래 변위는 통계적 노이즈로 거부(정지 표류 차단).
-    expect(acceptSegment({...good, distKm: 0.0063})).toBe(false); // 6.3m < 6.4m
-    expect(acceptSegment({...good, distKm: 0.0065})).toBe(true); // 6.5m ≥ 6.4m
-    // 정확도가 좋으면(acc 4m → 하한 3.2m) 그만큼 하한도 낮다.
-    expect(acceptSegment({...good, accuracyM: 4, distKm: 0.0033})).toBe(true);
-    expect(acceptSegment({...good, accuracyM: 4, distKm: 0.0015})).toBe(false); // 1.5m < 3.2m
+  test('노이즈 하한 = max(1m, 정확도×계수) — C1 팬텀 드리프트 억제', () => {
+    // 계수 이력: 0.35 → 0.8(2026-07-11, +9% 과대 교정) → 0.6(2026-07-28, 실측 -5.3%
+    // 과소 교정). 리터럴을 박지 않고 상수에서 하한을 계산해, 계수를 바꿔도 '경계 규칙'
+    // 자체가 지켜지는지만 본다(값이 아니라 계약을 검사).
+    const floorKm = (accM: number) =>
+      Math.max(MIN_SEG_DIST_KM, (accM * PHANTOM_ACC_FLOOR_FACTOR) / 1000);
+    const acc = 8;
+    const f = floorKm(acc);
+    expect(acceptSegment({...good, accuracyM: acc, distKm: f - 0.0001})).toBe(false);
+    expect(acceptSegment({...good, accuracyM: acc, distKm: f})).toBe(true);
+    // 정확도가 좋으면 하한도 그만큼 낮다(비례 규칙).
+    const f4 = floorKm(4);
+    expect(acceptSegment({...good, accuracyM: 4, distKm: f4})).toBe(true);
+    expect(acceptSegment({...good, accuracyM: 4, distKm: f4 - 0.0005})).toBe(false);
     // 하한 미달로 거부돼도 앵커 보존(runTracker) 덕에 변위는 다음 fix 에 합산돼
     // 무손실이다(저속 러닝/걷기는 '유예'될 뿐 삭제되지 않는다 — audit#5 정신 유지).
   });
@@ -83,7 +90,8 @@ describe('acceptSegment', () => {
 
   test('적응 하한은 정확한 >= 경계다(하한 정확히 = 통과, 그 아래 = 거부)', () => {
     expect(MIN_SEG_DIST_KM).toBe(0.001);
-    const floorKm = (good.accuracyM * 0.8) / 1000; // acc 8m → 0.0064km
+    // 리터럴 대신 상수에서 뽑는다 — 계수를 바꿔도 '>= 경계' 계약은 그대로여야 한다.
+    const floorKm = (good.accuracyM * PHANTOM_ACC_FLOOR_FACTOR) / 1000;
     expect(acceptSegment({...good, distKm: floorKm})).toBe(true);
     expect(acceptSegment({...good, distKm: floorKm - 1e-7})).toBe(false);
   });
