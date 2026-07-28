@@ -1018,18 +1018,21 @@
     "version": "2",
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
+    "weight": 224,
+    "weightBasis": "US9",
+    "drop": 0,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 24,
+      "forefoot": 24
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
       "알트라",
       "에스칼란테 레이서"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 450,
     "id": "altra-escalante-racer-2",
     "brand": "Altra",
@@ -1190,18 +1193,21 @@
     "version": null,
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 264,
+    "weightBasis": "US9",
+    "drop": 0,
+    "plate": "carbon",
+    "stackHeight": {
+      "heel": 33,
+      "forefoot": 33
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
       "알트라",
       "몽블랑 카본"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "altra-mont-blanc-carbon",
     "brand": "Altra",
@@ -1212,18 +1218,21 @@
     "version": null,
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 258,
+    "weightBasis": "US9",
+    "drop": 0,
+    "plate": "other",
+    "stackHeight": {
+      "heel": 30,
+      "forefoot": 30
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
       "알트라",
       "몽블랑 스피드"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "altra-mont-blanc-speed",
     "brand": "Altra",
@@ -1234,18 +1243,21 @@
     "version": null,
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
+    "weight": 315,
+    "weightBasis": "US9",
+    "drop": 0,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 35,
+      "forefoot": 35
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
       "알트라",
       "올림푸스 275"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "altra-olympus-275",
     "brand": "Altra",
@@ -1302,18 +1314,21 @@
     "version": "8",
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
+    "weight": 278,
+    "weightBasis": "US9",
+    "drop": 0,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 32,
+      "forefoot": 32
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
       "알트라",
       "패러다임"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 700,
     "id": "altra-paradigm-8",
     "brand": "Altra",
@@ -1372,11 +1387,14 @@
     "version": "5",
     "variant": "BOA",
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
+    "weight": 289,
+    "weightBasis": "US9",
+    "drop": 0,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 29,
+      "forefoot": 29
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
@@ -1384,7 +1402,7 @@
       "팀프",
       "보아"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "altra-timp-5-boa",
     "brand": "Altra",
@@ -2299,6 +2317,32 @@
     "verified": true
   },
   {
+    "version": "14",
+    "variant": "GTX",
+    "collabWith": null,
+    "weight": 298,
+    "weightBasis": "US9",
+    "drop": 8,
+    "plate": null,
+    "stackHeight": {
+      "heel": 36,
+      "forefoot": 28
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "아식스",
+      "지티2000",
+      "고어텍스"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 700,
+    "id": "asics-gt-2000-14-gtx",
+    "brand": "ASICS",
+    "model": "GT-2000",
+    "category": "stability"
+  },
+  {
     "version": "15",
     "variant": null,
     "collabWith": null,
@@ -2577,18 +2621,21 @@
     "variant": null,
     "collabWith": null,
     "category": "tempo",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
+    "weight": 213,
+    "weightBasis": "US9",
+    "drop": 5,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 34,
+      "forefoot": 29
+    },
     "releaseYear": 2024,
     "defaultLifespanKm": 650,
     "discontinued": false,
     "searchAliases": [
       "아식스"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "asics-novablast-3",
@@ -2698,6 +2745,32 @@
     "verified": true
   },
   {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": 235,
+    "weightBasis": "US9",
+    "drop": 6,
+    "stackHeight": {
+      "heel": 40,
+      "forefoot": 34
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "아식스",
+      "요기리",
+      "S4 요기리"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 450,
+    "id": "asics-s4-yogiri",
+    "brand": "ASICS",
+    "model": "S4+ Yogiri",
+    "category": "racing",
+    "plate": "carbon"
+  },
+  {
     "id": "asics-sonicblast",
     "brand": "ASICS",
     "model": "Sonicblast",
@@ -2803,11 +2876,14 @@
     "version": "15",
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
+    "weight": 354,
+    "weightBasis": "US9",
+    "drop": 12,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 36,
+      "forefoot": 24
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
@@ -2815,7 +2891,7 @@
       "어딕션",
       "어딕션 GTS"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 700,
     "id": "brooks-addiction-gts-15",
     "brand": "Brooks",
@@ -3109,18 +3185,21 @@
     "version": null,
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 269,
+    "weightBasis": "US9",
+    "drop": 6,
+    "plate": "other",
+    "stackHeight": {
+      "heel": 41,
+      "forefoot": 35
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
       "브룩스",
       "캐스캐디아 엘리트"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "brooks-cascadia-elite",
     "brand": "Brooks",
@@ -3299,11 +3378,14 @@
     "version": null,
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
+    "weight": 252,
+    "weightBasis": "US9",
+    "drop": 6,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 37,
+      "forefoot": 31
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
@@ -3311,7 +3393,7 @@
       "고스트",
       "고스트 앰프"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "brooks-ghost-amp",
     "brand": "Brooks",
@@ -3345,11 +3427,14 @@
     "version": "3",
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
+    "weight": 303,
+    "weightBasis": "US9",
+    "drop": 6,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 38,
+      "forefoot": 32
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
@@ -3357,7 +3442,7 @@
       "고스트맥스",
       "고스트 맥스 3"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 700,
     "id": "brooks-ghost-max-3",
     "brand": "Brooks",
@@ -3391,11 +3476,14 @@
     "version": null,
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
+    "weight": 292,
+    "weightBasis": "US9",
+    "drop": 8,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 40,
+      "forefoot": 32
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
@@ -3403,7 +3491,7 @@
       "고스트",
       "고스트 트레일"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "brooks-ghost-trail",
     "brand": "Brooks",
@@ -3824,11 +3912,14 @@
     "version": "3",
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 289,
+    "weightBasis": "US9",
+    "drop": 8,
+    "plate": "other",
+    "stackHeight": {
+      "heel": 46,
+      "forefoot": 38
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
@@ -3836,7 +3927,7 @@
       "하이페리온",
       "하이페리온 맥스 3"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "brooks-hyperion-max-3",
     "brand": "Brooks",
@@ -4909,11 +5000,14 @@
     "version": null,
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 261,
+    "weightBasis": "US9",
+    "drop": 6,
+    "plate": "carbon",
+    "stackHeight": {
+      "heel": 42,
+      "forefoot": 36
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
@@ -4921,7 +5015,7 @@
       "로켓엑스",
       "로켓 X 트레일"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "hoka-rocket-x-trail",
     "brand": "Hoka",
@@ -5195,11 +5289,14 @@
     "version": null,
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 272,
+    "weightBasis": "US9",
+    "drop": 5,
+    "plate": "carbon",
+    "stackHeight": {
+      "heel": 36,
+      "forefoot": 31
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
@@ -5207,7 +5304,7 @@
       "트랜스포트",
       "트랜스포트 X"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "hoka-transport-x",
     "brand": "Hoka",
@@ -5218,11 +5315,14 @@
     "version": "3",
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
+    "weight": 241,
+    "weightBasis": "US9",
+    "drop": 5,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 31,
+      "forefoot": 26
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
@@ -5230,7 +5330,7 @@
       "지날",
       "지날 3"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "hoka-zinal-3",
     "brand": "Hoka",
@@ -11318,11 +11418,14 @@
     "variant": null,
     "collabWith": null,
     "category": "stability",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
+    "weight": 323,
+    "weightBasis": "US9",
+    "drop": 6,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 38,
+      "forefoot": 32
+    },
     "releaseYear": 2024,
     "defaultLifespanKm": 700,
     "discontinued": false,
@@ -11330,7 +11433,7 @@
       "소코니",
       "써코니"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "saucony-triumph-21",
