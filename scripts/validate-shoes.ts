@@ -178,9 +178,7 @@ async function main(): Promise<void> {
   try {
     // 컴파일 출력이 node_modules/.cache 아래 놓이므로 __dirname 기준으로 찾으면 어긋난다.
     // npm run 은 항상 프로젝트 루트에서 도니 실행 위치를 기준으로 삼는다.
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const {readFileSync} = require('fs') as typeof import('fs');
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const {resolve} = require('path') as typeof import('path');
     const file = resolve(process.cwd(), 'data/shoeCatalog.json');
     const mod = JSON.parse(readFileSync(file, 'utf8'));
