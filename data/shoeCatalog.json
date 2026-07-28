@@ -779,6 +779,87 @@
     "verified": false
   },
   {
+    "version": "4",
+    "variant": null,
+    "collabWith": null,
+    "weight": 269,
+    "weightBasis": "US9",
+    "drop": 8,
+    "plate": null,
+    "stackHeight": {
+      "heel": 34,
+      "forefoot": 26
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "아디다스",
+      "테렉스",
+      "아그라빅",
+      "아그라빅 4"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 650,
+    "id": "adidas-terrex-agravic-4",
+    "brand": "Adidas",
+    "model": "Terrex Agravic",
+    "category": "trail"
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": 281,
+    "weightBasis": "US9",
+    "drop": 6,
+    "plate": "other",
+    "stackHeight": {
+      "heel": 37,
+      "forefoot": 31
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "아디다스",
+      "테렉스",
+      "아그라빅",
+      "아그라빅 SL"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 650,
+    "id": "adidas-terrex-agravic-sl",
+    "brand": "Adidas",
+    "model": "Terrex Agravic SL",
+    "category": "trail"
+  },
+  {
+    "version": "2",
+    "variant": null,
+    "collabWith": null,
+    "weight": 238,
+    "weightBasis": "US9",
+    "drop": 8,
+    "plate": null,
+    "stackHeight": {
+      "heel": 34,
+      "forefoot": 26
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "아디다스",
+      "테렉스",
+      "아그라빅",
+      "아그라빅 스피드"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 650,
+    "id": "adidas-terrex-agravic-speed-2",
+    "brand": "Adidas",
+    "model": "Terrex Agravic Speed",
+    "category": "trail"
+  },
+  {
     "id": "adidas-terrex-agravic-speed-ultra",
     "brand": "Adidas",
     "model": "Terrex Agravic Speed Ultra",
@@ -800,6 +881,60 @@
       "울트라"
     ],
     "verified": false
+  },
+  {
+    "version": "2",
+    "variant": null,
+    "collabWith": null,
+    "weight": 269,
+    "weightBasis": "US9",
+    "drop": 8,
+    "plate": "other",
+    "stackHeight": {
+      "heel": 38,
+      "forefoot": 30
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "아디다스",
+      "테렉스",
+      "아그라빅",
+      "아그라빅 스피드 울트라"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 650,
+    "id": "adidas-terrex-agravic-speed-ultra-2",
+    "brand": "Adidas",
+    "model": "Terrex Agravic Speed Ultra",
+    "category": "trail"
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": 306,
+    "weightBasis": "US9",
+    "drop": 8,
+    "plate": "other",
+    "stackHeight": {
+      "heel": 38,
+      "forefoot": 30
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "아디다스",
+      "테렉스",
+      "아그라빅",
+      "아그라빅 TT"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 650,
+    "id": "adidas-terrex-agravic-tt",
+    "brand": "Adidas",
+    "model": "Terrex Agravic TT",
+    "category": "trail"
   },
   {
     "id": "adidas-terrex-soulstride-ultra",
