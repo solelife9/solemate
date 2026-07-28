@@ -354,11 +354,13 @@ private struct PctRing: View {
           HStack(alignment: .firstTextBaseline, spacing: 1) {
             Text("\(pct)")
               // 지름 비례 확대(0.34 → 0.42): 링 안 % 히어로를 흘끗에 읽히게(실기기 피드백).
-              .font(.system(size: d * 0.42, weight: .bold))
+              // 0.42 → 0.36: 링 안은 위아래로 갈수록 좁아지는데 % 히어로가 커서 캡션을
+              // 아래로 밀어붙였고, 결과적으로 '남은 km'가 링 아크에 닿았다(2026-07-28 실기기).
+              .font(.system(size: d * 0.36, weight: .bold))
               .foregroundStyle(KeegoTheme.t1)
               .monospacedDigit()
             Text("%")
-              .font(.system(size: d * 0.21, weight: .semibold))
+              .font(.system(size: d * 0.18, weight: .semibold))
               .foregroundStyle(KeegoTheme.t3)
           }
           .lineLimit(1)
@@ -366,14 +368,19 @@ private struct PctRing: View {
           if let remainText {
             Text(remainText)
               // 캡션 — '남은 km'가 흘끗에 읽히되 링 폭을 안 넘게(0.15).
-              .font(.system(size: d * 0.15, weight: .semibold))
+              .font(.system(size: d * 0.13, weight: .semibold))
               .foregroundStyle(remainColor)
               .monospacedDigit()
               .lineLimit(1)
               .minimumScaleFactor(0.7)
           }
         }
-        .padding(.horizontal, d * 0.1)
+        // 원 안에 사각 텍스트를 넣을 때 실제로 쓸 수 있는 폭은 지름이 아니라 **내접
+        // 사각형**(지름 ÷ √2 ≈ 0.707)이다. 종전 가로 여백 0.1 은 그 사실을 반영하지 않아
+        // 캡션 양끝이 아크에 닿았다. 내접 폭에 맞춰 여백을 잡는다.
+        .padding(.horizontal, d * 0.16)
+        // 위아래로도 아크가 파고들므로 세로 여백을 함께 둔다.
+        .padding(.vertical, d * 0.08)
         .frame(width: g.size.width, height: g.size.height)
       }
     }
