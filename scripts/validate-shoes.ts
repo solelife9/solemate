@@ -15,7 +15,7 @@
 //
 // 종료 코드: 오류가 있으면 1, 경고만 있으면 0(CI 를 세우진 않되 눈에는 띄게).
 
-import {ShoeDoc, SHOE_CATEGORIES} from '../types/shoe';
+import {ShoeDoc, SHOE_CATEGORIES, PLATE_KINDS} from '../types/shoe';
 
 // ── 결과 타입 ────────────────────────────────────────────────────────────────
 export interface Issue {
@@ -42,7 +42,7 @@ export interface ValidateResult {
 /** ShoeDoc 의 필수 키 목록 — 값이 아니라 키의 존재를 본다. */
 const REQUIRED_KEYS: readonly (keyof ShoeDoc)[] = [
   'id', 'brand', 'model', 'version', 'variant', 'collabWith', 'category',
-  'weight', 'weightBasis', 'drop', 'stackHeight', 'releaseYear', 'defaultLifespanKm',
+  'weight', 'weightBasis', 'drop', 'plate', 'stackHeight', 'releaseYear', 'defaultLifespanKm',
   'discontinued', 'searchAliases', 'verified',
 ];
 
@@ -80,6 +80,9 @@ export function validateShoes(shoes: readonly ShoeDoc[]): ValidateResult {
     }
     if (s.category && !SHOE_CATEGORIES.includes(s.category)) {
       issues.push({level: 'error', id, message: `알 수 없는 카테고리: ${s.category}`});
+    }
+    if (s.plate != null && !PLATE_KINDS.includes(s.plate)) {
+      issues.push({level: 'error', id, message: `알 수 없는 플레이트: ${s.plate}`});
     }
   }
 

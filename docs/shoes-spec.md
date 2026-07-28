@@ -35,6 +35,7 @@
 | `weight` | number \| null | ✅ | 무게(g). **공표된 값 그대로** |
 | `weightBasis` | string \| null | ✅ | 그 무게를 잰 사이즈 (`US9`·`US9.5`·`US10`). 모르면 `null` |
 | `drop` | number \| null | ✅ | 드롭(mm) |
+| `plate` | `'carbon'`\|`'other'`\|`'none'`\|null | ✅ | 미드솔 플레이트. 모르면 `null` |
 | `stackHeight` | `{heel, forefoot}` \| null | ✅ | 스택(mm) |
 | `releaseYear` | number \| null | ✅ | 출시연도 |
 | `defaultLifespanKm` | number | ✅ | §3 — 카테고리 기본값 상속 |
@@ -51,6 +52,9 @@
 - **무게는 환산하지 않는다.** US9.5에서 잰 값을 US9로 고쳐 적는 순간 그건 측정이 아니라
   추정이다. 대신 `weightBasis`에 잰 사이즈를 적어 **비교하는 쪽이 판단**하게 한다
   (기준이 다른 두 신발의 무게 차이는 그만큼 덜 믿을 만하다).
+- **플레이트는 카테고리로 유추하지 않는다.** tempo 인데 카본인 신발이 흔하고(Zoom Fly 6·
+  Mach X 3·Hyperion Max 4), racing 인데 카본이 아닌 신발도 있다(Adizero Adios 9 = 나일론 샹크).
+  유리섬유·TPU 플레이트를 `carbon` 으로 적으면 없는 사실을 만드는 것이라 `other` 로 나눈다.
 - **`stackHeight`의 forefoot 은 `heel - drop` 으로 채워도 된다.** 드롭의 정의가 그것이라
   이건 추측이 아니라 산수다. 셋 중 둘을 알면 나머지는 확정된다.
 

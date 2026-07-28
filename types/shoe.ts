@@ -58,6 +58,16 @@ export const DEFAULT_LIFESPAN_KM: Readonly<Record<ShoeCategory, number>> = {
   recovery: 700,
 };
 
+/**
+ * 미드솔 플레이트 종류.
+ *  · carbon 카본 플레이트
+ *  · other  플레이트는 있으나 카본이 아님(유리섬유·TPU·나일론)
+ *  · none   플레이트 없음(확인함)
+ */
+export type PlateKind = 'carbon' | 'other' | 'none';
+
+export const PLATE_KINDS: readonly PlateKind[] = ['carbon', 'other', 'none'];
+
 /** 스택 높이(mm) — 힐/앞발. 한쪽만 아는 경우는 없다고 본다(둘 다 알거나 둘 다 모르거나). */
 export interface StackHeight {
   heel: number;
@@ -100,6 +110,16 @@ export interface ShoeDoc {
   weightBasis: string | null;
   /** 드롭(mm). 모르면 null. */
   drop: number | null;
+  /**
+   * 미드솔 플레이트. 러너가 신발을 고를 때 실제로 묻는 것이고, 로테이션에서도
+   * "카본은 매일 신는 신발이 아니다"라는 판단의 근거가 된다.
+   *
+   * **카테고리로 유추하지 않는다.** tempo 인데 카본인 신발이 흔하고(Zoom Fly 6·
+   * Mach X 3), racing 인데 카본이 아닌 신발도 있다(Adizero Adios 9 = 나일론 샹크).
+   * `other` 는 플레이트는 있으나 카본이 아닌 것(유리섬유·TPU·나일론) — 유리섬유를
+   * carbon 으로 적으면 없는 사실을 만드는 것이다.
+   */
+  plate: PlateKind | null;
   /** 스택 높이(mm). 모르면 null. */
   stackHeight: StackHeight | null;
   releaseYear: number | null;
@@ -126,6 +146,7 @@ export function emptyShoeDoc(id: string, brand: string, model: string, category:
     weight: null,
     weightBasis: null,
     drop: null,
+    plate: null,
     stackHeight: null,
     releaseYear: null,
     defaultLifespanKm: DEFAULT_LIFESPAN_KM[category],
