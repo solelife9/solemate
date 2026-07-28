@@ -9,7 +9,7 @@
 //   · 직접 입력 폴백 — 목록에 없으면 커스텀 추가('기타' 브랜드는 브랜드명부터)
 // onPick 은 {brand, model} 만 넘긴다. 권장 수명(km)은 호출부가 카탈로그에서 파생한다.
 // ============================================================================
-import React, {useMemo, useState} from 'react';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
 import { rf, rs, rv } from './lib/responsive';
 import {View, StyleSheet, Pressable, ScrollView, Modal} from 'react-native';
 import {Text, TextInput} from './lib/text';
@@ -18,6 +18,11 @@ import {BRANDS, SHOE_MODELS, findShoeModel, getRecommendedLifespanKm} from './da
 import {categoryLabelKo} from './lib/affiliate';
 import {BG, CARD, T1, T3, T4, SEP, FONT, withAlpha, GUTTER, MOTION} from './theme';
 import {Button, Input} from './primitives';
+// 검색 0건 신호 — 카탈로그가 낡는 문제에 대한 구조적 답이다(docs/shoes-spec.md §6).
+// 사람이 눈치채기를 기다리지 않고, "사용자가 찾았는데 없던 것"을 데이터로 남긴다.
+import {logSearchMiss, requestShoe} from './services/shoes';
+import {getFirebaseUid} from './lib/firebaseCloudPort';
+import {showToast} from './lib/toast';
 
 export type PickedShoe = {brand: string; model: string};
 
@@ -75,6 +80,40 @@ export function ShoePicker({visible, onClose, onPick, insetTop, insetBottom}: {
 
   // 검색어와 정확히 일치하는 모델이 없으면 '직접 추가'(그 브랜드에 커스텀 모델).
   const exactExists = brandModels.some(m => norm(m.model) === q);
+
+  // ── 검색 0건 ────────────────────────────────────────────────────────────────
+  // 결과가 없으면 그 질의를 남긴다. 같은 질의를 타이핑 중에 여러 번 적재하지 않게
+  // 마지막으로 남긴 질의를 기억하고, 조용히 실패한다(관측이지 기능이 아니다).
+  const noResult = q.length > 0 && brandModels.length === 0;
+  const loggedRef = useRef<string>('');
+  const [requested, setRequested] = useState(false);
+  useEffect(() => {
+    if (!noResult) return;
+    const key = `${selBrand}|${q}`;
+    if (loggedRef.current === key) return;
+    loggedRef.current = key;
+    setRequested(false);
+    const t = setTimeout(() => {
+      // 타이핑이 멎은 뒤에 남긴다 — 중간 글자마다 적재하면 잡음이 된다.
+      getFirebaseUid()
+        .then(uid => logSearchMiss(`${selBrand} ${query.trim()}`.trim(), uid))
+        .catch(() => {});
+    }, 900);
+    return () => clearTimeout(t);
+  }, [noResult, selBrand, q, query]);
+
+  /** '내 신발이 없어요' — 사용자가 누른 행동이라 결과를 반드시 알려준다. */
+  const askForShoe = async () => {
+    const model = query.trim();
+    const uid = await getFirebaseUid().catch(() => null);
+    const ok = await requestShoe(selBrand, model, uid);
+    setRequested(ok);
+    showToast({
+      message: ok
+        ? '알려주셔서 고마워요. 확인하고 넣어둘게요.'
+        : '지금은 전송이 안 돼요. 잠시 후 다시 시도해 주세요.',
+    });
+  };
 
   const subFor = (brand: string, model: string) => {
     const m = findShoeModel(brand, model);
@@ -169,6 +208,28 @@ export function ShoePicker({visible, onClose, onPick, insetTop, insetBottom}: {
                     </Text>
                   </Pressable>
                 )}
+
+                {/* 결과 0건 — 직접 추가 옆에 '없어요'를 둔다. 직접 추가는 지금 등록하는
+                    길이고, 이 버튼은 카탈로그를 고쳐달라는 신호다(둘은 다른 행동이다). */}
+                {noResult && (
+                  <View style={s.pkMissWrap} testID="picker-no-result">
+                    <Text style={s.pkMissTxt}>
+                      찾으시는 러닝화가 목록에 없네요. 위에서 직접 추가하시면 바로 쓸 수 있어요.
+                    </Text>
+                    <Pressable
+                      onPress={askForShoe}
+                      disabled={requested}
+                      accessibilityRole="button"
+                      accessibilityLabel="내 신발이 없어요, 등록 요청하기"
+                      accessibilityState={{disabled: requested}}
+                      testID="picker-request-shoe"
+                      style={({pressed}) => [s.pkMissBtn, pressed && s.pressed]}>
+                      <Text style={s.pkMissBtnTxt}>
+                        {requested ? '요청을 받았어요' : '내 신발이 없어요'}
+                      </Text>
+                    </Pressable>
+                  </View>
+                )}
               </ScrollView>
             </View>
           ) : (
@@ -239,6 +300,18 @@ const s = StyleSheet.create({
   pkRow: {paddingVertical: rv(12), borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: withAlpha(T1, 0.06)},
   pkRowName: {fontFamily: FONT, fontSize: rf(15), fontWeight: '600', color: T1, letterSpacing: -0.2},
   pkRowSub: {fontFamily: FONT, fontSize: rf(12), fontWeight: '500', color: T3, marginTop: rv(2)},
+  // 0건 안내 — 강조가 아니라 안심이라 무채. '내 신발이 없어요'는 카탈로그 개선 신호를
+  // 보내는 버튼이라 직접 추가와 시각적으로 구분한다(둘은 다른 행동이다).
+  pkMissWrap: {paddingHorizontal: rs(4), paddingTop: rv(14), gap: rv(10)},
+  pkMissTxt: {color: T3, fontFamily: FONT, fontSize: rf(13), lineHeight: rf(19)},
+  pkMissBtn: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: rs(14),
+    paddingVertical: rv(10),
+    borderRadius: rs(999),
+    backgroundColor: withAlpha(T1, 0.08),
+  },
+  pkMissBtnTxt: {color: T1, fontFamily: FONT, fontSize: rf(13), fontWeight: '600'},
   pkAddRow: {
     marginTop: rv(12),
     paddingVertical: rv(12),
