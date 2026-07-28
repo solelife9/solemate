@@ -95,6 +95,29 @@
     "verified": true
   },
   {
+    "version": "4",
+    "variant": null,
+    "collabWith": "Satisfy",
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": 2026,
+    "discontinued": false,
+    "searchAliases": [
+      "아디다스",
+      "새티스파이",
+      "아디오스프로",
+      "아디제로"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 450,
+    "id": "adidas-adizero-adios-pro-4-satisfy",
+    "brand": "Adidas",
+    "model": "Adizero Adios Pro",
+    "category": "racing"
+  },
+  {
     "id": "adidas-adizero-adios-pro-evo-1",
     "brand": "Adidas",
     "model": "Adizero Adios Pro Evo",
@@ -1346,7 +1369,7 @@
     "variant": null,
     "collabWith": null,
     "category": "daily",
-    "weight": 265,
+    "weight": 269,
     "weightBasis": "US9",
     "drop": 0,
     "stackHeight": {
@@ -2494,12 +2517,12 @@
     "variant": null,
     "collabWith": null,
     "category": "daily",
-    "weight": 255,
+    "weight": 247,
     "weightBasis": "US9",
     "drop": 8,
     "stackHeight": {
-      "heel": 41.5,
-      "forefoot": 33.5
+      "heel": 41,
+      "forefoot": 33
     },
     "releaseYear": 2025,
     "defaultLifespanKm": 650,
@@ -2845,17 +2868,20 @@
     "variant": null,
     "collabWith": null,
     "category": "trail",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "stackHeight": null,
+    "weight": 301,
+    "weightBasis": "US9",
+    "drop": 6,
+    "stackHeight": {
+      "heel": 34,
+      "forefoot": 28
+    },
     "releaseYear": 2025,
     "defaultLifespanKm": 650,
     "discontinued": false,
     "searchAliases": [
       "브룩스"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "version": "19",
@@ -3063,12 +3089,12 @@
     "variant": null,
     "collabWith": null,
     "category": "daily",
-    "weight": null,
-    "weightBasis": null,
+    "weight": 289,
+    "weightBasis": "US9",
     "drop": 10,
     "stackHeight": {
-      "heel": 36.5,
-      "forefoot": 26.5
+      "heel": 36,
+      "forefoot": 26
     },
     "releaseYear": 2025,
     "defaultLifespanKm": 650,
@@ -4143,6 +4169,29 @@
   {
     "version": null,
     "variant": null,
+    "collabWith": "Satisfy",
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": 2023,
+    "discontinued": false,
+    "searchAliases": [
+      "호카",
+      "새티스파이",
+      "클리프톤",
+      "클리프톤 LS"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "hoka-clifton-ls-satisfy",
+    "brand": "Hoka",
+    "model": "Clifton LS",
+    "category": "daily"
+  },
+  {
+    "version": null,
+    "variant": null,
     "collabWith": null,
     "weight": 266,
     "weightBasis": "US9",
@@ -4458,6 +4507,30 @@
       "마파테 4"
     ],
     "verified": false
+  },
+  {
+    "version": "4",
+    "variant": "LITE",
+    "collabWith": "Satisfy",
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": 2025,
+    "discontinued": false,
+    "searchAliases": [
+      "호카",
+      "새티스파이",
+      "마파테",
+      "새티스파이 호카",
+      "STSFY"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "hoka-mafate-speed-4-lite-satisfy",
+    "brand": "Hoka",
+    "model": "Mafate Speed",
+    "category": "trail"
   },
   {
     "version": null,
@@ -5864,10 +5937,13 @@
     "variant": null,
     "collabWith": null,
     "category": "daily",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "stackHeight": null,
+    "weight": 258,
+    "weightBasis": "유니섹스 M6.0/W7.5",
+    "drop": 10,
+    "stackHeight": {
+      "heel": 38,
+      "forefoot": 28
+    },
     "releaseYear": 2025,
     "defaultLifespanKm": 650,
     "discontinued": false,
@@ -5878,7 +5954,7 @@
       "웨이브라이더",
       "웨이브라이더 29"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "mizuno-wave-rider-30",
@@ -7848,6 +7924,28 @@
   {
     "version": null,
     "variant": null,
+    "collabWith": "Satisfy",
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": 2022,
+    "discontinued": false,
+    "searchAliases": [
+      "노다",
+      "새티스파이",
+      "노다 001"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "norda-001-satisfy",
+    "brand": "norda",
+    "model": "001",
+    "category": "trail"
+  },
+  {
+    "version": null,
+    "variant": null,
     "collabWith": null,
     "weight": null,
     "weightBasis": null,
@@ -8389,13 +8487,16 @@
     "version": "3",
     "variant": null,
     "collabWith": null,
-    "category": "daily",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "stackHeight": null,
+    "category": "stability",
+    "weight": 295,
+    "weightBasis": "US9",
+    "drop": 8,
+    "stackHeight": {
+      "heel": 37,
+      "forefoot": 29
+    },
     "releaseYear": 2026,
-    "defaultLifespanKm": 650,
+    "defaultLifespanKm": 700,
     "discontinued": false,
     "searchAliases": [
       "온",
@@ -8403,7 +8504,7 @@
       "클라우드러너",
       "클라우드러너 3"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "on-cloudstratus-3",
@@ -8533,11 +8634,14 @@
     "version": null,
     "variant": null,
     "collabWith": null,
-    "category": "tempo",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "stackHeight": null,
+    "category": "daily",
+    "weight": 266,
+    "weightBasis": "US9",
+    "drop": 6,
+    "stackHeight": {
+      "heel": 37,
+      "forefoot": 31
+    },
     "releaseYear": null,
     "defaultLifespanKm": 650,
     "discontinued": false,
@@ -8546,7 +8650,7 @@
       "온러닝",
       "클라우드서퍼"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "on-cloudswift-3",
@@ -8698,12 +8802,12 @@
     "variant": null,
     "collabWith": null,
     "category": "tempo",
-    "weight": 265,
+    "weight": 269,
     "weightBasis": "US9",
     "drop": 10,
     "stackHeight": {
-      "heel": 39,
-      "forefoot": 29
+      "heel": 44,
+      "forefoot": 34
     },
     "releaseYear": 2024,
     "defaultLifespanKm": 650,
@@ -8908,10 +9012,13 @@
     "variant": null,
     "collabWith": null,
     "category": "stability",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "stackHeight": null,
+    "weight": 292,
+    "weightBasis": "US9",
+    "drop": 10,
+    "stackHeight": {
+      "heel": 36,
+      "forefoot": 26
+    },
     "releaseYear": 2025,
     "defaultLifespanKm": 700,
     "discontinued": false,
@@ -8920,7 +9027,7 @@
       "포에버런",
       "포에버런 2"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "version": "3",
@@ -8948,17 +9055,20 @@
     "version": null,
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "stackHeight": null,
+    "weight": 292,
+    "weightBasis": "US9",
+    "drop": 8,
+    "stackHeight": {
+      "heel": 47,
+      "forefoot": 39
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
       "푸마",
       "맥맥스"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 700,
     "id": "puma-magmax-nitro",
     "brand": "Puma",
@@ -9067,10 +9177,13 @@
     "variant": null,
     "collabWith": null,
     "category": "daily",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "stackHeight": null,
+    "weight": 227,
+    "weightBasis": "US9",
+    "drop": 10,
+    "stackHeight": {
+      "heel": 34,
+      "forefoot": 24
+    },
     "releaseYear": 2025,
     "defaultLifespanKm": 650,
     "discontinued": false,
@@ -9079,7 +9192,7 @@
       "벨로시티",
       "벨로시티 4"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "version": "5",
@@ -9724,6 +9837,28 @@
     "verified": false
   },
   {
+    "version": null,
+    "variant": null,
+    "collabWith": "Satisfy",
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": 2018,
+    "discontinued": true,
+    "searchAliases": [
+      "살로몬",
+      "새티스파이",
+      "소닉 RA"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "salomon-sonic-ra-max-satisfy",
+    "brand": "Salomon",
+    "model": "Sonic RA Max",
+    "category": "daily"
+  },
+  {
     "id": "salomon-speedcross-5",
     "brand": "Salomon",
     "model": "Speedcross",
@@ -9858,26 +9993,6 @@
     "brand": "Salomon",
     "model": "Ultra Glide",
     "category": "trail"
-  },
-  {
-    "id": "satisfy-therocker",
-    "brand": "Satisfy",
-    "model": "TheRocker",
-    "version": null,
-    "variant": null,
-    "collabWith": null,
-    "category": "trail",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "stackHeight": null,
-    "releaseYear": 2026,
-    "defaultLifespanKm": 650,
-    "discontinued": false,
-    "searchAliases": [
-      "새티스파이"
-    ],
-    "verified": false
   },
   {
     "version": null,
