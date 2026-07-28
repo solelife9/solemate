@@ -4802,6 +4802,81 @@
     "verified": false
   },
   {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": 286,
+    "weightBasis": "US9",
+    "drop": 8,
+    "stackHeight": {
+      "heel": 35,
+      "forefoot": 27
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "나이키",
+      "페가수스 트레일",
+      "ACG 페가수스 트레일"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 650,
+    "id": "nike-acg-pegasus-trail",
+    "brand": "Nike",
+    "model": "ACG Pegasus Trail",
+    "category": "trail"
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": 269,
+    "weightBasis": "US9",
+    "drop": 8.5,
+    "stackHeight": {
+      "heel": 38,
+      "forefoot": 29.5
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "나이키",
+      "울트라플라이",
+      "ACG 울트라플라이"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 650,
+    "id": "nike-acg-ultrafly-trail",
+    "brand": "Nike",
+    "model": "ACG Ultrafly Trail",
+    "category": "trail"
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": 315,
+    "weightBasis": "US9",
+    "drop": 4,
+    "stackHeight": {
+      "heel": 36,
+      "forefoot": 32
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "나이키",
+      "제가마",
+      "ACG 제가마"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 650,
+    "id": "nike-acg-zegama-trail",
+    "brand": "Nike",
+    "model": "ACG Zegama Trail",
+    "category": "trail"
+  },
+  {
     "id": "nike-alphafly-2",
     "brand": "Nike",
     "model": "Alphafly",
@@ -4844,6 +4919,7 @@
     "searchAliases": [
       "나이키",
       "알파플라이",
+      "알파",
       "알파플라이 3"
     ],
     "verified": true
@@ -5001,6 +5077,32 @@
     "verified": false
   },
   {
+    "version": "10",
+    "variant": null,
+    "collabWith": null,
+    "weight": 258,
+    "weightBasis": "US9",
+    "drop": 5,
+    "stackHeight": {
+      "heel": 29,
+      "forefoot": 24
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "나이키",
+      "카이거",
+      "테라 카이거",
+      "카이거 10"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 650,
+    "id": "nike-kiger-10",
+    "brand": "Nike",
+    "model": "Kiger",
+    "category": "trail"
+  },
+  {
     "id": "nike-pegasus-39",
     "brand": "Nike",
     "model": "Pegasus",
@@ -5089,12 +5191,12 @@
     "variant": null,
     "collabWith": null,
     "category": "daily",
-    "weight": 286,
+    "weight": 292,
     "weightBasis": "US9",
     "drop": 10,
     "stackHeight": {
-      "heel": 37,
-      "forefoot": 27
+      "heel": 38,
+      "forefoot": 28
     },
     "releaseYear": 2025,
     "defaultLifespanKm": 650,
@@ -5102,11 +5204,9 @@
     "searchAliases": [
       "나이키",
       "페가수스",
-      "페가수스 42",
       "페가서스",
-      "페가서스 42",
       "페가",
-      "페가 42"
+      "페가수스 42"
     ],
     "verified": true
   },
@@ -5127,9 +5227,8 @@
     "discontinued": false,
     "searchAliases": [
       "나이키",
-      "페가수스",
-      "페가서스",
-      "페가"
+      "페가수스 플러스",
+      "페가수스플러스"
     ],
     "verified": true
   },
@@ -5140,21 +5239,23 @@
     "version": null,
     "variant": null,
     "collabWith": null,
-    "category": "recovery",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "stackHeight": null,
+    "category": "tempo",
+    "weight": 309,
+    "weightBasis": "US9",
+    "drop": 10,
+    "stackHeight": {
+      "heel": 45,
+      "forefoot": 35
+    },
     "releaseYear": 2025,
-    "defaultLifespanKm": 700,
+    "defaultLifespanKm": 650,
     "discontinued": false,
     "searchAliases": [
       "나이키",
-      "페가수스",
-      "페가서스",
-      "페가"
+      "페가수스 프리미엄",
+      "페가수스프리미엄"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "nike-pegasus-trail-5",
@@ -5181,6 +5282,32 @@
       "페가 5"
     ],
     "verified": false
+  },
+  {
+    "version": "5",
+    "variant": "GTX",
+    "collabWith": null,
+    "weight": 281,
+    "weightBasis": "US9",
+    "drop": 9.5,
+    "stackHeight": {
+      "heel": 37,
+      "forefoot": 27.5
+    },
+    "releaseYear": 2024,
+    "discontinued": false,
+    "searchAliases": [
+      "나이키",
+      "페가수스 트레일",
+      "페가수스 트레일 5",
+      "고어텍스"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 650,
+    "id": "nike-pegasus-trail-5-gtx",
+    "brand": "Nike",
+    "model": "Pegasus Trail",
+    "category": "trail"
   },
   {
     "id": "nike-react-infinity-run-3",
@@ -5252,20 +5379,23 @@
     "version": "2",
     "variant": null,
     "collabWith": null,
-    "category": "tempo",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "stackHeight": null,
+    "category": "racing",
+    "weight": 128,
+    "weightBasis": "US9(유니섹스)",
+    "drop": 4,
+    "stackHeight": {
+      "heel": 26,
+      "forefoot": 22
+    },
     "releaseYear": 2025,
-    "defaultLifespanKm": 650,
+    "defaultLifespanKm": 450,
     "discontinued": false,
     "searchAliases": [
       "나이키",
       "스트릭플라이",
       "스트릭플라이 2"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "nike-structure-24",
@@ -5319,12 +5449,12 @@
     "variant": null,
     "collabWith": null,
     "category": "stability",
-    "weight": 236,
-    "weightBasis": "US8.5",
-    "drop": 8,
+    "weight": 295,
+    "weightBasis": "US9",
+    "drop": 10,
     "stackHeight": {
-      "heel": 40,
-      "forefoot": 32
+      "heel": 38,
+      "forefoot": 28
     },
     "releaseYear": 2025,
     "defaultLifespanKm": 700,
@@ -5332,6 +5462,7 @@
     "searchAliases": [
       "나이키",
       "스트럭처",
+      "스트럭쳐",
       "스트럭처 26"
     ],
     "verified": true
@@ -5356,7 +5487,8 @@
     "discontinued": false,
     "searchAliases": [
       "나이키",
-      "스트럭처"
+      "스트럭처 플러스",
+      "스트럭처플러스"
     ],
     "verified": true
   },
@@ -5438,19 +5570,23 @@
     "variant": null,
     "collabWith": null,
     "category": "racing",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "stackHeight": null,
+    "weight": 167,
+    "weightBasis": "US9",
+    "drop": 6,
+    "stackHeight": {
+      "heel": 36,
+      "forefoot": 30
+    },
     "releaseYear": 2025,
     "defaultLifespanKm": 450,
     "discontinued": false,
     "searchAliases": [
       "나이키",
       "베이퍼플라이",
+      "베플",
       "베이퍼플라이 4"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "nike-vomero-18",
@@ -5460,12 +5596,12 @@
     "variant": null,
     "collabWith": null,
     "category": "recovery",
-    "weight": null,
-    "weightBasis": null,
+    "weight": 298,
+    "weightBasis": "US9",
     "drop": 10,
     "stackHeight": {
-      "heel": 42.5,
-      "forefoot": 32.5
+      "heel": 44,
+      "forefoot": 34
     },
     "releaseYear": 2025,
     "defaultLifespanKm": 700,
@@ -5519,7 +5655,8 @@
     "discontinued": false,
     "searchAliases": [
       "나이키",
-      "보메로"
+      "보메로 플러스",
+      "보메로플러스"
     ],
     "verified": true
   },
@@ -5531,18 +5668,22 @@
     "variant": null,
     "collabWith": null,
     "category": "recovery",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "stackHeight": null,
+    "weight": 329,
+    "weightBasis": "US9",
+    "drop": 10,
+    "stackHeight": {
+      "heel": 54,
+      "forefoot": 44
+    },
     "releaseYear": 2026,
     "defaultLifespanKm": 700,
     "discontinued": false,
     "searchAliases": [
       "나이키",
-      "보메로"
+      "보메로 프리미엄",
+      "보메로프리미엄"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "nike-wildhorse-10",
@@ -5552,10 +5693,13 @@
     "variant": null,
     "collabWith": null,
     "category": "trail",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "stackHeight": null,
+    "weight": 306,
+    "weightBasis": "US9",
+    "drop": 9.5,
+    "stackHeight": {
+      "heel": 38,
+      "forefoot": 28.5
+    },
     "releaseYear": 2025,
     "defaultLifespanKm": 650,
     "discontinued": false,
@@ -5564,7 +5708,7 @@
       "와일드호스",
       "와일드호스 10"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "nike-winflo-10",
@@ -5700,12 +5844,12 @@
     "variant": null,
     "collabWith": null,
     "category": "tempo",
-    "weight": null,
-    "weightBasis": null,
+    "weight": 244,
+    "weightBasis": "US9",
     "drop": 8,
     "stackHeight": {
-      "heel": 42,
-      "forefoot": 34
+      "heel": 40,
+      "forefoot": 32
     },
     "releaseYear": 2024,
     "defaultLifespanKm": 650,
@@ -5713,6 +5857,7 @@
     "searchAliases": [
       "나이키",
       "줌플라이",
+      "줌 플라이",
       "줌플라이 6"
     ],
     "verified": true

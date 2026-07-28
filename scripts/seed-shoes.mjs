@@ -16,8 +16,15 @@
 //      export GOOGLE_APPLICATION_CREDENTIALS=/path/key.json
 //
 // 실행:
-//   node scripts/seed-shoes.mjs               # data/shoeCatalog.json
-//   node scripts/seed-shoes.mjs --dry-run     # 올리지 않고 무엇이 올라갈지만 출력
+//   node scripts/seed-shoes.mjs --brand Nike        # 그 브랜드만 올린다(정상 경로)
+//   node scripts/seed-shoes.mjs --brand Nike --dry-run
+//   node scripts/seed-shoes.mjs --all               # 전 브랜드(브랜드 작업이 끝난 뒤에만)
+//
+// **브랜드 단위로 올린다.** data/shoeCatalog.json 에는 아직 확인되지 않은 옛 덤프가
+// 섞여 있고, 그대로 통째로 올리면 미확인 데이터가 정본 자리에 앉는다. 한 브랜드를
+// 새 스키마로 다 채운 뒤 그 브랜드만 올린다.
+//
+// 같은 이유로 **verified:false 는 기본적으로 올리지 않는다**(--include-unverified 로 해제).
 // ============================================================================
 import {readFileSync} from 'node:fs';
 import {initializeApp, applicationDefault} from 'firebase-admin/app';
@@ -35,10 +42,51 @@ try {
   console.error(`카탈로그를 읽지 못했습니다: ${file}\n  ${e.message}`);
   process.exit(1);
 }
-const shoes = Array.isArray(raw) ? raw : (raw.shoes ?? []);
-if (!shoes.length) {
+const all = Array.isArray(raw) ? raw : (raw.shoes ?? []);
+if (!all.length) {
   console.error(`신발이 없습니다: ${file}`);
   process.exit(1);
+}
+
+// ── 무엇을 올릴지 좁힌다 ─────────────────────────────────────────────────────
+const brandArg = (() => {
+  const i = process.argv.indexOf('--brand');
+  return i >= 0 ? process.argv[i + 1] : null;
+})();
+const uploadAll = process.argv.includes('--all');
+const includeUnverified = process.argv.includes('--include-unverified');
+
+if (!brandArg && !uploadAll) {
+  console.error(
+    '어떤 브랜드를 올릴지 정해야 합니다.\n' +
+    '  node scripts/seed-shoes.mjs --brand Nike\n' +
+    '  node scripts/seed-shoes.mjs --all        (브랜드 작업이 전부 끝난 뒤에만)',
+  );
+  process.exit(1);
+}
+
+let shoes = all;
+if (brandArg) {
+  const want = brandArg.toLowerCase();
+  shoes = shoes.filter((s) => String(s.brand ?? '').toLowerCase() === want);
+  if (!shoes.length) {
+    const brands = [...new Set(all.map((s) => s.brand))].sort();
+    console.error(`'${brandArg}' 브랜드가 카탈로그에 없습니다.\n있는 브랜드: ${brands.join(', ')}`);
+    process.exit(1);
+  }
+}
+
+// 미확인 문서는 기본적으로 막는다 — 확인 안 된 값이 정본 자리에 앉으면 그때부터
+// 아무도 그게 확인된 값인지 아닌지 모른다.
+if (!includeUnverified) {
+  const before = shoes.length;
+  shoes = shoes.filter((s) => s.verified === true);
+  const skipped = before - shoes.length;
+  if (skipped) console.log(`미확인(verified:false) ${skipped}켤레 제외 — 올리려면 --include-unverified`);
+  if (!shoes.length) {
+    console.error('올릴 것이 없습니다(전부 미확인). 스펙을 확인한 뒤 다시 실행하세요.');
+    process.exit(1);
+  }
 }
 
 // id 중복은 여기서 막는다 — upsert 라 나중 것이 앞 것을 조용히 덮어쓴다(데이터 손실).
