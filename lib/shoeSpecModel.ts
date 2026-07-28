@@ -40,9 +40,9 @@ export function basisOf(spec: {weightG?: number; stackHeelMm?: number}) {
  * 뒤꿈치 높이 차이 경고 — 갑자기 낮은 신발로 넘어가면 아킬레스건·종아리 부하가 급증한다.
  * 러너가 신발 바꾸고 다치는 흔한 경로라, 미션(부상 없이) 상 반드시 말해야 한다.
  *
- * ⚠️ '드롭'이라는 말을 쓰지 않는다(2026-07-28 민우님 피드백 — "드롭을 처음 들어봤다").
- * 대부분의 러너가 모르는 단어라, 그 말로 경고하면 경고가 되지 않는다. 몸이 겪는 일
- * (뒤꿈치가 낮아진다 → 아킬레스건이 더 늘어난다)로 풀어 쓴다.
+ * 용어는 '드롭'을 쓴다(2026-07-28 민우님 확정). 러너 사이의 표준 용어이고 스펙 표기와도
+ * 일치한다. 다만 처음 듣는 사람이 많아서 **괄호로 뜻을 붙이고 결과를 함께 말한다** —
+ * 모르는 단어만 던지면 경고가 경고로 읽히지 않는다.
  *
  * 4mm 이상 낮아질 때만 경고한다(그 미만은 적응 범위). 높아지는 쪽은 부상 위험이 낮아
  * 침묵한다.
@@ -52,7 +52,7 @@ export function dropWarningKo(prevDropMm?: number, nextDropMm?: number): string 
   if (!Number.isFinite(prevDropMm) || !Number.isFinite(nextDropMm)) return '';
   const diff = prevDropMm - nextDropMm;
   if (diff < 4) return '';
-  return `뒤꿈치가 지난 신발보다 ${Math.round(diff)}mm 낮아요. 아킬레스건과 종아리가 더 일하게 되니, 처음 2주는 짧게 신어보세요.`;
+  return `드롭(뒤꿈치 높이)이 지난 신발보다 ${Math.round(diff)}mm 낮아요. 아킬레스건과 종아리가 더 일하게 되니, 처음 2주는 짧게 신어보세요.`;
 }
 
 /**
