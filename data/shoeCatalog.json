@@ -1798,6 +1798,52 @@
     "verified": false
   },
   {
+    "version": "3",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "아식스",
+      "후지스피드",
+      "후지스피드 3"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "asics-fuji-speed-3",
+    "brand": "ASICS",
+    "model": "Fuji Speed",
+    "category": "trail"
+  },
+  {
+    "version": "4",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "아식스",
+      "후지스피드",
+      "후지스피드 4"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "asics-fuji-speed-4",
+    "brand": "ASICS",
+    "model": "Fuji Speed",
+    "category": "trail"
+  },
+  {
     "id": "asics-gel-contend-9",
     "brand": "ASICS",
     "model": "Gel-Contend",
@@ -2314,6 +2360,52 @@
     "verified": false
   },
   {
+    "version": "10",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "아식스",
+      "젤벤처",
+      "벤처 10"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "asics-gel-venture-10",
+    "brand": "ASICS",
+    "model": "Gel-Venture",
+    "category": "trail"
+  },
+  {
+    "version": "10",
+    "variant": "WP",
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "아식스",
+      "젤벤처",
+      "워터프루프"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "asics-gel-venture-10-wp",
+    "brand": "ASICS",
+    "model": "Gel-Venture",
+    "category": "trail"
+  },
+  {
     "id": "asics-gel-venture-9",
     "brand": "ASICS",
     "model": "Gel-Venture",
@@ -2333,6 +2425,29 @@
       "아식스"
     ],
     "verified": false
+  },
+  {
+    "version": "9",
+    "variant": "WP",
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "아식스",
+      "젤벤처",
+      "워터프루프"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "asics-gel-venture-9-wp",
+    "brand": "ASICS",
+    "model": "Gel-Venture",
+    "category": "trail"
   },
   {
     "version": "2",
@@ -2610,6 +2725,29 @@
       "메가블"
     ],
     "verified": true
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "아식스",
+      "메타후지",
+      "메타후지 트레일"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "asics-metafuji-trail",
+    "brand": "ASICS",
+    "model": "Metafuji Trail",
+    "category": "trail"
   },
   {
     "id": "asics-metaspeed-edge",
@@ -3019,6 +3157,52 @@
     "verified": true
   },
   {
+    "version": "14",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "아식스",
+      "트라부코",
+      "트라부코 14"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "asics-trabuco-14",
+    "brand": "ASICS",
+    "model": "Trabuco",
+    "category": "trail"
+  },
+  {
+    "version": "14",
+    "variant": "GTX",
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "아식스",
+      "트라부코",
+      "고어텍스"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "asics-trabuco-14-gtx",
+    "brand": "ASICS",
+    "model": "Trabuco",
+    "category": "trail"
+  },
+  {
     "id": "asics-trabuco-max-4",
     "brand": "ASICS",
     "model": "Trabuco Max",
@@ -3038,6 +3222,29 @@
       "아식스"
     ],
     "verified": false
+  },
+  {
+    "version": "5",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "아식스",
+      "트라부코 맥스",
+      "트라부코 맥스 5"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "asics-trabuco-max-5",
+    "brand": "ASICS",
+    "model": "Trabuco Max",
+    "category": "trail"
   },
   {
     "version": "15",
@@ -5959,6 +6166,29 @@
     "id": "mizuno-neo-accera",
     "brand": "Mizuno",
     "model": "Neo Accera",
+    "category": "tempo"
+  },
+  {
+    "version": "2",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "미즈노",
+      "네오코스모",
+      "네오 코스모 2"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "mizuno-neo-cosmo-2",
+    "brand": "Mizuno",
+    "model": "Neo Cosmo",
     "category": "tempo"
   },
   {
@@ -11974,6 +12204,78 @@
     "verified": false
   },
   {
+    "version": "2",
+    "variant": null,
+    "collabWith": null,
+    "weight": 281,
+    "weightBasis": "M9",
+    "drop": 5,
+    "plate": null,
+    "stackHeight": {
+      "heel": 40,
+      "forefoot": 35
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "토포",
+      "토포어슬레틱",
+      "아트모스"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 700,
+    "id": "topo-athletic-atmos-2",
+    "brand": "Topo Athletic",
+    "model": "Atmos",
+    "category": "recovery"
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "토포",
+      "토포어슬레틱",
+      "Aura"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "topo-athletic-aura",
+    "brand": "Topo Athletic",
+    "model": "Aura",
+    "category": "daily"
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "토포",
+      "토포어슬레틱",
+      "Connect"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "topo-athletic-connect",
+    "brand": "Topo Athletic",
+    "model": "Connect",
+    "category": "trail"
+  },
+  {
     "id": "topo-athletic-cyclone-3",
     "brand": "Topo Athletic",
     "model": "Cyclone",
@@ -11981,11 +12283,14 @@
     "variant": null,
     "collabWith": null,
     "category": "tempo",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
+    "weight": 196,
+    "weightBasis": "M9",
+    "drop": 5,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 28,
+      "forefoot": 23
+    },
     "releaseYear": 2025,
     "defaultLifespanKm": 650,
     "discontinued": false,
@@ -11994,7 +12299,53 @@
       "론피크",
       "론피크 3"
     ],
-    "verified": false
+    "verified": true
+  },
+  {
+    "version": "6",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "토포",
+      "토포어슬레틱",
+      "Fli-Lyte 6"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "topo-athletic-fli-lyte-6",
+    "brand": "Topo Athletic",
+    "model": "Fli-Lyte",
+    "category": "daily"
+  },
+  {
+    "version": "6",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "토포",
+      "토포어슬레틱",
+      "Magnifly 6"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "topo-athletic-magnifly-6",
+    "brand": "Topo Athletic",
+    "model": "Magnifly",
+    "category": "daily"
   },
   {
     "id": "topo-athletic-mt-5",
@@ -12018,6 +12369,29 @@
     "verified": false
   },
   {
+    "version": "4",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "토포",
+      "토포어슬레틱",
+      "MTN Racer 4"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "topo-athletic-mtn-racer-4",
+    "brand": "Topo Athletic",
+    "model": "MTN Racer",
+    "category": "trail"
+  },
+  {
     "id": "topo-athletic-phantom-4",
     "brand": "Topo Athletic",
     "model": "Phantom",
@@ -12025,8 +12399,8 @@
     "variant": null,
     "collabWith": null,
     "category": "daily",
-    "weight": null,
-    "weightBasis": null,
+    "weight": 264,
+    "weightBasis": "M9",
     "drop": 5,
     "plate": null,
     "stackHeight": {
@@ -12040,6 +12414,52 @@
       "토포"
     ],
     "verified": true
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "토포",
+      "토포어슬레틱",
+      "Phantom 4 WP"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "topo-athletic-phantom-4-wp",
+    "brand": "Topo Athletic",
+    "model": "Phantom 4 WP",
+    "category": "daily"
+  },
+  {
+    "version": "3",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "토포",
+      "토포어슬레틱",
+      "Pursuit 3"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "topo-athletic-pursuit-3",
+    "brand": "Topo Athletic",
+    "model": "Pursuit",
+    "category": "trail"
   },
   {
     "id": "topo-athletic-specter-2",
@@ -12061,6 +12481,167 @@
       "토포"
     ],
     "verified": false
+  },
+  {
+    "version": "3",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "토포",
+      "토포어슬레틱",
+      "Specter 3"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "topo-athletic-specter-3",
+    "brand": "Topo Athletic",
+    "model": "Specter",
+    "category": "daily"
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "토포",
+      "토포어슬레틱",
+      "Specter Elite"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "topo-athletic-specter-elite",
+    "brand": "Topo Athletic",
+    "model": "Specter Elite",
+    "category": "daily"
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "토포",
+      "토포어슬레틱",
+      "ST-6"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "topo-athletic-st-6",
+    "brand": "Topo Athletic",
+    "model": "ST-6",
+    "category": "daily"
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "토포",
+      "토포어슬레틱",
+      "Terraventure 4 WP"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "topo-athletic-terraventure-4-wp",
+    "brand": "Topo Athletic",
+    "model": "Terraventure 4 WP",
+    "category": "trail"
+  },
+  {
+    "version": "5",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "토포",
+      "토포어슬레틱",
+      "Terraventure 5"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "topo-athletic-terraventure-5",
+    "brand": "Topo Athletic",
+    "model": "Terraventure",
+    "category": "trail"
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "토포",
+      "토포어슬레틱",
+      "Trailventure 2 WP"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "topo-athletic-trailventure-2-wp",
+    "brand": "Topo Athletic",
+    "model": "Trailventure 2 WP",
+    "category": "trail"
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "토포",
+      "토포어슬레틱",
+      "Traverse"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "topo-athletic-traverse",
+    "brand": "Topo Athletic",
+    "model": "Traverse",
+    "category": "trail"
   },
   {
     "id": "topo-athletic-ultrafly-5",
@@ -12088,6 +12669,98 @@
       "울트라 5"
     ],
     "verified": false
+  },
+  {
+    "version": "6",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "토포",
+      "토포어슬레틱",
+      "Ultrafly 6"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "topo-athletic-ultrafly-6",
+    "brand": "Topo Athletic",
+    "model": "Ultrafly",
+    "category": "daily"
+  },
+  {
+    "version": "4",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "토포",
+      "토포어슬레틱",
+      "Ultraventure 4"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "topo-athletic-ultraventure-4",
+    "brand": "Topo Athletic",
+    "model": "Ultraventure",
+    "category": "trail"
+  },
+  {
+    "version": "5",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "토포",
+      "토포어슬레틱",
+      "Ultraventure 5"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "topo-athletic-ultraventure-5",
+    "brand": "Topo Athletic",
+    "model": "Ultraventure",
+    "category": "trail"
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "토포",
+      "토포어슬레틱",
+      "Vista"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "topo-athletic-vista",
+    "brand": "Topo Athletic",
+    "model": "Vista",
+    "category": "trail"
   },
   {
     "id": "tracksmith-eliot-range",
