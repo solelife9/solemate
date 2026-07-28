@@ -903,6 +903,27 @@
     "verified": false
   },
   {
+    "version": "4",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "알트라",
+      "에스칼란테"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "altra-escalante-4",
+    "brand": "Altra",
+    "model": "Escalante",
+    "category": "tempo"
+  },
+  {
     "id": "altra-escalante-5",
     "brand": "Altra",
     "model": "Escalante",
@@ -923,6 +944,111 @@
       "에스칼란테 5"
     ],
     "verified": false
+  },
+  {
+    "version": "2",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "알트라",
+      "에스칼란테 레이서"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 450,
+    "id": "altra-escalante-racer-2",
+    "brand": "Altra",
+    "model": "Escalante Racer",
+    "category": "racing"
+  },
+  {
+    "version": "3",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "알트라",
+      "익스피리언스 플로우"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "altra-experience-flow-3",
+    "brand": "Altra",
+    "model": "Experience Flow",
+    "category": "daily"
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "알트라",
+      "익스피리언스 플로우 ST"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 700,
+    "id": "altra-experience-flow-st",
+    "brand": "Altra",
+    "model": "Experience Flow ST",
+    "category": "stability"
+  },
+  {
+    "version": "3",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "알트라",
+      "익스피리언스 와일드"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "altra-experience-wild-3",
+    "brand": "Altra",
+    "model": "Experience Wild",
+    "category": "trail"
+  },
+  {
+    "version": "2",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "알트라",
+      "FWD 비아"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "altra-fwd-via-2",
+    "brand": "Altra",
+    "model": "FWD VIA",
+    "category": "daily"
   },
   {
     "id": "altra-lone-peak-8",
@@ -957,19 +1083,238 @@
     "variant": null,
     "collabWith": null,
     "category": "trail",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "stackHeight": null,
+    "weight": 295,
+    "weightBasis": "사이즈 9",
+    "drop": 0,
+    "stackHeight": {
+      "heel": 25,
+      "forefoot": 25
+    },
     "releaseYear": 2025,
     "defaultLifespanKm": 650,
     "discontinued": false,
     "searchAliases": [
       "알트라",
       "론피크",
-      "론피크 9"
+      "론 피크 9",
+      "제로드롭"
     ],
-    "verified": false
+    "verified": true
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "알트라",
+      "몽블랑 카본"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "altra-mont-blanc-carbon",
+    "brand": "Altra",
+    "model": "Mont Blanc Carbon",
+    "category": "trail"
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "알트라",
+      "몽블랑 스피드"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "altra-mont-blanc-speed",
+    "brand": "Altra",
+    "model": "Mont Blanc Speed",
+    "category": "trail"
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "알트라",
+      "올림푸스 275"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "altra-olympus-275",
+    "brand": "Altra",
+    "model": "Olympus 275",
+    "category": "trail"
+  },
+  {
+    "version": "6",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "알트라",
+      "올림푸스",
+      "올림푸스 6"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "altra-olympus-6",
+    "brand": "Altra",
+    "model": "Olympus",
+    "category": "trail"
+  },
+  {
+    "version": "7",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "알트라",
+      "올림푸스",
+      "올림푸스 7"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "altra-olympus-7",
+    "brand": "Altra",
+    "model": "Olympus",
+    "category": "trail"
+  },
+  {
+    "version": "8",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "알트라",
+      "패러다임"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 700,
+    "id": "altra-paradigm-8",
+    "brand": "Altra",
+    "model": "Paradigm",
+    "category": "stability"
+  },
+  {
+    "version": "3",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "알트라",
+      "솔스티스"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "altra-solstice-xt-3",
+    "brand": "Altra",
+    "model": "Solstice XT",
+    "category": "daily"
+  },
+  {
+    "version": "7",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "알트라",
+      "수페리어",
+      "슈페리어"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "altra-superior-7",
+    "brand": "Altra",
+    "model": "Superior",
+    "category": "trail"
+  },
+  {
+    "version": "5",
+    "variant": "BOA",
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "알트라",
+      "팀프",
+      "보아"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "altra-timp-5-boa",
+    "brand": "Altra",
+    "model": "Timp",
+    "category": "trail"
+  },
+  {
+    "version": "6",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "알트라",
+      "팀프",
+      "팀프 6"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "altra-timp-6",
+    "brand": "Altra",
+    "model": "Timp",
+    "category": "trail"
   },
   {
     "id": "altra-torin-7",
@@ -1019,6 +1364,53 @@
     "verified": true
   },
   {
+    "version": "9",
+    "variant": null,
+    "collabWith": null,
+    "weight": 261,
+    "weightBasis": null,
+    "drop": 0,
+    "stackHeight": {
+      "heel": 28,
+      "forefoot": 28
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "알트라",
+      "토린",
+      "토린 9",
+      "제로드롭"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 650,
+    "id": "altra-torin-9",
+    "brand": "Altra",
+    "model": "Torin",
+    "category": "daily"
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "알트라",
+      "토린 ST"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 700,
+    "id": "altra-torin-st",
+    "brand": "Altra",
+    "model": "Torin ST",
+    "category": "stability"
+  },
+  {
     "id": "altra-vanish-carbon-2",
     "brand": "Altra",
     "model": "Vanish Carbon",
@@ -1037,6 +1429,28 @@
       "알트라"
     ],
     "verified": false
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "알트라",
+      "배니시",
+      "바니시 펄스"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 450,
+    "id": "altra-vanish-pulse",
+    "brand": "Altra",
+    "model": "Vanish Pulse",
+    "category": "racing"
   },
   {
     "version": "6",
@@ -4556,6 +4970,120 @@
     "verified": false
   },
   {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "킵런",
+      "데카트론",
+      "킵라이드"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "kiprun-kipride",
+    "brand": "Kiprun",
+    "model": "KIPRIDE",
+    "category": "daily"
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "킵런",
+      "데카트론",
+      "킵라이드 맥스",
+      "킵라이드"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 700,
+    "id": "kiprun-kipride-max",
+    "brand": "Kiprun",
+    "model": "KIPRIDE MAX",
+    "category": "recovery"
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "킵런",
+      "데카트론",
+      "킵스톰 랩",
+      "킵스톰"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 450,
+    "id": "kiprun-kipstorm-lab",
+    "brand": "Kiprun",
+    "model": "KIPSTORM LAB",
+    "category": "racing"
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "킵런",
+      "데카트론",
+      "킵스톰 템포",
+      "킵스톰"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "kiprun-kipstorm-tempo",
+    "brand": "Kiprun",
+    "model": "KIPSTORM TEMPO",
+    "category": "tempo"
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "킵런",
+      "데카트론",
+      "킵서밋 레이스",
+      "킵서밋"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "kiprun-kipsummit-race",
+    "brand": "Kiprun",
+    "model": "KIPSUMMIT RACE",
+    "category": "trail"
+  },
+  {
     "id": "la-sportiva-jackal-ii",
     "brand": "La Sportiva",
     "model": "Jackal II",
@@ -7302,16 +7830,65 @@
     "collabWith": null,
     "category": "trail",
     "weight": 298,
-    "weightBasis": "US9",
-    "drop": null,
-    "stackHeight": null,
+    "weightBasis": "사이즈 9",
+    "drop": 5,
+    "stackHeight": {
+      "heel": 39,
+      "forefoot": 34
+    },
     "releaseYear": 2023,
     "defaultLifespanKm": 650,
     "discontinued": false,
     "searchAliases": [
-      "노다"
+      "노다",
+      "노다 001"
     ],
     "verified": true
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "노다",
+      "노다 001A"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "norda-001a",
+    "brand": "norda",
+    "model": "001A",
+    "category": "trail"
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": 272,
+    "weightBasis": null,
+    "drop": 4,
+    "stackHeight": {
+      "heel": 30,
+      "forefoot": 26
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "노다",
+      "노다 002"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 650,
+    "id": "norda-002",
+    "brand": "norda",
+    "model": "002",
+    "category": "trail"
   },
   {
     "id": "norda-005",
@@ -7321,20 +7898,45 @@
     "variant": null,
     "collabWith": null,
     "category": "trail",
-    "weight": 230,
-    "weightBasis": "US9.5",
+    "weight": 227,
+    "weightBasis": "US9",
     "drop": 7,
     "stackHeight": {
-      "heel": 28.5,
-      "forefoot": 21.5
+      "heel": 38,
+      "forefoot": 31
     },
     "releaseYear": 2025,
     "defaultLifespanKm": 650,
     "discontinued": false,
     "searchAliases": [
-      "노다"
+      "노다",
+      "노다 005"
     ],
     "verified": true
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": 298,
+    "weightBasis": "US9",
+    "drop": 6,
+    "stackHeight": {
+      "heel": 43,
+      "forefoot": 37
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "노다",
+      "노다 055"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 650,
+    "id": "norda-055",
+    "brand": "norda",
+    "model": "055",
+    "category": "trail"
   },
   {
     "id": "on-cloud-5",
@@ -8121,19 +8723,22 @@
     "variant": null,
     "collabWith": null,
     "category": "tempo",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "stackHeight": null,
+    "weight": 241,
+    "weightBasis": "US9",
+    "drop": 8,
+    "stackHeight": {
+      "heel": 35,
+      "forefoot": 27
+    },
     "releaseYear": 2025,
     "defaultLifespanKm": 650,
     "discontinued": false,
     "searchAliases": [
       "푸마",
       "디비에이트",
-      "디비에이트 4"
+      "디비에이트 니트로 4"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "puma-deviate-nitro-elite-2",
@@ -8208,6 +8813,69 @@
     "verified": false
   },
   {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "푸마",
+      "디비에이트 트레일"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "puma-deviate-nitro-elite-trail",
+    "brand": "Puma",
+    "model": "Deviate Nitro Elite Trail",
+    "category": "trail"
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "푸마",
+      "디비에이트 퓨어"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "puma-deviate-pure-nitro",
+    "brand": "Puma",
+    "model": "Deviate Pure Nitro",
+    "category": "tempo"
+  },
+  {
+    "version": "2",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "푸마",
+      "패스트FWD"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 450,
+    "id": "puma-fast-fwd-nitro-elite-2",
+    "brand": "Puma",
+    "model": "Fast-FWD Nitro Elite",
+    "category": "racing"
+  },
+  {
     "id": "puma-fast-r-nitro-elite-3",
     "brand": "Puma",
     "model": "Fast-R Nitro Elite",
@@ -8215,21 +8883,22 @@
     "variant": null,
     "collabWith": null,
     "category": "racing",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "stackHeight": null,
+    "weight": 170,
+    "weightBasis": "US9",
+    "drop": 8,
+    "stackHeight": {
+      "heel": 39,
+      "forefoot": 31
+    },
     "releaseYear": 2025,
     "defaultLifespanKm": 450,
     "discontinued": false,
     "searchAliases": [
       "푸마",
-      "엘리트",
-      "엘리트 3",
       "패스트알",
-      "패스트알 3"
+      "패스트R 니트로 엘리트 3"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "puma-foreverrun-nitro-2",
@@ -8254,6 +8923,49 @@
     "verified": false
   },
   {
+    "version": "3",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "푸마",
+      "포에버런",
+      "포에버런 니트로 3"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 700,
+    "id": "puma-foreverrun-nitro-3",
+    "brand": "Puma",
+    "model": "ForeverRun Nitro",
+    "category": "stability"
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "푸마",
+      "맥맥스"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 700,
+    "id": "puma-magmax-nitro",
+    "brand": "Puma",
+    "model": "MagMax Nitro",
+    "category": "recovery"
+  },
+  {
     "id": "puma-magmax-nitro-2",
     "brand": "Puma",
     "model": "MagMax Nitro",
@@ -8261,17 +8973,22 @@
     "variant": null,
     "collabWith": null,
     "category": "recovery",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "stackHeight": null,
+    "weight": 266,
+    "weightBasis": "US9",
+    "drop": 8,
+    "stackHeight": {
+      "heel": 46,
+      "forefoot": 38
+    },
     "releaseYear": 2025,
     "defaultLifespanKm": 700,
     "discontinued": false,
     "searchAliases": [
-      "푸마"
+      "푸마",
+      "맥맥스",
+      "맥스맥스 니트로"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "puma-magnify-nitro-2",
@@ -8365,6 +9082,53 @@
     "verified": false
   },
   {
+    "version": "5",
+    "variant": null,
+    "collabWith": null,
+    "weight": 244,
+    "weightBasis": "US9",
+    "drop": 8,
+    "stackHeight": {
+      "heel": 33,
+      "forefoot": 25
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "푸마",
+      "벨로시티",
+      "벨로시티 니트로 5"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 650,
+    "id": "puma-velocity-nitro-5",
+    "brand": "Puma",
+    "model": "Velocity Nitro",
+    "category": "daily"
+  },
+  {
+    "version": "4",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "푸마",
+      "보이지",
+      "보야지 니트로"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "puma-voyage-nitro-4",
+    "brand": "Puma",
+    "model": "Voyage Nitro",
+    "category": "trail"
+  },
+  {
     "id": "reebok-floatride-energy-5",
     "brand": "Reebok",
     "model": "Floatride Energy",
@@ -8428,6 +9192,49 @@
     "verified": false
   },
   {
+    "version": "3",
+    "variant": "GRVL",
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "살로몬",
+      "에어로블레이즈",
+      "그래블"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "salomon-aero-blaze-3-grvl",
+    "brand": "Salomon",
+    "model": "Aero Blaze",
+    "category": "trail"
+  },
+  {
+    "version": "4",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "살로몬",
+      "에어로블레이즈"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "salomon-aero-blaze-4",
+    "brand": "Salomon",
+    "model": "Aero Blaze",
+    "category": "daily"
+  },
+  {
     "id": "salomon-aero-glide-3",
     "brand": "Salomon",
     "model": "Aero Glide",
@@ -8446,6 +9253,53 @@
       "살로몬"
     ],
     "verified": false
+  },
+  {
+    "version": "4",
+    "variant": null,
+    "collabWith": null,
+    "weight": 261,
+    "weightBasis": "US9",
+    "drop": 8,
+    "stackHeight": {
+      "heel": 42,
+      "forefoot": 34
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "살로몬",
+      "에어로글라이드",
+      "에어로 글라이드 4"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 650,
+    "id": "salomon-aero-glide-4",
+    "brand": "Salomon",
+    "model": "Aero Glide",
+    "category": "daily"
+  },
+  {
+    "version": "4",
+    "variant": "GRVL",
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "살로몬",
+      "에어로글라이드",
+      "그래블"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "salomon-aero-glide-4-grvl",
+    "brand": "Salomon",
+    "model": "Aero Glide",
+    "category": "trail"
   },
   {
     "id": "salomon-genesis",
@@ -8467,6 +9321,73 @@
       "제네시스"
     ],
     "verified": false
+  },
+  {
+    "version": "2",
+    "variant": null,
+    "collabWith": null,
+    "weight": 286,
+    "weightBasis": "US9",
+    "drop": 8,
+    "stackHeight": {
+      "heel": 34,
+      "forefoot": 26
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "살로몬",
+      "제네시스",
+      "제네시스 2"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 650,
+    "id": "salomon-genesis-2",
+    "brand": "Salomon",
+    "model": "Genesis",
+    "category": "trail"
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "살로몬",
+      "그래블 컨셉"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "salomon-grvl-concept",
+    "brand": "Salomon",
+    "model": "GRVL Concept",
+    "category": "trail"
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "살로몬",
+      "펄사"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "salomon-pulsar",
+    "brand": "Salomon",
+    "model": "Pulsar",
+    "category": "trail"
   },
   {
     "id": "salomon-pulsar-trail-2",
@@ -8513,6 +9434,50 @@
     "verified": false
   },
   {
+    "version": "2",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "살로몬",
+      "에스랩",
+      "S랩 제네시스"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "salomon-s-lab-genesis-2",
+    "brand": "Salomon",
+    "model": "S/Lab Genesis",
+    "category": "trail"
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "살로몬",
+      "에스랩",
+      "S랩 제네시스 스파인"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "salomon-s-lab-genesis-spine",
+    "brand": "Salomon",
+    "model": "S/Lab Genesis Spine",
+    "category": "trail"
+  },
+  {
     "id": "salomon-s-lab-phantasm-2",
     "brand": "Salomon",
     "model": "S/Lab Phantasm",
@@ -8531,6 +9496,50 @@
       "살로몬"
     ],
     "verified": false
+  },
+  {
+    "version": "3",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "살로몬",
+      "에스랩",
+      "팬텀"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 450,
+    "id": "salomon-s-lab-phantasm-3",
+    "brand": "Salomon",
+    "model": "S/Lab Phantasm",
+    "category": "racing"
+  },
+  {
+    "version": "3",
+    "variant": "SC",
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "살로몬",
+      "에스랩",
+      "팬텀 SC"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 450,
+    "id": "salomon-s-lab-phantasm-3-sc",
+    "brand": "Salomon",
+    "model": "S/Lab Phantasm",
+    "category": "racing"
   },
   {
     "id": "salomon-s-lab-pulsar-3",
@@ -8553,6 +9562,50 @@
       "펄사 3"
     ],
     "verified": false
+  },
+  {
+    "version": "4",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "살로몬",
+      "에스랩",
+      "펄사 4"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "salomon-s-lab-pulsar-4",
+    "brand": "Salomon",
+    "model": "S/Lab Pulsar",
+    "category": "trail"
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "살로몬",
+      "에스랩",
+      "스펙터"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 450,
+    "id": "salomon-s-lab-spectur",
+    "brand": "Salomon",
+    "model": "S/Lab Spectur",
+    "category": "racing"
   },
   {
     "id": "salomon-s-lab-ultra-3",
@@ -8579,6 +9632,28 @@
     "verified": false
   },
   {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "살로몬",
+      "에스랩",
+      "울트라 더스트"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "salomon-s-lab-ultra-dust",
+    "brand": "Salomon",
+    "model": "S/Lab Ultra Dust",
+    "category": "trail"
+  },
+  {
     "id": "salomon-s-lab-ultra-glide",
     "brand": "Salomon",
     "model": "S/Lab Ultra Glide",
@@ -8599,6 +9674,28 @@
       "울트라"
     ],
     "verified": false
+  },
+  {
+    "version": "2",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "살로몬",
+      "에스랩",
+      "S랩 울트라 글라이드"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "salomon-s-lab-ultra-glide-2",
+    "brand": "Salomon",
+    "model": "S/Lab Ultra Glide",
+    "category": "trail"
   },
   {
     "id": "salomon-sense-ride-5",
@@ -8736,6 +9833,31 @@
       "울트라 3"
     ],
     "verified": false
+  },
+  {
+    "version": "4",
+    "variant": null,
+    "collabWith": null,
+    "weight": 275,
+    "weightBasis": "US9",
+    "drop": 6,
+    "stackHeight": {
+      "heel": 39,
+      "forefoot": 33
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "살로몬",
+      "울트라글라이드",
+      "울트라 글라이드 4"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 650,
+    "id": "salomon-ultra-glide-4",
+    "brand": "Salomon",
+    "model": "Ultra Glide",
+    "category": "trail"
   },
   {
     "id": "satisfy-therocker",
@@ -9636,6 +10758,143 @@
     "verified": false
   },
   {
+    "version": "2",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "노스페이스",
+      "알타메사",
+      "알타메사 300"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "the-north-face-altamesa-300-2",
+    "brand": "The North Face",
+    "model": "Altamesa 300",
+    "category": "trail"
+  },
+  {
+    "version": "2",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "노스페이스",
+      "알타메사",
+      "알타메사 500"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "the-north-face-altamesa-500-2",
+    "brand": "The North Face",
+    "model": "Altamesa 500",
+    "category": "trail"
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "노스페이스",
+      "오프트레일 울트라"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "the-north-face-offtrail-ultra",
+    "brand": "The North Face",
+    "model": "Offtrail Ultra",
+    "category": "trail"
+  },
+  {
+    "version": "3",
+    "variant": null,
+    "collabWith": null,
+    "weight": 303,
+    "weightBasis": "US9",
+    "drop": 6,
+    "stackHeight": {
+      "heel": 43,
+      "forefoot": 37
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "노스페이스",
+      "벡티브",
+      "서밋 벡티브 프로"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 650,
+    "id": "the-north-face-summit-vectiv-pro-3",
+    "brand": "The North Face",
+    "model": "Summit VECTIV Pro",
+    "category": "trail"
+  },
+  {
+    "version": "2",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "노스페이스",
+      "벡티브",
+      "스카이"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "the-north-face-summit-vectiv-sky-2",
+    "brand": "The North Face",
+    "model": "Summit VECTIV Sky",
+    "category": "trail"
+  },
+  {
+    "version": "4",
+    "variant": null,
+    "collabWith": null,
+    "weight": 298,
+    "weightBasis": "사이즈 9",
+    "drop": 6,
+    "stackHeight": {
+      "heel": 41,
+      "forefoot": 35
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "노스페이스",
+      "벡티브",
+      "엔듀리스"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 650,
+    "id": "the-north-face-vectiv-enduris-4",
+    "brand": "The North Face",
+    "model": "VECTIV Enduris",
+    "category": "trail"
+  },
+  {
     "id": "topo-athletic-atmos",
     "brand": "Topo Athletic",
     "model": "Atmos",
@@ -9810,6 +11069,111 @@
     "verified": true
   },
   {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "언더아머",
+      "차지드 어센드"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "under-armour-charged-ascend",
+    "brand": "Under Armour",
+    "model": "Charged Ascend",
+    "category": "daily"
+  },
+  {
+    "version": "11",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "언더아머",
+      "차지드 어썰트"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "under-armour-charged-assert-11",
+    "brand": "Under Armour",
+    "model": "Charged Assert",
+    "category": "daily"
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "언더아머",
+      "차지드 체이스"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "under-armour-charged-chase",
+    "brand": "Under Armour",
+    "model": "Charged Chase",
+    "category": "daily"
+  },
+  {
+    "version": "6",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "언더아머",
+      "차지드 로그"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "under-armour-charged-rogue-6",
+    "brand": "Under Armour",
+    "model": "Charged Rogue",
+    "category": "daily"
+  },
+  {
+    "version": "3",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "언더아머",
+      "차지드 터뷸런스"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "under-armour-charged-turbulence-3",
+    "brand": "Under Armour",
+    "model": "Charged Turbulence",
+    "category": "daily"
+  },
+  {
     "id": "under-armour-flow-machina-3",
     "brand": "Under Armour",
     "model": "Flow Machina",
@@ -9852,5 +11216,152 @@
       "엘리트 2"
     ],
     "verified": false
+  },
+  {
+    "version": "2",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "언더아머",
+      "HB 레이서"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 450,
+    "id": "under-armour-hb-racer-2",
+    "brand": "Under Armour",
+    "model": "HB Racer",
+    "category": "racing"
+  },
+  {
+    "version": "2",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "언더아머",
+      "HB 러너"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "under-armour-hb-runner-2",
+    "brand": "Under Armour",
+    "model": "HB Runner",
+    "category": "daily"
+  },
+  {
+    "version": "5",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "언더아머",
+      "서지"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "under-armour-surge-5",
+    "brand": "Under Armour",
+    "model": "Surge",
+    "category": "daily"
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "언더아머",
+      "벨로시티 디스턴스"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "under-armour-velociti-distance",
+    "brand": "Under Armour",
+    "model": "Velociti Distance",
+    "category": "daily"
+  },
+  {
+    "version": "3",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "언더아머",
+      "벨로시티 엘리트"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 450,
+    "id": "under-armour-velociti-elite-3",
+    "brand": "Under Armour",
+    "model": "Velociti Elite",
+    "category": "racing"
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "언더아머",
+      "벨로시티 페이스"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "under-armour-velociti-pace",
+    "brand": "Under Armour",
+    "model": "Velociti Pace",
+    "category": "tempo"
+  },
+  {
+    "version": "5",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "언더아머",
+      "벨로시티 SPD"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "under-armour-velociti-spd-5",
+    "brand": "Under Armour",
+    "model": "Velociti SPD",
+    "category": "tempo"
   }
 ]
