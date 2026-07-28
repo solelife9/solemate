@@ -22,14 +22,15 @@ import {
   withAlpha, TYPE, GLASS, MOTION, ICON, RING_ACCENT, GOOD, WARN,
 } from './theme';
 import {Button} from './primitives';
-import {buildAxisGroups, AxisCandidate} from './lib/nextShoe';
+import {similarShoes, SimilarCandidate, prevCategory} from './lib/nextShoe';
+import {ShoeCategory} from './data/shoeModels';
 import {
-  compareAxes, axisLabelKo, actualWonPerKm, expectedWonPerKm,
-  wonPerKmVerdictKo, wonPerKmLabelKo, ShoeSpec, CompareAxis,
+  actualWonPerKm, expectedWonPerKm,
+  wonPerKmVerdictKo, wonPerKmLabelKo, ShoeSpec,
 } from './lib/shoeCompare';
 import {buildShoeSpec, SPEC_BASIS_KO, basisOf, dropWarningKo} from './lib/shoeSpecModel';
 import {visibleChannels, tierLabelKo, EXCLUDED_CHANNELS} from './lib/shoeStore';
-import {AFFILIATE_DISCLOSURE, buildShopLinks} from './lib/affiliate';
+import {AFFILIATE_DISCLOSURE, buildShopLinks, categoryLabelKo} from './lib/affiliate';
 import {fetchShoePrice, checkedAtLabel, ShoePriceQuote} from './lib/shoePrice';
 
 export interface NextShoeScreenProps {
@@ -43,14 +44,6 @@ export interface NextShoeScreenProps {
   onClose: () => void;
 }
 
-/** 축 방향을 보여줄 짧은 꼬리표(그룹 헤더 옆). */
-const AXIS_HINT: Record<CompareAxis, string> = {
-  softer: '쿠션 ↑',
-  lighter: '무게 ↓',
-  longer: '수명 ↑',
-  stabler: '안정 ↑',
-  snappier: '반발 ↑',
-};
 
 type Step = 0 | 1 | 2;
 
@@ -59,7 +52,8 @@ function NextShoeScreen({
 }: NextShoeScreenProps) {
   const insets = useSafeAreaInsets();
   const [step, setStep] = useState<Step>(0);
-  const [picked, setPicked] = useState<AxisCandidate | null>(null);
+  /** 비교 중인 후보의 인덱스. 비교 화면에서 좌우로 갈아끼운다(왕복 없이 훑기). */
+  const [pickedIdx, setPickedIdx] = useState(0);
   /** 모델키 → 조회된 가격(없으면 미조회/실패). 화면은 있는 것만 보여준다. */
   const [prices, setPrices] = useState<Record<string, ShoePriceQuote | null>>({});
 
@@ -67,8 +61,13 @@ function NextShoeScreen({
     () => buildShoeSpec(prevBrand, prevModel),
     [prevBrand, prevModel],
   );
-  const groups = useMemo(
-    () => buildAxisGroups(prevBrand, prevModel, {limit: 3}),
+  const prevCategoryKey = useMemo(
+    () => prevCategory(prevBrand, prevModel),
+    [prevBrand, prevModel],
+  );
+  // 같은 종류 안에서 비슷한 순. 브랜드는 골고루 섞인다(라운드로빈).
+  const candidates = useMemo(
+    () => similarShoes(prevBrand, prevModel, {limit: 8, maxPerBrand: 2}),
     [prevBrand, prevModel],
   );
 
@@ -82,7 +81,7 @@ function NextShoeScreen({
   // 아무 일도 안 일어난다(6시간 캐시 + 실패 캐시라 반복 호출도 안 된다).
   useEffect(() => {
     let alive = true;
-    const shown = groups.flatMap((g) => g.items);
+    const shown = candidates;
     if (!shown.length) return;
     Promise.all(
       shown.map(async (c) => {
@@ -97,11 +96,12 @@ function NextShoeScreen({
       // fetchShoePrice 는 throw 하지 않지만, 언마운트 경합 등으로 새는 거절도 삼킨다.
       .catch(() => {});
     return () => { alive = false; };
-  }, [groups]);
+  }, [candidates]);
 
-  const priceOf = (c: AxisCandidate) => prices[`${c.model.brand}|${c.model.model}`] ?? null;
+  const priceOf = (c: SimilarCandidate) => prices[`${c.model.brand}|${c.model.model}`] ?? null;
 
-  const pick = (c: AxisCandidate) => { setPicked(c); setStep(1); };
+  const picked = candidates[pickedIdx] ?? null;
+  const pick = (i: number) => { setPickedIdx(i); setStep(1); };
 
   return (
     <View style={[s.screen, {paddingTop: insets.top}]}>
@@ -130,9 +130,9 @@ function NextShoeScreen({
             prevModel={prevModel}
             prevUsedKm={prevUsedKm}
             prevPerKmLabel={prevPerKm ? `1km당 ${prevPerKm.wonPerKm.toLocaleString('ko-KR')}원` : ''}
-            groups={groups}
+            candidates={candidates}
             priceOf={priceOf}
-            prevSpec={prevSpec}
+            prevCategoryKey={prevCategoryKey}
             onPick={pick}
           />
         )}
@@ -142,6 +142,9 @@ function NextShoeScreen({
             picked={picked}
             prevPerKm={prevPerKm}
             quote={priceOf(picked)}
+            candidates={candidates}
+            pickedIdx={pickedIdx}
+            onSwitch={setPickedIdx}
           />
         )}
         {step === 2 && picked && <StoreStep picked={picked} quote={priceOf(picked)} />}
@@ -172,20 +175,23 @@ function NextShoeScreen({
   );
 }
 
-// ── 스텝 0 · 방향별 추천 ────────────────────────────────────────────────────────
-// 방향을 한꺼번에 편다(칩으로 하나씩 거르지 않는다) — 고르기 전에 훑을 수 있어 탭이
-// 한 번 줄어든다.
+// ── 스텝 0 · 비슷한 후보 목록 ───────────────────────────────────────────────────
+// 방향별 그룹(더 푹신/더 가벼움) 대신 **비슷한 순 한 줄 목록**이다. 브랜드로 묶지 않고
+// 라벨로만 보여주되 브랜드가 골고루 섞이게 한다 — 브랜드는 비슷함의 근거가 아니라서,
+// 헤더로 묶으면 가장 잘 맞는 후보가 알파벳 순서에 밀린다.
+// 고르는 건 목적이 아니고 **눌러서 그래프로 견주는 게 본론**이라, 목록은 빨리 훑게만 한다.
 function RecommendStep({
-  prevBrand, prevModel, prevUsedKm, prevPerKmLabel, groups, priceOf, prevSpec, onPick,
+  prevBrand, prevModel, prevUsedKm, prevPerKmLabel, candidates, priceOf,
+  prevCategoryKey, onPick,
 }: {
   prevBrand: string;
   prevModel: string;
   prevUsedKm?: number;
   prevPerKmLabel: string;
-  groups: {axis: CompareAxis; items: AxisCandidate[]}[];
-  priceOf: (c: AxisCandidate) => ShoePriceQuote | null;
-  prevSpec: ShoeSpec;
-  onPick: (c: AxisCandidate) => void;
+  candidates: SimilarCandidate[];
+  priceOf: (c: SimilarCandidate) => ShoePriceQuote | null;
+  prevCategoryKey: ShoeCategory;
+  onPick: (index: number) => void;
 }) {
   return (
     <View style={s.stepWrap}>
@@ -197,58 +203,66 @@ function RecommendStep({
         {prevPerKmLabel ? ` · ${prevPerKmLabel}` : ''}
       </Text>
 
-      {groups.length === 0 ? (
-        // 스펙이 아직 없어 축이 하나도 안 잡히는 경우 — 빈 화면 대신 이유를 말한다.
+      {/* "왜 이 신발들이지?"에 먼저 답한다. 종류를 넘나들지 않는 게 안전 규칙이라,
+          밝히는 것 자체가 신뢰가 된다(카본화를 데일리로 권하지 않는다는 약속). */}
+      <View style={s.scopeNote} testID="next-shoe-scope">
+        <Ionicons name="shield-checkmark-outline" size={ri(ICON.inline)} color={T3} />
+        <Text style={s.scopeText}>
+          신던 신발과 같은 <Text style={s.scopeStrong}>{categoryLabelKo[prevCategoryKey]}</Text> 중에서만
+          골랐어요. 종류가 다르면 발에 오는 부담도 달라져요.
+        </Text>
+      </View>
+
+      {candidates.length === 0 ? (
         <View style={s.emptyWrap} testID="next-shoe-empty">
-          <Text style={s.emptyTitle}>아직 비교할 후보가 없어요</Text>
+          <Text style={s.emptyTitle}>아직 후보가 없어요</Text>
           <Text style={s.emptyBody}>
-            같은 종류의 러닝화 중에 뚜렷하게 달라지는 모델을 못 찾았어요. 스펙 정보가 쌓이면
-            여기에 후보가 나타나요.
+            같은 종류의 러닝화를 못 찾았어요. 러닝화 정보가 쌓이면 여기에 후보가 나타나요.
           </Text>
         </View>
       ) : (
-        groups.map((g) => (
-          <View key={g.axis} style={s.group}>
-            <View style={s.groupHead}>
-              <Text style={s.groupName}>
-                {axisLabelKo[g.axis]} <Text style={s.groupHint}>{AXIS_HINT[g.axis]}</Text>
-              </Text>
-              <Text style={s.groupCount}>{g.items.length}켤레</Text>
-            </View>
-            {g.items.map((c) => {
-              const q = priceOf(c);
-              const per = q ? expectedWonPerKm(q.priceKrw, c.spec.lifespanKm) : null;
-              const deltas = compareAxes(prevSpec, c.spec).filter((d) => d.better);
-              return (
-                <Pressable
-                  key={`${c.model.brand}|${c.model.model}`}
-                  onPress={() => onPick(c)}
-                  accessibilityRole="button"
-                  accessibilityLabel={`${c.model.brand} ${c.model.model} 비교하기`}
-                  testID={`next-shoe-cand-${c.model.model}`}
-                  style={({pressed}) => [s.cand, pressed && s.pressed]}>
-                  <View style={s.candLeft}>
-                    <Text style={s.candBrand}>{c.model.brand.toUpperCase()}</Text>
-                    <Text style={s.candName} numberOfLines={1}>{c.model.model}</Text>
-                    <Text style={s.candDelta} numberOfLines={1}>
-                      {deltas.map((d) => d.detailKo).join(' · ') || `권장 ${c.spec.lifespanKm}km`}
-                    </Text>
-                  </View>
-                  <View style={s.candRight}>
-                    {q ? (
-                      <>
-                        <Text style={s.candPrice}>{q.priceKrw.toLocaleString('ko-KR')}원</Text>
-                        {!!per && <Text style={s.candPerKm}>{per.wonPerKm.toLocaleString('ko-KR')}원/km</Text>}
-                      </>
-                    ) : (
-                      <Text style={s.candNoPrice}>공식 스토어에{'\n'}지금 없어요</Text>
-                    )}
-                  </View>
-                </Pressable>
-              );
-            })}
+        <>
+          <View style={s.listHead}>
+            <Text style={s.listHint}>비슷한 순 · 눌러서 비교해요</Text>
+            <Text style={s.groupCount}>{candidates.length}켤레</Text>
           </View>
-        ))
+          {candidates.map((c, i) => {
+            const q = priceOf(c);
+            const per = q ? expectedWonPerKm(q.priceKrw, c.spec.lifespanKm) : null;
+            // 지난 신발 대비 달라진 점 한 줄. 아무것도 안 다르면 스펙을 그대로 적는다
+            // (빈 줄을 두느니 아는 사실을 보여준다).
+            const diff = c.deltas.map((d) => d.detailKo).slice(0, 2).join(' · ');
+            const fallback = [
+              c.spec.weightG ? `${c.spec.weightG}g` : '',
+              c.spec.lifespanKm ? `권장 ${c.spec.lifespanKm}km` : '',
+            ].filter(Boolean).join(' · ');
+            return (
+              <Pressable
+                key={`${c.model.brand}|${c.model.model}`}
+                onPress={() => onPick(i)}
+                accessibilityRole="button"
+                accessibilityLabel={`${c.model.brand} ${c.model.model} 비교하기`}
+                testID={`next-shoe-cand-${c.model.model}`}
+                style={({pressed}) => [s.cand, pressed && s.pressed]}>
+                <View style={s.candLeft}>
+                  <Text style={s.candBrand}>{c.model.brand.toUpperCase()}</Text>
+                  <Text style={s.candName} numberOfLines={1}>{c.model.model}</Text>
+                  <Text style={s.candDelta} numberOfLines={1}>{diff || fallback}</Text>
+                </View>
+                <View style={s.candRight}>
+                  {q ? (
+                    <>
+                      <Text style={s.candPrice}>{q.priceKrw.toLocaleString('ko-KR')}원</Text>
+                      {!!per && <Text style={s.candPerKm}>{per.wonPerKm.toLocaleString('ko-KR')}원/km</Text>}
+                    </>
+                  ) : (
+                    <Ionicons name="chevron-forward" size={ri(ICON.inline)} color={T3} />
+                  )}
+                </View>
+              </Pressable>
+            );
+          })}
+        </>
       )}
 
       <Text style={s.basis}>
@@ -260,12 +274,15 @@ function RecommendStep({
 
 // ── 스텝 1 · 나란히 비교 ────────────────────────────────────────────────────────
 function CompareStep({
-  prevSpec, picked, prevPerKm, quote,
+  prevSpec, picked, prevPerKm, quote, candidates, pickedIdx, onSwitch,
 }: {
   prevSpec: ShoeSpec;
-  picked: AxisCandidate;
+  picked: SimilarCandidate;
   prevPerKm: ReturnType<typeof actualWonPerKm>;
   quote: ShoePriceQuote | null;
+  candidates: SimilarCandidate[];
+  pickedIdx: number;
+  onSwitch: (i: number) => void;
 }) {
   const next = picked.spec;
   const nextPerKm = quote ? expectedWonPerKm(quote.priceKrw, next.lifespanKm) : null;
@@ -303,6 +320,31 @@ function CompareStep({
 
   return (
     <View style={s.stepWrap} testID="next-shoe-compare">
+      {/* 후보 전환기 — 목록으로 돌아갔다 오지 않고 여기서 바로 갈아끼운다.
+          '하나씩 눌러보면서 비교'가 이 화면의 본론이라 왕복을 없앤다. */}
+      {candidates.length > 1 && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={s.switcher}>
+          {candidates.map((c, i) => {
+            const on = i === pickedIdx;
+            return (
+              <Pressable
+                key={`${c.model.brand}|${c.model.model}`}
+                onPress={() => onSwitch(i)}
+                accessibilityRole="button"
+                accessibilityLabel={`${c.model.model} 비교로 바꾸기`}
+                accessibilityState={{selected: on}}
+                testID={`next-shoe-switch-${c.model.model}`}
+                style={({pressed}) => [s.chip, on && s.chipOn, pressed && s.pressed]}>
+                <Text style={[s.chipTxt, on && s.chipTxtOn]} numberOfLines={1}>{c.model.model}</Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      )}
+
       <View style={s.vs}>
         <View style={s.vsCol}>
           <Text style={s.vsTag}>지난 신발</Text>
@@ -376,7 +418,7 @@ function CompareStep({
 }
 
 // ── 스텝 2 · 구매처 ────────────────────────────────────────────────────────────
-function StoreStep({picked, quote}: {picked: AxisCandidate; quote: ShoePriceQuote | null}) {
+function StoreStep({picked, quote}: {picked: SimilarCandidate; quote: ShoePriceQuote | null}) {
   const links = buildShopLinks({brand: picked.model.brand, model: picked.model.model});
   const channels = visibleChannels();
   // 외부 앱/브라우저를 못 열어도 화면이 죽지 않게 조용히 삼킨다.
@@ -454,15 +496,31 @@ const s = StyleSheet.create({
   },
   lede: {color: T3, fontFamily: FONT, fontSize: TYPE.body.fontSize},
   refMeta: {color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, marginBottom: rv(6)},
-
-  group: {marginTop: rv(14)},
-  groupHead: {
-    flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between',
-    marginBottom: rv(8), paddingHorizontal: rs(2),
+  // 추천 범위 안내 — 강조가 아니라 안심이라 무채 유리 표면에 담는다.
+  scopeNote: {
+    flexDirection: 'row', gap: rv(8), alignItems: 'flex-start',
+    backgroundColor: withAlpha(T1, 0.04), borderRadius: RADIUS.md, borderCurve: 'continuous',
+    paddingHorizontal: SPACE.sm, paddingVertical: rv(11), marginTop: rv(4),
   },
-  groupName: {color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '700', letterSpacing: -0.2},
-  groupHint: {color: T3, fontWeight: '500', fontSize: TYPE.caption.fontSize},
+  scopeText: {flex: 1, color: T3, fontFamily: FONT, fontSize: rf(11.5), lineHeight: rf(17)},
+  scopeStrong: {color: T2, fontWeight: '700'},
+
+  listHead: {
+    flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between',
+    marginTop: rv(16), marginBottom: rv(8), paddingHorizontal: rs(2),
+  },
+  listHint: {color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize},
   groupCount: {color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize},
+
+  // 후보 전환 칩 — 선택은 무채 반전(액센트 절제).
+  switcher: {gap: rv(7), paddingBottom: rv(4), paddingRight: SPACE.md},
+  chip: {
+    paddingHorizontal: rs(13), paddingVertical: rv(8), borderRadius: RADIUS.pill,
+    backgroundColor: GLASS.fill, maxWidth: rs(150),
+  },
+  chipOn: {backgroundColor: T1},
+  chipTxt: {color: T2, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600'},
+  chipTxtOn: {color: BG},
 
   cand: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',

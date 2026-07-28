@@ -161,29 +161,111 @@ export function recommendByAxis(
   return out;
 }
 
-/** 축 표시 순서 정본(그룹 나열 순서). */
+/** 축 표시 순서 정본(비교 화면의 줄 순서). */
 export const AXIS_ORDER: readonly CompareAxis[] = [
   'softer', 'lighter', 'longer', 'stabler', 'snappier',
 ];
 
-export interface AxisGroup {
-  axis: CompareAxis;
-  items: AxisCandidate[];
+// ─── 비슷한 신발 찾기 ──────────────────────────────────────────────────────────
+//
+// 방향별(더 푹신/더 가벼움) 그룹 대신 **비슷한 스펙끼리 브랜드별로** 늘어놓는다
+// (2026-07-28 민우님 확정). 이유가 둘이다:
+//  ① 같은 신발이 여러 방향 그룹에 중복으로 나온다.
+//  ② 스펙 커버리지가 낮은 동안에는 축이 잡히지 않아 그룹이 통째로 비어버린다. 반면
+//     '같은 종류 · 비슷한 스펙'은 카테고리만 있어도 언제나 성립한다.
+// 고른 뒤 그래프로 지난 신발과 바로 견주는 게 이 화면의 본론이라, 목록은 후보를 빨리
+// 훑게만 하면 된다.
+
+/** 축별 '많이 다름'의 기준 — 유사도 정규화에 쓴다(이 값만큼 벌어지면 1.0). */
+const SPREAD = {cushion: 4, weightG: 80, lifespanKm: 250} as const;
+
+/**
+ * 지난 신발과의 거리(0에 가까울수록 비슷). **양쪽 다 값이 있는 축만** 센다.
+ * 아는 축이 하나도 없으면 null — '비슷하다'고 말할 근거가 없다는 뜻이다.
+ */
+export function specDistance(prev: ShoeSpec, next: ShoeSpec): number | null {
+  const parts: number[] = [];
+  const push = (a: unknown, b: unknown, spread: number) => {
+    const x = num(a), y = num(b);
+    if (x === undefined || y === undefined) return;
+    parts.push(Math.min(1, Math.abs(x - y) / spread));
+  };
+  push(prev.cushion, next.cushion, SPREAD.cushion);
+  push(prev.weightG, next.weightG, SPREAD.weightG);
+  push(prev.lifespanKm, next.lifespanKm, SPREAD.lifespanKm);
+  if (!parts.length) return null;
+  return parts.reduce((a, b) => a + b, 0) / parts.length;
+}
+
+export interface SimilarCandidate {
+  model: ShoeModel;
+  spec: ShoeSpec;
+  /** 지난 신발 대비 달라진 축(화면이 한 줄 요약으로 쓴다). */
+  deltas: AxisDelta[];
+  /** 0에 가까울수록 비슷. 근거가 없으면 null(목록 뒤로 밀린다). */
+  distance: number | null;
 }
 
 /**
- * 방향별 그룹 목록 — 후보가 실제로 있는 방향만 만든다.
- * 빈 그룹은 만들지 않는다(눌러도 아무것도 없는 줄을 두지 않는다).
+ * 같은 카테고리에서 **비슷한 스펙** 후보를 비슷한 순으로 돌려준다.
+ *
+ * 브랜드로 묶지 않는다 — 브랜드는 '비슷함'의 근거가 아니고(같은 나이키 안에서도
+ * 페가수스와 알파플라이는 완전히 다르다), 브랜드 헤더로 묶으면 가장 잘 맞는 후보가
+ * 알파벳 순서에 밀려 화면 중간에 묻힌다. 대신 **브랜드가 골고루 섞이도록 보장**한다
+ * (라운드로빈): 순서는 정직하게 '비슷한 순'을 유지하면서 여러 브랜드를 보게 된다.
+ *
+ * 스펙을 모르는 후보(distance=null)는 뒤로 밀되 버리지 않는다 — 같은 종류라는 사실만
+ * 으로도 후보 자격은 있다. 커미션은 정렬 어디에도 개입하지 않는다.
  */
-export function buildAxisGroups(
+export function similarShoes(
   prevBrand: string,
   prevModel: string,
-  opts: RecommendOptions = {},
-): AxisGroup[] {
-  const groups: AxisGroup[] = [];
-  for (const axis of AXIS_ORDER) {
-    const items = recommendByAxis(prevBrand, prevModel, axis, opts);
-    if (items.length) groups.push({axis, items});
+  opts: RecommendOptions & {maxPerBrand?: number} = {},
+): SimilarCandidate[] {
+  const pool = opts.pool ?? SHOE_MODELS;
+  const officials = opts.officialSpecs ?? {};
+  const limit = Math.max(0, opts.limit ?? 8);
+  if (limit === 0) return [];
+  const maxPerBrand = Math.max(1, opts.maxPerBrand ?? 2);
+  const category = prevCategory(prevBrand, prevModel);
+  const prevSpec = buildShoeSpec(prevBrand, prevModel, officials[specKey(prevBrand, prevModel)]);
+
+  const all: SimilarCandidate[] = [];
+  for (const m of pool) {
+    if (sameShoe(m, {brand: prevBrand, model: prevModel})) continue;
+    if (!isCompatibleReplacement(category, m.category)) continue;
+    const spec = buildShoeSpec(m.brand, m.model, officials[specKey(m.brand, m.model)]);
+    all.push({
+      model: m, spec,
+      deltas: compareAxes(prevSpec, spec),
+      distance: specDistance(prevSpec, spec),
+    });
   }
-  return groups;
+
+  const rank = (c: SimilarCandidate) => (c.distance === null ? Number.POSITIVE_INFINITY : c.distance);
+  all.sort((a, b) => {
+    const d = rank(a) - rank(b);
+    if (d !== 0) return d;
+    if (b.model.year !== a.model.year) return b.model.year - a.model.year;
+    return a.model.model.localeCompare(b.model.model);
+  });
+
+  // 브랜드 라운드로빈 — 순서는 '비슷한 순'을 유지하되 한 브랜드가 앞을 독차지하지 않게.
+  const seen = new Map<string, number>();
+  const picked: SimilarCandidate[] = [];
+  const rest: SimilarCandidate[] = [];
+  for (const c of all) {
+    const k = c.model.brand.toLowerCase();
+    const n = seen.get(k) ?? 0;
+    if (n < 1) { seen.set(k, 1); picked.push(c); } else { rest.push(c); }
+  }
+  // 1순위(브랜드당 1켤레)로 채우고, 자리가 남으면 2번째 이후를 비슷한 순으로 채운다.
+  const out = picked.slice(0, limit);
+  for (const c of rest) {
+    if (out.length >= limit) break;
+    const k = c.model.brand.toLowerCase();
+    const n = out.filter((x) => x.model.brand.toLowerCase() === k).length;
+    if (n < maxPerBrand) out.push(c);
+  }
+  return out;
 }

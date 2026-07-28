@@ -2,11 +2,11 @@ import {
   isCompatibleReplacement,
   prevCategory,
   recommendByAxis,
-  buildAxisGroups,
+  similarShoes,
+  specDistance,
   AXIS_ORDER,
 } from '../../lib/nextShoe';
 import {SHOE_MODELS, ShoeModel} from '../../data/shoeModels';
-import {lookupOfficialSpec} from '../../lib/shoeSpecModel';
 
 /** 그 카테고리의 실제 시드 모델을 집어온다(합성 데이터로 눈속임하지 않게). */
 function firstOf(category: ShoeModel['category']): ShoeModel {
@@ -35,7 +35,7 @@ describe('카테고리 게이트 — 이 모듈의 존재 이유', () => {
   it('로드 러너에게 트레일화를 권하지 않는다(노면이 다르다)', () => {
     expect(isCompatibleReplacement('daily_trainer', 'trail')).toBe(false);
     const prev = firstOf('daily_trainer');
-    const all = buildAxisGroups(prev.brand, prev.model, {limit: 50}).flatMap((g) => g.items);
+    const all = similarShoes(prev.brand, prev.model, {limit: 50});
     expect(all.some((c) => c.model.category === 'trail')).toBe(false);
   });
 
@@ -43,11 +43,8 @@ describe('카테고리 게이트 — 이 모듈의 존재 이유', () => {
     const cats = [...new Set(SHOE_MODELS.map((m) => m.category))];
     for (const c of cats) {
       const prev = firstOf(c);
-      const groups = buildAxisGroups(prev.brand, prev.model, {limit: 10});
-      for (const g of groups) {
-        for (const item of g.items) {
-          expect(item.model.category).toBe(c);
-        }
+      for (const item of similarShoes(prev.brand, prev.model, {limit: 10})) {
+        expect(item.model.category).toBe(c);
       }
     }
   });
@@ -61,7 +58,7 @@ describe('추천 목록 규칙', () => {
   const prev = firstOf('daily_trainer');
 
   it('자기 자신은 후보에 없다', () => {
-    const all = buildAxisGroups(prev.brand, prev.model, {limit: 20}).flatMap((g) => g.items);
+    const all = similarShoes(prev.brand, prev.model, {limit: 20});
     expect(
       all.some((c) => c.model.brand === prev.brand && c.model.model === prev.model),
     ).toBe(false);
@@ -86,52 +83,74 @@ describe('추천 목록 규칙', () => {
     expect(a).toEqual(b);
   });
 
-  it('빈 그룹은 만들지 않는다', () => {
-    for (const g of buildAxisGroups(prev.brand, prev.model)) {
-      expect(g.items.length).toBeGreaterThan(0);
+  it('브랜드가 골고루 섞인다(한 브랜드가 앞을 독차지하지 않는다)', () => {
+    const got = similarShoes(prev.brand, prev.model, {limit: 6, maxPerBrand: 2});
+    const counts = new Map<string, number>();
+    for (const c of got) {
+      const k = c.model.brand.toLowerCase();
+      counts.set(k, (counts.get(k) ?? 0) + 1);
     }
+    for (const n of counts.values()) expect(n).toBeLessThanOrEqual(2);
+    if (got.length >= 3) expect(counts.size).toBeGreaterThan(1);
+  });
+
+  it('similarShoes 도 limit·결정성을 지킨다', () => {
+    expect(similarShoes(prev.brand, prev.model, {limit: 3}).length).toBeLessThanOrEqual(3);
+    expect(similarShoes(prev.brand, prev.model, {limit: 0})).toEqual([]);
+    const a = similarShoes(prev.brand, prev.model, {limit: 5}).map((c) => c.model.model);
+    const b = similarShoes(prev.brand, prev.model, {limit: 5}).map((c) => c.model.model);
+    expect(a).toEqual(b);
   });
 });
 
-describe('무게 스펙이 비교를 살린다', () => {
-  // 스펙 표(data/shoeSpecs.json)는 계속 채워지므로, 이 스위트는 pool 을 명시해
-  // 표의 성장과 무관하게 같은 결과를 내도록 격리한다.
-  const superTrainers = SHOE_MODELS.filter((m) => m.category === 'super_trainer');
-  const noSpecPool = superTrainers.filter((m) => !lookupOfficialSpec(m.brand, m.model)).slice(0, 6);
-
-  it('무게를 모르면 무게 축 그룹이 생기지 않는다(추측하지 않는다)', () => {
-    const prev = noSpecPool[0];
-    const groups = buildAxisGroups(prev.brand, prev.model, {pool: noSpecPool});
-    expect(groups.some((g) => g.axis === 'lighter')).toBe(false);
+describe('specDistance — 비슷함의 근거', () => {
+  it('아는 축이 하나도 없으면 null(비슷하다고 말할 근거가 없다)', () => {
+    expect(specDistance({brand: 'A', model: 'a'}, {brand: 'B', model: 'b'})).toBeNull();
   });
 
-  it('확인된 무게를 주면 "더 가벼워요"가 살아난다', () => {
-    const prev = noSpecPool[0];
-    const lighter = noSpecPool[1];
-    const groups = buildAxisGroups(prev.brand, prev.model, {
-      pool: noSpecPool,
+  it('스펙이 같으면 0에 가깝다', () => {
+    const a = {brand: 'A', model: 'a', weightG: 260, cushion: 3, lifespanKm: 650};
+    const b = {brand: 'B', model: 'b', weightG: 260, cushion: 3, lifespanKm: 650};
+    expect(specDistance(a, b)).toBe(0);
+  });
+
+  it('많이 다를수록 값이 커진다', () => {
+    const base = {brand: 'A', model: 'a', weightG: 260, cushion: 3, lifespanKm: 650};
+    const near = {brand: 'B', model: 'b', weightG: 270, cushion: 3, lifespanKm: 650};
+    const far = {brand: 'C', model: 'c', weightG: 340, cushion: 5, lifespanKm: 450};
+    expect(specDistance(base, near)!).toBeLessThan(specDistance(base, far)!);
+  });
+
+  it('한쪽만 아는 축은 세지 않는다', () => {
+    const a = {brand: 'A', model: 'a', weightG: 260, lifespanKm: 650};
+    const b = {brand: 'B', model: 'b', lifespanKm: 650};
+    expect(specDistance(a, b)).toBe(0); // 수명만 비교됨
+  });
+});
+
+describe('비슷한 순 정렬', () => {
+  it('스펙이 비슷한 쪽이 먼저 온다', () => {
+    // 실제 스펙 표를 쓰는 대신 주입해 결정적으로 확인한다.
+    const pool = SHOE_MODELS.filter((m) => m.category === 'super_trainer').slice(0, 4);
+    const [prev, near, far] = pool;
+    const got = similarShoes(prev.brand, prev.model, {
+      pool,
+      limit: 5,
+      // 브랜드 라운드로빈이 순서에 끼어들지 않게 풀어둔다 — 여기서 보는 건 유사도 정렬이다.
+      maxPerBrand: 10,
       officialSpecs: {
-        [`${prev.brand}|${prev.model}`]: {weightG: 260},
-        [`${lighter.brand}|${lighter.model}`]: {weightG: 215},
+        [`${prev.brand}|${prev.model}`]: {weightG: 250},
+        [`${near.brand}|${near.model}`]: {weightG: 255},
+        [`${far.brand}|${far.model}`]: {weightG: 340},
       },
     });
-    const g = groups.find((x) => x.axis === 'lighter');
-    expect(g).toBeDefined();
-    expect(g!.items[0].model.model).toBe(lighter.model);
-    expect(g!.items[0].deltas.find((d) => d.axis === 'lighter')!.detailKo).toBe('45g 가벼워요');
+    const order = got.map((c) => c.model.model);
+    expect(order.indexOf(near.model)).toBeLessThan(order.indexOf(far.model));
   });
 
-  it('실제 스펙 표가 채워질수록 비교 축이 저절로 늘어난다', () => {
-    // Hoka Mach 6(210g/37mm)과 Clifton 9(247g/32mm)은 표에 있다 — 같은 데일리 계열이
-    // 아니므로 카테고리 게이트를 지키되, 표가 실제로 축을 만들어내는지 확인한다.
-    const withSpec = SHOE_MODELS.filter(
-      (m) => m.category === 'daily_trainer' && lookupOfficialSpec(m.brand, m.model)?.weightG,
-    );
-    expect(withSpec.length).toBeGreaterThan(0);
-    const prev = withSpec[0];
-    const groups = buildAxisGroups(prev.brand, prev.model, {limit: 5});
-    // 표에 무게가 있는 모델끼리는 무게 축이 실제로 계산된다(있으면 lighter, 없으면 최소
-    // 수명 축이라도 뜬다 — 어느 쪽이든 빈 화면은 아니다).
-    expect(groups.length).toBeGreaterThan(0);
+  it('스펙을 모르는 후보도 버리지 않는다(같은 종류면 후보 자격은 있다)', () => {
+    const pool = SHOE_MODELS.filter((m) => m.category === 'stability').slice(0, 5);
+    const got = similarShoes(pool[0].brand, pool[0].model, {pool, limit: 10, maxPerBrand: 10});
+    expect(got.length).toBe(pool.length - 1);
   });
 });

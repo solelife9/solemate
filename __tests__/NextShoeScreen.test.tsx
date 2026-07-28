@@ -85,12 +85,14 @@ describe('추천은 같은 카테고리 안에서만', () => {
 describe('모르는 건 비운다', () => {
   test('가격을 못 구하면 없는 숫자를 지어내지 않는다', async () => {
     // 네이버 키가 없어 fetchShoePrice 가 전부 null 을 준다(현재 상태).
+    // 목록은 그래도 뜨고, 가격 자리에만 아무 숫자도 새지 않아야 한다.
     const r = await mount();
-    const txt = textOf(r.root);
-    expect(txt).toContain('공식 스토어에');
-    // 가격 자리에 0원 같은 가짜 값이 새지 않는다.
-    expect(txt).not.toContain('0원/km');
-    expect(txt).not.toMatch(/^0원/m);
+    const rows = pressables(r.root, 'next-shoe-cand-');
+    expect(rows.length).toBeGreaterThan(0);
+    // 후보 행 안에는 어떤 금액도 없어야 한다(지난 신발의 원/km는 상단에 따로 있고 진짜다).
+    for (const row of rows) {
+      expect(textOf(row)).not.toMatch(/원/);
+    }
   });
 
   test('구매가가 없으면 지난 신발 원/km 숫자를 말하지 않는다', async () => {
