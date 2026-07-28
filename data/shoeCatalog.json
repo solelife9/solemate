@@ -5602,11 +5602,14 @@
     "version": null,
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 170,
+    "weightBasis": "유니섹스 M9",
+    "drop": 3.5,
+    "plate": "carbon",
+    "stackHeight": {
+      "heel": 39,
+      "forefoot": 35.5
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
@@ -5614,7 +5617,7 @@
       "하이퍼워프",
       "하이퍼워프 엘리트"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 450,
     "id": "mizuno-hyperwarp-elite",
     "brand": "Mizuno",
@@ -5648,18 +5651,21 @@
     "version": null,
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
+    "weight": 139,
+    "weightBasis": "US9",
+    "drop": 3.5,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 33,
+      "forefoot": 29.5
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
       "미즈노",
       "하이퍼워프"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "mizuno-hyperwarp-pure",
     "brand": "Mizuno",
@@ -5718,11 +5724,14 @@
     "variant": null,
     "collabWith": null,
     "category": "tempo",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 264,
+    "weightBasis": "US9",
+    "drop": 8,
+    "plate": "other",
+    "stackHeight": {
+      "heel": 51,
+      "forefoot": 43
+    },
     "releaseYear": 2025,
     "defaultLifespanKm": 650,
     "discontinued": false,
@@ -5731,7 +5740,7 @@
       "네오",
       "네오 2"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "version": "3",
@@ -5785,11 +5794,14 @@
     "version": "2",
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
+    "weight": 241,
+    "weightBasis": "US9",
+    "drop": 6,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 48,
+      "forefoot": 42
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
@@ -5797,7 +5809,7 @@
       "네오젠",
       "네오 젠 2"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "mizuno-neo-zen-2",
     "brand": "Mizuno",
@@ -8578,8 +8590,8 @@
     "collabWith": null,
     "weight": null,
     "weightBasis": null,
-    "drop": null,
-    "plate": null,
+    "drop": 5,
+    "plate": "carbon",
     "stackHeight": null,
     "releaseYear": null,
     "discontinued": false,
@@ -8851,11 +8863,14 @@
     "version": "3",
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 264,
+    "weightBasis": "US9",
+    "drop": 6,
+    "plate": "none",
+    "stackHeight": {
+      "heel": 46,
+      "forefoot": 40
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
@@ -8864,7 +8879,7 @@
       "클라우드몬스터 하이퍼",
       "클몬 하이퍼"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "on-cloudmonster-3-hyper",
     "brand": "On",
@@ -9359,11 +9374,14 @@
     "variant": null,
     "collabWith": null,
     "category": "racing",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 170,
+    "weightBasis": "US9",
+    "drop": 8,
+    "plate": "carbon",
+    "stackHeight": {
+      "heel": 38,
+      "forefoot": 30
+    },
     "releaseYear": 2025,
     "defaultLifespanKm": 450,
     "discontinued": false,
@@ -9374,7 +9392,7 @@
       "디비에이트",
       "디비에이트 4"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "version": null,
@@ -9498,11 +9516,14 @@
     "version": "3",
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
+    "weight": 281,
+    "weightBasis": "US9",
+    "drop": 8,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 40,
+      "forefoot": 32
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
@@ -9510,7 +9531,7 @@
       "포에버런",
       "포에버런 니트로 3"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 700,
     "id": "puma-foreverrun-nitro-3",
     "brand": "Puma",
@@ -9880,11 +9901,14 @@
     "version": "4",
     "variant": "GRVL",
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
+    "weight": 283,
+    "weightBasis": "US9",
+    "drop": 8,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 43,
+      "forefoot": 35
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
@@ -9892,7 +9916,7 @@
       "에어로글라이드",
       "그래블"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "salomon-aero-glide-4-grvl",
     "brand": "Salomon",
@@ -9907,11 +9931,14 @@
     "variant": null,
     "collabWith": null,
     "category": "trail",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
+    "weight": 275,
+    "weightBasis": "US9",
+    "drop": 8,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 33,
+      "forefoot": 25
+    },
     "releaseYear": 2024,
     "defaultLifespanKm": 650,
     "discontinued": false,
@@ -9919,7 +9946,7 @@
       "살로몬",
       "제네시스"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "version": "2",
@@ -9951,18 +9978,21 @@
     "version": null,
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 269,
+    "weightBasis": "US9",
+    "drop": 6,
+    "plate": "carbon",
+    "stackHeight": {
+      "heel": 45,
+      "forefoot": 39
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
       "살로몬",
       "그래블 컨셉"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "salomon-grvl-concept",
     "brand": "Salomon",
@@ -9973,18 +10003,21 @@
     "version": null,
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
+    "weight": 289,
+    "weightBasis": "US9",
+    "drop": 6,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 30,
+      "forefoot": 24
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
       "살로몬",
       "펄사"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "salomon-pulsar",
     "brand": "Salomon",
@@ -10206,11 +10239,14 @@
     "version": null,
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 252,
+    "weightBasis": "US9",
+    "drop": 8,
+    "plate": "carbon",
+    "stackHeight": {
+      "heel": 38,
+      "forefoot": 30
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
@@ -10218,7 +10254,7 @@
       "에스랩",
       "스펙터"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 450,
     "id": "salomon-s-lab-spectur",
     "brand": "Salomon",
@@ -10300,11 +10336,14 @@
     "version": "2",
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
+    "weight": 295,
+    "weightBasis": "US9",
+    "drop": 6,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 41,
+      "forefoot": 35
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
@@ -10312,7 +10351,7 @@
       "에스랩",
       "S랩 울트라 글라이드"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "salomon-s-lab-ultra-glide-2",
     "brand": "Salomon",
@@ -11471,11 +11510,14 @@
     "version": "2",
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
+    "weight": 278,
+    "weightBasis": "US9",
+    "drop": 6,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 44,
+      "forefoot": 38
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
@@ -11483,7 +11525,7 @@
       "알타메사",
       "알타메사 500"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "the-north-face-altamesa-500-2",
     "brand": "The North Face",
@@ -11494,18 +11536,21 @@
     "version": null,
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
+    "weight": 269,
+    "weightBasis": "US9",
+    "drop": 6,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 35,
+      "forefoot": 29
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
       "노스페이스",
       "오프트레일 울트라"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "the-north-face-offtrail-ultra",
     "brand": "The North Face",
