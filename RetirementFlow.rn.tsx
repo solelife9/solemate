@@ -38,6 +38,7 @@ import {
   withAlpha, TYPE,
   GLASS, MOTION,
   ICON,
+  RING_ACCENT,
 } from './theme';
 import {Button, GlassEdge} from './primitives';
 import {Unit} from './lib/units';
@@ -540,11 +541,34 @@ function ArchivedStep({
 }) {
   return (
     <View style={s.stepWrap} testID="retire-flow-archived">
-      <Text style={s.eyebrow}>보관 완료</Text>
-      <Text style={s.stepTitle}>{model.shoeName}, 잘 보관했어요</Text>
-      <Text style={s.lede}>
-        함께 달린 기록은 하나도 사라지지 않았어요. 러닝화 아카이브에서 언제든 다시 볼 수
-        있어요.
+      {/* 완료 표식 — 수명 링이 끝까지 찬 상태의 언어를 그대로 쓴다(Ember 테두리). */}
+      <View style={s.doneMark}>
+        <Ionicons name="checkmark" size={ri(ICON.action)} color={RING_ACCENT} />
+      </View>
+
+      <Text style={s.doneTitle}>아카이브에 담았어요</Text>
+      <Text style={s.doneSub}>러닝화 아카이브에서 언제든 다시 만날 수 있어요.</Text>
+
+      {/* 무엇이 보관됐는지 눈으로 확인시킨다 — '담았다'는 말만으로는 안 믿긴다. */}
+      <View style={s.archivedCard}>
+        <GlassEdge glints={false} radius={RADIUS.md} />
+        <Text style={s.archivedName} numberOfLines={1}>{model.shoeName}</Text>
+        <Text style={s.archivedMeta}>
+          {model.distanceLabel}
+          {model.usageDays > 0 ? ` · ${usagePeriodKo(model.usageDays)}` : ''}
+        </Text>
+      </View>
+
+      {/* 여기서 화제가 바뀐다는 걸 선으로 알린다 — 작별과 다음은 같은 이야기가 아니다. */}
+      <View style={s.divider}>
+        <View style={s.dividerLine} />
+        <Text style={s.dividerText}>이제, 다음 동행</Text>
+        <View style={s.dividerLine} />
+      </View>
+
+      {/* 명령이 아니라 질문 — 거절해도 되는 초대여야 한다(BRAND.md §3-4). */}
+      <Text style={s.inviteCopy}>
+        비어 있는 자리, 함께 달릴{'\n'}다음 신발을 찾아볼까요?
       </Text>
     </View>
   );
@@ -611,6 +635,65 @@ const s = StyleSheet.create({
     fontSize: TYPE.heading.fontSize,
     fontWeight: '500',
     lineHeight: rf(25),
+  },
+
+  // ── 보관 완료(스텝 4) ────────────────────────────────────────────────────────
+  // 수명 링이 끝까지 찬 상태를 그대로 축소한 표식 — Ember 는 '진행/러닝 에너지'
+  // 허용 범위 안이다(DESIGN.md §1). 채우지 않고 테두리만 써서 성취 축하가 아니라
+  // 완결의 톤으로 남긴다.
+  doneMark: {
+    alignSelf: 'center',
+    width: rs(56),
+    height: rs(56),
+    borderRadius: RADIUS.pill,
+    borderWidth: 2,
+    borderColor: withAlpha(RING_ACCENT, 0.55),
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: rv(8),
+  },
+  doneTitle: {
+    color: T1,
+    fontFamily: DISPLAY,
+    fontSize: TYPE.title1.fontSize,
+    fontWeight: '700',
+    letterSpacing: -0.4,
+    textAlign: 'center',
+  },
+  doneSub: {
+    color: T3,
+    fontFamily: FONT,
+    fontSize: TYPE.body.fontSize,
+    textAlign: 'center',
+    marginTop: rv(-4),
+  },
+  archivedCard: {
+    backgroundColor: GLASS.fill,
+    borderRadius: RADIUS.md,
+    borderCurve: 'continuous',
+    overflow: 'hidden',
+    paddingHorizontal: SPACE.md,
+    paddingVertical: SPACE.md,
+    gap: rv(3),
+  },
+  archivedName: {
+    color: T1,
+    fontFamily: FONT,
+    fontSize: TYPE.heading.fontSize,
+    fontWeight: '700',
+    letterSpacing: -0.2,
+  },
+  archivedMeta: {color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize},
+  divider: {flexDirection: 'row', alignItems: 'center', gap: SPACE.sm},
+  dividerLine: {flex: 1, height: 1, backgroundColor: SEP},
+  dividerText: {color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize},
+  inviteCopy: {
+    color: T2,
+    fontFamily: FONT,
+    fontSize: TYPE.heading.fontSize,
+    fontWeight: '500',
+    lineHeight: rf(25),
+    textAlign: 'center',
   },
   ledeStrong: {color: T1, fontWeight: '700'},
   dateRange: {color: T3, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '500'},

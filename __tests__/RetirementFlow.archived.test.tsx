@@ -96,8 +96,13 @@ describe('보관 완료(스텝 4)', () => {
     expect(has(r.root, 'retire-flow-archived')).toBe(true);
     expect(onClose).not.toHaveBeenCalled();
     const txt = textOf(r.root.findAll((n: any) => n.props && n.props.testID === 'retire-flow-archived')[0]);
+    // 무엇이 어디에 담겼는지 눈으로 확인시킨다 — '담았다'는 말만으로는 안 믿긴다.
+    expect(txt).toContain('아카이브');
     expect(txt).toContain('Nike Pegasus 40');
-    expect(txt).toContain('보관');
+    expect(txt).toContain('590km');
+    // 화제 전환을 선으로 알리고, 명령이 아니라 질문으로 초대한다.
+    expect(txt).toContain('다음 동행');
+    expect(txt).toContain('찾아볼까요?');
   });
 
   test('여기서야 다음 신발 초대가 나오고, 거절하는 길도 같이 있다', async () => {
