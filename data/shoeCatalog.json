@@ -3463,6 +3463,30 @@
     "verified": false
   },
   {
+    "version": "18",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "브룩스",
+      "캐스캐디아",
+      "캐스케이디아",
+      "캐스캐디아 18"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "brooks-cascadia-18",
+    "brand": "Brooks",
+    "model": "Cascadia",
+    "category": "trail"
+  },
+  {
     "id": "brooks-cascadia-19",
     "brand": "Brooks",
     "model": "Cascadia",
@@ -7116,6 +7140,30 @@
     "category": "daily"
   },
   {
+    "version": "15",
+    "variant": "GTX",
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "뉴발란스",
+      "뉴발",
+      "880",
+      "고어텍스"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "new-balance-fresh-foam-x-880-15-gtx",
+    "brand": "New Balance",
+    "model": "Fresh Foam X 880",
+    "category": "daily"
+  },
+  {
     "version": "16",
     "variant": null,
     "collabWith": null,
@@ -7187,6 +7235,31 @@
       "히에로 v9"
     ],
     "verified": true
+  },
+  {
+    "version": "9",
+    "variant": "GTX",
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "뉴발란스",
+      "뉴발",
+      "히에로",
+      "이에로",
+      "고어텍스"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "new-balance-fresh-foam-x-hierro-9-gtx",
+    "brand": "New Balance",
+    "model": "Fresh Foam X Hierro",
+    "category": "trail"
   },
   {
     "version": "4",
@@ -8991,6 +9064,29 @@
     "verified": false
   },
   {
+    "version": "6",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "온",
+      "온러닝",
+      "클라우드 6"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "on-cloud-6",
+    "brand": "On",
+    "model": "Cloud",
+    "category": "daily"
+  },
+  {
     "id": "on-cloud-x-3",
     "brand": "On",
     "model": "Cloud X",
@@ -9771,6 +9867,52 @@
     "verified": false
   },
   {
+    "version": "2",
+    "variant": "WP",
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "온",
+      "온러닝",
+      "클라우드비스타",
+      "워터프루프"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "on-cloudvista-2-wp",
+    "brand": "On",
+    "model": "Cloudvista",
+    "category": "trail"
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "푸마",
+      "액티베이트 나이트로 트레이너"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "puma-activate-nitro-trainer",
+    "brand": "Puma",
+    "model": "Activate Nitro Trainer",
+    "category": "daily"
+  },
+  {
     "id": "puma-deviate-nitro-3",
     "brand": "Puma",
     "model": "Deviate Nitro",
@@ -10220,6 +10362,28 @@
     "category": "daily"
   },
   {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "푸마",
+      "벨로시티 나이트로 트레일"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "puma-velocity-nitro-trail",
+    "brand": "Puma",
+    "model": "Velocity Nitro Trail",
+    "category": "trail"
+  },
+  {
     "version": "4",
     "variant": null,
     "collabWith": null,
@@ -10578,6 +10742,29 @@
       "펄사 2"
     ],
     "verified": false
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "살로몬",
+      "에스랩",
+      "알파인웨이"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "salomon-s-lab-alpineway",
+    "brand": "Salomon",
+    "model": "S/Lab Alpineway",
+    "category": "trail"
   },
   {
     "version": "2",
