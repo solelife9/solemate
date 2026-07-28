@@ -91,6 +91,20 @@ describe('네이버 공식 스토어 판정 — 모르는 판매처는 공식이
     expect(isOfficialNaverMall('나이키매니아')).toBe(false);
   });
 
+  it("'공식'을 참칭하는 리셀 플랫폼을 막는다(실측으로 걸린 사례)", () => {
+    // 2026-07-28 실제 네이버 검색 결과에 섞여 나온 이름들. 브랜드 공식이 아닌데
+    // 상호에 '공식'이 들어간다 — 브랜드명 시작 앵커가 없으면 그대로 뚫린다.
+    expect(isOfficialNaverMall('POIZON공식온라인스토어')).toBe(false);
+    expect(isOfficialNaverMall('무신사공식스토어')).toBe(false); // 브랜드가 아니라 편집숍
+    expect(isOfficialNaverMall('공식스토어')).toBe(false);
+  });
+
+  it('실측으로 확인된 브랜드 공식 판매처는 통과시킨다', () => {
+    // 2026-07-28 네이버 검색에서 실제로 관찰된 표기.
+    expect(isOfficialNaverMall('나이키공식홈페이지')).toBe(true);
+    expect(isOfficialNaverMall('아식스공식몰')).toBe(true);
+  });
+
   it('빈 값·결측은 공식이 아니다', () => {
     expect(isOfficialNaverMall('')).toBe(false);
     expect(isOfficialNaverMall('   ')).toBe(false);

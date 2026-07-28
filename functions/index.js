@@ -162,7 +162,11 @@ app.get('/shop/price', rateLimit, async (req, res) => {
       return res.status(503).json({error: '가격 조회가 아직 설정되지 않았어요.', items: []});
     }
 
-    const url = `https://openapi.naver.com/v1/search/shop.json?query=${encodeURIComponent(q)}&display=20&sort=asc`;
+    // sort=asc(최저가순)는 **양말·깔창 같은 액세서리를 맨 위로 끌어올린다**(실측:
+    // '호카 클리프톤 10' 최저가 20,300원 = 같은 이름의 러닝 삭스). 정확도순(sim)으로
+    // 받고 질의에 '러닝화'를 덧붙여 상품군을 좁힌다. 최종 판정은 클라이언트가
+    // category4='러닝화' 로 한 번 더 거른다.
+    const url = `https://openapi.naver.com/v1/search/shop.json?query=${encodeURIComponent(q + ' 러닝화')}&display=50&sort=sim`;
     const r = await fetch(url, {
       headers: {'X-Naver-Client-Id': id, 'X-Naver-Client-Secret': secret},
     });
@@ -178,6 +182,9 @@ app.get('/shop/price', rateLimit, async (req, res) => {
         link: it.link,
         brand: it.brand,
         maker: it.maker,
+        // 상품군 판정용 — 클라이언트가 '러닝화'가 아닌 건 버린다(액세서리 오염 차단).
+        category3: it.category3,
+        category4: it.category4,
       })),
     });
   } catch (e) {

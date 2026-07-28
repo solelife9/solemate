@@ -119,8 +119,12 @@ export function isOfficialNaverMall(mallName: string | null | undefined): boolea
  * 신규 브랜드를 넣을 때는 **실제 mallName 을 눈으로 확인한 뒤** 추가한다(추측 금지).
  */
 const OFFICIAL_MALL_PATTERNS: readonly RegExp[] = [
-  // (1) 브랜드명 + '공식' 조합 — 네이버 브랜드스토어 표준 표기.
-  /^(나이키|아디다스|아식스|asics|뉴발란스|newbalance|호카|hoka|브룩스|brooks|써코니|saucony|미즈노|mizuno|온|on|퓨마|puma|살로몬|salomon|알트라|altra)공식/,
+  // (1) 브랜드명으로 **시작**해서 '공식'이 오는 조합 — 네이버 브랜드스토어 표준 표기.
+  //     실측(2026-07-28)으로 확인된 실제 판매처명: '나이키공식홈페이지', '아식스공식몰'.
+  //     ⚠️ 브랜드명 시작을 강제하는 게 핵심이다. 'POIZON공식온라인스토어'(중국 리셀
+  //     플랫폼)처럼 이름에 '공식'만 넣은 곳이 실제로 검색에 섞여 나온다 — 브랜드 공식이
+  //     아닌데 공식을 참칭한다. 시작 앵커가 없으면 그대로 뚫린다.
+  /^(나이키|아디다스|아식스|asics|뉴발란스|newbalance|호카|hoka|브룩스|brooks|써코니|saucony|미즈노|mizuno|퓨마|puma|살로몬|salomon|알트라|altra)공식/,
   // (2) 확인된 코리아 법인 직영 표기.
   /^(나이키코리아|아디다스코리아|아식스코리아|뉴발란스코리아|호카코리아)$/,
 ];

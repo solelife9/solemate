@@ -29,6 +29,22 @@ export interface RawPriceItem {
   link?: string;
   brand?: string;
   maker?: string;
+  /** 네이버 상품 분류. 러닝화가 아닌 것(양말·깔창 등)을 거르는 근거. */
+  category3?: string;
+  category4?: string;
+}
+
+/**
+ * 러닝화 상품인가 — 분류가 '러닝화'일 때만 true.
+ *
+ * 이게 없으면 **양말이 신발 가격으로 둔갑한다**(실측 2026-07-28: '호카 클리프톤 10'
+ * 최저가 20,300원 = 같은 이름의 러닝 삭스). 분류를 모르는 상품은 통과시키지 않는다 —
+ * 가격을 못 보여주는 쪽이 틀린 가격을 보여주는 쪽보다 낫다.
+ */
+export function isRunningShoeItem(it: RawPriceItem | null | undefined): boolean {
+  const c4 = String(it?.category4 || '').trim();
+  const c3 = String(it?.category3 || '').trim();
+  return c4 === '러닝화' || (c4 === '' && c3 === '러닝화');
 }
 
 /** 화면에 실제로 쓰는 가격 한 건. */
@@ -70,6 +86,8 @@ export function pickOfficialQuote(
   if (!Array.isArray(items) || items.length === 0) return null;
   let best: ShoePriceQuote | null = null;
   for (const it of items) {
+    // ① 러닝화가 맞는가(액세서리 오염 차단) → ② 공식 스토어인가(가품 차단).
+    if (!isRunningShoeItem(it)) continue;
     const mallName = stripTags(String(it?.mallName || ''));
     if (!isOfficialNaverMall(mallName)) continue;
     const priceKrw = toPrice(it?.lprice);

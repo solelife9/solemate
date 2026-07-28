@@ -68,6 +68,10 @@
     "ASICS|Novablast 6": {"weightG": 258, "stackHeelMm": 46.5, "dropMm": 8, "basis": "US9.5"},
     "ASICS|Superblast 3": {"weightG": 236, "stackHeelMm": 46.5, "dropMm": 8, "basis": "US9.5"},
     "ASICS|Gel-Kayano 32": {"weightG": 304, "stackHeelMm": 40, "dropMm": 8, "basis": "US9.5"},
-    "ASICS|Gel-Cumulus 27": {"weightG": 270, "basis": "US9.5"}
+    "ASICS|Gel-Cumulus 27": {"weightG": 270, "basis": "US9.5"},
+
+    "Hoka|Arahi 7": {"stackHeelMm": 37, "dropMm": 5},
+    "Hoka|Gaviota 5": {"stackHeelMm": 36, "dropMm": 6},
+    "Hoka|Skyflow": {"weightG": 283, "stackHeelMm": 39, "dropMm": 5, "basis": "US9"}
   }
 }

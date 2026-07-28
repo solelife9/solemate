@@ -1,5 +1,6 @@
 import {
   pickOfficialQuote,
+  isRunningShoeItem,
   checkedAtLabel,
   fetchShoePrice,
   __resetPriceCacheForTests,
@@ -15,9 +16,34 @@ function item(over: Partial<RawPriceItem> = {}): RawPriceItem {
     lprice: '169000',
     mallName: '나이키공식스토어',
     link: 'https://shopping.naver.com/p/1',
+    category3: '스니커즈/운동화',
+    category4: '러닝화',
     ...over,
   };
 }
+
+describe('러닝화가 아닌 상품은 버린다 — 양말이 신발 가격으로 둔갑하는 걸 막는다', () => {
+  it("분류가 '러닝화'여야 통과한다", () => {
+    expect(isRunningShoeItem(item())).toBe(true);
+  });
+
+  it('같은 이름의 액세서리를 거른다(실측: 클리프톤 10 러닝 삭스 20,300원)', () => {
+    const socks = item({
+      title: '호카 공용 클리프톤10 크루 런 삭스',
+      lprice: '20300',
+      category3: '양말',
+      category4: '스포츠양말',
+    });
+    expect(isRunningShoeItem(socks)).toBe(false);
+    // 파이프라인 전체에서도 걸러져 가격이 나오지 않아야 한다.
+    expect(pickOfficialQuote([{...socks, mallName: '호카공식스토어'}], T)).toBeNull();
+  });
+
+  it('분류를 모르면 통과시키지 않는다(틀린 가격보다 빈칸이 낫다)', () => {
+    expect(isRunningShoeItem(item({category3: undefined, category4: undefined}))).toBe(false);
+    expect(isRunningShoeItem(null)).toBe(false);
+  });
+});
 
 describe('pickOfficialQuote — 공식 스토어만 통과시킨다', () => {
   it('공식 스토어 상품을 고른다', () => {
