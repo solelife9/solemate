@@ -2,76 +2,369 @@
   "note": "모델별 확인된 공식 스펙(무게·힐 스택·드롭). 전부 제조사가 공표하는 사실이며, 확인한 것만 넣는다 — 추측·보간 금지. 키는 data/shoes.json 의 'brand|model' 과 정확히 일치해야 한다(불일치하면 조용히 무시되므로 테스트가 키 정합성을 검사한다). weightG 는 남성 US9/270mm 기준을 표준으로 삼되, 출처가 다른 사이즈면 basis 에 적는다.",
   "updated": "2026-07-28",
   "specs": {
-    "ASICS|Novablast 5": {"weightG": 255, "stackHeelMm": 41.5, "dropMm": 8, "basis": "US9"},
-    "ASICS|Superblast 2": {"weightG": 251, "stackHeelMm": 45, "dropMm": 8, "basis": "US9.5"},
-    "ASICS|Gel-Nimbus 27": {"weightG": 307, "stackHeelMm": 43.5, "dropMm": 8, "basis": "US9"},
-    "Hoka|Clifton 10": {"weightG": 278, "stackHeelMm": 42, "dropMm": 8, "basis": "US9"},
-    "Hoka|Clifton 9": {"weightG": 247, "stackHeelMm": 32, "dropMm": 5, "basis": "US9"},
-    "Hoka|Bondi 9": {"weightG": 297, "stackHeelMm": 43, "dropMm": 5, "basis": "US9"},
-    "Hoka|Bondi 8": {"weightG": 306, "stackHeelMm": 39, "dropMm": 5, "basis": "US9"},
-    "Hoka|Mach 6": {"weightG": 210, "stackHeelMm": 37, "dropMm": 5, "basis": "US9"},
-    "Hoka|Rincon 4": {"stackHeelMm": 36, "dropMm": 5},
-    "Nike|Pegasus 41": {"weightG": 281, "stackHeelMm": 37, "dropMm": 10, "basis": "US9"},
-    "Nike|Pegasus 42": {"weightG": 286, "stackHeelMm": 37, "dropMm": 10, "basis": "US9"},
-    "Nike|Vomero 18": {"stackHeelMm": 42.5, "dropMm": 10},
-    "Brooks|Ghost 16": {"weightG": 269, "stackHeelMm": 34.5, "dropMm": 12, "basis": "EU44"},
-    "Brooks|Glycerin 21": {"stackHeelMm": 38, "dropMm": 10},
-    "Brooks|Adrenaline GTS 24": {"stackHeelMm": 35, "dropMm": 12},
-    "Saucony|Endorphin Speed 4": {"weightG": 245, "stackHeelMm": 36, "dropMm": 8, "basis": "US9.5"},
-    "Saucony|Ride 18": {"stackHeelMm": 35, "dropMm": 8},
-
-    "ASICS|Gel-Cumulus 26": {"weightG": 255, "stackHeelMm": 38.5, "dropMm": 8, "basis": "US9"},
-    "ASICS|Gel-Kayano 31": {"weightG": 312, "stackHeelMm": 40, "dropMm": 10, "basis": "US9.5"},
-    "ASICS|Novablast 4": {"weightG": 267, "stackHeelMm": 41.5, "dropMm": 8, "basis": "US9.5"},
-
-    "New Balance|Fresh Foam X 1080v14": {"weightG": 298, "stackHeelMm": 38, "dropMm": 6, "basis": "US9"},
-    "New Balance|Fresh Foam X More v5": {"stackHeelMm": 43, "dropMm": 4},
-
-    "Mizuno|Wave Rider 28": {"weightG": 263, "stackHeelMm": 38.5, "dropMm": 12, "basis": "US9.5"},
-    "Mizuno|Wave Rebellion Pro 3": {"weightG": 218, "dropMm": 4, "basis": "US9"},
-
-    "On|Cloudmonster 2": {"weightG": 295, "stackHeelMm": 35, "dropMm": 6, "basis": "US9"},
-    "On|Cloudsurfer 7": {"weightG": 237, "stackHeelMm": 32, "dropMm": 10, "basis": "US9.5"},
-    "On|Cloudeclipse": {"weightG": 292, "stackHeelMm": 37, "dropMm": 6},
-
-    "Adidas|Boston 12": {"weightG": 261, "stackHeelMm": 37.5, "dropMm": 7, "basis": "US9"},
-    "Adidas|Supernova Rise": {"weightG": 287, "stackHeelMm": 36, "dropMm": 10, "basis": "UK9"},
-
-    "Nike|Vaporfly 3": {"weightG": 184, "stackHeelMm": 38, "dropMm": 8, "basis": "US9"},
-    "Nike|Alphafly 3": {"weightG": 198, "stackHeelMm": 40, "dropMm": 8, "basis": "US9"},
-    "Nike|Zoom Fly 6": {"stackHeelMm": 42, "dropMm": 8},
-
-    "Puma|Deviate Nitro 3": {"weightG": 265, "stackHeelMm": 39, "dropMm": 10, "basis": "US9"},
-    "Puma|Velocity Nitro 3": {"weightG": 260, "stackHeelMm": 36, "dropMm": 10, "basis": "US9"},
-
-    "Brooks|Ghost 17": {"stackHeelMm": 36.5, "dropMm": 10},
-    "Brooks|Glycerin 22": {"stackHeelMm": 38},
-
-    "Saucony|Triumph 22": {"stackHeelMm": 37, "dropMm": 10},
-    "Saucony|Ride 17": {"weightG": 293, "stackHeelMm": 35, "dropMm": 8, "basis": "US9.5"},
-    "Saucony|Kinvara 15": {"weightG": 198, "basis": "US9"},
-
-    "Adidas|Adizero SL2": {"stackHeelMm": 36},
-    "Adidas|Adizero Boston 13": {"weightG": 255, "stackHeelMm": 37, "dropMm": 7, "basis": "US9"},
-    "Adidas|Adizero Adios Pro 4": {"weightG": 202, "stackHeelMm": 39, "dropMm": 6, "basis": "US9"},
-
-    "On|Cloudmonster 3": {"weightG": 295, "stackHeelMm": 35, "dropMm": 6, "basis": "US9"},
-
-    "Altra|Torin 8": {"weightG": 265, "stackHeelMm": 30, "dropMm": 0, "basis": "US9"},
-    "Altra|Lone Peak 8": {"stackHeelMm": 25, "dropMm": 0},
-    "Topo Athletic|Phantom 4": {"stackHeelMm": 35, "dropMm": 5},
-
-    "Nike|Vomero Plus": {"weightG": 281, "stackHeelMm": 43, "dropMm": 10, "basis": "US9"},
-    "Nike|Structure 26": {"weightG": 236, "stackHeelMm": 40, "dropMm": 8, "basis": "US8.5"},
-    "Nike|Pegasus Plus": {"stackHeelMm": 35},
-
-    "ASICS|Novablast 6": {"weightG": 258, "stackHeelMm": 46.5, "dropMm": 8, "basis": "US9.5"},
-    "ASICS|Superblast 3": {"weightG": 236, "stackHeelMm": 46.5, "dropMm": 8, "basis": "US9.5"},
-    "ASICS|Gel-Kayano 32": {"weightG": 304, "stackHeelMm": 40, "dropMm": 8, "basis": "US9.5"},
-    "ASICS|Gel-Cumulus 27": {"weightG": 270, "basis": "US9.5"},
-
-    "Hoka|Arahi 7": {"stackHeelMm": 37, "dropMm": 5},
-    "Hoka|Gaviota 5": {"stackHeelMm": 36, "dropMm": 6},
-    "Hoka|Skyflow": {"weightG": 283, "stackHeelMm": 39, "dropMm": 5, "basis": "US9"}
+    "ASICS|Novablast 5": {
+      "weightG": 255,
+      "stackHeelMm": 41.5,
+      "dropMm": 8,
+      "basis": "US9"
+    },
+    "ASICS|Superblast 2": {
+      "weightG": 251,
+      "stackHeelMm": 45,
+      "dropMm": 8,
+      "basis": "US9.5"
+    },
+    "ASICS|Gel-Nimbus 27": {
+      "weightG": 307,
+      "stackHeelMm": 43.5,
+      "dropMm": 8,
+      "basis": "US9"
+    },
+    "Hoka|Clifton 10": {
+      "weightG": 278,
+      "stackHeelMm": 42,
+      "dropMm": 8,
+      "basis": "US9"
+    },
+    "Hoka|Clifton 9": {
+      "weightG": 247,
+      "stackHeelMm": 32,
+      "dropMm": 5,
+      "basis": "US9"
+    },
+    "Hoka|Bondi 9": {
+      "weightG": 297,
+      "stackHeelMm": 43,
+      "dropMm": 5,
+      "basis": "US9"
+    },
+    "Hoka|Bondi 8": {
+      "weightG": 306,
+      "stackHeelMm": 39,
+      "dropMm": 5,
+      "basis": "US9"
+    },
+    "Hoka|Mach 6": {
+      "weightG": 210,
+      "stackHeelMm": 37,
+      "dropMm": 5,
+      "basis": "US9"
+    },
+    "Hoka|Rincon 4": {
+      "stackHeelMm": 36,
+      "dropMm": 5
+    },
+    "Nike|Pegasus 41": {
+      "weightG": 281,
+      "stackHeelMm": 37,
+      "dropMm": 10,
+      "basis": "US9"
+    },
+    "Nike|Pegasus 42": {
+      "weightG": 286,
+      "stackHeelMm": 37,
+      "dropMm": 10,
+      "basis": "US9"
+    },
+    "Nike|Vomero 18": {
+      "stackHeelMm": 42.5,
+      "dropMm": 10
+    },
+    "Brooks|Ghost 16": {
+      "weightG": 269,
+      "stackHeelMm": 34.5,
+      "dropMm": 12,
+      "basis": "EU44"
+    },
+    "Brooks|Glycerin 21": {
+      "stackHeelMm": 38,
+      "dropMm": 10
+    },
+    "Brooks|Adrenaline GTS 24": {
+      "stackHeelMm": 35,
+      "dropMm": 12
+    },
+    "Saucony|Endorphin Speed 4": {
+      "weightG": 245,
+      "stackHeelMm": 36,
+      "dropMm": 8,
+      "basis": "US9.5"
+    },
+    "Saucony|Ride 18": {
+      "stackHeelMm": 35,
+      "dropMm": 8
+    },
+    "ASICS|Gel-Cumulus 26": {
+      "weightG": 255,
+      "stackHeelMm": 38.5,
+      "dropMm": 8,
+      "basis": "US9"
+    },
+    "ASICS|Gel-Kayano 31": {
+      "weightG": 312,
+      "stackHeelMm": 40,
+      "dropMm": 10,
+      "basis": "US9.5"
+    },
+    "ASICS|Novablast 4": {
+      "weightG": 267,
+      "stackHeelMm": 41.5,
+      "dropMm": 8,
+      "basis": "US9.5"
+    },
+    "New Balance|Fresh Foam X 1080v14": {
+      "weightG": 298,
+      "stackHeelMm": 38,
+      "dropMm": 6,
+      "basis": "US9"
+    },
+    "New Balance|Fresh Foam X More v5": {
+      "stackHeelMm": 43,
+      "dropMm": 4
+    },
+    "Mizuno|Wave Rider 28": {
+      "weightG": 263,
+      "stackHeelMm": 38.5,
+      "dropMm": 12,
+      "basis": "US9.5"
+    },
+    "Mizuno|Wave Rebellion Pro 3": {
+      "weightG": 218,
+      "dropMm": 4,
+      "basis": "US9"
+    },
+    "On|Cloudmonster 2": {
+      "weightG": 295,
+      "stackHeelMm": 35,
+      "dropMm": 6,
+      "basis": "US9"
+    },
+    "On|Cloudsurfer 7": {
+      "weightG": 237,
+      "stackHeelMm": 32,
+      "dropMm": 10,
+      "basis": "US9.5"
+    },
+    "On|Cloudeclipse": {
+      "weightG": 292,
+      "stackHeelMm": 37,
+      "dropMm": 6
+    },
+    "Adidas|Boston 12": {
+      "weightG": 261,
+      "stackHeelMm": 37.5,
+      "dropMm": 7,
+      "basis": "US9"
+    },
+    "Adidas|Supernova Rise": {
+      "weightG": 287,
+      "stackHeelMm": 36,
+      "dropMm": 10,
+      "basis": "UK9"
+    },
+    "Nike|Vaporfly 3": {
+      "weightG": 184,
+      "stackHeelMm": 38,
+      "dropMm": 8,
+      "basis": "US9"
+    },
+    "Nike|Alphafly 3": {
+      "weightG": 198,
+      "stackHeelMm": 40,
+      "dropMm": 8,
+      "basis": "US9"
+    },
+    "Nike|Zoom Fly 6": {
+      "stackHeelMm": 42,
+      "dropMm": 8
+    },
+    "Puma|Deviate Nitro 3": {
+      "weightG": 265,
+      "stackHeelMm": 39,
+      "dropMm": 10,
+      "basis": "US9"
+    },
+    "Puma|Velocity Nitro 3": {
+      "weightG": 260,
+      "stackHeelMm": 36,
+      "dropMm": 10,
+      "basis": "US9"
+    },
+    "Brooks|Ghost 17": {
+      "stackHeelMm": 36.5,
+      "dropMm": 10
+    },
+    "Brooks|Glycerin 22": {
+      "stackHeelMm": 38
+    },
+    "Saucony|Triumph 22": {
+      "stackHeelMm": 37,
+      "dropMm": 10
+    },
+    "Saucony|Ride 17": {
+      "weightG": 293,
+      "stackHeelMm": 35,
+      "dropMm": 8,
+      "basis": "US9.5"
+    },
+    "Saucony|Kinvara 15": {
+      "weightG": 198,
+      "basis": "US9"
+    },
+    "Adidas|Adizero SL2": {
+      "stackHeelMm": 36
+    },
+    "Adidas|Adizero Boston 13": {
+      "weightG": 255,
+      "stackHeelMm": 37,
+      "dropMm": 7,
+      "basis": "US9"
+    },
+    "Adidas|Adizero Adios Pro 4": {
+      "weightG": 202,
+      "stackHeelMm": 39,
+      "dropMm": 6,
+      "basis": "US9"
+    },
+    "On|Cloudmonster 3": {
+      "weightG": 295,
+      "stackHeelMm": 35,
+      "dropMm": 6,
+      "basis": "US9"
+    },
+    "Altra|Torin 8": {
+      "weightG": 265,
+      "stackHeelMm": 30,
+      "dropMm": 0,
+      "basis": "US9"
+    },
+    "Altra|Lone Peak 8": {
+      "stackHeelMm": 25,
+      "dropMm": 0
+    },
+    "Topo Athletic|Phantom 4": {
+      "stackHeelMm": 35,
+      "dropMm": 5
+    },
+    "Nike|Vomero Plus": {
+      "weightG": 281,
+      "stackHeelMm": 43,
+      "dropMm": 10,
+      "basis": "US9"
+    },
+    "Nike|Structure 26": {
+      "weightG": 236,
+      "stackHeelMm": 40,
+      "dropMm": 8,
+      "basis": "US8.5"
+    },
+    "Nike|Pegasus Plus": {
+      "stackHeelMm": 35
+    },
+    "ASICS|Novablast 6": {
+      "weightG": 258,
+      "stackHeelMm": 46.5,
+      "dropMm": 8,
+      "basis": "US9.5"
+    },
+    "ASICS|Superblast 3": {
+      "weightG": 236,
+      "stackHeelMm": 46.5,
+      "dropMm": 8,
+      "basis": "US9.5"
+    },
+    "ASICS|Gel-Kayano 32": {
+      "weightG": 304,
+      "stackHeelMm": 40,
+      "dropMm": 8,
+      "basis": "US9.5"
+    },
+    "ASICS|Gel-Cumulus 27": {
+      "weightG": 270,
+      "basis": "US9.5"
+    },
+    "Hoka|Arahi 7": {
+      "stackHeelMm": 37,
+      "dropMm": 5
+    },
+    "Hoka|Gaviota 5": {
+      "stackHeelMm": 36,
+      "dropMm": 6
+    },
+    "Hoka|Skyflow": {
+      "weightG": 283,
+      "stackHeelMm": 39,
+      "dropMm": 5,
+      "basis": "US9"
+    },
+    "Brooks|Ghost 18": {
+      "weightG": 289,
+      "stackHeelMm": 36.5,
+      "dropMm": 10,
+      "basis": "US9"
+    },
+    "Brooks|Glycerin Flex": {
+      "stackHeelMm": 35.2
+    },
+    "Nike|Structure Plus": {
+      "weightG": 295,
+      "stackHeelMm": 42,
+      "dropMm": 10,
+      "basis": "US9"
+    },
+    "ASICS|Megablast": {
+      "weightG": 230,
+      "stackHeelMm": 46,
+      "dropMm": 8,
+      "basis": "unisex"
+    },
+    "ASICS|Sonicblast": {
+      "weightG": 256,
+      "stackHeelMm": 46,
+      "dropMm": 8,
+      "basis": "US9"
+    },
+    "norda|001": {
+      "weightG": 298,
+      "basis": "US9"
+    },
+    "norda|005": {
+      "weightG": 230,
+      "stackHeelMm": 28.5,
+      "dropMm": 7,
+      "basis": "US9.5"
+    },
+    "NNormal|Kjerag": {
+      "weightG": 200,
+      "stackHeelMm": 23.5,
+      "dropMm": 6,
+      "basis": "US9"
+    },
+    "NNormal|Tomir 2.0": {
+      "weightG": 289,
+      "stackHeelMm": 33,
+      "dropMm": 8,
+      "basis": "US9"
+    },
+    "Li-Ning|Feidian 3.0 Ultra": {
+      "weightG": 208
+    },
+    "Merrell|Agility Peak 5": {
+      "weightG": 300,
+      "stackHeelMm": 31,
+      "dropMm": 6,
+      "basis": "US9"
+    },
+    "Tracksmith|Eliot Runner": {
+      "weightG": 258,
+      "stackHeelMm": 33.5,
+      "dropMm": 9,
+      "basis": "US8.5"
+    },
+    "Tracksmith|Eliot Range": {
+      "weightG": 281,
+      "dropMm": 9,
+      "basis": "US9"
+    }
   }
 }

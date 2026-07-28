@@ -1,6 +1,6 @@
 {
   "source": "사용자 분류(러닝화 타입 · 추천 러닝)",
-  "updated": "2026-07-28-novablast6",
+  "updated": "2026-07-29-brands2",
   "brands": [
     "Adidas",
     "ASICS",
@@ -47,7 +47,7 @@
     "회복",
     "트레일"
   ],
-  "count": 333,
+  "count": 347,
   "brandsInferred": [
     "Saucony",
     "Puma",
@@ -63,6 +63,515 @@
     "Reebok"
   ],
   "shoes": [
+    {
+      "brand": "ASICS",
+      "model": "Fuji Lite 5",
+      "type": "트레일",
+      "recommended": [
+        "트레일"
+      ],
+      "category": "trail",
+      "recommendedKm": 650,
+      "year": 2024
+    },
+    {
+      "brand": "ASICS",
+      "model": "GT-1000 12",
+      "type": "안정화",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "stability",
+      "recommendedKm": 700
+    },
+    {
+      "brand": "ASICS",
+      "model": "GT-2000 12",
+      "type": "안정화",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "stability",
+      "recommendedKm": 700
+    },
+    {
+      "brand": "ASICS",
+      "model": "GT-2000 13",
+      "type": "안정화",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "stability",
+      "recommendedKm": 700
+    },
+    {
+      "brand": "ASICS",
+      "model": "GT-2000 14",
+      "type": "안정화",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "stability",
+      "recommendedKm": 700,
+      "year": 2025
+    },
+    {
+      "brand": "ASICS",
+      "model": "Gel-Contend 9",
+      "type": "데일리",
+      "recommended": [
+        "데일리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "ASICS",
+      "model": "Gel-Cumulus 25",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "ASICS",
+      "model": "Gel-Cumulus 26",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "ASICS",
+      "model": "Gel-Cumulus 27",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650,
+      "year": 2025
+    },
+    {
+      "brand": "ASICS",
+      "model": "Gel-Cumulus 28",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650,
+      "year": 2026
+    },
+    {
+      "brand": "ASICS",
+      "model": "Gel-DS Trainer 28",
+      "type": "안정화",
+      "recommended": [
+        "데일리",
+        "템포"
+      ],
+      "category": "stability",
+      "recommendedKm": 700
+    },
+    {
+      "brand": "ASICS",
+      "model": "Gel-Excite 10",
+      "type": "데일리",
+      "recommended": [
+        "데일리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "ASICS",
+      "model": "Gel-Kayano 29",
+      "type": "안정화",
+      "recommended": [
+        "데일리",
+        "장거리",
+        "회복"
+      ],
+      "category": "stability",
+      "recommendedKm": 700
+    },
+    {
+      "brand": "ASICS",
+      "model": "Gel-Kayano 30",
+      "type": "안정화",
+      "recommended": [
+        "데일리",
+        "장거리",
+        "회복"
+      ],
+      "category": "stability",
+      "recommendedKm": 700
+    },
+    {
+      "brand": "ASICS",
+      "model": "Gel-Kayano 31",
+      "type": "안정화",
+      "recommended": [
+        "데일리",
+        "장거리",
+        "회복"
+      ],
+      "category": "stability",
+      "recommendedKm": 700
+    },
+    {
+      "brand": "ASICS",
+      "model": "Gel-Kayano 32",
+      "type": "안정화",
+      "recommended": [
+        "데일리",
+        "장거리",
+        "회복"
+      ],
+      "category": "stability",
+      "recommendedKm": 750,
+      "year": 2025
+    },
+    {
+      "brand": "ASICS",
+      "model": "Gel-Kayano 33",
+      "type": "안정화",
+      "recommended": [
+        "데일리",
+        "장거리",
+        "회복"
+      ],
+      "category": "stability",
+      "recommendedKm": 700,
+      "year": 2026
+    },
+    {
+      "brand": "ASICS",
+      "model": "Gel-Nimbus 25",
+      "type": "맥스쿠셔닝",
+      "recommended": [
+        "회복",
+        "장거리"
+      ],
+      "category": "max_cushion",
+      "recommendedKm": 700
+    },
+    {
+      "brand": "ASICS",
+      "model": "Gel-Nimbus 26",
+      "type": "맥스쿠셔닝",
+      "recommended": [
+        "회복",
+        "장거리"
+      ],
+      "category": "max_cushion",
+      "recommendedKm": 700
+    },
+    {
+      "brand": "ASICS",
+      "model": "Gel-Nimbus 27",
+      "type": "맥스쿠셔닝",
+      "recommended": [
+        "회복",
+        "장거리"
+      ],
+      "category": "max_cushion",
+      "recommendedKm": 750,
+      "year": 2025
+    },
+    {
+      "brand": "ASICS",
+      "model": "Gel-Nimbus 28",
+      "type": "맥스쿠셔닝",
+      "recommended": [
+        "데일리",
+        "회복",
+        "장거리"
+      ],
+      "category": "max_cushion",
+      "recommendedKm": 700,
+      "year": 2026
+    },
+    {
+      "brand": "ASICS",
+      "model": "Gel-Nimbus Lite 4",
+      "type": "맥스쿠셔닝",
+      "recommended": [
+        "회복",
+        "장거리"
+      ],
+      "category": "max_cushion",
+      "recommendedKm": 700
+    },
+    {
+      "brand": "ASICS",
+      "model": "Gel-Pulse 15",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "ASICS",
+      "model": "Gel-Pulse 16",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "ASICS",
+      "model": "Gel-Sonoma 7",
+      "type": "트레일",
+      "recommended": [
+        "트레일"
+      ],
+      "category": "trail",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "ASICS",
+      "model": "Gel-Trabuco 13",
+      "type": "트레일",
+      "recommended": [
+        "트레일",
+        "장거리"
+      ],
+      "category": "trail",
+      "recommendedKm": 650,
+      "year": 2025
+    },
+    {
+      "brand": "ASICS",
+      "model": "Gel-Venture 9",
+      "type": "트레일",
+      "recommended": [
+        "트레일"
+      ],
+      "category": "trail",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "ASICS",
+      "model": "Magic Speed 4",
+      "type": "슈퍼트레이너",
+      "recommended": [
+        "템포",
+        "장거리",
+        "데일리"
+      ],
+      "category": "super_trainer",
+      "recommendedKm": 650,
+      "year": 2024
+    },
+    {
+      "brand": "ASICS",
+      "model": "Magic Speed 5",
+      "type": "슈퍼트레이너",
+      "recommended": [
+        "템포",
+        "장거리",
+        "데일리"
+      ],
+      "category": "super_trainer",
+      "recommendedKm": 650,
+      "year": 2026
+    },
+    {
+      "brand": "ASICS",
+      "model": "Megablast",
+      "type": "슈퍼트레이너",
+      "recommended": [
+        "데일리",
+        "장거리",
+        "템포"
+      ],
+      "category": "super_trainer",
+      "recommendedKm": 700,
+      "year": 2026
+    },
+    {
+      "brand": "ASICS",
+      "model": "Metaspeed Edge Paris",
+      "type": "카본화",
+      "recommended": [
+        "템포",
+        "인터벌",
+        "레이스"
+      ],
+      "category": "carbon_racing",
+      "recommendedKm": 450,
+      "year": 2024
+    },
+    {
+      "brand": "ASICS",
+      "model": "Metaspeed Edge+",
+      "type": "카본화",
+      "recommended": [
+        "템포",
+        "인터벌",
+        "레이스"
+      ],
+      "category": "carbon_racing",
+      "recommendedKm": 450
+    },
+    {
+      "brand": "ASICS",
+      "model": "Metaspeed Sky Paris",
+      "type": "카본화",
+      "recommended": [
+        "템포",
+        "인터벌",
+        "레이스"
+      ],
+      "category": "carbon_racing",
+      "recommendedKm": 450,
+      "year": 2024
+    },
+    {
+      "brand": "ASICS",
+      "model": "Metaspeed Sky+",
+      "type": "카본화",
+      "recommended": [
+        "템포",
+        "인터벌",
+        "레이스"
+      ],
+      "category": "carbon_racing",
+      "recommendedKm": 450
+    },
+    {
+      "brand": "ASICS",
+      "model": "Noosa Tri 16",
+      "type": "슈퍼트레이너",
+      "recommended": [
+        "템포",
+        "장거리",
+        "데일리"
+      ],
+      "category": "super_trainer",
+      "recommendedKm": 650,
+      "year": 2024
+    },
+    {
+      "brand": "ASICS",
+      "model": "Novablast 3",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리",
+        "템포"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "ASICS",
+      "model": "Novablast 4",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리",
+        "템포"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "ASICS",
+      "model": "Novablast 5",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리",
+        "템포"
+      ],
+      "category": "super_trainer",
+      "recommendedKm": 700,
+      "year": 2025
+    },
+    {
+      "brand": "ASICS",
+      "model": "Novablast 6",
+      "type": "슈퍼트레이너",
+      "recommended": [
+        "데일리",
+        "장거리",
+        "템포"
+      ],
+      "category": "super_trainer",
+      "recommendedKm": 700,
+      "year": 2026
+    },
+    {
+      "brand": "ASICS",
+      "model": "Sonicblast",
+      "type": "슈퍼트레이너",
+      "recommended": [
+        "장거리",
+        "템포",
+        "레이스"
+      ],
+      "category": "super_trainer",
+      "recommendedKm": 650,
+      "year": 2026
+    },
+    {
+      "brand": "ASICS",
+      "model": "Superblast 2",
+      "type": "슈퍼트레이너",
+      "recommended": [
+        "장거리",
+        "템포",
+        "인터벌"
+      ],
+      "category": "super_trainer",
+      "recommendedKm": 700,
+      "year": 2024
+    },
+    {
+      "brand": "ASICS",
+      "model": "Superblast 3",
+      "type": "슈퍼트레이너",
+      "recommended": [
+        "장거리",
+        "템포",
+        "인터벌"
+      ],
+      "category": "super_trainer",
+      "recommendedKm": 650,
+      "year": 2026
+    },
+    {
+      "brand": "ASICS",
+      "model": "Trabuco Max 4",
+      "type": "트레일",
+      "recommended": [
+        "트레일"
+      ],
+      "category": "trail",
+      "recommendedKm": 700,
+      "year": 2025
+    },
     {
       "brand": "Adidas",
       "model": "Adios Pro 3",
@@ -512,489 +1021,6 @@
       "year": 2024
     },
     {
-      "brand": "ASICS",
-      "model": "Fuji Lite 5",
-      "type": "트레일",
-      "recommended": [
-        "트레일"
-      ],
-      "category": "trail",
-      "recommendedKm": 650,
-      "year": 2024
-    },
-    {
-      "brand": "ASICS",
-      "model": "Gel-Contend 9",
-      "type": "데일리",
-      "recommended": [
-        "데일리"
-      ],
-      "category": "daily_trainer",
-      "recommendedKm": 650
-    },
-    {
-      "brand": "ASICS",
-      "model": "Gel-Cumulus 25",
-      "type": "데일리",
-      "recommended": [
-        "데일리",
-        "장거리"
-      ],
-      "category": "daily_trainer",
-      "recommendedKm": 650
-    },
-    {
-      "brand": "ASICS",
-      "model": "Gel-Cumulus 26",
-      "type": "데일리",
-      "recommended": [
-        "데일리",
-        "장거리"
-      ],
-      "category": "daily_trainer",
-      "recommendedKm": 650
-    },
-    {
-      "brand": "ASICS",
-      "model": "Gel-Cumulus 27",
-      "type": "데일리",
-      "recommended": [
-        "데일리",
-        "장거리"
-      ],
-      "category": "daily_trainer",
-      "recommendedKm": 650,
-      "year": 2025
-    },
-    {
-      "brand": "ASICS",
-      "model": "Gel-Cumulus 28",
-      "type": "데일리",
-      "recommended": [
-        "데일리",
-        "장거리"
-      ],
-      "category": "daily_trainer",
-      "recommendedKm": 650,
-      "year": 2026
-    },
-    {
-      "brand": "ASICS",
-      "model": "Gel-DS Trainer 28",
-      "type": "안정화",
-      "recommended": [
-        "데일리",
-        "템포"
-      ],
-      "category": "stability",
-      "recommendedKm": 700
-    },
-    {
-      "brand": "ASICS",
-      "model": "Gel-Excite 10",
-      "type": "데일리",
-      "recommended": [
-        "데일리"
-      ],
-      "category": "daily_trainer",
-      "recommendedKm": 650
-    },
-    {
-      "brand": "ASICS",
-      "model": "Gel-Kayano 29",
-      "type": "안정화",
-      "recommended": [
-        "데일리",
-        "장거리",
-        "회복"
-      ],
-      "category": "stability",
-      "recommendedKm": 700
-    },
-    {
-      "brand": "ASICS",
-      "model": "Gel-Kayano 30",
-      "type": "안정화",
-      "recommended": [
-        "데일리",
-        "장거리",
-        "회복"
-      ],
-      "category": "stability",
-      "recommendedKm": 700
-    },
-    {
-      "brand": "ASICS",
-      "model": "Gel-Kayano 31",
-      "type": "안정화",
-      "recommended": [
-        "데일리",
-        "장거리",
-        "회복"
-      ],
-      "category": "stability",
-      "recommendedKm": 700
-    },
-    {
-      "brand": "ASICS",
-      "model": "Gel-Kayano 32",
-      "type": "안정화",
-      "recommended": [
-        "데일리",
-        "장거리",
-        "회복"
-      ],
-      "category": "stability",
-      "recommendedKm": 750,
-      "year": 2025
-    },
-    {
-      "brand": "ASICS",
-      "model": "Gel-Kayano 33",
-      "type": "안정화",
-      "recommended": [
-        "데일리",
-        "장거리",
-        "회복"
-      ],
-      "category": "stability",
-      "recommendedKm": 700,
-      "year": 2026
-    },
-    {
-      "brand": "ASICS",
-      "model": "Gel-Nimbus 25",
-      "type": "맥스쿠셔닝",
-      "recommended": [
-        "회복",
-        "장거리"
-      ],
-      "category": "max_cushion",
-      "recommendedKm": 700
-    },
-    {
-      "brand": "ASICS",
-      "model": "Gel-Nimbus 26",
-      "type": "맥스쿠셔닝",
-      "recommended": [
-        "회복",
-        "장거리"
-      ],
-      "category": "max_cushion",
-      "recommendedKm": 700
-    },
-    {
-      "brand": "ASICS",
-      "model": "Gel-Nimbus 27",
-      "type": "맥스쿠셔닝",
-      "recommended": [
-        "회복",
-        "장거리"
-      ],
-      "category": "max_cushion",
-      "recommendedKm": 750,
-      "year": 2025
-    },
-    {
-      "brand": "ASICS",
-      "model": "Gel-Nimbus 28",
-      "type": "맥스쿠셔닝",
-      "recommended": [
-        "데일리",
-        "회복",
-        "장거리"
-      ],
-      "category": "max_cushion",
-      "recommendedKm": 700,
-      "year": 2026
-    },
-    {
-      "brand": "ASICS",
-      "model": "Gel-Nimbus Lite 4",
-      "type": "맥스쿠셔닝",
-      "recommended": [
-        "회복",
-        "장거리"
-      ],
-      "category": "max_cushion",
-      "recommendedKm": 700
-    },
-    {
-      "brand": "ASICS",
-      "model": "Gel-Pulse 15",
-      "type": "데일리",
-      "recommended": [
-        "데일리",
-        "장거리"
-      ],
-      "category": "daily_trainer",
-      "recommendedKm": 650
-    },
-    {
-      "brand": "ASICS",
-      "model": "Gel-Pulse 16",
-      "type": "데일리",
-      "recommended": [
-        "데일리",
-        "장거리"
-      ],
-      "category": "daily_trainer",
-      "recommendedKm": 650
-    },
-    {
-      "brand": "ASICS",
-      "model": "Gel-Sonoma 7",
-      "type": "트레일",
-      "recommended": [
-        "트레일"
-      ],
-      "category": "trail",
-      "recommendedKm": 650
-    },
-    {
-      "brand": "ASICS",
-      "model": "Gel-Trabuco 13",
-      "type": "트레일",
-      "recommended": [
-        "트레일",
-        "장거리"
-      ],
-      "category": "trail",
-      "recommendedKm": 650,
-      "year": 2025
-    },
-    {
-      "brand": "ASICS",
-      "model": "Gel-Venture 9",
-      "type": "트레일",
-      "recommended": [
-        "트레일"
-      ],
-      "category": "trail",
-      "recommendedKm": 650
-    },
-    {
-      "brand": "ASICS",
-      "model": "GT-1000 12",
-      "type": "안정화",
-      "recommended": [
-        "데일리",
-        "장거리"
-      ],
-      "category": "stability",
-      "recommendedKm": 700
-    },
-    {
-      "brand": "ASICS",
-      "model": "GT-2000 12",
-      "type": "안정화",
-      "recommended": [
-        "데일리",
-        "장거리"
-      ],
-      "category": "stability",
-      "recommendedKm": 700
-    },
-    {
-      "brand": "ASICS",
-      "model": "GT-2000 13",
-      "type": "안정화",
-      "recommended": [
-        "데일리",
-        "장거리"
-      ],
-      "category": "stability",
-      "recommendedKm": 700
-    },
-    {
-      "brand": "ASICS",
-      "model": "GT-2000 14",
-      "type": "안정화",
-      "recommended": [
-        "데일리",
-        "장거리"
-      ],
-      "category": "stability",
-      "recommendedKm": 700,
-      "year": 2025
-    },
-    {
-      "brand": "ASICS",
-      "model": "Magic Speed 4",
-      "type": "슈퍼트레이너",
-      "recommended": [
-        "템포",
-        "장거리",
-        "데일리"
-      ],
-      "category": "super_trainer",
-      "recommendedKm": 650,
-      "year": 2024
-    },
-    {
-      "brand": "ASICS",
-      "model": "Magic Speed 5",
-      "type": "슈퍼트레이너",
-      "recommended": [
-        "템포",
-        "장거리",
-        "데일리"
-      ],
-      "category": "super_trainer",
-      "recommendedKm": 650,
-      "year": 2026
-    },
-    {
-      "brand": "ASICS",
-      "model": "Metaspeed Edge Paris",
-      "type": "카본화",
-      "recommended": [
-        "템포",
-        "인터벌",
-        "레이스"
-      ],
-      "category": "carbon_racing",
-      "recommendedKm": 450,
-      "year": 2024
-    },
-    {
-      "brand": "ASICS",
-      "model": "Metaspeed Edge+",
-      "type": "카본화",
-      "recommended": [
-        "템포",
-        "인터벌",
-        "레이스"
-      ],
-      "category": "carbon_racing",
-      "recommendedKm": 450
-    },
-    {
-      "brand": "ASICS",
-      "model": "Metaspeed Sky Paris",
-      "type": "카본화",
-      "recommended": [
-        "템포",
-        "인터벌",
-        "레이스"
-      ],
-      "category": "carbon_racing",
-      "recommendedKm": 450,
-      "year": 2024
-    },
-    {
-      "brand": "ASICS",
-      "model": "Metaspeed Sky+",
-      "type": "카본화",
-      "recommended": [
-        "템포",
-        "인터벌",
-        "레이스"
-      ],
-      "category": "carbon_racing",
-      "recommendedKm": 450
-    },
-    {
-      "brand": "ASICS",
-      "model": "Noosa Tri 16",
-      "type": "슈퍼트레이너",
-      "recommended": [
-        "템포",
-        "장거리",
-        "데일리"
-      ],
-      "category": "super_trainer",
-      "recommendedKm": 650,
-      "year": 2024
-    },
-    {
-      "brand": "ASICS",
-      "model": "Novablast 3",
-      "type": "데일리",
-      "recommended": [
-        "데일리",
-        "장거리",
-        "템포"
-      ],
-      "category": "daily_trainer",
-      "recommendedKm": 650
-    },
-    {
-      "brand": "ASICS",
-      "model": "Novablast 4",
-      "type": "데일리",
-      "recommended": [
-        "데일리",
-        "장거리",
-        "템포"
-      ],
-      "category": "daily_trainer",
-      "recommendedKm": 650
-    },
-    {
-      "brand": "ASICS",
-      "model": "Novablast 5",
-      "type": "데일리",
-      "recommended": [
-        "데일리",
-        "장거리",
-        "템포"
-      ],
-      "category": "super_trainer",
-      "recommendedKm": 700,
-      "year": 2025
-    },
-    {
-      "brand": "ASICS",
-      "model": "Novablast 6",
-      "type": "슈퍼트레이너",
-      "recommended": [
-        "데일리",
-        "장거리",
-        "템포"
-      ],
-      "category": "super_trainer",
-      "recommendedKm": 700,
-      "year": 2026
-    },
-    {
-      "brand": "ASICS",
-      "model": "Superblast 2",
-      "type": "슈퍼트레이너",
-      "recommended": [
-        "장거리",
-        "템포",
-        "인터벌"
-      ],
-      "category": "super_trainer",
-      "recommendedKm": 700,
-      "year": 2024
-    },
-    {
-      "brand": "ASICS",
-      "model": "Superblast 3",
-      "type": "슈퍼트레이너",
-      "recommended": [
-        "장거리",
-        "템포",
-        "인터벌"
-      ],
-      "category": "super_trainer",
-      "recommendedKm": 650,
-      "year": 2026
-    },
-    {
-      "brand": "ASICS",
-      "model": "Trabuco Max 4",
-      "type": "트레일",
-      "recommended": [
-        "트레일"
-      ],
-      "category": "trail",
-      "recommendedKm": 700,
-      "year": 2025
-    },
-    {
       "brand": "Brooks",
       "model": "Adrenaline GTS 23",
       "type": "안정화",
@@ -1156,6 +1182,18 @@
     },
     {
       "brand": "Brooks",
+      "model": "Ghost 18",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650,
+      "year": 2026
+    },
+    {
+      "brand": "Brooks",
       "model": "Ghost Max 2",
       "type": "맥스쿠셔닝",
       "recommended": [
@@ -1200,6 +1238,19 @@
       "category": "max_cushion",
       "recommendedKm": 700,
       "year": 2025
+    },
+    {
+      "brand": "Brooks",
+      "model": "Glycerin Flex",
+      "type": "쿠션화",
+      "recommended": [
+        "데일리",
+        "회복주",
+        "장거리"
+      ],
+      "category": "max_cushion",
+      "recommendedKm": 700,
+      "year": 2026
     },
     {
       "brand": "Brooks",
@@ -1816,6 +1867,18 @@
       "recommendedKm": 650
     },
     {
+      "brand": "Li-Ning",
+      "model": "Feidian 3.0 Ultra",
+      "type": "카본화",
+      "recommended": [
+        "레이스",
+        "템포"
+      ],
+      "category": "carbon_racing",
+      "recommendedKm": 450,
+      "year": 2024
+    },
+    {
       "brand": "Lululemon",
       "model": "Beyondfeel",
       "type": "맥스쿠셔닝",
@@ -1836,6 +1899,18 @@
       ],
       "category": "daily_trainer",
       "recommendedKm": 650
+    },
+    {
+      "brand": "Merrell",
+      "model": "Agility Peak 5",
+      "type": "트레일",
+      "recommended": [
+        "트레일",
+        "장거리"
+      ],
+      "category": "trail",
+      "recommendedKm": 650,
+      "year": 2024
     },
     {
       "brand": "Mizuno",
@@ -2130,6 +2205,30 @@
         "장거리"
       ],
       "category": "max_cushion",
+      "recommendedKm": 700,
+      "year": 2025
+    },
+    {
+      "brand": "NNormal",
+      "model": "Kjerag",
+      "type": "트레일",
+      "recommended": [
+        "트레일",
+        "레이스"
+      ],
+      "category": "trail",
+      "recommendedKm": 650,
+      "year": 2023
+    },
+    {
+      "brand": "NNormal",
+      "model": "Tomir 2.0",
+      "type": "트레일",
+      "recommended": [
+        "트레일",
+        "장거리"
+      ],
+      "category": "trail",
       "recommendedKm": 700,
       "year": 2025
     },
@@ -2692,6 +2791,18 @@
       "category": "stability",
       "recommendedKm": 700,
       "year": 2025
+    },
+    {
+      "brand": "Nike",
+      "model": "Structure Plus",
+      "type": "안정화",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "stability",
+      "recommendedKm": 700,
+      "year": 2026
     },
     {
       "brand": "Nike",
@@ -3429,6 +3540,18 @@
     },
     {
       "brand": "Salomon",
+      "model": "S/LAB Ultra 3",
+      "type": "트레일",
+      "recommended": [
+        "트레일",
+        "장거리",
+        "레이스"
+      ],
+      "category": "trail",
+      "recommendedKm": 650
+    },
+    {
+      "brand": "Salomon",
       "model": "S/Lab Phantasm 2",
       "type": "카본화",
       "recommended": [
@@ -3450,18 +3573,6 @@
       "category": "trail",
       "recommendedKm": 650,
       "year": 2024
-    },
-    {
-      "brand": "Salomon",
-      "model": "S/LAB Ultra 3",
-      "type": "트레일",
-      "recommended": [
-        "트레일",
-        "장거리",
-        "레이스"
-      ],
-      "category": "trail",
-      "recommendedKm": 650
     },
     {
       "brand": "Salomon",
@@ -3539,6 +3650,18 @@
       "category": "trail",
       "recommendedKm": 650,
       "year": 2024
+    },
+    {
+      "brand": "Satisfy",
+      "model": "TheRocker",
+      "type": "트레일",
+      "recommended": [
+        "트레일",
+        "데일리"
+      ],
+      "category": "trail",
+      "recommendedKm": 650,
+      "year": 2026
     },
     {
       "brand": "Saucony",
@@ -3959,6 +4082,29 @@
       "recommendedKm": 700
     },
     {
+      "brand": "Tracksmith",
+      "model": "Eliot Range",
+      "type": "트레일",
+      "recommended": [
+        "트레일"
+      ],
+      "category": "trail",
+      "recommendedKm": 650,
+      "year": 2024
+    },
+    {
+      "brand": "Tracksmith",
+      "model": "Eliot Runner",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650,
+      "year": 2023
+    },
+    {
       "brand": "Under Armour",
       "model": "Flow Machina 3",
       "type": "데일리",
@@ -3981,6 +4127,30 @@
       ],
       "category": "carbon_racing",
       "recommendedKm": 450
+    },
+    {
+      "brand": "norda",
+      "model": "001",
+      "type": "트레일",
+      "recommended": [
+        "트레일",
+        "장거리"
+      ],
+      "category": "trail",
+      "recommendedKm": 800,
+      "year": 2023
+    },
+    {
+      "brand": "norda",
+      "model": "005",
+      "type": "트레일",
+      "recommended": [
+        "트레일",
+        "템포"
+      ],
+      "category": "trail",
+      "recommendedKm": 700,
+      "year": 2025
     }
   ]
 }
