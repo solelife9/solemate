@@ -1,6 +1,6 @@
 {
   "source": "사용자 분류(러닝화 타입 · 추천 러닝)",
-  "updated": "2026-07-29-brands2",
+  "updated": "2026-07-29-brands3",
   "brands": [
     "Adidas",
     "ASICS",
@@ -47,7 +47,7 @@
     "회복",
     "트레일"
   ],
-  "count": 347,
+  "count": 351,
   "brandsInferred": [
     "Saucony",
     "Puma",
@@ -780,6 +780,18 @@
     },
     {
       "brand": "Adidas",
+      "model": "Hyperboost Edge",
+      "type": "슈퍼트레이너",
+      "recommended": [
+        "템포",
+        "장거리"
+      ],
+      "category": "super_trainer",
+      "recommendedKm": 650,
+      "year": 2026
+    },
+    {
+      "brand": "Adidas",
       "model": "Prime X 2 Strung",
       "type": "슈퍼트레이너",
       "recommended": [
@@ -826,6 +838,18 @@
     },
     {
       "brand": "Adidas",
+      "model": "Supernova Rise 3",
+      "type": "데일리",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "daily_trainer",
+      "recommendedKm": 650,
+      "year": 2026
+    },
+    {
+      "brand": "Adidas",
       "model": "Supernova Solution",
       "type": "안정화",
       "recommended": [
@@ -835,6 +859,18 @@
       ],
       "category": "stability",
       "recommendedKm": 700
+    },
+    {
+      "brand": "Adidas",
+      "model": "Supernova Solution 3",
+      "type": "안정화",
+      "recommended": [
+        "데일리",
+        "장거리"
+      ],
+      "category": "stability",
+      "recommendedKm": 700,
+      "year": 2026
     },
     {
       "brand": "Adidas",
@@ -1405,6 +1441,17 @@
       ],
       "category": "daily_trainer",
       "recommendedKm": 650
+    },
+    {
+      "brand": "Diadora",
+      "model": "Gara Carbon 3",
+      "type": "카본화",
+      "recommended": [
+        "레이스"
+      ],
+      "category": "carbon_racing",
+      "recommendedKm": 450,
+      "year": 2026
     },
     {
       "brand": "Hoka",

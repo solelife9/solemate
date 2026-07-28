@@ -365,6 +365,18 @@
       "weightG": 281,
       "dropMm": 9,
       "basis": "US9"
+    },
+    "Adidas|Supernova Rise 3": {
+      "weightG": 264,
+      "stackHeelMm": 36,
+      "dropMm": 8,
+      "basis": "US9"
+    },
+    "Diadora|Gara Carbon 3": {
+      "weightG": 198,
+      "stackHeelMm": 39,
+      "dropMm": 5,
+      "basis": "US9"
     }
   }
 }

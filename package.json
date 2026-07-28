@@ -13,7 +13,8 @@
     "postinstall": "patch-package",
     "bundle:android": "react-native bundle --platform android --dev false --entry-file index.js --bundle-output android/app/src/main/assets/index.android.bundle --assets-dest android/app/src/main/res",
     "build:android:release": "npm run bundle:android && cd android && gradlew assembleRelease",
-    "install:android:release": "adb install -r android/app/build/outputs/apk/release/app-release.apk"
+    "install:android:release": "adb install -r android/app/build/outputs/apk/release/app-release.apk",
+    "validate-shoes": "tsc -p tsconfig.scripts.json && node node_modules/.cache/keego-scripts/scripts/validate-shoes.js"
   },
   "dependencies": {
     "@kingstinct/react-native-healthkit": "^14.0.2",

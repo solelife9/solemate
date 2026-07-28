@@ -78,6 +78,39 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // ── 신발 카탈로그(전역, 읽기 전용) ──────────────────────────────────────
+    // races 와 같은 취급 — 큐레이션 데이터라 클라이언트는 읽기만 한다. 카탈로그 쓰기는
+    // admin SDK 스크립트로만(services/shoes.ts 의 upsert 계열은 그 전제로 쓴다).
+    // 클라이언트 쓰기를 열면 누구나 카탈로그를 오염시킬 수 있다.
+    match /shoes/{shoeId} {
+      allow read: if signedIn();
+      allow write: if false;
+    }
+
+    // ── 검색 0건 기록 · 신발 등록 요청 ──────────────────────────────────────
+    // 카탈로그가 낡는 문제에 대한 구조적 답이다(docs/shoes-spec.md §6) — 사용자가
+    // 찾았는데 없던 것을 데이터로 남긴다. 생성만 허용하고 읽기·수정은 막는다:
+    //  · 읽기 금지 — 남의 검색어를 볼 수 있으면 프라이버시 문제다(운영은 콘솔에서 본다).
+    //  · 수정·삭제 금지 — 남긴 신호를 지울 수 있으면 신호가 아니다.
+    // 형태를 검증해 잡음·거대 문서를 막는다.
+    match /search_misses/{docId} {
+      allow read, update, delete: if false;
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['query', 'userId', 'createdAt'])
+        && request.resource.data.query is string
+        && request.resource.data.query.size() > 0
+        && request.resource.data.query.size() <= 100;
+    }
+    match /shoe_requests/{docId} {
+      allow read, update, delete: if false;
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['brand', 'model', 'userId', 'createdAt'])
+        && request.resource.data.brand is string
+        && request.resource.data.model is string
+        && request.resource.data.brand.size() <= 60
+        && request.resource.data.model.size() <= 60;
+    }
+
     // ── 그 외 전부 거부 ──────────────────────────────────────────────────────
     match /{document=**} {
       allow read, write: if false;

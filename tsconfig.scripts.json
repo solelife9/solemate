@@ -1,0 +1,17 @@
+{
+  "//": "검증 스크립트 전용 빌드 설정 — npm run validate-shoes 가 쓴다.",
+  "//2": "루트 tsconfig 는 RN(noEmit)용이라 상속하지 않고 필요한 것만 최소로 둔다.",
+  "compilerOptions": {
+    "outDir": "node_modules/.cache/keego-scripts",
+    "module": "commonjs",
+    "moduleResolution": "bundler",
+    "target": "es2020",
+    "lib": ["es2020"],
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "strict": true,
+    "types": ["node"]
+  },
+  "include": ["scripts/validate-shoes.ts", "types/shoe.ts"]
+}
