@@ -13,6 +13,7 @@
 
 import {ShoeCategory, findShoeModel, getRecommendedLifespanKm} from '../data/shoeModels';
 import type {ShoeSpec} from './shoeCompare';
+import specsData from '../data/shoeSpecs.json';
 
 /** 축의 근거를 화면에 밝히는 문구(실측이 아님을 숨기지 않는다). */
 export const SPEC_BASIS_KO = 'keego 분류 — 신발 카테고리 기준이에요';
@@ -56,23 +57,72 @@ function weightAdjust(responsiveness: number, weightG?: number): number {
   return responsiveness;
 }
 
-/** 브랜드·모델별로 확인된 공식 스펙(무게/드롭). 눈으로 확인한 것만 넣는다 — 추측 금지. */
+/**
+ * 브랜드·모델별로 **확인된** 공식 스펙. 눈으로 확인한 것만 넣는다 — 추측 금지.
+ * 전부 제조사가 공표하는 사실이라 출처를 댈 수 있다.
+ */
 export interface OfficialSpec {
+  /** 무게(g). 남성 US9/270mm 기준이 관례. */
   weightG?: number;
+  /** 힐 스택 높이(mm) — 밑창 두께. 쿠션 산정의 실제 근거. */
+  stackHeelMm?: number;
+  /** 드롭(mm). */
   dropMm?: number;
+}
+
+/**
+ * 힐 스택 높이(mm) → 쿠션 1~5.
+ *
+ * 카테고리 산정은 같은 카테고리 안에서 전부 같은 값이라 비교가 안 된다. 스택은 모델마다
+ * 다른 실제 수치라, 같은 슈퍼트레이너끼리도 39mm와 33mm가 구분된다.
+ *
+ * 한계를 정직하게 적어두면: 스택은 '두께'지 '물렁함'이 아니다. 40mm 단단한 폼이 33mm
+ * 말랑한 폼보다 덜 푹신할 수 있다. 그래도 공개된 사실 중에서는 가장 나은 근거이고,
+ * 화면이 'keego 분류'라고 밝히므로 실측인 척하지 않는다.
+ *
+ * 구간은 현행 러닝화 스택 분포를 따른다(레이싱 플랫 ~20mm · 데일리 30~38mm ·
+ * 맥스쿠션 40mm+, 2026 기준).
+ */
+export function cushionFromStack(stackHeelMm: number): number {
+  if (!Number.isFinite(stackHeelMm) || stackHeelMm <= 0) return 3;
+  if (stackHeelMm < 28) return 1;
+  if (stackHeelMm < 33) return 2;
+  if (stackHeelMm < 37) return 3;
+  if (stackHeelMm < 41) return 4;
+  return 5;
+}
+
+/**
+ * 확인된 공식 스펙 표(data/shoeSpecs.json). 키는 'brand|model'.
+ * 여기 없는 모델은 스펙을 모르는 것이고, 모르면 그 축은 비교에서 빠진다.
+ */
+const OFFICIAL_SPECS: Readonly<Record<string, OfficialSpec>> =
+  (specsData as {specs?: Record<string, OfficialSpec>}).specs ?? {};
+
+/** 확인된 스펙을 조회한다(없으면 undefined). 카탈로그 표기와 정확히 일치해야 잡힌다. */
+export function lookupOfficialSpec(brand: string, model: string): OfficialSpec | undefined {
+  return OFFICIAL_SPECS[`${brand}|${model}`];
+}
+
+/** 스펙 표에 실린 모델 수(커버리지 리포트·테스트용). */
+export function officialSpecCount(): number {
+  return Object.keys(OFFICIAL_SPECS).length;
 }
 
 /**
  * 카탈로그 + (있으면) 공식 스펙 → 비교용 ShoeSpec.
  *
- * 카테고리를 못 찾으면 daily_trainer 로 본다(권장수명 로직과 같은 폴백). 무게·드롭은
+ * 카테고리를 못 찾으면 daily_trainer 로 본다(권장수명 로직과 같은 폴백). 무게·드롭·스택은
  * 확인된 값이 있을 때만 싣는다 — 없으면 그 축은 비교에서 조용히 빠진다.
+ *
+ * official 인자를 주면 표보다 우선한다(테스트·호출부 주입용).
  */
 export function buildShoeSpec(
   brand: string,
   model: string,
-  official?: OfficialSpec,
+  officialArg?: OfficialSpec,
 ): ShoeSpec {
+  const official = officialArg ?? lookupOfficialSpec(brand, model);
   const matched = findShoeModel(brand, model);
   const category: ShoeCategory = matched?.category ?? 'daily_trainer';
   const axes = CATEGORY_AXES[category];
@@ -82,16 +132,26 @@ export function buildShoeSpec(
   const dropMm = typeof official?.dropMm === 'number' && official.dropMm >= 0
     ? official.dropMm
     : undefined;
+  const stackHeelMm = typeof official?.stackHeelMm === 'number' && official.stackHeelMm > 0
+    ? official.stackHeelMm
+    : undefined;
+
+  // 쿠션: 스택을 알면 그 실제 수치로, 모르면 카테고리 기준값으로. 스택이 있어야 같은
+  // 카테고리 안에서도 모델끼리 구분된다(카테고리 산정만으로는 전부 같은 값이라 비교 불가).
+  const cushion = stackHeelMm !== undefined
+    ? cushionFromStack(stackHeelMm)
+    : clamp5(axes.cushion);
 
   return {
     brand: matched?.brand ?? brand,
     model: matched?.model ?? model,
     lifespanKm: getRecommendedLifespanKm({brand, model}),
-    cushion: clamp5(axes.cushion),
+    cushion,
     responsiveness: weightAdjust(clamp5(axes.responsiveness), weightG),
     stability: clamp5(axes.stability),
     ...(weightG !== undefined ? {weightG} : {}),
     ...(dropMm !== undefined ? {dropMm} : {}),
+    ...(stackHeelMm !== undefined ? {stackHeelMm} : {}),
   };
 }
 

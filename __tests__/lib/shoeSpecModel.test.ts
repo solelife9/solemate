@@ -1,8 +1,12 @@
 import {
   buildShoeSpec,
   categoryAxes,
+  cushionFromStack,
+  lookupOfficialSpec,
+  officialSpecCount,
   SPEC_BASIS_KO,
 } from '../../lib/shoeSpecModel';
+import shoeSpecs from '../../data/shoeSpecs.json';
 import {compareAxes} from '../../lib/shoeCompare';
 import {SHOE_MODELS} from '../../data/shoeModels';
 
@@ -37,9 +41,20 @@ describe('buildShoeSpec — 아는 것만 싣는다', () => {
   });
 
   it('공식 스펙이 없으면 무게·드롭을 싣지 않는다(추측 금지)', () => {
-    const spec = buildShoeSpec('Nike', 'Pegasus 41');
+    // 스펙 표(data/shoeSpecs.json)에 아직 없는 모델을 골라 확인한다.
+    const unknown = SHOE_MODELS.find((m) => !lookupOfficialSpec(m.brand, m.model))!;
+    expect(unknown).toBeDefined();
+    const spec = buildShoeSpec(unknown.brand, unknown.model);
     expect('weightG' in spec).toBe(false);
     expect('dropMm' in spec).toBe(false);
+    expect('stackHeelMm' in spec).toBe(false);
+  });
+
+  it('스펙 표에 실린 모델은 표의 값을 자동으로 쓴다', () => {
+    const spec = buildShoeSpec('Nike', 'Pegasus 41');
+    expect(spec.weightG).toBe(281);
+    expect(spec.stackHeelMm).toBe(37);
+    expect(spec.dropMm).toBe(10);
   });
 
   it('확인된 공식 스펙이 있으면 그대로 싣는다', () => {
@@ -106,6 +121,64 @@ describe('전 카탈로그 건전성 — 332개 어디서도 깨지지 않는다
     // 쿠션화 → 카본화: 푹신함은 줄고 반발은 는다.
     expect(byAxis.softer).toBe(false);
     expect(byAxis.snappier).toBe(true);
+  });
+});
+
+describe('스펙 표(data/shoeSpecs.json) 무결성', () => {
+  const keys = Object.keys((shoeSpecs as any).specs || {});
+
+  it('모든 키가 카탈로그 표기와 정확히 일치한다(오타는 조용히 무시되므로)', () => {
+    expect(keys.length).toBeGreaterThan(0);
+    const catalog = new Set(SHOE_MODELS.map((m) => `${m.brand}|${m.model}`));
+    const orphans = keys.filter((k) => !catalog.has(k));
+    expect(orphans).toEqual([]);
+  });
+
+  it('값이 러닝화로서 말이 되는 범위 안이다', () => {
+    for (const k of keys) {
+      const s = (shoeSpecs as any).specs[k];
+      if (s.weightG !== undefined) {
+        expect(s.weightG).toBeGreaterThan(120);   // 어떤 레이싱화도 이보다 가볍지 않다
+        expect(s.weightG).toBeLessThan(450);      // 이보다 무거우면 러닝화가 아니다
+      }
+      if (s.stackHeelMm !== undefined) {
+        expect(s.stackHeelMm).toBeGreaterThan(10);
+        expect(s.stackHeelMm).toBeLessThanOrEqual(50); // World Athletics 로드 상한 40mm + 여유
+      }
+      if (s.dropMm !== undefined) {
+        expect(s.dropMm).toBeGreaterThanOrEqual(0);
+        expect(s.dropMm).toBeLessThanOrEqual(15);
+      }
+    }
+  });
+
+  it('조회 함수가 표와 같은 것을 본다', () => {
+    expect(officialSpecCount()).toBe(keys.length);
+    const [brand, model] = keys[0].split('|');
+    expect(lookupOfficialSpec(brand, model)).toBeDefined();
+    expect(lookupOfficialSpec('없는브랜드', '없는모델')).toBeUndefined();
+  });
+});
+
+describe('스택 → 쿠션 산정', () => {
+  it('두꺼울수록 푹신하다(단조 증가)', () => {
+    const stacks = [24, 30, 35, 39, 44];
+    const vals = stacks.map(cushionFromStack);
+    expect(vals).toEqual([1, 2, 3, 4, 5]);
+    for (let i = 1; i < vals.length; i++) expect(vals[i]).toBeGreaterThanOrEqual(vals[i - 1]);
+  });
+
+  it('같은 카테고리 안에서도 스택이 다르면 쿠션이 갈린다(이게 도입 이유)', () => {
+    // 슈퍼트레이너 두 켤레: 스택 45mm vs 33mm
+    const a = buildShoeSpec('ASICS', 'Superblast 2');            // 표에 45mm
+    const b = buildShoeSpec('ASICS', 'Superblast 2', {stackHeelMm: 33});
+    expect(a.cushion).toBeGreaterThan(b.cushion!);
+  });
+
+  it('이상한 스택 값은 중간값으로 안전 처리한다', () => {
+    expect(cushionFromStack(0)).toBe(3);
+    expect(cushionFromStack(NaN)).toBe(3);
+    expect(cushionFromStack(-5)).toBe(3);
   });
 });
 

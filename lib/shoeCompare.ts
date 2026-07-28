@@ -40,6 +40,8 @@ export interface ShoeSpec {
   weightG?: number;
   /** 드롭(mm). 브랜드 공식 스펙 기준. */
   dropMm?: number;
+  /** 힐 스택 높이(mm). 쿠션 축의 실제 근거(있으면 카테고리 산정을 대체). */
+  stackHeelMm?: number;
   /** keego 분류 1~5 (5 = 가장 푹신 / 가장 반발 / 가장 안정). */
   cushion?: number;
   responsiveness?: number;
