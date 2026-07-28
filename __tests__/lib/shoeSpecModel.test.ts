@@ -4,6 +4,8 @@ import {
   cushionFromStack,
   lookupOfficialSpec,
   officialSpecCount,
+  basisOf,
+  dropWarningKo,
   SPEC_BASIS_KO,
 } from '../../lib/shoeSpecModel';
 import shoeSpecs from '../../data/shoeSpecs.json';
@@ -182,9 +184,46 @@ describe('스택 → 쿠션 산정', () => {
   });
 });
 
-describe('근거 표기', () => {
-  it('실측이 아니라 keego 분류임을 밝히는 문구가 있다', () => {
-    expect(SPEC_BASIS_KO).toContain('keego 분류');
+describe('근거 표기 — 출처를 사실대로', () => {
+  it('등급을 매긴 주체가 keego 임을 밝힌다(브랜드가 매긴 게 아니다)', () => {
+    expect(SPEC_BASIS_KO).toContain('keego');
     expect(SPEC_BASIS_KO).not.toContain('실측');
+    // "브랜드 데이터"로 뭉뚱그리면 출처 허위 표시가 된다 — 브랜드는 '쿠션 4단계'라고
+    // 말한 적이 없다. 이 회귀 테스트가 그 문구로 되돌아가는 걸 막는다.
+    expect(SPEC_BASIS_KO).not.toContain('브랜드 데이터');
+  });
+
+  it('축마다 실제 근거를 숫자로 말한다', () => {
+    const withStack = basisOf({weightG: 281, stackHeelMm: 42});
+    expect(withStack.weight).toBe('브랜드 공식 스펙');
+    expect(withStack.cushion).toBe('스택 42mm 기준');
+
+    // 스택을 모르면 숫자를 지어내지 않고 종류 기준이라고 밝힌다.
+    const noStack = basisOf({});
+    expect(noStack.cushion).toBe('신발 종류 기준');
+    expect(noStack.weight).toBe('');
+  });
+});
+
+describe('드롭 경고 — 부상 위험을 먼저 말한다', () => {
+  it('드롭이 4mm 이상 낮아지면 경고한다', () => {
+    const w = dropWarningKo(12, 5);
+    expect(w).toContain('7mm 낮아요');
+    expect(w).toContain('아킬레스건');
+  });
+
+  it('적응 범위(4mm 미만)는 경고하지 않는다', () => {
+    expect(dropWarningKo(10, 8)).toBe('');
+    expect(dropWarningKo(10, 10)).toBe('');
+  });
+
+  it('드롭이 높아지는 쪽은 경고하지 않는다(부상 위험이 낮다)', () => {
+    expect(dropWarningKo(4, 12)).toBe('');
+  });
+
+  it('한쪽이라도 모르면 경고하지 않는다(추측 금지)', () => {
+    expect(dropWarningKo(undefined, 4)).toBe('');
+    expect(dropWarningKo(12, undefined)).toBe('');
+    expect(dropWarningKo(NaN, 4)).toBe('');
   });
 });

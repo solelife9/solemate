@@ -24,6 +24,7 @@ import { assessShoeInjuryRisk } from './lib/injury';
 import { buildWearView, forecastConfidenceKo, forecastLineKo, type ReplacementForecast, type Surface } from './lib/wearView';
 import { findShoeClass, typeLabel, purposeSentenceKo } from './data/shoeClass';
 import RetirementFlow from './RetirementFlow.rn';
+import NextShoeScreen from './NextShoeScreen.rn';
 import type { ProgressionContext, RetiredShoeRecord } from './lib/progression/types';
 
 // lastWorn: 이 신발의 마지막 착용일(런에서 파생, 한국어 표기). 미착용이면 생략.
@@ -160,6 +161,8 @@ function ShoeDetail({
   // 금지 — 사용자가 [은퇴]를 눌러야만 flowOpen). [계속 사용]을 누르면 이번 세션 동안
   // 트리거를 접는다(kept). 영속 데이터·런/신발은 건드리지 않는다.
   const [flowOpen, setFlowOpen] = useState(false);
+  // 은퇴 플로우의 '보관 완료'에서만 열리는 다음 신발 플로우.
+  const [nextShoeOpen, setNextShoeOpen] = useState(false);
   const [kept, setKept] = useState(false);
   // 수명 도달 판정 = 사용률 임계 숫자 비교(구 3단계 condition==='교체' 폐지, 2026-07-11).
   // 임계 90%는 wearTier '교체 권장'·교체 알림과 동일(SHOE_REPLACE_PCT 단일 소스).
@@ -205,7 +208,22 @@ function ShoeDetail({
         equippedTitle={equippedTitle ?? null}
         onRetire={onRetire}
         onRetired={onRetiredKeepsake}
+        // 보관이 끝난 뒤에만 열린다 — 작별 화면엔 구매 동선이 없다(감정과 커머스 분리).
+        onFindNextShoe={() => { setFlowOpen(false); setNextShoeOpen(true); }}
         onClose={() => { setFlowOpen(false); onBack(); }}
+      />
+    );
+  }
+
+  // '다음 신발' 플로우(방향별 추천 → 나란히 비교 → 구매처). 방금 보관한 신발이 기준선이다.
+  if (nextShoeOpen) {
+    return (
+      <NextShoeScreen
+        prevBrand={shoe.brand}
+        prevModel={shoe.model}
+        prevUsedKm={shoe.used}
+        prevPriceKrw={shoe.priceKrw}
+        onClose={() => { setNextShoeOpen(false); onBack(); }}
       />
     );
   }

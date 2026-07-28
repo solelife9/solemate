@@ -15,8 +15,41 @@ import {ShoeCategory, findShoeModel, getRecommendedLifespanKm} from '../data/sho
 import type {ShoeSpec} from './shoeCompare';
 import specsData from '../data/shoeSpecs.json';
 
-/** 축의 근거를 화면에 밝히는 문구(실측이 아님을 숨기지 않는다). */
-export const SPEC_BASIS_KO = 'keego 분류 — 신발 카테고리 기준이에요';
+/**
+ * 축의 근거를 화면에 밝히는 문구.
+ *
+ * ⚠️ "브랜드 데이터"라고 뭉뚱그리면 안 된다(2026-07-28 검토) — 축마다 근거가 다르다.
+ * 무게는 브랜드 공표 스펙이지만, 쿠션은 브랜드가 공표한 **스택 수치를 우리가 1~5로
+ * 등급화**한 것이고, 반발·안정은 카테고리에서 파생한 우리 판단이다. 브랜드는 "이 신발
+ * 쿠션 4단계"라고 말한 적이 없다. 그렇게 적으면 출처 허위 표시가 된다.
+ *
+ * 대신 축마다 **실제 근거를 숫자로** 밝힌다(basisOf). 뭉뚱그린 라벨보다 숫자가 강하다.
+ */
+export const SPEC_BASIS_KO = '쿠션·반발·안정은 스펙과 신발 종류로 keego가 매긴 등급이에요';
+
+/** 축별 근거 문구 — 그 값이 어디서 왔는지 한 줄로. */
+export function basisOf(spec: {weightG?: number; stackHeelMm?: number}) {
+  return {
+    weight: spec.weightG !== undefined ? '브랜드 공식 스펙' : '',
+    cushion: spec.stackHeelMm !== undefined ? `스택 ${spec.stackHeelMm}mm 기준` : '신발 종류 기준',
+    others: '신발 종류 기준',
+  };
+}
+
+/**
+ * 드롭 차이 경고 — 갑자기 낮은 드롭으로 넘어가면 아킬레스건·종아리 부하가 급증한다.
+ * 러너가 신발 바꾸고 다치는 흔한 경로라, 미션(부상 없이) 상 반드시 말해야 한다.
+ *
+ * 4mm 이상 낮아질 때만 경고한다(그 미만은 적응 범위). 높아지는 쪽은 부상 위험이 낮아
+ * 경고하지 않는다.
+ */
+export function dropWarningKo(prevDropMm?: number, nextDropMm?: number): string {
+  if (typeof prevDropMm !== 'number' || typeof nextDropMm !== 'number') return '';
+  if (!Number.isFinite(prevDropMm) || !Number.isFinite(nextDropMm)) return '';
+  const diff = prevDropMm - nextDropMm;
+  if (diff < 4) return '';
+  return `지난 신발보다 드롭이 ${Math.round(diff)}mm 낮아요 — 아킬레스건과 종아리에 부담이 늘어요. 처음 2주는 짧게 신어보세요.`;
+}
 
 /**
  * 카테고리별 축 기준값(1~5). 제조사가 그 카테고리를 만든 설계 의도를 옮긴 값이다.
