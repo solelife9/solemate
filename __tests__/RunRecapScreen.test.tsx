@@ -145,7 +145,9 @@ describe('리캡 코스 지도 + 공유', () => {
     const root = render(<RunRecapScreen km={5} durationS={1800} route={ROUTE} />).root;
     // RTR 은 컴포지트+호스트를 중복 매칭 — 존재 여부만 단언.
     expect(root.findAll((n: any) => n?.props?.testID === 'course-map').length).toBeGreaterThanOrEqual(1);
-    expect(textOf(root)).toContain('오늘의 코스');
+    // 라벨('오늘의 코스')은 제거했다(2026-07-28) — 지도를 보면 코스인 걸 알고, 라벨이
+    // 세로 공간을 먹어 지도가 눌렸다. 계약은 '지도가 뜬다'이지 '라벨이 있다'가 아니다.
+    expect(textOf(root)).not.toContain('오늘의 코스');
   });
 
   test('route 없음(수동/GPS 실패)이면 지도 스스로 숨김', () => {

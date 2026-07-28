@@ -78,8 +78,10 @@ function SvgCourse({points}: {points: LatLon[]}) {
   );
 }
 
-export function CourseMap({points, title = '코스', style}: {
+export function CourseMap({points, title, style}: {
   points: LatLon[];
+  /** 카드 라벨. **생략하면 라벨 없이 지도만** 그린다(2026-07-28 완주 화면 정리 —
+   *  지도를 보면 코스인 걸 아는데 라벨이 세로 공간을 먹어 지도가 눌렸다). */
   title?: string;
   style?: object;
 }) {
@@ -90,7 +92,7 @@ export function CourseMap({points, title = '코스', style}: {
   return (
     <View style={[m.card, style]} testID="course-map">
       <GlassEdge glints={false} radius={RADIUS.lg} />
-      <Text style={m.label}>{title}</Text>
+      {!!title && <Text style={m.label}>{title}</Text>}
       {MAPS_AVAILABLE ? (
         <View style={[m.mapWell, {overflow: 'hidden'}]}>
           <MapView

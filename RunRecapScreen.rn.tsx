@@ -299,7 +299,6 @@ export default function RunRecapScreen({
           </PopIn>
           <Enter skip={skipAnim} delay={140} style={s.celebrateTxt}>
             <Text style={s.title}>러닝 완료</Text>
-            {shoeName ? <Text style={s.shoe} numberOfLines={1}>{shoeName}</Text> : null}
           </Enter>
         </View>
 
@@ -313,6 +312,15 @@ export default function RunRecapScreen({
           <Text ref={heroNumRef} onLayout={onHeroNumLayout} style={s.heroNum} maxFontSizeMultiplier={FONT_SCALE_CAP_HERO} testID="recap-distance">{kmToDisplay(heroShown, unit).toFixed(2)}</Text>
           <Text style={s.heroUnit}>{unit}</Text>
         </Animated.View>
+
+        {/* 시간 · 평균 페이스 — 히어로 바로 아래(2026-07-28 민우님: "위에 거리만 덩그러니
+            있는 것도 좀 웃기고"). 러너는 거리·시간·페이스를 한 덩어리로 본다. 종전엔 시간과
+            페이스가 화면 맨 아래 그리드에 있어, 완주 직후 숨찬 상태로 스크롤해야 했다. */}
+        <Enter skip={skipAnim} delay={380} style={s.heroSub}>
+          <Text style={s.heroSubTxt} testID="recap-hero-sub">
+            {fmtDur(durationS)}  ·  {fmtPace(km, durationS)} /km
+          </Text>
+        </Enter>
 
         {/* 배지 — 트랙 / 목표 달성 / 신기록 (④ 이하 섹션 Rise 스태거 80ms) */}
         {(!!track && track.laps > 0) || goalHit || prKinds.length > 0 ? (
@@ -373,7 +381,7 @@ export default function RunRecapScreen({
         {/* 오늘의 코스 — GPS 경로가 있으면 진짜 지도 위 경로(없으면 스스로 숨김).
             완주 직후가 러너가 코스를 가장 자랑하고 싶은 순간(공유 트리거). */}
         <Enter skip={skipAnim} delay={620}>
-          <CourseMap points={routePoints} title="오늘의 코스" style={{marginTop: rv(14)}} />
+          <CourseMap points={routePoints} style={{marginTop: rv(14)}} />
         </Enter>
 
         {/* 신발 마모 델타(시그니처) — 이 런이 신발 수명에 미친 영향 */}
@@ -417,8 +425,8 @@ export default function RunRecapScreen({
             // 안 된다(민우님 2026-07-26: "러닝앱 특수성"). 구 27pt 보다도 한 단 키운다.
             size="lg"
             items={[
-              {value: fmtDur(durationS), label: '시간'},
-              {value: fmtPace(km, durationS), unit: ' /km', label: '평균 페이스'},
+              // 시간·평균 페이스는 히어로 바로 아래로 올렸다(2026-07-28) — 여기 두면
+              // 완주 직후 숨찬 상태로 스크롤해야 제일 궁금한 값을 본다. 중복 제거.
               ...(bpm > 0 ? [{value: String(bpm), unit: ' bpm', label: '평균 심박'}] : []),
               {value: String(Math.round(calories)), unit: ' kcal', label: '칼로리'},
               ...(cadence > 0 ? [{value: String(Math.round(cadence)), unit: ' spm', label: '케이던스'}] : []),
@@ -550,6 +558,8 @@ const s = StyleSheet.create({
   medal: {width: rs(52), height: rs(52), borderRadius: rs(26), alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(GOOD, 0.14)},
   title: {color: T1, fontFamily: FONT, fontSize: TYPE.title.fontSize, fontWeight: '700', letterSpacing: -0.4},
   shoe: {color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600'},
+  heroSub: {alignItems: 'center', marginTop: rv(6)},
+  heroSubTxt: {color: T2, fontFamily: FONT, fontSize: TYPE.heading.fontSize, fontWeight: '700', letterSpacing: -0.2},
   hero: {flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'center', gap: rv(6), marginTop: rv(8), marginBottom: rv(14)},
   // tabular-nums — 카운트업 중 자릿수 폭이 튀지 않게(진입 시그니처 모션).
   // 세리머니 cer.dist(-1.5)와 '같은 숫자' 모프 — 자간 정합 + Jost 행간 규율 1.22×
@@ -581,7 +591,8 @@ const s = StyleSheet.create({
   grid: {backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderCurve: 'continuous', overflow: 'hidden'},
   // 그리드 안쪽 여백 — 런 상세(StatGrid 3열)와 같은 방식(컨테이너 패딩 + 행 간격).
   // (gridInner 삭제 — primitives.StatGrid inset="card" 로 수렴, 2026-07-26)
-  shoeCard: {flexDirection: 'row', alignItems: 'center', gap: rv(12), backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderCurve: 'continuous', overflow: 'hidden', paddingHorizontal: rs(14), paddingVertical: rv(12), marginBottom: rv(12)},
+  // 지도와 붙어 보이던 걸 벌린다(2026-07-28 민우님) — 카드끼리 숨 쉴 자리.
+  shoeCard: {flexDirection: 'row', alignItems: 'center', gap: rv(12), backgroundColor: GLASS.fill, borderRadius: RADIUS.lg, borderCurve: 'continuous', overflow: 'hidden', paddingHorizontal: rs(14), paddingVertical: rv(14), marginTop: rv(16), marginBottom: rv(12)},
   shoeIcon: {width: rs(36), height: rs(36), borderRadius: rs(18), alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(ACCENT, 0.12)},
   shoeName: {color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '700', letterSpacing: -0.2},
   shoeMeta: {color: T2, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500', marginTop: rv(2)},
