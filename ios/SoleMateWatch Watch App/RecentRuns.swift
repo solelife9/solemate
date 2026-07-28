@@ -59,7 +59,7 @@ enum RecentRuns {
     let run = RecentRun(
       id: summary.runId, endMs: summary.endMs, km: summary.km, durationS: summary.durationS,
       avgPaceSecPerKm: summary.avgPaceSecPerKm, avgBpm: summary.avgBpm, cadence: summary.cadence,
-      kcal: summary.kcal, elevGainM: summary.elevGainM, shoeName: summary.shoeName, source: "watch"
+      kcal: summary.kcal, elevGainM: 0, shoeName: summary.shoeName, source: "watch"
     )
     write(merge([run], into: load()))
   }

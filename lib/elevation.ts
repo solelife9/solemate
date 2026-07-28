@@ -27,6 +27,24 @@ export function initElevState(): ElevState {
  *  - −임계 이상 → 기준만 하향(내리막은 누적 안 함).
  *  - 임계 이내 → 무시(노이즈).
  */
+/**
+ * 고도 표본 배열 → 누적 상승(m). 워치가 보낸 원자료(routeAlt)를 폰이 계산할 때 쓴다.
+ *
+ * 워치는 상승고도를 스스로 계산하지 않는다(2026-07-28) — 종전엔 0.5m 이상 증분을 전부
+ * 더해 평지 5km 러닝에서도 274m 가 나왔다(폰 33m, 8배). 같은 러닝을 두 벌의 규칙으로
+ * 계산하면 답이 갈리므로, 규칙을 이 파일 하나로 모은다.
+ *
+ * 측정 불가 표본(NaN/null)은 건너뛴다 — 0 으로 치면 해수면으로 읽혀 가짜 오르내림이 생긴다.
+ */
+export function elevationGainFrom(samples: readonly (number | null | undefined)[]): number {
+  let st = initElevState();
+  for (const a of samples || []) {
+    if (a == null || !Number.isFinite(a)) continue;
+    st = feedAltitude(st, a);
+  }
+  return Math.round(st.gain);
+}
+
 export function feedAltitude(state: ElevState, altitude: number | null | undefined): ElevState {
   if (altitude == null || !Number.isFinite(altitude)) return state;
   if (state.ref == null) return {ref: altitude, gain: state.gain};

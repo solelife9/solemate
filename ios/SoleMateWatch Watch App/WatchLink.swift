@@ -246,7 +246,6 @@ final class WatchLink: NSObject, ObservableObject {
       "kcal": summary.kcal,
       // 케이던스(spm)·누적 상승 고도(m)·구간 스플릿(초/km) — 폰 상세 지표 유실 방지.
       "cadence": summary.cadence,
-      "elevGainM": summary.elevGainM,
       "splitsS": summary.splitsS,
       "startMs": summary.startMs,
       "endMs": summary.endMs,
@@ -256,6 +255,10 @@ final class WatchLink: NSObject, ObservableObject {
       "lapTimes": summary.lapTimesS,
       // GPS 경로([lat,lon,…] 플랫, ≤200점) — 폰 지도(민우님 2026-07-24 "워치 런도 지도").
       "route": summary.routeFlat,
+      // 경로와 1:1 짝인 고도 원자료(m). 폰이 lib/elevation.ts 로 상승고도를 계산한다.
+      // 워치는 더 이상 elevGainM 을 보내지 않는다(2026-07-28) — 두 벌 계산이 답을
+      // 갈라놨기 때문(워치 274m vs 폰 33m). 측정 불가 지점은 NaN 이라 폰이 건너뛴다.
+      "routeAlt": summary.routeAltFlat.map { $0.isFinite ? $0 : Double.nan },
     ]
     let s = WCSession.default
     guard s.activationState == .activated else { return }

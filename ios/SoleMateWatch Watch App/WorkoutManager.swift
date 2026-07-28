@@ -63,8 +63,11 @@ struct RunSummary: Equatable {
   let kcal: Double
   /// 평균 케이던스(spm) — HK stepCount 합 / 경과분. 0 = 미측정.
   let cadence: Double
-  /// 누적 상승 고도(m) — GPS 고도 양의 증분 적산(노이즈 게이트). 0 = 미측정.
-  let elevGainM: Double
+  /// 경로 점과 1:1 짝인 고도 원자료(m). 측정 불가 지점은 .nan.
+  /// ⚠️ 워치는 상승고도를 **계산하지 않는다**(2026-07-28) — 폰 lib/elevation.ts 가
+  /// 기준고도 히스테리시스(±3m)로 한 벌만 계산한다. 종전 워치 자체 누적은 0.5m 증분을
+  /// 다 더해 평지에서도 부풀었다(실측 274m vs 폰 33m).
+  let routeAltFlat: [Double]
   /// 구간 스플릿(초/km) — 폰 RunDetail 페이스 그래프·paceTrack 사이드카. 비면 [].
   let splitsS: [Double]
   let startMs: Double
@@ -139,6 +142,21 @@ final class WorkoutManager: NSObject, ObservableObject {
   }
 
   var isActive: Bool { phase == .running || phase == .paused }
+
+  /// 지금 이 순간의 경과시간(초) — 화면이 그릴 때마다 **직접 계산**한다.
+  ///
+  /// `elapsedS` 는 1초 Timer 가 밀어주는데, Always-On(손목 내림)에서는 그 Timer 가 돌지
+  /// 않아 숫자가 멈춘다. 그 상태로 손목을 들면 "시간이 안 간다 = 앱이 죽었다"로 보인다
+  /// (2026-07-28 민우님: "손목을 들어도 워치가 잘 안 켜져").
+  /// 이 계산 프로퍼티는 벽시계에서 즉시 뽑으므로 언제 그려도 맞는 값이 나온다.
+  /// 회계 규칙은 Timer 와 동일 — 시작 후 경과 − 일시정지 누적 − 진행 중 일시정지.
+  var liveElapsedS: Double {
+    guard let start = startDate, isActive else { return elapsedS }
+    if phase == .paused { return elapsedS }  // 일시정지 중엔 동결(Timer 와 같은 계약)
+    let ongoing = pauseStartDate.map { max(0, Date().timeIntervalSince($0)) } ?? 0
+    let e = Date().timeIntervalSince(start) - pausedAccumS - ongoing
+    return e.isFinite && e >= 0 ? max(e, elapsedS) : elapsedS
+  }
   /// 평균 페이스(초/km). 200m 미만은 통계 잡음이라 0(--'--") 처리.
   var avgPaceSecPerKm: Double { distanceKm > 0.2 ? elapsedS / distanceKm : 0 }
   /// 현재 랩(진행 중인 km 구간) 거리 — '현재 랩' 뷰(Apple Split 뷰 문법).
@@ -179,6 +197,9 @@ final class WorkoutManager: NSObject, ObservableObject {
   /// 간격으로 씨닝해 모은다. 메모리 상한 2000점(울트라 대비) — 초과 시 절반 데시메이션,
   /// 전송 시 200점 균등 다운샘플(폰 simplifyRoute 규약과 동일).
   private var routePoints: [CLLocationCoordinate2D] = []
+  /// 경로 점과 1:1로 짝지은 고도(m). 측정 불가 지점은 .nan — 폰이 그 점만 건너뛴다.
+  /// 워치는 고도를 **계산하지 않고 원자료만 넘긴다**(누적 규칙은 폰 lib/elevation.ts 한 벌).
+  private var routeAlts: [Double] = []
   private var lastRoutePoint: CLLocation?
   private var timer: Timer?
   private var countdownTimer: Timer?
@@ -189,7 +210,6 @@ final class WorkoutManager: NSObject, ObservableObject {
   // 폰이 주머니에 있어(실시간 스트림 놓침) hrTrack 이 비는 문제를 근본 해결한다.
   private var hrSamples: [(offsetS: Double, bpm: Double)] = []
   /// 누적 상승 고도(m) — process(locations) 가 GPS 고도 양의 증분으로 적산. 종료 시 요약에 실림.
-  private var elevGainM: Double = 0
   /// 현재(롤링) 페이스용 (경과초, 거리km) 샘플 — 최근 ~20s 창으로 순간 페이스 산출. 러너가
   /// 가장 자주 보는 실시간 지표(평균 페이스는 보조). 시작/리셋 시 비움.
   private var pacePoints: [(t: Double, d: Double)] = []
@@ -336,7 +356,6 @@ final class WorkoutManager: NSObject, ObservableObject {
       fastSec = 0
       lastLocation = nil
       hrSamples = []
-      elevGainM = 0
       capturedAvgBpm = 0
       capturedKcal = 0
       capturedCadence = 0
@@ -344,6 +363,8 @@ final class WorkoutManager: NSObject, ObservableObject {
       gpsDistanceKm = 0
       hkAlive = false
       routePoints = []
+    routeAlts = []
+      routeAlts = []
       lastRoutePoint = nil
       pacePoints = []
       currentPaceSecPerKm = 0
@@ -393,6 +414,7 @@ final class WorkoutManager: NSObject, ObservableObject {
     autoPaused = false
     beginPauseAccounting()
     session?.pause()
+    notifyPauseState(paused: true)
   }
 
   func resume() {
@@ -402,6 +424,20 @@ final class WorkoutManager: NSObject, ObservableObject {
     fastSec = 0
     endPauseAccounting()
     session?.resume()
+    notifyPauseState(paused: false)
+  }
+
+  /// 일시정지/재개를 **손목으로 느끼게** 알린다 — 햅틱 + 음성.
+  ///
+  /// 종전엔 화면만 바뀌어서, 달리다 멈췄을 때 손목을 들어 화면을 봐야만 상태를 알 수
+  /// 있었다(2026-07-28 민우님 실기기: "됐는지 안 됐는지 손목을 들어서 터치해서 봐야 돼서
+  /// 불편했어"). 러닝 중엔 화면을 못 보는 게 정상이라, 촉각과 소리로 알려야 한다.
+  /// 햅틱은 애플 운동 앱과 같은 결로 정지=stop, 재개=start 를 쓴다.
+  private func notifyPauseState(paused: Bool) {
+    if WatchLink.shared.hapticsOn {
+      WKInterfaceDevice.current().play(paused ? .stop : .start)
+    }
+    if paused { WatchVoice.shared.paused() } else { WatchVoice.shared.resumed() }
   }
 
   // ── 종료 → 요약 ───────────────────────────────────────────────────────────
@@ -452,7 +488,6 @@ final class WorkoutManager: NSObject, ObservableObject {
     autoPaused = false
     manualPause = false
     lastLocation = nil
-    elevGainM = 0
     capturedAvgBpm = 0
     capturedKcal = 0
     capturedCadence = 0
@@ -460,6 +495,7 @@ final class WorkoutManager: NSObject, ObservableObject {
     gpsDistanceKm = 0
     hkAlive = false
     routePoints = []
+    routeAlts = []
     lastRoutePoint = nil
     pacePoints = []
     currentPaceSecPerKm = 0
@@ -618,10 +654,12 @@ final class WorkoutManager: NSObject, ObservableObject {
     }
   }
 
-  /// 균등 스트라이드 다운샘플(폰 lib/geo.simplifyRoute 와 동일 규약).
-  private func downsampleRoute(_ pts: [CLLocationCoordinate2D], maxCount: Int) -> [CLLocationCoordinate2D] {
-    guard pts.count > maxCount, maxCount >= 2 else { return pts }
-    return (0..<maxCount).map { pts[Swift.min(($0 * (pts.count - 1)) / (maxCount - 1), pts.count - 1)] }
+  /// 균등 스트라이드 다운샘플 **인덱스**(폰 lib/geo.simplifyRoute 와 동일 규약).
+  /// 좌표와 고도를 같은 인덱스로 뽑아야 짝이 어긋나지 않아, 배열이 아니라 인덱스를 돌려준다.
+  private func downsampleIndices(count: Int, maxCount: Int) -> [Int] {
+    guard count > 0 else { return [] }
+    guard count > maxCount, maxCount >= 2 else { return Array(0..<count) }
+    return (0..<maxCount).map { Swift.min(($0 * (count - 1)) / (maxCount - 1), count - 1) }
   }
 
   private func buildSummary(endDate: Date) {
@@ -633,7 +671,7 @@ final class WorkoutManager: NSObject, ObservableObject {
     let cadence = capturedCadence
     let trackRun = goal.kind == .track && !lapTimes.isEmpty
     // 경로 다운샘플(≤200점) → 플랫 배열. 2점 미만(실내·GPS 부재)은 빈 배열 — 폰이 지도 생략.
-    let dsRoute = downsampleRoute(routePoints, maxCount: 200)
+    let dsIdx = downsampleIndices(count: routePoints.count, maxCount: 200)
     let s = RunSummary(
       runId: runId,
       shoeId: currentShoe?.id ?? "",
@@ -643,14 +681,15 @@ final class WorkoutManager: NSObject, ObservableObject {
       avgBpm: max(0, avgBpm),
       kcal: max(0, kcal),
       cadence: max(0, cadence),
-      elevGainM: max(0, elevGainM),
       // 비트랙 = km 스플릿(초/km). 트랙은 랩타임을 lapTimesS 로 별도 전송하므로 여기선 [].
       splitsS: trackRun ? [] : splits,
       startMs: start.timeIntervalSince1970 * 1000,
       endMs: endDate.timeIntervalSince1970 * 1000,
       lapM: trackRun ? lapM : 0,
       lapTimesS: trackRun ? lapTimes : [],
-      routeFlat: dsRoute.count >= 2 ? dsRoute.flatMap { [$0.latitude, $0.longitude] } : []
+      routeFlat: dsIdx.count >= 2 ? dsIdx.flatMap { [routePoints[$0].latitude, routePoints[$0].longitude] } : [],
+      // 좌표와 **같은 인덱스**로 뽑아 짝을 지킨다(따로 다운샘플하면 어긋난다).
+      routeAltFlat: dsIdx.count >= 2 ? dsIdx.map { $0 < routeAlts.count ? routeAlts[$0] : .nan } : []
     )
     summary = s
     // 완주 런 자동 전송(애플 피트니스 방식) — 정지 순간 바로 저장. 수동 '저장' 버튼을 안
@@ -777,6 +816,7 @@ final class WorkoutManager: NSObject, ObservableObject {
           autoPaused = true
           beginPauseAccounting()
           session?.pause()
+          notifyPauseState(paused: true)
         }
       } else {
         slowSec = 0
@@ -789,6 +829,7 @@ final class WorkoutManager: NSObject, ObservableObject {
           autoPaused = false
           endPauseAccounting()
           session?.resume()
+          notifyPauseState(paused: false)
         }
       } else {
         fastSec = 0
@@ -966,12 +1007,13 @@ extension WorkoutManager: CLLocationManagerDelegate {
               recomputeDistance()
             }
           }
-          // 상승 고도(누적) — GPS 고도의 양의 증분만 적산. 수직정확도 게이트 + 0.5m 노이즈
-          // 임계(미세 지터 무시) + 30m 스파이크 컷. 거리 소스와 무관(고도는 GPS 유지).
-          if phase == .running, loc.verticalAccuracy > 0, loc.altitude.isFinite, last.altitude.isFinite {
-            let dAlt = loc.altitude - last.altitude
-            if dAlt > 0.5, dAlt < 30 { elevGainM += dAlt }
-          }
+          // 상승 고도는 **여기서 계산하지 않는다**(2026-07-28 구조 변경).
+          // 종전엔 0.5m 이상 증분을 전부 더했는데, GPS 고도 노이즈가 ±5~10m 라 평지에서도
+          // 부풀었다 — 실측 5km 도심 러닝에서 274m(폰 33m, 8배). 폰은 lib/elevation.ts 가
+          // 기준고도 히스테리시스(±3m)로 지터를 걸러내는데, 같은 러닝을 두 벌의 규칙으로
+          // 계산하니 답이 갈렸다.
+          // 이제 워치는 **고도 원자료만 실어 보내고**(routeAlts) 폰이 검증된 한 벌의 규칙으로
+          // 계산한다. 워치로 뛰든 폰으로 뛰든 같은 숫자가 나오게 하는 게 목적이다.
           feedAutoPause(speedMps: sampleSpeed, dtSec: dt)
         }
       }
@@ -979,9 +1021,14 @@ extension WorkoutManager: CLLocationManagerDelegate {
       if phase == .running {
         if lastRoutePoint == nil || loc.distance(from: lastRoutePoint!) >= 10 {
           routePoints.append(loc.coordinate)
+          // 고도 원자료를 좌표와 **짝지어** 모은다(폰이 lib/elevation.ts 로 계산할 재료).
+          // 수직정확도가 없거나 값이 이상하면 .nan 을 넣어 자리를 지킨다 — 배열이 어긋나면
+          // 좌표와 고도가 짝이 안 맞아 엉뚱한 고도가 붙는다.
+          routeAlts.append(loc.verticalAccuracy > 0 && loc.altitude.isFinite ? loc.altitude : .nan)
           lastRoutePoint = loc
           if routePoints.count > 2000 {
             routePoints = stride(from: 0, to: routePoints.count, by: 2).map { routePoints[$0] }
+            routeAlts = stride(from: 0, to: routeAlts.count, by: 2).map { routeAlts[$0] }
           }
         }
       }

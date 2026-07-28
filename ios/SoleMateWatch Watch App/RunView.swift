@@ -20,6 +20,13 @@ import WatchKit
 
 struct RunView: View {
   @EnvironmentObject var workout: WorkoutManager
+  /// Always-On(손목 내림 — 화면이 어두워진 상태)인가.
+  ///
+  /// 2026-07-28 민우님 실기기: "손목을 들어도 워치가 잘 안 켜져". 실제로는 화면이 꺼진 게
+  /// 아니라 **숫자가 멈춰 있어서 꺼진 것처럼 보인** 것이다 — 경과시간을 1초 Timer 로 흘리는데
+  /// AOD 상태에서는 그 Timer 가 돌지 않는다(watchOS 는 앱을 얼려 배터리를 아낀다).
+  /// TimelineView(.periodic)로 시계를 바꾸면 watchOS 가 AOD 에서도 분당 갱신을 보장한다.
+  @Environment(\.isLuminanceReduced) private var dimmed
   /// 가로: 0 = 지표(기본) · 1 = 컨트롤 · 2 = Now Playing. 첫 페이지로 시작해야 한다 —
   /// watchOS .page TabView 를 비-첫 페이지 selection 으로 생성하면 레이아웃이 깨진다(실측).
   @State private var hPage = 0
@@ -158,17 +165,12 @@ struct RunView: View {
         .foregroundStyle(KeegoTheme.t1)
         .lineLimit(1)
         .minimumScaleFactor(0.6)
-      // km 라벨 + 거리 소스 진단 태그(HK 융합 살아있으면 'HK', 폴백이면 'GPS').
-      // 실기기에서 HK 융합거리가 실제로 동작하는지 눈으로 확인용(원인 확정 뒤 제거 예정).
-      HStack(spacing: 4) {
-        Text("km")
-          .font(.system(size: 13, weight: .semibold))
-          .foregroundStyle(KeegoTheme.brand)
-        Text(workout.hkAlive ? "HK" : "GPS")
-          .font(.system(size: 9, weight: .bold))
-          .foregroundStyle(workout.hkAlive ? KeegoTheme.good : KeegoTheme.t3)
-      }
-      .padding(.top, -2)
+      // km 라벨. 거리 소스 진단 태그(HK/GPS)는 제거했다 — 원인 확정용 개발 잔여물이었고
+      // (2026-07-28) 러닝 중 화면에서 9pt 글자는 읽히지도 않으면서 공간만 먹었다.
+      Text("km")
+        .font(.system(size: 14, weight: .semibold))
+        .foregroundStyle(KeegoTheme.brand)
+        .padding(.top, -2)
 
       // 목표 진행 — 거리/시간 목표면 얇은 바 + 남은 양(링 제거 결정과 정합).
       // 자유·트랙은 progressTarget 0 → 숨김.
@@ -188,33 +190,21 @@ struct RunView: View {
 
       Spacer(minLength: 4)
 
-      // 보조 지표 스택 — 라벨 T3 / 값 흰 세미볼드 tabular. 시간·페이스를 살짝
-      // 올리고 BPM 과 여백을 벌린다(2026-07-11 사용자 피드백 — 줄 사이 호흡).
+      // 보조 지표 — 시간·페이스 둘만 크게(2026-07-28 실기기: "거리는 얼추 보이는데 밑에
+      // 글씨들이 안 보여"). 원인은 크기가 아니라 **한 화면에 너무 많이 넣은 것**이었다.
+      // 평균 페이스(10pt)와 심박 줄을 걷어내 그만큼을 시간·페이스에 준다.
+      // 심박은 세로 스와이프 전용 페이지에 42pt 로 이미 크게 있다 — 여기 25pt 로 또 넣으면
+      // 셋 다 작아질 뿐이라 중복을 없앤다. 평균 페이스는 완주 요약에서 본다.
       HStack(spacing: 0) {
-        miniMetric(label: "시간", value: KeegoFormat.time(workout.elapsedS))
+        // 경과시간은 TimelineView 로 그린다 — AOD(손목 내림)에서도 watchOS 가 갱신을
+        // 보장한다. 러닝 중엔 1초, 어두워지면 분당(watchOS 가 알아서 낮춘다).
+        TimelineView(.periodic(from: .now, by: dimmed ? 60 : 1)) { _ in
+          miniMetric(label: "시간", value: KeegoFormat.time(workout.liveElapsedS))
+        }
         // 메인 페이스 = 현재(순간·롤링) — 러너가 가장 자주 보는 실시간 지표(#3).
         miniMetric(label: "페이스", value: KeegoFormat.pace(secPerKm: workout.currentPaceSecPerKm))
       }
-      // 평균 페이스는 보조로 작게(러닝 전체 페이싱 참고).
-      Text("평균 " + KeegoFormat.pace(secPerKm: workout.avgPaceSecPerKm))
-        .font(.system(size: 10, weight: .medium))
-        .monospacedDigit()
-        .foregroundStyle(KeegoTheme.t3)
-        .padding(.top, 2)
-      HStack(spacing: 5) {
-        Image(systemName: "heart.fill")
-          .font(.system(size: 14))
-          .foregroundStyle(KeegoTheme.hrZoneColor(workout.hrZone))
-        // 심박도 16 → 25(시간·페이스와 동일 스케일 — 보조 지표 한 줄로 크게).
-        Text(workout.heartRate > 0 ? "\(Int(workout.heartRate))" : "--")
-          .font(.system(size: 25, weight: .semibold))
-          .monospacedDigit()
-          .foregroundStyle(KeegoTheme.t1)
-        Text("BPM")
-          .font(.system(size: 12))
-          .foregroundStyle(KeegoTheme.t3)
-      }
-      .padding(.top, 10)
+      .padding(.top, 4)
     }
     .padding(.horizontal, 6)
   }
@@ -243,19 +233,21 @@ struct RunView: View {
   }
 
   private func miniMetric(label: String, value: String) -> some View {
-    VStack(spacing: 1) {
+    VStack(spacing: 2) {
       Text(label)
-        // 라벨 10 → 12(러닝 중 흘끗에도 무엇인지 읽히게).
-        .font(.system(size: 12))
+        .font(.system(size: 13, weight: .medium))
         .foregroundStyle(KeegoTheme.t3)
       Text(value)
-        // 값 16 → 25: 실기기 피드백 "km 빼곤 다 안 보여" — 보조 지표를 크게.
-        // 두 칼럼(반폭)이라 긴 시간값(h:mm:ss)은 축소로 안전하게 담는다.
-        .font(.system(size: 25, weight: .semibold))
+        // 25 → 34(2026-07-28 실기기 3차 피드백). 같은 지적이 세 번 반복됐다는 건 조금씩
+        // 키우는 걸로는 안 된다는 뜻이라, 화면에서 두 줄(평균 페이스·심박)을 걷어내고
+        // 그 공간을 여기에 몰아줬다.
+        .font(.system(size: 34, weight: .bold))
         .monospacedDigit()
         .foregroundStyle(KeegoTheme.t1)
         .lineLimit(1)
-        .minimumScaleFactor(0.6)
+        // 0.6 → 0.8: 반폭이라 긴 값(1:02:33)은 줄여야 하지만, 0.6 은 20pt 까지 쪼그라들어
+        // "안 보인다"의 진짜 원인이었다. 하한을 올려 최악에도 27pt 를 지킨다.
+        .minimumScaleFactor(0.8)
     }
     .frame(maxWidth: .infinity)
   }

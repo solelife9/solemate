@@ -72,6 +72,10 @@ import {
   weekBuckets, monthBuckets, yearBuckets,
 } from './lib/stats';
 import {parseShoeName, shoeHealth, isRetired, DEFAULT_MAX_KM, clampMaxKm, reconcileShoeAlerts, conditionForPercent, effectiveMaxKm} from './lib/shoe';
+// 한 러닝은 한 기록 — 폰·워치 중복 저장 병합(신발 이중 차감 차단).
+import {findMergeTarget, mergeRuns} from './lib/runMerge';
+// 상승 고도는 폰이 한 벌 규칙으로 계산한다(워치는 원자료만 보낸다).
+import {elevationGainFrom} from './lib/elevation';
 import {setRunSurface, parseSurface, type Surface} from './lib/wearModel';
 import {forecastReplacement, type ReplacementForecast} from './lib/replacementForecast';
 import {mostRecentShoeId, lastWornDate} from './lib/shoeRecommend';
@@ -1536,8 +1540,8 @@ function Main(){
   //    cloudSync 가 Firestore 로 push). 메시지+큐 이중 배달이 가능하므로 runId 를 영속
   //    목록으로 중복 방어한다. 워치가 보낸 신발이 목록에 없으면(그 사이 삭제 등) 현재
   //    선택 신발로 폴백. 구독은 1회, 최신 상태는 ref 로 읽는다(재구독 churn 방지).
-  const watchRunCtx=useRef({addRun,shoes,effectiveId});
-  watchRunCtx.current={addRun,shoes,effectiveId};
+  const watchRunCtx=useRef({addRun,shoes,effectiveId,runs});
+  watchRunCtx.current={addRun,shoes,effectiveId,runs};
   useEffect(()=>watchSession.onWatchRun(async p=>{
     try{
       const KEY='watch_runs_seen_v1';
@@ -1556,7 +1560,33 @@ function Main(){
       // GPS 경로(민우님 2026-07-24 "워치 런도 지도"): 워치가 보낸 경로를 레코드 route(클라우드
       // 동기 — 재설치·기기변경에도 지도 보존) + route_<id> 사이드카(addRun 내부)로 저장한다.
       const routeStr=Array.isArray(p.route)&&p.route.length>=2?JSON.stringify(p.route):'';
-      const newId=await ctx.addRun(shoeId,p.km,date,'','watch',Math.round(p.durationS),Math.round(p.cadence),routeStr,'',Math.round(p.avgBpm),Math.round(p.elevGainM),Math.round(p.kcal));
+      // 상승 고도는 **폰이 계산한다**(2026-07-28). 워치가 보낸 고도 원자료(routeAlt)를
+      // lib/elevation 규칙(기준고도 ±3m 히스테리시스)으로 누적한다. 워치 자체 계산값
+      // (구버전 elevGainM)은 0.5m 증분을 다 더해 평지에서도 부풀었다 — 실측 274m(폰 33m).
+      // 구버전 워치는 routeAlt 가 없으므로 그때만 elevGainM 을 폴백으로 받는다.
+      const elevM=Array.isArray(p.routeAlt)&&p.routeAlt.length>0
+        ? elevationGainFrom(p.routeAlt)
+        : Math.round(p.elevGainM);
+      // ── 중복 방어: 같은 러닝을 폰이 이미 저장했는가 ──────────────────────────
+      // runId 중복 방어(위)는 '같은 워치 런이 두 번 오는 것'만 막는다. 폰과 워치를 둘 다
+      // 켜고 뛰면 서로 다른 id 로 **같은 러닝이 두 건** 저장돼 신발에 거리가 두 번 차감된다
+      // (2026-07-28 실측: 5.4km 러닝이 신발에 10.50km). 시간창이 겹치면 새 런을 만들지 않고
+      // 기존 런에 합친다(lib/runMerge — 스트라바가 중복 업로드를 처리하는 방식과 같다).
+      const incoming={id:'incoming',shoe_id:shoeId,km:p.km,duration:Math.round(p.durationS),
+        run_date:date,source:'watch',updatedAt:Date.now(),route:routeStr,location:'',
+        cadence:Math.round(p.cadence),heart_rate:Math.round(p.avgBpm),
+        calories:Math.round(p.kcal),elevation_m:elevM};
+      const dup=findMergeTarget(incoming,ctx.runs as any,{incomingStartMs:p.startMs});
+      if(dup){
+        const merged=mergeRuns(dup as any,incoming,'watch');
+        setRuns(prev=>prev.map(r=>r.id===dup.id?({...r,...merged} as any):r));
+        // 경로가 폰에 없고 워치에만 있으면 사이드카도 채운다(지도 유실 방지).
+        if(routeStr&&!String((dup as any).route||'')){
+          try{await AsyncStorage.setItem('route_'+dup.id,routeStr);}catch{/* 비치명적 */}
+        }
+        return; // 새 런을 만들지 않는다 — 신발 이중 차감의 근본 차단.
+      }
+      const newId=await ctx.addRun(shoeId,p.km,date,'','watch',Math.round(p.durationS),Math.round(p.cadence),routeStr,'',Math.round(p.avgBpm),elevM,Math.round(p.kcal));
       // 트랙 런이면 track_<id> 마커 저장 — 폰 RunDetail 이 '트랙·Nm×N랩' 표시(폰 트랙 런과
       // 동일 계약). 거리(랩수×랩거리)·시간은 이미 레코드에 있으므로 메타만 얹는다.
       if(newId&&p.laps>0&&p.lapM>0){

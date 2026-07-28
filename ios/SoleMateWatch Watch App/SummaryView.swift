@@ -41,7 +41,9 @@ struct SummaryView: View {
             // 않고 '--' 로 보여준다(Truth only). 숨기면 측정 실패(HK 문제)가 가려진다.
             row(label: "케이던스", value: s.cadence > 0 ? "\(Int(s.cadence.rounded())) spm" : "--")
             row(label: "칼로리", value: s.kcal > 0 ? "\(Int(s.kcal.rounded())) kcal" : "--")
-            row(label: "상승 고도", value: s.elevGainM > 0 ? "\(Int(s.elevGainM.rounded())) m" : "0 m")
+            // 상승 고도는 워치 요약에서 뺐다(2026-07-28) — 워치는 고도를 계산하지 않고
+            // 원자료만 폰에 넘긴다(폰 lib/elevation.ts 한 벌). 완주 직후 손목에서 볼 값도
+            // 아니고, 여기서 0 m 를 띄우면 '측정 실패'로 오해된다.
             if !s.shoeName.isEmpty {
               row(label: "신발", value: s.shoeName)
             }

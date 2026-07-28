@@ -31,6 +31,11 @@ final class WatchVoice {
   func start() { play(["start"]) }
   /// 목표(거리/시간) 달성 순간.
   func goal() { play(["goal"]) }
+  /// 일시정지 — 수동·자동 공통. 클립(auto_pause.mp3)은 진작 번들에 있었는데 부르는 곳이
+  /// 없어 손목만 러닝 시 아무 안내가 없었다(2026-07-28 민우님: "일시정지했는지 모르겠어").
+  func paused() { play(["auto_pause"]) }
+  /// 재개.
+  func resumed() { play(["resume"]) }
   /// km 안내: "N킬로미터, 페이스 M분 S초, (경과 …)". paceSec/elapsed nil 이면 해당 조각 생략.
   func kmCue(_ n: Int, paceSec: Double?, elapsedSec: Double?, lastKm: Bool) {
     guard n >= 1, n <= 42 else { return }

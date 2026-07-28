@@ -57,8 +57,18 @@ export type WatchRunPayload = {
   kcal: number;
   /** 평균 케이던스(spm). 0=미측정. */
   cadence: number;
-  /** 누적 상승 고도(m). 0=미측정. */
+  /**
+   * 누적 상승 고도(m). **워치는 더 이상 보내지 않는다**(2026-07-28) — 항상 0.
+   * 상승고도는 폰이 routeAlt 원자료로 lib/elevation.ts 규칙에 따라 한 벌만 계산한다.
+   * 필드는 구버전 워치 호환을 위해 남긴다(구버전은 계산값을 보낸다).
+   */
   elevGainM: number;
+  /**
+   * 경로 점과 1:1 짝인 고도 원자료(m). 측정 불가 지점은 NaN → 폰이 그 점만 건너뛴다.
+   * 워치가 고도를 자체 계산하면 노이즈가 그대로 쌓여 부푼다(실측 274m vs 폰 33m).
+   * 그래서 계산은 폰이 하고 워치는 재료만 넘긴다 — 어느 기기로 뛰든 같은 규칙이 되게.
+   */
+  routeAlt: number[];
   /** 구간 스플릿(초/km) — 폰 페이스 그래프·paceTrack 사이드카. 비트랙 런만, 없으면 []. */
   splitsS: number[];
   startMs: number;
@@ -113,6 +123,11 @@ export const watchSession = {
         kcal: Math.max(0, Number(e?.kcal) || 0),
         cadence: Math.max(0, Number(e?.cadence) || 0),
         elevGainM: Math.max(0, Number(e?.elevGainM) || 0),
+        // 고도 원자료 — NaN(측정 불가)은 그대로 보존한다. 0 으로 바꾸면 해수면으로
+        // 읽혀 가짜 내리막이 생긴다(계산부가 유한값만 먹도록 걸러 쓴다).
+        routeAlt: Array.isArray(e?.routeAlt)
+          ? e.routeAlt.slice(0, 400).map((x: any) => Number(x))
+          : [],
         splitsS: Array.isArray(e?.splitsS) ? e.splitsS.map((x: any) => Math.max(0, Number(x) || 0)) : [],
         startMs: Math.max(0, Number(e?.startMs) || 0),
         endMs: Math.max(0, Number(e?.endMs) || 0),

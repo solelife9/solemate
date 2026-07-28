@@ -159,7 +159,12 @@ private struct RecentRunDetail: View {
           row("평균 심박", run.avgBpm > 0 ? "\(Int(run.avgBpm.rounded())) BPM" : "--")
           row("케이던스", run.cadence > 0 ? "\(Int(run.cadence.rounded())) spm" : "--")
           row("칼로리", run.kcal > 0 ? "\(Int(run.kcal.rounded())) kcal" : "--")
-          row("상승 고도", run.elevGainM > 0 ? "\(Int(run.elevGainM.rounded())) m" : "0 m")
+          // 워치 자체 기록은 상승 고도를 표시하지 않는다(2026-07-28) — 워치는 고도를
+          // 계산하지 않고 원자료만 폰에 넘긴다(폰 lib/elevation.ts 가 한 벌로 계산).
+          // 폰에서 온 기록(source=="phone")은 이미 계산된 값이라 그대로 보여준다.
+          if run.source == "phone", run.elevGainM > 0 {
+            row("상승 고도", "\(Int(run.elevGainM.rounded())) m")
+          }
           if !run.shoeName.isEmpty { row("신발", run.shoeName) }
         }
         .padding(8)
