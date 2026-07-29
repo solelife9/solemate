@@ -110,28 +110,22 @@ app.post('/auth/kakao', rateLimit, async (req, res) => {
   }
 });
 
-// 네이버: access token 으로 사용자 조회 → 커스텀 토큰. uid='naver:<고유 id>'.
-// NOTE(보안 후속): 네이버 공개 API 에는 토큰→client_id introspection 이 없어 audience 를
-// 직접 검증할 수 없다. 진짜 바인딩은 클라이언트가 accessToken 대신 *인가 code* 를 보내고
-// 서버가 NAVER_CLIENT_ID/SECRET 으로 code↔token 교환하는 방식이 필요하다(클라+서버 변경).
-// 현재는 토큰 유효성 + rate limit 으로 남용을 제한한다.
+// 네이버: refresh token → (1) 우리 앱 자격으로 교환해 audience 검증 (2) 그 결과 토큰으로
+// 신원 조회 → 커스텀 토큰. uid='naver:<고유 id>'. 상세 근거는 ./naverAuth.js 헤더 참조.
+// 클라이언트가 보낸 accessToken 은 **쓰지 않는다**(구 서버 호환으로 실려 올 뿐이다).
 app.post('/auth/naver', rateLimit, async (req, res) => {
   try {
-    const {accessToken} = req.body || {};
-    if (!accessToken) return res.status(400).json({error: 'accessToken 필요'});
-    const r = await fetch('https://openapi.naver.com/v1/nid/me', {
-      headers: {Authorization: `Bearer ${accessToken}`},
+    const {refreshToken} = req.body || {};
+    const v = await verifyNaverIdentity({
+      clientId: process.env.NAVER_CLIENT_ID,
+      clientSecret: process.env.NAVER_CLIENT_SECRET,
+      refreshToken,
     });
-    if (!r.ok) return res.status(401).json({error: '네이버 토큰 검증 실패'});
-    const body = await r.json();
-    if (!body || body.resultcode !== '00' || !body.response || body.response.id == null) {
-      return res.status(401).json({error: '네이버 사용자 정보 없음'});
-    }
-    const uid = `naver:${body.response.id}`;
-    const email = body.response.email || null;
-    const name = body.response.nickname || body.response.name || null;
-    const firebaseToken = await mintCustomToken(uid, {provider: 'naver', email, name});
-    res.json({firebaseToken, uid, email, name});
+    if (!v.ok) return res.status(v.status).json({error: v.error});
+
+    const uid = `naver:${v.id}`;
+    const firebaseToken = await mintCustomToken(uid, {provider: 'naver', email: v.email, name: v.name});
+    res.json({firebaseToken, uid, email: v.email, name: v.name});
   } catch (e) {
     res.status(500).json({error: String((e && e.message) || e)});
   }

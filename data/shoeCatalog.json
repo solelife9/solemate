@@ -314,6 +314,29 @@
   },
   {
     "version": null,
+    "variant": "ATR",
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "아디다스",
+      "아디제로",
+      "에보 SL ATR"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "adidas-adizero-evo-sl-atr",
+    "brand": "Adidas",
+    "model": "Adizero Evo SL",
+    "category": "trail"
+  },
+  {
+    "version": null,
     "variant": null,
     "collabWith": null,
     "weight": 235,
@@ -515,6 +538,29 @@
     "verified": true
   },
   {
+    "version": "2",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "아디다스",
+      "듀라모",
+      "듀라모 RC 2"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "adidas-duramo-rc-2",
+    "brand": "Adidas",
+    "model": "Duramo RC",
+    "category": "daily"
+  },
+  {
     "id": "adidas-duramo-sl",
     "brand": "Adidas",
     "model": "Duramo SL",
@@ -534,6 +580,98 @@
       "아디다스"
     ],
     "verified": false
+  },
+  {
+    "version": "2",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "아디다스",
+      "듀라모",
+      "듀라모 SL 2"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "adidas-duramo-sl-2",
+    "brand": "Adidas",
+    "model": "Duramo SL",
+    "category": "daily"
+  },
+  {
+    "version": "2",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "아디다스",
+      "듀라모",
+      "듀라모 스피드 2"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "adidas-duramo-speed-2",
+    "brand": "Adidas",
+    "model": "Duramo Speed",
+    "category": "tempo"
+  },
+  {
+    "version": "7",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "아디다스",
+      "갤럭시",
+      "갤럭시 7"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "adidas-galaxy-7",
+    "brand": "Adidas",
+    "model": "Galaxy",
+    "category": "daily"
+  },
+  {
+    "version": "8",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "아디다스",
+      "갤럭시",
+      "갤럭시 8"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "adidas-galaxy-8",
+    "brand": "Adidas",
+    "model": "Galaxy",
+    "category": "daily"
   },
   {
     "id": "adidas-hyperboost-edge",
@@ -560,6 +698,28 @@
     "verified": true
   },
   {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "아디다스",
+      "런블레이즈"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "adidas-runblaze",
+    "brand": "Adidas",
+    "model": "RunBlaze",
+    "category": "daily"
+  },
+  {
     "id": "adidas-solarboost-5",
     "brand": "Adidas",
     "model": "Solarboost",
@@ -579,6 +739,29 @@
       "아디다스"
     ],
     "verified": false
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "아디다스",
+      "스피리테인",
+      "스피리테인 2000"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "adidas-spiritain-2000",
+    "brand": "Adidas",
+    "model": "Spiritain 2000",
+    "category": "daily"
   },
   {
     "version": "2",
@@ -1104,6 +1287,30 @@
       "울트라 5"
     ],
     "verified": false
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "아디다스",
+      "울트라부스트",
+      "울부",
+      "울트라부스트 5X"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 700,
+    "id": "adidas-ultraboost-5x",
+    "brand": "Adidas",
+    "model": "Ultraboost 5X",
+    "category": "recovery"
   },
   {
     "id": "adidas-ultraboost-light",
@@ -2339,6 +2546,52 @@
     "verified": false
   },
   {
+    "version": "12",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "아식스",
+      "젤트라부코",
+      "트라부코 12"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "asics-gel-trabuco-12",
+    "brand": "ASICS",
+    "model": "Gel-Trabuco",
+    "category": "trail"
+  },
+  {
+    "version": "12",
+    "variant": "GTX",
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "아식스",
+      "젤트라부코",
+      "고어텍스"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "asics-gel-trabuco-12-gtx",
+    "brand": "ASICS",
+    "model": "Gel-Trabuco",
+    "category": "trail"
+  },
+  {
     "id": "asics-gel-trabuco-13",
     "brand": "ASICS",
     "model": "Gel-Trabuco",
@@ -2358,6 +2611,29 @@
       "아식스"
     ],
     "verified": false
+  },
+  {
+    "version": "13",
+    "variant": "GTX",
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "아식스",
+      "젤트라부코",
+      "고어텍스"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "asics-gel-trabuco-13-gtx",
+    "brand": "ASICS",
+    "model": "Gel-Trabuco",
+    "category": "trail"
   },
   {
     "version": "10",
@@ -2650,6 +2926,75 @@
     "brand": "ASICS",
     "model": "GT-2000",
     "category": "stability"
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "아식스",
+      "조그",
+      "조그 100S"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "asics-jog-100s",
+    "brand": "ASICS",
+    "model": "Jog 100S",
+    "category": "daily"
+  },
+  {
+    "version": "4",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "아식스",
+      "졸트",
+      "졸트 4"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "asics-jolt-4",
+    "brand": "ASICS",
+    "model": "Jolt",
+    "category": "daily"
+  },
+  {
+    "version": "5",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "아식스",
+      "졸트",
+      "졸트 5"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "asics-jolt-5",
+    "brand": "ASICS",
+    "model": "Jolt",
+    "category": "daily"
   },
   {
     "id": "asics-magic-speed-4",
@@ -4282,6 +4627,29 @@
     "brand": "Brooks",
     "model": "Hyperion Elite",
     "category": "racing"
+  },
+  {
+    "version": "2",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "브룩스",
+      "하이페리온",
+      "하이페리온 GTS"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 700,
+    "id": "brooks-hyperion-gts-2",
+    "brand": "Brooks",
+    "model": "Hyperion GTS",
+    "category": "stability"
   },
   {
     "id": "brooks-hyperion-max-2",
@@ -6633,6 +7001,29 @@
     "verified": false
   },
   {
+    "version": "2",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "미즈노",
+      "웨이브리벨리온",
+      "리벨리온 플래시 2"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "mizuno-wave-rebellion-flash-2",
+    "brand": "Mizuno",
+    "model": "Wave Rebellion Flash",
+    "category": "tempo"
+  },
+  {
     "id": "mizuno-wave-rebellion-flash-3",
     "brand": "Mizuno",
     "model": "Wave Rebellion Flash",
@@ -7187,6 +7578,29 @@
     "category": "daily"
   },
   {
+    "version": "1",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "뉴발란스",
+      "뉴발",
+      "발로스"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 700,
+    "id": "new-balance-fresh-foam-x-balos-1",
+    "brand": "New Balance",
+    "model": "Fresh Foam X Balos",
+    "category": "recovery"
+  },
+  {
     "version": "8",
     "variant": null,
     "collabWith": null,
@@ -7672,6 +8086,29 @@
       "SC트레이너"
     ],
     "verified": true
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "뉴발란스",
+      "뉴발",
+      "미니머스"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "new-balance-minimus-trail",
+    "brand": "New Balance",
+    "model": "Minimus Trail",
+    "category": "trail"
   },
   {
     "version": "1",
@@ -9128,6 +9565,29 @@
   },
   {
     "version": null,
+    "variant": "G+",
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "노다",
+      "노다 001 G+",
+      "지플러스"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "norda-001-g-plus",
+    "brand": "norda",
+    "model": "001",
+    "category": "trail"
+  },
+  {
+    "version": null,
     "variant": null,
     "collabWith": "Satisfy",
     "weight": null,
@@ -9223,6 +9683,28 @@
       "노다 005"
     ],
     "verified": true
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "노다",
+      "노다 008"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "norda-008",
+    "brand": "norda",
+    "model": "008",
+    "category": "trail"
   },
   {
     "version": null,
@@ -10343,6 +10825,52 @@
     "verified": true
   },
   {
+    "version": "4",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "푸마",
+      "패스트트랙",
+      "패스트 트랙 니트로 4"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "puma-fast-trak-nitro-4",
+    "brand": "Puma",
+    "model": "Fast-Trac Nitro",
+    "category": "trail"
+  },
+  {
+    "version": "4",
+    "variant": "GTX",
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "푸마",
+      "패스트트랙",
+      "고어텍스"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "puma-fast-trak-nitro-4-gtx",
+    "brand": "Puma",
+    "model": "Fast-Trac Nitro",
+    "category": "trail"
+  },
+  {
     "id": "puma-foreverrun-nitro-2",
     "brand": "Puma",
     "model": "ForeverRun Nitro",
@@ -10682,6 +11210,29 @@
   },
   {
     "version": "3",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "살로몬",
+      "에어로블레이즈",
+      "에어로 블레이즈 3"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "salomon-aero-blaze-3",
+    "brand": "Salomon",
+    "model": "Aero Blaze",
+    "category": "daily"
+  },
+  {
+    "version": "3",
     "variant": "GRVL",
     "collabWith": null,
     "weight": 247,
@@ -10702,6 +11253,30 @@
     "verified": true,
     "defaultLifespanKm": 650,
     "id": "salomon-aero-blaze-3-grvl",
+    "brand": "Salomon",
+    "model": "Aero Blaze",
+    "category": "trail"
+  },
+  {
+    "version": "3",
+    "variant": "GRVL GTX",
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "살로몬",
+      "에어로블레이즈",
+      "그래블",
+      "고어텍스"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "salomon-aero-blaze-3-grvl-gtx",
     "brand": "Salomon",
     "model": "Aero Blaze",
     "category": "trail"
@@ -10802,6 +11377,29 @@
     "id": "salomon-aero-glide-4-grvl",
     "brand": "Salomon",
     "model": "Aero Glide",
+    "category": "trail"
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "살로몬",
+      "DRX 데파이",
+      "그래블"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "salomon-drx-defy-grvl",
+    "brand": "Salomon",
+    "model": "DRX Defy GRVL",
     "category": "trail"
   },
   {
@@ -10972,6 +11570,29 @@
     "id": "salomon-s-lab-alpineway",
     "brand": "Salomon",
     "model": "S/Lab Alpineway",
+    "category": "trail"
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "살로몬",
+      "에스랩",
+      "S랩 제네시스"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "salomon-s-lab-genesis",
+    "brand": "Salomon",
+    "model": "S/Lab Genesis",
     "category": "trail"
   },
   {
@@ -11455,6 +12076,52 @@
     "id": "salomon-ultra-glide-4",
     "brand": "Salomon",
     "model": "Ultra Glide",
+    "category": "trail"
+  },
+  {
+    "version": "9",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "살로몬",
+      "XA 프로",
+      "엑스에이 프로"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "salomon-xa-pro-3d-v9",
+    "brand": "Salomon",
+    "model": "XA Pro 3D",
+    "category": "trail"
+  },
+  {
+    "version": "9",
+    "variant": "GTX",
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "살로몬",
+      "XA 프로",
+      "고어텍스"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "salomon-xa-pro-3d-v9-gtx",
+    "brand": "Salomon",
+    "model": "XA Pro 3D",
     "category": "trail"
   },
   {
