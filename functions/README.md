@@ -16,6 +16,14 @@
 배포 후 URL: `https://asia-northeast3-keego-620b8.cloudfunctions.net/api`
 앱(`lib/socialConfig.ts` `SOCIAL_BACKEND`)이 이 베이스로 `/api/auth/kakao` 를 호출한다.
 
+## ⚠️ 배포한 뒤엔 반드시 확인한다
+```bash
+./scripts/verify-backend.sh   # 30초
+```
+로컬 테스트가 전부 그린이어도 **배포된 서버는 죽어 있을 수 있다**. 실제로 2026-07-28
+배포 이후 카카오 로그인이 하루 넘게 503이었는데(키 미주입 + fail-closed) 아무도 몰랐다.
+테스트는 내 컴퓨터의 코드를 검사할 뿐 서버를 검사하지 않는다.
+
 ## 배포 (사용자가 1회 수행)
 1. Firebase **Blaze 요금제** 활성화 (Cloud Functions 필수). 예산 알림 $1 권장.
 2. Firebase CLI 로그인: `npx firebase login`
