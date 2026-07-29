@@ -12,7 +12,7 @@
 // ============================================================================
 import React, {useMemo, useState} from 'react';
 import {View, StyleSheet, Pressable, ScrollView, Modal} from 'react-native';
-import {Text} from './lib/text';
+import {Text, TextInput} from './lib/text';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {rf, rs, rv} from './lib/responsive';
 import {BG, CARD, CARD_HI, T1, T2, T3, T4, SEP, FONT, NUM, RADIUS, GUTTER,
@@ -85,8 +85,6 @@ function summaryLine(d: ShoeDoc): string {
 }
 
 function SearchBox({value, onChange}: {value: string; onChange: (v: string) => void}) {
-  // 검색창은 TextInput 이 필요하지만 이 화면의 다른 입력과 톤을 맞춘다.
-  const {TextInput} = require('./lib/text') as typeof import('./lib/text');
   return (
     <View style={s.search}>
       <TextInput
