@@ -226,6 +226,10 @@ function RecommendStep({
             <Text style={s.listHint}>비슷한 순 · 눌러서 비교해요</Text>
             <Text style={s.groupCount}>{candidates.length}켤레</Text>
           </View>
+          {/* 가격을 못 구한 후보도 목록에 그대로 남는다(2026-07-29 확정). 이 목록의 정렬
+              근거는 '얼마나 비슷한가'지 '가격을 아는가'가 아니다 — 공식몰 검색에 안 잡혔다는
+              이유로 잘 맞는 신발을 빼면, 추천 품질이 데이터 구멍을 따라 흔들린다.
+              가격 칸만 조용히 비운다(Truth only). */}
           {candidates.map((c, i) => {
             const q = priceOf(c);
             const per = q ? expectedWonPerKm(q.priceKrw, c.spec.lifespanKm) : null;
@@ -430,20 +434,34 @@ function StoreStep({picked, quote}: {picked: SimilarCandidate; quote: ShoePriceQ
       <Text style={s.stepTitle}>어디서 살까요?</Text>
       <Text style={s.lede}>정품이 확인된 곳만 보여줘요.</Text>
 
-      {/* 공식 스토어에서 가격이 확인된 경우에만 금액을 띄운다(출처·시각 함께). */}
+      {/* 공식 스토어에서 가격이 확인된 경우에만 금액을 띄운다(출처·시각 함께).
+          그리고 **그 상품 페이지로 바로 간다** — 가격을 보여주고 갈 길을 안 주면
+          사용자가 그 금액을 다시 찾아 헤매야 한다(여기가 '어디서 살까요' 화면이다).
+          이 줄이 맨 위인 건 공식 스토어가 최상위 등급이기 때문이다(lib/shoeStore). */}
       {!!quote && (
-        <View style={s.store}>
+        <Pressable
+          onPress={() => open(quote.productUrl)}
+          accessibilityRole="link"
+          accessibilityLabel={`${quote.mallName}에서 ${quote.priceKrw.toLocaleString('ko-KR')}원에 보기`}
+          testID="next-shoe-store-quote"
+          style={({pressed}) => [s.store, pressed && s.pressed]}>
           <View style={s.storeLeft}>
             <Text style={s.storeName} numberOfLines={1}>{quote.mallName}</Text>
             <Text style={[s.badge, s.badgeOfficial]}>{tierLabelKo.official}</Text>
           </View>
-          <View>
-            <Text style={s.storePrice}>{quote.priceKrw.toLocaleString('ko-KR')}원</Text>
-            <Text style={s.storeTime}>{checkedAtLabel(quote.checkedAtMs)} 기준</Text>
+          <View style={s.storeRight}>
+            <View>
+              <Text style={s.storePrice}>{quote.priceKrw.toLocaleString('ko-KR')}원</Text>
+              <Text style={s.storeTime}>{checkedAtLabel(quote.checkedAtMs)} 기준</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={ri(ICON.inline)} color={T3} />
           </View>
-        </View>
+        </Pressable>
       )}
 
+      {/* 무신사·29CM 는 가격을 가져올 수단이 없다(제휴 API 미보유). 그래서 '가격 보기'라고
+          쓰지 않는다(2026-07-29 확정) — 없는 걸 약속하면 눌렀을 때 배신이 된다.
+          여기는 정품 검수 채널로 **검색해 들어가는 길**이고, 배지가 그걸 말한다. */}
       {channels.map((c) => {
         const link = links.find((l) => l.shop === c.name);
         if (!link) return null;
@@ -534,14 +552,12 @@ const s = StyleSheet.create({
   candRight: {alignItems: 'flex-end'},
   candPrice: {color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '700'},
   candPerKm: {color: RING_ACCENT, fontFamily: FONT, fontSize: TYPE.caption.fontSize, marginTop: rv(2)},
-  candNoPrice: {color: T3, fontFamily: FONT, fontSize: rf(10), textAlign: 'right', lineHeight: rf(14)},
 
   emptyWrap: {paddingVertical: rv(28), gap: rv(8)},
   emptyTitle: {color: T1, fontFamily: FONT, fontSize: TYPE.heading.fontSize, fontWeight: '700'},
   emptyBody: {color: T3, fontFamily: FONT, fontSize: TYPE.body.fontSize, lineHeight: rf(21)},
 
   basis: {color: T3, fontFamily: FONT, fontSize: rf(11), lineHeight: rf(17), marginTop: rv(16)},
-  basisStrong: {color: T2, fontWeight: '600'},
 
   vs: {flexDirection: 'row', alignItems: 'flex-end', gap: SPACE.sm, marginBottom: rv(18)},
   vsCol: {flex: 1, alignItems: 'center'},
@@ -590,6 +606,7 @@ const s = StyleSheet.create({
   badge: {fontFamily: FONT, fontSize: rf(10), fontWeight: '700', paddingHorizontal: rs(7), paddingVertical: rv(3), borderRadius: RADIUS.pill, overflow: 'hidden'},
   badgeOfficial: {color: GOOD, backgroundColor: withAlpha(GOOD, 0.14)},
   badgeVerified: {color: T2, backgroundColor: withAlpha(T1, 0.1)},
+  storeRight: {flexDirection: 'row', alignItems: 'center', gap: rv(6)},
   storePrice: {color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '700', textAlign: 'right'},
   storeTime: {color: T3, fontFamily: FONT, fontSize: rf(9.5), textAlign: 'right', marginTop: rv(2)},
   excluded: {color: T3, fontFamily: FONT, fontSize: rf(11), lineHeight: rf(17), marginTop: rv(12)},

@@ -11,9 +11,11 @@
  * @format
  */
 import React from 'react';
+import {Linking} from 'react-native';
 import ReactTestRenderer, {act} from 'react-test-renderer';
 import NextShoeScreen from '../NextShoeScreen.rn';
 import {SHOE_MODELS} from '../data/shoeModels';
+import {__resetPriceCacheForTests} from '../lib/shoePrice';
 
 function textOf(node: any): string {
   let out = '';
@@ -173,5 +175,78 @@ describe('되돌아갈 길', () => {
     await flush();
     expect(onClose).not.toHaveBeenCalled();
     expect(pressables(r.root, 'next-shoe-cand-').length).toBeGreaterThan(0);
+  });
+});
+
+// ── 가격이 실제로 조회됐을 때 ───────────────────────────────────────────────────
+// 위 스위트들은 '키가 없어 가격이 전부 null' 인 현재 상태를 다룬다. 여기서는 네이버
+// 검색 키가 주입된 뒤의 동작을 못 박는다 — 특히 **가격을 보여줬으면 갈 길도 줘야 한다**.
+describe('공식 스토어 가격이 있을 때', () => {
+  const PRODUCT_URL = 'https://brand.naver.com/nike/products/1234567';
+
+  beforeEach(() => {
+    __resetPriceCacheForTests();
+    (global as unknown as {fetch: jest.Mock}).fetch = jest.fn(async () => ({
+      ok: true,
+      json: async () => ({
+        items: [{
+          title: '나이키 러닝화',
+          lprice: '189000',
+          mallName: '나이키공식스토어',
+          link: PRODUCT_URL,
+          category4: '러닝화',
+        }],
+      }),
+    }));
+  });
+
+  afterEach(() => {
+    __resetPriceCacheForTests();
+    delete (global as unknown as {fetch?: unknown}).fetch;
+  });
+
+  test('후보 목록에 조회된 금액이 뜬다', async () => {
+    const r = await mount();
+    const rows = pressables(r.root, 'next-shoe-cand-');
+    expect(rows.length).toBeGreaterThan(0);
+    expect(textOf(rows[0])).toContain('189,000원');
+  });
+
+  test('가격 카드를 누르면 그 공식 스토어 상품 페이지로 간다', async () => {
+    // 가격만 띄우고 링크를 안 주면, 사용자가 그 금액을 밖에서 다시 찾아야 한다.
+    const openURL = jest.spyOn(Linking, 'openURL').mockResolvedValue(true as never);
+    const r = await mount();
+    const cands = pressables(r.root, 'next-shoe-cand-');
+    await act(async () => { cands[0].props.onPress(); });
+    await flush();
+    const decide = r.root.findAll((n: any) => n.props?.testID === 'next-shoe-decide' && n.props.onPress)[0];
+    await act(async () => { decide.props.onPress(); });
+    await flush();
+
+    const card = r.root.findAll(
+      (n: any) => n.props?.testID === 'next-shoe-store-quote' && typeof n.props.onPress === 'function',
+    )[0];
+    expect(card).toBeTruthy();
+    await act(async () => { card.props.onPress(); });
+    expect(openURL).toHaveBeenCalledWith(PRODUCT_URL);
+    openURL.mockRestore();
+  });
+
+  test("무신사·29CM 행은 가격을 약속하지 않는다('가격 보기'가 아니다)", async () => {
+    const r = await mount();
+    const cands = pressables(r.root, 'next-shoe-cand-');
+    await act(async () => { cands[0].props.onPress(); });
+    await flush();
+    const decide = r.root.findAll((n: any) => n.props?.testID === 'next-shoe-decide' && n.props.onPress)[0];
+    await act(async () => { decide.props.onPress(); });
+    await flush();
+
+    for (const id of ['next-shoe-store-musinsa', 'next-shoe-store-29cm']) {
+      const row = r.root.findAll((n: any) => n.props?.testID === id)[0];
+      expect(row).toBeTruthy();
+      const t = textOf(row);
+      expect(t).not.toContain('가격');
+      expect(t).not.toMatch(/[\d,]+원/);
+    }
   });
 });
