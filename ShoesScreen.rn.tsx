@@ -25,6 +25,10 @@ import { buildWearView, forecastConfidenceKo, forecastLineKo, type ReplacementFo
 import { findShoeClass, typeLabel, purposeSentenceKo } from './data/shoeClass';
 import RetirementFlow from './RetirementFlow.rn';
 import NextShoeScreen from './NextShoeScreen.rn';
+import ShoeCompareScreen from './ShoeCompareScreen.rn';
+// 비교 화면은 카탈로그 스펙을 기준으로 세운다. 내 신발이 카탈로그에 없으면 이름만
+// 남는 형태로라도 세운다 — 직접 넣은 신발이 비교에서 통째로 사라지면 더 이상하다.
+import {findCatalogShoe, toCompareShoe, unknownCompareShoe} from './lib/shoeCatalogLookup';
 import type { ProgressionContext, RetiredShoeRecord } from './lib/progression/types';
 
 // lastWorn: 이 신발의 마지막 착용일(런에서 파생, 한국어 표기). 미착용이면 생략.
@@ -163,6 +167,7 @@ function ShoeDetail({
   const [flowOpen, setFlowOpen] = useState(false);
   // 은퇴 플로우의 '보관 완료'에서만 열리는 다음 신발 플로우.
   const [nextShoeOpen, setNextShoeOpen] = useState(false);
+  const [compareOpen, setCompareOpen] = useState(false);
   const [kept, setKept] = useState(false);
   // 수명 도달 판정 = 사용률 임계 숫자 비교(구 3단계 condition==='교체' 폐지, 2026-07-11).
   // 임계 90%는 wearTier '교체 권장'·교체 알림과 동일(SHOE_REPLACE_PCT 단일 소스).
@@ -224,6 +229,18 @@ function ShoeDetail({
         prevUsedKm={shoe.used}
         prevPriceKrw={shoe.priceKrw}
         onClose={() => { setNextShoeOpen(false); onBack(); }}
+      />
+    );
+  }
+
+  // 러닝화 비교 — 은퇴와 무관하게 언제든 연다. 이 신발이 기준(첫 칸)이 된다.
+  if (compareOpen) {
+    const doc = findCatalogShoe(shoe.brand, shoe.model);
+    const mine = {usedKm: shoe.used ?? 0, lifespanKm: shoe.max ?? 0};
+    return (
+      <ShoeCompareScreen
+        seed={doc ? toCompareShoe(doc, mine) : unknownCompareShoe(shoe.brand, shoe.model, mine)}
+        onClose={() => setCompareOpen(false)}
       />
     );
   }
@@ -448,6 +465,18 @@ function ShoeDetail({
             ))}
           </View>
         )}
+
+        {/* 러닝화 비교 — 은퇴할 때만 쓰던 비교를 상시 진입점으로. 스펙이 흩어져 있어
+            직접 찾아 비교하기 어려우니, 카탈로그가 모아둔 걸 이 신발 기준으로 보여준다. */}
+        <Pressable
+          onPress={() => setCompareOpen(true)}
+          accessibilityRole="button"
+          accessibilityLabel="러닝화 비교"
+          testID="shoe-compare-entry"
+          style={({ pressed }) => [s.compareBtn, pressed && s.pressed]}>
+          <Ionicons name="swap-horizontal-outline" size={ri(ICON.inline)} color={T2} />
+          <Text style={s.compareBtnText}>러닝화 비교</Text>
+        </Pressable>
 
         {/* 신발 보관(아카이브) — 하단 전체폭 버튼(danger 외곽선). 키프세이크 '은퇴'(명예의
             전당 기록)와 구분되는 단순 보관 동선이다: 런 기록은 보존한 채 선택목록에서만
@@ -802,6 +831,9 @@ const s = StyleSheet.create({
   retireBtn: { minHeight: rs(54), borderRadius: RADIUS.md, marginTop: rv(22), flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(8), backgroundColor: withAlpha(DANGER, 0.06), borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(DANGER, 0.45) },
   restoreBtn: { minHeight: rs(54), borderRadius: RADIUS.md, marginTop: rv(22), flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(8), backgroundColor: 'transparent', borderWidth: 1, borderColor: withAlpha(T1, 0.14) },
   retireBtnText: { fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600', letterSpacing: -0.2 },
+  // 러닝화 비교 진입 — 보관(danger)과 톤을 구분한다. 파괴적 행동이 아니다.
+  compareBtn: { minHeight: rs(54), borderRadius: RADIUS.md, marginTop: rv(22), flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(8), backgroundColor: CARD_HI, borderWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(T1, 0.12) },
+  compareBtnText: { fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600', letterSpacing: -0.2, color: T2 },
 
   // detail
   header: { paddingTop: rv(12), paddingBottom: rv(6) },
