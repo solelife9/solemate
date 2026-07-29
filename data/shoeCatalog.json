@@ -4954,10 +4954,10 @@
     "weight": null,
     "weightBasis": null,
     "drop": 5,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
-      "heel": 37,
-      "forefoot": 32
+      "heel": 34,
+      "forefoot": 29
     },
     "releaseYear": 2024,
     "defaultLifespanKm": 700,
@@ -5393,10 +5393,10 @@
     "variant": null,
     "collabWith": null,
     "category": "stability",
-    "weight": null,
-    "weightBasis": null,
+    "weight": 309,
+    "weightBasis": "US9",
     "drop": 6,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 36,
       "forefoot": 30
@@ -5959,11 +5959,14 @@
     "variant": null,
     "collabWith": null,
     "category": "trail",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 283,
+    "weightBasis": "US9",
+    "drop": 5,
+    "plate": "none",
+    "stackHeight": {
+      "heel": 37,
+      "forefoot": 32
+    },
     "releaseYear": 2024,
     "defaultLifespanKm": 650,
     "discontinued": false,
@@ -5972,7 +5975,7 @@
       "스피드고트",
       "스피드고트 6"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "hoka-speedgoat-7",
@@ -6023,6 +6026,32 @@
       "호카"
     ],
     "verified": true
+  },
+  {
+    "version": "2",
+    "variant": null,
+    "collabWith": null,
+    "weight": 249,
+    "weightBasis": "US9",
+    "drop": 5,
+    "plate": "carbon",
+    "stackHeight": {
+      "heel": 38,
+      "forefoot": 33
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "호카",
+      "텍톤엑스",
+      "텍톤 X 2"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 650,
+    "id": "hoka-tecton-x-2",
+    "brand": "Hoka",
+    "model": "Tecton X",
+    "category": "trail"
   },
   {
     "version": "3",
@@ -6143,6 +6172,32 @@
     "brand": "Hoka",
     "model": "Transport X",
     "category": "daily"
+  },
+  {
+    "version": "2",
+    "variant": null,
+    "collabWith": null,
+    "weight": 210,
+    "weightBasis": "US9",
+    "drop": 5,
+    "plate": "none",
+    "stackHeight": {
+      "heel": 30,
+      "forefoot": 25
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "호카",
+      "지날",
+      "지날 2"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 650,
+    "id": "hoka-zinal-2",
+    "brand": "Hoka",
+    "model": "Zinal",
+    "category": "trail"
   },
   {
     "version": "3",
@@ -8754,11 +8809,14 @@
     "version": "9",
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 286,
+    "weightBasis": "US9",
+    "drop": 3,
+    "plate": "none",
+    "stackHeight": {
+      "heel": 31,
+      "forefoot": 28
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
@@ -8767,7 +8825,7 @@
       "테라 카이거",
       "카이거 9"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "nike-kiger-9",
     "brand": "Nike",
@@ -8836,10 +8894,10 @@
     "variant": null,
     "collabWith": null,
     "category": "daily",
-    "weight": 281,
+    "weight": 283,
     "weightBasis": "US9",
     "drop": 10,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 37,
       "forefoot": 27
@@ -8989,11 +9047,14 @@
     "variant": null,
     "collabWith": null,
     "category": "trail",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 286,
+    "weightBasis": "US9",
+    "drop": 9.5,
+    "plate": "none",
+    "stackHeight": {
+      "heel": 37,
+      "forefoot": 27.5
+    },
     "releaseYear": 2024,
     "defaultLifespanKm": 650,
     "discontinued": false,
@@ -9006,7 +9067,7 @@
       "페가",
       "페가 5"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "version": "5",
@@ -9303,11 +9364,14 @@
     "variant": null,
     "collabWith": null,
     "category": "trail",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 283,
+    "weightBasis": "US9",
+    "drop": 8.5,
+    "plate": "carbon",
+    "stackHeight": {
+      "heel": 36,
+      "forefoot": 27.5
+    },
     "releaseYear": 2023,
     "defaultLifespanKm": 650,
     "discontinued": false,
@@ -9317,7 +9381,7 @@
       "울트라글라이드",
       "울트라"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "nike-vaporfly-2",
@@ -9353,7 +9417,7 @@
     "weight": 184,
     "weightBasis": "US9",
     "drop": 8,
-    "plate": null,
+    "plate": "carbon",
     "stackHeight": {
       "heel": 38,
       "forefoot": 30
@@ -9639,11 +9703,14 @@
     "variant": null,
     "collabWith": null,
     "category": "trail",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 306,
+    "weightBasis": "US9",
+    "drop": 4,
+    "plate": "none",
+    "stackHeight": {
+      "heel": 39,
+      "forefoot": 35
+    },
     "releaseYear": null,
     "defaultLifespanKm": 650,
     "discontinued": false,
@@ -9652,7 +9719,7 @@
       "제가마",
       "제가마 2"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "nike-zoom-fly-4",
