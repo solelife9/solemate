@@ -1,21 +1,14 @@
 import React, {useState, useEffect, useRef, useMemo, useCallback} from 'react';
-import { rf, rs, ri, rv } from './lib/responsive';
 import {
-  View, StyleSheet, StatusBar, Linking, AppState,
+  View, StatusBar, Linking, AppState,
 } from 'react-native';
 import {showDialog} from './lib/dialog';
-import {Text} from './lib/text';
 import {SafeAreaProvider, useSafeAreaInsets} from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {Pedometer} from 'expo-sensors';
-import Ionicons from 'react-native-vector-icons/Ionicons';
 
-import {
-  BG, CARD, WARN, SEP, T1, T3,
-  FONT as FP, RADIUS, GUTTER, Shoe, Run,
-  ICON,
-} from './theme';
-import {Button, Skeleton} from './primitives';
+import {BG, Shoe, Run} from './theme';
+import {BootSkeleton, BootError} from './screens/BootStates.rn';
 import ErrorBoundary from './ErrorBoundary';
 import ToastHost from './ToastHost';
 import DialogHost from './DialogHost';
@@ -80,7 +73,10 @@ import {setRunSurface, parseSurface, type Surface} from './lib/wearModel';
 import {forecastReplacement, type ReplacementForecast} from './lib/replacementForecast';
 import {mostRecentShoeId, lastWornDate} from './lib/shoeRecommend';
 import {recommendRotation} from './lib/rotation';
-import {cacheableRun, cacheEntryForSave} from './lib/runCache';
+import {
+  CACHE_SHOES_KEY, CACHE_RUNS_KEY, loadBootCache, writeBootCache,
+  persistRunToCache, persistRunCacheRemove,
+} from './lib/bootCache';
 import {reportStorageResult} from './lib/storageAlert';
 import {trackFirstShoeAdded} from './lib/productAnalytics';
 import {findShoeClass, typeLabel} from './data/shoeClass';
@@ -153,10 +149,7 @@ type BootState = 'loading' | 'ready' | 'error';
 // 첫 실행 온보딩 / 위치 권한 priming 의 1회성 플래그 키(AsyncStorage 영속).
 const ONBOARD_KEY = 'onboarded';        // 온보딩 완료
 const LOC_PRIME_KEY = 'loc_perm_primed'; // 위치 권한 사전 안내 완료
-// 로컬-퍼스트 폴백 캐시: 마지막으로 성공한 신발/런을 보관해, 콜드/다운 백엔드에서도
-// 재시도 카드 대신 '오프라인 부팅'으로 마지막 데이터를 보여준다(랭킹·동기화는 복구 시).
-const CACHE_SHOES_KEY = 'cache_shoes_v1';
-const CACHE_RUNS_KEY = 'cache_runs_v1';
+// 로컬-퍼스트 폴백 캐시(키·읽기·쓰기는 lib/bootCache 가 소유한다).
 // audit a2: soft-delete 묘비(tombstone) 영속 키. 삭제는 하드삭제 대신 {id,deleted:true,
 // updatedAt} 묘비로 표현해, 라이브 신발/런 배열엔 안 보이게 하면서도 backupData 에 실어
 // 클라우드 머지로 삭제가 전파되고(다른 기기에서도 사라짐) 부활하지 않게 한다. REST 는 정본
@@ -175,72 +168,6 @@ const CELEB_ICON: Record<string, 'medal'|'trophy'|'flag'|'route'|'run'|'star'|'s
   shoeJourney: 'medal', shoeMemory: 'trophy', experience: 'sparkles', keego: 'infinite',
 };
 const CELEB_RARITY: Record<string, {ko: string; color: string}> = {common: {ko: '커먼', color: RARITY_COLORS.common}, rare: {ko: '레어', color: RARITY_COLORS.rare}, epic: {ko: '에픽', color: RARITY_COLORS.epic}, legendary: {ko: '레전더리', color: RARITY_COLORS.legendary}};
-/** 부팅 폴백 캐시 로드 — 신발 배열이 있으면 {shoes,runs}, 없으면(미존재/손상) null. */
-// ── GPS 경로의 집은 사이드키 하나다(2026-07-26 감사 F-08) ────────────────────
-// 이전엔 같은 경로가 두 벌 있었다: 사이드키 route_<id> 와, 부팅 캐시 배열 안의 레코드.
-// 경로는 런당 수 KB 라 캐시 배열이 '런 수 × 경로 크기'로 커졌고, 런을 한 건 저장하거나
-// 지울 때마다 그 배열 **전체**를 파싱·재직렬화했다(런이 쌓일수록 악화 — 3년 주4회면 600건).
-// 지금은 캐시엔 경로를 빼고(경량 미러), 부팅 때 사이드키에서 되채운다.
-// 왜 '캐시에서 빼기만' 하면 안 되나: 메모리 레코드의 route 는 **클라우드 동기의 정본**이다
-// (재설치·기기변경에도 지도가 남는 이유). 되채우지 않으면 재부팅 후 빈 route 가 push 되어
-// 클라우드의 경로를 지운다 — 데이터 유실. 그래서 '빼기'와 '되채우기'는 한 쌍이어야 한다.
-// 순비용: O(n) 읽기가 '저장할 때마다' → '부팅 1회'로 옮겨간다.
-
-/** 레코드가 route 를 들고 있는데 사이드키가 없으면 채운다(클라우드 pull 유래 대비). */
-async function ensureRouteSidecars(list: any[]): Promise<void> {
-  const withRoute = list.filter(r => r && r.id && r.route);
-  if (withRoute.length === 0) return;
-  const keys = withRoute.map(r => 'route_' + String(r.id));
-  const existing = await AsyncStorage.getMany(keys);
-  const missing: Record<string, string> = {};
-  for (const r of withRoute) {
-    const k = 'route_' + String(r.id);
-    if (!existing[k]) missing[k] = String(r.route);
-  }
-  if (Object.keys(missing).length) await AsyncStorage.setMany(missing);
-}
-
-/** 캐시에서 읽은 런에 사이드키의 경로를 되채운다(메모리 레코드는 항상 완전해야 한다). */
-async function hydrateRoutes(runs: any[]): Promise<any[]> {
-  const need = runs.filter(r => r && r.id && !r.route);
-  if (need.length === 0) return runs;
-  const got = await AsyncStorage.getMany(need.map(r => 'route_' + String(r.id)));
-  return runs.map(r => {
-    if (!r || !r.id || r.route) return r;
-    const side = got['route_' + String(r.id)];
-    return side ? {...r, route: side} : r;
-  });
-}
-
-async function loadBootCache(): Promise<{shoes: any[]; runs: any[]} | null> {
-  try {
-    const [s, r] = await Promise.all([
-      AsyncStorage.getItem(CACHE_SHOES_KEY),
-      AsyncStorage.getItem(CACHE_RUNS_KEY),
-    ]);
-    const shoes = JSON.parse(s || 'null');
-    if (!Array.isArray(shoes)) return null;
-    const runs = JSON.parse(r || 'null');
-    const list = Array.isArray(runs) ? runs : [];
-    // 경로 되채우기 — 실패해도 부팅은 계속한다(지도만 비고 거리·시간은 온전).
-    let hydrated = list;
-    try {
-      hydrated = await hydrateRoutes(list);
-    } catch (e) {
-      reportIssue('storage: route hydrate on boot', e);
-    }
-    return {shoes, runs: hydrated};
-  } catch {
-    return null;
-  }
-}
-
-
-// keep-going 톤: 실패를 '끝'이 아니라 '잠깐 멈춤'으로 프레이밍해 재시도를 유도한다.
-const KEEP_GOING_RETRY = '잠깐 숨 고르는 중이에요. 다시 시도하면 계속 달릴 수 있어요.';
-// keep-going 톤(로딩): 스켈레톤이 비어 보이지 않도록 '곧 이어 달린다'는 안내를 얹는다.
-const KEEP_GOING_LOADING = '기록을 불러오는 중이에요. 곧 다시 달릴 수 있어요.';
-
 function nowTimeLabel():string{
   const n=new Date();
   return `${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`;
@@ -639,13 +566,7 @@ function Main(){
     const t=setTimeout(()=>{
       (async()=>{
         try{
-          // 경로는 사이드키가 소유한다(F-08). 클라우드 pull 유래처럼 사이드키가 없는
-          // 레코드는 여기서 먼저 채운 뒤, 캐시엔 경로를 뺀 경량 레코드만 쓴다.
-          await ensureRouteSidecars(runs as any[]);
-          await AsyncStorage.setMany({
-            [CACHE_SHOES_KEY]:JSON.stringify(shoes),
-            [CACHE_RUNS_KEY]:JSON.stringify((runs as any[]).map(cacheableRun)),
-          });
+          await writeBootCache(shoes as any[],runs as any[]);
           reportStorageResult(true);
         }catch(e){
           reportStorageResult(false);
@@ -933,36 +854,6 @@ function Main(){
     setShoes(prev=>prev.map(s=>s.id===id?stampUpdatedAt({...s,retired}):s));
   }
 
-
-  // 런 한 건을 부팅 캐시(CACHE_RUNS_KEY)에 즉시 durable 하게 prepend 한다(크래시-세이프티).
-  // 같은 id 가 이미 있으면 교체(멱등). 800ms 디바운스 캐시 효과가 전체 상태로 덮어쓰기 전에
-  // 크래시가 나도 이 동기 기록 덕에 런이 살아남는다(audit#3 미동기 큐의 역할을 대체). 비차단.
-  //  keepRoute: 사이드키 쓰기가 실패했을 때만 true — 그 경우엔 경로를 캐시에 남기는 것이
-  //  로컬의 유일한 사본이다(2026-07-27 F-08 후속: 사이드키 실패를 삼키던 구멍).
-  const persistRunToCache=async(run:BackendRun,opts?:{keepRoute?:boolean})=>{
-    try{
-      const raw=await AsyncStorage.getItem(CACHE_RUNS_KEY);
-      const arr=raw?JSON.parse(raw):[];
-      const list=Array.isArray(arr)?arr:[];
-      // 경로는 호출 직전 addRun 이 사이드키(route_<id>)에 이미 durable 하게 썼다(F-08).
-      const entry=cacheEntryForSave(run,!opts?.keepRoute);
-      const next=[entry,...list.filter((r:any)=>String(r?.id)!==String(run.id))];
-      await AsyncStorage.setItem(CACHE_RUNS_KEY,JSON.stringify(next));
-      reportStorageResult(true);
-    }catch(e){recordError(e,'storage: run cache write');reportStorageResult(false);}
-  };
-
-  // 런 한 건을 부팅 캐시에서 즉시 durable 하게 제거한다(삭제 크래시-세이프티). 800ms 디바운스
-  // 캐시가 갱신되기 전 종료/크래시돼도 삭제가 캐시에 반영돼 부팅에서 부활하지 않는다(#4/#5). 비차단.
-  const persistRunCacheRemove=async(id:string)=>{
-    try{
-      const raw=await AsyncStorage.getItem(CACHE_RUNS_KEY);
-      if(!raw) return;
-      const arr=JSON.parse(raw);
-      if(!Array.isArray(arr)) return;
-      await AsyncStorage.setItem(CACHE_RUNS_KEY,JSON.stringify(arr.filter((r:any)=>String(r?.id)!==String(id))));
-    }catch(e){recordError(e,'storage: run cache remove');}
-  };
 
   // 완주 런 저장(Stage 2b · Firestore 정본): 로컬 우선 + cloudSync push. REST POST/큐 제거.
   //   1) 사이드키(route_/time_) 영속 + 캐시에 즉시 durable 기록(크래시-세이프티) — 네트워크 무관.
@@ -2421,67 +2312,6 @@ function Main(){
     </View>
   );
 }
-
-// ─── 콜드 백엔드 스켈레톤(audit#9/#10) ──────────────────────────────────────
-// 스피너가 아니라 스켈레톤: 실제 콘텐츠(히어로 카드 + 주간 통계 3칸 + 신발 줄)의
-// 자리표시 형태를 회색 블록으로 미리 보여줘 '레이아웃이 곧 채워진다'는 신호를 준다.
-// testID로 통합테스트가 로딩 상태를 식별한다. 고스트 블록은 primitives.Skeleton
-// 공용 소비(로컬 SkelBlock 삭제 — 표면 CARD_HI 동일이라 시각 불변, 2026-07-25).
-function BootSkeleton(){
-  const insets=useSafeAreaInsets();
-  return (
-    <View testID="boot-skeleton" style={[boot.screen,{paddingTop:insets.top+12}]}>
-      <View style={{height: rs(24)}}/>
-      <Text testID="boot-loading-copy" style={boot.loadingCaption}>{KEEP_GOING_LOADING}</Text>
-      <View style={{height: rs(14)}}/>
-      <Skeleton h={14} w={120}/>
-      <View style={{height: rs(18)}}/>
-      {/* 히어로 카드 자리 */}
-      <Skeleton h={150} radius={RADIUS.lg}/>
-      <View style={{height: rs(16)}}/>
-      {/* 주간 통계 3칸 */}
-      <View style={{flexDirection:'row',gap: rv(10)}}>
-        <Skeleton h={64} w={'31%'}/>
-        <Skeleton h={64} w={'31%'}/>
-        <Skeleton h={64} w={'31%'}/>
-      </View>
-      <View style={{height: rs(16)}}/>
-      {/* 신발 줄 자리 */}
-      <Skeleton h={84} radius={RADIUS.md}/>
-      <View style={{height: rs(10)}}/>
-      <Skeleton h={84} radius={RADIUS.md}/>
-    </View>
-  );
-}
-
-// ─── 콜드 백엔드 에러: 재시도 카드(keep-going 톤, audit#9/#10) ───────────────
-// fetch 실패(콜드/오프라인)에만 뜬다 — 빈-신규(성공+빈배열)와 구분된다. 실패를
-// '잠깐 멈춤'으로 프레이밍하고 '다시 시도' 버튼으로 initUser 재진입을 제공한다.
-function BootError({onRetry}:{onRetry:()=>void}){
-  const insets=useSafeAreaInsets();
-  return (
-    <View testID="boot-error" style={[boot.screen,{justifyContent:'center',paddingTop:insets.top+12}]}>
-      <View style={boot.card}>
-        <Ionicons name="cloud-offline-outline" size={ri(ICON.hero)} color={WARN}/>
-        <Text style={boot.cardTitle}>연결이 잠시 끊겼어요</Text>
-        <Text style={boot.cardBody}>{KEEP_GOING_RETRY}</Text>
-        <Button testID="boot-retry" label="다시 시도" onPress={onRetry} icon="refresh" style={boot.retryBtn}/>
-      </View>
-    </View>
-  );
-}
-
-const boot=StyleSheet.create({
-  screen:{flex:1,backgroundColor:BG,paddingHorizontal:GUTTER,paddingTop: rv(12)},
-  card:{backgroundColor:CARD,borderRadius:RADIUS.lg, borderCurve: 'continuous',padding: rs(24),alignItems:'center',gap: rv(12),
-    borderWidth:StyleSheet.hairlineWidth,borderColor:SEP},
-  cardTitle:{color:T1,fontFamily:FP,fontSize: rf(19),fontWeight:'700',marginTop: rv(4)},
-  cardBody:{color:T3,fontFamily:FP,fontSize: rf(15),lineHeight: rf(20),textAlign:'center'},
-  loadingCaption:{color:T3,fontFamily:FP,fontSize: rf(14),lineHeight: rf(19)},
-  // 단일 Button 프리미티브로 라우팅 — 모서리/그라데이션/글로우는 Button 이 책임진다.
-  // 여기선 레이아웃(가로 stretch + 위 여백)만 얹는다.
-  retryBtn:{marginTop: rv(8),alignSelf:'stretch'},
-});
 
 // (라이브 러닝 엔진은 screens/RunEngine.tsx 로 분리 — 감사 F-03 1단계, 2026-07-26.
 //  App.tsx 는 부팅·인증·동기화·CRUD·라우팅을 맡고, 러닝 실행은 그 파일이 소유한다.)
