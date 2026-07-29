@@ -238,11 +238,14 @@
     "version": "12",
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
+    "weight": 258,
+    "weightBasis": "US9",
+    "drop": 6.5,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 37.5,
+      "forefoot": 30.5
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
@@ -251,7 +254,7 @@
       "보스턴",
       "보스턴 12"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "adidas-adizero-boston-12",
     "brand": "Adidas",
@@ -392,11 +395,14 @@
     "version": null,
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 306,
+    "weightBasis": "유니섹스 사이즈 9",
+    "drop": 7,
+    "plate": "carbon",
+    "stackHeight": {
+      "heel": 50,
+      "forefoot": 43
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
@@ -405,7 +411,7 @@
       "프라임엑스",
       "프라임 X 2"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "adidas-adizero-prime-x-2-strung",
     "brand": "Adidas",
@@ -474,11 +480,14 @@
     "variant": null,
     "collabWith": null,
     "category": "daily",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
+    "weight": 241,
+    "weightBasis": "US9",
+    "drop": 10,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 35,
+      "forefoot": 25
+    },
     "releaseYear": null,
     "defaultLifespanKm": 650,
     "discontinued": false,
@@ -486,7 +495,7 @@
       "아디다스",
       "아디제로"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "adidas-adizero-sl2",
@@ -496,11 +505,14 @@
     "variant": null,
     "collabWith": null,
     "category": "daily",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
+    "weight": 236,
+    "weightBasis": "US9",
+    "drop": 10,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 36,
+      "forefoot": 26
+    },
     "releaseYear": 2024,
     "defaultLifespanKm": 650,
     "discontinued": false,
@@ -948,18 +960,21 @@
     "variant": null,
     "collabWith": null,
     "category": "trail",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 292,
+    "weightBasis": "US9",
+    "drop": 8,
+    "plate": "other",
+    "stackHeight": {
+      "heel": 34,
+      "forefoot": 26
+    },
     "releaseYear": null,
     "defaultLifespanKm": 650,
     "discontinued": false,
     "searchAliases": [
       "아디다스"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "version": "4",
@@ -1050,11 +1065,14 @@
     "variant": null,
     "collabWith": null,
     "category": "trail",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 264,
+    "weightBasis": "US9",
+    "drop": 8,
+    "plate": "other",
+    "stackHeight": {
+      "heel": 40,
+      "forefoot": 32
+    },
     "releaseYear": 2025,
     "defaultLifespanKm": 650,
     "discontinued": false,
@@ -1063,7 +1081,7 @@
       "울트라글라이드",
       "울트라"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "version": "2",
@@ -7137,11 +7155,14 @@
     "variant": null,
     "collabWith": null,
     "category": "racing",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 204,
+    "weightBasis": "US9",
+    "drop": 2,
+    "plate": "other",
+    "stackHeight": {
+      "heel": 48,
+      "forefoot": 46
+    },
     "releaseYear": null,
     "defaultLifespanKm": 450,
     "discontinued": false,
@@ -7152,7 +7173,7 @@
       "리벨",
       "리벨 2"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "mizuno-wave-rebellion-pro-3",
@@ -12439,11 +12460,14 @@
     "variant": null,
     "collabWith": null,
     "category": "racing",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 201,
+    "weightBasis": "US9",
+    "drop": 8,
+    "plate": "carbon",
+    "stackHeight": {
+      "heel": 40,
+      "forefoot": 32
+    },
     "releaseYear": 2025,
     "defaultLifespanKm": 450,
     "discontinued": false,
@@ -12455,7 +12479,7 @@
       "엘리트",
       "엘리트 2"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "version": "3",
@@ -12516,11 +12540,14 @@
     "variant": null,
     "collabWith": null,
     "category": "racing",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 218,
+    "weightBasis": "US9",
+    "drop": 8,
+    "plate": "carbon",
+    "stackHeight": {
+      "heel": 40,
+      "forefoot": 32
+    },
     "releaseYear": 2024,
     "defaultLifespanKm": 450,
     "discontinued": false,
@@ -12530,7 +12557,7 @@
       "엔돌핀",
       "엔돌핀 4"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "version": "5",
@@ -13277,11 +13304,14 @@
     "variant": null,
     "collabWith": null,
     "category": "recovery",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 275,
+    "weightBasis": "US9",
+    "drop": 10,
+    "plate": "none",
+    "stackHeight": {
+      "heel": 42,
+      "forefoot": 32
+    },
     "releaseYear": 2025,
     "defaultLifespanKm": 700,
     "discontinued": false,
@@ -13291,7 +13321,7 @@
       "트라이엄프",
       "트라이엄프 23"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "saucony-triumph-24",
@@ -13301,11 +13331,14 @@
     "variant": null,
     "collabWith": null,
     "category": "recovery",
-    "weight": null,
+    "weight": 244,
     "weightBasis": null,
     "drop": 10,
-    "plate": null,
-    "stackHeight": null,
+    "plate": "none",
+    "stackHeight": {
+      "heel": 42,
+      "forefoot": 32
+    },
     "releaseYear": 2026,
     "defaultLifespanKm": 700,
     "discontinued": false,
@@ -13315,7 +13348,7 @@
       "트라이엄프",
       "트라이엄프 24"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "saucony-xodus-ultra-2",
@@ -13342,6 +13375,33 @@
       "울트라 2"
     ],
     "verified": false
+  },
+  {
+    "version": "3",
+    "variant": null,
+    "collabWith": null,
+    "weight": 309,
+    "weightBasis": "US9",
+    "drop": 10,
+    "plate": "none",
+    "stackHeight": {
+      "heel": 38,
+      "forefoot": 28
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "소코니",
+      "써코니",
+      "조더스",
+      "엑소더스 울트라"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 650,
+    "id": "saucony-xodus-ultra-3",
+    "brand": "Saucony",
+    "model": "Xodus Ultra",
+    "category": "trail"
   },
   {
     "id": "saucony-xodus-ultra-4",
