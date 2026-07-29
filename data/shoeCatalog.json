@@ -10814,6 +10814,80 @@
     "verified": true
   },
   {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "온",
+      "온러닝",
+      "클라우드서퍼 트레일"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "on-cloudsurfer-trail",
+    "brand": "On",
+    "model": "Cloudsurfer Trail",
+    "category": "trail"
+  },
+  {
+    "version": "2",
+    "variant": null,
+    "collabWith": null,
+    "weight": 287,
+    "weightBasis": null,
+    "drop": 8,
+    "plate": null,
+    "stackHeight": {
+      "heel": 34.5,
+      "forefoot": 26.5
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "온",
+      "온러닝",
+      "클라우드서퍼 트레일",
+      "클서퍼 트레일"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 650,
+    "id": "on-cloudsurfer-trail-2",
+    "brand": "On",
+    "model": "Cloudsurfer Trail",
+    "category": "trail"
+  },
+  {
+    "version": null,
+    "variant": "WP",
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "온",
+      "온러닝",
+      "클라우드서퍼 트레일",
+      "방수"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "on-cloudsurfer-trail-wp",
+    "brand": "On",
+    "model": "Cloudsurfer Trail",
+    "category": "trail"
+  },
+  {
     "id": "on-cloudswift-3",
     "brand": "On",
     "model": "Cloudswift",
