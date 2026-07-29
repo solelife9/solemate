@@ -4160,11 +4160,14 @@
     "variant": null,
     "collabWith": null,
     "category": "daily",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
+    "weight": 272,
+    "weightBasis": "US9",
+    "drop": 12,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 35,
+      "forefoot": 23
+    },
     "releaseYear": null,
     "defaultLifespanKm": 650,
     "discontinued": false,
@@ -4173,7 +4176,7 @@
       "고스트",
       "고스트 15"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "brooks-ghost-16",
@@ -6431,6 +6434,58 @@
     "verified": false
   },
   {
+    "version": "5.0",
+    "variant": null,
+    "collabWith": null,
+    "weight": 280,
+    "weightBasis": "US10",
+    "drop": 6,
+    "plate": null,
+    "stackHeight": {
+      "heel": 33,
+      "forefoot": 27
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "카루",
+      "퓨전",
+      "퓨전 5.0"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 650,
+    "brand": "Karhu",
+    "id": "karhu-fusion-5-0",
+    "model": "Fusion",
+    "category": "daily"
+  },
+  {
+    "version": "3.5",
+    "variant": null,
+    "collabWith": null,
+    "weight": 301,
+    "weightBasis": "US10",
+    "drop": 8,
+    "plate": null,
+    "stackHeight": {
+      "heel": 30,
+      "forefoot": 22
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "카루",
+      "이코니",
+      "이코니 3.5"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 650,
+    "brand": "Karhu",
+    "id": "karhu-ikoni-3-5",
+    "model": "Ikoni",
+    "category": "daily"
+  },
+  {
     "id": "karhu-ikoni-3-evo",
     "brand": "Karhu",
     "model": "Ikoni 3 Evo",
@@ -6454,11 +6509,85 @@
   },
   {
     "version": null,
+    "variant": "WR",
+    "collabWith": null,
+    "weight": 350,
+    "weightBasis": "US10",
+    "drop": 5,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "카루",
+      "이코니 트레일"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 650,
+    "brand": "Karhu",
+    "id": "karhu-ikoni-trail-wr",
+    "model": "Ikoni Trail",
+    "category": "trail"
+  },
+  {
+    "version": "1.5",
     "variant": null,
     "collabWith": null,
     "weight": null,
     "weightBasis": null,
-    "drop": null,
+    "drop": 8,
+    "plate": null,
+    "stackHeight": {
+      "heel": 33,
+      "forefoot": 25
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "카루",
+      "메스타리",
+      "메스타리 런 1.5"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 700,
+    "brand": "Karhu",
+    "id": "karhu-mestari-run-1-5",
+    "model": "Mestari Run",
+    "category": "recovery"
+  },
+  {
+    "version": "2.0",
+    "variant": null,
+    "collabWith": null,
+    "weight": 340,
+    "weightBasis": "US10",
+    "drop": 8,
+    "plate": null,
+    "stackHeight": {
+      "heel": 34,
+      "forefoot": 26
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "카루",
+      "메스타리",
+      "메스타리 런 2.0"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 700,
+    "brand": "Karhu",
+    "id": "karhu-mestari-run-2-0",
+    "model": "Mestari Run",
+    "category": "recovery"
+  },
+  {
+    "version": "3",
+    "variant": null,
+    "collabWith": null,
+    "weight": 250,
+    "weightBasis": "265mm",
+    "drop": 8,
     "plate": null,
     "stackHeight": null,
     "releaseYear": null,
@@ -6466,9 +6595,202 @@
     "searchAliases": [
       "킵런",
       "데카트론",
+      "KD500 3",
+      "KD500"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 650,
+    "id": "kiprun-kd500-3",
+    "brand": "Kiprun",
+    "model": "KD500",
+    "category": "daily"
+  },
+  {
+    "version": "2",
+    "variant": null,
+    "collabWith": null,
+    "weight": 230,
+    "weightBasis": "265mm",
+    "drop": 8,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "킵런",
+      "데카트론",
+      "KD900 2",
+      "KD900"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 650,
+    "id": "kiprun-kd900-2",
+    "brand": "Kiprun",
+    "model": "KD900",
+    "category": "tempo"
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": 196,
+    "weightBasis": "265mm",
+    "drop": 6,
+    "plate": "none",
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "킵런",
+      "데카트론",
+      "KD900 라이트",
+      "KD900"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 650,
+    "id": "kiprun-kd900-light",
+    "brand": "Kiprun",
+    "model": "KD900 LIGHT",
+    "category": "tempo"
+  },
+  {
+    "version": "2",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": 4,
+    "plate": "carbon",
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "킵런",
+      "데카트론",
+      "KD900X LD2",
+      "KD900X"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 450,
+    "id": "kiprun-kd900x-ld2",
+    "brand": "Kiprun",
+    "model": "KD900X LD",
+    "category": "racing"
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": 298,
+    "weightBasis": "265mm",
+    "drop": 6,
+    "plate": "none",
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "킵런",
+      "데카트론",
+      "킵클라임"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 650,
+    "id": "kiprun-kipclimb",
+    "brand": "Kiprun",
+    "model": "KIPCLIMB",
+    "category": "trail"
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": 264,
+    "weightBasis": null,
+    "drop": 8,
+    "plate": "none",
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "킵런",
+      "데카트론",
+      "킵코어"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 650,
+    "id": "kiprun-kipcore",
+    "brand": "Kiprun",
+    "model": "KIPCORE",
+    "category": "daily"
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": 272,
+    "weightBasis": "265mm",
+    "drop": 8,
+    "plate": "none",
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "킵런",
+      "데카트론",
+      "킵코어 프리미엄",
+      "킵코어"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 650,
+    "id": "kiprun-kipcore-premium",
+    "brand": "Kiprun",
+    "model": "KIPCORE PREMIUM",
+    "category": "daily"
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": 295,
+    "weightBasis": "265mm",
+    "drop": 8,
+    "plate": "none",
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "킵런",
+      "데카트론",
+      "킵코어 쉴드",
+      "킵코어"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 650,
+    "id": "kiprun-kipcore-shield",
+    "brand": "Kiprun",
+    "model": "KIPCORE SHIELD",
+    "category": "daily"
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": 243,
+    "weightBasis": "US9",
+    "drop": 6,
+    "plate": "none",
+    "stackHeight": {
+      "heel": 36,
+      "forefoot": 30
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "킵런",
+      "데카트론",
       "킵라이드"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "kiprun-kipride",
     "brand": "Kiprun",
@@ -6533,11 +6855,14 @@
     "version": null,
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 225,
+    "weightBasis": "265mm",
+    "drop": 8,
+    "plate": "none",
+    "stackHeight": {
+      "heel": 45,
+      "forefoot": 37
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
@@ -6546,12 +6871,62 @@
       "킵스톰 템포",
       "킵스톰"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "kiprun-kipstorm-tempo",
     "brand": "Kiprun",
     "model": "KIPSTORM TEMPO",
     "category": "tempo"
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": 298,
+    "weightBasis": "265mm",
+    "drop": 6,
+    "plate": "none",
+    "stackHeight": {
+      "heel": 39,
+      "forefoot": 33
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "킵런",
+      "데카트론",
+      "킵서밋"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 650,
+    "id": "kiprun-kipsummit",
+    "brand": "Kiprun",
+    "model": "KIPSUMMIT",
+    "category": "trail"
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": 268,
+    "weightBasis": "265mm",
+    "drop": 6,
+    "plate": "none",
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "킵런",
+      "데카트론",
+      "킵서밋 맥스",
+      "킵서밋"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 650,
+    "id": "kiprun-kipsummit-max",
+    "brand": "Kiprun",
+    "model": "KIPSUMMIT MAX",
+    "category": "trail"
   },
   {
     "version": null,
@@ -6578,6 +6953,128 @@
     "id": "kiprun-kipsummit-race",
     "brand": "Kiprun",
     "model": "KIPSUMMIT RACE",
+    "category": "trail"
+  },
+  {
+    "version": null,
+    "variant": "WATERPROOF",
+    "collabWith": null,
+    "weight": 320,
+    "weightBasis": "265mm",
+    "drop": 6,
+    "plate": "none",
+    "stackHeight": {
+      "heel": 39,
+      "forefoot": 33
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "킵런",
+      "데카트론",
+      "킵서밋 워터프루프",
+      "킵서밋"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 650,
+    "id": "kiprun-kipsummit-waterproof",
+    "brand": "Kiprun",
+    "model": "KIPSUMMIT",
+    "category": "trail"
+  },
+  {
+    "version": "2",
+    "variant": null,
+    "collabWith": null,
+    "weight": 280,
+    "weightBasis": "265mm",
+    "drop": 6,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "킵런",
+      "데카트론",
+      "KS500 2",
+      "KS500"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 650,
+    "id": "kiprun-ks500-2",
+    "brand": "Kiprun",
+    "model": "KS500",
+    "category": "daily"
+  },
+  {
+    "version": "2",
+    "variant": null,
+    "collabWith": null,
+    "weight": 300,
+    "weightBasis": "265mm",
+    "drop": 6,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "킵런",
+      "데카트론",
+      "KS900 2",
+      "KS900"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 650,
+    "id": "kiprun-ks900-2",
+    "brand": "Kiprun",
+    "model": "KS900",
+    "category": "daily"
+  },
+  {
+    "version": "2",
+    "variant": null,
+    "collabWith": null,
+    "weight": 282,
+    "weightBasis": "265mm",
+    "drop": 4,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "킵런",
+      "데카트론",
+      "MT 쿠션 2",
+      "MT 쿠션"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 650,
+    "id": "kiprun-mt-cushion-2",
+    "brand": "Kiprun",
+    "model": "MT CUSHION",
+    "category": "trail"
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": 315,
+    "weightBasis": "265mm",
+    "drop": 8,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "킵런",
+      "데카트론",
+      "XT8"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 650,
+    "id": "kiprun-xt8",
+    "brand": "Kiprun",
+    "model": "XT8",
     "category": "trail"
   },
   {
