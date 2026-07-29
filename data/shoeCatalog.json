@@ -852,7 +852,7 @@
     "weight": 264,
     "weightBasis": "US9",
     "drop": 8,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 36,
       "forefoot": 28
@@ -1395,7 +1395,7 @@
     "weight": 224,
     "weightBasis": "US9",
     "drop": 0,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 24,
       "forefoot": 24
@@ -1620,7 +1620,7 @@
     "weight": 315,
     "weightBasis": "US9",
     "drop": 0,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 35,
       "forefoot": 35
@@ -1691,7 +1691,7 @@
     "weight": 278,
     "weightBasis": "US9",
     "drop": 0,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 32,
       "forefoot": 32
@@ -1764,7 +1764,7 @@
     "weight": 289,
     "weightBasis": "US9",
     "drop": 0,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 29,
       "forefoot": 29
@@ -3056,7 +3056,7 @@
     "weight": 221,
     "weightBasis": "유니섹스(사이즈 미표기)",
     "drop": 8,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 45,
       "forefoot": 37
@@ -3378,7 +3378,7 @@
     "weight": 249,
     "weightBasis": "US9",
     "drop": 8,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 42,
       "forefoot": 34
@@ -3485,7 +3485,7 @@
     "weight": 230,
     "weightBasis": "US9",
     "drop": 8,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 46,
       "forefoot": 38
@@ -3598,7 +3598,7 @@
     "weight": 354,
     "weightBasis": "US9",
     "drop": 12,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 36,
       "forefoot": 24
@@ -4124,7 +4124,7 @@
     "weight": 252,
     "weightBasis": "US9",
     "drop": 6,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 37,
       "forefoot": 31
@@ -4173,7 +4173,7 @@
     "weight": 303,
     "weightBasis": "US9",
     "drop": 6,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 38,
       "forefoot": 32
@@ -4222,7 +4222,7 @@
     "weight": 292,
     "weightBasis": "US9",
     "drop": 8,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 40,
       "forefoot": 32
@@ -6686,7 +6686,7 @@
     "weight": 241,
     "weightBasis": "US9",
     "drop": 6,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 48,
       "forefoot": 42
@@ -7938,7 +7938,7 @@
     "weight": 224,
     "weightBasis": null,
     "drop": 6,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 38,
       "forefoot": 32
@@ -8759,7 +8759,7 @@
     "weight": 292,
     "weightBasis": "US9",
     "drop": 10,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 38,
       "forefoot": 28
@@ -9143,7 +9143,7 @@
     "weight": 295,
     "weightBasis": "US9",
     "drop": 10,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 38,
       "forefoot": 28
@@ -9170,7 +9170,7 @@
     "weight": 295,
     "weightBasis": "US9",
     "drop": 10,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 42,
       "forefoot": 32
@@ -9296,7 +9296,7 @@
     "weight": 298,
     "weightBasis": "US9",
     "drop": 10,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 44,
       "forefoot": 34
@@ -9345,7 +9345,7 @@
     "weight": 281,
     "weightBasis": "US9",
     "drop": 10,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 43,
       "forefoot": 33
@@ -11051,7 +11051,7 @@
     "weight": 281,
     "weightBasis": "US9",
     "drop": 8,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 40,
       "forefoot": 32
@@ -11106,7 +11106,7 @@
     "weight": 266,
     "weightBasis": "US9",
     "drop": 8,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 46,
       "forefoot": 38
@@ -11226,7 +11226,7 @@
     "weight": 244,
     "weightBasis": "US9",
     "drop": 8,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 33,
       "forefoot": 25
@@ -11386,7 +11386,7 @@
     "weight": 247,
     "weightBasis": "US9",
     "drop": 8,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 40,
       "forefoot": 32
@@ -11508,7 +11508,7 @@
     "weight": 283,
     "weightBasis": "US9",
     "drop": 8,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 43,
       "forefoot": 35
@@ -11561,7 +11561,7 @@
     "weight": 275,
     "weightBasis": "US9",
     "drop": 8,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 33,
       "forefoot": 25
@@ -11633,7 +11633,7 @@
     "weight": 289,
     "weightBasis": "US9",
     "drop": 6,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 30,
       "forefoot": 24
@@ -11966,7 +11966,7 @@
     "weight": 335,
     "weightBasis": "M8.5/W9.5",
     "drop": 6,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 41,
       "forefoot": 35
@@ -12015,7 +12015,7 @@
     "weight": 295,
     "weightBasis": "US9",
     "drop": 6,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 41,
       "forefoot": 35
@@ -13270,7 +13270,7 @@
     "weight": 278,
     "weightBasis": "US9",
     "drop": 6,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 44,
       "forefoot": 38
@@ -13296,7 +13296,7 @@
     "weight": 269,
     "weightBasis": "US9",
     "drop": 6,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 35,
       "forefoot": 29
@@ -13469,11 +13469,14 @@
     "version": null,
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
+    "weight": 232,
+    "weightBasis": "M9",
+    "drop": 0,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 10.5,
+      "forefoot": 10.5
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
@@ -13481,7 +13484,7 @@
       "토포어슬레틱",
       "Connect"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "topo-athletic-connect",
     "brand": "Topo Athletic",
@@ -13591,11 +13594,14 @@
     "version": "4",
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
+    "weight": 295,
+    "weightBasis": "M9",
+    "drop": 5,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 33,
+      "forefoot": 28
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
@@ -13603,7 +13609,7 @@
       "토포어슬레틱",
       "MTN Racer 4"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "topo-athletic-mtn-racer-4",
     "brand": "Topo Athletic",
@@ -13661,11 +13667,14 @@
     "version": "3",
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 301,
+    "weightBasis": "M9",
+    "drop": 0,
+    "plate": "none",
+    "stackHeight": {
+      "heel": 28,
+      "forefoot": 28
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
@@ -13673,7 +13682,7 @@
       "토포어슬레틱",
       "Pursuit 3"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "topo-athletic-pursuit-3",
     "brand": "Topo Athletic",
@@ -13688,18 +13697,21 @@
     "variant": null,
     "collabWith": null,
     "category": "tempo",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
+    "weight": 230,
+    "weightBasis": "M9",
+    "drop": 5,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 37,
+      "forefoot": 32
+    },
     "releaseYear": 2025,
     "defaultLifespanKm": 650,
     "discontinued": false,
     "searchAliases": [
       "토포"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "version": "3",
@@ -13731,11 +13743,14 @@
     "version": null,
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 201,
+    "weightBasis": "M9",
+    "drop": 5,
+    "plate": "carbon",
+    "stackHeight": {
+      "heel": 39,
+      "forefoot": 34
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
@@ -13743,7 +13758,7 @@
       "토포어슬레틱",
       "Specter Elite"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "topo-athletic-specter-elite",
     "brand": "Topo Athletic",
@@ -13754,11 +13769,14 @@
     "version": null,
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
+    "weight": 187,
+    "weightBasis": "M9",
+    "drop": 0,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 14,
+      "forefoot": 14
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
@@ -13766,7 +13784,7 @@
       "토포어슬레틱",
       "ST-6"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "topo-athletic-st-6",
     "brand": "Topo Athletic",
@@ -13800,11 +13818,14 @@
     "version": "5",
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
+    "weight": 292,
+    "weightBasis": "M9",
+    "drop": 3,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 25,
+      "forefoot": 22
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
@@ -13812,7 +13833,7 @@
       "토포어슬레틱",
       "Terraventure 5"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "topo-athletic-terraventure-5",
     "brand": "Topo Athletic",
@@ -13846,11 +13867,14 @@
     "version": null,
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
+    "weight": 301,
+    "weightBasis": "M9",
+    "drop": 5,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 30,
+      "forefoot": 25
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
@@ -13858,7 +13882,7 @@
       "토포어슬레틱",
       "Traverse"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "topo-athletic-traverse",
     "brand": "Topo Athletic",
@@ -13922,11 +13946,14 @@
     "version": "4",
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 295,
+    "weightBasis": "M9",
+    "drop": 5,
+    "plate": "none",
+    "stackHeight": {
+      "heel": 35,
+      "forefoot": 30
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
@@ -13934,7 +13961,7 @@
       "토포어슬레틱",
       "Ultraventure 4"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "topo-athletic-ultraventure-4",
     "brand": "Topo Athletic",
@@ -13971,11 +13998,14 @@
     "version": null,
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
+    "weight": 309,
+    "weightBasis": "M9",
+    "drop": 5,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 38,
+      "forefoot": 33
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
@@ -13983,7 +14013,7 @@
       "토포어슬레틱",
       "Vista"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "topo-athletic-vista",
     "brand": "Topo Athletic",
