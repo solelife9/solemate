@@ -138,12 +138,19 @@ describe('userBackups/{uid}/runDetails/{runId} (런 상세 사이드카 — B-01
   });
 });
 
-// ── leaderboards — 읽기 공개(로그인), 쓰기는 자기 엔트리 + 형태 검증 ─────────
+// ── leaderboards — 읽기 전면 차단, 쓰기는 자기 엔트리 + 형태 검증 ────────────
+// 2026-07-29 감사: 진입점 없는 리더보드가 닉네임·월간 운동량을 전원에게 공개하고
+// 있었다. 읽기를 본인 것까지 닫았다(운영 조회는 admin SDK 로).
 describe('leaderboards/{ym}/entries/{uid}', () => {
-  it('로그인 사용자는 남의 엔트리도 읽는다(리더보드 공개)', async () => {
+  it('남의 엔트리를 읽지 못한다', async () => {
     await seed(['leaderboards', YM, 'entries', OTHER], validEntry(OTHER));
-    await assertSucceeds(getDoc(doc(asMe(), 'leaderboards', YM, 'entries', OTHER)));
-    await assertSucceeds(getDocs(collection(asMe(), 'leaderboards', YM, 'entries')));
+    await assertFails(getDoc(doc(asMe(), 'leaderboards', YM, 'entries', OTHER)));
+    await assertFails(getDocs(collection(asMe(), 'leaderboards', YM, 'entries')));
+  });
+
+  it('본인 엔트리조차 읽지 못한다(발행·조회 전부 꺼진 상태)', async () => {
+    await seed(['leaderboards', YM, 'entries', ME], validEntry(ME));
+    await assertFails(getDoc(doc(asMe(), 'leaderboards', YM, 'entries', ME)));
   });
 
   it('비로그인은 읽지 못한다', async () => {
@@ -184,9 +191,19 @@ describe('leaderboards/{ym}/entries/{uid}', () => {
     await assertFails(setDoc(doc(asMe(), 'leaderboards', YM, 'entries', ME), partial));
   });
 
-  it('본인 엔트리라도 삭제는 불가(리더보드 무결성)', async () => {
+  it('본인 엔트리는 삭제할 수 있다(탈퇴 시 파기 경로)', async () => {
     await seed(['leaderboards', YM, 'entries', ME], validEntry(ME));
-    await assertFails(deleteDoc(doc(asMe(), 'leaderboards', YM, 'entries', ME)));
+    await assertSucceeds(deleteDoc(doc(asMe(), 'leaderboards', YM, 'entries', ME)));
+  });
+
+  it('타인 엔트리는 삭제하지 못한다', async () => {
+    await seed(['leaderboards', YM, 'entries', OTHER], validEntry(OTHER));
+    await assertFails(deleteDoc(doc(asMe(), 'leaderboards', YM, 'entries', OTHER)));
+  });
+
+  it('비로그인은 삭제하지 못한다', async () => {
+    await seed(['leaderboards', YM, 'entries', ME], validEntry(ME));
+    await assertFails(deleteDoc(doc(asGuest(), 'leaderboards', YM, 'entries', ME)));
   });
 });
 

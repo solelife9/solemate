@@ -33,6 +33,46 @@ import type { CloudPort, CloudProvider, CloudUser } from './cloudPort';
 /** 사용자별 백업 문서가 사는 컬렉션. 문서 id 는 auth uid. */
 const BACKUPS_COLLECTION = 'userBackups';
 
+/** 월간 랭킹 엔트리가 사는 컬렉션(`leaderboards/{YYYY-MM}/entries/{uid}`). */
+const LEADERBOARDS_COLLECTION = 'leaderboards';
+
+/**
+ * 탈퇴 시 지울 월간 랭킹 엔트리의 소급 범위(개월).
+ *
+ * 왜 '범위'인가: 규칙이 leaderboards 읽기를 전면 차단하므로(2026-07-29 감사) 클라이언트는
+ * **자기 엔트리가 어느 달에 있는지 조회할 수 없다.** 그래서 목록을 읽는 대신 최근 N개월의
+ * 문서 경로를 만들어 그냥 지운다 — Firestore 에서 없는 문서의 delete 는 오류가 아니라
+ * no-op 이므로 안전하다.
+ *
+ * 24개월인 이유: 랭킹 발행이 배선된 시점이 2026-06 이라 실제 엔트리는 그 이후에만 존재한다.
+ * 넉넉히 2년을 훑어도 24회 delete 로 끝나고, 그 대가로 '어느 달 것이 남았을까'를 고민할
+ * 필요가 없어진다.
+ */
+const LEADERBOARD_PURGE_MONTHS = 24;
+
+/**
+ * `nowMs` 가 속한 달부터 과거로 `months` 개월치 `YYYY-MM` 키를 만든다(최신순).
+ *
+ * 순수 함수 — 테스트에서 시각을 고정할 수 있도록 현재 시각을 인자로 받는다.
+ * (`lib/progression/firestoreRankingStore.yearMonthOf` 와 같은 규약이지만, 그 모듈이
+ *  이 파일의 `getFirebaseUid` 를 import 하므로 되가져오면 순환이 된다 — 그래서 여기 둔다.)
+ */
+export function recentYearMonths(nowMs: number, months = LEADERBOARD_PURGE_MONTHS): string[] {
+  const out: string[] = [];
+  const d = new Date(nowMs);
+  let year = d.getFullYear();
+  let month = d.getMonth(); // 0-based
+  for (let i = 0; i < months; i += 1) {
+    out.push(`${year}-${String(month + 1).padStart(2, '0')}`);
+    month -= 1;
+    if (month < 0) {
+      month = 11;
+      year -= 1;
+    }
+  }
+  return out;
+}
+
 /** google 자격증명의 정확한 타입을 signInWithCredential 시그니처에서 파생(직접 의존 회피). */
 type FirebaseAuthCredential = Parameters<typeof signInWithCredential>[1];
 
@@ -138,6 +178,9 @@ export function createFirebaseCloudPort(
   };
 
   const backupRef = (uid: string) => doc(getFirestore(), BACKUPS_COLLECTION, uid);
+  // 월간 랭킹 엔트리 — 탈퇴 시 함께 지운다(개인정보 파기 요건).
+  const leaderboardEntryRef = (yearMonth: string, uid: string) =>
+    doc(getFirestore(), LEADERBOARDS_COLLECTION, yearMonth, 'entries', uid);
   // 런 상세 사이드카 — 단일 백업 문서(1MB 상한)에 못 싣는 시계열을 런별 하위 문서로.
   const runDetailRef = (uid: string, runId: string) =>
     doc(getFirestore(), BACKUPS_COLLECTION, uid, 'runDetails', runId);
@@ -194,7 +237,25 @@ export function createFirebaseCloudPort(
       } catch {
         // 백업 문서 부재/일시 오류 — 계정 삭제를 막지 않는다.
       }
-      // 2) 인증 계정 자체를 삭제. 세션이 오래되면 'requires-recent-login' 으로 막히므로
+      // 2) 월간 랭킹 엔트리(leaderboards/{ym}/entries/{uid})를 지운다.
+      //    2026-07-29 감사 전까지 이 경로는 탈퇴 대상에서 빠져 있었다 — 규칙이 삭제를
+      //    아예 막고 있어서(`allow delete: if false`) 닉네임과 월간 운동량이 탈퇴 후에도
+      //    영구히 남았다. 공개된 처리방침("계정 정보는 회원 탈퇴 시까지")과 어긋난 상태였다.
+      //    읽기가 차단돼 있어 목록 조회는 불가하므로 최근 N개월 경로를 만들어 지운다
+      //    (없는 문서 delete 는 no-op — recentYearMonths 주석 참고).
+      //    계정 삭제 전에 해야 한다 — 삭제 후엔 권한이 사라져 영영 못 지운다.
+      try {
+        for (const ym of recentYearMonths(Date.now())) {
+          try {
+            await deleteDoc(leaderboardEntryRef(ym, user.uid));
+          } catch {
+            /* 개별 월 실패는 무시 — 나머지 달과 계정 삭제를 막지 않는다 */
+          }
+        }
+      } catch {
+        // 전체 실패도 계정 삭제를 막지 않는다(백업 삭제와 같은 규약).
+      }
+      // 3) 인증 계정 자체를 삭제. 세션이 오래되면 'requires-recent-login' 으로 막히므로
       //    재로그인 후 재시도하도록 정직한 한국어 에러로 바꿔 전파한다.
       try {
         await deleteUser(user);

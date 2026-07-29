@@ -9,7 +9,9 @@
 import * as authMock from '@react-native-firebase/auth';
 import * as firestoreMock from '@react-native-firebase/firestore';
 
-import {createFirebaseCloudPort} from '../../lib/firebaseCloudPort';
+import {createFirebaseCloudPort, recentYearMonths} from '../../lib/firebaseCloudPort';
+import {firestoreRankingStore, yearMonthOf} from '../../lib/progression/firestoreRankingStore';
+import {buildStoredEntry} from '../../lib/progression/firestoreRanking';
 import type {BackupPayload} from '../../lib/backup';
 
 const resetFirebase = () => {
@@ -189,6 +191,47 @@ describe('firebaseCloudPort (Firebase 클라우드 포트)', () => {
   test('로그인하지 않은 상태의 deleteAccount 는 명확한 에러로 거부된다', async () => {
     const port = createFirebaseCloudPort();
     await expect(port.deleteAccount()).rejects.toThrow(/계정/);
+  });
+
+  // ── 탈퇴 시 월간 랭킹 엔트리 파기 (2026-07-29 감사) ─────────────────────────
+  // 이전에는 leaderboards 엔트리가 탈퇴 대상에서 빠져 있었고, 규칙(`allow delete: if false`)
+  // 이 삭제 자체를 막아 닉네임·월간 운동량이 탈퇴 후에도 영구히 남았다.
+  test('deleteAccount 는 월간 랭킹 엔트리도 지운다', async () => {
+    const port = createFirebaseCloudPort();
+    await port.signIn('anonymous');
+    const uid = 'anon-test-uid';
+    const ym = yearMonthOf(Date.now());
+
+    await firestoreRankingStore.publish(
+      ym,
+      buildStoredEntry({
+        uid,
+        nickname: '민우',
+        rankTier: 'gold',
+        rankColor: '#FF8000',
+        stats: {distance: 120, consistency: 1, shoeHealth: 50, collection: 2, progressPoints: 900},
+        updatedAt: Date.now(),
+      }),
+    );
+    expect(await firestoreRankingStore.getEntry(uid, ym)).not.toBeNull();
+
+    await port.deleteAccount();
+
+    expect(await firestoreRankingStore.getEntry(uid, ym)).toBeNull();
+  });
+
+  test('recentYearMonths 는 이번 달부터 과거로 YYYY-MM 을 만든다(연도 경계 포함)', () => {
+    // 2026-01-15 → 2026-01, 2025-12, 2025-11 (연도가 넘어간다)
+    expect(recentYearMonths(new Date(2026, 0, 15).getTime(), 3)).toEqual([
+      '2026-01',
+      '2025-12',
+      '2025-11',
+    ]);
+    // 기본 범위는 24개월이고 중복이 없다(같은 달을 두 번 지우려 하지 않는다).
+    const many = recentYearMonths(new Date(2026, 6, 29).getTime());
+    expect(many).toHaveLength(24);
+    expect(new Set(many).size).toBe(24);
+    expect(many[0]).toBe('2026-07');
   });
 
   // ── 원자 동기(syncMerge) — P1-4 동시-기기 클로버 방지 ───────────────────────

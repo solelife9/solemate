@@ -126,6 +126,7 @@ import {setRemoteShoeDocs} from './lib/shoeCatalogStore';
 import {LoginScreen} from './LoginScreen.rn';
 import {stampUpdatedAt, markDeleted, partitionTombstones, mergeCloudData, mergeMedals, liveRecords, reconcileLivePreservingLocal, unionTombstones} from './lib/cloudSync';
 import {publishMyRanking} from './lib/progression/firestoreRankingStore';
+import {LEADERBOARD_PUBLISH_ENABLED} from './lib/featureFlags';
 import {genRunId, genShoeId} from './lib/genId';
 import {showToast} from './lib/toast';
 import {migrateStorageSchema} from './lib/storageMigration';
@@ -1172,7 +1173,11 @@ function Main(){
   const cloudSyncBusyRef=useRef(false);
   // 머지된 payload 로 내 월간 랭킹 엔트리를 계산·발행한다. 점수는 live 레코드 기준,
   // 표시정보(닉네임/랭크/색/장착 타이틀)는 현재 progression 파생. best-effort(throw 흡수).
+  // ⚠️ 2026-07-29 감사로 **플래그 오프**. 랭킹 화면 진입점이 없는데도 닉네임·월간 거리가
+  // 전원 읽기 가능한 leaderboards 컬렉션에 동의 없이 쌓이고 있었다. 발행 구현과 화면은
+  // 그대로 두고 호출만 막는다 — 재개봉은 lib/featureFlags 의 플래그 하나로(1.1 예정).
   const publishMyRankingNow=async(merged:{shoes:any[];runs:any[]})=>{
+    if(!LEADERBOARD_PUBLISH_ENABLED) return;
     try{
       const liveShoes=liveRecords(merged.shoes);
       const liveRuns=liveRecords(merged.runs);
@@ -1217,6 +1222,7 @@ function Main(){
       // Phase 3: 동기 직후 내 월간 랭킹 엔트리를 Firestore 에 발행(best-effort·논블로킹).
       // 점수는 머지된 live 레코드로 클라이언트가 계산하고, 표시정보(닉네임/랭크/타이틀)는
       // 현재 progression 에서 파생한다. 실패해도 동기 흐름·데이터엔 영향 없음(throw 흡수).
+      // ⚠️ 현재 LEADERBOARD_PUBLISH_ENABLED=false 라 이 호출은 즉시 반환한다(발행 없음).
       void publishMyRankingNow(merged);
     }catch(e){reportIssue('cloud sync',e);}
     finally{cloudSyncBusyRef.current=false;}
