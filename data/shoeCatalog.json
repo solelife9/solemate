@@ -553,9 +553,9 @@
     "version": "2",
     "variant": null,
     "collabWith": null,
-    "weight": null,
+    "weight": 246,
     "weightBasis": null,
-    "drop": null,
+    "drop": 6,
     "plate": null,
     "stackHeight": null,
     "releaseYear": null,
@@ -565,7 +565,7 @@
       "듀라모",
       "듀라모 RC 2"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "adidas-duramo-rc-2",
     "brand": "Adidas",
@@ -1544,7 +1544,9 @@
     "discontinued": false,
     "searchAliases": [
       "알트라",
-      "FWD 비아"
+      "FWD 비아",
+      "포워드 비아",
+      "포워드 비아 2"
     ],
     "verified": false,
     "defaultLifespanKm": 650,
@@ -1698,7 +1700,9 @@
     "searchAliases": [
       "알트라",
       "올림푸스",
-      "올림푸스 6"
+      "올림퍼스",
+      "올림푸스 6",
+      "올림퍼스 6"
     ],
     "verified": true,
     "defaultLifespanKm": 650,
@@ -1721,7 +1725,9 @@
     "searchAliases": [
       "알트라",
       "올림푸스",
-      "올림푸스 7"
+      "올림퍼스",
+      "올림푸스 7",
+      "올림퍼스 7"
     ],
     "verified": false,
     "defaultLifespanKm": 650,
@@ -5017,6 +5023,8 @@
     "searchAliases": [
       "호카",
       "본다이",
+      "본디",
+      "본디 8",
       "본다이 8"
     ],
     "verified": true
@@ -5043,6 +5051,8 @@
     "searchAliases": [
       "호카",
       "본다이",
+      "본디",
+      "본디 9",
       "본다이 9"
     ],
     "verified": true
@@ -6647,11 +6657,14 @@
     "version": null,
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 198,
+    "weightBasis": "사이즈 9",
+    "drop": 5.5,
+    "plate": "other",
+    "stackHeight": {
+      "heel": 46,
+      "forefoot": 40.5
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
@@ -6659,7 +6672,7 @@
       "하이퍼워프",
       "하이퍼워프 프로"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "mizuno-hyperwarp-pro",
     "brand": "Mizuno",
@@ -6673,7 +6686,7 @@
     "weight": 139,
     "weightBasis": "US9",
     "drop": 3.5,
-    "plate": null,
+    "plate": "carbon",
     "stackHeight": {
       "heel": 33,
       "forefoot": 29.5
@@ -6814,18 +6827,21 @@
     "version": null,
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 235,
+    "weightBasis": "US9",
+    "drop": 6,
+    "plate": "none",
+    "stackHeight": {
+      "heel": 46,
+      "forefoot": 40
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
       "미즈노",
       "네오젠"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "mizuno-neo-zen",
     "brand": "Mizuno",
@@ -7157,11 +7173,14 @@
     "version": "2",
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
+    "weight": 238,
+    "weightBasis": "US9",
+    "drop": 0.5,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 47,
+      "forefoot": 46.5
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
@@ -7169,7 +7188,7 @@
       "웨이브리벨리온",
       "리벨리온 플래시 2"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "mizuno-wave-rebellion-flash-2",
     "brand": "Mizuno",
@@ -8600,9 +8619,9 @@
     "version": "14",
     "variant": null,
     "collabWith": null,
-    "weight": null,
+    "weight": 358,
     "weightBasis": null,
-    "drop": null,
+    "drop": 10,
     "plate": null,
     "stackHeight": null,
     "releaseYear": null,
@@ -8612,7 +8631,7 @@
       "다운시프터",
       "다운시프터 14"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "nike-downshifter-14",
     "brand": "Nike",
@@ -9167,9 +9186,9 @@
     "version": "8",
     "variant": null,
     "collabWith": null,
-    "weight": null,
+    "weight": 292,
     "weightBasis": null,
-    "drop": null,
+    "drop": 10,
     "plate": null,
     "stackHeight": null,
     "releaseYear": null,
@@ -9179,7 +9198,7 @@
       "레볼루션",
       "레볼루션 8"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "nike-revolution-8",
     "brand": "Nike",
@@ -9655,9 +9674,9 @@
     "version": "12",
     "variant": null,
     "collabWith": null,
-    "weight": null,
+    "weight": 322,
     "weightBasis": null,
-    "drop": null,
+    "drop": 10,
     "plate": null,
     "stackHeight": null,
     "releaseYear": null,
@@ -9667,7 +9686,7 @@
       "윈플로",
       "윈플로 12"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "nike-winflo-12",
     "brand": "Nike",
@@ -10149,6 +10168,30 @@
     "verified": false
   },
   {
+    "version": "4",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "온",
+      "온러닝",
+      "클라우드엑스",
+      "클라우드 X 4"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "on-cloud-x-4",
+    "brand": "On",
+    "model": "Cloud X",
+    "category": "daily"
+  },
+  {
     "version": "5",
     "variant": null,
     "collabWith": null,
@@ -10276,7 +10319,7 @@
     "version": null,
     "variant": null,
     "collabWith": null,
-    "weight": 213,
+    "weight": 182,
     "weightBasis": null,
     "drop": 4,
     "plate": null,
@@ -10539,11 +10582,14 @@
     "variant": null,
     "collabWith": null,
     "category": "tempo",
-    "weight": null,
+    "weight": 270,
     "weightBasis": null,
-    "drop": null,
+    "drop": 6,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 37.5,
+      "forefoot": 31.5
+    },
     "releaseYear": null,
     "defaultLifespanKm": 650,
     "discontinued": false,
@@ -10553,7 +10599,7 @@
       "클라우드몬스터",
       "클몬"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "on-cloudrunner-2",
@@ -10630,7 +10676,10 @@
     "discontinued": false,
     "searchAliases": [
       "온",
-      "온러닝"
+      "온러닝",
+      "클라우드스트라투스",
+      "클라우드 스트라터스",
+      "스트라터스"
     ],
     "verified": true
   },
@@ -10822,11 +10871,14 @@
     "variant": null,
     "collabWith": null,
     "category": "trail",
-    "weight": null,
+    "weight": 295,
     "weightBasis": null,
-    "drop": null,
+    "drop": 6,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 38.5,
+      "forefoot": 32.5
+    },
     "releaseYear": 2025,
     "defaultLifespanKm": 650,
     "discontinued": false,
@@ -10840,7 +10892,7 @@
       "울트라",
       "울트라 3"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "version": null,
@@ -10899,11 +10951,14 @@
     "variant": null,
     "collabWith": null,
     "category": "trail",
-    "weight": null,
+    "weight": 245,
     "weightBasis": null,
-    "drop": null,
+    "drop": 6,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 29,
+      "forefoot": 23
+    },
     "releaseYear": 2024,
     "defaultLifespanKm": 650,
     "discontinued": false,
@@ -10913,7 +10968,7 @@
       "클라우드비스타",
       "클라우드비스타 2"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "version": "2",
@@ -12229,6 +12284,29 @@
     "verified": true
   },
   {
+    "version": "1.5",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "살로몬",
+      "에스랩",
+      "S랩 울트라 글라이드"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "salomon-s-lab-ultra-glide-1-5",
+    "brand": "Salomon",
+    "model": "S/Lab Ultra Glide",
+    "category": "trail"
+  },
+  {
     "version": "2",
     "variant": null,
     "collabWith": null,
@@ -12496,6 +12574,29 @@
     "version": null,
     "variant": null,
     "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "써코니",
+      "소코니",
+      "블레이즈 TR"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "saucony-blaze-tr",
+    "brand": "Saucony",
+    "model": "Blaze TR",
+    "category": "trail"
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
     "weight": 244,
     "weightBasis": "US9",
     "drop": 8,
@@ -12712,7 +12813,7 @@
     "weight": 245,
     "weightBasis": "US9.5",
     "drop": 8,
-    "plate": null,
+    "plate": "other",
     "stackHeight": {
       "heel": 36,
       "forefoot": 28
