@@ -2336,7 +2336,7 @@
     "weight": 295,
     "weightBasis": null,
     "drop": 8,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 41,
       "forefoot": 33
@@ -2441,7 +2441,7 @@
     "weight": 272,
     "weightBasis": "US9",
     "drop": 8,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 42,
       "forefoot": 34
@@ -3677,7 +3677,7 @@
     "weight": 301,
     "weightBasis": "US9",
     "drop": 10,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 39,
       "forefoot": 29
@@ -4102,7 +4102,7 @@
     "weight": 283,
     "weightBasis": "US9",
     "drop": 10,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 36,
       "forefoot": 26
@@ -4320,7 +4320,7 @@
     "weight": 309,
     "weightBasis": "US9",
     "drop": 8,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 39,
       "forefoot": 31
@@ -4922,7 +4922,7 @@
     "weight": 264,
     "weightBasis": null,
     "drop": 8,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 41,
       "forefoot": 33
@@ -4974,7 +4974,7 @@
     "weight": 306,
     "weightBasis": "US9",
     "drop": 5,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 44,
       "forefoot": 39
@@ -5183,7 +5183,7 @@
     "weight": 261,
     "weightBasis": "US9",
     "drop": 8,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 43,
       "forefoot": 35
@@ -5476,7 +5476,7 @@
     "weight": 241,
     "weightBasis": "US9",
     "drop": 5,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 37,
       "forefoot": 32
@@ -5918,7 +5918,7 @@
     "weight": 272,
     "weightBasis": "US9",
     "drop": 5,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 38,
       "forefoot": 33
@@ -7217,7 +7217,7 @@
     "weight": 264,
     "weightBasis": "유니섹스 M7.0/W8.5",
     "drop": 8,
-    "plate": null,
+    "plate": "other",
     "stackHeight": {
       "heel": 44,
       "forefoot": 36
@@ -7289,7 +7289,7 @@
     "weight": 292,
     "weightBasis": "US9",
     "drop": 6,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 44,
       "forefoot": 38
@@ -7404,7 +7404,7 @@
     "weight": 258,
     "weightBasis": "US9",
     "drop": 6,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 38,
       "forefoot": 32
@@ -7499,7 +7499,7 @@
     "weight": 335,
     "weightBasis": "US9",
     "drop": 8,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 43,
       "forefoot": 35
@@ -8620,7 +8620,7 @@
     "weight": 258,
     "weightBasis": "US9",
     "drop": 5,
-    "plate": null,
+    "plate": "other",
     "stackHeight": {
       "heel": 29,
       "forefoot": 24
@@ -9371,7 +9371,7 @@
     "weight": 329,
     "weightBasis": "US9",
     "drop": 10,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 54,
       "forefoot": 44
@@ -9397,7 +9397,7 @@
     "weight": 306,
     "weightBasis": "US9",
     "drop": 9.5,
-    "plate": null,
+    "plate": "other",
     "stackHeight": {
       "heel": 38,
       "forefoot": 28.5
@@ -10282,7 +10282,7 @@
     "weight": 295,
     "weightBasis": "US9",
     "drop": 6,
-    "plate": null,
+    "plate": "other",
     "stackHeight": {
       "heel": 40,
       "forefoot": 34
@@ -12615,7 +12615,7 @@
     "weight": 292,
     "weightBasis": "US9",
     "drop": 6,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 37,
       "forefoot": 31
@@ -12996,7 +12996,7 @@
     "weight": 255,
     "weightBasis": "US9",
     "drop": 8,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 38,
       "forefoot": 30
