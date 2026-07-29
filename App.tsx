@@ -93,9 +93,12 @@ import {
   AlertSettings, loadSettings, saveUnit, saveGoal, saveAlerts, saveWeight,
   saveAge, saveSex, saveRestHR, Sex,
   loadSettingsUpdatedAt, saveSettingsUpdatedAt,
-  clampGoal, clampWeight, clampAge, clampRestHR, DEFAULT_SETTINGS,
+  clampGoal, clampWeight, DEFAULT_SETTINGS,
   loadHaptics,
 } from './lib/settings';
+import {
+  settingsTsOf, shouldApplySettings, pickRestorableSettings, nextSettingsTs,
+} from './lib/settingsRestore';
 import {detectPRs, PRKind} from './lib/records';
 import {runInsights} from './lib/runInsights';
 import {getDistancePBs, PB_CACHE_KEY} from './lib/distancePBStore';
@@ -1098,22 +1101,18 @@ function Main(){
     // 상태 반영은 change* 가 아니라 저수준 set+save 로 — change* 는 bumpSettingsTs 를 불러
     // 복원을 '이 기기의 새 편집'으로 둔갑시키고, 그러면 다른 기기의 더 최신 편집을 이긴다.
     const st:any=data.settings||{};
-    const mergedTs=(()=>{const v=Number(st.updated_at);return Number.isFinite(v)&&v>0?v:0;})();
+    const mergedTs=settingsTsOf(st);
     const forceSettings=!preserve; // 명시적 import 교체
-    if(forceSettings||mergedTs>=settingsTsRef.current){
-      if(st.unit==='km'||st.unit==='mi'){setUnit(st.unit);void saveUnit(st.unit);}
-      if(typeof st.goal_weekly_km==='number'){const v=clampGoal(st.goal_weekly_km);setGoalWeeklyKm(v);void saveGoal(v);}
-      if(st.alerts&&typeof st.alerts==='object'){
-        const en=typeof st.alerts.enabled==='boolean'?st.alerts.enabled:alerts.enabled;
-        const th=Number(st.alerts.thresholdPct);
-        const next={enabled:en,thresholdPct:Number.isFinite(th)?th:alerts.thresholdPct};
-        setAlerts(next);void saveAlerts(next);
-      }
-      if(typeof st.weight_kg==='number'&&st.weight_kg>0){const v=clampWeight(st.weight_kg);setWeightKg(v);void saveWeight(v);}
-      if(typeof st.age==='number'&&st.age>0){const v=clampAge(st.age);setAge(v);void saveAge(v);}
-      if(st.sex==='male'||st.sex==='female'){setSex(st.sex);void saveSex(st.sex);}
-      if(typeof st.rest_hr==='number'&&st.rest_hr>0){const v=clampRestHR(st.rest_hr);setRestHR(v);void saveRestHR(v);}
-      const nextTs=forceSettings?Date.now():Math.max(mergedTs,settingsTsRef.current);
+    if(shouldApplySettings(mergedTs,settingsTsRef.current,forceSettings)){
+      const pick=pickRestorableSettings(st,{alerts});
+      if(pick.unit!==undefined){setUnit(pick.unit);void saveUnit(pick.unit);}
+      if(pick.goalWeeklyKm!==undefined){setGoalWeeklyKm(pick.goalWeeklyKm);void saveGoal(pick.goalWeeklyKm);}
+      if(pick.alerts!==undefined){setAlerts(pick.alerts);void saveAlerts(pick.alerts);}
+      if(pick.weightKg!==undefined){setWeightKg(pick.weightKg);void saveWeight(pick.weightKg);}
+      if(pick.age!==undefined){setAge(pick.age);void saveAge(pick.age);}
+      if(pick.sex!==undefined){setSex(pick.sex);void saveSex(pick.sex);}
+      if(pick.restHR!==undefined){setRestHR(pick.restHR);void saveRestHR(pick.restHR);}
+      const nextTs=nextSettingsTs(forceSettings,mergedTs,settingsTsRef.current,Date.now());
       if(nextTs>0&&nextTs!==settingsTsRef.current){
         settingsTsRef.current=nextTs;setSettingsTs(nextTs);void saveSettingsUpdatedAt(nextTs);
       }
