@@ -9,7 +9,15 @@
 
 ## 프로젝트
 Keego(= keep going) — React Native 러닝/신발 관리 앱. 차별점 = **러닝화 내구도 관리 + shoe-first**(신발 고르고 바로 러닝 → 자동 거리 차감). 경쟁: Nike Run Club·Strava.
-스택: RN 0.85.2 · React 19 · TS 5.8 · React Navigation. 저장: AsyncStorage(로컬-퍼스트) + **Firestore(정본)**.
+**스택(package.json 실측 기준, 2026-07-30 갱신):** RN **0.85.3** · React **19.2.3** · TS **~6.0.3** ·
+Expo 모듈 **~56** · Node ≥22.11. 저장: AsyncStorage(로컬-퍼스트) + **Firestore(정본, `@react-native-firebase` v24)**.
+- **라우터 라이브러리는 없다.** React Navigation 은 쓰지 않는다(死deps 로 제거됐고 회귀 가드가 있다 —
+  `__tests__/crosscut.polish.test.tsx`). 라우팅 = `App.tsx` 렌더 함수 상단의 **early-return 사다리**이며
+  그 순서가 곧 z-order 다. 화면을 추가하려면 그 사다리에 조건을 끼워 넣는다.
+- 백엔드: Cloud Functions 1개(`api`, asia-northeast3) — 카카오/네이버 커스텀 토큰 발급 + 네이버 쇼핑
+  가격 프록시. **REST 백엔드(Render)는 2026-07-17 완전 제거**(`lib/api.ts` 없음).
+- 이 줄을 고칠 땐 `package.json` 을 열어 대조한다 — 실제와 어긋난 스택 표기가 오래 방치된 적이 있다
+  (2026-07-29 재감사에서 RN·TS 버전과 React Navigation 표기가 전부 틀린 것으로 확인).
 
 ## 작업 모드 — 그냥 Claude (Tenet 제거됨 2026-07-09)
 이 프로젝트는 **터미널 Claude Code로 직접** 개발한다. 과거 Tenet MCP 방법론 하니스는 제거했다 — 매 변경마다 저널·status·harness·DESIGN 동기화가 따라와 느렸기 때문. (`.mcp.json`에서 tenet 비활성화. `.tenet/` 문서는 삭제하지 않고 **참고 정본**으로 유지.)
