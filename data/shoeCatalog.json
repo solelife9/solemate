@@ -599,7 +599,7 @@
     "collabWith": null,
     "weight": null,
     "weightBasis": null,
-    "drop": null,
+    "drop": 9,
     "plate": null,
     "stackHeight": null,
     "releaseYear": null,
@@ -609,7 +609,7 @@
       "듀라모",
       "듀라모 SL 2"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "adidas-duramo-sl-2",
     "brand": "Adidas",
@@ -622,7 +622,7 @@
     "collabWith": null,
     "weight": null,
     "weightBasis": null,
-    "drop": null,
+    "drop": 6,
     "plate": null,
     "stackHeight": null,
     "releaseYear": null,
@@ -632,7 +632,7 @@
       "듀라모",
       "듀라모 스피드 2"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "adidas-duramo-speed-2",
     "brand": "Adidas",
@@ -645,7 +645,7 @@
     "collabWith": null,
     "weight": null,
     "weightBasis": null,
-    "drop": null,
+    "drop": 6,
     "plate": null,
     "stackHeight": null,
     "releaseYear": null,
@@ -655,7 +655,7 @@
       "갤럭시",
       "갤럭시 7"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "adidas-galaxy-7",
     "brand": "Adidas",
@@ -668,7 +668,7 @@
     "collabWith": null,
     "weight": null,
     "weightBasis": null,
-    "drop": null,
+    "drop": 5,
     "plate": null,
     "stackHeight": null,
     "releaseYear": null,
@@ -678,7 +678,7 @@
       "갤럭시",
       "갤럭시 8"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "adidas-galaxy-8",
     "brand": "Adidas",
@@ -1312,7 +1312,7 @@
     "collabWith": null,
     "weight": null,
     "weightBasis": null,
-    "drop": null,
+    "drop": 10,
     "plate": null,
     "stackHeight": null,
     "releaseYear": null,
@@ -1323,7 +1323,7 @@
       "울부",
       "울트라부스트 5X"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 700,
     "id": "adidas-ultraboost-5x",
     "brand": "Adidas",
@@ -2078,7 +2078,7 @@
       "후지스피드",
       "후지스피드 3"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "asics-fuji-speed-3",
     "brand": "ASICS",
@@ -2702,7 +2702,7 @@
     "collabWith": null,
     "weight": null,
     "weightBasis": null,
-    "drop": null,
+    "drop": 10,
     "plate": null,
     "stackHeight": null,
     "releaseYear": null,
@@ -2712,7 +2712,7 @@
       "젤벤처",
       "벤처 10"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "asics-gel-venture-10",
     "brand": "ASICS",
@@ -3151,7 +3151,7 @@
       "메타후지",
       "메타후지 트레일"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "asics-metafuji-trail",
     "brand": "ASICS",
@@ -3618,7 +3618,7 @@
       "트라부코",
       "트라부코 14"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "asics-trabuco-14",
     "brand": "ASICS",
@@ -3739,7 +3739,7 @@
       "아드레날린",
       "아드레날린 23"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "brooks-adrenaline-gts-24",
@@ -3888,7 +3888,7 @@
       "칼데라",
       "칼데라 8"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "brooks-cascadia-17",
@@ -3931,7 +3931,7 @@
       "캐스케이디아",
       "캐스캐디아 18"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "brooks-cascadia-18",
     "brand": "Brooks",
@@ -3981,7 +3981,7 @@
       "캐스캐디아",
       "고어텍스"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "brooks-cascadia-19-gtx",
     "brand": "Brooks",
@@ -4083,7 +4083,7 @@
       "카타마운트",
       "카타마운트 4"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "brooks-divide-4",
@@ -4326,7 +4326,7 @@
       "고스트",
       "고스트 2"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "version": "3",
@@ -4573,7 +4573,7 @@
       "글리세린",
       "글리세린 22"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "brooks-glycerin-gts-23",
@@ -4621,7 +4621,7 @@
       "브룩스",
       "글리세린"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "version": "2",
@@ -5297,7 +5297,7 @@
       "호카",
       "시엘로"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "hoka-cielo-x1-2-0",
@@ -6852,7 +6852,7 @@
       "미즈노",
       "네오아세라"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "mizuno-neo-accera",
     "brand": "Mizuno",
@@ -6883,6 +6883,33 @@
     "category": "tempo"
   },
   {
+    "version": "10",
+    "variant": null,
+    "collabWith": null,
+    "weight": 290,
+    "weightBasis": "US9",
+    "drop": 6,
+    "plate": null,
+    "stackHeight": {
+      "heel": 36.5,
+      "forefoot": 30.5
+    },
+    "releaseYear": 2026,
+    "discontinued": false,
+    "searchAliases": [
+      "미즈노",
+      "네오다이치",
+      "네오 다이치 10",
+      "다이치 10"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 650,
+    "id": "mizuno-neo-daichi-10",
+    "brand": "Mizuno",
+    "model": "Neo Daichi",
+    "category": "trail"
+  },
+  {
     "id": "mizuno-neo-vista",
     "brand": "Mizuno",
     "model": "Neo Vista",
@@ -6905,7 +6932,7 @@
       "미즈노",
       "네오"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "mizuno-neo-vista-2",
@@ -7781,7 +7808,7 @@
     "category": "stability",
     "weight": null,
     "weightBasis": null,
-    "drop": null,
+    "drop": 8,
     "plate": null,
     "stackHeight": null,
     "releaseYear": null,
@@ -7797,7 +7824,7 @@
       "프레쉬폼x 14",
       "860 14"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "new-balance-fresh-foam-x-860-15",
@@ -7972,7 +7999,7 @@
       "프레쉬폼x 1",
       "발로스 1"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 700,
     "id": "new-balance-fresh-foam-x-balos-1",
     "brand": "New Balance",
@@ -8370,7 +8397,7 @@
       "SC 엘리트 5",
       "에스씨 엘리트 5"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "version": "6",
@@ -9030,7 +9057,7 @@
     "category": "daily",
     "weight": null,
     "weightBasis": null,
-    "drop": null,
+    "drop": 10,
     "plate": null,
     "stackHeight": null,
     "releaseYear": null,
@@ -9045,7 +9072,7 @@
       "페가",
       "페가 40"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "nike-pegasus-41",
@@ -9160,7 +9187,7 @@
     "collabWith": null,
     "weight": null,
     "weightBasis": null,
-    "drop": null,
+    "drop": 9.5,
     "plate": null,
     "stackHeight": null,
     "releaseYear": null,
@@ -9170,7 +9197,7 @@
       "페가수스 트레일",
       "페가수스 트레일 4"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "nike-pegasus-trail-4",
     "brand": "Nike",
@@ -9353,7 +9380,7 @@
     "collabWith": null,
     "weight": null,
     "weightBasis": null,
-    "drop": null,
+    "drop": 10,
     "plate": null,
     "stackHeight": null,
     "releaseYear": null,
@@ -9363,7 +9390,7 @@
       "런 디파이",
       "런디파이"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "nike-run-defy",
     "brand": "Nike",
@@ -9428,7 +9455,7 @@
     "category": "stability",
     "weight": null,
     "weightBasis": null,
-    "drop": null,
+    "drop": 8,
     "plate": null,
     "stackHeight": null,
     "releaseYear": null,
@@ -9439,7 +9466,7 @@
       "스트럭처",
       "스트럭처 24"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "nike-structure-25",
@@ -9753,7 +9780,7 @@
     "collabWith": null,
     "weight": null,
     "weightBasis": null,
-    "drop": null,
+    "drop": 9,
     "plate": null,
     "stackHeight": null,
     "releaseYear": null,
@@ -9763,7 +9790,7 @@
       "와일드호스",
       "와일드호스 8"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "nike-wildhorse-8",
     "brand": "Nike",
@@ -9915,7 +9942,7 @@
     "category": "tempo",
     "weight": null,
     "weightBasis": null,
-    "drop": null,
+    "drop": 10,
     "plate": null,
     "stackHeight": null,
     "releaseYear": null,
@@ -9926,7 +9953,7 @@
       "줌플라이",
       "줌플라이 5"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "nike-zoom-fly-6",
@@ -10280,7 +10307,7 @@
       "온러닝",
       "클라우드 6"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "on-cloud-6",
     "brand": "On",
@@ -10313,7 +10340,7 @@
     "version": "4",
     "variant": null,
     "collabWith": null,
-    "weight": 226,
+    "weight": null,
     "weightBasis": null,
     "drop": 7,
     "plate": null,
@@ -10329,7 +10356,7 @@
       "클라우드엑스",
       "클라우드 X 4"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "on-cloud-x-4",
     "brand": "On",
@@ -10386,6 +10413,29 @@
       "클라우드붐 3"
     ],
     "verified": false
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": 8,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": 2026,
+    "discontinued": false,
+    "searchAliases": [
+      "온",
+      "클라우드붐",
+      "클라우드 붐 맥스"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 450,
+    "id": "on-cloudboom-max",
+    "brand": "On",
+    "model": "Cloudboom Max",
+    "category": "racing"
   },
   {
     "id": "on-cloudboom-strike",
@@ -10499,19 +10549,19 @@
       "heel": 41,
       "forefoot": 37
     },
-    "releaseYear": null,
+    "releaseYear": 2026,
     "discontinued": false,
     "searchAliases": [
       "온",
-      "온러닝",
-      "클라우드붐 볼트"
+      "클라우드붐",
+      "클라우드 붐 볼트"
     ],
     "verified": true,
-    "defaultLifespanKm": 450,
+    "defaultLifespanKm": 650,
     "id": "on-cloudboom-volt",
     "brand": "On",
     "model": "Cloudboom Volt",
-    "category": "racing"
+    "category": "tempo"
   },
   {
     "id": "on-cloudeclipse",
@@ -10828,6 +10878,29 @@
     "verified": true
   },
   {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": 225,
+    "weightBasis": null,
+    "drop": 6,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": 2026,
+    "discontinued": false,
+    "searchAliases": [
+      "온",
+      "클라우드소마",
+      "클라우드 소마"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 650,
+    "id": "on-cloudsoma",
+    "brand": "On",
+    "model": "Cloudsoma",
+    "category": "daily"
+  },
+  {
     "id": "on-cloudstratus-3",
     "brand": "On",
     "model": "Cloudstratus",
@@ -10991,9 +11064,12 @@
     "collabWith": null,
     "weight": null,
     "weightBasis": null,
-    "drop": null,
+    "drop": 7,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 32.5,
+      "forefoot": 25.5
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
@@ -11001,7 +11077,7 @@
       "온러닝",
       "클라우드서퍼 트레일"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "on-cloudsurfer-trail",
     "brand": "On",
@@ -11907,7 +11983,7 @@
     "collabWith": null,
     "weight": null,
     "weightBasis": null,
-    "drop": null,
+    "drop": 8,
     "plate": null,
     "stackHeight": null,
     "releaseYear": null,
@@ -11917,7 +11993,7 @@
       "에어로블레이즈",
       "에어로 블레이즈 3"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "salomon-aero-blaze-3",
     "brand": "Salomon",
@@ -12688,7 +12764,7 @@
     "category": "trail",
     "weight": null,
     "weightBasis": null,
-    "drop": null,
+    "drop": 10,
     "plate": null,
     "stackHeight": null,
     "releaseYear": 2023,
@@ -12699,7 +12775,7 @@
       "스피드크로스",
       "스피드크로스 6"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "salomon-speedcross-6-gtx",
@@ -12756,7 +12832,7 @@
     "category": "trail",
     "weight": null,
     "weightBasis": null,
-    "drop": null,
+    "drop": 6,
     "plate": null,
     "stackHeight": null,
     "releaseYear": 2024,
@@ -12769,7 +12845,7 @@
       "울트라",
       "울트라 3"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "version": "4",
@@ -12873,7 +12949,7 @@
     "weight": 244,
     "weightBasis": "US9",
     "drop": 8,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 41,
       "forefoot": 33
@@ -13188,11 +13264,14 @@
     "variant": null,
     "collabWith": null,
     "category": "stability",
-    "weight": null,
+    "weight": 272,
     "weightBasis": null,
-    "drop": null,
+    "drop": 6,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 35,
+      "forefoot": 29
+    },
     "releaseYear": 2025,
     "defaultLifespanKm": 700,
     "discontinued": false,
@@ -13202,7 +13281,7 @@
       "가이드",
       "가이드 18"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "saucony-guide-19",
@@ -14853,7 +14932,7 @@
     "category": "racing",
     "weight": null,
     "weightBasis": null,
-    "drop": null,
+    "drop": 8,
     "plate": null,
     "stackHeight": null,
     "releaseYear": null,
@@ -14864,7 +14943,7 @@
       "엘리트",
       "엘리트 2"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "version": "2",
