@@ -2441,13 +2441,13 @@
     "variant": null,
     "collabWith": null,
     "category": "recovery",
-    "weight": 307,
+    "weight": 295,
     "weightBasis": "US9",
     "drop": 8,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
-      "heel": 43.5,
-      "forefoot": 35.5
+      "heel": 37,
+      "forefoot": 35
     },
     "releaseYear": 2025,
     "defaultLifespanKm": 700,
@@ -3035,10 +3035,10 @@
     "variant": null,
     "collabWith": null,
     "category": "tempo",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
+    "weight": 241,
+    "weightBasis": "US9",
+    "drop": 8,
+    "plate": "carbon",
     "stackHeight": null,
     "releaseYear": 2024,
     "defaultLifespanKm": 650,
@@ -3048,7 +3048,7 @@
       "매직스피드",
       "매직스피드 4"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "asics-magic-speed-5",
@@ -3155,11 +3155,14 @@
     "variant": null,
     "collabWith": null,
     "category": "racing",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 184,
+    "weightBasis": "US9",
+    "drop": 5,
+    "plate": "carbon",
+    "stackHeight": {
+      "heel": 39.5,
+      "forefoot": 34.5
+    },
     "releaseYear": 2024,
     "defaultLifespanKm": 450,
     "discontinued": false,
@@ -3167,7 +3170,7 @@
       "아식스",
       "메타스피드"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "version": null,
@@ -3253,11 +3256,14 @@
     "variant": null,
     "collabWith": null,
     "category": "racing",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 181,
+    "weightBasis": "US9",
+    "drop": 5,
+    "plate": "carbon",
+    "stackHeight": {
+      "heel": 39.5,
+      "forefoot": 34.5
+    },
     "releaseYear": 2024,
     "defaultLifespanKm": 450,
     "discontinued": false,
@@ -3265,7 +3271,7 @@
       "아식스",
       "메타스피드"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "version": null,
@@ -4329,11 +4335,14 @@
     "variant": null,
     "collabWith": null,
     "category": "recovery",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 292,
+    "weightBasis": "US9",
+    "drop": 10,
+    "plate": "none",
+    "stackHeight": {
+      "heel": 39,
+      "forefoot": 29
+    },
     "releaseYear": 2025,
     "defaultLifespanKm": 700,
     "discontinued": false,
@@ -5140,11 +5149,14 @@
     "variant": null,
     "collabWith": null,
     "category": "racing",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 210,
+    "weightBasis": "US9",
+    "drop": 7,
+    "plate": "carbon",
+    "stackHeight": {
+      "heel": 46,
+      "forefoot": 39
+    },
     "releaseYear": 2025,
     "defaultLifespanKm": 450,
     "discontinued": false,
@@ -5153,7 +5165,7 @@
       "시엘로",
       "시엘로 2.0"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "version": "3.0",
@@ -5552,11 +5564,14 @@
     "variant": null,
     "collabWith": null,
     "category": "tempo",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 252,
+    "weightBasis": "US9",
+    "drop": 5,
+    "plate": "other",
+    "stackHeight": {
+      "heel": 46,
+      "forefoot": 41
+    },
     "releaseYear": 2024,
     "defaultLifespanKm": 650,
     "discontinued": false,
@@ -5565,7 +5580,7 @@
       "마하",
       "마하 2"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "version": "3",
@@ -5750,10 +5765,10 @@
     "variant": null,
     "collabWith": null,
     "category": "racing",
-    "weight": null,
-    "weightBasis": null,
+    "weight": 235,
+    "weightBasis": "유니섹스 사이즈 9",
     "drop": null,
-    "plate": null,
+    "plate": "carbon",
     "stackHeight": null,
     "releaseYear": 2023,
     "defaultLifespanKm": 450,
@@ -5765,7 +5780,7 @@
       "로켓",
       "로켓 2"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "version": "3",
@@ -5852,11 +5867,14 @@
     "variant": null,
     "collabWith": null,
     "category": "recovery",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 306,
+    "weightBasis": "US9",
+    "drop": 5,
+    "plate": "carbon",
+    "stackHeight": {
+      "heel": 50,
+      "forefoot": 45
+    },
     "releaseYear": 2024,
     "defaultLifespanKm": 700,
     "discontinued": false,
@@ -5864,7 +5882,7 @@
       "호카",
       "스카이워드"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "version": "2",
@@ -7589,11 +7607,14 @@
     "variant": null,
     "collabWith": null,
     "category": "daily",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 261,
+    "weightBasis": "US9",
+    "drop": 8,
+    "plate": "none",
+    "stackHeight": {
+      "heel": 33,
+      "forefoot": 25
+    },
     "releaseYear": null,
     "defaultLifespanKm": 650,
     "discontinued": false,
@@ -7607,7 +7628,7 @@
       "프레쉬폼x 14",
       "880 14"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "version": "15",
@@ -7728,11 +7749,14 @@
     "version": "8",
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 281,
+    "weightBasis": "US9",
+    "drop": 6,
+    "plate": "none",
+    "stackHeight": {
+      "heel": 38,
+      "forefoot": 32
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
@@ -7747,7 +7771,7 @@
       "이에로 8",
       "히에로 8"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "new-balance-fresh-foam-x-hierro-8",
     "brand": "New Balance",
@@ -7853,10 +7877,10 @@
     "variant": null,
     "collabWith": null,
     "category": "recovery",
-    "weight": null,
-    "weightBasis": null,
+    "weight": 303,
+    "weightBasis": "US9",
     "drop": 4,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 43,
       "forefoot": 39
@@ -7969,10 +7993,10 @@
     "variant": null,
     "collabWith": null,
     "category": "tempo",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
+    "weight": 201,
+    "weightBasis": "US9",
+    "drop": 6,
+    "plate": "none",
     "stackHeight": null,
     "releaseYear": 2024,
     "defaultLifespanKm": 650,
@@ -7987,7 +8011,7 @@
       "레벨 4",
       "퓨어셀 레벨 4"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "new-balance-fuelcell-rebel-5",
@@ -8052,11 +8076,14 @@
     "version": "4",
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 232,
+    "weightBasis": "US9",
+    "drop": 4,
+    "plate": "carbon",
+    "stackHeight": {
+      "heel": 40,
+      "forefoot": 36
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
@@ -8071,7 +8098,7 @@
       "SC 엘리트 4",
       "에스씨 엘리트 4"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 450,
     "id": "new-balance-fuelcell-supercomp-elite-4",
     "brand": "New Balance",
