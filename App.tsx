@@ -67,7 +67,7 @@ import {
   sumKm, avgPaceLabel, totalTimeLabel, durationLabel, summaryOf, maxDayStreak,
   weekBuckets, monthBuckets, yearBuckets,
 } from './lib/stats';
-import {parseShoeName, shoeHealth, isRetired, DEFAULT_MAX_KM, clampMaxKm, reconcileShoeAlerts, conditionForPercent, effectiveMaxKm} from './lib/shoe';
+import {parseShoeName, shoeHealth, isRetired, DEFAULT_MAX_KM, clampMaxKm, reconcileShoeAlerts, effectiveMaxKm} from './lib/shoe';
 // 한 러닝은 한 기록 — 폰·워치 중복 저장 병합(신발 이중 차감 차단).
 import {findMergeTarget, mergeRuns} from './lib/runMerge';
 // 상승 고도는 폰이 한 벌 규칙으로 계산한다(워치는 원자료만 보낸다).
@@ -82,7 +82,7 @@ import {
 } from './lib/bootCache';
 import {reportStorageResult} from './lib/storageAlert';
 import {trackFirstShoeAdded} from './lib/productAnalytics';
-import {findShoeClass, typeLabel} from './data/shoeClass';
+import {buildWatchShoes, buildWatchRecentRuns, buildWidgetShoe} from './lib/watchPayload';
 import {
   loadSnapshot, clearSnapshot, isResumable,
   loadPendingRuns, overlayPendingRuns, removePendingRun,
@@ -105,7 +105,6 @@ import {registerRunForHr, saveWatchHrTrack, retryPendingHr, avgBpmFromTrack, has
 import {syncRunDetails} from './lib/runDetailSync';
 import {liveActivity} from './lib/liveActivity';
 import {watchSession} from './lib/watchSession';
-import {estimateMaxHR} from './lib/analytics/hrZones';
 import {assessTrainingLoad, loadRatioPhraseKo, LOAD_WORD, LoadLevel} from './lib/trainingLoad';
 import {
   getNotifSettings, setNotifSettings, dueNotifications,
@@ -1343,44 +1342,14 @@ function Main(){
   //    를 워치에 푸시한다. 워치 시작 화면이 이 목록을 좌우 스와이프로 넘기고, 남은 수명
   //    %·컨디션 도트를 그린다. applicationContext 라 워치가 꺼져 있어도 다음 실행 때
   //    도착·캐시된다. 직렬화 문자열을 dep 으로 써 내용이 실제로 바뀔 때만 전송한다.
-  const watchShoesJson=JSON.stringify({
-    shoes:homeShoes.map(x=>({
-      id:String(x.raw.id),brand:x.ui.brand,model:x.ui.model,
-      lifePct:Math.max(0,Math.min(100,Math.round((1-x.ui.used/Math.max(1,x.ui.max))*100))),
-      // 워치 구버전 계약(WatchShoePayload.condition — 도트 의미색 매핑)용 3단계 문자열.
-      // 폰 UI 는 4단계 wearTier 로 이행했지만(2026-07-11) 값은 계속 보낸다(호환).
-      condition:conditionForPercent(x.ui.max>0?(x.ui.used/x.ui.max)*100:0),
-      // 워치 시작 카드 '사용/남음' 줄(폰 히어로 kmRow 미러) — 반올림 정수 km.
-      usedKm:Math.max(0,Math.round(x.ui.used)),
-      maxKm:Math.max(0,Math.round(x.ui.max)),
-    })),
-    hr:{max:estimateMaxHR(age),rest:restHR||0},
-  });
+  const watchShoesJson=JSON.stringify(buildWatchShoes(homeShoes,age,restHR));
   useEffect(()=>{
     const p=JSON.parse(watchShoesJson);
     watchSession.updateShoes(p.shoes,p.hr);
   },[watchShoesJson]);
   // ①'' 폰 최근 러닝 → 워치 기록(HistoryView) 동기화. 워치가 폰 런 + 워치 런을 합쳐 최신순으로
   //    보여준다(runId 중복 제거는 워치 RecentRuns). 최근 10개만, 내용이 실제 바뀔 때만 전송.
-  const watchRecentRunsJson=(()=>{
-    const nm=(sid:any)=>shoes.find(s=>String(s.id)===String(sid))?.name||'';
-    const ts=(r:any)=>{const u=Number(r.updated_at);return Number.isFinite(u)&&u>0?u:(Date.parse(String(r.run_date||''))||0);};
-    const list=[...runs]
-      .sort((a,b)=>ts(b)-ts(a))
-      .slice(0,10)
-      .map(r=>{
-        const km=Number(r.km)||0;const durationS=Number(r.duration)||0;
-        return {
-          id:String(r.id||''),endMs:ts(r),km,durationS,
-          avgPaceSecPerKm:km>0.2?durationS/km:0,
-          avgBpm:Number(r.heart_rate)||0,cadence:Number(r.cadence)||0,
-          kcal:Number(r.calories)||0,elevGainM:Number(r.elevation_m)||0,
-          shoeName:nm(r.shoe_id),
-        };
-      })
-      .filter(r=>r.id&&r.km>0);
-    return JSON.stringify(list);
-  })();
+  const watchRecentRunsJson=JSON.stringify(buildWatchRecentRuns(runs,shoes));
   useEffect(()=>{
     watchSession.updateRecentRuns(JSON.parse(watchRecentRunsJson));
   },[watchRecentRunsJson]);
@@ -1388,12 +1357,8 @@ function Main(){
   //    공유 저장소에 기록(네이티브가 위젯 리로드). 카테고리는 홈 히어로와 동일 소스로.
   //    워치와 무관한 폰 기능(available=iOS만). 내용이 실제 바뀔 때만 전송(직렬화 dep).
   const widgetShoeJson=(()=>{
-    const e=homeShoes[homeActiveIdx]; if(!e) return '';
-    return JSON.stringify({
-      name:e.ui.model||e.ui.brand, brand:e.ui.brand,
-      category:typeLabel(findShoeClass(e.ui.brand,e.ui.model)?.type)||'',
-      usedKm:e.ui.used, maxKm:e.ui.max,
-    });
+    const p=buildWidgetShoe(homeShoes[homeActiveIdx]);
+    return p?JSON.stringify(p):'';
   })();
   useEffect(()=>{
     if(!widgetShoeJson||(globalThis as any).__KEEGO_CAPTURE__) return;
