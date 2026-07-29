@@ -7847,6 +7847,29 @@
     "verified": true
   },
   {
+    "version": "14",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "나이키",
+      "다운시프터",
+      "다운시프터 14"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "nike-downshifter-14",
+    "brand": "Nike",
+    "model": "Downshifter",
+    "category": "daily"
+  },
+  {
     "id": "nike-free-run-5-0",
     "brand": "Nike",
     "model": "Free Run",
@@ -8033,6 +8056,30 @@
     "category": "trail"
   },
   {
+    "version": "9",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "나이키",
+      "카이거",
+      "테라 카이거",
+      "카이거 9"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "nike-kiger-9",
+    "brand": "Nike",
+    "model": "Kiger",
+    "category": "trail"
+  },
+  {
     "id": "nike-pegasus-39",
     "brand": "Nike",
     "model": "Pegasus",
@@ -8194,6 +8241,52 @@
     "verified": true
   },
   {
+    "version": "4",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "나이키",
+      "페가수스 트레일",
+      "페가수스 트레일 4"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "nike-pegasus-trail-4",
+    "brand": "Nike",
+    "model": "Pegasus Trail",
+    "category": "trail"
+  },
+  {
+    "version": "4",
+    "variant": "GTX",
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "나이키",
+      "페가수스 트레일",
+      "고어텍스"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "nike-pegasus-trail-4-gtx",
+    "brand": "Nike",
+    "model": "Pegasus Trail",
+    "category": "trail"
+  },
+  {
     "id": "nike-pegasus-trail-5",
     "brand": "Nike",
     "model": "Pegasus Trail",
@@ -8290,6 +8383,75 @@
       "나이키"
     ],
     "verified": false
+  },
+  {
+    "version": "7",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "나이키",
+      "레볼루션",
+      "레볼루션 7"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "nike-revolution-7",
+    "brand": "Nike",
+    "model": "Revolution",
+    "category": "daily"
+  },
+  {
+    "version": "8",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "나이키",
+      "레볼루션",
+      "레볼루션 8"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "nike-revolution-8",
+    "brand": "Nike",
+    "model": "Revolution",
+    "category": "daily"
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "나이키",
+      "런 디파이",
+      "런디파이"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "nike-run-defy",
+    "brand": "Nike",
+    "model": "Run Defy",
+    "category": "daily"
   },
   {
     "id": "nike-streakfly",
@@ -8666,6 +8828,29 @@
     "verified": true
   },
   {
+    "version": "8",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "나이키",
+      "와일드호스",
+      "와일드호스 8"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "nike-wildhorse-8",
+    "brand": "Nike",
+    "model": "Wildhorse",
+    "category": "trail"
+  },
+  {
     "id": "nike-winflo-10",
     "brand": "Nike",
     "model": "Winflo",
@@ -8706,6 +8891,29 @@
       "나이키"
     ],
     "verified": false
+  },
+  {
+    "version": "12",
+    "variant": null,
+    "collabWith": null,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "나이키",
+      "윈플로",
+      "윈플로 12"
+    ],
+    "verified": false,
+    "defaultLifespanKm": 650,
+    "id": "nike-winflo-12",
+    "brand": "Nike",
+    "model": "Winflo",
+    "category": "daily"
   },
   {
     "id": "nike-winflo-9",
