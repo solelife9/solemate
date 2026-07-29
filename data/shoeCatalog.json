@@ -1464,6 +1464,31 @@
     "category": "stability"
   },
   {
+    "version": "2",
+    "variant": null,
+    "collabWith": null,
+    "weight": 269,
+    "weightBasis": "US9",
+    "drop": 4,
+    "plate": "none",
+    "stackHeight": {
+      "heel": 34,
+      "forefoot": 30
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "알트라",
+      "익스피리언스 와일드"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 650,
+    "id": "altra-experience-wild-2",
+    "brand": "Altra",
+    "model": "Experience Wild",
+    "category": "trail"
+  },
+  {
     "version": "3",
     "variant": null,
     "collabWith": null,
@@ -1642,11 +1667,14 @@
     "version": "6",
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 354,
+    "weightBasis": "US9",
+    "drop": 0,
+    "plate": "none",
+    "stackHeight": {
+      "heel": 35,
+      "forefoot": 35
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
@@ -1654,7 +1682,7 @@
       "올림푸스",
       "올림푸스 6"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "altra-olympus-6",
     "brand": "Altra",
@@ -1817,11 +1845,14 @@
     "variant": null,
     "collabWith": null,
     "category": "daily",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 280,
+    "weightBasis": "US9",
+    "drop": 0,
+    "plate": "none",
+    "stackHeight": {
+      "heel": 30,
+      "forefoot": 30
+    },
     "releaseYear": null,
     "defaultLifespanKm": 650,
     "discontinued": false,
@@ -1830,7 +1861,7 @@
       "토린",
       "토린 7"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "altra-torin-8",
@@ -6217,11 +6248,14 @@
     "version": null,
     "variant": null,
     "collabWith": null,
-    "weight": null,
+    "weight": 278,
     "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "drop": 6,
+    "plate": "none",
+    "stackHeight": {
+      "heel": 44,
+      "forefoot": 38
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
@@ -6230,7 +6264,7 @@
       "킵라이드 맥스",
       "킵라이드"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 700,
     "id": "kiprun-kipride-max",
     "brand": "Kiprun",
@@ -6292,11 +6326,14 @@
     "version": null,
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 247,
+    "weightBasis": "US9",
+    "drop": 6,
+    "plate": "carbon",
+    "stackHeight": {
+      "heel": 39,
+      "forefoot": 33
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
@@ -6305,7 +6342,7 @@
       "킵서밋 레이스",
       "킵서밋"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "kiprun-kipsummit-race",
     "brand": "Kiprun",
@@ -6374,6 +6411,31 @@
       "라스포르티바"
     ],
     "verified": false
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": 298,
+    "weightBasis": "US9",
+    "drop": 6,
+    "plate": "none",
+    "stackHeight": {
+      "heel": 36,
+      "forefoot": 30
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "라스포르티바",
+      "프로디지오"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 650,
+    "id": "la-sportiva-prodigio-max",
+    "brand": "La Sportiva",
+    "model": "Prodigio Max",
+    "category": "trail"
   },
   {
     "id": "li-ning-feidian-3-0-ultra",
@@ -9639,6 +9701,31 @@
     "verified": false
   },
   {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": 286,
+    "weightBasis": null,
+    "drop": 6,
+    "plate": "none",
+    "stackHeight": {
+      "heel": 37,
+      "forefoot": 31
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "엔노말",
+      "카디"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 650,
+    "id": "nnormal-cadi",
+    "brand": "NNormal",
+    "model": "Cadi",
+    "category": "trail"
+  },
+  {
     "id": "nnormal-kjerag",
     "brand": "NNormal",
     "model": "Kjerag",
@@ -9646,13 +9733,13 @@
     "variant": null,
     "collabWith": null,
     "category": "trail",
-    "weight": 200,
-    "weightBasis": "US9",
+    "weight": 230,
+    "weightBasis": "유니섹스 사이즈 9",
     "drop": 6,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
-      "heel": 23.5,
-      "forefoot": 17.5
+      "heel": 29,
+      "forefoot": 23
     },
     "releaseYear": 2023,
     "defaultLifespanKm": 650,
@@ -10226,11 +10313,14 @@
     "variant": null,
     "collabWith": null,
     "category": "recovery",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 275,
+    "weightBasis": "US9",
+    "drop": 6,
+    "plate": "none",
+    "stackHeight": {
+      "heel": 34,
+      "forefoot": 28
+    },
     "releaseYear": null,
     "defaultLifespanKm": 700,
     "discontinued": false,
@@ -10240,7 +10330,7 @@
       "클라우드몬스터",
       "클몬"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "on-cloudmonster-2",
@@ -10358,11 +10448,14 @@
     "variant": null,
     "collabWith": null,
     "category": "stability",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 275,
+    "weightBasis": "US9",
+    "drop": 10,
+    "plate": "none",
+    "stackHeight": {
+      "heel": 39,
+      "forefoot": 29
+    },
     "releaseYear": null,
     "defaultLifespanKm": 700,
     "discontinued": false,
@@ -10372,7 +10465,7 @@
       "클라우드러너",
       "클라우드러너 2"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "on-cloudrunner-3",
@@ -10409,11 +10502,14 @@
     "variant": null,
     "collabWith": null,
     "category": "stability",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 292,
+    "weightBasis": "US9",
+    "drop": 6,
+    "plate": "other",
+    "stackHeight": {
+      "heel": 37,
+      "forefoot": 31
+    },
     "releaseYear": null,
     "defaultLifespanKm": 700,
     "discontinued": false,
@@ -10421,7 +10517,7 @@
       "온",
       "온러닝"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "version": "2",
@@ -10884,18 +10980,21 @@
     "version": null,
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 272,
+    "weightBasis": "US9",
+    "drop": 6,
+    "plate": "carbon",
+    "stackHeight": {
+      "heel": 37,
+      "forefoot": 31
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
       "푸마",
       "디비에이트 트레일"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "puma-deviate-nitro-elite-trail",
     "brand": "Puma",
@@ -10906,18 +11005,21 @@
     "version": null,
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 213,
+    "weightBasis": "US9",
+    "drop": 8,
+    "plate": "none",
+    "stackHeight": {
+      "heel": 37,
+      "forefoot": 29
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
       "푸마",
       "디비에이트 퓨어"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "puma-deviate-pure-nitro",
     "brand": "Puma",
@@ -11077,7 +11179,7 @@
     "weight": 292,
     "weightBasis": "US9",
     "drop": 8,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 47,
       "forefoot": 39
@@ -11993,11 +12095,14 @@
     "variant": null,
     "collabWith": null,
     "category": "trail",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 306,
+    "weightBasis": "US9",
+    "drop": 6,
+    "plate": "none",
+    "stackHeight": {
+      "heel": 41,
+      "forefoot": 35
+    },
     "releaseYear": 2025,
     "defaultLifespanKm": 650,
     "discontinued": false,
@@ -12006,7 +12111,7 @@
       "울트라글라이드",
       "울트라"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "version": "2",
@@ -13267,13 +13372,13 @@
     "version": "2",
     "variant": null,
     "collabWith": null,
-    "weight": 278,
+    "weight": 309,
     "weightBasis": "US9",
     "drop": 6,
     "plate": "none",
     "stackHeight": {
-      "heel": 44,
-      "forefoot": 38
+      "heel": 38,
+      "forefoot": 32
     },
     "releaseYear": null,
     "discontinued": false,
