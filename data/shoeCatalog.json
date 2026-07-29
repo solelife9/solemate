@@ -9761,13 +9761,13 @@
     "version": null,
     "variant": null,
     "collabWith": null,
-    "weight": 298,
-    "weightBasis": "US9",
+    "weight": 268,
+    "weightBasis": "US M8.5",
     "drop": 5,
     "plate": null,
     "stackHeight": {
-      "heel": 39,
-      "forefoot": 34
+      "heel": 26,
+      "forefoot": 21
     },
     "releaseYear": null,
     "discontinued": false,
@@ -13641,26 +13641,29 @@
     "verified": true
   },
   {
-    "version": null,
-    "variant": null,
+    "version": "4",
+    "variant": "WP",
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
+    "weight": 292,
+    "weightBasis": "M9",
+    "drop": 5,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 35,
+      "forefoot": 30
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
       "토포",
-      "토포어슬레틱",
-      "Phantom 4 WP"
+      "팬텀",
+      "방수"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "topo-athletic-phantom-4-wp",
     "brand": "Topo Athletic",
-    "model": "Phantom 4 WP",
+    "model": "Phantom",
     "category": "daily"
   },
   {
@@ -13792,26 +13795,29 @@
     "category": "daily"
   },
   {
-    "version": null,
-    "variant": null,
+    "version": "4",
+    "variant": "WP",
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
+    "weight": 340,
+    "weightBasis": "M9",
+    "drop": 3,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 25,
+      "forefoot": 22
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
       "토포",
-      "토포어슬레틱",
-      "Terraventure 4 WP"
+      "테라벤처",
+      "방수"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "topo-athletic-terraventure-4-wp",
     "brand": "Topo Athletic",
-    "model": "Terraventure 4 WP",
+    "model": "Terraventure",
     "category": "trail"
   },
   {
@@ -13841,26 +13847,29 @@
     "category": "trail"
   },
   {
-    "version": null,
-    "variant": null,
+    "version": "2",
+    "variant": "WP",
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
+    "weight": 451,
+    "weightBasis": "M9",
+    "drop": 5,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 33,
+      "forefoot": 28
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
       "토포",
-      "토포어슬레틱",
-      "Trailventure 2 WP"
+      "트레일벤처",
+      "방수"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "topo-athletic-trailventure-2-wp",
     "brand": "Topo Athletic",
-    "model": "Trailventure 2 WP",
+    "model": "Trailventure",
     "category": "trail"
   },
   {
@@ -13897,11 +13906,14 @@
     "variant": null,
     "collabWith": null,
     "category": "stability",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
+    "weight": 281,
+    "weightBasis": "M9",
+    "drop": 5,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 30,
+      "forefoot": 25
+    },
     "releaseYear": null,
     "defaultLifespanKm": 700,
     "discontinued": false,
@@ -13914,7 +13926,7 @@
       "울트라",
       "울트라 5"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "version": "6",
