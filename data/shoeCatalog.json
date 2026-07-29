@@ -12943,6 +12943,32 @@
     "category": "trail"
   },
   {
+    "version": "10",
+    "variant": null,
+    "collabWith": null,
+    "weight": 308,
+    "weightBasis": "US9",
+    "drop": 8,
+    "plate": null,
+    "stackHeight": {
+      "heel": 35,
+      "forefoot": 27
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "써코니",
+      "에켈론",
+      "에켈론 10"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 700,
+    "id": "saucony-echelon-10",
+    "brand": "Saucony",
+    "model": "Echelon",
+    "category": "stability"
+  },
+  {
     "version": null,
     "variant": null,
     "collabWith": null,
@@ -13318,11 +13344,14 @@
     "variant": null,
     "collabWith": null,
     "category": "stability",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
+    "weight": 285,
+    "weightBasis": "US9",
+    "drop": 6,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 38,
+      "forefoot": 32
+    },
     "releaseYear": 2025,
     "defaultLifespanKm": 700,
     "discontinued": false,
@@ -13330,7 +13359,7 @@
       "소코니",
       "써코니"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "version": "26",
