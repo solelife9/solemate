@@ -676,8 +676,13 @@ jest.mock('@react-native-seoul/naver-login', () => ({
   __esModule: true,
   default: {
     initialize: jest.fn(),
+    // 실제 SDK 는 accessToken 과 refreshToken 을 함께 준다. 서버 audience 검증이
+    // refreshToken 을 요구하므로(functions/naverAuth.js) 목도 둘 다 준다.
     login: jest.fn(() =>
-      Promise.resolve({successResponse: {accessToken: 'naver-access-token'}, failureResponse: undefined}),
+      Promise.resolve({
+        successResponse: {accessToken: 'naver-access-token', refreshToken: 'naver-refresh-token'},
+        failureResponse: undefined,
+      }),
     ),
     logout: jest.fn(() => Promise.resolve()),
   },

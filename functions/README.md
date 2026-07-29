@@ -8,7 +8,9 @@
 ## 함수
 - `api` (HTTP, region `asia-northeast3`)
   - `POST /auth/kakao` — body `{accessToken}` → `{firebaseToken, uid, email, name}`
-  - `POST /auth/naver` — body `{accessToken}` → `{firebaseToken, uid, email, name}`
+  - `POST /auth/naver` — body `{refreshToken}` → `{firebaseToken, uid, email, name}`
+    (앱은 `accessToken` 도 함께 보내지만 **서버는 쓰지 않는다** — 아래 보안 절)
+  - `GET /shop/price?q=` — 러닝화 현재가 조회 프록시(네이버 검색 API)
   - `GET /health` — 배포 확인
 
 배포 후 URL: `https://asia-northeast3-keego-620b8.cloudfunctions.net/api`
@@ -30,8 +32,10 @@ Cloud Functions 안에서는 `admin.initializeApp()` 이 프로젝트 서비스�
 
 | 변수 | 의미 | 필수 |
 |------|------|------|
-| `KAKAO_APP_ID` | 카카오 앱의 **숫자 app_id**(access_token_info 가 돌려주는 값). 설정 시, 다른 앱에서 발급된 카카오 토큰을 401 로 거부 | 강력 권장 |
-| `NAVER_CLIENT_ID` | (후속) 네이버 code-교환용 client_id | 선택 |
+| `KAKAO_APP_ID` | 카카오 앱의 **숫자 app_id**(access_token_info 가 돌려주는 값) | **필수** (없으면 카카오 로그인 503) |
+| `NAVER_CLIENT_ID` | 네이버 앱 client_id (`lib/socialConfig.ts` 와 같은 값) | **필수** (없으면 네이버 로그인 503) |
+| `NAVER_CLIENT_SECRET` | 네이버 앱 client_secret | **필수** (동상) |
+| `NAVER_SEARCH_CLIENT_ID` / `_SECRET` | 네이버 **검색** API 키(가격 조회용 — 로그인 키와 별개) | 선택(없으면 가격 칸만 빔) |
 | `AUTH_RATE_MAX` | IP당 윈도 최대 요청수(기본 20) | 선택 |
 | `AUTH_RATE_WINDOW_MS` | 윈도 길이 ms(기본 60000) | 선택 |
 
@@ -39,10 +43,19 @@ Cloud Functions 안에서는 `admin.initializeApp()` 이 프로젝트 서비스�
 ```bash
 # functions/.env (gitignore 됨 — functions/.gitignore 확인)
 KAKAO_APP_ID=123456789
+NAVER_CLIENT_ID=xxxxxxxxxxxx
+NAVER_CLIENT_SECRET=xxxxxxxxxx
 ```
-- **카카오**: `access_token_info.app_id` 가 `KAKAO_APP_ID` 와 일치할 때만 토큰 수락(audience 검증).
-  `KAKAO_APP_ID` 미설정 시 검증은 건너뛰되(하위호환), 출시 전 반드시 설정할 것.
-- **네이버**: 공개 API 에 토큰→앱 introspection 이 없어 audience 직접 검증 불가. 진짜 바인딩은
-  클라가 accessToken 대신 *인가 code* 를 보내고 서버가 `NAVER_CLIENT_ID/SECRET` 으로 교환하는
-  방식이 필요(후속 작업). 현재는 토큰 유효성 + per-IP rate limit 으로 남용 제한.
+- **카카오**: `access_token_info.app_id` 가 `KAKAO_APP_ID` 와 일치할 때만 토큰 수락.
+  미설정이면 검증을 건너뛰는 게 아니라 **로그인을 거부한다(503, fail-closed)** — 오설정이
+  조용히 '검증 없음'으로 퇴화하면 그 순간부터 누구의 토큰으로든 계정이 열리기 때문.
+- **네이버**: 공개 API 에 토큰→앱 introspection 이 없다. 대신 앱이 보낸 **리프레시 토큰**을
+  `NAVER_CLIENT_ID/SECRET` 으로 교환하고(`grant_type=refresh_token`), 교환 성공 자체를
+  audience 증명으로 쓴다. 신원(`/nid/me`)은 **그 교환으로 새로 받은 토큰**으로만 조회한다 —
+  앱이 보낸 accessToken 을 쓰면 "내 리프레시 토큰 + 남의 액세스 토큰" 조합으로 계정 탈취가
+  그대로 가능하다. 카카오와 같이 fail-closed(503). 구현·테스트: `functions/naverAuth.js`,
+  `__tests__/naverAudience.test.js`.
+  - ⚠️ **배포 순서**: 이 함수를 먼저 배포해야 한다. 앱은 구·신 서버 모두와 호환되게
+    `accessToken` 과 `refreshToken` 을 함께 보내지만, 새 서버는 `refreshToken` 없는
+    옛 앱 빌드의 요청을 400 으로 거부한다.
 - 두 엔드포인트 모두 **per-IP rate limit**(기본 60초 20회 초과 시 429).

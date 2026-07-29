@@ -31,11 +31,17 @@ export async function resolveNaverFirebaseToken(): Promise<string> {
   }
   const accessToken = successResponse.accessToken;
   if (!accessToken) throw new Error('네이버 액세스 토큰을 받지 못했습니다.');
+  // 서버는 refreshToken 을 우리 앱 자격으로 교환해 이 토큰이 *우리 앱*에서 발급된 것인지
+  // 검증한다(네이버엔 토큰→발급앱 조회 API 가 없다 — functions/naverAuth.js 참조).
+  // 없으면 서버가 검증할 방법이 없으므로 여기서 먼저 정직하게 끊는다.
+  const refreshToken = successResponse.refreshToken;
+  if (!refreshToken) throw new Error('네이버 로그인 토큰이 불완전합니다. 다시 시도해 주세요.');
 
   const r = await fetch(`${SOCIAL_BACKEND}/api/auth/naver`, {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({accessToken}),
+    // accessToken 은 구 서버 호환용으로만 함께 보낸다(신 서버는 쓰지 않는다).
+    body: JSON.stringify({accessToken, refreshToken}),
   });
   if (!r || !r.ok) {
     const t = await (r ? r.text() : Promise.resolve('')).catch(() => '');

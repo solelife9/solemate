@@ -13,14 +13,16 @@
 //     ⚠️ fail-closed: KAKAO_APP_ID 가 주입되지 않은 배포에서는 검증을 건너뛰지 않고
 //     로그인 자체를 거부한다(503). 설정 누락이 조용히 '검증 없음'으로 퇴화하면
 //     그 순간부터 누구의 카카오 토큰으로든 계정을 열 수 있기 때문이다.
-//   · 네이버: 공개 API 에 토큰→발급앱(client_id) introspection 이 없다. 진짜 audience
-//     바인딩은 서버측 OAuth code 교환(NAVER_CLIENT_ID/SECRET)이 필요 — 후속(아래 NOTE).
-//     지금은 토큰 유효성 + rate limit 으로 남용을 제한한다.
+//   · 네이버: 공개 API 에 토큰→발급앱(client_id) introspection 이 없다. 대신 앱이 보낸
+//     **리프레시 토큰**을 우리 client_id/secret 으로 교환해(grant_type=refresh_token)
+//     교환 성공 자체를 audience 증명으로 쓴다. 신원은 그 교환으로 새로 받은 토큰으로만
+//     조회한다(근거·공격 시나리오는 ./naverAuth.js 헤더). 카카오와 같이 fail-closed(503).
 //   · 두 엔드포인트 모두 per-IP rate limit(무차별 토큰 시도 차단).
 //
 // 환경변수(배포 시 주입 — 코드에 시크릿 하드코딩 금지):
 //   KAKAO_APP_ID            카카오 앱의 *숫자* app_id(access_token_info 가 돌려주는 값).
-//   NAVER_CLIENT_ID         (후속 code-교환용) 네이버 앱 client_id.
+//   NAVER_CLIENT_ID         네이버 앱 client_id (audience 검증용 — 없으면 네이버 로그인 503).
+//   NAVER_CLIENT_SECRET     네이버 앱 client_secret (동상).
 //   AUTH_RATE_MAX           IP당 윈도 내 최대 요청수(기본 20).
 //   AUTH_RATE_WINDOW_MS     윈도 길이 ms(기본 60000).
 //
@@ -29,6 +31,7 @@
 const functions = require('firebase-functions/v1');
 const admin = require('firebase-admin');
 const express = require('express');
+const {verifyNaverIdentity} = require('./naverAuth');
 
 if (!admin.apps.length) {
   admin.initializeApp();
