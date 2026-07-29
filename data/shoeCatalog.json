@@ -2086,11 +2086,14 @@
     "version": "4",
     "variant": null,
     "collabWith": null,
-    "weight": null,
+    "weight": 240,
     "weightBasis": null,
-    "drop": null,
+    "drop": 5,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 34,
+      "forefoot": 29
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
@@ -2098,7 +2101,7 @@
       "후지스피드",
       "후지스피드 4"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "asics-fuji-speed-4",
     "brand": "ASICS",
@@ -3534,6 +3537,34 @@
       "슈블 2"
     ],
     "verified": true
+  },
+  {
+    "version": null,
+    "variant": "Ekiden",
+    "collabWith": null,
+    "weight": 252,
+    "weightBasis": null,
+    "drop": 8,
+    "plate": null,
+    "stackHeight": {
+      "heel": 45,
+      "forefoot": 37
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "아식스",
+      "슈퍼블라스트",
+      "슈블",
+      "에키덴",
+      "슈퍼블라스트 2 에키덴"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 650,
+    "id": "asics-superblast-2-ekiden",
+    "brand": "ASICS",
+    "model": "Superblast 2",
+    "category": "tempo"
   },
   {
     "id": "asics-superblast-3",
