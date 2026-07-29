@@ -10304,6 +10304,33 @@
     "version": "2",
     "variant": null,
     "collabWith": null,
+    "weight": 168,
+    "weightBasis": null,
+    "drop": 5,
+    "plate": null,
+    "stackHeight": {
+      "heel": 39,
+      "forefoot": 34
+    },
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "온",
+      "온러닝",
+      "클라우드붐",
+      "클라우드붐 스트라이크 2"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 450,
+    "id": "on-cloudboom-strike-2",
+    "brand": "On",
+    "model": "Cloudboom Strike",
+    "category": "racing"
+  },
+  {
+    "version": "2",
+    "variant": null,
+    "collabWith": null,
     "weight": null,
     "weightBasis": null,
     "drop": 5,
@@ -10948,11 +10975,14 @@
     "variant": null,
     "collabWith": null,
     "category": "trail",
-    "weight": null,
+    "weight": 295,
     "weightBasis": null,
-    "drop": null,
+    "drop": 5,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 35,
+      "forefoot": 30
+    },
     "releaseYear": null,
     "defaultLifespanKm": 650,
     "discontinued": false,
@@ -10966,7 +10996,7 @@
       "울트라",
       "울트라 2"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "on-cloudultra-3",
@@ -10998,6 +11028,30 @@
       "울트라 3"
     ],
     "verified": true
+  },
+  {
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "weight": 229,
+    "weightBasis": null,
+    "drop": 4,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": null,
+    "discontinued": false,
+    "searchAliases": [
+      "온",
+      "온러닝",
+      "클라우드울트라 피크",
+      "클라우드 울트라 피크"
+    ],
+    "verified": true,
+    "defaultLifespanKm": 650,
+    "id": "on-cloudultra-peak",
+    "brand": "On",
+    "model": "Cloudultra Peak",
+    "category": "trail"
   },
   {
     "version": null,
