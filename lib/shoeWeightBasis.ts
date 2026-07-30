@@ -101,6 +101,47 @@ export function normalizeWeightBasis(raw: string | null | undefined): string | n
 export const STANDARD_BASIS = '270mm';
 
 /**
+ * 사이즈 5mm 당 무게 차이(g). 같은 모델을 두 사이즈에서 잰 관측쌍에서 얻었다:
+ *
+ *   노바블라스트 6  249g@270 → 258g@275   +9g
+ *   슈퍼블라스트 3  230g@270 → 236g@275   +6g
+ *   젤 카야노 32    298g@270 → 304g@275   +6g
+ *   젤 큐물러스 27  261g@270 → 270g@275   +9g
+ *   norda 005      227g@270 → 230g@275   +3g
+ *   → 중앙값 6g · 범위 3~9g (즉 **±3g 불확실**)
+ *
+ * 신발끼리 실제 무게 차이가 보통 20~60g 이라 ±3g 은 부호도 크기도 뒤집지 않는다.
+ * 그래도 **추정은 추정이라 표시**해야 한다 — 비교 표는 이 보정을 쓴 차이에 `≈` 를 붙인다.
+ */
+export const GRAMS_PER_5MM = 6;
+
+const mmOf = (basis: string | null): number | null => {
+  if (!basis) return null;
+  const m = basis.match(/^(\d{3})mm$/);
+  return m ? Number(m[1]) : null;
+};
+
+/**
+ * `from` 사이즈에서 잰 무게를 `to` 사이즈 기준으로 **추정**한다.
+ *
+ * ⚠ 저장할 값이 아니다. `weightBasis` 규칙(무게는 환산하지 않는다)은 **데이터**에 대한
+ * 것이고, 이 함수는 **화면에서 비교할 때만** 쓴다. 카탈로그의 숫자는 손대지 않는다.
+ * 둘 중 하나라도 기준을 모르면 null — 모르는 걸 보정할 수는 없다.
+ */
+export function adjustWeightToBasis(
+  weight: number | null | undefined,
+  from: string | null | undefined,
+  to: string | null | undefined,
+): number | null {
+  if (weight == null || !Number.isFinite(weight)) return null;
+  const a = mmOf(normalizeWeightBasis(from));
+  const b = mmOf(normalizeWeightBasis(to));
+  if (a == null || b == null) return null;
+  if (a === b) return weight;
+  return weight + ((b - a) / 5) * GRAMS_PER_5MM;
+}
+
+/**
  * 두 신발의 무게를 **같은 잣대로 비교할 수 있는가.**
  * 하나라도 기준을 모르면 false — 모르는 걸 표준이라고 가정하면 없는 사실을 만든다.
  */

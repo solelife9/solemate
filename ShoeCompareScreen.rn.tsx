@@ -175,8 +175,13 @@ export default function ShoeCompareScreen({seed, onClose}: {
                     ) : (
                       <Text style={[s.textVal, i === 0 && s.textValBase]}>{c.value}</Text>
                     )}
-                    {(c.delta != null || c.sub != null) && (
-                      <Text style={[s.delta, i === 0 && s.deltaBase]}>{c.sub ?? c.delta}</Text>
+                    {/* 차이와 보조표기는 **둘 다** 필요하다. 예전엔 sub 가 있으면 delta 를
+                        가려서, 잰 사이즈가 다른 신발은 차이가 아예 안 보였다. */}
+                    {c.delta != null && (
+                      <Text style={[s.delta, i === 0 && s.deltaBase]}>{c.delta}</Text>
+                    )}
+                    {c.sub != null && (
+                      <Text style={[s.delta, i === 0 && s.deltaBase]}>{c.sub}</Text>
                     )}
                   </View>
                 ))}
