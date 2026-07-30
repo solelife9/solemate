@@ -14,6 +14,7 @@
 import {ShoeCategory, findShoeModel, getRecommendedLifespanKm} from '../data/shoeModels';
 import type {ShoeSpec} from './shoeCompare';
 import specsData from '../data/shoeSpecs.json';
+import {findCatalogShoe} from './shoeCatalogLookup';
 
 /**
  * 축의 근거를 화면에 밝히는 문구.
@@ -136,9 +137,49 @@ export function cushionFromStack(stackHeelMm: number): number {
 const OFFICIAL_SPECS: Readonly<Record<string, OfficialSpec>> =
   (specsData as {specs?: Record<string, OfficialSpec>}).specs ?? {};
 
-/** 확인된 스펙을 조회한다(없으면 undefined). 카탈로그 표기와 정확히 일치해야 잡힌다. */
+/**
+ * 카탈로그 문서(data/shoeCatalog.json)에서 스펙을 꺼내 OfficialSpec 형태로 맞춘다.
+ *
+ * 왜 필요한가(2026-07-30 감사): 스펙이 **두 곳에 따로** 쌓이고 있었다.
+ *   · `data/shoeSpecs.json`  — 71켤레. 이 모듈이 읽는다 → '다음 신발' 추천·비교가 쓴다.
+ *   · `data/shoeCatalog.json` — 491/624켤레. `lib/shoeCatalogLookup` 이 읽는다 →
+ *     '신발 비교' 화면만 쓴다.
+ * 즉 카탈로그에 힘들게 채운 스펙 420여 켤레가 '다음 신발'에는 도달하지 않았고, 그 축들이
+ * (CLAUDE.md 가 경고한 대로) 조용히 빠진 채였다. 두 표는 같은 데이터를 다른 이름으로
+ * 담고 있을 뿐이라 — weight↔weightG, drop↔dropMm, stackHeight.heel↔stackHeelMm —
+ * 여기서 이어준다.
+ */
+function specFromCatalog(brand: string, model: string): OfficialSpec | undefined {
+  const d = findCatalogShoe(brand, model);
+  if (!d) return undefined;
+  const out: OfficialSpec = {};
+  if (typeof d.weight === 'number' && d.weight > 0) out.weightG = d.weight;
+  if (typeof d.drop === 'number' && d.drop >= 0) out.dropMm = d.drop;
+  const heel = d.stackHeight?.heel;
+  if (typeof heel === 'number' && heel > 0) out.stackHeelMm = heel;
+  return Object.keys(out).length > 0 ? out : undefined;
+}
+
+/**
+ * 확인된 스펙을 조회한다(없으면 undefined).
+ *
+ * 우선순위: **손으로 검수한 표(shoeSpecs.json)가 이긴다.** 카탈로그는 표에 없는 모델과
+ * 표에서 비어 있는 축만 메운다 — 두 값이 다를 때 사람이 확인한 쪽을 버리지 않기 위해서다.
+ * (필드 단위 병합인 이유: 표에 무게만 있고 스택이 없는 항목이 실제로 있다.)
+ */
 export function lookupOfficialSpec(brand: string, model: string): OfficialSpec | undefined {
-  return OFFICIAL_SPECS[`${brand}|${model}`];
+  const table = OFFICIAL_SPECS[`${brand}|${model}`];
+  const catalog = specFromCatalog(brand, model);
+  if (!table) return catalog;
+  if (!catalog) return table;
+  const merged: OfficialSpec = {};
+  const weightG = table.weightG ?? catalog.weightG;
+  const stackHeelMm = table.stackHeelMm ?? catalog.stackHeelMm;
+  const dropMm = table.dropMm ?? catalog.dropMm;
+  if (weightG !== undefined) merged.weightG = weightG;
+  if (stackHeelMm !== undefined) merged.stackHeelMm = stackHeelMm;
+  if (dropMm !== undefined) merged.dropMm = dropMm;
+  return Object.keys(merged).length > 0 ? merged : undefined;
 }
 
 /** 스펙 표에 실린 모델 수(커버리지 리포트·테스트용). */
