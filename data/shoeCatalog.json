@@ -241,7 +241,7 @@
     "weight": 258,
     "weightBasis": "270mm",
     "drop": 6.5,
-    "plate": null,
+    "plate": "other",
     "stackHeight": {
       "heel": 37.5,
       "forefoot": 30.5
@@ -597,8 +597,8 @@
     "version": "2",
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
+    "weight": 291,
+    "weightBasis": "265mm",
     "drop": 9,
     "plate": null,
     "stackHeight": null,
@@ -624,7 +624,10 @@
     "weightBasis": null,
     "drop": 6,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 33,
+      "forefoot": 27
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
@@ -643,8 +646,8 @@
     "version": "7",
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
+    "weight": 319,
+    "weightBasis": "265mm",
     "drop": 6,
     "plate": null,
     "stackHeight": null,
@@ -670,7 +673,10 @@
     "weightBasis": null,
     "drop": 5,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 36,
+      "forefoot": 30
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
