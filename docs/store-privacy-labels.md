@@ -2,7 +2,13 @@
 
 > App Store "앱 개인정보" + Google Play "데이터 보안" 설문에 그대로 옮기는 답안.
 > 근거: 코드 실사(권한 문자열 Info.plist, 수집 지점 lib/*.ts). **광고·추적·IAP·Analytics SDK 0**,
-> Firebase Analytics 미사용 → **다른 앱/웹 추적 안 함**. 백엔드=Firebase(Auth·Firestore·Crashlytics·FCM).
+> Firebase Analytics 미사용 → **다른 앱/웹 추적 안 함**. 백엔드=Firebase(Auth·Firestore·Crashlytics).
+>
+> **원격 푸시(FCM) 미사용 — 푸시 토큰을 수집하지 않는다**(2026-07-30 결정,
+> `lib/featureFlags.REMOTE_PUSH_ENABLED=false`). 알림은 전부 기기 안에서 처리된다:
+> 러닝 리마인더는 OS 로컬 스케줄, 교체·주간 목표는 앱을 열 때 계산.
+> → 설문에서 **'기기 또는 기타 ID'에 푸시 토큰을 넣지 말 것.** 알림 권한은 요청하지만
+> 그건 기기 내 알림 표시용이다.
 
 ---
 

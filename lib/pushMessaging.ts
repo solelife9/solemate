@@ -25,6 +25,7 @@ import {
 
 import {type NotificationIntent} from './notifications';
 import {showDialog} from './dialog';
+import {REMOTE_PUSH_ENABLED} from './featureFlags';
 
 /** 한 알림 의도를 사용자에게 표시하는 함수(주입 가능 — 테스트/대체 표시 경로). */
 export type IntentPresenter = (intent: NotificationIntent) => void;
@@ -147,11 +148,21 @@ export async function initPushMessaging(opts?: {
   onForegroundMessage?: (message: unknown) => void;
   /** true 면 권한을 *요청하지 않고* 현재 상태만 본다(OS 다이얼로그 0회) — 부팅 경로용(심사 #3). */
   silent?: boolean;
+  /**
+   * 원격 푸시(토큰 취득) 사용 여부. 기본값은 lib/featureFlags.REMOTE_PUSH_ENABLED.
+   * 주입 가능한 이유: 플래그가 꺼져 있어도 **배선 자체는 계속 테스트돼야** 나중에 켤 때
+   * 썩어 있지 않다(끄면서 테스트를 지우면 재개봉 때 검증 없는 코드를 켜게 된다).
+   */
+  remotePush?: boolean;
 }): Promise<PushMessagingSetup> {
   const granted = opts?.silent
     ? isAuthorizedStatus(await getPushAuthStatus())
     : await requestPushPermission();
-  const token = granted ? await getPushToken() : null;
+  // 원격 푸시를 안 쓰기로 한 동안은 **토큰을 아예 받지 않는다**(2026-07-30).
+  // 권한은 그대로 요청한다 — 로컬 알림(러닝 리마인더)에 필요하다. 토큰만 건너뛴다:
+  // 보낼 서버가 없는데 받아두면 기기 식별자를 목적 없이 보관하는 셈이다(최소수집).
+  const remotePush = opts?.remotePush ?? REMOTE_PUSH_ENABLED;
+  const token = granted && remotePush ? await getPushToken() : null;
   const unsubscribe = opts?.onForegroundMessage
     ? registerForegroundMessageHandler(opts.onForegroundMessage)
     : () => {};
@@ -165,10 +176,12 @@ export async function initPushMessaging(opts?: {
 export const FCM_TOKEN_PENDING_KEY = 'fcm_token_pending';
 
 /**
- * FCM 토큰을 백엔드에 등록할 절대경로 엔드포인트. 아직 백엔드에 등록 라우트가 없으므로
- * 빈 문자열이다 — 이 경우 등록은 graceful no-op(토큰을 pending 키에 큐잉만 하고 POST 안
- * 함). 백엔드에 라우트가 생기면 이 상수에 URL 을 채우면 그때부터 POST 한다. (이 잡에서
- * 백엔드 repo 는 건드리지 않는다 — 앱 측 배선만.)
+ * FCM 토큰을 백엔드에 등록할 절대경로 엔드포인트.
+ *
+ * **비어 있는 것은 미완성이 아니라 결정이다**(2026-07-30). 원격 푸시를 쓰지 않기로 했고
+ * (lib/featureFlags.REMOTE_PUSH_ENABLED=false) 그래서 토큰을 받지도, 보낼 곳도 없다.
+ * 배선은 남겨둔다 — 소셜·운영 공지처럼 서버만 아는 알림이 생기면 그때 이 상수에 URL 을
+ * 채우고 플래그를 켠다. 이 상수가 비어 있으면 registerPushToken 은 no-op 이다.
  */
 export const FCM_REGISTER_ENDPOINT = '';
 
@@ -259,6 +272,8 @@ export async function setupPushMessaging(opts?: {
   userId?: string | null;
   onForegroundMessage?: (message: unknown) => void;
   endpoint?: string;
+  /** 원격 푸시 사용 여부 오버라이드(기본 = REMOTE_PUSH_ENABLED). 배선 테스트용. */
+  remotePush?: boolean;
   /** true 면 부팅 무프롬프트 배선 — 권한을 요청하지 않고 이미 허용된 경우에만 토큰을 취득한다(심사 #3). */
   silent?: boolean;
 }): Promise<PushWiring> {
@@ -270,6 +285,7 @@ export async function setupPushMessaging(opts?: {
     const setup = await initPushMessaging({
       onForegroundMessage: opts?.onForegroundMessage,
       silent: opts?.silent,
+      remotePush: opts?.remotePush,
     });
     await registerPushToken(setup.token, {
       userId: opts?.userId,

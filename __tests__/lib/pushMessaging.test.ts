@@ -162,6 +162,16 @@ describe('presentDue', () => {
 });
 
 describe('initPushMessaging', () => {
+  // 2026-07-30 결정: 원격 푸시를 쓰지 않기로 했다(lib/featureFlags.REMOTE_PUSH_ENABLED=false).
+  // 보낼 서버가 없는데 토큰을 받아두면 기기 식별자를 목적 없이 보관하는 것이라 최소수집
+  // 원칙에 어긋난다. **권한은 계속 요청한다** — 로컬 알림(러닝 리마인더)에 필요하다.
+  test('기본값에서는 권한만 얻고 토큰은 받지 않는다(원격 푸시 미사용)', async () => {
+    const setup = await initPushMessaging();
+    expect(setup.granted).toBe(true); // 권한은 그대로 요청·획득
+    expect(setup.token).toBeNull(); // 토큰은 취득하지 않음
+    expect(tokenMock).not.toHaveBeenCalled();
+  });
+
   test('권한 허용 시 토큰을 취득하고 포그라운드 핸들러를 등록한다', async () => {
     const unsub = jest.fn();
     onMessageMock.mockImplementationOnce((_m, listener) => {
@@ -171,7 +181,7 @@ describe('initPushMessaging', () => {
     });
     const onForegroundMessage = jest.fn();
 
-    const setup = await initPushMessaging({onForegroundMessage});
+    const setup = await initPushMessaging({onForegroundMessage, remotePush: true});
 
     expect(setup.granted).toBe(true);
     expect(setup.token).toBe('mock-fcm-token');
@@ -267,7 +277,7 @@ describe('registerTokenRefreshHandler (a4 onTokenRefresh)', () => {
 
 describe('setupPushMessaging (a4 부팅 배선 — 비차단)', () => {
   test('정상 경로: 토큰을 fcm_token_pending 에 영속하고 포그라운드/토큰갱신 핸들러를 등록한다', async () => {
-    const wiring = await setupPushMessaging({onForegroundMessage: jest.fn()});
+    const wiring = await setupPushMessaging({onForegroundMessage: jest.fn(), remotePush: true});
     await expect(AsyncStorage.getItem(FCM_TOKEN_PENDING_KEY)).resolves.toBe('mock-fcm-token');
     expect(onMessageMock).toHaveBeenCalledTimes(1);
     expect(onTokenRefreshMock).toHaveBeenCalledTimes(1);
@@ -315,7 +325,7 @@ describe('silent 부팅 배선 — OS 다이얼로그 0회', () => {
     // 앞 테스트가 큐에 남긴 미소비 mockRejectedValueOnce 를 리셋으로 비운다(Once 큐가 우선이라 필수).
     tokenMock.mockReset();
     tokenMock.mockResolvedValue('mock-fcm-token');
-    const setup = await initPushMessaging({silent: true});
+    const setup = await initPushMessaging({silent: true, remotePush: true});
     expect(reqMock).not.toHaveBeenCalled();
     expect(setup.granted).toBe(true);
     expect(setup.token).toBe('mock-fcm-token');
