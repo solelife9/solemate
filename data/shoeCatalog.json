@@ -838,9 +838,12 @@
     "category": "daily",
     "weight": null,
     "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "drop": 10,
+    "plate": "none",
+    "stackHeight": {
+      "heel": 34,
+      "forefoot": 24
+    },
     "releaseYear": 2025,
     "defaultLifespanKm": 650,
     "discontinued": false,
@@ -851,7 +854,7 @@
       "슈퍼노바",
       "슈퍼노바 2"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "adidas-supernova-rise-3",
@@ -911,11 +914,14 @@
     "variant": null,
     "collabWith": null,
     "category": "stability",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 280,
+    "weightBasis": "US9",
+    "drop": 8,
+    "plate": "none",
+    "stackHeight": {
+      "heel": 36,
+      "forefoot": 28
+    },
     "releaseYear": 2026,
     "defaultLifespanKm": 700,
     "discontinued": false,
@@ -926,7 +932,7 @@
       "슈퍼노바",
       "슈퍼노바 3"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "adidas-supernova-stride",
@@ -2125,9 +2131,9 @@
     "variant": null,
     "collabWith": null,
     "category": "daily",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
+    "weight": 274,
+    "weightBasis": "기준 미표기",
+    "drop": 8,
     "plate": null,
     "stackHeight": null,
     "releaseYear": null,
@@ -2136,7 +2142,7 @@
     "searchAliases": [
       "아식스"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "asics-gel-cumulus-25",
@@ -2295,9 +2301,9 @@
     "variant": null,
     "collabWith": null,
     "category": "stability",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
+    "weight": 299,
+    "weightBasis": "기준 미표기",
+    "drop": 10,
     "plate": null,
     "stackHeight": null,
     "releaseYear": null,
@@ -2310,7 +2316,7 @@
       "카야노",
       "카야노 29"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "asics-gel-kayano-30",
@@ -2587,9 +2593,9 @@
     "variant": null,
     "collabWith": null,
     "category": "daily",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
+    "weight": 240,
+    "weightBasis": "기준 미표기",
+    "drop": 8,
     "plate": null,
     "stackHeight": null,
     "releaseYear": null,
@@ -2598,7 +2604,7 @@
     "searchAliases": [
       "아식스"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "asics-gel-sonoma-7",
@@ -2610,7 +2616,7 @@
     "category": "trail",
     "weight": null,
     "weightBasis": null,
-    "drop": null,
+    "drop": 8,
     "plate": null,
     "stackHeight": null,
     "releaseYear": null,
@@ -2619,7 +2625,7 @@
     "searchAliases": [
       "아식스"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "version": "12",
@@ -2700,9 +2706,12 @@
     "collabWith": null,
     "weight": null,
     "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "drop": 8,
+    "plate": "other",
+    "stackHeight": {
+      "heel": 36,
+      "forefoot": 28
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
@@ -2710,7 +2719,7 @@
       "젤트라부코",
       "고어텍스"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "asics-gel-trabuco-13-gtx",
     "brand": "ASICS",
@@ -3065,9 +3074,9 @@
     "version": "5",
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
+    "weight": 265,
+    "weightBasis": "기준 미표기",
+    "drop": 10,
     "plate": null,
     "stackHeight": null,
     "releaseYear": null,
@@ -3077,7 +3086,7 @@
       "졸트",
       "졸트 5"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "asics-jolt-5",
     "brand": "ASICS",
@@ -3714,9 +3723,12 @@
     "collabWith": null,
     "weight": null,
     "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "drop": 5,
+    "plate": "none",
+    "stackHeight": {
+      "heel": 40,
+      "forefoot": 35
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
@@ -3724,7 +3736,7 @@
       "트라부코 맥스",
       "트라부코 맥스 5"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "asics-trabuco-max-5",
     "brand": "ASICS",
@@ -6352,8 +6364,8 @@
     "category": "trail",
     "weight": null,
     "weightBasis": null,
-    "drop": null,
-    "plate": null,
+    "drop": 5,
+    "plate": "none",
     "stackHeight": null,
     "releaseYear": 2025,
     "defaultLifespanKm": 650,
@@ -6361,7 +6373,7 @@
     "searchAliases": [
       "호카"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "version": "5",
@@ -9864,11 +9876,14 @@
     "version": "4",
     "variant": "GTX",
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 272,
+    "weightBasis": "US9",
+    "drop": 10,
+    "plate": "none",
+    "stackHeight": {
+      "heel": 37,
+      "forefoot": 27
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
@@ -9876,7 +9891,7 @@
       "페가수스 트레일",
       "고어텍스"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "nike-pegasus-trail-4-gtx",
     "brand": "Nike",
@@ -10945,11 +10960,14 @@
     "variant": null,
     "collabWith": null,
     "category": "daily",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 272,
+    "weightBasis": "US9",
+    "drop": 6,
+    "plate": "none",
+    "stackHeight": {
+      "heel": 37,
+      "forefoot": 31
+    },
     "releaseYear": null,
     "defaultLifespanKm": 650,
     "discontinued": false,
@@ -10957,7 +10975,7 @@
       "온",
       "온러닝"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "version": "6",
@@ -13198,11 +13216,14 @@
     "variant": null,
     "collabWith": null,
     "category": "trail",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 201,
+    "weightBasis": "US9",
+    "drop": 6,
+    "plate": "none",
+    "stackHeight": {
+      "heel": 29,
+      "forefoot": 23
+    },
     "releaseYear": 2024,
     "defaultLifespanKm": 650,
     "discontinued": false,
@@ -13211,7 +13232,7 @@
       "펄사",
       "펄사 3"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "version": "4",
@@ -15072,8 +15093,8 @@
     "category": "trail",
     "weight": null,
     "weightBasis": null,
-    "drop": null,
-    "plate": null,
+    "drop": 5,
+    "plate": "none",
     "stackHeight": null,
     "releaseYear": null,
     "defaultLifespanKm": 650,
@@ -15081,7 +15102,7 @@
     "searchAliases": [
       "토포"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "version": "4",
