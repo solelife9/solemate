@@ -187,8 +187,8 @@
     "version": "3",
     "variant": null,
     "collabWith": null,
-    "weight": 96,
-    "weightBasis": "US9",
+    "weight": null,
+    "weightBasis": null,
     "drop": 3,
     "plate": null,
     "stackHeight": {
@@ -2491,7 +2491,7 @@
     "drop": 8,
     "plate": "none",
     "stackHeight": {
-      "heel": 37,
+      "heel": 43,
       "forefoot": 35
     },
     "releaseYear": 2025,
@@ -3193,11 +3193,14 @@
     "variant": null,
     "collabWith": null,
     "category": "racing",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 209,
+    "weightBasis": "US9",
+    "drop": 5,
+    "plate": "carbon",
+    "stackHeight": {
+      "heel": 37,
+      "forefoot": 32
+    },
     "releaseYear": null,
     "defaultLifespanKm": 450,
     "discontinued": false,
@@ -3205,7 +3208,7 @@
       "아식스",
       "메타스피드"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "asics-metaspeed-edge-paris",
@@ -4459,11 +4462,14 @@
     "variant": null,
     "collabWith": null,
     "category": "recovery",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 300,
+    "weightBasis": "US9",
+    "drop": 10,
+    "plate": "none",
+    "stackHeight": {
+      "heel": 38,
+      "forefoot": 28
+    },
     "releaseYear": null,
     "defaultLifespanKm": 700,
     "discontinued": false,
@@ -4472,7 +4478,7 @@
       "글리세린",
       "글리세린 20"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "brooks-glycerin-21",
@@ -4781,11 +4787,14 @@
     "variant": null,
     "collabWith": null,
     "category": "racing",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 218,
+    "weightBasis": "US9",
+    "drop": 8,
+    "plate": "carbon",
+    "stackHeight": {
+      "heel": 40,
+      "forefoot": 32
+    },
     "releaseYear": null,
     "defaultLifespanKm": 450,
     "discontinued": false,
@@ -4796,7 +4805,7 @@
       "엘리트",
       "엘리트 4"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "brooks-hyperion-elite-4-pb",
@@ -5304,18 +5313,21 @@
     "variant": null,
     "collabWith": null,
     "category": "trail",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 275,
+    "weightBasis": "US9",
+    "drop": 5,
+    "plate": "none",
+    "stackHeight": {
+      "heel": 37,
+      "forefoot": 32
+    },
     "releaseYear": 2024,
     "defaultLifespanKm": 650,
     "discontinued": false,
     "searchAliases": [
       "호카"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "version": "8",
@@ -5697,11 +5709,14 @@
     "variant": null,
     "collabWith": null,
     "category": "daily",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 212,
+    "weightBasis": "US9",
+    "drop": 5,
+    "plate": "none",
+    "stackHeight": {
+      "heel": 30,
+      "forefoot": 25
+    },
     "releaseYear": null,
     "defaultLifespanKm": 650,
     "discontinued": false,
@@ -5710,7 +5725,7 @@
       "마하",
       "마하 5"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "hoka-mach-6",
@@ -5875,11 +5890,14 @@
     "variant": null,
     "collabWith": null,
     "category": "trail",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 280,
+    "weightBasis": "US9",
+    "drop": 4,
+    "plate": "none",
+    "stackHeight": {
+      "heel": 40,
+      "forefoot": 36
+    },
     "releaseYear": 2023,
     "defaultLifespanKm": 650,
     "discontinued": false,
@@ -5888,7 +5906,7 @@
       "마파테",
       "마파테 4"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "version": "4",
@@ -8278,11 +8296,14 @@
     "variant": null,
     "collabWith": null,
     "category": "recovery",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 263,
+    "weightBasis": "US9",
+    "drop": 6,
+    "plate": "none",
+    "stackHeight": {
+      "heel": 37,
+      "forefoot": 31
+    },
     "releaseYear": null,
     "defaultLifespanKm": 700,
     "discontinued": false,
@@ -8300,17 +8321,20 @@
       "1080 13",
       "텐에이티 13"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "version": "14",
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
+    "weight": 280,
+    "weightBasis": "US9",
+    "drop": 6,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 39,
+      "forefoot": 33
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
@@ -8327,7 +8351,7 @@
       "1080 14",
       "텐에이티 14"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "new-balance-fresh-foam-x-1080-14",
     "brand": "New Balance",
@@ -8405,11 +8429,14 @@
     "variant": null,
     "collabWith": null,
     "category": "stability",
-    "weight": null,
-    "weightBasis": null,
+    "weight": 298,
+    "weightBasis": "US9",
     "drop": 8,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 38,
+      "forefoot": 30
+    },
     "releaseYear": null,
     "defaultLifespanKm": 700,
     "discontinued": false,
@@ -8705,11 +8732,14 @@
     "version": "4",
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 309,
+    "weightBasis": "US9",
+    "drop": 4,
+    "plate": "none",
+    "stackHeight": {
+      "heel": 38,
+      "forefoot": 34
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
@@ -8722,7 +8752,7 @@
       "프레쉬폼x 4",
       "모어 4"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 700,
     "id": "new-balance-fresh-foam-x-more-4",
     "brand": "New Balance",
@@ -8799,10 +8829,10 @@
     "variant": null,
     "collabWith": null,
     "category": "stability",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
+    "weight": 309,
+    "weightBasis": "US9",
+    "drop": 6,
+    "plate": "none",
     "stackHeight": null,
     "releaseYear": 2024,
     "defaultLifespanKm": 700,
@@ -8817,7 +8847,7 @@
       "프레쉬폼x 6",
       "본고 6"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "new-balance-fuelcell-propel-4",
@@ -9125,10 +9155,10 @@
     "version": "2",
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
+    "weight": 275,
+    "weightBasis": "US9",
+    "drop": 8,
+    "plate": "carbon",
     "stackHeight": null,
     "releaseYear": null,
     "discontinued": false,
@@ -9142,7 +9172,7 @@
       "슈퍼컴프 2",
       "SC 트레이너 2"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "new-balance-fuelcell-supercomp-trainer-2",
     "brand": "New Balance",
@@ -10413,11 +10443,14 @@
     "version": "8",
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
+    "weight": 323,
+    "weightBasis": "US9",
     "drop": 9,
-    "plate": null,
-    "stackHeight": null,
+    "plate": "other",
+    "stackHeight": {
+      "heel": 35.5,
+      "forefoot": 27.5
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
@@ -10959,9 +10992,12 @@
     "category": "daily",
     "weight": null,
     "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "drop": 6,
+    "plate": "none",
+    "stackHeight": {
+      "heel": 30,
+      "forefoot": 24
+    },
     "releaseYear": null,
     "defaultLifespanKm": 650,
     "discontinued": false,
@@ -10969,7 +11005,7 @@
       "온",
       "온러닝"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "version": "4",
@@ -12071,9 +12107,12 @@
     "category": "racing",
     "weight": null,
     "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "drop": 6,
+    "plate": "carbon",
+    "stackHeight": {
+      "heel": 36,
+      "forefoot": 30
+    },
     "releaseYear": null,
     "defaultLifespanKm": 450,
     "discontinued": false,
@@ -12084,7 +12123,7 @@
       "디비에이트",
       "디비에이트 2"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "puma-deviate-nitro-elite-3",
@@ -13010,10 +13049,10 @@
     "version": null,
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
+    "weight": 258,
+    "weightBasis": "US9",
+    "drop": 8,
+    "plate": "none",
     "stackHeight": null,
     "releaseYear": null,
     "discontinued": false,
@@ -13022,7 +13061,7 @@
       "에스랩",
       "S랩 제네시스"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "salomon-s-lab-genesis",
     "brand": "Salomon",
@@ -13439,11 +13478,14 @@
     "variant": null,
     "collabWith": null,
     "category": "trail",
-    "weight": null,
-    "weightBasis": null,
+    "weight": 297,
+    "weightBasis": "US9",
     "drop": 10,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 36,
+      "forefoot": 26
+    },
     "releaseYear": 2023,
     "defaultLifespanKm": 650,
     "discontinued": false,
@@ -13739,11 +13781,14 @@
     "variant": null,
     "collabWith": null,
     "category": "racing",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 207,
+    "weightBasis": "US9",
+    "drop": 8,
+    "plate": "carbon",
+    "stackHeight": {
+      "heel": 39,
+      "forefoot": 31
+    },
     "releaseYear": null,
     "defaultLifespanKm": 450,
     "discontinued": false,
@@ -13753,7 +13798,7 @@
       "엔돌핀",
       "엔돌핀 3"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "saucony-endorphin-pro-4",
@@ -14324,10 +14369,10 @@
     "variant": null,
     "collabWith": null,
     "category": "daily",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
+    "weight": 250,
+    "weightBasis": "US9",
+    "drop": 8,
+    "plate": "none",
     "stackHeight": null,
     "releaseYear": null,
     "defaultLifespanKm": 650,
@@ -14338,7 +14383,7 @@
       "라이드",
       "라이드 16"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "saucony-ride-17",
@@ -14425,10 +14470,10 @@
     "version": null,
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
+    "weight": 292,
+    "weightBasis": "US9",
+    "drop": 8,
+    "plate": "none",
     "stackHeight": null,
     "releaseYear": null,
     "discontinued": false,
@@ -14437,7 +14482,7 @@
       "써코니",
       "라이드 TR"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "saucony-ride-tr",
     "brand": "Saucony",

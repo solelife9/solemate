@@ -122,6 +122,42 @@ export function validateShoes(shoes: readonly ShoeDoc[]): ValidateResult {
     }
   }
 
+  // 3-1) 값끼리 앞뒤가 맞는지 — 소스에서 잘못 읽어 오는 걸 여기서 잡는다.
+  //      드롭의 정의가 '뒤꿈치 − 앞발'이므로 셋이 서로를 검산한다. 어긋나면 어느 하나가
+  //      틀린 것이고, 비교 화면은 그 틀린 값을 그대로 보여준다(사용자가 알 방법이 없다).
+  //      범위는 러닝화로서 있을 수 있는 폭이다 — 넘으면 자릿수를 잘못 읽었을 가능성이 크다.
+  for (const s of shoes) {
+    const st = s.stackHeight;
+    if (st && typeof st.heel === 'number' && typeof st.forefoot === 'number') {
+      if (st.forefoot > st.heel + 0.01) {
+        issues.push({
+          level: 'error',
+          id: s.id,
+          message: `앞발(${st.forefoot})이 뒤꿈치(${st.heel})보다 높다 — 두 값이 바뀐 듯`,
+        });
+      }
+      if (typeof s.drop === 'number' && Math.abs(st.heel - st.forefoot - s.drop) > 1.01) {
+        issues.push({
+          level: 'error',
+          id: s.id,
+          message: `드롭 불일치: ${st.heel} − ${st.forefoot} = ${
+            Math.round((st.heel - st.forefoot) * 10) / 10
+          } 인데 drop 은 ${s.drop}`,
+        });
+      }
+    }
+    if (typeof s.weight === 'number' && (s.weight < 120 || s.weight > 420)) {
+      issues.push({level: 'warn', id: s.id, message: `무게 ${s.weight}g — 러닝화 범위를 벗어난다`});
+    }
+    if (typeof s.drop === 'number' && (s.drop < 0 || s.drop > 15)) {
+      issues.push({level: 'warn', id: s.id, message: `드롭 ${s.drop}mm — 범위를 벗어난다`});
+    }
+    // 상한 65 — 미즈노 웨이브 리벨리온 프로 3 이 실제로 61mm 다(아카이브 원본 확인).
+    if (st && typeof st.heel === 'number' && (st.heel < 10 || st.heel > 65)) {
+      issues.push({level: 'warn', id: s.id, message: `뒤꿈치 스택 ${st.heel}mm — 범위를 벗어난다`});
+    }
+  }
+
   // 4) searchAliases 빈 문서 — 한글로 검색하는 사용자가 못 찾는다.
   for (const s of shoes) {
     if (Array.isArray(s.searchAliases) && s.searchAliases.length === 0) {
