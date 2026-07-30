@@ -22,8 +22,44 @@ const SIDECARS = {
   hrTrack: 'hrTrack_',
   gapTrack: 'gapTrack_',
   track: 'track_',
+  // GPS 경로(2026-07-30). 여기 합류시키는 이유는 두 가지다.
+  //  1) 지금까지 경로가 재설치를 넘어 살아남는 유일한 길은 **백업 문서 본문의 run.route**
+  //     였다. 그런데 그 문서는 신발·런 전량이 들어가는 단일 문서이고 Firestore 상한이
+  //     1MiB 다. 실측(2026-07-30, 주 계정)에서 경로 있는 런 12건이 런 데이터의 74%를
+  //     차지했다 — 경로가 문서를 밀어 올리는 주범이다.
+  //  2) 상세 사이드카는 이미 '단일 문서에 못 싣는 것'을 런별 하위 문서로 빼려고 만든
+  //     자리다. 경로만 예외로 본문에 남아 있었을 뿐, 성격은 시계열과 같다.
+  // 이 한 줄로 push·pull·복원·시그니처가 전부 따라온다. 본문 route 제거는 **다음 단계**다
+  // — 새 집에 짐이 들어간 것을 확인하기 전에 옛 집을 비우면 그게 유실이다.
+  route: 'route_',
 } as const;
 type SidecarKey = keyof typeof SIDECARS;
+
+/**
+ * 이 런의 경로가 **클라우드 사이드카에 확실히 올라가 있는가**.
+ *
+ * 판단 근거는 push 성공 시에만 기록되는 마커(detail_pushed_<id>)의 시그니처다. 시그니처는
+ * `route:N` 형태로 키별 길이를 담으므로, N>0 이면 그 시점에 경로가 실제로 실려 올라갔다는
+ * 뜻이다(빈 배열은 collectLocalDetail 이 애초에 담지 않는다).
+ *
+ * 왜 필요한가: 백업 문서 본문에서 route 를 빼도 되는지 판정하는 **유일한 안전 조건**이다.
+ * 사이드카에 없는데 본문에서 빼면 그 경로는 어디에도 남지 않는다.
+ */
+export async function runsWithCloudRoute(runIds: readonly (string | number)[]): Promise<Set<string>> {
+  const out = new Set<string>();
+  const ids = runIds.map(String).filter(Boolean);
+  if (!ids.length) return out;
+  try {
+    const got = await AsyncStorage.getMany(ids.map(pushedKey));
+    for (const id of ids) {
+      const sig = got[pushedKey(id)];
+      if (typeof sig === 'string' && /(^|\|)route:([1-9]\d*)(\||$)/.test(sig)) out.add(id);
+    }
+  } catch {
+    /* 마커를 못 읽으면 '확인 안 됨' = 본문 route 를 그대로 둔다(안전한 기본값) */
+  }
+  return out;
+}
 
 /** 시계열 상한(점) — 1점/s 기준 3시간. 초과는 균등 다운샘플(lib/geo.simplifyRoute 규약). */
 export const DETAIL_SERIES_CAP = 10800;

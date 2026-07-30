@@ -105,7 +105,7 @@ import {getDistancePBs, PB_CACHE_KEY} from './lib/distancePBStore';
 import type {RunBestEfforts} from './lib/bestEfforts';
 import {hkSaveRunWorkout, hkBackfillHeartRate, hkEnsureLinked, hkFindRunWorkoutWindow} from './lib/healthkit';
 import {registerRunForHr, saveWatchHrTrack, retryPendingHr, avgBpmFromTrack, hasHrTrack} from './lib/hrBackfill';
-import {syncRunDetails} from './lib/runDetailSync';
+import {syncRunDetails, runsWithCloudRoute} from './lib/runDetailSync';
 import {liveActivity} from './lib/liveActivity';
 import {watchSession} from './lib/watchSession';
 import {assessTrainingLoad, loadRatioPhraseKo, LOAD_WORD, LoadLevel} from './lib/trainingLoad';
@@ -124,7 +124,7 @@ import {getAuth, onAuthStateChanged} from '@react-native-firebase/auth';
 import {syncRemoteCatalog} from './lib/shoeCatalogRemote';
 import {setRemoteShoeDocs} from './lib/shoeCatalogStore';
 import {LoginScreen} from './LoginScreen.rn';
-import {stampUpdatedAt, markDeleted, partitionTombstones, mergeCloudData, mergeMedals, liveRecords, reconcileLivePreservingLocal, unionTombstones} from './lib/cloudSync';
+import {stampUpdatedAt, markDeleted, partitionTombstones, mergeCloudData, mergeMedals, liveRecords, reconcileLivePreservingLocal, unionTombstones, stripSyncedRoutes} from './lib/cloudSync';
 import {publishMyRanking} from './lib/progression/firestoreRankingStore';
 import {LEADERBOARD_PUBLISH_ENABLED} from './lib/featureFlags';
 import {genRunId, genShoeId} from './lib/genId';
@@ -1171,6 +1171,10 @@ function Main(){
   // (mergeCloudData)이라 어느 쪽 레코드도 버리지 않는다. 동시 실행은 ref 락으로 막는다.
   // REST 의존은 Phase 5(task#5)에서 제거 — 이 단계는 Firestore 를 정본으로 '켜는' 것.
   const cloudSyncBusyRef=useRef(false);
+  // 경로가 클라우드 사이드카(runDetails/{runId})에 확실히 올라간 런 id 집합. 이 런들만
+  // 동기 페이로드에서 route 를 덜어낸다(stripSyncedRoutes) — 백업 문서 1MiB 상한 방어.
+  // 비어 있으면 아무것도 덜어내지 않는다(안전한 기본값). 상세 스윕 뒤에 갱신된다.
+  const cloudRouteIdsRef=useRef<Set<string>>(new Set());
   // 머지된 payload 로 내 월간 랭킹 엔트리를 계산·발행한다. 점수는 live 레코드 기준,
   // 표시정보(닉네임/랭크/색/장착 타이틀)는 현재 progression 파생. best-effort(throw 흡수).
   // ⚠️ 2026-07-29 감사로 **플래그 오프**. 랭킹 화면 진입점이 없는데도 닉네임·월간 거리가
@@ -1210,11 +1214,14 @@ function Main(){
       // P1-4: 원자 동기(pull→merge→push 를 한 트랜잭션) 우선 — 동시-기기 클로버 방지.
       // 미구현 포트(테스트 스텁)면 비원자 pull→merge→push 로 폴백한다(동작 동일, 경합만 노출).
       let merged:BackupPayload;
+      // 올릴 때만 경로를 덜어낸다 — 사이드카에 확실히 올라간 런 한정(백업 문서 1MiB 방어).
+      // 내보내기용 backupData 자체는 건드리지 않는다(사용자 백업 파일은 자기 완결적이어야 한다).
+      const syncPayload=stripSyncedRoutes(backupData,cloudRouteIdsRef.current);
       if(port.syncMerge){
-        merged=await port.syncMerge(backupData,mergeCloudData);
+        merged=await port.syncMerge(syncPayload,mergeCloudData);
       }else{
         const remote=await port.pull();
-        merged=mergeCloudData(backupData,remote);
+        merged=mergeCloudData(syncPayload,remote);
         await port.push(merged);
       }
       applyBackupPayload(merged);
@@ -1562,6 +1569,9 @@ function Main(){
         if(Date.now()-last<24*3600*1000)return;
         await syncRunDetails((runsForHrRef.current||[]) as {id:string|number}[],cloudPortRef.current,{max:30});
         await AsyncStorage.setItem(DETAIL_SWEEP_AT_KEY,String(Date.now()));
+        // 스윕 직후 '경로가 사이드카에 올라간 런'을 다시 셈해 둔다 — 다음 클라우드 동기부터
+        // 그 런들의 route 를 본문에서 덜어내 백업 문서가 점진적으로 줄어든다.
+        if(alive)cloudRouteIdsRef.current=await runsWithCloudRoute(((runsForHrRef.current||[]) as {id:string|number}[]).map(r=>r.id));
       }catch{/* 비차단 — 다음 기회 */}
     };
     const t=setTimeout(()=>{void sweep();},15000);

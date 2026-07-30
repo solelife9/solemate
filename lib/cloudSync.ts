@@ -259,6 +259,41 @@ function mergeRecords(local: unknown[], remote: unknown[]): unknown[] {
  * remote 가 null(원격 없음)이면 local 을 그대로 반환한다.
  * iron law: 어느 쪽 레코드도 절대 버리지 않는다(데이터 파괴 금지).
  */
+/**
+ * 클라우드로 **올릴 페이로드에서만** 경로(route)를 덜어낸다 — 사이드카에 확실히 올라간 런 한정.
+ *
+ * 왜: 백업 문서(userBackups/{uid})는 신발·런 전량이 들어가는 단일 문서이고 Firestore 상한이
+ * 1MiB 다. 실측(2026-07-30)에서 경로가 런 데이터의 74%를 차지했다 — 이대로면 GPS 런 약
+ * 163건에서 상한에 닿고, 넘으면 쓰기가 실패하는데 호출부가 그 실패를 삼킨다.
+ *
+ * 안전 조건은 하나뿐이다: **그 런의 경로가 이미 클라우드 사이드카(runDetails/{runId})에
+ * 있을 때만** 덜어낸다(`confirmed`). 사이드카에 없는 런은 손대지 않는다 — 본문에서 빼는
+ * 순간 그 경로는 어디에도 남지 않기 때문이다. 그래서 문서는 스윕이 돌면서 **점진적으로**
+ * 줄어들고, 어느 시점에 중단돼도 유실이 없다.
+ *
+ * 이 함수는 **동기 페이로드 전용**이다. 사용자가 내보내는 백업 파일(serializeBackup)에는
+ * 적용하지 않는다 — 내보내기는 자기 완결적이어야 하므로 경로를 그대로 담아야 한다.
+ *
+ * 순수 함수: 입력을 변형하지 않는다.
+ */
+export function stripSyncedRoutes<T extends {runs?: unknown[]}>(
+  payload: T,
+  confirmed: ReadonlySet<string>,
+): T {
+  if (!confirmed || confirmed.size === 0 || !Array.isArray(payload?.runs)) return payload;
+  let changed = false;
+  const runs = payload.runs.map(r => {
+    if (!r || typeof r !== 'object') return r;
+    const rec = r as Record<string, unknown>;
+    const id = rec.id == null ? '' : String(rec.id);
+    if (!id || !confirmed.has(id)) return r;
+    if (!rec.route) return r; // 이미 비어 있음
+    changed = true;
+    return {...rec, route: ''};
+  });
+  return changed ? {...payload, runs} : payload;
+}
+
 export function mergeCloudData(local: BackupPayload, remote: BackupPayload | null): BackupPayload {
   if (remote == null) {
     return local;
