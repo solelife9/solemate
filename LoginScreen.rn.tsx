@@ -158,32 +158,8 @@ export function LoginScreen({cloudPort, onSignedIn}: LoginScreenProps) {
           <Text testID="login-error" style={st.error}>{error}</Text>
         )}
 
-        {/* 로그인 없이 시작(2026-07-30 민우님 결정).
-            keego 의 핵심 — 러닝 기록과 신발 수명 — 은 전부 기기 안에서 완결된다(클라우드
-            동기는 uid 가 없으면 조용히 건너뛴다). 그런데 첫 화면이 소셜 로그인 4개를
-            강제하고 있었다: 이탈의 최대 단일 요인이자, "계정 기반 기능이 핵심이 아니면
-            로그인 없이 쓸 수 있게 하라"는 심사 지침에 걸릴 수 있는 형태였다.
-            Firebase 익명 로그인은 '로그인 없음'이 아니라 **익명 계정**이라 uid 가 생기고,
-            나중에 소셜로 갈아탈 때 cloudSync.migrateDeviceToAccount 가 기록을 옮긴다.
-            시각적으로는 소셜 버튼과 경쟁하지 않게 텍스트 링크 급으로 둔다 — 권장 경로는
-            여전히 로그인이다(기기 변경 시 복원되므로). */}
-        <Pressable
-          testID="login-anonymous"
-          onPress={() => signIn('anonymous')}
-          disabled={signingIn}
-          accessibilityRole="button"
-          accessibilityLabel="로그인 없이 시작하기"
-          accessibilityState={{disabled: signingIn}}
-          hitSlop={12}
-          style={({pressed}) => [st.skipBtn, pressed && st.pressed]}>
-          {busy === 'anonymous'
-            ? <ActivityIndicator color={T2} />
-            : <Text style={st.skipTxt}>로그인 없이 먼저 둘러볼게요</Text>}
-        </Pressable>
-
         <Text style={st.footnote}>
           로그인하면 신발·러닝 기록·설정이 안전하게 보관되고, 기기를 바꿔도 그대로 이어져요.
-          {'\n'}로그인 없이 시작하면 기록은 이 기기에만 저장돼요 — 나중에 로그인하면 그대로 옮겨가요.
         </Text>
       </View>
     </View>
@@ -212,9 +188,5 @@ const st = StyleSheet.create({
   btnNaver: {backgroundColor: NAVER_GREEN},
   btnTxt: {color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600'},
   error: {fontFamily: FONT, fontSize: TYPE.label.fontSize, color: DANGER, textAlign: 'center', marginTop: rv(4)},
-  // 로그인 없이 시작 — 소셜 버튼과 경쟁하지 않게 배경 없는 텍스트 급으로.
-  // 44pt 터치 타깃은 minHeight 로 확보한다(글자 높이만으론 미달 — 접근성 스윕 규약).
-  skipBtn: {minHeight: rv(44), alignItems: 'center', justifyContent: 'center'},
-  skipTxt: {fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600', color: T2, textAlign: 'center'},
   footnote: {fontFamily: FONT, fontSize: TYPE.caption.fontSize, lineHeight: rf(17), color: T3, textAlign: 'center', marginTop: rv(8)},
 });
