@@ -487,7 +487,7 @@ App.tsx            → onAuthStateChanged → authUser
 | FCM 등록 엔드포인트 부재 | `lib/pushMessaging.ts:173` | `MAJOR` |
 | ~~알림이 앱 실행 중에만 표시~~ **오판정 — 러닝 리마인더는 OS 스케줄로 실제 발화**(§5.2 정정). 남은 건 카피 문제였고 해결됨(`923e182`) | `lib/localReminder.ts` · `App.tsx:1038` | ~~`MAJOR`~~ 해결 |
 | 앱 버전 표기가 네이티브 `MARKETING_VERSION`을 못 읽음(하드코딩) | `ProfileScreen.rn.tsx:64` | `MINOR` |
-| 신발 스펙 커버리지 71/588(12%) — 없는 신발은 '다음 신발' 비교 축이 안 뜸 | `data/shoeSpecs.json` | `MINOR` |
+| 신발 스펙 커버리지 — 숫자는 맞았지만 **원인 진단이 없었다**(2026-07-30 규명). 스펙이 **두 곳에 따로** 쌓이고 있었다: `data/shoeSpecs.json` 71켤레(→'다음 신발'이 읽음) · `data/shoeCatalog.json` 491/624켤레(→'신발 비교'만 읽음). 즉 커버리지가 낮았던 게 아니라 **423켤레가 연결되지 않았던 것**. `8a45f59` 에서 폴백으로 연결 → '다음 신발' 축이 71→494켤레에서 뜬다 | `lib/shoeSpecModel.ts` | 해결 |
 | 경로 단순화가 RDP 아닌 균등 스트라이드 | `lib/geo.ts:86-91` | `MINOR` |
 | BottomSheet 드래그 dismiss 미구현 | `primitives.tsx:1674` | `NITPICK` |
 | `substr` deprecated 1건 | `App.tsx:701` | `NITPICK` |
@@ -515,9 +515,14 @@ App.tsx            → onAuthStateChanged → authUser
    초과하면 write 가 실패하는데 `catch` 가 조용히 삼킨다. 사용자는 기기를 바꾸는 날 안다.
    구조 결정이 필요하다(런 서브컬렉션화 vs route 사이드카화).
 2. **`aps-environment: development`** — 스토어 빌드 전 실빌드로 확인.
-3. **Functions 환경변수 5종** — 미주입이면 카카오·네이버 로그인이 503 으로 죽는다.
-   코드로는 판정 불가, 배포 절차로만 확인된다.
-   (Firestore 규칙 배포 상태는 2026-07-30 확인 완료 — 라이브 룰셋 = 로컬 파일 바이트 동일.)
+3. ~~**Functions 환경변수 5종**~~ **확인 완료(2026-07-30) — 5종 전부 주입돼 있다.**
+   배포된 함수를 직접 찔러 판정했다. 요령은 **일부러 잘못된 토큰**을 보내는 것 —
+   환경변수가 없으면 `503`(fail-closed)이고, 있으면 `401`(토큰이 틀림)이다.
+   `GET /health` → 200 · `POST /auth/kakao` → **401**(503 아님 = `KAKAO_APP_ID` 있음) ·
+   `POST /auth/naver` → **401**(= `NAVER_CLIENT_ID/SECRET` 있음) ·
+   `GET /shop/price` → 200 + 실제 네이버쇼핑 결과(= `NAVER_SEARCH_CLIENT_ID/SECRET` 있음).
+   → 카카오·네이버 로그인이 503 으로 죽을 위험은 없다.
+   (Firestore 규칙 배포 상태도 2026-07-30 확인 완료 — 라이브 룰셋 = 로컬 파일 바이트 동일.)
 4. **`shoes` 카탈로그가 프로덕션에 없다**(3-4 남은 부분) — 원격 카탈로그 갱신이 죽어 있다.
    시드하든가, '원격 카탈로그' 문서 표현을 실제에 맞추든가.
 5. **flaky 스위트** — `HistoryScreen.shareCard.test.tsx` 간헐 실패. 상시 red 는 아니지만
