@@ -106,6 +106,7 @@ import type {RunBestEfforts} from './lib/bestEfforts';
 import {hkSaveRunWorkout, hkBackfillHeartRate, hkEnsureLinked, hkFindRunWorkoutWindow} from './lib/healthkit';
 import {registerRunForHr, saveWatchHrTrack, retryPendingHr, avgBpmFromTrack, hasHrTrack} from './lib/hrBackfill';
 import {syncRunDetails, runsWithCloudRoute} from './lib/runDetailSync';
+import {updateHomeWidgetShoe} from './lib/homeWidget';
 import {liveActivity} from './lib/liveActivity';
 import {watchSession} from './lib/watchSession';
 import {assessTrainingLoad, loadRatioPhraseKo, LOAD_WORD, LoadLevel} from './lib/trainingLoad';
@@ -1374,7 +1375,10 @@ function Main(){
   })();
   useEffect(()=>{
     if(!widgetShoeJson||(globalThis as any).__KEEGO_CAPTURE__) return;
-    watchSession.updateWidgetShoe(JSON.parse(widgetShoeJson));
+    // 플랫폼 중립 통로(lib/homeWidget) 경유 — iOS 는 기존 WatchSessionModule 경로를 그대로
+    // 쓰고, 안드로이드는 KeegoWidgetModule 로 간다. 예전엔 watchSession(iOS 전용)을 직접
+    // 불러서 **안드로이드에선 위젯이 통째로 no-op** 이었다(2026-07-31 동등성 작업).
+    updateHomeWidgetShoe(JSON.parse(widgetShoeJson));
   },[widgetShoeJson]);
   // ② 워치 단독 러닝 완주 수신 → addRun(로컬-퍼스트 저장 → 신발 거리 자동 차감 →
   //    cloudSync 가 Firestore 로 push). 메시지+큐 이중 배달이 가능하므로 runId 를 영속

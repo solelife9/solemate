@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 위젯 메타데이터. 갱신 주기는 6시간(iOS 타임라인 폴백과 동일) — 실제 갱신은 앱이
+     신발을 바꿀 때 KeegoWidgetModule 이 즉시 건다. 주기는 앱을 오래 안 열었을 때의 폴백. -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="110dp"
+    android:minHeight="110dp"
+    android:targetCellWidth="2"
+    android:targetCellHeight="2"
+    android:updatePeriodMillis="21600000"
+    android:initialLayout="@layout/widget_shoe"
+    android:previewLayout="@layout/widget_shoe"
+    android:resizeMode="none"
+    android:widgetCategory="home_screen"
+    android:description="@string/widget_shoe_description" />
