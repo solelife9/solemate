@@ -10,7 +10,7 @@
 
 | # | 항목 | 플랫폼 | 심각도 |
 |---|---|---|---|
-| A-1 | 릴리스가 **debug 키로 조용히 서명**된다 | Android | `BLOCKER` |
+| A-1 | ~~릴리스가 debug 키로 서명된다~~ **오판정 — 정식 키로 서명돼 있었다.** 조용한 폴백만 차단(해결) | Android | ~~`BLOCKER`~~ 해결 |
 | A-2 | `aps-environment: development` | iOS | `BLOCKER` |
 | A-3 | Google Maps API 키 저장소 평문 커밋 | Android | `BLOCKER`(비용/보안) |
 | B-1 | ~~로그인 강제~~ **소셜 전용으로 확정(2026-07-30)** · 등급 하향 | 양쪽 | ~~`MAJOR`~~ `MINOR` |
@@ -23,19 +23,37 @@
 
 ## A. 제출 차단
 
-### A-1. `BLOCKER` Android 릴리스가 debug 키로 **조용히** 서명된다
+### A-1. ~~`BLOCKER`~~ **해결됨(2026-07-30)** — 릴리스 서명
 
-```gradle
-// android/app/build.gradle:145
-signingConfig project.hasProperty('KEEGO_UPLOAD_STORE_FILE')
-  ? signingConfigs.release : signingConfigs.debug
+> **정정: 처음 판정이 틀렸다.** "기존 `app-release.aab`가 debug 서명일 가능성이 높다"고
+> 적었으나, 실제로 인증서를 열어보니 **정식 업로드 키로 서명돼 있었다**:
+> `CN=Keego, OU=Keego, O=Keego, L=Seoul, C=KR`.
+> `~/.gradle/gradle.properties`에 `KEEGO_UPLOAD_*` 4개가 설정돼 있고 keystore 도 실재한다
+> (`~/keystores/keego-upload.keystore`). **설정 파일을 확인하지 않고 코드의 폴백 분기만 보고
+> 단정했다** — 기준선 감사에서 세 번 반복한 실수와 같은 종류다.
+
+남은 위험은 **조용한 폴백** 자체였다. `KEEGO_UPLOAD_*`가 없으면 경고 없이 debug 키로
+서명되므로, 새 노트북·CI 처럼 `~/.gradle/gradle.properties`가 없는 환경에서 만든 산출물이
+그대로 업로드돼 "원인 모를 거부"가 된다. 지금 환경이 멀쩡한 것과 별개로 재발 가능한 구조다.
+
+**조치:** `android/app/build.gradle`에 태스크 그래프 검사를 추가해 **release 산출물을 만드는
+순간 빌드를 실패**시킨다(구성 단계 throw 는 debug 빌드·IDE 동기화까지 막으므로 피했다).
+keystore 파일이 사라진 경우도 별도 메시지로 잡는다. 기기 테스트용 debug 서명 release 는
+의도를 명령에 드러내야 한다:
+
+```bash
+./gradlew assembleRelease -PKEEGO_ALLOW_DEBUG_SIGNED_RELEASE=true
 ```
 
-`KEEGO_UPLOAD_*`가 없으면 **경고 없이 debug 키로 서명**된다. Play는 debug 서명 업로드를 거부한다.
+검증: 존재하지 않는 keystore 경로를 주입하면 빌드가 실패하고, 정상 설정에서는 통과한다.
 
-주석은 "출시 빌드는 반드시 KEEGO_UPLOAD_* 설정 후 수행"이라 적어뒀지만, **사람의 기억에 기댄 안전장치는 안전장치가 아니다.** 실제로 `android/app/build/outputs/bundle/release/app-release.aab`(2026-07-18 생성)가 이미 있는데, 이게 debug 서명일 가능성이 높다 — 그걸 모르고 업로드하면 거부당하고 원인을 찾느라 시간을 쓴다.
-
-**고칠 것:** release 빌드에서 업로드 키가 없으면 **빌드를 실패시킨다**. 폴백은 개발 편의였는데, 그 편의의 대가가 "출시 직전에 원인 모를 거부"다. (코드로 수정 가능 — 아래 권고 참조)
+> ### ⚠️ 이 항목에서 정작 중요한 것 — **keystore 백업**
+> `~/keystores/keego-upload.keystore` 를 잃으면 **그 앱은 영원히 업데이트할 수 없다.**
+> 새 키로는 같은 앱을 갱신할 수 없고, 새 앱으로 다시 올려야 한다(리뷰·순위·설치수 초기화).
+> 저장소 밖에 있어서(올바름) 이 파일은 git 이 지켜주지 않는다.
+> **지금 안전한 곳 두 군데 이상에 백업할 것**(비밀번호 4개도 함께). `[사용자 액션]`
+> Play App Signing 에 등록하면 구글이 배포 키를 보관해 위험이 줄지만, **업로드 키는
+> 여전히 본인이 지켜야 한다.**
 
 ### A-2. `BLOCKER` `aps-environment: development`
 
@@ -172,10 +190,10 @@ iOS `PRODUCT_BUNDLE_IDENTIFIER = com.solemate` · Android `applicationId "com.so
 
 ## 권고 순서
 
-1. **A-1을 코드로 막는다**(빌드 실패시키기) — 유일하게 지금 코드로 해결 가능한 BLOCKER.
+1. ~~A-1~~ **완료**. 대신 **keystore 백업**이 이 항목의 진짜 과제로 남았다(위 경고 상자).
 2. **B-2를 실기기로 판정한다** — 성공하면 Play 심사에서 가장 무거운 항목이 사라진다. 화면 끄고 30분 러닝.
 3. **B-3 심박(Health Connect) 범위 결정** — 동시 출시의 실질적 최대 변수. 넣으면 일정↑, 빼면 Android는 반쪽.
-4. **B-1 익명 로그인 결정** — 리젝 위험 + 이탈 둘 다 해소.
+4. ~~B-1 익명 로그인 결정~~ **완료** — 소셜 전용 확정(계정 필수).
 5. **B-4 앱 ID 결정** — 되돌릴 수 없으므로 지금.
 6. A-2·A-3·C는 콘솔/실빌드 작업.
 

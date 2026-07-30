@@ -84,6 +84,41 @@ def enableProguardInReleaseBuilds = false
  */
 def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
 
+// ── 출시 서명 안전장치(2026-07-30 감사 A-1) ──────────────────────────────────
+// release 빌드는 업로드 키가 없으면 **조용히 debug 키로 폴백**한다(아래 signingConfig).
+// 로컬 개발에는 편하지만 Play 는 debug 서명 업로드를 거부하고, 폴백이 조용하기 때문에
+// 새 노트북·CI 처럼 ~/.gradle/gradle.properties 가 없는 환경에서 만든 산출물이 그대로
+// 업로드돼 "원인 모를 거부"가 된다. 사람의 기억에 기댄 주석은 안전장치가 아니다.
+//
+// 그래서 release 산출물을 만드는 태스크가 실제로 실행될 때만 검사해 **빌드를 실패시킨다**
+// (구성 단계에서 무조건 throw 하면 debug 빌드·IDE 동기화까지 막힌다).
+// 기기 테스트용으로 debug 서명 release 가 필요하면 의도를 명령에 드러낸다:
+//   ./gradlew assembleRelease -PKEEGO_ALLOW_DEBUG_SIGNED_RELEASE=true
+gradle.taskGraph.whenReady { graph ->
+    def buildsRelease = graph.allTasks.any { t ->
+        t.name == 'assembleRelease' || t.name == 'bundleRelease'
+    }
+    if (!buildsRelease) return
+    if (project.hasProperty('KEEGO_ALLOW_DEBUG_SIGNED_RELEASE')) {
+        logger.warn('⚠️  KEEGO: debug 서명 release 빌드입니다 — 스토어에 업로드하지 마세요.')
+        return
+    }
+    def storeFile = project.findProperty('KEEGO_UPLOAD_STORE_FILE')
+    if (!storeFile) {
+        throw new GradleException(
+            '출시 서명 키가 없습니다(KEEGO_UPLOAD_STORE_FILE 미설정).\n' +
+            '  이대로 만들면 debug 키로 서명돼 Play 가 업로드를 거부합니다.\n' +
+            '  · 출시용: ~/.gradle/gradle.properties 에 KEEGO_UPLOAD_* 4개를 설정하세요.\n' +
+            '  · 기기 테스트용이면: -PKEEGO_ALLOW_DEBUG_SIGNED_RELEASE=true 를 붙이세요.')
+    }
+    if (!file(storeFile).exists()) {
+        throw new GradleException(
+            "출시 서명 keystore 파일을 찾을 수 없습니다: ${storeFile}\n" +
+            '  경로가 바뀌었거나 파일이 사라졌습니다. **이 파일을 잃으면 앱 업데이트가 영구히\n' +
+            '  불가능합니다** — 백업본에서 복구하세요.')
+    }
+}
+
 android {
     ndkVersion rootProject.ext.ndkVersion
     buildToolsVersion rootProject.ext.buildToolsVersion
