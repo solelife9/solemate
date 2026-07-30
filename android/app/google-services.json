@@ -22,6 +22,14 @@
           }
         },
         {
+          "client_id": "404780715201-qfsgtn7kdkgfb8rih9n8t8j7aodqo3bn.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.solemate",
+            "certificate_hash": "39d416d752bef63417d4a22f20f469c3ee1267ce"
+          }
+        },
+        {
           "client_id": "404780715201-8lrp04ttqshdaq3fs0ln9g2hrr7tvs0v.apps.googleusercontent.com",
           "client_type": 3
         }
@@ -37,6 +45,13 @@
             {
               "client_id": "404780715201-8lrp04ttqshdaq3fs0ln9g2hrr7tvs0v.apps.googleusercontent.com",
               "client_type": 3
+            },
+            {
+              "client_id": "404780715201-4kt9l0uoauobq7ulu0k1fpaj7g0s9q5n.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.solemate"
+              }
             }
           ]
         }

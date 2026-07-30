@@ -1720,6 +1720,12 @@ function Main(){
   // 의 기본 표시는 Alert 라 FCM 권한과 무관하게 동작한다(비차단). 예외는 삼켜 흐름을 막지 않는다.
   presentDueRef.current=()=>{
     try{
+      // 로그인 게이트를 통과하고 데이터가 준비된 뒤에만 띄운다(2026-07-30 Android 실측 발견).
+      // 안 그러면 **로그인 화면 위로** 알림이 뜬다 — 에뮬레이터 첫 실행에서 아직 가입도
+      // 하지 않은 사용자에게 "오늘 달릴 시간이에요", "이번 주 목표의 0%를 달렸어요"가
+      // 연달아 떴다. 기록이 0인 사람에게 진척을 말하는 것이라 내용도 틀렸고, 로그인 버튼
+      // 위를 덮어 탭까지 가로챈다. 게이트 통과 전에는 알릴 '내 기록'이라는 것 자체가 없다.
+      if(!authUser?.uid||bootState!=='ready')return;
       const intents=dueNotifications(buildNotifState(),new Date());
       const fresh=intents.filter(i=>!presentedNotifKeys.current.has(i.key));
       if(fresh.length===0)return;
