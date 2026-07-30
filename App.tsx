@@ -633,7 +633,7 @@ function Main(){
         await markPushPrimed();
         showDialog(
           '알림을 켤까요?',
-          '러닝화 교체 시기, 주간 목표 달성, 러닝 리마인더를 딱 필요한 때에만 알려드려요. 광고성 알림은 보내지 않아요.',
+          '정해둔 시각에 러닝 리마인더를 보내드려요. 러닝화 교체 시기·주간 목표는 앱을 열 때 안내해요. 광고성 알림은 보내지 않아요.',
           [
             {text:'나중에',style:'cancel'},
             {text:'알림 받기',onPress:()=>{void primePushPermission();}},
