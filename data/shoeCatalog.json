@@ -483,7 +483,7 @@
     "weight": 241,
     "weightBasis": "270mm",
     "drop": 10,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 35,
       "forefoot": 25
@@ -702,7 +702,7 @@
     "weight": 247,
     "weightBasis": "270mm",
     "drop": 6,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 44,
       "forefoot": 38
@@ -819,7 +819,7 @@
     "weight": 287,
     "weightBasis": "280mm",
     "drop": 10,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 36,
       "forefoot": 26
@@ -900,7 +900,7 @@
     "weight": null,
     "weightBasis": null,
     "drop": null,
-    "plate": null,
+    "plate": "none",
     "stackHeight": null,
     "releaseYear": null,
     "defaultLifespanKm": 700,
@@ -910,7 +910,7 @@
       "수퍼노바",
       "슈퍼노바"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "adidas-supernova-solution-3",
@@ -1374,7 +1374,7 @@
     "weight": 244,
     "weightBasis": "270mm",
     "drop": 0,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 25,
       "forefoot": 25
@@ -1403,7 +1403,7 @@
     "weight": 264,
     "weightBasis": null,
     "drop": 0,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 25,
       "forefoot": 25
@@ -1450,7 +1450,7 @@
     "weight": 235,
     "weightBasis": "270mm",
     "drop": 4,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 32,
       "forefoot": 28
@@ -1475,7 +1475,7 @@
     "weight": 230,
     "weightBasis": "270mm",
     "drop": 4,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 32,
       "forefoot": 28
@@ -1525,7 +1525,7 @@
     "weight": 281,
     "weightBasis": null,
     "drop": 4,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 33,
       "forefoot": 29
@@ -1581,7 +1581,7 @@
     "weight": null,
     "weightBasis": null,
     "drop": 0,
-    "plate": null,
+    "plate": "other",
     "stackHeight": {
       "heel": 25,
       "forefoot": 25
@@ -1607,7 +1607,7 @@
     "weight": 295,
     "weightBasis": "270mm",
     "drop": 0,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 25,
       "forefoot": 25
@@ -1860,7 +1860,7 @@
     "weight": 281,
     "weightBasis": null,
     "drop": 0,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 30,
       "forefoot": 30
@@ -1916,7 +1916,7 @@
     "weight": 269,
     "weightBasis": "270mm",
     "drop": 0,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 30,
       "forefoot": 30
@@ -1938,7 +1938,7 @@
     "weight": 261,
     "weightBasis": null,
     "drop": 0,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 28,
       "forefoot": 28
@@ -2110,7 +2110,7 @@
     "weight": 240,
     "weightBasis": null,
     "drop": 5,
-    "plate": null,
+    "plate": "other",
     "stackHeight": {
       "heel": 34,
       "forefoot": 29
@@ -2186,7 +2186,7 @@
     "weight": 255,
     "weightBasis": "270mm",
     "drop": 8,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 38.5,
       "forefoot": 30.5
@@ -2214,7 +2214,7 @@
     "weight": 261,
     "weightBasis": "270mm",
     "drop": 8,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 41,
       "forefoot": 33
@@ -2241,7 +2241,7 @@
     "weight": 255,
     "weightBasis": "270mm",
     "drop": 8,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 42,
       "forefoot": 34
@@ -2310,7 +2310,7 @@
     "weight": 299,
     "weightBasis": null,
     "drop": 10,
-    "plate": null,
+    "plate": "none",
     "stackHeight": null,
     "releaseYear": null,
     "defaultLifespanKm": 700,
@@ -2363,7 +2363,7 @@
     "weight": 312,
     "weightBasis": "275mm",
     "drop": 10,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 40,
       "forefoot": 30
@@ -2391,7 +2391,7 @@
     "weight": 298,
     "weightBasis": "270mm",
     "drop": 8,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 40,
       "forefoot": 32
@@ -2445,7 +2445,7 @@
     "weight": null,
     "weightBasis": null,
     "drop": 8,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 41.5,
       "forefoot": 33.5
@@ -2473,7 +2473,7 @@
     "weight": 304,
     "weightBasis": "270mm",
     "drop": 8,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 42,
       "forefoot": 34
@@ -2640,7 +2640,7 @@
     "weight": 309,
     "weightBasis": "270mm",
     "drop": 8,
-    "plate": null,
+    "plate": "other",
     "stackHeight": {
       "heel": 36,
       "forefoot": 28
@@ -2693,7 +2693,7 @@
     "weight": 283,
     "weightBasis": "270mm",
     "drop": 8,
-    "plate": null,
+    "plate": "other",
     "stackHeight": {
       "heel": 34,
       "forefoot": 26
@@ -2829,7 +2829,7 @@
     "weight": 261,
     "weightBasis": "270mm",
     "drop": 6,
-    "plate": null,
+    "plate": "other",
     "stackHeight": {
       "heel": 46,
       "forefoot": 40
@@ -2878,7 +2878,7 @@
     "weight": 269,
     "weightBasis": "270mm",
     "drop": 8,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 36,
       "forefoot": 28
@@ -2961,7 +2961,7 @@
     "weight": 266,
     "weightBasis": "270mm",
     "drop": 8,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 36,
       "forefoot": 28
@@ -2984,7 +2984,7 @@
     "weight": 298,
     "weightBasis": "270mm",
     "drop": 8,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 36,
       "forefoot": 28
@@ -3010,7 +3010,7 @@
     "weight": 258,
     "weightBasis": "270mm",
     "drop": 8,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 40,
       "forefoot": 32
@@ -3181,7 +3181,7 @@
     "weight": 260,
     "weightBasis": null,
     "drop": 5,
-    "plate": null,
+    "plate": "carbon",
     "stackHeight": {
       "heel": 44,
       "forefoot": 39
@@ -3315,7 +3315,7 @@
     "weight": null,
     "weightBasis": null,
     "drop": 5,
-    "plate": null,
+    "plate": "carbon",
     "stackHeight": {
       "heel": 38,
       "forefoot": 33
@@ -3392,7 +3392,7 @@
     "weight": 213,
     "weightBasis": "270mm",
     "drop": 5,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 34,
       "forefoot": 29
@@ -3444,7 +3444,7 @@
     "weight": 267,
     "weightBasis": "275mm",
     "drop": 8,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 41.5,
       "forefoot": 33.5
@@ -3472,7 +3472,7 @@
     "weight": 247,
     "weightBasis": "270mm",
     "drop": 8,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 41,
       "forefoot": 33
@@ -3578,7 +3578,7 @@
     "weight": 251,
     "weightBasis": "275mm",
     "drop": 8,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 45,
       "forefoot": 37
@@ -3657,7 +3657,7 @@
     "weight": 278,
     "weightBasis": "265mm",
     "drop": 8,
-    "plate": null,
+    "plate": "other",
     "stackHeight": {
       "heel": 36,
       "forefoot": 28
@@ -3683,7 +3683,7 @@
     "weight": null,
     "weightBasis": null,
     "drop": null,
-    "plate": null,
+    "plate": "other",
     "stackHeight": null,
     "releaseYear": null,
     "discontinued": false,
@@ -3692,7 +3692,7 @@
       "트라부코",
       "고어텍스"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "asics-trabuco-14-gtx",
     "brand": "ASICS",
@@ -3710,7 +3710,7 @@
     "weight": 312,
     "weightBasis": "270mm",
     "drop": 5,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 40,
       "forefoot": 35
@@ -3786,7 +3786,7 @@
     "weight": 287,
     "weightBasis": "270mm",
     "drop": 12,
-    "plate": null,
+    "plate": "none",
     "stackHeight": null,
     "releaseYear": null,
     "defaultLifespanKm": 700,
@@ -3809,7 +3809,7 @@
     "weight": 283,
     "weightBasis": "270mm",
     "drop": 12,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 35,
       "forefoot": 23
@@ -3981,7 +3981,7 @@
     "weight": 320,
     "weightBasis": "270mm",
     "drop": 8,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 33,
       "forefoot": 25
@@ -4229,7 +4229,7 @@
     "weight": 272,
     "weightBasis": "270mm",
     "drop": 12,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 35,
       "forefoot": 23
@@ -4255,7 +4255,7 @@
     "weight": 269,
     "weightBasis": "280mm",
     "drop": 12,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 34.5,
       "forefoot": 22.5
@@ -4355,7 +4355,7 @@
     "weight": 283,
     "weightBasis": "270mm",
     "drop": 6,
-    "plate": null,
+    "plate": "none",
     "stackHeight": null,
     "releaseYear": 2023,
     "discontinued": true,
@@ -4382,7 +4382,7 @@
     "weight": 306,
     "weightBasis": "270mm",
     "drop": 6,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 39,
       "forefoot": 33
@@ -4509,7 +4509,7 @@
     "weight": 277,
     "weightBasis": "270mm",
     "drop": 10,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 38,
       "forefoot": 28
@@ -4605,7 +4605,7 @@
     "weight": 295,
     "weightBasis": "270mm",
     "drop": 10,
-    "plate": null,
+    "plate": "none",
     "stackHeight": null,
     "releaseYear": 2023,
     "discontinued": true,
@@ -4632,7 +4632,7 @@
     "weight": 303,
     "weightBasis": "270mm",
     "drop": 10,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 38,
       "forefoot": 28
@@ -4684,7 +4684,7 @@
     "weight": 298,
     "weightBasis": "270mm",
     "drop": 6,
-    "plate": null,
+    "plate": "none",
     "stackHeight": null,
     "releaseYear": 2024,
     "defaultLifespanKm": 700,
@@ -4753,7 +4753,7 @@
     "weight": 241,
     "weightBasis": "270mm",
     "drop": 8,
-    "plate": null,
+    "plate": "carbon",
     "stackHeight": {
       "heel": 37,
       "forefoot": 29
@@ -5232,7 +5232,7 @@
     "weight": 306,
     "weightBasis": "270mm",
     "drop": 5,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 39,
       "forefoot": 34
@@ -5313,7 +5313,7 @@
     "weight": null,
     "weightBasis": null,
     "drop": 5,
-    "plate": null,
+    "plate": "carbon",
     "stackHeight": {
       "heel": 37,
       "forefoot": 32
@@ -5357,7 +5357,7 @@
     "weight": 275,
     "weightBasis": null,
     "drop": 7,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 44,
       "forefoot": 37
@@ -5387,7 +5387,7 @@
     "weight": 264,
     "weightBasis": null,
     "drop": 7,
-    "plate": null,
+    "plate": "carbon",
     "stackHeight": {
       "heel": 39,
       "forefoot": 32
@@ -5542,7 +5542,7 @@
     "weight": 247,
     "weightBasis": "270mm",
     "drop": 5,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 32,
       "forefoot": 27
@@ -5661,7 +5661,7 @@
     "weight": 283,
     "weightBasis": "270mm",
     "drop": 6,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 39,
       "forefoot": 33
@@ -5759,7 +5759,7 @@
     "weight": 210,
     "weightBasis": "270mm",
     "drop": 5,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 37,
       "forefoot": 32
@@ -5884,7 +5884,7 @@
     "weight": 315,
     "weightBasis": "270mm",
     "drop": 8,
-    "plate": null,
+    "plate": "other",
     "stackHeight": {
       "heel": 44,
       "forefoot": 36
@@ -5961,7 +5961,7 @@
     "weight": 343,
     "weightBasis": "270mm",
     "drop": 8,
-    "plate": null,
+    "plate": "other",
     "stackHeight": {
       "heel": 48,
       "forefoot": 40
@@ -6017,7 +6017,7 @@
     "weight": null,
     "weightBasis": null,
     "drop": 5,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 36,
       "forefoot": 31
@@ -6120,7 +6120,7 @@
     "weight": 283,
     "weightBasis": "270mm",
     "drop": 5,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 39,
       "forefoot": 34
@@ -6274,7 +6274,7 @@
     "weight": 343,
     "weightBasis": "270mm",
     "drop": 5,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 44,
       "forefoot": 39
@@ -6391,7 +6391,7 @@
     "weight": 264,
     "weightBasis": null,
     "drop": 5,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 35,
       "forefoot": 30
@@ -6520,7 +6520,7 @@
     "weight": null,
     "weightBasis": null,
     "drop": null,
-    "plate": null,
+    "plate": "none",
     "stackHeight": null,
     "releaseYear": null,
     "defaultLifespanKm": 650,
@@ -6530,7 +6530,7 @@
       "울트라글라이드",
       "울트라"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "karhu-fusion-4-5",
@@ -7250,7 +7250,7 @@
     "weight": null,
     "weightBasis": null,
     "drop": 6,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 33,
       "forefoot": 27
@@ -7807,7 +7807,7 @@
     "weight": 292,
     "weightBasis": "270mm",
     "drop": 12,
-    "plate": null,
+    "plate": "other",
     "stackHeight": {
       "heel": 38,
       "forefoot": 26
@@ -7833,7 +7833,7 @@
     "weight": 281,
     "weightBasis": null,
     "drop": 10,
-    "plate": null,
+    "plate": "other",
     "stackHeight": {
       "heel": 37,
       "forefoot": 27
@@ -7971,7 +7971,7 @@
     "weight": 238,
     "weightBasis": "270mm",
     "drop": 0.5,
-    "plate": null,
+    "plate": "other",
     "stackHeight": {
       "heel": 47,
       "forefoot": 46.5
@@ -8134,7 +8134,7 @@
     "weight": 263,
     "weightBasis": "275mm",
     "drop": 12,
-    "plate": null,
+    "plate": "other",
     "stackHeight": {
       "heel": 38.5,
       "forefoot": 26.5
@@ -8162,7 +8162,7 @@
     "weight": 258,
     "weightBasis": "240mm",
     "drop": 10,
-    "plate": null,
+    "plate": "other",
     "stackHeight": {
       "heel": 38,
       "forefoot": 28
@@ -8351,7 +8351,7 @@
     "weight": 280,
     "weightBasis": "270mm",
     "drop": 6,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 39,
       "forefoot": 33
@@ -8453,7 +8453,7 @@
     "weight": 298,
     "weightBasis": "270mm",
     "drop": 8,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 38,
       "forefoot": 30
@@ -8629,7 +8629,7 @@
     "weight": 260,
     "weightBasis": null,
     "drop": 6,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 33,
       "forefoot": 27
@@ -9450,7 +9450,7 @@
     "weight": 358,
     "weightBasis": null,
     "drop": 10,
-    "plate": null,
+    "plate": "none",
     "stackHeight": null,
     "releaseYear": null,
     "discontinued": false,
@@ -9498,7 +9498,7 @@
     "weight": 297,
     "weightBasis": "270mm",
     "drop": 8,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 34,
       "forefoot": 26
@@ -9975,7 +9975,7 @@
     "weight": 297,
     "weightBasis": "270mm",
     "drop": 8,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 34,
       "forefoot": 26
@@ -11041,7 +11041,7 @@
     "weight": null,
     "weightBasis": null,
     "drop": 7,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 30.4,
       "forefoot": 23.4
@@ -11275,7 +11275,7 @@
     "weight": 292,
     "weightBasis": null,
     "drop": 6,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 37,
       "forefoot": 31
@@ -11377,7 +11377,7 @@
     "weight": null,
     "weightBasis": null,
     "drop": null,
-    "plate": null,
+    "plate": "none",
     "stackHeight": null,
     "releaseYear": null,
     "defaultLifespanKm": 650,
@@ -11387,7 +11387,7 @@
       "온러닝",
       "클라우드고"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "on-cloudmonster",
@@ -11511,7 +11511,7 @@
     "weight": 270,
     "weightBasis": null,
     "drop": 6,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 37.5,
       "forefoot": 31.5
@@ -11565,7 +11565,7 @@
     "weight": 295,
     "weightBasis": "270mm",
     "drop": 8,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 37,
       "forefoot": 29
@@ -11639,7 +11639,7 @@
     "weight": 255,
     "weightBasis": null,
     "drop": 9,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 37,
       "forefoot": 28
@@ -11769,7 +11769,7 @@
     "weight": null,
     "weightBasis": null,
     "drop": 7,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 32.5,
       "forefoot": 25.5
@@ -11987,7 +11987,7 @@
     "weight": null,
     "weightBasis": null,
     "drop": null,
-    "plate": null,
+    "plate": "none",
     "stackHeight": null,
     "releaseYear": null,
     "defaultLifespanKm": 650,
@@ -11997,7 +11997,7 @@
       "온러닝",
       "클라우드비스타"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "on-cloudvista-2",
@@ -12010,7 +12010,7 @@
     "weight": 245,
     "weightBasis": null,
     "drop": 6,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 29,
       "forefoot": 23
@@ -12518,7 +12518,7 @@
     "weight": 260,
     "weightBasis": "270mm",
     "drop": 10,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 36,
       "forefoot": 26
@@ -14057,7 +14057,7 @@
     "weight": 272,
     "weightBasis": null,
     "drop": 6,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 35,
       "forefoot": 29
@@ -14111,7 +14111,7 @@
     "weight": 285,
     "weightBasis": "270mm",
     "drop": 6,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 38,
       "forefoot": 32
@@ -14190,7 +14190,7 @@
     "weight": 198,
     "weightBasis": "270mm",
     "drop": null,
-    "plate": null,
+    "plate": "none",
     "stackHeight": null,
     "releaseYear": 2024,
     "defaultLifespanKm": 650,
@@ -14214,7 +14214,7 @@
     "weight": 207,
     "weightBasis": "270mm",
     "drop": 4,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 29,
       "forefoot": 24
@@ -14375,7 +14375,7 @@
     "weight": 283,
     "weightBasis": "270mm",
     "drop": 4,
-    "plate": null,
+    "plate": "other",
     "stackHeight": {
       "heel": 33,
       "forefoot": 29
@@ -14426,7 +14426,7 @@
     "weight": 293,
     "weightBasis": "275mm",
     "drop": 8,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 35,
       "forefoot": 27
@@ -14556,7 +14556,7 @@
     "weight": 323,
     "weightBasis": "270mm",
     "drop": 6,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 38,
       "forefoot": 32
@@ -14742,7 +14742,7 @@
     "weight": 323,
     "weightBasis": "270mm",
     "drop": 6,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 38,
       "forefoot": 32
@@ -15025,7 +15025,7 @@
     "weight": 196,
     "weightBasis": "270mm",
     "drop": 5,
-    "plate": null,
+    "plate": "other",
     "stackHeight": {
       "heel": 28,
       "forefoot": 23
@@ -15047,7 +15047,7 @@
     "weight": 221,
     "weightBasis": "270mm",
     "drop": 3,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 23,
       "forefoot": 20
@@ -15150,7 +15150,7 @@
     "weight": 264,
     "weightBasis": "270mm",
     "drop": 5,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 35,
       "forefoot": 30
@@ -15226,7 +15226,7 @@
     "weight": 230,
     "weightBasis": "270mm",
     "drop": 5,
-    "plate": null,
+    "plate": "other",
     "stackHeight": {
       "heel": 37,
       "forefoot": 32
@@ -15298,7 +15298,7 @@
     "weight": 187,
     "weightBasis": "270mm",
     "drop": 0,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 14,
       "forefoot": 14
@@ -15324,7 +15324,7 @@
     "weight": 340,
     "weightBasis": "270mm",
     "drop": 3,
-    "plate": null,
+    "plate": "other",
     "stackHeight": {
       "heel": 25,
       "forefoot": 22
@@ -15402,7 +15402,7 @@
     "weight": 301,
     "weightBasis": "270mm",
     "drop": 5,
-    "plate": null,
+    "plate": "other",
     "stackHeight": {
       "heel": 30,
       "forefoot": 25
