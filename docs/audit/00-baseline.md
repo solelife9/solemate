@@ -416,10 +416,21 @@ Android 하드웨어 뒤로가기가 이 사다리에 붙어 있지 않다 → A
 | 워치 앱 | `ios/SoleMateWatch Watch App/` `WKBackgroundModes: workout-processing` | 단독 러닝 후 폰 전송 |
 
 **앱이 완전히 종료됐을 때:**
-- **OS 스케줄 로컬 알림이 사실상 없다.** `lib/notifications.ts:177 dueNotifications`는 순수 결정 함수이고,
-  실제 표시는 `App.tsx:591-596` AppState `'active'` 전환에서 `presentDue`(커스텀 다이얼로그).
-  즉 **앱을 열어야 뜬다.** `lib/localReminder.ts:106`에 `scheduleNotificationAsync` 경로가 있으나
-  옵셔널 모듈 인터페이스 형태. `MAJOR` — 사용자는 "알림 켰는데 안 온다"고 인식한다.
+- **정정(2026-07-30). 원래 여기 "OS 스케줄 로컬 알림이 사실상 없다 `MAJOR`"라고 적었는데 틀렸다.**
+  `lib/localReminder.ts`의 `scheduleNotificationAsync` 경로는 "옵셔널 모듈 인터페이스 형태"로만
+  존재하는 게 아니라 **실제로 배선돼 동작한다** — `App.tsx:117`이 `syncRunReminder`를 import 하고
+  `:1038-1039`가 호출한다(설정·시각·오늘 런 여부가 바뀔 때마다 7일치 원샷 체인 갱신).
+  옵셔널 require 는 jest·시뮬처럼 네이티브가 없는 환경을 위한 방어이지 미배선의 증거가 아니었다.
+  **코드를 열어보지 않고 파일 헤더 주석만 읽어 옮긴 판정이었다.**
+- 실제 구조는 **두 갈래**다:
+  · **러닝 리마인더** — expo-notifications OS 스케줄. 앱이 닫혀 있어도 정해둔 시각에 울린다.
+    이미 달린 날은 건너뛴다(`reminderFireDates`의 `ranToday`).
+  · **교체 임박 · 주간 목표** — OS 스케줄이 아니다. `lib/notifications.ts:177 dueNotifications`가
+    순수 계산을 하고 `App.tsx:591-596` AppState `'active'`에서 `presentDue`로 표시한다.
+    발화 시점의 상태(진척·예측)를 미리 알 수 없어 억지 스케줄이 곧 노이즈이므로 **의도된 설계**다.
+- 남은 실제 문제는 '알림이 안 온다'가 아니라 **카피가 그 둘을 뭉갠 것**이었고, 이는 해결됐다
+  (2026-07-30 `923e182`): 권한 프라이밍이 셋을 나란히 약속하던 것을 실제 동작대로 갈랐고,
+  회귀 가드 `__tests__/notifCopyHonesty.test.ts`를 뒀다. `MINOR`(카피 문제였음)
 - **원격 푸시를 보낼 수단이 없다.** `lib/pushMessaging.ts:173 FCM_REGISTER_ENDPOINT=''` →
   `:208 if(!endpoint) return 'queued'`. 토큰은 발급·로컬 큐잉만 하고 서버 등록을 안 한다. `MAJOR`
 
@@ -474,7 +485,7 @@ App.tsx            → onAuthStateChanged → authUser
 |---|---|---|
 | 프로필/신발 사진 클라우드 백업 안 됨 — 재설치 시 영구 소실(화면이 그 사실을 고지) | `ProfileScreen.rn.tsx:1130` | `MAJOR` |
 | FCM 등록 엔드포인트 부재 | `lib/pushMessaging.ts:173` | `MAJOR` |
-| 알림이 앱 실행 중에만 표시 | `lib/notifications.ts` 헤더 | `MAJOR` |
+| ~~알림이 앱 실행 중에만 표시~~ **오판정 — 러닝 리마인더는 OS 스케줄로 실제 발화**(§5.2 정정). 남은 건 카피 문제였고 해결됨(`923e182`) | `lib/localReminder.ts` · `App.tsx:1038` | ~~`MAJOR`~~ 해결 |
 | 앱 버전 표기가 네이티브 `MARKETING_VERSION`을 못 읽음(하드코딩) | `ProfileScreen.rn.tsx:64` | `MINOR` |
 | 신발 스펙 커버리지 71/588(12%) — 없는 신발은 '다음 신발' 비교 축이 안 뜸 | `data/shoeSpecs.json` | `MINOR` |
 | 경로 단순화가 RDP 아닌 균등 스트라이드 | `lib/geo.ts:86-91` | `MINOR` |
@@ -511,4 +522,6 @@ App.tsx            → onAuthStateChanged → authUser
    시드하든가, '원격 카탈로그' 문서 표현을 실제에 맞추든가.
 5. **flaky 스위트** — `HistoryScreen.shareCard.test.tsx` 간헐 실패. 상시 red 는 아니지만
    출시 전에 원인을 잡아야 한다(게이트 신뢰도 문제).
-6. **사진 클라우드 미백업 · FCM 등록 엔드포인트 부재 · OS 스케줄 알림 부재** — §2-7 의 `MAJOR` 3종.
+6. **사진 클라우드 미백업 · FCM 등록 엔드포인트 부재** — §2-7 의 `MAJOR`.
+   (같이 묶여 있던 'OS 스케줄 알림 부재'는 **오판정**이었다 — §5.2 정정 참조. 남은 카피
+   문제는 2026-07-30 해결.) 둘 다 "어떻게 동작해야 하는가"가 먼저라 제품 결정이 필요하다.
