@@ -12,6 +12,13 @@ module.exports = {
     // 바로 그곳에서 무음이 된다. 진단은 lib/crashlytics 의 reportIssue 로 남긴다
     // (개발=콘솔 · 릴리스=원격, 한 줄로 보장). warn/error 는 RN 내부 경고용으로 허용.
     'no-console': ['error', {allow: ['warn', 'error']}],
+    // `void promise()` 는 이 코드베이스의 **정식 관용구**다(2026-07-30). 비차단 호출을
+    // "일부러 기다리지 않는다"고 코드에 명시하는 표시이고, 안 붙이면 떠도는 promise 를
+    // 실수로 놓친 것과 구분되지 않는다(no-floating-promises 계열 규칙의 표준 해법).
+    // 기본 설정은 이걸 전부 경고로 세서 120건이 쌓였고, --max-warnings 상한과 맞물려
+    // **관용구를 한 줄 더 쓰면 lint 가 깨지는** 상태였다(여유 1). 표현식 자리의 void
+    // (값으로 쓰는 것)는 여전히 잡고, 문(statement) 자리만 허용한다.
+    'no-void': ['warn', {allowAsStatement: true}],
     // Dynamic Type 정책(DESIGN.md §6.7): Text/TextInput 은 lib/text 래퍼 경유 강제 —
     // RN 직수입은 시스템 글꼴 배율 무제한(레이아웃 파괴) + 라이트 키보드 회귀를 만든다.
     // TS 변형을 쓰는 이유: ref 인스턴스 타입 등 `import type` 은 허용해야 해서.

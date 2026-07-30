@@ -699,7 +699,7 @@ function Main(){
     setBootState('loading');
     try{
     let did=await AsyncStorage.getItem('device_id');
-    if(!did){did='sl_'+Date.now()+'_'+Math.random().toString(36).substr(2,9);await AsyncStorage.setItem('device_id',did);}
+    if(!did){did='sl_'+Date.now()+'_'+Math.random().toString(36).slice(2,11);await AsyncStorage.setItem('device_id',did);}
     // audit a1: 로컬 스토리지 스키마 마이그레이션(1회). 이전 빌드의 캐시 신발/런 레코드엔
     // updatedAt 이 없어 클라우드 '최신 우선' 머지가 무력했다 — 부재 레코드에 updatedAt 을
     // 시드한다. 멱등·비파괴이며, 실패해도 내부에서 스킵+로그하므로 부팅을 막지 않는다.

@@ -5,7 +5,7 @@
   "scripts": {
     "android": "react-native run-android",
     "ios": "react-native run-ios",
-    "lint": "eslint . --max-warnings 338",
+    "lint": "eslint . --max-warnings 241",
     "start": "react-native start",
     "test": "jest",
     "test:coverage": "jest --config jest.coverage.config.js",
