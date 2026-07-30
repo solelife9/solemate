@@ -88,20 +88,40 @@ async function openPicker(root: ReactTestRenderer.ReactTestInstance) {
 describe('HistoryScreen 카드 공유(이미지) — 선택기 경유', () => {
   let shareSpy: jest.SpyInstance;
   let alertSpy: jest.SpyInstance;
+  // 렌더러를 추적해 **테스트마다 반드시 언마운트한다**(2026-07-30 flaky 대응).
+  //
+  // 이 스위트만 언마운트를 안 하고 있었다(App.* 스위트들은 전부 한다). 런 상세를 열면
+  // HistoryScreen 이 사진·경로·스플릿·트랙·노면을 AsyncStorage 에서 비동기로 읽고
+  // `.then(() => alive && setXxx(...))` 로 상태를 넣는다(HistoryScreen.rn.tsx:196·321·332·350·367).
+  // 그 `alive` 는 **언마운트(정리 함수)에서만** false 가 되므로, 트리를 띄운 채 테스트가
+  // 끝나면 남은 promise 가 나중에 착지해 act 밖에서 React 커밋을 일으킨다 —
+  // jest.setup.after.js 헤더가 적어둔 그 실패 계열이고, 실제 관측된 스택도
+  // flushLayoutEffects ← commitRoot ← 스케줄러였다. CPU 경합이 심할 때만 늦게 착지해
+  // 간헐적으로만 터졌다(단독 20회·전체 14회 연속으로는 재현되지 않음).
+  let renderers: ReactTestRenderer.ReactTestRenderer[] = [];
+  const mount = async (node: React.ReactElement) => {
+    let r!: ReactTestRenderer.ReactTestRenderer;
+    await act(async () => { r = ReactTestRenderer.create(node); });
+    renderers.push(r);
+    return r;
+  };
   beforeEach(() => {
+    renderers = [];
     shareSpy = jest.spyOn(Share, 'share').mockResolvedValue({action: 'sharedAction'} as any);
     alertSpy = jest.spyOn(dialogLib, 'showDialog').mockImplementation(() => 0);
   });
-  afterEach(() => {
+  afterEach(async () => {
+    // 언마운트 → 각 effect 의 cleanup 이 alive=false 로 만들어, 뒤늦게 오는 promise 가
+    // setState 를 하지 않는다. 남은 microtask 도 여기서 흘려보낸다.
+    await act(async () => { renderers.forEach(r => r.unmount()); });
+    await flush();
+    renderers = [];
     shareSpy.mockRestore();
     alertSpy.mockRestore();
   });
 
   test('선택기의 공유 → toDataURL PNG dataURL이 Share.share에 url로 전달된다', async () => {
-    let renderer!: ReactTestRenderer.ReactTestRenderer;
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<HistoryScreen shoes={[SHOE]} runs={[RUN]} unit="km" />);
-    });
+    const renderer = await mount(<HistoryScreen shoes={[SHOE]} runs={[RUN]} unit="km" />);
     await flush();
     const root = renderer.root;
 
@@ -122,10 +142,7 @@ describe('HistoryScreen 카드 공유(이미지) — 선택기 경유', () => {
 
   test("선택기의 저장 → 투명 PNG가 MediaLibrary 로 사진앱에 저장된다", async () => {
     const saveSpy = jest.spyOn(MediaLibrary, 'saveToLibraryAsync').mockResolvedValue(undefined as any);
-    let renderer!: ReactTestRenderer.ReactTestRenderer;
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<HistoryScreen shoes={[SHOE]} runs={[RUN]} unit="km" />);
-    });
+    const renderer = await mount(<HistoryScreen shoes={[SHOE]} runs={[RUN]} unit="km" />);
     await flush();
     const root = renderer.root;
 
@@ -143,10 +160,7 @@ describe('HistoryScreen 카드 공유(이미지) — 선택기 경유', () => {
 
   test('공유가 reject 돼도 예외가 표면화되지 않는다(텍스트 폴백, 조용히 무시)', async () => {
     shareSpy.mockRejectedValue(new Error('user dismissed / native failure'));
-    let renderer!: ReactTestRenderer.ReactTestRenderer;
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<HistoryScreen shoes={[SHOE]} runs={[RUN]} unit="km" />);
-    });
+    const renderer = await mount(<HistoryScreen shoes={[SHOE]} runs={[RUN]} unit="km" />);
     await flush();
     const root = renderer.root;
 
