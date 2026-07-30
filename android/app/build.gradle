@@ -94,11 +94,59 @@ def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
 // (구성 단계에서 무조건 throw 하면 debug 빌드·IDE 동기화까지 막힌다).
 // 기기 테스트용으로 debug 서명 release 가 필요하면 의도를 명령에 드러낸다:
 //   ./gradlew assembleRelease -PKEEGO_ALLOW_DEBUG_SIGNED_RELEASE=true
+// ── JS 번들 신선도 검사(2026-07-30) ─────────────────────────────────────────
+// 위 :206 에서 in-Gradle 번들링을 **일부러 꺼놨다**(Gradle 9 + RNGP 호환 문제). 대신
+// `npm run bundle:android` 로 미리 구운 번들을 src/main/assets 에 두고 그걸 패키징한다.
+// 문제: 그 명령을 깜빡하면 **옛 번들이 그대로 포장되고 아무도 모른다.** 실제로 2026-07-08
+// 번들이 3주 내내 포장돼, 그 사이의 모든 화면·문구 변경이 안드로이드에만 빠져 있었다
+// (카카오 로고가 구 글자 "K" 로 나오던 증상). 빌드는 성공하고 앱도 켜지므로 무증상이다.
+// 그래서 **소스가 번들보다 새로우면 빌드를 세운다.** 사람의 기억에 기대지 않는다.
+def newestJsSourceMs(File root) {
+    long newest = 0L
+    def rx = ~/.*\.(ts|tsx|js|jsx|json)$/
+    ['lib', 'screens', 'data', 'services', 'types'].each { name ->
+        def d = new File(root, name)
+        if (!d.exists()) return
+        d.eachFileRecurse(groovy.io.FileType.FILES) { f ->
+            if (f.name ==~ rx && f.lastModified() > newest) newest = f.lastModified()
+        }
+    }
+    root.listFiles()?.each { f ->
+        // 루트의 화면 파일들(App.tsx·*.rn.tsx·theme.ts·index.js 등). package-lock 은 번들
+        // 내용과 무관하므로 제외한다(의미 없는 실패를 만들지 않기 위해).
+        if (f.isFile() && f.name ==~ rx && f.name != 'package-lock.json' && f.lastModified() > newest) {
+            newest = f.lastModified()
+        }
+    }
+    return newest
+}
+
 gradle.taskGraph.whenReady { graph ->
     def buildsRelease = graph.allTasks.any { t ->
         t.name == 'assembleRelease' || t.name == 'bundleRelease'
     }
     if (!buildsRelease) return
+
+    if (!project.hasProperty('KEEGO_SKIP_BUNDLE_CHECK')) {
+        def bundleFile = file('src/main/assets/index.android.bundle')
+        if (!bundleFile.exists()) {
+            throw new GradleException(
+                'JS 번들이 없습니다: android/app/src/main/assets/index.android.bundle\n' +
+                '  이대로 만들면 앱이 흰 화면으로 뜹니다.\n' +
+                '  → npm run bundle:android   (또는 npm run build:android:release 로 한 번에)')
+        }
+        def newestSrc = newestJsSourceMs(rootDir.getAbsoluteFile().getParentFile())
+        if (newestSrc > bundleFile.lastModified()) {
+            def fmt = new java.text.SimpleDateFormat('yyyy-MM-dd HH:mm')
+            throw new GradleException(
+                'JS 번들이 낡았습니다 — 소스가 더 최신입니다.\n' +
+                "  번들: ${fmt.format(new Date(bundleFile.lastModified()))}\n" +
+                "  소스: ${fmt.format(new Date(newestSrc))}\n" +
+                '  이대로 만들면 **옛 화면·옛 문구가 담긴 앱**이 나오고, 빌드는 성공하며\n' +
+                '  앱도 켜지기 때문에 아무도 눈치채지 못합니다(2026-07-30 실제 사고).\n' +
+                '  → npm run bundle:android   (또는 npm run build:android:release 로 한 번에)')
+        }
+    }
     if (project.hasProperty('KEEGO_ALLOW_DEBUG_SIGNED_RELEASE')) {
         logger.warn('⚠️  KEEGO: debug 서명 release 빌드입니다 — 스토어에 업로드하지 마세요.')
         return
