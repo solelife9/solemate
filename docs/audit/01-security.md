@@ -2,7 +2,7 @@
 
 > 작성 2026-07-31 · 기준 커밋 `a5d60e3` · 감사자: 시니어 보안 엔지니어 관점
 > **판정 근거는 실행 결과다.** 규칙은 읽고 추론하지 않고 에뮬레이터에 실제 규칙 파일을
-> 로드해 **공격자 자격으로 71건을 직접 시도**했다(`tests/rules/attack.rules.test.ts`).
+> 로드해 **공격자 자격으로 35건을 직접 시도**했다(`tests/rules/attack.rules.test.ts`).
 > 재현: `npm run test:rules`
 > 분류: `BLOCKER` 공격 가능/데이터 격리 실패 · `MAJOR` 정책·파기 미준수 · `INFO` 확인 결과
 
@@ -21,7 +21,7 @@
 | 7 | 문서 크기·개수 무제한 쓰기 | **가능** ⚠️ |
 | 8 | 최근 추가 컬렉션이 열려 있는가 | **아니오** ✅ |
 
-**Firestore 규칙 자체는 견고하다.** 71건 공격이 전부 막혔다.
+**Firestore 규칙 자체는 견고하다.** 공격 35건이 전부 막혔다.
 
 **그러나 규칙 바깥에서 데이터 격리가 깨지는 경로를 찾았다.**
 
@@ -61,7 +61,7 @@
 
 ## 2. 공격 시나리오 8종 — 실행 결과
 
-`tests/rules/attack.rules.test.ts` · **71건 전부 방어 성공**.
+`tests/rules/attack.rules.test.ts` · **35건 전부 방어 성공**.
 
 ### 1. 다른 유저의 러닝 기록을 읽을 수 있는가 → **불가능** (근거 L56, L59)
 백업 본체·런 상세 사이드카·컬렉션 전체 조회·하위 컬렉션 목록 — 4가지 경로 전부 `PERMISSION_DENIED`.
@@ -291,7 +291,7 @@ Functions 쪽 비밀(`KAKAO_APP_ID`, `NAVER_CLIENT_SECRET` 등)은 코드에 없
 
 | 조치 | 파일 |
 |---|---|
-| 공격 시나리오 71건 실증 스위트 신설 | `tests/rules/attack.rules.test.ts` |
+| 공격 시나리오 35건 실증 스위트 신설 | `tests/rules/attack.rules.test.ts` |
 | 계정 전환 오염 차단(캐시 소유자 확인) | `lib/cacheOwner.ts` · `App.tsx` |
 | 그 가드의 회귀 테스트 11건 | `__tests__/lib/cacheOwner.test.ts` |
 | `.gitignore` 에 `*.p8`·`*.p12`·`*.mobileprovision` 추가 | `.gitignore` |
@@ -313,4 +313,6 @@ Functions 쪽 비밀(`KAKAO_APP_ID`, `NAVER_CLIENT_SECRET` 등)은 코드에 없
 
 ---
 
-*근거 재현: `npm run test:rules` (71 attack + 36 contract = 107건)*
+*근거 재현: `npm run test:rules` — 공격 35건 + 기존 계약 36건 = **71건 전부 통과***
+
+*정정(2026-07-31): 최초 커밋 메시지에 '공격 71건'이라 적었으나 71 은 두 스위트 합계이고 공격은 35건이다.*
