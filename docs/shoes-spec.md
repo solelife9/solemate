@@ -259,6 +259,25 @@ Running Warehouse 는 지금 전면 404 지만, 아카이브에는 당시 상품
 뒤꿈치 61mm 다(아카이브로 재확인). 확인 못 하고 물리적으로도 말이 안 되는 값은
 **비운다** — 틀린 숫자는 빈칸보다 나쁘다(아디제로 아디오스 프로 에보 3 의 96g).
 
+### Running Warehouse 의 측정 기준 (2026-07-31 확인)
+RW 는 **모든 상품 페이지에** 자기 방법론을 적어 둔다. 우리 카탈로그의 400켤레 넘는
+값이 이 소스에서 왔으므로 그대로 옮겨 둔다:
+
+> The weight is based on a **Men's size 9** for Men's and Unisex shoes or
+> Women's size 8 for Women's shoes. The weight listed is for a **single shoe,
+> including the laces.**
+> Heel Stack / Forefoot Stack — **Based on Men's size 9 as the standard.**
+> Heel-toe Offset — **We use the number given to us by the brand.**
+
+읽히는 것 셋:
+  · RW 계열 무게·스택은 전부 **270mm(남성 US9)** 기준이다 — 우리 `weightBasis` 라벨의 근거다
+  · RW 무게는 **한 짝 + 신발끈 포함**이다(브랜드 공표값과 몇 g 어긋나는 이유)
+  · **드롭만은 브랜드가 준 숫자**를 그대로 쓴다. 그래서 드롭은 RW 든 공홈이든 같아야 하고,
+    다르면 둘 중 하나가 잘못 읽힌 것이다(`validate-shoes` 의 검산이 이걸 잡는다)
+
+사이즈 라벨이 없는 신형 페이지도 이 문구가 있으면 기준이 확정된다 — 추론이 아니라
+공표된 방법론이다. 문구가 없는 캡처에서는 **비워 둔다.**
+
 ### 접근 불가로 확인한 소스
 `asics.co.kr`(robots.txt가 `/api/`·`/search/` 금지 + 목록이 JS 렌더) ·
 `nike.com/kr` · `adidas.co.kr`(403) · `hoka.com/kr`(406) · Running Warehouse(전면 404).

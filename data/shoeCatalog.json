@@ -1992,7 +1992,7 @@
     "collabWith": null,
     "category": "racing",
     "weight": 215,
-    "weightBasis": null,
+    "weightBasis": "270mm",
     "drop": 0,
     "plate": "carbon",
     "stackHeight": {
@@ -3179,7 +3179,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 260,
-    "weightBasis": null,
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": "carbon",
     "stackHeight": {
