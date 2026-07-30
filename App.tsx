@@ -107,6 +107,7 @@ import {hkSaveRunWorkout, hkBackfillHeartRate, hkEnsureLinked, hkFindRunWorkoutW
 import {registerRunForHr, saveWatchHrTrack, retryPendingHr, avgBpmFromTrack, hasHrTrack} from './lib/hrBackfill';
 import {syncRunDetails, runsWithCloudRoute} from './lib/runDetailSync';
 import {updateHomeWidgetShoe} from './lib/homeWidget';
+import {checkCacheOwner, claimCacheOwner} from './lib/cacheOwner';
 import {liveActivity} from './lib/liveActivity';
 import {watchSession} from './lib/watchSession';
 import {assessTrainingLoad, loadRatioPhraseKo, LOAD_WORD, LoadLevel} from './lib/trainingLoad';
@@ -1209,6 +1210,18 @@ function Main(){
     // 입력에서 빠지고, applyBackupPayload + 부팅캐시 영속이 그 런을 덮어써 영구 삭제한다.
     // bootState!=='ready' 가드가 이 레이스를 차단한다(ready 시 runs/shoes 가 같은 배치로 hydrate).
     if(cloudSyncBusyRef.current||!authUser?.uid||bootState!=='ready') return;
+    // 계정 전환 오염 차단(2026-07-31 AUDIT 1). 로컬 캐시에는 소유자 표시가 없었고,
+    // 로그아웃은 신발·런 상태도 캐시도 비우지 않는다(탈퇴만 비운다). 그래서 한 기기에서
+    // A 로그아웃 → B 로그인 하면 **메모리에 남은 A 의 기록이 B 계정으로 병합·업로드**됐다.
+    // 캐시 주인이 다르면 동기를 통째로 건너뛴다 — 올리지도 내리지도 않는다.
+    // 지우지는 않는다: 오프라인에서 쌓인 미동기 기록이 로그아웃 한 번에 사라지면 안 된다
+    // (Iron Law). 완전한 계정별 캐시 격리는 저장소 구조 변경이라 별도 승인 대상이다.
+    const ownership=await checkCacheOwner(authUser.uid);
+    if(ownership==='other'){
+      reportIssue('cloud sync 차단: 이 기기 캐시는 다른 계정 것이다(계정 전환 오염 방지)',
+        new Error('cache owner mismatch'));
+      return;
+    }
     cloudSyncBusyRef.current=true;
     try{
       const port=cloudPortRef.current;
@@ -1227,6 +1240,9 @@ function Main(){
       }
       applyBackupPayload(merged);
       setLastSyncAt(Date.now());
+      // 동기가 성공했으면 이 장치 캐시의 주인을 지금 계정으로 등록한다(멱등).
+      // 표시가 없던 기존 사용자도 첫 성공 동기에서 자연히 주인이 된다.
+      void claimCacheOwner(authUser.uid);
       // Phase 3: 동기 직후 내 월간 랭킹 엔트리를 Firestore 에 발행(best-effort·논블로킹).
       // 점수는 머지된 live 레코드로 클라이언트가 계산하고, 표시정보(닉네임/랭크/타이틀)는
       // 현재 progression 에서 파생한다. 실패해도 동기 흐름·데이터엔 영향 없음(throw 흡수).

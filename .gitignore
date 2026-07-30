@@ -31,6 +31,12 @@ local.properties
 *.iml
 *.hprof
 .cxx/
+# 배포용 인증서·키(진짜 비밀값) — AUDIT 1(2026-07-31)에서 누락 확인.
+# APNs 인증 키(.p8)·배포 인증서(.p12)·프로비저닝 프로파일은 유출되면 남이 우리 이름으로
+# 푸시를 보내거나 앱을 서명할 수 있다. 지금 저장소에 없지만, 푸시 설정을 하면 받게 된다.
+*.p8
+*.p12
+*.mobileprovision
 *.keystore
 !debug.keystore
 .kotlin/
