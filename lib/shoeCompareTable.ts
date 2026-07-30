@@ -12,6 +12,7 @@
 //  · 순수 — 네트워크·시간·네이티브 의존 0. 입력 불변, throw 금지.
 
 import type {PlateKind, ShoeCategory, StackHeight} from '../types/shoe';
+import {basisComparable, normalizeWeightBasis, STANDARD_BASIS} from './shoeWeightBasis';
 
 /** 비교에 필요한 최소 형태. 카탈로그 문서를 그대로 넣어도 되고, 일부만 채워도 된다. */
 export interface CompareShoe {
@@ -103,16 +104,31 @@ export function buildCompareTable(shoes: readonly CompareShoe[]): CompareRow[] {
   if (shoes.length === 0) return [];
   const base = shoes[0];
 
+  // 무게는 **같은 사이즈에서 잰 것끼리만** 차이를 낸다.
+  //
+  // 반 사이즈가 6~9g, 270↔280mm 가 12~18g 이다. 신발끼리 실제 차이가 20~60g 인데
+  // 여기에 사이즈 오차가 섞이면 "+62g 더 무겁다"를 사용자가 그대로 믿는다.
+  // 기준이 다르거나 하나라도 모르면 **차이를 안 적는다** — 틀린 숫자는 빈칸보다 나쁘다.
+  // 대신 두 무게와 각자의 기준을 나란히 보여주고 판단을 넘긴다(docs/shoes-spec.md §1).
   const weight: CompareRow = {
     key: 'weight',
     label: '무게',
     cells: shoes.map((s, i) => {
       const c = numCell(s.weight, base.weight, i === 0, 'g');
-      // 기준 사이즈가 서로 다르면 그 무게 차이는 그만큼 덜 믿을 만하다 — 숨기지 않는다.
-      if (c.value !== null && s.weightBasis && s.weightBasis !== 'US9') c.sub = s.weightBasis;
+      if (c.value === null) return c;
+      const mine = normalizeWeightBasis(s.weightBasis);
+      if (i > 0 && !basisComparable(s.weightBasis, base.weightBasis)) c.delta = null;
+      // 표준(270mm)이면 굳이 적지 않는다. 다르거나 모르면 그 사실을 드러낸다.
+      if (mine == null) c.sub = '기준 모름';
+      else if (mine !== STANDARD_BASIS) c.sub = mine;
       return c;
     }),
   };
+  // 기준이 갈린 게 하나라도 있으면 줄 자체에 이유를 적는다.
+  if (shoes.some((s, i) => i > 0 && s.weight != null && base.weight != null
+      && !basisComparable(s.weightBasis, base.weightBasis))) {
+    weight.hint = '잰 사이즈가 달라 차이는 비교하지 않음';
+  }
 
   const stack: CompareRow = {
     key: 'stack',

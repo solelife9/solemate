@@ -29,7 +29,7 @@
     "collabWith": null,
     "category": "racing",
     "weight": 176,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 7,
     "plate": "other",
     "stackHeight": {
@@ -80,7 +80,7 @@
     "collabWith": null,
     "category": "racing",
     "weight": 201,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "carbon",
     "stackHeight": {
@@ -160,7 +160,7 @@
     "collabWith": null,
     "category": "racing",
     "weight": 130,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 3,
     "plate": "other",
     "stackHeight": {
@@ -239,7 +239,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 258,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6.5,
     "plate": null,
     "stackHeight": {
@@ -270,7 +270,7 @@
     "collabWith": null,
     "category": "tempo",
     "weight": 255,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 7,
     "plate": "other",
     "stackHeight": {
@@ -343,7 +343,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 235,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 7,
     "plate": null,
     "stackHeight": {
@@ -370,7 +370,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 235,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 7,
     "plate": "other",
     "stackHeight": {
@@ -396,7 +396,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 306,
-    "weightBasis": "유니섹스 사이즈 9",
+    "weightBasis": "270mm",
     "drop": 7,
     "plate": "carbon",
     "stackHeight": {
@@ -423,7 +423,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 153,
-    "weightBasis": "M5.0/W6.0",
+    "weightBasis": "230mm",
     "drop": 6,
     "plate": null,
     "stackHeight": {
@@ -450,7 +450,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 286,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 7,
     "plate": "carbon",
     "stackHeight": {
@@ -481,7 +481,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 241,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": null,
     "stackHeight": {
@@ -506,7 +506,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 236,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": null,
     "stackHeight": {
@@ -531,7 +531,7 @@
     "collabWith": null,
     "category": "racing",
     "weight": 184,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 7,
     "plate": "other",
     "stackHeight": {
@@ -694,7 +694,7 @@
     "collabWith": null,
     "category": "tempo",
     "weight": 247,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": null,
     "stackHeight": {
@@ -780,7 +780,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 278,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -811,7 +811,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 287,
-    "weightBasis": "UK9",
+    "weightBasis": "280mm",
     "drop": 10,
     "plate": null,
     "stackHeight": {
@@ -865,7 +865,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 264,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
     "stackHeight": {
@@ -915,7 +915,7 @@
     "collabWith": null,
     "category": "stability",
     "weight": 280,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
     "stackHeight": {
@@ -967,7 +967,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 292,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "other",
     "stackHeight": {
@@ -987,7 +987,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 269,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -1014,7 +1014,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 281,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "other",
     "stackHeight": {
@@ -1041,7 +1041,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 238,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -1072,7 +1072,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 264,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "other",
     "stackHeight": {
@@ -1094,7 +1094,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 269,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "other",
     "stackHeight": {
@@ -1121,7 +1121,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 306,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "other",
     "stackHeight": {
@@ -1366,7 +1366,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 244,
-    "weightBasis": "사이즈 9",
+    "weightBasis": "270mm",
     "drop": 0,
     "plate": null,
     "stackHeight": {
@@ -1417,7 +1417,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 224,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 0,
     "plate": "none",
     "stackHeight": {
@@ -1442,7 +1442,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 235,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 4,
     "plate": null,
     "stackHeight": {
@@ -1467,7 +1467,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 230,
-    "weightBasis": "사이즈 9",
+    "weightBasis": "270mm",
     "drop": 4,
     "plate": null,
     "stackHeight": {
@@ -1492,7 +1492,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 269,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 4,
     "plate": "none",
     "stackHeight": {
@@ -1542,7 +1542,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 281,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 4,
     "plate": null,
     "stackHeight": {
@@ -1599,7 +1599,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 295,
-    "weightBasis": "사이즈 9",
+    "weightBasis": "270mm",
     "drop": 0,
     "plate": null,
     "stackHeight": {
@@ -1622,7 +1622,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 264,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 0,
     "plate": "carbon",
     "stackHeight": {
@@ -1647,7 +1647,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 258,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 0,
     "plate": "other",
     "stackHeight": {
@@ -1672,7 +1672,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 315,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 0,
     "plate": "none",
     "stackHeight": {
@@ -1697,7 +1697,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 354,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 0,
     "plate": "none",
     "stackHeight": {
@@ -1750,7 +1750,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 278,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 0,
     "plate": "none",
     "stackHeight": {
@@ -1775,7 +1775,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 286,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 0,
     "plate": null,
     "stackHeight": {
@@ -1826,7 +1826,7 @@
     "variant": "BOA",
     "collabWith": null,
     "weight": 289,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 0,
     "plate": "none",
     "stackHeight": {
@@ -1882,7 +1882,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 280,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 0,
     "plate": "none",
     "stackHeight": {
@@ -1908,7 +1908,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 269,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 0,
     "plate": null,
     "stackHeight": {
@@ -1957,7 +1957,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 281,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 0,
     "plate": null,
     "stackHeight": {
@@ -2029,7 +2029,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 275,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -2132,7 +2132,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 274,
-    "weightBasis": "기준 미표기",
+    "weightBasis": null,
     "drop": 8,
     "plate": null,
     "stackHeight": null,
@@ -2178,7 +2178,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 255,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -2206,7 +2206,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 261,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -2233,7 +2233,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 255,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -2302,7 +2302,7 @@
     "collabWith": null,
     "category": "stability",
     "weight": 299,
-    "weightBasis": "기준 미표기",
+    "weightBasis": null,
     "drop": 10,
     "plate": null,
     "stackHeight": null,
@@ -2327,7 +2327,7 @@
     "collabWith": null,
     "category": "stability",
     "weight": 303,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": "none",
     "stackHeight": {
@@ -2355,7 +2355,7 @@
     "collabWith": null,
     "category": "stability",
     "weight": 312,
-    "weightBasis": "US9.5",
+    "weightBasis": "275mm",
     "drop": 10,
     "plate": null,
     "stackHeight": {
@@ -2383,7 +2383,7 @@
     "collabWith": null,
     "category": "stability",
     "weight": 298,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -2465,7 +2465,7 @@
     "collabWith": null,
     "category": "recovery",
     "weight": 304,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -2493,7 +2493,7 @@
     "collabWith": null,
     "category": "recovery",
     "weight": 295,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
     "stackHeight": {
@@ -2521,7 +2521,7 @@
     "collabWith": null,
     "category": "recovery",
     "weight": 272,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
     "stackHeight": {
@@ -2594,7 +2594,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 240,
-    "weightBasis": "기준 미표기",
+    "weightBasis": null,
     "drop": 8,
     "plate": null,
     "stackHeight": null,
@@ -2632,7 +2632,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 309,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -2685,7 +2685,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 283,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -2821,7 +2821,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 261,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": null,
     "stackHeight": {
@@ -2870,7 +2870,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 269,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -2901,7 +2901,7 @@
     "collabWith": null,
     "category": "stability",
     "weight": 266,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
     "stackHeight": {
@@ -2927,7 +2927,7 @@
     "collabWith": null,
     "category": "stability",
     "weight": 266,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
     "stackHeight": {
@@ -2953,7 +2953,7 @@
     "collabWith": null,
     "category": "stability",
     "weight": 266,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -2976,7 +2976,7 @@
     "variant": "GTX",
     "collabWith": null,
     "weight": 298,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -3002,7 +3002,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 258,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -3075,7 +3075,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 265,
-    "weightBasis": "기준 미표기",
+    "weightBasis": null,
     "drop": 10,
     "plate": null,
     "stackHeight": null,
@@ -3102,7 +3102,7 @@
     "collabWith": null,
     "category": "tempo",
     "weight": 241,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "carbon",
     "stackHeight": null,
@@ -3125,7 +3125,7 @@
     "collabWith": null,
     "category": "tempo",
     "weight": 201,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 7,
     "plate": "carbon",
     "stackHeight": {
@@ -3151,7 +3151,7 @@
     "collabWith": null,
     "category": "tempo",
     "weight": 221,
-    "weightBasis": "유니섹스(사이즈 미표기)",
+    "weightBasis": null,
     "drop": 8,
     "plate": "none",
     "stackHeight": {
@@ -3203,7 +3203,7 @@
     "collabWith": null,
     "category": "racing",
     "weight": 209,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": "carbon",
     "stackHeight": {
@@ -3228,7 +3228,7 @@
     "collabWith": null,
     "category": "racing",
     "weight": 184,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": "carbon",
     "stackHeight": {
@@ -3249,7 +3249,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 159,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": "carbon",
     "stackHeight": {
@@ -3276,7 +3276,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 130,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": "carbon",
     "stackHeight": {
@@ -3332,7 +3332,7 @@
     "collabWith": null,
     "category": "racing",
     "weight": 181,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": "carbon",
     "stackHeight": {
@@ -3353,7 +3353,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 159,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": "carbon",
     "stackHeight": {
@@ -3384,7 +3384,7 @@
     "collabWith": null,
     "category": "tempo",
     "weight": 213,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": null,
     "stackHeight": {
@@ -3408,7 +3408,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 247,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
     "stackHeight": {
@@ -3436,7 +3436,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 267,
-    "weightBasis": "US9.5",
+    "weightBasis": "275mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -3464,7 +3464,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 247,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -3491,7 +3491,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 249,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
     "stackHeight": {
@@ -3514,7 +3514,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 235,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "stackHeight": {
       "heel": 40,
@@ -3544,7 +3544,7 @@
     "collabWith": null,
     "category": "tempo",
     "weight": 255,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "other",
     "stackHeight": {
@@ -3570,7 +3570,7 @@
     "collabWith": null,
     "category": "tempo",
     "weight": 251,
-    "weightBasis": "US9.5",
+    "weightBasis": "275mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -3626,7 +3626,7 @@
     "collabWith": null,
     "category": "tempo",
     "weight": 230,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
     "stackHeight": {
@@ -3702,7 +3702,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 312,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": null,
     "stackHeight": {
@@ -3748,7 +3748,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 354,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 12,
     "plate": "none",
     "stackHeight": {
@@ -3778,7 +3778,7 @@
     "collabWith": null,
     "category": "stability",
     "weight": 287,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 12,
     "plate": null,
     "stackHeight": null,
@@ -3801,7 +3801,7 @@
     "collabWith": null,
     "category": "stability",
     "weight": 283,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 12,
     "plate": null,
     "stackHeight": {
@@ -3827,7 +3827,7 @@
     "collabWith": null,
     "category": "stability",
     "weight": 301,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": "none",
     "stackHeight": {
@@ -3871,7 +3871,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 357,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": null,
     "stackHeight": {
@@ -3901,7 +3901,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 300,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "none",
     "stackHeight": {
@@ -3927,7 +3927,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 300,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "none",
     "stackHeight": {
@@ -3953,7 +3953,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 320,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "other",
     "stackHeight": {
@@ -3973,7 +3973,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 320,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -4004,7 +4004,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 301,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "other",
     "stackHeight": {
@@ -4024,7 +4024,7 @@
     "variant": "GTX",
     "collabWith": null,
     "weight": 318,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "other",
     "stackHeight": {
@@ -4096,7 +4096,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 269,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "other",
     "stackHeight": {
@@ -4125,7 +4125,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 269,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "other",
     "stackHeight": {
@@ -4168,7 +4168,7 @@
     "variant": "GTX",
     "collabWith": null,
     "weight": 298,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": null,
     "stackHeight": null,
@@ -4221,7 +4221,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 272,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 12,
     "plate": null,
     "stackHeight": {
@@ -4247,7 +4247,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 269,
-    "weightBasis": "EU44",
+    "weightBasis": "280mm",
     "drop": 12,
     "plate": null,
     "stackHeight": {
@@ -4273,7 +4273,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 289,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": null,
     "stackHeight": {
@@ -4299,7 +4299,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 283,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": "none",
     "stackHeight": {
@@ -4321,7 +4321,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 252,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "none",
     "stackHeight": {
@@ -4347,7 +4347,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 283,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": null,
     "stackHeight": null,
@@ -4374,7 +4374,7 @@
     "collabWith": null,
     "category": "recovery",
     "weight": 306,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": null,
     "stackHeight": {
@@ -4396,7 +4396,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 303,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "none",
     "stackHeight": {
@@ -4445,7 +4445,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 292,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
     "stackHeight": {
@@ -4475,7 +4475,7 @@
     "collabWith": null,
     "category": "recovery",
     "weight": 300,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": "none",
     "stackHeight": {
@@ -4501,7 +4501,7 @@
     "collabWith": null,
     "category": "recovery",
     "weight": 277,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": null,
     "stackHeight": {
@@ -4527,7 +4527,7 @@
     "collabWith": null,
     "category": "recovery",
     "weight": 292,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": "none",
     "stackHeight": {
@@ -4549,7 +4549,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 309,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
     "stackHeight": {
@@ -4579,7 +4579,7 @@
     "collabWith": null,
     "category": "recovery",
     "weight": 249,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": null,
     "stackHeight": null,
@@ -4597,7 +4597,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 295,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": null,
     "stackHeight": null,
@@ -4624,7 +4624,7 @@
     "collabWith": null,
     "category": "stability",
     "weight": 303,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": null,
     "stackHeight": {
@@ -4650,7 +4650,7 @@
     "collabWith": null,
     "category": "stability",
     "weight": 306,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -4676,7 +4676,7 @@
     "collabWith": null,
     "category": "recovery",
     "weight": 298,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": null,
     "stackHeight": null,
@@ -4694,7 +4694,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 315,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": null,
     "stackHeight": {
@@ -4723,7 +4723,7 @@
     "collabWith": null,
     "category": "tempo",
     "weight": 201,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
     "stackHeight": {
@@ -4745,7 +4745,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 241,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -4774,11 +4774,14 @@
     "variant": null,
     "collabWith": null,
     "category": "racing",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 235,
+    "weightBasis": "270mm",
+    "drop": 8,
+    "plate": "carbon",
+    "stackHeight": {
+      "heel": 35,
+      "forefoot": 27
+    },
     "releaseYear": null,
     "defaultLifespanKm": 450,
     "discontinued": false,
@@ -4789,7 +4792,7 @@
       "엘리트",
       "엘리트 3"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "brooks-hyperion-elite-4",
@@ -4800,7 +4803,7 @@
     "collabWith": null,
     "category": "racing",
     "weight": 218,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "carbon",
     "stackHeight": {
@@ -4847,7 +4850,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 201,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "carbon",
     "stackHeight": {
@@ -4945,7 +4948,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 289,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "other",
     "stackHeight": {
@@ -4971,7 +4974,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 295,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "other",
     "stackHeight": {
@@ -5001,7 +5004,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 232,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": "none",
     "stackHeight": {
@@ -5049,7 +5052,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 247,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -5145,7 +5148,7 @@
     "collabWith": null,
     "category": "racing",
     "weight": 198,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": null,
     "stackHeight": {
@@ -5221,7 +5224,7 @@
     "collabWith": null,
     "category": "recovery",
     "weight": 306,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": null,
     "stackHeight": {
@@ -5249,7 +5252,7 @@
     "collabWith": null,
     "category": "recovery",
     "weight": 306,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": "none",
     "stackHeight": {
@@ -5326,7 +5329,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 275,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": "none",
     "stackHeight": {
@@ -5401,7 +5404,7 @@
     "collabWith": null,
     "category": "racing",
     "weight": 210,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 7,
     "plate": "carbon",
     "stackHeight": {
@@ -5423,7 +5426,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 198,
-    "weightBasis": "유니섹스(사이즈 미표기)",
+    "weightBasis": null,
     "drop": 7,
     "plate": "carbon",
     "stackHeight": {
@@ -5453,7 +5456,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 258,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -5475,7 +5478,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 261,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
     "stackHeight": {
@@ -5531,7 +5534,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 247,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": null,
     "stackHeight": {
@@ -5577,7 +5580,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 266,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -5630,7 +5633,7 @@
     "collabWith": null,
     "category": "stability",
     "weight": 309,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "none",
     "stackHeight": {
@@ -5650,7 +5653,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 283,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": null,
     "stackHeight": {
@@ -5722,7 +5725,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 212,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": "none",
     "stackHeight": {
@@ -5748,7 +5751,7 @@
     "collabWith": null,
     "category": "tempo",
     "weight": 210,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": null,
     "stackHeight": {
@@ -5774,7 +5777,7 @@
     "collabWith": null,
     "category": "tempo",
     "weight": 241,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": "none",
     "stackHeight": {
@@ -5825,7 +5828,7 @@
     "collabWith": null,
     "category": "tempo",
     "weight": 252,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": "other",
     "stackHeight": {
@@ -5847,7 +5850,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 266,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": "other",
     "stackHeight": {
@@ -5873,7 +5876,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 315,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -5903,7 +5906,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 280,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 4,
     "plate": "none",
     "stackHeight": {
@@ -5950,7 +5953,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 343,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -6032,7 +6035,7 @@
     "collabWith": null,
     "category": "racing",
     "weight": 235,
-    "weightBasis": "유니섹스 사이즈 9",
+    "weightBasis": "270mm",
     "drop": null,
     "plate": "carbon",
     "stackHeight": null,
@@ -6079,7 +6082,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 261,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "carbon",
     "stackHeight": {
@@ -6109,7 +6112,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 283,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": null,
     "stackHeight": {
@@ -6134,7 +6137,7 @@
     "collabWith": null,
     "category": "recovery",
     "weight": 306,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": "carbon",
     "stackHeight": {
@@ -6155,7 +6158,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 283,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": "carbon",
     "stackHeight": {
@@ -6185,7 +6188,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 280,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 4,
     "plate": "none",
     "stackHeight": {
@@ -6211,7 +6214,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 283,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": "none",
     "stackHeight": {
@@ -6237,7 +6240,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 272,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": "none",
     "stackHeight": {
@@ -6263,7 +6266,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 343,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": null,
     "stackHeight": {
@@ -6283,7 +6286,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 249,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": "carbon",
     "stackHeight": {
@@ -6309,7 +6312,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 275,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": "carbon",
     "stackHeight": {
@@ -6406,7 +6409,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 272,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": "carbon",
     "stackHeight": {
@@ -6432,7 +6435,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 210,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": "none",
     "stackHeight": {
@@ -6458,7 +6461,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 241,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": null,
     "stackHeight": {
@@ -6549,7 +6552,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 280,
-    "weightBasis": "US10",
+    "weightBasis": "280mm",
     "drop": 6,
     "plate": null,
     "stackHeight": {
@@ -6575,7 +6578,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 301,
-    "weightBasis": "US10",
+    "weightBasis": "280mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -6623,7 +6626,7 @@
     "variant": "WR",
     "collabWith": null,
     "weight": 350,
-    "weightBasis": "US10",
+    "weightBasis": "280mm",
     "drop": 5,
     "plate": null,
     "stackHeight": null,
@@ -6671,7 +6674,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 340,
-    "weightBasis": "US10",
+    "weightBasis": "280mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -6887,7 +6890,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 243,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "none",
     "stackHeight": {
@@ -6940,7 +6943,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 167,
-    "weightBasis": "EU42",
+    "weightBasis": "265mm",
     "drop": 4,
     "plate": "carbon",
     "stackHeight": {
@@ -7044,7 +7047,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 247,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "carbon",
     "stackHeight": {
@@ -7259,7 +7262,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 298,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "none",
     "stackHeight": {
@@ -7353,7 +7356,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 300,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": null,
     "stackHeight": {
@@ -7373,7 +7376,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 170,
-    "weightBasis": "유니섹스 M9",
+    "weightBasis": "270mm",
     "drop": 3.5,
     "plate": "carbon",
     "stackHeight": {
@@ -7399,7 +7402,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 198,
-    "weightBasis": "사이즈 9",
+    "weightBasis": "270mm",
     "drop": 5.5,
     "plate": "other",
     "stackHeight": {
@@ -7425,7 +7428,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 139,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 3.5,
     "plate": "carbon",
     "stackHeight": {
@@ -7498,7 +7501,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 290,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": null,
     "stackHeight": {
@@ -7554,7 +7557,7 @@
     "collabWith": null,
     "category": "tempo",
     "weight": 264,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "other",
     "stackHeight": {
@@ -7576,7 +7579,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 272,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "other",
     "stackHeight": {
@@ -7602,7 +7605,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 235,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "none",
     "stackHeight": {
@@ -7627,7 +7630,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 241,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "none",
     "stackHeight": {
@@ -7720,7 +7723,7 @@
     "collabWith": null,
     "category": "stability",
     "weight": 323,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
     "stackHeight": {
@@ -7740,7 +7743,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 309,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -7770,7 +7773,7 @@
     "collabWith": null,
     "category": "stability",
     "weight": 300,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 12,
     "plate": "other",
     "stackHeight": {
@@ -7796,7 +7799,7 @@
     "collabWith": null,
     "category": "stability",
     "weight": 292,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 12,
     "plate": null,
     "stackHeight": {
@@ -7938,7 +7941,7 @@
     "collabWith": null,
     "category": "tempo",
     "weight": 235,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "other",
     "stackHeight": {
@@ -7960,7 +7963,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 238,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 0.5,
     "plate": null,
     "stackHeight": {
@@ -7990,7 +7993,7 @@
     "collabWith": null,
     "category": "tempo",
     "weight": 244,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 3,
     "plate": "other",
     "stackHeight": {
@@ -8016,7 +8019,7 @@
     "collabWith": null,
     "category": "racing",
     "weight": 204,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 2,
     "plate": "other",
     "stackHeight": {
@@ -8044,7 +8047,7 @@
     "collabWith": null,
     "category": "racing",
     "weight": 218,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 4,
     "plate": "other",
     "stackHeight": {
@@ -8070,7 +8073,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 286,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 12,
     "plate": "none",
     "stackHeight": {
@@ -8123,7 +8126,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 263,
-    "weightBasis": "US9.5",
+    "weightBasis": "275mm",
     "drop": 12,
     "plate": null,
     "stackHeight": {
@@ -8151,7 +8154,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 258,
-    "weightBasis": "유니섹스 M6.0/W7.5",
+    "weightBasis": "240mm",
     "drop": 10,
     "plate": null,
     "stackHeight": {
@@ -8179,7 +8182,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 264,
-    "weightBasis": "유니섹스 M7.0/W8.5",
+    "weightBasis": "250mm",
     "drop": 8,
     "plate": "other",
     "stackHeight": {
@@ -8254,7 +8257,7 @@
     "collabWith": null,
     "category": "recovery",
     "weight": 292,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "none",
     "stackHeight": {
@@ -8276,7 +8279,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 261,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -8309,7 +8312,7 @@
     "collabWith": null,
     "category": "recovery",
     "weight": 263,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "none",
     "stackHeight": {
@@ -8340,7 +8343,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 280,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": null,
     "stackHeight": {
@@ -8375,7 +8378,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 258,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "none",
     "stackHeight": {
@@ -8442,7 +8445,7 @@
     "collabWith": null,
     "category": "stability",
     "weight": 298,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -8473,7 +8476,7 @@
     "collabWith": null,
     "category": "stability",
     "weight": 335,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
     "stackHeight": {
@@ -8504,7 +8507,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 261,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
     "stackHeight": {
@@ -8531,7 +8534,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 281,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": null,
     "stackHeight": {
@@ -8649,7 +8652,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 281,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "none",
     "stackHeight": {
@@ -8686,7 +8689,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 306,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 4,
     "plate": null,
     "stackHeight": {
@@ -8745,7 +8748,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 309,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 4,
     "plate": "none",
     "stackHeight": {
@@ -8780,7 +8783,7 @@
     "collabWith": null,
     "category": "recovery",
     "weight": 303,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 4,
     "plate": "none",
     "stackHeight": {
@@ -8807,7 +8810,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 312,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 4,
     "plate": null,
     "stackHeight": {
@@ -8842,7 +8845,7 @@
     "collabWith": null,
     "category": "stability",
     "weight": 309,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "none",
     "stackHeight": null,
@@ -8896,7 +8899,7 @@
     "collabWith": null,
     "category": "tempo",
     "weight": 201,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "none",
     "stackHeight": null,
@@ -8951,7 +8954,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 289,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": null,
     "stackHeight": {
@@ -8979,7 +8982,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 232,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 4,
     "plate": "carbon",
     "stackHeight": {
@@ -9045,7 +9048,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 184,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "carbon",
     "stackHeight": {
@@ -9082,7 +9085,7 @@
     "collabWith": null,
     "category": "tempo",
     "weight": 189,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
     "stackHeight": {
@@ -9106,7 +9109,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 210,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "carbon",
     "stackHeight": {
@@ -9137,7 +9140,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 278,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "carbon",
     "stackHeight": {
@@ -9168,7 +9171,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 275,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "carbon",
     "stackHeight": null,
@@ -9200,7 +9203,7 @@
     "collabWith": null,
     "category": "tempo",
     "weight": 278,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "carbon",
     "stackHeight": {
@@ -9308,7 +9311,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 286,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -9334,7 +9337,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 269,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8.5,
     "plate": null,
     "stackHeight": {
@@ -9360,7 +9363,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 315,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 4,
     "plate": null,
     "stackHeight": {
@@ -9390,7 +9393,7 @@
     "collabWith": null,
     "category": "racing",
     "weight": 224,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "carbon",
     "stackHeight": {
@@ -9416,7 +9419,7 @@
     "collabWith": null,
     "category": "racing",
     "weight": 198,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "carbon",
     "stackHeight": {
@@ -9487,7 +9490,7 @@
     "collabWith": null,
     "category": "stability",
     "weight": 297,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -9582,7 +9585,7 @@
     "collabWith": null,
     "category": "recovery",
     "weight": 300,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 9,
     "plate": "none",
     "stackHeight": {
@@ -9627,7 +9630,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 258,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": "other",
     "stackHeight": {
@@ -9654,7 +9657,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 286,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 3,
     "plate": "none",
     "stackHeight": {
@@ -9685,7 +9688,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 266,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": null,
     "stackHeight": {
@@ -9715,7 +9718,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 266,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": "none",
     "stackHeight": {
@@ -9745,7 +9748,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 283,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": "none",
     "stackHeight": {
@@ -9775,7 +9778,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 292,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": "none",
     "stackHeight": {
@@ -9829,7 +9832,7 @@
     "collabWith": null,
     "category": "tempo",
     "weight": 309,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": null,
     "stackHeight": {
@@ -9851,7 +9854,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 289,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 9.5,
     "plate": "none",
     "stackHeight": {
@@ -9877,7 +9880,7 @@
     "variant": "GTX",
     "collabWith": null,
     "weight": 272,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": "none",
     "stackHeight": {
@@ -9907,7 +9910,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 286,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 9.5,
     "plate": "none",
     "stackHeight": {
@@ -9933,7 +9936,7 @@
     "variant": "GTX",
     "collabWith": null,
     "weight": 281,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 9.5,
     "plate": null,
     "stackHeight": {
@@ -9964,7 +9967,7 @@
     "collabWith": null,
     "category": "stability",
     "weight": 297,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -10080,7 +10083,7 @@
     "collabWith": null,
     "category": "racing",
     "weight": 173,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "none",
     "stackHeight": {
@@ -10105,7 +10108,7 @@
     "collabWith": null,
     "category": "racing",
     "weight": 128,
-    "weightBasis": "US9(유니섹스)",
+    "weightBasis": "270mm",
     "drop": 4,
     "plate": "carbon",
     "stackHeight": {
@@ -10154,7 +10157,7 @@
     "collabWith": null,
     "category": "stability",
     "weight": 306,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": "none",
     "stackHeight": {
@@ -10180,7 +10183,7 @@
     "collabWith": null,
     "category": "stability",
     "weight": 295,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": "none",
     "stackHeight": {
@@ -10207,7 +10210,7 @@
     "collabWith": null,
     "category": "stability",
     "weight": 295,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": "none",
     "stackHeight": {
@@ -10233,7 +10236,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 283,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8.5,
     "plate": "carbon",
     "stackHeight": {
@@ -10283,7 +10286,7 @@
     "collabWith": null,
     "category": "racing",
     "weight": 184,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "carbon",
     "stackHeight": {
@@ -10309,7 +10312,7 @@
     "collabWith": null,
     "category": "racing",
     "weight": 167,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "carbon",
     "stackHeight": {
@@ -10336,7 +10339,7 @@
     "collabWith": null,
     "category": "recovery",
     "weight": 298,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": "none",
     "stackHeight": {
@@ -10385,7 +10388,7 @@
     "collabWith": null,
     "category": "recovery",
     "weight": 281,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": "none",
     "stackHeight": {
@@ -10411,7 +10414,7 @@
     "collabWith": null,
     "category": "recovery",
     "weight": 329,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": "none",
     "stackHeight": {
@@ -10437,7 +10440,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 306,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 9.5,
     "plate": "other",
     "stackHeight": {
@@ -10459,7 +10462,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 323,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 9,
     "plate": "other",
     "stackHeight": {
@@ -10575,7 +10578,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 306,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 4,
     "plate": "none",
     "stackHeight": {
@@ -10647,7 +10650,7 @@
     "collabWith": null,
     "category": "tempo",
     "weight": 244,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "carbon",
     "stackHeight": {
@@ -10720,7 +10723,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 230,
-    "weightBasis": "유니섹스 사이즈 9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "none",
     "stackHeight": {
@@ -10744,7 +10747,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 289,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -10768,7 +10771,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 298,
-    "weightBasis": "사이즈 9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": null,
     "stackHeight": {
@@ -10835,7 +10838,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 268,
-    "weightBasis": "US M8.5",
+    "weightBasis": "265mm",
     "drop": 5,
     "plate": null,
     "stackHeight": {
@@ -10889,7 +10892,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 227,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 7,
     "plate": null,
     "stackHeight": {
@@ -10932,7 +10935,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 298,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": null,
     "stackHeight": {
@@ -10961,7 +10964,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 272,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "none",
     "stackHeight": {
@@ -11057,7 +11060,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 286,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -11088,7 +11091,7 @@
     "collabWith": null,
     "category": "racing",
     "weight": 218,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 9.5,
     "plate": "none",
     "stackHeight": {
@@ -11138,7 +11141,7 @@
     "collabWith": null,
     "category": "racing",
     "weight": 213,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 4,
     "plate": "carbon",
     "stackHeight": {
@@ -11290,7 +11293,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 247,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
     "stackHeight": {
@@ -11389,7 +11392,7 @@
     "collabWith": null,
     "category": "recovery",
     "weight": 275,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "none",
     "stackHeight": {
@@ -11416,7 +11419,7 @@
     "collabWith": null,
     "category": "recovery",
     "weight": 295,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": null,
     "stackHeight": {
@@ -11445,7 +11448,7 @@
     "collabWith": null,
     "category": "recovery",
     "weight": 295,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "other",
     "stackHeight": {
@@ -11469,7 +11472,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 264,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "none",
     "stackHeight": {
@@ -11527,7 +11530,7 @@
     "collabWith": null,
     "category": "stability",
     "weight": 275,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": "none",
     "stackHeight": {
@@ -11554,7 +11557,7 @@
     "collabWith": null,
     "category": "stability",
     "weight": 295,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -11604,7 +11607,7 @@
     "collabWith": null,
     "category": "stability",
     "weight": 292,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "other",
     "stackHeight": {
@@ -11683,7 +11686,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 237,
-    "weightBasis": "US9.5",
+    "weightBasis": "275mm",
     "drop": 10,
     "plate": null,
     "stackHeight": {
@@ -11736,7 +11739,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 266,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": null,
     "stackHeight": {
@@ -11839,7 +11842,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 290,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": "none",
     "stackHeight": {
@@ -11946,7 +11949,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 261,
-    "weightBasis": "사이즈 9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "other",
     "stackHeight": {
@@ -12072,7 +12075,7 @@
     "collabWith": null,
     "category": "tempo",
     "weight": 269,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": "carbon",
     "stackHeight": {
@@ -12098,7 +12101,7 @@
     "collabWith": null,
     "category": "tempo",
     "weight": 241,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "carbon",
     "stackHeight": {
@@ -12152,7 +12155,7 @@
     "collabWith": null,
     "category": "racing",
     "weight": 196,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "carbon",
     "stackHeight": {
@@ -12180,7 +12183,7 @@
     "collabWith": null,
     "category": "racing",
     "weight": 170,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "carbon",
     "stackHeight": {
@@ -12204,7 +12207,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 272,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "carbon",
     "stackHeight": {
@@ -12229,7 +12232,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 213,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
     "stackHeight": {
@@ -12280,7 +12283,7 @@
     "collabWith": null,
     "category": "racing",
     "weight": 170,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "carbon",
     "stackHeight": {
@@ -12352,7 +12355,7 @@
     "collabWith": null,
     "category": "stability",
     "weight": 292,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": null,
     "stackHeight": {
@@ -12374,7 +12377,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 281,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
     "stackHeight": {
@@ -12400,7 +12403,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 292,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
     "stackHeight": {
@@ -12429,7 +12432,7 @@
     "collabWith": null,
     "category": "recovery",
     "weight": 266,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
     "stackHeight": {
@@ -12481,7 +12484,7 @@
     "collabWith": null,
     "category": "recovery",
     "weight": 264,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": null,
     "stackHeight": {
@@ -12507,7 +12510,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 260,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": null,
     "stackHeight": {
@@ -12533,7 +12536,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 227,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": null,
     "stackHeight": {
@@ -12555,7 +12558,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 244,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
     "stackHeight": {
@@ -12692,7 +12695,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 227,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -12718,7 +12721,7 @@
     "variant": "GRVL",
     "collabWith": null,
     "weight": 247,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
     "stackHeight": {
@@ -12768,7 +12771,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 232,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -12797,7 +12800,7 @@
     "collabWith": null,
     "category": "recovery",
     "weight": 249,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
     "stackHeight": {
@@ -12817,7 +12820,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 261,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -12843,7 +12846,7 @@
     "variant": "GRVL",
     "collabWith": null,
     "weight": 283,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
     "stackHeight": {
@@ -12896,7 +12899,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 275,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
     "stackHeight": {
@@ -12917,7 +12920,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 286,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -12943,7 +12946,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 269,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "carbon",
     "stackHeight": {
@@ -12968,7 +12971,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 289,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "none",
     "stackHeight": {
@@ -12997,7 +13000,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 269,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "other",
     "stackHeight": {
@@ -13023,7 +13026,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 269,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "other",
     "stackHeight": {
@@ -13068,7 +13071,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 258,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
     "stackHeight": null,
@@ -13144,7 +13147,7 @@
     "collabWith": null,
     "category": "racing",
     "weight": 219,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 9,
     "plate": "none",
     "stackHeight": {
@@ -13164,7 +13167,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 184,
-    "weightBasis": "유니섹스(사이즈 미표기)",
+    "weightBasis": null,
     "drop": 6,
     "plate": "carbon",
     "stackHeight": {
@@ -13217,7 +13220,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 201,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "none",
     "stackHeight": {
@@ -13239,7 +13242,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 252,
-    "weightBasis": "M9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": null,
     "stackHeight": {
@@ -13265,7 +13268,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 252,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "carbon",
     "stackHeight": {
@@ -13319,7 +13322,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 335,
-    "weightBasis": "M8.5/W9.5",
+    "weightBasis": "265mm",
     "drop": 6,
     "plate": "none",
     "stackHeight": {
@@ -13349,7 +13352,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 306,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "none",
     "stackHeight": {
@@ -13394,7 +13397,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 295,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "none",
     "stackHeight": {
@@ -13424,7 +13427,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 286,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
     "stackHeight": {
@@ -13500,7 +13503,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 297,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": null,
     "stackHeight": {
@@ -13549,7 +13552,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 283,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 4,
     "plate": "none",
     "stackHeight": {
@@ -13595,7 +13598,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 275,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": null,
     "stackHeight": {
@@ -13690,7 +13693,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 308,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -13716,7 +13719,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 244,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
     "stackHeight": {
@@ -13747,7 +13750,7 @@
     "collabWith": null,
     "category": "racing",
     "weight": 201,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "carbon",
     "stackHeight": {
@@ -13772,7 +13775,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 210,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "carbon",
     "stackHeight": {
@@ -13803,7 +13806,7 @@
     "collabWith": null,
     "category": "racing",
     "weight": 207,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "carbon",
     "stackHeight": {
@@ -13830,7 +13833,7 @@
     "collabWith": null,
     "category": "racing",
     "weight": 218,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "carbon",
     "stackHeight": {
@@ -13853,7 +13856,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 215,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "carbon",
     "stackHeight": {
@@ -13884,7 +13887,7 @@
     "collabWith": null,
     "category": "recovery",
     "weight": 264,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 4,
     "plate": "none",
     "stackHeight": {
@@ -13911,7 +13914,7 @@
     "collabWith": null,
     "category": "tempo",
     "weight": 229,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "other",
     "stackHeight": {
@@ -13938,7 +13941,7 @@
     "collabWith": null,
     "category": "tempo",
     "weight": 245,
-    "weightBasis": "US9.5",
+    "weightBasis": "275mm",
     "drop": 8,
     "plate": "other",
     "stackHeight": {
@@ -13965,7 +13968,7 @@
     "collabWith": null,
     "category": "tempo",
     "weight": 238,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "other",
     "stackHeight": {
@@ -13988,7 +13991,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 278,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "carbon",
     "stackHeight": {
@@ -14019,7 +14022,7 @@
     "collabWith": null,
     "category": "stability",
     "weight": 269,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "none",
     "stackHeight": {
@@ -14073,7 +14076,7 @@
     "collabWith": null,
     "category": "stability",
     "weight": 292,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "none",
     "stackHeight": {
@@ -14100,7 +14103,7 @@
     "collabWith": null,
     "category": "stability",
     "weight": 285,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": null,
     "stackHeight": {
@@ -14121,7 +14124,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 261,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": null,
     "stackHeight": {
@@ -14179,7 +14182,7 @@
     "collabWith": null,
     "category": "tempo",
     "weight": 198,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": null,
     "plate": null,
     "stackHeight": null,
@@ -14203,7 +14206,7 @@
     "collabWith": null,
     "category": "tempo",
     "weight": 207,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 4,
     "plate": null,
     "stackHeight": {
@@ -14230,7 +14233,7 @@
     "collabWith": null,
     "category": "tempo",
     "weight": 286,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "carbon",
     "stackHeight": {
@@ -14252,7 +14255,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 286,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -14279,7 +14282,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 281,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": null,
     "stackHeight": {
@@ -14310,7 +14313,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 267,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 4,
     "plate": "other",
     "stackHeight": {
@@ -14337,7 +14340,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 278,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 4,
     "plate": "other",
     "stackHeight": {
@@ -14364,7 +14367,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 283,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 4,
     "plate": null,
     "stackHeight": {
@@ -14391,7 +14394,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 250,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
     "stackHeight": null,
@@ -14415,7 +14418,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 293,
-    "weightBasis": "US9.5",
+    "weightBasis": "275mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -14469,7 +14472,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 255,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
     "stackHeight": {
@@ -14492,7 +14495,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 292,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
     "stackHeight": null,
@@ -14515,7 +14518,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 301,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -14545,7 +14548,7 @@
     "collabWith": null,
     "category": "stability",
     "weight": 323,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": null,
     "stackHeight": {
@@ -14570,7 +14573,7 @@
     "collabWith": null,
     "category": "recovery",
     "weight": 283,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": "none",
     "stackHeight": {
@@ -14624,7 +14627,7 @@
     "collabWith": null,
     "category": "recovery",
     "weight": 275,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": "none",
     "stackHeight": {
@@ -14700,7 +14703,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 309,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": "none",
     "stackHeight": {
@@ -14731,7 +14734,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 323,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": null,
     "stackHeight": {
@@ -14779,7 +14782,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 309,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "none",
     "stackHeight": {
@@ -14805,7 +14808,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 269,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "none",
     "stackHeight": {
@@ -14830,7 +14833,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 303,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": null,
     "stackHeight": {
@@ -14882,7 +14885,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 298,
-    "weightBasis": "사이즈 9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "other",
     "stackHeight": {
@@ -14912,7 +14915,7 @@
     "collabWith": null,
     "category": "recovery",
     "weight": 275,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": "none",
     "stackHeight": {
@@ -14932,7 +14935,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 281,
-    "weightBasis": "M9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": null,
     "stackHeight": {
@@ -14958,7 +14961,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 309,
-    "weightBasis": "M9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": null,
     "stackHeight": {
@@ -14984,7 +14987,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 232,
-    "weightBasis": "M9",
+    "weightBasis": "270mm",
     "drop": 0,
     "plate": null,
     "stackHeight": {
@@ -15014,7 +15017,7 @@
     "collabWith": null,
     "category": "tempo",
     "weight": 196,
-    "weightBasis": "M9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": null,
     "stackHeight": {
@@ -15036,7 +15039,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 221,
-    "weightBasis": "M9",
+    "weightBasis": "270mm",
     "drop": 3,
     "plate": null,
     "stackHeight": {
@@ -15062,7 +15065,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 255,
-    "weightBasis": "M9",
+    "weightBasis": "270mm",
     "drop": 0,
     "plate": null,
     "stackHeight": {
@@ -15109,7 +15112,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 295,
-    "weightBasis": "M9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": null,
     "stackHeight": {
@@ -15139,7 +15142,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 264,
-    "weightBasis": "M9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": null,
     "stackHeight": {
@@ -15159,7 +15162,7 @@
     "variant": "WP",
     "collabWith": null,
     "weight": 292,
-    "weightBasis": "M9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": null,
     "stackHeight": {
@@ -15185,7 +15188,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 301,
-    "weightBasis": "M9",
+    "weightBasis": "270mm",
     "drop": 0,
     "plate": "none",
     "stackHeight": {
@@ -15215,7 +15218,7 @@
     "collabWith": null,
     "category": "tempo",
     "weight": 230,
-    "weightBasis": "M9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": null,
     "stackHeight": {
@@ -15235,7 +15238,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 218,
-    "weightBasis": "M9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": null,
     "stackHeight": {
@@ -15261,7 +15264,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 201,
-    "weightBasis": "M9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": "carbon",
     "stackHeight": {
@@ -15287,7 +15290,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 187,
-    "weightBasis": "M9",
+    "weightBasis": "270mm",
     "drop": 0,
     "plate": null,
     "stackHeight": {
@@ -15313,7 +15316,7 @@
     "variant": "WP",
     "collabWith": null,
     "weight": 340,
-    "weightBasis": "M9",
+    "weightBasis": "270mm",
     "drop": 3,
     "plate": null,
     "stackHeight": {
@@ -15339,7 +15342,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 292,
-    "weightBasis": "M9",
+    "weightBasis": "270mm",
     "drop": 3,
     "plate": null,
     "stackHeight": {
@@ -15365,7 +15368,7 @@
     "variant": "WP",
     "collabWith": null,
     "weight": 451,
-    "weightBasis": "M9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": null,
     "stackHeight": {
@@ -15391,7 +15394,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 301,
-    "weightBasis": "M9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": null,
     "stackHeight": {
@@ -15421,7 +15424,7 @@
     "collabWith": null,
     "category": "stability",
     "weight": 281,
-    "weightBasis": "M9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": null,
     "stackHeight": {
@@ -15447,7 +15450,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 272,
-    "weightBasis": "M9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": null,
     "stackHeight": {
@@ -15473,7 +15476,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 295,
-    "weightBasis": "M9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": "none",
     "stackHeight": {
@@ -15499,7 +15502,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 303,
-    "weightBasis": "M9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": "none",
     "stackHeight": {
@@ -15525,7 +15528,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 309,
-    "weightBasis": "M9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": null,
     "stackHeight": {
@@ -15555,7 +15558,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 281,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 9,
     "plate": null,
     "stackHeight": null,
@@ -15576,7 +15579,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 258,
-    "weightBasis": "US8.5",
+    "weightBasis": "265mm",
     "drop": 9,
     "plate": null,
     "stackHeight": {
