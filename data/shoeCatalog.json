@@ -11508,8 +11508,8 @@
     "variant": null,
     "collabWith": null,
     "category": "tempo",
-    "weight": 270,
-    "weightBasis": null,
+    "weight": 255,
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "none",
     "stackHeight": {
@@ -12007,8 +12007,8 @@
     "variant": null,
     "collabWith": null,
     "category": "trail",
-    "weight": 245,
-    "weightBasis": null,
+    "weight": 298,
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "none",
     "stackHeight": {
