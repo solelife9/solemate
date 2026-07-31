@@ -38,6 +38,7 @@ import {loadMedals, saveMedals, normalizeMedals, sortMedals, liveMedals, addMeda
 import {detectRace, SEED_RACES, type RaceEvent, type RaceMatch, type RaceDistance} from './data/raceEvents';
 import {syncRemoteRaces} from './lib/raceCatalogRemote';
 import {checkForceUpdate, type RemoteAppConfig} from './lib/forceUpdate';
+import {reconcileAccountStorage} from './lib/accountScope';
 import ForceUpdateScreen from './ForceUpdateScreen.rn';
 import {nativeRecognizer} from './lib/ocrNative';
 import {parseRoute} from './lib/route';
@@ -394,8 +395,48 @@ function Main(){
   const [locPrimed,setLocPrimed]=useState(true);
   const insets=useSafeAreaInsets();
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(()=>{initUser();},[]);
+  // 부팅 — **로그인한 계정이 정해진 뒤에** 로컬 데이터를 읽는다(AUDIT 1 S-1 잔여, 2026-08-01).
+  //
+  // 예전엔 마운트 즉시(deps []) 한 번만 돌았다. 그래서 한 기기에서 A 로그아웃 → B 로그인 하면
+  // **B 화면에 A 의 신발·러닝·GPS 경로가 그대로 남아 있었다.** 다시 읽을 계기가 없었기 때문이다.
+  // (클라우드 오염은 AUDIT 1 의 cacheOwner 가 이미 막았지만, 화면에 보이는 것은 그대로였다.)
+  //
+  // 이제 uid 가 바뀔 때마다 다시 부팅하고, **읽기 전에** reconcileAccountStorage 로 저장소를
+  // 그 계정 것으로 갈아끼운다. 이전 계정 데이터는 지우지 않고 보관함으로 옮긴다 —
+  // 그 계정으로 다시 로그인하면 미동기 기록까지 그대로 돌아온다(lib/accountScope).
+  //
+  // 정합에 실패하면 **부팅하지 않는다.** 남의 데이터를 보여주느니 재시도 카드가 낫다.
+  useEffect(()=>{
+    // 테스트는 기본 우회(25개 App 스위트가 계정 정합 없이 그대로 통과한다).
+    // 이 경로 자체의 검증은 __KEEGO_ENABLE_ACCOUNT_SCOPE__ 로 켜서 한다
+    // (__tests__/App.accountSwitch.test.tsx — 클라우드 동기의 관례와 동일).
+    const scopeOn=process.env.NODE_ENV!=='test'||(globalThis as any).__KEEGO_ENABLE_ACCOUNT_SCOPE__===true;
+    if(!scopeOn){void initUser();return;}
+    const uid=authUser?.uid;
+    if(!uid){
+      // 로그아웃/인증 확인중 — 메모리에 남은 이전 계정 데이터를 즉시 비운다.
+      // **저장소는 건드리지 않는다**(다시 로그인하면 그대로 돌아온다).
+      // bootState 를 함께 'loading' 으로 내리는 게 중요하다 — 캐시 쓰기 디바운스가
+      // 'ready' 일 때만 돌기 때문에, 이 빈 상태가 멀쩡한 캐시를 덮어쓰지 않는다.
+      setShoes([]);setRuns([]);setBootState('loading');
+      return;
+    }
+    // 정합·재로드가 끝날 때까지 스켈레톤 — 이전 계정 화면이 한 프레임도 비치지 않게.
+    setBootState('loading');
+    let alive=true;
+    (async()=>{
+      try{
+        await reconcileAccountStorage(uid);
+      }catch(e){
+        reportIssue('accountScope 정합 실패 — 부팅 중단(남의 데이터 노출 방지)',e);
+        if(alive)setBootState('error');
+        return;
+      }
+      if(alive)void initUser();
+    })();
+    return()=>{alive=false;};
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[authUser?.uid]);
 
   // 필수 로그인 게이트 — Firebase 인증 상태를 구독해 authUser 를 채운다. 로그인/로그아웃/
   // 토큰 만료를 한곳에서 반영한다. 테스트에선 게이트가 우회(authUser 기본 로그인)되므로
