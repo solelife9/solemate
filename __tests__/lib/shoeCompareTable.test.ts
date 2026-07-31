@@ -176,6 +176,22 @@ describe('무게는 잰 사이즈가 같을 때만 차이를 낸다', () => {
       .toBe('잰 사이즈를 몰라 차이는 비교하지 않음');
   });
 
+  // 보정 계수는 반 사이즈(5mm) 관측쌍에서 얻었다. 30mm 를 늘리면 +36g 이 되는데
+  // 그건 측정이 아니라 직선을 끝까지 그은 것이다. 차이를 안 적는 게 정직하다.
+  it('기준이 너무 멀면(>10mm) 보정하지 않는다 — 값과 기준은 그대로 보여 준다', () => {
+    const rows = buildCompareTable([SUPERBLAST, {...NOVABLAST, weight: 224, weightBasis: '240mm'}]);
+    const c = rowOf(rows, 'weight').cells[1];
+    expect(c.value).toBe('224');
+    expect(c.sub).toBe('240mm');
+    expect(c.delta).toBeNull();
+    expect(rowOf(rows, 'weight').hint).toBe('잰 사이즈가 너무 달라 차이는 비교하지 않음');
+  });
+
+  it('10mm 까지는 보정한다 — 경계에서 끊기지 않는다', () => {
+    const rows = buildCompareTable([SUPERBLAST, {...NOVABLAST, weightBasis: '280mm'}]);
+    expect(rowOf(rows, 'weight').cells[1].delta).toBe('≈+7');
+  });
+
   it('기준이 다 같으면 그런 설명을 붙이지 않는다', () => {
     expect(buildCompareTable([SUPERBLAST, other('US9')]).find((r) => r.key === 'weight')!.hint)
       .toBeUndefined();

@@ -216,7 +216,7 @@
     "collabWith": null,
     "weight": null,
     "weightBasis": null,
-    "drop": null,
+    "drop": 7,
     "plate": null,
     "stackHeight": null,
     "releaseYear": null,
@@ -620,8 +620,8 @@
     "version": "2",
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
+    "weight": 224,
+    "weightBasis": "240mm",
     "drop": 6,
     "plate": null,
     "stackHeight": {
@@ -669,8 +669,8 @@
     "version": "8",
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
+    "weight": 275,
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": null,
     "stackHeight": {
@@ -842,7 +842,7 @@
     "variant": null,
     "collabWith": null,
     "category": "daily",
-    "weight": null,
+    "weight": 275,
     "weightBasis": null,
     "drop": 10,
     "plate": "none",
@@ -13080,7 +13080,10 @@
     "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 34,
+      "forefoot": 26
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
@@ -13099,11 +13102,14 @@
     "version": "2",
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
+    "weight": 272,
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 31,
+      "forefoot": 25
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
@@ -13122,8 +13128,8 @@
     "version": null,
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
+    "weight": 330,
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -13198,11 +13204,14 @@
     "version": "3",
     "variant": "SC",
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 175,
+    "weightBasis": "270mm",
+    "drop": 6,
+    "plate": "carbon",
+    "stackHeight": {
+      "heel": 39,
+      "forefoot": 33
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [

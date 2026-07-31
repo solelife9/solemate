@@ -118,6 +118,7 @@ export function buildCompareTable(shoes: readonly CompareShoe[]): CompareRow[] {
   // 칸에 적히는 숫자는 **언제나 공표된 원래 무게**다. 보정은 차이를 낼 때만 쓴다
   // — 저장값도 표시값도 손대지 않는다(docs/shoes-spec.md §1).
   let approx = false;
+  let unmeasurable = false;   // 기준을 모르거나, 알아도 너무 멀어 보정이 무의미한 경우
   const weight: CompareRow = {
     key: 'weight',
     label: '무게',
@@ -132,6 +133,7 @@ export function buildCompareTable(shoes: readonly CompareShoe[]): CompareRow[] {
           approx = true;
         } else {
           c.delta = null;
+          unmeasurable = true;
         }
       }
       // 표준(270mm)이면 굳이 적지 않는다. 다르거나 모르면 그 사실을 드러낸다.
@@ -140,9 +142,11 @@ export function buildCompareTable(shoes: readonly CompareShoe[]): CompareRow[] {
       return c;
     }),
   };
+  // 이유를 갈라 적는다 — '모른다'와 '알지만 너무 다르다'는 사용자에게 다른 이야기다.
   const unknown = shoes.some((s, i) => i > 0 && s.weight != null && base.weight != null
     && normalizeWeightBasis(s.weightBasis) == null);
   if (unknown) weight.hint = '잰 사이즈를 몰라 차이는 비교하지 않음';
+  else if (unmeasurable) weight.hint = '잰 사이즈가 너무 달라 차이는 비교하지 않음';
   else if (approx) weight.hint = '≈ 는 사이즈 보정한 어림값';
 
   const stack: CompareRow = {

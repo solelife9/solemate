@@ -115,6 +115,17 @@ export const STANDARD_BASIS = '270mm';
  */
 export const GRAMS_PER_5MM = 6;
 
+/**
+ * 보정해도 되는 최대 거리(mm). 위 계수는 **반 사이즈(5mm) 관측쌍**에서 얻은 것이라
+ * 멀리 늘릴수록 근거가 없어진다.
+ *
+ * 실제로 문제가 되는 값이 있다: 아디다스 듀라모 스피드 2 는 공홈이 `224g(사이즈 240mm)`
+ * 로 적어 뒀다. 270mm 로 늘리면 30mm — 계수를 여섯 번 곱해 +36g 이 되는데, 그건 측정도
+ * 관측도 아니고 그냥 직선을 끝까지 그은 것이다. 그럴 바엔 차이를 안 적는 게 정직하다.
+ * (무게 숫자 자체와 `240mm` 라는 기준은 그대로 보여 준다 — 사라지는 건 '차이'뿐이다.)
+ */
+export const MAX_ADJUST_MM = 10;
+
 const mmOf = (basis: string | null): number | null => {
   if (!basis) return null;
   const m = basis.match(/^(\d{3})mm$/);
@@ -138,6 +149,7 @@ export function adjustWeightToBasis(
   const b = mmOf(normalizeWeightBasis(to));
   if (a == null || b == null) return null;
   if (a === b) return weight;
+  if (Math.abs(b - a) > MAX_ADJUST_MM) return null;
   return weight + ((b - a) / 5) * GRAMS_PER_5MM;
 }
 
