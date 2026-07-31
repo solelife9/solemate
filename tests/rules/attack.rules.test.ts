@@ -230,9 +230,31 @@ describe('시나리오 8 — 최근 추가 컬렉션이 규칙에 안 걸려 열
     await assertFails(deleteDoc(doc(attacker(), 'search_misses', 'm1')));
   });
   it('미정의 임의 컬렉션은 전부 deny', async () => {
-    for (const c of ['users', 'admin', 'config', 'shoeCatalog', 'medals', 'progression']) {
+    // 'config' 는 2026-07-31 필수 업데이트 게이트(AUDIT 2 I-3)로 **정의된** 컬렉션이 됐다.
+    // 읽기만 열렸고 쓰기는 여전히 막혀 있다 — 아래 별도 케이스에서 그걸 검사한다.
+    for (const c of ['users', 'admin', 'shoeCatalog', 'medals', 'progression']) {
       await assertFails(setDoc(doc(attacker(), c, 'x'), {a: 1}));
       await assertFails(getDoc(doc(attacker(), c, 'x')));
     }
+  });
+
+  // ── 원격 설정(config/app) — 읽기 전용 (AUDIT 2 I-3) ─────────────────────────
+  // 여기가 열리면 **누구나 전 사용자의 앱을 잠글 수 있다**(minSupportedVersion 을
+  // 999 로 올리면 끝). 그래서 쓰기 차단을 공격자 자격으로 직접 확인한다.
+  it('config 는 로그인 사용자가 읽을 수 있다(업데이트 게이트가 동작해야 한다)', async () => {
+    await seed(['config', 'app'], {minSupportedVersion: '1.0.0'});
+    await assertSucceeds(getDoc(doc(attacker(), 'config', 'app')));
+  });
+  it('config 는 아무도 쓸 수 없다 — 앱을 잠그는 킬 스위치를 남에게 주지 않는다', async () => {
+    await seed(['config', 'app'], {minSupportedVersion: '1.0.0'});
+    await assertFails(setDoc(doc(attacker(), 'config', 'app'), {minSupportedVersion: '999.0.0'}));
+    await assertFails(updateDoc(doc(attacker(), 'config', 'app'), {minSupportedVersion: '999.0.0'}));
+    await assertFails(deleteDoc(doc(attacker(), 'config', 'app')));
+    // 다른 문서 id 로 우회해 만드는 것도 막힌다.
+    await assertFails(setDoc(doc(attacker(), 'config', 'other'), {a: 1}));
+  });
+  it('config 는 미로그인이면 읽을 수 없다(공개 컬렉션이 아니다)', async () => {
+    await seed(['config', 'app'], {minSupportedVersion: '1.0.0'});
+    await assertFails(getDoc(doc(guest(), 'config', 'app')));
   });
 });

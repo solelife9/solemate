@@ -37,6 +37,8 @@ import RaceMedalScreen from './RaceMedalScreen.rn';
 import {loadMedals, saveMedals, normalizeMedals, sortMedals, liveMedals, addMedal as addMedalStore, removeMedal as removeMedalStore, type Medal} from './lib/medals';
 import {detectRace, SEED_RACES, type RaceEvent, type RaceMatch, type RaceDistance} from './data/raceEvents';
 import {syncRemoteRaces} from './lib/raceCatalogRemote';
+import {checkForceUpdate, type RemoteAppConfig} from './lib/forceUpdate';
+import ForceUpdateScreen from './ForceUpdateScreen.rn';
 import {nativeRecognizer} from './lib/ocrNative';
 import {parseRoute} from './lib/route';
 import LocationPrimeScreen from './LocationPrimeScreen.rn';
@@ -290,6 +292,8 @@ function Main(){
   const [races,setRaces]=useState<RaceEvent[]>(SEED_RACES);
   // 대회 원격 동기는 로그인 이후 별도 effect 가 맡는다(AUDIT 2 I-1 — 아래 syncRemoteRaces).
   useEffect(()=>{void loadMedals().then(setMedals);},[]);
+  // 필수 업데이트 게이트(AUDIT 2 I-3). null = 막지 않음(기본값이자 fail-open 의 기본 상태).
+  const [forceUpdateCfg,setForceUpdateCfg]=useState<RemoteAppConfig|null>(null);
   // 햅틱(진동) 설정 부팅 복원 — 폰 Vibration(lib/haptics 싱글턴) 동기화 + 워치에도 전달.
   // off 면 화면 전환·버튼·존 이탈·워치 랩 진동이 전부 조용해진다(사용자 요청 2026-07-13).
   useEffect(()=>{void loadHaptics().then(v=>{setHapticsEnabled(v);watchSession.setHaptics(v);});},[]);
@@ -415,6 +419,19 @@ function Main(){
     if(!authUser) return;
     let alive=true;
     syncRemoteCatalog().then(docs=>{if(alive&&docs.length)setRemoteShoeDocs(docs);}).catch(()=>{});
+    return()=>{alive=false;};
+  },[authUser]);
+
+  // 필수 업데이트 게이트(AUDIT 2 I-3) — 원격 config/app 의 minSupportedVersion 미만이면
+  // 앱을 막는다. 스토어에 나간 빌드에 데이터 유실급 버그가 있을 때, 심사를 기다리는 것
+  // 말고 할 수 있는 유일한 조치다. **fail-open** 이라 못 읽으면 막지 않는다(lib/forceUpdate).
+  // 로그인 뒤에 읽는다(규칙상 config 도 로그인 필요) — 막아야 할 대상인 '이미 설치해 쓰던
+  // 사용자'는 로그인 상태이므로 실효가 있다.
+  useEffect(()=>{
+    if(process.env.NODE_ENV==='test') return;
+    if(!authUser) return;
+    let alive=true;
+    checkForceUpdate().then(cfg=>{if(alive&&cfg)setForceUpdateCfg(cfg);}).catch(()=>{});
     return()=>{alive=false;};
   },[authUser]);
 
@@ -1967,6 +1984,12 @@ function Main(){
   }
   if(authUser===null){
     return <LoginScreen cloudPort={cloudPortRef.current} onSignedIn={(u)=>setAuthUser({uid:u.uid})}/>;
+  }
+  // 필수 업데이트 게이트(AUDIT 2 I-3) — 부팅 성공 여부보다 **먼저** 검사한다.
+  // 막아야 할 만큼 심각한 버그라면 부팅 자체가 깨져 있을 수 있는데, 그때 BootError 만
+  // 뜨면 사용자는 무엇을 해야 할지 알 수 없다. 이 게이트가 그 위에 온다.
+  if(forceUpdateCfg){
+    return <ForceUpdateScreen config={forceUpdateCfg}/>;
   }
   // 콜드 백엔드 부팅: 스켈레톤(로딩) / 재시도 카드(에러). 빈-신규는 'ready'라 여기
   // 걸리지 않고 아래 온보딩/홈으로 간다(fetch 실패와 빈 데이터의 구분).
