@@ -2673,7 +2673,7 @@
     "version": "10",
     "variant": null,
     "collabWith": null,
-    "weight": null,
+    "weight": 320,
     "weightBasis": null,
     "drop": 10,
     "plate": null,
