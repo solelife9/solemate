@@ -11,9 +11,12 @@
 //   · 복원은 '빈 자리만' 채운다(persistLocalDetailIfMissing) — 로컬 실측을 덮지 않는다.
 //   · 전 과정 no-throw — 개별 런 실패는 삼키고 다음 런으로(비차단), 결과는 카운트로 관찰.
 //   · 시계열 상한 CAP(1점/s 기준 3시간) — Firestore 문서 1MB 여유를 크게 남기는 안전 상한,
-//     초과분은 균등 스트라이드 다운샘플(울트라 런 방어).
+//     초과분은 균등 스트라이드 다운샘플(울트라 런 방어). 단 **경로(route)만은 RDP** 로
+//     줄인다 — 좌표열을 균등 추출하면 코너가 잘려 거리가 줄어든다(lib/geo 참조).
+//     상한 안에서는 어떤 키도 손대지 않는다 — 백업은 로컬과 같아야 복원이 무손실이다.
 // ============================================================================
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import {simplifyRoute, ROUTE_SIMPLIFY_TOLERANCE_M} from './geo';
 
 /** 사이드카 필드 ↔ AsyncStorage 키 프리픽스(HistoryScreen RunDetail 읽기 계약과 동일). */
 const SIDECARS = {
@@ -61,11 +64,17 @@ export async function runsWithCloudRoute(runIds: readonly (string | number)[]): 
   return out;
 }
 
-/** 시계열 상한(점) — 1점/s 기준 3시간. 초과는 균등 다운샘플(lib/geo.simplifyRoute 규약). */
+/** 시계열 상한(점) — 1점/s 기준 3시간. 초과는 균등 다운샘플(스칼라 시계열 한정). */
 export const DETAIL_SERIES_CAP = 10800;
 
 /** push 시그니처 마킹 키 — 같은 내용을 매일 재업로드하지 않기 위한 로컬 마커. */
 const pushedKey = (runId: string) => 'detail_pushed_' + runId;
+
+/** 좌표열인가 — 첫 원소만 본다(사이드카는 동종 배열이고, 아니면 그냥 균등 경로로 빠진다). */
+function isLatLonSeries(arr: unknown[]): arr is {lat: number; lon: number}[] {
+  const p = arr[0] as {lat?: unknown; lon?: unknown} | null;
+  return !!p && typeof p === 'object' && typeof p.lat === 'number' && typeof p.lon === 'number';
+}
 
 function capSeries<T>(arr: T[], max = DETAIL_SERIES_CAP): T[] {
   if (arr.length <= max) return arr;
@@ -83,7 +92,16 @@ export async function collectLocalDetail(runId: string): Promise<Record<string, 
       if (!raw) continue;
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed)) {
-        if (parsed.length > 0) out[k] = capSeries(parsed);
+        // 백업은 **로컬과 같아야 한다** — 상한 안이면 어떤 키든 손대지 않고 그대로 올린다.
+        // 상한을 넘을 때만 줄이되, 경로는 균등 추출이 곧 거리 손실이므로(코너가 잘린다 —
+        // lib/geo 참조) RDP 로 줄인다. RunEngine 이 이미 RDP 로 저장하니 실제로는 거의
+        // 발동하지 않는 안전 밸브다.
+        if (parsed.length > 0) {
+          out[k] =
+            k === 'route' && parsed.length > DETAIL_SERIES_CAP && isLatLonSeries(parsed)
+              ? simplifyRoute(parsed, ROUTE_SIMPLIFY_TOLERANCE_M, DETAIL_SERIES_CAP)
+              : capSeries(parsed);
+        }
       } else if (parsed && typeof parsed === 'object') {
         out[k] = parsed; // track 메타({lapM,laps,lapTimes})
       }

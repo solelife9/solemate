@@ -69,7 +69,7 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
   const ui=parseShoeName(shoe.name);
   // 복구 모드: 'review' 는 스냅샷을 done 화면에 띄워 검토 후 저장/버리기(GPS 재시작 안 함).
   // 'continue' 는 GPS/센서를 다시 켜고 누적 거리·경과를 시드해 running 으로 이어 달린다.
-  const resumeRoute=resume?(()=>{const sr=simplifyRoute(resume.pts as any,200);return sr.length>=2?JSON.stringify(sr):'';})():'';
+  const resumeRoute=resume?(()=>{const sr=simplifyRoute(resume.pts as any);return sr.length>=2?JSON.stringify(sr):'';})():'';
   const [phase,setPhase]=useState<'running'|'done'>(resume&&!isContinue?'done':'running');
   const [km,setKm]=useState(resume?resume.dist:0);
   const [elapsed,setElapsed]=useState(resume?resume.elapsed:0);
@@ -744,7 +744,8 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
     // 완주 요약 음성 — "운동을 종료합니다. 수고하셨습니다, N킬로미터, 경과 시간 …, 평균 페이스 …"
     // (Nike/NRC 종료 요약 관용). 거리는 클립 격자(0.5km)로 반올림해 읽는다(화면엔 정확값).
     runVoice.finishSummary(fk, ft, fk > 0.2 ? ft / fk : null);
-    const sampled=simplifyRoute(runTracker.getPoints() as any,200);
+    // 허용 오차(5m) 기준 RDP — 점 개수는 코스 복잡도가 정한다(lib/geo 주석 참조).
+    const sampled=simplifyRoute(runTracker.getPoints() as any);
     const routeFin=sampled.length>=2?JSON.stringify(sampled):'';
     setFinRoute(routeFin);
     // 고도: **기압계 우선, GPS 는 기압계 부재 시 폴백만**(2026-07-17 비교런 근본수정).
