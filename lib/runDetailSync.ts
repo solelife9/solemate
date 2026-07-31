@@ -70,6 +70,39 @@ export const DETAIL_SERIES_CAP = 10800;
 /** push 시그니처 마킹 키 — 같은 내용을 매일 재업로드하지 않기 위한 로컬 마커. */
 const pushedKey = (runId: string) => 'detail_pushed_' + runId;
 
+/**
+ * '이 런은 원격에도 상세가 없더라' 마커 키(AUDIT 2 I-5).
+ *
+ * 없었다: 로컬에도 원격에도 상세가 없는 런은 **매 스윕마다 다시 조회**됐다. 결과가
+ * 늘 '없음'이라 아무것도 기록되지 않았고, 그래서 영원히 반복됐다(하루 최대 30 읽기).
+ * 해당하는 런 — GPX 로 가져온 기록, 아주 짧은 런, 사이드카가 없던 초기 기록.
+ */
+const absentKey = (runId: string) => 'detail_absent_' + runId;
+
+/**
+ * '없음' 마커의 유효기간(ms). **영구가 아닌 이유가 중요하다.**
+ *
+ * 다른 기기에서 나중에 그 런의 상세를 올릴 수 있다(A 폰에서 달린 기록을 B 폰이 아직
+ * 못 받은 상태). 마커를 영구로 두면 B 는 그 상세를 **영영 복원하지 못한다** — 읽기
+ * 몇 번 아끼자고 사용자 데이터를 못 받게 만드는 건 본말전도다.
+ *
+ * 그래서 기한을 둔다. 7일이면 조회 빈도는 1/7 로 줄고(30 → 하루 약 4), 복원은
+ * 늦어도 일주일 안에 따라잡는다.
+ */
+export const DETAIL_ABSENT_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
+/**
+ * 지금 이 런의 원격 조회를 건너뛸 것인가(마커가 아직 유효한가). 순수 판정.
+ * 마커가 없거나·손상됐거나·기한이 지났으면 **조회한다**(안전한 쪽 = 데이터를 받는 쪽).
+ */
+export function isAbsentMarkerFresh(raw: string | null, now: number): boolean {
+  if (!raw) return false;
+  const at = Number(raw);
+  if (!Number.isFinite(at) || at <= 0) return false;
+  if (at > now) return false; // 기기 시계가 뒤로 갔다 — 막지 않는다
+  return now - at < DETAIL_ABSENT_TTL_MS;
+}
+
 /** 좌표열인가 — 첫 원소만 본다(사이드카는 동종 배열이고, 아니면 그냥 균등 경로로 빠진다). */
 function isLatLonSeries(arr: unknown[]): arr is {lat: number; lon: number}[] {
   const p = arr[0] as {lat?: unknown; lon?: unknown} | null;
@@ -158,9 +191,10 @@ export interface RunDetailPort {
 export async function syncRunDetails(
   runs: {id: string | number}[],
   port: RunDetailPort,
-  opts?: {max?: number},
+  opts?: {max?: number; now?: number},
 ): Promise<{pushed: number; restored: number}> {
   const max = opts?.max ?? 30;
+  const now = opts?.now ?? Date.now();
   let pushed = 0;
   let restored = 0;
   for (const r of runs.slice(0, max)) {
@@ -176,8 +210,17 @@ export async function syncRunDetails(
         await AsyncStorage.setItem(pushedKey(runId), sig);
         pushed++;
       } else if (port.pullRunDetail) {
+        // AUDIT 2 I-5 — 최근에 '원격에도 없음'을 확인했으면 그 기간 동안은 다시 묻지 않는다.
+        if (isAbsentMarkerFresh(await AsyncStorage.getItem(absentKey(runId)), now)) continue;
         const remote = await port.pullRunDetail(runId);
-        if (remote && (await persistLocalDetailIfMissing(runId, remote)) > 0) restored++;
+        if (remote && (await persistLocalDetailIfMissing(runId, remote)) > 0) {
+          restored++;
+          // 받아왔으면 '없음' 기록은 의미가 없다 — 지운다(다음에 또 스킵되지 않게).
+          await AsyncStorage.removeItem(absentKey(runId));
+        } else {
+          // 원격도 비었다. **이 사실을 기억한다** — 안 그러면 매 스윕 같은 걸 또 묻는다.
+          await AsyncStorage.setItem(absentKey(runId), String(now));
+        }
       }
     } catch {
       /* 이 런 실패 — 다음 런(비차단). 마커 미기록이라 다음 스윕에서 재시도된다. */
