@@ -7779,8 +7779,8 @@
     "variant": null,
     "collabWith": null,
     "category": "stability",
-    "weight": 281,
-    "weightBasis": null,
+    "weight": 295,
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": "other",
     "stackHeight": {
@@ -8108,8 +8108,8 @@
     "variant": null,
     "collabWith": null,
     "category": "daily",
-    "weight": 258,
-    "weightBasis": "240mm",
+    "weight": 264,
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": "other",
     "stackHeight": {
@@ -8136,8 +8136,8 @@
     "variant": null,
     "collabWith": null,
     "category": "daily",
-    "weight": 264,
-    "weightBasis": "250mm",
+    "weight": 266,
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "other",
     "stackHeight": {
@@ -8185,8 +8185,8 @@
     "variant": null,
     "collabWith": null,
     "category": "recovery",
-    "weight": null,
-    "weightBasis": null,
+    "weight": 281,
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
     "stackHeight": {
