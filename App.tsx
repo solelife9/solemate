@@ -36,7 +36,7 @@ import RaceMedalScreen from './RaceMedalScreen.rn';
 // 마라톤 메달 아카이브 — 완주 감지(위치+날짜) → 대회 기록 흐름 → 아카이브(로컬 우선).
 import {loadMedals, saveMedals, normalizeMedals, sortMedals, liveMedals, addMedal as addMedalStore, removeMedal as removeMedalStore, type Medal} from './lib/medals';
 import {detectRace, SEED_RACES, type RaceEvent, type RaceMatch, type RaceDistance} from './data/raceEvents';
-import {fetchRaces} from './lib/raceStore';
+import {syncRemoteRaces} from './lib/raceCatalogRemote';
 import {nativeRecognizer} from './lib/ocrNative';
 import {parseRoute} from './lib/route';
 import LocationPrimeScreen from './LocationPrimeScreen.rn';
@@ -126,7 +126,7 @@ import {getAuth, onAuthStateChanged} from '@react-native-firebase/auth';
 import {syncRemoteCatalog} from './lib/shoeCatalogRemote';
 import {setRemoteShoeDocs} from './lib/shoeCatalogStore';
 import {LoginScreen} from './LoginScreen.rn';
-import {stampUpdatedAt, markDeleted, partitionTombstones, mergeCloudData, mergeMedals, liveRecords, reconcileLivePreservingLocal, unionTombstones, stripSyncedRoutes} from './lib/cloudSync';
+import {stampUpdatedAt, markDeleted, partitionTombstones, mergeCloudData, mergeMedals, liveRecords, reconcileLivePreservingLocal, unionTombstones, stripSyncedRoutes, shouldSkipCloudSync} from './lib/cloudSync';
 import {publishMyRanking} from './lib/progression/firestoreRankingStore';
 import {LEADERBOARD_PUBLISH_ENABLED} from './lib/featureFlags';
 import {genRunId, genShoeId} from './lib/genId';
@@ -288,7 +288,8 @@ function Main(){
   const [recapRace,setRecapRace]=useState<null|{match:RaceMatch;date:string;runId?:string;appTimeSec:number;appPaceSec?:number}>(null);
   // 대회 카탈로그 — 번들 시드로 시작, 부팅 시 Firestore 'races' 머지(서버 갱신 반영). 실패 시 시드 유지.
   const [races,setRaces]=useState<RaceEvent[]>(SEED_RACES);
-  useEffect(()=>{void loadMedals().then(setMedals);void fetchRaces().then(setRaces).catch(()=>{});},[]);
+  // 대회 원격 동기는 로그인 이후 별도 effect 가 맡는다(AUDIT 2 I-1 — 아래 syncRemoteRaces).
+  useEffect(()=>{void loadMedals().then(setMedals);},[]);
   // 햅틱(진동) 설정 부팅 복원 — 폰 Vibration(lib/haptics 싱글턴) 동기화 + 워치에도 전달.
   // off 면 화면 전환·버튼·존 이탈·워치 랩 진동이 전부 조용해진다(사용자 요청 2026-07-13).
   useEffect(()=>{void loadHaptics().then(v=>{setHapticsEnabled(v);watchSession.setHaptics(v);});},[]);
@@ -414,6 +415,21 @@ function Main(){
     if(!authUser) return;
     let alive=true;
     syncRemoteCatalog().then(docs=>{if(alive&&docs.length)setRemoteShoeDocs(docs);}).catch(()=>{});
+    return()=>{alive=false;};
+  },[authUser]);
+
+  // 원격 대회 카탈로그 동기화 — 신발 카탈로그와 같은 규약(24시간 간격 + 커서 증분).
+  // **로그인 뒤에 돈다**(규칙상 races 읽기도 로그인 필요). 예전에는 마운트 즉시(deps [])
+  // 컬렉션 전량을 읽었는데, 그건 두 가지로 잘못이었다(AUDIT 2 I-1):
+  //   · 인증 복원이 아직 안 끝난 시점이라 규칙에 막혀 조용히 실패하고 재시도도 없었다
+  //     → 서버에서 대회를 고쳐도 사용자에게 영영 도달하지 않는다.
+  //   · 성공하는 경우엔 실행마다 82 읽기 — 하루 읽기의 96%.
+  // 실패해도 syncRemoteRaces 가 시드+캐시를 돌려주므로 화면은 그대로 동작한다.
+  useEffect(()=>{
+    if(process.env.NODE_ENV==='test') return;
+    if(!authUser) return;
+    let alive=true;
+    syncRemoteRaces().then(rs=>{if(alive&&rs.length)setRaces(rs);}).catch(()=>{});
     return()=>{alive=false;};
   },[authUser]);
 
@@ -772,7 +788,9 @@ function Main(){
   // 클라우드 동기(pull→merge→push)를 재호출한다. 미로그인이면 runCloudSync 가 no-op. lastSyncAt
   // 칩은 runCloudSync 가 갱신한다. 실패는 던지지 않고 조용히 무시(스피너만 내림 — 비차단).
   async function refreshData(){
-    try{await runCloudSyncRef.current();}catch{/* 오프라인/실패 — 화면 데이터 유지(비차단) */}
+    // 사용자가 직접 당긴 새로고침은 최소 간격을 무시한다(AUDIT 2 I-2) — 명시적 요청에
+    // 아무 일도 안 일어나면 고장 난 것으로 보인다.
+    try{await runCloudSyncRef.current({force:true});}catch{/* 오프라인/실패 — 화면 데이터 유지(비차단) */}
   }
 
   async function addShoe(name:string,maxKm:number,startKm:number,date:string,priceKrw?:number){
@@ -1173,6 +1191,10 @@ function Main(){
   // (mergeCloudData)이라 어느 쪽 레코드도 버리지 않는다. 동시 실행은 ref 락으로 막는다.
   // REST 의존은 Phase 5(task#5)에서 제거 — 이 단계는 Firestore 를 정본으로 '켜는' 것.
   const cloudSyncBusyRef=useRef(false);
+  // 마지막으로 **성공한** 동기의 시각과 그때의 데이터 시그니처(AUDIT 2 I-2).
+  // busy 락은 "겹치지 마라"이지 "자주 하지 마라"가 아니다 — 앱을 껐다 켜기만 반복해도
+  // 전환마다 1 읽기 + 1 쓰기가 나갔다. 아래 shouldSkipCloudSync 가 그 낭비만 걷어낸다.
+  const lastCloudSyncRef=useRef<{at:number;sig:string}>({at:0,sig:''});
   // 경로가 클라우드 사이드카(runDetails/{runId})에 확실히 올라간 런 id 집합. 이 런들만
   // 동기 페이로드에서 route 를 덜어낸다(stripSyncedRoutes) — 백업 문서 1MiB 상한 방어.
   // 비어 있으면 아무것도 덜어내지 않는다(안전한 기본값). 상세 스윕 뒤에 갱신된다.
@@ -1203,13 +1225,17 @@ function Main(){
       });
     }catch(e){reportIssue('publish ranking',e);}
   };
-  const runCloudSync=async()=>{
+  const runCloudSync=async(opts?:{force?:boolean})=>{
     // 부팅 캐시(로컬 신발/런)가 hydrate 되기 전에는 절대 동기하지 않는다(데이터 유실 가드).
     // Firebase auth 복원이 initUser 의 캐시 로드보다 먼저 끝나는 일이 잦은데, 그때 동기가
     // 빈 로컬(runs=[])을 remote 와 머지하면 *아직 클라우드에 안 올라간 로컬-전용 런*이 머지
     // 입력에서 빠지고, applyBackupPayload + 부팅캐시 영속이 그 런을 덮어써 영구 삭제한다.
     // bootState!=='ready' 가드가 이 레이스를 차단한다(ready 시 runs/shoes 가 같은 배치로 hydrate).
     if(cloudSyncBusyRef.current||!authUser?.uid||bootState!=='ready') return;
+    // 최소 간격 가드(AUDIT 2 I-2). **로컬 데이터가 그대로일 때만** 건너뛴다 —
+    // 바뀐 게 있으면 간격과 무관하게 즉시 올린다(유실 위험을 만들지 않는 게 우선이다).
+    // 그래서 이 가드가 실제로 걷어내는 건 '앱 전환만 반복하는' 헛도는 동기뿐이다.
+    if(shouldSkipCloudSync(opts?.force,cloudDataSig,lastCloudSyncRef.current,Date.now())) return;
     // 계정 전환 오염 차단(2026-07-31 AUDIT 1). 로컬 캐시에는 소유자 표시가 없었고,
     // 로그아웃은 신발·런 상태도 캐시도 비우지 않는다(탈퇴만 비운다). 그래서 한 기기에서
     // A 로그아웃 → B 로그인 하면 **메모리에 남은 A 의 기록이 B 계정으로 병합·업로드**됐다.
@@ -1240,6 +1266,9 @@ function Main(){
       }
       applyBackupPayload(merged);
       setLastSyncAt(Date.now());
+      // 다음 호출의 최소 간격 판정 기준(AUDIT 2 I-2). 성공했을 때만 기록한다 —
+      // 실패를 기록하면 오프라인 구간에서 재시도까지 막혀 유실 위험이 생긴다.
+      lastCloudSyncRef.current={at:Date.now(),sig:cloudDataSig};
       // 동기가 성공했으면 이 장치 캐시의 주인을 지금 계정으로 등록한다(멱등).
       // 표시가 없던 기존 사용자도 첫 성공 동기에서 자연히 주인이 된다.
       void claimCacheOwner(authUser.uid);
@@ -1292,7 +1321,10 @@ function Main(){
   useEffect(()=>{
     if(!cloudEnabled) return;
     const sub=AppState.addEventListener('change',(next)=>{
-      if(next==='active'||next==='background') void runCloudSyncRef.current();
+      // 'background'(이탈 직전 flush)는 최소 간격을 무시한다 — 이 호출의 목적이 '유실 방지'라
+      // 아끼면 안 된다. 'active'(복귀)는 타 기기 변경 pull 이 목적이라 간격 가드를 받는다
+      // (로컬이 그대로면 60초 안에는 다시 안 읽는다 — AUDIT 2 I-2).
+      if(next==='active'||next==='background') void runCloudSyncRef.current({force:next==='background'});
     });
     return ()=>sub.remove();
     // eslint-disable-next-line react-hooks/exhaustive-deps

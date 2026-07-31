@@ -135,6 +135,24 @@ function payloadToDoc(data: BackupPayload): Record<string, unknown> {
 }
 
 /**
+ * 두 백업 문서가 **같은 내용인가**(AUDIT 2 I-4 — 무변경 쓰기 생략용).
+ *
+ * 판정 방향이 한쪽으로만 틀리도록 설계했다: 같은데 다르다고 하면 **쓸데없는 쓰기 한 번**이고,
+ * 다른데 같다고 하면 **변경 유실**이다. 그래서 확신이 없으면 무조건 '다르다'로 답한다
+ * (직렬화 실패도 '다르다' → 쓴다). 데이터 안전이 비용 절감보다 우선한다.
+ *
+ * 두 인자는 모두 payloadToDoc 이 만든 객체라 키 순서가 고정이므로 문자열 비교가 성립한다.
+ * 배열 원소의 키 순서가 우연히 다르면 '다르다'로 떨어지는데, 그건 안전한 쪽 오답이다.
+ */
+function sameBackupDoc(a: Record<string, unknown>, b: Record<string, unknown>): boolean {
+  try {
+    return JSON.stringify(a) === JSON.stringify(b);
+  } catch {
+    return false; // 순환 참조 등 — 비교 불가면 '다르다'(쓴다)
+  }
+}
+
+/**
  * 로그인된 사용자의 Firebase ID 토큰(없으면 null). 백엔드 /api/v1 보호 라우트의
  * Authorization Bearer 토큰으로 쓴다(progression 랭킹 provider). 미로그인/실패 → null
  * (호출부가 빈 결과로 안전 처리하도록 throw 하지 않는다).
@@ -313,7 +331,14 @@ export function createFirebaseCloudPort(
             ? normalizePayload(snapshot.data() as Record<string, unknown>)
             : null;
         const merged = merge(local, remote);
-        tx.set(ref, payloadToDoc(merged));
+        const nextDoc = payloadToDoc(merged);
+        // AUDIT 2 I-4 — 병합 결과가 원격과 완전히 같으면 쓰지 않는다.
+        // 동기는 앱 전환·복귀마다 도는데(App.tsx AppState) 그중 대부분은 바뀐 게 없다.
+        // 그때마다 사용자의 신발·런 전체가 든 문서를 통째로 다시 올리고 있었다 —
+        // 쓰기 과금도, 모바일 데이터도, 배터리도 전부 헛돈다.
+        // 원격이 아예 없으면(remote == null) 첫 백업이므로 반드시 쓴다.
+        if (remote && sameBackupDoc(nextDoc, payloadToDoc(remote))) return merged;
+        tx.set(ref, nextDoc);
         return merged;
       });
     },

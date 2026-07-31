@@ -22,6 +22,7 @@ import {
   partitionTombstones,
   reconcileLivePreservingLocal,
   unionTombstones,
+  shouldSkipCloudSync,
   type AuthState,
 } from '../../lib/cloudSync';
 
@@ -420,5 +421,42 @@ describe('unionTombstones — 동기 중 로컬 묘비 파괴 방지(2026-07-05)
     expect(unionTombstones([], [])).toEqual([]);
     expect(unionTombstones([{ id: 'A', updatedAt: 1 }], []).map(r => r.id)).toEqual(['A']);
     expect(unionTombstones([], [{ id: 'B', updatedAt: 1 }]).map(r => r.id)).toEqual(['B']);
+  });
+});
+
+// ─── 동기 최소 간격 (AUDIT 2 I-2) ─────────────────────────────────────────────
+// 이 가드의 계약은 "아끼되, 아껴서 위험해지지는 않는다"이다. 바뀐 데이터가 있으면
+// 간격과 무관하게 통과시키는 것이 핵심 — 시간만으로 막으면 방금 저장한 러닝이 최대
+// 60초 클라우드에 못 올라간다.
+describe('shouldSkipCloudSync — 최소 간격 가드', () => {
+  const last = (at: number, sig: string) => ({at, sig});
+
+  test('이번 세션 첫 동기는 절대 건너뛰지 않는다', () => {
+    expect(shouldSkipCloudSync(false, 'sig', last(0, ''), 10_000)).toBe(false);
+  });
+
+  test('데이터가 그대로 + 간격 안 → 건너뛴다 (앱 전환만 반복하는 헛동기)', () => {
+    expect(shouldSkipCloudSync(false, 'sig', last(1_000, 'sig'), 1_000 + 59_999)).toBe(true);
+  });
+
+  test('간격이 지나면 데이터가 그대로여도 돈다 (타 기기 변경 pull)', () => {
+    expect(shouldSkipCloudSync(false, 'sig', last(1_000, 'sig'), 1_000 + 60_000)).toBe(false);
+  });
+
+  test('데이터가 바뀌면 간격을 무시하고 즉시 돈다 — 유실 위험을 만들지 않는다', () => {
+    expect(shouldSkipCloudSync(false, 'NEW', last(1_000, 'OLD'), 1_001)).toBe(false);
+  });
+
+  test('force 는 언제나 통과한다 (앱 이탈 flush · 당겨서 새로고침)', () => {
+    expect(shouldSkipCloudSync(true, 'sig', last(1_000, 'sig'), 1_001)).toBe(false);
+  });
+
+  test('기기 시계가 뒤로 가도 막지 않는다(안전한 쪽)', () => {
+    expect(shouldSkipCloudSync(false, 'sig', last(9_000_000, 'sig'), 1_000)).toBe(false);
+  });
+
+  test('간격은 주입 가능하다(테스트·튜닝)', () => {
+    expect(shouldSkipCloudSync(false, 'sig', last(1_000, 'sig'), 1_500, 1_000)).toBe(true);
+    expect(shouldSkipCloudSync(false, 'sig', last(1_000, 'sig'), 2_000, 1_000)).toBe(false);
   });
 });

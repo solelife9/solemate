@@ -399,6 +399,9 @@ jest.mock('@react-native-firebase/auth', () => {
 // testable against the same in-memory map (keys: "leaderboards/{ym}/entries/{uid}").
 jest.mock('@react-native-firebase/firestore', () => {
   const store = new Map();
+  // 쓰기 횟수 관측(테스트 전용) — "바뀐 게 없으면 쓰지 않는다"(AUDIT 2 I-4)를 단언하려면
+  // 결과 문서만 봐서는 안 된다(써도 안 써도 내용이 같다). 실제 쓰기 발생 여부를 세야 한다.
+  let writes = 0;
   // collect docs whose key sits directly under a collection path → [{id, data}].
   const docsUnder = colPath => {
     const prefix = `${colPath}/`;
@@ -464,6 +467,7 @@ jest.mock('@react-native-firebase/firestore', () => {
       return Promise.resolve({data: () => ({count})});
     }),
     setDoc: jest.fn((ref, data) => {
+      writes += 1;
       store.set(ref.__path, JSON.parse(JSON.stringify(data)));
       return Promise.resolve();
     }),
@@ -489,6 +493,7 @@ jest.mock('@react-native-firebase/firestore', () => {
             data: () => store.get(ref.__path),
           }),
         set: (ref, data) => {
+          writes += 1;
           store.set(ref.__path, JSON.parse(JSON.stringify(data)));
           return tx;
         },
@@ -503,10 +508,13 @@ jest.mock('@react-native-firebase/firestore', () => {
       };
       return updateFn(tx);
     }),
-    // test-only helper
+    // test-only helpers
     __reset: () => {
       store.clear();
+      writes = 0;
     },
+    /** 지금까지 발생한 문서 쓰기 횟수(setDoc + 트랜잭션 set). __reset 이 0으로 되돌린다. */
+    __writeCount: () => writes,
   };
 });
 

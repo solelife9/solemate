@@ -377,3 +377,49 @@ export function migrateDeviceToAccount(
   }
   return mergeCloudData(local, remote);
 }
+
+// ─── 동기 최소 간격 (AUDIT 2 I-2) ─────────────────────────────────────────────
+
+/** 클라우드 동기 최소 간격(ms). 이 안에서 **데이터가 그대로면** 다시 동기하지 않는다. */
+export const MIN_CLOUD_SYNC_INTERVAL_MS = 60_000;
+
+/** 마지막으로 성공한 동기의 시각과 그때의 로컬 데이터 시그니처. */
+export interface LastCloudSync {
+  at: number;
+  sig: string;
+}
+
+/**
+ * 이번 동기 호출을 건너뛸 것인가.
+ *
+ * 배경: 동기 트리거가 5경로(부팅·데이터 변경 디바운스·앱 이탈·앱 복귀·당겨서 새로고침)인데
+ * 가드가 '동시 실행 방지' 하나뿐이었다. 앱과 다른 앱을 30번 오가면 데이터가 하나도 안
+ * 바뀌었는데도 30 읽기 + 30 쓰기가 나갔다(AUDIT 2 I-2).
+ *
+ * **시간만으로 막지 않는다.** 시간만 보면 방금 저장한 러닝이 최대 60초 동안 클라우드에
+ * 못 올라가고, 그 사이 앱이 죽으면 유실 위험이 생긴다. 그래서 두 조건을 **모두** 만족할
+ * 때만 건너뛴다:
+ *   · 마지막 성공 동기 이후 로컬 데이터가 **하나도 안 바뀌었고**(시그니처 동일)
+ *   · 그로부터 `intervalMs` 가 아직 안 지났다
+ *
+ * 즉 걷어내는 것은 '올릴 것도 없는데 도는 동기'뿐이다. 바뀐 게 있으면 항상 즉시 간다.
+ *
+ * `force` 는 예외 경로용이다 — 앱 이탈 직전 flush(유실 방지)와 사용자가 직접 당긴
+ * 새로고침(명시적 요청)은 언제나 통과시킨다.
+ *
+ * 순수 함수 — 시계를 인자로 받는다(테스트에서 고정하기 위해).
+ */
+export function shouldSkipCloudSync(
+  force: boolean | undefined,
+  sig: string,
+  last: LastCloudSync,
+  now: number,
+  intervalMs: number = MIN_CLOUD_SYNC_INTERVAL_MS,
+): boolean {
+  if (force) return false;
+  if (!last.at) return false; // 이번 세션 첫 동기 — 무조건 돈다
+  if (sig !== last.sig) return false; // 바뀐 게 있다 — 간격 무시하고 올린다
+  const elapsed = now - last.at;
+  if (elapsed < 0) return false; // 기기 시계가 뒤로 갔다 — 막지 않는다(안전한 쪽)
+  return elapsed < intervalMs;
+}
