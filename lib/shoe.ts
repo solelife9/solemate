@@ -90,10 +90,24 @@ export type ShoeLike = {
   max?: number; // presentational alias used by the UI Shoe shape
   start_km?: number; // mileage already on the shoe at registration
   retired?: boolean;
-  // 서버 truth(audit#9/#10): 서버가 영속한 누적 주행거리(km). 존재하면 클라이언트
-  // 런-합산 파생 대신 이 값을 usedKm 의 단일 소스로 쓴다(다른 기기의 미동기 런으로
-  // 인한 과소표시 완화). 없으면 start_km + Σ runs 로 폴백한다.
+  // 서버 truth(audit#9/#10): REST 백엔드가 영속하던 누적 주행거리(km).
+  // ⚠️ **2026-08-01 확인 — 지금은 아무도 이 값을 쓰지 않는다.** Firestore 이관(2026-07-17)
+  // 이후 갱신 주체가 사라졌고, 남은 값은 옛 계정의 잔재다. 그래서 usedKm 은 사실상 100%
+  // 파생값이다. 옛 데이터 호환을 위해 읽기만 유지한다.
   total_km?: number;
+  /**
+   * 이 신발이 **지금까지 도달했던 최대 누적 거리**(km, AUDIT 3 D-4).
+   *
+   * 왜 필요한가: usedKm 은 런 목록에서 매번 다시 계산하는 파생값이라, 런이 어떤 이유로든
+   * 사라지면 **말없이 줄어든다.** 신발 수명 링이 뒤로 감기고 교체 알림이 늦춰지는데,
+   * 원래 얼마였는지 아는 주체가 없어 **사용자는 줄었다는 사실조차 모르고 되돌릴 수도 없다.**
+   * 런 한 건은 캐시·사이드카·묘비·클라우드로 네 겹으로 지키면서 그 합계는 아무 데도
+   * 안 적어 두던 셈이다 — 내구도 관리가 이 앱의 차별점인데.
+   *
+   * 이 필드는 되돌리기용이 아니라 **신호용**이다. 삭제처럼 정당한 감소는 호출부가 수위를
+   * 함께 내리고(App.deleteRun), 그 외의 감소만 '설명되지 않는 감소'로 남아 화면에 뜬다.
+   */
+  usedKmHighWater?: number;
 };
 
 export type RunLike = {shoe_id?: string | number; km?: number | string};
@@ -212,4 +226,86 @@ export function reconcileShoeAlerts(
     if (!notifiedSet.has(key)) toNotify.push(id);
   }
   return {toNotify, notified};
+}
+
+// ─── 마일리지 최고수위 (AUDIT 3 D-4) ──────────────────────────────────────────
+
+/**
+ * 이 정도 차이는 '줄었다'고 보지 않는다(km). 부동소수 오차와 반올림 잡음을 넘기는 하한.
+ * 100m 미만의 감소를 사용자에게 알리면 그게 잡음이다.
+ */
+export const MILEAGE_DROP_EPSILON_KM = 0.1;
+
+/** 설명되지 않는 마일리지 감소 한 건. */
+export interface MileageDrop {
+  shoeId: string;
+  shoeName: string;
+  /** 최고수위(km) — 예전에 도달했던 값. */
+  highWaterKm: number;
+  /** 지금 계산되는 값(km). */
+  currentKm: number;
+  /** 사라진 거리(km, 양수). */
+  missingKm: number;
+}
+
+/**
+ * 신발 목록과 런 목록을 받아 **설명되지 않는 마일리지 감소**를 찾는다(순수).
+ *
+ * 판정: `usedKmHighWater` 가 있고, 지금 파생값이 그보다 `MILEAGE_DROP_EPSILON_KM` 이상
+ * 작으면 감소다. 수위가 없으면(첫 계산·구버전 데이터) 판정하지 않는다 — 기준이 없는데
+ * 경고하면 전원에게 오탐이 뜬다.
+ *
+ * **되돌리지 않는다.** 이 함수는 "무언가 사라졌다"를 말할 뿐이고, 무엇이 옳은지는 모른다
+ * (삭제가 정당했을 수도 있다 — 그 경우는 호출부가 수위를 미리 내려 여기 안 걸린다).
+ */
+export function detectMileageDrops(
+  shoes: readonly ShoeLike[],
+  runs: readonly RunLike[] = [],
+  epsilonKm: number = MILEAGE_DROP_EPSILON_KM,
+): MileageDrop[] {
+  if (!Array.isArray(shoes)) return [];
+  const out: MileageDrop[] = [];
+  for (const shoe of shoes) {
+    const hw = Number((shoe as {usedKmHighWater?: unknown})?.usedKmHighWater);
+    if (!Number.isFinite(hw) || hw <= 0) continue; // 기준 없음 — 판정하지 않는다
+    const {usedKm} = shoeHealth(shoe, runs as RunLike[]);
+    const missing = hw - usedKm;
+    if (missing < epsilonKm) continue;
+    out.push({
+      shoeId: String(shoe?.id ?? ''),
+      shoeName: String((shoe as {name?: unknown})?.name ?? '신발'),
+      highWaterKm: hw,
+      currentKm: usedKm,
+      missingKm: missing,
+    });
+  }
+  return out;
+}
+
+/**
+ * 최고수위를 끌어올린다(순수). 지금 파생값이 기존 수위보다 크면 그 값으로 갱신한 **새
+ * 신발 객체**를, 아니면 **원본 그대로**(참조 동일) 돌려준다.
+ *
+ * 참조를 그대로 돌려주는 게 중요하다 — 호출부가 "바뀐 게 있나"를 참조 비교로 판정해,
+ * 변화가 없을 때 불필요한 상태 갱신·동기·쓰기를 만들지 않는다.
+ */
+export function raiseHighWater<T extends ShoeLike>(shoe: T, runs: readonly RunLike[] = []): T {
+  const {usedKm} = shoeHealth(shoe, runs as RunLike[]);
+  const hw = Number((shoe as {usedKmHighWater?: unknown})?.usedKmHighWater);
+  const cur = Number.isFinite(hw) && hw > 0 ? hw : 0;
+  if (!(usedKm > cur)) return shoe;
+  return {...shoe, usedKmHighWater: usedKm};
+}
+
+/**
+ * 정당한 감소만큼 수위를 내린다(순수) — 런 삭제처럼 사용자가 의도한 감소.
+ * 이걸 안 하면 삭제할 때마다 '설명되지 않는 감소' 경고가 뜬다.
+ * 수위가 없거나 내릴 것이 없으면 원본 그대로(참조 동일).
+ */
+export function lowerHighWater<T extends ShoeLike>(shoe: T, byKm: number): T {
+  const hw = Number((shoe as {usedKmHighWater?: unknown})?.usedKmHighWater);
+  if (!Number.isFinite(hw) || hw <= 0) return shoe;
+  const drop = Number.isFinite(byKm) && byKm > 0 ? byKm : 0;
+  if (drop <= 0) return shoe;
+  return {...shoe, usedKmHighWater: Math.max(0, hw - drop)};
 }

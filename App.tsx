@@ -70,7 +70,7 @@ import {
   sumKm, avgPaceLabel, totalTimeLabel, durationLabel, summaryOf, maxDayStreak,
   weekBuckets, monthBuckets, yearBuckets,
 } from './lib/stats';
-import {parseShoeName, shoeHealth, isRetired, DEFAULT_MAX_KM, clampMaxKm, reconcileShoeAlerts, effectiveMaxKm} from './lib/shoe';
+import {parseShoeName, shoeHealth, isRetired, DEFAULT_MAX_KM, clampMaxKm, reconcileShoeAlerts, effectiveMaxKm, raiseHighWater, lowerHighWater, detectMileageDrops} from './lib/shoe';
 // 한 러닝은 한 기록 — 폰·워치 중복 저장 병합(신발 이중 차감 차단).
 import {findMergeTarget, mergeRuns} from './lib/runMerge';
 // 상승 고도는 폰이 한 벌 규칙으로 계산한다(워치는 원자료만 보낸다).
@@ -83,7 +83,8 @@ import {
   CACHE_SHOES_KEY, CACHE_RUNS_KEY, loadBootCache, writeBootCache,
   persistRunToCache, persistRunCacheRemove,
 } from './lib/bootCache';
-import {reportStorageResult} from './lib/storageAlert';
+import {reportStorageResult, reportSyncResult} from './lib/storageAlert';
+import {nowMs as syncNowMs, loadClockOffset} from './lib/clockOffset';
 import {trackFirstShoeAdded} from './lib/productAnalytics';
 import {buildWatchShoes, buildWatchRecentRuns, buildWidgetShoe} from './lib/watchPayload';
 import {
@@ -108,7 +109,7 @@ import {getDistancePBs, PB_CACHE_KEY} from './lib/distancePBStore';
 import type {RunBestEfforts} from './lib/bestEfforts';
 import {hkSaveRunWorkout, hkBackfillHeartRate, hkEnsureLinked, hkFindRunWorkoutWindow} from './lib/healthkit';
 import {registerRunForHr, saveWatchHrTrack, retryPendingHr, avgBpmFromTrack, hasHrTrack} from './lib/hrBackfill';
-import {syncRunDetails, runsWithCloudRoute} from './lib/runDetailSync';
+import {syncRunDetails, runsWithCloudRoute, enqueueDetailDeletion} from './lib/runDetailSync';
 import {updateHomeWidgetShoe} from './lib/homeWidget';
 import {checkCacheOwner, claimCacheOwner} from './lib/cacheOwner';
 import {liveActivity} from './lib/liveActivity';
@@ -129,7 +130,7 @@ import {getAuth, onAuthStateChanged} from '@react-native-firebase/auth';
 import {syncRemoteCatalog} from './lib/shoeCatalogRemote';
 import {setRemoteShoeDocs} from './lib/shoeCatalogStore';
 import {LoginScreen} from './LoginScreen.rn';
-import {stampUpdatedAt, markDeleted, partitionTombstones, mergeCloudData, mergeMedals, liveRecords, reconcileLivePreservingLocal, unionTombstones, stripSyncedRoutes, shouldSkipCloudSync} from './lib/cloudSync';
+import {stampUpdatedAt, markDeleted, partitionTombstones, mergeCloudData, mergeMedals, liveRecords, reconcileLivePreservingLocal, unionTombstones, stripSyncedRoutes, shouldSkipCloudSync, compactTombstones, SHOE_TOMBSTONE_KEEP} from './lib/cloudSync';
 import {publishMyRanking} from './lib/progression/firestoreRankingStore';
 import {LEADERBOARD_PUBLISH_ENABLED} from './lib/featureFlags';
 import {genRunId, genShoeId} from './lib/genId';
@@ -637,6 +638,44 @@ function Main(){
     })();
   },[]);
 
+  // ── 신발 마일리지 최고수위 (AUDIT 3 D-4) ──────────────────────────────────
+  // usedKm 은 런 목록에서 매번 다시 계산하는 파생값이라, 런이 어떤 이유로든 사라지면
+  // **말없이 줄어든다.** 예전엔 그걸 아는 주체가 아무도 없었다 — 수명 링이 뒤로 감기고
+  // 교체 알림이 늦춰져도 사용자는 몰랐다.
+  //
+  // 되돌리지는 않는다(무엇이 옳은지 앱은 모른다 — 삭제가 정당했을 수도 있다).
+  // **조용하지 않게** 만드는 것이 목적이다: 도달했던 최대치를 기록해 두고, 설명되지 않는
+  // 감소가 생기면 한 번 알린 뒤 그 값으로 다시 기준을 잡는다(같은 일로 계속 나무라지 않는다).
+  // 삭제처럼 정당한 감소는 deleteRun 이 수위를 미리 내려 여기 걸리지 않는다.
+  useEffect(()=>{
+    if(bootState!=='ready') return;
+    const drops=detectMileageDrops(shoes as any,runs as any);
+    if(drops.length){
+      const first=drops[0];
+      showToast({message:drops.length===1
+        ?`${first.shoeName}의 기록 ${first.missingKm.toFixed(1)}km 가 보이지 않아요`
+        :`신발 ${drops.length}켤레의 기록 일부가 보이지 않아요`});
+      reportIssue('마일리지 감소 감지',new Error(JSON.stringify(drops.slice(0,5))));
+      // 재기준 — 알렸으니 이 감소는 소비됐다. 다음에 또 줄면 그때 다시 알린다.
+      setShoes(prev=>prev.map(sh=>{
+        const d=drops.find(x=>x.shoeId===String(sh.id));
+        return d?stampUpdatedAt({...sh,usedKmHighWater:d.currentKm}):sh;
+      }));
+      return;
+    }
+    // 수위 상승 — 바뀐 신발이 없으면 **원본 배열을 그대로** 돌려줘 재렌더를 만들지 않는다.
+    setShoes(prev=>{
+      let changed=false;
+      const next=prev.map(sh=>{
+        const r=raiseHighWater(sh,runs as any);
+        if(r===sh) return sh;
+        changed=true;
+        return stampUpdatedAt(r);
+      });
+      return changed?next:prev;
+    });
+  },[bootState,shoes,runs]);
+
   // 부팅 폴백 캐시(cache_shoes_v1/cache_runs_v1) 상시 갱신(디바운스). 기존엔 initUser 의
   // 서버 fetch 성공 직후에만 캐시를 썼다 — 그 뒤 신발/런 mutation(추가/편집/삭제/동기 화해)이
   // 캐시에 반영되지 않아, 오프라인 재부팅 시 *마지막 fetch 시점*의 낡은 데이터만 보였다.
@@ -776,6 +815,9 @@ function Main(){
     try{
     let did=await AsyncStorage.getItem('device_id');
     if(!did){did='sl_'+Date.now()+'_'+Math.random().toString(36).slice(2,11);await AsyncStorage.setItem('device_id',did);}
+    // 서버 시계 보정값 복원(AUDIT 3 D-2) — 이후 모든 레코드 스탬프가 이 값을 쓴다.
+    // 실패해도 보정 없이(offset 0) 예전과 똑같이 동작한다.
+    await loadClockOffset();
     // audit a1: 로컬 스토리지 스키마 마이그레이션(1회). 이전 빌드의 캐시 신발/런 레코드엔
     // updatedAt 이 없어 클라우드 '최신 우선' 머지가 무력했다 — 부재 레코드에 updatedAt 을
     // 시드한다. 멱등·비파괴이며, 실패해도 내부에서 스킵+로그하므로 부팅을 막지 않는다.
@@ -945,7 +987,7 @@ function Main(){
   // localId(genRunId)가 런의 영구 id다 — 서버 재키잉이 없으므로 머지 키가 안정적이다.
   async function addRun(shoeId:string,km:number,date:string,memo:string,source:string,duration?:number,cadence?:number,route?:string,location?:string,heart_rate?:number,elevationM?:number,calories?:number){
     const timeStr=nowTimeLabel();
-    const stampedAt=Date.now();
+    const stampedAt=syncNowMs(); // AUDIT 3 D-2 — 서버 보정 시계(병합 LWW 기준)
     const localId=genRunId(stampedAt);
     // 완주 런 레코드 — 모든 필드(source/location/heart_rate 포함)를 담아 Firestore 정본에
     // 유실 없이 올린다(이전엔 일부 필드가 REST 왕복으로만 보존됐다). updatedAt 으로 머지 최신 우선.
@@ -993,7 +1035,7 @@ function Main(){
   // 영속은 캐시 + cloudSync(Firestore push)가 담당한다(REST PATCH 제거).
   async function editRun(id:string,fields:{shoe_id?:string;km?:number;run_date?:string;duration?:number}){
     const sid=String(id);
-    const editedAt=Date.now();
+    const editedAt=syncNowMs(); // AUDIT 3 D-2
     setRuns(prev=>prev.map(r=>String(r.id)===sid?stampUpdatedAt({...r,...fields},editedAt):r));
     // 부팅캐시 즉시 갱신(#9): 캐시는 800ms 디바운스라 편집 후 그 안에 종료/크래시되면 편집이
     // 유실(옛 값으로 부팅)된다. persistRunToCache 는 id 로 upsert(교체)하므로 편집본을 즉시 durable
@@ -1014,7 +1056,7 @@ function Main(){
     }
     if(meta.memo!==undefined){
       const memo=meta.memo.trim();
-      const editedAt=Date.now();
+      const editedAt=syncNowMs(); // AUDIT 3 D-2
       setRuns(prev=>prev.map(r=>String(r.id)===sid?stampUpdatedAt({...r,memo},editedAt):r));
       const target=runs.find(r=>String(r.id)===sid);
       if(target)await persistRunToCache(stampUpdatedAt({...target,memo},editedAt));
@@ -1044,6 +1086,19 @@ function Main(){
     // 로컬-퍼스트 삭제: 라이브 제거 + 묘비(cloudSync 전파) + 사이드키 정리. 영속은 cloudSync 담당.
     setRuns(prev=>prev.filter(r=>String(r.id)!==sid));
     if(target)addRunTombstone(target);
+    // AUDIT 3 D-4: 삭제는 **정당한 감소**다 — 그만큼 최고수위도 함께 내린다.
+    // 안 내리면 다음 계산에서 '설명되지 않는 감소'로 잡혀 지울 때마다 경고가 뜬다.
+    if(target){
+      const delKm=typeof target.km==='number'?target.km:parseFloat(String(target.km));
+      const shoeId=String(target.shoe_id??'');
+      if(Number.isFinite(delKm)&&delKm>0&&shoeId){
+        setShoes(prev=>prev.map(sh=>{
+          if(String(sh.id)!==shoeId) return sh;
+          const next=lowerHighWater(sh,delKm);
+          return next===sh?sh:stampUpdatedAt(next);
+        }));
+      }
+    }
     // 부팅캐시에서도 즉시 제거(묘비 필터와 별개로 캐시 자체를 깔끔히 — 800ms 디바운스 의존 제거).
     await persistRunCacheRemove(sid);
     await AsyncStorage.removeItem('route_'+sid);
@@ -1056,6 +1111,20 @@ function Main(){
     await AsyncStorage.removeItem('gapTrack_'+sid);
     // 오늘의 한 컷 사이드카(2026-07-05 추가)도 정리 — 없으면 삭제된 런의 사진 URI 가 영구 고아.
     await AsyncStorage.removeItem('runphoto_'+sid);
+    // AUDIT 3 D-3 — **클라우드 상세도 지운다.** 예전엔 로컬만 지우고 서버의 GPS 경로·심박·
+    // 스플릿은 그대로 뒀다(삭제 API 자체가 없었다). 탈퇴하지 않는 한 영구히 남았다.
+    // 실패해도 삭제 흐름을 막지 않되 **큐에 적어 다음 스윕에서 재시도**한다 — 오프라인·
+    // 미로그인에서 지운 런의 경로가 영영 안 지워지는 것을 막는 유일한 장치다(D-5의 마커
+    // 정리도 큐가 함께 처리한다).
+    try{
+      const port=cloudPortRef.current;
+      if(port.deleteRunDetail) await port.deleteRunDetail(sid);
+      else await enqueueDetailDeletion(sid);
+      await AsyncStorage.removeMany(['detail_pushed_'+sid,'detail_absent_'+sid]);
+    }catch(e){
+      reportIssue('cloud runDetail 삭제 실패 — 큐에 남겨 재시도',e);
+      await enqueueDetailDeletion(sid);
+    }
     if(target)showToast({message:'러닝 기록 삭제됨'});
   }
 
@@ -1094,7 +1163,7 @@ function Main(){
   // bumpSettingsTs: 사용자가 설정을 바꿀 때마다 수정 시각을 올린다 — 클라우드 병합
   // last-write-wins + 동기 왕복 중 편집 클로버 가드(applyBackupPayload)의 판정 기준.
   const bumpSettingsTs=()=>{
-    const ts=Date.now();
+    const ts=syncNowMs(); // AUDIT 3 D-2 — 설정 LWW 도 같은 기준을 쓴다
     settingsTsRef.current=ts;setSettingsTs(ts);void saveSettingsUpdatedAt(ts);
   };
   const changeUnit=(u:Unit)=>{setUnit(u);void saveUnit(u);bumpSettingsTs();};
@@ -1122,9 +1191,12 @@ function Main(){
   // serializeBackup→RN Share로 내보낸다.
   // audit a2: 묘비를 라이브 레코드 뒤에 합류시켜 동기(mergeCloudData)가 삭제를 전파하게 한다.
   // 라이브 배열은 묘비-free 이고 한 id 가 양쪽에 동시에 있지 않으므로 합집합이 깨끗하다.
+  // AUDIT 3 D-1: 묘비는 **껍데기로, 기한 안의 것만** 싣는다. 예전엔 지운 레코드 전체가
+  // 영구 보존돼 백업 문서가 단조 증가했고, 1MiB 벽에 닿으면 동기가 통째로 멎는 구조였다.
+  // 신발 묘비는 name 을 남긴다 — 지난 기록의 신발 이름 표시에 실제로 쓰인다(buildNameById).
   const backupData={
-    shoes:[...shoes,...tombstones.shoes],
-    runs:[...runs,...tombstones.runs],
+    shoes:[...shoes,...compactTombstones(tombstones.shoes,Date.now(),SHOE_TOMBSTONE_KEEP)],
+    runs:[...runs,...compactTombstones(tombstones.runs,Date.now())],
     // 신체지표(체중·나이·성별·안정시심박)도 포함 — 재설치·기기변경 시 심박존(Tanaka/
     // Karvonen)·칼로리·TRIMP 가 틀어지지 않게(유실 0). updated_at 은 병합 LWW 판정 기준.
     settings:{unit,goal_weekly_km:goalWeeklyKm,alerts,weight_kg:weightKg,age,sex,rest_hr:restHR,updated_at:settingsTs},
@@ -1335,7 +1407,15 @@ function Main(){
       // 현재 progression 에서 파생한다. 실패해도 동기 흐름·데이터엔 영향 없음(throw 흡수).
       // ⚠️ 현재 LEADERBOARD_PUBLISH_ENABLED=false 라 이 호출은 즉시 반환한다(발행 없음).
       void publishMyRankingNow(merged);
-    }catch(e){reportIssue('cloud sync',e);}
+      // AUDIT 3 D-1: 동기 성공 — 실패 카운터를 되돌린다(회복되면 조용해진다).
+      reportSyncResult(true);
+    }catch(e){
+      reportIssue('cloud sync',e);
+      // AUDIT 3 D-1: **동기 실패를 사용자에게 알린다.** 예전엔 Crashlytics 로만 갔다 —
+      // 백업이 멎은 채 몇 주가 지나고, 기기를 바꿀 때 그제야 기록이 없다는 걸 알았다.
+      // 임계 3회·쿨다운 1시간이라 지하철 같은 일시적 오프라인으로는 뜨지 않는다.
+      reportSyncResult(false);
+    }
     finally{cloudSyncBusyRef.current=false;}
   };
   // 항상 최신 클로저를 가리키는 ref — effect 가 stale backupData/applyBackupPayload 를 잡지 않게.

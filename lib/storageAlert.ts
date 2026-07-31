@@ -46,14 +46,16 @@ export function shouldAlertStorage(
   state: StorageAlertState,
   ok: boolean,
   nowMs: number,
+  threshold: number = STORAGE_FAIL_THRESHOLD,
+  cooldownMs: number = STORAGE_ALERT_COOLDOWN_MS,
 ): {state: StorageAlertState; alert: boolean} {
   if (ok) {
     // 회복 — 카운터만 되돌린다. 쿨다운은 유지(방금 알렸다면 곧바로 다시 알리지 않는다).
     return {state: {...state, fails: 0}, alert: false};
   }
   const fails = state.fails + 1;
-  const due = fails >= STORAGE_FAIL_THRESHOLD;
-  const cooled = nowMs - state.lastAlertMs >= STORAGE_ALERT_COOLDOWN_MS;
+  const due = fails >= threshold;
+  const cooled = nowMs - state.lastAlertMs >= cooldownMs;
   if (due && cooled) {
     return {state: {fails, lastAlertMs: nowMs}, alert: true};
   }
@@ -85,6 +87,53 @@ export function reportStorageResult(ok: boolean, nowMs: number = Date.now()): vo
     if (next.alert) {
       showToast({message: STORAGE_ALERT_MESSAGE});
     }
+  } catch {
+    /* 알림 실패는 무시 */
+  }
+}
+
+// ─── 클라우드 동기 실패 알림 (AUDIT 3 D-1) ────────────────────────────────────
+//
+// 왜 필요한가: 캐시 쓰기 실패는 위처럼 사용자에게 알리면서, **클라우드 동기 실패는
+// Crashlytics 로만 갔다.** 사용자에겐 침묵이었다. 그런데 결과는 조용하지 않다 —
+// 백업이 멎은 채 몇 주가 지나고, 기기를 바꾸거나 앱을 지웠을 때 **그 사이의 모든 기록이
+// 없다는 걸 그때 처음 안다.**
+//
+// 저장 실패보다 임계를 높게 잡는다(3회). 동기 실패는 지하철·엘리베이터 같은 일시적
+// 오프라인으로도 나므로, 한두 번에 알리면 늑대 소년이 된다. 쿨다운은 더 길게(1시간) —
+// 오프라인이 오래가는 상황에서 10분마다 같은 말을 하면 그게 더 성가시다.
+
+/** 동기 연속 실패가 이만큼 쌓이면 알린다(일시적 오프라인은 넘긴다). */
+export const SYNC_FAIL_THRESHOLD = 3;
+
+/** 같은 안내를 다시 띄우기까지의 최소 간격(ms) — 1시간. */
+export const SYNC_ALERT_COOLDOWN_MS = 60 * 60 * 1000;
+
+/** 사용자에게 보이는 문구 — 무엇이 안 되고 있는지, 그래서 뭐가 위험한지. */
+export const SYNC_ALERT_MESSAGE = '기록이 클라우드에 백업되지 않고 있어요 — 연결을 확인해 주세요';
+
+let syncState = initialStorageAlertState();
+
+/** 테스트 전용 — 동기 알림 상태 초기화. */
+export function __resetSyncAlertForTests(): void {
+  syncState = initialStorageAlertState();
+}
+
+/** 현재 동기 연속 실패 횟수(관측용). */
+export function syncFailCount(): number {
+  return syncState.fails;
+}
+
+/**
+ * 클라우드 동기 결과를 보고한다. 임계에 닿으면 토스트로 알린다.
+ * 판정 로직은 저장 실패와 같은 순수 함수를 쓰되(shouldAlertStorage) 임계·쿨다운만 다르다.
+ * 절대 throw 하지 않는다.
+ */
+export function reportSyncResult(ok: boolean, nowMs: number = Date.now()): void {
+  try {
+    const next = shouldAlertStorage(syncState, ok, nowMs, SYNC_FAIL_THRESHOLD, SYNC_ALERT_COOLDOWN_MS);
+    syncState = next.state;
+    if (next.alert) showToast({message: SYNC_ALERT_MESSAGE});
   } catch {
     /* 알림 실패는 무시 */
   }

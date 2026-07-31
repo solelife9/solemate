@@ -61,6 +61,14 @@ export interface CloudPort {
   pushRunDetail?(runId: string, detail: Record<string, unknown>): Promise<void>;
   pullRunDetail?(runId: string): Promise<Record<string, unknown> | null>;
   /**
+   * 런 상세 사이드카를 클라우드에서 지운다(AUDIT 3 D-3).
+   *
+   * 없었다: 런을 삭제하면 로컬 사이드키 8종은 꼼꼼히 지우면서 **클라우드 사본은 그대로
+   * 뒀다.** 삭제 API 자체가 없어, 탈퇴하지 않는 한 지운 런의 GPS 경로·심박·스플릿이
+   * 서버에 영구히 남았다. 사용자 기대와도, 처리방침과도 어긋난다.
+   */
+  deleteRunDetail?(runId: string): Promise<void>;
+  /**
    * pull→merge→push 를 단일 트랜잭션으로 원자 실행한다(동시-기기 클로버 방지).
    * 비원자 pull/push 의 경합 창(A 가 stale 원격을 읽는 사이 B 가 쓰고, A 가 그 위에
    * 덮어써 B 를 잃음)을 없앤다 — 트랜잭션 안에서 원격을 *다시 읽어* merge 콜백으로

@@ -466,6 +466,10 @@ jest.mock('@react-native-firebase/firestore', () => {
           : docsUnder(target.__collection).length;
       return Promise.resolve({data: () => ({count})});
     }),
+    // 서버 타임스탬프 목 — 실제 SDK 는 Timestamp 객체로 되읽히지만, 여기서는 **숫자**로
+    // 둔다. 저장이 JSON 복제라 메서드가 살아남지 못하기 때문이고, 소비처
+    // (firebaseCloudPort.readDeviceClock)가 숫자와 Timestamp 를 모두 받도록 이미 방어돼 있다.
+    serverTimestamp: jest.fn(() => Date.now()),
     setDoc: jest.fn((ref, data) => {
       writes += 1;
       store.set(ref.__path, JSON.parse(JSON.stringify(data)));

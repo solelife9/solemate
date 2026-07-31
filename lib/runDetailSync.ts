@@ -177,9 +177,76 @@ export function detailSignature(detail: Record<string, unknown>): string {
     .join('|');
 }
 
+/** 클라우드 상세 삭제 대기 목록 키(AUDIT 3 D-3). */
+export const DETAIL_DELETE_QUEUE_KEY = 'detail_delete_pending_v1';
+
+/**
+ * 런을 지웠는데 클라우드 상세를 못 지웠을 때(오프라인·미로그인) 그 id 를 적어 둔다.
+ *
+ * 왜 큐가 필요한가: Firestore 오프라인 영속이 대부분의 삭제를 큐잉해 주지만, **로그인
+ * 전이거나 포트가 삭제를 지원하지 않는 경우**엔 호출 자체가 실패한다. 표시를 안 남기면
+ * 그 런의 GPS 경로는 서버에 영영 남는다 — 사용자는 지웠다고 믿는데.
+ * 절대 throw 하지 않는다(삭제 흐름을 막지 않는다).
+ */
+export async function enqueueDetailDeletion(runId: string): Promise<void> {
+  const id = String(runId || '');
+  if (!id) return;
+  try {
+    const raw = await AsyncStorage.getItem(DETAIL_DELETE_QUEUE_KEY);
+    const arr = raw ? JSON.parse(raw) : [];
+    const list: string[] = Array.isArray(arr) ? arr.map(String) : [];
+    if (list.includes(id)) return; // 멱등
+    list.push(id);
+    await AsyncStorage.setItem(DETAIL_DELETE_QUEUE_KEY, JSON.stringify(list));
+  } catch {
+    /* 큐 기록 실패 — 삭제 흐름은 계속한다 */
+  }
+}
+
+/**
+ * 대기 중인 클라우드 상세 삭제를 재시도한다. 성공한 것만 큐에서 뺀다.
+ * 지운 개수를 돌려준다. 전 과정 no-throw(비차단).
+ */
+export async function flushDetailDeletions(port: RunDetailPort): Promise<number> {
+  if (!port?.deleteRunDetail) return 0;
+  let list: string[] = [];
+  try {
+    const raw = await AsyncStorage.getItem(DETAIL_DELETE_QUEUE_KEY);
+    const arr = raw ? JSON.parse(raw) : [];
+    list = Array.isArray(arr) ? arr.map(String) : [];
+  } catch {
+    return 0;
+  }
+  if (list.length === 0) return 0;
+
+  const remaining: string[] = [];
+  let deleted = 0;
+  for (const id of list) {
+    try {
+      await port.deleteRunDetail(id);
+      deleted++;
+      // 로컬 마커도 함께 정리한다(D-5) — 안 지우면 삭제된 런의 마커가 영구 누수된다.
+      try {
+        await AsyncStorage.removeMany([pushedKey(id), absentKey(id)]);
+      } catch {
+        /* 마커 정리 실패는 무시 */
+      }
+    } catch {
+      remaining.push(id); // 다음 스윕에서 재시도
+    }
+  }
+  try {
+    await AsyncStorage.setItem(DETAIL_DELETE_QUEUE_KEY, JSON.stringify(remaining));
+  } catch {
+    /* 다음 스윕에서 다시 시도 */
+  }
+  return deleted;
+}
+
 export interface RunDetailPort {
   pushRunDetail?(runId: string, detail: Record<string, unknown>): Promise<void>;
   pullRunDetail?(runId: string): Promise<Record<string, unknown> | null>;
+  deleteRunDetail?(runId: string): Promise<void>;
 }
 
 /**
@@ -195,6 +262,9 @@ export async function syncRunDetails(
 ): Promise<{pushed: number; restored: number}> {
   const max = opts?.max ?? 30;
   const now = opts?.now ?? Date.now();
+  // 밀린 클라우드 상세 삭제를 먼저 처리한다(AUDIT 3 D-3) — 지운 런의 경로가 서버에
+  // 남아 있는 상태를 먼저 정리하고 나서 나머지를 동기한다.
+  await flushDetailDeletions(port);
   let pushed = 0;
   let restored = 0;
   for (const r of runs.slice(0, max)) {

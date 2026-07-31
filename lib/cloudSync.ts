@@ -13,6 +13,7 @@
 //   migrateDeviceToAccount — 최초 로그인 시 기기(device_id) 데이터를 계정으로 무손실 이관
 // ============================================================================
 
+import {nowMs} from './clockOffset';
 import type { BackupPayload } from './backup';
 import { mergeProgression } from './progression/mergeProgression';
 
@@ -58,7 +59,7 @@ export function nextAuthState(current: AuthState, event: AuthEvent): AuthState {
  */
 export function stampUpdatedAt<T extends object>(
   record: T,
-  now: number = Date.now(),
+  now: number = nowMs(),
 ): T & { updatedAt: number } {
   return { ...record, updatedAt: now };
 }
@@ -74,7 +75,7 @@ export function stampUpdatedAt<T extends object>(
  */
 export function markDeleted<T extends object>(
   record: T,
-  now: number = Date.now(),
+  now: number = nowMs(),
 ): T & { deleted: true; updatedAt: number } {
   return { ...record, deleted: true, updatedAt: now };
 }
@@ -423,3 +424,81 @@ export function shouldSkipCloudSync(
   if (elapsed < 0) return false; // 기기 시계가 뒤로 갔다 — 막지 않는다(안전한 쪽)
   return elapsed < intervalMs;
 }
+
+// ─── 묘비 관리 (AUDIT 3 D-1) ──────────────────────────────────────────────────
+//
+// 문제: 묘비를 아무도 치우지 않았다. 삭제할 때마다 백업 문서가 커지고 절대 작아지지
+// 않는다 — 지운 런의 **레코드 전체**(경로를 뺀 필드 15개 + 메모)가 영구 보존됐다.
+// Firestore 문서 상한은 1MiB 다. 이 프로젝트는 이미 한 번 그 벽에 부딪혔고(8f4ef86,
+// GPS 경로), 묘비는 같은 성질의 두 번째 폭탄이었다.
+//
+// 두 갈래로 줄인다.
+//   1) **껍데기화** — 머지에 필요한 건 id·deleted·updatedAt 뿐이다. 나머지는 버린다.
+//      단 **신발 묘비의 name 은 남긴다** — 삭제된 신발의 런을 기록 탭에서 라벨링하는 데
+//      실제로 쓰인다(lib/appViewModel.buildNameById). 이걸 버리면 지난 기록의 신발 이름이
+//      빈칸이 된다. 크기 절감보다 기록 온전함이 우선이다.
+//   2) **유효기간** — 삭제가 모든 기기에 전파되고 나면 묘비는 역할이 끝난다. 기한이 지난
+//      묘비는 떨어뜨려 문서가 스스로 줄게 한다.
+//
+// ⚠️ 유효기간의 대가: **기한보다 오래 꺼져 있던 기기**가 그 사이 삭제된 레코드를 되살릴 수
+// 있다(그 기기는 삭제 사실을 못 들었고, 묘비도 이미 사라졌다). 그래서 기한을 넉넉히 잡는다 —
+// 90일 넘게 안 켠 기기는 어차피 전량 복원 대상이고, 그 확률보다 문서가 터져 **모든 기기의
+// 동기가 멎는 쪽**이 훨씬 흔하고 나쁘다.
+
+/** 묘비 유효기간(ms) — 90일. 이보다 오래된 묘비는 머지에서 떨어뜨린다. */
+export const TOMBSTONE_TTL_MS = 90 * 24 * 60 * 60 * 1000;
+
+/** 묘비에서 반드시 남기는 필드(머지 계약). */
+const TOMBSTONE_CORE = ['id', 'deleted', 'updatedAt'] as const;
+
+/**
+ * 묘비를 껍데기로 줄인다. 코어 3필드 + `keep` 에 적힌 필드만 남긴다.
+ * 묘비가 아닌(살아 있는) 레코드는 **그대로 돌려준다** — 이 함수는 절대 live 를 건드리지 않는다.
+ */
+export function slimTombstone<T extends object>(rec: T, keep: readonly string[] = []): T {
+  if (!isDeleted(rec)) return rec;
+  const src = rec as Record<string, unknown>;
+  const out: Record<string, unknown> = {};
+  for (const k of TOMBSTONE_CORE) if (src[k] !== undefined) out[k] = src[k];
+  for (const k of keep) if (src[k] !== undefined) out[k] = src[k];
+  return out as T;
+}
+
+/**
+ * 묘비가 아직 유효한가(기한 안인가). **판정 불가는 유효로 본다** —
+ * updatedAt 이 없거나 이상하면 언제 지웠는지 모른다는 뜻이고, 그때 떨어뜨리면
+ * 삭제가 취소돼 지운 기록이 되살아난다. 모르면 남기는 쪽이 안전하다.
+ */
+export function isTombstoneFresh(rec: unknown, now: number, ttlMs = TOMBSTONE_TTL_MS): boolean {
+  if (!isDeleted(rec)) return true; // live 레코드는 대상 아님
+  const at = recordUpdatedAt(rec);
+  if (!Number.isFinite(at) || at <= 0) return true; // 시각 불명 — 남긴다
+  if (at > now) return true; // 미래(기기 시계 어긋남) — 남긴다
+  return now - at < ttlMs;
+}
+
+/**
+ * 레코드 배열에서 **묘비만** 껍데기화하고, 기한이 지난 묘비는 떨어뜨린다.
+ * 살아 있는 레코드는 하나도 건드리지 않는다(참조까지 그대로).
+ */
+export function compactTombstones<T extends object>(
+  records: readonly T[],
+  now: number,
+  keep: readonly string[] = [],
+  ttlMs = TOMBSTONE_TTL_MS,
+): T[] {
+  if (!Array.isArray(records)) return [];
+  const out: T[] = [];
+  for (const r of records) {
+    if (!isDeleted(r)) {
+      out.push(r);
+      continue;
+    }
+    if (!isTombstoneFresh(r, now, ttlMs)) continue; // 기한 만료 — 떨어뜨린다
+    out.push(slimTombstone(r, keep));
+  }
+  return out;
+}
+
+/** 신발 묘비에서 추가로 보존하는 필드 — 지난 기록의 신발 이름 표시에 쓰인다. */
+export const SHOE_TOMBSTONE_KEEP = ['name'] as const;
