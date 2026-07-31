@@ -510,7 +510,7 @@
     "category": "daily",
     "weight": 236,
     "weightBasis": "270mm",
-    "drop": 10,
+    "drop": 9,
     "plate": null,
     "stackHeight": {
       "heel": 36,
@@ -628,11 +628,11 @@
     "collabWith": null,
     "weight": 269,
     "weightBasis": "270mm",
-    "drop": 6,
+    "drop": 6.5,
     "plate": null,
     "stackHeight": {
-      "heel": 33,
-      "forefoot": 27
+      "heel": 34.9,
+      "forefoot": 28.4
     },
     "releaseYear": null,
     "discontinued": false,
@@ -856,8 +856,8 @@
     "drop": 10,
     "plate": "none",
     "stackHeight": {
-      "heel": 34,
-      "forefoot": 24
+      "heel": 36,
+      "forefoot": 26
     },
     "releaseYear": 2025,
     "defaultLifespanKm": 650,
