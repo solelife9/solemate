@@ -13,5 +13,10 @@
     "strict": true,
     "types": ["node"]
   },
-  "include": ["scripts/validate-shoes.ts", "types/shoe.ts"]
+  "include": [
+    "scripts/validate-shoes.ts",
+    "scripts/migrate-weight-basis.ts",
+    "lib/shoeWeightBasis.ts",
+    "types/shoe.ts"
+  ]
 }

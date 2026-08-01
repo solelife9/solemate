@@ -12,6 +12,12 @@
 //  · 순수 — 네트워크·시간·네이티브 의존 0. 입력 불변, throw 금지.
 
 import type {PlateKind, ShoeCategory, StackHeight} from '../types/shoe';
+import {
+  adjustWeightToBasis,
+  basisComparable,
+  normalizeWeightBasis,
+  STANDARD_BASIS,
+} from './shoeWeightBasis';
 
 /** 비교에 필요한 최소 형태. 카탈로그 문서를 그대로 넣어도 되고, 일부만 채워도 된다. */
 export interface CompareShoe {
@@ -103,16 +109,45 @@ export function buildCompareTable(shoes: readonly CompareShoe[]): CompareRow[] {
   if (shoes.length === 0) return [];
   const base = shoes[0];
 
+  // 무게는 잰 사이즈가 다르면 그냥 빼면 안 된다. 반 사이즈가 6g 쯤 되기 때문이다.
+  //
+  //  · 기준이 같다        → 그대로 뺀다
+  //  · 기준이 다르고 **둘 다 안다** → 사이즈 보정 후 빼고 `≈` 를 붙인다(±3g 추정)
+  //  · 하나라도 모른다     → 차이를 안 적는다. 모르는 걸 보정할 수는 없다
+  //
+  // 칸에 적히는 숫자는 **언제나 공표된 원래 무게**다. 보정은 차이를 낼 때만 쓴다
+  // — 저장값도 표시값도 손대지 않는다(docs/shoes-spec.md §1).
+  let approx = false;
+  let unmeasurable = false;   // 기준을 모르거나, 알아도 너무 멀어 보정이 무의미한 경우
   const weight: CompareRow = {
     key: 'weight',
     label: '무게',
     cells: shoes.map((s, i) => {
       const c = numCell(s.weight, base.weight, i === 0, 'g');
-      // 기준 사이즈가 서로 다르면 그 무게 차이는 그만큼 덜 믿을 만하다 — 숨기지 않는다.
-      if (c.value !== null && s.weightBasis && s.weightBasis !== 'US9') c.sub = s.weightBasis;
+      if (c.value === null) return c;
+      const mine = normalizeWeightBasis(s.weightBasis);
+      if (i > 0 && !basisComparable(s.weightBasis, base.weightBasis)) {
+        const adj = adjustWeightToBasis(s.weight, s.weightBasis, base.weightBasis);
+        if (adj != null && base.weight != null) {
+          c.delta = '≈' + formatDelta(adj - base.weight);
+          approx = true;
+        } else {
+          c.delta = null;
+          unmeasurable = true;
+        }
+      }
+      // 표준(270mm)이면 굳이 적지 않는다. 다르거나 모르면 그 사실을 드러낸다.
+      if (mine == null) c.sub = '기준 모름';
+      else if (mine !== STANDARD_BASIS) c.sub = mine;
       return c;
     }),
   };
+  // 이유를 갈라 적는다 — '모른다'와 '알지만 너무 다르다'는 사용자에게 다른 이야기다.
+  const unknown = shoes.some((s, i) => i > 0 && s.weight != null && base.weight != null
+    && normalizeWeightBasis(s.weightBasis) == null);
+  if (unknown) weight.hint = '잰 사이즈를 몰라 차이는 비교하지 않음';
+  else if (unmeasurable) weight.hint = '잰 사이즈가 너무 달라 차이는 비교하지 않음';
+  else if (approx) weight.hint = '≈ 는 사이즈 보정한 어림값';
 
   const stack: CompareRow = {
     key: 'stack',

@@ -120,10 +120,87 @@ describe('모르는 값', () => {
     expect(p.cells[1].value).toBe('없음');
   });
 
-  it('무게 기준 사이즈가 US9가 아니면 표시한다', () => {
+  it('무게 기준 사이즈가 표준(270mm)이 아니면 mm 로 표시한다', () => {
     const rows = buildCompareTable([SUPERBLAST, {...NOVABLAST, weightBasis: 'US9.5'}]);
-    expect(rowOf(rows, 'weight').cells[1].sub).toBe('US9.5');
+    expect(rowOf(rows, 'weight').cells[1].sub).toBe('275mm');
     expect(rowOf(rows, 'weight').cells[0].sub).toBeUndefined();
+  });
+});
+
+// 무게는 같은 사이즈에서 잰 것끼리만 비교할 수 있다. 반 사이즈가 6~9g 인데 신발끼리
+// 실제 차이가 20~60g 이라, 기준이 섞인 차이는 사용자를 속인다.
+describe('무게는 잰 사이즈가 같을 때만 차이를 낸다', () => {
+  const other = (basis: string | null) => ({...NOVABLAST, weightBasis: basis});
+
+  it('기준이 같으면 차이를 낸다 — 표기가 달라도(US9 = M9 = 270mm)', () => {
+    for (const b of ['US9', 'M9', '270mm', '사이즈 9']) {
+      const rows = buildCompareTable([SUPERBLAST, other(b)]);
+      expect(rowOf(rows, 'weight').cells[1].delta).toBe('+19');
+    }
+  });
+
+  // 기준이 달라도 **둘 다 알면** 사이즈 보정으로 비교할 수 있다(5mm 당 6g, ±3g).
+  // 칸에 적히는 숫자는 언제나 공표된 원래 무게다 — 보정은 차이를 낼 때만 쓴다.
+  it('기준이 다르고 둘 다 알면 보정한 어림 차이를 낸다', () => {
+    const rows = buildCompareTable([SUPERBLAST, other('US9.5')]);
+    const c = rowOf(rows, 'weight').cells[1];
+    expect(c.value).toBe('249'); // 원래 무게 그대로
+    expect(c.sub).toBe('275mm');
+    // 249g@275mm → 270mm 기준으로 243g · 기준 230g 대비 +13
+    expect(c.delta).toBe('≈+13');
+  });
+
+  it('어림값임을 줄에 밝힌다', () => {
+    expect(buildCompareTable([SUPERBLAST, other('US9.5')]).find((r) => r.key === 'weight')!.hint)
+      .toBe('≈ 는 사이즈 보정한 어림값');
+  });
+
+  it('보정 방향이 맞다 — 큰 사이즈에서 잰 무게는 줄어든다', () => {
+    const big = buildCompareTable([SUPERBLAST, other('US10')]).find((r) => r.key === 'weight')!;
+    const small = buildCompareTable([SUPERBLAST, other('US8.5')]).find((r) => r.key === 'weight')!;
+    // 280mm(-12g) 보정 → 237g, 265mm(+6g) 보정 → 255g
+    expect(big.cells[1].delta).toBe('≈+7');
+    expect(small.cells[1].delta).toBe('≈+25');
+  });
+
+  it('기준을 모르면 차이를 적지 않는다 — 모르는 걸 270mm 라고 가정하지 않는다', () => {
+    const rows = buildCompareTable([SUPERBLAST, other(null)]);
+    const c = rowOf(rows, 'weight').cells[1];
+    expect(c.value).toBe('249');
+    expect(c.delta).toBeNull();
+    expect(c.sub).toBe('기준 모름');
+  });
+
+  it('기준을 모르면 그 이유를 줄에 적는다', () => {
+    expect(buildCompareTable([SUPERBLAST, other(null)]).find((r) => r.key === 'weight')!.hint)
+      .toBe('잰 사이즈를 몰라 차이는 비교하지 않음');
+  });
+
+  // 보정 계수는 반 사이즈(5mm) 관측쌍에서 얻었다. 30mm 를 늘리면 +36g 이 되는데
+  // 그건 측정이 아니라 직선을 끝까지 그은 것이다. 차이를 안 적는 게 정직하다.
+  it('기준이 너무 멀면(>10mm) 보정하지 않는다 — 값과 기준은 그대로 보여 준다', () => {
+    const rows = buildCompareTable([SUPERBLAST, {...NOVABLAST, weight: 224, weightBasis: '240mm'}]);
+    const c = rowOf(rows, 'weight').cells[1];
+    expect(c.value).toBe('224');
+    expect(c.sub).toBe('240mm');
+    expect(c.delta).toBeNull();
+    expect(rowOf(rows, 'weight').hint).toBe('잰 사이즈가 너무 달라 차이는 비교하지 않음');
+  });
+
+  it('10mm 까지는 보정한다 — 경계에서 끊기지 않는다', () => {
+    const rows = buildCompareTable([SUPERBLAST, {...NOVABLAST, weightBasis: '280mm'}]);
+    expect(rowOf(rows, 'weight').cells[1].delta).toBe('≈+7');
+  });
+
+  it('기준이 다 같으면 그런 설명을 붙이지 않는다', () => {
+    expect(buildCompareTable([SUPERBLAST, other('US9')]).find((r) => r.key === 'weight')!.hint)
+      .toBeUndefined();
+  });
+
+  it('다른 축(스택·드롭)은 사이즈와 무관하므로 그대로 비교한다', () => {
+    const rows = buildCompareTable([SUPERBLAST, other('US10')]);
+    expect(rowOf(rows, 'stack').cells[1].delta).toBe('−4');
+    expect(rowOf(rows, 'drop').cells[1].delta).toBe('0');
   });
 });
 

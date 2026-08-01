@@ -7,8 +7,8 @@
     "variant": null,
     "collabWith": null,
     "category": "recovery",
-    "weight": null,
-    "weightBasis": null,
+    "weight": 269,
+    "weightBasis": "270mm",
     "drop": null,
     "plate": null,
     "stackHeight": null,
@@ -29,7 +29,7 @@
     "collabWith": null,
     "category": "racing",
     "weight": 176,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 7,
     "plate": "other",
     "stackHeight": {
@@ -51,11 +51,14 @@
     "version": "3",
     "variant": null,
     "collabWith": null,
-    "weight": null,
+    "weight": 215,
     "weightBasis": null,
-    "drop": null,
+    "drop": 8.5,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 39.5,
+      "forefoot": 31
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
@@ -80,7 +83,7 @@
     "collabWith": null,
     "category": "racing",
     "weight": 201,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "carbon",
     "stackHeight": {
@@ -102,11 +105,14 @@
     "version": "4",
     "variant": null,
     "collabWith": "Satisfy",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 201,
+    "weightBasis": "270mm",
+    "drop": 6,
+    "plate": "carbon",
+    "stackHeight": {
+      "heel": 39,
+      "forefoot": 33
+    },
     "releaseYear": 2026,
     "discontinued": false,
     "searchAliases": [
@@ -130,11 +136,14 @@
     "variant": null,
     "collabWith": null,
     "category": "racing",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
+    "weight": 138,
+    "weightBasis": "275mm",
+    "drop": 6,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 39,
+      "forefoot": 33
+    },
     "releaseYear": 2024,
     "defaultLifespanKm": 450,
     "discontinued": false,
@@ -160,7 +169,7 @@
     "collabWith": null,
     "category": "racing",
     "weight": 130,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 3,
     "plate": "other",
     "stackHeight": {
@@ -214,11 +223,14 @@
     "version": "11",
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
+    "weight": 272,
+    "weightBasis": "270mm",
+    "drop": 8.5,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 39.5,
+      "forefoot": 31
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
@@ -239,9 +251,9 @@
     "variant": null,
     "collabWith": null,
     "weight": 258,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6.5,
-    "plate": null,
+    "plate": "other",
     "stackHeight": {
       "heel": 37.5,
       "forefoot": 30.5
@@ -270,7 +282,7 @@
     "collabWith": null,
     "category": "tempo",
     "weight": 255,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 7,
     "plate": "other",
     "stackHeight": {
@@ -321,7 +333,7 @@
     "collabWith": null,
     "weight": null,
     "weightBasis": null,
-    "drop": null,
+    "drop": 6,
     "plate": null,
     "stackHeight": null,
     "releaseYear": null,
@@ -343,7 +355,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 235,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 7,
     "plate": null,
     "stackHeight": {
@@ -370,7 +382,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 235,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 7,
     "plate": "other",
     "stackHeight": {
@@ -396,7 +408,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 306,
-    "weightBasis": "유니섹스 사이즈 9",
+    "weightBasis": "270mm",
     "drop": 7,
     "plate": "carbon",
     "stackHeight": {
@@ -422,8 +434,8 @@
     "version": null,
     "variant": null,
     "collabWith": null,
-    "weight": 153,
-    "weightBasis": "M5.0/W6.0",
+    "weight": null,
+    "weightBasis": null,
     "drop": 6,
     "plate": null,
     "stackHeight": {
@@ -450,7 +462,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 286,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 7,
     "plate": "carbon",
     "stackHeight": {
@@ -481,9 +493,9 @@
     "collabWith": null,
     "category": "daily",
     "weight": 241,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 35,
       "forefoot": 25
@@ -506,8 +518,8 @@
     "collabWith": null,
     "category": "daily",
     "weight": 236,
-    "weightBasis": "US9",
-    "drop": 10,
+    "weightBasis": "270mm",
+    "drop": 9,
     "plate": null,
     "stackHeight": {
       "heel": 36,
@@ -531,7 +543,7 @@
     "collabWith": null,
     "category": "racing",
     "weight": 184,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 7,
     "plate": "other",
     "stackHeight": {
@@ -580,11 +592,14 @@
     "variant": null,
     "collabWith": null,
     "category": "daily",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
+    "weight": 298,
+    "weightBasis": "270mm",
+    "drop": 9.5,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 33,
+      "forefoot": 23.5
+    },
     "releaseYear": null,
     "defaultLifespanKm": 650,
     "discontinued": false,
@@ -597,11 +612,14 @@
     "version": "2",
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
+    "weight": 291,
+    "weightBasis": "265mm",
     "drop": 9,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 33,
+      "forefoot": 24
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
@@ -620,11 +638,14 @@
     "version": "2",
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": 6,
+    "weight": 269,
+    "weightBasis": "270mm",
+    "drop": 6.5,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 34.9,
+      "forefoot": 28.4
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
@@ -643,11 +664,14 @@
     "version": "7",
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
+    "weight": 319,
+    "weightBasis": "265mm",
     "drop": 6,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 35,
+      "forefoot": 29
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
@@ -666,11 +690,14 @@
     "version": "8",
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
+    "weight": 275,
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 36,
+      "forefoot": 30
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
@@ -694,9 +721,9 @@
     "collabWith": null,
     "category": "tempo",
     "weight": 247,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 44,
       "forefoot": 38
@@ -780,7 +807,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 278,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -811,9 +838,9 @@
     "collabWith": null,
     "category": "daily",
     "weight": 287,
-    "weightBasis": "UK9",
+    "weightBasis": "280mm",
     "drop": 10,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 36,
       "forefoot": 26
@@ -836,11 +863,14 @@
     "variant": null,
     "collabWith": null,
     "category": "daily",
-    "weight": null,
+    "weight": 275,
     "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "drop": 10,
+    "plate": "none",
+    "stackHeight": {
+      "heel": 36,
+      "forefoot": 26
+    },
     "releaseYear": 2025,
     "defaultLifespanKm": 650,
     "discontinued": false,
@@ -851,7 +881,7 @@
       "슈퍼노바",
       "슈퍼노바 2"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "adidas-supernova-rise-3",
@@ -862,7 +892,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 264,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
     "stackHeight": {
@@ -888,10 +918,10 @@
     "variant": null,
     "collabWith": null,
     "category": "stability",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
+    "weight": 289,
+    "weightBasis": "270mm",
+    "drop": 10,
+    "plate": "none",
     "stackHeight": null,
     "releaseYear": null,
     "defaultLifespanKm": 700,
@@ -901,7 +931,7 @@
       "수퍼노바",
       "슈퍼노바"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "adidas-supernova-solution-3",
@@ -911,11 +941,14 @@
     "variant": null,
     "collabWith": null,
     "category": "stability",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 280,
+    "weightBasis": "270mm",
+    "drop": 8,
+    "plate": "none",
+    "stackHeight": {
+      "heel": 36,
+      "forefoot": 28
+    },
     "releaseYear": 2026,
     "defaultLifespanKm": 700,
     "discontinued": false,
@@ -926,7 +959,7 @@
       "슈퍼노바",
       "슈퍼노바 3"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "adidas-supernova-stride",
@@ -938,7 +971,7 @@
     "category": "daily",
     "weight": null,
     "weightBasis": null,
-    "drop": null,
+    "drop": 10,
     "plate": null,
     "stackHeight": null,
     "releaseYear": 2024,
@@ -961,7 +994,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 292,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "other",
     "stackHeight": {
@@ -981,7 +1014,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 269,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -1008,7 +1041,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 281,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "other",
     "stackHeight": {
@@ -1035,7 +1068,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 238,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -1066,7 +1099,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 264,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "other",
     "stackHeight": {
@@ -1088,7 +1121,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 269,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "other",
     "stackHeight": {
@@ -1115,7 +1148,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 306,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "other",
     "stackHeight": {
@@ -1169,9 +1202,9 @@
     "variant": null,
     "collabWith": null,
     "category": "recovery",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
+    "weight": 333,
+    "weightBasis": "275mm",
+    "drop": 10,
     "plate": null,
     "stackHeight": null,
     "releaseYear": null,
@@ -1191,93 +1224,6 @@
     "verified": false
   },
   {
-    "id": "adidas-ultraboost-23",
-    "brand": "Adidas",
-    "model": "Ultraboost",
-    "version": "23",
-    "variant": null,
-    "collabWith": null,
-    "category": "recovery",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
-    "releaseYear": null,
-    "defaultLifespanKm": 700,
-    "discontinued": false,
-    "searchAliases": [
-      "아디다스",
-      "울트라부스트",
-      "울트라부스트 23",
-      "울부",
-      "울부 23",
-      "울트라글라이드",
-      "울트라글라이드 23",
-      "울트라",
-      "울트라 23"
-    ],
-    "verified": false
-  },
-  {
-    "id": "adidas-ultraboost-24",
-    "brand": "Adidas",
-    "model": "Ultraboost",
-    "version": "24",
-    "variant": null,
-    "collabWith": null,
-    "category": "recovery",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
-    "releaseYear": null,
-    "defaultLifespanKm": 700,
-    "discontinued": false,
-    "searchAliases": [
-      "아디다스",
-      "울트라부스트",
-      "울트라부스트 24",
-      "울부",
-      "울부 24",
-      "울트라글라이드",
-      "울트라글라이드 24",
-      "울트라",
-      "울트라 24"
-    ],
-    "verified": false
-  },
-  {
-    "id": "adidas-ultraboost-25",
-    "brand": "Adidas",
-    "model": "Ultraboost",
-    "version": "25",
-    "variant": null,
-    "collabWith": null,
-    "category": "recovery",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
-    "releaseYear": null,
-    "defaultLifespanKm": 700,
-    "discontinued": false,
-    "searchAliases": [
-      "아디다스",
-      "울트라부스트",
-      "울트라부스트 25",
-      "울부",
-      "울부 25",
-      "울트라글라이드",
-      "울트라글라이드 25",
-      "울트라",
-      "울트라 25"
-    ],
-    "verified": false
-  },
-  {
     "id": "adidas-ultraboost-5",
     "brand": "Adidas",
     "model": "Ultraboost",
@@ -1285,11 +1231,14 @@
     "variant": null,
     "collabWith": null,
     "category": "recovery",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
+    "weight": 292,
+    "weightBasis": "275mm",
+    "drop": 10,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 39,
+      "forefoot": 29
+    },
     "releaseYear": 2025,
     "defaultLifespanKm": 700,
     "discontinued": false,
@@ -1310,11 +1259,14 @@
     "version": null,
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
+    "weight": 275,
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 38,
+      "forefoot": 28
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
@@ -1340,7 +1292,7 @@
     "category": "recovery",
     "weight": null,
     "weightBasis": null,
-    "drop": null,
+    "drop": 10,
     "plate": null,
     "stackHeight": null,
     "releaseYear": null,
@@ -1360,9 +1312,9 @@
     "variant": null,
     "collabWith": null,
     "weight": 244,
-    "weightBasis": "사이즈 9",
+    "weightBasis": "270mm",
     "drop": 0,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 25,
       "forefoot": 25
@@ -1391,7 +1343,7 @@
     "weight": 264,
     "weightBasis": null,
     "drop": 0,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 25,
       "forefoot": 25
@@ -1411,7 +1363,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 224,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 0,
     "plate": "none",
     "stackHeight": {
@@ -1436,9 +1388,9 @@
     "variant": null,
     "collabWith": null,
     "weight": 235,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 4,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 32,
       "forefoot": 28
@@ -1461,9 +1413,9 @@
     "variant": null,
     "collabWith": null,
     "weight": 230,
-    "weightBasis": "사이즈 9",
+    "weightBasis": "270mm",
     "drop": 4,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 32,
       "forefoot": 28
@@ -1486,7 +1438,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 269,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 4,
     "plate": "none",
     "stackHeight": {
@@ -1513,7 +1465,7 @@
     "weight": 281,
     "weightBasis": null,
     "drop": 4,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 33,
       "forefoot": 29
@@ -1536,7 +1488,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 281,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 4,
     "plate": null,
     "stackHeight": {
@@ -1566,10 +1518,10 @@
     "variant": null,
     "collabWith": null,
     "category": "trail",
-    "weight": null,
-    "weightBasis": null,
+    "weight": 286,
+    "weightBasis": "270mm",
     "drop": 0,
-    "plate": null,
+    "plate": "other",
     "stackHeight": {
       "heel": 25,
       "forefoot": 25
@@ -1593,9 +1545,9 @@
     "collabWith": null,
     "category": "trail",
     "weight": 295,
-    "weightBasis": "사이즈 9",
+    "weightBasis": "270mm",
     "drop": 0,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 25,
       "forefoot": 25
@@ -1616,7 +1568,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 264,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 0,
     "plate": "carbon",
     "stackHeight": {
@@ -1641,7 +1593,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 258,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 0,
     "plate": "other",
     "stackHeight": {
@@ -1666,7 +1618,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 315,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 0,
     "plate": "none",
     "stackHeight": {
@@ -1691,7 +1643,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 354,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 0,
     "plate": "none",
     "stackHeight": {
@@ -1744,7 +1696,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 278,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 0,
     "plate": "none",
     "stackHeight": {
@@ -1769,7 +1721,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 286,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 0,
     "plate": null,
     "stackHeight": {
@@ -1820,7 +1772,7 @@
     "variant": "BOA",
     "collabWith": null,
     "weight": 289,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 0,
     "plate": "none",
     "stackHeight": {
@@ -1848,7 +1800,7 @@
     "weight": 281,
     "weightBasis": null,
     "drop": 0,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 30,
       "forefoot": 30
@@ -1876,7 +1828,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 280,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 0,
     "plate": "none",
     "stackHeight": {
@@ -1902,9 +1854,9 @@
     "collabWith": null,
     "category": "daily",
     "weight": 269,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 0,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 30,
       "forefoot": 30
@@ -1926,7 +1878,7 @@
     "weight": 261,
     "weightBasis": null,
     "drop": 0,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 28,
       "forefoot": 28
@@ -1951,7 +1903,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 281,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 0,
     "plate": null,
     "stackHeight": {
@@ -1980,7 +1932,7 @@
     "collabWith": null,
     "category": "racing",
     "weight": 215,
-    "weightBasis": null,
+    "weightBasis": "270mm",
     "drop": 0,
     "plate": "carbon",
     "stackHeight": {
@@ -2002,7 +1954,7 @@
     "weight": null,
     "weightBasis": null,
     "drop": 0,
-    "plate": null,
+    "plate": "none",
     "stackHeight": null,
     "releaseYear": null,
     "discontinued": false,
@@ -2023,7 +1975,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 275,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -2098,7 +2050,7 @@
     "weight": 240,
     "weightBasis": null,
     "drop": 5,
-    "plate": null,
+    "plate": "other",
     "stackHeight": {
       "heel": 34,
       "forefoot": 29
@@ -2125,9 +2077,9 @@
     "variant": null,
     "collabWith": null,
     "category": "daily",
-    "weight": null,
+    "weight": 274,
     "weightBasis": null,
-    "drop": null,
+    "drop": 8,
     "plate": null,
     "stackHeight": null,
     "releaseYear": null,
@@ -2136,7 +2088,7 @@
     "searchAliases": [
       "아식스"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "asics-gel-cumulus-25",
@@ -2146,9 +2098,9 @@
     "variant": null,
     "collabWith": null,
     "category": "daily",
-    "weight": null,
+    "weight": 266,
     "weightBasis": null,
-    "drop": null,
+    "drop": 8,
     "plate": null,
     "stackHeight": null,
     "releaseYear": null,
@@ -2172,9 +2124,9 @@
     "collabWith": null,
     "category": "daily",
     "weight": 255,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 38.5,
       "forefoot": 30.5
@@ -2200,9 +2152,9 @@
     "collabWith": null,
     "category": "daily",
     "weight": 261,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 41,
       "forefoot": 33
@@ -2227,9 +2179,9 @@
     "collabWith": null,
     "category": "daily",
     "weight": 255,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 42,
       "forefoot": 34
@@ -2274,9 +2226,9 @@
     "variant": null,
     "collabWith": null,
     "category": "daily",
-    "weight": null,
+    "weight": 260,
     "weightBasis": null,
-    "drop": null,
+    "drop": 8,
     "plate": null,
     "stackHeight": null,
     "releaseYear": null,
@@ -2295,10 +2247,10 @@
     "variant": null,
     "collabWith": null,
     "category": "stability",
-    "weight": null,
+    "weight": 299,
     "weightBasis": null,
-    "drop": null,
-    "plate": null,
+    "drop": 10,
+    "plate": "none",
     "stackHeight": null,
     "releaseYear": null,
     "defaultLifespanKm": 700,
@@ -2310,7 +2262,7 @@
       "카야노",
       "카야노 29"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "asics-gel-kayano-30",
@@ -2321,7 +2273,7 @@
     "collabWith": null,
     "category": "stability",
     "weight": 303,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": "none",
     "stackHeight": {
@@ -2349,9 +2301,9 @@
     "collabWith": null,
     "category": "stability",
     "weight": 312,
-    "weightBasis": "US9.5",
+    "weightBasis": "275mm",
     "drop": 10,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 40,
       "forefoot": 30
@@ -2377,9 +2329,9 @@
     "collabWith": null,
     "category": "stability",
     "weight": 298,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 40,
       "forefoot": 32
@@ -2430,10 +2382,10 @@
     "variant": null,
     "collabWith": null,
     "category": "recovery",
-    "weight": null,
-    "weightBasis": null,
+    "weight": 290,
+    "weightBasis": "270mm",
     "drop": 8,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 41.5,
       "forefoot": 33.5
@@ -2459,9 +2411,9 @@
     "collabWith": null,
     "category": "recovery",
     "weight": 304,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 42,
       "forefoot": 34
@@ -2487,7 +2439,7 @@
     "collabWith": null,
     "category": "recovery",
     "weight": 295,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
     "stackHeight": {
@@ -2515,7 +2467,7 @@
     "collabWith": null,
     "category": "recovery",
     "weight": 272,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
     "stackHeight": {
@@ -2568,7 +2520,7 @@
     "category": "daily",
     "weight": null,
     "weightBasis": null,
-    "drop": null,
+    "drop": 8,
     "plate": null,
     "stackHeight": null,
     "releaseYear": null,
@@ -2587,9 +2539,9 @@
     "variant": null,
     "collabWith": null,
     "category": "daily",
-    "weight": null,
+    "weight": 240,
     "weightBasis": null,
-    "drop": null,
+    "drop": 8,
     "plate": null,
     "stackHeight": null,
     "releaseYear": null,
@@ -2598,7 +2550,7 @@
     "searchAliases": [
       "아식스"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "asics-gel-sonoma-7",
@@ -2610,7 +2562,7 @@
     "category": "trail",
     "weight": null,
     "weightBasis": null,
-    "drop": null,
+    "drop": 8,
     "plate": null,
     "stackHeight": null,
     "releaseYear": null,
@@ -2619,16 +2571,16 @@
     "searchAliases": [
       "아식스"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "version": "12",
     "variant": null,
     "collabWith": null,
     "weight": 309,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
-    "plate": null,
+    "plate": "other",
     "stackHeight": {
       "heel": 36,
       "forefoot": 28
@@ -2679,9 +2631,9 @@
     "collabWith": null,
     "category": "trail",
     "weight": 283,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
-    "plate": null,
+    "plate": "other",
     "stackHeight": {
       "heel": 34,
       "forefoot": 26
@@ -2700,9 +2652,12 @@
     "collabWith": null,
     "weight": null,
     "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "drop": 8,
+    "plate": "other",
+    "stackHeight": {
+      "heel": 36,
+      "forefoot": 28
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
@@ -2710,7 +2665,7 @@
       "젤트라부코",
       "고어텍스"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "asics-gel-trabuco-13-gtx",
     "brand": "ASICS",
@@ -2721,7 +2676,7 @@
     "version": "10",
     "variant": null,
     "collabWith": null,
-    "weight": null,
+    "weight": 320,
     "weightBasis": null,
     "drop": 10,
     "plate": null,
@@ -2771,9 +2726,9 @@
     "variant": null,
     "collabWith": null,
     "category": "trail",
-    "weight": null,
+    "weight": 300,
     "weightBasis": null,
-    "drop": null,
+    "drop": 10,
     "plate": null,
     "stackHeight": null,
     "releaseYear": null,
@@ -2812,9 +2767,9 @@
     "variant": null,
     "collabWith": null,
     "weight": 261,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
-    "plate": null,
+    "plate": "other",
     "stackHeight": {
       "heel": 46,
       "forefoot": 40
@@ -2841,9 +2796,9 @@
     "variant": null,
     "collabWith": null,
     "category": "stability",
-    "weight": null,
+    "weight": 267,
     "weightBasis": null,
-    "drop": null,
+    "drop": 8,
     "plate": null,
     "stackHeight": null,
     "releaseYear": null,
@@ -2861,9 +2816,9 @@
     "variant": null,
     "collabWith": null,
     "weight": 269,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 36,
       "forefoot": 28
@@ -2892,7 +2847,7 @@
     "collabWith": null,
     "category": "stability",
     "weight": 266,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
     "stackHeight": {
@@ -2918,7 +2873,7 @@
     "collabWith": null,
     "category": "stability",
     "weight": 266,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
     "stackHeight": {
@@ -2944,9 +2899,9 @@
     "collabWith": null,
     "category": "stability",
     "weight": 266,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 36,
       "forefoot": 28
@@ -2967,9 +2922,9 @@
     "variant": "GTX",
     "collabWith": null,
     "weight": 298,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 36,
       "forefoot": 28
@@ -2993,9 +2948,9 @@
     "variant": null,
     "collabWith": null,
     "weight": 258,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 40,
       "forefoot": 32
@@ -3042,9 +2997,9 @@
     "version": "4",
     "variant": null,
     "collabWith": null,
-    "weight": null,
+    "weight": 268,
     "weightBasis": null,
-    "drop": null,
+    "drop": 10,
     "plate": null,
     "stackHeight": null,
     "releaseYear": null,
@@ -3065,9 +3020,9 @@
     "version": "5",
     "variant": null,
     "collabWith": null,
-    "weight": null,
+    "weight": 265,
     "weightBasis": null,
-    "drop": null,
+    "drop": 10,
     "plate": null,
     "stackHeight": null,
     "releaseYear": null,
@@ -3077,7 +3032,7 @@
       "졸트",
       "졸트 5"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "asics-jolt-5",
     "brand": "ASICS",
@@ -3093,10 +3048,13 @@
     "collabWith": null,
     "category": "tempo",
     "weight": 241,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "carbon",
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 44,
+      "forefoot": 36
+    },
     "releaseYear": 2024,
     "defaultLifespanKm": 650,
     "discontinued": false,
@@ -3116,7 +3074,7 @@
     "collabWith": null,
     "category": "tempo",
     "weight": 201,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 7,
     "plate": "carbon",
     "stackHeight": {
@@ -3142,7 +3100,7 @@
     "collabWith": null,
     "category": "tempo",
     "weight": 221,
-    "weightBasis": "유니섹스(사이즈 미표기)",
+    "weightBasis": null,
     "drop": 8,
     "plate": "none",
     "stackHeight": {
@@ -3164,9 +3122,9 @@
     "variant": null,
     "collabWith": null,
     "weight": 260,
-    "weightBasis": null,
+    "weightBasis": "270mm",
     "drop": 5,
-    "plate": null,
+    "plate": "carbon",
     "stackHeight": {
       "heel": 44,
       "forefoot": 39
@@ -3194,7 +3152,7 @@
     "collabWith": null,
     "category": "racing",
     "weight": 209,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": "carbon",
     "stackHeight": {
@@ -3219,7 +3177,7 @@
     "collabWith": null,
     "category": "racing",
     "weight": 184,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": "carbon",
     "stackHeight": {
@@ -3240,7 +3198,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 159,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": "carbon",
     "stackHeight": {
@@ -3267,7 +3225,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 130,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": "carbon",
     "stackHeight": {
@@ -3300,7 +3258,7 @@
     "weight": null,
     "weightBasis": null,
     "drop": 5,
-    "plate": null,
+    "plate": "carbon",
     "stackHeight": {
       "heel": 38,
       "forefoot": 33
@@ -3323,7 +3281,7 @@
     "collabWith": null,
     "category": "racing",
     "weight": 181,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": "carbon",
     "stackHeight": {
@@ -3344,7 +3302,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 159,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": "carbon",
     "stackHeight": {
@@ -3375,9 +3333,9 @@
     "collabWith": null,
     "category": "tempo",
     "weight": 213,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 5,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 34,
       "forefoot": 29
@@ -3399,7 +3357,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 247,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
     "stackHeight": {
@@ -3427,9 +3385,9 @@
     "collabWith": null,
     "category": "daily",
     "weight": 267,
-    "weightBasis": "US9.5",
+    "weightBasis": "275mm",
     "drop": 8,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 41.5,
       "forefoot": 33.5
@@ -3455,9 +3413,9 @@
     "collabWith": null,
     "category": "daily",
     "weight": 247,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 41,
       "forefoot": 33
@@ -3482,7 +3440,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 249,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
     "stackHeight": {
@@ -3505,7 +3463,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 235,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "stackHeight": {
       "heel": 40,
@@ -3535,7 +3493,7 @@
     "collabWith": null,
     "category": "tempo",
     "weight": 255,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "other",
     "stackHeight": {
@@ -3561,9 +3519,9 @@
     "collabWith": null,
     "category": "tempo",
     "weight": 251,
-    "weightBasis": "US9.5",
+    "weightBasis": "275mm",
     "drop": 8,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 45,
       "forefoot": 37
@@ -3617,7 +3575,7 @@
     "collabWith": null,
     "category": "tempo",
     "weight": 230,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
     "stackHeight": {
@@ -3642,7 +3600,7 @@
     "weight": 278,
     "weightBasis": "265mm",
     "drop": 8,
-    "plate": null,
+    "plate": "other",
     "stackHeight": {
       "heel": 36,
       "forefoot": 28
@@ -3668,7 +3626,7 @@
     "weight": null,
     "weightBasis": null,
     "drop": null,
-    "plate": null,
+    "plate": "other",
     "stackHeight": null,
     "releaseYear": null,
     "discontinued": false,
@@ -3677,7 +3635,7 @@
       "트라부코",
       "고어텍스"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "asics-trabuco-14-gtx",
     "brand": "ASICS",
@@ -3693,9 +3651,9 @@
     "collabWith": null,
     "category": "trail",
     "weight": 312,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 5,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 40,
       "forefoot": 35
@@ -3712,11 +3670,14 @@
     "version": "5",
     "variant": null,
     "collabWith": null,
-    "weight": null,
+    "weight": 302,
     "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "drop": 5,
+    "plate": "none",
+    "stackHeight": {
+      "heel": 40,
+      "forefoot": 35
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
@@ -3724,7 +3685,7 @@
       "트라부코 맥스",
       "트라부코 맥스 5"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "asics-trabuco-max-5",
     "brand": "ASICS",
@@ -3736,7 +3697,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 354,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 12,
     "plate": "none",
     "stackHeight": {
@@ -3766,10 +3727,13 @@
     "collabWith": null,
     "category": "stability",
     "weight": 287,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 12,
-    "plate": null,
-    "stackHeight": null,
+    "plate": "none",
+    "stackHeight": {
+      "heel": 36,
+      "forefoot": 24
+    },
     "releaseYear": null,
     "defaultLifespanKm": 700,
     "discontinued": false,
@@ -3789,9 +3753,9 @@
     "collabWith": null,
     "category": "stability",
     "weight": 283,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 12,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 35,
       "forefoot": 23
@@ -3815,7 +3779,7 @@
     "collabWith": null,
     "category": "stability",
     "weight": 301,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": "none",
     "stackHeight": {
@@ -3840,9 +3804,9 @@
     "variant": null,
     "collabWith": null,
     "category": "recovery",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
+    "weight": 243.8,
+    "weightBasis": "270mm",
+    "drop": 6,
     "plate": null,
     "stackHeight": null,
     "releaseYear": null,
@@ -3859,7 +3823,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 357,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": null,
     "stackHeight": {
@@ -3889,7 +3853,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 300,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "none",
     "stackHeight": {
@@ -3915,7 +3879,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 300,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "none",
     "stackHeight": {
@@ -3941,7 +3905,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 320,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "other",
     "stackHeight": {
@@ -3961,9 +3925,9 @@
     "variant": null,
     "collabWith": null,
     "weight": 320,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 33,
       "forefoot": 25
@@ -3992,7 +3956,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 301,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "other",
     "stackHeight": {
@@ -4012,7 +3976,7 @@
     "variant": "GTX",
     "collabWith": null,
     "weight": 318,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "other",
     "stackHeight": {
@@ -4084,7 +4048,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 269,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "other",
     "stackHeight": {
@@ -4113,7 +4077,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 269,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "other",
     "stackHeight": {
@@ -4156,7 +4120,7 @@
     "variant": "GTX",
     "collabWith": null,
     "weight": 298,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": null,
     "stackHeight": null,
@@ -4209,9 +4173,9 @@
     "collabWith": null,
     "category": "daily",
     "weight": 272,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 12,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 35,
       "forefoot": 23
@@ -4235,9 +4199,9 @@
     "collabWith": null,
     "category": "daily",
     "weight": 269,
-    "weightBasis": "EU44",
+    "weightBasis": "280mm",
     "drop": 12,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 34.5,
       "forefoot": 22.5
@@ -4261,7 +4225,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 289,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": null,
     "stackHeight": {
@@ -4287,7 +4251,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 283,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": "none",
     "stackHeight": {
@@ -4309,7 +4273,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 252,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "none",
     "stackHeight": {
@@ -4335,10 +4299,13 @@
     "variant": null,
     "collabWith": null,
     "weight": 283,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
-    "plate": null,
-    "stackHeight": null,
+    "plate": "none",
+    "stackHeight": {
+      "heel": 38,
+      "forefoot": 32
+    },
     "releaseYear": 2023,
     "discontinued": true,
     "searchAliases": [
@@ -4362,9 +4329,9 @@
     "collabWith": null,
     "category": "recovery",
     "weight": 306,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 39,
       "forefoot": 33
@@ -4384,7 +4351,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 303,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "none",
     "stackHeight": {
@@ -4409,8 +4376,8 @@
     "version": "4",
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
+    "weight": 292,
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": null,
     "stackHeight": null,
@@ -4433,7 +4400,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 292,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
     "stackHeight": {
@@ -4463,7 +4430,7 @@
     "collabWith": null,
     "category": "recovery",
     "weight": 300,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": "none",
     "stackHeight": {
@@ -4489,9 +4456,9 @@
     "collabWith": null,
     "category": "recovery",
     "weight": 277,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 38,
       "forefoot": 28
@@ -4515,7 +4482,7 @@
     "collabWith": null,
     "category": "recovery",
     "weight": 292,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": "none",
     "stackHeight": {
@@ -4537,7 +4504,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 309,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
     "stackHeight": {
@@ -4567,7 +4534,7 @@
     "collabWith": null,
     "category": "recovery",
     "weight": 249,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": null,
     "stackHeight": null,
@@ -4585,10 +4552,13 @@
     "variant": null,
     "collabWith": null,
     "weight": 295,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
-    "plate": null,
-    "stackHeight": null,
+    "plate": "none",
+    "stackHeight": {
+      "heel": 38,
+      "forefoot": 28
+    },
     "releaseYear": 2023,
     "discontinued": true,
     "searchAliases": [
@@ -4612,9 +4582,9 @@
     "collabWith": null,
     "category": "stability",
     "weight": 303,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 38,
       "forefoot": 28
@@ -4638,7 +4608,7 @@
     "collabWith": null,
     "category": "stability",
     "weight": 306,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -4664,10 +4634,13 @@
     "collabWith": null,
     "category": "recovery",
     "weight": 298,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
-    "plate": null,
-    "stackHeight": null,
+    "plate": "none",
+    "stackHeight": {
+      "heel": 47,
+      "forefoot": 41
+    },
     "releaseYear": 2024,
     "defaultLifespanKm": 700,
     "discontinued": false,
@@ -4682,7 +4655,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 315,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": null,
     "stackHeight": {
@@ -4711,7 +4684,7 @@
     "collabWith": null,
     "category": "tempo",
     "weight": 201,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
     "stackHeight": {
@@ -4733,9 +4706,9 @@
     "variant": null,
     "collabWith": null,
     "weight": 241,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
-    "plate": null,
+    "plate": "carbon",
     "stackHeight": {
       "heel": 37,
       "forefoot": 29
@@ -4762,11 +4735,14 @@
     "variant": null,
     "collabWith": null,
     "category": "racing",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 235,
+    "weightBasis": "270mm",
+    "drop": 8,
+    "plate": "carbon",
+    "stackHeight": {
+      "heel": 35,
+      "forefoot": 27
+    },
     "releaseYear": null,
     "defaultLifespanKm": 450,
     "discontinued": false,
@@ -4777,7 +4753,7 @@
       "엘리트",
       "엘리트 3"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "brooks-hyperion-elite-4",
@@ -4788,7 +4764,7 @@
     "collabWith": null,
     "category": "racing",
     "weight": 218,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "carbon",
     "stackHeight": {
@@ -4815,10 +4791,10 @@
     "variant": null,
     "collabWith": null,
     "category": "racing",
-    "weight": null,
-    "weightBasis": null,
+    "weight": 204.1,
+    "weightBasis": "270mm",
     "drop": null,
-    "plate": null,
+    "plate": "carbon",
     "stackHeight": null,
     "releaseYear": 2025,
     "defaultLifespanKm": 450,
@@ -4835,7 +4811,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 201,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "carbon",
     "stackHeight": {
@@ -4860,10 +4836,10 @@
     "version": "6",
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
+    "weight": 192.8,
+    "weightBasis": "270mm",
     "drop": 8,
-    "plate": null,
+    "plate": "carbon",
     "stackHeight": null,
     "releaseYear": null,
     "discontinued": false,
@@ -4883,8 +4859,8 @@
     "version": "2",
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
+    "weight": 215.5,
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
     "stackHeight": {
@@ -4913,10 +4889,10 @@
     "variant": null,
     "collabWith": null,
     "category": "tempo",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
+    "weight": 258,
+    "weightBasis": "270mm",
+    "drop": 6,
+    "plate": "carbon",
     "stackHeight": null,
     "releaseYear": 2024,
     "defaultLifespanKm": 650,
@@ -4933,7 +4909,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 289,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "other",
     "stackHeight": {
@@ -4959,7 +4935,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 295,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "other",
     "stackHeight": {
@@ -4989,7 +4965,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 232,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": "none",
     "stackHeight": {
@@ -5014,8 +4990,8 @@
     "variant": null,
     "collabWith": null,
     "category": "daily",
-    "weight": null,
-    "weightBasis": null,
+    "weight": 218.3,
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -5037,7 +5013,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 247,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -5087,8 +5063,8 @@
     "variant": null,
     "collabWith": null,
     "category": "daily",
-    "weight": null,
-    "weightBasis": null,
+    "weight": 255,
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": "none",
     "stackHeight": {
@@ -5111,9 +5087,9 @@
     "variant": null,
     "collabWith": null,
     "category": "daily",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
+    "weight": 255.1,
+    "weightBasis": "270mm",
+    "drop": 12,
     "plate": null,
     "stackHeight": null,
     "releaseYear": null,
@@ -5133,7 +5109,7 @@
     "collabWith": null,
     "category": "racing",
     "weight": 198,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": null,
     "stackHeight": {
@@ -5156,8 +5132,8 @@
     "variant": null,
     "collabWith": null,
     "category": "stability",
-    "weight": null,
-    "weightBasis": null,
+    "weight": 272,
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": "none",
     "stackHeight": {
@@ -5209,9 +5185,9 @@
     "collabWith": null,
     "category": "recovery",
     "weight": 306,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 5,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 39,
       "forefoot": 34
@@ -5237,7 +5213,7 @@
     "collabWith": null,
     "category": "recovery",
     "weight": 306,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": "none",
     "stackHeight": {
@@ -5292,7 +5268,7 @@
     "weight": null,
     "weightBasis": null,
     "drop": 5,
-    "plate": null,
+    "plate": "carbon",
     "stackHeight": {
       "heel": 37,
       "forefoot": 32
@@ -5314,7 +5290,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 275,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": "none",
     "stackHeight": {
@@ -5336,7 +5312,7 @@
     "weight": 275,
     "weightBasis": null,
     "drop": 7,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 44,
       "forefoot": 37
@@ -5366,7 +5342,7 @@
     "weight": 264,
     "weightBasis": null,
     "drop": 7,
-    "plate": null,
+    "plate": "carbon",
     "stackHeight": {
       "heel": 39,
       "forefoot": 32
@@ -5389,7 +5365,7 @@
     "collabWith": null,
     "category": "racing",
     "weight": 210,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 7,
     "plate": "carbon",
     "stackHeight": {
@@ -5411,7 +5387,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 198,
-    "weightBasis": "유니섹스(사이즈 미표기)",
+    "weightBasis": null,
     "drop": 7,
     "plate": "carbon",
     "stackHeight": {
@@ -5441,7 +5417,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 258,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -5463,7 +5439,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 261,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
     "stackHeight": {
@@ -5492,7 +5468,7 @@
     "variant": null,
     "collabWith": null,
     "category": "daily",
-    "weight": null,
+    "weight": 252,
     "weightBasis": null,
     "drop": 5,
     "plate": "none",
@@ -5519,9 +5495,9 @@
     "collabWith": null,
     "category": "daily",
     "weight": 247,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 5,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 32,
       "forefoot": 27
@@ -5565,7 +5541,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 266,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -5618,7 +5594,7 @@
     "collabWith": null,
     "category": "stability",
     "weight": 309,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "none",
     "stackHeight": {
@@ -5638,9 +5614,9 @@
     "variant": null,
     "collabWith": null,
     "weight": 283,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 39,
       "forefoot": 33
@@ -5688,9 +5664,9 @@
     "variant": null,
     "collabWith": null,
     "category": "daily",
-    "weight": null,
+    "weight": 326,
     "weightBasis": null,
-    "drop": null,
+    "drop": 5,
     "plate": null,
     "stackHeight": null,
     "releaseYear": null,
@@ -5710,7 +5686,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 212,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": "none",
     "stackHeight": {
@@ -5736,9 +5712,9 @@
     "collabWith": null,
     "category": "tempo",
     "weight": 210,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 5,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 37,
       "forefoot": 32
@@ -5762,7 +5738,7 @@
     "collabWith": null,
     "category": "tempo",
     "weight": 241,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": "none",
     "stackHeight": {
@@ -5787,8 +5763,8 @@
     "variant": null,
     "collabWith": null,
     "category": "tempo",
-    "weight": null,
-    "weightBasis": null,
+    "weight": 266,
+    "weightBasis": "280mm",
     "drop": 5,
     "plate": "other",
     "stackHeight": {
@@ -5813,7 +5789,7 @@
     "collabWith": null,
     "category": "tempo",
     "weight": 252,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": "other",
     "stackHeight": {
@@ -5835,7 +5811,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 266,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": "other",
     "stackHeight": {
@@ -5861,9 +5837,9 @@
     "variant": null,
     "collabWith": null,
     "weight": 315,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
-    "plate": null,
+    "plate": "other",
     "stackHeight": {
       "heel": 44,
       "forefoot": 36
@@ -5891,7 +5867,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 280,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 4,
     "plate": "none",
     "stackHeight": {
@@ -5938,9 +5914,9 @@
     "variant": null,
     "collabWith": null,
     "weight": 343,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
-    "plate": null,
+    "plate": "other",
     "stackHeight": {
       "heel": 48,
       "forefoot": 40
@@ -5967,7 +5943,7 @@
     "variant": null,
     "collabWith": null,
     "category": "daily",
-    "weight": null,
+    "weight": 218,
     "weightBasis": null,
     "drop": 5,
     "plate": "none",
@@ -5996,7 +5972,7 @@
     "weight": null,
     "weightBasis": null,
     "drop": 5,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 36,
       "forefoot": 31
@@ -6020,10 +5996,13 @@
     "collabWith": null,
     "category": "racing",
     "weight": 235,
-    "weightBasis": "유니섹스 사이즈 9",
-    "drop": null,
+    "weightBasis": "270mm",
+    "drop": 6,
     "plate": "carbon",
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 37,
+      "forefoot": 31
+    },
     "releaseYear": 2023,
     "defaultLifespanKm": 450,
     "discontinued": false,
@@ -6067,7 +6046,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 261,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "carbon",
     "stackHeight": {
@@ -6097,9 +6076,9 @@
     "collabWith": null,
     "category": "daily",
     "weight": 283,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 5,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 39,
       "forefoot": 34
@@ -6122,7 +6101,7 @@
     "collabWith": null,
     "category": "recovery",
     "weight": 306,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": "carbon",
     "stackHeight": {
@@ -6143,7 +6122,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 283,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": "carbon",
     "stackHeight": {
@@ -6173,7 +6152,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 280,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 4,
     "plate": "none",
     "stackHeight": {
@@ -6199,7 +6178,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 283,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": "none",
     "stackHeight": {
@@ -6225,7 +6204,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 272,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": "none",
     "stackHeight": {
@@ -6251,9 +6230,9 @@
     "collabWith": null,
     "category": "trail",
     "weight": 343,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 5,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 44,
       "forefoot": 39
@@ -6271,7 +6250,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 249,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": "carbon",
     "stackHeight": {
@@ -6297,7 +6276,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 275,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": "carbon",
     "stackHeight": {
@@ -6326,7 +6305,7 @@
     "variant": null,
     "collabWith": null,
     "category": "trail",
-    "weight": null,
+    "weight": 247,
     "weightBasis": null,
     "drop": 5,
     "plate": "none",
@@ -6352,8 +6331,8 @@
     "category": "trail",
     "weight": null,
     "weightBasis": null,
-    "drop": null,
-    "plate": null,
+    "drop": 5,
+    "plate": "none",
     "stackHeight": null,
     "releaseYear": 2025,
     "defaultLifespanKm": 650,
@@ -6361,7 +6340,7 @@
     "searchAliases": [
       "호카"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "version": "5",
@@ -6370,7 +6349,7 @@
     "weight": 264,
     "weightBasis": null,
     "drop": 5,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 35,
       "forefoot": 30
@@ -6394,7 +6373,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 272,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": "carbon",
     "stackHeight": {
@@ -6420,7 +6399,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 210,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": "none",
     "stackHeight": {
@@ -6446,7 +6425,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 241,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": null,
     "stackHeight": {
@@ -6499,7 +6478,7 @@
     "weight": null,
     "weightBasis": null,
     "drop": null,
-    "plate": null,
+    "plate": "none",
     "stackHeight": null,
     "releaseYear": null,
     "defaultLifespanKm": 650,
@@ -6509,7 +6488,7 @@
       "울트라글라이드",
       "울트라"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "karhu-fusion-4-5",
@@ -6537,7 +6516,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 280,
-    "weightBasis": "US10",
+    "weightBasis": "280mm",
     "drop": 6,
     "plate": null,
     "stackHeight": {
@@ -6563,7 +6542,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 301,
-    "weightBasis": "US10",
+    "weightBasis": "280mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -6611,7 +6590,7 @@
     "variant": "WR",
     "collabWith": null,
     "weight": 350,
-    "weightBasis": "US10",
+    "weightBasis": "280mm",
     "drop": 5,
     "plate": null,
     "stackHeight": null,
@@ -6659,7 +6638,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 340,
-    "weightBasis": "US10",
+    "weightBasis": "280mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -6875,7 +6854,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 243,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "none",
     "stackHeight": {
@@ -6928,7 +6907,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 167,
-    "weightBasis": "EU42",
+    "weightBasis": "265mm",
     "drop": 4,
     "plate": "carbon",
     "stackHeight": {
@@ -7032,7 +7011,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 247,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "carbon",
     "stackHeight": {
@@ -7229,7 +7208,7 @@
     "weight": null,
     "weightBasis": null,
     "drop": 6,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 33,
       "forefoot": 27
@@ -7247,7 +7226,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 298,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "none",
     "stackHeight": {
@@ -7341,7 +7320,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 300,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": null,
     "stackHeight": {
@@ -7361,7 +7340,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 170,
-    "weightBasis": "유니섹스 M9",
+    "weightBasis": "270mm",
     "drop": 3.5,
     "plate": "carbon",
     "stackHeight": {
@@ -7387,7 +7366,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 198,
-    "weightBasis": "사이즈 9",
+    "weightBasis": "270mm",
     "drop": 5.5,
     "plate": "other",
     "stackHeight": {
@@ -7413,7 +7392,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 139,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 3.5,
     "plate": "carbon",
     "stackHeight": {
@@ -7486,7 +7465,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 290,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": null,
     "stackHeight": {
@@ -7542,7 +7521,7 @@
     "collabWith": null,
     "category": "tempo",
     "weight": 264,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "other",
     "stackHeight": {
@@ -7564,7 +7543,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 272,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "other",
     "stackHeight": {
@@ -7590,7 +7569,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 235,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "none",
     "stackHeight": {
@@ -7615,7 +7594,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 241,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "none",
     "stackHeight": {
@@ -7708,7 +7687,7 @@
     "collabWith": null,
     "category": "stability",
     "weight": 323,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
     "stackHeight": {
@@ -7728,7 +7707,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 309,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -7758,7 +7737,7 @@
     "collabWith": null,
     "category": "stability",
     "weight": 300,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 12,
     "plate": "other",
     "stackHeight": {
@@ -7784,9 +7763,9 @@
     "collabWith": null,
     "category": "stability",
     "weight": 292,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 12,
-    "plate": null,
+    "plate": "other",
     "stackHeight": {
       "heel": 38,
       "forefoot": 26
@@ -7809,10 +7788,10 @@
     "variant": null,
     "collabWith": null,
     "category": "stability",
-    "weight": 281,
-    "weightBasis": null,
+    "weight": 295,
+    "weightBasis": "270mm",
     "drop": 10,
-    "plate": null,
+    "plate": "other",
     "stackHeight": {
       "heel": 37,
       "forefoot": 27
@@ -7837,7 +7816,7 @@
     "category": "trail",
     "weight": null,
     "weightBasis": null,
-    "drop": null,
+    "drop": 8,
     "plate": null,
     "stackHeight": null,
     "releaseYear": 2025,
@@ -7858,7 +7837,7 @@
     "category": "recovery",
     "weight": null,
     "weightBasis": null,
-    "drop": null,
+    "drop": 8,
     "plate": null,
     "stackHeight": null,
     "releaseYear": 2024,
@@ -7883,7 +7862,7 @@
     "category": "tempo",
     "weight": null,
     "weightBasis": null,
-    "drop": null,
+    "drop": 12,
     "plate": null,
     "stackHeight": null,
     "releaseYear": 2024,
@@ -7926,7 +7905,7 @@
     "collabWith": null,
     "category": "tempo",
     "weight": 235,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "other",
     "stackHeight": {
@@ -7948,9 +7927,9 @@
     "variant": null,
     "collabWith": null,
     "weight": 238,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 0.5,
-    "plate": null,
+    "plate": "other",
     "stackHeight": {
       "heel": 47,
       "forefoot": 46.5
@@ -7978,7 +7957,7 @@
     "collabWith": null,
     "category": "tempo",
     "weight": 244,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 3,
     "plate": "other",
     "stackHeight": {
@@ -8004,7 +7983,7 @@
     "collabWith": null,
     "category": "racing",
     "weight": 204,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 2,
     "plate": "other",
     "stackHeight": {
@@ -8032,7 +8011,7 @@
     "collabWith": null,
     "category": "racing",
     "weight": 218,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 4,
     "plate": "other",
     "stackHeight": {
@@ -8058,7 +8037,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 286,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 12,
     "plate": "none",
     "stackHeight": {
@@ -8111,9 +8090,9 @@
     "collabWith": null,
     "category": "daily",
     "weight": 263,
-    "weightBasis": "US9.5",
+    "weightBasis": "275mm",
     "drop": 12,
-    "plate": null,
+    "plate": "other",
     "stackHeight": {
       "heel": 38.5,
       "forefoot": 26.5
@@ -8138,10 +8117,10 @@
     "variant": null,
     "collabWith": null,
     "category": "daily",
-    "weight": 258,
-    "weightBasis": "유니섹스 M6.0/W7.5",
+    "weight": 264,
+    "weightBasis": "270mm",
     "drop": 10,
-    "plate": null,
+    "plate": "other",
     "stackHeight": {
       "heel": 38,
       "forefoot": 28
@@ -8166,8 +8145,8 @@
     "variant": null,
     "collabWith": null,
     "category": "daily",
-    "weight": 264,
-    "weightBasis": "유니섹스 M7.0/W8.5",
+    "weight": 266,
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "other",
     "stackHeight": {
@@ -8215,8 +8194,8 @@
     "variant": null,
     "collabWith": null,
     "category": "recovery",
-    "weight": null,
-    "weightBasis": null,
+    "weight": 281,
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
     "stackHeight": {
@@ -8242,7 +8221,7 @@
     "collabWith": null,
     "category": "recovery",
     "weight": 292,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "none",
     "stackHeight": {
@@ -8264,7 +8243,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 261,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -8297,7 +8276,7 @@
     "collabWith": null,
     "category": "recovery",
     "weight": 263,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "none",
     "stackHeight": {
@@ -8328,9 +8307,9 @@
     "variant": null,
     "collabWith": null,
     "weight": 280,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 39,
       "forefoot": 33
@@ -8363,7 +8342,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 258,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "none",
     "stackHeight": {
@@ -8430,9 +8409,9 @@
     "collabWith": null,
     "category": "stability",
     "weight": 298,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 38,
       "forefoot": 30
@@ -8461,7 +8440,7 @@
     "collabWith": null,
     "category": "stability",
     "weight": 335,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
     "stackHeight": {
@@ -8492,7 +8471,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 261,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
     "stackHeight": {
@@ -8519,7 +8498,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 281,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": null,
     "stackHeight": {
@@ -8574,41 +8553,13 @@
     "category": "daily"
   },
   {
-    "version": "16",
-    "variant": null,
-    "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
-    "releaseYear": null,
-    "discontinued": false,
-    "searchAliases": [
-      "뉴발란스",
-      "뉴발",
-      "프레쉬폼",
-      "프레쉬폼x",
-      "880",
-      "프레쉬폼 16",
-      "프레쉬폼x 16",
-      "880 16"
-    ],
-    "verified": false,
-    "defaultLifespanKm": 650,
-    "id": "new-balance-fresh-foam-x-880-16",
-    "brand": "New Balance",
-    "model": "Fresh Foam X 880",
-    "category": "daily"
-  },
-  {
     "version": "1",
     "variant": null,
     "collabWith": null,
     "weight": 260,
     "weightBasis": null,
     "drop": 6,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 33,
       "forefoot": 27
@@ -8637,7 +8588,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 281,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "none",
     "stackHeight": {
@@ -8674,7 +8625,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 306,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 4,
     "plate": null,
     "stackHeight": {
@@ -8733,7 +8684,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 309,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 4,
     "plate": "none",
     "stackHeight": {
@@ -8768,7 +8719,7 @@
     "collabWith": null,
     "category": "recovery",
     "weight": 303,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 4,
     "plate": "none",
     "stackHeight": {
@@ -8795,7 +8746,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 312,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 4,
     "plate": null,
     "stackHeight": {
@@ -8830,7 +8781,7 @@
     "collabWith": null,
     "category": "stability",
     "weight": 309,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "none",
     "stackHeight": null,
@@ -8857,9 +8808,9 @@
     "variant": null,
     "collabWith": null,
     "category": "daily",
-    "weight": null,
+    "weight": 302.6,
     "weightBasis": null,
-    "drop": null,
+    "drop": 6,
     "plate": null,
     "stackHeight": null,
     "releaseYear": null,
@@ -8884,10 +8835,13 @@
     "collabWith": null,
     "category": "tempo",
     "weight": 201,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "none",
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 34,
+      "forefoot": 28
+    },
     "releaseYear": 2024,
     "defaultLifespanKm": 650,
     "discontinued": false,
@@ -8939,7 +8893,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 289,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": null,
     "stackHeight": {
@@ -8967,7 +8921,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 232,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 4,
     "plate": "carbon",
     "stackHeight": {
@@ -9033,7 +8987,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 184,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "carbon",
     "stackHeight": {
@@ -9070,7 +9024,7 @@
     "collabWith": null,
     "category": "tempo",
     "weight": 189,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
     "stackHeight": {
@@ -9094,7 +9048,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 210,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "carbon",
     "stackHeight": {
@@ -9125,7 +9079,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 278,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "carbon",
     "stackHeight": {
@@ -9156,7 +9110,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 275,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "carbon",
     "stackHeight": null,
@@ -9188,7 +9142,7 @@
     "collabWith": null,
     "category": "tempo",
     "weight": 278,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "carbon",
     "stackHeight": {
@@ -9214,8 +9168,8 @@
     "version": null,
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
+    "weight": 172,
+    "weightBasis": "275mm",
     "drop": 4,
     "plate": "none",
     "stackHeight": {
@@ -9296,7 +9250,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 286,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -9322,9 +9276,9 @@
     "variant": null,
     "collabWith": null,
     "weight": 269,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8.5,
-    "plate": null,
+    "plate": "carbon",
     "stackHeight": {
       "heel": 38,
       "forefoot": 29.5
@@ -9348,7 +9302,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 315,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 4,
     "plate": null,
     "stackHeight": {
@@ -9378,7 +9332,7 @@
     "collabWith": null,
     "category": "racing",
     "weight": 224,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "carbon",
     "stackHeight": {
@@ -9404,7 +9358,7 @@
     "collabWith": null,
     "category": "racing",
     "weight": 198,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "carbon",
     "stackHeight": {
@@ -9429,7 +9383,7 @@
     "weight": 358,
     "weightBasis": null,
     "drop": 10,
-    "plate": null,
+    "plate": "none",
     "stackHeight": null,
     "releaseYear": null,
     "discontinued": false,
@@ -9475,9 +9429,9 @@
     "collabWith": null,
     "category": "stability",
     "weight": 297,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 34,
       "forefoot": 26
@@ -9502,7 +9456,7 @@
     "category": "stability",
     "weight": null,
     "weightBasis": null,
-    "drop": null,
+    "drop": 9,
     "plate": null,
     "stackHeight": null,
     "releaseYear": null,
@@ -9512,29 +9466,6 @@
       "나이키",
       "인피니티",
       "인피니티 4"
-    ],
-    "verified": false
-  },
-  {
-    "id": "nike-infinity-run-5",
-    "brand": "Nike",
-    "model": "Infinity Run",
-    "version": "5",
-    "variant": null,
-    "collabWith": null,
-    "category": "stability",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
-    "releaseYear": null,
-    "defaultLifespanKm": 700,
-    "discontinued": false,
-    "searchAliases": [
-      "나이키",
-      "인피니티",
-      "인피니티 5"
     ],
     "verified": false
   },
@@ -9570,7 +9501,7 @@
     "collabWith": null,
     "category": "recovery",
     "weight": 300,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 9,
     "plate": "none",
     "stackHeight": {
@@ -9588,34 +9519,11 @@
     "verified": true
   },
   {
-    "id": "nike-invincible-4",
-    "brand": "Nike",
-    "model": "Invincible",
-    "version": "4",
-    "variant": null,
-    "collabWith": null,
-    "category": "recovery",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
-    "releaseYear": null,
-    "defaultLifespanKm": 700,
-    "discontinued": false,
-    "searchAliases": [
-      "나이키",
-      "인빈시블",
-      "인빈시블 4"
-    ],
-    "verified": false
-  },
-  {
     "version": "10",
     "variant": null,
     "collabWith": null,
     "weight": 258,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": "other",
     "stackHeight": {
@@ -9642,7 +9550,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 286,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 3,
     "plate": "none",
     "stackHeight": {
@@ -9673,7 +9581,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 266,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": null,
     "stackHeight": {
@@ -9703,7 +9611,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 266,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": "none",
     "stackHeight": {
@@ -9733,7 +9641,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 283,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": "none",
     "stackHeight": {
@@ -9763,7 +9671,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 292,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": "none",
     "stackHeight": {
@@ -9790,8 +9698,8 @@
     "variant": null,
     "collabWith": null,
     "category": "tempo",
-    "weight": null,
-    "weightBasis": null,
+    "weight": 238,
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": "none",
     "stackHeight": {
@@ -9817,7 +9725,7 @@
     "collabWith": null,
     "category": "tempo",
     "weight": 309,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": null,
     "stackHeight": {
@@ -9839,7 +9747,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 289,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 9.5,
     "plate": "none",
     "stackHeight": {
@@ -9866,9 +9774,12 @@
     "collabWith": null,
     "weight": null,
     "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "drop": 10,
+    "plate": "none",
+    "stackHeight": {
+      "heel": 37,
+      "forefoot": 27
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
@@ -9876,7 +9787,7 @@
       "페가수스 트레일",
       "고어텍스"
     ],
-    "verified": false,
+    "verified": true,
     "defaultLifespanKm": 650,
     "id": "nike-pegasus-trail-4-gtx",
     "brand": "Nike",
@@ -9892,7 +9803,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 286,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 9.5,
     "plate": "none",
     "stackHeight": {
@@ -9917,8 +9828,8 @@
     "version": "5",
     "variant": "GTX",
     "collabWith": null,
-    "weight": 281,
-    "weightBasis": "US9",
+    "weight": null,
+    "weightBasis": null,
     "drop": 9.5,
     "plate": null,
     "stackHeight": {
@@ -9939,32 +9850,6 @@
     "brand": "Nike",
     "model": "Pegasus Trail",
     "category": "trail"
-  },
-  {
-    "id": "nike-react-infinity-run-3",
-    "brand": "Nike",
-    "model": "React Infinity Run",
-    "version": "3",
-    "variant": null,
-    "collabWith": null,
-    "category": "stability",
-    "weight": 297,
-    "weightBasis": "US9",
-    "drop": 8,
-    "plate": null,
-    "stackHeight": {
-      "heel": 34,
-      "forefoot": 26
-    },
-    "releaseYear": null,
-    "defaultLifespanKm": 700,
-    "discontinued": false,
-    "searchAliases": [
-      "나이키",
-      "인피니티",
-      "인피니티 3"
-    ],
-    "verified": true
   },
   {
     "id": "nike-react-miler-3",
@@ -10037,8 +9922,8 @@
     "version": null,
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
+    "weight": 281,
+    "weightBasis": "280mm",
     "drop": 10,
     "plate": null,
     "stackHeight": null,
@@ -10065,7 +9950,7 @@
     "collabWith": null,
     "category": "racing",
     "weight": 173,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "none",
     "stackHeight": {
@@ -10090,7 +9975,7 @@
     "collabWith": null,
     "category": "racing",
     "weight": 128,
-    "weightBasis": "US9(유니섹스)",
+    "weightBasis": "270mm",
     "drop": 4,
     "plate": "carbon",
     "stackHeight": {
@@ -10139,7 +10024,7 @@
     "collabWith": null,
     "category": "stability",
     "weight": 306,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": "none",
     "stackHeight": {
@@ -10165,7 +10050,7 @@
     "collabWith": null,
     "category": "stability",
     "weight": 295,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": "none",
     "stackHeight": {
@@ -10192,7 +10077,7 @@
     "collabWith": null,
     "category": "stability",
     "weight": 295,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": "none",
     "stackHeight": {
@@ -10218,7 +10103,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 283,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8.5,
     "plate": "carbon",
     "stackHeight": {
@@ -10246,9 +10131,12 @@
     "category": "racing",
     "weight": null,
     "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "drop": 8,
+    "plate": "carbon",
+    "stackHeight": {
+      "heel": 38,
+      "forefoot": 30
+    },
     "releaseYear": null,
     "defaultLifespanKm": 450,
     "discontinued": false,
@@ -10268,7 +10156,7 @@
     "collabWith": null,
     "category": "racing",
     "weight": 184,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "carbon",
     "stackHeight": {
@@ -10294,7 +10182,7 @@
     "collabWith": null,
     "category": "racing",
     "weight": 167,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "carbon",
     "stackHeight": {
@@ -10321,7 +10209,7 @@
     "collabWith": null,
     "category": "recovery",
     "weight": 298,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": "none",
     "stackHeight": {
@@ -10339,29 +10227,6 @@
     "verified": true
   },
   {
-    "id": "nike-vomero-19",
-    "brand": "Nike",
-    "model": "Vomero",
-    "version": "19",
-    "variant": null,
-    "collabWith": null,
-    "category": "recovery",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
-    "releaseYear": 2026,
-    "defaultLifespanKm": 700,
-    "discontinued": false,
-    "searchAliases": [
-      "나이키",
-      "보메로",
-      "보메로 19"
-    ],
-    "verified": false
-  },
-  {
     "id": "nike-vomero-plus",
     "brand": "Nike",
     "model": "Vomero Plus",
@@ -10370,7 +10235,7 @@
     "collabWith": null,
     "category": "recovery",
     "weight": 281,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": "none",
     "stackHeight": {
@@ -10396,7 +10261,7 @@
     "collabWith": null,
     "category": "recovery",
     "weight": 329,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": "none",
     "stackHeight": {
@@ -10422,7 +10287,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 306,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 9.5,
     "plate": "other",
     "stackHeight": {
@@ -10444,7 +10309,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 323,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 9,
     "plate": "other",
     "stackHeight": {
@@ -10560,7 +10425,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 306,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 4,
     "plate": "none",
     "stackHeight": {
@@ -10587,9 +10452,12 @@
     "category": "tempo",
     "weight": null,
     "weightBasis": null,
-    "drop": null,
+    "drop": 8,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 39,
+      "forefoot": 31
+    },
     "releaseYear": null,
     "defaultLifespanKm": 650,
     "discontinued": false,
@@ -10611,7 +10479,7 @@
     "weight": null,
     "weightBasis": null,
     "drop": 10,
-    "plate": null,
+    "plate": "carbon",
     "stackHeight": null,
     "releaseYear": null,
     "defaultLifespanKm": 650,
@@ -10632,7 +10500,7 @@
     "collabWith": null,
     "category": "tempo",
     "weight": 244,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "carbon",
     "stackHeight": {
@@ -10705,7 +10573,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 230,
-    "weightBasis": "유니섹스 사이즈 9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "none",
     "stackHeight": {
@@ -10729,7 +10597,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 289,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -10753,7 +10621,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 298,
-    "weightBasis": "사이즈 9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": null,
     "stackHeight": {
@@ -10820,7 +10688,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 268,
-    "weightBasis": "US M8.5",
+    "weightBasis": "265mm",
     "drop": 5,
     "plate": null,
     "stackHeight": {
@@ -10874,7 +10742,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 227,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 7,
     "plate": null,
     "stackHeight": {
@@ -10917,7 +10785,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 298,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": null,
     "stackHeight": {
@@ -10945,11 +10813,14 @@
     "variant": null,
     "collabWith": null,
     "category": "daily",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 272,
+    "weightBasis": "270mm",
+    "drop": 6,
+    "plate": "none",
+    "stackHeight": {
+      "heel": 37,
+      "forefoot": 31
+    },
     "releaseYear": null,
     "defaultLifespanKm": 650,
     "discontinued": false,
@@ -10957,7 +10828,7 @@
       "온",
       "온러닝"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "version": "6",
@@ -11011,10 +10882,10 @@
     "version": "4",
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
+    "weight": 247,
+    "weightBasis": "270mm",
     "drop": 7,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 30.4,
       "forefoot": 23.4
@@ -11039,7 +10910,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 286,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -11070,7 +10941,7 @@
     "collabWith": null,
     "category": "racing",
     "weight": 218,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 9.5,
     "plate": "none",
     "stackHeight": {
@@ -11092,7 +10963,7 @@
     "version": null,
     "variant": null,
     "collabWith": null,
-    "weight": null,
+    "weight": 296,
     "weightBasis": null,
     "drop": 8,
     "plate": null,
@@ -11120,7 +10991,7 @@
     "collabWith": null,
     "category": "racing",
     "weight": 213,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 4,
     "plate": "carbon",
     "stackHeight": {
@@ -11169,7 +11040,7 @@
     "version": "2",
     "variant": null,
     "collabWith": null,
-    "weight": null,
+    "weight": 158,
     "weightBasis": null,
     "drop": 5,
     "plate": "carbon",
@@ -11196,9 +11067,9 @@
     "variant": null,
     "collabWith": null,
     "category": "racing",
-    "weight": null,
+    "weight": 170,
     "weightBasis": null,
-    "drop": null,
+    "drop": 4,
     "plate": null,
     "stackHeight": null,
     "releaseYear": 2025,
@@ -11215,7 +11086,7 @@
     "version": null,
     "variant": null,
     "collabWith": null,
-    "weight": 182,
+    "weight": 222,
     "weightBasis": null,
     "drop": 4,
     "plate": null,
@@ -11248,7 +11119,7 @@
     "weight": 292,
     "weightBasis": null,
     "drop": 6,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 37,
       "forefoot": 31
@@ -11272,7 +11143,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 247,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
     "stackHeight": {
@@ -11325,7 +11196,7 @@
     "variant": null,
     "collabWith": null,
     "category": "stability",
-    "weight": null,
+    "weight": 320,
     "weightBasis": null,
     "drop": null,
     "plate": null,
@@ -11347,10 +11218,10 @@
     "variant": null,
     "collabWith": null,
     "category": "daily",
-    "weight": null,
+    "weight": 256,
     "weightBasis": null,
     "drop": null,
-    "plate": null,
+    "plate": "none",
     "stackHeight": null,
     "releaseYear": null,
     "defaultLifespanKm": 650,
@@ -11360,7 +11231,7 @@
       "온러닝",
       "클라우드고"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "on-cloudmonster",
@@ -11371,7 +11242,7 @@
     "collabWith": null,
     "category": "recovery",
     "weight": 275,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "none",
     "stackHeight": {
@@ -11398,7 +11269,7 @@
     "collabWith": null,
     "category": "recovery",
     "weight": 295,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": null,
     "stackHeight": {
@@ -11427,7 +11298,7 @@
     "collabWith": null,
     "category": "recovery",
     "weight": 295,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "other",
     "stackHeight": {
@@ -11451,7 +11322,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 264,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "none",
     "stackHeight": {
@@ -11481,10 +11352,10 @@
     "variant": null,
     "collabWith": null,
     "category": "tempo",
-    "weight": 270,
-    "weightBasis": null,
+    "weight": 255,
+    "weightBasis": "270mm",
     "drop": 6,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 37.5,
       "forefoot": 31.5
@@ -11509,7 +11380,7 @@
     "collabWith": null,
     "category": "stability",
     "weight": 275,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": "none",
     "stackHeight": {
@@ -11536,9 +11407,9 @@
     "collabWith": null,
     "category": "stability",
     "weight": 295,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 37,
       "forefoot": 29
@@ -11586,7 +11457,7 @@
     "collabWith": null,
     "category": "stability",
     "weight": 292,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "other",
     "stackHeight": {
@@ -11612,7 +11483,7 @@
     "weight": 255,
     "weightBasis": null,
     "drop": 9,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 37,
       "forefoot": 28
@@ -11633,30 +11504,6 @@
     "category": "daily"
   },
   {
-    "id": "on-cloudsurfer-3",
-    "brand": "On",
-    "model": "Cloudsurfer",
-    "version": "3",
-    "variant": null,
-    "collabWith": null,
-    "category": "tempo",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
-    "releaseYear": 2025,
-    "defaultLifespanKm": 650,
-    "discontinued": false,
-    "searchAliases": [
-      "온",
-      "온러닝",
-      "클라우드서퍼",
-      "클라우드서퍼 3"
-    ],
-    "verified": false
-  },
-  {
     "id": "on-cloudsurfer-7",
     "brand": "On",
     "model": "Cloudsurfer",
@@ -11665,7 +11512,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 237,
-    "weightBasis": "US9.5",
+    "weightBasis": "275mm",
     "drop": 10,
     "plate": null,
     "stackHeight": {
@@ -11718,7 +11565,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 266,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": null,
     "stackHeight": {
@@ -11739,10 +11586,10 @@
     "version": null,
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
+    "weight": 272,
+    "weightBasis": "270mm",
     "drop": 7,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 32.5,
       "forefoot": 25.5
@@ -11821,7 +11668,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 290,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": "none",
     "stackHeight": {
@@ -11928,7 +11775,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 261,
-    "weightBasis": "사이즈 9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "other",
     "stackHeight": {
@@ -11960,7 +11807,7 @@
     "weight": null,
     "weightBasis": null,
     "drop": null,
-    "plate": null,
+    "plate": "none",
     "stackHeight": null,
     "releaseYear": null,
     "defaultLifespanKm": 650,
@@ -11970,7 +11817,7 @@
       "온러닝",
       "클라우드비스타"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "id": "on-cloudvista-2",
@@ -11980,10 +11827,10 @@
     "variant": null,
     "collabWith": null,
     "category": "trail",
-    "weight": 245,
-    "weightBasis": null,
+    "weight": 298,
+    "weightBasis": "270mm",
     "drop": 6,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 29,
       "forefoot": 23
@@ -12054,7 +11901,7 @@
     "collabWith": null,
     "category": "tempo",
     "weight": 269,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": "carbon",
     "stackHeight": {
@@ -12080,7 +11927,7 @@
     "collabWith": null,
     "category": "tempo",
     "weight": 241,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "carbon",
     "stackHeight": {
@@ -12134,7 +11981,7 @@
     "collabWith": null,
     "category": "racing",
     "weight": 196,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "carbon",
     "stackHeight": {
@@ -12162,7 +12009,7 @@
     "collabWith": null,
     "category": "racing",
     "weight": 170,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "carbon",
     "stackHeight": {
@@ -12186,7 +12033,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 272,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "carbon",
     "stackHeight": {
@@ -12211,7 +12058,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 213,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
     "stackHeight": {
@@ -12262,7 +12109,7 @@
     "collabWith": null,
     "category": "racing",
     "weight": 170,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "carbon",
     "stackHeight": {
@@ -12334,7 +12181,7 @@
     "collabWith": null,
     "category": "stability",
     "weight": 292,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": null,
     "stackHeight": {
@@ -12356,7 +12203,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 281,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
     "stackHeight": {
@@ -12382,7 +12229,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 292,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
     "stackHeight": {
@@ -12411,7 +12258,7 @@
     "collabWith": null,
     "category": "recovery",
     "weight": 266,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
     "stackHeight": {
@@ -12436,8 +12283,8 @@
     "variant": null,
     "collabWith": null,
     "category": "recovery",
-    "weight": null,
-    "weightBasis": null,
+    "weight": 286,
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": "none",
     "stackHeight": {
@@ -12463,7 +12310,7 @@
     "collabWith": null,
     "category": "recovery",
     "weight": 264,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": null,
     "stackHeight": {
@@ -12489,9 +12336,9 @@
     "collabWith": null,
     "category": "daily",
     "weight": 260,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 36,
       "forefoot": 26
@@ -12515,7 +12362,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 227,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": null,
     "stackHeight": {
@@ -12537,7 +12384,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 244,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
     "stackHeight": {
@@ -12674,7 +12521,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 227,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -12700,7 +12547,7 @@
     "variant": "GRVL",
     "collabWith": null,
     "weight": 247,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
     "stackHeight": {
@@ -12750,7 +12597,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 232,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -12779,7 +12626,7 @@
     "collabWith": null,
     "category": "recovery",
     "weight": 249,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
     "stackHeight": {
@@ -12799,7 +12646,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 261,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -12825,7 +12672,7 @@
     "variant": "GRVL",
     "collabWith": null,
     "weight": 283,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
     "stackHeight": {
@@ -12878,7 +12725,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 275,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
     "stackHeight": {
@@ -12899,7 +12746,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 286,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -12925,7 +12772,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 269,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "carbon",
     "stackHeight": {
@@ -12950,7 +12797,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 289,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "none",
     "stackHeight": {
@@ -12979,7 +12826,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 269,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "other",
     "stackHeight": {
@@ -13005,7 +12852,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 269,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "other",
     "stackHeight": {
@@ -13050,10 +12897,13 @@
     "variant": null,
     "collabWith": null,
     "weight": 258,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 34,
+      "forefoot": 26
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
@@ -13072,11 +12922,14 @@
     "version": "2",
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
+    "weight": 272,
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": null,
-    "stackHeight": null,
+    "stackHeight": {
+      "heel": 31,
+      "forefoot": 25
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
@@ -13095,8 +12948,8 @@
     "version": null,
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
+    "weight": 330,
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -13126,7 +12979,7 @@
     "collabWith": null,
     "category": "racing",
     "weight": 219,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 9,
     "plate": "none",
     "stackHeight": {
@@ -13146,7 +12999,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 184,
-    "weightBasis": "유니섹스(사이즈 미표기)",
+    "weightBasis": null,
     "drop": 6,
     "plate": "carbon",
     "stackHeight": {
@@ -13171,11 +13024,14 @@
     "version": "3",
     "variant": "SC",
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 175,
+    "weightBasis": "270mm",
+    "drop": 6,
+    "plate": "carbon",
+    "stackHeight": {
+      "heel": 39,
+      "forefoot": 33
+    },
     "releaseYear": null,
     "discontinued": false,
     "searchAliases": [
@@ -13198,11 +13054,14 @@
     "variant": null,
     "collabWith": null,
     "category": "trail",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weight": 201,
+    "weightBasis": "270mm",
+    "drop": 6,
+    "plate": "none",
+    "stackHeight": {
+      "heel": 29,
+      "forefoot": 23
+    },
     "releaseYear": 2024,
     "defaultLifespanKm": 650,
     "discontinued": false,
@@ -13211,14 +13070,14 @@
       "펄사",
       "펄사 3"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "version": "4",
     "variant": null,
     "collabWith": null,
     "weight": 252,
-    "weightBasis": "M9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": null,
     "stackHeight": {
@@ -13244,7 +13103,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 252,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "carbon",
     "stackHeight": {
@@ -13298,7 +13157,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 335,
-    "weightBasis": "M8.5/W9.5",
+    "weightBasis": "265mm",
     "drop": 6,
     "plate": "none",
     "stackHeight": {
@@ -13328,7 +13187,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 306,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "none",
     "stackHeight": {
@@ -13373,7 +13232,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 295,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "none",
     "stackHeight": {
@@ -13403,7 +13262,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 286,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
     "stackHeight": {
@@ -13479,7 +13338,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 297,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": null,
     "stackHeight": {
@@ -13528,7 +13387,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 283,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 4,
     "plate": "none",
     "stackHeight": {
@@ -13574,7 +13433,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 275,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": null,
     "stackHeight": {
@@ -13669,7 +13528,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 308,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -13695,7 +13554,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 244,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
     "stackHeight": {
@@ -13726,7 +13585,7 @@
     "collabWith": null,
     "category": "racing",
     "weight": 201,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "carbon",
     "stackHeight": {
@@ -13751,7 +13610,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 210,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "carbon",
     "stackHeight": {
@@ -13782,7 +13641,7 @@
     "collabWith": null,
     "category": "racing",
     "weight": 207,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "carbon",
     "stackHeight": {
@@ -13809,7 +13668,7 @@
     "collabWith": null,
     "category": "racing",
     "weight": 218,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "carbon",
     "stackHeight": {
@@ -13832,7 +13691,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 215,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "carbon",
     "stackHeight": {
@@ -13863,7 +13722,7 @@
     "collabWith": null,
     "category": "recovery",
     "weight": 264,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 4,
     "plate": "none",
     "stackHeight": {
@@ -13890,7 +13749,7 @@
     "collabWith": null,
     "category": "tempo",
     "weight": 229,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "other",
     "stackHeight": {
@@ -13917,7 +13776,7 @@
     "collabWith": null,
     "category": "tempo",
     "weight": 245,
-    "weightBasis": "US9.5",
+    "weightBasis": "275mm",
     "drop": 8,
     "plate": "other",
     "stackHeight": {
@@ -13944,7 +13803,7 @@
     "collabWith": null,
     "category": "tempo",
     "weight": 238,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "other",
     "stackHeight": {
@@ -13967,7 +13826,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 278,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "carbon",
     "stackHeight": {
@@ -13998,7 +13857,7 @@
     "collabWith": null,
     "category": "stability",
     "weight": 269,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "none",
     "stackHeight": {
@@ -14027,7 +13886,7 @@
     "weight": 272,
     "weightBasis": null,
     "drop": 6,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 35,
       "forefoot": 29
@@ -14052,7 +13911,7 @@
     "collabWith": null,
     "category": "stability",
     "weight": 292,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "none",
     "stackHeight": {
@@ -14079,9 +13938,9 @@
     "collabWith": null,
     "category": "stability",
     "weight": 285,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 38,
       "forefoot": 32
@@ -14100,7 +13959,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 261,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": null,
     "stackHeight": {
@@ -14130,8 +13989,8 @@
     "variant": null,
     "collabWith": null,
     "category": "daily",
-    "weight": null,
-    "weightBasis": null,
+    "weight": 200,
+    "weightBasis": "270mm",
     "drop": 4,
     "plate": "none",
     "stackHeight": {
@@ -14158,10 +14017,13 @@
     "collabWith": null,
     "category": "tempo",
     "weight": 198,
-    "weightBasis": "US9",
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
+    "weightBasis": "270mm",
+    "drop": 4,
+    "plate": "none",
+    "stackHeight": {
+      "heel": 30,
+      "forefoot": 26
+    },
     "releaseYear": 2024,
     "defaultLifespanKm": 650,
     "discontinued": false,
@@ -14182,9 +14044,9 @@
     "collabWith": null,
     "category": "tempo",
     "weight": 207,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 4,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 29,
       "forefoot": 24
@@ -14209,7 +14071,7 @@
     "collabWith": null,
     "category": "tempo",
     "weight": 286,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "carbon",
     "stackHeight": {
@@ -14231,7 +14093,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 286,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -14258,7 +14120,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 281,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": null,
     "stackHeight": {
@@ -14289,7 +14151,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 267,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 4,
     "plate": "other",
     "stackHeight": {
@@ -14316,7 +14178,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 278,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 4,
     "plate": "other",
     "stackHeight": {
@@ -14343,9 +14205,9 @@
     "collabWith": null,
     "category": "trail",
     "weight": 283,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 4,
-    "plate": null,
+    "plate": "other",
     "stackHeight": {
       "heel": 33,
       "forefoot": 29
@@ -14370,7 +14232,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 250,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
     "stackHeight": null,
@@ -14394,9 +14256,9 @@
     "collabWith": null,
     "category": "daily",
     "weight": 293,
-    "weightBasis": "US9.5",
+    "weightBasis": "275mm",
     "drop": 8,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 35,
       "forefoot": 27
@@ -14420,8 +14282,8 @@
     "variant": null,
     "collabWith": null,
     "category": "daily",
-    "weight": null,
-    "weightBasis": null,
+    "weight": 269,
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -14448,7 +14310,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 255,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
     "stackHeight": {
@@ -14471,7 +14333,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 292,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": "none",
     "stackHeight": null,
@@ -14494,7 +14356,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 301,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 8,
     "plate": null,
     "stackHeight": {
@@ -14524,9 +14386,9 @@
     "collabWith": null,
     "category": "stability",
     "weight": 323,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 38,
       "forefoot": 32
@@ -14549,7 +14411,7 @@
     "collabWith": null,
     "category": "recovery",
     "weight": 283,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": "none",
     "stackHeight": {
@@ -14575,8 +14437,8 @@
     "variant": null,
     "collabWith": null,
     "category": "recovery",
-    "weight": null,
-    "weightBasis": null,
+    "weight": 297,
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": null,
     "stackHeight": {
@@ -14603,7 +14465,7 @@
     "collabWith": null,
     "category": "recovery",
     "weight": 275,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": "none",
     "stackHeight": {
@@ -14679,7 +14541,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 309,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 10,
     "plate": "none",
     "stackHeight": {
@@ -14710,9 +14572,9 @@
     "collabWith": null,
     "category": "trail",
     "weight": 323,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 38,
       "forefoot": 32
@@ -14758,7 +14620,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 309,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "none",
     "stackHeight": {
@@ -14784,7 +14646,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 269,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "none",
     "stackHeight": {
@@ -14809,7 +14671,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 303,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": null,
     "stackHeight": {
@@ -14861,7 +14723,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 298,
-    "weightBasis": "사이즈 9",
+    "weightBasis": "270mm",
     "drop": 6,
     "plate": "other",
     "stackHeight": {
@@ -14891,7 +14753,7 @@
     "collabWith": null,
     "category": "recovery",
     "weight": 275,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": "none",
     "stackHeight": {
@@ -14911,7 +14773,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 281,
-    "weightBasis": "M9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": null,
     "stackHeight": {
@@ -14937,7 +14799,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 309,
-    "weightBasis": "M9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": null,
     "stackHeight": {
@@ -14963,7 +14825,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 232,
-    "weightBasis": "M9",
+    "weightBasis": "270mm",
     "drop": 0,
     "plate": null,
     "stackHeight": {
@@ -14993,9 +14855,9 @@
     "collabWith": null,
     "category": "tempo",
     "weight": 196,
-    "weightBasis": "M9",
+    "weightBasis": "270mm",
     "drop": 5,
-    "plate": null,
+    "plate": "other",
     "stackHeight": {
       "heel": 28,
       "forefoot": 23
@@ -15015,9 +14877,9 @@
     "variant": null,
     "collabWith": null,
     "weight": 221,
-    "weightBasis": "M9",
+    "weightBasis": "270mm",
     "drop": 3,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 23,
       "forefoot": 20
@@ -15041,7 +14903,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 255,
-    "weightBasis": "M9",
+    "weightBasis": "270mm",
     "drop": 0,
     "plate": null,
     "stackHeight": {
@@ -15072,8 +14934,8 @@
     "category": "trail",
     "weight": null,
     "weightBasis": null,
-    "drop": null,
-    "plate": null,
+    "drop": 5,
+    "plate": "none",
     "stackHeight": null,
     "releaseYear": null,
     "defaultLifespanKm": 650,
@@ -15081,14 +14943,14 @@
     "searchAliases": [
       "토포"
     ],
-    "verified": false
+    "verified": true
   },
   {
     "version": "4",
     "variant": null,
     "collabWith": null,
     "weight": 295,
-    "weightBasis": "M9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": null,
     "stackHeight": {
@@ -15118,9 +14980,9 @@
     "collabWith": null,
     "category": "daily",
     "weight": 264,
-    "weightBasis": "M9",
+    "weightBasis": "270mm",
     "drop": 5,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 35,
       "forefoot": 30
@@ -15138,7 +15000,7 @@
     "variant": "WP",
     "collabWith": null,
     "weight": 292,
-    "weightBasis": "M9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": null,
     "stackHeight": {
@@ -15164,7 +15026,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 301,
-    "weightBasis": "M9",
+    "weightBasis": "270mm",
     "drop": 0,
     "plate": "none",
     "stackHeight": {
@@ -15194,9 +15056,9 @@
     "collabWith": null,
     "category": "tempo",
     "weight": 230,
-    "weightBasis": "M9",
+    "weightBasis": "270mm",
     "drop": 5,
-    "plate": null,
+    "plate": "other",
     "stackHeight": {
       "heel": 37,
       "forefoot": 32
@@ -15214,7 +15076,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 218,
-    "weightBasis": "M9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": null,
     "stackHeight": {
@@ -15240,7 +15102,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 201,
-    "weightBasis": "M9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": "carbon",
     "stackHeight": {
@@ -15266,9 +15128,9 @@
     "variant": null,
     "collabWith": null,
     "weight": 187,
-    "weightBasis": "M9",
+    "weightBasis": "270mm",
     "drop": 0,
-    "plate": null,
+    "plate": "none",
     "stackHeight": {
       "heel": 14,
       "forefoot": 14
@@ -15292,9 +15154,9 @@
     "variant": "WP",
     "collabWith": null,
     "weight": 340,
-    "weightBasis": "M9",
+    "weightBasis": "270mm",
     "drop": 3,
-    "plate": null,
+    "plate": "other",
     "stackHeight": {
       "heel": 25,
       "forefoot": 22
@@ -15318,7 +15180,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 292,
-    "weightBasis": "M9",
+    "weightBasis": "270mm",
     "drop": 3,
     "plate": null,
     "stackHeight": {
@@ -15344,7 +15206,7 @@
     "variant": "WP",
     "collabWith": null,
     "weight": 451,
-    "weightBasis": "M9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": null,
     "stackHeight": {
@@ -15370,9 +15232,9 @@
     "variant": null,
     "collabWith": null,
     "weight": 301,
-    "weightBasis": "M9",
+    "weightBasis": "270mm",
     "drop": 5,
-    "plate": null,
+    "plate": "other",
     "stackHeight": {
       "heel": 30,
       "forefoot": 25
@@ -15400,7 +15262,7 @@
     "collabWith": null,
     "category": "stability",
     "weight": 281,
-    "weightBasis": "M9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": null,
     "stackHeight": {
@@ -15426,7 +15288,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 272,
-    "weightBasis": "M9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": null,
     "stackHeight": {
@@ -15452,7 +15314,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 295,
-    "weightBasis": "M9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": "none",
     "stackHeight": {
@@ -15478,7 +15340,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 303,
-    "weightBasis": "M9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": "none",
     "stackHeight": {
@@ -15504,7 +15366,7 @@
     "variant": null,
     "collabWith": null,
     "weight": 309,
-    "weightBasis": "M9",
+    "weightBasis": "270mm",
     "drop": 5,
     "plate": null,
     "stackHeight": {
@@ -15534,7 +15396,7 @@
     "collabWith": null,
     "category": "trail",
     "weight": 281,
-    "weightBasis": "US9",
+    "weightBasis": "270mm",
     "drop": 9,
     "plate": null,
     "stackHeight": null,
@@ -15555,7 +15417,7 @@
     "collabWith": null,
     "category": "daily",
     "weight": 258,
-    "weightBasis": "US8.5",
+    "weightBasis": "265mm",
     "drop": 9,
     "plate": null,
     "stackHeight": {
