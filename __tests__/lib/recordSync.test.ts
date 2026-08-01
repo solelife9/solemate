@@ -23,6 +23,11 @@ import {
   mirrorRecords,
   loadMarkers,
   MARKERS_KEY,
+  fromRecordDoc,
+  mergePulled,
+  pullRecords,
+  loadCursors,
+  PULL_PAGE,
 } from '../../lib/recordSync';
 
 const run = (id: string, updatedAt = 1000, over: Record<string, unknown> = {}) => ({
@@ -298,5 +303,173 @@ describe('mirrorRecords — 이중 쓰기', () => {
     const res = await mirrorRecords(port, {runs: many});
     expect(port.pushRecords).toHaveBeenCalledTimes(2);
     expect(res.pushed.runs).toBe(BATCH_LIMIT + 10);
+  });
+});
+
+// ─── 2단계: 읽기 전환 ─────────────────────────────────────────────────────────
+// 여기서 제일 무서운 건 두 가지다.
+//   1) 조회가 비었을 때 화면의 기록이 사라지는 것 → 합집합이라 절대 안 사라져야 한다
+//   2) 원격이 이겼을 때 로컬 경로가 날아가는 것 → 하위 문서엔 route 가 없으므로
+//      그대로 덮으면 동기 한 번에 모든 지도가 사라진다
+describe('fromRecordDoc — 문서 → 로컬 레코드', () => {
+  test('editedAt 을 updatedAt 으로 되돌린다 — 기존 병합 로직이 그대로 동작하게', () => {
+    const rec = fromRecordDoc('r1', {km: 10, editedAt: 777, updatedAt: 999999});
+    expect(rec.id).toBe('r1');
+    expect(rec.updatedAt).toBe(777); // 서버 시각(999999)이 아니라 편집 시각
+  });
+
+  test('서버 시각은 레코드에 싣지 않는다(커서 전용)', () => {
+    const rec = fromRecordDoc('r1', {editedAt: 5, updatedAt: 12345});
+    expect(rec.updatedAt).toBe(5);
+  });
+
+  test('편집 시각이 없으면 0', () => {
+    expect(fromRecordDoc('r1', {km: 1}).updatedAt).toBe(0);
+  });
+
+  test('묘비 표식은 보존한다', () => {
+    expect(fromRecordDoc('r1', {deleted: true, editedAt: 9}).deleted).toBe(true);
+  });
+});
+
+describe('mergePulled — 합집합 병합', () => {
+  const L = (id: string, updatedAt: number, over: Record<string, unknown> = {}): Record<string, unknown> =>
+    ({id, km: 10, updatedAt, ...over});
+
+  test('조회가 비면 로컬을 그대로 돌려준다(참조 동일) — 화면이 안 비워진다', () => {
+    const local = [L('a', 100)];
+    expect(mergePulled(local, [])).toBe(local);
+  });
+
+  test('원격에만 있는 것은 더한다(다른 기기에서 만든 러닝)', () => {
+    const out = mergePulled([L('a', 100)], [L('b', 200)]);
+    expect(out.map(r => r.id).sort()).toEqual(['a', 'b']);
+  });
+
+  test('로컬에만 있는 것은 지킨다(아직 안 올라간 러닝)', () => {
+    const out = mergePulled([L('a', 100)], [L('b', 200)]);
+    expect(out.find(r => r.id === 'a')).toBeTruthy();
+  });
+
+  test('충돌은 편집 시각이 큰 쪽', () => {
+    const out = mergePulled([L('a', 100, {km: 1})], [L('a', 200, {km: 2})]);
+    expect(out[0].km).toBe(2);
+    const out2 = mergePulled([L('a', 300, {km: 1})], [L('a', 200, {km: 2})]);
+    expect(out2[0].km).toBe(1);
+  });
+
+  test('동률이면 삭제가 이긴다 — 부활 방지', () => {
+    const out = mergePulled([L('a', 100)], [L('a', 100, {deleted: true})]);
+    expect(out[0].deleted).toBe(true);
+  });
+
+  // ── 경로 유실 방어 ────────────────────────────────────────────────────────
+  test('원격이 이겨도 로컬 경로는 지킨다 — 하위 문서엔 route 가 없다', () => {
+    const local = [L('a', 100, {route: '[{"lat":37.5,"lon":127}]'})];
+    const out = mergePulled(local, [L('a', 200, {km: 99})]);
+    expect(out[0].km).toBe(99); // 원격이 이겼고
+    expect(out[0].route).toContain('37.5'); // 경로는 살아남았다
+  });
+
+  test('원격에 경로가 있으면 그걸 쓴다', () => {
+    const out = mergePulled([L('a', 100, {route: 'old'})], [L('a', 200, {route: 'new'})]);
+    expect(out[0].route).toBe('new');
+  });
+
+  test('묘비로 덮일 땐 경로를 살리지 않는다 — 지운 런의 경로를 되살리면 안 된다', () => {
+    const out = mergePulled([L('a', 100, {route: 'x'})], [L('a', 200, {deleted: true})]);
+    expect(out[0].deleted).toBe(true);
+    expect(out[0].route).toBeUndefined();
+  });
+
+  test('로컬 순서를 지키고 새 것은 뒤에 붙인다', () => {
+    const out = mergePulled([L('a', 1), L('b', 1)], [L('z', 1)]);
+    expect(out.map(r => r.id)).toEqual(['a', 'b', 'z']);
+  });
+
+  test('id 없는 로컬 레코드도 버리지 않는다', () => {
+    const out = mergePulled([{updatedAt: 1} as any, L('a', 1)], [L('b', 1)]);
+    expect(out).toHaveLength(3);
+  });
+});
+
+describe('pullRecords — 델타 조회', () => {
+  beforeEach(async () => {
+    await AsyncStorage.clear();
+  });
+
+  const makeReadPort = (pages: Record<string, {docs: any[]; maxUpdatedAtMs: number}[]>) => {
+    const idx: Record<string, number> = {};
+    return {
+      listRecords: jest.fn(async (collection: string) => {
+        const i = idx[collection] ?? 0;
+        idx[collection] = i + 1;
+        return pages[collection]?.[i] ?? {docs: [], maxUpdatedAtMs: 0};
+      }),
+    };
+  };
+
+  test('처음엔 커서 없이 조회한다(전량)', async () => {
+    const port = makeReadPort({runs: [{docs: [{id: 'r1', data: {editedAt: 5}}], maxUpdatedAtMs: 100}]});
+    await pullRecords(port);
+    expect(port.listRecords).toHaveBeenCalledWith('runs', null, PULL_PAGE);
+  });
+
+  test('두 번째부터는 커서 이후만 조회한다', async () => {
+    const port = makeReadPort({runs: [{docs: [{id: 'r1', data: {editedAt: 5}}], maxUpdatedAtMs: 100}]});
+    await pullRecords(port);
+    port.listRecords.mockClear();
+    port.listRecords.mockResolvedValue({docs: [], maxUpdatedAtMs: 100});
+    await pullRecords(port);
+    expect(port.listRecords).toHaveBeenCalledWith('runs', 100, PULL_PAGE);
+  });
+
+  test('받은 문서를 로컬 레코드 모양으로 돌려준다', async () => {
+    const port = makeReadPort({
+      runs: [{docs: [{id: 'r1', data: {km: 7, editedAt: 5}}], maxUpdatedAtMs: 100}],
+    });
+    const res = await pullRecords(port);
+    expect(res.records.runs?.[0]).toMatchObject({id: 'r1', km: 7, updatedAt: 5});
+  });
+
+  test('한 컬렉션이 실패해도 커서를 안 올려 다음에 다시 받는다', async () => {
+    const port = {
+      listRecords: jest.fn(async (collection: string) => {
+        if (collection === 'runs') throw new Error('오프라인');
+        return {docs: [], maxUpdatedAtMs: 50};
+      }),
+    };
+    await pullRecords(port);
+    const cursors = await loadCursors();
+    expect(cursors.runs).toBeUndefined(); // 실패 — 전진 안 함
+  });
+
+  test('포트가 조회를 지원 안 하면 조용히 건너뛴다', async () => {
+    const res = await pullRecords({});
+    expect(res.skipped).toBe(true);
+    expect(res.records).toEqual({});
+  });
+
+  test('페이지가 가득 차면 이어서 받는다', async () => {
+    const full = Array.from({length: PULL_PAGE}, (_, i) => ({id: `r${i}`, data: {editedAt: i + 1}}));
+    const port = makeReadPort({
+      runs: [
+        {docs: full, maxUpdatedAtMs: 500},
+        {docs: [{id: 'last', data: {editedAt: 9}}], maxUpdatedAtMs: 900},
+      ],
+    });
+    const res = await pullRecords(port);
+    expect(res.records.runs).toHaveLength(PULL_PAGE + 1);
+    expect((await loadCursors()).runs).toBe(900);
+  });
+
+  test('커서가 안 움직이면 멈춘다 — 같은 페이지 무한 반복 방지', async () => {
+    const full = Array.from({length: PULL_PAGE}, (_, i) => ({id: `r${i}`, data: {editedAt: 1}}));
+    const port = {
+      listRecords: jest.fn(async () => ({docs: full, maxUpdatedAtMs: 0})),
+    };
+    await pullRecords(port);
+    // runs·shoes·medals 각 1회씩만(무한 루프 없음)
+    expect(port.listRecords).toHaveBeenCalledTimes(3);
   });
 });

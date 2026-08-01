@@ -39,7 +39,7 @@ import {detectRace, SEED_RACES, type RaceEvent, type RaceMatch, type RaceDistanc
 import {syncRemoteRaces} from './lib/raceCatalogRemote';
 import {checkForceUpdate, type RemoteAppConfig} from './lib/forceUpdate';
 import {reconcileAccountStorage} from './lib/accountScope';
-import {mirrorRecords} from './lib/recordSync';
+import {mirrorRecords, pullRecords, mergePulled} from './lib/recordSync';
 import {retirementRecordsFromShoes, setShoeRetirement, migrateRetiredShoes} from './lib/shoeRetirement';
 import ForceUpdateScreen from './ForceUpdateScreen.rn';
 import {nativeRecognizer} from './lib/ocrNative';
@@ -1422,7 +1422,29 @@ function Main(){
         merged=mergeCloudData(syncPayload,remote);
         await port.push(merged);
       }
-      applyBackupPayload(merged);
+      // ── 2단계: 읽기를 하위 문서 델타로 ──────────────────────────────────
+      // 덩어리 병합 결과 위에 **하위 문서에서 바뀐 것만** 얹는다. 합집합이라 조회가
+      // 비거나 실패해도 화면의 기록이 사라지지 않고, 로컬에만 있는(아직 안 올라간)
+      // 러닝도 그대로 남는다. 경로는 로컬 것을 지킨다 — 하위 문서엔 route 가 없으므로
+      // 그냥 덮으면 동기 한 번에 모든 지도가 사라진다(mergePulled 참조).
+      let applied:BackupPayload=merged;
+      try{
+        const pulled=await pullRecords(cloudPortRef.current);
+        if(!pulled.skipped){
+          applied={
+            ...merged,
+            shoes:mergePulled(merged.shoes as any,(pulled.records.shoes??[]) as any) as any,
+            runs:mergePulled(merged.runs as any,(pulled.records.runs??[]) as any) as any,
+            ...(pulled.records.medals?.length
+              ?{medals:mergePulled(((merged as any).medals??[]) as any,pulled.records.medals as any)}
+              :{}),
+          } as BackupPayload;
+        }
+      }catch(e){
+        // 델타 조회 실패는 동기 전체를 실패로 만들지 않는다 — 덩어리 병합 결과로 간다.
+        reportIssue('recordSync 델타 조회',e);
+      }
+      applyBackupPayload(applied);
       setLastSyncAt(Date.now());
       // 다음 호출의 최소 간격 판정 기준(AUDIT 2 I-2). 성공했을 때만 기록한다 —
       // 실패를 기록하면 오프라인 구간에서 재시도까지 막혀 유실 위험이 생긴다.
@@ -1442,9 +1464,9 @@ function Main(){
       // 미러링이 실패해도 덩어리는 온전하므로 유실이 없고, 실패한 종류는 마커를 안 올려
       // 다음 동기에 그대로 재시도된다. 읽기는 아직 덩어리라 이 단계에서는 화면이 안 바뀐다.
       void mirrorRecords(cloudPortRef.current, {
-        runs: merged.runs as Record<string, unknown>[],
-        shoes: merged.shoes as Record<string, unknown>[],
-        medals: (merged as {medals?: Record<string, unknown>[]}).medals ?? [],
+        runs: applied.runs as Record<string, unknown>[],
+        shoes: applied.shoes as Record<string, unknown>[],
+        medals: (applied as {medals?: Record<string, unknown>[]}).medals ?? [],
       }).catch(e=>reportIssue('recordSync 미러링',e));
     }catch(e){
       reportIssue('cloud sync',e);

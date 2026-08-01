@@ -303,3 +303,192 @@ export async function mirrorRecords(
   if (touched) await saveMarkers(nextAll);
   return out;
 }
+
+// ─── 2단계: 읽기를 하위 문서 델타로 ──────────────────────────────────────────
+//
+// 1단계에서 하위 문서에 **쓰기**만 했다면, 여기서 **읽기**가 넘어온다.
+// 다만 덩어리 쓰기는 계속 유지한다(3단계에서 끊는다) — 어느 시점에 멈춰도 되돌릴 수
+// 있게 하는 것이 이 이행의 핵심이다.
+//
+// 안전 설계 두 가지:
+//  1) **합집합 병합이지 교체가 아니다.** 델타가 비어 오면 아무 일도 안 일어난다.
+//     조회가 실패하거나 커서가 어긋나도 화면의 기록이 사라지지 않는다.
+//  2) **경로(route)는 로컬 것을 지킨다.** 하위 문서는 일부러 route 를 안 담으므로
+//     (runDetails 가 소유), 병합에서 원격이 이겨도 로컬 route 를 덮어쓰면 안 된다.
+//     이걸 놓치면 동기 한 번에 모든 지도가 사라진다.
+
+/** 컬렉션별 델타 커서(서버 updatedAt ms) 저장 키. */
+export const CURSORS_KEY = 'recordSync_cursor_v1';
+
+export type Cursors = Partial<Record<RecordKind, number>>;
+
+/** 커서를 읽는다. 손상·부재는 빈 값(= 전량 조회, 안전한 쪽). */
+export async function loadCursors(): Promise<Cursors> {
+  try {
+    const raw = await AsyncStorage.getItem(CURSORS_KEY);
+    if (!raw) return {};
+    const p = JSON.parse(raw);
+    return p && typeof p === 'object' && !Array.isArray(p) ? (p as Cursors) : {};
+  } catch {
+    return {};
+  }
+}
+
+async function saveCursors(c: Cursors): Promise<void> {
+  try {
+    await AsyncStorage.setItem(CURSORS_KEY, JSON.stringify(c));
+  } catch {
+    /* 다음 동기에 다시 시도 — 최악이 재조회라 유실은 없다 */
+  }
+}
+
+/** 테스트 전용 — 커서를 지운다. */
+export async function __resetCursorsForTests(): Promise<void> {
+  try {
+    await AsyncStorage.removeItem(CURSORS_KEY);
+  } catch {
+    /* noop */
+  }
+}
+
+/**
+ * 하위 문서를 **로컬 레코드 모양**으로 되돌린다(순수).
+ *
+ * `editedAt`(문서) → `updatedAt`(로컬)로 되돌리는 게 핵심이다. 로컬·병합 코드는 전부
+ * `updatedAt` 을 편집 시각으로 읽으므로, 여기서 이름을 맞춰 주면 기존 병합 로직
+ * (cloudSync.mergeCloudData)이 **하나도 안 바뀌고** 그대로 동작한다.
+ *
+ * 서버 시각(`updatedAt` 문서 필드)은 커서 전용이라 레코드에 싣지 않는다.
+ */
+export function fromRecordDoc(id: string, data: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(data ?? {})) {
+    if (k === 'editedAt' || k === 'updatedAt') continue; // 아래에서 다시 세운다
+    if (v === undefined) continue;
+    out[k] = v;
+  }
+  out.id = id;
+  const edited = Number((data as {editedAt?: unknown})?.editedAt);
+  out.updatedAt = Number.isFinite(edited) && edited > 0 ? edited : 0;
+  return out;
+}
+
+/**
+ * 원격에서 내려온 레코드를 로컬에 합친다(순수, 합집합).
+ *
+ * · 한쪽에만 있으면 그대로 보존(어느 쪽도 버리지 않는다)
+ * · 양쪽에 있으면 `updatedAt`(편집 시각)이 큰 쪽. 동률이면 **삭제(묘비) 우선**
+ * · 원격이 이겨도 **로컬의 route 는 지킨다** — 하위 문서엔 route 가 없기 때문이다
+ *
+ * `pulled` 가 비면 `local` 을 그대로(참조 동일) 돌려준다 — 조회 실패가 화면을 비우지 않는다.
+ */
+export function mergePulled<T extends Record<string, unknown>>(
+  local: readonly T[],
+  pulled: readonly T[],
+): T[] {
+  if (!Array.isArray(pulled) || pulled.length === 0) return local as T[];
+  const byId = new Map<string, T>();
+  const order: string[] = [];
+  const noId: T[] = [];
+
+  for (const rec of local) {
+    const id = recordId(rec);
+    if (id == null) {
+      noId.push(rec);
+      continue;
+    }
+    if (!byId.has(id)) order.push(id);
+    byId.set(id, rec);
+  }
+
+  for (const rec of pulled) {
+    const id = recordId(rec);
+    if (id == null) continue;
+    const mine = byId.get(id);
+    if (!mine) {
+      byId.set(id, rec);
+      order.push(id);
+      continue;
+    }
+    const ru = editedAtOf(rec);
+    const mu = editedAtOf(mine);
+    const remoteWins = ru > mu || (ru === mu && isTombstone(rec) && !isTombstone(mine));
+    if (!remoteWins) continue;
+    // 원격이 이겼다 — 다만 로컬의 route 는 살린다(하위 문서엔 route 가 없다).
+    const localRoute = (mine as {route?: unknown}).route;
+    const merged =
+      localRoute && !(rec as {route?: unknown}).route && !isTombstone(rec)
+        ? ({...rec, route: localRoute} as T)
+        : rec;
+    byId.set(id, merged);
+  }
+
+  return [...order.map(id => byId.get(id) as T), ...noId];
+}
+
+export interface PullResult {
+  records: Partial<Record<RecordKind, Record<string, unknown>[]>>;
+  cursors: Cursors;
+  /** 포트가 조회를 지원하지 않거나 전부 실패했으면 true. */
+  skipped: boolean;
+}
+
+/** 조회를 지원하는 최소 포트 계약. */
+export interface RecordReadPort {
+  listRecords?(
+    collection: string,
+    afterMs: number | null,
+    limitN?: number,
+  ): Promise<{docs: {id: string; data: Record<string, unknown>}[]; maxUpdatedAtMs: number}>;
+}
+
+/** 한 번에 받아오는 최대 문서 수. 초기 전량 조회는 이 크기로 반복한다. */
+export const PULL_PAGE = 500;
+/** 페이지 반복 상한(무한 루프 방지). 500 × 40 = 2만 건. */
+const MAX_PAGES = 40;
+
+/**
+ * 하위 문서에서 **바뀐 것만** 받아온다. 커서는 성공한 컬렉션만 전진시킨다 —
+ * 실패한 컬렉션은 다음 동기에 같은 지점부터 다시 받는다(누락 없음).
+ * 전 과정 no-throw.
+ */
+export async function pullRecords(port: RecordReadPort): Promise<PullResult> {
+  const out: PullResult = {records: {}, cursors: {}, skipped: true};
+  if (!port?.listRecords) return out;
+
+  const cursors = await loadCursors();
+  const nextCursors: Cursors = {...cursors};
+  let touched = false;
+
+  for (const kind of Object.keys(RECORD_COLLECTIONS) as RecordKind[]) {
+    const from = cursors[kind] ?? 0;
+    const acc: Record<string, unknown>[] = [];
+    let cursor = from;
+    try {
+      for (let page = 0; page < MAX_PAGES; page++) {
+        const res = await port.listRecords(RECORD_COLLECTIONS[kind], cursor || null, PULL_PAGE);
+        const docs = res?.docs ?? [];
+        for (const d of docs) if (d?.id) acc.push(fromRecordDoc(d.id, d.data));
+        const next = Number(res?.maxUpdatedAtMs) || 0;
+        // 커서가 안 움직이면 더 받을 게 없다(같은 페이지 무한 반복 방지).
+        if (docs.length < PULL_PAGE || next <= cursor) {
+          if (next > cursor) cursor = next;
+          break;
+        }
+        cursor = next;
+      }
+      if (acc.length) out.records[kind] = acc;
+      if (cursor > (cursors[kind] ?? 0)) {
+        nextCursors[kind] = cursor;
+        touched = true;
+      }
+      out.skipped = false;
+    } catch {
+      // 이 컬렉션만 실패 — 커서를 안 올렸으므로 다음에 같은 지점부터 다시 받는다.
+    }
+  }
+
+  if (touched) await saveCursors(nextCursors);
+  out.cursors = nextCursors;
+  return out;
+}
