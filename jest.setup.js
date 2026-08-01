@@ -466,6 +466,28 @@ jest.mock('@react-native-firebase/firestore', () => {
           : docsUnder(target.__collection).length;
       return Promise.resolve({data: () => ({count})});
     }),
+    // writeBatch 목 — 실제 SDK 처럼 commit() 시점에 한꺼번에 반영한다(부분 적용 없음).
+    // 쓰기 카운터는 문서 수만큼 올린다(배치도 문서당 1회 쓰기로 과금되므로).
+    writeBatch: jest.fn(() => {
+      const ops = [];
+      const b = {
+        set: (ref, data) => { ops.push({t: 'set', ref, data}); return b; },
+        update: (ref, data) => { ops.push({t: 'update', ref, data}); return b; },
+        delete: ref => { ops.push({t: 'delete', ref}); return b; },
+        commit: () => {
+          for (const op of ops) {
+            if (op.t === 'delete') { store.delete(op.ref.__path); continue; }
+            writes += 1;
+            const prev = op.t === 'update' ? store.get(op.ref.__path) || {} : {};
+            // merge:true 를 흉내낸다 — set 도 기존 값 위에 얹는다(포트가 merge 로 쓴다).
+            const base = op.t === 'set' ? store.get(op.ref.__path) || {} : prev;
+            store.set(op.ref.__path, {...base, ...JSON.parse(JSON.stringify(op.data))});
+          }
+          return Promise.resolve();
+        },
+      };
+      return b;
+    }),
     // 서버 타임스탬프 목 — 실제 SDK 는 Timestamp 객체로 되읽히지만, 여기서는 **숫자**로
     // 둔다. 저장이 JSON 복제라 메서드가 살아남지 못하기 때문이고, 소비처
     // (firebaseCloudPort.readDeviceClock)가 숫자와 Timestamp 를 모두 받도록 이미 방어돼 있다.

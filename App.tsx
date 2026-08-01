@@ -39,6 +39,7 @@ import {detectRace, SEED_RACES, type RaceEvent, type RaceMatch, type RaceDistanc
 import {syncRemoteRaces} from './lib/raceCatalogRemote';
 import {checkForceUpdate, type RemoteAppConfig} from './lib/forceUpdate';
 import {reconcileAccountStorage} from './lib/accountScope';
+import {mirrorRecords} from './lib/recordSync';
 import ForceUpdateScreen from './ForceUpdateScreen.rn';
 import {nativeRecognizer} from './lib/ocrNative';
 import {parseRoute} from './lib/route';
@@ -1409,6 +1410,15 @@ function Main(){
       void publishMyRankingNow(merged);
       // AUDIT 3 D-1: 동기 성공 — 실패 카운터를 되돌린다(회복되면 조용해진다).
       reportSyncResult(true);
+      // ── 1단계 이중 쓰기(설계: docs/design/2026-08-01-cloud-data-model.md) ──
+      // 덩어리 쓰기가 **성공한 뒤에** 레코드를 하위 문서로도 미러링한다. 순서가 중요하다 —
+      // 미러링이 실패해도 덩어리는 온전하므로 유실이 없고, 실패한 종류는 마커를 안 올려
+      // 다음 동기에 그대로 재시도된다. 읽기는 아직 덩어리라 이 단계에서는 화면이 안 바뀐다.
+      void mirrorRecords(cloudPortRef.current, {
+        runs: merged.runs as Record<string, unknown>[],
+        shoes: merged.shoes as Record<string, unknown>[],
+        medals: (merged as {medals?: Record<string, unknown>[]}).medals ?? [],
+      }).catch(e=>reportIssue('recordSync 미러링',e));
     }catch(e){
       reportIssue('cloud sync',e);
       // AUDIT 3 D-1: **동기 실패를 사용자에게 알린다.** 예전엔 Crashlytics 로만 갔다 —

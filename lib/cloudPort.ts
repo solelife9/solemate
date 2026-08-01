@@ -69,6 +69,26 @@ export interface CloudPort {
    */
   deleteRunDetail?(runId: string): Promise<void>;
   /**
+   * 레코드를 **하위 문서로** 일괄 기록한다(설계: docs/design/2026-08-01-cloud-data-model.md).
+   *
+   * 지금까지 클라우드 사본은 문서 하나짜리 덩어리였다 — 러닝 하나를 추가해도 그 문서
+   * 전체를 다시 썼고, 1MiB 천장에 두 번 부딪혔으며, 러닝 한 건을 친구에게 열어줄 수도
+   * 없었다. 이 메서드가 그 전환의 쓰기 경로다.
+   *
+   * 각 문서에 서버 시각(`updatedAt`)을 함께 박는다 — 델타 조회의 커서가 된다.
+   * 배치 상한은 호출부가 지킨다(recordSync.chunk).
+   */
+  pushRecords?(collection: string, docs: {id: string; data: Record<string, unknown>}[]): Promise<void>;
+  /**
+   * 하위 컬렉션에서 **바뀐 것만** 읽는다. `afterMs` 가 null 이면 전량.
+   * 1단계에서는 대조(검증)에만 쓰고, 2단계에서 읽기 경로가 된다.
+   */
+  listRecords?(
+    collection: string,
+    afterMs: number | null,
+    limitN?: number,
+  ): Promise<{docs: {id: string; data: Record<string, unknown>}[]; maxUpdatedAtMs: number}>;
+  /**
    * pull→merge→push 를 단일 트랜잭션으로 원자 실행한다(동시-기기 클로버 방지).
    * 비원자 pull/push 의 경합 창(A 가 stale 원격을 읽는 사이 B 가 쓰고, A 가 그 위에
    * 덮어써 B 를 잃음)을 없앤다 — 트랜잭션 안에서 원격을 *다시 읽어* merge 콜백으로

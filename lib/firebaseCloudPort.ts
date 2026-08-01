@@ -26,6 +26,11 @@ import {
   collection,
   getDocs,
   serverTimestamp,
+  writeBatch,
+  query,
+  where,
+  orderBy,
+  limit as fbLimit,
 } from '@react-native-firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -179,6 +184,17 @@ function readDeviceClock(
     typeof sv === 'number' ? sv : sv && typeof sv.toMillis === 'function' ? sv.toMillis() : NaN;
   if (!Number.isFinite(clientMs) || !Number.isFinite(serverMs)) return null;
   return {serverMs, clientMs};
+}
+
+/** Firestore Timestamp | number | null → ms(없거나 이상하면 0). pending write 는 null 이다. */
+function toMillis(v: unknown): number {
+  if (typeof v === 'number') return Number.isFinite(v) ? v : 0;
+  const t = v as {toMillis?: () => number} | null;
+  if (t && typeof t.toMillis === 'function') {
+    const ms = t.toMillis();
+    return Number.isFinite(ms) ? ms : 0;
+  }
+  return 0;
 }
 
 function sameBackupDoc(a: Record<string, unknown>, b: Record<string, unknown>): boolean {
@@ -340,6 +356,56 @@ export function createFirebaseCloudPort(
       if (!runId) return;
       await setDoc(runDetailRef(uid, runId), detail);
     },
+    /**
+     * 레코드 하위 문서 일괄 기록(설계 1단계 — 이중 쓰기).
+     * 각 문서에 `updatedAt: serverTimestamp()` 를 박아 델타 조회의 커서를 만든다.
+     * merge:true 로 upsert 한다 — 부분 갱신이 안전하고, 없던 문서는 새로 생긴다.
+     */
+    async pushRecords(
+      collectionName: string,
+      docs: {id: string; data: Record<string, unknown>}[],
+    ): Promise<void> {
+      const uid = requireUid();
+      if (!collectionName || !docs?.length) return;
+      const db = getFirestore();
+      const batch = writeBatch(db);
+      for (const d of docs) {
+        if (!d?.id) continue;
+        batch.set(
+          doc(db, BACKUPS_COLLECTION, uid, collectionName, d.id),
+          {...d.data, updatedAt: serverTimestamp()},
+          {merge: true},
+        );
+      }
+      await batch.commit();
+    },
+
+    /** 하위 컬렉션 델타 조회. afterMs 가 null 이면 전량. */
+    async listRecords(
+      collectionName: string,
+      afterMs: number | null,
+      limitN = 500,
+    ): Promise<{docs: {id: string; data: Record<string, unknown>}[]; maxUpdatedAtMs: number}> {
+      const uid = requireUid();
+      const col = collection(getFirestore(), BACKUPS_COLLECTION, uid, collectionName);
+      const useCursor = !!afterMs && afterMs > 0;
+      const q = useCursor
+        ? query(col, where('updatedAt', '>', new Date(afterMs)), orderBy('updatedAt'), fbLimit(limitN))
+        : query(col, orderBy('updatedAt'), fbLimit(limitN));
+      const snap = await getDocs(q);
+      const out: {id: string; data: Record<string, unknown>}[] = [];
+      let maxMs = afterMs ?? 0;
+      for (const d of snap.docs) {
+        const data = (d.data() as Record<string, unknown>) ?? {};
+        // 방금 내가 쓴 문서는 서버 확인 전까지 updatedAt 이 null 이다(pending write).
+        // 커서 계산에서 건너뛴다 — 다음 동기에 잡힌다.
+        const ms = toMillis(data.updatedAt);
+        if (ms > maxMs) maxMs = ms;
+        out.push({id: d.id, data});
+      }
+      return {docs: out, maxUpdatedAtMs: maxMs};
+    },
+
     async deleteRunDetail(runId: string): Promise<void> {
       const uid = requireUid();
       if (!runId) return;
