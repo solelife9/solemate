@@ -41,7 +41,9 @@ import {checkForceUpdate, type RemoteAppConfig} from './lib/forceUpdate';
 import {reconcileAccountStorage} from './lib/accountScope';
 import {mirrorRecords, pullRecords, mergePulled, isPayloadMirrored, stripRecordArrays, loadMarkers} from './lib/recordSync';
 import {retirementRecordsFromShoes, setShoeRetirement, migrateRetiredShoes} from './lib/shoeRetirement';
-import {buildPublicProfile, publishProfile, loadVisibility} from './lib/publicProfile';
+import {buildPublicProfile, publishProfile, loadVisibility, saveVisibility, type ProfileVisibility} from './lib/publicProfile';
+import {fitnessSummary} from './lib/analytics/fitness';
+import SocialConsentScreen from './SocialConsentScreen.rn';
 import ForceUpdateScreen from './ForceUpdateScreen.rn';
 import {nativeRecognizer} from './lib/ocrNative';
 import {parseRoute} from './lib/route';
@@ -299,6 +301,9 @@ function Main(){
   useEffect(()=>{void loadMedals().then(setMedals);},[]);
   // 필수 업데이트 게이트(AUDIT 2 I-3). null = 막지 않음(기본값이자 fail-open 의 기본 상태).
   const [forceUpdateCfg,setForceUpdateCfg]=useState<RemoteAppConfig|null>(null);
+  // 공개 범위(소셜). 'unset' = 아직 안 물어봤다 → 동의 화면을 띄우고, 그 전엔 아무것도 안 올린다.
+  const [socialVisibility,setSocialVisibility]=useState<ProfileVisibility>('unset');
+  useEffect(()=>{void loadVisibility().then(setSocialVisibility);},[]);
   // 햅틱(진동) 설정 부팅 복원 — 폰 Vibration(lib/haptics 싱글턴) 동기화 + 워치에도 전달.
   // off 면 화면 전환·버튼·존 이탈·워치 랩 진동이 전부 조용해진다(사용자 요청 2026-07-13).
   useEffect(()=>{void loadHaptics().then(v=>{setHapticsEnabled(v);watchSession.setHaptics(v);});},[]);
@@ -666,6 +671,35 @@ function Main(){
     }
     // shoes 는 setShoes(prev=>…) 로만 읽으므로 의존성이 아니다(불필요한 재실행 방지).
   },[bootState,progState?.retiredShoes]);
+
+  // ── 공개 프로필용 러너 스펙 (소셜) ─────────────────────────────────────────
+  // 마이 탭이 쓰는 것과 **같은 계산**을 재사용한다 — 두 화면이 다른 값을 말하면 안 된다.
+  // VO2max 는 러닝 기록에서 파생한 성능 추정치라 공개해도 되는 값으로 봤다.
+  // **심박(안정시·평균)은 담지 않는다** — 건강 정보라 민감정보 별도 동의가 필요하고,
+  // 무엇보다 노력으로 못 바꾸는 값이라 비교 지표로 부적합하다(업적 원칙: 안전 정렬).
+  const socialSpecInput=useMemo(()=>{
+    const liveRuns=liveRecords(runs as any) as any[];
+    const fit=fitnessSummary(
+      liveRuns.map(r=>({km:Number(r?.km??0),durationS:Number(r?.duration??0),runDate:String(r?.run_date||'')})),
+      today(),
+    );
+    let longestKm=0;
+    let sumKmAll=0;
+    let sumSec=0;
+    for(const r of liveRuns){
+      const km=Number(r?.km)||0;
+      const dur=Number(r?.duration)||0;
+      if(km>longestKm) longestKm=km;
+      if(km>0&&dur>0){sumKmAll+=km;sumSec+=dur;}
+    }
+    return {
+      vo2max:fit?.vo2max??0,
+      paceSec:sumKmAll>0?sumSec/sumKmAll:0,
+      longestKm,
+      pb:distancePBs as Record<string,number|undefined>,
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[runs,distancePBs]);
 
   // ── 신발 마일리지 최고수위 (AUDIT 3 D-4) ──────────────────────────────────
   // usedKm 은 런 목록에서 매번 다시 계산하는 파생값이라, 런이 어떤 이유로든 사라지면
@@ -1484,13 +1518,13 @@ function Main(){
       // 실패해도 러닝 동기에는 영향이 없다(비차단).
       void (async()=>{
         try{
-          const visibility=await loadVisibility();
           const profile=buildPublicProfile({
-            visibility,
+            visibility:socialVisibility,
             nickname:profileName||DEFAULT_PROFILE_NAME,
             shoes:liveRecords(applied.shoes as any) as any,
             runs:liveRecords(applied.runs as any) as any,
             nowMs:Date.now(),
+            spec:socialSpecInput,
           });
           await publishProfile(cloudPortRef.current as any,profile);
         }catch(e){reportIssue('공개 프로필 발행',e);}
@@ -2230,6 +2264,29 @@ function Main(){
   }
   if(!onboarded&&shoes.length===0&&overlay==='none'){
     return <OnboardingScreen onDone={completeOnboarding}/>;
+  }
+  // 공개 범위 동의(소셜 1단계) — **아직 안 물어봤을 때 한 번만.**
+  // 신발이 생긴 뒤에 띄운다: 온보딩이 신발 등록으로 끝나므로 이 시점엔 카드가 비어 있지
+  // 않고, "이렇게 보여요"가 실제로 뭔가를 보여준다. 동의 전에는 아무것도 안 올라간다.
+  // 테스트는 기본 우회(다른 App 스위트가 홈에 못 가면 전부 깨진다). 이 화면 자체의
+  // 검증은 __KEEGO_ENABLE_SOCIAL_CONSENT__ 로 켜서 한다(클라우드 동기·계정격리와 같은 관례).
+  const consentGateOn=process.env.NODE_ENV!=='test'||(globalThis as any).__KEEGO_ENABLE_SOCIAL_CONSENT__===true;
+  if(consentGateOn&&socialVisibility==='unset'&&shoes.length>0&&overlay==='none'&&!activeRun){
+    const preview=buildPublicProfile({
+      visibility:'public', // 미리보기 — 실제 공개는 아래 버튼을 눌러야 시작된다
+      nickname:profileName||DEFAULT_PROFILE_NAME,
+      shoes:liveRecords(shoes as any) as any,
+      runs:liveRecords(runs as any) as any,
+      nowMs:Date.now(),
+      spec:socialSpecInput,
+    });
+    if(preview){
+      return <SocialConsentScreen
+        preview={preview}
+        onAccept={()=>{setSocialVisibility('public');void saveVisibility('public');}}
+        onDecline={()=>{setSocialVisibility('private');void saveVisibility('private');}}
+      />;
+    }
   }
   // 위치 권한 설명(priming) — 첫 GPS 런 직전. goal 화면보다 우선해 표시한다(이 분기를
   // goal 분기 앞에 둬야 goal 위에 덮인다). '계속'에서 안내 완료를 영속하고 런으로 진입,
