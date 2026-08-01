@@ -214,6 +214,25 @@ describe('설정 — 프로필 공개 토글', () => {
     r.unmount();
   });
 
+  test('공개 중이면 설정에서 남들에게 보이는 카드를 확인할 수 있다', async () => {
+    await seedUserWithShoe();
+    await AsyncStorage.setItem(VISIBILITY_KEY, 'public');
+    const r = await renderApp();
+    await goToToggle(r);
+    const preview = r.root.findAll(n => (n.props as any)?.testID === 'social-preview');
+    expect(preview.length).toBeGreaterThan(0);
+    r.unmount();
+  });
+
+  test('비공개면 미리보기를 띄우지 않는다 — 보여줄 것이 없다', async () => {
+    await seedUserWithShoe();
+    await AsyncStorage.setItem(VISIBILITY_KEY, 'private');
+    const r = await renderApp();
+    await goToToggle(r);
+    expect(r.root.findAll(n => (n.props as any)?.testID === 'social-preview')).toHaveLength(0);
+    r.unmount();
+  });
+
   test('아직 안 물어본 상태(unset)는 화면에 "비공개"로 보인다', async () => {
     await seedUserWithShoe();
     const r = await renderApp();

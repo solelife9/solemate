@@ -2583,6 +2583,14 @@ function Main(){
             profile={profile} badges={badges} records={records} distancePBs={distancePBs} onTab={setTab}
             socialVisibility={socialVisibility}
             onToggleSocial={(next)=>{setSocialVisibility(next);void saveVisibility(next);}}
+            socialPreview={buildPublicProfile({
+              visibility:'public', // 미리보기는 항상 '공개된 모습'으로 그린다
+              nickname:profileName||DEFAULT_PROFILE_NAME,
+              shoes:liveRecords(shoes as any) as any,
+              runs:liveRecords(runs as any) as any,
+              nowMs:Date.now(),
+              spec:socialSpecInput,
+            })}
             profilePhotoUri={profilePhoto} onChangeName={changeProfileName} onPickPhoto={pickProfilePhoto}
             weightKg={weightKg} onChangeWeight={changeWeight}
             age={age} onChangeAge={changeAge} sex={sex} onChangeSex={changeSex}
