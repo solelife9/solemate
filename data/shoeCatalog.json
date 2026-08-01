@@ -11196,7 +11196,7 @@
     "variant": null,
     "collabWith": null,
     "category": "stability",
-    "weight": null,
+    "weight": 320,
     "weightBasis": null,
     "drop": null,
     "plate": null,
@@ -11218,7 +11218,7 @@
     "variant": null,
     "collabWith": null,
     "category": "daily",
-    "weight": null,
+    "weight": 256,
     "weightBasis": null,
     "drop": null,
     "plate": "none",
@@ -11502,30 +11502,6 @@
     "brand": "On",
     "model": "Cloudsurfer",
     "category": "daily"
-  },
-  {
-    "id": "on-cloudsurfer-3",
-    "brand": "On",
-    "model": "Cloudsurfer",
-    "version": "3",
-    "variant": null,
-    "collabWith": null,
-    "category": "tempo",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
-    "releaseYear": 2025,
-    "defaultLifespanKm": 650,
-    "discontinued": false,
-    "searchAliases": [
-      "온",
-      "온러닝",
-      "클라우드서퍼",
-      "클라우드서퍼 3"
-    ],
-    "verified": false
   },
   {
     "id": "on-cloudsurfer-7",
