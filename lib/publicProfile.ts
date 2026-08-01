@@ -29,6 +29,17 @@ export type ProfileVisibility = 'unset' | 'public' | 'private';
 /** 공개 컬렉션 이름. */
 export const PROFILES_COLLECTION = 'profiles';
 
+/**
+ * 프로필에 싣는 거리 PB — 앱의 표준 거리와 **같은 순서·같은 라벨**을 쓴다
+ * (lib/bestEfforts.STANDARD_DISTANCES). 여기서 따로 정의하면 둘이 어긋난다.
+ */
+export const PB_DISTANCES = [
+  {key: '5k', label: '5K'},
+  {key: '10k', label: '10K'},
+  {key: 'half', label: '하프'},
+  {key: 'full', label: '풀'},
+] as const;
+
 /** 프로필에 싣는 현역 신발 최대 수 — 미러를 작게 유지한다(로테이션이 그보다 많을 일은 드물다). */
 export const MAX_ACTIVE_SHOES = 6;
 /** 명예의 전당 최대 수 — 최근 은퇴 순. */
@@ -53,6 +64,24 @@ export interface PublicRetiredShoe {
   grade: string;
 }
 
+/**
+ * 러너 스펙 — 마이 탭의 그 스펙(거리 PB·심폐 체력·평균 페이스·최장).
+ * "어떤 러너인가"를 말해 주는 값들이라 프로필의 절반이다.
+ *
+ * 신체 지표(몸무게·나이·성별·안정시심박)는 **여기 없다.** 그건 계산에만 쓰고 감춘다 —
+ * 어느 러닝 앱도 프로필에 띄우지 않는다.
+ */
+export interface PublicSpec {
+  /** VDOT. 0 = 아직 산출 불가(러닝이 적음) → 화면이 숨긴다. */
+  vo2max: number;
+  /** 평균 페이스(초/km). 0 = 없음. */
+  paceSec: number;
+  /** 최장 거리(km). 0 = 없음. */
+  longestKm: number;
+  /** 거리 PB — 5K·10K·하프·풀. `sec: 0` = 아직 못 뛴 거리. */
+  pb: {key: string; label: string; sec: number}[];
+}
+
 /** 남들이 읽는 공개 프로필. **이 타입에 없는 것은 절대 올라가지 않는다.** */
 export interface PublicProfile {
   nickname: string;
@@ -60,6 +89,7 @@ export interface PublicProfile {
   activeShoes: PublicShoe[];
   hallOfFame: PublicRetiredShoe[];
   stats: {totalKm: number; runCount: number; monthKm: number};
+  spec: PublicSpec;
 }
 
 /** 안전한 숫자(소수 1자리) — NaN·Infinity·음수를 화면에 내보내지 않는다. */
@@ -117,6 +147,13 @@ export function buildPublicProfile(input: {
   shoes: readonly ProfileInputShoe[];
   runs: readonly ProfileInputRun[];
   nowMs: number;
+  /** 러너 스펙 원자료(마이 탭이 이미 계산해 둔 값). 없으면 스펙은 전부 0. */
+  spec?: {
+    vo2max?: number;
+    paceSec?: number;
+    longestKm?: number;
+    pb?: Record<string, number | undefined>;
+  };
 }): PublicProfile | null {
   if (input?.visibility !== 'public') return null;
 
@@ -154,8 +191,8 @@ export function buildPublicProfile(input: {
     .slice(0, MAX_HALL_OF_FAME);
 
   // 통계 — 합계만. 개별 러닝은 담지 않는다(날짜·경로·메모가 새지 않게).
-  const d = new Date(input.nowMs);
-  const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  const at = new Date(input.nowMs);
+  const ym = `${at.getFullYear()}-${String(at.getMonth() + 1).padStart(2, '0')}`;
   let totalKm = 0;
   let monthKm = 0;
   for (const r of runs) {
@@ -165,12 +202,26 @@ export function buildPublicProfile(input: {
     if (String(r.run_date ?? '').startsWith(ym)) monthKm += km;
   }
 
+  // 러너 스펙 — 값이 없으면 0 으로 두고 화면이 알아서 숨긴다(가짜 값을 만들지 않는다).
+  const pbIn = input.spec?.pb ?? {};
+  const spec: PublicSpec = {
+    vo2max: num1(input.spec?.vo2max),
+    paceSec: Math.round(num1(input.spec?.paceSec)),
+    longestKm: num1(input.spec?.longestKm),
+    pb: PB_DISTANCES.map(d => ({
+      key: d.key,
+      label: d.label,
+      sec: Math.round(num1(pbIn[d.key])),
+    })),
+  };
+
   return {
     nickname: String(input.nickname ?? '').trim() || '러너',
     visibility: 'public',
     activeShoes,
     hallOfFame,
     stats: {totalKm: num1(totalKm), runCount: runs.length, monthKm: num1(monthKm)},
+    spec,
   };
 }
 

@@ -89,9 +89,12 @@ describe('개인정보가 새지 않는다', () => {
     expect(p.stats.totalKm).toBe(15);
   });
 
+  // ★ 이 테스트는 **일부러 부서지게** 만들어 뒀다. 미러에 필드를 더할 때마다 여기가
+  //   빨개지고, 사람이 "이게 공개돼도 되는 값인가"를 한 번 판단하게 된다.
+  //   2026-08-01: spec(러너 스펙)을 더하면서 실제로 부서졌고, 판단 후 목록을 갱신했다.
   test('나가는 최상위 키가 정확히 이것뿐이다(새 필드가 저절로 새지 않게)', () => {
     expect(Object.keys(build()!).sort()).toEqual([
-      'activeShoes', 'hallOfFame', 'nickname', 'stats', 'visibility',
+      'activeShoes', 'hallOfFame', 'nickname', 'spec', 'stats', 'visibility',
     ]);
   });
 
@@ -206,4 +209,43 @@ describe('profileSignature — 안 바뀌면 안 쓴다', () => {
   test('null 은 빈 문자열(쓸 것이 없다)', () => {
     expect(profileSignature(null)).toBe('');
   });
+});
+
+// ─── 러너 스펙 ────────────────────────────────────────────────────────────────
+describe('러너 스펙', () => {
+  test('없으면 전부 0 — 가짜 값을 만들지 않는다(Truth only)', () => {
+    const p = build()!;
+    expect(p.spec.vo2max).toBe(0);
+    expect(p.spec.paceSec).toBe(0);
+    expect(p.spec.longestKm).toBe(0);
+    expect(p.spec.pb.every(x => x.sec === 0)).toBe(true);
+  });
+
+  test('거리 PB 는 앱 표준 거리와 같은 순서·라벨', () => {
+    expect(build()!.spec.pb.map(x => x.key)).toEqual(['5k', '10k', 'half', 'full']);
+    expect(build()!.spec.pb.map(x => x.label)).toEqual(['5K', '10K', '하프', '풀']);
+  });
+
+  test('주입한 값이 실린다', () => {
+    const p = build({spec: {vo2max: 52, paceSec: 312, longestKm: 21.1, pb: {'5k': 1300, half: 5900}}})!;
+    expect(p.spec.vo2max).toBe(52);
+    expect(p.spec.paceSec).toBe(312);
+    expect(p.spec.longestKm).toBe(21.1);
+    expect(p.spec.pb.find(x => x.key === '5k')!.sec).toBe(1300);
+    expect(p.spec.pb.find(x => x.key === 'full')!.sec).toBe(0); // 아직 못 뛴 거리
+  });
+
+  test('이상한 값은 0으로 — 화면에 NaN 이 안 나가게', () => {
+    const p = build({spec: {vo2max: NaN, paceSec: -5, longestKm: Infinity, pb: {'5k': 'x'}}} as never)!;
+    expect(p.spec.vo2max).toBe(0);
+    expect(p.spec.paceSec).toBe(0);
+    expect(p.spec.longestKm).toBe(0);
+    expect(p.spec.pb[0].sec).toBe(0);
+  });
+
+  test('스펙에도 신체 지표는 없다 — 계산에만 쓰고 감춘다', () => {
+    const json = JSON.stringify(build({spec: {vo2max: 52}})!.spec);
+    for (const k of ['weight', 'age', 'sex', 'restHR', 'hr']) expect(json).not.toContain(k);
+  });
+
 });
