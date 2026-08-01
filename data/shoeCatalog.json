@@ -8808,9 +8808,9 @@
     "variant": null,
     "collabWith": null,
     "category": "daily",
-    "weight": null,
+    "weight": 302.6,
     "weightBasis": null,
-    "drop": null,
+    "drop": 6,
     "plate": null,
     "stackHeight": null,
     "releaseYear": null,
@@ -9168,8 +9168,8 @@
     "version": null,
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
+    "weight": 172,
+    "weightBasis": "275mm",
     "drop": 4,
     "plate": "none",
     "stackHeight": {
@@ -9772,8 +9772,8 @@
     "version": "4",
     "variant": "GTX",
     "collabWith": null,
-    "weight": 272,
-    "weightBasis": "270mm",
+    "weight": null,
+    "weightBasis": null,
     "drop": 10,
     "plate": "none",
     "stackHeight": {
@@ -9828,8 +9828,8 @@
     "version": "5",
     "variant": "GTX",
     "collabWith": null,
-    "weight": 281,
-    "weightBasis": "270mm",
+    "weight": null,
+    "weightBasis": null,
     "drop": 9.5,
     "plate": null,
     "stackHeight": {
@@ -9850,32 +9850,6 @@
     "brand": "Nike",
     "model": "Pegasus Trail",
     "category": "trail"
-  },
-  {
-    "id": "nike-react-infinity-run-3",
-    "brand": "Nike",
-    "model": "React Infinity Run",
-    "version": "3",
-    "variant": null,
-    "collabWith": null,
-    "category": "stability",
-    "weight": 297,
-    "weightBasis": "270mm",
-    "drop": 8,
-    "plate": "none",
-    "stackHeight": {
-      "heel": 34,
-      "forefoot": 26
-    },
-    "releaseYear": null,
-    "defaultLifespanKm": 700,
-    "discontinued": false,
-    "searchAliases": [
-      "나이키",
-      "인피니티",
-      "인피니티 3"
-    ],
-    "verified": true
   },
   {
     "id": "nike-react-miler-3",
