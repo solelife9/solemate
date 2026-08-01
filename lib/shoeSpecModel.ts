@@ -13,7 +13,9 @@
 
 import {ShoeCategory, findShoeModel, getRecommendedLifespanKm} from '../data/shoeModels';
 import type {ShoeSpec} from './shoeCompare';
+import type {ShoeDoc} from '../types/shoe';
 import specsData from '../data/shoeSpecs.json';
+import catalogData from '../data/shoeCatalog.json';
 
 /**
  * 축의 근거를 화면에 밝히는 문구.
@@ -130,11 +132,38 @@ export function cushionFromStack(stackHeelMm: number): number {
 }
 
 /**
- * 확인된 공식 스펙 표(data/shoeSpecs.json). 키는 'brand|model'.
- * 여기 없는 모델은 스펙을 모르는 것이고, 모르면 그 축은 비교에서 빠진다.
+ * 확인된 공식 스펙 표. **두 곳에서 온다.**
+ *
+ *  ① `data/shoeSpecs.json` — 손으로 확인해 넣은 71켤레. 키는 'brand|model'.
+ *  ② `data/shoeCatalog.json` — 공홈·아카이브에서 수확한 615켤레 문서.
+ *
+ * ②가 훨씬 넓다(같은 신발 기준 71 → 274켤레). 그래서 ②를 바닥에 깔고 ①을 위에 얹는다
+ * — **겹치면 ①이 이긴다.** ①은 사람이 출처를 확인해 넣은 값이고, 규모가 작은 만큼
+ * 손이 더 갔다. 이 순서면 화면에 이미 뜨던 값은 하나도 안 바뀌고 커버리지만 넓어진다.
+ *
+ * ②의 키는 `brand|model version` 으로 만든다(카탈로그는 모델과 버전을 나눠 갖고 있고,
+ * shoes.json 은 'Novablast 5' 처럼 붙여 쓴다). **변형·콜라보는 뺀다** — GTX 나 콜라보는
+ * 본모델과 키가 같아져서 서로를 덮어쓴다.
  */
-const OFFICIAL_SPECS: Readonly<Record<string, OfficialSpec>> =
-  (specsData as {specs?: Record<string, OfficialSpec>}).specs ?? {};
+function specsFromCatalog(): Record<string, OfficialSpec> {
+  const out: Record<string, OfficialSpec> = {};
+  for (const d of catalogData as unknown as ShoeDoc[]) {
+    if (d.variant || d.collabWith) continue;
+    if (d.weight == null && d.drop == null && !d.stackHeight) continue;
+    const key = `${d.brand}|${[d.model, d.version].filter(Boolean).join(' ')}`;
+    const spec: OfficialSpec = {};
+    if (d.weight != null) spec.weightG = d.weight;
+    if (d.stackHeight?.heel != null) spec.stackHeelMm = d.stackHeight.heel;
+    if (d.drop != null) spec.dropMm = d.drop;
+    out[key] = spec;
+  }
+  return out;
+}
+
+const OFFICIAL_SPECS: Readonly<Record<string, OfficialSpec>> = {
+  ...specsFromCatalog(),
+  ...((specsData as {specs?: Record<string, OfficialSpec>}).specs ?? {}),
+};
 
 /** 확인된 스펙을 조회한다(없으면 undefined). 카탈로그 표기와 정확히 일치해야 잡힌다. */
 export function lookupOfficialSpec(brand: string, model: string): OfficialSpec | undefined {

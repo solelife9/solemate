@@ -154,10 +154,21 @@ describe('스펙 표(data/shoeSpecs.json) 무결성', () => {
     }
   });
 
-  it('조회 함수가 표와 같은 것을 본다', () => {
-    expect(officialSpecCount()).toBe(keys.length);
-    const [brand, model] = keys[0].split('|');
-    expect(lookupOfficialSpec(brand, model)).toBeDefined();
+  // 스펙은 두 곳에서 온다: 손으로 확인한 shoeSpecs.json 과, 공홈·아카이브에서 수확한
+  // shoeCatalog.json. 카탈로그가 훨씬 넓어서 조회 대상은 표보다 많다.
+  it('조회 대상은 손으로 넣은 표보다 넓다 — 카탈로그가 바닥에 깔린다', () => {
+    expect(officialSpecCount()).toBeGreaterThan(keys.length);
+  });
+
+  it('겹치면 손으로 확인한 표가 이긴다 — 화면에 뜨던 값이 바뀌면 안 된다', () => {
+    for (const k of keys) {
+      const [brand, ...rest] = k.split('|');
+      const got = lookupOfficialSpec(brand, rest.join('|'));
+      expect(got).toEqual((shoeSpecs as any).specs[k]);
+    }
+  });
+
+  it('없는 모델은 여전히 undefined', () => {
     expect(lookupOfficialSpec('없는브랜드', '없는모델')).toBeUndefined();
   });
 });
