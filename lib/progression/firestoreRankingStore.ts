@@ -29,6 +29,7 @@ import {
   RankingStore,
   StoredRankingEntry,
   createFirestoreRankingProvider,
+  type EntryShoe,
   computeRankingStats,
   buildStoredEntry,
   RankingStatsInput,
@@ -124,6 +125,8 @@ export function yearMonthOf(nowMs: number): string {
 }
 
 export interface PublishRankingArgs {
+  /** 그달 주력 신발 요약 — 「1,2,3위는 뭘 신나」. 없으면 엔트리에 필드가 안 생긴다. */
+  shoes_summary?: readonly EntryShoe[];
   nickname: string;
   rankTier: RankTier;
   rankColor: string;
@@ -159,6 +162,7 @@ export async function publishMyRanking(args: PublishRankingArgs): Promise<boolea
       equippedTitle: args.equippedTitle ?? null,
       stats,
       updatedAt: args.nowMs,
+      shoes: args.shoes_summary,
     });
     await firestoreRankingStore.publish(yearMonth, entry);
     return true;

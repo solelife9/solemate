@@ -34,6 +34,24 @@ function isCategory(c: string): c is RankingCategory {
 }
 
 /** Firestore 에 저장되는 한 사용자의 월간 랭킹 엔트리(점수 5종 + 표시정보). */
+/**
+ * 랭킹 엔트리에 함께 싣는 신발 요약 — 「1, 2, 3위는 뭘 신나」(2026-08-01).
+ *
+ * **스펙(무게·스택·드롭)은 담지 않는다.** 보는 사람 앱이 번들 카탈로그에서 붙인다
+ * (data/shoeSpecs.json) — 미러가 작아지고, 스펙이 갱신되면 과거 랭킹까지 자동으로
+ * 최신이 되며, 기존 신발 비교 화면을 그대로 재사용한다.
+ */
+export interface EntryShoe {
+  /** 카탈로그 조회 키. */
+  brand: string;
+  model: string;
+  /** 누적 거리(km) — 이게 곧 크라우드소스 수명 데이터가 된다. */
+  usedKm: number;
+}
+
+/** 엔트리에 싣는 신발 최대 수 — 랭킹 행은 좁다. 많이 신은 순 상위만. */
+export const MAX_ENTRY_SHOES = 3;
+
 export interface StoredRankingEntry {
   uid: string;
   nickname: string;
@@ -46,6 +64,14 @@ export interface StoredRankingEntry {
   collection: number;
   progressPoints: number;
   updatedAt: number;
+  /**
+   * 그달 주력 신발(선택 — 옛 엔트리엔 없다).
+   *
+   * 왜 엔트리 안에 넣는가: 랭킹 화면은 어차피 상위 100명 엔트리를 읽는다. 신발을 여기
+   * 담아두면 **추가 읽기가 0**이다. 프로필을 따로 읽으면 100명 × 1읽기가 더 붙는다 —
+   * AUDIT 2 에서 읽기를 43배 줄여 놓고 여기서 되돌릴 이유가 없다.
+   */
+  shoes?: EntryShoe[];
 }
 
 /**
@@ -226,7 +252,10 @@ export function buildStoredEntry(args: {
   equippedTitle?: string | null;
   stats: RankingStats;
   updatedAt: number;
+  /** 그달 주력 신발(선택). 비면 필드 자체를 만들지 않는다. */
+  shoes?: readonly EntryShoe[];
 }): StoredRankingEntry {
+  const shoes = sanitizeEntryShoes(args.shoes);
   return {
     uid: args.uid,
     nickname: args.nickname || '러너',
@@ -239,5 +268,24 @@ export function buildStoredEntry(args: {
     collection: num(args.stats.collection),
     progressPoints: num(args.stats.progressPoints),
     updatedAt: args.updatedAt,
+    // 빈 배열도 넣지 않는다 — 규칙이 '있으면 검사'라 없는 게 가장 단순하다.
+    ...(shoes.length ? {shoes} : {}),
   };
+}
+
+/**
+ * 신발 요약을 정규화한다(순수). 이름 없는 것은 버리고, 많이 신은 순 상위 N 만 남긴다.
+ * 거리는 정수로 — 랭킹 행에 소수 자리는 잡음이다.
+ */
+export function sanitizeEntryShoes(list: readonly EntryShoe[] | undefined | null): EntryShoe[] {
+  if (!Array.isArray(list)) return [];
+  return list
+    .map(s => ({
+      brand: String(s?.brand ?? '').trim(),
+      model: String(s?.model ?? '').trim(),
+      usedKm: Math.max(0, Math.round(num((s as {usedKm?: unknown})?.usedKm))),
+    }))
+    .filter(s => !!(s.brand || s.model))
+    .sort((a, b) => b.usedKm - a.usedKm)
+    .slice(0, MAX_ENTRY_SHOES);
 }

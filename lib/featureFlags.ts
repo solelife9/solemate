@@ -18,11 +18,18 @@
  *  3) 동의를 받은 적이 없고, 개인정보 처리방침에도 '다른 이용자에게 공개된다'는
  *     고지가 없다.
  *
- * **켜는 조건 (1.1 예정):** 랭킹 화면 진입점 복원 + 공개 범위에 대한 **명시적 사용자
- * 동의(옵트인)** + 처리방침에 제3자 공개 조항 반영. 셋이 다 되기 전에는 켜지 않는다.
+ * **켜는 조건 셋** — 하나라도 빠지면 같은 사고가 반복된다. 진행 상황(2026-08-01):
+ *   ① 공개 범위 옵트인 ............ ✅ 완료(SocialConsentScreen · 설정 토글).
+ *      동의 전에는 발행 자체가 막힌다(App.publishMyRankingNow 의 socialVisibility 가드).
+ *   ② 랭킹 화면 진입점 ............ ✅ 완료(마이 → 명예의 전당).
+ *   ③ 처리방침 제3자 공개 조항 .... ⛔ **미완** — 문안은 docs/legal/social-disclosure.md
+ *      에 준비돼 있고, keego-legal 저장소에 반영해 배포해야 한다(민우님 작업).
+ *
+ * ③ 이 끝나면 이 값을 true 로 바꾼다. **그 전에는 켜지 않는다** — 화면과 동의를 갖춰도
+ * 처리방침에 고지가 없으면 "동의 없이 공개"와 법적으로 같은 자리다.
  *
  * 발행 코드(`lib/progression/firestoreRankingStore.publishMyRanking`)와 화면
- * (`HallOfFameScreen.rn.tsx`)은 **그대로 남겨둔다** — 되살릴 때 이 값만 true 로 바꾼다.
+ * (`HallOfFameScreen.rn.tsx`)은 그대로 살아 있다 — 이 값만 바꾸면 켜진다.
  */
 export const LEADERBOARD_PUBLISH_ENABLED = false;
 

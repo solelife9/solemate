@@ -40,7 +40,11 @@ service cloud.firestore {
         && d.shoeHealth is number
         && d.collection is number
         && d.progressPoints is number
-        && d.updatedAt is number;
+        && d.updatedAt is number
+        // 신발 요약(선택) — 「1,2,3위는 뭘 신나」. 있으면 형태를 검사한다.
+        // 개수 상한을 두는 이유: 엔트리는 랭킹 쿼리로 100개씩 읽히므로, 한 명이 거대한
+        // 배열을 심으면 남의 화면까지 느려진다.
+        && (!('shoes' in d.keys()) || (d.shoes is list && d.shoes.size() <= 3));
     }
 
     // ── 클라우드 동기 백업: 본인 서브트리만 ──────────────────────────────────
@@ -74,7 +78,15 @@ service cloud.firestore {
     //    공개 범위 옵트인과 처리방침 제3자 공개 조항을 먼저 만들고, 그때 이 규칙을
     //    동의한 사용자만 노출되도록 다시 설계한다(단순 복원 금지).
     match /leaderboards/{yearMonth}/entries/{uid} {
-      allow read: if false;
+      // 2026-08-01 재개봉 — 읽기를 로그인 사용자에게 연다.
+      // 닫아 뒀던 이유는 "볼 화면도 없는데 동의 없이 쌓이고 있어서"였다. 이제 셋 다 갖췄다:
+      //   ① 공개 범위 옵트인(SocialConsentScreen — 동의 전엔 발행 자체가 안 된다)
+      //   ② 설정에서 언제든 끌 수 있다(끄면 프로필도 내려간다)
+      //   ③ 랭킹 화면 진입점(마이 → 명예의 전당)
+      // 앱은 socialVisibility==='public' 일 때만 발행한다(App.publishMyRankingNow).
+      // ⚠️ 점수는 여전히 클라이언트 계산이다 — 조작 방지는 서버 재계산(Cloud Function)
+      //    으로 별도 처리한다. 규칙이 보장하는 건 '남의 엔트리 변조 불가'와 '형태 강제'다.
+      allow read: if signedIn();
       allow create, update: if signedIn()
         && request.auth.uid == uid
         && validRankingEntry(uid);

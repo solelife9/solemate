@@ -306,3 +306,43 @@ describe('공개 프로필', () => {
     await assertFails(setDoc(doc(attacker(), 'profiles', ATTACKER), validProfile({nickname: 'x'.repeat(41)})));
   });
 });
+
+// ── 랭킹 재개봉(2026-08-01) — 읽기를 열었다. 쓰기 방어가 그대로인가 ─────────────
+describe('랭킹 재개봉 후 방어', () => {
+  const withShoes = (uid: string, shoes: unknown) => validEntry(uid, {shoes});
+
+  it('로그인 사용자는 순위표를 읽을 수 있다(그게 기능이다)', async () => {
+    await seed(['leaderboards', YM, 'entries', VICTIM], validEntry(VICTIM));
+    await assertSucceeds(getDoc(doc(attacker(), 'leaderboards', YM, 'entries', VICTIM)));
+  });
+
+  it('미로그인은 여전히 못 읽는다', async () => {
+    await seed(['leaderboards', YM, 'entries', VICTIM], validEntry(VICTIM));
+    await assertFails(getDoc(doc(guest(), 'leaderboards', YM, 'entries', VICTIM)));
+  });
+
+  it('읽기를 열어도 남의 엔트리는 못 고친다', async () => {
+    await seed(['leaderboards', YM, 'entries', VICTIM], validEntry(VICTIM));
+    await assertFails(updateDoc(doc(attacker(), 'leaderboards', YM, 'entries', VICTIM), {distance: 99999}));
+    await assertFails(deleteDoc(doc(attacker(), 'leaderboards', YM, 'entries', VICTIM)));
+  });
+
+  it('신발 요약은 배열이어야 한다 — 깨진 문서가 순위표를 오염시키지 못하게', async () => {
+    await assertFails(setDoc(doc(attacker(), 'leaderboards', YM, 'entries', ATTACKER), withShoes(ATTACKER, '신발')));
+    await assertFails(setDoc(doc(attacker(), 'leaderboards', YM, 'entries', ATTACKER), withShoes(ATTACKER, 42)));
+  });
+
+  it('신발을 3켤레 넘게 심을 수 없다 — 남의 화면까지 느려진다', async () => {
+    const many = Array.from({length: 4}, (_, i) => ({brand: 'B', model: `M${i}`, usedKm: 1}));
+    await assertFails(setDoc(doc(attacker(), 'leaderboards', YM, 'entries', ATTACKER), withShoes(ATTACKER, many)));
+  });
+
+  it('정상 신발 요약은 통과한다(대조군)', async () => {
+    const ok = [{brand: 'Nike', model: 'Pegasus 41', usedKm: 412}];
+    await assertSucceeds(setDoc(doc(attacker(), 'leaderboards', YM, 'entries', ATTACKER), withShoes(ATTACKER, ok)));
+  });
+
+  it('신발 필드가 없어도 통과한다(옛 엔트리 호환)', async () => {
+    await assertSucceeds(setDoc(doc(attacker(), 'leaderboards', YM, 'entries', ATTACKER), validEntry(ATTACKER)));
+  });
+});

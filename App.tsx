@@ -1398,6 +1398,9 @@ function Main(){
   // 그대로 두고 호출만 막는다 — 재개봉은 lib/featureFlags 의 플래그 하나로(1.1 예정).
   const publishMyRankingNow=async(merged:{shoes:any[];runs:any[]})=>{
     if(!LEADERBOARD_PUBLISH_ENABLED) return;
+    // **동의한 사용자만 랭킹에 오른다.** AUDIT 1 의 사고가 정확히 "동의 없이 공개"였다 —
+    // 플래그가 켜져도 이 가드가 없으면 같은 일이 반복된다. 공개 프로필과 같은 스위치를 쓴다.
+    if(socialVisibility!=='public') return;
     try{
       const liveShoes=liveRecords(merged.shoes);
       const liveRuns=liveRecords(merged.runs);
@@ -1406,6 +1409,15 @@ function Main(){
         ? (view.titles.unlocked.find(t=>t.key===view.titles.equipped)?.name??null)
         : null;
       await publishMyRanking({
+        // 「1,2,3위는 뭘 신나」 — 랭킹 행에 신발을 함께 싣는다(추가 읽기 0).
+        // 공개 프로필과 **같은 출처**를 쓴다: 화면마다 다른 신발을 말하면 안 된다.
+        shoes_summary:(buildPublicProfile({
+          visibility:'public',
+          nickname:profileName||DEFAULT_PROFILE_NAME,
+          shoes:liveShoes as any,
+          runs:liveRuns as any,
+          nowMs:Date.now(),
+        })?.activeShoes??[]).map(sh=>({brand:sh.brand,model:sh.model||sh.name,usedKm:sh.usedKm})),
         nickname:profileName||DEFAULT_PROFILE_NAME,
         rankTier:view.rank.tier,
         rankColor:view.rank.color,
@@ -2452,11 +2464,15 @@ function Main(){
   }
 
   if(showProgression){
-    // 라이브 리더보드(HallOfFame) 진입은 MVP 에서 플래그 오프 — 유저 임계량 전의 빈
-    // 리더보드는 죽은 공간이다. onOpenHallOfFame 미주입이면 진척 화면이 버튼을 숨긴다.
-    // 재개봉 시 아래 한 줄만 복원: onOpenHallOfFame={()=>setShowHallOfFame(true)}
+    // 라이브 리더보드(HallOfFame) 진입 — 2026-08-01 재개봉.
+    // **공개에 동의한 사용자에게만 보인다.** 비공개인 사람에게 랭킹 입구를 보여주면
+    // 들어가서 빈 화면을 보거나(내 엔트리가 없다) 남의 기록만 구경하게 된다 —
+    // 둘 다 이상하다. 동의가 곧 참여 조건이다.
+    // 초기에 사람이 적어 초라해 보이는 건 감수한다(민우님 결정 2026-08-01):
+    // "내가 순위권이네?"는 앱 초기에만 존재하는 경험이라 아꼈다 쓸 수 없다.
     return <ProgressionScreen runs={runs} shoes={shoes} profileName={profileName} challenges={contextChallenges}
-      onBack={()=>setShowProgression(false)}/>;
+      onBack={()=>setShowProgression(false)}
+      {...(socialVisibility==='public'?{onOpenHallOfFame:()=>setShowHallOfFame(true)}:{})}/>;
   }
 
   // 명예의 전당(은퇴 신발 박물관) 전체화면 — 영속된 은퇴 레코드를 그대로 전시한다
