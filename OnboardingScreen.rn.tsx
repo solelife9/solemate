@@ -492,7 +492,10 @@ function ShoeIntelligence({goNext, onSkip, insetTop, insetBottom}: ScreenProps) 
 type FeatureRow = {color: string; Icon: (p: {size?: number; color?: string}) => React.JSX.Element; title: string; desc: string};
 const VALUE_ROWS: FeatureRow[] = [
   // 기능 아이콘은 Ember 가드레일 밖(브랜드색은 서명·진행 지표 전용) — 무채 T2 로.
-  {color: T2, Icon: BellIcon, title: '교체 알림', desc: '교체 시점 50km 전, 미리 알려드려요'},
+  // 정직 카피(2026-07-30): '50km 전'은 두 가지가 틀렸다 — 임계는 고정 거리가 아니라
+  // 수명 대비 **비율**이고(DEFAULT_ALERTS.thresholdPct=90 → 10% 남았을 때), 그래서 실제
+  // 거리는 신발마다 다르다(600km 신발이면 60km 전). 설정에서 조절할 수 있다.
+  {color: T2, Icon: BellIcon, title: '교체 알림', desc: '수명이 10% 남으면 미리 알려드려요'},
   {color: BEST, Icon: PulseIcon, title: '정밀 측정', desc: '심폐 체력·경사 보정 페이스·트랙 모드 — 폰만으로'},
   {color: HALL_GOLD, Icon: TrophyIcon, title: '쌓이는 기록', desc: '거리 PB·업적·메달 아카이브 — 달리다 보면 하나씩 열려요'},
 ];

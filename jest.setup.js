@@ -399,6 +399,9 @@ jest.mock('@react-native-firebase/auth', () => {
 // testable against the same in-memory map (keys: "leaderboards/{ym}/entries/{uid}").
 jest.mock('@react-native-firebase/firestore', () => {
   const store = new Map();
+  // 쓰기 횟수 관측(테스트 전용) — "바뀐 게 없으면 쓰지 않는다"(AUDIT 2 I-4)를 단언하려면
+  // 결과 문서만 봐서는 안 된다(써도 안 써도 내용이 같다). 실제 쓰기 발생 여부를 세야 한다.
+  let writes = 0;
   // collect docs whose key sits directly under a collection path → [{id, data}].
   const docsUnder = colPath => {
     const prefix = `${colPath}/`;
@@ -463,7 +466,34 @@ jest.mock('@react-native-firebase/firestore', () => {
           : docsUnder(target.__collection).length;
       return Promise.resolve({data: () => ({count})});
     }),
+    // writeBatch 목 — 실제 SDK 처럼 commit() 시점에 한꺼번에 반영한다(부분 적용 없음).
+    // 쓰기 카운터는 문서 수만큼 올린다(배치도 문서당 1회 쓰기로 과금되므로).
+    writeBatch: jest.fn(() => {
+      const ops = [];
+      const b = {
+        set: (ref, data) => { ops.push({t: 'set', ref, data}); return b; },
+        update: (ref, data) => { ops.push({t: 'update', ref, data}); return b; },
+        delete: ref => { ops.push({t: 'delete', ref}); return b; },
+        commit: () => {
+          for (const op of ops) {
+            if (op.t === 'delete') { store.delete(op.ref.__path); continue; }
+            writes += 1;
+            const prev = op.t === 'update' ? store.get(op.ref.__path) || {} : {};
+            // merge:true 를 흉내낸다 — set 도 기존 값 위에 얹는다(포트가 merge 로 쓴다).
+            const base = op.t === 'set' ? store.get(op.ref.__path) || {} : prev;
+            store.set(op.ref.__path, {...base, ...JSON.parse(JSON.stringify(op.data))});
+          }
+          return Promise.resolve();
+        },
+      };
+      return b;
+    }),
+    // 서버 타임스탬프 목 — 실제 SDK 는 Timestamp 객체로 되읽히지만, 여기서는 **숫자**로
+    // 둔다. 저장이 JSON 복제라 메서드가 살아남지 못하기 때문이고, 소비처
+    // (firebaseCloudPort.readDeviceClock)가 숫자와 Timestamp 를 모두 받도록 이미 방어돼 있다.
+    serverTimestamp: jest.fn(() => Date.now()),
     setDoc: jest.fn((ref, data) => {
+      writes += 1;
       store.set(ref.__path, JSON.parse(JSON.stringify(data)));
       return Promise.resolve();
     }),
@@ -489,6 +519,7 @@ jest.mock('@react-native-firebase/firestore', () => {
             data: () => store.get(ref.__path),
           }),
         set: (ref, data) => {
+          writes += 1;
           store.set(ref.__path, JSON.parse(JSON.stringify(data)));
           return tx;
         },
@@ -503,10 +534,13 @@ jest.mock('@react-native-firebase/firestore', () => {
       };
       return updateFn(tx);
     }),
-    // test-only helper
+    // test-only helpers
     __reset: () => {
       store.clear();
+      writes = 0;
     },
+    /** 지금까지 발생한 문서 쓰기 횟수(setDoc + 트랜잭션 set). __reset 이 0으로 되돌린다. */
+    __writeCount: () => writes,
   };
 });
 

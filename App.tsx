@@ -36,7 +36,13 @@ import RaceMedalScreen from './RaceMedalScreen.rn';
 // 마라톤 메달 아카이브 — 완주 감지(위치+날짜) → 대회 기록 흐름 → 아카이브(로컬 우선).
 import {loadMedals, saveMedals, normalizeMedals, sortMedals, liveMedals, addMedal as addMedalStore, removeMedal as removeMedalStore, type Medal} from './lib/medals';
 import {detectRace, SEED_RACES, type RaceEvent, type RaceMatch, type RaceDistance} from './data/raceEvents';
-import {fetchRaces} from './lib/raceStore';
+import {syncRemoteRaces} from './lib/raceCatalogRemote';
+import {checkForceUpdate, type RemoteAppConfig} from './lib/forceUpdate';
+import {reconcileAccountStorage} from './lib/accountScope';
+import {mirrorRecords, pullRecords, mergePulled, isPayloadMirrored, stripRecordArrays, loadMarkers} from './lib/recordSync';
+import {retirementRecordsFromShoes, setShoeRetirement, migrateRetiredShoes} from './lib/shoeRetirement';
+import {buildPublicProfile, publishProfile, loadVisibility} from './lib/publicProfile';
+import ForceUpdateScreen from './ForceUpdateScreen.rn';
 import {nativeRecognizer} from './lib/ocrNative';
 import {parseRoute} from './lib/route';
 import LocationPrimeScreen from './LocationPrimeScreen.rn';
@@ -67,7 +73,7 @@ import {
   sumKm, avgPaceLabel, totalTimeLabel, durationLabel, summaryOf, maxDayStreak,
   weekBuckets, monthBuckets, yearBuckets,
 } from './lib/stats';
-import {parseShoeName, shoeHealth, isRetired, DEFAULT_MAX_KM, clampMaxKm, reconcileShoeAlerts, effectiveMaxKm} from './lib/shoe';
+import {parseShoeName, shoeHealth, isRetired, DEFAULT_MAX_KM, clampMaxKm, reconcileShoeAlerts, effectiveMaxKm, raiseHighWater, lowerHighWater, detectMileageDrops} from './lib/shoe';
 // 한 러닝은 한 기록 — 폰·워치 중복 저장 병합(신발 이중 차감 차단).
 import {findMergeTarget, mergeRuns} from './lib/runMerge';
 // 상승 고도는 폰이 한 벌 규칙으로 계산한다(워치는 원자료만 보낸다).
@@ -80,7 +86,8 @@ import {
   CACHE_SHOES_KEY, CACHE_RUNS_KEY, loadBootCache, writeBootCache,
   persistRunToCache, persistRunCacheRemove,
 } from './lib/bootCache';
-import {reportStorageResult} from './lib/storageAlert';
+import {reportStorageResult, reportSyncResult} from './lib/storageAlert';
+import {nowMs as syncNowMs, loadClockOffset} from './lib/clockOffset';
 import {trackFirstShoeAdded} from './lib/productAnalytics';
 import {buildWatchShoes, buildWatchRecentRuns, buildWidgetShoe} from './lib/watchPayload';
 import {
@@ -105,7 +112,9 @@ import {getDistancePBs, PB_CACHE_KEY} from './lib/distancePBStore';
 import type {RunBestEfforts} from './lib/bestEfforts';
 import {hkSaveRunWorkout, hkBackfillHeartRate, hkEnsureLinked, hkFindRunWorkoutWindow} from './lib/healthkit';
 import {registerRunForHr, saveWatchHrTrack, retryPendingHr, avgBpmFromTrack, hasHrTrack} from './lib/hrBackfill';
-import {syncRunDetails} from './lib/runDetailSync';
+import {syncRunDetails, runsWithCloudRoute, enqueueDetailDeletion} from './lib/runDetailSync';
+import {updateHomeWidgetShoe} from './lib/homeWidget';
+import {checkCacheOwner, claimCacheOwner} from './lib/cacheOwner';
 import {liveActivity} from './lib/liveActivity';
 import {watchSession} from './lib/watchSession';
 import {assessTrainingLoad, loadRatioPhraseKo, LOAD_WORD, LoadLevel} from './lib/trainingLoad';
@@ -124,7 +133,7 @@ import {getAuth, onAuthStateChanged} from '@react-native-firebase/auth';
 import {syncRemoteCatalog} from './lib/shoeCatalogRemote';
 import {setRemoteShoeDocs} from './lib/shoeCatalogStore';
 import {LoginScreen} from './LoginScreen.rn';
-import {stampUpdatedAt, markDeleted, partitionTombstones, mergeCloudData, mergeMedals, liveRecords, reconcileLivePreservingLocal, unionTombstones} from './lib/cloudSync';
+import {stampUpdatedAt, markDeleted, partitionTombstones, mergeCloudData, mergeMedals, liveRecords, reconcileLivePreservingLocal, unionTombstones, stripSyncedRoutes, shouldSkipCloudSync, compactTombstones, SHOE_TOMBSTONE_KEEP} from './lib/cloudSync';
 import {publishMyRanking} from './lib/progression/firestoreRankingStore';
 import {LEADERBOARD_PUBLISH_ENABLED} from './lib/featureFlags';
 import {genRunId, genShoeId} from './lib/genId';
@@ -286,7 +295,10 @@ function Main(){
   const [recapRace,setRecapRace]=useState<null|{match:RaceMatch;date:string;runId?:string;appTimeSec:number;appPaceSec?:number}>(null);
   // 대회 카탈로그 — 번들 시드로 시작, 부팅 시 Firestore 'races' 머지(서버 갱신 반영). 실패 시 시드 유지.
   const [races,setRaces]=useState<RaceEvent[]>(SEED_RACES);
-  useEffect(()=>{void loadMedals().then(setMedals);void fetchRaces().then(setRaces).catch(()=>{});},[]);
+  // 대회 원격 동기는 로그인 이후 별도 effect 가 맡는다(AUDIT 2 I-1 — 아래 syncRemoteRaces).
+  useEffect(()=>{void loadMedals().then(setMedals);},[]);
+  // 필수 업데이트 게이트(AUDIT 2 I-3). null = 막지 않음(기본값이자 fail-open 의 기본 상태).
+  const [forceUpdateCfg,setForceUpdateCfg]=useState<RemoteAppConfig|null>(null);
   // 햅틱(진동) 설정 부팅 복원 — 폰 Vibration(lib/haptics 싱글턴) 동기화 + 워치에도 전달.
   // off 면 화면 전환·버튼·존 이탈·워치 랩 진동이 전부 조용해진다(사용자 요청 2026-07-13).
   useEffect(()=>{void loadHaptics().then(v=>{setHapticsEnabled(v);watchSession.setHaptics(v);});},[]);
@@ -387,8 +399,48 @@ function Main(){
   const [locPrimed,setLocPrimed]=useState(true);
   const insets=useSafeAreaInsets();
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(()=>{initUser();},[]);
+  // 부팅 — **로그인한 계정이 정해진 뒤에** 로컬 데이터를 읽는다(AUDIT 1 S-1 잔여, 2026-08-01).
+  //
+  // 예전엔 마운트 즉시(deps []) 한 번만 돌았다. 그래서 한 기기에서 A 로그아웃 → B 로그인 하면
+  // **B 화면에 A 의 신발·러닝·GPS 경로가 그대로 남아 있었다.** 다시 읽을 계기가 없었기 때문이다.
+  // (클라우드 오염은 AUDIT 1 의 cacheOwner 가 이미 막았지만, 화면에 보이는 것은 그대로였다.)
+  //
+  // 이제 uid 가 바뀔 때마다 다시 부팅하고, **읽기 전에** reconcileAccountStorage 로 저장소를
+  // 그 계정 것으로 갈아끼운다. 이전 계정 데이터는 지우지 않고 보관함으로 옮긴다 —
+  // 그 계정으로 다시 로그인하면 미동기 기록까지 그대로 돌아온다(lib/accountScope).
+  //
+  // 정합에 실패하면 **부팅하지 않는다.** 남의 데이터를 보여주느니 재시도 카드가 낫다.
+  useEffect(()=>{
+    // 테스트는 기본 우회(25개 App 스위트가 계정 정합 없이 그대로 통과한다).
+    // 이 경로 자체의 검증은 __KEEGO_ENABLE_ACCOUNT_SCOPE__ 로 켜서 한다
+    // (__tests__/App.accountSwitch.test.tsx — 클라우드 동기의 관례와 동일).
+    const scopeOn=process.env.NODE_ENV!=='test'||(globalThis as any).__KEEGO_ENABLE_ACCOUNT_SCOPE__===true;
+    if(!scopeOn){void initUser();return;}
+    const uid=authUser?.uid;
+    if(!uid){
+      // 로그아웃/인증 확인중 — 메모리에 남은 이전 계정 데이터를 즉시 비운다.
+      // **저장소는 건드리지 않는다**(다시 로그인하면 그대로 돌아온다).
+      // bootState 를 함께 'loading' 으로 내리는 게 중요하다 — 캐시 쓰기 디바운스가
+      // 'ready' 일 때만 돌기 때문에, 이 빈 상태가 멀쩡한 캐시를 덮어쓰지 않는다.
+      setShoes([]);setRuns([]);setBootState('loading');
+      return;
+    }
+    // 정합·재로드가 끝날 때까지 스켈레톤 — 이전 계정 화면이 한 프레임도 비치지 않게.
+    setBootState('loading');
+    let alive=true;
+    (async()=>{
+      try{
+        await reconcileAccountStorage(uid);
+      }catch(e){
+        reportIssue('accountScope 정합 실패 — 부팅 중단(남의 데이터 노출 방지)',e);
+        if(alive)setBootState('error');
+        return;
+      }
+      if(alive)void initUser();
+    })();
+    return()=>{alive=false;};
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[authUser?.uid]);
 
   // 필수 로그인 게이트 — Firebase 인증 상태를 구독해 authUser 를 채운다. 로그인/로그아웃/
   // 토큰 만료를 한곳에서 반영한다. 테스트에선 게이트가 우회(authUser 기본 로그인)되므로
@@ -412,6 +464,34 @@ function Main(){
     if(!authUser) return;
     let alive=true;
     syncRemoteCatalog().then(docs=>{if(alive&&docs.length)setRemoteShoeDocs(docs);}).catch(()=>{});
+    return()=>{alive=false;};
+  },[authUser]);
+
+  // 필수 업데이트 게이트(AUDIT 2 I-3) — 원격 config/app 의 minSupportedVersion 미만이면
+  // 앱을 막는다. 스토어에 나간 빌드에 데이터 유실급 버그가 있을 때, 심사를 기다리는 것
+  // 말고 할 수 있는 유일한 조치다. **fail-open** 이라 못 읽으면 막지 않는다(lib/forceUpdate).
+  // 로그인 뒤에 읽는다(규칙상 config 도 로그인 필요) — 막아야 할 대상인 '이미 설치해 쓰던
+  // 사용자'는 로그인 상태이므로 실효가 있다.
+  useEffect(()=>{
+    if(process.env.NODE_ENV==='test') return;
+    if(!authUser) return;
+    let alive=true;
+    checkForceUpdate().then(cfg=>{if(alive&&cfg)setForceUpdateCfg(cfg);}).catch(()=>{});
+    return()=>{alive=false;};
+  },[authUser]);
+
+  // 원격 대회 카탈로그 동기화 — 신발 카탈로그와 같은 규약(24시간 간격 + 커서 증분).
+  // **로그인 뒤에 돈다**(규칙상 races 읽기도 로그인 필요). 예전에는 마운트 즉시(deps [])
+  // 컬렉션 전량을 읽었는데, 그건 두 가지로 잘못이었다(AUDIT 2 I-1):
+  //   · 인증 복원이 아직 안 끝난 시점이라 규칙에 막혀 조용히 실패하고 재시도도 없었다
+  //     → 서버에서 대회를 고쳐도 사용자에게 영영 도달하지 않는다.
+  //   · 성공하는 경우엔 실행마다 82 읽기 — 하루 읽기의 96%.
+  // 실패해도 syncRemoteRaces 가 시드+캐시를 돌려주므로 화면은 그대로 동작한다.
+  useEffect(()=>{
+    if(process.env.NODE_ENV==='test') return;
+    if(!authUser) return;
+    let alive=true;
+    syncRemoteRaces().then(rs=>{if(alive&&rs.length)setRaces(rs);}).catch(()=>{});
     return()=>{alive=false;};
   },[authUser]);
 
@@ -561,6 +641,70 @@ function Main(){
     })();
   },[]);
 
+  // ── 은퇴 기록 1회 이관: progression → 신발 (2026-08-01 결정 A) ──────────────
+  // 옛 빌드는 은퇴 스냅샷을 progression.retiredShoes 에 따로 뒀다. 같은 신발을 두 곳이
+  // 설명하던 구조라 이제 신발 문서로 모은다. **무손실**이다 — 신발에 이미 스냅샷이
+  // 있으면 덮지 않고, 짝이 없는 기록(신발이 이미 삭제됨)만 버린다(결정 A와 같은 의미).
+  // 이관이 끝나면 옛 배열을 비워 두 곳이 다시 어긋나지 않게 한다.
+  useEffect(()=>{
+    if(bootState!=='ready') return;
+    const legacy=progState?.retiredShoes;
+    if(!legacy?.length) return;
+    let orphanCount=0;
+    setShoes(prev=>{
+      const {shoes:next,migrated,orphaned}=migrateRetiredShoes(prev as any,legacy);
+      orphanCount=orphaned;
+      if(migrated===0) return prev;
+      // 이관으로 새로 붙은 신발만 스탬프한다 — 클라우드 병합이 이 변경을 최신으로 본다.
+      return (next as typeof prev).map((sh,i)=>sh===prev[i]?sh:stampUpdatedAt(sh));
+    });
+    // 옛 배열은 비운다 — 이관됐거나(신발에 있음) 고아(신발 없음)라 더 볼 일이 없다.
+    setProgState(prev=>prev?{...prev,retiredShoes:[]}:prev);
+    if(orphanCount>0){
+      reportIssue('은퇴 기록 이관: 짝 없는 기록 폐기(신발이 이미 삭제됨)',
+        new Error(`orphaned=${orphanCount}`));
+    }
+    // shoes 는 setShoes(prev=>…) 로만 읽으므로 의존성이 아니다(불필요한 재실행 방지).
+  },[bootState,progState?.retiredShoes]);
+
+  // ── 신발 마일리지 최고수위 (AUDIT 3 D-4) ──────────────────────────────────
+  // usedKm 은 런 목록에서 매번 다시 계산하는 파생값이라, 런이 어떤 이유로든 사라지면
+  // **말없이 줄어든다.** 예전엔 그걸 아는 주체가 아무도 없었다 — 수명 링이 뒤로 감기고
+  // 교체 알림이 늦춰져도 사용자는 몰랐다.
+  //
+  // 되돌리지는 않는다(무엇이 옳은지 앱은 모른다 — 삭제가 정당했을 수도 있다).
+  // **조용하지 않게** 만드는 것이 목적이다: 도달했던 최대치를 기록해 두고, 설명되지 않는
+  // 감소가 생기면 한 번 알린 뒤 그 값으로 다시 기준을 잡는다(같은 일로 계속 나무라지 않는다).
+  // 삭제처럼 정당한 감소는 deleteRun 이 수위를 미리 내려 여기 걸리지 않는다.
+  useEffect(()=>{
+    if(bootState!=='ready') return;
+    const drops=detectMileageDrops(shoes as any,runs as any);
+    if(drops.length){
+      const first=drops[0];
+      showToast({message:drops.length===1
+        ?`${first.shoeName}의 기록 ${first.missingKm.toFixed(1)}km 가 보이지 않아요`
+        :`신발 ${drops.length}켤레의 기록 일부가 보이지 않아요`});
+      reportIssue('마일리지 감소 감지',new Error(JSON.stringify(drops.slice(0,5))));
+      // 재기준 — 알렸으니 이 감소는 소비됐다. 다음에 또 줄면 그때 다시 알린다.
+      setShoes(prev=>prev.map(sh=>{
+        const d=drops.find(x=>x.shoeId===String(sh.id));
+        return d?stampUpdatedAt({...sh,usedKmHighWater:d.currentKm}):sh;
+      }));
+      return;
+    }
+    // 수위 상승 — 바뀐 신발이 없으면 **원본 배열을 그대로** 돌려줘 재렌더를 만들지 않는다.
+    setShoes(prev=>{
+      let changed=false;
+      const next=prev.map(sh=>{
+        const r=raiseHighWater(sh,runs as any);
+        if(r===sh) return sh;
+        changed=true;
+        return stampUpdatedAt(r);
+      });
+      return changed?next:prev;
+    });
+  },[bootState,shoes,runs]);
+
   // 부팅 폴백 캐시(cache_shoes_v1/cache_runs_v1) 상시 갱신(디바운스). 기존엔 initUser 의
   // 서버 fetch 성공 직후에만 캐시를 썼다 — 그 뒤 신발/런 mutation(추가/편집/삭제/동기 화해)이
   // 캐시에 반영되지 않아, 오프라인 재부팅 시 *마지막 fetch 시점*의 낡은 데이터만 보였다.
@@ -633,7 +777,7 @@ function Main(){
         await markPushPrimed();
         showDialog(
           '알림을 켤까요?',
-          '러닝화 교체 시기, 주간 목표 달성, 러닝 리마인더를 딱 필요한 때에만 알려드려요. 광고성 알림은 보내지 않아요.',
+          '정해둔 시각에 러닝 리마인더를 보내드려요. 러닝화 교체 시기·주간 목표는 앱을 열 때 안내해요. 광고성 알림은 보내지 않아요.',
           [
             {text:'나중에',style:'cancel'},
             {text:'알림 받기',onPress:()=>{void primePushPermission();}},
@@ -699,7 +843,10 @@ function Main(){
     setBootState('loading');
     try{
     let did=await AsyncStorage.getItem('device_id');
-    if(!did){did='sl_'+Date.now()+'_'+Math.random().toString(36).substr(2,9);await AsyncStorage.setItem('device_id',did);}
+    if(!did){did='sl_'+Date.now()+'_'+Math.random().toString(36).slice(2,11);await AsyncStorage.setItem('device_id',did);}
+    // 서버 시계 보정값 복원(AUDIT 3 D-2) — 이후 모든 레코드 스탬프가 이 값을 쓴다.
+    // 실패해도 보정 없이(offset 0) 예전과 똑같이 동작한다.
+    await loadClockOffset();
     // audit a1: 로컬 스토리지 스키마 마이그레이션(1회). 이전 빌드의 캐시 신발/런 레코드엔
     // updatedAt 이 없어 클라우드 '최신 우선' 머지가 무력했다 — 부재 레코드에 updatedAt 을
     // 시드한다. 멱등·비파괴이며, 실패해도 내부에서 스킵+로그하므로 부팅을 막지 않는다.
@@ -770,7 +917,9 @@ function Main(){
   // 클라우드 동기(pull→merge→push)를 재호출한다. 미로그인이면 runCloudSync 가 no-op. lastSyncAt
   // 칩은 runCloudSync 가 갱신한다. 실패는 던지지 않고 조용히 무시(스피너만 내림 — 비차단).
   async function refreshData(){
-    try{await runCloudSyncRef.current();}catch{/* 오프라인/실패 — 화면 데이터 유지(비차단) */}
+    // 사용자가 직접 당긴 새로고침은 최소 간격을 무시한다(AUDIT 2 I-2) — 명시적 요청에
+    // 아무 일도 안 일어나면 고장 난 것으로 보인다.
+    try{await runCloudSyncRef.current({force:true});}catch{/* 오프라인/실패 — 화면 데이터 유지(비차단) */}
   }
 
   async function addShoe(name:string,maxKm:number,startKm:number,date:string,priceKrw?:number){
@@ -867,7 +1016,7 @@ function Main(){
   // localId(genRunId)가 런의 영구 id다 — 서버 재키잉이 없으므로 머지 키가 안정적이다.
   async function addRun(shoeId:string,km:number,date:string,memo:string,source:string,duration?:number,cadence?:number,route?:string,location?:string,heart_rate?:number,elevationM?:number,calories?:number){
     const timeStr=nowTimeLabel();
-    const stampedAt=Date.now();
+    const stampedAt=syncNowMs(); // AUDIT 3 D-2 — 서버 보정 시계(병합 LWW 기준)
     const localId=genRunId(stampedAt);
     // 완주 런 레코드 — 모든 필드(source/location/heart_rate 포함)를 담아 Firestore 정본에
     // 유실 없이 올린다(이전엔 일부 필드가 REST 왕복으로만 보존됐다). updatedAt 으로 머지 최신 우선.
@@ -915,7 +1064,7 @@ function Main(){
   // 영속은 캐시 + cloudSync(Firestore push)가 담당한다(REST PATCH 제거).
   async function editRun(id:string,fields:{shoe_id?:string;km?:number;run_date?:string;duration?:number}){
     const sid=String(id);
-    const editedAt=Date.now();
+    const editedAt=syncNowMs(); // AUDIT 3 D-2
     setRuns(prev=>prev.map(r=>String(r.id)===sid?stampUpdatedAt({...r,...fields},editedAt):r));
     // 부팅캐시 즉시 갱신(#9): 캐시는 800ms 디바운스라 편집 후 그 안에 종료/크래시되면 편집이
     // 유실(옛 값으로 부팅)된다. persistRunToCache 는 id 로 upsert(교체)하므로 편집본을 즉시 durable
@@ -936,7 +1085,7 @@ function Main(){
     }
     if(meta.memo!==undefined){
       const memo=meta.memo.trim();
-      const editedAt=Date.now();
+      const editedAt=syncNowMs(); // AUDIT 3 D-2
       setRuns(prev=>prev.map(r=>String(r.id)===sid?stampUpdatedAt({...r,memo},editedAt):r));
       const target=runs.find(r=>String(r.id)===sid);
       if(target)await persistRunToCache(stampUpdatedAt({...target,memo},editedAt));
@@ -966,6 +1115,19 @@ function Main(){
     // 로컬-퍼스트 삭제: 라이브 제거 + 묘비(cloudSync 전파) + 사이드키 정리. 영속은 cloudSync 담당.
     setRuns(prev=>prev.filter(r=>String(r.id)!==sid));
     if(target)addRunTombstone(target);
+    // AUDIT 3 D-4: 삭제는 **정당한 감소**다 — 그만큼 최고수위도 함께 내린다.
+    // 안 내리면 다음 계산에서 '설명되지 않는 감소'로 잡혀 지울 때마다 경고가 뜬다.
+    if(target){
+      const delKm=typeof target.km==='number'?target.km:parseFloat(String(target.km));
+      const shoeId=String(target.shoe_id??'');
+      if(Number.isFinite(delKm)&&delKm>0&&shoeId){
+        setShoes(prev=>prev.map(sh=>{
+          if(String(sh.id)!==shoeId) return sh;
+          const next=lowerHighWater(sh,delKm);
+          return next===sh?sh:stampUpdatedAt(next);
+        }));
+      }
+    }
     // 부팅캐시에서도 즉시 제거(묘비 필터와 별개로 캐시 자체를 깔끔히 — 800ms 디바운스 의존 제거).
     await persistRunCacheRemove(sid);
     await AsyncStorage.removeItem('route_'+sid);
@@ -978,6 +1140,20 @@ function Main(){
     await AsyncStorage.removeItem('gapTrack_'+sid);
     // 오늘의 한 컷 사이드카(2026-07-05 추가)도 정리 — 없으면 삭제된 런의 사진 URI 가 영구 고아.
     await AsyncStorage.removeItem('runphoto_'+sid);
+    // AUDIT 3 D-3 — **클라우드 상세도 지운다.** 예전엔 로컬만 지우고 서버의 GPS 경로·심박·
+    // 스플릿은 그대로 뒀다(삭제 API 자체가 없었다). 탈퇴하지 않는 한 영구히 남았다.
+    // 실패해도 삭제 흐름을 막지 않되 **큐에 적어 다음 스윕에서 재시도**한다 — 오프라인·
+    // 미로그인에서 지운 런의 경로가 영영 안 지워지는 것을 막는 유일한 장치다(D-5의 마커
+    // 정리도 큐가 함께 처리한다).
+    try{
+      const port=cloudPortRef.current;
+      if(port.deleteRunDetail) await port.deleteRunDetail(sid);
+      else await enqueueDetailDeletion(sid);
+      await AsyncStorage.removeMany(['detail_pushed_'+sid,'detail_absent_'+sid]);
+    }catch(e){
+      reportIssue('cloud runDetail 삭제 실패 — 큐에 남겨 재시도',e);
+      await enqueueDetailDeletion(sid);
+    }
     if(target)showToast({message:'러닝 기록 삭제됨'});
   }
 
@@ -1016,7 +1192,7 @@ function Main(){
   // bumpSettingsTs: 사용자가 설정을 바꿀 때마다 수정 시각을 올린다 — 클라우드 병합
   // last-write-wins + 동기 왕복 중 편집 클로버 가드(applyBackupPayload)의 판정 기준.
   const bumpSettingsTs=()=>{
-    const ts=Date.now();
+    const ts=syncNowMs(); // AUDIT 3 D-2 — 설정 LWW 도 같은 기준을 쓴다
     settingsTsRef.current=ts;setSettingsTs(ts);void saveSettingsUpdatedAt(ts);
   };
   const changeUnit=(u:Unit)=>{setUnit(u);void saveUnit(u);bumpSettingsTs();};
@@ -1044,9 +1220,12 @@ function Main(){
   // serializeBackup→RN Share로 내보낸다.
   // audit a2: 묘비를 라이브 레코드 뒤에 합류시켜 동기(mergeCloudData)가 삭제를 전파하게 한다.
   // 라이브 배열은 묘비-free 이고 한 id 가 양쪽에 동시에 있지 않으므로 합집합이 깨끗하다.
+  // AUDIT 3 D-1: 묘비는 **껍데기로, 기한 안의 것만** 싣는다. 예전엔 지운 레코드 전체가
+  // 영구 보존돼 백업 문서가 단조 증가했고, 1MiB 벽에 닿으면 동기가 통째로 멎는 구조였다.
+  // 신발 묘비는 name 을 남긴다 — 지난 기록의 신발 이름 표시에 실제로 쓰인다(buildNameById).
   const backupData={
-    shoes:[...shoes,...tombstones.shoes],
-    runs:[...runs,...tombstones.runs],
+    shoes:[...shoes,...compactTombstones(tombstones.shoes,Date.now(),SHOE_TOMBSTONE_KEEP)],
+    runs:[...runs,...compactTombstones(tombstones.runs,Date.now())],
     // 신체지표(체중·나이·성별·안정시심박)도 포함 — 재설치·기기변경 시 심박존(Tanaka/
     // Karvonen)·칼로리·TRIMP 가 틀어지지 않게(유실 0). updated_at 은 병합 LWW 판정 기준.
     settings:{unit,goal_weekly_km:goalWeeklyKm,alerts,weight_kg:weightKg,age,sex,rest_hr:restHR,updated_at:settingsTs},
@@ -1171,6 +1350,14 @@ function Main(){
   // (mergeCloudData)이라 어느 쪽 레코드도 버리지 않는다. 동시 실행은 ref 락으로 막는다.
   // REST 의존은 Phase 5(task#5)에서 제거 — 이 단계는 Firestore 를 정본으로 '켜는' 것.
   const cloudSyncBusyRef=useRef(false);
+  // 마지막으로 **성공한** 동기의 시각과 그때의 데이터 시그니처(AUDIT 2 I-2).
+  // busy 락은 "겹치지 마라"이지 "자주 하지 마라"가 아니다 — 앱을 껐다 켜기만 반복해도
+  // 전환마다 1 읽기 + 1 쓰기가 나갔다. 아래 shouldSkipCloudSync 가 그 낭비만 걷어낸다.
+  const lastCloudSyncRef=useRef<{at:number;sig:string}>({at:0,sig:''});
+  // 경로가 클라우드 사이드카(runDetails/{runId})에 확실히 올라간 런 id 집합. 이 런들만
+  // 동기 페이로드에서 route 를 덜어낸다(stripSyncedRoutes) — 백업 문서 1MiB 상한 방어.
+  // 비어 있으면 아무것도 덜어내지 않는다(안전한 기본값). 상세 스윕 뒤에 갱신된다.
+  const cloudRouteIdsRef=useRef<Set<string>>(new Set());
   // 머지된 payload 로 내 월간 랭킹 엔트리를 계산·발행한다. 점수는 live 레코드 기준,
   // 표시정보(닉네임/랭크/색/장착 타이틀)는 현재 progression 파생. best-effort(throw 흡수).
   // ⚠️ 2026-07-29 감사로 **플래그 오프**. 랭킹 화면 진입점이 없는데도 닉네임·월간 거리가
@@ -1197,34 +1384,135 @@ function Main(){
       });
     }catch(e){reportIssue('publish ranking',e);}
   };
-  const runCloudSync=async()=>{
+  const runCloudSync=async(opts?:{force?:boolean})=>{
     // 부팅 캐시(로컬 신발/런)가 hydrate 되기 전에는 절대 동기하지 않는다(데이터 유실 가드).
     // Firebase auth 복원이 initUser 의 캐시 로드보다 먼저 끝나는 일이 잦은데, 그때 동기가
     // 빈 로컬(runs=[])을 remote 와 머지하면 *아직 클라우드에 안 올라간 로컬-전용 런*이 머지
     // 입력에서 빠지고, applyBackupPayload + 부팅캐시 영속이 그 런을 덮어써 영구 삭제한다.
     // bootState!=='ready' 가드가 이 레이스를 차단한다(ready 시 runs/shoes 가 같은 배치로 hydrate).
     if(cloudSyncBusyRef.current||!authUser?.uid||bootState!=='ready') return;
+    // 최소 간격 가드(AUDIT 2 I-2). **로컬 데이터가 그대로일 때만** 건너뛴다 —
+    // 바뀐 게 있으면 간격과 무관하게 즉시 올린다(유실 위험을 만들지 않는 게 우선이다).
+    // 그래서 이 가드가 실제로 걷어내는 건 '앱 전환만 반복하는' 헛도는 동기뿐이다.
+    if(shouldSkipCloudSync(opts?.force,cloudDataSig,lastCloudSyncRef.current,Date.now())) return;
+    // 계정 전환 오염 차단(2026-07-31 AUDIT 1). 로컬 캐시에는 소유자 표시가 없었고,
+    // 로그아웃은 신발·런 상태도 캐시도 비우지 않는다(탈퇴만 비운다). 그래서 한 기기에서
+    // A 로그아웃 → B 로그인 하면 **메모리에 남은 A 의 기록이 B 계정으로 병합·업로드**됐다.
+    // 캐시 주인이 다르면 동기를 통째로 건너뛴다 — 올리지도 내리지도 않는다.
+    // 지우지는 않는다: 오프라인에서 쌓인 미동기 기록이 로그아웃 한 번에 사라지면 안 된다
+    // (Iron Law). 완전한 계정별 캐시 격리는 저장소 구조 변경이라 별도 승인 대상이다.
+    const ownership=await checkCacheOwner(authUser.uid);
+    if(ownership==='other'){
+      reportIssue('cloud sync 차단: 이 기기 캐시는 다른 계정 것이다(계정 전환 오염 방지)',
+        new Error('cache owner mismatch'));
+      return;
+    }
     cloudSyncBusyRef.current=true;
     try{
       const port=cloudPortRef.current;
       // P1-4: 원자 동기(pull→merge→push 를 한 트랜잭션) 우선 — 동시-기기 클로버 방지.
       // 미구현 포트(테스트 스텁)면 비원자 pull→merge→push 로 폴백한다(동작 동일, 경합만 노출).
       let merged:BackupPayload;
+      // 올릴 때만 경로를 덜어낸다 — 사이드카에 확실히 올라간 런 한정(백업 문서 1MiB 방어).
+      // 내보내기용 backupData 자체는 건드리지 않는다(사용자 백업 파일은 자기 완결적이어야 한다).
+      const syncPayload=stripSyncedRoutes(backupData,cloudRouteIdsRef.current);
+      // ── 3단계: 확인된 뒤에만 덩어리를 비운다 ────────────────────────────
+      // 판정 기준은 **병합 결과(local ∪ remote)** 다. 로컬만 보면 새로 설치한 기기가
+      // "비었으니 다 올라갔다"로 오판해 원격 기록을 지운다. 병합 결과의 모든 레코드가
+      // 하위 문서에 올라간 것이 확인돼야 덩어리가 잉여가 된다 — 새 기기는 첫 동기에
+      // 받아서 미러링하고 다음 동기에서 비운다(스스로 낫는 순서).
+      // 빈 배열을 **명시적으로** 쓴다: 키를 지우면 합집합 병합이 원격의 옛 배열을 되살린다.
+      const markers=await loadMarkers();
+      // 병합 결과의 레코드를 따로 잡아둔다 — 덩어리를 비우면 merged 에서 사라지므로,
+      // 화면에 반영할 목록은 여기서 가져와야 원격에만 있던 기록을 잃지 않는다.
+      let mergedRecords:{runs:unknown[];shoes:unknown[];medals:unknown[]}={runs:[],shoes:[],medals:[]};
+      const mergeFn=(l:BackupPayload,r:BackupPayload|null):BackupPayload=>{
+        const m=mergeCloudData(l,r);
+        mergedRecords={
+          runs:(m.runs??[]) as unknown[],
+          shoes:(m.shoes??[]) as unknown[],
+          medals:((m as {medals?:unknown[]}).medals??[]) as unknown[],
+        };
+        return isPayloadMirrored(m as any,markers)?(stripRecordArrays(m as any) as BackupPayload):m;
+      };
       if(port.syncMerge){
-        merged=await port.syncMerge(backupData,mergeCloudData);
+        merged=await port.syncMerge(syncPayload,mergeFn);
       }else{
         const remote=await port.pull();
-        merged=mergeCloudData(backupData,remote);
+        merged=mergeFn(syncPayload,remote);
         await port.push(merged);
       }
-      applyBackupPayload(merged);
+      // ── 2단계: 읽기를 하위 문서 델타로 ──────────────────────────────────
+      // 덩어리 병합 결과 위에 **하위 문서에서 바뀐 것만** 얹는다. 합집합이라 조회가
+      // 비거나 실패해도 화면의 기록이 사라지지 않고, 로컬에만 있는(아직 안 올라간)
+      // 러닝도 그대로 남는다. 경로는 로컬 것을 지킨다 — 하위 문서엔 route 가 없으므로
+      // 그냥 덮으면 동기 한 번에 모든 지도가 사라진다(mergePulled 참조).
+      let applied:BackupPayload=merged;
+      try{
+        const pulled=await pullRecords(cloudPortRef.current);
+        // 레코드 병합의 기준은 **병합 결과**다(merged 가 아니라) — 3단계에서 덩어리를
+        // 비우면 merged 에는 레코드가 없기 때문이다. 거기에 원격 델타를 얹는다.
+        applied={
+          ...merged,
+          shoes:mergePulled(mergedRecords.shoes as any,(pulled.records.shoes??[]) as any) as any,
+          runs:mergePulled(mergedRecords.runs as any,(pulled.records.runs??[]) as any) as any,
+          ...(mergedRecords.medals.length||pulled.records.medals?.length
+            ?{medals:mergePulled(mergedRecords.medals as any,(pulled.records.medals??[]) as any)}
+            :{}),
+        } as BackupPayload;
+      }catch(e){
+        // 델타 조회 실패는 동기 전체를 실패로 만들지 않는다 — 덩어리 병합 결과로 간다.
+        reportIssue('recordSync 델타 조회',e);
+      }
+      applyBackupPayload(applied);
       setLastSyncAt(Date.now());
+      // 다음 호출의 최소 간격 판정 기준(AUDIT 2 I-2). 성공했을 때만 기록한다 —
+      // 실패를 기록하면 오프라인 구간에서 재시도까지 막혀 유실 위험이 생긴다.
+      lastCloudSyncRef.current={at:Date.now(),sig:cloudDataSig};
+      // 동기가 성공했으면 이 장치 캐시의 주인을 지금 계정으로 등록한다(멱등).
+      // 표시가 없던 기존 사용자도 첫 성공 동기에서 자연히 주인이 된다.
+      void claimCacheOwner(authUser.uid);
       // Phase 3: 동기 직후 내 월간 랭킹 엔트리를 Firestore 에 발행(best-effort·논블로킹).
       // 점수는 머지된 live 레코드로 클라이언트가 계산하고, 표시정보(닉네임/랭크/타이틀)는
       // 현재 progression 에서 파생한다. 실패해도 동기 흐름·데이터엔 영향 없음(throw 흡수).
       // ⚠️ 현재 LEADERBOARD_PUBLISH_ENABLED=false 라 이 호출은 즉시 반환한다(발행 없음).
       void publishMyRankingNow(merged);
-    }catch(e){reportIssue('cloud sync',e);}
+      // ── 소셜: 공개 프로필 발행(동의했을 때만) ──────────────────────────
+      // 개인 저장소에서 **화이트리스트로 추린 것만** 별도 컬렉션에 올린다. 동의가
+      // 없으면(미결정 포함) 아무것도 안 올리고, 껐으면 올라가 있던 것을 **내린다** —
+      // "안 쓰는 것"이 아니라 "내리는 것"이어야 껐을 때 실제로 안 보인다.
+      // 실패해도 러닝 동기에는 영향이 없다(비차단).
+      void (async()=>{
+        try{
+          const visibility=await loadVisibility();
+          const profile=buildPublicProfile({
+            visibility,
+            nickname:profileName||DEFAULT_PROFILE_NAME,
+            shoes:liveRecords(applied.shoes as any) as any,
+            runs:liveRecords(applied.runs as any) as any,
+            nowMs:Date.now(),
+          });
+          await publishProfile(cloudPortRef.current as any,profile);
+        }catch(e){reportIssue('공개 프로필 발행',e);}
+      })();
+      // AUDIT 3 D-1: 동기 성공 — 실패 카운터를 되돌린다(회복되면 조용해진다).
+      reportSyncResult(true);
+      // ── 1단계 이중 쓰기(설계: docs/design/2026-08-01-cloud-data-model.md) ──
+      // 덩어리 쓰기가 **성공한 뒤에** 레코드를 하위 문서로도 미러링한다. 순서가 중요하다 —
+      // 미러링이 실패해도 덩어리는 온전하므로 유실이 없고, 실패한 종류는 마커를 안 올려
+      // 다음 동기에 그대로 재시도된다. 읽기는 아직 덩어리라 이 단계에서는 화면이 안 바뀐다.
+      void mirrorRecords(cloudPortRef.current, {
+        runs: applied.runs as Record<string, unknown>[],
+        shoes: applied.shoes as Record<string, unknown>[],
+        medals: (applied as {medals?: Record<string, unknown>[]}).medals ?? [],
+      }).catch(e=>reportIssue('recordSync 미러링',e));
+    }catch(e){
+      reportIssue('cloud sync',e);
+      // AUDIT 3 D-1: **동기 실패를 사용자에게 알린다.** 예전엔 Crashlytics 로만 갔다 —
+      // 백업이 멎은 채 몇 주가 지나고, 기기를 바꿀 때 그제야 기록이 없다는 걸 알았다.
+      // 임계 3회·쿨다운 1시간이라 지하철 같은 일시적 오프라인으로는 뜨지 않는다.
+      reportSyncResult(false);
+    }
     finally{cloudSyncBusyRef.current=false;}
   };
   // 항상 최신 클로저를 가리키는 ref — effect 가 stale backupData/applyBackupPayload 를 잡지 않게.
@@ -1268,7 +1556,10 @@ function Main(){
   useEffect(()=>{
     if(!cloudEnabled) return;
     const sub=AppState.addEventListener('change',(next)=>{
-      if(next==='active'||next==='background') void runCloudSyncRef.current();
+      // 'background'(이탈 직전 flush)는 최소 간격을 무시한다 — 이 호출의 목적이 '유실 방지'라
+      // 아끼면 안 된다. 'active'(복귀)는 타 기기 변경 pull 이 목적이라 간격 가드를 받는다
+      // (로컬이 그대로면 60초 안에는 다시 안 읽는다 — AUDIT 2 I-2).
+      if(next==='active'||next==='background') void runCloudSyncRef.current({force:next==='background'});
     });
     return ()=>sub.remove();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1367,7 +1658,10 @@ function Main(){
   })();
   useEffect(()=>{
     if(!widgetShoeJson||(globalThis as any).__KEEGO_CAPTURE__) return;
-    watchSession.updateWidgetShoe(JSON.parse(widgetShoeJson));
+    // 플랫폼 중립 통로(lib/homeWidget) 경유 — iOS 는 기존 WatchSessionModule 경로를 그대로
+    // 쓰고, 안드로이드는 KeegoWidgetModule 로 간다. 예전엔 watchSession(iOS 전용)을 직접
+    // 불러서 **안드로이드에선 위젯이 통째로 no-op** 이었다(2026-07-31 동등성 작업).
+    updateHomeWidgetShoe(JSON.parse(widgetShoeJson));
   },[widgetShoeJson]);
   // ② 워치 단독 러닝 완주 수신 → addRun(로컬-퍼스트 저장 → 신발 거리 자동 차감 →
   //    cloudSync 가 Firestore 로 push). 메시지+큐 이중 배달이 가능하므로 runId 를 영속
@@ -1562,6 +1856,9 @@ function Main(){
         if(Date.now()-last<24*3600*1000)return;
         await syncRunDetails((runsForHrRef.current||[]) as {id:string|number}[],cloudPortRef.current,{max:30});
         await AsyncStorage.setItem(DETAIL_SWEEP_AT_KEY,String(Date.now()));
+        // 스윕 직후 '경로가 사이드카에 올라간 런'을 다시 셈해 둔다 — 다음 클라우드 동기부터
+        // 그 런들의 route 를 본문에서 덜어내 백업 문서가 점진적으로 줄어든다.
+        if(alive)cloudRouteIdsRef.current=await runsWithCloudRoute(((runsForHrRef.current||[]) as {id:string|number}[]).map(r=>r.id));
       }catch{/* 비차단 — 다음 기회 */}
     };
     const t=setTimeout(()=>{void sweep();},15000);
@@ -1638,7 +1935,11 @@ function Main(){
   // ── 은퇴 키프세이크 컨텍스트(Slice B) ────────────────────────────────────────
   // 영속된 은퇴 레코드(Hall of Shoes 소스) + 진척 컨텍스트(요약/등급 판정용). buildContext
   // 는 순수·읽기 전용(런/신발 불변). progState 미로드 시 빈 레코드로 안전 동작.
-  const retiredRecords:RetiredShoeRecord[]=progState?.retiredShoes??[];
+  // 은퇴 기록의 **유일한 출처는 신발**이다(2026-08-01 결정 A). 예전엔 progression 이
+  // 따로 들고 있어 같은 신발을 두 곳이 설명했다 — 명예의 전당이 어느 쪽을 봐야 하는지
+  // 늘 헷갈렸고, 한쪽만 지워지는 경로가 생기면 조용히 어긋난다. 이제 신발 하나가 답한다.
+  // 삭제한 신발은 여기서 자연히 빠진다(= 명예의 전당에서도 사라진다 — 결정 A).
+  const retiredRecords:RetiredShoeRecord[]=useMemo(()=>retirementRecordsFromShoes(shoes as any),[shoes]);
   // 보관함 목록: retired(보관) 처리됐지만 명예의 전당(키프세이크) 기록이 없는 신발 = 단순
   // 보관 신발. 명예의 전당 신발은 박물관에 있으므로 제외한다. 마이 탭 '신발 보관함'이 소비.
   const museumShoeIds=new Set(retiredRecords.map(r=>r.shoeId));
@@ -1652,15 +1953,13 @@ function Main(){
   // shoeId 기준 UPSERT — 신발당 1개를 유지하되, 보관 복원 후 재은퇴 시 km/등급을 최신으로
   // 교체한다(stale 레코드 방지). run/shoe 상태는 건드리지 않는다.
   const onRetiredKeepsake=(record:RetiredShoeRecord)=>{
-    setProgState(prev=>{
-      const base=prev??{earnedTitles:[],equippedTitleKey:null,seenUnlocks:[],retiredShoes:[],points:0};
-      const idx=base.retiredShoes.findIndex(r=>r.shoeId===record.shoeId);
-      if(idx>=0){
-        const next=base.retiredShoes.slice();
-        next[idx]=record; // 최신 은퇴 레코드로 교체(여전히 신발당 1개)
-        return {...base,retiredShoes:next};
-      }
-      return {...base,retiredShoes:[...base.retiredShoes,record]};
+    // 신발 문서에 은퇴 스냅샷을 붙인다(신발당 1개, 재은퇴 시 교체). 영속·동기는 신발
+    // 레코드 경로가 그대로 담당하므로 별도 저장이 필요 없다 — 진실이 한 곳이라는 게
+    // 이 구조의 값어치다(결정 A).
+    setShoes(prev=>{
+      const next=setShoeRetirement(prev as any,record) as typeof prev;
+      if(next===prev) return prev;
+      return next.map(sh=>String(sh.id)===String(record.shoeId)?stampUpdatedAt(sh):sh);
     });
   };
 
@@ -1710,6 +2009,12 @@ function Main(){
   // 의 기본 표시는 Alert 라 FCM 권한과 무관하게 동작한다(비차단). 예외는 삼켜 흐름을 막지 않는다.
   presentDueRef.current=()=>{
     try{
+      // 로그인 게이트를 통과하고 데이터가 준비된 뒤에만 띄운다(2026-07-30 Android 실측 발견).
+      // 안 그러면 **로그인 화면 위로** 알림이 뜬다 — 에뮬레이터 첫 실행에서 아직 가입도
+      // 하지 않은 사용자에게 "오늘 달릴 시간이에요", "이번 주 목표의 0%를 달렸어요"가
+      // 연달아 떴다. 기록이 0인 사람에게 진척을 말하는 것이라 내용도 틀렸고, 로그인 버튼
+      // 위를 덮어 탭까지 가로챈다. 게이트 통과 전에는 알릴 '내 기록'이라는 것 자체가 없다.
+      if(!authUser?.uid||bootState!=='ready')return;
       const intents=dueNotifications(buildNotifState(),new Date());
       const fresh=intents.filter(i=>!presentedNotifKeys.current.has(i.key));
       if(fresh.length===0)return;
@@ -1899,6 +2204,12 @@ function Main(){
   }
   if(authUser===null){
     return <LoginScreen cloudPort={cloudPortRef.current} onSignedIn={(u)=>setAuthUser({uid:u.uid})}/>;
+  }
+  // 필수 업데이트 게이트(AUDIT 2 I-3) — 부팅 성공 여부보다 **먼저** 검사한다.
+  // 막아야 할 만큼 심각한 버그라면 부팅 자체가 깨져 있을 수 있는데, 그때 BootError 만
+  // 뜨면 사용자는 무엇을 해야 할지 알 수 없다. 이 게이트가 그 위에 온다.
+  if(forceUpdateCfg){
+    return <ForceUpdateScreen config={forceUpdateCfg}/>;
   }
   // 콜드 백엔드 부팅: 스켈레톤(로딩) / 재시도 카드(에러). 빈-신규는 'ready'라 여기
   // 걸리지 않고 아래 온보딩/홈으로 간다(fetch 실패와 빈 데이터의 구분).

@@ -268,6 +268,52 @@ describe('firebaseCloudPort (Firebase 클라우드 포트)', () => {
     expect((pulled!.shoes as any[]).map(s => s.id).sort()).toEqual(['A', 'B']);
   });
 
+  // ── 무변경 쓰기 생략 (AUDIT 2 I-4) ─────────────────────────────────────────
+  // 동기는 앱 전환·복귀마다 돌지만 그중 대부분은 바뀐 게 없다. 그때마다 사용자의 신발·런
+  // 전체가 든 문서를 통째로 다시 올리고 있었다. 결과 문서만 봐서는 판별이 안 되므로
+  // (써도 안 써도 내용이 같다) **실제 쓰기 횟수**를 센다(jest.setup 의 __writeCount).
+  const writeCount = (): number =>
+    (firestoreMock as unknown as {__writeCount: () => number}).__writeCount();
+
+  test('syncMerge 는 병합 결과가 원격과 같으면 쓰지 않는다', async () => {
+    const port = createFirebaseCloudPort();
+    await port.signIn('anonymous');
+    const payload: BackupPayload = {shoes: [{id: 'A'}], runs: [], settings: {u: 'km'}};
+
+    await port.syncMerge!(payload, unionMerge); // 첫 동기 — 원격이 없으니 쓴다
+    const afterFirst = writeCount();
+    expect(afterFirst).toBeGreaterThan(0);
+
+    // 같은 로컬로 두 번 더. 병합 결과가 원격과 동일하므로 쓰기가 늘지 않아야 한다.
+    await port.syncMerge!(payload, unionMerge);
+    await port.syncMerge!(payload, unionMerge);
+    expect(writeCount()).toBe(afterFirst);
+  });
+
+  test('바뀐 게 있으면 쓴다 — 생략이 변경을 삼키지 않는다', async () => {
+    const port = createFirebaseCloudPort();
+    await port.signIn('anonymous');
+
+    await port.syncMerge!({shoes: [{id: 'A'}], runs: [], settings: {}}, unionMerge);
+    const afterFirst = writeCount();
+
+    // 런이 하나 추가됐다 → 반드시 올라가야 한다.
+    await port.syncMerge!({shoes: [{id: 'A'}], runs: [{id: 'r1'}], settings: {}}, unionMerge);
+    expect(writeCount()).toBeGreaterThan(afterFirst);
+
+    const pulled = await port.pull();
+    expect((pulled!.runs as any[]).map(r => r.id)).toContain('r1');
+  });
+
+  test('첫 백업(원격 없음)은 결과가 로컬과 같아도 반드시 쓴다', async () => {
+    const port = createFirebaseCloudPort();
+    await port.signIn('anonymous');
+    const before = writeCount();
+    await port.syncMerge!({shoes: [], runs: [], settings: {}}, unionMerge);
+    expect(writeCount()).toBeGreaterThan(before);
+    expect(await port.pull()).not.toBeNull();
+  });
+
   test('syncMerge 는 경합 창을 닫는다: pull 직후 들어온 원격 쓰기를 덮어쓰지 않는다', async () => {
     const port = createFirebaseCloudPort();
     await port.signIn('anonymous');

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 위젯 목록(갤러리) 미리보기용 정적 링.
+     실제 위젯은 ShoeWidgetProvider 가 Canvas 로 그린 비트맵으로 이 자리를 덮어쓴다
+     (setImageViewBitmap). 미리보기는 코드가 돌지 않으므로 정적 그림이 필요하다 —
+     없으면 위젯 목록에 **빈 검은 사각형**만 보여서 깨진 것처럼 읽힌다.
+     iOS 도 갤러리에는 KeegoShoe.sample 을 쓴다(같은 규약).
+     잔여 82%(118/650km 샘플)를 파란 계열로 — wearTier '최상' 구간 색. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="100dp"
+    android:height="100dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+
+    <!-- 트랙(흰색 10%) -->
+    <path
+        android:strokeColor="#1AFFFFFF"
+        android:strokeWidth="9"
+        android:pathData="M50,5.5 A44.5,44.5 0 1,1 49.99,5.5" />
+
+    <!-- 진행 아크: 12시에서 시계방향 82% -->
+    <path
+        android:strokeColor="#79B7F6"
+        android:strokeWidth="9"
+        android:strokeLineCap="round"
+        android:pathData="M50,5.5 A44.5,44.5 0 1,1 12.6,72.9" />
+</vector>

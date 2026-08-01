@@ -19,6 +19,8 @@ class MainApplication : Application(), ReactApplication {
         PackageList(this).packages.apply {
           // Packages that cannot be autolinked yet can be added manually here, for example:
           // add(MyReactNativePackage())
+          // 홈 위젯(활성 신발 수명 링) — 앱 내부 네이티브 모듈이라 자동 링크 대상이 아니다.
+          add(KeegoWidgetPackage())
         },
     )
   }

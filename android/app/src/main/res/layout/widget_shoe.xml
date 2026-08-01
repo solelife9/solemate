@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 홈 위젯 레이아웃 — iOS KeegoSmallView 와 같은 구성: 수명 링 · 신발명 · 사용/총 km.
+     배경은 앱 카드색(#1C1C1E, DESIGN.md 다크 팔레트). RemoteViews 는 커스텀 뷰를 못 쓰므로
+     링은 ImageView 에 비트맵으로 넣는다(ShoeWidgetProvider.ringBitmap). -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="12dp"
+    android:background="@drawable/widget_bg">
+
+    <ImageView
+        android:id="@+id/widget_ring"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:src="@drawable/widget_ring_preview"
+        android:contentDescription="러닝화 수명" />
+
+    <TextView
+        android:id="@+id/widget_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:gravity="center"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:textColor="#FFFFFF"
+        android:textSize="13sp"
+        android:textStyle="bold"
+        android:text="Pegasus 41" />
+
+    <TextView
+        android:id="@+id/widget_km"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="1dp"
+        android:gravity="center"
+        android:maxLines="1"
+        android:textColor="#9C9CA3"
+        android:textSize="10sp"
+        android:text="118 / 650km" />
+</LinearLayout>

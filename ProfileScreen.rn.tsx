@@ -477,7 +477,7 @@ export default function ProfileScreen({
       const proceed = await new Promise<boolean>((resolve) => {
         showDialog(
           '알림을 켤까요?',
-          '러닝화 교체 시기, 주간 목표 달성, 러닝 리마인더를 딱 필요한 때에만 알려드려요. 광고성 알림은 보내지 않아요.',
+          '정해둔 시각에 러닝 리마인더를 보내드려요. 러닝화 교체 시기·주간 목표는 앱을 열 때 안내해요. 광고성 알림은 보내지 않아요.',
           [
             { text: '나중에', style: 'cancel', onPress: () => resolve(false) },
             { text: '알림 받기', onPress: () => resolve(true) },
@@ -907,7 +907,12 @@ export default function ProfileScreen({
             </Pressable>
             {open === 'notif' && (
               <View style={[s.panel, s.settingBorder]} testID="notif-panel">
-                <Text style={s.panelHint}>러닝 리마인더는 매일 정시에 울려요. 교체·주간 목표는 앱을 열 때 알려드려요</Text>
+                {/* 정직 카피(2026-07-30): 이 세 가지는 발화 방식이 서로 다르다.
+                    러닝 리마인더만 OS 스케줄로 앱이 닫혀 있어도 울리고(lib/localReminder),
+                    교체·주간 목표는 앱을 열 때 계산해 보여주는 인앱 안내다(dueNotifications
+                    → presentDue). '매일'도 부정확했다 — 이미 달린 날은 건너뛴다
+                    (reminderFireDates 의 ranToday: 달린 날 저녁의 "달려볼까요?"는 신뢰를 깎는다). */}
+                <Text style={s.panelHint}>러닝 리마인더는 정해둔 시각에 울려요(달린 날은 건너뛰어요). 교체·주간 목표는 앱을 열 때 알려드려요</Text>
                 <NotifToggle
                   label="교체 임박 알림"
                   value={notifSettings.shoeReplacement}

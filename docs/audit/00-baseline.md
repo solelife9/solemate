@@ -12,13 +12,16 @@
 |---|---|
 | `npx tsc --noEmit` | **0 에러** ✅ |
 | `npm run lint` | **0 에러 / 337 경고** (허용 상한 338 — 여유 1) ⚠️ |
-| `npm test` | **247 스위트 중 1 실패** · 2567 테스트 중 **1 실패** ❌ |
-| 실패 스위트 | `__tests__/HistoryScreen.shareCard.test.tsx` — "선택기의 공유 → toDataURL PNG dataURL이 Share.share에 url로 전달된다" |
-| `npm run test:rules` | 미실행(에뮬레이터 필요) — 이번 세션 범위 밖 |
+| `npm test` | **248 스위트 · 2572 테스트 전부 통과** ✅ (2026-07-30 재측정) |
+| `npm run test:rules` | **36/36 통과** (에뮬레이터, 2026-07-30) |
 | git 워킹트리 | clean |
 
-> **Iron Law 위반 상태다.** CLAUDE.md는 "머지 전 `tsc`·`lint`·`test` 전부 통과"를 요구하는데
-> 현재 main이 red다. 재감사의 첫 항목은 이 1건이다. `MAJOR`
+> **정정(2026-07-30).** 최초 측정에서 `__tests__/HistoryScreen.shareCard.test.tsx` 1건이
+> 실패해 "Iron Law 위반 · main이 red"로 적었으나 **이는 결정적 실패가 아니라 flaky였다.**
+> 이후 연속 5회 전량 실행에서 모두 그린이었고(`--silent` 유무와 무관), 리더보드 수정
+> 이후 재측정에서도 248/2572 전부 통과했다. **main은 red가 아니다.**
+> 다만 그 스위트가 간헐적으로 깨진다는 사실 자체는 유효하다 — 워커 순서·타이밍 의존으로
+> 보이며 출시 전에 원인을 잡아야 한다. `MINOR`(상시 red 아님)
 
 ---
 
@@ -173,7 +176,16 @@ function payloadToDoc(data: BackupPayload) {
 
 > 기존 감사가 이걸 못 잡은 이유: REST에는 문서 크기 개념이 없었다. 이 결함은 전환으로 **새로 생겼다.**
 
-## 3-2. `BLOCKER` — 진입점 없는 리더보드가 개인정보를 전원 공개 컬렉션에 계속 쓴다
+## 3-2. ~~`BLOCKER`~~ **해결됨(2026-07-30, `767032e`)** — 진입점 없는 리더보드가 개인정보를 전원 공개 컬렉션에 계속 쓴다
+
+> **조치:** `lib/featureFlags.LEADERBOARD_PUBLISH_ENABLED=false` 로 발행 차단(구현·화면은
+> 삭제하지 않음), `firestore.rules` 읽기 전면 차단(`allow read: if false`), 이미 쌓인 문서
+> 전량 삭제(`firebase firestore:delete` → REST API 로 잔량 0 검증), 규칙 배포 후 라이브
+> 룰셋이 로컬 파일과 바이트 동일함까지 확인. 회귀 가드 `__tests__/leaderboardPublishFlag.test.ts`.
+> **1.1 재개봉 조건:** 진입점 복원 + 명시적 옵트인 동의 + 처리방침 제3자 공개 조항 — 셋 다.
+> 플래그만 켜면 규칙이 읽기를 막으므로 화면이 아무것도 못 읽는다(의도된 안전장치).
+>
+> 아래는 발견 당시 기록이다.
 
 - `App.tsx:1219` — 클라우드 동기가 돌 때마다 **무조건** `publishMyRankingNow(merged)` 실행.
 - 쓰는 내용: `nickname`, `rankTier`, `equippedTitle`, 월간 `distance`, `consistency`,
@@ -183,7 +195,17 @@ function payloadToDoc(data: BackupPayload) {
   `// 리더보드는 죽은 공간이다. onOpenHallOfFame 미주입이면 진척 화면이 버튼을 숨긴다.`
 - 즉 **사용자가 존재조차 모르는 기능을 위해, 동의받지 않은 닉네임+운동량이 공개 저장소에 쌓인다.**
 
-## 3-3. `BLOCKER` — 탈퇴해도 리더보드 엔트리는 영원히 남는다 (처리방침과 정면 충돌)
+## 3-3. ~~`BLOCKER`~~ **해결됨(2026-07-30, `767032e`)** — 탈퇴해도 리더보드 엔트리는 영원히 남는다
+
+> **조치:** `firestore.rules` 를 `allow delete: if signedIn() && request.auth.uid == uid` 로
+> 바꿔 본인 삭제를 허용하고, `deleteAccount` 가 최근 24개월 엔트리 경로를 순회 삭제하도록
+> 했다(읽기를 막아 목록 조회가 불가하므로 경로를 만들어 지운다 — 없는 문서 delete 는 no-op).
+> 규칙 테스트 3건 신규(본인 삭제 허용·타인 삭제 거부·비로그인 삭제 거부).
+> 참고: 기존 `if false` 의 명분이던 "순위 조작 방지"는 **원래도 작동하지 않았다** — 점수가
+> 클라이언트 계산이라 update 로 덮어쓰면 그만이었다. 삭제 금지가 막던 건 조작이 아니라
+> 파기였다. 실제 조작 방어는 1.1 의 서버 재계산 몫.
+>
+> 아래는 발견 당시 기록이다.
 
 - `firestore.rules:70` — `allow delete: if false`. **본인도 못 지운다**(주석: "리더보드 무결성").
 - `lib/firebaseCloudPort.ts:177-207 deleteAccount` — `userBackups/{uid}` + `runDetails` 하위 문서 +
@@ -194,7 +216,18 @@ function payloadToDoc(data: BackupPayload) {
 - 추가로 `docs/privacy.html`은 이 데이터가 **다른 이용자에게 공개된다**는 사실을 어디에도 고지하지 않는다
   (제3자 제공/공개 조항 없음).
 
-## 3-4. `MAJOR` — 카탈로그·신호 컬렉션 3종은 어떤 감사에도 없었다
+## 3-4. `MAJOR` — 카탈로그·신호 컬렉션 3종은 어떤 감사에도 없었다 (**미고지 수집분 해결됨** 2026-07-30, `a020663`)
+
+> **조치(고지 부분):** `search_misses`·`shoe_requests` 를 `docs/privacy.html` §2 수집 항목과
+> §3 보유기간에 추가하고, 계정 식별자와 연결된다는 사실을 별도 문단으로 고지했다(바로 앞
+> "앱 사용 기록은 계정 식별자와 연결하지 않는다" 문단과 모순되지 않도록). 공개 저장소
+> `solelife9/keego-legal` 에 푸시해 라이브 반영까지 확인(시행일 2026-07-30).
+> `docs/store-privacy-labels.md` 의 App Privacy/Play 답안에도 반영 — 초안이 "검색 기록
+> 수집 안 함"으로 적어둬 그대로 제출하면 허위 신고가 될 상태였다.
+>
+> **남은 것:** `shoes` 카탈로그 컬렉션이 **프로덕션에 존재하지 않는다**(2026-07-30 REST 조회로
+> 확인 — 루트 컬렉션은 `userBackups` 하나뿐). 원격 카탈로그 갱신 기능이 사실상 죽어 있고
+> 앱은 번들 목록만 쓴다. `lib/shoeCatalogRemote.ts` 는 24시간마다 조회하지만 받을 게 없다.
 
 전부 2026-07 신설. 기존 감사 3건은 이 존재를 모른다.
 
@@ -383,10 +416,21 @@ Android 하드웨어 뒤로가기가 이 사다리에 붙어 있지 않다 → A
 | 워치 앱 | `ios/SoleMateWatch Watch App/` `WKBackgroundModes: workout-processing` | 단독 러닝 후 폰 전송 |
 
 **앱이 완전히 종료됐을 때:**
-- **OS 스케줄 로컬 알림이 사실상 없다.** `lib/notifications.ts:177 dueNotifications`는 순수 결정 함수이고,
-  실제 표시는 `App.tsx:591-596` AppState `'active'` 전환에서 `presentDue`(커스텀 다이얼로그).
-  즉 **앱을 열어야 뜬다.** `lib/localReminder.ts:106`에 `scheduleNotificationAsync` 경로가 있으나
-  옵셔널 모듈 인터페이스 형태. `MAJOR` — 사용자는 "알림 켰는데 안 온다"고 인식한다.
+- **정정(2026-07-30). 원래 여기 "OS 스케줄 로컬 알림이 사실상 없다 `MAJOR`"라고 적었는데 틀렸다.**
+  `lib/localReminder.ts`의 `scheduleNotificationAsync` 경로는 "옵셔널 모듈 인터페이스 형태"로만
+  존재하는 게 아니라 **실제로 배선돼 동작한다** — `App.tsx:117`이 `syncRunReminder`를 import 하고
+  `:1038-1039`가 호출한다(설정·시각·오늘 런 여부가 바뀔 때마다 7일치 원샷 체인 갱신).
+  옵셔널 require 는 jest·시뮬처럼 네이티브가 없는 환경을 위한 방어이지 미배선의 증거가 아니었다.
+  **코드를 열어보지 않고 파일 헤더 주석만 읽어 옮긴 판정이었다.**
+- 실제 구조는 **두 갈래**다:
+  · **러닝 리마인더** — expo-notifications OS 스케줄. 앱이 닫혀 있어도 정해둔 시각에 울린다.
+    이미 달린 날은 건너뛴다(`reminderFireDates`의 `ranToday`).
+  · **교체 임박 · 주간 목표** — OS 스케줄이 아니다. `lib/notifications.ts:177 dueNotifications`가
+    순수 계산을 하고 `App.tsx:591-596` AppState `'active'`에서 `presentDue`로 표시한다.
+    발화 시점의 상태(진척·예측)를 미리 알 수 없어 억지 스케줄이 곧 노이즈이므로 **의도된 설계**다.
+- 남은 실제 문제는 '알림이 안 온다'가 아니라 **카피가 그 둘을 뭉갠 것**이었고, 이는 해결됐다
+  (2026-07-30 `923e182`): 권한 프라이밍이 셋을 나란히 약속하던 것을 실제 동작대로 갈랐고,
+  회귀 가드 `__tests__/notifCopyHonesty.test.ts`를 뒀다. `MINOR`(카피 문제였음)
 - **원격 푸시를 보낼 수단이 없다.** `lib/pushMessaging.ts:173 FCM_REGISTER_ENDPOINT=''` →
   `:208 if(!endpoint) return 'queued'`. 토큰은 발급·로컬 큐잉만 하고 서버 등록을 안 한다. `MAJOR`
 
@@ -441,9 +485,9 @@ App.tsx            → onAuthStateChanged → authUser
 |---|---|---|
 | 프로필/신발 사진 클라우드 백업 안 됨 — 재설치 시 영구 소실(화면이 그 사실을 고지) | `ProfileScreen.rn.tsx:1130` | `MAJOR` |
 | FCM 등록 엔드포인트 부재 | `lib/pushMessaging.ts:173` | `MAJOR` |
-| 알림이 앱 실행 중에만 표시 | `lib/notifications.ts` 헤더 | `MAJOR` |
+| ~~알림이 앱 실행 중에만 표시~~ **오판정 — 러닝 리마인더는 OS 스케줄로 실제 발화**(§5.2 정정). 남은 건 카피 문제였고 해결됨(`923e182`) | `lib/localReminder.ts` · `App.tsx:1038` | ~~`MAJOR`~~ 해결 |
 | 앱 버전 표기가 네이티브 `MARKETING_VERSION`을 못 읽음(하드코딩) | `ProfileScreen.rn.tsx:64` | `MINOR` |
-| 신발 스펙 커버리지 71/588(12%) — 없는 신발은 '다음 신발' 비교 축이 안 뜸 | `data/shoeSpecs.json` | `MINOR` |
+| 신발 스펙 커버리지 — 숫자는 맞았지만 **원인 진단이 없었다**(2026-07-30 규명). 스펙이 **두 곳에 따로** 쌓이고 있었다: `data/shoeSpecs.json` 71켤레(→'다음 신발'이 읽음) · `data/shoeCatalog.json` 491/624켤레(→'신발 비교'만 읽음). 즉 커버리지가 낮았던 게 아니라 **423켤레가 연결되지 않았던 것**. `8a45f59` 에서 폴백으로 연결 → '다음 신발' 축이 71→494켤레에서 뜬다 | `lib/shoeSpecModel.ts` | 해결 |
 | 경로 단순화가 RDP 아닌 균등 스트라이드 | `lib/geo.ts:86-91` | `MINOR` |
 | BottomSheet 드래그 dismiss 미구현 | `primitives.tsx:1674` | `NITPICK` |
 | `substr` deprecated 1건 | `App.tsx:701` | `NITPICK` |
@@ -464,10 +508,25 @@ App.tsx            → onAuthStateChanged → authUser
 
 ## 다음 세션이 먼저 볼 것 (기준선이 말하는 순서)
 
-1. **red 테스트 1건** — `__tests__/HistoryScreen.shareCard.test.tsx`. Iron Law 위반 상태로 main이 서 있다.
-2. **3-1 단일 문서 1MB** — 사용자가 늘수록 조용히 터진다. 구조 결정이 필요하다(런 서브컬렉션화 vs route 사이드카화).
-3. **3-2·3-3 리더보드** — 보이지도 않는 기능이 개인정보를 공개 컬렉션에 쌓고, 탈퇴해도 안 지워지고,
-   처리방침은 그 사실을 모른다. 셋 중 무엇을 고칠지는 제품 결정(리더보드 정식 출시 vs publish 중단).
-4. **3-4 미고지 수집** — `search_misses`·`shoe_requests`를 `docs/privacy.html` 제2조에 넣거나 수집을 끄거나.
-5. **`aps-environment: development`** — 스토어 빌드 전 실빌드로 확인.
-6. **Functions 환경변수 5종 + Firestore 규칙 배포 상태** — 코드로는 판정 불가. 배포 절차로만 확인된다.
+> 2026-07-30 갱신 — 3-2·3-3·3-4(고지분)와 1번 오판은 처리됐다. 남은 순서는 아래와 같다.
+
+1. **3-1 단일 문서 1MB** — 남은 것 중 가장 무겁다. `userBackups/{uid}` 한 문서에 신발·런
+   전량이 들어가고 런에는 `route` 문자열이 포함된다. 런 100~150건이면 1MiB 상한에 닿고,
+   초과하면 write 가 실패하는데 `catch` 가 조용히 삼킨다. 사용자는 기기를 바꾸는 날 안다.
+   구조 결정이 필요하다(런 서브컬렉션화 vs route 사이드카화).
+2. **`aps-environment: development`** — 스토어 빌드 전 실빌드로 확인.
+3. ~~**Functions 환경변수 5종**~~ **확인 완료(2026-07-30) — 5종 전부 주입돼 있다.**
+   배포된 함수를 직접 찔러 판정했다. 요령은 **일부러 잘못된 토큰**을 보내는 것 —
+   환경변수가 없으면 `503`(fail-closed)이고, 있으면 `401`(토큰이 틀림)이다.
+   `GET /health` → 200 · `POST /auth/kakao` → **401**(503 아님 = `KAKAO_APP_ID` 있음) ·
+   `POST /auth/naver` → **401**(= `NAVER_CLIENT_ID/SECRET` 있음) ·
+   `GET /shop/price` → 200 + 실제 네이버쇼핑 결과(= `NAVER_SEARCH_CLIENT_ID/SECRET` 있음).
+   → 카카오·네이버 로그인이 503 으로 죽을 위험은 없다.
+   (Firestore 규칙 배포 상태도 2026-07-30 확인 완료 — 라이브 룰셋 = 로컬 파일 바이트 동일.)
+4. **`shoes` 카탈로그가 프로덕션에 없다**(3-4 남은 부분) — 원격 카탈로그 갱신이 죽어 있다.
+   시드하든가, '원격 카탈로그' 문서 표현을 실제에 맞추든가.
+5. **flaky 스위트** — `HistoryScreen.shareCard.test.tsx` 간헐 실패. 상시 red 는 아니지만
+   출시 전에 원인을 잡아야 한다(게이트 신뢰도 문제).
+6. **사진 클라우드 미백업 · FCM 등록 엔드포인트 부재** — §2-7 의 `MAJOR`.
+   (같이 묶여 있던 'OS 스케줄 알림 부재'는 **오판정**이었다 — §5.2 정정 참조. 남은 카피
+   문제는 2026-07-30 해결.) 둘 다 "어떻게 동작해야 하는가"가 먼저라 제품 결정이 필요하다.

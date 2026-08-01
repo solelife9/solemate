@@ -90,3 +90,43 @@ afterEach(() => {
   __liveTimeouts.clear();
   __liveIntervals.clear();
 });
+
+// ── 마운트된 트리 누수 차단(전 스위트) ──────────────────────────────────────
+// 위 타이머 차단이 못 잡는 나머지 벡터: **promise 기반 비동기 setState**.
+// 화면들은 마운트 시 AsyncStorage 를 읽고 `.then(() => alive && setXxx(...))` 로 상태를
+// 넣는다(예: HistoryScreen 런 상세는 사진·경로·스플릿·트랙·노면 5개를 동시에 읽는다).
+// 그 `alive` 플래그는 **effect 의 정리 함수에서만** false 가 되므로, 트리를 띄운 채
+// 테스트가 끝나면 남은 promise 가 나중에 착지해 act 밖에서 React 커밋을 일으킨다 →
+// 'environment torn down' / act 경고로 **다음 스위트가 무작위로** 깨진다.
+// 타이머와 달리 promise 는 취소할 수 없으므로, 대신 **트리를 언마운트**해 정리 함수를
+// 돌린다(= alive=false). 정상 테스트는 afterEach 시점에 이미 단언을 마쳤으므로 무해하다.
+//
+// 2026-07-30: HistoryScreen.shareCard 스위트가 이 이유로 간헐 실패(~1/7)했다. 언마운트를
+// 하는 스위트(App.*)와 안 하는 스위트가 섞여 있었고, 안 하는 쪽이 수십 개였다 — 그래서
+// 파일별로 고치지 않고 여기서 한 번에 막는다.
+const __RTR = require('react-test-renderer');
+if (__RTR && typeof __RTR.create === 'function' && !__RTR.__keegoTracked) {
+  const __realCreate = __RTR.create;
+  const __liveTrees = new Set();
+  __RTR.create = function (...args) {
+    const tree = __realCreate.apply(this, args);
+    __liveTrees.add(tree);
+    return tree;
+  };
+  __RTR.__keegoTracked = true;
+  afterEach(() => {
+    if (__liveTrees.size === 0) return;
+    const trees = [...__liveTrees];
+    __liveTrees.clear();
+    // act 로 감싸 언마운트 커밋과 그로 인한 정리 effect 를 React 가 온전히 흘리게 한다.
+    __RTR.act(() => {
+      for (const t of trees) {
+        try {
+          t.unmount();
+        } catch {
+          /* 이미 언마운트됐거나(스위트가 직접 함) 트리가 깨짐 — 무시 */
+        }
+      }
+    });
+  });
+}

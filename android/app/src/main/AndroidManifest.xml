@@ -85,5 +85,19 @@
             <data android:host="oauth" android:scheme="kakao${kakaoNativeAppKey}" />
         </intent-filter>
       </activity>
+
+      <!-- 홈 화면 위젯(활성 러닝화 수명 링). iOS KeegoShoeWidget 의 안드로이드 대응물.
+           데이터는 KeegoWidgetModule 이 SharedPreferences 에 쓰고, 앱이 신발을 바꿀 때
+           즉시 갱신을 건다(updatePeriodMillis 는 앱을 오래 안 열었을 때의 폴백). -->
+      <receiver
+        android:name=".ShoeWidgetProvider"
+        android:exported="false">
+        <intent-filter>
+            <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+        </intent-filter>
+        <meta-data
+            android:name="android.appwidget.provider"
+            android:resource="@xml/shoe_widget_info" />
+      </receiver>
     </application>
 </manifest>

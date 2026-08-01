@@ -324,10 +324,16 @@ describe('Audit Hardening 수용', () => {
       expect(typeof wiring.unsubscribeForeground).toBe('function');
       expect(() => wiring.unsubscribeForeground()).not.toThrow();
 
-      // 정상 경로에선 취득 토큰을 'fcm_token_pending' 키에 영속하고, 등록 엔드포인트가
-      // 비어 있으므로(백엔드 등록 API 미존재) graceful no-op 으로 큐잉만 한다.
-      await setupPushMessaging();
+      // 원격 푸시를 켠 경우에만 토큰을 취득해 'fcm_token_pending' 키에 영속하고, 등록
+      // 엔드포인트가 비어 있으므로 graceful no-op 으로 큐잉만 한다(배선은 살아 있다).
+      await setupPushMessaging({remotePush: true});
       await expect(AsyncStorage.getItem(FCM_TOKEN_PENDING_KEY)).resolves.toBe('mock-fcm-token');
+
+      // 기본값(REMOTE_PUSH_ENABLED=false, 2026-07-30 결정)에서는 **토큰을 아예 받지 않는다** —
+      // 보낼 서버가 없는데 받아두면 기기 식별자를 목적 없이 보관하는 셈이다(최소수집).
+      await AsyncStorage.removeItem(FCM_TOKEN_PENDING_KEY);
+      await setupPushMessaging();
+      await expect(AsyncStorage.getItem(FCM_TOKEN_PENDING_KEY)).resolves.toBeNull();
     });
   });
 

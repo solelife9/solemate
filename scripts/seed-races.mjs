@@ -17,7 +17,7 @@
 // ============================================================================
 import {readFileSync} from 'node:fs';
 import {initializeApp, applicationDefault} from 'firebase-admin/app';
-import {getFirestore} from 'firebase-admin/firestore';
+import {getFirestore, FieldValue} from 'firebase-admin/firestore';
 
 const PROJECT_ID = 'keego-620b8';
 const file = process.argv[2] || 'data/races.json';
@@ -49,6 +49,10 @@ const run = async () => {
       ...(typeof r.startLat === 'number' ? {startLat: r.startLat} : {}),
       ...(typeof r.startLon === 'number' ? {startLon: r.startLon} : {}),
       distances: Array.isArray(r.distances) ? r.distances : [],
+      // 앱이 **바뀐 것만** 받기 위한 커서(AUDIT 2 I-1 — lib/raceCatalogRemote).
+      // 이게 없으면 증분 조회가 아무것도 못 찾아 대회 갱신이 사용자에게 도달하지 않는다.
+      // 서버 시각으로 찍는다 — 이 스크립트를 돌리는 PC 시계를 믿으면 안 된다.
+      updatedAt: FieldValue.serverTimestamp(),
     });
     ok++;
   }
