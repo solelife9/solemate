@@ -40,6 +40,7 @@ import {syncRemoteRaces} from './lib/raceCatalogRemote';
 import {checkForceUpdate, type RemoteAppConfig} from './lib/forceUpdate';
 import {reconcileAccountStorage} from './lib/accountScope';
 import {mirrorRecords} from './lib/recordSync';
+import {retirementRecordsFromShoes, setShoeRetirement, migrateRetiredShoes} from './lib/shoeRetirement';
 import ForceUpdateScreen from './ForceUpdateScreen.rn';
 import {nativeRecognizer} from './lib/ocrNative';
 import {parseRoute} from './lib/route';
@@ -638,6 +639,32 @@ function Main(){
       }catch{/* 손상/부재는 무시 — 빈 묘비로 시작 */}
     })();
   },[]);
+
+  // ── 은퇴 기록 1회 이관: progression → 신발 (2026-08-01 결정 A) ──────────────
+  // 옛 빌드는 은퇴 스냅샷을 progression.retiredShoes 에 따로 뒀다. 같은 신발을 두 곳이
+  // 설명하던 구조라 이제 신발 문서로 모은다. **무손실**이다 — 신발에 이미 스냅샷이
+  // 있으면 덮지 않고, 짝이 없는 기록(신발이 이미 삭제됨)만 버린다(결정 A와 같은 의미).
+  // 이관이 끝나면 옛 배열을 비워 두 곳이 다시 어긋나지 않게 한다.
+  useEffect(()=>{
+    if(bootState!=='ready') return;
+    const legacy=progState?.retiredShoes;
+    if(!legacy?.length) return;
+    let orphanCount=0;
+    setShoes(prev=>{
+      const {shoes:next,migrated,orphaned}=migrateRetiredShoes(prev as any,legacy);
+      orphanCount=orphaned;
+      if(migrated===0) return prev;
+      // 이관으로 새로 붙은 신발만 스탬프한다 — 클라우드 병합이 이 변경을 최신으로 본다.
+      return (next as typeof prev).map((sh,i)=>sh===prev[i]?sh:stampUpdatedAt(sh));
+    });
+    // 옛 배열은 비운다 — 이관됐거나(신발에 있음) 고아(신발 없음)라 더 볼 일이 없다.
+    setProgState(prev=>prev?{...prev,retiredShoes:[]}:prev);
+    if(orphanCount>0){
+      reportIssue('은퇴 기록 이관: 짝 없는 기록 폐기(신발이 이미 삭제됨)',
+        new Error(`orphaned=${orphanCount}`));
+    }
+    // shoes 는 setShoes(prev=>…) 로만 읽으므로 의존성이 아니다(불필요한 재실행 방지).
+  },[bootState,progState?.retiredShoes]);
 
   // ── 신발 마일리지 최고수위 (AUDIT 3 D-4) ──────────────────────────────────
   // usedKm 은 런 목록에서 매번 다시 계산하는 파생값이라, 런이 어떤 이유로든 사라지면
@@ -1848,7 +1875,11 @@ function Main(){
   // ── 은퇴 키프세이크 컨텍스트(Slice B) ────────────────────────────────────────
   // 영속된 은퇴 레코드(Hall of Shoes 소스) + 진척 컨텍스트(요약/등급 판정용). buildContext
   // 는 순수·읽기 전용(런/신발 불변). progState 미로드 시 빈 레코드로 안전 동작.
-  const retiredRecords:RetiredShoeRecord[]=progState?.retiredShoes??[];
+  // 은퇴 기록의 **유일한 출처는 신발**이다(2026-08-01 결정 A). 예전엔 progression 이
+  // 따로 들고 있어 같은 신발을 두 곳이 설명했다 — 명예의 전당이 어느 쪽을 봐야 하는지
+  // 늘 헷갈렸고, 한쪽만 지워지는 경로가 생기면 조용히 어긋난다. 이제 신발 하나가 답한다.
+  // 삭제한 신발은 여기서 자연히 빠진다(= 명예의 전당에서도 사라진다 — 결정 A).
+  const retiredRecords:RetiredShoeRecord[]=useMemo(()=>retirementRecordsFromShoes(shoes as any),[shoes]);
   // 보관함 목록: retired(보관) 처리됐지만 명예의 전당(키프세이크) 기록이 없는 신발 = 단순
   // 보관 신발. 명예의 전당 신발은 박물관에 있으므로 제외한다. 마이 탭 '신발 보관함'이 소비.
   const museumShoeIds=new Set(retiredRecords.map(r=>r.shoeId));
@@ -1862,15 +1893,13 @@ function Main(){
   // shoeId 기준 UPSERT — 신발당 1개를 유지하되, 보관 복원 후 재은퇴 시 km/등급을 최신으로
   // 교체한다(stale 레코드 방지). run/shoe 상태는 건드리지 않는다.
   const onRetiredKeepsake=(record:RetiredShoeRecord)=>{
-    setProgState(prev=>{
-      const base=prev??{earnedTitles:[],equippedTitleKey:null,seenUnlocks:[],retiredShoes:[],points:0};
-      const idx=base.retiredShoes.findIndex(r=>r.shoeId===record.shoeId);
-      if(idx>=0){
-        const next=base.retiredShoes.slice();
-        next[idx]=record; // 최신 은퇴 레코드로 교체(여전히 신발당 1개)
-        return {...base,retiredShoes:next};
-      }
-      return {...base,retiredShoes:[...base.retiredShoes,record]};
+    // 신발 문서에 은퇴 스냅샷을 붙인다(신발당 1개, 재은퇴 시 교체). 영속·동기는 신발
+    // 레코드 경로가 그대로 담당하므로 별도 저장이 필요 없다 — 진실이 한 곳이라는 게
+    // 이 구조의 값어치다(결정 A).
+    setShoes(prev=>{
+      const next=setShoeRetirement(prev as any,record) as typeof prev;
+      if(next===prev) return prev;
+      return next.map(sh=>String(sh.id)===String(record.shoeId)?stampUpdatedAt(sh):sh);
     });
   };
 
