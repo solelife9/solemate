@@ -8550,34 +8550,6 @@
     "category": "daily"
   },
   {
-    "version": "16",
-    "variant": null,
-    "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
-    "releaseYear": null,
-    "discontinued": false,
-    "searchAliases": [
-      "뉴발란스",
-      "뉴발",
-      "프레쉬폼",
-      "프레쉬폼x",
-      "880",
-      "프레쉬폼 16",
-      "프레쉬폼x 16",
-      "880 16"
-    ],
-    "verified": false,
-    "defaultLifespanKm": 650,
-    "id": "new-balance-fresh-foam-x-880-16",
-    "brand": "New Balance",
-    "model": "Fresh Foam X 880",
-    "category": "daily"
-  },
-  {
     "version": "1",
     "variant": null,
     "collabWith": null,
