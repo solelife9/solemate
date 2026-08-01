@@ -698,7 +698,6 @@ function Main(){
       longestKm,
       pb:distancePBs as Record<string,number|undefined>,
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   },[runs,distancePBs]);
 
   // ── 신발 마일리지 최고수위 (AUDIT 3 D-4) ──────────────────────────────────
