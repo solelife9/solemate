@@ -9303,7 +9303,7 @@
     "weight": 269,
     "weightBasis": "270mm",
     "drop": 8.5,
-    "plate": null,
+    "plate": "carbon",
     "stackHeight": {
       "heel": 38,
       "forefoot": 29.5
@@ -9495,29 +9495,6 @@
     "verified": false
   },
   {
-    "id": "nike-infinity-run-5",
-    "brand": "Nike",
-    "model": "Infinity Run",
-    "version": "5",
-    "variant": null,
-    "collabWith": null,
-    "category": "stability",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
-    "releaseYear": null,
-    "defaultLifespanKm": 700,
-    "discontinued": false,
-    "searchAliases": [
-      "나이키",
-      "인피니티",
-      "인피니티 5"
-    ],
-    "verified": false
-  },
-  {
     "id": "nike-invincible-2",
     "brand": "Nike",
     "model": "Invincible",
@@ -9565,29 +9542,6 @@
       "인빈시블 3"
     ],
     "verified": true
-  },
-  {
-    "id": "nike-invincible-4",
-    "brand": "Nike",
-    "model": "Invincible",
-    "version": "4",
-    "variant": null,
-    "collabWith": null,
-    "category": "recovery",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
-    "releaseYear": null,
-    "defaultLifespanKm": 700,
-    "discontinued": false,
-    "searchAliases": [
-      "나이키",
-      "인빈시블",
-      "인빈시블 4"
-    ],
-    "verified": false
   },
   {
     "version": "10",
@@ -10019,8 +9973,8 @@
     "version": null,
     "variant": null,
     "collabWith": null,
-    "weight": null,
-    "weightBasis": null,
+    "weight": 281,
+    "weightBasis": "280mm",
     "drop": 10,
     "plate": null,
     "stackHeight": null,
@@ -10322,29 +10276,6 @@
       "보메로 18"
     ],
     "verified": true
-  },
-  {
-    "id": "nike-vomero-19",
-    "brand": "Nike",
-    "model": "Vomero",
-    "version": "19",
-    "variant": null,
-    "collabWith": null,
-    "category": "recovery",
-    "weight": null,
-    "weightBasis": null,
-    "drop": null,
-    "plate": null,
-    "stackHeight": null,
-    "releaseYear": 2026,
-    "defaultLifespanKm": 700,
-    "discontinued": false,
-    "searchAliases": [
-      "나이키",
-      "보메로",
-      "보메로 19"
-    ],
-    "verified": false
   },
   {
     "id": "nike-vomero-plus",
