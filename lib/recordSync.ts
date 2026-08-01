@@ -492,3 +492,73 @@ export async function pullRecords(port: RecordReadPort): Promise<PullResult> {
   out.cursors = nextCursors;
   return out;
 }
+
+// ─── 3단계: 덩어리에서 레코드를 뺀다 ─────────────────────────────────────────
+//
+// 여기서 1MiB 천장이 사라진다. 덩어리는 설정·진척만 남은 작은 문서가 되고, 레코드는
+// 문서 단위로 무한히 늘어날 수 있게 된다.
+//
+// **되돌리기가 비싼 유일한 단계다.** 그래서 규칙이 하나 있다:
+//
+//   > 새 집에 짐이 들어간 것을 확인하기 전에 옛 집을 비우면 그게 유실이다.
+//
+// 이 프로젝트는 이미 이 규칙으로 경로를 사이드카로 옮겼다(runDetailSync). 같은 방식으로,
+// **모든 레코드가 하위 문서에 확실히 올라간 것을 확인한 뒤에만** 덩어리를 비운다.
+// 하나라도 못 올라갔으면 이번 동기는 예전처럼 덩어리에 다 싣는다 — 다음 기회에 다시 본다.
+
+/**
+ * 이 종류의 레코드가 **전부** 하위 문서에 올라갔는가(순수).
+ *
+ * 판정 근거는 push 성공 시에만 갱신되는 마커다. 마커의 편집 시각이 현재 레코드와
+ * 같아야 "그 내용이 올라갔다"는 뜻이다. id 없는 레코드는 문서를 만들 수 없으므로
+ * **하나라도 있으면 미완료**로 본다(덩어리에 남겨야 유실이 없다).
+ */
+export function allMirrored<T extends object>(
+  records: readonly T[],
+  markers: Readonly<PushedMarkers>,
+): boolean {
+  if (!Array.isArray(records)) return false;
+  for (const rec of records) {
+    const id = recordId(rec);
+    if (id == null) return false; // 문서로 못 만드는 레코드가 있다 — 덩어리가 필요하다
+    if (markers[id] !== editedAtOf(rec)) return false;
+  }
+  return true;
+}
+
+/**
+ * **병합 결과**가 전부 미러링됐는가 — 덩어리를 비워도 되는지의 유일한 판정(순수).
+ *
+ * ⚠️ 로컬만 보고 판정하면 안 된다. 새로 설치한 기기는 로컬이 비어 있어 "전부 올라갔다"가
+ * 자동으로 참이 되고, 그러면 **원격 덩어리에만 있던 기록을 지워버린다.** 실제로 이 실수를
+ * 했고 테스트가 잡았다(App.cloudsync).
+ *
+ * 그래서 기준은 `local ∪ remote` 인 **병합 결과**다. 거기 있는 모든 레코드가 하위 문서에
+ * 올라간 것이 확인돼야 덩어리가 비로소 잉여가 된다. 새 기기는 첫 동기에서 원격 기록을
+ * 받아 미러링하고, **그다음 동기에서** 비운다 — 스스로 낫는 순서다.
+ */
+export function isPayloadMirrored(
+  payload: {shoes?: unknown; runs?: unknown; medals?: unknown},
+  markers: Partial<Record<RecordKind, PushedMarkers>>,
+): boolean {
+  const pick = (v: unknown): Record<string, unknown>[] =>
+    Array.isArray(v) ? (v as Record<string, unknown>[]) : [];
+  return (
+    allMirrored(pick(payload.runs), markers.runs ?? {}) &&
+    allMirrored(pick(payload.shoes), markers.shoes ?? {}) &&
+    allMirrored(pick(payload.medals), markers.medals ?? {})
+  );
+}
+
+/**
+ * 덩어리 페이로드에서 레코드 배열을 **비운다**(순수).
+ *
+ * 키를 지우지 않고 **빈 배열로 둔다.** 이유: 병합(mergeCloudData)이 합집합이라,
+ * 키가 없으면 원격에 남아 있던 옛 배열이 그대로 살아 돌아와 문서가 안 줄어든다.
+ * 빈 배열을 명시적으로 써야 원격의 옛 내용이 지워진다.
+ *
+ * 설정·진척·기타 필드는 손대지 않는다.
+ */
+export function stripRecordArrays<T extends Record<string, unknown>>(payload: T): T {
+  return {...payload, shoes: [], runs: [], medals: []};
+}

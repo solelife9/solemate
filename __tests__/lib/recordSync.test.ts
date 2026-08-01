@@ -28,6 +28,9 @@ import {
   pullRecords,
   loadCursors,
   PULL_PAGE,
+  allMirrored,
+  isPayloadMirrored,
+  stripRecordArrays,
 } from '../../lib/recordSync';
 
 const run = (id: string, updatedAt = 1000, over: Record<string, unknown> = {}) => ({
@@ -471,5 +474,120 @@ describe('pullRecords — 델타 조회', () => {
     await pullRecords(port);
     // runs·shoes·medals 각 1회씩만(무한 루프 없음)
     expect(port.listRecords).toHaveBeenCalledTimes(3);
+  });
+});
+
+// ─── 3단계: 덩어리 비우기 ─────────────────────────────────────────────────────
+// 되돌리기가 비싼 유일한 단계라, 계약이 하나다:
+//   **전부 올라간 것을 확인하기 전에는 절대 비우지 않는다.**
+describe('allMirrored — 확인 판정', () => {
+  test('마커가 전부 맞으면 완료', () => {
+    const recs = [run('a', 100), run('b', 200)];
+    expect(allMirrored(recs, {a: 100, b: 200})).toBe(true);
+  });
+
+  test('하나라도 어긋나면 미완료 — 그 레코드는 아직 안 올라갔다', () => {
+    expect(allMirrored([run('a', 100), run('b', 200)], {a: 100, b: 199})).toBe(false);
+  });
+
+  test('마커가 아예 없으면 미완료', () => {
+    expect(allMirrored([run('a', 100)], {})).toBe(false);
+  });
+
+  test('id 없는 레코드가 있으면 미완료 — 문서로 못 만드니 덩어리가 필요하다', () => {
+    expect(allMirrored([{updatedAt: 1} as any], {})).toBe(false);
+  });
+
+  test('빈 목록은 완료(비울 게 없다)', () => {
+    expect(allMirrored([], {})).toBe(true);
+  });
+});
+
+describe('isPayloadMirrored — 덩어리를 비워도 되는가', () => {
+  beforeEach(async () => {
+    await AsyncStorage.clear();
+  });
+
+  test('한 종류라도 미완료면 전체 미완료', async () => {
+    const port = {pushRecords: jest.fn(async () => {})};
+    await mirrorRecords(port, {runs: [run('r1', 100)]}); // runs 만 올림
+    expect(isPayloadMirrored(
+      {runs: [run('r1', 100)], shoes: [{id: 's1', updatedAt: 5}]}, // shoes 는 안 올림
+      await loadMarkers(),
+    )).toBe(false);
+  });
+
+  test('전부 올라가면 완료', async () => {
+    const port = {pushRecords: jest.fn(async () => {})};
+    const runs = [run('r1', 100)];
+    const shoes = [{id: 's1', updatedAt: 5}];
+    await mirrorRecords(port, {runs, shoes});
+    expect(isPayloadMirrored({runs, shoes}, await loadMarkers())).toBe(true);
+  });
+
+  test('미러링 실패 뒤에는 완료가 아니다 — 실패를 성공으로 오인하면 유실이다', async () => {
+    const port = {pushRecords: jest.fn(async () => { throw new Error('오프라인'); })};
+    const runs = [run('r1', 100)];
+    await mirrorRecords(port, {runs});
+    expect(isPayloadMirrored({runs}, await loadMarkers())).toBe(false);
+  });
+
+  test('레코드가 바뀌면 다시 미완료가 된다(그 변경이 아직 안 올라갔다)', async () => {
+    const port = {pushRecords: jest.fn(async () => {})};
+    await mirrorRecords(port, {runs: [run('r1', 100)]});
+    expect(isPayloadMirrored({runs: [run('r1', 999)]}, await loadMarkers())).toBe(false);
+  });
+});
+
+describe('stripRecordArrays — 덩어리 비우기', () => {
+  test('레코드는 빈 배열로, 나머지는 그대로', () => {
+    const payload = {
+      runs: [run('a')], shoes: [{id: 's1'}], medals: [{id: 'm1'}],
+      settings: {unit: 'km'}, progression: {points: 10},
+    };
+    const out = stripRecordArrays(payload);
+    expect(out.runs).toEqual([]);
+    expect(out.shoes).toEqual([]);
+    expect(out.medals).toEqual([]);
+    expect(out.settings).toEqual({unit: 'km'});
+    expect(out.progression).toEqual({points: 10});
+  });
+
+  test('키를 지우지 않고 빈 배열로 둔다 — 합집합 병합이 옛 배열을 되살리지 못하게', () => {
+    const out = stripRecordArrays({runs: [run('a')]}) as Record<string, unknown>;
+    expect('runs' in out).toBe(true);
+    expect(out.runs).toEqual([]);
+  });
+
+  test('입력을 변형하지 않는다', () => {
+    const payload = {runs: [run('a')], settings: {}};
+    stripRecordArrays(payload);
+    expect(payload.runs).toHaveLength(1);
+  });
+});
+
+// ★ 이 테스트가 실제 버그를 잡았다(2026-08-01): 처음엔 '로컬이 전부 올라갔는가'로
+//   판정했는데, 새로 설치한 기기는 로컬이 비어 있어 자동으로 참이 되고 **원격 덩어리에만
+//   있던 기록을 지워버렸다.** 판정 기준을 병합 결과로 옮겨 고쳤다.
+describe('isPayloadMirrored — 새 기기 오판 방어(회귀)', () => {
+  beforeEach(async () => {
+    await AsyncStorage.clear();
+  });
+
+  test('로컬이 비어도 병합 결과에 원격 기록이 있으면 비우지 않는다', async () => {
+    // 새로 설치한 기기: 로컬 0건, 원격에서 받은 기록 2건. 아직 하나도 미러링 안 됨.
+    const mergedPayload = {runs: [run('remote1'), run('remote2')], shoes: [], medals: []};
+    expect(isPayloadMirrored(mergedPayload, await loadMarkers())).toBe(false);
+  });
+
+  test('받은 뒤 미러링하면 그다음엔 비워도 된다(스스로 낫는 순서)', async () => {
+    const port = {pushRecords: jest.fn(async () => {})};
+    const remote = [run('remote1'), run('remote2')];
+    await mirrorRecords(port, {runs: remote, shoes: [], medals: []});
+    expect(isPayloadMirrored({runs: remote, shoes: [], medals: []}, await loadMarkers())).toBe(true);
+  });
+
+  test('완전히 빈 계정은 비워도 된다(비울 것이 없다)', async () => {
+    expect(isPayloadMirrored({runs: [], shoes: [], medals: []}, await loadMarkers())).toBe(true);
   });
 });

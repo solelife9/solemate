@@ -39,7 +39,7 @@ import {detectRace, SEED_RACES, type RaceEvent, type RaceMatch, type RaceDistanc
 import {syncRemoteRaces} from './lib/raceCatalogRemote';
 import {checkForceUpdate, type RemoteAppConfig} from './lib/forceUpdate';
 import {reconcileAccountStorage} from './lib/accountScope';
-import {mirrorRecords, pullRecords, mergePulled} from './lib/recordSync';
+import {mirrorRecords, pullRecords, mergePulled, isPayloadMirrored, stripRecordArrays, loadMarkers} from './lib/recordSync';
 import {retirementRecordsFromShoes, setShoeRetirement, migrateRetiredShoes} from './lib/shoeRetirement';
 import ForceUpdateScreen from './ForceUpdateScreen.rn';
 import {nativeRecognizer} from './lib/ocrNative';
@@ -1415,11 +1415,30 @@ function Main(){
       // 올릴 때만 경로를 덜어낸다 — 사이드카에 확실히 올라간 런 한정(백업 문서 1MiB 방어).
       // 내보내기용 backupData 자체는 건드리지 않는다(사용자 백업 파일은 자기 완결적이어야 한다).
       const syncPayload=stripSyncedRoutes(backupData,cloudRouteIdsRef.current);
+      // ── 3단계: 확인된 뒤에만 덩어리를 비운다 ────────────────────────────
+      // 판정 기준은 **병합 결과(local ∪ remote)** 다. 로컬만 보면 새로 설치한 기기가
+      // "비었으니 다 올라갔다"로 오판해 원격 기록을 지운다. 병합 결과의 모든 레코드가
+      // 하위 문서에 올라간 것이 확인돼야 덩어리가 잉여가 된다 — 새 기기는 첫 동기에
+      // 받아서 미러링하고 다음 동기에서 비운다(스스로 낫는 순서).
+      // 빈 배열을 **명시적으로** 쓴다: 키를 지우면 합집합 병합이 원격의 옛 배열을 되살린다.
+      const markers=await loadMarkers();
+      // 병합 결과의 레코드를 따로 잡아둔다 — 덩어리를 비우면 merged 에서 사라지므로,
+      // 화면에 반영할 목록은 여기서 가져와야 원격에만 있던 기록을 잃지 않는다.
+      let mergedRecords:{runs:unknown[];shoes:unknown[];medals:unknown[]}={runs:[],shoes:[],medals:[]};
+      const mergeFn=(l:BackupPayload,r:BackupPayload|null):BackupPayload=>{
+        const m=mergeCloudData(l,r);
+        mergedRecords={
+          runs:(m.runs??[]) as unknown[],
+          shoes:(m.shoes??[]) as unknown[],
+          medals:((m as {medals?:unknown[]}).medals??[]) as unknown[],
+        };
+        return isPayloadMirrored(m as any,markers)?(stripRecordArrays(m as any) as BackupPayload):m;
+      };
       if(port.syncMerge){
-        merged=await port.syncMerge(syncPayload,mergeCloudData);
+        merged=await port.syncMerge(syncPayload,mergeFn);
       }else{
         const remote=await port.pull();
-        merged=mergeCloudData(syncPayload,remote);
+        merged=mergeFn(syncPayload,remote);
         await port.push(merged);
       }
       // ── 2단계: 읽기를 하위 문서 델타로 ──────────────────────────────────
@@ -1430,16 +1449,16 @@ function Main(){
       let applied:BackupPayload=merged;
       try{
         const pulled=await pullRecords(cloudPortRef.current);
-        if(!pulled.skipped){
-          applied={
-            ...merged,
-            shoes:mergePulled(merged.shoes as any,(pulled.records.shoes??[]) as any) as any,
-            runs:mergePulled(merged.runs as any,(pulled.records.runs??[]) as any) as any,
-            ...(pulled.records.medals?.length
-              ?{medals:mergePulled(((merged as any).medals??[]) as any,pulled.records.medals as any)}
-              :{}),
-          } as BackupPayload;
-        }
+        // 레코드 병합의 기준은 **병합 결과**다(merged 가 아니라) — 3단계에서 덩어리를
+        // 비우면 merged 에는 레코드가 없기 때문이다. 거기에 원격 델타를 얹는다.
+        applied={
+          ...merged,
+          shoes:mergePulled(mergedRecords.shoes as any,(pulled.records.shoes??[]) as any) as any,
+          runs:mergePulled(mergedRecords.runs as any,(pulled.records.runs??[]) as any) as any,
+          ...(mergedRecords.medals.length||pulled.records.medals?.length
+            ?{medals:mergePulled(mergedRecords.medals as any,(pulled.records.medals??[]) as any)}
+            :{}),
+        } as BackupPayload;
       }catch(e){
         // 델타 조회 실패는 동기 전체를 실패로 만들지 않는다 — 덩어리 병합 결과로 간다.
         reportIssue('recordSync 델타 조회',e);

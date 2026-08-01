@@ -78,7 +78,10 @@ describe('App 동기 경로에 가드가 실제로 걸려 있는가(정적)', ()
   test('runCloudSync 가 checkCacheOwner 결과로 early-return 한다', () => {
     expect(app).toMatch(/import\s*\{[^}]*checkCacheOwner[^}]*\}\s*from\s*'\.\/lib\/cacheOwner'/);
     const gate = app.indexOf("ownership==='other'");
-    const sync = app.indexOf('port.syncMerge(syncPayload');
+    // 앵커는 **호출 자체**로 잡는다 — 인자 이름은 이행 단계마다 바뀐다(1~3단계에서
+    // syncPayload → pushPayload 로 바뀌었다). 검사의 목적은 '가드가 동기보다 앞인가'이지
+    // 변수 이름이 아니다.
+    const sync = app.indexOf('port.syncMerge(');
     expect(gate).toBeGreaterThan(-1);
     expect(sync).toBeGreaterThan(-1);
     // 가드가 실제 업로드보다 앞에 있어야 의미가 있다.
