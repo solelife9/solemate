@@ -41,6 +41,7 @@ import {checkForceUpdate, type RemoteAppConfig} from './lib/forceUpdate';
 import {reconcileAccountStorage} from './lib/accountScope';
 import {mirrorRecords, pullRecords, mergePulled, isPayloadMirrored, stripRecordArrays, loadMarkers} from './lib/recordSync';
 import {retirementRecordsFromShoes, setShoeRetirement, migrateRetiredShoes} from './lib/shoeRetirement';
+import {buildPublicProfile, publishProfile, loadVisibility} from './lib/publicProfile';
 import ForceUpdateScreen from './ForceUpdateScreen.rn';
 import {nativeRecognizer} from './lib/ocrNative';
 import {parseRoute} from './lib/route';
@@ -1476,6 +1477,24 @@ function Main(){
       // 현재 progression 에서 파생한다. 실패해도 동기 흐름·데이터엔 영향 없음(throw 흡수).
       // ⚠️ 현재 LEADERBOARD_PUBLISH_ENABLED=false 라 이 호출은 즉시 반환한다(발행 없음).
       void publishMyRankingNow(merged);
+      // ── 소셜: 공개 프로필 발행(동의했을 때만) ──────────────────────────
+      // 개인 저장소에서 **화이트리스트로 추린 것만** 별도 컬렉션에 올린다. 동의가
+      // 없으면(미결정 포함) 아무것도 안 올리고, 껐으면 올라가 있던 것을 **내린다** —
+      // "안 쓰는 것"이 아니라 "내리는 것"이어야 껐을 때 실제로 안 보인다.
+      // 실패해도 러닝 동기에는 영향이 없다(비차단).
+      void (async()=>{
+        try{
+          const visibility=await loadVisibility();
+          const profile=buildPublicProfile({
+            visibility,
+            nickname:profileName||DEFAULT_PROFILE_NAME,
+            shoes:liveRecords(applied.shoes as any) as any,
+            runs:liveRecords(applied.runs as any) as any,
+            nowMs:Date.now(),
+          });
+          await publishProfile(cloudPortRef.current as any,profile);
+        }catch(e){reportIssue('공개 프로필 발행',e);}
+      })();
       // AUDIT 3 D-1: 동기 성공 — 실패 카운터를 되돌린다(회복되면 조용해진다).
       reportSyncResult(true);
       // ── 1단계 이중 쓰기(설계: docs/design/2026-08-01-cloud-data-model.md) ──

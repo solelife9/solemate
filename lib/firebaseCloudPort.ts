@@ -305,6 +305,8 @@ export function createFirebaseCloudPort(
           }
         } catch { /* 목록 실패 — 본체 삭제 계속 */ }
         await deleteDoc(backupRef(user.uid));
+        // 공개 프로필도 함께 내린다 — 탈퇴했는데 남들에게 계속 보이면 안 된다.
+        try { await deleteDoc(doc(getFirestore(), 'profiles', user.uid)); } catch { /* 없으면 no-op */ }
       } catch {
         // 백업 문서 부재/일시 오류 — 계정 삭제를 막지 않는다.
       }
@@ -404,6 +406,20 @@ export function createFirebaseCloudPort(
         out.push({id: d.id, data});
       }
       return {docs: out, maxUpdatedAtMs: maxMs};
+    },
+
+    /** 공개 프로필 발행. 서버 시각을 함께 박아 '언제 갱신됐는지'를 남긴다. */
+    async putPublicProfile(profile: Record<string, unknown>): Promise<void> {
+      const uid = requireUid();
+      await setDoc(doc(getFirestore(), 'profiles', uid), {
+        ...profile,
+        updatedAt: serverTimestamp(),
+      });
+    },
+    /** 공개 중단·탈퇴 시 내린다. 없는 문서 삭제는 no-op. */
+    async deletePublicProfile(): Promise<void> {
+      const uid = requireUid();
+      await deleteDoc(doc(getFirestore(), 'profiles', uid));
     },
 
     async deleteRunDetail(runId: string): Promise<void> {

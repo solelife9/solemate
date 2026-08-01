@@ -83,6 +83,12 @@ export interface CloudPort {
    * 하위 컬렉션에서 **바뀐 것만** 읽는다. `afterMs` 가 null 이면 전량.
    * 1단계에서는 대조(검증)에만 쓰고, 2단계에서 읽기 경로가 된다.
    */
+  /**
+   * 공개 프로필을 올린다/내린다(소셜 1단계).
+   * **개인 저장소와 완전히 분리된 컬렉션**이다 — 사용자가 공개하기로 한 것만 복사해 올린다.
+   */
+  putPublicProfile?(profile: Record<string, unknown>): Promise<void>;
+  deletePublicProfile?(): Promise<void>;
   listRecords?(
     collection: string,
     afterMs: number | null,

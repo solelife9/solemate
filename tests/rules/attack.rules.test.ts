@@ -258,3 +258,51 @@ describe('시나리오 8 — 최근 추가 컬렉션이 규칙에 안 걸려 열
     await assertFails(getDoc(doc(guest(), 'config', 'app')));
   });
 });
+
+// ── 공개 프로필(소셜) — 개인 저장소와의 분리가 지켜지는가 ─────────────────────
+// keego 는 동의 없이 개인정보가 공개 컬렉션에 쌓이던 사고를 이미 냈다(767032e).
+// 그래서 '남의 프로필을 만들거나 고칠 수 있는가'를 공격자 자격으로 직접 확인한다.
+describe('공개 프로필', () => {
+  const validProfile = (over: Record<string, unknown> = {}) => ({
+    nickname: '민우', visibility: 'public',
+    activeShoes: [], hallOfFame: [], stats: {totalKm: 0, runCount: 0, monthKm: 0},
+    ...over,
+  });
+
+  it('로그인 사용자는 남의 프로필을 읽을 수 있다(그게 기능이다)', async () => {
+    await seed(['profiles', VICTIM], validProfile());
+    await assertSucceeds(getDoc(doc(attacker(), 'profiles', VICTIM)));
+  });
+
+  it('미로그인은 못 읽는다 — 인터넷 전체에 여는 게 아니다', async () => {
+    await seed(['profiles', VICTIM], validProfile());
+    await assertFails(getDoc(doc(guest(), 'profiles', VICTIM)));
+  });
+
+  it('남의 프로필을 만들 수 없다(사칭 차단)', async () => {
+    await assertFails(setDoc(doc(attacker(), 'profiles', VICTIM), validProfile()));
+  });
+
+  it('남의 프로필을 고칠 수 없다', async () => {
+    await seed(['profiles', VICTIM], validProfile());
+    await assertFails(updateDoc(doc(attacker(), 'profiles', VICTIM), {nickname: '조작됨'}));
+  });
+
+  it('남의 프로필을 지울 수 없다', async () => {
+    await seed(['profiles', VICTIM], validProfile());
+    await assertFails(deleteDoc(doc(attacker(), 'profiles', VICTIM)));
+  });
+
+  it('본인 프로필은 만들고 지울 수 있다(공개·공개 중단)', async () => {
+    await assertSucceeds(setDoc(doc(attacker(), 'profiles', ATTACKER), validProfile()));
+    await assertSucceeds(deleteDoc(doc(attacker(), 'profiles', ATTACKER)));
+  });
+
+  it('visibility 가 public 이 아니면 쓸 수 없다 — 비공개는 문서를 안 만드는 것으로 표현한다', async () => {
+    await assertFails(setDoc(doc(attacker(), 'profiles', ATTACKER), validProfile({visibility: 'private'})));
+  });
+
+  it('말도 안 되게 긴 닉네임은 거부한다', async () => {
+    await assertFails(setDoc(doc(attacker(), 'profiles', ATTACKER), validProfile({nickname: 'x'.repeat(41)})));
+  });
+});
