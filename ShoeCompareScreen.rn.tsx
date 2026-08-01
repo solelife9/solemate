@@ -16,7 +16,7 @@ import {Text, TextInput} from './lib/text';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {rf, rs, rv} from './lib/responsive';
 import {BG, CARD, CARD_HI, T1, T2, T3, T4, SEP, FONT, NUM, RADIUS, GUTTER,
-  RING_ACCENT, withAlpha} from './theme';
+  RING_ACCENT, withAlpha, TYPE} from './theme';
 import {buildCompareTable, mineSummary, MAX_COMPARE, type CompareShoe} from './lib/shoeCompareTable';
 import {allCatalogShoes, displayName, toCompareShoe} from './lib/shoeCatalogLookup';
 import {searchShoes} from './lib/shoeSearch';
@@ -234,41 +234,47 @@ const s = StyleSheet.create({
 
   bar: {flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between',
     paddingHorizontal: GUTTER, paddingBottom: rv(14)},
-  title: {fontFamily: FONT, fontSize: rf(26), fontWeight: '800', color: T1, letterSpacing: -0.6},
-  done: {fontFamily: FONT, fontSize: rf(15), color: T3, fontWeight: '500'},
+  // 글씨 크기는 **전부 theme.ts 의 TYPE 토큰**을 쓴다(2026-08-01).
+  // 그 전에는 9·9.5·10·11.5·12.5·19.5 처럼 숫자를 직접 박아 놨는데, 그중 셋이 스케일
+  // 최소값 micro(11)보다도 작아 실기기에서 읽기 어려웠다("전체적으로 글씨가 너무 작아").
+  // 토큰을 쓰면 다른 화면과 위계가 자동으로 맞고, 접근성 스케일도 함께 따라간다.
+  title: {fontFamily: FONT, ...TYPE.screenTitle, color: T1},
+  done: {fontFamily: FONT, ...TYPE.body, color: T3},
 
   table: {paddingHorizontal: rs(12)},
   row: {flexDirection: 'row', alignItems: 'flex-start'},
   rowSep: {borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP},
   labelCell: {width: rs(78), paddingHorizontal: rs(8), paddingTop: rv(15)},
-  label: {fontFamily: FONT, fontSize: rf(11.5), color: T3, fontWeight: '500'},
-  hint: {fontFamily: FONT, fontSize: rf(9.5), color: T4, marginTop: rv(2)},
+  label: {fontFamily: FONT, ...TYPE.caption, color: T3},
+  hint: {fontFamily: FONT, ...TYPE.micro, color: T4, marginTop: rv(2), letterSpacing: 0.2},
   cell: {flex: 1, paddingHorizontal: rs(8), paddingTop: rv(13), paddingBottom: rv(14)},
 
-  brand: {fontFamily: FONT, fontSize: rf(9.5), color: T4, letterSpacing: 0.5, marginBottom: rv(3)},
-  model: {fontFamily: FONT, fontSize: rf(12.5), fontWeight: '700', color: T2, letterSpacing: -0.2},
+  brand: {fontFamily: FONT, ...TYPE.micro, color: T4, marginBottom: rv(3)},
+  model: {fontFamily: FONT, ...TYPE.label, fontWeight: '700', color: T2, letterSpacing: -0.2},
   modelBase: {color: T1},
   pill: {alignSelf: 'flex-start', marginTop: rv(7), paddingHorizontal: rs(6), paddingVertical: rv(2.5),
     borderRadius: RADIUS.sm / 2, backgroundColor: CARD_HI},
   pillBase: {backgroundColor: withAlpha(T1, 0.13)},
-  pillTxt: {fontFamily: FONT, fontSize: rf(9), fontWeight: '600', color: T3},
+  pillTxt: {fontFamily: FONT, ...TYPE.micro, color: T3},
   pillTxtBase: {color: T1},
 
-  value: {fontFamily: NUM, fontSize: rf(19.5), color: T3, letterSpacing: -0.3},
+  // 표에서 제일 먼저 읽어야 하는 건 숫자다. 예전 19.5 는 모델명(12.5)과 두 배도 차이가
+  // 안 나 위계가 약했다 — title(23)로 올려 한눈에 숫자가 먼저 들어오게 한다.
+  value: {fontFamily: NUM, ...TYPE.title, color: T3, letterSpacing: -0.3},
   valueBase: {color: T1, fontWeight: '500'},
-  unit: {fontFamily: FONT, fontSize: rf(10), color: T4},
-  textVal: {fontFamily: FONT, fontSize: rf(13), color: T2, letterSpacing: -0.2},
+  unit: {fontFamily: FONT, ...TYPE.caption, color: T4},
+  textVal: {fontFamily: FONT, ...TYPE.body, color: T2, letterSpacing: -0.2},
   textValBase: {color: T1, fontWeight: '600'},
-  dash: {fontFamily: FONT, fontSize: rf(13), color: T4},
-  delta: {fontFamily: NUM, fontSize: rf(12.5), color: T2, marginTop: rv(5), fontWeight: '500'},
+  dash: {fontFamily: FONT, ...TYPE.body, color: T4},
+  delta: {fontFamily: NUM, ...TYPE.label, color: T2, marginTop: rv(5)},
   deltaBase: {color: T4, fontWeight: '400'},
 
   mine: {marginHorizontal: GUTTER, marginTop: rv(18), padding: rs(14),
     backgroundColor: CARD, borderRadius: RADIUS.md, borderWidth: StyleSheet.hairlineWidth,
     borderColor: SEP},
   mineRow: {flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline'},
-  mineKey: {flex: 1, fontFamily: FONT, fontSize: rf(11.5), color: T3, fontWeight: '500'},
-  mineVal: {fontFamily: NUM, fontSize: rf(13.5), color: T2, marginLeft: rs(8)},
+  mineKey: {flex: 1, fontFamily: FONT, ...TYPE.caption, color: T3},
+  mineVal: {fontFamily: NUM, ...TYPE.body, color: T2, marginLeft: rs(8)},
   mineTrack: {marginTop: rv(9), height: rv(3), borderRadius: rv(2),
     backgroundColor: withAlpha(T1, 0.08), overflow: 'hidden'},
   mineFill: {height: '100%', borderRadius: rv(2), backgroundColor: RING_ACCENT},
@@ -277,16 +283,16 @@ const s = StyleSheet.create({
     borderRadius: RADIUS.btn, backgroundColor: CARD_HI, alignItems: 'center',
     borderWidth: StyleSheet.hairlineWidth, borderColor: SEP},
   ctaOff: {backgroundColor: 'transparent'},
-  ctaTxt: {fontFamily: FONT, fontSize: rf(14.5), fontWeight: '600', color: T1},
+  ctaTxt: {fontFamily: FONT, ...TYPE.body, fontWeight: '600', color: T1},
   ctaTxtOff: {color: T4, fontWeight: '400'},
 
   search: {marginHorizontal: GUTTER, marginBottom: rv(6), backgroundColor: CARD_HI,
     borderRadius: RADIUS.input, paddingHorizontal: rs(14)},
-  searchInput: {fontFamily: FONT, fontSize: rf(14), color: T1, paddingVertical: rv(12)},
+  searchInput: {fontFamily: FONT, ...TYPE.body, color: T1, paddingVertical: rv(12)},
   item: {flexDirection: 'row', alignItems: 'center', paddingHorizontal: GUTTER,
     paddingVertical: rv(12)},
-  itemName: {fontFamily: FONT, fontSize: rf(14), fontWeight: '600', color: T1, letterSpacing: -0.2},
-  itemSub: {fontFamily: FONT, fontSize: rf(11.5), color: T4, marginTop: rv(3)},
-  empty: {fontFamily: FONT, fontSize: rf(13.5), color: T3, textAlign: 'center',
-    marginTop: rv(40), paddingHorizontal: GUTTER, lineHeight: rf(20)},
+  itemName: {fontFamily: FONT, ...TYPE.body, fontWeight: '600', color: T1, letterSpacing: -0.2},
+  itemSub: {fontFamily: FONT, ...TYPE.caption, color: T4, marginTop: rv(3)},
+  empty: {fontFamily: FONT, ...TYPE.body, color: T3, textAlign: 'center',
+    marginTop: rv(40), paddingHorizontal: GUTTER, lineHeight: rf(24)},
 });

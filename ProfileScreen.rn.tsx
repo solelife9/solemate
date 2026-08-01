@@ -25,8 +25,6 @@ import { hkAvailable, hkLinked, hkLink, hkRestingHR } from './lib/healthkit';
 import { buildRecapShareCardModel, shareRecapCard, shareRunnerSpecCard, formatRecapPRs, type RecapKind, type SvgCapturable } from './lib/shareCard';
 import RecapShareCard from './RecapShareCard';
 import RunnerSpecShareCard, { type RunnerSpecShareModel } from './RunnerSpecShareCard';
-import SocialProfileCard from './SocialProfileCard';
-import type { PublicProfile } from './lib/publicProfile';
 import {
   AlertSettings, THRESHOLD_STEP,
   MIN_THRESHOLD_PCT, MAX_THRESHOLD_PCT, DEFAULT_SETTINGS, DEFAULT_ALERTS,
@@ -112,7 +110,7 @@ function NotifToggle({ label, value, onToggle, testID }: { label: string; value:
 
 export default function ProfileScreen({
   profile = DEFAULT_PROFILE, badges: _badges = [], records = [], distancePBs = {}, onTab,
-  socialVisibility = 'unset', onToggleSocial, socialPreview = null,
+  socialVisibility = 'unset', onToggleSocial,
   profilePhotoUri = '', onChangeName, onPickPhoto,
   weightKg = DEFAULT_SETTINGS.weightKg, onChangeWeight,
   age = DEFAULT_SETTINGS.age, onChangeAge,
@@ -139,8 +137,6 @@ export default function ProfileScreen({
   /** 공개 프로필 상태(소셜). 'unset' 은 아직 안 물어본 것 — 이 화면에선 '꺼짐'과 같이 다룬다. */
   socialVisibility?: 'unset' | 'public' | 'private';
   onToggleSocial?: (next: 'public' | 'private') => void;
-  /** 남들에게 보일 카드(공개 중일 때 설정 안에서 그대로 보여준다). */
-  socialPreview?: PublicProfile | null;
   onTab?: (i: number) => void;
   // 프로필 정체성(로컬 영속). 사진 URI(없으면 아이콘 폴백), 이름 변경, 사진 선택 콜백.
   profilePhotoUri?: string;
@@ -1047,16 +1043,6 @@ export default function ProfileScreen({
               </Pressable>
             ) : null}
 
-            {/* 남들에게 보이는 그대로 — 토글만 있으면 "뭐가 나가는지 모르겠다"가 남는다.
-                실물을 그 자리에서 보여주는 게 추상적인 스위치보다 훨씬 안심된다.
-                공개 중일 때만 띄운다(비공개면 보여줄 것이 없다). */}
-            {socialVisibility === 'public' && socialPreview ? (
-              <View style={{ paddingTop: rv(10), paddingBottom: rv(4) }} testID="social-preview">
-                <Text style={s.settingSectionLabel}>남들에게 이렇게 보여요</Text>
-                <SocialProfileCard profile={socialPreview} />
-              </View>
-            ) : null}
-
             {/* Apple 건강(HealthKit) — 설정 안에 compact 행으로. 기기 지원 시만. */}
             {hkAvailable() && (
               <Pressable onPress={linkHealth} testID="link-health" accessibilityRole="button" accessibilityLabel="Apple 건강 연동" accessibilityState={{ disabled: hkOn }} style={({ pressed }) => [s.settingRow, s.settingBorder, pressed && !hkOn && { backgroundColor: CARD_HI }]}>
@@ -1342,11 +1328,6 @@ const s = StyleSheet.create({
   settingRow: { flexDirection: 'row', alignItems: 'center', gap: rv(12), paddingVertical: rv(14), paddingHorizontal: rs(16) },
   settingBorder: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: SEP },
   settingIcon: { width: rs(30), height: rs(30), borderRadius: rs(9), backgroundColor: withAlpha(T1, 0.06), alignItems: 'center', justifyContent: 'center' },
-  // 설정 안 소제목(미리보기 등) — 행 라벨보다 작고 눌린 톤.
-  settingSectionLabel: {
-    fontFamily: FONT, color: T3, fontSize: rf(11), fontWeight: '700',
-    letterSpacing: 0.9, marginBottom: rv(8),
-  },
   settingLabel: { flex: 1, color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600' },
   settingDetail: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500' },
 
