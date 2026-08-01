@@ -72,14 +72,28 @@ function WearRing({pct, size = rs(26)}: {pct: number; size?: number}) {
 export default function SocialProfileCard({
   profile,
   footnote,
+  maxShoes,
   testID,
 }: {
   profile: PublicProfile;
   /** 아래 안심 문구(동의 화면에서만 쓴다). 없으면 그 줄이 통째로 빠진다. */
   footnote?: string;
+  /**
+   * 보여줄 신발 수 상한(동의 화면처럼 세로가 빠듯할 때). 잘리면 **몇 켤레까지 보이는지**
+   * 한 줄로 알린다.
+   *
+   * ⚠️ **개수는 줄여도 되지만 종류는 빼면 안 된다.** 스펙·PB 를 통째로 빼면 카드가 약속한
+   * "여기 보이는 것이 전부"가 거짓이 되고, 그 순간 동의 자체가 무너진다(2026-08-01 목업
+   * 검토에서 실제로 저지를 뻔했다).
+   */
+  maxShoes?: number;
   testID?: string;
 }) {
-  const {stats, spec, activeShoes} = profile;
+  const {stats, spec} = profile;
+  const allShoes = profile.activeShoes;
+  const activeShoes =
+    typeof maxShoes === 'number' && maxShoes > 0 ? allShoes.slice(0, maxShoes) : allShoes;
+  const trimmed = activeShoes.length < allShoes.length;
   const pace = fmtPace(spec?.paceSec ?? 0);
   const hasSpecRow = (spec?.vo2max ?? 0) > 0 || !!pace || (spec?.longestKm ?? 0) > 0;
 
@@ -145,6 +159,9 @@ export default function SocialProfileCard({
                 </View>
               );
             })}
+            {trimmed ? (
+              <Text style={s.shoeNote}>{`현역 신발은 최대 ${allShoes.length}켤레까지 보여요`}</Text>
+            ) : null}
           </View>
         </>
       ) : null}
@@ -203,6 +220,7 @@ const s = StyleSheet.create({
   shoeKm: {color: T1, fontFamily: FONT, fontSize: rf(12), fontWeight: '700',
            letterSpacing: -0.3, fontVariant: ['tabular-nums']},
   shoeKmMax: {color: T3, fontSize: rf(9.5), fontWeight: '600'},
+  shoeNote: {color: T3, fontFamily: FONT, fontSize: rf(9.5), paddingTop: rv(2)},
 
   foot: {flexDirection: 'row', marginTop: rv(14), paddingTop: rv(11),
          borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP},

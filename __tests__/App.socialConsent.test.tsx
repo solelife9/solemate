@@ -16,6 +16,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import App from '../App';
 import {VISIBILITY_KEY} from '../lib/publicProfile';
 
+/** 탭바의 '마이' 라벨(primitives.TABS 와 같은 값). 인덱스 대신 라벨로 찾는다. */
+const MY_TAB_LABEL = '마이';
+
 function textOf(node: any): string {
   let out = '';
   const walk = (n: any) => {
@@ -150,6 +153,75 @@ describe('공개 범위 동의 게이트', () => {
     await AsyncStorage.setMany({onboarded: '1', cache_shoes_v1: '[]', cache_runs_v1: '[]'});
     const r = await renderApp();
     expect(textOf(r.toJSON())).not.toContain('이렇게 보여요');
+    r.unmount();
+  });
+});
+
+// ─── 설정 토글 ────────────────────────────────────────────────────────────────
+// 끄면 **내려간다**(안 쓰는 게 아니라 지운다)는 계약은 lib/publicProfile 단위 테스트가
+// 보고, 여기서는 화면이 상태를 옳게 반영·저장하는지만 본다.
+describe('설정 — 프로필 공개 토글', () => {
+  beforeEach(async () => {
+    await AsyncStorage.clear();
+    (globalThis as any).__KEEGO_DEV_SEED__ = false;
+  });
+  afterEach(() => {
+    delete (globalThis as any).__KEEGO_DEV_SEED__;
+  });
+
+  /** 마이 탭으로 이동한 뒤 공개 토글 행을 집는다. **없으면 실패**한다(빈 통과 방지). */
+  const goToToggle = async (r: ReactTestRenderer.ReactTestRenderer) => {
+    // 탭바는 accessibilityRole='tab' + 라벨로 찾는다(인덱스에 의존하지 않게).
+    const tab = r.root.findAll(
+      n => (n.props as any)?.accessibilityRole === 'tab'
+        && (n.props as any)?.accessibilityLabel === MY_TAB_LABEL
+        && !!(n.props as any)?.onPress,
+    );
+    expect(tab.length).toBeGreaterThan(0); // 마이 탭을 못 찾으면 테스트가 의미 없다
+    await act(async () => { (tab[0].props as any).onPress(); });
+
+    // 설정은 별도 시트다 — 열어야 토글 행이 마운트된다.
+    const gear = r.root.findAll(
+      n => (n.props as any)?.accessibilityLabel === '설정 열기' && !!(n.props as any)?.onPress,
+    );
+    expect(gear.length).toBeGreaterThan(0);
+    await act(async () => { (gear[0].props as any).onPress(); });
+
+    const rows = r.root.findAll(
+      n => (n.props as any)?.testID === 'social-visibility-row' && !!(n.props as any)?.onPress,
+    );
+    expect(rows.length).toBeGreaterThan(0); // 토글 행이 실제로 있어야 한다
+    return rows[0];
+  };
+
+  test('공개 상태면 누르면 비공개로 저장된다', async () => {
+    await seedUserWithShoe();
+    await AsyncStorage.setItem(VISIBILITY_KEY, 'public');
+    const r = await renderApp();
+    const row = await goToToggle(r);
+    await act(async () => { (row.props as any).onPress(); });
+    expect(await AsyncStorage.getItem(VISIBILITY_KEY)).toBe('private');
+    r.unmount();
+  });
+
+  test('비공개 상태에서 누르면 공개로 저장된다', async () => {
+    await seedUserWithShoe();
+    await AsyncStorage.setItem(VISIBILITY_KEY, 'private');
+    const r = await renderApp();
+    const row = await goToToggle(r);
+    await act(async () => { (row.props as any).onPress(); });
+    expect(await AsyncStorage.getItem(VISIBILITY_KEY)).toBe('public');
+    r.unmount();
+  });
+
+  test('아직 안 물어본 상태(unset)는 화면에 "비공개"로 보인다', async () => {
+    await seedUserWithShoe();
+    const r = await renderApp();
+    await goToToggle(r);
+    const detail = r.root.findAll(n => (n.props as any)?.testID === 'social-visibility-detail');
+    expect(detail.length).toBeGreaterThan(0);
+    // 자식 텍스트를 직접 읽는다(TestInstance 엔 toJSON 이 없다).
+    expect(String((detail[0].props as any).children)).toContain('비공개');
     r.unmount();
   });
 });

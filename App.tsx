@@ -2565,6 +2565,8 @@ function Main(){
         {tab===3&&(
           <ProfileScreen
             profile={profile} badges={badges} records={records} distancePBs={distancePBs} onTab={setTab}
+            socialVisibility={socialVisibility}
+            onToggleSocial={(next)=>{setSocialVisibility(next);void saveVisibility(next);}}
             profilePhotoUri={profilePhoto} onChangeName={changeProfileName} onPickPhoto={pickProfilePhoto}
             weightKg={weightKg} onChangeWeight={changeWeight}
             age={age} onChangeAge={changeAge} sex={sex} onChangeSex={changeSex}

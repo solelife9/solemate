@@ -110,6 +110,7 @@ function NotifToggle({ label, value, onToggle, testID }: { label: string; value:
 
 export default function ProfileScreen({
   profile = DEFAULT_PROFILE, badges: _badges = [], records = [], distancePBs = {}, onTab,
+  socialVisibility = 'unset', onToggleSocial,
   profilePhotoUri = '', onChangeName, onPickPhoto,
   weightKg = DEFAULT_SETTINGS.weightKg, onChangeWeight,
   age = DEFAULT_SETTINGS.age, onChangeAge,
@@ -133,6 +134,9 @@ export default function ProfileScreen({
   badges?: Badge[];
   records?: PersonalRecord[];
   distancePBs?: RunBestEfforts;
+  /** 공개 프로필 상태(소셜). 'unset' 은 아직 안 물어본 것 — 이 화면에선 '꺼짐'과 같이 다룬다. */
+  socialVisibility?: 'unset' | 'public' | 'private';
+  onToggleSocial?: (next: 'public' | 'private') => void;
   onTab?: (i: number) => void;
   // 프로필 정체성(로컬 영속). 사진 URI(없으면 아이콘 폴백), 이름 변경, 사진 선택 콜백.
   profilePhotoUri?: string;
@@ -1017,6 +1021,27 @@ export default function ProfileScreen({
               <Text style={[s.settingDetail, hapticsOn && { color: GOOD }]} testID="haptics-detail">{hapticsOn ? '켜짐' : '꺼짐'}</Text>
               <Ionicons name="swap-horizontal" size={ri(ICON.inline)} color={T3} />
             </Pressable>
+
+            {/* 프로필 공개(소셜) — 즉시 토글. 끄면 올라간 프로필이 **내려간다**(안 쓰는 게
+                아니라 지운다). keego 는 동의 없이 공개되던 사고를 이미 냈다(AUDIT 1) —
+                그래서 이 스위치는 항상 보이고, 끄면 즉시 반영된다. */}
+            {onToggleSocial ? (
+              <Pressable
+                onPress={() => onToggleSocial(socialVisibility === 'public' ? 'private' : 'public')}
+                accessibilityRole="button"
+                accessibilityLabel={`프로필 공개, 현재 ${socialVisibility === 'public' ? '공개' : '비공개'}. 눌러서 전환`}
+                style={({ pressed }) => [s.settingRow, s.settingBorder, pressed && { backgroundColor: CARD_HI }]}
+                testID="social-visibility-row">
+                <View style={s.settingIcon}><Ionicons name="people-outline" size={ri(ICON.inline)} color={ACCENT} /></View>
+                <Text style={s.settingLabel}>프로필 공개</Text>
+                <Text
+                  style={[s.settingDetail, socialVisibility === 'public' && { color: GOOD }]}
+                  testID="social-visibility-detail">
+                  {socialVisibility === 'public' ? '공개' : '비공개'}
+                </Text>
+                <Ionicons name="swap-horizontal" size={ri(ICON.inline)} color={T3} />
+              </Pressable>
+            ) : null}
 
             {/* Apple 건강(HealthKit) — 설정 안에 compact 행으로. 기기 지원 시만. */}
             {hkAvailable() && (

@@ -12,6 +12,16 @@
 //   · "여기 보이는 것이 전부입니다" 한 줄이 부정 목록 전체보다 세다(검증 가능한 약속)
 //   · 신발과 수명 링이 보이는 순간 이 기능의 재미가 전달된다
 //
+// ── 그런데 카드만으로는 부족하다 ────────────────────────────────────────────
+// 카드는 "여기 보이는 것이 전부"라고 말하지만, 사용자는 **카드에 뭐가 없는지를 스스로
+// 유추**해야 한다. 없는 걸 알아채는 건 어렵다. 그리고 동의는 "무엇에 동의하는지 구체적으로
+// 알렸는가"가 핵심이라, 나중에 문제가 생기면 "카드를 봤으니 알았을 것"보다 **명시적 고지**가
+// 훨씬 강한 방어다(스토어 심사·방통위도 마찬가지).
+//
+// 그래서 둘을 나눠 맡긴다:
+//   · **공개되는 것** → 카드가 실물로 보여준다(목록으로 또 쓰면 중복이다)
+//   · **공개되지 않는 것** → 문자로 못 박는다(유추가 필요 없게)
+//
 // 거절('나만 보기')을 작고 흐리게 숨기지 않는다. 그렇게 하면 동의가 아니라 유도다.
 // ============================================================================
 import React from 'react';
@@ -19,10 +29,28 @@ import {View, Pressable, StyleSheet, ScrollView} from 'react-native';
 import {Text} from './lib/text';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {rf, rs, rv} from './lib/responsive';
-import {BG, T1, T3, FONT, GUTTER, TYPE} from './theme';
+import {BG, T1, T2, T3, FONT, GUTTER, TYPE} from './theme';
 import {Button} from './primitives';
 import SocialProfileCard from './SocialProfileCard';
 import type {PublicProfile} from './lib/publicProfile';
+
+/**
+ * 공개되지 않는 것 — **문자로 못 박는다.**
+ * 경로를 맨 위에 두는 이유: 러닝 앱에서 사람들이 진짜 걱정하는 게 이거고,
+ * 이걸 먼저 해소해야 나머지를 편하게 켠다.
+ */
+/**
+ * 동의 화면에서 보여줄 신발 수 — 세로를 아껴 아래 '공개되지 않아요' 목록까지 한눈에
+ * 들어오게 한다. 스크롤해야만 보이는 고지는 고지로서 약하다.
+ * 잘린 만큼은 카드가 "최대 N켤레까지 보여요"로 정직하게 알린다.
+ */
+const CONSENT_MAX_SHOES = 2;
+
+const NOT_PUBLIC: readonly {label: string; why?: string}[] = [
+  {label: '달린 경로 지도', why: '집 위치가 드러나요'},
+  {label: '몸무게 · 나이 · 성별 · 심박'},
+  {label: '러닝별 메모 · 사진 · 날짜'},
+];
 
 export default function SocialConsentScreen({
   preview,
@@ -49,9 +77,24 @@ export default function SocialConsentScreen({
         <Text style={s.eyebrow}>내 공개 프로필</Text>
         <SocialProfileCard
           profile={preview}
-          footnote="경로·몸무게·메모는 올라가지 않아요. 여기 보이는 것이 전부입니다."
+          footnote="여기 보이는 것이 전부입니다."
+          maxShoes={CONSENT_MAX_SHOES}
           testID="consent-preview-card"
         />
+
+        {/* 공개되지 않는 것 — 카드가 못 하는 일(없는 것의 명시)을 여기서 한다. */}
+        <View style={s.notList} testID="consent-private-list">
+          <Text style={s.notHead}>공개되지 않아요</Text>
+          {NOT_PUBLIC.map(item => (
+            <View key={item.label} style={s.notRow}>
+              <Text style={s.notMark}>✕</Text>
+              <Text style={s.notText}>
+                {item.label}
+                {item.why ? <Text style={s.notWhy}>{`  ${item.why}`}</Text> : null}
+              </Text>
+            </View>
+          ))}
+        </View>
       </ScrollView>
 
       <View style={s.footer}>
@@ -80,6 +123,16 @@ const s = StyleSheet.create({
     color: T3, fontFamily: FONT, fontSize: rf(10), fontWeight: '700', letterSpacing: 1.4,
     textAlign: 'center', marginTop: rv(22), marginBottom: rv(9),
   },
+  notList: {marginTop: rv(18)},
+  notHead: {
+    color: T3, fontFamily: FONT, fontSize: rf(10), fontWeight: '700', letterSpacing: 1.2,
+    marginBottom: rv(8),
+  },
+  notRow: {flexDirection: 'row', alignItems: 'flex-start', gap: rs(8), paddingVertical: rv(4)},
+  notMark: {color: T3, fontFamily: FONT, fontSize: rf(11), lineHeight: rf(17), width: rs(11)},
+  notText: {flex: 1, color: T2, fontFamily: FONT, fontSize: rf(12.5), lineHeight: rf(17)},
+  notWhy: {color: T3, fontSize: rf(11)},
+
   footer: {gap: rv(6), paddingTop: rv(10)},
   ghost: {minHeight: rs(46), alignItems: 'center', justifyContent: 'center'},
   ghostTxt: {color: T3, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600'},
