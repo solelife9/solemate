@@ -116,6 +116,12 @@ function toEntry(
     rankTier: e.rankTier || 'bronze',
     rankColor: e.rankColor || '#CD7F32',
     equippedTitle: e.equippedTitle ?? null,
+    // 신발은 엔트리에 실려 온 것을 그대로 넘긴다 — 화면이 따로 읽지 않는다.
+    // 원격이 이상한 값을 보냈어도 여기서 한 번 더 정규화한다(남의 데이터를 믿지 않는다).
+    ...(() => {
+      const shoes = sanitizeEntryShoes((e as {shoes?: EntryShoe[]}).shoes);
+      return shoes.length ? {shoes} : {};
+    })(),
   };
 }
 

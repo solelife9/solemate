@@ -241,6 +241,14 @@ export default function HallOfFameScreen({
               </Text>
             </View>
           ) : null}
+          {/* 「1, 2, 3위는 뭘 신나」 — 이 한 줄이 keego 랭킹의 차별점이다(2026-08-01).
+              엔트리에 실려 온 값이라 **추가 읽기가 없다**. 옛 엔트리엔 없으므로 조용히 빠진다.
+              브랜드는 작은 대문자, 모델은 본문 — 이름이 길어도 한 줄에서 잘린다. */}
+          {e.shoes?.length ? (
+            <Text style={s.rowShoes} numberOfLines={1} testID={`hof-shoes-${e.uid}`}>
+              {e.shoes.map(sh => (sh.model || sh.brand)).join(' · ')}
+            </Text>
+          ) : null}
         </View>
         <Text style={s.rowScore}>{formatScore(category, e.score)}</Text>
       </View>
@@ -447,6 +455,8 @@ const s = StyleSheet.create({
   },
   tierDot: {width: rs(8), height: rs(8), borderRadius: rs(4)},
   rowName: {fontFamily: FONT, color: T1, fontSize: TYPE.body.fontSize, fontWeight: '700'},
+  // 신는 러닝화 — 이름 아래 한 줄. 무채(T3)로 눌러 순위·점수보다 뒤에 읽히게 한다.
+  rowShoes: {fontFamily: FONT, color: T3, fontSize: TYPE.label.fontSize, marginTop: 2},
   titlePill: {
     flexDirection: 'row',
     alignSelf: 'flex-start',

@@ -129,3 +129,82 @@ describe('HallOfFameScreen', () => {
     expect(byId(root, 'hof-my-rank')).toHaveLength(0);
   });
 });
+
+/** 렌더 트리의 모든 텍스트를 이어 붙인다. */
+function textOf(node: unknown): string {
+  let out = '';
+  const walk = (n: any) => {
+    if (typeof n === 'string') {
+      out += n;
+      return;
+    }
+    if (!n || !n.children) return;
+    n.children.forEach(walk);
+  };
+  walk(node);
+  return out;
+}
+
+// ─── 「1, 2, 3위는 뭘 신나」 (2026-08-01) ──────────────────────────────────────
+// keego 랭킹의 차별점. 값은 **엔트리에 실려 온다** — 화면이 프로필을 따로 읽지 않는다.
+// 그게 이 설계의 핵심이라(상위 100명 × 1읽기를 아낀다) 그 계약을 테스트로 못 박는다.
+describe('랭킹 행의 신발 표시', () => {
+  const shoeEntry = (over: Record<string, unknown> = {}) =>
+    entry({uid: 'a', rank: 1, score: 500, nickname: '에이스', ...over});
+
+  const renderWith = async (entries: unknown[]) => {
+    const provider = {
+      getLeaderboard: jest.fn(async (category: string, yearMonth: string) => ({
+        kind: 'remote' as const, available: true, category, yearMonth, entries,
+      })),
+      getMyRanking: jest.fn(async (category: string, yearMonth: string) => ({
+        kind: 'remote' as const, available: false, category, yearMonth,
+        total: 0, topPercent: null, me: null, nearby: [],
+      })),
+    } as never;
+    let r!: ReactTestRenderer.ReactTestRenderer;
+    await act(async () => {
+      r = ReactTestRenderer.create(<HallOfFameScreen provider={provider} profileName="나" />);
+    });
+    for (let i = 0; i < 4; i++) await act(async () => { await Promise.resolve(); });
+    return {r, provider};
+  };
+
+  test('신발이 있으면 순위 행에 뜬다', async () => {
+    const {r} = await renderWith([
+      shoeEntry({shoes: [
+        {brand: 'Nike', model: 'Alphafly 3', usedKm: 210},
+        {brand: 'Hoka', model: 'Clifton 9', usedKm: 130},
+      ]}),
+    ]);
+    const t = textOf(r.toJSON());
+    expect(t).toContain('Alphafly 3');
+    expect(t).toContain('Clifton 9');
+    r.unmount();
+  });
+
+  test('신발을 위해 추가 조회를 하지 않는다 — 엔트리에 실려 온다', async () => {
+    const {r, provider} = await renderWith([
+      shoeEntry({shoes: [{brand: 'Nike', model: 'Alphafly 3', usedKm: 210}]}),
+    ]);
+    // 화면이 부르는 것은 리더보드 + 내 순위 둘뿐이다(프로필 조회 없음).
+    expect(Object.keys(provider as object).sort()).toEqual(['getLeaderboard', 'getMyRanking']);
+    expect((provider as never as {getLeaderboard: jest.Mock}).getLeaderboard).toHaveBeenCalled();
+    r.unmount();
+  });
+
+  test('옛 엔트리(신발 없음)는 그 줄이 조용히 빠진다', async () => {
+    const {r} = await renderWith([shoeEntry()]);
+    const found = r.root.findAll(n => (n.props as any)?.testID === 'hof-shoes-a');
+    expect(found).toHaveLength(0);
+    r.unmount();
+  });
+
+  test('모델명이 없으면 브랜드로 대체한다(직접 등록한 신발)', async () => {
+    const {r} = await renderWith([
+      shoeEntry({shoes: [{brand: '내신발', model: '', usedKm: 50}]}),
+    ]);
+    expect(textOf(r.toJSON())).toContain('내신발');
+    r.unmount();
+  });
+});

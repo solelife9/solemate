@@ -250,6 +250,11 @@ export interface LeaderboardEntry {
   rankTier: RankTier;
   rankColor: string;
   equippedTitle: string | null;
+  /**
+   * 그달 주력 신발 — 「1, 2, 3위는 뭘 신나」(2026-08-01).
+   * 엔트리에 함께 실려 오므로 **화면이 따로 읽지 않는다**. 옛 엔트리엔 없다.
+   */
+  shoes?: {brand: string; model: string; usedKm: number}[];
 }
 
 export interface LocalMyRanking {
