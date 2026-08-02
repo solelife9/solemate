@@ -41,7 +41,7 @@ import {findCatalogShoe, toCompareShoe, unknownCompareShoe} from './lib/shoeCata
 import type {MyShoeRef} from './appTypes';
 import {similarShoes, SimilarCandidate, prevCategory} from './lib/nextShoe';
 import {ShoeCategory} from './data/shoeModels';
-import {actualWonPerKm, expectedWonPerKm} from './lib/shoeCompare';
+import {expectedWonPerKm} from './lib/shoeCompare';
 import {buildShoeSpec, SPEC_BASIS_KO, dropWarningKo} from './lib/shoeSpecModel';
 import {visibleChannels, tierLabelKo, EXCLUDED_CHANNELS} from './lib/shoeStore';
 import {AFFILIATE_DISCLOSURE, buildShopLinks, categoryLabelKo} from './lib/affiliate';
@@ -53,8 +53,6 @@ export interface FindShoesBase {
   model: string;
   /** 그 신발로 실제 달린 거리(km). 원/km 실측의 분모. */
   usedKm?: number;
-  /** 그 신발 구매가(원). 없으면 원/km를 계산하지 않는다. */
-  priceKrw?: number;
 }
 
 export interface FindShoesScreenProps {
@@ -85,7 +83,6 @@ function FindShoesScreen({base: baseProp = null, myShoes = [], onClose}: FindSho
   const prevBrand = base?.brand ?? '';
   const prevModel = base?.model ?? '';
   const prevUsedKm = base?.usedKm;
-  const prevPriceKrw = base?.priceKrw;
   /** 비교 중인 후보의 인덱스. 비교 화면에서 좌우로 갈아끼운다(왕복 없이 훑기). */
   const [pickedIdx, setPickedIdx] = useState(0);
   /** 모델키 → 조회된 가격(없으면 미조회/실패). 화면은 있는 것만 보여준다. */
@@ -99,12 +96,6 @@ function FindShoesScreen({base: baseProp = null, myShoes = [], onClose}: FindSho
   const candidates = useMemo(
     () => (prevModel ? similarShoes(prevBrand, prevModel, {limit: 8, maxPerBrand: 2}) : []),
     [prevBrand, prevModel],
-  );
-
-  // 지난 신발 원/km — 내가 낸 값 ÷ 내가 달린 거리(있으면 100% 실측).
-  const prevPerKm = useMemo(
-    () => actualWonPerKm(prevPriceKrw, prevUsedKm),
-    [prevPriceKrw, prevUsedKm],
   );
 
   // 화면에 뜬 후보들의 현재가를 한 번에 조회한다. 키가 없으면 전부 null 이라 조용히
@@ -150,19 +141,11 @@ function FindShoesScreen({base: baseProp = null, myShoes = [], onClose}: FindSho
     return () => { alive = false; };
   }, [shoes, prices]);
 
-  /**
-   * 표에 넘길 형태 — 가격을 얹는다.
-   *  · 내 신발이고 구매가를 아는 경우 → **내가 낸 값**(실측의 분자)
-   *  · 그 외 → 조회된 시세(예상)
-   * 내가 낸 값을 시세보다 우선한다. 지금 얼마에 파는지보다 **내가 얼마를 썼는지**가
-   * 내 1km당 비용의 진실이다.
-   */
+  /** 표에 넘길 형태 — 조회된 시세를 얹는다(구매가 입력은 2026-08-02 폐지). */
   const tableShoes = useMemo<CompareShoe[]>(() => shoes.map((x) => {
-    const owned = myShoes.find(m => m.brand === x.brand && m.model === x.name);
-    if (owned?.priceKrw) return {...x, price: {krw: owned.priceKrw, kind: 'paid' as const}};
     const q = prices[`${x.brand}|${x.name}`];
     return q ? {...x, price: {krw: q.priceKrw, kind: 'market' as const}} : x;
-  }), [shoes, prices, myShoes]);
+  }), [shoes, prices]);
 
   const picked = candidates[pickedIdx] ?? null;
   /**
@@ -189,9 +172,9 @@ function FindShoesScreen({base: baseProp = null, myShoes = [], onClose}: FindSho
     setStep('candidates');
   };
 
-  /** 내 신발 한 켤레 → 기준. 구매가가 있으면 원/km 가 실측이 된다. */
+  /** 내 신발 한 켤레 → 기준. */
   const chooseMine = (m: MyShoeRef) =>
-    chooseBase({brand: m.brand, model: m.model, usedKm: m.usedKm, priceKrw: m.priceKrw});
+    chooseBase({brand: m.brand, model: m.model, usedKm: m.usedKm});
 
   /** 카탈로그 문서 → 스펙 표에 세울 형태(없으면 이름만 남긴 형태). */
   const toSpec = (brand: string, model: string, mine: {usedKm: number; lifespanKm: number} | null) => {
@@ -266,7 +249,6 @@ function FindShoesScreen({base: baseProp = null, myShoes = [], onClose}: FindSho
             prevBrand={prevBrand}
             prevModel={prevModel}
             prevUsedKm={prevUsedKm}
-            prevPerKmLabel={prevPerKm ? `1km당 ${prevPerKm.wonPerKm.toLocaleString('ko-KR')}원` : ''}
             candidates={candidates}
             priceOf={priceOf}
             prevCategoryKey={prevCategoryKey}
@@ -407,13 +389,12 @@ function BaseStep({myShoes, onPickMine, onBrowse}: {
 // 헤더로 묶으면 가장 잘 맞는 후보가 알파벳 순서에 밀린다.
 // 고르는 건 목적이 아니고 **눌러서 그래프로 견주는 게 본론**이라, 목록은 빨리 훑게만 한다.
 function RecommendStep({
-  prevBrand, prevModel, prevUsedKm, prevPerKmLabel, candidates, priceOf,
+  prevBrand, prevModel, prevUsedKm, candidates, priceOf,
   prevCategoryKey, onPick, baseWearPct, onChangeBase,
 }: {
   prevBrand: string;
   prevModel: string;
   prevUsedKm?: number;
-  prevPerKmLabel: string;
   candidates: SimilarCandidate[];
   priceOf: (c: SimilarCandidate) => ShoePriceQuote | null;
   prevCategoryKey: ShoeCategory;
@@ -450,8 +431,6 @@ function RecommendStep({
             <Text style={s.baseCardMeta} numberOfLines={1}>
               {categoryLabelKo[prevCategoryKey]}
               {typeof prevUsedKm === 'number' && prevUsedKm > 0 ? ` · 실사용 ${Math.round(prevUsedKm)}km` : ''}
-              {prevPerKmLabel ? ' · ' : ''}
-              {prevPerKmLabel ? <Text style={s.baseCardPer}>{prevPerKmLabel}</Text> : null}
             </Text>
           </View>
         </View>

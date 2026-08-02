@@ -36,8 +36,6 @@ export type MyShoeRef = {
   model: string;
   usedKm: number;
   lifespanKm: number;
-  /** 구매가(원, 선택). 없으면 원/km 를 계산하지 않는다(추측 금지). */
-  priceKrw?: number;
 };
 
 export type Run = {

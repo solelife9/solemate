@@ -100,17 +100,11 @@ describe('모르는 건 비운다', () => {
     }
   });
 
-  test('구매가가 없으면 지난 신발 원/km 숫자를 말하지 않는다', async () => {
-    const r = await mount({}, {priceKrw: undefined});
-    const txt = textOf(r.root);
-    // '1km당 비용은 권장 수명 기준' 같은 범례 문구는 남지만, 계산된 금액은 없어야 한다.
-    expect(txt).not.toMatch(/1km당 [\d,]+원/);
-  });
-
-  test('구매가와 주행거리가 있으면 지난 신발 원/km를 보여준다', async () => {
-    const r = await mount({}, {priceKrw: 205000, usedKm: 824});
-    // 205,000 ÷ 824 = 249원
-    expect(textOf(r.root)).toContain('1km당 249원');
+  // 구매가 입력은 2026-08-02 폐지(민우님: "구매가 없애자 그냥"). 기준 신발의 원/km
+  // 라벨도 함께 사라졌다 — 분자를 받을 곳이 없으면 그 숫자는 만들 수 없다.
+  test('기준 카드는 1km당 비용을 말하지 않는다', async () => {
+    const r = await mount();
+    expect(textOf(r.root)).not.toMatch(/1km당 [\d,]+원/);
   });
 });
 

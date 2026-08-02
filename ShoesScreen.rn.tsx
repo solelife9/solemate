@@ -42,7 +42,6 @@ const condLabel = (pct: number) => wearTier(pct).label;
 // ── shoe detail ───────────────────────────────────────────────────────────────
 function ShoeDetail({
   shoe, idx, runs, totals, unit, weightKg, surfaceOf, onBack, onRename, onDelete, onRetire, onSetMaxKm,
-  onSetPriceKrw,
   rawShoe, rawRuns, progressionCtx, equippedTitle, onRetiredKeepsake, now, allShoes,
   age = 0, sex = 'male', restHR = 0,
 }: {
@@ -63,11 +62,6 @@ function ShoeDetail({
   onRetire?: (id: string, retired: boolean) => void;
   // 신발별 수명(max_km) 조정 — 교체 임계의 분모를 사용자가 직접 보정한다.
   onSetMaxKm?: (id: string, maxKm: number) => void;
-  /**
-   * 구매가 수정. 등록할 때만 넣을 수 있어서, 안 넣고 지나간 신발은 영영 1km당 비용을
-   * 못 봤다. null 이면 지운다 — 0원에 샀다고 기록하면 원/km 가 0이 되어 거짓이 된다.
-   */
-  onSetPriceKrw?: (id: string, priceKrw: number | null) => void;
   // 키프세이크 은퇴 플로우 입력(선택). 셋 다 있으면 수명 도달 시 [계속 사용]/[은퇴]
   // 트리거 + 3스텝 회고 + 카드를 띄운다(buildRetirementSummary 가 실데이터로 요약).
   rawShoe?: BackendShoe | null;
@@ -125,21 +119,6 @@ function ShoeDetail({
   const editBaseDisp = displayNum(editBaseMax, unit);
   // 몸무게 반영으로 유효 수명이 기저와 달라졌는가(반영 안내·기저 표기 노출 조건).
   const weightAdjusted = shoe.maxBase != null && Math.round(Number(shoe.maxBase)) !== Math.round(Number(shoe.max));
-  // 구매가 편집 — 수명(±50 스텝)과 달리 금액은 스텝으로 못 맞춘다. 숫자를 직접 받는다.
-  const [priceEditOpen, setPriceEditOpen] = useState(false);
-  const [priceDraft, setPriceDraft] = useState('');
-  const openPriceEdit = () => {
-    setPriceDraft(shoe.priceKrw ? String(shoe.priceKrw) : '');
-    setPriceEditOpen(true);
-  };
-  const savePrice = () => {
-    if (!shoe.id) return;
-    const n = Number(priceDraft.replace(/[^0-9]/g, ''));
-    // 0·빈값은 '0원에 샀다'가 아니라 '모른다'다 — 필드를 지운다(원/km 가 0이 되면 거짓).
-    onSetPriceKrw?.(String(shoe.id), n > 0 ? n : null);
-    setPriceEditOpen(false);
-  };
-
   const stepMaxKm = (deltaKm: number) => { if (shoe.id) onSetMaxKm?.(String(shoe.id), clampMaxKm(editBaseMax + deltaKm)); };
   // 런 상세 — 기록탭과 같은 RunDetail 재사용(읽기 전용: 삭제/편집은 기록탭 담당).
   const [selRun, setSelRun] = useState<Run | null>(null);
@@ -249,11 +228,11 @@ function ShoeDetail({
     const fromRetire = findOpen === 'retire';
     return (
       <FindShoesScreen
-        base={{brand: shoe.brand, model: shoe.model, usedKm: shoe.used, priceKrw: shoe.priceKrw}}
+        base={{brand: shoe.brand, model: shoe.model, usedKm: shoe.used}}
         myShoes={allShoes
           .filter(x => !x.retired)
           .map(x => ({brand: x.brand, model: x.model, usedKm: x.used ?? 0,
-            lifespanKm: x.max ?? 0, priceKrw: x.priceKrw}))}
+            lifespanKm: x.max ?? 0}))}
         onClose={() => { setFindOpen(null); if (fromRetire) onBack(); }}
       />
     );
@@ -352,60 +331,6 @@ function ShoeDetail({
             </View>
           )}
         </View>
-
-        {/* 구매가 — 등록할 때만 넣을 수 있어서, 안 넣고 지나간 신발은 영영 1km당 비용을
-            못 보던 갭을 메운다. 값이 있으면 '이 신발 본전 뽑았나'를 한 줄로 답한다. */}
-        {!!shoe.id && !!onSetPriceKrw && (
-          <View style={[s.card, { padding: rs(16) }]} testID="shoe-price-card">
-            <GlassEdge glints={false} radius={RADIUS.lg} />
-            <View style={s.priceRow}>
-              <Text style={s.priceLabel}>구매가</Text>
-              {priceEditOpen ? (
-                <View style={s.priceEditRow}>
-                  <Input
-                    value={priceDraft}
-                    onChangeText={setPriceDraft}
-                    keyboardType="number-pad"
-                    placeholder="예: 139000"
-                    accessibilityLabel="구매가 입력"
-                    testID="shoe-price-input"
-                    style={s.priceInput}
-                  />
-                  <Pressable
-                    onPress={savePrice}
-                    hitSlop={10}
-                    accessibilityRole="button"
-                    accessibilityLabel="구매가 저장"
-                    testID="shoe-price-save"
-                    style={s.maxEditToggle}>
-                    <Ionicons name="checkmark" size={ri(ICON.tag)} color={T2} />
-                  </Pressable>
-                </View>
-              ) : (
-                <Pressable
-                  onPress={openPriceEdit}
-                  hitSlop={10}
-                  accessibilityRole="button"
-                  accessibilityLabel={shoe.priceKrw ? `구매가 편집, 현재 ${shoe.priceKrw}원` : '구매가 입력'}
-                  testID="shoe-price-edit"
-                  style={s.priceEditRow}>
-                  <Text style={shoe.priceKrw ? s.priceValue : s.priceEmpty}>
-                    {shoe.priceKrw ? `${shoe.priceKrw.toLocaleString('ko-KR')}원` : '입력하기'}
-                  </Text>
-                  <Ionicons name="pencil" size={ri(ICON.tag)} color={T2} />
-                </Pressable>
-              )}
-            </View>
-            {/* 값을 넣을 이유 — 넣으면 이게 보인다. 아직 안 달렸으면 계산하지 않는다. */}
-            {!!shoe.priceKrw && shoe.used > 0 && (
-              <Text style={s.priceNote}>
-                지금까지 1km당 <Text style={s.priceNoteStrong}>
-                  {Math.round(shoe.priceKrw / shoe.used).toLocaleString('ko-KR')}원
-                </Text> · 달릴수록 내려가요
-              </Text>
-            )}
-          </View>
-        )}
 
         {/* 부상예방 경고 배너(주의/위험) — 마모도가 임계를 넘으면 keep-going 보이스로
             교체를 권한다. 안전 등급(InjuryBanner null)·보관 신발은 미노출. */}
@@ -658,7 +583,7 @@ function ShoeCard({ shoe, onPress, onPlay, unit, pace: _pace, forecast }: { shoe
 
 
 export default function ShoesScreen({
-  shoes = SHOES, runs = [], totals = {}, unit = 'km', weightKg, surfaceOf, onAddShoe, onTab, onRename, onDelete, onRetire, onSetMaxKm, onSetPriceKrw, onStartRun,
+  shoes = SHOES, runs = [], totals = {}, unit = 'km', weightKg, surfaceOf, onAddShoe, onTab, onRename, onDelete, onRetire, onSetMaxKm, onStartRun,
   detailShoeId, onConsumeDetail,
   rawShoes, rawRuns, progressionCtx, equippedTitle, onRetiredKeepsake, now, userName,
   forecasts, onOpenArchive, archivedCount = 0,
@@ -697,8 +622,6 @@ export default function ShoesScreen({
   onRetire?: (id: string, retired: boolean) => void;
   // 신발별 수명(max_km) 조정 — 상세 화면 수명 편집기가 호출한다.
   onSetMaxKm?: (id: string, maxKm: number) => void;
-  /** 구매가 수정(상세로 전달). null 이면 지운다. */
-  onSetPriceKrw?: (id: string, priceKrw: number | null) => void;
   // shoe-first 동선: 상세 CTA·락커 카드 play에서 해당 신발 id로 런 시작을 알린다.
   onStartRun?: (id: string) => void;
   // 은퇴 키프세이크 플로우 입력(선택, 상세 화면으로 전달). 서버 행/진척 컨텍스트가
@@ -742,7 +665,6 @@ export default function ShoesScreen({
         onDelete={onDelete}
         onRetire={onRetire}
         onSetMaxKm={onSetMaxKm}
-        onSetPriceKrw={onSetPriceKrw}
         rawShoe={rawShoes?.find((rs) => rs.id === dShoe.id) ?? null}
         rawRuns={rawRuns}
         progressionCtx={progressionCtx}
@@ -953,14 +875,6 @@ const s = StyleSheet.create({
 
   dHeroLabel: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize },
   maxEditToggle: { width: rs(26), height: rs(26), borderRadius: rs(8), backgroundColor: CARD_HI, alignItems: 'center', justifyContent: 'center' },
-  priceRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  priceLabel: { fontFamily: FONT, ...TYPE.caption, color: T3 },
-  priceEditRow: { flexDirection: 'row', alignItems: 'center', gap: rs(8) },
-  priceValue: { fontFamily: FONT, ...TYPE.body, fontWeight: '700', color: T1 },
-  priceEmpty: { fontFamily: FONT, ...TYPE.body, color: T3 },
-  priceInput: { minWidth: rs(120), textAlign: 'right' },
-  priceNote: { fontFamily: FONT, ...TYPE.caption, color: T3, marginTop: rv(10) },
-  priceNoteStrong: { color: T1, fontWeight: '700' },
   maxStepRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rs(20), marginTop: rv(14) },
   maxStepVal: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.heading.fontSize, fontWeight: '600', fontVariant: ['tabular-nums'], minWidth: rs(96), textAlign: 'center' },
   maxStepUnitTxt: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500' },

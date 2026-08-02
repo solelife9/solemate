@@ -993,21 +993,6 @@ function Main(){
   // 신발별 수명(max_km) 조정 — 신발별 교체 임계의 분모. clampMaxKm로 범위를 보정한
   // 뒤 낙관적으로 상태를 갱신(즉시 배지/링 반영)하고 백엔드에 PATCH한다. 수명을 올려
   // 임계 아래로 내려간 신발은 다음 checkShoeAlerts에서 추적 집합에서 빠진다.
-  /**
-   * 구매가 수정. 등록할 때만 넣을 수 있어서, 안 넣고 지나간 신발은 영영 1km당 비용을
-   * 못 보던 갭을 메운다(민우님: "기준 신발 구매가를 넣는 화면이 있어?").
-   * 0·빈값이면 필드를 **지운다** — 0원에 샀다고 기록하면 원/km 가 0이 되어 거짓이 된다.
-   */
-  async function updateShoePrice(id:string,priceKrw:number|null){
-    const ok=typeof priceKrw==='number'&&isFinite(priceKrw)&&priceKrw>0;
-    setShoes(prev=>prev.map(s=>{
-      if(s.id!==id)return s;
-      const next={...s} as any;
-      if(ok)next.price_krw=Math.round(priceKrw as number); else delete next.price_krw;
-      return stampUpdatedAt(next);
-    }));
-  }
-
   async function updateShoeMaxKm(id:string,maxKm:number){
     const v=clampMaxKm(maxKm);
     // Stage 2: 로컬 상태만(Firestore 정본). 낙관적 갱신 + stampUpdatedAt(머지 최신 우선).
@@ -2521,7 +2506,7 @@ function Main(){
   if(showFindShoes){
     return <FindShoesScreen
       myShoes={homeShoes.map(x=>({brand:x.ui.brand,model:x.ui.model,
-        usedKm:x.ui.used??0,lifespanKm:x.ui.max??0,priceKrw:x.ui.priceKrw}))}
+        usedKm:x.ui.used??0,lifespanKm:x.ui.max??0}))}
       onClose={()=>setShowFindShoes(false)} />;
   }
   if(showMedalArchive){
@@ -2597,7 +2582,7 @@ function Main(){
             unit={unit} weightKg={weightKg} surfaceOf={surfaceOf}
             onAddShoe={()=>setOverlay('add')} onTab={setTab}
             onRename={updateShoeName} onDelete={deleteShoe} onRetire={retireShoe}
-            onSetMaxKm={updateShoeMaxKm} onSetPriceKrw={updateShoePrice} onStartRun={startFromShoeId}
+            onSetMaxKm={updateShoeMaxKm} onStartRun={startFromShoeId}
             detailShoeId={shoesDetailId} onConsumeDetail={()=>setShoesDetailId(null)}
             rawShoes={shoes} rawRuns={runs} progressionCtx={progressionCtx} userName={profileName}
             onRetiredKeepsake={onRetiredKeepsake} forecasts={homeForecasts}

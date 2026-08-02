@@ -29,18 +29,6 @@ import { extractShoeFromImage } from './lib/shoeReceipt';
 import { pickPhotoFrom } from './lib/photo';
 import { showToast } from './lib/toast';
 
-/**
- * 구매가 입력 문자열을 정규화한다 — 숫자만 남기고 천단위 콤마를 붙인다.
- * 상한 9,999,999원: 러닝화 가격대를 한참 넘는 오타(0 하나 더 누름)를 입력 단계에서 막는다.
- */
-export function formatPriceInput(raw: string): string {
-  const digits = (raw || '').replace(/[^0-9]/g, '').slice(0, 7);
-  if (!digits) return '';
-  const n = Number(digits);
-  if (!isFinite(n) || n <= 0) return '';
-  return n.toLocaleString('ko-KR');
-}
-
 export default function AddShoeScreen({
   onClose, onSave,
 }: { onClose?: () => void; onSave?: (shoe: Shoe) => void }) {
@@ -50,8 +38,6 @@ export default function AddShoeScreen({
   // 권장 수명(km) — 모델 선택 시 자동 채워지며 사용자가 직접 수정 가능.
   const [max, setMax] = useState(0);
   const [used, setUsed] = useState('0');
-  // 구매가(원, 선택) — 천단위 콤마를 넣은 표시 문자열로 들고 있다가 저장 시 숫자로 판다.
-  const [price, setPrice] = useState('');
   // maxKm 0/비정상값 인라인 차단 — 제출 시 검증해 필드 아래 빨강 헬퍼텍스트로 표시한다.
   const [maxErr, setMaxErr] = useState<string | undefined>(undefined);
   // 영수증 스캔 진행 상태(중복 실행 방지 + 버튼 문구).
@@ -103,14 +89,11 @@ export default function AddShoeScreen({
     const me = validateMaxKm(max);
     setMaxErr(me);
     if (me) return;
-    // 구매가는 선택 — 비었거나 0이면 필드를 아예 싣지 않는다('모름'과 '0원'은 다르다).
-    const priceKrw = Number(price.replace(/[^0-9]/g, '')) || 0;
     onSave?.({
       brand: picked.brand.trim(),
       model: picked.model.trim(),
       max,
       used: Number(used) || 0,
-      ...(priceKrw > 0 ? { priceKrw } : {}),
     });
   };
 
@@ -195,28 +178,6 @@ export default function AddShoeScreen({
         </View>
         <Text style={s.hint}>새 신발이면 0으로 두세요.</Text>
 
-        {/* 구매가(선택) — 원/km(1km당 비용)의 분자. 정가를 추측해 채우지 않고 사용자가
-            실제로 낸 값만 받는다. 그래야 "이 신발은 1km에 210원이었어요"가 진짜 숫자가 된다.
-            비워도 등록에 아무 지장이 없다(원/km만 안 보인다). */}
-        <View style={s.labelRow}>
-          <Text style={[s.label, { paddingBottom: rv(0), marginTop: rv(22) }]}>구매가</Text>
-          <Text style={[s.optBadge, { marginTop: rv(22) }]}>선택</Text>
-        </View>
-        <View>
-          <Input
-            value={price}
-            onChangeText={(v) => setPrice(formatPriceInput(v))}
-            keyboardType="number-pad"
-            accessibilityLabel="구매가"
-            testID="add-shoe-price"
-            style={s.numInput}
-          />
-          <View style={s.unitWrap} pointerEvents="none"><Text style={s.usedUnit}>원</Text></View>
-        </View>
-        <Text style={s.hint}>
-          넣어두면 이 신발을 다 신었을 때 1km당 얼마였는지 알려줘요. 다음 신발을 고를 때
-          비싼 게 실제로 손해였는지 판단하는 기준이 돼요.
-        </Text>
       </ScrollView>
 
       {/* CTA — 미선택 시 ghost 비활성. */}
