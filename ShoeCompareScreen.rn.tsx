@@ -1,5 +1,5 @@
 // ============================================================================
-// ShoeCompareScreen.rn.tsx — 러닝화 비교
+// ShoeCompareScreen.rn.tsx — 러닝화 스펙 비교
 // ----------------------------------------------------------------------------
 // 흩어진 스펙을 한 표에 세운다. 지금 이걸 하려면 브랜드마다 공식몰을 열고, 단위도
 // 제각각이고(oz/g), 무게 잰 사이즈가 다른 것도 모른 채 비교해야 한다. 그 수고를
@@ -8,122 +8,90 @@
 // '추천'이 아니라 '비교'인 이유: 추천은 우리가 순서를 정하니 "커미션 때문에 뜬 건가"
 // 하는 의심이 붙는다. 비교는 무엇을 놓을지 사용자가 고르므로 왜곡될 자리가 없다.
 //
+// ── 2026-08-02 재설계(실기기 피드백) ────────────────────────────────────────
+// 셋을 고쳤다. 전부 "기준(첫 칸)이 곧 내 신발"이라는 낡은 가정에서 나온 문제였다.
+//  · **「기준」 칩이 삭제 버튼이었다.** 배지처럼 생겼는데 누르면 그 신발이 빠졌다
+//    (민우님: "기준이라고 써있는 걸 클릭하면 없어지는데"). 빼기는 ✕ 로 분리했다.
+//  · **기준을 바꿀 수 없었다.** 처음 넣은 게 영구 기준이라 "내 신발 말고 저 둘을
+//    견주고 싶다"가 불가능했다. 이제 어느 칸이든 「기준으로」 로 기준이 된다.
+//  · **추가할 때 카탈로그가 한 줄로 쏟아졌다.** 그것도 '최근 출시 40켤레'라, 관련
+//    있어 보이지만 아무 의미 없는 목록이었다. 등록·온보딩이 쓰는 공용 ShoePicker
+//    (브랜드 레일 + 모델)를 그대로 쓴다 — 새로 만들지 않고 있는 걸 쓴다.
+// 종류(데일리·레이싱…)도 칸마다 적는다. 무게 296g 이 무거운 건지 아닌지는 종류를
+// 알아야 판단된다.
+//
 // 계산은 전부 lib/shoeCompareTable.ts(순수)에 있다. 여기는 그리기만 한다.
 // ============================================================================
 import React, {useMemo, useState} from 'react';
-import {View, StyleSheet, Pressable, ScrollView, Modal} from 'react-native';
-import {Text, TextInput} from './lib/text';
+import {View, StyleSheet, Pressable, ScrollView} from 'react-native';
+import {Text} from './lib/text';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {rf, rs, rv} from './lib/responsive';
+import {rf, ri, rs, rv} from './lib/responsive';
 import {BG, CARD, CARD_HI, T1, T2, T3, T4, SEP, FONT, NUM, RADIUS, GUTTER,
-  RING_ACCENT, withAlpha, TYPE} from './theme';
+  RING_ACCENT, withAlpha, TYPE, ICON} from './theme';
 import {buildCompareTable, mineSummary, MAX_COMPARE, type CompareShoe} from './lib/shoeCompareTable';
-import {allCatalogShoes, displayName, toCompareShoe} from './lib/shoeCatalogLookup';
-import {searchShoes} from './lib/shoeSearch';
-import type {ShoeDoc} from './types/shoe';
+import {findCatalogShoe, toCompareShoe, unknownCompareShoe, SHOE_CATEGORY_KO} from './lib/shoeCatalogLookup';
+import {ShoePicker, type PickedShoe} from './ShoePicker';
 
-export type CompareSeed = {shoe: CompareShoe};
+/** 브랜드+모델이 같은지(대소문자·여백 무시) — 내 신발과 카탈로그를 잇는 열쇠. */
+const sameShoe = (a: {brand: string; model: string}, b: {brand: string; model: string}) =>
+  a.brand.trim().toLowerCase() === b.brand.trim().toLowerCase()
+  && a.model.trim().toLowerCase() === b.model.trim().toLowerCase();
 
-// ── 추가 시트 ────────────────────────────────────────────────────────────────
-// 검색은 카탈로그 전체를 훑는다(내 신발장은 호출부가 seed 로 먼저 넣어준다).
-function AddSheet({visible, onClose, onPick, exclude}: {
-  visible: boolean;
-  onClose: () => void;
-  onPick: (d: ShoeDoc) => void;
-  exclude: readonly string[];
-}) {
-  const [q, setQ] = useState('');
-  const insets = useSafeAreaInsets();
-  const results = useMemo(() => {
-    const all = allCatalogShoes().filter(d => !exclude.includes(d.id));
-    return searchShoes(all, q, {limit: 40});
-  }, [q, exclude]);
-
-  return (
-    <Modal visible={visible} animationType="slide" onRequestClose={onClose} presentationStyle="fullScreen">
-      <View style={[s.screen, {paddingTop: insets.top + rv(10)}]}>
-        <View style={s.bar}>
-          <Text style={s.title}>러닝화 추가</Text>
-          <Pressable onPress={onClose} hitSlop={10} accessibilityRole="button" accessibilityLabel="닫기">
-            <Text style={s.done}>완료</Text>
-          </Pressable>
-        </View>
-        <SearchBox value={q} onChange={setQ} />
-        <ScrollView
-          style={s.flex1}
-          contentContainerStyle={{paddingBottom: Math.max(insets.bottom, rv(16))}}
-          keyboardShouldPersistTaps="handled">
-          {results.map(d => (
-            <Pressable
-              key={d.id}
-              onPress={() => { onPick(d); onClose(); }}
-              accessibilityRole="button"
-              accessibilityLabel={`${d.brand} ${displayName(d)} 추가`}
-              style={({pressed}) => [s.item, pressed && s.pressed]}>
-              <View style={s.flex1}>
-                <Text numberOfLines={1} style={s.itemName}>{displayName(d)}</Text>
-                <Text style={s.itemSub}>{summaryLine(d)}</Text>
-              </View>
-            </Pressable>
-          ))}
-          {results.length === 0 && (
-            <Text style={s.empty}>“{q.trim()}” 검색 결과가 없어요.</Text>
-          )}
-        </ScrollView>
-      </View>
-    </Modal>
-  );
+/** 내 신발장 한 켤레 — 표에 세울 때 사용률(mine)까지 함께 실어준다. */
+export interface MyShoeRef {
+  brand: string;
+  model: string;
+  usedKm: number;
+  lifespanKm: number;
 }
 
-/** 검색 결과 한 줄 요약 — 아는 것만 잇는다(모르는 축은 빠진다). */
-function summaryLine(d: ShoeDoc): string {
-  const parts: string[] = [d.brand];
-  if (d.weight != null) parts.push(`${d.weight}g`);
-  if (d.stackHeight) parts.push(`${d.stackHeight.heel}/${d.stackHeight.forefoot}mm`);
-  if (d.drop != null) parts.push(`드롭 ${d.drop}`);
-  return parts.length > 1 ? parts.join(' · ') : `${d.brand} · 스펙 확인 중`;
-}
-
-function SearchBox({value, onChange}: {value: string; onChange: (v: string) => void}) {
-  return (
-    <View style={s.search}>
-      <TextInput
-        value={value}
-        onChangeText={onChange}
-        placeholder="브랜드나 모델명 검색"
-        placeholderTextColor={T4}
-        style={s.searchInput}
-        autoCorrect={false}
-        autoCapitalize="none"
-        accessibilityLabel="러닝화 검색"
-        testID="compare-search"
-      />
-    </View>
-  );
-}
-
-// ── 본 화면 ──────────────────────────────────────────────────────────────────
-export default function ShoeCompareScreen({seed, onClose}: {
-  /** 첫 칸(기준)에 미리 세울 신발. 없으면 빈 상태로 시작한다. */
-  seed?: CompareShoe | null;
+export default function ShoeCompareScreen({seeds, myShoes = [], onClose}: {
+  /** 미리 세워둘 신발들(1:1 비교에서 넘어오면 기준+후보 둘). 없으면 빈 표로 시작한다. */
+  seeds?: readonly CompareShoe[] | null;
+  /** 내 신발장 — 피커 맨 위에 얹어 한 번에 넣는다. */
+  myShoes?: readonly MyShoeRef[];
   onClose: () => void;
 }) {
   const insets = useSafeAreaInsets();
-  const [shoes, setShoes] = useState<CompareShoe[]>(seed ? [seed] : []);
-  const [addOpen, setAddOpen] = useState(false);
+  const [shoes, setShoes] = useState<CompareShoe[]>(
+    () => (seeds ? seeds.slice(0, MAX_COMPARE) : []));
+  /** 차이를 재는 기준 칸. 빼기로 칸이 사라지면 아래에서 따라 움직인다. */
+  const [baseIdx, setBaseIdx] = useState(0);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
-  const rows = useMemo(() => buildCompareTable(shoes), [shoes]);
-  const mine = useMemo(() => mineSummary(shoes[0]), [shoes]);
+  const rows = useMemo(() => buildCompareTable(shoes, baseIdx), [shoes, baseIdx]);
+  const mine = useMemo(() => mineSummary(shoes[baseIdx]), [shoes, baseIdx]);
   const full = shoes.length >= MAX_COMPARE;
 
-  const add = (d: ShoeDoc) => setShoes(prev =>
-    prev.length >= MAX_COMPARE ? prev : [...prev, toCompareShoe(d)]);
-  const remove = (id: string) => setShoes(prev => prev.filter(x => x.id !== id));
+  /** 피커가 넘긴 {브랜드, 모델} → 표에 세울 형태. 내 신발이면 사용률까지 싣는다. */
+  const add = (p: PickedShoe) => {
+    const owned = myShoes.find(m => sameShoe(m, p));
+    const mineRec = owned ? {usedKm: owned.usedKm, lifespanKm: owned.lifespanKm} : null;
+    const doc = findCatalogShoe(p.brand, p.model);
+    const next = doc
+      ? toCompareShoe(doc, mineRec)
+      : unknownCompareShoe(p.brand, p.model, mineRec);
+    setShoes(prev =>
+      prev.length >= MAX_COMPARE || prev.some(x => x.id === next.id) ? prev : [...prev, next]);
+  };
+
+  /**
+   * 칸을 뺀다. 기준 칸을 빼면 남은 첫 칸이 기준이 되고, 기준보다 앞을 빼면 기준이
+   * 한 칸 당겨진다 — 안 그러면 엉뚱한 신발이 조용히 기준이 된다.
+   */
+  const remove = (id: string) => {
+    const i = shoes.findIndex(x => x.id === id);
+    if (i < 0) return;
+    setShoes(shoes.filter((_, k) => k !== i));
+    setBaseIdx(b => (i < b ? b - 1 : i === b ? 0 : b));
+  };
 
   return (
-    <View style={[s.screen, {paddingTop: insets.top + rv(10)}]}>
+    <View style={[s.screen, {paddingTop: insets.top + rv(10)}]} testID="shoe-compare-screen">
       <View style={s.bar}>
-        <Text style={s.title}>러닝화 비교</Text>
+        <Text style={s.title}>스펙 비교</Text>
         <Pressable onPress={onClose} hitSlop={10} accessibilityRole="button" accessibilityLabel="닫기">
           <Text style={s.done}>완료</Text>
         </Pressable>
@@ -136,25 +104,46 @@ export default function ShoeCompareScreen({seed, onClose}: {
           <Text style={s.empty}>비교할 러닝화를 추가해 보세요.</Text>
         ) : (
           <View style={s.table}>
-            {/* 헤더 — 신발 이름 */}
+            {/* 헤더 — 브랜드 · 모델 · 종류 · 기준 컨트롤 */}
             <View style={s.row}>
               <View style={s.labelCell} />
-              {shoes.map((sh, i) => (
-                <View key={sh.id} style={s.cell}>
-                  <Text style={s.brand} numberOfLines={1}>{sh.brand.toUpperCase()}</Text>
-                  <Text style={[s.model, i === 0 && s.modelBase]} numberOfLines={2}>{sh.name}</Text>
-                  <Pressable
-                    onPress={() => remove(sh.id)}
-                    hitSlop={10}
-                    accessibilityRole="button"
-                    accessibilityLabel={`${sh.name} 비교에서 빼기`}
-                    style={({pressed}) => [s.pill, i === 0 && s.pillBase, pressed && s.pressed]}>
-                    <Text style={[s.pillTxt, i === 0 && s.pillTxtBase]}>
-                      {i === 0 ? '기준' : '빼기'}
-                    </Text>
-                  </Pressable>
-                </View>
-              ))}
+              {shoes.map((sh, i) => {
+                const isBase = i === baseIdx;
+                const cat = sh.category ? SHOE_CATEGORY_KO[sh.category] : null;
+                return (
+                  <View key={sh.id} style={s.cell}>
+                    {/* 빼기는 ✕ 하나로만. 「기준」 칩과 섞지 않는다 — 그게 사고로 지우던 원인이다. */}
+                    <Pressable
+                      onPress={() => remove(sh.id)}
+                      hitSlop={12}
+                      accessibilityRole="button"
+                      accessibilityLabel={`${sh.name} 비교에서 빼기`}
+                      testID={`compare-remove-${sh.id}`}
+                      style={({pressed}) => [s.rm, pressed && s.pressed]}>
+                      <Ionicons name="close" size={ri(ICON.inline)} color={T4} />
+                    </Pressable>
+                    <Text style={s.brand} numberOfLines={1}>{sh.brand.toUpperCase()}</Text>
+                    <Text style={[s.model, isBase && s.modelBase]} numberOfLines={2}>{sh.name}</Text>
+                    {!!cat && <Text style={s.cat} numberOfLines={1}>{cat}</Text>}
+                    {!!sh.mine && <Text style={s.owned} numberOfLines={1}>내 신발</Text>}
+                    {isBase ? (
+                      <View style={[s.pill, s.pillBase]} testID={`compare-base-${sh.id}`}>
+                        <Text style={[s.pillTxt, s.pillTxtBase]}>기준</Text>
+                      </View>
+                    ) : (
+                      <Pressable
+                        onPress={() => setBaseIdx(i)}
+                        hitSlop={8}
+                        accessibilityRole="button"
+                        accessibilityLabel={`${sh.name} 을 기준으로`}
+                        testID={`compare-setbase-${sh.id}`}
+                        style={({pressed}) => [s.pill, pressed && s.pressed]}>
+                        <Text style={s.pillTxt}>기준으로</Text>
+                      </Pressable>
+                    )}
+                  </View>
+                );
+              })}
             </View>
 
             {/* 값 행 */}
@@ -169,19 +158,19 @@ export default function ShoeCompareScreen({seed, onClose}: {
                     {c.value === null ? (
                       <Text style={s.dash}>—</Text>
                     ) : c.unit ? (
-                      <Text style={[s.value, i === 0 && s.valueBase]}>
+                      <Text style={[s.value, i === baseIdx && s.valueBase]}>
                         {c.value}<Text style={s.unit}>{c.unit}</Text>
                       </Text>
                     ) : (
-                      <Text style={[s.textVal, i === 0 && s.textValBase]}>{c.value}</Text>
+                      <Text style={[s.textVal, i === baseIdx && s.textValBase]}>{c.value}</Text>
                     )}
                     {/* 차이와 보조표기는 **둘 다** 필요하다. 예전엔 sub 가 있으면 delta 를
                         가려서, 잰 사이즈가 다른 신발은 차이가 아예 안 보였다. */}
                     {c.delta != null && (
-                      <Text style={[s.delta, i === 0 && s.deltaBase]}>{c.delta}</Text>
+                      <Text style={[s.delta, i === baseIdx && s.deltaBase]}>{c.delta}</Text>
                     )}
                     {c.sub != null && (
-                      <Text style={[s.delta, i === 0 && s.deltaBase]}>{c.sub}</Text>
+                      <Text style={[s.delta, i === baseIdx && s.deltaBase]}>{c.sub}</Text>
                     )}
                   </View>
                 ))}
@@ -204,7 +193,7 @@ export default function ShoeCompareScreen({seed, onClose}: {
         )}
 
         <Pressable
-          onPress={() => setAddOpen(true)}
+          onPress={() => setPickerOpen(true)}
           disabled={full}
           accessibilityRole="button"
           accessibilityLabel="비교할 러닝화 추가"
@@ -217,11 +206,20 @@ export default function ShoeCompareScreen({seed, onClose}: {
         </Pressable>
       </ScrollView>
 
-      <AddSheet
-        visible={addOpen}
-        onClose={() => setAddOpen(false)}
+      {/* 등록·온보딩과 같은 2열 피커. 이미 담은 신발은 '내 러닝화'에서 빼 준다. */}
+      <ShoePicker
+        visible={pickerOpen}
+        onClose={() => setPickerOpen(false)}
         onPick={add}
-        exclude={shoes.map(x => x.id)}
+        myShoes={myShoes
+          .filter(m => !shoes.some(x => sameShoe({brand: x.brand, model: x.name}, m)))
+          .map(m => ({
+            brand: m.brand,
+            model: m.model,
+            sub: `${m.brand} · ${Math.round(m.usedKm)} / ${Math.round(m.lifespanKm)} km`,
+          }))}
+        insetTop={insets.top}
+        insetBottom={insets.bottom}
       />
     </View>
   );
@@ -248,11 +246,18 @@ const s = StyleSheet.create({
   label: {fontFamily: FONT, ...TYPE.caption, color: T3},
   hint: {fontFamily: FONT, ...TYPE.micro, color: T4, marginTop: rv(2), letterSpacing: 0.2},
   cell: {flex: 1, paddingHorizontal: rs(8), paddingTop: rv(13), paddingBottom: rv(14)},
+  // (헤더 칸의 ✕ 는 absolute 라 값 행 높이에는 영향을 주지 않는다)
 
   brand: {fontFamily: FONT, ...TYPE.micro, color: T4, marginBottom: rv(3)},
   model: {fontFamily: FONT, ...TYPE.label, fontWeight: '700', color: T2, letterSpacing: -0.2},
   modelBase: {color: T1},
-  pill: {alignSelf: 'flex-start', marginTop: rv(7), paddingHorizontal: rs(6), paddingVertical: rv(2.5),
+  // 종류(데일리·레이싱…) — 무게 296g 이 무거운 건지는 종류를 알아야 판단된다.
+  cat: {fontFamily: FONT, ...TYPE.micro, color: T4, marginTop: rv(3)},
+  owned: {fontFamily: FONT, ...TYPE.micro, color: T3, marginTop: rv(2), fontWeight: '700'},
+  // 빼기 ✕ — 칸 오른쪽 위. 글자보다 위에 놓아 겹치지 않는다(cell 의 paddingTop 이 자리를 판다).
+  rm: {position: 'absolute', top: rv(1), right: rs(1), width: rs(24), height: rs(24),
+    alignItems: 'center', justifyContent: 'center'},
+  pill: {alignSelf: 'flex-start', marginTop: rv(7), paddingHorizontal: rs(6), paddingVertical: rv(3),
     borderRadius: RADIUS.sm / 2, backgroundColor: CARD_HI},
   pillBase: {backgroundColor: withAlpha(T1, 0.13)},
   pillTxt: {fontFamily: FONT, ...TYPE.micro, color: T3},
@@ -286,13 +291,6 @@ const s = StyleSheet.create({
   ctaTxt: {fontFamily: FONT, ...TYPE.body, fontWeight: '600', color: T1},
   ctaTxtOff: {color: T4, fontWeight: '400'},
 
-  search: {marginHorizontal: GUTTER, marginBottom: rv(6), backgroundColor: CARD_HI,
-    borderRadius: RADIUS.input, paddingHorizontal: rs(14)},
-  searchInput: {fontFamily: FONT, ...TYPE.body, color: T1, paddingVertical: rv(12)},
-  item: {flexDirection: 'row', alignItems: 'center', paddingHorizontal: GUTTER,
-    paddingVertical: rv(12)},
-  itemName: {fontFamily: FONT, ...TYPE.body, fontWeight: '600', color: T1, letterSpacing: -0.2},
-  itemSub: {fontFamily: FONT, ...TYPE.caption, color: T4, marginTop: rv(3)},
   empty: {fontFamily: FONT, ...TYPE.body, color: T3, textAlign: 'center',
     marginTop: rv(40), paddingHorizontal: GUTTER, lineHeight: rf(24)},
 });

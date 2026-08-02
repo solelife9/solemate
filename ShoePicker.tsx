@@ -28,6 +28,13 @@ import {showToast} from './lib/toast';
 
 export type PickedShoe = {brand: string; model: string};
 
+/**
+ * 피커 맨 위에 얹는 '내 러닝화' 한 줄. **선택 기능**이다(등록·온보딩은 넘기지 않는다 —
+ * 거기선 이미 가진 신발을 다시 등록할 일이 없다). 비교 화면처럼 내 신발을 자주
+ * 집어넣는 자리에서만 켠다.
+ */
+export type PickerMyShoe = {brand: string; model: string; sub?: string};
+
 function SearchIcon({size = 15, color = T3}: {size?: number; color?: string}) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
@@ -40,10 +47,12 @@ function SearchIcon({size = 15, color = T3}: {size?: number; color?: string}) {
 const OTHER = '기타';
 const norm = (v: string) => v.trim().toLowerCase().replace(/\s+/g, ' ');
 
-export function ShoePicker({visible, onClose, onPick, insetTop, insetBottom}: {
+export function ShoePicker({visible, onClose, onPick, myShoes, insetTop, insetBottom}: {
   visible: boolean;
   onClose: () => void;
   onPick: (p: PickedShoe) => void;
+  /** 있으면 맨 위에 '내 러닝화' 섹션이 뜬다. 없으면 지금까지와 똑같이 동작한다. */
+  myShoes?: readonly PickerMyShoe[];
   insetTop: number;
   insetBottom: number;
 }) {
@@ -165,6 +174,27 @@ export function ShoePicker({visible, onClose, onPick, insetTop, insetBottom}: {
             <Text style={s.pkCancel}>취소</Text>
           </Pressable>
         </View>
+
+        {/* 내 러닝화 — 카탈로그에서 다시 찾게 하지 않는다. 목록이 길면 스크롤한다
+            (잘라내면 없는 신발처럼 보이므로 감추지 않는다). */}
+        {!!myShoes?.length && (
+          <View style={s.pkMine} testID="picker-my-shoes">
+            <Text style={s.pkMineHead}>내 러닝화</Text>
+            <ScrollView style={s.pkMineList} keyboardShouldPersistTaps="handled">
+              {myShoes.map(m => (
+                <Pressable
+                  key={`${m.brand}|${m.model}`}
+                  onPress={() => pick(m.brand, m.model)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`내 러닝화 ${m.brand} ${m.model}`}
+                  style={({pressed}) => [s.pkRow, pressed && s.pressed]}>
+                  <Text numberOfLines={1} style={s.pkRowName}>{m.model}</Text>
+                  {!!m.sub && <Text style={s.pkRowSub}>{m.sub}</Text>}
+                </Pressable>
+              ))}
+            </ScrollView>
+          </View>
+        )}
 
         {/* 항상 2열: 브랜드 레일 + (그 브랜드) 검색·모델. 브랜드는 왼쪽에서 고르고 검색은 그 안에서. */}
         <View style={s.pkSplit}>
@@ -296,6 +326,11 @@ const s = StyleSheet.create({
   pkInput: {flex: 1, fontFamily: FONT, fontSize: rf(16), fontWeight: '500', color: T1, paddingVertical: rv(0)},
   pkClear: {color: T3, fontSize: rf(16), fontWeight: '600'},
   pkCancel: {fontFamily: FONT, fontSize: rf(16), fontWeight: '500', color: T1},
+  // 내 러닝화 섹션 — 세로를 너무 먹으면 아래 2열 피커가 눌리므로 상한을 둔다.
+  pkMine: {paddingHorizontal: rs(18), paddingBottom: rv(6)},
+  pkMineHead: {fontFamily: FONT, fontSize: rf(11), fontWeight: '700', color: T4,
+    letterSpacing: 1.1, marginBottom: rv(4)},
+  pkMineList: {maxHeight: rv(148)},
   pkSplit: {flex: 1, flexDirection: 'row', borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP},
   pkRight: {flex: 1},
   pkSearchScoped: {

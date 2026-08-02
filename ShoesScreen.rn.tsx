@@ -239,7 +239,10 @@ function ShoeDetail({
     const mine = {usedKm: shoe.used ?? 0, lifespanKm: shoe.max ?? 0};
     return (
       <ShoeCompareScreen
-        seed={doc ? toCompareShoe(doc, mine) : unknownCompareShoe(shoe.brand, shoe.model, mine)}
+        seeds={[doc ? toCompareShoe(doc, mine) : unknownCompareShoe(shoe.brand, shoe.model, mine)]}
+        myShoes={allShoes
+          .filter(x => !x.retired)
+          .map(x => ({brand: x.brand, model: x.model, usedKm: x.used ?? 0, lifespanKm: x.max ?? 0}))}
         onClose={() => setCompareOpen(false)}
       />
     );

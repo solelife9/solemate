@@ -27,7 +27,7 @@ function textOf(node: any): string {
 async function mount(seed: any = null) {
   let r!: ReactTestRenderer.ReactTestRenderer;
   await act(async () => {
-    r = ReactTestRenderer.create(<ShoeCompareScreen seed={seed} onClose={jest.fn()} />);
+    r = ReactTestRenderer.create(<ShoeCompareScreen seeds={seed ? [seed] : null} onClose={jest.fn()} />);
   });
   return r;
 }
@@ -36,11 +36,24 @@ const byId = (root: ReactTestRenderer.ReactTestInstance, id: string) =>
   root.findAll((n: any) => n.props?.testID === id);
 
 /** 추가 시트에서 검색 → 첫 결과 고르기. 빈 질의는 상위 40건만 나와 못 찾을 수 있다. */
-async function addBySearch(r: ReactTestRenderer.ReactTestRenderer, query: string, label: RegExp) {
+/**
+ * 추가 = 공용 ShoePicker 를 거친다(2026-08-02). 옛 전용 검색창(compare-search)은
+ * 사라졌다 — 카탈로그가 한 줄로 쏟아지던 자리다. 이제 **브랜드를 먼저 고르고**
+ * 그 안에서 검색한다(등록·온보딩과 같은 동선).
+ */
+async function addBySearch(
+  r: ReactTestRenderer.ReactTestRenderer, brand: string, query: string, label: RegExp,
+) {
   await act(async () => { byId(r.root, 'compare-add')[0].props.onPress(); });
-  const input = byId(r.root, 'compare-search')[0];
+  const [tab] = r.root.findAll((n: any) =>
+    n.props?.accessibilityRole === 'tab'
+    && new RegExp(`브랜드 ${brand}`, 'i').test(String(n.props?.accessibilityLabel ?? '')));
+  expect(tab).toBeTruthy();
+  await act(async () => { tab.props.onPress(); });
+  const input = byId(r.root, 'picker-search')[0];
   await act(async () => { input.props.onChangeText(query); });
   const [pick] = pressables(r.root, label);
+  expect(pick).toBeTruthy();
   await act(async () => { pick.props.onPress(); });
 }
 
@@ -128,8 +141,8 @@ describe('추가와 상한', () => {
     const r = await mount(seedOf('ASICS', 'Superblast 3'));
     const open = () => byId(r.root, 'compare-add')[0];
 
-    await addBySearch(r, 'Novablast 6', /Novablast 6 추가/);
-    await addBySearch(r, 'Pegasus 42', /Pegasus 42 추가/);
+    await addBySearch(r, 'Asics', 'Novablast 6', /Novablast 6/);
+    await addBySearch(r, 'Nike', 'Pegasus 42', /Pegasus 42/);
 
     const btn = open();
     expect(btn.props.disabled).toBe(true);
@@ -138,9 +151,64 @@ describe('추가와 상한', () => {
 
   it('추가하면 기준 대비 차이가 뜬다', async () => {
     const r = await mount(seedOf('ASICS', 'Superblast 3'));
-    await addBySearch(r, 'Pegasus 42', /Pegasus 42 추가/);
+    await addBySearch(r, 'Nike', 'Pegasus 42', /Pegasus 42/);
     const t = textOf(r.root);
     expect(t).toContain('292');  // 페가수스 42 무게
     expect(t).toContain('+62');  // 230g 대비
+  });
+});
+
+// ── 기준 전환과 빼기 ──────────────────────────────────────────────────────────
+// 「기준」 칩이 삭제 버튼이던 시절의 재발을 막는다(민우님 실기기: "기준이라고 써있는
+// 걸 클릭하면 없어지는데"). 배지는 배지로, 빼기는 ✕ 로.
+describe('기준 전환과 빼기', () => {
+  const seedOf = (brand: string, model: string) =>
+    toCompareShoe(findCatalogShoe(brand, model)!, null);
+  const superblast = 'asics-superblast-3';
+  const pegasus = 'nike-pegasus-42';
+
+  const mountTwo = async () => {
+    const r = await mount(seedOf('ASICS', 'Superblast 3'));
+    await addBySearch(r, 'Nike', 'Pegasus 42', /Pegasus 42/);
+    return r;
+  };
+
+  it('기준 칩은 눌러도 신발이 빠지지 않는다 — 배지다', async () => {
+    const r = await mountTwo();
+    const chip = byId(r.root, `compare-base-${superblast}`)[0];
+    expect(chip.props.onPress).toBeUndefined();
+    expect(textOf(r.root)).toContain('Superblast 3');
+  });
+
+  it('기준으로를 누르면 차이의 부호가 뒤집힌다', async () => {
+    const r = await mountTwo();
+    expect(textOf(r.root)).toContain('+62');   // 슈퍼블라스트 230g 기준, 페가수스 292g
+    await act(async () => {
+      byId(r.root, `compare-setbase-${pegasus}`)[0].props.onPress();
+    });
+    expect(textOf(r.root)).toContain('−62'); // 페가수스 기준이 되면 −62
+  });
+
+  it('✕ 로만 빠진다', async () => {
+    const r = await mountTwo();
+    await act(async () => {
+      byId(r.root, `compare-remove-${pegasus}`)[0].props.onPress();
+    });
+    const t = textOf(r.root);
+    expect(t).toContain('Superblast 3');
+    expect(t).not.toContain('Pegasus 42');
+  });
+
+  it('기준을 빼면 남은 칸이 기준이 된다 — 기준 없는 표를 만들지 않는다', async () => {
+    const r = await mountTwo();
+    await act(async () => {
+      byId(r.root, `compare-remove-${superblast}`)[0].props.onPress();
+    });
+    expect(byId(r.root, `compare-base-${pegasus}`).length).toBeGreaterThan(0);
+  });
+
+  it('칸마다 종류를 적는다 — 296g 이 무거운지는 종류를 알아야 판단된다', async () => {
+    const r = await mount(seedOf('Nike', 'Pegasus 42'));
+    expect(textOf(r.root)).toContain('데일리');
   });
 });

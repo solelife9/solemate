@@ -248,3 +248,47 @@ describe('입력을 건드리지 않는다', () => {
     expect(MAX_COMPARE).toBe(3);
   });
 });
+
+// ── 기준 전환 ────────────────────────────────────────────────────────────────
+// 처음 넣은 신발이 영구 기준이면 "내 신발 말고 저 둘을 견주고 싶다"를 할 수 없다.
+// 어느 칸이든 기준이 될 수 있어야 비교가 사용자 것이 된다.
+describe('기준 인덱스', () => {
+  const A: CompareShoe = {id: 'a', weightBasis: 'US9', brand: 'Nike', name: 'A', weight: 200, drop: 8,
+    stackHeight: {heel: 40, forefoot: 32}};
+  const B: CompareShoe = {id: 'b', weightBasis: 'US9', brand: 'Asics', name: 'B', weight: 260, drop: 10,
+    stackHeight: {heel: 37, forefoot: 27}};
+  const C: CompareShoe = {id: 'c', weightBasis: 'US9', brand: 'Hoka', name: 'C', weight: 300, drop: 5,
+    stackHeight: {heel: 42, forefoot: 37}};
+
+  const weightRow = (rows: ReturnType<typeof buildCompareTable>) =>
+    rows.find(r => r.key === 'weight')!;
+
+  test('기준 칸은 차이를 적지 않는다', () => {
+    const r = weightRow(buildCompareTable([A, B, C], 1));
+    expect(r.cells[1].delta).toBeNull();
+    expect(r.cells[0].delta).toBe('\u221260');
+    expect(r.cells[2].delta).toBe('+40');
+  });
+
+  test('기준을 바꾸면 부호가 뒤집힌다 — 같은 표를 다른 눈으로 본다', () => {
+    const from0 = weightRow(buildCompareTable([A, B], 0));
+    const from1 = weightRow(buildCompareTable([A, B], 1));
+    expect(from0.cells[1].delta).toBe('+60');
+    expect(from1.cells[0].delta).toBe('\u221260');
+  });
+
+  test('앞발 보조표기는 기준 칸을 따라간다', () => {
+    const rows = buildCompareTable([A, B, C], 2);
+    const stack = rows.find(r => r.key === 'stack')!;
+    expect(stack.cells[2].sub).toBe('앞발 37');
+    expect(stack.cells[0].sub).toBeUndefined();
+  });
+
+  test('범위를 벗어난 기준은 첫 칸으로 떨어진다 — 빈 표를 만들지 않는다', () => {
+    for (const bad of [-1, 3, 1.5, NaN]) {
+      const r = weightRow(buildCompareTable([A, B, C], bad));
+      expect(r.cells[0].delta).toBeNull();
+      expect(r.cells[1].delta).toBe('+60');
+    }
+  });
+});

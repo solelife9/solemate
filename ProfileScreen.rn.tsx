@@ -126,7 +126,7 @@ export default function ProfileScreen({
   cloudPort, onCloudMerged, onDeleteAccount, cloudClock = () => Date.now(),
   onOpenProgression,
   onOpenHallOfShoes, retiredCount = 0,
-  onOpenMedalArchive, medalCount = 0,
+  onOpenMedalArchive, medalCount = 0, onOpenShoeCompare,
   todayISO = '',
   onReplayOnboarding,
 }: {
@@ -196,6 +196,10 @@ export default function ProfileScreen({
   onOpenHallOfShoes?: () => void;
   // 마라톤 메달 아카이브 진입(명예의 전당 옆). 없으면 행 미표시(안전한 no-op).
   onOpenMedalArchive?: () => void;
+  // 러닝화 비교 진입. 원래는 신발 상세 화면 밑바닥에만 있어 사실상 아무도 못 찾았다
+  // (민우님 실기기: "러닝화 비교가 어디로 갔지"). 신발을 고를 땐 자주 여는 도구라
+  // 마이 탭 그룹 목록으로 끌어올린다. 없으면 행 미표시(안전한 no-op).
+  onOpenShoeCompare?: () => void;
   medalCount?: number;
   // 은퇴한 신발 수(전당 진입 행의 부제에 표시). 0이어도 진입은 가능(빈 전당 안내).
   retiredCount?: number;
@@ -771,7 +775,7 @@ export default function ProfileScreen({
             (간결화 E1, 2026-07-26). 셋 다 '아이콘 + 제목 + 부제 + ›' 로 완전히 같은 골격이라
             카드 표면 3장은 정보를 나누지 못하고 여백만 먹었다(애플 설정앱식 그룹 목록으로).
             행 사이만 헤어라인으로 나누고, 표면·유리 헤어라인은 카드 하나가 소유한다. */}
-        {(onOpenProgression || onOpenHallOfShoes || onOpenMedalArchive) && (() => {
+        {(onOpenProgression || onOpenHallOfShoes || onOpenMedalArchive || onOpenShoeCompare) && (() => {
           const entries = [
             onOpenProgression && {
               key: 'progression', testID: 'open-progression', icon: 'trophy-outline' as const,
@@ -788,6 +792,15 @@ export default function ProfileScreen({
               title: '메달 아카이브',
               sub: medalCount > 0 ? `완주 메달 ${medalCount}개` : '완주한 대회의 메달과 기록',
               a11y: '메달 아카이브 열기', onPress: onOpenMedalArchive,
+            },
+            // 러닝화 비교는 성취가 아니라 '도구'다. 그래도 같은 카드에 두는 이유:
+            // 이 카드엔 제목이 없어 사용자에겐 '갈 곳 목록'으로 읽히고, 별도 카드 하나를
+            // 더 세우면 표면만 늘어 여백을 먹는다(간결화 E1 과 같은 판단).
+            onOpenShoeCompare && {
+              key: 'shoe-compare', testID: 'open-shoe-compare', icon: 'git-compare-outline' as const,
+              title: '러닝화 비교',
+              sub: '무게 · 스택 · 드롭을 나란히',
+              a11y: '러닝화 비교 열기', onPress: onOpenShoeCompare,
             },
           ].filter(Boolean) as { key: string; testID: string; icon: string; title: string; sub: string; a11y: string; onPress: () => void }[];
           return (

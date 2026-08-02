@@ -99,15 +99,24 @@ const PLATE_LABEL: Readonly<Record<PlateKind, string>> = {
 };
 
 /**
- * 비교 표를 만든다. `shoes[0]`이 기준이다.
+ * 비교 표를 만든다. `baseIndex` 칸이 기준이고 나머지는 그 차이를 적는다.
+ *
+ * 기준을 인자로 받는 이유: 처음 넣은 신발이 영구 기준이면 "내 신발 말고 저 둘을
+ * 견주고 싶다"를 할 수 없다. 어느 칸이든 기준이 될 수 있어야 비교가 사용자 것이 된다.
+ * 범위를 벗어난 값은 0으로 떨어뜨린다(빈 표를 만드느니 첫 칸을 기준으로 삼는다).
  *
  * 값이 하나도 없는 행은 아예 빼지만, **일부만 아는 행은 남긴다** — 한 켤레라도
  * 아는 값이 있으면 그건 비교에 쓸 수 있는 정보이고, 나머지 칸이 비었다는 사실도
  * 사용자가 알아야 한다.
  */
-export function buildCompareTable(shoes: readonly CompareShoe[]): CompareRow[] {
+export function buildCompareTable(
+  shoes: readonly CompareShoe[],
+  baseIndex = 0,
+): CompareRow[] {
   if (shoes.length === 0) return [];
-  const base = shoes[0];
+  const bi = Number.isInteger(baseIndex) && baseIndex >= 0 && baseIndex < shoes.length
+    ? baseIndex : 0;
+  const base = shoes[bi];
 
   // 무게는 잰 사이즈가 다르면 그냥 빼면 안 된다. 반 사이즈가 6g 쯤 되기 때문이다.
   //
@@ -123,10 +132,10 @@ export function buildCompareTable(shoes: readonly CompareShoe[]): CompareRow[] {
     key: 'weight',
     label: '무게',
     cells: shoes.map((s, i) => {
-      const c = numCell(s.weight, base.weight, i === 0, 'g');
+      const c = numCell(s.weight, base.weight, i === bi, 'g');
       if (c.value === null) return c;
       const mine = normalizeWeightBasis(s.weightBasis);
-      if (i > 0 && !basisComparable(s.weightBasis, base.weightBasis)) {
+      if (i !== bi && !basisComparable(s.weightBasis, base.weightBasis)) {
         const adj = adjustWeightToBasis(s.weight, s.weightBasis, base.weightBasis);
         if (adj != null && base.weight != null) {
           c.delta = '≈' + formatDelta(adj - base.weight);
@@ -143,7 +152,7 @@ export function buildCompareTable(shoes: readonly CompareShoe[]): CompareRow[] {
     }),
   };
   // 이유를 갈라 적는다 — '모른다'와 '알지만 너무 다르다'는 사용자에게 다른 이야기다.
-  const unknown = shoes.some((s, i) => i > 0 && s.weight != null && base.weight != null
+  const unknown = shoes.some((s, i) => i !== bi && s.weight != null && base.weight != null
     && normalizeWeightBasis(s.weightBasis) == null);
   if (unknown) weight.hint = '잰 사이즈를 몰라 차이는 비교하지 않음';
   else if (unmeasurable) weight.hint = '잰 사이즈가 너무 달라 차이는 비교하지 않음';
@@ -154,8 +163,8 @@ export function buildCompareTable(shoes: readonly CompareShoe[]): CompareRow[] {
     label: '쿠션 두께',
     hint: '뒤꿈치',
     cells: shoes.map((s, i) => {
-      const c = numCell(s.stackHeight?.heel, base.stackHeight?.heel, i === 0, 'mm');
-      if (i === 0 && s.stackHeight?.forefoot != null) c.sub = `앞발 ${s.stackHeight.forefoot}`;
+      const c = numCell(s.stackHeight?.heel, base.stackHeight?.heel, i === bi, 'mm');
+      if (i === bi && s.stackHeight?.forefoot != null) c.sub = `앞발 ${s.stackHeight.forefoot}`;
       return c;
     }),
   };
@@ -164,7 +173,7 @@ export function buildCompareTable(shoes: readonly CompareShoe[]): CompareRow[] {
     key: 'drop',
     label: '드롭',
     hint: '앞뒤 높이차',
-    cells: shoes.map((s, i) => numCell(s.drop, base.drop, i === 0, 'mm')),
+    cells: shoes.map((s, i) => numCell(s.drop, base.drop, i === bi, 'mm')),
   };
 
   const plate: CompareRow = {

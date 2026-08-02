@@ -8,7 +8,7 @@
 // null 을 준다 — 억지로 비슷한 걸 고르면 남의 스펙을 내 신발이라고 보여주게 된다.
 
 import catalogData from '../data/shoeCatalog.json';
-import type {ShoeDoc} from '../types/shoe';
+import type {ShoeCategory, ShoeDoc} from '../types/shoe';
 import type {CompareShoe} from './shoeCompareTable';
 
 const CATALOG = catalogData as unknown as ShoeDoc[];
@@ -95,3 +95,17 @@ export function unknownCompareShoe(
     mine: mine ?? null,
   };
 }
+
+/**
+ * 카테고리 → 한국어. **짧게** 쓴다 — 3열 비교 표의 한 칸이 70px 남짓이라
+ * '데일리 트레이너'는 두 줄로 깨져 표를 흐트러뜨린다.
+ * (lib/rotation 의 CATEGORY_LABEL 은 data/shoeModels 의 다른 어휘라 별개다.)
+ */
+export const SHOE_CATEGORY_KO: Record<ShoeCategory, string> = {
+  daily: '데일리',
+  tempo: '템포',
+  racing: '레이싱',
+  trail: '트레일',
+  stability: '안정화',
+  recovery: '맥스쿠션',
+};
