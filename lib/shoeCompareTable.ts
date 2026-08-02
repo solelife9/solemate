@@ -35,6 +35,13 @@ export interface CompareShoe {
   lifespanKm?: number | null;
   /** 내 신발일 때만 채운다 — 비교 축이 아니라 맥락이다. */
   mine?: {usedKm: number; lifespanKm: number} | null;
+  /**
+   * 가격과 그 **성격**. 성격을 함께 들고 다니는 이유는 1km당 비용의 분모가 달라지기
+   * 때문이다 — 내가 낸 값은 내가 달린 거리로 나눠야 실측이고, 시세는 아직 안 달렸으니
+   * 권장 수명으로 나눈 예상치다. 둘을 같은 숫자처럼 늘어놓으면 그게 거짓말이 된다.
+   * 없으면 가격·1km당 행에서 그 칸만 빈다(추측 금지).
+   */
+  price?: {krw: number; kind: 'paid' | 'market'} | null;
 }
 
 export interface CompareCell {
@@ -52,7 +59,7 @@ export interface CompareCell {
 }
 
 export interface CompareRow {
-  key: 'weight' | 'stack' | 'drop' | 'plate' | 'lifespan';
+  key: 'weight' | 'stack' | 'drop' | 'plate' | 'lifespan' | 'price' | 'perKm';
   label: string;
   /** 라벨 밑 작은 설명. 없으면 undefined. */
   hint?: string;
@@ -68,7 +75,9 @@ function hasAnyValue(cells: readonly CompareCell[]): boolean {
 export function formatDelta(diff: number): string {
   const r = Math.round(diff * 10) / 10;
   if (r === 0) return '0';
-  const n = Number.isInteger(r) ? String(Math.abs(r)) : String(Math.abs(r));
+  // 천단위 구분자 — 가격 차이는 여섯 자리까지 가서 구분자 없이는 읽기 어렵다.
+  // 스펙(무게·mm)은 세 자리 이하라 이 서식에 영향받지 않는다.
+  const n = Math.abs(r).toLocaleString('en-US', {maximumFractionDigits: 1});
   // 음수 부호는 하이픈(-)이 아니라 마이너스(−) — 숫자 폭이 맞고 +와 시각적 무게가 같다.
   return (r > 0 ? '+' : '−') + n;
 }
@@ -196,7 +205,54 @@ export function buildCompareTable(
     })),
   };
 
-  return [weight, stack, drop, plate, lifespan].filter((r) => hasAnyValue(r.cells));
+  // ── 돈 ────────────────────────────────────────────────────────────────────
+  // 스펙 아래에 둔다. 무엇인지 먼저 알고 얼마인지 나중에 안다 — 반대 순서면 값으로
+  // 신발을 고르게 된다. 값이 하나도 없으면 두 행 다 통째로 빠진다.
+  const priceOf = (x: CompareShoe) =>
+    x.price && Number.isFinite(x.price.krw) && x.price.krw > 0 ? x.price.krw : null;
+  /** 1km당 = 내가 낸 값이면 내가 달린 거리로, 시세면 권장 수명으로 나눈다. */
+  const perKmOf = (x: CompareShoe) => {
+    const krw = priceOf(x);
+    if (krw == null) return null;
+    const actual = x.price!.kind === 'paid' && x.mine != null && x.mine.usedKm > 0;
+    const km = actual ? x.mine!.usedKm : x.lifespanKm;
+    if (km == null || !Number.isFinite(km) || km <= 0) return null;
+    return {won: Math.round(krw / km), actual};
+  };
+
+  const basePrice = priceOf(base);
+  const price: CompareRow = {
+    key: 'price',
+    label: '가격',
+    hint: '조회 시점',
+    cells: shoes.map((x, i) => {
+      const krw = priceOf(x);
+      if (krw == null) return {value: null, delta: null};
+      const c: CompareCell = {value: krw.toLocaleString('ko-KR'), unit: '원', delta: null};
+      if (i !== bi && basePrice != null) c.delta = formatDelta(krw - basePrice);
+      if (x.price!.kind === 'paid') c.sub = '내가 낸 값';
+      return c;
+    }),
+  };
+
+  const basePerKm = perKmOf(base);
+  const perKm: CompareRow = {
+    key: 'perKm',
+    label: '1km당',
+    hint: '오래 쓸수록 싸진다',
+    cells: shoes.map((x, i) => {
+      const v = perKmOf(x);
+      if (v == null) return {value: null, delta: null};
+      const c: CompareCell = {value: v.won.toLocaleString('ko-KR'), unit: '원', delta: null};
+      if (i !== bi && basePerKm != null) c.delta = formatDelta(v.won - basePerKm.won);
+      // 분모가 다르면 그 사실을 적는다 — 실측과 예상을 같은 줄에 두는 값이다.
+      c.sub = v.actual ? '실제 주행 기준' : '권장 수명 기준';
+      return c;
+    }),
+  };
+
+  return [weight, stack, drop, plate, lifespan, price, perKm]
+    .filter((r) => hasAnyValue(r.cells));
 }
 
 /** 기준 신발이 내 신발일 때 표 밖에 붙는 한 줄. 아니면 null. */

@@ -292,3 +292,68 @@ describe('기준 인덱스', () => {
     }
   });
 });
+
+// ── 돈 ────────────────────────────────────────────────────────────────────────
+// 1km당 비용은 분모가 둘이다. 내가 낸 값은 **내가 달린 거리**로 나눠야 실측이고,
+// 시세는 아직 안 달렸으니 **권장 수명**으로 나눈 예상치다. 둘을 같은 숫자처럼
+// 늘어놓으면 그게 거짓말이 되므로, 칸마다 근거를 함께 적는다.
+describe('가격과 1km당', () => {
+  const row = (rows: ReturnType<typeof buildCompareTable>, key: string) =>
+    rows.find(r => r.key === key);
+
+  const paid: CompareShoe = {id: 'p', brand: 'Nike', name: '내 신발', lifespanKm: 700,
+    mine: {usedKm: 400, lifespanKm: 700}, price: {krw: 200000, kind: 'paid'}};
+  const market: CompareShoe = {id: 'm', brand: 'Hoka', name: '후보', lifespanKm: 500,
+    price: {krw: 150000, kind: 'market'}};
+  const noPrice: CompareShoe = {id: 'n', brand: 'Asics', name: '모름', lifespanKm: 600};
+
+  test('내가 낸 값은 내가 달린 거리로 나눈다(실측)', () => {
+    const r = row(buildCompareTable([paid], 0), 'perKm')!;
+    expect(r.cells[0].value).toBe('500');          // 200,000 ÷ 400km
+    expect(r.cells[0].sub).toBe('실제 주행 기준');
+  });
+
+  test('시세는 권장 수명으로 나눈다(예상)', () => {
+    const r = row(buildCompareTable([market], 0), 'perKm')!;
+    expect(r.cells[0].value).toBe('300');          // 150,000 ÷ 500km
+    expect(r.cells[0].sub).toBe('권장 수명 기준');
+  });
+
+  test('가격을 모르는 칸은 비운다 — 추측하지 않는다', () => {
+    const rows = buildCompareTable([paid, noPrice], 0);
+    expect(row(rows, 'price')!.cells[1].value).toBeNull();
+    expect(row(rows, 'perKm')!.cells[1].value).toBeNull();
+  });
+
+  test('아무도 가격을 모르면 두 행이 통째로 빠진다', () => {
+    const rows = buildCompareTable([noPrice, {...noPrice, id: 'n2'}], 0);
+    expect(row(rows, 'price')).toBeUndefined();
+    expect(row(rows, 'perKm')).toBeUndefined();
+  });
+
+  test('내가 낸 값이라는 사실을 칸에 적는다', () => {
+    const rows = buildCompareTable([paid, market], 0);
+    expect(row(rows, 'price')!.cells[0].sub).toBe('내가 낸 값');
+    expect(row(rows, 'price')!.cells[1].sub).toBeUndefined();
+  });
+
+  test('차이는 기준 칸 대비로 적는다', () => {
+    const rows = buildCompareTable([paid, market], 0);
+    expect(row(rows, 'price')!.cells[1].delta).toBe('−50,000');  // 200,000 → 150,000
+    expect(row(rows, 'perKm')!.cells[1].delta).toBe('−200');     // 500 → 300
+  });
+
+  test('달린 거리가 0이면 실측을 만들지 않는다 — 0으로 나누지 않는다', () => {
+    const fresh: CompareShoe = {...paid, mine: {usedKm: 0, lifespanKm: 700}};
+    const r = row(buildCompareTable([fresh], 0), 'perKm')!;
+    expect(r.cells[0].value).toBe('286');          // 200,000 ÷ 700km(권장 수명)
+    expect(r.cells[0].sub).toBe('권장 수명 기준');
+  });
+
+  test('돈은 스펙 아래에 온다 — 무엇인지 먼저 알고 얼마인지 나중에 안다', () => {
+    const withSpec: CompareShoe = {...market, weight: 250, weightBasis: 'US9'};
+    const keys = buildCompareTable([withSpec], 0).map(r => r.key);
+    expect(keys.indexOf('price')).toBeGreaterThan(keys.indexOf('weight'));
+    expect(keys.indexOf('perKm')).toBeGreaterThan(keys.indexOf('price'));
+  });
+});

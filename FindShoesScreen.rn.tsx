@@ -43,7 +43,7 @@ import {similarShoes, SimilarCandidate, prevCategory} from './lib/nextShoe';
 import {ShoeCategory} from './data/shoeModels';
 import {
   actualWonPerKm, expectedWonPerKm,
-  wonPerKmVerdictKo, wonPerKmLabelKo,
+  wonPerKmVerdictKo,
 } from './lib/shoeCompare';
 import {buildShoeSpec, SPEC_BASIS_KO, dropWarningKo} from './lib/shoeSpecModel';
 import {visibleChannels, tierLabelKo, EXCLUDED_CHANNELS} from './lib/shoeStore';
@@ -132,6 +132,40 @@ function FindShoesScreen({base: baseProp = null, myShoes = [], onClose}: FindSho
   }, [candidates]);
 
   const priceOf = (c: SimilarCandidate) => prices[`${c.model.brand}|${c.model.model}`] ?? null;
+
+  /**
+   * 표에 담긴 신발의 시세도 조회한다(민우님: "추가한 신발도 가격 조회되게 해줘").
+   * 후보 목록을 거치지 않고 피커로 직접 넣은 신발은 아직 조회된 적이 없다.
+   * 캐시 키는 조회에 쓴 이름 그대로 — 아래 tableShoes 가 같은 키로 되찾는다.
+   */
+  useEffect(() => {
+    let alive = true;
+    const missing = shoes.filter(x => !(`${x.brand}|${x.name}` in prices));
+    if (!missing.length) return;
+    Promise.all(
+      missing.map(async (x) => {
+        const q = await fetchShoePrice(x.brand, x.name);
+        return [`${x.brand}|${x.name}`, q] as const;
+      }),
+    )
+      .then((pairs) => { if (alive) setPrices(prev => ({...prev, ...Object.fromEntries(pairs)})); })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, [shoes, prices]);
+
+  /**
+   * 표에 넘길 형태 — 가격을 얹는다.
+   *  · 내 신발이고 구매가를 아는 경우 → **내가 낸 값**(실측의 분자)
+   *  · 그 외 → 조회된 시세(예상)
+   * 내가 낸 값을 시세보다 우선한다. 지금 얼마에 파는지보다 **내가 얼마를 썼는지**가
+   * 내 1km당 비용의 진실이다.
+   */
+  const tableShoes = useMemo<CompareShoe[]>(() => shoes.map((x) => {
+    const owned = myShoes.find(m => m.brand === x.brand && m.model === x.name);
+    if (owned?.priceKrw) return {...x, price: {krw: owned.priceKrw, kind: 'paid' as const}};
+    const q = prices[`${x.brand}|${x.name}`];
+    return q ? {...x, price: {krw: q.priceKrw, kind: 'market' as const}} : x;
+  }), [shoes, prices, myShoes]);
 
   const picked = candidates[pickedIdx] ?? null;
   /**
@@ -254,7 +288,7 @@ function FindShoesScreen({base: baseProp = null, myShoes = [], onClose}: FindSho
             picked={picked}
             prevPerKm={prevPerKm}
             quote={picked ? priceOf(picked) : null}
-            shoes={shoes}
+            shoes={tableShoes}
             baseIdx={baseIdx}
             onSetBase={setBaseIdx}
             onRemove={removeFromTable}
@@ -547,6 +581,8 @@ function CompareStep({
   const next = picked?.spec ?? null;
   const nextPerKm = quote && next ? expectedWonPerKm(quote.priceKrw, next.lifespanKm) : null;
   const verdict = wonPerKmVerdictKo(prevPerKm, nextPerKm);
+  // '아껴요'가 아니면 아래 한 줄이 어긋난다 — 더 드는 경우엔 문장만 남긴다.
+  const saves = verdict.includes('아껴요');
   // 드롭이 크게 낮아지면 부상 위험을 먼저 말한다.
   const dropWarn = prevSpec && next ? dropWarningKo(prevSpec.dropMm, next.dropMm) : '';
 
@@ -568,23 +604,13 @@ function CompareStep({
         onAdd={onAdd}
       />
 
-      {/* 원/km 판정 — 양쪽 다 계산될 때만 카드를 만든다. */}
-      {!!verdict && !!prevSpec && !!next && (
+      {/* 원/km 판정 — 양쪽 다 계산될 때만. 숫자는 이제 표의 '1km당' 행에 칸마다
+          있으므로 여기서 되풀이하지 않는다. 카드가 하는 일은 **한 문장으로 결론을
+          말하는 것** 하나다(표는 읽어야 하고, 문장은 그냥 들어온다). */}
+      {!!verdict && (
         <View style={s.verdict} testID="next-shoe-verdict">
-          <Text style={s.verdictLab}>1km당 비용</Text>
           <Text style={s.verdictMain}>{verdict}</Text>
-          <View style={s.verdictRows}>
-            <View style={s.verdictCol}>
-              <Text style={s.vrL} numberOfLines={1}>{prevSpec.model}</Text>
-              <Text style={s.vrN}>{prevPerKm!.wonPerKm.toLocaleString('ko-KR')}원</Text>
-              <Text style={s.vrB}>{wonPerKmLabelKo(prevPerKm).split(' · ')[1] || ''}</Text>
-            </View>
-            <View style={s.verdictCol}>
-              <Text style={s.vrL} numberOfLines={1}>{next.model}</Text>
-              <Text style={s.vrN}>{nextPerKm!.wonPerKm.toLocaleString('ko-KR')}원</Text>
-              <Text style={s.vrB}>{wonPerKmLabelKo(nextPerKm).split(' · ')[1] || ''}</Text>
-            </View>
-          </View>
+          {saves && <Text style={s.verdictSub}>같은 거리를 달리면 그만큼 덜 써요.</Text>}
         </View>
       )}
 
@@ -806,8 +832,8 @@ const s = StyleSheet.create({
     backgroundColor: CARD, borderRadius: RADIUS.lg, borderCurve: 'continuous',
     padding: SPACE.md, marginTop: rv(6),
   },
-  verdictLab: {color: T3, fontFamily: FONT, fontSize: rf(10), fontWeight: '600', letterSpacing: 0.8},
-  verdictMain: {color: GOOD, fontFamily: DISPLAY, fontSize: TYPE.title.fontSize, fontWeight: '800', letterSpacing: -0.4, marginTop: rv(6)},
+  verdictSub: {color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, marginTop: rv(6)},
+  verdictMain: {color: GOOD, fontFamily: DISPLAY, fontSize: TYPE.title.fontSize, fontWeight: '800', letterSpacing: -0.4},
   verdictRows: {flexDirection: 'row', gap: SPACE.md, marginTop: rv(12), paddingTop: rv(12), borderTopWidth: 1, borderTopColor: SEP},
   verdictCol: {flex: 1, minWidth: 0},
   vrL: {color: T3, fontFamily: FONT, fontSize: rf(10.5)},
