@@ -70,13 +70,10 @@ import {
   GUTTER,
   SCRIM,
   ICON,
-  RING_ACCENT,
-  RING_ACCENT_HI,
-  RING_ACCENT_LO,
 } from './theme';
 import {tap as hapticTap} from './lib/haptics';
 import {setToastClearance} from './lib/toast';
-import {type WearTierTone} from './lib/shoe';
+import {wearTier, type WearTierTone} from './lib/shoe';
 import {InjuryLevel} from './lib/injury';
 
 // (구 conditionColor/conditionTone 3단계 매핑은 2026-07-11 제거 — 컨디션 색/톤은
@@ -407,8 +404,12 @@ function GlassEdgeBase({
 //    진행으로 드레인)와 세리머니(0→1 차오름)의 시작점.
 //  • delay/onSweepEnd: 슬라이드 시작 지연·완료 콜백(세리머니 페이드 후 시작 + 완성 햅틱).
 /**
- * 신발 수명 링(작게, 줄 앞에). 사용률 0~100(%). 100%를 넘어도 한 바퀴에서 멈춘다
- * — 수명 초과도 정상 상태이지 오류가 아니다.
+ * 신발 수명 링(작게, 줄 앞에). **남은 수명**을 그린다 — 새 신발이 가득 차고 닳을수록
+ * 비워지는 배터리 방향이다(2026-07-05 사용자 결정, FuelGauge·홈 링·락커 바와 동일).
+ * 색은 4단계 컨디션 램프(최상=파랑 … 교체권장=빨강) 단일 소스.
+ *
+ * 인자는 **사용률(%)** 이다(0=새 신발). 100을 넘겨도 색은 tier 가 정확히 잡고
+ * 링은 빈 채로 멈춘다 — 수명 초과도 정상 상태이지 오류가 아니다.
  *
  * 아래 Ring 과 역할이 다르다: Ring 은 러닝 진행용(애니메이션·핸드오프·세리머니)이라
  * 무겁고, 이건 목록 줄 앞에 붙는 정적 배지다. SocialProfileCard 안에만 있던 것을
@@ -417,20 +418,15 @@ function GlassEdgeBase({
 export function WearRing({pct, size = rs(30)}: {pct: number; size?: number}) {
   const r = 16;
   const c = 2 * Math.PI * r;
-  const p = Math.max(0, Math.min(1, (Number.isFinite(pct) ? pct : 0) / 100));
+  const used = Math.max(0, Math.min(1, (Number.isFinite(pct) ? pct : 0) / 100));
+  const remain = 1 - used;
+  const color = WEAR_TONE_COLOR[wearTier(Number.isFinite(pct) ? pct : 0).tone];
   return (
     <Svg width={size} height={size} viewBox="0 0 40 40">
-      <Defs>
-        <SvgGradient id="wear" x1="0" y1="0" x2="0" y2="1">
-          <Stop offset="0" stopColor={RING_ACCENT_HI} />
-          <Stop offset="0.5" stopColor={RING_ACCENT} />
-          <Stop offset="1" stopColor={RING_ACCENT_LO} />
-        </SvgGradient>
-      </Defs>
       <Circle cx="20" cy="20" r={r} fill="none" stroke={withAlpha(T1, 0.1)} strokeWidth={4} />
       <Circle
-        cx="20" cy="20" r={r} fill="none" stroke="url(#wear)" strokeWidth={4}
-        strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c * (1 - p)}
+        cx="20" cy="20" r={r} fill="none" stroke={color} strokeWidth={4}
+        strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c * (1 - remain)}
         transform="rotate(-90 20 20)"
       />
     </Svg>

@@ -439,10 +439,14 @@ function RecommendStep({
           {candidates.map((c, i) => {
             const q = priceOf(c);
             const per = q ? expectedWonPerKm(q.priceKrw, c.spec.lifespanKm) : null;
-            // 지난 신발 대비 달라진 점 한 줄. 아무것도 안 다르면 스펙을 그대로 적는다
-            // (빈 줄을 두느니 아는 사실을 보여준다).
-            const diff = c.deltas.map((d) => d.detailKo).slice(0, 2).join(' · ');
-            const fallback = [
+            // 두 줄을 **항상 같은 문법으로** 적는다. 전에는 차이가 있으면 문장
+            // ('쿠션은 조금 얇아요'), 없으면 스펙('255g · 권장 650km')이라 줄마다
+            // 다른 종류의 정보가 떠서 서로 비교가 안 됐다(민우님 실기기 지적).
+            //  · 위: 왜 이게 떴는지(기준 대비 차이). 차이가 없으면 그 사실을 적는다.
+            //  · 아래: 아는 숫자. 모르면 그 줄만 빠진다(추측 금지).
+            const diff = c.deltas.map((d) => d.detailKo).filter(Boolean).slice(0, 2).join(' · ')
+              || '기준과 비슷해요';
+            const spec = [
               c.spec.weightG ? `${c.spec.weightG}g` : '',
               c.spec.lifespanKm ? `권장 ${c.spec.lifespanKm}km` : '',
             ].filter(Boolean).join(' · ');
@@ -457,7 +461,8 @@ function RecommendStep({
                 <View style={s.candLeft}>
                   <Text style={s.candBrand}>{c.model.brand.toUpperCase()}</Text>
                   <Text style={s.candName} numberOfLines={1}>{c.model.model}</Text>
-                  <Text style={s.candDelta} numberOfLines={1}>{diff || fallback}</Text>
+                  <Text style={s.candDelta} numberOfLines={1}>{diff}</Text>
+                  {!!spec && <Text style={s.candSpec} numberOfLines={1}>{spec}</Text>}
                 </View>
                 <View style={s.candRight}>
                   {q ? (
@@ -810,7 +815,9 @@ const s = StyleSheet.create({
   candLeft: {flex: 1, minWidth: 0},
   candBrand: {color: T3, fontFamily: FONT, fontSize: rf(10), fontWeight: '600', letterSpacing: 1.2},
   candName: {color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '700', letterSpacing: -0.2, marginTop: rv(2)},
-  candDelta: {color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, marginTop: rv(3)},
+  // 위 줄(차이) = 이게 뜬 이유라 밝게, 아래 줄(숫자) = 사실이라 눌러서.
+  candDelta: {color: T2, fontFamily: FONT, fontSize: TYPE.caption.fontSize, marginTop: rv(3)},
+  candSpec: {color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, marginTop: rv(2)},
   candRight: {alignItems: 'flex-end'},
   candPrice: {color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '700'},
   candPerKm: {color: RING_ACCENT, fontFamily: FONT, fontSize: TYPE.caption.fontSize, marginTop: rv(2)},
