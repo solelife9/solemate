@@ -60,13 +60,20 @@ export const DEFAULT_LIFESPAN_KM: Readonly<Record<ShoeCategory, number>> = {
 
 /**
  * 미드솔 플레이트 종류.
- *  · carbon 카본 플레이트
- *  · other  플레이트는 있으나 카본이 아님(유리섬유·TPU·나일론)
- *  · none   플레이트 없음(확인함)
+ *  · carbon  카본 플레이트
+ *  · other   플레이트는 있으나 카본이 **아님**(유리섬유·TPU·나일론) — 확인한 경우만
+ *  · unknown 플레이트는 **있는데 재질을 모름**
+ *  · none    플레이트 없음(확인함)
+ *
+ * `unknown` 이 왜 필요한가(2026-08-02): 브랜드가 플레이트의 **존재는 말하고 재질은 안
+ * 밝히는** 경우가 실제로 있다 — On 클라우드붐 맥스의 Speedboard®, 푸마 Fast-FWD 의
+ * PWRPLATE 가 그렇다. 이걸 `other` 로 적으면 "카본이 아니다"라고 **단언**하는 셈인데
+ * 그건 확인하지 않은 사실이다. null(모름)로 두면 플레이트가 있다는 확인한 사실까지
+ * 버리게 된다. 두 손실을 피하려면 값이 하나 더 있어야 한다.
  */
-export type PlateKind = 'carbon' | 'other' | 'none';
+export type PlateKind = 'carbon' | 'other' | 'unknown' | 'none';
 
-export const PLATE_KINDS: readonly PlateKind[] = ['carbon', 'other', 'none'];
+export const PLATE_KINDS: readonly PlateKind[] = ['carbon', 'other', 'unknown', 'none'];
 
 /** 스택 높이(mm) — 힐/앞발. 한쪽만 아는 경우는 없다고 본다(둘 다 알거나 둘 다 모르거나). */
 export interface StackHeight {
