@@ -27,6 +27,19 @@ export type Shoe = {
   created_at?: string;    // 등록 시각(ISO) — purchase_date 결측 시 age 폴백
 };
 
+/**
+ * 러닝화 찾기·스펙 비교에 넘기는 '내 신발 한 켤레'. 표시·계산에 필요한 최소만 담는다
+ * — 화면끼리 Shoe 전체를 주고받으면 무엇에 의존하는지가 흐려진다.
+ */
+export type MyShoeRef = {
+  brand: string;
+  model: string;
+  usedKm: number;
+  lifespanKm: number;
+  /** 구매가(원, 선택). 없으면 원/km 를 계산하지 않는다(추측 금지). */
+  priceKrw?: number;
+};
+
 export type Run = {
   id?: string;
   date: string;   // "5월 28일"

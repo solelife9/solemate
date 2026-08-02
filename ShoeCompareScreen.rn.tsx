@@ -33,19 +33,12 @@ import {BG, CARD, CARD_HI, T1, T2, T3, T4, SEP, FONT, NUM, RADIUS, GUTTER,
 import {buildCompareTable, mineSummary, MAX_COMPARE, type CompareShoe} from './lib/shoeCompareTable';
 import {findCatalogShoe, toCompareShoe, unknownCompareShoe, SHOE_CATEGORY_KO} from './lib/shoeCatalogLookup';
 import {ShoePicker, type PickedShoe} from './ShoePicker';
+import type {MyShoeRef} from './appTypes';
 
 /** 브랜드+모델이 같은지(대소문자·여백 무시) — 내 신발과 카탈로그를 잇는 열쇠. */
 const sameShoe = (a: {brand: string; model: string}, b: {brand: string; model: string}) =>
   a.brand.trim().toLowerCase() === b.brand.trim().toLowerCase()
   && a.model.trim().toLowerCase() === b.model.trim().toLowerCase();
-
-/** 내 신발장 한 켤레 — 표에 세울 때 사용률(mine)까지 함께 실어준다. */
-export interface MyShoeRef {
-  brand: string;
-  model: string;
-  usedKm: number;
-  lifespanKm: number;
-}
 
 export default function ShoeCompareScreen({seeds, myShoes = [], onClose}: {
   /** 미리 세워둘 신발들(1:1 비교에서 넘어오면 기준+후보 둘). 없으면 빈 표로 시작한다. */

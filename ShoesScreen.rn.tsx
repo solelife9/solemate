@@ -24,11 +24,7 @@ import { assessShoeInjuryRisk } from './lib/injury';
 import { buildWearView, forecastConfidenceKo, forecastLineKo, type ReplacementForecast, type Surface } from './lib/wearView';
 import { findShoeClass, typeLabel, purposeSentenceKo } from './data/shoeClass';
 import RetirementFlow from './RetirementFlow.rn';
-import NextShoeScreen from './NextShoeScreen.rn';
-import ShoeCompareScreen from './ShoeCompareScreen.rn';
-// 비교 화면은 카탈로그 스펙을 기준으로 세운다. 내 신발이 카탈로그에 없으면 이름만
-// 남는 형태로라도 세운다 — 직접 넣은 신발이 비교에서 통째로 사라지면 더 이상하다.
-import {findCatalogShoe, toCompareShoe, unknownCompareShoe} from './lib/shoeCatalogLookup';
+import FindShoesScreen from './FindShoesScreen.rn';
 import type { ProgressionContext, RetiredShoeRecord } from './lib/progression/types';
 
 // lastWorn: 이 신발의 마지막 착용일(런에서 파생, 한국어 표기). 미착용이면 생략.
@@ -166,8 +162,15 @@ function ShoeDetail({
   // 트리거를 접는다(kept). 영속 데이터·런/신발은 건드리지 않는다.
   const [flowOpen, setFlowOpen] = useState(false);
   // 은퇴 플로우의 '보관 완료'에서만 열리는 다음 신발 플로우.
-  const [nextShoeOpen, setNextShoeOpen] = useState(false);
-  const [compareOpen, setCompareOpen] = useState(false);
+  /**
+   * 러닝화 찾기 — 이 신발이 기준. 진입은 둘인데 **도착지는 하나**다(2026-08-02 통합).
+   *  · 'button' 상세 화면 버튼 — 닫으면 상세로 돌아온다
+   *  · 'retire' 보관 완료의 초대 — 닫으면 상세가 아니라 목록으로 나간다(신발을 방금
+   *    보관했으니 그 상세에 남아 있을 이유가 없다)
+   * 전에는 이 둘이 서로 다른 화면(비교 표 / 다음 신발)으로 갈라져, 사용자에겐 이름만
+   * 다른 같은 기능이 둘로 보였다.
+   */
+  const [findOpen, setFindOpen] = useState<null | 'button' | 'retire'>(null);
   const [kept, setKept] = useState(false);
   // 수명 도달 판정 = 사용률 임계 숫자 비교(구 3단계 condition==='교체' 폐지, 2026-07-11).
   // 임계 90%는 wearTier '교체 권장'·교체 알림과 동일(SHOE_REPLACE_PCT 단일 소스).
@@ -214,36 +217,23 @@ function ShoeDetail({
         onRetire={onRetire}
         onRetired={onRetiredKeepsake}
         // 보관이 끝난 뒤에만 열린다 — 작별 화면엔 구매 동선이 없다(감정과 커머스 분리).
-        onFindNextShoe={() => { setFlowOpen(false); setNextShoeOpen(true); }}
+        onFindNextShoe={() => { setFlowOpen(false); setFindOpen('retire'); }}
         onClose={() => { setFlowOpen(false); onBack(); }}
       />
     );
   }
 
-  // '다음 신발' 플로우(방향별 추천 → 나란히 비교 → 구매처). 방금 보관한 신발이 기준선이다.
-  if (nextShoeOpen) {
+  // 러닝화 찾기(후보 추천 → 1:1 비교 → 스펙 표 → 구매처). 이 신발이 기준선이다.
+  if (findOpen) {
+    const fromRetire = findOpen === 'retire';
     return (
-      <NextShoeScreen
-        prevBrand={shoe.brand}
-        prevModel={shoe.model}
-        prevUsedKm={shoe.used}
-        prevPriceKrw={shoe.priceKrw}
-        onClose={() => { setNextShoeOpen(false); onBack(); }}
-      />
-    );
-  }
-
-  // 러닝화 비교 — 은퇴와 무관하게 언제든 연다. 이 신발이 기준(첫 칸)이 된다.
-  if (compareOpen) {
-    const doc = findCatalogShoe(shoe.brand, shoe.model);
-    const mine = {usedKm: shoe.used ?? 0, lifespanKm: shoe.max ?? 0};
-    return (
-      <ShoeCompareScreen
-        seeds={[doc ? toCompareShoe(doc, mine) : unknownCompareShoe(shoe.brand, shoe.model, mine)]}
+      <FindShoesScreen
+        base={{brand: shoe.brand, model: shoe.model, usedKm: shoe.used, priceKrw: shoe.priceKrw}}
         myShoes={allShoes
           .filter(x => !x.retired)
-          .map(x => ({brand: x.brand, model: x.model, usedKm: x.used ?? 0, lifespanKm: x.max ?? 0}))}
-        onClose={() => setCompareOpen(false)}
+          .map(x => ({brand: x.brand, model: x.model, usedKm: x.used ?? 0,
+            lifespanKm: x.max ?? 0, priceKrw: x.priceKrw}))}
+        onClose={() => { setFindOpen(null); if (fromRetire) onBack(); }}
       />
     );
   }
@@ -469,16 +459,16 @@ function ShoeDetail({
           </View>
         )}
 
-        {/* 러닝화 비교 — 은퇴할 때만 쓰던 비교를 상시 진입점으로. 스펙이 흩어져 있어
-            직접 찾아 비교하기 어려우니, 카탈로그가 모아둔 걸 이 신발 기준으로 보여준다. */}
+        {/* 러닝화 찾기 — 이 신발을 기준으로 같은 종류 후보를 보고, 거기서 스펙 표까지
+            이어진다. 마이 탭 진입점과 같은 화면이다(이름이 다르면 다른 기능처럼 보인다). */}
         <Pressable
-          onPress={() => setCompareOpen(true)}
+          onPress={() => setFindOpen('button')}
           accessibilityRole="button"
-          accessibilityLabel="러닝화 비교"
+          accessibilityLabel="러닝화 찾기"
           testID="shoe-compare-entry"
           style={({ pressed }) => [s.compareBtn, pressed && s.pressed]}>
-          <Ionicons name="swap-horizontal-outline" size={ri(ICON.inline)} color={T2} />
-          <Text style={s.compareBtnText}>러닝화 비교</Text>
+          <Ionicons name="search-outline" size={ri(ICON.inline)} color={T2} />
+          <Text style={s.compareBtnText}>러닝화 찾기</Text>
         </Pressable>
 
         {/* 신발 보관(아카이브) — 하단 전체폭 버튼(danger 외곽선). 키프세이크 '은퇴'(명예의

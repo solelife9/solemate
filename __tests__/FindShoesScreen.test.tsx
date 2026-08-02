@@ -1,5 +1,5 @@
 /**
- * NextShoeScreen — 은퇴 후 '다음 신발' 플로우.
+ * FindShoesScreen — 은퇴 후 '다음 신발' 플로우.
  *
  * 이 화면이 지켜야 할 계약만 단언한다(픽셀이 아니라 약속):
  *   1) 추천은 같은 카테고리 안에서만 — 쿠션화 졸업자에게 카본화가 뜨지 않는다.
@@ -13,7 +13,7 @@
 import React from 'react';
 import {Linking} from 'react-native';
 import ReactTestRenderer, {act} from 'react-test-renderer';
-import NextShoeScreen from '../NextShoeScreen.rn';
+import FindShoesScreen from '../FindShoesScreen.rn';
 import {SHOE_MODELS} from '../data/shoeModels';
 import {__resetPriceCacheForTests} from '../lib/shoePrice';
 
@@ -32,16 +32,19 @@ async function flush() {
   await act(async () => { await Promise.resolve(); });
 }
 
-async function mount(props: Partial<React.ComponentProps<typeof NextShoeScreen>> = {}) {
+// 기준(base)을 밖에서 주면 기준 고르기를 건너뛰고 후보부터 시작한다 — 은퇴·신발
+// 상세에서 들어오는 경로가 그렇다(2026-08-02 통합).
+async function mount(
+  props: Partial<React.ComponentProps<typeof FindShoesScreen>> = {},
+  baseOverride: Partial<{usedKm: number; priceKrw: number}> = {},
+) {
   const prev = SHOE_MODELS.find((m) => m.category === 'max_cushion')!;
   let r!: ReactTestRenderer.ReactTestRenderer;
   await act(async () => {
     r = ReactTestRenderer.create(
-      <NextShoeScreen
-        prevBrand={prev.brand}
-        prevModel={prev.model}
-        prevUsedKm={824}
-        prevPriceKrw={205000}
+      <FindShoesScreen
+        base={{brand: prev.brand, model: prev.model, usedKm: 824, priceKrw: 205000,
+          ...baseOverride}}
         onClose={jest.fn()}
         {...props}
       />,
@@ -98,14 +101,14 @@ describe('모르는 건 비운다', () => {
   });
 
   test('구매가가 없으면 지난 신발 원/km 숫자를 말하지 않는다', async () => {
-    const r = await mount({prevPriceKrw: undefined});
+    const r = await mount({}, {priceKrw: undefined});
     const txt = textOf(r.root);
     // '1km당 비용은 권장 수명 기준' 같은 범례 문구는 남지만, 계산된 금액은 없어야 한다.
     expect(txt).not.toMatch(/1km당 [\d,]+원/);
   });
 
   test('구매가와 주행거리가 있으면 지난 신발 원/km를 보여준다', async () => {
-    const r = await mount({prevPriceKrw: 205000, prevUsedKm: 824});
+    const r = await mount({}, {priceKrw: 205000, usedKm: 824});
     // 205,000 ÷ 824 = 249원
     expect(textOf(r.root)).toContain('1km당 249원');
   });
@@ -248,5 +251,92 @@ describe('공식 스토어 가격이 있을 때', () => {
       expect(t).not.toContain('가격');
       expect(t).not.toMatch(/[\d,]+원/);
     }
+  });
+});
+
+// ── 기준 고르기(마이 탭 진입) ─────────────────────────────────────────────────
+// base 를 안 주면 '어떤 신발을 기준으로 볼까요?'부터 시작한다. 전에는 이 화면이
+// 은퇴할 때만 열려서, 신발을 은퇴시키지 않는 사람은 평생 못 봤다.
+describe('기준 고르기', () => {
+  const MINE = [
+    {brand: 'Nike', model: 'Pegasus 41', usedKm: 402, lifespanKm: 700, priceKrw: 139000},
+    {brand: 'Asics', model: 'Novablast 5', usedKm: 583, lifespanKm: 800},
+  ];
+  const mountBare = async (myShoes = MINE) => {
+    let r!: ReactTestRenderer.ReactTestRenderer;
+    await act(async () => {
+      r = ReactTestRenderer.create(
+        <FindShoesScreen myShoes={myShoes} onClose={jest.fn()} />,
+      );
+    });
+    await act(async () => { await Promise.resolve(); });
+    return r;
+  };
+  const byId = (r: ReactTestRenderer.ReactTestRenderer, id: string) =>
+    r.root.findAll((n: any) => n.props?.testID === id);
+
+  test('base 가 없으면 기준 고르기부터 뜬다', async () => {
+    const r = await mountBare();
+    expect(byId(r, 'find-shoes-base').length).toBeGreaterThan(0);
+    expect(textOf(r.root)).toContain('기준으로 볼까요');
+  });
+
+  test('내 신발이 목록에 뜬다 — 카탈로그에서 다시 찾게 하지 않는다', async () => {
+    const r = await mountBare();
+    const t = textOf(r.root);
+    expect(t).toContain('Pegasus 41');
+    expect(t).toContain('Novablast 5');
+  });
+
+  test('내 신발을 고르면 그게 기준이 되어 후보로 넘어간다', async () => {
+    const r = await mountBare();
+    await act(async () => {
+      byId(r, 'find-shoes-mine-Pegasus 41')[0].props.onPress();
+    });
+    expect(byId(r, 'find-shoes-base-card').length).toBeGreaterThan(0);
+    expect(textOf(r.root)).toContain('Pegasus 41');
+  });
+
+  test('기준 카드에서 기준을 다시 바꿀 수 있다', async () => {
+    const r = await mountBare();
+    await act(async () => { byId(r, 'find-shoes-mine-Pegasus 41')[0].props.onPress(); });
+    await act(async () => { byId(r, 'find-shoes-change-base')[0].props.onPress(); });
+    expect(byId(r, 'find-shoes-base').length).toBeGreaterThan(0);
+  });
+
+  test('“기준 없이 둘러보기”는 추천을 건너뛰고 스펙 표로 간다', async () => {
+    const r = await mountBare();
+    await act(async () => { byId(r, 'find-shoes-skip')[0].props.onPress(); });
+    expect(byId(r, 'shoe-compare-screen').length).toBeGreaterThan(0);
+    // 기준을 강제하지 않으므로 표는 비어서 시작한다.
+    expect(textOf(r.root)).toContain('비교할 러닝화를 추가');
+  });
+
+  test('내 신발이 하나도 없어도 카탈로그에서 고를 수 있다', async () => {
+    const r = await mountBare([]);
+    expect(byId(r, 'find-shoes-browse').length).toBeGreaterThan(0);
+    expect(byId(r, 'find-shoes-skip').length).toBeGreaterThan(0);
+  });
+});
+
+// ── 1:1 → 스펙 표 ────────────────────────────────────────────────────────────
+// 막대는 '얼마나 다른가'를 몸으로 보여주고, 표는 '정확히 몇인가'를 답한다.
+describe('스펙 표로 잇기', () => {
+  const byId = (r: ReactTestRenderer.ReactTestRenderer, id: string) =>
+    r.root.findAll((n: any) => n.props?.testID === id);
+
+  test('1:1 비교에서 스펙 표로 넘어가면 두 켤레가 그대로 실린다', async () => {
+    const r = await mount();
+    const [first] = r.root.findAll((n: any) =>
+      typeof n.props?.testID === 'string' && n.props.testID.startsWith('next-shoe-cand-'));
+    await act(async () => { first.props.onPress(); });
+    const link = byId(r, 'next-shoe-open-spec');
+    expect(link.length).toBeGreaterThan(0);
+    await act(async () => { link[0].props.onPress(); });
+    expect(byId(r, 'shoe-compare-screen').length).toBeGreaterThan(0);
+    // 기준 칸이 하나 서 있어야 한다(빈 표로 넘어가면 이어붙인 의미가 없다).
+    expect(r.root.findAll((n: any) =>
+      typeof n.props?.testID === 'string' && n.props.testID.startsWith('compare-base-'))
+    ).not.toHaveLength(0);
   });
 });

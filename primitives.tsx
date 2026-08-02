@@ -70,6 +70,9 @@ import {
   GUTTER,
   SCRIM,
   ICON,
+  RING_ACCENT,
+  RING_ACCENT_HI,
+  RING_ACCENT_LO,
 } from './theme';
 import {tap as hapticTap} from './lib/haptics';
 import {setToastClearance} from './lib/toast';
@@ -403,6 +406,37 @@ function GlassEdgeBase({
 //  • from: 마운트 시작 진행률 — 카운트다운→러닝 핸드오프(가득 찬 링이 풀려나며 현재
 //    진행으로 드레인)와 세리머니(0→1 차오름)의 시작점.
 //  • delay/onSweepEnd: 슬라이드 시작 지연·완료 콜백(세리머니 페이드 후 시작 + 완성 햅틱).
+/**
+ * 신발 수명 링(작게, 줄 앞에). 사용률 0~100(%). 100%를 넘어도 한 바퀴에서 멈춘다
+ * — 수명 초과도 정상 상태이지 오류가 아니다.
+ *
+ * 아래 Ring 과 역할이 다르다: Ring 은 러닝 진행용(애니메이션·핸드오프·세리머니)이라
+ * 무겁고, 이건 목록 줄 앞에 붙는 정적 배지다. SocialProfileCard 안에만 있던 것을
+ * 러닝화 찾기·비교에서도 쓰게 되어 승격했다(사본 금지 — 램프가 어긋난 전례가 있다).
+ */
+export function WearRing({pct, size = rs(30)}: {pct: number; size?: number}) {
+  const r = 16;
+  const c = 2 * Math.PI * r;
+  const p = Math.max(0, Math.min(1, (Number.isFinite(pct) ? pct : 0) / 100));
+  return (
+    <Svg width={size} height={size} viewBox="0 0 40 40">
+      <Defs>
+        <SvgGradient id="wear" x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0" stopColor={RING_ACCENT_HI} />
+          <Stop offset="0.5" stopColor={RING_ACCENT} />
+          <Stop offset="1" stopColor={RING_ACCENT_LO} />
+        </SvgGradient>
+      </Defs>
+      <Circle cx="20" cy="20" r={r} fill="none" stroke={withAlpha(T1, 0.1)} strokeWidth={4} />
+      <Circle
+        cx="20" cy="20" r={r} fill="none" stroke="url(#wear)" strokeWidth={4}
+        strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c * (1 - p)}
+        transform="rotate(-90 20 20)"
+      />
+    </Svg>
+  );
+}
+
 const AnimatedRingCircle = Animated.createAnimatedComponent(Circle);
 
 export function Ring({

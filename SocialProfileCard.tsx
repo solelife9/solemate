@@ -15,13 +15,11 @@
 // ============================================================================
 import React from 'react';
 import {View, StyleSheet} from 'react-native';
-import Svg, {Circle, Defs, LinearGradient, Stop} from 'react-native-svg';
 import {Text} from './lib/text';
 import {rf, rs, rv} from './lib/responsive';
-import {
-  T1, T2, T3, FONT, RADIUS, GLASS, SEP, TYPE, NUM,
-  RING_ACCENT_HI, RING_ACCENT, RING_ACCENT_LO, withAlpha,
-} from './theme';
+import {T1, T2, T3, FONT, RADIUS, GLASS, SEP, TYPE, NUM, withAlpha} from './theme';
+// 수명 링은 primitives 단일 소스(2026-08-02 승격) — 여기 사본을 두면 램프가 어긋난다.
+import {WearRing} from './primitives';
 import type {PublicProfile} from './lib/publicProfile';
 
 /** 초 → 'M:SS' 또는 'H:MM:SS'. 0 이하면 null(표시하지 않는다). */
@@ -44,30 +42,6 @@ function fmtPace(sec: number): string | null {
 
 /** 천단위 구분. */
 const comma = (n: number) => Math.round(n).toLocaleString('en-US');
-
-/** 신발 수명 링(작게, 줄 앞에). 사용률이 100%를 넘어도 한 바퀴에서 멈춘다. */
-function WearRing({pct, size = rs(30)}: {pct: number; size?: number}) {
-  const r = 16;
-  const c = 2 * Math.PI * r;
-  const p = Math.max(0, Math.min(1, (Number.isFinite(pct) ? pct : 0) / 100));
-  return (
-    <Svg width={size} height={size} viewBox="0 0 40 40">
-      <Defs>
-        <LinearGradient id="wear" x1="0" y1="0" x2="0" y2="1">
-          <Stop offset="0" stopColor={RING_ACCENT_HI} />
-          <Stop offset="0.5" stopColor={RING_ACCENT} />
-          <Stop offset="1" stopColor={RING_ACCENT_LO} />
-        </LinearGradient>
-      </Defs>
-      <Circle cx="20" cy="20" r={r} fill="none" stroke={withAlpha(T1, 0.1)} strokeWidth={4} />
-      <Circle
-        cx="20" cy="20" r={r} fill="none" stroke="url(#wear)" strokeWidth={4}
-        strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c * (1 - p)}
-        transform="rotate(-90 20 20)"
-      />
-    </Svg>
-  );
-}
 
 export default function SocialProfileCard({
   profile,

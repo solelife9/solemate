@@ -32,8 +32,9 @@ import HallOfShoes from './HallOfShoes.rn';
 import ShoeArchiveScreen from './ShoeArchiveScreen.rn';
 import RunRecapScreen from './RunRecapScreen.rn';
 import MedalArchiveScreen from './MedalArchiveScreen.rn';
-// 러닝화 비교 — 신발 상세뿐 아니라 마이 탭에서도 연다(자주 쓰는 도구인데 묻혀 있었다).
-import ShoeCompareScreen from './ShoeCompareScreen.rn';
+// 러닝화 찾기 — 기준 → 후보 → 1:1 비교 → 스펙 표 → 구매처. 전에는 은퇴할 때만
+// 열려서(구 '다음 신발') 신발을 은퇴시키지 않는 사람은 평생 못 보던 화면이다.
+import FindShoesScreen from './FindShoesScreen.rn';
 import RaceMedalScreen from './RaceMedalScreen.rn';
 // 마라톤 메달 아카이브 — 완주 감지(위치+날짜) → 대회 기록 흐름 → 아카이브(로컬 우선).
 import {loadMedals, saveMedals, normalizeMedals, sortMedals, liveMedals, addMedal as addMedalStore, removeMedal as removeMedalStore, type Medal} from './lib/medals';
@@ -293,9 +294,9 @@ function Main(){
   // 마라톤 메달 아카이브(로컬 우선) — 부팅 시 로드. 마이 탭 진입 갤러리 + 완주 기록 흐름.
   const [medals,setMedals]=useState<Medal[]>([]);
   const [showMedalArchive,setShowMedalArchive]=useState(false);
-  // 마이 탭에서 연 러닝화 비교. 기준(첫 칸)은 지금 신는 신발 — 비교는 대개
-  // '내 거 vs 후보'라, 빈 표로 열면 사용자가 자기 신발부터 검색해 넣어야 한다.
-  const [showShoeCompare,setShowShoeCompare]=useState(false);
+  // 마이 탭에서 연 러닝화 찾기. 기준을 안 주므로 '어떤 신발을 기준으로 볼까요?'부터
+  // 시작한다(내 신발 고르기 · 카탈로그에서 고르기 · 기준 없이 둘러보기).
+  const [showFindShoes,setShowFindShoes]=useState(false);
   // 대회 기록 흐름(완주 감지 배너 또는 아카이브 '추가'에서 진입). null = 미표시.
   const [medalFlow,setMedalFlow]=useState<null|{date:string;runId?:string;appTimeSec?:number;appPaceSec?:number;presetRaceId?:string;presetDistance?:RaceDistance}>(null);
   // 완주 리캡의 대회 감지 컨텍스트(배너용) — setRunRecap 과 함께 세팅, 닫을 때 함께 해제.
@@ -2502,13 +2503,11 @@ function Main(){
       onSave={(m)=>{const stamped={...m,updatedAt:Date.now()};setMedals(cur=>sortMedals([stamped,...cur.filter(x=>x.id!==stamped.id)]));void addMedalStore(stamped);setMedalFlow(null);setShowMedalArchive(true);}}
       onClose={()=>setMedalFlow(null)}/>;
   }
-  if(showShoeCompare){
-    // 빈 표로 연다 — 내 신발을 기준으로 강제하지 않는다(민우님: "꼭 내 러닝화랑
-    // 비교해야 될까"). 내 신발은 피커 맨 위에 얹혀 한 번에 넣을 수 있다.
-    return <ShoeCompareScreen
+  if(showFindShoes){
+    return <FindShoesScreen
       myShoes={homeShoes.map(x=>({brand:x.ui.brand,model:x.ui.model,
-        usedKm:x.ui.used??0,lifespanKm:x.ui.max??0}))}
-      onClose={()=>setShowShoeCompare(false)} />;
+        usedKm:x.ui.used??0,lifespanKm:x.ui.max??0,priceKrw:x.ui.priceKrw}))}
+      onClose={()=>setShowFindShoes(false)} />;
   }
   if(showMedalArchive){
     return <MedalArchiveScreen medals={liveMedals(medals)}
@@ -2612,7 +2611,7 @@ function Main(){
             onOpenProgression={()=>setShowProgression(true)}
             onOpenHallOfShoes={()=>setShowHallOfShoes(true)} retiredCount={retiredRecords.length}
             onOpenMedalArchive={()=>setShowMedalArchive(true)} medalCount={liveMedals(medals).length}
-            onOpenShoeCompare={()=>setShowShoeCompare(true)}
+            onOpenFindShoes={()=>setShowFindShoes(true)}
             onReplayOnboarding={()=>setPreviewOnboard(true)}
           />
         )}
