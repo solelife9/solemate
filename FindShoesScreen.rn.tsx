@@ -37,7 +37,9 @@ import {Button, WearRing} from './primitives';
 import {ShoePicker} from './ShoePicker';
 import ShoeCompareTable from './ShoeCompareTable';
 import {MAX_COMPARE, type CompareShoe} from './lib/shoeCompareTable';
-import {findCatalogShoe, toCompareShoe, unknownCompareShoe} from './lib/shoeCatalogLookup';
+import {findCatalogShoe} from './lib/shoeCatalogLookup';
+// 스펙은 **손검수 표가 이긴다** — 그 규칙은 lib/compareSource 한 곳에만 있다.
+import {toCompareShoe, unknownCompareShoe} from './lib/compareSource';
 import type {MyShoeRef} from './appTypes';
 import {similarShoes, SimilarCandidate, prevCategory} from './lib/nextShoe';
 import {ShoeCategory} from './data/shoeModels';

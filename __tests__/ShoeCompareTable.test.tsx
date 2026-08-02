@@ -16,7 +16,8 @@
 import React from 'react';
 import ReactTestRenderer, {act} from 'react-test-renderer';
 import ShoeCompareTable from '../ShoeCompareTable';
-import {findCatalogShoe, toCompareShoe, unknownCompareShoe} from '../lib/shoeCatalogLookup';
+import {findCatalogShoe} from '../lib/shoeCatalogLookup';
+import {toCompareShoe, unknownCompareShoe} from '../lib/compareSource';
 import {MAX_COMPARE, type CompareShoe} from '../lib/shoeCompareTable';
 
 function textOf(node: any): string {
@@ -84,7 +85,8 @@ describe('그리기', () => {
     const {r} = await mount([seedOf('ASICS', 'Superblast 3')]);
     const t = textOf(r.toJSON());
     expect(t).toContain('Superblast 3');
-    expect(t).toContain('230');   // 무게 g
+    // 236g — 카탈로그(230g)가 아니라 **손검수 표**의 값이다(2026-08-02 AUDIT 4 Q-1).
+    expect(t).toContain('236');
   });
 
   it('칸마다 종류를 적는다 — 296g 이 무거운지는 종류를 알아야 판단된다', async () => {
@@ -118,14 +120,17 @@ describe('그리기', () => {
     expect(t).not.toContain('무게');   // 아무 값도 없으면 행이 아예 없다
   });
 
+  // 손검수 표를 쓰면 잰 사이즈가 275mm(US9.5) ↔ 270mm(US9) 로 갈린다. 그럴 땐 그냥
+  // 빼지 않고 보정한 뒤 `≈` 를 붙인다 — 반 사이즈가 6g쯤 되기 때문이다.
   it('기준 대비 차이를 적는다', async () => {
-    const {r} = await mount([seedOf('ASICS', 'Superblast 3'), seedOf('Nike', 'Pegasus 42')]);
-    expect(textOf(r.toJSON())).toContain('+62');   // 230g → 292g
+    const t = textOf((await mount([seedOf('ASICS', 'Superblast 3'), seedOf('Nike', 'Pegasus 42')])).r.toJSON());
+    expect(t).toContain('≈+56');
+    expect(t).toContain('사이즈 보정한 어림값');
   });
 
   it('기준이 바뀌면 부호가 뒤집힌다', async () => {
-    const {r} = await mount([seedOf('ASICS', 'Superblast 3'), seedOf('Nike', 'Pegasus 42')], 1);
-    expect(textOf(r.toJSON())).toContain('−62');
+    const t = textOf((await mount([seedOf('ASICS', 'Superblast 3'), seedOf('Nike', 'Pegasus 42')], 1)).r.toJSON());
+    expect(t).toContain('≈−56');
   });
 });
 

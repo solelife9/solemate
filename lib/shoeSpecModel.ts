@@ -14,7 +14,7 @@
 import {ShoeCategory, findShoeModel, getRecommendedLifespanKm} from '../data/shoeModels';
 import type {ShoeSpec} from './shoeCompare';
 import specsData from '../data/shoeSpecs.json';
-import {findCatalogShoe} from './shoeCatalogLookup';
+import {findCatalogShoe, shoeKey} from './shoeCatalogLookup';
 
 /**
  * 축의 근거를 화면에 밝히는 문구.
@@ -102,6 +102,13 @@ function weightAdjust(responsiveness: number, weightG?: number): number {
 export interface OfficialSpec {
   /** 무게(g). 남성 US9/270mm 기준이 관례. */
   weightG?: number;
+  /**
+   * `weightG` 를 잰 사이즈. **무게와 함께 움직인다** — 무게만 가져오고 기준을 두고 오면
+   * "US9.5에서 잰 236g"이 "270mm에서 잰 236g"으로 둔갑한다. 반 사이즈가 6g쯤 되므로
+   * 그건 작은 거짓말이 아니다(2026-08-02 AUDIT 4 Q-1).
+   * 표기는 정규화하지 않고 원문 그대로 둔다 — lib/shoeWeightBasis 가 읽을 때 흡수한다.
+   */
+  weightBasis?: string;
   /** 힐 스택 높이(mm) — 밑창 두께. 쿠션 산정의 실제 근거. */
   stackHeelMm?: number;
   /** 드롭(mm). */
@@ -134,8 +141,38 @@ export function cushionFromStack(stackHeelMm: number): number {
  * 확인된 공식 스펙 표(data/shoeSpecs.json). 키는 'brand|model'.
  * 여기 없는 모델은 스펙을 모르는 것이고, 모르면 그 축은 비교에서 빠진다.
  */
-const OFFICIAL_SPECS: Readonly<Record<string, OfficialSpec>> =
-  (specsData as {specs?: Record<string, OfficialSpec>}).specs ?? {};
+/**
+ * 손검수 표 색인. **카탈로그 id 로 잡는다.**
+ *
+ * 원래는 `'brand|model'` 문자열 정확 일치였는데, 표와 카탈로그가 같은 신발을 다르게
+ * 적어(`1080v14` ↔ `1080 14`, `Boston 12` ↔ `Adizero Boston 12`) **사람이 검수한 값이
+ * 조용히 무시되고 있었다**(2026-08-02 AUDIT 4 Q-1 수정 중 발견).
+ *
+ * 문자열 규칙을 여기 또 만들지 않고 `findCatalogShoe` 한 해석기에 맡긴다 — 표를 읽을
+ * 때도, 조회할 때도 같은 함수를 통과하므로 표기가 어떻든 같은 칸에 떨어진다.
+ * 카탈로그에 없는 신발만 정규화 문자열 키로 남긴다(그건 id 가 없다).
+ */
+const {byId: SPECS_BY_ID, byKey: SPECS_BY_KEY} = (() => {
+  // 표는 잰 사이즈를 `basis` 로, 카탈로그는 `weightBasis` 로 적는다 — 한 이름으로 맞춘다.
+  const raw = (specsData as {specs?: Record<string, OfficialSpec & {basis?: string}>}).specs ?? {};
+  const byId: Record<string, OfficialSpec> = {};
+  const byKey: Record<string, OfficialSpec> = {};
+  for (const [k, v] of Object.entries(raw)) {
+    const [brand, model] = k.split('|');
+    if (!brand || !model) continue;
+    const spec: OfficialSpec = {...v, ...(v.basis ? {weightBasis: v.basis} : {})};
+    const d = findCatalogShoe(brand, model);
+    if (d) byId[d.id] = spec;
+    else byKey[shoeKey(brand, model)] = spec;
+  }
+  return {byId, byKey};
+})();
+
+/** 손검수 표에서 찾는다(표기가 달라도 카탈로그를 거쳐 같은 칸으로 떨어진다). */
+function officialTableSpec(brand: string, model: string): OfficialSpec | undefined {
+  const d = findCatalogShoe(brand, model);
+  return (d ? SPECS_BY_ID[d.id] : undefined) ?? SPECS_BY_KEY[shoeKey(brand, model)];
+}
 
 /**
  * 카탈로그 문서(data/shoeCatalog.json)에서 스펙을 꺼내 OfficialSpec 형태로 맞춘다.
@@ -153,7 +190,10 @@ function specFromCatalog(brand: string, model: string): OfficialSpec | undefined
   const d = findCatalogShoe(brand, model);
   if (!d) return undefined;
   const out: OfficialSpec = {};
-  if (typeof d.weight === 'number' && d.weight > 0) out.weightG = d.weight;
+  if (typeof d.weight === 'number' && d.weight > 0) {
+    out.weightG = d.weight;
+    if (d.weightBasis) out.weightBasis = d.weightBasis;
+  }
   if (typeof d.drop === 'number' && d.drop >= 0) out.dropMm = d.drop;
   const heel = d.stackHeight?.heel;
   if (typeof heel === 'number' && heel > 0) out.stackHeelMm = heel;
@@ -168,15 +208,19 @@ function specFromCatalog(brand: string, model: string): OfficialSpec | undefined
  * (필드 단위 병합인 이유: 표에 무게만 있고 스택이 없는 항목이 실제로 있다.)
  */
 export function lookupOfficialSpec(brand: string, model: string): OfficialSpec | undefined {
-  const table = OFFICIAL_SPECS[`${brand}|${model}`];
+  const table = officialTableSpec(brand, model);
   const catalog = specFromCatalog(brand, model);
   if (!table) return catalog;
   if (!catalog) return table;
   const merged: OfficialSpec = {};
-  const weightG = table.weightG ?? catalog.weightG;
+  // 무게와 잰 사이즈는 **한 몸**이다. 어느 표에서 왔든 그 표의 짝을 함께 가져온다.
+  const fromTable = table.weightG !== undefined;
+  const weightG = fromTable ? table.weightG : catalog.weightG;
+  const weightBasis = fromTable ? table.weightBasis : catalog.weightBasis;
   const stackHeelMm = table.stackHeelMm ?? catalog.stackHeelMm;
   const dropMm = table.dropMm ?? catalog.dropMm;
   if (weightG !== undefined) merged.weightG = weightG;
+  if (weightBasis !== undefined) merged.weightBasis = weightBasis;
   if (stackHeelMm !== undefined) merged.stackHeelMm = stackHeelMm;
   if (dropMm !== undefined) merged.dropMm = dropMm;
   return Object.keys(merged).length > 0 ? merged : undefined;
@@ -184,7 +228,7 @@ export function lookupOfficialSpec(brand: string, model: string): OfficialSpec |
 
 /** 스펙 표에 실린 모델 수(커버리지 리포트·테스트용). */
 export function officialSpecCount(): number {
-  return Object.keys(OFFICIAL_SPECS).length;
+  return Object.keys(SPECS_BY_ID).length + Object.keys(SPECS_BY_KEY).length;
 }
 
 /**

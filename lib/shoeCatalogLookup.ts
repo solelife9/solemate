@@ -28,6 +28,17 @@ const norm = (s: string): string =>
  */
 const normVer = (s: string): string => norm(s).replace(/v(?=\d)/g, '');
 
+/**
+ * 브랜드+모델을 하나의 조회 키로. **표기가 흔들려도 같은 신발이면 같은 키**가 된다.
+ *
+ * 공개하는 이유: 손으로 검수한 스펙 표(data/shoeSpecs.json)도 'brand|model' 문자열을
+ * 키로 쓰는데, 그쪽은 정확 일치라 `1080v14`(표) 와 `1080 14`(카탈로그)가 안 맞아
+ * **검수한 값이 조용히 무시되고 있었다**(2026-08-02 AUDIT 4 Q-1 수정 중 발견).
+ * 규칙을 두 벌 만들지 않으려고 여기 하나만 두고 내보낸다.
+ */
+export const shoeKey = (brand: string, model: string): string =>
+  `${norm(brand)}|${normVer(model)}`;
+
 /** 화면에 뜨는 이름 — 모델 + 버전 + variant + 콜라보. */
 export function displayName(d: ShoeDoc): string {
   const base = [d.model, d.version, d.variant].filter(Boolean).join(' ');
@@ -81,26 +92,6 @@ export function findCatalogShoe(brand: string, model: string): ShoeDoc | null {
     if (plain.length === 1) return plain[0];
   }
   return null;
-}
-
-/** 카탈로그 문서를 비교 표가 쓰는 형태로. */
-export function toCompareShoe(
-  d: ShoeDoc,
-  mine?: {usedKm: number; lifespanKm: number} | null,
-): CompareShoe {
-  return {
-    id: d.id,
-    brand: d.brand,
-    name: displayName(d),
-    category: d.category,
-    weight: d.weight,
-    weightBasis: d.weightBasis,
-    drop: d.drop,
-    plate: d.plate,
-    stackHeight: d.stackHeight,
-    lifespanKm: d.defaultLifespanKm,
-    mine: mine ?? null,
-  };
 }
 
 /**
