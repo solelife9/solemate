@@ -8960,7 +8960,7 @@
     "weight": 214,
     "weightBasis": null,
     "drop": 8,
-    "plate": null,
+    "plate": "carbon",
     "stackHeight": {
       "heel": 40,
       "forefoot": 32
@@ -11016,7 +11016,7 @@
     "weight": 168,
     "weightBasis": null,
     "drop": 5,
-    "plate": null,
+    "plate": "carbon",
     "stackHeight": {
       "heel": 39,
       "forefoot": 34
@@ -11070,7 +11070,7 @@
     "weight": 170,
     "weightBasis": null,
     "drop": 4,
-    "plate": null,
+    "plate": "carbon",
     "stackHeight": null,
     "releaseYear": 2025,
     "defaultLifespanKm": 450,
