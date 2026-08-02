@@ -307,9 +307,11 @@ describe('기준 고르기', () => {
   test('“기준 없이 둘러보기”는 추천을 건너뛰고 스펙 표로 간다', async () => {
     const r = await mountBare();
     await act(async () => { byId(r, 'find-shoes-skip')[0].props.onPress(); });
-    expect(byId(r, 'shoe-compare-screen').length).toBeGreaterThan(0);
+    expect(byId(r, 'shoe-compare-table').length).toBeGreaterThan(0);
     // 기준을 강제하지 않으므로 표는 비어서 시작한다.
     expect(textOf(r.root)).toContain('비교할 러닝화를 추가');
+    // 추천 흐름이 아니므로 '이걸로 정했어요'(구매처로) 가 뜨면 안 된다.
+    expect(byId(r, 'next-shoe-decide')).toHaveLength(0);
   });
 
   test('내 신발이 하나도 없어도 카탈로그에서 고를 수 있다', async () => {
@@ -319,24 +321,46 @@ describe('기준 고르기', () => {
   });
 });
 
-// ── 1:1 → 스펙 표 ────────────────────────────────────────────────────────────
-// 막대는 '얼마나 다른가'를 몸으로 보여주고, 표는 '정확히 몇인가'를 답한다.
-describe('스펙 표로 잇기', () => {
+// ── 후보 → 스펙 표 ───────────────────────────────────────────────────────────
+// 막대 그래프 화면을 걷어냈다(2026-08-02). 후보를 누르면 **곧장 표**다.
+describe('후보를 고르면 표로 간다', () => {
   const byId = (r: ReactTestRenderer.ReactTestRenderer, id: string) =>
     r.root.findAll((n: any) => n.props?.testID === id);
 
-  test('1:1 비교에서 스펙 표로 넘어가면 두 켤레가 그대로 실린다', async () => {
-    const r = await mount();
+  const pickFirst = async (r: ReactTestRenderer.ReactTestRenderer) => {
     const [first] = r.root.findAll((n: any) =>
       typeof n.props?.testID === 'string' && n.props.testID.startsWith('next-shoe-cand-'));
+    expect(first).toBeTruthy();
     await act(async () => { first.props.onPress(); });
-    const link = byId(r, 'next-shoe-open-spec');
-    expect(link.length).toBeGreaterThan(0);
-    await act(async () => { link[0].props.onPress(); });
-    expect(byId(r, 'shoe-compare-screen').length).toBeGreaterThan(0);
-    // 기준 칸이 하나 서 있어야 한다(빈 표로 넘어가면 이어붙인 의미가 없다).
-    expect(r.root.findAll((n: any) =>
+  };
+
+  test('기준과 후보 두 켤레가 표에 선다', async () => {
+    const r = await mount();
+    await pickFirst(r);
+    expect(byId(r, 'shoe-compare-table').length).toBeGreaterThan(0);
+    // 기준 칸이 정확히 하나 서 있어야 한다(빈 표로 넘어가면 이어붙인 의미가 없다).
+    // findAll 은 같은 노드를 composite/host 로 두 번 주므로 testID 로 유일화한다.
+    const ids = new Set(r.root.findAll((n: any) =>
       typeof n.props?.testID === 'string' && n.props.testID.startsWith('compare-base-'))
-    ).not.toHaveLength(0);
+      .map((n: any) => n.props.testID));
+    expect(ids.size).toBe(1);
+    // 표에는 두 칸(기준 + 후보)이 서 있어야 한다.
+    const removes = new Set(r.root.findAll((n: any) =>
+      typeof n.props?.testID === 'string' && n.props.testID.startsWith('compare-remove-'))
+      .map((n: any) => n.props.testID));
+    expect(removes.size).toBe(2);
+  });
+
+  test('막대 그래프는 더 이상 없다 — 표가 같은 값을 더 정확히 말한다', async () => {
+    const r = await mount();
+    await pickFirst(r);
+    const t = textOf(r.root);
+    expect(t).not.toContain('단계 →');   // 구 쿠션 막대의 '3단계 → 5단계'
+  });
+
+  test('구매처로 가는 길은 남아 있다', async () => {
+    const r = await mount();
+    await pickFirst(r);
+    expect(byId(r, 'next-shoe-decide').length).toBeGreaterThan(0);
   });
 });

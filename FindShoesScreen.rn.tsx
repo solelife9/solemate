@@ -35,17 +35,17 @@ import {
 } from './theme';
 import {Button, WearRing} from './primitives';
 import {ShoePicker} from './ShoePicker';
-import ShoeCompareScreen from './ShoeCompareScreen.rn';
-import type {CompareShoe} from './lib/shoeCompareTable';
+import ShoeCompareTable from './ShoeCompareTable';
+import {MAX_COMPARE, type CompareShoe} from './lib/shoeCompareTable';
 import {findCatalogShoe, toCompareShoe, unknownCompareShoe} from './lib/shoeCatalogLookup';
 import type {MyShoeRef} from './appTypes';
 import {similarShoes, SimilarCandidate, prevCategory} from './lib/nextShoe';
 import {ShoeCategory} from './data/shoeModels';
 import {
   actualWonPerKm, expectedWonPerKm,
-  wonPerKmVerdictKo, wonPerKmLabelKo, ShoeSpec,
+  wonPerKmVerdictKo, wonPerKmLabelKo,
 } from './lib/shoeCompare';
-import {buildShoeSpec, SPEC_BASIS_KO, basisOf, dropWarningKo} from './lib/shoeSpecModel';
+import {buildShoeSpec, SPEC_BASIS_KO, dropWarningKo} from './lib/shoeSpecModel';
 import {visibleChannels, tierLabelKo, EXCLUDED_CHANNELS} from './lib/shoeStore';
 import {AFFILIATE_DISCLOSURE, buildShopLinks, categoryLabelKo} from './lib/affiliate';
 import {fetchShoePrice, checkedAtLabel, ShoePriceQuote} from './lib/shoePrice';
@@ -80,8 +80,10 @@ function FindShoesScreen({base: baseProp = null, myShoes = [], onClose}: FindSho
   const [step, setStep] = useState<Step>(baseProp ? 'candidates' : 'base');
   /** 기준 고르기에서 카탈로그를 뒤질 때 여는 공용 피커. */
   const [pickerOpen, setPickerOpen] = useState(false);
-  /** 스펙 표(3켤레). 1:1 비교에서 '스펙 자세히'로, 기준 없이 둘러보기로도 연다. */
-  const [specSeeds, setSpecSeeds] = useState<CompareShoe[] | null>(null);
+  /** 표에 세운 신발들(최대 3). 비교 단계의 유일한 면이다. */
+  const [shoes, setShoes] = useState<CompareShoe[]>([]);
+  /** 차이를 재는 기준 칸. 표에서 언제든 바꾼다. */
+  const [baseIdx, setBaseIdx] = useState(0);
 
   const prevBrand = base?.brand ?? '';
   const prevModel = base?.model ?? '';
@@ -92,10 +94,6 @@ function FindShoesScreen({base: baseProp = null, myShoes = [], onClose}: FindSho
   /** 모델키 → 조회된 가격(없으면 미조회/실패). 화면은 있는 것만 보여준다. */
   const [prices, setPrices] = useState<Record<string, ShoePriceQuote | null>>({});
 
-  const prevSpec: ShoeSpec = useMemo(
-    () => buildShoeSpec(prevBrand, prevModel),
-    [prevBrand, prevModel],
-  );
   const prevCategoryKey = useMemo(
     () => prevCategory(prevBrand, prevModel),
     [prevBrand, prevModel],
@@ -136,7 +134,22 @@ function FindShoesScreen({base: baseProp = null, myShoes = [], onClose}: FindSho
   const priceOf = (c: SimilarCandidate) => prices[`${c.model.brand}|${c.model.model}`] ?? null;
 
   const picked = candidates[pickedIdx] ?? null;
-  const pick = (i: number) => { setPickedIdx(i); setStep('compare'); };
+  /**
+   * 후보를 고르면 **곧장 표로** 간다. 전에는 사이에 막대 그래프 화면이 하나 더
+   * 있었는데, 같은 종류끼리는 그 막대가 대부분 같은 값이라 정보가 없었다
+   * (민우님: "그냥 바로 스펙 자세히 보기 화면으로 넘어가는 건 어때, 막대바 있는 화면 없애고?").
+   */
+  const pick = (i: number) => {
+    const c = candidates[i];
+    if (!base || !c) return;
+    setPickedIdx(i);
+    setShoes([
+      toSpecOwned(base.brand, base.model),
+      toSpec(c.model.brand, c.model.model, null),
+    ]);
+    setBaseIdx(0);
+    setStep('compare');
+  };
 
   /** 기준을 정한다. 고른 즉시 후보로 넘어간다 — 한 번 더 누르게 하지 않는다. */
   const chooseBase = (b: FindShoesBase) => {
@@ -155,26 +168,29 @@ function FindShoesScreen({base: baseProp = null, myShoes = [], onClose}: FindSho
     return doc ? toCompareShoe(doc, mine) : unknownCompareShoe(brand, model, mine);
   };
 
-  /** 1:1 에서 '스펙 자세히' — 기준과 지금 보는 후보를 그대로 표로 넘긴다. */
-  const openSpec = () => {
-    if (!base || !picked) return;
-    const owned = myShoes.find(m => m.brand === base.brand && m.model === base.model);
-    setSpecSeeds([
-      toSpec(base.brand, base.model, owned ? {usedKm: owned.usedKm, lifespanKm: owned.lifespanKm} : null),
-      toSpec(picked.model.brand, picked.model.model, null),
-    ]);
+  /** 내 신발이면 사용률까지 실어 표에 세운다(기준 칸 아래 '남은 수명' 줄이 뜬다). */
+  const toSpecOwned = (brand: string, model: string) => {
+    const owned = myShoes.find(m => m.brand === brand && m.model === model);
+    return toSpec(brand, model, owned ? {usedKm: owned.usedKm, lifespanKm: owned.lifespanKm} : null);
   };
 
-  // 스펙 표는 이 화면 위에 통째로 얹힌다(별도 모달 없이 — 뒤로가면 제자리).
-  if (specSeeds) {
-    return (
-      <ShoeCompareScreen
-        seeds={specSeeds.length ? specSeeds : null}
-        myShoes={myShoes}
-        onClose={() => setSpecSeeds(null)}
-      />
-    );
-  }
+  /** 표에 한 켤레 더. 이미 있으면 아무 일도 안 한다(같은 신발 두 칸은 비교가 아니다). */
+  const addToTable = (brand: string, model: string) => {
+    const next = toSpecOwned(brand, model);
+    setShoes(prev =>
+      prev.length >= MAX_COMPARE || prev.some(x => x.id === next.id) ? prev : [...prev, next]);
+  };
+
+  /**
+   * 칸을 뺀다. 기준 칸을 빼면 남은 첫 칸이 기준이 되고, 기준보다 앞을 빼면 기준이
+   * 한 칸 당겨진다 — 안 그러면 엉뚱한 신발이 조용히 기준이 된다.
+   */
+  const removeFromTable = (id: string) => {
+    const i = shoes.findIndex(x => x.id === id);
+    if (i < 0) return;
+    setShoes(shoes.filter((_, k) => k !== i));
+    setBaseIdx(b => (i < b ? b - 1 : i === b ? 0 : b));
+  };
 
   return (
     <View style={[s.screen, {paddingTop: insets.top}]}>
@@ -212,7 +228,7 @@ function FindShoesScreen({base: baseProp = null, myShoes = [], onClose}: FindSho
             myShoes={myShoes}
             onPickMine={chooseMine}
             onBrowse={() => setPickerOpen(true)}
-            onSkip={() => setSpecSeeds([])}
+            onSkip={() => { setShoes([]); setBaseIdx(0); setStep('compare'); }}
           />
         )}
         {step === 'candidates' && !!base && (
@@ -232,16 +248,17 @@ function FindShoesScreen({base: baseProp = null, myShoes = [], onClose}: FindSho
             onChangeBase={() => setStep('base')}
           />
         )}
-        {step === 'compare' && picked && (
+        {step === 'compare' && (
           <CompareStep
-            prevSpec={prevSpec}
+            base={base}
             picked={picked}
             prevPerKm={prevPerKm}
-            quote={priceOf(picked)}
-            candidates={candidates}
-            pickedIdx={pickedIdx}
-            onSwitch={setPickedIdx}
-            onOpenSpec={openSpec}
+            quote={picked ? priceOf(picked) : null}
+            shoes={shoes}
+            baseIdx={baseIdx}
+            onSetBase={setBaseIdx}
+            onRemove={removeFromTable}
+            onAdd={() => setPickerOpen(true)}
           />
         )}
         {step === 'store' && picked && <StoreStep picked={picked} quote={priceOf(picked)} />}
@@ -251,7 +268,10 @@ function FindShoesScreen({base: baseProp = null, myShoes = [], onClose}: FindSho
         {step === 'candidates' && (
           <Button label="나중에 볼게요" onPress={onClose} testID="next-shoe-later" style={s.btnFull} />
         )}
-        {step === 'compare' && (
+        {step === 'compare' && !base && (
+          <Button label="닫기" onPress={onClose} testID="next-shoe-close-browse" style={s.btnFull} />
+        )}
+        {step === 'compare' && !!base && (
           <View style={s.footRow}>
             <Pressable
               onPress={() => setStep('candidates')}
@@ -273,7 +293,13 @@ function FindShoesScreen({base: baseProp = null, myShoes = [], onClose}: FindSho
       <ShoePicker
         visible={pickerOpen}
         onClose={() => setPickerOpen(false)}
-        onPick={(p) => chooseBase({brand: p.brand, model: p.model})}
+        onPick={(p) => (step === 'base'
+          ? chooseBase({brand: p.brand, model: p.model})
+          : addToTable(p.brand, p.model))}
+        myShoes={step === 'base' ? undefined : myShoes
+          .filter(m => !shoes.some(x => x.brand === m.brand && x.name === m.model))
+          .map(m => ({brand: m.brand, model: m.model,
+            sub: `${m.brand} · ${Math.round(m.usedKm)} / ${Math.round(m.lifespanKm)} km`}))}
         insetTop={insets.top}
         insetBottom={insets.bottom}
       />
@@ -487,117 +513,46 @@ function RecommendStep({
   );
 }
 
-// ── 스텝 1 · 나란히 비교 ────────────────────────────────────────────────────────
+// ── 비교 · 스펙 표 ─────────────────────────────────────────────────────────────
+// 전에는 여기가 쿠션·무게·수명 **막대 그래프** 화면이었고, 정확한 숫자 표는 그 뒤에
+// 한 번 더 있었다. 그런데 막대가 실제로 담는 정보가 거의 없었다:
+//   · 반발·안정 — 카테고리에서 파생. 후보는 같은 종류에서만 고르므로 **항상 동일**
+//   · 쿠션      — 힐 스택(mm)을 1~5로 뭉갠 값. 표엔 그 mm 가 그대로 있다
+//   · 무게·권장 수명 — 표에 이미 정확히 있다
+// 그래서 막대를 걷어내고 표 하나로 합쳤다(민우님: "그냥 바로 스펙 자세히 보기
+// 화면으로 넘어가는 건 어때, 막대바 있는 화면 없애고?"). 화면이 하나 줄었고
+// 최대 3켤레를 한 번에 볼 수 있게 됐다.
+//
+// 막대 화면에만 있던 것 중 **값이 있는 둘은 남긴다** — 부상 경고와 1km당 비용.
+// 둘 다 카드지 막대가 아니었다. 경고를 비용보다 위에 두는 순서도 그대로다:
+// 미션(부상 없이)이 돈보다 앞선다.
 function CompareStep({
-  prevSpec, picked, prevPerKm, quote, candidates, pickedIdx, onSwitch, onOpenSpec,
+  base, picked, prevPerKm, quote, shoes, baseIdx, onSetBase, onRemove, onAdd,
 }: {
-  prevSpec: ShoeSpec;
-  picked: SimilarCandidate;
+  /** 기준 신발. null 이면 '기준 없이 둘러보기' — 추천도 가격도 없이 표만 쓴다. */
+  base: FindShoesBase | null;
+  picked: SimilarCandidate | null;
   prevPerKm: ReturnType<typeof actualWonPerKm>;
   quote: ShoePriceQuote | null;
-  candidates: SimilarCandidate[];
-  pickedIdx: number;
-  onSwitch: (i: number) => void;
-  /** 스펙 표(3켤레)로 넘어간다 — 여기 막대는 큰 방향, 표는 정확한 숫자 담당. */
-  onOpenSpec: () => void;
+  shoes: readonly CompareShoe[];
+  baseIdx: number;
+  onSetBase: (i: number) => void;
+  onRemove: (id: string) => void;
+  onAdd: () => void;
 }) {
-  const next = picked.spec;
-  const nextPerKm = quote ? expectedWonPerKm(quote.priceKrw, next.lifespanKm) : null;
+  const prevSpec = useMemo(
+    () => (base ? buildShoeSpec(base.brand, base.model) : null),
+    [base],
+  );
+  const next = picked?.spec ?? null;
+  const nextPerKm = quote && next ? expectedWonPerKm(quote.priceKrw, next.lifespanKm) : null;
   const verdict = wonPerKmVerdictKo(prevPerKm, nextPerKm);
-
-  // 양쪽 다 값이 있는 축만 그린다(한쪽이라도 모르면 그 줄을 만들지 않는다).
-  // 각 줄에 **그 값이 어디서 왔는지**를 함께 싣는다 — 뭉뚱그린 '브랜드 데이터' 라벨보다
-  // 숫자로 된 근거가 강하고, 무엇보다 사실이다.
-  const nextBasis = basisOf(next);
-  const rows: {label: string; a: number; b: number; note: string; basis: string; ember?: boolean}[] = [];
-  if (prevSpec.cushion !== undefined && next.cushion !== undefined) {
-    rows.push({
-      label: '쿠션', a: prevSpec.cushion, b: next.cushion,
-      note: `${prevSpec.cushion}단계 → ${next.cushion}단계`,
-      basis: nextBasis.cushion,
-    });
-  }
-  if (prevSpec.weightG !== undefined && next.weightG !== undefined) {
-    rows.push({
-      label: '무게', a: prevSpec.weightG, b: next.weightG,
-      note: `${prevSpec.weightG}g → ${next.weightG}g`,
-      basis: nextBasis.weight,
-    });
-  }
-  if (prevSpec.lifespanKm !== undefined && next.lifespanKm !== undefined) {
-    rows.push({
-      label: '권장 수명', a: prevSpec.lifespanKm, b: next.lifespanKm,
-      note: `${prevSpec.lifespanKm}km → ${next.lifespanKm}km`,
-      basis: '신발 종류 기준', ember: true,
-    });
-  }
-
-  // 드롭이 크게 낮아지면 부상 위험을 먼저 말한다 — 미션(부상 없이)이 가격보다 앞선다.
-  const dropWarn = dropWarningKo(prevSpec.dropMm, next.dropMm);
+  // 드롭이 크게 낮아지면 부상 위험을 먼저 말한다.
+  const dropWarn = prevSpec && next ? dropWarningKo(prevSpec.dropMm, next.dropMm) : '';
 
   return (
     <View style={s.stepWrap} testID="next-shoe-compare">
-      {/* 후보 전환기 — 목록으로 돌아갔다 오지 않고 여기서 바로 갈아끼운다.
-          '하나씩 눌러보면서 비교'가 이 화면의 본론이라 왕복을 없앤다. */}
-      {candidates.length > 1 && (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={s.switcher}>
-          {candidates.map((c, i) => {
-            const on = i === pickedIdx;
-            return (
-              <Pressable
-                key={`${c.model.brand}|${c.model.model}`}
-                onPress={() => onSwitch(i)}
-                accessibilityRole="button"
-                accessibilityLabel={`${c.model.model} 비교로 바꾸기`}
-                accessibilityState={{selected: on}}
-                testID={`next-shoe-switch-${c.model.model}`}
-                style={({pressed}) => [s.chip, on && s.chipOn, pressed && s.pressed]}>
-                <Text style={[s.chipTxt, on && s.chipTxtOn]} numberOfLines={1}>{c.model.model}</Text>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
-      )}
-
-      <View style={s.vs}>
-        <View style={s.vsCol}>
-          <Text style={s.vsTag}>지난 신발</Text>
-          <Text style={s.vsName} numberOfLines={2}>{prevSpec.model}</Text>
-        </View>
-        <Text style={s.vsMid}>vs</Text>
-        <View style={s.vsCol}>
-          <Text style={s.vsTag}>다음 신발</Text>
-          <Text style={s.vsName} numberOfLines={2}>{next.model}</Text>
-        </View>
-      </View>
-
-      {rows.map((r) => {
-        const max = Math.max(r.a, r.b) || 1;
-        return (
-          <View key={r.label} style={s.attr}>
-            <Text style={s.attrName}>{r.label}</Text>
-            <View style={s.abars}>
-              <View style={s.ab}>
-                <View style={[s.abFillL, {width: `${Math.round((r.a / max) * 100)}%`}]} />
-              </View>
-              <View style={s.ab}>
-                <View style={[
-                  s.abFillR,
-                  r.ember ? s.abEmber : null,
-                  {width: `${Math.round((r.b / max) * 100)}%`},
-                ]} />
-              </View>
-            </View>
-            <Text style={s.attrVals}>{r.note}</Text>
-            {!!r.basis && <Text style={s.attrBasis}>{r.basis}</Text>}
-          </View>
-        );
-      })}
-
-      {/* 부상 경고는 판정 카드보다 위에 둔다 — 돈보다 몸이 먼저다. */}
+      {/* 부상 경고는 표보다 위. 숫자를 읽기 전에 몸 얘기를 먼저 한다. */}
       {!!dropWarn && (
         <View style={s.warn} testID="next-shoe-drop-warning">
           <Ionicons name="alert-circle-outline" size={ri(ICON.inline)} color={WARN} />
@@ -605,8 +560,16 @@ function CompareStep({
         </View>
       )}
 
+      <ShoeCompareTable
+        shoes={shoes}
+        baseIdx={baseIdx}
+        onSetBase={onSetBase}
+        onRemove={onRemove}
+        onAdd={onAdd}
+      />
+
       {/* 원/km 판정 — 양쪽 다 계산될 때만 카드를 만든다. */}
-      {!!verdict && (
+      {!!verdict && !!prevSpec && !!next && (
         <View style={s.verdict} testID="next-shoe-verdict">
           <Text style={s.verdictLab}>1km당 비용</Text>
           <Text style={s.verdictMain}>{verdict}</Text>
@@ -625,27 +588,13 @@ function CompareStep({
         </View>
       )}
 
-      <Text style={s.basis}>
-        {prevPerKm
-          ? '지난 신발은 실제로 낸 값 ÷ 실제로 달린 거리라 실측이에요. 다음 신발은 아직 안 달렸으니 권장 수명으로 계산한 예상치예요.'
-          : '지난 신발 구매가를 넣으면 1km당 비용을 비교해 드려요.'}
-      </Text>
-
-      {/* 막대는 '얼마나 다른가'를 몸으로 보여주고, 표는 '정확히 몇인가'를 답한다.
-          둘은 경쟁이 아니라 확대다 — 여기서 표로 이어 준다(스택·드롭·카본까지). */}
-      <Pressable
-        onPress={onOpenSpec}
-        accessibilityRole="button"
-        accessibilityLabel="스펙 자세히 보기"
-        testID="next-shoe-open-spec"
-        style={({pressed}) => [s.specLink, pressed && s.pressed]}>
-        <Ionicons name="list-outline" size={ri(ICON.action)} color={T3} />
-        <View style={s.flex1}>
-          <Text style={s.specLinkTitle}>스펙 자세히 보기</Text>
-          <Text style={s.specLinkSub}>스택 · 드롭 · 카본까지, 최대 3켤레</Text>
-        </View>
-        <Ionicons name="chevron-forward" size={ri(ICON.action)} color={T3} />
-      </Pressable>
+      {!!base && (
+        <Text style={s.basis}>
+          {prevPerKm
+            ? '기준 신발은 실제로 낸 값 ÷ 실제로 달린 거리라 실측이에요. 다음 신발은 아직 안 달렸으니 권장 수명으로 계산한 예상치예요.'
+            : '기준 신발 구매가를 넣으면 1km당 비용을 비교해 드려요.'}
+        </Text>
+      )}
     </View>
   );
 }

@@ -1,8 +1,12 @@
 /**
- * 러닝화 비교 화면 — 계약.
+ * 러닝화 스펙 표 — 계약.
+ *
+ * 표는 이제 화면이 아니라 FindShoesScreen 안의 조각이다(2026-08-02: 막대 화면을
+ * 걷어내고 표 하나로 합침). 그래서 여기서는 **찾기 화면을 '기준 없이 둘러보기'로
+ * 띄워** 표만 있는 상태를 만든다 — 실제 사용자가 표만 쓰는 경로와 같다.
  *
  * 지키는 것:
- *  · 기준(첫 칸)은 뺄 수 있어도 화면이 깨지지 않는다
+ *  · 기준 칸을 빼도 표가 깨지지 않는다(남은 칸이 기준이 된다)
  *  · 3켤레가 차면 더 못 넣는다(한 화면에 안 들어오는 비교는 비교가 아니다)
  *  · 카탈로그에 없는 내 신발도 세워진다 — 이름만 남더라도
  *
@@ -10,7 +14,7 @@
  */
 import React from 'react';
 import ReactTestRenderer, {act} from 'react-test-renderer';
-import ShoeCompareScreen from '../ShoeCompareScreen.rn';
+import FindShoesScreen from '../FindShoesScreen.rn';
 import {findCatalogShoe, toCompareShoe, unknownCompareShoe} from '../lib/shoeCatalogLookup';
 
 function textOf(node: any): string {
@@ -24,13 +28,28 @@ function textOf(node: any): string {
   return out;
 }
 
+/**
+ * 표만 있는 상태로 띄운다. seed 를 주면 그 신발이 내 신발장에 있는 것으로 보고
+ * 표에 세운다 — '기준 없이 둘러보기'로 들어가 피커에서 그 신발을 고르는 것과 같다.
+ */
 async function mount(seed: any = null) {
+  // mine 이 있을 때만 '내 신발'로 넣는다 — 없으면 카탈로그에서 고른 남의 신발이고,
+  // 그 경우 표에 '남은 수명' 줄이 뜨면 안 된다.
+  const myShoes = seed?.mine
+    ? [{brand: seed.brand, model: seed.name,
+        usedKm: seed.mine.usedKm, lifespanKm: seed.mine.lifespanKm}]
+    : [];
   let r!: ReactTestRenderer.ReactTestRenderer;
   await act(async () => {
-    r = ReactTestRenderer.create(<ShoeCompareScreen seeds={seed ? [seed] : null} onClose={jest.fn()} />);
+    r = ReactTestRenderer.create(<FindShoesScreen myShoes={myShoes} onClose={jest.fn()} />);
   });
+  // 기준 고르기 → '기준 없이 그냥 둘러볼래요' → 빈 표
+  await act(async () => { byId(r.root, 'find-shoes-skip')[0].props.onPress(); });
+  if (seed) await addBySearch(r, seed.brand, seed.name, new RegExp(escapeRe(seed.name)));
   return r;
 }
+
+const escapeRe = (v: string) => v.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 const byId = (root: ReactTestRenderer.ReactTestInstance, id: string) =>
   root.findAll((n: any) => n.props?.testID === id);
