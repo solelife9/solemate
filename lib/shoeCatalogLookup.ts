@@ -16,6 +16,18 @@ const CATALOG = catalogData as unknown as ShoeDoc[];
 const norm = (s: string): string =>
   String(s ?? '').toLowerCase().replace(/[\s\-_.]/g, '');
 
+/**
+ * 버전 표기를 하나로 — `v14` · `V14` 를 `14` 로 본다.
+ *
+ * 같은 신발을 두 파일이 다르게 적고 있었다: data/shoes.json 은 뉴발란스식 `1080v14`,
+ * data/shoeCatalog.json 은 `1080 14`. 그 결과 **34켤레가 서로를 못 찾아** 스펙 표에서
+ * 무게·드롭이 통째로 빈칸이었다(2026-08-02 감사). 사용자도 두 표기를 다 쓰므로
+ * 데이터를 한쪽으로 미는 것보다 조회가 흡수하는 게 맞다.
+ *
+ * `v` 뒤에 숫자가 올 때만 지운다 — 'Vomero'·'Vaporfly' 처럼 v로 시작하는 이름은 건드리지 않는다.
+ */
+const normVer = (s: string): string => norm(s).replace(/v(?=\d)/g, '');
+
 /** 화면에 뜨는 이름 — 모델 + 버전 + variant + 콜라보. */
 export function displayName(d: ShoeDoc): string {
   const base = [d.model, d.version, d.variant].filter(Boolean).join(' ');
@@ -40,6 +52,7 @@ export function findCatalogShoe(brand: string, model: string): ShoeDoc | null {
 
   const sameBrand = CATALOG.filter((d) => norm(d.brand) === b);
   const pool = sameBrand.length ? sameBrand : [];
+  const mv = normVer(model);
 
   for (const d of pool) {
     if (norm(displayName(d)) === m) return d;
@@ -49,6 +62,23 @@ export function findCatalogShoe(brand: string, model: string): ShoeDoc | null {
   }
   for (const d of pool) {
     if ((d.searchAliases ?? []).some((a) => norm(a) === m)) return d;
+  }
+  // 버전 표기만 다른 경우(1080v14 ↔ 1080 14). 위 완전일치가 모두 실패한 뒤에만 본다.
+  for (const d of pool) {
+    if (normVer([d.model, d.version].filter(Boolean).join(' ')) === mv) return d;
+  }
+  for (const d of pool) {
+    if ((d.searchAliases ?? []).some((a) => normVer(a) === mv)) return d;
+  }
+  // 브랜드 라인 접두사가 빠진 경우(Boston 12 ↔ Adizero Boston 12). 접두사만 다르고
+  // 뒤가 통째로 같을 때만 — 'Pro 3' 같은 짧은 조각이 아무거나 물지 않게 4자 이상으로 막는다.
+  if (mv.length >= 4) {
+    const tail = pool.filter((d) => normVer([d.model, d.version].filter(Boolean).join(' ')).endsWith(mv));
+    if (tail.length === 1) return tail[0];
+    // 여럿이면 콜라보가 아닌 본판을 고른다(Adios Pro 4 ↔ Adios Pro 4 ×Satisfy).
+    // 그래도 여럿이면 포기한다 — 억지로 고르면 남의 스펙을 내 신발이라 보여주게 된다.
+    const plain = tail.filter((d) => !d.collabWith);
+    if (plain.length === 1) return plain[0];
   }
   return null;
 }

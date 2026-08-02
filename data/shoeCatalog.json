@@ -8940,7 +8940,9 @@
       "퓨어셀 4",
       "슈퍼컴프 4",
       "SC 엘리트 4",
-      "에스씨 엘리트 4"
+      "에스씨 엘리트 4",
+      "FuelCell SC Elite 4",
+      "SC Elite 4"
     ],
     "verified": true,
     "defaultLifespanKm": 450,
@@ -8978,7 +8980,9 @@
       "퓨어셀 5",
       "슈퍼컴프 5",
       "SC 엘리트 5",
-      "에스씨 엘리트 5"
+      "에스씨 엘리트 5",
+      "FuelCell SC Elite 5",
+      "SC Elite 5"
     ],
     "verified": true
   },
@@ -9006,7 +9010,9 @@
       "퓨어셀 6",
       "슈퍼컴프 6",
       "SC 엘리트 6",
-      "에스씨 엘리트 6"
+      "에스씨 엘리트 6",
+      "FuelCell SC Elite 6",
+      "SC Elite 6"
     ],
     "verified": true,
     "defaultLifespanKm": 450,
@@ -9039,7 +9045,9 @@
       "뉴발",
       "퓨어셀",
       "슈퍼컴프",
-      "SC 페이서"
+      "SC 페이서",
+      "FuelCell SC Pacer",
+      "SC Pacer"
     ],
     "verified": true
   },
@@ -9065,7 +9073,9 @@
       "SC 페이서",
       "퓨어셀 2",
       "슈퍼컴프 2",
-      "SC 페이서 2"
+      "SC 페이서 2",
+      "FuelCell SC Pacer 2",
+      "SC Pacer 2"
     ],
     "verified": true,
     "defaultLifespanKm": 450,
@@ -9124,7 +9134,9 @@
       "SC 트레이너",
       "퓨어셀 2",
       "슈퍼컴프 2",
-      "SC 트레이너 2"
+      "SC 트레이너 2",
+      "FuelCell SC Trainer 2",
+      "SC Trainer 2"
     ],
     "verified": true,
     "defaultLifespanKm": 650,
@@ -9160,7 +9172,9 @@
       "SC 트레이너",
       "퓨어셀 3",
       "슈퍼컴프 3",
-      "SC 트레이너 3"
+      "SC 트레이너 3",
+      "FuelCell SC Trainer 3",
+      "SC Trainer 3"
     ],
     "verified": true
   },
@@ -9442,7 +9456,8 @@
     "searchAliases": [
       "나이키",
       "인피니티",
-      "인피니티 3"
+      "인피니티 3",
+      "React Infinity Run 3"
     ],
     "verified": true
   },
@@ -9465,7 +9480,8 @@
     "searchAliases": [
       "나이키",
       "인피니티",
-      "인피니티 4"
+      "인피니티 4",
+      "React Infinity Run 4"
     ],
     "verified": false
   },
@@ -15741,5 +15757,68 @@
     "brand": "Under Armour",
     "model": "Velociti SPD",
     "category": "tempo"
+  },
+  {
+    "id": "new-balance-fresh-foam-x-880-16",
+    "brand": "New Balance",
+    "model": "Fresh Foam X 880",
+    "version": "16",
+    "variant": null,
+    "collabWith": null,
+    "category": "daily",
+    "defaultLifespanKm": 650,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": 2026,
+    "discontinued": false,
+    "verified": false,
+    "searchAliases": [
+      "Fresh Foam X 880v16"
+    ]
+  },
+  {
+    "id": "on-cloudsurfer-3",
+    "brand": "On",
+    "model": "Cloudsurfer",
+    "version": "3",
+    "variant": null,
+    "collabWith": null,
+    "category": "tempo",
+    "defaultLifespanKm": 650,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": 2025,
+    "discontinued": false,
+    "verified": false,
+    "searchAliases": [
+      "Cloudsurfer 3"
+    ]
+  },
+  {
+    "id": "satisfy-therocker",
+    "brand": "Satisfy",
+    "model": "TheRocker",
+    "version": null,
+    "variant": null,
+    "collabWith": null,
+    "category": "trail",
+    "defaultLifespanKm": 650,
+    "weight": null,
+    "weightBasis": null,
+    "drop": null,
+    "plate": null,
+    "stackHeight": null,
+    "releaseYear": 2026,
+    "discontinued": false,
+    "verified": false,
+    "searchAliases": [
+      "TheRocker"
+    ]
   }
 ]

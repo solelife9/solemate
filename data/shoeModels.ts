@@ -19,6 +19,9 @@
 // 통합 단일 소스: data/shoes.json — 카탈로그(여기)와 분류(shoeClass)가 같은 파일을 읽는다.
 import shoesData from './shoes.json';
 import catalogData from './shoeCatalog.json';
+// 카테고리 조회는 lib/shoeCatalogLookup 단일 소스를 쓴다(표기 정규화 사본 금지 —
+// 'v14'↔'14' 같은 규칙이 두 벌이 되는 순간 한쪽만 고쳐져 조용히 어긋난다).
+import {findCatalogShoe} from '../lib/shoeCatalogLookup';
 
 export type ShoeCategory =
   | 'daily_trainer'
@@ -77,17 +80,42 @@ export const DEFAULT_LIFESPAN_KM = categoryLifespanKm.daily_trainer; // 650
 // 시드 데이터 (164 모델)
 // ────────────────────────────────────────────────────────────
 
+const NEW_TO_LEGACY_CATEGORY: Readonly<Record<string, ShoeCategory>> = {
+  daily: 'daily_trainer',
+  tempo: 'super_trainer',
+  racing: 'carbon_racing',
+  trail: 'trail',
+  stability: 'stability',
+  recovery: 'max_cushion',
+};
+
+/**
+ * 시드 모델 — 용도 태그·권장 수명은 data/shoes.json, **카테고리는 카탈로그**에서 온다.
+ *
+ * 전에는 두 파일이 카테고리를 각자 들고 있었고 SEED(=shoes.json)가 이겼다. 그래서
+ * 같은 신발이 기준 카드에선 「슈퍼 트레이너」, 스펙 표에선 「데일리」로 보일 수 있었다
+ * (민우님: "노바블라스트가 슈퍼트레이너야?" — 실제로 shoes.json 만 그렇게 적고 있었다).
+ * 카테고리는 카탈로그 하나만 소유한다. 두 곳이 들고 있는 한 또 어긋난다.
+ *
+ * 카탈로그에 없으면 데일리로 떨어진다 — 그런 신발이 없도록 테스트가 막는다
+ * (__tests__/data.categorySource.test.ts).
+ */
 const SEED_MODELS: ShoeModel[] = (
-  shoesData.shoes as Array<{brand: string; model: string; category: ShoeCategory; recommendedKm?: number; year?: number}>
-).map((s) => ({
-  brand: s.brand,
-  model: s.model,
-  category: s.category,
-  recommendedKm: Number.isFinite(s.recommendedKm as number)
-    ? (s.recommendedKm as number)
-    : (categoryLifespanKm[s.category] ?? DEFAULT_LIFESPAN_KM),
-  year: s.year ?? 0,
-}));
+  shoesData.shoes as Array<{brand: string; model: string; recommendedKm?: number; year?: number}>
+).map((s) => {
+  const doc = findCatalogShoe(s.brand, s.model);
+  const category: ShoeCategory =
+    (doc && NEW_TO_LEGACY_CATEGORY[String(doc.category)]) ?? 'daily_trainer';
+  return {
+    brand: s.brand,
+    model: s.model,
+    category,
+    recommendedKm: Number.isFinite(s.recommendedKm as number)
+      ? (s.recommendedKm as number)
+      : (categoryLifespanKm[category] ?? DEFAULT_LIFESPAN_KM),
+    year: s.year ?? 0,
+  };
+});
 
 /**
  * 새 카탈로그(data/shoeCatalog.json, docs/shoes-spec.md 스키마) → 이 파일의 레거시 형태.
@@ -97,14 +125,6 @@ const SEED_MODELS: ShoeModel[] = (
  * 빈다. 그래서 **모델 목록만** 합친다 — 카탈로그에만 있는 신발이 등록 화면에 뜨는 게
  * 목적이고, 그건 이 한 겹으로 충분하다.
  */
-const NEW_TO_LEGACY_CATEGORY: Readonly<Record<string, ShoeCategory>> = {
-  daily: 'daily_trainer',
-  tempo: 'super_trainer',
-  racing: 'carbon_racing',
-  trail: 'trail',
-  stability: 'stability',
-  recovery: 'max_cushion',
-};
 
 /** 카탈로그 문서에서 이 파일이 쓰는 최소 형태(원격 문서도 같은 스키마다). */
 export interface ShoeDocLike {
