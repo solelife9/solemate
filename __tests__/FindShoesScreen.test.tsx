@@ -304,20 +304,14 @@ describe('기준 고르기', () => {
     expect(byId(r, 'find-shoes-base').length).toBeGreaterThan(0);
   });
 
-  test('“기준 없이 둘러보기”는 추천을 건너뛰고 스펙 표로 간다', async () => {
-    const r = await mountBare();
-    await act(async () => { byId(r, 'find-shoes-skip')[0].props.onPress(); });
-    expect(byId(r, 'shoe-compare-table').length).toBeGreaterThan(0);
-    // 기준을 강제하지 않으므로 표는 비어서 시작한다.
-    expect(textOf(r.root)).toContain('비교할 러닝화를 추가');
-    // 추천 흐름이 아니므로 '이걸로 정했어요'(구매처로) 가 뜨면 안 된다.
-    expect(byId(r, 'next-shoe-decide')).toHaveLength(0);
-  });
-
   test('내 신발이 하나도 없어도 카탈로그에서 고를 수 있다', async () => {
     const r = await mountBare([]);
     expect(byId(r, 'find-shoes-browse').length).toBeGreaterThan(0);
-    expect(byId(r, 'find-shoes-skip').length).toBeGreaterThan(0);
+  });
+
+  test('“기준 없이 둘러보기”는 없다 — “다른 러닝화에서 고르기”가 곧 그 행동이다', async () => {
+    const r = await mountBare();
+    expect(byId(r, 'find-shoes-skip')).toHaveLength(0);
   });
 });
 

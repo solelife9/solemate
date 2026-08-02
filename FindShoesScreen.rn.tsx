@@ -41,10 +41,7 @@ import {findCatalogShoe, toCompareShoe, unknownCompareShoe} from './lib/shoeCata
 import type {MyShoeRef} from './appTypes';
 import {similarShoes, SimilarCandidate, prevCategory} from './lib/nextShoe';
 import {ShoeCategory} from './data/shoeModels';
-import {
-  actualWonPerKm, expectedWonPerKm,
-  wonPerKmVerdictKo,
-} from './lib/shoeCompare';
+import {actualWonPerKm, expectedWonPerKm} from './lib/shoeCompare';
 import {buildShoeSpec, SPEC_BASIS_KO, dropWarningKo} from './lib/shoeSpecModel';
 import {visibleChannels, tierLabelKo, EXCLUDED_CHANNELS} from './lib/shoeStore';
 import {AFFILIATE_DISCLOSURE, buildShopLinks, categoryLabelKo} from './lib/affiliate';
@@ -262,7 +259,6 @@ function FindShoesScreen({base: baseProp = null, myShoes = [], onClose}: FindSho
             myShoes={myShoes}
             onPickMine={chooseMine}
             onBrowse={() => setPickerOpen(true)}
-            onSkip={() => { setShoes([]); setBaseIdx(0); setStep('compare'); }}
           />
         )}
         {step === 'candidates' && !!base && (
@@ -286,8 +282,6 @@ function FindShoesScreen({base: baseProp = null, myShoes = [], onClose}: FindSho
           <CompareStep
             base={base}
             picked={picked}
-            prevPerKm={prevPerKm}
-            quote={picked ? priceOf(picked) : null}
             shoes={tableShoes}
             baseIdx={baseIdx}
             onSetBase={setBaseIdx}
@@ -343,13 +337,15 @@ function FindShoesScreen({base: baseProp = null, myShoes = [], onClose}: FindSho
 
 // ── 기준 고르기 ───────────────────────────────────────────────────────────────
 // 마이 탭에서 맨몸으로 들어왔을 때만 뜬다. 내 신발을 **먼저** 놓는 이유는 그게 가장
-// 흔한 시작점이라서지, 의무라서가 아니다 — "기준 없이 그냥 둘러볼래요"로 빠져나가면
-// 추천 없이 스펙 표만 쓴다(민우님: "꼭 내 러닝화랑 비교해야 될까").
-function BaseStep({myShoes, onPickMine, onBrowse, onSkip}: {
+// 흔한 시작점이라서지, 의무라서가 아니다 — 아무 러닝화나 기준으로 세울 수 있다
+// (민우님: "꼭 내 러닝화랑 비교해야 될까").
+//
+// 전에는 '기준 없이 그냥 둘러볼래요'가 하나 더 있었는데 뺐다 — '다른 러닝화에서
+// 고르기'가 곧 그 행동이라 두 버튼이 같은 말을 하고 있었다(민우님 지적).
+function BaseStep({myShoes, onPickMine, onBrowse}: {
   myShoes: readonly MyShoeRef[];
   onPickMine: (m: MyShoeRef) => void;
   onBrowse: () => void;
-  onSkip: () => void;
 }) {
   return (
     <View style={s.stepWrap} testID="find-shoes-base">
@@ -401,14 +397,6 @@ function BaseStep({myShoes, onPickMine, onBrowse, onSkip}: {
         <Ionicons name="chevron-forward" size={ri(ICON.action)} color={T3} />
       </Pressable>
 
-      <Pressable
-        onPress={onSkip}
-        accessibilityRole="button"
-        accessibilityLabel="기준 없이 둘러보기"
-        testID="find-shoes-skip"
-        style={({pressed}) => [s.baseSkip, pressed && s.pressed]}>
-        <Text style={s.baseSkipTxt}>기준 없이 그냥 둘러볼래요</Text>
-      </Pressable>
     </View>
   );
 }
@@ -561,13 +549,11 @@ function RecommendStep({
 // 둘 다 카드지 막대가 아니었다. 경고를 비용보다 위에 두는 순서도 그대로다:
 // 미션(부상 없이)이 돈보다 앞선다.
 function CompareStep({
-  base, picked, prevPerKm, quote, shoes, baseIdx, onSetBase, onRemove, onAdd,
+  base, picked, shoes, baseIdx, onSetBase, onRemove, onAdd,
 }: {
   /** 기준 신발. null 이면 '기준 없이 둘러보기' — 추천도 가격도 없이 표만 쓴다. */
   base: FindShoesBase | null;
   picked: SimilarCandidate | null;
-  prevPerKm: ReturnType<typeof actualWonPerKm>;
-  quote: ShoePriceQuote | null;
   shoes: readonly CompareShoe[];
   baseIdx: number;
   onSetBase: (i: number) => void;
@@ -579,10 +565,6 @@ function CompareStep({
     [base],
   );
   const next = picked?.spec ?? null;
-  const nextPerKm = quote && next ? expectedWonPerKm(quote.priceKrw, next.lifespanKm) : null;
-  const verdict = wonPerKmVerdictKo(prevPerKm, nextPerKm);
-  // '아껴요'가 아니면 아래 한 줄이 어긋난다 — 더 드는 경우엔 문장만 남긴다.
-  const saves = verdict.includes('아껴요');
   // 드롭이 크게 낮아지면 부상 위험을 먼저 말한다.
   const dropWarn = prevSpec && next ? dropWarningKo(prevSpec.dropMm, next.dropMm) : '';
 
@@ -604,23 +586,10 @@ function CompareStep({
         onAdd={onAdd}
       />
 
-      {/* 원/km 판정 — 양쪽 다 계산될 때만. 숫자는 이제 표의 '1km당' 행에 칸마다
-          있으므로 여기서 되풀이하지 않는다. 카드가 하는 일은 **한 문장으로 결론을
-          말하는 것** 하나다(표는 읽어야 하고, 문장은 그냥 들어온다). */}
-      {!!verdict && (
-        <View style={s.verdict} testID="next-shoe-verdict">
-          <Text style={s.verdictMain}>{verdict}</Text>
-          {saves && <Text style={s.verdictSub}>같은 거리를 달리면 그만큼 덜 써요.</Text>}
-        </View>
-      )}
-
-      {!!base && (
-        <Text style={s.basis}>
-          {prevPerKm
-            ? '기준 신발은 실제로 낸 값 ÷ 실제로 달린 거리라 실측이에요. 다음 신발은 아직 안 달렸으니 권장 수명으로 계산한 예상치예요.'
-            : '기준 신발 구매가를 넣으면 1km당 비용을 비교해 드려요.'}
-        </Text>
-      )}
+      <Text style={s.basis}>
+        가격은 공식몰 조회 시점 기준이라 실제 결제가와 다를 수 있어요.
+        내 신발은 등록할 때 넣은 구매가를 그대로 보여줘요.
+      </Text>
     </View>
   );
 }

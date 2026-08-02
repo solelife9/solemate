@@ -59,7 +59,7 @@ export interface CompareCell {
 }
 
 export interface CompareRow {
-  key: 'weight' | 'stack' | 'drop' | 'plate' | 'lifespan' | 'price' | 'perKm';
+  key: 'weight' | 'stack' | 'drop' | 'plate' | 'lifespan' | 'price';
   label: string;
   /** 라벨 밑 작은 설명. 없으면 undefined. */
   hint?: string;
@@ -101,9 +101,12 @@ function numCell(
   return cell;
 }
 
+// `unknown` 은 '플레이트는 있는데 재질을 모른다'는 뜻이다. 확인한 만큼만 말한다 —
+// 있다는 건 사실이고, 카본인지 아닌지는 브랜드가 안 밝혔다.
 const PLATE_LABEL: Readonly<Record<PlateKind, string>> = {
   carbon: '카본',
   other: '있음 (카본 아님)',
+  unknown: '있음 (재질 모름)',
   none: '없음',
 };
 
@@ -207,19 +210,12 @@ export function buildCompareTable(
 
   // ── 돈 ────────────────────────────────────────────────────────────────────
   // 스펙 아래에 둔다. 무엇인지 먼저 알고 얼마인지 나중에 안다 — 반대 순서면 값으로
-  // 신발을 고르게 된다. 값이 하나도 없으면 두 행 다 통째로 빠진다.
+  // 신발을 고르게 된다. 값이 하나도 없으면 이 행은 통째로 빠진다.
+  //
+  // '1km당 비용' 행은 2026-08-02 에 뺐다(민우님: "1킬로당 얼마 아껴요는 빼고 그냥
+  // 가격만 딱 보여줘"). 계산은 lib/shoeCompare 에 그대로 살아 있으니 되살릴 수 있다.
   const priceOf = (x: CompareShoe) =>
     x.price && Number.isFinite(x.price.krw) && x.price.krw > 0 ? x.price.krw : null;
-  /** 1km당 = 내가 낸 값이면 내가 달린 거리로, 시세면 권장 수명으로 나눈다. */
-  const perKmOf = (x: CompareShoe) => {
-    const krw = priceOf(x);
-    if (krw == null) return null;
-    const actual = x.price!.kind === 'paid' && x.mine != null && x.mine.usedKm > 0;
-    const km = actual ? x.mine!.usedKm : x.lifespanKm;
-    if (km == null || !Number.isFinite(km) || km <= 0) return null;
-    return {won: Math.round(krw / km), actual};
-  };
-
   const basePrice = priceOf(base);
   const price: CompareRow = {
     key: 'price',
@@ -235,23 +231,7 @@ export function buildCompareTable(
     }),
   };
 
-  const basePerKm = perKmOf(base);
-  const perKm: CompareRow = {
-    key: 'perKm',
-    label: '1km당',
-    hint: '오래 쓸수록 싸진다',
-    cells: shoes.map((x, i) => {
-      const v = perKmOf(x);
-      if (v == null) return {value: null, delta: null};
-      const c: CompareCell = {value: v.won.toLocaleString('ko-KR'), unit: '원', delta: null};
-      if (i !== bi && basePerKm != null) c.delta = formatDelta(v.won - basePerKm.won);
-      // 분모가 다르면 그 사실을 적는다 — 실측과 예상을 같은 줄에 두는 값이다.
-      c.sub = v.actual ? '실제 주행 기준' : '권장 수명 기준';
-      return c;
-    }),
-  };
-
-  return [weight, stack, drop, plate, lifespan, price, perKm]
+  return [weight, stack, drop, plate, lifespan, price]
     .filter((r) => hasAnyValue(r.cells));
 }
 
@@ -277,5 +257,8 @@ export function mineSummary(shoe: CompareShoe | undefined): MineSummary | null {
   };
 }
 
-/** 한 화면에 세울 수 있는 최대 켤레. 넘치면 비교가 아니라 목록이 된다. */
-export const MAX_COMPARE = 3;
+/**
+ * 한 표에 세울 수 있는 최대 켤레. 넘치면 비교가 아니라 목록이 된다.
+ * 3 → 5(2026-08-02): 표가 가로 스와이프로 바뀌어 화면 폭이 상한을 정하지 않게 됐다.
+ */
+export const MAX_COMPARE = 5;

@@ -88,6 +88,23 @@ describe('표 구성', () => {
     ]);
     expect(rowOf(r, 'plate').cells.map((c) => c.value)).toEqual(['카본', '있음 (카본 아님)']);
   });
+
+  // 브랜드가 플레이트의 **존재는 말하고 재질은 안 밝히는** 경우가 실제로 있다
+  // (On 클라우드붐 맥스의 Speedboard®, 푸마 Fast-FWD 의 PWRPLATE).
+  // 'other'(카본 아님)로 적으면 확인하지 않은 사실을 단언하는 것이고,
+  // null 로 두면 '있다'는 확인한 사실까지 버리게 된다.
+  it("재질을 모르면 '있음 (재질 모름)' — 카본이 아니라고 단언하지 않는다", () => {
+    const r = buildCompareTable([{...SUPERBLAST, plate: 'unknown'}]);
+    expect(rowOf(r, 'plate').cells[0].value).toBe('있음 (재질 모름)');
+  });
+
+  it("'없음'과 '재질 모름'은 다른 말이다", () => {
+    const r = buildCompareTable([
+      {...SUPERBLAST, plate: 'none'},
+      {...NOVABLAST, plate: 'unknown'},
+    ]);
+    expect(rowOf(r, 'plate').cells.map((c) => c.value)).toEqual(['없음', '있음 (재질 모름)']);
+  });
 });
 
 describe('모르는 값', () => {
@@ -244,8 +261,8 @@ describe('입력을 건드리지 않는다', () => {
     expect(rowOf(rows, 'weight').cells).toHaveLength(1);
   });
 
-  it('한 화면 상한은 3켤레', () => {
-    expect(MAX_COMPARE).toBe(3);
+  it('한 표 상한은 5켤레 — 가로 스와이프로 본다', () => {
+    expect(MAX_COMPARE).toBe(5);
   });
 });
 
@@ -297,7 +314,7 @@ describe('기준 인덱스', () => {
 // 1km당 비용은 분모가 둘이다. 내가 낸 값은 **내가 달린 거리**로 나눠야 실측이고,
 // 시세는 아직 안 달렸으니 **권장 수명**으로 나눈 예상치다. 둘을 같은 숫자처럼
 // 늘어놓으면 그게 거짓말이 되므로, 칸마다 근거를 함께 적는다.
-describe('가격과 1km당', () => {
+describe('가격', () => {
   const row = (rows: ReturnType<typeof buildCompareTable>, key: string) =>
     rows.find(r => r.key === key);
 
@@ -307,53 +324,33 @@ describe('가격과 1km당', () => {
     price: {krw: 150000, kind: 'market'}};
   const noPrice: CompareShoe = {id: 'n', brand: 'Asics', name: '모름', lifespanKm: 600};
 
-  test('내가 낸 값은 내가 달린 거리로 나눈다(실측)', () => {
-    const r = row(buildCompareTable([paid], 0), 'perKm')!;
-    expect(r.cells[0].value).toBe('500');          // 200,000 ÷ 400km
-    expect(r.cells[0].sub).toBe('실제 주행 기준');
-  });
-
-  test('시세는 권장 수명으로 나눈다(예상)', () => {
-    const r = row(buildCompareTable([market], 0), 'perKm')!;
-    expect(r.cells[0].value).toBe('300');          // 150,000 ÷ 500km
-    expect(r.cells[0].sub).toBe('권장 수명 기준');
-  });
-
   test('가격을 모르는 칸은 비운다 — 추측하지 않는다', () => {
-    const rows = buildCompareTable([paid, noPrice], 0);
-    expect(row(rows, 'price')!.cells[1].value).toBeNull();
-    expect(row(rows, 'perKm')!.cells[1].value).toBeNull();
+    expect(row(buildCompareTable([paid, noPrice], 0), 'price')!.cells[1].value).toBeNull();
   });
 
-  test('아무도 가격을 모르면 두 행이 통째로 빠진다', () => {
-    const rows = buildCompareTable([noPrice, {...noPrice, id: 'n2'}], 0);
-    expect(row(rows, 'price')).toBeUndefined();
-    expect(row(rows, 'perKm')).toBeUndefined();
+  test('아무도 가격을 모르면 행이 통째로 빠진다', () => {
+    expect(row(buildCompareTable([noPrice, {...noPrice, id: 'n2'}], 0), 'price')).toBeUndefined();
   });
 
-  test('내가 낸 값이라는 사실을 칸에 적는다', () => {
+  test('내가 낸 값이라는 사실을 칸에 적는다 — 시세와 같은 숫자가 아니다', () => {
     const rows = buildCompareTable([paid, market], 0);
     expect(row(rows, 'price')!.cells[0].sub).toBe('내가 낸 값');
     expect(row(rows, 'price')!.cells[1].sub).toBeUndefined();
   });
 
-  test('차이는 기준 칸 대비로 적는다', () => {
+  test('차이는 기준 칸 대비로, 천단위 구분자와 함께', () => {
     const rows = buildCompareTable([paid, market], 0);
-    expect(row(rows, 'price')!.cells[1].delta).toBe('−50,000');  // 200,000 → 150,000
-    expect(row(rows, 'perKm')!.cells[1].delta).toBe('−200');     // 500 → 300
-  });
-
-  test('달린 거리가 0이면 실측을 만들지 않는다 — 0으로 나누지 않는다', () => {
-    const fresh: CompareShoe = {...paid, mine: {usedKm: 0, lifespanKm: 700}};
-    const r = row(buildCompareTable([fresh], 0), 'perKm')!;
-    expect(r.cells[0].value).toBe('286');          // 200,000 ÷ 700km(권장 수명)
-    expect(r.cells[0].sub).toBe('권장 수명 기준');
+    expect(row(rows, 'price')!.cells[1].delta).toBe('\u221250,000');  // 200,000 → 150,000
   });
 
   test('돈은 스펙 아래에 온다 — 무엇인지 먼저 알고 얼마인지 나중에 안다', () => {
     const withSpec: CompareShoe = {...market, weight: 250, weightBasis: 'US9'};
     const keys = buildCompareTable([withSpec], 0).map(r => r.key);
     expect(keys.indexOf('price')).toBeGreaterThan(keys.indexOf('weight'));
-    expect(keys.indexOf('perKm')).toBeGreaterThan(keys.indexOf('price'));
+  });
+
+  test('1km당 행은 없다 — 가격만 보여준다(2026-08-02)', () => {
+    const keys = buildCompareTable([paid, market], 0).map(r => r.key);
+    expect(keys).not.toContain('perKm');
   });
 });
