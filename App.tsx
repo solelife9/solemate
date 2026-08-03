@@ -42,6 +42,9 @@ import {detectRace, SEED_RACES, type RaceEvent, type RaceMatch, type RaceDistanc
 import {syncRemoteRaces} from './lib/raceCatalogRemote';
 import {checkForceUpdate, type RemoteAppConfig} from './lib/forceUpdate';
 import {reconcileAccountStorage} from './lib/accountScope';
+// 로그인 제공자 표시값 — **계정 정합이 끝난 뒤** 여기서만 쓴다(쓰는 곳이 둘이면 어긋난다).
+import {saveCloudAccount} from './lib/cloudAccount';
+import type {CloudProvider} from './lib/cloudPort';
 import {mirrorRecords, pullRecords, mergePulled, isPayloadMirrored, stripRecordArrays, loadMarkers} from './lib/recordSync';
 import {retirementRecordsFromShoes, setShoeRetirement, migrateRetiredShoes} from './lib/shoeRetirement';
 import {buildPublicProfile, publishProfile, loadVisibility, saveVisibility, type ProfileVisibility} from './lib/publicProfile';
@@ -323,6 +326,14 @@ function Main(){
   const [locPrimeGoal,setLocPrimeGoal]=useState<RunGoal|null>(null);
   // 명예의 전당(라이브 리더보드) 전체화면 표시 여부 — 진척 화면 헤더 버튼이 연다.
   const [showHallOfFame,setShowHallOfFame]=useState(false);
+  /**
+   * 방금 로그인한 제공자. LoginScreen 이 올려주고, **계정 정합이 끝난 뒤** 아래
+   * 효과가 한 번 적어 넣는다(그 전에 쓰면 정합이 덮는다 — 2026-08-03 버그).
+   */
+  // 테스트는 로그인 화면을 우회(__KEEGO_AUTH_USER__)하므로 제공자가 전달될 길이 없다.
+  // 기존 관례(__KEEGO_AUTH_USER__ · __KEEGO_ENABLE_ACCOUNT_SCOPE__)와 같은 문법으로 주입한다.
+  const pendingProviderRef=useRef<CloudProvider|null>(
+    ((globalThis as any).__KEEGO_PENDING_PROVIDER__ as CloudProvider|undefined)??null);
   // 열람 중인 러너(uid + 목록이 이미 알던 이름). null 이면 안 열려 있고, 그동안은
   // profiles 를 한 번도 읽지 않는다 — 목록을 그리며 미리 당겨오면 100명이면 100읽기다.
   const [viewedRunner,setViewedRunner]=useState<{uid:string;name:string}|null>(null);
@@ -447,6 +458,11 @@ function Main(){
     (async()=>{
       try{
         await reconcileAccountStorage(uid);
+        // **정합이 끝난 뒤에** 제공자를 적는다. 먼저 쓰면 위 정합이 옛 계정 서랍의
+        // 값으로 덮어써서, 카카오로 로그인했는데 "네이버 계정"으로 표시된다
+        // (2026-08-03 실기기). 쓰는 곳을 여기 하나로 모은 게 이 수정의 핵심이다.
+        const prov=pendingProviderRef.current;
+        if(prov){pendingProviderRef.current=null;await saveCloudAccount(prov,{uid});}
       }catch(e){
         reportIssue('accountScope 정합 실패 — 부팅 중단(남의 데이터 노출 방지)',e);
         if(alive)setBootState('error');
@@ -2265,7 +2281,8 @@ function Main(){
     return <BootSkeleton/>;
   }
   if(authUser===null){
-    return <LoginScreen cloudPort={cloudPortRef.current} onSignedIn={(u)=>setAuthUser({uid:u.uid})}/>;
+    return <LoginScreen cloudPort={cloudPortRef.current}
+      onSignedIn={(u,p)=>{pendingProviderRef.current=p;setAuthUser({uid:u.uid});}}/>;
   }
   // 필수 업데이트 게이트(AUDIT 2 I-3) — 부팅 성공 여부보다 **먼저** 검사한다.
   // 막아야 할 만큼 심각한 버그라면 부팅 자체가 깨져 있을 수 있는데, 그때 BootError 만
@@ -2622,6 +2639,7 @@ function Main(){
         {tab===3&&(
           <ProfileScreen
             profile={profile} badges={badges} records={records} distancePBs={distancePBs} onTab={setTab}
+            onProviderSignedIn={(p)=>{pendingProviderRef.current=p;}}
             socialVisibility={socialVisibility}
             onToggleSocial={(next)=>{setSocialVisibility(next);void saveVisibility(next);}}
             profilePhotoUri={profilePhoto} onChangeName={changeProfileName} onPickPhoto={pickProfilePhoto}

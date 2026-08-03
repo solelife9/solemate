@@ -41,7 +41,7 @@ import { requestPushPermission as defaultRequestPushPermission } from './lib/pus
 import { BackupPayload } from './lib/backup';
 import { mergeCloudData, nextAuthState, AuthState } from './lib/cloudSync';
 import type { CloudPort, CloudProvider, CloudUser } from './lib/cloudPort';
-import { loadCloudAccount, saveCloudAccount, clearCloudAccount, CLOUD_PROVIDER_LABEL } from './lib/cloudAccount';
+import { loadCloudAccount, clearCloudAccount, CLOUD_PROVIDER_LABEL } from './lib/cloudAccount';
 import type { RunBestEfforts } from './lib/bestEfforts';
 import { STANDARD_DISTANCES } from './lib/bestEfforts';
 import { fitnessSummary } from './lib/analytics/fitness';
@@ -110,7 +110,7 @@ function NotifToggle({ label, value, onToggle, testID }: { label: string; value:
 
 export default function ProfileScreen({
   profile = DEFAULT_PROFILE, badges: _badges = [], records = [], distancePBs = {}, onTab,
-  socialVisibility = 'unset', onToggleSocial,
+  onProviderSignedIn, socialVisibility = 'unset', onToggleSocial,
   profilePhotoUri = '', onChangeName, onPickPhoto,
   weightKg = DEFAULT_SETTINGS.weightKg, onChangeWeight,
   age = DEFAULT_SETTINGS.age, onChangeAge,
@@ -135,6 +135,11 @@ export default function ProfileScreen({
   records?: PersonalRecord[];
   distancePBs?: RunBestEfforts;
   /** 공개 프로필 상태(소셜). 'unset' 은 아직 안 물어본 것 — 이 화면에선 '꺼짐'과 같이 다룬다. */
+  /**
+   * 재로그인 성공 알림 — 저장은 호출부(App)가 **계정 정합 뒤에** 한다.
+   * 여기서 직접 쓰면 정합에 덮인다(2026-08-03 실기기 버그).
+   */
+  onProviderSignedIn?: (provider: CloudProvider, user: CloudUser) => void;
   socialVisibility?: 'unset' | 'public' | 'private';
   onToggleSocial?: (next: 'public' | 'private') => void;
   onTab?: (i: number) => void;
@@ -338,7 +343,10 @@ export default function ProfileScreen({
       const user = await cloudPort.signIn(provider);
       setCloudUser(user);
       setCloudProvider(provider);
-      void saveCloudAccount(provider, user);
+      // 저장은 **정합이 끝난 뒤** App 이 한다(2026-08-03). 여기서 쓰면
+      // reconcileAccountStorage 가 옛 계정 서랍 값으로 덮어써서, 카카오로 로그인했는데
+      // "네이버 계정"으로 표시된다. 화면 상태(setCloudProvider)만 즉시 반영한다.
+      onProviderSignedIn?.(provider, user);
       setAuthState((s) => nextAuthState(s, 'signInSuccess'));
       // 제공자별 성공만 남긴다 — 계정 식별자는 남기지 않는다(심사 B-12 최소 수집).
       trackLogin(provider as any);

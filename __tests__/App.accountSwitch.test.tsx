@@ -132,3 +132,52 @@ describe('계정 전환 화면 격리', () => {
     expect(keys.some(k => k.startsWith('acct_'))).toBe(false);
   });
 });
+
+// ── 로그인 제공자 표시값 ──────────────────────────────────────────────────────
+// `cloud_account` 는 계정 격리 대상(USER_KEYS)이다. 그래서 로그인 직후 도는
+// reconcileAccountStorage 가 그 값을 **옛 계정 서랍으로 치우고 새 서랍에서 꺼내온다.**
+// 로그인 화면이 먼저 쓰면 그 정합에 덮여, 실기기에서 **카카오·구글로 로그인했는데
+// "네이버 계정"으로 표시**됐다(2026-08-03). 쓰는 곳을 정합 뒤 한 곳으로 모은 계약을 못 박는다.
+describe('로그인 제공자 표시값은 정합에 덮이지 않는다', () => {
+  // 이 경로는 플래그로만 켠다(위 describe 와 같은 관례 — beforeEach 는 상속되지 않는다).
+  beforeEach(async () => {
+    await AsyncStorage.clear();
+    (globalThis as any).__KEEGO_ENABLE_ACCOUNT_SCOPE__ = true;
+    (globalThis as any).__KEEGO_DEV_SEED__ = false;
+  });
+  afterEach(() => {
+    delete (globalThis as any).__KEEGO_ENABLE_ACCOUNT_SCOPE__;
+    delete (globalThis as any).__KEEGO_DEV_SEED__;
+    delete (globalThis as any).__KEEGO_AUTH_USER__;
+    delete (globalThis as any).__KEEGO_PENDING_PROVIDER__;
+  });
+
+  test('옛 계정 서랍에 남아 있던 제공자가 새 로그인을 덮지 않는다', async () => {
+    // A 계정이 '네이버'로 로그인해 둔 상태를 만든다.
+    await seedAccountA();
+    await AsyncStorage.setItem('cloud_account',
+      JSON.stringify({provider: 'naver', uid: 'uid-A', email: null, displayName: null}));
+
+    // B 로 로그인 — App 이 정합 뒤에 'kakao' 를 적는다.
+    (globalThis as any).__KEEGO_AUTH_USER__ = {uid: 'uid-B'};
+    (globalThis as any).__KEEGO_PENDING_PROVIDER__ = 'kakao';
+    const renderer = await renderApp();
+    renderer.unmount();
+
+    const saved = JSON.parse((await AsyncStorage.getItem('cloud_account')) ?? 'null');
+    expect(saved?.provider).toBe('kakao');
+    expect(saved?.uid).toBe('uid-B');
+    delete (globalThis as any).__KEEGO_PENDING_PROVIDER__;
+  });
+
+  test('A 의 제공자는 A 서랍에 보존된다 — 돌아가면 그대로다', async () => {
+    await seedAccountA();
+    await AsyncStorage.setItem('cloud_account',
+      JSON.stringify({provider: 'naver', uid: 'uid-A', email: null, displayName: null}));
+
+    (globalThis as any).__KEEGO_AUTH_USER__ = {uid: 'uid-B'};
+    (await renderApp()).unmount();
+
+    expect(await AsyncStorage.getItem(archiveKeyFor('uid-A', 'cloud_account'))).toContain('naver');
+  });
+});

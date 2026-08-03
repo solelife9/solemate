@@ -25,13 +25,21 @@ import {
 } from './theme';
 import type {CloudPort, CloudProvider, CloudUser} from './lib/cloudPort';
 import {authErrorMessage} from './lib/authErrorMessage';
-import {saveCloudAccount} from './lib/cloudAccount';
 import {PRIVACY_URL, TERMS_URL} from './lib/legalLinks';
 
 interface LoginScreenProps {
   cloudPort: CloudPort;
-  /** 로그인 성공 시 호출 — 인증된 사용자를 전달해 게이트를 연다. */
-  onSignedIn: (user: CloudUser) => void;
+  /**
+   * 로그인 성공 시 호출 — 인증된 사용자와 **어떤 제공자로 로그인했는지**를 전달한다.
+   *
+   * 제공자를 여기서 저장하지 않고 올려보내는 이유(2026-08-03 버그):
+   * `cloud_account` 는 계정 격리 대상(accountScope.USER_KEYS)이라, 로그인 직후 도는
+   * `reconcileAccountStorage` 가 그 값을 **옛 계정 서랍으로 치우고 새 계정 서랍에서
+   * 꺼내온다.** 여기서 먼저 쓰면 그 정합에 덮여 사라진다 — 실제로 카카오·구글로
+   * 로그인했는데 "네이버 계정"으로 표시됐다. **쓰는 곳이 둘이면 순서가 어긋난다.**
+   * 정합이 끝난 뒤 App 이 한 곳에서 쓴다.
+   */
+  onSignedIn: (user: CloudUser, provider: CloudProvider) => void;
 }
 
 export function LoginScreen({cloudPort, onSignedIn}: LoginScreenProps) {
@@ -45,10 +53,7 @@ export function LoginScreen({cloudPort, onSignedIn}: LoginScreenProps) {
     setError(null);
     try {
       const user = await cloudPort.signIn(provider);
-      // 로그인 계정+제공자를 영속 — ProfileScreen 이 재시작 후에도 '카카오 계정'처럼
-      // 어떤 걸로 로그인했는지 표시하고 로그인 상태를 복원하게(2026-07-05).
-      void saveCloudAccount(provider, user);
-      onSignedIn(user);
+      onSignedIn(user, provider);
     } catch (e: any) {
       // 원문(서버 응답·SDK 코드)은 진단용 로그로만 — 화면엔 사용자 언어만(출시 감사).
       reportIssue(`auth: login (${provider})`, e);

@@ -56,7 +56,8 @@ test('카카오 버튼을 누르면 cloudPort.signIn("kakao") 을 호출하고 �
     press(r, 'login-kakao');
   });
   expect(port.signIn).toHaveBeenCalledWith('kakao');
-  expect(onSignedIn).toHaveBeenCalledWith({uid: 'kakao-uid', email: null, displayName: null});
+  // 제공자를 **함께** 올려보낸다 — 저장은 App 이 계정 정합 뒤에 한다(2026-08-03).
+  expect(onSignedIn).toHaveBeenCalledWith({uid: 'kakao-uid', email: null, displayName: null}, 'kakao');
 });
 
 test('로그인 실패 시 onSignedIn 을 부르지 않고 에러를 표시한다', async () => {
@@ -172,4 +173,25 @@ describe('로그인 게이트 — 심사 컴플라이언스', () => {
     // color prop 을 받지 않는 시그니처여야 재색칠이 구조적으로 막힌다.
     expect(src).toMatch(/export function GoogleMark\(\{size\}: \{size: number\}\)/);
   });
+});
+
+// ── 제공자 표시값을 여기서 저장하지 않는다 ────────────────────────────────────
+// `cloud_account` 는 계정 격리 대상이라, 로그인 직후 도는 reconcileAccountStorage 가
+// 그 값을 옛 계정 서랍으로 치우고 새 서랍에서 꺼내온다. 여기서 먼저 쓰면 덮인다 —
+// 실기기에서 카카오·구글로 로그인했는데 "네이버 계정"으로 표시됐다(2026-08-03).
+test('로그인 화면은 cloud_account 를 직접 쓰지 않는다 — 쓰는 곳이 둘이면 순서가 어긋난다', async () => {
+  const AsyncStorage = require('@react-native-async-storage/async-storage');
+  await AsyncStorage.clear();
+  const port = makePort();
+  const onSignedIn = jest.fn();
+  let r!: ReactTestRenderer.ReactTestRenderer;
+  act(() => {
+    r = ReactTestRenderer.create(<LoginScreen cloudPort={port} onSignedIn={onSignedIn} />);
+  });
+  await act(async () => { press(r, 'login-kakao'); });
+  expect(onSignedIn).toHaveBeenCalled();
+  // 여기서 쓰면 계정 정합(reconcileAccountStorage)이 옛 계정 서랍 값으로 덮어써서
+  // 카카오로 로그인했는데 "네이버 계정"으로 표시된다(2026-08-03 실기기).
+  expect(await AsyncStorage.getItem('cloud_account')).toBeNull();
+  r.unmount();
 });
