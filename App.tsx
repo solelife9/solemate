@@ -866,12 +866,21 @@ function Main(){
   },[runs]);
 
   // audit#2: 미완료 런 감지 → 복구/저장 프롬프트. 한 번만 묻는다.
+  //
+  // **게이트를 통과한 뒤에 묻는다**(2026-08-04 QA 감사 Q-5). 예전엔 deps [] 로 마운트 즉시
+  // 돌아서, DialogHost 가 루트에 있는 탓에 **로그인 화면·부팅 스켈레톤 위로** 이 다이얼로그가
+  // 떴다. 알림에는 이미 같은 가드를 넣어 뒀는데(presentDueRef — "로그인 화면 위로 알림이 뜬다",
+  // 2026-07-30 Android 실측) 이쪽엔 빠져 있었다. 게다가 이쪽이 더 나쁘다 — 알림은 정보만
+  // 주지만 이건 **선택을 요구**하고, 그 선택이 세우는 overlay==='run' 은 렌더 사다리에서
+  // 인증·부팅 게이트보다 아래라 즉시 반영되지도 않는다.
+  const resumeAskedRef=useRef(false);
   useEffect(()=>{
-    let asked=false;
+    if(!authUser?.uid||bootState!=='ready') return;
+    if(resumeAskedRef.current) return;
     (async()=>{
       const snap=await loadSnapshot();
-      if(asked||!isResumable(snap)||!snap) return;
-      asked=true;
+      if(resumeAskedRef.current||!isResumable(snap)||!snap) return;
+      resumeAskedRef.current=true;
       // 트랙 런이면 거리는 랩수×확정랩거리(GPS 누적 아님) — 안내·복구에 이 값을 쓴다.
       const dispKm=snap.track?(snap.track.lapTimes.length*snap.track.lapM)/1000:snap.dist;
       const trackLapM=snap.track?.lapM;
@@ -896,7 +905,7 @@ function Main(){
         ],
       );
     })();
-  },[]);
+  },[authUser?.uid,bootState]);
 
   async function initUser(){
     // 재시도(재진입) 시 스켈레톤으로 되돌려 직전 에러 카드를 치운다.
