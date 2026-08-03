@@ -13,7 +13,7 @@
 //
 // 토큰만 사용(theme.ts) — 색/폰트/간격 하드코딩 0. 티어 색은 TIER_COLORS 권위.
 // ============================================================================
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 import { rs, ri, rv } from './lib/responsive';
 import {
   View,
@@ -24,6 +24,8 @@ import {
 import {Text, FONT_SCALE_CAP_HERO} from './lib/text';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+// 「이번 달 많이 신는 러닝화」 — 엔트리에 이미 실려 온 신발을 세기만 한다(추가 읽기 0).
+import {shoeTrends, type ShoeTrend} from './lib/shoeTrends';
 import {ScreenHeader, EmptyGhostHeader, GhostBar, GhostThumb, GlassEdge} from './primitives';
 import {
   BG,
@@ -40,7 +42,7 @@ import {
   TYPE,
   TIER_COLORS,
   withAlpha, GLASS,
-  GUTTER, MOTION,
+  GUTTER, MOTION, NUM,
   ICON,
 } from './theme';
 import {ymLocal} from './lib/format';
@@ -204,6 +206,8 @@ export default function HallOfFameScreen({
   }, [provider, category, yearMonth]);
 
   const myUid = myEntry?.uid ?? null;
+  // 표본이 모자라면 top 이 비어 카드가 통째로 빠진다 — 3명이 신는 걸 유행이라 부르지 않는다.
+  const trends = useMemo(() => shoeTrends(entries, 5), [entries]);
 
   const renderRow = (e: LeaderboardEntry, highlight: boolean) => {
     const tColor = TIER_COLORS[e.rankTier] ?? TIER_COLORS.bronze;
@@ -315,7 +319,36 @@ export default function HallOfFameScreen({
               </Pressable>
             );
           })}
-        </ScrollView>
+  
+        {/* 「이번 달 많이 신는 러닝화」 — 위 목록을 세기만 한 것이라 **추가 읽기가 0**이다.
+            표본이 적으면 shoeTrends 가 빈 목록을 주고 이 카드는 통째로 빠진다. */}
+        {trends.top.length > 0 && (
+          <View style={s.trendCard} testID="hof-trends">
+            <GlassEdge glints={false} radius={RADIUS.md} />
+            <View style={s.trendHead}>
+              <Text style={s.trendTitle}>이번 달 많이 신는 러닝화</Text>
+              {/* 표본을 밝힌다 — "전체 사용자"가 아니라 "순위에 오른 N명"이다. */}
+              <Text style={s.trendMeta}>순위 {trends.sampleSize}명 기준</Text>
+            </View>
+            {trends.top.map((t: ShoeTrend, i: number) => (
+              <View key={`${t.brand}|${t.model}`} style={s.trendRow}>
+                <Text style={s.trendRank}>{i + 1}</Text>
+                <View style={{flex: 1, minWidth: 0}}>
+                  <Text style={s.trendBrand} numberOfLines={1}>{t.brand.toUpperCase()}</Text>
+                  <Text style={s.trendModel} numberOfLines={1}>{t.model || t.brand}</Text>
+                </View>
+                <View style={{alignItems: 'flex-end'}}>
+                  <Text style={s.trendCount}>{t.runners}명</Text>
+                  {/* 평균 거리는 아는 사람 것만 낸다. 아무도 모르면 이 줄이 빠진다. */}
+                  {t.avgKm !== null && (
+                    <Text style={s.trendKm}>평균 {t.avgKm.toLocaleString('ko-KR')}km</Text>
+                  )}
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
+      </ScrollView>
 
         {/* 내 순위 카드 */}
         {myAvailable && myEntry ? (
@@ -453,6 +486,23 @@ const s = StyleSheet.create({
   },
   hintTxt: {flex: 1, fontFamily: FONT, color: T2, fontSize: TYPE.label.fontSize, fontWeight: '600'},
   // 리더보드 행 — 일반=코너 페이드 헤어라인, 내 행=액센트 보더(렌더에서 주입).
+  // 유행 카드 — 랭킹 행과 같은 표면이되 순위 숫자를 눌러 두어 목록과 구분한다.
+  trendCard: {
+    backgroundColor: GLASS.fill, borderRadius: RADIUS.md, borderCurve: 'continuous',
+    paddingHorizontal: rs(14), paddingVertical: rv(12), gap: rv(2),
+    borderWidth: StyleSheet.hairlineWidth, borderColor: SEP, overflow: 'hidden',
+  },
+  trendHead: {flexDirection: 'row', alignItems: 'baseline',
+    justifyContent: 'space-between', marginBottom: rv(6)},
+  trendTitle: {fontFamily: FONT, ...TYPE.label, fontWeight: '700', color: T1},
+  trendMeta: {fontFamily: FONT, ...TYPE.micro, color: T3},
+  trendRow: {flexDirection: 'row', alignItems: 'center', gap: rs(10), paddingVertical: rv(7)},
+  trendRank: {fontFamily: NUM, ...TYPE.body, color: T3, width: rs(16)},
+  trendBrand: {fontFamily: FONT, ...TYPE.micro, color: T3},
+  trendModel: {fontFamily: FONT, ...TYPE.body, fontWeight: '600', color: T1, marginTop: rv(1)},
+  trendCount: {fontFamily: NUM, ...TYPE.body, color: T1},
+  trendKm: {fontFamily: FONT, ...TYPE.micro, color: T3, marginTop: rv(2)},
+
   // 열리는 행은 눌린 티가 나야 한다 — 안 그러면 눌러도 반응이 없는 것처럼 느껴진다.
   rowPressed: {opacity: MOTION.press.opacity},
   rowChev: {marginLeft: rs(2)},

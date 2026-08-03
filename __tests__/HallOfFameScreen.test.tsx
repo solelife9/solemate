@@ -248,3 +248,69 @@ describe('러너 프로필 열기', () => {
     r.unmount();
   });
 });
+
+// ── 「이번 달 많이 신는 러닝화」 ───────────────────────────────────────────────
+// 위 목록을 세기만 한 카드다 — **추가 읽기가 0**이라는 게 설계의 핵심.
+describe('신발 유행 카드', () => {
+  /** 신발을 실은 엔트리 n명(같은 신발 share 명). */
+  const withShoes = (n: number, share: number) =>
+    Array.from({length: n}, (_, i) => entry({
+      uid: `u${i}`, rank: i + 1, score: 100 - i, nickname: `러너${i}`,
+      shoes: i < share
+        ? [{brand: 'Nike', model: 'Pegasus 41', usedKm: 300}]
+        : [{brand: 'Etc', model: `M${i}`, usedKm: 100}],
+    } as never));
+
+  const provider = (rows: unknown[]) => ({
+    getLeaderboard: jest.fn(async (category: string, yearMonth: string) => ({
+      kind: 'remote' as const, available: true, category, yearMonth, entries: rows,
+    })),
+    getMyRanking: jest.fn(async (category: string, yearMonth: string) => ({
+      kind: 'remote' as const, available: true, category, yearMonth,
+      total: rows.length, topPercent: null, me: null, nearby: [],
+    })),
+  } as never);
+
+  test('표본이 모이면 카드가 뜬다', async () => {
+    const r = await render(<HallOfFameScreen provider={provider(withShoes(10, 4))} now={NOW} />);
+    expect(one(r.root, 'hof-trends')).toBeTruthy();
+    r.unmount();
+  });
+
+  test('표본이 모자라면 카드를 아예 만들지 않는다 — 3명이 신는 건 유행이 아니다', async () => {
+    const r = await render(<HallOfFameScreen provider={provider(withShoes(3, 2))} now={NOW} />);
+    expect(byId(r.root, 'hof-trends')).toHaveLength(0);
+    r.unmount();
+  });
+
+  test('신발을 안 실은 옛 엔트리만 있으면 카드가 없다', async () => {
+    const rows = Array.from({length: 12}, (_, i) =>
+      entry({uid: `u${i}`, rank: i + 1, score: 10, nickname: `r${i}`}));
+    const r = await render(<HallOfFameScreen provider={provider(rows)} now={NOW} />);
+    expect(byId(r.root, 'hof-trends')).toHaveLength(0);
+    r.unmount();
+  });
+
+  test('표본 수를 밝힌다 — "전체 사용자"가 아니라 "순위에 오른 N명"이다', async () => {
+    const r = await render(<HallOfFameScreen provider={provider(withShoes(10, 4))} now={NOW} />);
+    // 텍스트가 노드로 쪼개져 있어(["순위 ", 10, "명 기준"]) 이어 붙여 본다.
+    const flat = (n: any): string => {
+      if (typeof n === 'string' || typeof n === 'number') return String(n);
+      if (!n?.children) return '';
+      return n.children.map(flat).join('');
+    };
+    const txt = flat(r.toJSON());
+    expect(txt).toContain('순위 10명 기준');
+    expect(txt).toContain('많이 신는 러닝화');
+    expect(txt).toContain('Pegasus 41');       // 4명이 신어 1위여야 한다
+    r.unmount();
+  });
+
+  test('카드를 그리려고 추가로 읽지 않는다', async () => {
+    const p = provider(withShoes(10, 4));
+    const r = await render(<HallOfFameScreen provider={p} now={NOW} />);
+    // 리더보드 1회 + 내 순위 1회가 전부다. 프로필을 미리 당겨오면 여기가 늘어난다.
+    expect((p as never as {getLeaderboard: jest.Mock}).getLeaderboard).toHaveBeenCalledTimes(1);
+    r.unmount();
+  });
+});
