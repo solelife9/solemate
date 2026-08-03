@@ -18,20 +18,23 @@
  *  3) 동의를 받은 적이 없고, 개인정보 처리방침에도 '다른 이용자에게 공개된다'는
  *     고지가 없다.
  *
- * **켜는 조건 셋** — 하나라도 빠지면 같은 사고가 반복된다. 진행 상황(2026-08-01):
- *   ① 공개 범위 옵트인 ............ ✅ 완료(SocialConsentScreen · 설정 토글).
+ * **켜는 조건 셋 — 2026-08-03 셋 다 충족되어 켰다.**
+ *   ① 공개 범위 옵트인 ............ ✅ SocialConsentScreen · 설정 토글.
  *      동의 전에는 발행 자체가 막힌다(App.publishMyRankingNow 의 socialVisibility 가드).
- *   ② 랭킹 화면 진입점 ............ ✅ 완료(마이 → 명예의 전당).
- *   ③ 처리방침 제3자 공개 조항 .... ⛔ **미완** — 문안은 docs/legal/social-disclosure.md
- *      에 준비돼 있고, keego-legal 저장소에 반영해 배포해야 한다(민우님 작업).
+ *   ② 랭킹 화면 진입점 ............ ✅ 마이 → 명예의 전당.
+ *   ③ 처리방침 제3자 공개 조항 .... ✅ `privacy.html` 제4조의2 신설 →
+ *      **공개 저장소 `solelife9/keego-legal` 에 배포 완료**(시행일 2026-08-03).
+ *      https://solelife9.github.io/keego-legal/privacy.html 에서 200 + 조항 반영 확인.
  *
- * ③ 이 끝나면 이 값을 true 로 바꾼다. **그 전에는 켜지 않는다** — 화면과 동의를 갖춰도
- * 처리방침에 고지가 없으면 "동의 없이 공개"와 법적으로 같은 자리다.
+ * **되돌리려면 이 값을 false 로 바꾸면 된다** — 발행이 멈춘다. 다만 이미 발행된 엔트리는
+ * 자동으로 내려가지 않는다(공개 프로필과 달리 랭킹은 '내리는' 경로가 동기 흐름에 없다).
+ * 급히 내려야 하면 규칙에서 `leaderboards` 읽기를 닫는 게 즉효다.
  *
- * 발행 코드(`lib/progression/firestoreRankingStore.publishMyRanking`)와 화면
- * (`HallOfFameScreen.rn.tsx`)은 그대로 살아 있다 — 이 값만 바꾸면 켜진다.
+ * ⚠️ **점수는 여전히 클라이언트가 계산한다.** 규칙이 보장하는 건 '남의 엔트리 변조 불가'와
+ * '형태 강제'뿐이고, 자기 점수를 부풀리는 것은 막지 못한다. 서버 재계산(Cloud Function)이
+ * 붙기 전까지는 **순위를 상금·보상과 연결하지 않는다**(자랑 용도까지가 안전선이다).
  */
-export const LEADERBOARD_PUBLISH_ENABLED = false;
+export const LEADERBOARD_PUBLISH_ENABLED = true;
 
 /**
  * 원격 푸시(FCM) 사용 여부 — 서버가 사용자 폰으로 밀어 보내는 알림.
@@ -79,19 +82,16 @@ export const REMOTE_PUSH_ENABLED = false;
  *    "지우라"는 뜻으로 읽는다. "안 쓰는 것"이 아니라 "내리는 것"이어야 실제로 안 보인다.
  *  · 공개 범위 동의 화면을 띄우지 않는다 — 꺼진 기능의 동의를 받는 건 무의미하다.
  *
- * **켜는 조건 셋** — 리더보드와 같다. 하나라도 빠지면 같은 사고가 반복된다.
- *   ① 공개 범위 옵트인 ............ ✅ 완료(SocialConsentScreen · 설정 토글)
- *   ② 프로필을 **볼 화면** ........ ✅ 완료(RunnerProfileScreen, 2026-08-03 `ef39695`)
- *   ③ 처리방침 제3자 공개 조항 .... ⛔ **미완 — 남은 건 이것 하나다.**
- *      문안은 `docs/legal/social-disclosure.md` 에 준비돼 있다. 할 일은 둘:
- *        (a) `docs/privacy.html` 에 '다른 이용자에게 공개되는 항목' 조항을 넣고,
- *        (b) **공개 저장소 `solelife9/keego-legal` 에 푸시**한다(민우님 작업).
- *      ⚠️ (b)를 빼먹으면 공개 URL 은 옛 내용 그대로다 — 이 저장소만 고치는 건 고지가 아니다.
- *      그리고 `docs/store-privacy-labels.md` 수집 표에 공개 프로필 항목을 추가해야 한다.
+ * **켜는 조건 셋 — 2026-08-03 셋 다 충족되어 켰다.**
+ *   ① 공개 범위 옵트인 ............ ✅ SocialConsentScreen · 설정 토글
+ *   ② 프로필을 **볼 화면** ........ ✅ RunnerProfileScreen(`ef39695`)
+ *   ③ 처리방침 제3자 공개 조항 .... ✅ `privacy.html` 제4조의2 신설 →
+ *      **공개 저장소 `solelife9/keego-legal` 에 배포 완료**(시행일 2026-08-03).
+ *      ⚠️ 이 저장소의 `docs/privacy.html` 만 고치는 건 고지가 아니다 — 공개 URL 이 정본이다.
+ *      `docs/store-privacy-labels.md` §2-0 에도 공개 항목을 명시했다.
  *
- * ③ 이 끝나면 이 값을 true 로 바꾼다. 발행 코드(`lib/publicProfile`)와 동의 화면
- * (`SocialConsentScreen.rn.tsx`)은 그대로 살아 있다 — 이 값만 바꾸면 켜진다.
- * 켤 때 `__tests__/socialProfilePublishFlag.test.ts` 가 빨개지는데, **그게 정상이다** —
- * 그 테스트를 지우지 말고 "무엇을 확인하고 켰는지"를 기대값과 함께 다시 쓴다.
+ * **되돌리려면 이 값을 false 로 바꾸면 된다** — 발행이 멈추는 데서 그치지 않고,
+ * 이미 올라간 문서까지 **내려간다**(App.tsx 가 null 을 넘기고 publishProfile 이 삭제로 읽는다).
+ * 그래서 사고가 나면 플래그 하나로 회수된다.
  */
-export const SOCIAL_PROFILE_PUBLISH_ENABLED = false;
+export const SOCIAL_PROFILE_PUBLISH_ENABLED = true;

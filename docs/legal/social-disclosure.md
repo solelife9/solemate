@@ -84,10 +84,29 @@ keego 는 동의도 화면도 없이 닉네임과 월간 운동량이 전원 읽
 
 ---
 
-## 배포 후 할 것
+## 배포 후 할 것 — ✅ **2026-08-03 전부 완료**
 
-1. `keego-legal` 에 반영 → `https://solelife9.github.io/keego-legal/privacy.html` 로 배포 확인
-2. **스토어 등록 정보** 갱신 — Play「데이터 안전」·App Store「앱 개인정보」에
-   "사용자가 동의 시 다른 이용자에게 공개" 항목 반영
-3. `lib/featureFlags.ts` 의 `LEADERBOARD_PUBLISH_ENABLED` 를 `true` 로
-4. 규칙 배포 — `firestore.rules` 의 `leaderboards` 읽기 개방분이 반영돼야 랭킹이 보입니다
+1. ✅ `keego-legal` 반영 → `https://solelife9.github.io/keego-legal/privacy.html` **200 + 조항 확인**
+   (제4조의2 신설, 시행일 2026-08-03). 문안은 위 초안대로 넣되 두 가지를 더했다:
+   ⑤ 공개 대상이 **'로그인한 다른 이용자'이지 인터넷 전체가 아님**을 명시 · 공개용 정보가
+   개인 저장소와 **분리된 영역**에 화이트리스트로만 복사된다는 설명.
+2. ✅ 스토어 신고서 갱신 — `docs/store-privacy-labels.md` §2-0 신설.
+   **Play「데이터 공유」는 계속 "없음"이다** — Play 의 '공유'는 *다른 회사로의 전송*을 뜻하고,
+   같은 서비스의 다른 이용자에게 보이는 건 해당하지 않는다(이 판단을 뒤집지 말 것).
+3. ✅ `LEADERBOARD_PUBLISH_ENABLED` **+ `SOCIAL_PROFILE_PUBLISH_ENABLED`** 둘 다 `true`.
+   ⚠️ 이 체크리스트에는 후자가 빠져 있었다 — 2026-08-02 심사 감사(B-1)로 새로 생긴
+   플래그다. 하나만 켜면 랭킹은 뜨는데 프로필은 비어 보인다.
+4. ✅ 규칙 배포 — `npx firebase-tools deploy --only firestore:rules --project keego-620b8`
+   ("released rules firestore.rules to cloud.firestore" 확인).
+
+### 함께 고친 것 (배포 김에)
+
+처리방침에 **사실과 달라진 문장**이 하나 있었다 — 러닝화 검색어·등록 요청이 "계정 식별자와
+연결됩니다"라고 적혀 있었는데, 2026-08-03(`6852e02`)에 계정을 안 붙이도록 바뀌었다.
+공개 문서가 앱보다 더 많이 수집한다고 말하고 있던 셈이라 같은 배포에서 정정했다.
+
+### 다음에 이 문서를 다시 열 때
+
+`__tests__/socialProfilePublishFlag.test.ts` 가 **발행 플래그와 고지의 일관성**을 양방향으로
+지킨다 — 고지를 지우고 발행만 켜두면 빨개지고, 발행을 껐는데 스토어 설명이 그 기능을
+계속 광고해도 빨개진다. 미러에 필드를 더할 때는 이 문서의 공개 항목 표도 함께 고친다.

@@ -18,8 +18,16 @@ const repoRoot = path.join(__dirname, '..');
 const read = (rel: string) => fs.readFileSync(path.join(repoRoot, rel), 'utf8');
 
 describe('리더보드 발행 플래그', () => {
-  test('기본값은 꺼짐 — 동의·진입점 없이 공개 컬렉션에 쓰지 않는다', () => {
-    expect(LEADERBOARD_PUBLISH_ENABLED).toBe(false);
+  // 2026-08-03: 조건 셋(옵트인·진입점·처리방침 고지)을 모두 갖춰 **켰다**.
+  // 그래서 여기서 값을 `false` 로 못 박지 않는다 — 그건 켜는 순간 의미를 잃는 단언이고,
+  // 실제로 그렇게 됐다. 지켜야 할 진짜 불변식은 "발행이 켜져 있으면 동의·진입점·고지가
+  // 갖춰져 있다"이며, 그건 `socialProfilePublishFlag.test.ts` 가 양방향으로 본다.
+  // 이 파일은 **코드 게이트**(플래그를 실제로 거는가 · 구현이 남아 있는가)에 집중한다.
+  test('발행이 켜져 있다면 동의 가드가 코드에 살아 있어야 한다', () => {
+    if (!LEADERBOARD_PUBLISH_ENABLED) return; // 꺼져 있으면 애초에 발행되지 않는다
+    // 플래그를 통과해도 **동의하지 않은 사용자는 발행되지 않는다** — AUDIT 1 사고가
+    // 정확히 '동의 없이 공개'였다. 플래그와 동의는 별개의 두 겹이다.
+    expect(read('App.tsx')).toContain("if(socialVisibility!=='public') return;");
   });
 
   test('App 의 랭킹 발행이 플래그로 early-return 한다', () => {
