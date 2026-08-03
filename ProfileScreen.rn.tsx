@@ -21,6 +21,7 @@ import { TabBar, TABBAR_CLEARANCE, Button, SegmentedControl, StatGrid, Stepper, 
 import { Unit, unitKorean, displayNum } from './lib/units';
 import { monthlyRecap, type RecapRun, type RecapShoe } from './lib/recap';
 import { reportIssue } from './lib/crashlytics';
+import { isTimeoutError } from './lib/withTimeout';
 import { hkAvailable, hkLinked, hkLink, hkRestingHR } from './lib/healthkit';
 import { buildRecapShareCardModel, shareRecapCard, shareRunnerSpecCard, formatRecapPRs, type RecapKind, type SvgCapturable } from './lib/shareCard';
 import RecapShareCard from './RecapShareCard';
@@ -398,6 +399,9 @@ export default function ProfileScreen({
           text: '탈퇴',
           style: 'destructive',
           onPress: async () => {
+            // 클라우드 파기는 몇 초 걸릴 수 있다 — 그동안 화면이 아무 말도 안 하면
+            // 사용자는 버튼이 안 먹었다고 읽는다(다이얼로그는 이미 닫혀 있다).
+            setCloudMsg({ ok: true, text: '탈퇴를 처리하고 있어요…' });
             try {
               await onDeleteAccount();
               setCloudUser(null);
@@ -407,6 +411,14 @@ export default function ProfileScreen({
             } catch (e: any) {
               // raw 에러(영문 Firebase 코드)를 화면에 노출하지 않는다 — 콘솔에만.
               reportIssue('auth: account delete', e);
+              // '서버에 닿지 못함'과 '서버가 거절함'은 사용자가 할 일이 다르다(Q-2).
+              // 전자는 연결을 고치고 다시 누르면 되고, 후자는 재로그인이 필요하거나 문의 대상이다.
+              // (파기가 시간 초과되면 포트가 계정 삭제 전에 멈춘다 — 클라우드에 데이터를 남긴 채
+              //  계정만 지워 영영 못 지우게 되는 일을 막기 위해서다.)
+              if (isTimeoutError(e)) {
+                setCloudMsg({ ok: false, text: '연결이 불안정해 탈퇴를 마치지 못했어요. 네트워크를 확인한 뒤 다시 시도해 주세요.' });
+                return;
+              }
               const reauth = /requires-recent-login|recent login|re-authenticate/i.test(String(e?.code ?? e?.message ?? ''));
               setCloudMsg({ ok: false, text: reauth ? '보안을 위해 다시 로그인한 뒤 탈퇴해 주세요.' : '계정을 삭제하지 못했어요. 잠시 후 다시 시도해 주세요.' });
             }

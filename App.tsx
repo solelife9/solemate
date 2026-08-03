@@ -148,6 +148,7 @@ import {publishMyRanking} from './lib/progression/firestoreRankingStore';
 import {LEADERBOARD_PUBLISH_ENABLED, SOCIAL_PROFILE_PUBLISH_ENABLED} from './lib/featureFlags';
 import {genRunId, genShoeId} from './lib/genId';
 import {showToast} from './lib/toast';
+import {withTimeout} from './lib/withTimeout';
 import {migrateStorageSchema} from './lib/storageMigration';
 import {resolveGoogleCredential} from './lib/googleAuth';
 import {resolveAppleCredential} from './lib/appleAuth';
@@ -165,6 +166,9 @@ const DEFAULT_PROFILE_NAME = '러너';
 // 포그라운드에서 이미 표시한 푸시 알림 key 집합(당일 1회 표시, A8-4). 키는 날짜 스탬프를
 // 포함하므로(예: 'run_reminder:2026-06-09') 다음 날엔 자연히 새 키가 되어 다시 표시된다.
 const K_NOTIF_PRESENTED = 'notif_presented';
+// 런 삭제가 클라우드 상세 삭제를 기다리는 최대 시간(ms). 초과하면 재시도 큐로 넘긴다 —
+// 로컬 삭제와 사용자 피드백이 네트워크에 인질로 잡히면 안 된다(QA 감사 Q-2 동류).
+const DETAIL_DELETE_TIMEOUT_MS = 8000;
 
 // audit#9/#10: 콜드 백엔드 부팅 상태기계. 'loading'(스켈레톤) → 'ready'(정상) |
 // 'error'(재시도 카드). 'error'는 fetch 실패만을 의미하며, 빈-신규(fetch 성공 + 빈
@@ -1222,7 +1226,10 @@ function Main(){
     // 정리도 큐가 함께 처리한다).
     try{
       const port=cloudPortRef.current;
-      if(port.deleteRunDetail) await port.deleteRunDetail(sid);
+      // 오프라인에서는 Firestore 쓰기가 **거절되지 않고 그냥 안 끝난다**(서버 ack 까지 pending).
+      // 예전엔 여기서 영원히 멈춰 아래 '삭제됨' 토스트도, 마커 정리도 오지 않았다(Q-2 동류).
+      // 제한 시간을 두고, 못 끝내면 재시도 큐에 남긴다 — 그 큐가 원래 이 상황을 위한 것이다.
+      if(port.deleteRunDetail) await withTimeout(port.deleteRunDetail(sid),DETAIL_DELETE_TIMEOUT_MS,'런 상세 삭제');
       else await enqueueDetailDeletion(sid);
       await AsyncStorage.removeMany(['detail_pushed_'+sid,'detail_absent_'+sid]);
     }catch(e){

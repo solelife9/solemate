@@ -37,6 +37,19 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { BackupPayload } from './backup';
 import { observeServerClock } from './clockOffset';
 import type { CloudPort, CloudProvider, CloudUser } from './cloudPort';
+import { withTimeout, isTimeoutError } from './withTimeout';
+
+/**
+ * 탈퇴의 클라우드 파기 단계 제한 시간(ms).
+ *
+ * 왜 필요한가(2026-08-04 QA 감사 Q-2): Firestore 쓰기 프라미스는 **서버 ack 까지 pending**
+ * 이다. 오프라인 영속이 켜져 있으면 로컬엔 즉시 반영되지만 프라미스는 끝나지 않는다 —
+ * 즉 비행기모드에서 `await deleteDoc(...)` 은 throw 가 아니라 영원한 대기다. 그래서
+ * 사용자가 '탈퇴'를 눌러도 성공도 실패도 아무 메시지가 오지 않았다(무반응).
+ * 15초: 정상 연결에서 문서 삭제가 끝나는 시간(수백 ms)보다 충분히 길고, 사람이 "고장났다"고
+ * 결론 내리기 전이다.
+ */
+export const CLOUD_PURGE_TIMEOUT_MS = 15000;
 
 /** 사용자별 백업 문서가 사는 컬렉션. 문서 id 는 auth uid. */
 const BACKUPS_COLLECTION = 'userBackups';
@@ -294,11 +307,16 @@ export function createFirebaseCloudPort(
         throw new Error('삭제할 로그인 계정이 없습니다.');
       }
       // 1) 클라우드 백업 문서를 먼저 지운다(계정 삭제 후엔 권한이 사라져 못 지움).
-      //    백업이 없을 수도 있으므로 실패는 삼키고 계정 삭제로 진행한다.
-      try {
-        // 하위 컬렉션(runDetails)은 부모 문서 삭제로 지워지지 않는다 — 탈퇴 완전삭제 요건상
-        // 명시적으로 순회 삭제(실패해도 계속 — 계정/백업 본체 삭제가 우선).
+      //    백업이 없을 수도 있으므로 **서버가 응답한 실패**는 삼키고 계정 삭제로 진행한다.
+      //
+      //    ⚠️ 시간 초과는 다르게 다룬다(Q-2). 초과는 "서버에 닿지도 못했다"는 뜻이고,
+      //    그 상태로 계정만 지우면 **클라우드에 내 데이터가 남은 채 지울 권한이 사라진다**
+      //    (개인정보 파기 의무 위반, 되돌릴 방법 없음). 그래서 초과면 여기서 중단한다 —
+      //    사용자는 연결을 확인하고 다시 시도하면 되고, 이 단계는 멱등이라 재시도가 안전하다.
+      const purgeUserData = async () => {
         try {
+          // 하위 컬렉션(runDetails)은 부모 문서 삭제로 지워지지 않는다 — 탈퇴 완전삭제 요건상
+          // 명시적으로 순회 삭제(실패해도 계속 — 계정/백업 본체 삭제가 우선).
           const details = await getDocs(collection(getFirestore(), BACKUPS_COLLECTION, user.uid, 'runDetails'));
           for (const d of details.docs ?? []) {
             try { await deleteDoc(runDetailRef(user.uid, d.id)); } catch { /* 개별 실패 무시 */ }
@@ -307,8 +325,13 @@ export function createFirebaseCloudPort(
         await deleteDoc(backupRef(user.uid));
         // 공개 프로필도 함께 내린다 — 탈퇴했는데 남들에게 계속 보이면 안 된다.
         try { await deleteDoc(doc(getFirestore(), 'profiles', user.uid)); } catch { /* 없으면 no-op */ }
-      } catch {
-        // 백업 문서 부재/일시 오류 — 계정 삭제를 막지 않는다.
+      };
+      try {
+        await withTimeout(purgeUserData(), CLOUD_PURGE_TIMEOUT_MS, '클라우드 데이터 삭제');
+      } catch (e) {
+        // 화면이 '연결 문제'와 '그 외 실패'를 구분해 안내하도록 표식을 그대로 올려보낸다.
+        if (isTimeoutError(e)) throw e;
+        // 백업 문서 부재/일시 오류 — 계정 삭제를 막지 않는다(기존 동작 유지).
       }
       // 2) 월간 랭킹 엔트리(leaderboards/{ym}/entries/{uid})를 지운다.
       //    2026-07-29 감사 전까지 이 경로는 탈퇴 대상에서 빠져 있었다 — 규칙이 삭제를
@@ -317,7 +340,7 @@ export function createFirebaseCloudPort(
       //    읽기가 차단돼 있어 목록 조회는 불가하므로 최근 N개월 경로를 만들어 지운다
       //    (없는 문서 delete 는 no-op — recentYearMonths 주석 참고).
       //    계정 삭제 전에 해야 한다 — 삭제 후엔 권한이 사라져 영영 못 지운다.
-      try {
+      const purgeLeaderboard = async () => {
         for (const ym of recentYearMonths(Date.now())) {
           try {
             await deleteDoc(leaderboardEntryRef(ym, user.uid));
@@ -325,8 +348,13 @@ export function createFirebaseCloudPort(
             /* 개별 월 실패는 무시 — 나머지 달과 계정 삭제를 막지 않는다 */
           }
         }
-      } catch {
-        // 전체 실패도 계정 삭제를 막지 않는다(백업 삭제와 같은 규약).
+      };
+      try {
+        await withTimeout(purgeLeaderboard(), CLOUD_PURGE_TIMEOUT_MS, '랭킹 엔트리 삭제');
+      } catch (e) {
+        // 백업 삭제와 같은 규약: 시간 초과는 중단(닉네임·운동량이 공개 저장소에 남는다),
+        // 서버가 응답한 실패는 계정 삭제를 막지 않는다.
+        if (isTimeoutError(e)) throw e;
       }
       // 3) 인증 계정 자체를 삭제. 세션이 오래되면 'requires-recent-login' 으로 막히므로
       //    재로그인 후 재시도하도록 정직한 한국어 에러로 바꿔 전파한다.
