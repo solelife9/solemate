@@ -18,6 +18,12 @@ import {
 
 export const PB_CACHE_KEY = 'distance_pb_cache_v1';
 
+/**
+ * 캐시 미스 런의 paceTrack 을 한 번에 몇 개씩 읽을지. 지연(직렬)과 메모리(전량 병렬) 사이의 값.
+ * 시계열 하나가 수십 KB 라 상한 없는 병렬은 재설치 직후 메모리 스파이크가 된다.
+ */
+export const PB_LOAD_CHUNK = 16;
+
 export type PBCache = Record<string, RunBestEfforts>;
 
 export interface PBStoreDeps {
@@ -51,10 +57,20 @@ export async function getDistancePBs(
   }
 
   // 처음 보는 런 계산(마이그레이션 + 신규). 빈 {} 도 '계산됨' 표식으로 저장해 재읽기 방지.
-  for (const id of ids) {
-    if (cache[id] !== undefined) continue;
-    const track = await safe(deps.loadTrack(id));
-    cache[id] = track && track.length >= 2 ? runBestEfforts(track) : {};
+  //
+  // **직렬로 읽지 않는다**(2026-08-04 QA 감사 Q-4). 평소엔 캐시가 있어 새 런 한둘만 읽지만,
+  // 재설치·기기 변경 직후 첫 부팅은 캐시가 비어 있어 **전량이 미스**다 — 런 1000건이면
+  // paceTrack 읽기 1000번이 한 줄로 늘어서고, 그동안 거리 PB 가 비어 있다.
+  // 한 번에 다 던지지도 않는다: paceTrack 은 런당 수십 KB 라 1000개를 동시에 메모리에
+  // 올리는 쪽이 더 위험하다. 그래서 묶음 단위로 병렬 — 지연은 1/N 로 줄고 메모리 상한은 유지된다.
+  const missing = ids.filter((id) => cache[id] === undefined);
+  for (let i = 0; i < missing.length; i += PB_LOAD_CHUNK) {
+    const chunk = missing.slice(i, i + PB_LOAD_CHUNK);
+    const tracks = await Promise.all(chunk.map((id) => safe(deps.loadTrack(id))));
+    chunk.forEach((id, j) => {
+      const track = tracks[j];
+      cache[id] = track && track.length >= 2 ? runBestEfforts(track) : {};
+    });
     changed = true;
   }
 

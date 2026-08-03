@@ -848,17 +848,23 @@ function Main(){
   },[]);
 
   // 런별 노면 태그(surface_<runId>) 일괄 로드 → 실효 마모/예측 보정에 반영. runs가 바뀔
-  // 때마다 multiGet으로 한 번에 읽고, 손상/실패/미태그는 road로 graceful 폴백한다(차단 아님).
+  // 때마다 **한 번의 getMany** 로 읽고, 손상/실패/미태그는 road로 graceful 폴백한다(차단 아님).
+  //
+  // 2026-08-04 QA 감사 Q-4: 여기 주석은 원래도 "multiGet 으로 한 번에"라고 적혀 있었는데
+  // 코드는 `Promise.all(ids.map(getItem))` — **런 수만큼의 개별 브리지 왕복**이었다. 이 effect 는
+  // runs 가 바뀔 때마다(동기 1회·런 추가/편집/삭제·워치 런 수신) 전량이 다시 도는 자리라,
+  // 런 1000건이면 한 번에 1000 왕복이 나갔다. 같은 저장소 래퍼의 배치 API 를 다른 곳에선
+  // 이미 쓰고 있었다(runPersistence·bootCache) — 여기만 빠져 있었다.
   useEffect(()=>{
     let alive=true;
     const ids=runs.map(r=>String(r.id)).filter(Boolean);
     if(ids.length===0){setRunSurfaces({});return;}
     (async()=>{
       try{
-        const vals=await Promise.all(ids.map(id=>AsyncStorage.getItem('surface_'+id)));
+        const got=await AsyncStorage.getMany(ids.map(id=>'surface_'+id));
         if(!alive)return;
         const map:Record<string,Surface>={};
-        ids.forEach((id,i)=>{const v=vals[i];if(v!=null) map[id]=parseSurface(v);});
+        for(const id of ids){const v=got['surface_'+id];if(v!=null) map[id]=parseSurface(v);}
         setRunSurfaces(map);
       }catch{/* 손상/실패는 무시 — 전부 road로 동작 */}
     })();
