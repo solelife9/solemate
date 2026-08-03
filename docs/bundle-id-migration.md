@@ -37,7 +37,45 @@
 
 ---
 
-## ⛔ 민우님이 하셔야 하는 것 — 순서대로
+## ✅ 콘솔 작업 — 2026-08-03 완료
+
+| | 상태 |
+|---|---|
+| Firebase iOS 앱 등록 + `GoogleService-Info.plist` | ✅ (BUNDLE_ID 검증) |
+| 구글 로그인 URL 스킴 교체 | ✅ (plist 에서 읽어 자동 반영, 옛 스킴 잔존 0) |
+| Firebase Android 앱 등록 + `google-services.json` | ✅ |
+| **Android SHA-1 2개** | ✅ CLI 로 등록 후 설정 재발급 |
+| 카카오 iOS 번들 ID · Android 패키지 · 키 해시 | ✅ |
+| 네이버 Android 패키지명 (iOS 는 URL 스킴이라 무관) | ✅ |
+| 애플 App Group `group.com.keego.app` | ✅ (App ID 3개는 Xcode 자동 생성) |
+| 빌드·서명·설치 검증 | ✅ 산출물에서 번들 ID·entitlements 직접 확인 |
+
+### 곁들여 고친 것
+
+- **카카오 '앱 대표 도메인'** 이 이미 철거된 Render 백엔드를 가리키고 있었다
+  (`solelife-backend.onrender.com`). 로그인 동의 화면에 사용자에게 보이는 값이라 교체.
+- **제공자 표시가 틀리던 버그** — 카카오로 로그인했는데 "네이버 계정"으로 떴다.
+  앱 ID 와 무관한 기존 버그였고, `cloud_account` 를 쓰는 곳이 둘이라(LoginScreen +
+  계정 정합) 순서가 어긋난 것이었다. 정합 뒤 한 곳에서만 쓰도록 수정 + 회귀 테스트 3건.
+
+---
+
+## ⚠️ 미해결 — 첫 로그인이 두 번 필요했던 건
+
+새 앱 첫 설치 직후, **네 제공자 모두** 첫 탭이 실패하고 두 번째 탭에서 로그인됐다.
+그 뒤로는 재현되지 않는다.
+
+배제한 것: App Check(호출되는 곳이 없음) · Cloud Functions 콜드스타트(애플은 서버를
+안 거침) · URL 스킴/AppDelegate(애플은 URL 콜백이 없음) · iOS 동의 창(애플도 두 번 필요).
+남는 공통점은 `signInWithCredential` 직후뿐이다.
+
+**첫 설치 1회성으로 보이지만 확증하지 못했다.** 다시 나오면 폰 잠금을 푼 채로
+`xcrun devicectl device process launch --console com.keego.app` 으로 로그를 잡아야 한다
+(잠겨 있으면 iOS 가 실행을 거부한다 — 이번에 그래서 못 잡았다).
+
+---
+
+## ⛔ 남은 것 — 나중에
 
 ### ① Firebase — 앱 2개 새로 등록 (제일 먼저)
 
