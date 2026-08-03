@@ -7,6 +7,58 @@
   "client": [
     {
       "client_info": {
+        "mobilesdk_app_id": "1:404780715201:android:0972114c82f6999b351840",
+        "android_client_info": {
+          "package_name": "com.keego.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "404780715201-grm9lgvcog3h23dc64m6mand1l2ovkf4.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.keego.app",
+            "certificate_hash": "39d416d752bef63417d4a22f20f469c3ee1267ce"
+          }
+        },
+        {
+          "client_id": "404780715201-uuj0t20e8dfn2eaf0i6up4ed9ok9fm72.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.keego.app",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
+          "client_id": "404780715201-8lrp04ttqshdaq3fs0ln9g2hrr7tvs0v.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCKISf4Oh9MdRCjDiZUdJ1Xf5MMur956dY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "404780715201-8lrp04ttqshdaq3fs0ln9g2hrr7tvs0v.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "404780715201-4kt9l0uoauobq7ulu0k1fpaj7g0s9q5n.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.solemate"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:404780715201:android:7c0b7373bdc4daa1351840",
         "android_client_info": {
           "package_name": "com.solemate"
