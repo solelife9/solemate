@@ -183,7 +183,7 @@ describe('시나리오 7 — 문서 크기·개수 제한이 없어 한 유저�
     const db = attacker();
     for (let i = 0; i < 25; i++) {
       await assertSucceeds(
-        addDoc(collection(db, 'search_misses'), {query: `q${i}`, userId: ATTACKER, createdAt: i}),
+        addDoc(collection(db, 'search_misses'), {query: `q${i}`, createdAt: i}),
       );
     }
   });
@@ -191,7 +191,7 @@ describe('시나리오 7 — 문서 크기·개수 제한이 없어 한 유저�
     const db = attacker();
     for (let i = 0; i < 25; i++) {
       await assertSucceeds(
-        addDoc(collection(db, 'shoe_requests'), {brand: 'B', model: `M${i}`, userId: ATTACKER, createdAt: i, source: 'manual_add'}),
+        addDoc(collection(db, 'shoe_requests'), {brand: 'B', model: `M${i}`, createdAt: i, source: 'manual_add'}),
       );
     }
   });

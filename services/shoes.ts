@@ -124,18 +124,28 @@ export async function listShoesUpdatedAfter(
 // ── 사용자 신호(0건 검색·등록 요청) ────────────────────────────────────────────
 // 카탈로그가 낡는 문제에 대한 구조적 답이다 — 사람이 눈치채기를 기다리지 않고,
 // "사용자가 찾았는데 없던 것"을 데이터로 남긴다(docs/shoes-spec.md §6).
+//
+// ── 계정을 남기지 않는다(2026-08-03) ────────────────────────────────────────
+// 전에는 `userId` 를 함께 적었다. 그런데 이 컬렉션은 규칙상 **앱이 읽지도 지우지도
+// 못한다**(create 만 허용). 즉 탈퇴해도 그 기록이 계정 식별자와 함께 영원히 남고,
+// 그건 처리방침의 "탈퇴 시까지"와 어긋난다. 지울 수 없는 곳에 개인정보를 남기는 게
+// 문제의 본질이므로, 삭제 경로를 만드는 대신 **애초에 안 남긴다.**
+//
+// 신호의 목적은 "무엇이 없었나"이지 "누가 찾았나"가 아니다. 카탈로그 구멍을 메우는 데
+// 계정은 한 톨도 필요 없다. 같은 사람이 열 번 찾은 건과 열 명이 한 번씩 찾은 건을
+// 구분하고 싶어질 수 있지만, 그건 **질의 문자열 자체의 빈도**로 충분히 보인다.
 
 /**
  * 검색 0건 기록. 실패해도 **절대 throw 하지 않는다** — 관측 목적이지 기능이 아니다.
  * 이것 때문에 검색 화면이 깨지면 본말전도다.
  */
-export async function logSearchMiss(searchText: string, userId: string | null): Promise<void> {
+export async function logSearchMiss(searchText: string): Promise<void> {
   const q = String(searchText ?? '').trim();
   if (!q) return;
   try {
     await setDoc(
       doc(collection(db(), SEARCH_MISSES_COLLECTION)),
-      {query: q, userId: userId ?? null, createdAt: serverTimestamp()},
+      {query: q, createdAt: serverTimestamp()},
     );
   } catch {
     /* 관측 실패는 삼킨다 */
@@ -159,7 +169,6 @@ export type ShoeRequestSource = 'not_found' | 'manual_add';
 export async function requestShoe(
   brand: string,
   model: string,
-  userId: string | null,
   source: ShoeRequestSource = 'not_found',
 ): Promise<boolean> {
   const b = String(brand ?? '').trim();
@@ -168,7 +177,7 @@ export async function requestShoe(
   try {
     await setDoc(
       doc(collection(db(), SHOE_REQUESTS_COLLECTION)),
-      {brand: b, model: m, userId: userId ?? null, createdAt: serverTimestamp(), source},
+      {brand: b, model: m, createdAt: serverTimestamp(), source},
     );
     return true;
   } catch {

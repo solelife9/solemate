@@ -94,9 +94,11 @@ describe('검색 0건', () => {
     await act(async () => { jest.advanceTimersByTime(1000); });
     await flush();
     expect(logSearchMiss).toHaveBeenCalledTimes(1);
-    const [query, uid] = logSearchMiss.mock.calls[0];
-    expect(String(query)).toContain('zzzzqqq없는신발');
-    expect(uid).toBe('uid-1');
+    const call = logSearchMiss.mock.calls[0];
+    expect(String(call[0])).toContain('zzzzqqq없는신발');
+    // 계정은 넘기지 않는다 — 이 컬렉션은 앱이 읽지도 지우지도 못하므로, 남기면
+    // 탈퇴해도 지울 수 없는 개인정보가 된다(2026-08-03).
+    expect(call).toHaveLength(1);
   });
 
   test('같은 질의를 반복 적재하지 않는다', async () => {
@@ -117,10 +119,11 @@ describe('검색 0건', () => {
     await act(async () => { await btn.props.onPress(); });
     await flush();
     expect(requestShoe).toHaveBeenCalledTimes(1);
-    const [brand, model, uid] = requestShoe.mock.calls[0];
-    expect(typeof brand).toBe('string');
-    expect(String(model)).toContain('zzzzqqq없는신발');
-    expect(uid).toBe('uid-1');
+    const call = requestShoe.mock.calls[0];
+    expect(typeof call[0]).toBe('string');
+    expect(String(call[1])).toContain('zzzzqqq없는신발');
+    expect(call).toHaveLength(3);          // brand · model · source — 계정 없음
+    expect(call.some((a: unknown) => a === 'uid-1')).toBe(false);
   });
 
   test('보낸 뒤에는 눌렀다는 걸 알려주고 다시 누를 수 없다', async () => {
@@ -152,7 +155,7 @@ describe('검색 0건', () => {
     const btn = byTestID(r.root, 'picker-request-shoe').find((n: any) => typeof n.props.onPress === 'function')!;
     await act(async () => { await btn.props.onPress(); });
     await flush();
-    expect(requestShoe.mock.calls[0][3]).toBe('not_found');
+    expect(requestShoe.mock.calls[0][2]).toBe('not_found');
   });
 });
 
@@ -160,6 +163,21 @@ describe('검색 0건', () => {
  * 직접 추가 — 카탈로그 구멍의 **진짜 크기**는 여기 있다.
  * 대부분의 사용자는 버튼을 누르지 않고 그냥 손으로 넣고 달리러 간다.
  */
+describe('계정을 남기지 않는다', () => {
+  // 신호의 목적은 '무엇이 없었나'이지 '누가 찾았나'가 아니다. 계정을 넘기지 않는 것을
+  // 넘어 **조회조차 하지 않는다** — 부르지 않으면 실수로 실을 수도 없다.
+  test('검색 0건 경로가 계정을 조회하지 않는다', async () => {
+    const {getFirebaseUid} = require('../lib/firebaseCloudPort');
+    getFirebaseUid.mockClear();
+    const r = await mount();
+    await searchNonsense(r.root);
+    await act(async () => { jest.advanceTimersByTime(1000); });
+    await flush();
+    expect(logSearchMiss).toHaveBeenCalled();
+    expect(getFirebaseUid).not.toHaveBeenCalled();
+  });
+});
+
 describe('직접 추가', () => {
   test('브랜드 안에서 직접 추가하면 manual_add 로 남는다', async () => {
     const onPick = jest.fn();
@@ -175,10 +193,10 @@ describe('직접 추가', () => {
     await act(async () => { add.props.onPress(); });
     await flush();
     expect(requestShoe).toHaveBeenCalledTimes(1);
-    const [brand, model, uid, source] = requestShoe.mock.calls[0];
+    const [brand, model, source] = requestShoe.mock.calls[0];
+    expect(requestShoe.mock.calls[0]).toHaveLength(3);   // 계정 없음
     expect(typeof brand).toBe('string');
     expect(model).toBe('없는모델xyz');
-    expect(uid).toBe('uid-1');
     expect(source).toBe('manual_add');
     // 관측 때문에 등록이 늦어지면 안 된다 — 기록을 기다리지 않고 바로 선택된다.
     expect(onPick).toHaveBeenCalledWith({brand, model: '없는모델xyz'});

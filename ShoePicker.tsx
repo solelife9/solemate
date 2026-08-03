@@ -23,7 +23,6 @@ import {Button, Input} from './primitives';
 // 검색 0건 신호 — 카탈로그가 낡는 문제에 대한 구조적 답이다(docs/shoes-spec.md §6).
 // 사람이 눈치채기를 기다리지 않고, "사용자가 찾았는데 없던 것"을 데이터로 남긴다.
 import {logSearchMiss, requestShoe} from './services/shoes';
-import {getFirebaseUid} from './lib/firebaseCloudPort';
 import {showToast} from './lib/toast';
 
 export type PickedShoe = {brand: string; model: string};
@@ -84,9 +83,9 @@ export function ShoePicker({visible, onClose, onPick, myShoes, insetTop, insetBo
    * 기다리지 않고 실패는 삼킨다.
    */
   const pickManual = (brand: string, model: string) => {
-    getFirebaseUid()
-      .then(uid => requestShoe(brand, model, uid, 'manual_add'))
-      .catch(() => {});
+    // 계정은 넘기지 않는다 — 신호의 목적은 '무엇이 없었나'이지 '누가 찾았나'가 아니다
+    // (services/shoes 주석 참조). 결과를 기다리지 않고 실패는 삼킨다.
+    requestShoe(brand, model, 'manual_add').catch(() => {});
     pick(brand, model);
   };
 
@@ -123,9 +122,7 @@ export function ShoePicker({visible, onClose, onPick, myShoes, insetTop, insetBo
     setRequested(false);
     const t = setTimeout(() => {
       // 타이핑이 멎은 뒤에 남긴다 — 중간 글자마다 적재하면 잡음이 된다.
-      getFirebaseUid()
-        .then(uid => logSearchMiss(`${selBrand} ${query.trim()}`.trim(), uid))
-        .catch(() => {});
+      logSearchMiss(`${selBrand} ${query.trim()}`.trim()).catch(() => {});
     }, 900);
     return () => clearTimeout(t);
   }, [noResult, selBrand, q, query]);
@@ -133,8 +130,7 @@ export function ShoePicker({visible, onClose, onPick, myShoes, insetTop, insetBo
   /** '내 신발이 없어요' — 사용자가 누른 행동이라 결과를 반드시 알려준다. */
   const askForShoe = async () => {
     const model = query.trim();
-    const uid = await getFirebaseUid().catch(() => null);
-    const ok = await requestShoe(selBrand, model, uid, 'not_found');
+    const ok = await requestShoe(selBrand, model, 'not_found');
     setRequested(ok);
     showToast({
       message: ok

@@ -161,7 +161,9 @@ service cloud.firestore {
     match /search_misses/{docId} {
       allow read, update, delete: if false;
       allow create: if signedIn()
-        && request.resource.data.keys().hasOnly(['query', 'userId', 'createdAt'])
+        // 계정 식별자는 **받지 않는다**(2026-08-03). 이 컬렉션은 앱이 읽지도 지우지도
+        // 못하므로, 남기는 순간 탈퇴해도 지울 수 없는 개인정보가 된다.
+        && request.resource.data.keys().hasOnly(['query', 'createdAt'])
         && request.resource.data.query is string
         && request.resource.data.query.size() > 0
         && request.resource.data.query.size() <= 100;
@@ -169,7 +171,7 @@ service cloud.firestore {
     match /shoe_requests/{docId} {
       allow read, update, delete: if false;
       allow create: if signedIn()
-        && request.resource.data.keys().hasOnly(['brand', 'model', 'userId', 'createdAt', 'source'])
+        && request.resource.data.keys().hasOnly(['brand', 'model', 'createdAt', 'source'])
         && request.resource.data.brand is string
         && request.resource.data.model is string
         && request.resource.data.brand.size() <= 60

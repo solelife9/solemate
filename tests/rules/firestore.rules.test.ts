@@ -230,8 +230,12 @@ describe('races/{raceId}', () => {
 // ── 사용자 신호(검색 0건·등록 요청) ──────────────────────────────────────────
 // 적재 전용 컬렉션이다. 쓰기만 열고 읽기를 닫는 게 핵심 — 남이 무엇을 검색했는지
 // 열람할 수 있으면 관측 데이터가 곧 사생활 유출이 된다(docs/shoes-spec.md §6).
+//
+// **계정 식별자는 아예 받지 않는다(2026-08-03).** 앱이 읽지도 지우지도 못하는 곳이라
+// 한 번 들어가면 탈퇴해도 지울 방법이 없고, 그건 처리방침("탈퇴 시까지")과 어긋난다.
+// 규칙으로 막는 이유: 코드에서 빼는 것만으로는 다음 사람이 다시 넣는다.
 describe('search_misses/{docId}', () => {
-  const miss = {query: 'Nike Pegasus 99', userId: ME, createdAt: 1750000000000};
+  const miss = {query: 'Nike Pegasus 99', createdAt: 1750000000000};
 
   it('로그인 사용자는 적재할 수 있다', async () => {
     await assertSucceeds(setDoc(doc(asMe(), 'search_misses', 'm1'), miss));
@@ -258,10 +262,14 @@ describe('search_misses/{docId}', () => {
     await assertFails(setDoc(doc(asMe(), 'search_misses', 'm3'), {...miss, query: 'x'.repeat(101)}));
     await assertFails(setDoc(doc(asMe(), 'search_misses', 'm4'), {...miss, junk: 1}));
   });
+
+  it('계정 식별자는 거부한다 — 지울 수 없는 곳에 개인정보를 남기지 않는다', async () => {
+    await assertFails(setDoc(doc(asMe(), 'search_misses', 'm5'), {...miss, userId: ME}));
+  });
 });
 
 describe('shoe_requests/{docId}', () => {
-  const req = {brand: 'Nike', model: 'Pegasus 99', userId: ME, createdAt: 1750000000000};
+  const req = {brand: 'Nike', model: 'Pegasus 99', createdAt: 1750000000000};
 
   it('버튼 요청(not_found)을 적재한다', async () => {
     await assertSucceeds(setDoc(doc(asMe(), 'shoe_requests', 'r1'), {...req, source: 'not_found'}));
@@ -273,6 +281,10 @@ describe('shoe_requests/{docId}', () => {
 
   it('source 가 없어도 받는다(구버전 앱 호환 — 필드를 나중에 넣었다)', async () => {
     await assertSucceeds(setDoc(doc(asMe(), 'shoe_requests', 'r3'), req));
+  });
+
+  it('계정 식별자는 거부한다 — 지울 수 없는 곳에 개인정보를 남기지 않는다', async () => {
+    await assertFails(setDoc(doc(asMe(), 'shoe_requests', 'r5'), {...req, userId: ME}));
   });
 
   it('모르는 source 는 거부(자유 문자열이면 집계가 무의미해진다)', async () => {
