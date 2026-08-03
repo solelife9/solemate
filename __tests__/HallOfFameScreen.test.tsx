@@ -438,11 +438,11 @@ describe('티어 배지', () => {
     walk(r.toJSON());
     return out;
   };
-  const withTier = async (tier: string) => {
+  const withTier = async (tier: string, rank = 1) => {
     const provider = {
       getLeaderboard: jest.fn(async (category: string, yearMonth: string) => ({
         kind: 'remote' as const, available: true, category, yearMonth,
-        entries: [entry({uid: 'a', rank: 1, score: 500, nickname: '에이스', rankTier: tier as never})],
+        entries: [entry({uid: 'a', rank, score: 500, nickname: '에이스', rankTier: tier as never})],
       })),
       getMyRanking: jest.fn(async (category: string, yearMonth: string) => ({
         kind: 'remote' as const, available: false, category, yearMonth,
@@ -452,19 +452,21 @@ describe('티어 배지', () => {
     return render(<HallOfFameScreen provider={provider} now={NOW} />);
   };
 
-  test('레전드·마스터는 글자 배지를 단다', async () => {
-    expect(txt(await withTier('legend'))).toContain('LEGEND');
-    expect(txt(await withTier('master'))).toContain('MASTER');
-  });
-
-  test('그 아래 티어는 배지를 달지 않는다 — 목록이 시끄러워진다', async () => {
-    for (const t of ['diamond', 'platinum', 'gold', 'silver', 'bronze']) {
-      const body = txt(await withTier(t));
-      expect(body).not.toContain(t.toUpperCase());
+  // 게이트는 **티어 등급이 아니라 등수**다. 등급으로 잡으면 레전드 5,000 XP·마스터
+  // 3,000 XP(총 최대 ≈6,310)라 초반 몇 달은 배지가 하나도 안 떠서, 만들어 놓고 보이지
+  // 않는 기능이 된다.
+  test('100위 안쪽이면 티어 등급과 무관하게 글자를 단다', async () => {
+    for (const t of ['legend', 'master', 'diamond', 'platinum', 'gold', 'silver', 'bronze']) {
+      expect(txt(await withTier(t, 1))).toContain(t.toUpperCase());
     }
   });
 
-  test('배지가 있는 행에서는 타이틀 칩이 무채가 된다 — 같은 오렌지 두 개를 피한다', async () => {
+  test('100위 경계 — 100위는 달고 101위는 달지 않는다', async () => {
+    expect(txt(await withTier('gold', 100))).toContain('GOLD');
+    expect(txt(await withTier('gold', 101))).not.toContain('GOLD');
+  });
+
+  test('타이틀 칩은 무채다 — 티어 배지와 같은 색 두 개를 피한다', async () => {
     // 타이틀 칩은 원래 티어색을 썼다. 레전드(#FF6500)에 배지가 붙자 두 칩이 같은 색이 돼
     // 둘 다 안 읽혔다(실기기 렌더로 확인). 위계를 나눈다 — 티어=색, 타이틀=무채.
     const provider = {

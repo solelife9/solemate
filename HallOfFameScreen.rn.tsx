@@ -83,6 +83,20 @@ const CATEGORIES: ReadonlyArray<{key: Category; label: string; icon: string}> = 
   {key: 'progressPoints', label: '진척 포인트', icon: 'sparkles'},
 ];
 
+/**
+ * 티어를 **글자로** 보여주는 등수 상한 (2026-08-04).
+ *
+ * 기준을 티어 등급(마스터·레전드)으로 잡으면 **초반 몇 달은 배지가 하나도 안 뜬다** —
+ * 레전드 5,000 XP·마스터 3,000 XP 인데 총 최대가 ≈6,310 이라 거기 닿는 데 오래 걸린다.
+ * 만들어 놓고 보이지 않는 기능이 되므로 **등수**로 게이트한다: 첫날부터 동작하고,
+ * 목록이 길어지면 아래쪽은 저절로 조용해진다.
+ *
+ * 값이 100인 이유: 리더보드가 애초에 상위 100명만 읽는다
+ * (lib/progression/firestoreRanking.ts `topByCategory(..., 100)`). 즉 지금은 **보이는
+ * 모든 행**에 글자가 붙고, 나중에 더 많이 읽게 되면 100위까지만 붙는다.
+ */
+const TIER_BADGE_MAX_RANK = 100;
+
 // 1·2·3위 표기 — 이모지 메달(🥇🥈🥉) 폐지(감사 #62, 밈 톤 금지): 티어 색 숫자로.
 // 색은 TIER_COLORS 권위(gold/silver/bronze) — 순위 색이지 그 유저의 rankTier 색이 아니다.
 const RANK_TINT: Record<number, string> = {
@@ -245,8 +259,13 @@ export default function HallOfFameScreen({
 
   const renderRow = (e: LeaderboardEntry, highlight: boolean) => {
     const tColor = TIER_COLORS[e.rankTier] ?? TIER_COLORS.bronze;
-    // 배지를 다는 티어. 여기만 글자를 주고 나머지는 점 그대로 둔다(목업 D).
-    const topTier = e.rankTier === 'legend' || e.rankTier === 'master';
+    // 배지를 다는 기준은 **티어 등급이 아니라 등수**다(2026-08-04 민우님 결정).
+    //
+    // 처음엔 마스터·레전드에만 달았는데(목업 D), 그러면 **초반 몇 달은 배지가 아예 안 뜬다** —
+    // 레전드 5,000 XP·마스터 3,000 XP 인데 총 최대가 ≈6,310 이라 사용자가 거기 닿는 데
+    // 오래 걸린다. 만들어 놓고 보이지 않는 기능이 된다.
+    // 등수로 게이트하면 첫날부터 동작하고, 목록이 길어져도 아래쪽은 조용해진다.
+    const showTierBadge = e.rank <= TIER_BADGE_MAX_RANK;
     const tName = titleName(e.equippedTitle);
     const shown = e.nickname || (highlight ? profileName : '러너');
     // 내 행은 열지 않는다 — 내 프로필은 마이 탭이 정본이고, 여기서 또 열면 같은 걸
@@ -277,7 +296,7 @@ export default function HallOfFameScreen({
           </Text>
         </View>
         {/* 상위 티어가 아니면 지금까지처럼 점만. 배지는 아래 이름 옆에 붙는다. */}
-        {!topTier && <View style={[s.tierDot, {backgroundColor: tColor}]} />}
+        {!showTierBadge && <View style={[s.tierDot, {backgroundColor: tColor}]} />}
         <View style={s.rowFill}>
           {/* 이름 + 티어 배지 (2026-08-03 목업 D 채택).
               전에는 지름 8px 색 점이 티어의 전부라, 다이아(#3B82F6)와 마스터(#9333EA)를
@@ -294,7 +313,7 @@ export default function HallOfFameScreen({
               {shown}
               {highlight ? <Text style={{color: ACCENT}}>{'  (나)'}</Text> : null}
             </Text>
-            {topTier ? (
+            {showTierBadge ? (
               <View
                 testID={`hof-tier-${e.uid}`}
                 style={[
@@ -315,16 +334,8 @@ export default function HallOfFameScreen({
             // 같은 오렌지**가 됐다(둘 다 tColor). 색이 겹치면 둘 다 안 읽힌다.
             // 그래서 위계를 나눈다 — **티어=색, 타이틀=무채.** 티어는 드물고(마스터·레전드만)
             // 랭킹의 주제라 색을 갖고, 타이틀은 부가 정보라 물러난다.
-            <View
-              style={[
-                s.titlePill,
-                topTier
-                  ? {backgroundColor: withAlpha(T1, 0.06), borderColor: withAlpha(T1, 0.14)}
-                  : {backgroundColor: withAlpha(tColor, 0.14), borderColor: withAlpha(tColor, 0.4)},
-              ]}>
-              <Text
-                style={[s.titlePillTxt, {color: topTier ? T2 : tColor}]}
-                numberOfLines={1}>
+            <View style={s.titlePill}>
+              <Text style={s.titlePillTxt} numberOfLines={1}>
                 {tName}
               </Text>
             </View>
@@ -654,17 +665,22 @@ const s = StyleSheet.create({
   tierBadgeTxt: {fontFamily: FONT, ...TYPE.micro},
   // 신는 러닝화 — 이름 아래 한 줄. 무채(T3)로 눌러 순위·점수보다 뒤에 읽히게 한다.
   rowShoes: {fontFamily: FONT, color: T3, fontSize: TYPE.label.fontSize, marginTop: 2},
+  // 타이틀 칩은 **무채**다(2026-08-04). 원래 티어색을 썼는데 티어 배지가 생기면서
+  // 두 칩이 같은 색이 됐고, 색이 겹치면 둘 다 안 읽힌다. 위계를 나눈다 —
+  // **티어=색, 타이틀=무채.** 티어는 랭킹의 주제라 색을 갖고, 타이틀은 부가라 물러난다.
   titlePill: {
     flexDirection: 'row',
     alignSelf: 'flex-start',
     borderWidth: StyleSheet.hairlineWidth,
+    borderColor: withAlpha(T1, 0.14),
+    backgroundColor: withAlpha(T1, 0.06),
     borderRadius: RADIUS.pill,
     paddingHorizontal: rs(8),
     paddingVertical: rv(2),
     marginTop: rv(4),
     maxWidth: '100%',
   },
-  titlePillTxt: {fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '700', flexShrink: 1},
+  titlePillTxt: {fontFamily: FONT, color: T2, fontSize: TYPE.caption.fontSize, fontWeight: '700', flexShrink: 1},
   rowScore: {
     fontFamily: DISPLAY,
     color: T1,
