@@ -421,3 +421,74 @@ describe('집계 범위 라벨', () => {
     expect(t).not.toContain('이번 달 랭킹');
   });
 });
+
+// ─── 티어 배지 (2026-08-03 목업 D 채택) ────────────────────────────────────────
+// 전에는 지름 8px 색 점이 티어의 전부라, 다이아(#3B82F6)와 마스터(#9333EA)를 색만으로
+// 구별할 수 없었다(색각 이상 사용자에겐 정보가 아예 사라진다). 그렇다고 모든 행에 영어
+// 라벨을 달면 목록이 시끄러워, **마스터·레전드에만** 글자를 준다 — 물음이 "누가 레전드를
+// 찍었나"였고 레전드는 5,000 XP(총 최대 ≈6,310)라 실제로 드물다.
+describe('티어 배지', () => {
+  const txt = (r: ReactTestRenderer.ReactTestRenderer): string => {
+    let out = '';
+    const walk = (n: any) => {
+      if (typeof n === 'string') { out += n; return; }
+      if (!n || !n.children) return;
+      n.children.forEach(walk);
+    };
+    walk(r.toJSON());
+    return out;
+  };
+  const withTier = async (tier: string) => {
+    const provider = {
+      getLeaderboard: jest.fn(async (category: string, yearMonth: string) => ({
+        kind: 'remote' as const, available: true, category, yearMonth,
+        entries: [entry({uid: 'a', rank: 1, score: 500, nickname: '에이스', rankTier: tier as never})],
+      })),
+      getMyRanking: jest.fn(async (category: string, yearMonth: string) => ({
+        kind: 'remote' as const, available: false, category, yearMonth,
+        total: 0, topPercent: null, me: null, nearby: [],
+      })),
+    } as never;
+    return render(<HallOfFameScreen provider={provider} now={NOW} />);
+  };
+
+  test('레전드·마스터는 글자 배지를 단다', async () => {
+    expect(txt(await withTier('legend'))).toContain('LEGEND');
+    expect(txt(await withTier('master'))).toContain('MASTER');
+  });
+
+  test('그 아래 티어는 배지를 달지 않는다 — 목록이 시끄러워진다', async () => {
+    for (const t of ['diamond', 'platinum', 'gold', 'silver', 'bronze']) {
+      const body = txt(await withTier(t));
+      expect(body).not.toContain(t.toUpperCase());
+    }
+  });
+
+  test('배지가 있는 행에서는 타이틀 칩이 무채가 된다 — 같은 오렌지 두 개를 피한다', async () => {
+    // 타이틀 칩은 원래 티어색을 썼다. 레전드(#FF6500)에 배지가 붙자 두 칩이 같은 색이 돼
+    // 둘 다 안 읽혔다(실기기 렌더로 확인). 위계를 나눈다 — 티어=색, 타이틀=무채.
+    const provider = {
+      getLeaderboard: jest.fn(async (category: string, yearMonth: string) => ({
+        kind: 'remote' as const, available: true, category, yearMonth,
+        entries: [entry({
+          uid: 'a', rank: 1, score: 500, nickname: '에이스',
+          rankTier: 'legend', equippedTitle: 'running_1000k',
+        })],
+      })),
+      getMyRanking: jest.fn(async (category: string, yearMonth: string) => ({
+        kind: 'remote' as const, available: false, category, yearMonth,
+        total: 0, topPercent: null, me: null, nearby: [],
+      })),
+    } as never;
+    const r = await render(<HallOfFameScreen provider={provider} now={NOW} />);
+    const pillTxts = r.root.findAll(
+      n => typeof (n.props as any)?.style === 'object'
+        && JSON.stringify((n.props as any).style ?? '').includes('FF6500'),
+    );
+    // 티어색(#FF6500)을 쓰는 요소는 배지 계열뿐이어야 한다 — 타이틀 칩은 빠져야 한다.
+    const body = txt(r);
+    expect(body).toContain('LEGEND');
+    expect(body).toContain('마라토너의 길');
+    expect(pillTxts.length).toBeGreaterThan(0); // 배지는 여전히 티어색을 쓴다
+  });
+});

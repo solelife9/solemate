@@ -45,6 +45,7 @@ import {
   RADIUS,
   TYPE,
   TIER_COLORS,
+  TIER_LABEL,
   withAlpha, GLASS,
   GUTTER, MOTION, NUM,
   ICON,
@@ -244,6 +245,8 @@ export default function HallOfFameScreen({
 
   const renderRow = (e: LeaderboardEntry, highlight: boolean) => {
     const tColor = TIER_COLORS[e.rankTier] ?? TIER_COLORS.bronze;
+    // 배지를 다는 티어. 여기만 글자를 주고 나머지는 점 그대로 둔다(목업 D).
+    const topTier = e.rankTier === 'legend' || e.rankTier === 'master';
     const tName = titleName(e.equippedTitle);
     const shown = e.nickname || (highlight ? profileName : '러너');
     // 내 행은 열지 않는다 — 내 프로필은 마이 탭이 정본이고, 여기서 또 열면 같은 걸
@@ -273,22 +276,55 @@ export default function HallOfFameScreen({
             {e.rank}
           </Text>
         </View>
-        <View style={[s.tierDot, {backgroundColor: tColor}]} />
+        {/* 상위 티어가 아니면 지금까지처럼 점만. 배지는 아래 이름 옆에 붙는다. */}
+        {!topTier && <View style={[s.tierDot, {backgroundColor: tColor}]} />}
         <View style={s.rowFill}>
-          <Text style={s.rowName} numberOfLines={1}>
-            {shown}
-            {highlight ? <Text style={{color: ACCENT}}>{'  (나)'}</Text> : null}
-          </Text>
+          {/* 이름 + 티어 배지 (2026-08-03 목업 D 채택).
+              전에는 지름 8px 색 점이 티어의 전부라, 다이아(#3B82F6)와 마스터(#9333EA)를
+              색만으로 구별할 수 없었다(색각 이상 사용자에겐 정보가 아예 사라진다 — DESIGN §6.7).
+              그렇다고 모든 행에 영어 라벨을 달면 목록이 시끄럽다.
+              그래서 **마스터·레전드에만** 글자를 준다 — 물음이 "누가 레전드를 찍었나"였고,
+              레전드가 5,000 XP(총 최대 ≈6,310)라 실제로 드물어 희소성이 유지된다.
+              골드와 플래티넘을 가려 읽을 이유는 없으므로 그 구간은 점 그대로 둔다.
+              시각 문법은 기존 titlePill 과 같은 계열(틴트 배경 + 티어색 글자)이되,
+              **대문자 micro** 로 구분한다 — 한 행에 둘 다 있어도 서로 다른 물건으로 읽힌다.
+              문구는 theme.TIER_LABEL 단일 출처(마이·진척 화면과 같은 어휘). */}
+          <View style={s.nameRow}>
+            <Text style={s.rowName} numberOfLines={1}>
+              {shown}
+              {highlight ? <Text style={{color: ACCENT}}>{'  (나)'}</Text> : null}
+            </Text>
+            {topTier ? (
+              <View
+                testID={`hof-tier-${e.uid}`}
+                style={[
+                  s.tierBadge,
+                  {
+                    backgroundColor: withAlpha(tColor, 0.14),
+                    borderColor: withAlpha(tColor, 0.4),
+                  },
+                ]}>
+                <Text style={[s.tierBadgeTxt, {color: tColor}]}>
+                  {TIER_LABEL[e.rankTier].toUpperCase()}
+                </Text>
+              </View>
+            ) : null}
+          </View>
           {tName ? (
+            // 타이틀 칩은 원래 티어색을 썼는데, 티어 배지가 생기면서 **레전드 행에서 두 칩이
+            // 같은 오렌지**가 됐다(둘 다 tColor). 색이 겹치면 둘 다 안 읽힌다.
+            // 그래서 위계를 나눈다 — **티어=색, 타이틀=무채.** 티어는 드물고(마스터·레전드만)
+            // 랭킹의 주제라 색을 갖고, 타이틀은 부가 정보라 물러난다.
             <View
               style={[
                 s.titlePill,
-                {
-                  backgroundColor: withAlpha(tColor, 0.14),
-                  borderColor: withAlpha(tColor, 0.4),
-                },
+                topTier
+                  ? {backgroundColor: withAlpha(T1, 0.06), borderColor: withAlpha(T1, 0.14)}
+                  : {backgroundColor: withAlpha(tColor, 0.14), borderColor: withAlpha(tColor, 0.4)},
               ]}>
-              <Text style={[s.titlePillTxt, {color: tColor}]} numberOfLines={1}>
+              <Text
+                style={[s.titlePillTxt, {color: topTier ? T2 : tColor}]}
+                numberOfLines={1}>
                 {tName}
               </Text>
             </View>
@@ -602,7 +638,20 @@ const s = StyleSheet.create({
     fontVariant: ['tabular-nums'],
   },
   tierDot: {width: rs(8), height: rs(8), borderRadius: rs(4)},
-  rowName: {fontFamily: FONT, color: T1, fontSize: TYPE.body.fontSize, fontWeight: '700'},
+  // 이름 + 티어 배지 한 줄. 이름이 길면 **이름이 먼저 줄어든다**(flexShrink) — 배지는
+  // 짧고 고정폭이라 밀려나면 안 된다.
+  nameRow: {flexDirection: 'row', alignItems: 'center', gap: rs(7), minWidth: 0},
+  rowName: {fontFamily: FONT, color: T1, fontSize: TYPE.body.fontSize, fontWeight: '700', flexShrink: 1},
+  // 티어 배지(마스터·레전드 전용). titlePill 과 같은 틴트 문법이되 대문자 micro 로
+  // 구분한다 — 한 행에 둘 다 있어도 서로 다른 물건으로 읽힌다.
+  tierBadge: {
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: RADIUS.pill,
+    paddingHorizontal: rs(7),
+    paddingVertical: rv(1),
+    flexShrink: 0,
+  },
+  tierBadgeTxt: {fontFamily: FONT, ...TYPE.micro},
   // 신는 러닝화 — 이름 아래 한 줄. 무채(T3)로 눌러 순위·점수보다 뒤에 읽히게 한다.
   rowShoes: {fontFamily: FONT, color: T3, fontSize: TYPE.label.fontSize, marginTop: 2},
   titlePill: {
