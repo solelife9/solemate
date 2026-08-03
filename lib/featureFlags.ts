@@ -65,8 +65,9 @@ export const REMOTE_PUSH_ENABLED = false;
  *     `docs/privacy.html` 은 제3자 제공·공개를 하지 않는다고 적어 뒀다.
  *  3) 스토어 개인정보 신고서(`docs/store-privacy-labels.md`)에도 이 항목이 없다 —
  *     실제 동작과 어긋난 신고로 제출된다.
- *  4) **그 프로필을 볼 화면이 앱에 없다.** 포트 계약에 읽기 API 자체가 없다
- *     (`lib/cloudPort.ts` 는 put/delete 뿐). 동의만 받고 아무도 못 본다.
+ *  4) ~~그 프로필을 볼 화면이 앱에 없다.~~ → **해소(2026-08-03)**: 뷰어가 붙었다
+ *     (`RunnerProfileScreen.rn.tsx` · `lib/publicProfile.fetchPublicProfile` · `ef39695`).
+ *     감사 시점에는 포트 계약에 읽기 API 자체가 없었다(put/delete 뿐).
  *
  * 이건 AUDIT 1 이 잡아낸 사고(`767032e` — 동의도 화면도 없이 개인정보가 공개 컬렉션에
  * 쌓이던 것)와 **패턴이 같다.** 컬렉션 이름만 `leaderboards` → `profiles` 로 바뀌었다.
@@ -80,12 +81,17 @@ export const REMOTE_PUSH_ENABLED = false;
  *
  * **켜는 조건 셋** — 리더보드와 같다. 하나라도 빠지면 같은 사고가 반복된다.
  *   ① 공개 범위 옵트인 ............ ✅ 완료(SocialConsentScreen · 설정 토글)
- *   ② 프로필을 **볼 화면** ........ ⛔ 미완 — 지금은 읽는 코드가 아예 없다
- *   ③ 처리방침 제3자 공개 조항 .... ⛔ 미완 — 문안은 `docs/legal/social-disclosure.md` 에
- *      준비돼 있고, 공개 저장소 `solelife9/keego-legal` 에 반영해 배포해야 한다(민우님 작업).
- *      이 저장소의 `docs/privacy.html` 만 고치면 공개 URL 은 옛 내용 그대로다.
+ *   ② 프로필을 **볼 화면** ........ ✅ 완료(RunnerProfileScreen, 2026-08-03 `ef39695`)
+ *   ③ 처리방침 제3자 공개 조항 .... ⛔ **미완 — 남은 건 이것 하나다.**
+ *      문안은 `docs/legal/social-disclosure.md` 에 준비돼 있다. 할 일은 둘:
+ *        (a) `docs/privacy.html` 에 '다른 이용자에게 공개되는 항목' 조항을 넣고,
+ *        (b) **공개 저장소 `solelife9/keego-legal` 에 푸시**한다(민우님 작업).
+ *      ⚠️ (b)를 빼먹으면 공개 URL 은 옛 내용 그대로다 — 이 저장소만 고치는 건 고지가 아니다.
+ *      그리고 `docs/store-privacy-labels.md` 수집 표에 공개 프로필 항목을 추가해야 한다.
  *
- * ②③ 이 끝나면 이 값을 true 로 바꾼다. 발행 코드(`lib/publicProfile`)와 동의 화면
+ * ③ 이 끝나면 이 값을 true 로 바꾼다. 발행 코드(`lib/publicProfile`)와 동의 화면
  * (`SocialConsentScreen.rn.tsx`)은 그대로 살아 있다 — 이 값만 바꾸면 켜진다.
+ * 켤 때 `__tests__/socialProfilePublishFlag.test.ts` 가 빨개지는데, **그게 정상이다** —
+ * 그 테스트를 지우지 말고 "무엇을 확인하고 켰는지"를 기대값과 함께 다시 쓴다.
  */
 export const SOCIAL_PROFILE_PUBLISH_ENABLED = false;

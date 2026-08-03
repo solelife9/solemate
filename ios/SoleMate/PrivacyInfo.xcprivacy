@@ -116,6 +116,11 @@
 			<key>NSPrivacyCollectedDataTypeTracking</key>
 			<false/>
 		</dict>
+		<!-- 기기 ID = Firebase Analytics 앱 인스턴스 ID + App Check(DeviceCheck) 증명 토큰.
+		     Linked 를 true 로 두는 것은 **보수적 선택**이다: Analytics 인스턴스 ID 자체는
+		     계정과 잇지 않지만(lib/productAnalytics 가 setUserId 를 쓰지 않는다), App Check
+		     토큰은 인증된 요청에 함께 실려 계정과 결부될 여지가 있다. 식별자는 과소 신고보다
+		     과대 신고가 안전하다 — 사진(수집조차 하지 않는 것)을 신고하던 것과는 다른 문제다. -->
 		<dict>
 			<key>NSPrivacyCollectedDataType</key>
 			<string>NSPrivacyCollectedDataTypeDeviceID</string>
@@ -123,6 +128,7 @@
 			<true/>
 			<key>NSPrivacyCollectedDataTypePurposes</key>
 			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAnalytics</string>
 				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
 			</array>
 			<key>NSPrivacyCollectedDataTypeTracking</key>
@@ -153,9 +159,44 @@
 			<key>NSPrivacyCollectedDataTypeTracking</key>
 			<false/>
 		</dict>
+		<!-- 사용자 입력 텍스트 — 신발 이름·런 메모·닉네임(userBackups/{uid} 에 저장되므로
+		     계정과 연결됨) + 신발 등록 요청(shoe_requests, 2026-08-03 부터 계정 미첨부).
+		     둘이 섞여 있으므로 보수적으로 Linked 로 신고한다. -->
 		<dict>
 			<key>NSPrivacyCollectedDataType</key>
 			<string>NSPrivacyCollectedDataTypeOtherUserContent</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<true/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+			</array>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+		</dict>
+		<!-- 검색 기록 — 러닝화 등록 화면에서 **결과가 0건인 검색어**(search_misses).
+		     Linked=false 인 근거: 2026-08-03(`6852e02`)부터 계정 식별자를 함께 적지 않는다
+		     (services/shoes.ts logSearchMiss · firestore.rules 가 keys 를 ['query','createdAt']
+		     로 강제). 그 전에는 userId 를 붙였고, 그때는 연결됨이 맞았다. -->
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypeSearchHistory</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+			</array>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+		</dict>
+		<!-- 기타 데이터 — 나이·성별(App.tsx 동기 페이로드의 settings.age / settings.sex).
+		     체중·안정시심박은 위 Health 로 덮이지만 나이·성별은 Apple 의 어느 기존 유형에도
+		     들어가지 않는다. 셋 다 칼로리·심박존 계산에만 쓰고 화면·공개 프로필에는 싣지 않는다
+		     (lib/publicProfile 이 구조적으로 배제). userBackups/{uid} 아래 저장되므로 연결됨. -->
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypeOtherDataTypes</string>
 			<key>NSPrivacyCollectedDataTypeLinked</key>
 			<true/>
 			<key>NSPrivacyCollectedDataTypePurposes</key>

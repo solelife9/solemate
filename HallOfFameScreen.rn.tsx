@@ -114,7 +114,7 @@ function GhostRankRow({opacity, alt}: {opacity: number; alt?: boolean}) {
       <GlassEdge glints={false} radius={RADIUS.md} />
       <GhostBar w={rs(18)} />
       <GhostThumb size={34} />
-      <View style={{flex: 1, minWidth: 0}}>
+      <View style={s.rowFill}>
         <GhostBar w={alt ? '42%' : '56%'} />
       </View>
       <GhostBar w={rs(48)} dim style={{marginTop: 0}} />
@@ -270,7 +270,7 @@ export default function HallOfFameScreen({
           </Text>
         </View>
         <View style={[s.tierDot, {backgroundColor: tColor}]} />
-        <View style={{flex: 1, minWidth: 0}}>
+        <View style={s.rowFill}>
           <Text style={s.rowName} numberOfLines={1}>
             {shown}
             {highlight ? <Text style={{color: ACCENT}}>{'  (나)'}</Text> : null}
@@ -365,7 +365,7 @@ export default function HallOfFameScreen({
                 <Text style={s.myPct}>상위 {topPercent}%</Text>
               ) : null}
             </View>
-            <View style={{alignItems: 'flex-end'}}>
+            <View style={s.rowEnd}>
               <Text style={s.myScore}>{formatScore(category, myEntry.score)}</Text>
             </View>
           </View>
@@ -435,11 +435,11 @@ export default function HallOfFameScreen({
             {trends.top.map((t: ShoeTrend, i: number) => (
               <View key={`${t.brand}|${t.model}`} style={s.trendRow}>
                 <Text style={s.trendRank}>{i + 1}</Text>
-                <View style={{flex: 1, minWidth: 0}}>
+                <View style={s.rowFill}>
                   <Text style={s.trendBrand} numberOfLines={1}>{t.brand.toUpperCase()}</Text>
                   <Text style={s.trendModel} numberOfLines={1}>{t.model || t.brand}</Text>
                 </View>
-                <View style={{alignItems: 'flex-end'}}>
+                <View style={s.rowEnd}>
                   <Text style={s.trendCount}>{t.runners}명</Text>
                   {/* 평균 거리는 아는 사람 것만 낸다. 아무도 모르면 이 줄이 빠진다. */}
                   {t.avgKm !== null && (
@@ -458,6 +458,12 @@ export default function HallOfFameScreen({
 
 const s = StyleSheet.create({
   screen: {flex: 1, backgroundColor: BG},
+  // 행 안에서 이름·모델이 남는 폭을 다 쓰되 **줄이 밀려나지 않게** 한다.
+  // minWidth:0 이 없으면 flex 자식의 기본 min-content 폭 때문에 numberOfLines 가
+  // 걸리기 전에 오른쪽 값이 밀린다. 목록 행 3곳이 같은 구조라 한 토큰으로 모은다.
+  rowFill: {flex: 1, minWidth: 0},
+  // 행 오른쪽 값 묶음(점수·인원) — 우측 정렬.
+  rowEnd: {alignItems: 'flex-end'},
   // ScreenHeader 는 자체 GUTTER·상하 패딩을 갖는다 — 이 화면은 ScrollView 컨테이너가
   // 거터·gap 을 이미 주므로 0 으로 상쇄한다(시각 동등).
   header: {paddingHorizontal: 0, paddingVertical: 0},

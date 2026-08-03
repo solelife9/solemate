@@ -117,6 +117,9 @@ export const KAKAO_YELLOW = '#FEE500';
 export const KAKAO_LABEL = '#000000';
 export const NAVER_GREEN = '#03C75A';
 export const NAVER_LABEL = '#FFFFFF';
+// Google "G" 공식 4색(브랜드 가이드라인 — 단색화·재색칠 금지, 2026-08-02 심사 감사 N-3).
+// 네 값이 한 벌이라 배열로 둔다: 하나만 바꾸면 로고가 아니라 위조가 된다.
+export const GOOGLE_G = ['#4285F4', '#34A853', '#FBBC05', '#EA4335'] as const;
 
 // ── rank tier colors (progression Slice A — AUTHORITATIVE) ───────────────────
 // 합성 랭크 티어 색. 진척 엔진/칩/링은 이 토큰만 참조한다(화면·lib 하드코딩 금지).

@@ -10,12 +10,12 @@
 // ============================================================================
 import React, {useState} from 'react';
 import { rf, rs, ri, rv } from './lib/responsive';
-import {View, Pressable, StyleSheet, Platform, ActivityIndicator} from 'react-native';
+import {View, Pressable, StyleSheet, Platform, ActivityIndicator, Linking} from 'react-native';
 import {Text} from './lib/text';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
-import {Button, KeegoWordmark, KakaoMark, NaverMark} from './primitives';
+import {Button, KeegoWordmark, KakaoMark, NaverMark, AppleMark, GoogleMark} from './primitives';
 import {reportIssue} from './lib/crashlytics';
 import {
   BG, ACCENT, BLACK, DANGER, T1, T2, T3, FONT, RADIUS,
@@ -26,6 +26,7 @@ import {
 import type {CloudPort, CloudProvider, CloudUser} from './lib/cloudPort';
 import {authErrorMessage} from './lib/authErrorMessage';
 import {saveCloudAccount} from './lib/cloudAccount';
+import {PRIVACY_URL, TERMS_URL} from './lib/legalLinks';
 
 interface LoginScreenProps {
   cloudPort: CloudPort;
@@ -124,10 +125,13 @@ export function LoginScreen({cloudPort, onSignedIn}: LoginScreenProps) {
           onPress={() => signIn('google')}
           disabled={signingIn}
           iconNode={
-            // 고정 박스 중앙 정렬 — 아이콘(Text 글리프)이 라인박스에 아래가 잘리던 것 방지
+            // 고정 박스 중앙 정렬 — 아이콘이 라인박스에 아래가 잘리던 것 방지
             // (사용자 실기기 제보 2026-07-16: G 하단 클리핑).
-            <View style={st.googleIconBox}>
-              <Ionicons name="logo-google" size={ri(ICON.inline)} color={signingIn ? T3 : T1} />
+            // 마크는 공식 4색 G(primitives.GoogleMark) — 단색 글리프는 구글 브랜드
+            // 가이드라인 위반이다(2026-08-02 심사 감사 N-3). 비활성은 색을 바꾸지 않고
+            // opacity 로만 표현한다(마크를 회색으로 칠하는 것 자체가 위반).
+            <View style={[st.googleIconBox, signingIn && st.markDimmed]}>
+              <GoogleMark size={ri(ICON.inline)} />
             </View>
           }
           style={st.btnGoogle}
@@ -148,7 +152,7 @@ export function LoginScreen({cloudPort, onSignedIn}: LoginScreenProps) {
             {busy === 'apple'
               ? <ActivityIndicator color={BLACK} />
               : <>
-                  <Ionicons name="logo-apple" size={ri(ICON.action)} color={BLACK} />
+                  <AppleMark size={ri(ICON.action)} color={BLACK} />
                   <Text style={[st.btnTxt, {color: BLACK}]}>Apple로 계속하기</Text>
                 </>}
           </Pressable>
@@ -160,6 +164,32 @@ export function LoginScreen({cloudPort, onSignedIn}: LoginScreenProps) {
 
         <Text style={st.footnote}>
           로그인하면 신발·러닝 기록·설정이 안전하게 보관되고, 기기를 바꿔도 그대로 이어져요.
+        </Text>
+
+        {/* 약관·처리방침 고지 — **계정이 만들어지기 전에** 있어야 한다(2026-08-02 심사 감사 M-5).
+            이 화면이 렌더 사다리에서 온보딩보다 앞이라(App.tsx), 여기 링크가 없으면 사용자는
+            어떤 고지도 못 본 채 Firebase 계정을 만들게 된다. App Store 5.1.1(ii) 이고,
+            국내법상으로도 회원가입 시 약관·수집 동의가 먼저다.
+            온보딩의 위치기반서비스 약관 고지(OnboardingScreen)는 그대로 둔다 — 개인위치정보는
+            일반 약관과 구분되는 별도 동의라 두 곳 다 필요하다. */}
+        <Text style={st.legal}>
+          계속하면{' '}
+          <Text
+            style={st.legalLink}
+            accessibilityRole="link"
+            accessibilityLabel="이용약관 열기"
+            onPress={() => { Linking.openURL(TERMS_URL).catch(() => {}); }}>
+            이용약관
+          </Text>
+          {'과 '}
+          <Text
+            style={st.legalLink}
+            accessibilityRole="link"
+            accessibilityLabel="개인정보 처리방침 열기"
+            onPress={() => { Linking.openURL(PRIVACY_URL).catch(() => {}); }}>
+            개인정보 처리방침
+          </Text>
+          에 동의하는 것으로 봅니다.
         </Text>
       </View>
     </View>
@@ -189,4 +219,10 @@ const st = StyleSheet.create({
   btnTxt: {color: T1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600'},
   error: {fontFamily: FONT, fontSize: TYPE.label.fontSize, color: DANGER, textAlign: 'center', marginTop: rv(4)},
   footnote: {fontFamily: FONT, fontSize: TYPE.caption.fontSize, lineHeight: rf(17), color: T3, textAlign: 'center', marginTop: rv(8)},
+  // 법적 고지 — 각주보다 한 단계 더 조용하게(T3 유지, 크기만 낮춤). 링크는 밑줄로만
+  // 구분한다: 색으로 강조하면 무채 액센트 원칙(DESIGN §1)을 깨고 CTA 와 경쟁한다.
+  legal: {fontFamily: FONT, fontSize: TYPE.caption.fontSize, lineHeight: rf(16), color: T3, textAlign: 'center', marginTop: rv(6)},
+  legalLink: {color: T2, textDecorationLine: 'underline'},
+  // 브랜드 마크 비활성 표현 — 색을 바꾸지 않고 투명도만 낮춘다(구글 4색 G 는 재색칠 금지).
+  markDimmed: {opacity: 0.45},
 });

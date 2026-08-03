@@ -70,6 +70,7 @@ import {
   GUTTER,
   SCRIM,
   ICON,
+  GOOGLE_G,
 } from './theme';
 import {tap as hapticTap} from './lib/haptics';
 import {setToastClearance} from './lib/toast';
@@ -1591,6 +1592,63 @@ export function NaverMark({size, color}: {size: number; color: string}) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" accessibilityElementsHidden>
       <SvgPath fill={color} d="M16.273 12.845 7.376 0H0v24h7.727V11.155L16.624 24H24V0h-7.727z" />
+    </Svg>
+  );
+}
+
+/**
+ * Apple 로고 심벌 — **Sign in with Apple 버튼 전용**(심사 4.8 · HIG).
+ *
+ * 왜 아이콘 폰트가 아니라 패스인가: Ionicons 의 `logo-apple` 은 애플이 배포한 마크가 아니라
+ * 유사 도형이다. 애플은 SIWA 버튼에 **자사 제공 로고**(또는 `ASAuthorizationAppleIDButton`)를
+ * 쓰도록 요구하므로, 카카오·네이버와 같은 이유로 공식 지오메트리를 직접 그린다
+ * (2026-08-02 심사 감사 N-1).
+ *
+ * 네이티브 버튼(`AppleAuthenticationButton`)을 쓰지 않는 이유: 그쪽은 높이·라운드·타이포가
+ * 고정이라 다른 3개 로그인 버튼과 어긋난다. 애플은 커스텀 버튼을 허용하되 **로고·문구·
+ * 대비 규칙**을 지킬 것을 요구하고, 이 화면은 그 셋을 이미 지킨다(흰 버튼 + 검정 마크 +
+ * 공식 문구 "Apple로 계속하기").
+ */
+export function AppleMark({size, color}: {size: number; color: string}) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" accessibilityElementsHidden>
+      <SvgPath
+        fill={color}
+        d="M17.564 12.72c-.03-3.06 2.5-4.53 2.61-4.6-1.42-2.08-3.63-2.37-4.42-2.4-1.88-.19-3.67 1.11-4.63 1.11-.95 0-2.42-1.08-3.98-1.05-2.05.03-3.94 1.19-4.99 3.03-2.13 3.7-.54 9.17 1.53 12.17 1.01 1.47 2.22 3.12 3.81 3.06 1.53-.06 2.11-.99 3.96-.99 1.85 0 2.37.99 3.99.96 1.65-.03 2.69-1.5 3.7-2.97 1.17-1.7 1.65-3.35 1.68-3.44-.04-.02-3.22-1.24-3.25-4.89M14.79 3.9c.84-1.02 1.41-2.44 1.25-3.85-1.21.05-2.68.81-3.55 1.83-.78.9-1.46 2.35-1.28 3.73 1.35.11 2.73-.69 3.58-1.71"
+      />
+    </Svg>
+  );
+}
+
+/**
+ * Google "G" 심벌 — **Google 로그인 버튼 전용**(Google 브랜드 가이드라인).
+ *
+ * 가이드라인은 **4색 G 마크**를 요구한다. 단색 글리프(Ionicons `logo-google`)는 위반이며,
+ * 앱스토어 리젝 사유는 아니지만 OAuth 브랜딩 검수에서 지적된다(2026-08-02 심사 감사 N-3).
+ *
+ * 색이 고정이라 `color` prop 을 받지 않는다 — 비활성 상태는 소비처가 opacity 로 표현한다
+ * (마크를 회색으로 칠하는 것 자체가 가이드라인 위반이다).
+ */
+export function GoogleMark({size}: {size: number}) {
+  const [blue, green, yellow, red] = GOOGLE_G;
+  return (
+    <Svg width={size} height={size} viewBox="0 0 48 48" accessibilityElementsHidden>
+      <SvgPath
+        fill={blue}
+        d="M45.12 24.5c0-1.56-.14-3.06-.4-4.5H24v8.51h11.84c-.51 2.75-2.06 5.08-4.39 6.64v5.52h7.11c4.16-3.83 6.56-9.47 6.56-16.17z"
+      />
+      <SvgPath
+        fill={green}
+        d="M24 46c5.94 0 10.92-1.97 14.56-5.33l-7.11-5.52c-1.97 1.32-4.49 2.1-7.45 2.1-5.73 0-10.58-3.87-12.31-9.07H4.34v5.7C7.96 41.07 15.4 46 24 46z"
+      />
+      <SvgPath
+        fill={yellow}
+        d="M11.69 28.18C11.25 26.86 11 25.45 11 24s.25-2.86.69-4.18v-5.7H4.34C2.85 17.09 2 20.45 2 24s.85 6.91 2.34 9.88l7.35-5.7z"
+      />
+      <SvgPath
+        fill={red}
+        d="M24 10.75c3.23 0 6.13 1.11 8.41 3.29l6.31-6.31C34.91 4.18 29.93 2 24 2 15.4 2 7.96 6.93 4.34 14.12l7.35 5.7c1.73-5.2 6.58-9.07 12.31-9.07z"
+      />
     </Svg>
   );
 }

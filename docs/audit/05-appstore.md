@@ -37,20 +37,20 @@
 
 ---
 
-# 1. MAJOR 이하 요약
+# 1. MAJOR 이하 요약 — **N-4 를 뺀 전부 수정 완료(2026-08-03)**
 
-| # | 항목 | 근거 (파일:줄) | 심각도 |
-|---|---|---|---|
-| M-1 | 공개 프로필을 **볼 수 있는 화면이 앱에 없다** — 동의만 받고 아무도 못 본다 | `lib/cloudPort.ts:90-91` · `SocialConsentScreen.rn.tsx:78` | `MAJOR` |
-| M-2 | 사진 신고가 **두 문서에서 정반대** (ASC 답안=수집 / xcprivacy=미수집 / 실제=기기 전용) | `docs/store-privacy-labels.md:27` ↔ `__tests__/nativePermissions.test.ts:138-142` · `lib/backup.ts:17-32` | `MAJOR` |
-| M-3 | 검색 기록이 **xcprivacy 에만 빠져 있다**(ASC 답안엔 있음) | `docs/store-privacy-labels.md:30` ↔ `ios/SoleMate/PrivacyInfo.xcprivacy`(부재) · `firestore.rules:180-188` | `MAJOR` |
-| M-4 | 체중·나이·성별·안정시심박을 클라우드에 올리는데 신고 항목이 지정돼 있지 않다 | `App.tsx:1270` · `docs/store-privacy-labels.md:22-31`(부재) | `MAJOR` |
-| M-5 | 로그인 게이트가 **약관·처리방침 링크 없이** 계정을 만든다 | `LoginScreen.rn.tsx:63-166` · `App.tsx:2257` ↔ `2283` | `MAJOR` |
-| M-6 | 기기 ID — xcprivacy 는 `DeviceID` 선언, ASC 답안은 "UID만" | `ios/SoleMate/PrivacyInfo.xcprivacy` ↔ `docs/store-privacy-labels.md:64` | `MAJOR` |
-| N-1 | Apple 로그인 버튼이 공식 마크가 아니라 Ionicons 글리프다 | `LoginScreen.rn.tsx:151` | `MINOR` |
-| N-2 | '이름(displayName)' 신고 여부가 **"선택"으로 방치**돼 xcprivacy 와 어긋난다 | `docs/store-privacy-labels.md:44` ↔ `ios/SoleMate/PrivacyInfo.xcprivacy`(`Name` 선언) | `MINOR` |
-| N-3 | Google 버튼도 단색 Ionicons 글리프(구글 브랜딩 가이드라인) | `LoginScreen.rn.tsx:130` | `NITPICK` |
-| N-4 | 온보딩 히어로 사진의 사용권 근거가 저장소에 없다 | `assets/onboarding/hero-runner-bw.png` · `OnboardingScreen.rn.tsx` | `NITPICK` |
+| # | 항목 | 근거 (파일:줄) | 심각도 | 상태 |
+|---|---|---|---|---|
+| M-1 | 공개 프로필을 **볼 수 있는 화면이 앱에 없다** — 동의만 받고 아무도 못 본다 | `lib/cloudPort.ts:90-91` · `SocialConsentScreen.rn.tsx:78` | `MAJOR` | ✅ **해결**(다른 세션 `ef39695` — `RunnerProfileScreen`) |
+| M-2 | 사진 신고가 **두 문서에서 정반대** (ASC 답안=수집 / xcprivacy=미수집 / 실제=기기 전용) | `docs/store-privacy-labels.md:27` ↔ `__tests__/nativePermissions.test.ts:138-142` · `lib/backup.ts:17-32` | `MAJOR` | ✅ **해결** |
+| M-3 | 검색 기록이 **xcprivacy 에만 빠져 있다**(ASC 답안엔 있음) | `docs/store-privacy-labels.md:30` ↔ `ios/SoleMate/PrivacyInfo.xcprivacy`(부재) · `firestore.rules:180-188` | `MAJOR` | ✅ **해결**(+연결 여부 정정) |
+| M-4 | 체중·나이·성별·안정시심박을 클라우드에 올리는데 신고 항목이 지정돼 있지 않다 | `App.tsx:1270` · `docs/store-privacy-labels.md:22-31`(부재) | `MAJOR` | ✅ **해결** |
+| M-5 | 로그인 게이트가 **약관·처리방침 링크 없이** 계정을 만든다 | `LoginScreen.rn.tsx:63-166` · `App.tsx:2257` ↔ `2283` | `MAJOR` | ✅ **해결** |
+| M-6 | 기기 ID — xcprivacy 는 `DeviceID` 선언, ASC 답안은 "UID만" | `ios/SoleMate/PrivacyInfo.xcprivacy` ↔ `docs/store-privacy-labels.md:64` | `MAJOR` | ✅ **해결** |
+| N-1 | Apple 로그인 버튼이 공식 마크가 아니라 Ionicons 글리프다 | `LoginScreen.rn.tsx:151` | `MINOR` | ✅ **해결** |
+| N-2 | '이름(displayName)' 신고 여부가 **"선택"으로 방치**돼 xcprivacy 와 어긋난다 | `docs/store-privacy-labels.md:44` ↔ `ios/SoleMate/PrivacyInfo.xcprivacy`(`Name` 선언) | `MINOR` | ✅ **해결** |
+| N-3 | Google 버튼도 단색 Ionicons 글리프(구글 브랜딩 가이드라인) | `LoginScreen.rn.tsx:130` | `NITPICK` | ✅ **해결** |
+| N-4 | 온보딩 히어로 사진의 사용권 근거가 저장소에 없다 | `assets/onboarding/hero-runner-bw.png` · `OnboardingScreen.rn.tsx` | `NITPICK` | ⛔ **`[민우 확인]`** — 출처를 아는 사람만 판정 가능 |
 
 **통과(지적 없음):** 권한 사용 설명 8종 · 미사용 권한 · 백그라운드 위치·오디오 정당성 ·
 계정 삭제 인앱 완결 · Sign in with Apple 제공 · 더미 데이터 노출 경로 · 상표(로고·제품사진·
@@ -571,15 +571,108 @@ NIKE·HOKA·ADIDAS 가 **텍스트로만** 보이고 로고·제품 사진은 �
 허용하던 패턴이라 같은 구문에 플래그가 하나 더 붙자 깨졌다. 검사 의도("이 플래그를
 featureFlags 에서 가져오는가")는 그대로다.
 
-## 남은 것 (이번 조치 범위 밖)
+---
 
-- **설정의 '프로필 공개' 토글이 무력해졌다.** `ProfileScreen.rn.tsx:1043` 의 토글은 여전히
-  보이지만 발행이 꺼져 있어 켜도 아무 데도 올라가지 않는다. 개인정보 관점에서는 **안전한
-  쪽으로 실패**하지만(공개를 눌러도 공개되지 않는다) 유령 어포던스다. 토글을 감추려면
-  `ProfileScreen` 의 prop 배선과 테스트 3건을 함께 손봐야 해서 블로커 범위 밖으로 뒀다.
-  `MINOR` — 리젝 사유는 아니다.
-- **MAJOR 6건·MINOR 2건·NITPICK 2건은 그대로다**(§1). M-2~M-4·N-2 는 같은 문서를 한 번에
-  손보는 20분 작업이고, M-5(로그인 화면 약관 링크)·N-1(Apple 공식 마크)은 코드 수정이다.
+# 9. 조치 내역 2차 (2026-08-03 — 나머지 전부)
+
+## 9.0 먼저 한 것: 선제검사 — **정답이 두 군데 바뀌어 있었다**
+
+고치기 전에 현재 코드를 다시 읽었고, **감사 시점(08-02)의 정답이 이미 낡아 있었다.**
+그대로 "감사서에 적힌 대로" 고쳤으면 새 오답을 만들 뻔했다.
+
+| 감사 시점(08-02) | 지금(08-03) | 출처 |
+|---|---|---|
+| 검색어·신발요청에 `userId` 가 함께 저장됨 → **연결됨**으로 신고 | `userId` **제거됨** → **연결 안 됨**이 정답 | 다른 세션 `6852e02` |
+| 공개 프로필을 볼 화면이 없음(M-1) | 뷰어 **완성**(`RunnerProfileScreen`) | 다른 세션 `ef39695` |
+
+→ 검색 기록을 `Linked: false` 로 선언했고, `SOCIAL_PROFILE_PUBLISH_ENABLED` 주석의 켜는 조건
+②를 ✅ 로 갱신했다(**남은 건 ③ 처리방침 배포 하나**).
+
+## 9.1 신고 정합성 (M-2·M-3·M-4·M-6·N-2)
+
+`ios/SoleMate/PrivacyInfo.xcprivacy` 에 **2종 추가**:
+- `SearchHistory` — **Linked: false**. 근거: `6852e02` 이후 계정 미첨부이고, `firestore.rules`
+  가 `keys().hasOnly(['query','createdAt'])` 로 **서버에서 강제**한다(코드가 되돌아가도 거부된다).
+- `OtherDataTypes` — Linked: true. 나이·성별(`App.tsx:1270`). 체중·안정시심박은 `Health` 가 덮는다.
+- `DeviceID` 에 `Analytics` 목적 추가(기존 `AppFunctionality` 유지).
+
+`docs/store-privacy-labels.md`:
+- **사진 행 삭제** — 백업 페이로드에 이미지가 없다(`lib/backup.ts`). *과잉 신고도 부정확한
+  신고다*: 심사관이 "사진을 어디에 올리느냐"고 물으면 답이 없다.
+- **이름 행 추가**(선택 → 확정) · **기타 데이터 유형 행 추가**(나이·성별) ·
+  **기기 ID 행 추가** · 검색 기록·제품 상호작용을 **연결 안 됨**으로 정정.
+- Play 표도 같은 내용으로 정합화(사진 = 아니오, 기타 정보 = 예, 앱 상호작용 = 예).
+
+## 9.2 로그인 게이트 (M-5)
+
+`LoginScreen.rn.tsx` 에 약관·처리방침 링크를 넣었다 — *"계속하면 [이용약관]과 [개인정보
+처리방침]에 동의하는 것으로 봅니다."* `lib/legalLinks` 의 공개 URL 을 `Linking` 으로 연다.
+
+디자인은 **색이 아니라 밑줄로** 구분했다(무채 액센트 원칙 — 링크를 파랗게 칠하면 CTA 와
+경쟁한다). 온보딩의 위치기반서비스 약관 고지는 **그대로 뒀다** — 개인위치정보는 일반 약관과
+구분되는 별도 동의라 두 곳 다 필요하다.
+
+## 9.3 브랜드 마크 (N-1·N-3)
+
+`primitives.tsx` 에 `AppleMark`·`GoogleMark` 신설 — `KakaoMark`·`NaverMark` 와 같은 관례다.
+Ionicons 의 `logo-apple`·`logo-google` 은 각 사가 배포한 마크가 아니라 유사 도형이다.
+
+- **Apple**: 흰 버튼 위 검정 공식 마크(4.8 · HIG). 네이티브 `AppleAuthenticationButton` 을
+  쓰지 않은 이유는 높이·라운드·타이포가 고정이라 나머지 3개 버튼과 어긋나기 때문이고,
+  애플은 커스텀 버튼을 허용하되 **로고·문구·대비**를 요구하는데 이 화면은 셋 다 지킨다.
+- **Google**: 공식 4색 G. `color` prop 을 **받지 않는 시그니처**로 만들어 재색칠을 구조적으로
+  막았고, 비활성은 `opacity` 로만 표현한다(마크를 회색으로 칠하는 것 자체가 위반이다).
+- 색은 `theme.ts` 의 `GOOGLE_G` 토큰으로 올렸다 — 프리미티브 raw hex 0 원칙(CLAUDE.md).
+  이걸 안 하면 `slice-3-design` 회귀 가드가 빨개진다(실제로 한 번 걸렸고, 그게 옳은 동작이다).
+
+**렌더해서 눈으로 확인했다** — 두 마크 모두 정상 지오메트리(애플 = 잎 + 베어문 자국,
+구글 = 4색 G). 경로가 틀린 로고가 나가면 상표 문제가 되므로 코드만 보고 넘기지 않았다.
+
+## 9.4 장기 운영 가드 — **이게 이번 조치의 핵심이다**
+
+> 민우님 지시: *"나중에 길게 운영했을 때 문제 생기지 않도록 먼저 선제검사하고 미리 잘 만들어줘"*
+
+이 프로젝트의 개인정보 신고는 **두 번 낡았고 두 번 다 같은 방식**이었다 — 검색 기록(07-19
+초안 → 07-30 정정), Analytics(07-19 초안 → 08-02 정정). 둘 다 *코드가 나중에 바뀌었는데 문서를
+안 고쳐서*였고, 둘 다 사람이 우연히 읽다가 발견했다. **세 번째를 기다릴 이유가 없다.**
+
+`__tests__/privacyLabelsSync.test.ts` 신설 — 기계가 대조한다:
+
+| 검사 | 무엇을 막나 |
+|---|---|
+| 문서의 정본 목록(```privacy-labels 블록) **==** xcprivacy 선언 집합 | 두 자료가 조용히 갈라지는 것 |
+| 정본 목록의 각 항목이 **문서 본문 표에도** 있는가 | 목록만 고치고 표(=ASC 에 옮겨 적을 실물)를 빠뜨리는 것 |
+| 코드에 수집 지점이 있으면 그 유형이 선언돼 있는가 (7규칙) | **SDK 를 새로 붙이고 신고를 잊는 것 — B-2 의 재발** |
+| 사진: 백업 페이로드에 이미지가 없으면 신고도 없어야 | 과잉 신고(M-2 의 재발) + 사진 백업을 만들면 먼저 빨개짐 |
+| 세 타깃 `NSPrivacyTracking: false` | 추적 신고가 조용히 뒤집히는 것 |
+
+코드→선언 규칙 7개는 `조건(코드의 사실) → 기대(선언)` 구조라 **그 수집을 그만두면 규칙이
+스스로 잠든다** — 죽은 검사가 쌓이지 않는다.
+
+**가드가 실제로 잡는지 검증했다**: 정본 목록에서 `SearchHistory` 한 줄을 지우고 돌리자
+해당 검사만 빨개졌고(`1 failed`), 되돌리자 다시 그린이 됐다. 통과하는 걸 확인만 하고
+넘어가면 "아무것도 검사하지 않는 테스트"가 남는다.
+
+`__tests__/LoginScreen.test.tsx` 에 심사 컴플라이언스 4건 추가 — 약관 고지 문구·**링크가
+실제로 공개 URL 을 여는지**(글자만 적어두는 회귀 방지)·공식 마크 사용·구글 4색 유지.
+
+## 9.5 남은 것
+
+- **`[민우 확인]` N-4** — `assets/onboarding/hero-runner-bw.png` 의 출처·라이선스.
+  저장소에 근거가 없어 코드로는 판정 불가다. 직접 촬영이거나 상업적 사용이 허용된 소스인지
+  확인해 주시면 된다. 애매하면 브랜드 정체성상(2026-07-10 '비주얼 없음' 결정) 빼는 쪽이
+  일관되기도 하다.
+- **설정의 '프로필 공개' 토글이 무력하다.** `ProfileScreen.rn.tsx:1043` 의 토글은 보이지만
+  발행이 꺼져 있어 켜도 아무 데도 올라가지 않는다. 개인정보 관점에서는 **안전한 쪽으로
+  실패**하지만(공개를 눌러도 공개되지 않는다) 유령 어포던스다. `MINOR` — 리젝 사유는 아니고,
+  ③(처리방침 배포)이 끝나 플래그를 켜면 저절로 해소된다. 그 전에 감추려면 `ProfileScreen`
+  prop 배선과 테스트 3건을 함께 손봐야 한다.
+- **③ 처리방침 제3자 공개 조항 배포** — 소셜을 여는 마지막 한 칸. 코드가 아니라 민우님 작업이다
+  (`docs/legal/social-disclosure.md` 문안 → `docs/privacy.html` → **`solelife9/keego-legal` 푸시**).
+
+---
+
+*게이트(2차 조치 후): `tsc` **0 에러** · `lint` **0 에러** · **274스위트 3,067테스트** — 전부 그린*
 
 ---
 
