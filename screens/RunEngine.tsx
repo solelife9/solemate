@@ -251,6 +251,22 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
   const permRef=useRef<RunPermissions>({foreground:true,background:false});
   // 이어 달리기 시드를 마운트당 1회만 적용하기 위한 가드(짧은 런 '계속 달리기' 재시작과 분리).
   const seededRef=useRef(false);
+  /**
+   * **이 화면 인스턴스가 엔진을 시작했는가.** beginRun 이 runTracker.start() 를 부른 뒤에만 true.
+   *
+   * 왜 필요한가(2026-08-04 QA 감사 Q-1, BLOCKER): runTracker 는 프로세스 싱글턴이고
+   * (lib/runTracker.ts 하단), 누적 상태를 지우는 곳은 start() 하나뿐이다 — stop() 은
+   * active 플래그만 내리고 거리·t0·경로를 그대로 둔다("저장을 위해 남긴다"는 계약).
+   * 그런데 위치 권한이 거부되면 아래 마운트 효과가 beginRun 을 부르지 않고 빠져나간다.
+   * 그 상태에서 종료를 누르면 finishRun 이 **직전 러닝이 남긴 값**을 읽어 새 기록으로
+   * 저장했다 — 같은 러닝이 두 건이 되고 신발 거리가 두 번 차감된다(Iron Law 위반).
+   * 화면엔 0.00km 가 떠 있어 사용자는 무엇이 저장됐는지도 알 수 없었다.
+   *
+   * 그래서 종료 경로는 "엔진이 내 것인가"를 먼저 묻는다. 싱글턴을 건드려 고치지 않는 이유는
+   * stop() 이 데이터를 남기는 것 자체가 저장 흐름의 전제이기 때문이다 — 소유권을 아는 쪽은
+   * 엔진이 아니라 화면이다.
+   */
+  const engineStartedRef=useRef(false);
   // per-km 스플릿 누적(런 동안)과 마지막 km 경계의 시각/고도(구간 페이스·고도상승 계산용).
   const splitsRef=useRef<{km:number;paceSec:number;elevM:number}[]>([]);
   const lastSplitRef=useRef({elapsed:0,elevM:0});
@@ -285,7 +301,12 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
         setKm(s.dist);setElapsed(s.elapsed);setCurrentPaceSec(s.currentPaceSecPerKm);
         elapsedRef.current=s.elapsed;
         setPaused(s.paused);setAutoPaused(s.autoPaused);
-        setGpsStalled(s.stalled);setPermLost(s.permissionRevoked);setSnapshotFailing(s.snapshotFailing);
+        setGpsStalled(s.stalled);setSnapshotFailing(s.snapshotFailing);
+        // permLost 는 **두 곳에서** 온다: 주행 중 회수(엔진이 안다)와 시작 시 거부(화면만 안다).
+        // 예전엔 엔진 값을 그대로 대입해서, 시작 거부 상태로 일시정지를 누르는 순간
+        // (togglePause → emitState → permissionRevoked=false) 배너가 조용히 사라졌다.
+        // 내리는 건 명시적 지점(재허용 복귀·beginRun)이 하고, 여기선 올리기만 한다.
+        if(s.permissionRevoked)setPermLost(true);
         if(!baroAvail.current)setElevGain(s.elevGainM); // 기압계 가용 시 GPS 고도 양보(baro 권위)
         setAccuracyM(s.accuracyM);
         // 지도는 일시정지에서만 렌더된다(mapShown = uiPaused && …) — 그때만 경로 스냅샷을
@@ -613,6 +634,8 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
       runTracker.setTrackMeta({lapM:track!.lapM,lapTimes:[],locked:false});
     }
     }
+    // 엔진이 이 화면 것으로 초기화됐다 — 이 시점부터만 종료/저장이 엔진 값을 읽어도 된다(Q-1).
+    engineStartedRef.current=true;
     // 케이던스(걸음수): OS 걸음 센서(CMPedometer)의 누적 걸음수를 **주기 조회(폴링)**로
     // 받아 분당 비율 spm 을 산출한다. watchStepCount 스트림은 expo-sensors 네이티브가
     // OnAppEntersBackground 에서 stopUpdates() 해 화면을 잠그면(주머니 러닝) 끊긴다 —
@@ -726,6 +749,40 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
   }),[]);
 
   async function finishRun(){
+    // ── 엔진 소유권 확인이 가장 먼저다(Q-1) ──────────────────────────────────
+    // 엔진을 시작한 적이 없으면(위치 권한 거부로 beginRun 미도달, 또는 beginRun 이 start()
+    // 전에 실패) 아래 getDistanceKm()/getElapsedFinal() 은 **직전 러닝의 값**을 돌려준다.
+    // 그걸 저장하면 같은 러닝이 두 건이 된다. 저장 경로를 아예 타지 않고 닫는다.
+    if(!engineStartedRef.current){
+      stop();
+      if(resume){
+        // '이어 달리기'가 시작에 실패한 경우 — **복구하려던 기록은 스냅샷에 그대로 있다.**
+        // 여기서 버리면 크래시로 잃을 뻔한 러닝을 우리 손으로 지우는 셈이다. 이어 달리는 것만
+        // 불가능한 것이지 기록이 없는 게 아니므로, 검토 화면으로 넘겨 저장/버리기를 사용자가
+        // 고르게 한다(fin* 는 이미 스냅샷 값으로 초기화돼 있다).
+        if(trackMode&&resume.track){
+          const tk=resume.track;
+          setFinKm((tk.lapTimes.length*tk.lapM)/1000);
+          setFinPaceTrack(lapsToTrack(tk.lapTimes,tk.lapM/1000));
+        }
+        setPhase('done');
+        showDialog(
+          '이어 달릴 수 없어요',
+          permLost
+            ? '위치 권한이 없어 이어 달리기를 시작하지 못했어요. 여기까지의 기록은 저장할 수 있어요.'
+            : '러닝을 다시 시작하지 못했어요. 여기까지의 기록은 저장할 수 있어요.',
+        );
+        return;
+      }
+      showDialog(
+        '기록된 러닝이 없어요',
+        permLost
+          ? '위치 권한이 없어 이번 러닝은 기록되지 않았어요. 설정에서 위치를 허용하면 다음부터 기록할 수 있어요.'
+          : '러닝이 시작되지 않아 저장할 기록이 없어요.',
+        [{text:'확인',onPress:()=>{void clearSnapshot();onDiscard();}}],
+      );
+      return;
+    }
     // 최종 거리/시간. 트랙 모드는 랩수×확정랩거리(GPS 누적 아님), 그 외는 엔진 누적거리.
     const ft=runTracker.getElapsedFinal();
     const fk=trackMode?(lapTimesRef.current.length*lapMRef.current)/1000:runTracker.getDistanceKm();

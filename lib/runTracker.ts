@@ -841,6 +841,13 @@ class RunTracker {
    * 정지·일시정지 같은 분기점에서는 force 로 즉시 확정한다.
    */
   persist(opts?: {force?: boolean}) {
+    // 정지된 엔진은 스냅샷을 쓰지 않는다(2026-08-04 QA 감사 Q-1 동반 수정).
+    // stop() 은 active 를 내리기 *전에* 마지막 저장을 하므로 정상 경로는 영향이 없다.
+    // 막는 것은 이 경로다: 러닝이 끝난 뒤(또는 권한 거부로 시작조차 못 한 채) 화면이
+    // togglePause() 를 부르면 enterPause 가 persist 를 탄다 — 그러면 **이미 저장이 끝난
+    // 직전 러닝**(혹은 t0=0 인 빈 상태)이 스냅샷으로 되살아나, 다음 실행에서 "완료하지
+    // 않은 러닝이 있어요"로 떠 같은 기록을 한 번 더 저장할 수 있게 된다.
+    if (!this.active) return;
     const force = !!opts?.force;
     const now = this.now();
     // 스칼라 쓰기 스로틀 — 1Hz fix 와 3초 인터벌이 겹쳐 들어와도 실제 기록은 이 주기.
