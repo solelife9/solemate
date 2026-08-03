@@ -110,15 +110,18 @@ function hasEarlyReplacement(ctx: ProgressionContext): boolean {
   });
 }
 
-// ── 은퇴(Hall of Shoes) 지표 — 권위=ctx.retirementCount/retirementGrades ─────────
-// 신발 플래그가 아니라 영속 은퇴 레코드(progression_v1.retiredShoes)로 구동(날조 금지).
-/** 실제 은퇴(영속 레코드) 수 — 누락 → 0. */
+// ── 은퇴(Hall of Shoes) 지표 — 권위=ctx.wornRetirement* ──────────────────────────
+// 신발 플래그가 아니라 영속 은퇴 레코드(progression_v1.retiredShoes)로 구동한다.
+// 2026-08-03: 거기서 한 겹 더 조인다 — **이 앱에서 실제로 신고 달린 신발의 은퇴만** 센다.
+// 은퇴 게이트(수명 도달)의 usedKm 에 자기 신고값 start_km 이 섞여, 런 0건으로도
+// 은퇴가 가능했고 등급까지 'perfect' 로 찍혔다(context.ts wornRetirementGrades 주석).
+/** 실제로 신고 달린 신발의 은퇴 수 — 누락 → 0. */
 function retirementCount(ctx: ProgressionContext): number {
-  return nonNeg(ctx?.retirementCount ?? 0);
+  return nonNeg(ctx?.wornRetirementCount ?? 0);
 }
-/** 은퇴 등급 목록(방어적 — 누락/비배열 → []). */
+/** 위와 같은 필터를 통과한 은퇴 등급 목록(방어적 — 누락/비배열 → []). */
 function retirementGrades(ctx: ProgressionContext): RetirementGrade[] {
-  const g = ctx?.retirementGrades;
+  const g = ctx?.wornRetirementGrades;
   return Array.isArray(g) ? g.filter(Boolean) : [];
 }
 /** smart 이상 등급으로 교체한 은퇴 수(perfect/hallOfFame 포함). */

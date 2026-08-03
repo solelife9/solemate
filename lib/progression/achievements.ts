@@ -53,7 +53,10 @@ function maxShoeKm(ctx: ProgressionContext): number {
 
 // ── 은퇴 집계 ──────────────────────────────────────────────────────────────────
 function retirementCount(ctx: ProgressionContext): number {
-  return nonNeg(ctx?.retirementCount ?? 0);
+  // 2026-08-03: 전시용 retirementCount 가 아니라 **실제로 신고 달린** 은퇴만 센다.
+  // 은퇴 게이트가 자기 신고값(start_km)으로 통과 가능해 retire_1/3/5/10 = 1,500 XP 가
+  // 런 0건으로 날조됐다(context.ts wornRetirementGrades 주석 참조).
+  return nonNeg(ctx?.wornRetirementCount ?? 0);
 }
 
 // ── 팩토리 헬퍼 ────────────────────────────────────────────────────────────────

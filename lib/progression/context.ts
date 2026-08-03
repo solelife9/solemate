@@ -294,6 +294,20 @@ export function buildContext(
     .filter(Boolean);
   const completedChallengeCount = challengeList.filter(c => c?.completed === true).length;
 
+  // ── 은퇴 중 '실제로 신고 달린' 것만 (2026-08-03) ─────────────────────────────
+  // 은퇴 플로우는 수명 도달(atLifespan)에서만 열리는데, 그 판정의 usedKm 은
+  // `start_km + 런` 이고 start_km 은 **이용자가 직접 입력하는 값**이다. 그래서
+  // `start_km=600 / max_km=600` 으로 등록하면 런 한 건 없이 즉시 은퇴할 수 있고,
+  // closeness 가 1.0 이라 등급까지 'perfect' 로 매겨진다 — retire_1/3/5/10 합계
+  // 1,500 XP 와 명예의 전당·품질 타이틀이 통째로 날조 가능했다.
+  // 전시용(retirementGrades)은 그대로 두고, **업적·타이틀이 볼 목록만** 여기서 거른다.
+  const wornRetirementGrades: RetirementGrade[] = [];
+  for (const r of retiredList) {
+    if (!r || typeof r.shoeId !== 'string' || !r.shoeId) continue;
+    if ((perShoe[r.shoeId]?.runs ?? 0) <= 0) continue; // 이 앱에서 한 번도 안 신었다
+    wornRetirementGrades.push((r.grade as RetirementGrade) ?? 'standard');
+  }
+
   // ── 베이스 컨텍스트(2-pass: XP 먼저 0, 그 다음 실제 합산) ─────────────────────
   const baseCtx: ProgressionContext = {
     now: safeNow,
@@ -317,6 +331,8 @@ export function buildContext(
     retiredShoeCount,
     retirementCount,
     retirementGrades,
+    wornRetirementCount: wornRetirementGrades.length,
+    wornRetirementGrades,
     perShoe,
     earnedTitleKeys,
     earnedTitleCount: earnedTitleKeys.length,

@@ -222,8 +222,21 @@ export interface ProgressionContext {
    */
   wornShoeCount: number;
   retiredShoeCount: number;
+  /**
+   * 은퇴 레코드 전부. **전시(명예의 전당)용 진실**이라 거르지 않는다 —
+   * 사용자가 자기 기록을 보는 데는 문제가 없다.
+   * ⚠️ 업적·타이틀 기준으로는 쓰지 말 것: 수명 도달 판정에 자기 신고값(start_km)이
+   * 섞여서, `start_km=600 / max_km=600` 으로 등록하면 **런 0건에 즉시 은퇴 가능**하다.
+   */
   retirementCount?: number;
   retirementGrades?: RetirementGrade[];
+  /**
+   * **이 앱에서 실제로 신고 달린** 신발의 은퇴만 센다(perShoe.runs > 0).
+   * 업적 retire_*·명예의 전당 타이틀은 이 값을 쓴다 — 등록·수동 입력만으로는 안 오른다.
+   */
+  wornRetirementCount?: number;
+  /** 위와 같은 필터를 통과한 은퇴의 등급 — 품질 기반 타이틀(injury_iron 등)이 쓴다. */
+  wornRetirementGrades?: RetirementGrade[];
   perShoe: Record<string, PerShoeStats>;
   /** @deprecated 역호환 전용(타이틀 시스템 잔재). */
   earnedTitleKeys: string[];

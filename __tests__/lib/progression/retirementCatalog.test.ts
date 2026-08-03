@@ -61,9 +61,31 @@ function recordsByGrade(dist: Partial<Record<RetirementGrade, number>>): Retired
   return out;
 }
 
-/** 영속 은퇴 레코드만 가진 컨텍스트(런/신발 없음 — 은퇴 축만 격리 검증). */
+/**
+ * 은퇴 레코드 + **그 신발로 실제 달린 런**을 함께 가진 컨텍스트.
+ *
+ * 2026-08-03: 은퇴 업적·타이틀의 기준이 wornRetirementCount 로 바뀌었다 —
+ * 이 앱에서 한 번도 신지 않은 신발의 은퇴는 세지 않는다. 은퇴 게이트(수명 도달)의
+ * usedKm 에 자기 신고값(start_km)이 섞여 **런 0건으로도 은퇴가 가능했기** 때문이다.
+ * 그래서 사다리를 검증하려면 레코드마다 런이 하나씩 있어야 한다.
+ */
 function ctxWithRetired(records: RetiredShoeRecord[]): ProgressionContext {
-  return buildContext([], [], [], [], NOW, records);
+  const shoes = records.map(r => ({
+    id: r.shoeId, name: r.name, max_km: 600, start_km: 0, retired: true,
+  }));
+  const runs = records.map((r, i) => ({
+    id: `run-${r.shoeId}`, shoe_id: r.shoeId, km: 5, run_date: `2026-04-${String(i + 1).padStart(2, '0')}`,
+  }));
+  return buildContext(runs as never, shoes as never, [], [], NOW, records);
+}
+
+/** 은퇴 레코드는 있는데 **한 번도 신지 않은** 경우(날조 시나리오). */
+function ctxRetiredButNeverRun(records: RetiredShoeRecord[]): ProgressionContext {
+  const shoes = records.map(r => ({
+    // start_km 만으로 수명을 채워 은퇴 게이트를 통과시킨 신발 — 실제 주행은 0.
+    id: r.shoeId, name: r.name, max_km: 600, start_km: 600, retired: true,
+  }));
+  return buildContext([], shoes as never, [], [], NOW, records);
 }
 
 // ============================================================================
@@ -290,5 +312,43 @@ describe('은퇴 타이틀 사다리', () => {
       'retire_perfect',
       'retire_keep_going',
     ].forEach(k => expect(keys).not.toContain(k));
+  });
+});
+
+// ============================================================================
+// 날조 차단 — 은퇴는 '실제로 신고 달린' 신발만 센다 (2026-08-03)
+// ============================================================================
+// 은퇴 플로우는 수명 도달(atLifespan)에서만 열리는데, 그 판정의 usedKm 은
+// `start_km + 런` 이고 **start_km 은 이용자가 직접 입력한다.** 그래서
+// `start_km=600 / max_km=600` 으로 등록하면 런 한 건 없이 바로 은퇴시킬 수 있었다.
+// 그렇게 얻어지던 것: retire_1(150)+retire_3(250)+retire_5(400)+retire_10(700)=1,500 XP,
+// 명예의 전당 타이틀 사다리, 그리고 closeness 가 1.0 이라 **'perfect' 등급**까지 붙어
+// 품질 기반 타이틀(injury_iron 등)도 함께 열렸다.
+describe('은퇴 업적은 실제 주행 없이는 열리지 않는다', () => {
+  test('start_km 으로만 수명을 채운 10켤레 은퇴 — 은퇴 업적 0건', () => {
+    const ctx = ctxRetiredButNeverRun(retiredRecords(10, 'perfect'));
+    // 전시용 카운트는 그대로다(명예의 전당은 사용자 기록을 다 보여준다).
+    expect(ctx.retirementCount).toBe(10);
+    // 그러나 업적·타이틀이 보는 값은 0이다.
+    expect(ctx.wornRetirementCount).toBe(0);
+    const keys = evaluateAchievements(ctx);
+    for (const k of ['retire_1', 'retire_3', 'retire_5', 'retire_10']) {
+      expect(keys).not.toContain(k);
+    }
+  });
+
+  test("'perfect' 등급도 주행이 없으면 품질 타이틀로 이어지지 않는다", () => {
+    const ctx = ctxRetiredButNeverRun(retiredRecords(5, 'perfect'));
+    expect(ctx.wornRetirementGrades).toEqual([]);
+    const titles = evaluateTitles(ctx);
+    expect(titles).not.toContain('hall_of_shoes_1');
+  });
+
+  test('같은 은퇴라도 그 신발로 달렸으면 정상 인정된다', () => {
+    const ctx = ctxWithRetired(retiredRecords(3, 'perfect'));
+    expect(ctx.wornRetirementCount).toBe(3);
+    const keys = evaluateAchievements(ctx);
+    expect(keys).toContain('retire_1');
+    expect(keys).toContain('retire_3');
   });
 });

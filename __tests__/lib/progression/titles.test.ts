@@ -185,7 +185,7 @@ describe('shoeManagement 사다리', () => {
     const keego = emptyCtx({
       wornShoeCount: 10,
       perShoe: perShoeMap(healthyShoe('a', daysAgo(365))),
-      retirementCount: 3,
+      wornRetirementCount: 3,
     });
     expect(evaluateTitles(keego)).toContain('keego_master');
     // Keep Going 은 은퇴 5켤레 필요 — 3켤레로는 잠금.
@@ -193,7 +193,7 @@ describe('shoeManagement 사다리', () => {
     const keepGoing = emptyCtx({
       wornShoeCount: 10,
       perShoe: perShoeMap(healthyShoe('a', daysAgo(365))),
-      retirementCount: 5,
+      wornRetirementCount: 5,
     });
     expect(evaluateTitles(keepGoing)).toContain('keep_going');
     // 은퇴는 충분해도 컬렉션(10켤레) 게이트 미충족이면 KEEGO Master 잠금.
@@ -201,7 +201,7 @@ describe('shoeManagement 사다리', () => {
       emptyCtx({
         wornShoeCount: 5,
         perShoe: perShoeMap(healthyShoe('a', daysAgo(365))),
-        retirementCount: 3,
+        wornRetirementCount: 3,
       }),
     );
     expect(fewShoes).not.toContain('keego_master');
@@ -270,8 +270,8 @@ describe('injuryPrevention 사다리', () => {
     const healthy = (firstWorn: string, grades: string[] = []) =>
       emptyCtx({
         perShoe: perShoeMap(healthyShoe('a', firstWorn)),
-        retirementGrades: grades as never,
-        retirementCount: grades.length,
+        wornRetirementGrades: grades as never,
+        wornRetirementCount: grades.length,
       });
     // Expert: 6개월 건강 유지만으로 충족.
     expect(evaluateTitles(healthy(daysAgo(182)))).toContain('injury_prevention_expert');
