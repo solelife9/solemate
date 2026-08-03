@@ -4,7 +4,7 @@
  * 어떤 실패도 빈 문자열로 조용히 떨어져 러닝 저장을 막지 않는다.
  * @format
  */
-import {formatGeoLabelKo, reverseGeoLabelKo} from '../../lib/geocode';
+import {formatGeoLabelKo, reverseGeoLabelKo, GEOCODE_TIMEOUT_MS} from '../../lib/geocode';
 import * as Location from 'expo-location';
 
 describe('formatGeoLabelKo — "동네, 도시" 라벨', () => {
@@ -44,5 +44,30 @@ describe('reverseGeoLabelKo — OS 지오코더 배선·실패 폴백', () => {
     await expect(reverseGeoLabelKo(0, 0)).resolves.toBe('');
     (Location.reverseGeocodeAsync as jest.Mock).mockRejectedValue(new Error('no geocoder'));
     await expect(reverseGeoLabelKo(0, 0)).resolves.toBe('');
+  });
+  // QA 감사 Q-3: 완주 저장 경로가 이 호출을 **기다린다**(저장 직전 폴백). 그 폴백이 도는
+  // 조건이 "첫 fix 지오코딩 실패" = 네트워크 없음 이라, 응답하지 않는 지오코더는 곧 저장이
+  // 멈추는 것이었다. 제한 시간은 모듈이 스스로 지킨다 — 호출부가 기다리든 말든 안전하게.
+  test('응답하지 않는 지오코더도 제한 시간 안에 빈 문자열로 끝난다(저장이 멈추지 않는다)', async () => {
+    jest.useFakeTimers();
+    try {
+      (Location.reverseGeocodeAsync as jest.Mock).mockReturnValue(new Promise(() => {})); // 영원히 pending
+      const p = reverseGeoLabelKo(37.5, 127.0);
+      let settled = false;
+      void p.then(() => {
+        settled = true;
+      });
+
+      // 제한 시간 직전까지는 아직 대기 중.
+      jest.advanceTimersByTime(GEOCODE_TIMEOUT_MS - 1);
+      await Promise.resolve();
+      expect(settled).toBe(false);
+
+      // 제한 시간을 넘기면 라벨 없이 진행한다.
+      jest.advanceTimersByTime(2);
+      await expect(p).resolves.toBe('');
+    } finally {
+      jest.useRealTimers();
+    }
   });
 });
