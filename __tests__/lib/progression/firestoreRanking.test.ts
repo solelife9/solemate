@@ -3,7 +3,8 @@
 // 검증(행동): RankingStore(쿼리 원시연산) fake 를 주입해 firebase·네트워크 없이
 // 결정적으로 테스트한다.
 //  1) getLeaderboard: 상위 N 매핑 + rank 번호(1-based) + available:true.
-//  2) getMyRanking: 순위(countAbove+1)·topPercent·±2 nearby 슬라이스.
+//  2) getMyRanking: 순위(countAbove+1)·topPercent. **목록을 다시 읽지 않는다**(2026-08-04
+//     낭비 읽기 제거 — nearby 는 소비처가 없는데 상위 100 을 재조회하고 있었다).
 //  3) seam 계약: 미로그인/엔트리 부재/잘못된 카테고리/store throw → throw 없이 available:false.
 //  4) computeRankingStats: 이달 거리·활동일수·컬렉션·진척XP·평균 잔여수명(전기간 사용 km).
 //  5) buildStoredEntry: 표시정보 보정(빈 닉네임→'러너') + updatedAt 주입(결정성).
@@ -95,7 +96,7 @@ describe('createFirestoreRankingProvider — getLeaderboard', () => {
 });
 
 describe('createFirestoreRankingProvider — getMyRanking', () => {
-  test('순위·topPercent·nearby(±2 슬라이스)', async () => {
+  test('순위·topPercent — nearby 는 나 하나(낭비 읽기 제거)', async () => {
     // 점수 내림차순: e>d>c>b>a (me=c → rank 3)
     const rows = [
       entry('a', {distance: 10}),
@@ -111,9 +112,21 @@ describe('createFirestoreRankingProvider — getMyRanking', () => {
     expect(mine.me?.rank).toBe(3);
     expect(mine.total).toBe(5);
     expect(mine.topPercent).toBe(60); // round(3/5*100)
-    // idx(c)=2 → from=0 → slice(0,5) = e,d,c,b,a
-    expect(mine.nearby.map(e => e.uid)).toEqual(['e', 'd', 'c', 'b', 'a']);
-    expect(mine.nearby.map(e => e.rank)).toEqual([1, 2, 3, 4, 5]);
+    // 2026-08-04: 전에는 여기서 상위 100 을 한 번 더 읽어 ±2 를 잘라 담았다. 그 nearby 를
+    // 쓰는 화면이 하나도 없는데 목록(getLeaderboard)이 이미 읽은 것을 또 사는 구조라,
+    // 랭킹 화면 진입 1회가 203 읽기였다. 이제 내 엔트리만 담는다.
+    expect(mine.nearby.map(e => e.uid)).toEqual(['c']);
+    expect(mine.nearby[0].rank).toBe(3);
+  });
+
+  test('내 순위를 구하려고 목록을 다시 읽지 않는다 — 이게 낭비의 정체였다', async () => {
+    const rows = [entry('a', {distance: 10}), entry('me', {distance: 5})];
+    const store = fakeStore(rows);
+    const spy = jest.spyOn(store, 'topByCategory');
+    const p = createFirestoreRankingProvider(store, async () => 'me');
+    await p.getMyRanking('distance', YM);
+    // getMyRanking 은 내 문서 1건 + 집계 2건이면 충분하다. 목록 조회는 0 이어야 한다.
+    expect(spy).not.toHaveBeenCalled();
   });
 
   test('미로그인(uid null) → available:false', async () => {
@@ -130,7 +143,7 @@ describe('createFirestoreRankingProvider — getMyRanking', () => {
     expect(mine.me).toBeNull();
   });
 
-  test('상위 100 밖이면 nearby=나만', async () => {
+  test('상위 100 밖이어도 내 순위는 정확히 나온다(집계로 센다)', async () => {
     const rows: StoredRankingEntry[] = [];
     for (let i = 0; i < 120; i++) rows.push(entry(`u${i}`, {distance: 1000 - i}));
     rows.push(entry('me', {distance: 1})); // 꼴찌권 → 상위100 밖

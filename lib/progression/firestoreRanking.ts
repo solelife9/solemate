@@ -170,17 +170,21 @@ export function createFirestoreRankingProvider(
         const rank = above + 1;
         const total = await store.total(yearMonth);
         const topPercent = total > 0 ? Math.max(1, Math.round((rank / total) * 100)) : null;
-        // 주변 순위: 상위 100 안에 들면 ±2 슬라이스, 아니면 나만.
-        const top = await store.topByCategory(category, yearMonth, 100);
-        const idx = top.findIndex(e => e.uid === uid);
-        let nearby: LeaderboardEntry[];
-        if (idx >= 0) {
-          const from = Math.max(0, idx - 2);
-          nearby = top.slice(from, idx + 3).map((e, k) => toEntry(e, category, yearMonth, from + k + 1));
-        } else {
-          nearby = [toEntry(mine, category, yearMonth, rank)];
-        }
         const me = toEntry(mine, category, yearMonth, rank);
+        // ── nearby 를 만들려고 상위 100 을 다시 읽지 않는다 (2026-08-04) ──────────
+        // 전에는 여기서 `topByCategory(..., 100)` 을 한 번 더 호출해 내 앞뒤 ±2 명을
+        // 잘라 담았다. 문제가 둘이었다:
+        //   ① **그 nearby 를 쓰는 화면이 없다.** 앱 전체에 소비처가 0이다(만들어서 버린다).
+        //   ② 같은 상위 100 을 **getLeaderboard 가 이미 읽었다.** 같은 것을 두 번 산다.
+        // 그래서 화면 진입 1회가 203 읽기였다(목록 100 + 여기 100 + 내 문서 1 + 집계 2).
+        // 게다가 카테고리 칩을 누를 때마다 통째로 다시 돈다(HallOfFameScreen 의 effect
+        // 의존성에 category 가 있다) — 세 축을 훑으면 한 세션에 약 609 읽기였다.
+        // AUDIT 2 가 앱 전체를 하루 6 읽기로 줄여 놨는데 이 화면 한 번이 그 34일치였다.
+        //
+        // 계약은 유지한다(nearby 필드는 남는다) — 나중에 앞뒤 러너를 실제로 보여주게 되면
+        // **getLeaderboard 가 이미 받아온 목록에서 잘라 쓴다**(추가 읽기 0). 여기서 다시
+        // 읽는 구조로는 돌아가지 말 것.
+        const nearby: LeaderboardEntry[] = [me];
         return {kind: 'remote', available: true, category, yearMonth, total, topPercent, me, nearby};
       } catch {
         return emptyMyRanking(category, yearMonth);
