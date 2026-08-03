@@ -311,6 +311,9 @@ export function buildContext(
     nightRunCount,
     longestGapDays,
     registeredShoeCount: shoeList.filter(s => s && typeof s.id === 'string' && s.id).length,
+    // 실제로 신고 달린 켤레만. perShoe.runs 는 런 레코드에서 센 값이라 등록 행위로는
+    // 오르지 않는다 — 업적·타이틀이 이 값을 쓰는 이유다(검증 불가한 등록 수 대체).
+    wornShoeCount: Object.values(perShoe).filter(s => (s?.runs ?? 0) > 0).length,
     retiredShoeCount,
     retirementCount,
     retirementGrades,

@@ -262,6 +262,19 @@ const CONSISTENCY: AchievementDef[] = [
 // ============================================================================
 const SHOE_JOURNEY: AchievementDef[] = [
   metricAch({
+    // ── '등록' → '실제로 신고 달린' 기준 전환 (2026-08-03) ──────────────────
+    // 등록 수(registeredShoeCount)는 자기 신고라 앱이 진위를 판별할 수 없다. 이름만
+    // 열 번 입력하면 190 XP + 랭크 티어 + 타이틀이 한 번에 올랐고, 그 티어는 랭킹
+    // 목록의 모든 행에 색과 이름으로 표시된다 — 실제로 달린 사람 위에.
+    // MISSION 의 'Truth only(모든 숫자는 실제 집계)' 위반이라 기준을 러닝 기록으로 옮긴다.
+    // 이제 신발을 아무리 등록해도 **한 번은 신고 나가야** 카운트된다.
+    // shoe_1 만 '등록' 기준을 유지한다. 이유 둘:
+    //  ① 이름 그대로 **온보딩 완결의 축하**다(온보딩이 신발 등록으로 끝난다). 10 XP·1켤레
+    //     로는 랭킹을 흔들 수 없어 날조 유인이 사실상 없다.
+    //  ② 'worn' 으로 옮기면 **첫 러닝 저장 순간에 언락**되는데, CelebrationScreen 이 렌더
+    //     사다리에서 RunRecapScreen 보다 앞이라(App.tsx) **첫 완주 리캡을 가린다.**
+    //     앱에서 가장 큰 순간을 업적 축하가 덮는 건 손해다(2026-08-03 실측: App.cadence·
+    //     cloudsync·runsnapshot 3스위트가 리캡에 도달하지 못해 빨개졌다).
     key: 'shoe_1', name: '첫 신발', rarity: 'common', xp: 10,
     description: '러닝화를 처음 등록한 날.',
     category: 'shoeJourney', target: 1,
@@ -269,21 +282,21 @@ const SHOE_JOURNEY: AchievementDef[] = [
   }),
   metricAch({
     key: 'shoe_3', name: '3켤레', rarity: 'rare', xp: 30,
-    description: '러닝화 3켤레. 진지하게 달리고 있다.',
+    description: '세 켤레를 신고 달렸다. 진지하게 달리고 있다.',
     category: 'shoeJourney', target: 3,
-    value: ctx => nonNeg(ctx.registeredShoeCount),
+    value: ctx => nonNeg(ctx.wornShoeCount),
   }),
   metricAch({
     key: 'shoe_5', name: '5켤레', rarity: 'rare', xp: 50,
-    description: '신발장에 5켤레. 진정한 러닝 마니아.',
+    description: '다섯 켤레와 함께 달렸다. 진정한 러닝 마니아.',
     category: 'shoeJourney', target: 5,
-    value: ctx => nonNeg(ctx.registeredShoeCount),
+    value: ctx => nonNeg(ctx.wornShoeCount),
   }),
   metricAch({
     key: 'shoe_10', name: '10켤레', rarity: 'epic', xp: 100,
-    description: '10켤레 이상 등록. 신발 컬렉터의 경지.',
+    description: '열 켤레를 신고 달렸다. 신발장이 아니라 길 위에서.',
     category: 'shoeJourney', target: 10,
-    value: ctx => nonNeg(ctx.registeredShoeCount),
+    value: ctx => nonNeg(ctx.wornShoeCount),
   }),
   metricAch({
     key: 'retire_1', name: '첫 번째 은퇴', rarity: 'epic', xp: 150,

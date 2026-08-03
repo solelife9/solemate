@@ -42,6 +42,7 @@ function emptyCtx(over: Partial<ProgressionContext> = {}): ProgressionContext {
     nightRunCount: 0,
     longestGapDays: 0,
     registeredShoeCount: 0,
+    wornShoeCount: 0,
     retiredShoeCount: 0,
     perShoe: {},
     earnedTitleKeys: [],

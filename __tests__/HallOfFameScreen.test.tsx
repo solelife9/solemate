@@ -109,12 +109,14 @@ describe('HallOfFameScreen', () => {
     const r = await render(
       <HallOfFameScreen provider={provider} now={NOW} />,
     );
-    const chip = one(r.root, 'hof-category-shoeHealth');
+    // 2026-08-03: shoeHealth·collection 카테고리는 랭킹에서 제거됐다(검증 불가·인센티브
+    // 역전). 남은 축 중 하나로 확인한다 — 검사 의도는 '칩을 누르면 그 축으로 재조회'다.
+    const chip = one(r.root, 'hof-category-consistency');
     await act(async () => {
       (chip.props as any).onPress();
     });
     await settle();
-    expect(provider.getLeaderboard).toHaveBeenCalledWith('shoeHealth', '2026-06');
+    expect(provider.getLeaderboard).toHaveBeenCalledWith('consistency', '2026-06');
   });
 
   test('unavailable: 빈 상태 + 내 순위 미가용 힌트', async () => {

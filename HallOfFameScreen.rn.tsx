@@ -57,11 +57,21 @@ import type {
   RankingProvider,
 } from './lib/progression/types';
 
+// ── 랭킹 축은 '러닝 기록에서 파생된 것'만 둔다 (2026-08-03) ────────────────────
+// 뺀 둘과 그 이유:
+//  · shoeHealth(평균 잔여 수명%) — **안 신을수록 1등**이었다. 새 신발만 사서 모셔두면
+//    100점이고, 수명을 끝까지 쓴 은퇴 신발이 평균에 섞여 성실히 쓴 사람일수록 점수가
+//    내려갔다. MISSION('부상 없이, 계속 달리도록')과 인센티브가 정반대다.
+//  · collection(등록 신발 수) — **검증이 불가능하다.** 이름만 열 번 입력하면 1위가
+//    되는데 앱은 그게 진짜인지 판별할 수 없다. Truth-only 위반이라 튜닝으로 못 고친다.
+// 남긴 셋은 전부 런 레코드에서 파생된다(위조하려면 러닝 자체를 만들어야 한다).
+//
+// ⚠️ 점수 발행은 그대로 둔다 — firestore.rules 의 validRankingEntry 가 shoeHealth·
+// collection 필드를 요구하므로 빼면 쓰기가 거부된다. 화면에서만 내린다. 축을 다시
+// 설계해 열 때(모델별 랭킹·은퇴 켤레 등) 규칙 변경 없이 되살릴 수 있다.
 type Category =
   | 'distance'
   | 'consistency'
-  | 'shoeHealth'
-  | 'collection'
   | 'progressPoints';
 
 // 카테고리 메타(라벨/아이콘/점수 표기). 고정 순서로 칩을 노출(결정적 레이아웃).
@@ -69,8 +79,6 @@ type Category =
 const CATEGORIES: ReadonlyArray<{key: Category; label: string; icon: string}> = [
   {key: 'distance', label: '거리', icon: 'walk'},
   {key: 'consistency', label: '꾸준함', icon: 'flame'},
-  {key: 'shoeHealth', label: '신발 관리', icon: 'shield-checkmark'},
-  {key: 'collection', label: '컬렉션', icon: 'albums'},
   {key: 'progressPoints', label: '진척 포인트', icon: 'sparkles'},
 ];
 
@@ -87,7 +95,7 @@ function yearMonthOf(now: number): string {
   return ymLocal(new Date(now));
 }
 
-/** 카테고리별 점수 표기(거리 km / 포인트 P / 켤레 / 일 / 신발관리 0..100). */
+/** 카테고리별 점수 표기(거리 km / 꾸준함 일 / 진척 포인트 P). */
 function formatScore(category: Category, score: number): string {
   const n = Number.isFinite(score) ? score : 0;
   switch (category) {
@@ -95,12 +103,8 @@ function formatScore(category: Category, score: number): string {
       return `${Math.round(n).toLocaleString()} km`;
     case 'progressPoints':
       return `${Math.round(n).toLocaleString()} P`;
-    case 'collection':
-      return `${Math.round(n)} 켤레`;
     case 'consistency':
       return `${Math.round(n)} 일`;
-    case 'shoeHealth':
-      return `${Math.round(n * 100)}`;
     default:
       return String(Math.round(n));
   }

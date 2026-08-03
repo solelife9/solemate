@@ -44,6 +44,7 @@ function emptyCtx(over: Partial<ProgressionContext> = {}): ProgressionContext {
     nightRunCount: 0,
     longestGapDays: 0,
     registeredShoeCount: 0,
+    wornShoeCount: 0,
     retiredShoeCount: 0,
     perShoe: {},
     earnedTitleKeys: [],
@@ -403,4 +404,38 @@ describe('keego: 킵고잉, 1년', () => {
     expect(achievementDef('longtime_partner')).toBeUndefined();
   });
 
+});
+
+// ─── 검증 가능한 값만 XP 가 된다 (2026-08-03) ─────────────────────────────────
+// 등록 수(registeredShoeCount)는 자기 신고라 앱이 진위를 판별할 수 없다. 이름만 열 번
+// 입력하면 shoe_3·5·10 이 한 번에 열려 **180 XP + 랭크 티어 상승 + 타이틀**이 따라왔고,
+// 그 티어는 랭킹 목록의 모든 행에 색과 이름으로 표시된다 — 실제로 달린 사람보다 위에.
+// MISSION 의 'Truth only(모든 숫자는 실제 집계)' 위반이라 기준을 러닝 기록으로 옮겼다.
+describe('신발 업적은 등록이 아니라 실제 주행을 센다', () => {
+  const shoeXp = (ctx: ProgressionContext) =>
+    unlockedAchievements(ctx)
+      .filter(a => a.key.startsWith('shoe_'))
+      .reduce((sum, a) => sum + (Number((a as {xp?: number}).xp) || 0), 0);
+
+  test('등록만 10켤레 — 첫 신발(10 XP)만 열린다', () => {
+    const paper = emptyCtx({registeredShoeCount: 10, wornShoeCount: 0});
+    const keys = unlockedAchievements(paper).map(a => a.key);
+    expect(keys).toContain('shoe_1');
+    for (const k of ['shoe_3', 'shoe_5', 'shoe_10']) expect(keys).not.toContain(k);
+    expect(shoeXp(paper)).toBe(10); // 구조 변경 전에는 190 이었다
+  });
+
+  test('신고 달린 켤레가 늘어야 사다리가 열린다', () => {
+    const worn = (n: number) => emptyCtx({registeredShoeCount: 10, wornShoeCount: n});
+    expect(unlockedAchievements(worn(3)).map(a => a.key)).toContain('shoe_3');
+    expect(unlockedAchievements(worn(2)).map(a => a.key)).not.toContain('shoe_3');
+    expect(shoeXp(worn(10))).toBe(190); // 전부 실제로 신고 달렸을 때만 만점
+  });
+
+  test('첫 신발은 등록 기준을 유지한다 — 첫 완주 리캡을 축하가 가리지 않게', () => {
+    // 'worn' 으로 옮기면 첫 러닝 저장 순간에 언락되는데, CelebrationScreen 이 렌더
+    // 사다리에서 RunRecapScreen 보다 앞이라 완주 리캡을 덮는다(App.tsx).
+    expect(unlockedAchievements(emptyCtx({registeredShoeCount: 1, wornShoeCount: 0})).map(a => a.key))
+      .toContain('shoe_1');
+  });
 });

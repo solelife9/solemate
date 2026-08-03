@@ -52,6 +52,7 @@ function emptyCtx(over: Partial<ProgressionContext> = {}): ProgressionContext {
     nightRunCount: 0,
     longestGapDays: 0,
     registeredShoeCount: 0,
+    wornShoeCount: 0,
     retiredShoeCount: 0,
     perShoe: {},
     earnedTitleKeys: [],
@@ -129,36 +130,51 @@ describe('running 사다리: 누적 거리 경계', () => {
 // ============================================================================
 // 2) shoeManagement 사다리 — 컬렉션 수 + 관리 품질·기간
 // ============================================================================
+// 2026-08-03: 기준이 '등록 켤레'에서 **'신고 달린 켤레'**(wornShoeCount)로 바뀌었다.
+// 등록 수는 자기 신고라 검증할 수 없어 타이틀 근거로 쓰지 않는다(랭킹 행에 칩으로
+// 노출되므로 날조가 그대로 보였다). 아래 사다리는 그 새 기준을 고정한다.
 describe('shoeManagement 사다리', () => {
+  // shoe_beginner(1켤레)만 '등록' 기준이라 아래 사다리에서 분리한다(achievements shoe_1 과 동일 사유).
   const counts: Array<[number, string]> = [
-    [1, 'shoe_beginner'],
     [3, 'shoe_enthusiast'],
     [5, 'shoe_rotation_runner'],
     [10, 'shoe_collector'],
   ];
-  test.each(counts)('등록 %d켤레 → %s 언락(경계)', (n, key) => {
-    expect(evaluateTitles(emptyCtx({registeredShoeCount: n}))).toContain(key);
+  test.each(counts)('신고 달린 %d켤레 → %s 언락(경계)', (n, key) => {
+    expect(evaluateTitles(emptyCtx({wornShoeCount: n}))).toContain(key);
     expect(
-      evaluateTitles(emptyCtx({registeredShoeCount: n - 1})),
+      evaluateTitles(emptyCtx({wornShoeCount: n - 1})),
     ).not.toContain(key);
   });
 
+  test('신발 입문은 등록 1켤레로 언락된다 — 온보딩 완결 축하', () => {
+    expect(evaluateTitles(emptyCtx({registeredShoeCount: 1}))).toContain('shoe_beginner');
+    expect(evaluateTitles(emptyCtx({registeredShoeCount: 0}))).not.toContain('shoe_beginner');
+  });
+
+  test('등록만 잔뜩 해도 3켤레 이상 타이틀은 잠긴다 — 검증 불가한 값으로 못 딴다', () => {
+    const paper = emptyCtx({registeredShoeCount: 10, wornShoeCount: 0});
+    for (const key of ['shoe_enthusiast', 'shoe_rotation_runner', 'shoe_collector']) {
+      expect(evaluateTitles(paper)).not.toContain(key);
+    }
+  });
+
   test('Shoe Master: 10켤레 보유 + 활성 신발 전부 건강 — 컬렉션 게이트', () => {
-    // 10켤레 등록 + 활성 신발 건강 → 언락.
+    // 10켤레를 신고 달림 + 활성 신발 건강 → 언락.
     const at = emptyCtx({
-      registeredShoeCount: 10,
+      wornShoeCount: 10,
       perShoe: perShoeMap(healthyShoe('a', daysAgo(182))),
     });
     expect(evaluateTitles(at)).toContain('shoe_master');
     // 9켤레만으론 컬렉션 게이트 미충족 → 잠금.
     const fewer = emptyCtx({
-      registeredShoeCount: 9,
+      wornShoeCount: 9,
       perShoe: perShoeMap(healthyShoe('a', daysAgo(182))),
     });
     expect(evaluateTitles(fewer)).not.toContain('shoe_master');
     // 10켤레라도 활성 신발이 과사용(초과)이면 잠금(건강 게이트).
     const overdue = emptyCtx({
-      registeredShoeCount: 10,
+      wornShoeCount: 10,
       perShoe: perShoeMap(shoe({id: 'a', km: 600, maxKm: 600, retired: false})),
     });
     expect(evaluateTitles(overdue)).not.toContain('shoe_master');
@@ -167,7 +183,7 @@ describe('shoeManagement 사다리', () => {
   test('KEEGO Master(10켤레+건강+은퇴3) / Keep Going(10켤레+건강+은퇴5)', () => {
     // 10켤레 + 건강 + 은퇴 3켤레 → KEEGO Master.
     const keego = emptyCtx({
-      registeredShoeCount: 10,
+      wornShoeCount: 10,
       perShoe: perShoeMap(healthyShoe('a', daysAgo(365))),
       retirementCount: 3,
     });
@@ -175,7 +191,7 @@ describe('shoeManagement 사다리', () => {
     // Keep Going 은 은퇴 5켤레 필요 — 3켤레로는 잠금.
     expect(evaluateTitles(keego)).not.toContain('keep_going');
     const keepGoing = emptyCtx({
-      registeredShoeCount: 10,
+      wornShoeCount: 10,
       perShoe: perShoeMap(healthyShoe('a', daysAgo(365))),
       retirementCount: 5,
     });
@@ -183,7 +199,7 @@ describe('shoeManagement 사다리', () => {
     // 은퇴는 충분해도 컬렉션(10켤레) 게이트 미충족이면 KEEGO Master 잠금.
     const fewShoes = evaluateTitles(
       emptyCtx({
-        registeredShoeCount: 5,
+        wornShoeCount: 5,
         perShoe: perShoeMap(healthyShoe('a', daysAgo(365))),
         retirementCount: 3,
       }),

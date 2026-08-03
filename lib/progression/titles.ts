@@ -190,9 +190,13 @@ const RUNNING_TITLES: TitleDef[] = [
   },
 ];
 
-// ── shoeManagement: 컬렉션 수(1/3/5/10) + 관리 품질·기간 ──────────────────────────
+// ── shoeManagement: **신고 달린** 켤레 수(1/3/5/10) + 관리 품질·기간 ──────────────
+// 2026-08-03: 기준을 registeredShoeCount → wornShoeCount 로 옮겼다. 등록 수는 자기
+// 신고라 검증할 수 없고, 타이틀은 랭킹 행에 칩으로 노출되므로 날조가 그대로 보인다.
 const SHOE_TITLES: TitleDef[] = [
   {
+    // shoe_beginner 만 '등록' 기준 유지 — achievements 의 shoe_1 과 같은 사유
+    // (온보딩 완결 축하 · 1켤레로는 랭킹 왜곡 불가). 3/5/10 은 전부 '신고 달린' 기준이다.
     key: 'shoe_beginner',
     name: '신발 입문',
     category: 'shoeManagement',
@@ -204,21 +208,21 @@ const SHOE_TITLES: TitleDef[] = [
     name: '신발 애호가',
     category: 'shoeManagement',
     tier: 'silver',
-    criterion: ctx => nonNeg(ctx.registeredShoeCount) >= 3,
+    criterion: ctx => nonNeg(ctx.wornShoeCount) >= 3,
   },
   {
     key: 'shoe_rotation_runner',
     name: '로테이션 러너',
     category: 'shoeManagement',
     tier: 'gold',
-    criterion: ctx => nonNeg(ctx.registeredShoeCount) >= 5,
+    criterion: ctx => nonNeg(ctx.wornShoeCount) >= 5,
   },
   {
     key: 'shoe_collector',
     name: '신발 수집가',
     category: 'shoeManagement',
     tier: 'platinum',
-    criterion: ctx => nonNeg(ctx.registeredShoeCount) >= 10,
+    criterion: ctx => nonNeg(ctx.wornShoeCount) >= 10,
   },
   {
     // 신발 10켤레 이상 보유하면서 활성 신발 전부 건강 — 컬렉션 관리 숙련.
@@ -226,7 +230,7 @@ const SHOE_TITLES: TitleDef[] = [
     name: '신발 마스터',
     category: 'shoeManagement',
     tier: 'diamond',
-    criterion: ctx => nonNeg(ctx.registeredShoeCount) >= 10 && allActiveHealthy(ctx),
+    criterion: ctx => nonNeg(ctx.wornShoeCount) >= 10 && allActiveHealthy(ctx),
   },
   {
     // 신발 10켤레 이상 + 3켤레 이상 은퇴 + 전부 건강 — 체계적 컬렉션 운영.
@@ -235,7 +239,7 @@ const SHOE_TITLES: TitleDef[] = [
     category: 'shoeManagement',
     tier: 'master',
     criterion: ctx =>
-      nonNeg(ctx.registeredShoeCount) >= 10 && allActiveHealthy(ctx) && retirementCount(ctx) >= 3,
+      nonNeg(ctx.wornShoeCount) >= 10 && allActiveHealthy(ctx) && retirementCount(ctx) >= 3,
   },
   {
     // Keep Going — 신발 10켤레 이상 + 5켤레 이상 은퇴 + 전부 건강(오랜 관리 경험).
@@ -244,7 +248,7 @@ const SHOE_TITLES: TitleDef[] = [
     category: 'shoeManagement',
     tier: 'legend',
     criterion: ctx =>
-      nonNeg(ctx.registeredShoeCount) >= 10 && allActiveHealthy(ctx) && retirementCount(ctx) >= 5,
+      nonNeg(ctx.wornShoeCount) >= 10 && allActiveHealthy(ctx) && retirementCount(ctx) >= 5,
   },
 ];
 

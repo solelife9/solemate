@@ -209,7 +209,18 @@ export interface ProgressionContext {
   earlyRunCount: number;
   nightRunCount: number;
   longestGapDays: number;
+  /**
+   * 등록만 한 것 포함 — **자기 신고라 검증할 수 없다.**
+   * 업적·타이틀·랭킹의 기준으로 쓰지 말 것(2026-08-03): 이름만 열 번 입력하면
+   * XP·랭크 티어·타이틀이 한 번에 오르고, 앱은 그게 진짜인지 판별할 방법이 없다.
+   * 화면 표시(신발장에 몇 켤레 있나)에는 그대로 써도 된다.
+   */
   registeredShoeCount: number;
+  /**
+   * **한 번이라도 신고 달린** 신발 수(perShoe.runs > 0). 러닝 기록이 근거라
+   * 거리·꾸준함과 같은 수준으로 검증된다 — 업적·타이틀은 이 값을 쓴다.
+   */
+  wornShoeCount: number;
   retiredShoeCount: number;
   retirementCount?: number;
   retirementGrades?: RetirementGrade[];
