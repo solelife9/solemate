@@ -271,6 +271,22 @@ describe('신발 유행 카드', () => {
     })),
   } as never);
 
+  // 2026-08-03: 카드를 붙일 때 앵커가 **카테고리 칩 가로 스크롤**에 걸려, 카드가 칩
+  // 옆으로 들어간 적이 있다. testID 만 보는 테스트는 그걸 못 잡았다 — 위치도 본다.
+  test('세로 본문에 있다 — 가로 칩 스크롤 안이 아니다', async () => {
+    const r = await render(<HallOfFameScreen provider={provider(withShoes(10, 4))} now={NOW} />);
+    const inHorizontal = (node: any): boolean => {
+      if (!node || typeof node !== 'object') return false;
+      const kids = node.children ?? [];
+      const has = (n: any): boolean =>
+        n?.props?.testID === 'hof-trends' || (n?.children ?? []).some(has);
+      if (node.props?.horizontal === true && kids.some(has)) return true;
+      return kids.some(inHorizontal);
+    };
+    expect(inHorizontal(r.toJSON())).toBe(false);
+    r.unmount();
+  });
+
   test('표본이 모이면 카드가 뜬다', async () => {
     const r = await render(<HallOfFameScreen provider={provider(withShoes(10, 4))} now={NOW} />);
     expect(one(r.root, 'hof-trends')).toBeTruthy();
@@ -311,6 +327,63 @@ describe('신발 유행 카드', () => {
     const r = await render(<HallOfFameScreen provider={p} now={NOW} />);
     // 리더보드 1회 + 내 순위 1회가 전부다. 프로필을 미리 당겨오면 여기가 늘어난다.
     expect((p as never as {getLeaderboard: jest.Mock}).getLeaderboard).toHaveBeenCalledTimes(1);
+    r.unmount();
+  });
+});
+
+// ── 내 최고 순위(전성기) ──────────────────────────────────────────────────────
+// 랭킹은 한 달짜리라, 잘 달린 달이 다음 달이면 사라진다. 그 한 달을 붙잡는 한 줄이다.
+// **읽기 0** — 이미 읽은 내 순위를 지나가며 로컬에 적어 둔다.
+describe('내 최고 순위', () => {
+  const AsyncStorage = require('@react-native-async-storage/async-storage');
+  const {RANK_HISTORY_KEY} = require('../lib/rankHistory');
+
+  const flat = (n: any): string => {
+    if (typeof n === 'string' || typeof n === 'number') return String(n);
+    if (!n?.children) return '';
+    return n.children.map(flat).join('');
+  };
+
+  beforeEach(async () => { await AsyncStorage.clear(); });
+
+  test('지난 최고가 지금보다 좋으면 그 달과 함께 보여준다', async () => {
+    await AsyncStorage.setItem(RANK_HISTORY_KEY,
+      JSON.stringify({distance: {rank: 1, yearMonth: '2026-05'}}));
+    const r = await render(<HallOfFameScreen provider={makeProvider(true)} now={NOW} />);
+    expect(flat(r.toJSON())).toContain('내 최고 1위 · 2026년 5월');
+    r.unmount();
+  });
+
+  test('지금이 최고면 그렇다고 말한다 — 그 순간을 알려주는 게 이 줄의 값이다', async () => {
+    // 목 provider 의 내 순위는 2위. 저장된 최고를 그보다 낮게 두면 지금이 최고다.
+    await AsyncStorage.setItem(RANK_HISTORY_KEY,
+      JSON.stringify({distance: {rank: 9, yearMonth: '2026-05'}}));
+    const r = await render(<HallOfFameScreen provider={makeProvider(true)} now={NOW} />);
+    expect(flat(r.toJSON())).toContain('지금이 내 최고 순위예요');
+    r.unmount();
+  });
+
+  test('이번 달 순위를 로컬에 적어 둔다 — 다음 달에 이게 전성기가 된다', async () => {
+    const r = await render(<HallOfFameScreen provider={makeProvider(true)} now={NOW} />);
+    const saved = JSON.parse((await AsyncStorage.getItem(RANK_HISTORY_KEY)) ?? '{}');
+    expect(saved.distance.rank).toBe(2);          // 목의 내 순위
+    r.unmount();
+  });
+
+  test('내 순위를 모르면 줄이 아예 없다 — 없는 기록을 만들지 않는다', async () => {
+    const r = await render(<HallOfFameScreen provider={makeProvider(false)} now={NOW} />);
+    expect(byId(r.root, 'hof-best-rank')).toHaveLength(0);
+    r.unmount();
+  });
+
+  test('기록이 없으면 줄이 없다(첫 사용자에게 빈 자리를 만들지 않는다)', async () => {
+    // 저장 전 첫 렌더에는 아직 기록이 없다 — provider 가 실패하는 경우로 본다.
+    const failing = {
+      getLeaderboard: jest.fn(async () => { throw new Error('offline'); }),
+      getMyRanking: jest.fn(async () => { throw new Error('offline'); }),
+    } as never;
+    const r = await render(<HallOfFameScreen provider={failing} now={NOW} />);
+    expect(byId(r.root, 'hof-best-rank')).toHaveLength(0);
     r.unmount();
   });
 });

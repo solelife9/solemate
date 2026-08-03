@@ -75,7 +75,7 @@ export const USER_KEYS: readonly string[] = [
   'shoe_alert_notified',
   // 이미 본 업적·등급(셀러브레이션 기준선). 계정별이 아니면 새 계정이 남의 업적을
   // '이미 본 것'으로 취급하거나, 반대로 남의 업적 축하가 뜬다.
-  'celebration_seen_v1',
+  'rank_best_v1','celebration_seen_v1',
   // 1회성 플래그 — 새 계정은 온보딩을 다시 봐야 맞다
   'onboarded',
   // 상세 동기 스윕 시각(그 계정의 런을 훑은 기록이라 계정에 딸린다)

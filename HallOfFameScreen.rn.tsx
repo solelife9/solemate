@@ -26,6 +26,10 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 // 「이번 달 많이 신는 러닝화」 — 엔트리에 이미 실려 온 신발을 세기만 한다(추가 읽기 0).
 import {shoeTrends, type ShoeTrend} from './lib/shoeTrends';
+// 내 최고 순위(전성기) — 이미 읽은 내 순위를 지나가며 적어 둔다(읽기 0).
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {recordRank, sanitizeRankBests, formatYearMonthKo,
+  RANK_HISTORY_KEY, type RankBests} from './lib/rankHistory';
 import {ScreenHeader, EmptyGhostHeader, GhostBar, GhostThumb, GlassEdge} from './primitives';
 import {
   BG,
@@ -161,6 +165,20 @@ export default function HallOfFameScreen({
   const [myEntry, setMyEntry] = useState<LeaderboardEntry | null>(null);
   const [topPercent, setTopPercent] = useState<number | null>(null);
   const [total, setTotal] = useState(0);
+  /** 카테고리별 최고 순위. 로컬에만 둔다 — 지난달 리더보드를 다시 읽지 않기 위해서다. */
+  const [bests, setBests] = useState<RankBests>({});
+
+  // 최고 순위는 한 번만 읽는다(로컬 저장소). 실패해도 화면은 그대로 — 없으면 안 보일 뿐.
+  useEffect(() => {
+    let alive = true;
+    AsyncStorage.getItem(RANK_HISTORY_KEY)
+      .then(raw => {
+        if (!alive || !raw) return;
+        try { setBests(sanitizeRankBests(JSON.parse(raw))); } catch { /* 손상은 무시 */ }
+      })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, []);
 
   // 카테고리/달 변화 시 리더보드 + 내 순위를 로드한다(발행은 App 클라우드 동기가 담당).
   useEffect(() => {
@@ -179,6 +197,17 @@ export default function HallOfFameScreen({
           setMyEntry(mine.me);
           setTopPercent(mine.topPercent);
           setTotal(mine.total);
+          // 이번 달 순위를 전성기 기록에 반영한다. 더 좋을 때만 바뀌므로 보통 no-op 다.
+          if (mine.me) {
+            setBests(prev => {
+              const next = recordRank(prev, category, yearMonth, mine.me!.rank);
+              // 동일성으로 저장 여부를 판단한다 — 안 바뀌었으면 쓰지 않는다.
+              if (next !== prev) {
+                AsyncStorage.setItem(RANK_HISTORY_KEY, JSON.stringify(next)).catch(() => {});
+              }
+              return next;
+            });
+          }
         } else {
           setMyAvailable(false);
           setMyEntry(null);
@@ -320,34 +349,6 @@ export default function HallOfFameScreen({
             );
           })}
   
-        {/* 「이번 달 많이 신는 러닝화」 — 위 목록을 세기만 한 것이라 **추가 읽기가 0**이다.
-            표본이 적으면 shoeTrends 가 빈 목록을 주고 이 카드는 통째로 빠진다. */}
-        {trends.top.length > 0 && (
-          <View style={s.trendCard} testID="hof-trends">
-            <GlassEdge glints={false} radius={RADIUS.md} />
-            <View style={s.trendHead}>
-              <Text style={s.trendTitle}>이번 달 많이 신는 러닝화</Text>
-              {/* 표본을 밝힌다 — "전체 사용자"가 아니라 "순위에 오른 N명"이다. */}
-              <Text style={s.trendMeta}>순위 {trends.sampleSize}명 기준</Text>
-            </View>
-            {trends.top.map((t: ShoeTrend, i: number) => (
-              <View key={`${t.brand}|${t.model}`} style={s.trendRow}>
-                <Text style={s.trendRank}>{i + 1}</Text>
-                <View style={{flex: 1, minWidth: 0}}>
-                  <Text style={s.trendBrand} numberOfLines={1}>{t.brand.toUpperCase()}</Text>
-                  <Text style={s.trendModel} numberOfLines={1}>{t.model || t.brand}</Text>
-                </View>
-                <View style={{alignItems: 'flex-end'}}>
-                  <Text style={s.trendCount}>{t.runners}명</Text>
-                  {/* 평균 거리는 아는 사람 것만 낸다. 아무도 모르면 이 줄이 빠진다. */}
-                  {t.avgKm !== null && (
-                    <Text style={s.trendKm}>평균 {t.avgKm.toLocaleString('ko-KR')}km</Text>
-                  )}
-                </View>
-              </View>
-            ))}
-          </View>
-        )}
       </ScrollView>
 
         {/* 내 순위 카드 */}
@@ -377,6 +378,17 @@ export default function HallOfFameScreen({
             </Text>
           </View>
         )}
+
+        {/* 최고 순위(전성기) — 랭킹은 한 달짜리라 잘 달린 달이 다음 달이면 사라진다.
+            트로피 카드로 세우지 않고 내 순위 밑 **한 줄**로 둔다: 자랑이 아니라 맥락이다.
+            지금이 최고면 그렇다고 말한다 — 그 순간을 알려주는 게 이 줄의 값이다. */}
+        {myAvailable && myEntry && bests[category] ? (
+          <Text style={s.bestLine} testID="hof-best-rank">
+            {bests[category].rank >= myEntry.rank
+              ? '지금이 내 최고 순위예요'
+              : `내 최고 ${bests[category].rank}위 · ${formatYearMonthKo(bests[category].yearMonth)}`}
+          </Text>
+        ) : null}
 
         {/* 리더보드 본문 */}
         {loading ? (
@@ -410,6 +422,35 @@ export default function HallOfFameScreen({
             </View>
           </View>
         )}
+        {/* 「이번 달 많이 신는 러닝화」 — 위 목록을 세기만 한 것이라 **추가 읽기가 0**이다.
+            표본이 적으면 shoeTrends 가 빈 목록을 주고 이 카드는 통째로 빠진다. */}
+        {trends.top.length > 0 && (
+          <View style={s.trendCard} testID="hof-trends">
+            <GlassEdge glints={false} radius={RADIUS.md} />
+            <View style={s.trendHead}>
+              <Text style={s.trendTitle}>이번 달 많이 신는 러닝화</Text>
+              {/* 표본을 밝힌다 — "전체 사용자"가 아니라 "순위에 오른 N명"이다. */}
+              <Text style={s.trendMeta}>순위 {trends.sampleSize}명 기준</Text>
+            </View>
+            {trends.top.map((t: ShoeTrend, i: number) => (
+              <View key={`${t.brand}|${t.model}`} style={s.trendRow}>
+                <Text style={s.trendRank}>{i + 1}</Text>
+                <View style={{flex: 1, minWidth: 0}}>
+                  <Text style={s.trendBrand} numberOfLines={1}>{t.brand.toUpperCase()}</Text>
+                  <Text style={s.trendModel} numberOfLines={1}>{t.model || t.brand}</Text>
+                </View>
+                <View style={{alignItems: 'flex-end'}}>
+                  <Text style={s.trendCount}>{t.runners}명</Text>
+                  {/* 평균 거리는 아는 사람 것만 낸다. 아무도 모르면 이 줄이 빠진다. */}
+                  {t.avgKm !== null && (
+                    <Text style={s.trendKm}>평균 {t.avgKm.toLocaleString('ko-KR')}km</Text>
+                  )}
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
+
       </ScrollView>
     </View>
   );
@@ -486,6 +527,12 @@ const s = StyleSheet.create({
   },
   hintTxt: {flex: 1, fontFamily: FONT, color: T2, fontSize: TYPE.label.fontSize, fontWeight: '600'},
   // 리더보드 행 — 일반=코너 페이드 헤어라인, 내 행=액센트 보더(렌더에서 주입).
+  // 최고 순위 한 줄 — 카드 밖, 목록 앞. 조용해야 한다(자랑이 아니라 맥락).
+  bestLine: {
+    fontFamily: FONT, ...TYPE.caption, color: T3,
+    textAlign: 'center', marginTop: rv(-6),
+  },
+
   // 유행 카드 — 랭킹 행과 같은 표면이되 순위 숫자를 눌러 두어 목록과 구분한다.
   trendCard: {
     backgroundColor: GLASS.fill, borderRadius: RADIUS.md, borderCurve: 'continuous',
