@@ -225,3 +225,52 @@ describe('설정 — 프로필 공개 토글', () => {
     r.unmount();
   });
 });
+
+// ── 랭킹 진입점 ───────────────────────────────────────────────────────────────
+// 전에는 진척 화면 우상단 트로피 하나뿐이라 두 겹 안에 묻혀 있었다
+// (민우님: "랭킹은 진입점이 어디야, 보는 곳이 없는데?").
+describe('마이 탭의 랭킹 진입점', () => {
+  beforeEach(async () => {
+    await AsyncStorage.clear();
+    (globalThis as any).__KEEGO_DEV_SEED__ = false;
+  });
+  afterEach(() => { delete (globalThis as any).__KEEGO_DEV_SEED__; });
+
+  const openMy = async (r: ReactTestRenderer.ReactTestRenderer) => {
+    const tab = r.root.findAll(
+      n => (n.props as any)?.accessibilityRole === 'tab'
+        && (n.props as any)?.accessibilityLabel === MY_TAB_LABEL
+        && !!(n.props as any)?.onPress,
+    );
+    expect(tab.length).toBeGreaterThan(0);
+    await act(async () => { (tab[0].props as any).onPress(); });
+  };
+  const rows = (r: ReactTestRenderer.ReactTestRenderer, id: string) =>
+    r.root.findAll(n => (n.props as any)?.testID === id);
+
+  test('공개 중이면 마이 탭에 「랭킹」 줄이 있다', async () => {
+    await seedUserWithShoe();
+    await AsyncStorage.setItem(VISIBILITY_KEY, 'public');
+    const r = await renderApp();
+    await openMy(r);
+    expect(rows(r, 'open-ranking').length).toBeGreaterThan(0);
+    r.unmount();
+  });
+
+  test('비공개면 줄이 아예 없다 — 내 자리가 없는 목록으로 보내지 않는다', async () => {
+    await seedUserWithShoe();
+    await AsyncStorage.setItem(VISIBILITY_KEY, 'private');
+    const r = await renderApp();
+    await openMy(r);
+    expect(rows(r, 'open-ranking')).toHaveLength(0);
+    r.unmount();
+  });
+
+  test('아직 안 물어봤으면 줄이 없다', async () => {
+    await seedUserWithShoe();
+    const r = await renderApp();
+    await openMy(r);
+    expect(rows(r, 'open-ranking')).toHaveLength(0);
+    r.unmount();
+  });
+});

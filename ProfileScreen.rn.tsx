@@ -126,7 +126,7 @@ export default function ProfileScreen({
   cloudPort, onCloudMerged, onDeleteAccount, cloudClock = () => Date.now(),
   onOpenProgression,
   onOpenHallOfShoes, retiredCount = 0,
-  onOpenMedalArchive, medalCount = 0, onOpenFindShoes,
+  onOpenMedalArchive, medalCount = 0, onOpenFindShoes, onOpenRanking,
   todayISO = '',
   onReplayOnboarding,
 }: {
@@ -200,6 +200,14 @@ export default function ProfileScreen({
   // 있어 둘 다 사실상 아무도 못 찾았다(민우님: "러닝화 비교가 어디로 갔지").
   // 하나로 합쳐 마이 탭 그룹 목록으로 끌어올린다. 없으면 행 미표시(안전한 no-op).
   onOpenFindShoes?: () => void;
+  /**
+   * 랭킹(명예의 전당) 진입. 전에는 **진척 화면 우상단 트로피 하나**뿐이라 두 겹 안에
+   * 묻혀 있었다(민우님: "랭킹은 진입점이 어디야, 보는 곳이 없는데?"). 소셜의 얼굴을
+   * 아이콘 하나로 숨겨두면 없는 기능이 된다 — 러닝화 비교가 신발 상세 밑바닥에
+   * 묻혀 있던 것과 같은 실수다.
+   * 비공개 사용자에겐 주어지지 않는다(호출부가 판단) → 그 줄이 아예 안 뜬다.
+   */
+  onOpenRanking?: () => void;
   medalCount?: number;
   // 은퇴한 신발 수(전당 진입 행의 부제에 표시). 0이어도 진입은 가능(빈 전당 안내).
   retiredCount?: number;
@@ -775,11 +783,18 @@ export default function ProfileScreen({
             (간결화 E1, 2026-07-26). 셋 다 '아이콘 + 제목 + 부제 + ›' 로 완전히 같은 골격이라
             카드 표면 3장은 정보를 나누지 못하고 여백만 먹었다(애플 설정앱식 그룹 목록으로).
             행 사이만 헤어라인으로 나누고, 표면·유리 헤어라인은 카드 하나가 소유한다. */}
-        {(onOpenProgression || onOpenHallOfShoes || onOpenMedalArchive || onOpenFindShoes) && (() => {
+        {(onOpenProgression || onOpenHallOfShoes || onOpenMedalArchive || onOpenFindShoes || onOpenRanking) && (() => {
           const entries = [
             onOpenProgression && {
               key: 'progression', testID: 'open-progression', icon: 'trophy-outline' as const,
               title: '진척', sub: '나의 여정 · 업적', a11y: '진척 열기', onPress: onOpenProgression,
+            },
+            // 진척 바로 다음 — 점수를 본 사람이 자연히 "그래서 몇 등이지"로 간다.
+            onOpenRanking && {
+              key: 'ranking', testID: 'open-ranking', icon: 'trophy-outline' as const,
+              title: '랭킹',
+              sub: '이번 달 순위 · 다른 러너의 러닝화',
+              a11y: '랭킹 열기', onPress: onOpenRanking,
             },
             onOpenHallOfShoes && {
               key: 'hall-of-shoes', testID: 'open-hall-of-shoes', icon: 'ribbon-outline' as const,

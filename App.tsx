@@ -2641,6 +2641,10 @@ function Main(){
             onOpenHallOfShoes={()=>setShowHallOfShoes(true)} retiredCount={retiredRecords.length}
             onOpenMedalArchive={()=>setShowMedalArchive(true)} medalCount={liveMedals(medals).length}
             onOpenFindShoes={()=>setShowFindShoes(true)}
+            // 랭킹은 **공개에 동의한 사람에게만** 준다. 비공개인데 입구를 보여주면
+            // 들어가서 내 자리가 없는 목록을 보게 된다(2026-08-01 판단 유지).
+            {...(LEADERBOARD_PUBLISH_ENABLED&&socialVisibility==='public'
+              ?{onOpenRanking:()=>setShowHallOfFame(true)}:{})}
             onReplayOnboarding={()=>setPreviewOnboard(true)}
           />
         )}
