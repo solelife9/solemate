@@ -208,3 +208,43 @@ describe('랭킹 행의 신발 표시', () => {
     r.unmount();
   });
 });
+
+// ── 러너 프로필 열기(소셜 2단계) ──────────────────────────────────────────────
+// "1, 2, 3위는 뭘 신나"가 이 랭킹의 차별점인데 목록은 신발 이름 한 줄까지만 담는다.
+// 그 줄을 눌러 그 사람의 프로필로 들어가는 게 다음 걸음이다.
+describe('러너 프로필 열기', () => {
+  const pressable = (root: ReactTestRenderer.ReactTestInstance, id: string) =>
+    byId(root, id).find(n => typeof (n.props as any).onPress === 'function');
+
+  test('남의 행을 누르면 uid 와 이름을 준다', async () => {
+    const onOpenRunner = jest.fn();
+    const r = await render(
+      <HallOfFameScreen provider={makeProvider(true)} now={NOW} onOpenRunner={onOpenRunner} />,
+    );
+    const row = pressable(r.root, 'hof-entry-a');
+    expect(row).toBeTruthy();
+    await act(async () => { (row!.props as any).onPress(); });
+    expect(onOpenRunner).toHaveBeenCalledWith('a', expect.any(String));
+    r.unmount();
+  });
+
+  test('내 행은 열리지 않는다 — 내 프로필은 마이 탭이 정본이다', async () => {
+    const onOpenRunner = jest.fn();
+    const r = await render(
+      <HallOfFameScreen provider={makeProvider(true)} now={NOW} onOpenRunner={onOpenRunner} />,
+    );
+    const mine = byId(r.root, 'hof-entry-me').find(n => (n.props as any).disabled !== undefined);
+    expect(mine).toBeTruthy();
+    expect((mine!.props as any).disabled).toBe(true);
+    r.unmount();
+  });
+
+  test('핸들러가 없으면 아무 행도 눌리지 않는다 — 반응 없는 버튼을 만들지 않는다', async () => {
+    const r = await render(<HallOfFameScreen provider={makeProvider(true)} now={NOW} />);
+    for (const id of ['hof-entry-a', 'hof-entry-c']) {
+      const row = byId(r.root, id).find(n => (n.props as any).disabled !== undefined);
+      expect((row!.props as any).disabled).toBe(true);
+    }
+    r.unmount();
+  });
+});

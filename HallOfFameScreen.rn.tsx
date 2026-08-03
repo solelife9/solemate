@@ -126,6 +126,11 @@ function titleName(key: string | null): string {
 export interface HallOfFameScreenProps {
   /** 내 닉네임(내 행 강조 보조). */
   profileName?: string;
+  /**
+   * 러너 한 명을 연다(랭킹 행 탭 → 공개 프로필). 없으면 행이 눌리지 않는다 —
+   * 소셜이 꺼진 빌드에서 아무 일도 안 하는 버튼을 만들지 않기 위해서다.
+   */
+  onOpenRunner?: (uid: string, nickname: string) => void;
   /** 뒤로(진척 화면으로 복귀). */
   onBack?: () => void;
   /** 랭킹 데이터 소스(기본 keegoFirestoreRankingProvider). 테스트는 fake 주입. */
@@ -136,6 +141,7 @@ export interface HallOfFameScreenProps {
 
 export default function HallOfFameScreen({
   profileName = '나',
+  onOpenRunner,
   onBack,
   provider = keegoFirestoreRankingProvider,
   now,
@@ -202,17 +208,26 @@ export default function HallOfFameScreen({
   const renderRow = (e: LeaderboardEntry, highlight: boolean) => {
     const tColor = TIER_COLORS[e.rankTier] ?? TIER_COLORS.bronze;
     const tName = titleName(e.equippedTitle);
+    const shown = e.nickname || (highlight ? profileName : '러너');
+    // 내 행은 열지 않는다 — 내 프로필은 마이 탭이 정본이고, 여기서 또 열면 같은 걸
+    // 두 곳에서 보게 된다. 남의 행만 눌린다.
+    const openable = !!onOpenRunner && !highlight && !!e.uid;
     return (
-      <View
+      <Pressable
         key={`${e.uid}-${e.rank}`}
         testID={`hof-entry-${e.uid}`}
-        style={[
+        onPress={openable ? () => onOpenRunner!(e.uid, shown) : undefined}
+        disabled={!openable}
+        accessibilityRole={openable ? 'button' : undefined}
+        accessibilityLabel={openable ? `${shown} 프로필 보기` : undefined}
+        style={({pressed}) => [
           s.row,
           highlight && {
             borderWidth: 1,
             borderColor: withAlpha(ACCENT, 0.55),
             backgroundColor: withAlpha(ACCENT, 0.08),
           },
+          pressed && openable && s.rowPressed,
         ]}>
         {/* 일반 행 = 코너 페이드 헤어라인, 내 행(highlight) = 액센트 의미 보더(예외). */}
         {!highlight && <GlassEdge glints={false} radius={RADIUS.md} />}
@@ -224,7 +239,7 @@ export default function HallOfFameScreen({
         <View style={[s.tierDot, {backgroundColor: tColor}]} />
         <View style={{flex: 1, minWidth: 0}}>
           <Text style={s.rowName} numberOfLines={1}>
-            {e.nickname || (highlight ? profileName : '러너')}
+            {shown}
             {highlight ? <Text style={{color: ACCENT}}>{'  (나)'}</Text> : null}
           </Text>
           {tName ? (
@@ -251,7 +266,11 @@ export default function HallOfFameScreen({
           ) : null}
         </View>
         <Text style={s.rowScore}>{formatScore(category, e.score)}</Text>
-      </View>
+        {/* 열 수 있는 행에만 화살표. 없으면 눌러도 아무 일이 없는 줄로 보인다. */}
+        {openable && (
+          <Ionicons name="chevron-forward" size={ri(ICON.inline)} color={T3} style={s.rowChev} />
+        )}
+      </Pressable>
     );
   };
 
@@ -434,6 +453,9 @@ const s = StyleSheet.create({
   },
   hintTxt: {flex: 1, fontFamily: FONT, color: T2, fontSize: TYPE.label.fontSize, fontWeight: '600'},
   // 리더보드 행 — 일반=코너 페이드 헤어라인, 내 행=액센트 보더(렌더에서 주입).
+  // 열리는 행은 눌린 티가 나야 한다 — 안 그러면 눌러도 반응이 없는 것처럼 느껴진다.
+  rowPressed: {opacity: MOTION.press.opacity},
+  rowChev: {marginLeft: rs(2)},
   row: {
     flexDirection: 'row',
     alignItems: 'center',

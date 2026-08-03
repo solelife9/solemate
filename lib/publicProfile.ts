@@ -261,10 +261,48 @@ export async function saveVisibility(v: ProfileVisibility): Promise<void> {
   }
 }
 
-/** 공개 프로필을 쓰고 지우는 최소 포트 계약. */
+/** 공개 프로필을 쓰고·지우고·읽는 최소 포트 계약. */
 export interface ProfilePort {
   putPublicProfile?(profile: PublicProfile): Promise<void>;
   deletePublicProfile?(): Promise<void>;
+  /** 남의 공개 프로필 한 건. 없으면 null(공개 안 했거나 내렸다). */
+  getPublicProfile?(uid: string): Promise<PublicProfile | null>;
+}
+
+/**
+ * 남의 프로필 조회 결과. **"없다"와 "못 읽었다"를 구분한다** — 전자는 그 사람이
+ * 공개하지 않은 것이고(정상), 후자는 우리 쪽 문제다(네트워크·권한). 화면이 다르게
+ * 말해야 사용자가 "얘는 비공개구나"와 "지금 안 되는구나"를 헷갈리지 않는다.
+ */
+export type ProfileFetch =
+  | {state: 'ok'; profile: PublicProfile}
+  | {state: 'private'}
+  | {state: 'error'};
+
+/**
+ * 한 사람의 공개 프로필을 읽는다. **읽기 1건**이다.
+ *
+ * 랭킹 목록은 엔트리에 신발까지 실어 추가 읽기를 0으로 만들어 뒀다(AUDIT 2). 프로필은
+ * **사용자가 그 사람을 눌렀을 때만** 읽는다 — 목록을 그리며 미리 당겨오면 100명이면
+ * 100읽기다. 그 절제가 이 함수의 계약이다.
+ *
+ * 안 열어본 사람은 한 번도 안 읽는다. 같은 사람을 다시 눌러도 화면이 이미 들고 있으면
+ * 다시 부르지 않는다(호출부 책임).
+ */
+export async function fetchPublicProfile(
+  port: ProfilePort,
+  uid: string,
+): Promise<ProfileFetch> {
+  if (!port?.getPublicProfile || !uid) return {state: 'error'};
+  try {
+    const p = await port.getPublicProfile(uid);
+    if (!p) return {state: 'private'};
+    // 서버가 뭘 주든 우리가 아는 모양이 아니면 안 그린다 — 남의 데이터다.
+    if (typeof p.nickname !== 'string' || p.visibility !== 'public') return {state: 'private'};
+    return {state: 'ok', profile: p};
+  } catch {
+    return {state: 'error'};
+  }
 }
 
 /**

@@ -89,6 +89,11 @@ export interface CloudPort {
    */
   putPublicProfile?(profile: Record<string, unknown>): Promise<void>;
   deletePublicProfile?(): Promise<void>;
+  /**
+   * 남의 공개 프로필 한 건(소셜 2단계 — 랭킹에서 사람을 눌렀을 때).
+   * **목록을 그릴 때 미리 당겨오지 않는다** — 100명이면 100읽기다. 누른 것만 읽는다.
+   */
+  getPublicProfile?(uid: string): Promise<Record<string, unknown> | null>;
   listRecords?(
     collection: string,
     afterMs: number | null,

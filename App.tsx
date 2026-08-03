@@ -52,6 +52,8 @@ import {nativeRecognizer} from './lib/ocrNative';
 import {parseRoute} from './lib/route';
 import LocationPrimeScreen from './LocationPrimeScreen.rn';
 import HallOfFameScreen from './HallOfFameScreen.rn';
+// 남의 공개 프로필(소셜 2단계) — 랭킹에서 사람을 눌렀을 때만 읽는다(읽기 1건).
+import RunnerProfileScreen from './RunnerProfileScreen.rn';
 import {buildContext} from './lib/progression/context';
 import {getProgression, pickRecentAchievement, collectUnlockedKeys} from './lib/progression';
 import {RANK_XP} from './lib/progression/rank';
@@ -321,6 +323,9 @@ function Main(){
   const [locPrimeGoal,setLocPrimeGoal]=useState<RunGoal|null>(null);
   // 명예의 전당(라이브 리더보드) 전체화면 표시 여부 — 진척 화면 헤더 버튼이 연다.
   const [showHallOfFame,setShowHallOfFame]=useState(false);
+  // 열람 중인 러너(uid + 목록이 이미 알던 이름). null 이면 안 열려 있고, 그동안은
+  // profiles 를 한 번도 읽지 않는다 — 목록을 그리며 미리 당겨오면 100명이면 100읽기다.
+  const [viewedRunner,setViewedRunner]=useState<{uid:string;name:string}|null>(null);
   // 진척 영속 상태(progression_v1) — Hall of Shoes 레코드 + 은퇴 키프세이크 컨텍스트의
   // 소스. 마운트 시 로드하고, 은퇴 확정 시 레코드를 ADDITIVE 하게 덧붙인다(파생값은 재계산).
   const [progState,setProgState]=useState<ProgressionState|null>(null);
@@ -2476,7 +2481,14 @@ function Main(){
     return <CelebrationScreen data={celebration} onClose={closeCelebration}/>;
   }
   if(showHallOfFame){
+    // 러너 프로필은 랭킹 **위에** 얹힌다 — 닫으면 보던 순위 자리로 그대로 돌아온다.
+    if(viewedRunner){
+      return <RunnerProfileScreen
+        uid={viewedRunner.uid} fallbackName={viewedRunner.name}
+        port={cloudPortRef.current} onClose={()=>setViewedRunner(null)}/>;
+    }
     return <HallOfFameScreen profileName={profileName}
+      onOpenRunner={(uid,name)=>setViewedRunner({uid,name})}
       onBack={()=>setShowHallOfFame(false)}/>;
   }
 

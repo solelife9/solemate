@@ -416,6 +416,15 @@ export function createFirebaseCloudPort(
         updatedAt: serverTimestamp(),
       });
     },
+    /**
+     * 남의 공개 프로필 한 건. 없으면 null.
+     * **랭킹 목록을 그릴 때가 아니라 그 사람을 눌렀을 때만** 부른다(읽기 1건).
+     */
+    async getPublicProfile(uid: string): Promise<Record<string, unknown> | null> {
+      if (!uid) return null;
+      const snap = await getDoc(doc(getFirestore(), 'profiles', uid));
+      return snap.exists() ? (snap.data() as Record<string, unknown>) : null;
+    },
     /** 공개 중단·탈퇴 시 내린다. 없는 문서 삭제는 no-op. */
     async deletePublicProfile(): Promise<void> {
       const uid = requireUid();
