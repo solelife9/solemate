@@ -120,7 +120,7 @@ describe('storeUrlFor — 플랫폼별 링크', () => {
   const cfg: RemoteAppConfig = {
     minSupportedVersion: '1.0.1',
     storeUrlIos: 'https://apps.apple.com/app/id1',
-    storeUrlAndroid: 'https://play.google.com/store/apps/details?id=com.solemate',
+    storeUrlAndroid: 'https://play.google.com/store/apps/details?id=com.keego.app',
     message: null,
   };
 

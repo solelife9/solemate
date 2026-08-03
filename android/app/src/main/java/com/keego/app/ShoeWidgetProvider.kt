@@ -1,4 +1,4 @@
-package com.solemate
+package com.keego.app
 
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager

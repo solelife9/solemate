@@ -179,9 +179,9 @@ android {
         abortOnError false
     }
 
-    namespace "com.solemate"
+    namespace "com.keego.app"
     defaultConfig {
-        applicationId "com.solemate"
+        applicationId "com.keego.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         // 버전 체계: CI/로컬에서 ~/.gradle/gradle.properties 또는 -P 로 덮어쓸 수 있게(스토어

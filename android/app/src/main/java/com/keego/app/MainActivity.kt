@@ -1,4 +1,4 @@
-package com.solemate
+package com.keego.app
 
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate

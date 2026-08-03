@@ -643,7 +643,7 @@
 					"-lc++",
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
-				PRODUCT_BUNDLE_IDENTIFIER = com.solemate;
+				PRODUCT_BUNDLE_IDENTIFIER = com.keego.app;
 				PRODUCT_NAME = SoleMate;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -675,7 +675,7 @@
 					"-lc++",
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
-				PRODUCT_BUNDLE_IDENTIFIER = com.solemate;
+				PRODUCT_BUNDLE_IDENTIFIER = com.keego.app;
 				PRODUCT_NAME = SoleMate;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SWIFT_VERSION = 5.0;
@@ -923,7 +923,7 @@
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "러닝 운동을 건강 앱에 기록하기 위해 사용합니다.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "러닝 중 거리와 경로를 측정하기 위해 위치를 사용합니다.";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
-				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.solemate;
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.keego.app;
 				INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -934,7 +934,7 @@
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
-				PRODUCT_BUNDLE_IDENTIFIER = com.solemate.watchkitapp;
+				PRODUCT_BUNDLE_IDENTIFIER = com.keego.app.watchkitapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
@@ -979,7 +979,7 @@
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "러닝 운동을 건강 앱에 기록하기 위해 사용합니다.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "러닝 중 거리와 경로를 측정하기 위해 위치를 사용합니다.";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
-				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.solemate;
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.keego.app;
 				INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -989,7 +989,7 @@
 				MARKETING_VERSION = 1.0;
 				MTL_FAST_MATH = YES;
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
-				PRODUCT_BUNDLE_IDENTIFIER = com.solemate.watchkitapp;
+				PRODUCT_BUNDLE_IDENTIFIER = com.keego.app.watchkitapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
@@ -1038,7 +1038,7 @@
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
-				PRODUCT_BUNDLE_IDENTIFIER = com.solemate.RunActivity;
+				PRODUCT_BUNDLE_IDENTIFIER = com.keego.app.RunActivity;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -1085,7 +1085,7 @@
 				MARKETING_VERSION = 1.0;
 				MTL_FAST_MATH = YES;
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
-				PRODUCT_BUNDLE_IDENTIFIER = com.solemate.RunActivity;
+				PRODUCT_BUNDLE_IDENTIFIER = com.keego.app.RunActivity;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;

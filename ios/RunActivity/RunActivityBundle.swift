@@ -17,7 +17,7 @@ struct RunActivityBundle: WidgetBundle {
 // 이면 샘플로 폴백(빌드·프리뷰·최초 실행 안전). ⚠️ App Group id 는 Apple 개발자 포털+Xcode
 // Signing&Capabilities 에 등록 필요(앱·확장 양쪽 동일 그룹).
 enum KeegoWidgetShared {
-    static let appGroup = "group.com.solemate.keego"
+    static let appGroup = "group.com.keego.app"
     // 앱(WidgetDataModule)이 쓰는 키와 동일 계약.
     static let kName = "widget_shoe_name"
     static let kBrand = "widget_shoe_brand"
