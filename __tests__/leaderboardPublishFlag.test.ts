@@ -24,8 +24,12 @@ describe('리더보드 발행 플래그', () => {
 
   test('App 의 랭킹 발행이 플래그로 early-return 한다', () => {
     const app = read('App.tsx');
-    // 플래그를 가져오고
-    expect(app).toMatch(/import\s*\{\s*LEADERBOARD_PUBLISH_ENABLED\s*\}\s*from\s*'\.\/lib\/featureFlags'/);
+    // 플래그를 가져오고 (같은 구문에서 다른 플래그를 함께 가져올 수 있다 —
+    // 2026-08-02 에 SOCIAL_PROFILE_PUBLISH_ENABLED 가 합류했다. 검사할 것은
+    // '이 플래그를 featureFlags 에서 가져오는가'이지 import 목록의 길이가 아니다.)
+    expect(app).toMatch(
+      /import\s*\{[^}]*LEADERBOARD_PUBLISH_ENABLED[^}]*\}\s*from\s*'\.\/lib\/featureFlags'/,
+    );
     // 발행 함수 본문 첫 줄에서 가드한다(publishMyRanking 호출보다 앞).
     const guardIdx = app.indexOf('if(!LEADERBOARD_PUBLISH_ENABLED) return;');
     const callIdx = app.indexOf('await publishMyRanking({');

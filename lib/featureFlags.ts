@@ -53,3 +53,39 @@ export const LEADERBOARD_PUBLISH_ENABLED = false;
  * (FCM_REGISTER_ENDPOINT). 그때 이 값을 true 로 바꾼다 — 배선은 그대로 남겨뒀다.
  */
 export const REMOTE_PUSH_ENABLED = false;
+
+/**
+ * 공개 프로필(`profiles/{uid}`)을 발행할지 — 「이 사람은 무슨 러닝화 신나」.
+ *
+ * **false 인 이유 (2026-08-02 App Store 심사 감사 B-1):**
+ *  1) 발행되는 내용은 닉네임·현역 신발 6켤레·은퇴 신발 12켤레·총거리·이번달 거리·러닝 횟수·
+ *     VO₂max·평균 페이스·최장 거리·거리 PB 4종이고, 규칙상 **로그인한 전원이 읽을 수 있다**
+ *     (`firestore.rules` `match /profiles/{uid}` → `allow read: if signedIn()`).
+ *  2) 그런데 **공개된 처리방침에 '다른 이용자에게 공개된다'는 고지가 없다.** 오히려
+ *     `docs/privacy.html` 은 제3자 제공·공개를 하지 않는다고 적어 뒀다.
+ *  3) 스토어 개인정보 신고서(`docs/store-privacy-labels.md`)에도 이 항목이 없다 —
+ *     실제 동작과 어긋난 신고로 제출된다.
+ *  4) **그 프로필을 볼 화면이 앱에 없다.** 포트 계약에 읽기 API 자체가 없다
+ *     (`lib/cloudPort.ts` 는 put/delete 뿐). 동의만 받고 아무도 못 본다.
+ *
+ * 이건 AUDIT 1 이 잡아낸 사고(`767032e` — 동의도 화면도 없이 개인정보가 공개 컬렉션에
+ * 쌓이던 것)와 **패턴이 같다.** 컬렉션 이름만 `leaderboards` → `profiles` 로 바뀌었다.
+ * LEADERBOARD_PUBLISH_ENABLED 가 지키던 규율을 여기에도 똑같이 적용한다.
+ *
+ * **끄면 무엇이 달라지나:**
+ *  · 발행이 멈춘다. 그리고 **이미 올라가 있던 문서는 내려간다** — `App.tsx` 가 플래그가
+ *    꺼져 있으면 프로필을 `null` 로 만들어 `publishProfile` 에 넘기고, 그 함수는 null 을
+ *    "지우라"는 뜻으로 읽는다. "안 쓰는 것"이 아니라 "내리는 것"이어야 실제로 안 보인다.
+ *  · 공개 범위 동의 화면을 띄우지 않는다 — 꺼진 기능의 동의를 받는 건 무의미하다.
+ *
+ * **켜는 조건 셋** — 리더보드와 같다. 하나라도 빠지면 같은 사고가 반복된다.
+ *   ① 공개 범위 옵트인 ............ ✅ 완료(SocialConsentScreen · 설정 토글)
+ *   ② 프로필을 **볼 화면** ........ ⛔ 미완 — 지금은 읽는 코드가 아예 없다
+ *   ③ 처리방침 제3자 공개 조항 .... ⛔ 미완 — 문안은 `docs/legal/social-disclosure.md` 에
+ *      준비돼 있고, 공개 저장소 `solelife9/keego-legal` 에 반영해 배포해야 한다(민우님 작업).
+ *      이 저장소의 `docs/privacy.html` 만 고치면 공개 URL 은 옛 내용 그대로다.
+ *
+ * ②③ 이 끝나면 이 값을 true 로 바꾼다. 발행 코드(`lib/publicProfile`)와 동의 화면
+ * (`SocialConsentScreen.rn.tsx`)은 그대로 살아 있다 — 이 값만 바꾸면 켜진다.
+ */
+export const SOCIAL_PROFILE_PUBLISH_ENABLED = false;

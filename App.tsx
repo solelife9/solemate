@@ -140,7 +140,7 @@ import {setRemoteShoeDocs} from './lib/shoeCatalogStore';
 import {LoginScreen} from './LoginScreen.rn';
 import {stampUpdatedAt, markDeleted, partitionTombstones, mergeCloudData, mergeMedals, liveRecords, reconcileLivePreservingLocal, unionTombstones, stripSyncedRoutes, shouldSkipCloudSync, compactTombstones, SHOE_TOMBSTONE_KEEP} from './lib/cloudSync';
 import {publishMyRanking} from './lib/progression/firestoreRankingStore';
-import {LEADERBOARD_PUBLISH_ENABLED} from './lib/featureFlags';
+import {LEADERBOARD_PUBLISH_ENABLED, SOCIAL_PROFILE_PUBLISH_ENABLED} from './lib/featureFlags';
 import {genRunId, genShoeId} from './lib/genId';
 import {showToast} from './lib/toast';
 import {migrateStorageSchema} from './lib/storageMigration';
@@ -1533,16 +1533,22 @@ function Main(){
       // 없으면(미결정 포함) 아무것도 안 올리고, 껐으면 올라가 있던 것을 **내린다** —
       // "안 쓰는 것"이 아니라 "내리는 것"이어야 껐을 때 실제로 안 보인다.
       // 실패해도 러닝 동기에는 영향이 없다(비차단).
+      //
+      // ⚠️ 2026-08-02 App Store 심사 감사 B-1 로 **플래그 오프**(SOCIAL_PROFILE_PUBLISH_ENABLED).
+      // 처리방침에 '다른 이용자에게 공개' 고지가 없고 스토어 신고서에도 이 항목이 없는데
+      // 로그인 전원이 읽을 수 있는 컬렉션에 올라가고 있었다. 리더보드와 같은 규율을 적용한다.
+      // 플래그가 꺼져 있으면 profile 을 **null 로 만든다** — publishProfile 은 null 을
+      // "지우라"로 읽으므로, 이미 올라가 있던 문서까지 함께 내려간다(멈추는 게 아니라 내린다).
       void (async()=>{
         try{
-          const profile=buildPublicProfile({
+          const profile=SOCIAL_PROFILE_PUBLISH_ENABLED?buildPublicProfile({
             visibility:socialVisibility,
             nickname:profileName||DEFAULT_PROFILE_NAME,
             shoes:liveRecords(applied.shoes as any) as any,
             runs:liveRecords(applied.runs as any) as any,
             nowMs:Date.now(),
             spec:socialSpecInput,
-          });
+          }):null;
           await publishProfile(cloudPortRef.current as any,profile);
         }catch(e){reportIssue('공개 프로필 발행',e);}
       })();
@@ -2287,7 +2293,12 @@ function Main(){
   // 않고, "이렇게 보여요"가 실제로 뭔가를 보여준다. 동의 전에는 아무것도 안 올라간다.
   // 테스트는 기본 우회(다른 App 스위트가 홈에 못 가면 전부 깨진다). 이 화면 자체의
   // 검증은 __KEEGO_ENABLE_SOCIAL_CONSENT__ 로 켜서 한다(클라우드 동기·계정격리와 같은 관례).
-  const consentGateOn=process.env.NODE_ENV!=='test'||(globalThis as any).__KEEGO_ENABLE_SOCIAL_CONSENT__===true;
+  // ⚠️ 2026-08-02 심사 감사 B-1: 발행이 꺼져 있으면(SOCIAL_PROFILE_PUBLISH_ENABLED=false)
+  // 동의도 묻지 않는다 — 꺼진 기능의 동의를 받아 두는 건 사용자를 오도한다("공개했는데
+  // 아무 데도 안 보이는" 상태). 테스트 seam 은 그대로 둔다: 이 화면 자체의 동작 검증은
+  // 플래그와 무관하게 계속 돌아야 하고(1.1 재개봉 전제), seam 은 프로덕션에서 절대 켜지지 않는다.
+  const consentGateOn=(globalThis as any).__KEEGO_ENABLE_SOCIAL_CONSENT__===true
+    ||(SOCIAL_PROFILE_PUBLISH_ENABLED&&process.env.NODE_ENV!=='test');
   if(consentGateOn&&socialVisibility==='unset'&&shoes.length>0&&overlay==='none'&&!activeRun){
     const preview=buildPublicProfile({
       visibility:'public', // 미리보기 — 실제 공개는 아래 버튼을 눌러야 시작된다
@@ -2476,9 +2487,15 @@ function Main(){
     // 둘 다 이상하다. 동의가 곧 참여 조건이다.
     // 초기에 사람이 적어 초라해 보이는 건 감수한다(민우님 결정 2026-08-01):
     // "내가 순위권이네?"는 앱 초기에만 존재하는 경험이라 아꼈다 쓸 수 없다.
+    //
+    // ⚠️ 2026-08-02 심사 감사 B-3: **발행 플래그도 함께 본다.** 발행이 꺼져 있으면
+    // 아무도 엔트리를 올리지 않으므로 어느 달이든 리더보드가 비어 있고, 화면은 영구히
+    // "랭킹이 곧 열려요"만 띄운다 — 스토어 설명에 적힌 기능이 실제로는 빈 화면인 상태라
+    // App Store 2.1(미완성)·4.2('coming soon')에 걸린다. 진입점은 **데이터를 만드는
+    // 플래그를 따라가야 한다** — 동의 여부만 보면 둘이 어긋난다.
     return <ProgressionScreen runs={runs} shoes={shoes} profileName={profileName} challenges={contextChallenges}
       onBack={()=>setShowProgression(false)}
-      {...(socialVisibility==='public'?{onOpenHallOfFame:()=>setShowHallOfFame(true)}:{})}/>;
+      {...(LEADERBOARD_PUBLISH_ENABLED&&socialVisibility==='public'?{onOpenHallOfFame:()=>setShowHallOfFame(true)}:{})}/>;
   }
 
   // 명예의 전당(은퇴 신발 박물관) 전체화면 — 영속된 은퇴 레코드를 그대로 전시한다
