@@ -389,3 +389,35 @@ describe('내 최고 순위', () => {
     r.unmount();
   });
 });
+
+// ─── 축마다 집계 범위가 다르다는 걸 화면이 밝히는가 (2026-08-03) ────────────────
+// 거리·꾸준함은 이번 달 런만 세지만, 진척 포인트는 **평생 누적 XP**다
+// (App.tsx 가 view.rank.xp 를 싣는다). 그 축에도 "이번 달 랭킹"이라고 적으면
+// 사용자는 이번 달 성적표로 읽는다 — 실제로는 먼저 시작한 사람이 위에 있는 표다.
+describe('집계 범위 라벨', () => {
+  const labelOf = (r: ReactTestRenderer.ReactTestRenderer): string => {
+    let out = '';
+    const walk = (n: any) => {
+      if (typeof n === 'string') { out += n; return; }
+      if (!n || !n.children) return;
+      n.children.forEach(walk);
+    };
+    walk(r.toJSON());
+    return out;
+  };
+
+  test('거리 축은 이번 달 랭킹이라고 밝힌다', async () => {
+    const r = await render(<HallOfFameScreen provider={makeProvider(true)} now={NOW} />);
+    expect(labelOf(r)).toContain('이번 달 랭킹');
+  });
+
+  test('진척 포인트 축은 누적임을 밝힌다 — "이번 달"이라 하지 않는다', async () => {
+    const r = await render(<HallOfFameScreen provider={makeProvider(true)} now={NOW} />);
+    const chip = one(r.root, 'hof-category-progressPoints');
+    await act(async () => { (chip.props as any).onPress(); });
+    await settle();
+    const t = labelOf(r);
+    expect(t).toContain('전체 기간 누적');
+    expect(t).not.toContain('이번 달 랭킹');
+  });
+});

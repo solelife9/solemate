@@ -324,7 +324,20 @@ export default function HallOfFameScreen({
             거터는 ScrollView 컨테이너가 이미 주므로 패딩 0. (구 back 버튼 testID
             hof-back 은 헤더 행으로 이동 — 참조 테스트 없음 확인.) */}
         <ScreenHeader title="랭킹" onBack={onBack} testID="hof-back" style={s.header} />
-        <Text style={s.monthLabel}>{yearMonth} · 이번 달 랭킹</Text>
+        {/* 축마다 집계 범위가 다르다 — 라벨이 그걸 말해줘야 한다(2026-08-03).
+            · 거리·꾸준함 = 이번 달 런만 센다(월간 리셋 — 매달 시작선이 같다).
+            · 진척 포인트 = **평생 누적 XP**다(App.tsx 가 view.rank.xp 를 싣는다).
+              티어가 XP 에서 파생되므로(rank.tierForXp, 레전드 5,000) 이 축의 순위는
+              곧 '누가 레전드를 찍었나'다 — 월간 경쟁이 아니라 명예의 전당 성격이라
+              그대로 둔다. 다만 "이번 달 랭킹"이라 적으면 거짓이 된다.
+            엔트리는 leaderboards/{ym} 에 월별로 쌓이므로, 누적 축이라도 목록에 오르는 건
+            **그 달에 동기한 사람**뿐이다. 결함이 아니라 성질이다 — 유령 1위가 영구히
+            박혀 있는 대신 '현역 중 누가 최고인가'가 보인다. 라벨에 그걸 밝힌다. */}
+        <Text style={s.monthLabel}>
+          {category === 'progressPoints'
+            ? `전체 기간 누적 · ${yearMonth}에 달린 러너 중`
+            : `${yearMonth} · 이번 달 랭킹`}
+        </Text>
 
         {/* 카테고리 선택 칩(가로 스크롤) */}
         <ScrollView
