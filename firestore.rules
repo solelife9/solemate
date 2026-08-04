@@ -35,12 +35,30 @@ service cloud.firestore {
         && d.rankTier is string
         && d.rankColor is string
         && (d.equippedTitle == null || d.equippedTitle is string)
-        && d.distance is number
-        && d.consistency is number
-        && d.shoeHealth is number
-        && d.collection is number
-        && d.progressPoints is number
+        // ── 크기 검증 (2026-08-04) ────────────────────────────────────────────
+        // 전에는 `is number` 만 봤다. 점수는 **클라이언트가 계산**하므로, 형태만 통과하면
+        // 누구나 distance: 999999 를 써서 영구 1위가 될 수 있었다. 규칙이 리더보드를
+        // 공개(2026-08-03)한 뒤로는 그게 실제 노출된 구멍이다.
+        //
+        // 서버 재계산(Cloud Function)이 진짜 답이지만 그건 큰 작업이고, 그 전에도
+        // **사람이 낼 수 없는 값**은 여기서 막을 수 있다. 상한은 인간 기록에 여유를 둔
+        // 값이라 정상 사용자는 절대 닿지 않는다:
+        //   · distance 1,500km/월 — 세계 최상급 울트라 러너의 월간 주행이 ~1,000km 다.
+        //   · consistency 31일 — 한 달의 날 수. 이건 물리적 상한이다.
+        //   · shoeHealth 0~100 — 퍼센트다.
+        //   · collection 500켤레 — 신발장이 그보다 클 수는 없다.
+        //   · progressPoints 10,000 — 총 획득 가능 XP 가 ≈6,310 이다(lib/progression/rank).
+        // 음수도 막는다 — 어떤 점수도 음수가 될 수 없는데, 막지 않으면 정렬을 뒤집는
+        // 장난이 가능하다.
+        && d.distance is number && d.distance >= 0 && d.distance <= 1500
+        && d.consistency is number && d.consistency >= 0 && d.consistency <= 31
+        && d.shoeHealth is number && d.shoeHealth >= 0 && d.shoeHealth <= 100
+        && d.collection is number && d.collection >= 0 && d.collection <= 500
+        && d.progressPoints is number && d.progressPoints >= 0 && d.progressPoints <= 10000
         && d.updatedAt is number
+        // 닉네임 길이 — 랭킹 행은 좁고, 긴 문자열은 남의 화면까지 늘어뜨린다.
+        // profiles 규칙이 이미 40자를 쓰므로 같은 값으로 맞춘다.
+        && d.nickname.size() <= 40
         // 신발 요약(선택) — 「1,2,3위는 뭘 신나」. 있으면 형태를 검사한다.
         // 개수 상한을 두는 이유: 엔트리는 랭킹 쿼리로 100개씩 읽히므로, 한 명이 거대한
         // 배열을 심으면 남의 화면까지 느려진다.

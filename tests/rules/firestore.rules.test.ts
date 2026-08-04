@@ -322,3 +322,48 @@ describe('미정의 경로', () => {
     await assertFails(getDocs(collection(asMe(), 'userBackups')));
   });
 });
+
+// ============================================================================
+// 랭킹 점수 크기 검증 (2026-08-04)
+// ============================================================================
+// 점수는 **클라이언트가 계산한다.** 전에는 규칙이 `is number` 만 봐서, 형태만 맞추면
+// 누구나 distance: 999999 를 써서 영구 1위가 될 수 있었다. 리더보드를 실제로 공개한
+// 뒤로는(2026-08-03) 노출된 구멍이다.
+//
+// 서버 재계산(Cloud Function)이 진짜 답이지만 그건 큰 작업이고, 그 전에도 **사람이 낼 수
+// 없는 값**은 규칙에서 막을 수 있다. 여기서는 그 방어선을 고정한다.
+describe('leaderboards — 점수 크기 검증', () => {
+  const write = (over: Record<string, unknown>) =>
+    setDoc(doc(asMe(), 'leaderboards', YM, 'entries', ME), {...validEntry(ME), ...over});
+
+  test('정상 범위는 통과한다', async () => {
+    await assertSucceeds(write({distance: 300, consistency: 20, progressPoints: 5000}));
+  });
+
+  test('사람이 낼 수 없는 거리는 거부한다 — 월 1,500km 상한', async () => {
+    await assertFails(write({distance: 999999}));
+    await assertFails(write({distance: 1501}));
+  });
+
+  test('한 달은 31일을 넘을 수 없다', async () => {
+    await assertFails(write({consistency: 32}));
+  });
+
+  test('총 획득 가능 XP(≈6,310)를 크게 넘는 진척 포인트는 거부한다', async () => {
+    await assertFails(write({progressPoints: 10001}));
+  });
+
+  test('신발 관리는 퍼센트다 — 100 초과 거부', async () => {
+    await assertFails(write({shoeHealth: 101}));
+  });
+
+  test('음수는 전부 거부한다 — 정렬을 뒤집는 장난을 막는다', async () => {
+    await assertFails(write({distance: -1}));
+    await assertFails(write({consistency: -1}));
+    await assertFails(write({progressPoints: -1}));
+  });
+
+  test('긴 닉네임은 거부한다 — 랭킹 행이 남의 화면까지 늘어진다', async () => {
+    await assertFails(write({nickname: 'x'.repeat(41)}));
+  });
+});
