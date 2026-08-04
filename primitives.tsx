@@ -263,10 +263,15 @@ function GlassEdgeBase({
   const [s, setS] = useState({w: 0, h: 0});
   const onLayout = (e: LayoutChangeEvent) => {
     const {width, height} = e.nativeEvent.layout;
+    // **크기가 그대로면 상태를 건드리지 않는다**(2026-08-04 성능 실측).
+    // 예전엔 매 레이아웃마다 새 객체로 setState 를 불렀다. onLayout 은 탭을 다시 보일 때도
+    // (display:none→flex) 같은 값으로 재발화하는데, 그때마다 재렌더 → SVG 그라데이션
+    // 재래스터화가 일어났다. 카드 하나가 그라데이션 9개를 그리고 기록 탭엔 카드가 14개다.
+    // 이 한 줄이 '같은 크기로 다시 보일 때'의 재작업을 통째로 없앤다(시각 변화 0).
     // 정확한 레이아웃 치수 사용(내림 금지) — 내림하면 소수점 높이 카드(러닝기록 등)에서
     // SVG 가 1px 짧아져 아래 라인이 바닥에서 떠 보였다(기기 발견 2026-07-11).
     // 경계 클리핑은 스트로크 '바깥 모서리'를 1px 안쪽에 그려 방지한다(아래 edge).
-    setS({w: width, h: height});
+    setS(prev => (prev.w === width && prev.h === height ? prev : {w: width, h: height}));
   };
   // 스트로크의 바깥 모서리가 정확히 1px 안쪽에 오도록 중심을 1+sw/2 들인다.
   // 이전엔 중심을 sw(0.75)만 들여 바깥 모서리 여유가 0.375px 뿐이었다 — 뷰가 소수점
@@ -737,14 +742,31 @@ export function AmbientBackdrop() {
 
 // ── Rise — 진입 모션 표준(마운트 시 14px 아래→위 페이드인) ─────────────────────
 // 홈에서 확립된 유일한 화면 진입 모션(DESIGN.md §6)을 전역 프리미티브로 승격.
-// JS 드라이버 — 코드베이스 관례(react-test-renderer 호환). 420ms 단발이라 체감 차이 없음.
+//
+// ⚠️ **네이티브 드라이버 필수**(2026-08-04 갤럭시 S10e 실측으로 교체).
+//
+// 예전 주석은 "JS 드라이버 — 코드베이스 관례. 420ms 단발이라 체감 차이 없음"이었다.
+// 그 전제가 틀렸다. JS 드라이버는 애니메이션 **매 프레임**을 자바스크립트에서 계산해
+// UI 스레드에 style 을 다시 먹인다. 그 대상이 탭 화면 전체(GlassEdge 14개짜리 기록 탭 등)면
+// 프레임마다 그 트리를 다시 그린다. 실측 프레임 히스토그램이 정확히 그 모양이었다:
+//
+//   125ms=2  129ms=5  133ms=3  150ms=9  200ms=2   ← 150ms 안팎이 20프레임 **연속**
+//
+// 420ms 애니메이션 × 60fps ≈ 20프레임과 정확히 맞는다. "한 번 무거운 것"이 아니라
+// "가벼운 일을 20번 반복하며 매번 화면을 통째로 다시 그린 것"이었다. 탭을 눌렀을 때
+// 3초 가까이 끊긴 이유다. 마운트 유지·React.memo·파생값 메모로 1ms 도 안 줄었던 것도
+// 이걸로 설명된다 — 비용이 렌더가 아니라 **애니메이션 프레임마다의 재그리기**였다.
+//
+// opacity 와 translateY 는 **둘 다 네이티브 드라이버가 지원한다.** JS 를 거칠 이유가 없다.
+// 네이티브로 넘기면 애니메이션이 UI 스레드와 무관하게 돌아 화면 재그리기가 사라진다.
+// (jest 는 Animated 를 목으로 대체하므로 테스트 호환 문제도 없다 — 3,164개 그대로 통과.)
 export function Rise({delay = 0, children, style}: {delay?: number; children: React.ReactNode; style?: StyleProp<ViewStyle>}) {
   const v = useRef(new Animated.Value(0)).current;
   const rm = useReduceMotion();
   useEffect(() => {
     // 동작 줄이기(DESIGN §6.7): 장식 진입 모션은 생략하고 최종 상태로 점프.
     if (rm) { v.setValue(1); return; }
-    const anim = Animated.timing(v, {toValue: 1, duration: MOTION.rise.dur, delay, easing: MOTION.ease.out, useNativeDriver: false});
+    const anim = Animated.timing(v, {toValue: 1, duration: MOTION.rise.dur, delay, easing: MOTION.ease.out, useNativeDriver: true});
     anim.start();
     return () => anim.stop(); // 언마운트 시 타이머 정리
   }, [v, delay, rm]);
@@ -1434,7 +1456,8 @@ export function TabBar({active, onTab}: {active: number; onTab: (i: number) => v
   // effect 가 현재 탭으로 스프링한다. 캐시가 없으면(앱 첫 부팅) 0 에서 시작하되 effect 가 즉시 점프.
   const hlInit = useRef(tabCachedSlots[tabLastActive] ? hlGeom(tabCachedSlots[tabLastActive]) : {x: 0, w: 0}).current;
   const hlX = useRef(new Animated.Value(hlInit.x)).current;
-  const hlW = useRef(new Animated.Value(hlInit.w)).current;
+  // 폭은 애니메이션하지 않는다(탭 폭이 모두 같다) — 측정값을 그대로 쓴다.
+  const hlWidth = slots[active] ? hlGeom(slots[active]).w : hlInit.w;
   // 이 인스턴스가 최초 배치를 끝냈는지. 최초엔 직전 탭 위치에서 현재 탭으로 슬라이드(앱 첫 부팅
   // = 직전==현재 이면 점프)하고, 이후 같은 인스턴스 내 변경은 일반 스프링.
   const posed = useRef(false);
@@ -1453,7 +1476,7 @@ export function TabBar({active, onTab}: {active: number; onTab: (i: number) => v
   useEffect(() => {
     const s = slots[active];
     if (!s) return;
-    const {x, w} = hlGeom(s);
+    const {x} = hlGeom(s); // w 는 더 이상 애니메이션하지 않는다(탭 폭 동일 — hlWidth 가 담당)
     if (!posed.current) {
       posed.current = true;
       const from = slots[tabLastActive];
@@ -1461,21 +1484,24 @@ export function TabBar({active, onTab}: {active: number; onTab: (i: number) => v
         // 다른 탭에서 넘어옴: 직전 탭 위치에서 시작 → 현재 탭으로 스프링(미끄러짐).
         const f = hlGeom(from);
         hlX.setValue(f.x);
-        hlW.setValue(f.w);
       } else {
         // 앱 첫 부팅(직전==현재) 또는 직전 geometry 미상: 글리치 없이 즉시 자리잡기.
         hlX.setValue(x);
-        hlW.setValue(w);
         tabLastActive = active;
         return;
       }
     }
     tabLastActive = active;
-    Animated.parallel([
-      Animated.spring(hlX, {toValue: x, useNativeDriver: false, speed: 16, bounciness: 9}),
-      Animated.spring(hlW, {toValue: w, useNativeDriver: false, speed: 16, bounciness: 9}),
-    ]).start();
-  }, [active, slots, hlX, hlW]);
+    // **네이티브 드라이버**(2026-08-04 실측). 예전엔 left/width 를 애니메이션했는데 둘 다
+    // 레이아웃 속성이라 네이티브로 못 돌린다 — 탭을 누를 때마다 스프링이 멎을 때까지
+    // 매 프레임 레이아웃을 다시 계산했고, 그 위에 blurAmount 25 짜리 BlurView 가 깔려 있어
+    // 프레임마다 블러까지 다시 구웠다. 탭 전환이 느렸던 마지막 조각이다.
+    //
+    // 탭 4개는 flex:1 이라 **폭이 전부 같다** → 폭은 애니메이션할 것이 없다. 위치만
+    // translateX 로 옮기면 되고, 그건 네이티브가 처리한다. scaleX 를 쓰지 않으므로
+    // 알약 모양의 둥근 끝단도 왜곡되지 않는다(모양·속도·오버슈트 전부 그대로).
+    Animated.spring(hlX, {toValue: x, useNativeDriver: true, speed: 16, bounciness: 9}).start();
+  }, [active, slots, hlX]);
 
   return (
     // box-none: 독 캡슐만 터치를 받고, 좌우 여백은 아래로 흐르는 콘텐츠에 그대로 통과시킨다
@@ -1486,7 +1512,7 @@ export function TabBar({active, onTab}: {active: number; onTab: (i: number) => v
       <View style={t.dock}>
         <BlurView pointerEvents="none" style={StyleSheet.absoluteFill} blurType="dark" blurAmount={25} reducedTransparencyFallbackColor="rgba(46,46,52,0.9)" />
         {/* 미끄러지는 오벌 하이라이트 */}
-        <Animated.View pointerEvents="none" style={[t.hl, {left: hlX, width: hlW}]} />
+        <Animated.View pointerEvents="none" style={[t.hl, {left: 0, width: hlWidth, transform: [{translateX: hlX}]}]} />
         {TABS.map((tab, i) => {
           const on = i === active;
           // 비활성도 밝게(T2) — 어두운 독+검정 배경에서 햇빛에도 보이도록. 활성 구분은
