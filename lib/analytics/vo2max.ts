@@ -22,10 +22,25 @@
  *  · <1km 또는 <4min — 공식 신뢰구간 밖(단거리 스퍼트·GPS 조각).
  *  · 페이스 <2'40"/km — 인간 상위 한계 밖(차량 GPS·수동 오입력). 계산에서 제외.
  */
+/**
+ * VDOT 표본으로 인정하는 최소 거리·시간 (2026-08-04 강화).
+ *
+ * 전에는 1km·4분이었다. 그 헐거운 문턱 때문에 **2.56km 를 2'53"/km 로 달린 조각 하나가
+ * VO2max 67.9(엘리트 구간)를 만들었다** — 같은 사용자의 2위 기록은 48.8 이었다.
+ * 원인은 공식의 성격이다: Daniels VDOT 는 **레이스 결과 → 훈련 페이스 환산표**이고
+ * "이 노력은 레이스급 최대"를 전제한다. 짧은 인터벌 조각에 적용하면 과대추정이
+ * 구조적으로 일어난다(짧을수록 %VO2max 보정이 커져 VDOT 가 부풀려진다).
+ *
+ * 3km·10분은 그 전제가 그나마 성립하는 하한이다 — 5km 레이스(≈20분)의 절반 수준으로,
+ * 이보다 짧으면 '레이스'가 아니라 '구간 질주'다.
+ */
+export const VDOT_MIN_KM = 3;
+export const VDOT_MIN_MIN = 10;
+
 export function vdot(distanceKm: number, durationSec: number): number {
   const m = (Number.isFinite(distanceKm) ? distanceKm : 0) * 1000;
   const tMin = (Number.isFinite(durationSec) ? durationSec : 0) / 60;
-  if (m < 1000 || tMin < 4) return 0; // 단거리/단시간은 공식 범위 밖
+  if (m < VDOT_MIN_KM * 1000 || tMin < VDOT_MIN_MIN) return 0; // 공식 신뢰 범위 밖
   if ((tMin * 60) / (m / 1000) < 160) return 0; // 2'40"/km 미만 — 비현실 데이터
   const v = m / tMin; // m/min
   const vo2 = -4.60 + 0.182258 * v + 0.000104 * v * v;

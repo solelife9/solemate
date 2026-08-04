@@ -15,7 +15,7 @@ import { showDialog } from './lib/dialog';
 import {Text} from './lib/text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { BG, CARD, CARD_HI, ACCENT, GOOD, DANGER, WARN, T1, T2, T3, SEP, CARD_BORDER, FONT, DISPLAY, withAlpha, TIER_COLORS, TIER_LABEL, KAKAO_YELLOW, KAKAO_LABEL, NAVER_GREEN, NAVER_LABEL, RADIUS, GUTTER, MOTION, HALL_GOLD, TYPE, GLASS, ICON} from './theme';
+import { BG, CARD, CARD_HI, ACCENT, GOOD, DANGER, WARN, T1, T2, T3, T4, SEP, CARD_BORDER, FONT, DISPLAY, withAlpha, TIER_COLORS, TIER_LABEL, KAKAO_YELLOW, KAKAO_LABEL, NAVER_GREEN, NAVER_LABEL, RADIUS, GUTTER, MOTION, HALL_GOLD, TYPE, GLASS, ICON} from './theme';
 // recap 토글 = SegmentedControl(sm), 스탯 그리드들 = StatGrid 단일 프리미티브.
 import { TabBar, TABBAR_CLEARANCE, Button, SegmentedControl, StatGrid, Stepper, AmbientBackdrop, Rise, GlassEdge, Toggle, KakaoMark, NaverMark, Input } from './primitives';
 import { Unit, unitKorean, displayNum } from './lib/units';
@@ -566,13 +566,24 @@ export default function ProfileScreen({
   // 화면 표시용 PR 행(카드와 동일 포맷 재사용). 표시 단위 환산은 빌더가 처리.
   const recapPRs = formatRecapPRs(recap.prs, unit);
   // 심폐 체력(VO2max) — 러너 스펙(기록 탭 FitnessCard 를 마이 탭 스펙 카드로 이관). 같은 매핑.
+  // 심박을 함께 넘긴다(2026-08-04). 전에는 km·시간·날짜만 넘겨서, 애플 건강을 연동해도
+  // 이 화면은 **페이스만 보고** 체력을 추정했다 — 심박 기반 경로가 있어도 굶고 있었다.
+  // 안정시 심박·나이는 설정에서 이미 들어온다(아래 props). 최대 심박은 런들에서 관측된
+  // 값을 fitnessSummary 가 직접 집계한다.
   const vo2 = useMemo(
     () => fitnessSummary(
-      (recapRuns as RecapRun[]).map((r) => ({ km: Number(r?.km ?? 0), durationS: Number(r?.duration ?? 0), runDate: String(r?.run_date || '') })),
+      (recapRuns as RecapRun[]).map((r) => ({
+        km: Number(r?.km ?? 0),
+        durationS: Number(r?.duration ?? 0),
+        runDate: String(r?.run_date || ''),
+        hrAvg: Number((r as {heart_rate?: number})?.heart_rate ?? 0),
+        hrRest: restHR,
+      })),
       todayISO || '',
+      { age, sex: sex === 'female' ? 'female' : 'male' },
     ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [recapRuns.length, (recapRuns as RecapRun[])[recapRuns.length - 1]?.id, todayISO],
+    [recapRuns.length, (recapRuns as RecapRun[])[recapRuns.length - 1]?.id, todayISO, restHR, age, sex],
   );
   const paceRec = records.find((r) => r.label.includes('1km'));
   const longRec = records.find((r) => r.label.includes('최장'));
@@ -782,11 +793,22 @@ export default function ProfileScreen({
               </View>
             </View>
 
-            {/* 심폐 체력(VO₂max) — 낯설고 앱마다 값이 다른 지표라 보조로 강등(푸터 한 줄, 사용자 지시). */}
+            {/* 심폐 체력(VO₂max) — 낯설고 앱마다 값이 다른 지표라 보조로 강등(푸터 한 줄, 사용자 지시).
+                2026-08-04: **어떻게 나온 값인지 함께 밝힌다.** 심박 없이 페이스로만 뽑은
+                추정치를 '심폐 체력'이라고만 적으면 측정된 값처럼 읽힌다(Truth only).
+                가민·애플은 심박이 없으면 아예 표시하지 않는데, keego 는 폰만 쓰는 사용자가
+                많으므로 **감추는 대신 출처를 말한다** — 그리고 켜는 방법을 알려준다. */}
             {vo2.vo2max > 0 && (
-              <View style={s.specVo2Foot} accessible accessibilityLabel={`심폐 체력 ${vo2.vo2max.toFixed(1)} VO2max, ${vo2.vo2maxLabel}`}>
+              <View
+                style={s.specVo2Foot}
+                accessible
+                accessibilityLabel={`심폐 체력 ${vo2.vo2max.toFixed(1)} VO2max, ${vo2.vo2maxLabel}, ${vo2.vo2maxSource === 'hr' ? '심박 기반' : '페이스 기반 참고치'}`}>
                 <Ionicons name="pulse-outline" size={ri(ICON.tag)} color={T3} />
-                <Text style={s.specVo2FootText}>심폐 체력 <Text style={s.specVo2FootStrong}>{vo2.vo2max.toFixed(1)} VO₂max</Text> · {vo2.vo2maxLabel}</Text>
+                <Text style={s.specVo2FootText}>
+                  심폐 체력 <Text style={s.specVo2FootStrong}>{vo2.vo2max.toFixed(1)} VO₂max</Text> · {vo2.vo2maxLabel}
+                  {vo2.vo2maxSource === 'pace' ? <Text style={s.specVo2FootNote}>{'\n'}페이스로 추정한 참고치예요 · 애플 건강을 연동하면 심박으로 정확해져요</Text> : null}
+                  {vo2.vo2maxSource === 'hr' && vo2.vo2maxSamples < 5 ? <Text style={s.specVo2FootNote}>{'\n'}심박 러닝 {vo2.vo2maxSamples}회 기준 · 더 달릴수록 정확해져요</Text> : null}
+                </Text>
               </View>
             )}
           </View>
@@ -1334,6 +1356,8 @@ const s = StyleSheet.create({
   specVo2Foot: { flexDirection: 'row', alignItems: 'center', gap: rv(8), marginTop: rv(16), paddingTop: rv(14), borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: CARD_BORDER },
   specVo2FootText: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500' },
   specVo2FootStrong: { color: T2, fontWeight: '700' },
+  // 추정 방법 주석 — 값보다 한 단 더 물러난 톤(T4). 숫자를 부정하는 게 아니라 출처를 밝힌다.
+  specVo2FootNote: { color: T4, fontSize: TYPE.micro.fontSize, fontWeight: '500' },
   // 섹션 헤더 = SectionTitle 프리미티브와 동일 스펙(700) — 화면 간 헤더 무게 통일(600 혼용 제거).
   sectionLabel: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '700', letterSpacing: 0.4, paddingHorizontal: rs(4) },
   progressRow: { flexDirection: 'row', alignItems: 'center', gap: rv(12), padding: rs(16) },
