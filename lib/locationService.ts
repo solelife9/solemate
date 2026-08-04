@@ -112,6 +112,26 @@ export async function hasForegroundPermission(): Promise<boolean> {
   }
 }
 
+/**
+ * 포그라운드 위치 권한의 **세 갈래 상태**(요청하지 않고 조회만).
+ *
+ * `hasForegroundPermission()` 의 예/아니오로는 부족한 자리가 있다 — 러닝을 시작하기 전에
+ * "아직 안 물어봤다(→ 설명 화면을 띄우고 물어본다)"와 "이미 거부했다(→ 설정으로 보낸다)"를
+ * 갈라야 하기 때문이다. 둘을 뭉치면 이미 거부한 사람에게 설명 화면을 다시 띄우게 되고,
+ * 그 화면의 '계속'은 OS 가 두 번째 다이얼로그를 띄워주지 않으므로 아무 일도 안 일어난다.
+ * 조회 실패는 'denied' 로 본다(모르면 안전한 쪽 — 설정 안내가 무해하다).
+ */
+export async function getForegroundPermissionState(): Promise<'granted' | 'undetermined' | 'denied'> {
+  try {
+    const r = await Location.getForegroundPermissionsAsync();
+    if (r.granted) return 'granted';
+    // canAskAgain=true 면 OS 가 아직 다이얼로그를 띄워줄 수 있다 = 미결정.
+    return r.canAskAgain && r.status !== 'denied' ? 'undetermined' : 'denied';
+  } catch {
+    return 'denied';
+  }
+}
+
 /** Heuristic: does a watch error reason indicate the location permission was
  *  revoked (vs. a transient signal loss)? Used to stop the run on revocation. */
 export function isPermissionError(reason: string): boolean {

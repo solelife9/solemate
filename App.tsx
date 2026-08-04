@@ -71,9 +71,12 @@ import type {HomeProgression, HomeChallengeView} from './HomeScreen.rn';
 import {challengeProgress} from './lib/challenges';
 
 // 트랙 모드 순수 엔진 — 복귀감지(haversineM)·첫 랩 GPS 보정(calibrateLapM)·랩→시계열(lapsToTrack).
+// 러닝 시작 **전에** 위치 권한을 확인·요청하기 위한 진입점(2026-08-04 — 예전엔 카운트다운을
+// 다 돌린 뒤 러닝 화면에서야 물었다). 상태 조회는 요청 없이, 요청은 설명 화면의 '계속'에서.
 import {
-
-
+  getForegroundPermissionState,
+  hasForegroundPermission,
+  requestRunPermissions,
 } from './lib/locationService';
 
 // 러닝 중 화면이 OS 자동잠금으로 꺼지지 않게 하는 태그(손에 들고/암밴드로 지표를 흘끗 보는
@@ -328,6 +331,8 @@ function Main(){
   // 위치 권한 설명(priming) 풀스크린 — 첫 GPS 런 직전 들고 있을 목표(RunGoal). null=미표시.
   // '계속'에서 권한 안내 완료 영속 + 런 진입, '나중에'면 닫고 시작 취소.
   const [locPrimeGoal,setLocPrimeGoal]=useState<RunGoal|null>(null);
+  // 설정에서 위치를 허용하고 돌아오면 **바로 이어서 시작할** 러닝 목표. null = 기다리는 것 없음.
+  const [permRetryGoal,setPermRetryGoal]=useState<RunGoal|null>(null);
   // 명예의 전당(라이브 리더보드) 전체화면 표시 여부 — 진척 화면 헤더 버튼이 연다.
   const [showHallOfFame,setShowHallOfFame]=useState(false);
   /**
@@ -2275,12 +2280,71 @@ function Main(){
     setActiveRun({id:pendingShoe!.id,name:pendingShoe!.name,goalKm:goal.km,goalMin:goal.durationMin,pacePlan:goal.pacePlan,targetZone:goal.targetZone??0,trackLapM:goal.track?.lapM,indoor:!!goal.indoor});
     setOverlay('countdown');
   };
-  const startActiveRun=(goal:RunGoal)=>{
-    if(!pendingShoe) return;
-    if(locPrimed){enterRun(goal);return;}
-    // 첫 GPS 런 — OS 다이얼로그 전에 브랜디드 권한 설명 화면(LocationPrimeScreen)을 띄운다.
-    setLocPrimeGoal(goal);
+  /**
+   * 위치 권한이 꺼져 있어 야외 러닝을 시작할 수 없다 — 설정으로 안내한다(2지선다).
+   *
+   * '설정 열기'를 고르면 그 목표를 들고 기다린다(permRetryGoal). 사용자가 설정에서 허용하고
+   * 돌아오면 **바로 그 러닝이 시작된다** — 홈부터 다시 짚게 하면 방금 한 일이 헛수고가 된다
+   * (주행 중 회수 복구가 이미 쓰는 문법과 같다 — RunEngine 의 AppState 재개).
+   */
+  const showLocationDenied=(goal:RunGoal)=>{
+    showDialog(
+      '위치 권한이 꺼져 있어요',
+      'GPS 없이는 거리·페이스·코스가 기록되지 않아요. 설정에서 위치를 허용하면 바로 이어서 달릴 수 있어요.',
+      [
+        {text:'취소',style:'cancel',onPress:()=>setPermRetryGoal(null)},
+        {text:'설정 열기',onPress:()=>{
+          setPermRetryGoal(goal);
+          Promise.resolve(Linking.openSettings()).catch(()=>{});
+        }},
+      ],
+    );
   };
+  /** OS 권한을 실제로 묻고, 허용되면 그 목표로 러닝을 시작한다(거부면 설정 안내). */
+  const requestLocationThenStart=async(goal:RunGoal)=>{
+    const perm=await requestRunPermissions();
+    // 동작·피트니스도 여기서 한 번에 — 케이던스(Pedometer)와 고도(Barometer)가 같은 모션
+    // 권한을 쓰므로, 첫 러닝 순간이 아니라 앞단에서 받아 매끄럽게 동작하게 한다.
+    try{await Pedometer.requestPermissionsAsync();}catch{/* 거부/미지원 — 러닝은 계속 */}
+    if(!perm.foreground){showLocationDenied(goal);return;} // 카운트다운으로 넘기지 않는다
+    enterRun(goal);
+  };
+  const startActiveRun=async(goal:RunGoal)=>{
+    if(!pendingShoe) return;
+    // 실내(트레드밀)는 GPS 를 아예 쓰지 않는다 — 거리는 걸음이 정본이다(runTracker.indoorMode).
+    // 그런데 예전엔 러닝 화면의 위치 게이트가 indoor 를 보지 않아, **쓰지도 않는 권한 때문에
+    // 실내 러닝이 시작조차 되지 않았다**(2026-08-04 QA 후속). 묻지 않는 게 맞다.
+    if(goal.indoor){enterRun(goal);return;}
+    // 야외 — 카운트다운(3·2·1·GO)을 돌리기 **전에** 확인한다. 예전엔 세리머니를 다 하고
+    // 러닝 화면에 들어가서야 물어, 시작한 줄 알고 달리다 아무것도 안 남는 일이 가능했다.
+    const st=await getForegroundPermissionState();
+    if(st==='granted'){enterRun(goal);return;}
+    if(st==='undetermined'){
+      // 아직 안 물어봤다 — OS 다이얼로그 전에 브랜디드 설명 화면을 띄우고, 그 '계속'이 실제로 묻는다.
+      // 단 **설명을 이미 본 사람에겐 다시 띄우지 않는다**(locPrimed): OS 다이얼로그를 그냥
+      // 넘겨 상태가 미결정으로 남는 경우가 있는데, 그때마다 풀스크린 안내를 다시 보여주면 조른다.
+      if(locPrimed){void requestLocationThenStart(goal);return;}
+      setLocPrimeGoal(goal);
+      return;
+    }
+    showLocationDenied(goal); // 이미 거부 — 설명 화면은 무의미하다(OS 가 다시 안 묻는다).
+  };
+
+  // 설정에서 위치를 허용하고 돌아왔다면 기다리던 러닝을 바로 시작한다. 허용 안 하고 왔으면
+  // 아무 말도 하지 않는다(목표 화면에 그대로 머문다 — 돌아오자마자 또 조르지 않는다).
+  useEffect(()=>{
+    if(!permRetryGoal) return;
+    const sub=AppState.addEventListener('change',next=>{
+      if(next!=='active') return;
+      void (async()=>{
+        if(!(await hasForegroundPermission())) return;
+        setPermRetryGoal(null);
+        enterRun(permRetryGoal);
+      })();
+    });
+    return ()=>sub.remove();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[permRetryGoal]);
 
   // 온보딩 완료: 1회성 플래그 영속 + 화면에서 치운다. 온보딩의 등록 단계에서 고른
   // 신발(있으면)은 실제 백엔드 신발로 만들어 홈에 바로 반영한다(없으면 빈 홈으로).
@@ -2366,10 +2430,11 @@ function Main(){
   if(locPrimeGoal!=null){
     return <LocationPrimeScreen
       onContinue={async()=>{const g=locPrimeGoal;setLocPrimed(true);void AsyncStorage.setItem(LOC_PRIME_KEY,'1');setLocPrimeGoal(null);
-        // 동작·피트니스 권한을 여기서 한 번에 받아둔다 — 케이던스(Pedometer)와 고도(Barometer)가
-        // 같은 모션 권한을 쓰므로, 첫 러닝 순간이 아니라 앞단에서 받아 매끄럽게 동작하게 한다.
-        try{await Pedometer.requestPermissionsAsync();}catch{/* 거부/미지원 — 러닝은 계속 */}
-        enterRun(g);}}
+        // **여기서 실제로 묻는다.** 이 화면은 "다음 화면에서 위치와 동작·피트니스 권한을
+        // 물어봐요"라고 약속하는데, 예전엔 '계속'이 동작 권한만 요청하고 위치는 카운트다운
+        // 뒤 러닝 화면이 물었다 — 약속한 순서가 아니었고, 거부하면 세리머니를 다 돌린 뒤에야
+        // 알게 됐다. 설명 바로 다음이 OS 다이얼로그인 게 이 화면의 존재 이유다.
+        await requestLocationThenStart(g);}}
       onCancel={()=>setLocPrimeGoal(null)}/>;
   }
   if(overlay==='goal'&&pendingShoe){
@@ -2380,7 +2445,8 @@ function Main(){
         age={age}
         restHR={restHR}
         runs={runs}
-        onBack={()=>{setOverlay('none');setPendingShoe(null);}}
+        // 목표 화면을 떠나면 '설정 다녀오면 시작' 대기도 함께 푼다(엉뚱한 순간의 자동 시작 방지).
+        onBack={()=>{setOverlay('none');setPendingShoe(null);setPermRetryGoal(null);}}
         onStart={startActiveRun}
       />
     );

@@ -415,10 +415,20 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
     })();
     const voiceTimer=setTimeout(()=>{if(!cancelled)runVoice.start();},800);
     (async()=>{
+      // 실내(트레드밀)는 GPS 를 켜지 않는다 — 거리는 걸음이 정본이다(아래 beginRun 의
+      // `if(indoor) return;`). 그런데 이 게이트가 indoor 를 보지 않아 **쓰지도 않는 위치
+      // 권한 때문에 실내 러닝이 시작조차 되지 않았다**(2026-08-04 QA 후속). 묻지 않는 게 맞다.
+      if(indoor){
+        if(cancelled) return;
+        await beginRun();
+        return;
+      }
       // expo-location 통합 권한 게이트(android/ios 공통). 포그라운드 권한이 트래킹
       // 시작의 유일한 관문이다 — 거부 시 절대 시작하지 않는다(가비지 거리 금지).
       // 백그라운드(화면off) 권한은 추가 요청하되 거부돼도 비치명적: 포그라운드
       // 트래킹은 그대로 동작한다(graceful). 회귀 금지.
+      // (정상 동선에서는 App 이 카운트다운 전에 이미 확인·요청했다 — 여기 남은 호출은
+      //  이미 허용된 경우 즉시 통과하는 백스톱이다. 딥링크·복구 등 다른 진입도 막는다.)
       const perm=await requestRunPermissions();
       if(cancelled) return; // 권한 대기 중 언마운트 — 좀비 beginRun 방지.
       permRef.current=perm;

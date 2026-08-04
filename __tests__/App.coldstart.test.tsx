@@ -218,6 +218,14 @@ test('first-time runner is shown a location-permission rationale BEFORE the OS d
     return Promise.resolve(ok([]));
   });
   const alertSpy = jest.spyOn(dialogLib, 'showDialog').mockImplementation(() => 0);
+  // 첫 러너 = OS 에 **아직 물어본 적 없는** 상태(undetermined). 설명 화면은 정확히 이때
+  // 존재 이유가 있다 — 이미 허용됐으면 설명할 게 없고, 이미 거부됐으면 OS 가 다시 안 묻는다
+  // (그땐 설정 안내가 답이다). 2026-08-04: 러닝 시작이 카운트다운 **전에** 이 상태를 본다.
+  (Location.getForegroundPermissionsAsync as jest.Mock).mockResolvedValue({
+    granted: false,
+    canAskAgain: true,
+    status: 'undetermined',
+  });
 
   try {
     let renderer!: ReactTestRenderer.ReactTestRenderer;
@@ -248,23 +256,23 @@ test('first-time runner is shown a location-permission rationale BEFORE the OS d
       (n: any) => n.props?.testID === 'location-prime-continue' && typeof n.props.onPress === 'function',
     )[0];
     expect(cont).toBeTruthy();
-    // '계속' → enterRun → 카운트다운(준비·3·2·1·GO) → 라이브 런. OS 위치 권한은
-    // 카운트다운이 아니라 런 화면에서 요청하므로, 카운트다운이 fake 타이머 하에서
-    // mount 되도록 onPress 전에 fake 를 켜고 advance 해 런까지 진입시킨다.
+    // '계속' → **여기서 바로** OS 권한을 요청한다(이 화면이 약속한 순서다: "다음 화면에서
+    // 물어봐요"). 허용되면 카운트다운(준비·3·2·1·GO) → 라이브 런으로 이어진다.
     const fakeAlready = typeof (setTimeout as any).clock === 'object';
     if (!fakeAlready) jest.useFakeTimers();
     await act(async () => {
-      cont.props.onPress(); // enterRun → 카운트다운 mount
+      cont.props.onPress(); // 위치·모션 요청 → enterRun → 카운트다운 mount
     });
-    await act(async () => {
-      jest.advanceTimersByTime(6000); // 카운트다운 → 라이브 런(OS 권한 요청)
-    });
-    if (!fakeAlready) jest.useRealTimers();
     await flush();
-
+    // 카운트다운을 돌리기 **전에** 이미 물었다 — 세리머니를 다 하고 나서 "안 됩니다"가 아니다.
     expect(
       (Location.requestForegroundPermissionsAsync as jest.Mock).mock.calls.length,
     ).toBeGreaterThan(0);
+    await act(async () => {
+      jest.advanceTimersByTime(6000); // 카운트다운 → 라이브 런
+    });
+    if (!fakeAlready) jest.useRealTimers();
+    await flush();
     // Priming is remembered so it never nags on the next run.
     expect(await AsyncStorage.getItem('loc_perm_primed')).toBe('1');
 
