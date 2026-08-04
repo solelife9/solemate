@@ -9,7 +9,12 @@
 //    2'53"/km 로 달린 조각 하나가 67.9(엘리트 구간)를 만들었다.
 //    페이스만으로는 "체력이 좋아 빠른 것"과 "짧게 스퍼트한 것"을 구별할 수 없다 —
 //    그 구별은 심박이 한다. 가민(Firstbeat)·애플·폴라가 전부 심박을 쓰는 이유다.
-//    심박이 없으면 값을 감추지 않고 **출처를 밝혀** 보여준다(source='pace').
+//    **심박이 없으면 아예 보여주지 않는다**(민우님 결정 2026-08-04 — 가민·애플과 같은 기준).
+//    페이스로도 추정은 되지만 그건 '레이스급 최대 노력'을 가정한 참고치라, 숫자로 내보내면
+//    측정값처럼 읽힌다. 그래서 이 계층에서 **값 자체를 0 으로 막는다** — 화면마다 조건을
+//    되풀이하면 언젠가 한 곳이 샌다.
+//    단, 페이스 VDOT 는 임계페이스(rTSS 강도 기준) 역산에 여전히 필요하므로 **내부 계산용**
+//    으로 vdotPace·thresholdPaceSec 에 따로 내보낸다(표시용이 아니다).
 //  · 트레이닝 상태 = PMC(CTL 체력/ATL 피로/TSB 폼). 일별 부하는 HR 있으면 TRIMP,
 //                    없으면 페이스 기반 rTSS(paceLoad). rTSS 의 임계페이스는 VDOT 에서
 //                    역산한다(아래 thresholdPaceSec) — 사람마다 다른 강도 기준을 체력에
@@ -47,16 +52,26 @@ export type FitnessRunIn = FitnessRun & {
 };
 
 export type FitnessSummary = {
-  vo2max: number;          // 추정 VO2max. 표본 없으면 0.
+  /** **심박 기반 추정만** 담는다. 심박이 없으면 0 — 페이스로는 내보내지 않는다. */
+  vo2max: number;
   vo2maxLabel: string;     // 등급 라벨
-  /**
-   * 이 값이 어떻게 나왔나. 화면은 이걸로 표기를 달리한다 — 숫자만 보여주고 방법을
-   * 감추면 '페이스로 뽑은 참고치'가 '측정된 체력'처럼 읽힌다(Truth only).
-   *  · 'hr'   심박 기반(정본) · 'pace' 페이스 기반(참고) · 'none' 추정 불가
-   */
-  vo2maxSource: 'hr' | 'pace' | 'none';
-  /** 심박 기반일 때 쓰인 표본 수(페이스 기반이면 0). 신뢰도 표기에 쓴다. */
+  /** 'hr' 심박 기반(표시 가능) · 'none' 표시하지 않음. */
+  vo2maxSource: 'hr' | 'none';
+  /** 심박 기반일 때 쓰인 표본 수. 신뢰도 표기에 쓴다. */
   vo2maxSamples: number;
+  /**
+   * **달리기는 충분한데 심박이 없어서 못 보여주는 상태.**
+   * 화면은 이때 숫자 대신 "애플 건강을 연동하면 보여요"를 안내한다 — 그냥 비워 두면
+   * 사용자는 앱이 고장 났다고 생각한다(실제로 그런 제보가 있었다).
+   */
+  vo2maxNeedsHealth: boolean;
+  /**
+   * 페이스 기반 VDOT — **표시용이 아니다.** 임계 페이스 역산 등 내부 계산 전용.
+   * 화면에 숫자로 내보내지 말 것(그게 이번 변경의 이유다).
+   */
+  vdotPace: number;
+  /** 임계 페이스(초/km) — per-run rTSS 강도 기준. vdotPace 에서 역산. */
+  thresholdPaceSec: number;
   ctl: number;             // 체력(Fitness)
   atl: number;             // 피로(Fatigue)
   tsb: number;             // 폼(Form) = 전일 CTL−ATL
@@ -93,9 +108,11 @@ export function fitnessSummary(
     windowDays: opts?.hrWindowDays ?? 90,
   });
   const paceVdot = currentVdot(arr as FitnessRun[], today, windowDays);
-  const vo2max = hr.vo2max > 0 ? hr.vo2max : paceVdot;
-  const vo2maxSource: 'hr' | 'pace' | 'none' =
-    hr.vo2max > 0 ? 'hr' : paceVdot > 0 ? 'pace' : 'none';
+  // 심박 기반만 표시한다. 페이스 추정치는 있어도 내보내지 않는다(위 헤더 주석 참조).
+  const vo2max = hr.vo2max;
+  const vo2maxSource: 'hr' | 'none' = hr.vo2max > 0 ? 'hr' : 'none';
+  // "달릴 만큼 달렸는데 심박이 없어서 못 보여준다" — 이때만 연동을 권한다.
+  const vo2maxNeedsHealth = hr.vo2max <= 0 && paceVdot > 0;
   // 임계 페이스(rTSS 정규화)는 **페이스 기반 VDOT**로 계산한다 — 페이스 기준을 페이스에서
   // 뽑는 게 일관되고, 심박 추정치를 여기 섞으면 부하 계산이 방법 전환에 흔들린다.
   const tPace = thresholdPaceSec(paceVdot);
@@ -118,11 +135,14 @@ export function fitnessSummary(
     vo2maxLabel: vdotLabel(vo2max),
     vo2maxSource,
     vo2maxSamples: hr.sampleCount,
+    vo2maxNeedsHealth,
+    vdotPace: paceVdot,
+    thresholdPaceSec: tPace,
     ctl: cur.ctl,
     atl: cur.atl,
     tsb: cur.tsb,
     tsbLabel: tsbLabel(cur.tsb),
     pmc,
-    hasData: vo2max > 0 || pmc.length > 0,
+    hasData: vo2max > 0 || paceVdot > 0 || pmc.length > 0,
   };
 }

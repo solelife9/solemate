@@ -806,9 +806,18 @@ export default function ProfileScreen({
                 <Ionicons name="pulse-outline" size={ri(ICON.tag)} color={T3} />
                 <Text style={s.specVo2FootText}>
                   심폐 체력 <Text style={s.specVo2FootStrong}>{vo2.vo2max.toFixed(1)} VO₂max</Text> · {vo2.vo2maxLabel}
-                  {vo2.vo2maxSource === 'pace' ? <Text style={s.specVo2FootNote}>{'\n'}페이스로 추정한 참고치예요 · 애플 건강을 연동하면 심박으로 정확해져요</Text> : null}
-                  {vo2.vo2maxSource === 'hr' && vo2.vo2maxSamples < 5 ? <Text style={s.specVo2FootNote}>{'\n'}심박 러닝 {vo2.vo2maxSamples}회 기준 · 더 달릴수록 정확해져요</Text> : null}
+                  {vo2.vo2maxSamples < 5 ? <Text style={s.specVo2FootNote}>{'\n'}심박 러닝 {vo2.vo2maxSamples}회 기준 · 더 달릴수록 정확해져요</Text> : null}
                 </Text>
+              </View>
+            )}
+            {/* 심박이 없으면 **숫자를 보여주지 않는다**(가민·애플과 같은 기준, 민우님 결정
+                2026-08-04). 페이스로도 추정은 되지만 그건 '레이스급 최대'를 가정한 참고치라
+                측정값처럼 읽힌다. 대신 **왜 없는지와 켜는 법**은 알려준다 — 그냥 비워 두면
+                사용자는 앱이 고장 났다고 생각한다(실제로 그런 제보로 이 작업이 시작됐다). */}
+            {vo2.vo2max <= 0 && vo2.vo2maxNeedsHealth && (
+              <View style={s.specVo2Foot} accessible accessibilityLabel="심폐 체력은 애플 건강을 연동하면 표시됩니다">
+                <Ionicons name="pulse-outline" size={ri(ICON.tag)} color={T4} />
+                <Text style={s.specVo2FootNote}>심폐 체력은 심박이 있어야 정확해요 · 애플 건강을 연동하면 표시됩니다</Text>
               </View>
             )}
           </View>

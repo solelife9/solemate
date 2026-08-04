@@ -22,7 +22,7 @@ import { TabBar, TABBAR_CLEARANCE, Button, SegmentedControl, StatGrid, SwipeBack
 import { Unit, displayNum, displayToKm } from './lib/units';
 import { ymdLocal } from './lib/format';
 import { sumKm, summaryOf, monthBuckets, weekBuckets, yearBuckets } from './lib/stats';
-import { fitnessSummary, thresholdPaceSec } from './lib/analytics/fitness';
+import { fitnessSummary } from './lib/analytics/fitness';
 import { gradeAdjustedPaceSec, smoothElevation, resampleByDistance } from './lib/analytics/gap';
 import { estimateMaxHR, timeInZones, hrSummary, zoneBoundaries, HR_ZONE_LABEL, type HRZone } from './lib/analytics/hrZones';
 import { trimp, paceLoad, effortBand } from './lib/analytics/load';
@@ -177,7 +177,36 @@ export function RunForm({
 }) {
   const editing = !!initial;
   const initShoeId = editing && initial!.shoe >= 0 ? shoes[initial!.shoe]?.id : undefined;
-  const [shoeId, setShoeId] = useState<string | undefined>(initShoeId ?? shoes[0]?.id);
+  // ── 신발 선택지 정리(2026-08-04 QA 감사 Q-11·Q-8) ────────────────────────────
+  // 보관(은퇴)한 신발도 목록에는 있어야 한다 — 은퇴 전에 달린 옛 러닝을 편집하려면 필요하다.
+  // 다만 **앞에 두거나 기본값으로 잡아선 안 된다**: 은퇴 시점의 누적 거리는 명예의 전당에
+  // 박제되므로, 그 뒤로 거리가 더 붙으면 박제된 숫자와 실제가 어긋난다. 예전엔 정렬도
+  // 필터도 없어서 `shoes[0]` 가 보관 신발이면 **기본 선택이 은퇴한 신발**이었다.
+  const shoeOptions = useMemo(() => {
+    const withIdx = shoes.map((sh, i) => ({ sh, i }));
+    const active = withIdx.filter(x => !x.sh.retired);
+    const archived = withIdx.filter(x => x.sh.retired);
+    return [...active, ...archived];
+  }, [shoes]);
+  // 같은 이름의 신발이 둘 이상이면(중복 등록) 이름만으로는 구분이 안 된다 — 그때만 누적
+  // 거리를 덧붙인다. 중복이 없을 땐 잡음이므로 붙이지 않는다.
+  const dupNames = useMemo(() => {
+    const seen = new Map<string, number>();
+    for (const sh of shoes) {
+      const k = `${sh.brand} ${sh.model}`.trim();
+      seen.set(k, (seen.get(k) ?? 0) + 1);
+    }
+    return new Set([...seen.entries()].filter(([, n]) => n > 1).map(([k]) => k));
+  }, [shoes]);
+  const shoeChipLabel = (sh: Shoe) => {
+    const base = `${sh.brand} ${sh.model}`.trim();
+    const parts = [base];
+    if (dupNames.has(base)) parts.push(`${displayNum(sh.used ?? 0, unit, 0)}${unit}`);
+    if (sh.retired) parts.push('보관됨');
+    return parts.join(' · ');
+  };
+  // 기본 선택은 **활성 신발**. 편집이면 원래 신발이 무엇이든 그대로 프리필한다.
+  const [shoeId, setShoeId] = useState<string | undefined>(initShoeId ?? shoeOptions[0]?.sh.id);
   const [dist, setDist] = useState(editing ? String(displayNum(initial!.dist, unit, 2)) : '');
   const [dur, setDur] = useState(editing ? fmtDurationInput(initial!.durationS || 0) : '');
   const [date, setDate] = useState(editing ? (initial!.runDate || '') : ymdLocal(new Date()));
@@ -231,12 +260,12 @@ export function RunForm({
             <Text style={s.formHint}>먼저 신발을 등록하세요</Text>
           ) : (
             <View style={s.chipWrap}>
-              {shoes.map((sh, i) => {
+              {shoeOptions.map(({ sh, i }) => {
                 const on = sh.id === shoeId;
                 return (
                   <Chip
                     key={sh.id || i}
-                    label={`${sh.brand} ${sh.model}`}
+                    label={shoeChipLabel(sh)}
                     selected={on}
                     onPress={() => { if (sh.id) { setShoeId(sh.id); clearError('shoe'); } }}
                   />
@@ -903,8 +932,10 @@ export function RunCard({ run, shoes, onPress, unit, hideShoe }: { run: Run; sho
       <GlassEdge glints={false} radius={RADIUS.lg} />
       <View style={s.runCardTop}>
         <View style={{ flex: 1, minWidth: 0 }}>
+          {/* 삭제된 신발도 이름은 남아 있다(묘비의 name — buildNameById). 상세 화면은 그걸
+              살려 쓰는데 목록만 버려서, 같은 러닝을 두 화면이 다르게 불렀다(QA 감사 Q-10). */}
           <Text style={s.runCardBrand} numberOfLines={1}>{hideShoe ? `${run.day}요일` : (shoe ? shoe.brand : '삭제된 신발')}</Text>
-          <Text style={s.runCardModel} numberOfLines={1}>{hideShoe ? run.date : (shoe ? shoe.model : '')}</Text>
+          <Text style={s.runCardModel} numberOfLines={1}>{hideShoe ? run.date : (shoe ? shoe.model : (run.shoeName || ''))}</Text>
         </View>
         {!hideShoe && <Text style={s.runCardDate}>{run.date} {run.day}요일</Text>}
       </View>
@@ -1038,7 +1069,11 @@ export default function HistoryScreen({
   );
   // 개인 임계페이스(초/km) — 체력(VDOT)에서 역산. per-run 트레이닝 부하(rTSS)의 강도 기준.
   // 타임 있는 노력 런이 없어 vo2max=0 이면 0(그땐 페이스 기반 부하 대신 HR 부하만 가능).
-  const thresholdPace = thresholdPaceSec(fitness.vo2max);
+  // 임계 페이스는 **페이스 VDOT**에서 나온다(fitness 가 이미 역산해 둔다).
+  // 전에는 여기서 fitness.vo2max 로 다시 계산했는데, 2026-08-04 부터 vo2max 는
+  // '심박 기반일 때만 값이 있는 표시용'이라 그대로 두면 심박 없는 사용자의 부하 계산이
+  // 통째로 죽는다. 계산용 값과 표시용 값을 분리한 이유가 이것이다.
+  const thresholdPace = fitness.thresholdPaceSec;
   const sum = period === '주' ? selWeekSummary : period === '월' ? selMonthSummary : period === '년' ? selYearSummary : (summary['전체'] || EMPTY_SUMMARY);
   const ch = period === '주'
     ? (selWeekBuckets.some(v => v > 0) ? { title: '일별 거리', data: selWeekBuckets.map(v => displayNum(v, unit, 1)), labels: WEEKDAY_LABELS } : chart['주'])
