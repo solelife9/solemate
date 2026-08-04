@@ -94,7 +94,13 @@ struct RunActivityLiveActivity: Widget {
           HStack {
             Label(st.paceLabel, systemImage: "speedometer").font(.caption).foregroundColor(.secondary)
             Spacer()
-            Text("SoleMate").font(.caption2).foregroundColor(kAccent)
+            // 브랜드 서명 — 소문자 'keego'(BRAND.md 워드마크 정본). Ember 색을 쓰는 것도
+            // 그래서 허용된다(DESIGN §1 'B 서명+진행': 브랜드색은 서명·러닝 진행에만).
+            // 2026-08-04: 'SoleMate' 스테일 교정 — 앱은 Keego 로 개명됐는데(표시명·번들 ID·
+            // 워드마크 전부) **러닝 중 가장 자주 보이는 표면**인 다이내믹 아일랜드만 옛 이름을
+            // 말하고 있었다. 화면 안 문자열은 여기 하나뿐이고, 나머지 'SoleMate' 는 전부
+            // Xcode 타깃·스킴 이름이라 건드리지 않는다(빌드 설정).
+            Text("keego").font(.caption2).foregroundColor(kAccent)
           }
         }
       } compactLeading: {
