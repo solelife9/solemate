@@ -15,7 +15,7 @@ import {BootSkeleton, BootError} from './screens/BootStates.rn';
 import ErrorBoundary from './ErrorBoundary';
 import ToastHost from './ToastHost';
 import DialogHost from './DialogHost';
-import {installCrashHandler, setCrashUser, recordError, reportIssue} from './lib/crashlytics';
+import {installCrashHandler, setCrashUser, recordError, reportIssue, setCrashCollectionEnabled} from './lib/crashlytics';
 import {devSeedShoes, devSeedRuns} from './lib/devSeed';
 // BackendShoe / BackendRun 은 types.d.ts 의 전역 ambient 인터페이스(import 불필요).
 import HomeScreen, {WeekStats} from './HomeScreen.rn';
@@ -100,7 +100,7 @@ import {
 } from './lib/bootCache';
 import {reportStorageResult, reportSyncResult} from './lib/storageAlert';
 import {nowMs as syncNowMs, loadClockOffset} from './lib/clockOffset';
-import {trackFirstShoeAdded,trackShoeRetired,trackCrashRecovery,trackSyncFailed,trackPermissionResult,trackRunSave} from './lib/productAnalytics';
+import {setAnalyticsEnabled,trackFirstShoeAdded,trackShoeRetired,trackCrashRecovery,trackSyncFailed,trackPermissionResult,trackRunSave} from './lib/productAnalytics';
 import {buildWatchShoes, buildWatchRecentRuns, buildWidgetShoe} from './lib/watchPayload';
 import {
   loadSnapshot, clearSnapshot, isResumable,
@@ -113,7 +113,7 @@ import {
   saveAge, saveSex, saveRestHR, Sex,
   loadSettingsUpdatedAt, saveSettingsUpdatedAt,
   clampGoal, clampWeight, DEFAULT_SETTINGS,
-  loadHaptics,
+  loadHaptics, loadTelemetry,
 } from './lib/settings';
 import {
   settingsTsOf, shouldApplySettings, pickRestorableSettings, nextSettingsTs,
@@ -244,6 +244,18 @@ function extChallengeUnit(c:ExtChallenge):string{
 // 부팅 시 전역 JS 에러 핸들러 설치 — 잡히지 않은 예외를 Crashlytics 에 기록(멱등·graceful).
 // 모듈 로드 시 1회. jest 등 ErrorUtils 부재 환경에선 no-op 으로 폴백한다.
 installCrashHandler();
+
+// 저장된 수집 선택을 **부팅 즉시** 적용한다(2026-08-04 감사 L-13). 이게 없으면 사용자가
+// 껐어도 앱을 다시 켤 때마다 되켜진다 — 스위치가 있으나 마나가 되고, 그건 없는 것보다 나쁘다
+// (끈 줄 알고 있으니까). AsyncStorage 는 비동기라 부팅 직후 아주 짧은 창이 남지만, 그 사이
+// 발생하는 건 앱 시작 이벤트뿐이고 SDK 자체가 아직 전송 전이다.
+// 실패는 삼킨다 — 설정 읽기 실패로 앱이 죽으면 안 된다(기본값 = 켬).
+void loadTelemetry()
+  .then(on => {
+    setAnalyticsEnabled(on);
+    setCrashCollectionEnabled(on);
+  })
+  .catch(() => {});
 
 export default function App(){
   // 라이브 액티비티 고아 청소(2026-07-25 실기기 버그): 앱이 강제 종료되면 러닝 종료

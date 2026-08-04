@@ -20,7 +20,7 @@ import { BG, CARD, CARD_HI, ACCENT, GOOD, DANGER, WARN, T1, T2, T3, SEP, CARD_BO
 import { TabBar, TABBAR_CLEARANCE, Button, SegmentedControl, StatGrid, Stepper, AmbientBackdrop, Rise, GlassEdge, Toggle, KakaoMark, NaverMark, Input } from './primitives';
 import { Unit, unitKorean, displayNum } from './lib/units';
 import { monthlyRecap, type RecapRun, type RecapShoe } from './lib/recap';
-import { reportIssue } from './lib/crashlytics';
+import { reportIssue, setCrashCollectionEnabled } from './lib/crashlytics';
 import { isTimeoutError } from './lib/withTimeout';
 import { hkAvailable, hkLinked, hkLink, hkRestingHR } from './lib/healthkit';
 import { buildRecapShareCardModel, shareRecapCard, shareRunnerSpecCard, formatRecapPRs, type RecapKind, type SvgCapturable } from './lib/shareCard';
@@ -34,6 +34,7 @@ import {
   VoiceSettings, DEFAULT_VOICE, loadVoiceSettings, saveVoiceSettings, VOICE_VOLUME_STEPS,
   loadAutoPause, saveAutoPause, DEFAULT_AUTOPAUSE,
   loadHaptics, saveHaptics, DEFAULT_HAPTICS,
+  loadTelemetry, saveTelemetry, DEFAULT_TELEMETRY,
 } from './lib/settings';
 import { setHapticsEnabled } from './lib/haptics';
 import { watchSession } from './lib/watchSession';
@@ -51,7 +52,7 @@ import { fmtTime } from './lib/format';
 import { WEIGHT_DURABILITY_REF_KG, WEIGHT_WEAR_REASON_KO, weightDurabilityFactor } from './lib/shoe';
 import { authErrorMessage } from './lib/authErrorMessage';
 import { PRIVACY_URL, TERMS_URL, SUPPORT_EMAIL, SUPPORT_URL } from './lib/legalLinks';
-import { trackLogin } from './lib/productAnalytics';
+import { trackLogin, setAnalyticsEnabled } from './lib/productAnalytics';
 import type { RankTier } from './lib/progression/types';
 
 // 신원 칩은 진척 시스템의 단일 Rank(티어)로 통일한다 — 옛 '러닝 레벨 N'(km/100) 개념 폐기.
@@ -261,6 +262,22 @@ export default function ProfileScreen({
 
   // ── 햅틱(진동) on/off — 즉시 적용. 폰 Vibration(lib/haptics) + 워치(자동 랩·존 이탈)를
   //    한 스위치로. "화면 전환 진동이 거슬리는 사람"을 위한 단일 스위치(사용자 요청). ──
+  // 사용 기록·오류 보고 수집 on/off (2026-08-04 감사 L-13). 계측(kg_* 이벤트)과 크래시
+  // 수집을 함께 끈다 — 처리방침이 둘을 같은 목적으로 묶어 고지하므로 사용자에게도 하나의
+  // 선택으로 보이는 게 정직하다. 부팅 시 적용은 App.tsx 가 한다(여기선 화면 상태 + 즉시 반영).
+  const [telemetryOn, setTelemetryOn] = useState<boolean>(DEFAULT_TELEMETRY);
+  useEffect(() => { void loadTelemetry().then(setTelemetryOn); }, []);
+  const toggleTelemetry = () => {
+    setTelemetryOn(prev => {
+      const next = !prev;
+      // 즉시 반영 — 다음 실행까지 기다리게 하지 않는다(껐는데 계속 보내면 거짓말이 된다).
+      setAnalyticsEnabled(next);
+      setCrashCollectionEnabled(next);
+      void saveTelemetry(next);
+      return next;
+    });
+  };
+
   const [hapticsOn, setHapticsOn] = useState<boolean>(DEFAULT_HAPTICS);
   useEffect(() => { void loadHaptics().then(v => { setHapticsOn(v); setHapticsEnabled(v); }); }, []);
   const toggleHaptics = () => {
@@ -1147,6 +1164,21 @@ export default function ProfileScreen({
               <View style={s.settingIcon}><Ionicons name="phone-portrait-outline" size={ri(ICON.inline)} color={ACCENT} /></View>
               <Text style={s.settingLabel}>햅틱(진동)</Text>
               <Text style={[s.settingDetail, hapticsOn && { color: GOOD }]} testID="haptics-detail">{hapticsOn ? '켜짐' : '꺼짐'}</Text>
+              <Ionicons name="swap-horizontal" size={ri(ICON.inline)} color={T3} />
+            </Pressable>
+
+            {/* 사용 기록·오류 보고 — 즉시 토글(2026-08-04 감사 L-13). 계측(어느 화면에서
+                이탈하는지)과 크래시 보고를 함께 끈다. 처리방침이 둘을 같은 목적으로 묶어
+                고지하므로 사용자에게도 한 개의 선택으로 보이는 게 정직하다.
+                기본은 켬 — 이 숫자가 없으면 무엇이 깨지는지 알 방법이 없다(1인 개발).
+                끄면 그 사용자의 크래시도 안 온다. 그건 사용자의 선택이다. */}
+            <Pressable onPress={toggleTelemetry} accessibilityRole="button" accessibilityLabel={`사용 기록 보내기, 현재 ${telemetryOn ? '켜짐' : '꺼짐'}. 눌러서 전환`} style={({ pressed }) => [s.settingRow, s.settingBorder, pressed && { backgroundColor: CARD_HI }]} testID="telemetry-row">
+              <View style={s.settingIcon}><Ionicons name="analytics-outline" size={ri(ICON.inline)} color={ACCENT} /></View>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={s.settingLabel}>사용 기록 보내기</Text>
+                <Text style={s.cloudSub}>오류·이용 흐름 — 앱 개선에만 써요</Text>
+              </View>
+              <Text style={[s.settingDetail, telemetryOn && { color: GOOD }]} testID="telemetry-detail">{telemetryOn ? '켜짐' : '꺼짐'}</Text>
               <Ionicons name="swap-horizontal" size={ri(ICON.inline)} color={T3} />
             </Pressable>
 

@@ -120,6 +120,51 @@ describe('L-01 지원 URL — 스토어 제출 필수 필드', () => {
   });
 });
 
+describe('L-13 수집 opt-out — 끄면 실제로 꺼지는가', () => {
+  const {parseTelemetry, DEFAULT_TELEMETRY} = require('../lib/settings');
+
+  it('기본값은 켬이다', () => {
+    expect(DEFAULT_TELEMETRY).toBe(true);
+    // 값이 없거나 손상돼도 켬으로 읽는다(햅틱과 같은 규약).
+    expect(parseTelemetry(null)).toBe(true);
+    expect(parseTelemetry(undefined)).toBe(true);
+    expect(parseTelemetry('쓰레기')).toBe(true);
+  });
+
+  it("'0'/'false' 만 끔으로 읽는다", () => {
+    expect(parseTelemetry('0')).toBe(false);
+    expect(parseTelemetry('false')).toBe(false);
+    expect(parseTelemetry('1')).toBe(true);
+  });
+
+  it('끄면 analytics SDK 수집이 실제로 꺼진다', () => {
+    const {setAnalyticsEnabled} = require('../lib/productAnalytics');
+    analytics.setAnalyticsCollectionEnabled.mockClear();
+    setAnalyticsEnabled(false);
+    expect(analytics.setAnalyticsCollectionEnabled).toHaveBeenCalledWith(expect.anything(), false);
+  });
+
+  it('부팅 시 저장된 선택을 적용한다 — 껐는데 다시 켜지면 스위치가 거짓말이 된다', () => {
+    // App.tsx 가 모듈 로드 시점에 loadTelemetry → set*(on) 을 부른다. 이게 빠지면
+    // 사용자가 끈 뒤 앱을 재시작할 때마다 조용히 되켜진다(없는 것보다 나쁘다).
+    const {readFileSync} = require('fs');
+    const {join} = require('path');
+    const src = readFileSync(join(__dirname, '..', 'App.tsx'), 'utf8');
+    expect(src).toMatch(/loadTelemetry\(\)/);
+    expect(src).toMatch(/setAnalyticsEnabled\(on\)/);
+    expect(src).toMatch(/setCrashCollectionEnabled\(on\)/);
+  });
+
+  it('처리방침이 끌 수 있다는 사실과 경로를 고지한다', () => {
+    // 스위치만 있고 방침에 없으면 심사에서 불일치로 잡힌다.
+    const {readFileSync} = require('fs');
+    const {join} = require('path');
+    const html = readFileSync(join(__dirname, '..', 'docs/privacy.html'), 'utf8');
+    expect(html).toContain('사용 기록 보내기');
+    expect(html).toMatch(/Crashlytics/);
+  });
+});
+
 describe('L-02 워치 크래시 수집 — 배선이 남아 있는가', () => {
   // 네이티브 설정은 앱 테스트가 한 줄도 보지 않는 영역이다(nativePermissions.test.ts 와 같은
   // 취지). 워치 크래시 수집은 눈에 보이는 기능이 아니라서, 빠져도 아무도 눈치채지 못한다 —

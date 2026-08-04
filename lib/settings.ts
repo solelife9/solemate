@@ -221,6 +221,43 @@ export async function saveHaptics(enabled: boolean): Promise<void> {
   }
 }
 
+// ── 사용 기록·오류 보고 수집 on/off (2026-08-04 출시 운영 감사 L-13) ──────────
+//
+// 무엇을 끄는가: 제품 계측(lib/productAnalytics 의 kg_* 이벤트)과 크래시 수집
+// (lib/crashlytics)을 **함께** 끈다. 처리방침이 둘을 같은 목적("서비스 안정성 확보 및
+// 개선")으로 묶어 고지하므로, 사용자에게도 하나의 선택으로 보이는 게 정직하다.
+// 스위치를 둘로 쪼개면 설정만 길어지고, "분석은 껐는데 왜 로그가 가나" 같은 오해가 생긴다.
+//
+// 기본값은 **켬**이다. 한국 개인정보보호법상 처리방침 고지로 충분하고, 실제로 이 숫자가
+// 없으면 어디서 이탈하는지·무엇이 깨지는지 알 방법이 없다(1인 개발). 다만 끄고 싶은
+// 사람에게 끌 방법이 없는 상태는 다른 문제라서, 스위치를 둔다.
+//
+// ⚠️ 끄면 그 사용자의 크래시도 안 온다. 그건 사용자의 선택이고, 우리가 대신 정할 일이 아니다.
+export const K_TELEMETRY = 'settings_telemetry';
+export const DEFAULT_TELEMETRY = true;
+
+/** 영속 문자열 → 수집 on/off. '0'/'false' 만 끔, 그 외(누락/손상)는 기본 ON(햅틱과 동일 규약). */
+export function parseTelemetry(raw: string | null | undefined): boolean {
+  if (raw === '0' || raw === 'false') return false;
+  return DEFAULT_TELEMETRY;
+}
+
+export async function loadTelemetry(): Promise<boolean> {
+  try {
+    return parseTelemetry(await AsyncStorage.getItem(K_TELEMETRY));
+  } catch {
+    return DEFAULT_TELEMETRY;
+  }
+}
+
+export async function saveTelemetry(enabled: boolean): Promise<void> {
+  try {
+    await AsyncStorage.setItem(K_TELEMETRY, enabled ? '1' : '0');
+  } catch {
+    /* 저장 실패는 비치명적 */
+  }
+}
+
 // ── 설정 수정 시각(동기 LWW) ─────────────────────────────────────────────────
 // 설정 블록(단위·목표·알림·체중·나이·성별·안정시심박)이 이 기기에서 마지막으로 수정된
 // 시각. 클라우드 병합(mergeCloudData)이 이 값으로 최신 편집 기기를 가려낸다 — 과거의
