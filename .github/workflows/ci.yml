@@ -26,11 +26,10 @@ jobs:
   gates:
     name: 타입·린트·테스트·커버리지
     runs-on: ubuntu-latest
-    # 45분인 이유(2026-08-04 실측): 20분으로는 테스트가 못 끝나 두 번 연속 잘렸다.
-    # 러너는 2코어이고 **매 실행 babel 변환 캐시가 비어 있다** — RN 프리셋으로 수천 개
-    # 파일을 처음부터 변환한다. 로컬(코어 많음 + 캐시 warm)의 8초와는 다른 세계다.
-    # 아래 jest 캐시 스텝이 이걸 줄여주지만, 캐시가 없는 첫 실행은 여전히 오래 걸린다.
-    timeout-minutes: 45
+    # 20분인 이유(2026-08-04 3차 실측): 문제는 '느림'이 아니라 '멈춤'이었다 — 아래 테스트
+    # 스텝 주석 참조. 타임아웃을 45분으로 늘렸던 것은 오진이었고, 멈춘 잡을 45분씩 붙잡고
+    # 있게 만들 뿐이었다. 정상 실행은 몇 분이면 끝난다. **길게 두면 고장을 늦게 알 뿐이다.**
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 
@@ -40,12 +39,17 @@ jobs:
           node-version: '22'
           cache: npm
 
-      # jest 변환 캐시를 실행 간에 보존한다. 이게 없으면 매번 전체 babel 변환을 다시 한다
-      # (위 timeout 주석 참조). 키에 lock/babel/jest 설정을 넣어 의존성이 바뀌면 자동 무효화.
+      # jest 변환 캐시를 실행 간에 보존한다. 이게 없으면 매번 전체 babel 변환을 다시 한다.
+      #
+      # ⚠️ 경로를 **명시**해야 한다. 예전엔 `/tmp/jest_rs` 를 캐시했는데 그건 jest 기본
+      # 캐시 경로를 추측한 값이다(`os.tmpdir()/jest_<uid를 36진수로>`). 러너 uid 가 다르면
+      # 아무것도 안 잡히는, **조용히 아무 일도 하지 않는 캐시 스텝**이 된다. 아래 테스트
+      # 스텝에서 `--cacheDirectory` 로 같은 경로를 강제해 추측을 없앤다.
+      # 키에 lock/babel/jest 설정을 넣어 의존성이 바뀌면 자동 무효화.
       - name: jest 캐시
         uses: actions/cache@v4
         with:
-          path: /tmp/jest_rs
+          path: /tmp/jest_ci
           key: jest-${{ runner.os }}-${{ hashFiles('package-lock.json', 'babel.config.js', 'jest.config.js') }}
           restore-keys: jest-${{ runner.os }}-
 
@@ -60,18 +64,33 @@ jobs:
       - name: 린트
         run: npm run lint
 
-      # --maxWorkers 를 명시하는 이유(2026-08-04, CI 첫 가동에서 실측):
-      # 워커 수를 지정하지 않으면 이 잡이 **출력 한 줄 없이 16분 넘게 멈췄다가** 타임아웃에
-      # 잘렸다(run 30905338977). 느린 게 아니라 첫 스위트조차 끝나지 않았다 — 러너는
-      # 2코어/7GB 인데 RN 테스트(react-test-renderer)는 워커당 메모리를 많이 쓴다.
-      # 같은 실행에서 규칙 잡(jest, 소수 스위트)은 정상 통과했으므로 jest 자체 문제가 아니다.
-      # 로컬(코어 많음)에서는 8초에 끝나 절대 재현되지 않는 종류다.
+      # ── 워커 풀을 쓰지 않는다(2026-08-04 3차 실측으로 확정) ─────────────────────
+      # 증상은 세 번 다 같았다: 잡이 **출력 한 줄 없이** 멈췄다가 타임아웃에 잘린다
+      # (run 30905338977 · 30906938251 · 30909800019).
+      #
+      # 마지막 실행의 타임스탬프가 정체를 드러냈다 — 8개 스위트가 **95초 만에** 끝났고
+      # (12:37:10~12:38:41), 그 뒤 **43분간 출력이 0줄**이었다. 느린 게 아니라 멈춘 것이다.
+      # 남은 276개는 시작조차 못 했다.
+      #
+      # 원인은 이 저장소가 이미 알고 있었다 — `jest.coverage.config.js` 주석:
+      #   "화면 렌더 스위트를 커버리지 계측과 함께 돌리면 jest 워커가 죽는다
+      #    (--maxWorkers=2 · --runInBand 모두 재현 — react-test-renderer + 계측의 메모리 압력)"
+      # 러너는 2코어/7GB 이고, 워커가 죽으면 jest 는 그 자리에서 멎는다. 여기에
+      # `--workerIdleMemoryLimit=1GB` 는 워커 재시작을 **더 자주** 유발해 상황을 악화시켰다.
+      #
+      # 그래서 워커 풀 자체를 없앤다. 대가는 크지 않다 — 로컬 실측으로 병렬 6.8초 대 직렬
+      # 31초이고, 그 31초는 콜드 캐시 기준이다. 몇십 초를 더 쓰고 **멈추지 않는 쪽**을 산다.
+      # (로컬 검증: `--runInBand` 로 전체 6회 연속 3,164 테스트 전량 통과, 콜드 캐시 3회 포함.)
+      #
+      # ⚠️ 이 판정은 **로컬에서 재현한 것이 아니다** — 멈춤은 러너에서만 났다. 그러므로
+      # "고쳤다"의 근거는 이 주석이 아니라 **초록 실행 1회**다. 그 전까지 게이트는 없는 것이다.
       - name: 테스트
-        run: npm test -- --ci --maxWorkers=2 --workerIdleMemoryLimit=1GB
+        run: npm test -- --ci --runInBand --cacheDirectory /tmp/jest_ci
 
       # lib/ 비즈니스 로직 커버리지 임계(jest.coverage.config.js).
+      # 이쪽은 순수 로직 스위트만 돌아 가볍지만, 같은 이유로 워커를 쓰지 않는다.
       - name: 커버리지 게이트
-        run: npm run test:coverage -- --maxWorkers=2
+        run: npm run test:coverage -- --runInBand --cacheDirectory /tmp/jest_ci
 
   rules:
     name: Firestore 보안 규칙
