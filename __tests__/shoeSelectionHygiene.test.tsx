@@ -47,45 +47,56 @@ function render(shoes: Shoe[], initial: any = null) {
   return renderer;
 }
 
-test('보관한 신발은 뒤로 밀리고 「보관됨」 표식이 붙는다 — 목록에서 지우지는 않는다', () => {
+test('수동 추가에서는 보관한 신발이 후보에 아예 없다 — 보관 = 선택 목록에서 숨김', () => {
   // 보관 신발이 **먼저** 등록돼 있다(= 예전엔 이게 shoes[0] 이라 기본 선택이었다).
   const shoes = [mk('s1', 'Vomero', {retired: true}), mk('s2', 'Pegasus')];
   const renderer = render(shoes);
   const labels = chipLabels(renderer.root);
 
-  // 활성이 앞, 보관이 뒤.
+  expect(labels).toHaveLength(1);
   expect(labels[0]).toContain('Pegasus');
-  expect(labels[1]).toContain('Vomero');
-  // 보관 신발은 그렇다고 사라지지 않는다 — 옛 러닝 편집에 필요하다.
-  expect(labels[1]).toContain('보관됨');
-  expect(labels[0]).not.toContain('보관됨');
+  expect(labels.join()).not.toContain('Vomero'); // 은퇴시킨 신발엔 새 거리를 못 붙인다
 
-  act(() => renderer.unmount());
-});
-
-test('기본 선택은 활성 신발이다 — 보관 신발이 목록 맨 앞이어도', () => {
-  const shoes = [mk('s1', 'Vomero', {retired: true}), mk('s2', 'Pegasus')];
-  const renderer = render(shoes);
-  // 선택된 칩 = accessibilityState.selected 가 참인 것.
+  // 기본 선택도 당연히 활성 신발.
   const selected = renderer.root
     .findAll(n => typeof n.props.onPress === 'function' && n.props.accessibilityState?.selected === true)
     .map(n => String(n.props.accessibilityLabel ?? ''))
     .filter(l => l.includes('NIKE'));
   expect(selected).toHaveLength(1);
-  expect(selected[0]).toContain('Pegasus'); // 은퇴한 Vomero 가 아니다
+  expect(selected[0]).toContain('Pegasus');
 
   act(() => renderer.unmount());
 });
 
-test('편집 중인 러닝의 신발이 보관 상태여도 그대로 프리필된다(원래 신발을 바꾸지 않는다)', () => {
+test('편집만은 예외 — 그 러닝의 신발이 보관됐어도 남기고 「보관됨」을 붙인다', () => {
   const shoes = [mk('s1', 'Vomero', {retired: true}), mk('s2', 'Pegasus')];
   // initial.shoe = shoes 배열 인덱스(0 = 보관된 Vomero).
   const renderer = render(shoes, {id: 'r1', shoe: 0, dist: 5, durationS: 1800, runDate: '2026-08-01'});
+  const labels = chipLabels(renderer.root);
+
+  // 그 신발이 없으면 어느 신발의 기록인지 화면이 말해주지 못하고, 선택된 칩도 없어 고장처럼 보인다.
+  expect(labels.join()).toContain('Vomero');
+  expect(labels.find(l => l.includes('Vomero'))).toContain('보관됨');
   const selected = renderer.root
     .findAll(n => typeof n.props.onPress === 'function' && n.props.accessibilityState?.selected === true)
     .map(n => String(n.props.accessibilityLabel ?? ''))
     .filter(l => l.includes('NIKE'));
   expect(selected[0]).toContain('Vomero');
+
+  act(() => renderer.unmount());
+});
+
+test('편집이어도 **다른** 보관 신발까지 열어주지는 않는다', () => {
+  const shoes = [
+    mk('s1', 'Vomero', {retired: true}),
+    mk('s2', 'Pegasus'),
+    mk('s3', 'Invincible', {retired: true}),
+  ];
+  const renderer = render(shoes, {id: 'r1', shoe: 0, dist: 5, durationS: 1800, runDate: '2026-08-01'});
+  const labels = chipLabels(renderer.root).join();
+  expect(labels).toContain('Vomero'); // 이 러닝의 신발
+  expect(labels).toContain('Pegasus'); // 활성
+  expect(labels).not.toContain('Invincible'); // 상관없는 보관 신발
 
   act(() => renderer.unmount());
 });

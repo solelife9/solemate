@@ -178,16 +178,17 @@ export function RunForm({
   const editing = !!initial;
   const initShoeId = editing && initial!.shoe >= 0 ? shoes[initial!.shoe]?.id : undefined;
   // ── 신발 선택지 정리(2026-08-04 QA 감사 Q-11·Q-8) ────────────────────────────
-  // 보관(은퇴)한 신발도 목록에는 있어야 한다 — 은퇴 전에 달린 옛 러닝을 편집하려면 필요하다.
-  // 다만 **앞에 두거나 기본값으로 잡아선 안 된다**: 은퇴 시점의 누적 거리는 명예의 전당에
-  // 박제되므로, 그 뒤로 거리가 더 붙으면 박제된 숫자와 실제가 어긋난다. 예전엔 정렬도
-  // 필터도 없어서 `shoes[0]` 가 보관 신발이면 **기본 선택이 은퇴한 신발**이었다.
+  // **보관(은퇴)한 신발은 후보에서 뺀다.** 보관은 "선택 목록에서 숨긴다"는 뜻이고, 홈·러닝
+  // 시작은 이미 그렇게 하고 있었는데 이 폼만 빠져 있었다. 은퇴 시점의 누적 거리는 명예의
+  // 전당에 박제되므로, 그 뒤로 거리가 붙으면 박제된 숫자와 실제가 어긋난다.
+  // (다시 기록할 일이 생기면 마이 탭 → 신발 보관함에서 복원하면 된다 — 되돌릴 길이 있다.)
+  //
+  // **딱 하나 예외**: 편집 중인 러닝의 신발이 그 사이 보관됐다면 그건 남긴다. 안 그러면
+  // 어느 신발의 기록인지 화면이 말해주지 못하고, 선택된 칩이 없어 고장처럼 보인다.
   const shoeOptions = useMemo(() => {
     const withIdx = shoes.map((sh, i) => ({ sh, i }));
-    const active = withIdx.filter(x => !x.sh.retired);
-    const archived = withIdx.filter(x => x.sh.retired);
-    return [...active, ...archived];
-  }, [shoes]);
+    return withIdx.filter(x => !x.sh.retired || (!!initShoeId && x.sh.id === initShoeId));
+  }, [shoes, initShoeId]);
   // 같은 이름의 신발이 둘 이상이면(중복 등록) 이름만으로는 구분이 안 된다 — 그때만 누적
   // 거리를 덧붙인다. 중복이 없을 땐 잡음이므로 붙이지 않는다.
   const dupNames = useMemo(() => {
@@ -1093,6 +1094,13 @@ export default function HistoryScreen({
   // 최근 5개만 노출(펼치기 전). 기간을 바꾸면 다시 접힌다(아래 세그먼트 onChange).
   const RECENT_LIMIT = 5;
   const shownRuns = showAllRuns ? displayRuns : displayRuns.slice(0, RECENT_LIMIT);
+  // 기간이 비었을 때 대신 보여줄 최근 러닝(전체 기준). 기간 필터와 무관한 목록이라
+  // displayRuns 가 아니라 runs 에서 뽑는다 — runs 는 App 이 최신순으로 넘긴다.
+  const RECENT_FALLBACK = 3;
+  const recentRuns = useMemo(
+    () => (displayRuns.length === 0 ? runs.slice(0, RECENT_FALLBACK) : []),
+    [displayRuns.length, runs],
+  );
   const hiddenCount = displayRuns.length - shownRuns.length;
 
   const MIN_YEAR = runs.length > 0
@@ -1283,9 +1291,25 @@ export default function HistoryScreen({
               )}
             </View>
           ) : (
-            <View style={[s.card, { padding: rs(28), alignItems: 'center' }]}>
-              <GlassEdge glints={false} radius={RADIUS.lg} />
-              <Text style={s.emptyHint}>이 기간엔 기록이 없어요</Text>
+            // 기간엔 없지만 **기록 자체는 있다** — 예전엔 "이 기간엔 기록이 없어요" 한 줄로
+            // 끝나 막다른 길이었다(2026-08-04 민우님 지적). 이번 주에 안 달렸다고 화면이
+            // 텅 비는 건 사실도 아니고(지난주 기록은 있다) 도움도 안 된다.
+            // 그래프·요약은 그 기간의 값이라 그대로 두고, 아래에 최근 러닝을 이어 붙인다.
+            <View>
+              <View style={[s.card, { padding: rs(24), alignItems: 'center' }]}>
+                <GlassEdge glints={false} radius={RADIUS.lg} />
+                <Text style={s.emptyHint}>{periodTitle}엔 기록이 없어요</Text>
+              </View>
+              {recentRuns.length > 0 && (
+                <View style={s.recentWrap}>
+                  <Text style={s.recentHead}>최근 러닝</Text>
+                  {recentRuns.map(r => (
+                    <View key={r.id} style={s.recentItem}>
+                      <RunCard run={r} shoes={shoes} onPress={() => setDetail(r)} unit={unit} />
+                    </View>
+                  ))}
+                </View>
+              )}
             </View>
           )
         }
@@ -1414,6 +1438,9 @@ const s = StyleSheet.create({
   chartBarVal: { fontFamily: DISPLAY, fontSize: TYPE.micro.fontSize, fontWeight: '600', color: T1, fontVariant: ['tabular-nums'] },
 
   // course map (recessed well, svg polyline)
+  recentWrap: { marginTop: rv(18), gap: rv(10) },
+  recentHead: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '700', letterSpacing: 1.1, paddingHorizontal: rs(4) },
+  recentItem: { marginTop: rv(0) },
   emptyHint: { color: T3, fontFamily: FONT, fontSize: TYPE.body.fontSize, textAlign: 'center' },
 
   // 콤팩트: 요약 4칸(거리/횟수/페이스/시간)의 패딩·값 폰트·여백을 줄여 세로 높이를
