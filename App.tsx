@@ -124,6 +124,7 @@ import {runInsights} from './lib/runInsights';
 import {getDistancePBs, PB_CACHE_KEY} from './lib/distancePBStore';
 import type {RunBestEfforts} from './lib/bestEfforts';
 import {hkSaveRunWorkout, hkBackfillHeartRate, hkEnsureLinked, hkFindRunWorkoutWindow} from './lib/healthkit';
+import {pickRepairCandidates, repairHeartRates, hrRepairDone, markHrRepairDone} from './lib/hrRepair';
 import {registerRunForHr, saveWatchHrTrack, retryPendingHr, avgBpmFromTrack, hasHrTrack} from './lib/hrBackfill';
 import {syncRunDetails, runsWithCloudRoute, enqueueDetailDeletion} from './lib/runDetailSync';
 import {updateHomeWidgetShoe} from './lib/homeWidget';
@@ -2076,6 +2077,37 @@ function Main(){
   // 따로 들고 있어 같은 신발을 두 곳이 설명했다 — 명예의 전당이 어느 쪽을 봐야 하는지
   // 늘 헷갈렸고, 한쪽만 지워지는 경로가 생기면 조용히 어긋난다. 이제 신발 하나가 답한다.
   // 삭제한 신발은 여기서 자연히 빠진다(= 명예의 전당에서도 사라진다 — 결정 A).
+  /**
+   * 애플 건강 연동 직후, **지난 러닝의 심박을 소급 복구**한다(2026-08-04).
+   *
+   * 연동을 켜기 전에 달린 런들은 앱이 HealthKit 을 읽을 수 없어 심박이 비어 있다.
+   * 기존 백필(lib/hrBackfill)은 12시간 창만 보므로 그 기록들은 대기열에 등록된 적조차
+   * 없어 영영 복구되지 않는다 — 실측에서 36건 중 35건이 그 상태였다.
+   *
+   * 없는 값을 지어내지 않는다: HealthKit 에서 **그 시간대 워크아웃을 찾은 경우에만**
+   * 심박을 읽어 채운다. 못 찾으면 그 런은 건너뛴다.
+   */
+  const repairPastHeartRates=async()=>{
+    try{
+      if(await hrRepairDone())return;
+      const cands=pickRepairCandidates(
+        liveRecords(runs as any).map((r:any)=>({
+          id:String(r?.id??''), runDate:String(r?.run_date??''),
+          durationS:Number(r?.duration??0), heartRate:Number(r?.heart_rate??0),
+        })),
+        today(),
+      );
+      if(!cands.length){await markHrRepairDone();return;}
+      const res=await repairHeartRates(
+        {findWindow:(d,dur)=>hkFindRunWorkoutWindow(d,dur), backfill:(id,a,b)=>hkBackfillHeartRate(id,a,b)},
+        cands,
+      );
+      await markHrRepairDone();
+      // 조용히 끝내지 않는다 — 사용자는 연동을 켠 대가로 무엇을 얻었는지 알아야 한다.
+      if(res.repaired>0)showToast({message:`지난 러닝 ${res.repaired}건의 심박을 채웠어요`});
+    }catch(e){reportIssue('심박 소급 복구',e);}
+  };
+
   const retiredRecords:RetiredShoeRecord[]=useMemo(()=>retirementRecordsFromShoes(shoes as any),[shoes]);
   // 보관함 목록: retired(보관) 처리됐지만 명예의 전당(키프세이크) 기록이 없는 신발 = 단순
   // 보관 신발. 명예의 전당 신발은 박물관에 있으므로 제외한다. 마이 탭 '신발 보관함'이 소비.
@@ -2793,6 +2825,7 @@ function Main(){
             onDeleteAccount={handleDeleteAccount}
             onOpenProgression={()=>setShowProgression(true)}
             onOpenHallOfShoes={()=>setShowHallOfShoes(true)} retiredCount={retiredRecords.length}
+            onRepairHeartRates={repairPastHeartRates}
             onOpenMedalArchive={()=>setShowMedalArchive(true)} medalCount={liveMedals(medals).length}
             onOpenFindShoes={()=>setShowFindShoes(true)}
             // 랭킹은 **공개에 동의한 사람에게만** 준다. 비공개인데 입구를 보여주면

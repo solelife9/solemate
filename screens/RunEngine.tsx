@@ -688,7 +688,8 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
           if(runTracker.pausedFlag())return;
           const rel=ev?.relativeAltitude;
           if(typeof rel!=='number'||!Number.isFinite(rel))return; // Android 등 미제공
-          baroElev.current=feedAltitude(baroElev.current,rel);
+          // 시각을 함께 넘긴다 — 상승률 상한(사람이 낼 수 없는 상승 거부)이 이걸로 작동한다.
+          baroElev.current=feedAltitude(baroElev.current,rel,Date.now());
           baroAvail.current=true;
           setElevGain(Math.round(baroElev.current.gain));
         });

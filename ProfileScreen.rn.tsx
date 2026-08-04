@@ -127,6 +127,7 @@ export default function ProfileScreen({
   cloudPort, onCloudMerged, onDeleteAccount, cloudClock = () => Date.now(),
   onOpenProgression,
   onOpenHallOfShoes, retiredCount = 0,
+  onRepairHeartRates,
   onOpenMedalArchive, medalCount = 0, onOpenFindShoes, onOpenRanking,
   todayISO = '',
   onReplayOnboarding,
@@ -197,6 +198,11 @@ export default function ProfileScreen({
   // 진척(나의 여정·업적) 화면 진입. App 이 전체화면 ProgressionScreen 으로 전환한다.
   // 없으면 진척 진입 버튼은 표시되지 않는다(안전한 no-op).
   onOpenProgression?: () => void;
+  /**
+   * 애플 건강 연동 직후 **지난 러닝의 심박을 소급 복구**한다(App 이 주입).
+   * 없으면 아무 일도 하지 않는다 — 연동 자체는 그대로 동작한다.
+   */
+  onRepairHeartRates?: () => void;
   // 명예의 전당(은퇴 신발 박물관) 진입. 없으면 진입 버튼 미표시(안전한 no-op).
   // (신발탭 이동을 검토했으나 사용자 결정으로 마이탭 유지 — 2026-07-02.)
   onOpenHallOfShoes?: () => void;
@@ -283,6 +289,11 @@ export default function ProfileScreen({
       const v = await hkRestingHR();
       if (v > 0) onChangeRestHR?.(v);
     }
+    // 연동을 켠 **바로 그 순간**이 과거 기록을 되살릴 유일한 기회다(2026-08-04).
+    // 그 전에 달린 런들은 앱이 HealthKit 을 읽을 수 없어 심박이 비어 있고, 기존 백필은
+    // 12시간 창만 보므로 그 기록들은 대기열에 등록된 적조차 없다.
+    // 실패해도 조용히 넘어간다 — 연동 자체는 이미 성공했다.
+    void onRepairHeartRates?.();
   };
 
   const scrollRef = useRef<ScrollView>(null);

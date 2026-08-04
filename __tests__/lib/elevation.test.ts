@@ -49,3 +49,45 @@ describe('elevation gain accumulation', () => {
     expect(s.gain).toBe(35);
   });
 });
+
+// ─── 노이즈가 고도를 만들어내지 못한다 (2026-08-04) ────────────────────────────
+// 실기기에서 **3.25km / 20분 러닝에 3,262m** 가 찍혔다(분당 163m — 엘리트 등산 러너도
+// 20~30m/분이다). 임계 히스테리시스만으로는 못 막는 구조였다: 1초마다 표본이 들어오는데
+// 노이즈가 임계 근처에서 진동하면 **올라갈 때마다 누적되고 내려갈 때는 기준만 낮아진다.**
+// 제자리 흔들림이 계속 적립되는 것이다.
+describe('평지에서 고도가 쌓이지 않는다', () => {
+  /** 20분 동안 1초마다, 평지(0m)에 ±4m 로 진동하는 기압 노이즈. */
+  const flatWithNoise = (): {alt: number; atMs: number}[] => {
+    const out: {alt: number; atMs: number}[] = [];
+    for (let i = 0; i < 1200; i++) {
+      out.push({alt: (i % 2 === 0 ? 4 : -4), atMs: i * 1000});
+    }
+    return out;
+  };
+
+  test('임계를 넘나드는 진동 20분 → 상승 0에 가깝다(옛 규칙이면 수천 m)', () => {
+    let st = initElevState();
+    for (const s of flatWithNoise()) st = feedAltitude(st, s.alt, s.atMs);
+    expect(Math.round(st.gain)).toBeLessThan(50);
+  });
+
+  test('사람이 낼 수 없는 급상승은 버린다 — 1초에 30m 는 센서 이상이다', () => {
+    let st = initElevState();
+    st = feedAltitude(st, 0, 0);
+    st = feedAltitude(st, 30, 1000); // 분당 1,800m
+    expect(st.gain).toBe(0);
+  });
+
+  test('진짜 오르막은 그대로 잡는다 — 10분에 100m(분당 10m)', () => {
+    let st = initElevState();
+    for (let i = 0; i <= 600; i++) st = feedAltitude(st, (i / 600) * 100, i * 1000);
+    expect(st.gain).toBeGreaterThan(80);
+    expect(st.gain).toBeLessThan(110);
+  });
+
+  test('내리막은 누적하지 않는다', () => {
+    let st = initElevState();
+    for (let i = 0; i <= 600; i++) st = feedAltitude(st, 100 - (i / 600) * 100, i * 1000);
+    expect(st.gain).toBeLessThan(5);
+  });
+});
