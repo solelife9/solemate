@@ -44,6 +44,12 @@ function SearchIcon({size = 15, color = T3}: {size?: number; color?: string}) {
 }
 
 const OTHER = '기타';
+// 사용자 입력 상한(2026-08-04 QA 감사 Q-9). 예전엔 제한이 없어 임의 길이의 문자열이
+// 그대로 신발 이름이 됐고, 홈 히어로의 브랜드 줄은 줄바꿈 제한이 없어 카드가 밀렸다.
+// 60/30 은 서버 규칙(shoe_requests 의 brand·model ≤ 60자)과 정렬한 값이다 — 넘기면
+// 카탈로그 개선 신호가 조용히 거부돼, 등록은 되는데 신호만 사라지는 비대칭이 생긴다.
+const MODEL_MAX = 60;
+const BRAND_MAX = 30;
 const norm = (v: string) => v.trim().toLowerCase().replace(/\s+/g, ' ');
 
 export function ShoePicker({visible, onClose, onPick, myShoes, insetTop, insetBottom}: {
@@ -223,6 +229,10 @@ export function ShoePicker({visible, onClose, onPick, myShoes, insetTop, insetBo
                   placeholder={`${selBrand} 검색`}
                   placeholderTextColor={T4}
                   style={s.pkInput}
+                  // 모델명 상한(QA 감사 Q-9). 이 값이 그대로 '직접 추가'의 모델명이 되고
+                  // 신발 이름·카탈로그 요청 신호로 흘러간다 — 서버 규칙도 60자가 상한이라
+                  // 넘기면 요청이 조용히 거부된다(등록은 되고 신호만 사라지는 비대칭).
+                  maxLength={MODEL_MAX}
                   autoCorrect={false}
                   autoCapitalize="none"
                   accessibilityLabel={`${selBrand} 모델 검색`}
@@ -285,6 +295,7 @@ export function ShoePicker({visible, onClose, onPick, myShoes, insetTop, insetBo
                 value={customBrand}
                 onChangeText={setCustomBrand}
                 placeholder="브랜드명을 입력하세요"
+                maxLength={BRAND_MAX}
                 autoCorrect={false}
                 accessibilityLabel="브랜드명 입력"
               />
@@ -293,6 +304,7 @@ export function ShoePicker({visible, onClose, onPick, myShoes, insetTop, insetBo
                 onChangeText={setCustomModel}
                 placeholder="모델명을 입력하세요"
                 style={{marginTop: rv(8)}}
+                maxLength={MODEL_MAX}
                 autoCorrect={false}
                 accessibilityLabel="모델명 입력"
               />

@@ -1735,12 +1735,16 @@ function Main(){
   const challengeRuns:ChallengeRun[]=runs.map(r=>({date:String(r.run_date||'').slice(0,10),dist:Number(r.km)||0}));
 
   // ── adapters: backend → presentational shapes (lib/appViewModel) ──────────
-  const uiShoes:Shoe[]=shoes.map(s=>toUiShoe(s,runs,weightKg));
-  const idxById=buildIdxById(shoes);
-  const nameById=buildNameById(shoes,tombstones.shoes);
+  // 이 네 줄이 렌더 경로에서 가장 무거운 뿌리다(2026-08-04 QA 감사 Q-12): toUiShoe 는
+  // shoeHealth 로 신발마다 런 전량을 훑고(O(신발×런)), homeShoePairs 는 lastWornDate 로
+  // 한 번 더 훑는다. 예전엔 매 렌더 다시 돌아, 런이 쌓일수록 **러닝과 무관한 상호작용**
+  // (탭 전환·설정 토글)까지 같이 느려졌다. 입력이 그대로면 결과도 그대로다.
+  const uiShoes:Shoe[]=useMemo(()=>shoes.map(s=>toUiShoe(s,runs,weightKg)),[shoes,runs,weightKg]);
+  const idxById=useMemo(()=>buildIdxById(shoes),[shoes]);
+  const nameById=useMemo(()=>buildNameById(shoes,tombstones.shoes),[shoes,tombstones.shoes]);
 
-  const homeShoes=homeShoePairs(shoes,uiShoes,runs);
-  const homeUiShoes:Shoe[]=homeShoes.map(x=>x.ui);
+  const homeShoes=useMemo(()=>homeShoePairs(shoes,uiShoes,runs),[shoes,uiShoes,runs]);
+  const homeUiShoes:Shoe[]=useMemo(()=>homeShoes.map(x=>x.ui),[homeShoes]);
 
   // ── 선택/기본 신발(activeIdx 하드코딩 제거) ──────────────────────────────────
   // 기본: 가장 최근에 신은 활성 신발(손이 가는 신발). 선택: 사용자가 홈에서 고른 신발
@@ -2006,8 +2010,17 @@ function Main(){
   const homeForecast:ReplacementForecast|null=forecastForRaw(homeActiveRaw);
   // 캐러셀 카드마다 자기 신발의 예측을 바로 보여주려고 전 신발 예측을 맵으로 모은다
   // (활성 1개만 내려주던 구조 → 스와이프 시 forecast 가 한 박자 늦게 뜨던 지연 제거).
-  const homeForecasts:Record<string,ReplacementForecast|null>={};
-  for(const s of shoes){ if(s.id) homeForecasts[s.id]=forecastForRaw(s); }
+  //
+  // **메모한다**(2026-08-04 QA 감사 Q-12): 이건 신발마다 런 전량을 훑는 O(신발×런) 계산이라
+  // 런이 쌓일수록 무거워지는데, 예전엔 매 렌더 다시 돌았다. 탭 전환·설정 토글처럼 러닝과
+  // 무관한 상호작용까지 런 수에 끌려 느려진다. 입력이 그대로면 결과도 그대로다.
+  // 의존성에 runSurfaces 가 있어야 한다 — surfaceOf 가 그걸 읽는다(노면이 마모 계수를 바꾼다).
+  const homeForecasts:Record<string,ReplacementForecast|null>=useMemo(()=>{
+    const out:Record<string,ReplacementForecast|null>={};
+    for(const s of shoes){ if(s.id) out[s.id]=forecastForRaw(s); }
+    return out;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[shoes,runs,weightKg,runSurfaces]);
 
   // ── 진척 홈 노출(Slice D) ───────────────────────────────────────────────────────
   // 진척 계산에 넘길 챌린지 완료 신호(렌더 경로 단일 소스, 메모). 홈 띠·프로필 랭크·업적이
@@ -2085,8 +2098,11 @@ function Main(){
     });
   };
 
-  const sortedRaw=sortRunsByDateDesc(runs);
-  const uiRuns:Run[]=sortedRaw.map(r=>toUiRun(r,idxById,nameById));
+  // 정렬(O(n log n)) + 전량 매핑 — 기록 탭이 쓰는 목록. 같은 이유로 메모한다(Q-12).
+  const uiRuns:Run[]=useMemo(
+    ()=>sortRunsByDateDesc(runs).map(r=>toUiRun(r,idxById,nameById)),
+    [runs,idxById,nameById],
+  );
 
   // ── home week stats ────────────────────────────────────────
   const now=new Date();
@@ -2193,7 +2209,9 @@ function Main(){
   };
 
   // ── per-shoe totals (for shoe detail) ──────────────────────
-  const shoeTotals:Record<number,ShoeTotals>={};
+  // 신발마다 런 전량을 훑는 O(신발×런) — homeForecasts 와 같은 이유로 메모한다(Q-12).
+  const shoeTotals:Record<number,ShoeTotals>=useMemo(()=>{
+  const acc:Record<number,ShoeTotals>={};
   shoes.forEach((s,i)=>{
     const list=runs.filter(r=>r.shoe_id===s.id);
     // 마지막 착용일(런에서 파생) → 한국어 표기. 미착용이면 undefined로 둬 화면에서 생략.
@@ -2203,8 +2221,10 @@ function Main(){
     const serverSec=Number(s.run_time);
     const totalTime=Number.isFinite(serverSec)&&serverSec>0?durationLabel(serverSec):totalTimeLabel(list);
     // 신발별 평균 페이스(기록 있는 런만, lib/stats). 신발끼리 페이스 비교용으로 상세·목록에 노출.
-    shoeTotals[i]={totalRuns:list.length,totalTime,avgPace:avgPaceLabel(list),lastWorn:worn?fmtKDate(worn).date:undefined};
+    acc[i]={totalRuns:list.length,totalTime,avgPace:avgPaceLabel(list),lastWorn:worn?fmtKDate(worn).date:undefined};
   });
+  return acc;
+  },[shoes,runs]);
 
   // ── profile ─────────────────────────────────────────────────
   const totalKm=Math.round(sumKm(runs));

@@ -226,7 +226,10 @@ export function ShoeCard({
           {/* 상단: 브랜드/모델(좌) · 컨디션(우) */}
           <View style={styles.cardTop}>
             <View style={{flexShrink: 1}}>
-              <Text style={styles.cardBrand}>{shoe.brand}{cat ? ` · ${cat}` : ''}</Text>
+              {/* 브랜드 줄에도 줄바꿈 제한(QA 감사 Q-9) — parseShoeName 은 카탈로그 브랜드에
+                안 걸리면 첫 토큰 전체를 브랜드로 쓰므로, 공백 없는 긴 입력이 통째로 여기 온다.
+                모델 줄만 막혀 있어 히어로 카드가 밀렸다. */}
+            <Text style={styles.cardBrand} numberOfLines={1}>{shoe.brand}{cat ? ` · ${cat}` : ''}</Text>
               <Text style={styles.cardModel} numberOfLines={1}>{shoe.model}</Text>
             </View>
             {/* 컨디션 = 점 + 텍스트만(칩 박스 제거 — 배지보다 조용한 표기, 폴리싱 2026-07-02).
