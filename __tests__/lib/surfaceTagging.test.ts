@@ -15,7 +15,6 @@ import {
   SURFACE_FACTOR,
   runEffectiveWear,
   parseSurface,
-  getRunSurface,
   setRunSurface,
 } from '../../lib/wearModel';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -53,13 +52,15 @@ describe('노면 계수가 마모에 반영된다', () => {
 });
 
 describe('노면 태그 저장·조회', () => {
-  it("트랙으로 태깅하면 그대로 읽힌다", async () => {
+  it("트랙으로 태깅하면 그 값이 그대로 영속된다", async () => {
     await setRunSurface('r1', 'track');
-    await expect(getRunSurface('r1')).resolves.toBe('track');
+    // 읽기는 App 이 getMany 로 일괄 조회 후 parseSurface 로 정규화한다(단건 read 는 폐기).
+    await expect(AsyncStorage.getItem('surface_r1')).resolves.toBe('track');
   });
 
-  it('태그가 없는 런은 로드로 읽힌다', async () => {
-    await expect(getRunSurface('없는런')).resolves.toBe('road');
+  it('태그가 없는 런은 키 자체가 없다 — 소비처가 road 로 정규화한다', async () => {
+    await expect(AsyncStorage.getItem('surface_없는런')).resolves.toBeNull();
+    expect(parseSurface(null)).toBe('road');
   });
 
   it('손상된 값은 로드로 정규화한다', () => {

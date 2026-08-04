@@ -21,7 +21,6 @@ import {
   weightFactorFor,
   paceFactor,
   parseSurface,
-  getRunSurface,
   setRunSurface,
   SURFACE_FACTOR,
   type WearRun,
@@ -199,21 +198,22 @@ describe('A6-2 엣지(결측·0·음수·비유한) — 무NaN·무Infinity·무
   });
 });
 
+// 단건 read(getRunSurface)는 2026-08-04 제거 — App 이 런 목록을 getMany 로 일괄 조회한
+// 뒤 parseSurface 로 정규화한다. 여기서는 '쓴 값이 그 키에 그대로 남는가'만 지킨다.
 describe('노면 IO (AsyncStorage)', () => {
-  test('미저장 런은 road 로 읽힌다', async () => {
-    await expect(getRunSurface('never-set')).resolves.toBe('road');
+  test('미저장 런은 키 자체가 없다 — 소비처가 road 로 정규화한다', async () => {
+    await expect(AsyncStorage.getItem('surface_never-set')).resolves.toBeNull();
+    expect(parseSurface(null)).toBe('road');
   });
 
-  test('set→get 라운드트립으로 노면이 보존된다', async () => {
+  test('저장한 노면이 약속된 키에 그대로 남는다', async () => {
     await setRunSurface('run-42', 'trail');
-    await expect(getRunSurface('run-42')).resolves.toBe('trail');
-    // 키 형식 확인.
     await expect(AsyncStorage.getItem('surface_run-42')).resolves.toBe('trail');
   });
 
   test('미지원 값을 저장하면 road 로 정규화되어 영속된다', async () => {
     await setRunSurface('run-bad', 'bogus' as never);
-    await expect(getRunSurface('run-bad')).resolves.toBe('road');
+    await expect(AsyncStorage.getItem('surface_run-bad')).resolves.toBe('road');
   });
 
   test('parseSurface: 유효 4종 통과, 그 외/결측 → road', () => {

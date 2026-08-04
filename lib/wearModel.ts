@@ -200,16 +200,10 @@ export function effectiveWearKm(
 // ─── 노면 IO(얇게 — 순수계산과 분리) ──────────────────────────────
 // lib/settings.ts 패턴: try/catch 로 영속 실패를 삼키고, 손상/누락은 기본값(road)으로
 // 정규화한다. AsyncStorage 키 = `surface_<runId>`.
-
-/** 런별 노면 태그를 읽는다. 미태그/손상/실패 → 기준 road. */
-export async function getRunSurface(runId: string): Promise<Surface> {
-  try {
-    const raw = await AsyncStorage.getItem(`surface_${runId}`);
-    return parseSurface(raw);
-  } catch {
-    return 'road';
-  }
-}
+//
+// 읽기(단건 getRunSurface)는 2026-08-04 제거했다 — 소비처가 사라졌고(App 은 런 목록을
+// getMany 로 한 번에 읽어 parseSurface 로 정규화한다) 남겨 두면 "이걸 쓰는 데가 있다"는
+// 거짓 신호가 된다. 되살릴 일이 생기면 parseSurface + getItem 두 줄이다.
 
 /** 런별 노면 태그를 저장한다. 미지원 값은 road 로 정규화 후 영속(실패는 삼킨다). */
 export async function setRunSurface(runId: string, s: Surface): Promise<void> {
