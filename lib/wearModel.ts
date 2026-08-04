@@ -1,16 +1,32 @@
-// ─── 실효 마모 모델(Slice 6 차별점) ───────────────────────────────
-// 신발의 "진짜" 마모를 휴리스틱으로 추정하는 순수 함수 모음. 네이티브 0·백엔드 0:
-// 노면(surface)·체중만 로컬(AsyncStorage/기존 settings)에서 읽고, 마모 계산 자체는
-// 입력만으로 결정되는 순수 파생값이다. 계수 근거는
-// .tenet/knowledge/2026-06-03_research-shoe-wear-factors.md (휴리스틱, 정밀과학 아님).
+// ─── 마모 모델(Slice 6 차별점) ─────────────────────────────────────
+// 신발이 얼마나 닳았는지 추정하는 순수 함수 모음. 네이티브 0·백엔드 0.
+//
+// ⚠️ 2026-08-04 단일화 — **한 신발은 한 숫자가 설명한다.**
+// 예전엔 같은 신발을 두 계산이 다르게 봤다: 수명 링·%·교체 알림은 lib/shoe.shoeHealth
+// (실제 달린 거리), 신발 상세의 교체 예측은 여기(노면·페이스·체중·시간 보정). 둘은
+// 세 군데서 어긋났다 — 노면/페이스는 한쪽만 쓰고, 몸무게는 한쪽은 분모(수명↓) 한쪽은
+// 분자(마모↑)로, 그것도 **기준 체중이 65kg 과 70kg 으로 달랐다**(같은 사람이 한쪽에선
+// 무거운 편, 다른 쪽에선 가벼운 편이 됐다).
+//
+// 정리 방향:
+//   · 누적 마모 = **실제 달린 거리**(start_km + Σ 거리). 사용자가 보는 숫자를 건드리지
+//     않는다 — "412km 달렸는데 왜 390이지?"가 되면 그건 Truth only 위반이다.
+//   · 모든 보정은 **수명(분모)** 쪽으로 몬다. 몸무게가 이미 그렇게 하고 있었고 그 방식이
+//     옳았다. 규칙도 하나만 쓴다(lib/shoe.weightDurabilityFactor, 기준 65kg).
+//   · **노면·페이스 계수는 폐기했다.** 복잡해서가 아니라 근거가 없어서다: 출처 없이 우리가
+//     정한 숫자였고(CLAUDE.md 의 "확인한 것만 넣는다 · 유추 금지"에 정면으로 어긋난다),
+//     트레일이 더 빨리 닳는지조차 한 방향이 아니다(아웃솔은 더, 미드솔은 덜). 게다가
+//     입력이 반쪽이었다 — 트레일을 태깅할 경로가 애초에 없었다.
+//     되살리려면 셋이 필요하다: 신발 카테고리로 자동 판정 · 출처 있는 계수 · 화면 노출.
+//   · 시간 열화(ageWearKm)는 '지금 얼마나 닳았나'에서 빼고 **예측의 속도**에만 남겼다
+//     (forecastReplacement 의 agePerWeek) — 그건 링과 다투지 않는 별개 개념이다.
 //
 // 원본 불변(A6-1): shoe.total_km · run.distance_km 는 읽기만 한다. 어떤 입력도
 // 변경/마이그레이션하지 않으며 실효마모는 전부 파생값이다.
 // 엣지 graceful(A6-2): 결측·0·음수·비유한 입력에서도 NaN/Infinity/음수를 절대
 // 반환하지 않는다(모든 경로가 0 또는 양수 유한값으로 정규화).
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import {parseShoeName, type ShoeLike, type RunLike} from './shoe';
+import {parseShoeName, weightDurabilityFactor, type ShoeLike, type RunLike} from './shoe';
 import {
   categoryLifespanKm,
   DEFAULT_LIFESPAN_KM,
@@ -18,9 +34,6 @@ import {
 } from '../data/shoeModels';
 
 // ─── 타입 ─────────────────────────────────────────────────────────
-// 노면 종류. road 가 기준(factor 1.0)이며 미태그/미지원 값은 road 로 정규화된다.
-export type Surface = 'road' | 'trail' | 'track' | 'treadmill';
-
 // 마모 계산이 읽는 런 행. 기존 RunLike(shoe_id/km) 를 확장하되, 실효 마모는
 // distance_km(거리)·duration_s(소요시간)에서 도출한다(원본 km 은 건드리지 않음).
 export type WearRun = RunLike & {
@@ -38,71 +51,26 @@ export type WearShoe = ShoeLike & {
   purchase_date?: string; // YYYY-MM-DD
 };
 
-// ─── 계수(휴리스틱) ───────────────────────────────────────────────
-// 노면 계수: 트레드밀(쿠션·균일) 완만, 트레일(바위·진흙) 가속. road 기준 1.0.
-export const SURFACE_FACTOR: Record<Surface, number> = {
-  treadmill: 0.85,
-  track: 0.9,
-  road: 1.0,
-  trail: 1.15,
-};
-
+// ─── 계수 ─────────────────────────────────────────────────────────
 // 시간 기반 폼 열화: 미착용도 약 24개월에 수명 소진(target_km/24 per month).
+// 미드솔 노화는 실재하는 현상이라 남긴다 — 다만 '지금 마모'가 아니라 예측 속도에만 쓴다.
 export const AGE_WEAR_MONTHS = 24;
-
-// 체중 보정 클램프 범위. 기준 러너 70kg → factor 1.0.
-export const WEIGHT_FACTOR_REF_KG = 70;
-export const WEIGHT_FACTOR_MIN = 0.8;
-export const WEIGHT_FACTOR_MAX = 1.6;
 
 // 평균 한 달 길이(일) — 개월수 환산용.
 const DAYS_PER_MONTH = 30.4375;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
-const SURFACE_VALUES: readonly Surface[] = ['road', 'trail', 'track', 'treadmill'];
-
 // ─── 순수 계산 ─────────────────────────────────────────────────────
 
 /**
- * 페이스(초/km) → 페이스 계수. 빠를수록 수직충격력↑(완만히).
- *   ≥300(easy/normal) → 1.0, 240–300(tempo) → 1.05, <240(race/interval) → 1.10.
- * 비유한/0/음수 페이스(거리·시간 결측 등)는 보정 없음(1.0).
+ * 단일 런이 신발에 더하는 마모(km) = **실제 달린 거리**.
+ * 예전엔 노면·페이스 계수를 곱했다(위 헤더 참조 — 근거 없는 숫자였다). 거리 결측·0·
+ * 음수·비유한 → 0.
  */
-export function paceFactor(paceSecPerKm: number): number {
-  if (!Number.isFinite(paceSecPerKm) || paceSecPerKm <= 0) return 1.0;
-  if (paceSecPerKm >= 300) return 1.0; // ≥360 및 300–360 동일
-  if (paceSecPerKm >= 240) return 1.05;
-  return 1.1;
-}
-
-/** 노면 문자열 → Surface. 미지원/결측은 기준 road 로 정규화. */
-export function parseSurface(raw: string | null | undefined): Surface {
-  return raw != null && (SURFACE_VALUES as readonly string[]).includes(raw)
-    ? (raw as Surface)
-    : 'road';
-}
-
-/**
- * 단일 런의 실효 마모(km) = distance_km × surfaceFactor × paceFactor.
- * surface 미지정/미지원 → road. pace 는 duration_s/distance_km 에서 도출하며
- * 결측·0·비유한이면 paceFactor 1.0. 거리 결측·0·음수·비유한 → 0(마모 없음).
- */
-export function runEffectiveWear(run: WearRun, opts?: {surface?: Surface}): number {
+export function runEffectiveWear(run: WearRun): number {
   const distance = Number(run?.distance_km);
   if (!Number.isFinite(distance) || distance <= 0) return 0;
-
-  const surface = opts?.surface;
-  const sFactor =
-    surface != null && surface in SURFACE_FACTOR
-      ? SURFACE_FACTOR[surface]
-      : SURFACE_FACTOR.road;
-
-  const dur = Number(run?.duration_s);
-  const pace = Number.isFinite(dur) && dur > 0 ? dur / distance : NaN;
-  const pFactor = paceFactor(pace);
-
-  const wear = distance * sFactor * pFactor;
-  return Number.isFinite(wear) && wear > 0 ? wear : 0;
+  return distance;
 }
 
 /**
@@ -110,19 +78,26 @@ export function runEffectiveWear(run: WearRun, opts?: {surface?: Surface}): numb
  *   1) target_km 가 유한·>0 이면 그것.
  *   2) 아니면 모델명 파싱 → 시드 카테고리 → categoryLifespanKm[category].
  *   3) 최종 폴백 DEFAULT_LIFESPAN_KM(700).
+ * weightKg 를 주면 **몸무게 반영 유효 수명**을 돌려준다 — 수명 링(lib/appViewModel 의
+ * effectiveMaxKm)과 **같은 규칙·같은 기준(65kg)** 을 쓴다. 예전엔 여기만 70kg 기준의
+ * 별도 계수를 분자에 곱해, 같은 사람이 두 화면에서 반대로 판정됐다.
  * 항상 양수 유한값.
  */
-export function targetKmFor(shoe: WearShoe): number {
-  const explicit = Number(shoe?.target_km);
-  if (Number.isFinite(explicit) && explicit > 0) return explicit;
+export function targetKmFor(shoe: WearShoe, weightKg?: number): number {
+  const base = (() => {
+    const explicit = Number(shoe?.target_km);
+    if (Number.isFinite(explicit) && explicit > 0) return explicit;
 
-  const {brand, model} = parseShoeName(shoe?.name ?? '');
-  const matched = findShoeModel(brand, model);
-  if (matched) {
-    const byCategory = categoryLifespanKm[matched.category];
-    if (Number.isFinite(byCategory) && byCategory > 0) return byCategory;
-  }
-  return DEFAULT_LIFESPAN_KM;
+    const {brand, model} = parseShoeName(shoe?.name ?? '');
+    const matched = findShoeModel(brand, model);
+    if (matched) {
+      const byCategory = categoryLifespanKm[matched.category];
+      if (Number.isFinite(byCategory) && byCategory > 0) return byCategory;
+    }
+    return DEFAULT_LIFESPAN_KM;
+  })();
+  const adjusted = Math.round(base * weightDurabilityFactor(weightKg));
+  return Number.isFinite(adjusted) && adjusted > 0 ? adjusted : base;
 }
 
 /**
@@ -154,62 +129,21 @@ export function ageWearKm(shoe: WearShoe, now: Date = new Date()): number {
 }
 
 /**
- * 체중 보정 계수 = clamp(weightKg/70, 0.8, 1.6). 충격력은 체중에 거의 선형이라
- * 기준(70kg) 대비 마모를 스케일한다. 체중 결측·0·음수·비유한 → 1.0(기준 가정).
+ * 신발의 누적 마모(km) = start_km + Σ 실제 달린 거리.
+ *
+ * **수명 링(lib/shoe.shoeHealth)과 같은 값이다** — 그게 이 단일화의 핵심이다.
+ * 보정은 전부 수명(targetKmFor) 쪽에 있고, 시간 열화는 예측 속도에만 있다.
+ * 모든 결측·비정상 입력에서 0 이상 유한값을 보장한다. 원본은 읽기만 한다(A6-1).
  */
-export function weightFactorFor(weightKg?: number): number {
-  const w = Number(weightKg);
-  if (!Number.isFinite(w) || w <= 0) return 1.0;
-  const f = w / WEIGHT_FACTOR_REF_KG;
-  return Math.max(WEIGHT_FACTOR_MIN, Math.min(WEIGHT_FACTOR_MAX, f));
-}
-
-/**
- * 신발의 누적 실효 마모(km)
- *   = Σ runEffectiveWear(run, {surface: surfaceOf?.(run.id)}) × weightFactor
- *     + ageWearKm(shoe, now).
- * 빈 runs → ageWearKm 만. 모든 결측·비정상 입력에서 0 이상 유한값을 보장한다.
- * 원본 객체(shoe/run)는 읽기만 한다(A6-1).
- */
-export function effectiveWearKm(
-  shoe: WearShoe,
-  runs: WearRun[],
-  opts?: {weightKg?: number; now?: Date; surfaceOf?: (runId: string) => Surface},
-): number {
+export function effectiveWearKm(shoe: WearShoe, runs: WearRun[]): number {
   const list = Array.isArray(runs) ? runs : [];
-  const surfaceOf = opts?.surfaceOf;
-
   const runWear = list.reduce<number>((sum, run) => {
     if (!run) return sum;
-    const surface =
-      surfaceOf && run.id != null ? surfaceOf(String(run.id)) : undefined;
-    const w = runEffectiveWear(run, {surface});
+    const w = runEffectiveWear(run);
     return sum + (Number.isFinite(w) && w > 0 ? w : 0);
   }, 0);
-
-  const weighted = runWear * weightFactorFor(opts?.weightKg);
-  const age = ageWearKm(shoe, opts?.now);
-  // 등록 시 이미 쌓여 있던 주행거리(start_km) — 실효 마모의 baseline. 이미 일어난 실측
-  // 거리라 체중계수(장래 마모율)를 곱하지 않고 그대로 더한다. 이게 빠지면 이미 신던
-  // 신발을 등록했을 때 교체 예측이 과소평가돼 '교체 권장'이 안 뜬다(수명 링과 불일치).
+  // 등록 시 이미 쌓여 있던 주행거리 — 수명 링도 이걸 더한다(start_km).
   const startKm = Math.max(0, Number((shoe as {start_km?: number})?.start_km ?? 0) || 0);
-  const total = weighted + age + startKm;
+  const total = runWear + startKm;
   return Number.isFinite(total) && total > 0 ? total : 0;
-}
-
-// ─── 노면 IO(얇게 — 순수계산과 분리) ──────────────────────────────
-// lib/settings.ts 패턴: try/catch 로 영속 실패를 삼키고, 손상/누락은 기본값(road)으로
-// 정규화한다. AsyncStorage 키 = `surface_<runId>`.
-//
-// 읽기(단건 getRunSurface)는 2026-08-04 제거했다 — 소비처가 사라졌고(App 은 런 목록을
-// getMany 로 한 번에 읽어 parseSurface 로 정규화한다) 남겨 두면 "이걸 쓰는 데가 있다"는
-// 거짓 신호가 된다. 되살릴 일이 생기면 parseSurface + getItem 두 줄이다.
-
-/** 런별 노면 태그를 저장한다. 미지원 값은 road 로 정규화 후 영속(실패는 삼킨다). */
-export async function setRunSurface(runId: string, s: Surface): Promise<void> {
-  try {
-    await AsyncStorage.setItem(`surface_${runId}`, parseSurface(s));
-  } catch {
-    /* 영속 실패는 삼킨다(순수 계산은 영향 없음) */
-  }
 }

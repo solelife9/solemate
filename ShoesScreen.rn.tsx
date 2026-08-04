@@ -21,7 +21,7 @@ import FirstShoeScreen from './FirstShoeScreen.rn';
 import { Unit, displayNum } from './lib/units';
 import { wearTier, SHOE_REPLACE_PCT, clampMaxKm } from './lib/shoe';
 import { assessShoeInjuryRisk } from './lib/injury';
-import { buildWearView, forecastConfidenceKo, forecastLineKo, type ReplacementForecast, type Surface } from './lib/wearView';
+import { buildWearView, forecastConfidenceKo, forecastLineKo, type ReplacementForecast } from './lib/wearView';
 import { findShoeClass, typeLabel, purposeSentenceKo } from './data/shoeClass';
 import RetirementFlow from './RetirementFlow.rn';
 import FindShoesScreen from './FindShoesScreen.rn';
@@ -41,7 +41,7 @@ const condLabel = (pct: number) => wearTier(pct).label;
 
 // ── shoe detail ───────────────────────────────────────────────────────────────
 function ShoeDetail({
-  shoe, idx, runs, totals, unit, weightKg, surfaceOf, onBack, onRename, onDelete, onRetire, onSetMaxKm,
+  shoe, idx, runs, totals, unit, weightKg, onBack, onRename, onDelete, onRetire, onSetMaxKm,
   rawShoe, rawRuns, progressionCtx, equippedTitle, onRetiredKeepsake, now, allShoes,
   age = 0, sex = 'male', restHR = 0,
 }: {
@@ -53,9 +53,7 @@ function ShoeDetail({
   totals: ShoeTotals;
   unit: Unit;
   // 실효 마모/교체 예측 보정값. 체중(kg)은 settings.weightKg 재사용(미설정 시 기준 1.0),
-  // surfaceOf 는 런별 노면 태그 조회(미제공/미태그 시 road). 둘 다 표시 파생용.
   weightKg?: number;
-  surfaceOf?: (runId: string) => Surface;
   onBack: () => void;
   onRename?: (id: string, name: string) => void;
   onDelete?: (id: string) => void;
@@ -89,7 +87,7 @@ function ShoeDetail({
   // 실효 마모/교체 예측(차별점): 단순 누적 km 가 아니라 체중·노면·페이스·세월 보정 "진짜
   // 마모"와 "이 페이스면 약 N주 후 교체"를 파생한다(lib/wearView → wearModel/forecast 재사용).
   // 원본 shoe/run 은 읽기만 한다(A6-1). 모든 엣지에서 NaN/음수 없음(A6-2).
-  const wearView = buildWearView(shoe, shoeRuns, { weightKg, surfaceOf });
+  const wearView = buildWearView(shoe, shoeRuns, { weightKg });
   // 교체 예상(상세 카드, 핸드오프 정합): '현재 패턴 기준 약 N주 후 교체 예상이에요'.
   // ok 예측에서만 주수를 노출한다(overdue/예측불가는 카드 숨김 — 교체는 keep-going 배너가 담당).
   // 조건부 노출(2026-07-04 사용자 질문 → CD 결정): 예측이 8주 이내로 가까울 때만
@@ -583,7 +581,7 @@ function ShoeCard({ shoe, onPress, onPlay, unit, pace: _pace, forecast }: { shoe
 
 
 export default function ShoesScreen({
-  shoes = SHOES, runs = [], totals = {}, unit = 'km', weightKg, surfaceOf, onAddShoe, onTab, onRename, onDelete, onRetire, onSetMaxKm, onStartRun,
+  shoes = SHOES, runs = [], totals = {}, unit = 'km', weightKg, onAddShoe, onTab, onRename, onDelete, onRetire, onSetMaxKm, onStartRun,
   detailShoeId, onConsumeDetail,
   rawShoes, rawRuns, progressionCtx, equippedTitle, onRetiredKeepsake, now, userName,
   forecasts, onOpenArchive, archivedCount = 0,
@@ -606,9 +604,7 @@ export default function ShoesScreen({
   totals?: Record<number, ShoeTotals>;
   // (activeIdx '사용 중' 강조 prop 제거 2026-07-11 — 카드 간 구분 없이 동일 취급.)
   // 실효 마모/교체 예측 보정값(상세 화면 전달). 체중=settings.weightKg 재사용,
-  // surfaceOf=런별 노면 태그 조회. 둘 다 선택(미제공 시 기준 1.0·road).
   weightKg?: number;
-  surfaceOf?: (runId: string) => Surface;
   // 외부(홈 히어로 탭)에서 특정 신발 상세를 바로 연다. id가 들어오면 그 신발 상세로
   // 진입하고 onConsumeDetail로 한 번만 소비한다(뒤로가기는 내부 detail 상태로 복귀).
   detailShoeId?: string | null;
@@ -659,7 +655,6 @@ export default function ShoesScreen({
         totals={totals[detail] || { totalRuns: 0, totalTime: '--', avgPace: '--' }}
         unit={unit}
         weightKg={weightKg}
-        surfaceOf={surfaceOf}
         onBack={() => setDetail(null)}
         onRename={onRename}
         onDelete={onDelete}

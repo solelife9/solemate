@@ -6,7 +6,7 @@
 // 재사용(중복 계산 금지):
 //   · lib/stats.ts   — sumKm(총거리)·avgPaceLabel(평균 페이스)
 //   · lib/goals.ts   — personalRecords(개인 기록: 1km/5km/최장)
-//   · lib/wearModel.ts — runEffectiveWear·weightFactorFor(신발별 실효 마모)
+//   · lib/wearModel.ts — runEffectiveWear(신발별 마모 = 실제 달린 거리)
 //   · lib/format.ts  — getMonday(주 시작)
 //
 // 결정성(A8 테스트): 기준 시각 `now`는 opts로 주입한다(전역 Date 모킹 불필요).
@@ -20,8 +20,6 @@ import {sumKm, avgPaceLabel} from './stats';
 import {personalRecords, type PersonalRecords} from './goals';
 import {
   runEffectiveWear,
-  weightFactorFor,
-  type Surface,
 } from './wearModel';
 import {getMonday} from './format';
 
@@ -45,11 +43,13 @@ export interface RecapShoe {
   purchase_date?: string;
 }
 
-/** 결정성·보정 입력. now 미주입 시에만 현재 시각으로 폴백한다. */
+/**
+ * 결정성 입력. now 미주입 시에만 현재 시각으로 폴백한다.
+ * weightKg 는 2026-08-04 마모 단일화로 제거됐다 — 리캡이 말하는 건 '이 기간에 무엇을
+ * 얼마나 신었나'(실제 거리)이고, 몸무게 보정은 수명(분모) 쪽에만 산다.
+ */
 export interface RecapOpts {
   now?: Date;
-  weightKg?: number;
-  surfaceOf?: (runId: string) => Surface;
 }
 
 // ─── 출력 타입 ─────────────────────────────────────────────────────
@@ -125,7 +125,6 @@ function buildRecap(
   periodRuns: RecapRun[],
   shoes: RecapShoe[],
   periodLabel: string,
-  opts?: RecapOpts,
 ): Recap {
   const isEmpty = periodRuns.length === 0;
 
@@ -142,20 +141,15 @@ function buildRecap(
     })),
   );
 
-  // 신발별 실효 마모: wearModel.runEffectiveWear × 체중 보정(기간 런만 합산).
-  // 누적 폼 열화(ageWearKm)는 기간 리캡 의미에 맞지 않으므로 런-마모 코어만 쓴다.
-  const weight = weightFactorFor(opts?.weightKg);
-  const surfaceOf = opts?.surfaceOf;
+  // 신발별 마모(기간 런만 합산) = 실제 달린 거리. 2026-08-04 단일화로 노면·페이스·체중
+  // 계수가 사라졌다 — 보정은 전부 수명(분모) 쪽에 있고, 리캡은 '이 기간에 얼마나 신었나'다.
   const wearById = new Map<string, number>();
   for (const r of periodRuns) {
     if (r?.shoe_id == null) continue;
-    const surface =
-      surfaceOf && r.id != null ? surfaceOf(String(r.id)) : undefined;
-    const w =
-      runEffectiveWear(
-        {distance_km: parseFloat(String(r?.km)) || 0, duration_s: Number(r?.duration) || 0},
-        {surface},
-      ) * weight;
+    const w = runEffectiveWear({
+      distance_km: parseFloat(String(r?.km)) || 0,
+      duration_s: Number(r?.duration) || 0,
+    });
     const add = Number.isFinite(w) && w > 0 ? w : 0;
     const key = String(r.shoe_id);
     wearById.set(key, (wearById.get(key) ?? 0) + add);
@@ -202,7 +196,7 @@ export function weeklyRecap(
   const sunday = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 6);
   const label = `${monday.getMonth() + 1}.${monday.getDate()}–${sunday.getMonth() + 1}.${sunday.getDate()}`;
 
-  return buildRecap(runsInWindow(runs, start, end), shoes, label, opts);
+  return buildRecap(runsInWindow(runs, start, end), shoes, label);
 }
 
 /**
@@ -222,5 +216,5 @@ export function monthlyRecap(
 
   const label = `${year}년 ${month + 1}월`;
 
-  return buildRecap(runsInWindow(runs, start, end), shoes, label, opts);
+  return buildRecap(runsInWindow(runs, start, end), shoes, label);
 }

@@ -58,10 +58,11 @@ describe('표시형 Shoe → buildWearView 가 start_km baseline 을 반영한�
     expect(noField.effectiveWearKm).toBeGreaterThanOrEqual(0);
   });
 
-  it('purchase_date(보유 기간)로 시간 경과 열화가 실효 마모에 더해진다', () => {
-    // 24개월 전 보유 시작(런 동일) → ageWearKm 가 붙어 마모가 커진다.
+  it('보유 기간은 **누적 마모에 섞지 않는다** — 수명 링과 어긋나지 않게(2026-08-04 단일화)', () => {
+    // 예전엔 ageWearKm 를 마모에 더해서, 같은 신발을 링(실제 거리)과 상세(거리+열화)가
+    // 다르게 말했다. 시간 열화는 '앞으로 얼마나 빨리 닳나'(예측 속도)에만 남는다.
     const aged = buildWearView(uiShoe({start_km: 0, purchase_date: daysAgoISO(720)}), RUNS, {now: NOW});
     const newish = buildWearView(uiShoe({start_km: 0}), RUNS, {now: NOW});
-    expect(aged.effectiveWearKm).toBeGreaterThan(newish.effectiveWearKm);
+    expect(aged.effectiveWearKm).toBe(newish.effectiveWearKm);
   });
 });

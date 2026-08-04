@@ -18,8 +18,6 @@
 //    워치가 자체 계산한 고도는 노이즈 게이트가 없어 8배로 부푼다(274m vs 33m).
 //  · 빈 값(0·'')은 '없음'으로 본다 — 있는 쪽이 이긴다. 둘 다 있으면 아래 우선순위.
 
-import type {Surface} from './wearModel';
-
 /** 병합 판정에 필요한 최소 런 정보(BackendRun 의 부분집합 — 저장 형태에 안 묶인다). */
 export interface MergeableRun {
   id: string;
@@ -135,7 +133,7 @@ export type DistanceAuthority = 'watch' | 'phone';
  * 실내(트레드밀) 러닝인가 — GPS 가 무의미하므로 거리 정본이 뒤집힌다.
  * 야외는 워치(손목 GPS)가, 실내는 폰(걸음/트레드밀 입력)이 정확하다(업계 관행 동일).
  */
-export function distanceAuthority(surface?: Surface | string | null): DistanceAuthority {
+export function distanceAuthority(surface?: string | null): DistanceAuthority {
   return surface === 'treadmill' ? 'phone' : 'watch';
 }
 

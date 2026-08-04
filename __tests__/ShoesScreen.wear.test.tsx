@@ -114,7 +114,7 @@ describe('ShoesScreen 상세 — 실효 마모 + 교체 예측', () => {
     expect(txt).not.toContain('최근 기록이 없어 예측할 수 없어요');
   });
 
-  test('체중이 교체 예측 보정에 반영된다(weightFactor — 무거울수록 실효 마모 큼)', () => {
+  test('체중이 교체 예측에 반영된다 — 무거울수록 **수명(분모)** 이 짧아진다', () => {
     // 임박(≤8주) 게이트 통과 픽스처: 잔여 150km / 주 30km ≈ 5주.
     const shoe: Shoe = {id: 'a', brand: 'Nike', model: 'Pegasus 41', used: 550, max: 700};
     const runs: Run[] = [
@@ -123,11 +123,13 @@ describe('ShoesScreen 상세 — 실효 마모 + 교체 예측', () => {
       mkRun({id: 'r1', dist: 40, durationS: 12000, runDate: daysAgo(3)}),
       mkRun({id: 'r2', dist: 40, durationS: 12000, runDate: daysAgo(7)}),
     ];
-    // 모델(wearModel/forecast)이 체중을 반영한다 — 무거운 러너의 실효 마모가 더 크고
-    // 교체까지 남은 주가 더 짧다(예측 보정). 표시 숫자가 아니라 모델 결과로 검증.
+    // 2026-08-04 단일화: 체중은 분자(마모)가 아니라 **분모(수명)** 를 건드린다 — 수명 링과
+    // 같은 규칙(lib/shoe.weightDurabilityFactor, 기준 65kg)이다. 누적 마모는 실제 달린
+    // 거리라 체중과 무관하고, 무거운 러너는 유효 수명이 짧아 교체까지 남은 주가 더 짧다.
     const v60 = buildWearView(shoe, runs, {weightKg: 60});
     const v90 = buildWearView(shoe, runs, {weightKg: 90});
-    expect(v90.effectiveWearKm).toBeGreaterThan(v60.effectiveWearKm);
+    expect(v90.effectiveWearKm).toBe(v60.effectiveWearKm); // 달린 거리는 그대로
+    expect(v90.targetKm).toBeLessThan(v60.targetKm);       // 수명이 줄어든다
     expect(v90.forecast.weeksRemaining ?? 0).toBeLessThanOrEqual(v60.forecast.weeksRemaining ?? Infinity);
 
     // 두 체중 모두 상세에 '교체 예상' 예측이 렌더된다('실효 마모' 용어는 미노출).

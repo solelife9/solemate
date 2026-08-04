@@ -91,7 +91,6 @@ import {parseShoeName, shoeHealth, isRetired, DEFAULT_MAX_KM, clampMaxKm, reconc
 import {findMergeTarget, mergeRuns} from './lib/runMerge';
 // 상승 고도는 폰이 한 벌 규칙으로 계산한다(워치는 원자료만 보낸다).
 import {elevationGainFrom} from './lib/elevation';
-import {setRunSurface, parseSurface, type Surface} from './lib/wearModel';
 import {forecastReplacement, type ReplacementForecast} from './lib/replacementForecast';
 import {mostRecentShoeId, lastWornDate} from './lib/shoeRecommend';
 import {recommendRotation} from './lib/rotation';
@@ -289,9 +288,6 @@ function Main(){
   // 로컬에서 새로 만든 묘비를 stale 클로저 대신 이 ref 로 읽어 부활을 막는다(2026-07-05).
   const tombstonesRef=useRef(tombstones);
   useEffect(()=>{tombstonesRef.current=tombstones;},[tombstones]);
-  // 런별 노면 태그 캐시(surface_<runId> → Surface). 실효 마모/교체 예측 보정용. 미태그는
-  // road로 동작(차단 아님). runs 변경 시 한 번에 읽어들이고, 손상/실패는 무시한다.
-  const [runSurfaces,setRunSurfaces]=useState<Record<string,Surface>>({});
   // 홈/신발 화면이 공유하는 '선택 신발' id. null이면 휴식 로테이션 추천 신발로 폴백한다
   // (activeIdx={0} 하드코딩 제거 — 선택/추천이 홈 히어로를 몬다).
   const [selectedShoeId,setSelectedShoeId]=useState<string|null>(null);
@@ -858,30 +854,6 @@ function Main(){
       }catch{/* 비차단 — 프라이밍 실패가 리캡 닫힘을 막지 않는다 */}
     })();
   },[]);
-
-  // 런별 노면 태그(surface_<runId>) 일괄 로드 → 실효 마모/예측 보정에 반영. runs가 바뀔
-  // 때마다 **한 번의 getMany** 로 읽고, 손상/실패/미태그는 road로 graceful 폴백한다(차단 아님).
-  //
-  // 2026-08-04 QA 감사 Q-4: 여기 주석은 원래도 "multiGet 으로 한 번에"라고 적혀 있었는데
-  // 코드는 `Promise.all(ids.map(getItem))` — **런 수만큼의 개별 브리지 왕복**이었다. 이 effect 는
-  // runs 가 바뀔 때마다(동기 1회·런 추가/편집/삭제·워치 런 수신) 전량이 다시 도는 자리라,
-  // 런 1000건이면 한 번에 1000 왕복이 나갔다. 같은 저장소 래퍼의 배치 API 를 다른 곳에선
-  // 이미 쓰고 있었다(runPersistence·bootCache) — 여기만 빠져 있었다.
-  useEffect(()=>{
-    let alive=true;
-    const ids=runs.map(r=>String(r.id)).filter(Boolean);
-    if(ids.length===0){setRunSurfaces({});return;}
-    (async()=>{
-      try{
-        const got=await AsyncStorage.getMany(ids.map(id=>'surface_'+id));
-        if(!alive)return;
-        const map:Record<string,Surface>={};
-        for(const id of ids){const v=got['surface_'+id];if(v!=null) map[id]=parseSurface(v);}
-        setRunSurfaces(map);
-      }catch{/* 손상/실패는 무시 — 전부 road로 동작 */}
-    })();
-    return()=>{alive=false;};
-  },[runs]);
 
   // audit#2: 미완료 런 감지 → 복구/저장 프롬프트. 한 번만 묻는다.
   //
@@ -1851,9 +1823,6 @@ function Main(){
       // 동일 계약). 거리(랩수×랩거리)·시간은 이미 레코드에 있으므로 메타만 얹는다.
       if(newId&&p.laps>0&&p.lapM>0){
         try{await AsyncStorage.setItem('track_'+newId,JSON.stringify({lapM:Math.round(p.lapM),laps:Math.round(p.laps),lapTimes:(p.lapTimes||[]).map(t=>Math.round(t))}));}catch{/* 비치명적 */}
-        // 폰 트랙 런과 같은 규칙으로 노면을 태깅한다(2026-07-27) — 유입 경로가 달라도
-        // 같은 러닝이면 마모 계산이 같아야 한다.
-        try{await setRunSurface(newId,'track');}catch{/* 비치명적 */}
       }
       // 구간 스플릿(초/km) → splits_<id> 사이드카(폰 GPS 런과 동일 {km,paceSec,elevM} 포맷).
       // 각 km 이 1km라 paceSec=그 구간 시간. 2구간 미만이면 표시 가치 없어 생략(폰과 동일).
@@ -2002,17 +1971,16 @@ function Main(){
   // ── 실효 마모/교체 예측 보정(Slice 6) ────────────────────────────────────────
   // 런별 노면 태그 조회(미태그 → road). 신발 상세(ShoesScreen)와 홈 히어로 예측이 같은
   // 보정(체중·노면)을 공유하도록 한 곳에서 만든다. 표시 파생값이며 원본은 읽기만 한다.
-  const surfaceOf=(runId:string):Surface=>runSurfaces[runId]??'road';
   // 홈 히어로(선택 신발)의 교체 예측. 신발 상세와 동일 입력(target=max_km, 거리/시간/날짜,
-  // weightKg, surfaceOf)으로 계산해 두 화면 예측이 일치한다. ok/overdue일 때만 히어로에 노출.
+  // weightKg)으로 계산해 두 화면 예측이 일치한다. ok/overdue일 때만 히어로에 노출.
   const homeActiveRaw=shoes.find(s=>s.id===effectiveId)||null;
-  // 한 신발의 교체 예측(상세와 동일 보정: target=max_km, 거리/시간/날짜, weightKg, surfaceOf).
+  // 한 신발의 교체 예측(상세와 동일 입력: target=max_km, 거리/시간/날짜, weightKg).
   const forecastForRaw=(raw:BackendShoe|null):ReplacementForecast|null=>raw?forecastReplacement(
     {name:raw.name,target_km:Number(raw.max_km),start_km:Number(raw.start_km)||0,purchase_date:raw.purchase_date},
     runs.filter(r=>r.shoe_id===raw.id).map(r=>({
       id:r.id,distance_km:parseFloat(String(r.km))||0,duration_s:r.duration||0,date:String(r.run_date||''),
     })),
-    {weightKg,surfaceOf},
+    {weightKg},
   ):null;
   const homeForecast:ReplacementForecast|null=forecastForRaw(homeActiveRaw);
   // 캐러셀 카드마다 자기 신발의 예측을 바로 보여주려고 전 신발 예측을 맵으로 모은다
@@ -2021,13 +1989,12 @@ function Main(){
   // **메모한다**(2026-08-04 QA 감사 Q-12): 이건 신발마다 런 전량을 훑는 O(신발×런) 계산이라
   // 런이 쌓일수록 무거워지는데, 예전엔 매 렌더 다시 돌았다. 탭 전환·설정 토글처럼 러닝과
   // 무관한 상호작용까지 런 수에 끌려 느려진다. 입력이 그대로면 결과도 그대로다.
-  // 의존성에 runSurfaces 가 있어야 한다 — surfaceOf 가 그걸 읽는다(노면이 마모 계수를 바꾼다).
   const homeForecasts:Record<string,ReplacementForecast|null>=useMemo(()=>{
     const out:Record<string,ReplacementForecast|null>={};
     for(const s of shoes){ if(s.id) out[s.id]=forecastForRaw(s); }
     return out;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  },[shoes,runs,weightKg,runSurfaces]);
+  },[shoes,runs,weightKg]);
 
   // ── 진척 홈 노출(Slice D) ───────────────────────────────────────────────────────
   // 진척 계산에 넘길 챌린지 완료 신호(렌더 경로 단일 소스, 메모). 홈 띠·프로필 랭크·업적이
@@ -2172,7 +2139,7 @@ function Main(){
         runs.filter(r=>r.shoe_id===s.id).map(r=>({
           id:r.id,distance_km:parseFloat(String(r.km))||0,duration_s:r.duration||0,date:String(r.run_date||''),
         })),
-        {weightKg,surfaceOf},
+        {weightKg},
       ),
     }));
     const lastRunISO=runs.length
@@ -2578,18 +2545,8 @@ function Main(){
           const newId=await addRun(activeRun.id,km,runDate,memo||'','gps',dur,cad,route,location,avgBpm,elevM,cal);
           // 트랙 세션 마커 — RunDetail 이 track_<id> 로 읽어 '트랙 · 400m×12랩'을 표시한다.
           // 거리·페이스·PB 는 이미 랩 시계열(paceTrack=lapsToTrack)로 정본이라 별도 계산 불필요.
-          // 실내 러닝은 트레드밀 노면으로 자동 태깅한다(2026-07-27) — 사용자가 '실내'를
-          // 직접 골랐으므로 확정 정보다. 트레드밀은 쿠션·균일해서 아스팔트보다 덜 닳는다
-          // (SURFACE_FACTOR 0.85). 이 태깅이 없으면 실내 km 가 로드로 계산돼 수명이 과소평가된다.
-          if(activeRun.indoor) await setRunSurface(newId,'treadmill');
           if(trackMeta&&trackMeta.laps>0){
             await AsyncStorage.setItem('track_'+newId, JSON.stringify(trackMeta));
-            // 노면 자동 태깅(2026-07-27): 트랙에서 달린 것이 **확정 정보**이므로 추측이 아니다.
-            // 여태 마모 모델(SURFACE_FACTOR)은 완성돼 있는데 노면을 넣어주는 곳이 수동 런
-            // 추가/편집 폼 하나뿐이라, 실제로 달린 GPS 런은 전부 road(1.0)로 계산됐다 —
-            // 차별점의 정확도 장치가 실사용에서 죽어 있었다. 트랙은 우레탄이라 아스팔트보다
-            // 덜 닳는다(계수 0.9).
-            await setRunSurface(newId,'track');
           }
           // per-km 스플릿(레코더가 1km 통과 시각으로 남긴 실측 구간)을 localId로 영속한다.
           // route_/surface_ 와 동일 패턴(로컬 전용·동기 시 serverId로 재키잉). RunDetail이
@@ -2797,7 +2754,7 @@ function Main(){
         {tab===1&&(
           <ShoesScreen
             shoes={uiShoes} runs={uiRuns} totals={shoeTotals}
-            unit={unit} weightKg={weightKg} surfaceOf={surfaceOf}
+            unit={unit} weightKg={weightKg}
             onAddShoe={()=>setOverlay('add')} onTab={setTab}
             onRename={updateShoeName} onDelete={deleteShoe} onRetire={retireShoe}
             onSetMaxKm={updateShoeMaxKm} onStartRun={startFromShoeId}

@@ -93,8 +93,8 @@ describe('S6-4 정상(ok)', () => {
     const shoe: WearShoe = {id: 's1', target_km: 700};
     const runs: ForecastRun[] = [recentRun('r1', 3), recentRun('r2', 12)];
     const f = forecastReplacement(shoe, runs, {now: NOW, weightKg: 75});
-    const expected =
-      targetKmFor(shoe) - effectiveWearKm(shoe, runs, {now: NOW, weightKg: 75});
+    // 2026-08-04 단일화: target 이 몸무게를 흡수하고(분모), worn 은 실제 달린 거리다.
+    const expected = targetKmFor(shoe, 75) - effectiveWearKm(shoe, runs);
     expect(f.kmRemaining).toBeCloseTo(expected, 6);
   });
 });
@@ -274,8 +274,8 @@ describe('등록 마일리지(start_km) 반영 — 이미 신던 신발 교체�
     ({name: 's', target_km: 600, start_km: startKm} as WearShoe);
 
   it('effectiveWearKm 이 start_km 을 baseline 으로 더한다', () => {
-    const worn550 = effectiveWearKm(shoe(550), runs, {now: NOW});
-    const worn0 = effectiveWearKm(shoe(0), runs, {now: NOW});
+    const worn550 = effectiveWearKm(shoe(550), runs);
+    const worn0 = effectiveWearKm(shoe(0), runs);
     expect(worn550 - worn0).toBeCloseTo(550, 0); // 등록거리가 실제로 마모에 더해진다
   });
 

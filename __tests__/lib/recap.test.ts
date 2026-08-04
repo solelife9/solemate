@@ -53,7 +53,7 @@ describe('S8-5 주간 리캡(weeklyRecap) — 실데이터 요약', () => {
     expect(recap.periodLabel).toBe('6.8–6.14');
   });
 
-  test('신발별 실효 마모: 두 신발 모두 양수, 내림차순 정렬', () => {
+  test('신발별 마모: 두 신발 모두 양수, 내림차순 정렬', () => {
     expect(recap.perShoeWear.length).toBe(2);
     expect(recap.perShoeWear[0].effectiveKm).toBeGreaterThanOrEqual(
       recap.perShoeWear[1].effectiveKm,
@@ -61,10 +61,14 @@ describe('S8-5 주간 리캡(weeklyRecap) — 실데이터 요약', () => {
     recap.perShoeWear.forEach(s => expect(s.effectiveKm).toBeGreaterThan(0));
   });
 
-  test('최다 착용 신발 = 실효 마모 최댓값 신발(race 10km의 s2 Hoka)', () => {
-    // s2: 10km × road(1.0) × racePace(1.10) = 11.0  vs  s1: 6+4=10km × ~1.0 = ~10.0
+  test('최다 착용 신발 = **실제 달린 거리** 최댓값 신발', () => {
+    // 2026-08-04 단일화 전에는 s2 가 race 페이스 계수(1.10)로 이겼다(10km→11.0).
+    // 이제 계수가 없으므로 s1(6+4=10km)과 s2(10km)가 동률이고, 먼저 집계된 s1 이 앞선다.
+    // 리캡이 말하는 건 '이번 기간에 무엇을 가장 많이 신었나'이고, 그건 거리다.
     expect(recap.mostWornShoe).not.toBeNull();
-    expect(recap.mostWornShoe!.name).toBe('Hoka Clifton 9');
+    expect(recap.perShoeWear[0].effectiveKm).toBe(10);
+    expect(recap.perShoeWear[1].effectiveKm).toBe(10);
+    expect(recap.mostWornShoe!.name).toBe('Nike Pegasus 41');
     expect(recap.mostWornShoe!.km).toBe(recap.perShoeWear[0].effectiveKm);
     expect(recap.mostWornShoe!.km).toBeGreaterThan(0);
   });

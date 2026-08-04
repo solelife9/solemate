@@ -10,7 +10,6 @@
 import {
   effectiveWearKm,
   targetKmFor,
-  type Surface,
   type WearShoe,
 } from './wearModel';
 import {
@@ -19,7 +18,7 @@ import {
   type ReplacementForecast,
 } from './replacementForecast';
 
-export type {Surface, ReplacementForecast};
+export type {ReplacementForecast};
 
 // 화면 표시용 신발(theme.Shoe 부분집합). max(=사용자 설정 수명 km)가 권장 수명의
 // 단일 소스이므로 target_km 으로 넘긴다(결측이면 모델명 파싱으로 graceful 폴백).
@@ -50,7 +49,6 @@ export type WearView = {
 type WearOpts = {
   weightKg?: number;
   now?: Date;
-  surfaceOf?: (runId: string) => Surface;
 };
 
 /** 표시용 Shoe → wearModel WearShoe. brand+model 을 name 으로, max 를 target_km 으로. */
@@ -87,8 +85,8 @@ export function buildWearView(
   const wearShoe = toWearShoe(shoe);
   const wearRuns = toForecastRuns(runs);
   return {
-    effectiveWearKm: effectiveWearKm(wearShoe, wearRuns, opts),
-    targetKm: targetKmFor(wearShoe),
+    effectiveWearKm: effectiveWearKm(wearShoe, wearRuns),
+    targetKm: targetKmFor(wearShoe, opts?.weightKg),
     forecast: forecastReplacement(wearShoe, wearRuns, opts),
   };
 }

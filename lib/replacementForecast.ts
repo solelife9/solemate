@@ -13,7 +13,6 @@ import {
   targetKmFor,
   runEffectiveWear,
   AGE_WEAR_MONTHS,
-  type Surface,
   type WearRun,
   type WearShoe,
 } from './wearModel';
@@ -80,19 +79,17 @@ function runEpochMs(run: ForecastRun): number {
 export function forecastReplacement(
   shoe: WearShoe,
   runs: ForecastRun[],
-  opts?: {weightKg?: number; now?: Date; surfaceOf?: (runId: string) => Surface},
+  opts?: {weightKg?: number; now?: Date},
 ): ReplacementForecast {
   const now = resolveNow(opts?.now);
   const nowMs = now.getTime();
-  const surfaceOf = opts?.surfaceOf;
 
-  // 잔여 실효 수명. target 은 항상 양수 유한, worn 은 항상 0 이상 유한(wearModel 보장).
-  const target = targetKmFor(shoe);
-  const worn = effectiveWearKm(shoe, runs, {
-    weightKg: opts?.weightKg,
-    now,
-    surfaceOf,
-  });
+  // 잔여 수명. **수명 링과 같은 두 숫자를 쓴다**(2026-08-04 단일화):
+  // target = 몸무게 반영 유효 수명(분모), worn = 실제 달린 거리(분자).
+  // 예전엔 여기만 노면·페이스 계수를 곱하고 몸무게를 분자에 70kg 기준으로 얹어,
+  // 같은 신발을 링과 예측이 다르게 설명했다.
+  const target = targetKmFor(shoe, opts?.weightKg);
+  const worn = effectiveWearKm(shoe, runs);
   let kmRemaining = target - worn;
   if (!Number.isFinite(kmRemaining)) kmRemaining = 0; // 방어(이론상 도달 불가)
 
@@ -106,9 +103,7 @@ export function forecastReplacement(
     const t = runEpochMs(run);
     if (!Number.isFinite(t) || t < cutoffMs || t > nowMs) continue;
     recentCount += 1;
-    const surface =
-      surfaceOf && run.id != null ? surfaceOf(String(run.id)) : undefined;
-    const w = runEffectiveWear(run, {surface});
+    const w = runEffectiveWear(run);
     recentKm += Number.isFinite(w) && w > 0 ? w : 0;
   }
 
