@@ -25,7 +25,7 @@ import { ShoePicker, type PickedShoe } from './ShoePicker';
 // maxKm 0 같은 비정상값을 제출 시 인라인으로 차단(빨강 헬퍼텍스트).
 import { validateMaxKm } from './lib/inputMask';
 // 몸무게 보정 유효 수명 — 화면이 직접 계산하지 않고 단일 소스를 읽는다(UX 감사 ②).
-import { effectiveMaxKm, WEIGHT_WEAR_REASON_KO } from './lib/shoe';
+import { effectiveMaxKm, baseMaxKmFromEffective, WEIGHT_WEAR_REASON_KO } from './lib/shoe';
 
 export default function AddShoeScreen({
   onClose, onSave, weightKg = 0,
@@ -42,7 +42,15 @@ export default function AddShoeScreen({
   // 러닝화(브랜드+모델)는 공용 피커로 한 번에 고른다. 브랜드는 선택 결과에 따라온다.
   const [picked, setPicked] = useState<PickedShoe | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
-  // 권장 수명(km) — 모델 선택 시 자동 채워지며 사용자가 직접 수정 가능.
+  /**
+   * 교체 권장 거리 — **내 몸무게 기준 값**(유효 수명)이다. 저장은 기저값으로 되돌린다.
+   *
+   * 왜(2026-08-04 민우님): 예전엔 카탈로그 권장 650 을 보여주고 앱은 621 로 계산해서
+   * "권장은 650인데 621로 저장되네" 하는 **깎인 느낌**이 들었다. 처음부터 내 값 하나만
+   * 보여주면 621 이 손해가 아니라 **내 권장거리**가 된다.
+   * 저장을 기저로 되돌리는 이유는 lib/shoe.baseMaxKmFromEffective 주석 참조 —
+   * 요약하면 **몸무게를 바꾸면 모든 신발이 실시간으로 따라와야** 하기 때문이다.
+   */
   const [max, setMax] = useState(0);
   const [used, setUsed] = useState('0');
   // maxKm 0/비정상값 인라인 차단 — 제출 시 검증해 필드 아래 빨강 헬퍼텍스트로 표시한다.
@@ -52,16 +60,19 @@ export default function AddShoeScreen({
   // '기타' 레일 직접 입력은 브랜드명을 받으므로 그 경로는 브랜드가 채워진다.
   const valid = !!picked && picked.model.trim().length > 0;
 
-  // 현재 brand+model 기준 권장 수명. max가 이 값과 같으면 '권장'(자동값), 다르면 사용자 수정값.
-  const recommendedKm = picked ? getRecommendedLifespanKm({ brand: picked.brand, model: picked.model }) : 0;
+  // 이 신발의 권장 수명 — **내 몸무게 기준**. max 가 이 값과 같으면 '권장'(자동값).
+  const recommendedKm = picked
+    ? effectiveMaxKm(getRecommendedLifespanKm({ brand: picked.brand, model: picked.model }), weightKg)
+    : 0;
   const isRecommended = !!picked && max === recommendedKm;
-  // 앱이 실제로 쓸 수명(몸무게 보정 후). 입력값과 다르면 아래에서 미리 알려준다.
-  const effectiveMax = max > 0 && weightKg > 0 ? effectiveMaxKm(max, weightKg) : 0;
+  // 몸무게 보정이 실제로 걸렸는가(= 카탈로그 값과 내 값이 다른가). 안내 노출 조건.
+  const weightAdjusted = !!picked && weightKg > 0
+    && getRecommendedLifespanKm({ brand: picked.brand, model: picked.model }) !== recommendedKm;
 
-  // 피커에서 러닝화를 고르면 권장 수명을 자동 채운다(사용자가 아래에서 수정 가능).
+  // 피커에서 러닝화를 고르면 **내 몸무게 기준** 권장 수명을 자동 채운다(수정 가능).
   const onPick = (p: PickedShoe) => {
     setPicked(p);
-    setMax(getRecommendedLifespanKm({ brand: p.brand, model: p.model }));
+    setMax(effectiveMaxKm(getRecommendedLifespanKm({ brand: p.brand, model: p.model }), weightKg));
     setMaxErr(undefined);
   };
 
@@ -74,7 +85,9 @@ export default function AddShoeScreen({
     onSave?.({
       brand: picked.brand.trim(),
       model: picked.model.trim(),
-      max,
+      // 화면은 내 몸무게 기준 값을 보여줬고, 저장은 **기저**다 — 그래야 나중에 몸무게가
+      // 바뀌었을 때 이 신발도 같이 따라온다(저장값에 계수를 구우면 옛 몸무게에 갇힌다).
+      max: baseMaxKmFromEffective(max, weightKg),
       used: Number(used) || 0,
     });
   };
@@ -133,11 +146,11 @@ export default function AddShoeScreen({
             할 말이고 거기 이미 있다 — lib/shoe.KEEP_GOING_REPLACE · InjuryBanner). */}
         <Text style={s.hint}>쿠셔닝이 살아 있는 거리예요</Text>
         <Text style={s.hint}>{LIFESPAN_BASIS_KO}</Text>
-        {/* 몸무게 보정 예고(UX 감사 ②) — 등록 화면이 650 을 약속하고 홈이 621 을 보여주던
-            모순을 '약속하는 자리'에서 끊는다. 보정이 없으면(기준 몸무게·미설정) 뜨지 않는다. */}
-        {effectiveMax > 0 && effectiveMax !== max && (
+        {/* 보정이 걸렸을 때만 **왜 내 숫자가 남과 다른지**를 밝힌다. 숫자를 또 보여주지는
+            않는다 — 위 입력칸이 이미 내 값이다(두 숫자를 나란히 두는 순간 '깎였다'로 읽힌다). */}
+        {weightAdjusted && (
           <Text style={s.hint} testID="add-shoe-weight-note">
-            {WEIGHT_WEAR_REASON_KO} — 내 몸무게({weightKg}kg) 기준 <Text style={s.hintStrong}>{effectiveMax}km</Text>
+            {WEIGHT_WEAR_REASON_KO} · 내 몸무게 {weightKg}kg 반영
           </Text>
         )}
 

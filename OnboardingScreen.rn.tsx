@@ -578,17 +578,23 @@ function Register({onSkip, onBack, onComplete, insetTop, insetBottom}: Omit<Scre
   const [weight, setWeight] = useState<number | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const ready = !!picked;
-  // 권장 수명은 카탈로그 기준(모델 미확정이면 브랜드/기본값) — AddShoe 화면과 동일 소스.
+  // 카탈로그 권장 수명(기저) — 등록 시 저장되는 값. AddShoe 화면과 동일 소스.
   const max = useMemo(
     () => getRecommendedLifespanKm({brand: picked?.brand || undefined, model: picked?.model || undefined}),
     [picked],
   );
-  // 모델 변경으로 권장수명이 줄면 기존 누적거리 입력이 수명을 넘지 않도록 클램프.
+  /**
+   * 화면이 보여주는 수명 = **내 몸무게 기준**(2026-08-04 민우님). 아래 3번 슬라이더를
+   * 움직이면 이 숫자가 따라 움직인다 — 같은 화면 안에 있으니 인과가 눈에 보인다.
+   * 저장은 기저(max)다: 나중에 설정에서 몸무게를 바꾸면 이 신발도 같이 따라와야 한다.
+   * 몸무게 미설정이면 계수 1 이라 둘이 같다(안내도 안 뜬다).
+   */
+  const shownMax = weight != null ? effectiveMaxKm(max, weight) : max;
+  const weightAdjusted = shownMax !== max;
+  // 모델·몸무게 변경으로 수명이 줄면 기존 누적거리 입력이 수명을 넘지 않도록 클램프.
   useEffect(() => {
-    setKm(k => Math.min(k, max));
-  }, [max]);
-  // 앱이 실제로 쓸 수명(몸무게 보정 후). 몸무게 미설정이면 max 와 같아 안내가 뜨지 않는다.
-  const effectiveMax = weight != null ? effectiveMaxKm(max, weight) : max;
+    setKm(k => Math.min(k, shownMax));
+  }, [shownMax]);
 
   const submit = () => {
     if (!picked) return;
@@ -624,14 +630,13 @@ function Register({onSkip, onBack, onComplete, insetTop, insetBottom}: Omit<Scre
             <ChevronDown />
           </Pressable>
           <Text style={s.fieldHint}>
-            {picked ? `교체 권장 ${max} km 자동 설정 — 눌러서 변경할 수 있어요` : '누르면 브랜드와 모델을 고를 수 있어요'}
+            {picked ? `교체 권장 ${shownMax} km 자동 설정 — 눌러서 변경할 수 있어요` : '누르면 브랜드와 모델을 고를 수 있어요'}
           </Text>
-          {/* 몸무게 보정 예고(UX 감사 ②) — 아래 3번에서 몸무게를 잡으면 이 신발의 수명이
-              바뀐다. 예전엔 여기서 650 을 약속하고 홈에서 621 을 보여줬다. 같은 화면 안에
-              있으니 슬라이더를 움직이는 그 자리에서 결과가 따라 움직이게 한다. */}
-          {picked && effectiveMax !== max && (
+          {/* 보정이 걸렸을 때만 **왜 내 숫자가 남과 다른지**를 밝힌다. 위 숫자가 이미 내
+              값이므로 숫자를 또 보여주지 않는다(나란히 두면 '깎였다'로 읽힌다). */}
+          {picked && weightAdjusted && (
             <Text style={s.fieldHint} testID="onboarding-weight-note">
-              {WEIGHT_WEAR_REASON_KO} · 몸무게 {weight}kg 기준 <Text style={s.fieldHintStrong}>{effectiveMax}km</Text>
+              {WEIGHT_WEAR_REASON_KO} · 내 몸무게 {weight}kg 반영
             </Text>
           )}
         </Rise>
@@ -645,11 +650,11 @@ function Register({onSkip, onBack, onComplete, insetTop, insetBottom}: Omit<Scre
             </Text>
           </View>
           <View style={{marginTop: rv(14)}}>
-            <KmSlider value={km} min={0} max={max} step={10} onChange={setKm} />
+            <KmSlider value={km} min={0} max={shownMax} step={10} onChange={setKm} />
             <View style={{flexDirection: 'row', justifyContent: 'space-between', marginTop: rv(6)}}>
               <Text style={s.tick}>새 신발</Text>
-              <Text style={s.tick}>{Math.round(max / 2)} km</Text>
-              <Text style={s.tick}>{max} km+</Text>
+              <Text style={s.tick}>{Math.round(shownMax / 2)} km</Text>
+              <Text style={s.tick}>{shownMax} km+</Text>
             </View>
           </View>
           <Text style={[s.fieldHint, {marginTop: rv(10)}]}>새 신발이면 0으로 두세요.</Text>

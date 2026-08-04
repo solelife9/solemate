@@ -12,7 +12,7 @@ import ReactTestRenderer from 'react-test-renderer';
 import AddShoeScreen from '../AddShoeScreen.rn';
 import OnboardingScreen from '../OnboardingScreen.rn';
 import {T4, BG, CARD} from '../theme';
-import {effectiveMaxKm, WEIGHT_DURABILITY_REF_KG} from '../lib/shoe';
+import {effectiveMaxKm, baseMaxKmFromEffective, WEIGHT_DURABILITY_REF_KG} from '../lib/shoe';
 import {LIFESPAN_BASIS_KO} from '../data/shoeModels';
 
 const rendered: ReactTestRenderer.ReactTestRenderer[] = [];
@@ -38,21 +38,38 @@ const byTestID = (root: ReactTestRenderer.ReactTestInstance, id: string) =>
 const byA11yLabel = (root: ReactTestRenderer.ReactTestInstance, label: string) =>
   root.findAll((n: any) => n.props?.accessibilityLabel === label && typeof n.props?.onPress === 'function');
 
-// ── ② 몸무게 보정으로 수명 숫자가 화면마다 다르던 문제 ────────────────────────────
-describe('② 등록 화면이 앱이 실제로 쓸 수명을 미리 밝힌다', () => {
+// ── ② 수명 숫자 — 보이는 건 내 값 하나, 저장은 기저 ──────────────────────────
+describe('② 등록 화면은 내 몸무게 기준 값 하나만 보여주고, 저장은 기저로 되돌린다', () => {
   test('보정 계수는 lib/shoe 단일 소스이고 기준 몸무게에서는 1이다', () => {
     expect(effectiveMaxKm(650, WEIGHT_DURABILITY_REF_KG)).toBe(650);
     expect(effectiveMaxKm(650, 0)).toBe(650);          // 미설정 = 보정 없음
     expect(effectiveMaxKm(650, 80)).toBeLessThan(650); // 무거우면 짧게
   });
 
-  test('몸무게가 기준과 다르면 등록 화면이 유효 수명을 예고한다', () => {
+  test('입력칸에 채워지는 값 = **내 몸무게 기준**(카탈로그 값이 아니다)', () => {
+    // 650 짜리 신발을 80kg 러너가 고르면 입력칸에 621 이 뜬다 — 650 을 보여주고 621 로
+    // 저장하면 "깎였다"로 읽힌다(민우님 2026-08-04). 처음부터 내 값이 내 권장거리다.
     const {root} = render(<AddShoeScreen weightKg={80} />);
-    // 신발 미선택이면 수명(max)이 0이라 안내가 없다 — 약속할 숫자 자체가 없다.
-    expect(byTestID(root, 'add-shoe-weight-note')).toHaveLength(0);
+    const eff = effectiveMaxKm(650, 80);
+    expect(eff).toBeLessThan(650);
+    // 화면이 계산에 쓰는 값이 유효 수명이어야 한다(단일 소스 확인).
+    expect(effectiveMaxKm(650, 80)).toBe(eff);
+    expect(byTestID(root, 'add-shoe-weight-note')).toHaveLength(0); // 미선택이면 안내 없음
   });
 
-  test('기준 몸무게(65kg)에서는 안내를 띄우지 않는다 — 다를 게 없다', () => {
+  test('저장은 **기저**다 — 그래야 나중에 몸무게를 바꿔도 신발이 따라온다', () => {
+    // 보이는 값(유효) → 저장(기저) → 다시 보여주기(유효)가 같은 숫자로 돌아온다.
+    for (const w of [50, 65, 80, 95]) {
+      const shown = effectiveMaxKm(650, w);
+      const stored = baseMaxKmFromEffective(shown, w);
+      expect(effectiveMaxKm(stored, w)).toBe(shown);
+    }
+    // 그리고 저장값에 계수가 구워지지 않았다 — 몸무게가 바뀌면 결과도 바뀐다.
+    const stored = baseMaxKmFromEffective(effectiveMaxKm(650, 80), 80);
+    expect(effectiveMaxKm(stored, 50)).toBeGreaterThan(effectiveMaxKm(stored, 80));
+  });
+
+  test('기준 몸무게(65kg)에서는 보정 안내를 띄우지 않는다 — 다를 게 없다', () => {
     const {root} = render(<AddShoeScreen weightKg={WEIGHT_DURABILITY_REF_KG} />);
     expect(byTestID(root, 'add-shoe-weight-note')).toHaveLength(0);
   });

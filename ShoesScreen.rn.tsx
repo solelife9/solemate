@@ -19,7 +19,7 @@ import { RunCard, RunDetail } from './HistoryScreen.rn';
 import { FuelGauge } from './FuelGauge';
 import FirstShoeScreen from './FirstShoeScreen.rn';
 import { Unit, displayNum } from './lib/units';
-import { wearTier, SHOE_CAUTION_PCT, SHOE_REPLACE_PCT, clampMaxKm, WEIGHT_WEAR_REASON_KO } from './lib/shoe';
+import { wearTier, SHOE_CAUTION_PCT, SHOE_REPLACE_PCT, clampMaxKm, baseMaxKmFromEffective, WEIGHT_WEAR_REASON_KO } from './lib/shoe';
 // 권장 수명의 출처 고지(UX 감사 ⑩) — 문구는 data/shoeModels 단일 소스.
 import { LIFESPAN_BASIS_KO } from './data/shoeModels';
 import { assessShoeInjuryRisk } from './lib/injury';
@@ -114,12 +114,26 @@ function ShoeDetail({
   // 신발 수명(교체거리 max_km) 편집 — 등록 후에도 바꿀 수 있게(무거운 러너·트레일·모델
   // 오선택 보정). ±50km 스텝을 clampMaxKm(100~2000)로 보정해 onSetMaxKm 로 즉시 반영.
   const [maxEditOpen, setMaxEditOpen] = useState(false);
-  // 편집은 기저 수명(maxBase) 기준 — shoe.max 는 몸무게 반영된 유효값이라 그걸로 ±하면 오염된다.
+  /**
+   * 수명 편집은 **내 몸무게 기준 값**(= 게이지에 뜬 그 숫자)을 올리고 내린다(2026-08-04).
+   *
+   * 예전엔 기저값(650)을 편집했다 — 게이지엔 621 이 떠 있는데 스테퍼엔 650 이 떠서
+   * 같은 화면에 두 숫자가 있었고, ±50 을 눌러도 게이지는 다른 폭으로 움직였다.
+   * 이제 보이는 숫자 하나를 직접 만지고, 저장 직전에만 기저로 되돌린다
+   * (lib/shoe.baseMaxKmFromEffective — 몸무게를 바꾸면 신발이 따라오게 하려면 저장은 기저여야 한다).
+   */
   const editBaseMax = Number(shoe.maxBase ?? shoe.max) || 0;
+  const editShownMax = Number(shoe.max) || editBaseMax;
   const editBaseDisp = displayNum(editBaseMax, unit);
+  const editShownDisp = displayNum(editShownMax, unit);
   // 몸무게 반영으로 유효 수명이 기저와 달라졌는가(반영 안내·기저 표기 노출 조건).
   const weightAdjusted = shoe.maxBase != null && Math.round(Number(shoe.maxBase)) !== Math.round(Number(shoe.max));
-  const stepMaxKm = (deltaKm: number) => { if (shoe.id) onSetMaxKm?.(String(shoe.id), clampMaxKm(editBaseMax + deltaKm)); };
+  const stepMaxKm = (deltaKm: number) => {
+    if (!shoe.id) return;
+    // 보이는 값을 ±한 뒤 기저로 되돌려 저장한다(사용자는 자기 숫자를 만지고, 저장은 기저).
+    const nextShown = Math.max(1, editShownMax + deltaKm);
+    onSetMaxKm?.(String(shoe.id), clampMaxKm(baseMaxKmFromEffective(nextShown, weightKg)));
+  };
   // 런 상세 — 기록탭과 같은 RunDetail 재사용(읽기 전용: 삭제/편집은 기록탭 담당).
   const [selRun, setSelRun] = useState<Run | null>(null);
 
@@ -331,8 +345,8 @@ function ShoeDetail({
           {maxEditOpen && onSetMaxKm && (
             <View style={s.maxStepRow}>
               <Pressable onPress={() => stepMaxKm(-50)} hitSlop={10} accessibilityRole="button" accessibilityLabel="수명 50 줄이기" style={s.maxEditToggle}><Ionicons name="remove" size={ri(ICON.inline)} color={T1} /></Pressable>
-              {/* 편집은 기저 수명(몸무게 반영 전) — 유효값 오염 방지. */}
-              <Text style={s.maxStepVal}>수명 {editBaseDisp}<Text style={s.maxStepUnitTxt}> {unit}</Text></Text>
+              {/* 편집 대상 = 게이지에 뜬 그 숫자(내 몸무게 기준). 저장만 기저로 되돌린다. */}
+              <Text style={s.maxStepVal}>수명 {editShownDisp}<Text style={s.maxStepUnitTxt}> {unit}</Text></Text>
               <Pressable onPress={() => stepMaxKm(50)} hitSlop={10} accessibilityRole="button" accessibilityLabel="수명 50 늘리기" style={s.maxEditToggle}><Ionicons name="add" size={ri(ICON.inline)} color={T1} /></Pressable>
             </View>
           )}
