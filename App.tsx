@@ -1022,11 +1022,27 @@ function Main(){
     // price_krw 는 입력했을 때만 싣는다(0/NaN 을 '0원에 샀다'로 오해하지 않게 — 결측과
     // 0원은 다르다). 원/km 는 값이 있을 때만 계산된다.
     const priceOk=typeof priceKrw==='number'&&isFinite(priceKrw)&&priceKrw>0;
-    const newShoe=stampUpdatedAt({
-      id:genShoeId(),name,max_km:clampMaxKm(maxKm),start_km:startKm,purchase_date:date,
-      ...(priceOk?{price_krw:Math.round(priceKrw as number)}:{}),
-    } as BackendShoe);
-    setShoes(prev=>[newShoe,...prev]);
+    const create=()=>{
+      const newShoe=stampUpdatedAt({
+        id:genShoeId(),name,max_km:clampMaxKm(maxKm),start_km:startKm,purchase_date:date,
+        ...(priceOk?{price_krw:Math.round(priceKrw as number)}:{}),
+      } as BackendShoe);
+      setShoes(prev=>[newShoe,...prev]);
+    };
+    // 중복 등록 확인 한 겹(2026-08-04 QA 감사 Q-8). 예전엔 아무 방어가 없어 같은 신발을
+    // 몇 번이든 등록할 수 있었고, 등록 뒤엔 화면이 이름만 보여줘 **구분할 방법이 없었다** —
+    // 어느 쪽에 기록을 붙이는지 모른 채 두 켤레의 수명이 동시에 틀어진다.
+    // 막지는 않는다: 같은 모델을 진짜 두 켤레 쓰는 사람이 있다(로테이션이 이 앱의 차별점이다).
+    // 차단이 아니라 확인이 맞다. 보관한 신발은 세지 않는다(이미 목록에서 빠져 있다).
+    const dup=shoes.find(s=>!isRetired(s)&&String(s.name||'').trim().toLowerCase()===name.trim().toLowerCase());
+    if(dup){
+      showDialog('이미 등록한 러닝화예요',`'${name}'는 이미 목록에 있어요.\n같은 모델을 두 켤레 쓰신다면 그대로 추가하세요.`,[
+        {text:'취소',style:'cancel'},
+        {text:'그대로 추가',onPress:create},
+      ]);
+      return;
+    }
+    create();
   }
 
   async function updateShoeName(id:string,name:string){
