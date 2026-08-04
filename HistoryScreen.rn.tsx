@@ -1060,7 +1060,7 @@ export default function HistoryScreen({
   const hiddenCount = displayRuns.length - shownRuns.length;
 
   const MIN_YEAR = runs.length > 0
-    ? Math.min(now.getFullYear(), ...runs.map(r => parseInt(rd(r).slice(0,4)) || now.getFullYear()))
+    ? Math.min(now.getFullYear(), ...runs.map(r => parseInt(rd(r).slice(0, 4), 10) || now.getFullYear()))
     : now.getFullYear() - 3;
   const PICKER_YEARS = Array.from({ length: now.getFullYear() - MIN_YEAR + 1 }, (_, i) => MIN_YEAR + i);
   const MAX_WEEK_OFFSET = Math.min(52, runs.length > 0

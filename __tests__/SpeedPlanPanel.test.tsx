@@ -42,7 +42,7 @@ describe('SpeedPlanPanel — 페이스 플랜 입력(재구성)', () => {
     expect(plan.length).toBe(5);
   });
 
-  test('히어로: 평균 페이스 큰 숫자 + 요약("5km · 예상 30\'00\"" — 거리 × 평균 페이스)', () => {
+  test("히어로: 평균 페이스 큰 숫자 + 요약(5km · 예상 30'00\" — 거리 × 평균 페이스)", () => {
     const root = render(<SpeedPlanPanel />).root;
     const txt = textAll(root);
     expect(txt).toContain("6'00\"");            // 기본 평균 페이스 히어로

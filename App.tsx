@@ -1878,7 +1878,6 @@ function Main(){
       const rid=await saveWatchHrTrack(p.startMs,p.endMs,p.offsetS,p.bpm,Date.now());
       if(rid)void repairAvgBpm(rid);
     }catch{/* 비치명적 */}
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }),[]);
   // (B) HealthKit 백필 재시도 + 최근 러닝 심박 복구 — 마운트 시 1회 + 앱 복귀('active')마다.
   //   · retryPendingHr: 새 런의 대기 목록을 정확한 창으로 재백필(저장 직후 동기화 지연 보완).

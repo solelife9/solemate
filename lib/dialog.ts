@@ -11,6 +11,8 @@
 // 강제, iOS 동일). 표시 중 새 다이얼로그가 오면 대체한다(last-wins — 얼럿 중첩은
 // 설계상 피해야 할 상황이라 큐를 두지 않는다).
 
+import {Linking} from 'react-native';
+
 /** Alert.alert 와 동일한 버튼 모양 — style 로 굵기/색이 정해진다(DialogHost). */
 export type DialogButton = {
   text: string;
@@ -89,10 +91,7 @@ export function showPermissionSettingsDialog(title: string, message: string): nu
     {
       text: '설정 열기',
       onPress: () => {
-        // 지연 require — lib/dialog 는 순수 store 라 RN 의존을 상단에 두지 않는다.
         try {
-          // eslint-disable-next-line @typescript-eslint/no-require-imports
-          const {Linking} = require('react-native');
           Promise.resolve(Linking.openSettings()).catch(() => {});
         } catch {
           /* 미지원 환경 — 안내만으로 끝난다 */

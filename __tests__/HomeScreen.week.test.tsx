@@ -19,7 +19,7 @@ import {LOAD_MSG} from '../lib/trainingLoad';
 function textOf(node: any): string {
   let out = '';
   const walk = (n: any) => {
-    if (typeof n === 'string') return void (out += n);
+    if (typeof n === 'string') { out += n; return; }
     if (!n || !n.children) return;
     n.children.forEach(walk);
   };

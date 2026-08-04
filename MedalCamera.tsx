@@ -88,7 +88,7 @@ export default function MedalCamera({onCapture, onCancel}: {onCapture: (uri: str
           <Ionicons name="camera-outline" size={ri(ICON.hero)} color={T3} />
           <Text style={c.permT}>카메라 권한이 필요해요</Text>
           <Text style={c.permD}>메달을 촬영하려면 카메라를 허용해주세요. 앨범에서 고를 수도 있어요.</Text>
-          <Pressable onPress={() => void requestPerm()} style={c.permBtn}><Text style={c.permBtnT}>카메라 허용</Text></Pressable>
+          <Pressable onPress={() => { void requestPerm(); }} style={c.permBtn}><Text style={c.permBtnT}>카메라 허용</Text></Pressable>
           {/* 보조 고스트: 세로 ~34pt → hitSlop 8 로 실효 44pt(HIG 터치 타깃) 확보. */}
           <Pressable onPress={fromLibrary} hitSlop={8} style={c.permGhost}><Text style={c.permGhostT}>앨범에서 선택</Text></Pressable>
           <Pressable onPress={onCancel} hitSlop={8} style={c.permGhost}><Text style={c.permGhostT}>취소</Text></Pressable>
