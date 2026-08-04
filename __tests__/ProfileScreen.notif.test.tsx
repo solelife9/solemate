@@ -233,7 +233,7 @@ describe('ProfileScreen 푸시 권한 거부는 비차단(S8-3)', () => {
 });
 
 describe('문의하기(지원) — ASC 지원 연락처(감사#3)', () => {
-  test('설정의 문의 행 press → mailto:kmw0236 로 메일 앱을 연다', async () => {
+  test('설정의 문의 행 press → mailto:지원주소 로 메일 앱을 연다', async () => {
 
     const {Linking} = require('react-native');
     const spy = jest.spyOn(Linking, 'openURL').mockResolvedValue(true);
@@ -242,7 +242,7 @@ describe('문의하기(지원) — ASC 지원 연락처(감사#3)', () => {
     expect(row).toBeTruthy();
     await pressAsync(row);
     expect(spy).toHaveBeenCalledTimes(1);
-    expect(String(spy.mock.calls[0][0])).toContain('mailto:kmw0236@gmail.com');
+    expect(String(spy.mock.calls[0][0])).toContain('mailto:keego.support@gmail.com');
     spy.mockRestore();
   });
 });

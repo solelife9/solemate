@@ -24,7 +24,7 @@ export const TERMS_URL = 'https://solelife9.github.io/keego-legal/terms.html';
 export const DELETE_ACCOUNT_URL = 'https://solelife9.github.io/keego-legal/delete-account.html';
 
 /** 지원(문의) 이메일 — 앱스토어 심사(ASC) 지원 연락처 + 앱 내 '문의하기'. */
-export const SUPPORT_EMAIL = 'kmw0236@gmail.com';
+export const SUPPORT_EMAIL = 'keego.support@gmail.com';
 
 /**
  * 고객 지원 페이지 URL.

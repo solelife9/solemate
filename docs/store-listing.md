@@ -55,7 +55,7 @@
   — ASC `Support URL` 은 버전 제출 **필수 입력값**이고 `mailto:` 로 대체할 수 없다. Play 등록정보의
   지원 웹사이트에도 같은 주소를 넣는다. 원본 `docs/support.html` → keego-legal 에 푸시해야 200 이 된다
   (2026-08-04 출시 운영 감사 L-01). 앱 내 상수는 `lib/legalLinks.ts SUPPORT_URL`.
-- 지원 이메일: kmw0236@gmail.com (`lib/legalLinks.ts SUPPORT_EMAIL`)
+- 지원 이메일: keego.support@gmail.com (`lib/legalLinks.ts SUPPORT_EMAIL`)
 - 개인정보 처리방침 URL: https://solelife9.github.io/keego-legal/privacy.html (✅ keego-legal Pages, 200 확인 2026-07-17)
 - 계정·데이터 삭제 요청 URL: https://solelife9.github.io/keego-legal/delete-account.html
 - App Privacy 표기: 위치(러닝 기록), 건강(HealthKit), 식별자(로그인), 사진(메달·신발 — 선택)

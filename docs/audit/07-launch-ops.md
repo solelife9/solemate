@@ -121,10 +121,25 @@ BLOCKER 는 1건이다. 나머지는 **출시를 막지는 않지만, 출시 후
 ### 되어 있는 것
 
 - 메일 창구 자체는 존재하고 막다른 길 방어까지 있다 — `ProfileScreen.rn.tsx:637-639`(메일 앱 실패 시 주소를 다이얼로그로 안내).
-- 지원 메일 주소 단일 소스: `lib/legalLinks.ts:29` `SUPPORT_EMAIL = 'kmw0236@gmail.com'`.
+- 지원 메일 주소 단일 소스: `lib/legalLinks.ts` `SUPPORT_EMAIL`(2026-08-04 부터 `keego.support@gmail.com`).
 - 앱 밖 삭제 요청 경로: `docs/delete-account.html:39,62`(Play 요구사항 충족).
 
-### L-09 `MINOR` — 지원 메일이 개인 Gmail 이다
+### ~~L-09 `MINOR` — 지원 메일이 개인 Gmail 이다~~ **해결됨(2026-08-04)**
+
+> **조치:** 전용 계정 `keego.support@gmail.com` 신설 후 **14곳 일괄 교체** —
+> `lib/legalLinks.ts` · `docs/privacy.html`(3) · `docs/terms.html`(4) ·
+> `docs/delete-account.html`(2) · `docs/support.html`(3) · `docs/store-listing.md` ·
+> 테스트 1. 공개 저장소 `keego-legal` 의 4개 문서도 함께 갱신해 **앱과 공개 문서의 주소가
+> 어긋나지 않게** 했다(어긋나면 심사에서 바로 잡힌다).
+> 법적 문서 2건은 내용이 바뀌었으므로 시행일을 2026-08-04 로 올렸다(미출시라 고지 의무는
+> 없지만, 공개된 문서가 조용히 바뀌는 것보다 날짜를 정직하게 적는 편이 맞다).
+>
+> **도메인 메일(`support@keego.*`)은 의도적으로 미룬다.** `keego.com`·`keego.app`·
+> `keego.co.kr` 이 전부 선점돼 있어(각각 2000년 등록·`keebot.app` 리다이렉트·개인 명의)
+> 남은 선택지가 애매하다. 시간에 쫓겨 고른 도메인은 평생 쓰게 된다. 나중에 옮기는 비용은
+> 처리방침 개정 1회(30분)이고, 그건 사고가 아니라 정상적인 유지보수다.
+>
+> 아래는 발견 당시 기록이다.
 
 - `lib/legalLinks.ts:29`. 스토어에 **공개 노출되는 주소**이고, 앱스토어 심사 답변·법적 문의·스팸이 전부 개인 받은편지함으로 들어온다.
 - 최소한 Gmail 라벨/필터로 분리하거나, 무료 별칭을 하나 파는 것을 권한다. 지금 바꾸면 처리방침(`docs/privacy.html:40,225,259`)·약관(`docs/terms.html:35,133,171,176`)·삭제 안내까지 **전부 같이 고쳐야 하므로**, 바꿀 거면 출시 전이 마지막 기회다.
