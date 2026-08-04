@@ -26,7 +26,7 @@ import {
   BG, T1, T2, T3, WARN, DANGER, FONT, DISPLAY, TYPE, RADIUS, GUTTER, GLASS, MOTION, SHADOW, ICON, withAlpha,
   type Shoe,
 } from '../theme';
-import {GlassEdge, ShoeGlyph} from '../primitives';
+import {GlassEdge, ShoeGlyph, useReduceMotion} from '../primitives';
 import {shoeHealth, wearTier, type RunLike, KEEP_GOING_REPLACE} from '../lib/shoe';
 import {findShoeClass, typeLabel} from '../data/shoeClass';
 import {ringColor} from '../lib/ringColor';
@@ -189,19 +189,26 @@ export function ShoeCard({
   // 마운트 시 0→현재%로 차오르는 스윕 — 정적 게이지에 물리감을 준다. 1400ms 로 느긋하게
   // (800ms 는 급하다는 사용자 피드백 — 차오르는 과정 자체가 보여야 멋이 산다).
   // strokeDashoffset 은 네이티브 드라이버 미지원 prop 이라 JS 드라이버(false)로 구동.
+  // 동작 줄이기(DESIGN §6.7 · UX 감사 ⑧): 1.4초짜리 링 스윕은 홈을 열 때마다 도는
+  // 장식 모션이라 정확히 전정기관 민감 사용자가 끄고 싶어 하는 종류다. 끄면 최종
+  // 상태(현재 %)로 즉시 점프한다 — 정보는 하나도 잃지 않는다.
+  const reduceMotion = useReduceMotion();
   const sweep = useRef(new Animated.Value(0)).current;
   useEffect(() => {
+    const target = Math.min(remainPct, 100);
+    if (reduceMotion) { sweep.setValue(target); return; }
     const anim = Animated.timing(sweep, {
-      toValue: Math.min(remainPct, 100), duration: MOTION.dur.fill,
+      toValue: target, duration: MOTION.dur.fill,
       easing: MOTION.ease.out, useNativeDriver: false,
     });
     anim.start();
     return () => anim.stop(); // 언마운트 시 타이머 정리(테스트/화면전환 누수 방지)
-  }, [sweep, remainPct]);
+  }, [sweep, remainPct, reduceMotion]);
   const dash = sweep.interpolate({inputRange: [0, 100], outputRange: [ringC, 0]});
   // 링 중앙 숫자 — 스윕에 맞춰 살짝 떠오르며 페이드인.
   const centerIn = useRef(new Animated.Value(0)).current;
   useEffect(() => {
+    if (reduceMotion) { centerIn.setValue(1); return; }
     const anim = Animated.timing(centerIn, {
       toValue: 1, duration: 500, delay: 150,
       // JS 드라이버 — 링 스윕과 동일(테스트 렌더러 호환 + 코드베이스 관례).
@@ -209,7 +216,7 @@ export function ShoeCard({
     });
     anim.start();
     return () => anim.stop();
-  }, [centerIn]);
+  }, [centerIn, reduceMotion]);
 
   return (
     <Animated.View style={{width, transform: [{scale}], opacity}}>
@@ -292,11 +299,16 @@ export function ShoeCard({
           </View>
           </Pressable>
 
-          {/* 러닝 시작 — 정보 Pressable 의 형제(중첩 아님). */}
+          {/* 러닝 시작 — 정보 Pressable 의 형제(중첩 아님).
+              UX 감사 ⑫ 는 이 라벨을 '이 신발로 달리기'로 바꾸자고 했다(목표 화면 CTA 와
+              같은 말이라 "눌렀는데 안 시작"으로 읽힌다는 지적). **민우님이 유지로 결정**
+              (2026-08-04) — 앱의 히어로 CTA 라 에너지가 먼저다. 대신 스크린리더에는
+              무슨 일이 일어나는지 힌트로 밝힌다(보이는 라벨은 그대로). */}
           <Pressable
             style={({pressed}) => [styles.runBtn, pressed && {transform: [{scale: MOTION.press.scale}], opacity: MOTION.press.opacity}]}
             onPress={() => onStartRun?.(shoe)}
             accessibilityRole="button" accessibilityLabel="러닝 시작"
+            accessibilityHint="목표를 정하는 화면으로 넘어가요"
           >
             <GlassEdge glints={false} fade={false} id={`edge-run-${i}`} radius={RADIUS.btn} />
             <Ionicons name="play" size={ri(ICON.inline)} color={T1} style={{marginRight: rs(6)}} />
@@ -307,6 +319,20 @@ export function ShoeCard({
     </Animated.View>
   );
 }
+
+/**
+ * 빈 상태(신발 0켤레) 한 줄 — 홈·신발 탭이 **같은 문장**을 쓰도록 단일 소스(UX 감사 ⑥).
+ *
+ * 구 문구는 "신발이 얼마나 닳았는지 기록해서, 부상 없이 더 오래 달리게 해드려요."로
+ * 철학만 말하고 **지금 무엇이 막혀 있는지는 말하지 않았다.** 신발이 0켤레면 러닝 진입점이
+ * 앱 어디에도 없다(런 시작은 홈 캐러셀 카드와 신발 상세 두 곳뿐, 둘 다 신발이 있어야 한다).
+ * 온보딩을 건너뛴 사용자는 "달리려면 먼저 등록해야 한다"를 스스로 추론해야 했다 — 그게
+ * 막다른 길처럼 읽혔다. 의존성을 먼저 말하고 철학을 잇는다.
+ *
+ * 단, keep-going 보이스는 버리지 않는다(BRAND.md · 회귀 가드 `__tests__/crosscut.a11y.test.tsx`
+ * 가 '더 오래 달리게'를 지킨다). 첫 줄이 지금 막힌 것을, 둘째 줄이 왜 하는지를 말한다.
+ */
+export const EMPTY_SHOE_LINE = '러닝화를 등록하면 바로 달릴 수 있어요.\n닳는 만큼 기록해서, 더 오래 달리게 해드려요.';
 
 // ─── 고스트 카드(빈 상태) ──────────────────────────────────────────
 // 빈 상태 = 채워진 카드의 유령. 실카드와 같은 실루엣(유리 표면·엣지·링 자리·유리 CTA)으로

@@ -15,7 +15,7 @@ import {View, Pressable, ScrollView, StyleSheet, LayoutAnimation} from 'react-na
 import {Text, FONT_SCALE_CAP_HERO} from './lib/text';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {
-  ACCENT, T1, T2, T3, T4, SEP, CARD, CARD_HI, FONT, NUM, RADIUS, GLASS, TYPE, HERO,
+  ACCENT, T1, T2, T3, SEP, CARD, CARD_HI, FONT, NUM, RADIUS, GLASS, TYPE, HERO,
   LEADING, MOTION, TOUCH_TARGET, withAlpha,
   ICON,
 } from './theme';
@@ -264,7 +264,7 @@ const s = StyleSheet.create({
   // 채움 withAlpha(T1,0.14) · 보더 withAlpha(T1,0.4) — RunGoal 프리셋/랩 칩과 동일.
   kmChip: {minWidth: rs(58), alignItems: 'center', paddingVertical: rv(8), paddingHorizontal: rs(12), borderRadius: RADIUS.md, borderCurve: 'continuous', backgroundColor: withAlpha(T1, 0.04), borderWidth: 1, borderColor: SEP},
   kmChipOn: {backgroundColor: withAlpha(T1, 0.14), borderColor: withAlpha(T1, 0.4)},
-  kmChipNum: {color: T4, fontFamily: FONT, fontSize: rf(12), fontWeight: '700'},
+  kmChipNum: {color: T3, fontFamily: FONT, fontSize: rf(12), fontWeight: '700'},
   kmChipNumOn: {color: ACCENT},
   kmChipPace: {color: T1, fontFamily: FONT, fontSize: rf(15), fontWeight: '700', marginTop: rv(2), fontVariant: ['tabular-nums']},
   kmChipPaceOn: {color: ACCENT},

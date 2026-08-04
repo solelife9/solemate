@@ -24,7 +24,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 // · text→T1–T4 · hair→SEP · 그라데이션→GRAD_TOP/GRAD_BOT. 폰트 UI/DP → FONT/DISPLAY.
 // (시각 동등: 다크+오렌지 유지)
 import {
-  BG, ACCENT, T1, T2, T3, T4, SEP, CARD_BORDER,
+  BG, ACCENT, T1, T2, T3, SEP, CARD_BORDER,
   FONT, DISPLAY, NUM, RADIUS, GUTTER, withAlpha, TYPE, HERO, LEADING, MOTION, TOUCH_TARGET,
   ICON,
 } from './theme';
@@ -487,7 +487,7 @@ const s = StyleSheet.create({
   lapChipOn: { backgroundColor: withAlpha(T1, 0.14), borderColor: withAlpha(T1, 0.4) },
   lapChipVal: { color: T3, fontFamily: DISPLAY, fontSize: TYPE.heading.fontSize, fontWeight: '700', letterSpacing: -0.4 },
   lapChipValOn: { color: ACCENT },
-  lapChipUnit: { color: T4, fontFamily: FONT, fontSize: TYPE.micro.fontSize, fontWeight: '600', marginTop: rv(1) },
+  lapChipUnit: { color: T3, fontFamily: FONT, fontSize: TYPE.micro.fontSize, fontWeight: '600', marginTop: rv(1) },
 
   // '자유' 상태 히어로 — 숫자(bigVal 104) 자리에 낱말. 높이 점프가 없게 lineHeight 동일.
   bigFree: { color: T1, fontFamily: DISPLAY, fontSize: rf(64), fontWeight: '700', letterSpacing: -1.5, lineHeight: rf(127), includeFontPadding: false },
@@ -513,7 +513,7 @@ const s = StyleSheet.create({
   // 방금 탭한 Jost 히어로(bigVal)와 같은 값이 시트에서 Pretendard 로 폰트가 바뀌고
   // 타이핑 중 자릿수 폭이 흔들리던 분열 해소(심사 #27) — NUM+tabular, weight 도 500 정렬.
   kpVal: { color: T1, fontFamily: NUM, fontSize: HERO.hero, fontWeight: '500', letterSpacing: -1, lineHeight: Math.round(HERO.hero * LEADING.display), includeFontPadding: false, fontVariant: ['tabular-nums'] },
-  kpValGhost: { color: T4 },
+  kpValGhost: { color: T3 },
   kpUnit: { color: T3, fontFamily: FONT, fontSize: TYPE.heading.fontSize, fontWeight: '600' },
   kpGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: rv(8) },
   kpKey: { width: '31.5%', flexGrow: 1, alignItems: 'center', paddingVertical: rv(12), borderRadius: RADIUS.md, borderCurve: 'continuous', backgroundColor: CARD_BORDER },

@@ -24,7 +24,7 @@ import {
   LayoutChangeEvent,
   useWindowDimensions,
 } from 'react-native';
-import {Text} from './lib/text';
+import {Text, FONT_SCALE_CAP_HERO} from './lib/text';
 import type {TextInputProps} from 'react-native';
 import {TextInput} from './lib/text';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -1514,7 +1514,9 @@ export function TabBar({active, onTab}: {active: number; onTab: (i: number) => v
               <Text
                 style={[t.label, {color, fontWeight: on ? '700' : '500'}]}
                 numberOfLines={1}
-                maxFontSizeMultiplier={1.2}>
+                // 캡은 리터럴이 아니라 정책 토큰에서(UX 감사 ⑮) — 값이 같아도 리터럴이면
+                // 나중에 정책이 바뀔 때 여기만 뒤처진다(lib/text 가 캡의 단일 소스).
+                maxFontSizeMultiplier={FONT_SCALE_CAP_HERO}>
                 {tab.label}
               </Text>
             </Pressable>

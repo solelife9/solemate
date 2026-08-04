@@ -743,19 +743,6 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
     runTracker.togglePause();
   }
 
-  // 화면 잠금(UX 감사 ④) — 잠그면 keep-awake 를 놓아 화면이 OS 기본대로 꺼지게 한다.
-  // 잠금은 곧 "이제 화면 안 본다"(주머니·암밴드)라서 2시간 롱런 내내 화면을 켜 둘 이유가
-  // 없어진다(배터리·발열). **기록은 영향받지 않는다** — 거리 추적은 백그라운드 위치
-  // 업데이트가 담당하므로 화면이 꺼져도 계속되고(lib/locationService), 지표는 잠금화면
-  // Live Activity 로 이어진다. 해제하면 다시 켜 둔다. 실패는 종전처럼 비치명.
-  function handleLockChange(locked:boolean){
-    if(locked){
-      try{deactivateKeepAwake(KEEP_AWAKE_TAG);}catch{/* 무해: 이미 해제됨 */}
-    }else{
-      void activateKeepAwakeAsync(KEEP_AWAKE_TAG).catch(e=>reportIssue('run: keep-awake activate',e));
-    }
-  }
-
   // 런 종료(실제 stop) — RunActiveScreen 종료 버튼의 롱프레스로만 호출된다(롱프레스 자체가
   // 오작동 종료 가드라 별도 2단계 확인은 두지 않는다). 거리가 너무 짧으면 계속/나가기 선택.
   // 워치 정지 미러링(2026-07-18) — 워치에서 종료를 누르면 폰 러닝도 같은 종료 플로우를
@@ -1086,7 +1073,6 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
       voiceMuted={voiceMuted}
       onToggleVoice={toggleVoice}
       pausedMoveNudge={pauseMoveNudge}
-      onLockChange={handleLockChange}
     />
   );
 }

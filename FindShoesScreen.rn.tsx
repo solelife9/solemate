@@ -33,7 +33,7 @@ import {
   BG, CARD, T1, T2, T3, SEP, FONT, DISPLAY, SPACE, RADIUS,
   withAlpha, TYPE, GLASS, MOTION, ICON, RING_ACCENT, GOOD, WARN,
 } from './theme';
-import {Button, WearRing} from './primitives';
+import {Button, WearRing, SwipeBack} from './primitives';
 import {ShoePicker} from './ShoePicker';
 import ShoeCompareTable from './ShoeCompareTable';
 import {MAX_COMPARE, type CompareShoe} from './lib/shoeCompareTable';
@@ -208,16 +208,21 @@ function FindShoesScreen({base: baseProp = null, myShoes = [], onClose}: FindSho
     setBaseIdx(b => (i < b ? b - 1 : i === b ? 0 : b));
   };
 
+  // 단계 인지 뒤로가기 — 헤더 버튼과 엣지 스와이프가 **같은 동작**을 쓰도록 이름을 준다
+  // (UX 감사 ⑨: 앱의 절반은 스와이프 백이 되고 절반은 안 돼, 한 번 통한 제스처가 다음
+  //  화면에서 먹통이 되면 사용자는 앱이 고장 났다고 읽는다).
+  const goBackStep = () => {
+    // 기준을 밖에서 받았으면 후보에서 뒤로 = 닫기다(기준 고르기는 내 단계가 아니다).
+    if (step === 'base') return onClose();
+    if (step === 'candidates') return baseProp ? onClose() : setStep('base');
+    setStep(step === 'store' ? 'compare' : 'candidates');
+  };
   return (
+    <SwipeBack onBack={goBackStep}>
     <View style={[s.screen, {paddingTop: insets.top}]}>
       <View style={s.nav}>
         <Pressable
-          onPress={() => {
-            // 기준을 밖에서 받았으면 후보에서 뒤로 = 닫기다(기준 고르기는 내 단계가 아니다).
-            if (step === 'base') return onClose();
-            if (step === 'candidates') return baseProp ? onClose() : setStep('base');
-            setStep(step === 'store' ? 'compare' : 'candidates');
-          }}
+          onPress={goBackStep}
           hitSlop={8}
           accessibilityRole="button"
           accessibilityLabel={step === 'base' || (step === 'candidates' && !!baseProp) ? '닫기' : '이전'}
@@ -316,6 +321,7 @@ function FindShoesScreen({base: baseProp = null, myShoes = [], onClose}: FindSho
         insetBottom={insets.bottom}
       />
     </View>
+    </SwipeBack>
   );
 }
 

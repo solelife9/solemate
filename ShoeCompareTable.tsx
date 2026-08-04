@@ -32,7 +32,7 @@ import {View, StyleSheet, Pressable, ScrollView, useWindowDimensions} from 'reac
 import {Text} from './lib/text';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {rf, ri, rs, rv} from './lib/responsive';
-import {CARD_HI, T1, T2, T3, T4, SEP, FONT, NUM, RADIUS, GUTTER,
+import {CARD_HI, T1, T2, T3, SEP, FONT, NUM, RADIUS, GUTTER,
   withAlpha, TYPE, ICON} from './theme';
 import {buildCompareTable, MAX_COMPARE, type CompareShoe} from './lib/shoeCompareTable';
 import {SHOE_CATEGORY_KO} from './lib/shoeCatalogLookup';
@@ -115,7 +115,7 @@ export default function ShoeCompareTable({shoes, baseIdx, onSetBase, onRemove, o
                       accessibilityLabel={`${sh.name} 비교에서 빼기`}
                       testID={`compare-remove-${sh.id}`}
                       style={({pressed}) => [s.rm, pressed && s.pressed]}>
-                      <Ionicons name="close" size={ri(ICON.inline)} color={T4} />
+                      <Ionicons name="close" size={ri(ICON.inline)} color={T3} />
                     </Pressable>
                     <Text style={s.brand} numberOfLines={1}>{sh.brand.toUpperCase()}</Text>
                     <Text style={[s.model, isBase && s.modelBase]} numberOfLines={2}>{sh.name}</Text>
@@ -205,14 +205,14 @@ const s = StyleSheet.create({
   rowSep: {borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP},
   labelCell: {paddingHorizontal: rs(8), paddingTop: rv(15)},
   label: {fontFamily: FONT, ...TYPE.caption, color: T3},
-  hint: {fontFamily: FONT, ...TYPE.micro, color: T4, marginTop: rv(2), letterSpacing: 0.2},
+  hint: {fontFamily: FONT, ...TYPE.micro, color: T3, marginTop: rv(2), letterSpacing: 0.2},
   cell: {paddingHorizontal: rs(8), paddingTop: rv(13), paddingBottom: rv(14)},
 
-  brand: {fontFamily: FONT, ...TYPE.micro, color: T4, marginBottom: rv(3)},
+  brand: {fontFamily: FONT, ...TYPE.micro, color: T3, marginBottom: rv(3)},
   model: {fontFamily: FONT, ...TYPE.label, fontWeight: '700', color: T2, letterSpacing: -0.2},
   modelBase: {color: T1},
   // 종류(데일리·레이싱…) — 무게 296g 이 무거운 건지는 종류를 알아야 판단된다.
-  cat: {fontFamily: FONT, ...TYPE.micro, color: T4, marginTop: rv(3)},
+  cat: {fontFamily: FONT, ...TYPE.micro, color: T3, marginTop: rv(3)},
   owned: {fontFamily: FONT, ...TYPE.micro, color: T3, marginTop: rv(2), fontWeight: '700'},
   // 빼기 ✕ — 칸 오른쪽 위. 글자보다 위에 놓아 겹치지 않는다(cell 의 paddingTop 이 자리를 판다).
   rm: {position: 'absolute', top: rv(1), right: rs(1), width: rs(24), height: rs(24),
@@ -227,19 +227,19 @@ const s = StyleSheet.create({
   // 안 나 위계가 약했다 — title(23)로 올려 한눈에 숫자가 먼저 들어오게 한다.
   value: {fontFamily: NUM, ...TYPE.title, color: T3, letterSpacing: -0.3},
   valueBase: {color: T1, fontWeight: '500'},
-  unit: {fontFamily: FONT, ...TYPE.caption, color: T4},
+  unit: {fontFamily: FONT, ...TYPE.caption, color: T3},
   textVal: {fontFamily: FONT, ...TYPE.body, color: T2, letterSpacing: -0.2},
   textValBase: {color: T1, fontWeight: '600'},
-  dash: {fontFamily: FONT, ...TYPE.body, color: T4},
+  dash: {fontFamily: FONT, ...TYPE.body, color: T3},
   delta: {fontFamily: NUM, ...TYPE.label, color: T2, marginTop: rv(5)},
-  deltaBase: {color: T4, fontWeight: '400'},
+  deltaBase: {color: T3, fontWeight: '400'},
 
   cta: {marginHorizontal: GUTTER, marginTop: rv(18), paddingVertical: rv(15),
     borderRadius: RADIUS.btn, backgroundColor: CARD_HI, alignItems: 'center',
     borderWidth: StyleSheet.hairlineWidth, borderColor: SEP},
   ctaOff: {backgroundColor: 'transparent'},
   ctaTxt: {fontFamily: FONT, ...TYPE.body, fontWeight: '600', color: T1},
-  ctaTxtOff: {color: T4, fontWeight: '400'},
+  ctaTxtOff: {color: T3, fontWeight: '400'},
 
   empty: {fontFamily: FONT, ...TYPE.body, color: T3, textAlign: 'center',
     marginTop: rv(40), paddingHorizontal: GUTTER, lineHeight: rf(24)},

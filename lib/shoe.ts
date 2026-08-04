@@ -183,10 +183,54 @@ export function weightDurabilityFactor(weightKg?: number | null): number {
   return Math.max(0.9, Math.min(1.1, f));
 }
 
+/**
+ * 몸무게 보정을 **왜** 하는지 한 줄(2026-08-04 민우님: "621로 계산하는 이유도 적어주면 납득").
+ *
+ * 숫자만 들이밀면 임의로 보이지만, 이유를 대면 납득된다. 다만 **방향까지만** 말한다 —
+ * 착지 지면반력이 체중의 2.5~3배라 무거울수록 미드솔 폼의 압축 피로가 빨리 쌓인다는 건
+ * 근거가 있고(위 주석 · durability 리서치도 90kg+ → 15~20% 단축이라고 적는다),
+ * **정확한 계수는 학계에 없다.** 그래서 "N% 줄어요" 같은 정밀한 말은 화면에 쓰지 않는다.
+ * 화면은 이 상수만 참조한다(사본 금지).
+ */
+export const WEIGHT_WEAR_REASON_KO = '무거울수록 미드솔이 빨리 눌려요';
+
 /** 몸무게 반영 유효 수명(km) = 기저 권장수명 × 계수, 정수 반올림. 몸무게 없으면 기저 그대로. */
 export function effectiveMaxKm(baseMaxKm: number, weightKg?: number | null): number {
   const base = Number(baseMaxKm) || DEFAULT_MAX_KM;
   return Math.round(base * weightDurabilityFactor(weightKg));
+}
+
+/**
+ * `effectiveMaxKm` 의 **역함수** — 사용자가 본 유효 수명 → 저장할 기저 수명(km).
+ *
+ * 왜 필요한가(2026-08-04 민우님): 등록 화면이 "권장 650km" 를 보여주고 앱은 621km 로
+ * 계산하면 **깎인 느낌**이 든다. 그래서 등록·편집 화면은 처음부터 **내 몸무게 기준 값**
+ * 하나만 보여준다(621). 그런데 **저장은 여전히 기저(650)** 여야 한다 —
+ * 저장값에 계수를 구워 버리면 나중에 살이 빠졌을 때 그 신발만 옛 몸무게에 갇히고,
+ * 설정에서 몸무게를 바꿔도 안 따라온다(지금은 볼 때마다 곱해서 실시간으로 반영된다).
+ * 그래서 **보이는 건 유효값, 저장은 기저값** — 그 사이를 이 함수가 잇는다.
+ *
+ * **왕복 정확도(중요 — 단순 나눗셈이면 숫자가 흘러간다):**
+ * `round(round(E/f)·f)` 는 항상 `E` 가 아니다. 계수가 1보다 크면(65kg 미만 러너)
+ * `b → round(b·f)` 가 일부 정수를 건너뛰어 **도달 불가능한 E** 가 생긴다
+ * (f=1.03 에서 429 를 입력하면 430 으로 되돌아온다). 그래서 나눈 값 주변 ±1 을 훑어
+ * **되곱했을 때 정확히 E 가 되는 기저값**을 고른다.
+ *
+ * 그런 기저값이 아예 없는 E(위의 '건너뛴 값')만 근사로 떨어지고, 그때도 오차는 **최대 1km**,
+ * 게다가 **한 번만** 어긋난다 — 보정된 값은 도달 가능한 값이라 그다음부터 고정점이다.
+ * 650km 짜리 수명에서 1km 는 무해하고, 대안(기저를 소수로 저장)은 저장 규약을 더럽힌다.
+ * 회귀 가드가 전 구간(몸무게 30~150 × 수명 100~2000)을 훑는다 —
+ * `__tests__/lib/weightRoundTrip.test.ts`.
+ */
+export function baseMaxKmFromEffective(effectiveKm: number, weightKg?: number | null): number {
+  const e = Number(effectiveKm);
+  if (!Number.isFinite(e) || e <= 0) return 0; // 0/비정상은 그대로 넘겨 호출부 검증(validateMaxKm)에 맡긴다
+  const f = weightDurabilityFactor(weightKg);
+  const guess = Math.round(e / f);
+  for (const b of [guess, guess - 1, guess + 1]) {
+    if (b > 0 && Math.round(b * f) === e) return b;
+  }
+  return guess;
 }
 
 // (구 tierBadge/TierBadge 3단계 배지는 2026-07-11 제거 — 모든 화면이 wearTier 4단계

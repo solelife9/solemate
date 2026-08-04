@@ -151,5 +151,5 @@ test('보관된 신발은 신발 탭 락커에서 제외된다 → 시작 동선
   await tap(pressBy(root, '러닝화')); // 신발 탭
 
   expect(() => pressBy(root, 'Pegasus')).toThrow(); // 락커 목록에 없음 → 상세 진입 불가
-  expect(textOf(root)).not.toContain('이 신발로 달리기'); // 러닝 시작 CTA 미노출
+  expect(textOf(root)).not.toContain('러닝 시작'); // 러닝 시작 CTA 미노출
 });

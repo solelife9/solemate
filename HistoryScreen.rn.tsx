@@ -862,7 +862,18 @@ function DrumColumn({ items, selectedIndex, onChange }: {
           setActive(i); onChange(i);
         }}
         renderItem={({ item, index }) => (
+          // 조정 가능 역할(UX 감사 ⑮) — 스크롤 스냅으로 값을 고르는 컨트롤이라
+          // 스크린리더에는 '조정 가능'으로 서야 위/아래 스와이프로 값을 바꿀 수 있다.
+          // (같은 앱의 온보딩 슬라이더는 이미 adjustable + accessibilityActions 를 쓴다.)
           <Pressable onPress={() => select(index)}
+            accessibilityRole={index === active ? 'adjustable' : 'button'}
+            accessibilityLabel={String(item)}
+            accessibilityState={index === active ? { selected: true } : undefined}
+            accessibilityActions={index === active ? [{ name: 'increment' }, { name: 'decrement' }] : undefined}
+            onAccessibilityAction={index === active ? (e) => {
+              const d = e.nativeEvent.actionName === 'increment' ? 1 : -1;
+              select(Math.max(0, Math.min(items.length - 1, index + d)));
+            } : undefined}
             style={s.drumItem}>
             <Text style={[s.drumText, {
               fontSize: index === active ? TYPE.heading.fontSize : TYPE.label.fontSize,
@@ -1233,9 +1244,20 @@ export default function HistoryScreen({
                   <GhostBar w={rs(56)} dim style={s.mt0} />
                 </View>
               </View>
+              {/* 다음 행동(UX 감사 ⑪) — "첫 러닝을 마치면 이 자리에 쌓여요"라고 말해 놓고
+                  **첫 러닝으로 가는 길은 주지 않았다.** 러닝은 홈에서 신발을 골라 시작하므로
+                  홈으로 보낸다(런 진입점은 홈 카드와 신발 상세 둘뿐). 주 동작이므로 먼저. */}
+              {!!onTab && (
+                <Pressable onPress={() => onTab(0)} accessibilityRole="button" accessibilityLabel="홈에서 러닝 시작하기" hitSlop={6}
+                  testID="history-empty-go-run"
+                  style={({ pressed }) => [s.emptyActionPill, pressed && s.pressedPill]}>
+                  <Ionicons name="play" size={ri(ICON.inline)} color={ACCENT} />
+                  <Text style={s.labelT1w6}>러닝 시작하기</Text>
+                </Pressable>
+              )}
               {!!onAddRun && (
                 <Pressable onPress={() => setForm({ mode: 'add' })} accessibilityRole="button" accessibilityLabel="기록 직접 추가" hitSlop={6}
-                  style={({ pressed }) => [{ marginTop: rv(16), alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: rv(4), paddingVertical: rv(8), paddingHorizontal: rs(16), borderRadius: RADIUS.pill, backgroundColor: CARD_HI }, pressed && { transform: [{ scale: MOTION.press.scale }], opacity: MOTION.press.opacity }]}>
+                  style={({ pressed }) => [s.emptyActionPill, s.emptyActionPillNext, pressed && s.pressedPill]}>
                   <Ionicons name="add" size={ri(ICON.inline)} color={ACCENT} />
                   <Text style={s.labelT1w6}>기록 추가</Text>
                 </Pressable>
@@ -1450,6 +1472,10 @@ const s = StyleSheet.create({
   recentWrap: { marginTop: rv(18), gap: rv(10) },
   recentHead: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '700', letterSpacing: 1.1, paddingHorizontal: rs(4) },
   recentItem: { marginTop: rv(0) },
+  // 빈 상태 액션 pill(러닝 시작하기·기록 추가) — 같은 모양이라 스타일을 한 벌로 둔다.
+  emptyActionPill: { marginTop: rv(16), alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: rv(4), paddingVertical: rv(8), paddingHorizontal: rs(16), borderRadius: RADIUS.pill, backgroundColor: CARD_HI },
+  emptyActionPillNext: { marginTop: rv(10) }, // 두 번째 pill 은 위와 붙여 한 묶음으로 읽히게
+  pressedPill: { transform: [{ scale: MOTION.press.scale }], opacity: MOTION.press.opacity },
   emptyHint: { color: T3, fontFamily: FONT, fontSize: TYPE.body.fontSize, textAlign: 'center' },
 
   // 콤팩트: 요약 4칸(거리/횟수/페이스/시간)의 패딩·값 폰트·여백을 줄여 세로 높이를

@@ -19,17 +19,14 @@ import {Text} from './lib/text';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {BG, T1, T3, FONT, TYPE, GUTTER} from './theme';
 import {TabBar, ShoeGlyph} from './primitives';
-import {GhostShoeCard} from './screens/KeegoHome';
+import {GhostShoeCard, EMPTY_SHOE_LINE} from './screens/KeegoHome';
 
 // ShoeGlyph 는 primitives 로 승격(고스트 카드가 화면 간 공유) — 기존 import 경로 호환 re-export.
 export {ShoeGlyph};
 
-// 오늘 날짜 — "6월 10일 수요일"
-const WEEKDAYS_KO = ['일', '월', '화', '수', '목', '금', '토'];
-function todayKo(): string {
-  const d = new Date();
-  return `${d.getMonth() + 1}월 ${d.getDate()}일 ${WEEKDAYS_KO[d.getDay()]}요일`;
-}
+// (날짜 줄 제거 2026-08-04, UX 감사 ⑯ — 같은 빈 상태인데 홈은 날짜가 없고 여기만 있어
+//  두 탭의 인사 문법이 갈렸다. 홈은 신발이 있든 없든 날짜를 쓰지 않으므로 이쪽을 맞춘다.
+//  todayKo/WEEKDAYS_KO 도 소비처가 사라져 함께 삭제 — 남겨 두면 '쓰는 데가 있다'는 거짓 신호다.)
 
 // ── 진입점 ────────────────────────────────────────────────────────────────────
 export type FirstShoeProps = {
@@ -45,7 +42,6 @@ export default function FirstShoeScreen({onRegister, onTab, userName}: FirstShoe
   return (
     <View style={[s.screen, {paddingTop: insets.top}]}>
       <View style={s.greetWrap}>
-        <Text style={s.date}>{todayKo()}</Text>
         <Text style={s.greeting}>
           {greetName ? `${greetName}님,\n` : ''}첫 러닝화를 등록해볼까요?
         </Text>
@@ -53,9 +49,8 @@ export default function FirstShoeScreen({onRegister, onTab, userName}: FirstShoe
 
       <View style={s.stage}>
         <GhostShoeCard width={Math.min(Math.round(winW * 0.82), 380)} onPress={onRegister} />
-        <Text style={s.philosophy}>
-          신발이 얼마나 닳았는지 기록해서,{'\n'}부상 없이 더 오래 달리게 해드려요.
-        </Text>
+        {/* 문구는 screens/KeegoHome 단일 소스 — 홈 빈 상태와 같은 문장이어야 한다(UX 감사 ⑥). */}
+        <Text style={s.philosophy}>{EMPTY_SHOE_LINE}</Text>
       </View>
       <TabBar active={1} onTab={(i) => onTab?.(i)} />
     </View>
@@ -66,8 +61,7 @@ const s = StyleSheet.create({
   screen: {flex: 1, backgroundColor: BG},
 
   greetWrap: {paddingHorizontal: GUTTER, paddingTop: rv(18), paddingBottom: rv(20)},
-  date: {color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500'},
-  greeting: {marginTop: rv(6), color: T1, fontFamily: FONT, fontSize: TYPE.title.fontSize, fontWeight: '700', letterSpacing: -0.4, lineHeight: rf(31)},
+  greeting: {color: T1, fontFamily: FONT, fontSize: TYPE.title.fontSize, fontWeight: '700', letterSpacing: -0.4, lineHeight: rf(31)},
   // 스테이지 — 고스트 카드 + 철학 한 줄. 절대 탭 독에 가리지 않게 하단 여백 확보.
   // 히어로형 화면 — 고스트 카드 하나 + 여백이 비율(홈과 동일 결, 스택 없음 — 사용자 확정 07-10).
   stage: {flex: 1, gap: rv(24), paddingHorizontal: GUTTER, paddingTop: rv(6), paddingBottom: rv(96), alignItems: 'center'},

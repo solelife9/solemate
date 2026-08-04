@@ -30,7 +30,7 @@ import {shoeTrends, type ShoeTrend} from './lib/shoeTrends';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {recordRank, sanitizeRankBests, formatYearMonthKo,
   RANK_HISTORY_KEY, type RankBests} from './lib/rankHistory';
-import {ScreenHeader, EmptyGhostHeader, GhostBar, GhostThumb, GlassEdge} from './primitives';
+import {ScreenHeader, EmptyGhostHeader, GhostBar, GhostThumb, GlassEdge, SwipeBack} from './primitives';
 import {
   BG,
   CARD_HI,
@@ -359,6 +359,7 @@ export default function HallOfFameScreen({
   };
 
   return (
+    <SwipeBack onBack={onBack}>
     <View style={s.screen}>
       <ScrollView
         contentContainerStyle={{
@@ -523,6 +524,7 @@ export default function HallOfFameScreen({
 
       </ScrollView>
     </View>
+    </SwipeBack>
   );
 }
 

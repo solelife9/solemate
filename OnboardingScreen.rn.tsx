@@ -33,6 +33,8 @@ import {PRIVACY_URL, TERMS_URL} from './lib/legalLinks';
 import {trackOnboardingStep} from './lib/productAnalytics';
 // 신발 브랜드/모델·권장수명은 data/shoeModels(단일 소스)에서 — 메인 AddShoe 화면과 동일.
 import {getRecommendedLifespanKm} from './data/shoeModels';
+// 몸무게 보정 유효 수명 — 화면이 다시 계산하지 않고 단일 소스를 읽는다(UX 감사 ②).
+import {effectiveMaxKm, WEIGHT_WEAR_REASON_KO} from './lib/shoe';
 import Svg, {
   Circle,
   Path,
@@ -55,13 +57,12 @@ import {
   T1,
   T2,
   T3,
-  T4,
   SEP,
   FONT,
   DISPLAY,
   withAlpha, TYPE, GLASS,
   GUTTER, RADIUS, MOTION,
-  ICON,
+  ICON, TOUCH_TARGET,
 } from './theme';
 import {Button, KeegoWordmark, GlassEdge, useReduceMotion} from './primitives';
 // 러닝화 선택 모달(2열 분할 피커)은 메인 등록(AddShoeScreen)과 공유하는 단일 소스.
@@ -301,15 +302,42 @@ function ChevronDown({size = 12, color = T3}: {size?: number; color?: string}) {
     </Svg>
   );
 }
+function ChevronLeft({size = 20, color = T3}: {size?: number; color?: string}) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M15 18l-6-6 6-6" stroke={color} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
+  );
+}
 
-// 화면 1~3 공통 상단(진행 바 + 건너뛰기).
-function FlowHeader({step, total, onSkip, insetTop}: {step: number; total: number; onSkip: () => void; insetTop: number}) {
+// 화면 1~2 공통 상단(뒤로 + 진행 바 + 건너뛰기).
+//
+// 뒤로가기 신설(UX 감사 ⑭): 앞으로만 가는 사다리였다. 등록 단계에서 앞의 설명을 다시 보려면
+// **건너뛰는 수밖에 없었고**, 그 건너뛰기는 되돌릴 수 없는 완료로 이어졌다(⑥).
+// 터치 타깃(UX 감사 ⑯): 구 hitSlop 10 은 글줄 높이(≈18)와 합쳐도 38pt 로 44pt 미만이었다.
+// 이 화면만 앱 전역 규율(theme.TOUCH_TARGET) 밖이었다 → minHeight 로 확보한다.
+function FlowHeader({step, total, onSkip, onBack, insetTop}: {
+  step: number; total: number; onSkip?: () => void; onBack?: () => void; insetTop: number;
+}) {
   return (
     <View style={[s.flowHeader, {paddingTop: insetTop + 14}]}>
-      <TopProgress step={step} total={total} />
-      <Pressable testID="onboarding-skip" onPress={onSkip} hitSlop={10} accessibilityRole="button" accessibilityLabel="건너뛰기">
-        <Text style={s.skip}>건너뛰기</Text>
-      </Pressable>
+      <View style={s.flowHeaderLeft}>
+        {onBack ? (
+          <Pressable testID="onboarding-back" onPress={onBack} hitSlop={10}
+            accessibilityRole="button" accessibilityLabel="이전 단계"
+            style={({pressed}) => [s.headerBtn, pressed && s.pressed]}>
+            <ChevronLeft size={ri(ICON.inline)} />
+          </Pressable>
+        ) : null}
+        <TopProgress step={step} total={total} />
+      </View>
+      {onSkip ? (
+        <Pressable testID="onboarding-skip" onPress={onSkip} hitSlop={10}
+          accessibilityRole="button" accessibilityLabel="건너뛰기"
+          style={({pressed}) => [s.headerBtn, pressed && s.pressed]}>
+          <Text style={s.skip}>건너뛰기</Text>
+        </Pressable>
+      ) : <View style={s.headerBtn} />}
     </View>
   );
 }
@@ -317,7 +345,7 @@ function FlowHeader({step, total, onSkip, insetTop}: {step: number; total: numbe
 // ════════════════════════════════════════════════════════════════════════════
 // 0 · Welcome — 훅. 기존 배경(흑백 러너 사진 + 브랜드 그라데이션 + 하단 페이드) 유지.
 // ════════════════════════════════════════════════════════════════════════════
-function Welcome({goNext, goLogin, insetTop, insetBottom}: {goNext: () => void; goLogin: () => void; insetTop: number; insetBottom: number}) {
+function Welcome({goNext, goLogin, insetTop, insetBottom}: {goNext: () => void; goLogin?: () => void; insetTop: number; insetBottom: number}) {
   return (
     <View style={{flex: 1, backgroundColor: BG}}>
       <ImageBackground
@@ -365,17 +393,21 @@ function Welcome({goNext, goLogin, insetTop, insetBottom}: {goNext: () => void; 
           {/* 소개 스킵 — 인증 게이트(LoginScreen)는 온보딩보다 먼저이므로 여기 도달한
               시점엔 이미 로그인돼 있다. 구 카피 "이미 계정이 있나요? 로그인"은 실제 동작
               (온보딩 완료→홈)과 달라 기대 위반이라 정직한 라벨로 교체(심사 #2, 2026-07-22). */}
-          <Pressable
-            testID="onboarding-skip-intro"
-            onPress={goLogin}
-            hitSlop={8}
-            style={{alignItems: 'center', marginTop: rv(14)}}
-            accessibilityRole="button"
-            accessibilityLabel="건너뛰고 시작하기">
-            <Text style={{fontFamily: FONT, fontSize: TYPE.body.fontSize, color: T3, fontWeight: '500'}}>
-              건너뛰고 <Text style={{color: T1}}>시작하기</Text>
-            </Text>
-          </Pressable>
+          {/* 터치 타깃 44pt 확보(UX 감사 ⑯) — 구 hitSlop 8 은 글줄과 합쳐 ≈34pt 였다.
+              introOnly(다시 보기)에서는 숨긴다: 이미 본 소개를 '건너뛰고 시작'할 일이 없다. */}
+          {goLogin ? (
+            <Pressable
+              testID="onboarding-skip-intro"
+              onPress={goLogin}
+              hitSlop={10}
+              style={({pressed}) => [{alignItems: 'center', justifyContent: 'center', minHeight: rs(TOUCH_TARGET), marginTop: rv(8)}, pressed && s.pressed]}
+              accessibilityRole="button"
+              accessibilityLabel="건너뛰고 시작하기">
+              <Text style={{fontFamily: FONT, fontSize: TYPE.body.fontSize, color: T3, fontWeight: '500'}}>
+                건너뛰고 <Text style={{color: T1}}>시작하기</Text>
+              </Text>
+            </Pressable>
+          ) : null}
           {/* 약관 고지 — Ready 화면 제거(2026-07-07 재설계)로 첫 CTA 아래로 이전.
               링크는 인라인 Text onPress(터치 = 글줄 높이뿐, hitSlop 불가) 대신 Pressable 로 —
               paddingVertical + hitSlop 12 로 실효 44pt 터치 타깃 확보(HIG).
@@ -445,10 +477,12 @@ function DegradeCurve() {
   );
 }
 
-function ShoeIntelligence({goNext, onSkip, insetTop, insetBottom}: ScreenProps) {
+function ShoeIntelligence({goNext, onSkip, onBack, introOnly, insetTop, insetBottom}: ScreenProps & {introOnly?: boolean}) {
   return (
     <View style={s.screen}>
-      <FlowHeader step={1} total={2} onSkip={onSkip} insetTop={insetTop} />
+      {/* introOnly(= 마이 탭 '온보딩 다시 보기'): 이 화면이 끝이라 진행 바는 1/1,
+          '건너뛰기'는 CTA('확인')와 같은 뜻이 되므로 숨긴다 — 같은 일을 하는 버튼 둘 금지. */}
+      <FlowHeader step={1} total={introOnly ? 1 : 2} onSkip={introOnly ? undefined : onSkip} onBack={onBack} insetTop={insetTop} />
       <ScrollView style={s.flex1} contentContainerStyle={s.bodyContent} showsVerticalScrollIndicator={false}>
         <Rise>
           <Eyebrow>Your shoes matter</Eyebrow>
@@ -479,7 +513,7 @@ function ShoeIntelligence({goNext, onSkip, insetTop, insetBottom}: ScreenProps) 
         <FeatureListCard delay={240} items={VALUE_ROWS} />
       </ScrollView>
       <View style={[s.footer, {paddingBottom: Math.max(insetBottom, 18)}]}>
-        <PrimaryButton label="다음" onPress={goNext} />
+        <PrimaryButton testID="onboarding-next" label={introOnly ? '확인' : '다음'} onPress={goNext} />
       </View>
     </View>
   );
@@ -537,7 +571,7 @@ function FieldLabel({n, label}: {n: string; label: string}) {
   );
 }
 
-function Register({onSkip, onComplete, insetTop, insetBottom}: Omit<ScreenProps, 'goNext'> & {onComplete: (r: RegisteredShoe, weightKg?: number) => void}) {
+function Register({onSkip, onBack, onComplete, insetTop, insetBottom}: Omit<ScreenProps, 'goNext'> & {onComplete: (r: RegisteredShoe, weightKg?: number) => void}) {
   const [picked, setPicked] = useState<PickedShoe | null>(null);
   const [km, setKm] = useState(0);
   // 몸무게(선택) — null = 미설정(내구도 계수 1, 기존과 동일). 슬라이더를 건드리면 실제값이 잡힌다.
@@ -553,6 +587,8 @@ function Register({onSkip, onComplete, insetTop, insetBottom}: Omit<ScreenProps,
   useEffect(() => {
     setKm(k => Math.min(k, max));
   }, [max]);
+  // 앱이 실제로 쓸 수명(몸무게 보정 후). 몸무게 미설정이면 max 와 같아 안내가 뜨지 않는다.
+  const effectiveMax = weight != null ? effectiveMaxKm(max, weight) : max;
 
   const submit = () => {
     if (!picked) return;
@@ -563,7 +599,7 @@ function Register({onSkip, onComplete, insetTop, insetBottom}: Omit<ScreenProps,
 
   return (
     <View style={s.screen}>
-      <FlowHeader step={2} total={2} onSkip={onSkip} insetTop={insetTop} />
+      <FlowHeader step={2} total={2} onSkip={onSkip} onBack={onBack} insetTop={insetTop} />
       <ScrollView style={s.flex1} contentContainerStyle={s.bodyContent} showsVerticalScrollIndicator={false}>
         <Rise>
           <Eyebrow>Your first pair</Eyebrow>
@@ -582,7 +618,7 @@ function Register({onSkip, onComplete, insetTop, insetBottom}: Omit<ScreenProps,
             style={({pressed}) => [s.selector, pressed && s.pressed]}>
             <GlassEdge glints={false} radius={rs(14)} />
             <SearchIcon />
-            <Text numberOfLines={1} style={[s.selectorText, !picked && {color: T4, fontWeight: '500'}]}>
+            <Text numberOfLines={1} style={[s.selectorText, !picked && {color: T3, fontWeight: '500'}]}>
               {picked ? `${picked.brand ? `${picked.brand} · ` : ''}${picked.model}` : '브랜드·모델 선택'}
             </Text>
             <ChevronDown />
@@ -590,6 +626,14 @@ function Register({onSkip, onComplete, insetTop, insetBottom}: Omit<ScreenProps,
           <Text style={s.fieldHint}>
             {picked ? `교체 권장 ${max} km 자동 설정 — 눌러서 변경할 수 있어요` : '누르면 브랜드와 모델을 고를 수 있어요'}
           </Text>
+          {/* 몸무게 보정 예고(UX 감사 ②) — 아래 3번에서 몸무게를 잡으면 이 신발의 수명이
+              바뀐다. 예전엔 여기서 650 을 약속하고 홈에서 621 을 보여줬다. 같은 화면 안에
+              있으니 슬라이더를 움직이는 그 자리에서 결과가 따라 움직이게 한다. */}
+          {picked && effectiveMax !== max && (
+            <Text style={s.fieldHint} testID="onboarding-weight-note">
+              {WEIGHT_WEAR_REASON_KO} · 몸무게 {weight}kg 기준 <Text style={s.fieldHintStrong}>{effectiveMax}km</Text>
+            </Text>
+          )}
         </Rise>
 
         {/* 2 현재 누적 거리 */}
@@ -654,11 +698,23 @@ function Register({onSkip, onComplete, insetTop, insetBottom}: Omit<ScreenProps,
 type ScreenProps = {
   goNext: () => void;
   onSkip: () => void;
+  /** 이전 단계로. 첫 화면에서는 미주입(= 헤더에 뒤로 버튼이 안 뜬다). */
+  onBack?: () => void;
   insetTop: number;
   insetBottom: number;
 };
 
-export default function OnboardingScreen({onDone}: {onDone: (registered: RegisteredShoe | null, weightKg?: number) => void}) {
+export default function OnboardingScreen({onDone, introOnly = false}: {
+  onDone: (registered: RegisteredShoe | null, weightKg?: number) => void;
+  /**
+   * 소개만 보여주고 끝낸다(등록 단계 없음) — 마이 탭 「온보딩 다시 보기」 전용(UX 감사 ③).
+   *
+   * 이미 신발을 가진 사용자에게 "첫 러닝화를 등록해볼까요?"는 맥락이 틀렸고, 그 화면의
+   * 「등록 완료」는 실제로 아무것도 만들지 않아 **버튼이 거짓말을 하고 있었다.**
+   * 다시 보기의 목적은 소개를 다시 읽는 것이므로 거기서 끝낸다.
+   */
+  introOnly?: boolean;
+}) {
   const insets = useSafeAreaInsets();
   const reduceMotion = useReduceMotion();
   const [index, setIndex] = useState(0);
@@ -667,20 +723,23 @@ export default function OnboardingScreen({onDone}: {onDone: (registered: Registe
   useEffect(() => {
     trackOnboardingStep(index);
   }, [index]);
-  const goNext = () => setIndex(i => Math.min(2, i + 1));
+  const last = introOnly ? 1 : 2;
+  // introOnly 면 소개(index 1)가 마지막이므로 '다음'이 곧 완료다.
+  const goNext = () => setIndex(i => (i >= last ? (onDone(null), i) : i + 1));
+  const goBack = () => setIndex(i => Math.max(0, i - 1));
   // 기존 계정 링크: 인증 게이트는 온보딩보다 먼저라 이미 로그인 상태 — 소개를 건너뛰고
   // 즉시 완료 처리한다(과거 Ready 인터스티셜 제거, 동일 종착지).
   const goLogin = () => onDone(null);
   const onSkip = () => onDone(null);
-  const common = {insetTop: insets.top, insetBottom: insets.bottom, onSkip, goNext};
+  const common = {insetTop: insets.top, insetBottom: insets.bottom, onSkip, goNext, onBack: goBack};
 
   // 각 화면은 index 전환 시 마운트/언마운트되므로, 도착할 때마다 Rise 진입이 1회 재생된다.
   return (
     <ReduceMotionCtx.Provider value={reduceMotion}>
       <View testID="onboarding" style={{flex: 1, backgroundColor: BG}}>
-        {index === 0 && <Welcome goNext={goNext} goLogin={goLogin} insetTop={insets.top} insetBottom={insets.bottom} />}
-        {index === 1 && <ShoeIntelligence {...common} />}
-        {index === 2 && <Register insetTop={insets.top} insetBottom={insets.bottom} onSkip={onSkip} onComplete={onDone} />}
+        {index === 0 && <Welcome goNext={goNext} goLogin={introOnly ? undefined : goLogin} insetTop={insets.top} insetBottom={insets.bottom} />}
+        {index === 1 && <ShoeIntelligence {...common} introOnly={introOnly} />}
+        {index === 2 && <Register insetTop={insets.top} insetBottom={insets.bottom} onSkip={onSkip} onBack={goBack} onComplete={onDone} />}
       </View>
     </ReduceMotionCtx.Provider>
   );
@@ -694,6 +753,9 @@ const s = StyleSheet.create({
   // 누름 표준(MOTION.press) — 사설 opacity 값 폐지.
   pressed: {opacity: MOTION.press.opacity, transform: [{scale: MOTION.press.scale}]},
   flowHeader: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: GUTTER, paddingBottom: rv(6)},
+  flowHeaderLeft: {flexDirection: 'row', alignItems: 'center', gap: rv(10)},
+  // 헤더 버튼(뒤로·건너뛰기) — 터치 타깃 44pt(HIG · theme.TOUCH_TARGET). UX 감사 ⑯.
+  headerBtn: {minHeight: rs(TOUCH_TARGET), minWidth: rs(24), alignItems: 'center', justifyContent: 'center'},
   // 인터랙티브 텍스트는 T4(장식/disabled 전용) 금지 — 정보성 최저 톤 T3.
   skip: {fontFamily: FONT, fontSize: TYPE.label.fontSize, color: T3, fontWeight: '500'},
   flex1: {flex: 1},
@@ -756,6 +818,8 @@ const s = StyleSheet.create({
   },
   selectorText: {flex: 1, fontFamily: FONT, fontSize: TYPE.body.fontSize, fontWeight: '600', color: T1, letterSpacing: -0.2},
   fieldHint: {fontFamily: FONT, fontSize: TYPE.caption.fontSize, color: T3, marginTop: rv(8), lineHeight: rf(17)},
+  // 힌트 안에서 '앱이 실제로 쓸 숫자'만 한 단 밝게(AddShoeScreen 과 동일 문법).
+  fieldHintStrong: {color: T1, fontWeight: '700'},
   kmVal: {fontFamily: DISPLAY, fontSize: TYPE.title.fontSize, fontWeight: '600', color: T1, letterSpacing: -0.5, fontVariant: ['tabular-nums']},
   kmUnit: {fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600', color: T3, letterSpacing: 0.5},
   // 슬라이더 눈금 — 값 판독에 쓰이는 정보성 라벨이라 T4→T3 승격.

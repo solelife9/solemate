@@ -73,6 +73,34 @@ export const categoryLifespanKm: Record<ShoeCategory, number> = {
 /** category 미지정·미매칭 시 사용하는 최종 기본값 (daily_trainer 기준) */
 export const DEFAULT_LIFESPAN_KM = categoryLifespanKm.daily_trainer; // 650
 
+/**
+ * 권장 수명의 **출처 고지 문구**(UX 감사 ⑩ · 2026-08-04 신설, 2026-08-04 문구 재확정).
+ *
+ * 화면은 지금까지 "권장 650 km"만 보여줘서, 사용자는 그게 제조사 숫자인지 우리가 지어낸
+ * 숫자인지 알 수 없었다 — 같은 앱이 스펙 비교 화면에서는 `lib/shoeSpecModel.SPEC_BASIS_KO`
+ * 로 정확히 그 구분을 하는데 **수명에만 그 규율이 없었다.**
+ *
+ * **왜 '자료 기준'이라고 쓸 수 있나(중요):** 실제로 자료가 있다 —
+ * `.tenet/knowledge/2026-05-31_research-running-shoe-durability-database.md`.
+ * Nike 공식 교체 가이드 · RunRepeat · Marathon Handbook · Runners Need · Strava ·
+ * Fleet Feet/Running Warehouse 를 **교차검증**해 카테고리별 base/range 를 잡았고,
+ * 위 `categoryLifespanKm` 과 모델별 오버라이드가 그 결과다.
+ *
+ * **왜 '참고'이지 '권장'이 아닌가(중요):** 브랜드 공식 가이드는 실제로 참고했다 — sources 의
+ * Nike "how often to replace" 가 그것이다. 하지만 **"브랜드 권장 650km"라고 쓰면 거짓**이 된다:
+ * 그건 이 모델의 제조사 공표 수명으로 읽히는데, ASICS 신발에 붙는 650 은 Nike·매체·리테일러
+ * 자료를 교차검증해 **우리가** 종류별로 잡은 값이다. '참고'는 근거로 삼았다는 뜻이고, 그건 사실이다.
+ *
+ * **왜 그 이상은 못 쓰나:** 그 문서의 confidence 는 `scanned-not-verified` 다. 우리가 원문을
+ * 일차 검증하지 않았다. 그래서 "연구로 검증된"·"논문 기반" 같은 말은 쓰지 않는다.
+ * 출처 종류를 둘 다 밝히는 것도 같은 이유다 — 가장 권위 있는 하나(브랜드)만 이름 대고 나머지를
+ * 감추면, 틀린 말은 아니어도 **생략으로 신빙성을 부풀리는 것**이 된다.
+ * (BRAND.md 판정 독립 · MISSION.md Truth only · CLAUDE.md "확인한 것만 넣는다")
+ *
+ * 화면은 이 상수만 참조한다(사본 금지).
+ */
+export const LIFESPAN_BASIS_KO = '브랜드 공식 교체 가이드·러닝 매체 자료 참고';
+
 // 용도/태그(추천 러닝)는 사용자 정리 DB(data/shoes.json → data/shoeClass.ts)를 단일 소스로
 // 쓴다. 여기서 카테고리→문구를 임의로 만들던 매핑은 제거(사용자 데이터로 대체).
 

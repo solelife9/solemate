@@ -23,8 +23,11 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import Svg, { Circle, Defs, RadialGradient as SvgRadial, Stop } from 'react-native-svg';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
-import { GlassEdge, Ring, ShoeGlyph } from './primitives';
+import { GlassEdge, Ring, ShoeGlyph, useReduceMotion } from './primitives';
 import { RunLiveMap } from './RunLiveMap';
+// 스크린리더 공지(iOS 보완) — accessibilityLiveRegion 은 Android 전용이라, 아래 상태
+// 배너 5종은 iOS 에서 한 마디도 안 들렸다(UX 감사 ①). lib/a11y 가 단일 소스.
+import { useAnnounceOnEnter } from './lib/a11y';
 // 색·폰트는 전역 디자인 토큰(theme.ts)만 참조한다 — 사설 색객체(const C) 폐기.
 // 매핑: bg→BG · surface→CARD · accent→ACCENT · sage→GOOD · amber→WARN ·
 // red→DANGER · text→T1–T4 · sep→SEP. 폰트 UI/DP → FONT/DISPLAY.
@@ -202,6 +205,13 @@ export default function RunActiveScreen({
   const { height: winH } = useWindowDimensions();
   const [pausedState, setPausedState] = useState(false);
   const paused = pausedProp ?? pausedState;
+  // 동작 줄이기(DESIGN §6.7 · UX 감사 ⑧) — 이 화면만 훅을 참조하지 않아, 앱에서 모션이
+  // 가장 많은 화면이 정작 설정을 무시했다(카운트다운 팝·일시정지 전환·지도 시트·km 펄스·
+  // 세리머니). 링 스윕은 primitives.Ring 이 이미 존중하고 있었으므로 나머지를 맞춘다.
+  // 끄더라도 **정보와 동작은 하나도 줄지 않는다** — 최종 상태로 즉시 점프할 뿐이다.
+  const reduceMotion = useReduceMotion();
+  // 모션 생략 조건: jest(SKIP_ANIM) 또는 사용자의 '동작 줄이기'.
+  const noMotion = SKIP_ANIM || reduceMotion;
 
   // 확대↔축소 호흡(2026-07-07 사용자): 달릴 땐 링·핵심 지표가 크게, 일시정지하면 줄어들며
   // 서브 지표(평균페이스·케이던스·칼로리·고도)가 펼쳐진다. paused 는 수동·자동(autoPause)
@@ -215,6 +225,14 @@ export default function RunActiveScreen({
   const subIn = useRef(new Animated.Value(paused ? 1 : 0)).current;
   useEffect(() => {
     if (paused === uiPaused) return;
+    // 동작 줄이기(UX 감사 ⑧): 화면 절반이 함께 움직이는 전환이라 가장 먼저 꺼야 할 모션이다.
+    // 최종 상태로 즉시 바꾼다 — 보이는 정보와 컨트롤은 동일하다.
+    if (reduceMotion) {
+      setUiPaused(paused);
+      t.setValue(paused ? 1 : 0);
+      subIn.setValue(paused ? 1 : 0);
+      return;
+    }
     // 한 호흡 전환(2026-07-12 실기기 피드백 2차): 레이아웃 이동·생성·소멸 전부를 지도
     // 시트와 같은 420ms 커브로 동기화 — 화면 전체가 함께 내려와 바뀌는 것처럼 읽힌다.
     // delete 에 opacity 를 줘 링이 '띡' 사라지지 않고 페이드아웃되게 한다.
@@ -229,20 +247,22 @@ export default function RunActiveScreen({
       Animated.timing(t, { toValue: paused ? 1 : 0, duration: MOTION.dur.base, easing: MOTION.ease.inout, useNativeDriver: true }),
       Animated.timing(subIn, { toValue: paused ? 1 : 0, duration: paused ? 260 : MOTION.dur.fast, delay: paused ? 70 : 0, easing: MOTION.ease.quad, useNativeDriver: true }),
     ]).start();
-  }, [paused, uiPaused, t, subIn]);
+  }, [paused, uiPaused, t, subIn, reduceMotion]);
   // 일시정지 지도 등장 모션(2026-07-12 사용자 확정 — 나이키 문법): 화면이 '띡' 바뀌는 대신
   // 지도가 위에서 시트처럼 내려온다(-H→0, 420ms). 동시에 기존 LayoutAnimation(260ms)이
   // 아래 지표들을 밀어 한 호흡의 전환이 된다. 재개는 즉시 복귀(달리기 재개의 긴박함 우선).
-  const mapSlide = useRef(new Animated.Value(SKIP_ANIM ? 1 : 0)).current;
+  const mapSlide = useRef(new Animated.Value(noMotion ? 1 : 0)).current;
   const [mapH, setMapH] = useState(0);
   const mapShown = uiPaused && liveCoords.length > 0;
   useEffect(() => {
-    if (!mapShown || SKIP_ANIM) return;
+    if (!mapShown) return;
+    // 동작 줄이기: 시트가 내려오는 대신 제자리에 나타난다.
+    if (noMotion) { mapSlide.setValue(1); return; }
     mapSlide.setValue(0);
     const a = Animated.timing(mapSlide, { toValue: 1, duration: MOTION.dur.sheet, easing: MOTION.ease.inout, useNativeDriver: true });
     a.start();
     return () => a.stop();
-  }, [mapShown, mapSlide]);
+  }, [mapShown, mapSlide, noMotion]);
 
   // 일시정지 지도 패널을 탭하면 전체화면 인터랙티브 지도로 확장한다. 재개(uiPaused=false)하면 닫는다.
   const [mapFull, setMapFull] = useState(false);
@@ -255,7 +275,7 @@ export default function RunActiveScreen({
   const ringScale = t.interpolate({ inputRange: [0, 1], outputRange: [1, 0.92] });
   // 핸드오프 인트로는 '첫 마운트 한 번'만 — 링은 일시정지 때 언마운트됐다 재개 시 다시
   // 마운트되므로, prop 그대로 쓰면 재개마다 드레인이 재생된다. 첫 렌더에서 소비하고 끈다.
-  const handoffArmed = useRef(handoff && !SKIP_ANIM);
+  const handoffArmed = useRef(handoff && !noMotion);
   const handoffFrom = handoffArmed.current ? 1 : undefined;
   useEffect(() => { handoffArmed.current = false; }, []);
 
@@ -280,20 +300,25 @@ export default function RunActiveScreen({
     const beat = (n: number, i: number) => {
       setCdNum(n);
       countdownBeat();          // 3·2·1 각 박자마다 짧은 단발 진동
-      cdNumScale.setValue(1.5); cdNumOpacity.setValue(0);
-      Animated.parallel([
-        Animated.spring(cdNumScale, { toValue: 1, useNativeDriver: true, speed: 12, bounciness: 6 }),
-        Animated.timing(cdNumOpacity, { toValue: 1, duration: 180, useNativeDriver: true }),
-      ]).start();
+      // 동작 줄이기(UX 감사 ⑧): 숫자·진동·링 진행은 그대로 두고 **튀어오르는 팝만** 생략.
+      if (noMotion) { cdNumScale.setValue(1); cdNumOpacity.setValue(1); } else {
+        cdNumScale.setValue(1.5); cdNumOpacity.setValue(0);
+        Animated.parallel([
+          Animated.spring(cdNumScale, { toValue: 1, useNativeDriver: true, speed: 12, bounciness: 6 }),
+          Animated.timing(cdNumOpacity, { toValue: 1, duration: 180, useNativeDriver: true }),
+        ]).start();
+      }
       setCdProgress((i + 1) / 3); // Ring(1초 linear)이 1/3 씩 채운다
     };
     [3, 2, 1].forEach((n, i) => at(() => beat(n, i), i * 1000));
     at(() => {
       setCdPhase('go');
       goHaptic();               // GO — 카운트다운 종료, 강한 단발 진동
-      cdGoScale.setValue(0.6);
-      Animated.spring(cdGoScale, { toValue: 1, useNativeDriver: true, speed: 12, bounciness: 9 }).start();
-      Animated.timing(cdChipFade, { toValue: 0, duration: MOTION.dur.base, easing: MOTION.ease.quad, useNativeDriver: true }).start();
+      if (noMotion) { cdGoScale.setValue(1); cdChipFade.setValue(0); } else {
+        cdGoScale.setValue(0.6);
+        Animated.spring(cdGoScale, { toValue: 1, useNativeDriver: true, speed: 12, bounciness: 9 }).start();
+        Animated.timing(cdChipFade, { toValue: 0, duration: MOTION.dur.base, easing: MOTION.ease.quad, useNativeDriver: true }).start();
+      }
     }, 3000);
     at(() => cdCb.current?.onDone?.(), 3650);
     return () => timers.forEach(clearTimeout);
@@ -302,13 +327,14 @@ export default function RunActiveScreen({
 
   // 지표·컨트롤 라이즈('지표들이 날아온다') — 카운트다운 중엔 0(레이아웃은 그대로, 안 보임),
   // GO 스왑 후 엔진 인스턴스가 아래에서 떠올린다. 복구(resume) 등 핸드오프 없는 진입은 즉시 1.
-  const uiIn = useRef(new Animated.Value(cd || (handoff && !SKIP_ANIM) ? 0 : 1)).current;
+  const uiIn = useRef(new Animated.Value(cd || (handoff && !noMotion) ? 0 : 1)).current;
   useEffect(() => {
     if (cd) return;
+    if (noMotion) { uiIn.setValue(1); return; }
     const a = Animated.timing(uiIn, { toValue: 1, duration: 480, delay: 60, easing: MOTION.ease.out, useNativeDriver: true });
     a.start();
     return () => a.stop();
-  }, [cd, uiIn]);
+  }, [cd, uiIn, noMotion]);
   const uiRise = uiIn.interpolate({ inputRange: [0, 1], outputRange: [rv(14), 0] });
   // 라이브 심박 존 — 심박이 흐를 때만 산출(bpm>0). 워치 미연동이면 0 → 존 미표시.
   const hrZone = bpm > 0 ? zoneOf(bpm, estimateMaxHR(age), restHR || undefined) : 0;
@@ -325,9 +351,19 @@ export default function RunActiveScreen({
     if (resumeTimer.current) { clearInterval(resumeTimer.current); resumeTimer.current = null; }
     setResumeCd(0);
   };
+  // 언제 일시정지됐는지 — '실수로 눌린 일시정지'를 가려내는 유일한 단서(UX 감사 ⑬).
+  const pausedAtRef = useRef(0);
+  useEffect(() => { if (paused) pausedAtRef.current = Date.now(); }, [paused]);
+  /** 이 시간 안에 재개하면 카운트다운을 건너뛴다 — 그 사이엔 '멈춰 선' 적이 없다. */
+  const QUICK_RESUME_MS = 3000;
   const resumeRun = () => {
     tap();
     if (SKIP_ANIM) { togglePause(); return; }
+    // 방금 눌린 일시정지(주머니 접촉·오터치)에서 돌아올 땐 3·2·1 이 오답이다 —
+    // 카운트다운의 명분은 "정지 자세에서 달리기로 돌아갈 준비 시간"인데, 3초 전까지
+    // 달리던 사람에겐 준비가 필요 없고 3초를 더 잃을 뿐이다(UX 감사 ⑬).
+    // 자동 일시정지의 자동 재개는 애초에 이 경로를 타지 않는다.
+    if (Date.now() - pausedAtRef.current < QUICK_RESUME_MS) { togglePause(); return; }
     setResumeCd(3); countdownBeat();
     resumeTimer.current = setInterval(() => {
       setResumeCd(n => {
@@ -387,6 +423,15 @@ export default function RunActiveScreen({
     const fit = usable / (n * GLYPH_EM);
     return rf(Math.round(Math.min(base, fit)));
   };
+  // 종료 확정 → 세리머니(A안) → onStop. 세리머니 ~1.05s 는 사용자가 그만큼 늦게 종료를
+  // 누른 것과 동일한 회계(엔진은 onStop 에서 멈춤 — 데이터 정확성 불변). jest 는 즉시 종료.
+  const [ceremony, setCeremony] = useState(false);
+  const confirmStop = () => {
+    warning();
+    // 세리머니는 순수 장식이라 '동작 줄이기'에서 건너뛴다(종료 자체는 동일하게 수행).
+    if (noMotion) { onStop?.(); return; }
+    setCeremony(true);
+  };
   const holdFired = useRef(false);
   const holdRun = useRef<Animated.CompositeAnimation | null>(null);
   const fireStopOnce = () => {
@@ -407,14 +452,6 @@ export default function RunActiveScreen({
     holdRun.current = null;
     Animated.timing(holdAnim, { toValue: 0, duration: MOTION.dur.fast, useNativeDriver: false }).start();
   };
-  // 종료 확정 → 세리머니(A안) → onStop. 세리머니 ~1.05s 는 사용자가 그만큼 늦게 종료를
-  // 누른 것과 동일한 회계(엔진은 onStop 에서 멈춤 — 데이터 정확성 불변). jest 는 즉시 종료.
-  const [ceremony, setCeremony] = useState(false);
-  const confirmStop = () => {
-    warning();
-    if (SKIP_ANIM) { onStop?.(); return; }
-    setCeremony(true);
-  };
 
   // 시간 목표(#15): goalMin>0(그리고 거리 목표 없음)이면 링 진행·달성 판정이 경과시간 기준.
   // 링 센터 숫자는 시간 목표여도 거리 유지(달린 거리는 항상 1번 관심사 — NRC 동일).
@@ -433,18 +470,23 @@ export default function RunActiveScreen({
     if (!met || celebrated) return;
     setCelebrated(true);
     impactHeavy();  // 목표 달성 — 무게감 있는 단발 진동으로 성취를 알린다.
-    Animated.parallel([
-      Animated.spring(toastY, { toValue: 0, useNativeDriver: true, speed: 14, bounciness: 8 }),
-      Animated.timing(toastO, { toValue: 1, duration: MOTION.dur.base, useNativeDriver: true }),
-    ]).start();
+    // 동작 줄이기(UX 감사 ⑧): 위에서 튀어 들어오는 대신 제자리에 뜬다. 노출 시간(3.2초)과
+    // 진동·공지는 그대로 — 축하가 줄어드는 게 아니라 움직임만 없어진다.
+    if (noMotion) { toastY.setValue(0); toastO.setValue(1); } else {
+      Animated.parallel([
+        Animated.spring(toastY, { toValue: 0, useNativeDriver: true, speed: 14, bounciness: 8 }),
+        Animated.timing(toastO, { toValue: 1, duration: MOTION.dur.base, useNativeDriver: true }),
+      ]).start();
+    }
     const t = setTimeout(() => {
+      if (noMotion) { toastO.setValue(0); return; }
       Animated.parallel([
         Animated.timing(toastY, { toValue: -120, duration: MOTION.dur.base, useNativeDriver: true }),
         Animated.timing(toastO, { toValue: 0, duration: 280, useNativeDriver: true }),
       ]).start();
     }, 3200);
     return () => clearTimeout(t);
-  }, [met, celebrated, toastY, toastO]);
+  }, [met, celebrated, toastY, toastO, noMotion]);
 
   // ── km 달성 모멘트(모션 #4, 2026-07-12) — km 를 넘는 순간 링 안 거리 숫자가 한 번
   // 숨 쉬듯 커졌다 정착한다(음성 km 안내와 같은 시점). 절제 원칙: 색·글로우 없이 스케일만,
@@ -460,11 +502,14 @@ export default function RunActiveScreen({
     lastKmRef.current = k;
     if (paused || SKIP_ANIM) return;
     tap();
+    // 동작 줄이기: **햅틱은 남기고 스케일 모션만** 생략한다 — km 통과를 알리는 것은
+    // 정보이고 숫자가 부풀었다 줄어드는 것만 장식이다(UX 감사 ⑧).
+    if (reduceMotion) return;
     Animated.sequence([
       Animated.timing(kmPulse, { toValue: 1.07, duration: MOTION.dur.fast, easing: MOTION.ease.quad, useNativeDriver: true }),
       Animated.spring(kmPulse, { toValue: 1, friction: 5, tension: 120, useNativeDriver: true }),
     ]).start();
-  }, [distanceKm, paused, kmPulse]);
+  }, [distanceKm, paused, kmPulse, reduceMotion]);
 
   // GPS 상태는 문제가 있을 때만 말한다(2026-07-12 사용자 확정): '좋음/보통' 상시 표시는
   // 사용자가 조치할 게 없는 소음이라 제거. 死구간/약함(level 1)일 때만 경고 — 거리계가
@@ -481,6 +526,20 @@ export default function RunActiveScreen({
   ]), [bpm, hrZone, hrColor, calories, elevationM]);
   // 랩 구간시간(초) → m'ss" (트랙 '지난 랩' 표시용).
   const fmtLapSplit = (s: number) => `${Math.floor(s / 60)}'${String(Math.round(s % 60)).padStart(2, '0')}"`;
+
+  // ── 상태 배너 스크린리더 공지(UX 감사 ①) ─────────────────────────────────────
+  // 아래 다섯 배너는 전부 accessibilityLiveRegion 을 달고 있었지만 그건 **Android 전용**이라
+  // iOS 에서는 한 마디도 들리지 않았다. 특히 위치권한 회수·백업 실패는 "기록이 사라진다"는
+  // 경고라, 못 들으면 아무것도 안 남는 러닝을 완주하게 된다. 조건이 켜지는 순간 1회 공지하고
+  // (useAnnounceOnEnter), liveRegion 은 Android 를 위해 그대로 둔다 — 둘은 대체가 아니라 짝이다.
+  // 문구는 각 배너의 accessibilityLabel 과 같은 문장을 쓴다(듣는 말과 읽는 말이 달라선 안 된다).
+  useAnnounceOnEnter(noGpsFix && !permLost, 'GPS를 찾지 못했어요. 실내 러닝은 거리가 기록되지 않아요.');
+  useAnnounceOnEnter(gpsWeakNow && !noGpsFix, 'GPS 신호 약함, 거리 기록이 잠시 멈출 수 있어요');
+  useAnnounceOnEnter(permLost, '위치 권한이 꺼져 거리 기록을 멈췄어요. 눌러서 다시 허용하세요.');
+  useAnnounceOnEnter(snapshotFailing && !cd, '저장 공간이 부족해 러닝이 백업되지 않고 있어요. 지금 앱이 꺼지면 이 기록을 잃을 수 있어요.');
+  useAnnounceOnEnter(uiPaused && pausedMoveNudge && !cd, '일시정지 중이에요. 지금 움직임은 기록되지 않아요. 재개를 눌러 이어서 달리세요.');
+  // 목표 달성도 같은 이유로 iOS 에서 안 들렸다 — 토스트가 pointerEvents:none 이라 탐색으로도 못 찾는다.
+  useAnnounceOnEnter(met, timeGoal ? `목표 ${goalMin}분 달성! 계속 달려요` : `목표 ${goalKm}킬로미터 달성! 계속 달려요`);
 
   return (
     <View style={[r.screen, { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 16 }]}>
@@ -638,7 +697,12 @@ export default function RunActiveScreen({
               <Text style={r.lapHeroUnit}>바퀴</Text>
             </View>
           ) : (
-            <Animated.View style={{ alignItems: 'center', transform: [{ scale: kmPulse }] }} accessibilityRole="text" accessibilityLiveRegion="polite"
+            // live region 없음(UX 감사 ①): 이 라벨은 GPS 픽스마다(≈1초) 바뀌는데 polite
+            // live region 을 걸어 두면 Android TalkBack 이 러닝 내내 이 긴 문장을 반복해
+            // 다른 컨트롤 탐색이 사실상 불가능해진다. 거리 진행은 음성 코칭(runVoice, km
+            // 단위 안내)이 이미 말하고, 스크린리더 사용자는 이 요소로 스와이프해 언제든
+            // 현재 값을 들을 수 있다 — 라벨(목표·남은 거리 포함)은 그대로 둔다.
+            <Animated.View style={{ alignItems: 'center', transform: [{ scale: kmPulse }] }} accessibilityRole="text"
               accessibilityLabel={`달린 거리 ${distanceKm.toFixed(2)}킬로미터${timeGoal ? (met ? `, 목표 ${goalMin}분 달성` : `, 목표 ${goalMin}분 중 ${Math.floor(elapsedSec / 60)}분 경과`) : goalKm ? (met ? `, 목표 ${goalKm}킬로미터 달성, ${over.toFixed(2)}킬로미터 초과` : `, 목표 ${goalKm}킬로미터까지 ${remain.toFixed(2)}킬로미터 남음`) : ''}`}>
               {/* 링 센터: 큰 거리 숫자 + 'km' 단위만. 목표·퍼센티지 표기는 화면에서 제거하고
                   음성으로만 안내한다(나이키식, 사용자 요청). 링의 채워지는 호가 진행을 시각화.
@@ -811,7 +875,11 @@ export default function RunActiveScreen({
         style={[r.controls, { opacity: uiIn, transform: [{ translateY: uiRise }] }]}>
         {!paused ? (
           <View style={{ alignItems: 'center', gap: rv(8) }}>
-            <Pressable onPress={pauseRun} accessibilityRole="button" accessibilityLabel="일시정지" style={({ pressed }) => [r.cPrimary, pressed && { opacity: 0.85 }]}>
+            {/* accessibilityHint 신설(UX 감사 ⑮) — 종료 버튼엔 있는데 여기만 없었다.
+                일시정지가 무엇을 멈추는지(기록) 스크린리더가 말해 준다. */}
+            <Pressable onPress={pauseRun} accessibilityRole="button" accessibilityLabel="일시정지"
+              accessibilityHint="거리·시간 기록을 잠시 멈춥니다"
+              style={({ pressed }) => [r.cPrimary, pressed && { opacity: 0.85 }]}>
               <Ionicons name="pause" size={ri(ICON.hero)} color={T1} />
               <GlassEdge glints={false} fade={false} radius={rs(44)} />
             </Pressable>
@@ -1047,5 +1115,10 @@ const r = StyleSheet.create({
   cResume: { width: rs(76), height: rs(76), borderRadius: RADIUS.pill, overflow: 'hidden', backgroundColor: withAlpha(T1, 0.1), alignItems: 'center', justifyContent: 'center' },
   cStopWrap: { width: rs(76), height: rs(76), alignItems: 'center', justifyContent: 'center' },
   cStop: { width: rs(76), height: rs(76), borderRadius: RADIUS.pill, overflow: 'hidden', backgroundColor: withAlpha(T1, 0.1), alignItems: 'center', justifyContent: 'center' },
-  ctrlHint: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500' },
+  // 러닝 화면 동작 힌트(일시정지·길게 눌러 종료·재개) — UX 감사 ⑦.
+  // 구 caption(13) + T3 는 이 화면에서 **가장 작고 흐린** 글자였는데, 그게 하필
+  // "어떻게 끝내지?"를 답하는 유일한 텍스트였다. 이 화면은 다른 화면의 '작고 절제된'
+  // 기준을 따르지 않는다(값 40 · 라벨 16/흰75% 와 같은 판단) → label(14) + 흰 75%.
+  ctrlHint: { color: withAlpha(T1, 0.75), fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600', letterSpacing: 0.2 },
+
 });

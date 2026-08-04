@@ -71,8 +71,14 @@ export const T2 = '#EBEBF5';
 // smallest captions clear WCAG AA contrast on the dark surfaces (CARD/BG): ~5.2→
 // ~6.3:1 on CARD. Still clearly a muted secondary tone (dark direction intact).
 export const T3 = '#9C9CA3';
-// Quaternary text — dimmer than T3 for the faintest captions/units (sub-metric
-// 단위·라벨, 빈 GPS 바). 다크 표면에서 보조 정보 위계의 가장 약한 톤.
+// ⚠️ **텍스트·아이콘에 쓰지 말 것.** T4 는 BG 위 2.64:1 · CARD 위 2.26:1 로,
+// WCAG AA 본문(4.5:1)은 물론 큰 글자·UI 컴포넌트 최소치(3:1)에도 못 미친다.
+// 2026-08-04 UX 감사 ⑤에서 실제로 **읽어야 하는 값**들이 여기 있었다 — 신발 비교표의
+// 브랜드명·단위·'스펙 없음(—)', 페이스 플랜 칩의 km 번호, 검색 플레이스홀더, 인증서
+// 필드 라벨. 전부 T3(7.25:1)로 올렸다. baseline 이 T3 를 #8E8E93→#9C9CA3 로 올린 조치가
+// T4 에는 적용되지 않아 남아 있던 사각지대였다.
+// 남은 정당한 용도 = **순수 장식뿐**: 의미 없는 구분점(러닝 코칭 칩의 3px 점), 빈 상태
+// 고스트 실루엣(메달 아카이브 placeholder). 정보를 담는 순간 T3 로 올린다.
 export const T4 = '#54545b';
 // 순수 검정 — 셰이딩/그림자 프리미티브(메달 3D 모델링의 그늘 알파 스톱 등) 단일 토큰.
 // 표면 배경은 BG(#0A0A0A)를 쓰고, 이 토큰은 오직 셰이딩·그림자 알파 스톱에만 쓴다.

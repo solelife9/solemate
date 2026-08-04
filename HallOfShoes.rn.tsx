@@ -27,7 +27,6 @@ import {
   T1,
   T2,
   T3,
-  T4,
   SEP,
   FONT,
   DISPLAY,
@@ -408,7 +407,7 @@ const st = StyleSheet.create({
   certX: {position: 'absolute', width: rs(34), height: rs(34), borderRadius: rs(17), backgroundColor: GLASS.fill, alignItems: 'center', justifyContent: 'center', zIndex: 2, overflow: 'hidden'},
   coMast: {flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', alignSelf: 'stretch', marginBottom: rv(28)},
   coRunner: {alignItems: 'flex-start', gap: rv(4)},
-  coSignK: {fontFamily: FONT, fontSize: TYPE.micro.fontSize, fontWeight: '700', letterSpacing: 1.4, color: T4},
+  coSignK: {fontFamily: FONT, fontSize: TYPE.micro.fontSize, fontWeight: '700', letterSpacing: 1.4, color: T3},
   coSignNm: {fontFamily: FONT, fontSize: TYPE.heading.fontSize, fontWeight: '700', color: T1},
   // RETIRED 연도 칩 — 골드 소액센트(헌액 연도)
   coSeal: {alignItems: 'center', gap: rv(2), borderRadius: RADIUS.pill, borderWidth: 1, borderColor: withAlpha(HALL_GOLD, 0.35), paddingVertical: rv(6), paddingHorizontal: rs(14)},
@@ -425,11 +424,11 @@ const st = StyleSheet.create({
   coMeta: {flexDirection: 'row', alignSelf: 'stretch', marginTop: rv(28)},
   coCell: {flex: 1, gap: rv(4), paddingHorizontal: rs(8), alignItems: 'center'},
   coCellDiv: {borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: SEP},
-  coK: {fontFamily: FONT, fontSize: TYPE.micro.fontSize, fontWeight: '700', letterSpacing: 1.2, color: T4},
+  coK: {fontFamily: FONT, fontSize: TYPE.micro.fontSize, fontWeight: '700', letterSpacing: 1.2, color: T3},
   coV: {fontFamily: DISPLAY, fontSize: TYPE.label.fontSize, fontWeight: '700', color: T1, textAlign: 'center', lineHeight: rf(18)},
   coS: {fontFamily: DISPLAY, fontSize: TYPE.caption.fontSize, fontWeight: '600', color: T3, fontVariant: ['tabular-nums']},
   coRule: {alignSelf: 'stretch', height: StyleSheet.hairlineWidth, backgroundColor: SEP, marginTop: rv(26)},
-  coFootKg: {fontFamily: FONT, fontSize: TYPE.micro.fontSize, fontWeight: '700', letterSpacing: 2.8, color: T4, marginTop: rv(16)},
+  coFootKg: {fontFamily: FONT, fontSize: TYPE.micro.fontSize, fontWeight: '700', letterSpacing: 2.8, color: T3, marginTop: rv(16)},
   offscreen: {position: 'absolute', left: -4000, top: 0, opacity: 0},
 
   // ── 빈 상태(고스트) ──

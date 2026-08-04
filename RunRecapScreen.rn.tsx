@@ -14,7 +14,7 @@ import type {Text as RNText} from 'react-native'; // ref 인스턴스 타입 전
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {BG, BLACK, CARD_HI, ACCENT, GOOD, WARN, DANGER, HALL_GOLD, T1, T2, T3, FONT, RADIUS, GUTTER, SEP, withAlpha, TYPE, GLASS, NUM, MOTION, ICON} from './theme';
-import {GlassEdge, StatGrid, useReduceMotion, Input} from './primitives';
+import {GlassEdge, StatGrid, useReduceMotion, Input, SwipeBack} from './primitives';
 import {RACE_DISTANCE_LABEL, type RaceMatch} from './data/raceEvents';
 import {fmtPaceSec} from './lib/pacePlan';
 import {fmtPace} from './lib/format';
@@ -276,7 +276,10 @@ export default function RunRecapScreen({
   const cardModel = buildShareCardModel(shareInput);
   const onShare = () => setShareOpen(true);
   const closeWithMeta = () => { commitMemo(); onClose?.(); };
+  // 엣지 스와이프 백(UX 감사 ⑨) — 닫기 버튼과 **같은 경로**(closeWithMeta)를 탄다.
+  // 메모를 커밋하지 않고 나가면 방금 쓴 글이 조용히 사라지므로 onClose 를 직접 물리지 않는다.
   return (
+    <SwipeBack onBack={closeWithMeta}>
     <View style={[s.screen, {paddingTop: insets.top}]} testID="run-recap-screen">
       {/* 기록 삭제(심사 #1) — 자동 저장 전환으로 '버리기'가 여기로 왔다. 축하 위계를 해치지
           않게 우상단의 조용한 휴지통 하나(확인 다이얼로그는 App 담당). */}
@@ -546,6 +549,7 @@ export default function RunRecapScreen({
         </View>
       )}
     </View>
+    </SwipeBack>
   );
 }
 

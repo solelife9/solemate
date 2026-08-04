@@ -48,7 +48,7 @@ import { STANDARD_DISTANCES } from './lib/bestEfforts';
 import { fitnessSummary } from './lib/analytics/fitness';
 import { fmtTime } from './lib/format';
 // 몸무게가 러닝화 수명에 주는 효과를 설정 화면이 직접 밝히기 위한 단일 소스(UX 감사 ②).
-import { WEIGHT_DURABILITY_REF_KG, weightDurabilityFactor } from './lib/shoe';
+import { WEIGHT_DURABILITY_REF_KG, WEIGHT_WEAR_REASON_KO, weightDurabilityFactor } from './lib/shoe';
 import { authErrorMessage } from './lib/authErrorMessage';
 import { PRIVACY_URL, TERMS_URL, SUPPORT_EMAIL, SUPPORT_URL } from './lib/legalLinks';
 import { trackLogin } from './lib/productAnalytics';
@@ -1205,8 +1205,8 @@ export default function ProfileScreen({
                     숫자가 왜 카탈로그 권장값과 다른지 알 방법이 없었다(UX 감사 ②).
                     방향(무거울수록 짧게)·기준(65kg)·현재 효과(%)를 전부 밝힌다. */}
                 <Text style={s.panelHint}>
-                  {`러닝 칼로리·러닝화 수명 계산에 사용돼요 · ${WEIGHT_DURABILITY_REF_KG}kg 기준으로 무거울수록 수명을 짧게 잡아요`}
-                  {weightPct !== 0 ? ` (지금은 ${weightPct > 0 ? '+' : ''}${weightPct}%)` : ''}
+                  {`러닝 칼로리·러닝화 수명 계산에 써요 · ${WEIGHT_WEAR_REASON_KO}(${WEIGHT_DURABILITY_REF_KG}kg 기준)`}
+                  {weightPct !== 0 ? ` (지금 ${weightPct > 0 ? '+' : ''}${weightPct}%)` : ''}
                 </Text>
                 <View style={{ marginTop: rv(14) }}>
                   <Stepper value={age > 0 ? age : '미설정'} suffix="나이(세)" onMinus={() => stepAge(-1)} onPlus={() => stepAge(1)} />

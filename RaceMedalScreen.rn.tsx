@@ -12,7 +12,7 @@ import {Text, TextInput} from './lib/text';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {BG, CARD_BORDER, CARD_HI, GOOD, WARN, HALL_GOLD, T1, T2, T3, SEP, FONT, DISPLAY, withAlpha, TYPE, GLASS, RADIUS, GUTTER, MOTION, ICON} from './theme';
-import {Button, Chip, GlassEdge, Input} from './primitives';
+import {Button, Chip, GlassEdge, Input, SwipeBack} from './primitives';
 import {capturePhotoWithPermission} from './lib/photo';
 import {showPermissionSettingsDialog} from './lib/dialog';
 import MedalCamera from './MedalCamera';
@@ -153,9 +153,18 @@ export default function RaceMedalScreen({
     onSave(medal);
   };
 
+  // 단계 인지 뒤로가기 — 헤더 버튼과 엣지 스와이프가 같은 동작을 쓴다(UX 감사 ⑨).
+  // 'record' 에서는 대회 선택으로 돌아가고(밖에서 대회를 받았으면 그 단계가 없으니 닫기),
+  // 'race' 에서는 닫기다.
+  const goBackStep = () => {
+    if (step === 'record' && !presetRace) { setStep('race'); return; }
+    onClose();
+  };
+
   // ── 대회 선택 ──
   if (step === 'race') {
     return (
+      <SwipeBack onBack={goBackStep}>
       <View style={[s.screen, {paddingTop: insets.top}]} testID="race-medal-select">
         <View style={s.nav}>
           <Pressable onPress={onClose} hitSlop={8} accessibilityRole="button" accessibilityLabel="닫기" style={s.iconBtn}><Ionicons name="close" size={ri(ICON.action)} color={T2} /></Pressable>
@@ -192,14 +201,16 @@ export default function RaceMedalScreen({
           </View>
         </ScrollView>
       </View>
+      </SwipeBack>
     );
   }
 
   // ── 기록(촬영 + OCR + 확인) ──
   return (
+    <SwipeBack onBack={goBackStep}>
     <View style={[s.screen, {paddingTop: insets.top}]} testID="race-medal-record">
       <View style={s.nav}>
-        <Pressable onPress={() => (presetRace ? onClose() : setStep('race'))} hitSlop={8} accessibilityRole="button" accessibilityLabel="뒤로" style={s.iconBtn}><Ionicons name={presetRace ? 'close' : 'chevron-back'} size={presetRace ? 18 : 20} color={T2} /></Pressable>
+        <Pressable onPress={goBackStep} hitSlop={8} accessibilityRole="button" accessibilityLabel="뒤로" style={s.iconBtn}><Ionicons name={presetRace ? 'close' : 'chevron-back'} size={presetRace ? 18 : 20} color={T2} /></Pressable>
         <Text style={s.navTitle} numberOfLines={1}>{raceName || '대회 기록'}</Text>
         <View style={{width: rs(36)}} />
       </View>
@@ -277,6 +288,7 @@ export default function RaceMedalScreen({
         {cameraOpen && <MedalCamera onCapture={onMedalCaptured} onCancel={() => setCameraOpen(false)} />}
       </Modal>
     </View>
+    </SwipeBack>
   );
 }
 

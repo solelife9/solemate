@@ -40,7 +40,7 @@ import {
   ICON,
   RING_ACCENT,
 } from './theme';
-import {Button, GlassEdge} from './primitives';
+import {Button, GlassEdge, SwipeBack} from './primitives';
 import {Unit} from './lib/units';
 import {
   buildRetirementSummary,
@@ -179,7 +179,10 @@ function RetirementFlow({
   };
   const onShare = () => shareRetirementCard(cardRef, model);
 
+  // 엣지 스와이프 백(UX 감사 ⑨) — 상단 닫기와 같은 동작. 전체화면의 절반만 지원해
+  // 한 번 통한 제스처가 다음 화면에서 먹통이 되던 불일치를 없앤다.
   return (
+    <SwipeBack onBack={onClose}>
     <View style={[s.screen, {paddingTop: insets.top}]}>
       {/* 상단 바: 닫기 + 스텝 진행 점(4) */}
       <View style={s.nav}>
@@ -319,6 +322,7 @@ function RetirementFlow({
         )}
       </View>
     </View>
+    </SwipeBack>
   );
 }
 

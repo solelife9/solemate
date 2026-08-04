@@ -21,9 +21,9 @@ import {
   ICON,
 } from './theme';
 import type { RankTier } from './lib/progression/types';
-import { TabBar, TABBAR_CLEARANCE, KeegoWordmark, SectionTitle, AmbientBackdrop, GlassEdge, BottomSheet } from './primitives';
+import { TabBar, TABBAR_CLEARANCE, KeegoWordmark, SectionTitle, AmbientBackdrop, GlassEdge, BottomSheet, Rise } from './primitives';
 import { Unit } from './lib/units';
-import { ShoeCard as KeegoShoeCard, GhostShoeCard, Guardian } from './screens/KeegoHome';
+import { ShoeCard as KeegoShoeCard, GhostShoeCard, Guardian, EMPTY_SHOE_LINE } from './screens/KeegoHome';
 import { shoeHealth, wearTier } from './lib/shoe';
 import { recommendNextShoes, buildShopLinks, categoryLabelKo, AFFILIATE_DISCLOSURE } from './lib/affiliate';
 import { type ReplacementForecast } from './lib/wearView';
@@ -79,19 +79,10 @@ export type HomeProgression = {
 // 주는 유일한 전환 모션. JS 드라이버(false) — 코드베이스 관례(TabBar 등)이자
 // react-test-renderer 호환(네이티브 드라이버는 테스트 렌더러에서 nativeTag 연결이 깨짐).
 // 420ms 단발이라 JS 드라이버로도 체감 차이 없음.
-function Rise({ delay = 0, children }: { delay?: number; children: React.ReactNode }) {
-  const v = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    const anim = Animated.timing(v, { toValue: 1, duration: MOTION.dur.sheet, delay, easing: MOTION.ease.out, useNativeDriver: false });
-    anim.start();
-    return () => anim.stop(); // 언마운트 시 타이머 정리(테스트/화면전환 누수 방지)
-  }, [v, delay]);
-  return (
-    <Animated.View style={{ opacity: v, transform: [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [14, 0] }) }] }}>
-      {children}
-    </Animated.View>
-  );
-}
+// 2026-08-04(UX 감사 ⑧): 로컬 재구현을 **primitives.Rise 로 수렴**했다. 값(14px 상승·
+// easing·JS 드라이버)이 프리미티브와 이미 같았고, 다른 점은 하나뿐이었다 — 이 사본만
+// **'동작 줄이기'를 무시했다.** 같은 모션이 화면마다 지켜지기도 하고 안 지켜지기도 하는
+// 상태였다. 사본을 지우면 그 갈림 자체가 사라진다(Rise 는 primitives 에서 import).
 
 function TopBar({ onAddShoe }: { onAddShoe?: () => void }) {
   return (
@@ -368,9 +359,8 @@ function EmptyHome({ onAddShoe }: { onAddShoe?: () => void }) {
         <GhostShoeCard width={HERO_W} onPress={onAddShoe} />
       </Rise>
       <Rise delay={80}>
-        <Text style={s.emptyPhilosophy}>
-          신발이 얼마나 닳았는지 기록해서,{'\n'}부상 없이 더 오래 달리게 해드려요.
-        </Text>
+        {/* 문구는 screens/KeegoHome 단일 소스 — 신발 탭 빈 상태와 같은 문장이어야 한다. */}
+        <Text style={s.emptyPhilosophy}>{EMPTY_SHOE_LINE}</Text>
       </Rise>
     </View>
   );

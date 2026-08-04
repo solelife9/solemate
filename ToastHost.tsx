@@ -10,10 +10,11 @@
 
 import React, {useEffect, useRef, useState} from 'react';
 import { rs } from './lib/responsive';
-import {AccessibilityInfo, Animated, Platform, StyleSheet, Pressable} from 'react-native';
+import {Animated, StyleSheet, Pressable} from 'react-native';
 import {Text} from './lib/text';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {CARD_HI, ACCENT, T1, SEP, FONT, RADIUS, SPACE, TYPE, MOTION, SHADOW} from './theme';
+import {announceForA11y} from './lib/a11y';
 import {
   subscribeToast, runToastAction, getCurrentToast, ToastEntry,
   subscribeToastClearance, getToastClearance,
@@ -42,13 +43,12 @@ export default function ToastHost() {
         setToast(next);
         // iOS VoiceOver 공지 — accessibilityLiveRegion 은 Android 전용 prop 이라
         // iOS 는 명시적으로 announce 해야 들린다(P0 심사 #4). Android 는 liveRegion 이
-        // 이미 읽어 주므로 중복 공지하지 않는다.
-        if (Platform.OS === 'ios') {
-          const announce = next.actionLabel && next.actionLabel.trim()
-            ? `${next.message}. ${next.actionLabel} 버튼이 있어요.`
-            : next.message;
-          AccessibilityInfo.announceForAccessibility(announce);
-        }
+        // 이미 읽어 주므로 중복 공지하지 않는다(플랫폼 분기는 lib/a11y 안에 있다).
+        // 2026-08-04: 이 로직이 앱에서 유일한 announce 였고 러닝 화면 배너는 그걸 안 써서
+        // iOS 에서 침묵했다 — 단일 소스(lib/a11y)로 올려 다른 화면도 같은 규약을 쓴다.
+        announceForA11y(next.actionLabel && next.actionLabel.trim()
+          ? `${next.message}. ${next.actionLabel} 버튼이 있어요.`
+          : next.message);
         translateY.setValue(SLIDE_DP);
         opacity.setValue(0);
         Animated.parallel([

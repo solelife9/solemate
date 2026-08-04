@@ -10,7 +10,7 @@ import {Text} from './lib/text';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {
-  BG, CARD_HI, GLASS, ACCENT, DANGER, WARN, GOOD, T1, T2, T3, T4, FONT, DISPLAY, withAlpha, RADIUS, GUTTER, MOTION, Shoe, Run, SHOES, TYPE,
+  BG, CARD_HI, GLASS, ACCENT, DANGER, WARN, GOOD, T1, T2, T3, FONT, DISPLAY, withAlpha, RADIUS, GUTTER, MOTION, Shoe, Run, SHOES, TYPE,
   BAR, NUMERIC,
   ICON,
 } from './theme';
@@ -19,7 +19,9 @@ import { RunCard, RunDetail } from './HistoryScreen.rn';
 import { FuelGauge } from './FuelGauge';
 import FirstShoeScreen from './FirstShoeScreen.rn';
 import { Unit, displayNum } from './lib/units';
-import { wearTier, SHOE_REPLACE_PCT, clampMaxKm } from './lib/shoe';
+import { wearTier, SHOE_CAUTION_PCT, SHOE_REPLACE_PCT, clampMaxKm, WEIGHT_WEAR_REASON_KO } from './lib/shoe';
+// 권장 수명의 출처 고지(UX 감사 ⑩) — 문구는 data/shoeModels 단일 소스.
+import { LIFESPAN_BASIS_KO } from './data/shoeModels';
 import { assessShoeInjuryRisk } from './lib/injury';
 import { buildWearView, forecastConfidenceKo, forecastLineKo, type ReplacementForecast } from './lib/wearView';
 import { findShoeClass, typeLabel, purposeSentenceKo } from './data/shoeClass';
@@ -316,10 +318,16 @@ function ShoeDetail({
               </Pressable>
             ) : undefined}
           />
-          {/* 몸무게 반영 안내 — 게이지 수명(유효)이 기저와 다를 때만. 투명성(왜 650이 아닌지). */}
-          {weightAdjusted && (
-            <Text style={s.weightNote}>몸무게 반영 · 기저 {editBaseDisp}{unit}</Text>
-          )}
+          {/* 이 숫자가 어디서 왔는지(UX 감사 ②·⑩). 한 줄에 다 이어 붙였더니 45자가 넘어
+              읽히지 않았다(민우님 2026-08-04) — **성격이 다른 두 문장**이라 줄을 나눈다.
+              위: 이 수명이 어디서 온 값인가 · 아래: 언제 경고가 뜨는가.
+              임계(80/90)는 lib/shoe 상수에서 읽는다(사본 금지). '기저'는 우리 말이라 '기본'으로. */}
+          <Text style={s.weightNote} testID="shoe-basis-note">
+            {weightAdjusted ? `${WEIGHT_WEAR_REASON_KO} · 기본 ${editBaseDisp}${unit}\n` : ''}{LIFESPAN_BASIS_KO}
+          </Text>
+          <Text style={s.weightNoteSub}>
+            {SHOE_CAUTION_PCT}%부터 교체 안내, {SHOE_REPLACE_PCT}%부터 교체 권장
+          </Text>
           {maxEditOpen && onSetMaxKm && (
             <View style={s.maxStepRow}>
               <Pressable onPress={() => stepMaxKm(-50)} hitSlop={10} accessibilityRole="button" accessibilityLabel="수명 50 줄이기" style={s.maxEditToggle}><Ionicons name="remove" size={ri(ICON.inline)} color={T1} /></Pressable>
@@ -383,7 +391,9 @@ function ShoeDetail({
             style={({ pressed }) => [s.retireLink, pressed && s.pressed]}>
             <Ionicons name="ribbon-outline" size={ri(ICON.inline)} color={T3} />
             <Text style={s.retireLinkTxt}>이 신발 은퇴시키기</Text>
-            <Ionicons name="chevron-forward" size={ri(ICON.tag)} color={T4} />
+            {/* 셰브론도 T3 — 같은 버튼 안 형제 아이콘과 톤이 갈려 있었고, T4 는 UI 컴포넌트
+                최소 대비(3:1)에 못 미친다(UX 감사 ⑤). */}
+            <Ionicons name="chevron-forward" size={ri(ICON.tag)} color={T3} />
           </Pressable>
         )}
 
@@ -443,6 +453,11 @@ function ShoeDetail({
           )}
         </View>
         {shoeRuns.length === 0 ? (
+          // UX 감사 ⑪(신발 상세 빈 기록에 다음 행동 없음)은 **여기서 고치지 않는다.**
+          // 상세에 '이 신발로 달리기' CTA 를 두는 건 승인된 목업 09 결정(런 시작은 락커
+          // 카드의 ▶ 가 담당)과 정면으로 충돌하고, 회귀 가드가 그 결정을 지키고 있다
+          // (__tests__/ShoesScreen.test.tsx '신발 상세 진입 — 런 시작 CTA 없음').
+          // 디자인 결정을 코드에서 뒤집는 건 자율 범위 밖이라 민우님 판단으로 남긴다.
           <View style={[s.card, { padding: rs(16), alignItems: 'center' }]}>
             <GlassEdge glints={false} radius={RADIUS.lg} />
             <Text style={{ color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize }}>아직 기록이 없어요</Text>
@@ -873,7 +888,9 @@ const s = StyleSheet.create({
   maxStepRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rs(20), marginTop: rv(14) },
   maxStepVal: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.heading.fontSize, fontWeight: '600', fontVariant: ['tabular-nums'], minWidth: rs(96), textAlign: 'center' },
   maxStepUnitTxt: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500' },
-  weightNote: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500', textAlign: 'center', marginTop: rv(8) },
+  // 근거 두 줄 — 위(출처)가 아래(임계)보다 한 단 밝다. 둘 다 캡션 급이라 행간을 준다.
+  weightNote: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500', textAlign: 'center', marginTop: rv(10), lineHeight: rf(17) },
+  weightNoteSub: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500', textAlign: 'center', marginTop: rv(2), lineHeight: rf(17), opacity: .8 },
 
   // primitives.Input 표준(유리 표면·RADIUS.input) 위에 이름 편집 전용 타이포만 얹는다.
   editInput: { fontSize: TYPE.heading.fontSize, fontWeight: '500' },

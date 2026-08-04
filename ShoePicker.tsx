@@ -18,7 +18,7 @@ import {findShoeModel, getRecommendedLifespanKm} from './data/shoeModels';
 // 번들 + 원격 카탈로그. 원격이 늦게 도착해도 이 훅이 알아서 다시 그린다(lib/shoeCatalogStore).
 import {useShoeModels, useShoeBrands} from './lib/shoeCatalogStore';
 import {categoryLabelKo} from './lib/affiliate';
-import {BG, CARD, T1, T3, T4, SEP, FONT, withAlpha, GUTTER, MOTION} from './theme';
+import {BG, CARD, T1, T3, SEP, FONT, withAlpha, GUTTER, MOTION} from './theme';
 import {Button, Input} from './primitives';
 // 검색 0건 신호 — 카탈로그가 낡는 문제에 대한 구조적 답이다(docs/shoes-spec.md §6).
 // 사람이 눈치채기를 기다리지 않고, "사용자가 찾았는데 없던 것"을 데이터로 남긴다.
@@ -227,7 +227,7 @@ export function ShoePicker({visible, onClose, onPick, myShoes, insetTop, insetBo
                   value={query}
                   onChangeText={setQuery}
                   placeholder={`${selBrand} 검색`}
-                  placeholderTextColor={T4}
+                  placeholderTextColor={T3}
                   style={s.pkInput}
                   // 모델명 상한(QA 감사 Q-9). 이 값이 그대로 '직접 추가'의 모델명이 되고
                   // 신발 이름·카탈로그 요청 신호로 흘러간다 — 서버 규칙도 60자가 상한이라
@@ -336,7 +336,7 @@ const s = StyleSheet.create({
   pkCancel: {fontFamily: FONT, fontSize: rf(16), fontWeight: '500', color: T1},
   // 내 러닝화 섹션 — 세로를 너무 먹으면 아래 2열 피커가 눌리므로 상한을 둔다.
   pkMine: {paddingHorizontal: rs(18), paddingBottom: rv(6)},
-  pkMineHead: {fontFamily: FONT, fontSize: rf(11), fontWeight: '700', color: T4,
+  pkMineHead: {fontFamily: FONT, fontSize: rf(11), fontWeight: '700', color: T3,
     letterSpacing: 1.1, marginBottom: rv(4)},
   pkMineList: {maxHeight: rv(148)},
   pkSplit: {flex: 1, flexDirection: 'row', borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP},

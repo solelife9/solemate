@@ -2,7 +2,9 @@
 // AddShoeScreen.rn.tsx — register a new shoe.
 // 2026-07-07: 등록 UX 를 온보딩과 통일 — 브랜드 칩 + 모델 검색 모달을 하나의
 // '내 러닝화' 선택 필드 + 공용 2열 분할 피커(ShoePicker)로 대체한다(사용자 지시).
-// 나머지(사진·교체 권장 거리·현재 누적 거리)는 그대로 유지한다.
+// 입력은 셋뿐이다: 러닝화 · 교체 권장 거리 · 현재 누적 거리.
+// (구 주석은 '사진'도 유지한다고 적었지만 이 화면엔 사진 필드가 없다 — 스테일 주석 정리
+//  2026-08-04. 신발 사진은 신발 상세에서 따로 등록한다.)
 // ============================================================================
 import React, { useState } from 'react';
 import { rs, ri, rv } from './lib/responsive';
@@ -15,17 +17,28 @@ import {
   GUTTER, MOTION,
   ICON,
 } from './theme';
-import { Button, GlassEdge, Input } from './primitives';
+import { Button, GlassEdge, Input, SwipeBack } from './primitives';
 // 러닝화 모델 카탈로그·권장수명은 data/shoeModels(단일 소스)에서 가져온다.
-import { getRecommendedLifespanKm } from './data/shoeModels';
+import { getRecommendedLifespanKm, LIFESPAN_BASIS_KO } from './data/shoeModels';
 // 러닝화 선택은 온보딩과 공유하는 2열 분할 피커(단일 소스).
 import { ShoePicker, type PickedShoe } from './ShoePicker';
 // maxKm 0 같은 비정상값을 제출 시 인라인으로 차단(빨강 헬퍼텍스트).
 import { validateMaxKm } from './lib/inputMask';
+// 몸무게 보정 유효 수명 — 화면이 직접 계산하지 않고 단일 소스를 읽는다(UX 감사 ②).
+import { effectiveMaxKm, WEIGHT_WEAR_REASON_KO } from './lib/shoe';
 
 export default function AddShoeScreen({
-  onClose, onSave,
-}: { onClose?: () => void; onSave?: (shoe: Shoe) => void }) {
+  onClose, onSave, weightKg = 0,
+}: {
+  onClose?: () => void; onSave?: (shoe: Shoe) => void;
+  /**
+   * 설정된 몸무게(kg). 여기 입력하는 '교체 권장 거리'는 **기저값**이고, 앱이 실제로 쓰는
+   * 수명은 몸무게로 보정된 값이다(lib/shoe.effectiveMaxKm). 예전엔 그 사실을 아무도
+   * 말하지 않아서, 650 을 입력한 사용자가 홈에서 621 을 보게 됐다(UX 감사 ②).
+   * 0/미주입이면 보정이 없으므로 안내도 뜨지 않는다.
+   */
+  weightKg?: number;
+}) {
   // 러닝화(브랜드+모델)는 공용 피커로 한 번에 고른다. 브랜드는 선택 결과에 따라온다.
   const [picked, setPicked] = useState<PickedShoe | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -42,6 +55,8 @@ export default function AddShoeScreen({
   // 현재 brand+model 기준 권장 수명. max가 이 값과 같으면 '권장'(자동값), 다르면 사용자 수정값.
   const recommendedKm = picked ? getRecommendedLifespanKm({ brand: picked.brand, model: picked.model }) : 0;
   const isRecommended = !!picked && max === recommendedKm;
+  // 앱이 실제로 쓸 수명(몸무게 보정 후). 입력값과 다르면 아래에서 미리 알려준다.
+  const effectiveMax = max > 0 && weightKg > 0 ? effectiveMaxKm(max, weightKg) : 0;
 
   // 피커에서 러닝화를 고르면 권장 수명을 자동 채운다(사용자가 아래에서 수정 가능).
   const onPick = (p: PickedShoe) => {
@@ -66,6 +81,7 @@ export default function AddShoeScreen({
 
   const insets = useSafeAreaInsets();
   return (
+    <SwipeBack onBack={onClose}>
     <View style={[s.screen, { paddingTop: insets.top }]}>
       {/* nav */}
       <View style={s.nav}>
@@ -109,10 +125,21 @@ export default function AddShoeScreen({
           <View style={s.unitWrap} pointerEvents="none"><Text style={s.usedUnit}>km</Text></View>
         </View>
         {!!maxErr && <Text style={s.errText} accessibilityLabel="권장 거리 오류">{maxErr}</Text>}
-        <Text style={s.hint}>
-          쿠셔닝(성능)이 좋게 유지되는 교체 권장 거리예요. 더 신어도 되지만 충격 흡수는 점점 줄어요.
-          모델 선택 시 자동 입력되며 직접 바꿀 수 있어요.
-        </Text>
+        {/* 캡션 규칙(민우님 2026-08-04 "설명글이 너무 길다" → 문단 → **한 줄에 한 사실**).
+            줄 수보다 **줄바꿈과 만연체**가 문제였다. 각 줄이 사실 하나만 말하게 쪼갠다:
+              ① 이 숫자가 뭔가        ② 어디서 온 값인가(⑩)   ③ 왜 내 숫자는 다른가(②)
+            ③ 은 몸무게 보정이 걸릴 때만 뜬다. 뺀 것: "직접 바꿀 수 있어요"(입력칸이 이미
+            말한다) · "더 신어도 되지만 충격 흡수는 줄어요"(등록이 아니라 **교체 권장이 뜰 때**
+            할 말이고 거기 이미 있다 — lib/shoe.KEEP_GOING_REPLACE · InjuryBanner). */}
+        <Text style={s.hint}>쿠셔닝이 살아 있는 거리예요</Text>
+        <Text style={s.hint}>{LIFESPAN_BASIS_KO}</Text>
+        {/* 몸무게 보정 예고(UX 감사 ②) — 등록 화면이 650 을 약속하고 홈이 621 을 보여주던
+            모순을 '약속하는 자리'에서 끊는다. 보정이 없으면(기준 몸무게·미설정) 뜨지 않는다. */}
+        {effectiveMax > 0 && effectiveMax !== max && (
+          <Text style={s.hint} testID="add-shoe-weight-note">
+            {WEIGHT_WEAR_REASON_KO} — 내 몸무게({weightKg}kg) 기준 <Text style={s.hintStrong}>{effectiveMax}km</Text>
+          </Text>
+        )}
 
         {/* current mileage */}
         <Text style={[s.label, { marginTop: rv(22) }]}>현재 누적 거리</Text>
@@ -145,6 +172,7 @@ export default function AddShoeScreen({
         insetBottom={insets.bottom}
       />
     </View>
+    </SwipeBack>
   );
 }
 
@@ -159,8 +187,7 @@ const s = StyleSheet.create({
 
   recBadge: { color: RING_ACCENT, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '700', letterSpacing: 0.2 },
   // '선택' 배지는 무채(T3) — 강조가 아니라 '안 채워도 된다'는 안내다(액센트 절제).
-  optBadge: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500', letterSpacing: 0.2 },
-  labelRow: { flexDirection: 'row', alignItems: 'center', gap: rv(8), paddingHorizontal: rs(4), paddingBottom: rv(10) },
+  // (optBadge·labelRow 삭제 2026-08-04 — 소비처 0. 남겨 두면 '쓰는 데가 있다'는 거짓 신호다.)
 
   label: { color: T2, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '500', letterSpacing: 0.2, paddingHorizontal: rs(4), paddingBottom: rv(10) },
 
@@ -172,6 +199,8 @@ const s = StyleSheet.create({
   maxHead: { marginTop: rv(22), flexDirection: 'row', alignItems: 'center', gap: rv(8), paddingHorizontal: rs(4), paddingBottom: rv(10) },
 
   hint: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, paddingHorizontal: rs(4), paddingTop: rv(8) },
+  // 힌트 안에서 '앱이 실제로 쓸 숫자'만 한 단 밝게 — 이 줄의 요점이 그 숫자다.
+  hintStrong: { color: T1, fontWeight: '700' },
 
   errText: { color: DANGER, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500', paddingHorizontal: rs(4), paddingTop: rv(8) },
   // primitives.Input 표준(유리 표면·RADIUS.input) 위에 큰 숫자 타이포 + 단위 오버레이 여백만.
