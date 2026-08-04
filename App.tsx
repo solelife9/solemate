@@ -983,7 +983,8 @@ function Main(){
     }catch{/* 묘비 손상/부재는 무시 — 필터 없이 진행 */}
     setShoes(liveShoes);setRuns(liveRuns);
     setBootState('ready');
-    checkShoeAlerts(liveShoes,liveRuns,st.alerts);
+    // 몸무게를 함께 넘긴다 — 알림 임계의 분모가 화면과 같아야 한다(위 checkShoeAlerts 주석).
+    checkShoeAlerts(liveShoes,liveRuns,st.alerts,st.weightKg);
     }catch(e){
       // 부팅 초기화 실패(스토리지 손상/네이티브 결측 등) — 무한 스켈레톤 대신 재시도
       // 카드로 보낸다(2026-07-05: setBootState('error')가 한 번도 안 불려 BootError 가
@@ -1294,12 +1295,20 @@ function Main(){
   // 이미 알린 신발 id 집합(shoe_alert_notified)을 들고, 임계 이상이면서 아직 안 알린
   // 신발만 새로 알린다. 같은 신발의 반복 알림을 막으면서도, 같은 날 새로 임계에 도달한
   // 다른 신발은 즉시 알린다. 임계 아래로 내려간 신발(수명 상향/교체)은 집합에서 빠진다.
-  async function checkShoeAlerts(shoeList:any[],runList:any[],alertCfg:AlertSettings){
+  async function checkShoeAlerts(shoeList:any[],runList:any[],alertCfg:AlertSettings,alertWeightKg?:number){
     try{
       if(!alertCfg||!alertCfg.enabled) return;
       if(!Array.isArray(shoeList)||!Array.isArray(runList)) return;
       // 사용자 임계값 이상 사용한 신발만 후보. 보관된 신발은 제외.
-      const critical=shoeList.filter((s:any)=>!isRetired(s)&&shoeHealth(s,runList).percentUsed>=alertCfg.thresholdPct);
+      //
+      // ⚠️ **분모는 화면과 같아야 한다**(2026-08-04 수정). 예전엔 raw 신발을 그대로 넘겨
+      // shoeHealth 가 `max_km`(기저)를 읽었는데, 화면은 toUiShoe 를 거쳐 몸무게 보정된
+      // 유효 수명을 쓴다(lib/appViewModel). 80kg 러너 기준 650 vs 621 — **90% 도달이
+      // 585km 와 559km 로 26km 어긋났다.** 화면은 이미 빨간 '교체 권장'인데 알림은 한참
+      // 뒤에 왔다. HEAD 3728685 가 "한 신발은 한 숫자가 설명한다"로 분모를 통일했을 때
+      // 이 경로만 어댑터를 안 타서 빠졌다. 같은 effectiveMaxKm 을 여기서도 통과시킨다.
+      const withEffMax=shoeList.map((s:any)=>({...s,max_km:effectiveMaxKm(Number(s?.max_km)||DEFAULT_MAX_KM,alertWeightKg)}));
+      const critical=withEffMax.filter((s:any)=>!isRetired(s)&&shoeHealth(s,runList).percentUsed>=alertCfg.thresholdPct);
       const prevRaw=await AsyncStorage.getItem('shoe_alert_notified');
       let prev:any[]=[];
       try{const p=JSON.parse(prevRaw||'[]');if(Array.isArray(p)) prev=p;}catch{prev=[];}
