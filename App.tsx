@@ -152,6 +152,8 @@ import {LEADERBOARD_PUBLISH_ENABLED, SOCIAL_PROFILE_PUBLISH_ENABLED} from './lib
 import {genRunId, genShoeId} from './lib/genId';
 import {showToast} from './lib/toast';
 import {withTimeout} from './lib/withTimeout';
+// 러닝의 '시작 시각'을 저장 날짜로 쓰기 위해(Q-6). 엔진은 t0 를 이미 들고 있다.
+import {runTracker} from './lib/runTracker';
 import {migrateStorageSchema} from './lib/storageMigration';
 import {resolveGoogleCredential} from './lib/googleAuth';
 import {resolveAppleCredential} from './lib/appleAuth';
@@ -2528,7 +2530,16 @@ function Main(){
           // 라이브 hrTrack 이 비면(주머니 러닝) undefined 유지 → HealthKit 백필이 채운다.
           const liveHr=(hrTrack||[]).filter(p=>p.bpm>0);
           const avgBpm=liveHr.length?Math.round(liveHr.reduce((sm,p)=>sm+p.bpm,0)/liveHr.length):undefined;
-          const newId=await addRun(activeRun.id,km,today(),memo||'','gps',dur,cad,route,location,avgBpm,elevM,cal);
+          // ── 러닝의 날짜 = **시작한 날** (2026-08-04 QA 감사 Q-6) ──────────────
+          // 예전엔 today() — 저장하는 순간의 날짜였다. 23:30 에 출발해 00:20 에 끝낸 러닝이
+          // 다음 날 기록이 되고, 스트릭·주간 목표·리마인더(ranToday)가 하루씩 어긋났다.
+          // 업계 관례(Strava·NRC·가민)도, 이 앱의 워치 런 경로(p.startMs)도 이미 시작
+          // 기준이다 — 같은 앱 안에서 두 규칙이 공존하고 있었다.
+          // 복구 런은 스냅샷의 t0 가 진짜 출발 시각이라 그쪽이 우선한다(엔진 t0 는 이어
+          // 달리기에서 now−elapsed 로 재구성한 근사값).
+          const startMs=Number(resumeSnap?.t0)||runTracker.getStartMs();
+          const runDate=startMs>0?ymdLocal(new Date(startMs)):today();
+          const newId=await addRun(activeRun.id,km,runDate,memo||'','gps',dur,cad,route,location,avgBpm,elevM,cal);
           // 트랙 세션 마커 — RunDetail 이 track_<id> 로 읽어 '트랙 · 400m×12랩'을 표시한다.
           // 거리·페이스·PB 는 이미 랩 시계열(paceTrack=lapsToTrack)로 정본이라 별도 계산 불필요.
           // 실내 러닝은 트레드밀 노면으로 자동 태깅한다(2026-07-27) — 사용자가 '실내'를
@@ -2588,14 +2599,14 @@ function Main(){
             deltaPct:Math.round(km/aShoeUi.max*1000)/10,
           }:null;
           // 훈련 부하 영향(#5) — 이 런을 포함한 이번 주 부하(ACWR) 평가. 표본 부족(미확신)이면 생략.
-          const loadAfter=assessTrainingLoad([...(runs as any[]),{run_date:today(),km,duration:dur}],today());
+          const loadAfter=assessTrainingLoad([...(runs as any[]),{run_date:runDate,km,duration:dur}],today());
           const loadInfo=loadAfter.confident?{phrase:loadRatioPhraseKo(loadAfter),word:LOAD_WORD[loadAfter.level],level:loadAfter.level as LoadLevel}:null;
           setResumeSnap(null);setActiveRun(null);setOverlay('none');
           // 대회 감지 — GPS 시작 위치 + 날짜로 특정 대회 확정("상암 11/1 하프 → JTBC"),
           // 없으면 하프/풀 완주 시 일반 감지. 매치되면 리캡에 '대회 기록 남기기' 배너.
           const startPt=parseRoute(route||'')[0];
-          const rMatch=detectRace({date:today(),startLat:startPt?.lat,startLon:startPt?.lon,km},races);
-          setRecapRace(rMatch?{match:rMatch,date:today(),runId:newId,appTimeSec:dur,appPaceSec:km>0?dur/km:undefined}:null);
+          const rMatch=detectRace({date:runDate,startLat:startPt?.lat,startLon:startPt?.lon,km},races);
+          setRecapRace(rMatch?{match:rMatch,date:runDate,runId:newId,appTimeSec:dur,appPaceSec:km>0?dur/km:undefined}:null);
           // route 원문도 리캡에 전달 — 완주 직후 '오늘의 코스' 지도 + 경로 포함 공유 카드.
           // 평균 심박 — 라이브 캡처된 hrTrack 에서 산출(워치 착용 시). 주머니 러닝은 저장 후
           // 백필로 채워지므로 리캡 순간엔 0 → 타일 숨김(리캡은 즉시성, 상세는 복구본이 정본).
@@ -2603,7 +2614,7 @@ function Main(){
           const recapBpm=recapHrPts.length?Math.round(recapHrPts.reduce((sm,p)=>sm+p.bpm,0)/recapHrPts.length):0;
           // 기록 모먼트(공유 카드 리본) — 신기록 우선, 없으면 자연어 인사이트(네거티브 스플릿·
           // N일 연속·N일 만의 러닝·이번 달 최장) 중 top 하나. 아무 것도 없으면 undefined.
-          const recapInsights=runInsights({km,durationS:dur,runDate:today(),splits:(splits||[]).map((sp:any)=>({km:sp.km,paceSec:sp.paceSec}))},(runs as any[]).map(r=>({dist:Number(r.km)||0,durationS:r.duration||0,runDate:r.run_date})),{prKinds});
+          const recapInsights=runInsights({km,durationS:dur,runDate,splits:(splits||[]).map((sp:any)=>({km:sp.km,paceSec:sp.paceSec}))},(runs as any[]).map(r=>({dist:Number(r.km)||0,durationS:r.duration||0,runDate:r.run_date})),{prKinds});
           const recapMoment=prKinds.includes('longestDist')?'개인 최고 거리':prKinds.includes('fastestPace')?'개인 최고 페이스':prKinds.includes('longestTime')?'개인 최장 시간':(recapInsights[0]?.text||undefined);
           setRunRecap({km,durationS:dur,cadence:cad||0,bpm:recapBpm,splits:splits||[],elevationM:elevM||0,calories:cal||0,prKinds,moment:recapMoment,shoeName:shoeLabel,goalKm,goalMin:activeRun.goalMin,pacePlan:activeRun.pacePlan,shoeWear,loadInfo,route:route||null,track:trackMeta||null,runId:newId});
         }}
