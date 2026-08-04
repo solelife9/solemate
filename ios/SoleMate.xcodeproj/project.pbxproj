@@ -1095,7 +1095,7 @@
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = RunActivity/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = RunActivity;
+				INFOPLIST_KEY_CFBundleDisplayName = "Keego 위젯";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				IPHONEOS_DEPLOYMENT_TARGET = 16.4;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1143,7 +1143,7 @@
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = RunActivity/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = RunActivity;
+				INFOPLIST_KEY_CFBundleDisplayName = "Keego 위젯";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				IPHONEOS_DEPLOYMENT_TARGET = 16.4;
 				LD_RUNPATH_SEARCH_PATHS = (
