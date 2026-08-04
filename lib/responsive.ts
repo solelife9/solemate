@@ -75,9 +75,43 @@ export const rv = (size: number): number => (TEST ? size : Math.round(size * KH)
 export const rms = (size: number, factor = 0.5): number =>
   TEST ? size : Math.round(size + (size * KW - size) * factor);
 
-/** 반응형 폰트 크기 — moderate(0.5) + 정수 반올림(반px 금지, 디자인 규칙 유지). */
-export const rf = (size: number): number =>
-  TEST ? size : Math.round(PixelRatio.roundToNearestPixel(size + (size * KW - size) * 0.5));
+/**
+ * 반응형 폰트 크기 — **비대칭 스케일**(2026-08-04 갤럭시 S10e 실측으로 개정).
+ *
+ * ── 무엇이 문제였나 ────────────────────────────────────────────────────────
+ * 예전엔 큰 화면이든 작은 화면이든 moderate(편차의 50%)만 반영했다. 그런데 간격·카드폭
+ * (rs)은 100% 반영한다. 그래서 **작은 화면에서 둘이 어긋난다**:
+ *
+ *   갤럭시 S10e(360dp) → KW = 0.916
+ *     rs(칸 폭)  = ×0.916   (8.4% 축소)
+ *     rf(글자)   = ×0.958   (4.2% 축소)   ← 절반만 줄어든다
+ *
+ * 글자가 칸보다 상대적으로 4.2%p 커진 채로 놓인다. 아이폰에서 딱 맞던 문자열이 갤럭시에서
+ * 넘쳐 줄바꿈되고, 그 줄바꿈이 격자 높이를 밀어 레이아웃이 무너진다(신발 상세의
+ * "1시간 47분"이 두 줄로 떨어지던 증상). **디자인이 틀린 게 아니라 두 축의 스케일이
+ * 달랐던 것**이다 — 승인된 비율을 보존한다는 이 파일의 목적 자체와 어긋나 있었다.
+ *
+ * ── 왜 비대칭인가 ─────────────────────────────────────────────────────────
+ * moderate 의 원래 명분은 **큰 기기**다: 폭에 1:1로 비례시키면 Pro Max·태블릿에서 글자가
+ * 과하게 커진다. 그건 지금도 맞다. 반면 **작은 기기**에서는 그 절제가 정확히 해가 된다 —
+ * 줄일 걸 덜 줄여서 넘치게 만든다. 그래서 방향에 따라 다르게 적용한다:
+ *
+ *   KW < 1 (작은 화면) → **전량 반영**. 간격과 같은 비율로 줄여 레이아웃 비율을 보존한다.
+ *   KW ≥ 1 (큰 화면)   → moderate(0.5) 유지. 기존 의도 그대로.
+ *
+ * 하한은 KW 의 clamp(0.85)가 그대로 지킨다 — 아무리 작은 폰이어도 15pt 가 12.75pt 밑으로
+ * 내려가지 않는다. 그 아래 판독성은 OS 글자 크기 설정(lib/text.tsx 의 Dynamic Type)이 맡는다.
+ *
+ * ⚠️ 장기적으로는 이것도 최선이 아니다. Apple Fitness·WHOOP 류는 **타이포를 고정**하고
+ * 레이아웃이 흐르게(reflow) 만든다 — 화면이 좁으면 글자를 줄이는 게 아니라 내용을 접거나
+ * 열을 줄인다. 그쪽이 정석이지만 47개 파일의 레이아웃을 전부 유동형으로 바꾸는 일이라
+ * 출시 후 과제로 남긴다(DESIGN.md §스케일 정책).
+ */
+export const rf = (size: number): number => {
+  if (TEST) return size;
+  const factor = KW < 1 ? 1 : 0.5;
+  return Math.round(PixelRatio.roundToNearestPixel(size + (size * KW - size) * factor));
+};
 
 /** 반응형 아이콘 크기 — 폰트와 동일 절제 스케일. */
 export const ri = (size: number): number => rf(size);
