@@ -97,7 +97,7 @@ export function PeriodChartView({ data, labels, unit }: { data: number[]; labels
 
   return (
     <View>
-      <View style={{ height: H, position: 'relative' }}>
+      <View style={[s.rel, { height: H }]}>
         {ticks.map((tk, i) => (
           <View key={i} style={[s.chartGrid, { bottom: (tk / niceMax) * H }]}>
             <View style={s.chartGridLine} />
@@ -130,7 +130,7 @@ export function PeriodChartView({ data, labels, unit }: { data: number[]; labels
             실기기 제보: 주·월 실선 vs 년 점선). */}
         {avg > 0 && (
           <View style={[s.chartAvgLine, { bottom: (avg / niceMax) * H }]} pointerEvents="none">
-            <Svg style={{ flex: 1 }} height={2}>
+            <Svg style={s.flex1} height={2}>
               <SvgLine x1={0} y1={1} x2="100%" y2={1} stroke={withAlpha(T1, 0.4)} strokeWidth={1} strokeDasharray="4 5" />
             </Svg>
             <Text style={s.chartAvgVal}>{fmtTick(avg)}</Text>
@@ -226,7 +226,7 @@ export function RunForm({
       </View>
       {/* 키보드가 입력칸·저장 버튼을 가리지 않게 폼 전체를 KeyboardAvoidingView로 감싼다
           (iOS=padding, Android는 windowSoftInputMode adjustResize에 맡겨 undefined). */}
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={insets.top + 8}>
+      <KeyboardAvoidingView style={s.flex1} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={insets.top + 8}>
       <ScrollView contentContainerStyle={{ paddingHorizontal: GUTTER, paddingTop: rs(18), paddingBottom: rv(40), gap: rv(18) }} keyboardShouldPersistTaps="handled">
         {/* 신발 선택 */}
         <View>
@@ -534,13 +534,13 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, onEdit, age = 0, 
       <ScrollView contentContainerStyle={{ paddingHorizontal: GUTTER, paddingTop: rs(18), paddingBottom: rv(28) }}>
         {/* 신발(브랜드+모델)을 카드 없이 맨 위에 — 이 런의 '제목'처럼(사용자 요청). */}
         {shoe ? (
-          <View style={{ marginBottom: rv(14) }}>
+          <View style={s.mb14}>
             <Text style={s.detailBrand}>{shoe.brand}</Text>
             <Text style={s.detailModel}>{shoe.model}</Text>
           </View>
         ) : (run.shoeName ? (
           // 삭제된 신발 — 목록 카드(RunCard)처럼 묘비 신발명을 제목으로 살려 런의 정체성을 보존한다.
-          <View style={{ marginBottom: rv(14) }}>
+          <View style={s.mb14}>
             <Text style={s.detailBrand}>삭제된 신발</Text>
             <Text style={s.detailModel} numberOfLines={1}>{run.shoeName}</Text>
           </View>
@@ -584,15 +584,15 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, onEdit, age = 0, 
                 <View
                   style={s.effortRow}
                   accessible accessibilityLabel={`트레이닝 부하 ${effort.score}, ${effort.band}`}>
-                  <View style={{ flex: 1, paddingRight: rs(12) }}>
+                  <View style={s.flex1pr12}>
                     <Text style={s.cardTitle}>트레이닝 부하</Text>
-                    <Text style={{ color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, marginTop: rv(3) }}>
+                    <Text style={s.capT3mt3}>
                       {effort.method === 'HR' ? '심박 기반 — 이 러닝의 체감 강도' : '페이스 기반 — 체력 대비 이 러닝의 강도'}
                     </Text>
                   </View>
-                  <View style={{ alignItems: 'flex-end' }}>
-                    <Text style={{ color: T1, fontFamily: DISPLAY, fontSize: TYPE.title.fontSize, fontWeight: '700' }}>{effort.score}</Text>
-                    <Text style={{ color: ACCENT, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '700' }}>{effort.band}</Text>
+                  <View style={s.alignEnd}>
+                    <Text style={s.numTitle}>{effort.score}</Text>
+                    <Text style={s.capAccent}>{effort.band}</Text>
                   </View>
                 </View>
               )}
@@ -604,14 +604,14 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, onEdit, age = 0, 
                 <View
                   style={s.effortRow}
                   accessible accessibilityLabel={`경사 보정 페이스 GAP, 킬로미터당 ${fmtPace(gapSec)}`}>
-                  <View style={{ flex: 1, paddingRight: rs(12) }}>
+                  <View style={s.flex1pr12}>
                     <Text style={s.cardTitle}>경사 보정 페이스</Text>
-                    <Text style={{ color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, marginTop: rv(3) }}>
+                    <Text style={s.capT3mt3}>
                       {harder ? '오르막 코스 — 평지였다면 이 페이스' : '내리막 이득을 평지 기준으로 환산'}
                     </Text>
                   </View>
-                  <Text style={{ color: T1, fontFamily: DISPLAY, fontSize: TYPE.title.fontSize, fontWeight: '700' }}>
-                    {fmtPace(gapSec)}<Text style={{ fontSize: TYPE.caption.fontSize, color: T3, fontWeight: '500' }}> /km</Text>
+                  <Text style={s.numTitle}>
+                    {fmtPace(gapSec)}<Text style={s.capT3w5}> /km</Text>
                   </Text>
                 </View>
               )}
@@ -637,15 +637,15 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, onEdit, age = 0, 
                 accessibilityRole="button"
                 accessibilityLabel={hrCurveOpen ? '심박 그래프 접기' : '심박 그래프 펼치기'}
                 accessibilityState={{ expanded: hrCurveOpen }}
-                style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: rs(4) }}>
+                style={s.rowBetweenBaseline}>
+                <View style={s.rowCenterGap4}>
                   <Text style={s.cardTitle}>심박 존</Text>
                   {hrTrack.length >= 2 && (
                     <Ionicons name={hrCurveOpen ? 'chevron-up' : 'chevron-down'} size={ri(ICON.tag)} color={T3} />
                   )}
                 </View>
-                <Text style={{ color: T2, fontFamily: FONT, fontSize: TYPE.label.fontSize }}>
-                  평균 <Text style={{ color: T1, fontWeight: '700' }}>{hr.avg}</Text> · 최대 <Text style={{ color: T1, fontWeight: '700' }}>{hr.max}</Text> bpm
+                <Text style={s.labelT2}>
+                  평균 <Text style={s.t1Bold}>{hr.avg}</Text> · 최대 <Text style={s.t1Bold}>{hr.max}</Text> bpm
                 </Text>
               </Pressable>
               {/* 심박 곡선(#7) — 존 색 밴드 위 흰 라인. 페이스 곡선과 달리 밴드라는 절대
@@ -683,11 +683,11 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, onEdit, age = 0, 
                 // 라벨이 영원히 안 읽혔다(심박 데이터 0% 전달, 2026-07-24 심사 P0 #6).
                 return (
                   <View
-                    style={{ marginTop: rv(12) }}
+                    style={s.mt12}
                     accessible
                     accessibilityRole="image"
                     accessibilityLabel={`심박 곡선 그래프 — 평균 ${hr.avg}, 최고 ${hr.max} bpm`}>
-                    <View style={{ position: 'relative', height: H }}>
+                    <View style={[s.rel, { height: H }]}>
                       <Svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none">
                         {zones.map(zn => {
                           const lo = Math.max(yMin, zn.lo), hi = Math.min(yMax, zn.hi);
@@ -706,36 +706,36 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, onEdit, age = 0, 
                       </Svg>
                       {/* y축 bpm — 실제 최대(위)·최소(아래). 곡선 위에서도 읽히게 살짝 딤 배경. */}
                       {([[realMax, rv(1)], [realMin, y(realMin) - rv(7)]] as [number, number][]).map(([v, topPx], i) => (
-                        <Text key={i} style={{ position: 'absolute', left: rs(2), top: topPx, color: T2, fontFamily: DISPLAY, fontSize: rf(10), fontWeight: '700', fontVariant: ['tabular-nums'], backgroundColor: withAlpha(BG, 0.55), paddingHorizontal: rs(3), borderRadius: rs(3), overflow: 'hidden' }}>{v}</Text>
+                        <Text key={i} style={[s.hrPin, s.hrPinLeft, { top: topPx }]}>{v}</Text>
                       ))}
                       {/* 평균 라벨 — 점선 우측 끝 위. */}
                       {hr.avg > yMin && hr.avg < yMax && (
-                        <Text style={{ position: 'absolute', right: rs(2), top: y(hr.avg) - rv(13), color: T2, fontFamily: DISPLAY, fontSize: rf(10), fontWeight: '700', fontVariant: ['tabular-nums'], backgroundColor: withAlpha(BG, 0.55), paddingHorizontal: rs(3), borderRadius: rs(3), overflow: 'hidden' }}>평균 {hr.avg}</Text>
+                        <Text style={[s.hrPin, s.hrPinRight, { top: y(hr.avg) - rv(13) }]}>평균 {hr.avg}</Text>
                       )}
                     </View>
                     {/* x축 km 라벨 — 그리드라인과 같은 위치. */}
                     {kmTicks.length > 0 && (
-                      <View style={{ height: rv(14), marginTop: rv(2) }}>
+                      <View style={s.axisRow}>
                         {kmTicks.map(tk => (
-                          <Text key={tk.km} style={{ position: 'absolute', left: `${tk.xPct}%`, marginLeft: rs(-4), color: T3, fontFamily: DISPLAY, fontSize: rf(10), fontVariant: ['tabular-nums'] }}>{tk.km}</Text>
+                          <Text key={tk.km} style={[s.axisTick, { left: `${tk.xPct}%` }]}>{tk.km}</Text>
                         ))}
-                        <Text style={{ position: 'absolute', right: 0, color: withAlpha(T3, 0.7), fontFamily: FONT, fontSize: rf(10) }}>km</Text>
+                        <Text style={s.axisRight}>km</Text>
                       </View>
                     )}
                   </View>
                 );
               })()}
-              <View style={{ marginTop: rv(12), gap: rv(8) }}>
+              <View style={s.mt12gap8}>
                 {([5, 4, 3, 2, 1] as HRZone[]).map((z) => {
                   const sec = hr.secs[z];
                   const pct = hr.total > 0 ? sec / hr.total : 0;
                   return (
-                    <View key={z} style={{ flexDirection: 'row', alignItems: 'center' }}>
-                      <Text style={{ width: rs(60), color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600' }}>Z{z} {HR_ZONE_LABEL[z]}</Text>
-                      <View style={{ flex: 1, height: rs(BAR.md), backgroundColor: withAlpha(T1, 0.06), borderRadius: RADIUS.pill, overflow: 'hidden', marginHorizontal: rs(8) }}>
-                        <View style={{ width: `${Math.round(pct * 100)}%`, height: rs(BAR.md), backgroundColor: HR_ZONE_COLORS[z], borderRadius: RADIUS.pill }} />
+                    <View key={z} style={s.rowCenter}>
+                      <Text style={s.zoneName}>Z{z} {HR_ZONE_LABEL[z]}</Text>
+                      <View style={s.zoneTrack}>
+                        <View style={[s.zoneFill, { width: `${Math.round(pct * 100)}%`, backgroundColor: HR_ZONE_COLORS[z] }]} />
                       </View>
-                      <Text style={{ width: rs(44), textAlign: 'right', color: T2, fontFamily: DISPLAY, fontSize: TYPE.caption.fontSize, fontWeight: '600' }}>{fmtT(sec)}</Text>
+                      <Text style={s.zoneValue}>{fmtT(sec)}</Text>
                     </View>
                   );
                 })}
@@ -743,7 +743,7 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, onEdit, age = 0, 
               {/* TRIMP(트레이닝 부하)는 위 '트레이닝 부하' 카드가 밴드까지 붙여 보여주므로 여기선
                   중복 노출하지 않는다. 심박 존 카드는 '분포 + 평균/최대'에 집중. */}
               {!hr.rest && (
-                <Text style={{ color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, marginTop: rv(8) }}>마이 탭에서 안정시심박을 설정하면 심박 존이 더 정확해져요</Text>
+                <Text style={s.capT3mt8}>마이 탭에서 안정시심박을 설정하면 심박 존이 더 정확해져요</Text>
               )}
             </View>
           );
@@ -756,7 +756,7 @@ export function RunDetail({ run, shoe, onBack, unit, onDelete, onEdit, age = 0, 
           <Text style={s.runMemo} testID="run-memo">“{run.memo}”</Text>
         )}
         {/* 달린 위치(경로) 지도 — route_<id> 가 있으면 SVG 코스맵으로 표시(없으면 자동 숨김). */}
-        <CourseMap points={route} style={{ marginTop: rv(16) }} />
+        <CourseMap points={route} style={s.mt16} />
         {/* 트랙 세션이면 랩별 표(랩 · 페이스바 · km당 페이스 · 랩시간). 아니면 per-km 스플릿. */}
         {trackMeta && lapRows.length >= 1 ? (() => {
           const fmtP = (sec: number) => sec > 0 ? `${Math.floor(sec / 60)}'${String(Math.round(sec % 60)).padStart(2, '0')}"` : '--';
@@ -835,7 +835,7 @@ function DrumColumn({ items, selectedIndex, onChange }: {
     // VoiceOver: 드럼을 adjustable 하나로 묶어 위/아래 스와이프로 값을 조절한다
     // (스크롤 제스처는 VoiceOver 에서 사실상 불가 — increment/decrement 가 유일 경로).
     <View
-      style={{ flex: 1, height: DRUM_H }}
+      style={s.drumList}
       accessible
       accessibilityRole="adjustable"
       accessibilityValue={{ text: items[active] }}
@@ -846,10 +846,7 @@ function DrumColumn({ items, selectedIndex, onChange }: {
         const next = Math.max(0, Math.min(items.length - 1, active + dir));
         if (next !== active) select(next);
       }}>
-      <View pointerEvents="none" style={{
-        position: 'absolute', top: DRUM_ITEM_H * 2, left: 10, right: 10,
-        height: DRUM_ITEM_H, backgroundColor: CARD_HI, borderRadius: RADIUS.sm,
-      }} />
+      <View pointerEvents="none" style={s.drumHighlight} />
       <FlatList
         ref={ref}
         data={items}
@@ -866,12 +863,12 @@ function DrumColumn({ items, selectedIndex, onChange }: {
         }}
         renderItem={({ item, index }) => (
           <Pressable onPress={() => select(index)}
-            style={{ height: DRUM_ITEM_H, alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{
-              fontFamily: FONT, fontSize: index === active ? TYPE.heading.fontSize : TYPE.label.fontSize,
+            style={s.drumItem}>
+            <Text style={[s.drumText, {
+              fontSize: index === active ? TYPE.heading.fontSize : TYPE.label.fontSize,
               fontWeight: index === active ? '700' : '400',
               color: index === active ? T1 : T3,
-            }}>{item}</Text>
+            }]}>{item}</Text>
           </Pressable>
         )}
       />
@@ -888,7 +885,7 @@ export function RunCard({ run, shoes, onPress, unit, hideShoe }: { run: Run; sho
     <Pressable onPress={onPress} disabled={!onPress} accessibilityRole="button" accessibilityLabel={`${run.date} ${shoe ? shoe.brand + ' ' + shoe.model : '삭제된 신발'} 기록`} style={({ pressed }) => [s.runCard, pressed && !!onPress && { transform: [{ scale: MOTION.press.scale }], opacity: MOTION.press.opacity }]}>
       <GlassEdge glints={false} radius={RADIUS.lg} />
       <View style={s.runCardTop}>
-        <View style={{ flex: 1, minWidth: 0 }}>
+        <View style={s.flex1min0}>
           {/* 삭제된 신발도 이름은 남아 있다(묘비의 name — buildNameById). 상세 화면은 그걸
               살려 쓰는데 목록만 버려서, 같은 러닝을 두 화면이 다르게 불렀다(QA 감사 Q-10). */}
           <Text style={s.runCardBrand} numberOfLines={1}>{hideShoe ? `${run.day}요일` : (shoe ? shoe.brand : '삭제된 신발')}</Text>
@@ -1118,7 +1115,7 @@ export default function HistoryScreen({
   return (
     <View style={[s.screen, { paddingTop: insets.top }]}>
       <AmbientBackdrop />
-      <View style={[s.header, s.headerRow, { justifyContent: 'space-between' }]}>
+      <View style={[s.header, s.headerRow, s.between]}>
         <Text style={s.title}>기록</Text>
         {/* 수동 기록 추가 — 앱 없이/기록 못한 러닝을 직접 넣는 진입점(라이브 GPS 외 보조 경로). */}
         {!!onAddRun && (
@@ -1132,7 +1129,7 @@ export default function HistoryScreen({
           얹고, 빈 상태는 ListEmptyComponent 로 둔다. 당겨서 새로고침은 RN 내장 RefreshControl
           만 쓴다(새 네이티브 0) — onRefresh 가 있을 때만 단다. keyExtractor 는 안정 키(run.id,
           없으면 인덱스)로 리렌더 시 행 재사용을 보장한다. */}
-      <Rise style={{ flex: 1 }}>
+      <Rise style={s.flex1}>
       <FlatList
         data={shownRuns}
         keyExtractor={(r, i) => r.id || String(i)}
@@ -1146,13 +1143,13 @@ export default function HistoryScreen({
             <Pressable onPress={() => setShowAllRuns(true)} accessibilityRole="button" accessibilityLabel={`모든 기록 보기, ${displayRuns.length}개`}
               style={({ pressed }) => [{ marginTop: rv(4), paddingVertical: rv(14), borderRadius: RADIUS.md, backgroundColor: GLASS.fill, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(6), overflow: 'hidden' }, pressed && { backgroundColor: GLASS.fillActive }]}>
               <GlassEdge glints={false} radius={RADIUS.md} />
-              <Text style={{ color: T1, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600' }}>모든 기록 {displayRuns.length}개 보기</Text>
+              <Text style={s.labelT1w6}>모든 기록 {displayRuns.length}개 보기</Text>
               <Ionicons name="chevron-down" size={ri(ICON.inline)} color={T3} />
             </Pressable>
           ) : showAllRuns && displayRuns.length > RECENT_LIMIT ? (
             <Pressable onPress={() => setShowAllRuns(false)} accessibilityRole="button" accessibilityLabel="접기"
-              style={{ marginTop: rv(4), paddingVertical: rv(12), flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(6) }}>
-              <Text style={{ color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600' }}>접기</Text>
+              style={s.collapseRow}>
+              <Text style={s.labelT3w6}>접기</Text>
               <Ionicons name="chevron-up" size={ri(ICON.inline)} color={T3} />
             </Pressable>
           ) : null
@@ -1160,7 +1157,7 @@ export default function HistoryScreen({
         contentContainerStyle={{ padding: rs(14), paddingHorizontal: GUTTER, paddingBottom: TABBAR_CLEARANCE, gap: rv(10) }}
         refreshControl={onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={ACCENT} colors={[ACCENT]} /> : undefined}
         ListHeaderComponent={
-          <View style={{ gap: rv(10) }}>
+          <View style={s.gap10}>
             <SegmentedControl
               items={PERIODS.map((p) => ({ key: p, label: p }))}
               value={period}
@@ -1169,13 +1166,13 @@ export default function HistoryScreen({
             {period !== '전체'
               ? (
                 <Pressable onPress={openPicker} accessibilityRole="button"
-                  style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', gap: rv(4), paddingVertical: rv(4), paddingHorizontal: rs(10) }}>
-                  <Text style={{ color: T1, fontFamily: DISPLAY, fontSize: TYPE.heading.fontSize, fontWeight: '700' }}>{periodTitle}</Text>
+                  style={s.periodBtn}>
+                  <Text style={s.periodTitle}>{periodTitle}</Text>
                   <Ionicons name="chevron-down" size={ri(ICON.tag)} color={T3} />
                 </Pressable>
               ) : (
-                <View style={{ paddingVertical: rv(4), paddingHorizontal: rs(10) }}>
-                  <Text style={{ color: T1, fontFamily: DISPLAY, fontSize: TYPE.heading.fontSize, fontWeight: '700' }}>
+                <View style={s.periodStatic}>
+                  <Text style={s.periodTitle}>
                     {allYearKeys.length >= 2 ? `${allYearKeys[0]} — ${allYearKeys[allYearKeys.length - 1]}` : allYearKeys.length === 1 ? `${allYearKeys[0]}년` : '전체 기간'}
                   </Text>
                 </View>
@@ -1195,9 +1192,9 @@ export default function HistoryScreen({
               {/* '전체' 뷰의 연도 막대는 비교할 연도가 2개 이상일 때만(심사 #20, 2026-07-22)
                   — 데이터가 1년치뿐이면 막대 1개는 비교 정보가 0이라 합계 요약만 남긴다. */}
               {ch && ch.data.length > 0 && !(period === '전체' && ch.data.length < 2) && (
-                <View style={{ marginTop: rv(20), paddingTop: rv(20), borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP }}>
+                <View style={s.sectionSep}>
                   <Text style={[s.cardTitle, { color: T1 }]}>{ch.title}</Text>
-                  <View style={{ marginTop: rv(18) }}><PeriodChartView data={ch.data} labels={ch.labels} unit={unit} /></View>
+                  <View style={s.mt18}><PeriodChartView data={ch.data} labels={ch.labels} unit={unit} /></View>
                 </View>
               )}
             </View>
@@ -1220,27 +1217,27 @@ export default function HistoryScreen({
                 <GlassEdge glints={false} radius={RADIUS.lg} />
                 <GhostBar w="34%" />
                 <GhostBar w="58%" dim />
-                <View style={{ flexDirection: 'row', gap: rs(24), marginTop: rv(18) }}>
-                  <GhostBar w={rs(56)} dim style={{ marginTop: 0 }} />
-                  <GhostBar w={rs(56)} dim style={{ marginTop: 0 }} />
-                  <GhostBar w={rs(56)} dim style={{ marginTop: 0 }} />
+                <View style={s.ghostMetricRow}>
+                  <GhostBar w={rs(56)} dim style={s.mt0} />
+                  <GhostBar w={rs(56)} dim style={s.mt0} />
+                  <GhostBar w={rs(56)} dim style={s.mt0} />
                 </View>
               </View>
               <View style={[s.runCard, { opacity: 0.45, marginTop: rv(10) }]}>
                 <GlassEdge glints={false} radius={RADIUS.lg} />
                 <GhostBar w="28%" />
                 <GhostBar w="50%" dim />
-                <View style={{ flexDirection: 'row', gap: rs(24), marginTop: rv(18) }}>
-                  <GhostBar w={rs(56)} dim style={{ marginTop: 0 }} />
-                  <GhostBar w={rs(56)} dim style={{ marginTop: 0 }} />
-                  <GhostBar w={rs(56)} dim style={{ marginTop: 0 }} />
+                <View style={s.ghostMetricRow}>
+                  <GhostBar w={rs(56)} dim style={s.mt0} />
+                  <GhostBar w={rs(56)} dim style={s.mt0} />
+                  <GhostBar w={rs(56)} dim style={s.mt0} />
                 </View>
               </View>
               {!!onAddRun && (
                 <Pressable onPress={() => setForm({ mode: 'add' })} accessibilityRole="button" accessibilityLabel="기록 직접 추가" hitSlop={6}
                   style={({ pressed }) => [{ marginTop: rv(16), alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: rv(4), paddingVertical: rv(8), paddingHorizontal: rs(16), borderRadius: RADIUS.pill, backgroundColor: CARD_HI }, pressed && { transform: [{ scale: MOTION.press.scale }], opacity: MOTION.press.opacity }]}>
                   <Ionicons name="add" size={ri(ICON.inline)} color={ACCENT} />
-                  <Text style={{ color: T1, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600' }}>기록 추가</Text>
+                  <Text style={s.labelT1w6}>기록 추가</Text>
                 </Pressable>
               )}
             </View>
@@ -1277,7 +1274,7 @@ export default function HistoryScreen({
         confirmLabel="확인"
         onConfirm={confirmPicker}>
           {period === '주' && (
-            <View style={{ paddingHorizontal: rs(12), paddingBottom: rv(8), height: DRUM_H }}>
+            <View style={s.drumPad}>
               <DrumColumn
                 items={Array.from({ length: MAX_WEEK_OFFSET + 1 }, (_, i) =>
                   i === 0 ? '이번 주' : i === 1 ? '지난 주' : `${i}주 전`
@@ -1289,7 +1286,7 @@ export default function HistoryScreen({
           )}
 
           {period === '월' && (
-            <View style={{ flexDirection: 'row', paddingHorizontal: rs(12), paddingBottom: rv(8) }}>
+            <View style={s.drumHeadRow}>
               <DrumColumn
                 items={PICKER_YEARS.map(y => `${y}년`)}
                 selectedIndex={Math.max(0, PICKER_YEARS.indexOf(draftYear))}
@@ -1304,7 +1301,7 @@ export default function HistoryScreen({
           )}
 
           {period === '년' && (
-            <View style={{ paddingHorizontal: rs(12), paddingBottom: rv(8), height: DRUM_H }}>
+            <View style={s.drumPad}>
               <DrumColumn
                 items={[...PICKER_YEARS].reverse().map(y => `${y}년`)}
                 selectedIndex={Math.max(0, [...PICKER_YEARS].reverse().indexOf(draftYearYear))}
@@ -1320,6 +1317,64 @@ export default function HistoryScreen({
 }
 
 const s = StyleSheet.create({
+  // ── 유틸 스타일(2026-08-04) — 원래 JSX 안에 인라인으로 흩어져 있던 것들 ────────────
+  // 값은 하나도 바꾸지 않았다. 인라인 객체는 렌더마다 새로 만들어져 하위 memo 를 무력화하고
+  // (이 화면은 FlatList 로 수백 행을 그린다) lint 상한도 갉아먹었다.
+  // 검증: 정리 전/후로 화면 5개 상태를 렌더해 **모든 노드의 해석된 스타일**을 덤프하고
+  // 바이트 동일임을 확인했다(픽셀 캡처보다 엄격 — 값 자체를 비교한다).
+  flex1: {flex: 1},
+  flex1min0: {flex: 1, minWidth: 0},
+  flex1pr12: {flex: 1, paddingRight: rs(12)},
+  mt0: {marginTop: 0},
+  mt12: {marginTop: rv(12)},
+  mt16: {marginTop: rv(16)},
+  mt18: {marginTop: rv(18)},
+  mb14: {marginBottom: rv(14)},
+  mt12gap8: {marginTop: rv(12), gap: rv(8)},
+  gap10: {gap: rv(10)},
+  rel: {position: 'relative'},
+  between: {justifyContent: 'space-between'},
+  alignEnd: {alignItems: 'flex-end'},
+  rowCenter: {flexDirection: 'row', alignItems: 'center'},
+  rowCenterGap4: {flexDirection: 'row', alignItems: 'center', gap: rs(4)},
+  rowBetweenBaseline: {flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline'},
+  sectionSep: {marginTop: rv(20), paddingTop: rv(20), borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: SEP},
+  // 텍스트
+  t1Bold: {color: T1, fontWeight: '700'},
+  labelT2: {color: T2, fontFamily: FONT, fontSize: TYPE.label.fontSize},
+  labelT1w6: {color: T1, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600'},
+  labelT3w6: {color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600'},
+  capT3mt3: {color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, marginTop: rv(3)},
+  capT3mt8: {color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, marginTop: rv(8)},
+  capT3w5: {fontSize: TYPE.caption.fontSize, color: T3, fontWeight: '500'},
+  capAccent: {color: ACCENT, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '700'},
+  numTitle: {color: T1, fontFamily: DISPLAY, fontSize: TYPE.title.fontSize, fontWeight: '700'},
+  // 심박존 막대
+  zoneName: {width: rs(60), color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600'},
+  zoneTrack: {flex: 1, height: rs(BAR.md), backgroundColor: withAlpha(T1, 0.06), borderRadius: RADIUS.pill, overflow: 'hidden', marginHorizontal: rs(8)},
+  zoneFill: {height: rs(BAR.md), borderRadius: RADIUS.pill},
+  zoneValue: {width: rs(44), textAlign: 'right', color: T2, fontFamily: DISPLAY, fontSize: TYPE.caption.fontSize, fontWeight: '600'},
+  // 심박 곡선 축·핀
+  axisRow: {height: rv(14), marginTop: rv(2)},
+  axisRight: {position: 'absolute', right: 0, color: withAlpha(T3, 0.7), fontFamily: FONT, fontSize: rf(10)},
+  axisTick: {position: 'absolute', marginLeft: rs(-4), color: T3, fontFamily: DISPLAY, fontSize: rf(10), fontVariant: ['tabular-nums']},
+  hrPin: {position: 'absolute', color: T2, fontFamily: DISPLAY, fontSize: rf(10), fontWeight: '700', fontVariant: ['tabular-nums'], backgroundColor: withAlpha(BG, 0.55), paddingHorizontal: rs(3), borderRadius: rs(3), overflow: 'hidden'},
+  hrPinLeft: {left: rs(2)},
+  hrPinRight: {right: rs(2)},
+  // 기간 헤더
+  periodBtn: {flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', gap: rv(4), paddingVertical: rv(4), paddingHorizontal: rs(10)},
+  periodStatic: {paddingVertical: rv(4), paddingHorizontal: rs(10)},
+  periodTitle: {color: T1, fontFamily: DISPLAY, fontSize: TYPE.heading.fontSize, fontWeight: '700'},
+  collapseRow: {marginTop: rv(4), paddingVertical: rv(12), flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rv(6)},
+  ghostMetricRow: {flexDirection: 'row', gap: rs(24), marginTop: rv(18)},
+  // 날짜 드럼
+  drumPad: {paddingHorizontal: rs(12), paddingBottom: rv(8), height: DRUM_H},
+  drumHeadRow: {flexDirection: 'row', paddingHorizontal: rs(12), paddingBottom: rv(8)},
+  drumList: {flex: 1, height: DRUM_H},
+  drumItem: {height: DRUM_ITEM_H, alignItems: 'center', justifyContent: 'center'},
+  drumText: {fontFamily: FONT},
+  drumHighlight: {position: 'absolute', top: DRUM_ITEM_H * 2, left: 10, right: 10, height: DRUM_ITEM_H, backgroundColor: CARD_HI, borderRadius: RADIUS.sm},
+
   screen: { flex: 1, backgroundColor: BG },
   // 공유 카드 캡처용: 화면 밖(좌측 far-off)으로 밀어 보이지 않게 하되 마운트는 유지.
   runPhoto: { width: '100%', height: rs(200), borderRadius: rs(16), borderCurve: 'continuous', marginTop: rv(16) },
