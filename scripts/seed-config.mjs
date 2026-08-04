@@ -15,7 +15,7 @@
 //   현재 설정 보기      node scripts/seed-config.mjs
 //   최소 버전 지정      node scripts/seed-config.mjs --min 1.0.1
 //   안내 문구까지       node scripts/seed-config.mjs --min 1.0.1 --message "거리 기록 오류를 고쳤어요."
-//   스토어 링크 등록    node scripts/seed-config.mjs --ios https://apps.apple.com/app/id123 --android https://play.google.com/store/apps/details?id=com.solemate
+//   스토어 링크 등록    node scripts/seed-config.mjs --ios https://apps.apple.com/app/id123 --android https://play.google.com/store/apps/details?id=com.keego.app
 //   게이트 해제         node scripts/seed-config.mjs --off
 //
 // ⚠️ **--min 은 사용자를 잠그는 스위치다.** 넣기 전에 반드시 확인할 것:
