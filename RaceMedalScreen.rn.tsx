@@ -13,7 +13,8 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {BG, CARD_BORDER, CARD_HI, GOOD, WARN, HALL_GOLD, T1, T2, T3, SEP, FONT, DISPLAY, withAlpha, TYPE, GLASS, RADIUS, GUTTER, MOTION, ICON} from './theme';
 import {Button, Chip, GlassEdge, Input} from './primitives';
-import {captureCertPhoto} from './lib/photo';
+import {capturePhotoWithPermission} from './lib/photo';
+import {showPermissionSettingsDialog} from './lib/dialog';
 import MedalCamera from './MedalCamera';
 import {fmtTime} from './lib/format';
 import {parseClock, extractCertFields, type TextRecognizer} from './lib/ocr';
@@ -96,8 +97,17 @@ export default function RaceMedalScreen({
 
   const shotCert = async () => {
     try {
-      const p = await captureCertPhoto(); // 편집/크롭 없이 즉시(OCR 원본)
-      if (!p) return;
+      const p = await capturePhotoWithPermission({editing: false, shrink: false}); // OCR 원본
+      if (!p.ok) {
+        // 취소는 조용히, **거부는 안내한다**(QA 감사 Q-7 — 예전엔 둘 다 무반응이었다).
+        if (p.reason === 'denied') {
+          showPermissionSettingsDialog(
+            '카메라 권한이 필요해요',
+            '설정에서 카메라를 허용하면 기록증을 찍어 완주 시간을 자동으로 채울 수 있어요.',
+          );
+        }
+        return;
+      }
       setCertUri(p.uri);
       setOcrDone(false); setOcrEmpty(false);
       if (!recognizer) return; // 인식기 없으면 사진만 보관, 값은 직접 입력

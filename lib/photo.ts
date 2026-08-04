@@ -83,6 +83,33 @@ export async function pickShoePhoto(): Promise<PickedPhoto | null> {
 }
 
 /**
+ * 카메라 촬영 — **거부와 취소를 구분해** 돌려준다(2026-08-04 QA 감사 Q-7).
+ *
+ * 아래 `captureCertPhoto`/`pickPhotoFrom('camera')` 는 둘 다 null 로 뭉뚱그렸다. 그래서
+ * 호출부가 "권한이 없어서 못 했다"와 "사용자가 그만뒀다"를 구별할 수 없었고, 결국 둘 다
+ * 조용히 넘어가 **권한을 거부한 사람에겐 눌러도 아무 일 없는 버튼**이 됐다.
+ * 취소는 조용히, 거부는 설정 안내 — 그 판단을 하려면 이 정보가 필요하다.
+ *
+ * @param opts.editing  촬영 후 편집(크롭) 단계를 띄울지.
+ * @param opts.shrink   저장 전 축소 여부. OCR 입력(기록증)은 false — 글자가 뭉개진다.
+ */
+export async function capturePhotoWithPermission(
+  opts?: {editing?: boolean; shrink?: boolean},
+): Promise<PhotoPick> {
+  const perm = await ImagePicker.requestCameraPermissionsAsync();
+  if (!perm.granted) return {ok: false, reason: 'denied'};
+  const res = await ImagePicker.launchCameraAsync({
+    mediaTypes: ['images'],
+    allowsEditing: opts?.editing !== false,
+    quality: opts?.shrink === false ? 0.8 : 0.7,
+  });
+  if (res.canceled) return {ok: false, reason: 'cancelled'};
+  const a = res.assets && res.assets[0];
+  if (!a) return {ok: false, reason: 'cancelled'};
+  return {ok: true, uri: opts?.shrink === false ? a.uri : await downscale(a.uri)};
+}
+
+/**
  * 기록증 촬영 — 카메라로 바로 찍어 반환(편집/크롭 단계 없이 즉시). OCR 원본이라 자르면 안
  * 되고, '자르기 눌러야 저장' 혼란도 없앤다. 권한 거부·취소 → null(조용히).
  *

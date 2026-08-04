@@ -2,7 +2,7 @@ import React, {useState, useEffect, useRef, useMemo, useCallback} from 'react';
 import {
   View, StatusBar, Linking, AppState,
 } from 'react-native';
-import {showDialog} from './lib/dialog';
+import {showDialog, showPermissionSettingsDialog} from './lib/dialog';
 import {SafeAreaProvider, useSafeAreaInsets} from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {Pedometer} from 'expo-sensors';
@@ -1719,10 +1719,11 @@ function Main(){
       const picked=await pickPhotoWithPermission();
       if(!picked.ok){
         // 권한 거부 시 무반응이던 것 개선(2026-07-05) — 설정 안내(취소는 조용히).
-        if(picked.reason==='denied')showDialog('사진 접근 권한이 필요해요','설정에서 사진 권한을 허용하면 프로필 사진을 바꿀 수 있어요.',[
-          {text:'설정 열기',onPress:()=>{Promise.resolve(Linking.openSettings()).catch(()=>{});}},
-          {text:'나중에',style:'cancel'},
-        ]);
+        // 2026-08-04: 같은 안내를 하는 곳이 넷이라 공용 헬퍼로 모았다(QA 감사 Q-7).
+        if(picked.reason==='denied')showPermissionSettingsDialog(
+          '사진 접근 권한이 필요해요',
+          '설정에서 사진 권한을 허용하면 프로필 사진을 바꿀 수 있어요.',
+        );
         return;
       }
       setProfilePhoto(picked.uri);

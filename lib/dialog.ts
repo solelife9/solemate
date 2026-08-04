@@ -75,6 +75,34 @@ export function showDialog(title: string, message?: string, buttons?: DialogButt
 }
 
 /**
+ * 권한이 거부돼 기능을 쓸 수 없을 때의 **표준 안내** — 설명 + OS 설정 딥링크.
+ *
+ * 왜 공용인가(2026-08-04 QA 감사 Q-7): 권한 거부를 다루는 자리가 앱에 여럿인데, 어떤 곳은
+ * 안내하고 어떤 곳은 **아무 일도 하지 않았다**(카메라·앨범 3곳). 사용자에겐 눌러도 안 되는
+ * 버튼이다. 같은 상황에 같은 말을 하도록 한곳에 모은다 — 문구가 갈리는 것도 막는다.
+ *
+ * 취소(사용자가 사진 선택을 그만둔 것)에는 쓰지 않는다. 그건 조용히 넘어가는 게 맞다.
+ */
+export function showPermissionSettingsDialog(title: string, message: string): number {
+  return showDialog(title, message, [
+    {text: '나중에', style: 'cancel'},
+    {
+      text: '설정 열기',
+      onPress: () => {
+        // 지연 require — lib/dialog 는 순수 store 라 RN 의존을 상단에 두지 않는다.
+        try {
+          // eslint-disable-next-line @typescript-eslint/no-require-imports
+          const {Linking} = require('react-native');
+          Promise.resolve(Linking.openSettings()).catch(() => {});
+        } catch {
+          /* 미지원 환경 — 안내만으로 끝난다 */
+        }
+      },
+    },
+  ]);
+}
+
+/**
  * 버튼 탭 처리: 다이얼로그를 닫고 해당 버튼의 onPress 를 호출한다(얼럿 시맨틱 — 선택
  * 즉시 소멸). onPress 가 던져도 삼킨다(다이얼로그 상호작용이 앱을 깨면 안 됨).
  */

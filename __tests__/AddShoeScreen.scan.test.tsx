@@ -13,12 +13,16 @@ import React from 'react';
 import ReactTestRenderer, {act} from 'react-test-renderer';
 
 jest.mock('../lib/toast', () => ({showToast: jest.fn(() => 1)}));
-jest.mock('../lib/photo', () => ({pickPhotoFrom: jest.fn(async () => ({uri: 'file:///r.jpg'}))}));
+jest.mock('../lib/photo', () => ({
+  capturePhotoWithPermission: jest.fn(async () => ({ok: true, uri: 'file:///r.jpg'})),
+}));
+jest.mock('../lib/dialog', () => ({showPermissionSettingsDialog: jest.fn(() => 1)}));
 jest.mock('../lib/ocrNative', () => ({nativeRecognizer: {recognize: jest.fn(async () => '')}}));
 
 import AddShoeScreen from '../AddShoeScreen.rn';
 import {showToast} from '../lib/toast';
-import {pickPhotoFrom} from '../lib/photo';
+import {capturePhotoWithPermission} from '../lib/photo';
+import {showPermissionSettingsDialog} from '../lib/dialog';
 import {nativeRecognizer} from '../lib/ocrNative';
 
 const rec = nativeRecognizer as {recognize: jest.Mock};
@@ -35,7 +39,9 @@ const byId = (r: ReactTestRenderer.ReactTestRenderer, id: string) =>
 
 beforeEach(() => {
   (showToast as jest.Mock).mockClear();
-  (pickPhotoFrom as jest.Mock).mockClear();
+  (capturePhotoWithPermission as jest.Mock).mockClear();
+  (capturePhotoWithPermission as jest.Mock).mockResolvedValue({ok: true, uri: 'file:///r.jpg'});
+  (showPermissionSettingsDialog as jest.Mock).mockClear();
   rec.recognize.mockReset();
 });
 
@@ -49,7 +55,7 @@ test('영수증에서 러닝화를 찾으면 선택 필드를 채우고 알린�
   await act(async () => {
     byId(r, 'add-shoe-scan')[0].props.onPress();
   });
-  expect(pickPhotoFrom).toHaveBeenCalledWith('camera');
+  expect(capturePhotoWithPermission).toHaveBeenCalled();
   const msg = (showToast as jest.Mock).mock.calls[0][0].message;
   expect(msg).toContain('41');
   expect(msg).toContain('채웠어요');
@@ -74,3 +80,25 @@ test('인식이 터져도 화면이 죽지 않고 안내한다', async () => {
   expect((showToast as jest.Mock).mock.calls[0][0].message).toContain('직접');
 });
 
+
+// QA 감사 Q-7: 카메라 권한을 거부한 사람에겐 **눌러도 아무 일 없는 버튼**이었다.
+// 취소와 거부를 구분해, 거부일 때만 설정으로 안내한다.
+test('카메라 권한 거부는 조용히 넘기지 않고 설정으로 안내한다', async () => {
+  (capturePhotoWithPermission as jest.Mock).mockResolvedValue({ok: false, reason: 'denied'});
+  const r = render();
+  await act(async () => {
+    byId(r, 'add-shoe-scan')[0].props.onPress();
+  });
+  expect(showPermissionSettingsDialog).toHaveBeenCalled();
+  expect(String((showPermissionSettingsDialog as jest.Mock).mock.calls[0][0])).toContain('카메라');
+});
+
+test('사용자가 촬영을 취소한 것은 조용히 넘어간다 — 잘못한 게 없다', async () => {
+  (capturePhotoWithPermission as jest.Mock).mockResolvedValue({ok: false, reason: 'cancelled'});
+  const r = render();
+  await act(async () => {
+    byId(r, 'add-shoe-scan')[0].props.onPress();
+  });
+  expect(showPermissionSettingsDialog).not.toHaveBeenCalled();
+  expect(showToast).not.toHaveBeenCalled();
+});

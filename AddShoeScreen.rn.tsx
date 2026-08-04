@@ -26,7 +26,8 @@ import { validateMaxKm } from './lib/inputMask';
 // 같은 네이티브 모듈을 재사용한다 — 새 의존성 0. 인식기가 없으면 이 진입점은 아예 숨는다.
 import { nativeRecognizer } from './lib/ocrNative';
 import { extractShoeFromImage } from './lib/shoeReceipt';
-import { pickPhotoFrom } from './lib/photo';
+import { capturePhotoWithPermission } from './lib/photo';
+import { showPermissionSettingsDialog } from './lib/dialog';
 import { showToast } from './lib/toast';
 
 export default function AddShoeScreen({
@@ -67,8 +68,18 @@ export default function AddShoeScreen({
     if (scanning || !nativeRecognizer) return;
     setScanning(true);
     try {
-      const photo = await pickPhotoFrom('camera');
-      if (!photo?.uri) return;
+      const photo = await capturePhotoWithPermission({ editing: true });
+      if (!photo.ok) {
+        // 취소는 조용히, **거부는 안내한다** — 예전엔 둘 다 무반응이라 눌러도 안 되는
+        // 버튼으로 보였다(QA 감사 Q-7).
+        if (photo.reason === 'denied') {
+          showPermissionSettingsDialog(
+            '카메라 권한이 필요해요',
+            '설정에서 카메라를 허용하면 영수증·박스 사진으로 러닝화를 자동 입력할 수 있어요.',
+          );
+        }
+        return;
+      }
       const found = await extractShoeFromImage(nativeRecognizer, photo.uri);
       if (found.model) {
         onPick({ brand: found.brand, model: found.model });

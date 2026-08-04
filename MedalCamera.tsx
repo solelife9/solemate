@@ -14,7 +14,8 @@ import Svg, {Defs, Mask, Rect, Circle} from 'react-native-svg';
 import {CameraView, useCameraPermissions} from 'expo-camera';
 import {manipulateAsync, SaveFormat} from 'expo-image-manipulator';
 import {BG, BLACK, GLASS, HALL_GOLD, SCRIM, T1, T2, T3, FONT, withAlpha, RADIUS, ICON} from './theme';
-import {pickShoePhoto} from './lib/photo';
+import {pickPhotoWithPermission} from './lib/photo';
+import {showPermissionSettingsDialog} from './lib/dialog';
 import {medalCropRect} from './lib/medalCrop';
 
 export default function MedalCamera({onCapture, onCancel}: {onCapture: (uri: string) => void; onCancel: () => void}) {
@@ -63,8 +64,16 @@ export default function MedalCamera({onCapture, onCancel}: {onCapture: (uri: str
     // pickShoePhoto 계약: 취소/거부는 null, 네이티브 런처 예외는 throw(호출부가 비차단 처리).
     // shoot() 의 catch 와 동일 정책 — 실패해도 크래시 없이 조용히 무시(사용자 재시도).
     try {
-      const p = await pickShoePhoto();
-      if (p) onCapture(p.uri);
+      const p = await pickPhotoWithPermission();
+      if (p.ok) {onCapture(p.uri); return;}
+      // 취소는 조용히, **거부는 안내한다**(QA 감사 Q-7). 이 화면은 카메라 거부에는 이미
+      // 안내 화면을 띄우면서 앨범 거부에는 아무 말도 안 했다 — 같은 상황에 같은 말을 한다.
+      if (p.reason === 'denied') {
+        showPermissionSettingsDialog(
+          '사진 접근 권한이 필요해요',
+          '설정에서 사진을 허용하면 앨범에서 메달 사진을 고를 수 있어요.',
+        );
+      }
     } catch {
       // 앨범 열기 실패 — 무시.
     }
