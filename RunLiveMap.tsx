@@ -42,6 +42,21 @@ type LL = {lat: number; lon: number};
 function RunLiveMapBase({coords, interactive = false, recenterKey = 0}: {coords: LL[]; interactive?: boolean; recenterKey?: number}) {
   const mapRef = useRef<any>(null);
   const [preview, setPreview] = useState<LL | null>(null);
+  // 커스텀 마커(현위치 점)를 안드로이드에서 **처음 몇 프레임만** 추적한다.
+  //
+  // 왜(2026-08-04 갤럭시 S10e 실측): react-native-maps 는 커스텀 마커의 자식 View 를
+  // 비트맵으로 구워 네이티브 마커에 붙인다. tracksViewChanges 를 처음부터 false 로 주면
+  // **자식이 레이아웃되기 전에 비트맵이 굳어** 속이 빈 마커가 된다 — 화면에는 반투명 테두리
+  // 원만 남고 가운데 흰 점이 사라진다("투명한 동그라미"로 보임). iOS 는 마커를 뷰로 직접
+  // 올려서 이 문제가 없다 — 그래서 아이폰에서만 멀쩡했다.
+  //
+  // 계속 true 로 두면 매 프레임 비트맵을 다시 구워 지도가 버벅인다. 그래서 잠깐만 켰다 끈다.
+  const [trackMarker, setTrackMarker] = useState(Platform.OS === 'android');
+  useEffect(() => {
+    if (!trackMarker) return;
+    const t = setTimeout(() => setTrackMarker(false), 600);
+    return () => clearTimeout(t);
+  }, [trackMarker]);
   const list = Array.isArray(coords) ? coords : [];
   const liveLast = list.length > 0 ? list[list.length - 1] : null;
 
@@ -128,7 +143,7 @@ function RunLiveMapBase({coords, interactive = false, recenterKey = 0}: {coords:
         <MapMarker
           coordinate={{latitude: center.lat, longitude: center.lon}}
           anchor={{x: 0.5, y: 0.5}}
-          tracksViewChanges={false}>
+          tracksViewChanges={trackMarker}>
           <View style={s.posOuter}>
             <View style={s.posInner} />
           </View>
