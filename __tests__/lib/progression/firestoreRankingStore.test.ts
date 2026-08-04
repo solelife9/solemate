@@ -134,3 +134,52 @@ describe('yearMonthOf', () => {
     expect(yearMonthOf(Date.UTC(2026, 11, 31))).toBe('2026-12');
   });
 });
+
+// ─── 이번 달에 달리지 않았으면 명단에 없다 (2026-08-04) ────────────────────────
+// 실제 리더보드를 열어 보니 **엔트리 5개가 전부 거리 0km · 활동 0일**이었다(민우님
+// 테스트 계정들). 발행이 활동 여부를 안 보고 클라우드 동기마다 돌았기 때문이다.
+// 그러면 두 가지가 깨진다:
+//   · 화면 라벨이 거짓이 된다 — 진척 포인트 축은 "…에 **달린 러너 중**"이라고 적혀 있다.
+//   · 첫 사용자가 랭킹을 열면 `러너 0km` 가 늘어선 죽은 표를 본다.
+describe('publishMyRanking — 활동 게이트', () => {
+  const NOW = Date.UTC(2026, 5, 15); // 2026-06
+  const ym = yearMonthOf(NOW);
+
+  test('이번 달 러닝이 없으면 발행하지 않는다', async () => {
+    await signInWithCredential(getAuth(), {uid: 'idle'} as any);
+    const ok = await publishMyRanking({
+      nickname: '나', rankTier: 'silver', rankColor: '#C0C0C0',
+      runs: [{shoe_id: 's1', km: 10, run_date: '2026-04-02'}], // 지난달
+      shoes: [{id: 's1', max_km: 600, start_km: 0}],
+      progressPoints: 260, // XP 는 있어도 이번 달 활동이 아니다
+      nowMs: NOW,
+    });
+    expect(ok).toBe(false);
+    expect(await firestoreRankingStore.getEntry('idle', ym)).toBeNull();
+  });
+
+  test('달렸다가 그 기록을 지우면 명단에서 **내려간다**', async () => {
+    await signInWithCredential(getAuth(), {uid: 'gone'} as any);
+    const base = {
+      nickname: '나', rankTier: 'silver' as const, rankColor: '#C0C0C0',
+      shoes: [{id: 's1', max_km: 600, start_km: 0}], progressPoints: 100, nowMs: NOW,
+    };
+    // 먼저 달려서 올라간다
+    expect(await publishMyRanking({...base, runs: [{shoe_id: 's1', km: 5, run_date: '2026-06-02'}]})).toBe(true);
+    expect(await firestoreRankingStore.getEntry('gone', ym)).not.toBeNull();
+    // 그 런이 사라지면 — 발행을 '안 하는' 것만으로는 이미 올라간 줄이 남는다
+    expect(await publishMyRanking({...base, runs: []})).toBe(false);
+    expect(await firestoreRankingStore.getEntry('gone', ym)).toBeNull();
+  });
+
+  test('거리는 0 이어도 활동일이 있으면 올린다 — 아주 짧은 러닝도 달린 것이다', async () => {
+    await signInWithCredential(getAuth(), {uid: 'tiny'} as any);
+    const ok = await publishMyRanking({
+      nickname: '나', rankTier: 'bronze', rankColor: '#CD7F32',
+      runs: [{shoe_id: 's1', km: 0, run_date: '2026-06-03'}],
+      shoes: [{id: 's1', max_km: 600, start_km: 0}],
+      progressPoints: 0, nowMs: NOW,
+    });
+    expect(ok).toBe(true);
+  });
+});

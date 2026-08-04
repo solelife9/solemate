@@ -17,6 +17,7 @@ import {
   getDoc,
   getDocs,
   setDoc,
+  deleteDoc,
   query,
   where,
   orderBy,
@@ -105,6 +106,13 @@ export const firestoreRankingStore: RankingStore = {
     const ref = doc(db, entriesPath(yearMonth), entry.uid);
     await setDoc(ref, entry as any);
   },
+
+  async unpublish(yearMonth, uid) {
+    const db = getFirestore();
+    // 규칙상 본인 엔트리만 지울 수 있다(firestore.rules leaderboards allow delete).
+    // 없는 문서 삭제는 no-op 이다.
+    await deleteDoc(doc(db, entriesPath(yearMonth), uid));
+  },
 };
 
 /**
@@ -142,6 +150,14 @@ export interface PublishRankingArgs {
  * 내 월간 랭킹 엔트리를 계산해 Firestore 에 발행한다. 클라우드 동기(App.runCloudSync)
  * 뒤에 best-effort 로 호출 — 미로그인/실패는 false(throw 없음 — 동기 흐름을 막지 않는다).
  * 점수는 클라이언트가 computeRankingStats 로 계산한다(백엔드 leaderboardService 와 동일 의미).
+ *
+ * ── 이번 달에 달리지 않았으면 올리지 않는다 (2026-08-04) ──────────────────────
+ * 실제 리더보드를 열어 보니 **엔트리 5개가 전부 거리 0km · 활동 0일**이었다. 발행이
+ * 활동 여부를 안 보고 동기할 때마다 돌았기 때문이다. 그 결과 두 가지가 깨진다:
+ *   · 화면 라벨이 거짓이 된다 — 진척 포인트 축은 "…에 **달린 러너 중**"이라고 적혀 있다.
+ *   · 첫 사용자가 랭킹을 열면 `러너 0km` 가 늘어선 죽은 표를 본다.
+ * 그래서 **이번 달 활동(거리 또는 활동일)이 있을 때만** 올리고, 없으면 이미 올라간 줄을
+ * **내린다** — 발행을 '안 하는' 것만으로는 지난달에 올려둔 줄이 그대로 남는다.
  */
 export async function publishMyRanking(args: PublishRankingArgs): Promise<boolean> {
   try {
@@ -164,6 +180,11 @@ export async function publishMyRanking(args: PublishRankingArgs): Promise<boolea
       updatedAt: args.nowMs,
       shoes: args.shoes_summary,
     });
+    // 이번 달 활동이 없으면 명단에서 빠진다(올린 적 없으면 no-op).
+    if (!(stats.distance > 0) && !(stats.consistency > 0)) {
+      await firestoreRankingStore.unpublish(yearMonth, uid);
+      return false;
+    }
     await firestoreRankingStore.publish(yearMonth, entry);
     return true;
   } catch {

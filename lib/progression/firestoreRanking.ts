@@ -89,6 +89,11 @@ export interface RankingStore {
   total(yearMonth: string): Promise<number>;
   /** 내 엔트리 upsert. */
   publish(yearMonth: string, entry: StoredRankingEntry): Promise<void>;
+  /**
+   * 내 엔트리를 내린다(없으면 no-op).
+   * 이번 달 활동이 사라졌을 때 쓴다 — 발행을 '안 하는' 것만으로는 이미 올라간 줄이 남는다.
+   */
+  unpublish(yearMonth: string, uid: string): Promise<void>;
 }
 
 function num(v: unknown): number {

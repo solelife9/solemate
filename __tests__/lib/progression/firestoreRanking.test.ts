@@ -55,6 +55,9 @@ function fakeStore(rows: StoredRankingEntry[]): RankingStore {
     async publish() {
       /* no-op */
     },
+    async unpublish() {
+      /* no-op */
+    },
   };
 }
 
