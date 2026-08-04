@@ -368,6 +368,14 @@ function Main(){
   const [celebration,setCelebration]=useState<CelebrationData|null>(null);
   const celebQueueRef=useRef<CelebrationData[]>([]);
   const celebBaselineRef=useRef<{ach:string[];tier:string}|null>(null);
+  // 첫 클라우드 동기가 한 번이라도 끝났는가(성공/실패 무관). 셀러브레이션 베이스라인을
+  // **언제 심을지**를 가르는 신호다 — 자세한 이유는 아래 시딩 지점 주석 참조.
+  // 실패도 '끝난 것'으로 본다: 오프라인 신규 사용자를 영원히 기다리게 하면 안 된다.
+  //
+  // ref 가 아니라 state 인 이유: ref 는 바뀌어도 리렌더가 없어 아래 effect 가 다시 돌지
+  // 않는다. 그러면 '기다린다'가 '영영 안 심는다'가 되어 축하가 아예 사라진다.
+  const [celebSyncSettled,setCelebSyncSettled]=useState(false);
+
   const [celebReady,setCelebReady]=useState(false);
   // 온보딩 미리보기(개발 전용) — 계정에 신발이 있어 자연 노출 안 되는 온보딩을 dev 빌드
   // 실행 시 강제로 보여준다(넘기면 홈으로, 비영속). 릴리스 빌드에선 항상 꺼진다
@@ -597,7 +605,22 @@ function Main(){
       // 축하 중복 방지 마커 — 실패해도 최악은 축하가 한 번 더 뜨는 것뿐(데이터 무해).
       try{void AsyncStorage.setItem(CELEB_SEEN_KEY,JSON.stringify(merged));}catch{/* 무해: 축하 1회 중복 */}
     };
-    if(base===null){persist({ach:currentAch,tier});return;}
+    // 베이스라인이 아직 없다(= 이 기기에서 처음) → 현재 상태를 '이미 본 것'으로 심고 끝낸다.
+    //
+    // ⚠️ **언제 심느냐가 전부다**(2026-08-04 실기기 버그). 기존 계정으로 앱을 새로 깔면
+    // 부팅 직후엔 runs/shoes 가 비어 있고 클라우드 복원이 그 뒤에 온다. 그 빈 상태로 심으면
+    // 베이스라인이 '업적 0개'가 되고, 곧 도착한 수십 개가 전부 **신규**로 잡혀 축하가
+    // 폭주한다(민우님 갤럭시에서 실제 발생 — 하나씩 눌러 넘겨야 했다).
+    //
+    // 위 monotonic 병합은 **이미 있던 베이스라인이 줄어드는 것**만 막는다. 처음 심는 값이
+    // 비어 있는 경우는 못 막는다 — 비교 대상이 없으니까. 그래서 **데이터가 도착할 기회를
+    // 준 뒤에** 심는다: 로그인 상태인데 첫 동기가 아직 안 끝났으면 기다린다.
+    // 미로그인(로컬 전용)이나 동기가 한 번 끝난 뒤라면 지금 심는 게 맞다.
+    if(base===null){
+      if(authUser?.uid&&!celebSyncSettled) return; // 복원 대기 — 심지도, 축하하지도 않는다
+      persist({ach:currentAch,tier});
+      return;
+    }
     const seen=new Set(base.ach);
     const newAch=currentAch.filter(k=>!seen.has(k));
     const rankUp=(RANK_XP as Record<string,number>)[tier]>((RANK_XP as Record<string,number>)[base.tier]??-1)&&tier!==base.tier;
@@ -635,9 +658,14 @@ function Main(){
       }
     }
     persist({ach:currentAch,tier});
-  },[runs,shoes,progState,celebReady,buildContextChallenges]);
+  },[runs,shoes,progState,celebReady,celebSyncSettled,authUser?.uid,buildContextChallenges]);
 
-  const closeCelebration=()=>setCelebration(celebQueueRef.current.shift()??null);
+  // 다음 축하로 넘어간다(큐 소진 시 종료). 카드 자체를 탭했을 때의 동작.
+  const nextCelebration=()=>setCelebration(celebQueueRef.current.shift()??null);
+  // '건너뛰기' — **전부** 건너뛴다(2026-08-04 실기기 버그). 예전엔 이것도 한 개만 꺼내서,
+  // 큐가 길면 버튼 이름과 달리 하나씩 눌러 넘겨야 했다. 사용자가 '건너뛰기'를 누르는 건
+  // "이걸 그만 보고 싶다"이지 "다음 걸 보여달라"가 아니다.
+  const skipAllCelebrations=()=>{celebQueueRef.current=[];setCelebration(null);};
 
   // 개인 챌린지 목록 복원(신규 키 — 네트워크 무관, 1회). 손상/형식오류는 조용히
   // 무시해 빈 목록으로 시작한다(기존 데이터 보존, 크래시 금지).
@@ -1685,7 +1713,13 @@ function Main(){
       // 임계 3회·쿨다운 1시간이라 지하철 같은 일시적 오프라인으로는 뜨지 않는다.
       reportSyncResult(false);
     }
-    finally{cloudSyncBusyRef.current=false;}
+    finally{
+      cloudSyncBusyRef.current=false;
+      // 성공이든 실패든 '한 번은 시도가 끝났다'. 셀러브레이션 베이스라인 시딩이 이 신호를
+      // 기다린다(복원될 업적을 신규로 오인하지 않기 위해). 실패까지 포함하는 이유는
+      // 오프라인 사용자가 영원히 축하를 못 받는 상태를 만들지 않기 위해서다.
+      setCelebSyncSettled(true);
+    }
   };
   // 항상 최신 클로저를 가리키는 ref — effect 가 stale backupData/applyBackupPayload 를 잡지 않게.
   const runCloudSyncRef=useRef(runCloudSync);
@@ -2713,7 +2747,7 @@ function Main(){
   // showProgression 보다 먼저 검사한다 — 진척 위에 띄우고 뒤로 가면 진척으로 복귀(스택 보존).
   // 셀러브레이션(등급상승/업적) — 풀스크린 오버레이. 닫으면 큐의 다음 항목 또는 종료.
   if(celebration){
-    return <CelebrationScreen data={celebration} onClose={closeCelebration}/>;
+    return <CelebrationScreen data={celebration} onClose={nextCelebration} onSkipAll={skipAllCelebrations} remaining={celebQueueRef.current.length}/>;
   }
   if(showHallOfFame){
     // 러너 프로필은 랭킹 **위에** 얹힌다 — 닫으면 보던 순위 자리로 그대로 돌아온다.

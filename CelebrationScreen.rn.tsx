@@ -161,7 +161,26 @@ function Rise({
   return <Animated.View style={[style, {opacity, transform: pop ? [{scale}] : [{translateY: ty}]}]}>{children}</Animated.View>;
 }
 
-export default function CelebrationScreen({data, onClose}: {data: CelebrationData; onClose: () => void}) {
+export default function CelebrationScreen({
+  data,
+  onClose,
+  onSkipAll,
+  remaining = 0,
+}: {
+  data: CelebrationData;
+  /** 다음 축하로 넘어간다('계속하기'·'확인'). */
+  onClose: () => void;
+  /**
+   * 남은 축하를 **전부** 버린다('건너뛰기'). 미주입이면 onClose 로 폴백.
+   *
+   * 왜 별개인가(2026-08-04 실기기 버그): 예전엔 건너뛰기도 onClose 였고, 그건 큐에서 한 개만
+   * 꺼내는 동작이었다. 그래서 업적이 여러 개 쌓이면 '건너뛰기'를 그 개수만큼 눌러야 했다.
+   * 사용자가 이 버튼을 누르는 건 "그만 보고 싶다"이지 "다음 걸 보여달라"가 아니다.
+   */
+  onSkipAll?: () => void;
+  /** 이 카드 뒤에 대기 중인 축하 개수. 0이면 '건너뛰기'가 곧 닫기라 표기를 바꾸지 않는다. */
+  remaining?: number;
+}) {
   const insets = useSafeAreaInsets();
   const anim = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -227,8 +246,16 @@ export default function CelebrationScreen({data, onClose}: {data: CelebrationDat
   return (
     <View style={[st.screen, {paddingTop: insets.top + 64, paddingBottom: insets.bottom + 32}]}>
       <Glow color={c} />
-      <Pressable style={[st.skip, {top: insets.top + 14}]} onPress={onClose} hitSlop={10} accessibilityRole="button" accessibilityLabel="건너뛰기">
-        <Text style={st.skipTxt}>건너뛰기</Text>
+      {/* 남은 개수를 밝힌다 — 왜 계속 뜨는지 알려주고, 한 번에 끝낼 수 있음을 보여준다.
+          개수를 숨기면 사용자는 "언제 끝나지?"를 모른 채 계속 누르게 된다. */}
+      <Pressable
+        style={[st.skip, {top: insets.top + 14}]}
+        onPress={onSkipAll ?? onClose}
+        hitSlop={10}
+        accessibilityRole="button"
+        accessibilityLabel={remaining > 0 ? `${remaining}개 더 있음, 모두 건너뛰기` : '건너뛰기'}
+        testID="celebration-skip">
+        <Text style={st.skipTxt}>{remaining > 0 ? `모두 건너뛰기 (${remaining})` : '건너뛰기'}</Text>
       </Pressable>
       <View style={st.body}>
         <Rise anim={anim} from={0.05} to={0.35}>

@@ -99,26 +99,23 @@ test('중앙 클라우드 동기: 프로필 탭 방문 없이 부팅 직후 pull
     expect(port.pull).toHaveBeenCalled();
     expect(port.push).toHaveBeenCalled();
 
-    // 2) 복원: 원격 신발이 병합되어 상태로 들어왔다. (빈 로컬 + 원격 1켤레 복원이라
-    //    '첫 신발' 업적이 발동해 셀러브레이션이 떠 있다 — 복원이 실제로 일어났다는 증거.)
-    //    셀러브레이션 '확인'을 눌러 닫은 뒤, 화면에서 원격 신발 이름을 직접 확인한다.
+    // 2) 복원: 원격 신발이 병합되어 상태로 들어왔다.
+    //
+    // ⚠️ **복원은 축하하지 않는다**(2026-08-04 실기기 버그 수정). 예전엔 이 자리에서
+    // '첫 신발' 셀러브레이션을 단언했는데, 그건 사실 버그를 정상으로 굳힌 것이었다:
+    // 부팅 직후 빈 상태로 셀러브레이션 베이스라인이 심기고 → 곧이어 복원된 데이터가
+    // 전부 '신규'로 잡혀 축하가 뜨던 경쟁 조건이었다. 실기기(갤럭시 S10e)에서 기존 계정으로
+    // 새로 깔았더니 업적 수십 개가 줄줄이 떠서 하나씩 눌러 넘겨야 했다.
+    //
+    // 코드의 원래 의도는 주석에 명시돼 있다 — "첫 실행(베이스라인 없음)은 현재를 시딩만
+    // 한다(기존 업적·현재 등급 소급 축하 금지)". 이 테스트가 그 의도와 어긋나 있었다.
+    // 지금은 **첫 동기가 끝난 뒤에** 베이스라인을 심으므로 소급 축하가 없다.
     const screen1 = textOf(renderer.toJSON());
-    expect(screen1).toContain('첫 신발');
-    const confirm = renderer.root.find(
-      (n: any) => n.props && typeof n.props.onPress === 'function' &&
-        textOf(n).includes('확인'),
-    );
-    await act(async () => {
-      confirm.props.onPress();
-    });
-    for (let i = 0; i < 6; i++) {
-      await act(async () => {
-        await Promise.resolve();
-      });
-    }
+    expect(screen1).not.toContain('첫 신발');
+
+    // 축하 오버레이가 없으니 홈이 바로 보인다 — 복원된 신발 이름으로 병합을 확인한다.
     // (홈 히어로는 이름을 브랜드 대문자 + 모델로 쪼개 표시하므로 모델명 'Boston' 으로 확인.)
-    const screen2 = textOf(renderer.toJSON());
-    expect(screen2).toContain('Boston');
+    expect(screen1).toContain('Boston');
 
     act(() => renderer.unmount());
   } finally {
