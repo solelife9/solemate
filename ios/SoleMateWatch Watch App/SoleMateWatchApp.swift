@@ -31,6 +31,9 @@ final class WatchAppDelegate: NSObject, WKApplicationDelegate {
 
   // 사용자가 직접 재실행한 경우도 복구 — 활성 세션이 없으면 조용히 no-op.
   func applicationDidFinishLaunching() {
+    // 크래시 수집을 **가장 먼저** 켠다(2026-08-04 감사 L-02). 뒤에 오는 복구 로직이
+    // 죽으면 그것도 잡아야 하기 때문이다. 설정이 없으면 조용히 no-op(WatchCrash 참조).
+    WatchCrash.start()
     Task { @MainActor in WorkoutManager.shared.recoverActiveSession() }
   }
 }

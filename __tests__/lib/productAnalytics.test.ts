@@ -22,6 +22,7 @@ import {
   trackCrashRecovery,
   trackShoeRetired,
   setAnalyticsEnabled,
+  __resetPermissionDedupe,
 } from '../../lib/productAnalytics';
 
 const analytics = require('@react-native-firebase/analytics');
@@ -29,6 +30,9 @@ const analytics = require('@react-native-firebase/analytics');
 beforeEach(() => {
   analytics.logEvent.mockClear();
   analytics.setAnalyticsCollectionEnabled.mockClear();
+  // 권한 이벤트는 같은 실행에서 같은 결과를 중복 전송하지 않는다(2026-08-04 감사 L-12).
+  // 그 상태가 테스트 사이에 새면 뒤 테스트가 '이미 보냈다'로 조용히 스킵된다 — 초기화한다.
+  __resetPermissionDedupe();
 });
 
 /** 마지막 logEvent 호출의 (이름, 파라미터). */

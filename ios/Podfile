@@ -71,5 +71,94 @@ target 'SoleMate' do
         config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
       end
     end
+
+    # ── 워치 앱 dSYM 업로드 (2026-08-04 출시 운영 감사 L-02) ──────────────────
+    # 워치 타깃에는 react-native-firebase 가 없으므로(폰 전용 RN 모듈) 그쪽이 넣어주는
+    # `[CP-User] [RNFB] Crashlytics Configuration` 스크립트도 없다. 손으로 Xcode 에서
+    # 빌드 페이즈를 추가하면 pod install 할 때마다 날아가거나 사람이 잊는다 — 그래서
+    # 여기서 **결정적으로** 넣는다(pbxproj 수동 편집 금지, CLAUDE.md Danger Zone).
+    #
+    # 이 스크립트가 없으면 크래시는 도착하지만 스택이 **주소 숫자**로만 보인다.
+    # 어느 함수에서 죽었는지 모르는 크래시 리포트는 사실상 없는 것과 같다.
+    watch_target = installer.aggregate_targets.find { |t| t.name.include?('SoleMateWatch') }
+    if watch_target
+      native = watch_target.user_project.targets.find { |t| t.name.include?('SoleMateWatch') }
+
+      # react_native_post_install 이 **모든 타깃에** C++ 표준을 박아 넣는데(위 로그의
+      # "Setting CLANG_CXX_LANGUAGE_STANDARD"), 워치 타깃은 이제 파드 xcconfig 도 갖게 돼
+      # CocoaPods 가 "타깃이 파드 설정을 덮어쓴다"고 경고한다. 워치 앱은 순수 Swift 라
+      # C++ 표준이 의미가 없으므로 **타깃에서 지워** 파드 설정을 그대로 상속하게 둔다.
+      # (경고를 그냥 두면 진짜 경고가 묻힌다.)
+      native&.build_configurations&.each do |bc|
+        bc.build_settings.delete('CLANG_CXX_LANGUAGE_STANDARD')
+
+        # 워치 타깃만 `ENABLE_USER_SCRIPT_SANDBOXING = YES` 였다(Xcode 템플릿 기본값 —
+        # 앱 타깃은 이 설정을 두지 않아 NO 로 동작한다). 샌드박스가 켜져 있으면 아래
+        # dSYM 업로드 스크립트가 `Pods/FirebaseCrashlytics/run` 을 **읽지도 못하고** 빌드가
+        # 통째로 실패한다:
+        #   error: Sandbox: bash deny(1) file-read-data .../Pods/FirebaseCrashlytics/run
+        # Crashlytics 업로드는 dSYM·설정 파일 읽기 + 네트워크가 필요해 샌드박스와 공존할 수
+        # 없다(Firebase 공식 안내도 동일). 앱 타깃과 같은 값으로 맞춘다.
+        bc.build_settings['ENABLE_USER_SCRIPT_SANDBOXING'] = 'NO'
+      end
+
+      # CocoaPods 의 개인정보 매니페스트 집계가 **iOS 앱의** PrivacyInfo.xcprivacy 를 워치
+      # 타깃 리소스에도 끼워 넣는다. 그런데 워치는 이미 자기 매니페스트를 갖고 있어
+      # (`SoleMateWatch Watch App/PrivacyInfo.xcprivacy` — 동기화 폴더라 자동 포함),
+      # 같은 경로에 두 개가 복사되며 빌드가 통째로 깨진다:
+      #   error: Multiple commands produce '.../SoleMateWatch Watch App.app/PrivacyInfo.xcprivacy'
+      #
+      # CocoaPods 가 워치의 자체 매니페스트를 못 보는 게 원인이다 — 동기화 폴더의 파일은
+      # pbxproj 에 파일 참조로 등장하지 않아 xcodeproj API 에 안 보인다. 그래서 "이 타깃엔
+      # 매니페스트가 없네"라고 판단해 남의 것을 넣는다. 여기서 도로 뺀다.
+      #
+      # 워치가 쓰는 사유 필요 API 는 자체 매니페스트가 이미 선언하고 있고(UserDefaults CA92.1),
+      # FirebaseCrashlytics 는 자기 것을 리소스 번들로 함께 싣는다 — 빠지는 신고는 없다.
+      native&.resources_build_phase&.files&.dup&.each do |bf|
+        path = bf.file_ref&.path.to_s
+        next unless path.end_with?('PrivacyInfo.xcprivacy')
+        native.resources_build_phase.remove_build_file(bf)
+      end
+
+      phase_name = '[Keego] Crashlytics dSYM 업로드 (워치)'
+      if native
+        # 있으면 재사용하고 없으면 만든다 — 스크립트 내용은 **매번 덮어쓴다**(여기가 단일
+        # 출처여야 한다. 예전 내용이 남아 조용히 다른 동작을 하는 게 최악이다).
+        phase = native.shell_script_build_phases.find { |p| p.name == phase_name } ||
+                native.new_shell_script_build_phase(phase_name)
+
+        # ⚠️ 설정 파일이 없으면 **건너뛴다.** 그냥 run 을 부르면 이렇게 빌드가 통째로 깨진다:
+        #   error: Could not get GOOGLE_APP_ID in Google Services file from build environment
+        # 워치용 Firebase 앱(com.keego.app.watchkitapp)을 콘솔에 등록해 GoogleService-Info.plist
+        # 를 워치 타깃에 넣기 **전까지는** 이 페이즈가 아무 일도 하지 않아야 한다. 관측성을
+        # 붙이려다 앱을 못 만들게 되는 건 본말전도다(WatchCrash.swift 의 가드와 같은 규약).
+        phase.shell_script = <<~SH
+          PLIST="${CONFIGURATION_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/GoogleService-Info.plist"
+          if [ -f "$PLIST" ]; then
+            "${PODS_ROOT}/FirebaseCrashlytics/run"
+          else
+            echo "note: [Keego] 워치 GoogleService-Info.plist 가 없어 dSYM 업로드를 건너뜁니다(크래시 수집 비활성)."
+          fi
+        SH
+        # 입력 파일을 명시하지 않으면 Xcode 가 페이즈를 건너뛸 수 있다(증분 빌드 최적화).
+        phase.input_paths = [
+          '${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Resources/DWARF/${TARGET_NAME}',
+          '$(SRCROOT)/$(BUILT_PRODUCTS_DIR)/$(INFOPLIST_PATH)',
+        ]
+      end
+      watch_target.user_project.save
+    end
   end
+end
+
+# ── 애플워치 앱: 크래시 수집 (2026-08-04 출시 운영 감사 L-02, 민우님 승인) ──────────
+# 워치는 폰과 **별개의 Firebase 앱**이다(번들 ID com.keego.app.watchkitapp). 콘솔에 앱을
+# 하나 더 등록하고 그 GoogleService-Info.plist 를 워치 타깃에 넣어야 실제로 켜진다.
+# 등록 전까지는 WatchCrash.start() 가 조용히 no-op 이므로 앱은 지금과 똑같이 동작한다
+# (설정 파일 없이 FirebaseApp.configure() 를 부르면 앱이 죽는다 — 그래서 가드가 먼저다).
+#
+# RN 모듈(@react-native-firebase/*)은 여기 넣지 않는다. 그건 폰 전용이고 워치에는 JS 가 없다.
+target 'SoleMateWatch Watch App' do
+  platform :watchos, '11.0'
+  pod 'FirebaseCrashlytics'
 end

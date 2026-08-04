@@ -25,3 +25,16 @@ export const DELETE_ACCOUNT_URL = 'https://solelife9.github.io/keego-legal/delet
 
 /** 지원(문의) 이메일 — 앱스토어 심사(ASC) 지원 연락처 + 앱 내 '문의하기'. */
 export const SUPPORT_EMAIL = 'kmw0236@gmail.com';
+
+/**
+ * 고객 지원 페이지 URL.
+ *
+ * **왜 이메일만으로는 안 되는가:** App Store Connect 의 `Support URL` 은 버전 제출의
+ * **필수 입력값**이고 `mailto:` 가 아니라 웹 페이지여야 한다. Play 도 스토어 등록정보에
+ * 지원 웹사이트를 요구한다. 즉 이 상수가 가리키는 페이지가 없으면 **제출 폼을 채울 수
+ * 없어 심사에 올릴 수조차 없다**(2026-08-04 출시 운영 감사 L-01).
+ *
+ * 원본은 `docs/support.html`. 내용을 고치면 공개 저장소 keego-legal 에도 같은 파일을
+ * 푸시해야 한다(PRIVACY_URL·TERMS_URL 과 동일한 규약).
+ */
+export const SUPPORT_URL = 'https://solelife9.github.io/keego-legal/support.html';

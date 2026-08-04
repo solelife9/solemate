@@ -10,12 +10,12 @@
 // ============================================================================
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { rf, rs, ri, rv } from './lib/responsive';
-import { View, ScrollView, Pressable, StyleSheet, Image, Share, Linking } from 'react-native';
+import { View, ScrollView, Pressable, StyleSheet, Image, Share, Linking, Platform } from 'react-native';
 import { showDialog } from './lib/dialog';
 import {Text} from './lib/text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { BG, CARD, CARD_HI, ACCENT, GOOD, DANGER, WARN, T1, T2, T3, T4, SEP, CARD_BORDER, FONT, DISPLAY, withAlpha, TIER_COLORS, TIER_LABEL, KAKAO_YELLOW, KAKAO_LABEL, NAVER_GREEN, NAVER_LABEL, RADIUS, GUTTER, MOTION, HALL_GOLD, TYPE, GLASS, ICON} from './theme';
+import { BG, CARD, CARD_HI, ACCENT, GOOD, DANGER, WARN, T1, T2, T3, SEP, CARD_BORDER, FONT, DISPLAY, withAlpha, TIER_COLORS, TIER_LABEL, KAKAO_YELLOW, KAKAO_LABEL, NAVER_GREEN, NAVER_LABEL, RADIUS, GUTTER, MOTION, HALL_GOLD, TYPE, GLASS, ICON} from './theme';
 // recap 토글 = SegmentedControl(sm), 스탯 그리드들 = StatGrid 단일 프리미티브.
 import { TabBar, TABBAR_CLEARANCE, Button, SegmentedControl, StatGrid, Stepper, AmbientBackdrop, Rise, GlassEdge, Toggle, KakaoMark, NaverMark, Input } from './primitives';
 import { Unit, unitKorean, displayNum } from './lib/units';
@@ -47,8 +47,10 @@ import type { RunBestEfforts } from './lib/bestEfforts';
 import { STANDARD_DISTANCES } from './lib/bestEfforts';
 import { fitnessSummary } from './lib/analytics/fitness';
 import { fmtTime } from './lib/format';
+// 몸무게가 러닝화 수명에 주는 효과를 설정 화면이 직접 밝히기 위한 단일 소스(UX 감사 ②).
+import { WEIGHT_DURABILITY_REF_KG, weightDurabilityFactor } from './lib/shoe';
 import { authErrorMessage } from './lib/authErrorMessage';
-import { PRIVACY_URL, TERMS_URL, SUPPORT_EMAIL } from './lib/legalLinks';
+import { PRIVACY_URL, TERMS_URL, SUPPORT_EMAIL, SUPPORT_URL } from './lib/legalLinks';
 import { trackLogin } from './lib/productAnalytics';
 import type { RankTier } from './lib/progression/types';
 
@@ -496,6 +498,9 @@ export default function ProfileScreen({
   const stepWeight = (dir: 1 | -1) => {
     onChangeWeight?.(Math.max(MIN_WEIGHT_KG, Math.min(MAX_WEIGHT_KG, weightKg + dir * WEIGHT_STEP)));
   };
+  // 현재 몸무게가 러닝화 수명을 몇 % 바꾸는가(기준 65kg = 0%). 계수는 lib/shoe 단일 소스에서
+  // 읽는다 — 여기서 다시 계산하면 화면과 로직이 또 갈린다(HEAD 3728685 가 정리한 그 문제).
+  const weightPct = Math.round((weightDurabilityFactor(weightKg) - 1) * 100);
   // 나이·안정심박 스테퍼 — 미설정(0)에서 처음 +를 누르면 각자 하한값에서 시작한다.
   const stepAge = (dir: 1 | -1) => {
     const base = age > 0 ? age : (dir > 0 ? MIN_AGE - AGE_STEP : MIN_AGE);
@@ -626,32 +631,65 @@ export default function ProfileScreen({
   const insets = useSafeAreaInsets();
   // 문의/지원 — 앱스토어 심사(ASC)가 요구하는 지원 연락처. 메일 앱으로 프리필된 문의를 연다.
   // 메일 앱이 없거나 실패하면 주소를 Alert 로 안내(막다른 길 방지).
+  //
+  // 진단 정보를 **우리가 채운다**(2026-08-04 출시 운영 감사 L-04). 예전엔 본문이 "앱 버전·기기
+  // 정보를 함께 주시면 더 빨리 도와드릴 수 있어요"라고 사용자에게 시켰는데, 시키면 절반은 안
+  // 적고 적는 절반도 틀리게 적는다. 앱은 이미 버전을 알고(APP_VERSION) OS 도 안다 — 물어볼
+  // 이유가 없다. 문의 왕복 1회는 1인 개발에서 하루다.
+  //
+  // 넣는 값은 **기기 진단에 필요한 최소치**로 제한한다(처리방침 §2 '기기·오류 정보' 범위와
+  // 일치). 계정 식별자·닉네임·러닝 데이터는 넣지 않는다 — 사용자가 스스로 적기로 선택하지
+  // 않은 것을 메일 본문에 미리 채워 두면 그건 수집이 아니라 유출에 가깝다.
   const openSupport = () => {
     const subject = encodeURIComponent('[Keego] 문의');
-    const body = encodeURIComponent('\n\n\n————————\n문의 내용을 위에 적어주세요. 앱 버전·기기 정보를 함께 주시면 더 빨리 도와드릴 수 있어요.');
+    const diag = [
+      `앱 버전: ${APP_VERSION}`,
+      `기기: ${Platform.OS === 'ios' ? 'iOS' : Platform.OS === 'android' ? 'Android' : Platform.OS} ${String(Platform.Version)}`,
+    ].join('\n');
+    const body = encodeURIComponent(
+      `\n\n\n————————\n문의 내용을 위에 적어주세요.\n어느 화면에서 무엇을 하셨을 때인지 함께 적어주시면 더 빨리 확인할 수 있어요.\n\n${diag}\n`,
+    );
     Linking.openURL(`mailto:${SUPPORT_EMAIL}?subject=${subject}&body=${body}`).catch(() => {
-      showDialog('문의하기', `메일 앱을 열 수 없어요.\n${SUPPORT_EMAIL} 로 문의해 주세요.`);
+      // 메일 앱 부재(시뮬레이터·메일 삭제)에서도 막다른 길을 만들지 않는다. 지원 페이지가
+      // 있으니 주소만 읊지 말고 그쪽으로 갈 문을 같이 연다.
+      showDialog('문의하기', `메일 앱을 열 수 없어요.\n${SUPPORT_EMAIL} 로 보내주시거나, 지원 페이지를 열어주세요.`, [
+        { text: '지원 페이지 열기', onPress: () => { Linking.openURL(SUPPORT_URL).catch(() => {}); } },
+        { text: '닫기', style: 'cancel' },
+      ]);
     });
   };
-  // 법적 문서(개인정보·이용약관) + 문의 — 로그인 시엔 계정 아코디언 안에, 로그아웃 시엔 상시 노출.
+  // 문의하기 — **로그인 여부와 무관하게 상시 노출**(2026-08-04 출시 운영 감사 L-08).
+  //
+  // 예전엔 이 행이 legalRows 안에 있었고, legalRows 는 로그인 상태에서 계정 아코디언
+  // (기본 접힘) 안으로 들어갔다. 그런데 이 앱은 로그인이 강제다 — 즉 **모든 실사용자**에게
+  // 문의 창구가 '마이 → 스크롤 → 계정 탭 → 펼친 목록에서 찾기' 4단계 뒤에 있었다.
+  // 화가 난 사용자는 4단계를 밟지 않는다. 스토어 리뷰에 쓴다. 문의는 리뷰의 배수관이고,
+  // 그 입구가 잠겨 있었다. 법적 문서(읽을 일이 드문 것)와 문의(급할 때 찾는 것)는 접근
+  // 비용이 같아선 안 된다.
+  const supportRow = (
+    <Pressable
+      testID="support-contact"
+      onPress={openSupport}
+      accessibilityRole="button"
+      accessibilityLabel="문의하기"
+      style={({ pressed }) => [s.settingRow, pressed && { backgroundColor: CARD_HI }]}>
+      <View style={s.settingIcon}><Ionicons name="mail-outline" size={ri(ICON.inline)} color={T2} /></View>
+      <View style={{ flex: 1, minWidth: 0 }}>
+        <Text style={s.settingLabel}>문의하기</Text>
+        <Text style={s.cloudSub}>버그 신고·질문 — 직접 답해요</Text>
+      </View>
+      <Ionicons name="chevron-forward" size={ri(ICON.inline)} color={T3} />
+    </Pressable>
+  );
+  // 법적 문서(개인정보·이용약관) — 읽을 일이 드물어 로그인 시엔 계정 아코디언 안에 접힌다.
   const legalRows = (
     <>
-      <Pressable
-        testID="support-contact"
-        onPress={openSupport}
-        accessibilityRole="button"
-        accessibilityLabel="문의하기"
-        style={({ pressed }) => [s.settingRow, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.07) }, pressed && { backgroundColor: CARD_HI }]}>
-        <View style={s.settingIcon}><Ionicons name="mail-outline" size={ri(ICON.inline)} color={T2} /></View>
-        <Text style={s.settingLabel}>문의하기</Text>
-        <Ionicons name="chevron-forward" size={ri(ICON.inline)} color={T3} />
-      </Pressable>
       <Pressable
         testID="legal-privacy"
         onPress={() => { Linking.openURL(PRIVACY_URL).catch(() => {}); }}
         accessibilityRole="link"
         accessibilityLabel="개인정보 처리방침 열기"
-        style={({ pressed }) => [s.settingRow, pressed && { backgroundColor: CARD_HI }]}>
+        style={({ pressed }) => [s.settingRow, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.07) }, pressed && { backgroundColor: CARD_HI }]}>
         <View style={s.settingIcon}><Ionicons name="shield-checkmark-outline" size={ri(ICON.inline)} color={T2} /></View>
         <Text style={s.settingLabel}>개인정보 처리방침</Text>
         <Ionicons name="open-outline" size={ri(ICON.inline)} color={T3} />
@@ -827,7 +865,7 @@ export default function ProfileScreen({
                 사용자는 앱이 고장 났다고 생각한다(실제로 그런 제보로 이 작업이 시작됐다). */}
             {vo2.vo2max <= 0 && vo2.vo2maxNeedsHealth && (
               <View style={s.specVo2Foot} accessible accessibilityLabel="심폐 체력은 애플 건강을 연동하면 표시됩니다">
-                <Ionicons name="pulse-outline" size={ri(ICON.tag)} color={T4} />
+                <Ionicons name="pulse-outline" size={ri(ICON.tag)} color={T3} />
                 <Text style={s.specVo2FootNote}>심폐 체력은 심박이 있어야 정확해요 · 애플 건강을 연동하면 표시됩니다</Text>
               </View>
             )}
@@ -1162,7 +1200,14 @@ export default function ProfileScreen({
             {open === 'body' && (
               <View style={[s.panel, s.settingBorder]}>
                 <Stepper value={weightKg} suffix="kg" onMinus={() => stepWeight(-1)} onPlus={() => stepWeight(1)} />
-                <Text style={s.panelHint}>러닝 칼로리·신발 수명 계산에 사용돼요</Text>
+                {/* 몸무게는 러닝화 수명의 **분모**를 바꾼다(lib/shoe.effectiveMaxKm) — 그런데
+                    예전 힌트는 "사용돼요"까지만 말해서, 이걸 조정한 사용자는 홈·상세의 수명
+                    숫자가 왜 카탈로그 권장값과 다른지 알 방법이 없었다(UX 감사 ②).
+                    방향(무거울수록 짧게)·기준(65kg)·현재 효과(%)를 전부 밝힌다. */}
+                <Text style={s.panelHint}>
+                  {`러닝 칼로리·러닝화 수명 계산에 사용돼요 · ${WEIGHT_DURABILITY_REF_KG}kg 기준으로 무거울수록 수명을 짧게 잡아요`}
+                  {weightPct !== 0 ? ` (지금은 ${weightPct > 0 ? '+' : ''}${weightPct}%)` : ''}
+                </Text>
                 <View style={{ marginTop: rv(14) }}>
                   <Stepper value={age > 0 ? age : '미설정'} suffix="나이(세)" onMinus={() => stepAge(-1)} onPlus={() => stepAge(1)} />
                 </View>
@@ -1308,6 +1353,11 @@ export default function ProfileScreen({
                 </Pressable>
               </View>
             )}
+            {/* 문의하기 — 로그인 여부와 무관하게 항상 이 자리(L-08). 계정 상태가 어떻든
+                "도움이 필요할 때 누를 것"은 한 곳에 고정돼 있어야 찾을 수 있다. */}
+            <View style={{ borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: withAlpha(T1, 0.07) }}>
+              {supportRow}
+            </View>
             {/* 법적 문서 — 로그아웃 시엔 상시 노출(스토어 심사·신뢰), 로그인 시엔 위 계정
                 아코디언 안으로 접힌다(한 칸으로 줄이기, 사용자 2026-07-05). */}
             {!signedIn && legalRows}
@@ -1376,8 +1426,9 @@ const s = StyleSheet.create({
   specVo2Foot: { flexDirection: 'row', alignItems: 'center', gap: rv(8), marginTop: rv(16), paddingTop: rv(14), borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: CARD_BORDER },
   specVo2FootText: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500' },
   specVo2FootStrong: { color: T2, fontWeight: '700' },
-  // 추정 방법 주석 — 값보다 한 단 더 물러난 톤(T4). 숫자를 부정하는 게 아니라 출처를 밝힌다.
-  specVo2FootNote: { color: T4, fontSize: TYPE.micro.fontSize, fontWeight: '500' },
+  // 추정 방법 주석 — 값보다 한 단 물러난 톤(T3). 숫자를 부정하는 게 아니라 출처를 밝힌다.
+  // (구 T4 는 CARD 위 2.3:1 로 AA 미달이었다 — 읽으라고 쓴 글이 안 읽혔다. UX 감사 ⑤)
+  specVo2FootNote: { color: T3, fontSize: TYPE.micro.fontSize, fontWeight: '500' },
   // 섹션 헤더 = SectionTitle 프리미티브와 동일 스펙(700) — 화면 간 헤더 무게 통일(600 혼용 제거).
   sectionLabel: { color: T3, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '700', letterSpacing: 0.4, paddingHorizontal: rs(4) },
   progressRow: { flexDirection: 'row', alignItems: 'center', gap: rv(12), padding: rs(16) },

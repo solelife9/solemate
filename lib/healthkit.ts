@@ -17,6 +17,7 @@
 // ============================================================================
 import {Platform} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import {trackPermissionResult} from './productAnalytics';
 
 const LINKED_KEY = 'hk_linked_v1';
 
@@ -75,8 +76,14 @@ export async function hkLink(): Promise<boolean> {
       toShare: ['HKWorkoutTypeIdentifier'],
     });
     await AsyncStorage.setItem(LINKED_KEY, '1');
+    // 건강 연동 계측(L-12). ⚠️ 여기서 granted=true 는 **"요청이 끝났다"**는 뜻이지
+    // "읽기를 허락받았다"가 아니다 — iOS 는 읽기 승인 여부를 앱에 알려주지 않는다
+    // (바로 위 함수 주석 참조). 그래서 이 숫자는 '연동 시도 완료율'로만 읽어야 하고,
+    // 실제 심박 수신 여부는 별개로 봐야 한다. 뭉개면 지표가 거짓말을 한다.
+    trackPermissionResult('health', true);
     return true;
   } catch {
+    trackPermissionResult('health', false);
     return false;
   }
 }

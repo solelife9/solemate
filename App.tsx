@@ -100,7 +100,7 @@ import {
 } from './lib/bootCache';
 import {reportStorageResult, reportSyncResult} from './lib/storageAlert';
 import {nowMs as syncNowMs, loadClockOffset} from './lib/clockOffset';
-import {trackFirstShoeAdded} from './lib/productAnalytics';
+import {trackFirstShoeAdded,trackShoeRetired,trackCrashRecovery,trackSyncFailed,trackPermissionResult,trackRunSave} from './lib/productAnalytics';
 import {buildWatchShoes, buildWatchRecentRuns, buildWidgetShoe} from './lib/watchPayload';
 import {
   loadSnapshot, clearSnapshot, isResumable,
@@ -183,6 +183,10 @@ type BootState = 'loading' | 'ready' | 'error';
 // 첫 실행 온보딩 / 위치 권한 priming 의 1회성 플래그 키(AsyncStorage 영속).
 const ONBOARD_KEY = 'onboarded';        // 온보딩 완료
 const LOC_PRIME_KEY = 'loc_perm_primed'; // 위치 권한 사전 안내 완료
+// 활성화(첫 신발 등록) 계측을 이미 보냈는지 — 설치당 1회 보장(2026-08-04 감사 L-10).
+// 앱 동작에는 아무 영향이 없다. 순수 계측 플래그이므로 클라우드 백업/복원 대상이 아니다
+// (기기를 옮기면 다시 셀 수 있지만, 그건 새 설치라 새 코호트로 보는 게 맞다).
+const K_ACTIVATED = 'activation_first_shoe_v1';
 // 로컬-퍼스트 폴백 캐시(키·읽기·쓰기는 lib/bootCache 가 소유한다).
 // audit a2: soft-delete 묘비(tombstone) 영속 키. 삭제는 하드삭제 대신 {id,deleted:true,
 // updatedAt} 묘비로 표현해, 라이브 신발/런 배열엔 안 보이게 하면서도 backupData 에 실어
@@ -357,7 +361,20 @@ function Main(){
   // 실행 시 강제로 보여준다(넘기면 홈으로, 비영속). 릴리스 빌드에선 항상 꺼진다
   // (__DEV__ 게이트 — 출시 블로커 해소 2026-07-10. 온보딩 리뷰는 07-09~10 기기에서 완료).
   // jest 에서도 끈다 — 부팅/온보딩 통합 테스트가 실제 게이트 조건(!onboarded)을 검증해야 한다.
-  const [previewOnboard,setPreviewOnboard]=useState(__DEV__&&!(typeof process!=='undefined'&&process.env&&process.env.JEST_WORKER_ID));
+  /**
+   * 온보딩을 게이트 밖에서 띄우는 두 경로. **성격이 다르므로 구분한다**(UX 감사 ③).
+   *   · 'dev'    — 개발 빌드 부팅 시 자동 미리보기(등록 단계까지 전부, 결과는 버린다)
+   *   · 'replay' — 마이 탭 「온보딩 다시 보기」. **소개만** 보여준다.
+   *
+   * 왜 나눴나: 예전엔 둘 다 한 boolean 이었고 `onDone` 이 화면만 닫았다. 그래서 사용자가
+   * 「온보딩 다시 보기」에서 러닝화를 고르고 **「등록 완료」를 눌러도 아무 일도 없었다** —
+   * 오류도 토스트도 없이 조용히 버려졌다(같은 화면에서 조정한 몸무게도 함께). 등록을
+   * 살리는 것보다 **등록 단계를 안 보여주는 쪽**이 맞다: 이미 신발을 가진 사용자에게
+   * "첫 러닝화를 등록해볼까요?"는 맥락이 틀렸고, 다시 보기의 목적은 소개를 다시 읽는 것이다.
+   * 신발 추가는 홈 상단 '신발 추가'라는 제 진입점이 따로 있다.
+   */
+  const [previewOnboard,setPreviewOnboard]=useState<null|'dev'|'replay'>(
+    __DEV__&&!(typeof process!=='undefined'&&process.env&&process.env.JEST_WORKER_ID)?'dev':null);
   const [overlay,setOverlay]=useState<'none'|'add'|'goal'|'countdown'|'run'>('none');
   const [pendingShoe,setPendingShoe]=useState<{id:string;name:string;ui:Shoe}|null>(null);
   const [activeRun,setActiveRun]=useState<{id:string;name:string;goalKm:number;goalMin:number;pacePlan:number[];targetZone:number;trackLapM?:number;indoor?:boolean}|null>(null);
@@ -878,14 +895,18 @@ function Main(){
         '완료하지 않은 러닝이 있어요',
         `${dispKm.toFixed(2)}km${snap.track?` · ${snap.track.lapTimes.length}랩`:''} · ${fmtTime(snap.elapsed)} 기록이 남아 있어요.\n이어서 달릴까요, 여기까지 저장할까요?`,
         [
-          {text:'버리기',style:'destructive',onPress:()=>{void clearSnapshot();}},
+          {text:'버리기',style:'destructive',onPress:()=>{trackCrashRecovery('discard');void clearSnapshot();}},
           {text:'기록 저장',onPress:()=>{
+            trackCrashRecovery('save');
             setActiveRun({id:snap.shoe.id,name:snap.shoe.name,goalKm:snap.goalKm,goalMin:snap.goalMin??0,pacePlan:snap.pacePlan??[],targetZone:0,trackLapM});
             setResumeMode('review');
             setResumeSnap(snap);
             setOverlay('run');
           }},
           {text:'이어 달리기',onPress:()=>{
+            // 복구 경로 계측(L-12) — 크래시 후 사용자가 실제로 무엇을 고르는지. 셋 다 세야
+            // 의미가 있다('이어 달리기'만 세면 분모가 없어 비율을 못 만든다).
+            trackCrashRecovery('resume');
             // GPS/센서를 다시 켜고 누적 거리·경과시간을 시드해 계속 달린다(엔진 seed*).
             setActiveRun({id:snap.shoe.id,name:snap.shoe.name,goalKm:snap.goalKm,goalMin:snap.goalMin??0,pacePlan:snap.pacePlan??[],targetZone:0,trackLapM});
             setResumeMode('continue');
@@ -981,7 +1002,7 @@ function Main(){
     try{await runCloudSyncRef.current({force:true});}catch{/* 오프라인/실패 — 화면 데이터 유지(비차단) */}
   }
 
-  async function addShoe(name:string,maxKm:number,startKm:number,date:string,priceKrw?:number){
+  async function addShoe(name:string,maxKm:number,startKm:number,date:string,priceKrw?:number,entry:'onboarding'|'picker'|'manual'='picker'){
     // Stage 2: 신발 생성은 Firestore 정본. 로그인(authUser)만 있으면 클라이언트 id 로 즉시
     // 로컬 생성(로컬-퍼스트) — 서버 왕복 없이 바로 화면 반영. 영속은 부팅캐시 + cloudSync
     // (디바운스 push)가 담당한다(REST 의존 제거). 로그인 게이트가 이미 막지만 방어적 가드 유지.
@@ -990,8 +1011,21 @@ function Main(){
       return;
     }
     // 첫 신발 등록 = 활성화 지표(심사 B-12). 리텐션의 분기점이라 '첫 켤레'만 남긴다.
-    // (등록 경로 구분은 아직 없다 — 온보딩·메인 모두 이 함수를 지난다.)
-    if(shoes.filter(sh=>!isRetired(sh)).length===0){trackFirstShoeAdded('picker');}
+    //
+    // 판정 기준이 **영속 플래그**다(2026-08-04 출시 운영 감사 L-10). 예전엔 "현역 신발이
+    // 0개일 때"였는데, 그건 '첫 등록'이 아니라 '현재 비어 있음'을 센다 — 신발을 전부
+    // 은퇴시킨 사용자가 새 신발을 등록하면 그것도 첫 신발로 잡혔다. 은퇴는 쌓이기만 하니
+    // 활성화율이 시간이 갈수록 부풀었다. 지표는 틀리더라도 **양방향으로** 틀려야 눈치라도
+    // 채는데, 이건 한 방향으로만 틀리는 종류였다.
+    //
+    // 쓰기 실패는 삼킨다 — 계측 때문에 신발 등록이 막히면 안 된다(최악은 중복 1건).
+    void (async()=>{
+      try{
+        if(await AsyncStorage.getItem(K_ACTIVATED)) return;
+        await AsyncStorage.setItem(K_ACTIVATED,'1');
+        trackFirstShoeAdded(entry);
+      }catch{/* 계측 실패는 앱을 막지 않는다 */}
+    })();
     // 클라이언트 id + updatedAt 스탬프(머지 '최신 우선'). max_km/start_km/purchase_date 만
     // 채우고 나머지(total_km/run_time)는 런에서 파생(서버 truth 부재 시 폴백).
     // price_krw 는 입력했을 때만 싣는다(0/NaN 을 '0원에 샀다'로 오해하지 않게 — 결측과
@@ -1079,6 +1113,19 @@ function Main(){
   // 보관(retire/archive): 신발을 선택목록·홈 picker에서 숨기되 신발과 런 기록은
   // 모두 보존한다. retired 토글이므로 복원도 가능하다.
   async function retireShoe(id:string,retired:boolean){
+    // 은퇴 계측(2026-08-04 출시 운영 감사 L-12) — keego 의 차별점(수명 관리)이 **실제로
+    // 끝까지 소비되는지**를 보는 유일한 지표다. 신발을 등록만 하고 은퇴시키지 않는다면
+    // 루프가 절반에서 끊긴 것이고, 그건 제품 방향의 문제다.
+    //
+    // 보관 해제(복원)는 세지 않는다 — 그건 은퇴가 아니라 되돌리기다.
+    // 버킷으로만 보낸다(정확한 km 금지 — 처리방침 §2 최소 수집).
+    if(retired){
+      const target=shoes.find(s=>s.id===id);
+      if(target){
+        const pct=shoeHealth(target,runs).percentUsed;
+        trackShoeRetired(pct<80?'under_80':pct<=100?'80_100':'over_100');
+      }
+    }
     // Stage 2: 로컬 상태(retired 토글)만 갱신(Firestore 정본). stampUpdatedAt 으로 이 변경이
     // 머지에서 옛 값을 이긴다. 영속은 cloudSync 담당.
     setShoes(prev=>prev.map(s=>s.id===id?stampUpdatedAt({...s,retired}):s));
@@ -1608,6 +1655,10 @@ function Main(){
       }).catch(e=>reportIssue('recordSync 미러링',e));
     }catch(e){
       reportIssue('cloud sync',e);
+      // 동기 실패 빈도 계측(2026-08-04 출시 운영 감사 L-12). Crashlytics 는 '예외가 났다'를
+      // 알려주지만 **얼마나 흔한지**는 알려주지 않는다. 무음 실패 계열은 빈도가 곧 심각도다 —
+      // 1%면 네트워크 사정이고 20%면 설계 결함이다. 그 둘을 가르는 숫자가 여기서만 나온다.
+      trackSyncFailed('push');
       // AUDIT 3 D-1: **동기 실패를 사용자에게 알린다.** 예전엔 Crashlytics 로만 갔다 —
       // 백업이 멎은 채 몇 주가 지나고, 기기를 바꿀 때 그제야 기록이 없다는 걸 알았다.
       // 임계 3회·쿨다운 1시간이라 지하철 같은 일시적 오프라인으로는 뜨지 않는다.
@@ -1819,6 +1870,20 @@ function Main(){
         return; // 새 런을 만들지 않는다 — 신발 이중 차감의 근본 차단.
       }
       const newId=await ctx.addRun(shoeId,p.km,date,'','watch',Math.round(p.durationS),Math.round(p.cadence),routeStr,'',Math.round(p.avgBpm),elevM,Math.round(p.kcal));
+      // 워치 런 계측(2026-08-04 출시 운영 감사 L-11). 이전엔 이 경로에 계측이 없어
+      // **워치 사용량이 통째로 보이지 않았다** — device:'watch' 값이 프로덕션에서 한 번도
+      // 전송된 적이 없었다(테스트 파일에만 존재). 워치는 가장 많은 시간을 쏟은 영역 중
+      // 하나인데, 얼마나 쓰이는지 모르면 더 투자할지 말지 판단할 근거가 없다.
+      //
+      // ⚠️ 콘솔에서 읽을 때 주의: **워치 런에는 짝이 되는 kg_run_start 가 없다.** 러닝은
+      // 워치에서 시작됐고 폰은 끝난 뒤에 결과만 받기 때문이다. 그래서 '시작→저장' 완주율은
+      // 반드시 device='phone' 으로 걸러서 봐야 하고, 워치는 저장 건수만 따로 읽는다.
+      // 여기서 가짜 start 를 쏘면 숫자는 예뻐지지만 그 순간 지표가 거짓말이 된다.
+      //
+      // 중복 수신(dup)일 때는 위에서 이미 return 했으므로 여기 오지 않는다 — 새 런만 센다.
+      if(newId){
+        trackRunSave({km:p.km,durationSec:Math.round(p.durationS),device:'watch',hadGps:!!routeStr});
+      }
       // 트랙 런이면 track_<id> 마커 저장 — 폰 RunDetail 이 '트랙·Nm×N랩' 표시(폰 트랙 런과
       // 동일 계약). 거리(랩수×랩거리)·시간은 이미 레코드에 있으므로 메타만 얹는다.
       if(newId&&p.laps>0&&p.lapM>0){
@@ -2346,7 +2411,10 @@ function Main(){
     const perm=await requestRunPermissions();
     // 동작·피트니스도 여기서 한 번에 — 케이던스(Pedometer)와 고도(Barometer)가 같은 모션
     // 권한을 쓰므로, 첫 러닝 순간이 아니라 앞단에서 받아 매끄럽게 동작하게 한다.
-    try{await Pedometer.requestPermissionsAsync();}catch{/* 거부/미지원 — 러닝은 계속 */}
+    // 수락률 계측(L-12) — 케이던스·고도가 이 권한에 달려 있다. 같은 결과 중복 전송은
+    // trackPermissionResult 가 막는다(RunEngine 에서 한 번 더 요청하므로).
+    try{const mp=await Pedometer.requestPermissionsAsync();trackPermissionResult('motion',!!mp?.granted);}
+    catch{trackPermissionResult('motion',false);/* 거부/미지원 — 러닝은 계속 */}
     if(!perm.foreground){showLocationDenied(goal);return;} // 카운트다운으로 넘기지 않는다
     enterRun(goal);
   };
@@ -2396,7 +2464,7 @@ function Main(){
     // 온보딩에서 몸무게를 입력했으면 설정에 반영(칼로리+내구도 공용). 미입력이면 기본값 유지.
     if(typeof weightKg==='number'&&weightKg>0){changeWeight(clampWeight(weightKg));}
     if(registered&&authUser?.uid){
-      addShoe(`${registered.brand} ${registered.model}`.trim(),registered.max||DEFAULT_MAX_KM,Math.round(registered.km),today());
+      addShoe(`${registered.brand} ${registered.model}`.trim(),registered.max||DEFAULT_MAX_KM,Math.round(registered.km),today(),undefined,'onboarding');
     }
     setOverlay('none');
   };
@@ -2426,13 +2494,14 @@ function Main(){
     return <BootError onRetry={()=>{void initUser();}}/>;
   }
   if(overlay==='add'){
-    return <AddShoeScreen onClose={()=>setOverlay('none')} onSave={onAddSaved}/>;
+    return <AddShoeScreen onClose={()=>setOverlay('none')} onSave={onAddSaved} weightKg={weightKg}/>;
   }
   // 첫 실행 온보딩: 신발이 없고(신규) 아직 온보딩 전이면 신발→런→수명 차감 흐름을
   // 1회 소개한다. 신발을 이미 가진 사용자/완료자에겐 뜨지 않는다.
   // 온보딩 미리보기(개발 전용, __DEV__) — 넘기면 비영속으로 닫고 홈으로.
   if(previewOnboard){
-    return <OnboardingScreen onDone={()=>setPreviewOnboard(false)}/>;
+    // introOnly=소개 2화면에서 끝(등록 단계 없음) → 버려질 등록 자체가 생기지 않는다.
+    return <OnboardingScreen introOnly={previewOnboard==='replay'} onDone={()=>setPreviewOnboard(null)}/>;
   }
   if(!onboarded&&shoes.length===0&&overlay==='none'){
     return <OnboardingScreen onDone={completeOnboarding}/>;
@@ -2792,7 +2861,7 @@ function Main(){
             // 들어가서 내 자리가 없는 목록을 보게 된다(2026-08-01 판단 유지).
             {...(LEADERBOARD_PUBLISH_ENABLED&&socialVisibility==='public'
               ?{onOpenRanking:()=>setShowHallOfFame(true)}:{})}
-            onReplayOnboarding={()=>setPreviewOnboard(true)}
+            onReplayOnboarding={()=>setPreviewOnboard('replay')}
           />
         )}
       </View>

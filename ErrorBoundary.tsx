@@ -1,26 +1,28 @@
 import React from 'react';
 import { rf, rs, rv } from './lib/responsive';
-import {View, StyleSheet} from 'react-native';
+import {View, StyleSheet, Linking} from 'react-native';
 import {Text} from './lib/text';
 import {BG, T1, T3, FONT as FP, DISPLAY as FH, TYPE} from './theme';
 import {Button} from './primitives';
 import {reportIssue} from './lib/crashlytics';
+import {SUPPORT_EMAIL, SUPPORT_URL} from './lib/legalLinks';
 
 type Props = {
   children: React.ReactNode;
   // 재시도 시 부모가 상태를 초기화할 수 있는 선택 훅(예: 캐시/네비게이션 리셋).
   onReset?: () => void;
 };
-type State = {hasError: boolean};
+type State = {hasError: boolean; retries: number};
 
 // 렌더 트리에서 던진 예외를 가둬 "백스크린"(아무것도 안 그려진 흰/검은 빈 화면)을
 // 막고, 한국어 폴백 + 재시도 버튼을 보여준다. React error boundary 는 클래스
 // 컴포넌트로만 구현 가능하다(getDerivedStateFromError/componentDidCatch).
 export default class ErrorBoundary extends React.Component<Props, State> {
-  state: State = {hasError: false};
+  state: State = {hasError: false, retries: 0};
 
-  static getDerivedStateFromError(): State {
-    // 다음 렌더에서 폴백 UI를 그리도록 플래그를 세운다.
+  static getDerivedStateFromError(): Partial<State> {
+    // 다음 렌더에서 폴백 UI를 그리도록 플래그를 세운다. retries 는 건드리지 않는다 —
+    // 재시도 횟수는 handleRetry 가 센다(아래 '반복 실패' 참조).
     return {hasError: true};
   }
 
@@ -34,20 +36,55 @@ export default class ErrorBoundary extends React.Component<Props, State> {
 
   handleRetry = () => {
     // 에러 상태를 해제하면 children 서브트리를 다시 마운트해 렌더를 재시도한다.
-    this.setState({hasError: false});
+    this.setState(prev => ({hasError: false, retries: prev.retries + 1}));
     this.props.onReset?.();
+  };
+
+  // 문의 — 메일 앱을 우선 열고, 안 되면 지원 페이지로. 여기서 실패하면 사용자는 정말로
+  // 갈 곳이 없으므로 두 경로 모두 조용히 죽지 않게 한다.
+  handleSupport = () => {
+    const subject = encodeURIComponent('[Keego] 오류 신고');
+    const body = encodeURIComponent(
+      '\n\n\n————————\n앱에서 오류 화면이 떴습니다.\n어떤 화면에서 무엇을 하셨을 때인지 적어주시면 큰 도움이 됩니다.\n',
+    );
+    Linking.openURL(`mailto:${SUPPORT_EMAIL}?subject=${subject}&body=${body}`).catch(() => {
+      Linking.openURL(SUPPORT_URL).catch(() => {
+        /* 둘 다 실패하면 화면에 적힌 주소가 마지막 안내다 */
+      });
+    });
   };
 
   render(): React.ReactNode {
     if (this.state.hasError) {
+      // 반복 실패(재시도를 2번 넘게 눌렀다)면 같은 원인이 계속 터지는 것이다. 그때는
+      // "잠시 후 다시"가 거짓말이 되므로 말을 바꾸고 문의를 주행동으로 올린다
+      // (2026-08-04 출시 운영 감사 L-03). 무한히 실패하는 버튼만 남겨두면 사용자는
+      // 앱을 지우거나 리뷰에 별 하나를 남긴다 — 둘 다 되돌릴 수 없다.
+      const stuck = this.state.retries >= 2;
       return (
         <View style={styles.screen} testID="error-fallback">
-          <Text style={styles.title}>문제가 발생했어요</Text>
+          <Text style={styles.title}>{stuck ? '오류가 계속되고 있어요' : '문제가 발생했어요'}</Text>
           <Text style={styles.body}>
-            앱에 일시적인 오류가 생겼어요.{'\n'}잠시 후 다시 시도해 주세요.
+            {stuck
+              ? '같은 오류가 반복되고 있어요.\n알려주시면 바로 확인해서 고칠게요.'
+              : '앱에 일시적인 오류가 생겼어요.\n잠시 후 다시 시도해 주세요.'}
           </Text>
           {/* 수제 버튼 회수 → 단일 Button 프리미티브(글래스 CTA·RADIUS.btn·누름 표준). */}
-          <Button label="다시 시도" onPress={this.handleRetry} testID="error-retry" />
+          {stuck ? (
+            <>
+              <Button label="문의하기" onPress={this.handleSupport} testID="error-support" />
+              <View style={styles.gap} />
+              <Button label="다시 시도" variant="ghost" onPress={this.handleRetry} testID="error-retry" />
+            </>
+          ) : (
+            <>
+              <Button label="다시 시도" onPress={this.handleRetry} testID="error-retry" />
+              <View style={styles.gap} />
+              <Button label="문의하기" variant="ghost" onPress={this.handleSupport} testID="error-support" />
+            </>
+          )}
+          {/* 메일 앱도 브라우저도 못 여는 최악의 경우를 위한 마지막 줄. 읽어서 옮겨 적을 수 있다. */}
+          <Text style={styles.addr}>{SUPPORT_EMAIL}</Text>
         </View>
       );
     }
@@ -73,4 +110,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: rv(28),
   },
+  // 두 CTA 사이 간격 — 버튼끼리 붙어 오터치 나는 것을 막는다.
+  gap: {height: rv(10)},
+  // 마지막 안내(주소). 보조 정보이므로 T3·작은 글자로 눌러 둔다.
+  addr: {color: T3, fontFamily: FP, fontSize: rf(12), marginTop: rv(20)},
 });

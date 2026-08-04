@@ -3847,6 +3847,7 @@ DEPENDENCIES:
   - ExpoSensors (from `../node_modules/expo-sensors/ios`)
   - ExpoTaskManager (from `../node_modules/expo-task-manager/ios`)
   - FBLazyVector (from `../node_modules/react-native/Libraries/FBLazyVector`)
+  - FirebaseCrashlytics
   - hermes-engine (from `../node_modules/react-native/sdks/hermes-engine/hermes-engine.podspec`)
   - "kakao-login (from `../node_modules/@react-native-seoul/kakao-login`)"
   - NitroModules (from `../node_modules/react-native-nitro-modules`)
@@ -4418,6 +4419,6 @@ SPEC CHECKSUMS:
   Yoga: 9d8e8094a2bed6a175d9e6001a0546d5dae663ee
   ZXingObjC: 8898711ab495761b2dbbdec76d90164a6d7e14c5
 
-PODFILE CHECKSUM: b6095ab60b22fa629feb71cc34dfe8f23fda0183
+PODFILE CHECKSUM: 9a3534b10745b089978dea76223193dd02c4b133
 
 COCOAPODS: 1.15.2

@@ -22,6 +22,7 @@ import * as TaskManager from 'expo-task-manager';
 
 import {runTracker, RawFix} from './runTracker';
 import {buildForegroundServiceConfig} from './foregroundService';
+import {trackPermissionResult} from './productAnalytics';
 
 /** TaskManager task name for the background run-location updates. */
 export const RUN_LOCATION_TASK = 'keego-run-location';
@@ -90,6 +91,11 @@ export async function requestRunPermissions(): Promise<RunPermissions> {
   } catch {
     foreground = false;
   }
+  // 수락률 계측(2026-08-04 출시 운영 감사 L-12). **요청하는 자리에서 센다** — 호출부마다
+  // 붙이면 자리가 늘어날 때 반드시 하나가 빠지고, 그러면 분모가 조용히 틀린다.
+  // 위치 권한이 거부되면 이 앱은 존재 이유가 통째로 죽으므로, 프라이밍 문구·요청 시점을
+  // 고칠 근거가 되는 유일한 숫자다. trackPermissionResult 는 no-throw 다.
+  trackPermissionResult('location', foreground);
   if (!foreground) return {foreground, background};
   try {
     const bg = await Location.requestBackgroundPermissionsAsync();
@@ -97,6 +103,7 @@ export async function requestRunPermissions(): Promise<RunPermissions> {
   } catch {
     background = false;
   }
+  trackPermissionResult('location_background', background);
   return {foreground, background};
 }
 

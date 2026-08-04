@@ -51,7 +51,7 @@ import {estimateMaxHR, zoneOf} from '../lib/analytics/hrZones';
 import {decideZoneCoach, initZoneCoachState} from '../lib/zoneCoach';
 import {decidePaceCoach, initPaceCoachState} from '../lib/paceCoach';
 import {showToast} from '../lib/toast';
-import {trackRunStart, trackRunSave} from '../lib/productAnalytics';
+import {trackRunStart, trackRunSave, trackRunDiscard, trackPermissionResult} from '../lib/productAnalytics';
 
 const KEEP_AWAKE_TAG = 'keego-run';
 
@@ -655,6 +655,8 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
     // 거부/미지원 기기에선 케이던스만 0(러닝은 계속).
     try{
       const perm=await Pedometer.requestPermissionsAsync();
+      // 수락률 계측(L-12). App 의 앞단 요청과 중복되지만 같은 결과는 한 번만 나간다.
+      trackPermissionResult('motion',!!perm.granted);
       const available=perm.granted?await Pedometer.isAvailableAsync():false;
       if(available){
         const stepT0=new Date();
@@ -741,6 +743,19 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
     runTracker.togglePause();
   }
 
+  // 화면 잠금(UX 감사 ④) — 잠그면 keep-awake 를 놓아 화면이 OS 기본대로 꺼지게 한다.
+  // 잠금은 곧 "이제 화면 안 본다"(주머니·암밴드)라서 2시간 롱런 내내 화면을 켜 둘 이유가
+  // 없어진다(배터리·발열). **기록은 영향받지 않는다** — 거리 추적은 백그라운드 위치
+  // 업데이트가 담당하므로 화면이 꺼져도 계속되고(lib/locationService), 지표는 잠금화면
+  // Live Activity 로 이어진다. 해제하면 다시 켜 둔다. 실패는 종전처럼 비치명.
+  function handleLockChange(locked:boolean){
+    if(locked){
+      try{deactivateKeepAwake(KEEP_AWAKE_TAG);}catch{/* 무해: 이미 해제됨 */}
+    }else{
+      void activateKeepAwakeAsync(KEEP_AWAKE_TAG).catch(e=>reportIssue('run: keep-awake activate',e));
+    }
+  }
+
   // 런 종료(실제 stop) — RunActiveScreen 종료 버튼의 롱프레스로만 호출된다(롱프레스 자체가
   // 오작동 종료 가드라 별도 2단계 확인은 두지 않는다). 거리가 너무 짧으면 계속/나가기 선택.
   // 워치 정지 미러링(2026-07-18) — 워치에서 종료를 누르면 폰 러닝도 같은 종료 플로우를
@@ -792,6 +807,9 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
           : '러닝이 시작되지 않아 저장할 기록이 없어요.',
         [{text:'확인',onPress:()=>{void clearSnapshot();onDiscard();}}],
       );
+      // 사용자가 버린 게 아니라 **엔진이 기록을 못 만든** 경우다(L-12). '너무 짧음'과
+      // 사용자 폐기를 뭉개면 코어루프 완주율(시작→저장)이 나빠졌을 때 원인을 못 가른다.
+      trackRunDiscard('too_short');
       return;
     }
     // 최종 거리/시간. 트랙 모드는 랩수×확정랩거리(GPS 누적 아님), 그 외는 엔진 누적거리.
@@ -918,7 +936,9 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
   function confirmDiscard(){
     showDialog('이 기록을 버릴까요?',`방금 달린 ${finKm.toFixed(2)}km 기록이 사라지고 되돌릴 수 없어요.`,[
       {text:'취소',style:'cancel'},
-      {text:'버리기',style:'destructive',onPress:onDiscard},
+      // 사용자가 명시적으로 버린 경우만 'user' (L-12). 확인 다이얼로그를 통과한 뒤에 센다 —
+      // 버튼을 띄운 것과 실제로 버린 것은 다르다.
+      {text:'버리기',style:'destructive',onPress:()=>{trackRunDiscard('user');onDiscard();}},
     ]);
   }
 
@@ -1066,6 +1086,7 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
       voiceMuted={voiceMuted}
       onToggleVoice={toggleVoice}
       pausedMoveNudge={pauseMoveNudge}
+      onLockChange={handleLockChange}
     />
   );
 }

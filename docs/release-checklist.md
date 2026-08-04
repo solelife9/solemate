@@ -74,3 +74,53 @@ cd android && ./gradlew bundleRelease   # app/build/outputs/bundle/release/app-r
   → `https://solelife9.github.io/keego-legal/privacy.html` 열리는지 확인.
 - 스토어 등록 정보(Play Data safety / App Privacy)에도 **같은 URL** 입력.
 - ⚠️ 방침 본문은 초안 — 법적 자문 후 최종본으로 갱신.
+
+---
+
+## 6. 출시 운영 (2026-08-04 출시 운영 감사 — `docs/audit/07-launch-ops.md`)
+
+> 여기 있는 항목들은 **앱이 잘 도는지**가 아니라 **출시 다음 날 무슨 일이 벌어지고 그때
+> 무엇을 할 수 있는지**에 관한 것이다. 앞의 1~5절을 다 통과해도 이게 비면 출시 직후가 깜깜하다.
+
+### 6.1 지원 URL (제출 필수 — 없으면 폼을 못 채운다)
+- 원본 `docs/support.html` → 공개 저장소 **keego-legal 에 푸시**해야 200 이 된다
+  (privacy/terms 와 동일 규약). 앱 내 상수 = `lib/legalLinks.ts SUPPORT_URL`.
+- ASC `Support URL` 은 버전 제출 **필수 입력값**이고 `mailto:` 로 대체할 수 없다.
+  Play 등록정보의 지원 웹사이트에도 같은 주소를 넣는다.
+- [ ] `https://solelife9.github.io/keego-legal/support.html` 200 확인
+- [ ] ASC · Play Console 양쪽에 입력
+
+### 6.2 강제 업데이트 게이트 리허설 (비상 장치를 비상 때 처음 쓰지 않는다)
+스토어에 나간 빌드에 데이터 유실급 버그가 있을 때, 심사(iOS 1~2일 / Play 최대 7일)를
+기다리는 것 말고 할 수 있는 유일한 조치다. 그런데 **한 번도 켜 본 적이 없다.**
+```bash
+node scripts/seed-config.mjs                     # 현재 설정 조회(문서 존재 확인)
+node scripts/seed-config.mjs --ios https://apps.apple.com/app/idXXXXXXXX \
+                             --android https://play.google.com/store/apps/details?id=com.keego.app
+```
+- [ ] 프로덕션에 `config/app` 문서 생성
+- [ ] **스토어 링크 등록**(없으면 게이트 화면이 "검색해서 받으세요" 폴백 — 최후 수단이지 기본이 아니다)
+- [ ] `--min` 을 **현재 버전과 같게** 넣어 게이트가 **뜨지 않는 것**까지 확인 → 확인 후 `--off`
+- ⚠️ `--min` 은 사용자를 잠그는 스위치다. **고친 버전이 이미 스토어에서 심사를 통과한 뒤에만** 넣는다.
+- ⚠️ 한계: 게이트는 **로그인 이후**에만 판정한다(`firestore.rules` 의 `config` 읽기가 signedIn).
+  로그인 자체가 깨지는 버그는 이 장치로 못 막는다 — 그때 남는 건 심사 대기뿐이다.
+
+### 6.3 관측성 실제 도착 확인 (배선이 맞아도 콘솔이 안 붙어 있는 경우가 흔하다)
+- [ ] **릴리스 빌드에서 의도적으로 크래시 1회** → Firebase Crashlytics 콘솔 도착 확인
+      (심볼화된 스택으로 보이는지까지. dSYM 업로드가 안 되면 주소만 나온다)
+- [ ] Firebase Analytics 콘솔에 `kg_*` 이벤트 도착 확인 (첫 수집까지 **최대 24시간** 지연)
+- [ ] 워치 앱 크래시도 도착하는지 (워치 타깃 Crashlytics — 2026-08-04 추가)
+
+### 6.4 첫 릴리스는 단계적 출시로
+- [ ] iOS: App Store Connect **Phased Release** 켜기
+- [ ] Android: Play **staged rollout**(예: 20% → 50% → 100%)
+- 문제가 보이면 **심사 없이 배포를 멈출 수 있다.** 첫 출시에 가장 값싼 보험이다.
+- [ ] iOS **Expedited Review**(신속 심사) 요청 경로를 미리 열어만 볼 것. 남용하면 다음부터
+      안 받아주므로 데이터 유실·보안 같은 진짜 긴급 때만 쓰는 카드다.
+
+### 6.5 모집 전 게이트 (`docs/beta-recruiting.md` 문구를 보내기 **전에**)
+- [ ] 6.1 지원 URL 게시
+- [ ] CI 가 `.github/workflows/` 에서 돌고 있는지 (핫픽스가 게이트 없이 나가는 것을 막는다)
+- [ ] 단계 0: 지인 3~5명 실외 러닝 1회 완주·저장 → **크래시 0** 확인 후에 단계 1 발송
+- 100명을 한 번에 모으지 않는다. 3~5명 → 15~20명 → 50명+, 단계 사이 **최소 3일**
+  (D1 리텐션은 하루가 지나야 존재하는 숫자다).

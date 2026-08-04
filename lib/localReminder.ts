@@ -15,6 +15,7 @@
 //   - no-throw: 권한 거부·네이티브 결측(테스트/시뮬)에서도 조용히 no-op.
 
 import {parseTime} from './notifications';
+import {trackPermissionResult} from './productAnalytics';
 
 // ── 순수: 발화 시각 계산 ────────────────────────────────────────────
 export const REMINDER_CHAIN_DAYS = 7;
@@ -99,6 +100,10 @@ export async function syncRunReminder(
     }
     if (!opts.enabled) return 0;
     const perm = await mod.requestPermissionsAsync().catch(() => null);
+    const notifGranted = !!perm && (perm.granted === true || perm.status === 'granted');
+    // 알림 수락률 계측(L-12). 리마인더는 리텐션 장치인데 권한이 거부되면 통째로 죽는다 —
+    // 리텐션이 나쁠 때 "기능이 별로다"인지 "권한을 못 받았다"인지 가르는 유일한 근거다.
+    trackPermissionResult('notification', notifGranted);
     if (perm && perm.granted === false && perm.status !== 'granted') return 0;
     const dates = reminderFireDates(opts.now ?? new Date(), opts.reminderTime, opts.ranToday);
     let n = 0;

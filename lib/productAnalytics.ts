@@ -92,8 +92,18 @@ export function trackOnboardingStep(step: number): void {
   send(EVENTS.onboardingStep, {step: Math.max(0, Math.floor(Number(step) || 0))});
 }
 
-/** 첫 신발 등록 — 활성화 지표. 리텐션의 분기점이다. */
-export function trackFirstShoeAdded(source: 'picker' | 'manual'): void {
+/**
+ * 첫 신발 등록 — 활성화 지표. 리텐션의 분기점이다.
+ *
+ * **설치당 최대 1회여야 한다.** 이 보장은 호출부(App.addShoe)의 영속 플래그가 한다 —
+ * 예전엔 "현역 신발이 0개일 때"로 판정해서, 신발을 전부 은퇴시킨 기존 사용자가 새 신발을
+ * 사서 등록하면 그것도 '첫 신발'로 집계됐다(2026-08-04 출시 운영 감사 L-10). 은퇴는
+ * 누적되기만 하므로 오차는 **시간이 갈수록 커지는 방향으로만** 틀렸다.
+ *
+ * source = 등록이 일어난 **자리**. 온보딩에서 활성화되는지, 나중에 스스로 찾아와서
+ * 하는지는 첫 화면 설계가 먹히는지를 가르는 질문이라 나눌 값어치가 있다.
+ */
+export function trackFirstShoeAdded(source: 'onboarding' | 'picker' | 'manual'): void {
   send(EVENTS.firstShoeAdded, {source});
 }
 
@@ -124,12 +134,37 @@ export function trackRunDiscard(reason: 'user' | 'too_short'): void {
 }
 
 // ── 마찰 지점 ───────────────────────────────────────────────────────────────
-/** 권한 수락률 — 거부되면 그 기능 전체가 죽으므로 문구·시점 개선의 근거가 된다. */
+/**
+ * 같은 실행(프로세스) 안에서 이미 보고한 권한 결과 — `kind` → 마지막으로 보낸 granted.
+ * 아래 dedupe 의 상태다. 앱을 껐다 켜면 비워진다(그게 맞다 — 세션 경계는 의미가 있다).
+ */
+const lastPermission = new Map<string, boolean>();
+
+/**
+ * 권한 수락률 — 거부되면 그 기능 전체가 죽으므로 문구·시점 개선의 근거가 된다.
+ *
+ * **같은 결과를 한 실행에서 두 번 보내지 않는다.** 권한을 묻는 자리는 하나가 아니다 —
+ * 예를 들어 모션 권한은 러닝 시작 앞단(App)과 케이던스 구독(RunEngine) 두 곳에서 요청하고,
+ * OS 는 두 번째 요청에 다이얼로그를 띄우지 않고 이미 정해진 답을 즉시 돌려준다. 그걸 그대로
+ * 보내면 **한 번의 러닝이 이벤트를 두 번 쏘고, 많이 달리는 사용자일수록 수락률에 크게 반영된다.**
+ * 수락률은 '사람 수'로 읽어야 하는 지표인데 '실행 횟수'로 오염되는 것이다.
+ *
+ * 반대로 값이 **바뀌면** 보낸다 — 거부했다가 설정에서 허용하고 돌아온 경우가 그렇고,
+ * 그건 문구·유도 개선의 성패를 알려주는 진짜 신호다.
+ */
 export function trackPermissionResult(
   kind: 'location' | 'location_background' | 'notification' | 'health' | 'motion',
   granted: boolean,
 ): void {
-  send(EVENTS.permissionResult, {kind, granted: !!granted});
+  const g = !!granted;
+  if (lastPermission.get(kind) === g) return;
+  lastPermission.set(kind, g);
+  send(EVENTS.permissionResult, {kind, granted: g});
+}
+
+/** 테스트 전용 — dedupe 상태 초기화(프로세스가 공유되는 jest 환경 방어). */
+export function __resetPermissionDedupe(): void {
+  lastPermission.clear();
 }
 
 export function trackLogin(provider: 'google' | 'apple' | 'kakao' | 'naver' | 'anonymous'): void {
