@@ -1155,10 +1155,14 @@ function Main(){
   // 수동 런 입력(앱 외 주행·잔존 마일리지 보정): source='manual'로 addRun을 재사용한다.
   // 로컬 우선 + 낙관적 삽입 동선을 그대로 타므로 신발 km(shoeHealth)이 즉시 반영되고
   // 영속은 cloudSync 가 담당한다. route/cadence는 비운다(GPS 미동반).
-  async function addManualRun(shoeId:string,km:number,date:string,durationSec:number,surface?:Surface){
-    const localId=await addRun(shoeId,km,date,'','manual',durationSec);
-    // 노면 태그(선택)는 새 런 id가 생긴 뒤 영속한다. road(기본)는 키를 만들지 않는다(잡음 0).
-    if(localId&&surface&&surface!=='road') await setRunSurface(localId,surface);
+  //
+  // 노면은 묻지 않는다(2026-08-04 민우님 결정). 마모 계수는 살아 있지만(lib/wearModel),
+  // **주된 경로인 GPS 러닝은 노면을 묻지 않는다** — 실내·트랙만 자동 태깅되고 트레일은
+  // road 로 계산된다. 보조 경로에서만 묻는 건 비대칭이고 데이터도 반쪽이 된다(수동 런에만
+  // 트레일 표시가 붙는다). 이미 저장된 태그는 그대로 남아 계산에 반영된다 — 새로 붙이는
+  // 길만 없앤 것이다. 노면이 정말 필요하면 물어볼 자리는 런이 아니라 **신발**이다.
+  async function addManualRun(shoeId:string,km:number,date:string,durationSec:number){
+    await addRun(shoeId,km,date,'','manual',durationSec);
   }
 
   // 개별 런 편집(Stage 2b · Firestore 정본). 낙관적으로 runs 상태를 갱신 → toUiShoe가
