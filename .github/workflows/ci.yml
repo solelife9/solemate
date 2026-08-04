@@ -47,12 +47,18 @@ jobs:
       - name: 린트
         run: npm run lint
 
+      # --maxWorkers 를 명시하는 이유(2026-08-04, CI 첫 가동에서 실측):
+      # 워커 수를 지정하지 않으면 이 잡이 **출력 한 줄 없이 16분 넘게 멈췄다가** 타임아웃에
+      # 잘렸다(run 30905338977). 느린 게 아니라 첫 스위트조차 끝나지 않았다 — 러너는
+      # 2코어/7GB 인데 RN 테스트(react-test-renderer)는 워커당 메모리를 많이 쓴다.
+      # 같은 실행에서 규칙 잡(jest, 소수 스위트)은 정상 통과했으므로 jest 자체 문제가 아니다.
+      # 로컬(코어 많음)에서는 8초에 끝나 절대 재현되지 않는 종류다.
       - name: 테스트
-        run: npm test -- --ci
+        run: npm test -- --ci --maxWorkers=2 --workerIdleMemoryLimit=1GB
 
       # lib/ 비즈니스 로직 커버리지 임계(jest.coverage.config.js).
       - name: 커버리지 게이트
-        run: npm run test:coverage
+        run: npm run test:coverage -- --maxWorkers=2
 
   rules:
     name: Firestore 보안 규칙
