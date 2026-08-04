@@ -1,6 +1,6 @@
 import React, {useState, useEffect, useRef, useMemo, useCallback} from 'react';
 import {
-  View, StatusBar, Linking, AppState,
+  View, StatusBar, Linking, AppState, InteractionManager,
 } from 'react-native';
 import {showDialog, showPermissionSettingsDialog} from './lib/dialog';
 import {SafeAreaProvider, useSafeAreaInsets} from 'react-native-safe-area-context';
@@ -279,6 +279,13 @@ export default function App(){
 
 function Main(){
   const [tab,setTab]=useState(0);                 // 0 home · 1 shoes · 2 history · 3 profile (primitives TABS 순서와 동일)
+  // 한 번이라도 연 탭 — 그 화면은 언마운트하지 않고 숨기기만 한다(렌더 지점 주석 참조).
+  // 처음부터 넷을 다 만들지 않는 이유: 안 쓴 화면까지 미리 만들면 콜드 스타트가 느려진다.
+  // "첫 진입은 한 번 값을 치르고, 그다음부터 공짜"가 이 자료구조의 계약이다.
+  const [mountedTabs,setMountedTabs]=useState<Set<number>>(()=>new Set([0]));
+  useEffect(()=>{
+    setMountedTabs(prev=>prev.has(tab)?prev:new Set(prev).add(tab));
+  },[tab]);
   const [shoes,setShoes]=useState<BackendShoe[]>([]);
   const [runs,setRuns]=useState<BackendRun[]>([]);
   // 거리 PB(러너 스펙) — paceTrack 베스트에포트 집계. 캐시·마이그레이션·삭제복구는 store 담당.
@@ -452,6 +459,45 @@ function Main(){
   // audit#9/#10: 콜드 백엔드 부팅 상태(스켈레톤/재시도 카드). 최초엔 'loading'으로 떠
   // 스켈레톤을 보여주고, initUser 성공 시 'ready', fetch 실패 시 'error'로 간다.
   const [bootState,setBootState]=useState<BootState>('loading');
+
+  // ── 나머지 탭 프리워밍(2026-08-04) ─────────────────────────────────────────
+  // 위 '한 번 만들면 유지'만으로는 **첫 탭 전환이 여전히 느리다**. 실측에서 그 한 번이
+  // 2.1초였다(마이탭). 화면당 카드마다 GlassEdge(SVG)가 깔리고 설정 5섹션이 한꺼번에 서는데,
+  // 안드로이드에서 그 뷰 생성이 비싸다(같은 실측의 Slow bitmap uploads 100회).
+  //
+  // 그 비용을 줄이려면 화면 구조를 뜯어야 한다. 대신 **아무도 기다리지 않는 시간으로 옮긴다** —
+  // 사용자가 홈을 보고 있는 동안 나머지 셋을 조용히 만들어 둔다. 총 일의 양은 같지만
+  // 기다림이 사라진다. 탭 전환이 '처음부터' 즉시가 되는 건 이 프리워밍 덕분이다.
+  //
+  // 지키는 선:
+  //   · bootState==='ready' 이후에만 — 부팅 경로와 경쟁시키지 않는다.
+  //   · runAfterInteractions — 진행 중인 전환/제스처가 끝난 뒤에 시작한다.
+  //   · **한 번에 하나씩, 간격을 두고** — 셋을 동시에 세우면 그 순간 홈이 끊긴다.
+  //     끊김을 옮기려다 다른 곳에서 끊기면 아무것도 고친 게 아니다.
+  //   · 러닝 중(overlay)에는 하지 않는다 — 러닝 화면은 불가침이다(MISSION 원칙).
+  useEffect(()=>{
+    if(process.env.NODE_ENV==='test') return;
+    if(bootState!=='ready'||overlay!=='none') return;
+    if(mountedTabs.size>=4) return;
+    let cancelled=false;
+    let timer:any=null;
+    const task=InteractionManager.runAfterInteractions(()=>{
+      const order=[1,2,3];
+      let i=0;
+      const step=()=>{
+        if(cancelled) return;
+        while(i<order.length&&mountedTabs.has(order[i])) i++;
+        if(i>=order.length) return;
+        const t=order[i];i++;
+        setMountedTabs(prev=>prev.has(t)?prev:new Set(prev).add(t));
+        timer=setTimeout(step,600); // 한 화면 세우고 숨 고르기 — 연속 생성이 홈을 끊지 않게
+      };
+      step();
+    });
+    return()=>{cancelled=true;if(timer)clearTimeout(timer);task.cancel?.();};
+    // mountedTabs 를 dep 에 넣지 않는다 — 프리워밍이 스스로를 재시작해 무한 루프가 된다.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[bootState,overlay]);
   // 필수 로그인 게이트(Firebase 인증). undefined=확인중(스플래시) · null=미로그인(로그인 화면)
   // · 객체=로그인됨(앱 진입). 실기기에선 onAuthStateChanged 가 채운다. 테스트(NODE_ENV
   // ==='test')에선 게이트를 우회해 기존 App 테스트가 로그인 화면에 막히지 않게 한다
@@ -2092,7 +2138,7 @@ function Main(){
   // 보정(체중·노면)을 공유하도록 한 곳에서 만든다. 표시 파생값이며 원본은 읽기만 한다.
   // 홈 히어로(선택 신발)의 교체 예측. 신발 상세와 동일 입력(target=max_km, 거리/시간/날짜,
   // weightKg)으로 계산해 두 화면 예측이 일치한다. ok/overdue일 때만 히어로에 노출.
-  const homeActiveRaw=shoes.find(s=>s.id===effectiveId)||null;
+  const homeActiveRaw=useMemo(()=>shoes.find(s=>s.id===effectiveId)||null,[shoes,effectiveId]);
   // 한 신발의 교체 예측(상세와 동일 입력: target=max_km, 거리/시간/날짜, weightKg).
   const forecastForRaw=(raw:BackendShoe|null):ReplacementForecast|null=>raw?forecastReplacement(
     {name:raw.name,target_km:Number(raw.max_km),start_km:Number(raw.start_km)||0,purchase_date:raw.purchase_date},
@@ -2201,8 +2247,8 @@ function Main(){
   const retiredRecords:RetiredShoeRecord[]=useMemo(()=>retirementRecordsFromShoes(shoes as any),[shoes]);
   // 보관함 목록: retired(보관) 처리됐지만 명예의 전당(키프세이크) 기록이 없는 신발 = 단순
   // 보관 신발. 명예의 전당 신발은 박물관에 있으므로 제외한다. 마이 탭 '신발 보관함'이 소비.
-  const museumShoeIds=new Set(retiredRecords.map(r=>r.shoeId));
-  const archivedUiShoes:Shoe[]=uiShoes.filter(s=>s.retired&&!!s.id&&!museumShoeIds.has(s.id));
+  const museumShoeIds=useMemo(()=>new Set(retiredRecords.map(r=>r.shoeId)),[retiredRecords]);
+  const archivedUiShoes:Shoe[]=useMemo(()=>uiShoes.filter(s=>s.retired&&!!s.id&&!museumShoeIds.has(s.id)),[uiShoes,museumShoeIds]);
   const progressionCtx=useMemo(
     ()=>buildContext(runs,shoes,progState?.earnedTitles??[],null,Date.now(),retiredRecords),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -2229,12 +2275,33 @@ function Main(){
   );
 
   // ── home week stats ────────────────────────────────────────
-  const now=new Date();
-  const mon=getMonday(now); const sun=new Date(mon); sun.setDate(mon.getDate()+6);
-  const weekRuns=runs.filter(r=>r.run_date>=ymdLocal(mon)&&r.run_date<=ymdLocal(sun));
+  // `now` 를 **날짜 단위로 안정화**한다(2026-08-04 갤럭시 S10e 성능 실측).
+  //
+  // 예전엔 `const now=new Date()` 였다 — 렌더마다 새 객체다. 그 아래 주/월/년 필터, 버킷,
+  // 요약, 차트, 배지, 기록이 전부 now 에 매달려 있어서 **파생 체인 전체가 매 렌더 재계산되고
+  // 매번 새 배열·객체를 낳았다.** 그 새 참조가 화면 props 로 내려가면 React.memo 가 통째로
+  // 무력해진다(내용이 같아도 참조가 다르니 '바뀐 것'으로 본다). 탭 화면 넷이 마운트된 뒤로는
+  // App 의 상태 54개 중 아무거나 하나만 건드려도 네 화면이 전부 다시 그려졌다.
+  //
+  // 이 값들은 전부 **날짜 단위**로만 쓰인다(주 경계·월·연도·요일 라벨). 그래서 'YYYY-MM-DD'
+  // 를 키로 삼아 하루에 한 번만 새 Date 를 만든다. 자정을 넘겨도 그 뒤 첫 렌더에서 키가
+  // 바뀌므로 동작은 예전과 같다 — 바뀐 건 '같은 날 안에서 헛되이 새로 만들지 않는다'뿐이다.
+  const todayKey=ymdLocal(new Date());
+  // todayKey 는 본문에서 쓰지 않지만 **의도적인 캐시 키**다 — 날짜가 바뀔 때만 새 Date 를
+  // 만들라는 뜻이다. 린터는 '안 쓰는 의존성'으로 보지만 그게 이 memo 의 존재 이유다.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const now=useMemo(()=>new Date(),[todayKey]);
+  const {mon,sun}=useMemo(()=>{
+    const m=getMonday(now); const s=new Date(m); s.setDate(m.getDate()+6);
+    return {mon:m,sun:s};
+  },[now]);
+  const weekRuns=useMemo(
+    ()=>runs.filter(r=>r.run_date>=ymdLocal(mon)&&r.run_date<=ymdLocal(sun)),
+    [runs,mon,sun],
+  );
   // 표시 단위(unit)로 환산한 주간 거리. 저장 표준 km은 sumKm이 유지하고, 화면용
   // 문자열만 kmToDisplay로 변환한다(km이면 항등 — 기존 출력과 동일).
-  const week:WeekStats={km:kmToDisplay(sumKm(weekRuns),unit).toFixed(1),runs:weekRuns.length,pace:avgPaceLabel(weekRuns)};
+  const week:WeekStats=useMemo(()=>({km:kmToDisplay(sumKm(weekRuns),unit).toFixed(1),runs:weekRuns.length,pace:avgPaceLabel(weekRuns)}),[weekRuns,unit]);
   const dateLabel=`${now.getMonth()+1}월 ${now.getDate()}일 ${['일요일','월요일','화요일','수요일','목요일','금요일','토요일'][now.getDay()]}`;
   // 주간 목표 달성률(목표 설정 행이 구동). 거리 합·목표는 km 기준으로 계산하고
   // 퍼센트만 화면에 쓴다(단위 환산과 무관 — 비율은 단위 불변).
@@ -2311,26 +2378,26 @@ function Main(){
   );
 
   // ── history summary + chart per period ─────────────────────
-  const monthRuns=runs.filter(r=>String(r.run_date).startsWith(ymdLocal(now).slice(0,7)));
-  const yearRuns=runs.filter(r=>String(r.run_date).startsWith(String(now.getFullYear())));
+  const monthRuns=useMemo(()=>runs.filter(r=>String(r.run_date).startsWith(ymdLocal(now).slice(0,7))),[runs,now]);
+  const yearRuns=useMemo(()=>runs.filter(r=>String(r.run_date).startsWith(String(now.getFullYear()))),[runs,now]);
   // 기간 요약: 거리(km)만 표시 단위로 환산하고 나머지(횟수/페이스/시간)는 그대로.
-  const mkSummary=(list:any[]):PeriodSummary=>({...summaryOf(list),km:kmToDisplay(sumKm(list),unit).toFixed(1)});
-  const summary:Record<string,PeriodSummary>={
+  const mkSummary=useCallback((list:any[]):PeriodSummary=>({...summaryOf(list),km:kmToDisplay(sumKm(list),unit).toFixed(1)}),[unit]);
+  const summary:Record<string,PeriodSummary>=useMemo(()=>({
     '주':mkSummary(weekRuns),'월':mkSummary(monthRuns),'년':mkSummary(yearRuns),'전체':mkSummary(runs),
-  };
+  }),[weekRuns,monthRuns,yearRuns,runs,mkSummary]);
   // 차트 데이터도 표시 단위로 환산(막대 높이·우측 km 눈금 라벨이 함께 단위를 따른다).
   // week chart: daily Mon..Sun
-  const weekData=weekBuckets(runs,mon).map(v=>displayNum(v,unit,1));
+  const weekData=useMemo(()=>weekBuckets(runs,mon).map(v=>displayNum(v,unit,1)),[runs,mon,unit]);
   // month chart: weekly buckets
-  const monthData=monthBuckets(monthRuns,now.getFullYear(),now.getMonth());
+  const monthData=useMemo(()=>monthBuckets(monthRuns,now.getFullYear(),now.getMonth()),[monthRuns,now]);
   const weekCount=monthData.length;
   // year chart: monthly Jan..Dec
-  const yearData=yearBuckets(yearRuns);
-  const chart:Record<string,PeriodChart>={
+  const yearData=useMemo(()=>yearBuckets(yearRuns),[yearRuns]);
+  const chart:Record<string,PeriodChart>=useMemo(()=>({
     '주':{title:'일별 거리',data:weekData,labels:['월','화','수','목','금','토','일']},
     '월':{title:'주간 거리',data:monthData.map(v=>displayNum(v,unit,1)),labels:Array.from({length:weekCount},(_,i)=>`${i+1}주`)},
     '년':{title:'월별 거리',data:yearData.map(v=>displayNum(v,unit,0)),labels:['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월']},
-  };
+  }),[weekData,monthData,yearData,weekCount,unit]);
 
   // ── per-shoe totals (for shoe detail) ──────────────────────
   // 신발마다 런 전량을 훑는 O(신발×런) — homeForecasts 와 같은 이유로 메모한다(Q-12).
@@ -2351,11 +2418,11 @@ function Main(){
   },[shoes,runs]);
 
   // ── profile ─────────────────────────────────────────────────
-  const totalKm=Math.round(sumKm(runs));
+  const totalKm=useMemo(()=>Math.round(sumKm(runs)),[runs]);
   const totalSec=runs.reduce((a,r)=>a+(r.duration||0),0);
   const firstDate=runs.length?runs.reduce((m:string,r:any)=>r.run_date<m?r.run_date:m,runs[0].run_date):'';
   const since=firstDate?(()=>{const d=new Date(firstDate+'T00:00:00');return `${d.getFullYear()}년 ${d.getMonth()+1}월부터`;})():'';
-  const streak=maxDayStreak(runs.map(r=>r.run_date).filter(Boolean));
+  const streak=useMemo(()=>maxDayStreak(runs.map(r=>r.run_date).filter(Boolean)),[runs]);
   // 프로필 신원 블록(스펙): Rank·장착 타이틀 + 업적 수·은퇴 신발 수. getProgression 은
   // homeProgression 과 동일 참조라 메모 히트(재계산 없음). 은퇴 수는 영속 레코드 권위.
   const profView=getProgression(runs,shoes,progState??undefined,undefined,contextChallenges);
@@ -2369,22 +2436,22 @@ function Main(){
     achievementCount,
     retiredShoes:progState?.retiredShoes?.length??0,
   };
-  const badges:Badge[]=[
+  const badges:Badge[]=useMemo(()=>[
     {icon:'trophy',label:'100km',on:totalKm>=100},
     {icon:'flame',label:'7일 연속',on:streak>=7},
     {icon:'flash',label:'10회 달성',on:runs.length>=10},
     {icon:'map',label:'하프',on:runs.some(r=>parseFloat(String(r.km))>=21.1)},
-  ];
+  ],[totalKm,streak,runs]);
   // 개인 기록(PR) 프로필 카드: 1km/5km 최고 기록·최장 거리. 거리·시간이 모두 양수인
   // 런만 산정에 쓴다(personalRecords 순수함수). 거리 최고는 전부 '완주 시간' 표기로 통일
   // (러닝 관례 — 과거 1km 만 페이스 /km 라 5km 와 섞였다, 사용자 지적 2026-07-16).
   const prRuns=runs.map(r=>({run_date:String(r.run_date),km:parseFloat(String(r.km))||0,durationS:r.duration||0}));
-  const pr=personalRecords(prRuns);
-  const records:PersonalRecord[]=[
+  const pr=useMemo(()=>personalRecords(prRuns),[prRuns]);
+  const records:PersonalRecord[]=useMemo(()=>[
     {icon:'flash-outline',label:'1km 최고 기록',value:pr.fastest1k!=null?fmtTime(Math.round(pr.fastest1k)):'--',unit:''},
     {icon:'timer-outline',label:'5km 최고 기록',value:pr.fastest5k!=null?fmtTime(Math.round(pr.fastest5k)):'--',unit:''},
     {icon:'trending-up-outline',label:'최장 거리',value:pr.longest!=null?String(displayNum(pr.longest,unit,2)):'--',unit:pr.longest!=null?unit:''},
-  ];
+  ],[pr,unit]);
 
   // ── actions ─────────────────────────────────────────────────
   // i는 homeUiShoes(보관 신발 제외 목록)의 인덱스 — 원본 신발로 되짚어 시작한다.
@@ -2849,7 +2916,21 @@ function Main(){
   return(
     <View style={{flex:1,backgroundColor:BG}}>
       <View style={{flex:1}}>
-        {tab===0&&(
+        {/* 탭 화면은 **한 번 만들면 유지한다**(2026-08-04 갤럭시 S10e 실측).
+            예전엔 {tab===n && <Screen/>} 라서 탭을 누를 때마다 화면을 통째로 다시 만들었다.
+            마이탭은 1,563줄짜리라 그 비용이 컸다 — 실측 프레임 통계:
+              버벅인 프레임 48.75% · 99분위 2,100ms · Slow UI thread 123회
+              반면 GPU 99분위는 15ms — **그래픽이 아니라 UI 스레드가 병목**이었다.
+            아이폰은 같은 비용을 훨씬 빨리 치러 체감되지 않았고, 그래서 여태 안 보였다.
+
+            방문한 적 있는 탭만 유지한다(첫 진입 비용은 그대로 — 안 쓴 화면을 미리 만들면
+            콜드 스타트가 느려진다). 숨김은 display:'none' — 언마운트가 아니라 레이아웃에서만
+            빠져서, 스크롤 위치·펼침 상태가 보존되는 이득도 따라온다.
+            ⚠️ 전제: 네 화면 모두 상시 타이머·Animated.loop 가 0건이다(확인함). 숨은 채로
+            CPU 를 먹지 않는다. 새 화면을 이 탭에 넣을 땐 그 전제를 다시 확인할 것. */}
+        {mountedTabs.has(0)&&(
+        <View style={{flex:1,display:tab===0?'flex':'none'}} pointerEvents={tab===0?'auto':'none'}>
+        {(
           <HomeScreen
             shoes={homeUiShoes} week={week} dateLabel={dateLabel} unit={unit} userName={profileName}
             activeIdx={homeActiveIdx} onSelect={selectHomeShoe}
@@ -2865,7 +2946,11 @@ function Main(){
             rotation={rotationPicks}
           />
         )}
-        {tab===2&&(
+        </View>
+        )}
+        {mountedTabs.has(2)&&(
+        <View style={{flex:1,display:tab===2?'flex':'none'}} pointerEvents={tab===2?'auto':'none'}>
+        {(
           <HistoryScreen
             shoes={uiShoes} runs={uiRuns} summary={summary} chart={chart} unit={unit} onTab={setTab}
             onAddRun={addManualRun} onEditRun={editRun} onDeleteRun={deleteRun}
@@ -2874,7 +2959,11 @@ function Main(){
             todayISO={today()}
           />
         )}
-        {tab===1&&(
+        </View>
+        )}
+        {mountedTabs.has(1)&&(
+        <View style={{flex:1,display:tab===1?'flex':'none'}} pointerEvents={tab===1?'auto':'none'}>
+        {(
           <ShoesScreen
             shoes={uiShoes} runs={uiRuns} totals={shoeTotals}
             unit={unit} weightKg={weightKg}
@@ -2888,7 +2977,11 @@ function Main(){
             onOpenArchive={()=>setShowArchive(true)} archivedCount={archivedUiShoes.length}
           />
         )}
-        {tab===3&&(
+        </View>
+        )}
+        {mountedTabs.has(3)&&(
+        <View style={{flex:1,display:tab===3?'flex':'none'}} pointerEvents={tab===3?'auto':'none'}>
+        {(
           <ProfileScreen
             profile={profile} badges={badges} records={records} distancePBs={distancePBs} onTab={setTab}
             onProviderSignedIn={(p)=>{pendingProviderRef.current=p;}}
@@ -2918,6 +3011,8 @@ function Main(){
               ?{onOpenRanking:()=>setShowHallOfFame(true)}:{})}
             onReplayOnboarding={()=>setPreviewOnboard('replay')}
           />
+        )}
+        </View>
         )}
       </View>
     </View>

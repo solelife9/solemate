@@ -112,7 +112,7 @@ function NotifToggle({ label, value, onToggle, testID }: { label: string; value:
 // −/＋ 스테퍼(목표 거리·알림 임계값 공용). 모듈 스코프에 둬 매 렌더 재생성을 피한다.
 // 스텝퍼는 앱 공용 프리미티브(primitives.Stepper) — 로컬 구현 제거(2026-07-04 DS 통일).
 
-export default function ProfileScreen({
+function ProfileScreen({
   profile = DEFAULT_PROFILE, badges: _badges = [], records = [], distancePBs = {}, onTab,
   onProviderSignedIn, socialVisibility = 'unset', onToggleSocial,
   profilePhotoUri = '', onChangeName, onPickPhoto,
@@ -1561,3 +1561,12 @@ const s = StyleSheet.create({
   cloudMsg: { fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '600', lineHeight: rf(18), paddingHorizontal: rs(16), paddingBottom: rv(14) },
   makerNote: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '400', lineHeight: rf(19), paddingHorizontal: rs(16), paddingTop: rv(4), paddingBottom: rv(14) },
 });
+
+// ─── React.memo — 탭 화면은 자기 props 가 바뀔 때만 렌더한다 (2026-08-04 실측) ───
+// 왜: App.tsx 는 useState 54개를 가진 단일 거대 컴포넌트다. 그중 **아무거나 하나**가
+// 바뀌면 App 이 리렌더되고, memo 가 없으면 마운트된 탭 화면이 전부 따라 렌더된다.
+// 탭을 유지(display 토글)하도록 바꾼 뒤엔 그 대가가 4배가 됐다 — 갤럭시 S10e 실측에서
+// 버벅 프레임이 48.75%→52% 로 **오히려 악화**했다. memo 가 그 전제를 복구한다.
+// ⚠️ 효과의 전제: props 가 렌더마다 새 참조면 memo 는 무력하다. App 쪽에서 인라인 화살표
+//    함수와 즉석 배열/객체를 useCallback/useMemo 로 안정화해야 실제로 건너뛴다.
+export default React.memo(ProfileScreen);

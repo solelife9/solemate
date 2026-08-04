@@ -609,7 +609,7 @@ function ShoeCard({ shoe, onPress, onPlay, unit, pace: _pace, forecast }: { shoe
 }
 
 
-export default function ShoesScreen({
+function ShoesScreen({
   shoes = SHOES, runs = [], totals = {}, unit = 'km', weightKg, onAddShoe, onTab, onRename, onDelete, onRetire, onSetMaxKm, onStartRun,
   detailShoeId, onConsumeDetail,
   rawShoes, rawRuns, progressionCtx, equippedTitle, onRetiredKeepsake, now, userName,
@@ -926,3 +926,12 @@ const s = StyleSheet.create({
 
   // 신발 수명(max_km) 조정 스테퍼 + 직접 입력
 });
+
+// ─── React.memo — 탭 화면은 자기 props 가 바뀔 때만 렌더한다 (2026-08-04 실측) ───
+// 왜: App.tsx 는 useState 54개를 가진 단일 거대 컴포넌트다. 그중 **아무거나 하나**가
+// 바뀌면 App 이 리렌더되고, memo 가 없으면 마운트된 탭 화면이 전부 따라 렌더된다.
+// 탭을 유지(display 토글)하도록 바꾼 뒤엔 그 대가가 4배가 됐다 — 갤럭시 S10e 실측에서
+// 버벅 프레임이 48.75%→52% 로 **오히려 악화**했다. memo 가 그 전제를 복구한다.
+// ⚠️ 효과의 전제: props 가 렌더마다 새 참조면 memo 는 무력하다. App 쪽에서 인라인 화살표
+//    함수와 즉석 배열/객체를 useCallback/useMemo 로 안정화해야 실제로 건너뛴다.
+export default React.memo(ShoesScreen);
