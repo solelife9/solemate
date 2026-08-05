@@ -240,7 +240,17 @@ function ProfileScreen({
 
   // ── 음성 코칭 설정(탑티어 패리티 #14) — 로컬 로드/저장, 다음 러닝부터 적용 ──────
   const [voice, setVoice] = useState<VoiceSettings>({...DEFAULT_VOICE});
-  useEffect(() => { void loadVoiceSettings().then(setVoice); }, []);
+  // ── 설정 데이터는 **설정을 실제로 열 때** 읽는다 (2026-08-04 갤럭시 S10e 실측) ──────
+  //
+  // 예전엔 마이 탭에 들어서는 순간 음성·자동일시정지·계측·햅틱·건강연동·클라우드계정을
+  // 전부 읽었다. 저장소 읽기 6번이 각각 다른 시점에 끝나면서 setState 를 6번 부르고,
+  // 그때마다 1,563줄짜리 이 화면이 다시 그려졌다. 마이 탭 **첫 진입 350~450ms** 의 몫이
+  // 여기 있었다. 그런데 이 값들은 설정 화면을 열기 전까지 **어디에도 쓰이지 않는다.**
+  //
+  // (햅틱·계측은 App.tsx 가 부팅 시 이미 전역 적용한다 — 여기 읽기는 토글 표시용일 뿐이라
+  //  미뤄도 앱 동작이 달라지지 않는다.)
+  const [settingsLoaded, setSettingsLoaded] = useState(false);
+  useEffect(() => { if (!settingsLoaded) return; void loadVoiceSettings().then(setVoice); }, [settingsLoaded]);
   const patchVoice = (patch: Partial<VoiceSettings>) => {
     setVoice(prev => {
       const next = {...prev, ...patch};
@@ -251,7 +261,7 @@ function ProfileScreen({
 
   // ── 자동 일시정지(#16) — 즉시 토글, 다음 러닝부터 적용 ──────────────────────
   const [autoPauseOn, setAutoPauseOn] = useState<boolean>(DEFAULT_AUTOPAUSE);
-  useEffect(() => { void loadAutoPause().then(setAutoPauseOn); }, []);
+  useEffect(() => { if (!settingsLoaded) return; void loadAutoPause().then(setAutoPauseOn); }, [settingsLoaded]);
   const toggleAutoPause = () => {
     setAutoPauseOn(prev => {
       const next = !prev;
@@ -266,7 +276,7 @@ function ProfileScreen({
   // 수집을 함께 끈다 — 처리방침이 둘을 같은 목적으로 묶어 고지하므로 사용자에게도 하나의
   // 선택으로 보이는 게 정직하다. 부팅 시 적용은 App.tsx 가 한다(여기선 화면 상태 + 즉시 반영).
   const [telemetryOn, setTelemetryOn] = useState<boolean>(DEFAULT_TELEMETRY);
-  useEffect(() => { void loadTelemetry().then(setTelemetryOn); }, []);
+  useEffect(() => { if (!settingsLoaded) return; void loadTelemetry().then(setTelemetryOn); }, [settingsLoaded]);
   const toggleTelemetry = () => {
     setTelemetryOn(prev => {
       const next = !prev;
@@ -279,7 +289,7 @@ function ProfileScreen({
   };
 
   const [hapticsOn, setHapticsOn] = useState<boolean>(DEFAULT_HAPTICS);
-  useEffect(() => { void loadHaptics().then(v => { setHapticsOn(v); setHapticsEnabled(v); }); }, []);
+  useEffect(() => { if (!settingsLoaded) return; void loadHaptics().then(v => { setHapticsOn(v); setHapticsEnabled(v); }); }, [settingsLoaded]);
   const toggleHaptics = () => {
     setHapticsOn(prev => {
       const next = !prev;
@@ -294,11 +304,13 @@ function ProfileScreen({
   // 전체화면 '설정' 뷰로 전환된다(목표·알림·푸시·단위·체중·계정·클라우드를 한곳에 모음).
   // 상태/핸들러는 그대로 공유하므로 데이터 흐름은 바뀌지 않는다(뷰 전환일 뿐).
   const [showSettings, setShowSettings] = useState(false);
+  // 설정을 처음 여는 순간 위쪽 로드 게이트를 푼다(선언 순서상 여기서 감시).
+  useEffect(() => { if (showSettings) setSettingsLoaded(true); }, [showSettings]);
 
   // Apple 건강(HealthKit) 연동 상태 — 기기가 지원할 때만 행 노출. 연동 성공 시
   // 안정시심박이 비어 있으면 HK 최신값으로 자동 채움(Karvonen HR존 정확도 ↑).
   const [hkOn, setHkOn] = useState(false);
-  useEffect(() => { void hkLinked().then(setHkOn); }, []);
+  useEffect(() => { if (!settingsLoaded) return; void hkLinked().then(setHkOn); }, [settingsLoaded]);
   const linkHealth = async () => {
     if (hkOn) return;
     const ok = await hkLink();

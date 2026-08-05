@@ -17,6 +17,7 @@ import {
   AccessibilityInfo,
   PanResponder,
   Platform,
+  InteractionManager,
   StyleSheet,
   StyleProp,
   ViewStyle,
@@ -719,25 +720,65 @@ const card = StyleSheet.create({
 // 순흑 배경은 유리가 '비칠 것'이 없어 반투명 표면이 평평한 회색으로 죽는다. 상단에
 // 아주 옅은 무채 광을 깔아 유리 너머로 비치는 명암을 만든다(레퍼런스 앱들의 문법).
 // 무채 원칙 유지 — 색이 아니라 밝기만. 각 탭 화면 루트의 첫 자식으로 깐다(BG 위).
+// 상단 앰비언트 광량 — **미리 구운 이미지**로 그린다 (2026-08-05, 갤럭시 S10e 실측).
+//
+// ── 왜 SVG 를 버렸나 ────────────────────────────────────────────────────────
+// 예전엔 화면 폭 × 높이 45% 짜리 `<Svg>` 에 방사형 그라데이션을 그렸다. react-native-svg 는
+// 안드로이드에서 이걸 **CPU 로 한 픽셀씩 칠한다** — 1080×1026 ≈ 110만 픽셀이다.
+// 마이 탭 첫 진입 프레임을 단계별로 분해한 실측이 그대로 말해준다:
+//
+//   프레임 전체 1,878ms
+//     그리기 기록   1,644.8ms   ← 87%. 여기서 픽셀을 칠하고 있었다
+//     텍스처 업로드   161.2ms
+//     레이아웃/측정     0.7ms   ← 뷰 개수 문제가 아니었다
+//
+// 그래서 마운트 유지·프리워밍·React.memo·파생값 메모가 **한 번도 듣지 않았다.** 전부
+// 다른 단계를 고치고 있었기 때문이다. 병목은 처음부터 '그리기' 한 곳이었다.
+//
+// ── 왜 이미지인가 ──────────────────────────────────────────────────────────
+// `<Image>` 는 GPU 가 합성한다 — CPU 가 칠하는 일이 0 이 된다. 그리고 **iOS·안드로이드가
+// 똑같이 빨라진다**(같은 SVG 비용을 아이폰도 치르고 있었다. CPU 가 빨라 덜 느껴졌을 뿐).
+// 플랫폼 분기를 만들지 않는 것도 중요했다 — 배경이 기기마다 다르면 그건 다른 앱이다.
+//
+// 이미지는 384×384 정규화 좌표로 구웠고(3.9KB), 원본 SVG 와 **같은 수식**이다:
+//   중심(0.5, -0.3) · 반지름(0.95, 1.1) · 흰색 7% → 3% → 0%
+// 비율 기반이라 어떤 화면 크기로 늘려도 원본과 같은 모양이 나온다. 부드러운 저대비
+// 그라데이션이라 확대에 따른 눈에 띄는 열화가 없다.
 export function AmbientBackdrop() {
-  const {width: w, height: winH} = useWindowDimensions();
+  const {height: winH} = useWindowDimensions();
   const h = Math.round(winH * 0.45);
   return (
     <View testID="ambient-backdrop" pointerEvents="none" style={[StyleSheet.absoluteFill, {height: h}]}>
-      <Svg width={w} height={h}>
-        <Defs>
-          <SvgRadialGradient
-            id="keego-ambient" gradientUnits="userSpaceOnUse"
-            cx={w / 2} cy={-h * 0.3} fx={w / 2} fy={-h * 0.3} rx={w * 0.95} ry={h * 1.1}>
-            <Stop offset="0" stopColor={T1} stopOpacity={0.07} />
-            <Stop offset="0.55" stopColor={T1} stopOpacity={0.03} />
-            <Stop offset="1" stopColor={T1} stopOpacity={0} />
-          </SvgRadialGradient>
-        </Defs>
-        <Rect x="0" y="0" width={w} height={h} fill="url(#keego-ambient)" />
-      </Svg>
+      <Image
+        source={require('./assets/ambient-glow.png')}
+        style={StyleSheet.absoluteFill}
+        resizeMode="stretch"
+        fadeDuration={0}
+      />
     </View>
   );
+}
+
+// ── Deferred — 첫 화면 밖 내용을 한 프레임 뒤로 미룬다 ────────────────────────
+//
+// 왜(2026-08-04 갤럭시 S10e 실측): 마이 탭 **첫 진입**이 350~450ms 걸렸다. 화면 하나에
+// 러너 스펙 + 성취 진입 + 돌아보기 리캡(스탯 그리드·최다 착용 신발·PR 목록)이 한꺼번에
+// 그려지기 때문이다. 그런데 그중 사용자가 첫 프레임에 **보는 건 위쪽 하나뿐**이다.
+//
+// 아래쪽을 한 프레임 미루면 첫 그리기가 가벼워져 탭이 즉시 열리고, 나머지는 사용자가
+// 스크롤하기 훨씬 전에 조용히 채워진다. 일을 없애는 게 아니라 **보이는 것부터 그리는** 것이다.
+//
+// ⚠️ 화면 안(첫 뷰포트)에 보이는 것에는 쓰지 말 것 — 깜빡임으로 보인다.
+// jest 에서는 즉시 렌더한다(InteractionManager 콜백이 테스트에서 안 돌아 3,164개가 깨진다).
+export function Deferred({children}: {children: React.ReactNode}) {
+  const TESTING = !!(typeof process !== 'undefined' && process.env && process.env.JEST_WORKER_ID);
+  const [ready, setReady] = useState(TESTING);
+  useEffect(() => {
+    if (TESTING) return;
+    const task = InteractionManager.runAfterInteractions(() => setReady(true));
+    return () => task.cancel?.();
+  }, [TESTING]);
+  return <>{ready ? children : null}</>;
 }
 
 // ── Rise — 진입 모션 표준(마운트 시 14px 아래→위 페이드인) ─────────────────────
@@ -1510,7 +1551,20 @@ export function TabBar({active, onTab}: {active: number; onTab: (i: number) => v
       {/* 떠있는 유리 블러 캡슐 독. BlurView 는 absolute 배경으로만 깔고(신아키텍처 flex
           붕괴 회피) 레이아웃은 일반 flex View 가 담당. overflow:hidden 으로 라운드 클립. */}
       <View style={t.dock}>
-        <BlurView pointerEvents="none" style={StyleSheet.absoluteFill} blurType="dark" blurAmount={25} reducedTransparencyFallbackColor="rgba(46,46,52,0.9)" />
+        {/* ── 안드로이드는 블러 대신 반투명 단색 (2026-08-04 갤럭시 S10e 실측, 민우님 A안) ──
+            BlurView 는 **뒤에 있는 내용을 매 프레임 다시 샘플링해 흐리게 만든다.** 이 독은
+            화면에 항상 떠 있고 그 뒤로 콘텐츠가 스크롤되므로, 스크롤하는 내내 블러가 재계산된다.
+            네 탭 화면 전부에서 스크롤이 끊기던 마지막 원인이다(Slow bitmap uploads 가 계속
+            찍히던 것도 이것).
+
+            색은 새로 정하지 않았다 — 이미 디자인에 있던 `reducedTransparencyFallbackColor`
+            (접근성 '투명도 줄이기'용 폴백)를 그대로 쓴다. 즉 이 화면은 이미 승인된 대안 표현이다.
+            iOS 는 블러가 훨씬 싸고 재질이 브랜드 정체성이므로(DESIGN.md) 그대로 둔다. */}
+        {Platform.OS === 'android' ? (
+          <View pointerEvents="none" style={[StyleSheet.absoluteFill, {backgroundColor: 'rgba(46,46,52,0.9)'}]} />
+        ) : (
+          <BlurView pointerEvents="none" style={StyleSheet.absoluteFill} blurType="dark" blurAmount={25} reducedTransparencyFallbackColor="rgba(46,46,52,0.9)" />
+        )}
         {/* 미끄러지는 오벌 하이라이트 */}
         <Animated.View pointerEvents="none" style={[t.hl, {left: 0, width: hlWidth, transform: [{translateX: hlX}]}]} />
         {TABS.map((tab, i) => {
