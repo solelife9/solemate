@@ -240,3 +240,34 @@ describe('ProfileScreen 공유 카드는 누를 때만 마운트된다', () => {
     }
   });
 });
+
+// ────────────────────────────────────────────────────────────────────────────
+// 공유 진행 표시 (2026-08-05)
+//
+// 왜: 안드로이드에서 공유를 누르면 카드를 세우고(≈1.6s) 3240×4050px 를 캡처해 파일로 쓰기까지
+// **3.6초** 걸린다(갤럭시 S10e 실측). 그동안 버튼이 그대로면 사용자는 안 눌렸다고 생각하고
+// 다시 누른다 — 그러면 카드를 두 번 세우고 공유 시트가 두 번 뜬다.
+// ────────────────────────────────────────────────────────────────────────────
+describe('ProfileScreen 공유는 진행 중임을 알리고 재입력을 막는다', () => {
+  let shareSpy: jest.SpyInstance;
+  beforeEach(() => {
+    // 공유가 끝나지 않는 상태를 만든다 — '진행 중' 창을 관찰하기 위해.
+    shareSpy = jest.spyOn(Share, 'share').mockImplementation(() => new Promise(() => {}) as never);
+  });
+  afterEach(() => shareSpy.mockRestore());
+
+  const BASE = {recapRuns: ALL_RUNS, recapShoes: SHOES, recapNow: NOW, unit: 'km'};
+
+  test('누르면 라벨이 만드는 중으로 바뀌고, 다시 눌러도 공유가 두 번 나가지 않는다', async () => {
+    const root = render(BASE);
+    expect(textOf(byTestId(root, 'recap-share'))).toContain('공유');
+
+    await act(async () => { pressableByTestId(root, 'recap-share').props.onPress(); });
+    expect(textOf(byTestId(root, 'recap-share'))).toContain('만드는 중');
+    expect(byTestId(root, 'recap-share').props.accessibilityState).toMatchObject({busy: true});
+
+    // 진행 중 재입력 — 무시돼야 한다.
+    await act(async () => { pressableByTestId(root, 'recap-share').props.onPress(); });
+    expect(shareSpy).toHaveBeenCalledTimes(1);
+  });
+});

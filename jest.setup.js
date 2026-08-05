@@ -118,6 +118,14 @@ jest.mock('expo-media-library/legacy', () => ({
   requestPermissionsAsync: jest.fn(() => Promise.resolve({granted: true, status: 'granted'})),
   saveToLibraryAsync: jest.fn(() => Promise.resolve()),
 }));
+// ── expo-sharing ─────────────────────────────────────────────────────────────
+// 안드로이드 카드 이미지 공유(content:// URI). 기본: 사용 가능 + 공유 성공.
+// RN 의 Share 는 안드로이드에서 url 을 버려 파일을 못 붙인다(lib/shareCard 주석 참조).
+jest.mock('expo-sharing', () => ({
+  __esModule: true,
+  isAvailableAsync: jest.fn(() => Promise.resolve(true)),
+  shareAsync: jest.fn(() => Promise.resolve()),
+}));
 
 // ── expo-audio ───────────────────────────────────────────────────────────────
 // 러닝 음성 코칭 클립 재생. 테스트는 호출만 관찰하면 되므로, 끝-신호를 즉시 주는 no-op 목.

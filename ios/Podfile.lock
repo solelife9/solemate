@@ -1328,6 +1328,8 @@ PODS:
     - ExpoModulesCore
   - ExpoSensors (56.0.6):
     - ExpoModulesCore
+  - ExpoSharing (56.0.23):
+    - ExpoModulesCore
   - ExpoTaskManager (56.0.23):
     - ExpoModulesCore
     - UMAppLoader
@@ -3845,6 +3847,7 @@ DEPENDENCIES:
   - ExpoModulesWorklets (from `../node_modules/expo-modules-core`)
   - ExpoNotifications (from `../node_modules/expo-notifications/ios`)
   - ExpoSensors (from `../node_modules/expo-sensors/ios`)
+  - ExpoSharing (from `../node_modules/expo-sharing/ios`)
   - ExpoTaskManager (from `../node_modules/expo-task-manager/ios`)
   - FBLazyVector (from `../node_modules/react-native/Libraries/FBLazyVector`)
   - FirebaseCrashlytics
@@ -4051,6 +4054,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/expo-notifications/ios"
   ExpoSensors:
     :path: "../node_modules/expo-sensors/ios"
+  ExpoSharing:
+    :path: "../node_modules/expo-sharing/ios"
   ExpoTaskManager:
     :path: "../node_modules/expo-task-manager/ios"
   FBLazyVector:
@@ -4274,6 +4279,7 @@ SPEC CHECKSUMS:
   ExpoModulesWorklets: 3aaf91bb08abf910858592221480d6519f0daa1e
   ExpoNotifications: ac87d6f9e52a4c855775e73f692ac1e95ca63f27
   ExpoSensors: d34558ddf1f1d61c7a22180d1d40d8bd89d67d7b
+  ExpoSharing: 449f2f5fdb8007adf33cefe5c6ac6c42080b0d5f
   ExpoTaskManager: 045db4ef8965277c6e0c6f095e5e9f469dbdb0b7
   FBLazyVector: 473b935415b82ae4f7f9aa9d5b3378491143ccbf
   Firebase: 99f203d3a114c6ba591f3b32263a9626e450af65

@@ -694,9 +694,14 @@ function ProfileScreen({
     if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => resolve());
     else setTimeout(resolve, 0);
   };
+  // 공유 중 표시 — 카드를 세우고(≈1.6s) 캡처해 파일로 쓰기까지 **실기기에서 3.6초** 걸린다
+  // (갤럭시 S10e 실측 2026-08-05). 그동안 아무 반응이 없으면 사용자는 안 눌렸다고 생각하고
+  // 다시 누른다. 눌린 즉시 '공유 카드 만드는 중…'으로 바꾸고, 그 사이 재입력을 막는다.
+  const [sharingCard, setSharingCard] = useState(false);
   const withShareCard = async (which: 'recap' | 'spec', run: () => Promise<void>) => {
-    // 이미지 공유가 불가능한 플랫폼(안드로이드)에서는 카드를 세우지 않는다 — 캡처하지 않을
-    // 그림을 그리느라 1.6s 를 쓸 이유가 없다. 공유는 텍스트로 나간다(lib/shareCard 주석).
+    // 이미지 공유가 불가능한 플랫폼이면 카드를 세우지 않는다 — 캡처하지 않을 그림을 그리는
+    // 데 1.6s 를 쓸 이유가 없다(그 경우 공유는 텍스트로 나간다). 현재 iOS·안드로이드 모두
+    // 이미지 공유가 되므로 실질적으로는 항상 세운다.
     if (!canShareCardImage()) { await run(); return; }
     if (!shareCardUp) {
       await new Promise<void>((resolve) => {
@@ -711,11 +716,18 @@ function ProfileScreen({
     }
     try { await run(); } finally { if (deferShareCards) setShareCardUp(null); }
   };
+  // 진행 중 재입력을 막는다 — 두 번 누르면 카드를 두 번 세우고 공유 시트가 두 번 뜬다.
   const onShareSpec = () => {
-    void withShareCard('spec', () => shareRunnerSpecCard(specCardRef, `${profile?.name || '러너'}의 러너 스펙 — Keego`));
+    if (sharingCard) return;
+    setSharingCard(true);
+    void withShareCard('spec', () => shareRunnerSpecCard(specCardRef, `${profile?.name || '러너'}의 러너 스펙 — Keego`))
+      .finally(() => setSharingCard(false));
   };
   const onShareRecap = () => {
-    void withShareCard('recap', () => shareRecapCard(recapCardRef, recap, { unit, kind: recapMode }));
+    if (sharingCard) return;
+    setSharingCard(true);
+    void withShareCard('recap', () => shareRecapCard(recapCardRef, recap, { unit, kind: recapMode }))
+      .finally(() => setSharingCard(false));
   };
 
   const insets = useSafeAreaInsets();
@@ -886,9 +898,9 @@ function ProfileScreen({
             <GlassEdge glints={false} radius={RADIUS.lg} />
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: rv(16) }}>
               <Text style={[s.cardTitle, { marginBottom: rv(0) }]}>러너 스펙</Text>
-              <Pressable onPress={onShareSpec} testID="spec-share" accessibilityRole="button" accessibilityLabel="러너 스펙 공유" hitSlop={8} style={({ pressed }) => [{ flexDirection: 'row', alignItems: 'center', gap: rv(4) }, pressed && { transform: [{ scale: MOTION.press.scale }], opacity: MOTION.press.opacity }]}>
-                <Ionicons name="share-outline" size={ri(ICON.inline)} color={ACCENT} />
-                <Text style={{ color: ACCENT, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '700' }}>공유</Text>
+              <Pressable onPress={onShareSpec} testID="spec-share" accessibilityRole="button" accessibilityLabel="러너 스펙 공유" accessibilityState={{ busy: sharingCard, disabled: sharingCard }} hitSlop={8} style={({ pressed }) => [{ flexDirection: 'row', alignItems: 'center', gap: rv(4) }, pressed && { transform: [{ scale: MOTION.press.scale }], opacity: MOTION.press.opacity }, sharingCard && { opacity: 0.5 }]}>
+                <Ionicons name={sharingCard ? 'hourglass-outline' : 'share-outline'} size={ri(ICON.inline)} color={ACCENT} />
+                <Text style={{ color: ACCENT, fontFamily: FONT, fontSize: TYPE.label.fontSize, fontWeight: '700' }}>{sharingCard ? '만드는 중' : '공유'}</Text>
               </Pressable>
             </View>
 
@@ -1052,9 +1064,10 @@ function ProfileScreen({
                 testID="recap-share"
                 accessibilityRole="button"
                 accessibilityLabel="리캡 카드 공유"
-                style={({ pressed }) => [s.recapShareBtn, pressed && { backgroundColor: CARD_HI }]}>
-                <Ionicons name="share-outline" size={ri(ICON.inline)} color={ACCENT} />
-                <Text style={s.recapShareTxt}>공유</Text>
+                accessibilityState={{ busy: sharingCard, disabled: sharingCard }}
+                style={({ pressed }) => [s.recapShareBtn, pressed && { backgroundColor: CARD_HI }, sharingCard && { opacity: 0.5 }]}>
+                <Ionicons name={sharingCard ? 'hourglass-outline' : 'share-outline'} size={ri(ICON.inline)} color={ACCENT} />
+                <Text style={s.recapShareTxt}>{sharingCard ? '만드는 중' : '공유'}</Text>
               </Pressable>
             </View>
 

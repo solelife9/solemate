@@ -12,6 +12,9 @@ import {Platform, Share} from 'react-native';
 import * as FileSystem from 'expo-file-system/legacy';
 // saveToLibraryAsync 는 메인 export 에서 deprecated(throw) — 레거시 API 를 쓴다(SDK 56).
 import * as MediaLibrary from 'expo-media-library/legacy';
+// 안드로이드 이미지 공유 전용(민우님 승인 2026-08-05). RN 의 Share 는 안드로이드에서
+// url 을 버려 파일을 붙일 수 없다 — 아래 shareCardAsImage 주석 참조.
+import * as Sharing from 'expo-sharing';
 import {Unit, displayNum} from './units';
 import {buildRunShareText, RunShareInput} from './share';
 import {fmtTime} from './format';
@@ -378,35 +381,56 @@ export async function saveCardToLibrary(ref: SvgRefLike): Promise<{ok: boolean; 
 }
 
 /**
- * 이 플랫폼에서 카드 **이미지** 공유가 실제로 되는가.
+ * 카드 **이미지** 공유가 가능한 플랫폼인가. 지금은 iOS·안드로이드 둘 다 가능하다.
+ * (호출부가 캡처용 카드를 세울지 판단하는 데 쓴다 — 못 쓸 그림을 그리지 않기 위해.)
+ */
+export const canShareCardImage = (): boolean => Platform.OS === 'ios' || Platform.OS === 'android';
+
+/**
+ * 카드를 캡처해 **이미지로** 공유한다. 플랫폼마다 경로가 다르다.
  *
- * 안드로이드에서는 안 된다. RN 의 Share 는 안드로이드 분기에서 `url` 을 **버린다** —
- * `Libraries/Share/Share.js`:
+ * ── iOS ─────────────────────────────────────────────────────────────────────
+ * `Share.share({url: dataURL})` 그대로. 출시 전부터 아이폰에서 검증된 경로라 바꾸지 않는다.
+ *
+ * ── 안드로이드 ───────────────────────────────────────────────────────────────
+ * RN 의 Share 는 안드로이드 분기에서 `url` 을 **버린다** — `Libraries/Share/Share.js`:
  *
  *     if (Platform.OS === 'android') {
  *       const newContent = {title: content.title,
  *         message: typeof content.message === 'string' ? content.message : undefined};
  *
- * 즉 `Share.share({url})` 은 안드로이드에서 message 없는 빈 공유 인텐트가 된다. 게다가
- * 캡처(captureCardDataUrl)는 **성공**하므로 아래 catch 의 텍스트 폴백도 타지 않는다 —
- * 사용자는 공유 시트를 열고 아무것도 못 보낸다(조용한 실패). 갤럭시 S10e 실기기에서
- * 확인했다(2026-08-05): 시트에 "공유할 추천 사용자가 없음"만 뜬다. 공유 4종(런·리캡·
- * 러너 스펙·메달)이 전부 같은 경로라 안드로이드에선 전부 이랬다.
+ * 그래서 `Share.share({url})` 은 message 없는 **빈 공유**가 됐다. 게다가 캡처는 성공하므로
+ * 텍스트 폴백조차 타지 않았다 — 조용한 실패다. 갤럭시 S10e 에서 확인했다(2026-08-05:
+ * 공유 시트 내용이 비어 있음). 공유 4종(런·리캡·러너 스펙·메달)이 전부 이 경로였다.
  *
- * 그래서 안드로이드는 처음부터 텍스트 공유로 보낸다 — **빈 공유보다 낫다.**
+ * 안드로이드에서 이미지를 실제로 붙이려면 파일을 쓰고 **content:// URI** 로 넘겨야 하고,
+ * 그건 FileProvider 가 필요해 RN 의 Share 로는 불가능하다. 그래서 expo-sharing 을 쓴다
+ * (민우님 승인 2026-08-05 — CLAUDE.md 네이티브 의존 사전 승인제). expo-sharing 이
+ * 자체 FileProvider(SharingFileProvider)를 들고 있어 매니페스트 수작업이 필요 없다.
  *
- * ⚠️ 진짜 이미지 공유를 하려면 파일을 쓰고 content:// URI 를 넘겨야 하는데, 그건 RN 의
- * Share 로는 불가능하고 네이티브 모듈(expo-sharing)이 필요하다. 네이티브 의존은
- * 사전 승인제라(CLAUDE.md Danger Zones) 여기서 임의로 추가하지 않는다. 승인되면 이
- * 함수만 걷어내면 된다.
+ * 캐시 디렉터리에 쓴다 — OS 가 알아서 지운다(사용자 갤러리를 어지럽히지 않는다).
+ * 갤러리에 남기는 건 별도 기능이다(saveCardToLibrary).
+ *
+ * 실패하면 throw 한다 → 호출부의 catch 가 텍스트 공유로 폴백한다(막다른 길 없음).
  */
-export const canShareCardImage = (): boolean => Platform.OS !== 'android';
+async function shareCardAsImage(ref: SvgRefLike, fileStem: string): Promise<void> {
+  const dataUrl = await captureCardDataUrl(ref);
+  if (Platform.OS !== 'android') {
+    await Share.share({url: dataUrl});
+    return;
+  }
+  if (!(await Sharing.isAvailableAsync())) throw new Error('sharing unavailable');
+  const dir = FileSystem.cacheDirectory;
+  if (!dir) throw new Error('no cacheDirectory');
+  const base64 = dataUrl.replace(/^data:image\/png;base64,/, '');
+  const fileUri = `${dir}${fileStem}.png`;
+  await FileSystem.writeAsStringAsync(fileUri, base64, {encoding: FileSystem.EncodingType.Base64});
+  await Sharing.shareAsync(fileUri, {mimeType: 'image/png', UTI: 'public.png', dialogTitle: 'Keego 카드 공유'});
+}
 
 export async function shareRunCard(ref: SvgRefLike, fallback: RunShareInput): Promise<void> {
   try {
-    if (!canShareCardImage()) throw new Error('image share unsupported on this platform');
-    const url = await captureCardDataUrl(ref);
-    await Share.share({url});
+    await shareCardAsImage(ref, 'keego-run');
   } catch {
     await Share.share({message: buildRunShareText(fallback)}).catch(() => {});
   }
@@ -540,9 +564,7 @@ export async function shareRecapCard(
   opts?: {unit?: Unit; kind?: RecapKind},
 ): Promise<void> {
   try {
-    if (!canShareCardImage()) throw new Error('image share unsupported on this platform');
-    const url = await captureCardDataUrl(ref);
-    await Share.share({url});
+    await shareCardAsImage(ref, 'keego-recap');
   } catch {
     await Share.share({message: buildRecapShareText(fallback, opts)}).catch(() => {});
   }
@@ -553,9 +575,7 @@ export async function shareRecapCard(
  */
 export async function shareRunnerSpecCard(ref: SvgRefLike, fallbackText: string): Promise<void> {
   try {
-    if (!canShareCardImage()) throw new Error('image share unsupported on this platform');
-    const url = await captureCardDataUrl(ref);
-    await Share.share({url});
+    await shareCardAsImage(ref, 'keego-spec');
   } catch {
     await Share.share({message: fallbackText}).catch(() => {});
   }
@@ -564,9 +584,7 @@ export async function shareRunnerSpecCard(ref: SvgRefLike, fallbackText: string)
 /** 마라톤 메달 자랑 카드 공유 — 캡처 실패 시 텍스트 폴백. BIB·이름은 카드에 없음(프라이버시). */
 export async function shareMedalCard(ref: SvgRefLike, fallbackText: string): Promise<void> {
   try {
-    if (!canShareCardImage()) throw new Error('image share unsupported on this platform');
-    const url = await captureCardDataUrl(ref);
-    await Share.share({url});
+    await shareCardAsImage(ref, 'keego-medal');
   } catch {
     await Share.share({message: fallbackText}).catch(() => {});
   }
