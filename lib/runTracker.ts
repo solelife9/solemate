@@ -576,7 +576,11 @@ class RunTracker {
         }
         // 고도 누적은 거리 누적과 같은 '채택된 fix'에서만 — 거부된 노이즈 fix가
         // 상승분을 부풀리지 않게 한다(임계 필터는 lib/elevation가 추가로 담당).
-        this.elev = feedAltitude(this.elev, fix.coords.altitude);
+        // ⚠️ **ts 를 반드시 넘긴다.** 없으면 lib/elevation 의 상승률 상한이 통째로 잠들어
+        // 임계 히스테리시스만 남는다 — 1Hz 잡음이 임계 근처에서 진동하면 올라갈 때마다
+        // 적립되고 내려갈 때는 기준만 낮아진다(2026-08-05 실측: 아이폰 5km 에 1,814m).
+        // 아래 두 호출도 같은 이유로 ts 를 넘긴다.
+        this.elev = feedAltitude(this.elev, fix.coords.altitude, ts);
       } else if (idx < WARMUP_FIXES) {
         // warmup: don't count, but advance last-good so the first post-warmup
         // segment isn't a giant settling jump.
@@ -600,7 +604,7 @@ class RunTracker {
         this.lastGood = f;
         this.lastGoodMs = ts;
         this.pts.push(f);
-        this.elev = feedAltitude(this.elev, fix.coords.altitude);
+        this.elev = feedAltitude(this.elev, fix.coords.altitude, ts);
       }
       // 그 외 거부(정확도/노이즈/속도)는 last-good 보존 — 노이즈 fix 를 건너뛰고 다음 양호
       // fix 와 직접 잇기 위함(짧은 노이즈는 cap 미만이라 위 re-anchor 분기에 안 들어온다).
@@ -612,7 +616,7 @@ class RunTracker {
       this.lastGoodMs = ts;
       this.pts.push(f);
       // 첫 채택 지점의 고도를 기준으로 설정(누적 0에서 시작).
-      this.elev = feedAltitude(this.elev, fix.coords.altitude);
+      this.elev = feedAltitude(this.elev, fix.coords.altitude, ts);
     }
 
     this.persist();
