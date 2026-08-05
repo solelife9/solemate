@@ -239,7 +239,11 @@ export async function hcSaveRunWorkout(
     const startTime = new Date(startMs).toISOString();
     const endTime = new Date(endMs).toISOString();
     const records: unknown[] = [
-      {recordType: 'ExerciseSession', startTime, endTime, exerciseType: 56 /* RUNNING */, title: 'Keego 러닝'},
+      // 56 = ExerciseSessionRecord.EXERCISE_TYPE_RUNNING. 라이브러리가 상수를 export 하지
+      // 않아 숫자를 직접 쓴다 — 그래서 출처를 남긴다: connect-client-1.1.0-api.jar 를 풀어
+      // javap 로 확인했다(2026-08-06). 잘못 쓰면 러닝이 엉뚱한 운동으로 기록된다.
+      // 실내(트레드밀)는 57 이지만 이 함수는 실내 여부를 받지 않는다 — 필요해지면 인자를 늘린다.
+      {recordType: 'ExerciseSession', startTime, endTime, exerciseType: 56, title: 'Keego 러닝'},
       {recordType: 'Distance', startTime, endTime, distance: {unit: 'meters', value: Math.round(km * 1000)}},
     ];
     if (kcal && kcal > 0 && has(granted, 'write', 'TotalCaloriesBurned')) {

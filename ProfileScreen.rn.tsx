@@ -1374,7 +1374,7 @@ function ProfileScreen({
                 {restHR > 0 && (
                   <View style={{ marginTop: rv(14), flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                     <Text style={s.settingLabel}>안정시 심박</Text>
-                    <Text style={s.settingDetail}>{restHR}bpm · Apple 건강</Text>
+                    <Text style={s.settingDetail}>{restHR}bpm · {HEALTH_STORE_NAME}</Text>
                   </View>
                 )}
                 <Text style={s.panelHint}>
