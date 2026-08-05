@@ -16,7 +16,7 @@
 
 import {useState, useEffect, useRef, useCallback, useMemo} from 'react';
 import {rf, rs, ri, rv} from '../lib/responsive';
-import {View, StyleSheet, Pressable, Linking, AppState} from 'react-native';
+import {View, StyleSheet, Pressable, Linking, AppState, Platform} from 'react-native';
 import {showDialog} from '../lib/dialog';
 import {Text, FONT_SCALE_CAP_HERO} from '../lib/text';
 import {Pedometer, Barometer} from 'expo-sensors';
@@ -214,6 +214,16 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
   const timer=useRef<any>(null);
   const snapTimer=useRef<any>(null);
   const stepSub=useRef<any>(null);
+  // 안드로이드 걸음 구독 핸들과 최신 누적 걸음수. iOS 는 구간 조회를 쓰므로 둘 다 안 쓴다.
+  // 왜 필요한가(2026-08-05 실기기): expo-sensors 의 Pedometer.getStepCountAsync 는
+  // **안드로이드에서 항상 예외를 던진다** — 네이티브가 그렇게 짜여 있다:
+  //   throw NotSupportedException("Getting step count for date range is not supported on Android yet")
+  // 우리 코드는 그 예외를 조용히 삼키고 있었고(catch{}), 그래서 갤럭시 S10e 실측에서
+  // 케이던스가 '--' 였다. 기기 문제가 아니다 — 걸음 센서도 권한도 정상이었다.
+  // 대안은 watchStepCount 구독뿐이다. 안드로이드 구현은 TYPE_STEP_COUNTER(하드웨어 누적)를
+  // 쓰고 **구독 시점 기준 누적값**을 주므로 구간 조회와 의미가 같다 — 아래 소비처는 그대로 둔다.
+  const stepWatch=useRef<{remove?:()=>void}|null>(null);
+  const stepsRef=useRef(0);
   // 폴링 시작 시각 — 종료 시 총 걸음수(러닝 전체)를 조회해 평균 케이던스를 산출하는 기준점.
   const stepT0Ref=useRef<Date|null>(null);
   // 기압 고도계(iOS Barometer.relativeAltitude) — GPS 고도(노이즈 큼)보다 정확한 고도 상승.
@@ -680,18 +690,32 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
       if(available){
         const stepT0=new Date();
         stepT0Ref.current=stepT0;
+        stepsRef.current=0;
+        // 안드로이드: 구간 조회가 없으므로 구독으로 최신 누적 걸음을 받아 둔다.
+        // 화면이 꺼지면(주머니) 이벤트는 멈추지만 TYPE_STEP_COUNTER 는 하드웨어가 계속 세므로
+        // 복귀 시 그동안의 걸음이 누적값에 그대로 실려 온다 — 총 걸음수는 유실되지 않는다.
+        if(Platform.OS==='android'){
+          try{stepWatch.current=Pedometer.watchStepCount(r=>{stepsRef.current=r?.steps??0;});}
+          catch{/* 구독 실패 — 케이던스만 0, 러닝은 계속 */}
+        }
         let polling=false;
         stepSub.current=setInterval(async()=>{
           if(polling)return;
           polling=true;
           try{
-            const r=await Pedometer.getStepCountAsync(stepT0,new Date());
+            // 안드로이드는 구독이 담아 둔 최신 누적값을, iOS 는 구간 조회를 쓴다.
+            // **폴링 자체는 두 플랫폼 공통으로 남긴다** — 정지 게이트는 "걸음이 안 늘어난다"를
+            // 보려고 같은 값을 주기적으로 먹어야 한다. 이벤트가 올 때만 먹이면 멈춘 순간
+            // 표본이 끊겨 게이트가 영영 판정하지 못한다.
+            const steps=Platform.OS==='android'
+              ? stepsRef.current
+              : ((await Pedometer.getStepCountAsync(stepT0,new Date()))?.steps??0);
             // 걸음 정지 게이트 공급 — 일시정지 중에도 계속 먹인다. 끊으면 오토포즈가
             // 노이즈로 잠깐 풀리는 창에서 표본이 스테일해져 게이트가 꺼진 채 팬텀 거리가
             // 새던 바로 그 구간을 놓친다(도심 신호대기 팬텀 차단, 2026-07-11).
-            runTracker.feedSteps(r?.steps??0,Date.now());
+            runTracker.feedSteps(steps,Date.now());
             if(runTracker.pausedFlag())return; // 케이던스 표시 계산만 일시정지 중 생략(기존 동작)
-            const c=feedStepCount(cadenceState.current,r?.steps??0,Date.now());
+            const c=feedStepCount(cadenceState.current,steps,Date.now());
             cadenceState.current=c.state;
             if(c.spm!==cadRef.current){cadRef.current=c.spm;setCadence(c.spm);runTracker.setMeta({cadence:c.spm});}
           }catch{/* 일시 조회 실패 — 다음 폴에서 재시도 */}
@@ -743,6 +767,7 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
 
   function stop(){
     if(stepSub.current){clearInterval(stepSub.current);stepSub.current=null;}
+    if(stepWatch.current){try{stepWatch.current.remove?.();}catch{/* 이미 해제 */}stepWatch.current=null;}
     if(baroSub.current){try{baroSub.current.remove();}catch{/* noop */}baroSub.current=null;}
     if(pedDistUnsub.current){try{pedDistUnsub.current();}catch{/* noop */}pedDistUnsub.current=null;}
     pedometerDistance.stop(); // CMPedometer 스트림 종료(#16 융합) — 배터리·프라이버시
@@ -870,8 +895,10 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
     let cadFin=cadRef.current;
     if(stepT0Ref.current&&ft>0){
       try{
-        const r=await Pedometer.getStepCountAsync(stepT0Ref.current,new Date());
-        const avg=averageSpm(r?.steps??0,ft);
+        const total=Platform.OS==='android'
+          ? stepsRef.current
+          : ((await Pedometer.getStepCountAsync(stepT0Ref.current,new Date()))?.steps??0);
+        const avg=averageSpm(total,ft);
         if(avg>0)cadFin=avg;
       }catch{/* 조회 실패 — 롤링 폴백 유지 */}
     }
