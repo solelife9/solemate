@@ -17,6 +17,8 @@ import ReactTestRenderer, {act} from 'react-test-renderer';
 import {Share} from 'react-native';
 import ProfileScreen from '../ProfileScreen.rn';
 import type {RecapRun, RecapShoe} from '../lib/recap';
+import RecapShareCard from '../RecapShareCard';
+import RunnerSpecShareCard from '../RunnerSpecShareCard';
 
 // 기준 시각: 2026-06-10(수). 이 주 월요일 = 06-08, 일요일 = 06-14. 이 달 = 6월.
 const NOW = new Date(2026, 5, 10, 9, 0, 0);
@@ -163,5 +165,78 @@ describe('ProfileScreen 리캡 빈 데이터 graceful(A8-5)', () => {
     const root = render({recapRuns: [], recapShoes: SHOES, recapNow: NOW, unit: 'km'});
     expect(hasId(root, 'recap-empty')).toBe(true);
     expect(textOf(byTestId(root, 'recap-empty'))).toContain('이번 달');
+  });
+});
+
+// ────────────────────────────────────────────────────────────────────────────
+// 공유 카드 지연 마운트 (2026-08-05, 마이 탭 버벅임 근본 원인)
+//
+// 왜 이 테스트가 있나: 공유 카드 두 장(각 1080×1350dp)을 화면 밖에 **항상** 마운트해 두면
+// 480dpi 기기에서 텍스처 105MB 를 CPU 로 래스터화한다. 실측(갤럭시 S10e) 마이 탭 첫 진입
+// 1,850ms — 같은 방식으로 잰 러닝화 109ms · 기록 129ms 의 14배였다. "화면 밖이니 공짜"는
+// 틀렸다. 되돌아오기 쉬운 실수라 렌더 트리에 못을 박아 둔다.
+//
+// deferShareCards 는 이 검증을 위한 주입점이다(실기기 기본 true, 테스트 기본 false).
+// ────────────────────────────────────────────────────────────────────────────
+describe('ProfileScreen 공유 카드는 누를 때만 마운트된다', () => {
+  let shareSpy: jest.SpyInstance;
+  beforeEach(() => {
+    shareSpy = jest.spyOn(Share, 'share').mockResolvedValue({action: 'sharedAction'} as any);
+  });
+  afterEach(() => shareSpy.mockRestore());
+
+  const BASE = {recapRuns: ALL_RUNS, recapShoes: SHOES, recapNow: NOW, unit: 'km', deferShareCards: true};
+
+  test('평소엔 공유 카드가 트리에 없다', () => {
+    const root = render(BASE);
+    expect(hasId(root, 'share-card-stage')).toBe(false);
+    expect(root.findAllByType(RecapShareCard).length).toBe(0);
+    expect(root.findAllByType(RunnerSpecShareCard).length).toBe(0);
+  });
+
+  test('공유를 누르면 그때 마운트돼 캡처되고, 끝나면 다시 사라진다', async () => {
+    const root = render(BASE);
+    await act(async () => { pressableByTestId(root, 'recap-share').props.onPress(); });
+
+    // 눌린 직후: 무대가 서고 **리캡 카드 한 장만** 올라온다(스펙 카드는 필요 없다).
+    expect(hasId(root, 'share-card-stage')).toBe(true);
+    expect(root.findAllByType(RecapShareCard).length).toBe(1);
+    expect(root.findAllByType(RunnerSpecShareCard).length).toBe(0);
+
+    // 네이티브 레이아웃 완료 신호(onLayout)를 발화시켜 캡처를 진행시킨다.
+    await act(async () => {
+      byTestId(root, 'share-card-stage').props.onLayout();
+      await new Promise((r) => setTimeout(r, 0));
+    });
+    await flush();
+
+    // 이미지 공유(텍스트 폴백이 아니다) — 지연 마운트해도 캡처 경로가 살아 있다.
+    expect(shareSpy).toHaveBeenCalledTimes(1);
+    expect(shareSpy.mock.calls[0][0].url).toBe('data:image/png;base64,MOCK_SHARE_CARD_PNG_BASE64');
+
+    // 공유가 끝나면 다시 걷는다 — 남겨 두면 지연 마운트의 의미가 없다.
+    expect(hasId(root, 'share-card-stage')).toBe(false);
+  });
+
+  test('러너 스펙 공유는 스펙 카드만 올린다', async () => {
+    // 러너 스펙 카드는 기록이 있어야 뜬다(ProfileScreen 의 records.length > 0 조건).
+    const root = render({...BASE, records: [{label: '1km 최고', value: "4'30\"", unit: ''}]});
+    await act(async () => { pressableByTestId(root, 'spec-share').props.onPress(); });
+    expect(root.findAllByType(RunnerSpecShareCard).length).toBe(1);
+    expect(root.findAllByType(RecapShareCard).length).toBe(0);
+  });
+
+  test('onLayout 이 끝내 오지 않아도 멈추지 않는다(안전망 뒤 폴백 공유)', async () => {
+    jest.useFakeTimers();
+    try {
+      const root = render(BASE);
+      await act(async () => { pressableByTestId(root, 'recap-share').props.onPress(); });
+      // 레이아웃 콜백을 일부러 발화시키지 않는다 — 1.5s 안전망이 대기를 푼다.
+      await act(async () => { jest.advanceTimersByTime(1600); });
+      await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+      expect(shareSpy).toHaveBeenCalledTimes(1);
+    } finally {
+      jest.useRealTimers();
+    }
   });
 });

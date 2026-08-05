@@ -134,6 +134,7 @@ function ProfileScreen({
   onOpenMedalArchive, medalCount = 0, onOpenFindShoes, onOpenRanking,
   todayISO = '',
   onReplayOnboarding,
+  deferShareCards = process.env.NODE_ENV !== 'test',
 }: {
   profile?: Profile;
   badges?: Badge[];
@@ -189,6 +190,15 @@ function ProfileScreen({
   // 가져오기: parseBackup 검증 성공 시에만 호출된다(실패 시 미호출 — 기존 데이터 보존).
   // 기준일('YYYY-MM-DD') — 심폐 체력(VO₂max) 최근성 판정용. 테스트 결정성 주입.
   todayISO?: string;
+  /**
+   * 공유 카드를 '누를 때만' 마운트할지(기본 true, 테스트에선 false).
+   *
+   * 실기기에선 항상 true 다 — 카드 두 장이 텍스처 105MB 라 상시 마운트하면 마이 탭 첫
+   * 진입이 1,850ms 가 된다(아래 withShareCard 주석의 실측 참조). 테스트는 onLayout 이
+   * 뜨지 않아 기본은 '상시 마운트'(기존 동작)로 두고, 지연 경로를 검증하는 테스트만
+   * 이 값을 true 로 넘겨 onLayout 을 직접 발화시킨다.
+   */
+  deferShareCards?: boolean;
   // ── 계정·클라우드 동기 ───────────────────────────────────────────────────────
   // 백엔드 포트(주입). App 은 firebaseCloudPort 를, 테스트는 메모리 목 포트를 넣는다.
   // 없으면 계정 섹션의 버튼은 동작하지 않는다(안전한 no-op).
@@ -652,9 +662,57 @@ function ProfileScreen({
     longest: longRec && longRec.value !== '--' ? `${longRec.value}${longRec.unit ?? ''}` : '--',
     totalKm: profile.totalKm > 0 ? `${displayNum(profile.totalKm, unit, 0)}${unit}` : undefined,
   };
-  const onShareSpec = () => { shareRunnerSpecCard(specCardRef, `${profile?.name || '러너'}의 러너 스펙 — Keego`); };
+  // ── 공유 카드는 '누를 때만' 세운다 (2026-08-05, 마이 탭 버벅임 근본 원인) ──────────
+  // 예전엔 이 두 카드를 화면 밖(left:-10000, opacity:0)에 **항상** 마운트해 뒀다. 화면
+  // 밖이라 눈에 안 보일 뿐, 안드로이드는 레이아웃도 드로우도 그대로 한다. 카드는 각각
+  // 1080×1350dp — 480dpi 기기에선 3240×4050px 이고 두 장이면 텍스처 약 105MB 다
+  // (실측 112.36MB / 7 entries 와 일치). react-native-svg 는 안드로이드에서 CPU 로
+  // 래스터화하므로, **마이 탭을 열 때마다 인스타 크기 이미지 두 장을 UI 스레드로 그리고
+  // 있었다.**
+  //
+  // 실측(갤럭시 S10e, gfxinfo reset 후 탭 1회):
+  //   마이   1,850ms — 그중 DrawStart→SyncQueued 가 1,630ms(드로우 기록 구간)
+  //   러닝화   109ms  ·  기록 129ms          ← 같은 방식으로 잰 다른 탭
+  // GPU 는 7ms 였다. 느린 건 GPU 도 레이아웃(58ms)도 아니고 이 두 장이었다.
+  //
+  // 그래서 공유를 누른 순간에만, **필요한 한 장만** 마운트하고 캡처가 끝나면 뗀다.
+  // 캡처는 ref 가 살아 있어야 하므로 onLayout 으로 '네이티브 레이아웃 완료'를 기다린 뒤
+  // 한 프레임 더 양보한다. 레이아웃 콜백이 오지 않는 엣지에서도 멈추지 않도록 1.5s 안전망을
+  // 둔다 — 그 경우 captureCardDataUrl 이 reject 하고 **기존대로 텍스트 공유로 폴백**한다
+  // (막다른 길 없음. lib/shareCard.ts 의 catch 참조).
+  //
+  // 지연 여부는 deferShareCards 로 주입받는다(기본 true, 테스트 기본 false) — 기존 공유
+  // 테스트의 동작과 단언이 그대로 유지되고, 지연 경로는 그 값을 켠 전용 테스트가 검증한다.
+  const [shareCardUp, setShareCardUp] = useState<null | 'recap' | 'spec' | 'all'>(deferShareCards ? null : 'all');
+  const shareReadyRef = useRef<(() => void) | null>(null);
+  const onShareCardLayout = () => {
+    const resolve = shareReadyRef.current;
+    if (!resolve) return;
+    shareReadyRef.current = null;
+    // 레이아웃 직후 한 프레임 더 — 네이티브 Svg 가 실제로 그려진 뒤에 캡처하도록.
+    // rAF 가 없는 환경(일부 jest 러너)에서는 매크로태스크 한 번으로 대신한다.
+    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => resolve());
+    else setTimeout(resolve, 0);
+  };
+  const withShareCard = async (which: 'recap' | 'spec', run: () => Promise<void>) => {
+    if (!shareCardUp) {
+      await new Promise<void>((resolve) => {
+        shareReadyRef.current = resolve;
+        setTimeout(() => {
+          if (shareReadyRef.current !== resolve) return;
+          shareReadyRef.current = null;
+          resolve();
+        }, 1500);
+        setShareCardUp(which);
+      });
+    }
+    try { await run(); } finally { if (deferShareCards) setShareCardUp(null); }
+  };
+  const onShareSpec = () => {
+    void withShareCard('spec', () => shareRunnerSpecCard(specCardRef, `${profile?.name || '러너'}의 러너 스펙 — Keego`));
+  };
   const onShareRecap = () => {
-    shareRecapCard(recapCardRef, recap, { unit, kind: recapMode });
+    void withShareCard('recap', () => shareRecapCard(recapCardRef, recap, { unit, kind: recapMode }));
   };
 
   const insets = useSafeAreaInsets();
@@ -1432,11 +1490,14 @@ function ProfileScreen({
 
       </ScrollView>
       </Rise>
-      {/* 화면 밖에 마운트된 리캡 공유 카드 — ref.toDataURL()로 PNG 캡처(보이지 않음). */}
-      <View style={s.offscreen} pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-        <RecapShareCard ref={recapCardRef} model={recapCardModel} />
-        <RunnerSpecShareCard ref={specCardRef} model={specShareModel} />
+      {/* 공유 카드 — 누를 때만, 필요한 한 장만 화면 밖에 세워 캡처한다(위 withShareCard 주석).
+          항상 마운트하면 마이 탭 첫 진입이 1,850ms 가 된다. 화면 밖은 '안 그린다'가 아니다. */}
+      {shareCardUp && (
+      <View testID="share-card-stage" style={s.offscreen} pointerEvents="none" onLayout={onShareCardLayout} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+        {(shareCardUp === 'recap' || shareCardUp === 'all') && <RecapShareCard ref={recapCardRef} model={recapCardModel} />}
+        {(shareCardUp === 'spec' || shareCardUp === 'all') && <RunnerSpecShareCard ref={specCardRef} model={specShareModel} />}
       </View>
+      )}
       <TabBar active={3} onTab={(i) => onTab?.(i)} />
     </View>
   );
