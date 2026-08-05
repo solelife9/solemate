@@ -115,4 +115,4 @@ export const SOCIAL_PROFILE_PUBLISH_ENABLED = true;
  * ⚠️ 출시 전 점검: 이 값이 `true` 인지 확인할 것. `false` 로 나가면 워치 사용자의 신발이
  * 두 배로 닳는다 — 이 앱의 존재 이유가 정면으로 망가지는 종류다.
  */
-export const MERGE_PHONE_WATCH_RUNS = false;
+export const MERGE_PHONE_WATCH_RUNS = true;
