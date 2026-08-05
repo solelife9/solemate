@@ -17,11 +17,28 @@
 // ============================================================================
 import React from 'react';
 import {
+  Platform,
+  StyleSheet,
   Text as RNText,
   TextInput as RNTextInput,
   type TextProps,
   type TextInputProps,
 } from 'react-native';
+
+// ── 안드로이드 글자 여백 제거 (2026-08-05) ───────────────────────────────────
+// 왜: 안드로이드 Text 는 includeFontPadding 이 기본 true 라, 글꼴의 ascent/descent 만큼
+// 글자 위아래에 **보이지 않는 여백**을 덧붙인다. iOS 에는 그런 게 없다. 그래서 같은
+// 간격 값을 줘도 안드로이드가 매번 조금씩 더 벌어지고, 그게 화면 전체에 누적돼
+// "아이폰이랑 안드로이드랑 느낌이 다르다"가 된다(민우님 2026-08-05).
+//
+// 이건 스케일로 덮을 수 없다 — rs/rv 는 우리가 준 값을 줄이지만, 이 여백은 우리가 준
+// 값이 아니라 OS 가 얹는 값이기 때문이다. 끄는 게 정석이고, 끄면 두 플랫폼의 글자
+// 상자가 같은 규칙을 따른다.
+//
+// 여기 한 곳에서만 끈다 — 앱 전체가 이 래퍼로 Text 를 쓰기 때문(ESLint 로 강제).
+// 화면이 명시한 style 이 항상 뒤에 와서 이긴다(개별 화면이 되살릴 수 있다).
+const androidText = StyleSheet.create({metrics: {includeFontPadding: false}});
+const TEXT_METRICS = Platform.OS === 'android' ? androidText.metrics : undefined;
 
 /** 본문/라벨 시스템 글꼴 배율 상한. */
 export const FONT_SCALE_CAP = 1.5;
@@ -30,7 +47,16 @@ export const FONT_SCALE_CAP_HERO = 1.2;
 
 export const Text = React.forwardRef<React.ElementRef<typeof RNText>, TextProps>(
   function Text(props, ref) {
-    return <RNText ref={ref} maxFontSizeMultiplier={FONT_SCALE_CAP} {...props} />;
+    // style 은 {...props} **뒤에** 둔다 — 기본 메트릭 위에 화면 스타일을 얹기 위해서다.
+    // 순서를 바꾸면 화면이 준 style 이 통째로 지워진다.
+    return (
+      <RNText
+        ref={ref}
+        maxFontSizeMultiplier={FONT_SCALE_CAP}
+        {...props}
+        style={TEXT_METRICS ? [TEXT_METRICS, props.style] : props.style}
+      />
+    );
   },
 );
 

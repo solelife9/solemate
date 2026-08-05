@@ -15,8 +15,7 @@ import Svg, { Rect as SvgRect, Path as SvgPath, Line as SvgLine } from 'react-na
 import {
   BG, CARD_HI, GLASS, ACCENT, BRAND, DANGER, T1, T2, T3, SEP, FONT, DISPLAY, Shoe, Run, SHOES, withAlpha, RADIUS, GUTTER, MOTION, HERO, HR_ZONE_COLORS, TYPE,
   BAR,
-  ICON,
-} from './theme';
+  ICON, NUMERIC} from './theme';
 // 기간 탭 스트립 = SegmentedControl(md), 러닝 상세 2×3 메트릭 = StatGrid(sm) 프리미티브.
 import { TabBar, TABBAR_CLEARANCE, Button, SegmentedControl, StatGrid, SwipeBack, Chip, AmbientBackdrop, EmptyGhostHeader, GhostStrong, GhostBar, Rise, GlassEdge, BottomSheet, Input } from './primitives';
 import { Unit, displayNum, displayToKm } from './lib/units';
@@ -1435,7 +1434,9 @@ const s = StyleSheet.create({
   sumBigU: { color: T3, fontFamily: FONT, fontSize: TYPE.heading.fontSize, fontWeight: '500', marginLeft: rs(4), paddingBottom: rv(6) },
   sumMetricRow: { flexDirection: 'row', justifyContent: 'flex-start', gap: rv(28), marginTop: rv(14), paddingLeft: rs(2) },
   sumMetric: {},
-  sumMetricV: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.heading.fontSize, fontWeight: '700', letterSpacing: -0.2, fontVariant: ['tabular-nums'] },
+  // 숫자는 NUMERIC 램프에서만(DESIGN.md §3). TYPE.heading(18, **글자** 토큰)을 쓰고 있어
+  // 같은 3칸 지표인 신발 상세(24)보다 33% 작았다 — 탭을 오가면 숫자 크기가 널뛴다.
+  sumMetricV: { color: T1, fontFamily: DISPLAY, ...NUMERIC.md, letterSpacing: -0.2, fontVariant: ['tabular-nums'] },
   sumMetricU: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600' },
   sumMetricL: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500', marginTop: rv(4), marginLeft: rs(1) },
   // 개인 기록(PR, 1-3) — 2x2 그리드(최장거리/최고페이스/최장시간/최장스트릭).

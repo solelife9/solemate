@@ -15,7 +15,7 @@ import { showDialog } from './lib/dialog';
 import {Text} from './lib/text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { BG, CARD, CARD_HI, ACCENT, GOOD, DANGER, WARN, T1, T2, T3, SEP, CARD_BORDER, FONT, DISPLAY, withAlpha, TIER_COLORS, TIER_LABEL, KAKAO_YELLOW, KAKAO_LABEL, NAVER_GREEN, NAVER_LABEL, RADIUS, GUTTER, MOTION, HALL_GOLD, TYPE, GLASS, ICON} from './theme';
+import { BG, CARD, CARD_HI, ACCENT, GOOD, DANGER, WARN, T1, T2, T3, SEP, CARD_BORDER, FONT, DISPLAY, withAlpha, TIER_COLORS, TIER_LABEL, KAKAO_YELLOW, KAKAO_LABEL, NAVER_GREEN, NAVER_LABEL, RADIUS, GUTTER, MOTION, HALL_GOLD, TYPE, GLASS, ICON, NUMERIC} from './theme';
 // recap 토글 = SegmentedControl(sm), 스탯 그리드들 = StatGrid 단일 프리미티브.
 import { TabBar, TABBAR_CLEARANCE, Button, SegmentedControl, StatGrid, Stepper, AmbientBackdrop, Rise, GlassEdge, Toggle, KakaoMark, NaverMark, Input } from './primitives';
 import { Unit, unitKorean, displayNum } from './lib/units';
@@ -1540,7 +1540,11 @@ const s = StyleSheet.create({
   specSubRow: { flexDirection: 'row', marginTop: rv(16), paddingTop: rv(16), borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: CARD_BORDER },
   specSub: { flex: 1, alignItems: 'center', gap: rv(3) },
   specSubDiv: { borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: CARD_BORDER },
-  specSubVal: { color: T1, fontFamily: DISPLAY, fontSize: TYPE.heading.fontSize, fontWeight: '600', letterSpacing: -0.3, fontVariant: ['tabular-nums'] },
+  // 숫자는 NUMERIC 램프에서만 온다(DESIGN.md §3). 여기만 TYPE.heading(18, **글자** 토큰)을
+  // 쓰고 있어 같은 3칸 지표인 신발 상세(NUMERIC.md=24)보다 33% 작았다 — 화면을 나란히 보면
+  // 어느 쪽이 틀렸는지가 아니라 '따로 논다'가 먼저 보인다(민우님 2026-08-05).
+  // 올리는 방향으로 맞춘다: 러닝 지표 숫자는 키우는 게 맞다(판독성 우선, 2026-07-26 규칙).
+  specSubVal: { color: T1, fontFamily: DISPLAY, ...NUMERIC.md, letterSpacing: -0.3, fontVariant: ['tabular-nums'] },
   specSubUnit: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '600' },
   specSubLabel: { color: T3, fontFamily: FONT, fontSize: TYPE.caption.fontSize, fontWeight: '500' },
   // 심폐 체력(VO₂max) 강등 푸터 — 한 줄.
