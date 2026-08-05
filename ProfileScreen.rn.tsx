@@ -22,7 +22,7 @@ import { Unit, unitKorean, displayNum } from './lib/units';
 import { monthlyRecap, type RecapRun, type RecapShoe } from './lib/recap';
 import { reportIssue, setCrashCollectionEnabled } from './lib/crashlytics';
 import { isTimeoutError } from './lib/withTimeout';
-import { hkAvailable, hkLinked, hkLink, hkRestingHR } from './lib/healthkit';
+import { hkAvailable, hkLinked, hkLink, hkRestingHR, HEALTH_STORE_NAME, healthStoreReady, openHealthStoreSettings } from './lib/health';
 import { buildRecapShareCardModel, shareRecapCard, shareRunnerSpecCard, formatRecapPRs, canShareCardImage, type RecapKind, type SvgCapturable } from './lib/shareCard';
 import RecapShareCard from './RecapShareCard';
 import RunnerSpecShareCard, { type RunnerSpecShareModel } from './RunnerSpecShareCard';
@@ -323,8 +323,34 @@ function ProfileScreen({
   useEffect(() => { if (!settingsLoaded) return; void hkLinked().then(setHkOn); }, [settingsLoaded]);
   const linkHealth = async () => {
     if (hkOn) return;
+    // 안드로이드는 Health Connect 가 **별도 앱**이다(안드로이드 13 이하). 미설치 상태에서
+    // 그냥 연동을 시도하면 아무 일도 일어나지 않는다 — 눌렀는데 반응이 없는 막다른 길이다.
+    // 설치 경로를 열어 준다(2026-08-06). iOS 는 healthStoreReady 가 항상 false 이지만
+    // 아래 분기는 안드로이드에서만 타므로 영향이 없다.
+    if (Platform.OS === 'android' && !(await healthStoreReady())) {
+      showDialog(
+        `${HEALTH_STORE_NAME} 가 필요해요`,
+        '심박은 워치가 기록하고 Health Connect 에 모입니다. 앱을 설치하면 Keego 가 그 심박을 읽어 평균 심박·심박 존·심폐 체력을 보여줄 수 있어요.',
+        [
+          { text: '나중에', style: 'cancel' },
+          { text: '설치하기', onPress: () => { void Linking.openURL('market://details?id=com.google.android.apps.healthdata').catch(() => Linking.openURL('https://play.google.com/store/apps/details?id=com.google.android.apps.healthdata').catch(() => {})); } },
+        ],
+      );
+      return;
+    }
     const ok = await hkLink();
-    if (!ok) return;
+    if (!ok) {
+      // 사용자가 거부했거나 권한 창이 실패했다. 여기서도 조용히 끝내지 않는다 — 되돌릴
+      // 방법(설정 화면)을 알려 준다.
+      showDialog(
+        '심박 연동이 취소됐어요',
+        `${HEALTH_STORE_NAME} 에서 Keego 에 심박 읽기를 허용하면 평균 심박과 심박 존이 표시돼요.`,
+        Platform.OS === 'android'
+          ? [{ text: '확인', style: 'cancel' }, { text: '설정 열기', onPress: () => openHealthStoreSettings() }]
+          : [{ text: '확인', style: 'cancel' }],
+      );
+      return;
+    }
     setHkOn(true);
     if (!(restHR > 0)) {
       const v = await hkRestingHR();
@@ -966,9 +992,9 @@ function ProfileScreen({
                 측정값처럼 읽힌다. 대신 **왜 없는지와 켜는 법**은 알려준다 — 그냥 비워 두면
                 사용자는 앱이 고장 났다고 생각한다(실제로 그런 제보로 이 작업이 시작됐다). */}
             {vo2.vo2max <= 0 && vo2.vo2maxNeedsHealth && (
-              <View style={s.specVo2Foot} accessible accessibilityLabel="심폐 체력은 애플 건강을 연동하면 표시됩니다">
+              <View style={s.specVo2Foot} accessible accessibilityLabel={`심폐 체력은 ${HEALTH_STORE_NAME} 을 연동하면 표시됩니다`}>
                 <Ionicons name="pulse-outline" size={ri(ICON.tag)} color={T3} />
-                <Text style={s.specVo2FootNote}>심폐 체력은 심박이 있어야 정확해요 · 애플 건강을 연동하면 표시됩니다</Text>
+                <Text style={s.specVo2FootNote}>심폐 체력은 심박이 있어야 정확해요 · {HEALTH_STORE_NAME} 을 연동하면 표시됩니다</Text>
               </View>
             )}
           </View>
@@ -1291,9 +1317,9 @@ function ProfileScreen({
 
             {/* Apple 건강(HealthKit) — 설정 안에 compact 행으로. 기기 지원 시만. */}
             {hkAvailable() && (
-              <Pressable onPress={linkHealth} testID="link-health" accessibilityRole="button" accessibilityLabel="Apple 건강 연동" accessibilityState={{ disabled: hkOn }} style={({ pressed }) => [s.settingRow, s.settingBorder, pressed && !hkOn && { backgroundColor: CARD_HI }]}>
+              <Pressable onPress={linkHealth} testID="link-health" accessibilityRole="button" accessibilityLabel={`${HEALTH_STORE_NAME} 연동`} accessibilityState={{ disabled: hkOn }} style={({ pressed }) => [s.settingRow, s.settingBorder, pressed && !hkOn && { backgroundColor: CARD_HI }]}>
                 <View style={s.settingIcon}><Ionicons name="heart-outline" size={ri(ICON.inline)} color={ACCENT} /></View>
-                <Text style={s.settingLabel}>Apple 건강</Text>
+                <Text style={s.settingLabel}>{HEALTH_STORE_NAME}</Text>
                 <Text style={[s.settingDetail, hkOn && { color: GOOD }]}>{hkOn ? '연동됨' : '연동'}</Text>
                 <Ionicons name={hkOn ? 'checkmark' : 'chevron-forward'} size={ri(ICON.inline)} color={T3} />
               </Pressable>

@@ -1,7 +1,20 @@
 buildscript {
     ext {
         buildToolsVersion = "36.0.0"
-        minSdkVersion = 24
+        // 24 → 26 (2026-08-06). Health Connect(androidx.health.connect:connect-client)가
+        // minSdk 26 을 요구한다. 매니페스트 머지가 그래서 막혔다.
+        //
+        // tools:overrideLibrary 로 우회할 수도 있었지만 쓰지 않았다 — 구글 자신이 "런타임
+        // 실패 가능"이라고 경고하는 방법이고, 심박을 얻자고 크래시를 심는 건 거래가 안 맞는다.
+        //
+        // 잃는 것: 안드로이드 7.0/7.1(API 24·25) 기기. **그 기기들은 어차피 심박을 못 받는다**
+        // — Health Connect 자체가 26+ 이기 때문이다. 즉 여기서 배제되는 사용자는 '심박 없는
+        // 안드로이드'가 아니라 처음부터 대상이 아니었던 쪽이다. 국내 유통 기기 중 이 구간은
+        // 사실상 없다(갤럭시 S8 도 안드로이드 9 까지 올라갔다).
+        //
+        // 되돌리려면: 이 값을 24 로 내리고 react-native-health-connect 를 제거해야 한다.
+        // 둘은 함께 간다.
+        minSdkVersion = 26
         compileSdkVersion = 36
         targetSdkVersion = 36
         ndkVersion = "27.1.12297006"

@@ -92,6 +92,18 @@ final class WorkoutManager: NSObject, ObservableObject {
   @Published private(set) var phase: RunPhase = .idle
   /// 러닝 시작 전 3-2-1 카운트다운(3,2,1 → nil). nil 이 아니면 카운트다운 화면(ContentView).
   @Published private(set) var countdownValue: Int?
+  /**
+   러닝을 **시작하지 못한** 이유(사용자에게 보여줄 한 줄). nil = 정상.
+
+   왜 필요한가(2026-08-05 실측): 나이키 런 클럽을 폰에서 켠 채 keego 워치 러닝을 시작했더니
+   **아무 기록도 남지 않았다** — 워치에도, 폰에도, 서버에도. watchOS 는 워크아웃 세션을
+   **한 번에 하나만** 허용해서, 다른 앱이 세션을 잡고 있으면 `HKWorkoutSession` 생성이
+   throw 한다. 그런데 옛 코드는 `catch { phase = .idle }` 로 **조용히 되돌아갔다.**
+   화면은 시작 화면으로 남아 사용자는 "왜 안 되지" 하다 그냥 달렸고, 32분을 잃었다.
+
+   러닝 앱에서 '조용한 실패'는 데이터 유실과 같다. 시작하지 못했으면 그 자리에서 말해야 한다.
+   */
+  @Published private(set) var startError: String?
   @Published private(set) var heartRate: Double = 0
   @Published private(set) var distanceKm: Double = 0
   @Published private(set) var elapsedS: Double = 0
@@ -298,6 +310,7 @@ final class WorkoutManager: NSObject, ObservableObject {
   /// (애플 운동·나이키 관용). GPS-준비 표시는 없음(사용자 확정) — 순수 3-2-1.
   func beginCountdown(shoe: WatchShoe, goal: RunGoal = .free) {
     guard phase == .idle, countdownValue == nil else { return }
+    startError = nil // 다시 시도하는 순간 지난 실패 안내는 치운다
     pendingStart = (shoe, goal)
     countdownValue = 3
     if WatchLink.shared.hapticsOn { WKInterfaceDevice.current().play(.start) }
@@ -332,6 +345,7 @@ final class WorkoutManager: NSObject, ObservableObject {
   // goal 미지정 = 자유런(신발 화면에서 바로 시작). 목표 패널은 goal 을 실어 호출한다.
   func start(shoe: WatchShoe, goal: RunGoal = .free) {
     guard phase == .idle else { return }
+    startError = nil // 다시 시도하는 순간 지난 실패 안내는 치운다
     self.goal = goal
     goalReached = false
     goalReachedFired = false
@@ -401,8 +415,16 @@ final class WorkoutManager: NSObject, ObservableObject {
       WatchVoice.shared.start() // 러닝 시작 음성(워치 단독+에어팟)
     } catch {
       phase = .idle
+      // 조용히 돌아가지 않는다 — 왜 시작이 안 됐는지 시작 화면에 남긴다.
+      // 가장 흔한 원인이 '다른 앱이 워크아웃 세션을 쓰는 중'이라 그걸 먼저 말한다
+      // (watchOS 는 세션을 하나만 허용한다). 원문 오류는 진단용으로 뒤에 붙인다.
+      startError = "러닝을 시작하지 못했어요. 다른 운동 앱이 실행 중이면 종료하고 다시 시도해 주세요."
+      WatchCrash.record(error, context: "workout start failed")
     }
   }
+
+  /// 시작 화면에서 안내를 닫거나, 다시 시작을 누를 때 지운다.
+  func clearStartError() { startError = nil }
 
   // ── 일시정지 시간 회계 — 진행 중 일시정지 구간을 직접 적산해 경과시간에서 뺀다 ──────
   /// 일시정지 진입(수동·자동 공통) — 진행 중 일시정지 시작 시각을 찍는다(중복 방어).

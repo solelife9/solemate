@@ -5,6 +5,18 @@
     <!-- 햅틱(진동) — 없으면 RN Vibration.vibrate([pattern]) 이 SecurityException 으로 앱을 죽인다
          (신발 등록 성공 햅틱 등). VIBRATE 는 normal 권한이라 런타임 요청 불필요, 선언만 하면 됨. -->
     <uses-permission android:name="android.permission.VIBRATE" />
+
+    <!-- ── Health Connect (심박) 2026-08-05 ────────────────────────────────────
+         안드로이드에는 심박 소스가 없어 평균 심박·심박 존·VO2max 가 전부 비어 있었다.
+         Health Connect 는 센서가 아니라 **저장소**다 — 갤럭시워치·가민·핏빗이 여기에 쓰고
+         우리는 읽는다. 워치가 없으면 여전히 심박은 없다(아이폰도 애플워치 없으면 없다).
+         쓰기 권한은 Keego 러닝을 삼성헬스 등에서도 보이게 하려는 것이다(활동 기록 크레딧). -->
+    <uses-permission android:name="android.permission.health.READ_HEART_RATE" />
+    <uses-permission android:name="android.permission.health.READ_RESTING_HEART_RATE" />
+    <uses-permission android:name="android.permission.health.READ_EXERCISE" />
+    <uses-permission android:name="android.permission.health.WRITE_EXERCISE" />
+    <uses-permission android:name="android.permission.health.WRITE_DISTANCE" />
+    <uses-permission android:name="android.permission.health.WRITE_TOTAL_CALORIES_BURNED" />
     <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
@@ -64,7 +76,26 @@
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
         </intent-filter>
+        <!-- Health Connect 권한 창의 '개인정보 처리방침' 링크가 여기로 온다(안드로이드 13 이하).
+             이 필터가 없으면 권한 창에서 링크가 죽고, 구글 정책상 심박 권한 심사에서 걸린다.
+             안드로이드 14+ 는 아래 activity-alias 가 같은 역할을 한다. -->
+        <intent-filter>
+            <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE" />
+        </intent-filter>
       </activity>
+
+      <!-- Health Connect 권한 근거 화면(안드로이드 14+). 시스템만 띄울 수 있도록
+           START_VIEW_PERMISSION_USAGE 로 잠근다 — 아무 앱이나 우리 화면을 열지 못한다. -->
+      <activity-alias
+        android:name="ViewPermissionUsageActivity"
+        android:exported="true"
+        android:targetActivity=".MainActivity"
+        android:permission="android.permission.START_VIEW_PERMISSION_USAGE">
+        <intent-filter>
+            <action android:name="android.intent.action.VIEW_PERMISSION_USAGE" />
+            <category android:name="android.intent.category.HEALTH_PERMISSIONS" />
+        </intent-filter>
+      </activity-alias>
 
       <!-- Google Maps API 키 — react-native-maps 지도 표시에 필요.
            Google Cloud Console → Maps SDK for Android → API 키 생성 후 입력. -->
