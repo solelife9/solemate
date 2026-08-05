@@ -35,6 +35,7 @@ import {appendFinalSplit} from '../lib/splits';
 import {runTracker} from '../lib/runTracker';
 import {haversineM, calibrateLapM, lapsToTrack} from '../lib/laps';
 import {requestRunPermissions, startTracking, stopTracking, isPermissionError, hasForegroundPermission, RunPermissions} from '../lib/locationService';
+import {showRunNotification, clearRunNotification} from '../lib/runNotification';
 import {activateKeepAwakeAsync, deactivateKeepAwake} from 'expo-keep-awake';
 import {initStepCadence, feedStepCount, averageSpm} from '../lib/stepCadence';
 import {fmtPace, fmtTime} from '../lib/format';
@@ -67,6 +68,8 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
   // done 화면에서 검토·저장만. resume 가 없으면(일반 시작) 두 분기 모두 타지 않는다.
   const isContinue=!!resume&&resumeMode==='continue';
   const ui=parseShoeName(shoe.name);
+  // 잠금화면 알림 스로틀 타임스탬프(3초). 0 = 아직 안 띄움 → 첫 상태에서 바로 뜬다.
+  const notifAtRef=useRef(0);
   // 복구 모드: 'review' 는 스냅샷을 done 화면에 띄워 검토 후 저장/버리기(GPS 재시작 안 함).
   // 'continue' 는 GPS/센서를 다시 켜고 누적 거리·경과를 시드해 running 으로 이어 달린다.
   const resumeRoute=resume?(()=>{const sr=simplifyRoute(resume.pts as any);return sr.length>=2?JSON.stringify(sr):'';})():'';
@@ -298,6 +301,22 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
     const unsub=runTracker.subscribe(ev=>{
       if(ev.type==='state'){
         const s=ev.state;
+        // 잠금화면 지표 알림(안드로이드 전용) — 주머니에 넣고 달릴 때 잠금을 풀지 않고도
+        // 거리·시간을 본다(민우님 2026-08-05). 3초 스로틀: 1Hz fix 마다 알림을 다시 그리면
+        // 배터리를 먹고 시스템이 알림을 눌러 버린다. showRunNotification 은 iOS·모듈 결측·
+        // 실패를 전부 조용히 삼키므로 여기서 방어할 것이 없다(절대 throw 하지 않는다).
+        const nowMs=Date.now();
+        if(nowMs-notifAtRef.current>=3000){
+          notifAtRef.current=nowMs;
+          void showRunNotification({
+            km:s.dist,
+            elapsedSec:s.elapsed,
+            // 평균 페이스 = 경과/거리. 50m 미만에선 값이 쓰레기라 아예 안 준다.
+            avgPaceSecPerKm:s.dist>0.05?s.elapsed/s.dist:null,
+            paused:s.paused||s.autoPaused,
+            shoeName:ui.model||shoe.name,
+          });
+        }
         setKm(s.dist);setElapsed(s.elapsed);setCurrentPaceSec(s.currentPaceSecPerKm);
         elapsedRef.current=s.elapsed;
         setPaused(s.paused);setAutoPaused(s.autoPaused);
@@ -395,7 +414,7 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
         // 1초 틱/스냅샷 타이머도 정리한다 — 틱이 계속 돌면 헛돌 뿐이고, 시간은
         // 엔진이 freeze하므로 더 증가하지 않는다(거리와 동일하게 정지).
         clearInterval(timer.current);clearInterval(snapTimer.current);
-        void stopTracking();
+        void stopTracking();void clearRunNotification();
         setGpsStatus('위치 권한이 필요해요');setGpsStalled(false);
         openLocationSettingsAlert('달리는 중에 위치 권한이 꺼져서 거리 기록을 멈췄어요. 설정에서 위치 권한을 다시 허용해 주세요.');
       }
@@ -732,7 +751,7 @@ export default function RunEngine({shoe,insets,goalKm,goalMin=0,pacePlan=[],targ
     watchSession.stopWorkout(); // 워치 워크아웃도 종료(자동시작의 짝) — 종료/완주/취소 모두 경유
     clearInterval(timer.current);
     clearInterval(snapTimer.current);
-    void stopTracking();
+    void stopTracking();void clearRunNotification();
     runTracker.stop();
     // 화면 자동잠금 방지 해제 — 종료/완주/취소/언마운트(effect cleanup)가 모두 stop()을 경유.
     try{deactivateKeepAwake(KEEP_AWAKE_TAG);}catch{/* 무해: 이미 해제됨 */}

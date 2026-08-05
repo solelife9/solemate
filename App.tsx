@@ -148,7 +148,7 @@ import {setRemoteShoeDocs} from './lib/shoeCatalogStore';
 import {LoginScreen} from './LoginScreen.rn';
 import {stampUpdatedAt, markDeleted, partitionTombstones, mergeCloudData, mergeMedals, liveRecords, reconcileLivePreservingLocal, unionTombstones, stripSyncedRoutes, shouldSkipCloudSync, compactTombstones, SHOE_TOMBSTONE_KEEP} from './lib/cloudSync';
 import {publishMyRanking} from './lib/progression/firestoreRankingStore';
-import {LEADERBOARD_PUBLISH_ENABLED, SOCIAL_PROFILE_PUBLISH_ENABLED} from './lib/featureFlags';
+import {LEADERBOARD_PUBLISH_ENABLED, SOCIAL_PROFILE_PUBLISH_ENABLED, MERGE_PHONE_WATCH_RUNS} from './lib/featureFlags';
 import {genRunId, genShoeId} from './lib/genId';
 import {showToast} from './lib/toast';
 import {withTimeout} from './lib/withTimeout';
@@ -1960,7 +1960,8 @@ function Main(){
         run_date:date,source:'watch',updatedAt:Date.now(),route:routeStr,location:'',
         cadence:Math.round(p.cadence),heart_rate:Math.round(p.avgBpm),
         calories:Math.round(p.kcal),elevation_m:elevM};
-      const dup=findMergeTarget(incoming,ctx.runs as any,{incomingStartMs:p.startMs});
+      // 측정 모드에선 병합을 건너뛴다 — 폰이 잰 값이 워치 값으로 덮이지 않게(플래그 주석 참조).
+      const dup=MERGE_PHONE_WATCH_RUNS?findMergeTarget(incoming,ctx.runs as any,{incomingStartMs:p.startMs}):null;
       if(dup){
         const merged=mergeRuns(dup as any,incoming,'watch');
         setRuns(prev=>prev.map(r=>r.id===dup.id?({...r,...merged} as any):r));
@@ -1970,7 +1971,10 @@ function Main(){
         }
         return; // 새 런을 만들지 않는다 — 신발 이중 차감의 근본 차단.
       }
-      const newId=await ctx.addRun(shoeId,p.km,date,'','watch',Math.round(p.durationS),Math.round(p.cadence),routeStr,'',Math.round(p.avgBpm),elevM,Math.round(p.kcal));
+      // 측정 모드에선 두 건이 나란히 남으므로 어느 쪽이 워치인지 메모로 구분해 준다
+      // (정상 모드에선 병합돼 한 건이라 메모가 필요 없다).
+      const watchMemo=MERGE_PHONE_WATCH_RUNS?'':'⌚️ 워치 기록 (측정 모드 — 폰 기록과 비교용)';
+      const newId=await ctx.addRun(shoeId,p.km,date,watchMemo,'watch',Math.round(p.durationS),Math.round(p.cadence),routeStr,'',Math.round(p.avgBpm),elevM,Math.round(p.kcal));
       // 워치 런 계측(2026-08-04 출시 운영 감사 L-11). 이전엔 이 경로에 계측이 없어
       // **워치 사용량이 통째로 보이지 않았다** — device:'watch' 값이 프로덕션에서 한 번도
       // 전송된 적이 없었다(테스트 파일에만 존재). 워치는 가장 많은 시간을 쏟은 영역 중
