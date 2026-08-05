@@ -19,6 +19,7 @@ import { RunCard, RunDetail } from './HistoryScreen.rn';
 import { FuelGauge } from './FuelGauge';
 import FirstShoeScreen from './FirstShoeScreen.rn';
 import { Unit, displayNum } from './lib/units';
+import { durationParts } from './lib/stats';
 import { wearTier, SHOE_CAUTION_PCT, SHOE_REPLACE_PCT, clampMaxKm, baseMaxKmFromEffective, WEIGHT_WEAR_REASON_KO } from './lib/shoe';
 // 권장 수명의 출처 고지(UX 감사 ⑩) — 문구는 data/shoeModels 단일 소스.
 import { LIFESPAN_BASIS_KO } from './data/shoeModels';
@@ -32,7 +33,9 @@ import type { ProgressionContext, RetiredShoeRecord } from './lib/progression/ty
 // lastWorn: 이 신발의 마지막 착용일(런에서 파생, 한국어 표기). 미착용이면 생략.
 // avgPace: 이 신발로 달린 런들의 평균 페이스(예 "5'30\"" / 기록 없으면 '--'). 신발끼리
 // 페이스를 비교할 수 있게 상세·목록 카드에 함께 노출한다.
-export type ShoeTotals = { totalRuns: number; totalTime: string; avgPace: string; lastWorn?: string };
+// totalSec = totalTime 의 원본 초. 지표 격자가 '숫자+단위'로 쪼개 그리려면 포맷된 문자열이
+// 아니라 원본 값이 필요하다(durationParts). 없으면 totalTime 문자열을 그대로 쓴다.
+export type ShoeTotals = { totalRuns: number; totalTime: string; totalSec?: number; avgPace: string; lastWorn?: string };
 
 // 마모 4단계(사용률%) → 색/라벨. 매핑은 primitives.WEAR_TONE_COLOR 단일 소스
 // (2026-07-19 색통일 램프 — 사본 금지, 2026-07-24 심사에서 사본 간 램프 어긋남 발견).
@@ -421,15 +424,23 @@ function ShoeDetail({
           <GlassEdge glints={false} radius={RADIUS.lg} />
           <View style={s.statGrid}>
             {[
-              { v: String(usedDisp), u: unit, l: '누적 거리' },
-              { v: String(totals.totalRuns), u: '회', l: '러닝 횟수' },
-              { v: totals.totalTime, u: '', l: '러닝 시간' },
-              { v: totals.avgPace, u: totals.avgPace !== '--' ? '/km' : '', l: '평균 페이스' },
-              { v: extra.longest > 0 ? String(displayNum(extra.longest, unit, 1)) : '--', u: extra.longest > 0 ? unit : '', l: '최장 러닝' },
-              { v: extra.weeklyAvg > 0 ? String(displayNum(extra.weeklyAvg, unit, 1)) : '--', u: extra.weeklyAvg > 0 ? unit : '', l: '주 평균 · 4주' },
+              { p: [{ n: String(usedDisp), u: unit }], l: '누적 거리' },
+              { p: [{ n: String(totals.totalRuns), u: '회' }], l: '러닝 횟수' },
+              // 러닝 시간만 조각으로 넣는다 — "1시간 47분"을 통째로 큰 글자로 그리면 이 칸만
+              // 혼자 넓어져 360dp 폰에서 두 줄로 떨어지고 격자가 밀렸다(lib/stats durationParts).
+              { p: durationParts(totals.totalSec ?? 0), fallback: totals.totalTime, l: '러닝 시간' },
+              { p: [{ n: totals.avgPace, u: totals.avgPace !== '--' ? '/km' : '' }], l: '평균 페이스' },
+              { p: [{ n: extra.longest > 0 ? String(displayNum(extra.longest, unit, 1)) : '--', u: extra.longest > 0 ? unit : '' }], l: '최장 러닝' },
+              { p: [{ n: extra.weeklyAvg > 0 ? String(displayNum(extra.weeklyAvg, unit, 1)) : '--', u: extra.weeklyAvg > 0 ? unit : '' }], l: '주 평균 · 4주' },
             ].map((x, i) => (
               <View key={i} style={s.statGridCell3}>
-                <Text style={s.statValue}>{x.v}<Text style={s.statUnit}>{x.u}</Text></Text>
+                <Text style={s.statValue} numberOfLines={1}>
+                  {x.p.length > 0
+                    ? x.p.map((seg, j) => (
+                        <Text key={j}>{j > 0 ? ' ' : ''}{seg.n}<Text style={s.statUnit}>{seg.u}</Text></Text>
+                      ))
+                    : (x.fallback ?? '--')}
+                </Text>
                 <Text style={s.statLabel}>{x.l}</Text>
               </View>
             ))}

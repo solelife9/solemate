@@ -3,6 +3,7 @@ import {
   avgPaceLabel,
   totalTimeLabel,
   durationLabel,
+  durationParts,
   summaryOf,
   maxDayStreak,
   weekBuckets,
@@ -171,5 +172,39 @@ describe('yearBuckets (monthly, Jan..Dec)', () => {
     expect(out[0]).toBeCloseTo(10, 5);
     expect(out[11]).toBeCloseTo(7, 5);
     expect(out[5]).toBe(0);
+  });
+});
+
+// ────────────────────────────────────────────────────────────────────────────
+// durationParts — 지표 격자용 '숫자/단위' 분해 (2026-08-05)
+//
+// 왜: 신발 상세의 3×2 격자는 모든 칸이 `숫자(큰 글자) + 단위(작은 글자)` 꼴인데
+// (`21`+`km`, `12`+`회`), 러닝 시간만 "1시간 47분"을 통째로 큰 글자로 넣고 있었다.
+// 그래서 이 칸만 혼자 넓어져 360dp 폰(갤럭시 S10e)에서 칸 폭을 넘겨 두 줄로 떨어졌고,
+// 그 줄바꿈이 첫 줄 높이를 밀어 격자 전체가 어긋났다.
+// 단위를 작은 글자로 내리면 정보를 하나도 안 버리고 폭이 줄어든다.
+// ────────────────────────────────────────────────────────────────────────────
+describe('durationParts — 숫자와 단위를 나눠 준다', () => {
+  test('1시간 이상이면 시간·분 두 조각', () => {
+    expect(durationParts(3600 + 47 * 60)).toEqual([{n: '1', u: '시간'}, {n: '47', u: '분'}]);
+  });
+
+  test('1시간 미만이면 분 한 조각', () => {
+    expect(durationParts(47 * 60)).toEqual([{n: '47', u: '분'}]);
+  });
+
+  test('정각이면 분은 0으로 남긴다(칸이 비지 않게)', () => {
+    expect(durationParts(2 * 3600)).toEqual([{n: '2', u: '시간'}, {n: '0', u: '분'}]);
+  });
+
+  test('0·음수·비정상 입력은 빈 배열 — 호출부가 -- 를 쓴다', () => {
+    expect(durationParts(0)).toEqual([]);
+    expect(durationParts(-10)).toEqual([]);
+    expect(durationParts(NaN)).toEqual([]);
+  });
+
+  test('durationLabel 과 같은 값을 말한다(두 표기가 어긋나지 않게)', () => {
+    const sec = 5 * 3600 + 9 * 60 + 30;
+    expect(durationParts(sec).map((p) => `${p.n}${p.u}`).join(' ')).toBe(durationLabel(sec).replace(/ /g, ' '));
   });
 });

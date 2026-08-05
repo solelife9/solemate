@@ -2410,9 +2410,11 @@ function Main(){
     // 누적 러닝 시간은 서버 truth(run_time, 초)를 우선한다 — 다른 기기의 미동기 런까지
     // 반영된 값. 없으면 로컬 런 로그 합산으로 폴백한다(audit#9/#10).
     const serverSec=Number(s.run_time);
-    const totalTime=Number.isFinite(serverSec)&&serverSec>0?durationLabel(serverSec):totalTimeLabel(list);
+    const useServer=Number.isFinite(serverSec)&&serverSec>0;
+    const totalSec=useServer?serverSec:list.reduce((a,r)=>a+(Number(r.duration)||0),0);
+    const totalTime=useServer?durationLabel(serverSec):totalTimeLabel(list);
     // 신발별 평균 페이스(기록 있는 런만, lib/stats). 신발끼리 페이스 비교용으로 상세·목록에 노출.
-    acc[i]={totalRuns:list.length,totalTime,avgPace:avgPaceLabel(list),lastWorn:worn?fmtKDate(worn).date:undefined};
+    acc[i]={totalRuns:list.length,totalTime,totalSec,avgPace:avgPaceLabel(list),lastWorn:worn?fmtKDate(worn).date:undefined};
   });
   return acc;
   },[shoes,runs]);

@@ -1213,7 +1213,10 @@ function HistoryScreen({
                 스펙(거리 PB·VO2max)을 한곳에 모은다. */}
             {/* 훈련 부하는 홈으로 이관(안 A, 2026-07-25 민우님 확정) — 소비 시점이 '러닝 전'
                 이라 기록탭(사후 회고)이 아니라 홈이 맞다. HomeScreen 컴팩트 카드가 담당. */}
-            <Text style={s.sectionLabel}>러닝 기록</Text>
+            {/* '러닝 기록' → '최근 기록'(2026-08-05 민우님). 이 목록은 처음부터 최근
+                RECENT_LIMIT(5)개만 보여 주고 나머지는 아래 '모든 기록 N개 보기'로 펼친다 —
+                라벨만 전체 목록인 척하고 있었다. 화면이 하는 일과 이름을 일치시킨다. */}
+            <Text style={s.sectionLabel}>{showAllRuns ? '러닝 기록' : '최근 기록'}</Text>
           </View>
         }
         ListEmptyComponent={

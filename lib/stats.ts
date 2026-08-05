@@ -62,6 +62,28 @@ export function durationLabel(seconds: number): string {
   return h > 0 ? `${h}시간 ${m}분` : `${m}분`;
 }
 
+/**
+ * 지속 시간을 **숫자/단위 조각**으로 쪼갠다 — `[{n:'1',u:'시간'},{n:'47',u:'분'}]`.
+ *
+ * 왜 필요한가: 지표 격자의 칸은 전부 `숫자(큰 글자) + 단위(작은 글자)` 꼴인데
+ * (`21`+`km`, `12`+`회`), 러닝 시간만 "1시간 47분" 한 덩어리를 **전부 큰 글자로** 넣고
+ * 있었다. 그래서 이 칸만 혼자 넓어졌고, 360dp 폰(갤럭시 S10e)에서 칸 폭(≈98dp)을 넘겨
+ * 두 줄로 떨어졌다. 줄바꿈이 첫 줄 높이를 밀어 3×2 격자 전체가 어긋났다.
+ *
+ * 단위를 작은 글자로 내리면 같은 정보가 약 4분의 3 폭에 들어간다 — 글자를 줄이거나
+ * 정보를 버리지 않고, 다른 칸들이 이미 쓰던 규칙을 그대로 적용하는 것뿐이다.
+ *
+ * 0 이하·비정상 입력은 빈 배열을 준다(호출부가 '--' 를 그대로 쓰게).
+ */
+export function durationParts(seconds: number): Array<{n: string; u: string}> {
+  const s = Number(seconds);
+  if (!Number.isFinite(s) || s <= 0) return [];
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  if (h > 0) return [{n: String(h), u: '시간'}, {n: String(m), u: '분'}];
+  return [{n: String(m), u: '분'}];
+}
+
 /** 총 이동 시간 'H시간 M분' / 'M분', 0이면 '--'. */
 export function totalTimeLabel(list: RunRow[]): string {
   return durationLabel(asList(list).reduce((a, r) => a + (r.duration || 0), 0));
