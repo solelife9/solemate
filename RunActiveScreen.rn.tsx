@@ -639,7 +639,7 @@ export default function RunActiveScreen({
       {/* 상단 스페이서 — 러닝 중(그리고 일시정지·실내처럼 지도가 없을 때)엔 아래 컨트롤 앞
           flex:1 과 짝을 이뤄 링+지표 블록을 세로 중앙에 둔다. 일시정지 + 지도 있을 땐 지도 패널이
           상단을 차지하므로 이 스페이서를 뺀다. */}
-      {(!uiPaused || liveCoords.length === 0) && <View style={{ flex: 1 }} />}
+      {(!uiPaused || liveCoords.length === 0) && <View style={r.spacer} />}
 
       {/* 일시정지 상단 지도 — 야외(경로 있음)에서만. 카드가 아니라 좌우 풀블리드로 위 공간을
           꽉 채운다(2026-07-12 사용자 확정: 카드 폐지, km 위까지 여백 없이). flex:1 이 상단을
@@ -649,7 +649,16 @@ export default function RunActiveScreen({
           onPress={() => setMapFull(true)}
           accessibilityRole="button"
           accessibilityLabel="지도 전체화면으로 보기"
-          style={[r.mapPanel, { height: Math.max(rs(200), Math.round(winH * 0.5) - insets.top - rs(56)) }]}
+          // 높이가 아니라 **상한**이다(2026-08-05). 예전엔 고정 높이라 지도가 화면 절반을
+          // 무조건 가져갔고, 아래 지표·컨트롤은 '남는 것'을 나눠 썼다. 화면이 짧으면 남는 게
+          // 없어 지표와 정지/재개 버튼이 달라붙었다(갤럭시 S10e 673dp — 아이폰 852dp 보다
+          // 21% 짧다. 민우님 "지표들이랑 정지 재개버튼 거리가 너무 가까워").
+          //
+          // 순서를 뒤집는다: 지표·컨트롤·둘 사이 간격이 **먼저** 제 높이를 가져가고, 지도가
+          // flex 로 나머지를 채우되 화면 절반을 넘지 않는다. 긴 화면에서는 종전과 똑같이
+          // 절반에서 멈추고(아이폰 불변), 짧은 화면에서만 지도가 양보한다.
+          // 최소 160dp — 그보다 작은 지도는 경로를 못 읽어 있으나 마나다.
+          style={[r.mapPanel, { flex: 1, minHeight: rs(160), maxHeight: Math.max(rs(200), Math.round(winH * 0.5) - insets.top - rs(56)) }]}
           onLayout={e => setMapH(e.nativeEvent.layout.height)}>
           {/* 시트 등장: 컨테이너(레이아웃)는 그대로, 내용물만 위(-H)에서 내려온다(overflow hidden). */}
           <Animated.View
@@ -868,7 +877,10 @@ export default function RunActiveScreen({
           지표를 하단으로 밀므로 이 여백을 뺀다. */}
       {/* 하단 스페이서 — 러닝 중 + 일시정지-야외(지도 반높이 아래 그리드를 위로 올리고
           남는 공간을 여기서 흡수해 컨트롤을 바닥에 고정). 일시정지-실내는 상단 스페이서 담당. */}
-      {(!uiPaused || liveCoords.length > 0) && <View style={{ flex: 1 }} />}
+      {/* 일시정지-야외에서는 여기가 **고정 간격**이다 — 지도(flex)가 나머지를 흡수하므로
+          지표와 컨트롤 사이 숨 쉴 틈이 화면 길이와 무관하게 보장된다. 러닝 중에는 종전대로
+          flex:1 로, 위 스페이서와 짝을 이뤄 링을 세로 가운데에 둔다. */}
+      {(!uiPaused || liveCoords.length > 0) && <View style={uiPaused ? r.pausedGap : r.spacer} />}
 
       {/* controls — 카운트다운 중엔 자리(높이)만 지키고 안 보임 → GO 스왑 후 지표와 함께 라이즈 */}
       <Animated.View pointerEvents={cd ? 'none' : 'auto'}
@@ -1105,6 +1117,9 @@ const r = StyleSheet.create({
   // (lapBtnCount 삭제 — 랩 버튼 우측 카운트 폐지로 소비처가 사라졌다, 간결화 J1 2026-07-26)
   lapUndo: { width: rs(52), height: rs(52), borderRadius: rs(16), borderCurve: 'continuous', alignItems: 'center', justifyContent: 'center', backgroundColor: CARD, borderWidth: 1, borderColor: SEP },
 
+  // 일시정지-야외에서 지표와 컨트롤 사이 보장 간격(지도가 flex 로 나머지를 흡수한다).
+  pausedGap: { height: rv(28) },
+  spacer: { flex: 1 },
   controls: { flexDirection: 'row', justifyContent: 'center', gap: rv(48), paddingBottom: rv(8) },
   // 러닝 컨트롤 — 오렌지 필 대신 투명 유리(홈 CTA 와 같은 문법). 종료(cStop)만 DANGER
   // 색을 유지해 '위험한 동작'의 색 언어를 지킨다.
