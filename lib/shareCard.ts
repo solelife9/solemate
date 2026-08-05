@@ -311,6 +311,23 @@ export type SvgRefLike = {current: SvgCapturable | null} | null | undefined;
  * timeoutMs(기본 4s) 뒤 reject 한다 — 공유가 조용히 멈추는 대신 텍스트 공유로 폴백된다.
  * 정착 시 타이머를 반드시 정리한다(오픈 핸들·중복 정착 방지).
  */
+/**
+ * ⚠️ **`toDataURL(cb, {width, height})` 로 해상도를 줄이려 하지 말 것**(2026-08-06 실측).
+ *
+ * 이름만 보면 '그 크기로 구워 준다'로 읽히지만, 안드로이드 구현은 축소가 아니라 **잘라내기**다
+ * (`react-native-svg/android/.../SvgView.java`):
+ *
+ *     String toDataURL(int width, int height) {
+ *       Bitmap bitmap = Bitmap.createBitmap(width, height, ...);
+ *       drawChildren(new Canvas(bitmap));   // ← 축소 변환이 없다
+ *
+ * 원래 좌표계 그대로 작은 캔버스에 그리므로 **왼쪽 위 일부만 남는다.** 실기기에서 확인했다 —
+ * 공유 시트 썸네일에 워드마크와 이름만 남고 지표가 통째로 잘렸다. 게다가 캡처는 '성공'하고
+ * 공유도 나가므로 **테스트로도 안 잡힌다**(옵션이 전달됐는지만 검사하게 되기 때문).
+ *
+ * 해상도를 줄이려면 **카드 쪽에서** 줄여야 한다 — Svg 의 width/height 를 설계 px ÷ 화면 배율로
+ * 두고 viewBox 로 좌표계를 보존한다(RecapShareCard·RunnerSpecShareCard·MedalShareCard 참조).
+ */
 export function captureCardDataUrl(ref: SvgRefLike, timeoutMs = 4000): Promise<string> {
   return new Promise<string>((resolve, reject) => {
     const node = ref && ref.current;
@@ -329,7 +346,7 @@ export function captureCardDataUrl(ref: SvgRefLike, timeoutMs = 4000): Promise<s
     };
     timer = setTimeout(() => finish(() => reject(new Error('share card capture timed out'))), timeoutMs);
     try {
-      node.toDataURL((base64: string) => {
+      const cb = (base64: string) => {
         finish(() => {
           if (!base64) {
             reject(new Error('empty share card image'));
@@ -337,7 +354,8 @@ export function captureCardDataUrl(ref: SvgRefLike, timeoutMs = 4000): Promise<s
           }
           resolve(`data:image/png;base64,${base64}`);
         });
-      });
+      };
+      node.toDataURL(cb);
     } catch (e) {
       finish(() => reject(e instanceof Error ? e : new Error(String(e))));
     }

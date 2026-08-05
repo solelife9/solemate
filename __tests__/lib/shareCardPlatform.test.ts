@@ -111,3 +111,30 @@ describe('공유 카드 플랫폼 분기', () => {
     expect((Sharing.shareAsync as jest.Mock).mock.calls[0][0]).toBe('file:///cache/keego-medal.png');
   });
 });
+
+// ────────────────────────────────────────────────────────────────────────────
+// 캡처 해상도는 **카드 쪽**에서 정한다 (2026-08-06)
+//
+// 처음엔 toDataURL(cb, {width, height}) 로 줄이려 했는데, 안드로이드 구현이 축소가 아니라
+// **잘라내기**였다(SvgView.java 가 축소 변환 없이 작은 비트맵에 원래 좌표로 그린다).
+// 실기기에서 카드 왼쪽 위만 남은 걸 확인하고 폐기했다 — 캡처는 '성공'하고 공유도 나가므로
+// 눈으로 보기 전엔 안 드러나는 종류다.
+//
+// 지금은 각 카드가 Svg width/height 를 설계 px ÷ 화면 배율로 두고 viewBox 로 좌표계를
+// 유지한다. 그 계약을 여기서 못 박는다 — 되돌아오기 쉬운 실수다.
+// ────────────────────────────────────────────────────────────────────────────
+describe('공유 카드는 설계 치수(1080×1350px)로 구워진다', () => {
+  test('캡처는 크기 옵션을 넘기지 않는다 — 넘기면 안드로이드에서 카드가 잘린다', async () => {
+    const seen: unknown[] = [];
+    const ref = {
+      current: {
+        toDataURL: (cb: (b: string) => void, opts?: object) => { seen.push(opts); cb('PNG'); },
+      },
+    };
+    Object.defineProperty(Platform, 'OS', {value: 'ios', configurable: true});
+    const spy = jest.spyOn(Share, 'share').mockResolvedValue({action: 'sharedAction'} as never);
+    await shareRunnerSpecCard(ref, 'fallback');
+    expect(seen).toEqual([undefined]);
+    spy.mockRestore();
+  });
+});

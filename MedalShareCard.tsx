@@ -8,6 +8,7 @@
 // 시각 언어(2026-07-16 통일): 다크 라디얼 배경(SHARE_DARK_STOPS) + keego 파파야 워드마크
 // + 흰 보조 지표(그림자). 골드는 성취 도메인이라 유지(메달 링·공식 기록·FINISHER).
 // ============================================================================
+import {PixelRatio} from 'react-native';
 import React from 'react';
 import Svg, {Rect, Text as SvgText, G, Circle, Image as SvgImage, Line, Defs, ClipPath, RadialGradient, Stop} from 'react-native-svg';
 import {CARD, CARD_BORDER, FONT, HALL_GOLD, T1, RING_ACCENT, DISPLAY} from './theme';
@@ -18,6 +19,22 @@ const CF = WORDMARK_FONT;
 
 export const CARD_W = 1080;
 export const CARD_H = 1350;
+// ── 캡처 픽셀 크기 (2026-08-06) ─────────────────────────────────────────────
+// 카드는 1080×1350**px** 로 설계됐다(인스타 피드 4:5). 그런데 Svg 에 width/height 를 그대로
+// 주면 그 값은 **dp** 로 해석돼, 3배율 기기에서 3240×4050px 이 구워졌다 — 설계 의도가 아니라
+// dp/px 혼동의 부작용이고 어느 플랫폼도 그 해상도로 표시하지 않는다. 9배를 더 그리느라
+// 안드로이드 공유가 실측 3.6초 걸렸다.
+//
+// 그래서 **레이아웃은 설계 px ÷ 화면 배율**로 두고, viewBox 로 좌표계는 1080×1350 을 그대로
+// 유지한다. 결과 이미지는 배율과 무관하게 항상 설계 치수가 된다(3배율 360dp×3 = 1080px,
+// 2배율 540dp×2 = 1080px). 카드 내부 좌표는 한 줄도 바꾸지 않는다.
+//
+// ⚠️ toDataURL(cb, {width, height}) 로 줄이는 방법은 쓰지 말 것 — 안드로이드에서는 축소가
+// 아니라 **잘라내기**라 카드 왼쪽 위만 남는다(lib/shareCard.ts captureCardDataUrl 주석).
+const CAPTURE_SCALE = PixelRatio.get() || 1;
+const VIEW_W = Math.round(CARD_W / CAPTURE_SCALE);
+const VIEW_H = Math.round(CARD_H / CAPTURE_SCALE);
+
 const PAD = 88;
 
 export interface MedalShareModel {
@@ -54,7 +71,7 @@ const MedalShareCard = React.forwardRef<unknown, {model: MedalShareModel}>(({mod
   const hair = CARD_BORDER;
 
   return (
-    <Svg ref={ref as never} width={CARD_W} height={CARD_H}>
+    <Svg ref={ref as never} width={VIEW_W} height={VIEW_H} viewBox={`0 0 ${CARD_W} ${CARD_H}`}>
       <Defs>
         <RadialGradient id="medal-dark" cx="50%" cy="18%" r="110%">
           <Stop offset="0" stopColor={SHARE_DARK_STOPS[0]} />
