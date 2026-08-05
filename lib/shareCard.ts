@@ -8,7 +8,7 @@
 //   2) captureCardDataUrl  — Svg ref → 'data:image/png;base64,…' (콜백→Promise 래핑)
 // 캔버스 자체는 jest.setup의 Svg 목이 toDataURL을 흉내 내므로 경로를 그대로 테스트한다.
 
-import {Share} from 'react-native';
+import {Platform, Share} from 'react-native';
 import * as FileSystem from 'expo-file-system/legacy';
 // saveToLibraryAsync 는 메인 export 에서 deprecated(throw) — 레거시 API 를 쓴다(SDK 56).
 import * as MediaLibrary from 'expo-media-library/legacy';
@@ -377,8 +377,34 @@ export async function saveCardToLibrary(ref: SvgRefLike): Promise<{ok: boolean; 
   }
 }
 
+/**
+ * 이 플랫폼에서 카드 **이미지** 공유가 실제로 되는가.
+ *
+ * 안드로이드에서는 안 된다. RN 의 Share 는 안드로이드 분기에서 `url` 을 **버린다** —
+ * `Libraries/Share/Share.js`:
+ *
+ *     if (Platform.OS === 'android') {
+ *       const newContent = {title: content.title,
+ *         message: typeof content.message === 'string' ? content.message : undefined};
+ *
+ * 즉 `Share.share({url})` 은 안드로이드에서 message 없는 빈 공유 인텐트가 된다. 게다가
+ * 캡처(captureCardDataUrl)는 **성공**하므로 아래 catch 의 텍스트 폴백도 타지 않는다 —
+ * 사용자는 공유 시트를 열고 아무것도 못 보낸다(조용한 실패). 갤럭시 S10e 실기기에서
+ * 확인했다(2026-08-05): 시트에 "공유할 추천 사용자가 없음"만 뜬다. 공유 4종(런·리캡·
+ * 러너 스펙·메달)이 전부 같은 경로라 안드로이드에선 전부 이랬다.
+ *
+ * 그래서 안드로이드는 처음부터 텍스트 공유로 보낸다 — **빈 공유보다 낫다.**
+ *
+ * ⚠️ 진짜 이미지 공유를 하려면 파일을 쓰고 content:// URI 를 넘겨야 하는데, 그건 RN 의
+ * Share 로는 불가능하고 네이티브 모듈(expo-sharing)이 필요하다. 네이티브 의존은
+ * 사전 승인제라(CLAUDE.md Danger Zones) 여기서 임의로 추가하지 않는다. 승인되면 이
+ * 함수만 걷어내면 된다.
+ */
+export const canShareCardImage = (): boolean => Platform.OS !== 'android';
+
 export async function shareRunCard(ref: SvgRefLike, fallback: RunShareInput): Promise<void> {
   try {
+    if (!canShareCardImage()) throw new Error('image share unsupported on this platform');
     const url = await captureCardDataUrl(ref);
     await Share.share({url});
   } catch {
@@ -514,6 +540,7 @@ export async function shareRecapCard(
   opts?: {unit?: Unit; kind?: RecapKind},
 ): Promise<void> {
   try {
+    if (!canShareCardImage()) throw new Error('image share unsupported on this platform');
     const url = await captureCardDataUrl(ref);
     await Share.share({url});
   } catch {
@@ -526,6 +553,7 @@ export async function shareRecapCard(
  */
 export async function shareRunnerSpecCard(ref: SvgRefLike, fallbackText: string): Promise<void> {
   try {
+    if (!canShareCardImage()) throw new Error('image share unsupported on this platform');
     const url = await captureCardDataUrl(ref);
     await Share.share({url});
   } catch {
@@ -536,6 +564,7 @@ export async function shareRunnerSpecCard(ref: SvgRefLike, fallbackText: string)
 /** 마라톤 메달 자랑 카드 공유 — 캡처 실패 시 텍스트 폴백. BIB·이름은 카드에 없음(프라이버시). */
 export async function shareMedalCard(ref: SvgRefLike, fallbackText: string): Promise<void> {
   try {
+    if (!canShareCardImage()) throw new Error('image share unsupported on this platform');
     const url = await captureCardDataUrl(ref);
     await Share.share({url});
   } catch {

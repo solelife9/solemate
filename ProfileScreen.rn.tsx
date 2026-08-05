@@ -23,7 +23,7 @@ import { monthlyRecap, type RecapRun, type RecapShoe } from './lib/recap';
 import { reportIssue, setCrashCollectionEnabled } from './lib/crashlytics';
 import { isTimeoutError } from './lib/withTimeout';
 import { hkAvailable, hkLinked, hkLink, hkRestingHR } from './lib/healthkit';
-import { buildRecapShareCardModel, shareRecapCard, shareRunnerSpecCard, formatRecapPRs, type RecapKind, type SvgCapturable } from './lib/shareCard';
+import { buildRecapShareCardModel, shareRecapCard, shareRunnerSpecCard, formatRecapPRs, canShareCardImage, type RecapKind, type SvgCapturable } from './lib/shareCard';
 import RecapShareCard from './RecapShareCard';
 import RunnerSpecShareCard, { type RunnerSpecShareModel } from './RunnerSpecShareCard';
 import {
@@ -695,6 +695,9 @@ function ProfileScreen({
     else setTimeout(resolve, 0);
   };
   const withShareCard = async (which: 'recap' | 'spec', run: () => Promise<void>) => {
+    // 이미지 공유가 불가능한 플랫폼(안드로이드)에서는 카드를 세우지 않는다 — 캡처하지 않을
+    // 그림을 그리느라 1.6s 를 쓸 이유가 없다. 공유는 텍스트로 나간다(lib/shareCard 주석).
+    if (!canShareCardImage()) { await run(); return; }
     if (!shareCardUp) {
       await new Promise<void>((resolve) => {
         shareReadyRef.current = resolve;
