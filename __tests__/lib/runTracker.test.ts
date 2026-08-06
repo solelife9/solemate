@@ -986,3 +986,82 @@ describe('스냅샷 저장 연속 실패 경고', () => {
     expect(t.getState().snapshotFailing).toBe(false);
   });
 });
+
+// ============================================================================
+// 死구간 회계: 거리를 인정했으면 시간도 인정한다 (2026-08-07 감사)
+//
+// 두 방어가 서로를 파괴하고 있었다.
+//   · stalledMs  — 무신호 구간은 거리가 안 쌓이니 시간도 뺀다(페이스 왜곡 방지, audit#9)
+//   · pedFillKm  — 무신호 구간의 실제 이동을 만보계로 메운다(거리 유실 방지, #16)
+// 둘 다 옳지만 **같은 구간에 동시에 걸리면** 거리는 인정하고 시간은 삭제하게 된다.
+//
+// 감사 시점 실측(엔진 직접 실행): 60초 러닝 + 5분 터널(만보계 1km 보고) →
+//   거리 1.286km · 경과 **67초** · 페이스 **0'52"/km**
+// PB 판정이 duration/dist 라 **터널 하나가 가짜 개인 최고**를 만들었다. Truth only 위반.
+// (2026-08-07 에 다른 세션이 붙인 MIN_PLAUSIBLE_SEC_PER_KM 하한은 이 값이 *기록으로
+//  등록되는 것*을 막는다 — 증상 차단. 여기서 고치는 건 그 값이 애초에 생기는 원인이다.)
+// ============================================================================
+describe('死구간에서 만보계로 메운 거리에는 시간이 따라붙는다', () => {
+  /** 터널 시나리오: 정상 러닝 → 무신호 구간(만보계만 보고) → 탈출. */
+  const tunnel = (t: RunTracker, set: (v: number) => void) => {
+    let ts = 100000;
+    set(ts);
+    t.start({goalKm: 5, shoe: {id: 's1', name: 'X'}, t0: ts});
+    // 60초 정상 러닝 — 6초마다 fix, 매번 ~17m(≈2.8m/s)
+    for (let i = 0; i < 10; i++) {
+      ts += 6000;
+      set(ts);
+      t.ingestFix(fix(37.5 + i * 0.00015, LON, 5, ts));
+    }
+    // 터널 5분 — GPS fix 없음. 만보계만 2.5초마다 보고(총 1km).
+    t.feedPedometerDistance(0, ts); // 기준
+    const stepMs = 2500;
+    const ticks = (5 * 60 * 1000) / stepMs;
+    for (let i = 1; i <= ticks; i++) {
+      ts += stepMs;
+      set(ts);
+      t.feedPedometerDistance((1000 * i) / ticks, ts);
+    }
+    return ts;
+  };
+
+  test('터널을 지나도 페이스가 인간의 범위 안에 있다', () => {
+    const {t, set} = makeEngine();
+    tunnel(t, set);
+
+    const km = t.getDistanceKm();
+    const sec = t.getElapsed();
+    expect(km).toBeGreaterThan(1); // 만보계가 1km 를 메웠다
+    // 핵심 단언: 되찾은 거리에 시간이 따라붙었는가.
+    // 총 경과는 60초 + 300초 = 360초. 그중 死구간을 통째로 빼면 67초가 나왔었다.
+    expect(sec).toBeGreaterThan(300);
+
+    // 그리고 그 페이스는 사람이 낼 수 있는 값이다(1km 세계기록 131초/km 보다 느리다).
+    const secPerKm = sec / km;
+    expect(secPerKm).toBeGreaterThan(131);
+  });
+
+  test('상쇄가 시간을 늘리지는 않는다 — 경과는 벽시계를 넘지 않는다', () => {
+    const {t, set} = makeEngine();
+    const endTs = tunnel(t, set);
+    // 벽시계 총량(360초)보다 커지면 회계가 시간을 만들어낸 것이다.
+    expect(t.getElapsed()).toBeLessThanOrEqual((endTs - 100000) / 1000);
+  });
+
+  test('만보계가 없으면 예전 동작 그대로 — 死구간 시간은 빠진다', () => {
+    const {t, set} = makeEngine();
+    let ts = 100000;
+    set(ts);
+    t.start({goalKm: 5, shoe: {id: 's1', name: 'X'}, t0: ts});
+    for (let i = 0; i < 10; i++) {
+      ts += 6000;
+      set(ts);
+      t.ingestFix(fix(37.5 + i * 0.00015, LON, 5, ts));
+    }
+    const beforeStall = t.getElapsed();
+    ts += 5 * 60 * 1000; // 만보계 없이 5분 무신호(백그라운드 throttle)
+    set(ts);
+    // 거리가 안 쌓였으므로 시간도 늘지 않아야 한다 — 이게 audit#9 의 원래 목적이다.
+    expect(t.getElapsed() - beforeStall).toBeLessThan(10);
+  });
+});

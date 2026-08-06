@@ -97,6 +97,11 @@ export interface RunTrackerConfig {
   /** 누적 GPS stall ms(복구 시드/테스트용; 기본 0). elapsed 에서 빠지는 死구간 시간. */
   stalledMs?: number;
   /**
+   * 死구간 중 만보계로 거리를 되찾은 시간(ms) — stalledMs 의 상쇄분. 복구 시드/테스트용.
+   * stalledMs 를 이어받을 때 이것도 같이 줘야 경과 시간이 복구 직후 튀지 않는다.
+   */
+  pedFillMs?: number;
+  /**
    * 크래시 복구 '이어 달리기' 시드 — 직전 스냅샷의 누적 거리(km). 기본 0.
    * 새 fix는 여기서부터 누적된다. (t0 는 호출자가 now − elapsed 로 줘 경과시간을 잇는다.)
    */
@@ -178,6 +183,23 @@ class RunTracker {
   // (백그라운드 throttle/터널에서 '거리 0 + 시간만 증가 → 페이스 왜곡' 방지). 임계(8s)까지는
   // 정상 fix 간격이라 세지 않고, 그 *초과분*만 누적해 타이머가 뒤로 튀지 않게 한다.
   private stalledMs = 0;
+  /**
+   * 死구간 중 **만보계로 거리를 되찾은** 시간(ms). stalledMs 에서 이만큼은 도로 인정한다.
+   *
+   * 왜 필요한가(2026-08-07 감사): 두 방어가 서로를 파괴하고 있었다.
+   *   · stalledMs   — 무신호 구간은 거리가 안 쌓이니 시간도 빼자(페이스 왜곡 방지)
+   *   · pedFillKm   — 무신호 구간의 실제 이동을 만보계로 메우자(거리 유실 방지)
+   * 둘 다 옳지만 **같은 구간에 동시에 걸리면** 거리는 인정하고 시간은 삭제하게 된다.
+   * 실측(엔진 직접 실행): 60초 러닝 + 5분 터널(만보계 1km) →
+   *   거리 1.286km · 경과 **67초** · 페이스 **0'52"/km**.
+   * PB 판정이 duration/dist 라 터널 하나가 가짜 개인 최고를 만들었다(Truth only 위반).
+   *
+   * 그래서 '되찾은 만큼은 진짜 러닝 시간'으로 회계한다. 이 값은 stalledMs 를 상쇄할
+   * 뿐 절대 시간을 늘리지 않는다(상쇄 상한 = 死구간 총량).
+   */
+  private pedFillMs = 0;
+  /** 마지막으로 만보계 거리를 보탠 시각(ms). 위 회계의 구간 폭을 재는 기준. */
+  private pedFillAtMs = 0;
 
   private t0 = 0;
   private autoPauseEnabled = true;
@@ -251,6 +273,10 @@ class RunTracker {
     this.lastStepSampleMs = 0;
     this.pedLastCumM = -1;
     this.pedFillKm = 0;
+    // 크래시 복구 시드 — stalledMs 를 이어받으면 그 상쇄분도 같이 이어받아야
+    // 복구 직후 경과 시간이 갑자기 줄지 않는다(구 스냅샷엔 없으므로 기본 0).
+    this.pedFillMs = config.pedFillMs ?? 0;
+    this.pedFillAtMs = 0;
     this.isPaused = false;
     this.autoPausedFlag = false;
     this.pausedMs = 0;
@@ -641,7 +667,13 @@ class RunTracker {
       !this.indoorMode && !this.isPaused && this.lastRecvMs > 0
         ? Math.max(0, now - this.lastRecvMs - GPS_STALL_THRESHOLD_MS)
         : 0;
-    return Math.max(0, Math.floor((now - this.t0 - curPausedMs - this.stalledMs - ongoingStallMs) / 1000));
+    // 死구간 총량에서 **만보계로 거리를 되찾은 시간만큼은 도로 인정한다.**
+    // 그 구간의 이동은 dist 에 이미 들어가 있으므로, 시간까지 빼면 거리와 시간의
+    // 짝이 깨져 페이스가 폭주한다(pedFillMs 주석의 0'52"/km 실측). 상쇄는 死구간
+    // 총량을 넘지 않는다 — 이 회계가 시간을 늘리는 일은 절대 없다.
+    const rawStallMs = this.stalledMs + ongoingStallMs;
+    const netStallMs = Math.max(0, rawStallMs - this.pedFillMs);
+    return Math.max(0, Math.floor((now - this.t0 - curPausedMs - netStallMs) / 1000));
   }
 
   isStalled(): boolean {
@@ -792,10 +824,21 @@ class RunTracker {
     if (!this.firstFixEmitted || !this.active || this.pausedFlag()) return;
     // GPS 死구간일 때만 보탠다 — 정상 구간은 GPS(스무더)가 이미 적산 중이라 손대면 이중계산.
     const gpsStalled = now - this.lastRecvMs > GPS_STALL_THRESHOLD_MS;
-    if (!gpsStalled) return;
+    if (!gpsStalled) {
+      // 정상 구간에서도 기준 시각은 따라간다 — 死구간에 처음 진입했을 때 그 이전
+      // 시간까지 통째로 '되찾은 시간'으로 세지 않기 위해서다.
+      this.pedFillAtMs = now;
+      return;
+    }
     const addKm = deltaM / 1000;
     this.dist += addKm;
     this.pedFillKm += addKm;
+    // ── 되찾은 거리에는 되찾은 시간이 따라붙는다 ────────────────────────────
+    // 이 구간의 이동을 거리로 인정했으면 그 시간도 러닝 시간이다. 인정하지 않으면
+    // '거리는 있는데 시간이 없는' 구간이 생겨 페이스가 폭주한다(위 필드 주석 참조).
+    // 폭은 직전 만보계 표본과의 간격 — 표본 주기(2.5s)만큼씩 촘촘히 되돌려준다.
+    if (this.pedFillAtMs > 0) this.pedFillMs += Math.max(0, now - this.pedFillAtMs);
+    this.pedFillAtMs = now;
   }
 
   /** 융합(死구간 보행거리)으로 메운 누적 거리(km) — 검증·디버그용(총 거리 중 CMP 기여분). */
